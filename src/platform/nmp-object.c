@@ -1016,50 +1016,78 @@ nmp_object_clone (const NMPObject *obj, gboolean id_only)
 	return dst;
 }
 
-gboolean
-nmp_object_id_equal (const NMPObject *obj1, const NMPObject *obj2)
+int
+nmp_object_id_cmp (const NMPObject *obj1, const NMPObject *obj2)
 {
-	const NMPClass *klass;
+	const NMPClass *klass, *klass2;
 
-	if (obj1 == obj2)
-		return TRUE;
-	if (!obj1 || !obj2)
-		return FALSE;
+	NM_CMP_SELF (obj1, obj2);
 
 	g_return_val_if_fail (NMP_OBJECT_IS_VALID (obj1), FALSE);
 	g_return_val_if_fail (NMP_OBJECT_IS_VALID (obj2), FALSE);
 
 	klass = NMP_OBJECT_GET_CLASS (obj1);
-	return    klass == NMP_OBJECT_GET_CLASS (obj2)
-	       && klass->cmd_plobj_id_equal
-	       && klass->cmd_plobj_id_equal (&obj1->object, &obj2->object);
+	nm_assert (!klass->cmd_plobj_id_hash == !klass->cmd_plobj_id_cmp);
+
+	klass2 = NMP_OBJECT_GET_CLASS (obj2);
+	nm_assert (klass);
+	if (klass != klass2) {
+		nm_assert (klass2);
+		NM_CMP_DIRECT (klass->obj_type, klass2->obj_type);
+		/* resort to pointer comparison */
+		if (klass < klass2)
+			return -1;
+		return 1;
+	}
+
+	if (!klass->cmd_plobj_id_cmp) {
+		/* the klass doesn't implement ID cmp(). That means, different objects
+		 * never compare equal, but the cmp() according to their pointer value. */
+		return (obj1 < obj2) ? -1 : 1;
+	}
+
+	return klass->cmd_plobj_id_cmp (&obj1->object, &obj2->object);
 }
 
-#define _vt_cmd_plobj_id_equal(type, plat_type, cmd) \
-static gboolean \
-_vt_cmd_plobj_id_equal_##type (const NMPlatformObject *_obj1, const NMPlatformObject *_obj2) \
+#define _vt_cmd_plobj_id_cmp(type, plat_type, cmd) \
+static int \
+_vt_cmd_plobj_id_cmp_##type (const NMPlatformObject *_obj1, const NMPlatformObject *_obj2) \
 { \
 	const plat_type *const obj1 = (const plat_type *) _obj1; \
 	const plat_type *const obj2 = (const plat_type *) _obj2; \
-	return (cmd); \
+	\
+	NM_CMP_SELF (obj1, obj2); \
+	{ cmd; } \
+	return 0; \
 }
-_vt_cmd_plobj_id_equal (link, NMPlatformLink,
-                           obj1->ifindex == obj2->ifindex);
-_vt_cmd_plobj_id_equal (ip4_address, NMPlatformIP4Address,
-                           obj1->ifindex == obj2->ifindex
-                        && obj1->plen == obj2->plen
-                        && obj1->address == obj2->address
-                        /* for IPv4 addresses, you can add the same local address with differing peer-adddress
-                         * (IFA_ADDRESS), provided that their net-part differs. */
-                        && ((obj1->peer_address ^ obj2->peer_address) & nm_utils_ip4_prefix_to_netmask (obj1->plen)) == 0);
-_vt_cmd_plobj_id_equal (ip6_address, NMPlatformIP6Address,
-                           obj1->ifindex == obj2->ifindex
-                        /* for IPv6 addresses, the prefix length is not part of the primary identifier. */
-                        && IN6_ARE_ADDR_EQUAL (&obj1->address, &obj2->address));
-_vt_cmd_plobj_id_equal (ip4_route, NMPlatformIP4Route,
-                        nm_platform_ip4_route_cmp (obj1, obj2, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID_CACHE) == 0);
-_vt_cmd_plobj_id_equal (ip6_route, NMPlatformIP6Route,
-                        nm_platform_ip6_route_cmp (obj1, obj2, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID_CACHE) == 0);
+_vt_cmd_plobj_id_cmp (link, NMPlatformLink,
+                      NM_CMP_FIELD (obj1, obj2, ifindex);
+)
+_vt_cmd_plobj_id_cmp (ip4_address, NMPlatformIP4Address,
+                      NM_CMP_FIELD (obj1, obj2, ifindex);
+                      NM_CMP_FIELD (obj1, obj2, plen);
+                      NM_CMP_FIELD (obj1, obj2, address);
+                      /* for IPv4 addresses, you can add the same local address with differing peer-adddress
+                       * (IFA_ADDRESS), provided that their net-part differs. */
+                      NM_CMP_DIRECT_IN4ADDR_SAME_PREFIX (obj1->peer_address, obj2->peer_address, obj1->plen);
+)
+_vt_cmd_plobj_id_cmp (ip6_address, NMPlatformIP6Address,
+                      NM_CMP_FIELD (obj1, obj2, ifindex);
+                      /* for IPv6 addresses, the prefix length is not part of the primary identifier. */
+                      NM_CMP_FIELD_IN6ADDR (obj1, obj2, address);
+)
+
+static int
+_vt_cmd_plobj_id_cmp_ip4_route (const NMPlatformObject *obj1, const NMPlatformObject *obj2)
+{
+	return nm_platform_ip4_route_cmp ((NMPlatformIP4Route *) obj1, (NMPlatformIP4Route *) obj2, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID_CACHE);
+}
+
+static int
+_vt_cmd_plobj_id_cmp_ip6_route (const NMPlatformObject *obj1, const NMPlatformObject *obj2)
+{
+	return nm_platform_ip6_route_cmp ((NMPlatformIP6Route *) obj1, (NMPlatformIP6Route *) obj2, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID_CACHE);
+}
 
 guint
 nmp_object_id_hash (const NMPObject *obj)
@@ -1073,11 +1101,15 @@ nmp_object_id_hash (const NMPObject *obj)
 
 	klass = NMP_OBJECT_GET_CLASS (obj);
 
-	if (klass->cmd_plobj_id_hash)
-		return klass->cmd_plobj_id_hash (&obj->object);
+	nm_assert (!klass->cmd_plobj_id_hash == !klass->cmd_plobj_id_cmp);
 
-	/* unhashable objects implement pointer equality. */
-	return g_direct_hash (obj);
+	if (!klass->cmd_plobj_id_hash) {
+		/* The klass doesn't implement ID compare. It means, to use pointer
+		 * equality (g_direct_hash). */
+		return g_direct_hash (obj);
+	}
+
+	return klass->cmd_plobj_id_hash (&obj->object);
 }
 
 #define _vt_cmd_plobj_id_hash(type, plat_type, cmd) \
@@ -2303,7 +2335,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_obj_is_visible                 = _vt_cmd_obj_is_visible_link,
 		.cmd_obj_to_string                  = _vt_cmd_obj_to_string_link,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_link,
-		.cmd_plobj_id_equal                 = _vt_cmd_plobj_id_equal_link,
+		.cmd_plobj_id_cmp                   = _vt_cmd_plobj_id_cmp_link,
 		.cmd_plobj_id_hash                  = _vt_cmd_plobj_id_hash_link,
 		.cmd_plobj_to_string_id             = _vt_cmd_plobj_to_string_id_link,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_link_to_string,
@@ -2323,7 +2355,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.supported_cache_ids                = _supported_cache_ids_ipx_address,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_address,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_ip4_address,
-		.cmd_plobj_id_equal                 = _vt_cmd_plobj_id_equal_ip4_address,
+		.cmd_plobj_id_cmp                   = _vt_cmd_plobj_id_cmp_ip4_address,
 		.cmd_plobj_id_hash                  = _vt_cmd_plobj_id_hash_ip4_address,
 		.cmd_plobj_to_string_id             = _vt_cmd_plobj_to_string_id_ip4_address,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_ip4_address_to_string,
@@ -2343,7 +2375,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.supported_cache_ids                = _supported_cache_ids_ipx_address,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_address,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_ip6_address,
-		.cmd_plobj_id_equal                 = _vt_cmd_plobj_id_equal_ip6_address,
+		.cmd_plobj_id_cmp                   = _vt_cmd_plobj_id_cmp_ip6_address,
 		.cmd_plobj_id_hash                  = _vt_cmd_plobj_id_hash_ip6_address,
 		.cmd_plobj_to_string_id             = _vt_cmd_plobj_to_string_id_ip6_address,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_ip6_address_to_string,
@@ -2363,7 +2395,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.supported_cache_ids                = _supported_cache_ids_ipx_route,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_route,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_ip4_route,
-		.cmd_plobj_id_equal                 = _vt_cmd_plobj_id_equal_ip4_route,
+		.cmd_plobj_id_cmp                   = _vt_cmd_plobj_id_cmp_ip4_route,
 		.cmd_plobj_id_hash                  = _vt_cmd_plobj_id_hash_ip4_route,
 		.cmd_plobj_to_string_id             = _vt_cmd_plobj_to_string_id_ip4_route,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_ip4_route_to_string,
@@ -2383,7 +2415,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.supported_cache_ids                = _supported_cache_ids_ipx_route,
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_route,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_ip6_route,
-		.cmd_plobj_id_equal                 = _vt_cmd_plobj_id_equal_ip6_route,
+		.cmd_plobj_id_cmp                   = _vt_cmd_plobj_id_cmp_ip6_route,
 		.cmd_plobj_id_hash                  = _vt_cmd_plobj_id_hash_ip6_route,
 		.cmd_plobj_to_string_id             = _vt_cmd_plobj_to_string_id_ip6_route,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_ip6_route_to_string,

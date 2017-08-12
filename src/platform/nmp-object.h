@@ -125,7 +125,7 @@ typedef struct {
 
 	/* functions that operate on NMPlatformObject */
 	void (*cmd_plobj_id_copy) (NMPlatformObject *dst, const NMPlatformObject *src);
-	gboolean (*cmd_plobj_id_equal) (const NMPlatformObject *obj1, const NMPlatformObject *obj2);
+	int (*cmd_plobj_id_cmp) (const NMPlatformObject *obj1, const NMPlatformObject *obj2);
 	guint (*cmd_plobj_id_hash) (const NMPlatformObject *obj);
 	const char *(*cmd_plobj_to_string_id) (const NMPlatformObject *obj, char *buf, gsize buf_size);
 	const char *(*cmd_plobj_to_string) (const NMPlatformObject *obj, char *buf, gsize len);
@@ -456,8 +456,16 @@ int nmp_object_cmp (const NMPObject *obj1, const NMPObject *obj2);
 gboolean nmp_object_equal (const NMPObject *obj1, const NMPObject *obj2);
 void nmp_object_copy (NMPObject *dst, const NMPObject *src, gboolean id_only);
 NMPObject *nmp_object_clone (const NMPObject *obj, gboolean id_only);
-gboolean nmp_object_id_equal (const NMPObject *obj1, const NMPObject *obj2);
+
+int nmp_object_id_cmp (const NMPObject *obj1, const NMPObject *obj2);
 guint nmp_object_id_hash (const NMPObject *obj);
+
+static inline gboolean
+nmp_object_id_equal (const NMPObject *obj1, const NMPObject *obj2)
+{
+	return nmp_object_id_cmp (obj1, obj2) == 0;
+}
+
 gboolean nmp_object_is_alive (const NMPObject *obj);
 gboolean nmp_object_is_visible (const NMPObject *obj);
 
