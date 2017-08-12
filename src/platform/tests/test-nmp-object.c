@@ -235,7 +235,7 @@ _nmp_cache_update_netlink (NMPCache *cache, NMPObject *obj, const NMPObject **ou
 		obj_new_expected->_link.udev.device = udev_device_ref (obj_prev->_link.udev.device);
 	_nmp_object_fixup_link_udev_fields (&obj_new_expected, NULL, nmp_cache_use_udev_get (cache));
 
-	ops_type = nmp_cache_update_netlink (cache, obj, &obj_old, &obj_new);
+	ops_type = nmp_cache_update_netlink (cache, obj, FALSE, &obj_old, &obj_new);
 	ops_post_check (cache, ops_type, obj_old, obj_new,
 	                nmp_object_is_alive (obj_new_expected) ? obj_new_expected : NULL,
 	                expected_ops_type);

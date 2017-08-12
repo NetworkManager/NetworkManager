@@ -166,10 +166,9 @@ ip_routes (test_fixture *fixture, NMPObjectType obj_type)
 		else
 			ifindex = fixture->ifindex1;
 
-		pl_head_entry = nm_platform_lookup_route_visible (NM_PLATFORM_GET,
-		                                                  obj_type,
-		                                                  ifindex,
-		                                                  FALSE);
+		pl_head_entry = nm_platform_lookup_addrroute (NM_PLATFORM_GET,
+		                                              obj_type,
+		                                              ifindex);
 		nmp_cache_iter_for_each (&iter, pl_head_entry, &plobj) {
 			const NMPlatformIPRoute *r = NMP_OBJECT_CAST_IP_ROUTE (plobj);
 
@@ -553,6 +552,7 @@ static void
 test_ip6 (test_fixture *fixture, gconstpointer user_data)
 {
 	GArray *routes;
+	int i;
 
 	NMPlatformIP6Route state1[] = {
 		{
@@ -771,7 +771,37 @@ test_ip6 (test_fixture *fixture, gconstpointer user_data)
 
 	/* 2001:db8:abad:c0de::/64 on dev0 was updated for gateway removal*/
 	routes = ip_routes (fixture, NMP_OBJECT_TYPE_IP6_ROUTE);
-	g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state2));
+	if (routes->len != G_N_ELEMENTS (state2)) {
+		NMPlatformIP6Route rr;
+
+		/* hm, seems kernel may wrongly treat IPv6 gateway for `ip route replace`.
+		 * See rh#1480427.
+		 *
+		 * We would expect that `ip route replace` replaces an existing route.
+		 * However, kernel may not do so, and instead prepend it.
+		 *
+		 * Work around that, by checking if such a route exists and accept
+		 * it. */
+		g_assert (nmtstp_is_root_test ());
+		g_assert_cmpint (routes->len, ==, G_N_ELEMENTS (state2) + 1);
+		rr = ((NMPlatformIP6Route) {
+			.rt_source = nmp_utils_ip_config_source_round_trip_rtprot (NM_IP_CONFIG_SOURCE_USER),
+			.network = *nmtst_inet6_from_string ("2001:db8:abad:c0de::"),
+			.plen = 64,
+			.ifindex = fixture->ifindex0,
+			.gateway = *nmtst_inet6_from_string ("2001:db8:8086::1"),
+			.metric = 21,
+			.mss = 0,
+		});
+		for (i = 0; i < routes->len; i++) {
+			if (nm_platform_ip6_route_cmp (&rr,
+			                               &g_array_index (routes, NMPlatformIP6Route, i),
+			                               NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL) != 0)
+				continue;
+			g_array_remove_index (routes, i);
+			break;
+		}
+	}
 	nmtst_platform_ip6_routes_equal ((NMPlatformIP6Route *) routes->data, state2, routes->len, TRUE);
 	g_array_free (routes, TRUE);
 
@@ -806,9 +836,9 @@ _assert_route_check (const NMPlatformVTableRoute *vtable, gboolean has, const NM
 	g_assert (route);
 
 	if (vtable->is_ip4)
-		r = (const NMPlatformIPXRoute *) nm_platform_ip4_route_get (NM_PLATFORM_GET, route->rx.ifindex, route->r4.network, route->rx.plen, route->rx.metric);
+		r = (const NMPlatformIPXRoute *) nmtstp_ip4_route_get (NM_PLATFORM_GET, route->rx.ifindex, route->r4.network, route->rx.plen, route->rx.metric, route->r4.tos);
 	else
-		r = (const NMPlatformIPXRoute *) nm_platform_ip6_route_get (NM_PLATFORM_GET, route->rx.ifindex, route->r6.network, route->rx.plen, route->rx.metric);
+		r = (const NMPlatformIPXRoute *) nmtstp_ip6_route_get (NM_PLATFORM_GET, route->rx.ifindex, &route->r6.network, route->rx.plen, route->rx.metric, &route->r6.src, route->r6.src_plen);
 
 	if (!has) {
 		g_assert (!r);
@@ -940,6 +970,5 @@ _nmtstp_setup_tests (void)
 {
 	g_test_add ("/route-manager/ip4", test_fixture, NULL, fixture_setup, test_ip4, fixture_teardown);
 	g_test_add ("/route-manager/ip6", test_fixture, NULL, fixture_setup, test_ip6, fixture_teardown);
-
 	g_test_add ("/route-manager/ip4-full-sync", test_fixture, NULL, fixture_setup, test_ip4_full_sync, fixture_teardown);
 }

@@ -786,23 +786,91 @@ _nm_auto_nl_msg_cleanup (void *ptr)
 }
 
 static const char *
-_nl_nlmsg_type_to_str (guint16 type, char *buf, gsize len)
+_nl_nlmsghdr_to_str (const struct nlmsghdr *hdr, char *buf, gsize len)
 {
-	const char *str_type = NULL;
+	const char *b;
+	const char *s;
+	guint flags, flags_before;
+	const char *prefix;
 
-	switch (type) {
-	case RTM_NEWLINK:  str_type = "NEWLINK";  break;
-	case RTM_DELLINK:  str_type = "DELLINK";  break;
-	case RTM_NEWADDR:  str_type = "NEWADDR";  break;
-	case RTM_DELADDR:  str_type = "DELADDR";  break;
-	case RTM_NEWROUTE: str_type = "NEWROUTE"; break;
-	case RTM_DELROUTE: str_type = "DELROUTE"; break;
+	nm_utils_to_string_buffer_init (&buf, &len);
+	b = buf;
+
+	switch (hdr->nlmsg_type) {
+	case RTM_NEWLINK:  s = "NEWLINK";  break;
+	case RTM_DELLINK:  s = "DELLINK";  break;
+	case RTM_NEWADDR:  s = "NEWADDR";  break;
+	case RTM_DELADDR:  s = "DELADDR";  break;
+	case RTM_NEWROUTE: s = "NEWROUTE"; break;
+	case RTM_DELROUTE: s = "DELROUTE"; break;
+	default:           s = NULL;       break;
 	}
-	if (str_type)
-		g_strlcpy (buf, str_type, len);
+
+	if (s)
+		nm_utils_strbuf_append (&buf, &len, "RTM_%s", s);
 	else
-		g_snprintf (buf, len, "(%d)", type);
-	return buf;
+		nm_utils_strbuf_append (&buf, &len, "(%u)", (unsigned) hdr->nlmsg_type);
+
+	flags = hdr->nlmsg_flags;
+
+	if (!flags) {
+		nm_utils_strbuf_append_str (&buf, &len, ", flags 0");
+		goto flags_done;
+	}
+
+#define _F(f, n) \
+	G_STMT_START { \
+		if (NM_FLAGS_ALL (flags, f)) { \
+			flags &= ~(f); \
+			nm_utils_strbuf_append (&buf, &len, "%s%s", prefix, n); \
+			if (!flags) \
+				goto flags_done; \
+			prefix = ","; \
+		} \
+	} G_STMT_END
+
+	prefix = ", flags ";
+	flags_before = flags;
+	_F (NLM_F_REQUEST, "request");
+	_F (NLM_F_MULTI, "multi");
+	_F (NLM_F_ACK, "ack");
+	_F (NLM_F_ECHO, "echo");
+	_F (NLM_F_DUMP_INTR, "dump_intr");
+	_F (0x20 /*NLM_F_DUMP_FILTERED*/, "dump_filtered");
+
+	if (flags_before != flags)
+		prefix = ";";
+
+	switch (hdr->nlmsg_type) {
+	case RTM_NEWLINK:
+	case RTM_NEWADDR:
+	case RTM_NEWROUTE:
+		_F (NLM_F_REPLACE, "replace");
+		_F (NLM_F_EXCL, "excl");
+		_F (NLM_F_CREATE, "create");
+		_F (NLM_F_APPEND, "append");
+		break;
+	case RTM_GETLINK:
+	case RTM_GETADDR:
+	case RTM_GETROUTE:
+		_F (NLM_F_DUMP, "dump");
+		_F (NLM_F_ROOT, "root");
+		_F (NLM_F_MATCH, "match");
+		_F (NLM_F_ATOMIC, "atomic");
+		break;
+	}
+
+#undef _F
+
+	if (flags_before != flags)
+		prefix = ";";
+	nm_utils_strbuf_append (&buf, &len, "%s0x%04x", prefix, flags);
+
+flags_done:
+
+	nm_utils_strbuf_append (&buf, &len, ", seq %u", (unsigned) hdr->nlmsg_seq);
+
+	return b;
 }
 
 /******************************************************************
@@ -3324,7 +3392,7 @@ cache_prune_one_type (NMPlatform *platform, NMPObjectType obj_type)
 
 			obj = iter.current->obj;
 			_LOGt ("cache-prune: prune %s", nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ALL, NULL, 0));
-			cache_op = nmp_cache_remove (cache, obj, TRUE, &obj_old);
+			cache_op = nmp_cache_remove (cache, obj, TRUE, TRUE, &obj_old);
 			nm_assert (cache_op == NMP_CACHE_OPS_REMOVED);
 			cache_on_change (platform, cache_op, obj_old, NULL);
 			nm_platform_cache_update_emit_signal (platform, cache_op, obj_old, NULL);
@@ -3361,9 +3429,7 @@ cache_on_change (NMPlatform *platform,
 	NMPCache *cache = nm_platform_get_cache (platform);
 
 	ASSERT_nmp_cache_ops (cache, cache_op, obj_old, obj_new);
-
-	if (cache_op == NMP_CACHE_OPS_UNCHANGED)
-		return;
+	nm_assert (cache_op != NMP_CACHE_OPS_UNCHANGED);
 
 	klass = obj_old ? NMP_OBJECT_GET_CLASS (obj_old) : NMP_OBJECT_GET_CLASS (obj_new);
 
@@ -3579,39 +3645,6 @@ cache_on_change (NMPlatform *platform,
 	}
 }
 
-static void
-cache_post (NMPlatform *platform,
-            struct nlmsghdr *msghdr,
-            NMPCacheOpsType cache_op,
-            const NMPObject *obj,
-            const NMPObject *obj_old,
-            const NMPObject *obj_new)
-{
-	if (msghdr->nlmsg_type == RTM_NEWROUTE) {
-		DelayedActionType action_type;
-
-		action_type = NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_IP4_ROUTE
-		                  ? DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES
-		                  : DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES;
-		if (   !delayed_action_refresh_all_in_progress (platform, action_type)
-		    && nmp_cache_find_other_route_for_same_destination (nm_platform_get_cache (platform), obj)) {
-			/* via `iproute route change` the user can update an existing route which effectively
-			 * means that a new object (with a different ID) comes into existance, replacing the
-			 * old on. In other words, as the ID of the object changes, we really see a new
-			 * object with the old one deleted.
-			 * However, kernel decides not to send a RTM_DELROUTE event for that.
-			 *
-			 * To hack around that, check if the update leaves us with multiple routes for the
-			 * same network/plen,metric part. In that case, we cannot do better then requesting
-			 * all routes anew, which sucks.
-			 *
-			 * One mitigation to avoid a dump is only to request a new dump, if we are not in
-			 * the middle of an ongoing dump (delayed_action_refresh_all_in_progress). */
-			delayed_action_schedule (platform, action_type, NULL);
-		}
-	}
-}
-
 /*****************************************************************************/
 
 static int
@@ -3821,9 +3854,10 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 	nm_auto_nmpobj NMPObject *obj = NULL;
 	NMPCacheOpsType cache_op;
 	struct nlmsghdr *msghdr;
-	char buf_nlmsg_type[16];
+	char buf_nlmsghdr[400];
 	gboolean id_only = FALSE;
 	NMPCache *cache = nm_platform_get_cache (platform);
+	gboolean is_dump;
 
 	msghdr = nlmsg_hdr (msg);
 
@@ -3841,16 +3875,28 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 
 	obj = nmp_object_new_from_nl (platform, cache, msg, id_only);
 	if (!obj) {
-		_LOGT ("event-notification: %s, seq %u: ignore",
-		       _nl_nlmsg_type_to_str (msghdr->nlmsg_type, buf_nlmsg_type, sizeof (buf_nlmsg_type)),
-		       msghdr->nlmsg_seq);
+		_LOGT ("event-notification: %s: ignore",
+		       _nl_nlmsghdr_to_str (msghdr, buf_nlmsghdr, sizeof (buf_nlmsghdr)));
 		return;
 	}
 
-	_LOGT ("event-notification: %s, seq %u: %s",
-	       _nl_nlmsg_type_to_str (msghdr->nlmsg_type, buf_nlmsg_type, sizeof (buf_nlmsg_type)),
-	       msghdr->nlmsg_seq, nmp_object_to_string (obj,
-	           id_only ? NMP_OBJECT_TO_STRING_ID : NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+	switch (msghdr->nlmsg_type) {
+	case RTM_NEWADDR:
+	case RTM_NEWLINK:
+	case RTM_NEWROUTE:
+		is_dump = delayed_action_refresh_all_in_progress (platform,
+		                                                  delayed_action_refresh_from_object_type (NMP_OBJECT_GET_TYPE (obj)));
+		break;
+	default:
+		is_dump = FALSE;
+	}
+
+	_LOGT ("event-notification: %s%s: %s",
+	       _nl_nlmsghdr_to_str (msghdr, buf_nlmsghdr, sizeof (buf_nlmsghdr)),
+	       is_dump ? ", in-dump" : "",
+	       nmp_object_to_string (obj,
+	                             id_only ? NMP_OBJECT_TO_STRING_ID : NMP_OBJECT_TO_STRING_PUBLIC,
+	                             NULL, 0));
 
 	{
 		nm_auto_nmpobj const NMPObject *obj_old = NULL;
@@ -3860,15 +3906,72 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 
 		case RTM_NEWLINK:
 		case RTM_NEWADDR:
-		case RTM_NEWROUTE:
 		case RTM_GETLINK:
-			cache_op = nmp_cache_update_netlink (cache, obj, &obj_old, &obj_new);
+			cache_op = nmp_cache_update_netlink (cache, obj, is_dump, &obj_old, &obj_new);
 			if (cache_op != NMP_CACHE_OPS_UNCHANGED) {
 				cache_on_change (platform, cache_op, obj_old, obj_new);
-				cache_post (platform, msghdr, cache_op, obj, obj_old, obj_new);
 				nm_platform_cache_update_emit_signal (platform, cache_op, obj_old, obj_new);
 			}
 			break;
+
+		case RTM_NEWROUTE: {
+			nm_auto_nmpobj const NMPObject *obj_replace = NULL;
+			gboolean resync_required = FALSE;
+			gboolean only_dirty = FALSE;
+
+			cache_op = nmp_cache_update_netlink_route (cache,
+			                                           obj,
+			                                           is_dump,
+			                                           msghdr->nlmsg_flags,
+			                                           &obj_old,
+			                                           &obj_new,
+			                                           &obj_replace,
+			                                           &resync_required);
+			if (cache_op != NMP_CACHE_OPS_UNCHANGED) {
+				if (obj_replace) {
+					const NMDedupMultiEntry *entry_replace;
+
+					/* we found an object that is to be replaced by the RTM_NEWROUTE message.
+					 * While we invoke the signal, the platform cache might change and invalidate
+					 * the findings. Mitigate that (for the most part), by marking the entry as
+					 * dirty and only delete @obj_replace if it is still dirty afterwards.
+					 *
+					 * Yes, there is a tiny tiny chance for still getting it wrong. But in practice,
+					 * the signal handlers do not cause to call the platform again, so the cache
+					 * is not really changing. -- if they would, it would anyway be dangerous to overflow
+					 * the stack and it's not ensured that the processing of netlink messages is
+					 * reentrant (maybe it is).
+					 */
+					entry_replace = nmp_cache_lookup_entry (cache, obj_replace);
+					nm_assert (entry_replace && entry_replace->obj == obj_replace);
+					nm_dedup_multi_entry_set_dirty (entry_replace, TRUE);
+					only_dirty = TRUE;
+				}
+				cache_on_change (platform, cache_op, obj_old, obj_new);
+				nm_platform_cache_update_emit_signal (platform, cache_op, obj_old, obj_new);
+			}
+
+			if (obj_replace) {
+				/* the RTM_NEWROUTE message indicates that another route was replaced.
+				 * Remove it now. */
+				cache_op = nmp_cache_remove (cache, obj_replace, TRUE, only_dirty, NULL);
+				if (cache_op != NMP_CACHE_OPS_UNCHANGED) {
+					nm_assert (cache_op == NMP_CACHE_OPS_REMOVED);
+					cache_on_change (platform, cache_op, obj_replace, NULL);
+					nm_platform_cache_update_emit_signal (platform, cache_op, obj_replace, NULL);
+				}
+			}
+
+			if (resync_required) {
+				/* we'd like to avoid such resyncs as they are expensive and we should only rely on the
+				 * netlink events. This needs investigation. */
+				_LOGT ("schedule resync of routes after RTM_NEWROUTE");
+				delayed_action_schedule (platform,
+				                         delayed_action_refresh_from_object_type (NMP_OBJECT_GET_TYPE (obj)),
+				                         NULL);
+			}
+			break;
+		}
 
 		case RTM_DELLINK:
 		case RTM_DELADDR:
@@ -5750,6 +5853,7 @@ ip_route_add (NMPlatform *platform,
 		r6 = NMP_OBJECT_CAST_IP6_ROUTE (&obj);
 		nm_utils_ip6_address_clear_host_address (&r6->network, &r6->network, r6->plen);
 		r6->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (r6->rt_source),
+		r6->metric = nm_utils_ip6_route_metric_normalize (r6->metric);
 		nm_utils_ip6_address_clear_host_address (&r6->src, &r6->src, r6->src_plen);
 		break;
 	default:
@@ -5774,37 +5878,6 @@ ip_route_delete (NMPlatform *platform,
 
 	if (!NMP_OBJECT_IS_STACKINIT (obj))
 		obj_keep_alive = nmp_object_ref (obj);
-
-	if (   NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_IP4_ROUTE
-	    && obj->ip_route.metric == 0) {
-		NMPCache *cache = nm_platform_get_cache (platform);
-
-		/* Deleting an IPv4 route with metric 0 does not only delete an exectly matching route.
-		 * If no route with metric 0 exists, it might delete another route to the same destination.
-		 * For nm_platform_ip4_route_delete() we don't want this semantic.
-		 *
-		 * Instead, make sure that we have the most recent state and process all
-		 * delayed actions (including re-reading data from netlink). */
-
-		/* FIXME: later, we only want to pass in here @obj instances that originate
-		 * from the cache, and where we know that the route with metric 0 exists. */
-		delayed_action_handle_all (platform, TRUE);
-
-		if (!nmp_cache_lookup_obj (cache, obj)) {
-			/* hmm... we are about to delete an IP4 route with metric 0. We must only
-			 * send the delete request if such a route really exists. Above we refreshed
-			 * the platform cache, still no such route exists.
-			 *
-			 * Be extra careful and reload the routes. We must be sure that such a
-			 * route doesn't exists, because when we add an IPv4 address, we immediately
-			 * afterwards try to delete the kernel-added device route with metric 0.
-			 * It might be, that we didn't yet get the notification about that route. */
-			do_request_one_type (platform, NMP_OBJECT_TYPE_IP4_ROUTE);
-
-			if (!nmp_cache_lookup_obj (cache, obj))
-				return TRUE;
-		}
-	}
 
 	nlmsg = _nl_msg_new_route (RTM_DELROUTE, 0, obj);
 	if (!nlmsg)
@@ -5908,6 +5981,7 @@ continue_reading:
 		gboolean abort_parsing = FALSE;
 		gboolean process_valid_msg = FALSE;
 		guint32 seq_number;
+		char buf_nlmsghdr[400];
 
 		msg = nlmsg_convert (hdr);
 		if (!msg) {
@@ -5927,8 +6001,8 @@ continue_reading:
 			goto stop;
 		}
 
-		_LOGt ("netlink: recvmsg: new message type %d, seq %u",
-		       hdr->nlmsg_type, hdr->nlmsg_seq);
+		_LOGt ("netlink: recvmsg: new message %s",
+		       _nl_nlmsghdr_to_str (hdr, buf_nlmsghdr, sizeof (buf_nlmsghdr)));
 
 		if (creds)
 			nlmsg_set_creds (msg, creds);

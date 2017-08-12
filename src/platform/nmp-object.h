@@ -93,7 +93,7 @@ typedef enum { /*< skip >*/
 	 * sends one RTM_NEWADDR notification without notifying about the deletion. We detect
 	 * that by having this index to contain overlapping routes which require special
 	 * cache-resync. */
-	NMP_CACHE_ID_TYPE_ROUTES_BY_DESTINATION,
+	NMP_CACHE_ID_TYPE_ROUTES_BY_WEAK_ID,
 
 	__NMP_CACHE_ID_TYPE_MAX,
 	NMP_CACHE_ID_TYPE_MAX = __NMP_CACHE_ID_TYPE_MAX - 1,
@@ -125,7 +125,7 @@ typedef struct {
 
 	/* functions that operate on NMPlatformObject */
 	void (*cmd_plobj_id_copy) (NMPlatformObject *dst, const NMPlatformObject *src);
-	gboolean (*cmd_plobj_id_equal) (const NMPlatformObject *obj1, const NMPlatformObject *obj2);
+	int (*cmd_plobj_id_cmp) (const NMPlatformObject *obj1, const NMPlatformObject *obj2);
 	guint (*cmd_plobj_id_hash) (const NMPlatformObject *obj);
 	const char *(*cmd_plobj_to_string_id) (const NMPlatformObject *obj, char *buf, gsize buf_size);
 	const char *(*cmd_plobj_to_string) (const NMPlatformObject *obj, char *buf, gsize len);
@@ -413,6 +413,11 @@ const NMPClass *nmp_class_from_type (NMPObjectType obj_type);
 static inline const NMPObject *
 nmp_object_ref (const NMPObject *obj)
 {
+	if (!obj) {
+		/* for convenience, allow NULL. */
+		return NULL;
+	}
+
 	/* ref and unref accept const pointers. NMPObject is supposed to be shared
 	 * and kept immutable. Disallowing to take/retrun a reference to a const
 	 * NMPObject is cumbersome, because callers are precisely expected to
@@ -447,8 +452,6 @@ const NMPObject *nmp_object_stackinit_id  (NMPObject *obj, const NMPObject *src)
 const NMPObject *nmp_object_stackinit_id_link (NMPObject *obj, int ifindex);
 const NMPObject *nmp_object_stackinit_id_ip4_address (NMPObject *obj, int ifindex, guint32 address, guint8 plen, guint32 peer_address);
 const NMPObject *nmp_object_stackinit_id_ip6_address (NMPObject *obj, int ifindex, const struct in6_addr *address);
-const NMPObject *nmp_object_stackinit_id_ip4_route (NMPObject *obj, int ifindex, guint32 network, guint8 plen, guint32 metric);
-const NMPObject *nmp_object_stackinit_id_ip6_route (NMPObject *obj, int ifindex, const struct in6_addr *network, guint8 plen, guint32 metric);
 
 const char *nmp_object_to_string (const NMPObject *obj, NMPObjectToStringMode to_string_mode, char *buf, gsize buf_size);
 guint nmp_object_hash (const NMPObject *obj);
@@ -456,8 +459,16 @@ int nmp_object_cmp (const NMPObject *obj1, const NMPObject *obj2);
 gboolean nmp_object_equal (const NMPObject *obj1, const NMPObject *obj2);
 void nmp_object_copy (NMPObject *dst, const NMPObject *src, gboolean id_only);
 NMPObject *nmp_object_clone (const NMPObject *obj, gboolean id_only);
-gboolean nmp_object_id_equal (const NMPObject *obj1, const NMPObject *obj2);
+
+int nmp_object_id_cmp (const NMPObject *obj1, const NMPObject *obj2);
 guint nmp_object_id_hash (const NMPObject *obj);
+
+static inline gboolean
+nmp_object_id_equal (const NMPObject *obj1, const NMPObject *obj2)
+{
+	return nmp_object_id_cmp (obj1, obj2) == 0;
+}
+
 gboolean nmp_object_is_alive (const NMPObject *obj);
 gboolean nmp_object_is_visible (const NMPObject *obj);
 
@@ -475,10 +486,17 @@ typedef struct _NMPCache NMPCache;
 typedef void (*NMPCachePreHook) (NMPCache *cache, const NMPObject *old, const NMPObject *new, NMPCacheOpsType ops_type, gpointer user_data);
 typedef gboolean (*NMPObjectMatchFn) (const NMPObject *obj, gpointer user_data);
 
-const NMDedupMultiEntry *nmp_cache_lookup_entry_link (const NMPCache *cache, int ifindex);
-
-const NMPObject *nmp_cache_lookup_obj (const NMPCache *cache, const NMPObject *obj);
-const NMPObject *nmp_cache_lookup_link (const NMPCache *cache, int ifindex);
+const NMDedupMultiEntry *nmp_cache_lookup_entry (const NMPCache *cache,
+                                                 const NMPObject *obj);
+const NMDedupMultiEntry *nmp_cache_lookup_entry_with_idx_type (const NMPCache *cache,
+                                                               NMPCacheIdType cache_id_type,
+                                                               const NMPObject *obj);
+const NMDedupMultiEntry *nmp_cache_lookup_entry_link (const NMPCache *cache,
+                                                      int ifindex);
+const NMPObject *nmp_cache_lookup_obj (const NMPCache *cache,
+                                       const NMPObject *obj);
+const NMPObject *nmp_cache_lookup_link (const NMPCache *cache,
+                                        int ifindex);
 
 typedef struct _NMPLookup NMPLookup;
 
@@ -505,15 +523,21 @@ const NMPLookup *nmp_lookup_init_link_by_ifname (NMPLookup *lookup,
 const NMPLookup *nmp_lookup_init_addrroute (NMPLookup *lookup,
                                             NMPObjectType obj_type,
                                             int ifindex);
-const NMPLookup *nmp_lookup_init_route_visible (NMPLookup *lookup,
-                                                NMPObjectType obj_type,
-                                                int ifindex,
-                                                gboolean only_default);
-const NMPLookup *nmp_lookup_init_route_by_dest (NMPLookup *lookup,
-                                                int addr_family,
-                                                gconstpointer network,
-                                                guint plen,
-                                                guint32 metric);
+const NMPLookup *nmp_lookup_init_route_default (NMPLookup *lookup,
+                                                NMPObjectType obj_type);
+const NMPLookup *nmp_lookup_init_route_by_weak_id (NMPLookup *lookup,
+                                                   const NMPObject *obj);
+const NMPLookup *nmp_lookup_init_ip4_route_by_weak_id (NMPLookup *lookup,
+                                                       in_addr_t network,
+                                                       guint plen,
+                                                       guint32 metric,
+                                                       guint8 tos);
+const NMPLookup *nmp_lookup_init_ip6_route_by_weak_id (NMPLookup *lookup,
+                                                       const struct in6_addr *network,
+                                                       guint plen,
+                                                       guint32 metric,
+                                                       const struct in6_addr *src,
+                                                       guint8 src_plen);
 
 GArray *nmp_cache_lookup_to_array (const NMDedupMultiHeadEntry *head_entry,
                                    NMPObjectType obj_type,
@@ -557,8 +581,6 @@ nmp_cache_iter_next_link (NMDedupMultiIter *iter, const NMPlatformLink **out_obj
 	     nmp_cache_iter_next_link ((iter), (obj)); \
 	     )
 
-const NMPObject *nmp_cache_find_other_route_for_same_destination (const NMPCache *cache, const NMPObject *route);
-
 const NMPObject *nmp_cache_lookup_link_full (const NMPCache *cache,
                                              int ifindex,
                                              const char *ifname,
@@ -578,15 +600,25 @@ void ASSERT_nmp_cache_is_consistent (const NMPCache *cache);
 NMPCacheOpsType nmp_cache_remove (NMPCache *cache,
                                   const NMPObject *obj_needle,
                                   gboolean equals_by_ptr,
+                                  gboolean only_dirty,
                                   const NMPObject **out_obj_old);
 NMPCacheOpsType nmp_cache_remove_netlink (NMPCache *cache,
                                           const NMPObject *obj_needle,
                                           const NMPObject **out_obj_old,
                                           const NMPObject **out_obj_new);
 NMPCacheOpsType nmp_cache_update_netlink (NMPCache *cache,
-                                          NMPObject *obj,
+                                          NMPObject *obj_hand_over,
+                                          gboolean is_dump,
                                           const NMPObject **out_obj_old,
                                           const NMPObject **out_obj_new);
+NMPCacheOpsType nmp_cache_update_netlink_route (NMPCache *cache,
+                                                NMPObject *obj_hand_over,
+                                                gboolean is_dump,
+                                                guint16 nlmsgflags,
+                                                const NMPObject **out_obj_old,
+                                                const NMPObject **out_obj_new,
+                                                const NMPObject **out_obj_replace,
+                                                gboolean *out_resync_required);
 NMPCacheOpsType nmp_cache_update_link_udev (NMPCache *cache,
                                             int ifindex,
                                             struct udev_device *udevice,
@@ -642,6 +674,14 @@ ASSERT_nmp_cache_ops (const NMPCache *cache,
 #endif
 }
 
+const NMDedupMultiHeadEntry *nm_platform_lookup_all (NMPlatform *platform,
+                                                     NMPCacheIdType cache_id_type,
+                                                     NMPObject *obj);
+
+const NMDedupMultiEntry *nm_platform_lookup_entry (NMPlatform *platform,
+                                                   NMPCacheIdType cache_id_type,
+                                                   NMPObject *obj);
+
 static inline const NMDedupMultiHeadEntry *
 nm_platform_lookup_obj_type (NMPlatform *platform,
                              NMPObjectType obj_type)
@@ -673,42 +713,65 @@ nm_platform_lookup_addrroute (NMPlatform *platform,
 	return nm_platform_lookup (platform, &lookup);
 }
 
-static inline const NMDedupMultiHeadEntry *
-nm_platform_lookup_route_visible (NMPlatform *platform,
-                                  NMPObjectType obj_type,
-                                  int ifindex,
-                                  gboolean only_default)
+static inline GPtrArray *
+nm_platform_lookup_addrroute_clone (NMPlatform *platform,
+                                    NMPObjectType obj_type,
+                                    int ifindex,
+                                    gboolean (*predicate) (const NMPObject *obj, gpointer user_data),
+                                    gpointer user_data)
 {
 	NMPLookup lookup;
 
-	nmp_lookup_init_route_visible (&lookup, obj_type, ifindex, only_default);
+	nmp_lookup_init_addrroute (&lookup, obj_type, ifindex);
+	return nm_platform_lookup_clone (platform, &lookup, predicate, user_data);
+}
+
+static inline const NMDedupMultiHeadEntry *
+nm_platform_lookup_route_default (NMPlatform *platform,
+                                  NMPObjectType obj_type)
+{
+	NMPLookup lookup;
+
+	nmp_lookup_init_route_default (&lookup, obj_type);
 	return nm_platform_lookup (platform, &lookup);
 }
 
 static inline GPtrArray *
-nm_platform_lookup_route_visible_clone (NMPlatform *platform,
+nm_platform_lookup_route_default_clone (NMPlatform *platform,
                                         NMPObjectType obj_type,
-                                        int ifindex,
-                                        gboolean only_default,
                                         gboolean (*predicate) (const NMPObject *obj, gpointer user_data),
                                         gpointer user_data)
 {
 	NMPLookup lookup;
 
-	nmp_lookup_init_route_visible (&lookup, obj_type, ifindex, only_default);
+	nmp_lookup_init_route_default (&lookup, obj_type);
 	return nm_platform_lookup_clone (platform, &lookup, predicate, user_data);
 }
 
 static inline const NMDedupMultiHeadEntry *
-nm_platform_lookup_route_by_dest (NMPlatform *platform,
-                                  int addr_family,
-                                  gconstpointer network,
-                                  guint plen,
-                                  guint32 metric)
+nm_platform_lookup_ip4_route_by_weak_id (NMPlatform *platform,
+                                         in_addr_t network,
+                                         guint plen,
+                                         guint32 metric,
+                                         guint8 tos)
 {
 	NMPLookup lookup;
 
-	nmp_lookup_init_route_by_dest (&lookup, addr_family, network, plen, metric);
+	nmp_lookup_init_ip4_route_by_weak_id (&lookup, network, plen, metric, tos);
+	return nm_platform_lookup (platform, &lookup);
+}
+
+static inline const NMDedupMultiHeadEntry *
+nm_platform_lookup_ip6_route_by_weak_id (NMPlatform *platform,
+                                         const struct in6_addr *network,
+                                         guint plen,
+                                         guint32 metric,
+                                         const struct in6_addr *src,
+                                         guint8 src_plen)
+{
+	NMPLookup lookup;
+
+	nmp_lookup_init_ip6_route_by_weak_id (&lookup, network, plen, metric, src, src_plen);
 	return nm_platform_lookup (platform, &lookup);
 }
 

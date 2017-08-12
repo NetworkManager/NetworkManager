@@ -2804,6 +2804,26 @@ nm_platform_ethtool_get_link_settings (NMPlatform *self, int ifindex, gboolean *
 /*****************************************************************************/
 
 const NMDedupMultiHeadEntry *
+nm_platform_lookup_all (NMPlatform *platform,
+                        NMPCacheIdType cache_id_type,
+                        NMPObject *obj)
+{
+	return nmp_cache_lookup_all (nm_platform_get_cache (platform),
+	                             cache_id_type,
+	                             obj);
+}
+
+const NMDedupMultiEntry *
+nm_platform_lookup_entry (NMPlatform *platform,
+                          NMPCacheIdType cache_id_type,
+                          NMPObject *obj)
+{
+	return nmp_cache_lookup_entry_with_idx_type (nm_platform_get_cache (platform),
+	                                             cache_id_type,
+	                                             obj);
+}
+
+const NMDedupMultiHeadEntry *
 nm_platform_lookup (NMPlatform *self,
                     const NMPLookup *lookup)
 {
@@ -3503,38 +3523,6 @@ nm_platform_ip_route_delete (NMPlatform *self,
 	       nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 
 	return klass->ip_route_delete (self, obj);
-}
-
-const NMPlatformIP4Route *
-nm_platform_ip4_route_get (NMPlatform *self, int ifindex, in_addr_t network, guint8 plen, guint32 metric)
-{
-	NMPObject obj_id;
-	const NMPObject *obj;
-
-	_CHECK_SELF (self, klass, FALSE);
-
-	nmp_object_stackinit_id_ip4_route (&obj_id, ifindex, network, plen, metric);
-	obj = nmp_cache_lookup_obj (nm_platform_get_cache (self), &obj_id);
-	if (nmp_object_is_visible (obj))
-		return &obj->ip4_route;
-	return NULL;
-}
-
-const NMPlatformIP6Route *
-nm_platform_ip6_route_get (NMPlatform *self, int ifindex, struct in6_addr network, guint8 plen, guint32 metric)
-{
-	NMPObject obj_id;
-	const NMPObject *obj;
-
-	_CHECK_SELF (self, klass, FALSE);
-
-	metric = nm_utils_ip6_route_metric_normalize (metric);
-
-	nmp_object_stackinit_id_ip6_route (&obj_id, ifindex, &network, plen, metric);
-	obj = nmp_cache_lookup_obj (nm_platform_get_cache (self), &obj_id);
-	if (nmp_object_is_visible (obj))
-		return &obj->ip6_route;
-	return NULL;
 }
 
 /*****************************************************************************/
@@ -4270,7 +4258,7 @@ const char *
 nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsize len)
 {
 	char s_network[INET6_ADDRSTRLEN], s_gateway[INET6_ADDRSTRLEN], s_pref_src[INET6_ADDRSTRLEN];
-	char s_src[INET6_ADDRSTRLEN];
+	char s_src_all[INET6_ADDRSTRLEN + 40], s_src[INET6_ADDRSTRLEN];
 	char str_dev[TO_STRING_DEV_BUF_SIZE], s_source[50];
 	char str_window[32], str_cwnd[32], str_initcwnd[32], str_initrwnd[32], str_mtu[32];
 
@@ -4279,7 +4267,6 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 
 	inet_ntop (AF_INET6, &route->network, s_network, sizeof (s_network));
 	inet_ntop (AF_INET6, &route->gateway, s_gateway, sizeof (s_gateway));
-	inet_ntop (AF_INET6, &route->src, s_src, sizeof (s_src));
 
 	if (IN6_IS_ADDR_UNSPECIFIED (&route->pref_src))
 		s_pref_src[0] = 0;
@@ -4295,7 +4282,7 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	            " metric %"G_GUINT32_FORMAT
 	            " mss %"G_GUINT32_FORMAT
 	            " rt-src %s" /* protocol */
-	            " src %s/%u" /* source */
+	            "%s" /* source */
 	            "%s" /* cloned */
 	            "%s%s" /* pref-src */
 	            "%s" /* window */
@@ -4311,7 +4298,9 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	            route->metric,
 	            route->mss,
 	            nmp_utils_ip_config_source_to_string (route->rt_source, s_source, sizeof (s_source)),
-	            s_src, route->src_plen,
+	            route->src_plen || !IN6_IS_ADDR_UNSPECIFIED (&route->src)
+	              ? nm_sprintf_buf (s_src_all, " src %s/%u", nm_utils_inet6_ntop (&route->src, s_src), (unsigned) route->src_plen)
+	              : "",
 	            route->rt_cloned ? " cloned" : "",
 	            s_pref_src[0] ? " pref-src " : "",
 	            s_pref_src[0] ? s_pref_src : "",
@@ -4746,12 +4735,6 @@ nm_platform_ip4_route_hash (const NMPlatformIP4Route *obj, NMPlatformIPRouteCmpT
 			h = NM_HASH_COMBINE (h, nm_utils_ip4_address_clear_host_address (obj->network, obj->plen));
 			h = NM_HASH_COMBINE (h, obj->plen);
 			break;
-		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID_CACHE:
-			h = NM_HASH_COMBINE (h, nm_utils_ip4_address_clear_host_address (obj->network, obj->plen));
-			h = NM_HASH_COMBINE (h, obj->plen);
-			h = NM_HASH_COMBINE (h, obj->metric);
-			h = NM_HASH_COMBINE (h, obj->ifindex);
-			break;
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
 			h = NM_HASH_COMBINE (h, nm_utils_ip4_address_clear_host_address (obj->network, obj->plen));
@@ -4817,12 +4800,6 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_DST:
 		NM_CMP_DIRECT_IN4ADDR_SAME_PREFIX (a->network, b->network, MIN (a->plen, b->plen));
 		NM_CMP_FIELD (a, b, plen);
-		break;
-	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID_CACHE:
-		NM_CMP_DIRECT_IN4ADDR_SAME_PREFIX (a->network, b->network, MIN (a->plen, b->plen));
-		NM_CMP_FIELD (a, b, plen);
-		NM_CMP_FIELD (a, b, metric);
-		NM_CMP_FIELD (a, b, ifindex);
 		break;
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
@@ -4891,12 +4868,6 @@ nm_platform_ip6_route_hash (const NMPlatformIP6Route *obj, NMPlatformIPRouteCmpT
 			h = NM_HASH_COMBINE_IN6ADDR_PREFIX (h, &obj->network, obj->plen);
 			h = NM_HASH_COMBINE (h, obj->plen);
 			break;
-		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID_CACHE:
-			h = NM_HASH_COMBINE_IN6ADDR_PREFIX (h, &obj->network, obj->plen);
-			h = NM_HASH_COMBINE (h, obj->plen);
-			h = NM_HASH_COMBINE (h, obj->metric);
-			h = NM_HASH_COMBINE (h, obj->ifindex);
-			break;
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
 			h = NM_HASH_COMBINE_IN6ADDR_PREFIX (h, &obj->network, obj->plen);
@@ -4954,12 +4925,6 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_DST:
 		NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX (&a->network, &b->network, MIN (a->plen, b->plen));
 		NM_CMP_FIELD (a, b, plen);
-		break;
-	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID_CACHE:
-		NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX (&a->network, &b->network, MIN (a->plen, b->plen));
-		NM_CMP_FIELD (a, b, plen);
-		NM_CMP_FIELD (a, b, metric);
-		NM_CMP_FIELD (a, b, ifindex);
 		break;
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:

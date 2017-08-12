@@ -5453,12 +5453,10 @@ _device_get_default_route_from_platform (NMDevice *self, int addr_family, NMPlat
 	const NMPlatformIPRoute *route = NULL;
 	guint32 route_metric = G_MAXUINT32;
 
-	pl_head_entry = nm_platform_lookup_route_visible (nm_device_get_platform (self),
+	pl_head_entry = nm_platform_lookup_route_default (nm_device_get_platform (self),
 	                                                  addr_family == AF_INET
 	                                                    ? NMP_OBJECT_TYPE_IP4_ROUTE
-	                                                    : NMP_OBJECT_TYPE_IP6_ROUTE,
-	                                                  0,
-	                                                  TRUE);
+	                                                    : NMP_OBJECT_TYPE_IP6_ROUTE);
 	nmp_cache_iter_for_each (&iter, pl_head_entry, &plobj) {
 		guint32 m;
 		const NMPlatformIPRoute *r = NMP_OBJECT_CAST_IP_ROUTE (plobj);
