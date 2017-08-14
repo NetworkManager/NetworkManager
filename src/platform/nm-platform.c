@@ -3461,12 +3461,23 @@ nm_platform_ip6_address_sync (NMPlatform *self,
 }
 
 gboolean
-nm_platform_address_flush (NMPlatform *self, int ifindex)
+nm_platform_ip_address_flush (NMPlatform *self,
+                              int addr_family,
+                              int ifindex)
 {
+	gboolean success = TRUE;
+
 	_CHECK_SELF (self, klass, FALSE);
 
-	return    nm_platform_ip4_address_sync (self, ifindex, NULL)
-	       && nm_platform_ip6_address_sync (self, ifindex, NULL, FALSE);
+	nm_assert (NM_IN_SET (addr_family, AF_UNSPEC,
+	                                   AF_INET,
+	                                   AF_INET6));
+
+	if (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET))
+		success &= nm_platform_ip4_address_sync (self, ifindex, NULL);
+	if (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET6))
+		success &= nm_platform_ip6_address_sync (self, ifindex, NULL, FALSE);
+	return success;
 }
 
 /*****************************************************************************/

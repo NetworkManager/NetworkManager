@@ -1068,7 +1068,7 @@ deactivate_cleanup (NMModem *self, NMDevice *device)
 			if (ifindex > 0) {
 				nm_route_manager_route_flush (nm_netns_get_route_manager (nm_device_get_netns (device)),
 				                              ifindex);
-				nm_platform_address_flush (nm_device_get_platform (device), ifindex);
+				nm_platform_ip_address_flush (nm_device_get_platform (device), AF_UNSPEC, ifindex);
 				nm_platform_link_set_down (nm_device_get_platform (device), ifindex);
 			}
 		}

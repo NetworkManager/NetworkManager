@@ -1113,7 +1113,9 @@ gboolean nm_platform_ip4_address_delete (NMPlatform *self, int ifindex, in_addr_
 gboolean nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct in6_addr address, guint8 plen);
 gboolean nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, GPtrArray *known_addresse);
 gboolean nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, const GPtrArray *known_addresses, gboolean keep_link_local);
-gboolean nm_platform_address_flush (NMPlatform *self, int ifindex);
+gboolean nm_platform_ip_address_flush (NMPlatform *self,
+                                       int addr_family,
+                                       int ifindex);
 
 gboolean nm_platform_ip_route_add (NMPlatform *self,
                                    NMPNlmFlags flags,

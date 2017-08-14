@@ -12202,7 +12202,7 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 		ifindex = nm_device_get_ip_ifindex (self);
 		if (ifindex > 0) {
 			nm_route_manager_route_flush (nm_netns_get_route_manager (priv->netns), ifindex);
-			nm_platform_address_flush (nm_device_get_platform (self), ifindex);
+			nm_platform_ip_address_flush (nm_device_get_platform (self), AF_UNSPEC, ifindex);
 		}
 	}
 

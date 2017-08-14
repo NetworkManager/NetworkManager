@@ -396,7 +396,7 @@ vpn_cleanup (NMVpnConnection *self, NMDevice *parent_dev)
 	if (priv->ip_ifindex) {
 		nm_platform_link_set_down (nm_netns_get_platform (priv->netns), priv->ip_ifindex);
 		nm_route_manager_route_flush (nm_netns_get_route_manager (priv->netns), priv->ip_ifindex);
-		nm_platform_address_flush (nm_netns_get_platform (priv->netns), priv->ip_ifindex);
+		nm_platform_ip_address_flush (nm_netns_get_platform (priv->netns), AF_UNSPEC, priv->ip_ifindex);
 	}
 
 	remove_parent_device_config (self, parent_dev);
