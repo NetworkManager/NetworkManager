@@ -676,11 +676,11 @@ ASSERT_nmp_cache_ops (const NMPCache *cache,
 
 const NMDedupMultiHeadEntry *nm_platform_lookup_all (NMPlatform *platform,
                                                      NMPCacheIdType cache_id_type,
-                                                     NMPObject *obj);
+                                                     const NMPObject *obj);
 
 const NMDedupMultiEntry *nm_platform_lookup_entry (NMPlatform *platform,
                                                    NMPCacheIdType cache_id_type,
-                                                   NMPObject *obj);
+                                                   const NMPObject *obj);
 
 static inline const NMDedupMultiHeadEntry *
 nm_platform_lookup_obj_type (NMPlatform *platform,

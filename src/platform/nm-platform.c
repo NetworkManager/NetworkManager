@@ -2806,7 +2806,7 @@ nm_platform_ethtool_get_link_settings (NMPlatform *self, int ifindex, gboolean *
 const NMDedupMultiHeadEntry *
 nm_platform_lookup_all (NMPlatform *platform,
                         NMPCacheIdType cache_id_type,
-                        NMPObject *obj)
+                        const NMPObject *obj)
 {
 	return nmp_cache_lookup_all (nm_platform_get_cache (platform),
 	                             cache_id_type,
@@ -2816,7 +2816,7 @@ nm_platform_lookup_all (NMPlatform *platform,
 const NMDedupMultiEntry *
 nm_platform_lookup_entry (NMPlatform *platform,
                           NMPCacheIdType cache_id_type,
-                          NMPObject *obj)
+                          const NMPObject *obj)
 {
 	return nmp_cache_lookup_entry_with_idx_type (nm_platform_get_cache (platform),
 	                                             cache_id_type,
