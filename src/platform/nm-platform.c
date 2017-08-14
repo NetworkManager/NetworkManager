@@ -4872,7 +4872,7 @@ nm_platform_ip6_route_hash (const NMPlatformIP6Route *obj, NMPlatformIPRouteCmpT
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
 			h = NM_HASH_COMBINE_IN6ADDR_PREFIX (h, &obj->network, obj->plen);
 			h = NM_HASH_COMBINE (h, obj->plen);
-			h = NM_HASH_COMBINE (h, obj->metric);
+			h = NM_HASH_COMBINE (h, nm_utils_ip6_route_metric_normalize (obj->metric));
 			h = NM_HASH_COMBINE_IN6ADDR_PREFIX (h, &obj->src, obj->src_plen);
 			h = NM_HASH_COMBINE (h, obj->src_plen);
 			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
@@ -4888,7 +4888,10 @@ nm_platform_ip6_route_hash (const NMPlatformIP6Route *obj, NMPlatformIPRouteCmpT
 			else
 				h = NM_HASH_COMBINE_IN6ADDR (h, &obj->network);
 			h = NM_HASH_COMBINE (h, obj->plen);
-			h = NM_HASH_COMBINE (h, obj->metric);
+			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
+				h = NM_HASH_COMBINE (h, nm_utils_ip6_route_metric_normalize (obj->metric));
+			else
+				h = NM_HASH_COMBINE (h, obj->metric);
 			h = NM_HASH_COMBINE_IN6ADDR (h, &obj->gateway);
 			h = NM_HASH_COMBINE_IN6ADDR (h, &obj->pref_src);
 			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
@@ -4930,7 +4933,7 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
 		NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX (&a->network, &b->network, MIN (a->plen, b->plen));
 		NM_CMP_FIELD (a, b, plen);
-		NM_CMP_FIELD (a, b, metric);
+		NM_CMP_DIRECT (nm_utils_ip6_route_metric_normalize (a->metric), nm_utils_ip6_route_metric_normalize (b->metric));
 		NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX (&a->src, &b->src, MIN (a->src_plen, b->src_plen));
 		NM_CMP_FIELD (a, b, src_plen);
 		if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
@@ -4946,7 +4949,10 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 		else
 			NM_CMP_FIELD_IN6ADDR (a, b, network);
 		NM_CMP_FIELD (a, b, plen);
-		NM_CMP_FIELD (a, b, metric);
+		if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
+			NM_CMP_DIRECT (nm_utils_ip6_route_metric_normalize (a->metric), nm_utils_ip6_route_metric_normalize (b->metric));
+		else
+			NM_CMP_FIELD (a, b, metric);
 		NM_CMP_FIELD_IN6ADDR (a, b, gateway);
 		NM_CMP_FIELD_IN6ADDR (a, b, pref_src);
 		if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
