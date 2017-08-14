@@ -1112,6 +1112,9 @@ gboolean nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, GPtrArray 
 gboolean nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, const GPtrArray *known_addresses, gboolean keep_link_local);
 gboolean nm_platform_address_flush (NMPlatform *self, int ifindex);
 
+gboolean nm_platform_ip_route_add (NMPlatform *self,
+                                   NMPNlmFlags flags,
+                                   const NMPObject *route);
 gboolean nm_platform_ip4_route_add (NMPlatform *self, NMPNlmFlags flags, const NMPlatformIP4Route *route);
 gboolean nm_platform_ip6_route_add (NMPlatform *self, NMPNlmFlags flags, const NMPlatformIP6Route *route);
 

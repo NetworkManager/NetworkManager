@@ -3471,23 +3471,56 @@ nm_platform_address_flush (NMPlatform *self, int ifindex)
 
 /*****************************************************************************/
 
-gboolean
-nm_platform_ip4_route_add (NMPlatform *self,
-                           NMPNlmFlags flags,
-                           const NMPlatformIP4Route *route)
+static gboolean
+_ip_route_add (NMPlatform *self,
+               NMPNlmFlags flags,
+               int addr_family,
+               gconstpointer route)
 {
 	char sbuf[sizeof (_nm_utils_to_string_buffer)];
 
 	_CHECK_SELF (self, klass, FALSE);
 
-	g_return_val_if_fail (route, FALSE);
-	g_return_val_if_fail (route->plen <= 32, FALSE);
+	nm_assert (route);
+	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 
-	_LOGD ("route: %-10s IPv4 route: %s",
+	_LOGD ("route: %-10s IPv%c route: %s",
 	       _nmp_nlm_flag_to_string (flags),
-	       nm_platform_ip4_route_to_string (route, sbuf, sizeof (sbuf)));
+	       addr_family == AF_INET ? '4' : '6',
+	       addr_family == AF_INET
+	         ? nm_platform_ip4_route_to_string (route, sbuf, sizeof (sbuf))
+	         : nm_platform_ip6_route_to_string (route, sbuf, sizeof (sbuf)));
 
-	return klass->ip_route_add (self, flags, AF_INET, (const NMPlatformIPRoute *) route);
+	return klass->ip_route_add (self, flags, addr_family, route);
+}
+
+gboolean
+nm_platform_ip_route_add (NMPlatform *self,
+                          NMPNlmFlags flags,
+                          const NMPObject *route)
+{
+	int addr_family;
+
+	switch (NMP_OBJECT_GET_TYPE (route)) {
+	case NMP_OBJECT_TYPE_IP4_ROUTE:
+		addr_family = AF_INET;
+		break;
+	case NMP_OBJECT_TYPE_IP6_ROUTE:
+		addr_family = AF_INET6;
+		break;
+	default:
+		g_return_val_if_reached (FALSE);
+	}
+
+	return _ip_route_add (self, flags, addr_family, NMP_OBJECT_CAST_IP_ROUTE (route));
+}
+
+gboolean
+nm_platform_ip4_route_add (NMPlatform *self,
+                           NMPNlmFlags flags,
+                           const NMPlatformIP4Route *route)
+{
+	return _ip_route_add (self, flags, AF_INET, route);
 }
 
 gboolean
@@ -3495,18 +3528,7 @@ nm_platform_ip6_route_add (NMPlatform *self,
                            NMPNlmFlags flags,
                            const NMPlatformIP6Route *route)
 {
-	char sbuf[sizeof (_nm_utils_to_string_buffer)];
-
-	_CHECK_SELF (self, klass, FALSE);
-
-	g_return_val_if_fail (route, FALSE);
-	g_return_val_if_fail (route->plen <= 128, FALSE);
-
-	_LOGD ("route: %-10s IPv6 route: %s",
-	       _nmp_nlm_flag_to_string (flags),
-	       nm_platform_ip6_route_to_string (route, sbuf, sizeof (sbuf)));
-
-	return klass->ip_route_add (self, flags, AF_INET6, (const NMPlatformIPRoute *) route);
+	return _ip_route_add (self, flags, AF_INET6, route);
 }
 
 gboolean
