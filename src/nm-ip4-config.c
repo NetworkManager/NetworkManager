@@ -660,6 +660,10 @@ nm_ip4_config_commit (const NMIP4Config *self, NMPlatform *platform, NMRouteMana
 {
 	gs_unref_ptrarray GPtrArray *addresses = NULL;
 	const NMDedupMultiHeadEntry *head_entry;
+	guint i;
+	gs_unref_array GArray *routes = NULL;
+	gs_unref_array GArray *device_route_purge_list = NULL;
+	const CList *iter;
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (self != NULL, FALSE);
@@ -670,76 +674,69 @@ nm_ip4_config_commit (const NMIP4Config *self, NMPlatform *platform, NMRouteMana
 	nm_platform_ip4_address_sync (platform, ifindex, addresses);
 
 	/* Routes */
-	{
-		guint i;
-		gs_unref_array GArray *routes = NULL;
-		gs_unref_array GArray *device_route_purge_list = NULL;
-		const CList *iter;
+	head_entry = nm_ip4_config_lookup_routes (self);
 
-		head_entry = nm_ip4_config_lookup_routes (self);
+	routes = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP4Route), head_entry ? head_entry->len : 0);
 
-		routes = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP4Route), head_entry ? head_entry->len : 0);
+	if (   default_route_metric >= 0
+	    && addresses) {
+		/* For IPv6, we explicitly add the device-routes (onlink) to NMIP6Config.
+		 * As we don't do that for IPv4, add it here shortly before syncing
+		 * the routes. For NMRouteManager these routes are very much important. */
+		for (i = 0; i < addresses->len; i++) {
+			const NMPObject *o = addresses->pdata[i];
+			const NMPlatformIP4Address *addr;
+			NMPlatformIP4Route route = { 0 };
 
-		if (   default_route_metric >= 0
-		    && addresses) {
-			/* For IPv6, we explicitly add the device-routes (onlink) to NMIP6Config.
-			 * As we don't do that for IPv4, add it here shortly before syncing
-			 * the routes. For NMRouteManager these routes are very much important. */
-			for (i = 0; i < addresses->len; i++) {
-				const NMPObject *o = addresses->pdata[i];
-				const NMPlatformIP4Address *addr;
-				NMPlatformIP4Route route = { 0 };
+			if (!o)
+				continue;
 
-				if (!o)
-					continue;
+			addr = NMP_OBJECT_CAST_IP4_ADDRESS (o);
+			if (addr->plen == 0)
+				continue;
 
-				addr = NMP_OBJECT_CAST_IP4_ADDRESS (o);
-				if (addr->plen == 0)
-					continue;
+			nm_assert (addr->plen <= 32);
 
-				nm_assert (addr->plen <= 32);
+			route.ifindex = ifindex;
+			route.rt_source = NM_IP_CONFIG_SOURCE_KERNEL;
 
-				route.ifindex = ifindex;
-				route.rt_source = NM_IP_CONFIG_SOURCE_KERNEL;
+			/* The destination network depends on the peer-address. */
+			route.network = nm_utils_ip4_address_clear_host_address (addr->peer_address, addr->plen);
 
-				/* The destination network depends on the peer-address. */
-				route.network = nm_utils_ip4_address_clear_host_address (addr->peer_address, addr->plen);
+			if (_ipv4_is_zeronet (route.network)) {
+				/* Kernel doesn't add device-routes for destinations that
+				 * start with 0.x.y.z. Skip them. */
+				continue;
+			}
 
-				if (_ipv4_is_zeronet (route.network)) {
-					/* Kernel doesn't add device-routes for destinations that
-					 * start with 0.x.y.z. Skip them. */
-					continue;
-				}
+			route.plen = addr->plen;
+			route.pref_src = addr->address;
+			route.metric = default_route_metric;
 
-				route.plen = addr->plen;
-				route.pref_src = addr->address;
-				route.metric = default_route_metric;
+			g_array_append_val (routes, route);
 
-				g_array_append_val (routes, route);
-
-				if (default_route_metric != NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE) {
-					if (!device_route_purge_list)
-						device_route_purge_list = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Route));
-					route.metric = NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE;
-					g_array_append_val (device_route_purge_list, route);
-				}
+			if (default_route_metric != NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE) {
+				if (!device_route_purge_list)
+					device_route_purge_list = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Route));
+				route.metric = NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE;
+				g_array_append_val (device_route_purge_list, route);
 			}
 		}
-
-		if (head_entry) {
-			c_list_for_each (iter, &head_entry->lst_entries_head) {
-				g_array_append_vals (routes,
-				                     NMP_OBJECT_CAST_IP4_ROUTE (c_list_entry (iter, NMDedupMultiEntry, lst_entries)->obj),
-				                     1);
-			}
-		}
-
-		nm_route_manager_ip4_route_register_device_route_purge_list (route_manager, device_route_purge_list);
-
-		if (!nm_route_manager_ip4_route_sync (route_manager, ifindex, routes,
-		                                      default_route_metric < 0, routes_full_sync))
-			return FALSE;
 	}
+
+	if (head_entry) {
+		c_list_for_each (iter, &head_entry->lst_entries_head) {
+			g_array_append_vals (routes,
+			                     NMP_OBJECT_CAST_IP4_ROUTE (c_list_entry (iter, NMDedupMultiEntry, lst_entries)->obj),
+			                     1);
+		}
+	}
+
+	nm_route_manager_ip4_route_register_device_route_purge_list (route_manager, device_route_purge_list);
+
+	if (!nm_route_manager_ip4_route_sync (route_manager, ifindex, routes,
+	                                      default_route_metric < 0, routes_full_sync))
+		return FALSE;
 
 	return TRUE;
 }

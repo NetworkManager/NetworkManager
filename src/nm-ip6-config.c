@@ -523,6 +523,8 @@ nm_ip6_config_commit (const NMIP6Config *self,
 {
 	gs_unref_ptrarray GPtrArray *addresses = NULL;
 	const NMDedupMultiHeadEntry *head_entry;
+	gs_unref_array GArray *routes = NULL;
+	const CList *iter;
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (self != NULL, FALSE);
@@ -534,25 +536,20 @@ nm_ip6_config_commit (const NMIP6Config *self,
 	nm_platform_ip6_address_sync (platform, ifindex, addresses, TRUE);
 
 	/* Routes */
-	{
-		gs_unref_array GArray *routes = NULL;
-		const CList *iter;
+	head_entry = nm_ip6_config_lookup_routes (self);
 
-		head_entry = nm_ip6_config_lookup_routes (self);
+	routes = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP6Route), head_entry ? head_entry->len : 0);
 
-		routes = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP6Route), head_entry ? head_entry->len : 0);
-
-		if (head_entry) {
-			c_list_for_each (iter, &head_entry->lst_entries_head) {
-				g_array_append_vals (routes,
-				                     NMP_OBJECT_CAST_IP6_ROUTE (c_list_entry (iter, NMDedupMultiEntry, lst_entries)->obj),
-				                     1);
-			}
+	if (head_entry) {
+		c_list_for_each (iter, &head_entry->lst_entries_head) {
+			g_array_append_vals (routes,
+			                     NMP_OBJECT_CAST_IP6_ROUTE (c_list_entry (iter, NMDedupMultiEntry, lst_entries)->obj),
+			                     1);
 		}
-
-		if (!nm_route_manager_ip6_route_sync (route_manager, ifindex, routes, TRUE, routes_full_sync))
-			return FALSE;
 	}
+
+	if (!nm_route_manager_ip6_route_sync (route_manager, ifindex, routes, TRUE, routes_full_sync))
+		return FALSE;
 
 	return TRUE;
 }
