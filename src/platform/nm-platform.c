@@ -2879,7 +2879,7 @@ nm_platform_lookup_predicate_routes_skip_rtprot_kernel (const NMPObject *obj,
 GPtrArray *
 nm_platform_lookup_clone (NMPlatform *self,
                           const NMPLookup *lookup,
-                          gboolean (*predicate) (const NMPObject *obj, gpointer user_data),
+                          NMPObjectPredicateFunc predicate,
                           gpointer user_data)
 {
 	return nm_dedup_multi_objs_to_ptr_array_head (nm_platform_lookup (self, lookup),

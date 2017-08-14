@@ -52,6 +52,9 @@
 
 struct udev_device;
 
+typedef gboolean (*NMPObjectPredicateFunc) (const NMPObject *obj,
+                                            gpointer user_data);
+
 /* workaround for older libnl version, that does not define these flags. */
 #ifndef IFA_F_MANAGETEMPADDR
 #define IFA_F_MANAGETEMPADDR 0x100
@@ -917,7 +920,7 @@ gboolean nm_platform_lookup_predicate_routes_skip_rtprot_kernel (const NMPObject
 
 GPtrArray *nm_platform_lookup_clone (NMPlatform *platform,
                                      const struct _NMPLookup *lookup,
-                                     gboolean (*predicate) (const NMPObject *obj, gpointer user_data),
+                                     NMPObjectPredicateFunc predicate,
                                      gpointer user_data);
 
 /* convienience methods to lookup the link and access fields of NMPlatformLink. */

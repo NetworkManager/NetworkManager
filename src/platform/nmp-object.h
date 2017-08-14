@@ -717,7 +717,7 @@ static inline GPtrArray *
 nm_platform_lookup_addrroute_clone (NMPlatform *platform,
                                     NMPObjectType obj_type,
                                     int ifindex,
-                                    gboolean (*predicate) (const NMPObject *obj, gpointer user_data),
+                                    NMPObjectPredicateFunc predicate,
                                     gpointer user_data)
 {
 	NMPLookup lookup;
@@ -739,7 +739,7 @@ nm_platform_lookup_route_default (NMPlatform *platform,
 static inline GPtrArray *
 nm_platform_lookup_route_default_clone (NMPlatform *platform,
                                         NMPObjectType obj_type,
-                                        gboolean (*predicate) (const NMPObject *obj, gpointer user_data),
+                                        NMPObjectPredicateFunc predicate,
                                         gpointer user_data)
 {
 	NMPLookup lookup;
