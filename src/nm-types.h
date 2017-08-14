@@ -50,7 +50,6 @@ typedef struct _NMNetns              NMNetns;
 typedef struct _NMPolicy             NMPolicy;
 typedef struct _NMRfkillManager      NMRfkillManager;
 typedef struct _NMPacrunnerManager   NMPacrunnerManager;
-typedef struct _NMRouteManager       NMRouteManager;
 typedef struct _NMSessionMonitor     NMSessionMonitor;
 typedef struct _NMSleepMonitor       NMSleepMonitor;
 typedef struct _NMLldpListener       NMLldpListener;

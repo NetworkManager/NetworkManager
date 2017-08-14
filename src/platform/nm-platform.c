@@ -91,6 +91,9 @@ enum {
 typedef struct _NMPlatformPrivate {
 	bool use_udev:1;
 	bool log_with_ptr:1;
+	guint ip4_dev_route_blacklist_check_id;
+	guint ip4_dev_route_blacklist_gc_timeout_id;
+	GHashTable *ip4_dev_route_blacklist_hash;
 	NMDedupMultiIndex *multi_idx;
 	NMPCache *cache;
 } NMPlatformPrivate;
@@ -98,6 +101,10 @@ typedef struct _NMPlatformPrivate {
 G_DEFINE_TYPE (NMPlatform, nm_platform, G_TYPE_OBJECT)
 
 #define NM_PLATFORM_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR (self, NMPlatform, NM_IS_PLATFORM)
+
+/*****************************************************************************/
+
+static void _ip4_dev_route_blacklist_schedule (NMPlatform *self);
 
 /*****************************************************************************/
 
@@ -3482,6 +3489,153 @@ nm_platform_ip_address_flush (NMPlatform *self,
 
 /*****************************************************************************/
 
+/**
+ * nm_platform_ip_route_sync:
+ * @self: the #NMPlatform instance.
+ * @addr_family: AF_INET or AF_INET6.
+ * @ifindex: the @ifindex for which the routes are to be added.
+ * @routes: (allow-none): a list of routes to configure. Must contain
+ *   NMPObject instances of routes, according to @addr_family.
+ * @kernel_delete_predicate: (allow-none): if not %NULL, previously
+ *   existing routes already configured will only be deleted if the
+ *   predicate returns TRUE. This allows to preserve/ignore some
+ *   routes. For example by passing @nm_platform_lookup_predicate_routes_skip_rtprot_kernel,
+ *   routes with "proto kernel" will be left untouched.
+ * @kernel_delete_userdata: user data for @kernel_delete_predicate.
+ *
+ * Returns: %TRUE on success.
+ */
+gboolean
+nm_platform_ip_route_sync (NMPlatform *self,
+                           int addr_family,
+                           int ifindex,
+                           GPtrArray *routes,
+                           NMPObjectPredicateFunc kernel_delete_predicate,
+                           gpointer kernel_delete_userdata)
+{
+	const NMPlatformVTableRoute *vt;
+	gs_unref_ptrarray GPtrArray *plat_routes = NULL;
+	gs_unref_hashtable GHashTable *routes_idx = NULL;
+	const NMPObject *plat_o;
+	const NMPObject *conf_o;
+	const NMDedupMultiEntry *plat_entry;
+	guint i;
+	int i_type;
+
+	nm_assert (NM_IS_PLATFORM (self));
+	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
+	nm_assert (ifindex > 0);
+
+	vt = addr_family == AF_INET
+	     ? &nm_platform_vtable_route_v4
+	     : &nm_platform_vtable_route_v6;
+
+	plat_routes = nm_platform_lookup_addrroute_clone (self,
+	                                                  vt->obj_type,
+	                                                  ifindex,
+	                                                  kernel_delete_predicate,
+	                                                  kernel_delete_userdata);
+	/* first delete routes which are in platform (@plat_routes), but not to configure (@routes/@routes_idx). */
+	if (plat_routes) {
+
+		/* create a lookup index. */
+		if (routes && routes->len > 0) {
+			routes_idx = g_hash_table_new ((GHashFunc) nmp_object_id_hash,
+			                               (GEqualFunc) nmp_object_id_equal);
+			for (i = 0; i < routes->len; i++) {
+				conf_o = routes->pdata[i];
+				if (!nm_g_hash_table_insert (routes_idx, (gpointer) conf_o, (gpointer) conf_o)) {
+					/* we ignore duplicate @routes. */
+				}
+			}
+		}
+
+		for (i = 0; i < plat_routes->len; i++) {
+			plat_o = plat_routes->pdata[i];
+
+			if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (NMP_OBJECT_CAST_IP_ROUTE (plat_o))) {
+				/* don't delete default routes. */
+				continue;
+			}
+
+			conf_o = routes_idx ? g_hash_table_lookup (routes_idx, plat_o) : NULL;
+			if (   !conf_o
+			    || vt->route_cmp (NMP_OBJECT_CAST_IPX_ROUTE (conf_o),
+			                      NMP_OBJECT_CAST_IPX_ROUTE (plat_o),
+			                      NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) == 0) {
+				/* the route in platform is identical to the one we want to add.
+				 * Keep it. */
+				continue;
+			}
+
+			if (!nm_platform_ip_route_delete (self, plat_o)) {
+				/* ignore error... */
+			}
+		}
+	}
+
+	if (!routes)
+		return TRUE;
+
+	for (i_type = 0; i_type < 2; i_type++) {
+		for (i = 0; i < routes->len; i++) {
+			conf_o = routes->pdata[i];
+
+#define VTABLE_IS_DEVICE_ROUTE(vt, o) (vt->is_ip4 \
+                                         ? (NMP_OBJECT_CAST_IP4_ROUTE (o)->gateway == 0) \
+                                         : IN6_IS_ADDR_UNSPECIFIED (&NMP_OBJECT_CAST_IP6_ROUTE (o)->gateway) )
+
+			if (   (i_type == 0 && !VTABLE_IS_DEVICE_ROUTE (vt, conf_o))
+			    || (i_type == 1 &&  VTABLE_IS_DEVICE_ROUTE (vt, conf_o))) {
+				/* we add routes in two runs over @i_type.
+				 *
+				 * First device routes, then gateway routes. */
+				continue;
+			}
+
+			plat_entry = nm_platform_lookup_entry (self,
+			                                       NMP_CACHE_ID_TYPE_OBJECT_TYPE,
+			                                       conf_o);
+			if (plat_entry) {
+				/* we alreay have a route with the same ID in the platform cache.
+				 * Skip adding it again. It should identical already, otherwise we would
+				 * have deleted it in the previous step. */
+				continue;
+			}
+
+			if (!nm_platform_ip_route_add (self,
+			                               NMP_NLM_FLAG_APPEND,
+			                               conf_o)) {
+				/* ignore error adding route. */
+			}
+		}
+	}
+
+	return TRUE;
+}
+
+gboolean
+nm_platform_ip_route_flush (NMPlatform *self,
+                            int addr_family,
+                            int ifindex)
+{
+	gboolean success = TRUE;
+
+	_CHECK_SELF (self, klass, FALSE);
+
+	nm_assert (NM_IN_SET (addr_family, AF_UNSPEC,
+	                                   AF_INET,
+	                                   AF_INET6));
+
+	if (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET))
+		success &= nm_platform_ip_route_sync (self, AF_INET,  ifindex, NULL, NULL, NULL);
+	if (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET6))
+		success &= nm_platform_ip_route_sync (self, AF_INET6, ifindex, NULL, NULL, NULL);
+	return success;
+}
+
+/*****************************************************************************/
+
 static guint8
 _ip_route_scope_inv_get_normalized (const NMPlatformIP4Route *route)
 {
@@ -3612,6 +3766,274 @@ nm_platform_ip_route_delete (NMPlatform *self,
 	       nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 
 	return klass->ip_route_delete (self, obj);
+}
+
+/*****************************************************************************/
+
+#define IP4_DEV_ROUTE_BLACKLIST_TIMEOUT_MS   ((int) 1500)
+#define IP4_DEV_ROUTE_BLACKLIST_GC_TIMEOUT_S ((int) (((IP4_DEV_ROUTE_BLACKLIST_TIMEOUT_MS + 999) * 3) / 1000))
+
+static gint64
+_ip4_dev_route_blacklist_timeout_ms_get (gint64 timeout_ms)
+{
+	return timeout_ms >> 1;
+}
+
+static gint64
+_ip4_dev_route_blacklist_timeout_ms_marked (gint64 timeout_ms)
+{
+	return !!(timeout_ms & ((gint64) 1));
+}
+
+static gboolean
+_ip4_dev_route_blacklist_check_cb (gpointer user_data)
+{
+	NMPlatform *self = user_data;
+	NMPlatformPrivate *priv = NM_PLATFORM_GET_PRIVATE (self);
+	GHashTableIter iter;
+	const NMPObject *p_obj;
+	gint64 *p_timeout_ms;
+	gint64 now_ms;
+
+	priv->ip4_dev_route_blacklist_check_id = 0;
+
+again:
+	if (!priv->ip4_dev_route_blacklist_hash)
+		goto out;
+
+	now_ms = nm_utils_get_monotonic_timestamp_ms ();
+
+	g_hash_table_iter_init (&iter, priv->ip4_dev_route_blacklist_hash);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &p_obj, (gpointer *) &p_timeout_ms)) {
+		if (!_ip4_dev_route_blacklist_timeout_ms_marked (*p_timeout_ms))
+			continue;
+
+		/* unmark because we checked it. */
+		*p_timeout_ms = *p_timeout_ms & ~((gint64) 1);
+
+		if (now_ms > _ip4_dev_route_blacklist_timeout_ms_get (*p_timeout_ms))
+			continue;
+
+		if (!nm_platform_lookup_entry (self,
+		                               NMP_CACHE_ID_TYPE_OBJECT_TYPE,
+		                               p_obj))
+			continue;
+
+		_LOGT ("ip4-dev-route: delete %s",
+		       nmp_object_to_string (p_obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+		nm_platform_ip_route_delete (self, p_obj);
+		goto again;
+	}
+
+out:
+	return G_SOURCE_REMOVE;
+}
+
+static void
+_ip4_dev_route_blacklist_check_schedule (NMPlatform *self)
+{
+	NMPlatformPrivate *priv = NM_PLATFORM_GET_PRIVATE (self);
+
+	if (!priv->ip4_dev_route_blacklist_check_id) {
+		priv->ip4_dev_route_blacklist_check_id = g_idle_add_full (G_PRIORITY_HIGH,
+		                                                          _ip4_dev_route_blacklist_check_cb,
+		                                                          self,
+		                                                          NULL);
+	}
+}
+
+static void
+_ip4_dev_route_blacklist_notify_route (NMPlatform *self,
+                                       const NMPObject *obj)
+{
+	NMPlatformPrivate *priv;
+	const NMPObject *p_obj;
+	gint64 *p_timeout_ms;
+	gint64 now_ms;
+
+	nm_assert (NM_IS_PLATFORM (self));
+	nm_assert (NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_IP4_ROUTE);
+
+	priv = NM_PLATFORM_GET_PRIVATE (self);
+
+	nm_assert (priv->ip4_dev_route_blacklist_gc_timeout_id);
+
+	if (!g_hash_table_lookup_extended (priv->ip4_dev_route_blacklist_hash,
+	                                   obj,
+	                                   (gpointer *) &p_obj,
+	                                   (gpointer *) &p_timeout_ms))
+		return;
+
+	now_ms = nm_utils_get_monotonic_timestamp_ms ();
+	if (now_ms > _ip4_dev_route_blacklist_timeout_ms_get (*p_timeout_ms)) {
+		/* already expired. Wait for gc. */
+		return;
+	}
+
+	if (_ip4_dev_route_blacklist_timeout_ms_marked (*p_timeout_ms)) {
+		nm_assert (priv->ip4_dev_route_blacklist_check_id);
+		return;
+	}
+
+	/* We cannot delete it right away because we are in the process of receiving netlink messages.
+	 * It may be possible to do so, but complicated and error prone.
+	 *
+	 * Instead, we mark the entry and schedule an idle action (with high priority). */
+	*p_timeout_ms = (*p_timeout_ms) | ((gint64) 1);
+	_ip4_dev_route_blacklist_check_schedule (self);
+}
+
+static gboolean
+_ip4_dev_route_blacklist_gc_timeout_handle (gpointer user_data)
+{
+	NMPlatform *self = user_data;
+	NMPlatformPrivate *priv = NM_PLATFORM_GET_PRIVATE (self);
+	GHashTableIter iter;
+	const NMPObject *p_obj;
+	gint64 *p_timeout_ms;
+	gint64 now_ms;
+
+	nm_assert (priv->ip4_dev_route_blacklist_gc_timeout_id);
+
+	now_ms = nm_utils_get_monotonic_timestamp_ms ();
+
+	g_hash_table_iter_init (&iter, priv->ip4_dev_route_blacklist_hash);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &p_obj, (gpointer *) &p_timeout_ms)) {
+		if (now_ms > _ip4_dev_route_blacklist_timeout_ms_get (*p_timeout_ms)) {
+			_LOGT ("ip4-dev-route: cleanup %s",
+			       nmp_object_to_string (p_obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+			g_hash_table_iter_remove (&iter);
+		}
+	}
+
+	_ip4_dev_route_blacklist_schedule (self);
+	return G_SOURCE_CONTINUE;
+}
+
+static void
+_ip4_dev_route_blacklist_schedule (NMPlatform *self)
+{
+	NMPlatformPrivate *priv = NM_PLATFORM_GET_PRIVATE (self);
+
+	if (   !priv->ip4_dev_route_blacklist_hash
+	    || g_hash_table_size (priv->ip4_dev_route_blacklist_hash) == 0) {
+		g_clear_pointer (&priv->ip4_dev_route_blacklist_hash, g_hash_table_unref);
+		nm_clear_g_source (&priv->ip4_dev_route_blacklist_gc_timeout_id);
+	} else {
+		if (!priv->ip4_dev_route_blacklist_gc_timeout_id) {
+			/* this timeout is only to garbage collect the expired entries from priv->ip4_dev_route_blacklist_hash.
+			 * It can run infrequently, and it doesn't hurt if expired entries linger around a bit
+			 * longer then necessary. */
+			priv->ip4_dev_route_blacklist_gc_timeout_id = g_timeout_add_seconds (IP4_DEV_ROUTE_BLACKLIST_GC_TIMEOUT_S,
+			                                                                     _ip4_dev_route_blacklist_gc_timeout_handle,
+			                                                                     self);
+		}
+	}
+}
+
+/**
+ * nm_platform_ip4_dev_route_blacklist_set:
+ * @self:
+ * @ifindex:
+ * @ip4_dev_route_blacklist:
+ *
+ * When adding an IP address, kernel automatically adds a device route.
+ * This can be suppressed via the IFA_F_NOPREFIXROUTE address flag. For IPv6
+ * addresses, we require kernel support for IFA_F_NOPREFIXROUTE and always
+ * add the device route manually.
+ *
+ * For IPv4, this flag is rather new and we don't rely on it yet. We want to use
+ * it (but currently still don't). So, for IPv4, kernel possibly adds a device
+ * route, however it has a wrong metric of zero. We add our own device route (with
+ * proper metric), but need to delete the route that kernel adds.
+ *
+ * The problem is, that kernel does not immidiately add the route, when adding
+ * the address. It only shows up some time later. So, we register here a list
+ * of blacklisted routes, and when they show up within a time out, we assume it's
+ * the kernel generated one, and we delete it.
+ *
+ * Eventually, we want to get rid of this and use IFA_F_NOPREFIXROUTE for IPv4
+ * routes as well.
+ */
+void
+nm_platform_ip4_dev_route_blacklist_set (NMPlatform *self,
+                                         int ifindex,
+                                         GPtrArray *ip4_dev_route_blacklist)
+{
+	NMPlatformPrivate *priv;
+	GHashTableIter iter;
+	const NMPObject *p_obj;
+	guint i;
+	gint64 timeout_ms;
+	gint64 timeout_ms_val;
+	gint64 *p_timeout_ms;
+	gboolean needs_check = FALSE;
+
+	nm_assert (NM_IS_PLATFORM (self));
+	nm_assert (ifindex > 0);
+
+	priv = NM_PLATFORM_GET_PRIVATE (self);
+
+	/* first, expire all for current ifindex... */
+	if (priv->ip4_dev_route_blacklist_hash) {
+		g_hash_table_iter_init (&iter, priv->ip4_dev_route_blacklist_hash);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &p_obj, (gpointer *) &p_timeout_ms)) {
+			if (NMP_OBJECT_CAST_IP4_ROUTE (p_obj)->ifindex == ifindex) {
+				/* we could g_hash_table_iter_remove(&iter) the current entry.
+				 * Instead, just expire it and let _ip4_dev_route_blacklist_gc_timeout_handle()
+				 * handle it.
+				 *
+				 * The assumption is, that ip4_dev_route_blacklist contains the very same entry
+				 * again, with a new timeout. So, we can un-expire it below. */
+				*p_timeout_ms = 0;
+			}
+		}
+	}
+
+	if (   ip4_dev_route_blacklist
+	    && ip4_dev_route_blacklist->len > 0) {
+
+		if (!priv->ip4_dev_route_blacklist_hash) {
+			priv->ip4_dev_route_blacklist_hash = g_hash_table_new_full ((GHashFunc) nmp_object_id_hash,
+			                                                            (GEqualFunc) nmp_object_id_equal,
+			                                                            (GDestroyNotify) nmp_object_unref,
+			                                                            nm_g_slice_free_fcn_gint64);
+		}
+
+		timeout_ms = nm_utils_get_monotonic_timestamp_ms () + IP4_DEV_ROUTE_BLACKLIST_TIMEOUT_MS;
+		timeout_ms_val = (timeout_ms << 1) | ((gint64) 1);
+		for (i = 0; i < ip4_dev_route_blacklist->len; i++) {
+			const NMPObject *o;
+
+			needs_check = TRUE;
+			o = ip4_dev_route_blacklist->pdata[i];
+			if (g_hash_table_lookup_extended (priv->ip4_dev_route_blacklist_hash,
+			                                  o,
+			                                  (gpointer *) &p_obj,
+			                                  (gpointer *) &p_timeout_ms)) {
+				if (nmp_object_equal (p_obj, o)) {
+					/* un-expire and reuse the entry. */
+					_LOGT ("ip4-dev-route: register %s (update)",
+					       nmp_object_to_string (p_obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+					*p_timeout_ms = timeout_ms_val;
+					continue;
+				}
+			}
+
+			_LOGT ("ip4-dev-route: register %s",
+			       nmp_object_to_string (o, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+			p_timeout_ms = g_slice_new (gint64);
+			*p_timeout_ms = timeout_ms_val;
+			g_hash_table_replace (priv->ip4_dev_route_blacklist_hash,
+			                      (gpointer) nmp_object_ref (o),
+			                      p_timeout_ms);
+		}
+	}
+
+	_ip4_dev_route_blacklist_schedule (self);
+
+	if (needs_check)
+		_ip4_dev_route_blacklist_check_schedule (self);
 }
 
 /*****************************************************************************/
@@ -5235,6 +5657,11 @@ nm_platform_cache_update_emit_signal (NMPlatform *self,
 
 	klass = NMP_OBJECT_GET_CLASS (o);
 
+	if (   klass->obj_type == NMP_OBJECT_TYPE_IP4_ROUTE
+	    && NM_PLATFORM_GET_PRIVATE (self)->ip4_dev_route_blacklist_gc_timeout_id
+	    && NM_IN_SET (cache_op, NMP_CACHE_OPS_ADDED, NMP_CACHE_OPS_UPDATED))
+		_ip4_dev_route_blacklist_notify_route (self, o);
+
 	_LOGt ("emit signal %s %s: %s",
 	       klass->signal_type,
 	       nm_platform_signal_change_type_to_string ((NMPlatformSignalChangeType) cache_op),
@@ -5284,40 +5711,6 @@ nm_platform_netns_push (NMPlatform *self, NMPNetns **netns)
 
 /*****************************************************************************/
 
-static gboolean
-_vtr_v4_route_add (NMPlatform *self,
-                   NMPNlmFlags flags,
-                   const NMPlatformIPXRoute *route,
-                   int ifindex,
-                   gint64 metric)
-{
-	NMPlatformIP4Route rt = route->r4;
-
-	if (ifindex > 0)
-		rt.ifindex = ifindex;
-	if (metric >= 0)
-		rt.metric = metric;
-
-	return nm_platform_ip4_route_add (self, flags, &rt);
-}
-
-static gboolean
-_vtr_v6_route_add (NMPlatform *self,
-                   NMPNlmFlags flags,
-                   const NMPlatformIPXRoute *route,
-                   int ifindex,
-                   gint64 metric)
-{
-	NMPlatformIP6Route rt = route->r6;
-
-	if (ifindex > 0)
-		rt.ifindex = ifindex;
-	if (metric >= 0)
-		rt.metric = metric;
-
-	return nm_platform_ip6_route_add (self, flags, &rt);
-}
-
 static guint32
 _vtr_v4_metric_normalize (guint32 metric)
 {
@@ -5333,7 +5726,6 @@ const NMPlatformVTableRoute nm_platform_vtable_route_v4 = {
 	.sizeof_route                   = sizeof (NMPlatformIP4Route),
 	.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, NMPlatformIPRouteCmpType cmp_type)) nm_platform_ip4_route_cmp,
 	.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route, char *buf, gsize len)) nm_platform_ip4_route_to_string,
-	.route_add                      = _vtr_v4_route_add,
 	.metric_normalize               = _vtr_v4_metric_normalize,
 };
 
@@ -5344,7 +5736,6 @@ const NMPlatformVTableRoute nm_platform_vtable_route_v6 = {
 	.sizeof_route                   = sizeof (NMPlatformIP6Route),
 	.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, NMPlatformIPRouteCmpType cmp_type)) nm_platform_ip6_route_cmp,
 	.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route, char *buf, gsize len)) nm_platform_ip6_route_to_string,
-	.route_add                      = _vtr_v6_route_add,
 	.metric_normalize               = nm_utils_ip6_route_metric_normalize,
 };
 
@@ -5416,6 +5807,9 @@ finalize (GObject *object)
 	NMPlatform *self = NM_PLATFORM (object);
 	NMPlatformPrivate *priv = NM_PLATFORM_GET_PRIVATE (self);
 
+	nm_clear_g_source (&priv->ip4_dev_route_blacklist_check_id);
+	nm_clear_g_source (&priv->ip4_dev_route_blacklist_gc_timeout_id);
+	g_clear_pointer (&priv->ip4_dev_route_blacklist_hash, g_hash_table_unref);
 	g_clear_object (&self->_netns);
 	nm_dedup_multi_index_unref (priv->multi_idx);
 	nmp_cache_free (priv->cache);

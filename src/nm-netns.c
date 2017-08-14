@@ -26,7 +26,6 @@
 
 #include "platform/nm-platform.h"
 #include "platform/nmp-netns.h"
-#include "nm-route-manager.h"
 #include "nm-default-route-manager.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
@@ -40,7 +39,6 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 typedef struct {
 	NMPlatform *platform;
 	NMPNetns *platform_netns;
-	NMRouteManager *route_manager;
 	NMDefaultRouteManager *default_route_manager;
 	bool log_with_ptr;
 } NMNetnsPrivate;
@@ -88,12 +86,6 @@ nm_netns_get_default_route_manager (NMNetns *self)
 	return NM_NETNS_GET_PRIVATE (self)->default_route_manager;
 }
 
-NMRouteManager *
-nm_netns_get_route_manager (NMNetns *self)
-{
-	return NM_NETNS_GET_PRIVATE (self)->route_manager;
-}
-
 /*****************************************************************************/
 
 static void
@@ -137,7 +129,6 @@ constructed (GObject *object)
 	log_with_ptr = nm_platform_get_log_with_ptr (priv->platform);
 
 	priv->platform_netns = nm_platform_netns_get (priv->platform);
-	priv->route_manager = nm_route_manager_new (log_with_ptr, priv->platform);
 	priv->default_route_manager = nm_default_route_manager_new (log_with_ptr, priv->platform);
 
 	G_OBJECT_CLASS (nm_netns_parent_class)->constructed (object);
@@ -157,7 +148,6 @@ dispose (GObject *object)
 	NMNetns *self = NM_NETNS (object);
 	NMNetnsPrivate *priv = NM_NETNS_GET_PRIVATE (self);
 
-	g_clear_object (&priv->route_manager);
 	g_clear_object (&priv->default_route_manager);
 	g_clear_object (&priv->platform);
 

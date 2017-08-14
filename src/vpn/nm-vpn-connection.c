@@ -45,7 +45,6 @@
 #include "nm-core-internal.h"
 #include "nm-pacrunner-manager.h"
 #include "nm-default-route-manager.h"
-#include "nm-route-manager.h"
 #include "nm-firewall-manager.h"
 #include "nm-config.h"
 #include "nm-vpn-plugin-info.h"
@@ -394,9 +393,11 @@ vpn_cleanup (NMVpnConnection *self, NMDevice *parent_dev)
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
 	if (priv->ip_ifindex) {
-		nm_platform_link_set_down (nm_netns_get_platform (priv->netns), priv->ip_ifindex);
-		nm_route_manager_route_flush (nm_netns_get_route_manager (priv->netns), priv->ip_ifindex);
-		nm_platform_ip_address_flush (nm_netns_get_platform (priv->netns), AF_UNSPEC, priv->ip_ifindex);
+		NMPlatform *platform = nm_netns_get_platform (priv->netns);
+
+		nm_platform_link_set_down (platform, priv->ip_ifindex);
+		nm_platform_ip_route_flush (platform, AF_UNSPEC, priv->ip_ifindex);
+		nm_platform_ip_address_flush (platform, AF_UNSPEC, priv->ip_ifindex);
 	}
 
 	remove_parent_device_config (self, parent_dev);
@@ -1104,21 +1105,17 @@ nm_vpn_connection_apply_config (NMVpnConnection *self)
 		nm_platform_link_set_up (nm_netns_get_platform (priv->netns), priv->ip_ifindex, NULL);
 
 		if (priv->ip4_config) {
+			nm_assert (priv->ip_ifindex == nm_ip4_config_get_ifindex (priv->ip4_config));
 			if (!nm_ip4_config_commit (priv->ip4_config,
 			                           nm_netns_get_platform (priv->netns),
-			                           nm_netns_get_route_manager (priv->netns),
-			                           priv->ip_ifindex,
-			                           TRUE,
 			                           nm_vpn_connection_get_ip4_route_metric (self)))
 				return FALSE;
 		}
 
 		if (priv->ip6_config) {
+			nm_assert (priv->ip_ifindex == nm_ip6_config_get_ifindex (priv->ip6_config));
 			if (!nm_ip6_config_commit (priv->ip6_config,
-			                           nm_netns_get_platform (priv->netns),
-			                           nm_netns_get_route_manager (priv->netns),
-			                           priv->ip_ifindex,
-			                           TRUE))
+			                           nm_netns_get_platform (priv->netns)))
 				return FALSE;
 		}
 

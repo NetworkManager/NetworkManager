@@ -32,7 +32,6 @@
 #include "platform/nmp-object.h"
 #include "platform/nm-platform.h"
 #include "platform/nm-platform-utils.h"
-#include "nm-route-manager.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 #include "nm-ip4-config.h"
@@ -516,42 +515,33 @@ nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 
 gboolean
 nm_ip6_config_commit (const NMIP6Config *self,
-                      NMPlatform *platform,
-                      NMRouteManager *route_manager,
-                      int ifindex,
-                      gboolean routes_full_sync)
+                      NMPlatform *platform)
 {
 	gs_unref_ptrarray GPtrArray *addresses = NULL;
-	const NMDedupMultiHeadEntry *head_entry;
-	gs_unref_array GArray *routes = NULL;
-	const CList *iter;
+	gs_unref_ptrarray GPtrArray *routes = NULL;
+	int ifindex;
+	gboolean success = TRUE;
 
+	g_return_val_if_fail (NM_IS_IP6_CONFIG (self), FALSE);
+
+	ifindex = nm_ip6_config_get_ifindex (self);
 	g_return_val_if_fail (ifindex > 0, FALSE);
-	g_return_val_if_fail (self != NULL, FALSE);
 
-	/* Addresses */
 	addresses = nm_dedup_multi_objs_to_ptr_array_head (nm_ip6_config_lookup_addresses (self),
 	                                                   NULL, NULL);
-
+	routes = nm_dedup_multi_objs_to_ptr_array_head (nm_ip6_config_lookup_routes (self),
+	                                                NULL, NULL);
 	nm_platform_ip6_address_sync (platform, ifindex, addresses, TRUE);
 
-	/* Routes */
-	head_entry = nm_ip6_config_lookup_routes (self);
+	if (!nm_platform_ip_route_sync (platform,
+	                                AF_INET6,
+	                                ifindex,
+	                                routes,
+	                                nm_platform_lookup_predicate_routes_skip_rtprot_kernel,
+	                                NULL))
+		success = FALSE;
 
-	routes = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP6Route), head_entry ? head_entry->len : 0);
-
-	if (head_entry) {
-		c_list_for_each (iter, &head_entry->lst_entries_head) {
-			g_array_append_vals (routes,
-			                     NMP_OBJECT_CAST_IP6_ROUTE (c_list_entry (iter, NMDedupMultiEntry, lst_entries)->obj),
-			                     1);
-		}
-	}
-
-	if (!nm_route_manager_ip6_route_sync (route_manager, ifindex, routes, TRUE, routes_full_sync))
-		return FALSE;
-
-	return TRUE;
+	return success;
 }
 
 static void

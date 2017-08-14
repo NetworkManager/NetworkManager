@@ -63,6 +63,8 @@ typedef gboolean (*NMPObjectPredicateFunc) (const NMPObject *obj,
 #define IFA_F_NOPREFIXROUTE 0x200
 #endif
 
+#define NM_RT_SCOPE_LINK                       253  /* RT_SCOPE_LINK */
+
 /* Define of the IN6_ADDR_GEN_MODE_* values to workaround old kernel headers
  * that don't define it. */
 #define NM_IN6_ADDR_GEN_MODE_UNKNOWN           255  /* no corresponding value.  */
@@ -521,11 +523,6 @@ typedef struct {
 	gsize sizeof_route;
 	int (*route_cmp) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, NMPlatformIPRouteCmpType cmp_type);
 	const char *(*route_to_string) (const NMPlatformIPXRoute *route, char *buf, gsize len);
-	gboolean (*route_add) (NMPlatform *self,
-	                       NMPNlmFlags flags,
-	                       const NMPlatformIPXRoute *route,
-	                       int ifindex,
-	                       gint64 metric);
 	guint32 (*metric_normalize) (guint32 metric);
 } NMPlatformVTableRoute;
 
@@ -1128,6 +1125,16 @@ gboolean nm_platform_ip6_route_add (NMPlatform *self, NMPNlmFlags flags, const N
 
 gboolean nm_platform_ip_route_delete (NMPlatform *self, const NMPObject *route);
 
+gboolean nm_platform_ip_route_sync (NMPlatform *self,
+                                    int addr_family,
+                                    int ifindex,
+                                    GPtrArray *routes,
+                                    NMPObjectPredicateFunc kernel_delete_predicate,
+                                    gpointer kernel_delete_userdata);
+gboolean nm_platform_ip_route_flush (NMPlatform *self,
+                                     int addr_family,
+                                     int ifindex);
+
 const char *nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len);
 const char *nm_platform_lnk_gre_to_string (const NMPlatformLnkGre *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_infiniband_to_string (const NMPlatformLnkInfiniband *lnk, char *buf, gsize len);
@@ -1217,6 +1224,10 @@ int nm_platform_ip_address_cmp_expiry (const NMPlatformIPAddress *a, const NMPla
 gboolean nm_platform_ethtool_set_wake_on_lan (NMPlatform *self, int ifindex, NMSettingWiredWakeOnLan wol, const char *wol_password);
 gboolean nm_platform_ethtool_set_link_settings (NMPlatform *self, int ifindex, gboolean autoneg, guint32 speed, NMPlatformLinkDuplexType duplex);
 gboolean nm_platform_ethtool_get_link_settings (NMPlatform *self, int ifindex, gboolean *out_autoneg, guint32 *out_speed, NMPlatformLinkDuplexType *out_duplex);
+
+void nm_platform_ip4_dev_route_blacklist_set (NMPlatform *self,
+                                              int ifindex,
+                                              GPtrArray *ip4_dev_route_blacklist);
 
 struct _NMDedupMultiIndex *nm_platform_get_multi_idx (NMPlatform *self);
 

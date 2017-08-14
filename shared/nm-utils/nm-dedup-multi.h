@@ -278,11 +278,11 @@ gboolean nm_dedup_multi_index_add (NMDedupMultiIndex *self,
                                    const NMDedupMultiEntry **out_entry,
                                    /* const NMDedupMultiObj ** */ gpointer out_obj_old);
 
-const NMDedupMultiEntry *nm_dedup_multi_index_lookup_obj (NMDedupMultiIndex *self,
+const NMDedupMultiEntry *nm_dedup_multi_index_lookup_obj (const NMDedupMultiIndex *self,
                                                           const NMDedupMultiIdxType *idx_type,
                                                           /*const NMDedupMultiObj * */ gconstpointer obj);
 
-const NMDedupMultiHeadEntry *nm_dedup_multi_index_lookup_head (NMDedupMultiIndex *self,
+const NMDedupMultiHeadEntry *nm_dedup_multi_index_lookup_head (const NMDedupMultiIndex *self,
                                                                const NMDedupMultiIdxType *idx_type,
                                                                /*const NMDedupMultiObj * */ gconstpointer obj);
 

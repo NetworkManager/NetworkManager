@@ -77,7 +77,7 @@ nm_dedup_multi_idx_type_init (NMDedupMultiIdxType *idx_type,
 /*****************************************************************************/
 
 static NMDedupMultiEntry *
-_entry_lookup_obj (NMDedupMultiIndex *self,
+_entry_lookup_obj (const NMDedupMultiIndex *self,
                    const NMDedupMultiIdxType *idx_type,
                    const NMDedupMultiObj *obj)
 {
@@ -92,7 +92,7 @@ _entry_lookup_obj (NMDedupMultiIndex *self,
 }
 
 static NMDedupMultiHeadEntry *
-_entry_lookup_head (NMDedupMultiIndex *self,
+_entry_lookup_head (const NMDedupMultiIndex *self,
                     const NMDedupMultiIdxType *idx_type,
                     const NMDedupMultiObj *obj)
 {
@@ -682,7 +682,7 @@ nm_dedup_multi_index_remove_idx (NMDedupMultiIndex *self,
  * Returns: the cache entry or %NULL if the entry wasn't found.
  */
 const NMDedupMultiEntry *
-nm_dedup_multi_index_lookup_obj (NMDedupMultiIndex *self,
+nm_dedup_multi_index_lookup_obj (const NMDedupMultiIndex *self,
                                  const NMDedupMultiIdxType *idx_type,
                                  /*const NMDedupMultiObj * */ gconstpointer obj)
 {
@@ -708,7 +708,7 @@ nm_dedup_multi_index_lookup_obj (NMDedupMultiIndex *self,
  * Returns: the cache entry or %NULL if the entry wasn't found.
  */
 const NMDedupMultiHeadEntry *
-nm_dedup_multi_index_lookup_head (NMDedupMultiIndex *self,
+nm_dedup_multi_index_lookup_head (const NMDedupMultiIndex *self,
                                   const NMDedupMultiIdxType *idx_type,
                                   /*const NMDedupMultiObj * */ gconstpointer obj)
 {
