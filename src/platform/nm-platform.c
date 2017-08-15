@@ -4743,7 +4743,7 @@ nm_platform_ip4_route_hash (const NMPlatformIP4Route *obj, NMPlatformIPRouteCmpT
 			h = NM_HASH_COMBINE (h, obj->tos);
 			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
 				h = NM_HASH_COMBINE (h, obj->ifindex);
-				h = NM_HASH_COMBINE (h, obj->rt_source);
+				h = NM_HASH_COMBINE (h, nmp_utils_ip_config_source_round_trip_rtprot (obj->rt_source));
 				h = NM_HASH_COMBINE (h, obj->scope_inv);
 				h = NM_HASH_COMBINE (h, obj->gateway);
 				h = NM_HASH_COMBINE (h, obj->mss);
@@ -4770,7 +4770,10 @@ nm_platform_ip4_route_hash (const NMPlatformIP4Route *obj, NMPlatformIPRouteCmpT
 			h = NM_HASH_COMBINE (h, obj->plen);
 			h = NM_HASH_COMBINE (h, obj->metric);
 			h = NM_HASH_COMBINE (h, obj->gateway);
-			h = NM_HASH_COMBINE (h, obj->rt_source);
+			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
+				h = NM_HASH_COMBINE (h, nmp_utils_ip_config_source_round_trip_rtprot (obj->rt_source));
+			else
+				h = NM_HASH_COMBINE (h, obj->rt_source);
 			h = NM_HASH_COMBINE (h, obj->mss);
 			h = NM_HASH_COMBINE (h, obj->scope_inv);
 			h = NM_HASH_COMBINE (h, obj->pref_src);
@@ -4809,7 +4812,8 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 		NM_CMP_FIELD (a, b, tos);
 		if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
 			NM_CMP_FIELD (a, b, ifindex);
-			NM_CMP_FIELD (a, b, rt_source);
+			NM_CMP_DIRECT (nmp_utils_ip_config_source_round_trip_rtprot (a->rt_source),
+			               nmp_utils_ip_config_source_round_trip_rtprot (b->rt_source));
 			NM_CMP_FIELD (a, b, scope_inv);
 			NM_CMP_FIELD (a, b, gateway);
 			NM_CMP_FIELD (a, b, mss);
@@ -4836,7 +4840,11 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 		NM_CMP_FIELD (a, b, plen);
 		NM_CMP_FIELD (a, b, metric);
 		NM_CMP_FIELD (a, b, gateway);
-		NM_CMP_FIELD (a, b, rt_source);
+		if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
+			NM_CMP_DIRECT (nmp_utils_ip_config_source_round_trip_rtprot (a->rt_source),
+			               nmp_utils_ip_config_source_round_trip_rtprot (b->rt_source));
+		} else
+			NM_CMP_FIELD (a, b, rt_source);
 		NM_CMP_FIELD (a, b, mss);
 		NM_CMP_FIELD (a, b, scope_inv);
 		NM_CMP_FIELD (a, b, pref_src);
@@ -4897,11 +4905,12 @@ nm_platform_ip6_route_hash (const NMPlatformIP6Route *obj, NMPlatformIPRouteCmpT
 			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
 				h = NM_HASH_COMBINE_IN6ADDR_PREFIX (h, &obj->src, obj->src_plen);
 				h = NM_HASH_COMBINE (h, obj->src_plen);
+				h = NM_HASH_COMBINE (h, nmp_utils_ip_config_source_round_trip_rtprot (obj->rt_source));
 			} else {
 				h = NM_HASH_COMBINE_IN6ADDR (h, &obj->src);
 				h = NM_HASH_COMBINE (h, obj->src_plen);
+				h = NM_HASH_COMBINE (h, obj->rt_source);
 			}
-			h = NM_HASH_COMBINE (h, obj->rt_source);
 			h = NM_HASH_COMBINE (h, obj->mss);
 			h = NM_HASH_COMBINE (h, obj->rt_cloned);
 			h = NM_HASH_COMBINE (h, obj->lock_window);
@@ -4958,11 +4967,13 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 		if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
 			NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX (&a->src, &b->src, MIN (a->src_plen, b->src_plen));
 			NM_CMP_FIELD (a, b, src_plen);
+			NM_CMP_DIRECT (nmp_utils_ip_config_source_round_trip_rtprot (a->rt_source),
+			               nmp_utils_ip_config_source_round_trip_rtprot (b->rt_source));
 		} else {
 			NM_CMP_FIELD_IN6ADDR (a, b, src);
 			NM_CMP_FIELD (a, b, src_plen);
+			NM_CMP_FIELD (a, b, rt_source);
 		}
-		NM_CMP_FIELD (a, b, rt_source);
 		NM_CMP_FIELD (a, b, mss);
 		NM_CMP_FIELD_UNSAFE (a, b, rt_cloned);
 		NM_CMP_FIELD_UNSAFE (a, b, lock_window);
