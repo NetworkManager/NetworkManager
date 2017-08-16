@@ -3788,6 +3788,56 @@ nm_platform_ip_route_delete (NMPlatform *self,
 
 /*****************************************************************************/
 
+NMPlatformError
+nm_platform_ip_route_get (NMPlatform *self,
+                          int addr_family,
+                          gconstpointer address /* in_addr_t or struct in6_addr */,
+                          NMPObject **out_route)
+{
+	nm_auto_nmpobj NMPObject *route = NULL;
+	NMPlatformError result;
+	char buf[NM_UTILS_INET_ADDRSTRLEN];
+
+	_CHECK_SELF (self, klass, FALSE);
+
+	g_return_val_if_fail (address, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (NM_IN_SET (addr_family, AF_INET,
+	                                              AF_INET6), NM_PLATFORM_ERROR_BUG);
+
+	_LOGT ("route: get IPv%c route for: %s",
+	       addr_family == AF_INET ? '4' : '6',
+	       inet_ntop (addr_family, address, buf, sizeof (buf)));
+
+	if (!klass->ip_route_get)
+		result = NM_PLATFORM_ERROR_OPNOTSUPP;
+	else {
+		result = klass->ip_route_get (self,
+		                              addr_family,
+		                              address,
+		                              &route);
+	}
+
+	if (result != NM_PLATFORM_ERROR_SUCCESS) {
+		nm_assert (!route);
+		_LOGW ("route: get IPv%c route for: %s failed with %s",
+		       addr_family == AF_INET ? '4' : '6',
+		       inet_ntop (addr_family, address, buf, sizeof (buf)),
+		       nm_platform_error_to_string (result));
+	} else {
+		nm_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (route), NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
+		nm_assert (!NMP_OBJECT_IS_STACKINIT (route));
+		nm_assert (route->parent._ref_count == 1);
+		_LOGD ("route: get IPv%c route for: %s succeeded: %s",
+		       addr_family == AF_INET ? '4' : '6',
+		       inet_ntop (addr_family, address, buf, sizeof (buf)),
+		       nmp_object_to_string (route, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+		NM_SET_OUT (out_route, g_steal_pointer (&route));
+	}
+	return result;
+}
+
+/*****************************************************************************/
+
 #define IP4_DEV_ROUTE_BLACKLIST_TIMEOUT_MS   ((int) 1500)
 #define IP4_DEV_ROUTE_BLACKLIST_GC_TIMEOUT_S ((int) (((IP4_DEV_ROUTE_BLACKLIST_TIMEOUT_MS + 999) * 3) / 1000))
 

@@ -389,6 +389,43 @@ test_ip6_route (void)
 /*****************************************************************************/
 
 static void
+test_ip_route_get (void)
+{
+	int ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME);
+	in_addr_t a;
+	NMPlatformError result;
+	nm_auto_nmpobj NMPObject *route = NULL;
+	const NMPlatformIP4Route *r;
+
+	nmtstp_run_command_check ("ip route add 1.2.3.0/24 dev %s", DEVICE_NAME);
+
+	NMTST_WAIT_ASSERT (100, {
+		nmtstp_wait_for_signal (NM_PLATFORM_GET, 10);
+		if (nmtstp_ip4_route_get (NM_PLATFORM_GET, ifindex, nmtst_inet4_from_string ("1.2.3.0"), 24, 0, 0))
+			break;
+	});
+
+	a = nmtst_inet4_from_string ("1.2.3.1");
+	result = nm_platform_ip_route_get (NM_PLATFORM_GET,
+	                                   AF_INET,
+	                                   &a,
+	                                   &route);
+
+	g_assert (result == NM_PLATFORM_ERROR_SUCCESS);
+	g_assert (NMP_OBJECT_GET_TYPE (route) == NMP_OBJECT_TYPE_IP4_ROUTE);
+	g_assert (!NMP_OBJECT_IS_STACKINIT (route));
+	g_assert (route->parent._ref_count == 1);
+	r = NMP_OBJECT_CAST_IP4_ROUTE (route);
+	g_assert (r->rt_cloned);
+	g_assert (r->network == a);
+	g_assert (r->plen == 32);
+
+	nmtstp_run_command_check ("ip route flush dev %s", DEVICE_NAME);
+
+	nmtstp_wait_for_signal (NM_PLATFORM_GET, 50);
+}
+
+static void
 test_ip4_zero_gateway (void)
 {
 	int ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME);
@@ -739,6 +776,7 @@ _nmtstp_setup_tests (void)
 
 	if (nmtstp_is_root_test ()) {
 		add_test_func_data ("/route/ip/1", test_ip, GINT_TO_POINTER (1));
+		add_test_func ("/route/ip_route_get", test_ip_route_get);
 		add_test_func ("/route/ip4_zero_gateway", test_ip4_zero_gateway);
 	}
 }

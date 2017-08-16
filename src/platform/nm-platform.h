@@ -803,6 +803,11 @@ typedef struct {
 	                          const NMPlatformIPRoute *route);
 	gboolean (*ip_route_delete) (NMPlatform *, const NMPObject *obj);
 
+	NMPlatformError (*ip_route_get) (NMPlatform *self,
+	                                 int addr_family,
+	                                 gconstpointer address,
+	                                 NMPObject **out_route);
+
 	gboolean (*check_support_kernel_extended_ifa_flags) (NMPlatform *);
 	gboolean (*check_support_user_ipv6ll) (NMPlatform *);
 } NMPlatformClass;
@@ -1134,6 +1139,11 @@ gboolean nm_platform_ip_route_sync (NMPlatform *self,
 gboolean nm_platform_ip_route_flush (NMPlatform *self,
                                      int addr_family,
                                      int ifindex);
+
+NMPlatformError nm_platform_ip_route_get (NMPlatform *self,
+                                          int addr_family,
+                                          gconstpointer address,
+                                          NMPObject **out_route);
 
 const char *nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len);
 const char *nm_platform_lnk_gre_to_string (const NMPlatformLnkGre *lnk, char *buf, gsize len);

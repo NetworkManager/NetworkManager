@@ -826,6 +826,31 @@ _linktype_get_type (NMPlatform *platform,
  * libnl unility functions and wrappers
  ******************************************************************/
 
+#define NLMSG_TAIL(nmsg) \
+    ((struct rtattr *) (((char *) (nmsg)) + NLMSG_ALIGN((nmsg)->nlmsg_len)))
+
+/* copied from iproute2's addattr_l(). */
+static gboolean
+_nl_addattr_l (struct nlmsghdr *n,
+               int maxlen,
+               int type,
+               const void *data,
+               int alen)
+{
+	int len = RTA_LENGTH (alen);
+	struct rtattr *rta;
+
+	if (NLMSG_ALIGN (n->nlmsg_len) + RTA_ALIGN (len) > maxlen)
+		return FALSE;
+
+	rta = NLMSG_TAIL (n);
+	rta->rta_type = type;
+	rta->rta_len = len;
+	memcpy (RTA_DATA (rta), data, alen);
+	n->nlmsg_len = NLMSG_ALIGN (n->nlmsg_len) + RTA_ALIGN (len);
+	return TRUE;
+}
+
 #define nm_auto_nlmsg __attribute__((cleanup(_nm_auto_nl_msg_cleanup)))
 static void
 _nm_auto_nl_msg_cleanup (void *ptr)
@@ -2663,12 +2688,23 @@ nla_put_failure:
  * NMPlatform types and functions
  ******************************************************************/
 
+typedef enum {
+	DELAYED_ACTION_RESPONSE_TYPE_VOID                       = 0,
+	DELAYED_ACTION_RESPONSE_TYPE_REFRESH_ALL_IN_PROGRESS    = 1,
+	DELAYED_ACTION_RESPONSE_TYPE_ROUTE_GET                  = 2,
+} DelayedActionWaitForNlResponseType;
+
 typedef struct {
 	guint32 seq_number;
 	WaitForNlResponseResult seq_result;
+	DelayedActionWaitForNlResponseType response_type;
 	gint64 timeout_abs_ns;
 	WaitForNlResponseResult *out_seq_result;
-	gint *out_refresh_all_in_progess;
+	union {
+		gint *out_refresh_all_in_progess;
+		NMPObject **out_route_get;
+		gpointer out_data;
+	} response;
 } DelayedActionWaitForNlResponseData;
 
 typedef struct {
@@ -3087,11 +3123,12 @@ delayed_action_to_string_full (DelayedActionType action_type, gpointer user_data
 			gint64 timeout = data->timeout_abs_ns - nm_utils_get_monotonic_timestamp_ns ();
 			char b[255];
 
-			nm_utils_strbuf_append (&buf, &buf_size, " (seq %u, timeout in %s%"G_GINT64_FORMAT".%09"G_GINT64_FORMAT"%s%s)",
+			nm_utils_strbuf_append (&buf, &buf_size, " (seq %u, timeout in %s%"G_GINT64_FORMAT".%09"G_GINT64_FORMAT", response-type %d%s%s)",
 			                        data->seq_number,
 			                        timeout < 0 ? "-" : "",
 			                        (timeout < 0 ? -timeout : timeout) / NM_UTILS_NS_PER_SECOND,
 			                        (timeout < 0 ? -timeout : timeout) % NM_UTILS_NS_PER_SECOND,
+			                        (int) data->response_type,
 			                        data->seq_result ? ", " : "",
 			                        data->seq_result ? wait_for_nl_response_to_string (data->seq_result, b, sizeof (b)) : "");
 		} else
@@ -3153,9 +3190,22 @@ delayed_action_wait_for_nl_response_complete (NMPlatform *platform,
 		priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE;
 	if (data->out_seq_result)
 		*data->out_seq_result = seq_result;
-	if (data->out_refresh_all_in_progess) {
-		nm_assert (*data->out_refresh_all_in_progess > 0);
-		*data->out_refresh_all_in_progess -= 1;
+	switch (data->response_type) {
+	case DELAYED_ACTION_RESPONSE_TYPE_VOID:
+		break;
+	case DELAYED_ACTION_RESPONSE_TYPE_REFRESH_ALL_IN_PROGRESS:
+		if (data->response.out_refresh_all_in_progess) {
+			nm_assert (*data->response.out_refresh_all_in_progess > 0);
+			*data->response.out_refresh_all_in_progess -= 1;
+			data->response.out_refresh_all_in_progess = NULL;
+		}
+		break;
+	case DELAYED_ACTION_RESPONSE_TYPE_ROUTE_GET:
+		if (data->response.out_route_get) {
+			nm_assert (!*data->response.out_route_get);
+			data->response.out_route_get = NULL;
+		}
+		break;
 	}
 
 	g_array_remove_index_fast (priv->delayed_action.list_wait_for_nl_response, idx);
@@ -3365,13 +3415,15 @@ static void
 delayed_action_schedule_WAIT_FOR_NL_RESPONSE (NMPlatform *platform,
                                               guint32 seq_number,
                                               WaitForNlResponseResult *out_seq_result,
-                                              gint *out_refresh_all_in_progess)
+                                              DelayedActionWaitForNlResponseType response_type,
+                                              gpointer response_out_data)
 {
 	DelayedActionWaitForNlResponseData data = {
 		.seq_number = seq_number,
 		.timeout_abs_ns = nm_utils_get_monotonic_timestamp_ns () + (200 * (NM_UTILS_NS_PER_SECOND / 1000)),
 		.out_seq_result = out_seq_result,
-		.out_refresh_all_in_progess = out_refresh_all_in_progess,
+		.response_type = response_type,
+		.response.out_data = response_out_data,
 	};
 
 	delayed_action_schedule (platform,
@@ -3656,30 +3708,111 @@ cache_on_change (NMPlatform *platform,
 
 /*****************************************************************************/
 
+static guint32
+_nlh_seq_next_get (NMLinuxPlatformPrivate *priv)
+{
+	/* generate a new sequence number, but skip zero. */
+	return priv->nlh_seq_next++ ?: priv->nlh_seq_next++;
+}
+
+/**
+ * _nl_send_nlmsghdr:
+ * @platform:
+ * @nlhdr:
+ * @out_seq_result:
+ * @response_type:
+ * @response_out_data:
+ *
+ * Returns: 0 on success or a negative errno. Beware, it's an errno, not nlerror.
+ */
 static int
-_nl_send_auto_with_seq (NMPlatform *platform,
-                        struct nl_msg *nlmsg,
-                        WaitForNlResponseResult *out_seq_result,
-                        gint *out_refresh_all_in_progess)
+_nl_send_nlmsghdr (NMPlatform *platform,
+                   struct nlmsghdr *nlhdr,
+                   WaitForNlResponseResult *out_seq_result,
+                   DelayedActionWaitForNlResponseType response_type,
+                   gpointer response_out_data)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	guint32 seq;
 	int nle;
 
-	/* complete the message with a sequence number (ensuring it's not zero). */
-	seq = priv->nlh_seq_next++ ?: priv->nlh_seq_next++;
+	nm_assert (nlhdr);
 
-	nlmsg_hdr (nlmsg)->nlmsg_seq = seq;
+	seq = _nlh_seq_next_get (priv);
+	nlhdr->nlmsg_seq = seq;
+
+	{
+		struct sockaddr_nl nladdr = {
+			.nl_family = AF_NETLINK,
+		};
+		struct iovec iov = {
+			.iov_base = nlhdr,
+			.iov_len = nlhdr->nlmsg_len
+		};
+		struct msghdr msg = {
+			.msg_name = &nladdr,
+			.msg_namelen = sizeof(nladdr),
+			.msg_iov = &iov,
+			.msg_iovlen = 1,
+		};
+		int try_count;
+
+		if (!nlhdr->nlmsg_pid)
+			nlhdr->nlmsg_pid = nl_socket_get_local_port (priv->nlh);
+		nlhdr->nlmsg_flags |= (NLM_F_REQUEST | NLM_F_ACK);
+
+		try_count = 0;
+again:
+		nle = sendmsg (nl_socket_get_fd (priv->nlh), &msg, 0);
+		if (nle < 0) {
+			nle = errno;
+			if (nle == EINTR && try_count++ < 100)
+				goto again;
+			_LOGD ("netlink: nl-send-nlmsghdr: failed sending message: %s (%d)", g_strerror (nle), nle);
+			return -nle;
+		}
+	}
+
+	delayed_action_schedule_WAIT_FOR_NL_RESPONSE (platform, seq, out_seq_result,
+	                                              response_type, response_out_data);
+	return 0;
+}
+
+/**
+ * _nl_send_nlmsg:
+ * @platform:
+ * @nlmsg:
+ * @out_seq_result:
+ * @response_type:
+ * @response_out_data:
+ *
+ * Returns: 0 on success, or a negative libnl3 error code (beware, it's not an errno).
+ */
+static int
+_nl_send_nlmsg (NMPlatform *platform,
+                struct nl_msg *nlmsg,
+                WaitForNlResponseResult *out_seq_result,
+                DelayedActionWaitForNlResponseType response_type,
+                gpointer response_out_data)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	struct nlmsghdr *nlhdr;
+	guint32 seq;
+	int nle;
+
+	nlhdr = nlmsg_hdr (nlmsg);
+	seq = _nlh_seq_next_get (priv);
+	nlhdr->nlmsg_seq = seq;
 
 	nle = nl_send_auto (priv->nlh, nlmsg);
+	if (nle < 0) {
+		_LOGD ("netlink: nl-send-nlmsg: failed sending message: %s (%d)", nl_geterror (nle), nle);
+		return nle;
+	}
 
-	if (nle >= 0) {
-		nle = 0;
-		delayed_action_schedule_WAIT_FOR_NL_RESPONSE (platform, seq, out_seq_result, out_refresh_all_in_progess);
-	} else
-		_LOGD ("netlink: send: failed sending message: %s (%d)", nl_geterror (nle), nle);
-
-	return nle;
+	delayed_action_schedule_WAIT_FOR_NL_RESPONSE (platform, seq, out_seq_result,
+	                                              response_type, response_out_data);
+	return 0;
 }
 
 static void
@@ -3714,7 +3847,7 @@ do_request_link_no_delayed_actions (NMPlatform *platform, int ifindex, const cha
 	                          0,
 	                          0);
 	if (nlmsg)
-		_nl_send_auto_with_seq (platform, nlmsg, NULL, NULL);
+		_nl_send_nlmsg (platform, nlmsg, NULL, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
 }
 
 static void
@@ -3776,7 +3909,7 @@ do_request_all_no_delayed_actions (NMPlatform *platform, DelayedActionType actio
 		if (nle < 0)
 			continue;
 
-		if (_nl_send_auto_with_seq (platform, nlmsg, NULL, out_refresh_all_in_progess) < 0) {
+		if (_nl_send_nlmsg (platform, nlmsg, NULL, DELAYED_ACTION_RESPONSE_TYPE_REFRESH_ALL_IN_PROGRESS, out_refresh_all_in_progess) < 0) {
 			nm_assert (*out_refresh_all_in_progess > 0);
 			*out_refresh_all_in_progess -= 1;
 		}
@@ -3806,13 +3939,12 @@ event_seq_check_refresh_all (NMPlatform *platform, guint32 seq_number)
 		for (i = 0; i < priv->delayed_action.list_wait_for_nl_response->len; i++) {
 			data = &g_array_index (priv->delayed_action.list_wait_for_nl_response, DelayedActionWaitForNlResponseData, i);
 
-			if (data->seq_number == priv->nlh_seq_last_seen) {
-				if (data->out_refresh_all_in_progess) {
-					nm_assert (*data->out_refresh_all_in_progess > 0);
-					*data->out_refresh_all_in_progess -= 1;
-					data->out_refresh_all_in_progess = NULL;
-					break;
-				}
+			if (   data->response_type == DELAYED_ACTION_RESPONSE_TYPE_REFRESH_ALL_IN_PROGRESS
+			    && data->response.out_refresh_all_in_progess
+			    && data->seq_number == priv->nlh_seq_last_seen) {
+				*data->response.out_refresh_all_in_progess -= 1;
+				data->response.out_refresh_all_in_progess = NULL;
+				break;
 			}
 		}
 	}
@@ -3860,6 +3992,7 @@ event_seq_check (NMPlatform *platform, guint32 seq_number, WaitForNlResponseResu
 static void
 event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_events)
 {
+	NMLinuxPlatformPrivate *priv;
 	nm_auto_nmpobj NMPObject *obj = NULL;
 	NMPCacheOpsType cache_op;
 	struct nlmsghdr *msghdr;
@@ -3928,6 +4061,30 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 			nm_auto_nmpobj const NMPObject *obj_replace = NULL;
 			gboolean resync_required = FALSE;
 			gboolean only_dirty = FALSE;
+
+			if (obj->ip_route.rt_cloned) {
+				/* a cloned route might be a response for RTM_GETROUTE. Check, whether it is. */
+				nm_assert (!nmp_object_is_alive (obj));
+				priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+				if (NM_FLAGS_HAS (priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE)) {
+					guint i;
+
+					nm_assert (priv->delayed_action.list_wait_for_nl_response->len > 0);
+					for (i = 0; i < priv->delayed_action.list_wait_for_nl_response->len; i++) {
+						DelayedActionWaitForNlResponseData *data = &g_array_index (priv->delayed_action.list_wait_for_nl_response, DelayedActionWaitForNlResponseData, i);
+
+						if (   data->response_type == DELAYED_ACTION_RESPONSE_TYPE_ROUTE_GET
+						    && data->response.out_route_get) {
+							nm_assert (!*data->response.out_route_get);
+							if (data->seq_number == nlmsg_hdr (msg)->nlmsg_seq) {
+								*data->response.out_route_get = nmp_object_clone (obj, FALSE);
+								data->response.out_route_get = NULL;
+								break;
+							}
+						}
+					}
+				}
+			}
 
 			cache_op = nmp_cache_update_netlink_route (cache,
 			                                           obj,
@@ -4030,7 +4187,7 @@ do_add_link_with_lookup (NMPlatform *platform,
 		}
 	}
 
-	nle = _nl_send_auto_with_seq (platform, nlmsg, &seq_result, NULL);
+	nle = _nl_send_nlmsg (platform, nlmsg, &seq_result, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
 	if (nle < 0) {
 		_LOGE ("do-add-link[%s/%s]: failed sending netlink request \"%s\" (%d)",
 		       name,
@@ -4081,7 +4238,7 @@ do_add_addrroute (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 
 	event_handler_read_netlink (platform, FALSE);
 
-	nle = _nl_send_auto_with_seq (platform, nlmsg, &seq_result, NULL);
+	nle = _nl_send_nlmsg (platform, nlmsg, &seq_result, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
 	if (nle < 0) {
 		_LOGE ("do-add-%s[%s]: failure sending netlink request \"%s\" (%d)",
 		       NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
@@ -4134,7 +4291,7 @@ do_delete_object (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 
 	event_handler_read_netlink (platform, FALSE);
 
-	nle = _nl_send_auto_with_seq (platform, nlmsg, &seq_result, NULL);
+	nle = _nl_send_nlmsg (platform, nlmsg, &seq_result, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
 	if (nle < 0) {
 		_LOGE ("do-delete-%s[%s]: failure sending netlink request \"%s\" (%d)",
 		       NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
@@ -4191,7 +4348,7 @@ do_change_link_request (NMPlatform *platform,
 		return WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
 
 retry:
-	nle = _nl_send_auto_with_seq (platform, nlmsg, &seq_result, NULL);
+	nle = _nl_send_nlmsg (platform, nlmsg, &seq_result, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
 	if (nle < 0) {
 		_LOGE ("do-change-link[%d]: failure sending netlink request \"%s\" (%d)",
 		       ifindex,
@@ -5887,6 +6044,77 @@ ip_route_delete (NMPlatform *platform,
 
 /*****************************************************************************/
 
+static NMPlatformError
+ip_route_get (NMPlatform *platform,
+              int addr_family,
+              gconstpointer address,
+              NMPObject **out_route)
+{
+	const gboolean is_v4 = (addr_family == AF_INET);
+	const int addr_len = is_v4 ? 4 : 16;
+	int try_count = 0;
+	WaitForNlResponseResult seq_result;
+	int nle;
+	nm_auto_nlmsg NMPObject *route = NULL;
+
+	nm_assert (NM_IS_LINUX_PLATFORM (platform));
+	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
+	nm_assert (address);
+
+	do {
+		struct {
+			struct nlmsghdr n;
+			struct rtmsg r;
+			char buf[64];
+		} req = {
+			.n.nlmsg_len = NLMSG_LENGTH (sizeof (struct rtmsg)),
+			.n.nlmsg_flags = NLM_F_REQUEST,
+			.n.nlmsg_type = RTM_GETROUTE,
+			.r.rtm_family = addr_family,
+			.r.rtm_tos = 0,
+			.r.rtm_dst_len = is_v4 ? 32 : 128,
+			.r.rtm_flags = 0x1000 /* RTM_F_LOOKUP_TABLE */,
+		};
+
+		g_clear_pointer (&route, nmp_object_unref);
+
+		if (!_nl_addattr_l (&req.n, sizeof (req), RTA_DST, address, addr_len))
+			nm_assert_not_reached ();
+
+		seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+		nle = _nl_send_nlmsghdr (platform, &req.n, &seq_result, DELAYED_ACTION_RESPONSE_TYPE_ROUTE_GET, &route);
+		if (nle < 0) {
+			_LOGE ("get-route: failure sending netlink request \"%s\" (%d)",
+			       g_strerror (-nle), -nle);
+			return NM_PLATFORM_ERROR_UNSPECIFIED;
+		}
+
+		delayed_action_handle_all (platform, FALSE);
+
+		/* Retry, if we failed due to a cache resync. That can happen when the netlink
+		 * socket fills up and we lost the response. */
+	} while (   seq_result == WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC
+	         && ++try_count < 10);
+
+	if (seq_result < 0) {
+		/* negative seq_result is an errno from kernel. Map it to negative
+		 * NMPlatformError (which are also errno). */
+		return (NMPlatformError) seq_result;
+	}
+
+	if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK) {
+		if (route) {
+			NM_SET_OUT (out_route, g_steal_pointer (&route));
+			return NM_PLATFORM_ERROR_SUCCESS;
+		}
+		seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_UNKNOWN;
+	}
+
+	return NM_PLATFORM_ERROR_UNSPECIFIED;
+}
+
+/*****************************************************************************/
+
 #define EVENT_CONDITIONS      ((GIOCondition) (G_IO_IN | G_IO_PRI))
 #define ERROR_CONDITIONS      ((GIOCondition) (G_IO_ERR | G_IO_NVAL))
 #define DISCONNECT_CONDITIONS ((GIOCondition) (G_IO_HUP))
@@ -6616,6 +6844,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->ip_route_add = ip_route_add;
 	platform_class->ip_route_delete = ip_route_delete;
+	platform_class->ip_route_get = ip_route_get;
 
 	platform_class->check_support_kernel_extended_ifa_flags = check_support_kernel_extended_ifa_flags;
 	platform_class->check_support_user_ipv6ll = check_support_user_ipv6ll;
