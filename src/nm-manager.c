@@ -2351,6 +2351,7 @@ platform_link_added (NMManager *self,
 			/* Ignore the link added event since there's already a realized
 			 * device with the link's name.
 			 */
+			nm_device_update_from_platform_link (candidate, plink);
 			return;
 		} else if (nm_device_realize_start (candidate,
 		                                    plink,
@@ -2481,6 +2482,8 @@ _platform_link_cb_idle (PlatformLinkCbData *data)
 					_LOG2W (LOGD_DEVICE, device, "failed to unrealize: %s", error->message);
 					g_clear_error (&error);
 					remove_device (self, device, FALSE, TRUE);
+				} else {
+					nm_device_update_from_platform_link (device, NULL);
 				}
 			} else {
 				/* Hardware and external devices always get removed when their kernel link is gone */

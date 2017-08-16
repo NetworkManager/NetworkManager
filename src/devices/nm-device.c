@@ -2650,7 +2650,6 @@ device_link_changed (NMDevice *self)
 	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (self);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	gboolean ip_ifname_changed = FALSE;
-	const char *udi;
 	NMPlatformLink info;
 	const NMPlatformLink *pllink;
 	int ifindex;
@@ -2665,26 +2664,9 @@ device_link_changed (NMDevice *self)
 	if (!pllink)
 		return G_SOURCE_REMOVE;
 
+	nm_device_update_from_platform_link (self, pllink);
+
 	info = *pllink;
-
-	udi = nm_platform_link_get_udi (nm_device_get_platform (self), info.ifindex);
-	if (udi && !nm_streq0 (udi, priv->udi)) {
-		/* Update UDI to what udev gives us */
-		g_free (priv->udi);
-		priv->udi = g_strdup (udi);
-		_notify (self, PROP_UDI);
-	}
-
-	if (!nm_streq0 (info.driver, priv->driver)) {
-		g_free (priv->driver);
-		priv->driver = g_strdup (info.driver);
-		_notify (self, PROP_DRIVER);
-	}
-
-	_set_mtu (self, info.mtu);
-
-	if (ifindex == nm_device_get_ip_ifindex (self))
-		_stats_update_counters_from_pllink (self, &info);
 
 	had_hw_addr = (priv->hw_addr != NULL);
 	nm_device_update_hw_address (self);
@@ -3137,37 +3119,53 @@ nm_device_create_and_realize (NMDevice *self,
 	return TRUE;
 }
 
-static void
-update_device_from_platform_link (NMDevice *self, const NMPlatformLink *plink)
+void
+nm_device_update_from_platform_link (NMDevice *self, const NMPlatformLink *plink)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	const char *udi;
+	const char *str;
+	int ifindex;
+	guint32 mtu;
 
-	g_return_if_fail (plink != NULL);
+	g_return_if_fail (plink == NULL || link_type_compatible (self, plink->type, NULL, NULL));
 
-	udi = nm_platform_link_get_udi (nm_device_get_platform (self), plink->ifindex);
-	if (udi && !nm_streq0 (udi, priv->udi)) {
+	str = plink ? nm_platform_link_get_udi (nm_device_get_platform (self), plink->ifindex) : NULL;
+	if (g_strcmp0 (str, priv->udi)) {
 		g_free (priv->udi);
-		priv->udi = g_strdup (udi);
+		priv->udi = g_strdup (str);
 		_notify (self, PROP_UDI);
 	}
 
-	if (!g_strcmp0 (plink->name, priv->iface)) {
+	str = plink ? plink->name : NULL;
+	if (str && g_strcmp0 (str, priv->iface)) {
 		g_free (priv->iface);
-		priv->iface = g_strdup (plink->name);
+		priv->iface = g_strdup (str);
 		_notify (self, PROP_IFACE);
 	}
 
-	if (priv->ifindex != plink->ifindex) {
-		priv->ifindex = plink->ifindex;
-		_notify (self, PROP_IFINDEX);
+	str = plink ? plink->driver : NULL;
+	if (g_strcmp0 (str, priv->driver) != 0) {
+		g_free (priv->driver);
+		priv->driver = g_strdup (str);
+		_notify (self, PROP_DRIVER);
 	}
 
-	priv->up = NM_FLAGS_HAS (plink->n_ifi_flags, IFF_UP);
-	if (plink->driver && g_strcmp0 (plink->driver, priv->driver) != 0) {
-		g_free (priv->driver);
-		priv->driver = g_strdup (plink->driver);
-		_notify (self, PROP_DRIVER);
+	if (plink) {
+		priv->up = NM_FLAGS_HAS (plink->n_ifi_flags, IFF_UP);
+		if (plink->ifindex == nm_device_get_ip_ifindex (self))
+			_stats_update_counters_from_pllink (self, plink);
+	} else {
+		priv->up = FALSE;
+	}
+
+	mtu = plink ? plink->mtu : 0;
+	_set_mtu (self, mtu);
+
+	ifindex = plink ? plink->ifindex : 0;
+	if (priv->ifindex != ifindex) {
+		priv->ifindex = ifindex;
+		_notify (self, PROP_IFINDEX);
+		NM_DEVICE_GET_CLASS (self)->link_changed (self, plink);
 	}
 }
 
@@ -3282,11 +3280,8 @@ realize_start_setup (NMDevice *self,
 
 	nm_device_sys_iface_state_set (self, NM_DEVICE_SYS_IFACE_STATE_EXTERNAL);
 
-	if (plink) {
-		g_return_if_fail (link_type_compatible (self, plink->type, NULL, NULL));
-		update_device_from_platform_link (self, plink);
-		_stats_update_counters_from_pllink (self, plink);
-	}
+	if (plink)
+		nm_device_update_from_platform_link (self, plink);
 
 	if (priv->ifindex > 0) {
 		priv->physical_port_id = nm_platform_link_get_physical_port_id (nm_device_get_platform (self), priv->ifindex);
