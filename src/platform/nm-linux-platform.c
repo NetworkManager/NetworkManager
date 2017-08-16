@@ -290,9 +290,9 @@ wait_for_nl_response_to_string (WaitForNlResponseResult seq_result, char *buf, g
 	return buf0;
 }
 
-/******************************************************************
+/*****************************************************************************
  * Support IFLA_INET6_ADDR_GEN_MODE
- ******************************************************************/
+ *****************************************************************************/
 
 static int _support_user_ipv6ll = 0;
 #define _support_user_ipv6ll_still_undecided() (G_UNLIKELY (_support_user_ipv6ll == 0))
@@ -319,6 +319,48 @@ _support_user_ipv6ll_detect (struct nlattr **tb)
 		_LOG2D ("kernel-support: IFLA_INET6_ADDR_GEN_MODE: %s",
 		        supported ? "detected" : "not detected");
 	}
+}
+
+/*****************************************************************************
+ * extended IFA_FLAGS support
+ *****************************************************************************/
+
+static int _support_kernel_extended_ifa_flags = -1;
+
+#define _support_kernel_extended_ifa_flags_still_undecided() (G_UNLIKELY (_support_kernel_extended_ifa_flags == -1))
+
+static void
+_support_kernel_extended_ifa_flags_detect (struct nl_msg *msg)
+{
+	struct nlmsghdr *msg_hdr;
+
+	if (!_support_kernel_extended_ifa_flags_still_undecided ())
+		return;
+
+	msg_hdr = nlmsg_hdr (msg);
+	if (msg_hdr->nlmsg_type != RTM_NEWADDR)
+		return;
+
+	/* the extended address flags are only set for AF_INET6 */
+	if (((struct ifaddrmsg *) nlmsg_data (msg_hdr))->ifa_family != AF_INET6)
+		return;
+
+	/* see if the nl_msg contains the IFA_FLAGS attribute. If it does,
+	 * we assume, that the kernel supports extended flags, IFA_F_MANAGETEMPADDR
+	 * and IFA_F_NOPREFIXROUTE (they were added together).
+	 **/
+	_support_kernel_extended_ifa_flags = !!nlmsg_find_attr (msg_hdr, sizeof (struct ifaddrmsg), IFA_FLAGS);
+	_LOG2D ("kernel-support: extended-ifa-flags: %s", _support_kernel_extended_ifa_flags ? "detected" : "not detected");
+}
+
+static gboolean
+_support_kernel_extended_ifa_flags_get (void)
+{
+	if (_support_kernel_extended_ifa_flags_still_undecided ()) {
+		_LOG2D ("kernel-support: extended-ifa-flags: %s", "unable to detect kernel support for handling IPv6 temporary addresses. Assume support");
+		_support_kernel_extended_ifa_flags = 1;
+	}
+	return _support_kernel_extended_ifa_flags;
 }
 
 /******************************************************************
@@ -2608,46 +2650,6 @@ _nl_msg_new_route (int nlmsg_type,
 nla_put_failure:
 	nlmsg_free (msg);
 	g_return_val_if_reached (NULL);
-}
-
-/*****************************************************************************/
-
-static int _support_kernel_extended_ifa_flags = -1;
-
-#define _support_kernel_extended_ifa_flags_still_undecided() (G_UNLIKELY (_support_kernel_extended_ifa_flags == -1))
-
-static void
-_support_kernel_extended_ifa_flags_detect (struct nl_msg *msg)
-{
-	struct nlmsghdr *msg_hdr;
-
-	if (!_support_kernel_extended_ifa_flags_still_undecided ())
-		return;
-
-	msg_hdr = nlmsg_hdr (msg);
-	if (msg_hdr->nlmsg_type != RTM_NEWADDR)
-		return;
-
-	/* the extended address flags are only set for AF_INET6 */
-	if (((struct ifaddrmsg *) nlmsg_data (msg_hdr))->ifa_family != AF_INET6)
-		return;
-
-	/* see if the nl_msg contains the IFA_FLAGS attribute. If it does,
-	 * we assume, that the kernel supports extended flags, IFA_F_MANAGETEMPADDR
-	 * and IFA_F_NOPREFIXROUTE (they were added together).
-	 **/
-	_support_kernel_extended_ifa_flags = !!nlmsg_find_attr (msg_hdr, sizeof (struct ifaddrmsg), IFA_FLAGS);
-	_LOG2D ("kernel-support: extended-ifa-flags: %s", _support_kernel_extended_ifa_flags ? "detected" : "not detected");
-}
-
-static gboolean
-_support_kernel_extended_ifa_flags_get (void)
-{
-	if (_support_kernel_extended_ifa_flags_still_undecided ()) {
-		_LOG2D ("kernel-support: extended-ifa-flags: %s", "unable to detect kernel support for handling IPv6 temporary addresses. Assume support");
-		_support_kernel_extended_ifa_flags = 1;
-	}
-	return _support_kernel_extended_ifa_flags;
 }
 
 /******************************************************************
