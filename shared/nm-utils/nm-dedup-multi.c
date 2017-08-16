@@ -253,6 +253,8 @@ _add (NMDedupMultiIndex *self,
 	            }));
 
 	if (entry) {
+		gboolean changed = FALSE;
+
 		nm_dedup_multi_entry_set_dirty (entry, FALSE);
 
 		nm_assert (!head_existing || entry->head == head_existing);
@@ -270,11 +272,13 @@ _add (NMDedupMultiIndex *self,
 				    && entry->lst_entries.next != &entry_order->lst_entries) {
 					c_list_unlink (&entry->lst_entries);
 					c_list_link_before ((CList *) &entry_order->lst_entries, &entry->lst_entries);
+					changed = TRUE;
 				}
 			} else {
 				if (entry->lst_entries.prev != &entry->head->lst_entries_head) {
 					c_list_unlink (&entry->lst_entries);
 					c_list_link_front ((CList *) &entry->head->lst_entries_head, &entry->lst_entries);
+					changed = TRUE;
 				}
 			}
 			break;
@@ -284,11 +288,13 @@ _add (NMDedupMultiIndex *self,
 				    && entry->lst_entries.prev != &entry_order->lst_entries) {
 					c_list_unlink (&entry->lst_entries);
 					c_list_link_after ((CList *) &entry_order->lst_entries, &entry->lst_entries);
+					changed = TRUE;
 				}
 			} else {
 				if (entry->lst_entries.next != &entry->head->lst_entries_head) {
 					c_list_unlink (&entry->lst_entries);
 					c_list_link_tail ((CList *) &entry->head->lst_entries_head, &entry->lst_entries);
+					changed = TRUE;
 				}
 			}
 			break;
@@ -303,7 +309,7 @@ _add (NMDedupMultiIndex *self,
 		                                   entry->obj)) {
 			NM_SET_OUT (out_entry, entry);
 			NM_SET_OUT (out_obj_old, nm_dedup_multi_obj_ref (entry->obj));
-			return FALSE;
+			return changed;
 		}
 
 		obj_new = nm_dedup_multi_index_obj_intern (self, obj);
