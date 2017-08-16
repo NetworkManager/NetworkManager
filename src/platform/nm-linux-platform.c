@@ -297,60 +297,62 @@ wait_for_nl_response_to_string (WaitForNlResponseResult seq_result, char *buf, g
 static int _support_user_ipv6ll = 0;
 #define _support_user_ipv6ll_still_undecided() (G_UNLIKELY (_support_user_ipv6ll == 0))
 
+static void
+_support_user_ipv6ll_detect (struct nlattr **tb)
+{
+	gboolean supported;
+
+	nm_assert (_support_user_ipv6ll_still_undecided ());
+
+	supported = !!tb[IFLA_INET6_ADDR_GEN_MODE];
+	_support_user_ipv6ll = supported ? 1 : -1;
+	_LOG2D ("kernel-support: IFLA_INET6_ADDR_GEN_MODE: %s",
+	        supported ? "detected" : "not detected");
+}
+
 static gboolean
 _support_user_ipv6ll_get (void)
 {
 	if (_support_user_ipv6ll_still_undecided ()) {
-		_support_user_ipv6ll = -1;
-		_LOG2D ("kernel-support: IFLA_INET6_ADDR_GEN_MODE: %s", "failed to detect; assume no support");
-		return FALSE;
+		_support_user_ipv6ll = 1;
+		_LOG2D ("kernel-support: IFLA_INET6_ADDR_GEN_MODE: %s", "failed to detect; assume support");
 	}
-	return _support_user_ipv6ll > 0;
-
-}
-
-static void
-_support_user_ipv6ll_detect (struct nlattr **tb)
-{
-	if (_support_user_ipv6ll_still_undecided ()) {
-		gboolean supported = !!tb[IFLA_INET6_ADDR_GEN_MODE];
-
-		_support_user_ipv6ll = supported ? 1 : -1;
-		_LOG2D ("kernel-support: IFLA_INET6_ADDR_GEN_MODE: %s",
-		        supported ? "detected" : "not detected");
-	}
+	return _support_user_ipv6ll >= 0;
 }
 
 /*****************************************************************************
  * extended IFA_FLAGS support
  *****************************************************************************/
 
-static int _support_kernel_extended_ifa_flags = -1;
+static int _support_kernel_extended_ifa_flags = 0;
 
-#define _support_kernel_extended_ifa_flags_still_undecided() (G_UNLIKELY (_support_kernel_extended_ifa_flags == -1))
+#define _support_kernel_extended_ifa_flags_still_undecided() (G_UNLIKELY (_support_kernel_extended_ifa_flags == 0))
 
 static void
 _support_kernel_extended_ifa_flags_detect (struct nl_msg *msg)
 {
 	struct nlmsghdr *msg_hdr;
+	gboolean support;
 
-	if (!_support_kernel_extended_ifa_flags_still_undecided ())
-		return;
+	nm_assert (_support_kernel_extended_ifa_flags_still_undecided ());
+	nm_assert (msg);
 
 	msg_hdr = nlmsg_hdr (msg);
-	if (msg_hdr->nlmsg_type != RTM_NEWADDR)
-		return;
 
-	/* the extended address flags are only set for AF_INET6 */
-	if (((struct ifaddrmsg *) nlmsg_data (msg_hdr))->ifa_family != AF_INET6)
+	nm_assert (msg_hdr && msg_hdr->nlmsg_type == RTM_NEWADDR);
+
+	/* IFA_FLAGS is set for IPv4 and IPv6 addresses. It was added first to IPv6,
+	 * but if we encounter an IPv4 address with IFA_FLAGS, we surely have support. */
+	if (NM_IN_SET (((struct ifaddrmsg *) nlmsg_data (msg_hdr))->ifa_family, AF_INET, AF_INET6))
 		return;
 
 	/* see if the nl_msg contains the IFA_FLAGS attribute. If it does,
 	 * we assume, that the kernel supports extended flags, IFA_F_MANAGETEMPADDR
 	 * and IFA_F_NOPREFIXROUTE (they were added together).
 	 **/
-	_support_kernel_extended_ifa_flags = !!nlmsg_find_attr (msg_hdr, sizeof (struct ifaddrmsg), IFA_FLAGS);
-	_LOG2D ("kernel-support: extended-ifa-flags: %s", _support_kernel_extended_ifa_flags ? "detected" : "not detected");
+	support = !!nlmsg_find_attr (msg_hdr, sizeof (struct ifaddrmsg), IFA_FLAGS);
+	_support_kernel_extended_ifa_flags = support ? 1 : -1;
+	_LOG2D ("kernel-support: extended-ifa-flags: %s", support ? "detected" : "not detected");
 }
 
 static gboolean
@@ -360,7 +362,7 @@ _support_kernel_extended_ifa_flags_get (void)
 		_LOG2D ("kernel-support: extended-ifa-flags: %s", "unable to detect kernel support for handling IPv6 temporary addresses. Assume support");
 		_support_kernel_extended_ifa_flags = 1;
 	}
-	return _support_kernel_extended_ifa_flags;
+	return _support_kernel_extended_ifa_flags >= 0;
 }
 
 /******************************************************************
@@ -978,7 +980,8 @@ _parse_af_inet6 (NMPlatform *platform,
 	/* Hack to detect support addrgenmode of the kernel. We only parse
 	 * netlink messages that we receive from kernel, hence this check
 	 * is valid. */
-	_support_user_ipv6ll_detect (tb);
+	if (_support_user_ipv6ll_still_undecided ())
+		_support_user_ipv6ll_detect (tb);
 
 	if (tb[IFLA_INET6_ADDR_GEN_MODE]) {
 		i6_addr_gen_mode_inv = _nm_platform_uint8_inv (nla_get_u8 (tb[IFLA_INET6_ADDR_GEN_MODE]));
@@ -2992,7 +2995,7 @@ sysctl_get (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 static gboolean
 check_support_kernel_extended_ifa_flags (NMPlatform *platform)
 {
-	g_return_val_if_fail (NM_IS_LINUX_PLATFORM (platform), FALSE);
+	nm_assert (NM_IS_LINUX_PLATFORM (platform));
 
 	return _support_kernel_extended_ifa_flags_get ();
 }
@@ -3000,7 +3003,7 @@ check_support_kernel_extended_ifa_flags (NMPlatform *platform)
 static gboolean
 check_support_user_ipv6ll (NMPlatform *platform)
 {
-	g_return_val_if_fail (NM_IS_LINUX_PLATFORM (platform), FALSE);
+	nm_assert (NM_IS_LINUX_PLATFORM (platform));
 
 	return _support_user_ipv6ll_get ();
 }
@@ -3863,7 +3866,8 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 
 	msghdr = nlmsg_hdr (msg);
 
-	if (_support_kernel_extended_ifa_flags_still_undecided () && msghdr->nlmsg_type == RTM_NEWADDR)
+	if (   _support_kernel_extended_ifa_flags_still_undecided ()
+	    && msghdr->nlmsg_type == RTM_NEWADDR)
 		_support_kernel_extended_ifa_flags_detect (msg);
 
 	if (!handle_events)
@@ -4423,14 +4427,14 @@ link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enable
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	guint8 mode = enabled ? NM_IN6_ADDR_GEN_MODE_NONE : NM_IN6_ADDR_GEN_MODE_EUI64;
 
+	_LOGD ("link: change %d: user-ipv6ll: set IPv6 address generation mode to %s",
+	       ifindex,
+	       nm_platform_link_inet6_addrgenmode2str (mode, NULL, 0));
+
 	if (!_support_user_ipv6ll_get ()) {
 		_LOGD ("link: change %d: user-ipv6ll: not supported", ifindex);
 		return NM_PLATFORM_ERROR_OPNOTSUPP;
 	}
-
-	_LOGD ("link: change %d: user-ipv6ll: set IPv6 address generation mode to %s",
-	       ifindex,
-	       nm_platform_link_inet6_addrgenmode2str (mode, NULL, 0));
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,

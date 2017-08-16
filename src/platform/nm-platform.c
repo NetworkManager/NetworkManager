@@ -91,6 +91,10 @@ enum {
 typedef struct _NMPlatformPrivate {
 	bool use_udev:1;
 	bool log_with_ptr:1;
+
+	gint8 check_support_kernel_extended_ifa_flags_cached;
+	gint8 check_support_user_ipv6ll_cached;
+
 	guint ip4_dev_route_blacklist_check_id;
 	guint ip4_dev_route_blacklist_gc_timeout_id;
 	GHashTable *ip4_dev_route_blacklist_hash;
@@ -270,27 +274,35 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_nmp_nlm_flag_to_string_lookup, NMPNlmFlags,
 gboolean
 nm_platform_check_support_kernel_extended_ifa_flags (NMPlatform *self)
 {
-	_CHECK_SELF (self, klass, FALSE);
+	NMPlatformPrivate *priv;
 
-	if (!klass->check_support_kernel_extended_ifa_flags)
-		return FALSE;
+	_CHECK_SELF (self, klass, TRUE);
 
-	return klass->check_support_kernel_extended_ifa_flags (self);
+	priv = NM_PLATFORM_GET_PRIVATE (self);
+
+	if (G_UNLIKELY (priv->check_support_kernel_extended_ifa_flags_cached == 0)) {
+		priv->check_support_kernel_extended_ifa_flags_cached = (   klass->check_support_kernel_extended_ifa_flags
+		                                                        && klass->check_support_kernel_extended_ifa_flags (self))
+		                                                       ? 1 : -1;
+	}
+	return priv->check_support_kernel_extended_ifa_flags_cached >= 0;
 }
 
 gboolean
 nm_platform_check_support_user_ipv6ll (NMPlatform *self)
 {
-	static int supported = -1;
+	NMPlatformPrivate *priv;
 
-	_CHECK_SELF (self, klass, FALSE);
+	_CHECK_SELF (self, klass, TRUE);
 
-	if (!klass->check_support_user_ipv6ll)
-		return FALSE;
+	priv = NM_PLATFORM_GET_PRIVATE (self);
 
-	if (supported < 0)
-		supported = klass->check_support_user_ipv6ll (self) ? 1 : 0;
-	return !!supported;
+	if (G_UNLIKELY (priv->check_support_user_ipv6ll_cached == 0)) {
+		priv->check_support_user_ipv6ll_cached = (   klass->check_support_user_ipv6ll
+		                                          && klass->check_support_user_ipv6ll (self))
+		                                         ? 1 : -1;
+	}
+	return priv->check_support_user_ipv6ll_cached >= 0;
 }
 
 /**
