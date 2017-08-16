@@ -69,22 +69,24 @@ typedef struct {
 	NMNDiscPreference preference;
 } NMNDiscGateway;
 
-typedef struct {
+struct _NMNDiscAddress {
 	struct in6_addr address;
 	guint8 dad_counter;
 	guint32 timestamp;
 	guint32 lifetime;
 	guint32 preferred;
-} NMNDiscAddress;
+};
+typedef struct _NMNDiscAddress NMNDiscAddress;
 
-typedef struct {
+struct _NMNDiscRoute {
 	struct in6_addr network;
 	guint8 plen;
 	struct in6_addr gateway;
 	guint32 timestamp;
 	guint32 lifetime;
 	NMNDiscPreference preference;
-} NMNDiscRoute;
+};
+typedef struct _NMNDiscRoute NMNDiscRoute;
 
 typedef struct {
 	struct in6_addr address;

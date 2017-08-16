@@ -35,6 +35,7 @@
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 #include "nm-ip4-config.h"
+#include "ndisc/nm-ndisc.h"
 
 #include "introspection/org.freedesktop.NetworkManager.IP6Config.h"
 
@@ -1189,6 +1190,8 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 	dst_priv = NM_IP6_CONFIG_GET_PRIVATE (dst);
 	src_priv = NM_IP6_CONFIG_GET_PRIVATE (src);
 
+	g_return_val_if_fail (src_priv->ifindex > 0, FALSE);
+
 	g_object_freeze_notify (G_OBJECT (dst));
 
 	/* ifindex */
@@ -1521,6 +1524,58 @@ nm_ip6_config_get_route_metric (const NMIP6Config *self)
 /*****************************************************************************/
 
 void
+nm_ip6_config_reset_addresses_ndisc (NMIP6Config *self,
+                                     const NMNDiscAddress *addresses,
+                                     guint addresses_n,
+                                     guint8 plen,
+                                     guint32 ifa_flags)
+{
+	NMIP6ConfigPrivate *priv;
+	guint i;
+	gboolean changed = FALSE;
+
+	g_return_if_fail (NM_IS_IP6_CONFIG (self));
+
+	priv = NM_IP6_CONFIG_GET_PRIVATE (self);
+
+	g_return_if_fail (priv->ifindex > 0);
+
+	nm_dedup_multi_index_dirty_set_idx (priv->multi_idx, &priv->idx_ip6_addresses);
+
+	for (i = 0; i < addresses_n; i++) {
+		const NMNDiscAddress *ndisc_addr = &addresses[i];
+		NMPObject obj;
+		NMPlatformIP6Address *a;
+
+		nmp_object_stackinit (&obj, NMP_OBJECT_TYPE_IP6_ADDRESS, NULL);
+		a = NMP_OBJECT_CAST_IP6_ADDRESS (&obj);
+		a->ifindex     = priv->ifindex;
+		a->address     = ndisc_addr->address;
+		a->plen        = plen;
+		a->timestamp   = ndisc_addr->timestamp;
+		a->lifetime    = ndisc_addr->lifetime;
+		a->preferred   = MIN (ndisc_addr->lifetime, ndisc_addr->preferred);
+		a->addr_source = NM_IP_CONFIG_SOURCE_NDISC;
+		a->n_ifa_flags = ifa_flags;
+
+		if (_nm_ip_config_add_obj (priv->multi_idx,
+		                           &priv->idx_ip6_addresses_,
+		                           priv->ifindex,
+		                           &obj,
+		                           NULL,
+		                           FALSE,
+		                           TRUE))
+			changed = TRUE;
+	}
+
+	if (nm_dedup_multi_index_dirty_remove_idx (priv->multi_idx, &priv->idx_ip6_addresses, FALSE) > 0)
+		changed = TRUE;
+
+	if (changed)
+		_notify_addresses (self);
+}
+
+void
 nm_ip6_config_reset_addresses (NMIP6Config *self)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
@@ -1697,6 +1752,55 @@ nm_ip6_config_has_any_dad_pending (const NMIP6Config *self,
 }
 
 /*****************************************************************************/
+
+void
+nm_ip6_config_reset_routes_ndisc (NMIP6Config *self,
+                                  const NMNDiscRoute *routes,
+                                  guint routes_n,
+                                  guint32 metric)
+{
+	NMIP6ConfigPrivate *priv;
+	guint i;
+	gboolean changed = FALSE;
+
+	g_return_if_fail (NM_IS_IP6_CONFIG (self));
+
+	priv = NM_IP6_CONFIG_GET_PRIVATE (self);
+
+	g_return_if_fail (priv->ifindex > 0);
+
+	nm_dedup_multi_index_dirty_set_idx (priv->multi_idx, &priv->idx_ip6_routes);
+
+	for (i = 0; i < routes_n; i++) {
+		const NMNDiscRoute *ndisc_route = &routes[i];
+		NMPObject obj;
+		NMPlatformIP6Route *r;
+
+		nmp_object_stackinit (&obj, NMP_OBJECT_TYPE_IP6_ROUTE, NULL);
+		r = NMP_OBJECT_CAST_IP6_ROUTE (&obj);
+		r->ifindex    = priv->ifindex;
+		r->network    = ndisc_route->network;
+		r->plen       = ndisc_route->plen;
+		r->gateway    = ndisc_route->gateway;
+		r->rt_source  = NM_IP_CONFIG_SOURCE_NDISC;
+		r->metric     = metric;
+
+		if (_nm_ip_config_add_obj (priv->multi_idx,
+		                           &priv->idx_ip6_routes_,
+		                           priv->ifindex,
+		                           &obj,
+		                           NULL,
+		                           FALSE,
+		                           TRUE))
+			changed = TRUE;
+	}
+
+	if (nm_dedup_multi_index_dirty_remove_idx (priv->multi_idx, &priv->idx_ip6_routes, FALSE) > 0)
+		changed = TRUE;
+
+	if (changed)
+		_notify_routes (self);
+}
 
 void
 nm_ip6_config_reset_routes (NMIP6Config *self)

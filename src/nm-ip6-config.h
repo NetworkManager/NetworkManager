@@ -191,6 +191,18 @@ gboolean nm_ip6_config_equal (const NMIP6Config *a, const NMIP6Config *b);
 
 void nm_ip6_config_set_privacy (NMIP6Config *self, NMSettingIP6ConfigPrivacy privacy);
 
+struct _NMNDiscAddress;
+void nm_ip6_config_reset_addresses_ndisc (NMIP6Config *self,
+                                          const struct _NMNDiscAddress *addresses,
+                                          guint addresses_n,
+                                          guint8 plen,
+                                          guint32 ifa_flags);
+struct _NMNDiscRoute;
+void nm_ip6_config_reset_routes_ndisc (NMIP6Config *self,
+                                       const struct _NMNDiscRoute *routes,
+                                       guint routes_n,
+                                       guint32 metric);
+
 /*****************************************************************************/
 /* Testing-only functions */
 
