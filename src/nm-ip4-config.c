@@ -164,7 +164,9 @@ _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
                        NMIPConfigDedupMultiIdxType *idx_type,
                        int ifindex,
                        const NMPObject *obj_new,
-                       const NMPlatformObject *pl_new)
+                       const NMPlatformObject *pl_new,
+                       gboolean merge,
+                       gboolean append_force)
 {
 	NMPObject obj_new_stackinit;
 	const NMDedupMultiEntry *entry_old;
@@ -201,58 +203,62 @@ _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
 		const NMPObject *obj_old = entry_old->obj;
 
 		if (nmp_object_equal (obj_new, obj_old))
-			return FALSE;
+			goto append_force_and_out;
 
-		switch (idx_type->obj_type) {
-		case NMP_OBJECT_TYPE_IP4_ADDRESS:
-		case NMP_OBJECT_TYPE_IP6_ADDRESS:
-			/* we want to keep the maximum addr_source. But since we expect
-			 * that usually we already add the maxiumum right away, we first try to
-			 * add the new address (replacing the old one). Only if we later
-			 * find out that addr_source is now lower, we fix it.
-			 */
-			if (obj_new->ip_address.addr_source < obj_old->ip_address.addr_source) {
-				obj_new = nmp_object_stackinit_obj (&obj_new_stackinit, obj_new);
-				obj_new_stackinit.ip_address.addr_source = obj_old->ip_address.addr_source;
-				modified = TRUE;
+		/* if @merge, we merge the new object with the existing one.
+		 * Otherwise, we replace it entirely. */
+		if (merge) {
+			switch (idx_type->obj_type) {
+			case NMP_OBJECT_TYPE_IP4_ADDRESS:
+			case NMP_OBJECT_TYPE_IP6_ADDRESS:
+				/* we want to keep the maximum addr_source. But since we expect
+				 * that usually we already add the maxiumum right away, we first try to
+				 * add the new address (replacing the old one). Only if we later
+				 * find out that addr_source is now lower, we fix it.
+				 */
+				if (obj_new->ip_address.addr_source < obj_old->ip_address.addr_source) {
+					obj_new = nmp_object_stackinit_obj (&obj_new_stackinit, obj_new);
+					obj_new_stackinit.ip_address.addr_source = obj_old->ip_address.addr_source;
+					modified = TRUE;
+				}
+
+				/* for addresses that we read from the kernel, we keep the timestamps as defined
+				 * by the previous source (item_old). The reason is, that the other source configured the lifetimes
+				 * with "what should be" and the kernel values are "what turned out after configuring it".
+				 *
+				 * For other sources, the longer lifetime wins. */
+				if (   (   obj_new->ip_address.addr_source == NM_IP_CONFIG_SOURCE_KERNEL
+				        && obj_old->ip_address.addr_source != NM_IP_CONFIG_SOURCE_KERNEL)
+				    || nm_platform_ip_address_cmp_expiry (NMP_OBJECT_CAST_IP_ADDRESS (obj_old), NMP_OBJECT_CAST_IP_ADDRESS(obj_new)) > 0) {
+					obj_new = nmp_object_stackinit_obj (&obj_new_stackinit, obj_new);
+					obj_new_stackinit.ip_address.timestamp = NMP_OBJECT_CAST_IP_ADDRESS (obj_old)->timestamp;
+					obj_new_stackinit.ip_address.lifetime  = NMP_OBJECT_CAST_IP_ADDRESS (obj_old)->lifetime;
+					obj_new_stackinit.ip_address.preferred = NMP_OBJECT_CAST_IP_ADDRESS (obj_old)->preferred;
+					modified = TRUE;
+				}
+				break;
+			case NMP_OBJECT_TYPE_IP4_ROUTE:
+			case NMP_OBJECT_TYPE_IP6_ROUTE:
+				/* we want to keep the maximum rt_source. But since we expect
+				 * that usually we already add the maxiumum right away, we first try to
+				 * add the new route (replacing the old one). Only if we later
+				 * find out that rt_source is now lower, we fix it.
+				 */
+				if (obj_new->ip_route.rt_source < obj_old->ip_route.rt_source) {
+					obj_new = nmp_object_stackinit_obj (&obj_new_stackinit, obj_new);
+					obj_new_stackinit.ip_route.rt_source = obj_old->ip_route.rt_source;
+					modified = TRUE;
+				}
+				break;
+			default:
+				nm_assert_not_reached ();
+				break;
 			}
 
-			/* for addresses that we read from the kernel, we keep the timestamps as defined
-			 * by the previous source (item_old). The reason is, that the other source configured the lifetimes
-			 * with "what should be" and the kernel values are "what turned out after configuring it".
-			 *
-			 * For other sources, the longer lifetime wins. */
-			if (   (   obj_new->ip_address.addr_source == NM_IP_CONFIG_SOURCE_KERNEL
-			        && obj_old->ip_address.addr_source != NM_IP_CONFIG_SOURCE_KERNEL)
-			    || nm_platform_ip_address_cmp_expiry (NMP_OBJECT_CAST_IP_ADDRESS (obj_old), NMP_OBJECT_CAST_IP_ADDRESS(obj_new)) > 0) {
-				obj_new = nmp_object_stackinit_obj (&obj_new_stackinit, obj_new);
-				obj_new_stackinit.ip_address.timestamp = NMP_OBJECT_CAST_IP_ADDRESS (obj_old)->timestamp;
-				obj_new_stackinit.ip_address.lifetime  = NMP_OBJECT_CAST_IP_ADDRESS (obj_old)->lifetime;
-				obj_new_stackinit.ip_address.preferred = NMP_OBJECT_CAST_IP_ADDRESS (obj_old)->preferred;
-				modified = TRUE;
-			}
-			break;
-		case NMP_OBJECT_TYPE_IP4_ROUTE:
-		case NMP_OBJECT_TYPE_IP6_ROUTE:
-			/* we want to keep the maximum rt_source. But since we expect
-			 * that usually we already add the maxiumum right away, we first try to
-			 * add the new route (replacing the old one). Only if we later
-			 * find out that rt_source is now lower, we fix it.
-			 */
-			if (obj_new->ip_route.rt_source < obj_old->ip_route.rt_source) {
-				obj_new = nmp_object_stackinit_obj (&obj_new_stackinit, obj_new);
-				obj_new_stackinit.ip_route.rt_source = obj_old->ip_route.rt_source;
-				modified = TRUE;
-			}
-			break;
-		default:
-			nm_assert_not_reached ();
-			break;
+			if (   modified
+			    && nmp_object_equal (obj_new, obj_old))
+				goto append_force_and_out;
 		}
-
-		if (   modified
-		    && nmp_object_equal (obj_new, obj_old))
-			return FALSE;
 	}
 
 	if (!nm_dedup_multi_index_add_full (multi_idx,
@@ -269,6 +275,13 @@ _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
 	}
 
 	return TRUE;
+
+append_force_and_out:
+	if (append_force) {
+		if (nm_dedup_multi_entry_reorder (entry_old, NULL, TRUE))
+			return TRUE;
+	}
+	return FALSE;
 }
 
 /*****************************************************************************/
@@ -1884,7 +1897,9 @@ _add_address (NMIP4Config *self, const NMPObject *obj_new, const NMPlatformIP4Ad
 	                           &priv->idx_ip4_addresses_,
 	                           priv->ifindex,
 	                           obj_new,
-	                           (const NMPlatformObject *) new))
+	                           (const NMPlatformObject *) new,
+	                           TRUE,
+	                           FALSE))
 		_notify_addresses (self);
 }
 
@@ -2004,7 +2019,9 @@ _add_route (NMIP4Config *self, const NMPObject *obj_new, const NMPlatformIP4Rout
 	                           &priv->idx_ip4_routes_,
 	                           priv->ifindex,
 	                           obj_new,
-	                           (const NMPlatformObject *) new))
+	                           (const NMPlatformObject *) new,
+	                           TRUE,
+	                           FALSE))
 		_notify_routes (self);
 }
 

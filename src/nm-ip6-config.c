@@ -1258,12 +1258,13 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 		has_minor_changes = TRUE;
 		nm_dedup_multi_index_dirty_set_idx (dst_priv->multi_idx, &dst_priv->idx_ip6_addresses);
 		nm_dedup_multi_iter_for_each (&ipconf_iter_src, head_entry_src) {
-			nm_dedup_multi_index_add (dst_priv->multi_idx,
-			                          &dst_priv->idx_ip6_addresses,
-			                          ipconf_iter_src.current->obj,
-			                          NM_DEDUP_MULTI_IDX_MODE_APPEND_FORCE,
-			                          NULL,
-			                          NULL);
+			_nm_ip_config_add_obj (dst_priv->multi_idx,
+			                       &dst_priv->idx_ip6_addresses_,
+			                       dst_priv->ifindex,
+			                       ipconf_iter_src.current->obj,
+			                       NULL,
+			                       FALSE,
+			                       TRUE);
 		}
 		nm_dedup_multi_index_dirty_remove_idx (dst_priv->multi_idx, &dst_priv->idx_ip6_addresses, FALSE);
 		_notify_addresses (dst);
@@ -1302,12 +1303,13 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 		has_minor_changes = TRUE;
 		nm_dedup_multi_index_dirty_set_idx (dst_priv->multi_idx, &dst_priv->idx_ip6_routes);
 		nm_dedup_multi_iter_for_each (&ipconf_iter_src, head_entry_src) {
-			nm_dedup_multi_index_add (dst_priv->multi_idx,
-			                          &dst_priv->idx_ip6_routes,
-			                          ipconf_iter_src.current->obj,
-			                          NM_DEDUP_MULTI_IDX_MODE_APPEND_FORCE,
-			                          NULL,
-			                          NULL);
+			_nm_ip_config_add_obj (dst_priv->multi_idx,
+			                       &dst_priv->idx_ip6_routes_,
+			                       dst_priv->ifindex,
+			                       ipconf_iter_src.current->obj,
+			                       NULL,
+			                       FALSE,
+			                       TRUE);
 		}
 		nm_dedup_multi_index_dirty_remove_idx (dst_priv->multi_idx, &dst_priv->idx_ip6_routes, FALSE);
 		_notify_routes (dst);
@@ -1549,7 +1551,9 @@ _add_address (NMIP6Config *self,
 	                           &priv->idx_ip6_addresses_,
 	                           priv->ifindex,
 	                           obj_new,
-	                           (const NMPlatformObject *) new))
+	                           (const NMPlatformObject *) new,
+	                           TRUE,
+	                           FALSE))
 		_notify_addresses (self);
 }
 
@@ -1727,7 +1731,9 @@ _add_route (NMIP6Config *self, const NMPObject *obj_new, const NMPlatformIP6Rout
 	                           &priv->idx_ip6_routes_,
 	                           priv->ifindex,
 	                           obj_new,
-	                           (const NMPlatformObject *) new))
+	                           (const NMPlatformObject *) new,
+	                           TRUE,
+	                           FALSE))
 		_notify_routes (self);
 }
 

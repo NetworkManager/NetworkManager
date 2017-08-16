@@ -92,7 +92,9 @@ gboolean _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
                                 NMIPConfigDedupMultiIdxType *idx_type,
                                 int ifindex,
                                 const NMPObject *obj_new,
-                                const NMPlatformObject *pl_new);
+                                const NMPlatformObject *pl_new,
+                                gboolean merge,
+                                gboolean append_force);
 
 /*****************************************************************************/
 
