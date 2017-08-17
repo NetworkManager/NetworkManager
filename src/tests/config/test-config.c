@@ -26,6 +26,7 @@
 #include "nm-test-device.h"
 #include "platform/nm-fake-platform.h"
 #include "nm-bus-manager.h"
+#include "nm-connectivity.h"
 
 #include "nm-test-utils-core.h"
 
@@ -314,6 +315,38 @@ test_config_global_dns (void)
 	                       "/no/such/dir", "", NULL);
 	dns = nm_config_data_get_global_dns_config (nm_config_get_data_orig (config));
 	g_assert (!dns);
+	g_object_unref (config);
+}
+
+static void
+test_config_connectivity_check (void)
+{
+	const char *CONFIG_INTERN = BUILDDIR"/test-connectivity-check-intern.conf";
+	NMConfig *config;
+	NMConnectivity *connectivity;
+
+	g_assert (g_file_set_contents (CONFIG_INTERN, "", 0, NULL));
+	config = setup_config (NULL, SRCDIR "/NetworkManager.conf", CONFIG_INTERN, NULL,
+	                       "/no/such/dir", "", NULL);
+	connectivity = nm_connectivity_get();
+
+	g_assert (nm_connectivity_check_enabled (connectivity));
+
+	/* disable connectivity checking */
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: signal *");
+	nm_config_set_connectivity_check_enabled (config, FALSE);
+	g_test_assert_expected_messages ();
+
+	g_assert (!nm_connectivity_check_enabled (connectivity));
+
+	/* re-enable connectivity checking */
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, "*config: signal *");
+	nm_config_set_connectivity_check_enabled (config, TRUE);
+	g_test_assert_expected_messages ();
+
+	g_assert (nm_connectivity_check_enabled (connectivity));
+
+	g_object_unref (connectivity);
 	g_object_unref (config);
 }
 
@@ -1018,6 +1051,7 @@ main (int argc, char **argv)
 
 	g_test_add_func ("/config/set-values", test_config_set_values);
 	g_test_add_func ("/config/global-dns", test_config_global_dns);
+	g_test_add_func ("/config/connectivity-check", test_config_connectivity_check);
 
 	g_test_add_func ("/config/signal", test_config_signal);
 

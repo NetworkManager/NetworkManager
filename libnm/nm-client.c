@@ -123,6 +123,8 @@ enum {
 	PROP_WIMAX_HARDWARE_ENABLED,
 	PROP_ACTIVE_CONNECTIONS,
 	PROP_CONNECTIVITY,
+	PROP_CONNECTIVITY_CHECK_AVAILABLE,
+	PROP_CONNECTIVITY_CHECK_ENABLED,
 	PROP_PRIMARY_CONNECTION,
 	PROP_ACTIVATING_CONNECTION,
 	PROP_DEVICES,
@@ -471,6 +473,72 @@ nm_client_wimax_hardware_get_enabled (NMClient *client)
 		return FALSE;
 
 	return nm_manager_wimax_hardware_get_enabled (NM_CLIENT_GET_PRIVATE (client)->manager);
+}
+
+/**
+ * nm_client_connectivity_check_get_available:
+ * @client: a #NMClient
+ *
+ * Determine whether connectivity checking is available.  This
+ * requires that the URI of a connectivity service has been set in the
+ * configuration file.
+ *
+ * Returns: %TRUE if connectivity checking is available.
+ *
+ * Since: 1.10
+ */
+gboolean
+nm_client_connectivity_check_get_available (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+
+	if (!nm_client_get_nm_running (client))
+		return FALSE;
+
+	return nm_manager_connectivity_check_get_available (NM_CLIENT_GET_PRIVATE (client)->manager);
+}
+
+/**
+ * nm_client_connectivity_check_get_enabled:
+ * @client: a #NMClient
+ *
+ * Determine whether connectivity checking is enabled.
+ *
+ * Returns: %TRUE if connectivity checking is enabled.
+ *
+ * Since: 1.10
+ */
+gboolean
+nm_client_connectivity_check_get_enabled (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+
+	if (!nm_client_get_nm_running (client))
+		return FALSE;
+
+	return nm_manager_connectivity_check_get_enabled (NM_CLIENT_GET_PRIVATE (client)->manager);
+}
+
+/**
+ * nm_client_connectivity_check_set_enabled:
+ * @client: a #NMClient
+ * @enabled: %TRUE to enable connectivity checking
+ *
+ * Enable or disable connectivity checking.  Note that if a
+ * connectivity checking URI has not been configured, this will not
+ * have any effect.
+ *
+ * Since: 1.10
+ */
+void
+nm_client_connectivity_check_set_enabled (NMClient *client, gboolean enabled)
+{
+	g_return_if_fail (NM_IS_CLIENT (client));
+
+	if (!nm_client_get_nm_running (client))
+		return;
+
+	nm_manager_connectivity_check_set_enabled (NM_CLIENT_GET_PRIVATE (client)->manager, enabled);
 }
 
 /**
@@ -2593,6 +2661,7 @@ set_property (GObject *object, guint prop_id,
 	case PROP_WIRELESS_ENABLED:
 	case PROP_WWAN_ENABLED:
 	case PROP_WIMAX_ENABLED:
+	case PROP_CONNECTIVITY_CHECK_ENABLED:
 		if (priv->manager)
 			g_object_set_property (G_OBJECT (priv->manager), pspec->name, value);
 		break;
@@ -2659,6 +2728,12 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_CONNECTIVITY:
 		g_value_set_enum (value, nm_client_get_connectivity (self));
+		break;
+	case PROP_CONNECTIVITY_CHECK_AVAILABLE:
+		g_value_set_boolean (value, nm_client_connectivity_check_get_available (self));
+		break;
+	case PROP_CONNECTIVITY_CHECK_ENABLED:
+		g_value_set_boolean (value, nm_client_connectivity_check_get_enabled (self));
 		break;
 	case PROP_PRIMARY_CONNECTION:
 		g_value_set_object (value, nm_client_get_primary_connection (self));
@@ -2896,6 +2971,34 @@ nm_client_class_init (NMClientClass *client_class)
 		                    NM_CONNECTIVITY_UNKNOWN,
 		                    G_PARAM_READABLE |
 		                    G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMClient::connectivity-check-available
+	 *
+	 * Whether a connectivity checking service has been configured.
+	 *
+	 * Since: 1.10
+	 */
+	g_object_class_install_property
+		(object_class, PROP_CONNECTIVITY_CHECK_AVAILABLE,
+		 g_param_spec_boolean (NM_CLIENT_CONNECTIVITY_CHECK_AVAILABLE, "", "",
+		                       FALSE,
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMClient::connectivity-check-enabled
+	 *
+	 * Whether a connectivity checking service has been enabled.
+	 *
+	 * Since: 1.10
+	 */
+	g_object_class_install_property
+		(object_class, PROP_CONNECTIVITY_CHECK_ENABLED,
+		 g_param_spec_boolean (NM_CLIENT_CONNECTIVITY_CHECK_ENABLED, "", "",
+		                       FALSE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMClient:primary-connection:

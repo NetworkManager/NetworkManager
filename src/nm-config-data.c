@@ -65,6 +65,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_CONFIG_DESCRIPTION,
 	PROP_KEYFILE_USER,
 	PROP_KEYFILE_INTERN,
+	PROP_CONNECTIVITY_ENABLED,
 	PROP_CONNECTIVITY_URI,
 	PROP_CONNECTIVITY_INTERVAL,
 	PROP_CONNECTIVITY_RESPONSE,
@@ -88,6 +89,7 @@ typedef struct {
 	MatchSectionInfo *device_infos;
 
 	struct {
+		gboolean enabled;
 		char *uri;
 		char *response;
 		guint interval;
@@ -236,6 +238,14 @@ nm_config_data_get_plugins (const NMConfigData *self, gboolean allow_default)
 		list = g_key_file_get_string_list (kf, NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins", NULL, NULL);
 	}
 	return _nm_utils_strv_cleanup (list, TRUE, TRUE, TRUE);
+}
+
+gboolean
+nm_config_data_get_connectivity_enabled (const NMConfigData *self)
+{
+	g_return_val_if_fail (self, FALSE);
+
+	return NM_CONFIG_DATA_GET_PRIVATE (self)->connectivity.enabled;
 }
 
 const char *
@@ -1380,7 +1390,8 @@ nm_config_data_diff (NMConfigData *old_data, NMConfigData *new_data)
 	    || g_strcmp0 (nm_config_data_get_config_description (old_data), nm_config_data_get_config_description (new_data)) != 0)
 		changes |= NM_CONFIG_CHANGE_CONFIG_FILES;
 
-	if (   nm_config_data_get_connectivity_interval (old_data) != nm_config_data_get_connectivity_interval (new_data)
+	if (   nm_config_data_get_connectivity_enabled (old_data) != nm_config_data_get_connectivity_enabled (new_data)
+	    || nm_config_data_get_connectivity_interval (old_data) != nm_config_data_get_connectivity_interval (new_data)
 	    || g_strcmp0 (nm_config_data_get_connectivity_uri (old_data), nm_config_data_get_connectivity_uri (new_data))
 	    || g_strcmp0 (nm_config_data_get_connectivity_response (old_data), nm_config_data_get_connectivity_response (new_data)))
 		changes |= NM_CONFIG_CHANGE_CONNECTIVITY;
@@ -1419,6 +1430,9 @@ get_property (GObject *object,
 		break;
 	case PROP_CONFIG_DESCRIPTION:
 		g_value_set_string (value, nm_config_data_get_config_description (self));
+		break;
+	case PROP_CONNECTIVITY_ENABLED:
+		g_value_set_boolean (value, nm_config_data_get_connectivity_enabled (self));
 		break;
 	case PROP_CONNECTIVITY_URI:
 		g_value_set_string (value, nm_config_data_get_connectivity_uri (self));
@@ -1517,6 +1531,7 @@ constructed (GObject *object)
 	priv->connection_infos = _match_section_infos_construct (priv->keyfile, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION);
 	priv->device_infos = _match_section_infos_construct (priv->keyfile, NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE);
 
+	priv->connectivity.enabled = nm_config_keyfile_get_boolean (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "enabled", TRUE);
 	priv->connectivity.uri = nm_strstrip (g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "uri", NULL));
 	priv->connectivity.response = g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "response", NULL);
 
@@ -1662,6 +1677,12 @@ nm_config_data_class_init (NMConfigDataClass *config_class)
 	                         G_PARAM_WRITABLE |
 	                         G_PARAM_CONSTRUCT_ONLY |
 	                         G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_CONNECTIVITY_ENABLED] =
+	     g_param_spec_string (NM_CONFIG_DATA_CONNECTIVITY_ENABLED, "", "",
+	                          NULL,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_CONNECTIVITY_URI] =
 	     g_param_spec_string (NM_CONFIG_DATA_CONNECTIVITY_URI, "", "",

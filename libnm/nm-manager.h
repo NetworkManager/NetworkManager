@@ -46,6 +46,8 @@ G_BEGIN_DECLS
 #define NM_MANAGER_WIMAX_HARDWARE_ENABLED "wimax-hardware-enabled"
 #define NM_MANAGER_ACTIVE_CONNECTIONS "active-connections"
 #define NM_MANAGER_CONNECTIVITY "connectivity"
+#define NM_MANAGER_CONNECTIVITY_CHECK_AVAILABLE "connectivity-check-available"
+#define NM_MANAGER_CONNECTIVITY_CHECK_ENABLED "connectivity-check-enabled"
 #define NM_MANAGER_PRIMARY_CONNECTION "primary-connection"
 #define NM_MANAGER_ACTIVATING_CONNECTION "activating-connection"
 #define NM_MANAGER_DEVICES "devices"
@@ -96,6 +98,16 @@ gboolean  nm_manager_wwan_hardware_get_enabled (NMManager *manager);
 gboolean  nm_manager_wimax_get_enabled (NMManager *manager);
 void      nm_manager_wimax_set_enabled (NMManager *manager, gboolean enabled);
 gboolean  nm_manager_wimax_hardware_get_enabled (NMManager *manager);
+
+NM_AVAILABLE_IN_1_10
+gboolean  nm_manager_connectivity_check_get_available (NMManager *manager);
+
+NM_AVAILABLE_IN_1_10
+gboolean  nm_manager_connectivity_check_get_enabled (NMManager *manager);
+
+NM_AVAILABLE_IN_1_10
+void      nm_manager_connectivity_check_set_enabled (NMManager *manager,
+                                                     gboolean enabled);
 
 gboolean nm_manager_get_logging (NMManager *manager,
                                  char **level,

@@ -83,6 +83,9 @@ typedef struct {
 
 	gboolean wimax_enabled;
 	gboolean wimax_hw_enabled;
+
+	gboolean connectivity_check_available;
+	gboolean connectivity_check_enabled;
 } NMManagerPrivate;
 
 enum {
@@ -99,6 +102,8 @@ enum {
 	PROP_WIMAX_HARDWARE_ENABLED,
 	PROP_ACTIVE_CONNECTIONS,
 	PROP_CONNECTIVITY,
+	PROP_CONNECTIVITY_CHECK_AVAILABLE,
+	PROP_CONNECTIVITY_CHECK_ENABLED,
 	PROP_PRIMARY_CONNECTION,
 	PROP_ACTIVATING_CONNECTION,
 	PROP_DEVICES,
@@ -179,6 +184,8 @@ init_dbus (NMObject *object)
 		{ NM_MANAGER_WIMAX_HARDWARE_ENABLED,    &priv->wimax_hw_enabled },
 		{ NM_MANAGER_ACTIVE_CONNECTIONS,        &priv->active_connections, NULL, NM_TYPE_ACTIVE_CONNECTION, "active-connection" },
 		{ NM_MANAGER_CONNECTIVITY,              &priv->connectivity },
+		{ NM_MANAGER_CONNECTIVITY_CHECK_AVAILABLE, &priv->connectivity_check_available },
+		{ NM_MANAGER_CONNECTIVITY_CHECK_ENABLED, &priv->connectivity_check_enabled },
 		{ NM_MANAGER_PRIMARY_CONNECTION,        &priv->primary_connection, NULL, NM_TYPE_ACTIVE_CONNECTION },
 		{ NM_MANAGER_ACTIVATING_CONNECTION,     &priv->activating_connection, NULL, NM_TYPE_ACTIVE_CONNECTION },
 		{ NM_MANAGER_DEVICES,                   &priv->devices, NULL, NM_TYPE_DEVICE, "device" },
@@ -232,6 +239,8 @@ nm_permission_to_client (const char *nm)
 		return NM_CLIENT_PERMISSION_CHECKPOINT_ROLLBACK;
 	else if (!strcmp (nm, NM_AUTH_PERMISSION_ENABLE_DISABLE_STATISTICS))
 		return NM_CLIENT_PERMISSION_ENABLE_DISABLE_STATISTICS;
+	else if (!strcmp (nm, NM_AUTH_PERMISSION_ENABLE_DISABLE_CONNECTIVITY_CHECK))
+		return NM_CLIENT_PERMISSION_ENABLE_DISABLE_CONNECTIVITY_CHECK;
 
 	return NM_CLIENT_PERMISSION_NONE;
 }
@@ -499,6 +508,31 @@ nm_manager_wimax_hardware_get_enabled (NMManager *manager)
 	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
 
 	return NM_MANAGER_GET_PRIVATE (manager)->wimax_hw_enabled;
+}
+
+gboolean
+nm_manager_connectivity_check_get_available (NMManager *manager)
+{
+	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
+
+	return NM_MANAGER_GET_PRIVATE (manager)->connectivity_check_available;
+}
+
+gboolean
+nm_manager_connectivity_check_get_enabled (NMManager *manager)
+{
+	return NM_MANAGER_GET_PRIVATE (manager)->connectivity_check_enabled;
+}
+
+void
+nm_manager_connectivity_check_set_enabled (NMManager *manager, gboolean enabled)
+{
+	g_return_if_fail (NM_IS_MANAGER (manager));
+
+	_nm_object_set_property (NM_OBJECT (manager),
+	                         NM_DBUS_INTERFACE,
+	                         "ConnectivityCheckEnabled",
+	                         "b", enabled);
 }
 
 gboolean
@@ -1350,6 +1384,13 @@ set_property (GObject *object, guint prop_id,
 			/* Let the property value flip when we get the change signal from NM */
 		}
 		break;
+	case PROP_CONNECTIVITY_CHECK_ENABLED:
+		b = g_value_get_boolean (value);
+		if (priv->connectivity_check_enabled != b) {
+			nm_manager_connectivity_check_set_enabled (NM_MANAGER (object), b);
+			/* Let the property value flip when we get the change signal from NM */
+		}
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1401,6 +1442,12 @@ get_property (GObject *object,
 		break;
 	case PROP_CONNECTIVITY:
 		g_value_set_enum (value, priv->connectivity);
+		break;
+	case PROP_CONNECTIVITY_CHECK_AVAILABLE:
+		g_value_set_boolean (value, priv->connectivity_check_available);
+		break;
+	case PROP_CONNECTIVITY_CHECK_ENABLED:
+		g_value_set_boolean (value, priv->connectivity_check_enabled);
 		break;
 	case PROP_PRIMARY_CONNECTION:
 		g_value_set_object (value, priv->primary_connection);
@@ -1521,6 +1568,18 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		                    NM_CONNECTIVITY_UNKNOWN,
 		                    G_PARAM_READABLE |
 		                    G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_CONNECTIVITY_CHECK_AVAILABLE,
+		 g_param_spec_boolean (NM_MANAGER_CONNECTIVITY_CHECK_AVAILABLE, "", "",
+		                       FALSE,
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_CONNECTIVITY_CHECK_ENABLED,
+		 g_param_spec_boolean (NM_MANAGER_CONNECTIVITY_CHECK_ENABLED, "", "",
+		                       FALSE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 	g_object_class_install_property
 		(object_class, PROP_PRIMARY_CONNECTION,
 		 g_param_spec_object (NM_MANAGER_PRIMARY_CONNECTION, "", "",

@@ -151,5 +151,14 @@
     </defaults>
   </action>
 
+  <action id="org.freedesktop.NetworkManager.enable-disable-connectivity-check">
+    <_description>Enable or disable connectivity checking</_description>
+    <_message>System policy prevents enabling or disabling connectivity checking</_message>
+    <defaults>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
+
 </policyconfig>
 
