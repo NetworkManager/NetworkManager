@@ -3262,6 +3262,7 @@ nm_platform_ip4_address_sync (NMPlatform *self,
 	guint i, j, len;
 	NMPLookup lookup;
 	guint32 lifetime, preferred;
+	guint32 ifa_flags;
 
 	_CHECK_SELF (self, klass, FALSE);
 
@@ -3380,6 +3381,10 @@ delete_and_next:
 	if (!known_addresses)
 		return TRUE;
 
+	ifa_flags =   nm_platform_check_support_kernel_extended_ifa_flags (self)
+	            ? IFA_F_NOPREFIXROUTE
+	            : 0;
+
 	/* Add missing addresses */
 	for (i = 0; i < known_addresses->len; i++) {
 		const NMPObject *o;
@@ -3396,7 +3401,8 @@ delete_and_next:
 
 		if (!nm_platform_ip4_address_add (self, ifindex, known_address->address, known_address->plen,
 		                                  known_address->peer_address, lifetime, preferred,
-		                                  0, known_address->label))
+		                                  ifa_flags,
+		                                  known_address->label))
 			goto delete_and_next2;
 
 		continue;
@@ -3950,8 +3956,8 @@ _ip4_dev_route_blacklist_schedule (NMPlatform *self)
  * @ip4_dev_route_blacklist:
  *
  * When adding an IP address, kernel automatically adds a device route.
- * This can be suppressed via the IFA_F_NOPREFIXROUTE address flag. For IPv6
- * addresses, we require kernel support for IFA_F_NOPREFIXROUTE and always
+ * This can be suppressed via the IFA_F_NOPREFIXROUTE address flag. For proper
+ * IPv6 support, we require kernel support for IFA_F_NOPREFIXROUTE and always
  * add the device route manually.
  *
  * For IPv4, this flag is rather new and we don't rely on it yet. We want to use
