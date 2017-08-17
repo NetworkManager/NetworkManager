@@ -1180,8 +1180,14 @@ global:
 
 libnm_1_10_0 {
 global:
+	nm_client_connectivity_check_get_available;
+	nm_client_connectivity_check_get_enabled;
+	nm_client_connectivity_check_set_enabled;
 	nm_device_dummy_get_hw_address;
 	nm_device_ppp_get_type;
+	nm_manager_connectivity_check_get_available;
+	nm_manager_connectivity_check_get_enabled;
+	nm_manager_connectivity_check_set_enabled;
 	nm_setting_bridge_get_group_forward_mask;
 	nm_setting_pppoe_get_parent;
 	nm_setting_wireless_security_get_pmf;
