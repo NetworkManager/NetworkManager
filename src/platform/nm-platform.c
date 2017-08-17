@@ -3482,6 +3482,26 @@ nm_platform_ip_address_flush (NMPlatform *self,
 
 /*****************************************************************************/
 
+static guint8
+_ip_route_scope_inv_get_normalized (const NMPlatformIP4Route *route)
+{
+	/* in kernel, you cannot set scope to RT_SCOPE_NOWHERE (255).
+	 * That means, in NM, we treat RT_SCOPE_NOWHERE as unset, and detect
+	 * it based on the presence of the gateway. In other words, when adding
+	 * a route with scope RT_SCOPE_NOWHERE (in NetworkManager) to kernel,
+	 * the resulting scope will be either "link" or "universe" (depending
+	 * on the gateway).
+	 *
+	 * Note that internally, we track @scope_inv is the inverse of scope,
+	 * so that the default equals zero (~(RT_SCOPE_NOWHERE)).
+	 **/
+	if (route->scope_inv == 0) {
+		return nm_platform_route_scope_inv (!route->gateway
+		                                    ? RT_SCOPE_LINK : RT_SCOPE_UNIVERSE);
+	}
+	return route->scope_inv;
+}
+
 /**
  * nm_platform_ip_route_normalize:
  * @addr_family: AF_INET or AF_INET6
@@ -3503,8 +3523,7 @@ nm_platform_ip_route_normalize (int addr_family,
 		r4 = (NMPlatformIP4Route *) route;
 		r4->network = nm_utils_ip4_address_clear_host_address (r4->network, r4->plen);
 		r4->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (r4->rt_source);
-		r4->scope_inv = nm_platform_route_scope_inv (!r4->gateway
-		                                             ? RT_SCOPE_LINK : RT_SCOPE_UNIVERSE);
+		r4->scope_inv = _ip_route_scope_inv_get_normalized (r4);
 		break;
 	case AF_INET6:
 		r6 = (NMPlatformIP6Route *) route;
@@ -4814,7 +4833,7 @@ nm_platform_ip4_route_hash (const NMPlatformIP4Route *obj, NMPlatformIPRouteCmpT
 			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
 				h = NM_HASH_COMBINE (h, obj->ifindex);
 				h = NM_HASH_COMBINE (h, nmp_utils_ip_config_source_round_trip_rtprot (obj->rt_source));
-				h = NM_HASH_COMBINE (h, obj->scope_inv);
+				h = NM_HASH_COMBINE (h, _ip_route_scope_inv_get_normalized (obj));
 				h = NM_HASH_COMBINE (h, obj->gateway);
 				h = NM_HASH_COMBINE (h, obj->mss);
 				h = NM_HASH_COMBINE (h, obj->pref_src);
@@ -4840,12 +4859,14 @@ nm_platform_ip4_route_hash (const NMPlatformIP4Route *obj, NMPlatformIPRouteCmpT
 			h = NM_HASH_COMBINE (h, obj->plen);
 			h = NM_HASH_COMBINE (h, obj->metric);
 			h = NM_HASH_COMBINE (h, obj->gateway);
-			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
+			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
 				h = NM_HASH_COMBINE (h, nmp_utils_ip_config_source_round_trip_rtprot (obj->rt_source));
-			else
+				h = NM_HASH_COMBINE (h, _ip_route_scope_inv_get_normalized (obj));
+			} else {
 				h = NM_HASH_COMBINE (h, obj->rt_source);
+				h = NM_HASH_COMBINE (h, obj->scope_inv);
+			}
 			h = NM_HASH_COMBINE (h, obj->mss);
-			h = NM_HASH_COMBINE (h, obj->scope_inv);
 			h = NM_HASH_COMBINE (h, obj->pref_src);
 			h = NM_HASH_COMBINE (h, obj->rt_cloned);
 			h = NM_HASH_COMBINE (h, obj->tos);
@@ -4884,7 +4905,8 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 			NM_CMP_FIELD (a, b, ifindex);
 			NM_CMP_DIRECT (nmp_utils_ip_config_source_round_trip_rtprot (a->rt_source),
 			               nmp_utils_ip_config_source_round_trip_rtprot (b->rt_source));
-			NM_CMP_FIELD (a, b, scope_inv);
+			NM_CMP_DIRECT (_ip_route_scope_inv_get_normalized (a),
+			               _ip_route_scope_inv_get_normalized (b));
 			NM_CMP_FIELD (a, b, gateway);
 			NM_CMP_FIELD (a, b, mss);
 			NM_CMP_FIELD (a, b, pref_src);
@@ -4913,10 +4935,13 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 		if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
 			NM_CMP_DIRECT (nmp_utils_ip_config_source_round_trip_rtprot (a->rt_source),
 			               nmp_utils_ip_config_source_round_trip_rtprot (b->rt_source));
-		} else
+			NM_CMP_DIRECT (_ip_route_scope_inv_get_normalized (a),
+			               _ip_route_scope_inv_get_normalized (b));
+		} else {
 			NM_CMP_FIELD (a, b, rt_source);
+			NM_CMP_FIELD (a, b, scope_inv);
+		}
 		NM_CMP_FIELD (a, b, mss);
-		NM_CMP_FIELD (a, b, scope_inv);
 		NM_CMP_FIELD (a, b, pref_src);
 		NM_CMP_FIELD_UNSAFE (a, b, rt_cloned);
 		NM_CMP_FIELD (a, b, tos);
