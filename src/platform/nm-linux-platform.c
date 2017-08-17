@@ -304,6 +304,7 @@ _support_user_ipv6ll_detect (struct nlattr **tb)
 
 	nm_assert (_support_user_ipv6ll_still_undecided ());
 
+	/* IFLA_INET6_ADDR_GEN_MODE was added in kernel 3.17, dated 5 October, 2014. */
 	supported = !!tb[IFLA_INET6_ADDR_GEN_MODE];
 	_support_user_ipv6ll = supported ? 1 : -1;
 	_LOG2D ("kernel-support: IFLA_INET6_ADDR_GEN_MODE: %s",
@@ -348,8 +349,11 @@ _support_kernel_extended_ifa_flags_detect (struct nl_msg *msg)
 
 	/* see if the nl_msg contains the IFA_FLAGS attribute. If it does,
 	 * we assume, that the kernel supports extended flags, IFA_F_MANAGETEMPADDR
-	 * and IFA_F_NOPREFIXROUTE (they were added together).
-	 **/
+	 * and IFA_F_NOPREFIXROUTE for IPv6. They were added together in kernel 3.14,
+	 * dated 30 March, 2014.
+	 *
+	 * For IPv4, IFA_F_NOPREFIXROUTE was added later, but there is no easy
+	 * way to detect kernel support. */
 	support = !!nlmsg_find_attr (msg_hdr, sizeof (struct ifaddrmsg), IFA_FLAGS);
 	_support_kernel_extended_ifa_flags = support ? 1 : -1;
 	_LOG2D ("kernel-support: extended-ifa-flags: %s", support ? "detected" : "not detected");
