@@ -705,23 +705,48 @@ device_state_changed (NMActiveConnection *active,
 }
 
 static void
-add_ip4_vpn_gateway_route (NMIP4Config *config, NMDevice *parent_device, guint32 vpn_gw)
+add_ip4_vpn_gateway_route (NMIP4Config *config,
+                           NMDevice *parent_device,
+                           in_addr_t vpn_gw,
+                           NMPlatform *platform)
 {
 	NMIP4Config *parent_config;
 	guint32 parent_gw;
 	NMPlatformIP4Route route;
 	guint32 route_metric;
+	nm_auto_nmpobj const NMPObject *route_resolved = NULL;
 
 	g_return_if_fail (NM_IS_IP4_CONFIG (config));
 	g_return_if_fail (NM_IS_DEVICE (parent_device));
 	g_return_if_fail (vpn_gw != 0);
+	nm_assert (nm_ip4_config_get_ifindex (config) > 0);
 
 	/* Set up a route to the VPN gateway's public IP address through the default
 	 * network device if the VPN gateway is on a different subnet.
 	 */
 	parent_config = nm_device_get_ip4_config (parent_device);
 	g_return_if_fail (parent_config != NULL);
+
 	parent_gw = nm_ip4_config_get_gateway (parent_config);
+
+	/* If the VPN gateway is in the same subnet as one of the parent device's
+	 * IP addresses, don't add the host route to it, but a route through the
+	 * parent device.
+	 */
+	if (nm_ip4_config_destination_is_direct (parent_config, vpn_gw, 32))
+		parent_gw = 0;
+
+	/* actually, let's ask kernel how to reach @vpn_gw. If (and only if)
+	 * the destination is on @parent_device, then we take that @parent_gw. */
+	if (nm_platform_ip_route_get (platform,
+	                              AF_INET,
+	                              &vpn_gw,
+	                              (NMPObject **) &route_resolved) == NM_PLATFORM_ERROR_SUCCESS) {
+		const NMPlatformIP4Route *r = NMP_OBJECT_CAST_IP4_ROUTE (route_resolved);
+
+		if (r->ifindex == nm_ip4_config_get_ifindex (config))
+			parent_gw = r->gateway;
+	}
 
 	route_metric = nm_device_get_ip4_route_metric (parent_device);
 
@@ -729,17 +754,6 @@ add_ip4_vpn_gateway_route (NMIP4Config *config, NMDevice *parent_device, guint32
 	route.network = vpn_gw;
 	route.plen = 32;
 	route.gateway = parent_gw;
-	/* Set up a device route if the parent device has no gateway */
-	if (!parent_gw)
-		route.ifindex = nm_device_get_ip_ifindex (parent_device);
-
-	/* If the VPN gateway is in the same subnet as one of the parent device's
-	 * IP addresses, don't add the host route to it, but a route through the
-	 * parent device.
-	 */
-	if (nm_ip4_config_destination_is_direct (parent_config, vpn_gw, 32))
-		route.gateway = 0;
-
 	route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
 	route.metric = route_metric;
 	nm_ip4_config_add_route (config, &route);
@@ -755,7 +769,6 @@ add_ip4_vpn_gateway_route (NMIP4Config *config, NMDevice *parent_device, guint32
 		route.plen = 32;
 		route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
 		route.metric = route_metric;
-
 		nm_ip4_config_add_route (config, &route);
 	}
 }
@@ -763,22 +776,47 @@ add_ip4_vpn_gateway_route (NMIP4Config *config, NMDevice *parent_device, guint32
 static void
 add_ip6_vpn_gateway_route (NMIP6Config *config,
                            NMDevice *parent_device,
-                           const struct in6_addr *vpn_gw)
+                           const struct in6_addr *vpn_gw,
+                           NMPlatform *platform)
 {
 	NMIP6Config *parent_config;
 	const struct in6_addr *parent_gw;
 	NMPlatformIP6Route route;
 	guint32 route_metric;
+	nm_auto_nmpobj const NMPObject *route_resolved = NULL;
 
 	g_return_if_fail (NM_IS_IP6_CONFIG (config));
 	g_return_if_fail (NM_IS_DEVICE (parent_device));
 	g_return_if_fail (vpn_gw != NULL);
+	nm_assert (nm_ip6_config_get_ifindex (config) > 0);
 
 	parent_config = nm_device_get_ip6_config (parent_device);
 	g_return_if_fail (parent_config != NULL);
+
+	/* we add a direct route to the VPN gateway, but we only do that
+	 * on the @parent_device. That is probably not correct in every case... */
 	parent_gw = nm_ip6_config_get_gateway (parent_config);
 	if (!parent_gw)
 		return;
+
+	/* If the VPN gateway is in the same subnet as one of the parent device's
+	 * IP addresses, don't add the host route to it, but a route through the
+	 * parent device.
+	 */
+	if (nm_ip6_config_destination_is_direct (parent_config, vpn_gw, 128))
+		parent_gw = &in6addr_any;
+
+	/* actually, let's ask kernel how to reach @vpn_gw. If (and only if)
+	 * the destination is on @parent_device, then we take that @parent_gw. */
+	if (nm_platform_ip_route_get (platform,
+	                              AF_INET6,
+	                              vpn_gw,
+	                              (NMPObject **) &route_resolved) == NM_PLATFORM_ERROR_SUCCESS) {
+		const NMPlatformIP6Route *r = NMP_OBJECT_CAST_IP6_ROUTE (route_resolved);
+
+		if (r->ifindex == nm_ip6_config_get_ifindex (config))
+			parent_gw = &r->gateway;
+	}
 
 	route_metric = nm_device_get_ip6_route_metric (parent_device);
 
@@ -786,14 +824,6 @@ add_ip6_vpn_gateway_route (NMIP6Config *config,
 	route.network = *vpn_gw;
 	route.plen = 128;
 	route.gateway = *parent_gw;
-
-	/* If the VPN gateway is in the same subnet as one of the parent device's
-	 * IP addresses, don't add the host route to it, but a route through the
-	 * parent device.
-	 */
-	if (nm_ip6_config_destination_is_direct (parent_config, vpn_gw, 128))
-		route.gateway = in6addr_any;
-
 	route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
 	route.metric = route_metric;
 	nm_ip6_config_add_route (config, &route);
@@ -803,13 +833,14 @@ add_ip6_vpn_gateway_route (NMIP6Config *config,
 	 * routes include a subnet that matches the parent device's subnet,
 	 * the parent device's gateway would get routed through the VPN and fail.
 	 */
-	memset (&route, 0, sizeof (route));
-	route.network = *parent_gw;
-	route.plen = 128;
-	route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
-	route.metric = route_metric;
-
-	nm_ip6_config_add_route (config, &route);
+	if (!IN6_IS_ADDR_UNSPECIFIED (parent_gw)) {
+		memset (&route, 0, sizeof (route));
+		route.network = *parent_gw;
+		route.plen = 128;
+		route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
+		route.metric = route_metric;
+		nm_ip6_config_add_route (config, &route);
+	}
 }
 
 NMVpnConnection *
@@ -1068,24 +1099,36 @@ apply_parent_device_config (NMVpnConnection *self)
 		 * vpn-config. Instead we tell NMDefaultRouteManager directly about the
 		 * default route. */
 		ifindex = nm_device_get_ip_ifindex (parent_dev);
-		if (priv->ip4_config) {
-			vpn4_parent_config = nm_ip4_config_new (nm_netns_get_multi_idx (priv->netns),
-			                                        ifindex);
-			nm_ip4_config_merge (vpn4_parent_config, priv->ip4_config, NM_IP_CONFIG_MERGE_NO_DNS);
-		}
-		if (priv->ip6_config) {
-			vpn6_parent_config = nm_ip6_config_new (nm_netns_get_multi_idx (priv->netns),
-			                                        ifindex);
-			nm_ip6_config_merge (vpn6_parent_config, priv->ip6_config, NM_IP_CONFIG_MERGE_NO_DNS);
-			nm_ip6_config_set_gateway (vpn6_parent_config, NULL);
+		if (ifindex > 0) {
+			if (priv->ip4_config) {
+				vpn4_parent_config = nm_ip4_config_new (nm_netns_get_multi_idx (priv->netns),
+				                                        ifindex);
+				nm_ip4_config_merge (vpn4_parent_config, priv->ip4_config, NM_IP_CONFIG_MERGE_NO_DNS);
+			}
+			if (priv->ip6_config) {
+				vpn6_parent_config = nm_ip6_config_new (nm_netns_get_multi_idx (priv->netns),
+				                                        ifindex);
+				nm_ip6_config_merge (vpn6_parent_config, priv->ip6_config, NM_IP_CONFIG_MERGE_NO_DNS);
+				nm_ip6_config_set_gateway (vpn6_parent_config, NULL);
+			}
 		}
 	}
 
 	/* Add any explicit route to the VPN gateway through the parent device */
-	if (vpn4_parent_config && priv->ip4_external_gw)
-		add_ip4_vpn_gateway_route (vpn4_parent_config, parent_dev, priv->ip4_external_gw);
-	if (vpn6_parent_config && priv->ip6_external_gw)
-		add_ip6_vpn_gateway_route (vpn6_parent_config, parent_dev, priv->ip6_external_gw);
+	if (   vpn4_parent_config
+	    && priv->ip4_external_gw) {
+		add_ip4_vpn_gateway_route (vpn4_parent_config,
+		                           parent_dev,
+		                           priv->ip4_external_gw,
+		                           nm_netns_get_platform (priv->netns));
+	}
+	if (   vpn6_parent_config
+	    && priv->ip6_external_gw) {
+		add_ip6_vpn_gateway_route (vpn6_parent_config,
+		                           parent_dev,
+		                           priv->ip6_external_gw,
+		                           nm_netns_get_platform (priv->netns));
+	}
 
 	nm_device_replace_vpn4_config (parent_dev, priv->last_device_ip4_config, vpn4_parent_config);
 	g_clear_object (&priv->last_device_ip4_config);
