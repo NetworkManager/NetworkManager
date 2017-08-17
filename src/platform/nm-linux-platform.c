@@ -5836,29 +5836,19 @@ ip_route_add (NMPlatform *platform,
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	NMPObject obj;
-	NMPlatformIP4Route *r4;
-	NMPlatformIP6Route *r6;
 
 	switch (addr_family) {
 	case AF_INET:
 		nmp_object_stackinit (&obj, NMP_OBJECT_TYPE_IP4_ROUTE, (const NMPlatformObject *) route);
-		r4 = NMP_OBJECT_CAST_IP4_ROUTE (&obj);
-		r4->network = nm_utils_ip4_address_clear_host_address (r4->network, r4->plen);
-		r4->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (r4->rt_source),
-		r4->scope_inv = nm_platform_route_scope_inv (!r4->gateway
-		                                             ? RT_SCOPE_LINK : RT_SCOPE_UNIVERSE);
 		break;
 	case AF_INET6:
 		nmp_object_stackinit (&obj, NMP_OBJECT_TYPE_IP6_ROUTE, (const NMPlatformObject *) route);
-		r6 = NMP_OBJECT_CAST_IP6_ROUTE (&obj);
-		nm_utils_ip6_address_clear_host_address (&r6->network, &r6->network, r6->plen);
-		r6->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (r6->rt_source),
-		r6->metric = nm_utils_ip6_route_metric_normalize (r6->metric);
-		nm_utils_ip6_address_clear_host_address (&r6->src, &r6->src, r6->src_plen);
 		break;
 	default:
 		nm_assert_not_reached ();
 	}
+
+	nm_platform_ip_route_normalize (addr_family, NMP_OBJECT_CAST_IP_ROUTE (&obj));
 
 	nlmsg = _nl_msg_new_route (RTM_NEWROUTE, flags, &obj);
 	if (!nlmsg)

@@ -1117,6 +1117,9 @@ gboolean nm_platform_ip_address_flush (NMPlatform *self,
                                        int addr_family,
                                        int ifindex);
 
+void nm_platform_ip_route_normalize (int addr_family,
+                                     NMPlatformIPRoute *route);
+
 gboolean nm_platform_ip_route_add (NMPlatform *self,
                                    NMPNlmFlags flags,
                                    const NMPObject *route);

@@ -3482,6 +3482,43 @@ nm_platform_ip_address_flush (NMPlatform *self,
 
 /*****************************************************************************/
 
+/**
+ * nm_platform_ip_route_normalize:
+ * @addr_family: AF_INET or AF_INET6
+ * @route: an NMPlatformIP4Route or NMPlatformIP6Route instance, depending on @addr_family.
+ *
+ * Adding a route to kernel via nm_platform_ip_route_add() will normalize/coerce some
+ * properties of the route. This function modifies (normalizes) the route like it
+ * would be done by adding the route in kernel.
+ */
+void
+nm_platform_ip_route_normalize (int addr_family,
+                                NMPlatformIPRoute *route)
+{
+	NMPlatformIP4Route *r4;
+	NMPlatformIP6Route *r6;
+
+	switch (addr_family) {
+	case AF_INET:
+		r4 = (NMPlatformIP4Route *) route;
+		r4->network = nm_utils_ip4_address_clear_host_address (r4->network, r4->plen);
+		r4->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (r4->rt_source);
+		r4->scope_inv = nm_platform_route_scope_inv (!r4->gateway
+		                                             ? RT_SCOPE_LINK : RT_SCOPE_UNIVERSE);
+		break;
+	case AF_INET6:
+		r6 = (NMPlatformIP6Route *) route;
+		nm_utils_ip6_address_clear_host_address (&r6->network, &r6->network, r6->plen);
+		r6->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (r6->rt_source),
+		r6->metric = nm_utils_ip6_route_metric_normalize (r6->metric);
+		nm_utils_ip6_address_clear_host_address (&r6->src, &r6->src, r6->src_plen);
+		break;
+	default:
+		nm_assert_not_reached ();
+		break;
+	}
+}
+
 static gboolean
 _ip_route_add (NMPlatform *self,
                NMPNlmFlags flags,
