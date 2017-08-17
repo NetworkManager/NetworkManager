@@ -105,6 +105,8 @@ G_BEGIN_DECLS
  * @NM_CLIENT_PERMISSION_CHECKPOINT_ROLLBACK: permission to create checkpoints.
  * @NM_CLIENT_PERMISSION_ENABLE_DISABLE_STATISTICS: controls whether device
  *  statistics can be globally enabled or disabled
+ * @NM_CLIENT_PERMISSION_ENABLE_DISABLE_CONNECTIVITY_CHECK: controls whether
+ *  connectivity check can be enabled or disabled
  * @NM_CLIENT_PERMISSION_LAST: a reserved boundary value
  *
  * #NMClientPermission values indicate various permissions that NetworkManager
@@ -252,8 +254,13 @@ gboolean nm_client_wimax_get_enabled (NMClient *client);
 void     nm_client_wimax_set_enabled (NMClient *client, gboolean enabled);
 gboolean nm_client_wimax_hardware_get_enabled (NMClient *client);
 
+NM_AVAILABLE_IN_1_10
 gboolean nm_client_connectivity_check_get_available (NMClient *client);
+
+NM_AVAILABLE_IN_1_10
 gboolean nm_client_connectivity_check_get_enabled (NMClient *client);
+
+NM_AVAILABLE_IN_1_10
 void     nm_client_connectivity_check_set_enabled (NMClient *client,
                                                    gboolean enabled);
 

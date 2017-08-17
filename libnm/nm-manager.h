@@ -99,8 +99,13 @@ gboolean  nm_manager_wimax_get_enabled (NMManager *manager);
 void      nm_manager_wimax_set_enabled (NMManager *manager, gboolean enabled);
 gboolean  nm_manager_wimax_hardware_get_enabled (NMManager *manager);
 
+NM_AVAILABLE_IN_1_10
 gboolean  nm_manager_connectivity_check_get_available (NMManager *manager);
+
+NM_AVAILABLE_IN_1_10
 gboolean  nm_manager_connectivity_check_get_enabled (NMManager *manager);
+
+NM_AVAILABLE_IN_1_10
 void      nm_manager_connectivity_check_set_enabled (NMManager *manager,
                                                      gboolean enabled);
 

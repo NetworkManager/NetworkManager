@@ -484,6 +484,8 @@ nm_client_wimax_hardware_get_enabled (NMClient *client)
  * configuration file.
  *
  * Returns: %TRUE if connectivity checking is available.
+ *
+ * Since: 1.10
  */
 gboolean
 nm_client_connectivity_check_get_available (NMClient *client)
@@ -503,6 +505,8 @@ nm_client_connectivity_check_get_available (NMClient *client)
  * Determine whether connectivity checking is enabled.
  *
  * Returns: %TRUE if connectivity checking is enabled.
+ *
+ * Since: 1.10
  */
 gboolean
 nm_client_connectivity_check_get_enabled (NMClient *client)
@@ -523,6 +527,8 @@ nm_client_connectivity_check_get_enabled (NMClient *client)
  * Enable or disable connectivity checking.  Note that if a
  * connectivity checking URI has not been configured, this will not
  * have any effect.
+ *
+ * Since: 1.10
  */
 void
 nm_client_connectivity_check_set_enabled (NMClient *client, gboolean enabled)
@@ -2970,6 +2976,8 @@ nm_client_class_init (NMClientClass *client_class)
 	 * NMClient::connectivity-check-available
 	 *
 	 * Whether a connectivity checking service has been configured.
+	 *
+	 * Since: 1.10
 	 */
 	g_object_class_install_property
 		(object_class, PROP_CONNECTIVITY_CHECK_AVAILABLE,
@@ -2982,6 +2990,8 @@ nm_client_class_init (NMClientClass *client_class)
 	 * NMClient::connectivity-check-enabled
 	 *
 	 * Whether a connectivity checking service has been enabled.
+	 *
+	 * Since: 1.10
 	 */
 	g_object_class_install_property
 		(object_class, PROP_CONNECTIVITY_CHECK_ENABLED,
