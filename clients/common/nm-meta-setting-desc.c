@@ -6805,6 +6805,8 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (BLUETOOTH,             TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (BRIDGE,                FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (GSM,                   FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (CDMA,                  FALSE),
 		),
 		.setting_init_fcn =             _setting_init_fcn_bluetooth,
 	),
