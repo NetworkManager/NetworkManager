@@ -348,6 +348,8 @@ test_config_connectivity_check (void)
 
 	g_object_unref (connectivity);
 	g_object_unref (config);
+
+	g_assert (remove (CONFIG_INTERN) == 0);
 }
 
 static void
