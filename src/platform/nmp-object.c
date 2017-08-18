@@ -813,8 +813,10 @@ nmp_object_cmp (const NMPObject *obj1, const NMPObject *obj2)
 	klass1 = NMP_OBJECT_GET_CLASS (obj1);
 	klass2 = NMP_OBJECT_GET_CLASS (obj2);
 
-	if (klass1 != klass2)
+	if (klass1 != klass2) {
+		nm_assert (klass1->obj_type != klass2->obj_type);
 		return klass1->obj_type < klass2->obj_type ? -1 : 1;
+	}
 
 	if (klass1->cmd_obj_cmp)
 		return klass1->cmd_obj_cmp (obj1, obj2);
@@ -2179,13 +2181,15 @@ nmp_cache_update_netlink_route (NMPCache *cache,
 	entry_old = _lookup_entry (cache, obj_hand_over);
 	entry_new = NULL;
 
+	NM_SET_OUT (out_obj_old, nmp_object_ref (nm_dedup_multi_entry_get_obj (entry_old)));
+
 	if (!entry_old) {
 
 		if (!nmp_object_is_alive (obj_hand_over))
 			goto update_done;
 
 		_idxcache_update (cache,
-		                  entry_old,
+		                  NULL,
 		                  obj_hand_over,
 		                  is_dump,
 		                  &entry_new);
@@ -2215,7 +2219,6 @@ nmp_cache_update_netlink_route (NMPCache *cache,
 	ops_type = NMP_CACHE_OPS_UPDATED;
 
 update_done:
-	NM_SET_OUT (out_obj_old, nmp_object_ref (nm_dedup_multi_entry_get_obj (entry_old)));
 	NM_SET_OUT (out_obj_new, nmp_object_ref (nm_dedup_multi_entry_get_obj (entry_new)));
 
 	/* a RTM_GETROUTE event may signal that another object was replaced.
