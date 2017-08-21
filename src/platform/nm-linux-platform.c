@@ -4183,26 +4183,13 @@ do_add_link_with_lookup (NMPlatform *platform,
 
 	event_handler_read_netlink (platform, FALSE);
 
-	if (nmp_cache_lookup_link_full (cache, 0, name, FALSE, NM_LINK_TYPE_NONE, NULL, NULL)) {
-		/* hm, a link with such a name already exists. Try reloading first. */
-		do_request_link (platform, 0, name);
-
-		obj = nmp_cache_lookup_link_full (cache, 0, name, FALSE, NM_LINK_TYPE_NONE, NULL, NULL);
-		if (obj) {
-			_LOGE ("do-add-link[%s/%s]: link already exists: %s",
-			       name,
-			       nm_link_type_to_string (link_type),
-			       nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_ID, NULL, 0));
-			return FALSE;
-		}
-	}
-
 	nle = _nl_send_nlmsg (platform, nlmsg, &seq_result, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
 	if (nle < 0) {
 		_LOGE ("do-add-link[%s/%s]: failed sending netlink request \"%s\" (%d)",
 		       name,
 		       nm_link_type_to_string (link_type),
 		       nl_geterror (nle), -nle);
+		NM_SET_OUT (out_link, NULL);
 		return FALSE;
 	}
 
@@ -4212,25 +4199,18 @@ do_add_link_with_lookup (NMPlatform *platform,
 
 	_NMLOG (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK
 	            ? LOGL_DEBUG
-	            : LOGL_ERR,
+	            : LOGL_WARN,
 	        "do-add-link[%s/%s]: %s",
 	        name,
 	        nm_link_type_to_string (link_type),
 	        wait_for_nl_response_to_string (seq_result, s_buf, sizeof (s_buf)));
 
-	if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK)
+	if (out_link) {
 		obj = nmp_cache_lookup_link_full (cache, 0, name, FALSE, link_type, NULL, NULL);
-
-	if (!obj) {
-		/* either kernel signaled failure, or it signaled success and the link object
-		 * is not (yet) in the cache. Try to reload it... */
-		do_request_link (platform, 0, name);
-		obj = nmp_cache_lookup_link_full (cache, 0, name, FALSE, link_type, NULL, NULL);
+		*out_link = NMP_OBJECT_CAST_LINK (obj);
 	}
 
-	if (out_link)
-		*out_link = obj ? &obj->link : NULL;
-	return !!obj;
+	return seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
 }
 
 static NMPlatformError
@@ -4289,9 +4269,8 @@ do_delete_object (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 	WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
 	int nle;
 	char s_buf[256];
-	gboolean success = TRUE;
+	gboolean success;
 	const char *log_detail = "";
-	NMPCache *cache = nm_platform_get_cache (platform);
 
 	event_handler_read_netlink (platform, FALSE);
 
@@ -4301,13 +4280,14 @@ do_delete_object (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 		       NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
 		       nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0),
 		       nl_geterror (nle), -nle);
-		goto out;
+		return FALSE;
 	}
 
 	delayed_action_handle_all (platform, FALSE);
 
 	nm_assert (seq_result);
 
+	success = TRUE;
 	if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK) {
 		/* ok */
 	} else if (NM_IN_SET (-((int) seq_result), ESRCH, ENOENT))
@@ -4322,21 +4302,14 @@ do_delete_object (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 	else
 		success = FALSE;
 
-	_NMLOG (success ? LOGL_DEBUG : LOGL_ERR,
+	_NMLOG (success ? LOGL_DEBUG : LOGL_WARN,
 	        "do-delete-%s[%s]: %s%s",
 	        NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
 	        nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0),
 	        wait_for_nl_response_to_string (seq_result, s_buf, sizeof (s_buf)),
 	        log_detail);
 
-out:
-	if (!nmp_cache_lookup_obj (cache, obj_id))
-		return TRUE;
-
-	/* such an object still exists in the cache. To be sure, refetch it (and
-	 * hope it's gone) */
-	do_request_one_type (platform, NMP_OBJECT_GET_TYPE (obj_id));
-	return !nmp_cache_lookup_obj (cache, obj_id);
+	return success;
 }
 
 static WaitForNlResponseResult
@@ -4397,7 +4370,7 @@ do_change_link_result (NMPlatform *platform,
 		log_level = LOGL_DEBUG;
 		result = NM_PLATFORM_ERROR_NOT_FOUND;
 	} else {
-		log_level = LOGL_ERR;
+		log_level = LOGL_WARN;
 		result = NM_PLATFORM_ERROR_UNSPECIFIED;
 	}
 	_NMLOG (log_level,
