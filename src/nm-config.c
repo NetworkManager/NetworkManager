@@ -1608,10 +1608,8 @@ void nm_config_set_connectivity_check_enabled (NMConfig *self,
 	/* Remove existing groups */
 	g_key_file_remove_group (keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, NULL);
 
-	if (!enabled) {
-		g_key_file_set_value (keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY,
-		                      "enabled", "false");
-	}
+	g_key_file_set_value (keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY,
+	                      "enabled", enabled ? "true" : "false");
 
 	nm_config_set_values (self, keyfile, TRUE, FALSE);
 	g_key_file_unref (keyfile);
