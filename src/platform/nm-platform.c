@@ -228,17 +228,8 @@ nm_platform_get_multi_idx (NMPlatform *self)
 
 /*****************************************************************************/
 
-/**
- * _nm_platform_error_to_string:
- * @error_code: the error code to stringify.
- *
- * Returns: A string representation of the error.
- * For negative numbers, this function interprets
- * the code as -errno.
- * For invalid (positive) numbers it returns NULL.
- */
-NM_UTILS_LOOKUP_STR_DEFINE (_nm_platform_error_to_string, NMPlatformError,
-	NM_UTILS_LOOKUP_DEFAULT ( val < 0 ? g_strerror (- ((int) val)) : NULL ),
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_nm_platform_error_to_string, NMPlatformError,
+	NM_UTILS_LOOKUP_DEFAULT (NULL),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_SUCCESS,     "success"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_BUG,         "bug"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_UNSPECIFIED, "unspecified"),
@@ -251,6 +242,42 @@ NM_UTILS_LOOKUP_STR_DEFINE (_nm_platform_error_to_string, NMPlatformError,
 	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_NETLINK,     "netlink"),
 	NM_UTILS_LOOKUP_ITEM_IGNORE (_NM_PLATFORM_ERROR_MININT),
 );
+
+/**
+ * nm_platform_error_to_string:
+ * @error_code: the error code to stringify.
+ * @buf: (allow-none): buffer
+ * @buf_len: size of buffer
+ *
+ * Returns: A string representation of the error.
+ * For negative numbers, this function interprets
+ * the code as -errno.
+ * For invalid (positive) numbers it returns NULL.
+ */
+const char *
+nm_platform_error_to_string (NMPlatformError error_code, char *buf, gsize buf_len)
+{
+	const char *s;
+
+	if (error_code < 0) {
+		int errsv = -((int) error_code);
+
+		nm_utils_to_string_buffer_init (&buf, &buf_len);
+		g_snprintf (buf, buf_len, "%s (%d)", g_strerror (errsv), errsv);
+	} else {
+		s = _nm_platform_error_to_string (error_code);
+		if (s) {
+			if (!buf)
+				return s;
+			g_strlcpy (buf, s, buf_len);
+		} else {
+			nm_utils_to_string_buffer_init (&buf, &buf_len);
+			g_snprintf (buf, buf_len, "(%d)", (int) error_code);
+		}
+	}
+
+	return buf;
+}
 
 NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_nmp_nlm_flag_to_string_lookup, NMPNlmFlags,
 	NM_UTILS_LOOKUP_DEFAULT (NULL),
@@ -3801,6 +3828,7 @@ nm_platform_ip_route_get (NMPlatform *self,
 	nm_auto_nmpobj NMPObject *route = NULL;
 	NMPlatformError result;
 	char buf[NM_UTILS_INET_ADDRSTRLEN];
+	char buf_err[200];
 
 	_CHECK_SELF (self, klass, FALSE);
 
@@ -3826,7 +3854,7 @@ nm_platform_ip_route_get (NMPlatform *self,
 		_LOGW ("route: get IPv%c route for: %s failed with %s",
 		       addr_family == AF_INET ? '4' : '6',
 		       inet_ntop (addr_family, address, buf, sizeof (buf)),
-		       nm_platform_error_to_string (result));
+		       nm_platform_error_to_string (result, buf_err, sizeof (buf_err)));
 	} else {
 		nm_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (route), NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
 		nm_assert (!NMP_OBJECT_IS_STACKINIT (route));

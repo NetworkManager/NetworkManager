@@ -868,8 +868,11 @@ gboolean nm_platform_netns_push (NMPlatform *platform, NMPNetns **netns);
 
 const char *nm_link_type_to_string (NMLinkType link_type);
 
-const char *_nm_platform_error_to_string (NMPlatformError error);
-#define nm_platform_error_to_string(error) NM_UTILS_LOOKUP_STR (_nm_platform_error_to_string, error)
+const char *nm_platform_error_to_string (NMPlatformError error,
+                                         char *buf,
+                                         gsize buf_len);
+#define nm_platform_error_to_string_a(error) \
+	(nm_platform_error_to_string ((error), g_alloca (30), 30))
 
 #define NMP_SYSCTL_PATHID_ABSOLUTE(path) \
 	((const char *) NULL), -1, (path)

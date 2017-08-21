@@ -7729,7 +7729,7 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 			        LOGD_IP6,
 			        "failed to %s userspace IPv6LL address handling (%s)",
 			        detail,
-			        nm_platform_error_to_string (plerr));
+			        nm_platform_error_to_string_a (plerr));
 		}
 
 		if (enable) {
@@ -13397,7 +13397,7 @@ handle_fail:
 		_NMLOG (plerr == NM_PLATFORM_ERROR_NOT_FOUND ? LOGL_DEBUG : LOGL_WARN,
 		        LOGD_DEVICE, "set-hw-addr: failed to %s MAC address to %s (%s) (%s)",
 		        operation, addr, detail,
-		        nm_platform_error_to_string (plerr));
+		        nm_platform_error_to_string_a (plerr));
 	}
 
 	if (was_up) {
