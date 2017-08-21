@@ -5694,6 +5694,10 @@ nm_platform_cache_update_emit_signal (NMPlatform *self,
 
 	ASSERT_nmp_cache_ops (nm_platform_get_cache (self), cache_op, obj_old, obj_new);
 
+	nm_assert (NM_IN_SET (nm_platform_netns_get (self),
+	                      NULL,
+	                      nmp_netns_get_current ()));
+
 	NMTST_ASSERT_PLATFORM_NETNS_CURRENT (self);
 
 	switch (cache_op) {
