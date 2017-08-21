@@ -820,7 +820,7 @@ nm_ip4_config_commit (const NMIP4Config *self,
 	                                AF_INET,
 	                                ifindex,
 	                                routes,
-	                                nm_platform_lookup_predicate_routes_skip_rtprot_kernel,
+	                                nm_platform_lookup_predicate_routes_main_skip_rtprot_kernel,
 	                                NULL))
 		success = FALSE;
 

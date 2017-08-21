@@ -334,7 +334,7 @@ _platform_route_sync_flush (const VTableIP *vtable, NMDefaultRouteManager *self,
 
 	routes = nm_platform_lookup_route_default_clone (priv->platform,
 	                                                 vtable->vt->obj_type,
-	                                                 nm_platform_lookup_predicate_routes_skip_rtprot_kernel,
+	                                                 nm_platform_lookup_predicate_routes_main_skip_rtprot_kernel,
 	                                                 NULL);
 	if (!routes)
 		return FALSE;
@@ -515,7 +515,7 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 
 	routes = nm_platform_lookup_route_default_clone (priv->platform,
 	                                                 vtable->vt->obj_type,
-	                                                 nm_platform_lookup_predicate_routes_skip_rtprot_kernel,
+	                                                 nm_platform_lookup_predicate_routes_main_skip_rtprot_kernel,
 	                                                 NULL);
 
 	assumed_metrics = _get_assumed_interface_metrics (vtable, self, routes);

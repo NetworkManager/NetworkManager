@@ -2825,7 +2825,8 @@ _v4_has_shadowed_routes_detect (NMDevice *self)
 
 		nm_assert (r->ifindex == ifindex);
 
-		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (r))
+		if (   NM_PLATFORM_IP_ROUTE_IS_DEFAULT (r)
+		    || r->table_coerced)
 			continue;
 
 		d = &data_arr[data_len++];
@@ -2845,7 +2846,8 @@ _v4_has_shadowed_routes_detect (NMDevice *self)
 		IP4RPFilterData d;
 
 		if (   r->ifindex == ifindex
-		    || NM_PLATFORM_IP_ROUTE_IS_DEFAULT (r))
+		    || NM_PLATFORM_IP_ROUTE_IS_DEFAULT (r)
+		    || r->table_coerced)
 			continue;
 
 		d.network = nm_utils_ip4_address_clear_host_address (r->network, r->plen);
@@ -5537,9 +5539,9 @@ _device_get_default_route_from_platform (NMDevice *self, int addr_family, NMPlat
 		guint32 m;
 		const NMPlatformIPRoute *r = NMP_OBJECT_CAST_IP_ROUTE (plobj);
 
-		if (r->ifindex != ifindex)
-			continue;
-		if (r->rt_source == NM_IP_CONFIG_SOURCE_RTPROT_KERNEL)
+		if (   r->ifindex != ifindex
+		    || r->rt_source == NM_IP_CONFIG_SOURCE_RTPROT_KERNEL
+		    || r->table_coerced)
 			continue;
 
 		/* if there are several default routes, find the one with the best metric */

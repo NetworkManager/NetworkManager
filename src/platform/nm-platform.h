@@ -424,6 +424,13 @@ typedef union {
 	/* RTA_PRIORITY (iproute2: metric) */ \
 	guint32 metric; \
 	\
+	/* rtm_table, RTA_TABLE.
+	 *
+	 * This is not the original table ID. Instead, 254 (RT_TABLE_MAIN) and
+	 * zero (RT_TABLE_UNSPEC) are swapped, so that the default is the main
+	 * table. Use nm_platform_route_table_coerce(). */ \
+	guint32 table_coerced; \
+	\
 	/*end*/
 
 
@@ -853,6 +860,27 @@ NMPlatform *nm_platform_get (void);
 /*****************************************************************************/
 
 /**
+ * nm_platform_route_table_coerce:
+ * @table: the route table, either its original value, or its coerced.
+ *
+ * Returns: returns the coerced table id. If the table id is like
+ *   RTA_TABLE, it returns a value for NMPlatformIPRoute.table_coerced
+ *   and vice versa.
+ */
+static inline guint32
+nm_platform_route_table_coerce (guint32 table)
+{
+	switch (table) {
+	case 0 /* RT_TABLE_UNSPEC */:
+		return 254;
+	case 254 /* RT_TABLE_MAIN */:
+		return 0;
+	default:
+		return table;
+	}
+}
+
+/**
  * nm_platform_route_scope_inv:
  * @scope: the route scope, either its original value, or its inverse.
  *
@@ -930,6 +958,8 @@ struct _NMPLookup;
 const struct _NMDedupMultiHeadEntry *nm_platform_lookup (NMPlatform *platform,
                                                          const struct _NMPLookup *lookup);
 
+gboolean nm_platform_lookup_predicate_routes_main_skip_rtprot_kernel (const NMPObject *obj,
+                                                                      gpointer user_data);
 gboolean nm_platform_lookup_predicate_routes_skip_rtprot_kernel (const NMPObject *obj,
                                                                  gpointer user_data);
 

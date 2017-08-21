@@ -2030,8 +2030,6 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 	table = tb[RTA_TABLE]
 	        ? nla_get_u32 (tb[RTA_TABLE])
 	        : (guint32) rtm->rtm_table;
-	if (table != RT_TABLE_MAIN)
-		goto errout;
 
 	/*****************************************************************/
 
@@ -2148,6 +2146,7 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 
 	obj = nmp_object_new (is_v4 ? NMP_OBJECT_TYPE_IP4_ROUTE : NMP_OBJECT_TYPE_IP6_ROUTE, NULL);
 
+	obj->ip_route.table_coerced = nm_platform_route_table_coerce (table);
 	obj->ip_route.ifindex = nh.ifindex;
 
 	if (_check_addr_or_errout (tb, RTA_DST, addr_len))
@@ -2592,12 +2591,13 @@ _nl_msg_new_route (int nlmsg_type,
 	const NMPClass *klass = NMP_OBJECT_GET_CLASS (obj);
 	gboolean is_v4 = klass->addr_family == AF_INET;
 	const guint32 lock = ip_route_get_lock_flag (NMP_OBJECT_CAST_IP_ROUTE (obj));
+	const guint32 table = nm_platform_route_table_coerce (NMP_OBJECT_CAST_IP_ROUTE (obj)->table_coerced);
 	struct rtmsg rtmsg = {
 		.rtm_family = klass->addr_family,
 		.rtm_tos = is_v4
 		           ? obj->ip4_route.tos
 		           : 0,
-		.rtm_table = RT_TABLE_MAIN, /* omit setting RTA_TABLE attribute */
+		.rtm_table = table <= 0xFF ? table : RT_TABLE_UNSPEC,
 		.rtm_protocol = nmp_utils_ip_config_source_coerce_to_rtprot (obj->ip_route.rt_source),
 		.rtm_scope = is_v4
 		             ? nm_platform_route_scope_inv (obj->ip4_route.scope_inv)
@@ -2637,6 +2637,9 @@ _nl_msg_new_route (int nlmsg_type,
 	}
 
 	NLA_PUT_U32 (msg, RTA_PRIORITY, obj->ip_route.metric);
+
+	if (table > 0xFF)
+		NLA_PUT_U32 (msg, RTA_TABLE, table);
 
 	if (is_v4) {
 		if (NMP_OBJECT_CAST_IP4_ROUTE (obj)->pref_src)

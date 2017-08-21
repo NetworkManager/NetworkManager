@@ -538,7 +538,7 @@ nm_ip6_config_commit (const NMIP6Config *self,
 	                                AF_INET6,
 	                                ifindex,
 	                                routes,
-	                                nm_platform_lookup_predicate_routes_skip_rtprot_kernel,
+	                                nm_platform_lookup_predicate_routes_main_skip_rtprot_kernel,
 	                                NULL))
 		success = FALSE;
 
