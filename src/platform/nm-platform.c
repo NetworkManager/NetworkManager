@@ -240,6 +240,24 @@ NM_UTILS_LOOKUP_STR_DEFINE (_nm_platform_error_to_string, NMPlatformError,
 	NM_UTILS_LOOKUP_ITEM_IGNORE (_NM_PLATFORM_ERROR_MININT),
 );
 
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_nmp_nlm_flag_to_string_lookup, NMPNlmFlags,
+	NM_UTILS_LOOKUP_DEFAULT (NULL),
+	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_ADD,     "add"),
+	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_CHANGE,  "change"),
+	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_REPLACE, "replace"),
+	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_PREPEND, "prepend"),
+	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_APPEND,  "append"),
+	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_TEST,    "test"),
+	NM_UTILS_LOOKUP_ITEM_IGNORE (NMP_NLM_FLAG_F_APPEND),
+);
+
+#define _nmp_nlm_flag_to_string(flags) \
+	({ \
+		NMPNlmFlags _flags = (flags); \
+		\
+		_nmp_nlm_flag_to_string_lookup (flags) ?: nm_sprintf_bufa (100, "new[0x%x]", (unsigned) _flags); \
+	})
+
 /*****************************************************************************/
 
 gboolean
@@ -3452,24 +3470,6 @@ nm_platform_address_flush (NMPlatform *self, int ifindex)
 }
 
 /*****************************************************************************/
-
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_nmp_nlm_flag_to_string_lookup, NMPNlmFlags,
-	NM_UTILS_LOOKUP_DEFAULT (NULL),
-	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_ADD,     "add"),
-	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_CHANGE,  "change"),
-	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_REPLACE, "replace"),
-	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_PREPEND, "prepend"),
-	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_APPEND,  "append"),
-	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_TEST,    "test"),
-	NM_UTILS_LOOKUP_ITEM_IGNORE (NMP_NLM_FLAG_F_APPEND),
-);
-
-#define _nmp_nlm_flag_to_string(flags) \
-	({ \
-		NMPNlmFlags _flags = (flags); \
-		\
-		_nmp_nlm_flag_to_string_lookup (flags) ?: nm_sprintf_bufa (100, "new[0x%x]", (unsigned) _flags); \
-	})
 
 gboolean
 nm_platform_ip4_route_add (NMPlatform *self,
