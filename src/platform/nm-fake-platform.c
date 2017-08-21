@@ -1199,7 +1199,7 @@ ip_route_delete (NMPlatform *platform, const NMPObject *obj)
 	return ipx_route_delete (platform, AF_UNSPEC, -1, obj);
 }
 
-static gboolean
+static NMPlatformError
 ip_route_add (NMPlatform *platform,
               NMPNlmFlags flags,
               int addr_family,
@@ -1284,7 +1284,7 @@ ip_route_add (NMPlatform *platform,
 				nm_log_warn (LOGD_PLATFORM, "Fake platform: failure adding ip6-route '%d: %s/%d %d': Network Unreachable",
 				             r->ifindex, nm_utils_inet6_ntop (&r6->network, NULL), r->plen, r->metric);
 			}
-			return FALSE;
+			return NM_PLATFORM_ERROR_UNSPECIFIED;
 		}
 	}
 
@@ -1346,7 +1346,7 @@ ip_route_add (NMPlatform *platform,
 		}
 	}
 
-	return TRUE;
+	return NM_PLATFORM_ERROR_SUCCESS;
 }
 
 /*****************************************************************************/

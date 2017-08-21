@@ -469,7 +469,7 @@ test_ip4_route_options (void)
 	route.mtu = 1350;
 	route.lock_cwnd = TRUE;
 
-	g_assert (nm_platform_ip4_route_add (NM_PLATFORM_GET, NMP_NLM_FLAG_REPLACE, &route));
+	g_assert (nm_platform_ip4_route_add (NM_PLATFORM_GET, NMP_NLM_FLAG_REPLACE, &route) == NM_PLATFORM_ERROR_SUCCESS);
 
 	/* Test route listing */
 	routes = nmtstp_ip4_route_get_all (NM_PLATFORM_GET, ifindex);
@@ -597,7 +597,7 @@ test_ip6_route_options (gconstpointer test_data)
 	_wait_for_ipv6_addr_non_tentative (NM_PLATFORM_GET, 400, IFINDEX, addr_n, addr_in6);
 
 	for (i = 0; i < rts_n; i++)
-		g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, NMP_NLM_FLAG_REPLACE, &rts_add[i]));
+		g_assert (nm_platform_ip6_route_add (NM_PLATFORM_GET, NMP_NLM_FLAG_REPLACE, &rts_add[i]) == NM_PLATFORM_ERROR_SUCCESS);
 
 	routes = nmtstp_ip6_route_get_all (NM_PLATFORM_GET, IFINDEX);
 	switch (TEST_IDX) {
@@ -703,7 +703,7 @@ again_find_idx:
 			order_idx[order_len++] = idx;
 
 			r->ifindex = iface_data[idx].ifindex;
-			g_assert (nm_platform_ip4_route_add (platform, NMP_NLM_FLAG_APPEND, r));
+			g_assert (nm_platform_ip4_route_add (platform, NMP_NLM_FLAG_APPEND, r) == NM_PLATFORM_ERROR_SUCCESS);
 		} else {
 			i = nmtst_get_rand_int () % order_len;
 			idx = order_idx[i];

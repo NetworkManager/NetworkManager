@@ -248,6 +248,7 @@ NM_UTILS_LOOKUP_STR_DEFINE (_nm_platform_error_to_string, NMPlatformError,
 	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_NOT_SLAVE,   "not-slave"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_NO_FIRMWARE, "no-firmware"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_OPNOTSUPP,   "not-supported"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_NETLINK,     "netlink"),
 	NM_UTILS_LOOKUP_ITEM_IGNORE (_NM_PLATFORM_ERROR_MININT),
 );
 
@@ -3597,6 +3598,8 @@ nm_platform_ip_route_sync (NMPlatform *self,
 
 	for (i_type = 0; i_type < 2; i_type++) {
 		for (i = 0; i < routes->len; i++) {
+			NMPlatformError plerr;
+
 			conf_o = routes->pdata[i];
 
 #define VTABLE_IS_DEVICE_ROUTE(vt, o) (vt->is_ip4 \
@@ -3621,9 +3624,10 @@ nm_platform_ip_route_sync (NMPlatform *self,
 				continue;
 			}
 
-			if (!nm_platform_ip_route_add (self,
-			                               NMP_NLM_FLAG_APPEND,
-			                               conf_o)) {
+			plerr = nm_platform_ip_route_add (self,
+			                                  NMP_NLM_FLAG_APPEND,
+			                                  conf_o);
+			if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
 				/* ignore error adding route. */
 			}
 		}
@@ -3710,7 +3714,7 @@ nm_platform_ip_route_normalize (int addr_family,
 	}
 }
 
-static gboolean
+static NMPlatformError
 _ip_route_add (NMPlatform *self,
                NMPNlmFlags flags,
                int addr_family,
@@ -3733,7 +3737,7 @@ _ip_route_add (NMPlatform *self,
 	return klass->ip_route_add (self, flags, addr_family, route);
 }
 
-gboolean
+NMPlatformError
 nm_platform_ip_route_add (NMPlatform *self,
                           NMPNlmFlags flags,
                           const NMPObject *route)
@@ -3754,7 +3758,7 @@ nm_platform_ip_route_add (NMPlatform *self,
 	return _ip_route_add (self, flags, addr_family, NMP_OBJECT_CAST_IP_ROUTE (route));
 }
 
-gboolean
+NMPlatformError
 nm_platform_ip4_route_add (NMPlatform *self,
                            NMPNlmFlags flags,
                            const NMPlatformIP4Route *route)
@@ -3762,7 +3766,7 @@ nm_platform_ip4_route_add (NMPlatform *self,
 	return _ip_route_add (self, flags, AF_INET, route);
 }
 
-gboolean
+NMPlatformError
 nm_platform_ip6_route_add (NMPlatform *self,
                            NMPNlmFlags flags,
                            const NMPlatformIP6Route *route)

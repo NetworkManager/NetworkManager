@@ -158,6 +158,7 @@ typedef enum { /*< skip >*/
 	NM_PLATFORM_ERROR_NOT_SLAVE,
 	NM_PLATFORM_ERROR_NO_FIRMWARE,
 	NM_PLATFORM_ERROR_OPNOTSUPP,
+	NM_PLATFORM_ERROR_NETLINK,
 } NMPlatformError;
 
 #define NM_PLATFORM_LINK_OTHER_NETNS    (-1)
@@ -797,10 +798,10 @@ typedef struct {
 	gboolean (*ip4_address_delete) (NMPlatform *, int ifindex, in_addr_t address, guint8 plen, in_addr_t peer_address);
 	gboolean (*ip6_address_delete) (NMPlatform *, int ifindex, struct in6_addr address, guint8 plen);
 
-	gboolean (*ip_route_add) (NMPlatform *,
-	                          NMPNlmFlags flags,
-	                          int addr_family,
-	                          const NMPlatformIPRoute *route);
+	NMPlatformError (*ip_route_add) (NMPlatform *,
+	                                 NMPNlmFlags flags,
+	                                 int addr_family,
+	                                 const NMPlatformIPRoute *route);
 	gboolean (*ip_route_delete) (NMPlatform *, const NMPObject *obj);
 
 	NMPlatformError (*ip_route_get) (NMPlatform *self,
@@ -1122,11 +1123,11 @@ gboolean nm_platform_ip_address_flush (NMPlatform *self,
 void nm_platform_ip_route_normalize (int addr_family,
                                      NMPlatformIPRoute *route);
 
-gboolean nm_platform_ip_route_add (NMPlatform *self,
-                                   NMPNlmFlags flags,
-                                   const NMPObject *route);
-gboolean nm_platform_ip4_route_add (NMPlatform *self, NMPNlmFlags flags, const NMPlatformIP4Route *route);
-gboolean nm_platform_ip6_route_add (NMPlatform *self, NMPNlmFlags flags, const NMPlatformIP6Route *route);
+NMPlatformError nm_platform_ip_route_add (NMPlatform *self,
+                                          NMPNlmFlags flags,
+                                          const NMPObject *route);
+NMPlatformError nm_platform_ip4_route_add (NMPlatform *self, NMPNlmFlags flags, const NMPlatformIP4Route *route);
+NMPlatformError nm_platform_ip6_route_add (NMPlatform *self, NMPNlmFlags flags, const NMPlatformIP6Route *route);
 
 gboolean nm_platform_ip_route_delete (NMPlatform *self, const NMPObject *route);
 

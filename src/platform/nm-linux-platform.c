@@ -265,6 +265,16 @@ static gboolean event_handler_read_netlink (NMPlatform *platform, gboolean wait_
 
 /*****************************************************************************/
 
+static NMPlatformError
+wait_for_nl_response_to_plerr (WaitForNlResponseResult seq_result)
+{
+	if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK)
+		return NM_PLATFORM_ERROR_SUCCESS;
+	if (seq_result < 0)
+		return (NMPlatformError) seq_result;
+	return NM_PLATFORM_ERROR_NETLINK;
+}
+
 static const char *
 wait_for_nl_response_to_string (WaitForNlResponseResult seq_result, char *buf, gsize buf_size)
 {
@@ -4223,14 +4233,12 @@ do_add_link_with_lookup (NMPlatform *platform,
 	return !!obj;
 }
 
-static gboolean
+static NMPlatformError
 do_add_addrroute (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *nlmsg)
 {
 	WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
 	int nle;
 	char s_buf[256];
-	const NMPObject *obj;
-	NMPCache *cache = nm_platform_get_cache (platform);
 
 	nm_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj_id),
 	                      NMP_OBJECT_TYPE_IP4_ADDRESS, NMP_OBJECT_TYPE_IP6_ADDRESS,
@@ -4244,7 +4252,7 @@ do_add_addrroute (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 		       NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
 		       nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0),
 		       nl_geterror (nle), -nle);
-		return FALSE;
+		return NM_PLATFORM_ERROR_NETLINK;
 	}
 
 	delayed_action_handle_all (platform, FALSE);
@@ -4253,30 +4261,26 @@ do_add_addrroute (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 
 	_NMLOG (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK
 	            ? LOGL_DEBUG
-	            : LOGL_ERR,
+	            : LOGL_WARN,
 	        "do-add-%s[%s]: %s",
 	        NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
 	        nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0),
 	        wait_for_nl_response_to_string (seq_result, s_buf, sizeof (s_buf)));
 
-	/* In rare cases, the object is not yet ready as we received the ACK from
-	 * kernel. Need to refetch.
-	 *
-	 * We want to safe the expensive refetch, thus we look first into the cache
-	 * whether the object exists.
-	 *
-	 * FIXME: if the object already existed previously, we might not notice a
-	 * missing update. It's not clear how to fix that reliably without refechting
-	 * all the time. */
-	obj = nmp_cache_lookup_obj (cache, obj_id);
-	if (!obj) {
-		do_request_one_type (platform, NMP_OBJECT_GET_TYPE (obj_id));
-		obj = nmp_cache_lookup_obj (cache, obj_id);
+	if (NMP_OBJECT_GET_TYPE (obj_id) == NMP_OBJECT_TYPE_IP6_ADDRESS) {
+		/* In rare cases, the object is not yet ready as we received the ACK from
+		 * kernel. Need to refetch.
+		 *
+		 * We want to safe the expensive refetch, thus we look first into the cache
+		 * whether the object exists.
+		 *
+		 * rh#1484434 */
+		if (!nmp_cache_lookup_obj (nm_platform_get_cache (platform),
+		                           obj_id))
+			do_request_one_type (platform, NMP_OBJECT_GET_TYPE (obj_id));
 	}
 
-	/* Adding is only successful, if kernel reported success *and* we have the
-	 * expected object in cache afterwards. */
-	return obj && seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
+	return wait_for_nl_response_to_plerr (seq_result);
 }
 
 static gboolean
@@ -5910,7 +5914,7 @@ ip4_address_add (NMPlatform *platform,
 	                             label);
 
 	nmp_object_stackinit_id_ip4_address (&obj_id, ifindex, addr, plen, peer_addr);
-	return do_add_addrroute (platform, &obj_id, nlmsg);
+	return do_add_addrroute (platform, &obj_id, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static gboolean
@@ -5940,7 +5944,7 @@ ip6_address_add (NMPlatform *platform,
 	                             NULL);
 
 	nmp_object_stackinit_id_ip6_address (&obj_id, ifindex, &addr);
-	return do_add_addrroute (platform, &obj_id, nlmsg);
+	return do_add_addrroute (platform, &obj_id, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static gboolean
@@ -5995,7 +5999,7 @@ ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, gui
 
 /*****************************************************************************/
 
-static gboolean
+static NMPlatformError
 ip_route_add (NMPlatform *platform,
               NMPNlmFlags flags,
               int addr_family,
@@ -6019,7 +6023,7 @@ ip_route_add (NMPlatform *platform,
 
 	nlmsg = _nl_msg_new_route (RTM_NEWROUTE, flags, &obj);
 	if (!nlmsg)
-		g_return_val_if_reached (FALSE);
+		g_return_val_if_reached (NM_PLATFORM_ERROR_BUG);
 	return do_add_addrroute (platform, &obj, nlmsg);
 }
 
