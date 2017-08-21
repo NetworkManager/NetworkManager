@@ -1223,6 +1223,8 @@ ip_route_add (NMPlatform *platform,
 
 	g_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 
+	flags = NM_FLAGS_UNSET (flags, NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE);
+
 	/* currently, only replace is implemented. */
 	g_assert (flags == NMP_NLM_FLAG_REPLACE);
 

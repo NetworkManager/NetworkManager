@@ -2585,7 +2585,7 @@ ip_route_get_lock_flag (const NMPlatformIPRoute *route)
 /* Copied and modified from libnl3's build_route_msg() and rtnl_route_build_msg(). */
 static struct nl_msg *
 _nl_msg_new_route (int nlmsg_type,
-                   NMPNlmFlags nlmsgflags,
+                   guint16 nlmsgflags,
                    const NMPObject *obj)
 {
 	struct nl_msg *msg;
@@ -2615,7 +2615,6 @@ _nl_msg_new_route (int nlmsg_type,
 	nm_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
 	nm_assert (NM_IN_SET (nlmsg_type, RTM_NEWROUTE, RTM_DELROUTE));
 
-	nm_assert (((NMPNlmFlags) ((int) nlmsgflags)) == nlmsgflags);
 	msg = nlmsg_alloc_simple (nlmsg_type, (int) nlmsgflags);
 	if (!msg)
 		g_return_val_if_reached (NULL);
@@ -4214,7 +4213,10 @@ do_add_link_with_lookup (NMPlatform *platform,
 }
 
 static NMPlatformError
-do_add_addrroute (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *nlmsg)
+do_add_addrroute (NMPlatform *platform,
+                  const NMPObject *obj_id,
+                  struct nl_msg *nlmsg,
+                  gboolean suppress_netlink_failure)
 {
 	WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
 	int nle;
@@ -4239,7 +4241,9 @@ do_add_addrroute (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 
 	nm_assert (seq_result);
 
-	_NMLOG (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK
+	_NMLOG ((   seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK
+	         || (   suppress_netlink_failure
+	             && seq_result < 0))
 	            ? LOGL_DEBUG
 	            : LOGL_WARN,
 	        "do-add-%s[%s]: %s",
@@ -5887,7 +5891,7 @@ ip4_address_add (NMPlatform *platform,
 	                             label);
 
 	nmp_object_stackinit_id_ip4_address (&obj_id, ifindex, addr, plen, peer_addr);
-	return do_add_addrroute (platform, &obj_id, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
+	return do_add_addrroute (platform, &obj_id, nlmsg, FALSE) == NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static gboolean
@@ -5917,7 +5921,7 @@ ip6_address_add (NMPlatform *platform,
 	                             NULL);
 
 	nmp_object_stackinit_id_ip6_address (&obj_id, ifindex, &addr);
-	return do_add_addrroute (platform, &obj_id, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
+	return do_add_addrroute (platform, &obj_id, nlmsg, FALSE) == NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static gboolean
@@ -5994,10 +5998,13 @@ ip_route_add (NMPlatform *platform,
 
 	nm_platform_ip_route_normalize (addr_family, NMP_OBJECT_CAST_IP_ROUTE (&obj));
 
-	nlmsg = _nl_msg_new_route (RTM_NEWROUTE, flags, &obj);
+	nlmsg = _nl_msg_new_route (RTM_NEWROUTE, flags & NMP_NLM_FLAG_FMASK, &obj);
 	if (!nlmsg)
 		g_return_val_if_reached (NM_PLATFORM_ERROR_BUG);
-	return do_add_addrroute (platform, &obj, nlmsg);
+	return do_add_addrroute (platform,
+	                         &obj,
+	                         nlmsg,
+	                         NM_FLAGS_HAS (flags, NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE));
 }
 
 static gboolean

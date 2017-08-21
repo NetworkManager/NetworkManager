@@ -288,6 +288,8 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_nmp_nlm_flag_to_string_lookup, NMPNlmFlags,
 	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_APPEND,  "append"),
 	NM_UTILS_LOOKUP_ITEM (NMP_NLM_FLAG_TEST,    "test"),
 	NM_UTILS_LOOKUP_ITEM_IGNORE (NMP_NLM_FLAG_F_APPEND),
+	NM_UTILS_LOOKUP_ITEM_IGNORE (NMP_NLM_FLAG_FMASK),
+	NM_UTILS_LOOKUP_ITEM_IGNORE (NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE),
 );
 
 #define _nmp_nlm_flag_to_string(flags) \
@@ -3755,7 +3757,7 @@ _ip_route_add (NMPlatform *self,
 	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 
 	_LOGD ("route: %-10s IPv%c route: %s",
-	       _nmp_nlm_flag_to_string (flags),
+	       _nmp_nlm_flag_to_string (flags & NMP_NLM_FLAG_FMASK),
 	       addr_family == AF_INET ? '4' : '6',
 	       addr_family == AF_INET
 	         ? nm_platform_ip4_route_to_string (route, sbuf, sizeof (sbuf))

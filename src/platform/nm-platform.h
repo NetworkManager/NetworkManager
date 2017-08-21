@@ -86,6 +86,15 @@ typedef enum {
 	NMP_NLM_FLAG_F_CREATE       = 0x400, /* NLM_F_CREATE, Create, if it does not exist */
 	NMP_NLM_FLAG_F_APPEND       = 0x800, /* NLM_F_APPEND, Add to end of list */
 
+	NMP_NLM_FLAG_FMASK          = 0xFFFF, /* a mask for all NMP_NLM_FLAG_F_* flags */
+
+	/* instructs NM to suppress logging an error message for any failures
+	 * received from kernel.
+	 *
+	 * It will still log with debug-level, and it will still log
+	 * other failures aside the kernel response. */
+	NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE = 0x10000,
+
 	/* the following aliases correspond to iproute2's `ip route CMD` for
 	 * RTM_NEWROUTE, with CMD being one of add, change, replace, prepend,
 	 * append and test. */
