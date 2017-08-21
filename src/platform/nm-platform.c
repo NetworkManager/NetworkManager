@@ -3569,6 +3569,10 @@ nm_platform_ip_route_sync (NMPlatform *self,
 	const NMDedupMultiEntry *plat_entry;
 	guint i;
 	int i_type;
+	gboolean success = TRUE;
+	char sbuf1[sizeof (_nm_utils_to_string_buffer)];
+	char sbuf2[sizeof (_nm_utils_to_string_buffer)];
+	char sbuf_err[60];
 
 	nm_assert (NM_IS_PLATFORM (self));
 	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
@@ -3623,7 +3627,7 @@ nm_platform_ip_route_sync (NMPlatform *self,
 	}
 
 	if (!routes)
-		return TRUE;
+		return success;
 
 	for (i_type = 0; i_type < 2; i_type++) {
 		for (i = 0; i < routes->len; i++) {
@@ -3648,21 +3652,70 @@ nm_platform_ip_route_sync (NMPlatform *self,
 			                                       conf_o);
 			if (plat_entry) {
 				/* we alreay have a route with the same ID in the platform cache.
-				 * Skip adding it again. It should identical already, otherwise we would
-				 * have deleted it in the previous step. */
+				 * Skip adding it again. It should be identical already, otherwise we
+				 * would have deleted above. */
+				if (_LOGD_ENABLED ()) {
+					if (vt->route_cmp (NMP_OBJECT_CAST_IPX_ROUTE (conf_o),
+					                   NMP_OBJECT_CAST_IPX_ROUTE (plat_entry->obj),
+					                   NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) != 0) {
+						_LOGD ("route-sync: skip adding route %s due to existing (different!) route %s",
+						       nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)),
+						       nmp_object_to_string (plat_entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf2, sizeof (sbuf2)));
+					}
+				}
 				continue;
 			}
 
 			plerr = nm_platform_ip_route_add (self,
-			                                  NMP_NLM_FLAG_APPEND,
+			                                    NMP_NLM_FLAG_APPEND
+			                                  | NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE,
 			                                  conf_o);
 			if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
-				/* ignore error adding route. */
+				if (-((int) plerr) == EEXIST) {
+					/* Don't fail for EEXIST. It's not clear that the existing route
+					 * is identical to the one that we were about to add. However,
+					 * above we should have deleted conflicting (non-identical) routes. */
+					if (_LOGD_ENABLED ()) {
+						plat_entry = nm_platform_lookup_entry (self,
+						                                       NMP_CACHE_ID_TYPE_OBJECT_TYPE,
+						                                       conf_o);
+						if (!plat_entry) {
+							_LOGD ("route-sync: adding route %s failed with EEXIST, however we cannot find such a route",
+							       nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)));
+						} else if (vt->route_cmp (NMP_OBJECT_CAST_IPX_ROUTE (conf_o),
+						                          NMP_OBJECT_CAST_IPX_ROUTE (plat_entry->obj),
+						                          NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) != 0) {
+							_LOGD ("route-sync: adding route %s failed due to existing (different!) route %s",
+							       nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)),
+							       nmp_object_to_string (plat_entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf2, sizeof (sbuf2)));
+						}
+					}
+				} else if (NMP_OBJECT_CAST_IP_ROUTE (conf_o)->rt_source < NM_IP_CONFIG_SOURCE_USER) {
+					_LOGD ("route-sync: ignore failure to add IPv%c route: %s: %s",
+					       vt->is_ip4 ? '4' : '6',
+					       nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)),
+					       nm_platform_error_to_string (plerr, sbuf_err, sizeof (sbuf_err)));
+				} else {
+					const char *reason = "";
+
+					if (   -((int) plerr) == ENETUNREACH
+					    && (  vt->is_ip4
+					        ? !!NMP_OBJECT_CAST_IP4_ROUTE (conf_o)->gateway
+					        : !IN6_IS_ADDR_UNSPECIFIED (&NMP_OBJECT_CAST_IP6_ROUTE (conf_o)->gateway)))
+						reason = "; is the gateway directly reachable?";
+
+					_LOGW ("route-sync: failure to add IPv%c route: %s: %s%s",
+					       vt->is_ip4 ? '4' : '6',
+					       nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)),
+					       nm_platform_error_to_string (plerr, sbuf_err, sizeof (sbuf_err)),
+					       reason);
+					success = FALSE;
+				}
 			}
 		}
 	}
 
-	return TRUE;
+	return success;
 }
 
 gboolean
