@@ -236,6 +236,15 @@ create_and_realize (NMDevice *device,
 		return FALSE;
 	}
 
+	parent_ifindex = nm_device_get_ifindex (parent);
+	if (parent_ifindex <= 0) {
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+		             "cannot retrieve ifindex of interface %s (%s): skip VLAN creation for now",
+		             nm_device_get_iface (parent),
+		             nm_device_get_type_desc (parent));
+		return FALSE;
+	}
+
 	if (!nm_device_supports_vlans (parent)) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
 		             "no support for VLANs on interface %s of type %s",
@@ -243,9 +252,6 @@ create_and_realize (NMDevice *device,
 		             nm_device_get_type_desc (parent));
 		return FALSE;
 	}
-
-	parent_ifindex = nm_device_get_ifindex (parent);
-	g_warn_if_fail (parent_ifindex > 0);
 
 	vlan_id = nm_setting_vlan_get_id (s_vlan);
 
