@@ -6614,16 +6614,6 @@ _setting_init_fcn_adsl (ARGS_SETTING_INIT_FCN)
 }
 
 static void
-_setting_init_fcn_bluetooth (ARGS_SETTING_INIT_FCN)
-{
-	if (init_type == NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI) {
-		g_object_set (NM_SETTING_BLUETOOTH (setting),
-		              NM_SETTING_BLUETOOTH_TYPE, NM_SETTING_BLUETOOTH_TYPE_PANU,
-		              NULL);
-	}
-}
-
-static void
 _setting_init_fcn_cdma (ARGS_SETTING_INIT_FCN)
 {
 	if (init_type == NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI) {
@@ -6808,7 +6798,6 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (GSM,                   FALSE),
 			NM_META_SETTING_VALID_PART_ITEM (CDMA,                  FALSE),
 		),
-		.setting_init_fcn =             _setting_init_fcn_bluetooth,
 	),
 	SETTING_INFO (BOND,
 		.valid_parts = NM_META_SETTING_VALID_PARTS (
