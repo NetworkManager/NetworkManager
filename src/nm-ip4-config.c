@@ -681,16 +681,6 @@ nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 			continue;
 		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
 			continue;
-
-		if (   priv->has_gateway
-		    && route->plen == 32
-		    && route->network == priv->gateway
-		    && route->gateway == 0) {
-			/* If there is a host route to the gateway, ignore that route.  It is
-			 * automatically added by NetworkManager when needed.
-			 */
-			continue;
-		}
 		_add_route (self, plobj, NULL);
 	}
 
@@ -927,6 +917,11 @@ nm_ip4_config_merge_setting (NMIP4Config *self, NMSettingIPConfig *setting, guin
 	for (i = 0; i < nroutes; i++) {
 		NMIPRoute *s_route = nm_setting_ip_config_get_route (setting, i);
 		NMPlatformIP4Route route;
+
+		if (nm_ip_route_get_family (s_route) != AF_INET) {
+			nm_assert_not_reached ();
+			continue;
+		}
 
 		memset (&route, 0, sizeof (route));
 		nm_ip_route_get_dest_binary (s_route, &route.network);

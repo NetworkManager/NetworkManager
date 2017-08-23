@@ -483,15 +483,6 @@ nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
 			continue;
 
-		if (   has_gateway
-		    && route->plen == 128
-		    && IN6_ARE_ADDR_EQUAL (&route->network, &priv->gateway)
-		    && IN6_IS_ADDR_UNSPECIFIED (&route->gateway)) {
-			/* If there is a host route to the gateway, ignore that route.  It is
-			 * automatically added by NetworkManager when needed.
-			 */
-			continue;
-		}
 		_add_route (self, plobj, NULL);
 	}
 
@@ -655,6 +646,11 @@ nm_ip6_config_merge_setting (NMIP6Config *self, NMSettingIPConfig *setting, guin
 	for (i = 0; i < nroutes; i++) {
 		NMIPRoute *s_route = nm_setting_ip_config_get_route (setting, i);
 		NMPlatformIP6Route route;
+
+		if (nm_ip_route_get_family (s_route) != AF_INET6) {
+			nm_assert_not_reached ();
+			continue;
+		}
 
 		memset (&route, 0, sizeof (route));
 		nm_ip_route_get_dest_binary (s_route, &route.network);
