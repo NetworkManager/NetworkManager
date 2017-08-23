@@ -1975,7 +1975,7 @@ nm_ip4_config_address_exists (const NMIP4Config *self,
 	                                     needle->plen,
 	                                     needle->peer_address);
 	return !!nm_dedup_multi_index_lookup_obj (priv->multi_idx,
-	                                          &priv->idx_ip4_routes,
+	                                          &priv->idx_ip4_addresses,
 	                                          &obj_stack);
 }
 
