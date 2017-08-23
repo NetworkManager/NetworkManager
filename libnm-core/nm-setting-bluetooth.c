@@ -113,6 +113,8 @@ static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingBluetoothPrivate *priv = NM_SETTING_BLUETOOTH_GET_PRIVATE (setting);
+	const char *type;
+	gboolean missing_nap_bridge = FALSE;
 
 	if (priv->bdaddr && !nm_utils_hwaddr_valid (priv->bdaddr, ETH_ALEN)) {
 		g_set_error_literal (error,
@@ -123,28 +125,38 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (!priv->type) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
-		                     _("property is missing"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME, NM_SETTING_BLUETOOTH_TYPE);
-		return FALSE;
-	} else if (!g_str_equal (priv->type, NM_SETTING_BLUETOOTH_TYPE_DUN) &&
-	           !g_str_equal (priv->type, NM_SETTING_BLUETOOTH_TYPE_NAP) &&
-	           !g_str_equal (priv->type, NM_SETTING_BLUETOOTH_TYPE_PANU)) {
+	type = priv->type;
+	if (!type) {
+		if (connection) {
+			/* We may infer the type from the (non-)existence of gsm/cdma/bridge settings. */
+			type = _nm_connection_detect_bluetooth_type (connection);
+		}
+		if (!type) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
+			                     _("property is missing"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME, NM_SETTING_BLUETOOTH_TYPE);
+			return FALSE;
+		}
+	}
+
+	if (!NM_IN_STRSET (type, NM_SETTING_BLUETOOTH_TYPE_DUN,
+	                         NM_SETTING_BLUETOOTH_TYPE_NAP,
+	                         NM_SETTING_BLUETOOTH_TYPE_PANU)) {
+		nm_assert (priv->type == type);
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		             _("'%s' is not a valid value for the property"),
-		             priv->type);
+		             type);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME, NM_SETTING_BLUETOOTH_TYPE);
 		return FALSE;
 	}
 
 	/* Make sure the corresponding 'type' setting is present */
 	if (   connection
-	    && !strcmp (priv->type, NM_SETTING_BLUETOOTH_TYPE_DUN)) {
+	    && nm_streq (type, NM_SETTING_BLUETOOTH_TYPE_DUN)) {
 		gboolean gsm = FALSE, cdma = FALSE;
 
 		gsm = !!nm_connection_get_setting_gsm (connection);
@@ -170,19 +182,12 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	 */
 
 	/* NAP mode needs a bridge setting, and a bridge needs a name. */
-	if (!strcmp (priv->type, NM_SETTING_BLUETOOTH_TYPE_NAP)) {
+	if (nm_streq (type, NM_SETTING_BLUETOOTH_TYPE_NAP)) {
 		if (!_nm_connection_verify_required_interface_name (connection, error))
 			return FALSE;
-		if (connection && !nm_connection_get_setting_bridge (connection)) {
-			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_SETTING,
-			             _("'%s' connection requires '%s' setting"),
-			             NM_SETTING_BLUETOOTH_TYPE_NAP,
-			             NM_SETTING_BRIDGE_SETTING_NAME);
-			g_prefix_error (error, "%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME);
-			return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
-		}
+		if (   connection
+		    && !nm_connection_get_setting_bridge (connection))
+			missing_nap_bridge = TRUE;
 	} else {
 		if (!priv->bdaddr) {
 			g_set_error_literal (error,
@@ -192,6 +197,30 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME, NM_SETTING_BLUETOOTH_BDADDR);
 			return FALSE;
 		}
+	}
+
+	/* errors form here are normalizable. */
+
+	if (!priv->type) {
+		/* as determined above, we can detect the bluetooth type. */
+		nm_assert (!missing_nap_bridge);
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
+		                     _("property is missing"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME, NM_SETTING_BLUETOOTH_TYPE);
+		return NM_SETTING_VERIFY_NORMALIZABLE;
+	}
+
+	if (missing_nap_bridge) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_SETTING,
+		             _("'%s' connection requires '%s' setting"),
+		             NM_SETTING_BLUETOOTH_TYPE_NAP,
+		             NM_SETTING_BRIDGE_SETTING_NAME);
+		g_prefix_error (error, "%s: ", NM_SETTING_BLUETOOTH_SETTING_NAME);
+		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
 	}
 
 	return TRUE;

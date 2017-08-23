@@ -29,6 +29,8 @@ NMSetting  *_nm_connection_find_base_type_setting         (NMConnection *connect
 const char *_nm_connection_detect_slave_type              (NMConnection *connection,
                                                            NMSetting **out_s_port);
 
+const char *_nm_connection_detect_bluetooth_type (NMConnection *self);
+
 gboolean    _nm_connection_verify_required_interface_name (NMConnection *connection,
                                                            GError **error);
 

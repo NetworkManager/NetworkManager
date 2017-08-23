@@ -684,6 +684,26 @@ _normalize_connection_type (NMConnection *self)
 }
 
 const char *
+_nm_connection_detect_bluetooth_type (NMConnection *self)
+{
+	NMSettingBluetooth *s_bt = nm_connection_get_setting_bluetooth (self);
+
+	if (   s_bt
+	    && nm_setting_bluetooth_get_connection_type (s_bt)) {
+		if (   nm_connection_get_setting_gsm (self)
+		    || nm_connection_get_setting_cdma (self))
+			return NM_SETTING_BLUETOOTH_TYPE_DUN;
+		if (nm_connection_get_setting_bridge (self))
+			return NM_SETTING_BLUETOOTH_TYPE_NAP;
+		return NM_SETTING_BLUETOOTH_TYPE_PANU;
+	}
+
+	/* NULL means the connection is not a bluetooth type, or it needs
+	 * no normalization, as the type is set explicitly. */
+	return NULL;
+}
+
+const char *
 _nm_connection_detect_slave_type (NMConnection *connection, NMSetting **out_s_port)
 {
 	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (connection);
@@ -1053,6 +1073,20 @@ _normalize_team_port_config (NMConnection *self, GHashTable *parameters)
 }
 
 static gboolean
+_normalize_bluetooth_type (NMConnection *self, GHashTable *parameters)
+{
+	const char *type = _nm_connection_detect_bluetooth_type (self);
+
+	if (type) {
+		g_object_set (nm_connection_get_setting_bluetooth (self),
+		              NM_SETTING_BLUETOOTH_TYPE, type,
+		              NULL);
+		return TRUE;
+	}
+	return FALSE;
+}
+
+static gboolean
 _normalize_required_settings (NMConnection *self, GHashTable *parameters)
 {
 	NMSettingBluetooth *s_bt = nm_connection_get_setting_bluetooth (self);
@@ -1353,6 +1387,7 @@ nm_connection_normalize (NMConnection *connection,
 	was_modified |= _normalize_wireless_mac_address_randomization (connection, parameters);
 	was_modified |= _normalize_team_config (connection, parameters);
 	was_modified |= _normalize_team_port_config (connection, parameters);
+	was_modified |= _normalize_bluetooth_type (connection, parameters);
 
 	/* Verify anew. */
 	success = _nm_connection_verify (connection, error);
