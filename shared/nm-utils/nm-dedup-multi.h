@@ -291,7 +291,8 @@ guint nm_dedup_multi_index_remove_entry (NMDedupMultiIndex *self,
 
 guint nm_dedup_multi_index_remove_obj (NMDedupMultiIndex *self,
                                        NMDedupMultiIdxType *idx_type,
-                                       /*const NMDedupMultiObj * */ gconstpointer obj);
+                                       /*const NMDedupMultiObj * */ gconstpointer obj,
+                                       /*const NMDedupMultiObj ** */ gconstpointer *out_obj);
 
 guint nm_dedup_multi_index_remove_head (NMDedupMultiIndex *self,
                                         NMDedupMultiIdxType *idx_type,

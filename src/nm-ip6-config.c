@@ -1025,7 +1025,8 @@ nm_ip6_config_subtract (NMIP6Config *dst, const NMIP6Config *src)
 	nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, src, &a) {
 		if (nm_dedup_multi_index_remove_obj (priv_dst->multi_idx,
 		                                     &priv_dst->idx_ip6_addresses,
-		                                     NMP_OBJECT_UP_CAST (a)))
+		                                     NMP_OBJECT_UP_CAST (a),
+		                                     NULL))
 			changed = TRUE;
 	}
 	if (changed)
@@ -1054,7 +1055,8 @@ nm_ip6_config_subtract (NMIP6Config *dst, const NMIP6Config *src)
 	nm_ip_config_iter_ip6_route_for_each (&ipconf_iter, src, &r) {
 		if (nm_dedup_multi_index_remove_obj (priv_dst->multi_idx,
 		                                     &priv_dst->idx_ip6_routes,
-		                                     NMP_OBJECT_UP_CAST (r)))
+		                                     NMP_OBJECT_UP_CAST (r),
+		                                     NULL))
 			changed = TRUE;
 	}
 	if (changed)
@@ -1586,7 +1588,8 @@ _nmtst_nm_ip6_config_del_address (NMIP6Config *self, guint i)
 
 	if (nm_dedup_multi_index_remove_obj (priv->multi_idx,
 	                                     &priv->idx_ip6_addresses,
-	                                     NMP_OBJECT_UP_CAST (a)) != 1)
+	                                     NMP_OBJECT_UP_CAST (a),
+	                                     NULL) != 1)
 		g_return_if_reached ();
 	_notify_addresses (self);
 }
@@ -1763,7 +1766,8 @@ _nmtst_ip6_config_del_route (NMIP6Config *self, guint i)
 
 	if (nm_dedup_multi_index_remove_obj (priv->multi_idx,
 	                                     &priv->idx_ip6_routes,
-	                                     NMP_OBJECT_UP_CAST (r)) != 1)
+	                                     NMP_OBJECT_UP_CAST (r),
+	                                     NULL) != 1)
 		g_return_if_reached ();
 	_notify_routes (self);
 }

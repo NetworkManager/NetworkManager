@@ -626,13 +626,22 @@ nm_dedup_multi_index_remove_entry (NMDedupMultiIndex *self,
 guint
 nm_dedup_multi_index_remove_obj (NMDedupMultiIndex *self,
                                  NMDedupMultiIdxType *idx_type,
-                                 /*const NMDedupMultiObj * */ gconstpointer obj)
+                                 /*const NMDedupMultiObj * */ gconstpointer obj,
+                                 /*const NMDedupMultiObj ** */ gconstpointer *out_obj)
 {
 	const NMDedupMultiEntry *entry;
 
 	entry = nm_dedup_multi_index_lookup_obj (self, idx_type, obj);
-	if (!entry)
+	if (!entry) {
+		NM_SET_OUT (out_obj, NULL);
 		return 0;
+	}
+
+	/* since we are about to remove the object, we obviously pass
+	 * a reference to @out_obj, the caller MUST unref the object,
+	 * if he chooses to provide @out_obj. */
+	NM_SET_OUT (out_obj, nm_dedup_multi_obj_ref (entry->obj));
+
 	_remove_entry (self, (NMDedupMultiEntry *) entry, NULL);
 	return 1;
 }
