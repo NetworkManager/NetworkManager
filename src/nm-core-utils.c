@@ -2146,7 +2146,7 @@ monotonic_timestamp_get (struct timespec *tp)
 		break;
 	case 2:
 		/* fallback, return CLOCK_MONOTONIC. Kernels prior to 2.6.39
-		 * don't support CLOCK_BOOTTIME. */
+		 * (released on 18 May, 2011) don't support CLOCK_BOOTTIME. */
 		err = clock_gettime (CLOCK_MONOTONIC, tp);
 		break;
 	}

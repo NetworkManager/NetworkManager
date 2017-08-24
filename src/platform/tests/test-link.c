@@ -791,7 +791,7 @@ test_software_detect (gconstpointer user_data)
 		 * namespaced, the creation can fail if a macvtap in another namespace
 		 * has the same index. Try to detect this situation and skip already
 		 * used indexes.
-		 * http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=17af2bce88d31e65ed73d638bb752d2e13c66ced
+		 * The fix (17af2bce) is included kernel 4.7, dated 24 July, 2016.
 		 */
 		for (i = ifindex_parent + 1; i < ifindex_parent + 100; i++) {
 			snprintf (buf, sizeof (buf), "/sys/class/macvtap/tap%d", i);
@@ -1728,8 +1728,8 @@ test_nl_bugs_veth (void)
 	pllink_veth0 = nm_platform_link_get (NM_PLATFORM_GET, ifindex_veth0);
 	g_assert (pllink_veth0);
 	if (pllink_veth0->parent == 0) {
-		/* pre-4.1 kernels don't support exposing the veth peer as IFA_LINK. skip the remainder
-		 * of the test. */
+		/* Kernels prior to 4.1 dated 21 June, 2015 don't support exposing the veth peer
+		 * as IFA_LINK. skip the remainder of the test. */
 		goto out;
 	}
 	g_assert_cmpint (pllink_veth0->parent, ==, ifindex_veth1);
@@ -2023,8 +2023,8 @@ test_netns_general (gpointer fixture, gconstpointer test_data)
 	_sysctl_assert_eq (platform_1, "/proc/sys/net/ipv6/conf/dummy2b/disable_ipv6", NULL);
 	_sysctl_assert_eq (platform_2, "/proc/sys/net/ipv6/conf/dummy2a/disable_ipv6", NULL);
 
-	/* older kernels (Ubuntu 12.04) don't support ethtool -i for dummy devices. Work around that and
-	 * skip asserts that are known to fail. */
+	/* Kernels prior to 3.19 dated 8 February, 2015 don't support ethtool -i for dummy devices.
+	 * Work around that and skip asserts that are known to fail. */
 	ethtool_support = nmtstp_run_command ("ethtool -i dummy1_ > /dev/null") == 0;
 	if (ethtool_support) {
 		g_assert (nmp_utils_ethtool_get_driver_info (nmtstp_link_get_typed (platform_1, 0, "dummy1_", NM_LINK_TYPE_DUMMY)->ifindex, &driver_info));

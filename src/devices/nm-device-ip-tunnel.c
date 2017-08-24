@@ -647,7 +647,7 @@ create_and_realize (NMDevice *device,
 			             "Failed to create GRE interface '%s' for '%s': %s",
 			             iface,
 			             nm_connection_get_id (connection),
-			             nm_platform_error_to_string (plerr));
+			             nm_platform_error_to_string_a (plerr));
 			return FALSE;
 		}
 		break;
@@ -670,10 +670,10 @@ create_and_realize (NMDevice *device,
 		plerr = nm_platform_link_sit_add (nm_device_get_platform (device), iface, &lnk_sit, out_plink);
 		if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
 			g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
-					"Failed to create SIT interface '%s' for '%s': %s",
-					iface,
-					nm_connection_get_id (connection),
-					nm_platform_error_to_string (plerr));
+			             "Failed to create SIT interface '%s' for '%s': %s",
+			             iface,
+			             nm_connection_get_id (connection),
+			             nm_platform_error_to_string_a (plerr));
 			return FALSE;
 		}
 		break;
@@ -696,10 +696,10 @@ create_and_realize (NMDevice *device,
 		plerr = nm_platform_link_ipip_add (nm_device_get_platform (device), iface, &lnk_ipip, out_plink);
 		if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
 			g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
-					"Failed to create IPIP interface '%s' for '%s': %s",
-					iface,
-					nm_connection_get_id (connection),
-					nm_platform_error_to_string (plerr));
+			             "Failed to create IPIP interface '%s' for '%s': %s",
+			             iface,
+			             nm_connection_get_id (connection),
+			             nm_platform_error_to_string_a (plerr));
 			return FALSE;
 		}
 		break;
@@ -728,7 +728,7 @@ create_and_realize (NMDevice *device,
 			             "Failed to create IPIP interface '%s' for '%s': %s",
 			             iface,
 			             nm_connection_get_id (connection),
-			             nm_platform_error_to_string (plerr));
+			             nm_platform_error_to_string_a (plerr));
 			return FALSE;
 		}
 		break;

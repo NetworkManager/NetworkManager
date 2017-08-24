@@ -258,7 +258,7 @@ create_and_realize (NMDevice *device,
 		             lnk.tap ? "macvtap" : "macvlan",
 		             iface,
 		             nm_connection_get_id (connection),
-		             nm_platform_error_to_string (plerr));
+		             nm_platform_error_to_string_a (plerr));
 		return FALSE;
 	}
 

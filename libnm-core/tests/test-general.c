@@ -78,6 +78,26 @@ G_STATIC_ASSERT (sizeof (bool) <= sizeof (int));
 
 /*****************************************************************************/
 
+static void
+test_nm_g_slice_free_fcn (void)
+{
+	gpointer p;
+
+	p = g_slice_new (gint64);
+	(nm_g_slice_free_fcn (gint64)) (p);
+
+	p = g_slice_new (gint32);
+	(nm_g_slice_free_fcn (gint32)) (p);
+
+	p = g_slice_new (gint);
+	(nm_g_slice_free_fcn (gint)) (p);
+
+	p = g_slice_new (gint64);
+	nm_g_slice_free_fcn_gint64 (p);
+}
+
+/*****************************************************************************/
+
 typedef struct {
 	int val;
 	int idx;
@@ -6177,6 +6197,7 @@ int main (int argc, char **argv)
 {
 	nmtst_init (&argc, &argv, TRUE);
 
+	g_test_add_func ("/core/general/test_nm_g_slice_free_fcn", test_nm_g_slice_free_fcn);
 	g_test_add_func ("/core/general/test_c_list_sort", test_c_list_sort);
 	g_test_add_func ("/core/general/test_dedup_multi", test_dedup_multi);
 	g_test_add_func ("/core/general/test_utils_str_utf8safe", test_utils_str_utf8safe);

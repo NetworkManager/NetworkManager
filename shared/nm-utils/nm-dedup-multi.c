@@ -77,7 +77,7 @@ nm_dedup_multi_idx_type_init (NMDedupMultiIdxType *idx_type,
 /*****************************************************************************/
 
 static NMDedupMultiEntry *
-_entry_lookup_obj (NMDedupMultiIndex *self,
+_entry_lookup_obj (const NMDedupMultiIndex *self,
                    const NMDedupMultiIdxType *idx_type,
                    const NMDedupMultiObj *obj)
 {
@@ -92,7 +92,7 @@ _entry_lookup_obj (NMDedupMultiIndex *self,
 }
 
 static NMDedupMultiHeadEntry *
-_entry_lookup_head (NMDedupMultiIndex *self,
+_entry_lookup_head (const NMDedupMultiIndex *self,
                     const NMDedupMultiIdxType *idx_type,
                     const NMDedupMultiObj *obj)
 {
@@ -253,6 +253,8 @@ _add (NMDedupMultiIndex *self,
 	            }));
 
 	if (entry) {
+		gboolean changed = FALSE;
+
 		nm_dedup_multi_entry_set_dirty (entry, FALSE);
 
 		nm_assert (!head_existing || entry->head == head_existing);
@@ -270,11 +272,13 @@ _add (NMDedupMultiIndex *self,
 				    && entry->lst_entries.next != &entry_order->lst_entries) {
 					c_list_unlink (&entry->lst_entries);
 					c_list_link_before ((CList *) &entry_order->lst_entries, &entry->lst_entries);
+					changed = TRUE;
 				}
 			} else {
 				if (entry->lst_entries.prev != &entry->head->lst_entries_head) {
 					c_list_unlink (&entry->lst_entries);
 					c_list_link_front ((CList *) &entry->head->lst_entries_head, &entry->lst_entries);
+					changed = TRUE;
 				}
 			}
 			break;
@@ -284,11 +288,13 @@ _add (NMDedupMultiIndex *self,
 				    && entry->lst_entries.prev != &entry_order->lst_entries) {
 					c_list_unlink (&entry->lst_entries);
 					c_list_link_after ((CList *) &entry_order->lst_entries, &entry->lst_entries);
+					changed = TRUE;
 				}
 			} else {
 				if (entry->lst_entries.next != &entry->head->lst_entries_head) {
 					c_list_unlink (&entry->lst_entries);
 					c_list_link_tail ((CList *) &entry->head->lst_entries_head, &entry->lst_entries);
+					changed = TRUE;
 				}
 			}
 			break;
@@ -303,7 +309,7 @@ _add (NMDedupMultiIndex *self,
 		                                   entry->obj)) {
 			NM_SET_OUT (out_entry, entry);
 			NM_SET_OUT (out_obj_old, nm_dedup_multi_obj_ref (entry->obj));
-			return FALSE;
+			return changed;
 		}
 
 		obj_new = nm_dedup_multi_index_obj_intern (self, obj);
@@ -620,13 +626,22 @@ nm_dedup_multi_index_remove_entry (NMDedupMultiIndex *self,
 guint
 nm_dedup_multi_index_remove_obj (NMDedupMultiIndex *self,
                                  NMDedupMultiIdxType *idx_type,
-                                 /*const NMDedupMultiObj * */ gconstpointer obj)
+                                 /*const NMDedupMultiObj * */ gconstpointer obj,
+                                 /*const NMDedupMultiObj ** */ gconstpointer *out_obj)
 {
 	const NMDedupMultiEntry *entry;
 
 	entry = nm_dedup_multi_index_lookup_obj (self, idx_type, obj);
-	if (!entry)
+	if (!entry) {
+		NM_SET_OUT (out_obj, NULL);
 		return 0;
+	}
+
+	/* since we are about to remove the object, we obviously pass
+	 * a reference to @out_obj, the caller MUST unref the object,
+	 * if he chooses to provide @out_obj. */
+	NM_SET_OUT (out_obj, nm_dedup_multi_obj_ref (entry->obj));
+
 	_remove_entry (self, (NMDedupMultiEntry *) entry, NULL);
 	return 1;
 }
@@ -667,7 +682,7 @@ nm_dedup_multi_index_remove_idx (NMDedupMultiIndex *self,
  * Returns: the cache entry or %NULL if the entry wasn't found.
  */
 const NMDedupMultiEntry *
-nm_dedup_multi_index_lookup_obj (NMDedupMultiIndex *self,
+nm_dedup_multi_index_lookup_obj (const NMDedupMultiIndex *self,
                                  const NMDedupMultiIdxType *idx_type,
                                  /*const NMDedupMultiObj * */ gconstpointer obj)
 {
@@ -693,7 +708,7 @@ nm_dedup_multi_index_lookup_obj (NMDedupMultiIndex *self,
  * Returns: the cache entry or %NULL if the entry wasn't found.
  */
 const NMDedupMultiHeadEntry *
-nm_dedup_multi_index_lookup_head (NMDedupMultiIndex *self,
+nm_dedup_multi_index_lookup_head (const NMDedupMultiIndex *self,
                                   const NMDedupMultiIdxType *idx_type,
                                   /*const NMDedupMultiObj * */ gconstpointer obj)
 {

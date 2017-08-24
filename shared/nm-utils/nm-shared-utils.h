@@ -150,6 +150,53 @@ gint _nm_utils_ascii_str_to_bool (const char *str,
 
 /*****************************************************************************/
 
+#define _nm_g_slice_free_fcn_define(mem_size) \
+static inline void \
+_nm_g_slice_free_fcn_##mem_size (gpointer mem_block) \
+{ \
+	g_slice_free1 (mem_size, mem_block); \
+}
+
+_nm_g_slice_free_fcn_define (1)
+_nm_g_slice_free_fcn_define (2)
+_nm_g_slice_free_fcn_define (4)
+_nm_g_slice_free_fcn_define (8)
+_nm_g_slice_free_fcn_define (16)
+
+#define _nm_g_slice_free_fcn1(mem_size) \
+	({ \
+		void (*_fcn) (gpointer); \
+		\
+		/* If mem_size is a compile time constant, the compiler
+		 * will be able to optimize this. Hence, you don't want
+		 * to call this with a non-constant size argument. */ \
+		switch (mem_size) { \
+		case  1: _fcn = _nm_g_slice_free_fcn_1;  break; \
+		case  2: _fcn = _nm_g_slice_free_fcn_2;  break; \
+		case  4: _fcn = _nm_g_slice_free_fcn_4;  break; \
+		case  8: _fcn = _nm_g_slice_free_fcn_8;  break; \
+		case 16: _fcn = _nm_g_slice_free_fcn_16; break; \
+		default: g_assert_not_reached (); _fcn = NULL; break; \
+		} \
+		_fcn; \
+	})
+
+/**
+ * nm_g_slice_free_fcn:
+ * @type: type argument for sizeof() operator that you would
+ *   pass to g_slice_new().
+ *
+ * Returns: a function pointer with GDestroyNotify signature
+ *   for g_slice_free(type,*).
+ *
+ * Only certain types are implemented. You'll get an assertion
+ * using the wrong type. */
+#define nm_g_slice_free_fcn(type) (_nm_g_slice_free_fcn1 (sizeof (type)))
+
+#define nm_g_slice_free_fcn_gint64 (nm_g_slice_free_fcn (gint64))
+
+/*****************************************************************************/
+
 /**
  * NMUtilsError:
  * @NM_UTILS_ERROR_UNKNOWN: unknown or unclassified error

@@ -92,7 +92,14 @@ gboolean _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
                                 NMIPConfigDedupMultiIdxType *idx_type,
                                 int ifindex,
                                 const NMPObject *obj_new,
-                                const NMPlatformObject *pl_new);
+                                const NMPlatformObject *pl_new,
+                                gboolean merge,
+                                gboolean append_force);
+
+const NMDedupMultiEntry *_nm_ip_config_lookup_ip_route (const NMDedupMultiIndex *multi_idx,
+                                                        const NMIPConfigDedupMultiIdxType *idx_type,
+                                                        const NMPObject *needle,
+                                                        NMPlatformIPRouteCmpType cmp_type);
 
 /*****************************************************************************/
 
@@ -135,7 +142,9 @@ int nm_ip4_config_get_ifindex (const NMIP4Config *self);
 NMDedupMultiIndex *nm_ip4_config_get_multi_idx (const NMIP4Config *self);
 
 NMIP4Config *nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int ifindex, gboolean capture_resolv_conf);
-gboolean nm_ip4_config_commit (const NMIP4Config *self, NMPlatform *platform, NMRouteManager *route_manager, int ifindex, gboolean routes_full_sync, gint64 default_route_metric);
+gboolean nm_ip4_config_commit (const NMIP4Config *self,
+                               NMPlatform *platform,
+                               guint32 default_route_metric);
 void nm_ip4_config_merge_setting (NMIP4Config *self, NMSettingIPConfig *setting, guint32 default_route_metric);
 NMSetting *nm_ip4_config_create_setting (const NMIP4Config *self);
 

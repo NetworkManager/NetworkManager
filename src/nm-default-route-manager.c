@@ -304,7 +304,7 @@ _platform_route_sync_add (const VTableIP *vtable, NMDefaultRouteManager *self, g
 		rt.plen = 0;
 		rt.metric = entry->effective_metric;
 
-		success = nm_platform_ip4_route_add (priv->platform, NMP_NLM_FLAG_REPLACE, &rt);
+		success = (nm_platform_ip4_route_add (priv->platform, NMP_NLM_FLAG_REPLACE, &rt) == NM_PLATFORM_ERROR_SUCCESS);
 	} else {
 		NMPlatformIP6Route rt = entry->route.r6;
 
@@ -312,7 +312,7 @@ _platform_route_sync_add (const VTableIP *vtable, NMDefaultRouteManager *self, g
 		rt.plen = 0;
 		rt.metric = entry->effective_metric;
 
-		success = nm_platform_ip6_route_add (priv->platform, NMP_NLM_FLAG_REPLACE, &rt);
+		success = (nm_platform_ip6_route_add (priv->platform, NMP_NLM_FLAG_REPLACE, &rt) == NM_PLATFORM_ERROR_SUCCESS);
 	}
 	if (!success) {
 		_LOGW (vtable->vt->addr_family, "failed to add default route %s with effective metric %u",
@@ -334,7 +334,7 @@ _platform_route_sync_flush (const VTableIP *vtable, NMDefaultRouteManager *self,
 
 	routes = nm_platform_lookup_route_default_clone (priv->platform,
 	                                                 vtable->vt->obj_type,
-	                                                 nm_platform_lookup_predicate_routes_skip_rtprot_kernel,
+	                                                 nm_platform_lookup_predicate_routes_main_skip_rtprot_kernel,
 	                                                 NULL);
 	if (!routes)
 		return FALSE;
@@ -515,7 +515,7 @@ _resync_all (const VTableIP *vtable, NMDefaultRouteManager *self, const Entry *c
 
 	routes = nm_platform_lookup_route_default_clone (priv->platform,
 	                                                 vtable->vt->obj_type,
-	                                                 nm_platform_lookup_predicate_routes_skip_rtprot_kernel,
+	                                                 nm_platform_lookup_predicate_routes_main_skip_rtprot_kernel,
 	                                                 NULL);
 
 	assumed_metrics = _get_assumed_interface_metrics (vtable, self, routes);

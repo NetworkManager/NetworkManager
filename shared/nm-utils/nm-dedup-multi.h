@@ -278,11 +278,11 @@ gboolean nm_dedup_multi_index_add (NMDedupMultiIndex *self,
                                    const NMDedupMultiEntry **out_entry,
                                    /* const NMDedupMultiObj ** */ gpointer out_obj_old);
 
-const NMDedupMultiEntry *nm_dedup_multi_index_lookup_obj (NMDedupMultiIndex *self,
+const NMDedupMultiEntry *nm_dedup_multi_index_lookup_obj (const NMDedupMultiIndex *self,
                                                           const NMDedupMultiIdxType *idx_type,
                                                           /*const NMDedupMultiObj * */ gconstpointer obj);
 
-const NMDedupMultiHeadEntry *nm_dedup_multi_index_lookup_head (NMDedupMultiIndex *self,
+const NMDedupMultiHeadEntry *nm_dedup_multi_index_lookup_head (const NMDedupMultiIndex *self,
                                                                const NMDedupMultiIdxType *idx_type,
                                                                /*const NMDedupMultiObj * */ gconstpointer obj);
 
@@ -291,7 +291,8 @@ guint nm_dedup_multi_index_remove_entry (NMDedupMultiIndex *self,
 
 guint nm_dedup_multi_index_remove_obj (NMDedupMultiIndex *self,
                                        NMDedupMultiIdxType *idx_type,
-                                       /*const NMDedupMultiObj * */ gconstpointer obj);
+                                       /*const NMDedupMultiObj * */ gconstpointer obj,
+                                       /*const NMDedupMultiObj ** */ gconstpointer *out_obj);
 
 guint nm_dedup_multi_index_remove_head (NMDedupMultiIndex *self,
                                         NMDedupMultiIdxType *idx_type,

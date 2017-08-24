@@ -295,7 +295,7 @@ create_and_realize (NMDevice *device,
 		             "Failed to create InfiniBand P_Key interface '%s' for '%s': %s",
 		             nm_device_get_iface (device),
 		             nm_connection_get_id (connection),
-		             nm_platform_error_to_string (plerr));
+		             nm_platform_error_to_string_a (plerr));
 		return FALSE;
 	}
 
@@ -324,7 +324,7 @@ unrealize (NMDevice *device, GError **error)
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to remove InfiniBand P_Key interface '%s': %s",
 		             nm_device_get_iface (device),
-		             nm_platform_error_to_string (plerr));
+		             nm_platform_error_to_string_a (plerr));
 		return FALSE;
 	}
 

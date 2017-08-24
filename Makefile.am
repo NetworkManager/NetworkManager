@@ -1323,9 +1323,6 @@ src_libNetworkManagerBase_la_SOURCES = \
 	src/nm-ip6-config.c \
 	src/nm-ip6-config.h \
 	\
-	src/nm-route-manager.c \
-	src/nm-route-manager.h \
-	\
 	src/dhcp/nm-dhcp-client.c \
 	src/dhcp/nm-dhcp-client.h \
 	src/dhcp/nm-dhcp-client-logging.h \
@@ -2961,8 +2958,6 @@ check_programs += \
 	src/tests/test-general-with-expect \
 	src/tests/test-ip4-config \
 	src/tests/test-ip6-config \
-	src/tests/test-route-manager-linux \
-	src/tests/test-route-manager-fake \
 	src/tests/test-dcb \
 	src/tests/test-systemd \
 	src/tests/test-resolvconf-capture \
@@ -3009,28 +3004,6 @@ $(src_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_tests_test_general_with_expect_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_tests_test_wired_defname_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_tests_test_utils_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-
-src_tests_test_route_manager_ldflags = \
-	$(CODE_COVERAGE_LDFLAGS)
-
-src_tests_test_route_manager_ldadd = \
-	src/libNetworkManagerTest.la \
-	$(GLIB_LIBS) \
-	$(LIBUDEV_LIBS) \
-	$(LIBNL_LIBS)
-
-src_tests_test_route_manager_fake_SOURCES = src/tests/test-route-manager.c
-src_tests_test_route_manager_fake_CPPFLAGS = $(src_tests_cppflags_fake)
-src_tests_test_route_manager_fake_LDFLAGS = $(src_tests_test_route_manager_ldflags)
-src_tests_test_route_manager_fake_LDADD = $(src_tests_test_route_manager_ldadd)
-
-src_tests_test_route_manager_linux_SOURCES = src/tests/test-route-manager.c
-src_tests_test_route_manager_linux_CPPFLAGS = $(src_tests_cppflags_linux)
-src_tests_test_route_manager_linux_LDFLAGS = $(src_tests_test_route_manager_ldflags)
-src_tests_test_route_manager_linux_LDADD = $(src_tests_test_route_manager_ldadd)
-
-$(src_tests_test_route_manager_fake_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_tests_test_route_manager_linux_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 src_tests_test_systemd_CPPFLAGS = $(src_libsystemd_nm_la_cppflags)
 src_tests_test_systemd_LDADD = \

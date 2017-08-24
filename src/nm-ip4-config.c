@@ -33,7 +33,6 @@
 #include "platform/nm-platform.h"
 #include "platform/nm-platform-utils.h"
 #include "NetworkManagerUtils.h"
-#include "nm-route-manager.h"
 #include "nm-core-internal.h"
 
 #include "introspection/org.freedesktop.NetworkManager.IP4Config.h"
@@ -164,7 +163,9 @@ _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
                        NMIPConfigDedupMultiIdxType *idx_type,
                        int ifindex,
                        const NMPObject *obj_new,
-                       const NMPlatformObject *pl_new)
+                       const NMPlatformObject *pl_new,
+                       gboolean merge,
+                       gboolean append_force)
 {
 	NMPObject obj_new_stackinit;
 	const NMDedupMultiEntry *entry_old;
@@ -201,58 +202,62 @@ _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
 		const NMPObject *obj_old = entry_old->obj;
 
 		if (nmp_object_equal (obj_new, obj_old))
-			return FALSE;
+			goto append_force_and_out;
 
-		switch (idx_type->obj_type) {
-		case NMP_OBJECT_TYPE_IP4_ADDRESS:
-		case NMP_OBJECT_TYPE_IP6_ADDRESS:
-			/* we want to keep the maximum addr_source. But since we expect
-			 * that usually we already add the maxiumum right away, we first try to
-			 * add the new address (replacing the old one). Only if we later
-			 * find out that addr_source is now lower, we fix it.
-			 */
-			if (obj_new->ip_address.addr_source < obj_old->ip_address.addr_source) {
-				obj_new = nmp_object_stackinit_obj (&obj_new_stackinit, obj_new);
-				obj_new_stackinit.ip_address.addr_source = obj_old->ip_address.addr_source;
-				modified = TRUE;
+		/* if @merge, we merge the new object with the existing one.
+		 * Otherwise, we replace it entirely. */
+		if (merge) {
+			switch (idx_type->obj_type) {
+			case NMP_OBJECT_TYPE_IP4_ADDRESS:
+			case NMP_OBJECT_TYPE_IP6_ADDRESS:
+				/* we want to keep the maximum addr_source. But since we expect
+				 * that usually we already add the maxiumum right away, we first try to
+				 * add the new address (replacing the old one). Only if we later
+				 * find out that addr_source is now lower, we fix it.
+				 */
+				if (obj_new->ip_address.addr_source < obj_old->ip_address.addr_source) {
+					obj_new = nmp_object_stackinit_obj (&obj_new_stackinit, obj_new);
+					obj_new_stackinit.ip_address.addr_source = obj_old->ip_address.addr_source;
+					modified = TRUE;
+				}
+
+				/* for addresses that we read from the kernel, we keep the timestamps as defined
+				 * by the previous source (item_old). The reason is, that the other source configured the lifetimes
+				 * with "what should be" and the kernel values are "what turned out after configuring it".
+				 *
+				 * For other sources, the longer lifetime wins. */
+				if (   (   obj_new->ip_address.addr_source == NM_IP_CONFIG_SOURCE_KERNEL
+				        && obj_old->ip_address.addr_source != NM_IP_CONFIG_SOURCE_KERNEL)
+				    || nm_platform_ip_address_cmp_expiry (NMP_OBJECT_CAST_IP_ADDRESS (obj_old), NMP_OBJECT_CAST_IP_ADDRESS(obj_new)) > 0) {
+					obj_new = nmp_object_stackinit_obj (&obj_new_stackinit, obj_new);
+					obj_new_stackinit.ip_address.timestamp = NMP_OBJECT_CAST_IP_ADDRESS (obj_old)->timestamp;
+					obj_new_stackinit.ip_address.lifetime  = NMP_OBJECT_CAST_IP_ADDRESS (obj_old)->lifetime;
+					obj_new_stackinit.ip_address.preferred = NMP_OBJECT_CAST_IP_ADDRESS (obj_old)->preferred;
+					modified = TRUE;
+				}
+				break;
+			case NMP_OBJECT_TYPE_IP4_ROUTE:
+			case NMP_OBJECT_TYPE_IP6_ROUTE:
+				/* we want to keep the maximum rt_source. But since we expect
+				 * that usually we already add the maxiumum right away, we first try to
+				 * add the new route (replacing the old one). Only if we later
+				 * find out that rt_source is now lower, we fix it.
+				 */
+				if (obj_new->ip_route.rt_source < obj_old->ip_route.rt_source) {
+					obj_new = nmp_object_stackinit_obj (&obj_new_stackinit, obj_new);
+					obj_new_stackinit.ip_route.rt_source = obj_old->ip_route.rt_source;
+					modified = TRUE;
+				}
+				break;
+			default:
+				nm_assert_not_reached ();
+				break;
 			}
 
-			/* for addresses that we read from the kernel, we keep the timestamps as defined
-			 * by the previous source (item_old). The reason is, that the other source configured the lifetimes
-			 * with "what should be" and the kernel values are "what turned out after configuring it".
-			 *
-			 * For other sources, the longer lifetime wins. */
-			if (   (   obj_new->ip_address.addr_source == NM_IP_CONFIG_SOURCE_KERNEL
-			        && obj_old->ip_address.addr_source != NM_IP_CONFIG_SOURCE_KERNEL)
-			    || nm_platform_ip_address_cmp_expiry (NMP_OBJECT_CAST_IP_ADDRESS (obj_old), NMP_OBJECT_CAST_IP_ADDRESS(obj_new)) > 0) {
-				obj_new = nmp_object_stackinit_obj (&obj_new_stackinit, obj_new);
-				obj_new_stackinit.ip_address.timestamp = NMP_OBJECT_CAST_IP_ADDRESS (obj_old)->timestamp;
-				obj_new_stackinit.ip_address.lifetime  = NMP_OBJECT_CAST_IP_ADDRESS (obj_old)->lifetime;
-				obj_new_stackinit.ip_address.preferred = NMP_OBJECT_CAST_IP_ADDRESS (obj_old)->preferred;
-				modified = TRUE;
-			}
-			break;
-		case NMP_OBJECT_TYPE_IP4_ROUTE:
-		case NMP_OBJECT_TYPE_IP6_ROUTE:
-			/* we want to keep the maximum rt_source. But since we expect
-			 * that usually we already add the maxiumum right away, we first try to
-			 * add the new route (replacing the old one). Only if we later
-			 * find out that rt_source is now lower, we fix it.
-			 */
-			if (obj_new->ip_route.rt_source < obj_old->ip_route.rt_source) {
-				obj_new = nmp_object_stackinit_obj (&obj_new_stackinit, obj_new);
-				obj_new_stackinit.ip_route.rt_source = obj_old->ip_route.rt_source;
-				modified = TRUE;
-			}
-			break;
-		default:
-			nm_assert_not_reached ();
-			break;
+			if (   modified
+			    && nmp_object_equal (obj_new, obj_old))
+				goto append_force_and_out;
 		}
-
-		if (   modified
-		    && nmp_object_equal (obj_new, obj_old))
-			return FALSE;
 	}
 
 	if (!nm_dedup_multi_index_add_full (multi_idx,
@@ -269,6 +274,55 @@ _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
 	}
 
 	return TRUE;
+
+append_force_and_out:
+	if (append_force) {
+		if (nm_dedup_multi_entry_reorder (entry_old, NULL, TRUE))
+			return TRUE;
+	}
+	return FALSE;
+}
+
+/**
+ * _nm_ip_config_lookup_ip_route:
+ * @multi_idx:
+ * @idx_type:
+ * @needle:
+ * @cmp_type: after lookup, filter the result by comparing with @cmp_type. Only
+ *   return the result, if it compares equal to @needle according to this @cmp_type.
+ *   Note that the index uses %NM_PLATFORM_IP_ROUTE_CMP_TYPE_DST type, so passing
+ *   that compare-type means not to filter any further.
+ *
+ * Returns: the found entry or %NULL.
+ */
+const NMDedupMultiEntry *
+_nm_ip_config_lookup_ip_route (const NMDedupMultiIndex *multi_idx,
+                               const NMIPConfigDedupMultiIdxType *idx_type,
+                               const NMPObject *needle,
+                               NMPlatformIPRouteCmpType cmp_type)
+{
+	const NMDedupMultiEntry *entry;
+
+	nm_assert (multi_idx);
+	nm_assert (idx_type);
+	nm_assert (NM_IN_SET (idx_type->obj_type, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
+	nm_assert (NMP_OBJECT_GET_TYPE (needle) == idx_type->obj_type);
+
+	entry = nm_dedup_multi_index_lookup_obj (multi_idx,
+	                                         &idx_type->parent,
+	                                         needle);
+	if (!entry)
+		return NULL;
+
+	if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_DST)
+		nm_assert (nm_platform_ip4_route_cmp (NMP_OBJECT_CAST_IP4_ROUTE (entry->obj), NMP_OBJECT_CAST_IP4_ROUTE (needle), cmp_type) == 0);
+	else {
+		if (nm_platform_ip4_route_cmp (NMP_OBJECT_CAST_IP4_ROUTE (entry->obj),
+		                               NMP_OBJECT_CAST_IP4_ROUTE (needle),
+		                               cmp_type) != 0)
+			return NULL;
+	}
+	return entry;
 }
 
 /*****************************************************************************/
@@ -339,6 +393,9 @@ G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, NM_TYPE_EXPORTED_OBJECT)
 
 static void _add_address (NMIP4Config *self, const NMPObject *obj_new, const NMPlatformIP4Address *new);
 static void _add_route (NMIP4Config *self, const NMPObject *obj_new, const NMPlatformIP4Route *new);
+static const NMDedupMultiEntry *_lookup_route (const NMIP4Config *self,
+                                               const NMPObject *needle,
+                                               NMPlatformIPRouteCmpType cmp_type);
 
 /*****************************************************************************/
 
@@ -624,16 +681,6 @@ nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 			continue;
 		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
 			continue;
-
-		if (   priv->has_gateway
-		    && route->plen == 32
-		    && route->network == priv->gateway
-		    && route->gateway == 0) {
-			/* If there is a host route to the gateway, ignore that route.  It is
-			 * automatically added by NetworkManager when needed.
-			 */
-			continue;
-		}
 		_add_route (self, plobj, NULL);
 	}
 
@@ -656,92 +703,122 @@ nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 }
 
 gboolean
-nm_ip4_config_commit (const NMIP4Config *self, NMPlatform *platform, NMRouteManager *route_manager, int ifindex, gboolean routes_full_sync, gint64 default_route_metric)
+nm_ip4_config_commit (const NMIP4Config *self,
+                      NMPlatform *platform,
+                      guint32 default_route_metric)
 {
+	const NMIP4ConfigPrivate *priv;
 	gs_unref_ptrarray GPtrArray *addresses = NULL;
-	const NMDedupMultiHeadEntry *head_entry;
+	gs_unref_ptrarray GPtrArray *routes = NULL;
+	gs_unref_ptrarray GPtrArray *ip4_dev_route_blacklist = NULL;
+	int ifindex;
+	guint i;
+	gboolean success = TRUE;
 
+	g_return_val_if_fail (NM_IS_IP4_CONFIG (self), FALSE);
+
+	priv = NM_IP4_CONFIG_GET_PRIVATE (self);
+
+	ifindex = nm_ip4_config_get_ifindex (self);
 	g_return_val_if_fail (ifindex > 0, FALSE);
-	g_return_val_if_fail (self != NULL, FALSE);
 
 	addresses = nm_dedup_multi_objs_to_ptr_array_head (nm_ip4_config_lookup_addresses (self),
 	                                                   NULL, NULL);
 
-	nm_platform_ip4_address_sync (platform, ifindex, addresses);
+	routes = nm_dedup_multi_objs_to_ptr_array_head (nm_ip4_config_lookup_routes (self),
+	                                                NULL, NULL);
 
-	/* Routes */
-	{
-		guint i;
-		gs_unref_array GArray *routes = NULL;
-		gs_unref_array GArray *device_route_purge_list = NULL;
-		const CList *iter;
+	if (addresses) {
+		/* For IPv6, we explicitly add the device-routes (onlink) to NMIP6Config.
+		 * As we don't do that for IPv4, add it here shortly before syncing
+		 * the routes. */
+		for (i = 0; i < addresses->len; i++) {
+			const NMPObject *o = addresses->pdata[i];
+			const NMPlatformIP4Address *addr;
+			nm_auto_nmpobj NMPObject *r = NULL;
+			NMPlatformIP4Route *route;
+			in_addr_t network;
 
-		head_entry = nm_ip4_config_lookup_routes (self);
+			if (!o)
+				continue;
 
-		routes = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP4Route), head_entry ? head_entry->len : 0);
+			addr = NMP_OBJECT_CAST_IP4_ADDRESS (o);
+			if (addr->plen == 0)
+				continue;
 
-		if (   default_route_metric >= 0
-		    && addresses) {
-			/* For IPv6, we explicitly add the device-routes (onlink) to NMIP6Config.
-			 * As we don't do that for IPv4, add it here shortly before syncing
-			 * the routes. For NMRouteManager these routes are very much important. */
-			for (i = 0; i < addresses->len; i++) {
-				const NMPObject *o = addresses->pdata[i];
-				const NMPlatformIP4Address *addr;
-				NMPlatformIP4Route route = { 0 };
+			nm_assert (addr->plen <= 32);
 
-				if (!o)
-					continue;
+			/* The destination network depends on the peer-address. */
+			network = nm_utils_ip4_address_clear_host_address (addr->peer_address, addr->plen);
 
-				addr = NMP_OBJECT_CAST_IP4_ADDRESS (o);
-				if (addr->plen == 0)
-					continue;
+			if (_ipv4_is_zeronet (network)) {
+				/* Kernel doesn't add device-routes for destinations that
+				 * start with 0.x.y.z. Skip them. */
+				continue;
+			}
 
-				nm_assert (addr->plen <= 32);
+			r = nmp_object_new (NMP_OBJECT_TYPE_IP4_ROUTE, NULL);
+			route = NMP_OBJECT_CAST_IP4_ROUTE (r);
 
-				route.ifindex = ifindex;
-				route.rt_source = NM_IP_CONFIG_SOURCE_KERNEL;
+			route->ifindex = ifindex;
+			route->rt_source = NM_IP_CONFIG_SOURCE_KERNEL;
+			route->network = network;
+			route->plen = addr->plen;
+			route->pref_src = addr->address;
+			route->metric = default_route_metric;
+			route->scope_inv = nm_platform_route_scope_inv (NM_RT_SCOPE_LINK);
 
-				/* The destination network depends on the peer-address. */
-				route.network = nm_utils_ip4_address_clear_host_address (addr->peer_address, addr->plen);
+			nm_platform_ip_route_normalize (AF_INET, (NMPlatformIPRoute *) route);
 
-				if (_ipv4_is_zeronet (route.network)) {
-					/* Kernel doesn't add device-routes for destinations that
-					 * start with 0.x.y.z. Skip them. */
-					continue;
-				}
+			if (_lookup_route (self,
+			                   r,
+			                   NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID)) {
+				/* we already track this route. Don't add it again. */
+			} else {
+				if (!routes)
+					routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nmp_object_unref);
+				g_ptr_array_add (routes, (gpointer) nmp_object_ref (r));
+			}
 
-				route.plen = addr->plen;
-				route.pref_src = addr->address;
-				route.metric = default_route_metric;
+			if (default_route_metric != NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE) {
+				nm_auto_nmpobj NMPObject *r_dev = NULL;
 
-				g_array_append_val (routes, route);
+				r_dev = nmp_object_clone (r, FALSE);
+				route = NMP_OBJECT_CAST_IP4_ROUTE (r_dev);
+				route->metric = NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE;
 
-				if (default_route_metric != NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE) {
-					if (!device_route_purge_list)
-						device_route_purge_list = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Route));
-					route.metric = NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE;
-					g_array_append_val (device_route_purge_list, route);
+				nm_platform_ip_route_normalize (AF_INET, (NMPlatformIPRoute *) route);
+
+				if (_lookup_route (self,
+				                   r_dev,
+				                   NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID)) {
+					/* we track such a route explicitly. Don't blacklist it. */
+				} else {
+					if (!ip4_dev_route_blacklist)
+						ip4_dev_route_blacklist = g_ptr_array_new_with_free_func ((GDestroyNotify) nmp_object_unref);
+
+					g_ptr_array_add (ip4_dev_route_blacklist,
+					                 g_steal_pointer (&r_dev));
 				}
 			}
 		}
-
-		if (head_entry) {
-			c_list_for_each (iter, &head_entry->lst_entries_head) {
-				g_array_append_vals (routes,
-				                     NMP_OBJECT_CAST_IP4_ROUTE (c_list_entry (iter, NMDedupMultiEntry, lst_entries)->obj),
-				                     1);
-			}
-		}
-
-		nm_route_manager_ip4_route_register_device_route_purge_list (route_manager, device_route_purge_list);
-
-		if (!nm_route_manager_ip4_route_sync (route_manager, ifindex, routes,
-		                                      default_route_metric < 0, routes_full_sync))
-			return FALSE;
 	}
 
-	return TRUE;
+	nm_platform_ip4_address_sync (platform, ifindex, addresses);
+
+	if (!nm_platform_ip_route_sync (platform,
+	                                AF_INET,
+	                                ifindex,
+	                                routes,
+	                                nm_platform_lookup_predicate_routes_main_skip_rtprot_kernel,
+	                                NULL))
+		success = FALSE;
+
+	nm_platform_ip4_dev_route_blacklist_set (platform,
+	                                         ifindex,
+	                                         ip4_dev_route_blacklist);
+
+	return success;
 }
 
 static void
@@ -840,6 +917,11 @@ nm_ip4_config_merge_setting (NMIP4Config *self, NMSettingIPConfig *setting, guin
 	for (i = 0; i < nroutes; i++) {
 		NMIPRoute *s_route = nm_setting_ip_config_get_route (setting, i);
 		NMPlatformIP4Route route;
+
+		if (nm_ip_route_get_family (s_route) != AF_INET) {
+			nm_assert_not_reached ();
+			continue;
+		}
 
 		memset (&route, 0, sizeof (route));
 		nm_ip_route_get_dest_binary (s_route, &route.network);
@@ -1228,7 +1310,8 @@ nm_ip4_config_subtract (NMIP4Config *dst, const NMIP4Config *src)
 	nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, src, &a) {
 		if (nm_dedup_multi_index_remove_obj (priv_dst->multi_idx,
 		                                     &priv_dst->idx_ip4_addresses,
-		                                     NMP_OBJECT_UP_CAST (a)))
+		                                     NMP_OBJECT_UP_CAST (a),
+		                                     NULL))
 			changed = TRUE;
 	}
 	if (changed)
@@ -1256,7 +1339,8 @@ nm_ip4_config_subtract (NMIP4Config *dst, const NMIP4Config *src)
 	nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, src, &r) {
 		if (nm_dedup_multi_index_remove_obj (priv_dst->multi_idx,
 		                                     &priv_dst->idx_ip4_routes,
-		                                     NMP_OBJECT_UP_CAST (r)))
+		                                     NMP_OBJECT_UP_CAST (r),
+		                                     NULL))
 			changed = TRUE;
 	}
 	if (changed)
@@ -1885,7 +1969,9 @@ _add_address (NMIP4Config *self, const NMPObject *obj_new, const NMPlatformIP4Ad
 	                           &priv->idx_ip4_addresses_,
 	                           priv->ifindex,
 	                           obj_new,
-	                           (const NMPlatformObject *) new))
+	                           (const NMPlatformObject *) new,
+	                           TRUE,
+	                           FALSE))
 		_notify_addresses (self);
 }
 
@@ -1921,7 +2007,8 @@ _nmtst_nm_ip4_config_del_address (NMIP4Config *self, guint i)
 
 	if (nm_dedup_multi_index_remove_obj (priv->multi_idx,
 	                                     &priv->idx_ip4_addresses,
-	                                     NMP_OBJECT_UP_CAST (a)) != 1)
+	                                     NMP_OBJECT_UP_CAST (a),
+	                                     NULL) != 1)
 		g_return_if_reached ();
 	_notify_addresses (self);
 }
@@ -1975,11 +2062,29 @@ nm_ip4_config_address_exists (const NMIP4Config *self,
 	                                     needle->plen,
 	                                     needle->peer_address);
 	return !!nm_dedup_multi_index_lookup_obj (priv->multi_idx,
-	                                          &priv->idx_ip4_routes,
+	                                          &priv->idx_ip4_addresses,
 	                                          &obj_stack);
 }
 
 /*****************************************************************************/
+
+static const NMDedupMultiEntry *
+_lookup_route (const NMIP4Config *self,
+               const NMPObject *needle,
+               NMPlatformIPRouteCmpType cmp_type)
+{
+	const NMIP4ConfigPrivate *priv;
+
+	nm_assert (NM_IS_IP4_CONFIG (self));
+	nm_assert (NMP_OBJECT_GET_TYPE (needle) == NMP_OBJECT_TYPE_IP4_ROUTE);
+
+	priv = NM_IP4_CONFIG_GET_PRIVATE (self);
+
+	return _nm_ip_config_lookup_ip_route (priv->multi_idx,
+	                                      &priv->idx_ip4_routes_,
+	                                      needle,
+	                                      cmp_type);
+}
 
 void
 nm_ip4_config_reset_routes (NMIP4Config *self)
@@ -2004,7 +2109,9 @@ _add_route (NMIP4Config *self, const NMPObject *obj_new, const NMPlatformIP4Rout
 	                           &priv->idx_ip4_routes_,
 	                           priv->ifindex,
 	                           obj_new,
-	                           (const NMPlatformObject *) new))
+	                           (const NMPlatformObject *) new,
+	                           TRUE,
+	                           FALSE))
 		_notify_routes (self);
 }
 
@@ -2040,7 +2147,8 @@ _nmtst_nm_ip4_config_del_route (NMIP4Config *self, guint i)
 
 	if (nm_dedup_multi_index_remove_obj (priv->multi_idx,
 	                                     &priv->idx_ip4_routes,
-	                                     NMP_OBJECT_UP_CAST (r)) != 1)
+	                                     NMP_OBJECT_UP_CAST (r),
+	                                     NULL) != 1)
 		g_return_if_reached ();
 	_notify_routes (self);
 }

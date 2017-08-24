@@ -1199,7 +1199,7 @@ ip_route_delete (NMPlatform *platform, const NMPObject *obj)
 	return ipx_route_delete (platform, AF_UNSPEC, -1, obj);
 }
 
-static gboolean
+static NMPlatformError
 ip_route_add (NMPlatform *platform,
               NMPNlmFlags flags,
               int addr_family,
@@ -1223,6 +1223,8 @@ ip_route_add (NMPlatform *platform,
 
 	g_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 
+	flags = NM_FLAGS_UNSET (flags, NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE);
+
 	/* currently, only replace is implemented. */
 	g_assert (flags == NMP_NLM_FLAG_REPLACE);
 
@@ -1230,24 +1232,17 @@ ip_route_add (NMPlatform *platform,
 	                        ? NMP_OBJECT_TYPE_IP4_ROUTE
 	                        : NMP_OBJECT_TYPE_IP6_ROUTE,
 	                      (const NMPlatformObject *) route);
-	r = &obj->ip_route;
+	r = NMP_OBJECT_CAST_IP_ROUTE (obj);
+	nm_platform_ip_route_normalize (addr_family, r);
 
 	switch (addr_family) {
 	case AF_INET:
 		r4 = NMP_OBJECT_CAST_IP4_ROUTE (obj);
-		r4->network = nm_utils_ip4_address_clear_host_address (r4->network, r4->plen);
-		r4->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (r4->rt_source),
-		r4->scope_inv = nm_platform_route_scope_inv (!r4->gateway
-		                                             ? RT_SCOPE_LINK : RT_SCOPE_UNIVERSE);
 		if (r4->gateway)
 			has_gateway = TRUE;
 		break;
 	case AF_INET6:
 		r6 = NMP_OBJECT_CAST_IP6_ROUTE (obj);
-		nm_utils_ip6_address_clear_host_address (&r6->network, &r6->network, r6->plen);
-		r6->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (r6->rt_source),
-		r6->metric = nm_utils_ip6_route_metric_normalize (r6->metric);
-		nm_utils_ip6_address_clear_host_address (&r6->src, &r6->src, r6->src_plen);
 		if (!IN6_IS_ADDR_UNSPECIFIED (&r6->gateway))
 			has_gateway = TRUE;
 		break;
@@ -1291,7 +1286,7 @@ ip_route_add (NMPlatform *platform,
 				nm_log_warn (LOGD_PLATFORM, "Fake platform: failure adding ip6-route '%d: %s/%d %d': Network Unreachable",
 				             r->ifindex, nm_utils_inet6_ntop (&r6->network, NULL), r->plen, r->metric);
 			}
-			return FALSE;
+			return NM_PLATFORM_ERROR_UNSPECIFIED;
 		}
 	}
 
@@ -1353,7 +1348,7 @@ ip_route_add (NMPlatform *platform,
 		}
 	}
 
-	return TRUE;
+	return NM_PLATFORM_ERROR_SUCCESS;
 }
 
 /*****************************************************************************/

@@ -244,7 +244,7 @@ create_and_realize (NMDevice *device,
 		             "Failed to create TUN/TAP interface '%s' for '%s': %s",
 		             iface,
 		             nm_connection_get_id (connection),
-		             nm_platform_error_to_string (plerr));
+		             nm_platform_error_to_string_a (plerr));
 		return FALSE;
 	}
 
