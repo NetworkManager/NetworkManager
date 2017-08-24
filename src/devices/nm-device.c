@@ -2538,11 +2538,26 @@ static void
 device_recheck_slave_status (NMDevice *self, const NMPlatformLink *plink)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevice *master;
+	nm_auto_nmpobj const NMPObject *plink_master_keep_alive = NULL;
+	const NMPlatformLink *plink_master;
 
 	g_return_if_fail (plink);
 
 	if (plink->master <= 0)
 		return;
+
+	master = nm_manager_get_device_by_ifindex (nm_manager_get (), plink->master);
+	plink_master = nm_platform_link_get (nm_device_get_platform (self), plink->master);
+	plink_master_keep_alive = nmp_object_ref (NMP_OBJECT_UP_CAST (plink_master));
+
+	if (   master == NULL
+	    && plink_master
+	    && g_strcmp0 (plink_master->name, "ovs-system") == 0
+	    && plink_master->type == NM_LINK_TYPE_OPENVSWITCH) {
+		_LOGD (LOGD_DEVICE, "the device claimed by openvswitch");
+		return;
+	}
 
 	if (priv->master) {
 		if (   plink->master > 0
@@ -2555,20 +2570,16 @@ device_recheck_slave_status (NMDevice *self, const NMPlatformLink *plink)
 
 		nm_device_master_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 	}
-	if (plink->master > 0) {
-		NMDevice *master;
 
-		master = nm_manager_get_device_by_ifindex (nm_manager_get (), plink->master);
-		if (master && NM_DEVICE_GET_CLASS (master)->enslave_slave)
-			nm_device_master_add_slave (master, self, FALSE);
-		else if (master) {
-			_LOGI (LOGD_DEVICE, "enslaved to non-master-type device %s; ignoring",
-			       nm_device_get_iface (master));
-		} else {
-			_LOGW (LOGD_DEVICE, "enslaved to unknown device %d %s",
-			       plink->master,
-			       nm_platform_link_get_name (nm_device_get_platform (self), plink->master));
-		}
+	if (master && NM_DEVICE_GET_CLASS (master)->enslave_slave)
+		nm_device_master_add_slave (master, self, FALSE);
+	else if (master) {
+		_LOGI (LOGD_DEVICE, "enslaved to non-master-type device %s; ignoring",
+		       nm_device_get_iface (master));
+	} else {
+		_LOGW (LOGD_DEVICE, "enslaved to unknown device %d (%s%s%s)",
+		       plink->master,
+		       NM_PRINT_FMT_QUOTED (plink_master, "\"", plink_master->name, "\"", "??"));
 	}
 }
 
