@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# Util to pretty-print logfile of NetworkManager
+#
+# Unless setting NM_LOG_NO_COLOR it will colorize the output.
+# Suppress coloring with:
+# $ NM_LOG_NO_COLOR=1 NM-log ...
+#
+# If called without arguments, it either reads from stdin (if not
+# connected to a terminal) or it shows the journal content.
+#
+# If called with first argument "j", it always shows the journal content.
+#
+# You can pass multiple filenames.
+
+show-journal() {
+    local since="$(systemctl show NetworkManager | sed -n 's/^ExecMainStartTimestamp=\(.*\) [A-Z0-9]\+$/\1/p')"
+
+    if [[ "$since" == "" ]]; then
+       echo "error detecting NM. Is it running?"
+       systemctl status NetworkManager
+    else
+       exec journalctl -o short-precise --since "$since" -b 0 -u NetworkManager "$@"
+    fi
+}
+
+colorize() {
+    if [[ "$NM_LOG_NO_COLOR" == "" ]]; then
+        GREP_COLOR='01;33' grep --color=always '^\|^\(.* \)\?<\(warn>\|info> \|error>\) \(.*\<is starting\>.*$\)\?' | \
+        GREP_COLOR='01;37' grep --color=always '^\|\<platform: signal: .*$' | \
+        GREP_COLOR='01;34' grep --color=always '^\|\<platform-linux: link: change \|\<platform: link: setting .*$\|\<platform: \(route\|address\): .*$\|\<platform-linux: sysctl: setting .*$' | \
+        GREP_COLOR='01;35' grep --color=always '^\| audit: .*$' | \
+        GREP_COLOR='01;32' grep --color=always '^\|\<device (.*): state change: '
+    else
+        cat -
+    fi
+}
+
+(
+    if [ "$1" == "j" ]; then
+        shift
+        show-journal "$@"
+    elif [ "$#" -eq 0 -a -t 0 ]; then
+        show-journal
+    else
+        a="${1--}"
+        shift
+        /usr/bin/cat "$a" "$@"
+    fi
+) | \
+    colorize | \
+    LESS=FRSXMK exec less -R
