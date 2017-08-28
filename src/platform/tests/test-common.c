@@ -305,7 +305,7 @@ _ip4_route_get (NMPlatform *platform,
 {
 	NMDedupMultiIter iter;
 	NMPLookup lookup;
-	const NMPObject *o;
+	const NMPObject *o = NULL;
 	guint c;
 	const NMPlatformIP4Route *r = NULL;
 
@@ -409,7 +409,7 @@ _ip6_route_get (NMPlatform *platform,
 {
 	NMDedupMultiIter iter;
 	NMPLookup lookup;
-	const NMPObject *o;
+	const NMPObject *o = NULL;
 	guint c;
 	const NMPlatformIP6Route *r = NULL;
 
