@@ -435,6 +435,21 @@ nmp_object_unref (const NMPObject *obj)
 	return NULL;
 }
 
+#define nm_clear_nmp_object(ptr) \
+	({ \
+		typeof (ptr) _ptr = (ptr); \
+		typeof (*_ptr) _pptr; \
+		gboolean _changed = FALSE; \
+		\
+		if (   _ptr \
+		    && (_pptr = *_ptr)) { \
+			*_ptr = NULL; \
+			nmp_object_unref (_pptr); \
+			_changed = TRUE; \
+		} \
+		_changed; \
+	})
+
 NMPObject *nmp_object_new (NMPObjectType obj_type, const NMPlatformObject *plob);
 NMPObject *nmp_object_new_link (int ifindex);
 
