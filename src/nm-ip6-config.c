@@ -439,7 +439,8 @@ nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 			                            plobj,
 			                            NULL,
 			                            FALSE,
-			                            TRUE))
+			                            TRUE,
+			                            NULL))
 				nm_assert_not_reached ();
 			has_addresses = TRUE;
 		}
@@ -1254,7 +1255,8 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 			                       ipconf_iter_src.current->obj,
 			                       NULL,
 			                       FALSE,
-			                       TRUE);
+			                       TRUE,
+			                       NULL);
 		}
 		nm_dedup_multi_index_dirty_remove_idx (dst_priv->multi_idx, &dst_priv->idx_ip6_addresses, FALSE);
 		_notify_addresses (dst);
@@ -1299,7 +1301,8 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 			                       ipconf_iter_src.current->obj,
 			                       NULL,
 			                       FALSE,
-			                       TRUE);
+			                       TRUE,
+			                       NULL);
 		}
 		nm_dedup_multi_index_dirty_remove_idx (dst_priv->multi_idx, &dst_priv->idx_ip6_routes, FALSE);
 		_notify_routes (dst);
@@ -1561,7 +1564,8 @@ nm_ip6_config_reset_addresses_ndisc (NMIP6Config *self,
 		                           &obj,
 		                           NULL,
 		                           FALSE,
-		                           TRUE))
+		                           TRUE,
+		                           NULL))
 			changed = TRUE;
 	}
 
@@ -1595,7 +1599,8 @@ _add_address (NMIP6Config *self,
 	                           obj_new,
 	                           (const NMPlatformObject *) new,
 	                           TRUE,
-	                           FALSE))
+	                           FALSE,
+	                           NULL))
 		_notify_addresses (self);
 }
 
@@ -1788,7 +1793,8 @@ nm_ip6_config_reset_routes_ndisc (NMIP6Config *self,
 		                           &obj,
 		                           NULL,
 		                           FALSE,
-		                           TRUE))
+		                           TRUE,
+		                           NULL))
 			changed = TRUE;
 	}
 
@@ -1824,7 +1830,8 @@ _add_route (NMIP6Config *self, const NMPObject *obj_new, const NMPlatformIP6Rout
 	                           obj_new,
 	                           (const NMPlatformObject *) new,
 	                           TRUE,
-	                           FALSE))
+	                           FALSE,
+	                           NULL))
 		_notify_routes (self);
 }
 

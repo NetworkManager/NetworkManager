@@ -90,7 +90,8 @@ gboolean _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
                                 const NMPObject *obj_new,
                                 const NMPlatformObject *pl_new,
                                 gboolean merge,
-                                gboolean append_force);
+                                gboolean append_force,
+                                const NMPObject **out_obj_new);
 
 const NMDedupMultiEntry *_nm_ip_config_lookup_ip_route (const NMDedupMultiIndex *multi_idx,
                                                         const NMIPConfigDedupMultiIdxType *idx_type,

@@ -165,10 +165,12 @@ _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
                        const NMPObject *obj_new,
                        const NMPlatformObject *pl_new,
                        gboolean merge,
-                       gboolean append_force)
+                       gboolean append_force,
+                       const NMPObject **out_obj_new)
 {
 	NMPObject obj_new_stackinit;
 	const NMDedupMultiEntry *entry_old;
+	const NMDedupMultiEntry *entry_new;
 
 	nm_assert (multi_idx);
 	nm_assert (idx_type);
@@ -271,15 +273,18 @@ _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
 	                                    NULL,
 	                                    entry_old ?: NM_DEDUP_MULTI_ENTRY_MISSING,
 	                                    NULL,
-	                                    NULL,
+	                                    &entry_new,
 	                                    NULL)) {
 		nm_assert_not_reached ();
+		NM_SET_OUT (out_obj_new, NULL);
 		return FALSE;
 	}
 
+	NM_SET_OUT (out_obj_new, entry_new->obj);
 	return TRUE;
 
 append_force_and_out:
+	NM_SET_OUT (out_obj_new, entry_old->obj);
 	if (append_force) {
 		if (nm_dedup_multi_entry_reorder (entry_old, NULL, TRUE))
 			return TRUE;
@@ -641,7 +646,8 @@ nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 			                            plobj,
 			                            NULL,
 			                            FALSE,
-			                            TRUE))
+			                            TRUE,
+			                            NULL))
 				nm_assert_not_reached ();
 		}
 		head_entry = nm_ip4_config_lookup_addresses (self);
@@ -1580,7 +1586,8 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 			                       ipconf_iter_src.current->obj,
 			                       NULL,
 			                       FALSE,
-			                       TRUE);
+			                       TRUE,
+			                       NULL);
 		}
 		nm_dedup_multi_index_dirty_remove_idx (dst_priv->multi_idx, &dst_priv->idx_ip4_addresses, FALSE);
 		_notify_addresses (dst);
@@ -1625,7 +1632,8 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 			                       ipconf_iter_src.current->obj,
 			                       NULL,
 			                       FALSE,
-			                       TRUE);
+			                       TRUE,
+			                       NULL);
 		}
 		nm_dedup_multi_index_dirty_remove_idx (dst_priv->multi_idx, &dst_priv->idx_ip4_routes, FALSE);
 		_notify_routes (dst);
@@ -1986,7 +1994,8 @@ _add_address (NMIP4Config *self, const NMPObject *obj_new, const NMPlatformIP4Ad
 	                           obj_new,
 	                           (const NMPlatformObject *) new,
 	                           TRUE,
-	                           FALSE))
+	                           FALSE,
+	                           NULL))
 		_notify_addresses (self);
 }
 
@@ -2126,7 +2135,8 @@ _add_route (NMIP4Config *self, const NMPObject *obj_new, const NMPlatformIP4Rout
 	                           obj_new,
 	                           (const NMPlatformObject *) new,
 	                           TRUE,
-	                           FALSE))
+	                           FALSE,
+	                           NULL))
 		_notify_routes (self);
 }
 
