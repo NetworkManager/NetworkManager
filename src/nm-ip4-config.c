@@ -1290,7 +1290,7 @@ _wins_get_index (const NMIP4Config *self, guint32 wins_server)
 void
 nm_ip4_config_subtract (NMIP4Config *dst, const NMIP4Config *src)
 {
-	NMIP4ConfigPrivate *priv_dst;
+	NMIP4ConfigPrivate *dst_priv;
 	guint i;
 	gint idx;
 	const NMPlatformIP4Address *a;
@@ -1301,15 +1301,15 @@ nm_ip4_config_subtract (NMIP4Config *dst, const NMIP4Config *src)
 	g_return_if_fail (src != NULL);
 	g_return_if_fail (dst != NULL);
 
-	priv_dst = NM_IP4_CONFIG_GET_PRIVATE (dst);
+	dst_priv = NM_IP4_CONFIG_GET_PRIVATE (dst);
 
 	g_object_freeze_notify (G_OBJECT (dst));
 
 	/* addresses */
 	changed = FALSE;
 	nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, src, &a) {
-		if (nm_dedup_multi_index_remove_obj (priv_dst->multi_idx,
-		                                     &priv_dst->idx_ip4_addresses,
+		if (nm_dedup_multi_index_remove_obj (dst_priv->multi_idx,
+		                                     &dst_priv->idx_ip4_addresses,
 		                                     NMP_OBJECT_UP_CAST (a),
 		                                     NULL))
 			changed = TRUE;
@@ -1337,8 +1337,8 @@ nm_ip4_config_subtract (NMIP4Config *dst, const NMIP4Config *src)
 	/* routes */
 	changed = FALSE;
 	nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, src, &r) {
-		if (nm_dedup_multi_index_remove_obj (priv_dst->multi_idx,
-		                                     &priv_dst->idx_ip4_routes,
+		if (nm_dedup_multi_index_remove_obj (dst_priv->multi_idx,
+		                                     &dst_priv->idx_ip4_routes,
 		                                     NMP_OBJECT_UP_CAST (r),
 		                                     NULL))
 			changed = TRUE;
@@ -1403,8 +1403,8 @@ nm_ip4_config_subtract (NMIP4Config *dst, const NMIP4Config *src)
 void
 nm_ip4_config_intersect (NMIP4Config *dst, const NMIP4Config *src)
 {
-	NMIP4ConfigPrivate *priv_dst;
-	const NMIP4ConfigPrivate *priv_src;
+	NMIP4ConfigPrivate *dst_priv;
+	const NMIP4ConfigPrivate *src_priv;
 	NMDedupMultiIter ipconf_iter;
 	const NMPlatformIP4Address *a;
 	const NMPlatformIP4Route *r;
@@ -1414,17 +1414,17 @@ nm_ip4_config_intersect (NMIP4Config *dst, const NMIP4Config *src)
 
 	g_object_freeze_notify (G_OBJECT (dst));
 
-	priv_dst = NM_IP4_CONFIG_GET_PRIVATE (dst);
-	priv_src = NM_IP4_CONFIG_GET_PRIVATE (src);
+	dst_priv = NM_IP4_CONFIG_GET_PRIVATE (dst);
+	src_priv = NM_IP4_CONFIG_GET_PRIVATE (src);
 
 	/* addresses */
 	nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, dst, &a) {
-		if (nm_dedup_multi_index_lookup_obj (priv_src->multi_idx,
-		                                     &priv_src->idx_ip4_addresses,
+		if (nm_dedup_multi_index_lookup_obj (src_priv->multi_idx,
+		                                     &src_priv->idx_ip4_addresses,
 		                                     NMP_OBJECT_UP_CAST (a)))
 			continue;
 
-		if (nm_dedup_multi_index_remove_entry (priv_dst->multi_idx,
+		if (nm_dedup_multi_index_remove_entry (dst_priv->multi_idx,
 		                                       ipconf_iter.current) != 1)
 			nm_assert_not_reached ();
 	}
@@ -1441,12 +1441,12 @@ nm_ip4_config_intersect (NMIP4Config *dst, const NMIP4Config *src)
 
 	/* routes */
 	nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, dst, &r) {
-		if (nm_dedup_multi_index_lookup_obj (priv_src->multi_idx,
-		                                     &priv_src->idx_ip4_routes,
+		if (nm_dedup_multi_index_lookup_obj (src_priv->multi_idx,
+		                                     &src_priv->idx_ip4_routes,
 		                                     NMP_OBJECT_UP_CAST (r)))
 			continue;
 
-		if (nm_dedup_multi_index_remove_entry (priv_dst->multi_idx,
+		if (nm_dedup_multi_index_remove_entry (dst_priv->multi_idx,
 		                                       ipconf_iter.current) != 1)
 			nm_assert_not_reached ();
 	}
