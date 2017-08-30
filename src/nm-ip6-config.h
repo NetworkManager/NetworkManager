@@ -57,12 +57,12 @@ nm_ip_config_iter_ip6_route_next (NMDedupMultiIter *ipconf_iter, const NMPlatfor
 }
 
 #define nm_ip_config_iter_ip6_address_for_each(iter, self, address) \
-    for (({ if (address) { *(((const NMPlatformIP6Address **) address)) = NULL; } }), nm_ip_config_iter_ip6_address_init ((iter), (self)); \
+    for (({ if (!_nm_is_null (address)) { *(((const NMPlatformIP6Address **) address)) = NULL; } }), nm_ip_config_iter_ip6_address_init ((iter), (self)); \
          nm_ip_config_iter_ip6_address_next ((iter), (address)); \
          )
 
 #define nm_ip_config_iter_ip6_route_for_each(iter, self, route) \
-    for (({ if (route) { *((const NMPlatformIP6Route **) (route)) = NULL; } }), nm_ip_config_iter_ip6_route_init ((iter), (self)); \
+    for (({ if (!_nm_is_null (route)) { *((const NMPlatformIP6Route **) (route)) = NULL; } }), nm_ip_config_iter_ip6_route_init ((iter), (self)); \
          nm_ip_config_iter_ip6_route_next ((iter), (route)); \
          )
 
