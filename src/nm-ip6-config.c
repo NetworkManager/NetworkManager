@@ -503,8 +503,6 @@ nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 			continue;
 		if (route->rt_source == NM_IP_CONFIG_SOURCE_RTPROT_KERNEL)
 			continue;
-		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
-			continue;
 		_add_route (self, plobj, NULL, NULL);
 	}
 

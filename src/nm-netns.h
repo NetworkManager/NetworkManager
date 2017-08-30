@@ -39,7 +39,6 @@ NMNetns *nm_netns_new (NMPlatform *platform);
 
 NMPlatform *nm_netns_get_platform (NMNetns *self);
 NMPNetns *nm_netns_get_platform_netns (NMNetns *self);
-NMDefaultRouteManager *nm_netns_get_default_route_manager (NMNetns *self);
 
 struct _NMDedupMultiIndex *nm_netns_get_multi_idx (NMNetns *self);
 
