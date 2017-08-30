@@ -56,6 +56,8 @@ typedef struct {
 	guint teamd_read_timeout;
 	guint teamd_dbus_watch;
 	char *config;
+	gboolean kill_in_progress;
+	NMConnection *connection;
 } NMDeviceTeamPrivate;
 
 struct _NMDeviceTeam {
@@ -288,6 +290,26 @@ master_update_slave_connection (NMDevice *self,
 }
 
 /*****************************************************************************/
+static void
+teamd_kill_cb (pid_t pid, gboolean success, int child_status, void *user_data)
+{
+	NMDevice *device = NM_DEVICE (user_data);
+	NMDeviceTeam *self = (NMDeviceTeam *) device;
+	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
+
+	priv->kill_in_progress = FALSE;
+
+	if (priv->connection) {
+		_LOGT (LOGD_TEAM, "kill terminated, starting teamd...");
+		if (!teamd_start (device, priv->connection)) {
+			nm_device_state_changed (device,
+			                         NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
+		}
+		g_clear_object (&priv->connection);
+	}
+	g_object_unref (device);
+}
 
 static void
 teamd_cleanup (NMDevice *device, gboolean free_tdc)
@@ -299,7 +321,12 @@ teamd_cleanup (NMDevice *device, gboolean free_tdc)
 	nm_clear_g_source (&priv->teamd_read_timeout);
 
 	if (priv->teamd_pid > 0) {
-		nm_utils_kill_child_async (priv->teamd_pid, SIGTERM, LOGD_TEAM, "teamd", 2000, NULL, NULL);
+		priv->kill_in_progress = TRUE;
+		nm_utils_kill_child_async (priv->teamd_pid, SIGTERM,
+		                           LOGD_TEAM, "teamd",
+		                           2000,
+		                           teamd_kill_cb,
+		                           g_object_ref (device));
 		priv->teamd_pid = 0;
 	}
 
@@ -322,7 +349,7 @@ teamd_timeout_cb (gpointer user_data)
 
 	if (priv->teamd_pid && !priv->tdc) {
 		/* Timed out launching our own teamd process */
-		_LOGW (LOGD_TEAM, "teamd timed out.");
+		_LOGW (LOGD_TEAM, "teamd timed out");
 		teamd_cleanup (device, TRUE);
 
 		g_warn_if_fail (nm_device_is_activating (device));
@@ -645,6 +672,12 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		teamd_cleanup (device, TRUE);
 	}
 
+	if (priv->kill_in_progress) {
+		_LOGT (LOGD_TEAM, "kill in progress, wait before starting teamd");
+		priv->connection = g_object_ref (connection);
+		return NM_ACT_STAGE_RETURN_POSTPONE;
+	}
+
 	return teamd_start (device, connection) ?
 		NM_ACT_STAGE_RETURN_POSTPONE : NM_ACT_STAGE_RETURN_FAILURE;
 }
@@ -661,6 +694,7 @@ deactivate (NMDevice *device)
 	if (!priv->teamd_pid)
 		teamd_kill (self, NULL, NULL);
 	teamd_cleanup (device, TRUE);
+	g_clear_object (&priv->connection);
 }
 
 static gboolean
