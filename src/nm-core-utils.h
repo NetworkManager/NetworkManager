@@ -292,6 +292,10 @@ fcn_name (lookup_type val, char *buf, gsize len) \
 const char *nm_utils_get_ip_config_method (NMConnection *connection,
                                            GType         ip_setting_type);
 
+gboolean nm_utils_connection_has_default_route (NMConnection *connection,
+                                                int addr_family,
+                                                gboolean *out_is_never_default);
+
 char *nm_utils_new_vlan_name (const char *parent_iface, guint32 vlan_id);
 const char *nm_utils_new_infiniband_name (char *name, const char *parent_name, int p_key);
 

@@ -5753,8 +5753,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 	 */
 
 	connection_has_default_route
-	    = nm_default_route_manager_ip4_connection_has_default_route (nm_netns_get_default_route_manager (priv->netns),
-	                                                                 connection, &connection_is_never_default);
+	    = nm_utils_connection_has_default_route (connection, AF_INET, &connection_is_never_default);
 
 	if (   !priv->v4_commit_first_time
 	    && connection_is_never_default) {
@@ -6489,8 +6488,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 	 */
 
 	connection_has_default_route
-	    = nm_default_route_manager_ip6_connection_has_default_route (nm_netns_get_default_route_manager (priv->netns),
-	                                                                 connection, &connection_is_never_default);
+	    = nm_utils_connection_has_default_route (connection, AF_INET6, &connection_is_never_default);
 
 	if (   !priv->v6_commit_first_time
 	    && connection_is_never_default) {
