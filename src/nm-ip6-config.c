@@ -433,12 +433,13 @@ nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 	                                           ifindex);
 	if (head_entry) {
 		nmp_cache_iter_for_each (&iter, head_entry, &plobj) {
-			if (!nm_dedup_multi_index_add (priv->multi_idx,
-			                               &priv->idx_ip6_addresses,
-			                               plobj,
-			                               NM_DEDUP_MULTI_IDX_MODE_APPEND,
-			                               NULL,
-			                               NULL))
+			if (!_nm_ip_config_add_obj (priv->multi_idx,
+			                            &priv->idx_ip6_addresses_,
+			                            ifindex,
+			                            plobj,
+			                            NULL,
+			                            FALSE,
+			                            TRUE))
 				nm_assert_not_reached ();
 			has_addresses = TRUE;
 		}

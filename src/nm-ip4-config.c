@@ -631,12 +631,13 @@ nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 	                                           ifindex);
 	if (head_entry) {
 		nmp_cache_iter_for_each (&iter, head_entry, &plobj) {
-			if (!nm_dedup_multi_index_add (priv->multi_idx,
-			                               &priv->idx_ip4_addresses,
-			                               plobj,
-			                               NM_DEDUP_MULTI_IDX_MODE_APPEND,
-			                               NULL,
-			                               NULL))
+			if (!_nm_ip_config_add_obj (priv->multi_idx,
+			                            &priv->idx_ip4_addresses_,
+			                            ifindex,
+			                            plobj,
+			                            NULL,
+			                            FALSE,
+			                            TRUE))
 				nm_assert_not_reached ();
 		}
 		head_entry = nm_ip4_config_lookup_addresses (self);
@@ -1566,16 +1567,16 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 		}
 	}
 	if (!are_equal) {
-
 		has_minor_changes = TRUE;
 		nm_dedup_multi_index_dirty_set_idx (dst_priv->multi_idx, &dst_priv->idx_ip4_addresses);
 		nm_dedup_multi_iter_for_each (&ipconf_iter_src, head_entry_src) {
-			nm_dedup_multi_index_add (dst_priv->multi_idx,
-			                          &dst_priv->idx_ip4_addresses,
-			                          ipconf_iter_src.current->obj,
-			                          NM_DEDUP_MULTI_IDX_MODE_APPEND_FORCE,
-			                          NULL,
-			                          NULL);
+			_nm_ip_config_add_obj (dst_priv->multi_idx,
+			                       &dst_priv->idx_ip4_addresses_,
+			                       dst_priv->ifindex,
+			                       ipconf_iter_src.current->obj,
+			                       NULL,
+			                       FALSE,
+			                       TRUE);
 		}
 		nm_dedup_multi_index_dirty_remove_idx (dst_priv->multi_idx, &dst_priv->idx_ip4_addresses, FALSE);
 		_notify_addresses (dst);
