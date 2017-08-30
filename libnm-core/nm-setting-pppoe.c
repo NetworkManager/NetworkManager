@@ -279,6 +279,7 @@ finalize (GObject *object)
 {
 	NMSettingPppoePrivate *priv = NM_SETTING_PPPOE_GET_PRIVATE (object);
 
+	g_free (priv->parent);
 	g_free (priv->username);
 	g_free (priv->password);
 	g_free (priv->service);
