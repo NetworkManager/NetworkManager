@@ -5553,10 +5553,7 @@ _device_get_default_route_from_platform (NMDevice *self, int addr_family, NMPlat
 			continue;
 
 		/* if there are several default routes, find the one with the best metric */
-		m = r->metric;
-		if (addr_family != AF_INET)
-			m = nm_utils_ip6_route_metric_normalize (r->metric);
-
+		m = nm_utils_ip_route_metric_normalize (addr_family, r->metric);
 		if (!route || m < route_metric) {
 			route = NMP_OBJECT_CAST_IP_ROUTE (plobj);
 			route_metric = m;
