@@ -1835,7 +1835,7 @@ appropriate <literal>gsm.*</literal> or <literal>cdma.*</literal> properties.</e
         <entry align="left">mode</entry>
         <entry align="left" morerows="7">bond.options</entry>
         <entry align="left" morerows="7" valign="top">Setting each of these adds the option to <literal>bond.options</literal> property.
-It's equivalent of using the <literal>+bond.options 'option=value'</literal> syntax.</entry>
+It's equivalent to the <literal>+bond.options 'option=value'</literal> syntax.</entry>
       </row>
       <row><entry align="left">primary</entry></row>
       <row><entry align="left">miimon</entry></row>
@@ -1983,7 +1983,7 @@ It's equivalent of using the <literal>+bond.options 'option=value'</literal> syn
         <entry align="left"><link linkend="nm-settings.property.ipv4.addresses">ipv4.addresses</link>
                             <link linkend="nm-settings.property.ipv4.method">ipv4.method</link></entry>
         <entry align="left" valign="top">This option can be specified multiple times.
-It's equivalent of using <literal>+ipv4.addresses</literal> syntax and setting <literal>ipv4.method</literal> to <literal>manual</literal>.</entry>
+It's equivalent to using the <literal>+ipv4.addresses</literal> syntax and setting <literal>ipv4.method</literal> to <literal>manual</literal>.</entry>
       </row>
       <row><entry align="left">gw4</entry><entry align="left"><link linkend="nm-settings.property.ipv4.gateway">ipv4.gateway</link></entry><entry align="left" /></row>
     </tbody>
@@ -1999,7 +1999,7 @@ It's equivalent of using <literal>+ipv4.addresses</literal> syntax and setting <
         <entry align="left"><link linkend="nm-settings.property.ipv6.addresses">ipv6.addresses</link>
                             <link linkend="nm-settings.property.ipv6.method">ipv6.method</link></entry>
         <entry align="left" valign="top">This option can be specified multiple times.
-It's equivalent of using <literal>+ipv6.addresses</literal> syntax and setting <literal>ipv6.method</literal> to <literal>manual</literal>.</entry>
+It's equivalent to using the <literal>+ipv6.addresses</literal> syntax and setting <literal>ipv6.method</literal> to <literal>manual</literal>.</entry>
       </row>
       <row><entry align="left">gw6</entry><entry align="left"><link linkend="nm-settings.property.ipv6.gateway">ipv6.gateway</link></entry><entry align="left" /></row>
     </tbody>
