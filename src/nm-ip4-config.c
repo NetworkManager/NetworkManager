@@ -1619,12 +1619,13 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 		has_minor_changes = TRUE;
 		nm_dedup_multi_index_dirty_set_idx (dst_priv->multi_idx, &dst_priv->idx_ip4_routes);
 		nm_dedup_multi_iter_for_each (&ipconf_iter_src, head_entry_src) {
-			nm_dedup_multi_index_add (dst_priv->multi_idx,
-			                          &dst_priv->idx_ip4_routes,
-			                          ipconf_iter_src.current->obj,
-			                          NM_DEDUP_MULTI_IDX_MODE_APPEND_FORCE,
-			                          NULL,
-			                          NULL);
+			_nm_ip_config_add_obj (dst_priv->multi_idx,
+			                       &dst_priv->idx_ip4_routes_,
+			                       dst_priv->ifindex,
+			                       ipconf_iter_src.current->obj,
+			                       NULL,
+			                       FALSE,
+			                       TRUE);
 		}
 		nm_dedup_multi_index_dirty_remove_idx (dst_priv->multi_idx, &dst_priv->idx_ip4_routes, FALSE);
 		_notify_routes (dst);
