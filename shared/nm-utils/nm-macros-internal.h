@@ -687,21 +687,6 @@ nm_clear_g_cancellable (GCancellable **cancellable)
 
 /*****************************************************************************/
 
-/* Only useful inside a macro to avoid compiler warning.
- *
- * Otherwise compiler might warn for "if (ptr)"
- *   the address of ‘a’ will always evaluate as ‘true’ [-Werror=address]
- *
- * The trivial function avoids the compiler warning.
- */
-static inline int
-_nm_is_null (const void *ptr)
-{
-	return !!ptr;
-}
-
-/*****************************************************************************/
-
 /* Determine whether @x is a power of two (@x being an integer type).
  * Basically, this returns TRUE, if @x has exactly one bit set.
  * For negative values and zero, this always returns FALSE. */

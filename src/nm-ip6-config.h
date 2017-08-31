@@ -40,8 +40,8 @@ nm_ip_config_iter_ip6_address_next (NMDedupMultiIter *ipconf_iter, const NMPlatf
 	gboolean has_next;
 
 	has_next = nm_dedup_multi_iter_next (ipconf_iter);
-	if (has_next && out_address)
-		*out_address = NMP_OBJECT_CAST_IP6_ADDRESS (ipconf_iter->current->obj);
+	if (out_address)
+		*out_address = has_next ? NMP_OBJECT_CAST_IP6_ADDRESS (ipconf_iter->current->obj) : NULL;
 	return has_next;
 }
 
@@ -51,18 +51,18 @@ nm_ip_config_iter_ip6_route_next (NMDedupMultiIter *ipconf_iter, const NMPlatfor
 	gboolean has_next;
 
 	has_next = nm_dedup_multi_iter_next (ipconf_iter);
-	if (has_next && out_route)
-		*out_route = NMP_OBJECT_CAST_IP6_ROUTE (ipconf_iter->current->obj);
+	if (out_route)
+		*out_route = has_next ? NMP_OBJECT_CAST_IP6_ROUTE (ipconf_iter->current->obj) : NULL;
 	return has_next;
 }
 
 #define nm_ip_config_iter_ip6_address_for_each(iter, self, address) \
-    for (({ if (!_nm_is_null (address)) { *(((const NMPlatformIP6Address **) address)) = NULL; } }), nm_ip_config_iter_ip6_address_init ((iter), (self)); \
+    for (nm_ip_config_iter_ip6_address_init ((iter), (self)); \
          nm_ip_config_iter_ip6_address_next ((iter), (address)); \
          )
 
 #define nm_ip_config_iter_ip6_route_for_each(iter, self, route) \
-    for (({ if (!_nm_is_null (route)) { *((const NMPlatformIP6Route **) (route)) = NULL; } }), nm_ip_config_iter_ip6_route_init ((iter), (self)); \
+    for (nm_ip_config_iter_ip6_route_init ((iter), (self)); \
          nm_ip_config_iter_ip6_route_next ((iter), (route)); \
          )
 
