@@ -345,6 +345,71 @@ test_strip_search_trailing_dot (void)
 
 /*****************************************************************************/
 
+static void
+test_replace (gconstpointer user_data)
+{
+	nm_auto_unref_dedup_multi_index NMDedupMultiIndex *multi_idx = nm_dedup_multi_index_new ();
+	const int TEST_IDX = GPOINTER_TO_INT (user_data);
+	const int IFINDEX = 1;
+	gs_unref_object NMIP6Config *src_conf = NULL;
+	gs_unref_object NMIP6Config *dst_conf = NULL;
+	NMPlatformIP6Address *addr;
+	NMPlatformIP6Address addrs[5] = { };
+	guint addrs_n = 0;
+	guint i;
+
+	dst_conf = nm_ip6_config_new (multi_idx, IFINDEX);
+	src_conf = nm_ip6_config_new (multi_idx, IFINDEX);
+
+	switch (TEST_IDX) {
+	case 1:
+		addr = &addrs[addrs_n++];
+		addr->ifindex = IFINDEX;
+		addr->address = *nmtst_inet6_from_string ("fe80::78ec:7a6d:602d:20f2");
+		addr->plen = 64;
+		addr->n_ifa_flags = IFA_F_PERMANENT;
+		addr->addr_source = NM_IP_CONFIG_SOURCE_KERNEL;
+		break;
+	case 2:
+		addr = &addrs[addrs_n++];
+		addr->ifindex = IFINDEX;
+		addr->address = *nmtst_inet6_from_string ("fe80::78ec:7a6d:602d:20f2");
+		addr->plen = 64;
+		addr->n_ifa_flags = IFA_F_PERMANENT;
+		addr->addr_source = NM_IP_CONFIG_SOURCE_KERNEL;
+
+		addr = &addrs[addrs_n++];
+		addr->ifindex = IFINDEX;
+		addr->address = *nmtst_inet6_from_string ("1::1");
+		addr->plen = 64;
+		addr->addr_source = NM_IP_CONFIG_SOURCE_USER;
+
+		nm_ip6_config_add_address (dst_conf, addr);
+		break;
+	default:
+		g_assert_not_reached ();
+	}
+
+	g_assert (addrs_n < G_N_ELEMENTS (addrs));
+
+	for (i = 0; i < addrs_n; i++)
+		nm_ip6_config_add_address (src_conf, &addrs[i]);
+
+	nm_ip6_config_replace (dst_conf, src_conf, NULL);
+
+	for (i = 0; i < addrs_n; i++) {
+		const NMPlatformIP6Address *a = _nmtst_nm_ip6_config_get_address (dst_conf, i);
+		const NMPlatformIP6Address *b = _nmtst_nm_ip6_config_get_address (src_conf, i);
+
+		g_assert (nm_platform_ip6_address_cmp (&addrs[i], a) == 0);
+		g_assert (nm_platform_ip6_address_cmp (&addrs[i], b) == 0);
+	}
+	g_assert (addrs_n == nm_ip6_config_get_num_addresses (dst_conf));
+	g_assert (addrs_n == nm_ip6_config_get_num_addresses (src_conf));
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -358,6 +423,8 @@ main (int argc, char **argv)
 	g_test_add_func ("/ip6-config/add-route-with-source", test_add_route_with_source);
 	g_test_add_func ("/ip6-config/test_nm_ip6_config_addresses_sort", test_nm_ip6_config_addresses_sort);
 	g_test_add_func ("/ip6-config/strip-search-trailing-dot", test_strip_search_trailing_dot);
+	g_test_add_data_func ("/ip6-config/replace/1", GINT_TO_POINTER (1), test_replace);
+	g_test_add_data_func ("/ip6-config/replace/2", GINT_TO_POINTER (2), test_replace);
 
 	return g_test_run ();
 }
