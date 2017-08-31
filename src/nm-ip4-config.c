@@ -201,8 +201,10 @@ _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
 		gboolean modified = FALSE;
 		const NMPObject *obj_old = entry_old->obj;
 
-		if (nmp_object_equal (obj_new, obj_old))
+		if (nmp_object_equal (obj_new, obj_old)) {
+			nm_dedup_multi_entry_set_dirty (entry_old, FALSE);
 			goto append_force_and_out;
+		}
 
 		/* if @merge, we merge the new object with the existing one.
 		 * Otherwise, we replace it entirely. */
@@ -255,8 +257,10 @@ _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
 			}
 
 			if (   modified
-			    && nmp_object_equal (obj_new, obj_old))
+			    && nmp_object_equal (obj_new, obj_old)) {
+				nm_dedup_multi_entry_set_dirty (entry_old, FALSE);
 				goto append_force_and_out;
+			}
 		}
 	}
 

@@ -239,7 +239,7 @@ nm_dedup_multi_entry_set_dirty (const NMDedupMultiEntry *entry,
 	 * supposed to be modified outside NMDedupMultiIndex API. Except the "dirty"
 	 * flag. In C++ speak, it is a mutable field.
 	 *
-	 * Add this inline function, to case-away constness and set the dirty flag. */
+	 * Add this inline function, to cast-away constness and set the dirty flag. */
 	nm_assert (entry);
 	((NMDedupMultiEntry *) entry)->dirty = dirty;
 }
