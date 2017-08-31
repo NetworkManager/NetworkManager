@@ -3692,13 +3692,6 @@ nm_device_slave_notify_enslave (NMDevice *self, gboolean success)
 
 			priv->is_enslaved = TRUE;
 
-			if (   NM_IN_SET_TYPED (NMDeviceSysIfaceState,
-			                        priv->sys_iface_state,
-			                        NM_DEVICE_SYS_IFACE_STATE_EXTERNAL,
-			                        NM_DEVICE_SYS_IFACE_STATE_ASSUME)
-			    && nm_device_sys_iface_state_get (priv->master) == NM_DEVICE_SYS_IFACE_STATE_MANAGED)
-				nm_device_sys_iface_state_set (self, NM_DEVICE_SYS_IFACE_STATE_MANAGED);
-
 			_notify (self, PROP_MASTER);
 			_notify (priv->master, PROP_SLAVES);
 		} else if (activating) {
