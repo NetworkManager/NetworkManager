@@ -166,6 +166,8 @@ dump_ip4_to_props (NMIP4Config *ip4, GVariantBuilder *builder)
 	/* Static routes */
 	g_variant_builder_init (&int_builder, G_VARIANT_TYPE ("aau"));
 	nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, ip4, &route) {
+		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
+			continue;
 		array[0] = route->network;
 		array[1] = route->plen;
 		array[2] = route->gateway;
@@ -235,6 +237,8 @@ dump_ip6_to_props (NMIP6Config *ip6, GVariantBuilder *builder)
 	/* Static routes */
 	g_variant_builder_init (&int_builder, G_VARIANT_TYPE ("a(ayuayu)"));
 	nm_ip_config_iter_ip6_route_for_each (&ipconf_iter, ip6, &route) {
+		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
+			continue;
 		ip = g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
 		                                &route->network,
 		                                sizeof (struct in6_addr), 1);

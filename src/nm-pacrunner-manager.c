@@ -192,6 +192,8 @@ get_ip4_domains (GPtrArray *domains, NMIP4Config *ip4)
 	}
 
 	nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, ip4, &routes) {
+		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (routes))
+			continue;
 		cidr = g_strdup_printf ("%s/%u",
 		                        nm_utils_inet4_ntop (routes->network, NULL),
 		                        routes->plen);
@@ -225,6 +227,8 @@ get_ip6_domains (GPtrArray *domains, NMIP6Config *ip6)
 	}
 
 	nm_ip_config_iter_ip6_route_for_each (&ipconf_iter, ip6, &routes) {
+		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (routes))
+			continue;
 		cidr = g_strdup_printf ("%s/%u",
 		                        nm_utils_inet6_ntop (&routes->network, NULL),
 		                        routes->plen);

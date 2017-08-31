@@ -127,6 +127,9 @@ void nm_ip6_config_set_gateway (NMIP6Config *self, const struct in6_addr *);
 const struct in6_addr *nm_ip6_config_get_gateway (const NMIP6Config *self);
 gint64 nm_ip6_config_get_route_metric (const NMIP6Config *self);
 
+const NMPObject *nm_ip6_config_best_default_route_get (const NMIP6Config *self);
+const NMPObject *_nm_ip6_config_best_default_route_find (const NMIP6Config *self);
+
 const NMDedupMultiHeadEntry *nm_ip6_config_lookup_addresses (const NMIP6Config *self);
 void nm_ip6_config_reset_addresses (NMIP6Config *self);
 void nm_ip6_config_add_address (NMIP6Config *self, const NMPlatformIP6Address *address);
@@ -183,6 +186,11 @@ gint nm_ip6_config_get_dns_priority (const NMIP6Config *self);
 
 void nm_ip6_config_set_mss (NMIP6Config *self, guint32 mss);
 guint32 nm_ip6_config_get_mss (const NMIP6Config *self);
+
+const NMPObject *nm_ip6_config_nmpobj_lookup (const NMIP6Config *self,
+                                              const NMPObject *needle);
+gboolean nm_ip6_config_nmpobj_remove (NMIP6Config *self,
+                                      const NMPObject *needle);
 
 void nm_ip6_config_hash (const NMIP6Config *self, GChecksum *sum, gboolean dns_only);
 gboolean nm_ip6_config_equal (const NMIP6Config *a, const NMIP6Config *b);
