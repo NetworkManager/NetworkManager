@@ -1672,6 +1672,9 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 		return NULL;
 	ifi = nlmsg_data(nlh);
 
+	if (ifi->ifi_family != AF_UNSPEC)
+		return NULL;
+
 	obj = nmp_object_new_link (ifi->ifi_index);
 
 	if (id_only)
@@ -3680,22 +3683,6 @@ cache_on_change (NMPlatform *platform,
 					delayed_action_schedule (platform, DELAYED_ACTION_TYPE_REFRESH_LINK, GINT_TO_POINTER (ifindex1));
 				if (ifindex2 > 0 && ifindex1 != ifindex2)
 					delayed_action_schedule (platform, DELAYED_ACTION_TYPE_REFRESH_LINK, GINT_TO_POINTER (ifindex2));
-			}
-		}
-		{
-			if (   (       (cache_op == NMP_CACHE_OPS_REMOVED)
-			        || (   (cache_op == NMP_CACHE_OPS_UPDATED)
-			            && obj_new
-			            && !obj_new->_link.netlink.is_in_netlink))
-			    && obj_old
-			    && obj_old->_link.netlink.is_in_netlink
-			    && obj_old->link.master) {
-				/* sometimes we receive a wrong RTM_DELLINK message when unslaving
-				 * a device. Refetch the link again to check whether the device
-				 * is really gone.
-				 *
-				 * https://bugzilla.redhat.com/show_bug.cgi?id=1285719#c2 */
-				delayed_action_schedule (platform, DELAYED_ACTION_TYPE_REFRESH_LINK, GINT_TO_POINTER (obj_old->link.ifindex));
 			}
 		}
 		break;
