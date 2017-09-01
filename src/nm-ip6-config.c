@@ -463,7 +463,8 @@ nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 	nmp_cache_iter_for_each (&iter, head_entry, &plobj) {
 		const NMPlatformIP6Route *route = NMP_OBJECT_CAST_IP6_ROUTE (plobj);
 
-		if (   NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)
+		if (   !route->table_coerced
+		    && NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)
 		    && route->rt_source != NM_IP_CONFIG_SOURCE_RTPROT_KERNEL) {
 			if (route->metric < lowest_metric) {
 				priv->gateway = route->gateway;
@@ -472,6 +473,8 @@ nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 			has_gateway = TRUE;
 		}
 
+		if (route->table_coerced)
+			continue;
 		if (route->rt_source == NM_IP_CONFIG_SOURCE_RTPROT_KERNEL)
 			continue;
 		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
