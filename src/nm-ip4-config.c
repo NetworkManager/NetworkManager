@@ -679,14 +679,6 @@ nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 			}
 			priv->has_gateway = TRUE;
 		}
-	}
-
-	/* we detect the route metric based on the default route. All non-default
-	 * routes have their route metrics explicitly set. */
-	priv->route_metric = priv->has_gateway ? (gint64) lowest_metric : (gint64) -1;
-
-	nmp_cache_iter_for_each (&iter, head_entry, &plobj) {
-		const NMPlatformIP4Route *route = NMP_OBJECT_CAST_IP4_ROUTE (plobj);
 
 		if (route->rt_source == NM_IP_CONFIG_SOURCE_RTPROT_KERNEL)
 			continue;
@@ -694,6 +686,10 @@ nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 			continue;
 		_add_route (self, plobj, NULL);
 	}
+
+	/* we detect the route metric based on the default route. All non-default
+	 * routes have their route metrics explicitly set. */
+	priv->route_metric = priv->has_gateway ? (gint64) lowest_metric : (gint64) -1;
 
 	/* If the interface has the default route, and has IPv4 addresses, capture
 	 * nameservers from /etc/resolv.conf.

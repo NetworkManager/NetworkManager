@@ -471,22 +471,17 @@ nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 			}
 			has_gateway = TRUE;
 		}
-	}
-
-	/* we detect the route metric based on the default route. All non-default
-	 * routes have their route metrics explicitly set. */
-	priv->route_metric = has_gateway ? (gint64) lowest_metric : (gint64) -1;
-
-	nmp_cache_iter_for_each (&iter, head_entry, &plobj) {
-		const NMPlatformIP6Route *route = NMP_OBJECT_CAST_IP6_ROUTE (plobj);
 
 		if (route->rt_source == NM_IP_CONFIG_SOURCE_RTPROT_KERNEL)
 			continue;
 		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
 			continue;
-
 		_add_route (self, plobj, NULL);
 	}
+
+	/* we detect the route metric based on the default route. All non-default
+	 * routes have their route metrics explicitly set. */
+	priv->route_metric = has_gateway ? (gint64) lowest_metric : (gint64) -1;
 
 	/* If the interface has the default route, and has IPv6 addresses, capture
 	 * nameservers from /etc/resolv.conf.
