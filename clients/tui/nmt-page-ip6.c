@@ -180,6 +180,12 @@ nmt_page_ip6_constructed (GObject *object)
 	                        G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
 	nmt_editor_grid_append (grid, NULL, widget, NULL);
 
+	widget = nmt_newt_checkbox_new (_("Ignore automatically obtained DNS parameters"));
+	g_object_bind_property (s_ip6, NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS,
+	                        widget, "active",
+	                        G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
+	nmt_editor_grid_append (grid, NULL, widget, NULL);
+
 	nmt_editor_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
 
 	widget = nmt_newt_checkbox_new (_("Require IPv6 addressing for this connection"));
