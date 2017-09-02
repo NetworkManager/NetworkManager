@@ -3578,6 +3578,7 @@ slave_state_changed (NMDevice *slave,
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	gboolean release = FALSE;
+	gboolean configure;
 
 	_LOGD (LOGD_DEVICE, "slave %s state change %d (%s) -> %d (%s)",
 	       nm_device_get_iface (slave),
@@ -3601,8 +3602,11 @@ slave_state_changed (NMDevice *slave,
 	}
 
 	if (release) {
+		configure =    priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_MANAGED
+		            && nm_device_sys_iface_state_get (slave) != NM_DEVICE_SYS_IFACE_STATE_EXTERNAL;
+
 		nm_device_master_release_one_slave (self, slave,
-		                                    priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_MANAGED,
+		                                    configure,
 		                                    reason);
 		/* Bridge/bond/team interfaces are left up until manually deactivated */
 		if (   c_list_is_empty (&priv->slaves)
@@ -3811,13 +3815,6 @@ nm_device_slave_notify_enslave (NMDevice *self, gboolean success)
 				_LOGI (LOGD_DEVICE, "enslaved to %s", nm_device_get_iface (priv->master));
 
 			priv->is_enslaved = TRUE;
-
-			if (   NM_IN_SET_TYPED (NMDeviceSysIfaceState,
-			                        priv->sys_iface_state,
-			                        NM_DEVICE_SYS_IFACE_STATE_EXTERNAL,
-			                        NM_DEVICE_SYS_IFACE_STATE_ASSUME)
-			    && nm_device_sys_iface_state_get (priv->master) == NM_DEVICE_SYS_IFACE_STATE_MANAGED)
-				nm_device_sys_iface_state_set (self, NM_DEVICE_SYS_IFACE_STATE_MANAGED);
 
 			_notify (self, PROP_MASTER);
 			_notify (priv->master, PROP_SLAVES);
