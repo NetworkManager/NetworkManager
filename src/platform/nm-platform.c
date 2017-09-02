@@ -3778,6 +3778,10 @@ _ip_route_scope_inv_get_normalized (const NMPlatformIP4Route *route)
  * Adding a route to kernel via nm_platform_ip_route_add() will normalize/coerce some
  * properties of the route. This function modifies (normalizes) the route like it
  * would be done by adding the route in kernel.
+ *
+ * Note that this function is related to NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY
+ * in that if two routes compare semantically equal, after normalizing they also shall
+ * compare equal with NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL.
  */
 void
 nm_platform_ip_route_normalize (int addr_family,

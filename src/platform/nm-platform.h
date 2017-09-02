@@ -138,7 +138,10 @@ typedef enum {
 	 * a route destination 192.168.1.5/24 is not accepted by kernel and
 	 * we treat it identical to 192.168.1.0/24. Semantically these
 	 * routes are identical, but NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL will
-	 * report them as different. */
+	 * report them as different.
+	 *
+	 * The result shall be identical to call first nm_platform_ip_route_normalize()
+	 * on both routes and then doing a full comparison. */
 	NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY,
 
 	/* compare all fields. This should have the same effect as memcmp(),
