@@ -85,6 +85,9 @@ _LOG_DECLARE_SELF (NMDevice);
 #define DHCP_NUM_TRIES_MAX     3
 #define DEFAULT_AUTOCONNECT    TRUE
 
+#define CARRIER_WAIT_TIME_MS 5000
+#define CARRIER_WAIT_TIME_AFTER_MTU_MS 10000
+
 /*****************************************************************************/
 
 typedef void (*ActivationHandleFunc) (NMDevice *self);
@@ -314,6 +317,14 @@ typedef struct _NMDevicePrivate {
 	guint32         ip6_mtu;
 	guint32 mtu_initial;
 	guint32 ip6_mtu_initial;
+
+	/* when carrier goes away, we give a grace period of CARRIER_WAIT_TIME_MS
+	 * until taking action.
+	 *
+	 * When changing MTU, the device might take longer then that. So, whenever
+	 * NM changes the MTU it sets @carrier_wait_until_ms to CARRIER_WAIT_TIME_AFTER_MTU_MS
+	 * in the future. This is used to extend the grace period in this particular case. */
+	gint64          carrier_wait_until_ms;
 
 	bool            carrier:1;
 	bool            ignore_carrier:1;
@@ -7368,12 +7379,15 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 			priv->ip6_mtu_initial = _IP6_MTU_SYS ();
 		}
 
-		if (mtu_desired && mtu_desired != mtu_plat)
+		if (mtu_desired && mtu_desired != mtu_plat) {
 			nm_platform_link_set_mtu (nm_device_get_platform (self), ifindex, mtu_desired);
+			priv->carrier_wait_until_ms = nm_utils_get_monotonic_timestamp_ms () + CARRIER_WAIT_TIME_AFTER_MTU_MS;
+		}
 
 		if (ip6_mtu && ip6_mtu != _IP6_MTU_SYS ()) {
 			nm_device_ipv6_sysctl_set (self, "mtu",
 			                           nm_sprintf_buf (sbuf, "%u", (unsigned) ip6_mtu));
+			priv->carrier_wait_until_ms = nm_utils_get_monotonic_timestamp_ms () + CARRIER_WAIT_TIME_AFTER_MTU_MS;
 		}
 	}
 #undef _IP6_MTU_SYS
@@ -10539,6 +10553,8 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 	 * a timeout is reached.
 	 */
 	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
+		gint64 now_ms, until_ms;
+
 		/* we start a grace period of 5 seconds during which we will schedule
 		 * a pending action whenever we have no carrier.
 		 *
@@ -10547,7 +10563,10 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 		nm_clear_g_source (&priv->carrier_wait_id);
 		if (!priv->carrier)
 			nm_device_add_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
-		priv->carrier_wait_id = g_timeout_add_seconds (5, carrier_wait_timeout, self);
+
+		now_ms = nm_utils_get_monotonic_timestamp_ms ();
+		until_ms = NM_MAX (now_ms + CARRIER_WAIT_TIME_MS, priv->carrier_wait_until_ms);
+		priv->carrier_wait_id = g_timeout_add (until_ms - now_ms, carrier_wait_timeout, self);
 	}
 
 	/* Can only get HW address of some devices when they are up */
@@ -12263,8 +12282,10 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 		    && cleanup_type == CLEANUP_TYPE_DECONFIGURE) {
 			_LOGT (LOGD_DEVICE, "mtu: reset device-mtu: %u, ipv6-mtu: %u, ifindex: %d",
 			       (guint) priv->mtu_initial, (guint) priv->ip6_mtu_initial, ifindex);
-			if (priv->mtu_initial)
+			if (priv->mtu_initial) {
 				nm_platform_link_set_mtu (nm_device_get_platform (self), ifindex, priv->mtu_initial);
+				priv->carrier_wait_until_ms = nm_utils_get_monotonic_timestamp_ms () + CARRIER_WAIT_TIME_AFTER_MTU_MS;
+			}
 			if (priv->ip6_mtu_initial) {
 				char sbuf[64];
 
