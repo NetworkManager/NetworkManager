@@ -3620,9 +3620,9 @@ nm_platform_ip_route_sync (NMPlatform *self,
 				continue;
 			}
 
-			conf_o = routes_idx ? g_hash_table_lookup (routes_idx, plat_o) : NULL;
-			if (   !conf_o
-			    || vt->route_cmp (NMP_OBJECT_CAST_IPX_ROUTE (conf_o),
+			if (   routes_idx
+			    && (conf_o = g_hash_table_lookup (routes_idx, plat_o))
+			    && vt->route_cmp (NMP_OBJECT_CAST_IPX_ROUTE (conf_o),
 			                      NMP_OBJECT_CAST_IPX_ROUTE (plat_o),
 			                      NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) == 0) {
 				/* the route in platform is identical to the one we want to add.
