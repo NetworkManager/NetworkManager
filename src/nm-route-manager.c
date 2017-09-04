@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include "platform/nm-platform.h"
+#include "platform/nm-platform-utils.h"
 #include "platform/nmp-object.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
@@ -364,19 +365,20 @@ _route_index_reverse_idx (const VTableIP *vtable, const RouteIndex *index, guint
 /*****************************************************************************/
 
 static gboolean
-_route_equals_ignoring_ifindex (const VTableIP *vtable, const NMPlatformIPXRoute *r1, const NMPlatformIPXRoute *r2, gint64 r2_metric)
+_route_equals_ignoring_ifindex (const VTableIP *vtable,
+                                const NMPlatformIPXRoute *plat_rt,
+                                const NMPlatformIPXRoute *rt,
+                                gint64 rt_metric)
 {
-	NMPlatformIPXRoute r2_backup;
+	NMPlatformIPXRoute rt_backup;
 
-	if (   r1->rx.ifindex != r2->rx.ifindex
-	    || (r2_metric >= 0 && ((guint32) r2_metric) != r2->rx.metric)) {
-		memcpy (&r2_backup, r2, vtable->vt->sizeof_route);
-		r2_backup.rx.ifindex = r1->rx.ifindex;
-		if (r2_metric >= 0)
-			r2_backup.rx.metric = (guint32) r2_metric;
-		r2 = &r2_backup;
-	}
-	return vtable->vt->route_cmp (r1, r2, FALSE) == 0;
+	memcpy (&rt_backup, rt, vtable->vt->sizeof_route);
+	rt_backup.rx.ifindex = plat_rt->rx.ifindex;
+	if (rt_metric >= 0)
+		rt_backup.rx.metric = (guint32) rt_metric;
+	rt_backup.rx.rt_source = nmp_utils_ip_config_source_round_trip_rtprot (rt_backup.rx.rt_source);
+
+	return vtable->vt->route_cmp (plat_rt, &rt_backup, FALSE) == 0;
 }
 
 static NMPlatformIPXRoute *
