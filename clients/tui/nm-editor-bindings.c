@@ -71,45 +71,6 @@ nm_editor_bindings_init (void)
 }
 
 static gboolean
-parse_addr_prefix (const char  *text,
-                   int          family,
-                   char       **addr,
-                   guint32     *prefix)
-{
-	const char *slash;
-	char *addrstr, *end;
-	gboolean valid;
-
-	slash = strchr (text, '/');
-
-	if (slash)
-		addrstr = g_strndup (text, slash - text);
-	else
-		addrstr = g_strdup (text);
-	valid = nm_utils_ipaddr_valid (family, addrstr);
-
-	if (slash) {
-		*prefix = strtoul (slash + 1, &end, 10);
-		if (   *end
-		    || *prefix == 0
-		    || (family == AF_INET && *prefix > 32)
-		    || (family == AF_INET6 && *prefix > 128))
-			valid = FALSE;
-	} else if (prefix) {
-		if (family == AF_INET)
-			*prefix = 32;
-		else
-			*prefix = 128;
-	}
-
-	if (addr && valid)
-		*addr = addrstr;
-	else
-		g_free (addrstr);
-	return valid;
-}
-
-static gboolean
 ip_addresses_with_prefix_to_strv (GBinding     *binding,
                                   const GValue *source_value,
                                   GValue       *target_value,
@@ -151,7 +112,7 @@ ip_addresses_with_prefix_from_strv (GBinding     *binding,
 	GPtrArray *addrs;
 	NMIPAddress *addr;
 	char *addrstr;
-	guint32 prefix;
+	int prefix;
 	int i;
 
 	strings = g_value_get_boxed (source_value);
@@ -170,9 +131,22 @@ ip_addresses_with_prefix_from_strv (GBinding     *binding,
 		} else
 			addr = addrs->pdata[i];
 
-		if (!parse_addr_prefix (strings[i], family, &addrstr, &prefix)) {
+		if (!nm_utils_parse_inaddr_prefix (strings[i], family, &addrstr, &prefix)) {
 			g_ptr_array_unref (addrs);
 			return FALSE;
+		}
+
+		if (prefix == -1) {
+			if (family == AF_INET) {
+				in_addr_t v4;
+
+				inet_pton (family, addrstr, &v4);
+				if (nm_utils_ip_is_site_local (AF_INET, &v4))
+					prefix = nm_utils_ip4_get_default_prefix (v4);
+				else
+					prefix = 32;
+			} else
+				prefix = 64;
 		}
 
 		nm_ip_address_set_address (addr, addrstr);
@@ -451,16 +425,31 @@ ip_route_transform_from_dest_string (GBinding     *binding,
 	NMIPRoute *route;
 	const char *text;
 	char *addrstr;
-	guint32 prefix;
+	int prefix;
 
 	text = g_value_get_string (source_value);
-	if (!parse_addr_prefix (text, family, &addrstr, &prefix))
+	if (!nm_utils_parse_inaddr_prefix (text, family, &addrstr, &prefix))
 		return FALSE;
 
 	/* Fetch the original property value */
 	g_object_get (g_binding_get_source (binding),
 	              g_binding_get_source_property (binding), &route,
 	              NULL);
+
+	if (prefix == -1) {
+		if (family == AF_INET) {
+			in_addr_t v4;
+
+			inet_pton (family, addrstr, &v4);
+			if (nm_utils_ip_is_site_local (AF_INET, &v4)) {
+				prefix = nm_utils_ip4_get_default_prefix (v4);
+				if (v4 & (~nm_utils_ip4_prefix_to_netmask (prefix)))
+					prefix = 32;
+			} else
+				prefix = 32;
+		} else
+			prefix = 64;
+	}
 
 	nm_ip_route_set_dest (route, addrstr);
 	nm_ip_route_set_prefix (route, prefix);

@@ -169,6 +169,79 @@ nm_utils_ip_is_site_local (int addr_family,
 
 /*****************************************************************************/
 
+gboolean
+nm_utils_parse_inaddr (const char *text,
+                       int family,
+                       char **out_addr)
+{
+	union {
+		in_addr_t v4;
+		struct in6_addr v6;
+	} addrbin;
+	char addrstr_buf[MAX (INET_ADDRSTRLEN, INET6_ADDRSTRLEN)];
+
+	g_return_val_if_fail (text, FALSE);
+
+	if (family == AF_UNSPEC)
+		family = strchr (text, ':') ? AF_INET6 : AF_INET;
+	else
+		g_return_val_if_fail (NM_IN_SET (family, AF_INET, AF_INET6), FALSE);
+
+	if (inet_pton (family, text, &addrbin) != 1)
+		return FALSE;
+
+	NM_SET_OUT (out_addr, g_strdup (inet_ntop (family, &addrbin, addrstr_buf, sizeof (addrstr_buf))));
+	return TRUE;
+}
+
+gboolean
+nm_utils_parse_inaddr_prefix (const char *text,
+                              int family,
+                              char **out_addr,
+                              int *out_prefix)
+{
+	gs_free char *addrstr_free = NULL;
+	int prefix = -1;
+	const char *slash;
+	const char *addrstr;
+	union {
+		in_addr_t v4;
+		struct in6_addr v6;
+	} addrbin;
+	char addrstr_buf[MAX (INET_ADDRSTRLEN, INET6_ADDRSTRLEN)];
+
+	g_return_val_if_fail (text, FALSE);
+
+	if (family == AF_UNSPEC)
+		family = strchr (text, ':') ? AF_INET6 : AF_INET;
+	else
+		g_return_val_if_fail (NM_IN_SET (family, AF_INET, AF_INET6), FALSE);
+
+	slash = strchr (text, '/');
+	if (slash)
+		addrstr = addrstr_free = g_strndup (text, slash - text);
+	else
+		addrstr = text;
+
+	if (inet_pton (family, addrstr, &addrbin) != 1)
+		return FALSE;
+
+	if (slash) {
+		prefix = _nm_utils_ascii_str_to_int64 (slash + 1, 10,
+		                                       0,
+		                                       family == AF_INET ? 32 : 128,
+		                                       -1);
+		if (prefix == -1)
+			return FALSE;
+	}
+
+	NM_SET_OUT (out_addr, g_strdup (inet_ntop (family, &addrbin, addrstr_buf, sizeof (addrstr_buf))));
+	NM_SET_OUT (out_prefix, prefix);
+	return TRUE;
+}
+
+/*****************************************************************************/
+
 /* _nm_utils_ascii_str_to_int64:
  *
  * A wrapper for g_ascii_strtoll, that checks whether the whole string

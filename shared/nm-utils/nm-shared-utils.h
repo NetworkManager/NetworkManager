@@ -151,6 +151,15 @@ gboolean nm_utils_ip_is_site_local (int addr_family,
 
 /*****************************************************************************/
 
+gboolean nm_utils_parse_inaddr (const char *text,
+                                int family,
+                                char **out_addr);
+
+gboolean nm_utils_parse_inaddr_prefix (const char *text,
+                                       int family,
+                                       char **out_addr,
+                                       int *out_prefix);
+
 gint64 _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max, gint64 fallback);
 
 gint _nm_utils_ascii_str_to_bool (const char *str,
