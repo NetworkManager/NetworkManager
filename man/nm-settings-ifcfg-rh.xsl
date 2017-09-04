@@ -17,7 +17,6 @@
       />
 
   <xsl:template match="nm-ifcfg-rh-docs">
-    <xsl:variable name="unsupported" select="'adsl, bluetooth, ppp, pppoe, serial, generic, gsm, cdma, 802-11-olpc-mesh, wimax, vpn'"/>
     <refentry id="nm-settings-ifcfg-rh">
       <refentryinfo>
         <title>nm-settings-ifcfg-rh</title>
