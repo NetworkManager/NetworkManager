@@ -3200,7 +3200,10 @@ unmanaged_to_disconnected (NMDevice *device)
 
 	nm_device_set_unmanaged_by_flags (device, NM_UNMANAGED_USER_EXPLICIT, FALSE, NM_DEVICE_STATE_REASON_USER_REQUESTED);
 
-	g_return_if_fail (nm_device_get_managed (device, FALSE));
+	if (!nm_device_get_managed (device, FALSE)) {
+		/* the device is still marked as unmanaged. Nothing to do. */
+		return;
+	}
 
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_UNMANAGED) {
 		nm_device_state_changed (device,
