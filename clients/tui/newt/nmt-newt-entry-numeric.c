@@ -123,18 +123,12 @@ newt_entry_numeric_validate (NmtNewtEntry *entry,
 {
 	NmtNewtEntryNumericPrivate *priv = NMT_NEWT_ENTRY_NUMERIC_GET_PRIVATE (entry);
 	int val;
-	char *end;
 
 	if (!*text)
 		return priv->optional ? TRUE : FALSE;
 
-	val = strtoul (text, &end, 10);
-	if (*end)
-		return FALSE;
-	if (val < priv->min || val > priv->max)
-		return FALSE;
-
-	return TRUE;
+	val = _nm_utils_ascii_str_to_int64 (text, 10, priv->min, priv->max, 0);
+	return val != 0 || errno == 0;
 }
 
 static void
