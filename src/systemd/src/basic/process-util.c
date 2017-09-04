@@ -478,7 +478,7 @@ static int get_process_id(pid_t pid, const char *field, uid_t *uid) {
         assert(field);
         assert(uid);
 
-        if (pid < 0)
+        if (!pid_is_valid(pid))
                 return -EINVAL;
 
         p = procfs_file_alloca(pid, "status");
@@ -791,7 +791,7 @@ int getenv_for_pid(pid_t pid, const char *field, char **_value) {
 bool pid_is_unwaited(pid_t pid) {
         /* Checks whether a PID is still valid at all, including a zombie */
 
-        if (pid < 0)
+        if (!pid_is_valid(pid))
                 return false;
 
         if (pid <= 1) /* If we or PID 1 would be dead and have been waited for, this code would not be running */
@@ -811,7 +811,7 @@ bool pid_is_alive(pid_t pid) {
 
         /* Checks whether a PID is still valid and not a zombie */
 
-        if (pid < 0)
+        if (!pid_is_valid(pid))
                 return false;
 
         if (pid <= 1) /* If we or PID 1 would be a zombie, this code would not be running */
@@ -830,7 +830,7 @@ bool pid_is_alive(pid_t pid) {
 int pid_from_same_root_fs(pid_t pid) {
         const char *root;
 
-        if (pid < 0)
+        if (!pid_is_valid(pid))
                 return false;
 
         if (pid == 0 || pid == getpid_cached())
@@ -907,6 +907,25 @@ const char* personality_to_string(unsigned long p) {
                 return NULL;
 
         return architecture_to_string(architecture);
+}
+
+int opinionated_personality(unsigned long *ret) {
+        int current;
+
+        /* Returns the current personality, or PERSONALITY_INVALID if we can't determine it. This function is a bit
+         * opinionated though, and ignores all the finer-grained bits and exotic personalities, only distinguishing the
+         * two most relevant personalities: PER_LINUX and PER_LINUX32. */
+
+        current = personality(PERSONALITY_INVALID);
+        if (current < 0)
+                return -errno;
+
+        if (((unsigned long) current & 0xffff) == PER_LINUX32)
+                *ret = PER_LINUX32;
+        else
+                *ret = PER_LINUX;
+
+        return 0;
 }
 
 void valgrind_summary_hack(void) {
