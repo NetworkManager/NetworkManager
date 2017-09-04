@@ -38,12 +38,14 @@ G_DEFINE_TYPE (NmtNewtEntryNumeric, nmt_newt_entry_numeric, NMT_TYPE_NEWT_ENTRY)
 
 typedef struct {
 	int min, max;
+	bool optional;
 } NmtNewtEntryNumericPrivate;
 
 enum {
 	PROP_0,
 	PROP_MINIMUM,
 	PROP_MAXIMUM,
+	PROP_OPTIONAL,
 
 	LAST_PROP
 };
@@ -64,10 +66,35 @@ nmt_newt_entry_numeric_new (int width,
                             int min,
                             int max)
 {
+	return nmt_newt_entry_numeric_new_full (width,
+	                                        min,
+	                                        max,
+	                                        FALSE);
+}
+
+/**
+ * nmt_newt_entry_numeric_new_full:
+ * @width: the entry's width in characters
+ * @min: the minimum valid value
+ * @max: the maximum valid value
+ * @optional: whether an empty entry is valid
+ *
+ * Creates a new #NmtNewtEntryNumeric, accepting values in the
+ * indicated range.
+ *
+ * Returns: a new #NmtNewtEntryNumeric
+ */
+NmtNewtWidget *
+nmt_newt_entry_numeric_new_full (int width,
+                                 int min,
+                                 int max,
+                                 gboolean optional)
+{
 	return g_object_new (NMT_TYPE_NEWT_ENTRY_NUMERIC,
 	                     "width", width,
 	                     "minimum", min,
 	                     "maximum", max,
+	                     "optional", optional,
 	                     NULL);
 }
 
@@ -99,7 +126,7 @@ newt_entry_numeric_validate (NmtNewtEntry *entry,
 	char *end;
 
 	if (!*text)
-		return FALSE;
+		return priv->optional ? TRUE : FALSE;
 
 	val = strtoul (text, &end, 10);
 	if (*end)
@@ -147,6 +174,9 @@ nmt_newt_entry_numeric_set_property (GObject      *object,
 	case PROP_MAXIMUM:
 		priv->max = g_value_get_int (value);
 		break;
+	case PROP_OPTIONAL:
+		priv->optional = g_value_get_boolean (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -167,6 +197,9 @@ nmt_newt_entry_numeric_get_property (GObject    *object,
 		break;
 	case PROP_MAXIMUM:
 		g_value_set_int (value, priv->max);
+		break;
+	case PROP_OPTIONAL:
+		g_value_set_boolean (value, priv->optional);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -212,4 +245,17 @@ nmt_newt_entry_numeric_class_init (NmtNewtEntryNumericClass *entry_class)
 		                   G_PARAM_READWRITE |
 		                   G_PARAM_CONSTRUCT_ONLY |
 		                   G_PARAM_STATIC_STRINGS));
+	/**
+	 * NmtNewtEntryNumeric:optional:
+	 *
+	 * If %TRUE, allow empty string to indicate some default value.
+	 * It means the property is optional and can be left at the default
+	 */
+	g_object_class_install_property
+		(object_class, PROP_OPTIONAL,
+		 g_param_spec_boolean ("optional", "", "",
+		                       FALSE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT_ONLY |
+		                       G_PARAM_STATIC_STRINGS));
 }
