@@ -17,7 +17,6 @@
       />
 
   <xsl:template match="nm-ifcfg-rh-docs">
-    <xsl:variable name="unsupported" select="'adsl, bluetooth, ppp, pppoe, serial, generic, gsm, cdma, 802-11-olpc-mesh, wimax, vpn'"/>
     <refentry id="nm-settings-ifcfg-rh">
       <refentryinfo>
         <title>nm-settings-ifcfg-rh</title>
@@ -328,8 +327,8 @@ DEVICETYPE=TeamPort
 
   <xsl:template match="setting">
     <xsl:variable name="setting_name" select="../@name"/>
-    <xsl:variable name="unsupported" select="'adsl, bluetooth, ppp, pppoe, serial, generic, gsm, cdma, 802-11-olpc-mesh, wimax, vpn, macvlan, vxlan, tun, ip-tunnel'"/>
-      <xsl:if test="not (contains($unsupported, @name))">
+    <xsl:variable name="unsupported" select="'802-11-olpc-mesh, adsl, bluetooth, cdma, dummy, generic, gsm, ip-tunnel, macsec, macvlan, ppp, pppoe, serial, tun, vpn, vxlan, wimax'"/>
+      <xsl:if test="not (contains(concat(' ', $unsupported, ','), concat(' ', @name, ',')))">
         <table>
           <title><xsl:value-of select="@name"/> setting</title>
           <tgroup cols="4">

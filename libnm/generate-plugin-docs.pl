@@ -75,9 +75,11 @@ write_header();
 foreach my $c_file (@source_files) {
   my $path = "$srcdir/$c_file";
   my $setting_name = get_setting_name($path);
-  write_item("<setting name=\"$setting_name\">");
-  scan_doc_comments($path, $start_tag, $end_tag);
-  write_item("</setting>");
+  if ($setting_name) {
+    write_item("<setting name=\"$setting_name\">");
+    scan_doc_comments($path, $start_tag, $end_tag);
+    write_item("</setting>");
+  }
 }
 
 # write XML footer
