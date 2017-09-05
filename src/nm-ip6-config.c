@@ -364,7 +364,7 @@ sort_captured_addresses (const CList *lst_a, const CList *lst_b, gconstpointer u
 }
 
 gboolean
-_nmtst_nm_ip6_config_addresses_sort (NMIP6Config *self)
+_nmtst_ip6_config_addresses_sort (NMIP6Config *self)
 {
 	NMIP6ConfigPrivate *priv;
 	const NMDedupMultiHeadEntry *head_entry;
@@ -1624,12 +1624,12 @@ nm_ip6_config_add_address (NMIP6Config *self, const NMPlatformIP6Address *new)
 }
 
 void
-_nmtst_nm_ip6_config_del_address (NMIP6Config *self, guint i)
+_nmtst_ip6_config_del_address (NMIP6Config *self, guint i)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
 	const NMPlatformIP6Address *a;
 
-	a = _nmtst_nm_ip6_config_get_address (self, i);
+	a = _nmtst_ip6_config_get_address (self, i);
 	g_return_if_fail (a);
 
 	if (nm_dedup_multi_index_remove_obj (priv->multi_idx,
@@ -1661,7 +1661,7 @@ nm_ip6_config_get_first_address (const NMIP6Config *self)
 }
 
 const NMPlatformIP6Address *
-_nmtst_nm_ip6_config_get_address (const NMIP6Config *self, guint i)
+_nmtst_ip6_config_get_address (const NMIP6Config *self, guint i)
 {
 	NMDedupMultiIter iter;
 	const NMPlatformIP6Address *a = NULL;

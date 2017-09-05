@@ -130,15 +130,15 @@ gint64 nm_ip6_config_get_route_metric (const NMIP6Config *self);
 const NMDedupMultiHeadEntry *nm_ip6_config_lookup_addresses (const NMIP6Config *self);
 void nm_ip6_config_reset_addresses (NMIP6Config *self);
 void nm_ip6_config_add_address (NMIP6Config *self, const NMPlatformIP6Address *address);
-void _nmtst_nm_ip6_config_del_address (NMIP6Config *self, guint i);
+void _nmtst_ip6_config_del_address (NMIP6Config *self, guint i);
 guint nm_ip6_config_get_num_addresses (const NMIP6Config *self);
 const NMPlatformIP6Address *nm_ip6_config_get_first_address (const NMIP6Config *self);
-const NMPlatformIP6Address *_nmtst_nm_ip6_config_get_address (const NMIP6Config *self, guint i);
+const NMPlatformIP6Address *_nmtst_ip6_config_get_address (const NMIP6Config *self, guint i);
 const NMPlatformIP6Address *nm_ip6_config_get_address_first_nontentative (const NMIP6Config *self, gboolean linklocal);
 gboolean nm_ip6_config_address_exists (const NMIP6Config *self, const NMPlatformIP6Address *address);
 const NMPlatformIP6Address *nm_ip6_config_lookup_address (const NMIP6Config *self,
                                                           const struct in6_addr *addr);
-gboolean _nmtst_nm_ip6_config_addresses_sort (NMIP6Config *self);
+gboolean _nmtst_ip6_config_addresses_sort (NMIP6Config *self);
 gboolean nm_ip6_config_has_any_dad_pending (const NMIP6Config *self,
                                             const NMIP6Config *candidates);
 

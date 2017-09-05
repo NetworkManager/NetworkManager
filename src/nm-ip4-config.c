@@ -2020,12 +2020,12 @@ nm_ip4_config_add_address (NMIP4Config *self, const NMPlatformIP4Address *new)
 }
 
 void
-_nmtst_nm_ip4_config_del_address (NMIP4Config *self, guint i)
+_nmtst_ip4_config_del_address (NMIP4Config *self, guint i)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
 	const NMPlatformIP4Address *a;
 
-	a = _nmtst_nm_ip4_config_get_address (self, i);
+	a = _nmtst_ip4_config_get_address (self, i);
 	g_return_if_fail (a);
 
 	if (nm_dedup_multi_index_remove_obj (priv->multi_idx,
@@ -2057,7 +2057,7 @@ nm_ip4_config_get_first_address (const NMIP4Config *self)
 }
 
 const NMPlatformIP4Address *
-_nmtst_nm_ip4_config_get_address (const NMIP4Config *self, guint i)
+_nmtst_ip4_config_get_address (const NMIP4Config *self, guint i)
 {
 	NMDedupMultiIter iter;
 	const NMPlatformIP4Address *a = NULL;
@@ -2161,12 +2161,12 @@ nm_ip4_config_add_route (NMIP4Config *self, const NMPlatformIP4Route *new)
 }
 
 void
-_nmtst_nm_ip4_config_del_route (NMIP4Config *self, guint i)
+_nmtst_ip4_config_del_route (NMIP4Config *self, guint i)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
 	const NMPlatformIP4Route *r;
 
-	r = _nmtst_nm_ip4_config_get_route (self, i);
+	r = _nmtst_ip4_config_get_route (self, i);
 	g_return_if_fail (r);
 
 	if (nm_dedup_multi_index_remove_obj (priv->multi_idx,
@@ -2188,7 +2188,7 @@ nm_ip4_config_get_num_routes (const NMIP4Config *self)
 }
 
 const NMPlatformIP4Route *
-_nmtst_nm_ip4_config_get_route (const NMIP4Config *self, guint i)
+_nmtst_ip4_config_get_route (const NMIP4Config *self, guint i)
 {
 	NMDedupMultiIter iter;
 	const NMPlatformIP4Route *r = NULL;
