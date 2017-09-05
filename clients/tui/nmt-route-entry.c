@@ -126,7 +126,7 @@ nmt_route_entry_constructed (GObject *object)
 
 	priv->dest = nmt_ip_entry_new (priv->ip_entry_width, priv->family, TRUE, FALSE);
 	priv->next_hop = nmt_ip_entry_new (priv->ip_entry_width, priv->family, FALSE, TRUE);
-	priv->metric = nmt_newt_entry_numeric_new_full (priv->metric_entry_width, 0, 65535, TRUE);
+	priv->metric = nmt_newt_entry_numeric_new_full (priv->metric_entry_width, 0, G_MAXUINT32, TRUE);
 
 	nmt_newt_grid_add (grid, priv->dest, 0, 0);
 	warning_label = create_warning_label (priv->dest);

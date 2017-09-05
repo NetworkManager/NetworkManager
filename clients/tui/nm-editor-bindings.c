@@ -498,10 +498,7 @@ ip_route_transform_from_metric_string (GBinding     *binding,
 	gint64 metric;
 
 	text = g_value_get_string (source_value);
-	if (*text)
-		metric = strtoul (text, NULL, 10);
-	else
-		metric = -1;
+	metric = _nm_utils_ascii_str_to_int64 (text, 10, 0, G_MAXUINT32, -1);
 
 	/* Fetch the original property value */
 	g_object_get (g_binding_get_source (binding),
