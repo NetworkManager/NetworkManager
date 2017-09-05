@@ -143,6 +143,11 @@ char **_nm_utils_strv_cleanup (char **strv,
 
 /*****************************************************************************/
 
+guint32 _nm_utils_ip4_prefix_to_netmask (guint32 prefix);
+guint32 _nm_utils_ip4_get_default_prefix (guint32 ip);
+
+/*****************************************************************************/
+
 gint64 _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max, gint64 fallback);
 
 gint _nm_utils_ascii_str_to_bool (const char *str,

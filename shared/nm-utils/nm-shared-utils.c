@@ -24,6 +24,7 @@
 #include "nm-shared-utils.h"
 
 #include <errno.h>
+#include <arpa/inet.h>
 
 /*****************************************************************************/
 
@@ -106,6 +107,43 @@ nm_utils_strbuf_append (char **buf, gsize *len, const char *format, ...)
 		*buf = &p[retval];
 		*len -= retval;
 	}
+}
+
+/*****************************************************************************/
+
+/**
+ * _nm_utils_ip4_prefix_to_netmask:
+ * @prefix: a CIDR prefix
+ *
+ * Returns: the netmask represented by the prefix, in network byte order
+ **/
+guint32
+_nm_utils_ip4_prefix_to_netmask (guint32 prefix)
+{
+	return prefix < 32 ? ~htonl(0xFFFFFFFF >> prefix) : 0xFFFFFFFF;
+}
+
+/**
+ * _nm_utils_ip4_get_default_prefix:
+ * @ip: an IPv4 address (in network byte order)
+ *
+ * When the Internet was originally set up, various ranges of IP addresses were
+ * segmented into three network classes: A, B, and C.  This function will return
+ * a prefix that is associated with the IP address specified defining where it
+ * falls in the predefined classes.
+ *
+ * Returns: the default class prefix for the given IP
+ **/
+/* The function is originally from ipcalc.c of Red Hat's initscripts. */
+guint32
+_nm_utils_ip4_get_default_prefix (guint32 ip)
+{
+	if (((ntohl (ip) & 0xFF000000) >> 24) <= 127)
+		return 8;  /* Class A - 255.0.0.0 */
+	else if (((ntohl (ip) & 0xFF000000) >> 24) <= 191)
+		return 16;  /* Class B - 255.255.0.0 */
+
+	return 24;  /* Class C - 255.255.255.0 */
 }
 
 /*****************************************************************************/
