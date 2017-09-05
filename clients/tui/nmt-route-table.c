@@ -149,9 +149,9 @@ add_route (NmtWidgetList *list,
 	NMIPRoute *route;
 
 	if (priv->family == AF_INET)
-		route = nm_ip_route_new (AF_INET, "0.0.0.0", 32, NULL, 0, NULL);
+		route = nm_ip_route_new (AF_INET, "0.0.0.0", 32, NULL, -1, NULL);
 	else
-		route = nm_ip_route_new (AF_INET6, "::", 128, NULL, 0, NULL);
+		route = nm_ip_route_new (AF_INET6, "::", 128, NULL, -1, NULL);
 	g_ptr_array_add (priv->routes, route);
 	nmt_widget_list_set_length (list, priv->routes->len);
 	g_object_notify (table, "routes");

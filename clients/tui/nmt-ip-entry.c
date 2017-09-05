@@ -123,39 +123,12 @@ ip_entry_validate (NmtNewtEntry *entry,
                    gpointer      user_data)
 {
 	NmtIPEntryPrivate *priv = NMT_IP_ENTRY_GET_PRIVATE (entry);
-	guchar buf[16];
-	guint32 prefix;
-	const char *slash;
-	char *addrstr, *end;
-	gboolean valid;
 
 	if (!*text)
 		return priv->optional;
-
-	slash = strchr (text, '/');
-
-	if (slash) {
-		if (!priv->prefix)
-			return FALSE;
-		addrstr = g_strndup (text, slash - text);
-	} else
-		addrstr = g_strdup (text);
-	valid = (inet_pton (priv->family, addrstr, buf) == 1);
-	g_free (addrstr);
-
-	if (!valid)
-		return FALSE;
-
-	if (slash) {
-		prefix = strtoul (slash + 1, &end, 10);
-		if (   *end
-		    || prefix == 0
-		    || (priv->family == AF_INET && prefix > 32)
-		    || (priv->family == AF_INET6 && prefix > 128))
-			valid = FALSE;
-	}
-
-	return valid;
+	if (priv->prefix)
+		return nm_utils_parse_inaddr_prefix (text, priv->family, NULL, NULL);
+	return nm_utils_parse_inaddr (text, priv->family, NULL);
 }
 
 static void

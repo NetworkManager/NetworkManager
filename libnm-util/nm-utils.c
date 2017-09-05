@@ -1102,7 +1102,7 @@ nm_utils_ip4_netmask_to_prefix (guint32 netmask)
 guint32
 nm_utils_ip4_prefix_to_netmask (guint32 prefix)
 {
-	return prefix < 32 ? ~htonl(0xFFFFFFFF >> prefix) : 0xFFFFFFFF;
+	return _nm_utils_ip4_prefix_to_netmask (prefix);
 }
 
 
@@ -1121,12 +1121,7 @@ nm_utils_ip4_prefix_to_netmask (guint32 prefix)
 guint32
 nm_utils_ip4_get_default_prefix (guint32 ip)
 {
-	if (((ntohl (ip) & 0xFF000000) >> 24) <= 127)
-		return 8;  /* Class A - 255.0.0.0 */
-	else if (((ntohl (ip) & 0xFF000000) >> 24) <= 191)
-		return 16;  /* Class B - 255.255.0.0 */
-
-	return 24;  /* Class C - 255.255.255.0 */
+	return _nm_utils_ip4_get_default_prefix (ip);
 }
 
 /**

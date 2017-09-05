@@ -44,4 +44,9 @@ NmtNewtWidget *nmt_newt_entry_numeric_new (int width,
                                            int min,
                                            int max);
 
+NmtNewtWidget *nmt_newt_entry_numeric_new_full (int width,
+                                                int min,
+                                                int max,
+                                                gboolean optional);
+
 #endif /* NMT_NEWT_ENTRY_NUMERIC_H */

@@ -3249,7 +3249,7 @@ test_ip4_prefix_to_netmask (void)
 	int i;
 
 	for (i = 0; i<=32; i++) {
-		guint32 netmask = nm_utils_ip4_prefix_to_netmask (i);
+		guint32 netmask = _nm_utils_ip4_prefix_to_netmask (i);
 		int plen = nm_utils_ip4_netmask_to_prefix (netmask);
 
 		g_assert_cmpint (i, ==, plen);
@@ -3277,8 +3277,8 @@ test_ip4_netmask_to_prefix (void)
 	g_rand_set_seed (rand, 1);
 
 	for (i = 2; i<=32; i++) {
-		guint32 netmask = nm_utils_ip4_prefix_to_netmask (i);
-		guint32 netmask_lowest_bit = netmask & ~nm_utils_ip4_prefix_to_netmask (i-1);
+		guint32 netmask = _nm_utils_ip4_prefix_to_netmask (i);
+		guint32 netmask_lowest_bit = netmask & ~_nm_utils_ip4_prefix_to_netmask (i-1);
 
 		g_assert_cmpint (i, ==, nm_utils_ip4_netmask_to_prefix (netmask));
 

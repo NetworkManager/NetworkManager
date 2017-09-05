@@ -740,7 +740,7 @@ _vt_cmd_plobj_to_string_id_##type (const NMPlatformObject *_obj, char *buf, gsiz
 _vt_cmd_plobj_to_string_id (link,        NMPlatformLink,       "%d",            obj->ifindex);
 _vt_cmd_plobj_to_string_id (ip4_address, NMPlatformIP4Address, "%d: %s/%d%s%s", obj->ifindex, nm_utils_inet4_ntop ( obj->address, buf1), obj->plen,
                                                                obj->peer_address != obj->address ? "," : "",
-                                                               obj->peer_address != obj->address ? nm_utils_inet4_ntop (obj->peer_address & nm_utils_ip4_prefix_to_netmask (obj->plen), buf2) : "");
+                                                               obj->peer_address != obj->address ? nm_utils_inet4_ntop (obj->peer_address & _nm_utils_ip4_prefix_to_netmask (obj->plen), buf2) : "");
 _vt_cmd_plobj_to_string_id (ip6_address, NMPlatformIP6Address, "%d: %s",        obj->ifindex, nm_utils_inet6_ntop (&obj->address, buf1));
 
 guint
@@ -1102,7 +1102,7 @@ _vt_cmd_plobj_id_hash (ip4_address, NMPlatformIP4Address, {
 	hash = NM_HASH_COMBINE (hash, obj->plen);
 	hash = NM_HASH_COMBINE (hash, obj->address);
 	/* for IPv4 we must also consider the net-part of the peer-address (IFA_ADDRESS) */
-	hash = NM_HASH_COMBINE (hash, (obj->peer_address & nm_utils_ip4_prefix_to_netmask (obj->plen)));
+	hash = NM_HASH_COMBINE (hash, (obj->peer_address & _nm_utils_ip4_prefix_to_netmask (obj->plen)));
 })
 _vt_cmd_plobj_id_hash (ip6_address, NMPlatformIP6Address, {
 	hash = (guint) 2907861637u;

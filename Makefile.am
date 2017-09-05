@@ -3423,6 +3423,8 @@ clients_tui_newt_libnmt_newt_a_CPPFLAGS = \
 bin_PROGRAMS += clients/tui/nmtui
 
 clients_tui_nmtui_SOURCES = \
+	shared/nm-utils/nm-shared-utils.c \
+	shared/nm-utils/nm-shared-utils.h \
 	clients/tui/nmtui.c \
 	clients/tui/nmtui.h \
 	clients/tui/nmtui-connect.c \

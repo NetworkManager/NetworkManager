@@ -2543,7 +2543,7 @@ _nl_msg_new_address (int nlmsg_type,
 	    && *((in_addr_t *) address) != 0) {
 		in_addr_t broadcast;
 
-		broadcast = *((in_addr_t *) address) | ~nm_utils_ip4_prefix_to_netmask (plen);
+		broadcast = *((in_addr_t *) address) | ~_nm_utils_ip4_prefix_to_netmask (plen);
 		NLA_PUT (msg, IFA_BROADCAST, addr_len, &broadcast);
 	}
 

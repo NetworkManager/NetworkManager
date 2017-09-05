@@ -8385,7 +8385,7 @@ start_sharing (NMDevice *self, NMIP4Config *config)
 	if (!ip4_addr || !ip4_addr->address)
 		return FALSE;
 
-	netmask = nm_utils_ip4_prefix_to_netmask (ip4_addr->plen);
+	netmask = _nm_utils_ip4_prefix_to_netmask (ip4_addr->plen);
 	if (!inet_ntop (AF_INET, &netmask, str_mask, sizeof (str_mask)))
 		return FALSE;
 

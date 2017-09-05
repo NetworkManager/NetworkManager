@@ -24,6 +24,7 @@
 #include "nm-shared-utils.h"
 
 #include <errno.h>
+#include <arpa/inet.h>
 
 /*****************************************************************************/
 
@@ -106,6 +107,137 @@ nm_utils_strbuf_append (char **buf, gsize *len, const char *format, ...)
 		*buf = &p[retval];
 		*len -= retval;
 	}
+}
+
+/*****************************************************************************/
+
+/**
+ * _nm_utils_ip4_prefix_to_netmask:
+ * @prefix: a CIDR prefix
+ *
+ * Returns: the netmask represented by the prefix, in network byte order
+ **/
+guint32
+_nm_utils_ip4_prefix_to_netmask (guint32 prefix)
+{
+	return prefix < 32 ? ~htonl(0xFFFFFFFF >> prefix) : 0xFFFFFFFF;
+}
+
+/**
+ * _nm_utils_ip4_get_default_prefix:
+ * @ip: an IPv4 address (in network byte order)
+ *
+ * When the Internet was originally set up, various ranges of IP addresses were
+ * segmented into three network classes: A, B, and C.  This function will return
+ * a prefix that is associated with the IP address specified defining where it
+ * falls in the predefined classes.
+ *
+ * Returns: the default class prefix for the given IP
+ **/
+/* The function is originally from ipcalc.c of Red Hat's initscripts. */
+guint32
+_nm_utils_ip4_get_default_prefix (guint32 ip)
+{
+	if (((ntohl (ip) & 0xFF000000) >> 24) <= 127)
+		return 8;  /* Class A - 255.0.0.0 */
+	else if (((ntohl (ip) & 0xFF000000) >> 24) <= 191)
+		return 16;  /* Class B - 255.255.0.0 */
+
+	return 24;  /* Class C - 255.255.255.0 */
+}
+
+gboolean
+nm_utils_ip_is_site_local (int addr_family,
+                           const void *address)
+{
+	in_addr_t addr4;
+
+	switch (addr_family) {
+	case AF_INET:
+		/* RFC1918 private addresses
+		 * 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 */
+		addr4 = ntohl (*((const in_addr_t *) address));
+		return    (addr4 & 0xff000000) == 0x0a000000
+		       || (addr4 & 0xfff00000) == 0xac100000
+		       || (addr4 & 0xffff0000) == 0xc0a80000;
+	case AF_INET6:
+		return IN6_IS_ADDR_SITELOCAL (address);
+	default:
+		g_return_val_if_reached (FALSE);
+	}
+}
+
+/*****************************************************************************/
+
+gboolean
+nm_utils_parse_inaddr (const char *text,
+                       int family,
+                       char **out_addr)
+{
+	union {
+		in_addr_t v4;
+		struct in6_addr v6;
+	} addrbin;
+	char addrstr_buf[MAX (INET_ADDRSTRLEN, INET6_ADDRSTRLEN)];
+
+	g_return_val_if_fail (text, FALSE);
+
+	if (family == AF_UNSPEC)
+		family = strchr (text, ':') ? AF_INET6 : AF_INET;
+	else
+		g_return_val_if_fail (NM_IN_SET (family, AF_INET, AF_INET6), FALSE);
+
+	if (inet_pton (family, text, &addrbin) != 1)
+		return FALSE;
+
+	NM_SET_OUT (out_addr, g_strdup (inet_ntop (family, &addrbin, addrstr_buf, sizeof (addrstr_buf))));
+	return TRUE;
+}
+
+gboolean
+nm_utils_parse_inaddr_prefix (const char *text,
+                              int family,
+                              char **out_addr,
+                              int *out_prefix)
+{
+	gs_free char *addrstr_free = NULL;
+	int prefix = -1;
+	const char *slash;
+	const char *addrstr;
+	union {
+		in_addr_t v4;
+		struct in6_addr v6;
+	} addrbin;
+	char addrstr_buf[MAX (INET_ADDRSTRLEN, INET6_ADDRSTRLEN)];
+
+	g_return_val_if_fail (text, FALSE);
+
+	if (family == AF_UNSPEC)
+		family = strchr (text, ':') ? AF_INET6 : AF_INET;
+	else
+		g_return_val_if_fail (NM_IN_SET (family, AF_INET, AF_INET6), FALSE);
+
+	slash = strchr (text, '/');
+	if (slash)
+		addrstr = addrstr_free = g_strndup (text, slash - text);
+	else
+		addrstr = text;
+
+	if (inet_pton (family, addrstr, &addrbin) != 1)
+		return FALSE;
+
+	if (slash) {
+		prefix = _nm_utils_ascii_str_to_int64 (slash + 1, 10,
+		                                       0,
+		                                       family == AF_INET ? 32 : 128,
+		                                       -1);
+		if (prefix == -1)
+			return FALSE;
+	}
+
+	NM_SET_OUT (out_addr, g_strdup (inet_ntop (family, &addrbin, addrstr_buf, sizeof (addrstr_buf))));
+	NM_SET_OUT (out_prefix, prefix);
+	return TRUE;
 }
 
 /*****************************************************************************/

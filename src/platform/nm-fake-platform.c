@@ -1071,7 +1071,7 @@ ipx_address_delete (NMPlatform *platform,
 			    || (addr && address->address != *((guint32 *) addr))
 			    || (plen && address->plen != *plen)
 			    || (   peer_addr
-			        && (((peer_addr_i ^ address->peer_address) & nm_utils_ip4_prefix_to_netmask (address->plen)) != 0)))
+			        && (((peer_addr_i ^ address->peer_address) & _nm_utils_ip4_prefix_to_netmask (address->plen)) != 0)))
 				continue;
 		} else {
 			const NMPlatformIP6Address *address = NMP_OBJECT_CAST_IP6_ADDRESS (o);

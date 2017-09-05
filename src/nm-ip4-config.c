@@ -61,7 +61,7 @@ nm_ip_config_obj_id_equal_ip4_address (const NMPlatformIP4Address *a,
 {
 	return    a->address == b->address
 	       && a->plen == b->plen
-	       && ((a->peer_address ^ b->peer_address) & nm_utils_ip4_prefix_to_netmask (a->plen)) == 0;
+	       && ((a->peer_address ^ b->peer_address) & _nm_utils_ip4_prefix_to_netmask (a->plen)) == 0;
 }
 
 gboolean
@@ -589,8 +589,8 @@ _addresses_sort_cmp (gconstpointer a, gconstpointer b, gpointer user_data)
 	 * subnet (and thus also the primary/secondary role) is
 	 * preserved.
 	 */
-	n1 = a1->address & nm_utils_ip4_prefix_to_netmask (a1->plen);
-	n2 = a2->address & nm_utils_ip4_prefix_to_netmask (a2->plen);
+	n1 = a1->address & _nm_utils_ip4_prefix_to_netmask (a1->plen);
+	n2 = a2->address & _nm_utils_ip4_prefix_to_netmask (a2->plen);
 
 	return memcmp (&n1, &n2, sizeof (guint32));
 }
@@ -2698,7 +2698,7 @@ nm_ip4_config_hash (const NMIP4Config *self, GChecksum *sum, gboolean dns_only)
 		nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, self, &address) {
 			hash_u32 (sum, address->address);
 			hash_u32 (sum, address->plen);
-			hash_u32 (sum, address->peer_address & nm_utils_ip4_prefix_to_netmask (address->plen));
+			hash_u32 (sum, address->peer_address & _nm_utils_ip4_prefix_to_netmask (address->plen));
 		}
 
 		nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, self, &route) {

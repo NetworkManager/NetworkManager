@@ -317,8 +317,8 @@ process_classful_routes (const char *iface,
 		   The Static Routes option (option 33) does not provide a subnet mask
 		   for each route - it is assumed that the subnet mask is implicit in
 		   whatever network number is specified in each route entry */
-		route.plen = nm_utils_ip4_get_default_prefix (rt_addr);
-		if (rt_addr & ~nm_utils_ip4_prefix_to_netmask (route.plen)) {
+		route.plen = _nm_utils_ip4_get_default_prefix (rt_addr);
+		if (rt_addr & ~_nm_utils_ip4_prefix_to_netmask (route.plen)) {
 			/* RFC 943: target not "this network"; using host routing */
 			route.plen = 32;
 		}
@@ -418,7 +418,7 @@ nm_dhcp_utils_ip4_config_from_options (NMDedupMultiIndex *multi_idx,
 		_LOG2I (LOGD_DHCP4, iface, "  plen %d (%s)", plen, str);
 	} else {
 		/* Get default netmask for the IP according to appropriate class. */
-		plen = nm_utils_ip4_get_default_prefix (addr);
+		plen = _nm_utils_ip4_get_default_prefix (addr);
 		_LOG2I (LOGD_DHCP4, iface, "  plen %d (default)", plen);
 	}
 	nm_platform_ip4_address_set_addr (&address, addr, plen);

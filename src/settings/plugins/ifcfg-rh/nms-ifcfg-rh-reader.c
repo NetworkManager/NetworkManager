@@ -399,7 +399,7 @@ read_full_ip4_address (shvarFile *ifcfg,
 				prefix = nm_ip_address_get_prefix (base_addr);
 			else {
 				/* Try to autodetermine the prefix for the address' class */
-				prefix = nm_utils_ip4_get_default_prefix (ipaddr);
+				prefix = _nm_utils_ip4_get_default_prefix (ipaddr);
 				PARSE_WARNING ("missing %s, assuming %s/%d", prefix_tag, nm_utils_inet4_ntop (ipaddr, inet_buf), prefix);
 			}
 		}
@@ -588,7 +588,7 @@ read_one_ip4_route (shvarFile *ifcfg,
 		return FALSE;
 	if (has_key) {
 		prefix = nm_utils_ip4_netmask_to_prefix (netmask);
-		if (prefix == 0 || netmask != nm_utils_ip4_prefix_to_netmask (prefix)) {
+		if (prefix == 0 || netmask != _nm_utils_ip4_prefix_to_netmask (prefix)) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Invalid IP4 netmask '%s' \"%s\"", netmask_tag, nm_utils_inet4_ntop (netmask, inet_buf));
 			return FALSE;
