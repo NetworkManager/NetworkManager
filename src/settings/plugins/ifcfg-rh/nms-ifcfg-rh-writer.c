@@ -2151,7 +2151,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 			char buf[INET_ADDRSTRLEN];
 
 			svSetValueStr (ifcfg, tag,
-			               nm_utils_inet4_ntop (nm_utils_ip4_prefix_to_netmask (prefix), buf));
+			               nm_utils_inet4_ntop (_nm_utils_ip4_prefix_to_netmask (prefix), buf));
 		} else
 			svUnsetValue (ifcfg, tag);
 
@@ -2293,7 +2293,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 				svSetValueStr (routefile, addr_key, nm_ip_route_get_dest (route));
 
 				memset (buf, 0, sizeof (buf));
-				netmask = nm_utils_ip4_prefix_to_netmask (nm_ip_route_get_prefix (route));
+				netmask = _nm_utils_ip4_prefix_to_netmask (nm_ip_route_get_prefix (route));
 				inet_ntop (AF_INET, (const void *) &netmask, &buf[0], sizeof (buf));
 				svSetValueStr (routefile, netmask_key, &buf[0]);
 

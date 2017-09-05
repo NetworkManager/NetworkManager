@@ -65,7 +65,7 @@ nm_dnsmasq_utils_get_range (const NMPlatformIP4Address *addr,
 		prefix = 24;
 	}
 
-	netmask = nm_utils_ip4_prefix_to_netmask (prefix);
+	netmask = _nm_utils_ip4_prefix_to_netmask (prefix);
 
 	/* treat addresses in host-order from here on. */
 	netmask = ntohl (netmask);

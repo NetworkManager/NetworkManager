@@ -278,7 +278,7 @@ nm_utils_ipx_address_clear_host_address (int family, gpointer dst, gconstpointer
 in_addr_t
 nm_utils_ip4_address_clear_host_address (in_addr_t addr, guint8 plen)
 {
-	return addr & nm_utils_ip4_prefix_to_netmask (plen);
+	return addr & _nm_utils_ip4_prefix_to_netmask (plen);
 }
 
 /* nm_utils_ip6_address_clear_host_address:

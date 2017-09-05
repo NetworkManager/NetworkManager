@@ -3190,7 +3190,7 @@ ip4_addr_subnets_build_index (const GPtrArray *addresses,
 		p_address = &addresses->pdata[i];
 		address = NMP_OBJECT_CAST_IP4_ADDRESS (addresses->pdata[i]);
 
-		net = address->address & nm_utils_ip4_prefix_to_netmask (address->plen);
+		net = address->address & _nm_utils_ip4_prefix_to_netmask (address->plen);
 		if (!g_hash_table_lookup_extended (subnets, GUINT_TO_POINTER (net), NULL, &p)) {
 			g_hash_table_insert (subnets, GUINT_TO_POINTER (net), p_address);
 			continue;
@@ -3251,7 +3251,7 @@ ip4_addr_subnets_is_secondary (const NMPObject *address,
 
 	a = NMP_OBJECT_CAST_IP4_ADDRESS (address);
 
-	net = a->address & nm_utils_ip4_prefix_to_netmask (a->plen);
+	net = a->address & _nm_utils_ip4_prefix_to_netmask (a->plen);
 	p = g_hash_table_lookup (subnets, GUINT_TO_POINTER (net));
 	nm_assert (p);
 	if (!ip4_addr_subnets_is_plain_address (addresses, p)) {

@@ -782,7 +782,7 @@ nm_dhcp_dhclient_read_lease_ip_configs (NMDedupMultiIndex *multi_idx,
 
 		/* Get default netmask for the IP according to appropriate class. */
 		if (!address.plen)
-			address.plen = nm_utils_ip4_get_default_prefix (address.address);
+			address.plen = _nm_utils_ip4_get_default_prefix (address.address);
 
 		address.timestamp = now_monotonic_ts;
 		address.lifetime = address.preferred = expiry;
