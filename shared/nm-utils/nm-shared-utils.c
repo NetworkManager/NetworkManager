@@ -146,6 +146,27 @@ _nm_utils_ip4_get_default_prefix (guint32 ip)
 	return 24;  /* Class C - 255.255.255.0 */
 }
 
+gboolean
+nm_utils_ip_is_site_local (int addr_family,
+                           const void *address)
+{
+	in_addr_t addr4;
+
+	switch (addr_family) {
+	case AF_INET:
+		/* RFC1918 private addresses
+		 * 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 */
+		addr4 = ntohl (*((const in_addr_t *) address));
+		return    (addr4 & 0xff000000) == 0x0a000000
+		       || (addr4 & 0xfff00000) == 0xac100000
+		       || (addr4 & 0xffff0000) == 0xc0a80000;
+	case AF_INET6:
+		return IN6_IS_ADDR_SITELOCAL (address);
+	default:
+		g_return_val_if_reached (FALSE);
+	}
+}
+
 /*****************************************************************************/
 
 /* _nm_utils_ascii_str_to_int64:
