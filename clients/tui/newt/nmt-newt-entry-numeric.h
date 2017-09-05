@@ -41,12 +41,12 @@ typedef struct {
 GType nmt_newt_entry_numeric_get_type (void);
 
 NmtNewtWidget *nmt_newt_entry_numeric_new (int width,
-                                           int min,
-                                           int max);
+                                           gint64 min,
+                                           gint64 max);
 
 NmtNewtWidget *nmt_newt_entry_numeric_new_full (int width,
-                                                int min,
-                                                int max,
+                                                gint64 min,
+                                                gint64 max,
                                                 gboolean optional);
 
 #endif /* NMT_NEWT_ENTRY_NUMERIC_H */
