@@ -359,7 +359,7 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 			if (route.plen) {
 				route.rt_source = NM_IP_CONFIG_SOURCE_DHCP;
 				route.metric = default_priority;
-				nm_ip4_config_add_route (ip4_config, &route);
+				nm_ip4_config_add_route (ip4_config, &route, NULL);
 
 				s = nm_utils_inet4_ntop (route.network, buf);
 				gw_str = nm_utils_inet4_ntop (route.gateway, NULL);

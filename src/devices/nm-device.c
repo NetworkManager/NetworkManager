@@ -5365,7 +5365,7 @@ ipv4ll_get_ip4_config (NMDevice *self, guint32 lla)
 	route.plen = 4;
 	route.rt_source = NM_IP_CONFIG_SOURCE_IP4LL;
 	route.metric = nm_device_get_ip4_route_metric (self);
-	nm_ip4_config_add_route (config, &route);
+	nm_ip4_config_add_route (config, &route, NULL);
 
 	return config;
 }
@@ -5798,7 +5798,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 		r.network = gateway;
 		r.plen = 32;
 		r.gateway = 0;
-		nm_ip4_config_add_route (composite, &r);
+		nm_ip4_config_add_route (composite, &r, NULL);
 	}
 
 END_ADD_DEFAULT_ROUTE:
@@ -6534,7 +6534,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 		r.network = *gateway;
 		r.plen = 128;
 		r.gateway = in6addr_any;
-		nm_ip6_config_add_route (composite, &r);
+		nm_ip6_config_add_route (composite, &r, NULL);
 	}
 
 END_ADD_DEFAULT_ROUTE:

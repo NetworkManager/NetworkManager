@@ -37,8 +37,8 @@ build_test_config (void)
 	config = nmtst_ip6_config_new (1);
 
 	nm_ip6_config_add_address (config, nmtst_platform_ip6_address ("abcd:1234:4321::cdde", "1:2:3:4::5", 64));
-	nm_ip6_config_add_route (config, nmtst_platform_ip6_route ("abcd:1200::", 24, "abcd:1234:4321:cdde::2", NULL));
-	nm_ip6_config_add_route (config, nmtst_platform_ip6_route ("2001::", 16, "2001:abba::2234", NULL));
+	nm_ip6_config_add_route (config, nmtst_platform_ip6_route ("abcd:1200::", 24, "abcd:1234:4321:cdde::2", NULL), NULL);
+	nm_ip6_config_add_route (config, nmtst_platform_ip6_route ("2001::", 16, "2001:abba::2234", NULL), NULL);
 
 	nm_ip6_config_set_gateway (config, nmtst_inet6_from_string ("3001:abba::3234"));
 
@@ -74,7 +74,7 @@ test_subtract (void)
 	/* add a couple more things to the test config */
 	dst = build_test_config ();
 	nm_ip6_config_add_address (dst, nmtst_platform_ip6_address (expected_addr, NULL, expected_addr_plen));
-	nm_ip6_config_add_route (dst, nmtst_platform_ip6_route (expected_route_dest, expected_route_plen, expected_route_next_hop, NULL));
+	nm_ip6_config_add_route (dst, nmtst_platform_ip6_route (expected_route_dest, expected_route_plen, expected_route_next_hop, NULL), NULL);
 
 	expected_ns1 = *nmtst_inet6_from_string ("2222:3333:4444::5555");
 	nm_ip6_config_add_nameserver (dst, &expected_ns1);
@@ -141,10 +141,10 @@ test_compare_with_source (void)
 	/* Route */
 	route = *nmtst_platform_ip6_route ("abcd:1200::", 24, "abcd:1234:4321:cdde::2", NULL);
 	route.rt_source = NM_IP_CONFIG_SOURCE_USER;
-	nm_ip6_config_add_route (a, &route);
+	nm_ip6_config_add_route (a, &route, NULL);
 
 	route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
-	nm_ip6_config_add_route (b, &route);
+	nm_ip6_config_add_route (b, &route, NULL);
 
 	/* Assert that the configs are basically the same, eg that the source is ignored */
 	g_assert (nm_ip6_config_equal (a, b));
@@ -205,13 +205,13 @@ test_add_route_with_source (void)
 	/* Test that a higher priority source is not overwritten */
 	route = *nmtst_platform_ip6_route ("abcd:1200::", 24, "abcd:1234:4321:cdde::2", NULL);
 	route.rt_source = NM_IP_CONFIG_SOURCE_USER;
-	nm_ip6_config_add_route (a, &route);
+	nm_ip6_config_add_route (a, &route, NULL);
 
 	test_route = _nmtst_ip6_config_get_route (a, 0);
 	g_assert_cmpint (test_route->rt_source, ==, NM_IP_CONFIG_SOURCE_USER);
 
 	route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
-	nm_ip6_config_add_route (a, &route);
+	nm_ip6_config_add_route (a, &route, NULL);
 
 	test_route = _nmtst_ip6_config_get_route (a, 0);
 	g_assert_cmpint (test_route->rt_source, ==, NM_IP_CONFIG_SOURCE_USER);
@@ -219,13 +219,13 @@ test_add_route_with_source (void)
 	/* Test that a lower priority address source is overwritten */
 	_nmtst_ip6_config_del_route (a, 0);
 	route.rt_source = NM_IP_CONFIG_SOURCE_KERNEL;
-	nm_ip6_config_add_route (a, &route);
+	nm_ip6_config_add_route (a, &route, NULL);
 
 	test_route = _nmtst_ip6_config_get_route (a, 0);
 	g_assert_cmpint (test_route->rt_source, ==, NM_IP_CONFIG_SOURCE_KERNEL);
 
 	route.rt_source = NM_IP_CONFIG_SOURCE_USER;
-	nm_ip6_config_add_route (a, &route);
+	nm_ip6_config_add_route (a, &route, NULL);
 
 	test_route = _nmtst_ip6_config_get_route (a, 0);
 	g_assert_cmpint (test_route->rt_source, ==, NM_IP_CONFIG_SOURCE_USER);

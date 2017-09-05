@@ -91,6 +91,7 @@ gboolean _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
                                 const NMPlatformObject *pl_new,
                                 gboolean merge,
                                 gboolean append_force,
+                                const NMPObject **out_obj_old,
                                 const NMPObject **out_obj_new);
 
 const NMDedupMultiEntry *_nm_ip_config_lookup_ip_route (const NMDedupMultiIndex *multi_idx,
@@ -173,7 +174,9 @@ gboolean nm_ip4_config_address_exists (const NMIP4Config *self, const NMPlatform
 
 const NMDedupMultiHeadEntry *nm_ip4_config_lookup_routes (const NMIP4Config *self);
 void nm_ip4_config_reset_routes (NMIP4Config *self);
-void nm_ip4_config_add_route (NMIP4Config *self, const NMPlatformIP4Route *route);
+void nm_ip4_config_add_route (NMIP4Config *self,
+                              const NMPlatformIP4Route *route,
+                              const NMPObject **out_obj_new);
 void _nmtst_ip4_config_del_route (NMIP4Config *self, guint i);
 guint nm_ip4_config_get_num_routes (const NMIP4Config *self);
 const NMPlatformIP4Route *_nmtst_ip4_config_get_route (const NMIP4Config *self, guint i);

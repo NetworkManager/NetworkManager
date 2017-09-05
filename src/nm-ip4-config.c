@@ -166,7 +166,8 @@ _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
                        const NMPlatformObject *pl_new,
                        gboolean merge,
                        gboolean append_force,
-                       const NMPObject **out_obj_new)
+                       const NMPObject **out_obj_old /* returns a reference! */,
+                       const NMPObject **out_obj_new /* does not return a reference */)
 {
 	NMPObject obj_new_stackinit;
 	const NMDedupMultiEntry *entry_old;
@@ -274,7 +275,7 @@ _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
 	                                    entry_old ?: NM_DEDUP_MULTI_ENTRY_MISSING,
 	                                    NULL,
 	                                    &entry_new,
-	                                    NULL)) {
+	                                    out_obj_old)) {
 		nm_assert_not_reached ();
 		NM_SET_OUT (out_obj_new, NULL);
 		return FALSE;
@@ -284,6 +285,7 @@ _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
 	return TRUE;
 
 append_force_and_out:
+	NM_SET_OUT (out_obj_old, nmp_object_ref (entry_old->obj));
 	NM_SET_OUT (out_obj_new, entry_old->obj);
 	if (append_force) {
 		if (nm_dedup_multi_entry_reorder (entry_old, NULL, TRUE))
@@ -401,7 +403,7 @@ G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, NM_TYPE_EXPORTED_OBJECT)
 /*****************************************************************************/
 
 static void _add_address (NMIP4Config *self, const NMPObject *obj_new, const NMPlatformIP4Address *new);
-static void _add_route (NMIP4Config *self, const NMPObject *obj_new, const NMPlatformIP4Route *new);
+static void _add_route (NMIP4Config *self, const NMPObject *obj_new, const NMPlatformIP4Route *new, const NMPObject **out_obj_new);
 static const NMDedupMultiEntry *_lookup_route (const NMIP4Config *self,
                                                const NMPObject *needle,
                                                NMPlatformIPRouteCmpType cmp_type);
@@ -647,6 +649,7 @@ nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 			                            NULL,
 			                            FALSE,
 			                            TRUE,
+			                            NULL,
 			                            NULL))
 				nm_assert_not_reached ();
 		}
@@ -687,7 +690,7 @@ nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 			continue;
 		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
 			continue;
-		_add_route (self, plobj, NULL);
+		_add_route (self, plobj, NULL, NULL);
 	}
 
 	/* we detect the route metric based on the default route. All non-default
@@ -951,7 +954,7 @@ nm_ip4_config_merge_setting (NMIP4Config *self, NMSettingIPConfig *setting, guin
 		route.network = nm_utils_ip4_address_clear_host_address (route.network, route.plen);
 
 		merge_route_attributes (s_route, &route);
-		_add_route (self, NULL, &route);
+		_add_route (self, NULL, &route, NULL);
 	}
 
 	/* DNS */
@@ -1133,7 +1136,7 @@ nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src, NMIPConfigMergeFl
 		const NMPlatformIP4Route *route;
 
 		nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, src, &route)
-			_add_route (dst, NMP_OBJECT_UP_CAST (route), NULL);
+			_add_route (dst, NMP_OBJECT_UP_CAST (route), NULL, NULL);
 	}
 
 	if (dst_priv->route_metric == -1)
@@ -1586,6 +1589,7 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 			                       NULL,
 			                       FALSE,
 			                       TRUE,
+			                       NULL,
 			                       NULL);
 		}
 		nm_dedup_multi_index_dirty_remove_idx (dst_priv->multi_idx, &dst_priv->idx_ip4_addresses, FALSE);
@@ -1632,6 +1636,7 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 			                       NULL,
 			                       FALSE,
 			                       TRUE,
+			                       NULL,
 			                       NULL);
 		}
 		nm_dedup_multi_index_dirty_remove_idx (dst_priv->multi_idx, &dst_priv->idx_ip4_routes, FALSE);
@@ -1994,6 +1999,7 @@ _add_address (NMIP4Config *self, const NMPObject *obj_new, const NMPlatformIP4Ad
 	                           (const NMPlatformObject *) new,
 	                           TRUE,
 	                           FALSE,
+	                           NULL,
 	                           NULL))
 		_notify_addresses (self);
 }
@@ -2120,9 +2126,13 @@ nm_ip4_config_reset_routes (NMIP4Config *self)
 }
 
 static void
-_add_route (NMIP4Config *self, const NMPObject *obj_new, const NMPlatformIP4Route *new)
+_add_route (NMIP4Config *self,
+            const NMPObject *obj_new,
+            const NMPlatformIP4Route *new,
+            const NMPObject **out_obj_new)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
+	const NMPObject *obj_new_2;
 
 	nm_assert ((!new) != (!obj_new));
 	nm_assert (!new || _route_valid (new));
@@ -2135,14 +2145,20 @@ _add_route (NMIP4Config *self, const NMPObject *obj_new, const NMPlatformIP4Rout
 	                           (const NMPlatformObject *) new,
 	                           TRUE,
 	                           FALSE,
-	                           NULL))
+	                           NULL,
+	                           &obj_new_2)) {
+		NM_SET_OUT (out_obj_new, nmp_object_ref (obj_new_2));
 		_notify_routes (self);
+	} else
+		NM_SET_OUT (out_obj_new, nmp_object_ref (obj_new_2));
 }
 
 /**
  * nm_ip4_config_add_route:
  * @self: the #NMIP4Config
  * @new: the new route to add to @self
+ * @out_obj_new: (allow-none): (out): the added route object. Must be unrefed
+ *   by caller.
  *
  * Adds the new route to @self.  If a route with the same basic properties
  * (network, prefix) already exists in @self, it is overwritten including the
@@ -2150,14 +2166,16 @@ _add_route (NMIP4Config *self, const NMPObject *obj_new, const NMPlatformIP4Rout
  * from @new if that source is higher priority.
  */
 void
-nm_ip4_config_add_route (NMIP4Config *self, const NMPlatformIP4Route *new)
+nm_ip4_config_add_route (NMIP4Config *self,
+                         const NMPlatformIP4Route *new,
+                         const NMPObject **out_obj_new)
 {
 	g_return_if_fail (self);
 	g_return_if_fail (new);
 	g_return_if_fail (new->plen > 0 && new->plen <= 32);
 	g_return_if_fail (NM_IP4_CONFIG_GET_PRIVATE (self)->ifindex > 0);
 
-	_add_route (self, NULL, new);
+	_add_route (self, NULL, new, out_obj_new);
 }
 
 void

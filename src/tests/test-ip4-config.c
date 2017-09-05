@@ -42,10 +42,10 @@ build_test_config (void)
 	nm_ip4_config_add_address (config, &addr);
 
 	route = *nmtst_platform_ip4_route ("10.0.0.0", 8, "192.168.1.1");
-	nm_ip4_config_add_route (config, &route);
+	nm_ip4_config_add_route (config, &route, NULL);
 
 	route = *nmtst_platform_ip4_route ("172.16.0.0", 16, "192.168.1.1");
-	nm_ip4_config_add_route (config, &route);
+	nm_ip4_config_add_route (config, &route, NULL);
 
 	nm_ip4_config_set_gateway (config, nmtst_inet4_from_string ("192.168.1.1"));
 
@@ -95,7 +95,7 @@ test_subtract (void)
 	nm_ip4_config_add_address (dst, &addr);
 
 	route = *nmtst_platform_ip4_route (expected_route_dest, expected_route_plen, expected_route_next_hop);
-	nm_ip4_config_add_route (dst, &route);
+	nm_ip4_config_add_route (dst, &route, NULL);
 
 	nm_ip4_config_add_nameserver (dst, expected_ns1);
 	nm_ip4_config_add_nameserver (dst, expected_ns2);
@@ -170,10 +170,10 @@ test_compare_with_source (void)
 	/* Route */
 	route = *nmtst_platform_ip4_route ("10.0.0.0", 8, "192.168.1.1");
 	route.rt_source = NM_IP_CONFIG_SOURCE_USER;
-	nm_ip4_config_add_route (a, &route);
+	nm_ip4_config_add_route (a, &route, NULL);
 
 	route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
-	nm_ip4_config_add_route (b, &route);
+	nm_ip4_config_add_route (b, &route, NULL);
 
 	/* Assert that the configs are basically the same, eg that the source is ignored */
 	g_assert (nm_ip4_config_equal (a, b));
@@ -234,13 +234,13 @@ test_add_route_with_source (void)
 	/* Test that a higher priority source is not overwritten */
 	route = *nmtst_platform_ip4_route ("1.2.3.0", 24, "1.2.3.1");
 	route.rt_source = NM_IP_CONFIG_SOURCE_USER;
-	nm_ip4_config_add_route (a, &route);
+	nm_ip4_config_add_route (a, &route, NULL);
 
 	test_route = _nmtst_ip4_config_get_route (a, 0);
 	g_assert_cmpint (test_route->rt_source, ==, NM_IP_CONFIG_SOURCE_USER);
 
 	route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
-	nm_ip4_config_add_route (a, &route);
+	nm_ip4_config_add_route (a, &route, NULL);
 
 	test_route = _nmtst_ip4_config_get_route (a, 0);
 	g_assert_cmpint (test_route->rt_source, ==, NM_IP_CONFIG_SOURCE_USER);
@@ -248,13 +248,13 @@ test_add_route_with_source (void)
 	/* Test that a lower priority address source is overwritten */
 	_nmtst_ip4_config_del_route (a, 0);
 	route.rt_source = NM_IP_CONFIG_SOURCE_KERNEL;
-	nm_ip4_config_add_route (a, &route);
+	nm_ip4_config_add_route (a, &route, NULL);
 
 	test_route = _nmtst_ip4_config_get_route (a, 0);
 	g_assert_cmpint (test_route->rt_source, ==, NM_IP_CONFIG_SOURCE_KERNEL);
 
 	route.rt_source = NM_IP_CONFIG_SOURCE_USER;
-	nm_ip4_config_add_route (a, &route);
+	nm_ip4_config_add_route (a, &route, NULL);
 
 	test_route = _nmtst_ip4_config_get_route (a, 0);
 	g_assert_cmpint (test_route->rt_source, ==, NM_IP_CONFIG_SOURCE_USER);

@@ -760,7 +760,7 @@ add_ip4_vpn_gateway_route (NMIP4Config *config,
 	route.gateway = parent_gw;
 	route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
 	route.metric = route_metric;
-	nm_ip4_config_add_route (config, &route);
+	nm_ip4_config_add_route (config, &route, NULL);
 
 	if (parent_gw) {
 		/* Ensure there's a route to the parent device's gateway through the
@@ -773,7 +773,7 @@ add_ip4_vpn_gateway_route (NMIP4Config *config,
 		route.plen = 32;
 		route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
 		route.metric = route_metric;
-		nm_ip4_config_add_route (config, &route);
+		nm_ip4_config_add_route (config, &route, NULL);
 	}
 }
 
@@ -834,7 +834,7 @@ add_ip6_vpn_gateway_route (NMIP6Config *config,
 		route.gateway = *parent_gw;
 	route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
 	route.metric = route_metric;
-	nm_ip6_config_add_route (config, &route);
+	nm_ip6_config_add_route (config, &route, NULL);
 
 	/* Ensure there's a route to the parent device's gateway through the
 	 * parent device, since if the VPN claims the default route and the VPN
@@ -847,7 +847,7 @@ add_ip6_vpn_gateway_route (NMIP6Config *config,
 		route.plen = 128;
 		route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
 		route.metric = route_metric;
-		nm_ip6_config_add_route (config, &route);
+		nm_ip6_config_add_route (config, &route, NULL);
 	}
 }
 
@@ -1548,7 +1548,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 			const NMPlatformIP4Route *route;
 
 			nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, priv->ip4_config, &route)
-				nm_ip4_config_add_route (config, route);
+				nm_ip4_config_add_route (config, route, NULL);
 		}
 	} else if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP4_CONFIG_ROUTES, "aau", &iter)) {
 		while (g_variant_iter_next (iter, "@au", &v)) {
@@ -1578,7 +1578,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 				 * whatever the server provides.
 				 */
 				if (!(priv->ip4_external_gw && route.network == priv->ip4_external_gw && route.plen == 32))
-					nm_ip4_config_add_route (config, &route);
+					nm_ip4_config_add_route (config, &route, NULL);
 				break;
 			default:
 				break;
@@ -1713,7 +1713,7 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 			const NMPlatformIP6Route *route;
 
 			nm_ip_config_iter_ip6_route_for_each (&ipconf_iter, priv->ip6_config, &route)
-				nm_ip6_config_add_route (config, route);
+				nm_ip6_config_add_route (config, route, NULL);
 		}
 	} else if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP6_CONFIG_ROUTES, "a(ayuayu)", &iter)) {
 		GVariant *dest, *next_hop;
@@ -1741,7 +1741,7 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 			 * the server provides.
 			 */
 			if (!(priv->ip6_external_gw && IN6_ARE_ADDR_EQUAL (&route.network, priv->ip6_external_gw) && route.plen == 128))
-				nm_ip6_config_add_route (config, &route);
+				nm_ip6_config_add_route (config, &route, NULL);
 
 next:
 			g_variant_unref (dest);

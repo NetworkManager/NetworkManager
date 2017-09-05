@@ -144,7 +144,9 @@ gboolean nm_ip6_config_has_any_dad_pending (const NMIP6Config *self,
 
 const NMDedupMultiHeadEntry *nm_ip6_config_lookup_routes (const NMIP6Config *self);
 void nm_ip6_config_reset_routes (NMIP6Config *self);
-void nm_ip6_config_add_route (NMIP6Config *self, const NMPlatformIP6Route *route);
+void nm_ip6_config_add_route (NMIP6Config *self,
+                              const NMPlatformIP6Route *route,
+                              const NMPObject **out_obj_new);
 void _nmtst_ip6_config_del_route (NMIP6Config *self, guint i);
 guint nm_ip6_config_get_num_routes (const NMIP6Config *self);
 const NMPlatformIP6Route *_nmtst_ip6_config_get_route (const NMIP6Config *self, guint i);
