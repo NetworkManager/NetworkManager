@@ -1376,7 +1376,7 @@ test_read_wired_static_routes_legacy (void)
 	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
 
 	/* Routes */
-	g_assert_cmpint (nm_setting_ip_config_get_num_routes (s_ip4), ==, 3);
+	g_assert_cmpint (nm_setting_ip_config_get_num_routes (s_ip4), ==, 4);
 
 	/* Route #1 */
 	ip4_route = nm_setting_ip_config_get_route (s_ip4, 0);
@@ -1409,6 +1409,13 @@ test_read_wired_static_routes_legacy (void)
 	nmtst_assert_route_attribute_boolean (ip4_route, NM_IP_ROUTE_ATTRIBUTE_LOCK_WINDOW, TRUE);
 	nmtst_assert_route_attribute_boolean (ip4_route, NM_IP_ROUTE_ATTRIBUTE_LOCK_MTU, TRUE);
 	nmtst_assert_route_attribute_string (ip4_route, NM_IP_ROUTE_ATTRIBUTE_SRC, "1.2.3.4");
+
+	ip4_route = nm_setting_ip_config_get_route (s_ip4, 3);
+	g_assert (ip4_route != NULL);
+	g_assert_cmpstr (nm_ip_route_get_dest (ip4_route), ==, "7.7.7.8");
+	g_assert_cmpint (nm_ip_route_get_prefix (ip4_route), ==, 32);
+	g_assert_cmpstr (nm_ip_route_get_next_hop (ip4_route), ==, NULL);
+	g_assert_cmpint (nm_ip_route_get_metric (ip4_route), ==, 18);
 
 	g_object_unref (connection);
 }
