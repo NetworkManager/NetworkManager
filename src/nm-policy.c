@@ -822,8 +822,7 @@ static void
 update_ip4_routing (NMPolicy *self, gboolean force_update)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	NMDevice *best = NULL, *default_device;
-	NMConnection *connection = NULL;
+	NMDevice *best = NULL;
 	NMVpnConnection *vpn = NULL;
 	NMActiveConnection *best_ac = NULL;
 	const char *ip_iface = NULL;
@@ -832,18 +831,18 @@ update_ip4_routing (NMPolicy *self, gboolean force_update)
 	 * so we can get (vpn != NULL && best == NULL).
 	 */
 	if (!get_best_ip4_config (self, FALSE, &ip_iface, &best_ac, &best, &vpn)) {
-		gboolean changed;
-
-		changed = (priv->default_device4 != NULL);
-		priv->default_device4 = NULL;
-		if (changed)
+		if (priv->default_device4) {
+			priv->default_device4 = NULL;
+			_LOGt (LOGD_DNS, "set-default-device-4: %p", NULL);
 			_notify (self, PROP_DEFAULT_IP4_DEVICE);
-
+		}
 		return;
 	}
 	g_assert ((best || vpn) && best_ac);
 
-	if (!force_update && best && (best == priv->default_device4))
+	if (   !force_update
+	    && best
+	    && best == priv->default_device4)
 		return;
 
 	if (best) {
@@ -861,19 +860,18 @@ update_ip4_routing (NMPolicy *self, gboolean force_update)
 	}
 
 	if (vpn)
-		default_device = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
-	else
-		default_device = best;
+		best = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
 
 	update_default_ac (self, best_ac, nm_active_connection_set_default);
 
-	if (default_device == priv->default_device4)
+	if (best == priv->default_device4)
 		return;
 
-	priv->default_device4 = default_device;
-	connection = nm_active_connection_get_applied_connection (best_ac);
+	priv->default_device4 = best;
+	_LOGt (LOGD_DNS, "set-default-device-4: %p", best);
 	_LOGI (LOGD_CORE, "set '%s' (%s) as default for IPv4 routing and DNS",
-	       nm_connection_get_id (connection), ip_iface);
+	       nm_connection_get_id (nm_active_connection_get_applied_connection (best_ac)),
+	       ip_iface);
 	_notify (self, PROP_DEFAULT_IP4_DEVICE);
 }
 
@@ -950,8 +948,7 @@ static void
 update_ip6_routing (NMPolicy *self, gboolean force_update)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	NMDevice *best = NULL, *default_device6;
-	NMConnection *connection = NULL;
+	NMDevice *best = NULL;
 	NMVpnConnection *vpn = NULL;
 	NMActiveConnection *best_ac = NULL;
 	const char *ip_iface = NULL;
@@ -960,18 +957,18 @@ update_ip6_routing (NMPolicy *self, gboolean force_update)
 	 * so we can get (vpn != NULL && best == NULL).
 	 */
 	if (!get_best_ip6_config (self, FALSE, &ip_iface, &best_ac, &best, &vpn)) {
-		gboolean changed;
-
-		changed = (priv->default_device6 != NULL);
-		priv->default_device6 = NULL;
-		if (changed)
+		if (priv->default_device6) {
+			priv->default_device6 = NULL;
+			_LOGt (LOGD_DNS, "set-default-device-6: %p", NULL);
 			_notify (self, PROP_DEFAULT_IP6_DEVICE);
-
+		}
 		return;
 	}
 	g_assert ((best || vpn) && best_ac);
 
-	if (!force_update && best && (best == priv->default_device6))
+	if (   !force_update
+	    && best
+	    && best == priv->default_device6)
 		return;
 
 	if (best) {
@@ -989,21 +986,22 @@ update_ip6_routing (NMPolicy *self, gboolean force_update)
 	}
 
 	if (vpn)
-		default_device6 = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
-	else
-		default_device6 = best;
+		best = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
 
 	update_default_ac (self, best_ac, nm_active_connection_set_default6);
 
-	if (default_device6 == priv->default_device6)
+	if (best == priv->default_device6)
 		return;
-	priv->default_device6 = default_device6;
+
+	priv->default_device6 = best;
+	_LOGt (LOGD_DNS, "set-default-device-6: %p", best);
 
 	update_ip6_prefix_delegation (self);
 
-	connection = nm_active_connection_get_applied_connection (best_ac);
 	_LOGI (LOGD_CORE, "set '%s' (%s) as default for IPv6 routing and DNS",
-	       nm_connection_get_id (connection), ip_iface);
+	       nm_connection_get_id (nm_active_connection_get_applied_connection (best_ac)),
+	       ip_iface);
+
 	_notify (self, PROP_DEFAULT_IP6_DEVICE);
 }
 
@@ -1039,10 +1037,12 @@ check_activating_devices (NMPolicy *self)
 	g_object_freeze_notify (object);
 
 	if (best4 != priv->activating_device4) {
+		_LOGt (LOGD_DNS, "set-activating-device-4: %p", best4);
 		priv->activating_device4 = best4;
 		_notify (self, PROP_ACTIVATING_IP4_DEVICE);
 	}
 	if (best6 != priv->activating_device6) {
+		_LOGt (LOGD_DNS, "set-activating-device-6: %p", best4);
 		priv->activating_device6 = best6;
 		_notify (self, PROP_ACTIVATING_IP6_DEVICE);
 	}
