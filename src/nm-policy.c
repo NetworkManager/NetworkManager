@@ -596,7 +596,7 @@ lookup_by_address (NMPolicy *self)
 }
 
 static void
-update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const char *msg)
+update_system_hostname (NMPolicy *self, const char *msg)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	const char *configured_hostname;
@@ -659,17 +659,11 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const 
 		return;
 	}
 
-	/* Try automatically determined hostname from the best device's IP config */
-	if (!best4)
-		best4 = get_best_ip4_device (self, TRUE);
-	if (!best6)
-		best6 = get_best_ip6_device (self, TRUE);
-
-	if (best4) {
+	if (priv->default_device4) {
 		NMDhcp4Config *dhcp4_config;
 
 		/* Grab a hostname out of the device's DHCP4 config */
-		dhcp4_config = nm_device_get_dhcp4_config (best4);
+		dhcp4_config = nm_device_get_dhcp4_config (priv->default_device4);
 		if (dhcp4_config) {
 			dhcp_hostname = nm_dhcp4_config_get_option (dhcp4_config, "host_name");
 			if (dhcp_hostname && dhcp_hostname[0]) {
@@ -685,11 +679,11 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const 
 		}
 	}
 
-	if (best6) {
+	if (priv->default_device6) {
 		NMDhcp6Config *dhcp6_config;
 
 		/* Grab a hostname out of the device's DHCP6 config */
-		dhcp6_config = nm_device_get_dhcp6_config (best6);
+		dhcp6_config = nm_device_get_dhcp6_config (priv->default_device6);
 		if (dhcp6_config) {
 			dhcp_hostname = nm_dhcp6_config_get_option (dhcp6_config, "host_name");
 			if (dhcp_hostname && dhcp_hostname[0]) {
@@ -724,7 +718,7 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const 
 
 	priv->dhcp_hostname = FALSE;
 
-	if (!best4 && !best6) {
+	if (!priv->default_device4 && !priv->default_device6) {
 		/* No best device; fall back to the last hostname set externally
 		 * to NM or if there wasn't one, 'localhost.localdomain'
 		 */
@@ -743,8 +737,8 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const 
 	/* No configured hostname, no automatically determined hostname, and no
 	 * bootup hostname. Start reverse DNS of the current IPv4 or IPv6 address.
 	 */
-	ip4_config = best4 ? nm_device_get_ip4_config (best4) : NULL;
-	ip6_config = best6 ? nm_device_get_ip6_config (best6) : NULL;
+	ip4_config = priv->default_device4 ? nm_device_get_ip4_config (priv->default_device4) : NULL;
+	ip6_config = priv->default_device6 ? nm_device_get_ip6_config (priv->default_device6) : NULL;
 
 	if (   ip4_config
 	    && (addr4 = nm_ip4_config_get_first_address (ip4_config))) {
@@ -1027,7 +1021,7 @@ update_routing_and_dns (NMPolicy *self, gboolean force_update)
 	update_ip6_routing (self, force_update);
 
 	/* Update the system hostname */
-	update_system_hostname (self, priv->default_device4, priv->default_device6, "routing and dns");
+	update_system_hostname (self, "routing and dns");
 
 	nm_dns_manager_end_updates (priv->dns_manager, __func__);
 }
@@ -1258,7 +1252,7 @@ hostname_changed (NMHostnameManager *hostname_manager, GParamSpec *pspec, gpoint
 	NMPolicyPrivate *priv = user_data;
 	NMPolicy *self = _PRIV_TO_SELF (priv);
 
-	update_system_hostname (self, NULL, NULL, "hostname changed");
+	update_system_hostname (self, "hostname changed");
 }
 
 static void
@@ -1740,7 +1734,7 @@ device_ip4_config_changed (NMDevice *device,
 		}
 		update_ip4_dns (self, priv->dns_manager);
 		update_ip4_routing (self, TRUE);
-		update_system_hostname (self, priv->default_device4, priv->default_device6, "ip4 conf");
+		update_system_hostname (self, "ip4 conf");
 	} else {
 		/* Old configs get removed immediately */
 		if (old_config)
@@ -1776,7 +1770,7 @@ device_ip6_config_changed (NMDevice *device,
 		}
 		update_ip6_dns (self, priv->dns_manager);
 		update_ip6_routing (self, TRUE);
-		update_system_hostname (self, priv->default_device4, priv->default_device6, "ip6 conf");
+		update_system_hostname (self, "ip6 conf");
 	} else {
 		/* Old configs get removed immediately */
 		if (old_config)
