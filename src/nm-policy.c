@@ -683,7 +683,9 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const 
 				       dhcp_hostname);
 			}
 		}
-	} else if (best6) {
+	}
+
+	if (best6) {
 		NMDhcp6Config *dhcp6_config;
 
 		/* Grab a hostname out of the device's DHCP6 config */
