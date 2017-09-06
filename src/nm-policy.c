@@ -671,15 +671,13 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const 
 		/* Grab a hostname out of the device's DHCP4 config */
 		dhcp4_config = nm_device_get_dhcp4_config (best4);
 		if (dhcp4_config) {
-			p = dhcp_hostname = nm_dhcp4_config_get_option (dhcp4_config, "host_name");
-			if (dhcp_hostname && strlen (dhcp_hostname)) {
-				/* Sanity check; strip leading spaces */
-				while (*p) {
-					if (!g_ascii_isspace (*p++)) {
-						_set_hostname (self, p-1, "from DHCPv4");
-						priv->dhcp_hostname = TRUE;
-						return;
-					}
+			dhcp_hostname = nm_dhcp4_config_get_option (dhcp4_config, "host_name");
+			if (dhcp_hostname && dhcp_hostname[0]) {
+				p = nm_str_skip_leading_spaces (dhcp_hostname);
+				if (p[0]) {
+					_set_hostname (self, p, "from DHCPv4");
+					priv->dhcp_hostname = TRUE;
+					return;
 				}
 				_LOGW (LOGD_DNS, "set-hostname: DHCPv4-provided hostname '%s' looks invalid; ignoring it",
 				       dhcp_hostname);
@@ -691,15 +689,13 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const 
 		/* Grab a hostname out of the device's DHCP6 config */
 		dhcp6_config = nm_device_get_dhcp6_config (best6);
 		if (dhcp6_config) {
-			p = dhcp_hostname = nm_dhcp6_config_get_option (dhcp6_config, "host_name");
-			if (dhcp_hostname && strlen (dhcp_hostname)) {
-				/* Sanity check; strip leading spaces */
-				while (*p) {
-					if (!g_ascii_isspace (*p++)) {
-						_set_hostname (self, p-1, "from DHCPv6");
-						priv->dhcp_hostname = TRUE;
-						return;
-					}
+			dhcp_hostname = nm_dhcp6_config_get_option (dhcp6_config, "host_name");
+			if (dhcp_hostname && dhcp_hostname[0]) {
+				p = nm_str_skip_leading_spaces (dhcp_hostname);
+				if (p[0]) {
+					_set_hostname (self, p, "from DHCPv6");
+					priv->dhcp_hostname = TRUE;
+					return;
 				}
 				_LOGW (LOGD_DNS, "set-hostname: DHCPv6-provided hostname '%s' looks invalid; ignoring it",
 				       dhcp_hostname);
