@@ -619,6 +619,36 @@ nm_g_object_unref (gpointer obj)
 		g_object_unref (obj);
 }
 
+/* Assigns GObject @obj to destination @pdst, and takes an additional ref.
+ * The previous value of @pdst is unrefed.
+ *
+ * It makes sure to first increase the ref-count of @obj, and handles %NULL
+ * @obj correctly.
+ * */
+#define nm_g_object_ref_set(pp, obj) \
+	({ \
+		typeof (*(pp)) *const _pp = (pp); \
+		typeof (**_pp) *const _obj = (obj); \
+		typeof (**_pp) *_p; \
+		gboolean _changed = FALSE; \
+		\
+		if (   _pp \
+		    && ((_p = *_pp) != _obj)) { \
+			if (_obj) { \
+				nm_assert (G_IS_OBJECT (_obj)); \
+				 g_object_ref (_obj); \
+			} \
+			if (_p) { \
+				nm_assert (G_IS_OBJECT (_p)); \
+				*_pp = NULL; \
+				g_object_unref (_p); \
+			} \
+			*_pp = _obj; \
+			_changed = TRUE; \
+		} \
+		_changed; \
+	})
+
 /* basically, replaces
  *   g_clear_pointer (&location, g_free)
  * with
@@ -631,13 +661,32 @@ nm_g_object_unref (gpointer obj)
 #define nm_clear_g_free(pp) \
 	({  \
 		typeof (*(pp)) *_pp = (pp); \
-		typeof (**_pp) *_p = *_pp; \
+		typeof (**_pp) *_p; \
+		gboolean _changed = FALSE; \
 		\
-		if (_p) { \
+		if (  _pp \
+		    && (_p = *_pp)) { \
 			*_pp = NULL; \
 			g_free (_p); \
+			_changed = TRUE; \
 		} \
-		!!_p; \
+		_changed; \
+	})
+
+#define nm_clear_g_object(pp) \
+	({ \
+		typeof (*(pp)) *_pp = (pp); \
+		typeof (**_pp) *_p; \
+		gboolean _changed = FALSE; \
+		\
+		if (   _pp \
+		    && (_p = *_pp)) { \
+			nm_assert (G_IS_OBJECT (_p)); \
+			*_pp = NULL; \
+			g_object_unref (_p); \
+			_changed = TRUE; \
+		} \
+		_changed; \
 	})
 
 static inline gboolean
