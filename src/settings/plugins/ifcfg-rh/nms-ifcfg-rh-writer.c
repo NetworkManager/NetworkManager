@@ -1242,7 +1242,7 @@ write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired,
 }
 
 static gboolean
-write_bonding_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired, GError **error)
+write_bond_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired, GError **error)
 {
 	NMSettingBond *s_bond;
 	guint32 i, num_opts;
@@ -2838,7 +2838,7 @@ write_connection (NMConnection *connection,
 		if (!write_infiniband_setting (connection, ifcfg, error))
 			return FALSE;
 	} else if (!strcmp (type, NM_SETTING_BOND_SETTING_NAME)) {
-		if (!write_bonding_setting (connection, ifcfg, &wired, error))
+		if (!write_bond_setting (connection, ifcfg, &wired, error))
 			return FALSE;
 	} else if (!strcmp (type, NM_SETTING_TEAM_SETTING_NAME)) {
 		if (!write_team_setting (connection, ifcfg, &wired, error))
