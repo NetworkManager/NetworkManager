@@ -1713,7 +1713,7 @@ msgstr ""
 
 #. Ask for optional arguments.
 #: ../clients/cli/connections.c:4645
-#, c-format
+#, fuzzy, c-format
 msgid "There is %d optional setting for %s.\n"
 msgid_plural "There are %d optional settings for %s.\n"
 msgstr[0] "'%s' には %d のオプション設定があります。\n"
@@ -10362,7 +10362,7 @@ msgid "not a file (%s)"
 msgstr "ファイルではありません (%s)"
 
 #: ../libnm-core/nm-utils.c:2435
-#, c-format
+#, fuzzy, c-format
 msgid "invalid file owner %d for %s"
 msgstr "'%s' の無効なファイル所有者 %d"
 
@@ -10407,7 +10407,7 @@ msgid "not a valid ethernet MAC address for mask at position %lld"
 msgstr "%lld の場所でマスク用に有効なイーサネット MAC アドレスではありません"
 
 #: ../libnm-core/nm-utils.c:3651
-#, c-format
+#, fuzzy, c-format
 msgid "not a valid ethernet MAC address #%u at position %lld"
 msgstr "%lld の場所で有効なイーサネット MAC アドレス #%u ではありません"
 
