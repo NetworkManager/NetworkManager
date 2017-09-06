@@ -1192,18 +1192,10 @@ static gboolean
 write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired, GError **error)
 {
 	NMSettingVlan *s_vlan;
-	NMSettingConnection *s_con;
 	char *tmp;
 	guint32 vlan_flags = 0;
 	gsize s_buf_len;
 	char s_buf[50], *s_buf_ptr;
-
-	s_con = nm_connection_get_setting_connection (connection);
-	if (!s_con) {
-		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		                     "Missing connection setting");
-		return FALSE;
-	}
 
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	if (!s_vlan) {
@@ -1214,9 +1206,8 @@ write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired,
 
 	svSetValueStr (ifcfg, "VLAN", "yes");
 	svSetValueStr (ifcfg, "TYPE", TYPE_VLAN);
-	svSetValueStr (ifcfg, "DEVICE", nm_setting_connection_get_interface_name (s_con));
 	svSetValueStr (ifcfg, "PHYSDEV", nm_setting_vlan_get_parent (s_vlan));
-	svSetValueInt64 (ifcfg, "VLAN_ID", nm_setting_vlan_get_id(s_vlan));
+	svSetValueInt64 (ifcfg, "VLAN_ID", nm_setting_vlan_get_id (s_vlan));
 
 	vlan_flags = nm_setting_vlan_get_flags (s_vlan);
 	svSetValueBoolean (ifcfg, "REORDER_HDR", NM_FLAGS_HAS (vlan_flags, NM_VLAN_FLAG_REORDER_HEADERS));
@@ -1254,7 +1245,6 @@ static gboolean
 write_bonding_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired, GError **error)
 {
 	NMSettingBond *s_bond;
-	const char *iface;
 	guint32 i, num_opts;
 
 	s_bond = nm_connection_get_setting_bond (connection);
@@ -1264,14 +1254,6 @@ write_bonding_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wir
 		return FALSE;
 	}
 
-	iface = nm_connection_get_interface_name (connection);
-	if (!iface) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "Missing interface name");
-		return FALSE;
-	}
-
-	svSetValueStr (ifcfg, "DEVICE", iface);
 	svUnsetValue (ifcfg, "BONDING_OPTS");
 
 	num_opts = nm_setting_bond_get_num_options (s_bond);
@@ -1308,7 +1290,6 @@ static gboolean
 write_team_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired, GError **error)
 {
 	NMSettingTeam *s_team;
-	const char *iface;
 	const char *config;
 
 	s_team = nm_connection_get_setting_team (connection);
@@ -1318,14 +1299,6 @@ write_team_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired,
 		return FALSE;
 	}
 
-	iface = nm_connection_get_interface_name (connection);
-	if (!iface) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "Missing interface name");
-		return FALSE;
-	}
-
-	svSetValueStr (ifcfg, "DEVICE", iface);
 	config = nm_setting_team_get_config (s_team);
 	svSetValueStr (ifcfg, "TEAM_CONFIG", config);
 
@@ -1372,7 +1345,6 @@ static gboolean
 write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 {
 	NMSettingBridge *s_bridge;
-	const char *iface;
 	guint32 i;
 	gboolean b;
 	GString *opts;
@@ -1385,14 +1357,6 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, GError **error
 		return FALSE;
 	}
 
-	iface = nm_connection_get_interface_name (connection);
-	if (!iface) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "Missing interface name");
-		return FALSE;
-	}
-
-	svSetValueStr (ifcfg, "DEVICE", iface);
 	svUnsetValue (ifcfg, "BRIDGING_OPTS");
 	svSetValueBoolean (ifcfg, "STP", FALSE);
 	svUnsetValue (ifcfg, "DELAY");

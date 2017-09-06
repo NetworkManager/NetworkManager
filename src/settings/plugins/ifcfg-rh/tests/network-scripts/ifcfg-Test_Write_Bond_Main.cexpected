@@ -1,4 +1,3 @@
-DEVICE=bond0
 BONDING_OPTS=mode=balance-rr
 TYPE=Bond
 BONDING_MASTER=yes
@@ -13,4 +12,5 @@ IPV4_FAILURE_FATAL=no
 IPV6INIT=no
 NAME="Test Write Bond Main"
 UUID=${UUID}
+DEVICE=bond0
 ONBOOT=yes

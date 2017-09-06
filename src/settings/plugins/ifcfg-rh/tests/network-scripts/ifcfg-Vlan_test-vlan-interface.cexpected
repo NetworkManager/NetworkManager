@@ -1,6 +1,5 @@
 VLAN=yes
 TYPE=Vlan
-DEVICE=vlan43
 PHYSDEV=eth9
 VLAN_ID=43
 REORDER_HDR=yes
@@ -19,4 +18,5 @@ IPV4_FAILURE_FATAL=no
 IPV6INIT=no
 NAME="Vlan test-vlan-interface"
 UUID=${UUID}
+DEVICE=vlan43
 ONBOOT=yes
