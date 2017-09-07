@@ -1167,9 +1167,16 @@ update_dns (NMDnsManager *self,
 	 * but only uses the local caching nameserver.
 	 */
 	if (caching) {
+		const char *lladdr = "127.0.0.1";
+
+		if (NM_IS_DNS_SYSTEMD_RESOLVED (priv->plugin)) {
+			/* systemd-resolved uses a different link-local address */
+			lladdr = "127.0.0.53";
+		}
+
 		g_strfreev (nameservers);
-		nameservers = g_new0 (char*, 2);
-		nameservers[0] = g_strdup ("127.0.0.1");
+		nameservers = g_new0 (char *, 2);
+		nameservers[0] = g_strdup (lladdr);
 	}
 
 	if (update) {
