@@ -246,6 +246,9 @@ gboolean nm_g_object_set_property (GObject *object,
                                    const GValue *value,
                                    GError **error);
 
+GParamSpec *nm_g_object_class_find_property_from_gtype (GType gtype,
+                                                        const char *property_name);
+
 /*****************************************************************************/
 
 typedef enum {

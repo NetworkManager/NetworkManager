@@ -56,10 +56,10 @@ _nm_auto_unset_gvalue_impl (GValue *v)
 #define nm_auto_unset_gvalue nm_auto(_nm_auto_unset_gvalue_impl)
 
 static inline void
-_nm_auto_unref_gtypeclass (GTypeClass **v)
+_nm_auto_unref_gtypeclass (gpointer v)
 {
-	if (v && *v)
-		g_type_class_unref (*v);
+	if (v && *((gpointer *) v))
+		g_type_class_unref (*((gpointer *) v));
 }
 #define nm_auto_unref_gtypeclass nm_auto(_nm_auto_unref_gtypeclass)
 

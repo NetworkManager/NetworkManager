@@ -528,6 +528,16 @@ nm_g_object_set_property (GObject *object,
 	return TRUE;
 }
 
+GParamSpec *
+nm_g_object_class_find_property_from_gtype (GType gtype,
+                                            const char *property_name)
+{
+	nm_auto_unref_gtypeclass GObjectClass *gclass = NULL;
+
+	gclass = g_type_class_ref (gtype);
+	return g_object_class_find_property (gclass, property_name);
+}
+
 /*****************************************************************************/
 
 static void
