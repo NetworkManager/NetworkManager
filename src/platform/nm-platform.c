@@ -3888,12 +3888,14 @@ NMPlatformError
 nm_platform_ip_route_get (NMPlatform *self,
                           int addr_family,
                           gconstpointer address /* in_addr_t or struct in6_addr */,
+                          int oif_ifindex,
                           NMPObject **out_route)
 {
 	nm_auto_nmpobj NMPObject *route = NULL;
 	NMPlatformError result;
 	char buf[NM_UTILS_INET_ADDRSTRLEN];
 	char buf_err[200];
+	char buf_oif[64];
 
 	_CHECK_SELF (self, klass, FALSE);
 
@@ -3901,9 +3903,10 @@ nm_platform_ip_route_get (NMPlatform *self,
 	g_return_val_if_fail (NM_IN_SET (addr_family, AF_INET,
 	                                              AF_INET6), NM_PLATFORM_ERROR_BUG);
 
-	_LOGT ("route: get IPv%c route for: %s",
+	_LOGT ("route: get IPv%c route for: %s%s",
 	       addr_family == AF_INET ? '4' : '6',
-	       inet_ntop (addr_family, address, buf, sizeof (buf)));
+	       inet_ntop (addr_family, address, buf, sizeof (buf)),
+	       oif_ifindex > 0 ? nm_sprintf_buf (buf_oif, " oif %d", oif_ifindex) : "");
 
 	if (!klass->ip_route_get)
 		result = NM_PLATFORM_ERROR_OPNOTSUPP;
@@ -3911,6 +3914,7 @@ nm_platform_ip_route_get (NMPlatform *self,
 		result = klass->ip_route_get (self,
 		                              addr_family,
 		                              address,
+		                              oif_ifindex,
 		                              &route);
 	}
 

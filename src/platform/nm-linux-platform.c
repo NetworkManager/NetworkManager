@@ -6033,6 +6033,7 @@ static NMPlatformError
 ip_route_get (NMPlatform *platform,
               int addr_family,
               gconstpointer address,
+              int oif_ifindex,
               NMPObject **out_route)
 {
 	const gboolean is_v4 = (addr_family == AF_INET);
@@ -6065,6 +6066,13 @@ ip_route_get (NMPlatform *platform,
 
 		if (!_nl_addattr_l (&req.n, sizeof (req), RTA_DST, address, addr_len))
 			nm_assert_not_reached ();
+
+		if (oif_ifindex > 0) {
+			gint32 ii = oif_ifindex;
+
+			if (!_nl_addattr_l (&req.n, sizeof (req), RTA_OIF, &ii, sizeof (ii)))
+				nm_assert_not_reached ();
+		}
 
 		seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
 		nle = _nl_send_nlmsghdr (platform, &req.n, &seq_result, DELAYED_ACTION_RESPONSE_TYPE_ROUTE_GET, &route);

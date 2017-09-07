@@ -741,6 +741,7 @@ add_ip4_vpn_gateway_route (NMIP4Config *config,
 	if (nm_platform_ip_route_get (platform,
 	                              AF_INET,
 	                              &vpn_gw,
+	                              0,
 	                              (NMPObject **) &route_resolved) == NM_PLATFORM_ERROR_SUCCESS) {
 		const NMPlatformIP4Route *r = NMP_OBJECT_CAST_IP4_ROUTE (route_resolved);
 
@@ -811,6 +812,7 @@ add_ip6_vpn_gateway_route (NMIP6Config *config,
 	if (nm_platform_ip_route_get (platform,
 	                              AF_INET6,
 	                              vpn_gw,
+	                              0,
 	                              (NMPObject **) &route_resolved) == NM_PLATFORM_ERROR_SUCCESS) {
 		const NMPlatformIP6Route *r = NMP_OBJECT_CAST_IP6_ROUTE (route_resolved);
 
