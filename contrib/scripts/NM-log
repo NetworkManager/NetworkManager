@@ -34,7 +34,9 @@ NM-colorize() {
     if [[ "$NM_LOG_NO_COLOR" == "" ]]; then
         # poor man's coloring using grep.
         # TODO: do it somehow better (and more efficient).
-        GREP_COLOR='01;33' grep -a --color=always '^\|^\(.* \)\?<\(warn>\|info> \|error>\) \(.*\<is starting\>.*$\)\?' | \
+        sed 's/\r$//' | \
+        GREP_COLOR='01;31' grep -a --color=always '^\|^\(.* \)\?<\(warn> \|error>\) \[[0-9.]*\] ' | \
+        GREP_COLOR='01;33' grep -a --color=always '^\|^\(.* \)\?<info>  \[[0-9.]*\] \(.*\<is starting\>.*$\)\?' | \
         GREP_COLOR='01;37' grep -a --color=always '^\|\<platform: signal: .*$' | \
         GREP_COLOR='01;34' grep -a --color=always '^\|\<platform-linux: link: change \|\<platform: link: setting .*$\|\<platform: \(route\|address\): .*$\|\<platform-linux: sysctl: setting .*$' | \
         GREP_COLOR='01;35' grep -a --color=always '^\| audit: .*$' | \
