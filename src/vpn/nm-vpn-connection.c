@@ -713,13 +713,18 @@ add_ip4_vpn_gateway_route (NMIP4Config *config,
 	NMIP4Config *parent_config;
 	guint32 parent_gw;
 	NMPlatformIP4Route route;
+	int ifindex;
 	guint32 route_metric;
 	nm_auto_nmpobj const NMPObject *route_resolved = NULL;
 
 	g_return_if_fail (NM_IS_IP4_CONFIG (config));
 	g_return_if_fail (NM_IS_DEVICE (parent_device));
 	g_return_if_fail (vpn_gw != 0);
-	nm_assert (nm_ip4_config_get_ifindex (config) > 0);
+
+	ifindex = nm_ip4_config_get_ifindex (config);
+
+	nm_assert (ifindex > 0);
+	nm_assert (ifindex == nm_device_get_ip_ifindex (parent_device));
 
 	/* Set up a route to the VPN gateway's public IP address through the default
 	 * network device if the VPN gateway is on a different subnet.
@@ -741,17 +746,25 @@ add_ip4_vpn_gateway_route (NMIP4Config *config,
 	if (nm_platform_ip_route_get (platform,
 	                              AF_INET,
 	                              &vpn_gw,
-	                              0,
+	                              ifindex,
 	                              (NMPObject **) &route_resolved) == NM_PLATFORM_ERROR_SUCCESS) {
 		const NMPlatformIP4Route *r = NMP_OBJECT_CAST_IP4_ROUTE (route_resolved);
 
-		if (r->ifindex == nm_ip4_config_get_ifindex (config))
-			parent_gw = r->gateway;
+		if (r->ifindex == ifindex) {
+			/* `ip route get` always resolves the route, even if the destination is unreachable.
+			 * In which case, it pretends the destination is directly reachable.
+			 *
+			 * So, only accept direct routes, if @vpn_gw is a private network. */
+			if (   r->gateway
+			    || nm_utils_ip_is_site_local (AF_INET, &vpn_gw))
+				parent_gw = r->gateway;
+		}
 	}
 
 	route_metric = nm_device_get_ip4_route_metric (parent_device);
 
 	memset (&route, 0, sizeof (route));
+	route.ifindex = ifindex;
 	route.network = vpn_gw;
 	route.plen = 32;
 	route.gateway = parent_gw;
@@ -783,13 +796,18 @@ add_ip6_vpn_gateway_route (NMIP6Config *config,
 	NMIP6Config *parent_config;
 	const struct in6_addr *parent_gw;
 	NMPlatformIP6Route route;
+	int ifindex;
 	guint32 route_metric;
 	nm_auto_nmpobj const NMPObject *route_resolved = NULL;
 
 	g_return_if_fail (NM_IS_IP6_CONFIG (config));
 	g_return_if_fail (NM_IS_DEVICE (parent_device));
 	g_return_if_fail (vpn_gw != NULL);
-	nm_assert (nm_ip6_config_get_ifindex (config) > 0);
+
+	ifindex = nm_ip6_config_get_ifindex (config);
+
+	nm_assert (ifindex > 0);
+	nm_assert (ifindex == nm_device_get_ip_ifindex (parent_device));
 
 	parent_config = nm_device_get_ip6_config (parent_device);
 	g_return_if_fail (parent_config != NULL);
@@ -812,17 +830,25 @@ add_ip6_vpn_gateway_route (NMIP6Config *config,
 	if (nm_platform_ip_route_get (platform,
 	                              AF_INET6,
 	                              vpn_gw,
-	                              0,
+	                              ifindex,
 	                              (NMPObject **) &route_resolved) == NM_PLATFORM_ERROR_SUCCESS) {
 		const NMPlatformIP6Route *r = NMP_OBJECT_CAST_IP6_ROUTE (route_resolved);
 
-		if (r->ifindex == nm_ip6_config_get_ifindex (config))
-			parent_gw = &r->gateway;
+		if (r->ifindex == ifindex) {
+			/* `ip route get` always resolves the route, even if the destination is unreachable.
+			 * In which case, it pretends the destination is directly reachable.
+			 *
+			 * So, only accept direct routes, if @vpn_gw is a private network. */
+			if (   !IN6_IS_ADDR_UNSPECIFIED (&r->gateway)
+			    || nm_utils_ip_is_site_local (AF_INET6, &vpn_gw))
+				parent_gw = &r->gateway;
+		}
 	}
 
 	route_metric = nm_device_get_ip6_route_metric (parent_device);
 
 	memset (&route, 0, sizeof (route));
+	route.ifindex = ifindex;
 	route.network = *vpn_gw;
 	route.plen = 128;
 	route.gateway = *parent_gw;
