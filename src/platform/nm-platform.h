@@ -823,6 +823,7 @@ typedef struct {
 	NMPlatformError (*ip_route_get) (NMPlatform *self,
 	                                 int addr_family,
 	                                 gconstpointer address,
+	                                 int oif_ifindex,
 	                                 NMPObject **out_route);
 
 	gboolean (*check_support_kernel_extended_ifa_flags) (NMPlatform *);
@@ -1186,6 +1187,7 @@ gboolean nm_platform_ip_route_flush (NMPlatform *self,
 NMPlatformError nm_platform_ip_route_get (NMPlatform *self,
                                           int addr_family,
                                           gconstpointer address,
+                                          int oif_ifindex,
                                           NMPObject **out_route);
 
 const char *nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len);

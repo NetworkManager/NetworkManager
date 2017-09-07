@@ -409,6 +409,7 @@ test_ip_route_get (void)
 	result = nm_platform_ip_route_get (NM_PLATFORM_GET,
 	                                   AF_INET,
 	                                   &a,
+	                                   nmtst_get_rand_int () % 2 ? 0 : ifindex,
 	                                   &route);
 
 	g_assert (result == NM_PLATFORM_ERROR_SUCCESS);
@@ -417,6 +418,7 @@ test_ip_route_get (void)
 	g_assert (route->parent._ref_count == 1);
 	r = NMP_OBJECT_CAST_IP4_ROUTE (route);
 	g_assert (r->rt_cloned);
+	g_assert (r->ifindex == ifindex);
 	g_assert (r->network == a);
 	g_assert (r->plen == 32);
 
