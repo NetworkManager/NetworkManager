@@ -6345,7 +6345,7 @@ event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks)
 
 			nle = event_handler_recvmsgs (platform, TRUE);
 
-			if (nle < 0)
+			if (nle < 0) {
 				switch (nle) {
 				case -NLE_AGAIN:
 					goto after_read;
@@ -6376,6 +6376,7 @@ event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks)
 				default:
 					_LOGE ("netlink: read: failed to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
 					break;
+				}
 			}
 			any = TRUE;
 		}
