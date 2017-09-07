@@ -321,11 +321,11 @@ add_connection (NMSettingsPlugin *config,
 	 * asked to write it to disk.
 	 */
 	if (!ifnet_can_write_connection (source, error))
-		return NULL;
+		goto out;
 
 	if (save_to_disk) {
 		if (!ifnet_add_new_connection (source, CONF_NET_FILE, WPA_SUPPLICANT_CONF, NULL, NULL, error))
-			return NULL;
+			goto out;
 		reload_connections (config);
 		new = g_hash_table_lookup (priv->connections, nm_connection_get_uuid (source));
 	} else {
@@ -337,6 +337,11 @@ add_connection (NMSettingsPlugin *config,
 		}
 	}
 
+out:
+	if (!new && error && !*error) {
+		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+		                     "The ifnet plugin cannot add the connection (unknown error).");
+	}
 	return (NMSettingsConnection *) new;
 }
 
