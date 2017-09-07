@@ -10038,6 +10038,11 @@ nm_device_replace_vpn4_config (NMDevice *self, NMIP4Config *old, NMIP4Config *co
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
+	nm_assert (!old || NM_IS_IP4_CONFIG (old));
+	nm_assert (!config || NM_IS_IP4_CONFIG (config));
+	nm_assert (!old || nm_ip4_config_get_ifindex (old) == nm_device_get_ip_ifindex (self));
+	nm_assert (!config || nm_ip4_config_get_ifindex (config) == nm_device_get_ip_ifindex (self));
+
 	if (!_replace_vpn_config_in_list (&priv->vpn4_configs, (GObject *) old, (GObject *) config))
 		return;
 
@@ -10166,6 +10171,11 @@ void
 nm_device_replace_vpn6_config (NMDevice *self, NMIP6Config *old, NMIP6Config *config)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	nm_assert (!old || NM_IS_IP6_CONFIG (old));
+	nm_assert (!config || NM_IS_IP6_CONFIG (config));
+	nm_assert (!old || nm_ip6_config_get_ifindex (old) == nm_device_get_ip_ifindex (self));
+	nm_assert (!config || nm_ip6_config_get_ifindex (config) == nm_device_get_ip_ifindex (self));
 
 	if (!_replace_vpn_config_in_list (&priv->vpn6_configs, (GObject *) old, (GObject *) config))
 		return;
