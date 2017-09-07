@@ -60,7 +60,7 @@ NM-log() {
         fi
     ) | \
         NM-colorize | \
-        LESS=FRSXMK exec less -R
+        LESS=FRSXM exec less -R
 }
 
 if [[ "$NM_not_sourced" != "" ]]; then
