@@ -1135,6 +1135,8 @@ nm_vpn_connection_apply_config (NMVpnConnection *self)
 {
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
+	apply_parent_device_config (self);
+
 	if (priv->ip_ifindex > 0) {
 		nm_platform_link_set_up (nm_netns_get_platform (priv->netns), priv->ip_ifindex, NULL);
 
@@ -1156,8 +1158,6 @@ nm_vpn_connection_apply_config (NMVpnConnection *self)
 		if (priv->mtu && priv->mtu != nm_platform_link_get_mtu (nm_netns_get_platform (priv->netns), priv->ip_ifindex))
 			nm_platform_link_set_mtu (nm_netns_get_platform (priv->netns), priv->ip_ifindex, priv->mtu);
 	}
-
-	apply_parent_device_config (self);
 
 	nm_default_route_manager_ip4_update_default_route (nm_netns_get_default_route_manager (priv->netns), self);
 	nm_default_route_manager_ip6_update_default_route (nm_netns_get_default_route_manager (priv->netns), self);
