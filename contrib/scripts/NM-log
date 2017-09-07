@@ -35,11 +35,11 @@ NM-colorize() {
         # poor man's coloring using grep.
         # TODO: do it somehow better (and more efficient).
         sed 's/\r$//' | \
-        GREP_COLOR='01;31' grep -a --color=always '^\|^\(.* \)\?<\(warn> \|error>\) \[[0-9.]*\] ' | \
-        GREP_COLOR='01;33' grep -a --color=always '^\|^\(.* \)\?<info>  \[[0-9.]*\] \(.*\<is starting\>.*$\)\?' | \
+        GREP_COLOR='01;31' grep -a --color=always '^\|^\(.* \)\?<\(warn> \|error>\) \[[0-9.]*\]' | \
+        GREP_COLOR='01;33' grep -a --color=always '^\|^\(.* \)\?<info>  \[[0-9.]*\]\( .*\<is starting\>.*$\)\?' | \
         GREP_COLOR='01;37' grep -a --color=always '^\|\<platform: signal: .*$' | \
         GREP_COLOR='01;34' grep -a --color=always '^\|\<platform-linux: link: change \|\<platform: link: setting .*$\|\<platform: \(route\|address\): .*$\|\<platform-linux: sysctl: setting .*$' | \
-        GREP_COLOR='01;35' grep -a --color=always '^\| audit: .*$' | \
+        GREP_COLOR='01;35' grep -a --color=always '^\|\<audit: .*$' | \
         GREP_COLOR='01;32' grep -a --color=always '^\|\<device (.*): state change: '
     else
         /usr/bin/cat -
