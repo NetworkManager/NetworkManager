@@ -4249,8 +4249,7 @@ do_add_addrroute (NMPlatform *platform,
 		 * whether the object exists.
 		 *
 		 * rh#1484434 */
-		if (!nmp_cache_lookup_obj (nm_platform_get_cache (platform),
-		                           obj_id))
+		if (!nmp_cache_lookup_obj (nm_platform_get_cache (platform), obj_id))
 			do_request_one_type (platform, NMP_OBJECT_GET_TYPE (obj_id));
 	}
 
@@ -4302,6 +4301,18 @@ do_delete_object (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 	        nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0),
 	        wait_for_nl_response_to_string (seq_result, s_buf, sizeof (s_buf)),
 	        log_detail);
+
+	if (NMP_OBJECT_GET_TYPE (obj_id) == NMP_OBJECT_TYPE_IP6_ADDRESS) {
+		/* In rare cases, the object is still there after we receive the ACK from
+		 * kernel. Need to refetch.
+		 *
+		 * We want to safe the expensive refetch, thus we look first into the cache
+		 * whether the object exists.
+		 *
+		 * rh#1484434 */
+		if (nmp_cache_lookup_obj (nm_platform_get_cache (platform), obj_id))
+			do_request_one_type (platform, NMP_OBJECT_GET_TYPE (obj_id));
+	}
 
 	return success;
 }
