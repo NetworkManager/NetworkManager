@@ -26,7 +26,7 @@ NM-show-journal() {
        echo "error detecting NM. Is it running?"
        systemctl status NetworkManager
     else
-       exec journalctl -o short-precise --since "$since" -b 0 -u NetworkManager "$@"
+       journalctl -o short-precise --since "$since" -b 0 -u NetworkManager "$@"
     fi
 }
 
@@ -60,7 +60,7 @@ NM-log() {
         fi
     ) | \
         NM-colorize | \
-        LESS=FRSXM exec less -R
+        LESS=FRSXM less -R
 }
 
 if [[ "$NM_not_sourced" != "" ]]; then
