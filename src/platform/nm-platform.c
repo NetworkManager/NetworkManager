@@ -3697,11 +3697,6 @@ nm_platform_ip_route_sync (NMPlatform *self,
 		for (i = 0; i < plat_routes->len; i++) {
 			plat_o = plat_routes->pdata[i];
 
-			if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (NMP_OBJECT_CAST_IP_ROUTE (plat_o))) {
-				/* don't delete default routes. */
-				continue;
-			}
-
 			if (   !routes_idx
 			    || !g_hash_table_lookup (routes_idx, plat_o)) {
 				if (!nm_platform_ip_route_delete (self, plat_o)) {

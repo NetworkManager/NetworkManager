@@ -1494,8 +1494,6 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-dcb.h \
 	src/nm-netns.c \
 	src/nm-netns.h \
-	src/nm-default-route-manager.c \
-	src/nm-default-route-manager.h \
 	src/nm-dhcp4-config.c \
 	src/nm-dhcp4-config.h \
 	src/nm-dhcp6-config.c \

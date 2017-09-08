@@ -31,7 +31,6 @@
 #include "NetworkManagerUtils.h"
 #include "nm-act-request.h"
 #include "devices/nm-device.h"
-#include "nm-default-route-manager.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-connection.h"
 #include "platform/nm-platform.h"
@@ -375,25 +374,81 @@ device_ip6_subnet_needed (NMDevice *device,
 /*****************************************************************************/
 
 static NMDevice *
-get_best_ip4_device (NMPolicy *self, gboolean fully_activated)
+get_best_ip_device (NMPolicy *self,
+                    int addr_family,
+                    gboolean fully_activated)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+	const GSList *iter;
+	NMDevice *best_device;
+	NMDevice *prev_device;
+	guint32 best_metric = G_MAXUINT32;
+	gboolean best_is_fully_activated = FALSE;
 
-	return nm_default_route_manager_ip4_get_best_device (nm_netns_get_default_route_manager (priv->netns),
-	                                                     nm_manager_get_devices (priv->manager),
-	                                                     fully_activated,
-	                                                     priv->default_device4);
-}
+	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 
-static NMDevice *
-get_best_ip6_device (NMPolicy *self, gboolean fully_activated)
-{
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+	/* we prefer the current device in case of identical metric.
+	 * Hence, try that one first.*/
+	best_device = NULL;
+	prev_device =   addr_family == AF_INET
+	              ? (fully_activated ? priv->default_device4 : priv->activating_device4)
+	              : (fully_activated ? priv->default_device6 : priv->activating_device6);
 
-	return nm_default_route_manager_ip6_get_best_device (nm_netns_get_default_route_manager (priv->netns),
-	                                                     nm_manager_get_devices (priv->manager),
-	                                                     fully_activated,
-	                                                     priv->default_device6);
+	for (iter = nm_manager_get_devices (priv->manager); iter; iter = iter->next) {
+		NMDevice *device = NM_DEVICE (iter->data);
+		NMDeviceState state;
+		const NMPObject *r;
+		NMConnection *connection;
+		guint32 metric;
+		gboolean is_fully_activated;
+
+		state = nm_device_get_state (device);
+		if (   state <= NM_DEVICE_STATE_DISCONNECTED
+		    || state >= NM_DEVICE_STATE_DEACTIVATING)
+			continue;
+
+		if (nm_device_sys_iface_state_is_external (device))
+			continue;
+
+		r = nm_device_get_best_default_route (device, addr_family);
+		if (r) {
+			/* XXX: the best route might have rt_source NM_IP_CONFIG_SOURCE_VPN,
+			 * which means it was injected by a VPN, not added by device.
+			 *
+			 * In this case, is it really the best device? Why do we even need the best
+			 * device?? */
+			metric = nm_utils_ip_route_metric_normalize (addr_family,
+			                                             NMP_OBJECT_CAST_IP_ROUTE (r)->metric);
+			is_fully_activated = TRUE;
+		} else if (   !fully_activated
+		           && (connection = nm_device_get_applied_connection (device))
+		           && nm_utils_connection_has_default_route (connection, addr_family, NULL)) {
+			metric = nm_utils_ip_route_metric_normalize (addr_family,
+			                                             nm_device_get_ip_route_metric (device, addr_family));
+			is_fully_activated = FALSE;
+		} else
+			continue;
+
+		if (   !best_device
+		    || (!best_is_fully_activated && is_fully_activated)
+		    || (   metric < best_metric
+		        || (metric == best_metric && device == prev_device))) {
+			best_device = device;
+			best_metric = metric;
+			best_is_fully_activated = is_fully_activated;
+		}
+	}
+
+	if (   !fully_activated
+	    && best_device
+	    && best_is_fully_activated) {
+		/* There's only a best activating device if the best device
+		 * among all activating and already-activated devices is a
+		 * still-activating one. */
+		return NULL;
+	}
+
+	return best_device;
 }
 
 static gboolean
@@ -782,20 +837,83 @@ update_default_ac (NMPolicy *self,
 		set_active_func (best, TRUE);
 }
 
-static NMIP4Config *
-get_best_ip4_config (NMPolicy *self,
-                     gboolean ignore_never_default,
-                     const char **out_ip_iface,
-                     NMActiveConnection **out_ac,
-                     NMDevice **out_device,
-                     NMVpnConnection **out_vpn)
+static gpointer
+get_best_ip_config (NMPolicy *self,
+                    int addr_family,
+                    const char **out_ip_iface,
+                    NMActiveConnection **out_ac,
+                    NMDevice **out_device,
+                    NMVpnConnection **out_vpn)
 {
-	return nm_default_route_manager_ip4_get_best_config (nm_netns_get_default_route_manager (NM_POLICY_GET_PRIVATE (self)->netns),
-	                                                     ignore_never_default,
-	                                                     out_ip_iface,
-	                                                     out_ac,
-	                                                     out_device,
-	                                                     out_vpn);
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+	NMDevice *device;
+	gpointer conf;
+	const GSList *iter;
+
+	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
+
+	for (iter = nm_manager_get_active_connections (priv->manager); iter; iter = iter->next) {
+		NMActiveConnection *active = NM_ACTIVE_CONNECTION (iter->data);
+		NMVpnConnection *candidate;
+		NMVpnConnectionState vpn_state;
+
+		if (!NM_IS_VPN_CONNECTION (active))
+			continue;
+
+		candidate = NM_VPN_CONNECTION (active);
+
+		vpn_state = nm_vpn_connection_get_vpn_state (candidate);
+		if (vpn_state != NM_VPN_CONNECTION_STATE_ACTIVATED)
+			continue;
+
+		if (addr_family == AF_INET)
+			conf = nm_vpn_connection_get_ip4_config (candidate);
+		else
+			conf = nm_vpn_connection_get_ip6_config (candidate);
+		if (!conf)
+			continue;
+
+		if (addr_family == AF_INET) {
+			if (!nm_ip4_config_best_default_route_get (conf))
+				continue;
+		} else {
+			if (!nm_ip6_config_best_default_route_get (conf))
+				continue;
+		}
+
+		/* FIXME: in case of multiple VPN candidates, choose the one with the
+		 * best metric. */
+		NM_SET_OUT (out_device, NULL);
+		NM_SET_OUT (out_vpn, candidate);
+		NM_SET_OUT (out_ac, active);
+		NM_SET_OUT (out_ip_iface, nm_vpn_connection_get_ip_iface (candidate, TRUE));
+		return conf;
+	}
+
+	device = get_best_ip_device (self, addr_family, TRUE);
+	if (device) {
+		NMActRequest *req;
+
+		if (addr_family == AF_INET)
+			conf = nm_device_get_ip4_config (device);
+		else
+			conf = nm_device_get_ip6_config (device);
+		req = nm_device_get_act_request (device);
+
+		if (conf && req) {
+			NM_SET_OUT (out_device, device);
+			NM_SET_OUT (out_vpn, NULL);
+			NM_SET_OUT (out_ac, NM_ACTIVE_CONNECTION (req));
+			NM_SET_OUT (out_ip_iface, nm_device_get_ip_iface (device));
+			return conf;
+		}
+	}
+
+	NM_SET_OUT (out_device, NULL);
+	NM_SET_OUT (out_vpn, NULL);
+	NM_SET_OUT (out_ac, NULL);
+	NM_SET_OUT (out_ip_iface, NULL);
+	return NULL;
 }
 
 static void
@@ -806,7 +924,7 @@ update_ip4_dns (NMPolicy *self, NMDnsManager *dns_mgr)
 	NMVpnConnection *vpn = NULL;
 	NMDnsIPConfigType dns_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
 
-	ip4_config = get_best_ip4_config (self, TRUE, &ip_iface, NULL, NULL, &vpn);
+	ip4_config = get_best_ip_config (self, AF_INET, &ip_iface, NULL, NULL, &vpn);
 	if (ip4_config) {
 		if (vpn)
 			dns_type = NM_DNS_IP_CONFIG_TYPE_VPN;
@@ -830,7 +948,7 @@ update_ip4_routing (NMPolicy *self, gboolean force_update)
 	/* Note that we might have an IPv4 VPN tunneled over an IPv6-only device,
 	 * so we can get (vpn != NULL && best == NULL).
 	 */
-	if (!get_best_ip4_config (self, FALSE, &ip_iface, &best_ac, &best, &vpn)) {
+	if (!get_best_ip_config (self, AF_INET, &ip_iface, &best_ac, &best, &vpn)) {
 		if (nm_clear_g_object (&priv->default_device4)) {
 			_LOGt (LOGD_DNS, "set-default-device-4: %p", NULL);
 			_notify (self, PROP_DEFAULT_IP4_DEVICE);
@@ -873,22 +991,6 @@ update_ip4_routing (NMPolicy *self, gboolean force_update)
 	_notify (self, PROP_DEFAULT_IP4_DEVICE);
 }
 
-static NMIP6Config *
-get_best_ip6_config (NMPolicy *self,
-                     gboolean ignore_never_default,
-                     const char **out_ip_iface,
-                     NMActiveConnection **out_ac,
-                     NMDevice **out_device,
-                     NMVpnConnection **out_vpn)
-{
-	return nm_default_route_manager_ip6_get_best_config (nm_netns_get_default_route_manager (NM_POLICY_GET_PRIVATE (self)->netns),
-	                                                     ignore_never_default,
-	                                                     out_ip_iface,
-	                                                     out_ac,
-	                                                     out_device,
-	                                                     out_vpn);
-}
-
 static void
 update_ip6_dns_delegation (NMPolicy *self)
 {
@@ -912,7 +1014,7 @@ update_ip6_dns (NMPolicy *self, NMDnsManager *dns_mgr)
 	NMVpnConnection *vpn = NULL;
 	NMDnsIPConfigType dns_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
 
-	ip6_config = get_best_ip6_config (self, TRUE, &ip_iface, NULL, NULL, &vpn);
+	ip6_config = get_best_ip_config (self, AF_INET6, &ip_iface, NULL, NULL, &vpn);
 	if (ip6_config) {
 		if (vpn)
 			dns_type = NM_DNS_IP_CONFIG_TYPE_VPN;
@@ -954,7 +1056,7 @@ update_ip6_routing (NMPolicy *self, gboolean force_update)
 	/* Note that we might have an IPv6 VPN tunneled over an IPv4-only device,
 	 * so we can get (vpn != NULL && best == NULL).
 	 */
-	if (!get_best_ip6_config (self, FALSE, &ip_iface, &best_ac, &best, &vpn)) {
+	if (!get_best_ip_config (self, AF_INET6, &ip_iface, &best_ac, &best, &vpn)) {
 		if (nm_clear_g_object (&priv->default_device6)) {
 			_LOGt (LOGD_DNS, "set-default-device-6: %p", NULL);
 			_notify (self, PROP_DEFAULT_IP6_DEVICE);
@@ -1024,8 +1126,8 @@ check_activating_devices (NMPolicy *self)
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	NMDevice *best4, *best6 = NULL;
 
-	best4 = get_best_ip4_device (self, FALSE);
-	best6 = get_best_ip6_device (self, FALSE);
+	best4 = get_best_ip_device (self, AF_INET, FALSE);
+	best6 = get_best_ip_device (self, AF_INET6, FALSE);
 
 	g_object_freeze_notify (G_OBJECT (self));
 
