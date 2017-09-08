@@ -105,17 +105,20 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 	NMDevice *device = NM_DEVICE (user_data);
 	NMDevicePpp *self = NM_DEVICE_PPP (device);
 	NMDevicePppPrivate *priv = NM_DEVICE_PPP_GET_PRIVATE (self);
+	gboolean renamed;
 
 	_LOGT (LOGD_DEVICE | LOGD_PPP, "received IPv4 config from pppd");
 
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG) {
 		if (nm_device_activate_ip4_state_in_conf (device)) {
-			if (!nm_device_take_over_link (device, iface)) {
+			if (!nm_device_take_over_link (device, iface, &renamed)) {
 				nm_device_state_changed (device, NM_DEVICE_STATE_FAILED,
 				                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 				return;
 			}
-			nm_manager_remove_device (nm_manager_get (), iface);
+			if (renamed)
+				nm_manager_remove_device (nm_manager_get (), iface);
+
 			nm_device_activate_schedule_ip4_config_result (device, config);
 			return;
 		}
@@ -178,11 +181,13 @@ act_stage3_ip4_config_start (NMDevice *device,
 {
 	NMDevicePpp *self = NM_DEVICE_PPP (device);
 	NMDevicePppPrivate *priv = NM_DEVICE_PPP_GET_PRIVATE (self);
+	gboolean renamed;
 
 	if (priv->pending_ip4_config) {
-		if  (!nm_device_take_over_link (device, priv->pending_ifname))
+		if  (!nm_device_take_over_link (device, priv->pending_ifname, &renamed))
 			return NM_ACT_STAGE_RETURN_FAILURE;
-		nm_manager_remove_device (nm_manager_get (), priv->pending_ifname);
+		if (renamed)
+			nm_manager_remove_device (nm_manager_get (), priv->pending_ifname);
 		if (out_config)
 			*out_config = g_steal_pointer (&priv->pending_ip4_config);
 		else

@@ -1007,15 +1007,18 @@ nm_device_get_iface (NMDevice *self)
 }
 
 gboolean
-nm_device_take_over_link (NMDevice *self, const char *ifname)
+nm_device_take_over_link (NMDevice *self, const char *ifname, gboolean *renamed)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	const NMPlatformLink *plink;
 	NMPlatform *platform;
-	gboolean up, success;
+	gboolean up, success = TRUE;
 	int ifindex;
 
 	g_return_val_if_fail (priv->ifindex <= 0, FALSE);
+	g_return_val_if_fail (ifname, FALSE);
+
+	NM_SET_OUT (renamed, FALSE);
 
 	platform = nm_device_get_platform (self);
 	plink = nm_platform_link_get_by_ifname (platform, ifname);
@@ -1023,14 +1026,19 @@ nm_device_take_over_link (NMDevice *self, const char *ifname)
 		return FALSE;
 
 	ifindex = plink->ifindex;
-	up = NM_FLAGS_HAS (plink->n_ifi_flags, IFF_UP);
 
-	/* Rename the link to the device ifname */
-	if (up)
-		nm_platform_link_set_down (platform, ifindex);
-	success = nm_platform_link_set_name (platform, ifindex, nm_device_get_iface (self));
-	if (up)
-		nm_platform_link_set_up (platform, ifindex, NULL);
+	if (!nm_streq (ifname, nm_device_get_iface (self))) {
+		up = NM_FLAGS_HAS (plink->n_ifi_flags, IFF_UP);
+
+		/* Rename the link to the device ifname */
+		if (up)
+			nm_platform_link_set_down (platform, ifindex);
+		success = nm_platform_link_set_name (platform, ifindex, nm_device_get_iface (self));
+		if (up)
+			nm_platform_link_set_up (platform, ifindex, NULL);
+
+		NM_SET_OUT (renamed, success);
+	}
 
 	if (success) {
 		priv->ifindex = ifindex;
