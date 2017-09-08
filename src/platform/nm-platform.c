@@ -3592,54 +3592,7 @@ nm_platform_ip_route_sync (NMPlatform *self,
 	     ? &nm_platform_vtable_route_v4
 	     : &nm_platform_vtable_route_v6;
 
-	plat_routes = nm_platform_lookup_addrroute_clone (self,
-	                                                  vt->obj_type,
-	                                                  ifindex,
-	                                                  kernel_delete_predicate,
-	                                                  kernel_delete_userdata);
-	/* first delete routes which are in platform (@plat_routes), but not to configure (@routes/@routes_idx). */
-	if (plat_routes) {
-
-		/* create a lookup index. */
-		if (routes && routes->len > 0) {
-			routes_idx = g_hash_table_new ((GHashFunc) nmp_object_id_hash,
-			                               (GEqualFunc) nmp_object_id_equal);
-			for (i = 0; i < routes->len; i++) {
-				conf_o = routes->pdata[i];
-				if (!nm_g_hash_table_insert (routes_idx, (gpointer) conf_o, (gpointer) conf_o)) {
-					/* we ignore duplicate @routes. */
-				}
-			}
-		}
-
-		for (i = 0; i < plat_routes->len; i++) {
-			plat_o = plat_routes->pdata[i];
-
-			if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (NMP_OBJECT_CAST_IP_ROUTE (plat_o))) {
-				/* don't delete default routes. */
-				continue;
-			}
-
-			if (   routes_idx
-			    && (conf_o = g_hash_table_lookup (routes_idx, plat_o))
-			    && vt->route_cmp (NMP_OBJECT_CAST_IPX_ROUTE (conf_o),
-			                      NMP_OBJECT_CAST_IPX_ROUTE (plat_o),
-			                      NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) == 0) {
-				/* the route in platform is identical to the one we want to add.
-				 * Keep it. */
-				continue;
-			}
-
-			if (!nm_platform_ip_route_delete (self, plat_o)) {
-				/* ignore error... */
-			}
-		}
-	}
-
-	if (!routes)
-		return success;
-
-	for (i_type = 0; i_type < 2; i_type++) {
+	for (i_type = 0; routes && i_type < 2; i_type++) {
 		for (i = 0; i < routes->len; i++) {
 			NMPlatformError plerr;
 
@@ -3657,23 +3610,32 @@ nm_platform_ip_route_sync (NMPlatform *self,
 				continue;
 			}
 
+			if (!routes_idx) {
+				routes_idx = g_hash_table_new ((GHashFunc) nmp_object_id_hash,
+				                               (GEqualFunc) nmp_object_id_equal);
+			}
+			if (!nm_g_hash_table_insert (routes_idx, (gpointer) conf_o, (gpointer) conf_o)) {
+				_LOGD ("route-sync: skip adding duplicate route %s",
+				       nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)));
+				continue;
+			}
+
 			plat_entry = nm_platform_lookup_entry (self,
 			                                       NMP_CACHE_ID_TYPE_OBJECT_TYPE,
 			                                       conf_o);
 			if (plat_entry) {
-				/* we alreay have a route with the same ID in the platform cache.
-				 * Skip adding it again. It should be identical already, otherwise we
-				 * would have deleted above. */
-				if (_LOGD_ENABLED ()) {
-					if (vt->route_cmp (NMP_OBJECT_CAST_IPX_ROUTE (conf_o),
-					                   NMP_OBJECT_CAST_IPX_ROUTE (plat_entry->obj),
-					                   NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) != 0) {
-						_LOGD ("route-sync: skip adding route %s due to existing (different!) route %s",
-						       nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)),
-						       nmp_object_to_string (plat_entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf2, sizeof (sbuf2)));
-					}
+				plat_o = plat_entry->obj;
+
+				if (vt->route_cmp (NMP_OBJECT_CAST_IPX_ROUTE (conf_o),
+				                   NMP_OBJECT_CAST_IPX_ROUTE (plat_o),
+				                   NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) == 0)
+					continue;
+
+				/* we need to replace the existing route with a (slightly) differnt
+				 * one. Delete it first. */
+				if (!nm_platform_ip_route_delete (self, plat_o)) {
+					/* ignore error. */
 				}
-				continue;
 			}
 
 			plerr = nm_platform_ip_route_add (self,
@@ -3720,6 +3682,30 @@ nm_platform_ip_route_sync (NMPlatform *self,
 					       nm_platform_error_to_string (plerr, sbuf_err, sizeof (sbuf_err)),
 					       reason);
 					success = FALSE;
+				}
+			}
+		}
+	}
+
+	plat_routes = nm_platform_lookup_addrroute_clone (self,
+	                                                  vt->obj_type,
+	                                                  ifindex,
+	                                                  kernel_delete_predicate,
+	                                                  kernel_delete_userdata);
+
+	if (plat_routes) {
+		for (i = 0; i < plat_routes->len; i++) {
+			plat_o = plat_routes->pdata[i];
+
+			if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (NMP_OBJECT_CAST_IP_ROUTE (plat_o))) {
+				/* don't delete default routes. */
+				continue;
+			}
+
+			if (   !routes_idx
+			    || !g_hash_table_lookup (routes_idx, plat_o)) {
+				if (!nm_platform_ip_route_delete (self, plat_o)) {
+					/* ignore error... */
 				}
 			}
 		}
@@ -3778,6 +3764,10 @@ _ip_route_scope_inv_get_normalized (const NMPlatformIP4Route *route)
  * Adding a route to kernel via nm_platform_ip_route_add() will normalize/coerce some
  * properties of the route. This function modifies (normalizes) the route like it
  * would be done by adding the route in kernel.
+ *
+ * Note that this function is related to NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY
+ * in that if two routes compare semantically equal, after normalizing they also shall
+ * compare equal with NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL.
  */
 void
 nm_platform_ip_route_normalize (int addr_family,

@@ -174,6 +174,12 @@ nm_utils_ip6_route_metric_normalize (guint32 metric)
 	return metric ? metric : 1024 /*NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6*/;
 }
 
+static inline guint32
+nm_utils_ip_route_metric_normalize (int addr_family, guint32 metric)
+{
+	return addr_family == AF_INET6 ? nm_utils_ip6_route_metric_normalize (metric) : metric;
+}
+
 int nm_utils_modprobe (GError **error, gboolean suppress_error_loggin, const char *arg1, ...) G_GNUC_NULL_TERMINATED;
 
 guint64 nm_utils_get_start_time_for_pid (pid_t pid, char *out_state, pid_t *out_ppid);
@@ -285,6 +291,10 @@ fcn_name (lookup_type val, char *buf, gsize len) \
 
 const char *nm_utils_get_ip_config_method (NMConnection *connection,
                                            GType         ip_setting_type);
+
+gboolean nm_utils_connection_has_default_route (NMConnection *connection,
+                                                int addr_family,
+                                                gboolean *out_is_never_default);
 
 char *nm_utils_new_vlan_name (const char *parent_iface, guint32 vlan_id);
 const char *nm_utils_new_infiniband_name (char *name, const char *parent_name, int p_key);

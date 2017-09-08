@@ -91,7 +91,7 @@ ip4_process_dhcpcd_rfc3442_routes (const char *iface,
 			route.gateway = rt_route;
 			route.rt_source = NM_IP_CONFIG_SOURCE_DHCP;
 			route.metric = priority;
-			nm_ip4_config_add_route (ip4_config, &route);
+			nm_ip4_config_add_route (ip4_config, &route, NULL);
 		}
 	}
 
@@ -199,7 +199,7 @@ ip4_process_dhclient_rfc3442_routes (const char *iface,
 			/* normal route */
 			route.rt_source = NM_IP_CONFIG_SOURCE_DHCP;
 			route.metric = priority;
-			nm_ip4_config_add_route (ip4_config, &route);
+			nm_ip4_config_add_route (ip4_config, &route, NULL);
 
 			_LOG2I (LOGD_DHCP4, iface, "  classless static route %s/%d gw %s",
 			        nm_utils_inet4_ntop (route.network, addr), route.plen,
@@ -328,7 +328,7 @@ process_classful_routes (const char *iface,
 
 		route.network = nm_utils_ip4_address_clear_host_address (route.network, route.plen);
 
-		nm_ip4_config_add_route (ip4_config, &route);
+		nm_ip4_config_add_route (ip4_config, &route, NULL);
 		_LOG2I (LOGD_DHCP, iface, "  static route %s",
 		             nm_platform_ip4_route_to_string (&route, NULL, 0));
 	}

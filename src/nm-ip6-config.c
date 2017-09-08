@@ -113,7 +113,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMIP6Config,
 /*****************************************************************************/
 
 static void _add_address (NMIP6Config *self, const NMPObject *obj_new, const NMPlatformIP6Address *new);
-static void _add_route (NMIP6Config *self, const NMPObject *obj_new, const NMPlatformIP6Route *new);
+static void _add_route (NMIP6Config *self, const NMPObject *obj_new, const NMPlatformIP6Route *new, const NMPObject **out_obj_new);
 
 /*****************************************************************************/
 
@@ -364,7 +364,7 @@ sort_captured_addresses (const CList *lst_a, const CList *lst_b, gconstpointer u
 }
 
 gboolean
-_nmtst_nm_ip6_config_addresses_sort (NMIP6Config *self)
+_nmtst_ip6_config_addresses_sort (NMIP6Config *self)
 {
 	NMIP6ConfigPrivate *priv;
 	const NMDedupMultiHeadEntry *head_entry;
@@ -439,7 +439,9 @@ nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 			                            plobj,
 			                            NULL,
 			                            FALSE,
-			                            TRUE))
+			                            TRUE,
+			                            NULL,
+			                            NULL))
 				nm_assert_not_reached ();
 			has_addresses = TRUE;
 		}
@@ -462,7 +464,8 @@ nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 	nmp_cache_iter_for_each (&iter, head_entry, &plobj) {
 		const NMPlatformIP6Route *route = NMP_OBJECT_CAST_IP6_ROUTE (plobj);
 
-		if (   NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)
+		if (   !route->table_coerced
+		    && NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)
 		    && route->rt_source != NM_IP_CONFIG_SOURCE_RTPROT_KERNEL) {
 			if (route->metric < lowest_metric) {
 				priv->gateway = route->gateway;
@@ -470,22 +473,19 @@ nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 			}
 			has_gateway = TRUE;
 		}
+
+		if (route->table_coerced)
+			continue;
+		if (route->rt_source == NM_IP_CONFIG_SOURCE_RTPROT_KERNEL)
+			continue;
+		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
+			continue;
+		_add_route (self, plobj, NULL, NULL);
 	}
 
 	/* we detect the route metric based on the default route. All non-default
 	 * routes have their route metrics explicitly set. */
 	priv->route_metric = has_gateway ? (gint64) lowest_metric : (gint64) -1;
-
-	nmp_cache_iter_for_each (&iter, head_entry, &plobj) {
-		const NMPlatformIP6Route *route = NMP_OBJECT_CAST_IP6_ROUTE (plobj);
-
-		if (route->rt_source == NM_IP_CONFIG_SOURCE_RTPROT_KERNEL)
-			continue;
-		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
-			continue;
-
-		_add_route (self, plobj, NULL);
-	}
 
 	/* If the interface has the default route, and has IPv6 addresses, capture
 	 * nameservers from /etc/resolv.conf.
@@ -671,7 +671,7 @@ nm_ip6_config_merge_setting (NMIP6Config *self, NMSettingIPConfig *setting, guin
 		nm_utils_ip6_address_clear_host_address (&route.network, &route.network, route.plen);
 
 		merge_route_attributes (s_route, &route);
-		_add_route (self, NULL, &route);
+		_add_route (self, NULL, &route, NULL);
 	}
 
 	/* DNS */
@@ -860,7 +860,7 @@ nm_ip6_config_merge (NMIP6Config *dst, const NMIP6Config *src, NMIPConfigMergeFl
 		const NMPlatformIP6Route *route;
 
 		nm_ip_config_iter_ip6_route_for_each (&ipconf_iter, src, &route)
-			_add_route (dst, NMP_OBJECT_UP_CAST (route), NULL);
+			_add_route (dst, NMP_OBJECT_UP_CAST (route), NULL, NULL);
 	}
 
 	if (dst_priv->route_metric == -1)
@@ -1254,7 +1254,9 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 			                       ipconf_iter_src.current->obj,
 			                       NULL,
 			                       FALSE,
-			                       TRUE);
+			                       TRUE,
+			                       NULL,
+			                       NULL);
 		}
 		nm_dedup_multi_index_dirty_remove_idx (dst_priv->multi_idx, &dst_priv->idx_ip6_addresses, FALSE);
 		_notify_addresses (dst);
@@ -1299,7 +1301,9 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 			                       ipconf_iter_src.current->obj,
 			                       NULL,
 			                       FALSE,
-			                       TRUE);
+			                       TRUE,
+			                       NULL,
+			                       NULL);
 		}
 		nm_dedup_multi_index_dirty_remove_idx (dst_priv->multi_idx, &dst_priv->idx_ip6_routes, FALSE);
 		_notify_routes (dst);
@@ -1561,7 +1565,9 @@ nm_ip6_config_reset_addresses_ndisc (NMIP6Config *self,
 		                           &obj,
 		                           NULL,
 		                           FALSE,
-		                           TRUE))
+		                           TRUE,
+		                           NULL,
+		                           NULL))
 			changed = TRUE;
 	}
 
@@ -1595,7 +1601,9 @@ _add_address (NMIP6Config *self,
 	                           obj_new,
 	                           (const NMPlatformObject *) new,
 	                           TRUE,
-	                           FALSE))
+	                           FALSE,
+	                           NULL,
+	                           NULL))
 		_notify_addresses (self);
 }
 
@@ -1621,12 +1629,12 @@ nm_ip6_config_add_address (NMIP6Config *self, const NMPlatformIP6Address *new)
 }
 
 void
-_nmtst_nm_ip6_config_del_address (NMIP6Config *self, guint i)
+_nmtst_ip6_config_del_address (NMIP6Config *self, guint i)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
 	const NMPlatformIP6Address *a;
 
-	a = _nmtst_nm_ip6_config_get_address (self, i);
+	a = _nmtst_ip6_config_get_address (self, i);
 	g_return_if_fail (a);
 
 	if (nm_dedup_multi_index_remove_obj (priv->multi_idx,
@@ -1658,7 +1666,7 @@ nm_ip6_config_get_first_address (const NMIP6Config *self)
 }
 
 const NMPlatformIP6Address *
-_nmtst_nm_ip6_config_get_address (const NMIP6Config *self, guint i)
+_nmtst_ip6_config_get_address (const NMIP6Config *self, guint i)
 {
 	NMDedupMultiIter iter;
 	const NMPlatformIP6Address *a = NULL;
@@ -1788,7 +1796,9 @@ nm_ip6_config_reset_routes_ndisc (NMIP6Config *self,
 		                           &obj,
 		                           NULL,
 		                           FALSE,
-		                           TRUE))
+		                           TRUE,
+		                           NULL,
+		                           NULL))
 			changed = TRUE;
 	}
 
@@ -1810,9 +1820,13 @@ nm_ip6_config_reset_routes (NMIP6Config *self)
 }
 
 static void
-_add_route (NMIP6Config *self, const NMPObject *obj_new, const NMPlatformIP6Route *new)
+_add_route (NMIP6Config *self,
+            const NMPObject *obj_new,
+            const NMPlatformIP6Route *new,
+            const NMPObject **out_obj_new)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
+	const NMPObject *obj_new_2;
 
 	nm_assert ((!new) != (!obj_new));
 	nm_assert (!new || _route_valid (new));
@@ -1824,14 +1838,21 @@ _add_route (NMIP6Config *self, const NMPObject *obj_new, const NMPlatformIP6Rout
 	                           obj_new,
 	                           (const NMPlatformObject *) new,
 	                           TRUE,
-	                           FALSE))
+	                           FALSE,
+	                           NULL,
+	                           &obj_new_2)) {
+		NM_SET_OUT (out_obj_new, nmp_object_ref (obj_new_2));
 		_notify_routes (self);
+	} else
+		NM_SET_OUT (out_obj_new, nmp_object_ref (obj_new_2));
 }
 
 /**
  * nm_ip6_config_add_route:
  * @self: the #NMIP6Config
  * @new: the new route to add to @self
+ * @out_obj_new: (allow-none): (out): the added route object. Must be unrefed
+ *   by caller.
  *
  * Adds the new route to @self.  If a route with the same basic properties
  * (network, prefix) already exists in @self, it is overwritten including the
@@ -1839,14 +1860,16 @@ _add_route (NMIP6Config *self, const NMPObject *obj_new, const NMPlatformIP6Rout
  * from @new if that source is higher priority.
  */
 void
-nm_ip6_config_add_route (NMIP6Config *self, const NMPlatformIP6Route *new)
+nm_ip6_config_add_route (NMIP6Config *self,
+                         const NMPlatformIP6Route *new,
+                         const NMPObject **out_obj_new)
 {
 	g_return_if_fail (self);
 	g_return_if_fail (new);
 	g_return_if_fail (new->plen > 0 && new->plen <= 128);
 	g_return_if_fail (NM_IP6_CONFIG_GET_PRIVATE (self)->ifindex > 0);
 
-	_add_route (self, NULL, new);
+	_add_route (self, NULL, new, out_obj_new);
 }
 
 void

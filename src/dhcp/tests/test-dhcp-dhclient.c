@@ -922,7 +922,7 @@ test_read_lease_ip4_config_basic (void)
 	/* Address */
 	g_assert_cmpint (nm_ip4_config_get_num_addresses (config), ==, 1);
 	expected_addr = nmtst_inet4_from_string ("192.168.1.180");
-	addr = _nmtst_nm_ip4_config_get_address (config, 0);
+	addr = _nmtst_ip4_config_get_address (config, 0);
 	g_assert_cmpint (addr->address, ==, expected_addr);
 	g_assert_cmpint (addr->peer_address, ==, expected_addr);
 	g_assert_cmpint (addr->plen, ==, 24);
@@ -945,7 +945,7 @@ test_read_lease_ip4_config_basic (void)
 	/* Address */
 	g_assert_cmpint (nm_ip4_config_get_num_addresses (config), ==, 1);
 	expected_addr = nmtst_inet4_from_string ("10.77.52.141");
-	addr = _nmtst_nm_ip4_config_get_address (config, 0);
+	addr = _nmtst_ip4_config_get_address (config, 0);
 	g_assert_cmpint (addr->address, ==, expected_addr);
 	g_assert_cmpint (addr->peer_address, ==, expected_addr);
 	g_assert_cmpint (addr->plen, ==, 8);

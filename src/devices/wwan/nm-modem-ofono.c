@@ -997,7 +997,7 @@ context_property_changed (GDBusProxy *proxy,
 
 			mms_route.metric = 1;
 
-			nm_ip4_config_add_route (priv->ip4_config, &mms_route);
+			nm_ip4_config_add_route (priv->ip4_config, &mms_route, NULL);
 		} else {
 			_LOGW ("invalid MessageProxy: %s", s);
 		}

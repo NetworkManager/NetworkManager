@@ -206,6 +206,55 @@ nm_utils_get_ip_config_method (NMConnection *connection,
 		g_assert_not_reached ();
 }
 
+gboolean
+nm_utils_connection_has_default_route (NMConnection *connection,
+                                       int addr_family,
+                                       gboolean *out_is_never_default)
+{
+	const char *method;
+	NMSettingIPConfig *s_ip;
+	gboolean is_never_default = FALSE;
+	gboolean has_default_route = FALSE;
+
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (NM_IN_SET (addr_family, AF_INET, AF_INET6), FALSE);
+
+	if (!connection)
+		goto out;
+
+	if (addr_family == AF_INET)
+		s_ip = nm_connection_get_setting_ip4_config (connection);
+	else
+		s_ip = nm_connection_get_setting_ip6_config (connection);
+	if (!s_ip)
+		goto out;
+	if (nm_setting_ip_config_get_never_default (s_ip)) {
+		is_never_default = TRUE;
+		goto out;
+	}
+
+	if (addr_family == AF_INET) {
+		method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
+		if (NM_IN_STRSET (method, NULL,
+		                          NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
+		                          NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
+			goto out;
+	} else {
+		method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
+		if (NM_IN_STRSET (method, NULL,
+		                          NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+		                          NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL))
+			goto out;
+	}
+
+	has_default_route = TRUE;
+out:
+	NM_SET_OUT (out_is_never_default, is_never_default);
+	return has_default_route;
+}
+
+/*****************************************************************************/
+
 void
 nm_utils_complete_generic (NMPlatform *platform,
                            NMConnection *connection,

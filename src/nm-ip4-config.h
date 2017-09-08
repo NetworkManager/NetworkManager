@@ -90,7 +90,9 @@ gboolean _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
                                 const NMPObject *obj_new,
                                 const NMPlatformObject *pl_new,
                                 gboolean merge,
-                                gboolean append_force);
+                                gboolean append_force,
+                                const NMPObject **out_obj_old,
+                                const NMPObject **out_obj_new);
 
 const NMDedupMultiEntry *_nm_ip_config_lookup_ip_route (const NMDedupMultiIndex *multi_idx,
                                                         const NMIPConfigDedupMultiIdxType *idx_type,
@@ -164,18 +166,20 @@ gint64 nm_ip4_config_get_route_metric (const NMIP4Config *self);
 const NMDedupMultiHeadEntry *nm_ip4_config_lookup_addresses (const NMIP4Config *self);
 void nm_ip4_config_reset_addresses (NMIP4Config *self);
 void nm_ip4_config_add_address (NMIP4Config *self, const NMPlatformIP4Address *address);
-void _nmtst_nm_ip4_config_del_address (NMIP4Config *self, guint i);
+void _nmtst_ip4_config_del_address (NMIP4Config *self, guint i);
 guint nm_ip4_config_get_num_addresses (const NMIP4Config *self);
 const NMPlatformIP4Address *nm_ip4_config_get_first_address (const NMIP4Config *self);
-const NMPlatformIP4Address *_nmtst_nm_ip4_config_get_address (const NMIP4Config *self, guint i);
+const NMPlatformIP4Address *_nmtst_ip4_config_get_address (const NMIP4Config *self, guint i);
 gboolean nm_ip4_config_address_exists (const NMIP4Config *self, const NMPlatformIP4Address *address);
 
 const NMDedupMultiHeadEntry *nm_ip4_config_lookup_routes (const NMIP4Config *self);
 void nm_ip4_config_reset_routes (NMIP4Config *self);
-void nm_ip4_config_add_route (NMIP4Config *self, const NMPlatformIP4Route *route);
-void _nmtst_nm_ip4_config_del_route (NMIP4Config *self, guint i);
+void nm_ip4_config_add_route (NMIP4Config *self,
+                              const NMPlatformIP4Route *route,
+                              const NMPObject **out_obj_new);
+void _nmtst_ip4_config_del_route (NMIP4Config *self, guint i);
 guint nm_ip4_config_get_num_routes (const NMIP4Config *self);
-const NMPlatformIP4Route *_nmtst_nm_ip4_config_get_route (const NMIP4Config *self, guint i);
+const NMPlatformIP4Route *_nmtst_ip4_config_get_route (const NMIP4Config *self, guint i);
 
 const NMPlatformIP4Route *nm_ip4_config_get_direct_route_for_host (const NMIP4Config *self, guint32 host);
 

@@ -1645,9 +1645,9 @@ route_metric_with_penalty (NMDevice *self, guint32 metric)
 	return metric;
 }
 
-static guint32
-_get_ipx_route_metric (NMDevice *self,
-                       gboolean is_v4)
+guint32
+nm_device_get_ip_route_metric (NMDevice *self,
+                               int addr_family)
 {
 	char *value;
 	gint64 route_metric;
@@ -1655,10 +1655,11 @@ _get_ipx_route_metric (NMDevice *self,
 	NMConnection *connection;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), G_MAXUINT32);
+	g_return_val_if_fail (NM_IN_SET (addr_family, AF_INET, AF_INET6), G_MAXUINT32);
 
 	connection = nm_device_get_applied_connection (self);
 	if (connection) {
-		s_ip = is_v4
+		s_ip = addr_family == AF_INET
 		       ? nm_connection_get_setting_ip4_config (connection)
 		       : nm_connection_get_setting_ip6_config (connection);
 
@@ -1677,7 +1678,7 @@ _get_ipx_route_metric (NMDevice *self,
 	 * Note that that means that the route-metric might change between SIGHUP.
 	 * You must cache the returned value if that is a problem. */
 	value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-	                                               is_v4 ? "ipv4.route-metric" : "ipv6.route-metric", self);
+	                                               addr_family == AF_INET ? "ipv4.route-metric" : "ipv6.route-metric", self);
 	if (value) {
 		route_metric = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT32, -1);
 		g_free (value);
@@ -1687,21 +1688,7 @@ _get_ipx_route_metric (NMDevice *self,
 	}
 	route_metric = nm_device_get_priority (self);
 out:
-	if (!is_v4)
-		route_metric = nm_utils_ip6_route_metric_normalize (route_metric);
-	return route_metric;
-}
-
-guint32
-nm_device_get_ip4_route_metric (NMDevice *self)
-{
-	return _get_ipx_route_metric (self, TRUE);
-}
-
-guint32
-nm_device_get_ip6_route_metric (NMDevice *self)
-{
-	return _get_ipx_route_metric (self, FALSE);
+	return nm_utils_ip_route_metric_normalize (addr_family, route_metric);
 }
 
 static void
@@ -5378,7 +5365,7 @@ ipv4ll_get_ip4_config (NMDevice *self, guint32 lla)
 	route.plen = 4;
 	route.rt_source = NM_IP_CONFIG_SOURCE_IP4LL;
 	route.metric = nm_device_get_ip4_route_metric (self);
-	nm_ip4_config_add_route (config, &route);
+	nm_ip4_config_add_route (config, &route, NULL);
 
 	return config;
 }
@@ -5553,10 +5540,7 @@ _device_get_default_route_from_platform (NMDevice *self, int addr_family, NMPlat
 			continue;
 
 		/* if there are several default routes, find the one with the best metric */
-		m = r->metric;
-		if (addr_family != AF_INET)
-			m = nm_utils_ip6_route_metric_normalize (r->metric);
-
+		m = nm_utils_ip_route_metric_normalize (addr_family, r->metric);
 		if (!route || m < route_metric) {
 			route = NMP_OBJECT_CAST_IP_ROUTE (plobj);
 			route_metric = m;
@@ -5769,8 +5753,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 	 */
 
 	connection_has_default_route
-	    = nm_default_route_manager_ip4_connection_has_default_route (nm_netns_get_default_route_manager (priv->netns),
-	                                                                 connection, &connection_is_never_default);
+	    = nm_utils_connection_has_default_route (connection, AF_INET, &connection_is_never_default);
 
 	if (   !priv->v4_commit_first_time
 	    && connection_is_never_default) {
@@ -5815,7 +5798,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 		r.network = gateway;
 		r.plen = 32;
 		r.gateway = 0;
-		nm_ip4_config_add_route (composite, &r);
+		nm_ip4_config_add_route (composite, &r, NULL);
 	}
 
 END_ADD_DEFAULT_ROUTE:
@@ -6505,8 +6488,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 	 */
 
 	connection_has_default_route
-	    = nm_default_route_manager_ip6_connection_has_default_route (nm_netns_get_default_route_manager (priv->netns),
-	                                                                 connection, &connection_is_never_default);
+	    = nm_utils_connection_has_default_route (connection, AF_INET6, &connection_is_never_default);
 
 	if (   !priv->v6_commit_first_time
 	    && connection_is_never_default) {
@@ -6552,7 +6534,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 		r.network = *gateway;
 		r.plen = 128;
 		r.gateway = in6addr_any;
-		nm_ip6_config_add_route (composite, &r);
+		nm_ip6_config_add_route (composite, &r, NULL);
 	}
 
 END_ADD_DEFAULT_ROUTE:

@@ -596,7 +596,7 @@ lookup_by_address (NMPolicy *self)
 }
 
 static void
-update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const char *msg)
+update_system_hostname (NMPolicy *self, const char *msg)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	const char *configured_hostname;
@@ -659,47 +659,39 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const 
 		return;
 	}
 
-	/* Try automatically determined hostname from the best device's IP config */
-	if (!best4)
-		best4 = get_best_ip4_device (self, TRUE);
-	if (!best6)
-		best6 = get_best_ip6_device (self, TRUE);
-
-	if (best4) {
+	if (priv->default_device4) {
 		NMDhcp4Config *dhcp4_config;
 
 		/* Grab a hostname out of the device's DHCP4 config */
-		dhcp4_config = nm_device_get_dhcp4_config (best4);
+		dhcp4_config = nm_device_get_dhcp4_config (priv->default_device4);
 		if (dhcp4_config) {
-			p = dhcp_hostname = nm_dhcp4_config_get_option (dhcp4_config, "host_name");
-			if (dhcp_hostname && strlen (dhcp_hostname)) {
-				/* Sanity check; strip leading spaces */
-				while (*p) {
-					if (!g_ascii_isspace (*p++)) {
-						_set_hostname (self, p-1, "from DHCPv4");
-						priv->dhcp_hostname = TRUE;
-						return;
-					}
+			dhcp_hostname = nm_dhcp4_config_get_option (dhcp4_config, "host_name");
+			if (dhcp_hostname && dhcp_hostname[0]) {
+				p = nm_str_skip_leading_spaces (dhcp_hostname);
+				if (p[0]) {
+					_set_hostname (self, p, "from DHCPv4");
+					priv->dhcp_hostname = TRUE;
+					return;
 				}
 				_LOGW (LOGD_DNS, "set-hostname: DHCPv4-provided hostname '%s' looks invalid; ignoring it",
 				       dhcp_hostname);
 			}
 		}
-	} else if (best6) {
+	}
+
+	if (priv->default_device6) {
 		NMDhcp6Config *dhcp6_config;
 
 		/* Grab a hostname out of the device's DHCP6 config */
-		dhcp6_config = nm_device_get_dhcp6_config (best6);
+		dhcp6_config = nm_device_get_dhcp6_config (priv->default_device6);
 		if (dhcp6_config) {
-			p = dhcp_hostname = nm_dhcp6_config_get_option (dhcp6_config, "host_name");
-			if (dhcp_hostname && strlen (dhcp_hostname)) {
-				/* Sanity check; strip leading spaces */
-				while (*p) {
-					if (!g_ascii_isspace (*p++)) {
-						_set_hostname (self, p-1, "from DHCPv6");
-						priv->dhcp_hostname = TRUE;
-						return;
-					}
+			dhcp_hostname = nm_dhcp6_config_get_option (dhcp6_config, "host_name");
+			if (dhcp_hostname && dhcp_hostname[0]) {
+				p = nm_str_skip_leading_spaces (dhcp_hostname);
+				if (p[0]) {
+					_set_hostname (self, p, "from DHCPv6");
+					priv->dhcp_hostname = TRUE;
+					return;
 				}
 				_LOGW (LOGD_DNS, "set-hostname: DHCPv6-provided hostname '%s' looks invalid; ignoring it",
 				       dhcp_hostname);
@@ -726,7 +718,7 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const 
 
 	priv->dhcp_hostname = FALSE;
 
-	if (!best4 && !best6) {
+	if (!priv->default_device4 && !priv->default_device6) {
 		/* No best device; fall back to the last hostname set externally
 		 * to NM or if there wasn't one, 'localhost.localdomain'
 		 */
@@ -745,8 +737,8 @@ update_system_hostname (NMPolicy *self, NMDevice *best4, NMDevice *best6, const 
 	/* No configured hostname, no automatically determined hostname, and no
 	 * bootup hostname. Start reverse DNS of the current IPv4 or IPv6 address.
 	 */
-	ip4_config = best4 ? nm_device_get_ip4_config (best4) : NULL;
-	ip6_config = best6 ? nm_device_get_ip6_config (best6) : NULL;
+	ip4_config = priv->default_device4 ? nm_device_get_ip4_config (priv->default_device4) : NULL;
+	ip6_config = priv->default_device6 ? nm_device_get_ip6_config (priv->default_device6) : NULL;
 
 	if (   ip4_config
 	    && (addr4 = nm_ip4_config_get_first_address (ip4_config))) {
@@ -830,8 +822,7 @@ static void
 update_ip4_routing (NMPolicy *self, gboolean force_update)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	NMDevice *best = NULL, *default_device;
-	NMConnection *connection = NULL;
+	NMDevice *best = NULL;
 	NMVpnConnection *vpn = NULL;
 	NMActiveConnection *best_ac = NULL;
 	const char *ip_iface = NULL;
@@ -840,18 +831,17 @@ update_ip4_routing (NMPolicy *self, gboolean force_update)
 	 * so we can get (vpn != NULL && best == NULL).
 	 */
 	if (!get_best_ip4_config (self, FALSE, &ip_iface, &best_ac, &best, &vpn)) {
-		gboolean changed;
-
-		changed = (priv->default_device4 != NULL);
-		priv->default_device4 = NULL;
-		if (changed)
+		if (nm_clear_g_object (&priv->default_device4)) {
+			_LOGt (LOGD_DNS, "set-default-device-4: %p", NULL);
 			_notify (self, PROP_DEFAULT_IP4_DEVICE);
-
+		}
 		return;
 	}
 	g_assert ((best || vpn) && best_ac);
 
-	if (!force_update && best && (best == priv->default_device4))
+	if (   !force_update
+	    && best
+	    && best == priv->default_device4)
 		return;
 
 	if (best) {
@@ -869,19 +859,17 @@ update_ip4_routing (NMPolicy *self, gboolean force_update)
 	}
 
 	if (vpn)
-		default_device = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
-	else
-		default_device = best;
+		best = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
 
 	update_default_ac (self, best_ac, nm_active_connection_set_default);
 
-	if (default_device == priv->default_device4)
+	if (!nm_g_object_ref_set (&priv->default_device4, best))
 		return;
+	_LOGt (LOGD_DNS, "set-default-device-4: %p", priv->default_device4);
 
-	priv->default_device4 = default_device;
-	connection = nm_active_connection_get_applied_connection (best_ac);
 	_LOGI (LOGD_CORE, "set '%s' (%s) as default for IPv4 routing and DNS",
-	       nm_connection_get_id (connection), ip_iface);
+	       nm_connection_get_id (nm_active_connection_get_applied_connection (best_ac)),
+	       ip_iface);
 	_notify (self, PROP_DEFAULT_IP4_DEVICE);
 }
 
@@ -958,8 +946,7 @@ static void
 update_ip6_routing (NMPolicy *self, gboolean force_update)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	NMDevice *best = NULL, *default_device6;
-	NMConnection *connection = NULL;
+	NMDevice *best = NULL;
 	NMVpnConnection *vpn = NULL;
 	NMActiveConnection *best_ac = NULL;
 	const char *ip_iface = NULL;
@@ -968,18 +955,17 @@ update_ip6_routing (NMPolicy *self, gboolean force_update)
 	 * so we can get (vpn != NULL && best == NULL).
 	 */
 	if (!get_best_ip6_config (self, FALSE, &ip_iface, &best_ac, &best, &vpn)) {
-		gboolean changed;
-
-		changed = (priv->default_device6 != NULL);
-		priv->default_device6 = NULL;
-		if (changed)
+		if (nm_clear_g_object (&priv->default_device6)) {
+			_LOGt (LOGD_DNS, "set-default-device-6: %p", NULL);
 			_notify (self, PROP_DEFAULT_IP6_DEVICE);
-
+		}
 		return;
 	}
 	g_assert ((best || vpn) && best_ac);
 
-	if (!force_update && best && (best == priv->default_device6))
+	if (   !force_update
+	    && best
+	    && best == priv->default_device6)
 		return;
 
 	if (best) {
@@ -997,21 +983,19 @@ update_ip6_routing (NMPolicy *self, gboolean force_update)
 	}
 
 	if (vpn)
-		default_device6 = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
-	else
-		default_device6 = best;
+		best = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
 
 	update_default_ac (self, best_ac, nm_active_connection_set_default6);
 
-	if (default_device6 == priv->default_device6)
+	if (!nm_g_object_ref_set (&priv->default_device6, best))
 		return;
-	priv->default_device6 = default_device6;
+	_LOGt (LOGD_DNS, "set-default-device-6: %p", priv->default_device6);
 
 	update_ip6_prefix_delegation (self);
 
-	connection = nm_active_connection_get_applied_connection (best_ac);
 	_LOGI (LOGD_CORE, "set '%s' (%s) as default for IPv6 routing and DNS",
-	       nm_connection_get_id (connection), ip_iface);
+	       nm_connection_get_id (nm_active_connection_get_applied_connection (best_ac)),
+	       ip_iface);
 	_notify (self, PROP_DEFAULT_IP6_DEVICE);
 }
 
@@ -1029,7 +1013,7 @@ update_routing_and_dns (NMPolicy *self, gboolean force_update)
 	update_ip6_routing (self, force_update);
 
 	/* Update the system hostname */
-	update_system_hostname (self, priv->default_device4, priv->default_device6, "routing and dns");
+	update_system_hostname (self, "routing and dns");
 
 	nm_dns_manager_end_updates (priv->dns_manager, __func__);
 }
@@ -1038,24 +1022,23 @@ static void
 check_activating_devices (NMPolicy *self)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	GObject *object = G_OBJECT (self);
 	NMDevice *best4, *best6 = NULL;
 
 	best4 = get_best_ip4_device (self, FALSE);
 	best6 = get_best_ip6_device (self, FALSE);
 
-	g_object_freeze_notify (object);
+	g_object_freeze_notify (G_OBJECT (self));
 
-	if (best4 != priv->activating_device4) {
-		priv->activating_device4 = best4;
+	if (nm_g_object_ref_set (&priv->activating_device4, best4)) {
+		_LOGt (LOGD_DNS, "set-activating-device-4: %p", priv->activating_device4);
 		_notify (self, PROP_ACTIVATING_IP4_DEVICE);
 	}
-	if (best6 != priv->activating_device6) {
-		priv->activating_device6 = best6;
+	if (nm_g_object_ref_set (&priv->activating_device6, best6)) {
+		_LOGt (LOGD_DNS, "set-activating-device-6: %p", priv->activating_device6);
 		_notify (self, PROP_ACTIVATING_IP6_DEVICE);
 	}
 
-	g_object_thaw_notify (object);
+	g_object_thaw_notify (G_OBJECT (self));
 }
 
 typedef struct {
@@ -1260,7 +1243,7 @@ hostname_changed (NMHostnameManager *hostname_manager, GParamSpec *pspec, gpoint
 	NMPolicyPrivate *priv = user_data;
 	NMPolicy *self = _PRIV_TO_SELF (priv);
 
-	update_system_hostname (self, NULL, NULL, "hostname changed");
+	update_system_hostname (self, "hostname changed");
 }
 
 static void
@@ -1742,7 +1725,7 @@ device_ip4_config_changed (NMDevice *device,
 		}
 		update_ip4_dns (self, priv->dns_manager);
 		update_ip4_routing (self, TRUE);
-		update_system_hostname (self, priv->default_device4, priv->default_device6, "ip4 conf");
+		update_system_hostname (self, "ip4 conf");
 	} else {
 		/* Old configs get removed immediately */
 		if (old_config)
@@ -1778,7 +1761,7 @@ device_ip6_config_changed (NMDevice *device,
 		}
 		update_ip6_dns (self, priv->dns_manager);
 		update_ip6_routing (self, TRUE);
-		update_system_hostname (self, priv->default_device4, priv->default_device6, "ip6 conf");
+		update_system_hostname (self, "ip6 conf");
 	} else {
 		/* Old configs get removed immediately */
 		if (old_config)
@@ -2404,6 +2387,11 @@ dispose (GObject *object)
 	nm_clear_g_cancellable (&priv->lookup.cancellable);
 	g_clear_object (&priv->lookup.addr);
 	g_clear_object (&priv->lookup.resolver);
+
+	nm_clear_g_object (&priv->default_device4);
+	nm_clear_g_object (&priv->default_device6);
+	nm_clear_g_object (&priv->activating_device4);
+	nm_clear_g_object (&priv->activating_device6);
 
 	while (priv->pending_activation_checks)
 		activate_data_free (priv->pending_activation_checks->data);

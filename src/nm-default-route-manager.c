@@ -964,65 +964,6 @@ nm_default_route_manager_ip6_update_default_route (NMDefaultRouteManager *self,
 
 /*****************************************************************************/
 
-static gboolean
-_ipx_connection_has_default_route (const VTableIP *vtable, NMDefaultRouteManager *self, NMConnection *connection, gboolean *out_is_never_default)
-{
-	const char *method;
-	NMSettingIPConfig *s_ip;
-	gboolean is_never_default = FALSE;
-	gboolean has_default_route = FALSE;
-
-	g_return_val_if_fail (NM_IS_DEFAULT_ROUTE_MANAGER (self), FALSE);
-
-	if (!connection)
-		goto out;
-
-	if (vtable->vt->is_ip4)
-		s_ip = nm_connection_get_setting_ip4_config (connection);
-	else
-		s_ip = nm_connection_get_setting_ip6_config (connection);
-	if (!s_ip)
-		goto out;
-	if (nm_setting_ip_config_get_never_default (s_ip)) {
-		is_never_default = TRUE;
-		goto out;
-	}
-
-	if (vtable->vt->is_ip4) {
-		method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
-		if (   !method
-		    || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)
-		    || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
-			goto out;
-	} else {
-		method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
-		if (   !method
-		    || !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)
-		    || !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL))
-			goto out;
-	}
-
-	has_default_route = TRUE;
-out:
-	if (out_is_never_default)
-		*out_is_never_default = is_never_default;
-	return has_default_route;
-}
-
-gboolean
-nm_default_route_manager_ip4_connection_has_default_route (NMDefaultRouteManager *self, NMConnection *connection, gboolean *out_is_never_default)
-{
-	return _ipx_connection_has_default_route (&vtable_ip4, self, connection, out_is_never_default);
-}
-
-gboolean
-nm_default_route_manager_ip6_connection_has_default_route (NMDefaultRouteManager *self, NMConnection *connection, gboolean *out_is_never_default)
-{
-	return _ipx_connection_has_default_route (&vtable_ip6, self, connection, out_is_never_default);
-}
-
-/*****************************************************************************/
-
 static NMDevice *
 _ipx_get_best_device (const VTableIP *vtable, NMDefaultRouteManager *self, const GSList *devices)
 {
@@ -1117,7 +1058,7 @@ _ipx_get_best_activating_device (const VTableIP *vtable, NMDefaultRouteManager *
 			    || state >= NM_DEVICE_STATE_DEACTIVATING)
 				continue;
 
-			if (!_ipx_connection_has_default_route (vtable, self, nm_device_get_applied_connection (device), NULL))
+			if (!nm_utils_connection_has_default_route (nm_device_get_applied_connection (device), vtable->vt->addr_family, NULL))
 				continue;
 
 			prio = nm_device_get_ip4_route_metric (device);
