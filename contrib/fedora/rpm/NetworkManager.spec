@@ -371,7 +371,11 @@ intltoolize --automake --copy --force
 	--with-dhclient=yes \
 	--with-dhcpcd=no \
 	--with-crypto=nss \
+%if %{with test}
 	--enable-more-warnings=error \
+%else
+	--enable-more-warnings=yes \
+%endif
 %if %{with sanitizer}
 	--enable-address-sanitizer \
 	--enable-undefined-sanitizer \
