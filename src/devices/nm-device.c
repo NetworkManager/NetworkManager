@@ -5805,7 +5805,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 	NMIP4Config *manual, **configs;
 	NMConnection *connection;
 
-	g_return_if_fail (nm_dhcp_client_get_ipv6 (client) == FALSE);
+	g_return_if_fail (nm_dhcp_client_get_addr_family (client) == AF_INET);
 	g_return_if_fail (!ip4_config || NM_IS_IP4_CONFIG (ip4_config));
 
 	_LOGD (LOGD_DHCP4, "new DHCPv4 client state %d", state);
@@ -6570,7 +6570,7 @@ dhcp6_state_changed (NMDhcpClient *client,
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	g_return_if_fail (nm_dhcp_client_get_ipv6 (client) == TRUE);
+	g_return_if_fail (nm_dhcp_client_get_addr_family (client) == AF_INET6);
 	g_return_if_fail (!ip6_config || NM_IS_IP6_CONFIG (ip6_config));
 
 	_LOGD (LOGD_DHCP6, "new DHCPv6 client state %d", state);
@@ -10500,10 +10500,10 @@ find_ip4_lease_config (NMDevice *self,
 
 	leases = nm_dhcp_manager_get_lease_ip_configs (nm_dhcp_manager_get (),
 	                                               nm_device_get_multi_index (self),
+	                                               AF_INET,
 	                                               ip_iface,
 	                                               ip_ifindex,
 	                                               nm_connection_get_uuid (connection),
-	                                               FALSE,
 	                                               nm_device_get_ip4_route_metric (self));
 	for (liter = leases; liter && !found; liter = liter->next) {
 		NMIP4Config *lease_config = liter->data;

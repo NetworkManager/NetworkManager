@@ -428,20 +428,20 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 /*****************************************************************************/
 
 static char *
-get_leasefile_path (const char *iface, const char *uuid, gboolean ipv6)
+get_leasefile_path (int addr_family, const char *iface, const char *uuid)
 {
 	return g_strdup_printf (NMSTATEDIR "/internal%s-%s-%s.lease",
-	                        ipv6 ? "6" : "",
+	                        addr_family == AF_INET6 ? "6" : "",
 	                        uuid,
 	                        iface);
 }
 
 static GSList *
 nm_dhcp_systemd_get_lease_ip_configs (NMDedupMultiIndex *multi_idx,
+                                      int addr_family,
                                       const char *iface,
                                       int ifindex,
                                       const char *uuid,
-                                      gboolean ipv6,
                                       guint32 default_route_metric)
 {
 	GSList *leases = NULL;
@@ -450,10 +450,10 @@ nm_dhcp_systemd_get_lease_ip_configs (NMDedupMultiIndex *multi_idx,
 	NMIP4Config *ip4_config;
 	int r;
 
-	if (ipv6)
+	if (addr_family != AF_INET)
 		return NULL;
 
-	path = get_leasefile_path (iface, uuid, FALSE);
+	path = get_leasefile_path (addr_family, iface, uuid);
 	r = dhcp_lease_load (&lease, path);
 	if (r == 0 && lease) {
 		ip4_config = lease_to_ip4_config (multi_idx, iface, ifindex, lease, NULL, default_route_metric, FALSE, NULL);
@@ -604,7 +604,7 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 	g_assert (priv->client6 == NULL);
 
 	g_free (priv->lease_file);
-	priv->lease_file = get_leasefile_path (iface, nm_dhcp_client_get_uuid (client), FALSE);
+	priv->lease_file = get_leasefile_path (AF_INET, iface, nm_dhcp_client_get_uuid (client));
 
 	r = sd_dhcp_client_new (&priv->client4);
 	if (r < 0) {
@@ -905,7 +905,7 @@ ip6_start (NMDhcpClient *client,
 	g_return_val_if_fail (duid != NULL, FALSE);
 
 	g_free (priv->lease_file);
-	priv->lease_file = get_leasefile_path (iface, nm_dhcp_client_get_uuid (client), TRUE);
+	priv->lease_file = get_leasefile_path (AF_INET6, iface, nm_dhcp_client_get_uuid (client));
 	priv->info_only = info_only;
 
 	r = sd_dhcp6_client_new (&priv->client6);

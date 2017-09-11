@@ -23,7 +23,7 @@
 #include "nm-setting-ip6-config.h"
 
 char *nm_dhcp_dhclient_create_config (const char *interface,
-                                      gboolean is_ip6,
+                                      int addr_family,
                                       GBytes *client_id,
                                       const char *anycast_addr,
                                       const char *hostname,
@@ -43,10 +43,10 @@ gboolean nm_dhcp_dhclient_save_duid (const char *leasefile,
                                      GError **error);
 
 GSList *nm_dhcp_dhclient_read_lease_ip_configs (struct _NMDedupMultiIndex *multi_idx,
+                                                int addr_family,
                                                 const char *iface,
                                                 int ifindex,
                                                 const char *contents,
-                                                gboolean ipv6,
                                                 GDateTime *now);
 
 GBytes *nm_dhcp_dhclient_get_client_id_from_config_file (const char *path);

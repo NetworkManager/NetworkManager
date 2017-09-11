@@ -51,10 +51,10 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_MULTI_IDX,
+	PROP_ADDR_FAMILY,
 	PROP_IFACE,
 	PROP_IFINDEX,
 	PROP_HWADDR,
-	PROP_IPV6,
 	PROP_UUID,
 	PROP_PRIORITY,
 	PROP_TIMEOUT,
@@ -63,22 +63,21 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 typedef struct _NMDhcpClientPrivate {
 	NMDedupMultiIndex *multi_idx;
 	char *       iface;
-	int          ifindex;
 	GByteArray * hwaddr;
-	gboolean     ipv6;
 	char *       uuid;
-	guint32      priority;
-	guint32      timeout;
 	GByteArray * duid;
 	GBytes *     client_id;
 	char *       hostname;
-	gboolean     use_fqdn;
-
-	NMDhcpState  state;
 	pid_t        pid;
 	guint        timeout_id;
 	guint        watch_id;
-	gboolean     info_only;
+	int          addr_family;
+	int          ifindex;
+	guint32      priority;
+	guint32      timeout;
+	NMDhcpState  state;
+	bool         info_only:1;
+	bool         use_fqdn:1;
 } NMDhcpClientPrivate;
 
 G_DEFINE_TYPE_EXTENDED (NMDhcpClient, nm_dhcp_client, G_TYPE_OBJECT, G_TYPE_FLAG_ABSTRACT, {})
@@ -119,12 +118,12 @@ nm_dhcp_client_get_ifindex (NMDhcpClient *self)
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->ifindex;
 }
 
-gboolean
-nm_dhcp_client_get_ipv6 (NMDhcpClient *self)
+int
+nm_dhcp_client_get_addr_family (NMDhcpClient *self)
 {
-	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), AF_UNSPEC);
 
-	return NM_DHCP_CLIENT_GET_PRIVATE (self)->ipv6;
+	return NM_DHCP_CLIENT_GET_PRIVATE (self)->addr_family;
 }
 
 const char *
@@ -315,8 +314,8 @@ nm_dhcp_client_set_state (NMDhcpClient *self,
 		watch_cleanup (self);
 
 	if (new_state == NM_DHCP_STATE_BOUND) {
-		g_assert (   (priv->ipv6 && NM_IS_IP6_CONFIG (ip_config))
-		          || (!priv->ipv6 && NM_IS_IP4_CONFIG (ip_config)));
+		g_assert (   (priv->addr_family == AF_INET  && NM_IS_IP4_CONFIG (ip_config))
+		          || (priv->addr_family == AF_INET6 && NM_IS_IP6_CONFIG (ip_config)));
 		g_assert (options);
 	} else {
 		g_assert (ip_config == NULL);
@@ -331,7 +330,8 @@ nm_dhcp_client_set_state (NMDhcpClient *self,
 	if ((priv->state == new_state) && (new_state != NM_DHCP_STATE_BOUND))
 		return;
 
-	if (priv->ipv6 && new_state == NM_DHCP_STATE_BOUND) {
+	if (   priv->addr_family == AF_INET6
+	    && new_state == NM_DHCP_STATE_BOUND) {
 		char *start, *iaid;
 
 		iaid = g_hash_table_lookup (options, "iaid");
@@ -438,7 +438,7 @@ nm_dhcp_client_start_ip4 (NMDhcpClient *self,
 
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 	g_return_val_if_fail (priv->pid == -1, FALSE);
-	g_return_val_if_fail (priv->ipv6 == FALSE, FALSE);
+	g_return_val_if_fail (priv->addr_family == AF_INET, FALSE);
 	g_return_val_if_fail (priv->uuid != NULL, FALSE);
 
 	_LOGI ("activation: beginning transaction (timeout in %u seconds)", (guint) priv->timeout);
@@ -540,7 +540,7 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 	g_return_val_if_fail (priv->pid == -1, FALSE);
-	g_return_val_if_fail (priv->ipv6 == TRUE, FALSE);
+	g_return_val_if_fail (priv->addr_family == AF_INET6, FALSE);
 	g_return_val_if_fail (priv->uuid != NULL, FALSE);
 
 	/* If we don't have one yet, read the default DUID for this DHCPv6 client
@@ -775,7 +775,13 @@ nm_dhcp_client_handle_event (gpointer unused,
 		/* Create the IP config */
 		g_warn_if_fail (g_hash_table_size (str_options));
 		if (g_hash_table_size (str_options)) {
-			if (priv->ipv6) {
+			if (priv->addr_family == AF_INET) {
+				ip_config = (GObject *) nm_dhcp_utils_ip4_config_from_options (nm_dhcp_client_get_multi_idx (self),
+				                                                               priv->ifindex,
+				                                                               priv->iface,
+				                                                               str_options,
+				                                                               priv->priority);
+			} else {
 				prefix = nm_dhcp_utils_ip6_prefix_from_options (str_options);
 				ip_config = (GObject *) nm_dhcp_utils_ip6_config_from_options (nm_dhcp_client_get_multi_idx (self),
 				                                                               priv->ifindex,
@@ -783,12 +789,6 @@ nm_dhcp_client_handle_event (gpointer unused,
 				                                                               str_options,
 				                                                               priv->priority,
 				                                                               priv->info_only);
-			} else {
-				ip_config = (GObject *) nm_dhcp_utils_ip4_config_from_options (nm_dhcp_client_get_multi_idx (self),
-				                                                               priv->ifindex,
-				                                                               priv->iface,
-				                                                               str_options,
-				                                                               priv->priority);
 			}
 		}
 	}
@@ -836,8 +836,8 @@ get_property (GObject *object, guint prop_id,
 	case PROP_HWADDR:
 		g_value_set_boxed (value, priv->hwaddr);
 		break;
-	case PROP_IPV6:
-		g_value_set_boolean (value, priv->ipv6);
+	case PROP_ADDR_FAMILY:
+		g_value_set_int (value, priv->addr_family);
 		break;
 	case PROP_UUID:
 		g_value_set_string (value, priv->uuid);
@@ -881,9 +881,11 @@ set_property (GObject *object, guint prop_id,
 		/* construct-only */
 		priv->hwaddr = g_value_dup_boxed (value);
 		break;
-	case PROP_IPV6:
+	case PROP_ADDR_FAMILY:
 		/* construct-only */
-		priv->ipv6 = g_value_get_boolean (value);
+		priv->addr_family = g_value_get_int (value);
+		if (!NM_IN_SET (priv->addr_family, AF_INET, AF_INET6))
+			g_return_if_reached ();
 		break;
 	case PROP_UUID:
 		/* construct-only */
@@ -988,11 +990,11 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 	                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 	                        G_PARAM_STATIC_STRINGS);
 
-	obj_properties[PROP_IPV6] =
-	    g_param_spec_boolean (NM_DHCP_CLIENT_IPV6, "", "",
-	                          FALSE,
-	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-	                          G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_ADDR_FAMILY] =
+	    g_param_spec_int (NM_DHCP_CLIENT_ADDR_FAMILY, "", "",
+	                      0, G_MAXINT, AF_UNSPEC,
+	                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                      G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_UUID] =
 	    g_param_spec_string (NM_DHCP_CLIENT_UUID, "", "",

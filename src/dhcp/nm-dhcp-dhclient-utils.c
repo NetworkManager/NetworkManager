@@ -257,7 +257,7 @@ read_interface (const char *line, char *interface, guint size)
 
 char *
 nm_dhcp_dhclient_create_config (const char *interface,
-                                gboolean is_ip6,
+                                int addr_family,
                                 GBytes *client_id,
                                 const char *anycast_addr,
                                 const char *hostname,
@@ -272,6 +272,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 	int i;
 
 	g_return_val_if_fail (!anycast_addr || nm_utils_hwaddr_valid (anycast_addr, ETH_ALEN), NULL);
+	g_return_val_if_fail (NM_IN_SET (addr_family, AF_INET, AF_INET6), NULL);
 
 	new_contents = g_string_new (_("# Created by NetworkManager\n"));
 	fqdn_opts = g_ptr_array_sized_new (5);
@@ -373,18 +374,18 @@ nm_dhcp_dhclient_create_config (const char *interface,
 	} else
 		g_string_append_c (new_contents, '\n');
 
-	if (is_ip6) {
-		add_hostname6 (new_contents, hostname);
-		add_request (reqs, "dhcp6.name-servers");
-		add_request (reqs, "dhcp6.domain-search");
-		add_request (reqs, "dhcp6.client-id");
-	} else {
+	if (addr_family == AF_INET) {
 		add_ip4_config (new_contents, client_id, hostname, use_fqdn);
 		add_request (reqs, "rfc3442-classless-static-routes");
 		add_request (reqs, "ms-classless-static-routes");
 		add_request (reqs, "static-routes");
 		add_request (reqs, "wpad");
 		add_request (reqs, "ntp-servers");
+	} else {
+		add_hostname6 (new_contents, hostname);
+		add_request (reqs, "dhcp6.name-servers");
+		add_request (reqs, "dhcp6.domain-search");
+		add_request (reqs, "dhcp6.client-id");
 	}
 
 	if (reset_reqlist)
@@ -663,25 +664,25 @@ lease_validity_span (const char *str_expire, GDateTime *now)
 /**
  * nm_dhcp_dhclient_read_lease_ip_configs:
  * @multi_idx: the multi index instance for the ip config object
+ * @addr_family: whether to read IPv4 or IPv6 leases
  * @iface: the interface name to match leases with
  * @ifindex: interface index of @iface
  * @contents: the contents of a dhclient leasefile
- * @ipv6: whether to read IPv4 or IPv6 leases
  * @now: the current UTC date/time; pass %NULL to automatically use current
  *  UTC time.  Testcases may need a different value for 'now'
  *
  * Reads dhclient leases from @contents and parses them into either
- * #NMIP4Config or #NMIP6Config objects depending on the value of @ipv6.
+ * #NMIP4Config or #NMIP6Config objects depending on the value of @addr_family.
  *
- * Returns: a #GSList of #NMIP4Config objects (if @ipv6 is %FALSE) or a list of
- * #NMIP6Config objects (if @ipv6 is %TRUE) containing the lease data.
+ * Returns: a #GSList of #NMIP4Config objects (if @addr_family is %AF_INET) or a list of
+ * #NMIP6Config objects (if @addr_family is %AF_INET6) containing the lease data.
  */
 GSList *
 nm_dhcp_dhclient_read_lease_ip_configs (NMDedupMultiIndex *multi_idx,
+                                        int addr_family,
                                         const char *iface,
                                         int ifindex,
                                         const char *contents,
-                                        gboolean ipv6,
                                         GDateTime *now)
 {
 	GSList *parsed = NULL, *iter, *leases = NULL;
@@ -690,6 +691,7 @@ nm_dhcp_dhclient_read_lease_ip_configs (NMDedupMultiIndex *multi_idx,
 	gint32 now_monotonic_ts;
 
 	g_return_val_if_fail (contents != NULL, NULL);
+	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 
 	split = g_strsplit_set (contents, "\n\r", -1);
 	if (!split)

@@ -78,10 +78,10 @@ NMDhcpClient * nm_dhcp_manager_start_ip6     (NMDhcpManager *manager,
 
 GSList *       nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
                                                      struct _NMDedupMultiIndex *multi_idx,
+                                                     int addr_family,
                                                      const char *iface,
                                                      int ifindex,
                                                      const char *uuid,
-                                                     gboolean ipv6,
                                                      guint32 default_route_metric);
 
 /* For testing only */

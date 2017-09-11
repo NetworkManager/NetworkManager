@@ -34,9 +34,9 @@
 #define NM_DHCP_CLIENT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP_CLIENT, NMDhcpClientClass))
 
 #define NM_DHCP_CLIENT_INTERFACE "iface"
+#define NM_DHCP_CLIENT_ADDR_FAMILY "addr-family"
 #define NM_DHCP_CLIENT_IFINDEX   "ifindex"
 #define NM_DHCP_CLIENT_HWADDR    "hwaddr"
-#define NM_DHCP_CLIENT_IPV6      "ipv6"
 #define NM_DHCP_CLIENT_UUID      "uuid"
 #define NM_DHCP_CLIENT_PRIORITY  "priority"
 #define NM_DHCP_CLIENT_TIMEOUT   "timeout"
@@ -108,11 +108,11 @@ struct _NMDedupMultiIndex *nm_dhcp_client_get_multi_idx (NMDhcpClient *self);
 
 pid_t nm_dhcp_client_get_pid (NMDhcpClient *self);
 
+int nm_dhcp_client_get_addr_family (NMDhcpClient *self);
+
 const char *nm_dhcp_client_get_iface (NMDhcpClient *self);
 
 int         nm_dhcp_client_get_ifindex (NMDhcpClient *self);
-
-gboolean nm_dhcp_client_get_ipv6 (NMDhcpClient *self);
 
 const char *nm_dhcp_client_get_uuid (NMDhcpClient *self);
 
@@ -179,10 +179,10 @@ typedef struct {
 	const char *name;
 	const char *(*get_path) (void);
 	GSList *(*get_lease_ip_configs) (struct _NMDedupMultiIndex *multi_idx,
+	                                 int addr_family,
 	                                 const char *iface,
 	                                 int ifindex,
 	                                 const char *uuid,
-	                                 gboolean ipv6,
 	                                 guint32 default_route_metric);
 } NMDhcpClientFactory;
 

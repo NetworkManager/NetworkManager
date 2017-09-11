@@ -23,6 +23,23 @@
 
 #include "nm-dhcp-client.h"
 
+static inline NMLogDomain
+_nm_dhcp_client_get_domain (NMDhcpClient *self)
+{
+	if (self) {
+		switch (nm_dhcp_client_get_addr_family (self)) {
+		case AF_INET:
+			return LOGD_DHCP4;
+		case AF_INET6:
+			return LOGD_DHCP6;
+		default:
+			nm_assert_not_reached ();
+			break;
+		}
+	}
+	return LOGD_DHCP;
+}
+
 #define _NMLOG_PREFIX_NAME    "dhcp"
 #define _NMLOG_DOMAIN         LOGD_DHCP
 #define _NMLOG(level, ...) \
@@ -38,9 +55,7 @@
         if (nm_logging_enabled (_level, _NMLOG_DOMAIN)) { \
             NMDhcpClient *_self = (NMDhcpClient *) (self); \
             const char *__ifname = _self ? nm_dhcp_client_get_iface (_self) : NULL; \
-            const NMLogDomain _domain = !_self \
-                                            ? LOGD_DHCP \
-                                            : (nm_dhcp_client_get_ipv6 (_self) ? LOGD_DHCP6 : LOGD_DHCP4); \
+            const NMLogDomain _domain = _nm_dhcp_client_get_domain (_self); \
             \
             nm_log (_level, _domain, __ifname, NULL, \
                     "%s%s%s%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
