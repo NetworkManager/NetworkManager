@@ -1111,10 +1111,12 @@ _vt_cmd_plobj_id_hash (ip6_address, NMPlatformIP6Address, {
 	hash = NM_HASH_COMBINE (hash, nm_utils_in6_addr_hash (&obj->address));
 })
 _vt_cmd_plobj_id_hash (ip4_route, NMPlatformIP4Route, {
-	hash = nm_platform_ip4_route_hash (obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID);
+	hash = (guint) 1038302471u;
+	hash = NM_HASH_COMBINE (hash, nm_platform_ip4_route_hash (obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID));
 })
 _vt_cmd_plobj_id_hash (ip6_route, NMPlatformIP6Route, {
-	hash = nm_platform_ip6_route_hash (obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID);
+	hash = (guint) 1233384151u;
+	hash = NM_HASH_COMBINE (hash, nm_platform_ip6_route_hash (obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID));
 })
 
 gboolean
