@@ -25,6 +25,7 @@
 #include "nm-ip6-config.h"
 
 #define NM_DHCP_TIMEOUT_DEFAULT ((guint32) 45) /* default DHCP timeout, in seconds */
+#define NM_DHCP_TIMEOUT_INFINITY G_MAXINT32
 
 #define NM_TYPE_DHCP_CLIENT            (nm_dhcp_client_get_type ())
 #define NM_DHCP_CLIENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP_CLIENT, NMDhcpClient))
@@ -44,6 +45,7 @@
 
 #define NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED "state-changed"
 #define NM_DHCP_CLIENT_SIGNAL_PREFIX_DELEGATED "prefix-delegated"
+
 
 typedef enum {
 	NM_DHCP_STATE_UNKNOWN = 0,

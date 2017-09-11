@@ -404,6 +404,10 @@ nm_dhcp_client_start_timeout (NMDhcpClient *self)
 
 	/* Set up a timeout on the transaction to kill it after the timeout */
 	g_assert (priv->timeout_id == 0);
+
+	if (priv->timeout == NM_DHCP_TIMEOUT_INFINITY)
+		return;
+
 	priv->timeout_id = g_timeout_add_seconds (priv->timeout,
 	                                          transaction_timeout,
 	                                          self);
@@ -441,7 +445,10 @@ nm_dhcp_client_start_ip4 (NMDhcpClient *self,
 	g_return_val_if_fail (priv->addr_family == AF_INET, FALSE);
 	g_return_val_if_fail (priv->uuid != NULL, FALSE);
 
-	_LOGI ("activation: beginning transaction (timeout in %u seconds)", (guint) priv->timeout);
+	if (priv->timeout == NM_DHCP_TIMEOUT_INFINITY)
+		_LOGI ("activation: beginning transaction (no timeout)");
+	else
+		_LOGI ("activation: beginning transaction (timeout in %u seconds)", (guint) priv->timeout);
 
 	if (dhcp_client_id)
 		tmp = nm_dhcp_utils_client_id_string_to_bytes (dhcp_client_id);
@@ -556,8 +563,10 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 
 	priv->info_only = info_only;
 
-	_LOGI ("activation: beginning transaction (timeout in %u seconds)",
-	       (guint) priv->timeout);
+	if (priv->timeout == NM_DHCP_TIMEOUT_INFINITY)
+		_LOGI ("activation: beginning transaction (no timeout)");
+	else
+		_LOGI ("activation: beginning transaction (timeout in %u seconds)", (guint) priv->timeout);
 
 	return NM_DHCP_CLIENT_GET_CLASS (self)->ip6_start (self,
 	                                                   dhcp_anycast_addr,
