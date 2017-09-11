@@ -453,7 +453,7 @@ dhclient_start (NMDhcpClient *client,
 	timeout = nm_dhcp_client_get_timeout (client);
 	if (timeout >= 60) {
 		timeout = timeout < G_MAXINT32 ? timeout + 1 : G_MAXINT32;
-		g_ptr_array_add (argv, (gpointer) "-timeout");
+		g_ptr_array_add (argv, (gpointer) "--timeout");
 		g_ptr_array_add (argv, (gpointer) nm_sprintf_buf (timeout_str, "%u", (unsigned) timeout));
 	}
 
