@@ -5364,6 +5364,19 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DHCP_TIMEOUT, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DHCP_TIMEOUT,
 		.property_type =                &_pt_gobject_int,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
+			.value_infos =          INT_VALUE_INFOS (
+				{
+					.value = 0,
+					.nick = "default",
+				},
+				{
+					.value = G_MAXINT32,
+					.nick = "infinity",
+				}
+			),
+		),
+
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME,
 		.property_type =                &_pt_gobject_bool,
