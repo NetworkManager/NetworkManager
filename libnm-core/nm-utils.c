@@ -201,8 +201,13 @@ get_system_encodings (void)
 	if (cached_encodings)
 		return cached_encodings;
 
-	/* LANG may be a good encoding hint */
-	if ((lang = getenv ("LANG"))) {
+	/* Use environment variables as encoding hint */
+	lang = getenv ("LC_ALL");
+	if (!lang)
+		lang = getenv ("LC_CTYPE");
+	if (!lang)
+		lang = getenv ("LANG");
+	if (lang) {
 		char *dot;
 
 		lang = g_ascii_strdown (lang, -1);
