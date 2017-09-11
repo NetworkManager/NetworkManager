@@ -94,15 +94,6 @@ gboolean _nm_ip_config_best_default_route_merge (const NMPObject **best_default_
 
 /*****************************************************************************/
 
-gboolean nm_ip_config_obj_id_equal_ip4_address (const NMPlatformIP4Address *a,
-                                                const NMPlatformIP4Address *b);
-gboolean nm_ip_config_obj_id_equal_ip6_address (const NMPlatformIP6Address *a,
-                                                const NMPlatformIP6Address *b);
-gboolean nm_ip_config_obj_id_equal_ip4_route (const NMPlatformIP4Route *r_a,
-                                              const NMPlatformIP4Route *r_b);
-gboolean nm_ip_config_obj_id_equal_ip6_route (const NMPlatformIP6Route *r_a,
-                                              const NMPlatformIP6Route *r_b);
-
 gboolean _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
                                 NMIPConfigDedupMultiIdxType *idx_type,
                                 int ifindex,

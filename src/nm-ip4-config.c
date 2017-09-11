@@ -55,67 +55,11 @@ _route_valid (const NMPlatformIP4Route *r)
 
 /*****************************************************************************/
 
-gboolean
-nm_ip_config_obj_id_equal_ip4_address (const NMPlatformIP4Address *a,
-                                       const NMPlatformIP4Address *b)
-{
-	return    a->address == b->address
-	       && a->plen == b->plen
-	       && ((a->peer_address ^ b->peer_address) & _nm_utils_ip4_prefix_to_netmask (a->plen)) == 0;
-}
-
-gboolean
-nm_ip_config_obj_id_equal_ip6_address (const NMPlatformIP6Address *a,
-                                       const NMPlatformIP6Address *b)
-{
-	return IN6_ARE_ADDR_EQUAL (&a->address, &b->address);
-}
-
-gboolean
-nm_ip_config_obj_id_equal_ip4_route (const NMPlatformIP4Route *r_a,
-                                     const NMPlatformIP4Route *r_b)
-{
-	return nm_platform_ip4_route_cmp (r_a, r_b, NM_PLATFORM_IP_ROUTE_CMP_TYPE_DST) == 0;
-}
-
-gboolean
-nm_ip_config_obj_id_equal_ip6_route (const NMPlatformIP6Route *r_a,
-                                     const NMPlatformIP6Route *r_b)
-{
-	return nm_platform_ip6_route_cmp (r_a, r_b, NM_PLATFORM_IP_ROUTE_CMP_TYPE_DST) == 0;
-}
-
 static guint
 _idx_obj_id_hash (const NMDedupMultiIdxType *idx_type,
                   const NMDedupMultiObj *obj)
 {
-	const NMPObject *o = (NMPObject *) obj;
-	guint h;
-
-	switch (NMP_OBJECT_GET_TYPE (o)) {
-	case NMP_OBJECT_TYPE_IP4_ADDRESS:
-		h = 1550630563;
-		h = NM_HASH_COMBINE (h, o->ip4_address.address);
-		h = NM_HASH_COMBINE (h, o->ip_address.plen);
-		h = NM_HASH_COMBINE (h, nm_utils_ip4_address_clear_host_address (o->ip4_address.peer_address, o->ip_address.plen));
-		break;
-	case NMP_OBJECT_TYPE_IP6_ADDRESS:
-		h = 851146661;
-		h = NM_HASH_COMBINE_IN6ADDR (h, &o->ip6_address.address);
-		break;
-	case NMP_OBJECT_TYPE_IP4_ROUTE:
-		h = 40303327;
-		h = NM_HASH_COMBINE (h, nm_platform_ip4_route_hash (NMP_OBJECT_CAST_IP4_ROUTE (o), NM_PLATFORM_IP_ROUTE_CMP_TYPE_DST));
-		break;
-	case NMP_OBJECT_TYPE_IP6_ROUTE:
-		h = 577629323;
-		h = NM_HASH_COMBINE (h, nm_platform_ip6_route_hash (NMP_OBJECT_CAST_IP6_ROUTE (o), NM_PLATFORM_IP_ROUTE_CMP_TYPE_DST));
-		break;
-	default:
-		g_return_val_if_reached (0);
-	};
-
-	return h;
+	return nmp_object_id_hash ((NMPObject *) obj);
 }
 
 static gboolean
@@ -123,36 +67,20 @@ _idx_obj_id_equal (const NMDedupMultiIdxType *idx_type,
                    const NMDedupMultiObj *obj_a,
                    const NMDedupMultiObj *obj_b)
 {
-	const NMPObject *o_a = (NMPObject *) obj_a;
-	const NMPObject *o_b = (NMPObject *) obj_b;
-
-	nm_assert (NMP_OBJECT_GET_TYPE (o_a) == NMP_OBJECT_GET_TYPE (o_b));
-
-	switch (NMP_OBJECT_GET_TYPE (o_a)) {
-	case NMP_OBJECT_TYPE_IP4_ADDRESS:
-		return nm_ip_config_obj_id_equal_ip4_address (NMP_OBJECT_CAST_IP4_ADDRESS (o_a), NMP_OBJECT_CAST_IP4_ADDRESS (o_b));
-	case NMP_OBJECT_TYPE_IP6_ADDRESS:
-		return nm_ip_config_obj_id_equal_ip6_address (NMP_OBJECT_CAST_IP6_ADDRESS (o_a), NMP_OBJECT_CAST_IP6_ADDRESS (o_b));
-	case NMP_OBJECT_TYPE_IP4_ROUTE:
-		return nm_ip_config_obj_id_equal_ip4_route (&o_a->ip4_route, &o_b->ip4_route);
-	case NMP_OBJECT_TYPE_IP6_ROUTE:
-		return nm_ip_config_obj_id_equal_ip6_route (&o_a->ip6_route, &o_b->ip6_route);
-	default:
-		g_return_val_if_reached (FALSE);
-	};
+	return nmp_object_id_equal ((NMPObject *) obj_a, (NMPObject *) obj_b);
 }
-
-static const NMDedupMultiIdxTypeClass _dedup_multi_idx_type_class = {
-	.idx_obj_id_hash = _idx_obj_id_hash,
-	.idx_obj_id_equal = _idx_obj_id_equal,
-};
 
 void
 nm_ip_config_dedup_multi_idx_type_init (NMIPConfigDedupMultiIdxType *idx_type,
                                         NMPObjectType obj_type)
 {
+	static const NMDedupMultiIdxTypeClass idx_type_class = {
+		.idx_obj_id_hash = _idx_obj_id_hash,
+		.idx_obj_id_equal = _idx_obj_id_equal,
+	};
+
 	nm_dedup_multi_idx_type_init ((NMDedupMultiIdxType *) idx_type,
-	                              &_dedup_multi_idx_type_class);
+	                              &idx_type_class);
 	idx_type->obj_type = obj_type;
 }
 
@@ -325,7 +253,7 @@ _nm_ip_config_lookup_ip_route (const NMDedupMultiIndex *multi_idx,
 	if (!entry)
 		return NULL;
 
-	if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_DST)
+	if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID)
 		nm_assert (nm_platform_ip4_route_cmp (NMP_OBJECT_CAST_IP4_ROUTE (entry->obj), NMP_OBJECT_CAST_IP4_ROUTE (needle), cmp_type) == 0);
 	else {
 		if (nm_platform_ip4_route_cmp (NMP_OBJECT_CAST_IP4_ROUTE (entry->obj),
@@ -1679,7 +1607,8 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 
 		if (nm_platform_ip4_address_cmp (r_src, r_dst) != 0) {
 			are_equal = FALSE;
-			if (   !nm_ip_config_obj_id_equal_ip4_address (r_src, r_dst)
+			if (   r_src->address != r_dst->address
+			    || r_src->plen != r_dst->plen
 			    || r_src->peer_address != r_dst->peer_address) {
 				has_relevant_changes = TRUE;
 				break;
@@ -1725,7 +1654,8 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 
 		if (nm_platform_ip4_route_cmp_full (r_src, r_dst) != 0) {
 			are_equal = FALSE;
-			if (   !nm_ip_config_obj_id_equal_ip4_route (r_src, r_dst)
+			if (   r_src->plen != r_dst->plen
+			    || !nm_utils_ip4_address_same_prefix (r_src->network, r_dst->network, r_src->plen)
 			    || r_src->gateway != r_dst->gateway
 			    || r_src->metric != r_dst->metric) {
 				has_relevant_changes = TRUE;

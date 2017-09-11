@@ -1277,7 +1277,7 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 
 		if (nm_platform_ip6_address_cmp (r_src, r_dst) != 0) {
 			are_equal = FALSE;
-			if (   !nm_ip_config_obj_id_equal_ip6_address (r_src, r_dst)
+			if (   !IN6_ARE_ADDR_EQUAL (&r_src->address, &r_dst->address)
 			    || r_src->plen != r_dst->plen
 			    || !IN6_ARE_ADDR_EQUAL (nm_platform_ip6_address_get_peer (r_src),
 			                            nm_platform_ip6_address_get_peer (r_dst))) {
@@ -1325,7 +1325,8 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 
 		if (nm_platform_ip6_route_cmp_full (r_src, r_dst) != 0) {
 			are_equal = FALSE;
-			if (   !nm_ip_config_obj_id_equal_ip6_route (r_src, r_dst)
+			if (   r_src->plen != r_dst->plen
+			    || !nm_utils_ip6_address_same_prefix (&r_src->network, &r_dst->network, r_src->plen)
 			    || r_src->metric != r_dst->metric
 			    || !IN6_ARE_ADDR_EQUAL (&r_src->gateway, &r_dst->gateway)) {
 				has_relevant_changes = TRUE;

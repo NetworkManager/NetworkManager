@@ -251,19 +251,19 @@ test_add_route_with_source (void)
 	g_assert_cmpint (nm_ip4_config_get_num_routes (a), ==, 0);
 
 	/* Test that a lower priority address source is overwritten */
+	route.rt_source = NM_IP_CONFIG_SOURCE_RTPROT_KERNEL;
+	nm_ip4_config_add_route (a, &route, NULL);
+
+	g_assert_cmpint (nm_ip4_config_get_num_routes (a), ==, 1);
+	test_route = _nmtst_ip4_config_get_route (a, 0);
+	g_assert_cmpint (test_route->rt_source, ==, NM_IP_CONFIG_SOURCE_RTPROT_KERNEL);
+
 	route.rt_source = NM_IP_CONFIG_SOURCE_KERNEL;
 	nm_ip4_config_add_route (a, &route, NULL);
 
 	g_assert_cmpint (nm_ip4_config_get_num_routes (a), ==, 1);
 	test_route = _nmtst_ip4_config_get_route (a, 0);
 	g_assert_cmpint (test_route->rt_source, ==, NM_IP_CONFIG_SOURCE_KERNEL);
-
-	route.rt_source = NM_IP_CONFIG_SOURCE_USER;
-	nm_ip4_config_add_route (a, &route, NULL);
-
-	g_assert_cmpint (nm_ip4_config_get_num_routes (a), ==, 1);
-	test_route = _nmtst_ip4_config_get_route (a, 0);
-	g_assert_cmpint (test_route->rt_source, ==, NM_IP_CONFIG_SOURCE_USER);
 }
 
 static void

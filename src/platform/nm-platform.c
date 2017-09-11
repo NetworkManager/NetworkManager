@@ -5402,10 +5402,6 @@ nm_platform_ip4_route_hash (const NMPlatformIP4Route *obj, NMPlatformIPRouteCmpT
 
 	if (obj) {
 		switch (cmp_type) {
-		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_DST:
-			h = NM_HASH_COMBINE (h, nm_utils_ip4_address_clear_host_address (obj->network, obj->plen));
-			h = NM_HASH_COMBINE (h, obj->plen);
-			break;
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
 			h = NM_HASH_COMBINE (h, obj->table_coerced);
@@ -5475,10 +5471,6 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 {
 	NM_CMP_SELF (a, b);
 	switch (cmp_type) {
-	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_DST:
-		NM_CMP_DIRECT_IN4ADDR_SAME_PREFIX (a->network, b->network, MIN (a->plen, b->plen));
-		NM_CMP_FIELD (a, b, plen);
-		break;
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
 		NM_CMP_FIELD (a, b, table_coerced);
@@ -5553,10 +5545,6 @@ nm_platform_ip6_route_hash (const NMPlatformIP6Route *obj, NMPlatformIPRouteCmpT
 
 	if (obj) {
 		switch (cmp_type) {
-		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_DST:
-			h = NM_HASH_COMBINE_IN6ADDR_PREFIX (h, &obj->network, obj->plen);
-			h = NM_HASH_COMBINE (h, obj->plen);
-			break;
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
 			h = NM_HASH_COMBINE (h, obj->table_coerced);
@@ -5617,10 +5605,6 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 {
 	NM_CMP_SELF (a, b);
 	switch (cmp_type) {
-	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_DST:
-		NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX (&a->network, &b->network, MIN (a->plen, b->plen));
-		NM_CMP_FIELD (a, b, plen);
-		break;
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
 		NM_CMP_FIELD (a, b, table_coerced);
