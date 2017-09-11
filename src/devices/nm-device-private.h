@@ -85,7 +85,6 @@ gboolean nm_device_activate_ip6_state_in_conf (NMDevice *device);
 gboolean nm_device_activate_ip6_state_in_wait (NMDevice *device);
 gboolean nm_device_activate_ip6_state_done (NMDevice *device);
 
-void nm_device_set_dhcp_timeout (NMDevice *device, guint32 timeout);
 void nm_device_set_dhcp_anycast_address (NMDevice *device, const char *addr);
 
 gboolean nm_device_dhcp4_renew (NMDevice *device, gboolean release);

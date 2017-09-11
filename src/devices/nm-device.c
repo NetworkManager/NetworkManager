@@ -338,7 +338,6 @@ typedef struct _NMDevicePrivate {
 	NMDeviceSysIfaceState sys_iface_state:2;
 
 	/* Generic DHCP stuff */
-	guint32         dhcp_timeout;
 	char *          dhcp_anycast_address;
 
 	char *          current_stable_id;
@@ -533,7 +532,7 @@ static gboolean queued_ip4_config_change (gpointer user_data);
 static gboolean queued_ip6_config_change (gpointer user_data);
 static void ip_check_ping_watch_cb (GPid pid, gint status, gpointer user_data);
 static gboolean ip_config_valid (NMDeviceState state);
-static NMActStageReturn dhcp4_start (NMDevice *self, NMConnection *connection);
+static NMActStageReturn dhcp4_start (NMDevice *self);
 static gboolean dhcp6_start (NMDevice *self, gboolean wait_for_ll);
 static void nm_device_start_ip_check (NMDevice *self);
 static void realize_start_setup (NMDevice *self,
@@ -5733,15 +5732,13 @@ dhcp4_restart_cb (gpointer user_data)
 {
 	NMDevice *self = user_data;
 	NMDevicePrivate *priv;
-	NMConnection *connection;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	priv->dhcp4.restart_id = 0;
-	connection = nm_device_get_applied_connection (self);
 
-	if (dhcp4_start (self, connection) == NM_ACT_STAGE_RETURN_FAILURE)
+	if (dhcp4_start (self) == NM_ACT_STAGE_RETURN_FAILURE)
 		dhcp_schedule_restart (self, AF_INET, NULL);
 
 	return FALSE;
@@ -5868,36 +5865,60 @@ dhcp4_state_changed (NMDhcpClient *client,
 }
 
 static int
-dhcp4_get_timeout (NMDevice *self, NMSettingIP4Config *s_ip4)
+get_dhcp_timeout (NMDevice *self, int addr_family)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	gs_free char *value = NULL;
-	int timeout;
+	NMDeviceClass *klass;
+	NMConnection *connection;
+	NMSettingIPConfig *s_ip;
+	guint32 timeout;
 
-	timeout = nm_setting_ip_config_get_dhcp_timeout (NM_SETTING_IP_CONFIG (s_ip4));
+	nm_assert (NM_IS_DEVICE (self));
+	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
+
+	connection = nm_device_get_applied_connection (self);
+
+	if (addr_family == AF_INET)
+		s_ip = nm_connection_get_setting_ip4_config (connection);
+	else
+		s_ip = nm_connection_get_setting_ip6_config (connection);
+
+	timeout = nm_setting_ip_config_get_dhcp_timeout (s_ip);
 	if (timeout)
 		return timeout;
 
-	value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-	                                               "ipv4.dhcp-timeout",
-	                                               self);
-	timeout = _nm_utils_ascii_str_to_int64 (value, 10,
-	                                        0, G_MAXINT32, 0);
-	if (timeout)
-		return timeout;
+	{
+		gs_free char *value = NULL;
 
-	return priv->dhcp_timeout;
+		value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+		                                               addr_family == AF_INET
+		                                                 ? "ipv4.dhcp-timeout"
+		                                                 : "ipv6.dhcp-timeout",
+		                                               self);
+		timeout = _nm_utils_ascii_str_to_int64 (value, 10,
+		                                        0, G_MAXINT32, 0);
+		if (timeout)
+			return timeout;
+	}
+
+	klass = NM_DEVICE_GET_CLASS (self);
+	if (klass->get_dhcp_timeout)
+		timeout = klass->get_dhcp_timeout (self, addr_family);
+
+	return timeout ?: NM_DHCP_TIMEOUT_DEFAULT;
 }
 
 static NMActStageReturn
-dhcp4_start (NMDevice *self,
-             NMConnection *connection)
+dhcp4_start (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMSettingIPConfig *s_ip4;
 	const guint8 *hw_addr;
 	size_t hw_addr_len = 0;
 	GByteArray *tmp = NULL;
+	NMConnection *connection;
+
+	connection = nm_device_get_applied_connection (self);
+	g_return_val_if_fail (connection, FALSE);
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 
@@ -5924,7 +5945,7 @@ dhcp4_start (NMDevice *self,
 	                                                nm_setting_ip_config_get_dhcp_hostname (s_ip4),
 	                                                nm_setting_ip4_config_get_dhcp_fqdn (NM_SETTING_IP4_CONFIG (s_ip4)),
 	                                                nm_setting_ip4_config_get_dhcp_client_id (NM_SETTING_IP4_CONFIG (s_ip4)),
-	                                                dhcp4_get_timeout (self, NM_SETTING_IP4_CONFIG (s_ip4)),
+	                                                get_dhcp_timeout (self, AF_INET),
 	                                                priv->dhcp_anycast_address,
 	                                                NULL);
 
@@ -5952,7 +5973,6 @@ gboolean
 nm_device_dhcp4_renew (NMDevice *self, gboolean release)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMConnection *connection;
 
 	g_return_val_if_fail (priv->dhcp4.client != NULL, FALSE);
 
@@ -5961,11 +5981,8 @@ nm_device_dhcp4_renew (NMDevice *self, gboolean release)
 	/* Terminate old DHCP instance and release the old lease */
 	dhcp4_cleanup (self, CLEANUP_TYPE_DECONFIGURE, release);
 
-	connection = nm_device_get_applied_connection (self);
-	g_return_val_if_fail (connection, FALSE);
-
 	/* Start DHCP again on the interface */
-	return dhcp4_start (self, connection) != NM_ACT_STAGE_RETURN_FAILURE;
+	return dhcp4_start (self) != NM_ACT_STAGE_RETURN_FAILURE;
 }
 
 /*****************************************************************************/
@@ -6173,7 +6190,7 @@ act_stage3_ip4_config_start (NMDevice *self,
 
 	/* Start IPv4 addressing based on the method requested */
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0) {
-		ret = dhcp4_start (self, connection);
+		ret = dhcp4_start (self);
 		if (ret == NM_ACT_STAGE_RETURN_FAILURE)
 			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_DHCP_START_FAILED);
 	} else if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL) == 0) {
@@ -6671,7 +6688,7 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	                                                nm_device_get_ip6_route_metric (self),
 	                                                nm_setting_ip_config_get_dhcp_send_hostname (s_ip6),
 	                                                nm_setting_ip_config_get_dhcp_hostname (s_ip6),
-	                                                priv->dhcp_timeout,
+	                                                get_dhcp_timeout (self, AF_INET6),
 	                                                priv->dhcp_anycast_address,
 	                                                (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_OTHERCONF) ? TRUE : FALSE,
 	                                                nm_setting_ip6_config_get_ip6_privacy (NM_SETTING_IP6_CONFIG (s_ip6)),
@@ -11361,14 +11378,6 @@ nm_device_set_unmanaged_by_quitting (NMDevice *self)
 /*****************************************************************************/
 
 void
-nm_device_set_dhcp_timeout (NMDevice *self, guint32 timeout)
-{
-	g_return_if_fail (NM_IS_DEVICE (self));
-
-	NM_DEVICE_GET_PRIVATE (self)->dhcp_timeout = timeout;
-}
-
-void
 nm_device_set_dhcp_anycast_address (NMDevice *self, const char *addr)
 {
 	NMDevicePrivate *priv;
@@ -13656,7 +13665,6 @@ nm_device_init (NMDevice *self)
 	priv->capabilities = NM_DEVICE_CAP_NM_SUPPORTED;
 	priv->state = NM_DEVICE_STATE_UNMANAGED;
 	priv->state_reason = NM_DEVICE_STATE_REASON_NONE;
-	priv->dhcp_timeout = 0;
 	priv->rfkill_type = RFKILL_TYPE_UNKNOWN;
 	priv->unmanaged_flags = NM_UNMANAGED_PLATFORM_INIT;
 	priv->unmanaged_mask = priv->unmanaged_flags;

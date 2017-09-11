@@ -406,6 +406,9 @@ typedef struct {
 	void            (* reapply_connection) (NMDevice *self,
 	                                        NMConnection *con_old,
 	                                        NMConnection *con_new);
+
+	guint32         (* get_dhcp_timeout) (NMDevice *self,
+	                                      int addr_family);
 } NMDeviceClass;
 
 typedef void (*NMDeviceAuthRequestFunc) (NMDevice *device,

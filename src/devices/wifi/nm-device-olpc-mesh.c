@@ -425,6 +425,13 @@ state_changed (NMDevice *device,
 		find_companion (NM_DEVICE_OLPC_MESH (device));
 }
 
+static guint32
+get_dhcp_timeout (NMDevice *device, int addr_family)
+{
+	/* shorter timeout for mesh connectivity */
+	return 20;
+}
+
 /*****************************************************************************/
 
 static void
@@ -467,9 +474,6 @@ constructed (GObject *object)
 
 	g_signal_connect (priv->manager, "device-added", G_CALLBACK (device_added_cb), self);
 	g_signal_connect (priv->manager, "device-removed", G_CALLBACK (device_removed_cb), self);
-
-	/* shorter timeout for mesh connectivity */
-	nm_device_set_dhcp_timeout (NM_DEVICE (self), 20);
 }
 
 NMDevice *
@@ -519,6 +523,7 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->act_stage2_config = act_stage2_config;
 	parent_class->state_changed = state_changed;
+	parent_class->get_dhcp_timeout = get_dhcp_timeout;
 
 	obj_properties[PROP_COMPANION] =
 	     g_param_spec_string (NM_DEVICE_OLPC_MESH_COMPANION, "", "",

@@ -441,7 +441,7 @@ nm_dhcp_client_start_ip4 (NMDhcpClient *self,
 	g_return_val_if_fail (priv->ipv6 == FALSE, FALSE);
 	g_return_val_if_fail (priv->uuid != NULL, FALSE);
 
-	_LOGI ("activation: beginning transaction (timeout in %d seconds)", priv->timeout);
+	_LOGI ("activation: beginning transaction (timeout in %u seconds)", (guint) priv->timeout);
 
 	if (dhcp_client_id)
 		tmp = nm_dhcp_utils_client_id_string_to_bytes (dhcp_client_id);
@@ -556,8 +556,8 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 
 	priv->info_only = info_only;
 
-	_LOGI ("activation: beginning transaction (timeout in %d seconds)",
-	       priv->timeout);
+	_LOGI ("activation: beginning transaction (timeout in %u seconds)",
+	       (guint) priv->timeout);
 
 	return NM_DHCP_CLIENT_GET_CLASS (self)->ip6_start (self,
 	                                                   dhcp_anycast_addr,
@@ -894,6 +894,7 @@ set_property (GObject *object, guint prop_id,
 		priv->priority = g_value_get_uint (value);
 		break;
 	case PROP_TIMEOUT:
+		/* construct-only */
 		priv->timeout = g_value_get_uint (value);
 		break;
 	default:
@@ -1007,7 +1008,7 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 
 	obj_properties[PROP_TIMEOUT] =
 	    g_param_spec_uint (NM_DHCP_CLIENT_TIMEOUT, "", "",
-	                       0, G_MAXUINT, 45,
+	                       1, G_MAXINT32, NM_DHCP_TIMEOUT_DEFAULT,
 	                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 	                       G_PARAM_STATIC_STRINGS);
 

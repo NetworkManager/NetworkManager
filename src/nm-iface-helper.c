@@ -446,7 +446,7 @@ main (int argc, char *argv[])
 		                                          global_opt.dhcp4_hostname,
 		                                          global_opt.dhcp4_fqdn,
 		                                          global_opt.dhcp4_clientid,
-		                                          45,
+		                                          NM_DHCP_TIMEOUT_DEFAULT,
 		                                          NULL,
 		                                          global_opt.dhcp4_address);
 		g_assert (dhcp4_client);

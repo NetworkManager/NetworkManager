@@ -664,6 +664,16 @@ set_modem (NMDeviceModem *self, NMModem *modem)
 	g_signal_connect (modem, "notify::" NM_MODEM_SIM_OPERATOR_ID, G_CALLBACK (ids_changed_cb), self);
 }
 
+static guint32
+get_dhcp_timeout (NMDevice *device, int addr_family)
+{
+	/* DHCP is always done by the modem firmware, not by the network, and
+	 * by the time we get around to DHCP the firmware should already know
+	 * the IP addressing details.  So the DHCP timeout can be much shorter.
+	 */
+	return 15;
+}
+
 /*****************************************************************************/
 
 static void
@@ -716,18 +726,6 @@ set_property (GObject *object, guint prop_id,
 static void
 nm_device_modem_init (NMDeviceModem *self)
 {
-}
-
-static void
-constructed (GObject *object)
-{
-	G_OBJECT_CLASS (nm_device_modem_parent_class)->constructed (object);
-
-	/* DHCP is always done by the modem firmware, not by the network, and
-	 * by the time we get around to DHCP the firmware should already know
-	 * the IP addressing details.  So the DHCP timeout can be much shorter.
-	 */
-	nm_device_set_dhcp_timeout (NM_DEVICE (object), 15);
 }
 
 NMDevice *
@@ -786,7 +784,6 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
-	object_class->constructed = constructed;
 
 	device_class->get_generic_capabilities = get_generic_capabilities;
 	device_class->get_type_description = get_type_description;
@@ -807,6 +804,7 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	device_class->is_available = is_available;
 	device_class->get_ip_iface_identifier = get_ip_iface_identifier;
 	device_class->get_configured_mtu = nm_modem_get_configured_mtu;
+	device_class->get_dhcp_timeout = get_dhcp_timeout;
 
 	device_class->state_changed = device_state_changed;
 

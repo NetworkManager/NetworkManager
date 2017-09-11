@@ -39,8 +39,6 @@
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"
 
-#define DHCP_TIMEOUT 45 /* default DHCP timeout, in seconds */
-
 /*****************************************************************************/
 
 typedef struct {
@@ -205,7 +203,7 @@ client_start (NMDhcpManager *self,
 	                       NM_DHCP_CLIENT_IPV6, ipv6,
 	                       NM_DHCP_CLIENT_UUID, uuid,
 	                       NM_DHCP_CLIENT_PRIORITY, priority,
-	                       NM_DHCP_CLIENT_TIMEOUT, timeout ? timeout : DHCP_TIMEOUT,
+	                       NM_DHCP_CLIENT_TIMEOUT, (guint) timeout,
 	                       NULL);
 	g_hash_table_insert (NM_DHCP_MANAGER_GET_PRIVATE (self)->clients, client, g_object_ref (client));
 	g_signal_connect (client, NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED, G_CALLBACK (client_state_changed), self);
