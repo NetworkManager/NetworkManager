@@ -143,17 +143,6 @@ _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
 			switch (idx_type->obj_type) {
 			case NMP_OBJECT_TYPE_IP4_ADDRESS:
 			case NMP_OBJECT_TYPE_IP6_ADDRESS:
-				/* we want to keep the maximum addr_source. But since we expect
-				 * that usually we already add the maxiumum right away, we first try to
-				 * add the new address (replacing the old one). Only if we later
-				 * find out that addr_source is now lower, we fix it.
-				 */
-				if (obj_new->ip_address.addr_source < obj_old->ip_address.addr_source) {
-					obj_new = nmp_object_stackinit_obj (&obj_new_stackinit, obj_new);
-					obj_new_stackinit.ip_address.addr_source = obj_old->ip_address.addr_source;
-					modified = TRUE;
-				}
-
 				/* for addresses that we read from the kernel, we keep the timestamps as defined
 				 * by the previous source (item_old). The reason is, that the other source configured the lifetimes
 				 * with "what should be" and the kernel values are "what turned out after configuring it".
@@ -168,14 +157,17 @@ _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
 					obj_new_stackinit.ip_address.preferred = NMP_OBJECT_CAST_IP_ADDRESS (obj_old)->preferred;
 					modified = TRUE;
 				}
+
+				/* keep the maximum addr_source. */
+				if (obj_new->ip_address.addr_source < obj_old->ip_address.addr_source) {
+					obj_new = nmp_object_stackinit_obj (&obj_new_stackinit, obj_new);
+					obj_new_stackinit.ip_address.addr_source = obj_old->ip_address.addr_source;
+					modified = TRUE;
+				}
 				break;
 			case NMP_OBJECT_TYPE_IP4_ROUTE:
 			case NMP_OBJECT_TYPE_IP6_ROUTE:
-				/* we want to keep the maximum rt_source. But since we expect
-				 * that usually we already add the maxiumum right away, we first try to
-				 * add the new route (replacing the old one). Only if we later
-				 * find out that rt_source is now lower, we fix it.
-				 */
+				/* keep the maximum rt_source. */
 				if (obj_new->ip_route.rt_source < obj_old->ip_route.rt_source) {
 					obj_new = nmp_object_stackinit_obj (&obj_new_stackinit, obj_new);
 					obj_new_stackinit.ip_route.rt_source = obj_old->ip_route.rt_source;
