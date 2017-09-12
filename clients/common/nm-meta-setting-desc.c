@@ -3130,28 +3130,6 @@ _get_fcn_ip_config_routes (ARGS_GET_FCN)
 	RETURN_STR_TO_FREE (g_string_free (printable, FALSE));
 }
 
-static gconstpointer
-_get_fcn_ip4_config_dad_timeout (ARGS_GET_FCN)
-{
-	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
-	gint dad_timeout;
-
-	RETURN_UNSUPPORTED_GET_TYPE ();
-
-	dad_timeout = nm_setting_ip_config_get_dad_timeout (s_ip);
-	if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY)
-		RETURN_STR_TO_FREE (g_strdup_printf ("%d", dad_timeout));
-
-	switch (dad_timeout) {
-	case -1:
-		RETURN_STR_TO_FREE (g_strdup_printf (_("%d (default)"), dad_timeout));
-	case 0:
-		RETURN_STR_TO_FREE (g_strdup_printf (_("%d (off)"), dad_timeout));
-	default:
-		RETURN_STR_TO_FREE (g_strdup_printf ("%d", dad_timeout));
-	}
-}
-
 static const char *ipv4_valid_methods[] = {
 	NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 	NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
@@ -5452,9 +5430,18 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 		.property_type =                &_pt_gobject_bool,
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DAD_TIMEOUT, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DAD_TIMEOUT,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_ip4_config_dad_timeout,
-			.set_fcn =                  _set_fcn_gobject_int,
+		.property_type =                &_pt_gobject_int,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
+			.value_infos =              INT_VALUE_INFOS (
+				{
+					.value = -1,
+					.nick = "default",
+				},
+				{
+					.value = 0,
+					.nick = "off",
+				}
+			),
 		),
 	),
 	NULL
