@@ -957,10 +957,10 @@ struct _NMPLookup;
 const struct _NMDedupMultiHeadEntry *nm_platform_lookup (NMPlatform *platform,
                                                          const struct _NMPLookup *lookup);
 
+gboolean nm_platform_lookup_predicate_routes_main (const NMPObject *obj,
+                                                   gpointer user_data);
 gboolean nm_platform_lookup_predicate_routes_main_skip_rtprot_kernel (const NMPObject *obj,
                                                                       gpointer user_data);
-gboolean nm_platform_lookup_predicate_routes_skip_rtprot_kernel (const NMPObject *obj,
-                                                                 gpointer user_data);
 
 GPtrArray *nm_platform_lookup_clone (NMPlatform *platform,
                                      const struct _NMPLookup *lookup,

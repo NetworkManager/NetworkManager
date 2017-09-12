@@ -501,8 +501,6 @@ nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 
 		if (route->table_coerced)
 			continue;
-		if (route->rt_source == NM_IP_CONFIG_SOURCE_RTPROT_KERNEL)
-			continue;
 		_add_route (self, plobj, NULL, NULL);
 	}
 
@@ -553,7 +551,7 @@ nm_ip6_config_commit (const NMIP6Config *self,
 	                                AF_INET6,
 	                                ifindex,
 	                                routes,
-	                                nm_platform_lookup_predicate_routes_main_skip_rtprot_kernel,
+	                                nm_platform_lookup_predicate_routes_main,
 	                                NULL))
 		success = FALSE;
 

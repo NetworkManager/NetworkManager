@@ -2899,6 +2899,15 @@ nm_platform_lookup (NMPlatform *self,
 }
 
 gboolean
+nm_platform_lookup_predicate_routes_main (const NMPObject *obj,
+                                          gpointer user_data)
+{
+	nm_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ROUTE,
+	                                                 NMP_OBJECT_TYPE_IP6_ROUTE));
+	return !obj->ip_route.table_coerced;
+}
+
+gboolean
 nm_platform_lookup_predicate_routes_main_skip_rtprot_kernel (const NMPObject *obj,
                                                              gpointer user_data)
 {
@@ -2906,15 +2915,6 @@ nm_platform_lookup_predicate_routes_main_skip_rtprot_kernel (const NMPObject *ob
 	                                                 NMP_OBJECT_TYPE_IP6_ROUTE));
 	return    !obj->ip_route.table_coerced
 	       && obj->ip_route.rt_source != NM_IP_CONFIG_SOURCE_RTPROT_KERNEL;
-}
-
-gboolean
-nm_platform_lookup_predicate_routes_skip_rtprot_kernel (const NMPObject *obj,
-                                                        gpointer user_data)
-{
-	nm_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ROUTE,
-	                                                 NMP_OBJECT_TYPE_IP6_ROUTE));
-	return obj->ip_route.rt_source != NM_IP_CONFIG_SOURCE_RTPROT_KERNEL;
 }
 
 /**
