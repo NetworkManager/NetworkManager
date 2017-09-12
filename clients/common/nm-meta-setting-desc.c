@@ -2278,35 +2278,6 @@ _values_fcn_bond_options (ARGS_VALUES_FCN)
 }
 
 static gconstpointer
-_get_fcn_connection_autoconnect_retries (ARGS_GET_FCN)
-{
-	NMSettingConnection *s_con = NM_SETTING_CONNECTION (setting);
-	gint retries;
-	char *s;
-
-	RETURN_UNSUPPORTED_GET_TYPE ();
-
-	retries = nm_setting_connection_get_autoconnect_retries (s_con);
-	if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY)
-		s = g_strdup_printf ("%d", retries);
-	else {
-		switch (retries) {
-		case -1:
-			s = g_strdup_printf (_("%d (default)"), retries);
-			break;
-		case 0:
-			s = g_strdup_printf (_("%d (forever)"), retries);
-			break;
-		default:
-			s = g_strdup_printf ("%d", retries);
-			break;
-		}
-	}
-
-	RETURN_STR_TO_FREE (s);
-}
-
-static gconstpointer
 _get_fcn_connection_permissions (ARGS_GET_FCN)
 {
 	NMSettingConnection *s_con = NM_SETTING_CONNECTION (setting);
@@ -5012,9 +4983,18 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
 		.property_type =                &_pt_gobject_int,
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_connection_autoconnect_retries,
-			.set_fcn =                  _set_fcn_gobject_int,
+		.property_type =                &_pt_gobject_int,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
+			.value_infos =              INT_VALUE_INFOS (
+				{
+					.value = -1,
+					.nick = "default",
+				},
+				{
+					.value = 0,
+					.nick = "forever",
+				}
+			),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_TIMESTAMP,
