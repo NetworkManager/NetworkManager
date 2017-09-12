@@ -2310,7 +2310,7 @@ nm_ip4_config_get_num_routes (const NMIP4Config *self)
 	const NMDedupMultiHeadEntry *head_entry;
 
 	head_entry = nm_ip4_config_lookup_routes (self);
-	nm_assert ((head_entry ? head_entry->len : 0) == c_list_length (&head_entry->lst_entries_head));
+	nm_assert (!head_entry || head_entry->len == c_list_length (&head_entry->lst_entries_head));
 	return head_entry ? head_entry->len : 0;
 }
 
