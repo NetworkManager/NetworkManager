@@ -590,15 +590,12 @@ _get_fcn_gobject (ARGS_GET_FCN)
 }
 
 static gconstpointer
-_get_fcn_gobject_int_impl (const NMMetaPropertyInfo *property_info,
-                           NMSetting *setting,
-                           NMMetaAccessorGetType get_type,
-                           const NMMetaUtilsIntValueInfo *value_infos,
-                           gpointer *out_to_free)
+_get_fcn_gobject_int (ARGS_GET_FCN)
 {
 	const GParamSpec *pspec;
 	nm_auto_unset_gvalue GValue gval = G_VALUE_INIT;
 	gint64 v;
+	const NMMetaUtilsIntValueInfo *value_infos;
 
 	RETURN_UNSUPPORTED_GET_TYPE ();
 
@@ -624,7 +621,8 @@ _get_fcn_gobject_int_impl (const NMMetaPropertyInfo *property_info,
 	}
 
 	if (   get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY
-	    && value_infos) {
+	    && property_info->property_typ_data
+	    && (value_infos = property_info->property_typ_data->subtype.gobject_int.value_infos)) {
 		for (; value_infos->nick; value_infos++) {
 			if (value_infos->value == v) {
 				RETURN_STR_TO_FREE (g_strdup_printf ("%lli (%s)",
@@ -635,16 +633,6 @@ _get_fcn_gobject_int_impl (const NMMetaPropertyInfo *property_info,
 	}
 
 	RETURN_STR_TO_FREE (g_strdup_printf ("%"G_GINT64_FORMAT, v));
-}
-
-static gconstpointer
-_get_fcn_gobject_int (ARGS_GET_FCN)
-{
-	return _get_fcn_gobject_int_impl (property_info, setting, get_type,
-	                                  property_info->property_typ_data
-	                                      ? property_info->property_typ_data->subtype.gobject_int.value_infos
-	                                      : NULL,
-	                                  out_to_free);
 }
 
 static gconstpointer
@@ -851,10 +839,7 @@ _set_fcn_gobject_bool (ARGS_SET_FCN)
 }
 
 static gboolean
-_set_fcn_gobject_int_impl (const NMMetaPropertyInfo *property_info,
-                           NMSetting *setting,
-                           const char *value,
-                           GError **error)
+_set_fcn_gobject_int (ARGS_SET_FCN)
 {
 	int errsv;
 	const GParamSpec *pspec;
@@ -972,12 +957,6 @@ _set_fcn_gobject_int_impl (const NMMetaPropertyInfo *property_info,
 		g_return_val_if_reached (FALSE);
 
 	return TRUE;
-}
-
-static gboolean
-_set_fcn_gobject_int (ARGS_SET_FCN)
-{
-	return _set_fcn_gobject_int_impl (property_info, setting, value, error);
 }
 
 static gboolean
