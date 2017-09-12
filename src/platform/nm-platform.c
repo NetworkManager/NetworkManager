@@ -3547,6 +3547,41 @@ nm_platform_ip_address_flush (NMPlatform *self,
 
 /*****************************************************************************/
 
+static gboolean
+_err_inval_due_to_ipv6_tentative_pref_src (NMPlatform *self, const NMPObject *obj)
+{
+	const NMPlatformIP6Route *r;
+	const NMPlatformIP6Address *a;
+
+	nm_assert (NM_IS_PLATFORM (self));
+	nm_assert (NMP_OBJECT_IS_VALID (obj));
+
+	/* trying to add an IPv6 route with pref-src fails, if the address is
+	 * still tentative (rh#1452684). We need to hack around that.
+	 *
+	 * Detect it, by guessing whether that's the case. */
+
+	if (NMP_OBJECT_GET_TYPE (obj) != NMP_OBJECT_TYPE_IP6_ROUTE)
+		return FALSE;
+
+	r = NMP_OBJECT_CAST_IP6_ROUTE (obj);
+
+	/* we only allow this workaround for routes added manually by the user. */
+	if (r->rt_source != NM_IP_CONFIG_SOURCE_USER)
+		return FALSE;
+
+	if (IN6_IS_ADDR_UNSPECIFIED (&r->pref_src))
+		return FALSE;
+
+	a = nm_platform_ip6_address_get (self, r->ifindex, r->pref_src);
+	if (!a)
+		return FALSE;
+	if (!NM_FLAGS_HAS (a->n_ifa_flags, IFA_F_TENTATIVE))
+		return FALSE;
+
+	return TRUE;
+}
+
 /**
  * nm_platform_ip_route_sync:
  * @self: the #NMPlatform instance.
@@ -3560,6 +3595,8 @@ nm_platform_ip_address_flush (NMPlatform *self,
  *   routes. For example by passing @nm_platform_lookup_predicate_routes_main_skip_rtprot_kernel,
  *   routes with "proto kernel" will be left untouched.
  * @kernel_delete_userdata: user data for @kernel_delete_predicate.
+ * @out_temporary_not_available: (allow-none): (out): routes that could
+ *   currently not be synced. The caller shall keep them and try later again.
  *
  * Returns: %TRUE on success.
  */
@@ -3569,7 +3606,8 @@ nm_platform_ip_route_sync (NMPlatform *self,
                            int ifindex,
                            GPtrArray *routes,
                            NMPObjectPredicateFunc kernel_delete_predicate,
-                           gpointer kernel_delete_userdata)
+                           gpointer kernel_delete_userdata,
+                           GPtrArray **out_temporary_not_available)
 {
 	const NMPlatformVTableRoute *vt;
 	gs_unref_ptrarray GPtrArray *plat_routes = NULL;
@@ -3662,6 +3700,15 @@ nm_platform_ip_route_sync (NMPlatform *self,
 							       nmp_object_to_string (plat_entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf2, sizeof (sbuf2)));
 						}
 					}
+				} else if (   -((int) plerr) == EINVAL
+				           && out_temporary_not_available
+				           && _err_inval_due_to_ipv6_tentative_pref_src (self, conf_o)) {
+					_LOGD ("route-sync: ignore failure to add IPv6 route with tentative IPv6 pref-src: %s: %s",
+					       nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)),
+					       nm_platform_error_to_string (plerr, sbuf_err, sizeof (sbuf_err)));
+					if (!*out_temporary_not_available)
+						*out_temporary_not_available = g_ptr_array_new_full (0, (GDestroyNotify) nmp_object_unref);
+					g_ptr_array_add (*out_temporary_not_available, (gpointer) nmp_object_ref (conf_o));
 				} else if (NMP_OBJECT_CAST_IP_ROUTE (conf_o)->rt_source < NM_IP_CONFIG_SOURCE_USER) {
 					_LOGD ("route-sync: ignore failure to add IPv%c route: %s: %s",
 					       vt->is_ip4 ? '4' : '6',
@@ -3723,9 +3770,9 @@ nm_platform_ip_route_flush (NMPlatform *self,
 	                                   AF_INET6));
 
 	if (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET))
-		success &= nm_platform_ip_route_sync (self, AF_INET,  ifindex, NULL, NULL, NULL);
+		success &= nm_platform_ip_route_sync (self, AF_INET,  ifindex, NULL, NULL, NULL, NULL);
 	if (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET6))
-		success &= nm_platform_ip_route_sync (self, AF_INET6, ifindex, NULL, NULL, NULL);
+		success &= nm_platform_ip_route_sync (self, AF_INET6, ifindex, NULL, NULL, NULL, NULL);
 	return success;
 }
 

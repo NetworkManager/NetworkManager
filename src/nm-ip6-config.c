@@ -529,7 +529,8 @@ nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 
 gboolean
 nm_ip6_config_commit (const NMIP6Config *self,
-                      NMPlatform *platform)
+                      NMPlatform *platform,
+                      GPtrArray **out_temporary_not_available)
 {
 	gs_unref_ptrarray GPtrArray *addresses = NULL;
 	gs_unref_ptrarray GPtrArray *routes = NULL;
@@ -552,7 +553,8 @@ nm_ip6_config_commit (const NMIP6Config *self,
 	                                ifindex,
 	                                routes,
 	                                nm_platform_lookup_predicate_routes_main,
-	                                NULL))
+	                                NULL,
+	                                out_temporary_not_available))
 		success = FALSE;
 
 	return success;

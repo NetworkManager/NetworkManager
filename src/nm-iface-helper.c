@@ -226,7 +226,7 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 	}
 
 	nm_ip6_config_merge (existing, ndisc_config, NM_IP_CONFIG_MERGE_DEFAULT);
-	if (!nm_ip6_config_commit (existing, NM_PLATFORM_GET))
+	if (!nm_ip6_config_commit (existing, NM_PLATFORM_GET, NULL))
 		_LOGW (LOGD_IP6, "failed to apply IPv6 config");
 }
 
