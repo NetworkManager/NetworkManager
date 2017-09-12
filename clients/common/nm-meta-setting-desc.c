@@ -648,20 +648,6 @@ _get_fcn_gobject_int (ARGS_GET_FCN)
 }
 
 static gconstpointer
-_get_fcn_gobject_dcb_priority (ARGS_GET_FCN)
-{
-	static const NMMetaUtilsIntValueInfo value_infos[] = {
-		{
-			.value = -1,
-			.nick = "unset",
-		},
-		{ 0 },
-	};
-
-	return _get_fcn_gobject_int_impl (property_info, setting, get_type, value_infos, out_to_free);
-}
-
-static gconstpointer
 _get_fcn_gobject_mtu (ARGS_GET_FCN)
 {
 	guint32 mtu;
@@ -4408,11 +4394,6 @@ static const NMMetaPropertyType _pt_gobject_mtu = {
 	.set_fcn =                      _set_fcn_gobject_mtu,
 };
 
-static const NMMetaPropertyType _pt_gobject_dcb_priority = {
-	.get_fcn =                      _get_fcn_gobject_dcb_priority,
-	.set_fcn =                      _set_fcn_gobject_int,
-};
-
 static const NMMetaPropertyType _pt_gobject_mac = {
 	.get_fcn =                      _get_fcn_gobject,
 	.set_fcn =                      _set_fcn_gobject_mac,
@@ -4478,6 +4459,17 @@ static const NMMetaPropertyType _pt_gobject_devices = {
 	   "Examples: set team.config " \
 	   "{ \"device\": \"team0\", \"runner\": {\"name\": \"roundrobin\"}, \"ports\": {\"eth1\": {}, \"eth2\": {}} }\n" \
 	   "          set team.config /etc/my-team.conf\n")
+
+#define DEFINE_DCB_PROPRITY_PROPERTY_TYPE \
+		.property_type =                &_pt_gobject_int, \
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int, \
+			.value_infos =              INT_VALUE_INFOS ( \
+				{ \
+					.value = -1, \
+					.nick = "unset", \
+				} \
+			), \
+		),
 
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_802_1X
 static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
@@ -5104,7 +5096,7 @@ static const NMMetaPropertyInfo *const property_infos_DCB[] = {
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_APP_FCOE_PRIORITY,
-		.property_type =                &_pt_gobject_dcb_priority,
+		DEFINE_DCB_PROPRITY_PROPERTY_TYPE
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_APP_FCOE_MODE,
 		.property_type =                &_pt_gobject_string,
@@ -5120,7 +5112,7 @@ static const NMMetaPropertyInfo *const property_infos_DCB[] = {
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_APP_ISCSI_PRIORITY,
-		.property_type =                &_pt_gobject_dcb_priority,
+		DEFINE_DCB_PROPRITY_PROPERTY_TYPE
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_APP_FIP_FLAGS,
 		.property_type = DEFINE_PROPERTY_TYPE (
@@ -5129,7 +5121,7 @@ static const NMMetaPropertyInfo *const property_infos_DCB[] = {
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_APP_FIP_PRIORITY,
-		.property_type =                &_pt_gobject_dcb_priority,
+		DEFINE_DCB_PROPRITY_PROPERTY_TYPE
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS,
 		.property_type = DEFINE_PROPERTY_TYPE (
