@@ -944,21 +944,22 @@ _set_fcn_gobject_int_impl (const NMMetaPropertyInfo *property_info,
 		g_return_val_if_reached (FALSE);
 	}
 
-	if (!has_value)
+	if (!has_value) {
 		v = _nm_utils_ascii_str_to_int64 (value, base, min, max, 0);
 
-	if ((errsv = errno) != 0) {
-		if (errsv == ERANGE) {
-			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
-			             _("'%s' is out of range [%lli, %lli]"),
-			             value,
-			             (long long) min,
-			             (long long) max);
-		} else {
-			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
-			             _("'%s' is not a valid number"), value);
+		if ((errsv = errno) != 0) {
+			if (errsv == ERANGE) {
+				g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+				             _("'%s' is out of range [%lli, %lli]"),
+				             value,
+				             (long long) min,
+				             (long long) max);
+			} else {
+				g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+				             _("'%s' is not a valid number"), value);
+			}
+			return FALSE;
 		}
-		return FALSE;
 	}
 
 	g_value_init (&gval, pspec->value_type);
