@@ -107,6 +107,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 {
 	static NMIP4Config *last_config = NULL;
 	NMIP4Config *existing;
+	gs_unref_ptrarray GPtrArray *ip4_dev_route_blacklist = NULL;
 
 	g_return_if_fail (!ip4_config || NM_IS_IP4_CONFIG (ip4_config));
 
@@ -123,10 +124,16 @@ dhcp4_state_changed (NMDhcpClient *client,
 			nm_ip4_config_subtract (existing, last_config);
 
 		nm_ip4_config_merge (existing, ip4_config, NM_IP_CONFIG_MERGE_DEFAULT);
+		nm_ip4_config_add_device_routes (existing,
+		                                 global_opt.priority_v4,
+		                                 &ip4_dev_route_blacklist);
 		if (!nm_ip4_config_commit (existing,
-		                           NM_PLATFORM_GET,
-		                           global_opt.priority_v4))
+		                           NM_PLATFORM_GET))
 			_LOGW (LOGD_DHCP4, "failed to apply DHCPv4 config");
+
+		nm_platform_ip4_dev_route_blacklist_set (NM_PLATFORM_GET,
+		                                         gl.ifindex,
+		                                         ip4_dev_route_blacklist);
 
 		if (last_config)
 			g_object_unref (last_config);

@@ -724,22 +724,104 @@ nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 	return self;
 }
 
-gboolean
-nm_ip4_config_commit (const NMIP4Config *self,
-                      NMPlatform *platform,
-                      guint32 default_route_metric)
+void
+nm_ip4_config_add_device_routes (NMIP4Config *self,
+                                 guint32 default_route_metric,
+                                 GPtrArray **out_ip4_dev_route_blacklist)
 {
 	const NMIP4ConfigPrivate *priv;
+	GPtrArray *ip4_dev_route_blacklist = NULL;
+	const NMPlatformIP4Address *addr;
+	int ifindex;
+	NMDedupMultiIter iter;
+
+	g_return_if_fail (NM_IS_IP4_CONFIG (self));
+
+	priv = NM_IP4_CONFIG_GET_PRIVATE (self);
+
+	ifindex = nm_ip4_config_get_ifindex (self);
+	g_return_if_fail (ifindex > 0);
+
+	/* For IPv6, we explicitly add the device-routes (onlink) to NMIP6Config.
+	 * As we don't do that for IPv4, add it here shortly before syncing
+	 * the routes. */
+
+	nm_ip_config_iter_ip4_address_for_each (&iter, self, &addr) {
+		nm_auto_nmpobj NMPObject *r = NULL;
+		NMPlatformIP4Route *route;
+		in_addr_t network;
+
+		if (addr->plen == 0)
+			continue;
+
+		nm_assert (addr->plen <= 32);
+
+		/* The destination network depends on the peer-address. */
+		network = nm_utils_ip4_address_clear_host_address (addr->peer_address, addr->plen);
+
+		if (_ipv4_is_zeronet (network)) {
+			/* Kernel doesn't add device-routes for destinations that
+			 * start with 0.x.y.z. Skip them. */
+			continue;
+		}
+
+		r = nmp_object_new (NMP_OBJECT_TYPE_IP4_ROUTE, NULL);
+		route = NMP_OBJECT_CAST_IP4_ROUTE (r);
+
+		route->ifindex = ifindex;
+		route->rt_source = NM_IP_CONFIG_SOURCE_KERNEL;
+		route->network = network;
+		route->plen = addr->plen;
+		route->pref_src = addr->address;
+		route->metric = default_route_metric;
+		route->scope_inv = nm_platform_route_scope_inv (NM_RT_SCOPE_LINK);
+
+		nm_platform_ip_route_normalize (AF_INET, (NMPlatformIPRoute *) route);
+
+		if (_lookup_route (self,
+		                   r,
+		                   NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID)) {
+			/* we already track this route. Don't add it again. */
+		} else
+			_add_route (self, nmp_object_ref (r), NULL, NULL);
+
+		if (   out_ip4_dev_route_blacklist
+		    && default_route_metric != NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE) {
+			nm_auto_nmpobj NMPObject *r_dev = NULL;
+
+			r_dev = nmp_object_clone (r, FALSE);
+			route = NMP_OBJECT_CAST_IP4_ROUTE (r_dev);
+			route->metric = NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE;
+
+			nm_platform_ip_route_normalize (AF_INET, (NMPlatformIPRoute *) route);
+
+			if (_lookup_route (self,
+			                   r_dev,
+			                   NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID)) {
+				/* we track such a route explicitly. Don't blacklist it. */
+			} else {
+				if (!ip4_dev_route_blacklist)
+					ip4_dev_route_blacklist = g_ptr_array_new_with_free_func ((GDestroyNotify) nmp_object_unref);
+
+				g_ptr_array_add (ip4_dev_route_blacklist,
+				                 g_steal_pointer (&r_dev));
+			}
+		}
+	}
+
+	NM_SET_OUT (out_ip4_dev_route_blacklist, ip4_dev_route_blacklist);
+}
+
+gboolean
+nm_ip4_config_commit (const NMIP4Config *self,
+                      NMPlatform *platform)
+{
 	gs_unref_ptrarray GPtrArray *addresses = NULL;
 	gs_unref_ptrarray GPtrArray *routes = NULL;
-	gs_unref_ptrarray GPtrArray *ip4_dev_route_blacklist = NULL;
 	int ifindex;
-	guint i;
 	gboolean success = TRUE;
 
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (self), FALSE);
-
-	priv = NM_IP4_CONFIG_GET_PRIVATE (self);
 
 	ifindex = nm_ip4_config_get_ifindex (self);
 	g_return_val_if_fail (ifindex > 0, FALSE);
@@ -750,82 +832,6 @@ nm_ip4_config_commit (const NMIP4Config *self,
 	routes = nm_dedup_multi_objs_to_ptr_array_head (nm_ip4_config_lookup_routes (self),
 	                                                NULL, NULL);
 
-	if (addresses) {
-		/* For IPv6, we explicitly add the device-routes (onlink) to NMIP6Config.
-		 * As we don't do that for IPv4, add it here shortly before syncing
-		 * the routes. */
-		for (i = 0; i < addresses->len; i++) {
-			const NMPObject *o = addresses->pdata[i];
-			const NMPlatformIP4Address *addr;
-			nm_auto_nmpobj NMPObject *r = NULL;
-			NMPlatformIP4Route *route;
-			in_addr_t network;
-
-			if (!o)
-				continue;
-
-			addr = NMP_OBJECT_CAST_IP4_ADDRESS (o);
-			if (addr->plen == 0)
-				continue;
-
-			nm_assert (addr->plen <= 32);
-
-			/* The destination network depends on the peer-address. */
-			network = nm_utils_ip4_address_clear_host_address (addr->peer_address, addr->plen);
-
-			if (_ipv4_is_zeronet (network)) {
-				/* Kernel doesn't add device-routes for destinations that
-				 * start with 0.x.y.z. Skip them. */
-				continue;
-			}
-
-			r = nmp_object_new (NMP_OBJECT_TYPE_IP4_ROUTE, NULL);
-			route = NMP_OBJECT_CAST_IP4_ROUTE (r);
-
-			route->ifindex = ifindex;
-			route->rt_source = NM_IP_CONFIG_SOURCE_KERNEL;
-			route->network = network;
-			route->plen = addr->plen;
-			route->pref_src = addr->address;
-			route->metric = default_route_metric;
-			route->scope_inv = nm_platform_route_scope_inv (NM_RT_SCOPE_LINK);
-
-			nm_platform_ip_route_normalize (AF_INET, (NMPlatformIPRoute *) route);
-
-			if (_lookup_route (self,
-			                   r,
-			                   NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID)) {
-				/* we already track this route. Don't add it again. */
-			} else {
-				if (!routes)
-					routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nmp_object_unref);
-				g_ptr_array_add (routes, (gpointer) nmp_object_ref (r));
-			}
-
-			if (default_route_metric != NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE) {
-				nm_auto_nmpobj NMPObject *r_dev = NULL;
-
-				r_dev = nmp_object_clone (r, FALSE);
-				route = NMP_OBJECT_CAST_IP4_ROUTE (r_dev);
-				route->metric = NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE;
-
-				nm_platform_ip_route_normalize (AF_INET, (NMPlatformIPRoute *) route);
-
-				if (_lookup_route (self,
-				                   r_dev,
-				                   NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID)) {
-					/* we track such a route explicitly. Don't blacklist it. */
-				} else {
-					if (!ip4_dev_route_blacklist)
-						ip4_dev_route_blacklist = g_ptr_array_new_with_free_func ((GDestroyNotify) nmp_object_unref);
-
-					g_ptr_array_add (ip4_dev_route_blacklist,
-					                 g_steal_pointer (&r_dev));
-				}
-			}
-		}
-	}
-
 	nm_platform_ip4_address_sync (platform, ifindex, addresses);
 
 	if (!nm_platform_ip_route_sync (platform,
@@ -835,10 +841,6 @@ nm_ip4_config_commit (const NMIP4Config *self,
 	                                nm_platform_lookup_predicate_routes_main_skip_rtprot_kernel,
 	                                NULL))
 		success = FALSE;
-
-	nm_platform_ip4_dev_route_blacklist_set (platform,
-	                                         ifindex,
-	                                         ip4_dev_route_blacklist);
 
 	return success;
 }
