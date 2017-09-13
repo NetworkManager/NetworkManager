@@ -178,6 +178,7 @@ _nm_g_slice_free_fcn_define (1)
 _nm_g_slice_free_fcn_define (2)
 _nm_g_slice_free_fcn_define (4)
 _nm_g_slice_free_fcn_define (8)
+_nm_g_slice_free_fcn_define (12)
 _nm_g_slice_free_fcn_define (16)
 
 #define _nm_g_slice_free_fcn1(mem_size) \
@@ -192,6 +193,7 @@ _nm_g_slice_free_fcn_define (16)
 		case  2: _fcn = _nm_g_slice_free_fcn_2;  break; \
 		case  4: _fcn = _nm_g_slice_free_fcn_4;  break; \
 		case  8: _fcn = _nm_g_slice_free_fcn_8;  break; \
+		case 12: _fcn = _nm_g_slice_free_fcn_12;  break; \
 		case 16: _fcn = _nm_g_slice_free_fcn_16; break; \
 		default: g_assert_not_reached (); _fcn = NULL; break; \
 		} \

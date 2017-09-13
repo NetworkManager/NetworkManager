@@ -1159,7 +1159,8 @@ nm_vpn_connection_apply_config (NMVpnConnection *self)
 		if (priv->ip6_config) {
 			nm_assert (priv->ip_ifindex == nm_ip6_config_get_ifindex (priv->ip6_config));
 			if (!nm_ip6_config_commit (priv->ip6_config,
-			                           nm_netns_get_platform (priv->netns)))
+			                           nm_netns_get_platform (priv->netns),
+			                           NULL))
 				return FALSE;
 		}
 

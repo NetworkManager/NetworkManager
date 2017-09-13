@@ -400,6 +400,7 @@ typedef struct _NMDevicePrivate {
 	/* IPv4LL stuff */
 	sd_ipv4ll *    ipv4ll;
 	guint          ipv4ll_timeout;
+	guint          rt6_temporary_not_available_id;
 
 	/* IPv4 DAD stuff */
 	struct {
@@ -420,6 +421,8 @@ typedef struct _NMDevicePrivate {
 	GSList *       vpn6_configs;   /* VPNs which use this device */
 	bool           nm_ipv6ll; /* TRUE if NM handles the device's IPv6LL address */
 	NMIP6Config *  dad6_ip6_config;
+
+	GHashTable *   rt6_temporary_not_available;
 
 	NMNDisc *      ndisc;
 	gulong         ndisc_changed_id;
@@ -6350,6 +6353,18 @@ ip6_config_merge_and_apply (NMDevice *self,
 		                     | (ignore_auto_dns ? NM_IP_CONFIG_MERGE_NO_DNS : 0));
 	}
 
+	if (priv->rt6_temporary_not_available) {
+		const NMPObject *o;
+		GHashTableIter hiter;
+
+		g_hash_table_iter_init (&hiter, priv->rt6_temporary_not_available);
+		while (g_hash_table_iter_next (&hiter, (gpointer *) &o, NULL)) {
+			nm_ip6_config_add_route (composite,
+			                         NMP_OBJECT_CAST_IP6_ROUTE (o),
+			                         NULL);
+		}
+	}
+
 	/* Merge user overrides into the composite config. For assumed connections,
 	 * con_ip6_config is empty. */
 	if (priv->con_ip6_config)
@@ -7452,6 +7467,9 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 		priv->ac_ip6_config = NULL;
 	}
 
+	g_clear_pointer (&priv->rt6_temporary_not_available, g_hash_table_unref);
+	nm_clear_g_source (&priv->rt6_temporary_not_available_id);
+
 	s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting_ip6_config (connection));
 	g_assert (s_ip6);
 
@@ -7505,6 +7523,8 @@ addrconf6_cleanup (NMDevice *self)
 	nm_device_remove_pending_action (self, NM_PENDING_ACTION_AUTOCONF6, FALSE);
 
 	g_clear_object (&priv->ac_ip6_config);
+	g_clear_pointer (&priv->rt6_temporary_not_available, g_hash_table_unref);
+	nm_clear_g_source (&priv->rt6_temporary_not_available_id);
 	g_clear_object (&priv->ndisc);
 }
 
@@ -9396,6 +9416,97 @@ impl_device_get_applied_connection (NMDevice *self,
 
 /*****************************************************************************/
 
+typedef struct {
+	gint64 timestamp_ms;
+	bool dirty;
+} IP6RoutesTemporaryNotAvailableData;
+
+static gboolean
+_rt6_temporary_not_available_timeout (gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	priv->rt6_temporary_not_available_id = 0;
+	nm_device_activate_schedule_ip6_config_result (self);
+
+	return G_SOURCE_REMOVE;
+}
+
+static gboolean
+_rt6_temporary_not_available_set (NMDevice *self,
+                                  GPtrArray *temporary_not_available)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	IP6RoutesTemporaryNotAvailableData *data;
+	GHashTableIter iter;
+	gint64 now_ms, oldest_ms;
+	const gint64 MAX_AGE_MS = 20000;
+	guint i;
+	gboolean success = TRUE;
+
+	if (   !temporary_not_available
+	    || !temporary_not_available->len) {
+		/* nothing outstanding. Clear tracking the routes. */
+		g_clear_pointer (&priv->rt6_temporary_not_available, g_hash_table_unref);
+		nm_clear_g_source (&priv->rt6_temporary_not_available_id);
+		return success;
+	}
+
+	if (priv->rt6_temporary_not_available) {
+		g_hash_table_iter_init (&iter, priv->rt6_temporary_not_available);
+		while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &data))
+			data->dirty = TRUE;
+	} else {
+		priv->rt6_temporary_not_available = g_hash_table_new_full ((GHashFunc) nmp_object_id_hash,
+		                                                           (GEqualFunc) nmp_object_id_equal,
+		                                                           (GDestroyNotify) nmp_object_unref,
+		                                                           nm_g_slice_free_fcn (IP6RoutesTemporaryNotAvailableData));
+	}
+
+	now_ms = nm_utils_get_monotonic_timestamp_ms ();
+	oldest_ms = now_ms;
+
+	for (i = 0; i < temporary_not_available->len; i++) {
+		const NMPObject *o = temporary_not_available->pdata[i];
+
+		data = g_hash_table_lookup (priv->rt6_temporary_not_available, o);
+		if (data) {
+			if (!data->dirty)
+				continue;
+			data->dirty = FALSE;
+			nm_assert (data->timestamp_ms > 0 && data->timestamp_ms <= now_ms);
+			if (now_ms > data->timestamp_ms + MAX_AGE_MS) {
+				/* timeout. Could not add this address. */
+				_LOGW (LOGD_DEVICE, "failure to add IPv6 route: %s",
+				       nmp_object_to_string (o, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+				success = FALSE;
+			} else
+				oldest_ms = MIN (data->timestamp_ms, oldest_ms);
+			continue;
+		}
+
+		data = g_slice_new0 (IP6RoutesTemporaryNotAvailableData);
+		data->timestamp_ms = now_ms;
+		g_hash_table_insert (priv->rt6_temporary_not_available, (gpointer) nmp_object_ref (o), data);
+	}
+
+	g_hash_table_iter_init (&iter, priv->rt6_temporary_not_available);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &data)) {
+		if (data->dirty)
+			g_hash_table_iter_remove (&iter);
+	}
+
+	nm_clear_g_source (&priv->rt6_temporary_not_available_id);
+	priv->rt6_temporary_not_available_id = g_timeout_add (oldest_ms + MAX_AGE_MS - now_ms,
+	                                                      _rt6_temporary_not_available_timeout,
+	                                                      self);
+
+	return success;
+}
+
+/*****************************************************************************/
+
 static void
 disconnect_cb (NMDevice *self,
                GDBusMethodInvocation *context,
@@ -9941,9 +10052,16 @@ nm_device_set_ip6_config (NMDevice *self,
 
 	/* Always commit to nm-platform to update lifetimes */
 	if (commit && new_config) {
+		gs_unref_ptrarray GPtrArray *temporary_not_available = NULL;
+
 		_commit_mtu (self, priv->ip4_config);
+
 		success = nm_ip6_config_commit (new_config,
-		                                nm_device_get_platform (self));
+		                                nm_device_get_platform (self),
+		                                &temporary_not_available);
+
+		if (!_rt6_temporary_not_available_set (self, temporary_not_available))
+			success = FALSE;
 	}
 
 	if (new_config) {
@@ -10876,6 +10994,8 @@ queued_ip6_config_change (gpointer user_data)
 			g_clear_object (&priv->dad6_ip6_config);
 			_set_ip_state (self, AF_INET6, IP_DONE);
 			check_ip_state (self, FALSE);
+			if (priv->rt6_temporary_not_available)
+				nm_device_activate_schedule_ip6_config_result (self);
 		}
 	}
 
@@ -12015,6 +12135,9 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 	g_clear_object (&priv->wwan_ip6_config);
 	g_clear_object (&priv->ip6_config);
 	g_clear_object (&priv->dad6_ip6_config);
+
+	g_clear_pointer (&priv->rt6_temporary_not_available, g_hash_table_unref);
+	nm_clear_g_source (&priv->rt6_temporary_not_available_id);
 
 	g_slist_free_full (priv->vpn4_configs, g_object_unref);
 	priv->vpn4_configs = NULL;

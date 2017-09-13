@@ -108,7 +108,8 @@ struct _NMDedupMultiIndex *nm_ip6_config_get_multi_idx (const NMIP6Config *self)
 NMIP6Config *nm_ip6_config_capture (struct _NMDedupMultiIndex *multi_idx, NMPlatform *platform, int ifindex,
                                     gboolean capture_resolv_conf, NMSettingIP6ConfigPrivacy use_temporary);
 gboolean nm_ip6_config_commit (const NMIP6Config *self,
-                               NMPlatform *platform);
+                               NMPlatform *platform,
+                               GPtrArray **out_temporary_not_available);
 void nm_ip6_config_merge_setting (NMIP6Config *self, NMSettingIPConfig *setting, guint32 default_route_metric);
 NMSetting *nm_ip6_config_create_setting (const NMIP6Config *self);
 
