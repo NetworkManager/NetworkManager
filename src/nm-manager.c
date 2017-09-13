@@ -94,6 +94,8 @@ static void settings_startup_complete_changed (NMSettings *settings,
                                                GParamSpec *pspec,
                                                NMManager *self);
 
+static void retry_connections_for_parent_device (NMManager *self, NMDevice *device);
+
 static NM_CACHED_QUARK_FCN ("active-connection-add-and-activate", active_connection_add_and_activate_quark)
 
 typedef struct {
@@ -1385,6 +1387,8 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 			remove_device (self, device, FALSE, TRUE);
 			return NULL;
 		}
+
+		retry_connections_for_parent_device (self, device);
 		break;
 	}
 
@@ -2232,11 +2236,6 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 
 	_parent_notify_changed (self, device, FALSE);
 
-	/* Virtual connections may refer to the new device as
-	 * parent device, retry to activate them.
-	 */
-	retry_connections_for_parent_device (self, device);
-
 	return TRUE;
 }
 
@@ -2262,6 +2261,7 @@ factory_device_added_cb (NMDeviceFactory *factory,
 	                             &error)) {
 		add_device (self, device, NULL);
 		_device_realize_finish (self, device, NULL);
+		retry_connections_for_parent_device (self, device);
 	} else {
 		_LOG2W (LOGD_DEVICE, device, "failed to realize device: %s", error->message);
 		g_error_free (error);
@@ -2415,6 +2415,7 @@ platform_link_added (NMManager *self,
 		                             &error)) {
 			add_device (self, device, NULL);
 			_device_realize_finish (self, device, plink);
+			retry_connections_for_parent_device (self, device);
 		} else {
 			_LOGW (LOGD_DEVICE, "%s: failed to realize device: %s",
 			       plink->name, error->message);
