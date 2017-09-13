@@ -1684,7 +1684,7 @@
       <row>
         <entry align="left">type</entry>
         <entry align="left"><link linkend="nm-settings.property.connection.type">connection.type</link></entry>
-        <entry align="left" valign="top">This option also accepts values of <option>bond-slave</option>,
+        <entry align="left" valign="top">This alias also accepts values of <option>bond-slave</option>,
 <option>team-slave</option> and <option>bridge-slave</option>. They create
 <option>ethernet</option> connection profiles. Their use is discouraged in
 favor of using a specific type with <option>master</option> option.</entry>
@@ -1980,10 +1980,8 @@ It's equivalent to the <literal>+bond.options 'option=value'</literal> syntax.</
     <tbody>
       <row>
         <entry align="left">ip4</entry>
-        <entry align="left"><link linkend="nm-settings.property.ipv4.addresses">ipv4.addresses</link>
-                            <link linkend="nm-settings.property.ipv4.method">ipv4.method</link></entry>
-        <entry align="left" valign="top">This option can be specified multiple times.
-It's equivalent to using the <literal>+ipv4.addresses</literal> syntax and setting <literal>ipv4.method</literal> to <literal>manual</literal>.</entry>
+        <entry align="left"><link linkend="nm-settings.property.ipv4.addresses">ipv4.addresses</link> <link linkend="nm-settings.property.ipv4.method">ipv4.method</link></entry>
+        <entry align="left" valign="top">The alias is equivalent to the <literal>+ipv4.addresses</literal> syntax and also sets <literal>ipv4.method</literal> to <literal>manual</literal>. It can be specified multiple times.</entry>
       </row>
       <row><entry align="left">gw4</entry><entry align="left"><link linkend="nm-settings.property.ipv4.gateway">ipv4.gateway</link></entry><entry align="left" /></row>
     </tbody>
@@ -1996,10 +1994,8 @@ It's equivalent to using the <literal>+ipv4.addresses</literal> syntax and setti
     <tbody>
       <row>
         <entry align="left">ip6</entry>
-        <entry align="left"><link linkend="nm-settings.property.ipv6.addresses">ipv6.addresses</link>
-                            <link linkend="nm-settings.property.ipv6.method">ipv6.method</link></entry>
-        <entry align="left" valign="top">This option can be specified multiple times.
-It's equivalent to using the <literal>+ipv6.addresses</literal> syntax and setting <literal>ipv6.method</literal> to <literal>manual</literal>.</entry>
+        <entry align="left"><link linkend="nm-settings.property.ipv6.addresses">ipv6.addresses</link> <link linkend="nm-settings.property.ipv6.method">ipv6.method</link></entry>
+        <entry align="left" valign="top">The alias is equivalent to the <literal>+ipv6.addresses</literal> syntax and also sets <literal>ipv6.method</literal> to <literal>manual</literal>. It can be specified multiple times.</entry>
       </row>
       <row><entry align="left">gw6</entry><entry align="left"><link linkend="nm-settings.property.ipv6.gateway">ipv6.gateway</link></entry><entry align="left" /></row>
     </tbody>
