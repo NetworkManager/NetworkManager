@@ -1724,6 +1724,7 @@ property as well.
       <row><entry align="left">username</entry><entry align="left"><link linkend="nm-settings.property.pppoe.username">pppoe.username</link></entry></row>
       <row><entry align="left">password</entry><entry align="left"><link linkend="nm-settings.property.pppoe.password">pppoe.password</link></entry></row>
       <row><entry align="left">service</entry><entry align="left"><link linkend="nm-settings.property.pppoe.service">pppoe.service</link></entry></row>
+      <row><entry align="left">parent</entry><entry align="left"><link linkend="nm-settings.property.pppoe.parent">pppoe.parent</link></entry></row>
     </tbody>
     </tgroup></table>
 
@@ -1880,6 +1881,7 @@ It's equivalent to the <literal>+bond.options 'option=value'</literal> syntax.</
       <row><entry align="left">hello-time</entry><entry align="left"><link linkend="nm-settings.property.bridge.hello-time">bridge.hello-time</link></entry></row>
       <row><entry align="left">max-age</entry><entry align="left"><link linkend="nm-settings.property.bridge.max-age">bridge.max-age</link></entry></row>
       <row><entry align="left">ageing-time</entry><entry align="left"><link linkend="nm-settings.property.bridge.ageing-time">bridge.ageing-time</link></entry></row>
+      <row><entry align="left">group-forward-mask</entry><entry align="left"><link linkend="nm-settings.property.bridge.group-forward-mask">bridge.group-forward-mask</link></entry></row>
       <row><entry align="left">multicast-snooping</entry><entry align="left"><link linkend="nm-settings.property.bridge.multicast-snooping">bridge.multicast-snooping</link></entry></row>
       <row><entry align="left">mac</entry><entry align="left"><link linkend="nm-settings.property.bridge.mac-address">bridge.mac-address</link></entry></row>
       <row><entry align="left">priority</entry><entry align="left"><link linkend="nm-settings.property.bridge-port.priority">bridge-port.priority</link></entry></row>
@@ -1929,6 +1931,20 @@ It's equivalent to the <literal>+bond.options 'option=value'</literal> syntax.</
       <row><entry align="left">dev</entry><entry align="left"><link linkend="nm-settings.property.macvlan.parent">macvlan.parent</link></entry></row>
       <row><entry align="left">mode</entry><entry align="left"><link linkend="nm-settings.property.macvlan.mode">macvlan.mode</link></entry></row>
       <row><entry align="left">tap</entry><entry align="left"><link linkend="nm-settings.property.macvlan.tap">macvlan.tap</link></entry></row>
+    </tbody>
+    </tgroup></table>
+
+    <table><title>MACsec options</title><tgroup cols="2">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry></row>
+    </thead>
+    <tbody>
+      <row><entry align="left">dev</entry><entry align="left"><link linkend="nm-settings.property.macsec.parent">macsec.parent</link></entry></row>
+      <row><entry align="left">mode</entry><entry align="left"><link linkend="nm-settings.property.macsec.mode">macsec.mode</link></entry></row>
+      <row><entry align="left">encrypt</entry><entry align="left"><link linkend="nm-settings.property.macsec.encrypt">macsec.encrypt</link></entry></row>
+      <row><entry align="left">cak</entry><entry align="left"><link linkend="nm-settings.property.macsec.cak">macsec.cak</link></entry></row>
+      <row><entry align="left">ckn</entry><entry align="left"><link linkend="nm-settings.property.macsec.ckn">macsec.ckn</link></entry></row>
+      <row><entry align="left">port</entry><entry align="left"><link linkend="nm-settings.property.macsec.port">macsec.port</link></entry></row>
     </tbody>
     </tgroup></table>
 
@@ -2006,10 +2022,13 @@ It's equivalent to the <literal>+bond.options 'option=value'</literal> syntax.</
       <row><entry>Alias</entry><entry>Property</entry><entry>Note</entry></row>
     </thead>
     <tbody>
+      <row><entry align="left">method</entry><entry align="left"><link linkend="nm-settings.property.proxy.method">proxy.method</link></entry><entry align="left" /></row>
+      <row><entry align="left">browser-only</entry><entry align="left"><link linkend="nm-settings.property.proxy.browser-only">proxy.browser-only</link></entry><entry align="left" /></row>
+      <row><entry align="left">pac-url</entry><entry align="left"><link linkend="nm-settings.property.proxy.pac-url">proxy.pac-url</link></entry><entry align="left" /></row>
       <row>
-        <entry align="left"></entry>
+        <entry align="left">pac-script</entry>
         <entry align="left"><link linkend="nm-settings.property.proxy.pac-script">proxy.pac-script</link></entry>
-        <entry align="left" valign="top">Read the java script pac-script from file or pass it directly on the command line. Prefix the value with "file://" or "js://" to force one or the other.</entry>
+        <entry align="left" valign="top">Read the JavaScript PAC (proxy auto-config) script from file or pass it directly on the command line. Prefix the value with "file://" or "js://" to force one or the other.</entry>
       </row>
     </tbody>
     </tgroup></table>
