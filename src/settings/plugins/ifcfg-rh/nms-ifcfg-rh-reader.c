@@ -412,133 +412,440 @@ read_full_ip4_address (shvarFile *ifcfg,
 	return FALSE;
 }
 
-/*
- * Use looser syntax to comprise all the possibilities.
- * The validity must be checked after the match.
- */
-#define IPV4_ADDR_REGEX "(?:[0-9]{1,3}\\.){3}[0-9]{1,3}"
-#define IPV6_ADDR_REGEX "[0-9A-Fa-f:.]+"
-
-/*
- * NOTE: The regexes below don't describe all variants allowed by 'ip route add',
- * namely destination IP without 'to' keyword is recognized just at line start.
- */
+/*****************************************************************************/
 
 static gboolean
-parse_route_options (NMIPRoute *route, int family, const char *line, GError **error)
+parse_route_line_is_comment (const char *line)
 {
-	GRegex *regex = NULL;
-	GMatchInfo *match_info = NULL;
-	gboolean success = FALSE;
-	static const char *metrics[] = { NM_IP_ROUTE_ATTRIBUTE_WINDOW, NM_IP_ROUTE_ATTRIBUTE_CWND,
-	                                 NM_IP_ROUTE_ATTRIBUTE_INITCWND, NM_IP_ROUTE_ATTRIBUTE_INITRWND,
-	                                 NM_IP_ROUTE_ATTRIBUTE_MTU, NULL };
-	char buffer[1024];
-	int i;
+	/* we obtained the line from a legacy route file. Here we skip
+	 * empty lines and comments.
+	 *
+	 * initscripts compares: "$line" =~ '^[[:space:]]*(\#.*)?$'
+	 */
+	while (NM_IN_SET (line[0], ' ', '\t'))
+		line++;
+	if (NM_IN_SET (line[0], '\0', '#'))
+		return TRUE;
+	return FALSE;
+}
 
-	g_return_val_if_fail (family == AF_INET || family == AF_INET6, FALSE);
+/*****************************************************************************/
 
-	for (i = 0; metrics[i]; i++) {
-		nm_sprintf_buf (buffer, "(?:\\s|^)%s\\s+(lock\\s+)?(\\d+)(?:$|\\s)", metrics[i]);
-		regex = g_regex_new (buffer, 0, 0, NULL);
-		g_regex_match (regex, line, 0, &match_info);
-		if (g_match_info_matches (match_info)) {
-			gs_free char *lock = g_match_info_fetch (match_info, 1);
-			gs_free char *str = g_match_info_fetch (match_info, 2);
-			gint64 num = _nm_utils_ascii_str_to_int64 (str, 10, 0, G_MAXUINT32, -1);
+typedef struct {
+	const char *key;
 
-			if (num == -1) {
-				g_match_info_free (match_info);
+	/* the element is not available in this case. */
+	bool disabled:1;
+
+	/* whether the element is to be ignored. Ignord is different from
+	 * "disabled", because we still parse the option, but don't use it. */
+	bool ignore:1;
+
+	bool int_base_16:1;
+
+	/* the type, one of PARSE_LINE_TYPE_* */
+	char type;
+
+	/* whether the command line option was found, and @v is
+	 * initialized. */
+	bool has:1;
+
+	union {
+		guint8 uint8;
+		guint32 uint32;
+		struct {
+			guint32 uint32;
+			bool lock:1;
+		} uint32_with_lock;
+		struct {
+			NMIPAddr addr;
+			guint8 plen;
+			bool has_plen:1;
+		} addr;
+	} v;
+
+} ParseLineInfo;
+
+enum {
+	/* route attributes */
+	PARSE_LINE_ATTR_ROUTE_SRC,
+	PARSE_LINE_ATTR_ROUTE_FROM,
+	PARSE_LINE_ATTR_ROUTE_TOS,
+	PARSE_LINE_ATTR_ROUTE_WINDOW,
+	PARSE_LINE_ATTR_ROUTE_CWND,
+	PARSE_LINE_ATTR_ROUTE_INITCWND,
+	PARSE_LINE_ATTR_ROUTE_INITRWND,
+	PARSE_LINE_ATTR_ROUTE_MTU,
+
+	/* iproute2 arguments that only matter when parsing the file. */
+	PARSE_LINE_ATTR_ROUTE_TO,
+	PARSE_LINE_ATTR_ROUTE_VIA,
+	PARSE_LINE_ATTR_ROUTE_METRIC,
+
+	/* iproute2 paramters that are well known and that we silently ignore. */
+	PARSE_LINE_ATTR_ROUTE_DEV,
+};
+
+#define PARSE_LINE_TYPE_UINT8             '8'
+#define PARSE_LINE_TYPE_UINT32            'u'
+#define PARSE_LINE_TYPE_UINT32_WITH_LOCK  'l'
+#define PARSE_LINE_TYPE_ADDR              'a'
+#define PARSE_LINE_TYPE_ADDR_WITH_PREFIX  'p'
+#define PARSE_LINE_TYPE_IFNAME            'i'
+
+/**
+ * parse_route_line:
+ * @line: the line to parse. This is either a line from the route-* or route6-* file,
+ *   or the numbered OPTIONS setting.
+ * @addr_family: the address family.
+ * @options_route: (in-out): when line is from the OPTIONS setting, this is a pre-created
+ *   route object that is completed with the settings from options. Otherwise,
+ *   it shall point to %NULL and a new route is created and returned.
+ * @out_route: (out): (transfer-full): (allow-none): the parsed %NMIPRoute instance.
+ *   In case a @options_route is passed in, it returns the input route that was modified
+ *   in-place. But the caller must unref the returned route in either case.
+ * @error: the failure description.
+ *
+ * Parsing the route options line has two modes: one for the numbered OPTIONS
+ * setting, and one for initscript's handle_ip_file(), which takes the lines
+ * and passes them to `ip route add`. The modes are similar, but certain properties
+ * are not allowed for OPTIONS.
+ * The mode is differenciated by having an @options_route argument.
+ *
+ * Returns: returns a negative errno on failure. On success, it returns 0
+ *   and @out_route.
+ */
+static int
+parse_route_line (const char *line,
+                  int addr_family,
+                  NMIPRoute *options_route,
+                  NMIPRoute **out_route,
+                  GError **error)
+{
+	nm_auto_ip_route_unref NMIPRoute *route = NULL;
+	gs_free const char **words = NULL;
+	const char *s;
+	gsize i_words;
+	guint i;
+	char buf1[256];
+	char buf2[256];
+	ParseLineInfo infos[] = {
+		[PARSE_LINE_ATTR_ROUTE_SRC]      = { .key = NM_IP_ROUTE_ATTRIBUTE_SRC,
+		                                     .type = PARSE_LINE_TYPE_ADDR, },
+		[PARSE_LINE_ATTR_ROUTE_FROM]     = { .key = NM_IP_ROUTE_ATTRIBUTE_FROM,
+		                                     .type = PARSE_LINE_TYPE_ADDR_WITH_PREFIX,
+		                                     .disabled = (addr_family != AF_INET6), },
+		[PARSE_LINE_ATTR_ROUTE_TOS]      = { .key = NM_IP_ROUTE_ATTRIBUTE_TOS,
+		                                     .type = PARSE_LINE_TYPE_UINT8,
+		                                     .int_base_16 = TRUE,
+		                                     .ignore = (addr_family != AF_INET), },
+		[PARSE_LINE_ATTR_ROUTE_WINDOW]   = { .key = NM_IP_ROUTE_ATTRIBUTE_WINDOW,
+		                                     .type = PARSE_LINE_TYPE_UINT32_WITH_LOCK, },
+		[PARSE_LINE_ATTR_ROUTE_CWND]     = { .key = NM_IP_ROUTE_ATTRIBUTE_CWND,
+		                                     .type = PARSE_LINE_TYPE_UINT32_WITH_LOCK, },
+		[PARSE_LINE_ATTR_ROUTE_INITCWND] = { .key = NM_IP_ROUTE_ATTRIBUTE_INITCWND,
+		                                     .type = PARSE_LINE_TYPE_UINT32_WITH_LOCK, },
+		[PARSE_LINE_ATTR_ROUTE_INITRWND] = { .key = NM_IP_ROUTE_ATTRIBUTE_INITRWND,
+		                                     .type = PARSE_LINE_TYPE_UINT32_WITH_LOCK, },
+		[PARSE_LINE_ATTR_ROUTE_MTU]      = { .key = NM_IP_ROUTE_ATTRIBUTE_MTU,
+		                                     .type = PARSE_LINE_TYPE_UINT32_WITH_LOCK, },
+
+		[PARSE_LINE_ATTR_ROUTE_TO]       = { .key = "to",
+		                                     .type = PARSE_LINE_TYPE_ADDR_WITH_PREFIX,
+		                                     .disabled = (options_route != NULL), },
+		[PARSE_LINE_ATTR_ROUTE_VIA]      = { .key = "via",
+		                                     .type = PARSE_LINE_TYPE_ADDR,
+		                                     .disabled = (options_route != NULL), },
+		[PARSE_LINE_ATTR_ROUTE_METRIC]   = { .key = "metric",
+		                                     .type = PARSE_LINE_TYPE_UINT32,
+		                                     .disabled = (options_route != NULL), },
+
+		[PARSE_LINE_ATTR_ROUTE_DEV]      = { .key = "dev",
+		                                     .type = PARSE_LINE_TYPE_IFNAME,
+		                                     .ignore = TRUE,
+		                                     .disabled = (options_route != NULL), },
+	};
+
+	nm_assert (line);
+	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
+	nm_assert (!options_route || nm_ip_route_get_family (options_route) == addr_family);
+
+	/* initscripts read the legacy route file line-by-line and
+	 * use it as `ip route add $line`, thus doing split+glob.
+	 * Splitting on IFS (which we consider '<space><tab><newline>')
+	 * and globbing (which we obviously don't do).
+	 *
+	 * I think it's a mess, because it doesn't support escaping or
+	 * quoting. In fact, it can only encode benign values.
+	 *
+	 * We also use the same form for the numbered OPTIONS
+	 * variable. I think it's bad not to support any form of
+	 * escaping. But do that for now.
+	 *
+	 * Maybe later we want to support some form of quotation here.
+	 * Which of course, would be incompatible with initscripts.
+	 */
+	words = nm_utils_strsplit_set (line, " \t\n");
+
+	if (!words)
+		words = (const char **) NM_PTRARRAY_EMPTY (const char *);
+
+	for (i_words = 0; words[i_words]; ) {
+		const gsize i_words0 = i_words;
+		const char *const w = words[i_words0];
+		ParseLineInfo *info;
+		gboolean unqualified_addr = FALSE;
+
+		for (i = 0; i < G_N_ELEMENTS (infos); i++) {
+			info = &infos[i];
+
+			if (info->disabled)
+				continue;
+
+			if (!nm_streq (w, info->key))
+				continue;
+
+			if (info->has) {
+				/* iproute2 for most arguments allows specifying them multiple times.
+				 * Let's not do that. */
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-				             "Invalid route %s '%s'", metrics[i], str);
-				goto out;
+				             "Duplicate option \"%s\"", w);
+				return -EINVAL;
 			}
 
-			nm_ip_route_set_attribute (route, metrics[i],
-			                           g_variant_new_uint32 (num));
-			if (lock && lock[0]) {
-				nm_sprintf_buf (buffer, "lock-%s", metrics[i]);
-				nm_ip_route_set_attribute (route, buffer,
+			info->has = TRUE;
+			switch (info->type) {
+			case PARSE_LINE_TYPE_UINT8:
+				i_words++;
+				goto parse_line_type_uint8;
+			case PARSE_LINE_TYPE_UINT32:
+				i_words++;
+				goto parse_line_type_uint32;
+			case PARSE_LINE_TYPE_UINT32_WITH_LOCK:
+				i_words++;
+				goto parse_line_type_uint32_with_lock;
+			case PARSE_LINE_TYPE_ADDR:
+				i_words++;
+				goto parse_line_type_addr;
+			case PARSE_LINE_TYPE_ADDR_WITH_PREFIX:
+				i_words++;
+				goto parse_line_type_addr_with_prefix;
+			case PARSE_LINE_TYPE_IFNAME:
+				i_words++;
+				goto parse_line_type_ifname;
+			default:
+				nm_assert_not_reached ();
+			}
+		}
+
+		/* "to" is also accepted unqualified... (once) */
+		info = &infos[PARSE_LINE_ATTR_ROUTE_TO];
+		if (!info->has && !info->disabled) {
+			unqualified_addr = TRUE;
+			info->has = TRUE;
+			goto parse_line_type_addr;
+		}
+
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		             "Unrecognized argument (\"to\" is duplicate or \"%s\" is garbage)", w);
+		return -EINVAL;
+
+parse_line_type_uint8:
+		s = words[i_words];
+		if (!s)
+			goto err_word_missing_argument;
+		info->v.uint8 = _nm_utils_ascii_str_to_int64 (s,
+		                                              info->int_base_16 ? 16 : 10,
+		                                              0,
+		                                              G_MAXUINT8,
+		                                              0);;
+		if (errno) {
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Argument for \"%s\" is not a valid number", w);
+			return -EINVAL;
+		}
+		i_words++;
+		goto next;
+
+parse_line_type_uint32:
+parse_line_type_uint32_with_lock:
+		s = words[i_words];
+		if (!s)
+			goto err_word_missing_argument;
+		if (info->type == PARSE_LINE_TYPE_UINT32_WITH_LOCK) {
+			if (nm_streq (s, "lock")) {
+				s = words[++i_words];
+				if (!s)
+					goto err_word_missing_argument;
+				info->v.uint32_with_lock.lock = TRUE;
+			} else
+				info->v.uint32_with_lock.lock = FALSE;
+			info->v.uint32_with_lock.uint32 = _nm_utils_ascii_str_to_int64 (s, 10, 0, G_MAXUINT32, 0);;
+		} else {
+			info->v.uint32 = _nm_utils_ascii_str_to_int64 (s, 10, 0, G_MAXUINT32, 0);
+		}
+		if (errno) {
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Argument for \"%s\" is not a valid number", w);
+			return -EINVAL;
+		}
+		i_words++;
+		goto next;
+
+parse_line_type_ifname:
+		s = words[i_words];
+		if (!s)
+			goto err_word_missing_argument;
+		i_words++;
+		goto next;
+
+parse_line_type_addr:
+parse_line_type_addr_with_prefix:
+		s = words[i_words];
+		if (!s)
+			goto err_word_missing_argument;
+		{
+			int prefix = -1;
+
+			if (info->type == PARSE_LINE_TYPE_ADDR) {
+				if (!nm_utils_parse_inaddr_bin (s,
+				                                addr_family,
+				                                &info->v.addr.addr)) {
+					if (   info == &infos[PARSE_LINE_ATTR_ROUTE_VIA]
+					    && nm_streq (s, "(null)")) {
+						/* Due to a bug, would older versions of NM write "via (null)"
+						 * (rh#1452648). Workaround that, and accept it.*/
+						memset (&info->v.addr.addr, 0, sizeof (info->v.addr.addr));
+					} else {
+						if (unqualified_addr) {
+							g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+							             "Unrecognized argument (inet prefix is expected rather then \"%s\")", w);
+							return -EINVAL;
+						} else {
+							g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+							             "Argument for \"%s\" is not a valid IPv%c address", w,
+							             addr_family == AF_INET ? '4' : '6');
+						}
+						return -EINVAL;
+					}
+				}
+			} else {
+				nm_assert (info->type == PARSE_LINE_TYPE_ADDR_WITH_PREFIX);
+				if (   info == &infos[PARSE_LINE_ATTR_ROUTE_TO]
+				    && nm_streq (s, "default")) {
+					memset (&info->v.addr.addr, 0, sizeof (info->v.addr.addr));
+					prefix = 0;
+				} else if (!nm_utils_parse_inaddr_prefix_bin (s,
+				                                       addr_family,
+				                                       &info->v.addr.addr,
+				                                       &prefix)) {
+					g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+					             "Argument for \"%s\" is not ADDR/PREFIX format", w);
+					return -EINVAL;
+				}
+			}
+			if (prefix == -1)
+				info->v.addr.has_plen = FALSE;
+			else {
+				info->v.addr.has_plen = TRUE;
+				info->v.addr.plen = prefix;
+			}
+		}
+		i_words++;
+		goto next;
+
+err_word_missing_argument:
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		             "Missing argument for \"%s\"", w);
+		return -EINVAL;
+next:
+		;
+	}
+
+	if (options_route) {
+		route = options_route;
+		nm_ip_route_ref (route);
+	} else {
+		ParseLineInfo *info_to = &infos[PARSE_LINE_ATTR_ROUTE_TO];
+		ParseLineInfo *info_via = &infos[PARSE_LINE_ATTR_ROUTE_VIA];
+		ParseLineInfo *info_metric = &infos[PARSE_LINE_ATTR_ROUTE_METRIC];
+		guint prefix;
+
+		if (!info_to->has) {
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Missing destination prefix");
+			return -EINVAL;
+		}
+
+		prefix =   info_to->v.addr.has_plen
+		         ? info_to->v.addr.plen
+		         : (addr_family == AF_INET ? 32 : 128);
+
+		if (   (   (addr_family == AF_INET  && !info_to->v.addr.addr.addr4)
+		        || (addr_family == AF_INET6 && IN6_IS_ADDR_UNSPECIFIED (&info_to->v.addr.addr.addr6)))
+		    && prefix == 0) {
+			/* we ignore default routes by returning -ERANGE. */
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Ignore manual default route");
+			return -ERANGE;
+		}
+
+		route = nm_ip_route_new_binary (addr_family,
+		                                &info_to->v.addr.addr,
+		                                prefix,
+		                                info_via->has ? &info_via->v.addr.addr : NULL,
+		                                info_metric->has ? (gint64) info_metric->v.uint32 : (gint64) -1,
+		                                error);
+		info_to->has = FALSE;
+		info_via->has = FALSE;
+		info_metric->has = FALSE;
+		if (!route)
+			return -EINVAL;
+	}
+
+	for (i = 0; i < G_N_ELEMENTS (infos); i++) {
+		ParseLineInfo *info = &infos[i];
+
+		if (!info->has)
+			continue;
+		if (info->ignore || info->disabled)
+			continue;
+		switch (info->type) {
+		case PARSE_LINE_TYPE_UINT8:
+			nm_ip_route_set_attribute (route,
+			                           info->key,
+			                           g_variant_new_byte (info->v.uint8));
+			break;
+		case PARSE_LINE_TYPE_UINT32_WITH_LOCK:
+			if (info->v.uint32_with_lock.lock) {
+				nm_ip_route_set_attribute (route,
+				                           nm_sprintf_buf (buf1, "lock-%s", info->key),
 				                           g_variant_new_boolean (TRUE));
 			}
+			nm_ip_route_set_attribute (route,
+			                           info->key,
+			                           g_variant_new_uint32 (info->v.uint32_with_lock.uint32));
+			break;
+		case PARSE_LINE_TYPE_ADDR:
+		case PARSE_LINE_TYPE_ADDR_WITH_PREFIX:
+			nm_ip_route_set_attribute (route,
+			                           info->key,
+			                           g_variant_new_printf ("%s%s",
+			                                                 inet_ntop (addr_family, &info->v.addr.addr, buf1, sizeof (buf1)),
+			                                                 info->v.addr.has_plen
+			                                                    ? nm_sprintf_buf (buf2, "/%u", (unsigned) info->v.addr.plen)
+			                                                    : ""));
+			break;
+		default:
+			nm_assert_not_reached ();
+			break;
 		}
-		g_clear_pointer (&regex, g_regex_unref);
-		g_clear_pointer (&match_info, g_match_info_free);
 	}
 
-	/* tos */
-	if (family == AF_INET) {
-		regex = g_regex_new ("(?:\\s|^)tos\\s+(\\S+)(?:$|\\s)", 0, 0, NULL);
-		g_regex_match (regex, line, 0, &match_info);
-		if (g_match_info_matches (match_info)) {
-			gs_free char *str = g_match_info_fetch (match_info, 1);
-			gint64 num = _nm_utils_ascii_str_to_int64 (str, 16, 0, G_MAXUINT8, -1);
+	nm_assert (_nm_ip_route_attribute_validate_all (route));
 
-			if (num == -1) {
-				g_match_info_free (match_info);
-				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-				             "Invalid route %s '%s'", "tos", str);
-				goto out;
-			}
-			nm_ip_route_set_attribute (route, NM_IP_ROUTE_ATTRIBUTE_TOS,
-			                           g_variant_new_byte ((guchar) num));
-		}
-		g_clear_pointer (&regex, g_regex_unref);
-		g_clear_pointer (&match_info, g_match_info_free);
-	}
-
-	/* from */
-	if (family == AF_INET6) {
-		regex = g_regex_new ("(?:\\s|^)from\\s+(" IPV6_ADDR_REGEX "(?:/\\d{1,3})?)(?:$|\\s)", 0, 0, NULL);
-		g_regex_match (regex, line, 0, &match_info);
-		if (g_match_info_matches (match_info)) {
-			gs_free char *str = g_match_info_fetch (match_info, 1);
-			gs_free_error GError *local_error = NULL;
-			GVariant *variant = g_variant_new_string (str);
-
-			if (!nm_ip_route_attribute_validate (NM_IP_ROUTE_ATTRIBUTE_FROM, variant, family, NULL, &local_error)) {
-				g_match_info_free (match_info);
-				g_variant_unref (variant);
-				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-				             "Invalid route from '%s': %s", str, local_error->message);
-				goto out;
-			}
-			nm_ip_route_set_attribute (route, NM_IP_ROUTE_ATTRIBUTE_FROM, variant);
-		}
-		g_clear_pointer (&regex, g_regex_unref);
-		g_clear_pointer (&match_info, g_match_info_free);
-	}
-
-	if (family == AF_INET)
-		regex = g_regex_new ("(?:\\s|^)src\\s+(" IPV4_ADDR_REGEX ")(?:$|\\s)", 0, 0, NULL);
-	else
-		regex = g_regex_new ("(?:\\s|^)src\\s+(" IPV6_ADDR_REGEX ")(?:$|\\s)", 0, 0, NULL);
-	g_regex_match (regex, line, 0, &match_info);
-	if (g_match_info_matches (match_info)) {
-		gs_free char *str = g_match_info_fetch (match_info, 1);
-		gs_free_error GError *local_error = NULL;
-		GVariant *variant = g_variant_new_string (str);
-
-		if (!nm_ip_route_attribute_validate (NM_IP_ROUTE_ATTRIBUTE_SRC, variant, family,
-		                                     NULL, &local_error)) {
-			g_match_info_free (match_info);
-			g_variant_unref (variant);
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Invalid route src '%s': %s", str, local_error->message);
-			goto out;
-		}
-
-		nm_ip_route_set_attribute (route, NM_IP_ROUTE_ATTRIBUTE_SRC, variant);
-	}
-	success = TRUE;
-
-out:
-	if (regex)
-		g_regex_unref (regex);
-	if (match_info)
-		g_match_info_free (match_info);
-
-	return success;
+	NM_SET_OUT (out_route, g_steal_pointer (&route));
+	return 0;
 }
 
 /* Returns TRUE on missing route or valid route */
@@ -620,7 +927,7 @@ read_one_ip4_route (shvarFile *ifcfg,
 	nm_clear_g_free (&value);
 	v = svGetValueStr (ifcfg, numbered_tag (tag, "OPTIONS", which), &value);
 	if (v) {
-		if (!parse_route_options (*out_route, AF_INET, v, error)) {
+		if (parse_route_line (v, AF_INET, *out_route, NULL, error) < 0) {
 			g_clear_pointer (out_route, nm_ip_route_unref);
 			return FALSE;
 		}
@@ -630,149 +937,58 @@ read_one_ip4_route (shvarFile *ifcfg,
 }
 
 static gboolean
-read_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError **error)
+read_route_file (int addr_family,
+                 const char *filename,
+                 NMSettingIPConfig *s_ip,
+                 GError **error)
 {
 	gs_free char *contents = NULL;
-	gs_strfreev char **lines = NULL;
+	char *contents_rest;
+	const char *line;
 	gsize len = 0;
-	char **iter;
-	GRegex *regex_to1, *regex_to2, *regex_via, *regex_metric;
-	GMatchInfo *match_info;
-	int prefix_int;
-	gint64 metric_int;
-	gboolean success = FALSE;
+	gsize line_num;
 
-	const char *pattern_empty = "^\\s*(\\#.*)?$";
-	const char *pattern_to1 = "^\\s*(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|default)"  /* IP or 'default' keyword */
-	                          "(?:/(\\d{1,2}))?";                                         /* optional prefix */
-	const char *pattern_to2 = "to\\s+(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|default)" /* IP or 'default' keyword */
-	                          "(?:/(\\d{1,2}))?";                                         /* optional prefix */
-	const char *pattern_via = "via\\s+(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})";       /* IP of gateway */
-	const char *pattern_metric = "metric\\s+(\\d+)";                                      /* metric */
-
-	g_return_val_if_fail (filename != NULL, FALSE);
-	g_return_val_if_fail (s_ip4 != NULL, FALSE);
+	g_return_val_if_fail (filename, FALSE);
+	g_return_val_if_fail (   (addr_family == AF_INET  && NM_IS_SETTING_IP4_CONFIG (s_ip))
+	                      || (addr_family == AF_INET6 && NM_IS_SETTING_IP6_CONFIG (s_ip)), FALSE);
 	g_return_val_if_fail (!error || !*error, FALSE);
 
-	/* Read the route file */
 	if (   !g_file_get_contents (filename, &contents, &len, NULL)
 	    || !len) {
 		return TRUE;  /* missing/empty = success */
 	}
 
-	/* Create regexes for pieces to be matched */
-	regex_to1 = g_regex_new (pattern_to1, 0, 0, NULL);
-	regex_to2 = g_regex_new (pattern_to2, 0, 0, NULL);
-	regex_via = g_regex_new (pattern_via, 0, 0, NULL);
-	regex_metric = g_regex_new (pattern_metric, 0, 0, NULL);
+	line_num = 0;
+	for (line = strtok_r (contents, "\n", &contents_rest);
+	     line;
+	     line = strtok_r (NULL, "\n", &contents_rest)) {
+		nm_auto_ip_route_unref NMIPRoute *route = NULL;
+		gs_free_error GError *local = NULL;
+		int e;
 
-	/* Iterate through file lines */
-	lines = g_strsplit_set (contents, "\n\r", -1);
-	for (iter = lines; iter && *iter; iter++) {
-		gs_free char *next_hop = NULL, *dest = NULL;
-		char *prefix, *metric;
-		NMIPRoute *route;
+		line_num++;
 
-		/* Skip empty lines */
-		if (g_regex_match_simple (pattern_empty, *iter, 0, 0))
+		if (parse_route_line_is_comment (line))
 			continue;
 
-		/* Destination */
-		g_regex_match (regex_to1, *iter, 0, &match_info);
-		if (!g_match_info_matches (match_info)) {
-			g_match_info_free (match_info);
-			g_regex_match (regex_to2, *iter, 0, &match_info);
-			if (!g_match_info_matches (match_info)) {
-				g_match_info_free (match_info);
-				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-				             "Missing IP4 route destination address in record: '%s'", *iter);
-				goto error;
+		e = parse_route_line (line, addr_family, NULL, &route, &local);
+
+		if (e < 0) {
+			if (e == -ERANGE)
+				PARSE_WARNING ("ignoring manual default route: '%s' (%s)", line, filename);
+			else {
+				/* we accept all unrecognized lines, because otherwise we would reject the
+				 * entire connection. */
+				PARSE_WARNING ("ignoring invalid route at \"%s\" (%s:%lu): %s", line, filename, (long unsigned) line_num, local->message);
 			}
-		}
-		dest = g_match_info_fetch (match_info, 1);
-		if (!strcmp (dest, "default")) {
-			g_match_info_free (match_info);
-			PARSE_WARNING ("ignoring manual default route: '%s' (%s)", *iter, filename);
 			continue;
 		}
-		if (!nm_utils_ipaddr_valid (AF_INET, dest)) {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Invalid IP4 route destination address '%s'", dest);
-			g_match_info_free (match_info);
-			goto error;
-		}
 
-		/* Prefix - is optional; 32 if missing */
-		prefix = g_match_info_fetch (match_info, 2);
-		g_match_info_free (match_info);
-		prefix_int = 32;
-		if (prefix) {
-			prefix_int = _nm_utils_ascii_str_to_int64 (prefix, 10, 1, 32, -1);
-			if (prefix_int == -1) {
-				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-				             "Invalid IP4 route destination prefix '%s'", prefix);
-				g_free (prefix);
-				goto error;
-			}
-		}
-		g_free (prefix);
-
-		/* Next hop */
-		g_regex_match (regex_via, *iter, 0, &match_info);
-		if (g_match_info_matches (match_info)) {
-			next_hop = g_match_info_fetch (match_info, 1);
-			if (!nm_utils_ipaddr_valid (AF_INET, next_hop)) {
-				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-				             "Invalid IP4 route gateway address '%s'",
-				             next_hop);
-				g_match_info_free (match_info);
-				goto error;
-			}
-		} else {
-			/* we don't make distinction between missing GATEWAY IP and 0.0.0.0 */
-		}
-		g_match_info_free (match_info);
-
-		/* Metric */
-		g_regex_match (regex_metric, *iter, 0, &match_info);
-		metric_int = -1;
-		if (g_match_info_matches (match_info)) {
-			metric = g_match_info_fetch (match_info, 1);
-			metric_int = _nm_utils_ascii_str_to_int64 (metric, 10, 0, G_MAXUINT32, -1);
-			if (metric_int == -1) {
-				g_match_info_free (match_info);
-				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-				             "Invalid IP4 route metric '%s'", metric);
-				g_free (metric);
-				goto error;
-			}
-			g_free (metric);
-		}
-		g_match_info_free (match_info);
-
-		route = nm_ip_route_new (AF_INET, dest, prefix_int, next_hop, metric_int, error);
-		if (!route)
-			goto error;
-
-		if (!parse_route_options (route, AF_INET, *iter, error)) {
-			nm_ip_route_unref (route);
-			goto error;
-		}
-
-		if (!nm_setting_ip_config_add_route (s_ip4, route))
-			PARSE_WARNING ("duplicate IP4 route");
-		nm_ip_route_unref (route);
+		if (!nm_setting_ip_config_add_route (s_ip, route))
+			PARSE_WARNING ("duplicate IPv%c route", addr_family == AF_INET ? '4' : '6');
 	}
 
-	success = TRUE;
-
-error:
-	g_regex_unref (regex_to1);
-	g_regex_unref (regex_to2);
-	g_regex_unref (regex_via);
-	g_regex_unref (regex_metric);
-
-	return success;
+	return TRUE;
 }
 
 static void
@@ -844,157 +1060,6 @@ parse_full_ip6_address (shvarFile *ifcfg,
 
 error:
 	g_strfreev (list);
-	return success;
-}
-
-static gboolean
-read_route6_file (const char *filename, NMSettingIPConfig *s_ip6, GError **error)
-{
-	char *contents = NULL;
-	gsize len = 0;
-	char **lines = NULL, **iter;
-	GRegex *regex_to1, *regex_to2, *regex_via, *regex_metric;
-	GMatchInfo *match_info;
-	char *dest = NULL, *prefix = NULL, *next_hop = NULL, *metric = NULL;
-	int prefix_int;
-	gint64 metric_int;
-	gboolean success = FALSE;
-
-	const char *pattern_empty = "^\\s*(\\#.*)?$";
-	const char *pattern_to1 = "^\\s*(default|" IPV6_ADDR_REGEX ")"  /* IPv6 or 'default' keyword */
-	                          "(?:/(\\d{1,3}))?";                   /* optional prefix */
-	const char *pattern_to2 = "to\\s+(default|" IPV6_ADDR_REGEX ")" /* IPv6 or 'default' keyword */
-	                          "(?:/(\\d{1,3}))?";                   /* optional prefix */
-	const char *pattern_via = "via\\s+(" IPV6_ADDR_REGEX ")";       /* IPv6 of gateway */
-	const char *pattern_metric = "metric\\s+(\\d+)";                /* metric */
-
-
-	g_return_val_if_fail (filename != NULL, FALSE);
-	g_return_val_if_fail (s_ip6 != NULL, FALSE);
-	g_return_val_if_fail (!error || !*error, FALSE);
-
-	/* Read the route file */
-	if (!g_file_get_contents (filename, &contents, &len, NULL) || !len) {
-		g_free (contents);
-		return TRUE;  /* missing/empty = success */
-	}
-
-	/* Create regexes for pieces to be matched */
-	regex_to1 = g_regex_new (pattern_to1, 0, 0, NULL);
-	regex_to2 = g_regex_new (pattern_to2, 0, 0, NULL);
-	regex_via = g_regex_new (pattern_via, 0, 0, NULL);
-	regex_metric = g_regex_new (pattern_metric, 0, 0, NULL);
-
-	/* Iterate through file lines */
-	lines = g_strsplit_set (contents, "\n\r", -1);
-	for (iter = lines; iter && *iter; iter++) {
-		NMIPRoute *route;
-
-		/* Skip empty lines */
-		if (g_regex_match_simple (pattern_empty, *iter, 0, 0))
-			continue;
-
-		/* Destination */
-		g_regex_match (regex_to1, *iter, 0, &match_info);
-		if (!g_match_info_matches (match_info)) {
-			g_match_info_free (match_info);
-			g_regex_match (regex_to2, *iter, 0, &match_info);
-			if (!g_match_info_matches (match_info)) {
-				g_match_info_free (match_info);
-				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-				             "Missing IP6 route destination address in record: '%s'", *iter);
-				goto error;
-			}
-		}
-		dest = g_match_info_fetch (match_info, 1);
-		if (!g_strcmp0 (dest, "default")) {
-			/* Ignore default route - NM handles it internally */
-			g_clear_pointer (&dest, g_free);
-			g_match_info_free (match_info);
-			PARSE_WARNING ("ignoring manual default route: '%s' (%s)", *iter, filename);
-			continue;
-		}
-
-		/* Prefix - is optional; 128 if missing */
-		prefix = g_match_info_fetch (match_info, 2);
-		g_match_info_free (match_info);
-		prefix_int = 128;
-		if (prefix) {
-			prefix_int = _nm_utils_ascii_str_to_int64 (prefix, 10, 1, 128, -1);
-			if (prefix_int == -1) {
-				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-				             "Invalid IP6 route destination prefix '%s'", prefix);
-				g_free (dest);
-				g_free (prefix);
-				goto error;
-			}
-		}
-		g_free (prefix);
-
-		/* Next hop */
-		g_regex_match (regex_via, *iter, 0, &match_info);
-		if (g_match_info_matches (match_info)) {
-			next_hop = g_match_info_fetch (match_info, 1);
-			if (!nm_utils_ipaddr_valid (AF_INET6, next_hop)) {
-				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-				             "Invalid IPv6 route nexthop address '%s'",
-				             next_hop);
-				g_match_info_free (match_info);
-				g_free (dest);
-				g_free (next_hop);
-				goto error;
-			}
-		} else {
-			/* Missing "via" is taken as :: */
-			next_hop = NULL;
-		}
-		g_match_info_free (match_info);
-
-		/* Metric */
-		g_regex_match (regex_metric, *iter, 0, &match_info);
-		metric_int = -1;
-		if (g_match_info_matches (match_info)) {
-			metric = g_match_info_fetch (match_info, 1);
-			metric_int = _nm_utils_ascii_str_to_int64 (metric, 10, 0, G_MAXUINT32, -1);
-			if (metric_int == -1) {
-				g_match_info_free (match_info);
-				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-				             "Invalid IP6 route metric '%s'", metric);
-				g_free (dest);
-				g_free (next_hop);
-				g_free (metric);
-				goto error;
-			}
-			g_free (metric);
-		}
-		g_match_info_free (match_info);
-
-		route = nm_ip_route_new (AF_INET6, dest, prefix_int, next_hop, metric_int, error);
-		g_free (dest);
-		g_free (next_hop);
-		if (!route)
-			goto error;
-
-		if (!parse_route_options (route, AF_INET6, *iter, error)) {
-			nm_ip_route_unref (route);
-			goto error;
-		}
-
-		if (!nm_setting_ip_config_add_route (s_ip6, route))
-			PARSE_WARNING ("duplicate IP6 route");
-		nm_ip_route_unref (route);
-	}
-
-	success = TRUE;
-
-error:
-	g_free (contents);
-	g_strfreev (lines);
-	g_regex_unref (regex_to1);
-	g_regex_unref (regex_to2);
-	g_regex_unref (regex_via);
-	g_regex_unref (regex_metric);
-
 	return success;
 }
 
@@ -1369,7 +1434,7 @@ make_ip4_setting (shvarFile *ifcfg,
 			svCloseFile (route_ifcfg);
 		}
 	} else {
-		if (!read_route_file_legacy (route_path, s_ip4, error))
+		if (!read_route_file (AF_INET, route_path, s_ip4, error))
 			return NULL;
 	}
 
@@ -1769,7 +1834,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	if (!utils_has_complex_routes (svFileGetName (ifcfg))) {
 		/* Read static routes from route6-<interface> file */
 		route6_path = utils_get_route6_path (svFileGetName (ifcfg));
-		if (!read_route6_file (route6_path, s_ip6, error))
+		if (!read_route_file (AF_INET6, route6_path, s_ip6, error))
 			goto error;
 
 		g_free (route6_path);
