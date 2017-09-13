@@ -121,6 +121,8 @@ typedef struct {
 
 	NMNetns *netns;
 
+	GPtrArray *ip4_dev_route_blacklist;
+
 	GDBusProxy *proxy;
 	GCancellable *cancellable;
 	GVariant *connect_hash;
@@ -1147,9 +1149,11 @@ nm_vpn_connection_apply_config (NMVpnConnection *self)
 		if (priv->ip4_config) {
 			nm_assert (priv->ip_ifindex == nm_ip4_config_get_ifindex (priv->ip4_config));
 			if (!nm_ip4_config_commit (priv->ip4_config,
-			                           nm_netns_get_platform (priv->netns),
-			                           nm_vpn_connection_get_ip4_route_metric (self)))
+			                           nm_netns_get_platform (priv->netns)))
 				return FALSE;
+			nm_platform_ip4_dev_route_blacklist_set (nm_netns_get_platform (priv->netns),
+			                                         priv->ip_ifindex,
+			                                         priv->ip4_dev_route_blacklist);
 		}
 
 		if (priv->ip6_config) {
@@ -1600,6 +1604,12 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 
 		nm_ip4_config_add_route (config, &r, NULL);
 	}
+
+	g_clear_pointer (&priv->ip4_dev_route_blacklist, g_ptr_array_unref);
+
+	nm_ip4_config_add_device_routes (config,
+	                                 nm_vpn_connection_get_ip4_route_metric (self),
+	                                 &priv->ip4_dev_route_blacklist);
 
 	if (priv->ip4_config) {
 		nm_ip4_config_replace (priv->ip4_config, config, NULL);
@@ -2703,6 +2713,8 @@ dispose (GObject *object)
 	nm_clear_g_source (&priv->start_timeout);
 
 	g_clear_pointer (&priv->connect_hash, g_variant_unref);
+
+	g_clear_pointer (&priv->ip4_dev_route_blacklist, g_ptr_array_unref);
 
 	nm_clear_g_source (&priv->connect_timeout);
 

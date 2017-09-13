@@ -496,8 +496,8 @@ static void nm_device_set_proxy_config (NMDevice *self, const char *pac_url);
 
 static gboolean nm_device_set_ip4_config (NMDevice *self,
                                           NMIP4Config *config,
-                                          guint32 default_route_metric,
-                                          gboolean commit);
+                                          gboolean commit,
+                                          GPtrArray *ip4_dev_route_blacklist);
 static gboolean ip4_config_merge_and_apply (NMDevice *self,
                                             NMIP4Config *config,
                                             gboolean commit);
@@ -3885,7 +3885,7 @@ nm_device_removed (NMDevice *self, gboolean unconfigure_ip_config)
 	if (!unconfigure_ip_config)
 		return;
 
-	nm_device_set_ip4_config (self, NULL, 0, FALSE);
+	nm_device_set_ip4_config (self, NULL, FALSE, NULL);
 	nm_device_set_ip6_config (self, NULL, FALSE);
 }
 
@@ -5578,6 +5578,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 	gboolean ignore_auto_dns = FALSE;
 	GSList *iter;
 	NMPlatformIP4Route default_route;
+	gs_unref_ptrarray GPtrArray *ip4_dev_route_blacklist = NULL;
 
 	/* Merge all the configs into the composite config */
 	if (config) {
@@ -5694,12 +5695,19 @@ ip4_config_merge_and_apply (NMDevice *self,
 	}
 
 END_ADD_DEFAULT_ROUTE:
+
+	if (commit) {
+		nm_ip4_config_add_device_routes (composite,
+		                                 default_route_metric,
+		                                 &ip4_dev_route_blacklist);
+	}
+
 	if (commit) {
 		if (NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit)
 			NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit (self, composite);
 	}
 
-	success = nm_device_set_ip4_config (self, composite, default_route_metric, commit);
+	success = nm_device_set_ip4_config (self, composite, commit, ip4_dev_route_blacklist);
 	g_object_unref (composite);
 
 	if (commit)
@@ -9739,8 +9747,8 @@ nm_device_get_ip4_config (NMDevice *self)
 static gboolean
 nm_device_set_ip4_config (NMDevice *self,
                           NMIP4Config *new_config,
-                          guint32 default_route_metric,
-                          gboolean commit)
+                          gboolean commit,
+                          GPtrArray *ip4_dev_route_blacklist)
 {
 	NMDevicePrivate *priv;
 	NMIP4Config *old_config = NULL;
@@ -9766,8 +9774,10 @@ nm_device_set_ip4_config (NMDevice *self,
 	if (commit && new_config) {
 		_commit_mtu (self, new_config);
 		success = nm_ip4_config_commit (new_config,
-		                                nm_device_get_platform (self),
-		                                default_route_metric);
+		                                nm_device_get_platform (self));
+		nm_platform_ip4_dev_route_blacklist_set (nm_device_get_platform (self),
+		                                         nm_ip4_config_get_ifindex (new_config),
+		                                         ip4_dev_route_blacklist);
 	}
 
 	if (new_config) {
@@ -11986,7 +11996,7 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 	/* Clean up IP configs; this does not actually deconfigure the
 	 * interface; the caller must flush routes and addresses explicitly.
 	 */
-	nm_device_set_ip4_config (self, NULL, 0, TRUE);
+	nm_device_set_ip4_config (self, NULL, TRUE, NULL);
 	nm_device_set_ip6_config (self, NULL, TRUE);
 	nm_clear_nmp_object (&priv->default_route4);
 	nm_clear_nmp_object (&priv->default_route6);

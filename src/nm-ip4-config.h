@@ -94,15 +94,6 @@ gboolean _nm_ip_config_best_default_route_merge (const NMPObject **best_default_
 
 /*****************************************************************************/
 
-gboolean nm_ip_config_obj_id_equal_ip4_address (const NMPlatformIP4Address *a,
-                                                const NMPlatformIP4Address *b);
-gboolean nm_ip_config_obj_id_equal_ip6_address (const NMPlatformIP6Address *a,
-                                                const NMPlatformIP6Address *b);
-gboolean nm_ip_config_obj_id_equal_ip4_route (const NMPlatformIP4Route *r_a,
-                                              const NMPlatformIP4Route *r_b);
-gboolean nm_ip_config_obj_id_equal_ip6_route (const NMPlatformIP6Route *r_a,
-                                              const NMPlatformIP6Route *r_b);
-
 gboolean _nm_ip_config_add_obj (NMDedupMultiIndex *multi_idx,
                                 NMIPConfigDedupMultiIdxType *idx_type,
                                 int ifindex,
@@ -159,9 +150,14 @@ int nm_ip4_config_get_ifindex (const NMIP4Config *self);
 NMDedupMultiIndex *nm_ip4_config_get_multi_idx (const NMIP4Config *self);
 
 NMIP4Config *nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int ifindex, gboolean capture_resolv_conf);
+
+void nm_ip4_config_add_device_routes (NMIP4Config *self,
+                                      guint32 default_route_metric,
+                                      GPtrArray **out_ip4_dev_route_blacklist);
+
 gboolean nm_ip4_config_commit (const NMIP4Config *self,
-                               NMPlatform *platform,
-                               guint32 default_route_metric);
+                               NMPlatform *platform);
+
 void nm_ip4_config_merge_setting (NMIP4Config *self, NMSettingIPConfig *setting, guint32 default_route_metric);
 NMSetting *nm_ip4_config_create_setting (const NMIP4Config *self);
 

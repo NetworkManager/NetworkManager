@@ -129,11 +129,6 @@ typedef enum {
 	 */
 	NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID,
 
-	/* NMIP4Config and NMIP6Config also track a list of routes. They have their
-	 * own notion of what equality means. Basically, they consider network/plen
-	 * for IPv4 and IPv6. */
-	NM_PLATFORM_IP_ROUTE_CMP_TYPE_DST,
-
 	/* compare all fields as they make sense for kernel. For example,
 	 * a route destination 192.168.1.5/24 is not accepted by kernel and
 	 * we treat it identical to 192.168.1.0/24. Semantically these
@@ -962,10 +957,10 @@ struct _NMPLookup;
 const struct _NMDedupMultiHeadEntry *nm_platform_lookup (NMPlatform *platform,
                                                          const struct _NMPLookup *lookup);
 
+gboolean nm_platform_lookup_predicate_routes_main (const NMPObject *obj,
+                                                   gpointer user_data);
 gboolean nm_platform_lookup_predicate_routes_main_skip_rtprot_kernel (const NMPObject *obj,
                                                                       gpointer user_data);
-gboolean nm_platform_lookup_predicate_routes_skip_rtprot_kernel (const NMPObject *obj,
-                                                                 gpointer user_data);
 
 GPtrArray *nm_platform_lookup_clone (NMPlatform *platform,
                                      const struct _NMPLookup *lookup,
