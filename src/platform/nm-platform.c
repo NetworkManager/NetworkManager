@@ -3592,18 +3592,56 @@ _err_inval_due_to_ipv6_tentative_pref_src (NMPlatform *self, const NMPObject *ob
 GPtrArray *
 nm_platform_ip_route_get_prune_list (NMPlatform *self,
                                      int addr_family,
-                                     int ifindex)
+                                     int ifindex,
+                                     NMIPRouteTableSyncMode route_table_sync)
 {
+	NMPLookup lookup;
+	GPtrArray *routes_prune;
+	const NMDedupMultiHeadEntry *head_entry;
+	CList *iter;
+
 	nm_assert (NM_IS_PLATFORM (self));
 	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
+	nm_assert (NM_IN_SET (route_table_sync, NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
+	                                        NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN,
+	                                        NM_IP_ROUTE_TABLE_SYNC_MODE_FULL,
+	                                        NM_IP_ROUTE_TABLE_SYNC_MODE_ALL));
 
-	return nm_platform_lookup_addrroute_clone (self,
-	                                           addr_family == AF_INET
-	                                             ? NMP_OBJECT_TYPE_IP4_ROUTE
-	                                             : NMP_OBJECT_TYPE_IP6_ROUTE,
-	                                           ifindex,
-	                                           nm_platform_lookup_predicate_routes_main,
-	                                           NULL);
+	if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_NONE)
+		return NULL;
+
+	nmp_lookup_init_addrroute (&lookup,
+	                           addr_family == AF_INET
+	                             ? NMP_OBJECT_TYPE_IP4_ROUTE
+	                             : NMP_OBJECT_TYPE_IP6_ROUTE,
+	                           ifindex);
+	head_entry = nm_platform_lookup (self, &lookup);
+	if (!head_entry)
+		return NULL;
+
+	routes_prune = g_ptr_array_new_full (head_entry->len,
+	                                     (GDestroyNotify) nm_dedup_multi_obj_unref);
+
+	c_list_for_each (iter, &head_entry->lst_entries_head) {
+		const NMPObject *obj = c_list_entry (iter, NMDedupMultiEntry, lst_entries)->obj;
+
+		if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_FULL) {
+			if (nm_platform_route_table_uncoerce (NMP_OBJECT_CAST_IP_ROUTE (obj)->table_coerced, TRUE) == (RT_TABLE_LOCAL))
+				continue;
+		} else if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN) {
+			if (!nm_platform_route_table_is_main (NMP_OBJECT_CAST_IP_ROUTE (obj)->table_coerced))
+				continue;
+		} else
+			nm_assert (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_ALL);
+
+		g_ptr_array_add (routes_prune, (gpointer) nmp_object_ref (obj));
+	}
+
+	if (routes_prune->len == 0) {
+		g_ptr_array_unref (routes_prune);
+		return NULL;
+	}
+	return routes_prune;
 }
 
 /**
@@ -3800,21 +3838,19 @@ nm_platform_ip_route_flush (NMPlatform *self,
 	if (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET)) {
 		gs_unref_ptrarray GPtrArray *routes_prune = NULL;
 
-		routes_prune = nm_platform_lookup_addrroute_clone (self,
-		                                                   NMP_OBJECT_TYPE_IP4_ROUTE,
-		                                                   ifindex,
-		                                                   NULL,
-		                                                   NULL);
+		routes_prune = nm_platform_ip_route_get_prune_list (self,
+		                                                    AF_INET,
+		                                                    ifindex,
+		                                                    NM_IP_ROUTE_TABLE_SYNC_MODE_ALL);
 		success &= nm_platform_ip_route_sync (self, AF_INET, ifindex, NULL, routes_prune, NULL);
 	}
 	if (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET6)) {
 		gs_unref_ptrarray GPtrArray *routes_prune = NULL;
 
-		routes_prune = nm_platform_lookup_addrroute_clone (self,
-		                                                   NMP_OBJECT_TYPE_IP6_ROUTE,
-		                                                   ifindex,
-		                                                   NULL,
-		                                                   NULL);
+		routes_prune = nm_platform_ip_route_get_prune_list (self,
+		                                                    AF_INET6,
+		                                                    ifindex,
+		                                                    NM_IP_ROUTE_TABLE_SYNC_MODE_ALL);
 		success &= nm_platform_ip_route_sync (self, AF_INET6, ifindex, NULL, routes_prune, NULL);
 	}
 	return success;

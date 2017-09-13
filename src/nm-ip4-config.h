@@ -156,7 +156,8 @@ void nm_ip4_config_add_device_routes (NMIP4Config *self,
                                       GPtrArray **out_ip4_dev_route_blacklist);
 
 gboolean nm_ip4_config_commit (const NMIP4Config *self,
-                               NMPlatform *platform);
+                               NMPlatform *platform,
+                               NMIPRouteTableSyncMode route_table_sync);
 
 void nm_ip4_config_merge_setting (NMIP4Config *self, NMSettingIPConfig *setting, guint32 default_route_metric);
 NMSetting *nm_ip4_config_create_setting (const NMIP4Config *self);

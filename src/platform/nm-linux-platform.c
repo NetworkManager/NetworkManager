@@ -1988,6 +1988,7 @@ static NMPObject *
 _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 {
 	static struct nla_policy policy[RTA_MAX+1] = {
+		[RTA_TABLE]     = { .type = NLA_U32 },
 		[RTA_IIF]       = { .type = NLA_U32 },
 		[RTA_OIF]       = { .type = NLA_U32 },
 		[RTA_PRIORITY]  = { .type = NLA_U32 },
@@ -2010,7 +2011,6 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 	} nh;
 	guint32 mss;
 	guint32 window = 0, cwnd = 0, initcwnd = 0, initrwnd = 0, mtu = 0, lock = 0;
-	guint32 table;
 
 	if (!nlmsg_valid_hdr (nlh, sizeof (*rtm)))
 		return NULL;
@@ -2029,10 +2029,6 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 	err = nlmsg_parse (nlh, sizeof (struct rtmsg), tb, RTA_MAX, policy);
 	if (err < 0)
 		goto errout;
-
-	table = tb[RTA_TABLE]
-	        ? nla_get_u32 (tb[RTA_TABLE])
-	        : (guint32) rtm->rtm_table;
 
 	/*****************************************************************/
 
@@ -2149,7 +2145,10 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 
 	obj = nmp_object_new (is_v4 ? NMP_OBJECT_TYPE_IP4_ROUTE : NMP_OBJECT_TYPE_IP6_ROUTE, NULL);
 
-	obj->ip_route.table_coerced = nm_platform_route_table_coerce (table);
+	obj->ip_route.table_coerced = nm_platform_route_table_coerce (  tb[RTA_TABLE]
+	                                                              ? nla_get_u32 (tb[RTA_TABLE])
+	                                                              : (guint32) rtm->rtm_table);
+
 	obj->ip_route.ifindex = nh.ifindex;
 
 	if (_check_addr_or_errout (tb, RTA_DST, addr_len))

@@ -1868,6 +1868,8 @@ get_route_attributes_string (NMIPRoute *route, int family)
 			}
 		} else if (nm_streq (names[i], NM_IP_ROUTE_ATTRIBUTE_TOS)) {
 			g_string_append_printf (str, "%s 0x%02x", names[i], (unsigned) g_variant_get_byte (attr));
+		} else if (nm_streq (names[i], NM_IP_ROUTE_ATTRIBUTE_TABLE)) {
+			g_string_append_printf (str, "%s %u", names[i], (unsigned) g_variant_get_uint32 (attr));
 		} else if (   nm_streq (names[i], NM_IP_ROUTE_ATTRIBUTE_SRC)
 		           || nm_streq (names[i], NM_IP_ROUTE_ATTRIBUTE_FROM)) {
 			char *arg = nm_streq (names[i], NM_IP_ROUTE_ATTRIBUTE_SRC) ? "src" : "from";

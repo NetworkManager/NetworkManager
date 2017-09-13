@@ -1700,6 +1700,46 @@ out:
 	return nm_utils_ip_route_metric_normalize (addr_family, route_metric);
 }
 
+static NMIPRouteTableSyncMode
+get_route_table_sync (NMDevice *self, int addr_family)
+{
+	NMConnection *connection;
+	NMSettingIPConfig *s_ip;
+	NMIPRouteTableSyncMode route_table_sync = NM_IP_ROUTE_TABLE_SYNC_MODE_DEFAULT;
+
+	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
+
+	connection = nm_device_get_applied_connection (self);
+	if (connection) {
+		if (addr_family == AF_INET)
+			s_ip = nm_connection_get_setting_ip4_config (connection);
+		else
+			s_ip = nm_connection_get_setting_ip6_config (connection);
+
+		if (s_ip)
+			route_table_sync = nm_setting_ip_config_get_route_table_sync (s_ip);
+	}
+
+	if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_DEFAULT) {
+		gs_free char *value = NULL;
+
+		value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+		                                               addr_family == AF_INET
+		                                                 ? "ipv4.route-table-sync"
+		                                                 : "ipv6.route-table-sync",
+		                                               self);
+		route_table_sync = _nm_utils_ascii_str_to_int64 (value, 10,
+		                                                 NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
+		                                                 NM_IP_ROUTE_TABLE_SYNC_MODE_FULL,
+		                                                 NM_IP_ROUTE_TABLE_SYNC_MODE_DEFAULT);
+
+		if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_DEFAULT)
+			route_table_sync = NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN;
+	}
+
+	return route_table_sync;
+}
+
 const NMPObject *
 nm_device_get_best_default_route (NMDevice *self,
                                   int addr_family)
@@ -9902,7 +9942,8 @@ nm_device_set_ip4_config (NMDevice *self,
 	if (commit && new_config) {
 		_commit_mtu (self, new_config);
 		success = nm_ip4_config_commit (new_config,
-		                                nm_device_get_platform (self));
+		                                nm_device_get_platform (self),
+		                                get_route_table_sync (self, AF_INET));
 		nm_platform_ip4_dev_route_blacklist_set (nm_device_get_platform (self),
 		                                         nm_ip4_config_get_ifindex (new_config),
 		                                         ip4_dev_route_blacklist);
@@ -10075,6 +10116,7 @@ nm_device_set_ip6_config (NMDevice *self,
 
 		success = nm_ip6_config_commit (new_config,
 		                                nm_device_get_platform (self),
+		                                get_route_table_sync (self, AF_INET6),
 		                                &temporary_not_available);
 
 		if (!_rt6_temporary_not_available_set (self, temporary_not_available))

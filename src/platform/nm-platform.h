@@ -1219,7 +1219,8 @@ gboolean nm_platform_ip_route_delete (NMPlatform *self, const NMPObject *route);
 
 GPtrArray *nm_platform_ip_route_get_prune_list (NMPlatform *self,
                                                 int addr_family,
-                                                int ifindex);
+                                                int ifindex,
+                                                NMIPRouteTableSyncMode route_table_sync);
 
 gboolean nm_platform_ip_route_sync (NMPlatform *self,
                                     int addr_family,

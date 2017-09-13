@@ -131,6 +131,7 @@ gboolean     nm_ip_route_attribute_validate  (const char *name,
                                               gboolean *known,
                                               GError **error);
 
+#define NM_IP_ROUTE_ATTRIBUTE_TABLE          "table"
 #define NM_IP_ROUTE_ATTRIBUTE_SRC            "src"
 #define NM_IP_ROUTE_ATTRIBUTE_FROM           "from"
 #define NM_IP_ROUTE_ATTRIBUTE_TOS            "tos"
