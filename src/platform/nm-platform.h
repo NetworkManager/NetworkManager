@@ -1177,7 +1177,8 @@ gboolean nm_platform_ip_route_sync (NMPlatform *self,
                                     int ifindex,
                                     GPtrArray *routes,
                                     NMPObjectPredicateFunc kernel_delete_predicate,
-                                    gpointer kernel_delete_userdata);
+                                    gpointer kernel_delete_userdata,
+                                    GPtrArray **out_temporary_not_available);
 gboolean nm_platform_ip_route_flush (NMPlatform *self,
                                      int addr_family,
                                      int ifindex);

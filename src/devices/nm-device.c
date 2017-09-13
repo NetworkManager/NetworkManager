@@ -421,6 +421,8 @@ typedef struct _NMDevicePrivate {
 	bool           nm_ipv6ll; /* TRUE if NM handles the device's IPv6LL address */
 	NMIP6Config *  dad6_ip6_config;
 
+	GPtrArray *    ipv6_routes_temporary_not_available;
+
 	NMNDisc *      ndisc;
 	gulong         ndisc_changed_id;
 	gulong         ndisc_timeout_id;
@@ -6284,6 +6286,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 	const char *token = NULL;
 	GSList *iter;
 	NMPlatformIP6Route default_route;
+	guint i;
 
 	/* Apply ignore-auto-routes and ignore-auto-dns settings */
 	connection = nm_device_get_applied_connection (self);
@@ -6348,6 +6351,14 @@ ip6_config_merge_and_apply (NMDevice *self,
 		nm_ip6_config_merge (composite, priv->wwan_ip6_config,
 		                       (ignore_auto_routes ? NM_IP_CONFIG_MERGE_NO_ROUTES : 0)
 		                     | (ignore_auto_dns ? NM_IP_CONFIG_MERGE_NO_DNS : 0));
+	}
+
+	if (priv->ipv6_routes_temporary_not_available) {
+		for (i = 0; i < priv->ipv6_routes_temporary_not_available->len; i++) {
+			nm_ip6_config_add_route (composite,
+			                         NMP_OBJECT_CAST_IP6_ROUTE (priv->ipv6_routes_temporary_not_available->pdata[i]),
+			                         NULL);
+		}
 	}
 
 	/* Merge user overrides into the composite config. For assumed connections,
@@ -7452,6 +7463,8 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 		priv->ac_ip6_config = NULL;
 	}
 
+	g_clear_pointer (&priv->ipv6_routes_temporary_not_available, g_ptr_array_unref);
+
 	s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting_ip6_config (connection));
 	g_assert (s_ip6);
 
@@ -7505,6 +7518,7 @@ addrconf6_cleanup (NMDevice *self)
 	nm_device_remove_pending_action (self, NM_PENDING_ACTION_AUTOCONF6, FALSE);
 
 	g_clear_object (&priv->ac_ip6_config);
+	g_clear_pointer (&priv->ipv6_routes_temporary_not_available, g_ptr_array_unref);
 	g_clear_object (&priv->ndisc);
 }
 
@@ -9942,8 +9956,17 @@ nm_device_set_ip6_config (NMDevice *self,
 	/* Always commit to nm-platform to update lifetimes */
 	if (commit && new_config) {
 		_commit_mtu (self, priv->ip4_config);
+
+		if (priv->ipv6_routes_temporary_not_available)
+			g_ptr_array_set_size (priv->ipv6_routes_temporary_not_available, 0);
+
 		success = nm_ip6_config_commit (new_config,
-		                                nm_device_get_platform (self));
+		                                nm_device_get_platform (self),
+		                                &priv->ipv6_routes_temporary_not_available);
+
+		if (   priv->ipv6_routes_temporary_not_available
+		    && priv->ipv6_routes_temporary_not_available->len == 0)
+			g_clear_pointer (&priv->ipv6_routes_temporary_not_available, g_ptr_array_unref);
 	}
 
 	if (new_config) {
@@ -12015,6 +12038,8 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 	g_clear_object (&priv->wwan_ip6_config);
 	g_clear_object (&priv->ip6_config);
 	g_clear_object (&priv->dad6_ip6_config);
+
+	g_clear_pointer (&priv->ipv6_routes_temporary_not_available, g_ptr_array_unref);
 
 	g_slist_free_full (priv->vpn4_configs, g_object_unref);
 	priv->vpn4_configs = NULL;

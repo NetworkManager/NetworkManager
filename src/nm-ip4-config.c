@@ -837,6 +837,7 @@ nm_ip4_config_commit (const NMIP4Config *self,
 	                                ifindex,
 	                                routes,
 	                                nm_platform_lookup_predicate_routes_main,
+	                                NULL,
 	                                NULL))
 		success = FALSE;
 
