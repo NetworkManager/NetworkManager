@@ -195,7 +195,7 @@ get_system_encodings (void)
 {
 	static const char *const *cached_encodings;
 	static char *default_encodings[4];
-	const char *const *encodings;
+	const char *const *encodings = NULL;
 	char *lang;
 
 	if (cached_encodings)
