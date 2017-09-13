@@ -1289,7 +1289,7 @@ nm_ip_route_attribute_validate  (const char *name,
 		char *sep;
 
 		switch (spec->str_type) {
-		case 'a':	/* IP address */
+		case 'a': /* IP address */
 			if (!nm_utils_ipaddr_valid (family, string)) {
 				g_set_error (error,
 				             NM_CONNECTION_ERROR,
@@ -1301,7 +1301,7 @@ nm_ip_route_attribute_validate  (const char *name,
 				return FALSE;
 			}
 			break;
-		case 'p':	/* IP address + optional prefix */
+		case 'p': /* IP address + optional prefix */
 			string_free = g_strdup (string);
 			sep = strchr (string_free, '/');
 			if (sep) {
@@ -1330,6 +1330,26 @@ nm_ip_route_attribute_validate  (const char *name,
 		}
 	}
 
+	return TRUE;
+}
+
+gboolean
+_nm_ip_route_attribute_validate_all (const NMIPRoute *route)
+{
+	GHashTableIter iter;
+	const char *key;
+	GVariant *val;
+
+	g_return_val_if_fail (route, FALSE);
+
+	if (!route->attributes)
+		return TRUE;
+
+	g_hash_table_iter_init (&iter, route->attributes);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &val)) {
+		if (!nm_ip_route_attribute_validate (key, val, route->family, NULL, NULL))
+			return FALSE;
+	}
 	return TRUE;
 }
 
