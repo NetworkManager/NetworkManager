@@ -239,7 +239,7 @@ create_and_realize (NMDevice *device,
 	parent_ifindex = nm_device_get_ifindex (parent);
 	if (parent_ifindex <= 0) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_MISSING_DEPENDENCIES,
-		             "cannot retrieve ifindex of interface %s (%s): skip VLAN creation for now",
+		             "cannot retrieve ifindex of interface %s (%s)",
 		             nm_device_get_iface (parent),
 		             nm_device_get_type_desc (parent));
 		return FALSE;
