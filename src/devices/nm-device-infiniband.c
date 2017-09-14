@@ -269,13 +269,13 @@ create_and_realize (NMDevice *device,
 	}
 
 	if (!parent) {
-		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_MISSING_DEPENDENCIES,
 		             "InfiniBand partitions can not be created without a parent interface");
 		return FALSE;
 	}
 
 	if (!NM_IS_DEVICE_INFINIBAND (parent)) {
-		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_MISSING_DEPENDENCIES,
 		             "Parent interface %s must be an InfiniBand interface",
 		             nm_device_get_iface (parent));
 		return FALSE;
@@ -283,7 +283,7 @@ create_and_realize (NMDevice *device,
 
 	priv->parent_ifindex = nm_device_get_ifindex (parent);
 	if (priv->parent_ifindex <= 0) {
-		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_MISSING_DEPENDENCIES,
 		             "failed to get InfiniBand parent %s ifindex",
 		             nm_device_get_iface (parent));
 		return FALSE;

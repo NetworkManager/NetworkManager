@@ -143,6 +143,8 @@ GQuark nm_crypto_error_quark (void);
  *   activation request (eg, the #NMAccessPoint or #NMWimaxNsp) was not
  *   found.
  * @NM_DEVICE_ERROR_VERSION_ID_MISMATCH: the version id did not match.
+ * @NM_DEVICE_ERROR_MISSING_DEPENDENCIES: the requested operation could not
+ *   be completed due to missing dependencies.
  *
  * Device-related errors.
  *
@@ -160,6 +162,7 @@ typedef enum {
 	NM_DEVICE_ERROR_NOT_ALLOWED,               /*< nick=NotAllowed >*/
 	NM_DEVICE_ERROR_SPECIFIC_OBJECT_NOT_FOUND, /*< nick=SpecificObjectNotFound >*/
 	NM_DEVICE_ERROR_VERSION_ID_MISMATCH,       /*< nick=VersionIdMismatch >*/
+	NM_DEVICE_ERROR_MISSING_DEPENDENCIES,      /*< nick=MissingDependencies >*/
 } NMDeviceError;
 
 #define NM_DEVICE_ERROR nm_device_error_quark ()
