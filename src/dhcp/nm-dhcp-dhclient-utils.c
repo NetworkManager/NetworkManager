@@ -33,7 +33,9 @@
 #include "platform/nm-platform.h"
 #include "NetworkManagerUtils.h"
 
-#define CLIENTID_TAG            "send dhcp-client-identifier"
+#define TIMEOUT_TAG      "timeout "
+#define RETRY_TAG        "retry "
+#define CLIENTID_TAG     "send dhcp-client-identifier"
 
 #define HOSTNAME4_TAG    "send host-name"
 #define HOSTNAME4_FORMAT HOSTNAME4_TAG " \"%s\"; # added by NetworkManager"
@@ -261,6 +263,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
                                 GBytes *client_id,
                                 const char *anycast_addr,
                                 const char *hostname,
+                                guint32 timeout,
                                 gboolean use_fqdn,
                                 const char *orig_path,
                                 const char *orig_contents,
@@ -307,6 +310,17 @@ nm_dhcp_dhclient_create_config (const char *interface,
 			}
 
 			if (intf[0] && !nm_streq (intf, interface))
+				continue;
+
+			/* Some timing parameters in dhclient should not be imported (timeout, retry).
+			 * The retry parameter will be simply not used as we will exit on first failure.
+			 * The timeout one instead may affect NetworkManager behavior: if the timeout
+			 * elapses before dhcp-timeout dhclient will report failure and cause NM to
+			 * fail the dhcp process before dhcp-timeout. So, always skip importing timeout
+			 * as we will need to add one greater than dhcp-timeout.
+			 */
+			if (   !strncmp (p, TIMEOUT_TAG, strlen (TIMEOUT_TAG))
+			    || !strncmp (p, RETRY_TAG, strlen (RETRY_TAG)))
 				continue;
 
 			if (!strncmp (p, CLIENTID_TAG, strlen (CLIENTID_TAG))) {
@@ -373,6 +387,14 @@ nm_dhcp_dhclient_create_config (const char *interface,
 			g_strfreev (lines);
 	} else
 		g_string_append_c (new_contents, '\n');
+
+	/* ensure dhclient timeout is greater than dhcp-timeout: as dhclient timeout default value is
+	 * 60 seconds, we need this only if dhcp-timeout is greater than 60.
+	 */
+	if (timeout >= 60) {
+		timeout = timeout < G_MAXINT32 ? timeout + 1 : G_MAXINT32;
+		g_string_append_printf (new_contents, "timeout %u;\n", timeout);
+	}
 
 	if (addr_family == AF_INET) {
 		add_ip4_config (new_contents, client_id, hostname, use_fqdn);
