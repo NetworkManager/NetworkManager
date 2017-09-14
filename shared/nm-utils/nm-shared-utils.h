@@ -153,6 +153,8 @@ void nm_utils_strbuf_append_str (char **buf, gsize *len, const char *str);
 
 /*****************************************************************************/
 
+const char **nm_utils_strsplit_set (const char *str, const char *delimiters);
+
 gssize nm_utils_strv_find_first (char **list, gssize len, const char *needle);
 
 char **_nm_utils_strv_cleanup (char **strv,
