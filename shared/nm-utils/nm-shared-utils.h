@@ -170,9 +170,18 @@ gboolean nm_utils_ip_is_site_local (int addr_family,
 
 /*****************************************************************************/
 
+gboolean nm_utils_parse_inaddr_bin  (const char *text,
+                                     int family,
+                                     gpointer out_addr);
+
 gboolean nm_utils_parse_inaddr (const char *text,
                                 int family,
                                 char **out_addr);
+
+gboolean nm_utils_parse_inaddr_prefix_bin (const char *text,
+                                           int family,
+                                           gpointer out_addr,
+                                           int *out_prefix);
 
 gboolean nm_utils_parse_inaddr_prefix (const char *text,
                                        int family,
