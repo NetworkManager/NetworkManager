@@ -32,6 +32,10 @@ const void *const _NM_PTRARRAY_EMPTY[1] = { NULL };
 
 /*****************************************************************************/
 
+const NMIPAddr nm_ip_addr_zero = { 0 };
+
+/*****************************************************************************/
+
 void
 nm_utils_strbuf_append_c (char **buf, gsize *len, char c)
 {

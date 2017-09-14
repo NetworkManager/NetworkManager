@@ -110,10 +110,6 @@ _nm_utils_set_testing (NMUtilsTestFlags flags)
 
 /*****************************************************************************/
 
-const NMIPAddr nm_ip_addr_zero = NMIPAddrInit;
-
-/*****************************************************************************/
-
 static GSList *_singletons = NULL;
 static gboolean _singletons_shutdown = FALSE;
 
