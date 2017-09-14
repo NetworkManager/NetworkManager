@@ -182,6 +182,7 @@ merge_dhclient_config (NMDhcpDhclient *self,
                        GBytes *client_id,
                        const char *anycast_addr,
                        const char *hostname,
+                       guint32 timeout,
                        gboolean use_fqdn,
                        const char *orig_path,
                        GBytes **out_new_client_id,
@@ -206,7 +207,8 @@ merge_dhclient_config (NMDhcpDhclient *self,
 	if (is_ip6 && hostname && !strchr (hostname, '.'))
 		_LOGW ("hostname is not a FQDN, it will be ignored");
 
-	new = nm_dhcp_dhclient_create_config (iface, is_ip6, client_id, anycast_addr, hostname, use_fqdn, orig_path, orig, out_new_client_id);
+	new = nm_dhcp_dhclient_create_config (iface, is_ip6, client_id, anycast_addr, hostname, timeout,
+	                                      use_fqdn, orig_path, orig, out_new_client_id);
 	g_assert (new);
 	success = g_file_set_contents (conf_file, new, -1, error);
 	g_free (new);
@@ -294,6 +296,7 @@ create_dhclient_config (NMDhcpDhclient *self,
                         GBytes *client_id,
                         const char *dhcp_anycast_addr,
                         const char *hostname,
+                        guint32 timeout,
                         gboolean use_fqdn,
                         GBytes **out_new_client_id)
 {
@@ -314,7 +317,7 @@ create_dhclient_config (NMDhcpDhclient *self,
 
 	error = NULL;
 	success = merge_dhclient_config (self, iface, new, is_ip6, client_id, dhcp_anycast_addr,
-			                         hostname, use_fqdn, orig, out_new_client_id, &error);
+	                                 hostname, timeout, use_fqdn, orig, out_new_client_id, &error);
 	if (!success) {
 		_LOGW ("error creating dhclient configuration: %s", error->message);
 		g_error_free (error);
@@ -342,8 +345,6 @@ dhclient_start (NMDhcpClient *client,
 	char *binary_name, *cmd_str, *pid_file = NULL, *system_bus_address_env = NULL;
 	gboolean ipv6, success;
 	char *escaped, *preferred_leasefile_path = NULL;
-	guint32 timeout;
-	char timeout_str[64];
 
 	g_return_val_if_fail (priv->pid_file == NULL, FALSE);
 
@@ -446,17 +447,6 @@ dhclient_start (NMDhcpClient *client,
 		g_ptr_array_add (argv, (gpointer) priv->conf_file);
 	}
 
-	/* Specify a timeout longer than configuration's one,
-	 * so that dhclient doesn't send back a FAIL event before
-	 * that time.
-	 */
-	timeout = nm_dhcp_client_get_timeout (client);
-	if (timeout >= 60) {
-		timeout = timeout < G_MAXINT32 ? timeout + 1 : G_MAXINT32;
-		g_ptr_array_add (argv, (gpointer) "--timeout");
-		g_ptr_array_add (argv, (gpointer) nm_sprintf_buf (timeout_str, "%u", (unsigned) timeout));
-	}
-
 	/* Usually the system bus address is well-known; but if it's supposed
 	 * to be something else, we need to push it to dhclient, since dhclient
 	 * sanitizes the environment it gives the action scripts.
@@ -506,6 +496,7 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 	GBytes *client_id;
 	gs_unref_bytes GBytes *new_client_id = NULL;
 	const char *iface, *uuid, *hostname;
+	guint32 timeout;
 	gboolean success = FALSE;
 	gboolean use_fqdn;
 
@@ -513,10 +504,11 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 	uuid = nm_dhcp_client_get_uuid (client);
 	client_id = nm_dhcp_client_get_client_id (client);
 	hostname = nm_dhcp_client_get_hostname (client);
+	timeout = nm_dhcp_client_get_timeout (client);
 	use_fqdn = nm_dhcp_client_get_use_fqdn (client);
 
 	priv->conf_file = create_dhclient_config (self, iface, FALSE, uuid, client_id, dhcp_anycast_addr,
-	                                          hostname, use_fqdn, &new_client_id);
+	                                          hostname, timeout, use_fqdn, &new_client_id);
 	if (priv->conf_file) {
 		if (new_client_id)
 			nm_dhcp_client_set_client_id (client, new_client_id);
@@ -539,12 +531,15 @@ ip6_start (NMDhcpClient *client,
 	NMDhcpDhclient *self = NM_DHCP_DHCLIENT (client);
 	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (self);
 	const char *iface, *uuid, *hostname;
+	guint32 timeout;
 
 	iface = nm_dhcp_client_get_iface (client);
 	uuid = nm_dhcp_client_get_uuid (client);
 	hostname = nm_dhcp_client_get_hostname (client);
+	timeout = nm_dhcp_client_get_timeout (client);
 
-	priv->conf_file = create_dhclient_config (self, iface, TRUE, uuid, NULL, dhcp_anycast_addr, hostname, TRUE, NULL);
+	priv->conf_file = create_dhclient_config (self, iface, TRUE, uuid, NULL, dhcp_anycast_addr,
+	                                          hostname, timeout, TRUE, NULL);
 	if (!priv->conf_file) {
 		_LOGW ("error creating dhclient configuration file");
 		return FALSE;
