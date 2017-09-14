@@ -22,6 +22,25 @@
 #ifndef __NM_SHARED_UTILS_H__
 #define __NM_SHARED_UTILS_H__
 
+#include <netinet/in.h>
+
+/*****************************************************************************/
+
+typedef struct {
+	union {
+		guint8 addr_ptr[1];
+		in_addr_t addr4;
+		struct in6_addr addr6;
+
+		/* NMIPAddr is really a union for IP addresses.
+		 * However, as ethernet addresses fit in here nicely, use
+		 * it also for an ethernet MAC address. */
+		guint8 addr_eth[6 /*ETH_ALEN*/];
+	};
+} NMIPAddr;
+
+extern const NMIPAddr nm_ip_addr_zero;
+
 /*****************************************************************************/
 
 #define NM_CMP_RETURN(c) \
