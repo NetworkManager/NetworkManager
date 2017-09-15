@@ -1891,7 +1891,17 @@ get_route_attributes_string (NMIPRoute *route, int family)
 			                        (lock && g_variant_get_boolean (lock)) ? "lock " : "",
 			                        g_variant_get_uint32 (attr));
 		} else if (strstr (names[i], "lock-")) {
-			/* handled above */
+			const char *n = &(names[i])[NM_STRLEN ("lock-")];
+
+			attr = nm_ip_route_get_attribute (route, n);
+			if (!attr) {
+				g_string_append_printf (str,
+				                        "%s lock 0",
+				                        n);
+			} else {
+				/* we also have a corresponding attribute with the numeric value. The
+				 * lock setting is handled above. */
+			}
 		} else if (nm_streq (names[i], NM_IP_ROUTE_ATTRIBUTE_TOS)) {
 			g_string_append_printf (str, "%s 0x%02x", names[i], (unsigned) g_variant_get_byte (attr));
 		} else if (   nm_streq (names[i], NM_IP_ROUTE_ATTRIBUTE_SRC)
