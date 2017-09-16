@@ -3182,8 +3182,8 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 				              NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE,
 				              wep_passphrase ? NM_WEP_KEY_TYPE_PASSPHRASE: NM_WEP_KEY_TYPE_KEY,
 				              NULL);
-			} else if (   !(ap_wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
-				   && !(ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
+			} else if (   (ap_wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
+			           || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)) {
 				/* WPA PSK */
 				g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_PSK, password, NULL);
 			}
