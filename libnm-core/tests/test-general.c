@@ -98,6 +98,67 @@ test_nm_g_slice_free_fcn (void)
 
 /*****************************************************************************/
 
+static void
+_do_test_nm_utils_strsplit_set (const char *str, ...)
+{
+	gs_unref_ptrarray GPtrArray *args_array = g_ptr_array_new ();
+	const char *const*args;
+	gs_free const char **words = NULL;
+	const char *arg;
+	gsize i;
+	va_list ap;
+
+	va_start (ap, str);
+	while ((arg = va_arg (ap, const char *)))
+		g_ptr_array_add (args_array, (gpointer) arg);
+	va_end (ap);
+	g_ptr_array_add (args_array, NULL);
+
+	args = (const char *const*) args_array->pdata;
+
+	words = nm_utils_strsplit_set (str, " \t\n");
+
+	if (!args[0]) {
+		g_assert (!words);
+		g_assert (   !str
+		          || NM_STRCHAR_ALL (str, ch, NM_IN_SET (ch, ' ', '\t', '\n')));
+		return;
+	}
+	g_assert (words);
+	for (i = 0; args[i] || words[i]; i++) {
+		g_assert (args[i]);
+		g_assert (words[i]);
+		g_assert (args[i][0]);
+		g_assert (NM_STRCHAR_ALL (args[i], ch, !NM_IN_SET (ch, ' ', '\t', '\n')));
+		g_assert_cmpstr (args[i], ==, words[i]);
+	}
+}
+
+#define do_test_nm_utils_strsplit_set(str, ...) \
+	_do_test_nm_utils_strsplit_set (str, ##__VA_ARGS__, NULL)
+
+static void
+test_nm_utils_strsplit_set (void)
+{
+	do_test_nm_utils_strsplit_set (NULL);
+	do_test_nm_utils_strsplit_set ("");
+	do_test_nm_utils_strsplit_set ("\t");
+	do_test_nm_utils_strsplit_set (" \t\n");
+	do_test_nm_utils_strsplit_set ("a", "a");
+	do_test_nm_utils_strsplit_set ("a b", "a", "b");
+	do_test_nm_utils_strsplit_set ("a\rb", "a\rb");
+	do_test_nm_utils_strsplit_set ("  a\rb  ", "a\rb");
+	do_test_nm_utils_strsplit_set ("  a bbbd afds ere", "a", "bbbd", "afds", "ere");
+	do_test_nm_utils_strsplit_set ("1 2 3 4 5 6 7 8 9 0 "
+	                               "1 2 3 4 5 6 7 8 9 0 "
+	                               "1 2 3 4 5 6 7 8 9 0",
+	                               "1", "2", "3", "4", "5", "6", "7", "8", "9", "0",
+	                               "1", "2", "3", "4", "5", "6", "7", "8", "9", "0",
+	                               "1", "2", "3", "4", "5", "6", "7", "8", "9", "0");
+}
+
+/*****************************************************************************/
+
 typedef struct {
 	int val;
 	int idx;
@@ -6201,6 +6262,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_c_list_sort", test_c_list_sort);
 	g_test_add_func ("/core/general/test_dedup_multi", test_dedup_multi);
 	g_test_add_func ("/core/general/test_utils_str_utf8safe", test_utils_str_utf8safe);
+	g_test_add_func ("/core/general/test_nm_utils_strsplit_set", test_nm_utils_strsplit_set);
 	g_test_add_func ("/core/general/test_nm_in_set", test_nm_in_set);
 	g_test_add_func ("/core/general/test_nm_in_strset", test_nm_in_strset);
 	g_test_add_func ("/core/general/test_setting_vpn_items", test_setting_vpn_items);

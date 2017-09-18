@@ -645,7 +645,7 @@ svFileGetName (const shvarFile *s)
 }
 
 void
-svFileSetName_test_only (shvarFile *s, const char *fileName)
+_nmtst_svFileSetName (shvarFile *s, const char *fileName)
 {
 	/* changing the file name is not supported for regular
 	 * operation. Only allowed to use in tests, othewise,
@@ -655,7 +655,7 @@ svFileSetName_test_only (shvarFile *s, const char *fileName)
 }
 
 void
-svFileSetModified_test_only (shvarFile *s)
+_nmtst_svFileSetModified (shvarFile *s)
 {
 	/* marking a file as modified is only for testing. */
 	s->modified = TRUE;

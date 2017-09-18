@@ -198,6 +198,16 @@ GHashTable *_nm_utils_copy_strdict (GHashTable *strdict);
 
 typedef gpointer (*NMUtilsCopyFunc) (gpointer);
 
+gboolean _nm_ip_route_attribute_validate_all (const NMIPRoute *route);
+
+static inline void
+_nm_auto_ip_route_unref (NMIPRoute **v)
+{
+	if (*v)
+		nm_ip_route_unref (*v);
+}
+#define nm_auto_ip_route_unref nm_auto (_nm_auto_ip_route_unref)
+
 GPtrArray *_nm_utils_copy_slist_to_array (const GSList *list,
                                           NMUtilsCopyFunc copy_func,
                                           GDestroyNotify unref_func);

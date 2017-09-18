@@ -2087,7 +2087,7 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 	    || tb[RTA_GATEWAY]
 	    || tb[RTA_FLOW]) {
 		int ifindex = 0;
-		NMIPAddr gateway = NMIPAddrInit;
+		NMIPAddr gateway = { };
 
 		if (tb[RTA_OIF])
 			ifindex = nla_get_u32 (tb[RTA_OIF]);

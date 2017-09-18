@@ -26,15 +26,15 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include "nm-glib.h"
-
-/*****************************************************************************/
-
 #define _nm_packed __attribute__ ((packed))
 #define _nm_unused __attribute__ ((unused))
 #define _nm_pure   __attribute__ ((pure))
 #define _nm_const  __attribute__ ((const))
 #define _nm_printf(a,b) __attribute__ ((__format__ (__printf__, a, b)))
+
+#include "nm-glib.h"
+
+/*****************************************************************************/
 
 #define nm_offsetofend(t,m) (G_STRUCT_OFFSET (t,m) + sizeof (((t *) NULL)->m))
 

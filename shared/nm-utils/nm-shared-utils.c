@@ -32,6 +32,10 @@ const void *const _NM_PTRARRAY_EMPTY[1] = { NULL };
 
 /*****************************************************************************/
 
+const NMIPAddr nm_ip_addr_zero = { 0 };
+
+/*****************************************************************************/
+
 void
 nm_utils_strbuf_append_c (char **buf, gsize *len, char c)
 {
@@ -170,15 +174,11 @@ nm_utils_ip_is_site_local (int addr_family,
 /*****************************************************************************/
 
 gboolean
-nm_utils_parse_inaddr (const char *text,
-                       int family,
-                       char **out_addr)
+nm_utils_parse_inaddr_bin  (const char *text,
+                            int family,
+                            gpointer out_addr)
 {
-	union {
-		in_addr_t v4;
-		struct in6_addr v6;
-	} addrbin;
-	char addrstr_buf[MAX (INET_ADDRSTRLEN, INET6_ADDRSTRLEN)];
+	NMIPAddr addrbin;
 
 	g_return_val_if_fail (text, FALSE);
 
@@ -187,35 +187,49 @@ nm_utils_parse_inaddr (const char *text,
 	else
 		g_return_val_if_fail (NM_IN_SET (family, AF_INET, AF_INET6), FALSE);
 
-	if (inet_pton (family, text, &addrbin) != 1)
+	if (inet_pton (family, text, out_addr ?: &addrbin) != 1)
 		return FALSE;
+	return TRUE;
+}
 
+gboolean
+nm_utils_parse_inaddr (const char *text,
+                       int family,
+                       char **out_addr)
+{
+	NMIPAddr addrbin;
+	char addrstr_buf[MAX (INET_ADDRSTRLEN, INET6_ADDRSTRLEN)];
+
+	if (!nm_utils_parse_inaddr_bin (text, family, &addrbin))
+		return FALSE;
 	NM_SET_OUT (out_addr, g_strdup (inet_ntop (family, &addrbin, addrstr_buf, sizeof (addrstr_buf))));
 	return TRUE;
 }
 
 gboolean
-nm_utils_parse_inaddr_prefix (const char *text,
-                              int family,
-                              char **out_addr,
-                              int *out_prefix)
+nm_utils_parse_inaddr_prefix_bin (const char *text,
+                                  int family,
+                                  gpointer out_addr,
+                                  int *out_prefix)
 {
 	gs_free char *addrstr_free = NULL;
 	int prefix = -1;
 	const char *slash;
 	const char *addrstr;
-	union {
-		in_addr_t v4;
-		struct in6_addr v6;
-	} addrbin;
-	char addrstr_buf[MAX (INET_ADDRSTRLEN, INET6_ADDRSTRLEN)];
+	NMIPAddr addrbin;
+	int addr_len;
 
 	g_return_val_if_fail (text, FALSE);
 
 	if (family == AF_UNSPEC)
 		family = strchr (text, ':') ? AF_INET6 : AF_INET;
+
+	if (family == AF_INET)
+		addr_len = sizeof (in_addr_t);
+	else if (family == AF_INET6)
+		addr_len = sizeof (struct in6_addr);
 	else
-		g_return_val_if_fail (NM_IN_SET (family, AF_INET, AF_INET6), FALSE);
+		g_return_val_if_reached (FALSE);
 
 	slash = strchr (text, '/');
 	if (slash)
@@ -235,8 +249,24 @@ nm_utils_parse_inaddr_prefix (const char *text,
 			return FALSE;
 	}
 
-	NM_SET_OUT (out_addr, g_strdup (inet_ntop (family, &addrbin, addrstr_buf, sizeof (addrstr_buf))));
+	if (out_addr)
+		memcpy (out_addr, &addrbin, addr_len);
 	NM_SET_OUT (out_prefix, prefix);
+	return TRUE;
+}
+
+gboolean
+nm_utils_parse_inaddr_prefix (const char *text,
+                              int family,
+                              char **out_addr,
+                              int *out_prefix)
+{
+	NMIPAddr addrbin;
+	char addrstr_buf[MAX (INET_ADDRSTRLEN, INET6_ADDRSTRLEN)];
+
+	if (!nm_utils_parse_inaddr_prefix_bin (text, family, &addrbin, out_prefix))
+		return FALSE;
+	NM_SET_OUT (out_addr, g_strdup (inet_ntop (family, &addrbin, addrstr_buf, sizeof (addrstr_buf))));
 	return TRUE;
 }
 
@@ -293,6 +323,118 @@ _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 ma
 }
 
 /*****************************************************************************/
+
+/**
+ * nm_utils_strsplit_set:
+ * @str: the string to split.
+ * @delimiters: the set of delimiters. If %NULL, defaults to " \t\n",
+ *   like bash's $IFS.
+ *
+ * This is a replacement for g_strsplit_set() which avoids copying
+ * each word once (the entire strv array), but instead copies it once
+ * and all words point into that internal copy.
+ *
+ * Another difference from g_strsplit_set() is that this never returns
+ * empty words. Multiple delimiters are combined and treated as one.
+ *
+ * Returns: %NULL if @str is %NULL or contains only delimiters.
+ *   Otherwise, a %NULL terminated strv array containing non-empty
+ *   words, split at the delimiter characters (delimiter characters
+ *   are removed).
+ *   The strings to which the result strv array points to are allocated
+ *   after the returned result itself. Don't free the strings themself,
+ *   but free everything with g_free().
+ */
+const char **
+nm_utils_strsplit_set (const char *str, const char *delimiters)
+{
+	const char **ptr, **ptr0;
+	gsize alloc_size, plen, i;
+	gsize str_len;
+	char *s0;
+	char *s;
+	guint8 delimiters_table[256];
+
+	if (!str)
+		return NULL;
+
+	/* initialize lookup table for delimiter */
+	if (!delimiters)
+		delimiters = " \t\n";
+	memset (delimiters_table, 0, sizeof (delimiters_table));
+	for (i = 0; delimiters[i]; i++)
+		delimiters_table[(guint8) delimiters[i]] = 1;
+
+#define _is_delimiter(ch, delimiters_table) \
+	((delimiters_table)[(guint8) (ch)] != 0)
+
+	/* skip initial delimiters, and return of the remaining string is
+	 * empty. */
+	while (_is_delimiter (str[0], delimiters_table))
+		str++;
+	if (!str[0])
+		return NULL;
+
+	str_len = strlen (str) + 1;
+	alloc_size = 8;
+
+	/* we allocate the buffer larger, so to copy @str at the
+	 * end of it as @s0. */
+	ptr0 = g_malloc ((sizeof (const char *) * (alloc_size + 1)) + str_len);
+	s0 = (char *) &ptr0[alloc_size + 1];
+	memcpy (s0, str, str_len);
+
+	plen = 0;
+	s = s0;
+	ptr = ptr0;
+
+	while (TRUE) {
+		if (plen >= alloc_size) {
+			const char **ptr_old = ptr;
+
+			/* reallocate the buffer. Note that for now the string
+			 * continues to be in ptr0/s0. We fix that at the end. */
+			alloc_size += 2;
+			ptr = g_malloc ((sizeof (const char *) * (alloc_size + 1)) + str_len);
+			memcpy (ptr, ptr_old, sizeof (const char *) * plen);
+			if (ptr_old != ptr0)
+				g_free (ptr_old);
+		}
+
+		ptr[plen++] = s;
+
+		nm_assert (s[0] && !_is_delimiter (s[0], delimiters_table));
+
+		while (TRUE) {
+			s++;
+			if (_is_delimiter (s[0], delimiters_table))
+				break;
+			if (s[0] == '\0')
+				goto done;
+		}
+
+		s[0] = '\0';
+		s++;
+		while (_is_delimiter (s[0], delimiters_table))
+			s++;
+		if (s[0] == '\0')
+			break;
+	}
+done:
+	ptr[plen] = NULL;
+
+	if (ptr != ptr0) {
+		/* we reallocated the buffer. We must copy over the
+		 * string @s0 and adjust the pointers. */
+		s = (char *) &ptr[alloc_size + 1];
+		memcpy (s, s0, str_len);
+		for (i = 0; i < plen; i++)
+			ptr[i] = &s[ptr[i] - s0];
+		g_free (ptr0);
+	}
+
+	return ptr;
+}
 
 /**
  * nm_utils_strv_find_first:

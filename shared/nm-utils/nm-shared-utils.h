@@ -22,6 +22,25 @@
 #ifndef __NM_SHARED_UTILS_H__
 #define __NM_SHARED_UTILS_H__
 
+#include <netinet/in.h>
+
+/*****************************************************************************/
+
+typedef struct {
+	union {
+		guint8 addr_ptr[1];
+		in_addr_t addr4;
+		struct in6_addr addr6;
+
+		/* NMIPAddr is really a union for IP addresses.
+		 * However, as ethernet addresses fit in here nicely, use
+		 * it also for an ethernet MAC address. */
+		guint8 addr_eth[6 /*ETH_ALEN*/];
+	};
+} NMIPAddr;
+
+extern const NMIPAddr nm_ip_addr_zero;
+
 /*****************************************************************************/
 
 #define NM_CMP_RETURN(c) \
@@ -134,6 +153,8 @@ void nm_utils_strbuf_append_str (char **buf, gsize *len, const char *str);
 
 /*****************************************************************************/
 
+const char **nm_utils_strsplit_set (const char *str, const char *delimiters);
+
 gssize nm_utils_strv_find_first (char **list, gssize len, const char *needle);
 
 char **_nm_utils_strv_cleanup (char **strv,
@@ -151,9 +172,18 @@ gboolean nm_utils_ip_is_site_local (int addr_family,
 
 /*****************************************************************************/
 
+gboolean nm_utils_parse_inaddr_bin  (const char *text,
+                                     int family,
+                                     gpointer out_addr);
+
 gboolean nm_utils_parse_inaddr (const char *text,
                                 int family,
                                 char **out_addr);
+
+gboolean nm_utils_parse_inaddr_prefix_bin (const char *text,
+                                           int family,
+                                           gpointer out_addr,
+                                           int *out_prefix);
 
 gboolean nm_utils_parse_inaddr_prefix (const char *text,
                                        int family,
