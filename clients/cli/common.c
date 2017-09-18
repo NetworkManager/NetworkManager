@@ -38,6 +38,61 @@
 
 /*****************************************************************************/
 
+static char **
+_ip_config_get_routes (NMIPConfig *cfg)
+{
+	gs_unref_hashtable GHashTable *hash = g_hash_table_new (g_str_hash, g_str_equal);
+	GPtrArray *ptr_array;
+	char **arr;
+	guint i;
+
+	ptr_array = nm_ip_config_get_routes (cfg);
+	if (!ptr_array)
+		return NULL;
+
+	arr = g_new (char *, ptr_array->len + 1);
+	for (i = 0; i < ptr_array->len; i++) {
+		NMIPRoute *route = g_ptr_array_index (ptr_array, i);
+		gs_strfreev char **names = NULL;
+		gs_free char *attributes = NULL;
+		gsize j;
+		GString *str;
+		guint64 metric;
+
+		str = g_string_new (NULL);
+		g_string_append_printf (str,
+		                        "dst = %s/%u, nh = %s",
+		                        nm_ip_route_get_dest (route),
+		                        nm_ip_route_get_prefix (route),
+		                        nm_ip_route_get_next_hop (route)
+		                          ?: (nm_ip_route_get_family (route) == AF_INET ? "0.0.0.0" : "::"));
+
+		metric = nm_ip_route_get_metric (route);
+		if (metric != -1) {
+			g_string_append_printf (str,
+			                        ", mt = %u",
+			                        (guint) metric);
+		}
+
+		names = nm_ip_route_get_attribute_names (route);
+		g_hash_table_remove_all (hash);
+		for (j = 0; names && names[j]; j++)
+			g_hash_table_insert (hash, names[j], nm_ip_route_get_attribute (route, names[j]));
+		attributes = nm_utils_format_variant_attributes (hash, ',', '=');
+		if (attributes) {
+			g_string_append (str, ", ");
+			g_string_append (str, attributes);
+		}
+
+		arr[i] = g_string_free (str, FALSE);
+	}
+
+	nm_assert (i == ptr_array->len);
+	arr[i] = NULL;
+
+	return arr;
+}
+
 static gconstpointer
 _metagen_ip4_config_get_fcn (const NMMetaEnvironment *environment,
                              gpointer environment_user_data,
@@ -81,27 +136,7 @@ _metagen_ip4_config_get_fcn (const NMMetaEnvironment *environment,
 	case NMC_GENERIC_INFO_TYPE_IP4_CONFIG_ROUTE:
 		if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
 			return NULL;
-		ptr_array = nm_ip_config_get_routes (cfg4);
-		if (ptr_array) {
-			arr = g_new (char *, ptr_array->len + 1);
-			for (i = 0; i < ptr_array->len; i++) {
-				NMIPRoute *route = g_ptr_array_index (ptr_array, i);
-				const char *next_hop;
-
-				next_hop = nm_ip_route_get_next_hop (route);
-				if (!next_hop)
-					next_hop = "0.0.0.0";
-
-				arr[i] = g_strdup_printf ("dst = %s/%u, nh = %s%c mt = %u",
-				                          nm_ip_route_get_dest (route),
-				                          nm_ip_route_get_prefix (route),
-				                          next_hop,
-				                          nm_ip_route_get_metric (route) == -1 ? '\0' : ',',
-				                          (guint32) nm_ip_route_get_metric (route));
-			}
-			arr[i] = NULL;
-		} else
-			arr = NULL;
+		arr = _ip_config_get_routes (cfg4);
 		goto arr_out;
 	case NMC_GENERIC_INFO_TYPE_IP4_CONFIG_DNS:
 		if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
@@ -177,27 +212,7 @@ _metagen_ip6_config_get_fcn (const NMMetaEnvironment *environment,
 	case NMC_GENERIC_INFO_TYPE_IP6_CONFIG_ROUTE:
 		if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
 			return NULL;
-		ptr_array = nm_ip_config_get_routes (cfg6);
-		if (ptr_array) {
-			arr = g_new (char *, ptr_array->len + 1);
-			for (i = 0; i < ptr_array->len; i++) {
-				NMIPRoute *route = g_ptr_array_index (ptr_array, i);
-				const char *next_hop;
-
-				next_hop = nm_ip_route_get_next_hop (route);
-				if (!next_hop)
-					next_hop = "::";
-
-				arr[i] = g_strdup_printf ("dst = %s/%u, nh = %s%c mt = %u",
-				                          nm_ip_route_get_dest (route),
-				                          nm_ip_route_get_prefix (route),
-				                          next_hop,
-				                          nm_ip_route_get_metric (route) == -1 ? '\0' : ',',
-				                          (guint32) nm_ip_route_get_metric (route));
-			}
-			arr[i] = NULL;
-		} else
-			arr = NULL;
+		arr = _ip_config_get_routes (cfg6);
 		goto arr_out;
 	case NMC_GENERIC_INFO_TYPE_IP6_CONFIG_DNS:
 		if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
