@@ -5582,6 +5582,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 	GSList *iter;
 	NMPlatformIP4Route default_route;
 	gs_unref_ptrarray GPtrArray *ip4_dev_route_blacklist = NULL;
+	gboolean add_default_route = TRUE;
 
 	/* Merge all the configs into the composite config */
 	if (config) {
@@ -5678,6 +5679,8 @@ ip4_config_merge_and_apply (NMDevice *self,
 	    && nm_device_get_device_type (self) != NM_DEVICE_TYPE_MODEM)
 		goto END_ADD_DEFAULT_ROUTE;
 
+	add_default_route = FALSE;
+
 	memset (&default_route, 0, sizeof (default_route));
 	default_route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	default_route.gateway = gateway;
@@ -5698,6 +5701,13 @@ ip4_config_merge_and_apply (NMDevice *self,
 	}
 
 END_ADD_DEFAULT_ROUTE:
+
+	if (add_default_route) {
+		if (priv->default_route4)
+			nm_ip4_config_add_route (composite, NMP_OBJECT_CAST_IP4_ROUTE (priv->default_route4), NULL);
+		if (priv->default_routegw4)
+			nm_ip4_config_add_route (composite, NMP_OBJECT_CAST_IP4_ROUTE (priv->default_routegw4), NULL);
+	}
 
 	if (commit) {
 		nm_ip4_config_add_device_routes (composite,
@@ -6287,6 +6297,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 	const char *token = NULL;
 	GSList *iter;
 	NMPlatformIP6Route default_route;
+	gboolean add_default_route = TRUE;
 
 	/* Apply ignore-auto-routes and ignore-auto-dns settings */
 	connection = nm_device_get_applied_connection (self);
@@ -6407,6 +6418,8 @@ ip6_config_merge_and_apply (NMDevice *self,
 	if (!gateway)
 		goto END_ADD_DEFAULT_ROUTE;
 
+	add_default_route = FALSE;
+
 	memset (&default_route, 0, sizeof (default_route));
 	default_route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	default_route.gateway = *gateway;
@@ -6426,6 +6439,14 @@ ip6_config_merge_and_apply (NMDevice *self,
 	}
 
 END_ADD_DEFAULT_ROUTE:
+
+	if (add_default_route) {
+		if (priv->default_route6)
+			nm_ip6_config_add_route (composite, NMP_OBJECT_CAST_IP6_ROUTE (priv->default_route6), NULL);
+		if (priv->default_routegw6)
+			nm_ip6_config_add_route (composite, NMP_OBJECT_CAST_IP6_ROUTE (priv->default_routegw6), NULL);
+	}
+
 	/* Allow setting MTU etc */
 	if (commit) {
 		NMUtilsIPv6IfaceId iid;
