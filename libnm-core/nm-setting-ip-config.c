@@ -1128,6 +1128,7 @@ nm_ip_route_get_attribute_names (NMIPRoute *route)
 		while (g_hash_table_iter_next (&iter, (gpointer *) &key, NULL))
 			g_ptr_array_add (names, g_strdup (key));
 	}
+	g_ptr_array_sort (names, nm_strcmp_p);
 	g_ptr_array_add (names, NULL);
 
 	return (char **) g_ptr_array_free (names, FALSE);
