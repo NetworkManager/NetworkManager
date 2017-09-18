@@ -180,8 +180,8 @@ device_created (GDBusProxy *proxy, const char *path, gpointer user_data)
 	NMBluezDevice *device;
 
 	device = nm_bluez_device_new (path, priv->address, priv->settings, 4);
-	g_signal_connect (device, "initialized", G_CALLBACK (device_initialized), self);
-	g_signal_connect (device, "notify::usable", G_CALLBACK (device_usable), self);
+	g_signal_connect (device, NM_BLUEZ_DEVICE_INITIALIZED, G_CALLBACK (device_initialized), self);
+	g_signal_connect (device, "notify::" NM_BLUEZ_DEVICE_USABLE, G_CALLBACK (device_usable), self);
 	g_hash_table_insert (priv->devices, (gpointer) nm_bluez_device_get_path (device), device);
 
 	_LOGD ("(%s): new bluez device found", path);
@@ -432,7 +432,7 @@ nm_bluez4_adapter_class_init (NMBluez4AdapterClass *config_class)
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-	signals[INITIALIZED] = g_signal_new ("initialized",
+	signals[INITIALIZED] = g_signal_new (NM_BLUEZ4_ADAPTER_INITIALIZED,
 	                                     G_OBJECT_CLASS_TYPE (object_class),
 	                                     G_SIGNAL_RUN_LAST,
 	                                     0,
@@ -440,7 +440,7 @@ nm_bluez4_adapter_class_init (NMBluez4AdapterClass *config_class)
 	                                     g_cclosure_marshal_VOID__BOOLEAN,
 	                                     G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
 
-	signals[DEVICE_ADDED] = g_signal_new ("device-added",
+	signals[DEVICE_ADDED] = g_signal_new (NM_BLUEZ4_ADAPTER_DEVICE_ADDED,
 	                                      G_OBJECT_CLASS_TYPE (object_class),
 	                                      G_SIGNAL_RUN_LAST,
 	                                      0,
@@ -448,7 +448,7 @@ nm_bluez4_adapter_class_init (NMBluez4AdapterClass *config_class)
 	                                      g_cclosure_marshal_VOID__OBJECT,
 	                                      G_TYPE_NONE, 1, G_TYPE_OBJECT);
 
-	signals[DEVICE_REMOVED] = g_signal_new ("device-removed",
+	signals[DEVICE_REMOVED] = g_signal_new (NM_BLUEZ4_ADAPTER_DEVICE_REMOVED,
 	                                        G_OBJECT_CLASS_TYPE (object_class),
 	                                        G_SIGNAL_RUN_LAST,
 	                                        0,

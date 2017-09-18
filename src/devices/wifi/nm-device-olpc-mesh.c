@@ -472,8 +472,8 @@ constructed (GObject *object)
 
 	priv->manager = g_object_ref (nm_manager_get ());
 
-	g_signal_connect (priv->manager, "device-added", G_CALLBACK (device_added_cb), self);
-	g_signal_connect (priv->manager, "device-removed", G_CALLBACK (device_removed_cb), self);
+	g_signal_connect (priv->manager, NM_MANAGER_DEVICE_ADDED, G_CALLBACK (device_added_cb), self);
+	g_signal_connect (priv->manager, NM_MANAGER_DEVICE_REMOVED, G_CALLBACK (device_removed_cb), self);
 }
 
 NMDevice *

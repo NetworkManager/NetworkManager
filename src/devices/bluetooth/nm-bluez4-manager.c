@@ -125,8 +125,10 @@ adapter_initialized (NMBluez4Adapter *adapter, gboolean success, gpointer user_d
 			emit_bdaddr_added (self, NM_BLUEZ_DEVICE (iter->data));
 		g_slist_free (devices);
 
-		g_signal_connect (adapter, "device-added", G_CALLBACK (device_added), self);
-		g_signal_connect (adapter, "device-removed", G_CALLBACK (device_removed), self);
+		g_signal_connect (adapter, NM_BLUEZ4_ADAPTER_DEVICE_ADDED,
+		                  G_CALLBACK (device_added), self);
+		g_signal_connect (adapter, NM_BLUEZ4_ADAPTER_DEVICE_REMOVED,
+		                  G_CALLBACK (device_removed), self);
 	} else {
 		g_object_unref (priv->adapter);
 		priv->adapter = NULL;
@@ -175,7 +177,8 @@ default_adapter_changed (GDBusProxy *proxy, const char *path, NMBluez4Manager *s
 	/* Add the new default adapter */
 	if (path) {
 		priv->adapter = nm_bluez4_adapter_new (path, priv->settings);
-		g_signal_connect (priv->adapter, "initialized", G_CALLBACK (adapter_initialized), self);
+		g_signal_connect (priv->adapter, NM_BLUEZ4_ADAPTER_INITIALIZED,
+		                  G_CALLBACK (adapter_initialized), self);
 	}
 }
 

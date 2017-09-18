@@ -39,6 +39,7 @@
 #define NM_BLUEZ_DEVICE_CONNECTED    "connected"
 
 /* Signals */
+#define NM_BLUEZ_DEVICE_INITIALIZED  "initialized"
 #define NM_BLUEZ_DEVICE_REMOVED      "removed"
 
 typedef struct _NMBluezDevice NMBluezDevice;

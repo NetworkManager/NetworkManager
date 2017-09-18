@@ -1278,7 +1278,7 @@ nm_bluez_device_class_init (NMBluezDeviceClass *config_class)
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-	signals[INITIALIZED] = g_signal_new ("initialized",
+	signals[INITIALIZED] = g_signal_new (NM_BLUEZ_DEVICE_INITIALIZED,
 	                                     G_OBJECT_CLASS_TYPE (object_class),
 	                                     G_SIGNAL_RUN_LAST,
 	                                     0,

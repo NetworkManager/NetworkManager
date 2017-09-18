@@ -1074,7 +1074,8 @@ constructed (GObject *object)
 		g_signal_connect (priv->bt_device, "notify::" NM_BLUEZ_DEVICE_CONNECTED,
 		                  G_CALLBACK (bluez_connected_changed),
 		                  object);
-		g_signal_connect (priv->bt_device, "removed", G_CALLBACK (bluez_device_removed), object);
+		g_signal_connect (priv->bt_device, NM_BLUEZ_DEVICE_REMOVED,
+		                  G_CALLBACK (bluez_device_removed), object);
 	}
 
 	my_hwaddr = nm_device_get_hw_address (NM_DEVICE (object));

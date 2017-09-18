@@ -348,8 +348,8 @@ device_added (GDBusProxy *proxy, const gchar *path, NMBluez5Manager *self)
 	NMBluezDevice *device;
 
 	device = nm_bluez_device_new (path, NULL, priv->settings, 5);
-	g_signal_connect (device, "initialized", G_CALLBACK (device_initialized), self);
-	g_signal_connect (device, "notify::usable", G_CALLBACK (device_usable), self);
+	g_signal_connect (device, NM_BLUEZ_DEVICE_INITIALIZED, G_CALLBACK (device_initialized), self);
+	g_signal_connect (device, "notify::" NM_BLUEZ_DEVICE_USABLE, G_CALLBACK (device_usable), self);
 	g_hash_table_insert (priv->devices, (gpointer) nm_bluez_device_get_path (device), device);
 
 	_LOGD ("(%s): new bluez device found", path);

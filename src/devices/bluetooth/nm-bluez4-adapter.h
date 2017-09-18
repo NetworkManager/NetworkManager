@@ -30,8 +30,14 @@
 #define NM_IS_BLUEZ4_ADAPTER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_BLUEZ4_ADAPTER))
 #define NM_BLUEZ4_ADAPTER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_BLUEZ4_ADAPTER, NMBluez4AdapterClass))
 
+/* Properties */
 #define NM_BLUEZ4_ADAPTER_PATH    "path"
 #define NM_BLUEZ4_ADAPTER_ADDRESS "address"
+
+/* Signals */
+#define NM_BLUEZ4_ADAPTER_INITIALIZED      "initialized"
+#define NM_BLUEZ4_ADAPTER_DEVICE_ADDED     "device-added"
+#define NM_BLUEZ4_ADAPTER_DEVICE_REMOVED   "device-removed"
 
 typedef struct _NMBluez4Adapter NMBluez4Adapter;
 typedef struct _NMBluez4AdapterClass NMBluez4AdapterClass;
