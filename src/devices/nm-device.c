@@ -7765,7 +7765,8 @@ act_stage3_ip6_config_start (NMDevice *self,
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
 
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0) {
-		if (!priv->master) {
+		if (   !priv->master
+		    && !nm_device_sys_iface_state_is_external (self)) {
 			gboolean old_nm_ipv6ll = priv->nm_ipv6ll;
 
 			/* When activating an IPv6 'ignore' connection we need to revert back
