@@ -1796,7 +1796,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: autoconnect-slaves
-	 * variable: AUTOCONNECT-SLAVES(+)
+	 * variable: AUTOCONNECT_SLAVES(+)
 	 * default: missing variable means global default
 	 * description: Whether slaves of this connection should be auto-connected
 	 *   when this connection is activated.
