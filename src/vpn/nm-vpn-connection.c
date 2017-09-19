@@ -1786,6 +1786,9 @@ next:
 		nm_ip6_config_add_route (config, &r, NULL);
 	}
 
+	nm_ip6_config_add_device_routes (config,
+	                                 nm_vpn_connection_get_ip6_route_metric (self));
+
 	if (priv->ip6_config) {
 		nm_ip6_config_replace (priv->ip6_config, config, NULL);
 		g_object_unref (config);

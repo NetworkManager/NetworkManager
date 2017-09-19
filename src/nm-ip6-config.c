@@ -115,6 +115,9 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMIP6Config,
 
 static void _add_address (NMIP6Config *self, const NMPObject *obj_new, const NMPlatformIP6Address *new);
 static void _add_route (NMIP6Config *self, const NMPObject *obj_new, const NMPlatformIP6Route *new, const NMPObject **out_obj_new);
+static const NMDedupMultiEntry *_lookup_route (const NMIP6Config *self,
+                                               const NMPObject *needle,
+                                               NMPlatformIPRouteCmpType cmp_type);
 
 /*****************************************************************************/
 
@@ -525,6 +528,77 @@ nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 		_notify (self, PROP_GATEWAY);
 
 	return self;
+}
+
+void
+nm_ip6_config_add_device_routes (NMIP6Config *self,
+                                 guint32 default_route_metric)
+{
+	const NMIP6ConfigPrivate *priv;
+	const NMPlatformIP6Address *addr;
+	int ifindex;
+	NMDedupMultiIter iter;
+
+	g_return_if_fail (NM_IS_IP6_CONFIG (self));
+
+	priv = NM_IP6_CONFIG_GET_PRIVATE (self);
+
+	ifindex = nm_ip6_config_get_ifindex (self);
+	g_return_if_fail (ifindex > 0);
+
+	/* For IPv6 addresses received via SLAAC/autoconf, we explicitly add the
+	 * device-routes (onlink) to NMIP6Config.
+	 *
+	 * For manually added IPv6 routes, add the device routes explicitly. */
+
+	nm_ip_config_iter_ip6_address_for_each (&iter, self, &addr) {
+		NMPObject *r;
+		NMPlatformIP6Route *route;
+		gboolean has_peer;
+		int routes_n, routes_i;
+
+		if (NM_FLAGS_HAS (addr->n_ifa_flags, IFA_F_NOPREFIXROUTE))
+			continue;
+
+		has_peer = !IN6_IS_ADDR_UNSPECIFIED (&addr->peer_address);
+
+		/* If we have an IPv6 peer, we add two /128 routes
+		 * (unless, both addresses are identical). */
+		routes_n = (   has_peer
+		            && !IN6_ARE_ADDR_EQUAL (&addr->address, &addr->peer_address))
+		           ? 2 : 1;
+
+		for (routes_i = 0; routes_i < routes_n; routes_i++) {
+
+			r = nmp_object_new (NMP_OBJECT_TYPE_IP6_ROUTE, NULL);
+			route = NMP_OBJECT_CAST_IP6_ROUTE (r);
+
+			route->ifindex = ifindex;
+			route->rt_source = NM_IP_CONFIG_SOURCE_KERNEL;
+			route->metric = default_route_metric;
+
+			if (has_peer) {
+				if (routes_i == 0)
+					route->network = addr->address;
+				else
+					route->network = addr->peer_address;
+				route->plen = 128;
+			} else {
+				nm_utils_ip6_address_clear_host_address (&route->network, &addr->address, addr->plen);
+				route->plen = addr->plen;
+			}
+
+			nm_platform_ip_route_normalize (AF_INET6, (NMPlatformIPRoute *) route);
+
+			if (_lookup_route (self,
+			                   r,
+			                   NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID)) {
+				/* we already track this route. Don't add it again. */
+				nmp_object_unref (r);
+			} else
+				_add_route (self, r, NULL, NULL);
+		}
+	}
 }
 
 gboolean
@@ -1800,6 +1874,24 @@ nm_ip6_config_has_any_dad_pending (const NMIP6Config *self,
 }
 
 /*****************************************************************************/
+
+static const NMDedupMultiEntry *
+_lookup_route (const NMIP6Config *self,
+               const NMPObject *needle,
+               NMPlatformIPRouteCmpType cmp_type)
+{
+	const NMIP6ConfigPrivate *priv;
+
+	nm_assert (NM_IS_IP6_CONFIG (self));
+	nm_assert (NMP_OBJECT_GET_TYPE (needle) == NMP_OBJECT_TYPE_IP6_ROUTE);
+
+	priv = NM_IP6_CONFIG_GET_PRIVATE (self);
+
+	return _nm_ip_config_lookup_ip_route (priv->multi_idx,
+	                                      &priv->idx_ip6_routes_,
+	                                      needle,
+	                                      cmp_type);
+}
 
 void
 nm_ip6_config_reset_routes_ndisc (NMIP6Config *self,

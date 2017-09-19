@@ -245,13 +245,23 @@ _nm_ip_config_lookup_ip_route (const NMDedupMultiIndex *multi_idx,
 	if (!entry)
 		return NULL;
 
-	if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID)
-		nm_assert (nm_platform_ip4_route_cmp (NMP_OBJECT_CAST_IP4_ROUTE (entry->obj), NMP_OBJECT_CAST_IP4_ROUTE (needle), cmp_type) == 0);
-	else {
-		if (nm_platform_ip4_route_cmp (NMP_OBJECT_CAST_IP4_ROUTE (entry->obj),
-		                               NMP_OBJECT_CAST_IP4_ROUTE (needle),
-		                               cmp_type) != 0)
-			return NULL;
+	if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
+		nm_assert (   (   NMP_OBJECT_GET_TYPE (needle) == NMP_OBJECT_TYPE_IP4_ROUTE
+		               && nm_platform_ip4_route_cmp (NMP_OBJECT_CAST_IP4_ROUTE (entry->obj), NMP_OBJECT_CAST_IP4_ROUTE (needle), cmp_type) == 0)
+		           || (   NMP_OBJECT_GET_TYPE (needle) == NMP_OBJECT_TYPE_IP6_ROUTE
+		               && nm_platform_ip6_route_cmp (NMP_OBJECT_CAST_IP6_ROUTE (entry->obj), NMP_OBJECT_CAST_IP6_ROUTE (needle), cmp_type) == 0));
+	} else {
+		if (NMP_OBJECT_GET_TYPE (needle) == NMP_OBJECT_TYPE_IP4_ROUTE) {
+			if (nm_platform_ip4_route_cmp (NMP_OBJECT_CAST_IP4_ROUTE (entry->obj),
+			                               NMP_OBJECT_CAST_IP4_ROUTE (needle),
+			                               cmp_type) != 0)
+				return NULL;
+		} else {
+			if (nm_platform_ip6_route_cmp (NMP_OBJECT_CAST_IP6_ROUTE (entry->obj),
+			                               NMP_OBJECT_CAST_IP6_ROUTE (needle),
+			                               cmp_type) != 0)
+				return NULL;
+		}
 	}
 	return entry;
 }
@@ -740,9 +750,8 @@ nm_ip4_config_add_device_routes (NMIP4Config *self,
 	ifindex = nm_ip4_config_get_ifindex (self);
 	g_return_if_fail (ifindex > 0);
 
-	/* For IPv6, we explicitly add the device-routes (onlink) to NMIP6Config.
-	 * As we don't do that for IPv4, add it here shortly before syncing
-	 * the routes. */
+	/* For IPv6 slaac, we explicitly add the device-routes (onlink) to NMIP6Config.
+	 * As we don't do that for IPv4 (and manual IPv6 addresses), add them explicitly. */
 
 	nm_ip_config_iter_ip4_address_for_each (&iter, self, &addr) {
 		nm_auto_nmpobj NMPObject *r = NULL;

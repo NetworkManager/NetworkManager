@@ -3479,6 +3479,7 @@ nm_platform_ip6_address_sync (NMPlatform *self,
 	gint32 now = nm_utils_get_monotonic_timestamp_s ();
 	guint i;
 	NMPLookup lookup;
+	guint32 ifa_flags;
 
 	/* Delete unknown addresses */
 	plat_addresses = nm_platform_lookup_clone (self,
@@ -3502,6 +3503,10 @@ nm_platform_ip6_address_sync (NMPlatform *self,
 	if (!known_addresses)
 		return TRUE;
 
+	ifa_flags =   nm_platform_check_support_kernel_extended_ifa_flags (self)
+	            ? IFA_F_NOPREFIXROUTE
+	            : 0;
+
 	/* Add missing addresses */
 	for (i = 0; i < known_addresses->len; i++) {
 		const NMPlatformIP6Address *known_address = NMP_OBJECT_CAST_IP6_ADDRESS (known_addresses->pdata[i]);
@@ -3518,7 +3523,8 @@ nm_platform_ip6_address_sync (NMPlatform *self,
 
 		if (!nm_platform_ip6_address_add (self, ifindex, known_address->address,
 		                                  known_address->plen, known_address->peer_address,
-		                                  lifetime, preferred, known_address->n_ifa_flags))
+		                                  lifetime, preferred,
+		                                  ifa_flags | known_address->n_ifa_flags))
 			return FALSE;
 	}
 

@@ -6290,6 +6290,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 	NMConnection *connection;
 	gboolean success;
 	NMIP6Config *composite;
+	const guint32 default_route_metric = nm_device_get_ip6_route_metric (self);
 	const struct in6_addr *gateway;
 	gboolean connection_has_default_route, connection_is_never_default;
 	gboolean ignore_auto_routes = FALSE;
@@ -6423,8 +6424,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 	memset (&default_route, 0, sizeof (default_route));
 	default_route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	default_route.gateway = *gateway;
-	default_route.metric = route_metric_with_penalty (self,
-	                                       nm_device_get_ip6_route_metric (self));
+	default_route.metric = route_metric_with_penalty (self, default_route_metric);
 	default_route.mss = nm_ip6_config_get_mss (composite);
 	nm_clear_nmp_object (&priv->default_route6);
 	nm_ip6_config_add_route (composite, &default_route, &priv->default_route6);
@@ -6445,6 +6445,11 @@ END_ADD_DEFAULT_ROUTE:
 			nm_ip6_config_add_route (composite, NMP_OBJECT_CAST_IP6_ROUTE (priv->default_route6), NULL);
 		if (priv->default_routegw6)
 			nm_ip6_config_add_route (composite, NMP_OBJECT_CAST_IP6_ROUTE (priv->default_routegw6), NULL);
+	}
+
+	if (commit) {
+		nm_ip6_config_add_device_routes (composite,
+		                                 default_route_metric);
 	}
 
 	/* Allow setting MTU etc */
