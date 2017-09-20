@@ -425,6 +425,9 @@ pushd "$DIRNAME"
             RELEASE_BASE_COMMIT="$(sed -n 's/^NM_GIT_SHA=\(.*\)/\1/p' configure 2>/dev/null)"
         elif [[ "$BUILD_TYPE" == "libnl3" ]]; then
             RELEASE_BASE_COMMIT="$(sed -n 's/^LIBNL_GIT_SHA=\(.*\)/\1/p' configure 2>/dev/null)"
+            if [[ "$RELEASE_BASE_COMMIT" == "23c44dad998f72f39fd1fc24aa9579fd0a7f05c0" ]]; then
+                RELEASE_BASE_COMMIT="e01b9df629e2f4f833fdc4fe0bda460bb738d136"
+            fi
         elif [[ "$BUILD_TYPE" == "network-manager-applet" ]]; then
             RELEASE_BASE_COMMIT="$(sed -n 's/^NMA_GIT_SHA=\(.*\)/\1/p' configure 2>/dev/null)"
         elif [[ "$BUILD_TYPE" == "glib2" ]]; then
