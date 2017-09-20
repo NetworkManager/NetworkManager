@@ -94,6 +94,8 @@ static void settings_startup_complete_changed (NMSettings *settings,
                                                GParamSpec *pspec,
                                                NMManager *self);
 
+static void retry_connections_for_parent_device (NMManager *self, NMDevice *device);
+
 static NM_CACHED_QUARK_FCN ("active-connection-add-and-activate", active_connection_add_and_activate_quark)
 
 typedef struct {
@@ -1299,6 +1301,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	gs_free char *iface = NULL;
 	NMDevice *device = NULL, *parent = NULL;
 	GError *error = NULL;
+	NMLogLevel log_level;
 
 	g_return_val_if_fail (NM_IS_MANAGER (self), NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
@@ -1379,12 +1382,20 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 
 		/* Create any backing resources the device needs */
 		if (!nm_device_create_and_realize (device, connection, parent, &error)) {
-			_LOG3W (LOGD_DEVICE, connection, "couldn't create the device: %s",
-			        error->message);
+			log_level = g_error_matches (error,
+			                             NM_DEVICE_ERROR,
+			                             NM_DEVICE_ERROR_MISSING_DEPENDENCIES)
+			            ? LOGL_DEBUG
+			            : LOGL_ERR;
+			_NMLOG3 (log_level, LOGD_DEVICE, connection,
+			         "couldn't create the device: %s",
+			         error->message);
 			g_error_free (error);
 			remove_device (self, device, FALSE, TRUE);
 			return NULL;
 		}
+
+		retry_connections_for_parent_device (self, device);
 		break;
 	}
 
@@ -2232,11 +2243,6 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 
 	_parent_notify_changed (self, device, FALSE);
 
-	/* Virtual connections may refer to the new device as
-	 * parent device, retry to activate them.
-	 */
-	retry_connections_for_parent_device (self, device);
-
 	return TRUE;
 }
 
@@ -2262,6 +2268,7 @@ factory_device_added_cb (NMDeviceFactory *factory,
 	                             &error)) {
 		add_device (self, device, NULL);
 		_device_realize_finish (self, device, NULL);
+		retry_connections_for_parent_device (self, device);
 	} else {
 		_LOG2W (LOGD_DEVICE, device, "failed to realize device: %s", error->message);
 		g_error_free (error);
@@ -2415,6 +2422,7 @@ platform_link_added (NMManager *self,
 		                             &error)) {
 			add_device (self, device, NULL);
 			_device_realize_finish (self, device, plink);
+			retry_connections_for_parent_device (self, device);
 		} else {
 			_LOGW (LOGD_DEVICE, "%s: failed to realize device: %s",
 			       plink->name, error->message);

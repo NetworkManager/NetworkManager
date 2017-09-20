@@ -692,7 +692,7 @@ create_and_realize (NMDevice *device,
 	g_assert (s_macsec);
 
 	if (!parent) {
-		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_MISSING_DEPENDENCIES,
 		             "MACsec devices can not be created without a parent interface");
 		return FALSE;
 	}

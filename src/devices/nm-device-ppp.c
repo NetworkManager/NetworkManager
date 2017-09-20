@@ -209,7 +209,7 @@ create_and_realize (NMDevice *device,
 	int parent_ifindex;
 
 	if (!parent) {
-		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_MISSING_DEPENDENCIES,
 		             "PPP devices can not be created without a parent interface");
 		return FALSE;
 	}
