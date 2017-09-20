@@ -202,8 +202,8 @@ init_dbus (NMObject *object)
 	                                property_info);
 
 	/* Permissions */
-	g_signal_connect (priv->proxy, "check-permissions",
-	                  G_CALLBACK (manager_recheck_permissions), object);
+	g_signal_connect_object (priv->proxy, "check-permissions",
+				 G_CALLBACK (manager_recheck_permissions), object, 0);
 }
 
 static NMClientPermission
