@@ -23,7 +23,7 @@
  * using GDBus.
  *
  * Compile with:
- *   gcc -Wall `pkg-config --libs --cflags glib-2.0 libnm` list-connections-libnm.c -o list-connections-libnm
+ *   gcc -Wall list-connections-libnm.c -o list-connections-libnm `pkg-config --cflags --libs libnm`
  */
 
 #include <glib.h>

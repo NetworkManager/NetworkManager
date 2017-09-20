@@ -24,7 +24,7 @@
  * much of the low-level stuff for you.
  *
  * Compile with:
- *   gcc -Wall `pkg-config --libs --cflags glib-2.0 libnm` add-connection-libnm.c -o add-connection-libnm
+ *   gcc -Wall add-connection-libnm.c -o add-connection-libnm `pkg-config --libs --cflags libnm`
  */
 
 #include <glib.h>

@@ -23,7 +23,7 @@
  * a few defines from the NetworkManager headers.
  *
  * Compile with:
- *   gcc -Wall `pkg-config --cflags libnm` `pkg-config --cflags --libs gio-2.0` get-active-connections-gdbus.c -o get-active-connections-gdbus
+ *   gcc -Wall get-active-connections-gdbus.c -o get-active-connections-gdbus `pkg-config --cflags --libs libnm`
  */
 
 #include <string.h>

@@ -26,7 +26,7 @@
  * grab nm-dbus-interface.h and put it in the path.
  *
  * Standalone compilation:
- *   gcc -Wall `pkg-config --libs --cflags glib-2.0 gio-2.0` `pkg-config --cflags libnm` monitor-nm-state-gdbus.c -o monitor-nm-state-gdbus
+ *   gcc -Wall monitor-nm-state-gdbus.c -o monitor-nm-state-gdbus `pkg-config --cflags --libs libnm`
  */
 
 #include <gio/gio.h>

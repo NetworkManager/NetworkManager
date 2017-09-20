@@ -22,7 +22,7 @@
  * libnm.
  *
  * Compile with:
- *   gcc -Wall `pkg-config --libs --cflags glib-2.0 libnm` get-ap-info-libnm.c -o get-ap-info-libnm
+ *   gcc -Wall get-ap-info-libnm.c -o get-ap-info-libnm `pkg-config --libs --cflags libnm`
  */
 
 #include <glib.h>

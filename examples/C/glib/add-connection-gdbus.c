@@ -24,7 +24,7 @@
  * higher level because it uses libnm.
  *
  * Compile with:
- *   gcc -Wall `pkg-config --cflags libnm` `pkg-config --cflags --libs gio-2.0` -luuid add-connection-gdbus.c -o add-connection-gdbus
+ *   gcc -Wall add-connection-gdbus.c -o add-connection-gdbus `pkg-config --cflags --libs libnm uuid`
  */
 
 #include <gio/gio.h>
