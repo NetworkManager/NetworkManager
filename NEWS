@@ -1,4 +1,29 @@
 ==============================================
+NetworkManager-1.8.4
+Overview of changes since NetworkManager-1.8.2
+==============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* No longer install NetworkManager-wait-online.service in
+  network-online.target.wants directory (rh#1455704).
+* Fix nmcli device connect wifi for APs that support both
+  WPA-PSK and WPA-EAP (rh#1492064).
+* Fix crash unregistering object manager in libnm on restart
+  of NetworkManager.
+* Improve handling externally managed slaves devices.
+* Don't reset MAC address of software devices to fake permanent
+  address.
+* For dhclient use "timeout" option in configuration file, instead
+  of the command line option which is only supported by downstream.
+* Perform the public-suffix check only for the hostname-derived
+  domain.
+* Fix memory leak in connectivity check.
+* Better restore device managed state on rollback of checkpoint.
+* Skip addition of default-route if it already exists.
+* Bug fix detecting error condition when deleting route in platform.
+
+==============================================
 NetworkManager-1.8.2
 Overview of changes since NetworkManager-1.8.0
 ==============================================
@@ -13,7 +38,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Fix reading managed state from device state file.
 * Fix crash activating bluetooth or WWAN connection.
 * No longer add a direct route to the DHCP server.
-* Several bug fixes and improvements
+* Several bug fixes and improvements.
 
 ============================================
 NetworkManager-1.8
