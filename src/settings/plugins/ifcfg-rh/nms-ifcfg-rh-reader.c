@@ -1277,6 +1277,8 @@ make_ip4_setting (shvarFile *ifcfg,
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, !svGetValueBoolean (ifcfg, "IPV4_FAILURE_FATAL", FALSE),
 	              NM_SETTING_IP_CONFIG_ROUTE_METRIC, svGetValueInt64 (ifcfg, "IPV4_ROUTE_METRIC", 10,
 	                                                                  -1, G_MAXUINT32, -1),
+	              NM_SETTING_IP_CONFIG_ROUTE_TABLE_SYNC, (int) svGetValueInt64 (ifcfg, "IPV4_ROUTE_TABLE_SYNC", 10,
+	                                                                            G_MININT32, G_MAXINT32, NM_IP_ROUTE_TABLE_SYNC_MODE_DEFAULT),
 	              NULL);
 
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0)
@@ -1707,6 +1709,8 @@ make_ip6_setting (shvarFile *ifcfg,
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, !svGetValueBoolean (ifcfg, "IPV6_FAILURE_FATAL", FALSE),
 	              NM_SETTING_IP_CONFIG_ROUTE_METRIC, svGetValueInt64 (ifcfg, "IPV6_ROUTE_METRIC", 10,
 	                                                                  -1, G_MAXUINT32, -1),
+	              NM_SETTING_IP_CONFIG_ROUTE_TABLE_SYNC, (int) svGetValueInt64 (ifcfg, "IPV6_ROUTE_TABLE_SYNC", 10,
+	                                                                            G_MININT32, G_MAXINT32, NM_IP_ROUTE_TABLE_SYNC_MODE_DEFAULT),
 	              NM_SETTING_IP6_CONFIG_IP6_PRIVACY, ip6_privacy_val,
 	              NULL);
 

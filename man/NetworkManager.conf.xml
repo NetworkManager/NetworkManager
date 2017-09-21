@@ -683,6 +683,10 @@ ipv6.ip6-privacy=0
           <term><varname>ipv4.route-metric</varname></term>
         </varlistentry>
         <varlistentry>
+          <term><varname>ipv4.route-table-sync</varname></term>
+          <listitem><para>If left unspecified, the default value is 2 (main).</para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>ipv6.dhcp-timeout</varname></term>
           <listitem><para>If left unspecified, the default value for
            the interface type is used.</para></listitem>
@@ -695,6 +699,10 @@ ipv6.ip6-privacy=0
         </varlistentry>
         <varlistentry>
           <term><varname>ipv6.route-metric</varname></term>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>ipv6.route-table-sync</varname></term>
+          <listitem><para>If left unspecified, the default value is 2 (main).</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>vpn.timeout</varname></term>
