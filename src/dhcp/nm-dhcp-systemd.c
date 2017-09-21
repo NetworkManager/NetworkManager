@@ -606,7 +606,7 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 	g_free (priv->lease_file);
 	priv->lease_file = get_leasefile_path (AF_INET, iface, nm_dhcp_client_get_uuid (client));
 
-	r = sd_dhcp_client_new (&priv->client4);
+	r = sd_dhcp_client_new (&priv->client4, FALSE);
 	if (r < 0) {
 		_LOGW ("failed to create client (%d)", r);
 		return FALSE;

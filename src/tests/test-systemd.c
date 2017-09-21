@@ -78,7 +78,7 @@ test_dhcp_create (void)
 	sd_dhcp_client *client4 = NULL;
 	int r;
 
-	r = sd_dhcp_client_new (&client4);
+	r = sd_dhcp_client_new (&client4, FALSE);
 	g_assert (r == 0);
 	g_assert (client4);
 
