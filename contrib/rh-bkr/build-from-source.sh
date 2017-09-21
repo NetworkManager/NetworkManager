@@ -22,6 +22,7 @@ $SUDO yum install \
     git \
     rpm-build \
     valgrind \
+    strace \
     dbus-devel \
     dbus-glib-devel \
     wireless-tools-devel \
