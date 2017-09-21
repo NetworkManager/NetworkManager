@@ -564,10 +564,9 @@ nmp_cache_iter_next (NMDedupMultiIter *iter, const NMPObject **out_obj)
 	gboolean has_next;
 
 	has_next = nm_dedup_multi_iter_next (iter);
-	if (has_next) {
-		nm_assert (NMP_OBJECT_IS_VALID (iter->current->obj));
-		NM_SET_OUT (out_obj, iter->current->obj);
-	}
+	nm_assert (!has_next || NMP_OBJECT_IS_VALID (iter->current->obj));
+	if (out_obj)
+		*out_obj = has_next ? iter->current->obj : NULL;
 	return has_next;
 }
 
@@ -577,10 +576,9 @@ nmp_cache_iter_next_link (NMDedupMultiIter *iter, const NMPlatformLink **out_obj
 	gboolean has_next;
 
 	has_next = nm_dedup_multi_iter_next (iter);
-	if (has_next) {
-		nm_assert (NMP_OBJECT_GET_TYPE (iter->current->obj) == NMP_OBJECT_TYPE_LINK);
-		NM_SET_OUT (out_obj, &(((const NMPObject *) iter->current->obj)->link));
-	}
+	nm_assert (!has_next || NMP_OBJECT_GET_TYPE (iter->current->obj) == NMP_OBJECT_TYPE_LINK);
+	if (out_obj)
+		*out_obj = has_next ? &(((const NMPObject *) iter->current->obj)->link) : NULL;
 	return has_next;
 }
 
