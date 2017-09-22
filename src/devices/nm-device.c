@@ -497,6 +497,8 @@ G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, NM_TYPE_EXPORTED_OBJECT)
 
 static void nm_device_set_proxy_config (NMDevice *self, const char *pac_url);
 
+static gboolean update_ext_ip_config (NMDevice *self, int addr_family, gboolean initial, gboolean intersect_configs);
+
 static gboolean nm_device_set_ip4_config (NMDevice *self,
                                           NMIP4Config *config,
                                           gboolean commit,
@@ -5605,14 +5607,9 @@ ip4_config_merge_and_apply (NMDevice *self,
 	init_ip4_config_dns_priority (self, composite);
 
 	if (commit) {
+		if (priv->queued_ip4_config_id)
+			update_ext_ip_config (self, AF_INET, FALSE, FALSE);
 		ensure_con_ip4_config (self);
-		if (priv->queued_ip4_config_id) {
-			g_clear_object (&priv->ext_ip4_config);
-			priv->ext_ip4_config = nm_ip4_config_capture (nm_device_get_multi_index (self),
-			                                              nm_device_get_platform (self),
-			                                              nm_device_get_ip_ifindex (self),
-			                                              FALSE);
-		}
 	}
 
 	if (priv->dev_ip4_config) {
@@ -6324,18 +6321,9 @@ ip6_config_merge_and_apply (NMDevice *self,
 	init_ip6_config_dns_priority (self, composite);
 
 	if (commit) {
+		if (priv->queued_ip6_config_id)
+			update_ext_ip_config (self, AF_INET6, FALSE, FALSE);
 		ensure_con_ip6_config (self);
-		if (priv->queued_ip6_config_id) {
-			g_clear_object (&priv->ext_ip6_config);
-			g_clear_object (&priv->ext_ip6_config_captured);
-			priv->ext_ip6_config_captured = nm_ip6_config_capture (nm_device_get_multi_index (self),
-			                                                       nm_device_get_platform (self),
-			                                                       nm_device_get_ip_ifindex (self),
-			                                                       FALSE,
-			                                                       NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
-			if (priv->ext_ip6_config_captured)
-				priv->ext_ip6_config = nm_ip6_config_new_cloned (priv->ext_ip6_config_captured);
-		}
 	}
 
 	/* Merge all the IP configs into the composite config */
@@ -10746,7 +10734,7 @@ capture_lease_config (NMDevice *self,
 }
 
 static gboolean
-update_ext_ip_config (NMDevice *self, int addr_family, gboolean initial)
+update_ext_ip_config (NMDevice *self, int addr_family, gboolean initial, gboolean intersect_configs)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ifindex;
@@ -10775,29 +10763,26 @@ update_ext_ip_config (NMDevice *self, int addr_family, gboolean initial)
 				capture_lease_config (self, priv->ext_ip4_config, &priv->dev_ip4_config, NULL, NULL);
 			}
 
-			/* FIXME: ext_ip4_config does not contain routes with source==RTPROT_KERNEL.
-			 * Hence, we will wrongly remove device-routes with metric=0 if they were added by
-			 * the user on purpose. This should be fixed by also tracking and exposing
-			 * kernel routes. */
-
-			/* This function was called upon external changes. Remove the configuration
-			 * (addresses,routes) that is no longer present externally from the internal
-			 * config. This way, we don't re-add addresses that were manually removed
-			 * by the user. */
-			if (priv->con_ip4_config)
-				nm_ip4_config_intersect (priv->con_ip4_config, priv->ext_ip4_config);
-			if (priv->dev_ip4_config)
-				nm_ip4_config_intersect (priv->dev_ip4_config, priv->ext_ip4_config);
-			if (priv->wwan_ip4_config)
-				nm_ip4_config_intersect (priv->wwan_ip4_config, priv->ext_ip4_config);
-			for (iter = priv->vpn4_configs; iter; iter = iter->next)
-				nm_ip4_config_intersect (iter->data, priv->ext_ip4_config);
-			if (   priv->default_route4
-			    && !nm_ip4_config_nmpobj_lookup (priv->ext_ip4_config, priv->default_route4))
-				nm_clear_nmp_object (&priv->default_route4);
-			if (   priv->default_routegw4
-			    && !nm_ip4_config_nmpobj_lookup (priv->ext_ip4_config, priv->default_routegw4))
-				nm_clear_nmp_object (&priv->default_routegw4);
+			if (intersect_configs) {
+				/* This function was called upon external changes. Remove the configuration
+				 * (addresses,routes) that is no longer present externally from the internal
+				 * config. This way, we don't re-add addresses that were manually removed
+				 * by the user. */
+				if (priv->con_ip4_config)
+					nm_ip4_config_intersect (priv->con_ip4_config, priv->ext_ip4_config);
+				if (priv->dev_ip4_config)
+					nm_ip4_config_intersect (priv->dev_ip4_config, priv->ext_ip4_config);
+				if (priv->wwan_ip4_config)
+					nm_ip4_config_intersect (priv->wwan_ip4_config, priv->ext_ip4_config);
+				for (iter = priv->vpn4_configs; iter; iter = iter->next)
+					nm_ip4_config_intersect (iter->data, priv->ext_ip4_config);
+				if (   priv->default_route4
+				    && !nm_ip4_config_nmpobj_lookup (priv->ext_ip4_config, priv->default_route4))
+					nm_clear_nmp_object (&priv->default_route4);
+				if (   priv->default_routegw4
+				    && !nm_ip4_config_nmpobj_lookup (priv->ext_ip4_config, priv->default_routegw4))
+					nm_clear_nmp_object (&priv->default_routegw4);
+			}
 
 			/* Remove parts from ext_ip4_config to only contain the information that
 			 * was configured externally -- we already have the same configuration from
@@ -10830,26 +10815,28 @@ update_ext_ip_config (NMDevice *self, int addr_family, gboolean initial)
 
 			priv->ext_ip6_config = nm_ip6_config_new_cloned (priv->ext_ip6_config_captured);
 
-			/* This function was called upon external changes. Remove the configuration
-			 * (addresses,routes) that is no longer present externally from the internal
-			 * config. This way, we don't re-add addresses that were manually removed
-			 * by the user. */
-			if (priv->con_ip6_config)
-				nm_ip6_config_intersect (priv->con_ip6_config, priv->ext_ip6_config);
-			if (priv->ac_ip6_config)
-				nm_ip6_config_intersect (priv->ac_ip6_config, priv->ext_ip6_config);
-			if (priv->dhcp6.ip6_config)
-				nm_ip6_config_intersect (priv->dhcp6.ip6_config, priv->ext_ip6_config);
-			if (priv->wwan_ip6_config)
-				nm_ip6_config_intersect (priv->wwan_ip6_config, priv->ext_ip6_config);
-			for (iter = priv->vpn6_configs; iter; iter = iter->next)
-				nm_ip6_config_intersect (iter->data, priv->ext_ip6_config);
-			if (   priv->default_route6
-			    && !nm_ip6_config_nmpobj_lookup (priv->ext_ip6_config, priv->default_route6))
-				nm_clear_nmp_object (&priv->default_route6);
-			if (   priv->default_routegw6
-			    && !nm_ip6_config_nmpobj_lookup (priv->ext_ip6_config, priv->default_routegw6))
-				nm_clear_nmp_object (&priv->default_routegw6);
+			if (intersect_configs) {
+				/* This function was called upon external changes. Remove the configuration
+				 * (addresses,routes) that is no longer present externally from the internal
+				 * config. This way, we don't re-add addresses that were manually removed
+				 * by the user. */
+				if (priv->con_ip6_config)
+					nm_ip6_config_intersect (priv->con_ip6_config, priv->ext_ip6_config);
+				if (priv->ac_ip6_config)
+					nm_ip6_config_intersect (priv->ac_ip6_config, priv->ext_ip6_config);
+				if (priv->dhcp6.ip6_config)
+					nm_ip6_config_intersect (priv->dhcp6.ip6_config, priv->ext_ip6_config);
+				if (priv->wwan_ip6_config)
+					nm_ip6_config_intersect (priv->wwan_ip6_config, priv->ext_ip6_config);
+				for (iter = priv->vpn6_configs; iter; iter = iter->next)
+					nm_ip6_config_intersect (iter->data, priv->ext_ip6_config);
+				if (   priv->default_route6
+					&& !nm_ip6_config_nmpobj_lookup (priv->ext_ip6_config, priv->default_route6))
+					nm_clear_nmp_object (&priv->default_route6);
+				if (   priv->default_routegw6
+					&& !nm_ip6_config_nmpobj_lookup (priv->ext_ip6_config, priv->default_routegw6))
+					nm_clear_nmp_object (&priv->default_routegw6);
+			}
 
 			/* Remove parts from ext_ip6_config to only contain the information that
 			 * was configured externally -- we already have the same configuration from
@@ -10881,7 +10868,7 @@ update_ip_config (NMDevice *self, int addr_family, gboolean initial)
 
 	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 
-	if (update_ext_ip_config (self, addr_family, initial)) {
+	if (update_ext_ip_config (self, addr_family, initial, TRUE)) {
 		if (addr_family == AF_INET) {
 			if (priv->ext_ip4_config)
 				ip4_config_merge_and_apply (self, NULL, FALSE);
