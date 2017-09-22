@@ -641,7 +641,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	GVariant *settings;
 
 	priv->proxy = NMDBUS_SETTINGS_CONNECTION (_nm_object_get_proxy (NM_OBJECT (initable), NM_DBUS_INTERFACE_SETTINGS_CONNECTION));
-	g_signal_connect (priv->proxy, "updated", G_CALLBACK (updated_cb), initable);
+	g_signal_connect_object (priv->proxy, "updated", G_CALLBACK (updated_cb), initable, 0);
 
 	if (nmdbus_settings_connection_call_get_settings_sync (priv->proxy,
 	                                                       &settings,
@@ -730,8 +730,8 @@ init_async (GAsyncInitable *initable, int io_priority,
 	priv->proxy = NMDBUS_SETTINGS_CONNECTION (_nm_object_get_proxy (NM_OBJECT (initable),
 	                                          NM_DBUS_INTERFACE_SETTINGS_CONNECTION));
 
-	g_signal_connect (priv->proxy, "updated",
-	                  G_CALLBACK (updated_cb), initable);
+	g_signal_connect_object (priv->proxy, "updated",
+	                         G_CALLBACK (updated_cb), initable, 0);
 
 	nmdbus_settings_connection_call_get_settings (NM_REMOTE_CONNECTION_GET_PRIVATE (init_data->initable)->proxy,
 	                                              init_data->cancellable,
