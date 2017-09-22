@@ -1141,6 +1141,7 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/sd-adapt/nm-sd-adapt.c \
 	src/systemd/sd-adapt/nm-sd-adapt.h \
 	src/systemd/sd-adapt/architecture.h \
+	src/systemd/sd-adapt/btrfs-util.h \
 	src/systemd/sd-adapt/build.h \
 	src/systemd/sd-adapt/cgroup-util.h \
 	src/systemd/sd-adapt/condition.h \
