@@ -825,6 +825,7 @@ nm_ip4_config_commit (const NMIP4Config *self,
 {
 	gs_unref_ptrarray GPtrArray *addresses = NULL;
 	gs_unref_ptrarray GPtrArray *routes = NULL;
+	gs_unref_ptrarray GPtrArray *routes_prune = NULL;
 	int ifindex;
 	gboolean success = TRUE;
 
@@ -839,14 +840,17 @@ nm_ip4_config_commit (const NMIP4Config *self,
 	routes = nm_dedup_multi_objs_to_ptr_array_head (nm_ip4_config_lookup_routes (self),
 	                                                NULL, NULL);
 
+	routes_prune = nm_platform_ip_route_get_prune_list (platform,
+	                                                    AF_INET,
+	                                                    ifindex);
+
 	nm_platform_ip4_address_sync (platform, ifindex, addresses);
 
 	if (!nm_platform_ip_route_sync (platform,
 	                                AF_INET,
 	                                ifindex,
 	                                routes,
-	                                nm_platform_lookup_predicate_routes_main,
-	                                NULL,
+	                                routes_prune,
 	                                NULL))
 		success = FALSE;
 

@@ -608,6 +608,7 @@ nm_ip6_config_commit (const NMIP6Config *self,
 {
 	gs_unref_ptrarray GPtrArray *addresses = NULL;
 	gs_unref_ptrarray GPtrArray *routes = NULL;
+	gs_unref_ptrarray GPtrArray *routes_prune = NULL;
 	int ifindex;
 	gboolean success = TRUE;
 
@@ -618,16 +619,21 @@ nm_ip6_config_commit (const NMIP6Config *self,
 
 	addresses = nm_dedup_multi_objs_to_ptr_array_head (nm_ip6_config_lookup_addresses (self),
 	                                                   NULL, NULL);
+
 	routes = nm_dedup_multi_objs_to_ptr_array_head (nm_ip6_config_lookup_routes (self),
 	                                                NULL, NULL);
+
+	routes_prune = nm_platform_ip_route_get_prune_list (platform,
+	                                                    AF_INET6,
+	                                                    ifindex);
+
 	nm_platform_ip6_address_sync (platform, ifindex, addresses, TRUE);
 
 	if (!nm_platform_ip_route_sync (platform,
 	                                AF_INET6,
 	                                ifindex,
 	                                routes,
-	                                nm_platform_lookup_predicate_routes_main,
-	                                NULL,
+	                                routes_prune,
 	                                out_temporary_not_available))
 		success = FALSE;
 

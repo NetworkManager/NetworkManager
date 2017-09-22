@@ -3589,6 +3589,23 @@ _err_inval_due_to_ipv6_tentative_pref_src (NMPlatform *self, const NMPObject *ob
 	return TRUE;
 }
 
+GPtrArray *
+nm_platform_ip_route_get_prune_list (NMPlatform *self,
+                                     int addr_family,
+                                     int ifindex)
+{
+	nm_assert (NM_IS_PLATFORM (self));
+	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
+
+	return nm_platform_lookup_addrroute_clone (self,
+	                                           addr_family == AF_INET
+	                                             ? NMP_OBJECT_TYPE_IP4_ROUTE
+	                                             : NMP_OBJECT_TYPE_IP6_ROUTE,
+	                                           ifindex,
+	                                           nm_platform_lookup_predicate_routes_main,
+	                                           NULL);
+}
+
 /**
  * nm_platform_ip_route_sync:
  * @self: the #NMPlatform instance.
@@ -3596,12 +3613,11 @@ _err_inval_due_to_ipv6_tentative_pref_src (NMPlatform *self, const NMPObject *ob
  * @ifindex: the @ifindex for which the routes are to be added.
  * @routes: (allow-none): a list of routes to configure. Must contain
  *   NMPObject instances of routes, according to @addr_family.
- * @kernel_delete_predicate: (allow-none): if not %NULL, previously
- *   existing routes already configured will only be deleted if the
- *   predicate returns TRUE. This allows to preserve/ignore some
- *   routes. For example by passing @nm_platform_lookup_predicate_routes_main_skip_rtprot_kernel,
- *   routes with "proto kernel" will be left untouched.
- * @kernel_delete_userdata: user data for @kernel_delete_predicate.
+ * @routes_prune: (allow-none): the list of routes to delete.
+ *   If platform has such a route configured, it will be deleted
+ *   at the end of the operation. Note that if @routes contains
+ *   the same route, then it will not be deleted. @routes overrules
+ *   @routes_prune list.
  * @out_temporary_not_available: (allow-none): (out): routes that could
  *   currently not be synced. The caller shall keep them and try later again.
  *
@@ -3612,14 +3628,12 @@ nm_platform_ip_route_sync (NMPlatform *self,
                            int addr_family,
                            int ifindex,
                            GPtrArray *routes,
-                           NMPObjectPredicateFunc kernel_delete_predicate,
-                           gpointer kernel_delete_userdata,
+                           GPtrArray *routes_prune,
                            GPtrArray **out_temporary_not_available)
 {
 	const NMPlatformVTableRoute *vt;
 	gs_unref_ptrarray GPtrArray *plat_routes = NULL;
 	gs_unref_hashtable GHashTable *routes_idx = NULL;
-	const NMPObject *plat_o;
 	const NMPObject *conf_o;
 	const NMDedupMultiEntry *plat_entry;
 	guint i;
@@ -3669,6 +3683,8 @@ nm_platform_ip_route_sync (NMPlatform *self,
 			                                       NMP_CACHE_ID_TYPE_OBJECT_TYPE,
 			                                       conf_o);
 			if (plat_entry) {
+				const NMPObject *plat_o;
+
 				plat_o = plat_entry->obj;
 
 				if (vt->route_cmp (NMP_OBJECT_CAST_IPX_ROUTE (conf_o),
@@ -3741,21 +3757,26 @@ nm_platform_ip_route_sync (NMPlatform *self,
 		}
 	}
 
-	plat_routes = nm_platform_lookup_addrroute_clone (self,
-	                                                  vt->obj_type,
-	                                                  ifindex,
-	                                                  kernel_delete_predicate,
-	                                                  kernel_delete_userdata);
+	if (routes_prune) {
+		for (i = 0; i < routes_prune->len; i++) {
+			const NMPObject *prune_o;
 
-	if (plat_routes) {
-		for (i = 0; i < plat_routes->len; i++) {
-			plat_o = plat_routes->pdata[i];
+			prune_o = routes_prune->pdata[i];
 
-			if (   !routes_idx
-			    || !g_hash_table_lookup (routes_idx, plat_o)) {
-				if (!nm_platform_ip_route_delete (self, plat_o)) {
-					/* ignore error... */
-				}
+			nm_assert (   (addr_family == AF_INET  && NMP_OBJECT_GET_TYPE (prune_o) == NMP_OBJECT_TYPE_IP4_ROUTE)
+			           || (addr_family == AF_INET6 && NMP_OBJECT_GET_TYPE (prune_o) == NMP_OBJECT_TYPE_IP6_ROUTE));
+
+			if (   routes_idx
+			    && g_hash_table_lookup (routes_idx, prune_o))
+				continue;
+
+			if (!nm_platform_lookup_entry (self,
+			                               NMP_CACHE_ID_TYPE_OBJECT_TYPE,
+			                               prune_o))
+				continue;
+
+			if (!nm_platform_ip_route_delete (self, prune_o)) {
+				/* ignore error... */
 			}
 		}
 	}
@@ -3776,10 +3797,26 @@ nm_platform_ip_route_flush (NMPlatform *self,
 	                                   AF_INET,
 	                                   AF_INET6));
 
-	if (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET))
-		success &= nm_platform_ip_route_sync (self, AF_INET,  ifindex, NULL, NULL, NULL, NULL);
-	if (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET6))
-		success &= nm_platform_ip_route_sync (self, AF_INET6, ifindex, NULL, NULL, NULL, NULL);
+	if (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET)) {
+		gs_unref_ptrarray GPtrArray *routes_prune = NULL;
+
+		routes_prune = nm_platform_lookup_addrroute_clone (self,
+		                                                   NMP_OBJECT_TYPE_IP4_ROUTE,
+		                                                   ifindex,
+		                                                   NULL,
+		                                                   NULL);
+		success &= nm_platform_ip_route_sync (self, AF_INET, ifindex, NULL, routes_prune, NULL);
+	}
+	if (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET6)) {
+		gs_unref_ptrarray GPtrArray *routes_prune = NULL;
+
+		routes_prune = nm_platform_lookup_addrroute_clone (self,
+		                                                   NMP_OBJECT_TYPE_IP6_ROUTE,
+		                                                   ifindex,
+		                                                   NULL,
+		                                                   NULL);
+		success &= nm_platform_ip_route_sync (self, AF_INET6, ifindex, NULL, routes_prune, NULL);
+	}
 	return success;
 }
 
@@ -3913,8 +3950,9 @@ nm_platform_ip_route_delete (NMPlatform *self,
 {
 	_CHECK_SELF (self, klass, FALSE);
 
-	nm_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ROUTE,
-	                                                 NMP_OBJECT_TYPE_IP6_ROUTE));
+	if (!NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ROUTE,
+	                                           NMP_OBJECT_TYPE_IP6_ROUTE))
+		g_return_val_if_reached (FALSE);
 
 	_LOGD ("route: delete     IPv%c route %s",
 	       NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_IP4_ROUTE ? '4' : '6',

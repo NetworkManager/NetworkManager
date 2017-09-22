@@ -1217,13 +1217,17 @@ NMPlatformError nm_platform_ip6_route_add (NMPlatform *self, NMPNlmFlags flags, 
 
 gboolean nm_platform_ip_route_delete (NMPlatform *self, const NMPObject *route);
 
+GPtrArray *nm_platform_ip_route_get_prune_list (NMPlatform *self,
+                                                int addr_family,
+                                                int ifindex);
+
 gboolean nm_platform_ip_route_sync (NMPlatform *self,
                                     int addr_family,
                                     int ifindex,
                                     GPtrArray *routes,
-                                    NMPObjectPredicateFunc kernel_delete_predicate,
-                                    gpointer kernel_delete_userdata,
+                                    GPtrArray *routes_prune,
                                     GPtrArray **out_temporary_not_available);
+
 gboolean nm_platform_ip_route_flush (NMPlatform *self,
                                      int addr_family,
                                      int ifindex);
