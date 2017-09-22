@@ -2904,7 +2904,7 @@ nm_platform_lookup_predicate_routes_main (const NMPObject *obj,
 {
 	nm_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ROUTE,
 	                                                 NMP_OBJECT_TYPE_IP6_ROUTE));
-	return !obj->ip_route.table_coerced;
+	return nm_platform_route_table_is_main (obj->ip_route.table_coerced);
 }
 
 gboolean
@@ -2913,7 +2913,7 @@ nm_platform_lookup_predicate_routes_main_skip_rtprot_kernel (const NMPObject *ob
 {
 	nm_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ROUTE,
 	                                                 NMP_OBJECT_TYPE_IP6_ROUTE));
-	return    !obj->ip_route.table_coerced
+	return    nm_platform_route_table_is_main (obj->ip_route.table_coerced)
 	       && obj->ip_route.rt_source != NM_IP_CONFIG_SOURCE_RTPROT_KERNEL;
 }
 
@@ -3828,12 +3828,14 @@ nm_platform_ip_route_normalize (int addr_family,
 	switch (addr_family) {
 	case AF_INET:
 		r4 = (NMPlatformIP4Route *) route;
+		r4->table_coerced = nm_platform_route_table_coerce (nm_platform_route_table_uncoerce (r4->table_coerced, TRUE));
 		r4->network = nm_utils_ip4_address_clear_host_address (r4->network, r4->plen);
 		r4->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (r4->rt_source);
 		r4->scope_inv = _ip_route_scope_inv_get_normalized (r4);
 		break;
 	case AF_INET6:
 		r6 = (NMPlatformIP6Route *) route;
+		r6->table_coerced = nm_platform_route_table_coerce (nm_platform_route_table_uncoerce (r6->table_coerced, TRUE));
 		nm_utils_ip6_address_clear_host_address (&r6->network, &r6->network, r6->plen);
 		r6->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (r6->rt_source),
 		r6->metric = nm_utils_ip6_route_metric_normalize (r6->metric);
@@ -4942,7 +4944,7 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsi
 	            "%s" /* initrwnd */
 	            "%s" /* mtu */
 	            "",
-	            route->table_coerced ? nm_sprintf_buf (str_table, "table %u ", nm_platform_route_table_coerce (route->table_coerced)) : "",
+	            route->table_coerced ? nm_sprintf_buf (str_table, "table %u ", nm_platform_route_table_uncoerce (route->table_coerced, FALSE)) : "",
 	            s_network,
 	            route->plen,
 	            s_gateway,
@@ -5015,7 +5017,7 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	            "%s" /* initrwnd */
 	            "%s" /* mtu */
 	            "",
-	            route->table_coerced ? nm_sprintf_buf (str_table, "table %u ", nm_platform_route_table_coerce (route->table_coerced)) : "",
+	            route->table_coerced ? nm_sprintf_buf (str_table, "table %u ", nm_platform_route_table_uncoerce (route->table_coerced, FALSE)) : "",
 	            s_network,
 	            route->plen,
 	            s_gateway,
@@ -5458,7 +5460,7 @@ nm_platform_ip4_route_hash (const NMPlatformIP4Route *obj, NMPlatformIPRouteCmpT
 		switch (cmp_type) {
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
-			h = NM_HASH_COMBINE (h, obj->table_coerced);
+			h = NM_HASH_COMBINE (h, nm_platform_route_table_uncoerce (obj->table_coerced, TRUE));
 			h = NM_HASH_COMBINE (h, nm_utils_ip4_address_clear_host_address (obj->network, obj->plen));
 			h = NM_HASH_COMBINE (h, obj->plen);
 			h = NM_HASH_COMBINE (h, obj->metric);
@@ -5484,7 +5486,10 @@ nm_platform_ip4_route_hash (const NMPlatformIP4Route *obj, NMPlatformIPRouteCmpT
 			break;
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL:
-			h = NM_HASH_COMBINE (h, obj->table_coerced);
+			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
+				h = NM_HASH_COMBINE (h, nm_platform_route_table_uncoerce (obj->table_coerced, TRUE));
+			else
+				h = NM_HASH_COMBINE (h, obj->table_coerced);
 			h = NM_HASH_COMBINE (h, obj->ifindex);
 			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
 				h = NM_HASH_COMBINE (h, nm_utils_ip4_address_clear_host_address (obj->network, obj->plen));
@@ -5527,7 +5532,8 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 	switch (cmp_type) {
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
-		NM_CMP_FIELD (a, b, table_coerced);
+		NM_CMP_DIRECT (nm_platform_route_table_uncoerce (a->table_coerced, TRUE),
+		               nm_platform_route_table_uncoerce (b->table_coerced, TRUE));
 		NM_CMP_DIRECT_IN4ADDR_SAME_PREFIX (a->network, b->network, MIN (a->plen, b->plen));
 		NM_CMP_FIELD (a, b, plen);
 		NM_CMP_FIELD (a, b, metric);
@@ -5555,7 +5561,11 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 		break;
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL:
-		NM_CMP_FIELD (a, b, table_coerced);
+		if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
+			NM_CMP_DIRECT (nm_platform_route_table_uncoerce (a->table_coerced, TRUE),
+			               nm_platform_route_table_uncoerce (b->table_coerced, TRUE));
+		} else
+			NM_CMP_FIELD (a, b, table_coerced);
 		NM_CMP_FIELD (a, b, ifindex);
 		if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
 			NM_CMP_DIRECT_IN4ADDR_SAME_PREFIX (a->network, b->network, MIN (a->plen, b->plen));
@@ -5601,7 +5611,7 @@ nm_platform_ip6_route_hash (const NMPlatformIP6Route *obj, NMPlatformIPRouteCmpT
 		switch (cmp_type) {
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
-			h = NM_HASH_COMBINE (h, obj->table_coerced);
+			h = NM_HASH_COMBINE (h, nm_platform_route_table_uncoerce (obj->table_coerced, TRUE));
 			h = NM_HASH_COMBINE_IN6ADDR_PREFIX (h, &obj->network, obj->plen);
 			h = NM_HASH_COMBINE (h, obj->plen);
 			h = NM_HASH_COMBINE (h, nm_utils_ip6_route_metric_normalize (obj->metric));
@@ -5614,7 +5624,10 @@ nm_platform_ip6_route_hash (const NMPlatformIP6Route *obj, NMPlatformIPRouteCmpT
 			break;
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL:
-			h = NM_HASH_COMBINE (h, obj->table_coerced);
+			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
+				h = NM_HASH_COMBINE (h, nm_platform_route_table_uncoerce (obj->table_coerced, TRUE));
+			else
+				h = NM_HASH_COMBINE (h, obj->table_coerced);
 			h = NM_HASH_COMBINE (h, obj->ifindex);
 			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
 				h = NM_HASH_COMBINE_IN6ADDR_PREFIX (h, &obj->network, obj->plen);
@@ -5661,7 +5674,8 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 	switch (cmp_type) {
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
-		NM_CMP_FIELD (a, b, table_coerced);
+		NM_CMP_DIRECT (nm_platform_route_table_uncoerce (a->table_coerced, TRUE),
+		               nm_platform_route_table_uncoerce (b->table_coerced, TRUE));
 		NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX (&a->network, &b->network, MIN (a->plen, b->plen));
 		NM_CMP_FIELD (a, b, plen);
 		NM_CMP_DIRECT (nm_utils_ip6_route_metric_normalize (a->metric), nm_utils_ip6_route_metric_normalize (b->metric));
@@ -5674,7 +5688,11 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 		break;
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL:
-		NM_CMP_FIELD (a, b, table_coerced);
+		if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
+			NM_CMP_DIRECT (nm_platform_route_table_uncoerce (a->table_coerced, TRUE),
+			               nm_platform_route_table_uncoerce (b->table_coerced, TRUE));
+		} else
+			NM_CMP_FIELD (a, b, table_coerced);
 		NM_CMP_FIELD (a, b, ifindex);
 		if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
 			NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX (&a->network, &b->network, MIN (a->plen, b->plen));

@@ -2594,7 +2594,7 @@ _nl_msg_new_route (int nlmsg_type,
 	const NMPClass *klass = NMP_OBJECT_GET_CLASS (obj);
 	gboolean is_v4 = klass->addr_family == AF_INET;
 	const guint32 lock = ip_route_get_lock_flag (NMP_OBJECT_CAST_IP_ROUTE (obj));
-	const guint32 table = nm_platform_route_table_coerce (NMP_OBJECT_CAST_IP_ROUTE (obj)->table_coerced);
+	const guint32 table = nm_platform_route_table_uncoerce (NMP_OBJECT_CAST_IP_ROUTE (obj)->table_coerced, TRUE);
 	struct rtmsg rtmsg = {
 		.rtm_family = klass->addr_family,
 		.rtm_tos = is_v4

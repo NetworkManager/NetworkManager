@@ -426,7 +426,7 @@ typedef union {
 	 *
 	 * This is not the original table ID. Instead, 254 (RT_TABLE_MAIN) and
 	 * zero (RT_TABLE_UNSPEC) are swapped, so that the default is the main
-	 * table. Use nm_platform_route_table_coerce(). */ \
+	 * table. Use nm_platform_route_table_coerce()/nm_platform_route_table_uncoerce(). */ \
 	guint32 table_coerced; \
 	\
 	/*end*/
@@ -860,15 +860,21 @@ NMPlatform *nm_platform_get (void);
 
 /**
  * nm_platform_route_table_coerce:
- * @table: the route table, either its original value, or its coerced.
+ * @table: the route table, in its original value as received
+ *   from rtm_table/RTA_TABLE.
  *
- * Returns: returns the coerced table id. If the table id is like
- *   RTA_TABLE, it returns a value for NMPlatformIPRoute.table_coerced
- *   and vice versa.
+ * Returns: returns the coerced table id, that can be stored in
+ *   NMPlatformIPRoute.table_coerced.
  */
 static inline guint32
 nm_platform_route_table_coerce (guint32 table)
 {
+	/* For kernel, the default table is RT_TABLE_MAIN (254).
+	 * We want that in NMPlatformIPRoute.table_coerced a numeric
+	 * zero is the default. Hence, @table_coerced swaps the
+	 * value 0 and 254. Use nm_platform_route_table_coerce()
+	 * and nm_platform_route_table_uncoerce() to convert between
+	 * the two domains. */
 	switch (table) {
 	case 0 /* RT_TABLE_UNSPEC */:
 		return 254;
@@ -877,6 +883,45 @@ nm_platform_route_table_coerce (guint32 table)
 	default:
 		return table;
 	}
+}
+
+/**
+ * nm_platform_route_table_uncoerce:
+ * @table: the route table, in its coerced value
+ * @normalize: whether to normalize RT_TABLE_UNSPEC to
+ *   RT_TABLE_MAIN. For kernel, routes with a table id
+ *   RT_TABLE_UNSPEC do not exist and are treated like
+ *   RT_TABLE_MAIN.
+ *
+ * Returns: reverts the coerced table ID in NMPlatformIPRoute.table_coerced
+ *   to the original value as kernel understands it.
+ */
+static inline guint32
+nm_platform_route_table_uncoerce (guint32 table_coerced, gboolean normalize)
+{
+	/* this undoes nm_platform_route_table_coerce().  */
+	switch (table_coerced) {
+	case 0 /* RT_TABLE_UNSPEC */:
+		return 254;
+	case 254 /* RT_TABLE_MAIN */:
+		return normalize ? 254 : 0;
+	default:
+		return table_coerced;
+	}
+}
+
+static inline gboolean
+nm_platform_route_table_is_main (guint32 table)
+{
+	/* same as
+	 *   nm_platform_route_table_uncoerce (table, TRUE) == RT_TABLE_MAIN
+	 * and
+	 *   nm_platform_route_table_uncoerce (nm_platform_route_table_coerce (table), TRUE) == RT_TABLE_MAIN
+	 *
+	 * That is, the function operates the same on @table and its coerced
+	 * form.
+	 */
+	return table == 0 || table == 254;
 }
 
 /**
