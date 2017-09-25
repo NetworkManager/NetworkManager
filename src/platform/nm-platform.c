@@ -856,7 +856,7 @@ nm_platform_link_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("link: add link '%s' of type '%s' (%d)"
+	_LOGD ("link: adding link '%s' of type '%s' (%d)"
 	       "%s%s" /* address */
 	       "%s%s" /* veth peer */
 	       "",
