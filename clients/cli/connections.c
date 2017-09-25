@@ -7387,7 +7387,10 @@ editor_menu_main (NmCli *nmc, NMConnection *connection)
 				} else
 					ss = menu_ctx.curr_setting;
 
-				if (descr_all) {
+				if (!ss) {
+					g_print (_("Error: no setting selected; valid are [%s]\n"), valid_settings_str);
+					g_print (_("use 'goto <setting>' first, or 'describe <setting>.<property>'\n"));
+				} else if (descr_all) {
 					/* Show description for all properties */
 					print_setting_description (ss);
 				} else {
