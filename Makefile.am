@@ -1734,12 +1734,12 @@ EXTRA_src_ppp_libnm_ppp_plugin_la_DEPENDENCIES = \
 	src/ppp/nm-ppp-plugin.ver
 
 src_ppp_libnm_ppp_plugin_la_CPPFLAGS = \
-	-I${top_srcdir}/src \
-	-I${top_builddir}/src \
-	-I${top_srcdir}/shared \
-	-I$(top_builddir)/shared \
-	-I${top_builddir}/libnm-core \
-	-I${top_srcdir}/libnm-core \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(builddir)/libnm-core \
+	-I$(srcdir)/libnm-core \
 	-DPPPD_PLUGIN_DIR=\"$(PPPD_PLUGIN_DIR)\" \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
@@ -1747,7 +1747,7 @@ src_ppp_libnm_ppp_plugin_la_CPPFLAGS = \
 
 src_ppp_libnm_ppp_plugin_la_LDFLAGS = \
 	-module -avoid-version \
-	-Wl,--version-script="$(top_srcdir)/src/ppp/nm-ppp-plugin.ver"
+	-Wl,--version-script="$(srcdir)/src/ppp/nm-ppp-plugin.ver"
 
 src_ppp_libnm_ppp_plugin_la_LIBADD = \
 	introspection/libnmdbus.la \
