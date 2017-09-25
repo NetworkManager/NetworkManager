@@ -877,4 +877,16 @@ typedef enum {
 	NM_IP_ROUTE_TABLE_SYNC_MODE_FULL        = 3,
 } NMIPRouteTableSyncMode;
 
+/**
+ * NMActivationStateFlags:
+ * @NM_ACTIVATION_STATE_FLAG_NONE: an alias for numeric zero, no flags set.
+ *
+ * Flags describing the current activation state.
+ *
+ * Since: 1.10
+ **/
+typedef enum { /*< flags >*/
+	NM_ACTIVATION_STATE_FLAG_NONE                       = 0,
+} NMActivationStateFlags;
+
 #endif /* __NM_DBUS_INTERFACE_H__ */

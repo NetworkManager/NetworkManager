@@ -51,6 +51,7 @@ typedef struct {
 	char *specific_object_path;
 	GPtrArray *devices;
 	NMActiveConnectionState state;
+	guint state_flags;
 	gboolean is_default;
 	NMIPConfig *ip4_config;
 	NMDhcpConfig *dhcp4_config;
@@ -71,6 +72,7 @@ enum {
 	PROP_SPECIFIC_OBJECT_PATH,
 	PROP_DEVICES,
 	PROP_STATE,
+	PROP_STATE_FLAGS,
 	PROP_DEFAULT,
 	PROP_IP4_CONFIG,
 	PROP_DHCP4_CONFIG,
@@ -213,6 +215,24 @@ nm_active_connection_get_state (NMActiveConnection *connection)
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NM_ACTIVE_CONNECTION_STATE_UNKNOWN);
 
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->state;
+}
+
+/**
+ * nm_active_connection_get_state_flags:
+ * @connection: a #NMActiveConnection
+ *
+ * Gets the active connection's state flags.
+ *
+ * Returns: the state flags
+ *
+ * Since: 1.10
+ **/
+NMActivationStateFlags
+nm_active_connection_get_state_flags (NMActiveConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NM_ACTIVATION_STATE_FLAG_NONE);
+
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->state_flags;
 }
 
 /**
@@ -474,6 +494,9 @@ get_property (GObject *object,
 	case PROP_STATE:
 		g_value_set_enum (value, nm_active_connection_get_state (self));
 		break;
+	case PROP_STATE_FLAGS:
+		g_value_set_uint (value, nm_active_connection_get_state_flags (self));
+		break;
 	case PROP_DEFAULT:
 		g_value_set_boolean (value, nm_active_connection_get_default (self));
 		break;
@@ -537,6 +560,7 @@ init_dbus (NMObject *object)
 		{ "specific-object",                         &priv->specific_object_path, demarshal_specific_object_path },
 		{ NM_ACTIVE_CONNECTION_DEVICES,              &priv->devices, NULL, NM_TYPE_DEVICE },
 		{ NM_ACTIVE_CONNECTION_STATE,                &priv->state },
+		{ NM_ACTIVE_CONNECTION_STATE_FLAGS,          &priv->state_flags },
 		{ NM_ACTIVE_CONNECTION_DEFAULT,              &priv->is_default },
 		{ NM_ACTIVE_CONNECTION_IP4_CONFIG,           &priv->ip4_config, NULL, NM_TYPE_IP4_CONFIG },
 		{ NM_ACTIVE_CONNECTION_DHCP4_CONFIG,         &priv->dhcp4_config, NULL, NM_TYPE_DHCP4_CONFIG },
@@ -660,6 +684,21 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 		 g_param_spec_enum (NM_ACTIVE_CONNECTION_STATE, "", "",
 		                    NM_TYPE_ACTIVE_CONNECTION_STATE,
 		                    NM_ACTIVE_CONNECTION_STATE_UNKNOWN,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMActiveConnection:state-flags:
+	 *
+	 * The state flags of the active connection.
+	 *
+	 * Since: 1.10
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_STATE_FLAGS,
+		 g_param_spec_uint (NM_ACTIVE_CONNECTION_STATE_FLAGS, "", "",
+		                    0, G_MAXUINT32,
+		                    NM_ACTIVATION_STATE_FLAG_NONE,
 		                    G_PARAM_READABLE |
 		                    G_PARAM_STATIC_STRINGS));
 

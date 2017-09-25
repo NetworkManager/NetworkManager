@@ -44,6 +44,8 @@ typedef struct _NMActiveConnectionPrivate {
 
 	char *pending_activation_id;
 
+	NMActivationStateFlags state_flags;
+
 	NMActiveConnectionState state;
 	bool is_default:1;
 	bool is_default6:1;
@@ -73,6 +75,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMActiveConnection,
 	PROP_SPECIFIC_OBJECT,
 	PROP_DEVICES,
 	PROP_STATE,
+	PROP_STATE_FLAGS,
 	PROP_DEFAULT,
 	PROP_IP4_CONFIG,
 	PROP_DHCP4_CONFIG,
@@ -142,6 +145,10 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_state_to_string, NMActiveConnectionState,
 	NM_UTILS_LOOKUP_STR_ITEM (NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,  "deactivated"),
 );
 #define state_to_string(state) NM_UTILS_LOOKUP_STR (_state_to_string, state)
+
+NM_UTILS_FLAGS2STR_DEFINE_STATIC (_state_flags_to_string, NMActivationStateFlags,
+	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_NONE,                 "none"),
+);
 
 /*****************************************************************************/
 
@@ -276,6 +283,33 @@ nm_active_connection_set_state (NMActiveConnection *self,
 		 */
 		_device_cleanup (self);
 		_notify (self, PROP_DEVICES);
+	}
+}
+
+NMActivationStateFlags
+nm_active_connection_get_state_flags (NMActiveConnection *self)
+{
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->state_flags;
+}
+
+void
+nm_active_connection_set_state_flags_full (NMActiveConnection *self,
+                                           NMActivationStateFlags state_flags,
+                                           NMActivationStateFlags mask)
+{
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+	NMActivationStateFlags f;
+
+	f = (priv->state_flags & ~mask) | (state_flags & mask);
+	if (f != priv->state_flags) {
+		char buf1[G_N_ELEMENTS (_nm_utils_to_string_buffer)];
+		char buf2[G_N_ELEMENTS (_nm_utils_to_string_buffer)];
+
+		_LOGD ("set state-flags %s (was %s)",
+		       _state_flags_to_string (f, buf1, sizeof (buf1)),
+		       _state_flags_to_string (priv->state_flags, buf2, sizeof (buf2)));
+		priv->state_flags = f;
+		_notify (self, PROP_STATE_FLAGS);
 	}
 }
 
@@ -1105,6 +1139,9 @@ get_property (GObject *object, guint prop_id,
 			g_value_set_uint (value, NM_ACTIVE_CONNECTION_STATE_ACTIVATING);
 		}
 		break;
+	case PROP_STATE_FLAGS:
+		g_value_set_uint (value, priv->state_flags);
+		break;
 	case PROP_DEFAULT:
 		g_value_set_boolean (value, priv->is_default);
 		break;
@@ -1356,6 +1393,12 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 	                        NM_ACTIVE_CONNECTION_STATE_UNKNOWN,
 	                        NM_ACTIVE_CONNECTION_STATE_DEACTIVATING,
 	                        NM_ACTIVE_CONNECTION_STATE_UNKNOWN,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_STATE_FLAGS] =
+	     g_param_spec_uint (NM_ACTIVE_CONNECTION_STATE_FLAGS, "", "",
+	                        0, G_MAXUINT32, NM_ACTIVATION_STATE_FLAG_NONE,
 	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS);
 
