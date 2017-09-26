@@ -490,6 +490,16 @@ make %{?_smp_mflags} check
 %endif
 
 
+%pre
+if [ -f "%{systemd_dir}/network-online.target.wants/NetworkManager-wait-online.service" ] ; then
+    # older versions used to install this file, effectively always enabling
+    # NetworkManager-wait-online.service. We no longer do that and rely on
+    # preset.
+    # But on package upgrade we must explicitly enable it (rh#1455704).
+    systemctl enable NetworkManager-wait-online.service || :
+fi
+
+
 %post
 /usr/bin/udevadm control --reload-rules || :
 /usr/bin/udevadm trigger --subsystem-match=net || :
