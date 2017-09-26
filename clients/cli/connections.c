@@ -6888,25 +6888,22 @@ menu_switch_to_level1 (NmcColorOption color_option,
 static gboolean
 editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_type)
 {
+	gs_unref_object NMRemoteConnection *rem_con = NULL;
 	NMSettingConnection *s_con;
-	NMRemoteConnection *rem_con;
 	NMRemoteConnection *con_tmp;
 	GWeakRef weak = { { NULL } };
 	gboolean removed;
 	NmcEditorMainCmd cmd;
-	char *cmd_user;
 	gboolean cmd_loop = TRUE;
-	char *cmd_arg = NULL;
-	char *cmd_arg_s, *cmd_arg_p, *cmd_arg_v;
 	const NMMetaSettingValidPartItem *const*valid_settings_main;
 	const NMMetaSettingValidPartItem *const*valid_settings_slave;
-	char *valid_settings_str = NULL;
+	gs_free char *valid_settings_str = NULL;
 	const char *s_type = NULL;
 	AddConnectionInfo *info = NULL;
 	gboolean dirty;
 	gboolean temp_changes;
 	GError *err1 = NULL;
-	NmcEditorMenuContext menu_ctx;
+	NmcEditorMenuContext menu_ctx = { 0 };
 
 	s_con = nm_connection_get_setting_connection (connection);
 	if (s_con)
@@ -6918,12 +6915,8 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	valid_settings_str = get_valid_options_string (valid_settings_main, valid_settings_slave);
 	g_print (_("You may edit the following settings: %s\n"), valid_settings_str);
 
-	menu_ctx.level = 0;
 	menu_ctx.main_prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NM_META_TERM_FORMAT_NORMAL,
 	                                     BASE_PROMPT);
-	menu_ctx.curr_setting = NULL;
-	menu_ctx.valid_props = NULL;
-	menu_ctx.valid_props_str = NULL;
 
 	/* Get remote connection */
 	con_tmp = nm_client_get_connection_by_uuid (nmc->client,
@@ -6932,6 +6925,12 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	rem_con = g_weak_ref_get (&weak);
 
 	while (cmd_loop) {
+		gs_free char *cmd_user = NULL;
+		gs_free char *cmd_arg = NULL;
+		gs_free char *cmd_arg_s = NULL;
+		gs_free char *cmd_arg_p = NULL;
+		gs_free char *cmd_arg_v = NULL;
+
 		/* Connection is dirty? (not saved or differs from the saved) */
 		dirty = is_connection_dirty (connection, rem_con);
 		temp_changes = rem_con ? nm_remote_connection_get_unsaved (rem_con) : TRUE;
@@ -6951,9 +6950,6 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 			continue;
 		cmd = parse_editor_main_cmd (g_strstrip (cmd_user), &cmd_arg);
 
-		cmd_arg_s = NULL;
-		cmd_arg_p = NULL;
-		cmd_arg_v = NULL;
 		split_editor_main_cmd_args (cmd_arg, &cmd_arg_s, &cmd_arg_p, &cmd_arg_v);
 		switch (cmd) {
 		case NMC_EDITOR_MAIN_CMD_SET:
@@ -6992,22 +6988,22 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					g_print (_("use 'goto <setting>' first, or 'set <setting>.<property>'\n"));
 				}
 			} else {
+				gs_free char *prop_name = NULL;
+				gs_unref_object NMSetting *ss_created = NULL;
 				NMSetting *ss = NULL;
-				gboolean created_ss = FALSE;
-				char *prop_name;
 				GError *tmp_err = NULL;
 
 				if (cmd_arg_s) {
 					/* setting provided as "setting.property" */
 					ss = is_setting_valid (connection, valid_settings_main, valid_settings_slave, cmd_arg_s);
 					if (!ss) {
-						ss = create_setting_by_name (cmd_arg_s, valid_settings_main, valid_settings_slave);
+						ss_created = create_setting_by_name (cmd_arg_s, valid_settings_main, valid_settings_slave);
+						ss = ss_created;
 						if (!ss) {
 							g_print (_("Error: invalid setting argument '%s'; valid are [%s]\n"),
 							         cmd_arg_s, valid_settings_str);
 							break;
 						}
-						created_ss = TRUE;
 					}
 				} else {
 					if (menu_ctx.curr_setting)
@@ -7022,12 +7018,8 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				if (!prop_name) {
 					g_print (_("Error: invalid property: %s\n"), tmp_err->message);
 					g_clear_error (&tmp_err);
-					if (created_ss)
-						g_object_unref (ss);
 					break;
 				}
-
-
 
 				/* Ask for value */
 				if (!cmd_arg_v) {
@@ -7052,9 +7044,8 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					g_clear_error (&tmp_err);
 				}
 
-				if (created_ss)
-					nm_connection_add_setting (connection, ss);
-				g_free (prop_name);
+				if (ss_created)
+					nm_connection_add_setting (connection, g_steal_pointer (&ss_created));
 			}
 			break;
 
@@ -7187,8 +7178,10 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						nmc_tab_completion.setting = NULL;  /* for TAB completion */
 					}
 				} else {
+					gs_free char *prop_name = NULL;
 					GError *tmp_err = NULL;
-					char *prop_name = is_property_valid (ss, cmd_arg_p, &tmp_err);
+
+					prop_name = is_property_valid (ss, cmd_arg_p, &tmp_err);
 					if (prop_name) {
 						/* Delete property value */
 						if (!nmc_setting_reset_property (ss, prop_name, &tmp_err)) {
@@ -7217,7 +7210,6 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 							         tmp_err->message);
 						g_clear_error (&tmp_err);
 					}
-					g_free (prop_name);
 				}
 			}
 			break;
@@ -7241,8 +7233,8 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					g_print (_("use 'goto <setting>' first, or 'describe <setting>.<property>'\n"));
 				}
 			} else {
+				gs_unref_object NMSetting *ss_free = NULL;
 				NMSetting *ss = NULL;
-				gboolean unref_ss = FALSE;
 				gboolean descr_all;
 				char *user_s;
 
@@ -7263,23 +7255,29 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 							         user_s, valid_settings_str);
 							break;
 						}
-						unref_ss = TRUE;
+						ss_free = ss;
 					}
 				} else
 					ss = menu_ctx.curr_setting;
 
-				if (descr_all) {
+				if (!ss) {
+					g_print (_("Error: no setting selected; valid are [%s]\n"), valid_settings_str);
+					g_print (_("use 'goto <setting>' first, or 'describe <setting>.<property>'\n"));
+				} else if (descr_all) {
 					/* Show description for all properties */
 					print_setting_description (ss);
 				} else {
 					GError *tmp_err = NULL;
-					char *prop_name = is_property_valid (ss, cmd_arg_p, &tmp_err);
+					gs_free char *prop_name = NULL;
+
+					prop_name = is_property_valid (ss, cmd_arg_p, &tmp_err);
 					if (prop_name) {
 						/* Show property description */
 						print_property_description (ss, prop_name);
 					} else {
 						/* If the string is not a property, try it as a setting */
 						NMSetting *s_tmp;
+
 						s_tmp = is_setting_valid (connection,
 						                          valid_settings_main,
 						                          valid_settings_slave,
@@ -7292,10 +7290,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 							         tmp_err->message);
 						g_clear_error (&tmp_err);
 					}
-					g_free (prop_name);
 				}
-				if (unref_ss)
-					g_object_unref (ss);
 			}
 			break;
 
@@ -7335,13 +7330,16 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						/* Print the whole setting */
 						editor_show_setting (ss, nmc);
 					} else {
+						gs_free char *prop_name = NULL;
 						GError *err = NULL;
-						char *prop_name = is_property_valid (ss, cmd_arg_p, &err);
+
+						prop_name = is_property_valid (ss, cmd_arg_p, &err);
 						if (prop_name) {
 							/* Print one property */
-							char *prop_val = nmc_setting_get_property (ss, prop_name, NULL);
+							gs_free char *prop_val = NULL;
+
+							prop_val = nmc_setting_get_property (ss, prop_name, NULL);
 							g_print ("%s.%s: %s\n", nm_setting_get_name (ss),prop_name , prop_val);
-							g_free (prop_val);
 						} else {
 							/* If the string is not a property, try it as a setting */
 							NMSetting *s_tmp;
@@ -7358,7 +7356,6 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 								         cmd_arg_s ? "" : _(", neither a valid setting name"));
 							g_clear_error (&err);
 						}
-						g_free (prop_name);
 					}
 				}
 			} else {
@@ -7469,7 +7466,8 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					 * adding ipv{4,6} settings when not present.
 					 */
 					if (con_tmp) {
-						char *s_name = NULL;
+						gs_free char *s_name = NULL;
+
 						if (menu_ctx.curr_setting)
 							s_name = g_strdup (nm_setting_get_name (menu_ctx.curr_setting));
 
@@ -7480,7 +7478,6 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						/* Also update setting for menu context and TAB-completion */
 						menu_ctx.curr_setting = s_name ? nm_connection_get_setting_by_name (connection, s_name) : NULL;
 						nmc_tab_completion.setting = menu_ctx.curr_setting;
-						g_free (s_name);
 					}
 				}
 
@@ -7605,14 +7602,15 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					g_clear_error (&tmp_err);
 				} else {
 					nmc->editor_prompt_color = color;
-					g_free (menu_ctx.main_prompt);
-					if (menu_ctx.level == 0)
+					nm_clear_g_free (&menu_ctx.main_prompt);
+					if (menu_ctx.level == 0) {
 						menu_ctx.main_prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NM_META_TERM_FORMAT_NORMAL,
 						                                     BASE_PROMPT);
-					else
+					} else {
 						menu_ctx.main_prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NM_META_TERM_FORMAT_NORMAL,
 						                                     "nmcli %s> ",
 						                                     nm_setting_get_name (menu_ctx.curr_setting));
+					}
 				}
 			} else if (!cmd_arg_p) {
 				g_print (_("Current nmcli configuration:\n"));
@@ -7643,19 +7641,11 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 			g_print (_("Unknown command: '%s'\n"), cmd_user);
 			break;
 		}
-
-		g_free (cmd_user);
-		g_free (cmd_arg);
-		g_free (cmd_arg_s);
-		g_free (cmd_arg_p);
-		g_free (cmd_arg_v);
 	}
-	g_free (valid_settings_str);
+
 	g_free (menu_ctx.main_prompt);
 	g_strfreev (menu_ctx.valid_props);
 	g_free (menu_ctx.valid_props_str);
-	if (rem_con)
-		g_object_unref (rem_con);
 	g_weak_ref_clear (&weak);
 
 	/* Save history file */
