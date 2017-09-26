@@ -1869,7 +1869,6 @@ nm_utils_flags2str (const NMUtilsFlags2StrDesc *descs,
 	for (i = 0; i < n_descs; i++) {
 		gsize j;
 
-		nm_assert (descs[i].flag && nm_utils_is_power_of_two (descs[i].flag));
 		nm_assert (descs[i].name && descs[i].name[0]);
 		for (j = 0; j < i; j++)
 			nm_assert (descs[j].flag != descs[i].flag);
@@ -1882,13 +1881,20 @@ nm_utils_flags2str (const NMUtilsFlags2StrDesc *descs,
 		return buf;
 
 	buf[0] = '\0';
+	p = buf;
 	if (!flags) {
+		for (i = 0; i < n_descs; i++) {
+			if (!descs[i].flag) {
+				nm_utils_strbuf_append_str (&p, &len, descs[i].name);
+				break;
+			}
+		}
 		return buf;
 	}
 
-	p = buf;
 	for (i = 0; flags && i < n_descs; i++) {
-		if (NM_FLAGS_HAS (flags, descs[i].flag)) {
+		if (   descs[i].flag
+		    && NM_FLAGS_ALL (flags, descs[i].flag)) {
 			flags &= ~descs[i].flag;
 
 			if (buf[0] != '\0')
