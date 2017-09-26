@@ -746,6 +746,25 @@ nm_device_sys_iface_state_set (NMDevice *self,
 	nm_assert (priv->sys_iface_state == sys_iface_state);
 }
 
+static void
+_active_connection_set_state_flags_full (NMDevice *self,
+                                         NMActivationStateFlags flags,
+                                         NMActivationStateFlags mask)
+{
+	NMActiveConnection *ac;
+
+	ac = NM_ACTIVE_CONNECTION (nm_device_get_act_request (self));
+	if (ac)
+		nm_active_connection_set_state_flags_full (ac, flags, mask);
+}
+
+static void
+_active_connection_set_state_flags (NMDevice *self,
+                                    NMActivationStateFlags flags)
+{
+	_active_connection_set_state_flags_full (self, flags, flags);
+}
+
 /*****************************************************************************/
 
 void
@@ -993,6 +1012,17 @@ _set_ip_state (NMDevice *self, int addr_family, IpState new_state)
 		       (int) new_state,
 		       _ip_state_to_string (new_state));
 		*p = new_state;
+
+		if (new_state == IP_DONE) {
+			/* we only set the IPx_READY flag once we reach IP_DONE state. We don't
+			 * ever clear it, even if we later enter IP_FAIL state.
+			 *
+			 * This is not documented/guaranteed behavior, but seems to make sense for now. */
+			_active_connection_set_state_flags (self,
+			                                    addr_family == AF_INET
+			                                      ? NM_ACTIVATION_STATE_FLAG_IP4_READY
+			                                      : NM_ACTIVATION_STATE_FLAG_IP6_READY);
+		}
 	}
 }
 
@@ -8084,6 +8114,9 @@ activate_stage3_ip_config_start (NMDevice *self)
 
 	_set_ip_state (self, AF_INET, IP_WAIT);
 	_set_ip_state (self, AF_INET6, IP_WAIT);
+
+	_active_connection_set_state_flags (self,
+	                                    NM_ACTIVATION_STATE_FLAG_LAYER2_READY);
 
 	nm_device_state_changed (self, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 

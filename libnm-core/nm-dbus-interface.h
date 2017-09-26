@@ -882,6 +882,9 @@ typedef enum {
  * @NM_ACTIVATION_STATE_FLAG_NONE: an alias for numeric zero, no flags set.
  * @NM_ACTIVATION_STATE_FLAG_IS_MASTER: the device is a master.
  * @NM_ACTIVATION_STATE_FLAG_IS_SLAVE: the device is a slave.
+ * @NM_ACTIVATION_STATE_FLAG_LAYER2_READY: layer2 is activated and ready.
+ * @NM_ACTIVATION_STATE_FLAG_IP4_READY: IPv4 setting is completed.
+ * @NM_ACTIVATION_STATE_FLAG_IP6_READY: IPv6 setting is completed.
  *
  * Flags describing the current activation state.
  *
@@ -892,6 +895,9 @@ typedef enum { /*< flags >*/
 
 	NM_ACTIVATION_STATE_FLAG_IS_MASTER                  = (1LL <<  0),
 	NM_ACTIVATION_STATE_FLAG_IS_SLAVE                   = (1LL <<  1),
+	NM_ACTIVATION_STATE_FLAG_LAYER2_READY               = (1LL <<  2),
+	NM_ACTIVATION_STATE_FLAG_IP4_READY                  = (1LL <<  3),
+	NM_ACTIVATION_STATE_FLAG_IP6_READY                  = (1LL <<  4),
 } NMActivationStateFlags;
 
 #endif /* __NM_DBUS_INTERFACE_H__ */

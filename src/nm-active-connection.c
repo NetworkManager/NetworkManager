@@ -150,6 +150,9 @@ NM_UTILS_FLAGS2STR_DEFINE_STATIC (_state_flags_to_string, NMActivationStateFlags
 	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_NONE,                 "none"),
 	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_IS_MASTER,            "is-master"),
 	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_IS_SLAVE,             "is-slave"),
+	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_LAYER2_READY,         "layer2-ready"),
+	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_IP4_READY,            "ip4-ready"),
+	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_IP6_READY,            "ip6-ready"),
 );
 
 /*****************************************************************************/
