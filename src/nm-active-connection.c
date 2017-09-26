@@ -330,6 +330,20 @@ nm_active_connection_get_applied_connection (NMActiveConnection *self)
 	return con;
 }
 
+static void
+_set_applied_connection_take (NMActiveConnection *self,
+                              NMConnection *applied_connection)
+{
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+
+	nm_assert (NM_IS_CONNECTION (applied_connection));
+	nm_assert (!priv->applied_connection);
+
+	/* we take ownership of @applied_connection. Ensure to pass in a reference. */
+	priv->applied_connection = applied_connection;
+	nm_connection_clear_secrets (priv->applied_connection);
+}
+
 void
 nm_active_connection_set_settings_connection (NMActiveConnection *self,
                                               NMSettingsConnection *connection)
@@ -354,8 +368,9 @@ nm_active_connection_set_settings_connection (NMActiveConnection *self,
 	g_return_if_fail (!nm_exported_object_is_exported (NM_EXPORTED_OBJECT (self)));
 
 	_set_settings_connection (self, connection);
-	priv->applied_connection = nm_simple_connection_new_clone (NM_CONNECTION (priv->settings_connection));
-	nm_connection_clear_secrets (priv->applied_connection);
+
+	_set_applied_connection_take (self,
+	                              nm_simple_connection_new_clone (NM_CONNECTION (priv->settings_connection)));
 }
 
 gboolean
@@ -1150,8 +1165,15 @@ set_property (GObject *object, guint prop_id,
 	case PROP_INT_APPLIED_CONNECTION:
 		/* construct-only */
 		acon = g_value_get_object (value);
-		if (acon)
+		if (acon) {
+			/* we don't call _set_applied_connection_take() yet, because the instance
+			 * is not yet fully initialized. We are currently in the process of setting
+			 * the constructor properties.
+			 *
+			 * For now, just piggyback the connection, but call _set_applied_connection_take()
+			 * in constructed(). */
 			priv->applied_connection = g_object_ref (acon);
+		}
 		break;
 	case PROP_INT_DEVICE:
 		/* construct-only */
@@ -1219,16 +1241,24 @@ constructed (GObject *object)
 
 	G_OBJECT_CLASS (nm_active_connection_parent_class)->constructed (object);
 
-	if (!priv->applied_connection && priv->settings_connection)
+	if (   !priv->applied_connection
+	    && priv->settings_connection)
 		priv->applied_connection = nm_simple_connection_new_clone (NM_CONNECTION (priv->settings_connection));
-
-	if (priv->applied_connection)
-		nm_connection_clear_secrets (priv->applied_connection);
 
 	_LOGD ("constructed (%s, version-id %llu, type %s)",
 	       G_OBJECT_TYPE_NAME (self),
 	       (unsigned long long) priv->version_id,
 	       nm_activation_type_to_string (priv->activation_type));
+
+	if (priv->applied_connection) {
+		/* priv->applied_connection was set during the construction of the object.
+		 * It's not yet fully initialized, so do that now.
+		 *
+		 * We delayed that, because we may log in _set_applied_connection_take(), and the
+		 * first logging line should be "constructed" above). */
+		_set_applied_connection_take (self,
+		                              g_steal_pointer (&priv->applied_connection));
+	}
 
 	g_return_if_fail (priv->subject);
 }
