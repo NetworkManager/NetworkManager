@@ -148,6 +148,8 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_state_to_string, NMActiveConnectionState,
 
 NM_UTILS_FLAGS2STR_DEFINE_STATIC (_state_flags_to_string, NMActivationStateFlags,
 	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_NONE,                 "none"),
+	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_IS_MASTER,            "is-master"),
+	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_IS_SLAVE,             "is-slave"),
 );
 
 /*****************************************************************************/
@@ -369,6 +371,8 @@ _set_applied_connection_take (NMActiveConnection *self,
                               NMConnection *applied_connection)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+	NMSettingConnection *s_con;
+	NMActivationStateFlags flags_val = 0;
 
 	nm_assert (NM_IS_CONNECTION (applied_connection));
 	nm_assert (!priv->applied_connection);
@@ -376,6 +380,23 @@ _set_applied_connection_take (NMActiveConnection *self,
 	/* we take ownership of @applied_connection. Ensure to pass in a reference. */
 	priv->applied_connection = applied_connection;
 	nm_connection_clear_secrets (priv->applied_connection);
+
+	/* we determine whether the connection is a master/slave, based solely
+	 * on the connection properties itself. */
+	s_con = nm_connection_get_setting_connection (priv->applied_connection);
+	if (nm_setting_connection_get_master (s_con))
+		flags_val |= NM_ACTIVATION_STATE_FLAG_IS_SLAVE;
+
+	if (NM_IN_STRSET (nm_setting_connection_get_connection_type (s_con),
+	                  NM_SETTING_BOND_SETTING_NAME,
+	                  NM_SETTING_BRIDGE_SETTING_NAME,
+	                  NM_SETTING_TEAM_SETTING_NAME))
+		flags_val |= NM_ACTIVATION_STATE_FLAG_IS_MASTER;
+
+	nm_active_connection_set_state_flags_full (self,
+	                                           flags_val,
+	                                             NM_ACTIVATION_STATE_FLAG_IS_MASTER
+	                                           | NM_ACTIVATION_STATE_FLAG_IS_SLAVE);
 }
 
 void

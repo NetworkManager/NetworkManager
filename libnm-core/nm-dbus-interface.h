@@ -880,6 +880,8 @@ typedef enum {
 /**
  * NMActivationStateFlags:
  * @NM_ACTIVATION_STATE_FLAG_NONE: an alias for numeric zero, no flags set.
+ * @NM_ACTIVATION_STATE_FLAG_IS_MASTER: the device is a master.
+ * @NM_ACTIVATION_STATE_FLAG_IS_SLAVE: the device is a slave.
  *
  * Flags describing the current activation state.
  *
@@ -887,6 +889,9 @@ typedef enum {
  **/
 typedef enum { /*< flags >*/
 	NM_ACTIVATION_STATE_FLAG_NONE                       = 0,
+
+	NM_ACTIVATION_STATE_FLAG_IS_MASTER                  = (1LL <<  0),
+	NM_ACTIVATION_STATE_FLAG_IS_SLAVE                   = (1LL <<  1),
 } NMActivationStateFlags;
 
 #endif /* __NM_DBUS_INTERFACE_H__ */
