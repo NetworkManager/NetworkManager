@@ -821,7 +821,7 @@ ipv6.ip6-privacy=1
 <programlisting>
 [device]
 match-device=interface-name:eth3
-ignore-carrier=1
+managed=1
 </programlisting>
     </para>
     <refsect2>
@@ -829,6 +829,19 @@ ignore-carrier=1
     <para>
       The following properties can be configured per-device.
       <variablelist>
+        <varlistentry id="managed">
+          <term><varname>managed</varname></term>
+          <listitem>
+            <para>
+              Whether the device is managed or not. A device can be
+              marked as managed via udev rules (ENV{NM_UNMANAGED}),
+              or via setting plugins (keyfile.unmanaged-devices).
+              This is yet another way. Contrary to keyfile.unmanaged-devices,
+              this configuration can still be overruled at runtime
+              via D-Bus API. Hence, it seems preferable.
+            </para>
+          </listitem>
+        </varlistentry>
         <varlistentry id="ignore-carrier">
           <term><varname>ignore-carrier</varname></term>
           <listitem>

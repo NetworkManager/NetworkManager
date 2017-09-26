@@ -580,6 +580,10 @@ void nm_device_copy_ip6_dns_config (NMDevice *self, NMDevice *from_device);
  *   the settings plugins, such as NM_CONTROLLED=no in ifcfg-rh), it cannot
  *   be overruled and is authorative. That is because users may depend on
  *   dropping a ifcfg-rh file to ensure the device is unmanaged.
+ * @NM_UNMANAGED_USER_CONF: %TRUE when unmanaged by user decision via
+ *   the NetworkManager.conf ("unmanaged" in the [device] section).
+ *   Contray to @NM_UNMANAGED_USER_SETTINGS, this can be overwritten via
+ *   D-Bus.
  * @NM_UNMANAGED_BY_DEFAULT: %TRUE for certain device types where we unmanage
  *   them by default
  * @NM_UNMANAGED_USER_UDEV: %TRUE when unmanaged by user decision (via UDev rule)
@@ -604,6 +608,7 @@ typedef enum { /*< skip >*/
 	/* These flags can be non-effective and be overwritten
 	 * by other flags. */
 	NM_UNMANAGED_BY_DEFAULT    = (1LL <<  8),
+	NM_UNMANAGED_USER_CONF     = (1LL <<  9),
 	NM_UNMANAGED_USER_UDEV     = (1LL << 10),
 	NM_UNMANAGED_EXTERNAL_DOWN = (1LL << 11),
 	NM_UNMANAGED_IS_SLAVE      = (1LL << 12),
@@ -634,6 +639,7 @@ void nm_device_set_unmanaged_by_flags_queue (NMDevice *self,
                                              NMDeviceStateReason reason);
 void nm_device_set_unmanaged_by_user_settings (NMDevice *self);
 void nm_device_set_unmanaged_by_user_udev (NMDevice *self);
+void nm_device_set_unmanaged_by_user_conf (NMDevice *self);
 void nm_device_set_unmanaged_by_quitting (NMDevice *device);
 
 gboolean nm_device_is_nm_owned (NMDevice *device);
