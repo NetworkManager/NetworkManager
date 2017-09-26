@@ -681,6 +681,15 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *ip4_class)
 	 */
 
 	/* ---ifcfg-rh---
+	 * property: route-table-sync
+	 * variable: IPV4_ROUTE_TABLE_SYNC(+)
+	 * default: 0
+	 * description: IPV4_ROUTE_TABLE_SYNC controls how NetworkManager removes extraneous
+	 *   routes from the routing tables.
+	 * ---end---
+	 */
+
+	/* ---ifcfg-rh---
 	 * property: dns-priority
 	 * variable: IPV4_DNS_PRIORITY(+)
 	 * description: The priority for DNS servers of this connection. Lower values have higher priority.

@@ -128,7 +128,8 @@ dhcp4_state_changed (NMDhcpClient *client,
 		                                 global_opt.priority_v4,
 		                                 &ip4_dev_route_blacklist);
 		if (!nm_ip4_config_commit (existing,
-		                           NM_PLATFORM_GET))
+		                           NM_PLATFORM_GET,
+		                           NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN))
 			_LOGW (LOGD_DHCP4, "failed to apply DHCPv4 config");
 
 		nm_platform_ip4_dev_route_blacklist_set (NM_PLATFORM_GET,
@@ -228,7 +229,10 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 	nm_ip6_config_merge (existing, ndisc_config, NM_IP_CONFIG_MERGE_DEFAULT);
 	nm_ip6_config_add_device_routes (existing,
 	                                 global_opt.priority_v6);
-	if (!nm_ip6_config_commit (existing, NM_PLATFORM_GET, NULL))
+	if (!nm_ip6_config_commit (existing,
+	                           NM_PLATFORM_GET,
+	                           NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN,
+	                           NULL))
 		_LOGW (LOGD_IP6, "failed to apply IPv6 config");
 }
 

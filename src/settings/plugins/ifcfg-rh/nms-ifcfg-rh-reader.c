@@ -468,6 +468,7 @@ typedef struct {
 
 enum {
 	/* route attributes */
+	PARSE_LINE_ATTR_ROUTE_TABLE,
 	PARSE_LINE_ATTR_ROUTE_SRC,
 	PARSE_LINE_ATTR_ROUTE_FROM,
 	PARSE_LINE_ATTR_ROUTE_TOS,
@@ -530,6 +531,8 @@ parse_route_line (const char *line,
 	char buf1[256];
 	char buf2[256];
 	ParseLineInfo infos[] = {
+		[PARSE_LINE_ATTR_ROUTE_TABLE]    = { .key = NM_IP_ROUTE_ATTRIBUTE_TABLE,
+		                                     .type = PARSE_LINE_TYPE_UINT32, },
 		[PARSE_LINE_ATTR_ROUTE_SRC]      = { .key = NM_IP_ROUTE_ATTRIBUTE_SRC,
 		                                     .type = PARSE_LINE_TYPE_ADDR, },
 		[PARSE_LINE_ATTR_ROUTE_FROM]     = { .key = NM_IP_ROUTE_ATTRIBUTE_FROM,
@@ -815,6 +818,11 @@ next:
 			nm_ip_route_set_attribute (route,
 			                           info->key,
 			                           g_variant_new_byte (info->v.uint8));
+			break;
+		case PARSE_LINE_TYPE_UINT32:
+			nm_ip_route_set_attribute (route,
+			                           info->key,
+			                           g_variant_new_uint32 (info->v.uint32));
 			break;
 		case PARSE_LINE_TYPE_UINT32_WITH_LOCK:
 			if (info->v.uint32_with_lock.lock) {
@@ -1277,6 +1285,8 @@ make_ip4_setting (shvarFile *ifcfg,
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, !svGetValueBoolean (ifcfg, "IPV4_FAILURE_FATAL", FALSE),
 	              NM_SETTING_IP_CONFIG_ROUTE_METRIC, svGetValueInt64 (ifcfg, "IPV4_ROUTE_METRIC", 10,
 	                                                                  -1, G_MAXUINT32, -1),
+	              NM_SETTING_IP_CONFIG_ROUTE_TABLE_SYNC, (int) svGetValueInt64 (ifcfg, "IPV4_ROUTE_TABLE_SYNC", 10,
+	                                                                            G_MININT32, G_MAXINT32, NM_IP_ROUTE_TABLE_SYNC_MODE_DEFAULT),
 	              NULL);
 
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0)
@@ -1707,6 +1717,8 @@ make_ip6_setting (shvarFile *ifcfg,
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, !svGetValueBoolean (ifcfg, "IPV6_FAILURE_FATAL", FALSE),
 	              NM_SETTING_IP_CONFIG_ROUTE_METRIC, svGetValueInt64 (ifcfg, "IPV6_ROUTE_METRIC", 10,
 	                                                                  -1, G_MAXUINT32, -1),
+	              NM_SETTING_IP_CONFIG_ROUTE_TABLE_SYNC, (int) svGetValueInt64 (ifcfg, "IPV6_ROUTE_TABLE_SYNC", 10,
+	                                                                            G_MININT32, G_MAXINT32, NM_IP_ROUTE_TABLE_SYNC_MODE_DEFAULT),
 	              NM_SETTING_IP6_CONFIG_IP6_PRIVACY, ip6_privacy_val,
 	              NULL);
 

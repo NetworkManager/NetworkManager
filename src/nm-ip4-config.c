@@ -705,8 +705,6 @@ nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 			priv->has_gateway = TRUE;
 		}
 
-		if (route->table_coerced)
-			continue;
 		_add_route (self, plobj, NULL, NULL);
 	}
 
@@ -821,10 +819,12 @@ nm_ip4_config_add_device_routes (NMIP4Config *self,
 
 gboolean
 nm_ip4_config_commit (const NMIP4Config *self,
-                      NMPlatform *platform)
+                      NMPlatform *platform,
+                      NMIPRouteTableSyncMode route_table_sync)
 {
 	gs_unref_ptrarray GPtrArray *addresses = NULL;
 	gs_unref_ptrarray GPtrArray *routes = NULL;
+	gs_unref_ptrarray GPtrArray *routes_prune = NULL;
 	int ifindex;
 	gboolean success = TRUE;
 
@@ -839,14 +839,18 @@ nm_ip4_config_commit (const NMIP4Config *self,
 	routes = nm_dedup_multi_objs_to_ptr_array_head (nm_ip4_config_lookup_routes (self),
 	                                                NULL, NULL);
 
+	routes_prune = nm_platform_ip_route_get_prune_list (platform,
+	                                                    AF_INET,
+	                                                    ifindex,
+	                                                    route_table_sync);
+
 	nm_platform_ip4_address_sync (platform, ifindex, addresses);
 
 	if (!nm_platform_ip_route_sync (platform,
 	                                AF_INET,
 	                                ifindex,
 	                                routes,
-	                                nm_platform_lookup_predicate_routes_main,
-	                                NULL,
+	                                routes_prune,
 	                                NULL))
 		success = FALSE;
 
@@ -863,6 +867,10 @@ merge_route_attributes (NMIPRoute *s_route, NMPlatformIP4Route *r)
 	variant = nm_ip_route_get_attribute (s_route, name); \
 	if (variant && g_variant_is_of_type (variant, G_VARIANT_TYPE_ ## variant_type)) \
 		r->field = g_variant_get_ ## type (variant);
+
+	r->table_coerced = 254 /* RT_TABLE_MAIN */;
+	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_TABLE,          table_coerced,  UINT32,   uint32);
+	r->table_coerced = nm_platform_route_table_coerce (r->table_coerced);
 
 	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_TOS,            tos,            BYTE,     byte);
 	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_WINDOW,         window,         UINT32,   uint32);
@@ -3046,11 +3054,18 @@ out_addresses_cached:
 			                       "metric",
 			                       g_variant_new_uint32 (route->metric));
 
+			if (!nm_platform_route_table_is_main (route->table_coerced)) {
+				g_variant_builder_add (&route_builder, "{sv}",
+				                       "table",
+				                       g_variant_new_uint32 (nm_platform_route_table_uncoerce (route->table_coerced, TRUE)));
+			}
+
 			g_variant_builder_add (&builder_data, "a{sv}", &route_builder);
 
 			/* legacy versions of nm_ip4_route_set_prefix() in libnm-util assert that the
 			 * plen is positive. Skip the default routes not to break older clients. */
-			if (!NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)) {
+			if (   nm_platform_route_table_is_main (route->table_coerced)
+			    && !NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)) {
 				const guint32 dbus_route[4] = {
 				    route->network,
 				    route->plen,

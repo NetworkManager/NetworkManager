@@ -872,22 +872,6 @@ nm_dedup_multi_index_obj_intern (NMDedupMultiIndex *self,
 }
 
 const NMDedupMultiObj *
-nm_dedup_multi_obj_ref (const NMDedupMultiObj *obj)
-{
-	/* ref and unref accept const pointers. Objects is supposed to be shared
-	 * and kept immutable. Disallowing to take/retrun a reference to a const
-	 * NMPObject is cumbersome, because callers are precisely expected to
-	 * keep a ref on the otherwise immutable object. */
-
-	nm_assert (obj);
-	nm_assert (obj->_ref_count != NM_OBJ_REF_COUNT_STACKINIT);
-	nm_assert (obj->_ref_count > 0);
-
-	((NMDedupMultiObj *) obj)->_ref_count++;
-	return obj;
-}
-
-const NMDedupMultiObj *
 nm_dedup_multi_obj_unref (const NMDedupMultiObj *obj)
 {
 	if (obj) {

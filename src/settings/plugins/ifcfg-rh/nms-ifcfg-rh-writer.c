@@ -1868,6 +1868,8 @@ get_route_attributes_string (NMIPRoute *route, int family)
 			}
 		} else if (nm_streq (names[i], NM_IP_ROUTE_ATTRIBUTE_TOS)) {
 			g_string_append_printf (str, "%s 0x%02x", names[i], (unsigned) g_variant_get_byte (attr));
+		} else if (nm_streq (names[i], NM_IP_ROUTE_ATTRIBUTE_TABLE)) {
+			g_string_append_printf (str, "%s %u", names[i], (unsigned) g_variant_get_uint32 (attr));
 		} else if (   nm_streq (names[i], NM_IP_ROUTE_ATTRIBUTE_SRC)
 		           || nm_streq (names[i], NM_IP_ROUTE_ATTRIBUTE_FROM)) {
 			char *arg = nm_streq (names[i], NM_IP_ROUTE_ATTRIBUTE_SRC) ? "src" : "from";
@@ -2021,6 +2023,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	gint j;
 	guint i, num, n;
 	gint64 route_metric;
+	NMIPRouteTableSyncMode route_table_sync;
 	gint priority;
 	int timeout;
 	GString *searches;
@@ -2214,6 +2217,12 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	tmp = route_metric != -1 ? g_strdup_printf ("%"G_GINT64_FORMAT, route_metric) : NULL;
 	svSetValueStr (ifcfg, "IPV4_ROUTE_METRIC", tmp);
 	g_free (tmp);
+
+	route_table_sync = nm_setting_ip_config_get_route_table_sync (s_ip4);
+	svSetValueInt64_cond (ifcfg,
+	                      "IPV4_ROUTE_TABLE_SYNC",
+	                      route_table_sync != NM_IP_ROUTE_TABLE_SYNC_MODE_DEFAULT,
+	                      route_table_sync);
 
 	/* Static routes - route-<name> file */
 	route_path = utils_get_route_path (svFileGetName (ifcfg));
@@ -2482,6 +2491,7 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	NMIPAddress *addr;
 	const char *dns;
 	gint64 route_metric;
+	NMIPRouteTableSyncMode route_table_sync;
 	GString *ip_str1, *ip_str2, *ip_ptr;
 	char *route6_path;
 	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
@@ -2613,6 +2623,12 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	tmp = route_metric != -1 ? g_strdup_printf ("%"G_GINT64_FORMAT, route_metric) : NULL;
 	svSetValueStr (ifcfg, "IPV6_ROUTE_METRIC", tmp);
 	g_free (tmp);
+
+	route_table_sync = nm_setting_ip_config_get_route_table_sync (s_ip6);
+	svSetValueInt64_cond (ifcfg,
+	                      "IPV6_ROUTE_TABLE_SYNC",
+	                      route_table_sync != NM_IP_ROUTE_TABLE_SYNC_MODE_DEFAULT,
+	                      route_table_sync);
 
 	/* IPv6 Privacy Extensions */
 	svUnsetValue (ifcfg, "IPV6_PRIVACY");

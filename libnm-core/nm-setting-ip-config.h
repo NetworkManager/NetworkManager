@@ -131,6 +131,7 @@ gboolean     nm_ip_route_attribute_validate  (const char *name,
                                               gboolean *known,
                                               GError **error);
 
+#define NM_IP_ROUTE_ATTRIBUTE_TABLE          "table"
 #define NM_IP_ROUTE_ATTRIBUTE_SRC            "src"
 #define NM_IP_ROUTE_ATTRIBUTE_FROM           "from"
 #define NM_IP_ROUTE_ATTRIBUTE_TOS            "tos"
@@ -171,6 +172,7 @@ gboolean     nm_ip_route_attribute_validate  (const char *name,
 #define NM_SETTING_IP_CONFIG_MAY_FAIL           "may-fail"
 #define NM_SETTING_IP_CONFIG_DAD_TIMEOUT        "dad-timeout"
 #define NM_SETTING_IP_CONFIG_DHCP_TIMEOUT       "dhcp-timeout"
+#define NM_SETTING_IP_CONFIG_ROUTE_TABLE_SYNC   "route-table-sync"
 
 #define NM_SETTING_DNS_OPTION_DEBUG                     "debug"
 #define NM_SETTING_DNS_OPTION_NDOTS                     "ndots"
@@ -283,6 +285,9 @@ NM_AVAILABLE_IN_1_2
 gint          nm_setting_ip_config_get_dad_timeout            (NMSettingIPConfig *setting);
 NM_AVAILABLE_IN_1_2
 gint          nm_setting_ip_config_get_dhcp_timeout           (NMSettingIPConfig *setting);
+
+NM_AVAILABLE_IN_1_10
+NMIPRouteTableSyncMode nm_setting_ip_config_get_route_table_sync (NMSettingIPConfig *setting);
 
 G_END_DECLS
 

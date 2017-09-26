@@ -1128,6 +1128,7 @@ nm_ip_route_get_attribute_names (NMIPRoute *route)
 		while (g_hash_table_iter_next (&iter, (gpointer *) &key, NULL))
 			g_ptr_array_add (names, g_strdup (key));
 	}
+	g_ptr_array_sort (names, nm_strcmp_p);
 	g_ptr_array_add (names, NULL);
 
 	return (char **) g_ptr_array_free (names, FALSE);
@@ -1186,6 +1187,7 @@ nm_ip_route_set_attribute (NMIPRoute *route, const char *name, GVariant *value)
 	&(NMVariantAttributeSpec) { name, type, v4, v6, str_type }
 
 static const NMVariantAttributeSpec * const ip_route_attribute_spec[] = {
+	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_TABLE,           G_VARIANT_TYPE_UINT32,   TRUE,  TRUE,  0 ),
 	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_SRC,             G_VARIANT_TYPE_STRING,   TRUE,  TRUE, 'a'),
 	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_FROM,            G_VARIANT_TYPE_STRING,   FALSE, TRUE, 'p'),
 	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_TOS,             G_VARIANT_TYPE_BYTE,     TRUE,  FALSE, 0 ),
@@ -1377,6 +1379,7 @@ typedef struct {
 	gboolean may_fail;
 	gint dad_timeout;
 	gint dhcp_timeout;
+	int route_table_sync;
 } NMSettingIPConfigPrivate;
 
 enum {
@@ -1398,6 +1401,7 @@ enum {
 	PROP_MAY_FAIL,
 	PROP_DAD_TIMEOUT,
 	PROP_DHCP_TIMEOUT,
+	PROP_ROUTE_TABLE_SYNC,
 
 	LAST_PROP
 };
@@ -2249,6 +2253,24 @@ nm_setting_ip_config_get_route_metric (NMSettingIPConfig *setting)
 	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->route_metric;
 }
 
+/**
+ * nm_setting_ip_config_get_route_table_sync:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns the value contained in the #NMSettingIPConfig:route-table-sync
+ * property.
+ *
+ * Returns: the configured route-table-sync mode.
+ *
+ * Since: 1.10
+ **/
+NMIPRouteTableSyncMode
+nm_setting_ip_config_get_route_table_sync (NMSettingIPConfig *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), 0);
+
+	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->route_table_sync;
+}
 
 /**
  * nm_setting_ip_config_get_ignore_auto_routes:
@@ -2512,6 +2534,17 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
+	if (   priv->route_table_sync < NM_IP_ROUTE_TABLE_SYNC_MODE_DEFAULT
+	    || priv->route_table_sync > NM_IP_ROUTE_TABLE_SYNC_MODE_FULL) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("invalid route table sync value %d"),
+		             priv->route_table_sync);
+		g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_IP_CONFIG_ROUTE_TABLE_SYNC);
+		return FALSE;
+	}
+
 	/* Validate routes */
 	for (i = 0; i < priv->routes->len; i++) {
 		NMIPRoute *route = (NMIPRoute *) priv->routes->pdata[i];
@@ -2715,6 +2748,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_DHCP_TIMEOUT:
 		priv->dhcp_timeout = g_value_get_int (value);
 		break;
+	case PROP_ROUTE_TABLE_SYNC:
+		priv->route_table_sync = g_value_get_int (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -2783,6 +2819,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_DHCP_TIMEOUT:
 		g_value_set_int (value, nm_setting_ip_config_get_dhcp_timeout (setting));
+		break;
+	case PROP_ROUTE_TABLE_SYNC:
+		g_value_set_int (value, priv->route_table_sync);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -3126,6 +3165,7 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 		                    G_PARAM_CONSTRUCT |
 		                    NM_SETTING_PARAM_FUZZY_IGNORE |
 		                    G_PARAM_STATIC_STRINGS));
+
 	/**
 	 * NMSettingIPConfig:dhcp-timeout:
 	 *
@@ -3135,6 +3175,29 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 		(object_class, PROP_DHCP_TIMEOUT,
 		 g_param_spec_int (NM_SETTING_IP_CONFIG_DHCP_TIMEOUT, "", "",
 		                   0, G_MAXINT32, 0,
+		                   G_PARAM_READWRITE |
+		                   NM_SETTING_PARAM_FUZZY_IGNORE |
+		                   G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingIPConfig:route-table-sync:
+	 *
+	 * The mode how to sync the routes per table. In general, when NetworkManager manages
+	 * a device it will remove extraneous routes from the routing tables. The
+	 * sync parameter specifies which tables are synced this way. That means, from
+	 * which routing table NetworkManager will remove those unexpected, extraneous routes.
+	 * A value of 1 (none) means that no route tables will not be synced and no routes
+	 * are removed by NetworkManager. 2 (main) means that only the main table will be synced.
+	 * 3 (full) will sync all the route tables, except the local table. A value of zero is
+	 * the default value and allows to be overwritten via global configuration. In absence of
+	 * global configuration, the default value is 2 (main).
+	 *
+	 * Since: 1.10
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_ROUTE_TABLE_SYNC,
+		 g_param_spec_int (NM_SETTING_IP_CONFIG_ROUTE_TABLE_SYNC, "", "",
+		                   G_MININT32, G_MAXINT32, NM_IP_ROUTE_TABLE_SYNC_MODE_DEFAULT,
 		                   G_PARAM_READWRITE |
 		                   NM_SETTING_PARAM_FUZZY_IGNORE |
 		                   G_PARAM_STATIC_STRINGS));
