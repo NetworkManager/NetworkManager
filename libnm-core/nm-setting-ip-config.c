@@ -753,18 +753,22 @@ nm_ip_route_unref (NMIPRoute *route)
 }
 
 /**
- * _nm_ip_route_equal:
+ * nm_ip_route_equal_full:
  * @route: the #NMIPRoute
  * @other: the #NMIPRoute to compare @route to.
- * @consider_attributes: whether to compare attributes too
+ * @cmp_flags: tune how to compare attributes. Currently only
+ *   NM_IP_ROUTE_EQUAL_CMP_FLAGS_NONE (0) and NM_IP_ROUTE_EQUAL_CMP_FLAGS_WITH_ATTRS (1)
+ *   is supported.
  *
  * Determines if two #NMIPRoute objects contain the same destination, prefix,
  * next hop, and metric.
  *
  * Returns: %TRUE if the objects contain the same values, %FALSE if they do not.
+ *
+ * Since: 1.10
  **/
-static gboolean
-_nm_ip_route_equal (NMIPRoute *route, NMIPRoute *other, gboolean consider_attributes)
+gboolean
+nm_ip_route_equal_full (NMIPRoute *route, NMIPRoute *other, guint cmp_flags)
 {
 	g_return_val_if_fail (route != NULL, FALSE);
 	g_return_val_if_fail (route->refcount > 0, FALSE);
@@ -772,12 +776,16 @@ _nm_ip_route_equal (NMIPRoute *route, NMIPRoute *other, gboolean consider_attrib
 	g_return_val_if_fail (other != NULL, FALSE);
 	g_return_val_if_fail (other->refcount > 0, FALSE);
 
+	g_return_val_if_fail (NM_IN_SET (cmp_flags,
+	                                 NM_IP_ROUTE_EQUAL_CMP_FLAGS_NONE,
+	                                 NM_IP_ROUTE_EQUAL_CMP_FLAGS_WITH_ATTRS), FALSE);
+
 	if (   route->prefix != other->prefix
 	    || route->metric != other->metric
 	    || strcmp (route->dest, other->dest) != 0
 	    || g_strcmp0 (route->next_hop, other->next_hop) != 0)
 		return FALSE;
-	if (consider_attributes) {
+	if (cmp_flags == NM_IP_ROUTE_EQUAL_CMP_FLAGS_WITH_ATTRS) {
 		GHashTableIter iter;
 		const char *key;
 		GVariant *value, *value2;
@@ -813,7 +821,7 @@ _nm_ip_route_equal (NMIPRoute *route, NMIPRoute *other, gboolean consider_attrib
 gboolean
 nm_ip_route_equal (NMIPRoute *route, NMIPRoute *other)
 {
-	return _nm_ip_route_equal (route, other, FALSE);
+	return nm_ip_route_equal_full (route, other, NM_IP_ROUTE_EQUAL_CMP_FLAGS_NONE);
 }
 
 /**
@@ -2164,7 +2172,7 @@ nm_setting_ip_config_add_route (NMSettingIPConfig *setting,
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
 	for (i = 0; i < priv->routes->len; i++) {
-		if (_nm_ip_route_equal (priv->routes->pdata[i], route, TRUE))
+		if (nm_ip_route_equal_full (priv->routes->pdata[i], route, NM_IP_ROUTE_EQUAL_CMP_FLAGS_WITH_ATTRS))
 			return FALSE;
 	}
 
@@ -2217,7 +2225,7 @@ nm_setting_ip_config_remove_route_by_value (NMSettingIPConfig *setting,
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
 	for (i = 0; i < priv->routes->len; i++) {
-		if (_nm_ip_route_equal (priv->routes->pdata[i], route, TRUE)) {
+		if (nm_ip_route_equal_full (priv->routes->pdata[i], route, NM_IP_ROUTE_EQUAL_CMP_FLAGS_WITH_ATTRS)) {
 			g_ptr_array_remove_index (priv->routes, i);
 			g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ROUTES);
 			return TRUE;
@@ -2620,7 +2628,7 @@ compare_property (NMSetting *setting,
 		if (a_priv->routes->len != b_priv->routes->len)
 			return FALSE;
 		for (i = 0; i < a_priv->routes->len; i++) {
-			if (!_nm_ip_route_equal (a_priv->routes->pdata[i], b_priv->routes->pdata[i], TRUE))
+			if (!nm_ip_route_equal_full (a_priv->routes->pdata[i], b_priv->routes->pdata[i], NM_IP_ROUTE_EQUAL_CMP_FLAGS_WITH_ATTRS))
 				return FALSE;
 		}
 		return TRUE;
