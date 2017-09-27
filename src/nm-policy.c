@@ -1276,7 +1276,7 @@ auto_activate_device (NMPolicy *self,
 		 * activation fails in early stages without changing device
 		 * state.
 		 */
-		if (g_hash_table_add (priv->pending_active_connections, ac)) {
+		if (nm_g_hash_table_add (priv->pending_active_connections, ac)) {
 			g_signal_connect (ac, NM_ACTIVE_CONNECTION_STATE_CHANGED,
 			                  G_CALLBACK (pending_ac_state_changed), g_object_ref (self));
 			g_object_weak_ref (G_OBJECT (ac), (GWeakNotify) pending_ac_gone, self);
