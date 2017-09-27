@@ -4422,6 +4422,32 @@ nm_device_match_parent (NMDevice *self, const char *parent)
 	return TRUE;
 }
 
+gboolean
+nm_device_match_hwaddr (NMDevice *device,
+                        NMConnection *connection,
+                        gboolean fail_if_no_hwaddr)
+{
+	NMSettingWired *s_wired;
+	NMDevice *parent_device;
+	const char *setting_mac;
+	const char *parent_mac;
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	if (!s_wired)
+		return !fail_if_no_hwaddr;
+
+	setting_mac = nm_setting_wired_get_mac_address (s_wired);
+	if (!setting_mac)
+		return !fail_if_no_hwaddr;
+
+	parent_device = nm_device_parent_get_device (device);
+	if (!parent_device)
+		return !fail_if_no_hwaddr;
+
+	parent_mac = nm_device_get_permanent_hw_address (parent_device);
+	return parent_mac && nm_utils_hwaddr_matches (setting_mac, -1, parent_mac, -1);
+}
+
 static gboolean
 check_connection_compatible (NMDevice *self, NMConnection *connection)
 {

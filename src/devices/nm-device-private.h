@@ -133,5 +133,8 @@ gboolean _nm_device_hash_check_invalid_keys (GHashTable *hash, const char *setti
 	_nm_device_hash_check_invalid_keys (hash, setting_name, error, ((const char *[]) { __VA_ARGS__, NULL }))
 
 gboolean nm_device_match_parent (NMDevice *device, const char *parent);
+gboolean nm_device_match_hwaddr (NMDevice *device,
+                                 NMConnection *connection,
+                                 gboolean fail_if_no_hwaddr);
 
 #endif	/* NM_DEVICE_PRIVATE_H */

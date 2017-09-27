@@ -315,30 +315,6 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 /*****************************************************************************/
 
 static gboolean
-match_hwaddr (NMDevice *device, NMConnection *connection, gboolean fail_if_no_hwaddr)
-{
-	NMSettingWired *s_wired;
-	NMDevice *parent_device;
-	const char *setting_mac;
-	const char *parent_mac;
-
-	s_wired = nm_connection_get_setting_wired (connection);
-	if (!s_wired)
-		return !fail_if_no_hwaddr;
-
-	setting_mac = nm_setting_wired_get_mac_address (s_wired);
-	if (!setting_mac)
-		return !fail_if_no_hwaddr;
-
-	parent_device = nm_device_parent_get_device (device);
-	if (!parent_device)
-		return !fail_if_no_hwaddr;
-
-	parent_mac = nm_device_get_permanent_hw_address (parent_device);
-	return parent_mac && nm_utils_hwaddr_matches (setting_mac, -1, parent_mac, -1);
-}
-
-static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE ((NMDeviceVlan *) device);
@@ -364,7 +340,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 				return FALSE;
 		} else {
 			/* Parent could be a MAC address in an NMSettingWired */
-			if (!match_hwaddr (device, connection, TRUE))
+			if (!nm_device_match_hwaddr (device, connection, TRUE))
 				return FALSE;
 		}
 	}
@@ -413,7 +389,7 @@ complete_connection (NMDevice *device,
 	 * settings, then there's not enough information to complete the setting.
 	 */
 	if (   !nm_setting_vlan_get_parent (s_vlan)
-	    && !match_hwaddr (device, connection, TRUE)) {
+	    && !nm_device_match_hwaddr (device, connection, TRUE)) {
 		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INVALID_CONNECTION,
 		                     "The 'vlan' setting had no interface name, parent, or hardware address.");
 		return FALSE;
