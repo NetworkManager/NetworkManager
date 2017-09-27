@@ -392,7 +392,7 @@ device_state_changed (NMDevice *device,
 		 */
 		if (connection) {
 			nm_settings_connection_set_autoconnect_blocked_reason (connection,
-			                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_BLOCKED);
+			                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED);
 		}
 		break;
 	default:

@@ -84,8 +84,9 @@ typedef enum { /*< skip >*/
 
 typedef enum {
 	NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_UNBLOCKED               = 0,
-	NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_BLOCKED                 = 1,
-	NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS              = 2,
+	NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST            = 1,
+	NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED                  = 2,
+	NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS              = 3,
 } NMSettingsAutoconnectBlockedReason;
 
 struct _NMSettingsConnectionCallId;

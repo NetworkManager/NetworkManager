@@ -2621,7 +2621,8 @@ nm_settings_connection_set_autoconnect_blocked_reason (NMSettingsConnection *sel
 {
 	g_return_if_fail (NM_IN_SET (reason,
 	                             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_UNBLOCKED,
-	                             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_BLOCKED,
+	                             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST,
+	                             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
 	                             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS));
 	NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->autoconnect_blocked_reason = reason;
 }
