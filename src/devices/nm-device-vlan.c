@@ -315,44 +315,6 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 /*****************************************************************************/
 
 static gboolean
-match_parent (NMDeviceVlan *self, const char *parent)
-{
-	NMDevice *parent_device;
-
-	g_return_val_if_fail (parent != NULL, FALSE);
-
-	parent_device = nm_device_parent_get_device (NM_DEVICE (self));
-	if (!parent_device)
-		return FALSE;
-
-	if (nm_utils_is_uuid (parent)) {
-		NMActRequest *parent_req;
-		NMConnection *parent_connection;
-
-		/* If the parent is a UUID, the connection matches if our parent
-		 * device has that connection activated.
-		 */
-
-		parent_req = nm_device_get_act_request (parent_device);
-		if (!parent_req)
-			return FALSE;
-
-		parent_connection = nm_active_connection_get_applied_connection (NM_ACTIVE_CONNECTION (parent_req));
-		if (!parent_connection)
-			return FALSE;
-
-		if (g_strcmp0 (parent, nm_connection_get_uuid (parent_connection)) != 0)
-			return FALSE;
-	} else {
-		/* interface name */
-		if (g_strcmp0 (parent, nm_device_get_ip_iface (parent_device)) != 0)
-			return FALSE;
-	}
-
-	return TRUE;
-}
-
-static gboolean
 match_hwaddr (NMDevice *device, NMConnection *connection, gboolean fail_if_no_hwaddr)
 {
 	NMSettingWired *s_wired;
@@ -398,7 +360,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		/* Check parent interface; could be an interface name or a UUID */
 		parent = nm_setting_vlan_get_parent (s_vlan);
 		if (parent) {
-			if (!match_parent (NM_DEVICE_VLAN (device), parent))
+			if (!nm_device_match_parent (device, parent))
 				return FALSE;
 		} else {
 			/* Parent could be a MAC address in an NMSettingWired */

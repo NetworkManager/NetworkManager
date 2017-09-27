@@ -442,40 +442,6 @@ update_connection (NMDevice *device, NMConnection *connection)
 }
 
 static gboolean
-match_parent (NMDevice *dev_parent, const char *setting_parent)
-{
-	g_return_val_if_fail (setting_parent, FALSE);
-
-	if (!dev_parent)
-		return FALSE;
-
-	if (nm_utils_is_uuid (setting_parent)) {
-		NMActRequest *parent_req;
-		NMConnection *parent_connection;
-
-		/* If the parent is a UUID, the connection matches if our parent
-		 * device has that connection activated.
-		 */
-		parent_req = nm_device_get_act_request (dev_parent);
-		if (!parent_req)
-			return FALSE;
-
-		parent_connection = nm_active_connection_get_applied_connection (NM_ACTIVE_CONNECTION (parent_req));
-		if (!parent_connection)
-			return FALSE;
-
-		if (g_strcmp0 (setting_parent, nm_connection_get_uuid (parent_connection)) != 0)
-			return FALSE;
-	} else {
-		/* interface name */
-		if (g_strcmp0 (setting_parent, nm_device_get_ip_iface (dev_parent)) != 0)
-			return FALSE;
-	}
-
-	return TRUE;
-}
-
-static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceIPTunnel *self = NM_DEVICE_IP_TUNNEL (device);
@@ -496,10 +462,8 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	if (nm_device_is_real (device)) {
 		/* Check parent interface; could be an interface name or a UUID */
 		parent = nm_setting_ip_tunnel_get_parent (s_ip_tunnel);
-		if (parent) {
-			if (!match_parent (nm_device_parent_get_device (device), parent))
-				return FALSE;
-		}
+		if (parent && !nm_device_match_parent (device, parent))
+			return FALSE;
 
 		if (!address_equal_pp (priv->addr_family,
 		                       nm_setting_ip_tunnel_get_local (s_ip_tunnel),

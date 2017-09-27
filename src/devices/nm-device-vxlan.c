@@ -231,43 +231,6 @@ create_and_realize (NMDevice *device,
 }
 
 static gboolean
-match_parent (NMDeviceVxlan *self, const char *parent)
-{
-	NMDevice *parent_device;
-
-	g_return_val_if_fail (parent != NULL, FALSE);
-
-	parent_device = nm_device_parent_get_device (NM_DEVICE (self));
-	if (!parent_device)
-		return FALSE;
-
-	if (nm_utils_is_uuid (parent)) {
-		NMActRequest *parent_req;
-		NMConnection *parent_connection;
-
-		/* If the parent is a UUID, the connection matches if our parent
-		 * device has that connection activated.
-		 */
-		parent_req = nm_device_get_act_request (parent_device);
-		if (!parent_req)
-			return FALSE;
-
-		parent_connection = nm_active_connection_get_applied_connection (NM_ACTIVE_CONNECTION (parent_req));
-		if (!parent_connection)
-			return FALSE;
-
-		if (g_strcmp0 (parent, nm_connection_get_uuid (parent_connection)) != 0)
-			return FALSE;
-	} else {
-		/* interface name */
-		if (g_strcmp0 (parent, nm_device_get_ip_iface (parent_device)) != 0)
-			return FALSE;
-	}
-
-	return TRUE;
-}
-
-static gboolean
 address_matches (const char *str, in_addr_t addr4, struct in6_addr *addr6)
 {
 	in_addr_t new_addr4 = 0;
@@ -302,8 +265,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 
 	if (nm_device_is_real (device)) {
 		parent = nm_setting_vxlan_get_parent (s_vxlan);
-		if (   parent
-		    && !match_parent (NM_DEVICE_VXLAN (device), parent))
+		if (parent && !nm_device_match_parent (device, parent))
 			return FALSE;
 
 		if (priv->props.id != nm_setting_vxlan_get_id (s_vxlan))

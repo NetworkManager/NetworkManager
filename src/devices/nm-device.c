@@ -4390,6 +4390,38 @@ nm_device_complete_connection (NMDevice *self,
 	return success;
 }
 
+gboolean
+nm_device_match_parent (NMDevice *self, const char *parent)
+{
+	NMDevice *parent_device;
+
+	g_return_val_if_fail (parent, FALSE);
+
+	parent_device = nm_device_parent_get_device (self);
+	if (!parent_device)
+		return FALSE;
+
+	if (nm_utils_is_uuid (parent)) {
+		NMConnection *connection;
+
+		/* If the parent is a UUID, the connection matches if our parent
+		 * device has that connection activated.
+		 */
+		connection = nm_device_get_applied_connection (self);
+		if (!connection)
+			return FALSE;
+
+		if (!nm_streq0 (parent, nm_connection_get_uuid (connection)))
+			return FALSE;
+	} else {
+		/* Interface name */
+		if (!nm_streq0 (parent, nm_device_get_ip_iface (parent_device)))
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
 static gboolean
 check_connection_compatible (NMDevice *self, NMConnection *connection)
 {
