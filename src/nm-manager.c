@@ -1155,6 +1155,10 @@ find_parent_device_for_connection (NMManager *self, NMConnection *connection, NM
 	for (iter = priv->devices; iter; iter = iter->next) {
 		NMDevice *candidate = iter->data;
 
+		/* Unmanaged devices are not compatible with any connection */
+		if (!nm_device_get_managed (candidate, FALSE))
+			continue;
+
 		if (nm_device_get_settings_connection (candidate) == parent_connection)
 			return candidate;
 
