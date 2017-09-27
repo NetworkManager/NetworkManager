@@ -2140,8 +2140,14 @@ nm_setting_ip_config_get_route (NMSettingIPConfig *setting, int idx)
  * @setting: the #NMSettingIPConfig
  * @route: the route to add
  *
- * Adds a new route and associated information to the setting.  The
+ * Appends a new route and associated information to the setting.  The
  * given route is duplicated internally and is not changed by this function.
+ * If an identical route (considering attributes as well) already exists, the
+ * route is not added and the function returns %FALSE.
+ *
+ * Note that before 1.10, this function would not consider route attributes
+ * and not add a route that has an existing route with same dest/prefix,next_hop,metric
+ * parameters.
  *
  * Returns: %TRUE if the route was added; %FALSE if the route was already known.
  **/
@@ -2158,7 +2164,7 @@ nm_setting_ip_config_add_route (NMSettingIPConfig *setting,
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
 	for (i = 0; i < priv->routes->len; i++) {
-		if (nm_ip_route_equal (priv->routes->pdata[i], route))
+		if (_nm_ip_route_equal (priv->routes->pdata[i], route, TRUE))
 			return FALSE;
 	}
 
@@ -2193,7 +2199,9 @@ nm_setting_ip_config_remove_route (NMSettingIPConfig *setting, int idx)
  * @setting: the #NMSettingIPConfig
  * @route: the route to remove
  *
- * Removes the route @route.
+ * Removes the first matching route that matches @route.
+ * Note that before 1.10, this function would only compare dest/prefix,next_hop,metric
+ * and ignore route attributes. Now, @route must match exactly.
  *
  * Returns: %TRUE if the route was found and removed; %FALSE if it was not.
  **/
@@ -2209,7 +2217,7 @@ nm_setting_ip_config_remove_route_by_value (NMSettingIPConfig *setting,
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
 	for (i = 0; i < priv->routes->len; i++) {
-		if (nm_ip_route_equal (priv->routes->pdata[i], route)) {
+		if (_nm_ip_route_equal (priv->routes->pdata[i], route, TRUE)) {
 			g_ptr_array_remove_index (priv->routes, i);
 			g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ROUTES);
 			return TRUE;
