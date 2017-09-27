@@ -92,6 +92,17 @@ void         nm_ip_route_ref                 (NMIPRoute  *route);
 void         nm_ip_route_unref               (NMIPRoute  *route);
 gboolean     nm_ip_route_equal               (NMIPRoute  *route,
                                               NMIPRoute  *other);
+
+enum {
+	NM_IP_ROUTE_EQUAL_CMP_FLAGS_NONE         = 0,
+	NM_IP_ROUTE_EQUAL_CMP_FLAGS_WITH_ATTRS   = (1LL <<  0),
+};
+
+NM_AVAILABLE_IN_1_10
+gboolean     nm_ip_route_equal_full          (NMIPRoute  *route,
+                                              NMIPRoute  *other,
+                                              guint       cmp_flags);
+
 NMIPRoute   *nm_ip_route_dup                 (NMIPRoute  *route);
 
 int          nm_ip_route_get_family          (NMIPRoute  *route);
