@@ -4191,11 +4191,11 @@ out:
  * Returns: the index of the option in the array or -1 if was not
  * found.
  */
-int _nm_utils_dns_option_find_idx (GPtrArray *array, const char *option)
+gssize _nm_utils_dns_option_find_idx (GPtrArray *array, const char *option)
 {
 	gboolean ret;
 	char *option_name, *tmp_name;
-	int i;
+	guint i;
 
 	if (!_nm_utils_dns_option_validate (option, &option_name, NULL, FALSE, NULL))
 		return -1;
