@@ -2215,6 +2215,12 @@ nm_device_master_release_one_slave (NMDevice *self, NMDevice *slave, gboolean co
 	g_object_unref (slave);
 	g_slice_free (SlaveInfo, info);
 
+	if (c_list_is_empty (&priv->slaves)) {
+		_active_connection_set_state_flags_full (self,
+		                                         0,
+		                                         NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES);
+	}
+
 	/* Ensure the device's hardware address is up-to-date; it often changes
 	 * when slaves change.
 	 */
@@ -3723,6 +3729,9 @@ nm_device_master_add_slave (NMDevice *self, NMDevice *slave, gboolean configure)
 		                                   G_CALLBACK (slave_state_changed), self);
 		c_list_link_tail (&priv->slaves, &info->lst_slave);
 		slave_priv->master = g_object_ref (self);
+
+		_active_connection_set_state_flags (self,
+		                                    NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES);
 
 		/* no need to emit
 		 *
