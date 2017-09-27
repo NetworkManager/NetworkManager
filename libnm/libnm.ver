@@ -1185,6 +1185,7 @@ global:
 	nm_client_connectivity_check_set_enabled;
 	nm_device_dummy_get_hw_address;
 	nm_device_ppp_get_type;
+	nm_ip_route_equal_full;
 	nm_ip_route_table_sync_mode_get_type;
 	nm_setting_bridge_get_group_forward_mask;
 	nm_setting_ip_config_get_route_table_sync;
