@@ -26,6 +26,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <resolv.h>
+#include <linux/rtnetlink.h>
 
 #include "nm-utils/nm-dedup-multi.h"
 
@@ -469,7 +470,7 @@ nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 
 void
 nm_ip6_config_add_device_routes (NMIP6Config *self,
-                                 guint32 default_route_metric)
+                                 guint32 route_metric)
 {
 	const NMIP6ConfigPrivate *priv;
 	const NMPlatformIP6Address *addr;
@@ -512,7 +513,7 @@ nm_ip6_config_add_device_routes (NMIP6Config *self,
 
 			route->ifindex = ifindex;
 			route->rt_source = NM_IP_CONFIG_SOURCE_KERNEL;
-			route->metric = default_route_metric;
+			route->metric = route_metric;
 
 			if (has_peer) {
 				if (routes_i == 0)
@@ -580,9 +581,12 @@ nm_ip6_config_commit (const NMIP6Config *self,
 }
 
 static void
-merge_route_attributes (NMIPRoute *s_route, NMPlatformIP6Route *r)
+merge_route_attributes (NMIPRoute *s_route,
+                        NMPlatformIP6Route *r,
+                        guint32 route_table)
 {
 	GVariant *variant;
+	guint32 u32;
 	struct in6_addr addr;
 
 #define GET_ATTR(name, field, variant_type, type) \
@@ -590,9 +594,11 @@ merge_route_attributes (NMIPRoute *s_route, NMPlatformIP6Route *r)
 	if (variant && g_variant_is_of_type (variant, G_VARIANT_TYPE_ ## variant_type)) \
 		r->field = g_variant_get_ ## type (variant);
 
-	r->table_coerced = 254 /* RT_TABLE_MAIN */;
-	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_TABLE,          table_coerced,  UINT32,   uint32);
-	r->table_coerced = nm_platform_route_table_coerce (r->table_coerced);
+	variant = nm_ip_route_get_attribute (s_route, NM_IP_ROUTE_ATTRIBUTE_TABLE);
+	u32 =   variant && g_variant_is_of_type (variant, G_VARIANT_TYPE_UINT32)
+	      ? g_variant_get_uint32 (variant)
+	      : 0;
+	r->table_coerced = nm_platform_route_table_coerce (u32 ?: (route_table ?: RT_TABLE_MAIN));
 
 	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_WINDOW,         window,         UINT32,   uint32);
 	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_CWND,           cwnd,           UINT32,   uint32);
@@ -634,7 +640,10 @@ merge_route_attributes (NMIPRoute *s_route, NMPlatformIP6Route *r)
 }
 
 void
-nm_ip6_config_merge_setting (NMIP6Config *self, NMSettingIPConfig *setting, guint32 default_route_metric)
+nm_ip6_config_merge_setting (NMIP6Config *self,
+                             NMSettingIPConfig *setting,
+                             guint32 route_table,
+                             guint32 route_metric)
 {
 	NMIP6ConfigPrivate *priv;
 	guint naddresses, nroutes, nnameservers, nsearches;
@@ -709,14 +718,14 @@ nm_ip6_config_merge_setting (NMIP6Config *self, NMSettingIPConfig *setting, guin
 
 		nm_ip_route_get_next_hop_binary (s_route, &route.gateway);
 		if (nm_ip_route_get_metric (s_route) == -1)
-			route.metric = default_route_metric;
+			route.metric = route_metric;
 		else
 			route.metric = nm_ip_route_get_metric (s_route);
 		route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 
 		nm_utils_ip6_address_clear_host_address (&route.network, &route.network, route.plen);
 
-		merge_route_attributes (s_route, &route);
+		merge_route_attributes (s_route, &route, route_table);
 		_add_route (self, NULL, &route, NULL);
 	}
 

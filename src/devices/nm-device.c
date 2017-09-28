@@ -34,6 +34,7 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <linux/if_addr.h>
+#include <linux/rtnetlink.h>
 
 #include "nm-utils/nm-dedup-multi.h"
 
@@ -317,6 +318,9 @@ typedef struct _NMDevicePrivate {
 	guint32 mtu_initial;
 	guint32 ip6_mtu_initial;
 
+	guint32         v4_route_table;
+	guint32         v6_route_table;
+
 	/* when carrier goes away, we give a grace period of CARRIER_WAIT_TIME_MS
 	 * until taking action.
 	 *
@@ -336,6 +340,9 @@ typedef struct _NMDevicePrivate {
 	bool            v6_commit_first_time:1;
 
 	NMDeviceSysIfaceState sys_iface_state:2;
+
+	bool            v4_route_table_initalized:1;
+	bool            v6_route_table_initalized:1;
 
 	/* Generic DHCP stuff */
 	char *          dhcp_anycast_address;
@@ -1724,14 +1731,27 @@ out:
 	return nm_utils_ip_route_metric_normalize (addr_family, route_metric);
 }
 
-static NMIPRouteTableSyncMode
-get_route_table_sync (NMDevice *self, int addr_family)
+guint32
+nm_device_get_route_table (NMDevice *self,
+                           int addr_family,
+                           gboolean fallback_main)
 {
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip;
-	NMIPRouteTableSyncMode route_table_sync = NM_IP_ROUTE_TABLE_SYNC_MODE_DEFAULT;
+	guint32 route_table = 0;
 
 	nm_assert_addr_family (addr_family);
+
+	/* the route table setting affects how we sync routes. We shall
+	 * not change it while the device is active, hence, cache it. */
+	if (addr_family == AF_INET) {
+		if (priv->v4_route_table_initalized)
+			return priv->v4_route_table ?: (fallback_main ? RT_TABLE_MAIN : 0);
+	} else {
+		if (priv->v6_route_table_initalized)
+			return priv->v6_route_table ?: (fallback_main ? RT_TABLE_MAIN : 0);
+	}
 
 	connection = nm_device_get_applied_connection (self);
 	if (connection) {
@@ -1741,27 +1761,38 @@ get_route_table_sync (NMDevice *self, int addr_family)
 			s_ip = nm_connection_get_setting_ip6_config (connection);
 
 		if (s_ip)
-			route_table_sync = nm_setting_ip_config_get_route_table_sync (s_ip);
+			route_table = nm_setting_ip_config_get_route_table (s_ip);
+
+		/* we only lookup the global default if we also have an applied
+		 * connection. Otherwise, the connection is not active, and the
+		 * connection default doesn't matter. */
+		if (route_table == 0) {
+			gs_free char *value = NULL;
+
+			value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+			                                               addr_family == AF_INET
+			                                                 ? "ipv4.route-table"
+			                                                 : "ipv6.route-table",
+			                                               self);
+			route_table = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT32, 0);
+		}
 	}
 
-	if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_DEFAULT) {
-		gs_free char *value = NULL;
-
-		value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-		                                               addr_family == AF_INET
-		                                                 ? "ipv4.route-table-sync"
-		                                                 : "ipv6.route-table-sync",
-		                                               self);
-		route_table_sync = _nm_utils_ascii_str_to_int64 (value, 10,
-		                                                 NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
-		                                                 NM_IP_ROUTE_TABLE_SYNC_MODE_FULL,
-		                                                 NM_IP_ROUTE_TABLE_SYNC_MODE_DEFAULT);
-
-		if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_DEFAULT)
-			route_table_sync = NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN;
+	if (addr_family == AF_INET) {
+		priv->v4_route_table_initalized = TRUE;
+		priv->v4_route_table = route_table;
+	} else {
+		priv->v6_route_table_initalized = TRUE;
+		priv->v6_route_table = route_table;
 	}
 
-	return route_table_sync;
+	_LOGT (LOGD_DEVICE,
+	       "ipv%c.route-table = %u%s",
+	       addr_family == AF_INET ? '4' : '6',
+	       (guint) (route_table ?: RT_TABLE_MAIN),
+	       route_table ? "" : " (policy routing not enabled)");
+
+	return route_table ?: (fallback_main ? RT_TABLE_MAIN : 0);
 }
 
 const NMPObject *
@@ -5661,6 +5692,7 @@ ensure_con_ip4_config (NMDevice *self)
 	priv->con_ip4_config = _ip4_config_new (self);
 	nm_ip4_config_merge_setting (priv->con_ip4_config,
 	                             nm_connection_get_setting_ip4_config (connection),
+	                             nm_device_get_route_table (self, AF_INET, TRUE),
 	                             nm_device_get_route_metric (self, AF_INET));
 
 	if (nm_device_sys_iface_state_is_external_or_assume (self)) {
@@ -5686,6 +5718,7 @@ ensure_con_ip6_config (NMDevice *self)
 	priv->con_ip6_config = _ip6_config_new (self);
 	nm_ip6_config_merge_setting (priv->con_ip6_config,
 	                             nm_connection_get_setting_ip6_config (connection),
+	                             nm_device_get_route_table (self, AF_INET6, TRUE),
 	                             nm_device_get_route_metric (self, AF_INET6));
 
 	if (nm_device_sys_iface_state_is_external_or_assume (self)) {
@@ -6007,6 +6040,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 			manual = _ip4_config_new (self);
 			nm_ip4_config_merge_setting (manual,
 			                             nm_connection_get_setting_ip4_config (connection),
+			                             nm_device_get_route_table (self, AF_INET, TRUE),
 			                             nm_device_get_route_metric (self, AF_INET));
 
 			configs = g_new0 (NMIP4Config *, 3);
@@ -6377,6 +6411,7 @@ act_stage3_ip4_config_start (NMDevice *self,
 		config = _ip4_config_new (self);
 		nm_ip4_config_merge_setting (config,
 		                             nm_connection_get_setting_ip4_config (connection),
+		                             nm_device_get_route_table (self, AF_INET, TRUE),
 		                             nm_device_get_route_metric (self, AF_INET));
 
 		configs = g_new0 (NMIP4Config *, 2);
@@ -9084,6 +9119,7 @@ nm_device_reactivate_ip4_config (NMDevice *self,
 		priv->con_ip4_config = _ip4_config_new (self);
 		nm_ip4_config_merge_setting (priv->con_ip4_config,
 		                             s_ip4_new,
+		                             nm_device_get_route_table (self, AF_INET, TRUE),
 		                             nm_device_get_route_metric (self, AF_INET));
 
 		if (!force_restart) {
@@ -9126,6 +9162,7 @@ nm_device_reactivate_ip6_config (NMDevice *self,
 		priv->con_ip6_config = _ip6_config_new (self);
 		nm_ip6_config_merge_setting (priv->con_ip6_config,
 		                             s_ip6_new,
+		                             nm_device_get_route_table (self, AF_INET6, TRUE),
 		                             nm_device_get_route_metric (self, AF_INET6));
 
 		if (!force_restart) {
@@ -9206,7 +9243,27 @@ can_reapply_change (NMDevice *self, const char *setting_name,
 	                         NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	                         NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	                         NM_SETTING_PROXY_SETTING_NAME)) {
-		/* accept all */
+		if (g_hash_table_contains (diffs, NM_SETTING_IP_CONFIG_ROUTE_TABLE)) {
+			/* changing the route-table setting is complicated, because it affects
+			 * how we sync the routes. Don't support changing it without full
+			 * re-activation.
+			 *
+			 * The problem is really that changing the setting also affects the sync
+			 * mode. So, switching from NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN to
+			 * NM_IP_ROUTE_TABLE_SYNC_MODE_FULL would somehow require us to get rid
+			 * of additional routes, but we don't know which routes were added by NM
+			 * and which should be removed.
+			 *
+			 * Note how nm_device_get_route_table() caches the value for the duration of the
+			 * activation. */
+			g_set_error (error,
+			             NM_DEVICE_ERROR,
+			             NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+			             "Can't reapply changes to '%s.%s' setting",
+			             setting_name,
+			             NM_SETTING_IP_CONFIG_ROUTE_TABLE);
+			return FALSE;
+		}
 		return TRUE;
 	} else {
 		g_set_error (error,
@@ -10064,7 +10121,9 @@ nm_device_set_ip4_config (NMDevice *self,
 		_commit_mtu (self, new_config);
 		success = nm_ip4_config_commit (new_config,
 		                                nm_device_get_platform (self),
-		                                get_route_table_sync (self, AF_INET));
+		                                nm_device_get_route_table (self, AF_INET, FALSE)
+		                                  ? NM_IP_ROUTE_TABLE_SYNC_MODE_FULL
+		                                  : NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN);
 		nm_platform_ip4_dev_route_blacklist_set (nm_device_get_platform (self),
 		                                         nm_ip4_config_get_ifindex (new_config),
 		                                         ip4_dev_route_blacklist);
@@ -10237,7 +10296,9 @@ nm_device_set_ip6_config (NMDevice *self,
 
 		success = nm_ip6_config_commit (new_config,
 		                                nm_device_get_platform (self),
-		                                get_route_table_sync (self, AF_INET6),
+		                                nm_device_get_route_table (self, AF_INET6, FALSE)
+		                                  ? NM_IP_ROUTE_TABLE_SYNC_MODE_FULL
+		                                  : NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN,
 		                                &temporary_not_available);
 
 		if (!_rt6_temporary_not_available_set (self, temporary_not_available))
@@ -12331,6 +12392,9 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 
 	priv->v4_commit_first_time = TRUE;
 	priv->v6_commit_first_time = TRUE;
+
+	priv->v4_route_table_initalized = FALSE;
+	priv->v6_route_table_initalized = FALSE;
 
 	priv->linklocal6_dad_counter = 0;
 

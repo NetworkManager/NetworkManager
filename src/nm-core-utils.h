@@ -31,8 +31,6 @@
 
 #define NM_PLATFORM_LIFETIME_PERMANENT G_MAXUINT32
 
-#define NM_IP_ROUTE_TABLE_SYNC_MODE_ALL ((NMIPRouteTableSyncMode) -1)
-
 #define NM_DEFINE_SINGLETON_INSTANCE(TYPE) \
 static TYPE *singleton_instance
 

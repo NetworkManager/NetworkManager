@@ -109,13 +109,16 @@ NMIP6Config *nm_ip6_config_capture (struct _NMDedupMultiIndex *multi_idx, NMPlat
                                     gboolean capture_resolv_conf, NMSettingIP6ConfigPrivacy use_temporary);
 
 void nm_ip6_config_add_device_routes (NMIP6Config *self,
-                                      guint32 default_route_metric);
+                                      guint32 route_metric);
 
 gboolean nm_ip6_config_commit (const NMIP6Config *self,
                                NMPlatform *platform,
                                NMIPRouteTableSyncMode route_table_sync,
                                GPtrArray **out_temporary_not_available);
-void nm_ip6_config_merge_setting (NMIP6Config *self, NMSettingIPConfig *setting, guint32 default_route_metric);
+void nm_ip6_config_merge_setting (NMIP6Config *self,
+                                  NMSettingIPConfig *setting,
+                                  guint32 route_table,
+                                  guint32 route_metric);
 NMSetting *nm_ip6_config_create_setting (const NMIP6Config *self);
 
 

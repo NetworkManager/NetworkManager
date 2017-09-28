@@ -681,11 +681,10 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *ip4_class)
 	 */
 
 	/* ---ifcfg-rh---
-	 * property: route-table-sync
-	 * variable: IPV4_ROUTE_TABLE_SYNC(+)
+	 * property: route-table
+	 * variable: IPV4_ROUTE_TABLE(+)
 	 * default: 0
-	 * description: IPV4_ROUTE_TABLE_SYNC controls how NetworkManager removes extraneous
-	 *   routes from the routing tables.
+	 * description: IPV4_ROUTE_TABLE enables policy-routing and sets the default routing table.
 	 * ---end---
 	 */
 

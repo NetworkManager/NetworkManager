@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <syslog.h>
+#include <linux/rtnetlink.h>
 
 #include "nm-proxy-config.h"
 #include "nm-ip4-config.h"
@@ -186,7 +187,7 @@ static void get_secrets (NMVpnConnection *self,
                          SecretsReq secrets_idx,
                          const char **hints);
 
-static NMIPRouteTableSyncMode get_route_table_sync (NMVpnConnection *self, int addr_family);
+static guint32 get_route_table (NMVpnConnection *self, int addr_family, gboolean fallback_main);
 
 static void plugin_interactive_secrets_required (NMVpnConnection *self,
                                                  const char *message,
@@ -1152,7 +1153,9 @@ nm_vpn_connection_apply_config (NMVpnConnection *self)
 			nm_assert (priv->ip_ifindex == nm_ip4_config_get_ifindex (priv->ip4_config));
 			if (!nm_ip4_config_commit (priv->ip4_config,
 			                           nm_netns_get_platform (priv->netns),
-			                           get_route_table_sync (self, AF_INET)))
+			                           get_route_table (self, AF_INET, FALSE)
+			                             ? NM_IP_ROUTE_TABLE_SYNC_MODE_FULL
+			                             : NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN))
 				return FALSE;
 			nm_platform_ip4_dev_route_blacklist_set (nm_netns_get_platform (priv->netns),
 			                                         priv->ip_ifindex,
@@ -1163,7 +1166,9 @@ nm_vpn_connection_apply_config (NMVpnConnection *self)
 			nm_assert (priv->ip_ifindex == nm_ip6_config_get_ifindex (priv->ip6_config));
 			if (!nm_ip6_config_commit (priv->ip6_config,
 			                           nm_netns_get_platform (priv->netns),
-			                           get_route_table_sync (self, AF_INET6),
+			                           get_route_table (self, AF_INET6, FALSE)
+			                             ? NM_IP_ROUTE_TABLE_SYNC_MODE_FULL
+			                             : NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN,
 			                           NULL))
 				return FALSE;
 		}
@@ -1435,12 +1440,14 @@ nm_vpn_connection_get_ip6_route_metric (NMVpnConnection *self)
 	return (route_metric >= 0) ? route_metric : NM_VPN_ROUTE_METRIC_DEFAULT;
 }
 
-static NMIPRouteTableSyncMode
-get_route_table_sync (NMVpnConnection *self, int addr_family)
+static guint32
+get_route_table (NMVpnConnection *self,
+                 int addr_family,
+                 gboolean fallback_main)
 {
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip;
-	NMIPRouteTableSyncMode route_table_sync = NM_IP_ROUTE_TABLE_SYNC_MODE_DEFAULT;
+	guint32 route_table = 0;
 
 	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 
@@ -1452,13 +1459,10 @@ get_route_table_sync (NMVpnConnection *self, int addr_family)
 			s_ip = nm_connection_get_setting_ip6_config (connection);
 
 		if (s_ip)
-			route_table_sync = nm_setting_ip_config_get_route_table_sync (s_ip);
+			route_table = nm_setting_ip_config_get_route_table  (s_ip);
 	}
 
-	if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_DEFAULT)
-		route_table_sync = NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN;
-
-	return route_table_sync;
+	return route_table ?: (fallback_main ? RT_TABLE_MAIN : 0);
 }
 
 static void
@@ -1622,6 +1626,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 	/* Merge in user overrides from the NMConnection's IPv4 setting */
 	nm_ip4_config_merge_setting (config,
 	                             nm_connection_get_setting_ip4_config (_get_applied_connection (self)),
+	                             get_route_table (self, AF_INET, TRUE),
 	                             route_metric);
 
 	if (!nm_ip4_config_get_never_default (config)) {
@@ -1802,6 +1807,7 @@ next:
 	/* Merge in user overrides from the NMConnection's IPv6 setting */
 	nm_ip6_config_merge_setting (config,
 	                             nm_connection_get_setting_ip6_config (_get_applied_connection (self)),
+	                             get_route_table (self, AF_INET6, TRUE),
 	                             route_metric);
 
 	if (!nm_ip6_config_get_never_default (config)) {

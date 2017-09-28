@@ -152,14 +152,17 @@ NMDedupMultiIndex *nm_ip4_config_get_multi_idx (const NMIP4Config *self);
 NMIP4Config *nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int ifindex, gboolean capture_resolv_conf);
 
 void nm_ip4_config_add_device_routes (NMIP4Config *self,
-                                      guint32 default_route_metric,
+                                      guint32 route_metric,
                                       GPtrArray **out_ip4_dev_route_blacklist);
 
 gboolean nm_ip4_config_commit (const NMIP4Config *self,
                                NMPlatform *platform,
                                NMIPRouteTableSyncMode route_table_sync);
 
-void nm_ip4_config_merge_setting (NMIP4Config *self, NMSettingIPConfig *setting, guint32 default_route_metric);
+void nm_ip4_config_merge_setting (NMIP4Config *self,
+                                  NMSettingIPConfig *setting,
+                                  guint32 route_table,
+                                  guint32 route_metric);
 NMSetting *nm_ip4_config_create_setting (const NMIP4Config *self);
 
 

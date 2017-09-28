@@ -175,6 +175,7 @@ gboolean     nm_ip_route_attribute_validate  (const char *name,
 #define NM_SETTING_IP_CONFIG_GATEWAY            "gateway"
 #define NM_SETTING_IP_CONFIG_ROUTES             "routes"
 #define NM_SETTING_IP_CONFIG_ROUTE_METRIC       "route-metric"
+#define NM_SETTING_IP_CONFIG_ROUTE_TABLE        "route-table"
 #define NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES "ignore-auto-routes"
 #define NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS    "ignore-auto-dns"
 #define NM_SETTING_IP_CONFIG_DHCP_HOSTNAME      "dhcp-hostname"
@@ -183,7 +184,6 @@ gboolean     nm_ip_route_attribute_validate  (const char *name,
 #define NM_SETTING_IP_CONFIG_MAY_FAIL           "may-fail"
 #define NM_SETTING_IP_CONFIG_DAD_TIMEOUT        "dad-timeout"
 #define NM_SETTING_IP_CONFIG_DHCP_TIMEOUT       "dhcp-timeout"
-#define NM_SETTING_IP_CONFIG_ROUTE_TABLE_SYNC   "route-table-sync"
 
 #define NM_SETTING_DNS_OPTION_DEBUG                     "debug"
 #define NM_SETTING_DNS_OPTION_NDOTS                     "ndots"
@@ -284,6 +284,9 @@ void          nm_setting_ip_config_clear_routes               (NMSettingIPConfig
 
 gint64        nm_setting_ip_config_get_route_metric           (NMSettingIPConfig *setting);
 
+NM_AVAILABLE_IN_1_10
+guint32       nm_setting_ip_config_get_route_table            (NMSettingIPConfig *setting);
+
 gboolean      nm_setting_ip_config_get_ignore_auto_routes     (NMSettingIPConfig *setting);
 gboolean      nm_setting_ip_config_get_ignore_auto_dns        (NMSettingIPConfig *setting);
 
@@ -296,9 +299,6 @@ NM_AVAILABLE_IN_1_2
 gint          nm_setting_ip_config_get_dad_timeout            (NMSettingIPConfig *setting);
 NM_AVAILABLE_IN_1_2
 gint          nm_setting_ip_config_get_dhcp_timeout           (NMSettingIPConfig *setting);
-
-NM_AVAILABLE_IN_1_10
-NMIPRouteTableSyncMode nm_setting_ip_config_get_route_table_sync (NMSettingIPConfig *setting);
 
 G_END_DECLS
 

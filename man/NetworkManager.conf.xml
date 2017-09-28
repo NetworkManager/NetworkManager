@@ -684,8 +684,11 @@ ipv6.ip6-privacy=0
           <term><varname>ipv4.route-metric</varname></term>
         </varlistentry>
         <varlistentry>
-          <term><varname>ipv4.route-table-sync</varname></term>
-          <listitem><para>If left unspecified, the default value is 2 (main).</para></listitem>
+          <term><varname>ipv4.route-table</varname></term>
+          <listitem><para>If left unspecified, routes are only added to the main table. Note that this
+            is different from explicitly selecting the main table 254, because of how NetworkManager
+            removes extraneous routes from the tables.
+          </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>ipv6.dhcp-timeout</varname></term>
@@ -702,8 +705,11 @@ ipv6.ip6-privacy=0
           <term><varname>ipv6.route-metric</varname></term>
         </varlistentry>
         <varlistentry>
-          <term><varname>ipv6.route-table-sync</varname></term>
-          <listitem><para>If left unspecified, the default value is 2 (main).</para></listitem>
+          <term><varname>ipv6.route-table</varname></term>
+          <listitem><para>If left unspecified, routes are only added to the main table. Note that this
+            is different from explicitly selecting the main table 254, because of how NetworkManager
+            removes extraneous routes from the tables.
+          </para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>vpn.timeout</varname></term>
