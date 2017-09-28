@@ -6607,6 +6607,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 	memset (&default_route, 0, sizeof (default_route));
 	default_route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	default_route.gateway = *gateway;
+	default_route.table_coerced = nm_platform_route_table_coerce (nm_device_get_route_table (self, AF_INET6, TRUE));
 	default_route.metric = route_metric_with_penalty (self, default_route_metric);
 	default_route.mss = nm_ip6_config_get_mss (composite);
 	nm_clear_nmp_object (&priv->default_route6);
@@ -6632,6 +6633,7 @@ END_ADD_DEFAULT_ROUTE:
 
 	if (commit) {
 		nm_ip6_config_add_device_routes (composite,
+		                                 nm_device_get_route_table (self, AF_INET6, TRUE),
 		                                 default_route_metric);
 	}
 
@@ -7514,6 +7516,7 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 		nm_ip6_config_reset_routes_ndisc (priv->ac_ip6_config,
 		                                  rdata->routes,
 		                                  rdata->routes_n,
+		                                  nm_device_get_route_table (self, AF_INET6, TRUE),
 		                                  nm_device_get_route_metric (self, AF_INET6));
 	}
 

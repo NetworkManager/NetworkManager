@@ -470,6 +470,7 @@ nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 
 void
 nm_ip6_config_add_device_routes (NMIP6Config *self,
+                                 guint32 route_table,
                                  guint32 route_metric)
 {
 	const NMIP6ConfigPrivate *priv;
@@ -513,6 +514,7 @@ nm_ip6_config_add_device_routes (NMIP6Config *self,
 
 			route->ifindex = ifindex;
 			route->rt_source = NM_IP_CONFIG_SOURCE_KERNEL;
+			route->table_coerced = nm_platform_route_table_coerce (route_table);
 			route->metric = route_metric;
 
 			if (has_peer) {
@@ -1855,7 +1857,8 @@ void
 nm_ip6_config_reset_routes_ndisc (NMIP6Config *self,
                                   const NMNDiscRoute *routes,
                                   guint routes_n,
-                                  guint32 metric)
+                                  guint32 route_table,
+                                  guint32 route_metric)
 {
 	NMIP6ConfigPrivate *priv;
 	guint i;
@@ -1884,7 +1887,8 @@ nm_ip6_config_reset_routes_ndisc (NMIP6Config *self,
 		r->plen       = ndisc_route->plen;
 		r->gateway    = ndisc_route->gateway;
 		r->rt_source  = NM_IP_CONFIG_SOURCE_NDISC;
-		r->metric     = metric;
+		r->table_coerced = nm_platform_route_table_coerce (route_table);
+		r->metric     = route_metric;
 
 		if (_nm_ip_config_add_obj (priv->multi_idx,
 		                           &priv->idx_ip6_routes_,

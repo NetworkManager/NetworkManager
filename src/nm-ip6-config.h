@@ -109,6 +109,7 @@ NMIP6Config *nm_ip6_config_capture (struct _NMDedupMultiIndex *multi_idx, NMPlat
                                     gboolean capture_resolv_conf, NMSettingIP6ConfigPrivacy use_temporary);
 
 void nm_ip6_config_add_device_routes (NMIP6Config *self,
+                                      guint32 route_table,
                                       guint32 route_metric);
 
 gboolean nm_ip6_config_commit (const NMIP6Config *self,
@@ -216,6 +217,7 @@ struct _NMNDiscRoute;
 void nm_ip6_config_reset_routes_ndisc (NMIP6Config *self,
                                        const struct _NMNDiscRoute *routes,
                                        guint routes_n,
-                                       guint32 metric);
+                                       guint32 route_table,
+                                       guint32 route_metric);
 
 #endif /* __NETWORKMANAGER_IP6_CONFIG_H__ */

@@ -815,8 +815,9 @@ add_ip6_vpn_gateway_route (NMIP6Config *config,
 			 * In which case, it pretends the destination is directly reachable.
 			 *
 			 * So, only accept direct routes, if @vpn_gw is a private network. */
-			if (   !IN6_IS_ADDR_UNSPECIFIED (&r->gateway)
-			    || nm_utils_ip_is_site_local (AF_INET6, &vpn_gw)) {
+			if (   nm_platform_route_table_is_main (r->table_coerced)
+			    && (   !IN6_IS_ADDR_UNSPECIFIED (&r->gateway)
+			        || nm_utils_ip_is_site_local (AF_INET6, &vpn_gw))) {
 				parent_gw = &r->gateway;
 				has_parent_gw = TRUE;
 			}
@@ -1671,6 +1672,7 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 	NMPlatformIP6Address address;
 	guint32 u32, route_metric;
+	guint32 route_table;
 	NMIP6Config *config;
 	GVariantIter *iter;
 	const char *str;
@@ -1761,6 +1763,7 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 		g_variant_iter_free (iter);
 	}
 
+	route_table = get_route_table (self, AF_INET6, TRUE);
 	route_metric = nm_vpn_connection_get_ip6_route_metric (self);
 
 	if (   g_variant_lookup (dict, NM_VPN_PLUGIN_IP6_CONFIG_PRESERVE_ROUTES, "b", &b)
@@ -1789,6 +1792,7 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 
 			route.plen = prefix;
 			ip6_addr_from_variant (next_hop, &route.gateway);
+			route.table_coerced = nm_platform_route_table_coerce (route_table);
 			route.metric = route_metric;
 			route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
 
@@ -1813,7 +1817,7 @@ next:
 	/* Merge in user overrides from the NMConnection's IPv6 setting */
 	nm_ip6_config_merge_setting (config,
 	                             nm_connection_get_setting_ip6_config (_get_applied_connection (self)),
-	                             get_route_table (self, AF_INET6, TRUE),
+	                             route_table,
 	                             route_metric);
 
 	if (!nm_ip6_config_get_never_default (config)) {
@@ -1821,6 +1825,7 @@ next:
 			.ifindex   = ip_ifindex,
 			.rt_source = NM_IP_CONFIG_SOURCE_VPN,
 			.gateway   = *(nm_ip6_config_get_gateway (config) ?: &in6addr_any),
+			.table_coerced = nm_platform_route_table_coerce (route_table),
 			.metric    = route_metric,
 			.mss       = nm_ip6_config_get_mss (config),
 		};
@@ -1829,7 +1834,8 @@ next:
 	}
 
 	nm_ip6_config_add_device_routes (config,
-	                                 nm_vpn_connection_get_ip6_route_metric (self));
+	                                 route_table,
+	                                 route_metric);
 
 	if (priv->ip6_config) {
 		nm_ip6_config_replace (priv->ip6_config, config, NULL);

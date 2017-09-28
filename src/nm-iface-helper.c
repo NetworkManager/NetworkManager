@@ -211,6 +211,7 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 		nm_ip6_config_reset_routes_ndisc (ndisc_config,
 		                                  rdata->routes,
 		                                  rdata->routes_n,
+		                                  RT_TABLE_MAIN,
 		                                  global_opt.priority_v6);
 	}
 
@@ -230,6 +231,7 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 
 	nm_ip6_config_merge (existing, ndisc_config, NM_IP_CONFIG_MERGE_DEFAULT);
 	nm_ip6_config_add_device_routes (existing,
+	                                 RT_TABLE_MAIN,
 	                                 global_opt.priority_v6);
 	if (!nm_ip6_config_commit (existing,
 	                           NM_PLATFORM_GET,
