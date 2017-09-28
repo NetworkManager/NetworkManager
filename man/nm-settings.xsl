@@ -87,13 +87,18 @@
         <refsect2 id="secrets-flags">
           <title>Secret flag types:</title>
           <para>
-            Each secret property in a setting has an associated <emphasis>flags</emphasis> property
+            Each password or secret property in a setting has an associated <emphasis>flags</emphasis> property
             that describes how to handle that secret. The <emphasis>flags</emphasis> property is a bitfield
             that contains zero or more of the following values logically OR-ed together.
           </para>
           <itemizedlist>
             <listitem>
-              <para>0x0 (none) - the system is responsible for providing and storing this secret.</para>
+              <para>0x0 (none) - the system is responsible for providing and storing this secret. This
+              may be required so that secrets are already available before the user logs in.
+              It also commonly means that the secret will be stored in plain text on disk, accessible
+              to root only. For example via the keyfile settings plugin as described in the "PLUGINS" section
+              in <link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>.
+              </para>
             </listitem>
             <listitem>
               <para>0x1 (agent-owned) - a user-session secret agent is responsible for providing and storing
