@@ -751,7 +751,7 @@ add_ip4_vpn_gateway_route (NMIP4Config *config,
 	if (!has_parent_gw)
 		return;
 
-	route_metric = nm_device_get_ip4_route_metric (parent_device);
+	route_metric = nm_device_get_ip_route_metric (parent_device, AF_INET);
 
 	memset (&route, 0, sizeof (route));
 	route.ifindex = ifindex;
@@ -824,7 +824,7 @@ add_ip6_vpn_gateway_route (NMIP6Config *config,
 	if (!has_parent_gw)
 		return;
 
-	route_metric = nm_device_get_ip6_route_metric (parent_device);
+	route_metric = nm_device_get_ip_route_metric (parent_device, AF_INET6);
 
 	memset (&route, 0, sizeof (route));
 	route.ifindex = ifindex;

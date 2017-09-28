@@ -5501,7 +5501,7 @@ ipv4ll_get_ip4_config (NMDevice *self, guint32 lla)
 	route.network = htonl (0xE0000000L);
 	route.plen = 4;
 	route.rt_source = NM_IP_CONFIG_SOURCE_IP4LL;
-	route.metric = nm_device_get_ip4_route_metric (self);
+	route.metric = nm_device_get_ip_route_metric (self, AF_INET);
 	nm_ip4_config_add_route (config, &route, NULL);
 
 	return config;
@@ -5669,7 +5669,7 @@ ensure_con_ip4_config (NMDevice *self)
 	priv->con_ip4_config = _ip4_config_new (self);
 	nm_ip4_config_merge_setting (priv->con_ip4_config,
 	                             nm_connection_get_setting_ip4_config (connection),
-	                             nm_device_get_ip4_route_metric (self));
+	                             nm_device_get_ip_route_metric (self, AF_INET));
 
 	if (nm_device_sys_iface_state_is_external_or_assume (self)) {
 		/* For assumed connections ignore all addresses and routes. */
@@ -5694,7 +5694,7 @@ ensure_con_ip6_config (NMDevice *self)
 	priv->con_ip6_config = _ip6_config_new (self);
 	nm_ip6_config_merge_setting (priv->con_ip6_config,
 	                             nm_connection_get_setting_ip6_config (connection),
-	                             nm_device_get_ip6_route_metric (self));
+	                             nm_device_get_ip_route_metric (self, AF_INET6));
 
 	if (nm_device_sys_iface_state_is_external_or_assume (self)) {
 		/* For assumed connections ignore all addresses and routes. */
@@ -5742,7 +5742,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 	NMConnection *connection;
 	gboolean success;
 	NMIP4Config *composite;
-	const guint32 default_route_metric = nm_device_get_ip4_route_metric (self);
+	const guint32 default_route_metric = nm_device_get_ip_route_metric (self, AF_INET);
 	guint32 gateway;
 	gboolean connection_has_default_route, connection_is_never_default;
 	gboolean ignore_auto_routes = FALSE;
@@ -6017,7 +6017,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 			manual = _ip4_config_new (self);
 			nm_ip4_config_merge_setting (manual,
 			                             nm_connection_get_setting_ip4_config (connection),
-			                             nm_device_get_ip4_route_metric (self));
+			                             nm_device_get_ip_route_metric (self, AF_INET));
 
 			configs = g_new0 (NMIP4Config *, 3);
 			configs[0] = manual;
@@ -6124,7 +6124,7 @@ dhcp4_start (NMDevice *self)
 	                                                nm_device_get_ip_ifindex (self),
 	                                                tmp,
 	                                                nm_connection_get_uuid (connection),
-	                                                nm_device_get_ip4_route_metric (self),
+	                                                nm_device_get_ip_route_metric (self, AF_INET),
 	                                                nm_setting_ip_config_get_dhcp_send_hostname (s_ip4),
 	                                                nm_setting_ip_config_get_dhcp_hostname (s_ip4),
 	                                                nm_setting_ip4_config_get_dhcp_fqdn (NM_SETTING_IP4_CONFIG (s_ip4)),
@@ -6387,7 +6387,7 @@ act_stage3_ip4_config_start (NMDevice *self,
 		config = _ip4_config_new (self);
 		nm_ip4_config_merge_setting (config,
 		                             nm_connection_get_setting_ip4_config (connection),
-		                             nm_device_get_ip4_route_metric (self));
+		                             nm_device_get_ip_route_metric (self, AF_INET));
 
 		configs = g_new0 (NMIP4Config *, 2);
 		configs[0] = config;
@@ -6453,7 +6453,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 	NMConnection *connection;
 	gboolean success;
 	NMIP6Config *composite;
-	const guint32 default_route_metric = nm_device_get_ip6_route_metric (self);
+	const guint32 default_route_metric = nm_device_get_ip_route_metric (self, AF_INET6);
 	const struct in6_addr *gateway;
 	gboolean connection_has_default_route, connection_is_never_default;
 	gboolean ignore_auto_routes = FALSE;
@@ -6890,7 +6890,7 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	                                                tmp,
 	                                                &ll_addr->address,
 	                                                nm_connection_get_uuid (connection),
-	                                                nm_device_get_ip6_route_metric (self),
+	                                                nm_device_get_ip_route_metric (self, AF_INET6),
 	                                                nm_setting_ip_config_get_dhcp_send_hostname (s_ip6),
 	                                                nm_setting_ip_config_get_dhcp_hostname (s_ip6),
 	                                                get_dhcp_timeout (self, AF_INET6),
@@ -7484,7 +7484,7 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 		nm_ip6_config_reset_routes_ndisc (priv->ac_ip6_config,
 		                                  rdata->routes,
 		                                  rdata->routes_n,
-		                                  nm_device_get_ip6_route_metric (self));
+		                                  nm_device_get_ip_route_metric (self, AF_INET6));
 	}
 
 	if (changed & NM_NDISC_CONFIG_DNS_SERVERS) {
@@ -9094,7 +9094,7 @@ nm_device_reactivate_ip4_config (NMDevice *self,
 		priv->con_ip4_config = _ip4_config_new (self);
 		nm_ip4_config_merge_setting (priv->con_ip4_config,
 		                             s_ip4_new,
-		                             nm_device_get_ip4_route_metric (self));
+		                             nm_device_get_ip_route_metric (self, AF_INET));
 
 		if (!force_restart) {
 			method_old = s_ip4_old
@@ -9136,7 +9136,7 @@ nm_device_reactivate_ip6_config (NMDevice *self,
 		priv->con_ip6_config = _ip6_config_new (self);
 		nm_ip6_config_merge_setting (priv->con_ip6_config,
 		                             s_ip6_new,
-		                             nm_device_get_ip6_route_metric (self));
+		                             nm_device_get_ip_route_metric (self, AF_INET6));
 
 		if (!force_restart) {
 			method_old = s_ip6_old
@@ -10822,7 +10822,7 @@ find_ip4_lease_config (NMDevice *self,
 	                                               ip_iface,
 	                                               ip_ifindex,
 	                                               nm_connection_get_uuid (connection),
-	                                               nm_device_get_ip4_route_metric (self));
+	                                               nm_device_get_ip_route_metric (self, AF_INET));
 	for (liter = leases; liter && !found; liter = liter->next) {
 		NMIP4Config *lease_config = liter->data;
 		const NMPlatformIP4Address *address = nm_ip4_config_get_first_address (lease_config);
@@ -12597,7 +12597,7 @@ nm_device_spawn_iface_helper (NMDevice *self)
 		g_assert (s_ip4);
 
 		g_ptr_array_add (argv, g_strdup ("--priority4"));
-		g_ptr_array_add (argv, g_strdup_printf ("%u", nm_device_get_ip4_route_metric (self)));
+		g_ptr_array_add (argv, g_strdup_printf ("%u", nm_device_get_ip_route_metric (self, AF_INET)));
 
 		g_ptr_array_add (argv, g_strdup ("--dhcp4"));
 		g_ptr_array_add (argv, g_strdup (dhcp4_address));
@@ -12639,7 +12639,7 @@ nm_device_spawn_iface_helper (NMDevice *self)
 		g_assert (s_ip6);
 
 		g_ptr_array_add (argv, g_strdup ("--priority6"));
-		g_ptr_array_add (argv, g_strdup_printf ("%u", nm_device_get_ip6_route_metric (self)));
+		g_ptr_array_add (argv, g_strdup_printf ("%u", nm_device_get_ip_route_metric (self, AF_INET6)));
 
 		g_ptr_array_add (argv, g_strdup ("--slaac"));
 

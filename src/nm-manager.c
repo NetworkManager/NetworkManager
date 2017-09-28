@@ -1845,8 +1845,8 @@ get_existing_connection (NMManager *self,
 		matched = NM_SETTINGS_CONNECTION (nm_utils_match_connection (connections,
 		                                                             connection,
 		                                                             nm_device_has_carrier (device),
-		                                                             nm_device_get_ip4_route_metric (device),
-		                                                             nm_device_get_ip6_route_metric (device),
+		                                                             nm_device_get_ip_route_metric (device, AF_INET),
+		                                                             nm_device_get_ip_route_metric (device, AF_INET6),
 		                                                             NULL, NULL));
 	} else
 		matched = NULL;
@@ -1874,8 +1874,8 @@ get_existing_connection (NMManager *self,
 			matched = NM_SETTINGS_CONNECTION (nm_utils_match_connection ((NMConnection *const*) connections,
 			                                                             connection,
 			                                                             nm_device_has_carrier (device),
-			                                                             nm_device_get_ip4_route_metric (device),
-			                                                             nm_device_get_ip6_route_metric (device),
+			                                                             nm_device_get_ip_route_metric (device, AF_INET),
+			                                                             nm_device_get_ip_route_metric (device, AF_INET6),
 			                                                             NULL, NULL));
 		}
 	}
