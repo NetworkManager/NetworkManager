@@ -449,7 +449,7 @@ NMMetered       nm_device_get_metered           (NMDevice *dev);
 
 int             nm_device_get_priority          (NMDevice *dev);
 
-guint32         nm_device_get_ip_route_metric   (NMDevice *dev, int addr_family);
+guint32         nm_device_get_route_metric      (NMDevice *dev, int addr_family);
 
 const char *    nm_device_get_hw_address        (NMDevice *dev);
 const char *    nm_device_get_permanent_hw_address (NMDevice *self);
