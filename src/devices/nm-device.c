@@ -1586,23 +1586,14 @@ nm_device_get_metered (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->metered;
 }
 
-/**
- * nm_device_get_priority():
- * @self: the #NMDevice
- *
- * Returns: the device's routing priority.  Lower numbers means a "better"
- *  device, eg higher priority.
- */
-int
-nm_device_get_priority (NMDevice *self)
+static guint32
+_get_route_metric_default (NMDevice *self)
 {
-	g_return_val_if_fail (NM_IS_DEVICE (self), 1000);
-
 	/* Device 'priority' is used for the default route-metric and is based on
 	 * the device type. The settings ipv4.route-metric and ipv6.route-metric
 	 * can overwrite this default.
 	 *
-	 * Currently for both IPv4 and IPv6 we use the same default values.
+	 * For both IPv4 and IPv6 we use the same default values.
 	 *
 	 * The route-metric is used for the metric of the routes of device.
 	 * This also applies to the default route. Therefore it affects also
@@ -1729,7 +1720,7 @@ nm_device_get_route_metric (NMDevice *self,
 		if (route_metric >= 0)
 			goto out;
 	}
-	route_metric = nm_device_get_priority (self);
+	route_metric = _get_route_metric_default (self);
 out:
 	return nm_utils_ip_route_metric_normalize (addr_family, route_metric);
 }
