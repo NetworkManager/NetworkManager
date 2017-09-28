@@ -2671,6 +2671,7 @@ device_link_changed (NMDevice *self)
 		NMDeviceStateReason reason;
 
 		nm_device_set_unmanaged_by_user_udev (self);
+		nm_device_set_unmanaged_by_user_conf (self);
 
 		reason = NM_DEVICE_STATE_REASON_NOW_MANAGED;
 
@@ -3309,6 +3310,7 @@ realize_start_setup (NMDevice *self,
 	nm_device_set_unmanaged_flags (self, NM_UNMANAGED_LOOPBACK, priv->ifindex == 1);
 
 	nm_device_set_unmanaged_by_user_udev (self);
+	nm_device_set_unmanaged_by_user_conf (self);
 
 	nm_device_set_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT,
 	                               plink && !plink->initialized);
@@ -11191,6 +11193,7 @@ NM_UTILS_FLAGS2STR_DEFINE (nm_unmanaged_flags2str, NMUnmanagedFlags,
 	NM_UTILS_FLAGS2STR (NM_UNMANAGED_USER_EXPLICIT, "user-explicit"),
 	NM_UTILS_FLAGS2STR (NM_UNMANAGED_BY_DEFAULT, "by-default"),
 	NM_UTILS_FLAGS2STR (NM_UNMANAGED_USER_SETTINGS, "user-settings"),
+	NM_UTILS_FLAGS2STR (NM_UNMANAGED_USER_CONF, "user-conf"),
 	NM_UTILS_FLAGS2STR (NM_UNMANAGED_USER_UDEV, "user-udev"),
 	NM_UTILS_FLAGS2STR (NM_UNMANAGED_EXTERNAL_DOWN, "external-down"),
 	NM_UTILS_FLAGS2STR (NM_UNMANAGED_IS_SLAVE, "is-slave"),
@@ -11283,11 +11286,19 @@ _get_managed_by_flags(NMUnmanagedFlags flags, NMUnmanagedFlags mask, gboolean fo
 
 	if (NM_FLAGS_ANY (mask, NM_UNMANAGED_USER_UDEV)) {
 		/* configuration from udev or nm-config overwrites the by-default flag
-		 * which is based on the device type. */
-		flags &= ~NM_UNMANAGED_BY_DEFAULT;
+		 * which is based on the device type.
+		 * configuration from udev overwrites external-down */
+		flags &= ~(  NM_UNMANAGED_BY_DEFAULT
+		           | NM_UNMANAGED_EXTERNAL_DOWN);
+	}
 
-		/* configuration from udev overwrites external-down */
-		flags &= ~NM_UNMANAGED_EXTERNAL_DOWN;
+	if (NM_FLAGS_ANY (mask, NM_UNMANAGED_USER_CONF)) {
+		/* configuration from NetworkManager.conf overwrites the by-default flag
+		 * which is based on the device type.
+		 * It also overwrites the udev configuration and external-down */
+		flags &= ~(   NM_UNMANAGED_BY_DEFAULT
+		           || NM_UNMANAGED_USER_UDEV
+		           || NM_UNMANAGED_EXTERNAL_DOWN);
 	}
 
 	if (   NM_FLAGS_HAS (mask, NM_UNMANAGED_IS_SLAVE)
@@ -11299,9 +11310,9 @@ _get_managed_by_flags(NMUnmanagedFlags flags, NMUnmanagedFlags mask, gboolean fo
 	if (NM_FLAGS_HAS (mask, NM_UNMANAGED_USER_EXPLICIT)) {
 		/* if the device is managed by user-decision, certain other flags
 		 * are ignored. */
-
 		flags &= ~(  NM_UNMANAGED_BY_DEFAULT
 		           | NM_UNMANAGED_USER_UDEV
+		           | NM_UNMANAGED_USER_CONF
 		           | NM_UNMANAGED_EXTERNAL_DOWN);
 	}
 
@@ -11604,6 +11615,35 @@ nm_device_set_unmanaged_by_user_udev (NMDevice *self)
 	nm_device_set_unmanaged_by_flags (self,
 	                                  NM_UNMANAGED_USER_UDEV,
 	                                  platform_unmanaged,
+	                                  NM_DEVICE_STATE_REASON_USER_REQUESTED);
+}
+
+void
+nm_device_set_unmanaged_by_user_conf (NMDevice *self)
+{
+	gboolean value;
+	NMUnmanFlagOp set_op;
+
+	value = nm_config_data_get_device_config_boolean (NM_CONFIG_GET_DATA,
+	                                                  NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED,
+	                                                  self,
+	                                                  -1,
+	                                                  TRUE);
+	switch (value) {
+	case TRUE:
+		set_op = NM_UNMAN_FLAG_OP_SET_MANAGED;
+		break;
+	case FALSE:
+		set_op = NM_UNMAN_FLAG_OP_SET_UNMANAGED;
+		break;
+	default:
+		set_op = NM_UNMAN_FLAG_OP_FORGET;
+		break;
+	}
+
+	nm_device_set_unmanaged_by_flags (self,
+	                                  NM_UNMANAGED_USER_CONF,
+	                                  set_op,
 	                                  NM_DEVICE_STATE_REASON_USER_REQUESTED);
 }
 
