@@ -158,6 +158,7 @@ client_start (NMDhcpManager *self,
               int ifindex,
               const GByteArray *hwaddr,
               const char *uuid,
+              guint32 route_table,
               guint32 route_metric,
               const struct in6_addr *ipv6_ll_addr,
               const char *dhcp_client_id,
@@ -202,7 +203,8 @@ client_start (NMDhcpManager *self,
 	                       NM_DHCP_CLIENT_IFINDEX, ifindex,
 	                       NM_DHCP_CLIENT_HWADDR, hwaddr,
 	                       NM_DHCP_CLIENT_UUID, uuid,
-	                       NM_DHCP_CLIENT_ROUTE_METRIC, route_metric,
+	                       NM_DHCP_CLIENT_ROUTE_TABLE, (guint) route_table,
+	                       NM_DHCP_CLIENT_ROUTE_METRIC, (guint) route_metric,
 	                       NM_DHCP_CLIENT_TIMEOUT, (guint) timeout,
 	                       NULL);
 	g_hash_table_insert (NM_DHCP_MANAGER_GET_PRIVATE (self)->clients, client, g_object_ref (client));
@@ -229,6 +231,7 @@ nm_dhcp_manager_start_ip4 (NMDhcpManager *self,
                            int ifindex,
                            const GByteArray *hwaddr,
                            const char *uuid,
+                           guint32 route_table,
                            guint32 route_metric,
                            gboolean send_hostname,
                            const char *dhcp_hostname,
@@ -270,7 +273,8 @@ nm_dhcp_manager_start_ip4 (NMDhcpManager *self,
 		}
 	}
 
-	return client_start (self, AF_INET, multi_idx, iface, ifindex, hwaddr, uuid, route_metric, NULL,
+	return client_start (self, AF_INET, multi_idx, iface, ifindex, hwaddr, uuid,
+	                     route_table, route_metric, NULL,
 	                     dhcp_client_id, timeout, dhcp_anycast_addr, hostname,
 	                     use_fqdn, FALSE, 0, last_ip_address, 0);
 }
@@ -284,6 +288,7 @@ nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
                            const GByteArray *hwaddr,
                            const struct in6_addr *ll_addr,
                            const char *uuid,
+                           guint32 route_table,
                            guint32 route_metric,
                            gboolean send_hostname,
                            const char *dhcp_hostname,
@@ -303,8 +308,9 @@ nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
 		/* Always prefer the explicit dhcp-hostname if given */
 		hostname = dhcp_hostname ? dhcp_hostname : priv->default_hostname;
 	}
-	return client_start (self, AF_INET6, multi_idx, iface, ifindex, hwaddr, uuid, route_metric,
-	                     ll_addr, NULL, timeout, dhcp_anycast_addr, hostname, TRUE, info_only,
+	return client_start (self, AF_INET6, multi_idx, iface, ifindex, hwaddr, uuid,
+	                     route_table, route_metric, ll_addr,
+	                     NULL, timeout, dhcp_anycast_addr, hostname, TRUE, info_only,
 	                     privacy, NULL, needed_prefixes);
 }
 
@@ -329,6 +335,7 @@ nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
                                       const char *iface,
                                       int ifindex,
                                       const char *uuid,
+                                      guint32 route_table,
                                       guint32 route_metric)
 {
 	NMDhcpManagerPrivate *priv;
@@ -342,7 +349,7 @@ nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 	if (   priv->client_factory
 	    && priv->client_factory->get_lease_ip_configs)
-		return priv->client_factory->get_lease_ip_configs (multi_idx, addr_family, iface, ifindex, uuid, route_metric);
+		return priv->client_factory->get_lease_ip_configs (multi_idx, addr_family, iface, ifindex, uuid, route_table, route_metric);
 	return NULL;
 }
 

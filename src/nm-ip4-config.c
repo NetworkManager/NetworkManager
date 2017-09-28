@@ -675,6 +675,7 @@ nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 
 void
 nm_ip4_config_add_device_routes (NMIP4Config *self,
+                                 guint32 route_table,
                                  guint32 route_metric,
                                  GPtrArray **out_ip4_dev_route_blacklist)
 {
@@ -721,6 +722,7 @@ nm_ip4_config_add_device_routes (NMIP4Config *self,
 		route->network = network;
 		route->plen = addr->plen;
 		route->pref_src = addr->address;
+		route->table_coerced = nm_platform_route_table_coerce (route_table);
 		route->metric = route_metric;
 		route->scope_inv = nm_platform_route_scope_inv (NM_RT_SCOPE_LINK);
 
@@ -734,11 +736,13 @@ nm_ip4_config_add_device_routes (NMIP4Config *self,
 			_add_route (self, nmp_object_ref (r), NULL, NULL);
 
 		if (   out_ip4_dev_route_blacklist
-		    && route_metric != NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE) {
+		    && (   route_table != RT_TABLE_MAIN
+		        || route_metric != NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE)) {
 			nm_auto_nmpobj NMPObject *r_dev = NULL;
 
 			r_dev = nmp_object_clone (r, FALSE);
 			route = NMP_OBJECT_CAST_IP4_ROUTE (r_dev);
+			route->table_coerced = nm_platform_route_table_coerce (RT_TABLE_MAIN);
 			route->metric = NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE;
 
 			nm_platform_ip_route_normalize (AF_INET, (NMPlatformIPRoute *) route);

@@ -152,6 +152,7 @@ NMDedupMultiIndex *nm_ip4_config_get_multi_idx (const NMIP4Config *self);
 NMIP4Config *nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int ifindex, gboolean capture_resolv_conf);
 
 void nm_ip4_config_add_device_routes (NMIP4Config *self,
+                                      guint32 route_table,
                                       guint32 route_metric,
                                       GPtrArray **out_ip4_dev_route_blacklist);
 

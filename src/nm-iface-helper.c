@@ -31,6 +31,7 @@
 #include <sys/resource.h>
 #include <sys/stat.h>
 #include <signal.h>
+#include <linux/rtnetlink.h>
 
 #include "main-utils.h"
 #include "NetworkManagerUtils.h"
@@ -125,6 +126,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 
 		nm_ip4_config_merge (existing, ip4_config, NM_IP_CONFIG_MERGE_DEFAULT);
 		nm_ip4_config_add_device_routes (existing,
+		                                 RT_TABLE_MAIN,
 		                                 global_opt.priority_v4,
 		                                 &ip4_dev_route_blacklist);
 		if (!nm_ip4_config_commit (existing,
@@ -454,6 +456,7 @@ main (int argc, char *argv[])
 		                                          gl.ifindex,
 		                                          hwaddr,
 		                                          global_opt.uuid,
+		                                          RT_TABLE_MAIN,
 		                                          global_opt.priority_v4,
 		                                          !!global_opt.dhcp4_hostname,
 		                                          global_opt.dhcp4_hostname,

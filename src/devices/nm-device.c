@@ -5522,6 +5522,7 @@ ipv4ll_get_ip4_config (NMDevice *self, guint32 lla)
 	route.network = htonl (0xE0000000L);
 	route.plen = 4;
 	route.rt_source = NM_IP_CONFIG_SOURCE_IP4LL;
+	route.table_coerced = nm_platform_route_table_coerce (nm_device_get_route_table (self, AF_INET, TRUE));
 	route.metric = nm_device_get_route_metric (self, AF_INET);
 	nm_ip4_config_add_route (config, &route, NULL);
 
@@ -5865,6 +5866,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 	memset (&default_route, 0, sizeof (default_route));
 	default_route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 	default_route.gateway = gateway;
+	default_route.table_coerced = nm_platform_route_table_coerce (nm_device_get_route_table (self, AF_INET, TRUE));
 	default_route.metric = route_metric_with_penalty (self, default_route_metric);
 	default_route.mss = nm_ip4_config_get_mss (composite);
 	nm_clear_nmp_object (&priv->default_route4);
@@ -5892,6 +5894,7 @@ END_ADD_DEFAULT_ROUTE:
 
 	if (commit) {
 		nm_ip4_config_add_device_routes (composite,
+		                                 nm_device_get_route_table (self, AF_INET, TRUE),
 		                                 default_route_metric,
 		                                 &ip4_dev_route_blacklist);
 	}
@@ -6148,6 +6151,7 @@ dhcp4_start (NMDevice *self)
 	                                                nm_device_get_ip_ifindex (self),
 	                                                tmp,
 	                                                nm_connection_get_uuid (connection),
+	                                                nm_device_get_route_table (self, AF_INET, TRUE),
 	                                                nm_device_get_route_metric (self, AF_INET),
 	                                                nm_setting_ip_config_get_dhcp_send_hostname (s_ip4),
 	                                                nm_setting_ip_config_get_dhcp_hostname (s_ip4),
@@ -6915,6 +6919,7 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	                                                tmp,
 	                                                &ll_addr->address,
 	                                                nm_connection_get_uuid (connection),
+	                                                nm_device_get_route_table (self, AF_INET6, TRUE),
 	                                                nm_device_get_route_metric (self, AF_INET6),
 	                                                nm_setting_ip_config_get_dhcp_send_hostname (s_ip6),
 	                                                nm_setting_ip_config_get_dhcp_hostname (s_ip6),
@@ -10873,6 +10878,7 @@ find_ip4_lease_config (NMDevice *self,
 	                                               ip_iface,
 	                                               ip_ifindex,
 	                                               nm_connection_get_uuid (connection),
+	                                               nm_device_get_route_table (self, AF_INET, TRUE),
 	                                               nm_device_get_route_metric (self, AF_INET));
 	for (liter = leases; liter && !found; liter = liter->next) {
 		NMIP4Config *lease_config = liter->data;

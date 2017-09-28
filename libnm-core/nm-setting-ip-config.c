@@ -3057,9 +3057,9 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 	 *
 	 * Enable policy routing (source routing) and set the routing table used when adding routes.
 	 *
-	 * This currently only affects static routes (ipv4.routes and ipv6.routes). However,
-	 * each static route can individually overwrite the table setting by explicitly
-	 * specifying a non-zero routing table.
+	 * This affects all routes, including device-routes, IPv4LL, DHCP, SLAAC, default-routes
+	 * and static routes. But note that static routes can individually overwrite the setting
+	 * by explicitly specifying a non-zero routing table.
 	 *
 	 * If the table setting is left at zero, it is eligible to be overwritten via global
 	 * configuration. If the property is zero even after applying the global configuration

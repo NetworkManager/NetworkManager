@@ -22,6 +22,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string.h>
+#include <linux/rtnetlink.h>
 
 #include "nm-utils/nm-dedup-multi.h"
 #include "nm-utils.h"
@@ -40,7 +41,7 @@ _ip4_config_from_options (int ifindex,
 	nm_auto_unref_dedup_multi_index NMDedupMultiIndex *multi_idx = nm_dedup_multi_index_new ();
 	NMIP4Config *config;
 
-	config = nm_dhcp_utils_ip4_config_from_options (multi_idx, ifindex, iface, options, route_metric);
+	config = nm_dhcp_utils_ip4_config_from_options (multi_idx, ifindex, iface, options, RT_TABLE_MAIN, route_metric);
 	g_assert (config);
 	return config;
 }

@@ -988,6 +988,9 @@ context_property_changed (GDBusProxy *proxy,
 				.metric = 1,
 			};
 
+			/* FIXME: does not handle ipv4.route-table setting and always adds the
+			 * route to RT_TABLE_MAIN table. */
+
 			nm_ip4_config_add_route (priv->ip4_config, &mms_route, NULL);
 		} else {
 			_LOGW ("invalid MessageProxy: %s", s);

@@ -164,6 +164,7 @@ nm_dhcp_dhclient_get_lease_ip_configs (NMDedupMultiIndex *multi_idx,
                                        const char *iface,
                                        int ifindex,
                                        const char *uuid,
+                                       guint32 route_table,
                                        guint32 route_metric)
 {
 	char *contents = NULL;
