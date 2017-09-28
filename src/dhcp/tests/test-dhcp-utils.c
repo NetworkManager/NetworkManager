@@ -35,12 +35,12 @@ static NMIP4Config *
 _ip4_config_from_options (int ifindex,
                           const char *iface,
                           GHashTable *options,
-                          guint32 priority)
+                          guint32 route_metric)
 {
 	nm_auto_unref_dedup_multi_index NMDedupMultiIndex *multi_idx = nm_dedup_multi_index_new ();
 	NMIP4Config *config;
 
-	config = nm_dhcp_utils_ip4_config_from_options (multi_idx, ifindex, iface, options, priority);
+	config = nm_dhcp_utils_ip4_config_from_options (multi_idx, ifindex, iface, options, route_metric);
 	g_assert (config);
 	return config;
 }

@@ -28,13 +28,12 @@ NMIP4Config *nm_dhcp_utils_ip4_config_from_options (struct _NMDedupMultiIndex *m
                                                     int ifindex,
                                                     const char *iface,
                                                     GHashTable *options,
-                                                    guint priority);
+                                                    guint32 route_metric);
 
 NMIP6Config *nm_dhcp_utils_ip6_config_from_options (struct _NMDedupMultiIndex *multi_idx,
                                                     int ifindex,
                                                     const char *iface,
                                                     GHashTable *options,
-                                                    guint priority,
                                                     gboolean info_only);
 
 NMPlatformIP6Address nm_dhcp_utils_ip6_prefix_from_options (GHashTable *options);

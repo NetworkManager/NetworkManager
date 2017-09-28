@@ -38,7 +38,7 @@
 static gboolean
 ip4_process_dhcpcd_rfc3442_routes (const char *iface,
                                    const char *str,
-                                   guint32 priority,
+                                   guint32 route_metric,
                                    NMIP4Config *ip4_config,
                                    guint32 *gwaddr)
 {
@@ -90,7 +90,7 @@ ip4_process_dhcpcd_rfc3442_routes (const char *iface,
 			route.plen = rt_cidr;
 			route.gateway = rt_route;
 			route.rt_source = NM_IP_CONFIG_SOURCE_DHCP;
-			route.metric = priority;
+			route.metric = route_metric;
 			nm_ip4_config_add_route (ip4_config, &route, NULL);
 		}
 	}
@@ -166,7 +166,7 @@ error:
 static gboolean
 ip4_process_dhclient_rfc3442_routes (const char *iface,
                                      const char *str,
-                                     guint32 priority,
+                                     guint32 route_metric,
                                      NMIP4Config *ip4_config,
                                      guint32 *gwaddr)
 {
@@ -198,7 +198,7 @@ ip4_process_dhclient_rfc3442_routes (const char *iface,
 
 			/* normal route */
 			route.rt_source = NM_IP_CONFIG_SOURCE_DHCP;
-			route.metric = priority;
+			route.metric = route_metric;
 			nm_ip4_config_add_route (ip4_config, &route, NULL);
 
 			_LOG2I (LOGD_DHCP4, iface, "  classless static route %s/%d gw %s",
@@ -215,7 +215,7 @@ out:
 static gboolean
 ip4_process_classless_routes (const char *iface,
                               GHashTable *options,
-                              guint32 priority,
+                              guint32 route_metric,
                               NMIP4Config *ip4_config,
                               guint32 *gwaddr)
 {
@@ -271,16 +271,16 @@ ip4_process_classless_routes (const char *iface,
 
 	if (strchr (str, '/')) {
 		/* dhcpcd format */
-		return ip4_process_dhcpcd_rfc3442_routes (iface, str, priority, ip4_config, gwaddr);
+		return ip4_process_dhcpcd_rfc3442_routes (iface, str, route_metric, ip4_config, gwaddr);
 	}
 
-	return ip4_process_dhclient_rfc3442_routes (iface, str, priority, ip4_config, gwaddr);
+	return ip4_process_dhclient_rfc3442_routes (iface, str, route_metric, ip4_config, gwaddr);
 }
 
 static void
 process_classful_routes (const char *iface,
                          GHashTable *options,
-                         guint32 priority,
+                         guint32 route_metric,
                          NMIP4Config *ip4_config)
 {
 	const char *str;
@@ -324,7 +324,7 @@ process_classful_routes (const char *iface,
 		}
 		route.gateway = rt_route;
 		route.rt_source = NM_IP_CONFIG_SOURCE_DHCP;
-		route.metric = priority;
+		route.metric = route_metric;
 
 		route.network = nm_utils_ip4_address_clear_host_address (route.network, route.plen);
 
@@ -390,7 +390,7 @@ nm_dhcp_utils_ip4_config_from_options (NMDedupMultiIndex *multi_idx,
                                        int ifindex,
                                        const char *iface,
                                        GHashTable *options,
-                                       guint32 priority)
+                                       guint32 route_metric)
 {
 	NMIP4Config *ip4_config = NULL;
 	guint32 tmp_addr;
@@ -426,8 +426,8 @@ nm_dhcp_utils_ip4_config_from_options (NMDedupMultiIndex *multi_idx,
 	/* Routes: if the server returns classless static routes, we MUST ignore
 	 * the 'static_routes' option.
 	 */
-	if (!ip4_process_classless_routes (iface, options, priority, ip4_config, &gwaddr))
-		process_classful_routes (iface, options, priority, ip4_config);
+	if (!ip4_process_classless_routes (iface, options, route_metric, ip4_config, &gwaddr))
+		process_classful_routes (iface, options, route_metric, ip4_config);
 
 	if (gwaddr) {
 		_LOG2I (LOGD_DHCP4, iface, "  gateway %s", nm_utils_inet4_ntop (gwaddr, NULL));
@@ -624,7 +624,6 @@ nm_dhcp_utils_ip6_config_from_options (NMDedupMultiIndex *multi_idx,
                                        int ifindex,
                                        const char *iface,
                                        GHashTable *options,
-                                       guint32 priority,
                                        gboolean info_only)
 {
 	NMIP6Config *ip6_config = NULL;

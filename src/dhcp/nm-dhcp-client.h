@@ -39,7 +39,7 @@
 #define NM_DHCP_CLIENT_IFINDEX   "ifindex"
 #define NM_DHCP_CLIENT_HWADDR    "hwaddr"
 #define NM_DHCP_CLIENT_UUID      "uuid"
-#define NM_DHCP_CLIENT_PRIORITY  "priority"
+#define NM_DHCP_CLIENT_ROUTE_METRIC "route-metric"
 #define NM_DHCP_CLIENT_TIMEOUT   "timeout"
 #define NM_DHCP_CLIENT_MULTI_IDX "multi-idx"
 
@@ -122,7 +122,7 @@ const GByteArray *nm_dhcp_client_get_duid (NMDhcpClient *self);
 
 const GByteArray *nm_dhcp_client_get_hw_addr (NMDhcpClient *self);
 
-guint32 nm_dhcp_client_get_priority (NMDhcpClient *self);
+guint32 nm_dhcp_client_get_route_metric (NMDhcpClient *self);
 
 guint32 nm_dhcp_client_get_timeout (NMDhcpClient *self);
 
@@ -185,7 +185,7 @@ typedef struct {
 	                                 const char *iface,
 	                                 int ifindex,
 	                                 const char *uuid,
-	                                 guint32 default_route_metric);
+	                                 guint32 route_metric);
 } NMDhcpClientFactory;
 
 extern const NMDhcpClientFactory _nm_dhcp_client_factory_dhclient;
