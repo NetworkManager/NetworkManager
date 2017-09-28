@@ -907,6 +907,9 @@ context_property_changed (GDBusProxy *proxy,
 	 * 'Interface'.
 	 *
 	 * This needs discussion with upstream.
+	 *
+	 * FIXME: it is no longer allowed to omit the ifindex for NMIP4Config instances.
+	 * This is broken.
 	 */
 	priv->ip4_config = nm_ip4_config_new (nm_platform_get_multi_idx (NM_PLATFORM_GET),
 	                                      0);
