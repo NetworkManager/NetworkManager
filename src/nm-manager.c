@@ -6389,8 +6389,8 @@ _deinit_device_factory (NMDeviceFactory *factory, gpointer user_data)
 static void
 dispose (GObject *object)
 {
-	NMManager *manager = NM_MANAGER (object);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	NMManager *self = NM_MANAGER (object);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
 	g_slist_free_full (priv->auth_chains, (GDestroyNotify) nm_auth_chain_unref);
 	priv->auth_chains = NULL;
@@ -6405,7 +6405,7 @@ dispose (GObject *object)
 	if (priv->auth_mgr) {
 		g_signal_handlers_disconnect_by_func (priv->auth_mgr,
 		                                      G_CALLBACK (auth_mgr_changed),
-		                                      manager);
+		                                      self);
 		g_clear_object (&priv->auth_mgr);
 	}
 
@@ -6414,32 +6414,32 @@ dispose (GObject *object)
 	nm_clear_g_source (&priv->ac_cleanup_id);
 
 	while (priv->active_connections)
-		active_connection_remove (manager, NM_ACTIVE_CONNECTION (priv->active_connections->data));
+		active_connection_remove (self, NM_ACTIVE_CONNECTION (priv->active_connections->data));
 	g_clear_pointer (&priv->active_connections, g_slist_free);
 	g_clear_object (&priv->primary_connection);
 	g_clear_object (&priv->activating_connection);
 
 	if (priv->config) {
-		g_signal_handlers_disconnect_by_func (priv->config, _config_changed_cb, manager);
+		g_signal_handlers_disconnect_by_func (priv->config, _config_changed_cb, self);
 		g_clear_object (&priv->config);
 	}
 
 	if (priv->policy) {
-		g_signal_handlers_disconnect_by_func (priv->policy, policy_default_device_changed, manager);
-		g_signal_handlers_disconnect_by_func (priv->policy, policy_activating_device_changed, manager);
+		g_signal_handlers_disconnect_by_func (priv->policy, policy_default_device_changed, self);
+		g_signal_handlers_disconnect_by_func (priv->policy, policy_activating_device_changed, self);
 		g_clear_object (&priv->policy);
 	}
 
 	if (priv->settings) {
-		g_signal_handlers_disconnect_by_func (priv->settings, settings_startup_complete_changed, manager);
-		g_signal_handlers_disconnect_by_func (priv->settings, system_unmanaged_devices_changed_cb, manager);
-		g_signal_handlers_disconnect_by_func (priv->settings, connection_added_cb, manager);
-		g_signal_handlers_disconnect_by_func (priv->settings, connection_updated_cb, manager);
+		g_signal_handlers_disconnect_by_func (priv->settings, settings_startup_complete_changed, self);
+		g_signal_handlers_disconnect_by_func (priv->settings, system_unmanaged_devices_changed_cb, self);
+		g_signal_handlers_disconnect_by_func (priv->settings, connection_added_cb, self);
+		g_signal_handlers_disconnect_by_func (priv->settings, connection_updated_cb, self);
 		g_clear_object (&priv->settings);
 	}
 
 	if (priv->hostname_manager) {
-		g_signal_handlers_disconnect_by_func (priv->hostname_manager, hostname_changed_cb, manager);
+		g_signal_handlers_disconnect_by_func (priv->hostname_manager, hostname_changed_cb, self);
 		g_clear_object (&priv->hostname_manager);
 	}
 
@@ -6447,21 +6447,21 @@ dispose (GObject *object)
 
 	/* Unregister property filter */
 	if (priv->dbus_mgr) {
-		g_signal_handlers_disconnect_by_func (priv->dbus_mgr, dbus_connection_changed_cb, manager);
+		g_signal_handlers_disconnect_by_func (priv->dbus_mgr, dbus_connection_changed_cb, self);
 		g_clear_object (&priv->dbus_mgr);
 	}
-	_set_prop_filter (manager, NULL);
+	_set_prop_filter (self, NULL);
 
-	sleep_devices_clear (manager);
+	sleep_devices_clear (self);
 	g_clear_pointer (&priv->sleep_devices, g_hash_table_unref);
 
 	if (priv->sleep_monitor) {
-		g_signal_handlers_disconnect_by_func (priv->sleep_monitor, sleeping_cb, manager);
+		g_signal_handlers_disconnect_by_func (priv->sleep_monitor, sleeping_cb, self);
 		g_clear_object (&priv->sleep_monitor);
 	}
 
 	if (priv->fw_monitor) {
-		g_signal_handlers_disconnect_by_func (priv->fw_monitor, firmware_dir_changed, manager);
+		g_signal_handlers_disconnect_by_func (priv->fw_monitor, firmware_dir_changed, self);
 
 		nm_clear_g_source (&priv->fw_changed_id);
 
@@ -6470,11 +6470,11 @@ dispose (GObject *object)
 	}
 
 	if (priv->rfkill_mgr) {
-		g_signal_handlers_disconnect_by_func (priv->rfkill_mgr, rfkill_manager_rfkill_changed_cb, manager);
+		g_signal_handlers_disconnect_by_func (priv->rfkill_mgr, rfkill_manager_rfkill_changed_cb, self);
 		g_clear_object (&priv->rfkill_mgr);
 	}
 
-	nm_device_factory_manager_for_each_factory (_deinit_device_factory, manager);
+	nm_device_factory_manager_for_each_factory (_deinit_device_factory, self);
 
 	nm_clear_g_source (&priv->timestamp_update_id);
 
