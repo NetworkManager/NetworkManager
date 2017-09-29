@@ -12213,7 +12213,8 @@ nm_device_has_pending_action (NMDevice *self)
 	if (priv->pending_actions)
 		return TRUE;
 
-	if (nm_device_get_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT)) {
+	if (   nm_device_is_real (self)
+	    && nm_device_get_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT)) {
 		/* as long as the platform link is not yet initialized, we have a pending
 		 * action. */
 		return TRUE;
