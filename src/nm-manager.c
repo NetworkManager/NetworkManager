@@ -6392,6 +6392,10 @@ dispose (GObject *object)
 	NMManager *self = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
+	g_signal_handlers_disconnect_by_func (priv->platform,
+	                                      G_CALLBACK (platform_link_cb),
+	                                      self);
+
 	g_slist_free_full (priv->auth_chains, (GDestroyNotify) nm_auth_chain_unref);
 	priv->auth_chains = NULL;
 
