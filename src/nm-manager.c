@@ -2452,17 +2452,16 @@ _platform_link_cb_idle (PlatformLinkCbData *data)
 	int ifindex = data->ifindex;
 	NMManager *self = data->self;
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	const NMPlatformLink *l;
+	const NMPlatformLink *plink;
 
 	c_list_unlink (&data->lst);
 	g_slice_free (PlatformLinkCbData, data);
 
-	l = nm_platform_link_get (priv->platform, ifindex);
-	if (l) {
-		NMPlatformLink pllink;
+	plink = nm_platform_link_get (priv->platform, ifindex);
+	if (plink) {
+		nm_auto_nmpobj const NMPObject *plink_keep_alive = nmp_object_ref (NMP_OBJECT_UP_CAST (plink));
 
-		pllink = *l; /* make a copy of the link instance */
-		platform_link_added (self, ifindex, &pllink, FALSE, NULL);
+		platform_link_added (self, ifindex, plink, FALSE, NULL);
 	} else {
 		NMDevice *device;
 		GError *error = NULL;

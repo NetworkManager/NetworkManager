@@ -2983,7 +2983,9 @@ nm_device_realize_start (NMDevice *self,
                          gboolean *out_compatible,
                          GError **error)
 {
-	NMPlatformLink plink_copy;
+	nm_auto_nmpobj const NMPObject *plink_keep_alive = NULL;
+
+	nm_assert (!plink || NMP_OBJECT_GET_TYPE (NMP_OBJECT_UP_CAST (plink)) == NMP_OBJECT_TYPE_LINK);
 
 	NM_SET_OUT (out_compatible, TRUE);
 
@@ -2997,13 +2999,12 @@ nm_device_realize_start (NMDevice *self,
 
 		if (!link_type_compatible (self, plink->type, out_compatible, error))
 			return FALSE;
+
+		plink_keep_alive = nmp_object_ref (NMP_OBJECT_UP_CAST (plink));
 	}
 
-	if (plink) {
-		plink_copy = *plink;
-		plink = &plink_copy;
-	}
-	realize_start_setup (self, plink,
+	realize_start_setup (self,
+	                     plink,
 	                     assume_state_guess_assume,
 	                     assume_state_connection_uuid,
 	                     set_nm_owned,
@@ -3029,8 +3030,8 @@ nm_device_create_and_realize (NMDevice *self,
                               NMDevice *parent,
                               GError **error)
 {
+	nm_auto_nmpobj const NMPObject *plink_keep_alive = NULL;
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMPlatformLink plink_copy;
 	const NMPlatformLink *plink = NULL;
 
 	/* Must be set before device is realized */
@@ -3043,12 +3044,13 @@ nm_device_create_and_realize (NMDevice *self,
 		if (!NM_DEVICE_GET_CLASS (self)->create_and_realize (self, connection, parent, &plink, error))
 			return FALSE;
 		if (plink) {
-			plink_copy = *plink;
-			plink = &plink_copy;
+			nm_assert (NMP_OBJECT_GET_TYPE (NMP_OBJECT_UP_CAST (plink)) == NMP_OBJECT_TYPE_LINK);
+			plink_keep_alive = nmp_object_ref (NMP_OBJECT_UP_CAST (plink));
 		}
 	}
 
-	realize_start_setup (self, plink,
+	realize_start_setup (self,
+	                     plink,
 	                     FALSE, /* assume_state_guess_assume */
 	                     NULL,  /* assume_state_connection_uuid */
 	                     FALSE, NM_UNMAN_FLAG_OP_FORGET);
@@ -3174,6 +3176,10 @@ realize_start_setup (NMDevice *self,
 	NMConfig *config;
 	guint real_rate;
 	guint32 mtu;
+
+	/* plink is a NMPlatformLink type, however, we require it to come from the platform
+	 * cache (where else would it come from?). */
+	nm_assert (!plink || NMP_OBJECT_GET_TYPE (NMP_OBJECT_UP_CAST (plink)) == NMP_OBJECT_TYPE_LINK);
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
