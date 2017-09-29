@@ -110,6 +110,8 @@ typedef struct {
 } RadioState;
 
 typedef struct {
+	NMPlatform *platform;
+
 	GArray *capabilities;
 
 	GSList *active_connections;
@@ -1780,14 +1782,14 @@ get_existing_connection (NMManager *self,
 	nm_device_capture_initial_config (device);
 
 	if (ifindex) {
-		int master_ifindex = nm_platform_link_get_master (NM_PLATFORM_GET, ifindex);
+		int master_ifindex = nm_platform_link_get_master (priv->platform, ifindex);
 
 		if (master_ifindex) {
 			master = nm_manager_get_device_by_ifindex (self, master_ifindex);
 			if (!master) {
 				_LOG2D (LOGD_DEVICE, device, "assume: don't assume because "
 				        "cannot generate connection for slave before its master (%s/%d)",
-				        nm_platform_link_get_name (NM_PLATFORM_GET, master_ifindex), master_ifindex);
+				        nm_platform_link_get_name (priv->platform, master_ifindex), master_ifindex);
 				return NULL;
 			}
 			if (!nm_device_get_act_request (master)) {
@@ -2444,14 +2446,17 @@ static gboolean
 _platform_link_cb_idle (PlatformLinkCbData *data)
 {
 	NMManager *self = data->self;
+	NMManagerPrivate *priv;
 	const NMPlatformLink *l;
 
 	if (!self)
 		goto out;
 
+	priv = NM_MANAGER_GET_PRIVATE (self);
+
 	g_object_remove_weak_pointer (G_OBJECT (self), (gpointer *) &data->self);
 
-	l = nm_platform_link_get (NM_PLATFORM_GET, data->ifindex);
+	l = nm_platform_link_get (priv->platform, data->ifindex);
 	if (l) {
 		NMPlatformLink pllink;
 
@@ -2511,6 +2516,7 @@ platform_link_cb (NMPlatform *platform,
 static void
 platform_query_devices (NMManager *self)
 {
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	gs_unref_ptrarray GPtrArray *links = NULL;
 	int i;
 	gboolean guess_assume;
@@ -2521,7 +2527,7 @@ platform_query_devices (NMManager *self)
 	                                         NM_CONFIG_KEYFILE_GROUP_MAIN,
 	                                         NM_CONFIG_KEYFILE_KEY_MAIN_SLAVES_ORDER,
 	                                         NM_CONFIG_GET_VALUE_STRIP);
-	links = nm_platform_link_get_all (NM_PLATFORM_GET, !nm_streq0 (order, "index"));
+	links = nm_platform_link_get_all (priv->platform, !nm_streq0 (order, "index"));
 	if (!links)
 		return;
 	for (i = 0; i < links->len; i++) {
@@ -4169,7 +4175,7 @@ impl_manager_add_and_activate_connection (NMManager *self,
 			goto error;
 		}
 
-		nm_utils_complete_generic (NM_PLATFORM_GET,
+		nm_utils_complete_generic (priv->platform,
 		                           connection,
 		                           NM_SETTING_VPN_SETTING_NAME,
 		                           all_connections,
@@ -4386,9 +4392,9 @@ done:
 }
 
 static gboolean
-device_is_wake_on_lan (NMDevice *device)
+device_is_wake_on_lan (NMPlatform *platform, NMDevice *device)
 {
-	return nm_platform_link_get_wake_on_lan (NM_PLATFORM_GET, nm_device_get_ip_ifindex (device));
+	return nm_platform_link_get_wake_on_lan (platform, nm_device_get_ip_ifindex (device));
 }
 
 static gboolean
@@ -4506,7 +4512,8 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 			if (nm_device_is_software (device))
 				continue;
 			/* Wake-on-LAN devices will be taken down post-suspend rather than pre- */
-			if (suspending && device_is_wake_on_lan (device)) {
+			if (   suspending
+			    && device_is_wake_on_lan (priv->platform, device)) {
 				_LOGD (LOGD_SUSPEND, "sleep: device %s has wake-on-lan, skipping",
 				       nm_device_get_ip_iface (device));
 				continue;
@@ -4537,7 +4544,7 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 				/* Belatedly take down Wake-on-LAN devices; ideally we wouldn't have to do this
 				 * but for now it's the only way to make sure we re-check their connectivity.
 				 */
-				if (device_is_wake_on_lan (device))
+				if (device_is_wake_on_lan (priv->platform, device))
 					nm_device_set_unmanaged_by_flags (device, NM_UNMANAGED_SLEEPING, TRUE, NM_DEVICE_STATE_REASON_SLEEPING);
 
 				/* Check if the device is unmanaged but the state transition is still pending.
@@ -5111,7 +5118,7 @@ nm_manager_write_device_state (NMManager *self)
 			continue;
 		}
 
-		if (!nm_platform_link_get (NM_PLATFORM_GET, ifindex))
+		if (!nm_platform_link_get (priv->platform, ifindex))
 			continue;
 
 		managed = nm_device_get_managed (device, FALSE);
@@ -5196,9 +5203,9 @@ nm_manager_start (NMManager *self, GError **error)
 	nm_device_factory_manager_load_factories (_register_device_factory, self);
 	nm_device_factory_manager_for_each_factory (start_factory, NULL);
 
-	nm_platform_process_events (NM_PLATFORM_GET);
+	nm_platform_process_events (priv->platform);
 
-	g_signal_connect (NM_PLATFORM_GET,
+	g_signal_connect (priv->platform,
 	                  NM_PLATFORM_SIGNAL_LINK_CHANGED,
 	                  G_CALLBACK (platform_link_cb),
 	                  self);
@@ -6149,6 +6156,8 @@ nm_manager_init (NMManager *self)
 	guint i;
 	GFile *file;
 
+	priv->platform = g_object_ref (NM_PLATFORM_GET);
+
 	priv->capabilities = g_array_new (FALSE, FALSE, sizeof (guint32));
 
 	/* Initialize rfkill structures and states */
@@ -6480,6 +6489,8 @@ finalize (GObject *object)
 	g_array_free (priv->capabilities, TRUE);
 
 	G_OBJECT_CLASS (nm_manager_parent_class)->finalize (object);
+
+	g_object_unref (priv->platform);
 }
 
 static void
