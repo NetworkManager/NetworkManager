@@ -137,6 +137,8 @@ typedef struct {
 	} prop_filter;
 	NMRfkillManager *rfkill_mgr;
 
+	CList link_cb_lst;
+
 	NMCheckpointManager *checkpoint_mgr;
 
 	NMSettings *settings;
@@ -2438,35 +2440,34 @@ platform_link_added (NMManager *self,
 }
 
 typedef struct {
+	CList lst;
 	NMManager *self;
 	int ifindex;
+	guint idle_id;
 } PlatformLinkCbData;
 
 static gboolean
 _platform_link_cb_idle (PlatformLinkCbData *data)
 {
+	int ifindex = data->ifindex;
 	NMManager *self = data->self;
-	NMManagerPrivate *priv;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	const NMPlatformLink *l;
 
-	if (!self)
-		goto out;
+	c_list_unlink (&data->lst);
+	g_slice_free (PlatformLinkCbData, data);
 
-	priv = NM_MANAGER_GET_PRIVATE (self);
-
-	g_object_remove_weak_pointer (G_OBJECT (self), (gpointer *) &data->self);
-
-	l = nm_platform_link_get (priv->platform, data->ifindex);
+	l = nm_platform_link_get (priv->platform, ifindex);
 	if (l) {
 		NMPlatformLink pllink;
 
 		pllink = *l; /* make a copy of the link instance */
-		platform_link_added (self, data->ifindex, &pllink, FALSE, NULL);
+		platform_link_added (self, ifindex, &pllink, FALSE, NULL);
 	} else {
 		NMDevice *device;
 		GError *error = NULL;
 
-		device = nm_manager_get_device_by_ifindex (self, data->ifindex);
+		device = nm_manager_get_device_by_ifindex (self, ifindex);
 		if (device) {
 			if (nm_device_is_software (device)) {
 				nm_device_sys_iface_state_set (device, NM_DEVICE_SYS_IFACE_STATE_REMOVED);
@@ -2483,8 +2484,6 @@ _platform_link_cb_idle (PlatformLinkCbData *data)
 		}
 	}
 
-out:
-	g_slice_free (PlatformLinkCbData, data);
 	return G_SOURCE_REMOVE;
 }
 
@@ -2496,17 +2495,22 @@ platform_link_cb (NMPlatform *platform,
                   int change_type_i,
                   gpointer user_data)
 {
+	NMManager *self;
+	NMManagerPrivate *priv;
 	const NMPlatformSignalChangeType change_type = change_type_i;
 	PlatformLinkCbData *data;
 
 	switch (change_type) {
 	case NM_PLATFORM_SIGNAL_ADDED:
 	case NM_PLATFORM_SIGNAL_REMOVED:
+		self = NM_MANAGER (user_data);
+		priv = NM_MANAGER_GET_PRIVATE (self);
+
 		data = g_slice_new (PlatformLinkCbData);
-		data->self = NM_MANAGER (user_data);
+		data->self = self;
 		data->ifindex = ifindex;
-		g_object_add_weak_pointer (G_OBJECT (data->self), (gpointer *) &data->self);
-		g_idle_add ((GSourceFunc) _platform_link_cb_idle, data);
+		c_list_link_tail (&priv->link_cb_lst, &data->lst);
+		data->idle_id = g_idle_add ((GSourceFunc) _platform_link_cb_idle, data);
 		break;
 	default:
 		break;
@@ -6156,6 +6160,8 @@ nm_manager_init (NMManager *self)
 	guint i;
 	GFile *file;
 
+	c_list_init (&priv->link_cb_lst);
+
 	priv->platform = g_object_ref (NM_PLATFORM_GET);
 
 	priv->capabilities = g_array_new (FALSE, FALSE, sizeof (guint32));
@@ -6391,10 +6397,18 @@ dispose (GObject *object)
 {
 	NMManager *self = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	CList *iter, *iter_safe;
 
 	g_signal_handlers_disconnect_by_func (priv->platform,
 	                                      G_CALLBACK (platform_link_cb),
 	                                      self);
+	c_list_for_each_safe (iter, iter_safe, &priv->link_cb_lst) {
+		PlatformLinkCbData *data = c_list_entry (iter, PlatformLinkCbData, lst);
+
+		g_source_remove (data->idle_id);
+		c_list_unlink (iter);
+		g_slice_free (PlatformLinkCbData, data);
+	}
 
 	g_slist_free_full (priv->auth_chains, (GDestroyNotify) nm_auth_chain_unref);
 	priv->auth_chains = NULL;
