@@ -1193,7 +1193,7 @@ pending_ac_state_changed (NMActiveConnection *ac, guint state, guint reason, NMP
 		 * loop.
 		 */
 		con = nm_active_connection_get_settings_connection (ac);
-		nm_settings_connection_set_autoconnect_blocked_reason (con, NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_BLOCKED);
+		nm_settings_connection_set_autoconnect_blocked_reason (con, NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED);
 		schedule_activate_check (self, nm_active_connection_get_device (ac));
 
 		/* Cleanup */
@@ -1267,7 +1267,7 @@ auto_activate_device (NMPolicy *self,
 			       error->message);
 			g_error_free (error);
 			nm_settings_connection_set_autoconnect_blocked_reason (best_connection,
-			                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_BLOCKED);
+			                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED);
 			schedule_activate_check (self, device);
 			return;
 		}
@@ -1425,7 +1425,7 @@ reset_autoconnect_all (NMPolicy *self, NMDevice *device)
 
 		if (!device || nm_device_check_connection_compatible (device, NM_CONNECTION (connection))) {
 			nm_settings_connection_reset_autoconnect_retries (connection);
-			nm_settings_connection_set_autoconnect_blocked_reason (connection, NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_UNBLOCKED);
+			nm_settings_connection_set_autoconnect_blocked_reason (connection, NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE);
 		}
 	}
 }
@@ -1445,7 +1445,7 @@ reset_autoconnect_for_failed_secrets (NMPolicy *self)
 
 		if (nm_settings_connection_get_autoconnect_blocked_reason (connection) == NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS) {
 			nm_settings_connection_reset_autoconnect_retries (connection);
-			nm_settings_connection_set_autoconnect_blocked_reason (connection, NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_UNBLOCKED);
+			nm_settings_connection_set_autoconnect_blocked_reason (connection, NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE);
 		}
 	}
 }
@@ -1473,7 +1473,7 @@ block_autoconnect_for_device (NMPolicy *self, NMDevice *device)
 
 		if (nm_device_check_connection_compatible (device, NM_CONNECTION (connection))) {
 			nm_settings_connection_set_autoconnect_blocked_reason (connection,
-			                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_BLOCKED);
+			                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST);
 		}
 	}
 }
@@ -1586,6 +1586,7 @@ activate_slave_connections (NMPolicy *self, NMDevice *device)
 	guint i;
 	NMActRequest *req;
 	gboolean internal_activation = FALSE;
+	gs_free NMSettingsConnection **connections = NULL;
 
 	master_device = nm_device_get_iface (device);
 	g_assert (master_device);
@@ -1609,28 +1610,34 @@ activate_slave_connections (NMPolicy *self, NMDevice *device)
 		internal_activation = subject && nm_auth_subject_is_internal (subject);
 	}
 
-	if (!internal_activation) {
-		gs_free NMSettingsConnection **connections = NULL;
+	connections = nm_settings_get_connections_sorted (priv->settings, NULL);
+	for (i = 0; connections[i]; i++) {
+		NMConnection *slave;
+		NMSettingConnection *s_slave_con;
+		const char *slave_master;
 
-		connections = nm_settings_get_connections_sorted (priv->settings, NULL);
+		slave = NM_CONNECTION (connections[i]);
 
-		for (i = 0; connections[i]; i++) {
-			NMConnection *slave;
-			NMSettingConnection *s_slave_con;
-			const char *slave_master;
+		s_slave_con = nm_connection_get_setting_connection (slave);
+		g_assert (s_slave_con);
+		slave_master = nm_setting_connection_get_master (s_slave_con);
+		if (!slave_master)
+			continue;
 
-			slave = NM_CONNECTION (connections[i]);
+		if (   nm_streq0 (slave_master, master_device)
+		    || nm_streq0 (slave_master, master_uuid_applied)
+		    || nm_streq0 (slave_master, master_uuid_settings)) {
+			NMSettingsConnection *settings = NM_SETTINGS_CONNECTION (slave);
+			NMSettingsAutoconnectBlockedReason reason;
 
-			s_slave_con = nm_connection_get_setting_connection (slave);
-			g_assert (s_slave_con);
-			slave_master = nm_setting_connection_get_master (s_slave_con);
-			if (!slave_master)
-				continue;
+			if (!internal_activation)
+				nm_settings_connection_reset_autoconnect_retries (settings);
 
-			if (   !g_strcmp0 (slave_master, master_device)
-			    || !g_strcmp0 (slave_master, master_uuid_applied)
-			    || !g_strcmp0 (slave_master, master_uuid_settings))
-				nm_settings_connection_reset_autoconnect_retries (NM_SETTINGS_CONNECTION (slave));
+			reason = nm_settings_connection_get_autoconnect_blocked_reason (settings);
+			if (reason == NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED) {
+				reason = NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE;
+				nm_settings_connection_set_autoconnect_blocked_reason (settings, reason);
+			}
 		}
 	}
 
@@ -1806,7 +1813,7 @@ device_state_changed (NMDevice *device,
 					_LOGD (LOGD_DEVICE, "blocking autoconnect of connection '%s' by user request",
 					       nm_settings_connection_get_id (connection));
 					nm_settings_connection_set_autoconnect_blocked_reason (connection,
-					                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_BLOCKED);
+					                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST);
 				}
 			}
 		}
@@ -1844,7 +1851,7 @@ device_state_changed (NMDevice *device,
 	case NM_DEVICE_STATE_IP_CONFIG:
 		/* We must have secrets if we got here. */
 		if (connection)
-			nm_settings_connection_set_autoconnect_blocked_reason (connection, NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_UNBLOCKED);
+			nm_settings_connection_set_autoconnect_blocked_reason (connection, NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE);
 		break;
 	case NM_DEVICE_STATE_SECONDARIES:
 		if (connection)
