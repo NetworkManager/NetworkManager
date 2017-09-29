@@ -2620,7 +2620,7 @@ nm_settings_connection_set_autoconnect_blocked_reason (NMSettingsConnection *sel
                                                        NMSettingsAutoconnectBlockedReason reason)
 {
 	g_return_if_fail (NM_IN_SET (reason,
-	                             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_UNBLOCKED,
+	                             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE,
 	                             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST,
 	                             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
 	                             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS));
@@ -2636,7 +2636,7 @@ nm_settings_connection_can_autoconnect (NMSettingsConnection *self)
 
 	if (   !priv->visible
 	    || priv->autoconnect_retries == 0
-	    || priv->autoconnect_blocked_reason != NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_UNBLOCKED)
+	    || priv->autoconnect_blocked_reason != NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE)
 		return FALSE;
 
 	s_con = nm_connection_get_setting_connection (NM_CONNECTION (self));
