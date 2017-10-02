@@ -6615,28 +6615,30 @@ dhcp6_restart_cb (gpointer user_data)
 }
 
 static void
-dhcp_schedule_restart (NMDevice *self, int family, const char *reason)
+dhcp_schedule_restart (NMDevice *self,
+                       int addr_family,
+                       const char *reason)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	gboolean inet4;
 	guint tries_left;
-	gs_free char *tries_str = NULL;
+	char tries_str[255];
 
-	g_return_if_fail (family == AF_INET || family == AF_INET6);
-	inet4 = family == AF_INET;
+	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 
-	tries_left = inet4 ? priv->dhcp4.num_tries_left : priv->dhcp6.num_tries_left;
-	if (tries_left != DHCP_NUM_TRIES_MAX)
-		tries_str = g_strdup_printf (", %u tries left", tries_left + 1);
+	tries_left =   (addr_family == AF_INET)
+	             ? priv->dhcp4.num_tries_left
+	             : priv->dhcp6.num_tries_left;
 
-	_LOGI (inet4 ? LOGD_DHCP4 : LOGD_DHCP6,
+	_LOGI ((addr_family == AF_INET) ? LOGD_DHCP4 : LOGD_DHCP6,
 	       "scheduling DHCPv%c restart in %u seconds%s%s%s%s",
-	       inet4 ? '4' : '6',
+	       (addr_family == AF_INET) ? '4' : '6',
 	       DHCP_RESTART_TIMEOUT,
-	       tries_str ? tries_str : "",
+	       (tries_left != DHCP_NUM_TRIES_MAX)
+	         ? nm_sprintf_buf (tries_str, ", %u tries left", tries_left + 1)
+	         : "",
 	       NM_PRINT_FMT_QUOTED (reason, " (reason: ", reason, ")", ""));
 
-	if (inet4) {
+	if (addr_family == AF_INET) {
 		priv->dhcp4.restart_id = g_timeout_add_seconds (DHCP_RESTART_TIMEOUT,
 		                                                dhcp4_restart_cb, self);
 	} else {
