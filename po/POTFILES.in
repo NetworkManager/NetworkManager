@@ -77,6 +77,7 @@ libnm-core/nm-setting-macvlan.c
 libnm-core/nm-setting-olpc-mesh.c
 libnm-core/nm-setting-ovs-interface.c
 libnm-core/nm-setting-ovs-patch.c
+libnm-core/nm-setting-ovs-port.c
 libnm-core/nm-setting-ppp.c
 libnm-core/nm-setting-pppoe.c
 libnm-core/nm-setting-proxy.c

@@ -395,6 +395,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-setting-olpc-mesh.h \
 	libnm-core/nm-setting-ovs-interface.h \
 	libnm-core/nm-setting-ovs-patch.h \
+	libnm-core/nm-setting-ovs-port.h \
 	libnm-core/nm-setting-ppp.h \
 	libnm-core/nm-setting-pppoe.h \
 	libnm-core/nm-setting-proxy.h \
@@ -478,6 +479,7 @@ libnm_core_lib_c_real = \
 	libnm-core/nm-setting-olpc-mesh.c \
 	libnm-core/nm-setting-ovs-interface.c \
 	libnm-core/nm-setting-ovs-patch.c \
+	libnm-core/nm-setting-ovs-port.c \
 	libnm-core/nm-setting-ppp.c \
 	libnm-core/nm-setting-pppoe.c \
 	libnm-core/nm-setting-proxy.c \

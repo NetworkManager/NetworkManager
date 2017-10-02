@@ -1196,6 +1196,14 @@ global:
 	nm_setting_ovs_patch_get_peer;
 	nm_setting_ovs_patch_get_type;
 	nm_setting_ovs_patch_new;
+	nm_setting_ovs_port_get_bond_downdelay;
+	nm_setting_ovs_port_get_bond_mode;
+	nm_setting_ovs_port_get_bond_updelay;
+	nm_setting_ovs_port_get_lacp;
+	nm_setting_ovs_port_get_tag;
+	nm_setting_ovs_port_get_type;
+	nm_setting_ovs_port_get_vlan_mode;
+	nm_setting_ovs_port_new;
 	nm_setting_pppoe_get_parent;
 	nm_setting_wireless_security_get_pmf;
 	nm_setting_wireless_security_get_wps_method;

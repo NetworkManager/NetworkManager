@@ -216,6 +216,8 @@ NMSettingOlpcMesh *        nm_connection_get_setting_olpc_mesh         (NMConnec
 NM_AVAILABLE_IN_1_10
 NMSettingOvsInterface *    nm_connection_get_setting_ovs_interface     (NMConnection *connection);
 NMSettingOvsPatch *        nm_connection_get_setting_ovs_patch         (NMConnection *connection);
+NM_AVAILABLE_IN_1_10
+NMSettingOvsPort *         nm_connection_get_setting_ovs_port          (NMConnection *connection);
 NMSettingPpp *             nm_connection_get_setting_ppp               (NMConnection *connection);
 NMSettingPppoe *           nm_connection_get_setting_pppoe             (NMConnection *connection);
 NM_AVAILABLE_IN_1_6

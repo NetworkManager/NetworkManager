@@ -1099,6 +1099,7 @@ static gboolean
 _normalize_ovs_interface_type (NMConnection *self, GHashTable *parameters)
 {
 	NMSettingOvsInterface *s_ovs_interface = nm_connection_get_setting_ovs_interface (self);
+	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
 	const char *interface_type;
 
 	if (strcmp (nm_connection_get_connection_type (self), NM_SETTING_OVS_INTERFACE_SETTING_NAME) == 0) {
@@ -1107,6 +1108,9 @@ _normalize_ovs_interface_type (NMConnection *self, GHashTable *parameters)
 			interface_type = "patch";
 		else
 			interface_type = "internal";
+	} else if (g_strcmp0 (nm_setting_connection_get_slave_type (s_con), NM_SETTING_OVS_PORT_SETTING_NAME) == 0) {
+		/* A regular device enslaved to a port. */
+		interface_type = "";
 	} else {
 		/* Something else. */
 		return FALSE;
@@ -2014,6 +2018,7 @@ nm_connection_is_virtual (NMConnection *connection)
 	    || !strcmp (type, NM_SETTING_MACSEC_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_MACVLAN_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_OVS_INTERFACE_SETTING_NAME)
+	    || !strcmp (type, NM_SETTING_OVS_PORT_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_VXLAN_SETTING_NAME))
 		return TRUE;
 
@@ -2396,6 +2401,22 @@ NMSettingOvsPatch *
 nm_connection_get_setting_ovs_patch (NMConnection *connection)
 {
 	return _connection_get_setting_check (connection, NM_TYPE_SETTING_OVS_PATCH);
+}
+ 
+/**
+ * nm_connection_get_setting_ovs_port:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingOvsPort the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingOvsPort if the connection contains one, otherwise %NULL
+ *
+ * Since: 1.10
+ **/
+NMSettingOvsPort *
+nm_connection_get_setting_ovs_port (NMConnection *connection)
+{
+	return _connection_get_setting_check (connection, NM_TYPE_SETTING_OVS_PORT);
 }
 
 /**
