@@ -208,6 +208,8 @@ introspection_sources = \
 	introspection/org.freedesktop.NetworkManager.Device.OlpcMesh.h \
 	introspection/org.freedesktop.NetworkManager.Device.OvsInterface.c \
 	introspection/org.freedesktop.NetworkManager.Device.OvsInterface.h \
+	introspection/org.freedesktop.NetworkManager.Device.OvsPort.c \
+	introspection/org.freedesktop.NetworkManager.Device.OvsPort.h \
 	introspection/org.freedesktop.NetworkManager.Device.Ppp.c \
 	introspection/org.freedesktop.NetworkManager.Device.Ppp.h \
 	introspection/org.freedesktop.NetworkManager.Device.Statistics.c \
@@ -284,6 +286,7 @@ DBUS_INTERFACE_DOCS = \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Bridge.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.OlpcMesh.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.OvsInterface.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.OvsPort.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Ppp.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.DHCP4Config.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Generic.xml \
@@ -333,6 +336,7 @@ dbusinterfaces_DATA = \
 	introspection/org.freedesktop.NetworkManager.Device.Modem.xml \
 	introspection/org.freedesktop.NetworkManager.Device.OlpcMesh.xml \
 	introspection/org.freedesktop.NetworkManager.Device.OvsInterface.xml \
+	introspection/org.freedesktop.NetworkManager.Device.OvsPort.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Ppp.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Statistics.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Team.xml \
