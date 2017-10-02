@@ -526,7 +526,7 @@ static void nm_device_set_autoconnect_both (NMDevice *self, gboolean autoconnect
 static void nm_device_set_autoconnect_full (NMDevice *self, int autoconnect_intern, int autoconnect_user);
 
 static const char *_activation_func_to_string (ActivationHandleFunc func);
-static void activation_source_handle_cb (NMDevice *self, int family);
+static void activation_source_handle_cb (NMDevice *self, int addr_family);
 
 static void _set_state_full (NMDevice *self,
                              NMDeviceState state,
@@ -547,7 +547,7 @@ static void realize_start_setup (NMDevice *self,
                                  gboolean set_nm_owned,
                                  NMUnmanFlagOp unmanaged_user_explicit);
 static void _commit_mtu (NMDevice *self, const NMIP4Config *config);
-static void dhcp_schedule_restart (NMDevice *self, int family, const char *reason);
+static void dhcp_schedule_restart (NMDevice *self, int addr_family, const char *reason);
 static void _cancel_activation (NMDevice *self);
 
 /*****************************************************************************/
@@ -981,13 +981,17 @@ _set_ip_state (NMDevice *self, int addr_family, IpState new_state)
 	IpState *p;
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
+	nm_assert_addr_family (addr_family);
 
-	p = addr_family == AF_INET ? &priv->ip4_state_ : &priv->ip6_state_;
+	p =   (addr_family == AF_INET)
+	    ? &priv->ip4_state_
+        : &priv->ip6_state_;
 
 	if (*p != new_state) {
-		_LOGT (LOGD_DEVICE, "ip%c-state: set to %d (%s)", addr_family == AF_INET ? '4' : '6',
-		       (int) new_state, _ip_state_to_string (new_state));
+		_LOGT (LOGD_DEVICE, "ip%c-state: set to %d (%s)",
+		       nm_utils_addr_family_to_char (addr_family),
+		       (int) new_state,
+		       _ip_state_to_string (new_state));
 		*p = new_state;
 	}
 }
@@ -1707,7 +1711,7 @@ get_route_table_sync (NMDevice *self, int addr_family)
 	NMSettingIPConfig *s_ip;
 	NMIPRouteTableSyncMode route_table_sync = NM_IP_ROUTE_TABLE_SYNC_MODE_DEFAULT;
 
-	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
+	nm_assert_addr_family (addr_family);
 
 	connection = nm_device_get_applied_connection (self);
 	if (connection) {
@@ -4702,44 +4706,49 @@ activation_source_handle_cb6 (gpointer user_data)
 
 static ActivationHandleData *
 activation_source_get_by_family (NMDevice *self,
-                                 int family,
+                                 int addr_family,
                                  GSourceFunc *out_idle_func)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (family == AF_INET6) {
+	switch (addr_family) {
+	case AF_INET6:
 		NM_SET_OUT (out_idle_func, activation_source_handle_cb6);
 		return &priv->act_handle6;
-	} else {
+	case AF_INET:
 		NM_SET_OUT (out_idle_func, activation_source_handle_cb4);
-		g_return_val_if_fail (family == AF_INET, &priv->act_handle4);
 		return &priv->act_handle4;
 	}
+	g_return_val_if_reached (NULL);
 }
 
 static void
-activation_source_clear (NMDevice *self, int family)
+activation_source_clear (NMDevice *self,
+                         int addr_family)
 {
 	ActivationHandleData *act_data;
 
-	act_data = activation_source_get_by_family (self, family, NULL);
+	act_data = activation_source_get_by_family (self, addr_family, NULL);
 
 	if (act_data->id) {
-		_LOGD (LOGD_DEVICE, "activation-stage: clear %s,%d (id %u)",
-		       _activation_func_to_string (act_data->func), family, act_data->id);
+		_LOGD (LOGD_DEVICE, "activation-stage: clear %s,v%c (id %u)",
+		       _activation_func_to_string (act_data->func),
+		       nm_utils_addr_family_to_char (addr_family),
+		       act_data->id);
 		nm_clear_g_source (&act_data->id);
 		act_data->func = NULL;
 	}
 }
 
 static void
-activation_source_handle_cb (NMDevice *self, int family)
+activation_source_handle_cb (NMDevice *self,
+                             int addr_family)
 {
 	ActivationHandleData *act_data, a;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
-	act_data = activation_source_get_by_family (self, family, NULL);
+	act_data = activation_source_get_by_family (self, addr_family, NULL);
 
 	g_return_if_fail (act_data->id);
 	g_return_if_fail (act_data->func);
@@ -4749,23 +4758,27 @@ activation_source_handle_cb (NMDevice *self, int family)
 	act_data->func = NULL;
 	act_data->id = 0;
 
-	_LOGD (LOGD_DEVICE, "activation-stage: invoke %s,%d (id %u)",
-	       _activation_func_to_string (a.func), family, a.id);
+	_LOGD (LOGD_DEVICE, "activation-stage: invoke %s,v%c (id %u)",
+	       _activation_func_to_string (a.func),
+	       nm_utils_addr_family_to_char (addr_family),
+	       a.id);
 
 	a.func (self);
 
-	_LOGD (LOGD_DEVICE, "activation-stage: complete %s,%d (id %u)",
-	       _activation_func_to_string (a.func), family, a.id);
+	_LOGD (LOGD_DEVICE, "activation-stage: complete %s,v%c (id %u)",
+	       _activation_func_to_string (a.func),
+	       nm_utils_addr_family_to_char (addr_family),
+	       a.id);
 }
 
 static void
-activation_source_schedule (NMDevice *self, ActivationHandleFunc func, int family)
+activation_source_schedule (NMDevice *self, ActivationHandleFunc func, int addr_family)
 {
 	ActivationHandleData *act_data;
 	GSourceFunc source_func;
 	guint new_id = 0;
 
-	act_data = activation_source_get_by_family (self, family, &source_func);
+	act_data = activation_source_get_by_family (self, addr_family, &source_func);
 
 	if (act_data->id && act_data->func == func) {
 		/* Don't bother rescheduling the same function that's about to
@@ -4773,22 +4786,28 @@ activation_source_schedule (NMDevice *self, ActivationHandleFunc func, int famil
 		 * streams of associate events before NM has had a chance to process
 		 * the first one.
 		 */
-		_LOGD (LOGD_DEVICE, "activation-stage: already scheduled %s,%d (id %u)",
-		       _activation_func_to_string (func), family, act_data->id);
+		_LOGD (LOGD_DEVICE, "activation-stage: already scheduled %s,v%c (id %u)",
+		       _activation_func_to_string (func),
+		       nm_utils_addr_family_to_char (addr_family),
+		       act_data->id);
 		return;
 	}
 
 	new_id = g_idle_add (source_func, self);
 
 	if (act_data->id) {
-		_LOGW (LOGD_DEVICE, "activation-stage: schedule %s,%d which replaces %s,%d (id %u -> %u)",
-		       _activation_func_to_string (func), family,
-		       _activation_func_to_string (act_data->func), family,
+		_LOGW (LOGD_DEVICE, "activation-stage: schedule %s,v%c which replaces %s,v%c (id %u -> %u)",
+		       _activation_func_to_string (func),
+		       nm_utils_addr_family_to_char (addr_family),
+		       _activation_func_to_string (act_data->func),
+		       nm_utils_addr_family_to_char (addr_family),
 		       act_data->id, new_id);
 		nm_clear_g_source (&act_data->id);
 	} else {
-		_LOGD (LOGD_DEVICE, "activation-stage: schedule %s,%d (id %u)",
-		       _activation_func_to_string (func), family, new_id);
+		_LOGD (LOGD_DEVICE, "activation-stage: schedule %s,v%c (id %u)",
+		       _activation_func_to_string (func),
+		       nm_utils_addr_family_to_char (addr_family),
+		       new_id);
 	}
 
 	act_data->func = func;
@@ -4796,29 +4815,28 @@ activation_source_schedule (NMDevice *self, ActivationHandleFunc func, int famil
 }
 
 static gboolean
-activation_source_is_scheduled (NMDevice *self, ActivationHandleFunc func, int family)
+activation_source_is_scheduled (NMDevice *self,
+                                ActivationHandleFunc func,
+                                int addr_family)
 {
 	ActivationHandleData *act_data;
 
-	act_data = activation_source_get_by_family (self, family, NULL);
+	act_data = activation_source_get_by_family (self, addr_family, NULL);
 	return act_data->func == func;
 }
 
 /*****************************************************************************/
 
 static gboolean
-get_ip_config_may_fail (NMDevice *self, int family)
+get_ip_config_may_fail (NMDevice *self, int addr_family)
 {
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip = NULL;
 
-	g_return_val_if_fail (self != NULL, TRUE);
-
 	connection = nm_device_get_applied_connection (self);
-	g_assert (connection);
 
 	/* Fail the connection if the failed IP method is required to complete */
-	switch (family) {
+	switch (addr_family) {
 	case AF_INET:
 		s_ip = nm_connection_get_setting_ip4_config (connection);
 		break;
@@ -4826,7 +4844,7 @@ get_ip_config_may_fail (NMDevice *self, int family)
 		s_ip = nm_connection_get_setting_ip6_config (connection);
 		break;
 	default:
-		g_assert_not_reached ();
+		nm_assert_not_reached ();
 	}
 
 	return !s_ip || nm_setting_ip_config_get_may_fail (s_ip);
@@ -5205,18 +5223,20 @@ check_ip_state (NMDevice *self, gboolean may_fail)
 }
 
 void
-nm_device_ip_method_failed (NMDevice *self, int family, NMDeviceStateReason reason)
+nm_device_ip_method_failed (NMDevice *self,
+                            int addr_family,
+                            NMDeviceStateReason reason)
 {
 	NMDevicePrivate *priv;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
-	g_return_if_fail (family == AF_INET || family == AF_INET6);
+	g_return_if_fail (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	_set_ip_state (self, family, IP_FAIL);
+	_set_ip_state (self, addr_family, IP_FAIL);
 
-	if (get_ip_config_may_fail (self, family))
+	if (get_ip_config_may_fail (self, addr_family))
 		check_ip_state (self, FALSE);
 	else
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
@@ -5998,7 +6018,7 @@ get_dhcp_timeout (NMDevice *self, int addr_family)
 	guint32 timeout;
 
 	nm_assert (NM_IS_DEVICE (self));
-	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
+	nm_assert_addr_family (addr_family);
 
 	connection = nm_device_get_applied_connection (self);
 
@@ -6623,7 +6643,7 @@ dhcp_schedule_restart (NMDevice *self,
 	guint tries_left;
 	char tries_str[255];
 
-	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
+	nm_assert_addr_family (addr_family);
 
 	tries_left =   (addr_family == AF_INET)
 	             ? priv->dhcp4.num_tries_left
@@ -6631,7 +6651,7 @@ dhcp_schedule_restart (NMDevice *self,
 
 	_LOGI ((addr_family == AF_INET) ? LOGD_DHCP4 : LOGD_DHCP6,
 	       "scheduling DHCPv%c restart in %u seconds%s%s%s%s",
-	       (addr_family == AF_INET) ? '4' : '6',
+	       nm_utils_addr_family_to_char (addr_family),
 	       DHCP_RESTART_TIMEOUT,
 	       (tries_left != DHCP_NUM_TRIES_MAX)
 	         ? nm_sprintf_buf (tries_str, ", %u tries left", tries_left + 1)
@@ -10852,7 +10872,7 @@ update_ext_ip_config (NMDevice *self, int addr_family, gboolean initial, gboolea
 	gboolean capture_resolv_conf;
 	GSList *iter;
 
-	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
+	nm_assert_addr_family (addr_family);
 
 	ifindex = nm_device_get_ip_ifindex (self);
 	if (!ifindex)
@@ -10977,7 +10997,7 @@ update_ip_config (NMDevice *self, int addr_family, gboolean initial)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
+	nm_assert_addr_family (addr_family);
 
 	if (update_ext_ip_config (self, addr_family, initial, TRUE)) {
 		if (addr_family == AF_INET) {

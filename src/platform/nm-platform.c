@@ -3935,7 +3935,7 @@ _ip_route_add (NMPlatform *self,
 
 	_LOGD ("route: %-10s IPv%c route: %s",
 	       _nmp_nlm_flag_to_string (flags & NMP_NLM_FLAG_FMASK),
-	       addr_family == AF_INET ? '4' : '6',
+	       nm_utils_addr_family_to_char (addr_family),
 	       addr_family == AF_INET
 	         ? nm_platform_ip4_route_to_string (route, sbuf, sizeof (sbuf))
 	         : nm_platform_ip6_route_to_string (route, sbuf, sizeof (sbuf)));
@@ -4019,7 +4019,7 @@ nm_platform_ip_route_get (NMPlatform *self,
 	                                              AF_INET6), NM_PLATFORM_ERROR_BUG);
 
 	_LOGT ("route: get IPv%c route for: %s%s",
-	       addr_family == AF_INET ? '4' : '6',
+	       nm_utils_addr_family_to_char (addr_family),
 	       inet_ntop (addr_family, address, buf, sizeof (buf)),
 	       oif_ifindex > 0 ? nm_sprintf_buf (buf_oif, " oif %d", oif_ifindex) : "");
 
@@ -4036,7 +4036,7 @@ nm_platform_ip_route_get (NMPlatform *self,
 	if (result != NM_PLATFORM_ERROR_SUCCESS) {
 		nm_assert (!route);
 		_LOGW ("route: get IPv%c route for: %s failed with %s",
-		       addr_family == AF_INET ? '4' : '6',
+		       nm_utils_addr_family_to_char (addr_family),
 		       inet_ntop (addr_family, address, buf, sizeof (buf)),
 		       nm_platform_error_to_string (result, buf_err, sizeof (buf_err)));
 	} else {
@@ -4044,7 +4044,7 @@ nm_platform_ip_route_get (NMPlatform *self,
 		nm_assert (!NMP_OBJECT_IS_STACKINIT (route));
 		nm_assert (route->parent._ref_count == 1);
 		_LOGD ("route: get IPv%c route for: %s succeeded: %s",
-		       addr_family == AF_INET ? '4' : '6',
+		       nm_utils_addr_family_to_char (addr_family),
 		       inet_ntop (addr_family, address, buf, sizeof (buf)),
 		       nmp_object_to_string (route, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 		NM_SET_OUT (out_route, g_steal_pointer (&route));
