@@ -43,6 +43,21 @@ extern const NMIPAddr nm_ip_addr_zero;
 
 /*****************************************************************************/
 
+static inline char
+nm_utils_addr_family_to_char (int addr_family)
+{
+	switch (addr_family) {
+	case AF_INET:  return '4';
+	case AF_INET6: return '6';
+	}
+	g_return_val_if_reached ('?');
+}
+
+#define nm_assert_addr_family(addr_family) \
+	nm_assert (NM_IN_SET ((addr_family), AF_INET, AF_INET6))
+
+/*****************************************************************************/
+
 #define NM_CMP_RETURN(c) \
     G_STMT_START { \
         const int _cc = (c); \
