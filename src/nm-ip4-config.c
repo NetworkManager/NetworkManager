@@ -291,7 +291,6 @@ typedef struct {
 	bool metered:1;
 	bool has_gateway:1;
 	guint32 gateway;
-	guint32 mss;
 	guint32 mtu;
 	int ifindex;
 	NMIPConfigSource mtu_source;
@@ -1141,10 +1140,6 @@ nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src, NMIPConfigMergeFl
 			nm_ip4_config_add_dns_option (dst, nm_ip4_config_get_dns_option (src, i));
 	}
 
-	/* MSS */
-	if (nm_ip4_config_get_mss (src))
-		nm_ip4_config_set_mss (dst, nm_ip4_config_get_mss (src));
-
 	/* MTU */
 	if (   src_priv->mtu_source > dst_priv->mtu_source
 	    || (   src_priv->mtu_source == dst_priv->mtu_source
@@ -1371,10 +1366,6 @@ nm_ip4_config_subtract (NMIP4Config *dst, const NMIP4Config *src)
 		if (idx >= 0)
 			nm_ip4_config_del_dns_option (dst, idx);
 	}
-
-	/* MSS */
-	if (nm_ip4_config_get_mss (src) == nm_ip4_config_get_mss (dst))
-		nm_ip4_config_set_mss (dst, 0);
 
 	/* MTU */
 	if (   nm_ip4_config_get_mtu (src) == nm_ip4_config_get_mtu (dst)
@@ -1733,12 +1724,6 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 		has_minor_changes = TRUE;
 	}
 
-	/* mss */
-	if (src_priv->mss != dst_priv->mss) {
-		nm_ip4_config_set_mss (dst, src_priv->mss);
-		has_minor_changes = TRUE;
-	}
-
 	/* nis */
 	num = nm_ip4_config_get_num_nis_servers (src);
 	are_equal = num == nm_ip4_config_get_num_nis_servers (dst);
@@ -1863,7 +1848,6 @@ nm_ip4_config_dump (const NMIP4Config *self, const char *detail)
 
 	g_message (" dnspri: %d", nm_ip4_config_get_dns_priority (self));
 
-	g_message ("    mss: %"G_GUINT32_FORMAT, nm_ip4_config_get_mss (self));
 	g_message ("    mtu: %"G_GUINT32_FORMAT" (source: %d)", nm_ip4_config_get_mtu (self), (int) nm_ip4_config_get_mtu_source (self));
 
 	/* NIS */
@@ -2513,24 +2497,6 @@ nm_ip4_config_get_dns_priority (const NMIP4Config *self)
 	const NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
 
 	return priv->dns_priority;
-}
-
-/*****************************************************************************/
-
-void
-nm_ip4_config_set_mss (NMIP4Config *self, guint32 mss)
-{
-	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
-
-	priv->mss = mss;
-}
-
-guint32
-nm_ip4_config_get_mss (const NMIP4Config *self)
-{
-	const NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
-
-	return priv->mss;
 }
 
 /*****************************************************************************/

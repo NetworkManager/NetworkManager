@@ -59,7 +59,6 @@ _route_valid (const NMPlatformIP6Route *r)
 
 typedef struct {
 	bool never_default:1;
-	guint32 mss;
 	int ifindex;
 	int dns_priority;
 	NMSettingIP6ConfigPrivacy privacy;
@@ -940,9 +939,6 @@ nm_ip6_config_merge (NMIP6Config *dst, const NMIP6Config *src, NMIPConfigMergeFl
 			nm_ip6_config_add_dns_option (dst, nm_ip6_config_get_dns_option (src, i));
 	}
 
-	if (nm_ip6_config_get_mss (src))
-		nm_ip6_config_set_mss (dst, nm_ip6_config_get_mss (src));
-
 	/* DNS priority */
 	if (nm_ip6_config_get_dns_priority (src))
 		nm_ip6_config_set_dns_priority (dst, nm_ip6_config_get_dns_priority (src));
@@ -1134,9 +1130,6 @@ nm_ip6_config_subtract (NMIP6Config *dst, const NMIP6Config *src)
 		if (idx >= 0)
 			nm_ip6_config_del_dns_option (dst, idx);
 	}
-
-	if (nm_ip6_config_get_mss (src) == nm_ip6_config_get_mss (dst))
-		nm_ip6_config_set_mss (dst, 0);
 
 	/* DNS priority */
 	if (nm_ip6_config_get_dns_priority (src) == nm_ip6_config_get_dns_priority (dst))
@@ -1468,12 +1461,6 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 		has_relevant_changes = TRUE;
 	}
 
-	/* mss */
-	if (src_priv->mss != dst_priv->mss) {
-		nm_ip6_config_set_mss (dst, src_priv->mss);
-		has_minor_changes = TRUE;
-	}
-
 	/* DNS priority */
 	if (src_priv->dns_priority != dst_priv->dns_priority) {
 		nm_ip6_config_set_dns_priority (dst, src_priv->dns_priority);
@@ -1550,7 +1537,6 @@ nm_ip6_config_dump (const NMIP6Config *self, const char *detail)
 
 	g_message (" dnspri: %d", nm_ip6_config_get_dns_priority (self));
 
-	g_message ("    mss: %"G_GUINT32_FORMAT, nm_ip6_config_get_mss (self));
 	g_message (" n-dflt: %d", nm_ip6_config_get_never_default (self));
 }
 
@@ -2334,24 +2320,6 @@ nm_ip6_config_get_dns_priority (const NMIP6Config *self)
 	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
 
 	return priv->dns_priority;
-}
-
-/*****************************************************************************/
-
-void
-nm_ip6_config_set_mss (NMIP6Config *self, guint32 mss)
-{
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
-
-	priv->mss = mss;
-}
-
-guint32
-nm_ip6_config_get_mss (const NMIP6Config *self)
-{
-	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
-
-	return priv->mss;
 }
 
 /*****************************************************************************/

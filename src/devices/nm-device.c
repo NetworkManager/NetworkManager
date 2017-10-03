@@ -5868,7 +5868,6 @@ ip4_config_merge_and_apply (NMDevice *self,
 	default_route.gateway = gateway;
 	default_route.table_coerced = nm_platform_route_table_coerce (nm_device_get_route_table (self, AF_INET, TRUE));
 	default_route.metric = route_metric_with_penalty (self, default_route_metric);
-	default_route.mss = nm_ip4_config_get_mss (composite);
 	nm_clear_nmp_object (&priv->default_route4);
 	nm_ip4_config_add_route (composite, &default_route, &priv->default_route4);
 
@@ -6609,7 +6608,6 @@ ip6_config_merge_and_apply (NMDevice *self,
 	default_route.gateway = *gateway;
 	default_route.table_coerced = nm_platform_route_table_coerce (nm_device_get_route_table (self, AF_INET6, TRUE));
 	default_route.metric = route_metric_with_penalty (self, default_route_metric);
-	default_route.mss = nm_ip6_config_get_mss (composite);
 	nm_clear_nmp_object (&priv->default_route6);
 	nm_ip6_config_add_route (composite, &default_route, &priv->default_route6);
 

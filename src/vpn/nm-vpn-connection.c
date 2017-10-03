@@ -1010,7 +1010,6 @@ print_vpn_config (NMVpnConnection *self)
 		_LOGI ("Data:   Internal Address: %s", nm_utils_inet4_ntop (address4->address, NULL));
 		_LOGI ("Data:   Internal Prefix: %d", address4->plen);
 		_LOGI ("Data:   Internal Point-to-Point Address: %s", nm_utils_inet4_ntop (address4->peer_address, NULL));
-		_LOGI ("Data:   Maximum Segment Size (MSS): %d", nm_ip4_config_get_mss (priv->ip4_config));
 
 		nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, priv->ip4_config, &route) {
 			_LOGI ("Data:   Static Route: %s/%d   Next Hop: %s",
@@ -1048,7 +1047,6 @@ print_vpn_config (NMVpnConnection *self)
 		_LOGI ("Data:   Internal Address: %s", nm_utils_inet6_ntop (&address6->address, NULL));
 		_LOGI ("Data:   Internal Prefix: %d", address6->plen);
 		_LOGI ("Data:   Internal Point-to-Point Address: %s", nm_utils_inet6_ntop (&address6->peer_address, NULL));
-		_LOGI ("Data:   Maximum Segment Size (MSS): %d", nm_ip6_config_get_mss (priv->ip6_config));
 
 		nm_ip_config_iter_ip6_route_for_each (&ipconf_iter, priv->ip6_config, &route) {
 			_LOGI ("Data:   Static Route: %s/%d   Next Hop: %s",
@@ -1480,6 +1478,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 	GVariant *v;
 	gboolean b;
 	int ip_ifindex;
+	guint32 mss = 0;
 
 	g_return_if_fail (dict && g_variant_is_of_type (dict, G_VARIANT_TYPE_VARDICT));
 
@@ -1563,7 +1562,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 	}
 
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP4_CONFIG_MSS, "u", &u32))
-		nm_ip4_config_set_mss (config, u32);
+		mss = u32;
 
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP4_CONFIG_DOMAIN, "&s", &str))
 		nm_ip4_config_add_domain (config, str);
@@ -1641,7 +1640,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 			.gateway   = nm_ip4_config_get_gateway (config),
 			.table_coerced = nm_platform_route_table_coerce (route_table),
 			.metric    = route_metric,
-			.mss       = nm_ip4_config_get_mss (config),
+			.mss       = mss,
 		};
 
 		nm_ip4_config_add_route (config, &r, NULL);
@@ -1679,6 +1678,7 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 	GVariant *v;
 	gboolean b;
 	int ip_ifindex;
+	guint32 mss = 0;
 
 	g_return_if_fail (dict && g_variant_is_of_type (dict, G_VARIANT_TYPE_VARDICT));
 
@@ -1752,7 +1752,7 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 	}
 
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP6_CONFIG_MSS, "u", &u32))
-		nm_ip6_config_set_mss (config, u32);
+		mss = u32;
 
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_IP6_CONFIG_DOMAIN, "&s", &str))
 		nm_ip6_config_add_domain (config, str);
@@ -1827,7 +1827,7 @@ next:
 			.gateway   = *(nm_ip6_config_get_gateway (config) ?: &in6addr_any),
 			.table_coerced = nm_platform_route_table_coerce (route_table),
 			.metric    = route_metric,
-			.mss       = nm_ip6_config_get_mss (config),
+			.mss       = mss,
 		};
 
 		nm_ip6_config_add_route (config, &r, NULL);

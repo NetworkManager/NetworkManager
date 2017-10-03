@@ -233,9 +233,6 @@ const char * nm_ip4_config_get_dns_option (const NMIP4Config *self, guint i);
 void nm_ip4_config_set_dns_priority (NMIP4Config *self, gint priority);
 gint nm_ip4_config_get_dns_priority (const NMIP4Config *self);
 
-void nm_ip4_config_set_mss (NMIP4Config *self, guint32 mss);
-guint32 nm_ip4_config_get_mss (const NMIP4Config *self);
-
 void nm_ip4_config_reset_nis_servers (NMIP4Config *self);
 void nm_ip4_config_add_nis_server (NMIP4Config *self, guint32 nis);
 void nm_ip4_config_del_nis_server (NMIP4Config *self, guint i);
