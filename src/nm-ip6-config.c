@@ -62,7 +62,6 @@ typedef struct {
 	int ifindex;
 	int dns_priority;
 	NMSettingIP6ConfigPrivacy privacy;
-	gint64 route_metric;
 	struct in6_addr gateway;
 	GArray *nameservers;
 	GPtrArray *domains;
@@ -439,10 +438,6 @@ nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 		_add_route (self, plobj, NULL, NULL);
 	}
 
-	/* we detect the route metric based on the default route. All non-default
-	 * routes have their route metrics explicitly set. */
-	priv->route_metric = has_gateway ? (gint64) lowest_metric : (gint64) -1;
-
 	/* If the interface has the default route, and has IPv6 addresses, capture
 	 * nameservers from /etc/resolv.conf.
 	 */
@@ -678,9 +673,6 @@ nm_ip6_config_merge_setting (NMIP6Config *self,
 		nm_ip6_config_set_gateway (self, &gateway);
 	}
 
-	if (priv->route_metric  == -1)
-		priv->route_metric = nm_setting_ip_config_get_route_metric (setting);
-
 	/* Addresses */
 	for (i = 0; i < naddresses; i++) {
 		NMIPAddress *s_addr = nm_setting_ip_config_get_address (setting, i);
@@ -766,7 +758,6 @@ nm_ip6_config_create_setting (const NMIP6Config *self)
 	guint nnameservers, nsearches, noptions;
 	const char *method = NULL;
 	int i;
-	gint64 route_metric;
 	NMDedupMultiIter ipconf_iter;
 	const NMPlatformIP6Address *address;
 	const NMPlatformIP6Route *route;
@@ -784,7 +775,6 @@ nm_ip6_config_create_setting (const NMIP6Config *self)
 	nnameservers = nm_ip6_config_get_num_nameservers (self);
 	nsearches = nm_ip6_config_get_num_searches (self);
 	noptions = nm_ip6_config_get_num_dns_options (self);
-	route_metric = nm_ip6_config_get_route_metric (self);
 
 	/* Addresses */
 	nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, self, &address) {
@@ -826,7 +816,6 @@ nm_ip6_config_create_setting (const NMIP6Config *self)
 
 	g_object_set (s_ip6,
 	              NM_SETTING_IP_CONFIG_METHOD, method,
-	              NM_SETTING_IP_CONFIG_ROUTE_METRIC, (gint64) route_metric,
 	              NULL);
 
 	/* Routes */
@@ -915,11 +904,6 @@ nm_ip6_config_merge (NMIP6Config *dst, const NMIP6Config *src, NMIPConfigMergeFl
 		nm_ip_config_iter_ip6_route_for_each (&ipconf_iter, src, NULL)
 			_add_route (dst, ipconf_iter.current->obj, NULL, NULL);
 	}
-
-	if (dst_priv->route_metric == -1)
-		dst_priv->route_metric = src_priv->route_metric;
-	else if (src_priv->route_metric != -1)
-		dst_priv->route_metric = MIN (dst_priv->route_metric, src_priv->route_metric);
 
 	/* domains */
 	if (!NM_FLAGS_HAS (merge_flags, NM_IP_CONFIG_MERGE_NO_DNS)) {
@@ -1084,8 +1068,6 @@ nm_ip6_config_subtract (NMIP6Config *dst, const NMIP6Config *src)
 	if (!nm_ip6_config_get_num_addresses (dst))
 		nm_ip6_config_set_gateway (dst, NULL);
 
-	/* ignore route_metric */
-
 	/* routes */
 	changed = FALSE;
 	changed_default_route = FALSE;
@@ -1174,7 +1156,6 @@ nm_ip6_config_intersect (NMIP6Config *dst, const NMIP6Config *src)
 	if (changed)
 		_notify_addresses (dst);
 
-	/* ignore route_metric */
 	/* ignore nameservers */
 
 	/* default gateway */
@@ -1276,11 +1257,6 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 	if (!IN6_ARE_ADDR_EQUAL (&src_priv->gateway, &dst_priv->gateway)) {
 		nm_ip6_config_set_gateway (dst, &src_priv->gateway);
 		has_relevant_changes = TRUE;
-	}
-
-	if (src_priv->route_metric != dst_priv->route_metric) {
-		dst_priv->route_metric = src_priv->route_metric;
-		has_minor_changes = TRUE;
 	}
 
 	/* addresses */
@@ -1581,14 +1557,6 @@ nm_ip6_config_get_gateway (const NMIP6Config *self)
 	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
 
 	return IN6_IS_ADDR_UNSPECIFIED (&priv->gateway) ? NULL : &priv->gateway;
-}
-
-gint64
-nm_ip6_config_get_route_metric (const NMIP6Config *self)
-{
-	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
-
-	return priv->route_metric;
 }
 
 /*****************************************************************************/
@@ -2737,7 +2705,6 @@ nm_ip6_config_init (NMIP6Config *self)
 	priv->domains = g_ptr_array_new_with_free_func (g_free);
 	priv->searches = g_ptr_array_new_with_free_func (g_free);
 	priv->dns_options = g_ptr_array_new_with_free_func (g_free);
-	priv->route_metric = -1;
 }
 
 NMIP6Config *

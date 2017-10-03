@@ -135,7 +135,6 @@ void nm_ip6_config_set_never_default (NMIP6Config *self, gboolean never_default)
 gboolean nm_ip6_config_get_never_default (const NMIP6Config *self);
 void nm_ip6_config_set_gateway (NMIP6Config *self, const struct in6_addr *);
 const struct in6_addr *nm_ip6_config_get_gateway (const NMIP6Config *self);
-gint64 nm_ip6_config_get_route_metric (const NMIP6Config *self);
 
 const NMPObject *nm_ip6_config_best_default_route_get (const NMIP6Config *self);
 const NMPObject *_nm_ip6_config_best_default_route_find (const NMIP6Config *self);

@@ -181,7 +181,6 @@ void nm_ip4_config_set_gateway (NMIP4Config *self, guint32 gateway);
 void nm_ip4_config_unset_gateway (NMIP4Config *self);
 gboolean nm_ip4_config_has_gateway (const NMIP4Config *self);
 guint32 nm_ip4_config_get_gateway (const NMIP4Config *self);
-gint64 nm_ip4_config_get_route_metric (const NMIP4Config *self);
 
 const NMPObject *nm_ip4_config_best_default_route_get (const NMIP4Config *self);
 const NMPObject *_nm_ip4_config_best_default_route_find (const NMIP4Config *self);

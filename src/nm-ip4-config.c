@@ -295,7 +295,6 @@ typedef struct {
 	int ifindex;
 	NMIPConfigSource mtu_source;
 	gint dns_priority;
-	gint64 route_metric;
 	GArray *nameservers;
 	GPtrArray *domains;
 	GPtrArray *searches;
@@ -643,10 +642,6 @@ nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 		_add_route (self, plobj, NULL, NULL);
 	}
 
-	/* we detect the route metric based on the default route. All non-default
-	 * routes have their route metrics explicitly set. */
-	priv->route_metric = priv->has_gateway ? (gint64) lowest_metric : (gint64) -1;
-
 	/* If the interface has the default route, and has IPv4 addresses, capture
 	 * nameservers from /etc/resolv.conf.
 	 */
@@ -880,9 +875,6 @@ nm_ip4_config_merge_setting (NMIP4Config *self,
 		nm_ip4_config_set_gateway (self, gateway);
 	}
 
-	if (priv->route_metric  == -1)
-		priv->route_metric = nm_setting_ip_config_get_route_metric (setting);
-
 	/* Addresses */
 	for (i = 0; i < naddresses; i++) {
 		NMIPAddress *s_addr = nm_setting_ip_config_get_address (setting, i);
@@ -974,7 +966,6 @@ nm_ip4_config_create_setting (const NMIP4Config *self)
 	guint nnameservers, nsearches, noptions;
 	const char *method = NULL;
 	int i;
-	gint64 route_metric;
 	NMDedupMultiIter ipconf_iter;
 	const NMPlatformIP4Address *address;
 	const NMPlatformIP4Route *route;
@@ -992,7 +983,6 @@ nm_ip4_config_create_setting (const NMIP4Config *self)
 	nnameservers = nm_ip4_config_get_num_nameservers (self);
 	nsearches = nm_ip4_config_get_num_searches (self);
 	noptions = nm_ip4_config_get_num_dns_options (self);
-	route_metric = nm_ip4_config_get_route_metric (self);
 
 	/* Addresses */
 	nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, self, &address) {
@@ -1030,7 +1020,6 @@ nm_ip4_config_create_setting (const NMIP4Config *self)
 
 	g_object_set (s_ip4,
 	              NM_SETTING_IP_CONFIG_METHOD, method,
-	              NM_SETTING_IP_CONFIG_ROUTE_METRIC, (gint64) route_metric,
 	              NULL);
 
 	/* Routes */
@@ -1116,11 +1105,6 @@ nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src, NMIPConfigMergeFl
 		nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, src, NULL)
 			_add_route (dst, ipconf_iter.current->obj, NULL, NULL);
 	}
-
-	if (dst_priv->route_metric == -1)
-		dst_priv->route_metric = src_priv->route_metric;
-	else if (src_priv->route_metric != -1)
-		dst_priv->route_metric = MIN (dst_priv->route_metric, src_priv->route_metric);
 
 	/* domains */
 	if (!NM_FLAGS_HAS (merge_flags, NM_IP_CONFIG_MERGE_NO_DNS)) {
@@ -1320,8 +1304,6 @@ nm_ip4_config_subtract (NMIP4Config *dst, const NMIP4Config *src)
 	if (!nm_ip4_config_get_num_addresses (dst))
 		nm_ip4_config_unset_gateway (dst);
 
-	/* ignore route_metric */
-
 	/* routes */
 	changed = FALSE;
 	changed_default_route = FALSE;
@@ -1431,7 +1413,6 @@ nm_ip4_config_intersect (NMIP4Config *dst, const NMIP4Config *src)
 	if (changed)
 		_notify_addresses (dst);
 
-	/* ignore route_metric */
 	/* ignore nameservers */
 
 	/* default gateway */
@@ -1535,11 +1516,6 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 		else
 			nm_ip4_config_unset_gateway (dst);
 		has_relevant_changes = TRUE;
-	}
-
-	if (src_priv->route_metric != dst_priv->route_metric) {
-		dst_priv->route_metric = src_priv->route_metric;
-		has_minor_changes = TRUE;
 	}
 
 	/* addresses */
@@ -1958,14 +1934,6 @@ nm_ip4_config_get_gateway (const NMIP4Config *self)
 	const NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
 
 	return priv->gateway;
-}
-
-gint64
-nm_ip4_config_get_route_metric (const NMIP4Config *self)
-{
-	const NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
-
-	return priv->route_metric;
 }
 
 /*****************************************************************************/
@@ -3092,7 +3060,6 @@ nm_ip4_config_init (NMIP4Config *self)
 	priv->dns_options = g_ptr_array_new_with_free_func (g_free);
 	priv->nis = g_array_new (FALSE, TRUE, sizeof (guint32));
 	priv->wins = g_array_new (FALSE, TRUE, sizeof (guint32));
-	priv->route_metric = -1;
 }
 
 NMIP4Config *
