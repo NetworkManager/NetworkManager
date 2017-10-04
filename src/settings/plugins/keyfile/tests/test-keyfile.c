@@ -312,11 +312,11 @@ test_read_valid_wired_connection (void)
 	check_ip_route (s_ip4, 3, "1.1.1.3", 13, NULL, -1);
 	check_ip_route (s_ip4, 4, "1.1.1.4", 14, "2.2.2.4", -1);
 	check_ip_route (s_ip4, 5, "1.1.1.5", 15, "2.2.2.5", -1);
-	check_ip_route (s_ip4, 6, "1.1.1.6", 16, "2.2.2.6", -1);
+	check_ip_route (s_ip4, 6, "1.1.1.6", 16, "2.2.2.6", 0);
 	check_ip_route (s_ip4, 7, "1.1.1.7", 17, NULL, -1);
 	check_ip_route (s_ip4, 8, "1.1.1.8", 18, NULL, -1);
-	check_ip_route (s_ip4, 9, "1.1.1.9", 19, NULL, -1);
-	check_ip_route (s_ip4, 10, "1.1.1.10", 20, NULL, -1);
+	check_ip_route (s_ip4, 9, "1.1.1.9", 19, NULL, 0);
+	check_ip_route (s_ip4, 10, "1.1.1.10", 20, NULL, 0);
 	check_ip_route (s_ip4, 11, "1.1.1.11", 21, NULL, 21);
 
 	/* Route attributes */

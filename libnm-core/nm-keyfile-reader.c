@@ -133,8 +133,7 @@ read_array_of_uint (GKeyFile *file,
 static gboolean
 get_one_int (KeyfileReaderInfo *info, const char *property_name, const char *str, guint32 max_val, guint32 *out)
 {
-	long tmp;
-	char *endptr;
+	gint64 tmp;
 
 	g_return_val_if_fail (!info == !property_name, FALSE);
 
@@ -145,13 +144,13 @@ get_one_int (KeyfileReaderInfo *info, const char *property_name, const char *str
 		return FALSE;
 	}
 
-	errno = 0;
-	tmp = strtol (str, &endptr, 10);
-	if (errno || (tmp < 0) || (tmp > max_val) || *endptr != 0) {
-		if (property_name)
+	tmp = _nm_utils_ascii_str_to_int64 (str, 10, 0, max_val, -1);
+	if (tmp == -1) {
+		if (property_name) {
 			handle_warn (info, property_name, NM_KEYFILE_WARN_SEVERITY_WARN,
 			             _("ignoring invalid number '%s'"),
 			            str);
+		}
 		return FALSE;
 	}
 
@@ -186,7 +185,8 @@ build_route (KeyfileReaderInfo *info,
              const char *gateway_str, const char *metric_str)
 {
 	NMIPRoute *route;
-	guint32 metric = 0;
+	guint32 u32;
+	gint64 metric = -1;
 	GError *error = NULL;
 
 	g_return_val_if_fail (plen, NULL);
@@ -205,9 +205,10 @@ build_route (KeyfileReaderInfo *info,
 			 **/
 			if (   family == AF_INET6
 			    && !metric_str
-			    && get_one_int (NULL, NULL, gateway_str, G_MAXUINT32, &metric))
+			    && get_one_int (NULL, NULL, gateway_str, G_MAXUINT32, &u32)) {
+				metric = u32;
 				gateway_str = NULL;
-			else {
+			} else {
 				if (!info->error) {
 					handle_warn (info, property_name, NM_KEYFILE_WARN_SEVERITY_WARN,
 					             _("ignoring invalid gateway '%s' for %s route"),
@@ -219,14 +220,15 @@ build_route (KeyfileReaderInfo *info,
 	} else
 		gateway_str = NULL;
 
-	/* parse metric, default to 0 */
+	/* parse metric, default to -1 */
 	if (metric_str) {
-		if (!get_one_int (info, property_name, metric_str, G_MAXUINT32, &metric))
+		if (!get_one_int (info, property_name, metric_str, G_MAXUINT32, &u32))
 			return NULL;
+		metric = u32;
 	}
 
 	route = nm_ip_route_new (family, dest_str, plen, gateway_str,
-	                         metric ? (gint64) metric : -1,
+	                         metric,
 	                         &error);
 	if (!route) {
 		handle_warn (info, property_name, NM_KEYFILE_WARN_SEVERITY_WARN,
@@ -250,17 +252,17 @@ build_route (KeyfileReaderInfo *info,
  * When @current target is %NULL, gracefully fail returning %NULL while
  * leaving the @current target %NULL end setting @error to %NULL;
  */
-static char *
-read_field (char **current, char **error, const char *characters, const char *delimiters)
+static const char *
+read_field (char **current, const char **out_err_str, const char *characters, const char *delimiters)
 {
-	char *start;
+	const char *start;
 
-	g_return_val_if_fail (current, NULL);
-	g_return_val_if_fail (error, NULL);
-	g_return_val_if_fail (characters, NULL);
-	g_return_val_if_fail (delimiters, NULL);
+	nm_assert (current);
+	nm_assert (out_err_str);
+	nm_assert (characters);
+	nm_assert (delimiters);
 
-	*error = NULL;
+	*out_err_str = NULL;
 
 	if (!*current) {
 		/* graceful failure, leave '*current' NULL */
@@ -283,8 +285,8 @@ read_field (char **current, char **error, const char *characters, const char *de
 			return start;
 		} else {
 			/* error, bad character */
-			*error = *current;
-			*current = start;
+			*out_err_str = *current;
+			*current = (char *) start;
 			return NULL;
 		}
 	else {
@@ -333,42 +335,50 @@ read_one_ip_address_or_route (KeyfileReaderInfo *info,
                               char **out_gateway,
                               NMSetting *setting)
 {
-	guint32 plen = G_MAXUINT32;
+	guint plen;
 	gpointer result;
-	char *address_str, *plen_str, *gateway_str, *metric_str, *current, *error;
-	gs_free char *value = NULL, *value_orig = NULL;
+	const char *address_str;
+	const char *plen_str;
+	const char *gateway_str;
+	const char *metric_str;
+	const char *err_str = NULL;
+	char *current;
+	gs_free char *value = NULL;
+	gs_free char *value_orig = NULL;
 
 #define VALUE_ORIG()   (value_orig ? value_orig : (value_orig = nm_keyfile_plugin_kf_get_string (info->keyfile, setting_name, key_name, NULL)))
 
-	current = value = nm_keyfile_plugin_kf_get_string (info->keyfile, setting_name, key_name, NULL);
+	value = nm_keyfile_plugin_kf_get_string (info->keyfile, setting_name, key_name, NULL);
 	if (!value)
 		return NULL;
 
+	current = value;
+
 	/* get address field */
-	address_str = read_field (&current, &error, IP_ADDRESS_CHARS, DELIMITERS);
-	if (error) {
+	address_str = read_field (&current, &err_str, IP_ADDRESS_CHARS, DELIMITERS);
+	if (err_str) {
 		handle_warn (info, property_name, NM_KEYFILE_WARN_SEVERITY_WARN,
 		             _("unexpected character '%c' for address %s: '%s' (position %td)"),
-		             *error, key_name, VALUE_ORIG (), error - current);
+		             *err_str, key_name, VALUE_ORIG (), err_str - current);
 		return NULL;
 	}
 	/* get prefix length field (skippable) */
-	plen_str = read_field (&current, &error, DIGITS, DELIMITERS);
+	plen_str = read_field (&current, &err_str, DIGITS, DELIMITERS);
 	/* get gateway field */
-	gateway_str = read_field (&current, &error, IP_ADDRESS_CHARS, DELIMITERS);
-	if (error) {
+	gateway_str = read_field (&current, &err_str, IP_ADDRESS_CHARS, DELIMITERS);
+	if (err_str) {
 		handle_warn (info, property_name, NM_KEYFILE_WARN_SEVERITY_WARN,
 		             _("unexpected character '%c' for %s: '%s' (position %td)"),
-		             *error, key_name, VALUE_ORIG (), error - current);
+		             *err_str, key_name, VALUE_ORIG (), err_str - current);
 		return NULL;
 	}
 	/* for routes, get metric */
 	if (route) {
-		metric_str = read_field (&current, &error, DIGITS, DELIMITERS);
-		if (error) {
+		metric_str = read_field (&current, &err_str, DIGITS, DELIMITERS);
+		if (err_str) {
 			handle_warn (info, property_name, NM_KEYFILE_WARN_SEVERITY_WARN,
 			             _("unexpected character '%c' in prefix length for %s: '%s' (position %td)"),
-			             *error, key_name, VALUE_ORIG (), error - current);
+			             *err_str, key_name, VALUE_ORIG (), err_str - current);
 			return NULL;
 		}
 	} else
@@ -394,7 +404,7 @@ read_one_ip_address_or_route (KeyfileReaderInfo *info,
 
 	/* parse plen, fallback to defaults */
 	if (plen_str) {
-		if (!get_one_int (info, property_name, plen_str, ipv6 ? 128 : 32, &plen)
+		if (   !get_one_int (info, property_name, plen_str, ipv6 ? 128 : 32, &plen)
 		    || (route && plen == 0)) {
 			plen = DEFAULT_PREFIX (route, ipv6);
 			if (   info->error
