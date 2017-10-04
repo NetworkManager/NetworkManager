@@ -185,7 +185,8 @@ build_route (KeyfileReaderInfo *info,
              const char *gateway_str, const char *metric_str)
 {
 	NMIPRoute *route;
-	guint32 metric = 0;
+	guint32 u32;
+	gint64 metric = -1;
 	GError *error = NULL;
 
 	g_return_val_if_fail (plen, NULL);
@@ -204,9 +205,10 @@ build_route (KeyfileReaderInfo *info,
 			 **/
 			if (   family == AF_INET6
 			    && !metric_str
-			    && get_one_int (NULL, NULL, gateway_str, G_MAXUINT32, &metric))
+			    && get_one_int (NULL, NULL, gateway_str, G_MAXUINT32, &u32)) {
+				metric = u32;
 				gateway_str = NULL;
-			else {
+			} else {
 				if (!info->error) {
 					handle_warn (info, property_name, NM_KEYFILE_WARN_SEVERITY_WARN,
 					             _("ignoring invalid gateway '%s' for %s route"),
@@ -218,14 +220,15 @@ build_route (KeyfileReaderInfo *info,
 	} else
 		gateway_str = NULL;
 
-	/* parse metric, default to 0 */
+	/* parse metric, default to -1 */
 	if (metric_str) {
-		if (!get_one_int (info, property_name, metric_str, G_MAXUINT32, &metric))
+		if (!get_one_int (info, property_name, metric_str, G_MAXUINT32, &u32))
 			return NULL;
+		metric = u32;
 	}
 
 	route = nm_ip_route_new (family, dest_str, plen, gateway_str,
-	                         metric ? (gint64) metric : -1,
+	                         metric,
 	                         &error);
 	if (!route) {
 		handle_warn (info, property_name, NM_KEYFILE_WARN_SEVERITY_WARN,
