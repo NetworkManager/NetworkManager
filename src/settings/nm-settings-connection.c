@@ -2550,7 +2550,7 @@ nm_settings_connection_get_autoconnect_retries (NMSettingsConnection *self)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
-	if (priv->autoconnect_retries == AUTOCONNECT_RETRIES_UNSET) {
+	if (G_UNLIKELY (priv->autoconnect_retries == AUTOCONNECT_RETRIES_UNSET)) {
 		NMSettingConnection *s_con;
 		int retries = -1;
 		const char *value;
@@ -2575,6 +2575,7 @@ nm_settings_connection_get_autoconnect_retries (NMSettingsConnection *self)
 		if (retries == 0)
 			retries = AUTOCONNECT_RETRIES_FOREVER;
 
+		_LOGT ("autoconnect-retries: init %d", retries);
 		priv->autoconnect_retries = retries;
 	}
 
@@ -2586,6 +2587,8 @@ nm_settings_connection_set_autoconnect_retries (NMSettingsConnection *self,
                                                 int retries)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+
+	nm_assert (retries == AUTOCONNECT_RETRIES_UNSET || retries >= 0);
 
 	if (priv->autoconnect_retries != retries) {
 		_LOGT ("autoconnect-retries: set %d", retries);
@@ -2635,7 +2638,7 @@ nm_settings_connection_can_autoconnect (NMSettingsConnection *self)
 	const char *permission;
 
 	if (   !priv->visible
-	    || priv->autoconnect_retries == 0
+	    || nm_settings_connection_get_autoconnect_retries (self) == 0
 	    || priv->autoconnect_blocked_reason != NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE)
 		return FALSE;
 
