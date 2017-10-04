@@ -3257,7 +3257,6 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	g_return_val_if_fail (priv->iface != NULL, FALSE);
 	g_return_val_if_fail (priv->real, FALSE);
 
-	g_object_freeze_notify (G_OBJECT (self));
 
 	ifindex = nm_device_get_ifindex (self);
 
@@ -3274,6 +3273,7 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 		}
 	}
 
+	g_object_freeze_notify (G_OBJECT (self));
 	NM_DEVICE_GET_CLASS (self)->unrealize_notify (self);
 
 	_parent_set_ifindex (self, 0, FALSE);
