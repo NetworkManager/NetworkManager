@@ -863,21 +863,6 @@ set_mm_enabled (NMModem *_self,
 /* IPv4 method static */
 
 static gboolean
-ip4_string_to_num (const gchar *str, guint32 *out)
-{
-	guint32 addr = 0;
-	gboolean success = FALSE;
-
-	if (!str || inet_pton (AF_INET, str, &addr) != 1)
-		addr = 0;
-	else
-		success = TRUE;
-
-	*out = (guint32)addr;
-	return success;
-}
-
-static gboolean
 static_stage3_ip4_done (NMModemBroadband *self)
 {
 	GError *error = NULL;
@@ -886,7 +871,7 @@ static_stage3_ip4_done (NMModemBroadband *self)
 	const gchar *address_string;
 	const gchar *gw_string;
 	guint32 address_network;
-	guint32 gw;
+	guint32 gw = 0;
 	NMPlatformIP4Address address;
 	const gchar **dns;
 	guint i;
@@ -898,7 +883,7 @@ static_stage3_ip4_done (NMModemBroadband *self)
 
 	/* Fully fail if invalid IP address retrieved */
 	address_string = mm_bearer_ip_config_get_address (self->_priv.ipv4_config);
-	if (!ip4_string_to_num (address_string, &address_network)) {
+	if (!nm_utils_parse_inaddr_bin (AF_INET, address_string, &address_network)) {
 		error = g_error_new (NM_DEVICE_ERROR,
 		                     NM_DEVICE_ERROR_INVALID_CONNECTION,
 		                     "(%s) retrieving IP4 configuration failed: invalid address given '%s'",
@@ -909,7 +894,7 @@ static_stage3_ip4_done (NMModemBroadband *self)
 
 	/* Missing gateway not a hard failure */
 	gw_string = mm_bearer_ip_config_get_gateway (self->_priv.ipv4_config);
-	ip4_string_to_num (gw_string, &gw);
+	nm_utils_parse_inaddr_bin (AF_INET, gw_string, &gw);
 
 	data_port = mm_bearer_get_interface (self->_priv.bearer);
 	g_assert (data_port);
@@ -934,7 +919,7 @@ static_stage3_ip4_done (NMModemBroadband *self)
 	/* DNS servers */
 	dns = mm_bearer_ip_config_get_dns (self->_priv.ipv4_config);
 	for (i = 0; dns && dns[i]; i++) {
-		if (   ip4_string_to_num (dns[i], &address_network)
+		if (   nm_utils_parse_inaddr_bin (AF_INET, dns[i], &address_network)
 		    && address_network > 0) {
 			nm_ip4_config_add_nameserver (config, address_network);
 			_LOGI ("  DNS %s", dns[i]);

@@ -104,22 +104,6 @@ G_DEFINE_TYPE (NMModemOfono, nm_modem_ofono, NM_TYPE_MODEM)
 
 /*****************************************************************************/
 
-static gboolean
-ip_string_to_network_address (const gchar *str,
-                              guint32 *out)
-{
-	guint32 addr = 0;
-	gboolean success = FALSE;
-
-	if (!str || inet_pton (AF_INET, str, &addr) != 1)
-		addr = 0;
-	else
-		success = TRUE;
-
-	*out = (guint32)addr;
-	return success;
-}
-
 static void
 get_capabilities (NMModem *_self,
                   NMDeviceModemCapabilities *modem_caps,
@@ -919,7 +903,8 @@ context_property_changed (GDBusProxy *proxy,
 	if (g_variant_lookup (v_dict, "Address", "&s", &addr_s)) {
 		_LOGD ("Address: %s", addr_s);
 
-		if (ip_string_to_network_address (addr_s, &address_network)) {
+		if (   addr_s
+		    && nm_utils_parse_inaddr_bin (AF_INET, addr_s, &address_network)) {
 			addr.address = address_network;
 			addr.addr_source = NM_IP_CONFIG_SOURCE_WWAN;
 		} else {
@@ -935,7 +920,8 @@ context_property_changed (GDBusProxy *proxy,
 	if (g_variant_lookup (v_dict, "Netmask", "&s", &s)) {
 		_LOGD ("Netmask: %s", s);
 
-		if (s && ip_string_to_network_address (s, &address_network)) {
+		if (   s
+		    && nm_utils_parse_inaddr_bin (AF_INET, s, &address_network)) {
 			prefix = nm_utils_ip4_netmask_to_prefix (address_network);
 			if (prefix > 0)
 				addr.plen = prefix;
@@ -953,7 +939,8 @@ context_property_changed (GDBusProxy *proxy,
 	nm_ip4_config_add_address (priv->ip4_config, &addr);
 
 	if (g_variant_lookup (v_dict, "Gateway", "&s", &s)) {
-		if (s && ip_string_to_network_address (s, &gateway_network)) {
+		if (   s
+		    && nm_utils_parse_inaddr_bin (AF_INET, s, &gateway_network)) {
 			_LOGI ("Gateway: %s", s);
 			nm_ip4_config_set_gateway (priv->ip4_config, gateway_network);
 		} else {
@@ -969,7 +956,8 @@ context_property_changed (GDBusProxy *proxy,
 	if (g_variant_lookup (v_dict, "DomainNameServers", "^a&s", &array)) {
 		if (array) {
 			for (iter = array; *iter; iter++) {
-				if (ip_string_to_network_address (*iter, &address_network) && address_network > 0) {
+				if (   nm_utils_parse_inaddr_bin (AF_INET, *iter, &address_network)
+				    && address_network) {
 					_LOGI ("DNS: %s", *iter);
 					nm_ip4_config_add_nameserver (priv->ip4_config, address_network);
 				} else {
@@ -991,7 +979,8 @@ context_property_changed (GDBusProxy *proxy,
 
 	if (g_variant_lookup (v_dict, "MessageProxy", "&s", &s)) {
 		_LOGI ("MessageProxy: %s", s);
-		if (s && ip_string_to_network_address (s, &address_network)) {
+		if (   s
+		    && nm_utils_parse_inaddr_bin (AF_INET, s, &address_network)) {
 			NMPlatformIP4Route mms_route;
 
 			mms_route.network = address_network;
