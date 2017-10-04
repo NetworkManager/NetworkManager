@@ -342,8 +342,23 @@ nm_utils_parse_inaddr_bin (int addr_family,
 	else
 		g_return_val_if_fail (NM_IN_SET (addr_family, AF_INET, AF_INET6), FALSE);
 
-	if (inet_pton (addr_family, text, out_addr ?: &addrbin) != 1)
+	/* use a temporary variable @addrbin, to guarantee that @out_addr
+	 * is only modified on success. */
+	if (inet_pton (addr_family, text, &addrbin) != 1)
 		return FALSE;
+
+	if (out_addr) {
+		switch (addr_family) {
+		case AF_INET:
+			*((in_addr_t *) out_addr) = addrbin.addr4;
+			break;
+		case AF_INET6:
+			*((struct in6_addr *) out_addr) = addrbin.addr6;
+			break;
+		default:
+			nm_assert_not_reached ();
+		}
+	}
 	return TRUE;
 }
 
@@ -354,6 +369,8 @@ nm_utils_parse_inaddr (int addr_family,
 {
 	NMIPAddr addrbin;
 	char addrstr_buf[MAX (INET_ADDRSTRLEN, INET6_ADDRSTRLEN)];
+
+	nm_assert (!out_addr || !*out_addr);
 
 	if (!nm_utils_parse_inaddr_bin (addr_family, text, &addrbin))
 		return FALSE;
