@@ -243,6 +243,8 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	gsize data_len;
 	gboolean metered = FALSE;
 	gboolean static_default_gateway = FALSE;
+	gboolean gateway_has = FALSE;
+	in_addr_t gateway = 0;
 
 	g_return_val_if_fail (lease != NULL, NULL);
 
@@ -369,7 +371,8 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 			} else {
 				if (!static_default_gateway) {
 					static_default_gateway = TRUE;
-					nm_ip4_config_set_gateway (ip4_config, route.gateway);
+					gateway_has = TRUE;
+					gateway = route.gateway;
 
 					s = nm_utils_inet4_ntop (route.gateway, NULL);
 					LOG_LEASE (LOGD_DHCP4, "gateway %s", s);
@@ -390,11 +393,23 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	if (!static_default_gateway) {
 		r = sd_dhcp_lease_get_router (lease, &tmp_addr);
 		if (r == 0) {
-			nm_ip4_config_set_gateway (ip4_config, tmp_addr.s_addr);
+			gateway_has = TRUE;
+			gateway = tmp_addr.s_addr;
 			s = nm_utils_inet4_ntop (tmp_addr.s_addr, NULL);
 			LOG_LEASE (LOGD_DHCP4, "gateway %s", s);
 			add_option (options, dhcp4_requests, SD_DHCP_OPTION_ROUTER, s);
 		}
+	}
+
+	if (gateway_has) {
+		const NMPlatformIP4Route rt = {
+			.rt_source = NM_IP_CONFIG_SOURCE_DHCP,
+			.gateway = gateway,
+			.table_coerced = nm_platform_route_table_coerce (route_table),
+			.metric = route_metric,
+		};
+
+		nm_ip4_config_add_route (ip4_config, &rt, NULL);
 	}
 
 	/* MTU */

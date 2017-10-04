@@ -42,6 +42,7 @@
 #endif
 #include <linux/if.h>
 #include <linux/if_ppp.h>
+#include <linux/rtnetlink.h>
 
 #include "NetworkManagerUtils.h"
 #include "platform/nm-platform.h"
@@ -105,6 +106,11 @@ typedef struct {
 	char *ip_iface;
 	int monitor_fd;
 	guint monitor_id;
+
+	guint32 ip4_route_table;
+	guint32 ip4_route_metric;
+	guint32 ip6_route_table;
+	guint32 ip6_route_metric;
 } NMPPPManagerPrivate;
 
 struct _NMPPPManager {
@@ -129,6 +135,37 @@ G_DEFINE_TYPE (NMPPPManager, nm_ppp_manager, NM_TYPE_EXPORTED_OBJECT)
 
 static void _ppp_cleanup  (NMPPPManager *manager);
 static void _ppp_kill (NMPPPManager *manager);
+
+/*****************************************************************************/
+
+static void
+_ppp_manager_set_route_paramters (NMPPPManager *self,
+                                  guint32 ip4_route_table,
+                                  guint32 ip4_route_metric,
+                                  guint32 ip6_route_table,
+                                  guint32 ip6_route_metric)
+{
+	NMPPPManagerPrivate *priv;
+
+	g_return_if_fail (NM_IS_PPP_MANAGER (self));
+
+	priv = NM_PPP_MANAGER_GET_PRIVATE (self);
+	if (   priv->ip4_route_table  != ip4_route_table
+	    || priv->ip4_route_metric != ip4_route_metric
+	    || priv->ip6_route_table  != ip6_route_table
+	    || priv->ip6_route_metric != ip6_route_metric) {
+		priv->ip4_route_table = ip4_route_table;
+		priv->ip4_route_metric = ip4_route_metric;
+		priv->ip6_route_table = ip6_route_table;
+		priv->ip6_route_metric = ip6_route_metric;
+
+		_LOGT ("route-parameters: table-v4: %u, metric-v4: %u, table-v6: %u, metric-v6: %u",
+		       priv->ip4_route_table,
+		       priv->ip4_route_metric,
+		       priv->ip6_route_table,
+		       priv->ip6_route_metric);
+	}
+}
 
 /*****************************************************************************/
 
@@ -404,6 +441,7 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 	NMPlatformIP4Address address;
 	guint32 u32, mtu;
 	GVariantIter *iter;
+	int ifindex;
 
 	_LOGI ("(IPv4 Config Get) reply received.");
 
@@ -412,8 +450,11 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 	if (!set_ip_config_common (manager, config_dict, NM_PPP_IP4_CONFIG_INTERFACE, &mtu))
 		goto out;
 
-	config = nm_ip4_config_new (nm_platform_get_multi_idx (NM_PLATFORM_GET),
-	                            nm_platform_link_get_ifindex (NM_PLATFORM_GET, priv->ip_iface));
+	ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, priv->ip_iface);
+	if (ifindex <= 0)
+		goto out;
+
+	config = nm_ip4_config_new (nm_platform_get_multi_idx (NM_PLATFORM_GET), ifindex);
 
 	if (mtu)
 		nm_ip4_config_set_mtu (config, mtu, NM_IP_CONFIG_SOURCE_PPP);
@@ -425,7 +466,15 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 		address.address = u32;
 
 	if (g_variant_lookup (config_dict, NM_PPP_IP4_CONFIG_GATEWAY, "u", &u32)) {
-		nm_ip4_config_set_gateway (config, u32);
+		const NMPlatformIP4Route r = {
+			.ifindex   = ifindex,
+			.rt_source = NM_IP_CONFIG_SOURCE_PPP,
+			.gateway   = u32,
+			.table_coerced = nm_platform_route_table_coerce (priv->ip4_route_table),
+			.metric    = priv->ip4_route_metric,
+		};
+
+		nm_ip4_config_add_route (config, &r, NULL);
 		address.peer_address = u32;
 	} else
 		address.peer_address = address.address;
@@ -500,6 +549,7 @@ impl_ppp_manager_set_ip6_config (NMPPPManager *manager,
 	struct in6_addr a;
 	NMUtilsIPv6IfaceId iid = NM_UTILS_IPV6_IFACE_ID_INIT;
 	gboolean has_peer = FALSE;
+	int ifindex;
 
 	_LOGI ("(IPv6 Config Get) reply received.");
 
@@ -508,14 +558,25 @@ impl_ppp_manager_set_ip6_config (NMPPPManager *manager,
 	if (!set_ip_config_common (manager, config_dict, NM_PPP_IP6_CONFIG_INTERFACE, NULL))
 		goto out;
 
-	config = nm_ip6_config_new (nm_platform_get_multi_idx (NM_PLATFORM_GET),
-	                            nm_platform_link_get_ifindex (NM_PLATFORM_GET, priv->ip_iface));
+	ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, priv->ip_iface);
+	if (ifindex <= 0)
+		goto out;
+
+	config = nm_ip6_config_new (nm_platform_get_multi_idx (NM_PLATFORM_GET), ifindex);
 
 	memset (&addr, 0, sizeof (addr));
 	addr.plen = 64;
 
 	if (iid_value_to_ll6_addr (config_dict, NM_PPP_IP6_CONFIG_PEER_IID, &a, NULL)) {
-		nm_ip6_config_set_gateway (config, &a);
+		const NMPlatformIP6Route r = {
+			.ifindex   = ifindex,
+			.rt_source = NM_IP_CONFIG_SOURCE_PPP,
+			.gateway   = a,
+			.table_coerced = nm_platform_route_table_coerce (priv->ip6_route_table),
+			.metric    = priv->ip6_route_metric,
+		};
+
+		nm_ip6_config_add_route (config, &r, NULL);
 		addr.peer_address = a;
 		has_peer = TRUE;
 	}
@@ -1167,7 +1228,7 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_PARENT_IFACE:
-		g_free (priv->parent_iface);
+		/* construct-only */
 		priv->parent_iface = g_value_dup_string (value);
 		break;
 	default:
@@ -1181,7 +1242,13 @@ set_property (GObject *object, guint prop_id,
 static void
 nm_ppp_manager_init (NMPPPManager *manager)
 {
-	NM_PPP_MANAGER_GET_PRIVATE (manager)->monitor_fd = -1;
+	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
+
+	priv->monitor_fd = -1;
+	priv->ip4_route_table = RT_TABLE_MAIN;
+	priv->ip4_route_metric = 460;
+	priv->ip6_route_table = RT_TABLE_MAIN;
+	priv->ip6_route_metric = 460;
 }
 
 static NMPPPManager *
@@ -1291,9 +1358,10 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 }
 
 NMPPPOps ppp_ops = {
-	.create       = _ppp_manager_new,
-	.start        = _ppp_manager_start,
-	.stop_async   = _ppp_manager_stop_async,
-	.stop_finish  = _ppp_manager_stop_finish,
-	.stop_sync    = _ppp_manager_stop_sync,
+	.create               = _ppp_manager_new,
+	.set_route_parameters = _ppp_manager_set_route_paramters,
+	.start                = _ppp_manager_start,
+	.stop_async           = _ppp_manager_stop_async,
+	.stop_finish          = _ppp_manager_stop_finish,
+	.stop_sync            = _ppp_manager_stop_sync,
 };

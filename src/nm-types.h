@@ -194,7 +194,8 @@ typedef enum {
 typedef enum {
 	NM_IP_CONFIG_MERGE_DEFAULT                  = 0,
 	NM_IP_CONFIG_MERGE_NO_ROUTES                = (1LL << 0),
-	NM_IP_CONFIG_MERGE_NO_DNS                   = (1LL << 1),
+	NM_IP_CONFIG_MERGE_NO_DEFAULT_ROUTES        = (1LL << 1),
+	NM_IP_CONFIG_MERGE_NO_DNS                   = (1LL << 2),
 } NMIPConfigMergeFlags;
 
 

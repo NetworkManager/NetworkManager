@@ -138,7 +138,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	NMDevicePppPrivate *priv = NM_DEVICE_PPP_GET_PRIVATE (self);
 	NMSettingPppoe *s_pppoe;
 	NMActRequest *req;
-	GError *err = NULL;
+	GError *error = NULL;
 
 	req = nm_device_get_act_request (NM_DEVICE (self));
 	g_return_val_if_fail (req, NM_ACT_STAGE_RETURN_FAILURE);
@@ -149,14 +149,22 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	g_clear_object (&priv->pending_ip4_config);
 	nm_clear_g_free (&priv->pending_ifname);
 
-	priv->ppp_manager = nm_ppp_manager_create (nm_setting_pppoe_get_parent (s_pppoe), &err);
+	priv->ppp_manager = nm_ppp_manager_create (nm_setting_pppoe_get_parent (s_pppoe), &error);
+
+	if (priv->ppp_manager) {
+		nm_ppp_manager_set_route_parameters (priv->ppp_manager,
+		                                     nm_device_get_route_table (device, AF_INET, TRUE),
+		                                     nm_device_get_route_metric (device, AF_INET),
+		                                     nm_device_get_route_table (device, AF_INET6, TRUE),
+		                                     nm_device_get_route_metric (device, AF_INET6));
+	}
 
 	if (   !priv->ppp_manager
 	    || !nm_ppp_manager_start (priv->ppp_manager, req,
 	                              nm_setting_pppoe_get_username (s_pppoe),
-	                              30, 0, &err)) {
-		_LOGW (LOGD_DEVICE | LOGD_PPP, "PPPoE failed to start: %s", err->message);
-		g_error_free (err);
+	                              30, 0, &error)) {
+		_LOGW (LOGD_DEVICE | LOGD_PPP, "PPPoE failed to start: %s", error->message);
+		g_error_free (error);
 
 		g_clear_object (&priv->ppp_manager);
 

@@ -912,8 +912,24 @@ static_stage3_ip4_done (NMModemBroadband *self)
 	_LOGI ("  address %s/%d", address_string, address.plen);
 
 	if (gw) {
-		nm_ip4_config_set_gateway (config, gw);
-		_LOGI ("  gateway %s", gw_string);
+		guint32 ip4_route_table, ip4_route_metric;
+
+		nm_modem_get_route_parameters (NM_MODEM (self),
+		                               &ip4_route_table,
+		                               &ip4_route_metric,
+		                               NULL,
+		                               NULL);
+		{
+			const NMPlatformIP4Route r = {
+				.rt_source = NM_IP_CONFIG_SOURCE_WWAN,
+				.gateway = gw,
+				.table_coerced = nm_platform_route_table_coerce (ip4_route_table),
+				.metric = ip4_route_metric,
+			};
+
+			_LOGI ("  gateway %s", gw_string);
+			nm_ip4_config_add_route (config, &r, NULL);
+		}
 	}
 
 	/* DNS servers */
@@ -1006,7 +1022,9 @@ stage3_ip6_done (NMModemBroadband *self)
 
 	address_string = mm_bearer_ip_config_get_gateway (self->_priv.ipv6_config);
 	if (address_string) {
-		if (!inet_pton (AF_INET6, address_string, (void *) &(address.address))) {
+		guint32 ip6_route_table, ip6_route_metric;
+
+		if (inet_pton (AF_INET6, address_string, &address.address) != 1) {
 			error = g_error_new (NM_DEVICE_ERROR,
 			                     NM_DEVICE_ERROR_INVALID_CONNECTION,
 			                     "(%s) retrieving IPv6 configuration failed: invalid gateway given '%s'",
@@ -1014,8 +1032,23 @@ stage3_ip6_done (NMModemBroadband *self)
 			                     address_string);
 			goto out;
 		}
-		_LOGI ("  gateway %s", address_string);
-		nm_ip6_config_set_gateway (config, &address.address);
+
+		nm_modem_get_route_parameters (NM_MODEM (self),
+		                               NULL,
+		                               NULL,
+		                               &ip6_route_table,
+		                               &ip6_route_metric);
+		{
+			const NMPlatformIP6Route r = {
+				.rt_source = NM_IP_CONFIG_SOURCE_WWAN,
+				.gateway = address.address,
+				.table_coerced = nm_platform_route_table_coerce (ip6_route_table),
+				.metric = ip6_route_metric,
+			};
+
+			_LOGI ("  gateway %s", address_string);
+			nm_ip6_config_add_route (config, &r, NULL);
+		}
 	} else if (ip_method == NM_MODEM_IP_METHOD_STATIC) {
 		/* Gateway required for the 'static' method */
 		error = g_error_new (NM_DEVICE_ERROR,

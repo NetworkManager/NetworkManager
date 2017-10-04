@@ -25,6 +25,13 @@
 
 NMPPPManager *      nm_ppp_manager_create      (const char *iface,
                                                 GError **error);
+
+void                nm_ppp_manager_set_route_parameters (NMPPPManager *ppp_manager,
+                                                         guint32 ip4_route_table,
+                                                         guint32 ip4_route_metric,
+                                                         guint32 ip6_route_table,
+                                                         guint32 ip6_route_metric);
+
 gboolean            nm_ppp_manager_start       (NMPPPManager *self,
                                                 NMActRequest *req,
                                                 const char *ppp_name,

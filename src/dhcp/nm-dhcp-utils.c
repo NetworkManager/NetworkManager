@@ -405,7 +405,8 @@ nm_dhcp_utils_ip4_config_from_options (NMDedupMultiIndex *multi_idx,
 	in_addr_t addr;
 	NMPlatformIP4Address address;
 	char *str = NULL;
-	guint32 gwaddr = 0;
+	gboolean gateway_has = FALSE;
+	guint32 gateway = 0;
 	guint8 plen = 0;
 
 	g_return_val_if_fail (options != NULL, NULL);
@@ -434,12 +435,12 @@ nm_dhcp_utils_ip4_config_from_options (NMDedupMultiIndex *multi_idx,
 	/* Routes: if the server returns classless static routes, we MUST ignore
 	 * the 'static_routes' option.
 	 */
-	if (!ip4_process_classless_routes (iface, options, route_table, route_metric, ip4_config, &gwaddr))
+	if (!ip4_process_classless_routes (iface, options, route_table, route_metric, ip4_config, &gateway))
 		process_classful_routes (iface, options, route_table, route_metric, ip4_config);
 
-	if (gwaddr) {
-		_LOG2I (LOGD_DHCP4, iface, "  gateway %s", nm_utils_inet4_ntop (gwaddr, NULL));
-		nm_ip4_config_set_gateway (ip4_config, gwaddr);
+	if (gateway) {
+		_LOG2I (LOGD_DHCP4, iface, "  gateway %s", nm_utils_inet4_ntop (gateway, NULL));
+		gateway_has = TRUE;
 	} else {
 		/* If the gateway wasn't provided as a classless static route with a
 		 * subnet length of 0, try to find it using the old-style 'routers' option.
@@ -451,15 +452,26 @@ nm_dhcp_utils_ip4_config_from_options (NMDedupMultiIndex *multi_idx,
 
 			for (s = routers; *s; s++) {
 				/* FIXME: how to handle multiple routers? */
-				if (inet_pton (AF_INET, *s, &gwaddr) > 0) {
-					nm_ip4_config_set_gateway (ip4_config, gwaddr);
+				if (inet_pton (AF_INET, *s, &gateway) > 0) {
 					_LOG2I (LOGD_DHCP4, iface, "  gateway %s", *s);
+					gateway_has = TRUE;
 					break;
 				} else
 					_LOG2W (LOGD_DHCP4, iface, "ignoring invalid gateway '%s'", *s);
 			}
 			g_strfreev (routers);
 		}
+	}
+
+	if (gateway_has) {
+		const NMPlatformIP4Route r = {
+			.rt_source = NM_IP_CONFIG_SOURCE_DHCP,
+			.gateway = gateway,
+			.table_coerced = nm_platform_route_table_coerce (route_table),
+			.metric = route_metric,
+		};
+
+		nm_ip4_config_add_route (ip4_config, &r, NULL);
 	}
 
 	str = g_hash_table_lookup (options, "dhcp_lease_time");

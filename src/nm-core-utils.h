@@ -169,6 +169,15 @@ nm_utils_ip_route_metric_normalize (int addr_family, guint32 metric)
 	return addr_family == AF_INET6 ? nm_utils_ip6_route_metric_normalize (metric) : metric;
 }
 
+static inline guint32
+nm_utils_ip_route_metric_penalize (int addr_family, guint32 metric, guint32 penalty)
+{
+	metric = nm_utils_ip_route_metric_normalize (addr_family, metric);
+	if (metric < G_MAXUINT32 - penalty)
+		return metric + penalty;
+	return G_MAXUINT32;
+}
+
 int nm_utils_modprobe (GError **error, gboolean suppress_error_loggin, const char *arg1, ...) G_GNUC_NULL_TERMINATED;
 
 guint64 nm_utils_get_start_time_for_pid (pid_t pid, char *out_state, pid_t *out_ppid);

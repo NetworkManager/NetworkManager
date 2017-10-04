@@ -108,9 +108,9 @@ struct _NMDedupMultiIndex *nm_ip6_config_get_multi_idx (const NMIP6Config *self)
 NMIP6Config *nm_ip6_config_capture (struct _NMDedupMultiIndex *multi_idx, NMPlatform *platform, int ifindex,
                                     gboolean capture_resolv_conf, NMSettingIP6ConfigPrivacy use_temporary);
 
-void nm_ip6_config_add_device_routes (NMIP6Config *self,
-                                      guint32 route_table,
-                                      guint32 route_metric);
+void nm_ip6_config_add_dependent_routes (NMIP6Config *self,
+                                         guint32 route_table,
+                                         guint32 route_metric);
 
 gboolean nm_ip6_config_commit (const NMIP6Config *self,
                                NMPlatform *platform,
@@ -123,18 +123,18 @@ void nm_ip6_config_merge_setting (NMIP6Config *self,
 NMSetting *nm_ip6_config_create_setting (const NMIP6Config *self);
 
 
-void nm_ip6_config_merge (NMIP6Config *dst, const NMIP6Config *src, NMIPConfigMergeFlags merge_flags);
-void nm_ip6_config_subtract (NMIP6Config *dst, const NMIP6Config *src);
-void nm_ip6_config_intersect (NMIP6Config *dst, const NMIP6Config *src);
+void nm_ip6_config_merge (NMIP6Config *dst,
+                          const NMIP6Config *src,
+                          NMIPConfigMergeFlags merge_flags,
+                          guint32 default_route_metric_penalty);
+void nm_ip6_config_subtract (NMIP6Config *dst,
+                             const NMIP6Config *src,
+                             guint32 default_route_metric_penalty);
+void nm_ip6_config_intersect (NMIP6Config *dst,
+                              const NMIP6Config *src,
+                              guint32 default_route_metric_penalty);
 gboolean nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relevant_changes);
-int nm_ip6_config_destination_is_direct (const NMIP6Config *self, const struct in6_addr *dest, guint8 plen);
 void nm_ip6_config_dump (const NMIP6Config *self, const char *detail);
-
-
-void nm_ip6_config_set_never_default (NMIP6Config *self, gboolean never_default);
-gboolean nm_ip6_config_get_never_default (const NMIP6Config *self);
-void nm_ip6_config_set_gateway (NMIP6Config *self, const struct in6_addr *);
-const struct in6_addr *nm_ip6_config_get_gateway (const NMIP6Config *self);
 
 const NMPObject *nm_ip6_config_best_default_route_get (const NMIP6Config *self);
 const NMPObject *_nm_ip6_config_best_default_route_find (const NMIP6Config *self);
@@ -163,7 +163,9 @@ void _nmtst_ip6_config_del_route (NMIP6Config *self, guint i);
 guint nm_ip6_config_get_num_routes (const NMIP6Config *self);
 const NMPlatformIP6Route *_nmtst_ip6_config_get_route (const NMIP6Config *self, guint i);
 
-const NMPlatformIP6Route *nm_ip6_config_get_direct_route_for_host (const NMIP6Config *self, const struct in6_addr *host);
+const NMPlatformIP6Route *nm_ip6_config_get_direct_route_for_host (const NMIP6Config *self,
+                                                                   const struct in6_addr *host,
+                                                                   guint32 route_table);
 const NMPlatformIP6Address *nm_ip6_config_get_subnet_for_host (const NMIP6Config *self, const struct in6_addr *host);
 
 void nm_ip6_config_reset_nameservers (NMIP6Config *self);
@@ -210,7 +212,10 @@ void nm_ip6_config_reset_addresses_ndisc (NMIP6Config *self,
                                           guint8 plen,
                                           guint32 ifa_flags);
 struct _NMNDiscRoute;
+struct _NMNDiscGateway;
 void nm_ip6_config_reset_routes_ndisc (NMIP6Config *self,
+                                       const struct _NMNDiscGateway *gateways,
+                                       guint gateways_n,
                                        const struct _NMNDiscRoute *routes,
                                        guint routes_n,
                                        guint32 route_table,

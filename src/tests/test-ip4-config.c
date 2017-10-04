@@ -47,7 +47,16 @@ build_test_config (void)
 	route = *nmtst_platform_ip4_route ("172.16.0.0", 16, "192.168.1.1");
 	nm_ip4_config_add_route (config, &route, NULL);
 
-	nm_ip4_config_set_gateway (config, nmtst_inet4_from_string ("192.168.1.1"));
+	{
+		const NMPlatformIP4Route r = {
+			.rt_source = NM_IP_CONFIG_SOURCE_DHCP,
+			.gateway = nmtst_inet4_from_string ("192.168.1.1"),
+			.table_coerced = 0,
+			.metric = 100,
+		};
+
+		nm_ip4_config_add_route (config, &r, NULL);
+	}
 
 	nm_ip4_config_add_nameserver (config, nmtst_inet4_from_string ("4.2.2.1"));
 	nm_ip4_config_add_nameserver (config, nmtst_inet4_from_string ("4.2.2.2"));
@@ -106,7 +115,7 @@ test_subtract (void)
 
 	nm_ip4_config_set_mtu (dst, expected_mtu, NM_IP_CONFIG_SOURCE_UNKNOWN);
 
-	nm_ip4_config_subtract (dst, src);
+	nm_ip4_config_subtract (dst, src, 0);
 
 	/* ensure what's left is what we expect */
 	g_assert_cmpuint (nm_ip4_config_get_num_addresses (dst), ==, 1);
@@ -116,7 +125,8 @@ test_subtract (void)
 	g_assert_cmpuint (test_addr->peer_address, ==, test_addr->address);
 	g_assert_cmpuint (test_addr->plen, ==, expected_addr_plen);
 
-	g_assert_cmpuint (nm_ip4_config_get_gateway (dst), ==, 0);
+	g_assert (!nm_ip4_config_best_default_route_get (dst));
+	g_assert_cmpuint (nmtst_ip4_config_get_gateway (dst), ==, 0);
 
 	g_assert_cmpuint (nm_ip4_config_get_num_routes (dst), ==, 1);
 	test_route = _nmtst_ip4_config_get_route (dst, 0);
@@ -278,15 +288,15 @@ test_merge_subtract_mtu (void)
 	nm_ip4_config_set_mtu (cfg2, expected_mtu2, NM_IP_CONFIG_SOURCE_UNKNOWN);
 	nm_ip4_config_set_mtu (cfg3, expected_mtu3, NM_IP_CONFIG_SOURCE_UNKNOWN);
 
-	nm_ip4_config_merge (cfg1, cfg2, NM_IP_CONFIG_MERGE_DEFAULT);
+	nm_ip4_config_merge (cfg1, cfg2, NM_IP_CONFIG_MERGE_DEFAULT, 0);
 	/* ensure MSS and MTU are in cfg1 */
 	g_assert_cmpuint (nm_ip4_config_get_mtu (cfg1), ==, expected_mtu2);
 
-	nm_ip4_config_merge (cfg1, cfg3, NM_IP_CONFIG_MERGE_DEFAULT);
+	nm_ip4_config_merge (cfg1, cfg3, NM_IP_CONFIG_MERGE_DEFAULT, 0);
 	/* ensure again the MSS and MTU in cfg1 got overridden */
 	g_assert_cmpuint (nm_ip4_config_get_mtu (cfg1), ==, expected_mtu3);
 
-	nm_ip4_config_subtract (cfg1, cfg3);
+	nm_ip4_config_subtract (cfg1, cfg3, 0);
 	/* ensure MSS and MTU are zero in cfg1 */
 	g_assert_cmpuint (nm_ip4_config_get_mtu (cfg1), ==, 0);
 

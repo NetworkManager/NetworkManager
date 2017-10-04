@@ -40,7 +40,7 @@ build_test_config (void)
 	nm_ip6_config_add_route (config, nmtst_platform_ip6_route ("abcd:1200::", 24, "abcd:1234:4321:cdde::2", NULL), NULL);
 	nm_ip6_config_add_route (config, nmtst_platform_ip6_route ("2001::", 16, "2001:abba::2234", NULL), NULL);
 
-	nm_ip6_config_set_gateway (config, nmtst_inet6_from_string ("3001:abba::3234"));
+	nm_ip6_config_add_route (config, nmtst_platform_ip6_route ("::", 0, "3001:abba::3234", NULL), NULL);
 
 	nm_ip6_config_add_nameserver (config, nmtst_inet6_from_string ("1:2:3:4::1"));
 	nm_ip6_config_add_nameserver (config, nmtst_inet6_from_string ("1:2:3:4::2"));
@@ -84,7 +84,7 @@ test_subtract (void)
 	nm_ip6_config_add_domain (dst, expected_domain);
 	nm_ip6_config_add_search (dst, expected_search);
 
-	nm_ip6_config_subtract (dst, src);
+	nm_ip6_config_subtract (dst, src, 0);
 
 	/* ensure what's left is what we expect */
 	g_assert_cmpuint (nm_ip6_config_get_num_addresses (dst), ==, 1);
@@ -95,7 +95,7 @@ test_subtract (void)
 	g_assert (memcmp (&test_addr->peer_address, &in6addr_any, sizeof (tmp)) == 0);
 	g_assert_cmpuint (test_addr->plen, ==, expected_addr_plen);
 
-	g_assert (nm_ip6_config_get_gateway (dst) == NULL);
+	g_assert (nm_ip6_config_best_default_route_get (dst) == NULL);
 
 	g_assert_cmpuint (nm_ip6_config_get_num_routes (dst), ==, 1);
 	test_route = _nmtst_ip6_config_get_route (dst, 0);

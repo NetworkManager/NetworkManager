@@ -167,9 +167,8 @@ nm_dhcp_dhclient_get_lease_ip_configs (NMDedupMultiIndex *multi_idx,
                                        guint32 route_table,
                                        guint32 route_metric)
 {
-	char *contents = NULL;
-	char *leasefile;
-	GSList *leases = NULL;
+	gs_free char *contents = NULL;
+	gs_free char *leasefile = NULL;
 
 	leasefile = get_dhclient_leasefile (addr_family, iface, uuid, NULL);
 	if (!leasefile)
@@ -178,13 +177,11 @@ nm_dhcp_dhclient_get_lease_ip_configs (NMDedupMultiIndex *multi_idx,
 	if (   g_file_test (leasefile, G_FILE_TEST_EXISTS)
 	    && g_file_get_contents (leasefile, &contents, NULL, NULL)
 	    && contents
-	    && contents[0])
-		leases = nm_dhcp_dhclient_read_lease_ip_configs (multi_idx, addr_family, iface, ifindex, contents, NULL);
-
-	g_free (leasefile);
-	g_free (contents);
-
-	return leases;
+	    && contents[0]) {
+		return nm_dhcp_dhclient_read_lease_ip_configs (multi_idx, addr_family, iface, ifindex,
+		                                               route_table, route_metric, contents, NULL);
+	}
+	return NULL;
 }
 
 static gboolean

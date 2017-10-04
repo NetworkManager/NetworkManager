@@ -833,6 +833,7 @@ context_property_changed (GDBusProxy *proxy,
 	const gchar *s, *addr_s;
 	const gchar **array, **iter;
 	guint32 address_network, gateway_network;
+	guint32 ip4_route_table, ip4_route_metric;
 	guint prefix = 0;
 
 	_LOGD ("PropertyChanged: %s", property);
@@ -938,16 +939,30 @@ context_property_changed (GDBusProxy *proxy,
 
 	nm_ip4_config_add_address (priv->ip4_config, &addr);
 
-	if (g_variant_lookup (v_dict, "Gateway", "&s", &s)) {
-		if (   s
-		    && nm_utils_parse_inaddr_bin (AF_INET, s, &gateway_network)) {
-			_LOGI ("Gateway: %s", s);
-			nm_ip4_config_set_gateway (priv->ip4_config, gateway_network);
-		} else {
+	if (   g_variant_lookup (v_dict, "Gateway", "&s", &s)
+	    && s) {
+
+		if (!nm_utils_parse_inaddr_bin (AF_INET, s, &gateway_network)) {
 			_LOGW ("invalid 'Gateway': %s", s);
 			goto out;
 		}
-		nm_ip4_config_set_gateway (priv->ip4_config, gateway_network);
+
+		nm_modem_get_route_parameters (NM_MODEM (self),
+		                               &ip4_route_table,
+		                               &ip4_route_metric,
+		                               NULL,
+		                               NULL);
+		{
+			const NMPlatformIP4Route r = {
+				.rt_source = NM_IP_CONFIG_SOURCE_WWAN,
+				.gateway = gateway_network,
+				.table_coerced = nm_platform_route_table_coerce (ip4_route_table),
+				.metric = ip4_route_metric,
+			};
+
+			_LOGI ("Gateway: %s", s);
+			nm_ip4_config_add_route (priv->ip4_config, &r, NULL);
+		}
 	} else {
 		_LOGW ("Settings 'Gateway' missing");
 		goto out;
@@ -981,17 +996,23 @@ context_property_changed (GDBusProxy *proxy,
 		_LOGI ("MessageProxy: %s", s);
 		if (   s
 		    && nm_utils_parse_inaddr_bin (AF_INET, s, &address_network)) {
-			const NMPlatformIP4Route mms_route = {
-				.network = address_network,
-				.plen = 32,
-				.gateway = gateway_network,
-				.metric = 1,
-			};
+			nm_modem_get_route_parameters (NM_MODEM (self),
+			                               &ip4_route_table,
+			                               &ip4_route_metric,
+			                               NULL,
+			                               NULL);
 
-			/* FIXME: does not handle ipv4.route-table setting and always adds the
-			 * route to RT_TABLE_MAIN table. */
+			{
+				const NMPlatformIP4Route mms_route = {
+					.network = address_network,
+					.plen = 32,
+					.gateway = gateway_network,
+					.table_coerced = nm_platform_route_table_coerce (ip4_route_table),
+					.metric = ip4_route_metric,
+				};
 
-			nm_ip4_config_add_route (priv->ip4_config, &mms_route, NULL);
+				nm_ip4_config_add_route (priv->ip4_config, &mms_route, NULL);
+			}
 		} else {
 			_LOGW ("invalid MessageProxy: %s", s);
 		}

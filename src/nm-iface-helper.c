@@ -122,13 +122,13 @@ dhcp4_state_changed (NMDhcpClient *client,
 		existing = nm_ip4_config_capture (nm_platform_get_multi_idx (NM_PLATFORM_GET),
 		                                  NM_PLATFORM_GET, gl.ifindex, FALSE);
 		if (last_config)
-			nm_ip4_config_subtract (existing, last_config);
+			nm_ip4_config_subtract (existing, last_config, 0);
 
-		nm_ip4_config_merge (existing, ip4_config, NM_IP_CONFIG_MERGE_DEFAULT);
-		nm_ip4_config_add_device_routes (existing,
-		                                 RT_TABLE_MAIN,
-		                                 global_opt.priority_v4,
-		                                 &ip4_dev_route_blacklist);
+		nm_ip4_config_merge (existing, ip4_config, NM_IP_CONFIG_MERGE_DEFAULT, 0);
+		nm_ip4_config_add_dependent_routes (existing,
+		                                    RT_TABLE_MAIN,
+		                                    global_opt.priority_v4,
+		                                    &ip4_dev_route_blacklist);
 		if (!nm_ip4_config_commit (existing,
 		                           NM_PLATFORM_GET,
 		                           NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN))
@@ -168,18 +168,10 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 	existing = nm_ip6_config_capture (nm_platform_get_multi_idx (NM_PLATFORM_GET),
 	                                  NM_PLATFORM_GET, gl.ifindex, FALSE, global_opt.tempaddr);
 	if (ndisc_config)
-		nm_ip6_config_subtract (existing, ndisc_config);
+		nm_ip6_config_subtract (existing, ndisc_config, 0);
 	else {
 		ndisc_config = nm_ip6_config_new (nm_platform_get_multi_idx (NM_PLATFORM_GET),
 		                                  gl.ifindex);
-	}
-
-	if (changed & NM_NDISC_CONFIG_GATEWAYS) {
-		/* Use the first gateway as ordered in neighbor discovery cache. */
-		if (rdata->gateways_n)
-			nm_ip6_config_set_gateway (ndisc_config, &rdata->gateways[0].address);
-		else
-			nm_ip6_config_set_gateway (ndisc_config, NULL);
 	}
 
 	if (changed & NM_NDISC_CONFIG_ADDRESSES) {
@@ -207,8 +199,11 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 		                                     ifa_flags);
 	}
 
-	if (changed & NM_NDISC_CONFIG_ROUTES) {
+	if (NM_FLAGS_ANY (changed,  NM_NDISC_CONFIG_ROUTES
+	                          | NM_NDISC_CONFIG_GATEWAYS)) {
 		nm_ip6_config_reset_routes_ndisc (ndisc_config,
+		                                  rdata->gateways,
+		                                  rdata->gateways_n,
 		                                  rdata->routes,
 		                                  rdata->routes_n,
 		                                  RT_TABLE_MAIN,
@@ -229,10 +224,10 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 		nm_platform_sysctl_set (NM_PLATFORM_GET, NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_ip6_property_path (global_opt.ifname, "mtu")), val);
 	}
 
-	nm_ip6_config_merge (existing, ndisc_config, NM_IP_CONFIG_MERGE_DEFAULT);
-	nm_ip6_config_add_device_routes (existing,
-	                                 RT_TABLE_MAIN,
-	                                 global_opt.priority_v6);
+	nm_ip6_config_merge (existing, ndisc_config, NM_IP_CONFIG_MERGE_DEFAULT, 0);
+	nm_ip6_config_add_dependent_routes (existing,
+	                                    RT_TABLE_MAIN,
+	                                    global_opt.priority_v6);
 	if (!nm_ip6_config_commit (existing,
 	                           NM_PLATFORM_GET,
 	                           NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN,
