@@ -135,49 +135,35 @@ get_option (GVariant *options, const char *key)
 }
 
 static void
-_method_call (GDBusConnection *connection,
-              const char *sender,
-              const char *object_path,
-              const char *interface_name,
-              const char *method_name,
-              GVariant *parameters,
-              GDBusMethodInvocation *invocation,
-              gpointer user_data)
+_method_call_handle (NMDhcpListener *self,
+                     GVariant *parameters)
 {
-	NMDhcpListener *self = NM_DHCP_LISTENER (user_data);
-	char *iface = NULL;
-	char *pid_str = NULL;
-	char *reason = NULL;
-	gint pid;
+	gs_free char *iface = NULL;
+	gs_free char *pid_str = NULL;
+	gs_free char *reason = NULL;
+	gs_unref_variant GVariant *options;
+	int pid;
 	gboolean handled = FALSE;
-	GVariant *options;
-
-	if (!nm_streq0 (interface_name, NM_DHCP_HELPER_SERVER_INTERFACE_NAME))
-		g_return_if_reached ();
-	if (!nm_streq0 (method_name, NM_DHCP_HELPER_SERVER_METHOD_NOTIFY))
-		g_return_if_reached ();
-	if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(a{sv})")))
-		g_return_if_reached ();
 
 	g_variant_get (parameters, "(@a{sv})", &options);
 
 	iface = get_option (options, "interface");
 	if (iface == NULL) {
 		_LOGW ("dhcp-event: didn't have associated interface.");
-		goto out;
+		return;
 	}
 
 	pid_str = get_option (options, "pid");
 	pid = _nm_utils_ascii_str_to_int64 (pid_str, 10, 0, G_MAXINT32, -1);
 	if (pid == -1) {
 		_LOGW ("dhcp-event: couldn't convert PID '%s' to an integer", pid_str ? pid_str : "(null)");
-		goto out;
+		return;
 	}
 
 	reason = get_option (options, "reason");
 	if (reason == NULL) {
 		_LOGW ("dhcp-event: (pid %d) DHCP event didn't have a reason", pid);
-		goto out;
+		return;
 	}
 
 	g_signal_emit (self, signals[EVENT], 0, iface, pid, options, reason, &handled);
@@ -188,12 +174,29 @@ _method_call (GDBusConnection *connection,
 		} else
 			_LOGW ("dhcp-event: (pid %d) unhandled DHCP event for interface %s", pid, iface);
 	}
+}
 
-out:
-	g_free (iface);
-	g_free (pid_str);
-	g_free (reason);
-	g_variant_unref (options);
+static void
+_method_call (GDBusConnection *connection,
+              const char *sender,
+              const char *object_path,
+              const char *interface_name,
+              const char *method_name,
+              GVariant *parameters,
+              GDBusMethodInvocation *invocation,
+              gpointer user_data)
+{
+	NMDhcpListener *self = NM_DHCP_LISTENER (user_data);
+
+	if (!nm_streq0 (interface_name, NM_DHCP_HELPER_SERVER_INTERFACE_NAME))
+		g_return_if_reached ();
+	if (!nm_streq0 (method_name, NM_DHCP_HELPER_SERVER_METHOD_NOTIFY))
+		g_return_if_reached ();
+	if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(a{sv})")))
+		g_return_if_reached ();
+
+	_method_call_handle (self, parameters);
+
 	g_dbus_method_invocation_return_value (invocation, NULL);
 }
 
