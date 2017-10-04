@@ -133,8 +133,7 @@ read_array_of_uint (GKeyFile *file,
 static gboolean
 get_one_int (KeyfileReaderInfo *info, const char *property_name, const char *str, guint32 max_val, guint32 *out)
 {
-	long tmp;
-	char *endptr;
+	gint64 tmp;
 
 	g_return_val_if_fail (!info == !property_name, FALSE);
 
@@ -145,13 +144,13 @@ get_one_int (KeyfileReaderInfo *info, const char *property_name, const char *str
 		return FALSE;
 	}
 
-	errno = 0;
-	tmp = strtol (str, &endptr, 10);
-	if (errno || (tmp < 0) || (tmp > max_val) || *endptr != 0) {
-		if (property_name)
+	tmp = _nm_utils_ascii_str_to_int64 (str, 10, 0, max_val, -1);
+	if (tmp == -1) {
+		if (property_name) {
 			handle_warn (info, property_name, NM_KEYFILE_WARN_SEVERITY_WARN,
 			             _("ignoring invalid number '%s'"),
 			            str);
+		}
 		return FALSE;
 	}
 
