@@ -127,8 +127,8 @@ ip_entry_validate (NmtNewtEntry *entry,
 	if (!*text)
 		return priv->optional;
 	if (priv->prefix)
-		return nm_utils_parse_inaddr_prefix (text, priv->family, NULL, NULL);
-	return nm_utils_parse_inaddr (text, priv->family, NULL);
+		return nm_utils_parse_inaddr_prefix (priv->family, text, NULL, NULL);
+	return nm_utils_parse_inaddr (priv->family, text, NULL);
 }
 
 static void

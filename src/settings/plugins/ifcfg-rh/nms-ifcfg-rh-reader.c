@@ -711,8 +711,8 @@ parse_line_type_addr_with_prefix:
 			int prefix = -1;
 
 			if (info->type == PARSE_LINE_TYPE_ADDR) {
-				if (!nm_utils_parse_inaddr_bin (s,
-				                                addr_family,
+				if (!nm_utils_parse_inaddr_bin (addr_family,
+				                                s,
 				                                &info->v.addr.addr)) {
 					if (   info == &infos[PARSE_LINE_ATTR_ROUTE_VIA]
 					    && nm_streq (s, "(null)")) {
@@ -738,10 +738,10 @@ parse_line_type_addr_with_prefix:
 				    && nm_streq (s, "default")) {
 					memset (&info->v.addr.addr, 0, sizeof (info->v.addr.addr));
 					prefix = 0;
-				} else if (!nm_utils_parse_inaddr_prefix_bin (s,
-				                                       addr_family,
-				                                       &info->v.addr.addr,
-				                                       &prefix)) {
+				} else if (!nm_utils_parse_inaddr_prefix_bin (addr_family,
+				                                              s,
+				                                              &info->v.addr.addr,
+				                                              &prefix)) {
 					g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 					             "Argument for \"%s\" is not ADDR/PREFIX format", w);
 					return -EINVAL;
