@@ -137,7 +137,7 @@ write_ip_values (GKeyFile *file,
 	GString *output;
 	int family, i;
 	const char *addr, *gw;
-	guint32 plen, metric;
+	guint32 plen;
 	char key_name[64], *key_name_idx;
 
 	if (!array->len)
@@ -150,25 +150,27 @@ write_ip_values (GKeyFile *file,
 
 	output = g_string_sized_new (2*INET_ADDRSTRLEN + 10);
 	for (i = 0; i < array->len; i++) {
+		gint64 metric = -1;
+
 		if (is_route) {
 			NMIPRoute *route = array->pdata[i];
 
 			addr = nm_ip_route_get_dest (route);
 			plen = nm_ip_route_get_prefix (route);
 			gw = nm_ip_route_get_next_hop (route);
-			metric = MAX (0, nm_ip_route_get_metric (route));
+			metric = nm_ip_route_get_metric (route);
 		} else {
 			NMIPAddress *address = array->pdata[i];
 
 			addr = nm_ip_address_get_address (address);
 			plen = nm_ip_address_get_prefix (address);
 			gw = i == 0 ? gateway : NULL;
-			metric = 0;
 		}
 
 		g_string_set_size (output, 0);
 		g_string_append_printf (output, "%s/%u", addr, plen);
-		if (metric || gw) {
+		if (   metric != -1
+		    || gw) {
 			/* Older versions of the plugin do not support the form
 			 * "a.b.c.d/plen,,metric", so, we always have to write the
 			 * gateway, even if there isn't one.
@@ -182,7 +184,7 @@ write_ip_values (GKeyFile *file,
 			}
 
 			g_string_append_printf (output, ",%s", gw);
-			if (metric)
+			if (is_route && metric != -1)
 				g_string_append_printf (output, ",%lu", (unsigned long) metric);
 		}
 
