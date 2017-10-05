@@ -762,6 +762,10 @@ _linktype_get_type (NMPlatform *platform,
 			 * aside from the DEVTYPE. */
 			if (!g_strcmp0 (devtype, "gadget"))
 				return NM_LINK_TYPE_ETHERNET;
+
+			/* Distributed Switch Architecture switch chips */
+			if (!g_strcmp0 (devtype, "dsa"))
+				return NM_LINK_TYPE_ETHERNET;
 		}
 	}
 
