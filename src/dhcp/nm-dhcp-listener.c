@@ -41,10 +41,13 @@
 
 /*****************************************************************************/
 
-const NMDhcpClientFactory *const _nm_dhcp_manager_factories[3] = {
+const NMDhcpClientFactory *const _nm_dhcp_manager_factories[4] = {
 	/* the order here matters, as we will try the plugins in this order to find
 	 * the first available plugin. */
 
+#if WITH_DHCPCANON
+	&_nm_dhcp_client_factory_dhcpcanon,
+#endif
 #if WITH_DHCLIENT
 	&_nm_dhcp_client_factory_dhclient,
 #endif

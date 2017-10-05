@@ -90,6 +90,6 @@ GSList *       nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
 /* For testing only */
 extern const char* nm_dhcp_helper_path;
 
-extern const NMDhcpClientFactory *const _nm_dhcp_manager_factories[3];
+extern const NMDhcpClientFactory *const _nm_dhcp_manager_factories[4];
 
 #endif /* __NETWORKMANAGER_DHCP_MANAGER_H__ */

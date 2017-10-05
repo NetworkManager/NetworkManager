@@ -373,6 +373,7 @@ intltoolize --automake --copy --force
 	--disable-static \
 	--with-dhclient=yes \
 	--with-dhcpcd=no \
+	--with-dhcpcanon=no \
 	--with-config-dhcp-default=dhclient \
 	--with-crypto=nss \
 %if %{with test}
@@ -694,4 +695,3 @@ fi
 
 %changelog
 __CHANGELOG__
-
