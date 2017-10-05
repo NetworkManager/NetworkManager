@@ -1180,6 +1180,8 @@ global:
 
 libnm_1_10_0 {
 global:
+	nm_activation_state_flags_get_type;
+	nm_active_connection_get_state_flags;
 	nm_client_connectivity_check_get_available;
 	nm_client_connectivity_check_get_enabled;
 	nm_client_connectivity_check_set_enabled;

@@ -877,4 +877,30 @@ typedef enum {
 	NM_IP_ROUTE_TABLE_SYNC_MODE_FULL        = 3,
 } NMIPRouteTableSyncMode;
 
+/**
+ * NMActivationStateFlags:
+ * @NM_ACTIVATION_STATE_FLAG_NONE: an alias for numeric zero, no flags set.
+ * @NM_ACTIVATION_STATE_FLAG_IS_MASTER: the device is a master.
+ * @NM_ACTIVATION_STATE_FLAG_IS_SLAVE: the device is a slave.
+ * @NM_ACTIVATION_STATE_FLAG_LAYER2_READY: layer2 is activated and ready.
+ * @NM_ACTIVATION_STATE_FLAG_IP4_READY: IPv4 setting is completed.
+ * @NM_ACTIVATION_STATE_FLAG_IP6_READY: IPv6 setting is completed.
+ * @NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES: The master has any slave devices attached.
+ *   This only makes sense if the device is a master.
+ *
+ * Flags describing the current activation state.
+ *
+ * Since: 1.10
+ **/
+typedef enum { /*< flags >*/
+	NM_ACTIVATION_STATE_FLAG_NONE                       = 0,
+
+	NM_ACTIVATION_STATE_FLAG_IS_MASTER                  = (1LL <<  0),
+	NM_ACTIVATION_STATE_FLAG_IS_SLAVE                   = (1LL <<  1),
+	NM_ACTIVATION_STATE_FLAG_LAYER2_READY               = (1LL <<  2),
+	NM_ACTIVATION_STATE_FLAG_IP4_READY                  = (1LL <<  3),
+	NM_ACTIVATION_STATE_FLAG_IP6_READY                  = (1LL <<  4),
+	NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES          = (1LL <<  5),
+} NMActivationStateFlags;
+
 #endif /* __NM_DBUS_INTERFACE_H__ */

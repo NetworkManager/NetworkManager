@@ -39,6 +39,7 @@
 #define NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT "specific-object"
 #define NM_ACTIVE_CONNECTION_DEVICES         "devices"
 #define NM_ACTIVE_CONNECTION_STATE           "state"
+#define NM_ACTIVE_CONNECTION_STATE_FLAGS     "state-flags"
 #define NM_ACTIVE_CONNECTION_DEFAULT         "default"
 #define NM_ACTIVE_CONNECTION_IP4_CONFIG      "ip4-config"
 #define NM_ACTIVE_CONNECTION_DHCP4_CONFIG    "dhcp4-config"
@@ -144,6 +145,19 @@ NMActiveConnectionState nm_active_connection_get_state (NMActiveConnection *self
 void          nm_active_connection_set_state (NMActiveConnection *self,
                                               NMActiveConnectionState state,
                                               NMActiveConnectionStateReason reason);
+
+NMActivationStateFlags  nm_active_connection_get_state_flags (NMActiveConnection *self);
+
+void          nm_active_connection_set_state_flags_full (NMActiveConnection *self,
+                                                         NMActivationStateFlags state_flags,
+                                                         NMActivationStateFlags mask);
+
+static inline void
+nm_active_connection_set_state_flags (NMActiveConnection *self,
+                                      NMActivationStateFlags state_flags)
+{
+	nm_active_connection_set_state_flags_full (self, state_flags, state_flags);
+}
 
 NMDevice *    nm_active_connection_get_device (NMActiveConnection *self);
 

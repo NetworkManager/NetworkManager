@@ -44,6 +44,8 @@ typedef struct _NMActiveConnectionPrivate {
 
 	char *pending_activation_id;
 
+	NMActivationStateFlags state_flags;
+
 	NMActiveConnectionState state;
 	bool is_default:1;
 	bool is_default6:1;
@@ -73,6 +75,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMActiveConnection,
 	PROP_SPECIFIC_OBJECT,
 	PROP_DEVICES,
 	PROP_STATE,
+	PROP_STATE_FLAGS,
 	PROP_DEFAULT,
 	PROP_IP4_CONFIG,
 	PROP_DHCP4_CONFIG,
@@ -120,12 +123,11 @@ static void _set_activation_type_managed (NMActiveConnection *self);
 #define _NMLOG(level, ...) \
     G_STMT_START { \
         char _sbuf[64]; \
-        NMDevice *_device = (self) ? NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->device : NULL; \
-        NMConnection *_applied_connection = _device ? NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->applied_connection : NULL; \
+        NMActiveConnectionPrivate *_priv = self ? NM_ACTIVE_CONNECTION_GET_PRIVATE (self) : NULL; \
         \
         nm_log ((level), _NMLOG_DOMAIN, \
-                (_device) ? nm_device_get_iface (_device) : NULL, \
-                (_applied_connection) ? nm_connection_get_uuid (_applied_connection) : NULL, \
+                (_priv && _priv->device) ? nm_device_get_iface (_priv->device) : NULL, \
+                (_priv && _priv->applied_connection) ? nm_connection_get_uuid (_priv->applied_connection) : NULL, \
                 "%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
                 _NMLOG_PREFIX_NAME, \
                 self ? nm_sprintf_buf (_sbuf, "[%p]", self) : "" \
@@ -143,6 +145,16 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_state_to_string, NMActiveConnectionState,
 	NM_UTILS_LOOKUP_STR_ITEM (NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,  "deactivated"),
 );
 #define state_to_string(state) NM_UTILS_LOOKUP_STR (_state_to_string, state)
+
+NM_UTILS_FLAGS2STR_DEFINE_STATIC (_state_flags_to_string, NMActivationStateFlags,
+	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_NONE,                 "none"),
+	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_IS_MASTER,            "is-master"),
+	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_IS_SLAVE,             "is-slave"),
+	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_LAYER2_READY,         "layer2-ready"),
+	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_IP4_READY,            "ip4-ready"),
+	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_IP6_READY,            "ip6-ready"),
+	NM_UTILS_FLAGS2STR (NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES,    "master-has-slaves"),
+);
 
 /*****************************************************************************/
 
@@ -280,6 +292,33 @@ nm_active_connection_set_state (NMActiveConnection *self,
 	}
 }
 
+NMActivationStateFlags
+nm_active_connection_get_state_flags (NMActiveConnection *self)
+{
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->state_flags;
+}
+
+void
+nm_active_connection_set_state_flags_full (NMActiveConnection *self,
+                                           NMActivationStateFlags state_flags,
+                                           NMActivationStateFlags mask)
+{
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+	NMActivationStateFlags f;
+
+	f = (priv->state_flags & ~mask) | (state_flags & mask);
+	if (f != priv->state_flags) {
+		char buf1[G_N_ELEMENTS (_nm_utils_to_string_buffer)];
+		char buf2[G_N_ELEMENTS (_nm_utils_to_string_buffer)];
+
+		_LOGD ("set state-flags %s (was %s)",
+		       _state_flags_to_string (f, buf1, sizeof (buf1)),
+		       _state_flags_to_string (priv->state_flags, buf2, sizeof (buf2)));
+		priv->state_flags = f;
+		_notify (self, PROP_STATE_FLAGS);
+	}
+}
+
 const char *
 nm_active_connection_get_settings_connection_id (NMActiveConnection *self)
 {
@@ -331,6 +370,39 @@ nm_active_connection_get_applied_connection (NMActiveConnection *self)
 	return con;
 }
 
+static void
+_set_applied_connection_take (NMActiveConnection *self,
+                              NMConnection *applied_connection)
+{
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+	NMSettingConnection *s_con;
+	NMActivationStateFlags flags_val = 0;
+
+	nm_assert (NM_IS_CONNECTION (applied_connection));
+	nm_assert (!priv->applied_connection);
+
+	/* we take ownership of @applied_connection. Ensure to pass in a reference. */
+	priv->applied_connection = applied_connection;
+	nm_connection_clear_secrets (priv->applied_connection);
+
+	/* we determine whether the connection is a master/slave, based solely
+	 * on the connection properties itself. */
+	s_con = nm_connection_get_setting_connection (priv->applied_connection);
+	if (nm_setting_connection_get_master (s_con))
+		flags_val |= NM_ACTIVATION_STATE_FLAG_IS_SLAVE;
+
+	if (NM_IN_STRSET (nm_setting_connection_get_connection_type (s_con),
+	                  NM_SETTING_BOND_SETTING_NAME,
+	                  NM_SETTING_BRIDGE_SETTING_NAME,
+	                  NM_SETTING_TEAM_SETTING_NAME))
+		flags_val |= NM_ACTIVATION_STATE_FLAG_IS_MASTER;
+
+	nm_active_connection_set_state_flags_full (self,
+	                                           flags_val,
+	                                             NM_ACTIVATION_STATE_FLAG_IS_MASTER
+	                                           | NM_ACTIVATION_STATE_FLAG_IS_SLAVE);
+}
+
 void
 nm_active_connection_set_settings_connection (NMActiveConnection *self,
                                               NMSettingsConnection *connection)
@@ -355,8 +427,9 @@ nm_active_connection_set_settings_connection (NMActiveConnection *self,
 	g_return_if_fail (!nm_exported_object_is_exported (NM_EXPORTED_OBJECT (self)));
 
 	_set_settings_connection (self, connection);
-	priv->applied_connection = nm_simple_connection_new_clone (NM_CONNECTION (priv->settings_connection));
-	nm_connection_clear_secrets (priv->applied_connection);
+
+	_set_applied_connection_take (self,
+	                              nm_simple_connection_new_clone (NM_CONNECTION (priv->settings_connection)));
 }
 
 gboolean
@@ -1091,6 +1164,9 @@ get_property (GObject *object, guint prop_id,
 			g_value_set_uint (value, NM_ACTIVE_CONNECTION_STATE_ACTIVATING);
 		}
 		break;
+	case PROP_STATE_FLAGS:
+		g_value_set_uint (value, priv->state_flags);
+		break;
 	case PROP_DEFAULT:
 		g_value_set_boolean (value, priv->is_default);
 		break;
@@ -1151,8 +1227,15 @@ set_property (GObject *object, guint prop_id,
 	case PROP_INT_APPLIED_CONNECTION:
 		/* construct-only */
 		acon = g_value_get_object (value);
-		if (acon)
+		if (acon) {
+			/* we don't call _set_applied_connection_take() yet, because the instance
+			 * is not yet fully initialized. We are currently in the process of setting
+			 * the constructor properties.
+			 *
+			 * For now, just piggyback the connection, but call _set_applied_connection_take()
+			 * in constructed(). */
 			priv->applied_connection = g_object_ref (acon);
+		}
 		break;
 	case PROP_INT_DEVICE:
 		/* construct-only */
@@ -1220,16 +1303,24 @@ constructed (GObject *object)
 
 	G_OBJECT_CLASS (nm_active_connection_parent_class)->constructed (object);
 
-	if (!priv->applied_connection && priv->settings_connection)
+	if (   !priv->applied_connection
+	    && priv->settings_connection)
 		priv->applied_connection = nm_simple_connection_new_clone (NM_CONNECTION (priv->settings_connection));
-
-	if (priv->applied_connection)
-		nm_connection_clear_secrets (priv->applied_connection);
 
 	_LOGD ("constructed (%s, version-id %llu, type %s)",
 	       G_OBJECT_TYPE_NAME (self),
 	       (unsigned long long) priv->version_id,
 	       nm_activation_type_to_string (priv->activation_type));
+
+	if (priv->applied_connection) {
+		/* priv->applied_connection was set during the construction of the object.
+		 * It's not yet fully initialized, so do that now.
+		 *
+		 * We delayed that, because we may log in _set_applied_connection_take(), and the
+		 * first logging line should be "constructed" above). */
+		_set_applied_connection_take (self,
+		                              g_steal_pointer (&priv->applied_connection));
+	}
 
 	g_return_if_fail (priv->subject);
 }
@@ -1327,6 +1418,12 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 	                        NM_ACTIVE_CONNECTION_STATE_UNKNOWN,
 	                        NM_ACTIVE_CONNECTION_STATE_DEACTIVATING,
 	                        NM_ACTIVE_CONNECTION_STATE_UNKNOWN,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_STATE_FLAGS] =
+	     g_param_spec_uint (NM_ACTIVE_CONNECTION_STATE_FLAGS, "", "",
+	                        0, G_MAXUINT32, NM_ACTIVATION_STATE_FLAG_NONE,
 	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS);
 

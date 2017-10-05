@@ -44,6 +44,7 @@ G_BEGIN_DECLS
 #define NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT_PATH "specific-object-path"
 #define NM_ACTIVE_CONNECTION_DEVICES              "devices"
 #define NM_ACTIVE_CONNECTION_STATE                "state"
+#define NM_ACTIVE_CONNECTION_STATE_FLAGS          "state-flags"
 #define NM_ACTIVE_CONNECTION_DEFAULT              "default"
 #define NM_ACTIVE_CONNECTION_IP4_CONFIG           "ip4-config"
 #define NM_ACTIVE_CONNECTION_DHCP4_CONFIG         "dhcp4-config"
@@ -76,6 +77,8 @@ const char                    *nm_active_connection_get_connection_type      (NM
 const char                    *nm_active_connection_get_specific_object_path (NMActiveConnection *connection);
 const GPtrArray               *nm_active_connection_get_devices              (NMActiveConnection *connection);
 NMActiveConnectionState        nm_active_connection_get_state                (NMActiveConnection *connection);
+NM_AVAILABLE_IN_1_10
+NMActivationStateFlags         nm_active_connection_get_state_flags          (NMActiveConnection *connection);
 NM_AVAILABLE_IN_1_8
 NMActiveConnectionStateReason  nm_active_connection_get_state_reason         (NMActiveConnection *connection);
 NMDevice                      *nm_active_connection_get_master               (NMActiveConnection *connection);

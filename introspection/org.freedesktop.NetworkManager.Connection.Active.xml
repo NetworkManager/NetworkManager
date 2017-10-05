@@ -81,6 +81,15 @@
     <property name="State" type="u" access="read"/>
 
     <!--
+        StateFlags:
+
+        The state flags of this active connection.
+
+        Returns: <link linkend="NMActivationStateFlags">NMActivationStateFlags</link>
+    -->
+    <property name="StateFlags" type="u" access="read"/>
+
+    <!--
         StateChanged:
         @state: (<link linkend="NMActiveConnectionState">NMActiveConnectionState</link>) The new state of the active connection.
         @reason: (<link linkend="NMActiveConnectionStateReason">NMActiveConnectionStateReason</link>) Reason code describing the change to the new state.
