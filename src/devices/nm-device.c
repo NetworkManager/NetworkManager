@@ -11367,8 +11367,8 @@ _get_managed_by_flags(NMUnmanagedFlags flags, NMUnmanagedFlags mask, gboolean fo
 		 * which is based on the device type.
 		 * It also overwrites the udev configuration and external-down */
 		flags &= ~(   NM_UNMANAGED_BY_DEFAULT
-		           || NM_UNMANAGED_USER_UDEV
-		           || NM_UNMANAGED_EXTERNAL_DOWN);
+		           | NM_UNMANAGED_USER_UDEV
+		           | NM_UNMANAGED_EXTERNAL_DOWN);
 	}
 
 	if (   NM_FLAGS_HAS (mask, NM_UNMANAGED_IS_SLAVE)
