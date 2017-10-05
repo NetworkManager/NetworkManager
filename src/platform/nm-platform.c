@@ -3670,7 +3670,6 @@ nm_platform_ip_route_sync (NMPlatform *self,
                            GPtrArray **out_temporary_not_available)
 {
 	const NMPlatformVTableRoute *vt;
-	gs_unref_ptrarray GPtrArray *plat_routes = NULL;
 	gs_unref_hashtable GHashTable *routes_idx = NULL;
 	const NMPObject *conf_o;
 	const NMDedupMultiEntry *plat_entry;

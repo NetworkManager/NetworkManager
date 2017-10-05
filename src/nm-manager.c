@@ -2459,9 +2459,10 @@ _platform_link_cb_idle (PlatformLinkCbData *data)
 
 	plink = nm_platform_link_get (priv->platform, ifindex);
 	if (plink) {
-		nm_auto_nmpobj const NMPObject *plink_keep_alive = nmp_object_ref (NMP_OBJECT_UP_CAST (plink));
+		const NMPObject *plink_keep_alive = nmp_object_ref (NMP_OBJECT_UP_CAST (plink));
 
 		platform_link_added (self, ifindex, plink, FALSE, NULL);
+		nmp_object_unref (plink_keep_alive);
 	} else {
 		NMDevice *device;
 		GError *error = NULL;
