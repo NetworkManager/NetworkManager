@@ -115,6 +115,78 @@ nm_utils_strbuf_append (char **buf, gsize *len, const char *format, ...)
 
 /*****************************************************************************/
 
+/**
+ * nm_strquote:
+ * @buf: the output buffer of where to write the quoted @str argument.
+ * @buf_len: the size of @buf.
+ * @str: (allow-none): the string to quote.
+ *
+ * Writes @str to @buf with quoting. The resulting buffer
+ * is always NUL terminated, unless @buf_len is zero.
+ * If @str is %NULL, it writes "(null)".
+ *
+ * If @str needs to be truncated, the closing quote is '^' instead
+ * of '"'.
+ *
+ * This is similar to nm_strquote_a(), which however uses alloca()
+ * to allocate a new buffer. Also, here @buf_len is the size of @buf,
+ * while nm_strquote_a() has the number of characters to print. The latter
+ * doesn't include the quoting.
+ *
+ * Returns: the input buffer with the quoted string. */
+const char *
+nm_strquote (char *buf, gsize buf_len, const char *str)
+{
+	const char *const buf0 = buf;
+
+	if (!str) {
+		nm_utils_strbuf_append_str (&buf, &buf_len, "(null)");
+		goto out;
+	}
+
+	if (G_UNLIKELY (buf_len <= 2)) {
+		switch (buf_len) {
+		case 2:
+			*(buf++) = '^';
+			/* fall-through*/
+		case 1:
+			*(buf++) = '\0';
+			break;
+		}
+		goto out;
+	}
+
+	*(buf++) = '"';
+	buf_len--;
+
+	nm_utils_strbuf_append_str (&buf, &buf_len, str);
+
+	/* if the string was too long we indicate truncation with a
+	 * '^' instead of a closing quote. */
+	if (G_UNLIKELY (buf_len <= 1)) {
+		switch (buf_len) {
+		case 1:
+			buf[-1] = '^';
+			break;
+		case 0:
+			buf[-2] = '^';
+			break;
+		default:
+			nm_assert_not_reached ();
+			break;
+		}
+	} else {
+		nm_assert (buf_len >= 2);
+		*(buf++) = '"';
+		*(buf++) = '\0';
+	}
+
+out:
+	return buf0;
+}
+
+/*****************************************************************************/
+
 char _nm_utils_to_string_buffer[];
 
 void

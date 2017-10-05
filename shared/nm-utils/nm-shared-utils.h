@@ -166,6 +166,8 @@ void nm_utils_strbuf_append (char **buf, gsize *len, const char *format, ...) _n
 void nm_utils_strbuf_append_c (char **buf, gsize *len, char c);
 void nm_utils_strbuf_append_str (char **buf, gsize *len, const char *str);
 
+const char *nm_strquote (char *buf, gsize buf_len, const char *str);
+
 /*****************************************************************************/
 
 const char **nm_utils_strsplit_set (const char *str, const char *delimiters);

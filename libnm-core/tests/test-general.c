@@ -4852,6 +4852,88 @@ test_hexstr2bin (void)
 
 /*****************************************************************************/
 
+static void
+_do_strquote (const char *str, gsize buf_len, const char *expected)
+{
+	char canary = (char) nmtst_get_rand_int ();
+	gs_free char *buf_full = g_malloc (buf_len + 2);
+	char *buf = &buf_full[1];
+	const char *b;
+
+	buf[-1] = canary;
+	buf[buf_len] = canary;
+
+	if (buf_len == 0) {
+		b = nm_strquote (NULL, 0, str);
+		g_assert (b == NULL);
+		g_assert (expected == NULL);
+		b = nm_strquote (buf, 0, str);
+		g_assert (b == buf);
+	} else {
+		b = nm_strquote (buf, buf_len, str);
+		g_assert (b == buf);
+		g_assert (strlen (b) < buf_len);
+		g_assert_cmpstr (expected, ==, b);
+	}
+
+	g_assert (buf[-1] == canary);
+	g_assert (buf[buf_len] == canary);
+}
+
+static void
+test_nm_strquote (void)
+{
+	_do_strquote (NULL, 0, NULL);
+	_do_strquote ("", 0, NULL);
+	_do_strquote ("a", 0, NULL);
+	_do_strquote ("ab", 0, NULL);
+
+	_do_strquote (NULL, 1, "");
+	_do_strquote (NULL, 2, "(");
+	_do_strquote (NULL, 3, "(n");
+	_do_strquote (NULL, 4, "(nu");
+	_do_strquote (NULL, 5, "(nul");
+	_do_strquote (NULL, 6, "(null");
+	_do_strquote (NULL, 7, "(null)");
+	_do_strquote (NULL, 8, "(null)");
+	_do_strquote (NULL, 100, "(null)");
+
+	_do_strquote ("", 1, "");
+	_do_strquote ("", 2, "^");
+	_do_strquote ("", 3, "\"\"");
+	_do_strquote ("", 4, "\"\"");
+	_do_strquote ("", 5, "\"\"");
+	_do_strquote ("", 100, "\"\"");
+
+	_do_strquote ("a", 1, "");
+	_do_strquote ("a", 2, "^");
+	_do_strquote ("a", 3, "\"^");
+	_do_strquote ("a", 4, "\"a\"");
+	_do_strquote ("a", 5, "\"a\"");
+	_do_strquote ("a", 6, "\"a\"");
+	_do_strquote ("a", 100, "\"a\"");
+
+	_do_strquote ("ab", 1, "");
+	_do_strquote ("ab", 2, "^");
+	_do_strquote ("ab", 3, "\"^");
+	_do_strquote ("ab", 4, "\"a^");
+	_do_strquote ("ab", 5, "\"ab\"");
+	_do_strquote ("ab", 6, "\"ab\"");
+	_do_strquote ("ab", 7, "\"ab\"");
+	_do_strquote ("ab", 100, "\"ab\"");
+
+	_do_strquote ("abc", 1, "");
+	_do_strquote ("abc", 2, "^");
+	_do_strquote ("abc", 3, "\"^");
+	_do_strquote ("abc", 4, "\"a^");
+	_do_strquote ("abc", 5, "\"ab^");
+	_do_strquote ("abc", 6, "\"abc\"");
+	_do_strquote ("abc", 7, "\"abc\"");
+	_do_strquote ("abc", 100, "\"abc\"");
+}
+
+/*****************************************************************************/
+
 #define UUID_NIL        "00000000-0000-0000-0000-000000000000"
 #define UUID_NS_DNS     "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
 
@@ -6366,6 +6448,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_setting_user_data", test_setting_user_data);
 
 	g_test_add_func ("/core/general/hexstr2bin", test_hexstr2bin);
+	g_test_add_func ("/core/general/nm_strquote", test_nm_strquote);
 	g_test_add_func ("/core/general/test_nm_utils_uuid_generate_from_string", test_nm_utils_uuid_generate_from_string);
 	g_test_add_func ("/core/general/_nm_utils_uuid_generate_from_strings", test_nm_utils_uuid_generate_from_strings);
 
