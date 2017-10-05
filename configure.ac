@@ -852,6 +852,25 @@ else
 fi
 AM_CONDITIONAL(WITH_OFONO, test "${with_ofono}" = "yes")
 
+# DHCP client support with dhcpcanon
+AC_ARG_WITH([dhcpcanon],
+            AS_HELP_STRING([--with-dhcpcanon=yes|no|path], [Enable dhcpcanon support (experimental)]))
+if test "$with_dhcpcanon" != "no"; then
+    with_dhcpcanon_="$with_dhcpcanon"
+    AC_PATH_PROGS(with_dhcpcanon, dhcpcanon, no, /sbin:/usr/sbin:/usr/local/sbin:/usr/bin:/usr/local/bin)
+    if test "$with_dhcpcanon" == "no"; then
+        if test "$with_dhcpcanon_" == yes; then
+            AC_MSG_WARN([dhcpcanon not found, assume path /sbin/dhcpcanon])
+            with_dhcpcanon=/sbin/dhcpcanon
+        fi
+    fi
+fi
+if test "$with_dhcpcanon" != "no"; then
+    AC_DEFINE(WITH_DHCPCANON, 1, [Define if you have dhcpcanon])
+    AC_SUBST(DHCPCANON_PATH, $with_dhcpcanon)
+else
+    AC_DEFINE(WITH_DHCPCANON, 0, [Define if you have dhcpcanon])
+fi
 # DHCP client support
 AC_ARG_WITH([dhclient],
             AS_HELP_STRING([--with-dhclient=yes|no|path], [Enable dhclient 4.x support]))
@@ -933,6 +952,7 @@ AC_ARG_WITH(config-dhcp-default,
 if test "$config_dhcp_default" = yes -o "$config_dhcp_default" = no; then
 	config_dhcp_default=''
 fi
+test -z "$config_dhcp_default" -a "$with_dhcpcanon" != "no" && config_dhcp_default='dhcpcanon'
 test -z "$config_dhcp_default" -a "$with_dhclient" != "no" && config_dhcp_default='dhclient'
 test -z "$config_dhcp_default" -a "$with_dhcpcd"   != "no" && config_dhcp_default='dhcpcd'
 test -z "$config_dhcp_default"                             && config_dhcp_default='internal'
@@ -1019,7 +1039,7 @@ AC_SUBST(DNSSEC_TRIGGER_SCRIPT)
 
 # system CA certificates path
 AC_ARG_WITH(system-ca-path,
-            AS_HELP_STRING([--with-system-ca-path=/path/to/ssl/certs], [path to system CA certificates])) 
+            AS_HELP_STRING([--with-system-ca-path=/path/to/ssl/certs], [path to system CA certificates]))
 if test "x${with_system_ca_path}" = x; then
 	SYSTEM_CA_PATH=/etc/ssl/certs
 else
@@ -1358,6 +1378,7 @@ echo "  config-dns-rc-manager-default: ${config_dns_rc_manager_default}"
 echo
 
 echo "DHCP clients (default $config_dhcp_default):"
+echo "  dhcpcanon: $with_dhcpcanon"
 echo "  dhclient: $with_dhclient"
 echo "  dhcpcd: $with_dhcpcd"
 echo "  dhcpcd-supports-ipv6: $with_dhcpcd_supports_ipv6"
