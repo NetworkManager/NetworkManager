@@ -90,6 +90,9 @@ typedef struct {
 	MMBearerIpConfig *ipv4_config;
 	MMBearerIpConfig *ipv6_config;
 
+	guint idle_id_ip4;
+	guint idle_id_ip6;
+
 	guint32 pin_tries;
 } NMModemBroadbandPrivate;
 
@@ -945,15 +948,17 @@ out:
 }
 
 static NMActStageReturn
-static_stage3_ip4_config_start (NMModem *_self,
+static_stage3_ip4_config_start (NMModem *modem,
                                 NMActRequest *req,
                                 NMDeviceStateReason *out_failure_reason)
 {
-	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
+	NMModemBroadband *self = NM_MODEM_BROADBAND (modem);
+	NMModemBroadbandPrivate *priv = NM_MODEM_BROADBAND_GET_PRIVATE (self);
 
 	/* We schedule it in an idle just to follow the same logic as in the
 	 * generic modem implementation. */
-	g_idle_add ((GSourceFunc) static_stage3_ip4_done, self);
+	nm_clear_g_source (&priv->idle_id_ip4);
+	priv->idle_id_ip4 = g_idle_add ((GSourceFunc) static_stage3_ip4_done, self);
 
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
@@ -1054,13 +1059,15 @@ out:
 }
 
 static NMActStageReturn
-stage3_ip6_config_request (NMModem *_self, NMDeviceStateReason *out_failure_reason)
+stage3_ip6_config_request (NMModem *modem, NMDeviceStateReason *out_failure_reason)
 {
-	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
+	NMModemBroadband *self = NM_MODEM_BROADBAND (modem);
+	NMModemBroadbandPrivate *priv = NM_MODEM_BROADBAND_GET_PRIVATE (self);
 
 	/* We schedule it in an idle just to follow the same logic as in the
 	 * generic modem implementation. */
-	g_idle_add ((GSourceFunc) stage3_ip6_done, self);
+	nm_clear_g_source (&priv->idle_id_ip6);
+	priv->idle_id_ip6 = g_idle_add ((GSourceFunc) stage3_ip6_done, self);
 
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
@@ -1411,6 +1418,10 @@ static void
 dispose (GObject *object)
 {
 	NMModemBroadband *self = NM_MODEM_BROADBAND (object);
+	NMModemBroadbandPrivate *priv = NM_MODEM_BROADBAND_GET_PRIVATE (self);
+
+	nm_clear_g_source (&priv->idle_id_ip4);
+	nm_clear_g_source (&priv->idle_id_ip6);
 
 	connect_context_clear (self);
 	g_clear_object (&self->_priv.ipv4_config);
