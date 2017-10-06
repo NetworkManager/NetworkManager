@@ -261,10 +261,4 @@ gboolean nm_ip4_config_nmpobj_remove (NMIP4Config *self,
 void nm_ip4_config_hash (const NMIP4Config *self, GChecksum *sum, gboolean dns_only);
 gboolean nm_ip4_config_equal (const NMIP4Config *a, const NMIP4Config *b);
 
-/*****************************************************************************/
-/* Testing-only functions */
-
-gboolean nm_ip4_config_capture_resolv_conf (GArray *nameservers, GPtrArray *dns_options,
-                                            const char *rc_contents);
-
 #endif /* __NETWORKMANAGER_IP4_CONFIG_H__ */

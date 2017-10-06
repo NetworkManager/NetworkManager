@@ -1888,101 +1888,109 @@ nm_utils_new_infiniband_name (char *name, const char *parent_name, int p_key)
 	return name;
 }
 
-/**
- * nm_utils_read_resolv_conf_nameservers():
- * @rc_contents: contents of a resolv.conf; or %NULL to read /etc/resolv.conf
- *
- * Reads all nameservers out of @rc_contents or /etc/resolv.conf and returns
- * them.
- *
- * Returns: a #GPtrArray of 'char *' elements of each nameserver line from
- * @contents or resolv.conf
- */
-GPtrArray *
-nm_utils_read_resolv_conf_nameservers (const char *rc_contents)
+/*****************************************************************************/
+
+gboolean
+nm_utils_resolve_conf_parse (int addr_family,
+                             const char *rc_contents,
+                             GArray *nameservers,
+                             GPtrArray *dns_options)
 {
-	GPtrArray *nameservers = NULL;
-	char *contents = NULL;
-	char **lines, **iter;
-	char *p;
+	guint i;
+	gboolean changed = FALSE;
+	gs_free const char **lines = NULL;
+	gsize l;
 
-	if (rc_contents)
-		contents = g_strdup (rc_contents);
-	else {
-		if (!g_file_get_contents (_PATH_RESCONF, &contents, NULL, NULL))
-			return NULL;
-	}
+	g_return_val_if_fail (rc_contents, FALSE);
+	g_return_val_if_fail (nameservers, FALSE);
+	g_return_val_if_fail (   (   addr_family == AF_INET
+	                          && g_array_get_element_size (nameservers) == sizeof (in_addr_t))
+	                      || (   addr_family == AF_INET6
+	                          && g_array_get_element_size (nameservers) == sizeof (struct in6_addr)), FALSE);
 
-	nameservers = g_ptr_array_new_full (3, g_free);
+	lines = nm_utils_strsplit_set (rc_contents, "\r\n");
+	if (!lines)
+		return FALSE;
 
-	lines = g_strsplit_set (contents, "\r\n", -1);
-	for (iter = lines; *iter; iter++) {
-		if (!g_str_has_prefix (*iter, "nameserver"))
-			continue;
-		p = *iter + strlen ("nameserver");
-		if (!g_ascii_isspace (*p++))
-			continue;
-		/* Skip intermediate whitespace */
-		while (g_ascii_isspace (*p))
-			p++;
-		g_strchomp (p);
+/* like glibc's MATCH() macro in resolv/res_init.c. */
+#define RC_MATCH(line, option, out_arg) \
+    ({ \
+        const char *const _line = (line); \
+        gboolean _match = FALSE; \
+        \
+        if (   (strncmp (_line, option, NM_STRLEN (option)) == 0) \
+            && (NM_IN_SET (_line[NM_STRLEN (option)], ' ', '\t'))) { \
+            _match = TRUE;\
+            (out_arg) = &_line[NM_STRLEN (option) + 1]; \
+        } \
+        _match; \
+    })
 
-		g_ptr_array_add (nameservers, g_strdup (p));
-	}
-	g_strfreev (lines);
-	g_free (contents);
+	for (l = 0; lines[l]; l++) {
+		const char *const line = lines[l];
+		const char *s;
 
-	return nameservers;
-}
+		if (RC_MATCH (line, "nameserver", s)) {
+			gs_free char *s_cpy = NULL;
+			NMIPAddr ns;
 
-/**
- * nm_utils_read_resolv_conf_dns_options():
- * @rc_contents: contents of a resolv.conf; or %NULL to read /etc/resolv.conf
- *
- * Reads all dns options out of @rc_contents or /etc/resolv.conf and returns
- * them.
- *
- * Returns: a #GPtrArray of 'char *' elements of each option
- */
-GPtrArray *
-nm_utils_read_resolv_conf_dns_options (const char *rc_contents)
-{
-	GPtrArray *options = NULL;
-	char *contents = NULL;
-	char **lines, **line_iter;
-	char **tokens, **token_iter;
-	char *p;
-
-	if (rc_contents)
-		contents = g_strdup (rc_contents);
-	else {
-		if (!g_file_get_contents (_PATH_RESCONF, &contents, NULL, NULL))
-			return NULL;
-	}
-
-	options = g_ptr_array_new_full (3, g_free);
-
-	lines = g_strsplit_set (contents, "\r\n", -1);
-	for (line_iter = lines; *line_iter; line_iter++) {
-		if (!g_str_has_prefix (*line_iter, "options"))
-			continue;
-		p = *line_iter + strlen ("options");
-		if (!g_ascii_isspace (*p++))
-			continue;
-
-		tokens = g_strsplit (p, " ", 0);
-		for (token_iter = tokens; token_iter && *token_iter; token_iter++) {
-			g_strstrip (*token_iter);
-			if (!*token_iter[0])
+			s = nm_strstrip_avoid_copy (s, &s_cpy);
+			if (inet_pton (addr_family, s, &ns) != 1)
 				continue;
-			g_ptr_array_add (options, g_strdup (*token_iter));
-		}
-		g_strfreev (tokens);
-	}
-	g_strfreev (lines);
-	g_free (contents);
 
-	return options;
+			if (addr_family == AF_INET) {
+				if (!ns.addr4)
+					continue;
+				for (i = 0; i < nameservers->len; i++) {
+					if (g_array_index (nameservers, guint32, i) == ns.addr4)
+						break;
+				}
+			} else {
+				if (IN6_IS_ADDR_UNSPECIFIED (&ns.addr6))
+					continue;
+				for (i = 0; i < nameservers->len; i++) {
+					struct in6_addr *t = &g_array_index (nameservers, struct in6_addr, i);
+
+					if (IN6_ARE_ADDR_EQUAL (t, &ns.addr6))
+						break;
+				}
+			}
+
+			if (i == nameservers->len) {
+				g_array_append_val (nameservers, ns);
+				changed = TRUE;
+			}
+			continue;
+		}
+
+		if (RC_MATCH (line, "options", s)) {
+			if (!dns_options)
+				continue;
+
+			s = nm_str_skip_leading_spaces (s);
+			if (s[0]) {
+				gs_free const char **tokens = NULL;
+				gsize i_tokens;
+
+				tokens = nm_utils_strsplit_set (s, " \t");
+				nm_assert (tokens);
+				for (i_tokens = 0; tokens[i_tokens]; i_tokens++) {
+					gs_free char *t = g_strstrip (g_strdup (tokens[i_tokens]));
+
+					if (   _nm_utils_dns_option_validate (t, NULL, NULL,
+					                                      addr_family == AF_INET6,
+					                                      _nm_utils_dns_option_descs)
+					    && _nm_utils_dns_option_find_idx (dns_options, t) < 0) {
+						g_ptr_array_add (dns_options, g_steal_pointer (&t));
+						changed = TRUE;
+					}
+				}
+			}
+			continue;
+		}
+	}
+
+	return changed;
 }
 
 /*****************************************************************************/

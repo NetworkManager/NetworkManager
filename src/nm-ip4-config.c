@@ -25,6 +25,7 @@
 
 #include <string.h>
 #include <arpa/inet.h>
+#include <resolv.h>
 
 #include "nm-utils/nm-dedup-multi.h"
 
@@ -516,72 +517,6 @@ _notify_routes (NMIP4Config *self)
 
 /*****************************************************************************/
 
-/**
- * nm_ip4_config_capture_resolv_conf():
- * @nameservers: array of guint32
- * @rc_contents: the contents of a resolv.conf or %NULL to read /etc/resolv.conf
- *
- * Reads all resolv.conf IPv4 nameservers and adds them to @nameservers.
- *
- * Returns: %TRUE if nameservers were added, %FALSE if @nameservers is unchanged
- */
-gboolean
-nm_ip4_config_capture_resolv_conf (GArray *nameservers,
-                                   GPtrArray *dns_options,
-                                   const char *rc_contents)
-{
-	GPtrArray *read_ns, *read_options;
-	guint i, j;
-	gboolean changed = FALSE;
-
-	g_return_val_if_fail (nameservers != NULL, FALSE);
-
-	read_ns = nm_utils_read_resolv_conf_nameservers (rc_contents);
-	if (!read_ns)
-		return FALSE;
-
-	for (i = 0; i < read_ns->len; i++) {
-		const char *s = g_ptr_array_index (read_ns, i);
-		guint32 ns = 0;
-
-		if (!inet_pton (AF_INET, s, (void *) &ns) || !ns)
-			continue;
-
-		/* Ignore duplicates */
-		for (j = 0; j < nameservers->len; j++) {
-			if (g_array_index (nameservers, guint32, j) == ns)
-				break;
-		}
-
-		if (j == nameservers->len) {
-			g_array_append_val (nameservers, ns);
-			changed = TRUE;
-		}
-	}
-	g_ptr_array_unref (read_ns);
-
-	if (dns_options) {
-		read_options = nm_utils_read_resolv_conf_dns_options (rc_contents);
-		if (!read_options)
-			return changed;
-
-		for (i = 0; i < read_options->len; i++) {
-			const char *s = g_ptr_array_index (read_options, i);
-
-			if (_nm_utils_dns_option_validate (s, NULL, NULL, FALSE, _nm_utils_dns_option_descs) &&
-				_nm_utils_dns_option_find_idx (dns_options, s) < 0) {
-				g_ptr_array_add (dns_options, g_strdup (s));
-				changed = TRUE;
-			}
-		}
-		g_ptr_array_unref (read_options);
-	}
-
-	return changed;
-}
-
-/*****************************************************************************/
-
 static gint
 _addresses_sort_cmp_get_prio (in_addr_t addr)
 {
@@ -716,8 +651,15 @@ nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 	 * nameservers from /etc/resolv.conf.
 	 */
 	if (has_addresses && priv->has_gateway && capture_resolv_conf) {
-		if (nm_ip4_config_capture_resolv_conf (priv->nameservers, priv->dns_options, NULL))
-			_notify (self, PROP_NAMESERVERS);
+		gs_free char *rc_contents = NULL;
+
+		if (g_file_get_contents (_PATH_RESCONF, &rc_contents, NULL, NULL)) {
+			if (nm_utils_resolve_conf_parse (AF_INET,
+			                                 rc_contents,
+			                                 priv->nameservers,
+			                                 priv->dns_options))
+				_notify (self, PROP_NAMESERVERS);
+		}
 	}
 
 	/* actually, nobody should be connected to the signal, just to be sure, notify */
