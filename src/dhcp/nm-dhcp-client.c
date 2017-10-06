@@ -56,7 +56,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_IFINDEX,
 	PROP_HWADDR,
 	PROP_UUID,
-	PROP_PRIORITY,
+	PROP_ROUTE_METRIC,
 	PROP_TIMEOUT,
 );
 
@@ -73,7 +73,7 @@ typedef struct _NMDhcpClientPrivate {
 	guint        watch_id;
 	int          addr_family;
 	int          ifindex;
-	guint32      priority;
+	guint32      route_metric;
 	guint32      timeout;
 	NMDhcpState  state;
 	bool         info_only:1;
@@ -151,11 +151,11 @@ nm_dhcp_client_get_hw_addr (NMDhcpClient *self)
 }
 
 guint32
-nm_dhcp_client_get_priority (NMDhcpClient *self)
+nm_dhcp_client_get_route_metric (NMDhcpClient *self)
 {
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), G_MAXUINT32);
 
-	return NM_DHCP_CLIENT_GET_PRIVATE (self)->priority;
+	return NM_DHCP_CLIENT_GET_PRIVATE (self)->route_metric;
 }
 
 guint32
@@ -789,14 +789,13 @@ nm_dhcp_client_handle_event (gpointer unused,
 				                                                               priv->ifindex,
 				                                                               priv->iface,
 				                                                               str_options,
-				                                                               priv->priority);
+				                                                               priv->route_metric);
 			} else {
 				prefix = nm_dhcp_utils_ip6_prefix_from_options (str_options);
 				ip_config = (GObject *) nm_dhcp_utils_ip6_config_from_options (nm_dhcp_client_get_multi_idx (self),
 				                                                               priv->ifindex,
 				                                                               priv->iface,
 				                                                               str_options,
-				                                                               priv->priority,
 				                                                               priv->info_only);
 			}
 		}
@@ -851,8 +850,8 @@ get_property (GObject *object, guint prop_id,
 	case PROP_UUID:
 		g_value_set_string (value, priv->uuid);
 		break;
-	case PROP_PRIORITY:
-		g_value_set_uint (value, priv->priority);
+	case PROP_ROUTE_METRIC:
+		g_value_set_uint (value, priv->route_metric);
 		break;
 	case PROP_TIMEOUT:
 		g_value_set_uint (value, priv->timeout);
@@ -900,9 +899,9 @@ set_property (GObject *object, guint prop_id,
 		/* construct-only */
 		priv->uuid = g_value_dup_string (value);
 		break;
-	case PROP_PRIORITY:
+	case PROP_ROUTE_METRIC:
 		/* construct-only */
-		priv->priority = g_value_get_uint (value);
+		priv->route_metric = g_value_get_uint (value);
 		break;
 	case PROP_TIMEOUT:
 		/* construct-only */
@@ -1011,8 +1010,8 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 	                         G_PARAM_STATIC_STRINGS);
 
-	obj_properties[PROP_PRIORITY] =
-	    g_param_spec_uint (NM_DHCP_CLIENT_PRIORITY, "", "",
+	obj_properties[PROP_ROUTE_METRIC] =
+	    g_param_spec_uint (NM_DHCP_CLIENT_ROUTE_METRIC, "", "",
 	                       0, G_MAXUINT32, 0,
 	                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 	                       G_PARAM_STATIC_STRINGS);

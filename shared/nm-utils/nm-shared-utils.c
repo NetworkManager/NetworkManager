@@ -115,6 +115,78 @@ nm_utils_strbuf_append (char **buf, gsize *len, const char *format, ...)
 
 /*****************************************************************************/
 
+/**
+ * nm_strquote:
+ * @buf: the output buffer of where to write the quoted @str argument.
+ * @buf_len: the size of @buf.
+ * @str: (allow-none): the string to quote.
+ *
+ * Writes @str to @buf with quoting. The resulting buffer
+ * is always NUL terminated, unless @buf_len is zero.
+ * If @str is %NULL, it writes "(null)".
+ *
+ * If @str needs to be truncated, the closing quote is '^' instead
+ * of '"'.
+ *
+ * This is similar to nm_strquote_a(), which however uses alloca()
+ * to allocate a new buffer. Also, here @buf_len is the size of @buf,
+ * while nm_strquote_a() has the number of characters to print. The latter
+ * doesn't include the quoting.
+ *
+ * Returns: the input buffer with the quoted string. */
+const char *
+nm_strquote (char *buf, gsize buf_len, const char *str)
+{
+	const char *const buf0 = buf;
+
+	if (!str) {
+		nm_utils_strbuf_append_str (&buf, &buf_len, "(null)");
+		goto out;
+	}
+
+	if (G_UNLIKELY (buf_len <= 2)) {
+		switch (buf_len) {
+		case 2:
+			*(buf++) = '^';
+			/* fall-through*/
+		case 1:
+			*(buf++) = '\0';
+			break;
+		}
+		goto out;
+	}
+
+	*(buf++) = '"';
+	buf_len--;
+
+	nm_utils_strbuf_append_str (&buf, &buf_len, str);
+
+	/* if the string was too long we indicate truncation with a
+	 * '^' instead of a closing quote. */
+	if (G_UNLIKELY (buf_len <= 1)) {
+		switch (buf_len) {
+		case 1:
+			buf[-1] = '^';
+			break;
+		case 0:
+			buf[-2] = '^';
+			break;
+		default:
+			nm_assert_not_reached ();
+			break;
+		}
+	} else {
+		nm_assert (buf_len >= 2);
+		*(buf++) = '"';
+		*(buf++) = '\0';
+	}
+
+out:
+	return buf0;
+}
+
+/*****************************************************************************/
+
 char _nm_utils_to_string_buffer[];
 
 void
@@ -257,41 +329,58 @@ nm_utils_ip_is_site_local (int addr_family,
 /*****************************************************************************/
 
 gboolean
-nm_utils_parse_inaddr_bin  (const char *text,
-                            int family,
-                            gpointer out_addr)
+nm_utils_parse_inaddr_bin (int addr_family,
+                           const char *text,
+                           gpointer out_addr)
 {
 	NMIPAddr addrbin;
 
 	g_return_val_if_fail (text, FALSE);
 
-	if (family == AF_UNSPEC)
-		family = strchr (text, ':') ? AF_INET6 : AF_INET;
+	if (addr_family == AF_UNSPEC)
+		addr_family = strchr (text, ':') ? AF_INET6 : AF_INET;
 	else
-		g_return_val_if_fail (NM_IN_SET (family, AF_INET, AF_INET6), FALSE);
+		g_return_val_if_fail (NM_IN_SET (addr_family, AF_INET, AF_INET6), FALSE);
 
-	if (inet_pton (family, text, out_addr ?: &addrbin) != 1)
+	/* use a temporary variable @addrbin, to guarantee that @out_addr
+	 * is only modified on success. */
+	if (inet_pton (addr_family, text, &addrbin) != 1)
 		return FALSE;
+
+	if (out_addr) {
+		switch (addr_family) {
+		case AF_INET:
+			*((in_addr_t *) out_addr) = addrbin.addr4;
+			break;
+		case AF_INET6:
+			*((struct in6_addr *) out_addr) = addrbin.addr6;
+			break;
+		default:
+			nm_assert_not_reached ();
+		}
+	}
 	return TRUE;
 }
 
 gboolean
-nm_utils_parse_inaddr (const char *text,
-                       int family,
+nm_utils_parse_inaddr (int addr_family,
+                       const char *text,
                        char **out_addr)
 {
 	NMIPAddr addrbin;
 	char addrstr_buf[MAX (INET_ADDRSTRLEN, INET6_ADDRSTRLEN)];
 
-	if (!nm_utils_parse_inaddr_bin (text, family, &addrbin))
+	nm_assert (!out_addr || !*out_addr);
+
+	if (!nm_utils_parse_inaddr_bin (addr_family, text, &addrbin))
 		return FALSE;
-	NM_SET_OUT (out_addr, g_strdup (inet_ntop (family, &addrbin, addrstr_buf, sizeof (addrstr_buf))));
+	NM_SET_OUT (out_addr, g_strdup (inet_ntop (addr_family, &addrbin, addrstr_buf, sizeof (addrstr_buf))));
 	return TRUE;
 }
 
 gboolean
-nm_utils_parse_inaddr_prefix_bin (const char *text,
-                                  int family,
+nm_utils_parse_inaddr_prefix_bin (int addr_family,
+                                  const char *text,
                                   gpointer out_addr,
                                   int *out_prefix)
 {
@@ -304,12 +393,12 @@ nm_utils_parse_inaddr_prefix_bin (const char *text,
 
 	g_return_val_if_fail (text, FALSE);
 
-	if (family == AF_UNSPEC)
-		family = strchr (text, ':') ? AF_INET6 : AF_INET;
+	if (addr_family == AF_UNSPEC)
+		addr_family = strchr (text, ':') ? AF_INET6 : AF_INET;
 
-	if (family == AF_INET)
+	if (addr_family == AF_INET)
 		addr_len = sizeof (in_addr_t);
-	else if (family == AF_INET6)
+	else if (addr_family == AF_INET6)
 		addr_len = sizeof (struct in6_addr);
 	else
 		g_return_val_if_reached (FALSE);
@@ -320,13 +409,13 @@ nm_utils_parse_inaddr_prefix_bin (const char *text,
 	else
 		addrstr = text;
 
-	if (inet_pton (family, addrstr, &addrbin) != 1)
+	if (inet_pton (addr_family, addrstr, &addrbin) != 1)
 		return FALSE;
 
 	if (slash) {
 		prefix = _nm_utils_ascii_str_to_int64 (slash + 1, 10,
 		                                       0,
-		                                       family == AF_INET ? 32 : 128,
+		                                       addr_family == AF_INET ? 32 : 128,
 		                                       -1);
 		if (prefix == -1)
 			return FALSE;
@@ -339,17 +428,17 @@ nm_utils_parse_inaddr_prefix_bin (const char *text,
 }
 
 gboolean
-nm_utils_parse_inaddr_prefix (const char *text,
-                              int family,
+nm_utils_parse_inaddr_prefix (int addr_family,
+                              const char *text,
                               char **out_addr,
                               int *out_prefix)
 {
 	NMIPAddr addrbin;
 	char addrstr_buf[MAX (INET_ADDRSTRLEN, INET6_ADDRSTRLEN)];
 
-	if (!nm_utils_parse_inaddr_prefix_bin (text, family, &addrbin, out_prefix))
+	if (!nm_utils_parse_inaddr_prefix_bin (addr_family, text, &addrbin, out_prefix))
 		return FALSE;
-	NM_SET_OUT (out_addr, g_strdup (inet_ntop (family, &addrbin, addrstr_buf, sizeof (addrstr_buf))));
+	NM_SET_OUT (out_addr, g_strdup (inet_ntop (addr_family, &addrbin, addrstr_buf, sizeof (addrstr_buf))));
 	return TRUE;
 }
 

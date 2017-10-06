@@ -426,7 +426,7 @@ get_best_ip_device (NMPolicy *self,
 		           && (connection = nm_device_get_applied_connection (device))
 		           && nm_utils_connection_has_default_route (connection, addr_family, NULL)) {
 			metric = nm_utils_ip_route_metric_normalize (addr_family,
-			                                             nm_device_get_ip_route_metric (device, addr_family));
+			                                             nm_device_get_route_metric (device, addr_family));
 			is_fully_activated = FALSE;
 		} else
 			continue;

@@ -447,21 +447,7 @@ NMDeviceType    nm_device_get_device_type       (NMDevice *dev);
 NMLinkType      nm_device_get_link_type         (NMDevice *dev);
 NMMetered       nm_device_get_metered           (NMDevice *dev);
 
-int             nm_device_get_priority          (NMDevice *dev);
-
-guint32         nm_device_get_ip_route_metric   (NMDevice *dev, int addr_family);
-
-static inline guint32
-nm_device_get_ip4_route_metric (NMDevice *self)
-{
-	return nm_device_get_ip_route_metric (self, AF_INET);
-}
-
-static inline guint32
-nm_device_get_ip6_route_metric (NMDevice *self)
-{
-	return nm_device_get_ip_route_metric (self, AF_INET6);
-}
+guint32         nm_device_get_route_metric      (NMDevice *dev, int addr_family);
 
 const char *    nm_device_get_hw_address        (NMDevice *dev);
 const char *    nm_device_get_permanent_hw_address (NMDevice *self);

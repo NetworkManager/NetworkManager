@@ -107,7 +107,7 @@ ip_addresses_with_prefix_from_strv (GBinding     *binding,
                                     GValue       *target_value,
                                     gpointer      user_data)
 {
-	int family = GPOINTER_TO_INT (user_data);
+	int addr_family = GPOINTER_TO_INT (user_data);
 	char **strings;
 	GPtrArray *addrs;
 	NMIPAddress *addr;
@@ -123,7 +123,7 @@ ip_addresses_with_prefix_from_strv (GBinding     *binding,
 
 	for (i = 0; strings[i]; i++) {
 		if (i >= addrs->len) {
-			if (family == AF_INET)
+			if (addr_family == AF_INET)
 				addr = nm_ip_address_new (AF_INET, "0.0.0.0", 32, NULL);
 			else
 				addr = nm_ip_address_new (AF_INET6, "::", 128, NULL);
@@ -131,16 +131,16 @@ ip_addresses_with_prefix_from_strv (GBinding     *binding,
 		} else
 			addr = addrs->pdata[i];
 
-		if (!nm_utils_parse_inaddr_prefix (strings[i], family, &addrstr, &prefix)) {
+		if (!nm_utils_parse_inaddr_prefix (addr_family, strings[i], &addrstr, &prefix)) {
 			g_ptr_array_unref (addrs);
 			return FALSE;
 		}
 
 		if (prefix == -1) {
-			if (family == AF_INET) {
+			if (addr_family == AF_INET) {
 				in_addr_t v4;
 
-				inet_pton (family, addrstr, &v4);
+				inet_pton (addr_family, addrstr, &v4);
 				if (nm_utils_ip_is_site_local (AF_INET, &v4))
 					prefix = nm_utils_ip4_get_default_prefix (v4);
 				else
@@ -161,7 +161,7 @@ ip_addresses_with_prefix_from_strv (GBinding     *binding,
 
 /**
  * nm_editor_bind_ip_addresses_with_prefix_to_strv:
- * @family: the IP address family
+ * @addr_family: the IP address family
  * @source: the source object (eg, an #NMSettingIP4Config)
  * @source_property: the property on @source to bind (eg,
  *   %NM_SETTING_IP4_CONFIG_ADDRESSES)
@@ -178,7 +178,7 @@ ip_addresses_with_prefix_from_strv (GBinding     *binding,
  * vice versa if %G_BINDING_BIDIRECTIONAL) is specified.
  */
 void
-nm_editor_bind_ip_addresses_with_prefix_to_strv (int            family,
+nm_editor_bind_ip_addresses_with_prefix_to_strv (int            addr_family,
                                                  gpointer       source,
                                                  const gchar   *source_property,
                                                  gpointer       target,
@@ -190,7 +190,7 @@ nm_editor_bind_ip_addresses_with_prefix_to_strv (int            family,
 	                             flags,
 	                             ip_addresses_with_prefix_to_strv,
 	                             ip_addresses_with_prefix_from_strv,
-	                             GINT_TO_POINTER (family), NULL);
+	                             GINT_TO_POINTER (addr_family), NULL);
 }
 
 static gboolean
@@ -199,14 +199,14 @@ ip_addresses_check_and_copy (GBinding     *binding,
                              GValue       *target_value,
                              gpointer      user_data)
 {
-	int family = GPOINTER_TO_INT (user_data);
+	int addr_family = GPOINTER_TO_INT (user_data);
 	char **strings;
 	int i;
 
 	strings = g_value_get_boxed (source_value);
 
 	for (i = 0; strings[i]; i++) {
-		if (!nm_utils_ipaddr_valid (family, strings[i]))
+		if (!nm_utils_ipaddr_valid (addr_family, strings[i]))
 			return FALSE;
 	}
 
@@ -216,7 +216,7 @@ ip_addresses_check_and_copy (GBinding     *binding,
 
 /**
  * nm_editor_bind_ip_addresses_to_strv:
- * @family: the IP address family
+ * @addr_family: the IP address family
  * @source: the source object (eg, an #NMSettingIP4Config)
  * @source_property: the property on @source to bind (eg,
  *   %NM_SETTING_IP4_CONFIG_DNS)
@@ -227,10 +227,10 @@ ip_addresses_check_and_copy (GBinding     *binding,
  *
  * Binds the %G_TYPE_STRV property @source_property on @source to the
  * %G_TYPE_STRV property @target_property on @target, verifying that
- * each string is a valid address of type @family when copying.
+ * each string is a valid address of type @addr_family when copying.
  */
 void
-nm_editor_bind_ip_addresses_to_strv (int            family,
+nm_editor_bind_ip_addresses_to_strv (int            addr_family,
                                      gpointer       source,
                                      const gchar   *source_property,
                                      gpointer       target,
@@ -242,7 +242,7 @@ nm_editor_bind_ip_addresses_to_strv (int            family,
 	                             flags,
 	                             ip_addresses_check_and_copy,
 	                             ip_addresses_check_and_copy,
-	                             GINT_TO_POINTER (family), NULL);
+	                             GINT_TO_POINTER (addr_family), NULL);
 }
 
 static gboolean
@@ -261,11 +261,11 @@ ip_gateway_from_string (GBinding     *binding,
                         GValue       *target_value,
                         gpointer      user_data)
 {
-	int family = GPOINTER_TO_INT (user_data);
+	int addr_family = GPOINTER_TO_INT (user_data);
 	const char *gateway;
 
 	gateway = g_value_get_string (source_value);
-	if (gateway && !nm_utils_ipaddr_valid (family, gateway))
+	if (gateway && !nm_utils_ipaddr_valid (addr_family, gateway))
 		gateway = NULL;
 
 	g_value_set_string (target_value, gateway);
@@ -303,7 +303,7 @@ ip_addresses_to_sensitivity (GBinding     *binding,
 
 /**
  * nm_editor_bind_ip_gateway_to_string:
- * @family: the IP address family
+ * @addr_family: the IP address family
  * @source: the source #NMSettingIPConfig
  * @target: the target object (eg, an #NmtIPEntry)
  * @target_property: the property on @target to bind (eg, "text")
@@ -325,7 +325,7 @@ ip_addresses_to_sensitivity (GBinding     *binding,
  * address.
  */
 void
-nm_editor_bind_ip_gateway_to_string (int                family,
+nm_editor_bind_ip_gateway_to_string (int                addr_family,
                                      NMSettingIPConfig *source,
                                      gpointer           target,
                                      const gchar       *target_property,
@@ -337,7 +337,7 @@ nm_editor_bind_ip_gateway_to_string (int                family,
 	                             flags,
 	                             ip_gateway_to_string,
 	                             ip_gateway_from_string,
-	                             GINT_TO_POINTER (family), NULL);
+	                             GINT_TO_POINTER (addr_family), NULL);
 	g_object_bind_property_full (source, "addresses",
 	                             source, "gateway",
 	                             (flags & G_BINDING_SYNC_CREATE),
@@ -421,14 +421,14 @@ ip_route_transform_from_dest_string (GBinding     *binding,
                                      GValue       *target_value,
                                      gpointer      user_data)
 {
-	int family = GPOINTER_TO_INT (user_data);
+	int addr_family = GPOINTER_TO_INT (user_data);
 	NMIPRoute *route;
 	const char *text;
 	char *addrstr;
 	int prefix;
 
 	text = g_value_get_string (source_value);
-	if (!nm_utils_parse_inaddr_prefix (text, family, &addrstr, &prefix))
+	if (!nm_utils_parse_inaddr_prefix (addr_family, text, &addrstr, &prefix))
 		return FALSE;
 
 	/* Fetch the original property value */
@@ -437,10 +437,10 @@ ip_route_transform_from_dest_string (GBinding     *binding,
 	              NULL);
 
 	if (prefix == -1) {
-		if (family == AF_INET) {
+		if (addr_family == AF_INET) {
 			in_addr_t v4;
 
-			inet_pton (family, addrstr, &v4);
+			inet_pton (addr_family, addrstr, &v4);
 			if (nm_utils_ip_is_site_local (AF_INET, &v4)) {
 				prefix = nm_utils_ip4_get_default_prefix (v4);
 				if (v4 & (~nm_utils_ip4_prefix_to_netmask (prefix)))
@@ -465,13 +465,13 @@ ip_route_transform_from_next_hop_string (GBinding     *binding,
                                          GValue       *target_value,
                                          gpointer      user_data)
 {
-	int family = GPOINTER_TO_INT (user_data);
+	int addr_family = GPOINTER_TO_INT (user_data);
 	NMIPRoute *route;
 	const char *text;
 
 	text = g_value_get_string (source_value);
 	if (*text) {
-		if (!nm_utils_ipaddr_valid (family, text))
+		if (!nm_utils_ipaddr_valid (addr_family, text))
 			return FALSE;
 	} else
 		text = NULL;
@@ -513,7 +513,7 @@ ip_route_transform_from_metric_string (GBinding     *binding,
 
 /**
  * nm_editor_bind_ip_route_to_strings:
- * @family: the IP address family
+ * @addr_family: the IP address family
  * @source: the source object
  * @source_property: the source property
  * @dest_target: the target object for the route's destionation
@@ -533,7 +533,7 @@ ip_route_transform_from_metric_string (GBinding     *binding,
  * is a plain IP address, and @metric_target_property is a number.
  */
 void
-nm_editor_bind_ip_route_to_strings (int            family,
+nm_editor_bind_ip_route_to_strings (int            addr_family,
                                     gpointer       source,
                                     const gchar   *source_property,
                                     gpointer       dest_target,
@@ -549,19 +549,19 @@ nm_editor_bind_ip_route_to_strings (int            family,
 	                             flags,
 	                             ip_route_transform_to_dest_string,
 	                             ip_route_transform_from_dest_string,
-	                             GINT_TO_POINTER (family), NULL);
+	                             GINT_TO_POINTER (addr_family), NULL);
 	g_object_bind_property_full (source, source_property,
 	                             next_hop_target, next_hop_target_property,
 	                             flags,
 	                             ip_route_transform_to_next_hop_string,
 	                             ip_route_transform_from_next_hop_string,
-	                             GINT_TO_POINTER (family), NULL);
+	                             GINT_TO_POINTER (addr_family), NULL);
 	g_object_bind_property_full (source, source_property,
 	                             metric_target, metric_target_property,
 	                             flags,
 	                             ip_route_transform_to_metric_string,
 	                             ip_route_transform_from_metric_string,
-	                             GINT_TO_POINTER (family), NULL);
+	                             GINT_TO_POINTER (addr_family), NULL);
 }
 
 /* Wireless security method binding */

@@ -107,6 +107,46 @@ G_DEFINE_TYPE (NMModem, nm_modem, G_TYPE_OBJECT)
 #define NM_MODEM_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR (self, NMModem, NM_IS_MODEM)
 
 /*****************************************************************************/
+
+#define _NMLOG_PREFIX_BUFLEN              64
+#define _NMLOG_PREFIX_NAME                "modem"
+#define _NMLOG_DOMAIN                     LOGD_MB
+
+static const char *
+_nmlog_prefix (char *prefix, NMModem *self)
+{
+	const char *uuid;
+	int c;
+
+	if (!self)
+		return "";
+
+	uuid = nm_modem_get_uid (self);
+
+	if (uuid) {
+		char pp[_NMLOG_PREFIX_BUFLEN - 5];
+
+		c = g_snprintf (prefix, _NMLOG_PREFIX_BUFLEN, "[%s]",
+		                nm_strquote (pp, sizeof (pp), uuid));
+	} else
+		c = g_snprintf (prefix, _NMLOG_PREFIX_BUFLEN, "[%p]", self);
+	nm_assert (c < _NMLOG_PREFIX_BUFLEN);
+
+	return prefix;
+}
+
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        char _prefix[_NMLOG_PREFIX_BUFLEN]; \
+        \
+        nm_log ((level), _NMLOG_DOMAIN, NULL, NULL, \
+                "%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                _NMLOG_PREFIX_NAME, \
+                _nmlog_prefix (_prefix, (self)) \
+                _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+    } G_STMT_END
+
+/*****************************************************************************/
 /* State/enabled/connected */
 
 static const char *state_table[] = {
@@ -150,11 +190,10 @@ nm_modem_set_state (NMModem *self,
 	priv->prev_state = NM_MODEM_STATE_UNKNOWN;
 
 	if (new_state != old_state) {
-		nm_log_info (LOGD_MB, "(%s): modem state changed, '%s' --> '%s' (reason: %s)\n",
-		             nm_modem_get_uid (self),
-		             nm_modem_state_to_string (old_state),
-		             nm_modem_state_to_string (new_state),
-		             reason ? reason : "none");
+		_LOGI ("modem state changed, '%s' --> '%s' (reason: %s)",
+		       nm_modem_state_to_string (old_state),
+		       nm_modem_state_to_string (new_state),
+		       reason ? reason : "none");
 
 		priv->state = new_state;
 		_notify (self, PROP_STATE);
@@ -180,24 +219,20 @@ nm_modem_set_mm_enabled (NMModem *self,
 	NMModemState prev_state = priv->state;
 
 	if (enabled && priv->state >= NM_MODEM_STATE_ENABLING) {
-		nm_log_dbg (LOGD_MB, "(%s): cannot enable modem: already enabled",
-		            nm_modem_get_uid (self));
+		_LOGD ("cannot enable modem: already enabled");
 		return;
 	}
 	if (!enabled && priv->state <= NM_MODEM_STATE_DISABLING) {
-		nm_log_dbg (LOGD_MB, "(%s): cannot disable modem: already disabled",
-		            nm_modem_get_uid (self));
+		_LOGD ("cannot disable modem: already disabled");
 		return;
 	}
 
 	if (priv->state <= NM_MODEM_STATE_INITIALIZING) {
-		nm_log_dbg (LOGD_MB, "(%s): cannot enable/disable modem: initializing or failed",
-		            nm_modem_get_uid (self));
+		_LOGD ("cannot enable/disable modem: initializing or failed");
 		return;
 	} else if (priv->state == NM_MODEM_STATE_LOCKED) {
 		/* Don't try to enable if the modem is locked since that will fail */
-		nm_log_warn (LOGD_MB, "(%s): cannot enable/disable modem: locked",
-		             nm_modem_get_uid (self));
+		_LOGW ("cannot enable/disable modem: locked");
 
 		/* Try to unlock the modem if it's being enabled */
 		if (enabled)
@@ -467,7 +502,7 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 	}
 
 	if (!num || dns_workaround) {
-		nm_log_warn (LOGD_PPP, "compensating for invalid PPP-provided nameservers");
+		_LOGW ("compensating for invalid PPP-provided nameservers");
 		nm_ip4_config_reset_nameservers (config);
 		nm_ip4_config_add_nameserver (config, good_dns1);
 		nm_ip4_config_add_nameserver (config, good_dns2);
@@ -560,9 +595,8 @@ ppp_stage3_ip_config_start (NMModem *self,
 	/* Check if ModemManager requested a specific IP timeout to be used. If 0 reported,
 	 * use the default one (30s) */
 	if (priv->mm_ip_timeout > 0) {
-		nm_log_info (LOGD_PPP, "(%s): using modem-specified IP timeout: %u seconds",
-		             nm_modem_get_uid (self),
-		             priv->mm_ip_timeout);
+		_LOGI ("using modem-specified IP timeout: %u seconds",
+		       priv->mm_ip_timeout);
 		ip_timeout = priv->mm_ip_timeout;
 	}
 
@@ -579,9 +613,7 @@ ppp_stage3_ip_config_start (NMModem *self,
 	if (   !priv->ppp_manager
 	    || !nm_ppp_manager_start (priv->ppp_manager, req, ppp_name,
 	                              ip_timeout, baud_override, &error)) {
-		nm_log_err (LOGD_PPP, "(%s): error starting PPP: %s",
-		            nm_modem_get_uid (self),
-		            error->message);
+		_LOGE ("error starting PPP: %s", error->message);
 		g_error_free (error);
 
 		g_clear_object (&priv->ppp_manager);
@@ -620,7 +652,7 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
 	const char *method;
 	NMActStageReturn ret;
 
-	nm_log_dbg (LOGD_MB, "ip4_config_start");
+	_LOGD ("ip4_config_start");
 
 	g_return_val_if_fail (NM_IS_MODEM (self), NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (NM_IS_DEVICE (device), NM_ACT_STAGE_RETURN_FAILURE);
@@ -639,9 +671,8 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
 		return NM_ACT_STAGE_RETURN_SUCCESS;
 
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) != 0) {
-		nm_log_warn (LOGD_MB | LOGD_IP4,
-		             "(%s): unhandled WWAN IPv4 method '%s'; will fail",
-		             nm_modem_get_uid (self), method);
+		_LOGW ("unhandled WWAN IPv4 method '%s'; will fail",
+		       method);
 		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
@@ -652,15 +683,15 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
 		ret = ppp_stage3_ip_config_start (self, req, out_failure_reason);
 		break;
 	case NM_MODEM_IP_METHOD_STATIC:
-		nm_log_dbg (LOGD_MB, "MODEM_IP_METHOD_STATIC");
+		_LOGD ("MODEM_IP_METHOD_STATIC");
 		ret = NM_MODEM_GET_CLASS (self)->static_stage3_ip4_config_start (self, req, out_failure_reason);
 		break;
 	case NM_MODEM_IP_METHOD_AUTO:
-		nm_log_dbg (LOGD_MB, "MODEM_IP_METHOD_AUTO");
+		_LOGD ("MODEM_IP_METHOD_AUTO");
 		ret = device_class->act_stage3_ip4_config_start (device, NULL, out_failure_reason);
 		break;
 	default:
-		nm_log_info (LOGD_MB, "(%s): IPv4 configuration disabled", nm_modem_get_uid (self));
+		_LOGI ("IPv4 configuration disabled");
 		ret = NM_ACT_STAGE_RETURN_IP_FAIL;
 		break;
 	}
@@ -753,9 +784,8 @@ nm_modem_stage3_ip6_config_start (NMModem *self,
 		return NM_ACT_STAGE_RETURN_IP_DONE;
 
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) != 0) {
-		nm_log_warn (LOGD_MB | LOGD_IP6,
-		             "(%s): unhandled WWAN IPv6 method '%s'; will fail",
-		             nm_modem_get_uid (self), method);
+		_LOGW ("unhandled WWAN IPv6 method '%s'; will fail",
+		       method);
 		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
@@ -774,7 +804,7 @@ nm_modem_stage3_ip6_config_start (NMModem *self,
 		ret = NM_MODEM_GET_CLASS (self)->stage3_ip6_config_request (self, out_failure_reason);
 		break;
 	default:
-		nm_log_info (LOGD_MB, "(%s): IPv6 configuration disabled", nm_modem_get_uid (self));
+		_LOGI ("IPv6 configuration disabled");
 		ret = NM_ACT_STAGE_RETURN_IP_FAIL;
 		break;
 	}
@@ -850,7 +880,7 @@ modem_secrets_cb (NMActRequest *req,
 		return;
 
 	if (error)
-		nm_log_warn (LOGD_MB, "(%s): %s", nm_modem_get_uid (self), error->message);
+		_LOGW ("modem-secrets: %s", error->message);
 
 	g_signal_emit (self, signals[AUTH_RESULT], 0, error);
 }
@@ -971,17 +1001,15 @@ nm_modem_check_connection_compatible (NMModem *self, NMConnection *connection)
 		str = nm_setting_gsm_get_device_id (s_gsm);
 		if (str) {
 			if (!priv->device_id) {
-				nm_log_dbg (LOGD_MB, "(%s): %s/%s has device-id, device does not",
-				            priv->uid,
-				            nm_connection_get_uuid (connection),
-				            nm_connection_get_id (connection));
+				_LOGD ("%s/%s has device-id, device does not",
+				       nm_connection_get_uuid (connection),
+				       nm_connection_get_id (connection));
 				return FALSE;
 			}
 			if (strcmp (str, priv->device_id)) {
-				nm_log_dbg (LOGD_MB, "(%s): %s/%s device-id mismatch",
-				            priv->uid,
-				            nm_connection_get_uuid (connection),
-				            nm_connection_get_id (connection));
+				_LOGD ("%s/%s device-id mismatch",
+				       nm_connection_get_uuid (connection),
+				       nm_connection_get_id (connection));
 				return FALSE;
 			}
 		}
@@ -994,10 +1022,9 @@ nm_modem_check_connection_compatible (NMModem *self, NMConnection *connection)
 		str = nm_setting_gsm_get_sim_id (s_gsm);
 		if (str && priv->sim_id) {
 			if (strcmp (str, priv->sim_id)) {
-				nm_log_dbg (LOGD_MB, "(%s): %s/%s sim-id mismatch",
-				            priv->uid,
-				            nm_connection_get_uuid (connection),
-				            nm_connection_get_id (connection));
+				_LOGD ("%s/%s sim-id mismatch",
+				       nm_connection_get_uuid (connection),
+				       nm_connection_get_id (connection));
 				return FALSE;
 			}
 		}
@@ -1005,10 +1032,9 @@ nm_modem_check_connection_compatible (NMModem *self, NMConnection *connection)
 		str = nm_setting_gsm_get_sim_operator_id (s_gsm);
 		if (str && priv->sim_operator_id) {
 			if (strcmp (str, priv->sim_operator_id)) {
-				nm_log_dbg (LOGD_MB, "(%s): %s/%s sim-operator-id mismatch",
-				            priv->uid,
-				            nm_connection_get_uuid (connection),
-				            nm_connection_get_id (connection));
+				_LOGD ("%s/%s sim-operator-id mismatch",
+				       nm_connection_get_uuid (connection),
+				       nm_connection_get_id (connection));
 				return FALSE;
 			}
 		}
@@ -1146,12 +1172,12 @@ ppp_manager_stop_ready (NMPPPManager *ppp_manager,
                         GAsyncResult *res,
                         DeactivateContext *ctx)
 {
+	NMModem *self = ctx->self;
 	GError *error = NULL;
 
 	if (!nm_ppp_manager_stop_finish (ppp_manager, res, &error)) {
-		nm_log_warn (LOGD_MB, "(%s): cannot stop PPP manager: %s",
-		             nm_modem_get_uid (ctx->self),
-		             error->message);
+		_LOGW ("cannot stop PPP manager: %s",
+		       error->message);
 		g_simple_async_result_take_error (ctx->result, error);
 		deactivate_context_complete (ctx);
 		return;
@@ -1165,7 +1191,8 @@ ppp_manager_stop_ready (NMPPPManager *ppp_manager,
 static void
 deactivate_step (DeactivateContext *ctx)
 {
-	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (ctx->self);
+	NMModem *self = ctx->self;
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
 	GError *error = NULL;
 
 	/* Check cancellable in each step */
@@ -1184,7 +1211,7 @@ deactivate_step (DeactivateContext *ctx)
 		if (priv->ppp_manager)
 			ctx->ppp_manager = g_object_ref (priv->ppp_manager);
 		/* Run cleanup */
-		NM_MODEM_GET_CLASS (ctx->self)->deactivate_cleanup (ctx->self, ctx->device);
+		NM_MODEM_GET_CLASS (self)->deactivate_cleanup (self, ctx->device);
 		ctx->step++;
 		/* fall through */
 	case DEACTIVATE_CONTEXT_STEP_PPP_MANAGER_STOP:
@@ -1200,16 +1227,15 @@ deactivate_step (DeactivateContext *ctx)
 		/* fall through */
 	case DEACTIVATE_CONTEXT_STEP_MM_DISCONNECT:
 		/* Disconnect asynchronously */
-		NM_MODEM_GET_CLASS (ctx->self)->disconnect (ctx->self,
-		                                            FALSE,
-		                                            ctx->cancellable,
-		                                            (GAsyncReadyCallback) disconnect_ready,
-		                                            ctx);
+		NM_MODEM_GET_CLASS (self)->disconnect (self,
+		                                       FALSE,
+		                                       ctx->cancellable,
+		                                       (GAsyncReadyCallback) disconnect_ready,
+		                                       ctx);
 		return;
 
 	case DEACTIVATE_CONTEXT_STEP_LAST:
-		nm_log_dbg (LOGD_MB, "(%s): modem deactivation finished",
-		            nm_modem_get_uid (ctx->self));
+		_LOGD ("modem deactivation finished");
 		deactivate_context_complete (ctx);
 		return;
 	}
