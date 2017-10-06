@@ -6903,7 +6903,7 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	}
 
 	if (nm_device_sys_iface_state_is_external_or_assume (self))
-		priv->dhcp4.was_active = TRUE;
+		priv->dhcp6.was_active = TRUE;
 
 	return !!priv->dhcp6.client;
 }
