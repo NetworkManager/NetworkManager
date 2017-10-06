@@ -147,6 +147,12 @@ nmt_page_bridge_constructed (GObject *object)
 	label = nmt_newt_label_new (_("seconds"));
 	nmt_editor_grid_append (grid, _("Max age"), widget, label);
 
+	widget = nmt_newt_entry_numeric_new (10, 0, 65535);
+	g_object_bind_property (s_bridge, NM_SETTING_BRIDGE_GROUP_FORWARD_MASK,
+	                        widget, "text",
+	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+	nmt_editor_grid_append (grid, _("Group forward mask"), widget, NULL);
+
 	nmt_editor_page_add_section (NMT_EDITOR_PAGE (bridge), section);
 
 	G_OBJECT_CLASS (nmt_page_bridge_parent_class)->constructed (object);
