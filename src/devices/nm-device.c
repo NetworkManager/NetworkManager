@@ -12796,7 +12796,7 @@ _set_state_full (NMDevice *self,
 	if (   (priv->state == state)
 	    && (   state != NM_DEVICE_STATE_UNAVAILABLE
 	        || !priv->firmware_missing)) {
-		_LOGD (LOGD_DEVICE, "state change: %s -> %s (reason '%s', internal state '%s'%s)",
+		_LOGD (LOGD_DEVICE, "state change: %s -> %s (reason '%s', sys-iface-state: '%s'%s)",
 		       nm_device_state_to_str (old_state),
 		       nm_device_state_to_str (state),
 		       reason_to_string (reason),
@@ -12805,7 +12805,7 @@ _set_state_full (NMDevice *self,
 		return;
 	}
 
-	_LOGI (LOGD_DEVICE, "state change: %s -> %s (reason '%s', internal state '%s')",
+	_LOGI (LOGD_DEVICE, "state change: %s -> %s (reason '%s', sys-iface-state: '%s')",
 	       nm_device_state_to_str (old_state),
 	       nm_device_state_to_str (state),
 	       reason_to_string (reason),
