@@ -3873,6 +3873,16 @@ _ip_route_scope_inv_get_normalized (const NMPlatformIP4Route *route)
 	return route->scope_inv;
 }
 
+static guint8
+_route_pref_normalize (guint8 pref)
+{
+	/* for kernel (and ICMPv6) pref can only have one of 3 values. Normalize. */
+	return NM_IN_SET (pref, NM_ICMPV6_ROUTER_PREF_LOW,
+	                        NM_ICMPV6_ROUTER_PREF_HIGH)
+	       ? pref
+	       : NM_ICMPV6_ROUTER_PREF_MEDIUM;
+}
+
 /**
  * nm_platform_ip_route_normalize:
  * @addr_family: AF_INET or AF_INET6
@@ -5053,6 +5063,8 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	char s_network[INET6_ADDRSTRLEN], s_gateway[INET6_ADDRSTRLEN], s_pref_src[INET6_ADDRSTRLEN];
 	char s_src_all[INET6_ADDRSTRLEN + 40], s_src[INET6_ADDRSTRLEN];
 	char str_table[30];
+	char str_pref[40];
+	char str_pref2[30];
 	char str_dev[TO_STRING_DEV_BUF_SIZE], s_source[50];
 	char str_window[32], str_cwnd[32], str_initcwnd[32], str_initrwnd[32], str_mtu[32];
 
@@ -5085,6 +5097,7 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	            "%s" /* initcwnd */
 	            "%s" /* initrwnd */
 	            "%s" /* mtu */
+	            "%s" /* pref */
 	            "",
 	            route->table_coerced ? nm_sprintf_buf (str_table, "table %u ", nm_platform_route_table_uncoerce (route->table_coerced, FALSE)) : "",
 	            s_network,
@@ -5104,7 +5117,8 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	            route->cwnd     || route->lock_cwnd     ? nm_sprintf_buf (str_cwnd,     " cwnd %s%"G_GUINT32_FORMAT,     route->lock_cwnd     ? "lock " : "", route->cwnd)     : "",
 	            route->initcwnd || route->lock_initcwnd ? nm_sprintf_buf (str_initcwnd, " initcwnd %s%"G_GUINT32_FORMAT, route->lock_initcwnd ? "lock " : "", route->initcwnd) : "",
 	            route->initrwnd || route->lock_initrwnd ? nm_sprintf_buf (str_initrwnd, " initrwnd %s%"G_GUINT32_FORMAT, route->lock_initrwnd ? "lock " : "", route->initrwnd) : "",
-	            route->mtu      || route->lock_mtu      ? nm_sprintf_buf (str_mtu,      " mtu %s%"G_GUINT32_FORMAT,      route->lock_mtu      ? "lock " : "", route->mtu)      : "");
+	            route->mtu      || route->lock_mtu      ? nm_sprintf_buf (str_mtu,      " mtu %s%"G_GUINT32_FORMAT,      route->lock_mtu      ? "lock " : "", route->mtu)      : "",
+	            route->rt_pref ? nm_sprintf_buf (str_pref, " pref %s", nm_icmpv6_router_pref_to_string (route->rt_pref, str_pref2, sizeof (str_pref2))) : "");
 
 	return buf;
 }
@@ -5730,6 +5744,10 @@ nm_platform_ip6_route_hash (const NMPlatformIP6Route *obj, NMPlatformIPRouteCmpT
 			h = NM_HASH_COMBINE (h, obj->initcwnd);
 			h = NM_HASH_COMBINE (h, obj->initrwnd);
 			h = NM_HASH_COMBINE (h, obj->mtu);
+			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
+				h = NM_HASH_COMBINE (h, _route_pref_normalize (obj->rt_pref));
+			else
+				h = NM_HASH_COMBINE (h, obj->rt_pref);
 			break;
 		}
 	}
@@ -5796,6 +5814,10 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 		NM_CMP_FIELD (a, b, initcwnd);
 		NM_CMP_FIELD (a, b, initrwnd);
 		NM_CMP_FIELD (a, b, mtu);
+		if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
+			NM_CMP_DIRECT (_route_pref_normalize (a->rt_pref), _route_pref_normalize (b->rt_pref));
+		else
+			NM_CMP_FIELD (a, b, rt_pref);
 		break;
 	}
 	return 0;

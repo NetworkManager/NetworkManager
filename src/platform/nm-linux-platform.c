@@ -104,6 +104,11 @@
 #define IFLA_IPTUN_MAX                  (__IFLA_IPTUN_MAX - 1)
 #endif
 
+G_STATIC_ASSERT (RTA_MAX == (__RTA_MAX - 1));
+#define RTA_PREF                        20
+#undef  RTA_MAX
+#define RTA_MAX                        (MAX ((__RTA_MAX - 1), RTA_PREF))
+
 #ifndef MACVLAN_FLAG_NOPROMISC
 #define MACVLAN_FLAG_NOPROMISC          1
 #endif
@@ -2020,6 +2025,7 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 		[RTA_IIF]       = { .type = NLA_U32 },
 		[RTA_OIF]       = { .type = NLA_U32 },
 		[RTA_PRIORITY]  = { .type = NLA_U32 },
+		[RTA_PREF]      = { .type = NLA_U8 },
 		[RTA_FLOW]      = { .type = NLA_U32 },
 		[RTA_CACHEINFO] = { .minlen = nm_offsetofend (struct rta_cacheinfo, rta_tsage) },
 		[RTA_METRICS]   = { .type = NLA_NESTED },
@@ -2223,6 +2229,10 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 	obj->ip_route.lock_initcwnd = NM_FLAGS_HAS (lock, 1 << RTAX_INITCWND);
 	obj->ip_route.lock_initrwnd = NM_FLAGS_HAS (lock, 1 << RTAX_INITRWND);
 	obj->ip_route.lock_mtu      = NM_FLAGS_HAS (lock, 1 << RTAX_MTU);
+
+	if (   !is_v4
+	    && tb[RTA_PREF])
+		obj->ip6_route.rt_pref = nla_get_u8 (tb[RTA_PREF]);
 
 	if (NM_FLAGS_HAS (rtm->rtm_flags, RTM_F_CLONED)) {
 		/* we must not straight way reject cloned routes, because we might have cached
@@ -2718,6 +2728,10 @@ _nl_msg_new_route (int nlmsg_type,
 			NLA_PUT (msg, RTA_GATEWAY, addr_len, &obj->ip6_route.gateway);
 	}
 	NLA_PUT_U32 (msg, RTA_OIF, obj->ip_route.ifindex);
+
+	if (   !is_v4
+	    && obj->ip6_route.rt_pref != NM_ICMPV6_ROUTER_PREF_MEDIUM)
+		NLA_PUT_U8 (msg, RTA_PREF, obj->ip6_route.rt_pref);
 
 	return msg;
 

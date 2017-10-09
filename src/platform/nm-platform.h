@@ -517,6 +517,12 @@ struct _NMPlatformIP6Route {
 	 */
 	struct in6_addr src;
 	guint8 src_plen;
+
+	/* RTA_PREF router preference.
+	 *
+	 * The type is guint8 to keep the struct size small. But the values are compatible with
+	 * the NMIcmpv6RouterPref enum. */
+	guint8 rt_pref;
 };
 
 typedef union {
