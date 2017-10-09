@@ -5562,10 +5562,26 @@ test_nm_utils_team_config_equal (void)
 	                          "{ \"runner\" :  { \"name\" : \"random\"} }",
 	                          FALSE,
 	                          TRUE);
+	_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"loadbalance\"} }",
+	                          "{ \"runner\" :  { \"name\" : \"loadbalance\"} }",
+	                          FALSE,
+	                          TRUE);
 	_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"random\"}, \"ports\" : { \"eth0\" : {} } }",
 	                          "{ \"runner\" :  { \"name\" : \"random\"}, \"ports\" : { \"eth1\" : {} } }",
 	                          FALSE,
 	                          TRUE);
+	_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"lacp\"} }",
+	                          "{ \"runner\" :  { \"name\" : \"lacp\", \"tx_hash\" : [ \"eth\", \"ipv4\", \"ipv6\" ] } }",
+	                          FALSE,
+	                          TRUE);
+	_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"roundrobin\"} }",
+	                          "{ \"runner\" :  { \"name\" : \"roundrobin\", \"tx_hash\" : [ \"eth\", \"ipv4\", \"ipv6\" ] } }",
+	                          FALSE,
+	                          FALSE);
+	_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"lacp\"} }",
+	                          "{ \"runner\" :  { \"name\" : \"lacp\", \"tx_hash\" : [ \"eth\" ] } }",
+	                          FALSE,
+	                          FALSE);
 
 	/* team port config */
 	_team_config_equal_check ("{ }",

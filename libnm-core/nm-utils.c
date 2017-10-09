@@ -4355,6 +4355,7 @@ _nm_utils_team_config_equal (const char *conf1,
                              gboolean port_config)
 {
 	json_t *json1 = NULL, *json2 = NULL, *json;
+	json_t *array, *name;
 	gs_free char *dump1 = NULL, *dump2 = NULL;
 	json_t *value, *property;
 	json_error_t jerror;
@@ -4394,6 +4395,16 @@ _nm_utils_team_config_equal (const char *conf1,
 				property = json_object ();
 				json_object_set_new (property, "name", json_string ("roundrobin"));
 				json_object_set_new (json, "runner", property);
+			} else if (   (name = json_object_get (property, "name"))
+			           && NM_IN_STRSET (json_string_value (name), "lacp", "loadbalance")) {
+				/* Add default tx_hash when missing */
+				if (!json_object_get (property, "tx_hash")) {
+					array = json_array ();
+					json_array_append_new (array, json_string ("eth"));
+					json_array_append_new (array, json_string ("ipv4"));
+					json_array_append_new (array, json_string ("ipv6"));
+					json_object_set_new (property, "tx_hash", array);
+				}
 			}
 		}
 	}
