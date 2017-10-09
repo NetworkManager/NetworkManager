@@ -50,7 +50,7 @@ void nm_fake_ndisc_add_gateway    (NMFakeNDisc *self,
                                    const char *addr,
                                    guint32 timestamp,
                                    guint32 lifetime,
-                                   NMNDiscPreference preference);
+                                   NMIcmpv6RouterPref preference);
 
 void nm_fake_ndisc_add_prefix     (NMFakeNDisc *self,
                                    guint ra_id,
@@ -60,7 +60,7 @@ void nm_fake_ndisc_add_prefix     (NMFakeNDisc *self,
                                    guint32 timestamp,
                                    guint32 lifetime,
                                    guint32 preferred,
-                                   NMNDiscPreference preference);
+                                   NMIcmpv6RouterPref preference);
 
 void nm_fake_ndisc_add_dns_server (NMFakeNDisc *self,
                                    guint ra_id,

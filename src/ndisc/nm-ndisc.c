@@ -106,6 +106,24 @@ static void _config_changed_log (NMNDisc *ndisc, NMNDiscConfigMap changed);
 
 /*****************************************************************************/
 
+static guint8
+_preference_to_priority (NMIcmpv6RouterPref pref)
+{
+	switch (pref) {
+	case NM_ICMPV6_ROUTER_PREF_LOW:
+		return 1;
+	case NM_ICMPV6_ROUTER_PREF_MEDIUM:
+		return 2;
+	case NM_ICMPV6_ROUTER_PREF_HIGH:
+		return 3;
+	case NM_ICMPV6_ROUTER_PREF_INVALID:
+		break;
+	}
+	return 0;
+}
+
+/*****************************************************************************/
+
 NMPNetns *
 nm_ndisc_netns_get (NMNDisc *self)
 {
@@ -216,7 +234,7 @@ nm_ndisc_add_gateway (NMNDisc *ndisc, const NMNDiscGateway *new)
 		}
 
 		/* Put before less preferable gateways. */
-		if (   item->preference < new->preference
+		if (   _preference_to_priority (item->preference) < _preference_to_priority (new->preference)
 		    && insert_idx == G_MAXUINT)
 			insert_idx = i;
 
@@ -375,7 +393,7 @@ nm_ndisc_add_route (NMNDisc *ndisc, const NMNDiscRoute *new)
 		}
 
 		/* Put before less preferable routes. */
-		if (   item->preference < new->preference
+		if (   _preference_to_priority (item->preference) < _preference_to_priority (new->preference)
 		    && insert_idx == G_MAXUINT)
 			insert_idx = i;
 
@@ -840,6 +858,7 @@ _config_changed_log (NMNDisc *ndisc, NMNDiscConfigMap changed)
 	guint i;
 	char changedstr[CONFIG_MAP_MAX_STR];
 	char addrstr[INET6_ADDRSTRLEN];
+	char str_pref[35];
 
 	if (!_LOGD_ENABLED ())
 		return;
@@ -854,7 +873,9 @@ _config_changed_log (NMNDisc *ndisc, NMNDiscConfigMap changed)
 		NMNDiscGateway *gateway = &g_array_index (rdata->gateways, NMNDiscGateway, i);
 
 		inet_ntop (AF_INET6, &gateway->address, addrstr, sizeof (addrstr));
-		_LOGD ("  gateway %s pref %d exp %d", addrstr, gateway->preference, get_expiry (gateway));
+		_LOGD ("  gateway %s pref %s exp %d", addrstr,
+		       nm_icmpv6_router_pref_to_string (gateway->preference, str_pref, sizeof (str_pref)),
+		       get_expiry (gateway));
 	}
 	for (i = 0; i < rdata->addresses->len; i++) {
 		NMNDiscAddress *address = &g_array_index (rdata->addresses, NMNDiscAddress, i);
@@ -866,8 +887,9 @@ _config_changed_log (NMNDisc *ndisc, NMNDiscConfigMap changed)
 		NMNDiscRoute *route = &g_array_index (rdata->routes, NMNDiscRoute, i);
 
 		inet_ntop (AF_INET6, &route->network, addrstr, sizeof (addrstr));
-		_LOGD ("  route %s/%u via %s pref %d exp %d", addrstr, (guint) route->plen,
-		       nm_utils_inet6_ntop (&route->gateway, NULL), route->preference,
+		_LOGD ("  route %s/%u via %s pref %s exp %d", addrstr, (guint) route->plen,
+		       nm_utils_inet6_ntop (&route->gateway, NULL),
+		       nm_icmpv6_router_pref_to_string (route->preference, str_pref, sizeof (str_pref)),
 		       get_expiry (route));
 	}
 	for (i = 0; i < rdata->dns_servers->len; i++) {

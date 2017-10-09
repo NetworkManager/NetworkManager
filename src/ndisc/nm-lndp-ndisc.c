@@ -93,12 +93,20 @@ send_rs (NMNDisc *ndisc, GError **error)
 	return TRUE;
 }
 
-_NM_UTILS_LOOKUP_DEFINE (static, translate_preference, enum ndp_route_preference, NMNDiscPreference,
-	NM_UTILS_LOOKUP_DEFAULT (NM_NDISC_PREFERENCE_INVALID),
-	NM_UTILS_LOOKUP_ITEM (NDP_ROUTE_PREF_LOW,    NM_NDISC_PREFERENCE_LOW),
-	NM_UTILS_LOOKUP_ITEM (NDP_ROUTE_PREF_MEDIUM, NM_NDISC_PREFERENCE_MEDIUM),
-	NM_UTILS_LOOKUP_ITEM (NDP_ROUTE_PREF_HIGH,   NM_NDISC_PREFERENCE_HIGH),
-);
+static NMIcmpv6RouterPref
+_route_preference_coerce (enum ndp_route_preference pref)
+{
+	switch (pref) {
+	case NDP_ROUTE_PREF_LOW:
+		return NM_ICMPV6_ROUTER_PREF_LOW;
+	case NDP_ROUTE_PREF_MEDIUM:
+		return NM_ICMPV6_ROUTER_PREF_MEDIUM;
+	case NDP_ROUTE_PREF_HIGH:
+		return NM_ICMPV6_ROUTER_PREF_HIGH;
+	}
+	/* unexpected value must be treated as MEDIUM (RFC 4191). */
+	return NM_ICMPV6_ROUTER_PREF_MEDIUM;
+}
 
 static int
 receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
@@ -165,7 +173,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 		    .address = gateway_addr,
 		    .timestamp = now,
 		    .lifetime = ndp_msgra_router_lifetime (msgra),
-		    .preference = translate_preference (ndp_msgra_route_preference (msgra)),
+		    .preference = _route_preference_coerce (ndp_msgra_route_preference (msgra)),
 		};
 
 		if (nm_ndisc_add_gateway (ndisc, &gateway))
@@ -218,7 +226,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 		    .plen = ndp_msg_opt_route_prefix_len (msg, offset),
 		    .timestamp = now,
 		    .lifetime = ndp_msg_opt_route_lifetime (msg, offset),
-		    .preference = translate_preference (ndp_msg_opt_route_preference (msg, offset)),
+		    .preference = _route_preference_coerce (ndp_msg_opt_route_preference (msg, offset)),
 		};
 
 		if (route.plen == 0 || route.plen > 128)
