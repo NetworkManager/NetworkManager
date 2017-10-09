@@ -981,13 +981,12 @@ context_property_changed (GDBusProxy *proxy,
 		_LOGI ("MessageProxy: %s", s);
 		if (   s
 		    && nm_utils_parse_inaddr_bin (AF_INET, s, &address_network)) {
-			NMPlatformIP4Route mms_route;
-
-			mms_route.network = address_network;
-			mms_route.plen = 32;
-			mms_route.gateway = gateway_network;
-
-			mms_route.metric = 1;
+			const NMPlatformIP4Route mms_route = {
+				.network = address_network,
+				.plen = 32,
+				.gateway = gateway_network,
+				.metric = 1,
+			};
 
 			nm_ip4_config_add_route (priv->ip4_config, &mms_route, NULL);
 		} else {
