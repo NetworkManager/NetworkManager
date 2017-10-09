@@ -208,7 +208,9 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 		                                  rdata->routes,
 		                                  rdata->routes_n,
 		                                  RT_TABLE_MAIN,
-		                                  global_opt.priority_v6);
+		                                  global_opt.priority_v6,
+		                                  nm_platform_check_kernel_support (NM_PLATFORM_GET,
+		                                                                    NM_PLATFORM_KERNEL_SUPPORT_RTA_PREF));
 	}
 
 	if (changed & NM_NDISC_CONFIG_DHCP_LEVEL) {

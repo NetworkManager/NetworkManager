@@ -219,6 +219,7 @@ void nm_ip6_config_reset_routes_ndisc (NMIP6Config *self,
                                        const struct _NMNDiscRoute *routes,
                                        guint routes_n,
                                        guint32 route_table,
-                                       guint32 route_metric);
+                                       guint32 route_metric,
+                                       gboolean kernel_support_rta_pref);
 
 #endif /* __NETWORKMANAGER_IP6_CONFIG_H__ */

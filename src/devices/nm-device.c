@@ -7397,7 +7397,9 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 		                                  rdata->routes,
 		                                  rdata->routes_n,
 		                                  nm_device_get_route_table (self, AF_INET6, TRUE),
-		                                  nm_device_get_route_metric (self, AF_INET6));
+		                                  nm_device_get_route_metric (self, AF_INET6),
+		                                  nm_platform_check_kernel_support (nm_device_get_platform (self),
+		                                                                    NM_PLATFORM_KERNEL_SUPPORT_RTA_PREF));
 	}
 
 	if (changed & NM_NDISC_CONFIG_DNS_SERVERS) {

@@ -1769,7 +1769,8 @@ nm_ip6_config_reset_routes_ndisc (NMIP6Config *self,
                                   const NMNDiscRoute *routes,
                                   guint routes_n,
                                   guint32 route_table,
-                                  guint32 route_metric)
+                                  guint32 route_metric,
+                                  gboolean kernel_support_rta_pref)
 {
 	NMIP6ConfigPrivate *priv;
 	guint i;
@@ -1800,6 +1801,8 @@ nm_ip6_config_reset_routes_ndisc (NMIP6Config *self,
 		r->rt_source  = NM_IP_CONFIG_SOURCE_NDISC;
 		r->table_coerced = nm_platform_route_table_coerce (route_table);
 		r->metric     = route_metric;
+		r->rt_pref    = ndisc_route->preference;
+		nm_assert ((NMIcmpv6RouterPref) r->rt_pref == ndisc_route->preference);
 
 		if (_nm_ip_config_add_obj (priv->multi_idx,
 		                           &priv->idx_ip6_routes_,
@@ -1814,28 +1817,40 @@ nm_ip6_config_reset_routes_ndisc (NMIP6Config *self,
 		new_best_default_route = _nm_ip_config_best_default_route_find_better (new_best_default_route, obj_new);
 	}
 
-	/* Use the first gateway as ordered in neighbor discovery cache. */
 	if (gateways_n) {
 		const NMPObject *obj_new;
-		const NMPlatformIP6Route r = {
+		NMPlatformIP6Route r = {
 			.rt_source     = NM_IP_CONFIG_SOURCE_NDISC,
 			.ifindex       = priv->ifindex,
-			.gateway       = gateways[0].address,
 			.table_coerced = nm_platform_route_table_coerce (route_table),
 			.metric        = route_metric,
 		};
+		const NMIcmpv6RouterPref first_pref = gateways[0].preference;
 
-		if (_nm_ip_config_add_obj (priv->multi_idx,
-		                           &priv->idx_ip6_routes_,
-		                           priv->ifindex,
-		                           NULL,
-		                           (const NMPlatformObject *) &r,
-		                           FALSE,
-		                           TRUE,
-		                           NULL,
-		                           &obj_new))
-			changed = TRUE;
-		new_best_default_route = _nm_ip_config_best_default_route_find_better (new_best_default_route, obj_new);
+		for (i = 0; i < gateways_n; i++) {
+			r.gateway = gateways[i].address;
+			r.rt_pref = gateways[i].preference;
+			nm_assert ((NMIcmpv6RouterPref) r.rt_pref == gateways[i].preference);
+			if (_nm_ip_config_add_obj (priv->multi_idx,
+			                           &priv->idx_ip6_routes_,
+			                           priv->ifindex,
+			                           NULL,
+			                           (const NMPlatformObject *) &r,
+			                           FALSE,
+			                           TRUE,
+			                           NULL,
+			                           &obj_new))
+				changed = TRUE;
+			new_best_default_route = _nm_ip_config_best_default_route_find_better (new_best_default_route, obj_new);
+
+			if (   first_pref != gateways[i].preference
+			    && !kernel_support_rta_pref) {
+				/* We are unable to configure a router preference. Hence, we skip all gateways
+				 * with a different preference from the first gateway. Note, that the gateways
+				 * are sorted in order of highest to lowest preference. */
+				break;
+			}
+		}
 	}
 
 	if (nm_dedup_multi_index_dirty_remove_idx (priv->multi_idx, &priv->idx_ip6_routes, FALSE) > 0)
