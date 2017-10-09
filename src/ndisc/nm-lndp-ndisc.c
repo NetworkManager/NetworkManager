@@ -133,6 +133,10 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	 */
 	_LOGD ("received router advertisement at %d", (int) now);
 
+	gateway_addr = *ndp_msg_addrto (msg);
+	if (IN6_IS_ADDR_UNSPECIFIED (&gateway_addr))
+		g_return_val_if_reached (0);
+
 	/* DHCP level:
 	 *
 	 * The problem with DHCP level is what to do if subsequent
@@ -167,9 +171,8 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	 * on the network. We should present all of them in router preference
 	 * order.
 	 */
-	gateway_addr = *ndp_msg_addrto (msg);
 	{
-		NMNDiscGateway gateway = {
+		const NMNDiscGateway gateway = {
 		    .address = gateway_addr,
 		    .timestamp = now,
 		    .lifetime = ndp_msgra_router_lifetime (msgra),

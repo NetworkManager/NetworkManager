@@ -178,9 +178,43 @@ nm_ndisc_get_node_type (NMNDisc *self)
 
 /*****************************************************************************/
 
+static void
+_ASSERT_data_gateways (const NMNDiscDataInternal *data)
+{
+#if NM_MORE_ASSERTS > 10
+	guint i, j;
+	const NMNDiscGateway *item_prev = NULL;
+
+	if (!data->gateways->len)
+		return;
+
+	for (i = 0; i < data->gateways->len; i++) {
+		const NMNDiscGateway *item = &g_array_index (data->gateways, NMNDiscGateway, i);
+
+		nm_assert (!IN6_IS_ADDR_UNSPECIFIED (&item->address));
+		nm_assert (item->timestamp > 0 && item->timestamp <= G_MAXINT32);
+		for (j = 0; j < i; j++) {
+			const NMNDiscGateway *item2 = &g_array_index (data->gateways, NMNDiscGateway, j);
+
+			nm_assert (!IN6_ARE_ADDR_EQUAL (&item->address, &item2->address));
+		}
+
+		nm_assert (item->lifetime > 0);
+		if (i > 0)
+			nm_assert (_preference_to_priority (item_prev->preference) >= _preference_to_priority (item->preference));
+
+		item_prev = item;
+	}
+#endif
+}
+
+/*****************************************************************************/
+
 static const NMNDiscData *
 _data_complete (NMNDiscDataInternal *data)
 {
+	_ASSERT_data_gateways (data);
+
 #define _SET(data, field) \
 	G_STMT_START { \
 		if ((data->public.field##_n = data->field->len) > 0) \
@@ -221,6 +255,7 @@ nm_ndisc_add_gateway (NMNDisc *ndisc, const NMNDiscGateway *new)
 		if (IN6_ARE_ADDR_EQUAL (&item->address, &new->address)) {
 			if (new->lifetime == 0) {
 				g_array_remove_index (rdata->gateways, i);
+				_ASSERT_data_gateways (rdata);
 				return TRUE;
 			}
 
@@ -229,7 +264,8 @@ nm_ndisc_add_gateway (NMNDisc *ndisc, const NMNDiscGateway *new)
 				continue;
 			}
 
-			memcpy (item, new, sizeof (*new));
+			*item = *new;
+			_ASSERT_data_gateways (rdata);
 			return FALSE;
 		}
 
@@ -248,6 +284,7 @@ nm_ndisc_add_gateway (NMNDisc *ndisc, const NMNDiscGateway *new)
 		                      : insert_idx,
 		                    *new);
 	}
+	_ASSERT_data_gateways (rdata);
 	return !!new->lifetime;
 }
 
@@ -929,6 +966,8 @@ clean_gateways (NMNDisc *ndisc, gint32 now, NMNDiscConfigMap *changed, gint32 *n
 		}
 		i++;
 	}
+
+	_ASSERT_data_gateways (rdata);
 }
 
 static void
