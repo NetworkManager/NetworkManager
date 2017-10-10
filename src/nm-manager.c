@@ -2341,6 +2341,9 @@ platform_link_added (NMManager *self,
 		gboolean compatible = TRUE;
 		gs_free_error GError *error = NULL;
 
+		if (nm_device_get_link_type (candidate) != plink->type)
+			continue;
+
 		if (strcmp (nm_device_get_iface (candidate), plink->name))
 			continue;
 
