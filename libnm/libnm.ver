@@ -1186,6 +1186,7 @@ global:
 	nm_client_connectivity_check_get_enabled;
 	nm_client_connectivity_check_set_enabled;
 	nm_device_dummy_get_hw_address;
+	nm_device_ovs_bridge_get_type;
 	nm_device_ovs_interface_get_type;
 	nm_device_ovs_port_get_type;
 	nm_device_ppp_get_type;
