@@ -460,7 +460,6 @@ nm_ip6_config_add_dependent_routes (NMIP6Config *self,
 	 * For manually added IPv6 routes, add the device routes explicitly. */
 
 	nm_ip_config_iter_ip6_address_for_each (&iter, self, &my_addr) {
-		NMPObject *r;
 		NMPlatformIP6Route *route;
 		gboolean has_peer;
 		int routes_n, routes_i;
@@ -477,6 +476,7 @@ nm_ip6_config_add_dependent_routes (NMIP6Config *self,
 		           ? 2 : 1;
 
 		for (routes_i = 0; routes_i < routes_n; routes_i++) {
+			nm_auto_nmpobj NMPObject *r = NULL;
 
 			r = nmp_object_new (NMP_OBJECT_TYPE_IP6_ROUTE, NULL);
 			route = NMP_OBJECT_CAST_IP6_ROUTE (r);
@@ -503,7 +503,6 @@ nm_ip6_config_add_dependent_routes (NMIP6Config *self,
 			                   r,
 			                   NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID)) {
 				/* we already track this route. Don't add it again. */
-				nmp_object_unref (r);
 			} else
 				_add_route (self, r, NULL, NULL);
 		}

@@ -713,7 +713,7 @@ nm_ip4_config_add_dependent_routes (NMIP4Config *self,
 		                   NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID)) {
 			/* we already track this route. Don't add it again. */
 		} else
-			_add_route (self, nmp_object_ref (r), NULL, NULL);
+			_add_route (self, r, NULL, NULL);
 
 		if (   out_ip4_dev_route_blacklist
 		    && (   route_table != RT_TABLE_MAIN
