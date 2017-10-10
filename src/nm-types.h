@@ -194,8 +194,26 @@ typedef enum {
 typedef enum {
 	NM_IP_CONFIG_MERGE_DEFAULT                  = 0,
 	NM_IP_CONFIG_MERGE_NO_ROUTES                = (1LL << 0),
-	NM_IP_CONFIG_MERGE_NO_DNS                   = (1LL << 1),
+	NM_IP_CONFIG_MERGE_NO_DEFAULT_ROUTES        = (1LL << 1),
+	NM_IP_CONFIG_MERGE_NO_DNS                   = (1LL << 2),
 } NMIPConfigMergeFlags;
+
+
+/**
+ * NMIPRouteTableSyncMode:
+ * @NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN: only the main table is synced. For all
+ *   other tables, NM won't delete any extra routes.
+ * @NM_IP_ROUTE_TABLE_SYNC_MODE_FULL: NM will sync all tables, except the
+ *   local table (255).
+ * @NM_IP_ROUTE_TABLE_SYNC_MODE_ALL: NM will sync all tables, including the
+ *   local table (255).
+ */
+typedef enum {
+	NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN        = 1,
+	NM_IP_ROUTE_TABLE_SYNC_MODE_FULL        = 2,
+	NM_IP_ROUTE_TABLE_SYNC_MODE_ALL         = 3,
+} NMIPRouteTableSyncMode;
+
 
 /* settings */
 typedef struct _NMAgentManager       NMAgentManager;

@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <uuid/uuid.h>
+#include <linux/rtnetlink.h>
 
 #include "nm-utils/nm-dedup-multi.h"
 
@@ -56,6 +57,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_IFINDEX,
 	PROP_HWADDR,
 	PROP_UUID,
+	PROP_ROUTE_TABLE,
 	PROP_ROUTE_METRIC,
 	PROP_TIMEOUT,
 );
@@ -73,6 +75,7 @@ typedef struct _NMDhcpClientPrivate {
 	guint        watch_id;
 	int          addr_family;
 	int          ifindex;
+	guint32      route_table;
 	guint32      route_metric;
 	guint32      timeout;
 	NMDhcpState  state;
@@ -148,6 +151,14 @@ nm_dhcp_client_get_hw_addr (NMDhcpClient *self)
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
 
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->hwaddr;
+}
+
+guint32
+nm_dhcp_client_get_route_table (NMDhcpClient *self)
+{
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), RT_TABLE_MAIN);
+
+	return NM_DHCP_CLIENT_GET_PRIVATE (self)->route_table;
 }
 
 guint32
@@ -789,6 +800,7 @@ nm_dhcp_client_handle_event (gpointer unused,
 				                                                               priv->ifindex,
 				                                                               priv->iface,
 				                                                               str_options,
+				                                                               priv->route_table,
 				                                                               priv->route_metric);
 			} else {
 				prefix = nm_dhcp_utils_ip6_prefix_from_options (str_options);
@@ -898,6 +910,10 @@ set_property (GObject *object, guint prop_id,
 	case PROP_UUID:
 		/* construct-only */
 		priv->uuid = g_value_dup_string (value);
+		break;
+	case PROP_ROUTE_TABLE:
+		/* construct-only */
+		priv->route_table = g_value_get_uint (value);
 		break;
 	case PROP_ROUTE_METRIC:
 		/* construct-only */
@@ -1009,6 +1025,12 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 	                         NULL,
 	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 	                         G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_ROUTE_TABLE] =
+	    g_param_spec_uint (NM_DHCP_CLIENT_ROUTE_TABLE, "", "",
+	                       0, G_MAXUINT32, RT_TABLE_MAIN,
+	                       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
+	                       G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_ROUTE_METRIC] =
 	    g_param_spec_uint (NM_DHCP_CLIENT_ROUTE_METRIC, "", "",

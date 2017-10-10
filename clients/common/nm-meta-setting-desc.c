@@ -5353,11 +5353,18 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_ROUTE_METRIC, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_ROUTE_METRIC,
 		.property_type =                &_pt_gobject_int,
 	),
-	PROPERTY_INFO (NM_SETTING_IP_CONFIG_ROUTE_TABLE_SYNC, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_ROUTE_TABLE_SYNC,
-		.property_type =                &_pt_gobject_enum,
-		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
-				.get_gtype =            nm_ip_route_table_sync_mode_get_type,
+	PROPERTY_INFO (NM_SETTING_IP_CONFIG_ROUTE_TABLE, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_ROUTE_TABLE,
+		.property_type =                &_pt_gobject_int,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
+			.value_infos = INT_VALUE_INFOS (
+				{
+					.value = 0,
+					.nick = "unspec",
+				},
+				{
+					.value = 254,
+					.nick = "main",
+				}
 			),
 		),
 	),
@@ -5384,7 +5391,6 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 				}
 			),
 		),
-
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME,
 		.property_type =                &_pt_gobject_bool,
@@ -5510,11 +5516,18 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_ROUTE_METRIC, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_ROUTE_METRIC,
 		.property_type =                &_pt_gobject_int,
 	),
-	PROPERTY_INFO (NM_SETTING_IP_CONFIG_ROUTE_TABLE_SYNC, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_ROUTE_TABLE_SYNC,
-		.property_type =                &_pt_gobject_enum,
-		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-			PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
-				.get_gtype =            nm_ip_route_table_sync_mode_get_type,
+	PROPERTY_INFO (NM_SETTING_IP_CONFIG_ROUTE_TABLE, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_ROUTE_TABLE,
+		.property_type =                &_pt_gobject_int,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
+			.value_infos =          INT_VALUE_INFOS (
+				{
+					.value = 0,
+					.nick = "unspec",
+				},
+				{
+					.value = 254,
+					.nick = "main",
+				}
 			),
 		),
 	),

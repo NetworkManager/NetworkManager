@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <termios.h>
+#include <linux/rtnetlink.h>
 
 #include "nm-core-internal.h"
 #include "platform/nm-platform.h"
@@ -96,6 +97,11 @@ typedef struct _NMModemPrivate {
 	NMActRequestGetSecretsCallId secrets_id;
 
 	guint32 mm_ip_timeout;
+
+	guint32 ip4_route_table;
+	guint32 ip4_route_metric;
+	guint32 ip6_route_table;
+	guint32 ip6_route_metric;
 
 	/* PPP stats */
 	guint32 in_bytes;
@@ -610,6 +616,14 @@ ppp_stage3_ip_config_start (NMModem *self,
 
 	priv->ppp_manager = nm_ppp_manager_create (priv->data_port, &error);
 
+	if (priv->ppp_manager) {
+		nm_ppp_manager_set_route_parameters (priv->ppp_manager,
+		                                     priv->ip4_route_table,
+		                                     priv->ip4_route_metric,
+		                                     priv->ip6_route_table,
+		                                     priv->ip6_route_metric);
+	}
+
 	if (   !priv->ppp_manager
 	    || !nm_ppp_manager_start (priv->ppp_manager, req, ppp_name,
 	                              ip_timeout, baud_override, &error)) {
@@ -705,6 +719,8 @@ nm_modem_ip4_pre_commit (NMModem *modem,
                          NMIP4Config *config)
 {
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (modem);
+
+	nm_modem_set_route_parameters_from_device (modem, device);
 
 	/* If the modem has an ethernet-type data interface (ie, not PPP and thus
 	 * not point-to-point) and IP config has a /32 prefix, then we assume that
@@ -1400,6 +1416,76 @@ nm_modem_get_iid (NMModem *self, NMUtilsIPv6IfaceId *out_iid)
 /*****************************************************************************/
 
 void
+nm_modem_get_route_parameters (NMModem *self,
+                               guint32 *out_ip4_route_table,
+                               guint32 *out_ip4_route_metric,
+                               guint32 *out_ip6_route_table,
+                               guint32 *out_ip6_route_metric)
+{
+	NMModemPrivate *priv;
+
+	g_return_if_fail (NM_IS_MODEM (self));
+
+	priv = NM_MODEM_GET_PRIVATE (self);
+	NM_SET_OUT (out_ip4_route_table, priv->ip4_route_table);
+	NM_SET_OUT (out_ip4_route_metric, priv->ip4_route_metric);
+	NM_SET_OUT (out_ip6_route_table, priv->ip6_route_table);
+	NM_SET_OUT (out_ip6_route_metric, priv->ip6_route_metric);
+}
+
+void
+nm_modem_set_route_parameters (NMModem *self,
+                               guint32 ip4_route_table,
+                               guint32 ip4_route_metric,
+                               guint32 ip6_route_table,
+                               guint32 ip6_route_metric)
+{
+	NMModemPrivate *priv;
+
+	g_return_if_fail (NM_IS_MODEM (self));
+
+	priv = NM_MODEM_GET_PRIVATE (self);
+	if (   priv->ip4_route_table  != ip4_route_table
+	    || priv->ip4_route_metric != ip4_route_metric
+	    || priv->ip6_route_table  != ip6_route_table
+	    || priv->ip6_route_metric != ip6_route_metric) {
+		priv->ip4_route_table = ip4_route_table;
+		priv->ip4_route_metric = ip4_route_metric;
+		priv->ip6_route_table = ip6_route_table;
+		priv->ip6_route_metric = ip6_route_metric;
+
+		_LOGT ("route-parameters: table-v4: %u, metric-v4: %u, table-v6: %u, metric-v6: %u",
+		       priv->ip4_route_table,
+		       priv->ip4_route_metric,
+		       priv->ip6_route_table,
+		       priv->ip6_route_metric);
+	}
+
+	if (priv->ppp_manager) {
+		nm_ppp_manager_set_route_parameters (priv->ppp_manager,
+		                                     priv->ip4_route_table,
+		                                     priv->ip4_route_metric,
+		                                     priv->ip6_route_table,
+		                                     priv->ip6_route_metric);
+	}
+}
+
+void
+nm_modem_set_route_parameters_from_device (NMModem *self,
+                                           NMDevice *device)
+{
+	g_return_if_fail (NM_IS_DEVICE (device));
+
+	nm_modem_set_route_parameters (self,
+	                               nm_device_get_route_table (device, AF_INET, TRUE),
+	                               nm_device_get_route_metric (device, AF_INET),
+	                               nm_device_get_route_table (device, AF_INET6, TRUE),
+	                               nm_device_get_route_metric (device, AF_INET6));
+}
+
+/*****************************************************************************/
+
+void
 nm_modem_get_capabilities (NMModem *self,
                            NMDeviceModemCapabilities *modem_caps,
                            NMDeviceModemCapabilities *current_caps)
@@ -1533,7 +1619,15 @@ set_property (GObject *object, guint prop_id,
 static void
 nm_modem_init (NMModem *self)
 {
+	NMModemPrivate *priv;
+
 	self->_priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_MODEM, NMModemPrivate);
+	priv = self->_priv;
+
+	priv->ip4_route_table = RT_TABLE_MAIN;
+	priv->ip4_route_metric = 700;
+	priv->ip6_route_table = RT_TABLE_MAIN;
+	priv->ip6_route_metric = 700;
 }
 
 static void

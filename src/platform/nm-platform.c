@@ -3602,13 +3602,9 @@ nm_platform_ip_route_get_prune_list (NMPlatform *self,
 
 	nm_assert (NM_IS_PLATFORM (self));
 	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
-	nm_assert (NM_IN_SET (route_table_sync, NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
-	                                        NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN,
+	nm_assert (NM_IN_SET (route_table_sync, NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN,
 	                                        NM_IP_ROUTE_TABLE_SYNC_MODE_FULL,
 	                                        NM_IP_ROUTE_TABLE_SYNC_MODE_ALL));
-
-	if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_NONE)
-		return NULL;
 
 	nmp_lookup_init_addrroute (&lookup,
 	                           addr_family == AF_INET
@@ -3626,7 +3622,7 @@ nm_platform_ip_route_get_prune_list (NMPlatform *self,
 		const NMPObject *obj = c_list_entry (iter, NMDedupMultiEntry, lst_entries)->obj;
 
 		if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_FULL) {
-			if (nm_platform_route_table_uncoerce (NMP_OBJECT_CAST_IP_ROUTE (obj)->table_coerced, TRUE) == (RT_TABLE_LOCAL))
+			if (nm_platform_route_table_uncoerce (NMP_OBJECT_CAST_IP_ROUTE (obj)->table_coerced, TRUE) == RT_TABLE_LOCAL)
 				continue;
 		} else if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN) {
 			if (!nm_platform_route_table_is_main (NMP_OBJECT_CAST_IP_ROUTE (obj)->table_coerced))

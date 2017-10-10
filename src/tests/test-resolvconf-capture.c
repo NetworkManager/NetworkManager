@@ -36,10 +36,10 @@ test_capture_empty (void)
 	GArray *ns4 = g_array_new (FALSE, FALSE, sizeof (guint32));
 	GArray *ns6 = g_array_new (FALSE, FALSE, sizeof (struct in6_addr));
 
-	g_assert (nm_ip4_config_capture_resolv_conf (ns4, NULL, "") == FALSE);
+	g_assert (!nm_utils_resolve_conf_parse (AF_INET, "", ns4, NULL));
 	g_assert_cmpint (ns4->len, ==, 0);
 
-	g_assert (nm_ip6_config_capture_resolv_conf (ns6, NULL, "") == FALSE);
+	g_assert (!nm_utils_resolve_conf_parse (AF_INET6, "", ns6, NULL));
 	g_assert_cmpint (ns6->len, ==, 0);
 
 	g_array_free (ns4, TRUE);
@@ -66,7 +66,7 @@ test_capture_basic4 (void)
 "nameserver 4.2.2.1\r\n"
 "nameserver 4.2.2.2\r\n";
 
-	g_assert (nm_ip4_config_capture_resolv_conf (ns4, NULL, rc));
+	g_assert (nm_utils_resolve_conf_parse (AF_INET, rc, ns4, NULL));
 	g_assert_cmpint (ns4->len, ==, 2);
 	assert_dns4_entry (ns4, 0, "4.2.2.1");
 	assert_dns4_entry (ns4, 1, "4.2.2.2");
@@ -87,7 +87,7 @@ test_capture_dup4 (void)
 "nameserver 4.2.2.2\r\n";
 
 	/* Check that duplicates are ignored */
-	g_assert (nm_ip4_config_capture_resolv_conf (ns4, NULL, rc));
+	g_assert (nm_utils_resolve_conf_parse (AF_INET, rc, ns4, NULL));
 	g_assert_cmpint (ns4->len, ==, 2);
 	assert_dns4_entry (ns4, 0, "4.2.2.1");
 	assert_dns4_entry (ns4, 1, "4.2.2.2");
@@ -106,7 +106,7 @@ test_capture_basic6 (void)
 "nameserver 2001:4860:4860::8888\r\n"
 "nameserver 2001:4860:4860::8844\r\n";
 
-	g_assert (nm_ip6_config_capture_resolv_conf (ns6, NULL, rc));
+	g_assert (nm_utils_resolve_conf_parse (AF_INET6, rc, ns6, NULL));
 	g_assert_cmpint (ns6->len, ==, 2);
 	assert_dns6_entry (ns6, 0, "2001:4860:4860::8888");
 	assert_dns6_entry (ns6, 1, "2001:4860:4860::8844");
@@ -127,7 +127,7 @@ test_capture_dup6 (void)
 "nameserver 2001:4860:4860::8844\r\n";
 
 	/* Check that duplicates are ignored */
-	g_assert (nm_ip6_config_capture_resolv_conf (ns6, NULL, rc));
+	g_assert (nm_utils_resolve_conf_parse (AF_INET6, rc, ns6, NULL));
 	g_assert_cmpint (ns6->len, ==, 2);
 	assert_dns6_entry (ns6, 0, "2001:4860:4860::8888");
 	assert_dns6_entry (ns6, 1, "2001:4860:4860::8844");
@@ -147,7 +147,7 @@ test_capture_addr4_with_6 (void)
 "nameserver 4.2.2.2\r\n"
 "nameserver 2001:4860:4860::8888\r\n";
 
-	g_assert (nm_ip4_config_capture_resolv_conf (ns4, NULL, rc));
+	g_assert (nm_utils_resolve_conf_parse (AF_INET, rc, ns4, NULL));
 	g_assert_cmpint (ns4->len, ==, 2);
 	assert_dns4_entry (ns4, 0, "4.2.2.1");
 	assert_dns4_entry (ns4, 1, "4.2.2.2");
@@ -167,7 +167,7 @@ test_capture_addr6_with_4 (void)
 "nameserver 2001:4860:4860::8888\r\n"
 "nameserver 2001:4860:4860::8844\r\n";
 
-	g_assert (nm_ip6_config_capture_resolv_conf (ns6, NULL, rc));
+	g_assert (nm_utils_resolve_conf_parse (AF_INET6, rc, ns6, NULL));
 	g_assert_cmpint (ns6->len, ==, 2);
 	assert_dns6_entry (ns6, 0, "2001:4860:4860::8888");
 	assert_dns6_entry (ns6, 1, "2001:4860:4860::8844");
@@ -182,15 +182,17 @@ test_capture_format (void)
 	const char *rc =
 " nameserver 4.2.2.1\r\n"     /* bad */
 "nameserver4.2.2.1\r\n"       /* bad */
-"nameserver     4.2.2.3\r"  /* good */
+"nameserver     4.2.2.3\r"    /* good */
 "nameserver\t\t4.2.2.4\r\n"   /* good */
-"nameserver  4.2.2.5\t\t\r\n"; /* good */
+"nameserver  4.2.2.5\t\t\r\n" /* good */
+"nameserver  4.2.2.6   \r\n"; /* good */
 
-	g_assert (nm_ip4_config_capture_resolv_conf (ns4, NULL, rc));
-	g_assert_cmpint (ns4->len, ==, 3);
+	g_assert (nm_utils_resolve_conf_parse (AF_INET, rc, ns4, NULL));
+	g_assert_cmpint (ns4->len, ==, 4);
 	assert_dns4_entry (ns4, 0, "4.2.2.3");
 	assert_dns4_entry (ns4, 1, "4.2.2.4");
 	assert_dns4_entry (ns4, 2, "4.2.2.5");
+	assert_dns4_entry (ns4, 3, "4.2.2.6");
 
 	g_array_free (ns4, TRUE);
 }
@@ -205,7 +207,7 @@ test_capture_dns_options (void)
 "options debug rotate  timeout:5 \r\n"
 "options edns0\r\n";
 
-	g_assert (nm_ip4_config_capture_resolv_conf (ns4, dns_options, rc));
+	g_assert (nm_utils_resolve_conf_parse (AF_INET, rc, ns4, dns_options));
 	g_assert_cmpint (dns_options->len, ==, 4);
 	assert_dns_option (dns_options, 0, "debug");
 	assert_dns_option (dns_options, 1, "rotate");
@@ -226,7 +228,7 @@ test_capture_dns_options_dup (void)
 "options edns0 debug\r\n"
 "options timeout:5\r\n";
 
-	g_assert (nm_ip4_config_capture_resolv_conf (ns4, dns_options, rc));
+	g_assert (nm_utils_resolve_conf_parse (AF_INET, rc, ns4, dns_options));
 	g_assert_cmpint (dns_options->len, ==, 4);
 	assert_dns_option (dns_options, 0, "debug");
 	assert_dns_option (dns_options, 1, "rotate");
@@ -245,7 +247,7 @@ test_capture_dns_options_valid4 (void)
 	const char *rc =
 "options debug: rotate:yes edns0 foobar : inet6\r\n";
 
-	g_assert (nm_ip4_config_capture_resolv_conf (ns4, dns_options, rc));
+	g_assert (nm_utils_resolve_conf_parse (AF_INET, rc, ns4, dns_options));
 	g_assert_cmpint (dns_options->len, ==, 1);
 	assert_dns_option (dns_options, 0, "edns0");
 
@@ -256,12 +258,12 @@ test_capture_dns_options_valid4 (void)
 static void
 test_capture_dns_options_valid6 (void)
 {
-	GArray *ns6 = g_array_new (FALSE, FALSE, sizeof (guint32));
+	GArray *ns6 = g_array_new (FALSE, FALSE, sizeof (struct in6_addr));
 	GPtrArray *dns_options = g_ptr_array_new_with_free_func (g_free);
 	const char *rc =
 "options inet6 debug foobar rotate:\r\n";
 
-	g_assert (nm_ip6_config_capture_resolv_conf (ns6, dns_options, rc));
+	g_assert (nm_utils_resolve_conf_parse (AF_INET6, rc, ns6, dns_options));
 	g_assert_cmpint (dns_options->len, ==, 2);
 	assert_dns_option (dns_options, 0, "inet6");
 	assert_dns_option (dns_options, 1, "debug");

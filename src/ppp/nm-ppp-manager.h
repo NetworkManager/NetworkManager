@@ -22,7 +22,7 @@
 #ifndef __NM_PPP_MANAGER_H__
 #define __NM_PPP_MANAGER_H__
 
-#define NM_PPP_MANAGER_PARENT_IFACE "parent-iface"
+#define NM_PPP_MANAGER_PARENT_IFACE    "parent-iface"
 
 #define NM_PPP_MANAGER_SIGNAL_STATE_CHANGED "state-changed"
 #define NM_PPP_MANAGER_SIGNAL_IP4_CONFIG    "ip4-config"

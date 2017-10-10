@@ -653,11 +653,10 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 	 */
 
 	/* ---ifcfg-rh---
-	 * property: route-table-sync
-	 * variable: IPV6_ROUTE_TABLE_SYNC(+)
+	 * property: route-table
+	 * variable: IPV6_ROUTE_TABLE(+)
 	 * default: 0
-	 * description: IPV6_ROUTE_TABLE_SYNC controls how NetworkManager removes extraneous
-	 *   routes from the routing tables.
+	 * description: IPV6_ROUTE_TABLE enables policy-routing and sets the default routing table.
 	 * ---end---
 	 */
 

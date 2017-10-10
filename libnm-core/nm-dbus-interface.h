@@ -857,27 +857,6 @@ typedef enum { /*< skip >*/
 } NMRollbackResult;
 
 /**
- * NMIPRouteTableSyncMode:
- * @NM_IP_ROUTE_TABLE_SYNC_MODE_DEFAULT: the default value, meaning the value
- *   is subject to global configuration default.
- * @NM_IP_ROUTE_TABLE_SYNC_MODE_NONE: no route table is synced. This means,
- *   NetworkManager will only add routes for a particular interface to the
- *   routing tables, but not delete any routes.
- * @NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN: only the main table is synced. For all
- *   other tables, NM won't delete any extra routes.
- * @NM_IP_ROUTE_TABLE_SYNC_MODE_FULL: NM will sync all tables, except the
- *   local table (255).
- *
- * Since: 1.10
- */
-typedef enum {
-	NM_IP_ROUTE_TABLE_SYNC_MODE_DEFAULT     = 0,
-	NM_IP_ROUTE_TABLE_SYNC_MODE_NONE        = 1,
-	NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN        = 2,
-	NM_IP_ROUTE_TABLE_SYNC_MODE_FULL        = 3,
-} NMIPRouteTableSyncMode;
-
-/**
  * NMActivationStateFlags:
  * @NM_ACTIVATION_STATE_FLAG_NONE: an alias for numeric zero, no flags set.
  * @NM_ACTIVATION_STATE_FLAG_IS_MASTER: the device is a master.

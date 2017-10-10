@@ -31,8 +31,6 @@
 
 #define NM_PLATFORM_LIFETIME_PERMANENT G_MAXUINT32
 
-#define NM_IP_ROUTE_TABLE_SYNC_MODE_ALL ((NMIPRouteTableSyncMode) -1)
-
 #define NM_DEFINE_SINGLETON_INSTANCE(TYPE) \
 static TYPE *singleton_instance
 
@@ -171,6 +169,15 @@ nm_utils_ip_route_metric_normalize (int addr_family, guint32 metric)
 	return addr_family == AF_INET6 ? nm_utils_ip6_route_metric_normalize (metric) : metric;
 }
 
+static inline guint32
+nm_utils_ip_route_metric_penalize (int addr_family, guint32 metric, guint32 penalty)
+{
+	metric = nm_utils_ip_route_metric_normalize (addr_family, metric);
+	if (metric < G_MAXUINT32 - penalty)
+		return metric + penalty;
+	return G_MAXUINT32;
+}
+
 int nm_utils_modprobe (GError **error, gboolean suppress_error_loggin, const char *arg1, ...) G_GNUC_NULL_TERMINATED;
 
 guint64 nm_utils_get_start_time_for_pid (pid_t pid, char *out_state, pid_t *out_ppid);
@@ -224,8 +231,10 @@ gboolean nm_utils_connection_has_default_route (NMConnection *connection,
 char *nm_utils_new_vlan_name (const char *parent_iface, guint32 vlan_id);
 const char *nm_utils_new_infiniband_name (char *name, const char *parent_name, int p_key);
 
-GPtrArray *nm_utils_read_resolv_conf_nameservers (const char *rc_contents);
-GPtrArray *nm_utils_read_resolv_conf_dns_options (const char *rc_contents);
+gboolean nm_utils_resolve_conf_parse (int addr_family,
+                                      const char *rc_contents,
+                                      GArray *nameservers,
+                                      GPtrArray *dns_options);
 
 int nm_utils_cmp_connection_by_autoconnect_priority (NMConnection *a, NMConnection *b);
 

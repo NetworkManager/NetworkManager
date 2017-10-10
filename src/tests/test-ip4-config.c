@@ -47,7 +47,16 @@ build_test_config (void)
 	route = *nmtst_platform_ip4_route ("172.16.0.0", 16, "192.168.1.1");
 	nm_ip4_config_add_route (config, &route, NULL);
 
-	nm_ip4_config_set_gateway (config, nmtst_inet4_from_string ("192.168.1.1"));
+	{
+		const NMPlatformIP4Route r = {
+			.rt_source = NM_IP_CONFIG_SOURCE_DHCP,
+			.gateway = nmtst_inet4_from_string ("192.168.1.1"),
+			.table_coerced = 0,
+			.metric = 100,
+		};
+
+		nm_ip4_config_add_route (config, &r, NULL);
+	}
 
 	nm_ip4_config_add_nameserver (config, nmtst_inet4_from_string ("4.2.2.1"));
 	nm_ip4_config_add_nameserver (config, nmtst_inet4_from_string ("4.2.2.2"));
@@ -84,7 +93,6 @@ test_subtract (void)
 	const char *expected_search = "somewhere.com";
 	guint32 expected_nis = nmtst_inet4_from_string ("1.2.3.13");
 	guint32 expected_wins = nmtst_inet4_from_string ("2.3.4.5");
-	guint32 expected_mss = 1400;
 	guint32 expected_mtu = 1492;
 
 	src = build_test_config ();
@@ -105,10 +113,9 @@ test_subtract (void)
 	nm_ip4_config_add_nis_server (dst, expected_nis);
 	nm_ip4_config_add_wins (dst, expected_wins);
 
-	nm_ip4_config_set_mss (dst, expected_mss);
 	nm_ip4_config_set_mtu (dst, expected_mtu, NM_IP_CONFIG_SOURCE_UNKNOWN);
 
-	nm_ip4_config_subtract (dst, src);
+	nm_ip4_config_subtract (dst, src, 0);
 
 	/* ensure what's left is what we expect */
 	g_assert_cmpuint (nm_ip4_config_get_num_addresses (dst), ==, 1);
@@ -118,7 +125,8 @@ test_subtract (void)
 	g_assert_cmpuint (test_addr->peer_address, ==, test_addr->address);
 	g_assert_cmpuint (test_addr->plen, ==, expected_addr_plen);
 
-	g_assert_cmpuint (nm_ip4_config_get_gateway (dst), ==, 0);
+	g_assert (!nm_ip4_config_best_default_route_get (dst));
+	g_assert_cmpuint (nmtst_ip4_config_get_gateway (dst), ==, 0);
 
 	g_assert_cmpuint (nm_ip4_config_get_num_routes (dst), ==, 1);
 	test_route = _nmtst_ip4_config_get_route (dst, 0);
@@ -142,7 +150,6 @@ test_subtract (void)
 	g_assert_cmpuint (nm_ip4_config_get_num_wins (dst), ==, 1);
 	g_assert_cmpuint (nm_ip4_config_get_wins (dst, 0), ==, expected_wins);
 
-	g_assert_cmpuint (nm_ip4_config_get_mss (dst), ==, expected_mss);
 	g_assert_cmpuint (nm_ip4_config_get_mtu (dst), ==, expected_mtu);
 
 	g_object_unref (src);
@@ -267,12 +274,10 @@ test_add_route_with_source (void)
 }
 
 static void
-test_merge_subtract_mss_mtu (void)
+test_merge_subtract_mtu (void)
 {
 	NMIP4Config *cfg1, *cfg2, *cfg3;
-	guint32 expected_mss2 = 1400;
 	guint32 expected_mtu2 = 1492;
-	guint32 expected_mss3 = 555;
 	guint32 expected_mtu3 = 666;
 
 	cfg1 = build_test_config ();
@@ -280,24 +285,19 @@ test_merge_subtract_mss_mtu (void)
 	cfg3 = build_test_config ();
 
 	/* add MSS, MTU to configs to test them */
-	nm_ip4_config_set_mss (cfg2, expected_mss2);
 	nm_ip4_config_set_mtu (cfg2, expected_mtu2, NM_IP_CONFIG_SOURCE_UNKNOWN);
-	nm_ip4_config_set_mss (cfg3, expected_mss3);
 	nm_ip4_config_set_mtu (cfg3, expected_mtu3, NM_IP_CONFIG_SOURCE_UNKNOWN);
 
-	nm_ip4_config_merge (cfg1, cfg2, NM_IP_CONFIG_MERGE_DEFAULT);
+	nm_ip4_config_merge (cfg1, cfg2, NM_IP_CONFIG_MERGE_DEFAULT, 0);
 	/* ensure MSS and MTU are in cfg1 */
-	g_assert_cmpuint (nm_ip4_config_get_mss (cfg1), ==, expected_mss2);
 	g_assert_cmpuint (nm_ip4_config_get_mtu (cfg1), ==, expected_mtu2);
 
-	nm_ip4_config_merge (cfg1, cfg3, NM_IP_CONFIG_MERGE_DEFAULT);
+	nm_ip4_config_merge (cfg1, cfg3, NM_IP_CONFIG_MERGE_DEFAULT, 0);
 	/* ensure again the MSS and MTU in cfg1 got overridden */
-	g_assert_cmpuint (nm_ip4_config_get_mss (cfg1), ==, expected_mss3);
 	g_assert_cmpuint (nm_ip4_config_get_mtu (cfg1), ==, expected_mtu3);
 
-	nm_ip4_config_subtract (cfg1, cfg3);
+	nm_ip4_config_subtract (cfg1, cfg3, 0);
 	/* ensure MSS and MTU are zero in cfg1 */
-	g_assert_cmpuint (nm_ip4_config_get_mss (cfg1), ==, 0);
 	g_assert_cmpuint (nm_ip4_config_get_mtu (cfg1), ==, 0);
 
 	g_object_unref (cfg1);
@@ -339,7 +339,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/ip4-config/compare-with-source", test_compare_with_source);
 	g_test_add_func ("/ip4-config/add-address-with-source", test_add_address_with_source);
 	g_test_add_func ("/ip4-config/add-route-with-source", test_add_route_with_source);
-	g_test_add_func ("/ip4-config/merge-subtract-mss-mtu", test_merge_subtract_mss_mtu);
+	g_test_add_func ("/ip4-config/merge-subtract-mtu", test_merge_subtract_mtu);
 	g_test_add_func ("/ip4-config/strip-search-trailing-dot", test_strip_search_trailing_dot);
 
 	return g_test_run ();

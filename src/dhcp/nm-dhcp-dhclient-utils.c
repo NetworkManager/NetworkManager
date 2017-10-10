@@ -689,6 +689,8 @@ lease_validity_span (const char *str_expire, GDateTime *now)
  * @addr_family: whether to read IPv4 or IPv6 leases
  * @iface: the interface name to match leases with
  * @ifindex: interface index of @iface
+ * @route_table: the route table for the default route.
+ * @route_metric: the route metric for the default route.
  * @contents: the contents of a dhclient leasefile
  * @now: the current UTC date/time; pass %NULL to automatically use current
  *  UTC time.  Testcases may need a different value for 'now'
@@ -704,6 +706,8 @@ nm_dhcp_dhclient_read_lease_ip_configs (NMDedupMultiIndex *multi_idx,
                                         int addr_family,
                                         const char *iface,
                                         int ifindex,
+                                        guint32 route_table,
+                                        guint32 route_metric,
                                         const char *contents,
                                         GDateTime *now)
 {
@@ -814,7 +818,17 @@ nm_dhcp_dhclient_read_lease_ip_configs (NMDedupMultiIndex *multi_idx,
 
 		ip4 = nm_ip4_config_new (multi_idx, ifindex);
 		nm_ip4_config_add_address (ip4, &address);
-		nm_ip4_config_set_gateway (ip4, gw);
+
+		{
+			const NMPlatformIP4Route r = {
+				.rt_source = NM_IP_CONFIG_SOURCE_DHCP,
+				.gateway = gw,
+				.table_coerced = nm_platform_route_table_coerce (route_table),
+				.metric = route_metric,
+			};
+
+			nm_ip4_config_add_route (ip4, &r, NULL);
+		}
 
 		value = g_hash_table_lookup (hash, "option domain-name-servers");
 		if (value) {

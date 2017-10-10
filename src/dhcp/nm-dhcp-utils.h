@@ -28,6 +28,7 @@ NMIP4Config *nm_dhcp_utils_ip4_config_from_options (struct _NMDedupMultiIndex *m
                                                     int ifindex,
                                                     const char *iface,
                                                     GHashTable *options,
+                                                    guint32 route_table,
                                                     guint32 route_metric);
 
 NMIP6Config *nm_dhcp_utils_ip6_config_from_options (struct _NMDedupMultiIndex *multi_idx,

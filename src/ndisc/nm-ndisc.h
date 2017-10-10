@@ -62,12 +62,13 @@ typedef enum {
 	NM_NDISC_PREFERENCE_HIGH
 } NMNDiscPreference;
 
-typedef struct {
+struct _NMNDiscGateway {
 	struct in6_addr address;
 	guint32 timestamp;
 	guint32 lifetime;
 	NMNDiscPreference preference;
-} NMNDiscGateway;
+};
+typedef struct _NMNDiscGateway NMNDiscGateway;
 
 struct _NMNDiscAddress {
 	struct in6_addr address;

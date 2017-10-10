@@ -1378,6 +1378,7 @@ typedef struct {
 	GPtrArray *addresses;  /* array of NMIPAddress */
 	GPtrArray *routes;     /* array of NMIPRoute */
 	gint64 route_metric;
+	guint32 route_table;
 	char *gateway;
 	gboolean ignore_auto_routes;
 	gboolean ignore_auto_dns;
@@ -1387,7 +1388,6 @@ typedef struct {
 	gboolean may_fail;
 	gint dad_timeout;
 	gint dhcp_timeout;
-	int route_table_sync;
 } NMSettingIPConfigPrivate;
 
 enum {
@@ -1401,6 +1401,7 @@ enum {
 	PROP_GATEWAY,
 	PROP_ROUTES,
 	PROP_ROUTE_METRIC,
+	PROP_ROUTE_TABLE,
 	PROP_IGNORE_AUTO_ROUTES,
 	PROP_IGNORE_AUTO_DNS,
 	PROP_DHCP_HOSTNAME,
@@ -1409,7 +1410,6 @@ enum {
 	PROP_MAY_FAIL,
 	PROP_DAD_TIMEOUT,
 	PROP_DHCP_TIMEOUT,
-	PROP_ROUTE_TABLE_SYNC,
 
 	LAST_PROP
 };
@@ -2270,22 +2270,22 @@ nm_setting_ip_config_get_route_metric (NMSettingIPConfig *setting)
 }
 
 /**
- * nm_setting_ip_config_get_route_table_sync:
+ * nm_setting_ip_config_get_route_table:
  * @setting: the #NMSettingIPConfig
  *
- * Returns the value contained in the #NMSettingIPConfig:route-table-sync
+ * Returns the value contained in the #NMSettingIPConfig:route-table
  * property.
  *
- * Returns: the configured route-table-sync mode.
+ * Returns: the configured route-table.
  *
  * Since: 1.10
  **/
-NMIPRouteTableSyncMode
-nm_setting_ip_config_get_route_table_sync (NMSettingIPConfig *setting)
+guint32
+nm_setting_ip_config_get_route_table (NMSettingIPConfig *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), 0);
 
-	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->route_table_sync;
+	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->route_table;
 }
 
 /**
@@ -2550,17 +2550,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
-	if (   priv->route_table_sync < NM_IP_ROUTE_TABLE_SYNC_MODE_DEFAULT
-	    || priv->route_table_sync > NM_IP_ROUTE_TABLE_SYNC_MODE_FULL) {
-		g_set_error (error,
-		             NM_CONNECTION_ERROR,
-		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("invalid route table sync value %d"),
-		             priv->route_table_sync);
-		g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_IP_CONFIG_ROUTE_TABLE_SYNC);
-		return FALSE;
-	}
-
 	/* Validate routes */
 	for (i = 0; i < priv->routes->len; i++) {
 		NMIPRoute *route = (NMIPRoute *) priv->routes->pdata[i];
@@ -2739,6 +2728,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_ROUTE_METRIC:
 		priv->route_metric = g_value_get_int64 (value);
 		break;
+	case PROP_ROUTE_TABLE:
+		priv->route_table = g_value_get_uint (value);
+		break;
 	case PROP_IGNORE_AUTO_ROUTES:
 		priv->ignore_auto_routes = g_value_get_boolean (value);
 		break;
@@ -2763,9 +2755,6 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_DHCP_TIMEOUT:
 		priv->dhcp_timeout = g_value_get_int (value);
-		break;
-	case PROP_ROUTE_TABLE_SYNC:
-		priv->route_table_sync = g_value_get_int (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -2812,6 +2801,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_ROUTE_METRIC:
 		g_value_set_int64 (value, priv->route_metric);
 		break;
+	case PROP_ROUTE_TABLE:
+		g_value_set_uint (value, priv->route_table);
+		break;
 	case PROP_IGNORE_AUTO_ROUTES:
 		g_value_set_boolean (value, nm_setting_ip_config_get_ignore_auto_routes (setting));
 		break;
@@ -2835,9 +2827,6 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_DHCP_TIMEOUT:
 		g_value_set_int (value, nm_setting_ip_config_get_dhcp_timeout (setting));
-		break;
-	case PROP_ROUTE_TABLE_SYNC:
-		g_value_set_int (value, priv->route_table_sync);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -3064,6 +3053,34 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 	                         G_PARAM_STATIC_STRINGS));
 
 	/**
+	 * NMSettingIPConfig:route-table:
+	 *
+	 * Enable policy routing (source routing) and set the routing table used when adding routes.
+	 *
+	 * This affects all routes, including device-routes, IPv4LL, DHCP, SLAAC, default-routes
+	 * and static routes. But note that static routes can individually overwrite the setting
+	 * by explicitly specifying a non-zero routing table.
+	 *
+	 * If the table setting is left at zero, it is eligible to be overwritten via global
+	 * configuration. If the property is zero even after applying the global configuration
+	 * value, policy routing is disabled for the address family of this connection.
+	 *
+	 * Policy routing disabled means that NetworkManager will add all routes to the main
+	 * table (except static routes that explicitly configure a different table). Additionally,
+	 * NetworkManager will not delete any extraneous routes from tables except the main table.
+	 * This is to preserve backward compatibility for users who manage routing tables outside
+	 * of NetworkManager.
+	 *
+	 * Since: 1.10
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_ROUTE_TABLE,
+		 g_param_spec_uint (NM_SETTING_IP_CONFIG_ROUTE_TABLE, "", "",
+		                    0, G_MAXUINT32, 0,
+		                    G_PARAM_READWRITE |
+		                    NM_SETTING_PARAM_FUZZY_IGNORE |
+		                    G_PARAM_STATIC_STRINGS));
+	/**
 	 * NMSettingIPConfig:ignore-auto-routes:
 	 *
 	 * When #NMSettingIPConfig:method is set to "auto" and this property to
@@ -3191,29 +3208,6 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 		(object_class, PROP_DHCP_TIMEOUT,
 		 g_param_spec_int (NM_SETTING_IP_CONFIG_DHCP_TIMEOUT, "", "",
 		                   0, G_MAXINT32, 0,
-		                   G_PARAM_READWRITE |
-		                   NM_SETTING_PARAM_FUZZY_IGNORE |
-		                   G_PARAM_STATIC_STRINGS));
-
-	/**
-	 * NMSettingIPConfig:route-table-sync:
-	 *
-	 * The mode how to sync the routes per table. In general, when NetworkManager manages
-	 * a device it will remove extraneous routes from the routing tables. The
-	 * sync parameter specifies which tables are synced this way. That means, from
-	 * which routing table NetworkManager will remove those unexpected, extraneous routes.
-	 * A value of 1 (none) means that no route tables will not be synced and no routes
-	 * are removed by NetworkManager. 2 (main) means that only the main table will be synced.
-	 * 3 (full) will sync all the route tables, except the local table. A value of zero is
-	 * the default value and allows to be overwritten via global configuration. In absence of
-	 * global configuration, the default value is 2 (main).
-	 *
-	 * Since: 1.10
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_ROUTE_TABLE_SYNC,
-		 g_param_spec_int (NM_SETTING_IP_CONFIG_ROUTE_TABLE_SYNC, "", "",
-		                   G_MININT32, G_MAXINT32, NM_IP_ROUTE_TABLE_SYNC_MODE_DEFAULT,
 		                   G_PARAM_READWRITE |
 		                   NM_SETTING_PARAM_FUZZY_IGNORE |
 		                   G_PARAM_STATIC_STRINGS));

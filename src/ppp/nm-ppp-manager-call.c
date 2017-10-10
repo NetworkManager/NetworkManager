@@ -98,6 +98,22 @@ nm_ppp_manager_create (const char *iface, GError **error)
 	return ret;
 }
 
+void
+nm_ppp_manager_set_route_parameters (NMPPPManager *self,
+                                     guint32 ip4_route_table,
+                                     guint32 ip4_route_metric,
+                                     guint32 ip6_route_table,
+                                     guint32 ip6_route_metric)
+{
+	g_return_if_fail (ppp_ops);
+
+	ppp_ops->set_route_parameters (self,
+	                               ip4_route_table,
+	                               ip4_route_metric,
+	                               ip6_route_table,
+	                               ip6_route_metric);
+}
+
 gboolean
 nm_ppp_manager_start (NMPPPManager *self,
                       NMActRequest *req,

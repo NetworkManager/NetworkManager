@@ -960,6 +960,30 @@ flags_done:
 	return b;
 }
 
+static int
+_nl_nla_parse (struct nlattr *tb[], int maxtype, struct nlattr *head, int len,
+               const struct nla_policy *policy)
+{
+	return nla_parse (tb, maxtype, head, len, (struct nla_policy *) policy);
+}
+#define nla_parse(...) _nl_nla_parse(__VA_ARGS__)
+
+static int
+_nl_nlmsg_parse (struct nlmsghdr *nlh, int hdrlen, struct nlattr *tb[],
+                 int maxtype, const struct nla_policy *policy)
+{
+	return nlmsg_parse (nlh, hdrlen, tb, maxtype, (struct nla_policy *) policy);
+}
+#define nlmsg_parse(...) _nl_nlmsg_parse(__VA_ARGS__)
+
+static int
+_nl_nla_parse_nested (struct nlattr *tb[], int maxtype, struct nlattr *nla,
+                      const struct nla_policy *policy)
+{
+	return nla_parse_nested (tb, maxtype, nla, (struct nla_policy *) policy);
+}
+#define nla_parse_nested(...) _nl_nla_parse_nested(__VA_ARGS__)
+
 /******************************************************************
  * NMPObject/netlink functions
  ******************************************************************/
@@ -987,7 +1011,7 @@ _parse_af_inet6 (NMPlatform *platform,
                  guint8 *out_addr_gen_mode_inv,
                  gboolean *out_addr_gen_mode_valid)
 {
-	static struct nla_policy policy[IFLA_INET6_MAX+1] = {
+	static const struct nla_policy policy[IFLA_INET6_MAX+1] = {
 		[IFLA_INET6_FLAGS]              = { .type = NLA_U32 },
 		[IFLA_INET6_CACHEINFO]          = { .minlen = nm_offsetofend (struct ifla_cacheinfo, retrans_time) },
 		[IFLA_INET6_CONF]               = { .minlen = 4 },
@@ -1054,7 +1078,7 @@ errout:
 static NMPObject *
 _parse_lnk_gre (const char *kind, struct nlattr *info_data)
 {
-	static struct nla_policy policy[IFLA_GRE_MAX + 1] = {
+	static const struct nla_policy policy[IFLA_GRE_MAX + 1] = {
 		[IFLA_GRE_LINK]     = { .type = NLA_U32 },
 		[IFLA_GRE_IFLAGS]   = { .type = NLA_U16 },
 		[IFLA_GRE_OFLAGS]   = { .type = NLA_U16 },
@@ -1114,7 +1138,7 @@ _parse_lnk_gre (const char *kind, struct nlattr *info_data)
 static NMPObject *
 _parse_lnk_infiniband (const char *kind, struct nlattr *info_data)
 {
-	static struct nla_policy policy[IFLA_IPOIB_MAX + 1] = {
+	static const struct nla_policy policy[IFLA_IPOIB_MAX + 1] = {
 		[IFLA_IPOIB_PKEY]   = { .type = NLA_U16 },
 		[IFLA_IPOIB_MODE]   = { .type = NLA_U16 },
 		[IFLA_IPOIB_UMCAST] = { .type = NLA_U16 },
@@ -1160,7 +1184,7 @@ _parse_lnk_infiniband (const char *kind, struct nlattr *info_data)
 static NMPObject *
 _parse_lnk_ip6tnl (const char *kind, struct nlattr *info_data)
 {
-	static struct nla_policy policy[IFLA_IPTUN_MAX + 1] = {
+	static const struct nla_policy policy[IFLA_IPTUN_MAX + 1] = {
 		[IFLA_IPTUN_LINK]        = { .type = NLA_U32 },
 		[IFLA_IPTUN_LOCAL]       = { .type = NLA_UNSPEC,
 		                             .minlen = sizeof (struct in6_addr)},
@@ -1213,7 +1237,7 @@ _parse_lnk_ip6tnl (const char *kind, struct nlattr *info_data)
 static NMPObject *
 _parse_lnk_ipip (const char *kind, struct nlattr *info_data)
 {
-	static struct nla_policy policy[IFLA_IPTUN_MAX + 1] = {
+	static const struct nla_policy policy[IFLA_IPTUN_MAX + 1] = {
 		[IFLA_IPTUN_LINK]     = { .type = NLA_U32 },
 		[IFLA_IPTUN_LOCAL]    = { .type = NLA_U32 },
 		[IFLA_IPTUN_REMOTE]   = { .type = NLA_U32 },
@@ -1251,7 +1275,7 @@ _parse_lnk_ipip (const char *kind, struct nlattr *info_data)
 static NMPObject *
 _parse_lnk_macvlan (const char *kind, struct nlattr *info_data)
 {
-	static struct nla_policy policy[IFLA_MACVLAN_MAX + 1] = {
+	static const struct nla_policy policy[IFLA_MACVLAN_MAX + 1] = {
 		[IFLA_MACVLAN_MODE]  = { .type = NLA_U32 },
 		[IFLA_MACVLAN_FLAGS] = { .type = NLA_U16 },
 	};
@@ -1294,7 +1318,7 @@ _parse_lnk_macvlan (const char *kind, struct nlattr *info_data)
 static NMPObject *
 _parse_lnk_macsec (const char *kind, struct nlattr *info_data)
 {
-	static struct nla_policy policy[__IFLA_MACSEC_MAX] = {
+	static const struct nla_policy policy[__IFLA_MACSEC_MAX] = {
 		[IFLA_MACSEC_SCI]            = { .type = NLA_U64 },
 		[IFLA_MACSEC_ICV_LEN]        = { .type = NLA_U8 },
 		[IFLA_MACSEC_CIPHER_SUITE]   = { .type = NLA_U64 },
@@ -1344,7 +1368,7 @@ _parse_lnk_macsec (const char *kind, struct nlattr *info_data)
 static NMPObject *
 _parse_lnk_sit (const char *kind, struct nlattr *info_data)
 {
-	static struct nla_policy policy[IFLA_IPTUN_MAX + 1] = {
+	static const struct nla_policy policy[IFLA_IPTUN_MAX + 1] = {
 		[IFLA_IPTUN_LINK]     = { .type = NLA_U32 },
 		[IFLA_IPTUN_LOCAL]    = { .type = NLA_U32 },
 		[IFLA_IPTUN_REMOTE]   = { .type = NLA_U32 },
@@ -1446,7 +1470,7 @@ _vlan_qos_mapping_from_nla (struct nlattr *nlattr,
 static NMPObject *
 _parse_lnk_vlan (const char *kind, struct nlattr *info_data)
 {
-	static struct nla_policy policy[IFLA_VLAN_MAX+1] = {
+	static const struct nla_policy policy[IFLA_VLAN_MAX+1] = {
 		[IFLA_VLAN_ID]          = { .type = NLA_U16 },
 		[IFLA_VLAN_FLAGS]       = { .minlen = nm_offsetofend (struct ifla_vlan_flags, flags) },
 		[IFLA_VLAN_INGRESS_QOS] = { .type = NLA_NESTED },
@@ -1532,7 +1556,7 @@ struct nm_ifla_vxlan_port_range {
 static NMPObject *
 _parse_lnk_vxlan (const char *kind, struct nlattr *info_data)
 {
-	static struct nla_policy policy[IFLA_VXLAN_MAX + 1] = {
+	static const struct nla_policy policy[IFLA_VXLAN_MAX + 1] = {
 		[IFLA_VXLAN_ID]         = { .type = NLA_U32 },
 		[IFLA_VXLAN_GROUP]      = { .type = NLA_U32 },
 		[IFLA_VXLAN_GROUP6]     = { .type = NLA_UNSPEC,
@@ -1622,7 +1646,7 @@ _parse_lnk_vxlan (const char *kind, struct nlattr *info_data)
 static NMPObject *
 _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr *nlh, gboolean id_only)
 {
-	static struct nla_policy policy[IFLA_MAX+1] = {
+	static const struct nla_policy policy[IFLA_MAX+1] = {
 		[IFLA_IFNAME]           = { .type = NLA_STRING,
 		                            .maxlen = IFNAMSIZ },
 		[IFLA_MTU]              = { .type = NLA_U32 },
@@ -1650,7 +1674,7 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 		[IFLA_NET_NS_PID]       = { .type = NLA_U32 },
 		[IFLA_NET_NS_FD]        = { .type = NLA_U32 },
 	};
-	static struct nla_policy policy_link_info[IFLA_INFO_MAX+1] = {
+	static const struct nla_policy policy_link_info[IFLA_INFO_MAX+1] = {
 		[IFLA_INFO_KIND]        = { .type = NLA_STRING },
 		[IFLA_INFO_DATA]        = { .type = NLA_NESTED },
 		[IFLA_INFO_XSTATS]      = { .type = NLA_NESTED },
@@ -1876,7 +1900,7 @@ errout:
 static NMPObject *
 _new_from_nl_addr (struct nlmsghdr *nlh, gboolean id_only)
 {
-	static struct nla_policy policy[IFA_MAX+1] = {
+	static const struct nla_policy policy[IFA_MAX+1] = {
 		[IFA_LABEL]     = { .type = NLA_STRING,
 		                     .maxlen = IFNAMSIZ },
 		[IFA_CACHEINFO] = { .minlen = nm_offsetofend (struct ifa_cacheinfo, tstamp) },
@@ -1898,7 +1922,7 @@ _new_from_nl_addr (struct nlmsghdr *nlh, gboolean id_only)
 		goto errout;
 	is_v4 = ifa->ifa_family == AF_INET;
 
-	err = nlmsg_parse(nlh, sizeof(*ifa), tb, IFA_MAX, policy);
+	err = nlmsg_parse (nlh, sizeof(*ifa), tb, IFA_MAX, policy);
 	if (err < 0)
 		goto errout;
 
@@ -1991,7 +2015,7 @@ errout:
 static NMPObject *
 _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 {
-	static struct nla_policy policy[RTA_MAX+1] = {
+	static const struct nla_policy policy[RTA_MAX+1] = {
 		[RTA_TABLE]     = { .type = NLA_U32 },
 		[RTA_IIF]       = { .type = NLA_U32 },
 		[RTA_OIF]       = { .type = NLA_U32 },
@@ -2115,7 +2139,7 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 	mss = 0;
 	if (tb[RTA_METRICS]) {
 		struct nlattr *mtb[RTAX_MAX + 1];
-		static struct nla_policy rtax_policy[RTAX_MAX + 1] = {
+		static const struct nla_policy rtax_policy[RTAX_MAX + 1] = {
 			[RTAX_LOCK]        = { .type = NLA_U32 },
 			[RTAX_ADVMSS]      = { .type = NLA_U32 },
 			[RTAX_WINDOW]      = { .type = NLA_U32 },
