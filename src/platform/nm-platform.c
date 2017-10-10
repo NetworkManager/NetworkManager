@@ -92,8 +92,8 @@ typedef struct _NMPlatformPrivate {
 	bool use_udev:1;
 	bool log_with_ptr:1;
 
-	gint8 check_support_kernel_extended_ifa_flags_cached;
-	gint8 check_support_user_ipv6ll_cached;
+	NMPlatformKernelSupportFlags support_checked;
+	NMPlatformKernelSupportFlags support_present;
 
 	guint ip4_dev_route_blacklist_check_id;
 	guint ip4_dev_route_blacklist_gc_timeout_id;
@@ -301,8 +301,9 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_nmp_nlm_flag_to_string_lookup, NMPNlmFlags,
 
 /*****************************************************************************/
 
-gboolean
-nm_platform_check_support_kernel_extended_ifa_flags (NMPlatform *self)
+NMPlatformKernelSupportFlags
+nm_platform_check_kernel_support (NMPlatform *self,
+                                  NMPlatformKernelSupportFlags request_flags)
 {
 	NMPlatformPrivate *priv;
 
@@ -310,29 +311,28 @@ nm_platform_check_support_kernel_extended_ifa_flags (NMPlatform *self)
 
 	priv = NM_PLATFORM_GET_PRIVATE (self);
 
-	if (G_UNLIKELY (priv->check_support_kernel_extended_ifa_flags_cached == 0)) {
-		priv->check_support_kernel_extended_ifa_flags_cached = (   klass->check_support_kernel_extended_ifa_flags
-		                                                        && klass->check_support_kernel_extended_ifa_flags (self))
-		                                                       ? 1 : -1;
+	/* we cache the response from subclasses and only request it once.
+	 * This probably gives better performance, but more importantly,
+	 * we are guaranteed that the answer for a certain request_flag
+	 * is always the same. */
+	if (G_UNLIKELY (!NM_FLAGS_ALL (priv->support_checked, request_flags))) {
+		NMPlatformKernelSupportFlags checked, response;
+
+		checked = request_flags & ~priv->support_checked;
+		nm_assert (checked);
+
+		if (klass->check_kernel_support)
+			response = klass->check_kernel_support (self, checked);
+		else {
+			/* fake platform. Pretend no support for anything. */
+			response = 0;
+		}
+
+		priv->support_checked |= checked;
+		priv->support_present = (priv->support_present & ~checked) | (response & checked);
 	}
-	return priv->check_support_kernel_extended_ifa_flags_cached >= 0;
-}
 
-gboolean
-nm_platform_check_support_user_ipv6ll (NMPlatform *self)
-{
-	NMPlatformPrivate *priv;
-
-	_CHECK_SELF (self, klass, TRUE);
-
-	priv = NM_PLATFORM_GET_PRIVATE (self);
-
-	if (G_UNLIKELY (priv->check_support_user_ipv6ll_cached == 0)) {
-		priv->check_support_user_ipv6ll_cached = (   klass->check_support_user_ipv6ll
-		                                          && klass->check_support_user_ipv6ll (self))
-		                                         ? 1 : -1;
-	}
-	return priv->check_support_user_ipv6ll_cached >= 0;
+	return priv->support_present & request_flags;
 }
 
 /**
@@ -3421,7 +3421,7 @@ delete_and_next:
 	if (!known_addresses)
 		return TRUE;
 
-	ifa_flags =   nm_platform_check_support_kernel_extended_ifa_flags (self)
+	ifa_flags =   nm_platform_check_kernel_support (self, NM_PLATFORM_KERNEL_SUPPORT_EXTENDED_IFA_FLAGS)
 	            ? IFA_F_NOPREFIXROUTE
 	            : 0;
 
@@ -3503,7 +3503,7 @@ nm_platform_ip6_address_sync (NMPlatform *self,
 	if (!known_addresses)
 		return TRUE;
 
-	ifa_flags =   nm_platform_check_support_kernel_extended_ifa_flags (self)
+	ifa_flags =   nm_platform_check_kernel_support (self, NM_PLATFORM_KERNEL_SUPPORT_EXTENDED_IFA_FLAGS)
 	            ? IFA_F_NOPREFIXROUTE
 	            : 0;
 

@@ -3074,20 +3074,25 @@ sysctl_get (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 
 /*****************************************************************************/
 
-static gboolean
-check_support_kernel_extended_ifa_flags (NMPlatform *platform)
+static NMPlatformKernelSupportFlags
+check_kernel_support (NMPlatform *platform,
+                      NMPlatformKernelSupportFlags request_flags)
 {
+	NMPlatformKernelSupportFlags response = 0;
+
 	nm_assert (NM_IS_LINUX_PLATFORM (platform));
 
-	return _support_kernel_extended_ifa_flags_get ();
-}
+	if (NM_FLAGS_HAS (request_flags, NM_PLATFORM_KERNEL_SUPPORT_EXTENDED_IFA_FLAGS)) {
+		if (_support_kernel_extended_ifa_flags_get ())
+			response |= NM_PLATFORM_KERNEL_SUPPORT_EXTENDED_IFA_FLAGS;
+	}
 
-static gboolean
-check_support_user_ipv6ll (NMPlatform *platform)
-{
-	nm_assert (NM_IS_LINUX_PLATFORM (platform));
+	if (NM_FLAGS_HAS (request_flags, NM_PLATFORM_KERNEL_SUPPORT_USER_IPV6LL)) {
+		if (_support_user_ipv6ll_get ())
+			response |= NM_PLATFORM_KERNEL_SUPPORT_USER_IPV6LL;
+	}
 
-	return _support_user_ipv6ll_get ();
+	return response;
 }
 
 static void
@@ -6864,8 +6869,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->ip_route_delete = ip_route_delete;
 	platform_class->ip_route_get = ip_route_get;
 
-	platform_class->check_support_kernel_extended_ifa_flags = check_support_kernel_extended_ifa_flags;
-	platform_class->check_support_user_ipv6ll = check_support_user_ipv6ll;
+	platform_class->check_kernel_support = check_kernel_support;
 
 	platform_class->process_events = process_events;
 }
