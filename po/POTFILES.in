@@ -142,6 +142,7 @@ libnm/nm-device-macvlan.c
 libnm/nm-device-modem.c
 libnm/nm-device-olpc-mesh.c
 libnm/nm-device-ovs-interface.c
+libnm/nm-device-ovs-port.c
 libnm/nm-device-team.c
 libnm/nm-device-vlan.c
 libnm/nm-device-vxlan.c

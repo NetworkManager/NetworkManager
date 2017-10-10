@@ -42,6 +42,7 @@
 #include "nm-device-modem.h"
 #include "nm-device-olpc-mesh.h"
 #include "nm-device-ovs-interface.h"
+#include "nm-device-ovs-port.h"
 #include "nm-device-team.h"
 #include "nm-device-tun.h"
 #include "nm-device-vlan.h"

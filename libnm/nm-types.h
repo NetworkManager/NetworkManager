@@ -44,6 +44,7 @@ typedef struct _NMDeviceMacvlan      NMDeviceMacvlan;
 typedef struct _NMDeviceModem        NMDeviceModem;
 typedef struct _NMDeviceOlpcMesh     NMDeviceOlpcMesh;
 typedef struct _NMDeviceOvsInterface NMDeviceOvsInterface;
+typedef struct _NMDeviceOvsPort      NMDeviceOvsPort;
 typedef struct _NMDevicePpp          NMDevicePpp;
 typedef struct _NMDeviceTeam         NMDeviceTeam;
 typedef struct _NMDeviceTun          NMDeviceTun;
