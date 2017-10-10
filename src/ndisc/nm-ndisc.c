@@ -519,7 +519,8 @@ static void
 solicit_routers (NMNDisc *ndisc)
 {
 	NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE (ndisc);
-	gint64 next, now;
+	gint32 now, next;
+	gint64 t;
 
 	if (priv->send_rs_id)
 		return;
@@ -527,9 +528,9 @@ solicit_routers (NMNDisc *ndisc)
 	now = nm_utils_get_monotonic_timestamp_s ();
 	priv->solicitations_left = priv->router_solicitations;
 
-	next = (((gint64) priv->last_rs) + priv->router_solicitation_interval) - now;
-	next = CLAMP (next, 0, G_MAXINT32);
-	_LOGD ("scheduling explicit router solicitation request in %" G_GINT64_FORMAT " seconds.",
+	t = (((gint64) priv->last_rs) + priv->router_solicitation_interval) - now;
+	next = CLAMP (t, 0, G_MAXINT32);
+	_LOGD ("scheduling explicit router solicitation request in %" G_GINT32_FORMAT " seconds.",
 	       next);
 	priv->send_rs_id = g_timeout_add_seconds ((guint32) next, (GSourceFunc) send_rs_timeout, ndisc);
 }
@@ -797,7 +798,39 @@ dhcp_level_to_string (NMNDiscDHCPLevel dhcp_level)
 	}
 }
 
-#define expiry(item) (item->timestamp + item->lifetime)
+static gint32
+get_expiry_time (guint32 timestamp, guint32 lifetime)
+{
+	gint64 t;
+
+	/* timestamp is supposed to come from nm_utils_get_monotonic_timestamp_s().
+	 * It is expected to be within a certain range. */
+	nm_assert (timestamp > 0);
+	nm_assert (timestamp <= G_MAXINT32);
+
+	if (lifetime == NM_NDISC_INFINITY)
+		return G_MAXINT32;
+
+	t = (gint64) timestamp + (gint64) lifetime;
+	return CLAMP (t, 0, G_MAXINT32 - 1);
+}
+
+#define get_expiry(item) \
+	({ \
+		typeof (item) _item = (item); \
+		nm_assert (_item); \
+		get_expiry_time ((_item->timestamp), (_item->lifetime)); \
+	})
+
+#define get_expiry_half(item) \
+	({ \
+		typeof (item) _item = (item); \
+		nm_assert (_item); \
+		get_expiry_time ((_item->timestamp),\
+		                 (_item->lifetime) == NM_NDISC_INFINITY \
+		                   ? NM_NDISC_INFINITY \
+		                   : (_item->lifetime) / 2); \
+	})
 
 static void
 _config_changed_log (NMNDisc *ndisc, NMNDiscConfigMap changed)
@@ -821,37 +854,37 @@ _config_changed_log (NMNDisc *ndisc, NMNDiscConfigMap changed)
 		NMNDiscGateway *gateway = &g_array_index (rdata->gateways, NMNDiscGateway, i);
 
 		inet_ntop (AF_INET6, &gateway->address, addrstr, sizeof (addrstr));
-		_LOGD ("  gateway %s pref %d exp %u", addrstr, gateway->preference, expiry (gateway));
+		_LOGD ("  gateway %s pref %d exp %d", addrstr, gateway->preference, get_expiry (gateway));
 	}
 	for (i = 0; i < rdata->addresses->len; i++) {
 		NMNDiscAddress *address = &g_array_index (rdata->addresses, NMNDiscAddress, i);
 
 		inet_ntop (AF_INET6, &address->address, addrstr, sizeof (addrstr));
-		_LOGD ("  address %s exp %u", addrstr, expiry (address));
+		_LOGD ("  address %s exp %d", addrstr, get_expiry (address));
 	}
 	for (i = 0; i < rdata->routes->len; i++) {
 		NMNDiscRoute *route = &g_array_index (rdata->routes, NMNDiscRoute, i);
 
 		inet_ntop (AF_INET6, &route->network, addrstr, sizeof (addrstr));
-		_LOGD ("  route %s/%u via %s pref %d exp %u", addrstr, (guint) route->plen,
+		_LOGD ("  route %s/%u via %s pref %d exp %d", addrstr, (guint) route->plen,
 		       nm_utils_inet6_ntop (&route->gateway, NULL), route->preference,
-		       expiry (route));
+		       get_expiry (route));
 	}
 	for (i = 0; i < rdata->dns_servers->len; i++) {
 		NMNDiscDNSServer *dns_server = &g_array_index (rdata->dns_servers, NMNDiscDNSServer, i);
 
 		inet_ntop (AF_INET6, &dns_server->address, addrstr, sizeof (addrstr));
-		_LOGD ("  dns_server %s exp %u", addrstr, expiry (dns_server));
+		_LOGD ("  dns_server %s exp %d", addrstr, get_expiry (dns_server));
 	}
 	for (i = 0; i < rdata->dns_domains->len; i++) {
 		NMNDiscDNSDomain *dns_domain = &g_array_index (rdata->dns_domains, NMNDiscDNSDomain, i);
 
-		_LOGD ("  dns_domain %s exp %u", dns_domain->domain, expiry (dns_domain));
+		_LOGD ("  dns_domain %s exp %d", dns_domain->domain, get_expiry (dns_domain));
 	}
 }
 
 static void
-clean_gateways (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap *changed, guint32 *nextevent)
+clean_gateways (NMNDisc *ndisc, gint32 now, NMNDiscConfigMap *changed, gint32 *nextevent)
 {
 	NMNDiscDataInternal *rdata;
 	guint i;
@@ -861,8 +894,8 @@ clean_gateways (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap *changed, guint32 
 	for (i = 0; i < rdata->gateways->len; ) {
 		NMNDiscGateway *item = &g_array_index (rdata->gateways, NMNDiscGateway, i);
 
-		if (item->lifetime != G_MAXUINT32) {
-			guint64 expiry = (guint64) item->timestamp + item->lifetime;
+		if (item->lifetime != NM_NDISC_INFINITY) {
+			gint32 expiry = get_expiry (item);
 
 			if (now >= expiry) {
 				g_array_remove_index (rdata->gateways, i);
@@ -877,7 +910,7 @@ clean_gateways (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap *changed, guint32 
 }
 
 static void
-clean_addresses (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap *changed, guint32 *nextevent)
+clean_addresses (NMNDisc *ndisc, gint32 now, NMNDiscConfigMap *changed, gint32 *nextevent)
 {
 	NMNDiscDataInternal *rdata;
 	guint i;
@@ -887,8 +920,8 @@ clean_addresses (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap *changed, guint32
 	for (i = 0; i < rdata->addresses->len; ) {
 		NMNDiscAddress *item = &g_array_index (rdata->addresses, NMNDiscAddress, i);
 
-		if (item->lifetime != G_MAXUINT32) {
-			guint64 expiry = (guint64) item->timestamp + item->lifetime;
+		if (item->lifetime != NM_NDISC_INFINITY) {
+			gint32 expiry = get_expiry (item);
 
 			if (now >= expiry) {
 				g_array_remove_index (rdata->addresses, i);
@@ -903,7 +936,7 @@ clean_addresses (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap *changed, guint32
 }
 
 static void
-clean_routes (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap *changed, guint32 *nextevent)
+clean_routes (NMNDisc *ndisc, gint32 now, NMNDiscConfigMap *changed, gint32 *nextevent)
 {
 	NMNDiscDataInternal *rdata;
 	guint i;
@@ -913,8 +946,8 @@ clean_routes (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap *changed, guint32 *n
 	for (i = 0; i < rdata->routes->len; ) {
 		NMNDiscRoute *item = &g_array_index (rdata->routes, NMNDiscRoute, i);
 
-		if (item->lifetime != G_MAXUINT32) {
-			guint64 expiry = (guint64) item->timestamp + item->lifetime;
+		if (item->lifetime != NM_NDISC_INFINITY) {
+			gint32 expiry = get_expiry (item);
 
 			if (now >= expiry) {
 				g_array_remove_index (rdata->routes, i);
@@ -929,7 +962,7 @@ clean_routes (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap *changed, guint32 *n
 }
 
 static void
-clean_dns_servers (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap *changed, guint32 *nextevent)
+clean_dns_servers (NMNDisc *ndisc, gint32 now, NMNDiscConfigMap *changed, gint32 *nextevent)
 {
 	NMNDiscDataInternal *rdata;
 	guint i;
@@ -939,9 +972,9 @@ clean_dns_servers (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap *changed, guint
 	for (i = 0; i < rdata->dns_servers->len; ) {
 		NMNDiscDNSServer *item = &g_array_index (rdata->dns_servers, NMNDiscDNSServer, i);
 
-		if (item->lifetime != G_MAXUINT32) {
-			guint64 expiry = (guint64) item->timestamp + item->lifetime;
-			guint64 refresh = (guint64) item->timestamp + item->lifetime / 2;
+		if (item->lifetime != NM_NDISC_INFINITY) {
+			gint32 expiry = get_expiry (item);
+			gint32 refresh;
 
 			if (now >= expiry) {
 				g_array_remove_index (rdata->dns_servers, i);
@@ -949,6 +982,7 @@ clean_dns_servers (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap *changed, guint
 				continue;
 			}
 
+			refresh = get_expiry_half (item);
 			if (now >= refresh)
 				solicit_routers (ndisc);
 			else if (*nextevent > refresh)
@@ -959,7 +993,7 @@ clean_dns_servers (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap *changed, guint
 }
 
 static void
-clean_dns_domains (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap *changed, guint32 *nextevent)
+clean_dns_domains (NMNDisc *ndisc, gint32 now, NMNDiscConfigMap *changed, gint32 *nextevent)
 {
 	NMNDiscDataInternal *rdata;
 	guint i;
@@ -969,9 +1003,9 @@ clean_dns_domains (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap *changed, guint
 	for (i = 0; i < rdata->dns_domains->len; ) {
 		NMNDiscDNSDomain *item = &g_array_index (rdata->dns_domains, NMNDiscDNSDomain, i);
 
-		if (item->lifetime != G_MAXUINT32) {
-			guint64 expiry = (guint64) item->timestamp + item->lifetime;
-			guint64 refresh = (guint64) item->timestamp + item->lifetime / 2;
+		if (item->lifetime != NM_NDISC_INFINITY) {
+			gint32 expiry = get_expiry (item);
+			gint32 refresh;
 
 			if (now >= expiry) {
 				g_array_remove_index (rdata->dns_domains, i);
@@ -979,6 +1013,7 @@ clean_dns_domains (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap *changed, guint
 				continue;
 			}
 
+			refresh = get_expiry_half (item);
 			if (now >= refresh)
 				solicit_routers (ndisc);
 			else if (*nextevent > refresh)
@@ -991,12 +1026,11 @@ clean_dns_domains (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap *changed, guint
 static gboolean timeout_cb (gpointer user_data);
 
 static void
-check_timestamps (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap changed)
+check_timestamps (NMNDisc *ndisc, gint32 now, NMNDiscConfigMap changed)
 {
 	NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE (ndisc);
 	/* Use a magic date in the distant future (~68 years) */
-	guint32 never = G_MAXINT32;
-	guint32 nextevent = never;
+	gint32 nextevent = G_MAXINT32;
 
 	nm_clear_g_source (&priv->timeout_id);
 
@@ -1009,10 +1043,11 @@ check_timestamps (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap changed)
 	if (changed)
 		_emit_config_change (ndisc, changed);
 
-	if (nextevent != never) {
-		g_return_if_fail (nextevent > now);
-		_LOGD ("scheduling next now/lifetime check: %u seconds",
-		       nextevent - now);
+	if (nextevent != G_MAXINT32) {
+		if (nextevent <= now)
+			g_return_if_reached ();
+		_LOGD ("scheduling next now/lifetime check: %d seconds",
+		       (int) (nextevent - now));
 		priv->timeout_id = g_timeout_add_seconds (nextevent - now, timeout_cb, ndisc);
 	}
 }
@@ -1028,7 +1063,7 @@ timeout_cb (gpointer user_data)
 }
 
 void
-nm_ndisc_ra_received (NMNDisc *ndisc, guint32 now, NMNDiscConfigMap changed)
+nm_ndisc_ra_received (NMNDisc *ndisc, gint32 now, NMNDiscConfigMap changed)
 {
 	NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE (ndisc);
 

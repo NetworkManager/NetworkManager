@@ -108,7 +108,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	NMNDiscConfigMap changed = 0;
 	struct ndp_msgra *msgra = ndp_msgra (msg);
 	struct in6_addr gateway_addr;
-	guint32 now = nm_utils_get_monotonic_timestamp_s ();
+	gint32 now = nm_utils_get_monotonic_timestamp_s ();
 	int offset;
 	int hop_limit;
 
@@ -123,7 +123,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	 * single time when the configuration is finished and updates can
 	 * come at any time.
 	 */
-	_LOGD ("received router advertisement at %u", now);
+	_LOGD ("received router advertisement at %d", (int) now);
 
 	/* DHCP level:
 	 *
@@ -337,7 +337,7 @@ send_ra (NMNDisc *ndisc, GError **error)
 {
 	NMLndpNDiscPrivate *priv = NM_LNDP_NDISC_GET_PRIVATE ((NMLndpNDisc *) ndisc);
 	NMNDiscDataInternal *rdata = ndisc->rdata;
-	guint32 now = nm_utils_get_monotonic_timestamp_s ();
+	gint32 now = nm_utils_get_monotonic_timestamp_s ();
 	int errsv;
 	struct in6_addr *addr;
 	struct ndp_msg *msg;
@@ -367,14 +367,14 @@ send_ra (NMNDisc *ndisc, GError **error)
 	 * whose prefixes are suitable for delegating. Let's announce them. */
 	for (i = 0; i < rdata->addresses->len; i++) {
 		NMNDiscAddress *address = &g_array_index (rdata->addresses, NMNDiscAddress, i);
-		guint32 age = now - address->timestamp;
+		guint32 age = NM_CLAMP ((gint64) now - (gint64) address->timestamp, 0, G_MAXUINT32 - 1);
 		guint32 lifetime = address->lifetime;
 		guint32 preferred = address->preferred;
 
 		/* Clamp the life times if they're not forever. */
-		if (lifetime != 0xffffffff)
+		if (lifetime != NM_NDISC_INFINITY)
 			lifetime = lifetime > age ? lifetime - age : 0;
-		if (preferred != 0xffffffff)
+		if (preferred != NM_NDISC_INFINITY)
 			preferred = preferred > age ? preferred - age : 0;
 
 		prefix = _ndp_msg_add_option (msg, sizeof(*prefix));

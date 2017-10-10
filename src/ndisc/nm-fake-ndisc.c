@@ -250,7 +250,7 @@ receive_ra (gpointer user_data)
 	NMNDiscDataInternal *rdata = ndisc->rdata;
 	FakeRa *ra = priv->ras->data;
 	NMNDiscConfigMap changed = 0;
-	guint32 now = nm_utils_get_monotonic_timestamp_s ();
+	gint32 now = nm_utils_get_monotonic_timestamp_s ();
 	guint i;
 	NMNDiscDHCPLevel dhcp_level;
 

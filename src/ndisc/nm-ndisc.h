@@ -62,6 +62,8 @@ typedef enum {
 	NM_NDISC_PREFERENCE_HIGH
 } NMNDiscPreference;
 
+#define NM_NDISC_INFINITY  G_MAXUINT32
+
 struct _NMNDiscGateway {
 	struct in6_addr address;
 	guint32 timestamp;
