@@ -120,7 +120,7 @@ char *strjoin_real(const char *x, ...) _sentinel_;
         ({                                                              \
                 const char *_appendees_[] = { a, __VA_ARGS__ };         \
                 char *_d_, *_p_;                                        \
-                int _len_ = 0;                                          \
+                size_t _len_ = 0;                                          \
                 unsigned _i_;                                           \
                 for (_i_ = 0; _i_ < ELEMENTSOF(_appendees_) && _appendees_[_i_]; _i_++) \
                         _len_ += strlen(_appendees_[_i_]);              \
@@ -189,7 +189,7 @@ static inline void *memmem_safe(const void *haystack, size_t haystacklen, const 
         return memmem(haystack, haystacklen, needle, needlelen);
 }
 
-#if !HAVE_DECL_EXPLICIT_BZERO
+#if !HAVE_EXPLICIT_BZERO
 void explicit_bzero(void *p, size_t l);
 #endif
 

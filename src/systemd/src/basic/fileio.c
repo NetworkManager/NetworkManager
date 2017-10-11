@@ -30,6 +30,7 @@
 
 #include "alloc-util.h"
 #include "ctype.h"
+#include "def.h"
 #include "env-util.h"
 #include "escape.h"
 #include "fd-util.h"
@@ -52,13 +53,17 @@
 
 #define READ_FULL_BYTES_MAX (4U*1024U*1024U)
 
-int write_string_stream_ts(FILE *f, const char *line, bool enforce_newline, struct timespec *ts) {
+int write_string_stream_ts(
+                FILE *f,
+                const char *line,
+                WriteStringFileFlags flags,
+                struct timespec *ts) {
 
         assert(f);
         assert(line);
 
         fputs(line, f);
-        if (enforce_newline && !endswith(line, "\n"))
+        if (!(flags & WRITE_STRING_FILE_AVOID_NEWLINE) && !endswith(line, "\n"))
                 fputc('\n', f);
 
         if (ts) {
@@ -68,10 +73,18 @@ int write_string_stream_ts(FILE *f, const char *line, bool enforce_newline, stru
                         return -errno;
         }
 
-        return fflush_and_check(f);
+        if (flags & WRITE_STRING_FILE_SYNC)
+                return fflush_sync_and_check(f);
+        else
+                return fflush_and_check(f);
 }
 
-static int write_string_file_atomic(const char *fn, const char *line, bool enforce_newline, bool do_fsync) {
+static int write_string_file_atomic(
+                const char *fn,
+                const char *line,
+                WriteStringFileFlags flags,
+                struct timespec *ts) {
+
         _cleanup_fclose_ FILE *f = NULL;
         _cleanup_free_ char *p = NULL;
         int r;
@@ -85,22 +98,28 @@ static int write_string_file_atomic(const char *fn, const char *line, bool enfor
 
         (void) fchmod_umask(fileno(f), 0644);
 
-        r = write_string_stream(f, line, enforce_newline);
-        if (r >= 0 && do_fsync)
-                r = fflush_sync_and_check(f);
+        r = write_string_stream_ts(f, line, flags, ts);
+        if (r < 0)
+                goto fail;
 
-        if (r >= 0) {
-                if (rename(p, fn) < 0)
-                        r = -errno;
+        if (rename(p, fn) < 0) {
+                r = -errno;
+                goto fail;
         }
 
-        if (r < 0)
-                (void) unlink(p);
+        return 0;
 
+fail:
+        (void) unlink(p);
         return r;
 }
 
-int write_string_file_ts(const char *fn, const char *line, WriteStringFileFlags flags, struct timespec *ts) {
+int write_string_file_ts(
+                const char *fn,
+                const char *line,
+                WriteStringFileFlags flags,
+                struct timespec *ts) {
+
         _cleanup_fclose_ FILE *f = NULL;
         int q, r;
 
@@ -113,8 +132,7 @@ int write_string_file_ts(const char *fn, const char *line, WriteStringFileFlags 
         if (flags & WRITE_STRING_FILE_ATOMIC) {
                 assert(flags & WRITE_STRING_FILE_CREATE);
 
-                r = write_string_file_atomic(fn, line, !(flags & WRITE_STRING_FILE_AVOID_NEWLINE),
-                                                       flags & WRITE_STRING_FILE_SYNC);
+                r = write_string_file_atomic(fn, line, flags, ts);
                 if (r < 0)
                         goto fail;
 
@@ -147,15 +165,9 @@ int write_string_file_ts(const char *fn, const char *line, WriteStringFileFlags 
                 }
         }
 
-        r = write_string_stream_ts(f, line, !(flags & WRITE_STRING_FILE_AVOID_NEWLINE), ts);
+        r = write_string_stream_ts(f, line, flags, ts);
         if (r < 0)
                 goto fail;
-
-        if (flags & WRITE_STRING_FILE_SYNC) {
-                r = fflush_sync_and_check(f);
-                if (r < 0)
-                        return r;
-        }
 
         return 0;
 
@@ -177,7 +189,7 @@ fail:
 
 int read_one_line_file(const char *fn, char **line) {
         _cleanup_fclose_ FILE *f = NULL;
-        char t[LINE_MAX], *c;
+        int r;
 
         assert(fn);
         assert(line);
@@ -186,21 +198,8 @@ int read_one_line_file(const char *fn, char **line) {
         if (!f)
                 return -errno;
 
-        if (!fgets(t, sizeof(t), f)) {
-
-                if (ferror(f))
-                        return errno > 0 ? -errno : -EIO;
-
-                t[0] = 0;
-        }
-
-        c = strdup(t);
-        if (!c)
-                return -ENOMEM;
-        truncate_nl(c);
-
-        *line = c;
-        return 0;
+        r = read_line(f, LONG_LINE_MAX, line);
+        return r < 0 ? r : 0;
 }
 
 int verify_file(const char *fn, const char *blob, bool accept_extra_nl) {
@@ -259,11 +258,11 @@ int read_full_stream(FILE *f, char **contents, size_t *size) {
                 if (st.st_size > READ_FULL_BYTES_MAX)
                         return -E2BIG;
 
-                /* Start with the right file size, but be prepared for
-                 * files from /proc which generally report a file size
-                 * of 0 */
+                /* Start with the right file size, but be prepared for files from /proc which generally report a file
+                 * size of 0. Note that we increase the size to read here by one, so that the first read attempt
+                 * already makes us notice the EOF. */
                 if (st.st_size > 0)
-                        n = st.st_size;
+                        n = st.st_size + 1;
         }
 
         l = 0;
@@ -276,12 +275,13 @@ int read_full_stream(FILE *f, char **contents, size_t *size) {
                         return -ENOMEM;
 
                 buf = t;
+                errno = 0;
                 k = fread(buf + l, 1, n - l, f);
                 if (k > 0)
                         l += k;
 
                 if (ferror(f))
-                        return -errno;
+                        return errno > 0 ? -errno : -EIO;
 
                 if (feof(f))
                         break;
@@ -1525,4 +1525,78 @@ int mkdtemp_malloc(const char *template, char **ret) {
 
         *ret = p;
         return 0;
+}
+
+static inline void funlockfilep(FILE **f) {
+        funlockfile(*f);
+}
+
+int read_line(FILE *f, size_t limit, char **ret) {
+        _cleanup_free_ char *buffer = NULL;
+        size_t n = 0, allocated = 0, count = 0;
+
+        assert(f);
+
+        /* Something like a bounded version of getline().
+         *
+         * Considers EOF, \n and \0 end of line delimiters, and does not include these delimiters in the string
+         * returned.
+         *
+         * Returns the number of bytes read from the files (i.e. including delimiters — this hence usually differs from
+         * the number of characters in the returned string). When EOF is hit, 0 is returned.
+         *
+         * The input parameter limit is the maximum numbers of characters in the returned string, i.e. excluding
+         * delimiters. If the limit is hit we fail and return -ENOBUFS.
+         *
+         * If a line shall be skipped ret may be initialized as NULL. */
+
+        if (ret) {
+                if (!GREEDY_REALLOC(buffer, allocated, 1))
+                        return -ENOMEM;
+        }
+
+        {
+                _cleanup_(funlockfilep) FILE *flocked = f;
+                flockfile(f);
+
+                for (;;) {
+                        int c;
+
+                        if (n >= limit)
+                                return -ENOBUFS;
+
+                        errno = 0;
+                        c = fgetc_unlocked(f);
+                        if (c == EOF) {
+                                /* if we read an error, and have no data to return, then propagate the error */
+                                if (ferror_unlocked(f) && n == 0)
+                                        return errno > 0 ? -errno : -EIO;
+
+                                break;
+                        }
+
+                        count++;
+
+                        if (IN_SET(c, '\n', 0)) /* Reached a delimiter */
+                                break;
+
+                        if (ret) {
+                                if (!GREEDY_REALLOC(buffer, allocated, n + 2))
+                                        return -ENOMEM;
+
+                                buffer[n] = (char) c;
+                        }
+
+                        n++;
+                }
+        }
+
+        if (ret) {
+                buffer[n] = 0;
+
+                *ret = buffer;
+                buffer = NULL;
+        }
+
+        return (int) count;
 }
