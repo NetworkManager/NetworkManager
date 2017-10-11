@@ -32,6 +32,18 @@
 #define CLOCK_BOOTTIME 7
 #endif
 
+#if defined(HAVE_DECL_EXPLICIT_BZERO) && HAVE_DECL_EXPLICIT_BZERO == 1
+#define HAVE_EXPLICIT_BZERO 1
+#else
+#define HAVE_EXPLICIT_BZERO 0
+#endif
+
+#define ENABLE_DEBUG_HASHMAP 0
+
+#ifndef HAVE_SYS_AUXV_H
+#define HAVE_SYS_AUXV_H 0
+#endif
+
 /*****************************************************************************/
 
 static inline NMLogLevel

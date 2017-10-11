@@ -677,7 +677,7 @@ char *strip_tab_ansi(char **ibuf, size_t *_isz) {
                 case STATE_BRACKET:
 
                         if (i >= *ibuf + isz || /* EOT */
-                            (!(*i >= '0' && *i <= '9') && *i != ';' && *i != 'm')) {
+                            (!(*i >= '0' && *i <= '9') && !IN_SET(*i, ';', 'm'))) {
                                 fputc_unlocked('\x1B', f);
                                 fputc_unlocked('[', f);
                                 state = STATE_OTHER;
@@ -830,7 +830,7 @@ int free_and_strdup(char **p, const char *s) {
         return 1;
 }
 
-#if !HAVE_DECL_EXPLICIT_BZERO
+#if !HAVE_EXPLICIT_BZERO
 /*
  * Pointer to memset is volatile so that compiler must de-reference
  * the pointer and can't assume that it points to any function in

@@ -69,6 +69,22 @@ AC_CHECK_DECLS([
 #include <string.h>
 ]])
 
+AC_CHECK_HEADERS(sys/auxv.h)
+
+AC_CHECK_DECLS([getrandom],
+               [AC_DEFINE([USE_SYS_RANDOM_H], [1], [sys/random.h is usable])
+                AC_DEFINE([HAVE_GETRANDOM], [1], [has getrandom])
+               ],
+               [AC_CHECK_DECLS([getrandom],
+                               [AC_DEFINE([USE_SYS_RANDOM_H], [0], [sys/random.h is usable])
+                                AC_DEFINE([HAVE_GETRANDOM], [1], [has getrandom])],
+                               [AC_DEFINE([USE_SYS_RANDOM_H], [0], [sys/random.h is usable])
+                                AC_DEFINE([HAVE_GETRANDOM], [0], [has getrandom])],
+                               [[#include <linux/random.h>
+                                 ]])],
+               [[#include <sys/random.h>
+                 ]])
+
 dnl
 dnl translation support
 dnl

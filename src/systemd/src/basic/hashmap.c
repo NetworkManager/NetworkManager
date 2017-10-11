@@ -36,7 +36,7 @@
 #include "strv.h"
 #include "util.h"
 
-#ifdef ENABLE_DEBUG_HASHMAP
+#if ENABLE_DEBUG_HASHMAP
 #include <pthread.h>
 #include "list.h"
 #endif
@@ -144,7 +144,7 @@ typedef uint8_t dib_raw_t;
 
 #define DIB_FREE UINT_MAX
 
-#ifdef ENABLE_DEBUG_HASHMAP
+#if ENABLE_DEBUG_HASHMAP
 struct hashmap_debug_info {
         LIST_FIELDS(struct hashmap_debug_info, debug_list);
         unsigned max_entries;  /* high watermark of n_entries */
@@ -501,7 +501,7 @@ static void base_remove_entry(HashmapBase *h, unsigned idx) {
         dibs = dib_raw_ptr(h);
         assert(dibs[idx] != DIB_RAW_FREE);
 
-#ifdef ENABLE_DEBUG_HASHMAP
+#if ENABLE_DEBUG_HASHMAP
         h->debug.rem_count++;
         h->debug.last_rem_idx = idx;
 #endif
@@ -510,7 +510,7 @@ static void base_remove_entry(HashmapBase *h, unsigned idx) {
         /* Find the stop bucket ("right"). It is either free or has DIB == 0. */
         for (right = next_idx(h, left); ; right = next_idx(h, right)) {
                 raw_dib = dibs[right];
-                if (raw_dib == 0 || raw_dib == DIB_RAW_FREE)
+                if (IN_SET(raw_dib, 0, DIB_RAW_FREE))
                         break;
 
                 /* The buckets are not supposed to be all occupied and with DIB > 0.
@@ -580,7 +580,7 @@ static unsigned hashmap_iterate_in_insertion_order(OrderedHashmap *h, Iterator *
                 assert(e->p.b.key == i->next_key);
         }
 
-#ifdef ENABLE_DEBUG_HASHMAP
+#if ENABLE_DEBUG_HASHMAP
         i->prev_idx = idx;
 #endif
 
@@ -637,7 +637,7 @@ static unsigned hashmap_iterate_in_internal_order(HashmapBase *h, Iterator *i) {
         }
 
         idx = i->idx;
-#ifdef ENABLE_DEBUG_HASHMAP
+#if ENABLE_DEBUG_HASHMAP
         i->prev_idx = idx;
 #endif
 
@@ -660,7 +660,7 @@ static unsigned hashmap_iterate_entry(HashmapBase *h, Iterator *i) {
                 return IDX_NIL;
         }
 
-#ifdef ENABLE_DEBUG_HASHMAP
+#if ENABLE_DEBUG_HASHMAP
         if (i->idx == IDX_FIRST) {
                 i->put_count = h->debug.put_count;
                 i->rem_count = h->debug.rem_count;
@@ -752,7 +752,7 @@ static struct HashmapBase *hashmap_base_new(const struct hash_ops *hash_ops, enu
                 shared_hash_key_initialized= true;
         }
 
-#ifdef ENABLE_DEBUG_HASHMAP
+#if ENABLE_DEBUG_HASHMAP
         h->debug.func = func;
         h->debug.file = file;
         h->debug.line = line;
@@ -809,7 +809,7 @@ static void hashmap_free_no_clear(HashmapBase *h) {
         assert(!h->has_indirect);
         assert(!h->n_direct_entries);
 
-#ifdef ENABLE_DEBUG_HASHMAP
+#if ENABLE_DEBUG_HASHMAP
         assert_se(pthread_mutex_lock(&hashmap_debug_list_mutex) == 0);
         LIST_REMOVE(debug_list, hashmap_debug_list, &h->debug);
         assert_se(pthread_mutex_unlock(&hashmap_debug_list_mutex) == 0);
@@ -921,7 +921,7 @@ static bool hashmap_put_robin_hood(HashmapBase *h, unsigned idx,
         dib_raw_t raw_dib, *dibs;
         unsigned dib, distance;
 
-#ifdef ENABLE_DEBUG_HASHMAP
+#if ENABLE_DEBUG_HASHMAP
         h->debug.put_count++;
 #endif
 
@@ -929,7 +929,7 @@ static bool hashmap_put_robin_hood(HashmapBase *h, unsigned idx,
 
         for (distance = 0; ; distance++) {
                 raw_dib = dibs[idx];
-                if (raw_dib == DIB_RAW_FREE || raw_dib == DIB_RAW_REHASH) {
+                if (IN_SET(raw_dib, DIB_RAW_FREE, DIB_RAW_REHASH)) {
                         if (raw_dib == DIB_RAW_REHASH)
                                 bucket_move_entry(h, swap, idx, IDX_TMP);
 
@@ -1014,7 +1014,7 @@ static int hashmap_base_put_boldly(HashmapBase *h, unsigned idx,
         assert_se(hashmap_put_robin_hood(h, idx, swap) == false);
 
         n_entries_inc(h);
-#ifdef ENABLE_DEBUG_HASHMAP
+#if ENABLE_DEBUG_HASHMAP
         h->debug.max_entries = MAX(h->debug.max_entries, n_entries(h));
 #endif
 
@@ -1242,7 +1242,7 @@ int hashmap_replace(Hashmap *h, const void *key, void *value) {
         idx = bucket_scan(h, hash, key);
         if (idx != IDX_NIL) {
                 e = plain_bucket_at(h, idx);
-#ifdef ENABLE_DEBUG_HASHMAP
+#if ENABLE_DEBUG_HASHMAP
                 /* Although the key is equal, the key pointer may have changed,
                  * and this would break our assumption for iterating. So count
                  * this operation as incompatible with iteration. */

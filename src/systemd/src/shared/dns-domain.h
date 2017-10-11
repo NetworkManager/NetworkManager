@@ -51,10 +51,12 @@ static inline int dns_name_parent(const char **name) {
         return dns_label_unescape(name, NULL, DNS_LABEL_MAX);
 }
 
-#if defined(HAVE_LIBIDN)
+#if 0 /* NM_IGNORED */
+#if HAVE_LIBIDN
 int dns_label_apply_idna(const char *encoded, size_t encoded_size, char *decoded, size_t decoded_max);
 int dns_label_undo_idna(const char *encoded, size_t encoded_size, char *decoded, size_t decoded_max);
 #endif
+#endif /* NM_IGNORED */
 
 int dns_name_concat(const char *a, const char *b, char **ret);
 

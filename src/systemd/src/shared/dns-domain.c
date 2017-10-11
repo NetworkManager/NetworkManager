@@ -19,11 +19,13 @@
 
 #include "nm-sd-adapt.h"
 
-#if defined(HAVE_LIBIDN2)
+#if 0 /* NM_IGNORED */
+#if HAVE_LIBIDN2
 #  include <idn2.h>
-#elif defined(HAVE_LIBIDN)
+#elif HAVE_LIBIDN
 #  include <idna.h>
 #  include <stringprep.h>
+#endif
 #endif
 
 #include <endian.h>
@@ -78,7 +80,7 @@ int dns_label_unescape(const char **name, char *dest, size_t sz) {
                                 /* Ending NUL */
                                 return -EINVAL;
 
-                        else if (*n == '\\' || *n == '.') {
+                        else if (IN_SET(*n, '\\', '.')) {
                                 /* Escaped backslash or dot */
 
                                 if (d)
@@ -167,7 +169,7 @@ int dns_label_unescape_suffix(const char *name, const char **label_terminal, cha
         }
 
         terminal = *label_terminal;
-        assert(*terminal == '.' || *terminal == 0);
+        assert(IN_SET(*terminal, 0, '.'));
 
         /* Skip current terminal character (and accept domain names ending it ".") */
         if (*terminal == 0)
@@ -232,7 +234,7 @@ int dns_label_escape(const char *p, size_t l, char *dest, size_t sz) {
         q = dest;
         while (l > 0) {
 
-                if (*p == '.' || *p == '\\') {
+                if (IN_SET(*p, '.', '\\')) {
 
                         /* Dot or backslash */
 
@@ -244,8 +246,7 @@ int dns_label_escape(const char *p, size_t l, char *dest, size_t sz) {
 
                         sz -= 2;
 
-                } else if (*p == '_' ||
-                           *p == '-' ||
+                } else if (IN_SET(*p, '_', '-') ||
                            (*p >= '0' && *p <= '9') ||
                            (*p >= 'a' && *p <= 'z') ||
                            (*p >= 'A' && *p <= 'Z')) {
@@ -306,7 +307,7 @@ int dns_label_escape_new(const char *p, size_t l, char **ret) {
         return r;
 }
 
-#ifdef HAVE_LIBIDN
+#if HAVE_LIBIDN
 int dns_label_apply_idna(const char *encoded, size_t encoded_size, char *decoded, size_t decoded_max) {
         _cleanup_free_ uint32_t *input = NULL;
         size_t input_size, l;
@@ -1281,7 +1282,7 @@ int dns_name_common_suffix(const char *a, const char *b, const char **ret) {
 int dns_name_apply_idna(const char *name, char **ret) {
         /* Return negative on error, 0 if not implemented, positive on success. */
 
-#if defined(HAVE_LIBIDN2)
+#if HAVE_LIBIDN2
         int r;
         _cleanup_free_ char *t = NULL;
 
@@ -1321,7 +1322,7 @@ int dns_name_apply_idna(const char *name, char **ret) {
         if (IN_SET(r, IDN2_TOO_BIG_DOMAIN, IDN2_TOO_BIG_LABEL))
                 return -ENOSPC;
         return -EINVAL;
-#elif defined(HAVE_LIBIDN)
+#elif HAVE_LIBIDN
         _cleanup_free_ char *buf = NULL;
         size_t n = 0, allocated = 0;
         bool first = true;
