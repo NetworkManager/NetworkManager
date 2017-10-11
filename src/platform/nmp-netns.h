@@ -60,8 +60,7 @@ _nm_auto_pop_netns (NMPNetns **p)
 		errno = errsv;
 	}
 }
-
-#define nm_auto_pop_netns __attribute__((cleanup(_nm_auto_pop_netns)))
+#define nm_auto_pop_netns nm_auto(_nm_auto_pop_netns)
 
 gboolean nmp_netns_bind_to_path (NMPNetns *self, const char *filename, int *out_fd);
 gboolean nmp_netns_bind_to_path_destroy (NMPNetns *self, const char *filename);

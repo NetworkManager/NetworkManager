@@ -865,12 +865,12 @@ _nl_addattr_l (struct nlmsghdr *n,
 	return TRUE;
 }
 
-#define nm_auto_nlmsg __attribute__((cleanup(_nm_auto_nl_msg_cleanup)))
 static void
 _nm_auto_nl_msg_cleanup (void *ptr)
 {
 	nlmsg_free (*((struct nl_msg **) ptr));
 }
+#define nm_auto_nlmsg nm_auto(_nm_auto_nl_msg_cleanup)
 
 static const char *
 _nl_nlmsghdr_to_str (const struct nlmsghdr *hdr, char *buf, gsize len)

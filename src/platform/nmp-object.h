@@ -489,12 +489,12 @@ gboolean nmp_object_is_visible (const NMPObject *obj);
 
 void _nmp_object_fixup_link_udev_fields (NMPObject **obj_new, NMPObject *obj_orig, gboolean use_udev);
 
-#define nm_auto_nmpobj __attribute__((cleanup(_nm_auto_nmpobj_cleanup)))
 static inline void
 _nm_auto_nmpobj_cleanup (gpointer p)
 {
 	nmp_object_unref (*((const NMPObject **) p));
 }
+#define nm_auto_nmpobj nm_auto(_nm_auto_nmpobj_cleanup)
 
 typedef struct _NMPCache NMPCache;
 
