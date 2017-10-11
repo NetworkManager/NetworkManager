@@ -171,7 +171,10 @@ close_connection_in_idle (gpointer user_data)
 
 	g_hash_table_iter_init (&iter, server->obj_managers);
 	while (g_hash_table_iter_next (&iter, (gpointer) &manager, NULL)) {
-		if (g_dbus_object_manager_server_get_connection (manager) == info->connection) {
+		gs_unref_object GDBusConnection *connection = NULL;
+
+		connection = g_dbus_object_manager_server_get_connection (manager);
+		if (connection == info->connection) {
 			g_hash_table_iter_remove (&iter);
 			break;
 		}
@@ -250,6 +253,7 @@ private_server_manager_destroy (GDBusObjectManagerServer *manager)
 		g_dbus_connection_close (connection, NULL, NULL, NULL);
 	g_dbus_object_manager_server_set_connection (manager, NULL);
 	g_object_unref (manager);
+	g_object_unref (connection);
 }
 
 static gboolean
@@ -368,7 +372,10 @@ private_server_get_connection_owner (PrivateServer *s, GDBusConnection *connecti
 
 	g_hash_table_iter_init (&iter, s->obj_managers);
 	while (g_hash_table_iter_next (&iter, (gpointer) &manager, (gpointer) &owner)) {
-		if (g_dbus_object_manager_server_get_connection (manager) == connection)
+		gs_unref_object GDBusConnection *c = NULL;
+
+		c = g_dbus_object_manager_server_get_connection (manager);
+		if (c == connection)
 			return owner;
 	}
 	return NULL;
@@ -606,7 +613,10 @@ nm_bus_manager_get_unix_user (NMBusManager *self,
 
 	/* Check if it's a private connection sender, which we fake */
 	for (iter = priv->private_servers; iter; iter = iter->next) {
-		if (private_server_get_connection_by_owner (iter->data, sender)) {
+		gs_unref_object GDBusConnection *connection = NULL;
+
+		connection = private_server_get_connection_by_owner (iter->data, sender);
+		if (connection) {
 			*out_uid = 0;
 			return TRUE;
 		}
