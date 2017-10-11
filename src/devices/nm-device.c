@@ -8907,7 +8907,7 @@ delete_on_deactivate_link_delete (gpointer user_data)
 
 		if (!nm_device_unrealize (data->device, TRUE, &error))
 			_LOGD (LOGD_DEVICE, "delete_on_deactivate: unrealizing %d failed (%s)", data->ifindex, error->message);
-	} else
+	} else if (data->ifindex > 0)
 		nm_platform_link_delete (nm_device_get_platform (self), data->ifindex);
 
 	g_free (data);
@@ -8938,8 +8938,6 @@ delete_on_deactivate_check_and_schedule (NMDevice *self, int ifindex)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	DeleteOnDeactivateData *data;
 
-	if (ifindex <= 0)
-		return;
 	if (!priv->nm_owned)
 		return;
 	if (priv->queued_act_request)
