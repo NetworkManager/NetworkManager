@@ -585,6 +585,9 @@ get_security_type (NMEditorWirelessSecurityMethodBinding *binding)
 		return "none";
 
 	key_mgmt = nm_setting_wireless_security_get_key_mgmt (binding->s_wsec);
+	if (!key_mgmt)
+		return "none";
+
 	auth_alg = nm_setting_wireless_security_get_auth_alg (binding->s_wsec);
 
 	/* No IEEE 802.1x */

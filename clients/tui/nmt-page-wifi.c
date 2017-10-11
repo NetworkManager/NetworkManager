@@ -193,7 +193,6 @@ nmt_page_wifi_constructed (GObject *object)
 		nm_connection_add_setting (conn, nm_setting_wireless_security_new ());
 		s_wsec = nm_connection_get_setting_wireless_security (conn);
 	}
-	s_wsec = nm_connection_get_setting_wireless_security (conn);
 
 	deventry = nmt_editor_page_device_get_device_entry (NMT_EDITOR_PAGE_DEVICE (object));
 	g_object_bind_property (s_wireless, NM_SETTING_WIRELESS_MAC_ADDRESS,
