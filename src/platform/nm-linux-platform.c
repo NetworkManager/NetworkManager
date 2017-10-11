@@ -104,6 +104,9 @@
 #define IFLA_IPTUN_MAX                  (__IFLA_IPTUN_MAX - 1)
 #endif
 
+
+static const gboolean RTA_PREF_SUPPORTED_AT_COMPILETIME = (RTA_MAX >= 20 /* RTA_PREF */);
+
 G_STATIC_ASSERT (RTA_MAX == (__RTA_MAX - 1));
 #define RTA_PREF                        20
 #undef  RTA_MAX
@@ -382,6 +385,40 @@ _support_kernel_extended_ifa_flags_get (void)
 		_support_kernel_extended_ifa_flags = 1;
 	}
 	return _support_kernel_extended_ifa_flags >= 0;
+}
+
+/*****************************************************************************
+ * Support RTA_PREF
+ *****************************************************************************/
+
+static int _support_rta_pref = 0;
+#define _support_rta_pref_still_undecided() (G_UNLIKELY (_support_rta_pref == 0))
+
+static void
+_support_rta_pref_detect (struct nlattr **tb)
+{
+	gboolean supported;
+
+	nm_assert (_support_rta_pref_still_undecided ());
+
+	/* RTA_PREF was added in kernel 4.1, dated 21 June, 2015. */
+	supported = !!tb[RTA_PREF];
+	_support_rta_pref = supported ? 1 : -1;
+	_LOG2D ("kernel-support: RTA_PREF: ability to set router preference for IPv6 routes: %s",
+	        supported ? "detected" : "not detected");
+}
+
+static gboolean
+_support_rta_pref_get (void)
+{
+	if (_support_rta_pref_still_undecided ()) {
+		/* if we couldn't detect support, we fallback on compile-time check, whether
+		 * RTA_PREF is present in the kernel headers. */
+		_support_rta_pref = RTA_PREF_SUPPORTED_AT_COMPILETIME ? 1 : -1;
+		_LOG2D ("kernel-support: RTA_PREF: ability to set router preference for IPv6 routes: %s",
+		        RTA_PREF_SUPPORTED_AT_COMPILETIME ? "assume support" : "assume no support");
+	}
+	return _support_rta_pref >= 0;
 }
 
 /******************************************************************
@@ -2230,9 +2267,14 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 	obj->ip_route.lock_initrwnd = NM_FLAGS_HAS (lock, 1 << RTAX_INITRWND);
 	obj->ip_route.lock_mtu      = NM_FLAGS_HAS (lock, 1 << RTAX_MTU);
 
-	if (   !is_v4
-	    && tb[RTA_PREF])
-		obj->ip6_route.rt_pref = nla_get_u8 (tb[RTA_PREF]);
+	if (!is_v4) {
+		/* Detect support for RTA_PREF by inspecting the netlink message. */
+		if (_support_rta_pref_still_undecided ())
+			_support_rta_pref_detect (tb);
+
+		if (tb[RTA_PREF])
+			obj->ip6_route.rt_pref = nla_get_u8 (tb[RTA_PREF]);
+	}
 
 	if (NM_FLAGS_HAS (rtm->rtm_flags, RTM_F_CLONED)) {
 		/* we must not straight way reject cloned routes, because we might have cached
@@ -3104,6 +3146,11 @@ check_kernel_support (NMPlatform *platform,
 	if (NM_FLAGS_HAS (request_flags, NM_PLATFORM_KERNEL_SUPPORT_USER_IPV6LL)) {
 		if (_support_user_ipv6ll_get ())
 			response |= NM_PLATFORM_KERNEL_SUPPORT_USER_IPV6LL;
+	}
+
+	if (NM_FLAGS_HAS (request_flags, NM_PLATFORM_KERNEL_SUPPORT_RTA_PREF)) {
+		if (_support_rta_pref_get ())
+			response |= NM_PLATFORM_KERNEL_SUPPORT_RTA_PREF;
 	}
 
 	return response;

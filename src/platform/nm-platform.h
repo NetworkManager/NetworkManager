@@ -668,6 +668,7 @@ typedef enum {
 typedef enum {
 	NM_PLATFORM_KERNEL_SUPPORT_EXTENDED_IFA_FLAGS               = (1LL <<  0),
 	NM_PLATFORM_KERNEL_SUPPORT_USER_IPV6LL                      = (1LL <<  1),
+	NM_PLATFORM_KERNEL_SUPPORT_RTA_PREF                         = (1LL <<  2),
 } NMPlatformKernelSupportFlags;
 
 /*****************************************************************************/
