@@ -60,7 +60,14 @@ int acquire_random_bytes(void *p, size_t n, bool high_quality_required) {
 
         /* Use the getrandom() syscall unless we know we don't have it. */
         if (have_syscall != 0) {
+#if !HAVE_GETRANDOM
+                /* XXX: NM: systemd calls the syscall directly in this case. Don't add that workaround.
+                 * If you don't compile against a libc that provides getrandom(), you don't get it. */
+                r = -1;
+                errno = ENOSYS;
+#else
                 r = getrandom(p, n, GRND_NONBLOCK);
+#endif
                 if (r > 0) {
                         have_syscall = true;
                         if ((size_t) r == n)
