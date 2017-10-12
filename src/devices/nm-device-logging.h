@@ -40,13 +40,16 @@ _nm_device_log_self_to_device (t *self) \
 		\
 		if (nm_logging_enabled (_level, _domain)) { \
 			typeof (*self) *const _self = (self); \
-			const char *const _ifname = _nm_device_get_iface (_nm_device_log_self_to_device (_self)); \
+			NMDevice *_device = _nm_device_log_self_to_device (_self); \
+			const char *const _ifname = _nm_device_get_iface (_device); \
+			const char *const _type_description = _ifname ? nm_device_get_type_description (_device) : NULL; \
 			\
 			nm_log_obj (_level, _domain, \
 			            _ifname, NULL, \
 			            _self, "device", \
-			            "%s%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-			            NM_PRINT_FMT_QUOTED (_ifname, "(", _ifname, ")", "[null]") \
+			            "%s%s%s%s%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+			            NM_PRINT_FMT_QUOTED (_ifname, "(", _ifname, "", "[null]"), \
+			            NM_PRINT_FMT_QUOTED (_ifname, ",", _type_description, ")", "") \
 			            _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
 		} \
 	} G_STMT_END
