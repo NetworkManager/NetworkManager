@@ -30,10 +30,6 @@ gboolean print_ip6_config (NMIPConfig *cfg6, const NmcConfig *nmc_config, const 
 gboolean print_dhcp4_config (NMDhcpConfig *dhcp4, const NmcConfig *nmc_config, const char *group_prefix, const char *one_field);
 gboolean print_dhcp6_config (NMDhcpConfig *dhcp6, const NmcConfig *nmc_config, const char *group_prefix, const char *one_field);
 
-const char * nmc_device_state_to_string (NMDeviceState state);
-const char * nmc_device_reason_to_string (NMDeviceStateReason reason);
-const char * nmc_device_metered_to_string (NMMetered value);
-
 NMConnection *nmc_find_connection (const GPtrArray *connections,
                                    const char *filter_type,
                                    const char *filter_val,

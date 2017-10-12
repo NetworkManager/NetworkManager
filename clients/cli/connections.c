@@ -2050,45 +2050,6 @@ typedef struct {
 
 static void activate_connection_info_finish (ActivateConnectionInfo *info);
 
-static const char *
-active_connection_state_reason_to_string (NMActiveConnectionStateReason reason)
-{
-	switch (reason) {
-	case NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN:
-		return _("Unknown reason");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_NONE:
-		return _("The connection was disconnected");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_USER_DISCONNECTED:
-		return _("Disconnected by user");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED:
-		return _("The base network connection was interrupted");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_STOPPED:
-		return _("The VPN service stopped unexpectedly");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_IP_CONFIG_INVALID:
-		return _("The VPN service returned invalid configuration");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_CONNECT_TIMEOUT:
-		return _("The connection attempt timed out");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_START_TIMEOUT:
-		return _("The VPN service did not start in time");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_START_FAILED:
-		return _("The VPN service failed to start");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_NO_SECRETS:
-		return _("No valid secrets");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_LOGIN_FAILED:
-		return _("Invalid secrets");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_CONNECTION_REMOVED:
-		return _("The connection was removed");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_DEPENDENCY_FAILED:
-		return _("Master connection failed");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REALIZE_FAILED:
-		return _("Could not create a software link");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REMOVED:
-		return _("The device disappeared");
-	}
-
-	g_return_val_if_reached (_("Invalid reason"));
-}
-
 static NMActiveConnectionState
 get_effective_activation_state (NMActiveConnection *active,
                                 NMDevice *device,
@@ -2121,7 +2082,7 @@ get_effective_activation_state (NMActiveConnection *active,
 			 * - or, @ac_reason is specific
 			 * - or, @device no longer references the current @active
 			 * >> we complete with @ac_reason. */
-			*reason = active_connection_state_reason_to_string (ac_reason);
+			*reason = nm_active_connection_state_reason_to_string (ac_reason);
 		} else if (   dev_state <= NM_DEVICE_STATE_DISCONNECTED
 		           || dev_state >= NM_DEVICE_STATE_FAILED) {
 			/* (2)
