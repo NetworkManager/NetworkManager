@@ -7231,8 +7231,7 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 		return;
 
 	if (nm_device_sys_iface_state_is_external_or_assume (self)) {
-		/* for assumed connections we don't tamper with the MTU. This is
-		 * a bug and supposed to be fixed by the unmanaged/assumed rework. */
+		/* for assumed connections we don't tamper with the MTU. */
 		return;
 	}
 
@@ -7352,6 +7351,22 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 		}
 	}
 #undef _IP6_MTU_SYS
+}
+
+void
+nm_device_commit_mtu (NMDevice *self)
+{
+	NMDeviceState state;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	state = nm_device_get_state (self);
+	if (   state >= NM_DEVICE_STATE_CONFIG
+	    && state < NM_DEVICE_STATE_DEACTIVATING) {
+		_LOGT (LOGD_DEVICE, "mtu: commit-mtu...");
+		_commit_mtu (self, NM_DEVICE_GET_PRIVATE (self)->ip4_config);
+	} else
+		_LOGT (LOGD_DEVICE, "mtu: commit-mtu... skip due to state %s", nm_device_state_to_str (state));
 }
 
 static void
