@@ -2050,74 +2050,6 @@ typedef struct {
 
 static void activate_connection_info_finish (ActivateConnectionInfo *info);
 
-static NMActiveConnectionState
-get_effective_activation_state (NMActiveConnection *active,
-                                NMDevice *device,
-                                const char **reason)
-{
-	NMActiveConnectionState ac_state;
-	NMActiveConnectionStateReason ac_reason;
-	NMDeviceState dev_state = NM_DEVICE_STATE_UNKNOWN;
-	NMDeviceStateReason dev_reason = NM_DEVICE_STATE_REASON_UNKNOWN;
-
-	g_return_val_if_fail (active, NM_ACTIVE_CONNECTION_STATE_UNKNOWN);
-	g_return_val_if_fail (reason, NM_ACTIVE_CONNECTION_STATE_UNKNOWN);
-
-	*reason = NULL;
-	ac_reason = nm_active_connection_get_state_reason (active);
-
-	if (device) {
-		dev_state = nm_device_get_state (device);
-		dev_reason = nm_device_get_state_reason (device);
-	}
-
-	ac_state = nm_active_connection_get_state (active);
-	switch (ac_state) {
-	case NM_ACTIVE_CONNECTION_STATE_DEACTIVATED:
-		if (   !device
-		    || ac_reason != NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED
-		    || nm_device_get_active_connection (device) != active) {
-			/* (1)
-			 * - we have no device,
-			 * - or, @ac_reason is specific
-			 * - or, @device no longer references the current @active
-			 * >> we complete with @ac_reason. */
-			*reason = nm_active_connection_state_reason_to_string (ac_reason);
-		} else if (   dev_state <= NM_DEVICE_STATE_DISCONNECTED
-		           || dev_state >= NM_DEVICE_STATE_FAILED) {
-			/* (2)
-			 * - not (1)
-			 * - and, the device is no longer in an activated state,
-			 * >> we complete with @dev_reason. */
-			*reason = nmc_device_reason_to_string (dev_reason);
-		} else {
-			/* (3)
-			 * we wait for the device go disconnect. We will get a better
-			 * failure reason from the device (2). */
-			return NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
-		}
-		break;
-	case NM_ACTIVE_CONNECTION_STATE_ACTIVATING:
-		/* activating master connection does not automatically activate any slaves, so their
-		 * active connection state will not progress beyond ACTIVATING state.
-		 * Monitor the device instead. */
-		if (   device
-		    && (   NM_IS_DEVICE_BOND (device)
-		        || NM_IS_DEVICE_TEAM (device)
-		        || NM_IS_DEVICE_BRIDGE (device))
-		    && dev_state >= NM_DEVICE_STATE_IP_CONFIG
-		    && dev_state <= NM_DEVICE_STATE_ACTIVATED) {
-			*reason = "master waiting for slaves";
-			return NM_ACTIVE_CONNECTION_STATE_ACTIVATED;
-		}
-		break;
-	default:
-		break;
-	}
-
-	return ac_state;
-}
-
 static void
 check_activated (ActivateConnectionInfo *info)
 {
@@ -2125,7 +2057,7 @@ check_activated (ActivateConnectionInfo *info)
 	NmCli *nmc = info->nmc;
 	const char *reason = NULL;
 
-	ac_state = get_effective_activation_state (info->active, info->device, &reason);
+	ac_state = nmc_activation_get_effective_state (info->active, info->device, &reason);
 	switch (ac_state) {
 	case NM_ACTIVE_CONNECTION_STATE_ACTIVATED:
 		if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)

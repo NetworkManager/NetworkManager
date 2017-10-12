@@ -21,6 +21,8 @@
 #define __NM_CLIENT_UTILS_H__
 
 #include "nm-meta-setting.h"
+#include "nm-active-connection.h"
+#include "nm-device.h"
 
 typedef enum {
 	NMC_TRI_STATE_NO,
@@ -49,5 +51,9 @@ const char *nm_active_connection_state_reason_to_string (NMActiveConnectionState
 const char *nmc_device_state_to_string (NMDeviceState state);
 const char *nmc_device_reason_to_string (NMDeviceStateReason reason);
 const char *nmc_device_metered_to_string (NMMetered value);
+
+NMActiveConnectionState nmc_activation_get_effective_state (NMActiveConnection *active,
+                                                            NMDevice *device,
+                                                            const char **reason);
 
 #endif /* __NM_CLIENT_UTILS_H__ */
