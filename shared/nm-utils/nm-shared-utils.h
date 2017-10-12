@@ -406,4 +406,8 @@ int nm_utils_fd_read_loop_exact (int fd, void *buf, size_t nbytes, bool do_poll)
 
 /*****************************************************************************/
 
+gboolean nm_utils_random_bytes (void *p, size_t n);
+
+/*****************************************************************************/
+
 #endif /* __NM_SHARED_UTILS_H__ */

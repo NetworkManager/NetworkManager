@@ -2938,30 +2938,6 @@ nm_utils_file_get_contents (int dirfd,
 
 /*****************************************************************************/
 
-/* taken from systemd's dev_urandom(). */
-int
-nm_utils_read_urandom (void *p, size_t nbytes)
-{
-	int fd = -1;
-	int r;
-
-again:
-	fd = open ("/dev/urandom", O_RDONLY | O_CLOEXEC | O_NOCTTY);
-	if (fd < 0) {
-		r = errno;
-		if (r == EINTR)
-			goto again;
-		return r == ENOENT ? -ENOSYS : -r;
-	}
-
-	r = nm_utils_fd_read_loop_exact (fd, p, nbytes, TRUE);
-	close (fd);
-
-	return r;
-}
-
-/*****************************************************************************/
-
 guint8 *
 nm_utils_secret_key_read (gsize *out_key_len, GError **error)
 {
@@ -2980,7 +2956,6 @@ nm_utils_secret_key_read (gsize *out_key_len, GError **error)
 			key_len = 0;
 		}
 	} else {
-		int r;
 		mode_t key_mask;
 
 		/* RFC7217 mandates the key SHOULD be at least 128 bits.
@@ -2988,10 +2963,9 @@ nm_utils_secret_key_read (gsize *out_key_len, GError **error)
 		key_len = 32;
 		secret_key = g_malloc (key_len);
 
-		r = nm_utils_read_urandom (secret_key, key_len);
-		if (r < 0) {
+		if (!nm_utils_random_bytes (secret_key, key_len)) {
 			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-			             "Can't read /dev/urandom: %s", strerror (-r));
+			             "Can't get random data to generate secret key");
 			key_len = 0;
 			goto out;
 		}
@@ -3245,8 +3219,7 @@ nm_utils_stable_id_random (void)
 {
 	char buf[15];
 
-	if (nm_utils_read_urandom (buf, sizeof (buf)) < 0)
-		g_return_val_if_reached (nm_utils_uuid_generate ());
+	nm_utils_random_bytes (buf, sizeof (buf));
 	return g_base64_encode ((guchar *) buf, sizeof (buf));
 }
 
@@ -3630,8 +3603,7 @@ nm_utils_hw_addr_gen_random_eth (const char *current_mac_address,
 {
 	struct ether_addr bin_addr;
 
-	if (nm_utils_read_urandom (&bin_addr, ETH_ALEN) < 0)
-		return NULL;
+	nm_utils_random_bytes (&bin_addr, ETH_ALEN);
 	_hw_addr_eth_complete (&bin_addr, current_mac_address, generate_mac_address_mask);
 	return nm_utils_hwaddr_ntoa (&bin_addr, ETH_ALEN);
 }

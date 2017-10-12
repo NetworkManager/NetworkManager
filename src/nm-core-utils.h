@@ -272,8 +272,6 @@ gboolean nm_utils_file_set_contents (const gchar *filename,
                                      mode_t mode,
                                      GError **error);
 
-int nm_utils_read_urandom (void *p, size_t n);
-
 char *nm_utils_machine_id_read (void);
 gboolean nm_utils_machine_id_parse (const char *id_str, /*uuid_t*/ guchar *out_uuid);
 
