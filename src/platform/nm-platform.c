@@ -92,8 +92,8 @@ typedef struct _NMPlatformPrivate {
 	bool use_udev:1;
 	bool log_with_ptr:1;
 
-	gint8 check_support_kernel_extended_ifa_flags_cached;
-	gint8 check_support_user_ipv6ll_cached;
+	NMPlatformKernelSupportFlags support_checked;
+	NMPlatformKernelSupportFlags support_present;
 
 	guint ip4_dev_route_blacklist_check_id;
 	guint ip4_dev_route_blacklist_gc_timeout_id;
@@ -301,8 +301,9 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_nmp_nlm_flag_to_string_lookup, NMPNlmFlags,
 
 /*****************************************************************************/
 
-gboolean
-nm_platform_check_support_kernel_extended_ifa_flags (NMPlatform *self)
+NMPlatformKernelSupportFlags
+nm_platform_check_kernel_support (NMPlatform *self,
+                                  NMPlatformKernelSupportFlags request_flags)
 {
 	NMPlatformPrivate *priv;
 
@@ -310,29 +311,28 @@ nm_platform_check_support_kernel_extended_ifa_flags (NMPlatform *self)
 
 	priv = NM_PLATFORM_GET_PRIVATE (self);
 
-	if (G_UNLIKELY (priv->check_support_kernel_extended_ifa_flags_cached == 0)) {
-		priv->check_support_kernel_extended_ifa_flags_cached = (   klass->check_support_kernel_extended_ifa_flags
-		                                                        && klass->check_support_kernel_extended_ifa_flags (self))
-		                                                       ? 1 : -1;
+	/* we cache the response from subclasses and only request it once.
+	 * This probably gives better performance, but more importantly,
+	 * we are guaranteed that the answer for a certain request_flag
+	 * is always the same. */
+	if (G_UNLIKELY (!NM_FLAGS_ALL (priv->support_checked, request_flags))) {
+		NMPlatformKernelSupportFlags checked, response;
+
+		checked = request_flags & ~priv->support_checked;
+		nm_assert (checked);
+
+		if (klass->check_kernel_support)
+			response = klass->check_kernel_support (self, checked);
+		else {
+			/* fake platform. Pretend no support for anything. */
+			response = 0;
+		}
+
+		priv->support_checked |= checked;
+		priv->support_present = (priv->support_present & ~checked) | (response & checked);
 	}
-	return priv->check_support_kernel_extended_ifa_flags_cached >= 0;
-}
 
-gboolean
-nm_platform_check_support_user_ipv6ll (NMPlatform *self)
-{
-	NMPlatformPrivate *priv;
-
-	_CHECK_SELF (self, klass, TRUE);
-
-	priv = NM_PLATFORM_GET_PRIVATE (self);
-
-	if (G_UNLIKELY (priv->check_support_user_ipv6ll_cached == 0)) {
-		priv->check_support_user_ipv6ll_cached = (   klass->check_support_user_ipv6ll
-		                                          && klass->check_support_user_ipv6ll (self))
-		                                         ? 1 : -1;
-	}
-	return priv->check_support_user_ipv6ll_cached >= 0;
+	return priv->support_present & request_flags;
 }
 
 /**
@@ -3421,7 +3421,7 @@ delete_and_next:
 	if (!known_addresses)
 		return TRUE;
 
-	ifa_flags =   nm_platform_check_support_kernel_extended_ifa_flags (self)
+	ifa_flags =   nm_platform_check_kernel_support (self, NM_PLATFORM_KERNEL_SUPPORT_EXTENDED_IFA_FLAGS)
 	            ? IFA_F_NOPREFIXROUTE
 	            : 0;
 
@@ -3503,7 +3503,7 @@ nm_platform_ip6_address_sync (NMPlatform *self,
 	if (!known_addresses)
 		return TRUE;
 
-	ifa_flags =   nm_platform_check_support_kernel_extended_ifa_flags (self)
+	ifa_flags =   nm_platform_check_kernel_support (self, NM_PLATFORM_KERNEL_SUPPORT_EXTENDED_IFA_FLAGS)
 	            ? IFA_F_NOPREFIXROUTE
 	            : 0;
 
@@ -3871,6 +3871,16 @@ _ip_route_scope_inv_get_normalized (const NMPlatformIP4Route *route)
 		                                    ? RT_SCOPE_LINK : RT_SCOPE_UNIVERSE);
 	}
 	return route->scope_inv;
+}
+
+static guint8
+_route_pref_normalize (guint8 pref)
+{
+	/* for kernel (and ICMPv6) pref can only have one of 3 values. Normalize. */
+	return NM_IN_SET (pref, NM_ICMPV6_ROUTER_PREF_LOW,
+	                        NM_ICMPV6_ROUTER_PREF_HIGH)
+	       ? pref
+	       : NM_ICMPV6_ROUTER_PREF_MEDIUM;
 }
 
 /**
@@ -5053,6 +5063,8 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	char s_network[INET6_ADDRSTRLEN], s_gateway[INET6_ADDRSTRLEN], s_pref_src[INET6_ADDRSTRLEN];
 	char s_src_all[INET6_ADDRSTRLEN + 40], s_src[INET6_ADDRSTRLEN];
 	char str_table[30];
+	char str_pref[40];
+	char str_pref2[30];
 	char str_dev[TO_STRING_DEV_BUF_SIZE], s_source[50];
 	char str_window[32], str_cwnd[32], str_initcwnd[32], str_initrwnd[32], str_mtu[32];
 
@@ -5085,6 +5097,7 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	            "%s" /* initcwnd */
 	            "%s" /* initrwnd */
 	            "%s" /* mtu */
+	            "%s" /* pref */
 	            "",
 	            route->table_coerced ? nm_sprintf_buf (str_table, "table %u ", nm_platform_route_table_uncoerce (route->table_coerced, FALSE)) : "",
 	            s_network,
@@ -5104,7 +5117,8 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	            route->cwnd     || route->lock_cwnd     ? nm_sprintf_buf (str_cwnd,     " cwnd %s%"G_GUINT32_FORMAT,     route->lock_cwnd     ? "lock " : "", route->cwnd)     : "",
 	            route->initcwnd || route->lock_initcwnd ? nm_sprintf_buf (str_initcwnd, " initcwnd %s%"G_GUINT32_FORMAT, route->lock_initcwnd ? "lock " : "", route->initcwnd) : "",
 	            route->initrwnd || route->lock_initrwnd ? nm_sprintf_buf (str_initrwnd, " initrwnd %s%"G_GUINT32_FORMAT, route->lock_initrwnd ? "lock " : "", route->initrwnd) : "",
-	            route->mtu      || route->lock_mtu      ? nm_sprintf_buf (str_mtu,      " mtu %s%"G_GUINT32_FORMAT,      route->lock_mtu      ? "lock " : "", route->mtu)      : "");
+	            route->mtu      || route->lock_mtu      ? nm_sprintf_buf (str_mtu,      " mtu %s%"G_GUINT32_FORMAT,      route->lock_mtu      ? "lock " : "", route->mtu)      : "",
+	            route->rt_pref ? nm_sprintf_buf (str_pref, " pref %s", nm_icmpv6_router_pref_to_string (route->rt_pref, str_pref2, sizeof (str_pref2))) : "");
 
 	return buf;
 }
@@ -5730,6 +5744,10 @@ nm_platform_ip6_route_hash (const NMPlatformIP6Route *obj, NMPlatformIPRouteCmpT
 			h = NM_HASH_COMBINE (h, obj->initcwnd);
 			h = NM_HASH_COMBINE (h, obj->initrwnd);
 			h = NM_HASH_COMBINE (h, obj->mtu);
+			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
+				h = NM_HASH_COMBINE (h, _route_pref_normalize (obj->rt_pref));
+			else
+				h = NM_HASH_COMBINE (h, obj->rt_pref);
 			break;
 		}
 	}
@@ -5796,6 +5814,10 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 		NM_CMP_FIELD (a, b, initcwnd);
 		NM_CMP_FIELD (a, b, initrwnd);
 		NM_CMP_FIELD (a, b, mtu);
+		if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
+			NM_CMP_DIRECT (_route_pref_normalize (a->rt_pref), _route_pref_normalize (b->rt_pref));
+		else
+			NM_CMP_FIELD (a, b, rt_pref);
 		break;
 	}
 	return 0;

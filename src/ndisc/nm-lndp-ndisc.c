@@ -93,12 +93,20 @@ send_rs (NMNDisc *ndisc, GError **error)
 	return TRUE;
 }
 
-_NM_UTILS_LOOKUP_DEFINE (static, translate_preference, enum ndp_route_preference, NMNDiscPreference,
-	NM_UTILS_LOOKUP_DEFAULT (NM_NDISC_PREFERENCE_INVALID),
-	NM_UTILS_LOOKUP_ITEM (NDP_ROUTE_PREF_LOW,    NM_NDISC_PREFERENCE_LOW),
-	NM_UTILS_LOOKUP_ITEM (NDP_ROUTE_PREF_MEDIUM, NM_NDISC_PREFERENCE_MEDIUM),
-	NM_UTILS_LOOKUP_ITEM (NDP_ROUTE_PREF_HIGH,   NM_NDISC_PREFERENCE_HIGH),
-);
+static NMIcmpv6RouterPref
+_route_preference_coerce (enum ndp_route_preference pref)
+{
+	switch (pref) {
+	case NDP_ROUTE_PREF_LOW:
+		return NM_ICMPV6_ROUTER_PREF_LOW;
+	case NDP_ROUTE_PREF_MEDIUM:
+		return NM_ICMPV6_ROUTER_PREF_MEDIUM;
+	case NDP_ROUTE_PREF_HIGH:
+		return NM_ICMPV6_ROUTER_PREF_HIGH;
+	}
+	/* unexpected value must be treated as MEDIUM (RFC 4191). */
+	return NM_ICMPV6_ROUTER_PREF_MEDIUM;
+}
 
 static int
 receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
@@ -108,7 +116,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	NMNDiscConfigMap changed = 0;
 	struct ndp_msgra *msgra = ndp_msgra (msg);
 	struct in6_addr gateway_addr;
-	guint32 now = nm_utils_get_monotonic_timestamp_s ();
+	gint32 now = nm_utils_get_monotonic_timestamp_s ();
 	int offset;
 	int hop_limit;
 
@@ -123,7 +131,11 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	 * single time when the configuration is finished and updates can
 	 * come at any time.
 	 */
-	_LOGD ("received router advertisement at %u", now);
+	_LOGD ("received router advertisement at %d", (int) now);
+
+	gateway_addr = *ndp_msg_addrto (msg);
+	if (IN6_IS_ADDR_UNSPECIFIED (&gateway_addr))
+		g_return_val_if_reached (0);
 
 	/* DHCP level:
 	 *
@@ -159,13 +171,12 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	 * on the network. We should present all of them in router preference
 	 * order.
 	 */
-	gateway_addr = *ndp_msg_addrto (msg);
 	{
-		NMNDiscGateway gateway = {
+		const NMNDiscGateway gateway = {
 		    .address = gateway_addr,
 		    .timestamp = now,
 		    .lifetime = ndp_msgra_router_lifetime (msgra),
-		    .preference = translate_preference (ndp_msgra_route_preference (msgra)),
+		    .preference = _route_preference_coerce (ndp_msgra_route_preference (msgra)),
 		};
 
 		if (nm_ndisc_add_gateway (ndisc, &gateway))
@@ -218,7 +229,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 		    .plen = ndp_msg_opt_route_prefix_len (msg, offset),
 		    .timestamp = now,
 		    .lifetime = ndp_msg_opt_route_lifetime (msg, offset),
-		    .preference = translate_preference (ndp_msg_opt_route_preference (msg, offset)),
+		    .preference = _route_preference_coerce (ndp_msg_opt_route_preference (msg, offset)),
 		};
 
 		if (route.plen == 0 || route.plen > 128)
@@ -337,7 +348,7 @@ send_ra (NMNDisc *ndisc, GError **error)
 {
 	NMLndpNDiscPrivate *priv = NM_LNDP_NDISC_GET_PRIVATE ((NMLndpNDisc *) ndisc);
 	NMNDiscDataInternal *rdata = ndisc->rdata;
-	guint32 now = nm_utils_get_monotonic_timestamp_s ();
+	gint32 now = nm_utils_get_monotonic_timestamp_s ();
 	int errsv;
 	struct in6_addr *addr;
 	struct ndp_msg *msg;
@@ -367,14 +378,14 @@ send_ra (NMNDisc *ndisc, GError **error)
 	 * whose prefixes are suitable for delegating. Let's announce them. */
 	for (i = 0; i < rdata->addresses->len; i++) {
 		NMNDiscAddress *address = &g_array_index (rdata->addresses, NMNDiscAddress, i);
-		guint32 age = now - address->timestamp;
+		guint32 age = NM_CLAMP ((gint64) now - (gint64) address->timestamp, 0, G_MAXUINT32 - 1);
 		guint32 lifetime = address->lifetime;
 		guint32 preferred = address->preferred;
 
 		/* Clamp the life times if they're not forever. */
-		if (lifetime != 0xffffffff)
+		if (lifetime != NM_NDISC_INFINITY)
 			lifetime = lifetime > age ? lifetime - age : 0;
-		if (preferred != 0xffffffff)
+		if (preferred != NM_NDISC_INFINITY)
 			preferred = preferred > age ? preferred - age : 0;
 
 		prefix = _ndp_msg_add_option (msg, sizeof(*prefix));

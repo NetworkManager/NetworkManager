@@ -517,6 +517,12 @@ struct _NMPlatformIP6Route {
 	 */
 	struct in6_addr src;
 	guint8 src_plen;
+
+	/* RTA_PREF router preference.
+	 *
+	 * The type is guint8 to keep the struct size small. But the values are compatible with
+	 * the NMIcmpv6RouterPref enum. */
+	guint8 rt_pref;
 };
 
 typedef union {
@@ -658,6 +664,12 @@ typedef enum {
 	NM_PLATFORM_LINK_DUPLEX_HALF,
 	NM_PLATFORM_LINK_DUPLEX_FULL,
 } NMPlatformLinkDuplexType;
+
+typedef enum {
+	NM_PLATFORM_KERNEL_SUPPORT_EXTENDED_IFA_FLAGS               = (1LL <<  0),
+	NM_PLATFORM_KERNEL_SUPPORT_USER_IPV6LL                      = (1LL <<  1),
+	NM_PLATFORM_KERNEL_SUPPORT_RTA_PREF                         = (1LL <<  2),
+} NMPlatformKernelSupportFlags;
 
 /*****************************************************************************/
 
@@ -824,8 +836,8 @@ typedef struct {
 	                                 int oif_ifindex,
 	                                 NMPObject **out_route);
 
-	gboolean (*check_support_kernel_extended_ifa_flags) (NMPlatform *);
-	gboolean (*check_support_user_ipv6ll) (NMPlatform *);
+	NMPlatformKernelSupportFlags (*check_kernel_support) (NMPlatform * self,
+	                                                      NMPlatformKernelSupportFlags request_flags);
 } NMPlatformClass;
 
 /* NMPlatform signals
@@ -1315,8 +1327,8 @@ nm_platform_ip6_route_hash_full (const NMPlatformIP6Route *obj)
 	return nm_platform_ip6_route_hash (obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL);
 }
 
-gboolean nm_platform_check_support_kernel_extended_ifa_flags (NMPlatform *self);
-gboolean nm_platform_check_support_user_ipv6ll (NMPlatform *self);
+NMPlatformKernelSupportFlags nm_platform_check_kernel_support (NMPlatform *self,
+                                                               NMPlatformKernelSupportFlags request_flags);
 
 const char *nm_platform_link_flags2str (unsigned flags, char *buf, gsize len);
 const char *nm_platform_link_inet6_addrgenmode2str (guint8 mode, char *buf, gsize len);

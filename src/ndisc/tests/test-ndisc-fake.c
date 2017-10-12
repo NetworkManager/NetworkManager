@@ -46,7 +46,7 @@ ndisc_new (void)
 }
 
 static void
-match_gateway (const NMNDiscData *rdata, guint idx, const char *addr, guint32 ts, guint32 lt, NMNDiscPreference pref)
+match_gateway (const NMNDiscData *rdata, guint idx, const char *addr, guint32 ts, guint32 lt, NMIcmpv6RouterPref pref)
 {
 	const NMNDiscGateway *gw;
 	char buf[INET6_ADDRSTRLEN];
@@ -82,7 +82,7 @@ match_address (const NMNDiscData *rdata, guint idx, const char *addr, guint32 ts
 }
 
 static void
-match_route (const NMNDiscData *rdata, guint idx, const char *nw, int plen, const char *gw, guint32 ts, guint32 lt, NMNDiscPreference pref)
+match_route (const NMNDiscData *rdata, guint idx, const char *nw, int plen, const char *gw, guint32 ts, guint32 lt, NMIcmpv6RouterPref pref)
 {
 	const NMNDiscRoute *route;
 	char buf[INET6_ADDRSTRLEN];
@@ -158,7 +158,7 @@ test_simple_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_int
 	                              NM_NDISC_CONFIG_HOP_LIMIT |
 	                              NM_NDISC_CONFIG_MTU);
 	g_assert_cmpint (rdata->dhcp_level, ==, NM_NDISC_DHCP_LEVEL_OTHERCONF);
-	match_gateway (rdata, 0, "fe80::1", data->timestamp1, 10, NM_NDISC_PREFERENCE_MEDIUM);
+	match_gateway (rdata, 0, "fe80::1", data->timestamp1, 10, NM_ICMPV6_ROUTER_PREF_MEDIUM);
 	match_address (rdata, 0, "2001:db8:a:a::1", data->timestamp1, 10, 10);
 	match_route (rdata, 0, "2001:db8:a:a::", 64, "fe80::1", data->timestamp1, 10, 10);
 	match_dns_server (rdata, 0, "2001:db8:c:c::1", data->timestamp1, 10);
@@ -179,7 +179,7 @@ test_simple (void)
 
 	id = nm_fake_ndisc_add_ra (ndisc, 1, NM_NDISC_DHCP_LEVEL_OTHERCONF, 4, 1500);
 	g_assert (id);
-	nm_fake_ndisc_add_gateway (ndisc, id, "fe80::1", now, 10, NM_NDISC_PREFERENCE_MEDIUM);
+	nm_fake_ndisc_add_gateway (ndisc, id, "fe80::1", now, 10, NM_ICMPV6_ROUTER_PREF_MEDIUM);
 	nm_fake_ndisc_add_prefix (ndisc, id, "2001:db8:a:a::", 64, "fe80::1", now, 10, 10, 10);
 	nm_fake_ndisc_add_dns_server (ndisc, id, "2001:db8:c:c::1", now, 10);
 	nm_fake_ndisc_add_dns_domain (ndisc, id, "foobar.com", now, 10);
@@ -219,7 +219,7 @@ test_everything_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed
 		                              NM_NDISC_CONFIG_DNS_DOMAINS |
 		                              NM_NDISC_CONFIG_HOP_LIMIT |
 		                              NM_NDISC_CONFIG_MTU);
-		match_gateway (rdata, 0, "fe80::1", data->timestamp1, 10, NM_NDISC_PREFERENCE_MEDIUM);
+		match_gateway (rdata, 0, "fe80::1", data->timestamp1, 10, NM_ICMPV6_ROUTER_PREF_MEDIUM);
 		match_address (rdata, 0, "2001:db8:a:a::1", data->timestamp1, 10, 10);
 		match_route (rdata, 0, "2001:db8:a:a::", 64, "fe80::1", data->timestamp1, 10, 10);
 		match_dns_server (rdata, 0, "2001:db8:c:c::1", data->timestamp1, 10);
@@ -232,7 +232,7 @@ test_everything_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed
 		                              NM_NDISC_CONFIG_DNS_DOMAINS);
 
 		g_assert_cmpint (rdata->gateways_n, ==, 1);
-		match_gateway (rdata, 0, "fe80::2", data->timestamp1, 10, NM_NDISC_PREFERENCE_MEDIUM);
+		match_gateway (rdata, 0, "fe80::2", data->timestamp1, 10, NM_ICMPV6_ROUTER_PREF_MEDIUM);
 		g_assert_cmpint (rdata->addresses_n, ==, 1);
 		match_address (rdata, 0, "2001:db8:a:b::1", data->timestamp1, 10, 10);
 		g_assert_cmpint (rdata->routes_n, ==, 1);
@@ -260,7 +260,7 @@ test_everything (void)
 
 	id = nm_fake_ndisc_add_ra (ndisc, 1, NM_NDISC_DHCP_LEVEL_NONE, 4, 1500);
 	g_assert (id);
-	nm_fake_ndisc_add_gateway (ndisc, id, "fe80::1", now, 10, NM_NDISC_PREFERENCE_MEDIUM);
+	nm_fake_ndisc_add_gateway (ndisc, id, "fe80::1", now, 10, NM_ICMPV6_ROUTER_PREF_MEDIUM);
 	nm_fake_ndisc_add_prefix (ndisc, id, "2001:db8:a:a::", 64, "fe80::1", now, 10, 10, 10);
 	nm_fake_ndisc_add_dns_server (ndisc, id, "2001:db8:c:c::1", now, 10);
 	nm_fake_ndisc_add_dns_domain (ndisc, id, "foobar.com", now, 10);
@@ -268,13 +268,13 @@ test_everything (void)
 	/* expire everything from the first RA in the second */
 	id = nm_fake_ndisc_add_ra (ndisc, 1, NM_NDISC_DHCP_LEVEL_NONE, 4, 1500);
 	g_assert (id);
-	nm_fake_ndisc_add_gateway (ndisc, id, "fe80::1", now, 0, NM_NDISC_PREFERENCE_MEDIUM);
+	nm_fake_ndisc_add_gateway (ndisc, id, "fe80::1", now, 0, NM_ICMPV6_ROUTER_PREF_MEDIUM);
 	nm_fake_ndisc_add_prefix (ndisc, id, "2001:db8:a:a::", 64, "fe80::1", now, 0, 0, 0);
 	nm_fake_ndisc_add_dns_server (ndisc, id, "2001:db8:c:c::1", now, 0);
 	nm_fake_ndisc_add_dns_domain (ndisc, id, "foobar.com", now, 0);
 
 	/* and add some new stuff */
-	nm_fake_ndisc_add_gateway (ndisc, id, "fe80::2", now, 10, NM_NDISC_PREFERENCE_MEDIUM);
+	nm_fake_ndisc_add_gateway (ndisc, id, "fe80::2", now, 10, NM_ICMPV6_ROUTER_PREF_MEDIUM);
 	nm_fake_ndisc_add_prefix (ndisc, id, "2001:db8:a:b::", 64, "fe80::2", now, 10, 10, 10);
 	nm_fake_ndisc_add_dns_server (ndisc, id, "2001:db8:c:c::2", now, 10);
 	nm_fake_ndisc_add_dns_domain (ndisc, id, "foobar2.com", now, 10);
@@ -307,8 +307,8 @@ test_preference_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed
 		                              NM_NDISC_CONFIG_ADDRESSES |
 		                              NM_NDISC_CONFIG_ROUTES);
 		g_assert_cmpint (rdata->gateways_n, ==, 2);
-		match_gateway (rdata, 0, "fe80::2", data->timestamp1 + 1, 10, NM_NDISC_PREFERENCE_MEDIUM);
-		match_gateway (rdata, 1, "fe80::1", data->timestamp1, 10, NM_NDISC_PREFERENCE_LOW);
+		match_gateway (rdata, 0, "fe80::2", data->timestamp1 + 1, 10, NM_ICMPV6_ROUTER_PREF_MEDIUM);
+		match_gateway (rdata, 1, "fe80::1", data->timestamp1, 10, NM_ICMPV6_ROUTER_PREF_LOW);
 		g_assert_cmpint (rdata->addresses_n, ==, 2);
 		match_address (rdata, 0, "2001:db8:a:a::1", data->timestamp1, 10, 10);
 		match_address (rdata, 1, "2001:db8:a:b::1", data->timestamp1 + 1, 10, 10);
@@ -321,8 +321,8 @@ test_preference_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed
 		                              NM_NDISC_CONFIG_ROUTES);
 
 		g_assert_cmpint (rdata->gateways_n, ==, 2);
-		match_gateway (rdata, 0, "fe80::1", data->timestamp1 + 2, 10, NM_NDISC_PREFERENCE_HIGH);
-		match_gateway (rdata, 1, "fe80::2", data->timestamp1 + 1, 10, NM_NDISC_PREFERENCE_MEDIUM);
+		match_gateway (rdata, 0, "fe80::1", data->timestamp1 + 2, 10, NM_ICMPV6_ROUTER_PREF_HIGH);
+		match_gateway (rdata, 1, "fe80::2", data->timestamp1 + 1, 10, NM_ICMPV6_ROUTER_PREF_MEDIUM);
 		g_assert_cmpint (rdata->addresses_n, ==, 2);
 		match_address (rdata, 0, "2001:db8:a:a::1", data->timestamp1 + 2, 10, 10);
 		match_address (rdata, 1, "2001:db8:a:b::1", data->timestamp1 + 1, 10, 10);
@@ -352,17 +352,17 @@ test_preference (void)
 
 	id = nm_fake_ndisc_add_ra (ndisc, 1, NM_NDISC_DHCP_LEVEL_NONE, 4, 1500);
 	g_assert (id);
-	nm_fake_ndisc_add_gateway (ndisc, id, "fe80::1", now, 10, NM_NDISC_PREFERENCE_LOW);
+	nm_fake_ndisc_add_gateway (ndisc, id, "fe80::1", now, 10, NM_ICMPV6_ROUTER_PREF_LOW);
 	nm_fake_ndisc_add_prefix (ndisc, id, "2001:db8:a:a::", 64, "fe80::1", now, 10, 10, 5);
 
 	id = nm_fake_ndisc_add_ra (ndisc, 1, NM_NDISC_DHCP_LEVEL_NONE, 4, 1500);
 	g_assert (id);
-	nm_fake_ndisc_add_gateway (ndisc, id, "fe80::2", ++now, 10, NM_NDISC_PREFERENCE_MEDIUM);
+	nm_fake_ndisc_add_gateway (ndisc, id, "fe80::2", ++now, 10, NM_ICMPV6_ROUTER_PREF_MEDIUM);
 	nm_fake_ndisc_add_prefix (ndisc, id, "2001:db8:a:b::", 64, "fe80::2", now, 10, 10, 10);
 
 	id = nm_fake_ndisc_add_ra (ndisc, 1, NM_NDISC_DHCP_LEVEL_NONE, 4, 1500);
 	g_assert (id);
-	nm_fake_ndisc_add_gateway (ndisc, id, "fe80::1", ++now, 10, NM_NDISC_PREFERENCE_HIGH);
+	nm_fake_ndisc_add_gateway (ndisc, id, "fe80::1", ++now, 10, NM_ICMPV6_ROUTER_PREF_HIGH);
 	nm_fake_ndisc_add_prefix (ndisc, id, "2001:db8:a:a::", 64, "fe80::1", now, 10, 10, 15);
 
 	g_signal_connect (ndisc,
@@ -411,7 +411,7 @@ test_dns_solicit_loop_rs_sent (NMFakeNDisc *ndisc, TestData *data)
 		 */
 		id = nm_fake_ndisc_add_ra (ndisc, 0, NM_NDISC_DHCP_LEVEL_NONE, 4, 1500);
 		g_assert (id);
-		nm_fake_ndisc_add_gateway (ndisc, id, "fe80::1", now, 10, NM_NDISC_PREFERENCE_MEDIUM);
+		nm_fake_ndisc_add_gateway (ndisc, id, "fe80::1", now, 10, NM_ICMPV6_ROUTER_PREF_MEDIUM);
 
 		nm_fake_ndisc_emit_new_ras (ndisc);
 	} else if (data->rs_counter >= 6) {
@@ -440,7 +440,7 @@ test_dns_solicit_loop (void)
 
 	id = nm_fake_ndisc_add_ra (ndisc, 1, NM_NDISC_DHCP_LEVEL_NONE, 4, 1500);
 	g_assert (id);
-	nm_fake_ndisc_add_gateway (ndisc, id, "fe80::1", now, 10, NM_NDISC_PREFERENCE_LOW);
+	nm_fake_ndisc_add_gateway (ndisc, id, "fe80::1", now, 10, NM_ICMPV6_ROUTER_PREF_LOW);
 	nm_fake_ndisc_add_dns_server (ndisc, id, "2001:db8:c:c::1", now, 6);
 
 	g_signal_connect (ndisc,

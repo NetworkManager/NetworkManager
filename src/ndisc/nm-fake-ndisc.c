@@ -51,7 +51,7 @@ typedef struct {
         guint32 timestamp;
         guint32 lifetime;
         guint32 preferred;
-        NMNDiscPreference preference;
+        NMIcmpv6RouterPref preference;
 } FakePrefix;
 
 /*****************************************************************************/
@@ -145,7 +145,7 @@ nm_fake_ndisc_add_gateway (NMFakeNDisc *self,
                            const char *addr,
                            guint32 timestamp,
                            guint32 lifetime,
-                           NMNDiscPreference preference)
+                           NMIcmpv6RouterPref preference)
 {
 	NMFakeNDiscPrivate *priv = NM_FAKE_NDISC_GET_PRIVATE (self);
 	FakeRa *ra = find_ra (priv->ras, ra_id);
@@ -169,7 +169,7 @@ nm_fake_ndisc_add_prefix (NMFakeNDisc *self,
                           guint32 timestamp,
                           guint32 lifetime,
                           guint32 preferred,
-                          NMNDiscPreference preference)
+                          NMIcmpv6RouterPref preference)
 {
 	NMFakeNDiscPrivate *priv = NM_FAKE_NDISC_GET_PRIVATE (self);
 	FakeRa *ra = find_ra (priv->ras, ra_id);
@@ -250,7 +250,7 @@ receive_ra (gpointer user_data)
 	NMNDiscDataInternal *rdata = ndisc->rdata;
 	FakeRa *ra = priv->ras->data;
 	NMNDiscConfigMap changed = 0;
-	guint32 now = nm_utils_get_monotonic_timestamp_s ();
+	gint32 now = nm_utils_get_monotonic_timestamp_s ();
 	guint i;
 	NMNDiscDHCPLevel dhcp_level;
 
