@@ -2031,6 +2031,7 @@ device_ip_iface_changed (NMDevice *device,
                          NMManager *self)
 {
 	const char *ip_iface = nm_device_get_ip_iface (device);
+	NMDeviceType device_type = nm_device_get_device_type (device);
 	GSList *iter;
 
 	/* Remove NMDevice objects that are actually child devices of others,
@@ -2043,6 +2044,7 @@ device_ip_iface_changed (NMDevice *device,
 
 		if (   candidate != device
 		    && g_strcmp0 (nm_device_get_iface (candidate), ip_iface) == 0
+		    && nm_device_get_device_type (candidate) == device_type
 		    && nm_device_is_real (candidate)) {
 			remove_device (self, candidate, FALSE, FALSE);
 			break;
