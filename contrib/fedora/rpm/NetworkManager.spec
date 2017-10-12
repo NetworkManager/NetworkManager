@@ -373,6 +373,7 @@ intltoolize --automake --copy --force
 	--disable-static \
 	--with-dhclient=yes \
 	--with-dhcpcd=no \
+	--with-config-dhcp-default=dhclient \
 	--with-crypto=nss \
 %if %{with test}
 	--enable-more-warnings=error \
