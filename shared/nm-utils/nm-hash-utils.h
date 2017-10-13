@@ -22,10 +22,10 @@
 #ifndef __NM_HASH_UTILS_H__
 #define __NM_HASH_UTILS_H__
 
-#include <stdint.h>
+#include "siphash24.h"
 
 typedef struct {
-	guint hash;
+	struct siphash _state;
 } NMHashState;
 
 void nm_hash_init (NMHashState *state, guint static_seed);
@@ -33,93 +33,94 @@ void nm_hash_init (NMHashState *state, guint static_seed);
 static inline guint
 nm_hash_complete (NMHashState *state)
 {
+	guint64 h;
+
 	nm_assert (state);
+
+	h = siphash24_finalize (&state->_state);
+
 	/* we don't ever want to return a zero hash.
 	 *
 	 * NMPObject requires that in _idx_obj_part(), and it's just a good idea. */
-	return state->hash ?: 1396707757u;
+	return (((guint) (h >> 32)) ^ ((guint) h)) ?: 1396707757u;
+}
+
+static inline void
+nm_hash_update (NMHashState *state, const void *ptr, gsize n)
+{
+	nm_assert (state);
+	nm_assert (ptr);
+	nm_assert (n > 0);
+
+	siphash24_compress (ptr, n, &state->_state);
 }
 
 static inline void
 nm_hash_update_uint (NMHashState *state, guint val)
 {
-	guint h;
-
-	nm_assert (state);
-
-	h = state->hash;
-	h = (h << 5) + h + val;
-	state->hash = h;
+	nm_hash_update (state, &val, sizeof (val));
 }
 
 static inline void
 nm_hash_update_uint64 (NMHashState *state, guint64 val)
 {
-	guint h;
-
-	nm_assert (state);
-
-	h = state->hash;
-	h = (h << 5) + h + ((guint) val);
-	h = (h << 5) + h + ((guint) (val >> 32));
-	state->hash = h;
+	nm_hash_update (state, &val, sizeof (val));
 }
 
 static inline void
 nm_hash_update_ptr (NMHashState *state, gconstpointer ptr)
 {
-	if (sizeof (ptr) <= sizeof (guint))
-		nm_hash_update_uint (state, ((guint) ((uintptr_t) ptr)));
-	else
-		nm_hash_update_uint64 (state, (guint64) ((uintptr_t) ptr));
+	nm_hash_update (state, &ptr, sizeof (ptr));
 }
 
 static inline void
 nm_hash_update_mem (NMHashState *state, const void *ptr, gsize n)
 {
-	gsize i;
-	guint h;
+	/* This also hashes the length of the data. That means,
+	 * hashing two consecutive binary fields (of arbitrary
+	 * length), will hash differently. That is,
+	 * [[1,1], []] differs from [[1],[1]].
+	 *
+	 * If you have a constant length (sizeof), use nm_hash_update()
+	 * instead. */
+	nm_hash_update (state, &n, sizeof (n));
+	if (n > 0)
+		siphash24_compress (ptr, n, &state->_state);
+}
 
-	nm_assert (state);
+static inline void
+nm_hash_update_str0 (NMHashState *state, const char *str)
+{
+	if (str)
+		nm_hash_update_mem (state, str, strlen (str));
+	else {
+		gsize n = G_MAXSIZE;
 
-	/* use the same hash seed as nm_hash_update_str().
-	 * That way, nm_hash_update_str(&h, s) is identical to
-	 * nm_hash_update_mem(&h, s, strlen(s)). */
-	h = state->hash;
-	for (i = 0; i < n; i++)
-		h = (h << 5) + h + ((guint) ((const guint8 *) ptr)[i]);
-	h = (h << 5) + h + 1774132687u;
-	state->hash = h;
+		nm_hash_update (state, &n, sizeof (n));
+	}
 }
 
 static inline void
 nm_hash_update_str (NMHashState *state, const char *str)
 {
-	const guint8 *p = (const guint8 *) str;
-	guint8 c;
-	guint h;
-
-	nm_assert (state);
-
-	/* Note that NULL hashes differently from "". */
-	h = state->hash;
-	if (str) {
-		while ((c = *p++))
-			h = (h << 5) + h + ((guint) c);
-		h = (h << 5) + h + 1774132687u;
-	} else
-		h = (h << 5) + h + 2967906233u;
-	state->hash = h;
+	nm_assert (str);
+	nm_hash_update (state, str, strlen (str) + 1);
 }
 
-static inline guint
-nm_hash_ptr (gconstpointer ptr)
-{
-	if (sizeof (ptr) <= sizeof (guint))
-		return (guint) ((uintptr_t) ptr);
-	else
-		return ((guint) (((uintptr_t) ptr) >> 32)) ^ ((guint) ((uintptr_t) ptr));
-}
+#if _NM_CC_SUPPORT_GENERIC
+/* Like nm_hash_update_str(), but restricted to arrays only. nm_hash_update_str() only works
+ * with a @str argument that cannot be NULL. If you have a string pointer, that is never NULL, use
+ * nm_hash_update() instead. */
+#define nm_hash_update_strarr(state, str) \
+	(_Generic (&(str), \
+		const char (*) [sizeof (str)]: nm_hash_update_str ((state), (str)), \
+		char (*) [sizeof (str)]:       nm_hash_update_str ((state), (str))) \
+	)
+#else
+#define nm_hash_update_strarr(state, str) nm_hash_update_str ((state), (str))
+#endif
+
+guint nm_hash_ptr (gconstpointer ptr);
 guint nm_direct_hash (gconstpointer str);
 
 guint nm_hash_str (const char *str);
