@@ -88,6 +88,7 @@ nmt_connect_connection_free (NmtConnectConnection *nmtconn)
 	g_clear_object (&nmtconn->ap);
 	g_clear_object (&nmtconn->active);
 	g_free (nmtconn->ssid);
+	g_slice_free (NmtConnectConnection, nmtconn);
 }
 
 static void
@@ -97,6 +98,7 @@ nmt_connect_device_free (NmtConnectDevice *nmtdev)
 	g_clear_object (&nmtdev->device);
 
 	g_slist_free_full (nmtdev->conns, (GDestroyNotify) nmt_connect_connection_free);
+	g_slice_free (NmtConnectDevice, nmtdev);
 }
 
 static const char *device_sort_order[] = {
