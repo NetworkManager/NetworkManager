@@ -150,7 +150,8 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 		if (obj_b)
 			return NMP_OBJECT_GET_TYPE (obj_a) == NMP_OBJECT_GET_TYPE (obj_b);
 		if (request_hash) {
-			h = (guint) idx_type->cache_id_type;
+			h = NM_HASH_INIT (487703243u);
+			h = NM_HASH_COMBINE (h, idx_type->cache_id_type);
 			h = NM_HASH_COMBINE (h, NMP_OBJECT_GET_TYPE (obj_a));
 			return _HASH_NON_ZERO (h);
 		}
@@ -170,7 +171,8 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 		}
 		if (request_hash) {
 			/* we request a hash from obj_a. Hash the relevant parts. */
-			h = (guint) idx_type->cache_id_type;
+			h = NM_HASH_INIT (2126752699u);
+			h = NM_HASH_COMBINE (h, idx_type->cache_id_type);
 			h = NM_HASH_COMBINE (h, g_str_hash (obj_a->link.name));
 			return _HASH_NON_ZERO (h);
 		}
@@ -189,7 +191,8 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 			       && nmp_object_is_visible (obj_b);
 		}
 		if (request_hash) {
-			h = (guint) idx_type->cache_id_type;
+			h = NM_HASH_INIT (4278960223u);
+			h = NM_HASH_COMBINE (h, idx_type->cache_id_type);
 			h = NM_HASH_COMBINE (h, NMP_OBJECT_GET_TYPE (obj_a));
 			return _HASH_NON_ZERO (h);
 		}
@@ -209,7 +212,8 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 			       && nmp_object_is_visible (obj_b);
 		}
 		if (request_hash) {
-			h = (guint) idx_type->cache_id_type;
+			h = NM_HASH_INIT (920415631u);
+			h = NM_HASH_COMBINE (h, idx_type->cache_id_type);
 			h = NM_HASH_COMBINE (h, NMP_OBJECT_GET_TYPE (obj_a));
 			h = NM_HASH_COMBINE (h, obj_a->object.ifindex);
 			return _HASH_NON_ZERO (h);
@@ -230,7 +234,8 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 			           : (nm_platform_ip6_route_cmp (&obj_a->ip6_route, &obj_b->ip6_route, NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID) == 0));
 		}
 		if (request_hash) {
-			h = (guint) idx_type->cache_id_type;
+			h = NM_HASH_INIT (778646573u);
+			h = NM_HASH_COMBINE (h, idx_type->cache_id_type);
 			if (obj_type == NMP_OBJECT_TYPE_IP4_ROUTE)
 				h = NM_HASH_COMBINE (h, nm_platform_ip4_route_hash (&obj_a->ip4_route, NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID));
 			else
@@ -300,7 +305,7 @@ static guint
 _vlan_xgress_qos_mappings_hash (guint n_map,
                                 const NMVlanQosMapping *map)
 {
-	guint h = 1453577309;
+	guint h = NM_HASH_INIT (1453577309u);
 	guint i;
 
 	for (i = 0; i < n_map; i++) {
@@ -756,19 +761,20 @@ nmp_object_hash (const NMPObject *obj)
 
 	klass = NMP_OBJECT_GET_CLASS (obj);
 
+	h = NM_HASH_INIT (816200863u);
 	if (klass->cmd_obj_hash)
-		h = klass->cmd_obj_hash (obj);
+		h = NM_HASH_COMBINE (h, klass->cmd_obj_hash (obj));
 	else if (klass->cmd_plobj_hash)
-		h = klass->cmd_plobj_hash (&obj->object);
+		h = NM_HASH_COMBINE (h, klass->cmd_plobj_hash (&obj->object));
 	else
-		return GPOINTER_TO_UINT (obj);
+		return NM_HASH_POINTER (obj);
 	return NM_HASH_COMBINE (h, klass->obj_type);
 }
 
 static guint
 _vt_cmd_obj_hash_link (const NMPObject *obj)
 {
-	guint h = 1228913327;
+	guint h = NM_HASH_INIT (3448776161u);
 
 	nm_assert (NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LINK);
 
@@ -783,7 +789,7 @@ _vt_cmd_obj_hash_link (const NMPObject *obj)
 static guint
 _vt_cmd_obj_hash_lnk_vlan (const NMPObject *obj)
 {
-	guint h = 914932607;
+	guint h = NM_HASH_INIT (914932607u);
 
 	nm_assert (NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LNK_VLAN);
 
@@ -1077,7 +1083,7 @@ nmp_object_id_hash (const NMPObject *obj)
 	if (!klass->cmd_plobj_id_hash) {
 		/* The klass doesn't implement ID compare. It means, to use pointer
 		 * equality (g_direct_hash). */
-		return g_direct_hash (obj);
+		return NM_HASH_POINTER (obj);
 	}
 
 	return klass->cmd_plobj_id_hash (&obj->object);
@@ -1093,29 +1099,29 @@ _vt_cmd_plobj_id_hash_##type (const NMPlatformObject *_obj) \
 	return hash; \
 }
 _vt_cmd_plobj_id_hash (link, NMPlatformLink, {
-	hash = (guint) 3982791431u;
-	hash = hash + ((guint) obj->ifindex);
+	hash = NM_HASH_INIT (3982791431u);
+	hash = NM_HASH_COMBINE (hash, ((guint) obj->ifindex));
 })
 _vt_cmd_plobj_id_hash (ip4_address, NMPlatformIP4Address, {
-	hash = (guint) 3591309853u;
-	hash = hash + ((guint) obj->ifindex);
+	hash = NM_HASH_INIT (3591309853u);
+	hash = NM_HASH_COMBINE (hash, ((guint) obj->ifindex));
 	hash = NM_HASH_COMBINE (hash, obj->plen);
 	hash = NM_HASH_COMBINE (hash, obj->address);
 	/* for IPv4 we must also consider the net-part of the peer-address (IFA_ADDRESS) */
 	hash = NM_HASH_COMBINE (hash, (obj->peer_address & _nm_utils_ip4_prefix_to_netmask (obj->plen)));
 })
 _vt_cmd_plobj_id_hash (ip6_address, NMPlatformIP6Address, {
-	hash = (guint) 2907861637u;
-	hash = hash + ((guint) obj->ifindex);
+	hash = NM_HASH_INIT (2907861637u);
+	hash = NM_HASH_COMBINE (hash, ((guint) obj->ifindex));
 	/* for IPv6 addresses, the prefix length is not part of the primary identifier. */
 	hash = NM_HASH_COMBINE (hash, nm_utils_in6_addr_hash (&obj->address));
 })
 _vt_cmd_plobj_id_hash (ip4_route, NMPlatformIP4Route, {
-	hash = (guint) 1038302471u;
+	hash = NM_HASH_INIT (1038302471u);
 	hash = NM_HASH_COMBINE (hash, nm_platform_ip4_route_hash (obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID));
 })
 _vt_cmd_plobj_id_hash (ip6_route, NMPlatformIP6Route, {
-	hash = (guint) 1233384151u;
+	hash = NM_HASH_INIT (1233384151u);
 	hash = NM_HASH_COMBINE (hash, nm_platform_ip6_route_hash (obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID));
 })
 

@@ -25,6 +25,14 @@
 
 #include <errno.h>
 #include <arpa/inet.h>
+#include <poll.h>
+#include <fcntl.h>
+
+#if USE_SYS_RANDOM_H
+#include <sys/random.h>
+#else
+#include <linux/random.h>
+#endif
 
 /*****************************************************************************/
 
@@ -855,6 +863,29 @@ nm_g_object_class_find_property_from_gtype (GType gtype,
 
 /*****************************************************************************/
 
+guint
+NM_HASH_INIT (guint seed)
+{
+	static volatile guint global_seed = 0;
+	guint g, s;
+
+	/* we xor @seed with a random @global_seed. This is to make the hashing behavior
+	 * less predictable and harder to exploit collisions. */
+	g = global_seed;
+	if (G_UNLIKELY (g == 0)) {
+		nm_utils_random_bytes (&s, sizeof (s));
+		if (s == 0)
+			s = 42;
+		g_atomic_int_compare_and_exchange ((int *) &global_seed, 0, s);
+		g = global_seed;
+		nm_assert (g);
+	}
+
+	return g ^ seed;
+}
+
+/*****************************************************************************/
+
 static void
 _str_append_escape (GString *s, char ch)
 {
@@ -991,4 +1022,230 @@ nm_utils_str_utf8safe_escape_take (char *str, NMUtilsStrUtf8SafeFlags flags)
 		return str_to_free;
 	}
 	return str;
+}
+
+/*****************************************************************************/
+
+/* taken from systemd's fd_wait_for_event(). Note that the timeout
+ * is here in nano-seconds, not micro-seconds. */
+int
+nm_utils_fd_wait_for_event (int fd, int event, gint64 timeout_ns)
+{
+	struct pollfd pollfd = {
+		.fd = fd,
+		.events = event,
+	};
+	struct timespec ts, *pts;
+	int r;
+
+	if (timeout_ns < 0)
+		pts = NULL;
+	else {
+		ts.tv_sec = (time_t) (timeout_ns / NM_UTILS_NS_PER_SECOND);
+		ts.tv_nsec = (long int) (timeout_ns % NM_UTILS_NS_PER_SECOND);
+		pts = &ts;
+	}
+
+	r = ppoll (&pollfd, 1, pts, NULL);
+	if (r < 0)
+		return -errno;
+	if (r == 0)
+		return 0;
+	return pollfd.revents;
+}
+
+/* taken from systemd's loop_read() */
+ssize_t
+nm_utils_fd_read_loop (int fd, void *buf, size_t nbytes, bool do_poll)
+{
+	uint8_t *p = buf;
+	ssize_t n = 0;
+
+	g_return_val_if_fail (fd >= 0, -EINVAL);
+	g_return_val_if_fail (buf, -EINVAL);
+
+	/* If called with nbytes == 0, let's call read() at least
+	 * once, to validate the operation */
+
+	if (nbytes > (size_t) SSIZE_MAX)
+		return -EINVAL;
+
+	do {
+		ssize_t k;
+
+		k = read (fd, p, nbytes);
+		if (k < 0) {
+			if (errno == EINTR)
+				continue;
+
+			if (errno == EAGAIN && do_poll) {
+
+				/* We knowingly ignore any return value here,
+				 * and expect that any error/EOF is reported
+				 * via read() */
+
+				(void) nm_utils_fd_wait_for_event (fd, POLLIN, -1);
+				continue;
+			}
+
+			return n > 0 ? n : -errno;
+		}
+
+		if (k == 0)
+			return n;
+
+		g_assert ((size_t) k <= nbytes);
+
+		p += k;
+		nbytes -= k;
+		n += k;
+	} while (nbytes > 0);
+
+	return n;
+}
+
+/* taken from systemd's loop_read_exact() */
+int
+nm_utils_fd_read_loop_exact (int fd, void *buf, size_t nbytes, bool do_poll)
+{
+	ssize_t n;
+
+	n = nm_utils_fd_read_loop (fd, buf, nbytes, do_poll);
+	if (n < 0)
+		return (int) n;
+	if ((size_t) n != nbytes)
+		return -EIO;
+
+	return 0;
+}
+
+/*****************************************************************************/
+
+/**
+ * nm_utils_random_bytes:
+ * @p: the buffer to fill
+ * @n: the number of bytes to write to @p.
+ *
+ * Uses getrandom() or reads /dev/urandom to fill the buffer
+ * with random data. If all fails, as last fallback it uses
+ * GRand to fill the buffer with pseudo random numbers.
+ * The function always succeeds in writing some random numbers
+ * to the buffer. The return value of FALSE indicates that the
+ * obtained bytes are probably not of good randomness.
+ *
+ * Returns: whether the written bytes are good. If you
+ * don't require good randomness, you can ignore the return
+ * value.
+ *
+ * Note that if calling getrandom() fails because there is not enough
+ * entroy (at early boot), the function will read /dev/urandom.
+ * Which of course, still has low entropy, and cause kernel to log
+ * a warning.
+ */
+gboolean
+nm_utils_random_bytes (void *p, size_t n)
+{
+	int fd;
+	int r;
+	gboolean has_high_quality = TRUE;
+	gboolean urandom_success;
+	guint8 *buf = p;
+	gboolean avoid_urandom = FALSE;
+
+	g_return_val_if_fail (p, FALSE);
+	g_return_val_if_fail (n > 0, FALSE);
+
+#if HAVE_GETRANDOM
+	{
+		static gboolean have_syscall = TRUE;
+
+		if (have_syscall) {
+			r = getrandom (buf, n, GRND_NONBLOCK);
+			if (r > 0) {
+				if ((size_t) r == n)
+					return TRUE;
+
+				/* no or partial read. There is not enough entropy.
+				 * Fill the rest reading from urandom, and remember that
+				 * some bits are not hight quality. */
+				nm_assert (r < n);
+				buf += r;
+				n -= r;
+				has_high_quality = FALSE;
+
+				/* At this point, we don't want to read /dev/urandom, because
+				 * the entropy pool is low (early boot?), and asking for more
+				 * entropy causes kernel messages to be logged.
+				 *
+				 * We use our fallback via GRand. Note that g_rand_new() also
+				 * tries to seed itself with data from /dev/urandom, but since
+				 * we reuse the instance, it shouldn't matter. */
+				avoid_urandom = TRUE;
+			} else {
+				if (errno == ENOSYS) {
+					/* no support for getrandom(). We don't know whether
+					 * we urandom will give us good quality. Assume yes. */
+					have_syscall = FALSE;
+				} else {
+					/* unknown error. We'll read urandom below, but we don't have
+					 * high-quality randomness. */
+					has_high_quality = FALSE;
+				}
+			}
+		}
+	}
+#endif
+
+	urandom_success = FALSE;
+	if (!avoid_urandom) {
+fd_open:
+		fd = open ("/dev/urandom", O_RDONLY | O_CLOEXEC | O_NOCTTY);
+		if (fd < 0) {
+			r = errno;
+			if (r == EINTR)
+				goto fd_open;
+		} else {
+			r = nm_utils_fd_read_loop_exact (fd, buf, n, TRUE);
+			close (fd);
+			if (r >= 0)
+				urandom_success = TRUE;
+		}
+	}
+
+	if (!urandom_success) {
+		static _nm_thread_local GRand *rand = NULL;
+		gsize i;
+		int j;
+
+		/* we failed to fill the bytes reading from urandom.
+		 * Fill the bits using GRand pseudo random numbers.
+		 *
+		 * We don't have good quality.
+		 */
+		has_high_quality = FALSE;
+
+		if (G_UNLIKELY (!rand))
+			rand = g_rand_new ();
+
+		nm_assert (n > 0);
+		i = 0;
+		for (;;) {
+			const union {
+				guint32 v32;
+				guint8 v8[4];
+			} v = {
+				.v32 = g_rand_int (rand),
+			};
+
+			for (j = 0; j < 4; ) {
+				buf[i++] = v.v8[j++];
+				if (i >= n)
+					goto done;
+			}
+		}
+done:
+		;
+	}
+
+	return has_high_quality;
 }

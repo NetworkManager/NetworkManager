@@ -2858,7 +2858,7 @@ typedef struct {
 static guint
 _v4_has_shadowed_routes_detect_hash (const IP4RPFilterData *d)
 {
-	guint h = 0;
+	guint h = NM_HASH_INIT (1105201169u);
 
 	h = NM_HASH_COMBINE (h, d->network);
 	h = NM_HASH_COMBINE (h, d->plen);

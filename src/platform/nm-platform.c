@@ -5126,7 +5126,7 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 guint
 nm_platform_link_hash (const NMPlatformLink *obj)
 {
-	guint h = 99413953;
+	guint h = NM_HASH_INIT (99413953u);
 	guint8 i8;
 
 	h = NM_HASH_COMBINE (h, obj->ifindex);
@@ -5187,7 +5187,7 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 guint
 nm_platform_lnk_gre_hash (const NMPlatformLnkGre *obj)
 {
-	guint h = 1887023311;
+	guint h = NM_HASH_INIT (1887023311u);
 
 	h = NM_HASH_COMBINE (h, obj->parent_ifindex);
 	h = NM_HASH_COMBINE (h, obj->input_flags);
@@ -5222,7 +5222,7 @@ nm_platform_lnk_gre_cmp (const NMPlatformLnkGre *a, const NMPlatformLnkGre *b)
 guint
 nm_platform_lnk_infiniband_hash (const NMPlatformLnkInfiniband *obj)
 {
-	guint h = 1748638583;
+	guint h = NM_HASH_INIT (1748638583u);
 
 	h = NM_HASH_COMBINE (h, obj->p_key);
 	if (obj->mode)
@@ -5242,7 +5242,7 @@ nm_platform_lnk_infiniband_cmp (const NMPlatformLnkInfiniband *a, const NMPlatfo
 guint
 nm_platform_lnk_ip6tnl_hash (const NMPlatformLnkIp6Tnl *obj)
 {
-	guint h = 1651660009;
+	guint h = NM_HASH_INIT (1651660009u);
 
 	h = NM_HASH_COMBINE (h, obj->parent_ifindex);
 	h = NM_HASH_COMBINE_IN6ADDR (h, &obj->local);
@@ -5273,7 +5273,7 @@ nm_platform_lnk_ip6tnl_cmp (const NMPlatformLnkIp6Tnl *a, const NMPlatformLnkIp6
 guint
 nm_platform_lnk_ipip_hash (const NMPlatformLnkIpIp *obj)
 {
-	guint h = 861934429;
+	guint h = NM_HASH_INIT (861934429u);
 
 	h = NM_HASH_COMBINE (h, obj->parent_ifindex);
 	h = NM_HASH_COMBINE (h, obj->local);
@@ -5300,7 +5300,7 @@ nm_platform_lnk_ipip_cmp (const NMPlatformLnkIpIp *a, const NMPlatformLnkIpIp *b
 guint
 nm_platform_lnk_macsec_hash (const NMPlatformLnkMacsec *obj)
 {
-	guint h = 226984267;
+	guint h = NM_HASH_INIT (226984267u);
 
 	h = NM_HASH_COMBINE (h, obj->sci);
 	h = NM_HASH_COMBINE_UINT64 (h, obj->icv_length);
@@ -5339,7 +5339,7 @@ nm_platform_lnk_macsec_cmp (const NMPlatformLnkMacsec *a, const NMPlatformLnkMac
 guint
 nm_platform_lnk_macvlan_hash (const NMPlatformLnkMacvlan *obj)
 {
-	guint h = 771014989;
+	guint h = NM_HASH_INIT (771014989u);
 
 	h = NM_HASH_COMBINE (h, obj->mode);
 	h = NM_HASH_COMBINE (h, obj->no_promisc);
@@ -5360,7 +5360,7 @@ nm_platform_lnk_macvlan_cmp (const NMPlatformLnkMacvlan *a, const NMPlatformLnkM
 guint
 nm_platform_lnk_sit_hash (const NMPlatformLnkSit *obj)
 {
-	guint h = 1690154969;
+	guint h = NM_HASH_INIT (1690154969u);
 
 	h = NM_HASH_COMBINE (h, obj->parent_ifindex);
 	h = NM_HASH_COMBINE (h, obj->local);
@@ -5391,7 +5391,7 @@ nm_platform_lnk_sit_cmp (const NMPlatformLnkSit *a, const NMPlatformLnkSit *b)
 guint
 nm_platform_lnk_vlan_hash (const NMPlatformLnkVlan *obj)
 {
-	guint h = 58751383;
+	guint h = NM_HASH_INIT (58751383u);
 
 	h = NM_HASH_COMBINE (h, obj->id);
 	h = NM_HASH_COMBINE (h, obj->flags);
@@ -5410,7 +5410,7 @@ nm_platform_lnk_vlan_cmp (const NMPlatformLnkVlan *a, const NMPlatformLnkVlan *b
 guint
 nm_platform_lnk_vxlan_hash (const NMPlatformLnkVxlan *obj)
 {
-	guint h = 461041297;
+	guint h = NM_HASH_INIT (461041297u);
 
 	h = NM_HASH_COMBINE (h, obj->parent_ifindex);
 	h = NM_HASH_COMBINE (h, obj->id);
@@ -5461,7 +5461,7 @@ nm_platform_lnk_vxlan_cmp (const NMPlatformLnkVxlan *a, const NMPlatformLnkVxlan
 guint
 nm_platform_ip4_address_hash (const NMPlatformIP4Address *obj)
 {
-	guint h = 469681301;
+	guint h = NM_HASH_INIT (469681301u);
 
 	if (obj) {
 		h = NM_HASH_COMBINE (h, obj->ifindex);
@@ -5498,7 +5498,7 @@ nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4A
 guint
 nm_platform_ip6_address_hash (const NMPlatformIP6Address *obj)
 {
-	guint h = 605908909;
+	guint h = NM_HASH_INIT (605908909u);
 
 	if (obj) {
 		h = NM_HASH_COMBINE (h, obj->ifindex);
@@ -5537,8 +5537,9 @@ nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6A
 guint
 nm_platform_ip4_route_hash (const NMPlatformIP4Route *obj, NMPlatformIPRouteCmpType cmp_type)
 {
-	guint h = NM_HASH_COMBINE (1228913327, cmp_type);
+	guint h = NM_HASH_INIT (1228913327u);
 
+	h = NM_HASH_COMBINE (h, cmp_type);
 	if (obj) {
 		switch (cmp_type) {
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
@@ -5688,8 +5689,9 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 guint
 nm_platform_ip6_route_hash (const NMPlatformIP6Route *obj, NMPlatformIPRouteCmpType cmp_type)
 {
-	guint h = NM_HASH_COMBINE (1053326051, cmp_type);
+	guint h = NM_HASH_INIT (1053326051u);
 
+	h = NM_HASH_COMBINE (h, cmp_type);
 	if (obj) {
 		switch (cmp_type) {
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:

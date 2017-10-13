@@ -32,6 +32,22 @@
 #define _nm_const  __attribute__ ((const))
 #define _nm_printf(a,b) __attribute__ ((__format__ (__printf__, a, b)))
 
+/*****************************************************************************/
+
+#ifdef thread_local
+#define _nm_thread_local thread_local
+/*
+ * Don't break on glibc < 2.16 that doesn't define __STDC_NO_THREADS__
+ * see http://gcc.gnu.org/bugzilla/show_bug.cgi?id=53769
+ */
+#elif __STDC_VERSION__ >= 201112L && !(defined(__STDC_NO_THREADS__) || (defined(__GNU_LIBRARY__) && __GLIBC__ == 2 && __GLIBC_MINOR__ < 16))
+#define _nm_thread_local _Thread_local
+#else
+#define _nm_thread_local __thread
+#endif
+
+/*****************************************************************************/
+
 #include "nm-glib.h"
 
 /*****************************************************************************/
@@ -407,21 +423,6 @@ _NM_IN_STRSET_streq (const char *x, const char *s)
 		} \
 		_val; \
 	})
-
-/*****************************************************************************/
-
-static inline guint
-NM_HASH_COMBINE (guint h, guint val)
-{
-	/* see g_str_hash() for reasons */
-	return (h << 5) + h + val;
-}
-
-static inline guint
-NM_HASH_COMBINE_UINT64 (guint h, guint64 val)
-{
-	return NM_HASH_COMBINE (h, (((guint) val) & 0xFFFFFFFFu) + ((guint) (val >> 32)));
-}
 
 /*****************************************************************************/
 

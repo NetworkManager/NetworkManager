@@ -378,6 +378,30 @@ GParamSpec *nm_g_object_class_find_property_from_gtype (GType gtype,
 
 /*****************************************************************************/
 
+guint NM_HASH_INIT (guint seed);
+
+static inline guint
+NM_HASH_COMBINE (guint h, guint val)
+{
+	/* see g_str_hash() for reasons */
+	return (h << 5) + h + val;
+}
+
+static inline guint
+NM_HASH_COMBINE_UINT64 (guint h, guint64 val)
+{
+	return NM_HASH_COMBINE (h, (((guint) val) & 0xFFFFFFFFu) + ((guint) (val >> 32)));
+}
+
+static inline guint
+NM_HASH_POINTER (gconstpointer ptr)
+{
+	/* same as g_direct_hash(), but inline. */
+	return GPOINTER_TO_UINT (ptr);
+}
+
+/*****************************************************************************/
+
 typedef enum {
 	NM_UTILS_STR_UTF8_SAFE_FLAG_NONE                = 0,
 	NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL         = 0x0001,
@@ -391,6 +415,22 @@ char *nm_utils_str_utf8safe_escape_cp   (const char *str, NMUtilsStrUtf8SafeFlag
 char *nm_utils_str_utf8safe_unescape_cp (const char *str);
 
 char *nm_utils_str_utf8safe_escape_take (char *str, NMUtilsStrUtf8SafeFlags flags);
+
+/*****************************************************************************/
+
+#define NM_UTILS_NS_PER_SECOND  ((gint64) 1000000000)
+#define NM_UTILS_NS_PER_MSEC    ((gint64) 1000000)
+#define NM_UTILS_NS_TO_MSEC_CEIL(nsec)      (((nsec) + (NM_UTILS_NS_PER_MSEC - 1)) / NM_UTILS_NS_PER_MSEC)
+
+/*****************************************************************************/
+
+int nm_utils_fd_wait_for_event (int fd, int event, gint64 timeout_ns);
+ssize_t nm_utils_fd_read_loop (int fd, void *buf, size_t nbytes, bool do_poll);
+int nm_utils_fd_read_loop_exact (int fd, void *buf, size_t nbytes, bool do_poll);
+
+/*****************************************************************************/
+
+gboolean nm_utils_random_bytes (void *p, size_t n);
 
 /*****************************************************************************/
 

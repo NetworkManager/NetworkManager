@@ -182,7 +182,7 @@ _dict_idx_entries_hash (const NMDedupMultiEntry *entry)
 		nm_assert (obj);
 		h = idx_type->klass->idx_obj_partition_hash (idx_type, obj);
 	} else
-		h = 1914869417;
+		h = NM_HASH_INIT (1914869417u);
 
 	if (!lookup_head)
 		h = NM_HASH_COMBINE (h, idx_type->klass->idx_obj_id_hash (idx_type, obj));
