@@ -394,4 +394,16 @@ char *nm_utils_str_utf8safe_escape_take (char *str, NMUtilsStrUtf8SafeFlags flag
 
 /*****************************************************************************/
 
+#define NM_UTILS_NS_PER_SECOND  ((gint64) 1000000000)
+#define NM_UTILS_NS_PER_MSEC    ((gint64) 1000000)
+#define NM_UTILS_NS_TO_MSEC_CEIL(nsec)      (((nsec) + (NM_UTILS_NS_PER_MSEC - 1)) / NM_UTILS_NS_PER_MSEC)
+
+/*****************************************************************************/
+
+int nm_utils_fd_wait_for_event (int fd, int event, gint64 timeout_ns);
+ssize_t nm_utils_fd_read_loop (int fd, void *buf, size_t nbytes, bool do_poll);
+int nm_utils_fd_read_loop_exact (int fd, void *buf, size_t nbytes, bool do_poll);
+
+/*****************************************************************************/
+
 #endif /* __NM_SHARED_UTILS_H__ */

@@ -240,10 +240,6 @@ int nm_utils_cmp_connection_by_autoconnect_priority (NMConnection *a, NMConnecti
 
 void nm_utils_log_connection_diff (NMConnection *connection, NMConnection *diff_base, guint32 level, guint64 domain, const char *name, const char *prefix);
 
-#define NM_UTILS_NS_PER_SECOND  ((gint64) 1000000000)
-#define NM_UTILS_NS_PER_MSEC    ((gint64) 1000000)
-#define NM_UTILS_NS_TO_MSEC_CEIL(nsec)      (((nsec) + (NM_UTILS_NS_PER_MSEC - 1)) / NM_UTILS_NS_PER_MSEC)
-
 gint64 nm_utils_get_monotonic_timestamp_ns (void);
 gint64 nm_utils_get_monotonic_timestamp_us (void);
 gint64 nm_utils_get_monotonic_timestamp_ms (void);
@@ -256,10 +252,6 @@ const char *nm_utils_ip6_property_path (const char *ifname, const char *property
 const char *nm_utils_ip4_property_path (const char *ifname, const char *property);
 
 gboolean nm_utils_is_specific_hostname (const char *name);
-
-int nm_utils_fd_wait_for_event (int fd, int event, gint64 timeout_ns);
-ssize_t nm_utils_fd_read_loop (int fd, void *buf, size_t nbytes, bool do_poll);
-int nm_utils_fd_read_loop_exact (int fd, void *buf, size_t nbytes, bool do_poll);
 
 int nm_utils_fd_get_contents (int fd,
                               gsize max_length,
