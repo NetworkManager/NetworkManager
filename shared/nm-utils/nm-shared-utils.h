@@ -378,6 +378,34 @@ GParamSpec *nm_g_object_class_find_property_from_gtype (GType gtype,
 
 /*****************************************************************************/
 
+static inline guint
+NM_HASH_INIT (guint seed)
+{
+	return seed;
+}
+
+static inline guint
+NM_HASH_COMBINE (guint h, guint val)
+{
+	/* see g_str_hash() for reasons */
+	return (h << 5) + h + val;
+}
+
+static inline guint
+NM_HASH_COMBINE_UINT64 (guint h, guint64 val)
+{
+	return NM_HASH_COMBINE (h, (((guint) val) & 0xFFFFFFFFu) + ((guint) (val >> 32)));
+}
+
+static inline guint
+NM_HASH_POINTER (gconstpointer ptr)
+{
+	/* same as g_direct_hash(), but inline. */
+	return GPOINTER_TO_UINT (ptr);
+}
+
+/*****************************************************************************/
+
 typedef enum {
 	NM_UTILS_STR_UTF8_SAFE_FLAG_NONE                = 0,
 	NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL         = 0x0001,

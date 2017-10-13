@@ -260,9 +260,9 @@ ck_init (NMSessionMonitor *monitor)
 		if ((monitor->ck.monitor = g_file_monitor_file (file, G_FILE_MONITOR_NONE, NULL, &error))) {
 			monitor->ck.cache = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_free);
 			g_signal_connect (monitor->ck.monitor,
-							  "changed",
-							  G_CALLBACK (ck_changed),
-							  monitor);
+			                  "changed",
+			                  G_CALLBACK (ck_changed),
+			                  monitor);
 		} else {
 			_LOGE ("error monitoring " CKDB_PATH ": %s", error->message);
 			g_clear_error (&error);

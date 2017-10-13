@@ -188,7 +188,7 @@ nm_utils_exp10 (gint16 ex)
 guint
 nm_utils_in6_addr_hash (const struct in6_addr *addr)
 {
-	guint hash = (guint) 0x897da53981a13ULL;
+	guint hash = NM_HASH_INIT (3675559913u);
 	int i;
 
 	for (i = 0; i < sizeof (*addr); i++)

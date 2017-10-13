@@ -4006,7 +4006,7 @@ _nm_utils_strstrdictkey_hash (gconstpointer a)
 {
 	const NMUtilsStrStrDictKey *k = a;
 	const signed char *p;
-	guint32 h = 5381;
+	guint32 h = NM_HASH_INIT (76642997u);
 
 	if (k) {
 		if (((int) k->type) & ~STRSTRDICTKEY_ALL_SET)
