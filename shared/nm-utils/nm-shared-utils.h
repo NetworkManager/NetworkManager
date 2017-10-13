@@ -378,11 +378,7 @@ GParamSpec *nm_g_object_class_find_property_from_gtype (GType gtype,
 
 /*****************************************************************************/
 
-static inline guint
-NM_HASH_INIT (guint seed)
-{
-	return seed;
-}
+guint NM_HASH_INIT (guint seed);
 
 static inline guint
 NM_HASH_COMBINE (guint h, guint val)

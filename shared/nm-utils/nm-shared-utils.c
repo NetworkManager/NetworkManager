@@ -863,6 +863,29 @@ nm_g_object_class_find_property_from_gtype (GType gtype,
 
 /*****************************************************************************/
 
+guint
+NM_HASH_INIT (guint seed)
+{
+	static volatile guint global_seed = 0;
+	guint g, s;
+
+	/* we xor @seed with a random @global_seed. This is to make the hashing behavior
+	 * less predictable and harder to exploit collisions. */
+	g = global_seed;
+	if (G_UNLIKELY (g == 0)) {
+		nm_utils_random_bytes (&s, sizeof (s));
+		if (s == 0)
+			s = 42;
+		g_atomic_int_compare_and_exchange ((int *) &global_seed, 0, s);
+		g = global_seed;
+		nm_assert (g);
+	}
+
+	return g ^ seed;
+}
+
+/*****************************************************************************/
+
 static void
 _str_append_escape (GString *s, char ch)
 {
