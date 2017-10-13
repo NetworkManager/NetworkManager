@@ -5131,7 +5131,7 @@ nm_platform_link_hash (const NMPlatformLink *obj)
 	nm_hash_init (&h, 99413953u);
 	nm_hash_update_uint (&h, obj->ifindex);
 	nm_hash_update_uint (&h, obj->type);
-	nm_hash_update_str (&h, obj->name);
+	nm_hash_update_strarr (&h, obj->name);
 	nm_hash_update_uint (&h, obj->master);
 	nm_hash_update_uint (&h, obj->parent);
 	nm_hash_update_uint (&h, obj->n_ifi_flags);
@@ -5141,8 +5141,8 @@ nm_platform_link_hash (const NMPlatformLink *obj)
 	nm_hash_update_uint (&h, obj->arptype);
 	nm_hash_update_uint (&h, obj->addr.len);
 	nm_hash_update_uint (&h, obj->inet6_addr_gen_mode_inv);
-	nm_hash_update_str (&h, obj->kind);
-	nm_hash_update_str (&h, obj->driver);
+	nm_hash_update_str0 (&h, obj->kind);
+	nm_hash_update_str0 (&h, obj->driver);
 	nm_hash_update_mem (&h, obj->addr.data, obj->addr.len);
 	nm_hash_update_mem (&h, &obj->inet6_token, sizeof (obj->inet6_token));
 	nm_hash_update_uint (&h, obj->rx_packets);
@@ -5223,8 +5223,7 @@ nm_platform_lnk_infiniband_hash (const NMPlatformLnkInfiniband *obj)
 
 	nm_hash_init (&h, 1748638583u);
 	nm_hash_update_uint (&h, obj->p_key);
-	if (obj->mode)
-		nm_hash_update_str (&h, obj->mode);
+	nm_hash_update_str0 (&h, obj->mode);
 	return nm_hash_complete (&h);
 }
 
@@ -5481,7 +5480,7 @@ nm_platform_ip4_address_hash (const NMPlatformIP4Address *obj)
 		nm_hash_update_uint (&h, obj->lifetime);
 		nm_hash_update_uint (&h, obj->preferred);
 		nm_hash_update_uint (&h, obj->n_ifa_flags);
-		nm_hash_update_str (&h, obj->label);
+		nm_hash_update_strarr (&h, obj->label);
 	}
 	return nm_hash_complete (&h);
 }

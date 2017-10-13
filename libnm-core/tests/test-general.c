@@ -87,18 +87,17 @@ _test_hash_str (const char *str)
 	const guint SEED = 10;
 
 	nm_hash_init (&h, SEED);
-	nm_hash_update_str (&h, str);
+	nm_hash_update_str0 (&h, str);
 	v = nm_hash_complete (&h);
 
-	{
-		/* assert that hashing a string and a buffer yields the
-		 * same result.
-		 *
-		 * I think that is a desirable property. */
-		nm_hash_init (&h, SEED);
-		nm_hash_update_mem (&h, str, str ? strlen (str) : 0);
-		v2 = nm_hash_complete (&h);
-	}
+	/* assert that hashing a string and a buffer yields the
+	 * same result.
+	 *
+	 * I think that is a desirable property. */
+	nm_hash_init (&h, SEED);
+	nm_hash_update_mem (&h, str, strlen (str));
+	v2 = nm_hash_complete (&h);
+
 	g_assert (v == v2);
 	return v;
 }
@@ -106,35 +105,10 @@ _test_hash_str (const char *str)
 static void
 test_nm_hash (void)
 {
-	NMHashState h;
-
 	_test_hash_str ("");
 	_test_hash_str ("a");
 	_test_hash_str ("aa");
 	_test_hash_str ("diceros bicornis longipes");
-
-	memset (&h, 0, sizeof (h));
-	g_assert_cmpint (nm_hash_complete (&h), ==, 1396707757u);
-
-	/* note how two different string still always hash the same,
-	 * although we use a global seed that we initialize each time
-	 * differently.
-	 *
-	 * The aim would be that two collisions depend on the seed value,
-	 * which they currently don't. */
-	g_assert_cmpint (nm_hash_str ("BA"), ==, nm_hash_str ("Ab"));
-
-	/* with the current hasing algorighm, once we know two words that hash
-	 * the same, we can trivally find more collions by concatenating
-	 * them (which is bad). */
-	g_assert_cmpint (nm_hash_str ("BABABA"), ==, nm_hash_str ("AbAbAb"));
-	g_assert_cmpint (nm_hash_str ("BABABA"), ==, nm_hash_str ("AbAbBA"));
-	g_assert_cmpint (nm_hash_str ("BABABA"), ==, nm_hash_str ("AbBAAb"));
-	g_assert_cmpint (nm_hash_str ("BABABA"), ==, nm_hash_str ("AbBABA"));
-	g_assert_cmpint (nm_hash_str ("BABABA"), ==, nm_hash_str ("BAAbAb"));
-	g_assert_cmpint (nm_hash_str ("BABABA"), ==, nm_hash_str ("BAAbBA"));
-	g_assert_cmpint (nm_hash_str ("BABABA"), ==, nm_hash_str ("BABAAb"));
-	g_assert_cmpint (nm_hash_str ("BABABA"), ==, nm_hash_str ("BABABA"));
 }
 
 /*****************************************************************************/

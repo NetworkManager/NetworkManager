@@ -186,7 +186,7 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 			/* we request a hash from obj_a. Hash the relevant parts. */
 			nm_hash_init (&h, 2126752699u);
 			nm_hash_update_uint (&h, idx_type->cache_id_type);
-			nm_hash_update_str (&h, obj_a->link.name);
+			nm_hash_update_strarr (&h, obj_a->link.name);
 			return _HASH_NON_ZERO (&h);
 		}
 		/* just return 1, to indicate that obj_a is partitionable by this idx_type. */

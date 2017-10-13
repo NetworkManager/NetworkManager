@@ -17,11 +17,12 @@
     coding style)
 */
 
-#include "nm-sd-adapt.h"
+#include "nm-default.h"
+
+#define assert(cond) nm_assert (cond)
 
 #include <stdio.h>
 
-#include "macro.h"
 #include "siphash24.h"
 #include "unaligned.h"
 
