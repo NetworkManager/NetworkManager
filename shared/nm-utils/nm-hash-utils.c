@@ -28,11 +28,13 @@
 
 /*****************************************************************************/
 
-guint
-NM_HASH_INIT (guint seed)
+void
+nm_hash_init (NMHashState *state, guint static_seed)
 {
 	static volatile guint global_seed = 0;
 	guint g, s;
+
+	nm_assert (state);
 
 	/* we xor @seed with a random @global_seed. This is to make the hashing behavior
 	 * less predictable and harder to exploit collisions. */
@@ -46,5 +48,28 @@ NM_HASH_INIT (guint seed)
 		nm_assert (g);
 	}
 
-	return g ^ seed;
+	s = g ^ static_seed;
+	state->hash = s;
+}
+
+guint
+nm_hash_str (const char *str)
+{
+	NMHashState h;
+
+	nm_hash_init (&h, 1867854211u);
+	nm_hash_update_str (&h, str);
+	return nm_hash_complete (&h);
+}
+
+guint
+nm_str_hash (gconstpointer str)
+{
+	return nm_hash_str (str);
+}
+
+guint
+nm_direct_hash (gconstpointer ptr)
+{
+	return nm_hash_ptr (ptr);
 }

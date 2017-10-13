@@ -176,21 +176,21 @@ _dict_idx_entries_hash (const NMDedupMultiEntry *entry)
 	const NMDedupMultiIdxType *idx_type;
 	const NMDedupMultiObj *obj;
 	gboolean lookup_head;
-	guint h;
+	NMHashState h;
 
 	_entry_unpack (entry, &idx_type, &obj, &lookup_head);
 
+	nm_hash_init (&h, 1914869417u);
 	if (idx_type->klass->idx_obj_partition_hash) {
 		nm_assert (obj);
-		h = idx_type->klass->idx_obj_partition_hash (idx_type, obj);
-	} else
-		h = NM_HASH_INIT (1914869417u);
+		nm_hash_update_uint (&h, idx_type->klass->idx_obj_partition_hash (idx_type, obj));
+	}
 
 	if (!lookup_head)
-		h = NM_HASH_COMBINE (h, idx_type->klass->idx_obj_id_hash (idx_type, obj));
+		nm_hash_update_uint (&h, idx_type->klass->idx_obj_id_hash (idx_type, obj));
 
-	h = NM_HASH_COMBINE (h, GPOINTER_TO_UINT (idx_type));
-	return h;
+	nm_hash_update_ptr (&h, idx_type);
+	return nm_hash_complete (&h);
 }
 
 static gboolean

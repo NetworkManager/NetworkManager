@@ -121,9 +121,19 @@ _idx_obj_id_equal (const NMDedupMultiIdxType *idx_type,
  *   on whether the objects are equal.
  *
  * _HASH_NON_ZERO() is used to for case 2), to avoid that the a zero hash value
- * is returned. */
-#define _HASH_NON_ZERO(h) \
-	((h) ?: (1998098407 + __LINE__)) \
+ * is returned.
+ *
+ * Actually, nm_hash_complete() never returns zero. This code is only
+ * here as a safeguard and a reminder that the has MUST not be zero. */
+static inline guint
+_HASH_NON_ZERO (NMHashState *h)
+{
+	guint v;
+
+	v = nm_hash_complete (h);
+	nm_assert (v != 0);
+	return v;
+}
 
 static guint
 _idx_obj_part (const DedupMultiIdxType *idx_type,
@@ -131,7 +141,6 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
                const NMPObject *obj_a,
                const NMPObject *obj_b)
 {
-	guint h;
 	NMPObjectType obj_type;
 
 	/* the hash/equals functions are strongly related. So, keep them
@@ -150,10 +159,12 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 		if (obj_b)
 			return NMP_OBJECT_GET_TYPE (obj_a) == NMP_OBJECT_GET_TYPE (obj_b);
 		if (request_hash) {
-			h = NM_HASH_INIT (487703243u);
-			h = NM_HASH_COMBINE (h, idx_type->cache_id_type);
-			h = NM_HASH_COMBINE (h, NMP_OBJECT_GET_TYPE (obj_a));
-			return _HASH_NON_ZERO (h);
+			NMHashState h;
+
+			nm_hash_init (&h, 487703243u);
+			nm_hash_update_uint (&h, idx_type->cache_id_type);
+			nm_hash_update_uint (&h, NMP_OBJECT_GET_TYPE (obj_a));
+			return _HASH_NON_ZERO (&h);
 		}
 		return 1;
 
@@ -170,11 +181,13 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 			       && nm_streq (obj_a->link.name, obj_b->link.name);
 		}
 		if (request_hash) {
+			NMHashState h;
+
 			/* we request a hash from obj_a. Hash the relevant parts. */
-			h = NM_HASH_INIT (2126752699u);
-			h = NM_HASH_COMBINE (h, idx_type->cache_id_type);
-			h = NM_HASH_COMBINE (h, g_str_hash (obj_a->link.name));
-			return _HASH_NON_ZERO (h);
+			nm_hash_init (&h, 2126752699u);
+			nm_hash_update_uint (&h, idx_type->cache_id_type);
+			nm_hash_update_str (&h, obj_a->link.name);
+			return _HASH_NON_ZERO (&h);
 		}
 		/* just return 1, to indicate that obj_a is partitionable by this idx_type. */
 		return 1;
@@ -191,10 +204,12 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 			       && nmp_object_is_visible (obj_b);
 		}
 		if (request_hash) {
-			h = NM_HASH_INIT (4278960223u);
-			h = NM_HASH_COMBINE (h, idx_type->cache_id_type);
-			h = NM_HASH_COMBINE (h, NMP_OBJECT_GET_TYPE (obj_a));
-			return _HASH_NON_ZERO (h);
+			NMHashState h;
+
+			nm_hash_init (&h, 4278960223u);
+			nm_hash_update_uint (&h, idx_type->cache_id_type);
+			nm_hash_update_uint (&h, NMP_OBJECT_GET_TYPE (obj_a));
+			return _HASH_NON_ZERO (&h);
 		}
 		return 1;
 
@@ -212,11 +227,13 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 			       && nmp_object_is_visible (obj_b);
 		}
 		if (request_hash) {
-			h = NM_HASH_INIT (920415631u);
-			h = NM_HASH_COMBINE (h, idx_type->cache_id_type);
-			h = NM_HASH_COMBINE (h, NMP_OBJECT_GET_TYPE (obj_a));
-			h = NM_HASH_COMBINE (h, obj_a->object.ifindex);
-			return _HASH_NON_ZERO (h);
+			NMHashState h;
+
+			nm_hash_init (&h, 920415631u);
+			nm_hash_update_uint (&h, idx_type->cache_id_type);
+			nm_hash_update_uint (&h, NMP_OBJECT_GET_TYPE (obj_a));
+			nm_hash_update_uint (&h, obj_a->object.ifindex);
+			return _HASH_NON_ZERO (&h);
 		}
 		return 1;
 
@@ -234,13 +251,15 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 			           : (nm_platform_ip6_route_cmp (&obj_a->ip6_route, &obj_b->ip6_route, NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID) == 0));
 		}
 		if (request_hash) {
-			h = NM_HASH_INIT (778646573u);
-			h = NM_HASH_COMBINE (h, idx_type->cache_id_type);
+			NMHashState h;
+
+			nm_hash_init (&h, 778646573u);
+			nm_hash_update_uint (&h, idx_type->cache_id_type);
 			if (obj_type == NMP_OBJECT_TYPE_IP4_ROUTE)
-				h = NM_HASH_COMBINE (h, nm_platform_ip4_route_hash (&obj_a->ip4_route, NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID));
+				nm_hash_update_uint (&h, nm_platform_ip4_route_hash (&obj_a->ip4_route, NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID));
 			else
-				h = NM_HASH_COMBINE (h, nm_platform_ip6_route_hash (&obj_a->ip6_route, NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID));
-			return _HASH_NON_ZERO (h);
+				nm_hash_update_uint (&h, nm_platform_ip6_route_hash (&obj_a->ip6_route, NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID));
+			return _HASH_NON_ZERO (&h);
 		}
 		return 1;
 
@@ -301,18 +320,18 @@ _dedup_multi_idx_type_init (DedupMultiIdxType *idx_type, NMPCacheIdType cache_id
 
 /*****************************************************************************/
 
-static guint
-_vlan_xgress_qos_mappings_hash (guint n_map,
+static void
+_vlan_xgress_qos_mappings_hash (NMHashState *h,
+                                guint n_map,
                                 const NMVlanQosMapping *map)
 {
-	guint h = NM_HASH_INIT (1453577309u);
 	guint i;
 
+	nm_hash_update_uint (h, 1453577309u);
 	for (i = 0; i < n_map; i++) {
-		h = NM_HASH_COMBINE (h, map[i].from);
-		h = NM_HASH_COMBINE (h, map[i].to);
+		nm_hash_update_uint (h, map[i].from);
+		nm_hash_update_uint (h, map[i].to);
 	}
-	return h;
 }
 
 static int
@@ -745,14 +764,14 @@ _vt_cmd_plobj_to_string_id_##type (const NMPlatformObject *_obj, char *buf, gsiz
 _vt_cmd_plobj_to_string_id (link,        NMPlatformLink,       "%d",            obj->ifindex);
 _vt_cmd_plobj_to_string_id (ip4_address, NMPlatformIP4Address, "%d: %s/%d%s%s", obj->ifindex, nm_utils_inet4_ntop ( obj->address, buf1), obj->plen,
                                                                obj->peer_address != obj->address ? "," : "",
-                                                               obj->peer_address != obj->address ? nm_utils_inet4_ntop (obj->peer_address & _nm_utils_ip4_prefix_to_netmask (obj->plen), buf2) : "");
+                                                               obj->peer_address != obj->address ? nm_utils_inet4_ntop (nm_utils_ip4_address_clear_host_address (obj->peer_address, obj->plen), buf2) : "");
 _vt_cmd_plobj_to_string_id (ip6_address, NMPlatformIP6Address, "%d: %s",        obj->ifindex, nm_utils_inet6_ntop (&obj->address, buf1));
 
 guint
 nmp_object_hash (const NMPObject *obj)
 {
 	const NMPClass *klass;
-	guint h;
+	NMHashState h;
 
 	if (!obj)
 		return 0;
@@ -761,44 +780,50 @@ nmp_object_hash (const NMPObject *obj)
 
 	klass = NMP_OBJECT_GET_CLASS (obj);
 
-	h = NM_HASH_INIT (816200863u);
+	nm_hash_init (&h, 816200863u);
+	nm_hash_update_uint (&h, klass->obj_type);
 	if (klass->cmd_obj_hash)
-		h = NM_HASH_COMBINE (h, klass->cmd_obj_hash (obj));
+		nm_hash_update_uint (&h, klass->cmd_obj_hash (obj));
 	else if (klass->cmd_plobj_hash)
-		h = NM_HASH_COMBINE (h, klass->cmd_plobj_hash (&obj->object));
+		nm_hash_update_uint (&h, klass->cmd_plobj_hash (&obj->object));
 	else
-		return NM_HASH_POINTER (obj);
-	return NM_HASH_COMBINE (h, klass->obj_type);
+		nm_hash_update_ptr (&h, obj);
+
+	return nm_hash_complete (&h);
 }
 
 static guint
 _vt_cmd_obj_hash_link (const NMPObject *obj)
 {
-	guint h = NM_HASH_INIT (3448776161u);
+	NMHashState h;
 
 	nm_assert (NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LINK);
 
-	h = NM_HASH_COMBINE (h, nm_platform_link_hash (&obj->link));
-	h = NM_HASH_COMBINE (h, obj->_link.netlink.is_in_netlink);
+	nm_hash_init (&h, 3448776161u);
+	nm_hash_update_uint (&h, nm_platform_link_hash (&obj->link));
+	nm_hash_update_uint (&h, obj->_link.netlink.is_in_netlink);
 	if (obj->_link.netlink.lnk)
-		h = NM_HASH_COMBINE (h, nmp_object_hash (obj->_link.netlink.lnk));
-	h = NM_HASH_COMBINE (h, GPOINTER_TO_UINT (obj->_link.udev.device));
-	return h;
+		nm_hash_update_uint (&h, nmp_object_hash (obj->_link.netlink.lnk));
+	nm_hash_update_ptr (&h, obj->_link.udev.device);
+	return nm_hash_complete (&h);
 }
 
 static guint
 _vt_cmd_obj_hash_lnk_vlan (const NMPObject *obj)
 {
-	guint h = NM_HASH_INIT (914932607u);
+	NMHashState h;
 
 	nm_assert (NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LNK_VLAN);
 
-	h = NM_HASH_COMBINE (h, nm_platform_lnk_vlan_hash (&obj->lnk_vlan));
-	h = NM_HASH_COMBINE (h, _vlan_xgress_qos_mappings_hash (obj->_lnk_vlan.n_ingress_qos_map,
-	                                                        obj->_lnk_vlan.ingress_qos_map));
-	h = NM_HASH_COMBINE (h, _vlan_xgress_qos_mappings_hash (obj->_lnk_vlan.n_egress_qos_map,
-	                                                        obj->_lnk_vlan.egress_qos_map));
-	return h;
+	nm_hash_init (&h, 914932607u);
+	nm_hash_update_uint (&h, nm_platform_lnk_vlan_hash (&obj->lnk_vlan));
+	_vlan_xgress_qos_mappings_hash (&h,
+	                                obj->_lnk_vlan.n_ingress_qos_map,
+	                                obj->_lnk_vlan.ingress_qos_map);
+	_vlan_xgress_qos_mappings_hash (&h,
+	                                obj->_lnk_vlan.n_egress_qos_map,
+	                                obj->_lnk_vlan.egress_qos_map);
+	return nm_hash_complete (&h);
 }
 
 int
@@ -1082,47 +1107,43 @@ nmp_object_id_hash (const NMPObject *obj)
 
 	if (!klass->cmd_plobj_id_hash) {
 		/* The klass doesn't implement ID compare. It means, to use pointer
-		 * equality (g_direct_hash). */
-		return NM_HASH_POINTER (obj);
+		 * equality. */
+		return nm_hash_ptr (obj);
 	}
 
 	return klass->cmd_plobj_id_hash (&obj->object);
 }
 
-#define _vt_cmd_plobj_id_hash(type, plat_type, cmd) \
+#define _vt_cmd_plobj_id_hash(type, plat_type, hash_seed, cmd) \
 static guint \
 _vt_cmd_plobj_id_hash_##type (const NMPlatformObject *_obj) \
 { \
 	const plat_type *const obj = (const plat_type *) _obj; \
-	guint hash; \
+	NMHashState h; \
+	nm_hash_init (&h, (hash_seed)); \
 	{ cmd; } \
-	return hash; \
+	return nm_hash_complete (&h); \
 }
-_vt_cmd_plobj_id_hash (link, NMPlatformLink, {
-	hash = NM_HASH_INIT (3982791431u);
-	hash = NM_HASH_COMBINE (hash, ((guint) obj->ifindex));
+_vt_cmd_plobj_id_hash (link, NMPlatformLink, 3982791431u, {
+	nm_hash_update_uint (&h, obj->ifindex);
 })
-_vt_cmd_plobj_id_hash (ip4_address, NMPlatformIP4Address, {
-	hash = NM_HASH_INIT (3591309853u);
-	hash = NM_HASH_COMBINE (hash, ((guint) obj->ifindex));
-	hash = NM_HASH_COMBINE (hash, obj->plen);
-	hash = NM_HASH_COMBINE (hash, obj->address);
+_vt_cmd_plobj_id_hash (ip4_address, NMPlatformIP4Address, 3591309853u, {
+	nm_hash_update_uint (&h, obj->ifindex);
+	nm_hash_update_uint (&h, obj->plen);
+	nm_hash_update_uint (&h, obj->address);
 	/* for IPv4 we must also consider the net-part of the peer-address (IFA_ADDRESS) */
-	hash = NM_HASH_COMBINE (hash, (obj->peer_address & _nm_utils_ip4_prefix_to_netmask (obj->plen)));
+	nm_hash_update_uint (&h, nm_utils_ip4_address_clear_host_address (obj->peer_address, obj->plen));
 })
-_vt_cmd_plobj_id_hash (ip6_address, NMPlatformIP6Address, {
-	hash = NM_HASH_INIT (2907861637u);
-	hash = NM_HASH_COMBINE (hash, ((guint) obj->ifindex));
+_vt_cmd_plobj_id_hash (ip6_address, NMPlatformIP6Address, 2907861637u, {
+	nm_hash_update_uint (&h, obj->ifindex);
 	/* for IPv6 addresses, the prefix length is not part of the primary identifier. */
-	hash = NM_HASH_COMBINE (hash, nm_utils_in6_addr_hash (&obj->address));
+	nm_hash_update_in6addr (&h, &obj->address);
 })
-_vt_cmd_plobj_id_hash (ip4_route, NMPlatformIP4Route, {
-	hash = NM_HASH_INIT (1038302471u);
-	hash = NM_HASH_COMBINE (hash, nm_platform_ip4_route_hash (obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID));
+_vt_cmd_plobj_id_hash (ip4_route, NMPlatformIP4Route, 1038302471u, {
+	nm_hash_update_uint (&h, nm_platform_ip4_route_hash (obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID));
 })
-_vt_cmd_plobj_id_hash (ip6_route, NMPlatformIP6Route, {
-	hash = NM_HASH_INIT (1233384151u);
-	hash = NM_HASH_COMBINE (hash, nm_platform_ip6_route_hash (obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID));
+_vt_cmd_plobj_id_hash (ip6_route, NMPlatformIP6Route, 1233384151u, {
+	nm_hash_update_uint (&h, nm_platform_ip6_route_hash (obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID));
 })
 
 gboolean

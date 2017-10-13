@@ -22,26 +22,107 @@
 #ifndef __NM_HASH_UTILS_H__
 #define __NM_HASH_UTILS_H__
 
-guint NM_HASH_INIT (guint seed);
+#include <stdint.h>
+
+typedef struct {
+	guint hash;
+} NMHashState;
+
+void nm_hash_init (NMHashState *state, guint static_seed);
 
 static inline guint
-NM_HASH_COMBINE (guint h, guint val)
+nm_hash_complete (NMHashState *state)
 {
-	/* see g_str_hash() for reasons */
-	return (h << 5) + h + val;
+	nm_assert (state);
+	/* we don't ever want to return a zero hash.
+	 *
+	 * NMPObject requires that in _idx_obj_part(), and it's just a good idea. */
+	return state->hash ?: 1396707757u;
+}
+
+static inline void
+nm_hash_update_uint (NMHashState *state, guint val)
+{
+	guint h;
+
+	nm_assert (state);
+
+	h = state->hash;
+	h = (h << 5) + h + val;
+	state->hash = h;
+}
+
+static inline void
+nm_hash_update_uint64 (NMHashState *state, guint64 val)
+{
+	guint h;
+
+	nm_assert (state);
+
+	h = state->hash;
+	h = (h << 5) + h + ((guint) val);
+	h = (h << 5) + h + ((guint) (val >> 32));
+	state->hash = h;
+}
+
+static inline void
+nm_hash_update_ptr (NMHashState *state, gconstpointer ptr)
+{
+	if (sizeof (ptr) <= sizeof (guint))
+		nm_hash_update_uint (state, ((guint) ((uintptr_t) ptr)));
+	else
+		nm_hash_update_uint64 (state, (guint64) ((uintptr_t) ptr));
+}
+
+static inline void
+nm_hash_update_mem (NMHashState *state, const void *ptr, gsize n)
+{
+	gsize i;
+	guint h;
+
+	nm_assert (state);
+
+	/* use the same hash seed as nm_hash_update_str().
+	 * That way, nm_hash_update_str(&h, s) is identical to
+	 * nm_hash_update_mem(&h, s, strlen(s)). */
+	h = state->hash;
+	for (i = 0; i < n; i++)
+		h = (h << 5) + h + ((guint) ((const guint8 *) ptr)[i]);
+	h = (h << 5) + h + 1774132687u;
+	state->hash = h;
+}
+
+static inline void
+nm_hash_update_str (NMHashState *state, const char *str)
+{
+	const guint8 *p = (const guint8 *) str;
+	guint8 c;
+	guint h;
+
+	nm_assert (state);
+
+	/* Note that NULL hashes differently from "". */
+	h = state->hash;
+	if (str) {
+		while ((c = *p++))
+			h = (h << 5) + h + ((guint) c);
+		h = (h << 5) + h + 1774132687u;
+	} else
+		h = (h << 5) + h + 2967906233u;
+	state->hash = h;
 }
 
 static inline guint
-NM_HASH_COMBINE_UINT64 (guint h, guint64 val)
+nm_hash_ptr (gconstpointer ptr)
 {
-	return NM_HASH_COMBINE (h, (((guint) val) & 0xFFFFFFFFu) + ((guint) (val >> 32)));
+	if (sizeof (ptr) <= sizeof (guint))
+		return (guint) ((uintptr_t) ptr);
+	else
+		return ((guint) (((uintptr_t) ptr) >> 32)) ^ ((guint) ((uintptr_t) ptr));
 }
+guint nm_direct_hash (gconstpointer str);
 
-static inline guint
-NM_HASH_POINTER (gconstpointer ptr)
-{
-	/* same as g_direct_hash(), but inline. */
-	return GPOINTER_TO_UINT (ptr);
-}
+guint nm_hash_str (const char *str);
+guint nm_str_hash (gconstpointer str);
 
 #endif /* __NM_HASH_UTILS_H__ */

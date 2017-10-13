@@ -189,12 +189,11 @@ nm_utils_exp10 (gint16 ex)
 guint
 nm_utils_in6_addr_hash (const struct in6_addr *addr)
 {
-	guint hash = NM_HASH_INIT (3675559913u);
-	int i;
+	NMHashState h;
 
-	for (i = 0; i < sizeof (*addr); i++)
-		hash = NM_HASH_COMBINE (hash, ((const guint8 *) addr)[i]);
-	return hash;
+	nm_hash_init (&h, 3675559913u);
+	nm_hash_update_in6addr (&h, addr);
+	return nm_hash_complete (&h);
 }
 
 /*****************************************************************************/

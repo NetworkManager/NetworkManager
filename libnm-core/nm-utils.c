@@ -4007,27 +4007,27 @@ _nm_utils_strstrdictkey_hash (gconstpointer a)
 {
 	const NMUtilsStrStrDictKey *k = a;
 	const signed char *p;
-	guint32 h = NM_HASH_INIT (76642997u);
+	NMHashState h;
 
+	nm_hash_init (&h, 76642997u);
 	if (k) {
 		if (((int) k->type) & ~STRSTRDICTKEY_ALL_SET)
 			g_return_val_if_reached (0);
 
-		h = NM_HASH_COMBINE (h, k->type);
+		nm_hash_update_uint (&h, k->type);
 		if (k->type & STRSTRDICTKEY_ALL_SET) {
 			p = (void *) k->data;
 			for (; *p != '\0'; p++)
-				h = NM_HASH_COMBINE (h, *p);
+				nm_hash_update_uint (&h, *p);
 			if (k->type == STRSTRDICTKEY_ALL_SET) {
 				/* the key contains two strings. Continue... */
-				h = NM_HASH_COMBINE (h, '\0');
+				nm_hash_update_uint (&h, '\0');
 				for (p++; *p != '\0'; p++)
-					h = NM_HASH_COMBINE (h, *p);
+					nm_hash_update_uint (&h, *p);
 			}
 		}
 	}
-
-	return h;
+	return nm_hash_complete (&h);
 }
 
 gboolean
