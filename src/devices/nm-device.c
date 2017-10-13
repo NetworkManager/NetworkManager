@@ -550,6 +550,7 @@ static void realize_start_setup (NMDevice *self,
                                  const char *assume_state_connection_uuid,
                                  gboolean set_nm_owned,
                                  NMUnmanFlagOp unmanaged_user_explicit);
+static void _set_mtu (NMDevice *self, guint32 mtu);
 static void _commit_mtu (NMDevice *self, const NMIP4Config *config);
 static void dhcp_schedule_restart (NMDevice *self, int addr_family, const char *reason);
 static void _cancel_activation (NMDevice *self);
@@ -2672,10 +2673,7 @@ device_link_changed (NMDevice *self)
 		_notify (self, PROP_DRIVER);
 	}
 
-	if (priv->mtu != info.mtu) {
-		priv->mtu = info.mtu;
-		_notify (self, PROP_MTU);
-	}
+	_set_mtu (self, info.mtu);
 
 	if (ifindex == nm_device_get_ip_ifindex (self))
 		_stats_update_counters_from_pllink (self, &info);
@@ -3242,7 +3240,6 @@ realize_start_setup (NMDevice *self,
 	NMDeviceCapabilities capabilities = 0;
 	NMConfig *config;
 	guint real_rate;
-	guint32 mtu;
 
 	/* plink is a NMPlatformLink type, however, we require it to come from the platform
 	 * cache (where else would it come from?). */
@@ -3271,10 +3268,7 @@ realize_start_setup (NMDevice *self,
 	priv->mtu_initial = 0;
 	priv->ip6_mtu_initial = 0;
 	priv->ip6_mtu = 0;
-	if (priv->mtu) {
-		priv->mtu = 0;
-		_notify (self, PROP_MTU);
-	}
+	_set_mtu (self, 0);
 
 	_assume_state_set (self, assume_state_guess_assume, assume_state_connection_uuid);
 
@@ -3295,11 +3289,9 @@ realize_start_setup (NMDevice *self,
 		if (nm_platform_link_is_software (nm_device_get_platform (self), priv->ifindex))
 			capabilities |= NM_DEVICE_CAP_IS_SOFTWARE;
 
-		mtu = nm_platform_link_get_mtu (nm_device_get_platform (self), priv->ifindex);
-		if (priv->mtu != mtu) {
-			priv->mtu = mtu;
-			_notify (self, PROP_MTU);
-		}
+		_set_mtu (self,
+		          nm_platform_link_get_mtu (nm_device_get_platform (self),
+		                                    priv->ifindex));
 
 		nm_platform_link_get_driver_info (nm_device_get_platform (self),
 		                                  priv->ifindex,
@@ -3524,10 +3516,7 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	if (nm_clear_g_free (&priv->ip_iface))
 		_notify (self, PROP_IP_IFACE);
 
-	if (priv->mtu != 0) {
-		priv->mtu = 0;
-		_notify (self, PROP_MTU);
-	}
+	_set_mtu (self, 0);
 
 	if (priv->driver_version) {
 		g_clear_pointer (&priv->driver_version, g_free);
@@ -7210,6 +7199,18 @@ nm_device_get_configured_mtu_for_wired (NMDevice *self, gboolean *out_is_user_co
 }
 
 /*****************************************************************************/
+
+static void
+_set_mtu (NMDevice *self, guint32 mtu)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->mtu == mtu)
+		return;
+
+	priv->mtu = mtu;
+	_notify (self, PROP_MTU);
+}
 
 static void
 _commit_mtu (NMDevice *self, const NMIP4Config *config)
