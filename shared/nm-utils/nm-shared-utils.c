@@ -133,7 +133,8 @@ nm_utils_strbuf_append (char **buf, gsize *len, const char *format, ...)
  * while nm_strquote_a() has the number of characters to print. The latter
  * doesn't include the quoting.
  *
- * Returns: the input buffer with the quoted string. */
+ * Returns: the input buffer with the quoted string.
+ */
 const char *
 nm_strquote (char *buf, gsize buf_len, const char *str)
 {
