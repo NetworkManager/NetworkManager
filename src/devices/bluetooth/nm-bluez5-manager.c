@@ -514,7 +514,7 @@ nm_bluez5_manager_init (NMBluez5Manager *self)
 
 	bluez_connect (self);
 
-	priv->devices = g_hash_table_new_full (g_str_hash, g_str_equal,
+	priv->devices = g_hash_table_new_full (nm_str_hash, g_str_equal,
 	                                       NULL, g_object_unref);
 
 	c_list_init (&priv->network_servers);

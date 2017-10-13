@@ -3062,7 +3062,7 @@ _log_dbg_sysctl_get_impl (NMPlatform *platform, const char *pathid, const char *
 	if (!priv->sysctl_get_prev_values) {
 		_nm_logging_clear_platform_logging_cache = _nm_logging_clear_platform_logging_cache_impl;
 		sysctl_clear_cache_list = g_slist_prepend (sysctl_clear_cache_list, platform);
-		priv->sysctl_get_prev_values = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+		priv->sysctl_get_prev_values = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 	} else
 		prev_value = g_hash_table_lookup (priv->sysctl_get_prev_values, pathid);
 

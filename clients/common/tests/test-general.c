@@ -21,6 +21,8 @@
 
 #include "NetworkManager.h"
 
+#include "nm-utils/nm-hash-utils.h"
+
 #include "nm-meta-setting-access.h"
 
 #include "nm-utils/nm-test-utils.h"
@@ -77,7 +79,7 @@ test_client_meta_check (void)
 		g_assert (info->properties_num == NM_PTRARRAY_LEN (info->properties));
 
 		if (info->properties_num) {
-			gs_unref_hashtable GHashTable *property_names = g_hash_table_new (g_str_hash, g_str_equal);
+			gs_unref_hashtable GHashTable *property_names = g_hash_table_new (nm_str_hash, g_str_equal);
 
 			g_assert (info->properties);
 			for (p = 0; p < info->properties_num; p++) {

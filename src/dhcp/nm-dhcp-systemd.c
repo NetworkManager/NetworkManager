@@ -525,7 +525,7 @@ bound4_handle (NMDhcpSystemd *self)
 
 	_LOGD ("lease available");
 
-	options = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
+	options = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, g_free);
 	ip4_config = lease_to_ip4_config (nm_dhcp_client_get_multi_idx (NM_DHCP_CLIENT (self)),
 	                                  iface,
 	                                  nm_dhcp_client_get_ifindex (NM_DHCP_CLIENT (self)),
@@ -853,7 +853,7 @@ bound6_handle (NMDhcpSystemd *self)
 
 	_LOGD ("lease available");
 
-	options = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
+	options = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, g_free);
 	ip6_config = lease_to_ip6_config (nm_dhcp_client_get_multi_idx (NM_DHCP_CLIENT (self)),
 	                                  iface,
 	                                  nm_dhcp_client_get_ifindex (NM_DHCP_CLIENT (self)),

@@ -36,6 +36,8 @@
 
 #include "nm-client-utils.h"
 
+#include "nm-utils/nm-hash-utils.h"
+
 #include "polkit-agent.h"
 #include "utils.h"
 #include "common.h"
@@ -124,7 +126,7 @@ complete_fields (const char *option, const char *prefix)
 	GHashTable *h;
 	const char *option_with_value[2] = { option, prefix };
 
-	h = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+	h = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
 
 	complete_field (h, metagen_ip4_config);
 	complete_field (h, nmc_fields_dhcp4_config);

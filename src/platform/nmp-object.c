@@ -321,9 +321,9 @@ _dedup_multi_idx_type_init (DedupMultiIdxType *idx_type, NMPCacheIdType cache_id
 /*****************************************************************************/
 
 static void
-_vlan_xgress_qos_mappings_hash (NMHashState *h,
-                                guint n_map,
-                                const NMVlanQosMapping *map)
+_vlan_xgress_qos_mappings_hash_update (guint n_map,
+                                       const NMVlanQosMapping *map,
+                                       NMHashState *h)
 {
 	guint i;
 
@@ -817,12 +817,12 @@ _vt_cmd_obj_hash_lnk_vlan (const NMPObject *obj)
 
 	nm_hash_init (&h, 914932607u);
 	nm_hash_update_uint (&h, nm_platform_lnk_vlan_hash (&obj->lnk_vlan));
-	_vlan_xgress_qos_mappings_hash (&h,
-	                                obj->_lnk_vlan.n_ingress_qos_map,
-	                                obj->_lnk_vlan.ingress_qos_map);
-	_vlan_xgress_qos_mappings_hash (&h,
-	                                obj->_lnk_vlan.n_egress_qos_map,
-	                                obj->_lnk_vlan.egress_qos_map);
+	_vlan_xgress_qos_mappings_hash_update (obj->_lnk_vlan.n_ingress_qos_map,
+	                                       obj->_lnk_vlan.ingress_qos_map,
+	                                       &h);
+	_vlan_xgress_qos_mappings_hash_update (obj->_lnk_vlan.n_egress_qos_map,
+	                                       obj->_lnk_vlan.egress_qos_map,
+	                                       &h);
 	return nm_hash_complete (&h);
 }
 

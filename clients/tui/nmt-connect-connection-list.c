@@ -30,6 +30,8 @@
 
 #include "NetworkManager.h"
 
+#include "nm-utils/nm-hash-utils.h"
+
 #include "nmtui.h"
 #include "nmt-connect-connection-list.h"
 
@@ -274,7 +276,7 @@ add_connections_for_aps (NmtConnectDevice *nmtdev,
 	if (!aps->len)
 		return;
 
-	seen_ssids = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+	seen_ssids = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
 
 	for (i = 0; i < aps->len; i++) {
 		ap = aps->pdata[i];
@@ -362,7 +364,7 @@ append_nmt_devices_for_virtual_devices (GSList          *nmt_devices,
 	NmtConnectConnection *nmtconn;
 	int sort_order;
 
-	devices_by_name = g_hash_table_new (g_str_hash, g_str_equal);
+	devices_by_name = g_hash_table_new (nm_str_hash, g_str_equal);
 
 	for (i = 0; i < connections->len; i++) {
 		conn = connections->pdata[i];

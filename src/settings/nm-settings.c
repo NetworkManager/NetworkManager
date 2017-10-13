@@ -1885,7 +1885,7 @@ nm_settings_init (NMSettings *self)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 
-	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
+	priv->connections = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, g_object_unref);
 
 	/* Hold a reference to the agent manager so it stays alive; the only
 	 * other holders are NMSettingsConnection objects which are often

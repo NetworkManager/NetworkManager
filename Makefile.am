@@ -3192,6 +3192,15 @@ clients_cppflags = \
 check_ltlibraries += clients/common/libnmc-base.la
 
 clients_common_libnmc_base_la_SOURCES = \
+	shared/nm-utils/nm-enum-utils.c \
+	shared/nm-utils/nm-enum-utils.h \
+	shared/nm-utils/nm-hash-utils.c \
+	shared/nm-utils/nm-hash-utils.h \
+	shared/nm-utils/nm-random-utils.c \
+	shared/nm-utils/nm-random-utils.h \
+	shared/nm-utils/nm-shared-utils.c \
+	shared/nm-utils/nm-shared-utils.h \
+	\
 	clients/common/nm-secret-agent-simple.c \
 	clients/common/nm-secret-agent-simple.h \
 	clients/common/nm-vpn-helpers.c \
@@ -3240,11 +3249,6 @@ EXTRA_LTLIBRARIES += clients/common/libnmc.la
 endif
 
 clients_common_libnmc_la_SOURCES = \
-	shared/nm-utils/nm-enum-utils.c \
-	shared/nm-utils/nm-enum-utils.h \
-	shared/nm-utils/nm-shared-utils.c \
-	shared/nm-utils/nm-shared-utils.h \
-	\
 	shared/nm-meta-setting.c \
 	shared/nm-meta-setting.h \
 	\
@@ -3426,8 +3430,6 @@ clients_tui_newt_libnmt_newt_a_CPPFLAGS = \
 bin_PROGRAMS += clients/tui/nmtui
 
 clients_tui_nmtui_SOURCES = \
-	shared/nm-utils/nm-shared-utils.c \
-	shared/nm-utils/nm-shared-utils.h \
 	clients/tui/nmtui.c \
 	clients/tui/nmtui.h \
 	clients/tui/nmtui-connect.c \

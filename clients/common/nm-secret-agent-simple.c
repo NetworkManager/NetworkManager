@@ -33,6 +33,8 @@
 
 #include <string.h>
 
+#include "nm-utils/nm-hash-utils.h"
+
 #include "NetworkManager.h"
 #include "nm-vpn-service-plugin.h"
 
@@ -86,7 +88,7 @@ nm_secret_agent_simple_init (NMSecretAgentSimple *agent)
 {
 	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (agent);
 
-	priv->requests = g_hash_table_new_full (g_str_hash, g_str_equal,
+	priv->requests = g_hash_table_new_full (nm_str_hash, g_str_equal,
 	                                        g_free, nm_secret_agent_simple_request_free);
 }
 
@@ -694,7 +696,7 @@ nm_secret_agent_simple_response (NMSecretAgentSimple *self,
 
 		g_variant_builder_init (&vpn_secrets_builder, G_VARIANT_TYPE ("a{ss}"));
 
-		settings = g_hash_table_new (g_str_hash, g_str_equal);
+		settings = g_hash_table_new (nm_str_hash, g_str_equal);
 		for (i = 0; i < secrets->len; i++) {
 			NMSecretAgentSimpleSecretReal *secret = secrets->pdata[i];
 

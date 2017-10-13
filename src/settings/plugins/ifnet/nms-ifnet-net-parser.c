@@ -58,7 +58,7 @@ add_new_connection_config (const gchar * type, const gchar * name)
 	/* Return existing connection */
 	if ((new_conn = g_hash_table_lookup (conn_table, name)) != NULL)
 		return new_conn;
-	new_conn = g_hash_table_new (g_str_hash, g_str_equal);
+	new_conn = g_hash_table_new (nm_str_hash, g_str_equal);
 	new_name = g_strdup (name);
 	g_hash_table_insert (new_conn, g_strdup ("name"), new_name);
 	g_hash_table_insert (new_conn, g_strdup ("type"), g_strdup (type));
@@ -302,8 +302,8 @@ ifnet_init (gchar * config_file)
 
 	net_parser_data_changed = FALSE;
 
-	conn_table = g_hash_table_new (g_str_hash, g_str_equal);
-	global_settings_table = g_hash_table_new (g_str_hash, g_str_equal);
+	conn_table = g_hash_table_new (nm_str_hash, g_str_equal);
+	global_settings_table = g_hash_table_new (nm_str_hash, g_str_equal);
 	functions_list = NULL;
 
 	if (g_file_test (config_file, G_FILE_TEST_IS_REGULAR))

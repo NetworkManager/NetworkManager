@@ -57,7 +57,7 @@ fill_table (const Option *test_options, GHashTable *table)
 	const Option *opt;
 
 	if (!table)
-		table = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, NULL);
+		table = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, NULL);
 	for (opt = test_options; opt->name; opt++)
 		g_hash_table_insert (table, (gpointer) opt->name, (gpointer) opt->value);
 	return table;

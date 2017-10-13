@@ -1147,7 +1147,7 @@ create_connect_properties (NMConnection *connection)
 	const char *str;
 
 	setting = nm_connection_get_setting_gsm (connection);
-	properties = g_hash_table_new (g_str_hash, g_str_equal);
+	properties = g_hash_table_new (nm_str_hash, g_str_equal);
 
 	str = nm_setting_gsm_get_apn (setting);
 	if (str)

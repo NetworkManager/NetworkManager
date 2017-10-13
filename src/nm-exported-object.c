@@ -272,7 +272,7 @@ nm_exported_object_class_add_interface (NMExportedObjectClass *object_class,
 		classinfo = g_slice_new (NMExportedObjectClassInfo);
 		classinfo->skeleton_types = NULL;
 		classinfo->methods = g_array_new (FALSE, FALSE, sizeof (NMExportedObjectDBusMethodImpl));
-		classinfo->properties = g_hash_table_new (g_str_hash, g_str_equal);
+		classinfo->properties = g_hash_table_new (nm_str_hash, g_str_equal);
 		g_type_set_qdata (G_TYPE_FROM_CLASS (object_class),
 		                  nm_exported_object_class_info_quark (), classinfo);
 	}
@@ -579,7 +579,7 @@ _create_export_path (NMExportedObjectClass *klass)
 	p = strchr (class_export_path, '%');
 	if (p) {
 		if (G_UNLIKELY (!prefix_counters))
-			prefix_counters = g_hash_table_new (g_str_hash, g_str_equal);
+			prefix_counters = g_hash_table_new (nm_str_hash, g_str_equal);
 
 		nm_assert (p[1] == 'l');
 		nm_assert (p[2] == 'l');

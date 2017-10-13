@@ -8939,7 +8939,7 @@ _nm_device_hash_check_invalid_keys (GHashTable *hash, const char *setting_name,
 #if NM_MORE_ASSERTS > 10
 	/* Assert that the keys are unique. */
 	{
-		gs_unref_hashtable GHashTable *check_dups = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, NULL);
+		gs_unref_hashtable GHashTable *check_dups = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, NULL);
 
 		for (i = 0; argv[i]; i++) {
 			if (!nm_g_hash_table_add (check_dups, (char *) argv[i]))
@@ -13989,7 +13989,7 @@ nm_device_init (NMDevice *self)
 	priv->unmanaged_flags = NM_UNMANAGED_PLATFORM_INIT;
 	priv->unmanaged_mask = priv->unmanaged_flags;
 	priv->available_connections = g_hash_table_new_full (g_direct_hash, g_direct_equal, g_object_unref, NULL);
-	priv->ip6_saved_properties = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
+	priv->ip6_saved_properties = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, g_free);
 	priv->sys_iface_state = NM_DEVICE_SYS_IFACE_STATE_EXTERNAL;
 
 	priv->v4_commit_first_time = TRUE;

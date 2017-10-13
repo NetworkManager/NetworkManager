@@ -739,7 +739,7 @@ nm_dhcp_dhclient_read_lease_ip_configs (NMDedupMultiIndex *multi_idx,
 				g_hash_table_destroy (hash);
 			}
 
-			hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+			hash = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 		} else if (hash && strlen (*line))
 			add_lease_option (hash, *line);
 	}
