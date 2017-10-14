@@ -23,6 +23,8 @@
 
 #include "nm-dedup-multi.h"
 
+#include "nm-hash-utils.h"
+
 /*****************************************************************************/
 
 typedef struct {

@@ -421,7 +421,9 @@ libnm_core_lib_h_priv = \
 	shared/nm-utils/c-list-util.h \
 	shared/nm-utils/nm-dedup-multi.h \
 	shared/nm-utils/nm-enum-utils.h \
+	shared/nm-utils/nm-hash-utils.h \
 	shared/nm-utils/nm-shared-utils.h \
+	shared/nm-utils/nm-random-utils.h \
 	shared/nm-utils/nm-udev-utils.h \
 	shared/nm-meta-setting.h \
 	libnm-core/crypto.h \
@@ -437,7 +439,9 @@ libnm_core_lib_c_real = \
 	shared/nm-utils/c-list-util.c \
 	shared/nm-utils/nm-dedup-multi.c \
 	shared/nm-utils/nm-enum-utils.c \
+	shared/nm-utils/nm-hash-utils.c \
 	shared/nm-utils/nm-shared-utils.c \
+	shared/nm-utils/nm-random-utils.c \
 	shared/nm-utils/nm-udev-utils.c \
 	shared/nm-meta-setting.c \
 	libnm-core/crypto.c \
