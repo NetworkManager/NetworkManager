@@ -21,7 +21,8 @@
 #define __NM_CLIENT_UTILS_H__
 
 #include "nm-meta-setting.h"
-
+#include "nm-active-connection.h"
+#include "nm-device.h"
 
 typedef enum {
 	NMC_TRI_STATE_NO,
@@ -45,5 +46,14 @@ gboolean matches (const char *cmd, const char *pattern);
 
 /* FIXME: don't expose this function on it's own, at least not from this file. */
 const char *nmc_bond_validate_mode (const char *mode, GError **error);
+
+const char *nm_active_connection_state_reason_to_string (NMActiveConnectionStateReason reason);
+const char *nmc_device_state_to_string (NMDeviceState state);
+const char *nmc_device_reason_to_string (NMDeviceStateReason reason);
+const char *nmc_device_metered_to_string (NMMetered value);
+
+NMActiveConnectionState nmc_activation_get_effective_state (NMActiveConnection *active,
+                                                            NMDevice *device,
+                                                            const char **reason);
 
 #endif /* __NM_CLIENT_UTILS_H__ */

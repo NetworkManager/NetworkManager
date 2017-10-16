@@ -3191,7 +3191,9 @@ clients_common_libnmc_base_la_SOURCES = \
 	clients/common/nm-secret-agent-simple.c \
 	clients/common/nm-secret-agent-simple.h \
 	clients/common/nm-vpn-helpers.c \
-	clients/common/nm-vpn-helpers.h
+	clients/common/nm-vpn-helpers.h \
+	clients/common/nm-client-utils.c \
+	clients/common/nm-client-utils.h
 
 clients_common_libnmc_base_la_CPPFLAGS = \
 	$(clients_cppflags) \
@@ -3242,8 +3244,6 @@ clients_common_libnmc_la_SOURCES = \
 	shared/nm-meta-setting.c \
 	shared/nm-meta-setting.h \
 	\
-	clients/common/nm-client-utils.c \
-	clients/common/nm-client-utils.h \
 	clients/common/nm-meta-setting-desc.c \
 	clients/common/nm-meta-setting-desc.h \
 	clients/common/nm-meta-setting-access.c \

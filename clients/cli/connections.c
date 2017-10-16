@@ -2050,132 +2050,43 @@ typedef struct {
 
 static void activate_connection_info_finish (ActivateConnectionInfo *info);
 
-static const char *
-active_connection_state_reason_to_string (NMActiveConnectionStateReason reason)
-{
-	switch (reason) {
-	case NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN:
-		return _("Unknown reason");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_NONE:
-		return _("The connection was disconnected");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_USER_DISCONNECTED:
-		return _("Disconnected by user");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED:
-		return _("The base network connection was interrupted");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_STOPPED:
-		return _("The VPN service stopped unexpectedly");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_IP_CONFIG_INVALID:
-		return _("The VPN service returned invalid configuration");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_CONNECT_TIMEOUT:
-		return _("The connection attempt timed out");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_START_TIMEOUT:
-		return _("The VPN service did not start in time");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_START_FAILED:
-		return _("The VPN service failed to start");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_NO_SECRETS:
-		return _("No valid secrets");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_LOGIN_FAILED:
-		return _("Invalid secrets");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_CONNECTION_REMOVED:
-		return _("The connection was removed");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_DEPENDENCY_FAILED:
-		return _("Master connection failed");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REALIZE_FAILED:
-		return _("Could not create a software link");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REMOVED:
-		return _("The device disappeared");
-	}
-
-	g_return_val_if_reached (_("Invalid reason"));
-}
-
 static void
 check_activated (ActivateConnectionInfo *info)
 {
+	NMActiveConnectionState ac_state;
 	NmCli *nmc = info->nmc;
-	NMDevice *device = info->device;
-	NMActiveConnection *active = info->active;
-	NMActiveConnectionStateReason ac_reason;
-	NMDeviceState dev_state = NM_DEVICE_STATE_UNKNOWN;
-	NMDeviceStateReason dev_reason = NM_DEVICE_STATE_REASON_UNKNOWN;
-	const char *reason;
+	const char *reason = NULL;
 
-	ac_reason = nm_active_connection_get_state_reason (active);
-
-	if (device) {
-		dev_state = nm_device_get_state (device);
-		dev_reason = nm_device_get_state_reason (device);
-	}
-
-	switch (nm_active_connection_get_state (active)) {
-
+	ac_state = nmc_activation_get_effective_state (info->active, info->device, &reason);
+	switch (ac_state) {
 	case NM_ACTIVE_CONNECTION_STATE_ACTIVATED:
 		if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
 			nmc_terminal_erase_line ();
-		g_print (_("Connection successfully activated (D-Bus active path: %s)\n"),
-		         nm_object_get_path (NM_OBJECT (active)));
+		if (reason) {
+			g_print (_("Connection successfully activated (%s) (D-Bus active path: %s)\n"),
+			         reason,
+			         nm_object_get_path (NM_OBJECT (info->active)));
+		} else {
+			g_print (_("Connection successfully activated (D-Bus active path: %s)\n"),
+			         nm_object_get_path (NM_OBJECT (info->active)));
+		}
 		activate_connection_info_finish (info);
 		break;
-
 	case NM_ACTIVE_CONNECTION_STATE_DEACTIVATED:
-
-		if (   !device
-		    || ac_reason != NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED
-		    || nm_device_get_active_connection (device) != active) {
-			/* (1)
-			 * - we have no device,
-			 * - or, @ac_reason is specific
-			 * - or, @device no longer references the current @active
-			 * >> we complete with @ac_reason. */
-			reason = active_connection_state_reason_to_string (ac_reason);
-		} else if (   dev_state <= NM_DEVICE_STATE_DISCONNECTED
-		           || dev_state >= NM_DEVICE_STATE_FAILED) {
-			/* (2)
-			 * - not (1)
-			 * - and, the device is no longer in an activated state,
-			 * >> we complete with @dev_reason. */
-			reason = nmc_device_reason_to_string (dev_reason);
-		} else {
-			/* (3)
-			 * we wait for the device go disconnect. We will get a better
-			 * failure reason from the device (2). */
-			reason = NULL;
-		}
-
-		if (reason) {
-			g_string_printf (nmc->return_text, _("Error: Connection activation failed: %s"),
-			                 reason);
-			nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
-			activate_connection_info_finish (info);
-		}
+		nm_assert (reason);
+		g_string_printf (nmc->return_text, _("Error: Connection activation failed: %s"),
+		                 reason);
+		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
+		activate_connection_info_finish (info);
 		break;
-
 	case NM_ACTIVE_CONNECTION_STATE_ACTIVATING:
-		/* activating master connection does not automatically activate any slaves, so their
-		 * active connection state will not progress beyond ACTIVATING state.
-		 * Monitor the device instead. */
-
 		if (nmc->secret_agent) {
-			NMRemoteConnection *connection = nm_active_connection_get_connection (active);
+			NMRemoteConnection *connection = nm_active_connection_get_connection (info->active);
 
 			nm_secret_agent_simple_enable (NM_SECRET_AGENT_SIMPLE (nmc->secret_agent),
 			                               nm_connection_get_path (NM_CONNECTION (connection)));
 		}
-
-		if (   device
-		    && (   NM_IS_DEVICE_BOND (device)
-		        || NM_IS_DEVICE_TEAM (device)
-		        || NM_IS_DEVICE_BRIDGE (device))
-		    && dev_state >= NM_DEVICE_STATE_IP_CONFIG
-		    && dev_state <= NM_DEVICE_STATE_ACTIVATED) {
-			if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
-				nmc_terminal_erase_line ();
-			g_print (_("Connection successfully activated (master waiting for slaves) (D-Bus active path: %s)\n"),
-			          nm_object_get_path (NM_OBJECT (active)));
-			activate_connection_info_finish (info);
-		}
 		break;
-
 	default:
 		break;
 	}
