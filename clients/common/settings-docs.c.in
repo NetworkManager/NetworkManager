@@ -197,7 +197,7 @@
 #define DESCRIBE_DOC_NM_SETTING_IP_TUNNEL_INPUT_KEY N_("The key used for tunnel input packets; the property is valid only for certain tunnel modes (GRE, IP6GRE). If empty, no key is used.")
 #define DESCRIBE_DOC_NM_SETTING_IP_TUNNEL_LOCAL N_("The local endpoint of the tunnel; the value can be empty, otherwise it must contain an IPv4 or IPv6 address.")
 #define DESCRIBE_DOC_NM_SETTING_IP_TUNNEL_MODE N_("The tunneling mode, for example NM_IP_TUNNEL_MODE_IPIP (1) or NM_IP_TUNNEL_MODE_GRE (2).")
-#define DESCRIBE_DOC_NM_SETTING_IP_TUNNEL_MTU N_("None")
+#define DESCRIBE_DOC_NM_SETTING_IP_TUNNEL_MTU N_("If non-zero, only transmit packets of the specified size or smaller, breaking larger packets up into multiple fragments.")
 #define DESCRIBE_DOC_NM_SETTING_IP_TUNNEL_NAME N_("The setting's name, which uniquely identifies the setting within the connection.  Each setting type has a name unique to that type, for example \"ppp\" or \"wireless\" or \"wired\".")
 #define DESCRIBE_DOC_NM_SETTING_IP_TUNNEL_OUTPUT_KEY N_("The key used for tunnel output packets; the property is valid only for certain tunnel modes (GRE, IP6GRE). If empty, no key is used.")
 #define DESCRIBE_DOC_NM_SETTING_IP_TUNNEL_PARENT N_("If given, specifies the parent interface name or parent connection UUID the new device will be bound to so that tunneled packets will only be routed via that interface.")

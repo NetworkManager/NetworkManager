@@ -758,7 +758,7 @@ nm_setting_ip_tunnel_class_init (NMSettingIPTunnelClass *setting_class)
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingIPTunel:mtu:
+	 * NMSettingIPTunnel:mtu:
 	 *
 	 * If non-zero, only transmit packets of the specified size or smaller,
 	 * breaking larger packets up into multiple fragments.
