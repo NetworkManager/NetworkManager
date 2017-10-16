@@ -279,8 +279,9 @@ lldp_neighbor_id_hash (gconstpointer ptr)
 	nm_hash_init (&h, 23423423u);
 	nm_hash_update_str0 (&h, neigh->chassis_id);
 	nm_hash_update_str0 (&h, neigh->port_id);
-	nm_hash_update_uint (&h, neigh->chassis_id_type);
-	nm_hash_update_uint (&h, neigh->port_id_type);
+	nm_hash_update_vals (&h,
+	                     neigh->chassis_id_type,
+	                     neigh->port_id_type);
 	return nm_hash_complete (&h);
 }
 

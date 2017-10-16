@@ -5129,26 +5129,29 @@ nm_platform_link_hash (const NMPlatformLink *obj)
 	NMHashState h;
 
 	nm_hash_init (&h, 99413953u);
-	nm_hash_update_uint (&h, obj->ifindex);
-	nm_hash_update_uint (&h, obj->type);
+	nm_hash_update_vals (&h,
+	                     obj->ifindex,
+	                     obj->master,
+	                     obj->parent);
+	nm_hash_update_val (&h, obj->type);
 	nm_hash_update_strarr (&h, obj->name);
-	nm_hash_update_uint (&h, obj->master);
-	nm_hash_update_uint (&h, obj->parent);
-	nm_hash_update_uint (&h, obj->n_ifi_flags);
-	nm_hash_update_uint (&h, obj->connected);
-	nm_hash_update_uint (&h, obj->mtu);
-	nm_hash_update_uint (&h, !!obj->initialized);
-	nm_hash_update_uint (&h, obj->arptype);
-	nm_hash_update_uint (&h, obj->addr.len);
-	nm_hash_update_uint (&h, obj->inet6_addr_gen_mode_inv);
+	nm_hash_update_vals (&h,
+	                     obj->n_ifi_flags,
+	                     obj->mtu);
+	nm_hash_update_bools (&h, obj->connected,
+	                          obj->initialized);
+	nm_hash_update_val (&h, obj->arptype);
+	nm_hash_update_val (&h, obj->inet6_addr_gen_mode_inv);
 	nm_hash_update_str0 (&h, obj->kind);
 	nm_hash_update_str0 (&h, obj->driver);
+	/* nm_hash_update_mem() also hashes the length obj->addr.len */
 	nm_hash_update_mem (&h, obj->addr.data, obj->addr.len);
-	nm_hash_update_mem (&h, &obj->inet6_token, sizeof (obj->inet6_token));
-	nm_hash_update_uint (&h, obj->rx_packets);
-	nm_hash_update_uint (&h, obj->rx_bytes);
-	nm_hash_update_uint (&h, obj->tx_packets);
-	nm_hash_update_uint (&h, obj->tx_bytes);
+	nm_hash_update (&h, &obj->inet6_token, sizeof (obj->inet6_token));
+	nm_hash_update_vals (&h,
+	                     obj->rx_packets,
+	                     obj->rx_bytes,
+	                     obj->tx_packets,
+	                     obj->tx_bytes);
 	return nm_hash_complete (&h);
 }
 
@@ -5186,16 +5189,16 @@ nm_platform_lnk_gre_hash (const NMPlatformLnkGre *obj)
 	NMHashState h;
 
 	nm_hash_init (&h, 1887023311u);
-	nm_hash_update_uint (&h, obj->parent_ifindex);
-	nm_hash_update_uint (&h, obj->input_flags);
-	nm_hash_update_uint (&h, obj->output_flags);
-	nm_hash_update_uint (&h, obj->input_key);
-	nm_hash_update_uint (&h, obj->output_key);
-	nm_hash_update_uint (&h, obj->local);
-	nm_hash_update_uint (&h, obj->remote);
-	nm_hash_update_uint (&h, obj->ttl);
-	nm_hash_update_uint (&h, obj->tos);
-	nm_hash_update_uint (&h, !obj->path_mtu_discovery);
+	nm_hash_update_val (&h, obj->parent_ifindex);
+	nm_hash_update_val (&h, obj->input_flags);
+	nm_hash_update_val (&h, obj->output_flags);
+	nm_hash_update_val (&h, obj->input_key);
+	nm_hash_update_val (&h, obj->output_key);
+	nm_hash_update_val (&h, obj->local);
+	nm_hash_update_val (&h, obj->remote);
+	nm_hash_update_val (&h, obj->ttl);
+	nm_hash_update_val (&h, obj->tos);
+	nm_hash_update_bool (&h, obj->path_mtu_discovery);
 	return nm_hash_complete (&h);
 }
 
@@ -5222,7 +5225,7 @@ nm_platform_lnk_infiniband_hash (const NMPlatformLnkInfiniband *obj)
 	NMHashState h;
 
 	nm_hash_init (&h, 1748638583u);
-	nm_hash_update_uint (&h, obj->p_key);
+	nm_hash_update_val (&h, obj->p_key);
 	nm_hash_update_str0 (&h, obj->mode);
 	return nm_hash_complete (&h);
 }
@@ -5242,14 +5245,14 @@ nm_platform_lnk_ip6tnl_hash (const NMPlatformLnkIp6Tnl *obj)
 	NMHashState h;
 
 	nm_hash_init (&h, 1651660009u);
-	nm_hash_update_uint (&h, obj->parent_ifindex);
+	nm_hash_update_val (&h, obj->parent_ifindex);
 	nm_hash_update_in6addr (&h, &obj->local);
 	nm_hash_update_in6addr (&h, &obj->remote);
-	nm_hash_update_uint (&h, obj->ttl);
-	nm_hash_update_uint (&h, obj->tclass);
-	nm_hash_update_uint (&h, obj->encap_limit);
-	nm_hash_update_uint (&h, obj->flow_label);
-	nm_hash_update_uint (&h, obj->proto);
+	nm_hash_update_val (&h, obj->ttl);
+	nm_hash_update_val (&h, obj->tclass);
+	nm_hash_update_val (&h, obj->encap_limit);
+	nm_hash_update_val (&h, obj->flow_label);
+	nm_hash_update_val (&h, obj->proto);
 	return nm_hash_complete (&h);
 }
 
@@ -5274,12 +5277,12 @@ nm_platform_lnk_ipip_hash (const NMPlatformLnkIpIp *obj)
 	NMHashState h;
 
 	nm_hash_init (&h, 861934429u);
-	nm_hash_update_uint (&h, obj->parent_ifindex);
-	nm_hash_update_uint (&h, obj->local);
-	nm_hash_update_uint (&h, obj->remote);
-	nm_hash_update_uint (&h, obj->ttl);
-	nm_hash_update_uint (&h, obj->tos);
-	nm_hash_update_uint (&h, obj->path_mtu_discovery);
+	nm_hash_update_val (&h, obj->parent_ifindex);
+	nm_hash_update_val (&h, obj->local);
+	nm_hash_update_val (&h, obj->remote);
+	nm_hash_update_val (&h, obj->ttl);
+	nm_hash_update_val (&h, obj->tos);
+	nm_hash_update_bool (&h, obj->path_mtu_discovery);
 	return nm_hash_complete (&h);
 }
 
@@ -5302,19 +5305,21 @@ nm_platform_lnk_macsec_hash (const NMPlatformLnkMacsec *obj)
 	NMHashState h;
 
 	nm_hash_init (&h, 226984267u);
-	nm_hash_update_uint (&h, obj->parent_ifindex);
-	nm_hash_update_uint (&h, obj->sci);
-	nm_hash_update_uint64 (&h, obj->icv_length);
-	nm_hash_update_uint64 (&h, obj->cipher_suite);
-	nm_hash_update_uint (&h, obj->window);
-	nm_hash_update_uint (&h, obj->encoding_sa);
-	nm_hash_update_uint (&h, obj->validation);
-	nm_hash_update_uint (&h, obj->encrypt);
-	nm_hash_update_uint (&h, obj->protect);
-	nm_hash_update_uint (&h, obj->include_sci);
-	nm_hash_update_uint (&h, obj->es);
-	nm_hash_update_uint (&h, obj->scb);
-	nm_hash_update_uint (&h, obj->replay_protect);
+	nm_hash_update_val (&h, obj->parent_ifindex);
+	nm_hash_update_val (&h, obj->window);
+	nm_hash_update_vals (&h,
+	                     obj->cipher_suite,
+	                     obj->sci);
+	nm_hash_update_vals (&h,
+	                     obj->icv_length,
+	                     obj->encoding_sa,
+	                     obj->validation);
+	nm_hash_update_bools (&h, obj->encrypt,
+	                          obj->protect,
+	                          obj->include_sci,
+	                          obj->es,
+	                          obj->scb,
+	                          obj->replay_protect);
 	return nm_hash_complete (&h);
 }
 
@@ -5344,9 +5349,9 @@ nm_platform_lnk_macvlan_hash (const NMPlatformLnkMacvlan *obj)
 	NMHashState h;
 
 	nm_hash_init (&h, 771014989u);
-	nm_hash_update_uint (&h, obj->mode);
-	nm_hash_update_uint (&h, obj->no_promisc);
-	nm_hash_update_uint (&h, obj->tap);
+	nm_hash_update_val (&h, obj->mode);
+	nm_hash_update_bools (&h, obj->no_promisc,
+	                          obj->tap);
 	return nm_hash_complete (&h);
 }
 
@@ -5366,14 +5371,14 @@ nm_platform_lnk_sit_hash (const NMPlatformLnkSit *obj)
 	NMHashState h;
 
 	nm_hash_init (&h, 1690154969u);
-	nm_hash_update_uint (&h, obj->parent_ifindex);
-	nm_hash_update_uint (&h, obj->local);
-	nm_hash_update_uint (&h, obj->remote);
-	nm_hash_update_uint (&h, obj->ttl);
-	nm_hash_update_uint (&h, obj->tos);
-	nm_hash_update_uint (&h, obj->path_mtu_discovery);
-	nm_hash_update_uint (&h, obj->flags);
-	nm_hash_update_uint (&h, obj->proto);
+	nm_hash_update_val (&h, obj->parent_ifindex);
+	nm_hash_update_val (&h, obj->local);
+	nm_hash_update_val (&h, obj->remote);
+	nm_hash_update_val (&h, obj->ttl);
+	nm_hash_update_val (&h, obj->tos);
+	nm_hash_update_bool (&h, obj->path_mtu_discovery);
+	nm_hash_update_val (&h, obj->flags);
+	nm_hash_update_val (&h, obj->proto);
 	return nm_hash_complete (&h);
 }
 
@@ -5398,8 +5403,8 @@ nm_platform_lnk_vlan_hash (const NMPlatformLnkVlan *obj)
 	NMHashState h;
 
 	nm_hash_init (&h, 58751383u);
-	nm_hash_update_uint (&h, obj->id);
-	nm_hash_update_uint (&h, obj->flags);
+	nm_hash_update_val (&h, obj->id);
+	nm_hash_update_val (&h, obj->flags);
 	return nm_hash_complete (&h);
 }
 
@@ -5418,24 +5423,24 @@ nm_platform_lnk_vxlan_hash (const NMPlatformLnkVxlan *obj)
 	NMHashState h;
 
 	nm_hash_init (&h, 461041297u);
-	nm_hash_update_uint (&h, obj->parent_ifindex);
-	nm_hash_update_uint (&h, obj->id);
-	nm_hash_update_uint (&h, obj->group);
-	nm_hash_update_uint (&h, obj->local);
+	nm_hash_update_val (&h, obj->parent_ifindex);
+	nm_hash_update_val (&h, obj->id);
+	nm_hash_update_val (&h, obj->group);
+	nm_hash_update_val (&h, obj->local);
 	nm_hash_update_in6addr (&h, &obj->group6);
 	nm_hash_update_in6addr (&h, &obj->local6);
-	nm_hash_update_uint (&h, obj->tos);
-	nm_hash_update_uint (&h, obj->ttl);
-	nm_hash_update_uint (&h, obj->learning);
-	nm_hash_update_uint (&h, obj->ageing);
-	nm_hash_update_uint (&h, obj->limit);
-	nm_hash_update_uint (&h, obj->dst_port);
-	nm_hash_update_uint (&h, obj->src_port_min);
-	nm_hash_update_uint (&h, obj->src_port_max);
-	nm_hash_update_uint (&h, obj->proxy);
-	nm_hash_update_uint (&h, obj->rsc);
-	nm_hash_update_uint (&h, obj->l2miss);
-	nm_hash_update_uint (&h, obj->l3miss);
+	nm_hash_update_val (&h, obj->tos);
+	nm_hash_update_val (&h, obj->ttl);
+	nm_hash_update_val (&h, obj->ageing);
+	nm_hash_update_val (&h, obj->limit);
+	nm_hash_update_val (&h, obj->dst_port);
+	nm_hash_update_val (&h, obj->src_port_min);
+	nm_hash_update_val (&h, obj->src_port_max);
+	nm_hash_update_bools (&h, obj->learning,
+	                          obj->proxy,
+	                          obj->rsc,
+	                          obj->l2miss,
+	                          obj->l3miss);
 	return nm_hash_complete (&h);
 }
 
@@ -5471,15 +5476,15 @@ nm_platform_ip4_address_hash (const NMPlatformIP4Address *obj)
 
 	nm_hash_init (&h, 469681301u);
 	if (obj) {
-		nm_hash_update_uint (&h, obj->ifindex);
-		nm_hash_update_uint (&h, obj->address);
-		nm_hash_update_uint (&h, obj->plen);
-		nm_hash_update_uint (&h, obj->peer_address);
-		nm_hash_update_uint (&h, obj->addr_source);
-		nm_hash_update_uint (&h, obj->timestamp);
-		nm_hash_update_uint (&h, obj->lifetime);
-		nm_hash_update_uint (&h, obj->preferred);
-		nm_hash_update_uint (&h, obj->n_ifa_flags);
+		nm_hash_update_val (&h, obj->ifindex);
+		nm_hash_update_val (&h, obj->address);
+		nm_hash_update_val (&h, obj->plen);
+		nm_hash_update_val (&h, obj->peer_address);
+		nm_hash_update_val (&h, obj->addr_source);
+		nm_hash_update_val (&h, obj->timestamp);
+		nm_hash_update_val (&h, obj->lifetime);
+		nm_hash_update_val (&h, obj->preferred);
+		nm_hash_update_val (&h, obj->n_ifa_flags);
 		nm_hash_update_strarr (&h, obj->label);
 	}
 	return nm_hash_complete (&h);
@@ -5509,15 +5514,15 @@ nm_platform_ip6_address_hash (const NMPlatformIP6Address *obj)
 
 	nm_hash_init (&h, 605908909u);
 	if (obj) {
-		nm_hash_update_uint (&h, obj->ifindex);
+		nm_hash_update_val (&h, obj->ifindex);
 		nm_hash_update_in6addr (&h, &obj->address);
-		nm_hash_update_uint (&h, obj->plen);
+		nm_hash_update_val (&h, obj->plen);
 		nm_hash_update_in6addr (&h, &obj->peer_address);
-		nm_hash_update_uint (&h, obj->addr_source);
-		nm_hash_update_uint (&h, obj->timestamp);
-		nm_hash_update_uint (&h, obj->lifetime);
-		nm_hash_update_uint (&h, obj->preferred);
-		nm_hash_update_uint (&h, obj->n_ifa_flags);
+		nm_hash_update_val (&h, obj->addr_source);
+		nm_hash_update_val (&h, obj->timestamp);
+		nm_hash_update_val (&h, obj->lifetime);
+		nm_hash_update_val (&h, obj->preferred);
+		nm_hash_update_val (&h, obj->n_ifa_flags);
 	}
 	return nm_hash_complete (&h);
 }
@@ -5548,70 +5553,72 @@ nm_platform_ip4_route_hash (const NMPlatformIP4Route *obj, NMPlatformIPRouteCmpT
 	NMHashState h;
 
 	nm_hash_init (&h, 1228913327u);
-	nm_hash_update_uint (&h, cmp_type);
+	nm_hash_update_val (&h, cmp_type);
 	if (obj) {
 		switch (cmp_type) {
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
-			nm_hash_update_uint (&h, nm_platform_route_table_uncoerce (obj->table_coerced, TRUE));
-			nm_hash_update_uint (&h, nm_utils_ip4_address_clear_host_address (obj->network, obj->plen));
-			nm_hash_update_uint (&h, obj->plen);
-			nm_hash_update_uint (&h, obj->metric);
-			nm_hash_update_uint (&h, obj->tos);
+			nm_hash_update_val (&h, nm_platform_route_table_uncoerce (obj->table_coerced, TRUE));
+			nm_hash_update_val (&h, nm_utils_ip4_address_clear_host_address (obj->network, obj->plen));
+			nm_hash_update_val (&h, obj->plen);
+			nm_hash_update_val (&h, obj->metric);
+			nm_hash_update_val (&h, obj->tos);
 			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
-				nm_hash_update_uint (&h, obj->ifindex);
-				nm_hash_update_uint (&h, nmp_utils_ip_config_source_round_trip_rtprot (obj->rt_source));
-				nm_hash_update_uint (&h, _ip_route_scope_inv_get_normalized (obj));
-				nm_hash_update_uint (&h, obj->gateway);
-				nm_hash_update_uint (&h, obj->mss);
-				nm_hash_update_uint (&h, obj->pref_src);
-				nm_hash_update_uint (&h, obj->window);
-				nm_hash_update_uint (&h, obj->cwnd);
-				nm_hash_update_uint (&h, obj->initcwnd);
-				nm_hash_update_uint (&h, obj->initrwnd);
-				nm_hash_update_uint (&h, obj->mtu);
-				nm_hash_update_uint (&h, obj->lock_window);
-				nm_hash_update_uint (&h, obj->lock_cwnd);
-				nm_hash_update_uint (&h, obj->lock_initcwnd);
-				nm_hash_update_uint (&h, obj->lock_initrwnd);
-				nm_hash_update_uint (&h, obj->lock_mtu);
+				nm_hash_update_val (&h, obj->ifindex);
+				nm_hash_update_val (&h, nmp_utils_ip_config_source_round_trip_rtprot (obj->rt_source));
+				nm_hash_update_val (&h, _ip_route_scope_inv_get_normalized (obj));
+				nm_hash_update_val (&h, obj->gateway);
+				nm_hash_update_val (&h, obj->mss);
+				nm_hash_update_val (&h, obj->pref_src);
+				nm_hash_update_vals (&h,
+				                     obj->window,
+				                     obj->cwnd,
+				                     obj->initcwnd,
+				                     obj->initrwnd,
+				                     obj->mtu);
+				nm_hash_update_bools (&h, obj->lock_window,
+				                          obj->lock_cwnd,
+				                          obj->lock_initcwnd,
+				                          obj->lock_initrwnd,
+				                          obj->lock_mtu);
 			}
 			break;
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL:
 			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
-				nm_hash_update_uint (&h, nm_platform_route_table_uncoerce (obj->table_coerced, TRUE));
+				nm_hash_update_val (&h, nm_platform_route_table_uncoerce (obj->table_coerced, TRUE));
 			else
-				nm_hash_update_uint (&h, obj->table_coerced);
-			nm_hash_update_uint (&h, obj->ifindex);
+				nm_hash_update_val (&h, obj->table_coerced);
+			nm_hash_update_val (&h, obj->ifindex);
 			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
-				nm_hash_update_uint (&h, nm_utils_ip4_address_clear_host_address (obj->network, obj->plen));
+				nm_hash_update_val (&h, nm_utils_ip4_address_clear_host_address (obj->network, obj->plen));
 			else
-				nm_hash_update_uint (&h, obj->network);
-			nm_hash_update_uint (&h, obj->plen);
-			nm_hash_update_uint (&h, obj->metric);
-			nm_hash_update_uint (&h, obj->gateway);
+				nm_hash_update_val (&h, obj->network);
+			nm_hash_update_val (&h, obj->plen);
+			nm_hash_update_val (&h, obj->metric);
+			nm_hash_update_val (&h, obj->gateway);
 			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
-				nm_hash_update_uint (&h, nmp_utils_ip_config_source_round_trip_rtprot (obj->rt_source));
-				nm_hash_update_uint (&h, _ip_route_scope_inv_get_normalized (obj));
+				nm_hash_update_val (&h, nmp_utils_ip_config_source_round_trip_rtprot (obj->rt_source));
+				nm_hash_update_val (&h, _ip_route_scope_inv_get_normalized (obj));
 			} else {
-				nm_hash_update_uint (&h, obj->rt_source);
-				nm_hash_update_uint (&h, obj->scope_inv);
+				nm_hash_update_val (&h, obj->rt_source);
+				nm_hash_update_val (&h, obj->scope_inv);
 			}
-			nm_hash_update_uint (&h, obj->mss);
-			nm_hash_update_uint (&h, obj->pref_src);
-			nm_hash_update_uint (&h, obj->rt_cloned);
-			nm_hash_update_uint (&h, obj->tos);
-			nm_hash_update_uint (&h, obj->lock_window);
-			nm_hash_update_uint (&h, obj->lock_cwnd);
-			nm_hash_update_uint (&h, obj->lock_initcwnd);
-			nm_hash_update_uint (&h, obj->lock_initrwnd);
-			nm_hash_update_uint (&h, obj->lock_mtu);
-			nm_hash_update_uint (&h, obj->window);
-			nm_hash_update_uint (&h, obj->cwnd);
-			nm_hash_update_uint (&h, obj->initcwnd);
-			nm_hash_update_uint (&h, obj->initrwnd);
-			nm_hash_update_uint (&h, obj->mtu);
+			nm_hash_update_val (&h, obj->tos);
+			nm_hash_update_vals (&h,
+			                     obj->mss,
+			                     obj->pref_src,
+			                     obj->window,
+			                     obj->cwnd,
+			                     obj->initcwnd,
+			                     obj->initrwnd,
+			                     obj->mtu);
+			nm_hash_update_bools (&h, obj->rt_cloned,
+			                          obj->lock_window,
+			                          obj->lock_cwnd,
+			                          obj->lock_initcwnd,
+			                          obj->lock_initrwnd,
+			                          obj->lock_mtu);
 			break;
 		}
 	}
@@ -5701,65 +5708,65 @@ nm_platform_ip6_route_hash (const NMPlatformIP6Route *obj, NMPlatformIPRouteCmpT
 	NMHashState h;
 
 	nm_hash_init (&h, 1053326051u);
-	nm_hash_update_uint (&h, cmp_type);
+	nm_hash_update_val (&h, cmp_type);
 	if (obj) {
 		switch (cmp_type) {
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
-			nm_hash_update_uint (&h, nm_platform_route_table_uncoerce (obj->table_coerced, TRUE));
+			nm_hash_update_val (&h, nm_platform_route_table_uncoerce (obj->table_coerced, TRUE));
 			nm_hash_update_in6addr_prefix (&h, &obj->network, obj->plen);
-			nm_hash_update_uint (&h, obj->plen);
-			nm_hash_update_uint (&h, nm_utils_ip6_route_metric_normalize (obj->metric));
+			nm_hash_update_val (&h, obj->plen);
+			nm_hash_update_val (&h, nm_utils_ip6_route_metric_normalize (obj->metric));
 			nm_hash_update_in6addr_prefix (&h, &obj->src, obj->src_plen);
-			nm_hash_update_uint (&h, obj->src_plen);
+			nm_hash_update_val (&h, obj->src_plen);
 			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
-				nm_hash_update_uint (&h, obj->ifindex);
+				nm_hash_update_val (&h, obj->ifindex);
 				nm_hash_update_in6addr (&h, &obj->gateway);
 			}
 			break;
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
 		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL:
 			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
-				nm_hash_update_uint (&h, nm_platform_route_table_uncoerce (obj->table_coerced, TRUE));
+				nm_hash_update_val (&h, nm_platform_route_table_uncoerce (obj->table_coerced, TRUE));
 			else
-				nm_hash_update_uint (&h, obj->table_coerced);
-			nm_hash_update_uint (&h, obj->ifindex);
+				nm_hash_update_val (&h, obj->table_coerced);
+			nm_hash_update_val (&h, obj->ifindex);
 			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
 				nm_hash_update_in6addr_prefix (&h, &obj->network, obj->plen);
 			else
 				nm_hash_update_in6addr (&h, &obj->network);
-			nm_hash_update_uint (&h, obj->plen);
+			nm_hash_update_val (&h, obj->plen);
 			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
-				nm_hash_update_uint (&h, nm_utils_ip6_route_metric_normalize (obj->metric));
+				nm_hash_update_val (&h, nm_utils_ip6_route_metric_normalize (obj->metric));
 			else
-				nm_hash_update_uint (&h, obj->metric);
+				nm_hash_update_val (&h, obj->metric);
 			nm_hash_update_in6addr (&h, &obj->gateway);
 			nm_hash_update_in6addr (&h, &obj->pref_src);
 			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
 				nm_hash_update_in6addr_prefix (&h, &obj->src, obj->src_plen);
-				nm_hash_update_uint (&h, obj->src_plen);
-				nm_hash_update_uint (&h, nmp_utils_ip_config_source_round_trip_rtprot (obj->rt_source));
+				nm_hash_update_val (&h, obj->src_plen);
+				nm_hash_update_val (&h, nmp_utils_ip_config_source_round_trip_rtprot (obj->rt_source));
 			} else {
 				nm_hash_update_in6addr (&h, &obj->src);
-				nm_hash_update_uint (&h, obj->src_plen);
-				nm_hash_update_uint (&h, obj->rt_source);
+				nm_hash_update_val (&h, obj->src_plen);
+				nm_hash_update_val (&h, obj->rt_source);
 			}
-			nm_hash_update_uint (&h, obj->mss);
-			nm_hash_update_uint (&h, obj->rt_cloned);
-			nm_hash_update_uint (&h, obj->lock_window);
-			nm_hash_update_uint (&h, obj->lock_cwnd);
-			nm_hash_update_uint (&h, obj->lock_initcwnd);
-			nm_hash_update_uint (&h, obj->lock_initrwnd);
-			nm_hash_update_uint (&h, obj->lock_mtu);
-			nm_hash_update_uint (&h, obj->window);
-			nm_hash_update_uint (&h, obj->cwnd);
-			nm_hash_update_uint (&h, obj->initcwnd);
-			nm_hash_update_uint (&h, obj->initrwnd);
-			nm_hash_update_uint (&h, obj->mtu);
+			nm_hash_update_val (&h, obj->mss);
+			nm_hash_update_bools (&h, obj->rt_cloned,
+			                          obj->lock_window,
+			                          obj->lock_cwnd,
+			                          obj->lock_initcwnd,
+			                          obj->lock_initrwnd,
+			                          obj->lock_mtu);
+			nm_hash_update_val (&h, obj->window);
+			nm_hash_update_val (&h, obj->cwnd);
+			nm_hash_update_val (&h, obj->initcwnd);
+			nm_hash_update_val (&h, obj->initrwnd);
+			nm_hash_update_val (&h, obj->mtu);
 			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
-				nm_hash_update_uint (&h, _route_pref_normalize (obj->rt_pref));
+				nm_hash_update_val (&h, _route_pref_normalize (obj->rt_pref));
 			else
-				nm_hash_update_uint (&h, obj->rt_pref);
+				nm_hash_update_val (&h, obj->rt_pref);
 			break;
 		}
 	}

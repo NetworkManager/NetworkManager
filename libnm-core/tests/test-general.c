@@ -79,6 +79,41 @@ G_STATIC_ASSERT (sizeof (bool) <= sizeof (int));
 
 /*****************************************************************************/
 
+typedef struct _nm_packed {
+	int v0;
+	char v1;
+	double v2;
+	guint8 v3;
+} TestHashStruct;
+
+static void
+_test_hash_struct (int v0, char v1, double v2, guint8 v3)
+{
+	const TestHashStruct s = {
+		.v0 = v0,
+		.v1 = v1,
+		.v2 = v2,
+		.v3 = v3,
+	};
+	NMHashState h;
+	guint hh;
+
+	nm_hash_init (&h, 100);
+	nm_hash_update (&h, &s, sizeof (s));
+	hh = nm_hash_complete (&h);
+
+	nm_hash_init (&h, 100);
+	nm_hash_update_val (&h, v0);
+	nm_hash_update_val (&h, v1);
+	nm_hash_update_val (&h, v2);
+	nm_hash_update_val (&h, v3);
+	g_assert_cmpint (hh, ==, nm_hash_complete (&h));
+
+	nm_hash_init (&h, 100);
+	nm_hash_update_vals (&h, v0, v1, v2, v3);
+	g_assert_cmpint (hh, ==, nm_hash_complete (&h));
+}
+
 static guint
 _test_hash_str (const char *str)
 {
@@ -102,6 +137,34 @@ _test_hash_str (const char *str)
 	return v;
 }
 
+#define _test_hash_vals(type, ...) \
+	G_STMT_START { \
+		NMHashState h0, h1, h2, h3; \
+		const type v[] = { __VA_ARGS__ }; \
+		guint h; \
+		guint i; \
+		\
+		nm_hash_init (&h0, 10); \
+		nm_hash_init (&h1, 10); \
+		nm_hash_init (&h2, 10); \
+		nm_hash_init (&h3, 10); \
+		\
+		/* assert that it doesn't matter, whether we hash the values individually,
+		 * or all at once, or via the convenience macros nm_hash_update_val()
+		 * and nm_hash_update_vals(). */ \
+		for (i = 0; i < G_N_ELEMENTS (v); i++) { \
+			nm_hash_update (&h0, &v[i], sizeof (type)); \
+			nm_hash_update_val (&h1, v[i]); \
+		} \
+		nm_hash_update_vals (&h2, __VA_ARGS__); \
+		nm_hash_update (&h3, v, sizeof (v)); \
+		\
+		h = nm_hash_complete (&h0); \
+		g_assert_cmpint (h, ==, nm_hash_complete (&h1)); \
+		g_assert_cmpint (h, ==, nm_hash_complete (&h2)); \
+		g_assert_cmpint (h, ==, nm_hash_complete (&h3)); \
+	} G_STMT_END
+
 static void
 test_nm_hash (void)
 {
@@ -109,6 +172,26 @@ test_nm_hash (void)
 	_test_hash_str ("a");
 	_test_hash_str ("aa");
 	_test_hash_str ("diceros bicornis longipes");
+
+	/* assert that nm_hash_update_vals() is the same as calling nm_hash_update_val() multiple times. */
+	_test_hash_vals (int, 1);
+	_test_hash_vals (int, 1, 2);
+	_test_hash_vals (int, 1, 2, 3);
+	_test_hash_vals (int, 1, 2, 3, 4);
+	_test_hash_vals (long, 1l);
+	_test_hash_vals (long, 1l, 2l, 3l, 4l, 5l);
+
+	_test_hash_struct (10, 'a', 5.4, 7);
+	_test_hash_struct (-10, '\0', -5.4e49, 255);
+
+	g_assert_cmpint (NM_HASH_COMBINE_BOOLS (guint8,                       1, 0), ==, 0x002);
+	g_assert_cmpint (NM_HASH_COMBINE_BOOLS (guint8,                       1, 1), ==, 0x003);
+	g_assert_cmpint (NM_HASH_COMBINE_BOOLS (guint8,           1, 1, 0, 0, 0, 0), ==, 0x030);
+	g_assert_cmpint (NM_HASH_COMBINE_BOOLS (guint8,           1, 1, 0, 0, 0, 1), ==, 0x031);
+	g_assert_cmpint (NM_HASH_COMBINE_BOOLS (guint8,     0, 0, 1, 1, 0, 0, 0, 1), ==, 0x031);
+	g_assert_cmpint (NM_HASH_COMBINE_BOOLS (guint16,    0, 0, 1, 1, 0, 0, 0, 1), ==, 0x031);
+	g_assert_cmpint (NM_HASH_COMBINE_BOOLS (guint16, 0, 0, 0, 1, 1, 0, 0, 0, 1), ==, 0x031);
+	g_assert_cmpint (NM_HASH_COMBINE_BOOLS (guint16, 1, 0, 0, 1, 1, 0, 0, 0, 1), ==, 0x131);
 }
 
 /*****************************************************************************/

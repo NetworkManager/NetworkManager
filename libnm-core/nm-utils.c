@@ -4006,7 +4006,7 @@ guint
 _nm_utils_strstrdictkey_hash (gconstpointer a)
 {
 	const NMUtilsStrStrDictKey *k = a;
-	const signed char *p;
+	const char *p;
 	NMHashState h;
 
 	nm_hash_init (&h, 76642997u);
@@ -4014,17 +4014,18 @@ _nm_utils_strstrdictkey_hash (gconstpointer a)
 		if (((int) k->type) & ~STRSTRDICTKEY_ALL_SET)
 			g_return_val_if_reached (0);
 
-		nm_hash_update_uint (&h, k->type);
+		nm_hash_update_val (&h, k->type);
 		if (k->type & STRSTRDICTKEY_ALL_SET) {
-			p = (void *) k->data;
-			for (; *p != '\0'; p++)
-				nm_hash_update_uint (&h, *p);
+			gsize n;
+
+			n = 0;
+			p = strchr (k->data, '\0');
 			if (k->type == STRSTRDICTKEY_ALL_SET) {
 				/* the key contains two strings. Continue... */
-				nm_hash_update_uint (&h, '\0');
-				for (p++; *p != '\0'; p++)
-					nm_hash_update_uint (&h, *p);
+				p = strchr (p + 1, '\0');
 			}
+			if (p != k->data)
+				nm_hash_update (&h, k->data, p - k->data);
 		}
 	}
 	return nm_hash_complete (&h);

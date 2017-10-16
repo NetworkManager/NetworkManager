@@ -92,8 +92,6 @@ GETTER (void) \
 
 /*****************************************************************************/
 
-guint nm_utils_in6_addr_hash (const struct in6_addr *addr);
-
 gboolean nm_ethernet_address_is_valid (gconstpointer addr, gssize len);
 
 gconstpointer nm_utils_ipx_address_clear_host_address (int family, gpointer dst, gconstpointer src, guint8 plen);
@@ -131,7 +129,9 @@ nm_utils_ip6_address_same_prefix (const struct in6_addr *addr_a, const struct in
 static inline void
 nm_hash_update_in6addr (NMHashState *h, const struct in6_addr *addr)
 {
-	nm_hash_update_mem (h, addr, addr ? sizeof (*addr) : 0);
+	nm_assert (addr);
+
+	nm_hash_update (h, addr, sizeof (*addr));
 }
 
 static inline void
@@ -139,8 +139,7 @@ nm_hash_update_in6addr_prefix (NMHashState *h, const struct in6_addr *addr, guin
 {
 	struct in6_addr a;
 
-	if (!addr)
-		g_return_if_reached ();
+	nm_assert (addr);
 
 	nm_utils_ip6_address_clear_host_address (&a, addr, plen);
 	/* we don't hash plen itself. The caller may want to do that.*/
