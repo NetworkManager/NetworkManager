@@ -7114,11 +7114,11 @@ check_and_add_ipv6ll_addr (NMDevice *self)
 	if (priv->nm_ipv6ll == FALSE)
 		return;
 
-	if (priv->ip6_config) {
+	if (priv->ext_ip6_config_captured) {
 		NMDedupMultiIter ipconf_iter;
 		const NMPlatformIP6Address *addr;
 
-		nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, priv->ip6_config, &addr) {
+		nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, priv->ext_ip6_config_captured, &addr) {
 			if (   IN6_IS_ADDR_LINKLOCAL (&addr->address)
 			    && !(addr->n_ifa_flags & IFA_F_DADFAILED)) {
 				/* Already have an LL address, nothing to do */
