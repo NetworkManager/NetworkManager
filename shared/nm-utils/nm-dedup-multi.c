@@ -183,13 +183,13 @@ _dict_idx_entries_hash (const NMDedupMultiEntry *entry)
 	nm_hash_init (&h, 1914869417u);
 	if (idx_type->klass->idx_obj_partition_hash) {
 		nm_assert (obj);
-		nm_hash_update_uint (&h, idx_type->klass->idx_obj_partition_hash (idx_type, obj));
+		nm_hash_update_val (&h, idx_type->klass->idx_obj_partition_hash (idx_type, obj));
 	}
 
 	if (!lookup_head)
-		nm_hash_update_uint (&h, idx_type->klass->idx_obj_id_hash (idx_type, obj));
+		nm_hash_update_val (&h, idx_type->klass->idx_obj_id_hash (idx_type, obj));
 
-	nm_hash_update_ptr (&h, idx_type);
+	nm_hash_update_val (&h, idx_type);
 	return nm_hash_complete (&h);
 }
 

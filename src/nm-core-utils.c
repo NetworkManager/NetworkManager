@@ -186,18 +186,6 @@ nm_utils_exp10 (gint16 ex)
 
 /*****************************************************************************/
 
-guint
-nm_utils_in6_addr_hash (const struct in6_addr *addr)
-{
-	NMHashState h;
-
-	nm_hash_init (&h, 3675559913u);
-	nm_hash_update_in6addr (&h, addr);
-	return nm_hash_complete (&h);
-}
-
-/*****************************************************************************/
-
 /*
  * nm_ethernet_address_is_valid:
  * @addr: pointer to a binary or ASCII Ethernet address

@@ -2861,8 +2861,8 @@ _v4_has_shadowed_routes_detect_hash (const IP4RPFilterData *d)
 	NMHashState h;
 
 	nm_hash_init (&h, 1105201169u);
-	nm_hash_update_uint (&h, d->network);
-	nm_hash_update_uint (&h, d->plen);
+	nm_hash_update_val (&h, d->network);
+	nm_hash_update_val (&h, d->plen);
 	return nm_hash_complete (&h);
 }
 
