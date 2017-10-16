@@ -550,6 +550,7 @@ typedef enum {
  * @NM_DEVICE_STATE_REASON_NEW_ACTIVATION: New connection activation was enqueued
  * @NM_DEVICE_STATE_REASON_PARENT_CHANGED: the device's parent changed
  * @NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED: the device parent's management changed
+ * @NM_DEVICE_STATE_REASON_OVSDB_FAILED: problem communicating with OpenVSwitch database
  *
  * Device state change reason codes
  */
@@ -617,6 +618,7 @@ typedef enum {
 	NM_DEVICE_STATE_REASON_NEW_ACTIVATION                 = 60,
 	NM_DEVICE_STATE_REASON_PARENT_CHANGED                 = 61,
 	NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED         = 62,
+	NM_DEVICE_STATE_REASON_OVSDB_FAILED                   = 63,
 } NMDeviceStateReason;
 
 /**

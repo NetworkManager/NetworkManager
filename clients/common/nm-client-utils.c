@@ -399,6 +399,9 @@ nmc_device_reason_to_string (NMDeviceStateReason reason)
 		return _("The device's parent changed");
 	case NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED:
 		return _("The device parent's management changed");
+
+	case NM_DEVICE_STATE_REASON_OVSDB_FAILED:
+		return _("OpenVSwitch database connection failed");
 	}
 
 	/* TRANSLATORS: Unknown reason for a device state change (NMDeviceStateReason) */
