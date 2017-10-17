@@ -5129,26 +5129,25 @@ nm_platform_link_hash_update (const NMPlatformLink *obj, NMHashState *h)
 	nm_hash_update_vals (h,
 	                     obj->ifindex,
 	                     obj->master,
-	                     obj->parent);
-	nm_hash_update_val (h, obj->type);
-	nm_hash_update_strarr (h, obj->name);
-	nm_hash_update_vals (h,
+	                     obj->parent,
 	                     obj->n_ifi_flags,
-	                     obj->mtu);
-	nm_hash_update_bools (h, obj->connected,
-	                         obj->initialized);
-	nm_hash_update_val (h, obj->arptype);
-	nm_hash_update_val (h, obj->inet6_addr_gen_mode_inv);
+	                     obj->mtu,
+	                     obj->type,
+	                     obj->arptype,
+	                     obj->inet6_addr_gen_mode_inv,
+	                     obj->inet6_token,
+	                     obj->rx_packets,
+	                     obj->rx_bytes,
+	                     obj->tx_packets,
+	                     obj->tx_bytes,
+	                     NM_HASH_COMBINE_BOOLS (guint8,
+	                                            obj->connected,
+	                                            obj->initialized));
+	nm_hash_update_strarr (h, obj->name);
 	nm_hash_update_str0 (h, obj->kind);
 	nm_hash_update_str0 (h, obj->driver);
 	/* nm_hash_update_mem() also hashes the length obj->addr.len */
 	nm_hash_update_mem (h, obj->addr.data, obj->addr.len);
-	nm_hash_update (h, &obj->inet6_token, sizeof (obj->inet6_token));
-	nm_hash_update_vals (h,
-	                     obj->rx_packets,
-	                     obj->rx_bytes,
-	                     obj->tx_packets,
-	                     obj->tx_bytes);
 }
 
 int
@@ -5182,16 +5181,17 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 void
 nm_platform_lnk_gre_hash_update (const NMPlatformLnkGre *obj, NMHashState *h)
 {
-	nm_hash_update_val (h, obj->parent_ifindex);
-	nm_hash_update_val (h, obj->input_flags);
-	nm_hash_update_val (h, obj->output_flags);
-	nm_hash_update_val (h, obj->input_key);
-	nm_hash_update_val (h, obj->output_key);
-	nm_hash_update_val (h, obj->local);
-	nm_hash_update_val (h, obj->remote);
-	nm_hash_update_val (h, obj->ttl);
-	nm_hash_update_val (h, obj->tos);
-	nm_hash_update_bool (h, obj->path_mtu_discovery);
+	nm_hash_update_vals (h,
+	                     obj->local,
+	                     obj->remote,
+	                     obj->parent_ifindex,
+	                     obj->input_flags,
+	                     obj->output_flags,
+	                     obj->input_key,
+	                     obj->output_key,
+	                     obj->ttl,
+	                     obj->tos,
+	                     (bool) obj->path_mtu_discovery);
 }
 
 int
@@ -5230,14 +5230,15 @@ nm_platform_lnk_infiniband_cmp (const NMPlatformLnkInfiniband *a, const NMPlatfo
 void
 nm_platform_lnk_ip6tnl_hash_update (const NMPlatformLnkIp6Tnl *obj, NMHashState *h)
 {
-	nm_hash_update_val (h, obj->parent_ifindex);
-	nm_hash_update_in6addr (h, &obj->local);
-	nm_hash_update_in6addr (h, &obj->remote);
-	nm_hash_update_val (h, obj->ttl);
-	nm_hash_update_val (h, obj->tclass);
-	nm_hash_update_val (h, obj->encap_limit);
-	nm_hash_update_val (h, obj->flow_label);
-	nm_hash_update_val (h, obj->proto);
+	nm_hash_update_vals (h,
+	                     obj->local,
+	                     obj->remote,
+	                     obj->parent_ifindex,
+	                     obj->ttl,
+	                     obj->tclass,
+	                     obj->encap_limit,
+	                     obj->proto,
+	                     obj->flow_label);
 }
 
 int
@@ -5258,12 +5259,13 @@ nm_platform_lnk_ip6tnl_cmp (const NMPlatformLnkIp6Tnl *a, const NMPlatformLnkIp6
 void
 nm_platform_lnk_ipip_hash_update (const NMPlatformLnkIpIp *obj, NMHashState *h)
 {
-	nm_hash_update_val (h, obj->parent_ifindex);
-	nm_hash_update_val (h, obj->local);
-	nm_hash_update_val (h, obj->remote);
-	nm_hash_update_val (h, obj->ttl);
-	nm_hash_update_val (h, obj->tos);
-	nm_hash_update_bool (h, obj->path_mtu_discovery);
+	nm_hash_update_vals (h,
+	                     obj->local,
+	                     obj->remote,
+	                     obj->parent_ifindex,
+	                     obj->ttl,
+	                     obj->tos,
+	                     (bool) obj->path_mtu_discovery);
 }
 
 int
@@ -5282,21 +5284,21 @@ nm_platform_lnk_ipip_cmp (const NMPlatformLnkIpIp *a, const NMPlatformLnkIpIp *b
 void
 nm_platform_lnk_macsec_hash_update (const NMPlatformLnkMacsec *obj, NMHashState *h)
 {
-	nm_hash_update_val (h, obj->parent_ifindex);
-	nm_hash_update_val (h, obj->window);
 	nm_hash_update_vals (h,
+	                     obj->parent_ifindex,
+	                     obj->sci,
 	                     obj->cipher_suite,
-	                     obj->sci);
-	nm_hash_update_vals (h,
+	                     obj->window,
 	                     obj->icv_length,
 	                     obj->encoding_sa,
-	                     obj->validation);
-	nm_hash_update_bools (h, obj->encrypt,
-	                         obj->protect,
-	                         obj->include_sci,
-	                         obj->es,
-	                         obj->scb,
-	                         obj->replay_protect);
+	                     obj->validation,
+	                     NM_HASH_COMBINE_BOOLS (guint8,
+	                                            obj->encrypt,
+	                                            obj->protect,
+	                                            obj->include_sci,
+	                                            obj->es,
+	                                            obj->scb,
+	                                            obj->replay_protect));
 }
 
 int
@@ -5322,9 +5324,11 @@ nm_platform_lnk_macsec_cmp (const NMPlatformLnkMacsec *a, const NMPlatformLnkMac
 void
 nm_platform_lnk_macvlan_hash_update (const NMPlatformLnkMacvlan *obj, NMHashState *h )
 {
-	nm_hash_update_val (h, obj->mode);
-	nm_hash_update_bools (h, obj->no_promisc,
-	                         obj->tap);
+	nm_hash_update_vals (h,
+	                     obj->mode,
+	                     NM_HASH_COMBINE_BOOLS (guint8,
+	                                            obj->no_promisc,
+	                                            obj->tap));
 }
 
 int
@@ -5340,14 +5344,15 @@ nm_platform_lnk_macvlan_cmp (const NMPlatformLnkMacvlan *a, const NMPlatformLnkM
 void
 nm_platform_lnk_sit_hash_update (const NMPlatformLnkSit *obj, NMHashState *h)
 {
-	nm_hash_update_val (h, obj->parent_ifindex);
-	nm_hash_update_val (h, obj->local);
-	nm_hash_update_val (h, obj->remote);
-	nm_hash_update_val (h, obj->ttl);
-	nm_hash_update_val (h, obj->tos);
-	nm_hash_update_bool (h, obj->path_mtu_discovery);
-	nm_hash_update_val (h, obj->flags);
-	nm_hash_update_val (h, obj->proto);
+	nm_hash_update_vals (h,
+	                     obj->local,
+	                     obj->remote,
+	                     obj->parent_ifindex,
+	                     obj->flags,
+	                     obj->ttl,
+	                     obj->tos,
+	                     obj->proto,
+	                     (bool) obj->path_mtu_discovery);
 }
 
 int
@@ -5368,8 +5373,9 @@ nm_platform_lnk_sit_cmp (const NMPlatformLnkSit *a, const NMPlatformLnkSit *b)
 void
 nm_platform_lnk_vlan_hash_update (const NMPlatformLnkVlan *obj, NMHashState *h)
 {
-	nm_hash_update_val (h, obj->id);
-	nm_hash_update_val (h, obj->flags);
+	nm_hash_update_vals (h,
+	                     obj->id,
+	                     obj->flags);
 }
 
 int
@@ -5384,24 +5390,26 @@ nm_platform_lnk_vlan_cmp (const NMPlatformLnkVlan *a, const NMPlatformLnkVlan *b
 void
 nm_platform_lnk_vxlan_hash_update (const NMPlatformLnkVxlan *obj, NMHashState *h)
 {
-	nm_hash_update_val (h, obj->parent_ifindex);
-	nm_hash_update_val (h, obj->id);
-	nm_hash_update_val (h, obj->group);
-	nm_hash_update_val (h, obj->local);
-	nm_hash_update_in6addr (h, &obj->group6);
-	nm_hash_update_in6addr (h, &obj->local6);
-	nm_hash_update_val (h, obj->tos);
-	nm_hash_update_val (h, obj->ttl);
-	nm_hash_update_val (h, obj->ageing);
-	nm_hash_update_val (h, obj->limit);
-	nm_hash_update_val (h, obj->dst_port);
-	nm_hash_update_val (h, obj->src_port_min);
-	nm_hash_update_val (h, obj->src_port_max);
-	nm_hash_update_bools (h, obj->learning,
-	                         obj->proxy,
-	                         obj->rsc,
-	                         obj->l2miss,
-	                         obj->l3miss);
+	nm_hash_update_vals (h,
+	                     obj->group6,
+	                     obj->local6,
+	                     obj->group,
+	                     obj->local,
+	                     obj->parent_ifindex,
+	                     obj->id,
+	                     obj->ageing,
+	                     obj->limit,
+	                     obj->dst_port,
+	                     obj->src_port_min,
+	                     obj->src_port_max,
+	                     obj->tos,
+	                     obj->ttl,
+	                     NM_HASH_COMBINE_BOOLS (guint8,
+	                                            obj->learning,
+	                                            obj->proxy,
+	                                            obj->rsc,
+	                                            obj->l2miss,
+	                                            obj->l3miss));
 }
 
 int
@@ -5432,15 +5440,16 @@ nm_platform_lnk_vxlan_cmp (const NMPlatformLnkVxlan *a, const NMPlatformLnkVxlan
 void
 nm_platform_ip4_address_hash_update (const NMPlatformIP4Address *obj, NMHashState *h)
 {
-	nm_hash_update_val (h, obj->ifindex);
-	nm_hash_update_val (h, obj->address);
-	nm_hash_update_val (h, obj->plen);
-	nm_hash_update_val (h, obj->peer_address);
-	nm_hash_update_val (h, obj->addr_source);
-	nm_hash_update_val (h, obj->timestamp);
-	nm_hash_update_val (h, obj->lifetime);
-	nm_hash_update_val (h, obj->preferred);
-	nm_hash_update_val (h, obj->n_ifa_flags);
+	nm_hash_update_vals (h,
+	                     obj->ifindex,
+	                     obj->addr_source,
+	                     obj->timestamp,
+	                     obj->lifetime,
+	                     obj->preferred,
+	                     obj->n_ifa_flags,
+	                     obj->plen,
+	                     obj->address,
+	                     obj->peer_address);
 	nm_hash_update_strarr (h, obj->label);
 }
 
@@ -5464,15 +5473,16 @@ nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4A
 void
 nm_platform_ip6_address_hash_update (const NMPlatformIP6Address *obj, NMHashState *h)
 {
-	nm_hash_update_val (h, obj->ifindex);
-	nm_hash_update_in6addr (h, &obj->address);
-	nm_hash_update_val (h, obj->plen);
-	nm_hash_update_in6addr (h, &obj->peer_address);
-	nm_hash_update_val (h, obj->addr_source);
-	nm_hash_update_val (h, obj->timestamp);
-	nm_hash_update_val (h, obj->lifetime);
-	nm_hash_update_val (h, obj->preferred);
-	nm_hash_update_val (h, obj->n_ifa_flags);
+	nm_hash_update_vals (h,
+	                     obj->ifindex,
+	                     obj->addr_source,
+	                     obj->timestamp,
+	                     obj->lifetime,
+	                     obj->preferred,
+	                     obj->n_ifa_flags,
+	                     obj->plen,
+	                     obj->address,
+	                     obj->peer_address);
 }
 
 int
@@ -5498,74 +5508,97 @@ nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6A
 void
 nm_platform_ip4_route_hash_update (const NMPlatformIP4Route *obj, NMPlatformIPRouteCmpType cmp_type, NMHashState *h)
 {
-	nm_hash_update_val (h, cmp_type);
-	if (obj) {
-		switch (cmp_type) {
-		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
-		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
-			nm_hash_update_val (h, nm_platform_route_table_uncoerce (obj->table_coerced, TRUE));
-			nm_hash_update_val (h, nm_utils_ip4_address_clear_host_address (obj->network, obj->plen));
-			nm_hash_update_val (h, obj->plen);
-			nm_hash_update_val (h, obj->metric);
-			nm_hash_update_val (h, obj->tos);
-			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
-				nm_hash_update_val (h, obj->ifindex);
-				nm_hash_update_val (h, nmp_utils_ip_config_source_round_trip_rtprot (obj->rt_source));
-				nm_hash_update_val (h, _ip_route_scope_inv_get_normalized (obj));
-				nm_hash_update_val (h, obj->gateway);
-				nm_hash_update_val (h, obj->mss);
-				nm_hash_update_val (h, obj->pref_src);
-				nm_hash_update_vals (h,
-				                     obj->window,
-				                     obj->cwnd,
-				                     obj->initcwnd,
-				                     obj->initrwnd,
-				                     obj->mtu);
-				nm_hash_update_bools (h, obj->lock_window,
-				                         obj->lock_cwnd,
-				                         obj->lock_initcwnd,
-				                         obj->lock_initrwnd,
-				                         obj->lock_mtu);
-			}
-			break;
-		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
-		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL:
-			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
-				nm_hash_update_val (h, nm_platform_route_table_uncoerce (obj->table_coerced, TRUE));
-			else
-				nm_hash_update_val (h, obj->table_coerced);
-			nm_hash_update_val (h, obj->ifindex);
-			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
-				nm_hash_update_val (h, nm_utils_ip4_address_clear_host_address (obj->network, obj->plen));
-			else
-				nm_hash_update_val (h, obj->network);
-			nm_hash_update_val (h, obj->plen);
-			nm_hash_update_val (h, obj->metric);
-			nm_hash_update_val (h, obj->gateway);
-			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
-				nm_hash_update_val (h, nmp_utils_ip_config_source_round_trip_rtprot (obj->rt_source));
-				nm_hash_update_val (h, _ip_route_scope_inv_get_normalized (obj));
-			} else {
-				nm_hash_update_val (h, obj->rt_source);
-				nm_hash_update_val (h, obj->scope_inv);
-			}
-			nm_hash_update_val (h, obj->tos);
-			nm_hash_update_vals (h,
-			                     obj->mss,
-			                     obj->pref_src,
-			                     obj->window,
-			                     obj->cwnd,
-			                     obj->initcwnd,
-			                     obj->initrwnd,
-			                     obj->mtu);
-			nm_hash_update_bools (h, obj->rt_cloned,
-			                         obj->lock_window,
-			                         obj->lock_cwnd,
-			                         obj->lock_initcwnd,
-			                         obj->lock_initrwnd,
-			                         obj->lock_mtu);
-			break;
-		}
+	switch (cmp_type) {
+	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
+		nm_hash_update_vals (h,
+		                     cmp_type,
+		                     nm_platform_route_table_uncoerce (obj->table_coerced, TRUE),
+		                     nm_utils_ip4_address_clear_host_address (obj->network, obj->plen),
+		                     obj->plen,
+		                     obj->metric,
+		                     obj->tos);
+		break;
+	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
+		nm_hash_update_vals (h,
+		                     cmp_type,
+		                     nm_platform_route_table_uncoerce (obj->table_coerced, TRUE),
+		                     nm_utils_ip4_address_clear_host_address (obj->network, obj->plen),
+		                     obj->plen,
+		                     obj->metric,
+		                     obj->tos,
+		                     /* on top of WEAK_ID: */
+		                     obj->ifindex,
+		                     nmp_utils_ip_config_source_round_trip_rtprot (obj->rt_source),
+		                     _ip_route_scope_inv_get_normalized (obj),
+		                     obj->gateway,
+		                     obj->mss,
+		                     obj->pref_src,
+		                     obj->window,
+		                     obj->cwnd,
+		                     obj->initcwnd,
+		                     obj->initrwnd,
+		                     obj->mtu,
+		                     NM_HASH_COMBINE_BOOLS (guint8,
+		                                            obj->lock_window,
+		                                            obj->lock_cwnd,
+		                                            obj->lock_initcwnd,
+		                                            obj->lock_initrwnd,
+		                                            obj->lock_mtu));
+		break;
+	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
+		nm_hash_update_vals (h,
+		                     cmp_type,
+		                     nm_platform_route_table_uncoerce (obj->table_coerced, TRUE),
+		                     obj->ifindex,
+		                     nm_utils_ip4_address_clear_host_address (obj->network, obj->plen),
+		                     obj->plen,
+		                     obj->metric,
+		                     obj->gateway,
+		                     nmp_utils_ip_config_source_round_trip_rtprot (obj->rt_source),
+		                     _ip_route_scope_inv_get_normalized (obj),
+		                     obj->tos,
+		                     obj->mss,
+		                     obj->pref_src,
+		                     obj->window,
+		                     obj->cwnd,
+		                     obj->initcwnd,
+		                     obj->initrwnd,
+		                     obj->mtu,
+		                     NM_HASH_COMBINE_BOOLS (guint8,
+		                                            obj->rt_cloned,
+		                                            obj->lock_window,
+		                                            obj->lock_cwnd,
+		                                            obj->lock_initcwnd,
+		                                            obj->lock_initrwnd,
+		                                            obj->lock_mtu));
+		break;
+	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL:
+		nm_hash_update_vals (h,
+		                     cmp_type,
+		                     obj->table_coerced,
+		                     obj->ifindex,
+		                     obj->network,
+		                     obj->plen,
+		                     obj->metric,
+		                     obj->gateway,
+		                     obj->rt_source,
+		                     obj->scope_inv,
+		                     obj->tos,
+		                     obj->mss,
+		                     obj->pref_src,
+		                     obj->window,
+		                     obj->cwnd,
+		                     obj->initcwnd,
+		                     obj->initrwnd,
+		                     obj->mtu,
+		                     NM_HASH_COMBINE_BOOLS (guint8,
+		                                            obj->rt_cloned,
+		                                            obj->lock_window,
+		                                            obj->lock_cwnd,
+		                                            obj->lock_initcwnd,
+		                                            obj->lock_initrwnd,
+		                                            obj->lock_mtu));
+		break;
 	}
 }
 
@@ -5649,67 +5682,88 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 void
 nm_platform_ip6_route_hash_update (const NMPlatformIP6Route *obj, NMPlatformIPRouteCmpType cmp_type, NMHashState *h)
 {
-	nm_hash_update_val (h, cmp_type);
-	if (obj) {
-		switch (cmp_type) {
-		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
-		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
-			nm_hash_update_val (h, nm_platform_route_table_uncoerce (obj->table_coerced, TRUE));
-			nm_hash_update_in6addr_prefix (h, &obj->network, obj->plen);
-			nm_hash_update_val (h, obj->plen);
-			nm_hash_update_val (h, nm_utils_ip6_route_metric_normalize (obj->metric));
-			nm_hash_update_in6addr_prefix (h, &obj->src, obj->src_plen);
-			nm_hash_update_val (h, obj->src_plen);
-			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
-				nm_hash_update_val (h, obj->ifindex);
-				nm_hash_update_in6addr (h, &obj->gateway);
-			}
-			break;
-		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
-		case NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL:
-			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
-				nm_hash_update_val (h, nm_platform_route_table_uncoerce (obj->table_coerced, TRUE));
-			else
-				nm_hash_update_val (h, obj->table_coerced);
-			nm_hash_update_val (h, obj->ifindex);
-			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
-				nm_hash_update_in6addr_prefix (h, &obj->network, obj->plen);
-			else
-				nm_hash_update_in6addr (h, &obj->network);
-			nm_hash_update_val (h, obj->plen);
-			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
-				nm_hash_update_val (h, nm_utils_ip6_route_metric_normalize (obj->metric));
-			else
-				nm_hash_update_val (h, obj->metric);
-			nm_hash_update_in6addr (h, &obj->gateway);
-			nm_hash_update_in6addr (h, &obj->pref_src);
-			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
-				nm_hash_update_in6addr_prefix (h, &obj->src, obj->src_plen);
-				nm_hash_update_val (h, obj->src_plen);
-				nm_hash_update_val (h, nmp_utils_ip_config_source_round_trip_rtprot (obj->rt_source));
-			} else {
-				nm_hash_update_in6addr (h, &obj->src);
-				nm_hash_update_val (h, obj->src_plen);
-				nm_hash_update_val (h, obj->rt_source);
-			}
-			nm_hash_update_val (h, obj->mss);
-			nm_hash_update_bools (h, obj->rt_cloned,
-			                         obj->lock_window,
-			                         obj->lock_cwnd,
-			                         obj->lock_initcwnd,
-			                         obj->lock_initrwnd,
-			                         obj->lock_mtu);
-			nm_hash_update_val (h, obj->window);
-			nm_hash_update_val (h, obj->cwnd);
-			nm_hash_update_val (h, obj->initcwnd);
-			nm_hash_update_val (h, obj->initrwnd);
-			nm_hash_update_val (h, obj->mtu);
-			if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
-				nm_hash_update_val (h, _route_pref_normalize (obj->rt_pref));
-			else
-				nm_hash_update_val (h, obj->rt_pref);
-			break;
-		}
+	struct in6_addr a1, a2;
+
+	switch (cmp_type) {
+	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
+		nm_hash_update_vals (h,
+		                     cmp_type,
+		                     nm_platform_route_table_uncoerce (obj->table_coerced, TRUE),
+		                     *nm_utils_ip6_address_clear_host_address (&a1, &obj->network, obj->plen),
+		                     obj->plen,
+		                     nm_utils_ip6_route_metric_normalize (obj->metric),
+		                     *nm_utils_ip6_address_clear_host_address (&a2, &obj->src, obj->src_plen),
+		                     obj->src_plen);
+		break;
+	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
+		nm_hash_update_vals (h,
+		                     cmp_type,
+		                     nm_platform_route_table_uncoerce (obj->table_coerced, TRUE),
+		                     *nm_utils_ip6_address_clear_host_address (&a1, &obj->network, obj->plen),
+		                     obj->plen,
+		                     nm_utils_ip6_route_metric_normalize (obj->metric),
+		                     *nm_utils_ip6_address_clear_host_address (&a2, &obj->src, obj->src_plen),
+		                     obj->src_plen,
+		                     /* on top of WEAK_ID: */
+		                     obj->ifindex,
+		                     obj->gateway);
+		break;
+	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
+		nm_hash_update_vals (h,
+		                     cmp_type,
+		                     nm_platform_route_table_uncoerce (obj->table_coerced, TRUE),
+		                     obj->ifindex,
+		                     *nm_utils_ip6_address_clear_host_address (&a1, &obj->network, obj->plen),
+		                     obj->plen,
+		                     nm_utils_ip6_route_metric_normalize (obj->metric),
+		                     obj->gateway,
+		                     obj->pref_src,
+		                     *nm_utils_ip6_address_clear_host_address (&a2, &obj->src, obj->src_plen),
+		                     obj->src_plen,
+		                     nmp_utils_ip_config_source_round_trip_rtprot (obj->rt_source),
+		                     obj->mss,
+		                     NM_HASH_COMBINE_BOOLS (guint8,
+		                                            obj->rt_cloned,
+		                                            obj->lock_window,
+		                                            obj->lock_cwnd,
+		                                            obj->lock_initcwnd,
+		                                            obj->lock_initrwnd,
+		                                            obj->lock_mtu),
+		                     obj->window,
+		                     obj->cwnd,
+		                     obj->initcwnd,
+		                     obj->initrwnd,
+		                     obj->mtu,
+		                     _route_pref_normalize (obj->rt_pref));
+		break;
+	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL:
+		nm_hash_update_vals (h,
+		                     cmp_type,
+		                     obj->table_coerced,
+		                     obj->ifindex,
+		                     obj->network,
+		                     obj->plen,
+		                     obj->metric,
+		                     obj->gateway,
+		                     obj->pref_src,
+		                     obj->src,
+		                     obj->src_plen,
+		                     obj->rt_source,
+		                     obj->mss,
+		                     NM_HASH_COMBINE_BOOLS (guint8,
+		                                            obj->rt_cloned,
+		                                            obj->lock_window,
+		                                            obj->lock_cwnd,
+		                                            obj->lock_initcwnd,
+		                                            obj->lock_initrwnd,
+		                                            obj->lock_mtu),
+		                     obj->window,
+		                     obj->cwnd,
+		                     obj->initcwnd,
+		                     obj->initrwnd,
+		                     obj->mtu,
+		                     obj->rt_pref);
+		break;
 	}
 }
 
