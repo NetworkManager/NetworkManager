@@ -86,16 +86,17 @@ struct _NMPCache {
 
 static const NMDedupMultiIdxTypeClass _dedup_multi_idx_type_class;
 
-static guint
-_idx_obj_id_hash (const NMDedupMultiIdxType *idx_type,
-                  const NMDedupMultiObj *obj)
+static void
+_idx_obj_id_hash_update (const NMDedupMultiIdxType *idx_type,
+                         const NMDedupMultiObj *obj,
+                         NMHashState *h)
 {
 	const NMPObject *o = (NMPObject *) obj;
 
 	nm_assert (idx_type && idx_type->klass == &_dedup_multi_idx_type_class);
 	nm_assert (NMP_OBJECT_GET_TYPE (o) != NMP_OBJECT_TYPE_UNKNOWN);
 
-	return nmp_object_id_hash (o);
+	nmp_object_id_hash_update (o, h);
 }
 
 static gboolean
@@ -113,33 +114,11 @@ _idx_obj_id_equal (const NMDedupMultiIdxType *idx_type,
 	return nmp_object_id_equal (o_a, o_b);
 }
 
-/* the return value of _idx_obj_part() encodes 3 things:
- * 1) for idx_obj_partitionable(), it returns 0 or non-zero.
- * 2) for idx_obj_partition_hash(), it returns the hash value (which
- *   must never be zero not to clash with idx_obj_partitionable().
- * 3) for idx_obj_partition_equal(), returns 0 or 1 depending
- *   on whether the objects are equal.
- *
- * _HASH_NON_ZERO() is used to for case 2), to avoid that the a zero hash value
- * is returned.
- *
- * Actually, nm_hash_complete() never returns zero. This code is only
- * here as a safeguard and a reminder that the has MUST not be zero. */
-static inline guint
-_HASH_NON_ZERO (NMHashState *h)
-{
-	guint v;
-
-	v = nm_hash_complete (h);
-	nm_assert (v != 0);
-	return v;
-}
-
 static guint
 _idx_obj_part (const DedupMultiIdxType *idx_type,
-               gboolean request_hash,
                const NMPObject *obj_a,
-               const NMPObject *obj_b)
+               const NMPObject *obj_b,
+               NMHashState *h)
 {
 	NMPObjectType obj_type;
 
@@ -151,21 +130,17 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 	nm_assert (obj_a);
 	nm_assert (NMP_OBJECT_GET_TYPE (obj_a) != NMP_OBJECT_TYPE_UNKNOWN);
 	nm_assert (!obj_b || (NMP_OBJECT_GET_TYPE (obj_b) != NMP_OBJECT_TYPE_UNKNOWN));
-	nm_assert (!request_hash || !obj_b);
+	nm_assert (!h || !obj_b);
 
 	switch (idx_type->cache_id_type) {
 
 	case NMP_CACHE_ID_TYPE_OBJECT_TYPE:
 		if (obj_b)
 			return NMP_OBJECT_GET_TYPE (obj_a) == NMP_OBJECT_GET_TYPE (obj_b);
-		if (request_hash) {
-			NMHashState h;
-
-			nm_hash_init (&h, 487703243u);
-			nm_hash_update_vals (&h,
+		if (h) {
+			nm_hash_update_vals (h,
 			                     idx_type->cache_id_type,
 			                     NMP_OBJECT_GET_TYPE (obj_a));
-			return _HASH_NON_ZERO (&h);
 		}
 		return 1;
 
@@ -174,6 +149,8 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 			/* first check, whether obj_a is suitable for this idx_type.
 			 * If not, return 0 (which is correct for partitionable(), hash() and equal()
 			 * functions. */
+			if (h)
+				nm_hash_update_val (h, obj_a);
 			return 0;
 		}
 		if (obj_b) {
@@ -181,14 +158,9 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 			return    NMP_OBJECT_GET_TYPE (obj_b) == NMP_OBJECT_TYPE_LINK
 			       && nm_streq (obj_a->link.name, obj_b->link.name);
 		}
-		if (request_hash) {
-			NMHashState h;
-
-			/* we request a hash from obj_a. Hash the relevant parts. */
-			nm_hash_init (&h, 2126752699u);
-			nm_hash_update_val (&h, idx_type->cache_id_type);
-			nm_hash_update_strarr (&h, obj_a->link.name);
-			return _HASH_NON_ZERO (&h);
+		if (h) {
+			nm_hash_update_val (h, idx_type->cache_id_type);
+			nm_hash_update_strarr (h, obj_a->link.name);
 		}
 		/* just return 1, to indicate that obj_a is partitionable by this idx_type. */
 		return 1;
@@ -197,21 +169,20 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 		if (   !NM_IN_SET (NMP_OBJECT_GET_TYPE (obj_a), NMP_OBJECT_TYPE_IP4_ROUTE,
 		                                                NMP_OBJECT_TYPE_IP6_ROUTE)
 		    || !NM_PLATFORM_IP_ROUTE_IS_DEFAULT (&obj_a->ip_route)
-		    || !nmp_object_is_visible (obj_a))
+		    || !nmp_object_is_visible (obj_a)) {
+			if (h)
+				nm_hash_update_val (h, obj_a);
 			return 0;
+		}
 		if (obj_b) {
 			return    NMP_OBJECT_GET_TYPE (obj_a) == NMP_OBJECT_GET_TYPE (obj_b)
 			       && NM_PLATFORM_IP_ROUTE_IS_DEFAULT (&obj_b->ip_route)
 			       && nmp_object_is_visible (obj_b);
 		}
-		if (request_hash) {
-			NMHashState h;
-
-			nm_hash_init (&h, 4278960223u);
-			nm_hash_update_vals (&h,
+		if (h) {
+			nm_hash_update_vals (h,
 			                     idx_type->cache_id_type,
 			                     NMP_OBJECT_GET_TYPE (obj_a));
-			return _HASH_NON_ZERO (&h);
 		}
 		return 1;
 
@@ -220,22 +191,21 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 		                                                NMP_OBJECT_TYPE_IP6_ADDRESS,
 		                                                NMP_OBJECT_TYPE_IP4_ROUTE,
 		                                                NMP_OBJECT_TYPE_IP6_ROUTE)
-		    || !nmp_object_is_visible (obj_a))
+		    || !nmp_object_is_visible (obj_a)) {
+			if (h)
+				nm_hash_update_val (h, obj_a);
 			return 0;
+		}
 		nm_assert (obj_a->object.ifindex > 0);
 		if (obj_b) {
 			return    NMP_OBJECT_GET_TYPE (obj_a) == NMP_OBJECT_GET_TYPE (obj_b)
 			       && obj_a->object.ifindex == obj_b->object.ifindex
 			       && nmp_object_is_visible (obj_b);
 		}
-		if (request_hash) {
-			NMHashState h;
-
-			nm_hash_init (&h, 920415631u);
-			nm_hash_update_vals (&h,
+		if (h) {
+			nm_hash_update_vals (h,
 			                     idx_type->cache_id_type,
 			                     obj_a->object.ifindex);
-			return _HASH_NON_ZERO (&h);
 		}
 		return 1;
 
@@ -243,8 +213,11 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 		obj_type = NMP_OBJECT_GET_TYPE (obj_a);
 		if (   !NM_IN_SET (obj_type, NMP_OBJECT_TYPE_IP4_ROUTE,
 		                             NMP_OBJECT_TYPE_IP6_ROUTE)
-		    || obj_a->object.ifindex <= 0)
+		    || obj_a->object.ifindex <= 0) {
+			if (h)
+				nm_hash_update_val (h, obj_a);
 			return 0;
+		}
 		if (obj_b) {
 			return    obj_type == NMP_OBJECT_GET_TYPE (obj_b)
 			       && obj_b->object.ifindex > 0
@@ -252,19 +225,12 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 			           ? (nm_platform_ip4_route_cmp (&obj_a->ip4_route, &obj_b->ip4_route, NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID) == 0)
 			           : (nm_platform_ip6_route_cmp (&obj_a->ip6_route, &obj_b->ip6_route, NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID) == 0));
 		}
-		if (request_hash) {
-			NMHashState h;
-			guint h2;
-
-			h2 =   (obj_type == NMP_OBJECT_TYPE_IP4_ROUTE)
-			     ? nm_platform_ip4_route_hash (&obj_a->ip4_route, NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID)
-			     : nm_platform_ip6_route_hash (&obj_a->ip6_route, NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID);
-
-			nm_hash_init (&h, 778646573u);
-			nm_hash_update_vals (&h,
-			                     idx_type->cache_id_type,
-			                     h2);
-			return _HASH_NON_ZERO (&h);
+		if (h) {
+			nm_hash_update_val (h, idx_type->cache_id_type);
+			if (obj_type == NMP_OBJECT_TYPE_IP4_ROUTE)
+				nm_platform_ip4_route_hash_update (&obj_a->ip4_route, NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID, h);
+			else
+				nm_platform_ip6_route_hash_update (&obj_a->ip6_route, NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID, h);
 		}
 		return 1;
 
@@ -281,19 +247,20 @@ _idx_obj_partitionable (const NMDedupMultiIdxType *idx_type,
                         const NMDedupMultiObj *obj)
 {
 	return _idx_obj_part ((DedupMultiIdxType *) idx_type,
-	                      FALSE,
 	                      (NMPObject *) obj,
+	                      NULL,
 	                      NULL) != 0;
 }
 
-static guint
-_idx_obj_partition_hash (const NMDedupMultiIdxType *idx_type,
-                         const NMDedupMultiObj *obj)
+static void
+_idx_obj_partition_hash_update (const NMDedupMultiIdxType *idx_type,
+                                const NMDedupMultiObj *obj,
+                                NMHashState *h)
 {
-	return _idx_obj_part ((DedupMultiIdxType *) idx_type,
-	                      TRUE,
-	                      (NMPObject *) obj,
-	                      NULL);
+	_idx_obj_part ((DedupMultiIdxType *) idx_type,
+	               (NMPObject *) obj,
+	               NULL,
+	               h);
 }
 
 static gboolean
@@ -302,16 +269,16 @@ _idx_obj_partition_equal (const NMDedupMultiIdxType *idx_type,
                           const NMDedupMultiObj *obj_b)
 {
 	return _idx_obj_part ((DedupMultiIdxType *) idx_type,
-	                      FALSE,
 	                      (NMPObject *) obj_a,
-	                      (NMPObject *) obj_b);
+	                      (NMPObject *) obj_b,
+	                      NULL);
 }
 
 static const NMDedupMultiIdxTypeClass _dedup_multi_idx_type_class = {
-	.idx_obj_id_hash = _idx_obj_id_hash,
+	.idx_obj_id_hash_update = _idx_obj_id_hash_update,
 	.idx_obj_id_equal = _idx_obj_id_equal,
 	.idx_obj_partitionable = _idx_obj_partitionable,
-	.idx_obj_partition_hash = _idx_obj_partition_hash,
+	.idx_obj_partition_hash_update = _idx_obj_partition_hash_update,
 	.idx_obj_partition_equal = _idx_obj_partition_equal,
 };
 
@@ -771,63 +738,48 @@ _vt_cmd_plobj_to_string_id (ip4_address, NMPlatformIP4Address, "%d: %s/%d%s%s", 
                                                                obj->peer_address != obj->address ? nm_utils_inet4_ntop (nm_utils_ip4_address_clear_host_address (obj->peer_address, obj->plen), buf2) : "");
 _vt_cmd_plobj_to_string_id (ip6_address, NMPlatformIP6Address, "%d: %s",        obj->ifindex, nm_utils_inet6_ntop (&obj->address, buf1));
 
-guint
-nmp_object_hash (const NMPObject *obj)
+void
+nmp_object_hash_update (const NMPObject *obj, NMHashState *h)
 {
 	const NMPClass *klass;
-	NMHashState h;
 
-	if (!obj)
-		return 0;
-
-	g_return_val_if_fail (NMP_OBJECT_IS_VALID (obj), 0);
+	g_return_if_fail (NMP_OBJECT_IS_VALID (obj));
 
 	klass = NMP_OBJECT_GET_CLASS (obj);
 
-	nm_hash_init (&h, 816200863u);
-	nm_hash_update_val (&h, klass->obj_type);
-	if (klass->cmd_obj_hash)
-		nm_hash_update_val (&h, klass->cmd_obj_hash (obj));
-	else if (klass->cmd_plobj_hash)
-		nm_hash_update_val (&h, klass->cmd_plobj_hash (&obj->object));
+	nm_hash_update_val (h, klass->obj_type);
+	if (klass->cmd_obj_hash_update)
+		klass->cmd_obj_hash_update (obj, h);
+	else if (klass->cmd_plobj_hash_update)
+		klass->cmd_plobj_hash_update (&obj->object, h);
 	else
-		nm_hash_update_val (&h, obj);
-
-	return nm_hash_complete (&h);
+		nm_hash_update_val (h, obj);
 }
 
-static guint
-_vt_cmd_obj_hash_link (const NMPObject *obj)
+static void
+_vt_cmd_obj_hash_update_link (const NMPObject *obj, NMHashState *h)
 {
-	NMHashState h;
-
 	nm_assert (NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LINK);
 
-	nm_hash_init (&h, 3448776161u);
-	nm_hash_update_val (&h, nm_platform_link_hash (&obj->link));
-	nm_hash_update_val (&h, obj->_link.netlink.is_in_netlink);
+	nm_platform_link_hash_update (&obj->link, h);
+	nm_hash_update_val (h, obj->_link.netlink.is_in_netlink);
 	if (obj->_link.netlink.lnk)
-		nm_hash_update_val (&h, nmp_object_hash (obj->_link.netlink.lnk));
-	nm_hash_update_val (&h, obj->_link.udev.device);
-	return nm_hash_complete (&h);
+		nmp_object_hash_update (obj->_link.netlink.lnk, h);
+	nm_hash_update_val (h, obj->_link.udev.device);
 }
 
-static guint
-_vt_cmd_obj_hash_lnk_vlan (const NMPObject *obj)
+static void
+_vt_cmd_obj_hash_update_lnk_vlan (const NMPObject *obj, NMHashState *h)
 {
-	NMHashState h;
-
 	nm_assert (NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LNK_VLAN);
 
-	nm_hash_init (&h, 914932607u);
-	nm_hash_update_val (&h, nm_platform_lnk_vlan_hash (&obj->lnk_vlan));
+	nm_platform_lnk_vlan_hash_update (&obj->lnk_vlan, h);
 	_vlan_xgress_qos_mappings_hash_update (obj->_lnk_vlan.n_ingress_qos_map,
 	                                       obj->_lnk_vlan.ingress_qos_map,
-	                                       &h);
+	                                       h);
 	_vlan_xgress_qos_mappings_hash_update (obj->_lnk_vlan.n_egress_qos_map,
 	                                       obj->_lnk_vlan.egress_qos_map,
-	                                       &h);
-	return nm_hash_complete (&h);
+	                                       h);
 }
 
 int
@@ -1033,7 +985,7 @@ nmp_object_id_cmp (const NMPObject *obj1, const NMPObject *obj2)
 	g_return_val_if_fail (NMP_OBJECT_IS_VALID (obj2), FALSE);
 
 	klass = NMP_OBJECT_GET_CLASS (obj1);
-	nm_assert (!klass->cmd_plobj_id_hash == !klass->cmd_plobj_id_cmp);
+	nm_assert (!klass->cmd_plobj_id_hash_update == !klass->cmd_plobj_id_cmp);
 
 	klass2 = NMP_OBJECT_GET_CLASS (obj2);
 	nm_assert (klass);
@@ -1095,62 +1047,83 @@ _vt_cmd_plobj_id_cmp_ip6_route (const NMPlatformObject *obj1, const NMPlatformOb
 	return nm_platform_ip6_route_cmp ((NMPlatformIP6Route *) obj1, (NMPlatformIP6Route *) obj2, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID);
 }
 
+void
+nmp_object_id_hash_update (const NMPObject *obj, NMHashState *h)
+{
+	const NMPClass *klass;
+
+	g_return_if_fail (NMP_OBJECT_IS_VALID (obj));
+
+	klass = NMP_OBJECT_GET_CLASS (obj);
+
+	nm_assert (!klass->cmd_plobj_id_hash_update == !klass->cmd_plobj_id_cmp);
+
+	if (!klass->cmd_plobj_id_hash_update) {
+		/* The klass doesn't implement ID compare. It means, to use pointer
+		 * equality. */
+		nm_hash_update_val (h, obj);
+		return;
+	}
+
+	nm_hash_update_val (h, klass->obj_type);
+	klass->cmd_plobj_id_hash_update (&obj->object, h);
+}
+
 guint
 nmp_object_id_hash (const NMPObject *obj)
 {
-	const NMPClass *klass;
+	NMHashState h;
 
 	if (!obj)
 		return 0;
 
-	g_return_val_if_fail (NMP_OBJECT_IS_VALID (obj), 0);
-
-	klass = NMP_OBJECT_GET_CLASS (obj);
-
-	nm_assert (!klass->cmd_plobj_id_hash == !klass->cmd_plobj_id_cmp);
-
-	if (!klass->cmd_plobj_id_hash) {
-		/* The klass doesn't implement ID compare. It means, to use pointer
-		 * equality. */
-		return nm_hash_ptr (obj);
-	}
-
-	return klass->cmd_plobj_id_hash (&obj->object);
+	nm_hash_init (&h, 914932607u);
+	nmp_object_id_hash_update (obj, &h);
+	return nm_hash_complete (&h);
 }
 
-#define _vt_cmd_plobj_id_hash(type, plat_type, hash_seed, cmd) \
-static guint \
-_vt_cmd_plobj_id_hash_##type (const NMPlatformObject *_obj) \
+#define _vt_cmd_plobj_id_hash_update(type, plat_type, cmd) \
+static void \
+_vt_cmd_plobj_id_hash_update_##type (const NMPlatformObject *_obj, NMHashState *h) \
 { \
 	const plat_type *const obj = (const plat_type *) _obj; \
-	NMHashState h; \
-	nm_hash_init (&h, (hash_seed)); \
 	{ cmd; } \
-	return nm_hash_complete (&h); \
 }
-_vt_cmd_plobj_id_hash (link, NMPlatformLink, 3982791431u, {
-	nm_hash_update_val (&h, obj->ifindex);
+_vt_cmd_plobj_id_hash_update (link, NMPlatformLink, {
+	nm_hash_update_val (h, obj->ifindex);
 })
-_vt_cmd_plobj_id_hash (ip4_address, NMPlatformIP4Address, 3591309853u, {
-	nm_hash_update_vals (&h,
+_vt_cmd_plobj_id_hash_update (ip4_address, NMPlatformIP4Address, {
+	nm_hash_update_vals (h,
 	                     obj->ifindex,
 	                     obj->plen,
 	                     obj->address,
 	                     /* for IPv4 we must also consider the net-part of the peer-address (IFA_ADDRESS) */
 	                     nm_utils_ip4_address_clear_host_address (obj->peer_address, obj->plen));
 })
-_vt_cmd_plobj_id_hash (ip6_address, NMPlatformIP6Address, 2907861637u, {
-	nm_hash_update_vals (&h,
+_vt_cmd_plobj_id_hash_update (ip6_address, NMPlatformIP6Address, {
+	nm_hash_update_vals (h,
 	                     obj->ifindex,
 	                     /* for IPv6 addresses, the prefix length is not part of the primary identifier. */
 	                     obj->address);
 })
-_vt_cmd_plobj_id_hash (ip4_route, NMPlatformIP4Route, 1038302471u, {
-	nm_hash_update_val (&h, nm_platform_ip4_route_hash (obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID));
+_vt_cmd_plobj_id_hash_update (ip4_route, NMPlatformIP4Route, {
+	nm_platform_ip4_route_hash_update (obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID, h);
 })
-_vt_cmd_plobj_id_hash (ip6_route, NMPlatformIP6Route, 1233384151u, {
-	nm_hash_update_val (&h, nm_platform_ip6_route_hash (obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID));
+_vt_cmd_plobj_id_hash_update (ip6_route, NMPlatformIP6Route, {
+	nm_platform_ip6_route_hash_update (obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID, h);
 })
+
+static inline void
+_vt_cmd_plobj_hash_update_ip4_route (const NMPlatformObject *obj, NMHashState *h)
+{
+	return nm_platform_ip4_route_hash_update ((const NMPlatformIP4Route *) obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL, h);
+}
+
+static inline void
+_vt_cmd_plobj_hash_update_ip6_route (const NMPlatformObject *obj, NMHashState *h)
+{
+	return nm_platform_ip6_route_hash_update ((const NMPlatformIP6Route *) obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL, h);
+}
 
 gboolean
 nmp_object_is_alive (const NMPObject *obj)
@@ -1271,26 +1244,12 @@ _vt_dedup_obj_clone (const NMDedupMultiObj *obj)
 	return (const NMDedupMultiObj *) nmp_object_clone ((const NMPObject *) obj, FALSE);
 }
 
-static guint
-_vt_dedup_obj_full_hash (const NMDedupMultiObj *obj)
-{
-	return nmp_object_hash ((NMPObject *) obj);
-}
-
-static gboolean
-_vt_dedup_obj_full_equal (const NMDedupMultiObj *obj_a,
-                          const NMDedupMultiObj *obj_b)
-{
-	return nmp_object_equal ((NMPObject *) obj_a,
-	                         (NMPObject *) obj_b);
-}
-
 #define DEDUP_MULTI_OBJ_CLASS_INIT() \
 	{ \
 		.obj_clone                      = _vt_dedup_obj_clone, \
 		.obj_destroy                    = _vt_dedup_obj_destroy, \
-		.obj_full_hash                  = _vt_dedup_obj_full_hash, \
-		.obj_full_equal                 = _vt_dedup_obj_full_equal, \
+		.obj_full_hash_update           = (void (*)(const NMDedupMultiObj *obj, NMHashState *h)) nmp_object_hash_update, \
+		.obj_full_equal                 = (gboolean (*)(const NMDedupMultiObj *obj_a, const NMDedupMultiObj *obj_b)) nmp_object_equal, \
 	}
 
 /*****************************************************************************/
@@ -1523,7 +1482,6 @@ _L (const NMPLookup *lookup)
 	nm_assert (lookup);
 	_dedup_multi_idx_type_init (&idx_type, lookup->cache_id_type);
 	nm_assert (idx_type.parent.klass->idx_obj_partitionable  ((NMDedupMultiIdxType *) &idx_type, (NMDedupMultiObj *) &lookup->selector_obj));
-	nm_assert (idx_type.parent.klass->idx_obj_partition_hash ((NMDedupMultiIdxType *) &idx_type, (NMDedupMultiObj *) &lookup->selector_obj) > 0);
 #endif
 	return lookup;
 }
@@ -2515,7 +2473,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.signal_type_id                     = NM_PLATFORM_SIGNAL_ID_LINK,
 		.signal_type                        = NM_PLATFORM_SIGNAL_LINK_CHANGED,
 		.supported_cache_ids                = _supported_cache_ids_link,
-		.cmd_obj_hash                       = _vt_cmd_obj_hash_link,
+		.cmd_obj_hash_update                = _vt_cmd_obj_hash_update_link,
 		.cmd_obj_cmp                        = _vt_cmd_obj_cmp_link,
 		.cmd_obj_copy                       = _vt_cmd_obj_copy_link,
 		.cmd_obj_dispose                    = _vt_cmd_obj_dispose_link,
@@ -2524,10 +2482,10 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_obj_to_string                  = _vt_cmd_obj_to_string_link,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_link,
 		.cmd_plobj_id_cmp                   = _vt_cmd_plobj_id_cmp_link,
-		.cmd_plobj_id_hash                  = _vt_cmd_plobj_id_hash_link,
+		.cmd_plobj_id_hash_update           = _vt_cmd_plobj_id_hash_update_link,
 		.cmd_plobj_to_string_id             = _vt_cmd_plobj_to_string_id_link,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_link_to_string,
-		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_link_hash,
+		.cmd_plobj_hash_update              = (void (*) (const NMPlatformObject *obj, NMHashState *h)) nm_platform_link_hash_update,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_link_cmp,
 	},
 	[NMP_OBJECT_TYPE_IP4_ADDRESS - 1] = {
@@ -2544,10 +2502,10 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_address,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_ip4_address,
 		.cmd_plobj_id_cmp                   = _vt_cmd_plobj_id_cmp_ip4_address,
-		.cmd_plobj_id_hash                  = _vt_cmd_plobj_id_hash_ip4_address,
+		.cmd_plobj_id_hash_update           = _vt_cmd_plobj_id_hash_update_ip4_address,
 		.cmd_plobj_to_string_id             = _vt_cmd_plobj_to_string_id_ip4_address,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_ip4_address_to_string,
-		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_ip4_address_hash,
+		.cmd_plobj_hash_update              = (void (*) (const NMPlatformObject *obj, NMHashState *h)) nm_platform_ip4_address_hash_update,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_ip4_address_cmp,
 	},
 	[NMP_OBJECT_TYPE_IP6_ADDRESS - 1] = {
@@ -2564,10 +2522,10 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_address,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_ip6_address,
 		.cmd_plobj_id_cmp                   = _vt_cmd_plobj_id_cmp_ip6_address,
-		.cmd_plobj_id_hash                  = _vt_cmd_plobj_id_hash_ip6_address,
+		.cmd_plobj_id_hash_update           = _vt_cmd_plobj_id_hash_update_ip6_address,
 		.cmd_plobj_to_string_id             = _vt_cmd_plobj_to_string_id_ip6_address,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_ip6_address_to_string,
-		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_ip6_address_hash,
+		.cmd_plobj_hash_update              = (void (*) (const NMPlatformObject *obj, NMHashState *h)) nm_platform_ip6_address_hash_update,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_ip6_address_cmp
 	},
 	[NMP_OBJECT_TYPE_IP4_ROUTE - 1] = {
@@ -2584,10 +2542,10 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_route,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_ip4_route,
 		.cmd_plobj_id_cmp                   = _vt_cmd_plobj_id_cmp_ip4_route,
-		.cmd_plobj_id_hash                  = _vt_cmd_plobj_id_hash_ip4_route,
+		.cmd_plobj_id_hash_update           = _vt_cmd_plobj_id_hash_update_ip4_route,
 		.cmd_plobj_to_string_id             = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_ip4_route_to_string,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_ip4_route_to_string,
-		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_ip4_route_hash_full,
+		.cmd_plobj_hash_update              = _vt_cmd_plobj_hash_update_ip4_route,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_ip4_route_cmp_full,
 	},
 	[NMP_OBJECT_TYPE_IP6_ROUTE - 1] = {
@@ -2604,10 +2562,10 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_obj_is_alive                   = _vt_cmd_obj_is_alive_ipx_route,
 		.cmd_plobj_id_copy                  = _vt_cmd_plobj_id_copy_ip6_route,
 		.cmd_plobj_id_cmp                   = _vt_cmd_plobj_id_cmp_ip6_route,
-		.cmd_plobj_id_hash                  = _vt_cmd_plobj_id_hash_ip6_route,
+		.cmd_plobj_id_hash_update           = _vt_cmd_plobj_id_hash_update_ip6_route,
 		.cmd_plobj_to_string_id             = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_ip6_route_to_string,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_ip6_route_to_string,
-		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_ip6_route_hash_full,
+		.cmd_plobj_hash_update              = _vt_cmd_plobj_hash_update_ip6_route,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_ip6_route_cmp_full,
 	},
 	[NMP_OBJECT_TYPE_LNK_GRE - 1] = {
@@ -2618,7 +2576,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.obj_type_name                      = "gre",
 		.lnk_link_type                      = NM_LINK_TYPE_GRE,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_gre_to_string,
-		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_lnk_gre_hash,
+		.cmd_plobj_hash_update              = (void (*) (const NMPlatformObject *obj, NMHashState *h)) nm_platform_lnk_gre_hash_update,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_gre_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_INFINIBAND - 1] = {
@@ -2629,7 +2587,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.obj_type_name                      = "infiniband",
 		.lnk_link_type                      = NM_LINK_TYPE_INFINIBAND,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_infiniband_to_string,
-		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_lnk_infiniband_hash,
+		.cmd_plobj_hash_update              = (void (*) (const NMPlatformObject *obj, NMHashState *h)) nm_platform_lnk_infiniband_hash_update,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_infiniband_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_IP6TNL - 1] = {
@@ -2640,7 +2598,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.obj_type_name                      = "ip6tnl",
 		.lnk_link_type                      = NM_LINK_TYPE_IP6TNL,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_ip6tnl_to_string,
-		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_lnk_ip6tnl_hash,
+		.cmd_plobj_hash_update              = (void (*) (const NMPlatformObject *obj, NMHashState *h)) nm_platform_lnk_ip6tnl_hash_update,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_ip6tnl_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_IPIP - 1] = {
@@ -2651,7 +2609,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.obj_type_name                      = "ipip",
 		.lnk_link_type                      = NM_LINK_TYPE_IPIP,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_ipip_to_string,
-		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_lnk_ipip_hash,
+		.cmd_plobj_hash_update              = (void (*) (const NMPlatformObject *obj, NMHashState *h)) nm_platform_lnk_ipip_hash_update,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_ipip_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_MACSEC - 1] = {
@@ -2662,7 +2620,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.obj_type_name                      = "macsec",
 		.lnk_link_type                      = NM_LINK_TYPE_MACSEC,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_macsec_to_string,
-		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_lnk_macsec_hash,
+		.cmd_plobj_hash_update              = (void (*) (const NMPlatformObject *obj, NMHashState *h)) nm_platform_lnk_macsec_hash_update,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_macsec_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_MACVLAN - 1] = {
@@ -2673,7 +2631,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.obj_type_name                      = "macvlan",
 		.lnk_link_type                      = NM_LINK_TYPE_MACVLAN,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_macvlan_to_string,
-		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_lnk_macvlan_hash,
+		.cmd_plobj_hash_update              = (void (*) (const NMPlatformObject *obj, NMHashState *h)) nm_platform_lnk_macvlan_hash_update,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_macvlan_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_MACVTAP - 1] = {
@@ -2684,7 +2642,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.obj_type_name                      = "macvtap",
 		.lnk_link_type                      = NM_LINK_TYPE_MACVTAP,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_macvlan_to_string,
-		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_lnk_macvlan_hash,
+		.cmd_plobj_hash_update              = (void (*) (const NMPlatformObject *obj, NMHashState *h)) nm_platform_lnk_macvlan_hash_update,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_macvlan_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_SIT - 1] = {
@@ -2695,7 +2653,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.obj_type_name                      = "sit",
 		.lnk_link_type                      = NM_LINK_TYPE_SIT,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_sit_to_string,
-		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_lnk_sit_hash,
+		.cmd_plobj_hash_update              = (void (*) (const NMPlatformObject *obj, NMHashState *h)) nm_platform_lnk_sit_hash_update,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_sit_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_VLAN - 1] = {
@@ -2705,13 +2663,13 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.sizeof_public                      = sizeof (NMPlatformLnkVlan),
 		.obj_type_name                      = "vlan",
 		.lnk_link_type                      = NM_LINK_TYPE_VLAN,
-		.cmd_obj_hash                       = _vt_cmd_obj_hash_lnk_vlan,
+		.cmd_obj_hash_update                = _vt_cmd_obj_hash_update_lnk_vlan,
 		.cmd_obj_cmp                        = _vt_cmd_obj_cmp_lnk_vlan,
 		.cmd_obj_copy                       = _vt_cmd_obj_copy_lnk_vlan,
 		.cmd_obj_dispose                    = _vt_cmd_obj_dispose_lnk_vlan,
 		.cmd_obj_to_string                  = _vt_cmd_obj_to_string_lnk_vlan,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_vlan_to_string,
-		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_lnk_vlan_hash,
+		.cmd_plobj_hash_update              = (void (*) (const NMPlatformObject *obj, NMHashState *h)) nm_platform_lnk_vlan_hash_update,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_vlan_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_VXLAN - 1] = {
@@ -2722,7 +2680,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.obj_type_name                      = "vxlan",
 		.lnk_link_type                      = NM_LINK_TYPE_VXLAN,
 		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_vxlan_to_string,
-		.cmd_plobj_hash                     = (guint (*) (const NMPlatformObject *obj)) nm_platform_lnk_vxlan_hash,
+		.cmd_plobj_hash_update              = (void (*) (const NMPlatformObject *obj, NMHashState *h)) nm_platform_lnk_vxlan_hash_update,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_vxlan_cmp,
 	},
 };

@@ -420,13 +420,15 @@ _dedup_obj_destroy (NMDedupMultiObj *obj)
 	g_slice_free (DedupObj, o);
 }
 
-static guint
-_dedup_obj_full_hash (const NMDedupMultiObj *obj)
+static void
+_dedup_obj_full_hash_update (const NMDedupMultiObj *obj, NMHashState *h)
 {
 	const DedupObj *o;
 
 	o = _dedup_obj_assert (obj);
-	return (o->val * 33) + o->other;
+	nm_hash_update_vals (h,
+	                     o->val,
+	                     o->other);
 }
 
 static gboolean
@@ -443,7 +445,7 @@ _dedup_obj_full_equal (const NMDedupMultiObj *obj_a,
 static const NMDedupMultiObjClass dedup_obj_class = {
 	.obj_clone = _dedup_obj_clone,
 	.obj_destroy = _dedup_obj_destroy,
-	.obj_full_hash = _dedup_obj_full_hash,
+	.obj_full_hash_update = _dedup_obj_full_hash_update,
 	.obj_full_equal = _dedup_obj_full_equal,
 };
 
@@ -478,20 +480,19 @@ _dedup_idx_assert (const NMDedupMultiIdxType *idx_type)
 	return t;
 }
 
-static guint
-_dedup_idx_obj_id_hash (const NMDedupMultiIdxType *idx_type,
-                        const NMDedupMultiObj *obj)
+static void
+_dedup_idx_obj_id_hash_update (const NMDedupMultiIdxType *idx_type,
+                               const NMDedupMultiObj *obj,
+                               NMHashState *h)
 {
 	const DedupIdxType *t;
 	const DedupObj *o;
-	guint h;
 
 	t = _dedup_idx_assert (idx_type);
 	o = _dedup_obj_assert (obj);
 
-	h = o->val / t->partition_size;
-	h = (h * 33) + (o->val % t->val_mod);
-	return h;
+	nm_hash_update_val (h, o->val / t->partition_size);
+	nm_hash_update_val (h, o->val % t->val_mod);
 }
 
 static gboolean
@@ -511,9 +512,10 @@ _dedup_idx_obj_id_equal (const NMDedupMultiIdxType *idx_type,
 	       && (o_a->val % t->val_mod) == (o_b->val % t->val_mod);
 }
 
-static guint
-_dedup_idx_obj_partition_hash (const NMDedupMultiIdxType *idx_type,
-                               const NMDedupMultiObj *obj)
+static void
+_dedup_idx_obj_partition_hash_update (const NMDedupMultiIdxType *idx_type,
+                                      const NMDedupMultiObj *obj,
+                                      NMHashState *h)
 {
 	const DedupIdxType *t;
 	const DedupObj *o;
@@ -521,7 +523,7 @@ _dedup_idx_obj_partition_hash (const NMDedupMultiIdxType *idx_type,
 	t = _dedup_idx_assert (idx_type);
 	o = _dedup_obj_assert (obj);
 
-	return o->val / t->partition_size;
+	nm_hash_update_val (h, o->val / t->partition_size);
 }
 
 static gboolean
@@ -541,9 +543,9 @@ _dedup_idx_obj_partition_equal (const NMDedupMultiIdxType *idx_type,
 }
 
 static const NMDedupMultiIdxTypeClass dedup_idx_type_class = {
-	.idx_obj_id_hash = _dedup_idx_obj_id_hash,
+	.idx_obj_id_hash_update = _dedup_idx_obj_id_hash_update,
 	.idx_obj_id_equal = _dedup_idx_obj_id_equal,
-	.idx_obj_partition_hash = _dedup_idx_obj_partition_hash,
+	.idx_obj_partition_hash_update = _dedup_idx_obj_partition_hash_update,
 	.idx_obj_partition_equal = _dedup_idx_obj_partition_equal,
 };
 

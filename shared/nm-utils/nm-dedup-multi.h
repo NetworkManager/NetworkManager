@@ -27,6 +27,8 @@
 
 /*****************************************************************************/
 
+struct _NMHashState;
+
 typedef struct _NMDedupMultiObj             NMDedupMultiObj;
 typedef struct _NMDedupMultiObjClass        NMDedupMultiObjClass;
 typedef struct _NMDedupMultiIdxType         NMDedupMultiIdxType;
@@ -69,9 +71,10 @@ struct _NMDedupMultiObjClass {
 
 	void (*obj_destroy) (NMDedupMultiObj *obj);
 
-	/* the NMDedupMultiObj can be deduplicated. For that the obj_full_hash()
+	/* the NMDedupMultiObj can be deduplicated. For that the obj_full_hash_update()
 	 * and obj_full_equal() compare *all* fields of the object, even minor ones. */
-	guint    (*obj_full_hash)  (const NMDedupMultiObj *obj);
+	void (*obj_full_hash_update)  (const NMDedupMultiObj *obj,
+	                               struct _NMHashState *h);
 	gboolean (*obj_full_equal) (const NMDedupMultiObj *obj_a,
 	                            const NMDedupMultiObj *obj_b);
 };
@@ -152,8 +155,9 @@ void nm_dedup_multi_idx_type_init (NMDedupMultiIdxType *idx_type,
 struct _NMDedupMultiIdxTypeClass {
 	NMObjBaseClass parent;
 
-	guint    (*idx_obj_id_hash)  (const NMDedupMultiIdxType *idx_type,
-	                              const NMDedupMultiObj *obj);
+	void (*idx_obj_id_hash_update)  (const NMDedupMultiIdxType *idx_type,
+	                                 const NMDedupMultiObj *obj,
+	                                 struct _NMHashState *h);
 	gboolean (*idx_obj_id_equal) (const NMDedupMultiIdxType *idx_type,
 	                              const NMDedupMultiObj *obj_a,
 	                              const NMDedupMultiObj *obj_b);
@@ -167,8 +171,9 @@ struct _NMDedupMultiIdxTypeClass {
 	 * object is not partitionable, it is never added to the NMDedupMultiIndex. */
 	gboolean (*idx_obj_partitionable)   (const NMDedupMultiIdxType *idx_type,
 	                                     const NMDedupMultiObj *obj);
-	guint    (*idx_obj_partition_hash)  (const NMDedupMultiIdxType *idx_type,
-	                                     const NMDedupMultiObj *obj);
+	void (*idx_obj_partition_hash_update) (const NMDedupMultiIdxType *idx_type,
+	                                       const NMDedupMultiObj *obj,
+	                                       struct _NMHashState *h);
 	gboolean (*idx_obj_partition_equal) (const NMDedupMultiIdxType *idx_type,
 	                                     const NMDedupMultiObj *obj_a,
 	                                     const NMDedupMultiObj *obj_b);
