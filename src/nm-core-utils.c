@@ -2793,9 +2793,16 @@ nm_utils_fd_get_contents (int fd,
 		nm_auto_fclose FILE *f = NULL;
 		char buf[4096];
 		gsize n_have, n_alloc;
+		int fd2;
 
-		if (!(f = fdopen (fd, "r")))
+		fd2 = dup (fd);
+		if (fd2 < 0)
+			return _get_contents_error (error, 0, "error during dup");
+
+		if (!(f = fdopen (fd2, "r"))) {
+			close (fd2);
 			return _get_contents_error (error, 0, "failure during fdopen");
+		}
 
 		n_have = 0;
 		n_alloc = 0;
