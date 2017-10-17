@@ -762,10 +762,11 @@ _vt_cmd_obj_hash_update_link (const NMPObject *obj, NMHashState *h)
 	nm_assert (NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_LINK);
 
 	nm_platform_link_hash_update (&obj->link, h);
-	nm_hash_update_val (h, obj->_link.netlink.is_in_netlink);
+	nm_hash_update_vals (h,
+	                     obj->_link.netlink.is_in_netlink,
+	                     obj->_link.udev.device);
 	if (obj->_link.netlink.lnk)
 		nmp_object_hash_update (obj->_link.netlink.lnk, h);
-	nm_hash_update_val (h, obj->_link.udev.device);
 }
 
 static void

@@ -616,11 +616,11 @@ typedef struct {
 	in_addr_t local;
 	in_addr_t remote;
 	int parent_ifindex;
+	guint16 flags;
 	guint8 ttl;
 	guint8 tos;
 	guint8 proto;
 	bool path_mtu_discovery:1;
-	guint16 flags;
 } NMPlatformLnkSit;
 
 typedef struct {
