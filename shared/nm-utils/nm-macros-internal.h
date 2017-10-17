@@ -288,6 +288,18 @@ NM_G_ERROR_MSG (GError *error)
 	((type *) (obj))
 #endif
 
+#if _NM_CC_SUPPORT_GENERIC
+/* returns @value, if the type of @value matches @type.
+ * This requires support for C11 _Generic(). If no support is
+ * present, this returns @value directly.
+ *
+ * It's useful to check the let the compiler ensure that @value is
+ * of a certain type. */
+#define _NM_ENSURE_TYPE(type, value) (_Generic ((value), type: (value)))
+#else
+#define _NM_ENSURE_TYPE(type, value) (value)
+#endif
+
 /*****************************************************************************/
 
 #define _NM_IN_SET_EVAL_1( op, _x, y)           (_x == (y))
