@@ -5511,7 +5511,6 @@ nm_platform_ip4_route_hash_update (const NMPlatformIP4Route *obj, NMPlatformIPRo
 	switch (cmp_type) {
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
 		nm_hash_update_vals (h,
-		                     cmp_type,
 		                     nm_platform_route_table_uncoerce (obj->table_coerced, TRUE),
 		                     nm_utils_ip4_address_clear_host_address (obj->network, obj->plen),
 		                     obj->plen,
@@ -5520,7 +5519,6 @@ nm_platform_ip4_route_hash_update (const NMPlatformIP4Route *obj, NMPlatformIPRo
 		break;
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
 		nm_hash_update_vals (h,
-		                     cmp_type,
 		                     nm_platform_route_table_uncoerce (obj->table_coerced, TRUE),
 		                     nm_utils_ip4_address_clear_host_address (obj->network, obj->plen),
 		                     obj->plen,
@@ -5547,7 +5545,6 @@ nm_platform_ip4_route_hash_update (const NMPlatformIP4Route *obj, NMPlatformIPRo
 		break;
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
 		nm_hash_update_vals (h,
-		                     cmp_type,
 		                     nm_platform_route_table_uncoerce (obj->table_coerced, TRUE),
 		                     obj->ifindex,
 		                     nm_utils_ip4_address_clear_host_address (obj->network, obj->plen),
@@ -5574,7 +5571,6 @@ nm_platform_ip4_route_hash_update (const NMPlatformIP4Route *obj, NMPlatformIPRo
 		break;
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL:
 		nm_hash_update_vals (h,
-		                     cmp_type,
 		                     obj->table_coerced,
 		                     obj->ifindex,
 		                     obj->network,
@@ -5687,7 +5683,6 @@ nm_platform_ip6_route_hash_update (const NMPlatformIP6Route *obj, NMPlatformIPRo
 	switch (cmp_type) {
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
 		nm_hash_update_vals (h,
-		                     cmp_type,
 		                     nm_platform_route_table_uncoerce (obj->table_coerced, TRUE),
 		                     *nm_utils_ip6_address_clear_host_address (&a1, &obj->network, obj->plen),
 		                     obj->plen,
@@ -5697,7 +5692,6 @@ nm_platform_ip6_route_hash_update (const NMPlatformIP6Route *obj, NMPlatformIPRo
 		break;
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
 		nm_hash_update_vals (h,
-		                     cmp_type,
 		                     nm_platform_route_table_uncoerce (obj->table_coerced, TRUE),
 		                     *nm_utils_ip6_address_clear_host_address (&a1, &obj->network, obj->plen),
 		                     obj->plen,
@@ -5710,7 +5704,6 @@ nm_platform_ip6_route_hash_update (const NMPlatformIP6Route *obj, NMPlatformIPRo
 		break;
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
 		nm_hash_update_vals (h,
-		                     cmp_type,
 		                     nm_platform_route_table_uncoerce (obj->table_coerced, TRUE),
 		                     obj->ifindex,
 		                     *nm_utils_ip6_address_clear_host_address (&a1, &obj->network, obj->plen),
@@ -5738,7 +5731,6 @@ nm_platform_ip6_route_hash_update (const NMPlatformIP6Route *obj, NMPlatformIPRo
 		break;
 	case NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL:
 		nm_hash_update_vals (h,
-		                     cmp_type,
 		                     obj->table_coerced,
 		                     obj->ifindex,
 		                     obj->network,
