@@ -5302,6 +5302,7 @@ nm_platform_lnk_macsec_hash (const NMPlatformLnkMacsec *obj)
 {
 	guint h = NM_HASH_INIT (226984267u);
 
+	h = NM_HASH_COMBINE (h, obj->parent_ifindex);
 	h = NM_HASH_COMBINE (h, obj->sci);
 	h = NM_HASH_COMBINE_UINT64 (h, obj->icv_length);
 	h = NM_HASH_COMBINE_UINT64 (h, obj->cipher_suite);
@@ -5321,6 +5322,7 @@ int
 nm_platform_lnk_macsec_cmp (const NMPlatformLnkMacsec *a, const NMPlatformLnkMacsec *b)
 {
 	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, parent_ifindex);
 	NM_CMP_FIELD (a, b, sci);
 	NM_CMP_FIELD (a, b, icv_length);
 	NM_CMP_FIELD (a, b, cipher_suite);
