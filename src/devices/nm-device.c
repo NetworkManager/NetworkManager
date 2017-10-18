@@ -7210,6 +7210,14 @@ _set_mtu (NMDevice *self, guint32 mtu)
 
 	priv->mtu = mtu;
 	_notify (self, PROP_MTU);
+
+	if (priv->master) {
+		/* changing the MTU of a slave, might require the master to reset
+		 * it's MTU. Note that the master usually cannot set a MTU larger
+		 * then the slave's. Hence, when the slave increases the MTU,
+		 * master might want to retry setting the MTU. */
+		nm_device_commit_mtu (priv->master);
+	}
 }
 
 static void
