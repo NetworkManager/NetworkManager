@@ -24,6 +24,7 @@
 
 #include <string.h>
 
+#include "nm-utils/nm-hash-utils.h"
 #include "nm-setting-connection.h"
 #include "nm-auth-subject.h"
 #include "nm-auth-manager.h"
@@ -131,7 +132,7 @@ nm_auth_chain_new_subject (NMAuthSubject *subject,
 
 	self = g_slice_new0 (NMAuthChain);
 	self->refcount = 1;
-	self->data = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, chain_data_free);
+	self->data = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, chain_data_free);
 	self->done_func = done_func;
 	self->user_data = user_data;
 	self->context = context ? g_object_ref (context) : NULL;

@@ -283,7 +283,7 @@ nm_checkpoint_manager_new (NMManager *manager)
 	 * of NMManager shall surpass the lifetime of the NMCheckpointManager
 	 * instance. */
 	self->_manager = manager;
-	self->checkpoints = g_hash_table_new_full (g_str_hash, g_str_equal,
+	self->checkpoints = g_hash_table_new_full (nm_str_hash, g_str_equal,
 	                                           NULL, checkpoint_destroy);
 
 	return self;

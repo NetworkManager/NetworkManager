@@ -338,16 +338,16 @@ init (NMSettingsPlugin *config)
 	const char *block_name;
 	NMIfupdownConnection *connection;
 
-	auto_ifaces = g_hash_table_new (g_str_hash, g_str_equal);
+	auto_ifaces = g_hash_table_new (nm_str_hash, g_str_equal);
 
 	if(!priv->connections)
-		priv->connections = g_hash_table_new (g_str_hash, g_str_equal);
+		priv->connections = g_hash_table_new (nm_str_hash, g_str_equal);
 
 	if(!priv->kernel_ifaces)
-		priv->kernel_ifaces = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, _udev_device_unref);
+		priv->kernel_ifaces = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, _udev_device_unref);
 
 	if(!priv->eni_ifaces)
-		priv->eni_ifaces = g_hash_table_new (g_str_hash, g_str_equal);
+		priv->eni_ifaces = g_hash_table_new (nm_str_hash, g_str_equal);
 
 	nm_log_info (LOGD_SETTINGS, "init!");
 

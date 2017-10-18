@@ -226,7 +226,7 @@ reload_connections (NMSettingsPlugin *config)
 	                                                 NM_CONFIG_KEYFILE_GROUP_IFNET, NM_CONFIG_KEYFILE_KEY_IFNET_AUTO_REFRESH,
 	                                                 FALSE);
 
-	new_connections = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
+	new_connections = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, g_object_unref);
 
 	/* Reread on-disk data and refresh in-memory connections from it */
 	conn_names = ifnet_get_connection_names ();
@@ -444,7 +444,7 @@ init (NMSettingsPlugin *config)
 
 	nm_log_info (LOGD_SETTINGS, "Initializing!");
 
-	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
+	priv->connections = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_object_unref);
 	priv->unmanaged_well_known = !is_managed_plugin ();
 	nm_log_info (LOGD_SETTINGS, "management mode: %s",
 	             priv->unmanaged_well_known ? "unmanaged" : "managed");

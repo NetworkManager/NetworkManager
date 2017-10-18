@@ -26,11 +26,14 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#define _nm_packed __attribute__ ((packed))
-#define _nm_unused __attribute__ ((unused))
-#define _nm_pure   __attribute__ ((pure))
-#define _nm_const  __attribute__ ((const))
-#define _nm_printf(a,b) __attribute__ ((__format__ (__printf__, a, b)))
+#define _nm_packed           __attribute__ ((packed))
+#define _nm_unused           __attribute__ ((unused))
+#define _nm_pure             __attribute__ ((pure))
+#define _nm_const            __attribute__ ((const))
+#define _nm_printf(a,b)      __attribute__ ((__format__ (__printf__, a, b)))
+#define _nm_align(s)         __attribute__ ((aligned (s)))
+#define _nm_alignof(type)    __alignof (type)
+#define _nm_alignas(type)    _nm_align (_nm_alignof (type))
 
 /*****************************************************************************/
 
@@ -283,6 +286,18 @@ NM_G_ERROR_MSG (GError *error)
  * to a non-const pointer. */
 #define _NM_CONSTCAST(type, obj) \
 	((type *) (obj))
+#endif
+
+#if _NM_CC_SUPPORT_GENERIC
+/* returns @value, if the type of @value matches @type.
+ * This requires support for C11 _Generic(). If no support is
+ * present, this returns @value directly.
+ *
+ * It's useful to check the let the compiler ensure that @value is
+ * of a certain type. */
+#define _NM_ENSURE_TYPE(type, value) (_Generic ((value), type: (value)))
+#else
+#define _NM_ENSURE_TYPE(type, value) (value)
 #endif
 
 /*****************************************************************************/

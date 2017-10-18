@@ -32,6 +32,7 @@
 #include <linux/rtnetlink.h>
 
 #include "nm-utils/nm-dedup-multi.h"
+#include "nm-utils/nm-random-utils.h"
 
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
@@ -771,7 +772,7 @@ nm_dhcp_client_handle_event (gpointer unused,
 		GVariant *value;
 
 		/* Copy options */
-		str_options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+		str_options = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 		g_variant_iter_init (&iter, options);
 		while (g_variant_iter_next (&iter, "{&sv}", &name, &value)) {
 			maybe_add_option (self, str_options, name, value);

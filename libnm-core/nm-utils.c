@@ -38,6 +38,7 @@
 #endif
 
 #include "nm-utils/nm-enum-utils.h"
+#include "nm-utils/nm-hash-utils.h"
 #include "nm-common-macros.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
@@ -4005,28 +4006,29 @@ guint
 _nm_utils_strstrdictkey_hash (gconstpointer a)
 {
 	const NMUtilsStrStrDictKey *k = a;
-	const signed char *p;
-	guint32 h = NM_HASH_INIT (76642997u);
+	const char *p;
+	NMHashState h;
 
+	nm_hash_init (&h, 76642997u);
 	if (k) {
 		if (((int) k->type) & ~STRSTRDICTKEY_ALL_SET)
 			g_return_val_if_reached (0);
 
-		h = NM_HASH_COMBINE (h, k->type);
+		nm_hash_update_val (&h, k->type);
 		if (k->type & STRSTRDICTKEY_ALL_SET) {
-			p = (void *) k->data;
-			for (; *p != '\0'; p++)
-				h = NM_HASH_COMBINE (h, *p);
+			gsize n;
+
+			n = 0;
+			p = strchr (k->data, '\0');
 			if (k->type == STRSTRDICTKEY_ALL_SET) {
 				/* the key contains two strings. Continue... */
-				h = NM_HASH_COMBINE (h, '\0');
-				for (p++; *p != '\0'; p++)
-					h = NM_HASH_COMBINE (h, *p);
+				p = strchr (p + 1, '\0');
 			}
+			if (p != k->data)
+				nm_hash_update (&h, k->data, p - k->data);
 		}
 	}
-
-	return h;
+	return nm_hash_complete (&h);
 }
 
 gboolean

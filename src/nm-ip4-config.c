@@ -57,11 +57,12 @@ _route_valid (const NMPlatformIP4Route *r)
 
 /*****************************************************************************/
 
-static guint
-_idx_obj_id_hash (const NMDedupMultiIdxType *idx_type,
-                  const NMDedupMultiObj *obj)
+static void
+_idx_obj_id_hash_update (const NMDedupMultiIdxType *idx_type,
+                         const NMDedupMultiObj *obj,
+                         NMHashState *h)
 {
-	return nmp_object_id_hash ((NMPObject *) obj);
+	nmp_object_id_hash_update ((NMPObject *) obj, h);
 }
 
 static gboolean
@@ -77,7 +78,7 @@ nm_ip_config_dedup_multi_idx_type_init (NMIPConfigDedupMultiIdxType *idx_type,
                                         NMPObjectType obj_type)
 {
 	static const NMDedupMultiIdxTypeClass idx_type_class = {
-		.idx_obj_id_hash = _idx_obj_id_hash,
+		.idx_obj_id_hash_update = _idx_obj_id_hash_update,
 		.idx_obj_id_equal = _idx_obj_id_equal,
 	};
 

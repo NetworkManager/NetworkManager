@@ -26,6 +26,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "nm-utils/nm-hash-utils.h"
 #include "settings/nm-settings-plugin.h"
 
 #include "nms-ifnet-net-parser.h"
@@ -270,8 +271,8 @@ wpa_parser_init (const char *wpa_supplicant_conf)
 	gboolean complete = FALSE;
 
 	wpa_parser_data_changed = FALSE;
-	wsec_table = g_hash_table_new (g_str_hash, g_str_equal);
-	wsec_global_table = g_hash_table_new (g_str_hash, g_str_equal);
+	wsec_table = g_hash_table_new (nm_str_hash, g_str_equal);
+	wsec_global_table = g_hash_table_new (nm_str_hash, g_str_equal);
 
 	if (g_file_test (wpa_supplicant_conf, G_FILE_TEST_IS_REGULAR))
 		channel =
@@ -292,7 +293,7 @@ wpa_parser_init (const char *wpa_supplicant_conf)
 				continue;
 			} else {
 				GHashTable *network =
-				    g_hash_table_new (g_str_hash, g_str_equal);
+				    g_hash_table_new (nm_str_hash, g_str_equal);
 
 				do {
 					gchar *quote_start, *quote_end = NULL, *comment;
@@ -512,7 +513,7 @@ wpa_add_security (const char *ssid)
 		return TRUE;
 	else {
 		GHashTable *security =
-		    g_hash_table_new (g_str_hash, g_str_equal);
+		    g_hash_table_new (nm_str_hash, g_str_equal);
 		gchar *ssid_i;
 
 		nm_log_info (LOGD_SETTINGS, "Adding security for %s", ssid);

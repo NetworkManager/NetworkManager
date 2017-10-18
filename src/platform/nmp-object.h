@@ -115,7 +115,7 @@ typedef struct {
 	/* Only for NMPObjectLnk* types. */
 	NMLinkType lnk_link_type;
 
-	guint (*cmd_obj_hash) (const NMPObject *obj);
+	void (*cmd_obj_hash_update) (const NMPObject *obj, NMHashState *h);
 	int (*cmd_obj_cmp) (const NMPObject *obj1, const NMPObject *obj2);
 	void (*cmd_obj_copy) (NMPObject *dst, const NMPObject *src);
 	void (*cmd_obj_dispose) (NMPObject *obj);
@@ -126,10 +126,10 @@ typedef struct {
 	/* functions that operate on NMPlatformObject */
 	void (*cmd_plobj_id_copy) (NMPlatformObject *dst, const NMPlatformObject *src);
 	int (*cmd_plobj_id_cmp) (const NMPlatformObject *obj1, const NMPlatformObject *obj2);
-	guint (*cmd_plobj_id_hash) (const NMPlatformObject *obj);
+	void (*cmd_plobj_id_hash_update) (const NMPlatformObject *obj, NMHashState *h);
 	const char *(*cmd_plobj_to_string_id) (const NMPlatformObject *obj, char *buf, gsize buf_size);
 	const char *(*cmd_plobj_to_string) (const NMPlatformObject *obj, char *buf, gsize len);
-	guint (*cmd_plobj_hash) (const NMPlatformObject *obj);
+	void (*cmd_plobj_hash_update) (const NMPlatformObject *obj, NMHashState *h);
 	int (*cmd_plobj_cmp) (const NMPlatformObject *obj1, const NMPlatformObject *obj2);
 } NMPClass;
 
@@ -469,13 +469,14 @@ const NMPObject *nmp_object_stackinit_id_ip4_address (NMPObject *obj, int ifinde
 const NMPObject *nmp_object_stackinit_id_ip6_address (NMPObject *obj, int ifindex, const struct in6_addr *address);
 
 const char *nmp_object_to_string (const NMPObject *obj, NMPObjectToStringMode to_string_mode, char *buf, gsize buf_size);
-guint nmp_object_hash (const NMPObject *obj);
+void nmp_object_hash_update (const NMPObject *obj, NMHashState *h);
 int nmp_object_cmp (const NMPObject *obj1, const NMPObject *obj2);
 gboolean nmp_object_equal (const NMPObject *obj1, const NMPObject *obj2);
 void nmp_object_copy (NMPObject *dst, const NMPObject *src, gboolean id_only);
 NMPObject *nmp_object_clone (const NMPObject *obj, gboolean id_only);
 
 int nmp_object_id_cmp (const NMPObject *obj1, const NMPObject *obj2);
+void nmp_object_id_hash_update (const NMPObject *obj, NMHashState *h);
 guint nmp_object_id_hash (const NMPObject *obj);
 
 static inline gboolean

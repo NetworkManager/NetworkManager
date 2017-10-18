@@ -616,11 +616,11 @@ typedef struct {
 	in_addr_t local;
 	in_addr_t remote;
 	int parent_ifindex;
+	guint16 flags;
 	guint8 ttl;
 	guint8 tos;
 	guint8 proto;
 	bool path_mtu_discovery:1;
-	guint16 flags;
 } NMPlatformLnkSit;
 
 typedef struct {
@@ -1300,32 +1300,20 @@ nm_platform_ip6_route_cmp_full (const NMPlatformIP6Route *a, const NMPlatformIP6
 	return nm_platform_ip6_route_cmp (a, b, NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL);
 }
 
-guint nm_platform_link_hash (const NMPlatformLink *obj);
-guint nm_platform_ip4_address_hash (const NMPlatformIP4Address *obj);
-guint nm_platform_ip6_address_hash (const NMPlatformIP6Address *obj);
-guint nm_platform_ip4_route_hash (const NMPlatformIP4Route *obj, NMPlatformIPRouteCmpType cmp_type);
-guint nm_platform_ip6_route_hash (const NMPlatformIP6Route *obj, NMPlatformIPRouteCmpType cmp_type);
-guint nm_platform_lnk_gre_hash (const NMPlatformLnkGre *obj);
-guint nm_platform_lnk_infiniband_hash (const NMPlatformLnkInfiniband *obj);
-guint nm_platform_lnk_ip6tnl_hash (const NMPlatformLnkIp6Tnl *obj);
-guint nm_platform_lnk_ipip_hash (const NMPlatformLnkIpIp *obj);
-guint nm_platform_lnk_macsec_hash (const NMPlatformLnkMacsec *obj);
-guint nm_platform_lnk_macvlan_hash (const NMPlatformLnkMacvlan *obj);
-guint nm_platform_lnk_sit_hash (const NMPlatformLnkSit *obj);
-guint nm_platform_lnk_vlan_hash (const NMPlatformLnkVlan *obj);
-guint nm_platform_lnk_vxlan_hash (const NMPlatformLnkVxlan *obj);
-
-static inline guint
-nm_platform_ip4_route_hash_full (const NMPlatformIP4Route *obj)
-{
-	return nm_platform_ip4_route_hash (obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL);
-}
-
-static inline guint
-nm_platform_ip6_route_hash_full (const NMPlatformIP6Route *obj)
-{
-	return nm_platform_ip6_route_hash (obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL);
-}
+void nm_platform_link_hash_update (const NMPlatformLink *obj, NMHashState *h);
+void nm_platform_ip4_address_hash_update (const NMPlatformIP4Address *obj, NMHashState *h);
+void nm_platform_ip6_address_hash_update (const NMPlatformIP6Address *obj, NMHashState *h);
+void nm_platform_ip4_route_hash_update (const NMPlatformIP4Route *obj, NMPlatformIPRouteCmpType cmp_type, NMHashState *h);
+void nm_platform_ip6_route_hash_update (const NMPlatformIP6Route *obj, NMPlatformIPRouteCmpType cmp_type, NMHashState *h);
+void nm_platform_lnk_gre_hash_update (const NMPlatformLnkGre *obj, NMHashState *h);
+void nm_platform_lnk_infiniband_hash_update (const NMPlatformLnkInfiniband *obj, NMHashState *h);
+void nm_platform_lnk_ip6tnl_hash_update (const NMPlatformLnkIp6Tnl *obj, NMHashState *h);
+void nm_platform_lnk_ipip_hash_update (const NMPlatformLnkIpIp *obj, NMHashState *h);
+void nm_platform_lnk_macsec_hash_update (const NMPlatformLnkMacsec *obj, NMHashState *h);
+void nm_platform_lnk_macvlan_hash_update (const NMPlatformLnkMacvlan *obj, NMHashState *h);
+void nm_platform_lnk_sit_hash_update (const NMPlatformLnkSit *obj, NMHashState *h);
+void nm_platform_lnk_vlan_hash_update (const NMPlatformLnkVlan *obj, NMHashState *h);
+void nm_platform_lnk_vxlan_hash_update (const NMPlatformLnkVxlan *obj, NMHashState *h);
 
 NMPlatformKernelSupportFlags nm_platform_check_kernel_support (NMPlatform *self,
                                                                NMPlatformKernelSupportFlags request_flags);

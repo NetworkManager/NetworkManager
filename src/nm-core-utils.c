@@ -36,6 +36,7 @@
 #include <linux/if_infiniband.h>
 #include <net/ethernet.h>
 
+#include "nm-utils/nm-random-utils.h"
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 #include "nm-setting-connection.h"
@@ -181,19 +182,6 @@ nm_utils_exp10 (gint16 ex)
 	if (ex >= 0)
 		return _exp10 (ex);
 	return 1.0 / _exp10 (- ((gint32) ex));
-}
-
-/*****************************************************************************/
-
-guint
-nm_utils_in6_addr_hash (const struct in6_addr *addr)
-{
-	guint hash = NM_HASH_INIT (3675559913u);
-	int i;
-
-	for (i = 0; i < sizeof (*addr); i++)
-		hash = NM_HASH_COMBINE (hash, ((const guint8 *) addr)[i]);
-	return hash;
 }
 
 /*****************************************************************************/

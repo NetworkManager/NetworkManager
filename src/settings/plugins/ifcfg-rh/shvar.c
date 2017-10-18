@@ -882,7 +882,7 @@ svGetKeys (shvarFile *s)
 			/* we don't clone the keys. The keys are only valid
 			 * until @s gets modified. */
 			if (!keys)
-				keys = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, NULL);
+				keys = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, NULL);
 			g_hash_table_add (keys, (gpointer) line->key);
 		}
 	}

@@ -1358,7 +1358,7 @@ nm_fake_platform_init (NMFakePlatform *fake_platform)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (fake_platform);
 
-	priv->options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	priv->options = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 	priv->links = g_array_new (TRUE, TRUE, sizeof (NMFakePlatformLink));
 }
 

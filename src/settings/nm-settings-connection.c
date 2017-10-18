@@ -2776,7 +2776,7 @@ nm_settings_connection_init (NMSettingsConnection *self)
 
 	priv->agent_mgr = g_object_ref (nm_agent_manager_get ());
 
-	priv->seen_bssids = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+	priv->seen_bssids = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
 
 	priv->autoconnect_retries = AUTOCONNECT_RETRIES_UNSET;
 
