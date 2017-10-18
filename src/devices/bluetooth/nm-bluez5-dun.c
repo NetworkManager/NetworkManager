@@ -386,11 +386,11 @@ nm_bluez5_dun_cleanup (NMBluez5DunContext *context)
 			ioctl (context->rfcomm_fd, RFCOMMRELEASEDEV, &req);
 			context->rfcomm_id = -1;
 		}
-		close (context->rfcomm_fd);
+		nm_close (context->rfcomm_fd);
 		context->rfcomm_fd = -1;
 	}
 
-	close (context->rfcomm_tty_fd);
+	nm_close (context->rfcomm_tty_fd);
 	context->rfcomm_tty_fd = -1;
 }
 

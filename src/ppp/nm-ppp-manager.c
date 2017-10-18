@@ -1088,7 +1088,7 @@ _ppp_cleanup (NMPPPManager *manager)
 	if (priv->monitor_fd >= 0) {
 		/* Get the stats one last time */
 		monitor_cb (manager);
-		close (priv->monitor_fd);
+		nm_close (priv->monitor_fd);
 		priv->monitor_fd = -1;
 	}
 

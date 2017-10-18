@@ -1326,8 +1326,7 @@ svCloseFile (shvarFile *s)
 
 	g_return_if_fail (s != NULL);
 
-	if (s->fd != -1)
-		close (s->fd);
+	nm_close (s->fd);
 	g_free (s->fileName);
 	c_list_for_each_safe (current, safe, &s->lst_head)
 		line_free (c_list_entry (current, shvarLine, lst));

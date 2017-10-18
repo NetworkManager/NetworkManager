@@ -227,7 +227,7 @@ br2684_assign_vcc (NMDeviceAdsl *self, NMSettingAdsl *s_adsl)
 	return TRUE;
 
 error:
-	close (priv->brfd);
+	nm_close (priv->brfd);
 	priv->brfd = -1;
 	return FALSE;
 }
@@ -519,10 +519,8 @@ adsl_cleanup (NMDeviceAdsl *self)
 
 	g_signal_handlers_disconnect_by_func (nm_device_get_platform (NM_DEVICE (self)), G_CALLBACK (link_changed_cb), self);
 
-	if (priv->brfd >= 0) {
-		close (priv->brfd);
-		priv->brfd = -1;
-	}
+	nm_close (priv->brfd);
+	priv->brfd = -1;
 
 	nm_clear_g_source (&priv->nas_update_id);
 

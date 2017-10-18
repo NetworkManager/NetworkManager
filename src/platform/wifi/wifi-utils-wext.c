@@ -97,8 +97,7 @@ wifi_wext_deinit (WifiData *parent)
 {
 	WifiDataWext *wext = (WifiDataWext *) parent;
 
-	if (wext->fd >= 0)
-		close (wext->fd);
+	nm_close (wext->fd);
 }
 
 static gboolean
@@ -757,7 +756,7 @@ wifi_wext_is_wifi (const char *iface)
 		nm_utils_ifname_cpy (iwr.ifr_ifrn.ifrn_name, iface);
 		if (ioctl (fd, SIOCGIWNAME, &iwr) == 0)
 			is_wifi = TRUE;
-		close (fd);
+		nm_close (fd);
 	}
 	return is_wifi;
 }

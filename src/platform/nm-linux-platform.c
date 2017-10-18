@@ -3019,7 +3019,7 @@ sysctl_set (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 	}
 
 	if (nwrote < len - 1) {
-		if (close (fd) != 0) {
+		if (nm_close (fd) != 0) {
 			if (errsv != 0)
 				errno = errsv;
 		} else if (errsv != 0)
@@ -3028,7 +3028,7 @@ sysctl_set (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 			errno = EIO;
 		return FALSE;
 	}
-	if (close (fd) != 0) {
+	if (nm_close (fd) != 0) {
 		/* errno is already properly set. */
 		return FALSE;
 	}
@@ -5601,26 +5601,26 @@ tun_add (NMPlatform *platform, const char *name, gboolean tap,
 		ifr.ifr_flags |= NM_IFF_MULTI_QUEUE;
 
 	if (ioctl (fd, TUNSETIFF, &ifr)) {
-		close (fd);
+		nm_close (fd);
 		return FALSE;
 	}
 
 	if (owner >= 0 && owner < G_MAXINT32) {
 		if (ioctl (fd, TUNSETOWNER, (uid_t) owner)) {
-			close (fd);
+			nm_close (fd);
 			return FALSE;
 		}
 	}
 
 	if (group >= 0 && group < G_MAXINT32) {
 		if (ioctl (fd, TUNSETGROUP, (gid_t) group)) {
-			close (fd);
+			nm_close (fd);
 			return FALSE;
 		}
 	}
 
 	if (ioctl (fd, TUNSETPERSIST, 1)) {
-		close (fd);
+		nm_close (fd);
 		return FALSE;
 	}
 	do_request_link (platform, 0, name);
