@@ -25,6 +25,8 @@
 #include <stdio.h>
 #include <arpa/inet.h>
 
+#include "nm-utils/nm-hash-utils.h"
+
 #include "nm-connection.h"
 
 /*****************************************************************************/
@@ -90,8 +92,6 @@ GETTER (void) \
 
 /*****************************************************************************/
 
-guint nm_utils_in6_addr_hash (const struct in6_addr *addr);
-
 gboolean nm_ethernet_address_is_valid (gconstpointer addr, gssize len);
 
 gconstpointer nm_utils_ipx_address_clear_host_address (int family, gpointer dst, gconstpointer src, guint8 plen);
@@ -126,24 +126,24 @@ nm_utils_ip6_address_same_prefix (const struct in6_addr *addr_a, const struct in
 #define NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX(a, b, plen) \
     NM_CMP_RETURN (nm_utils_ip6_address_same_prefix_cmp ((a), (b), (plen)))
 
-static inline guint
-NM_HASH_COMBINE_IN6ADDR (guint h, const struct in6_addr *addr)
+static inline void
+nm_hash_update_in6addr (NMHashState *h, const struct in6_addr *addr)
 {
-	if (!addr)
-		g_return_val_if_reached (h);
-	return NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (addr));
+	nm_assert (addr);
+
+	nm_hash_update (h, addr, sizeof (*addr));
 }
 
-static inline guint
-NM_HASH_COMBINE_IN6ADDR_PREFIX (guint h, const struct in6_addr *addr, guint8 plen)
+static inline void
+nm_hash_update_in6addr_prefix (NMHashState *h, const struct in6_addr *addr, guint8 plen)
 {
 	struct in6_addr a;
 
-	if (!addr)
-		g_return_val_if_reached (h);
+	nm_assert (addr);
+
 	nm_utils_ip6_address_clear_host_address (&a, addr, plen);
 	/* we don't hash plen itself. The caller may want to do that.*/
-	return NM_HASH_COMBINE (h, nm_utils_in6_addr_hash (&a));
+	nm_hash_update_in6addr (h, &a);
 }
 
 double nm_utils_exp10 (gint16 e);

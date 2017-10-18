@@ -31,6 +31,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+#include "nm-utils/nm-hash-utils.h"
 #include "nm-vpn-helpers.h"
 #include "nm-client-utils.h"
 
@@ -41,7 +42,7 @@
 static char **
 _ip_config_get_routes (NMIPConfig *cfg)
 {
-	gs_unref_hashtable GHashTable *hash = g_hash_table_new (g_str_hash, g_str_equal);
+	gs_unref_hashtable GHashTable *hash = g_hash_table_new (nm_str_hash, g_str_equal);
 	GPtrArray *ptr_array;
 	char **arr;
 	guint i;

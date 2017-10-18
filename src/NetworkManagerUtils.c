@@ -299,7 +299,7 @@ nm_utils_complete_generic (NMPlatform *platform,
 	}
 
 	/* Normalize */
-	parameters = g_hash_table_new (g_str_hash, g_str_equal);
+	parameters = g_hash_table_new (nm_str_hash, g_str_equal);
 	g_hash_table_insert (parameters, NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD,
 	                     default_enable_ipv6 ? NM_SETTING_IP6_CONFIG_METHOD_AUTO : NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
 	nm_connection_normalize (connection, parameters, NULL, NULL);

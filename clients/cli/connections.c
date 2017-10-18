@@ -31,6 +31,8 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+#include "nm-utils/nm-hash-utils.h"
+
 #include "nm-client-utils.h"
 #include "nm-vpn-helpers.h"
 #include "nm-meta-setting-access.h"
@@ -2268,7 +2270,7 @@ parse_passwords (const char *passwd_file, GError **error)
 	char *pwd_spec, *pwd, *prop;
 	const char *setting;
 
-	pwds_hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	pwds_hash = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 
 	if (!passwd_file)
 		return pwds_hash;

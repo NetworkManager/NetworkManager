@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include "nm-dbus-interface.h"
+#include "nm-utils/nm-hash-utils.h"
 #include "nm-bluez-device.h"
 #include "nm-bluez-common.h"
 #include "nm-core-internal.h"
@@ -340,7 +341,7 @@ nm_bluez4_adapter_init (NMBluez4Adapter *self)
 {
 	NMBluez4AdapterPrivate *priv = NM_BLUEZ4_ADAPTER_GET_PRIVATE (self);
 
-	priv->devices = g_hash_table_new_full (g_str_hash, g_str_equal,
+	priv->devices = g_hash_table_new_full (nm_str_hash, g_str_equal,
 	                                       NULL, NULL);
 }
 

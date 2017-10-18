@@ -461,7 +461,7 @@ _paths_from_connections (GHashTable *connections)
 {
 	GHashTableIter iter;
 	NMIfcfgConnection *connection;
-	GHashTable *paths = g_hash_table_new (g_str_hash, g_str_equal);
+	GHashTable *paths = g_hash_table_new (nm_str_hash, g_str_equal);
 
 	g_hash_table_iter_init (&iter, connections);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &connection)) {
@@ -991,7 +991,7 @@ settings_plugin_ifcfg_init (SettingsPluginIfcfg *plugin)
 {
 	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE ((SettingsPluginIfcfg *) plugin);
 
-	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
+	priv->connections = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_object_unref);
 }
 
 static void

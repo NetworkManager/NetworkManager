@@ -294,7 +294,7 @@ nm_device_ethernet_init (NMDeviceEthernet *self)
 	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_DEVICE_ETHERNET, NMDeviceEthernetPrivate);
 	self->_priv = priv;
 
-	priv->s390_options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	priv->s390_options = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 }
 
 static NMDeviceCapabilities

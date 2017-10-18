@@ -840,7 +840,7 @@ nm_modem_manager_init (NMModemManager *self)
 {
 	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (self);
 
-	priv->modems = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
+	priv->modems = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_object_unref);
 
 	priv->main_cancellable = g_cancellable_new ();
 

@@ -1559,7 +1559,7 @@ nm_agent_manager_init (NMAgentManager *self)
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
 
 	c_list_init (&priv->requests);
-	priv->agents = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
+	priv->agents = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_object_unref);
 }
 
 static void

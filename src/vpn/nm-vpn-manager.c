@@ -255,7 +255,7 @@ nm_vpn_manager_init (NMVpnManager *self)
 		try_add_plugin (self, info->data);
 	g_slist_free_full (infos, g_object_unref);
 
-	priv->active_services = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+	priv->active_services = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
 }
 
 static void

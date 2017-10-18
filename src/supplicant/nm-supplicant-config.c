@@ -88,11 +88,11 @@ nm_supplicant_config_init (NMSupplicantConfig * self)
 {
 	NMSupplicantConfigPrivate *priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
 
-	priv->config = g_hash_table_new_full (g_str_hash, g_str_equal,
+	priv->config = g_hash_table_new_full (nm_str_hash, g_str_equal,
 	                                      (GDestroyNotify) g_free,
 	                                      (GDestroyNotify) config_option_free);
 
-	priv->blobs = g_hash_table_new_full (g_str_hash, g_str_equal,
+	priv->blobs = g_hash_table_new_full (nm_str_hash, g_str_equal,
 	                                     (GDestroyNotify) g_free,
 	                                     (GDestroyNotify) blob_free);
 

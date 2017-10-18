@@ -25,6 +25,7 @@
 #include <arpa/inet.h>
 
 #include "nm-common-macros.h"
+#include "nm-utils/nm-hash-utils.h"
 #include "nm-utils/nm-enum-utils.h"
 
 #include "NetworkManager.h"
@@ -188,7 +189,7 @@ _parse_ip_route (int family,
 			}
 
 			if (!attrs)
-				attrs = g_hash_table_new (g_str_hash, g_str_equal);
+				attrs = g_hash_table_new (nm_str_hash, g_str_equal);
 
 			g_hash_table_iter_init (&iter, tmp_attrs);
 			while (g_hash_table_iter_next (&iter, (gpointer *) &iter_key, (gpointer *) &iter_value)) {
@@ -3011,7 +3012,7 @@ _get_fcn_ip_config_routes (ARGS_GET_FCN)
 	for (i = 0; i < num_routes; i++) {
 		gs_free char *attr_str = NULL;
 		gs_strfreev char **attr_names = NULL;
-		gs_unref_hashtable GHashTable *hash = g_hash_table_new (g_str_hash, g_str_equal);
+		gs_unref_hashtable GHashTable *hash = g_hash_table_new (nm_str_hash, g_str_equal);
 		int j;
 
 		route = nm_setting_ip_config_get_route (s_ip, i);

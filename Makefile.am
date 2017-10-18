@@ -421,8 +421,11 @@ libnm_core_lib_h_priv = \
 	shared/nm-utils/c-list-util.h \
 	shared/nm-utils/nm-dedup-multi.h \
 	shared/nm-utils/nm-enum-utils.h \
+	shared/nm-utils/nm-hash-utils.h \
 	shared/nm-utils/nm-shared-utils.h \
+	shared/nm-utils/nm-random-utils.h \
 	shared/nm-utils/nm-udev-utils.h \
+	shared/nm-utils/siphash24.h \
 	shared/nm-meta-setting.h \
 	libnm-core/crypto.h \
 	libnm-core/nm-connection-private.h \
@@ -437,8 +440,11 @@ libnm_core_lib_c_real = \
 	shared/nm-utils/c-list-util.c \
 	shared/nm-utils/nm-dedup-multi.c \
 	shared/nm-utils/nm-enum-utils.c \
+	shared/nm-utils/nm-hash-utils.c \
 	shared/nm-utils/nm-shared-utils.c \
+	shared/nm-utils/nm-random-utils.c \
 	shared/nm-utils/nm-udev-utils.c \
+	shared/nm-utils/siphash24.c \
 	shared/nm-meta-setting.c \
 	libnm-core/crypto.c \
 	libnm-core/nm-connection.c \
@@ -1123,6 +1129,7 @@ src_libsystemd_nm_la_cppflags = \
 	-I$(builddir)/libnm-core \
 	-I$(srcdir)/src \
 	-I$(srcdir)/src/systemd/sd-adapt \
+	-I$(srcdir)/shared/nm-utils \
 	-I$(srcdir)/src/systemd/src/systemd \
 	-I$(srcdir)/src/systemd/src/basic \
 	-I$(srcdir)/src/systemd/src/shared \
@@ -1209,8 +1216,6 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/src/basic/refcnt.h \
 	src/systemd/src/basic/set.h \
 	src/systemd/src/basic/signal-util.h \
-	src/systemd/src/basic/siphash24.c \
-	src/systemd/src/basic/siphash24.h \
 	src/systemd/src/basic/socket-util.c \
 	src/systemd/src/basic/socket-util.h \
 	src/systemd/src/basic/sparse-endian.h \
@@ -1224,7 +1229,6 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/src/basic/time-util.c \
 	src/systemd/src/basic/time-util.h \
 	src/systemd/src/basic/umask-util.h \
-	src/systemd/src/basic/unaligned.h \
 	src/systemd/src/basic/utf8.c \
 	src/systemd/src/basic/utf8.h \
 	src/systemd/src/basic/util.c \
@@ -3005,6 +3009,9 @@ $(src_tests_test_wired_defname_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_tests_test_utils_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 src_tests_test_systemd_CPPFLAGS = $(src_libsystemd_nm_la_cppflags)
+src_tests_test_systemd_SOURCES = \
+	shared/nm-utils/siphash24.c \
+	src/tests/test-systemd.c
 src_tests_test_systemd_LDADD = \
 	src/libsystemd-nm.la \
 	$(src_libsystemd_nm_la_libadd)
@@ -3188,6 +3195,17 @@ clients_cppflags = \
 check_ltlibraries += clients/common/libnmc-base.la
 
 clients_common_libnmc_base_la_SOURCES = \
+	shared/nm-utils/nm-enum-utils.c \
+	shared/nm-utils/nm-enum-utils.h \
+	shared/nm-utils/nm-hash-utils.c \
+	shared/nm-utils/nm-hash-utils.h \
+	shared/nm-utils/nm-random-utils.c \
+	shared/nm-utils/nm-random-utils.h \
+	shared/nm-utils/nm-shared-utils.c \
+	shared/nm-utils/nm-shared-utils.h \
+	shared/nm-utils/siphash24.c \
+	shared/nm-utils/siphash24.h \
+	\
 	clients/common/nm-secret-agent-simple.c \
 	clients/common/nm-secret-agent-simple.h \
 	clients/common/nm-vpn-helpers.c \
@@ -3236,11 +3254,6 @@ EXTRA_LTLIBRARIES += clients/common/libnmc.la
 endif
 
 clients_common_libnmc_la_SOURCES = \
-	shared/nm-utils/nm-enum-utils.c \
-	shared/nm-utils/nm-enum-utils.h \
-	shared/nm-utils/nm-shared-utils.c \
-	shared/nm-utils/nm-shared-utils.h \
-	\
 	shared/nm-meta-setting.c \
 	shared/nm-meta-setting.h \
 	\
@@ -3422,8 +3435,6 @@ clients_tui_newt_libnmt_newt_a_CPPFLAGS = \
 bin_PROGRAMS += clients/tui/nmtui
 
 clients_tui_nmtui_SOURCES = \
-	shared/nm-utils/nm-shared-utils.c \
-	shared/nm-utils/nm-shared-utils.h \
 	clients/tui/nmtui.c \
 	clients/tui/nmtui.h \
 	clients/tui/nmtui-connect.c \

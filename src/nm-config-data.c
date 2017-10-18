@@ -875,7 +875,7 @@ load_global_dns (GKeyFile *keyfile, gboolean internal)
 		return NULL;
 
 	conf = g_malloc0 (sizeof (NMGlobalDnsConfig));
-	conf->domains = g_hash_table_new_full (g_str_hash, g_str_equal,
+	conf->domains = g_hash_table_new_full (nm_str_hash, g_str_equal,
 	                                       g_free, (GDestroyNotify) global_dns_domain_free);
 
 	strv = g_key_file_get_string_list (keyfile, group, "searches", NULL, NULL);
@@ -1077,7 +1077,7 @@ nm_global_dns_config_from_dbus (const GValue *value, GError **error)
 	}
 
 	dns_config = g_malloc0 (sizeof (NMGlobalDnsConfig));
-	dns_config->domains = g_hash_table_new_full (g_str_hash, g_str_equal,
+	dns_config->domains = g_hash_table_new_full (nm_str_hash, g_str_equal,
 	                                             g_free, (GDestroyNotify) global_dns_domain_free);
 
 	g_variant_iter_init (&iter, variant);

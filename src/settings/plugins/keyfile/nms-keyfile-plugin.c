@@ -378,7 +378,7 @@ _paths_from_connections (GHashTable *connections)
 {
 	GHashTableIter iter;
 	NMSKeyfileConnection *connection;
-	GHashTable *paths = g_hash_table_new (g_str_hash, g_str_equal);
+	GHashTable *paths = g_hash_table_new (nm_str_hash, g_str_equal);
 
 	g_hash_table_iter_init (&iter, connections);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &connection)) {
@@ -588,7 +588,7 @@ nms_keyfile_plugin_init (NMSKeyfilePlugin *plugin)
 	NMSKeyfilePluginPrivate *priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE (plugin);
 
 	priv->config = g_object_ref (nm_config_get ());
-	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
+	priv->connections = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_object_unref);
 }
 
 static void

@@ -1912,7 +1912,7 @@ nm_supplicant_interface_init (NMSupplicantInterface * self)
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
 	priv->state = NM_SUPPLICANT_INTERFACE_STATE_INIT;
-	priv->bss_proxies = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, bss_data_destroy);
+	priv->bss_proxies = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, bss_data_destroy);
 }
 
 NMSupplicantInterface *
