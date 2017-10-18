@@ -249,9 +249,13 @@ make_connection_setting (const char *file,
 		gint64 tmp;
 
 		tmp = _nm_utils_ascii_str_to_int64 (v, 10, 0, G_MAXINT32 - 1, -1);
-		if (tmp >= 0)
+		if (tmp >= 0) {
+			if (tmp > 600) {
+				tmp = 600;
+				PARSE_WARNING ("invalid GATEWAY_PING_TIMEOUT time");
+			}
 			g_object_set (s_con, NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT, (guint) tmp, NULL);
-		else
+		} else
 			PARSE_WARNING ("invalid GATEWAY_PING_TIMEOUT time");
 	}
 
