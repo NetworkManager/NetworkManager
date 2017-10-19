@@ -94,10 +94,6 @@ typedef struct _NMSettingsConnectionCallId *NMSettingsConnectionCallId;
 
 typedef struct _NMSettingsConnectionClass NMSettingsConnectionClass;
 
-typedef void (*NMSettingsConnectionDeleteFunc) (NMSettingsConnection *self,
-                                                GError *error,
-                                                gpointer user_data);
-
 struct _NMSettingsConnectionPrivate;
 
 struct _NMSettingsConnection {
@@ -138,9 +134,8 @@ gboolean nm_settings_connection_replace_settings (NMSettingsConnection *self,
                                                   const char *log_diff_name,
                                                   GError **error);
 
-void nm_settings_connection_delete (NMSettingsConnection *self,
-                                    NMSettingsConnectionDeleteFunc callback,
-                                    gpointer user_data);
+gboolean nm_settings_connection_delete (NMSettingsConnection *self,
+                                        GError **error);
 
 typedef void (*NMSettingsConnectionSecretsFunc) (NMSettingsConnection *self,
                                                  NMSettingsConnectionCallId call_id,

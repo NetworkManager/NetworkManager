@@ -342,7 +342,7 @@ next_dev:
 			                            nm_settings_connection_get_uuid (con))) {
 				_LOGD ("rollback: deleting new connection %s",
 				       nm_settings_connection_get_uuid (con));
-				nm_settings_connection_delete (con, NULL, NULL);
+				nm_settings_connection_delete (con, NULL);
 			}
 		}
 	}

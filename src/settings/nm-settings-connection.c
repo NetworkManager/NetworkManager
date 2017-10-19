@@ -663,33 +663,31 @@ remove_entry_from_db (NMSettingsConnection *self, const char* db_name)
 	g_key_file_free (key_file);
 }
 
-void
+gboolean
 nm_settings_connection_delete (NMSettingsConnection *self,
-                               NMSettingsConnectionDeleteFunc callback,
-                               gpointer user_data)
+                               GError **error)
 {
 	gs_unref_object NMSettingsConnection *self_keep_alive = NULL;
-	gs_free_error GError *error = NULL;
 	NMSettingsConnectionClass *klass;
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	NMConnection *for_agents;
 
-	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
+	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
 
 	klass = NM_SETTINGS_CONNECTION_GET_CLASS (self);
 
 	self_keep_alive = g_object_ref (self);
 
 	if (!klass->delete) {
-		g_set_error (&error,
+		g_set_error (error,
 		             NM_SETTINGS_ERROR,
 		             NM_SETTINGS_ERROR_FAILED,
 		             "delete not supported");
-		goto out;
+		return FALSE;
 	}
 	if (!klass->delete (self,
-	                    &error))
-		goto out;
+	                    error))
+		return FALSE;
 
 	set_visible (self, FALSE);
 
@@ -708,10 +706,7 @@ nm_settings_connection_delete (NMSettingsConnection *self,
 	remove_entry_from_db (self, "seen-bssids");
 
 	nm_settings_connection_signal_remove (self, FALSE);
-
-out:
-	if (callback)
-		callback (self, error, user_data);
+	return TRUE;
 }
 
 
@@ -1514,11 +1509,6 @@ typedef struct {
 	char *audit_args;
 } UpdateInfo;
 
-typedef struct {
-	GDBusMethodInvocation *context;
-	NMAuthSubject *subject;
-} CallbackInfo;
-
 static void
 has_some_secrets_cb (NMSetting *setting,
                      const char *key,
@@ -1813,30 +1803,13 @@ impl_settings_connection_save (NMSettingsConnection *self,
 }
 
 static void
-con_delete_cb (NMSettingsConnection *self,
-               GError *error,
-               gpointer user_data)
-{
-	CallbackInfo *info = user_data;
-
-	if (error)
-		g_dbus_method_invocation_return_gerror (info->context, error);
-	else
-		g_dbus_method_invocation_return_value (info->context, NULL);
-
-	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_DELETE, self,
-	                            !error, NULL, info->subject, error ? error->message : NULL);
-	g_free (info);
-}
-
-static void
 delete_auth_cb (NMSettingsConnection *self,
                 GDBusMethodInvocation *context,
                 NMAuthSubject *subject,
                 GError *error,
                 gpointer data)
 {
-	CallbackInfo *info;
+	gs_free_error GError *local = NULL;
 
 	if (error) {
 		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_DELETE, self, FALSE, NULL, subject,
@@ -1845,11 +1818,15 @@ delete_auth_cb (NMSettingsConnection *self,
 		return;
 	}
 
-	info = g_malloc0 (sizeof (*info));
-	info->context = context;
-	info->subject = subject;
+	nm_settings_connection_delete (self, &local);
 
-	nm_settings_connection_delete (self, con_delete_cb, info);
+	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_DELETE, self,
+	                            !local, NULL, subject, local ? local->message : NULL);
+
+	if (local)
+		g_dbus_method_invocation_return_gerror (context, local);
+	else
+		g_dbus_method_invocation_return_value (context, NULL);
 }
 
 static const char *

@@ -1773,7 +1773,7 @@ nm_settings_device_removed (NMSettings *self, NMDevice *device, gboolean quittin
 		 * remains up and can be assumed if NM starts again.
 		 */
 		if (quitting == FALSE)
-			nm_settings_connection_delete (connection, NULL, NULL);
+			nm_settings_connection_delete (connection, NULL);
 	}
 }
 

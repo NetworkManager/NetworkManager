@@ -339,7 +339,7 @@ active_connection_remove (NMManager *self, NMActiveConnection *active)
 			if (nm_settings_has_connection (priv->settings, connection)) {
 				_LOGD (LOGD_DEVICE, "assumed connection disconnected. Deleting generated connection '%s' (%s)",
 				       nm_settings_connection_get_id (connection), nm_settings_connection_get_uuid (connection));
-				nm_settings_connection_delete (connection, NULL, NULL);
+				nm_settings_connection_delete (connection, NULL);
 			}
 			g_object_unref (connection);
 		}
@@ -1990,7 +1990,7 @@ recheck_assume_connection (NMManager *self,
 
 			if (generated) {
 				_LOG2D (LOGD_DEVICE, device, "assume: deleting generated connection after assuming failed");
-				nm_settings_connection_delete (connection, NULL, NULL);
+				nm_settings_connection_delete (connection, NULL);
 			} else {
 				if (nm_device_sys_iface_state_get (device) == NM_DEVICE_SYS_IFACE_STATE_ASSUME)
 					nm_device_sys_iface_state_set (device, NM_DEVICE_SYS_IFACE_STATE_EXTERNAL);
@@ -4056,7 +4056,7 @@ activation_add_done (NMSettings *settings,
 	g_assert (error);
 	_internal_activation_failed (self, active, error->message);
 	if (new_connection)
-		nm_settings_connection_delete (new_connection, NULL, NULL);
+		nm_settings_connection_delete (new_connection, NULL);
 	g_dbus_method_invocation_return_gerror (context, error);
 	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE,
 	                            NULL,
