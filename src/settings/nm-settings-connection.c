@@ -1677,64 +1677,66 @@ update_auth_cb (NMSettingsConnection *self,
 		return;
 	}
 
-	if (!info->new_settings) {
-		/* We're just calling Save(). Just commit the existing connection. */
-		if (info->save_to_disk) {
-			nm_settings_connection_commit_changes (self,
-			                                       NULL,
-			                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION,
-			                                       &local);
+	if (info->new_settings) {
+		if (!any_secrets_present (info->new_settings)) {
+			/* If the new connection has no secrets, we do not want to remove all
+			 * secrets, rather we keep all the existing ones. Do that by merging
+			 * them in to the new connection.
+			 */
+			cached_secrets_to_connection (self, info->new_settings);
+		} else {
+			/* Cache the new secrets from the agent, as stuff like inotify-triggered
+			 * changes to connection's backing config files will blow them away if
+			 * they're in the main connection.
+			 */
+			update_agent_secrets_cache (self, info->new_settings);
+		}
+
+		if (nm_audit_manager_audit_enabled (nm_audit_manager_get ())) {
+			gs_unref_hashtable GHashTable *diff = NULL;
+			gboolean same;
+
+			same = nm_connection_diff (NM_CONNECTION (self), info->new_settings,
+			                           NM_SETTING_COMPARE_FLAG_EXACT |
+			                           NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT,
+			                           &diff);
+			if (!same && diff)
+				info->audit_args = nm_utils_format_con_diff_for_audit (diff);
+		}
+	}
+
+	if (!info->save_to_disk) {
+		if (info->new_settings) {
+			nm_settings_connection_replace_settings (self,
+			                                         info->new_settings,
+			                                         TRUE,
+			                                         "replace-unsaved",
+			                                         &local);
 		}
 		goto out;
 	}
 
-	if (!any_secrets_present (info->new_settings)) {
-		/* If the new connection has no secrets, we do not want to remove all
-		 * secrets, rather we keep all the existing ones. Do that by merging
-		 * them in to the new connection.
-		 */
-		cached_secrets_to_connection (self, info->new_settings);
-	} else {
-		/* Cache the new secrets from the agent, as stuff like inotify-triggered
-		 * changes to connection's backing config files will blow them away if
-		 * they're in the main connection.
-		 */
-		update_agent_secrets_cache (self, info->new_settings);
+	if (info->new_settings) {
+		if (!nm_settings_connection_replace_settings_prepare (self,
+		                                                      info->new_settings,
+		                                                      &local))
+			goto out;
 	}
 
-	if (nm_audit_manager_audit_enabled (nm_audit_manager_get ())) {
-		gs_unref_hashtable GHashTable *diff = NULL;
-		gboolean same;
-
-		same = nm_connection_diff (NM_CONNECTION (self), info->new_settings,
-		                           NM_SETTING_COMPARE_FLAG_EXACT |
-		                           NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT,
-		                           &diff);
-		if (!same && diff)
-			info->audit_args = nm_utils_format_con_diff_for_audit (diff);
+	klass = NM_SETTINGS_CONNECTION_GET_CLASS (self);
+	if (klass->can_commit) {
+		if (!klass->can_commit (self, &local))
+			goto out;
 	}
-
-	if (info->save_to_disk) {
-		klass = NM_SETTINGS_CONNECTION_GET_CLASS (self);
-		if (klass->can_commit) {
-			if (!klass->can_commit (self, &local))
-				goto out;
-		}
-	}
-
-	if (!nm_settings_connection_replace_settings (self, info->new_settings, TRUE, "replace-and-commit-disk", &local))
-		goto out;
-
-	if (!info->save_to_disk)
-		goto out;
 
 	commit_reason = NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION;
-	if (nm_streq0 (nm_connection_get_id (NM_CONNECTION (self)),
-	               nm_connection_get_id (info->new_settings)))
+	if (   info->new_settings
+	    && !nm_streq0 (nm_connection_get_id (NM_CONNECTION (self)),
+	                   nm_connection_get_id (info->new_settings)))
 		commit_reason |= NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED;
 
 	nm_settings_connection_commit_changes (self,
-	                                       NULL,
+	                                       info->new_settings,
 	                                       commit_reason,
 	                                       &local);
 
