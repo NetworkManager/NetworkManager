@@ -3222,7 +3222,7 @@ clients_common_libnmc_base_la_LIBADD = \
 	$(GLIB_LIBS)
 
 $(clients_common_libnmc_base_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-
+$(clients_common_libnmc_base_la_OBJECTS): clients/common/.dirstamp
 
 clients_common_settings_doc_c = clients/common/settings-docs.c
 if HAVE_INTROSPECTION
