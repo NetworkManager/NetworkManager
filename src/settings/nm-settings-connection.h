@@ -112,11 +112,8 @@ struct _NMSettingsConnection {
 struct _NMSettingsConnectionClass {
 	NMExportedObjectClass parent;
 
-	/* virtual methods */
-	void (*replace_and_commit) (NMSettingsConnection *self,
-	                            NMConnection *new_connection,
-	                            NMSettingsConnectionCommitFunc callback,
-	                            gpointer user_data);
+	gboolean (*can_commit) (NMSettingsConnection *self,
+	                        GError **error);
 
 	void (*commit_changes) (NMSettingsConnection *self,
 	                        NMSettingsConnectionCommitReason commit_reason,

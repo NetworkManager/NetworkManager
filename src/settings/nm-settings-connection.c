@@ -604,44 +604,40 @@ ignore_cb (NMSettingsConnection *self,
 {
 }
 
-/* Replaces the settings in this connection with those in 'new_connection'. If
- * any changes are made, commits them to permanent storage and to any other
- * subsystems watching this connection. Before returning, 'callback' is run
- * with the given 'user_data' along with any errors encountered.
- */
-static void
-replace_and_commit (NMSettingsConnection *self,
-                    NMConnection *new_connection,
-                    NMSettingsConnectionCommitFunc callback,
-                    gpointer user_data)
-{
-	GError *error = NULL;
-	NMSettingsConnectionCommitReason commit_reason = NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION;
-
-	if (g_strcmp0 (nm_connection_get_id (NM_CONNECTION (self)),
-	               nm_connection_get_id (new_connection)) != 0)
-		commit_reason |= NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED;
-
-	if (nm_settings_connection_replace_settings (self, new_connection, TRUE, "replace-and-commit-disk", &error))
-		nm_settings_connection_commit_changes (self, commit_reason, callback, user_data);
-	else {
-		g_assert (error);
-		if (callback)
-			callback (self, error, user_data);
-		g_clear_error (&error);
-	}
-}
-
 void
 nm_settings_connection_replace_and_commit (NMSettingsConnection *self,
                                            NMConnection *new_connection,
                                            NMSettingsConnectionCommitFunc callback,
                                            gpointer user_data)
 {
+	gs_free_error GError *error = NULL;
+	NMSettingsConnectionClass *klass;
+	NMSettingsConnectionCommitReason commit_reason = NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION;
+
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
 	g_return_if_fail (NM_IS_CONNECTION (new_connection));
 
-	NM_SETTINGS_CONNECTION_GET_CLASS (self)->replace_and_commit (self, new_connection, callback, user_data);
+	klass = NM_SETTINGS_CONNECTION_GET_CLASS (self);
+
+	if (nm_streq0 (nm_connection_get_id (NM_CONNECTION (self)),
+	               nm_connection_get_id (new_connection)))
+		commit_reason |= NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED;
+
+	if (klass->can_commit) {
+		if (!klass->can_commit (self, &error)) {
+			if (callback)
+				callback (self, error, user_data);
+			return;
+		}
+	}
+
+	if (!nm_settings_connection_replace_settings (self, new_connection, TRUE, "replace-and-commit-disk", &error)) {
+		if (callback)
+			callback (self, error, user_data);
+		return;
+	}
+
+	nm_settings_connection_commit_changes (self, commit_reason, callback, user_data);
 }
 
 static void
@@ -2902,7 +2898,6 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 
-	class->replace_and_commit = replace_and_commit;
 	class->commit_changes = commit_changes;
 	class->delete = do_delete;
 	class->supports_secrets = supports_secrets;
