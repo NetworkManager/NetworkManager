@@ -634,16 +634,21 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 
 gboolean
 nm_settings_connection_commit_changes (NMSettingsConnection *self,
+                                       NMConnection *new_connection,
                                        NMSettingsConnectionCommitReason commit_reason,
                                        GError **error)
 {
 	NMSettingsConnectionClass *klass;
+	gs_free_error GError *local = NULL;
+	gs_unref_object NMConnection *reread_connection = NULL;
+	gs_free char *logmsg_change = NULL;
 
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
 
 	klass = NM_SETTINGS_CONNECTION_GET_CLASS (self);
-
 	if (!klass->commit_changes) {
+		_LOGW ("write: setting plugin %s does not support to write connection",
+		       G_OBJECT_TYPE_NAME (self));
 		g_set_error (error,
 		             NM_SETTINGS_ERROR,
 		             NM_SETTINGS_ERROR_FAILED,
@@ -651,13 +656,54 @@ nm_settings_connection_commit_changes (NMSettingsConnection *self,
 		return FALSE;
 	}
 
-	if (!klass->commit_changes (self,
-	                            commit_reason,
-	                            error)) {
+	if (   new_connection
+	    && !nm_settings_connection_replace_settings_prepare (self,
+	                                                         new_connection,
+	                                                         &local)) {
+		_LOGW ("write: failed to prepare connection for writing: %s",
+		       local->message);
+		g_propagate_error (error, g_steal_pointer (&local));
 		return FALSE;
 	}
 
+	if (!klass->commit_changes (self,
+	                            new_connection,
+	                            commit_reason,
+	                            &reread_connection,
+	                            &logmsg_change,
+	                            &local)) {
+		_LOGW ("write: failure to write setting: %s",
+		       local->message);
+		g_propagate_error (error, g_steal_pointer (&local));
+		return FALSE;
+	}
+
+	if (reread_connection || new_connection) {
+		if (!nm_settings_connection_replace_settings_full (self,
+		                                                   reread_connection ?: new_connection,
+		                                                   !reread_connection,
+		                                                   FALSE,
+		                                                   new_connection
+		                                                     ? "update-during-write"
+		                                                     : "replace-and-commit-disk",
+		                                                   &local)) {
+			/* this can't really happen, because at this point replace-settings
+			 * is no longer supposed to fail. It's a bug. */
+			_LOGE ("write: replacing setting failed: %s",
+			       local->message);
+			g_propagate_error (error, g_steal_pointer (&local));
+			g_return_val_if_reached (FALSE);
+		}
+	}
+
 	set_unsaved (self, FALSE);
+
+	if (reread_connection)
+		_LOGI ("write: successfully updated (%s), connection was modified in the process", logmsg_change);
+	else if (new_connection)
+		_LOGI ("write: successfully updated (%s)", logmsg_change);
+	else
+		_LOGI ("write: successfully commited (%s)", logmsg_change);
 
 	return TRUE;
 }
@@ -945,8 +991,6 @@ nm_settings_connection_new_secrets (NMSettingsConnection *self,
                                     GVariant *secrets,
                                     GError **error)
 {
-	gs_free_error GError *local = NULL;
-
 	if (!nm_settings_connection_has_unmodified_applied_connection (self, applied_connection,
 	                                                              NM_SETTING_COMPARE_FLAG_NONE)) {
 		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
@@ -960,11 +1004,10 @@ nm_settings_connection_new_secrets (NMSettingsConnection *self,
 	update_system_secrets_cache (self);
 	update_agent_secrets_cache (self, NULL);
 
-	if (!nm_settings_connection_commit_changes (self,
-	                                            NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
-	                                            &local))
-		_LOGW ("Error saving new secrets to backing storage: %s", local->message);
-
+	nm_settings_connection_commit_changes (self,
+	                                       NULL,
+	                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
+	                                       NULL);
 	return TRUE;
 }
 
@@ -1074,16 +1117,14 @@ get_secrets_done_cb (NMAgentManager *manager,
 			 * nothing has changed, since agent-owned secrets don't get saved here.
 			 */
 			if (agent_had_system) {
-				gs_free_error GError *local2 = NULL;
-
 				_LOGD ("(%s:%p) saving new secrets to backing storage",
 				       setting_name,
 				       info);
 
-				if (!nm_settings_connection_commit_changes (self,
-				                                            NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
-				                                            &local2))
-					_LOGW ("Error saving new secrets to backing storage: %s", local2->message);
+				nm_settings_connection_commit_changes (self,
+				                                       NULL,
+				                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
+				                                       NULL);
 			} else {
 				_LOGD ("(%s:%p) new agent secrets processed",
 				       setting_name,
@@ -1640,6 +1681,7 @@ update_auth_cb (NMSettingsConnection *self,
 		/* We're just calling Save(). Just commit the existing connection. */
 		if (info->save_to_disk) {
 			nm_settings_connection_commit_changes (self,
+			                                       NULL,
 			                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION,
 			                                       &local);
 		}
@@ -1691,7 +1733,10 @@ update_auth_cb (NMSettingsConnection *self,
 	               nm_connection_get_id (info->new_settings)))
 		commit_reason |= NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED;
 
-	nm_settings_connection_commit_changes (self, commit_reason, &local);
+	nm_settings_connection_commit_changes (self,
+	                                       NULL,
+	                                       commit_reason,
+	                                       &local);
 
 out:
 	if (!local) {
@@ -2010,6 +2055,7 @@ dbus_clear_secrets_auth_cb (NMSettingsConnection *self,
 	                                 NM_CONNECTION (self));
 
 	nm_settings_connection_commit_changes (self,
+	                                       NULL,
 	                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
 	                                       &local);
 

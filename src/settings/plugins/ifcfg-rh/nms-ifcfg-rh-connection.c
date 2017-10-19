@@ -325,16 +325,22 @@ can_commit (NMSettingsConnection *connection,
 
 static gboolean
 commit_changes (NMSettingsConnection *connection,
+                NMConnection *new_connection,
                 NMSettingsConnectionCommitReason commit_reason,
+                NMConnection **out_reread_connection,
+                char **out_logmsg_change,
                 GError **error)
 {
 	const char *filename;
+
+	nm_assert (out_reread_connection && !*out_reread_connection);
+	nm_assert (!out_logmsg_change || !*out_logmsg_change);
 
 	filename = nm_settings_connection_get_filename (connection);
 	if (!filename) {
 		gs_free char *ifcfg_path = NULL;
 
-		if (!writer_new_connection (NM_CONNECTION (connection),
+		if (!writer_new_connection (new_connection ?: NM_CONNECTION (connection),
 		                            IFCFG_DIR,
 		                            &ifcfg_path,
 		                            NULL,
@@ -342,15 +348,24 @@ commit_changes (NMSettingsConnection *connection,
 		                            error))
 			return FALSE;
 		nm_settings_connection_set_filename (connection, ifcfg_path);
+		NM_SET_OUT (out_logmsg_change,
+		            g_strdup_printf ("ifcfg-rh: persist %s",
+		                             ifcfg_path));
 		return TRUE;
 	}
 
-	return writer_update_connection (NM_CONNECTION (connection),
-	                                 IFCFG_DIR,
-	                                 filename,
-	                                 NULL,
-	                                 NULL,
-	                                 error);
+	if (!writer_update_connection (new_connection ?: NM_CONNECTION (connection),
+	                               IFCFG_DIR,
+	                               filename,
+	                               NULL,
+	                               NULL,
+	                               error))
+		return FALSE;
+
+	NM_SET_OUT (out_logmsg_change,
+	            g_strdup_printf ("ifcfg-rh: update %s",
+	                             filename));
+	return TRUE;
 }
 
 static gboolean

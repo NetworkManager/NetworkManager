@@ -140,6 +140,7 @@ bind_device_to_connection (SettingsPluginIfupdown *self,
 	}
 
 	nm_settings_connection_commit_changes (NM_SETTINGS_CONNECTION (exported),
+	                                       NULL,
 	                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
 	                                       NULL);
 }

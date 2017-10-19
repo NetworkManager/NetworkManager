@@ -108,7 +108,10 @@ struct _NMSettingsConnectionClass {
 	                        GError **error);
 
 	gboolean (*commit_changes) (NMSettingsConnection *self,
+	                            NMConnection *new_connection,
 	                            NMSettingsConnectionCommitReason commit_reason,
+	                            NMConnection **out_reread_connection,
+	                            char **out_logmsg_change,
 	                            GError **error);
 
 	gboolean (*delete) (NMSettingsConnection *self,
@@ -124,9 +127,10 @@ gboolean nm_settings_connection_has_unmodified_applied_connection (NMSettingsCon
                                                                    NMConnection *applied_connection,
                                                                    NMSettingCompareFlags compare_flage);
 
-gboolean nm_settings_connection_commit_changes (NMSettingsConnection *self,
-                                                NMSettingsConnectionCommitReason commit_reason,
-                                                GError **error);
+gboolean  nm_settings_connection_commit_changes (NMSettingsConnection *self,
+                                                 NMConnection *new_connection,
+                                                 NMSettingsConnectionCommitReason commit_reason,
+                                                 GError **error);
 
 gboolean nm_settings_connection_replace_settings_prepare (NMSettingsConnection *self,
                                                           NMConnection *new_connection,

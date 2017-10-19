@@ -259,6 +259,7 @@ activate:
 					nm_connection_replace_settings_from_connection (NM_CONNECTION (connection),
 					                                                dev_checkpoint->settings_connection);
 					nm_settings_connection_commit_changes (connection,
+					                                       NULL,
 					                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
 					                                       NULL);
 				}

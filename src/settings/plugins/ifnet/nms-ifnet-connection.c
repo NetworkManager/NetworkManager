@@ -76,12 +76,19 @@ nm_ifnet_connection_get_conn_name (NMIfnetConnection *connection)
 
 static gboolean
 commit_changes (NMSettingsConnection *connection,
+                NMConnection *new_connection,
                 NMSettingsConnectionCommitReason commit_reason,
+                NMConnection **out_reread_connection,
+                char **out_logmsg_change,
                 GError **error)
 {
 	NMIfnetConnectionPrivate *priv = NM_IFNET_CONNECTION_GET_PRIVATE ((NMIfnetConnection *) connection);
 	char *new_name = NULL;
 	gboolean success = FALSE;
+	gboolean added = FALSE;
+
+	nm_assert (out_reread_connection && !*out_reread_connection);
+	nm_assert (!out_logmsg_change || !*out_logmsg_change);
 
 	g_signal_emit (connection, signals[IFNET_CANCEL_MONITORS], 0);
 
@@ -94,6 +101,7 @@ commit_changes (NMSettingsConnection *connection,
 		                                              NULL,
 		                                              error);
 	} else {
+		added = TRUE;
 		success = ifnet_add_new_connection (NM_CONNECTION (connection),
 		                                    CONF_NET_FILE,
 		                                    WPA_SUPPLICANT_CONF,
@@ -112,6 +120,12 @@ commit_changes (NMSettingsConnection *connection,
 
 	g_signal_emit (connection, signals[IFNET_SETUP_MONITORS], 0);
 
+	if (success) {
+		NM_SET_OUT (out_logmsg_change,
+		            g_strdup_printf ("ifcfg-rh: %s %s",
+		                             added ? "persist" : "updated",
+		                             new_name));
+	}
 	return success;
 }
 

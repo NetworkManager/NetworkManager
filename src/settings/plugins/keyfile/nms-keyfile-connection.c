@@ -52,14 +52,20 @@ G_DEFINE_TYPE (NMSKeyfileConnection, nms_keyfile_connection, NM_TYPE_SETTINGS_CO
 
 static gboolean
 commit_changes (NMSettingsConnection *connection,
+                NMConnection *new_connection,
                 NMSettingsConnectionCommitReason commit_reason,
+                NMConnection **out_reread_connection,
+                char **out_logmsg_change,
                 GError **error)
 {
 	gs_free char *path = NULL;
 	gs_unref_object NMConnection *reread = NULL;
 	gboolean reread_same = FALSE;
 
-	if (!nms_keyfile_writer_connection (NM_CONNECTION (connection),
+	nm_assert (out_reread_connection && !*out_reread_connection);
+	nm_assert (!out_logmsg_change || !*out_logmsg_change);
+
+	if (!nms_keyfile_writer_connection (new_connection ?: NM_CONNECTION (connection),
 	                                    nm_settings_connection_get_filename (connection),
 	                                    NM_FLAGS_ALL (commit_reason,   NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION
 	                                                                 | NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED),
@@ -76,29 +82,23 @@ commit_changes (NMSettingsConnection *connection,
 
 		nm_settings_connection_set_filename (connection, path);
 		if (old_path) {
-			nm_log_info (LOGD_SETTINGS, "keyfile: update "NMS_KEYFILE_CONNECTION_LOG_FMT" and rename from \"%s\"",
-			             NMS_KEYFILE_CONNECTION_LOG_ARG (connection),
-			             old_path);
+			NM_SET_OUT (out_logmsg_change,
+			            g_strdup_printf ("keyfile: update "NMS_KEYFILE_CONNECTION_LOG_FMT" and rename from \"%s\"",
+			                             NMS_KEYFILE_CONNECTION_LOG_ARG (connection),
+			                             old_path));
 		} else {
-			nm_log_info (LOGD_SETTINGS, "keyfile: update "NMS_KEYFILE_CONNECTION_LOG_FMT" and persist connection",
-			             NMS_KEYFILE_CONNECTION_LOG_ARG (connection));
+			NM_SET_OUT (out_logmsg_change,
+			            g_strdup_printf ("keyfile: update "NMS_KEYFILE_CONNECTION_LOG_FMT" and persist connection",
+			                             NMS_KEYFILE_CONNECTION_LOG_ARG (connection)));
 		}
 	} else {
-		nm_log_info (LOGD_SETTINGS, "keyfile: update "NMS_KEYFILE_CONNECTION_LOG_FMT,
-		             NMS_KEYFILE_CONNECTION_LOG_ARG (connection));
+		NM_SET_OUT (out_logmsg_change,
+		            g_strdup_printf ("keyfile: update "NMS_KEYFILE_CONNECTION_LOG_FMT,
+		                             NMS_KEYFILE_CONNECTION_LOG_ARG (connection)));
 	}
 
-	if (reread && !reread_same) {
-		gs_free_error GError *local = NULL;
-
-		if (!nm_settings_connection_replace_settings (connection, reread, FALSE, "update-during-write", &local)) {
-			nm_log_warn (LOGD_SETTINGS, "keyfile: update "NMS_KEYFILE_CONNECTION_LOG_FMT" after persisting connection failed: %s",
-			             NMS_KEYFILE_CONNECTION_LOG_ARG (connection), local->message);
-		} else {
-			nm_log_info (LOGD_SETTINGS, "keyfile: update "NMS_KEYFILE_CONNECTION_LOG_FMT" after persisting connection",
-			             NMS_KEYFILE_CONNECTION_LOG_ARG (connection));
-		}
-	}
+	if (reread && !reread_same)
+		*out_reread_connection = g_steal_pointer (&reread);
 
 	return TRUE;
 }
