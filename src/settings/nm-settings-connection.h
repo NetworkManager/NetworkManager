@@ -128,11 +128,22 @@ gboolean nm_settings_connection_commit_changes (NMSettingsConnection *self,
                                                 NMSettingsConnectionCommitReason commit_reason,
                                                 GError **error);
 
+gboolean nm_settings_connection_replace_settings_prepare (NMSettingsConnection *self,
+                                                          NMConnection *new_connection,
+                                                          GError **error);
+
 gboolean nm_settings_connection_replace_settings (NMSettingsConnection *self,
                                                   NMConnection *new_connection,
                                                   gboolean update_unsaved,
                                                   const char *log_diff_name,
                                                   GError **error);
+
+gboolean nm_settings_connection_replace_settings_full (NMSettingsConnection *self,
+                                                       NMConnection *new_connection,
+                                                       gboolean prepare_new_connection,
+                                                       gboolean update_unsaved,
+                                                       const char *log_diff_name,
+                                                       GError **error);
 
 gboolean nm_settings_connection_delete (NMSettingsConnection *self,
                                         GError **error);

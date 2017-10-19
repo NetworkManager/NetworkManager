@@ -510,18 +510,12 @@ connection_changed_cb (NMSettingsConnection *self, gpointer unused)
 	_emit_updated (self, FALSE);
 }
 
-/* Update the settings of this connection to match that of 'new_connection',
- * taking care to make a private copy of secrets.
- */
 gboolean
-nm_settings_connection_replace_settings (NMSettingsConnection *self,
-                                         NMConnection *new_connection,
-                                         gboolean update_unsaved,
-                                         const char *log_diff_name,
-                                         GError **error)
+nm_settings_connection_replace_settings_prepare (NMSettingsConnection *self,
+                                                 NMConnection *new_connection,
+                                                 GError **error)
 {
 	NMSettingsConnectionPrivate *priv;
-	gboolean success = FALSE;
 
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (new_connection), FALSE);
@@ -539,6 +533,30 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 		             nm_settings_connection_get_uuid (self), nm_connection_get_uuid (new_connection));
 		return FALSE;
 	}
+
+	return TRUE;
+}
+
+gboolean
+nm_settings_connection_replace_settings_full (NMSettingsConnection *self,
+                                              NMConnection *new_connection,
+                                              gboolean prepare_new_connection,
+                                              gboolean update_unsaved,
+                                              const char *log_diff_name,
+                                              GError **error)
+{
+	NMSettingsConnectionPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (new_connection), FALSE);
+
+	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+
+	if (   prepare_new_connection
+	    && !nm_settings_connection_replace_settings_prepare (self,
+	                                                         new_connection,
+	                                                         error))
+		return FALSE;
 
 	/* Do nothing if there's nothing to update */
 	if (nm_connection_compare (NM_CONNECTION (self),
@@ -567,7 +585,6 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 	 * nm_connection_clear_secrets() and clears them.
 	 */
 	update_system_secrets_cache (self);
-	success = TRUE;
 
 	/* Add agent and always-ask secrets back; they won't necessarily be
 	 * in the replacement connection data if it was eg reread from disk.
@@ -594,7 +611,25 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 
 	_emit_updated (self, TRUE);
 
-	return success;
+	return TRUE;
+}
+
+/* Update the settings of this connection to match that of 'new_connection',
+ * taking care to make a private copy of secrets.
+ */
+gboolean
+nm_settings_connection_replace_settings (NMSettingsConnection *self,
+                                         NMConnection *new_connection,
+                                         gboolean update_unsaved,
+                                         const char *log_diff_name,
+                                         GError **error)
+{
+	return nm_settings_connection_replace_settings_full (self,
+	                                                     new_connection,
+	                                                     TRUE,
+	                                                     update_unsaved,
+	                                                     log_diff_name,
+	                                                     error);
 }
 
 gboolean
