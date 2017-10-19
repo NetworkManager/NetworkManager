@@ -59,6 +59,8 @@
 
 #define nm_auto(fcn) __attribute__ ((cleanup(fcn)))
 
+static inline int nm_close (int fd);
+
 /**
  * nm_auto_free:
  *
@@ -96,7 +98,7 @@ _nm_auto_close_impl (int *pfd)
 	if (*pfd >= 0) {
 		int errsv = errno;
 
-		(void) close (*pfd);
+		(void) nm_close (*pfd);
 		errno = errsv;
 	}
 }
@@ -1148,5 +1150,36 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro)
 #endif
 
 /*****************************************************************************/
+
+static inline int
+nm_steal_fd (int *p_fd)
+{
+	int fd;
+
+	if (   p_fd
+	    && ((fd = *p_fd) > 0)) {
+		*p_fd = -1;
+		return fd;
+	}
+	return -1;
+}
+
+/**
+ * nm_close:
+ *
+ * Like close() but throws an assertion if the input fd is
+ * invalid.  Closing an invalid fd is a programming error, so
+ * it's better to catch it early.
+ */
+static inline int
+nm_close (int fd)
+{
+	if (fd >= 0) {
+		if (close (fd) == 0)
+			return 0;
+		nm_assert (errno != EBADF);
+	}
+	return -1;
+}
 
 #endif /* __NM_MACROS_INTERNAL_H__ */

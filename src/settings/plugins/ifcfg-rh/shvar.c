@@ -818,7 +818,8 @@ svOpenFileInternal (const char *name, gboolean create, GError **error)
 		return NULL;
 	}
 
-	if (nm_utils_fd_get_contents (fd,
+	if (nm_utils_fd_get_contents (closefd ? nm_steal_fd (&fd) : fd,
+	                              closefd,
 	                              10 * 1024 * 1024,
 	                              &arena,
 	                              NULL,
@@ -842,8 +843,8 @@ svOpenFileInternal (const char *name, gboolean create, GError **error)
 	/* closefd is set if we opened the file read-only, so go ahead and
 	 * close it, because we can't write to it anyway */
 	if (!closefd) {
-		s->fd = fd;
-		fd = -1;
+		nm_assert (fd > 0);
+		s->fd = nm_steal_fd (&fd);
 	}
 
 	return s;
@@ -1326,8 +1327,7 @@ svCloseFile (shvarFile *s)
 
 	g_return_if_fail (s != NULL);
 
-	if (s->fd != -1)
-		close (s->fd);
+	nm_close (s->fd);
 	g_free (s->fileName);
 	c_list_for_each_safe (current, safe, &s->lst_head)
 		line_free (c_list_entry (current, shvarLine, lst));

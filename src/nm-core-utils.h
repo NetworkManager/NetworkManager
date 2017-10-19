@@ -254,6 +254,7 @@ const char *nm_utils_ip4_property_path (const char *ifname, const char *property
 gboolean nm_utils_is_specific_hostname (const char *name);
 
 int nm_utils_fd_get_contents (int fd,
+                              gboolean close_fd,
                               gsize max_length,
                               char **contents,
                               gsize *length,

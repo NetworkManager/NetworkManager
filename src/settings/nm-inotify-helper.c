@@ -188,8 +188,7 @@ finalize (GObject *object)
 {
 	NMInotifyHelperPrivate *priv = NM_INOTIFY_HELPER_GET_PRIVATE ((NMInotifyHelper *) object);
 
-	if (priv->ifd >= 0)
-		close (priv->ifd);
+	nm_close (priv->ifd);
 
 	g_hash_table_destroy (priv->wd_refs);
 
