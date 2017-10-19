@@ -150,34 +150,38 @@ monitor_file_changes (const char *filename,
 }
 
 static void
-setup_monitors (NMIfnetConnection * connection, gpointer user_data)
+setup_monitors (NMIfnetConnection *connection, gpointer user_data)
 {
 	SettingsPluginIfnet *self = SETTINGS_PLUGIN_IFNET (user_data);
 	SettingsPluginIfnetPrivate *priv = SETTINGS_PLUGIN_IFNET_GET_PRIVATE (self);
 
-	if (nm_config_get_monitor_connection_files (nm_config_get ())) {
-		priv->net_monitor = monitor_file_changes (CONF_NET_FILE,
-		                                          (FileChangedFn) reload_connections,
-		                                          user_data);
-		priv->wpa_monitor = monitor_file_changes (WPA_SUPPLICANT_CONF,
-		                                          (FileChangedFn) reload_connections,
-		                                          user_data);
-	}
+	if (!nm_config_get_monitor_connection_files (nm_config_get ()))
+		return;
+
+	if (priv->net_monitor || priv->wpa_monitor)
+		return;
+
+	priv->net_monitor = monitor_file_changes (CONF_NET_FILE,
+	                                          (FileChangedFn) reload_connections,
+	                                          user_data);
+	priv->wpa_monitor = monitor_file_changes (WPA_SUPPLICANT_CONF,
+	                                          (FileChangedFn) reload_connections,
+	                                          user_data);
 }
 
 static void
-cancel_monitors (NMIfnetConnection * connection, gpointer user_data)
+cancel_monitors (NMIfnetConnection *connection, gpointer user_data)
 {
 	SettingsPluginIfnet *self = SETTINGS_PLUGIN_IFNET (user_data);
 	SettingsPluginIfnetPrivate *priv = SETTINGS_PLUGIN_IFNET_GET_PRIVATE (self);
 
 	if (priv->net_monitor) {
 		g_file_monitor_cancel (priv->net_monitor);
-		g_object_unref (priv->net_monitor);
+		g_clear_object (&priv->net_monitor);
 	}
 	if (priv->wpa_monitor) {
 		g_file_monitor_cancel (priv->wpa_monitor);
-		g_object_unref (priv->wpa_monitor);
+		g_clear_object (&priv->wpa_monitor);
 	}
 }
 
