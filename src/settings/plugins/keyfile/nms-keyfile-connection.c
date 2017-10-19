@@ -50,14 +50,12 @@ G_DEFINE_TYPE (NMSKeyfileConnection, nms_keyfile_connection, NM_TYPE_SETTINGS_CO
 
 /*****************************************************************************/
 
-static void
+static gboolean
 commit_changes (NMSettingsConnection *connection,
                 NMSettingsConnectionCommitReason commit_reason,
-                NMSettingsConnectionCommitFunc callback,
-                gpointer user_data)
+                GError **error)
 {
-	char *path = NULL;
-	GError *error = NULL;
+	gs_free char *path = NULL;
 	gs_unref_object NMConnection *reread = NULL;
 	gboolean reread_same = FALSE;
 
@@ -68,11 +66,8 @@ commit_changes (NMSettingsConnection *connection,
 	                                    &path,
 	                                    &reread,
 	                                    &reread_same,
-	                                    &error)) {
-		callback (connection, error, user_data);
-		g_clear_error (&error);
-		return;
-	}
+	                                    error))
+		return FALSE;
 
 	/* Update the filename if it changed */
 	if (   path
@@ -105,12 +100,7 @@ commit_changes (NMSettingsConnection *connection,
 		}
 	}
 
-	g_free (path);
-
-	NM_SETTINGS_CONNECTION_CLASS (nms_keyfile_connection_parent_class)->commit_changes (connection,
-	                                                                                    commit_reason,
-	                                                                                    callback,
-	                                                                                    user_data);
+	return TRUE;
 }
 
 static void

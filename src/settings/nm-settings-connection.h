@@ -115,10 +115,9 @@ struct _NMSettingsConnectionClass {
 	gboolean (*can_commit) (NMSettingsConnection *self,
 	                        GError **error);
 
-	void (*commit_changes) (NMSettingsConnection *self,
-	                        NMSettingsConnectionCommitReason commit_reason,
-	                        NMSettingsConnectionCommitFunc callback,
-	                        gpointer user_data);
+	gboolean (*commit_changes) (NMSettingsConnection *self,
+	                            NMSettingsConnectionCommitReason commit_reason,
+	                            GError **error);
 
 	void (*delete) (NMSettingsConnection *self,
 	                NMSettingsConnectionDeleteFunc callback,

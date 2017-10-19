@@ -323,52 +323,40 @@ can_commit (NMSettingsConnection *connection,
 	return TRUE;
 }
 
-static void
+static gboolean
 commit_changes (NMSettingsConnection *connection,
                 NMSettingsConnectionCommitReason commit_reason,
-                NMSettingsConnectionCommitFunc callback,
-                gpointer user_data)
+                GError **error)
 {
-	GError *error = NULL;
-	gboolean success = FALSE;
-	char *ifcfg_path = NULL;
 	const char *filename;
 
 	filename = nm_settings_connection_get_filename (connection);
-	if (filename) {
-		success = writer_update_connection (NM_CONNECTION (connection),
-		                                    IFCFG_DIR,
-		                                    filename,
-		                                    NULL,
-		                                    NULL,
-		                                    &error);
-	} else {
-		success = writer_new_connection (NM_CONNECTION (connection),
-		                                 IFCFG_DIR,
-		                                 &ifcfg_path,
-		                                 NULL,
-		                                 NULL,
-		                                 &error);
-		if (success) {
-			nm_settings_connection_set_filename (connection, ifcfg_path);
-			g_free (ifcfg_path);
-		}
+	if (!filename) {
+		gs_free char *ifcfg_path = NULL;
+
+		if (!writer_new_connection (NM_CONNECTION (connection),
+		                            IFCFG_DIR,
+		                            &ifcfg_path,
+		                            NULL,
+		                            NULL,
+		                            error))
+			return FALSE;
+		nm_settings_connection_set_filename (connection, ifcfg_path);
+		return TRUE;
 	}
 
-	if (success) {
-		/* Chain up to parent to handle success */
-		NM_SETTINGS_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->commit_changes (connection, commit_reason, callback, user_data);
-	} else {
-		/* Otherwise immediate error */
-		callback (connection, error, user_data);
-		g_error_free (error);
-	}
+	return writer_update_connection (NM_CONNECTION (connection),
+	                                 IFCFG_DIR,
+	                                 filename,
+	                                 NULL,
+	                                 NULL,
+	                                 error);
 }
 
 static void
 do_delete (NMSettingsConnection *connection,
-	       NMSettingsConnectionDeleteFunc callback,
-	       gpointer user_data)
+           NMSettingsConnectionDeleteFunc callback,
+           gpointer user_data)
 {
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE ((NMIfcfgConnection *) connection);
 	const char *filename;

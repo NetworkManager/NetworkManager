@@ -640,42 +640,41 @@ nm_settings_connection_replace_and_commit (NMSettingsConnection *self,
 	nm_settings_connection_commit_changes (self, commit_reason, callback, user_data);
 }
 
-static void
-commit_changes (NMSettingsConnection *self,
-                NMSettingsConnectionCommitReason commit_reason,
-                NMSettingsConnectionCommitFunc callback,
-                gpointer user_data)
-{
-	/* Subclasses only call this function if the save was successful, so at
-	 * this point the connection is synced to disk and no longer unsaved.
-	 */
-	set_unsaved (self, FALSE);
-
-	g_object_ref (self);
-	callback (self, NULL, user_data);
-	g_object_unref (self);
-}
-
 void
 nm_settings_connection_commit_changes (NMSettingsConnection *self,
                                        NMSettingsConnectionCommitReason commit_reason,
                                        NMSettingsConnectionCommitFunc callback,
                                        gpointer user_data)
 {
+	gs_free_error GError *error = NULL;
+	NMSettingsConnectionClass *klass;
+
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
 
-	if (NM_SETTINGS_CONNECTION_GET_CLASS (self)->commit_changes) {
-		NM_SETTINGS_CONNECTION_GET_CLASS (self)->commit_changes (self,
-		                                                         commit_reason,
-		                                                         callback ? callback : ignore_cb,
-		                                                         user_data);
-	} else {
-		GError *error = g_error_new (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_FAILED,
-		                             "%s: %s:%d commit_changes() unimplemented", __func__, __FILE__, __LINE__);
-		if (callback)
-			callback (self, error, user_data);
-		g_error_free (error);
+	klass = NM_SETTINGS_CONNECTION_GET_CLASS (self);
+
+	if (!klass->commit_changes) {
+		g_set_error (&error,
+		             NM_SETTINGS_ERROR,
+		             NM_SETTINGS_ERROR_FAILED,
+		             "writing settings not supported");
+		goto out;
+	}
+
+	if (!klass->commit_changes (self,
+	                            commit_reason,
+	                            &error)) {
+		nm_assert (error);
+		goto out;
+	}
+
+	set_unsaved (self, FALSE);
+
+out:
+	if (callback) {
+		g_object_ref (self);
+		callback (self, error, user_data);
+		g_object_unref (self);
 	}
 }
 
@@ -2898,7 +2897,6 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 
-	class->commit_changes = commit_changes;
 	class->delete = do_delete;
 	class->supports_secrets = supports_secrets;
 
