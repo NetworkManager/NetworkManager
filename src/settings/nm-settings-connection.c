@@ -1652,7 +1652,8 @@ update_auth_cb (NMSettingsConnection *self,
 			                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION,
 			                                       con_update_cb,
 			                                       info);
-		}
+		} else
+			update_complete (self, info, NULL);
 		return;
 	}
 
