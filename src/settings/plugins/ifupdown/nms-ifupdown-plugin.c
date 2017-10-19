@@ -139,7 +139,9 @@ bind_device_to_connection (SettingsPluginIfupdown *self,
 		g_object_set (s_wifi, NM_SETTING_WIRELESS_MAC_ADDRESS, address, NULL);
 	}
 
-	nm_settings_connection_commit_changes (NM_SETTINGS_CONNECTION (exported), NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE, NULL, NULL);
+	nm_settings_connection_commit_changes (NM_SETTINGS_CONNECTION (exported),
+	                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
+	                                       NULL);
 }
 
 static void

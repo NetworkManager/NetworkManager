@@ -597,42 +597,34 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 	return success;
 }
 
-void
+gboolean
 nm_settings_connection_commit_changes (NMSettingsConnection *self,
                                        NMSettingsConnectionCommitReason commit_reason,
-                                       NMSettingsConnectionCommitFunc callback,
-                                       gpointer user_data)
+                                       GError **error)
 {
-	gs_free_error GError *error = NULL;
 	NMSettingsConnectionClass *klass;
 
-	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
+	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
 
 	klass = NM_SETTINGS_CONNECTION_GET_CLASS (self);
 
 	if (!klass->commit_changes) {
-		g_set_error (&error,
+		g_set_error (error,
 		             NM_SETTINGS_ERROR,
 		             NM_SETTINGS_ERROR_FAILED,
 		             "writing settings not supported");
-		goto out;
+		return FALSE;
 	}
 
 	if (!klass->commit_changes (self,
 	                            commit_reason,
-	                            &error)) {
-		nm_assert (error);
-		goto out;
+	                            error)) {
+		return FALSE;
 	}
 
 	set_unsaved (self, FALSE);
 
-out:
-	if (callback) {
-		g_object_ref (self);
-		callback (self, error, user_data);
-		g_object_unref (self);
-	}
+	return TRUE;
 }
 
 static void
@@ -838,15 +830,6 @@ secret_is_system_owned (NMSettingSecretFlags flags,
 }
 
 static void
-new_secrets_commit_cb (NMSettingsConnection *self,
-                       GError *error,
-                       gpointer user_data)
-{
-	if (error)
-		_LOGW ("Error saving new secrets to backing storage: %s", error->message);
-}
-
-static void
 get_cmp_flags (NMSettingsConnection *self, /* only needed for logging */
                GetSecretsInfo *info, /* only needed for logging */
                NMConnection *connection,
@@ -932,6 +915,8 @@ nm_settings_connection_new_secrets (NMSettingsConnection *self,
                                     GVariant *secrets,
                                     GError **error)
 {
+	gs_free_error GError *local = NULL;
+
 	if (!nm_settings_connection_has_unmodified_applied_connection (self, applied_connection,
 	                                                              NM_SETTING_COMPARE_FLAG_NONE)) {
 		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
@@ -944,8 +929,11 @@ nm_settings_connection_new_secrets (NMSettingsConnection *self,
 
 	update_system_secrets_cache (self);
 	update_agent_secrets_cache (self, NULL);
-	nm_settings_connection_commit_changes (self, NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
-	                                       new_secrets_commit_cb, NULL);
+
+	if (!nm_settings_connection_commit_changes (self,
+	                                            NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
+	                                            &local))
+		_LOGW ("Error saving new secrets to backing storage: %s", local->message);
 
 	return TRUE;
 }
@@ -1056,11 +1044,16 @@ get_secrets_done_cb (NMAgentManager *manager,
 			 * nothing has changed, since agent-owned secrets don't get saved here.
 			 */
 			if (agent_had_system) {
+				gs_free_error GError *local2 = NULL;
+
 				_LOGD ("(%s:%p) saving new secrets to backing storage",
 				       setting_name,
 				       info);
 
-				nm_settings_connection_commit_changes (self, NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE, new_secrets_commit_cb, NULL);
+				if (!nm_settings_connection_commit_changes (self,
+				                                            NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
+				                                            &local2))
+					_LOGW ("Error saving new secrets to backing storage: %s", local2->message);
 			} else {
 				_LOGD ("(%s:%p) new agent secrets processed",
 				       setting_name,
@@ -1602,33 +1595,6 @@ update_complete (NMSettingsConnection *self,
 }
 
 static void
-con_update_cb (NMSettingsConnection *self,
-               GError *error,
-               gpointer user_data)
-{
-	UpdateInfo *info = user_data;
-	NMConnection *for_agent;
-
-	if (!error) {
-		/* Dupe the connection so we can clear out non-agent-owned secrets,
-		 * as agent-owned secrets are the only ones we send back be saved.
-		 * Only send secrets to agents of the same UID that called update too.
-		 */
-		for_agent = nm_simple_connection_new_clone (NM_CONNECTION (self));
-		nm_connection_clear_secrets_with_flags (for_agent,
-		                                        secrets_filter_cb,
-		                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
-		nm_agent_manager_save_secrets (info->agent_mgr,
-		                               nm_connection_get_path (NM_CONNECTION (self)),
-		                               for_agent,
-		                               info->subject);
-		g_object_unref (for_agent);
-	}
-
-	update_complete (self, info, error);
-}
-
-static void
 update_auth_cb (NMSettingsConnection *self,
                 GDBusMethodInvocation *context,
                 NMAuthSubject *subject,
@@ -1650,11 +1616,9 @@ update_auth_cb (NMSettingsConnection *self,
 		if (info->save_to_disk) {
 			nm_settings_connection_commit_changes (self,
 			                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION,
-			                                       con_update_cb,
-			                                       info);
-		} else
-			update_complete (self, info, NULL);
-		return;
+			                                       &local);
+		}
+		goto out;
 	}
 
 	if (!any_secrets_present (info->new_settings)) {
@@ -1686,30 +1650,45 @@ update_auth_cb (NMSettingsConnection *self,
 	if (info->save_to_disk) {
 		klass = NM_SETTINGS_CONNECTION_GET_CLASS (self);
 		if (klass->can_commit) {
-			if (!klass->can_commit (self, &local)) {
-				con_update_cb (self, local, info);
-				return;
-			}
+			if (!klass->can_commit (self, &local))
+				goto out;
 		}
 	}
 
-	if (!nm_settings_connection_replace_settings (self, info->new_settings, TRUE, "replace-and-commit-disk", &local)) {
-		con_update_cb (self, local, info);
-		return;
-	}
+	if (!nm_settings_connection_replace_settings (self, info->new_settings, TRUE, "replace-and-commit-disk", &local))
+		goto out;
 
-	if (!info->save_to_disk) {
-		con_update_cb (self, NULL, info);
-		return;
-	}
+	if (!info->save_to_disk)
+		goto out;
 
 	commit_reason = NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION;
 	if (nm_streq0 (nm_connection_get_id (NM_CONNECTION (self)),
 	               nm_connection_get_id (info->new_settings)))
 		commit_reason |= NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED;
 
-	nm_settings_connection_commit_changes (self, commit_reason, con_update_cb, info);
+	nm_settings_connection_commit_changes (self, commit_reason, &local);
+
+out:
+	if (!local) {
+		gs_unref_object NMConnection *for_agent = NULL;
+
+		/* Dupe the connection so we can clear out non-agent-owned secrets,
+		 * as agent-owned secrets are the only ones we send back be saved.
+		 * Only send secrets to agents of the same UID that called update too.
+		 */
+		for_agent = nm_simple_connection_new_clone (NM_CONNECTION (self));
+		nm_connection_clear_secrets_with_flags (for_agent,
+		                                        secrets_filter_cb,
+		                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
+		nm_agent_manager_save_secrets (info->agent_mgr,
+		                               nm_connection_get_path (NM_CONNECTION (self)),
+		                               for_agent,
+		                               info->subject);
+	}
+
+	update_complete (self, info, local);
 }
+
 
 static const char *
 get_update_modify_permission (NMConnection *old, NMConnection *new)
@@ -1990,23 +1969,6 @@ impl_settings_connection_get_secrets (NMSettingsConnection *self,
 }
 
 static void
-clear_secrets_cb (NMSettingsConnection *self,
-                  GError *error,
-                  gpointer user_data)
-{
-	CallbackInfo *info = user_data;
-
-	if (error)
-		g_dbus_method_invocation_return_gerror (info->context, error);
-	else
-		g_dbus_method_invocation_return_value (info->context, NULL);
-
-	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_CLEAR_SECRETS, self,
-	                            !error, NULL, info->subject, error ? error->message : NULL);
-	g_free (info);
-}
-
-static void
 dbus_clear_secrets_auth_cb (NMSettingsConnection *self,
                             GDBusMethodInvocation *context,
                             NMAuthSubject *subject,
@@ -2014,31 +1976,38 @@ dbus_clear_secrets_auth_cb (NMSettingsConnection *self,
                             gpointer user_data)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-	CallbackInfo *info;
+	gs_free_error GError *local = NULL;
 
 	if (error) {
 		g_dbus_method_invocation_return_gerror (context, error);
 		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_CLEAR_SECRETS, self,
 		                            FALSE, NULL, subject, error->message);
-	} else {
-		/* Clear secrets in connection and caches */
-		nm_connection_clear_secrets (NM_CONNECTION (self));
-		if (priv->system_secrets)
-			nm_connection_clear_secrets (priv->system_secrets);
-		if (priv->agent_secrets)
-			nm_connection_clear_secrets (priv->agent_secrets);
-
-		/* Tell agents to remove secrets for this connection */
-		nm_agent_manager_delete_secrets (priv->agent_mgr,
-		                                 nm_connection_get_path (NM_CONNECTION (self)),
-		                                 NM_CONNECTION (self));
-
-		info = g_malloc0 (sizeof (*info));
-		info->context = context;
-		info->subject = subject;
-
-		nm_settings_connection_commit_changes (self, NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE, clear_secrets_cb, info);
+		return;
 	}
+
+	/* Clear secrets in connection and caches */
+	nm_connection_clear_secrets (NM_CONNECTION (self));
+	if (priv->system_secrets)
+		nm_connection_clear_secrets (priv->system_secrets);
+	if (priv->agent_secrets)
+		nm_connection_clear_secrets (priv->agent_secrets);
+
+	/* Tell agents to remove secrets for this connection */
+	nm_agent_manager_delete_secrets (priv->agent_mgr,
+	                                 nm_connection_get_path (NM_CONNECTION (self)),
+	                                 NM_CONNECTION (self));
+
+	nm_settings_connection_commit_changes (self,
+	                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
+	                                       &local);
+
+	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_CLEAR_SECRETS, self,
+	                            !local, NULL, subject, local ? local->message : NULL);
+
+	if (local)
+		g_dbus_method_invocation_return_gerror (context, local);
+	else
+		g_dbus_method_invocation_return_value (context, NULL);
 }
 
 static void

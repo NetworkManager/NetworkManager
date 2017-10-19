@@ -94,10 +94,6 @@ typedef struct _NMSettingsConnectionCallId *NMSettingsConnectionCallId;
 
 typedef struct _NMSettingsConnectionClass NMSettingsConnectionClass;
 
-typedef void (*NMSettingsConnectionCommitFunc) (NMSettingsConnection *self,
-                                                GError *error,
-                                                gpointer user_data);
-
 typedef void (*NMSettingsConnectionDeleteFunc) (NMSettingsConnection *self,
                                                 GError *error,
                                                 gpointer user_data);
@@ -132,10 +128,9 @@ gboolean nm_settings_connection_has_unmodified_applied_connection (NMSettingsCon
                                                                    NMConnection *applied_connection,
                                                                    NMSettingCompareFlags compare_flage);
 
-void nm_settings_connection_commit_changes (NMSettingsConnection *self,
-                                            NMSettingsConnectionCommitReason commit_reason,
-                                            NMSettingsConnectionCommitFunc callback,
-                                            gpointer user_data);
+gboolean nm_settings_connection_commit_changes (NMSettingsConnection *self,
+                                                NMSettingsConnectionCommitReason commit_reason,
+                                                GError **error);
 
 gboolean nm_settings_connection_replace_settings (NMSettingsConnection *self,
                                                   NMConnection *new_connection,

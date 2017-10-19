@@ -260,7 +260,6 @@ activate:
 					                                                dev_checkpoint->settings_connection);
 					nm_settings_connection_commit_changes (connection,
 					                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
-					                                       NULL,
 					                                       NULL);
 				}
 			} else {
