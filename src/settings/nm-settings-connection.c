@@ -598,42 +598,6 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 }
 
 void
-nm_settings_connection_replace_and_commit (NMSettingsConnection *self,
-                                           NMConnection *new_connection,
-                                           NMSettingsConnectionCommitFunc callback,
-                                           gpointer user_data)
-{
-	gs_free_error GError *error = NULL;
-	NMSettingsConnectionClass *klass;
-	NMSettingsConnectionCommitReason commit_reason = NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION;
-
-	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
-	g_return_if_fail (NM_IS_CONNECTION (new_connection));
-
-	klass = NM_SETTINGS_CONNECTION_GET_CLASS (self);
-
-	if (nm_streq0 (nm_connection_get_id (NM_CONNECTION (self)),
-	               nm_connection_get_id (new_connection)))
-		commit_reason |= NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED;
-
-	if (klass->can_commit) {
-		if (!klass->can_commit (self, &error)) {
-			if (callback)
-				callback (self, error, user_data);
-			return;
-		}
-	}
-
-	if (!nm_settings_connection_replace_settings (self, new_connection, TRUE, "replace-and-commit-disk", &error)) {
-		if (callback)
-			callback (self, error, user_data);
-		return;
-	}
-
-	nm_settings_connection_commit_changes (self, commit_reason, callback, user_data);
-}
-
-void
 nm_settings_connection_commit_changes (NMSettingsConnection *self,
                                        NMSettingsConnectionCommitReason commit_reason,
                                        NMSettingsConnectionCommitFunc callback,
@@ -1672,7 +1636,9 @@ update_auth_cb (NMSettingsConnection *self,
                 gpointer data)
 {
 	UpdateInfo *info = data;
-	GError *local = NULL;
+	NMSettingsConnectionClass *klass;
+	NMSettingsConnectionCommitReason commit_reason;
+	gs_free_error GError *local = NULL;
 
 	if (error) {
 		update_complete (self, info, error);
@@ -1717,16 +1683,31 @@ update_auth_cb (NMSettingsConnection *self,
 	}
 
 	if (info->save_to_disk) {
-		nm_settings_connection_replace_and_commit (self,
-		                                           info->new_settings,
-		                                           con_update_cb,
-		                                           info);
-	} else {
-		if (!nm_settings_connection_replace_settings (self, info->new_settings, TRUE, "replace-and-commit-memory", &local))
-			g_assert (local);
-		con_update_cb (self, local, info);
-		g_clear_error (&local);
+		klass = NM_SETTINGS_CONNECTION_GET_CLASS (self);
+		if (klass->can_commit) {
+			if (!klass->can_commit (self, &local)) {
+				con_update_cb (self, local, info);
+				return;
+			}
+		}
 	}
+
+	if (!nm_settings_connection_replace_settings (self, info->new_settings, TRUE, "replace-and-commit-disk", &local)) {
+		con_update_cb (self, local, info);
+		return;
+	}
+
+	if (!info->save_to_disk) {
+		con_update_cb (self, NULL, info);
+		return;
+	}
+
+	commit_reason = NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION;
+	if (nm_streq0 (nm_connection_get_id (NM_CONNECTION (self)),
+	               nm_connection_get_id (info->new_settings)))
+		commit_reason |= NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED;
+
+	nm_settings_connection_commit_changes (self, commit_reason, con_update_cb, info);
 }
 
 static const char *

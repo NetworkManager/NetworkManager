@@ -143,11 +143,6 @@ gboolean nm_settings_connection_replace_settings (NMSettingsConnection *self,
                                                   const char *log_diff_name,
                                                   GError **error);
 
-void nm_settings_connection_replace_and_commit (NMSettingsConnection *self,
-                                                NMConnection *new_connection,
-                                                NMSettingsConnectionCommitFunc callback,
-                                                gpointer user_data);
-
 void nm_settings_connection_delete (NMSettingsConnection *self,
                                     NMSettingsConnectionDeleteFunc callback,
                                     gpointer user_data);

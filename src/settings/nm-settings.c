@@ -91,7 +91,6 @@ EXPORT(nm_inotify_helper_remove_watch)
 
 EXPORT(nm_settings_connection_get_type)
 EXPORT(nm_settings_connection_replace_settings)
-EXPORT(nm_settings_connection_replace_and_commit)
 
 /*****************************************************************************/
 
