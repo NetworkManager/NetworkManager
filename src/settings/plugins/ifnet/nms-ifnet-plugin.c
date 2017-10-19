@@ -138,9 +138,9 @@ monitor_file_changes (const char *filename,
 		info->callback = callback;
 		info->user_data = user_data;
 		g_object_weak_ref (G_OBJECT (monitor), (GWeakNotify) g_free,
-				   info);
+		                   info);
 		g_signal_connect (monitor, "changed", G_CALLBACK (file_changed),
-				  info);
+		                  info);
 	} else {
 		nm_log_warn (LOGD_SETTINGS, "Monitoring %s failed, error: %s", filename,
 		             error == NULL ? "nothing" : (*error)->message);
@@ -156,12 +156,12 @@ setup_monitors (NMIfnetConnection * connection, gpointer user_data)
 	SettingsPluginIfnetPrivate *priv = SETTINGS_PLUGIN_IFNET_GET_PRIVATE (self);
 
 	if (nm_config_get_monitor_connection_files (nm_config_get ())) {
-		priv->net_monitor =
-			monitor_file_changes (CONF_NET_FILE, (FileChangedFn) reload_connections,
-			                      user_data);
-		priv->wpa_monitor =
-			monitor_file_changes (WPA_SUPPLICANT_CONF, (FileChangedFn) reload_connections,
-			                      user_data);
+		priv->net_monitor = monitor_file_changes (CONF_NET_FILE,
+		                                          (FileChangedFn) reload_connections,
+		                                          user_data);
+		priv->wpa_monitor = monitor_file_changes (WPA_SUPPLICANT_CONF,
+		                                          (FileChangedFn) reload_connections,
+		                                          user_data);
 	}
 }
 
