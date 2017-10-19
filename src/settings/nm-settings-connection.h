@@ -119,9 +119,8 @@ struct _NMSettingsConnectionClass {
 	                            NMSettingsConnectionCommitReason commit_reason,
 	                            GError **error);
 
-	void (*delete) (NMSettingsConnection *self,
-	                NMSettingsConnectionDeleteFunc callback,
-	                gpointer user_data);
+	gboolean (*delete) (NMSettingsConnection *self,
+	                    GError **error);
 
 	gboolean (*supports_secrets) (NMSettingsConnection *self,
 	                              const char *setting_name);

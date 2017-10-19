@@ -353,10 +353,9 @@ commit_changes (NMSettingsConnection *connection,
 	                                 error);
 }
 
-static void
-do_delete (NMSettingsConnection *connection,
-           NMSettingsConnectionDeleteFunc callback,
-           gpointer user_data)
+static gboolean
+delete (NMSettingsConnection *connection,
+        GError **error)
 {
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE ((NMIfcfgConnection *) connection);
 	const char *filename;
@@ -372,7 +371,7 @@ do_delete (NMSettingsConnection *connection,
 			g_unlink (priv->route6file);
 	}
 
-	NM_SETTINGS_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->delete (connection, callback, user_data);
+	return TRUE;
 }
 
 /*****************************************************************************/
@@ -511,7 +510,7 @@ nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 	object_class->get_property = get_property;
 	object_class->dispose      = dispose;
 
-	settings_class->delete = do_delete;
+	settings_class->delete = delete;
 	settings_class->can_commit = can_commit;
 	settings_class->commit_changes = commit_changes;
 

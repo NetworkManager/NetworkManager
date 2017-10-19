@@ -597,13 +597,6 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 	return success;
 }
 
-static void
-ignore_cb (NMSettingsConnection *self,
-           GError *error,
-           gpointer user_data)
-{
-}
-
 void
 nm_settings_connection_replace_and_commit (NMSettingsConnection *self,
                                            NMConnection *new_connection,
@@ -678,27 +671,6 @@ out:
 	}
 }
 
-void
-nm_settings_connection_delete (NMSettingsConnection *self,
-                               NMSettingsConnectionDeleteFunc callback,
-                               gpointer user_data)
-{
-	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
-
-	if (NM_SETTINGS_CONNECTION_GET_CLASS (self)->delete) {
-		NM_SETTINGS_CONNECTION_GET_CLASS (self)->delete (self,
-		                                                 callback ? callback : ignore_cb,
-		                                                 user_data);
-	} else {
-		GError *error = g_error_new (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_FAILED,
-		                             "%s: %s:%d delete() unimplemented", __func__, __FILE__, __LINE__);
-		if (callback)
-			callback (self, error, user_data);
-		g_error_free (error);
-	}
-}
-
 static void
 remove_entry_from_db (NMSettingsConnection *self, const char* db_name)
 {
@@ -735,15 +707,34 @@ remove_entry_from_db (NMSettingsConnection *self, const char* db_name)
 	g_key_file_free (key_file);
 }
 
-static void
-do_delete (NMSettingsConnection *self,
-           NMSettingsConnectionDeleteFunc callback,
-           gpointer user_data)
+void
+nm_settings_connection_delete (NMSettingsConnection *self,
+                               NMSettingsConnectionDeleteFunc callback,
+                               gpointer user_data)
 {
+	gs_unref_object NMSettingsConnection *self_keep_alive = NULL;
+	gs_free_error GError *error = NULL;
+	NMSettingsConnectionClass *klass;
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	NMConnection *for_agents;
 
-	g_object_ref (self);
+	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
+
+	klass = NM_SETTINGS_CONNECTION_GET_CLASS (self);
+
+	self_keep_alive = g_object_ref (self);
+
+	if (!klass->delete) {
+		g_set_error (&error,
+		             NM_SETTINGS_ERROR,
+		             NM_SETTINGS_ERROR_FAILED,
+		             "delete not supported");
+		goto out;
+	}
+	if (!klass->delete (self,
+	                    &error))
+		goto out;
+
 	set_visible (self, FALSE);
 
 	/* Tell agents to remove secrets for this connection */
@@ -762,10 +753,11 @@ do_delete (NMSettingsConnection *self,
 
 	nm_settings_connection_signal_remove (self, FALSE);
 
-	callback (self, NULL, user_data);
-
-	g_object_unref (self);
+out:
+	if (callback)
+		callback (self, error, user_data);
 }
+
 
 /*****************************************************************************/
 
@@ -2897,7 +2889,6 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 
-	class->delete = do_delete;
 	class->supports_secrets = supports_secrets;
 
 	obj_properties[PROP_VISIBLE] =

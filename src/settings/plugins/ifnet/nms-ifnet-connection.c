@@ -115,35 +115,26 @@ commit_changes (NMSettingsConnection *connection,
 	return success;
 }
 
-static void
-do_delete (NMSettingsConnection *connection,
-           NMSettingsConnectionDeleteFunc callback,
-           gpointer user_data)
+static gboolean
+delete (NMSettingsConnection *connection,
+        GError **error)
 {
-	GError *error = NULL;
 	NMIfnetConnectionPrivate *priv = NM_IFNET_CONNECTION_GET_PRIVATE ((NMIfnetConnection *) connection);
-
-	g_signal_emit (connection, signals[IFNET_CANCEL_MONITORS], 0);
 
 	/* Only connections which exist in /etc/conf.d/net will have a conn_name */
 	if (priv->conn_name) {
+		g_signal_emit (connection, signals[IFNET_CANCEL_MONITORS], 0);
+
 		if (!ifnet_delete_connection_in_parsers (priv->conn_name, CONF_NET_FILE, WPA_SUPPLICANT_CONF, NULL)) {
 			nm_log_warn (LOGD_SETTINGS, "Failed to delete %s", priv->conn_name);
 			reload_parsers ();
-			callback (connection, error, user_data);
-			g_error_free (error);
-			g_signal_emit (connection, signals[IFNET_SETUP_MONITORS], 0);
-			return;
+			/* let's not return an error. */
 		}
+
+		g_signal_emit (connection, signals[IFNET_SETUP_MONITORS], 0);
 	}
 
-	NM_SETTINGS_CONNECTION_CLASS (nm_ifnet_connection_parent_class)->delete (connection, callback, user_data);
-
-	g_signal_emit (connection, signals[IFNET_SETUP_MONITORS], 0);
-
-	nm_log_info (LOGD_SETTINGS, "Successfully deleted %s",
-	             priv->conn_name ? priv->conn_name :
-	             nm_connection_get_id (NM_CONNECTION (connection)));
+	return TRUE;
 }
 
 /*****************************************************************************/
@@ -209,7 +200,7 @@ nm_ifnet_connection_class_init (NMIfnetConnectionClass * ifnet_connection_class)
 
 	object_class->finalize = finalize;
 
-	settings_class->delete = do_delete;
+	settings_class->delete = delete;
 	settings_class->commit_changes = commit_changes;
 
 	signals[IFNET_SETUP_MONITORS] =

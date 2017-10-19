@@ -103,20 +103,16 @@ commit_changes (NMSettingsConnection *connection,
 	return TRUE;
 }
 
-static void
-do_delete (NMSettingsConnection *connection,
-           NMSettingsConnectionDeleteFunc callback,
-           gpointer user_data)
+static gboolean
+delete (NMSettingsConnection *connection,
+        GError **error)
 {
 	const char *path;
 
 	path = nm_settings_connection_get_filename (connection);
 	if (path)
 		g_unlink (path);
-
-	NM_SETTINGS_CONNECTION_CLASS (nms_keyfile_connection_parent_class)->delete (connection,
-	                                                                            callback,
-	                                                                            user_data);
+	return TRUE;
 }
 
 /*****************************************************************************/
@@ -182,5 +178,5 @@ nms_keyfile_connection_class_init (NMSKeyfileConnectionClass *keyfile_connection
 	NMSettingsConnectionClass *settings_class = NM_SETTINGS_CONNECTION_CLASS (keyfile_connection_class);
 
 	settings_class->commit_changes = commit_changes;
-	settings_class->delete = do_delete;
+	settings_class->delete = delete;
 }
