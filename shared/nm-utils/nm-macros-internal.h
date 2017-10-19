@@ -1151,6 +1151,19 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro)
 
 /*****************************************************************************/
 
+static inline int
+nm_steal_fd (int *p_fd)
+{
+	int fd;
+
+	if (   p_fd
+	    && ((fd = *p_fd) > 0)) {
+		*p_fd = -1;
+		return fd;
+	}
+	return -1;
+}
+
 /**
  * nm_close:
  *
