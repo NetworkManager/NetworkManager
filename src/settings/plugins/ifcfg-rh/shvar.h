@@ -86,6 +86,13 @@ gboolean svSetValueEnum (shvarFile *s, const char *key, GType gtype, int value);
 
 gboolean svUnsetValue (shvarFile *s, const char *key);
 
+typedef enum {
+	SV_KEY_TYPE_ANY                     = (1LL << 0),
+	SV_KEY_TYPE_ROUTE_SVFORMAT          = (1LL << 1),
+} SvKeyType;
+
+gboolean svUnsetAll (shvarFile *s, SvKeyType match_key_type);
+
 void svUnsetValuesWithPrefix (shvarFile *s, const char *prefix);
 
 /* Write the current contents iff modified.  Returns FALSE on error

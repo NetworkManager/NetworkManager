@@ -1120,6 +1120,57 @@ svGetValueEnum (shvarFile *s, const char *key,
 
 /*****************************************************************************/
 
+static gboolean
+_is_all_digits (const char *str)
+{
+	return    str[0]
+	       && NM_STRCHAR_ALL (str, ch, g_ascii_isdigit (ch));
+}
+
+#define IS_NUMBERED_TAG(key, tab_name) \
+	({ \
+		const char *_key = (key); \
+		\
+		(   (strncmp (_key, tab_name, NM_STRLEN (tab_name)) == 0) \
+		 && _is_all_digits (&_key[NM_STRLEN (tab_name)])); \
+	})
+
+gboolean
+svUnsetAll (shvarFile *s, SvKeyType match_key_type)
+{
+	CList *current;
+	shvarLine *line;
+	gboolean changed = FALSE;
+
+	g_return_val_if_fail (s, FALSE);
+
+	c_list_for_each (current, &s->lst_head) {
+		line = c_list_entry (current, shvarLine, lst);
+		if (!line->key)
+			continue;
+
+		if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_ANY))
+			goto do_clear;
+		if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_ROUTE_SVFORMAT)) {
+			if (   IS_NUMBERED_TAG (line->key, "ADDRESS")
+			    || IS_NUMBERED_TAG (line->key, "NETMASK")
+			    || IS_NUMBERED_TAG (line->key, "GATEWAY")
+			    || IS_NUMBERED_TAG (line->key, "METRIC")
+			    || IS_NUMBERED_TAG (line->key, "OPTIONS"))
+				goto do_clear;
+		}
+
+		continue;
+do_clear:
+		if (nm_clear_g_free (&line->line))
+			changed = TRUE;
+	}
+
+	if (changed)
+		s->modified = TRUE;
+	return changed;
+}
+
 /* Same as svSetValueStr() but it preserves empty @value -- contrary to
  * svSetValueStr() for which "" effectively means to remove the value. */
 gboolean
