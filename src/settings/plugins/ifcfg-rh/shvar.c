@@ -1146,6 +1146,7 @@ svUnsetAll (shvarFile *s, SvKeyType match_key_type)
 
 	c_list_for_each (current, &s->lst_head) {
 		line = c_list_entry (current, shvarLine, lst);
+		ASSERT_shvarLine (line);
 		if (!line->key)
 			continue;
 
@@ -1166,11 +1167,17 @@ svUnsetAll (shvarFile *s, SvKeyType match_key_type)
 			    || IS_NUMBERED_TAG (line->key, "GATEWAY"))
 				goto do_clear;
 		}
+		if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_USER)) {
+			if (g_str_has_prefix (line->key, "NM_USER_"))
+				goto do_clear;
+		}
 
 		continue;
 do_clear:
-		if (nm_clear_g_free (&line->line))
+		if (nm_clear_g_free (&line->line)) {
+			ASSERT_shvarLine (line);
 			changed = TRUE;
+		}
 	}
 
 	if (changed)
@@ -1274,27 +1281,6 @@ gboolean
 svUnsetValue (shvarFile *s, const char *key)
 {
 	return svSetValue (s, key, NULL);
-}
-
-void
-svUnsetValuesWithPrefix (shvarFile *s, const char *prefix)
-{
-	CList *current;
-
-	g_return_if_fail (s);
-	g_return_if_fail (prefix);
-
-	c_list_for_each (current, &s->lst_head) {
-		shvarLine *line = c_list_entry (current, shvarLine, lst);
-
-		ASSERT_shvarLine (line);
-		if (   line->key
-		    && g_str_has_prefix (line->key, prefix)) {
-			if (nm_clear_g_free (&line->line))
-				s->modified = TRUE;
-		}
-		ASSERT_shvarLine (line);
-	}
 }
 
 /*****************************************************************************/

@@ -2033,7 +2033,7 @@ write_user_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 
 	s_user = NM_SETTING_USER (nm_connection_get_setting (connection, NM_TYPE_SETTING_USER));
 
-	svUnsetValuesWithPrefix (ifcfg, "NM_USER_");
+	svUnsetAll (ifcfg, SV_KEY_TYPE_USER);
 
 	if (!s_user)
 		return TRUE;
