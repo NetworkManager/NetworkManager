@@ -2207,16 +2207,18 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	svSetValueStr (ifcfg, "DHCP_CLIENT_ID", value);
 
 	timeout = nm_setting_ip_config_get_dhcp_timeout (s_ip4);
-	tmp = timeout ? g_strdup_printf ("%d", timeout) : NULL;
-	svSetValueStr (ifcfg, "IPV4_DHCP_TIMEOUT", tmp);
-	g_free (tmp);
+	svSetValueInt64_cond (ifcfg,
+	                      "IPV4_DHCP_TIMEOUT",
+	                      timeout != 0,
+	                      timeout);
 
 	svSetValueBoolean (ifcfg, "IPV4_FAILURE_FATAL", !nm_setting_ip_config_get_may_fail (s_ip4));
 
 	route_metric = nm_setting_ip_config_get_route_metric (s_ip4);
-	tmp = route_metric != -1 ? g_strdup_printf ("%"G_GINT64_FORMAT, route_metric) : NULL;
-	svSetValueStr (ifcfg, "IPV4_ROUTE_METRIC", tmp);
-	g_free (tmp);
+	svSetValueInt64_cond (ifcfg,
+	                      "IPV4_ROUTE_METRIC",
+	                      route_metric != -1,
+	                      route_metric);
 
 	route_table = nm_setting_ip_config_get_route_table (s_ip4);
 	svSetValueInt64_cond (ifcfg,
@@ -2485,7 +2487,6 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	NMSettingIPConfig *s_ip6;
 	NMSettingIPConfig *s_ip4;
 	const char *value;
-	char *tmp;
 	guint i, num, num4;
 	gint priority;
 	NMIPAddress *addr;
@@ -2620,9 +2621,10 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	               nm_setting_ip_config_get_may_fail (s_ip6) ? "no" : "yes");
 
 	route_metric = nm_setting_ip_config_get_route_metric (s_ip6);
-	tmp = route_metric != -1 ? g_strdup_printf ("%"G_GINT64_FORMAT, route_metric) : NULL;
-	svSetValueStr (ifcfg, "IPV6_ROUTE_METRIC", tmp);
-	g_free (tmp);
+	svSetValueInt64_cond (ifcfg,
+	                      "IPV6_ROUTE_METRIC",
+	                      route_metric != -1,
+	                      route_metric);
 
 	route_table = nm_setting_ip_config_get_route_table (s_ip6);
 	svSetValueInt64_cond (ifcfg,
