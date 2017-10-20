@@ -2294,11 +2294,9 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 			(void) unlink (route_path);
 		else {
 			if (!g_file_set_contents (route_path, routes_file->str, routes_file->len, NULL)) {
-				if (error) {
-					g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-					             "Writing route file '%s' failed", route_path);
-					return FALSE;
-				}
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+				             "Writing route file '%s' failed", route_path);
+				return FALSE;
 			}
 		}
 	}
@@ -2669,11 +2667,9 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		(void) unlink (route6_path);
 	else {
 		if (!g_file_set_contents (route6_path, routes_file->str, routes_file->len, NULL)) {
-			if (error) {
-				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-				             "Writing route6 file '%s' failed", route6_path);
-				return FALSE;
-			}
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+			             "Writing route6 file '%s' failed", route6_path);
+			return FALSE;
 		}
 	}
 
