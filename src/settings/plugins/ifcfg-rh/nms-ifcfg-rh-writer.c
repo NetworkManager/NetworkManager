@@ -2860,8 +2860,6 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 	                        error))
 		return FALSE;
 
-	write_ip4_aliases (connection, ifcfg_name);
-
 	if (!write_ip6_setting (connection,
 	                        ifcfg,
 	                        &route6_content,
@@ -2873,8 +2871,14 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 
 	write_connection_setting (s_con, ifcfg);
 
+	/* From here on, we persist data to disk. Before, it was all in-memory
+	 * only. But we loaded the ifcfg files from disk, and managled our
+	 * new settings (in-momory). */
+
 	if (!svWriteFile (ifcfg, 0644, error))
 		return FALSE;
+
+	write_ip4_aliases (connection, ifcfg_name);
 
 	if (!write_secrets (ifcfg, secrets, error))
 		return FALSE;
