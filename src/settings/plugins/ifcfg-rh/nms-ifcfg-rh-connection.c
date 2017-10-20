@@ -335,33 +335,27 @@ commit_changes (NMSettingsConnection *connection,
 	gs_unref_object NMConnection *reread = NULL;
 	gboolean reread_same = TRUE;
 	const char *operation_message;
+	gs_free char *ifcfg_path = NULL;
 
 	nm_assert (out_reread_connection && !*out_reread_connection);
 	nm_assert (!out_logmsg_change || !*out_logmsg_change);
 
 	filename = nm_settings_connection_get_filename (connection);
-	if (!filename) {
-		gs_free char *ifcfg_path = NULL;
+	if (!nms_ifcfg_rh_writer_write_connection (new_connection ?: NM_CONNECTION (connection),
+	                                           IFCFG_DIR,
+	                                           filename,
+	                                           &ifcfg_path,
+	                                           &reread,
+	                                           &reread_same,
+	                                           error))
+		return FALSE;
 
-		if (!writer_new_connection (new_connection ?: NM_CONNECTION (connection),
-		                            IFCFG_DIR,
-		                            &ifcfg_path,
-		                            &reread,
-		                            &reread_same,
-		                            error))
-			return FALSE;
+	nm_assert ((!filename && ifcfg_path) || (filename && !ifcfg_path));
+	if (ifcfg_path) {
 		nm_settings_connection_set_filename (connection, ifcfg_path);
 		operation_message = "persist";
-	} else {
-		if (!writer_update_connection (new_connection ?: NM_CONNECTION (connection),
-		                               IFCFG_DIR,
-		                               filename,
-		                               &reread,
-		                               &reread_same,
-		                               error))
-			return FALSE;
+	} else
 		operation_message = "update";
-	}
 
 	if (reread && !reread_same)
 		*out_reread_connection = g_steal_pointer (&reread);

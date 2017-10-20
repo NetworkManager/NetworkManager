@@ -2761,14 +2761,14 @@ escape_id (const char *id)
 	return escaped;
 }
 
-static gboolean
-write_connection (NMConnection *connection,
-                  const char *ifcfg_dir,
-                  const char *filename,
-                  char **out_filename,
-                  NMConnection **out_reread,
-                  gboolean *out_reread_same,
-                  GError **error)
+gboolean
+nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
+                                      const char *ifcfg_dir,
+                                      const char *filename,
+                                      char **out_filename,
+                                      NMConnection **out_reread,
+                                      gboolean *out_reread_same,
+                                      GError **error)
 {
 	NMSettingConnection *s_con;
 	nm_auto_shvar_file_close shvarFile *ifcfg = NULL;
@@ -2781,7 +2781,14 @@ write_connection (NMConnection *connection,
 	nm_assert (_nm_connection_verify (connection, NULL) == NM_SETTING_VERIFY_SUCCESS);
 	nm_assert (!out_reread || !*out_reread);
 
-	if (!writer_can_write_connection (connection, error))
+	if (   filename
+	    && utils_has_complex_routes (filename)) {
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+		             "Cannot modify a connection that has an associated 'rule-' or 'rule6-' file");
+		return FALSE;
+	}
+
+	if (!nms_ifcfg_rh_writer_can_write_connection (connection, error))
 		return FALSE;
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -2950,7 +2957,7 @@ write_connection (NMConnection *connection,
 }
 
 gboolean
-writer_can_write_connection (NMConnection *connection, GError **error)
+nms_ifcfg_rh_writer_can_write_connection (NMConnection *connection, GError **error)
 {
 	NMSettingConnection *s_con;
 
@@ -2972,33 +2979,5 @@ writer_can_write_connection (NMConnection *connection, GError **error)
 	             nm_setting_connection_get_connection_type (s_con),
 	             !!nm_connection_get_setting_pppoe (connection));
 	return FALSE;
-}
-
-gboolean
-writer_new_connection (NMConnection *connection,
-                       const char *ifcfg_dir,
-                       char **out_filename,
-                       NMConnection **out_reread,
-                       gboolean *out_reread_same,
-                       GError **error)
-{
-	return write_connection (connection, ifcfg_dir, NULL, out_filename, out_reread, out_reread_same, error);
-}
-
-gboolean
-writer_update_connection (NMConnection *connection,
-                          const char *ifcfg_dir,
-                          const char *filename,
-                          NMConnection **out_reread,
-                          gboolean *out_reread_same,
-                          GError **error)
-{
-	if (utils_has_complex_routes (filename)) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "Cannot modify a connection that has an associated 'rule-' or 'rule6-' file");
-		return FALSE;
-	}
-
-	return write_connection (connection, ifcfg_dir, filename, NULL, out_reread, out_reread_same, error);
 }
 

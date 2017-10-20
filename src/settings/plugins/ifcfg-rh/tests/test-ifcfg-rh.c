@@ -232,7 +232,7 @@ _assert_expected_content (NMConnection *connection, const char *filename, const 
 		g_assert (_ifcfg_dir && _ifcfg_dir[0]); \
 		g_assert (_filename && _filename[0]); \
 		\
-		_success = writer_update_connection (_connection, _ifcfg_dir, _filename, _out_reread, _out_reread_same, &_error); \
+		_success = nms_ifcfg_rh_writer_write_connection (_connection, _ifcfg_dir, _filename, NULL, _out_reread, _out_reread_same, &_error); \
 		nmtst_assert_success (_success, _error); \
 		_assert_expected_content (_connection, _filename, _expected); \
 	} G_STMT_END
@@ -310,12 +310,13 @@ _writer_new_connection_reread (NMConnection *connection,
 
 	con_verified = nmtst_connection_duplicate_and_normalize (connection);
 
-	success = writer_new_connection (con_verified,
-	                                 ifcfg_dir,
-	                                 &filename,
-	                                 reread,
-	                                 out_reread_same,
-	                                 &error);
+	success = nms_ifcfg_rh_writer_write_connection (con_verified,
+	                                                ifcfg_dir,
+	                                                NULL,
+	                                                &filename,
+	                                                reread,
+	                                                out_reread_same,
+	                                                &error);
 	nmtst_assert_success (success, error);
 	g_assert (filename && filename[0]);
 
@@ -384,12 +385,13 @@ _writer_new_connection_fail (NMConnection *connection,
 
 	connection_normalized = nmtst_connection_duplicate_and_normalize (connection);
 
-	success = writer_new_connection (connection_normalized,
-	                                 ifcfg_dir,
-	                                 &filename,
-	                                 &reread,
-	                                 NULL,
-	                                 &local);
+	success = nms_ifcfg_rh_writer_write_connection (connection_normalized,
+	                                                ifcfg_dir,
+	                                                NULL,
+	                                                &filename,
+	                                                &reread,
+	                                                NULL,
+	                                                &local);
 	nmtst_assert_no_success (success, local);
 	g_assert (!filename);
 	g_assert (!reread);

@@ -683,11 +683,11 @@ add_connection (NMSettingsPlugin *config,
 	/* Ensure we reject attempts to add the connection long before we're
 	 * asked to write it to disk.
 	 */
-	if (!writer_can_write_connection (connection, error))
+	if (!nms_ifcfg_rh_writer_can_write_connection (connection, error))
 		return NULL;
 
 	if (save_to_disk) {
-		if (!writer_new_connection (connection, IFCFG_DIR, &path, NULL, NULL, error))
+		if (!nms_ifcfg_rh_writer_write_connection (connection, IFCFG_DIR, NULL, &path, NULL, NULL, error))
 			return NULL;
 	}
 	return NM_SETTINGS_CONNECTION (update_connection (self, connection, path, NULL, FALSE, NULL, error));
