@@ -5451,7 +5451,6 @@ guint
 devtimeout_from_file (const char *filename)
 {
 	shvarFile *ifcfg;
-	char *devtimeout_str;
 	guint devtimeout;
 
 	g_return_val_if_fail (filename != NULL, 0);
@@ -5460,14 +5459,7 @@ devtimeout_from_file (const char *filename)
 	if (!ifcfg)
 		return 0;
 
-	devtimeout_str = svGetValueStr_cp (ifcfg, "DEVTIMEOUT");
-	if (devtimeout_str) {
-		devtimeout = _nm_utils_ascii_str_to_int64 (devtimeout_str, 10, 0, G_MAXUINT, 0);
-		g_free (devtimeout_str);
-	} else
-		devtimeout = 0;
-
+	devtimeout = svGetValueInt64 (ifcfg, "DEVTIMEOUT", 10, 0, G_MAXUINT, 0);
 	svCloseFile (ifcfg);
-
 	return devtimeout;
 }
