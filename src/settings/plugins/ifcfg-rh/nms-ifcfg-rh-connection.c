@@ -307,23 +307,6 @@ nm_ifcfg_connection_get_unrecognized_spec (NMIfcfgConnection *self)
 }
 
 static gboolean
-can_commit (NMSettingsConnection *connection,
-            GError **error)
-{
-	const char *filename;
-
-	filename = nm_settings_connection_get_filename (connection);
-	if (   filename
-	    && utils_has_complex_routes (filename)) {
-		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		                     "Cannot modify a connection that has an associated 'rule-' or 'rule6-' file");
-		return FALSE;
-	}
-
-	return TRUE;
-}
-
-static gboolean
 commit_changes (NMSettingsConnection *connection,
                 NMConnection *new_connection,
                 NMSettingsConnectionCommitReason commit_reason,
@@ -524,7 +507,6 @@ nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 	object_class->dispose      = dispose;
 
 	settings_class->delete = delete;
-	settings_class->can_commit = can_commit;
 	settings_class->commit_changes = commit_changes;
 
 	obj_properties[PROP_UNMANAGED_SPEC] =

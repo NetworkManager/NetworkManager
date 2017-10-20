@@ -104,9 +104,6 @@ struct _NMSettingsConnection {
 struct _NMSettingsConnectionClass {
 	NMExportedObjectClass parent;
 
-	gboolean (*can_commit) (NMSettingsConnection *self,
-	                        GError **error);
-
 	gboolean (*commit_changes) (NMSettingsConnection *self,
 	                            NMConnection *new_connection,
 	                            NMSettingsConnectionCommitReason commit_reason,

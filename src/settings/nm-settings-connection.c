@@ -1668,7 +1668,6 @@ update_auth_cb (NMSettingsConnection *self,
                 gpointer data)
 {
 	UpdateInfo *info = data;
-	NMSettingsConnectionClass *klass;
 	NMSettingsConnectionCommitReason commit_reason;
 	gs_free_error GError *local = NULL;
 
@@ -1720,12 +1719,6 @@ update_auth_cb (NMSettingsConnection *self,
 		if (!nm_settings_connection_replace_settings_prepare (self,
 		                                                      info->new_settings,
 		                                                      &local))
-			goto out;
-	}
-
-	klass = NM_SETTINGS_CONNECTION_GET_CLASS (self);
-	if (klass->can_commit) {
-		if (!klass->can_commit (self, &local))
 			goto out;
 	}
 
