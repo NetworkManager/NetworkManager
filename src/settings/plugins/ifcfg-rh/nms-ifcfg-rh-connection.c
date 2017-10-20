@@ -332,6 +332,9 @@ commit_changes (NMSettingsConnection *connection,
                 GError **error)
 {
 	const char *filename;
+	gs_unref_object NMConnection *reread = NULL;
+	gboolean reread_same = TRUE;
+	const char *operation_message;
 
 	nm_assert (out_reread_connection && !*out_reread_connection);
 	nm_assert (!out_logmsg_change || !*out_logmsg_change);
@@ -343,28 +346,29 @@ commit_changes (NMSettingsConnection *connection,
 		if (!writer_new_connection (new_connection ?: NM_CONNECTION (connection),
 		                            IFCFG_DIR,
 		                            &ifcfg_path,
-		                            NULL,
-		                            NULL,
+		                            &reread,
+		                            &reread_same,
 		                            error))
 			return FALSE;
 		nm_settings_connection_set_filename (connection, ifcfg_path);
-		NM_SET_OUT (out_logmsg_change,
-		            g_strdup_printf ("ifcfg-rh: persist %s",
-		                             ifcfg_path));
-		return TRUE;
+		operation_message = "persist";
+	} else {
+		if (!writer_update_connection (new_connection ?: NM_CONNECTION (connection),
+		                               IFCFG_DIR,
+		                               filename,
+		                               &reread,
+		                               &reread_same,
+		                               error))
+			return FALSE;
+		operation_message = "update";
 	}
 
-	if (!writer_update_connection (new_connection ?: NM_CONNECTION (connection),
-	                               IFCFG_DIR,
-	                               filename,
-	                               NULL,
-	                               NULL,
-	                               error))
-		return FALSE;
+	if (reread && !reread_same)
+		*out_reread_connection = g_steal_pointer (&reread);
 
 	NM_SET_OUT (out_logmsg_change,
-	            g_strdup_printf ("ifcfg-rh: update %s",
-	                             filename));
+	            g_strdup_printf ("ifcfg-rh: %s %s",
+	                             operation_message, filename));
 	return TRUE;
 }
 
