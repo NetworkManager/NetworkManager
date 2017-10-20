@@ -431,4 +431,16 @@ gboolean    _nm_utils_team_config_equal (const char *conf1, const char *conf2, g
 
 /*****************************************************************************/
 
+static inline int
+nm_setting_ip_config_get_addr_family (NMSettingIPConfig *s_ip)
+{
+	if (NM_IS_SETTING_IP4_CONFIG (s_ip))
+		return AF_INET;
+	if (NM_IS_SETTING_IP6_CONFIG (s_ip))
+		return AF_INET6;
+	g_return_val_if_reached (AF_UNSPEC);
+}
+
+/*****************************************************************************/
+
 #endif
