@@ -2085,13 +2085,7 @@ write_ip4_setting (NMConnection *connection,
 		 * Some IPv4 setting related options are not cleared,
 		 * for no strong reason. */
 		svUnsetValue (ifcfg, "BOOTPROTO");
-
-		for (j = -1; j < 256; j++) {
-			svUnsetValue (ifcfg, numbered_tag (tag, "IPADDR", j));
-			svUnsetValue (ifcfg, numbered_tag (tag, "PREFIX", j));
-			svUnsetValue (ifcfg, numbered_tag (tag, "NETMASK", j));
-			svUnsetValue (ifcfg, numbered_tag (tag, "GATEWAY", j));
-		}
+		svUnsetAll (ifcfg, SV_KEY_TYPE_IP4_ADDRESS);
 		return TRUE;
 	}
 

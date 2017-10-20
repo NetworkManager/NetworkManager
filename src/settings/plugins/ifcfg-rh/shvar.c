@@ -1159,6 +1159,13 @@ svUnsetAll (shvarFile *s, SvKeyType match_key_type)
 			    || IS_NUMBERED_TAG (line->key, "OPTIONS"))
 				goto do_clear;
 		}
+		if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_IP4_ADDRESS)) {
+			if (   IS_NUMBERED_TAG (line->key, "IPADDR")
+			    || IS_NUMBERED_TAG (line->key, "PREFIX")
+			    || IS_NUMBERED_TAG (line->key, "NETMASK")
+			    || IS_NUMBERED_TAG (line->key, "GATEWAY"))
+				goto do_clear;
+		}
 
 		continue;
 do_clear:
