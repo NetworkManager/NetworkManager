@@ -837,7 +837,7 @@ find_best_device_state (NMManager *manager)
 		case NM_ACTIVE_CONNECTION_STATE_ACTIVATED:
 			if (   nm_active_connection_get_default (ac)
 			    || nm_active_connection_get_default6 (ac)) {
-				if (priv->connectivity_state)
+				if (priv->connectivity_state == NM_CONNECTIVITY_FULL)
 					return NM_STATE_CONNECTED_GLOBAL;
 
 				best_state = NM_STATE_CONNECTED_SITE;
