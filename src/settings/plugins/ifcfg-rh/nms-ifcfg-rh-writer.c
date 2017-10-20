@@ -108,45 +108,75 @@ save_secret_flags (shvarFile *ifcfg,
 
 static void
 set_secret (shvarFile *ifcfg,
+            GHashTable *secrets,
             const char *key,
             const char *value,
             const char *flags_key,
             NMSettingSecretFlags flags)
 {
-	shvarFile *keyfile;
-	GError *error = NULL;
-
 	/* Clear the secret from the ifcfg and the associated "keys" file */
 	svUnsetValue (ifcfg, key);
 
 	/* Save secret flags */
 	save_secret_flags (ifcfg, flags_key, flags);
 
+	/* Only write the secret if it's system owned and supposed to be saved */
+	if (flags != NM_SETTING_SECRET_FLAG_NONE)
+		value = NULL;
+
+	g_hash_table_replace (secrets, g_strdup (key), g_strdup (value));
+}
+
+static gboolean
+write_secrets (shvarFile *ifcfg,
+               GHashTable *secrets,
+               GError **error)
+{
+	nm_auto_shvar_file_close shvarFile *keyfile = NULL;
+	gs_free const char **secrets_keys = NULL;
+	guint i, secrets_keys_n;
+	GError *local = NULL;
+	gboolean any_secrets = FALSE;
+
 	keyfile = utils_get_keys_ifcfg (svFileGetName (ifcfg), TRUE);
 	if (!keyfile) {
-		_LOGW ("could not create ifcfg file for '%s'", svFileGetName (ifcfg));
-		goto error;
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+		             "Failure to create secrets file for '%s'", svFileGetName (ifcfg));
+		return FALSE;
 	}
 
-	/* Only write the secret if it's system owned and supposed to be saved */
-	if (flags == NM_SETTING_SECRET_FLAG_NONE)
-		svSetValueStr (keyfile, key, value);
-	else
-		svUnsetValue (keyfile, key);
+	/* we purge all existing secrets. */
+	svUnsetAll (keyfile, SV_KEY_TYPE_ANY);
 
-	if (!svWriteFile (keyfile, 0600, &error)) {
-		_LOGW ("could not update ifcfg file '%s': %s",
-		       svFileGetName (keyfile), error->message);
-		g_clear_error (&error);
-		svCloseFile (keyfile);
-		goto error;
+	/* sort the keys. */
+	secrets_keys = (const char **) g_hash_table_get_keys_as_array (secrets, &secrets_keys_n);
+	if (secrets_keys) {
+		g_qsort_with_data (secrets_keys,
+		                   secrets_keys_n,
+		                   sizeof (const char *),
+		                   nm_strcmp_p_with_data,
+		                   NULL);
 	}
-	svCloseFile (keyfile);
-	return;
 
-error:
-	/* Try setting the secret in the actual ifcfg */
-	svSetValueStr (ifcfg, key, value);
+	for (i = 0; i < secrets_keys_n; i++) {
+		const char *k = secrets_keys[i];
+		const char *v = g_hash_table_lookup (secrets, k);
+
+		if (v) {
+			svSetValueStr (keyfile, k, v);
+			any_secrets = TRUE;
+		}
+	}
+
+	if (!any_secrets)
+		(void) unlink (svFileGetName (keyfile));
+	else if (!svWriteFile (keyfile, 0600, &local)) {
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+		             "Failure to write secrets to '%s': %s", svFileGetName (keyfile), local->message);
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 typedef struct {
@@ -184,6 +214,7 @@ static const Setting8021xSchemeVtable setting_8021x_scheme_vtable[] = {
 static gboolean
 write_object (NMSetting8021x *s_8021x,
               shvarFile *ifcfg,
+              GHashTable *secrets,
               const Setting8021xSchemeVtable *objtype,
               GError **error)
 {
@@ -222,7 +253,7 @@ write_object (NMSetting8021x *s_8021x,
 	secret_flags = g_strdup_printf ("%s_PASSWORD_FLAGS", objtype->ifcfg_rh_key);
 	password = (*(objtype->vtable->passwd_func))(s_8021x);
 	flags = (*(objtype->vtable->pwflag_func))(s_8021x);
-	set_secret (ifcfg, secret_name, password, secret_flags, flags);
+	set_secret (ifcfg, secrets, secret_name, password, secret_flags, flags);
 	g_free (secret_name);
 	g_free (secret_flags);
 
@@ -237,8 +268,7 @@ write_object (NMSetting8021x *s_8021x,
 	 * 802.1x and thus we clear out the paths and certs.
 	 */
 	if (!value && !blob) {
-		char *standard_file;
-		int ignored;
+		gs_free char *standard_file = NULL;
 
 		/* Since no cert/private key is now being used, delete any standard file
 		 * that was created for this connection, but leave other files alone.
@@ -248,8 +278,7 @@ write_object (NMSetting8021x *s_8021x,
 		 */
 		standard_file = utils_cert_path (svFileGetName (ifcfg), objtype->vtable->file_suffix, extension);
 		if (g_file_test (standard_file, G_FILE_TEST_EXISTS))
-			ignored = unlink (standard_file);
-		g_free (standard_file);
+			(void) unlink (standard_file);
 
 		svUnsetValue (ifcfg, objtype->ifcfg_rh_key);
 		return TRUE;
@@ -305,6 +334,7 @@ write_object (NMSetting8021x *s_8021x,
 
 static gboolean
 write_8021x_certs (NMSetting8021x *s_8021x,
+                   GHashTable *secrets,
                    gboolean phase2,
                    shvarFile *ifcfg,
                    GError **error)
@@ -312,7 +342,7 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 	const Setting8021xSchemeVtable *otype = NULL;
 
 	/* CA certificate */
-	if (!write_object (s_8021x, ifcfg,
+	if (!write_object (s_8021x, ifcfg, secrets,
 	                   phase2
 	                       ? &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CA_CERT]
 	                       : &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_CA_CERT],
@@ -326,7 +356,7 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 		otype = &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PRIVATE_KEY];
 
 	/* Save the private key */
-	if (!write_object (s_8021x, ifcfg, otype, error))
+	if (!write_object (s_8021x, ifcfg, secrets, otype, error))
 		return FALSE;
 
 	/* Client certificate */
@@ -339,7 +369,7 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 		               NULL);
 	} else {
 		/* Save the client certificate */
-		if (!write_object (s_8021x, ifcfg,
+		if (!write_object (s_8021x, ifcfg, secrets,
 		                   phase2
 		                       ? &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CLIENT_CERT]
 		                       : &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_CLIENT_CERT],
@@ -353,6 +383,7 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 static gboolean
 write_8021x_setting (NMConnection *connection,
                      shvarFile *ifcfg,
+                     GHashTable *secrets,
                      gboolean wired,
                      GError **error)
 {
@@ -393,6 +424,7 @@ write_8021x_setting (NMConnection *connection,
 	               nm_setting_802_1x_get_anonymous_identity (s_8021x));
 
 	set_secret (ifcfg,
+	            secrets,
 	            "IEEE_8021X_PASSWORD",
 	            nm_setting_802_1x_get_password (s_8021x),
 	            "IEEE_8021X_PASSWORD_FLAGS",
@@ -506,11 +538,11 @@ write_8021x_setting (NMConnection *connection,
 	else
 		svUnsetValue (ifcfg, "IEEE_8021X_AUTH_TIMEOUT");
 
-	if (!write_8021x_certs (s_8021x, FALSE, ifcfg, error))
+	if (!write_8021x_certs (s_8021x, secrets, FALSE, ifcfg, error))
 		return FALSE;
 
 	/* phase2/inner certs */
-	if (!write_8021x_certs (s_8021x, TRUE, ifcfg, error))
+	if (!write_8021x_certs (s_8021x, secrets, TRUE, ifcfg, error))
 		return FALSE;
 
 	return TRUE;
@@ -519,6 +551,7 @@ write_8021x_setting (NMConnection *connection,
 static gboolean
 write_wireless_security_setting (NMConnection *connection,
                                  shvarFile *ifcfg,
+                                 GHashTable *secrets,
                                  gboolean adhoc,
                                  gboolean *no_8021x,
                                  GError **error)
@@ -573,6 +606,7 @@ write_wireless_security_setting (NMConnection *connection,
 			svSetValueStr (ifcfg, "IEEE_8021X_IDENTITY",
 			               nm_setting_wireless_security_get_leap_username (s_wsec));
 			set_secret (ifcfg,
+			            secrets,
 			            "IEEE_8021X_PASSWORD",
 			            nm_setting_wireless_security_get_leap_password (s_wsec),
 			            "IEEE_8021X_PASSWORD_FLAGS",
@@ -591,17 +625,17 @@ write_wireless_security_setting (NMConnection *connection,
 	/* WEP keys */
 
 	/* Clear any default key */
-	set_secret (ifcfg, "KEY", NULL, "WEP_KEY_FLAGS", NM_SETTING_SECRET_FLAG_NONE);
+	set_secret (ifcfg, secrets, "KEY", NULL, "WEP_KEY_FLAGS", NM_SETTING_SECRET_FLAG_NONE);
 
 	/* Clear existing keys */
 	for (i = 0; i < 4; i++) {
 		char tag[64];
 
 		numbered_tag (tag, "KEY_PASSPHRASE", i + 1);
-		set_secret (ifcfg, tag, NULL, "WEP_KEY_FLAGS", NM_SETTING_SECRET_FLAG_NONE);
+		set_secret (ifcfg, secrets, tag, NULL, "WEP_KEY_FLAGS", NM_SETTING_SECRET_FLAG_NONE);
 
 		numbered_tag (tag, "KEY", i + 1);
-		set_secret (ifcfg, tag, NULL, "WEP_KEY_FLAGS", NM_SETTING_SECRET_FLAG_NONE);
+		set_secret (ifcfg, secrets, tag, NULL, "WEP_KEY_FLAGS", NM_SETTING_SECRET_FLAG_NONE);
 	}
 
 	/* And write the new ones out */
@@ -647,6 +681,7 @@ write_wireless_security_setting (NMConnection *connection,
 
 				if (key_valid) {
 					set_secret (ifcfg,
+					            secrets,
 					            tag,
 					            key,
 					            "WEP_KEY_FLAGS",
@@ -710,6 +745,7 @@ write_wireless_security_setting (NMConnection *connection,
 		psk = nm_setting_wireless_security_get_psk (s_wsec);
 
 	set_secret (ifcfg,
+	            secrets,
 	            "WPA_PSK",
 	            psk,
 	            "WPA_PSK_FLAGS",
@@ -729,6 +765,7 @@ write_wireless_security_setting (NMConnection *connection,
 static gboolean
 write_wireless_setting (NMConnection *connection,
                         shvarFile *ifcfg,
+                        GHashTable *secrets,
                         gboolean *no_8021x,
                         GError **error)
 {
@@ -862,27 +899,25 @@ write_wireless_setting (NMConnection *connection,
 	svUnsetValue (ifcfg, "SECURITYMODE");
 
 	if (nm_connection_get_setting_wireless_security (connection)) {
-		if (!write_wireless_security_setting (connection, ifcfg, adhoc, no_8021x, error))
+		if (!write_wireless_security_setting (connection, ifcfg, secrets, adhoc, no_8021x, error))
 			return FALSE;
 	} else {
-		char *keys_path;
-
 		/* Clear out wifi security keys */
 		svUnsetValue (ifcfg, "KEY_MGMT");
 		svUnsetValue (ifcfg, "IEEE_8021X_IDENTITY");
-		set_secret (ifcfg, "IEEE_8021X_PASSWORD", NULL, "IEEE_8021X_PASSWORD_FLAGS", NM_SETTING_SECRET_FLAG_NONE);
+		set_secret (ifcfg, secrets, "IEEE_8021X_PASSWORD", NULL, "IEEE_8021X_PASSWORD_FLAGS", NM_SETTING_SECRET_FLAG_NONE);
 		svUnsetValue (ifcfg, "SECURITYMODE");
 
 		/* Clear existing keys */
-		set_secret (ifcfg, "KEY", NULL, "WEP_KEY_FLAGS", NM_SETTING_SECRET_FLAG_NONE);
+		set_secret (ifcfg, secrets, "KEY", NULL, "WEP_KEY_FLAGS", NM_SETTING_SECRET_FLAG_NONE);
 		for (i = 0; i < 4; i++) {
 			char tag[64];
 
 			numbered_tag (tag, "KEY_PASSPHRASE", i + 1);
-			set_secret (ifcfg, tag, NULL, "WEP_KEY_FLAGS", NM_SETTING_SECRET_FLAG_NONE);
+			set_secret (ifcfg, secrets, tag, NULL, "WEP_KEY_FLAGS", NM_SETTING_SECRET_FLAG_NONE);
 
 			numbered_tag (tag, "KEY", i + 1);
-			set_secret (ifcfg, tag, NULL, "WEP_KEY_FLAGS", NM_SETTING_SECRET_FLAG_NONE);
+			set_secret (ifcfg, secrets, tag, NULL, "WEP_KEY_FLAGS", NM_SETTING_SECRET_FLAG_NONE);
 		}
 
 		svUnsetValue (ifcfg, "DEFAULTKEY");
@@ -890,12 +925,7 @@ write_wireless_setting (NMConnection *connection,
 		svUnsetValue (ifcfg, "WPA_ALLOW_WPA2");
 		svUnsetValue (ifcfg, "CIPHER_PAIRWISE");
 		svUnsetValue (ifcfg, "CIPHER_GROUP");
-		set_secret (ifcfg, "WPA_PSK", NULL, "WPA_PSK_FLAGS", NM_SETTING_SECRET_FLAG_NONE);
-
-		/* Kill any old keys file */
-		keys_path = utils_get_keys_path (svFileGetName (ifcfg));
-		(void) unlink (keys_path);
-		g_free (keys_path);
+		set_secret (ifcfg, secrets, "WPA_PSK", NULL, "WPA_PSK_FLAGS", NM_SETTING_SECRET_FLAG_NONE);
 	}
 
 	svSetValueStr (ifcfg, "SSID_HIDDEN", nm_setting_wireless_get_hidden (s_wireless) ? "yes" : NULL);
@@ -2680,6 +2710,7 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 	nm_auto_free_gstring GString *route_content = NULL;
 	nm_auto_shvar_file_close shvarFile *route_content_svformat = NULL;
 	nm_auto_free_gstring GString *route6_content = NULL;
+	gs_unref_hashtable GHashTable *secrets = NULL;
 
 	nm_assert (NM_IS_CONNECTION (connection));
 	nm_assert (_nm_connection_verify (connection, NULL) == NM_SETTING_VERIFY_SUCCESS);
@@ -2759,6 +2790,8 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 		return FALSE;
 	}
 
+	secrets = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
+
 	if (!strcmp (type, NM_SETTING_WIRED_SETTING_NAME)) {
 		// FIXME: can't write PPPoE at this time
 		if (nm_connection_get_setting_pppoe (connection)) {
@@ -2775,7 +2808,7 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 		if (!write_vlan_setting (connection, ifcfg, &wired, error))
 			return FALSE;
 	} else if (!strcmp (type, NM_SETTING_WIRELESS_SETTING_NAME)) {
-		if (!write_wireless_setting (connection, ifcfg, &no_8021x, error))
+		if (!write_wireless_setting (connection, ifcfg, secrets, &no_8021x, error))
 			return FALSE;
 	} else if (!strcmp (type, NM_SETTING_INFINIBAND_SETTING_NAME)) {
 		if (!write_infiniband_setting (connection, ifcfg, error))
@@ -2796,7 +2829,7 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 	}
 
 	if (!no_8021x) {
-		if (!write_8021x_setting (connection, ifcfg, wired, error))
+		if (!write_8021x_setting (connection, ifcfg, secrets, wired, error))
 			return FALSE;
 	}
 
@@ -2841,6 +2874,9 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 	write_connection_setting (s_con, ifcfg);
 
 	if (!svWriteFile (ifcfg, 0644, error))
+		return FALSE;
+
+	if (!write_secrets (ifcfg, secrets, error))
 		return FALSE;
 
 	if (!route_content && !route_content_svformat)
