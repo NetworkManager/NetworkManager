@@ -260,8 +260,8 @@ _connection_from_file (const char *filename,
 
 	g_assert (!out_unhandled || !*out_unhandled);
 
-	connection = connection_from_file_test (filename, network_file, test_type,
-	                                        out_unhandled ?: &unhandled_fallback, &error);
+	connection = nmtst_connection_from_file (filename, network_file, test_type,
+	                                         out_unhandled ?: &unhandled_fallback, &error);
 	g_assert_no_error (error);
 	g_assert (!unhandled_fallback);
 
@@ -282,7 +282,7 @@ _connection_from_file_fail (const char *filename,
 	GError *local = NULL;
 	char *unhandled = NULL;
 
-	connection = connection_from_file_test (filename, network_file, test_type, &unhandled, &local);
+	connection = nmtst_connection_from_file (filename, network_file, test_type, &unhandled, &local);
 
 	g_assert (!connection);
 	g_assert (local);
