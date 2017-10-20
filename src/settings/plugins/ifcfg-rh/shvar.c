@@ -794,7 +794,7 @@ svOpenFileInternal (const char *name, gboolean create, GError **error)
 	int errsv = 0;
 	char *arena;
 	const char *p, *q;
-	GError *local = NULL;
+	gs_free_error GError *local = NULL;
 	nm_auto_close int fd = -1;
 
 	if (create)
@@ -824,11 +824,13 @@ svOpenFileInternal (const char *name, gboolean create, GError **error)
 	                              &arena,
 	                              NULL,
 	                              &local) < 0) {
+		if (create)
+			return svFile_new (name);
+
 		g_set_error (error, G_FILE_ERROR,
 		             local->domain == G_FILE_ERROR ? local->code : G_FILE_ERROR_FAILED,
 		             "Could not read file '%s': %s",
 		             name, local->message);
-		g_error_free (local);
 		return NULL;
 	}
 
