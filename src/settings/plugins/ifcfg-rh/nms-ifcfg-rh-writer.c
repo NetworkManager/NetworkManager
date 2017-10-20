@@ -2058,13 +2058,16 @@ write_user_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 }
 
 static gboolean
-write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
+write_ip4_setting (NMConnection *connection,
+                   shvarFile *ifcfg,
+                   shvarFile **out_route_content_svformat,
+                   GString **out_route_content,
+                   GError **error)
 {
 	NMSettingIPConfig *s_ip4;
 	const char *value;
 	char *tmp;
 	char tag[64];
-	gs_free char *route_path = NULL;
 	gint j;
 	guint i, num, n;
 	gint64 route_metric;
@@ -2107,9 +2110,6 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 			svUnsetValue (ifcfg, numbered_tag (tag, "NETMASK", j));
 			svUnsetValue (ifcfg, numbered_tag (tag, "GATEWAY", j));
 		}
-
-		route_path = utils_get_route_path (svFileGetName (ifcfg));
-		(void) unlink (route_path);
 		return TRUE;
 	}
 
@@ -2268,34 +2268,8 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	                      route_table != 0,
 	                      route_table);
 
-	/* Static routes - route-<name> file */
-	route_path = utils_get_route_path (svFileGetName (ifcfg));
-	if (!route_path) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "Could not get route file path for '%s'", svFileGetName (ifcfg));
-		return FALSE;
-	}
-
-	if (utils_has_route_file_new_syntax (route_path)) {
-		nm_auto_shvar_file_close shvarFile *routefile = NULL;
-
-		routefile = write_route_file_svformat (svFileGetName (ifcfg), s_ip4);
-		if (!svWriteFile (routefile, 0644, error))
-			return FALSE;
-	} else {
-		nm_auto_free_gstring GString *routes_file = NULL;
-
-		routes_file = write_route_file (s_ip4);
-		if (!routes_file)
-			(void) unlink (route_path);
-		else {
-			if (!g_file_set_contents (route_path, routes_file->str, routes_file->len, NULL)) {
-				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-				             "Writing route file '%s' failed", route_path);
-				return FALSE;
-			}
-		}
-	}
+	NM_SET_OUT (out_route_content_svformat, write_route_file_svformat (svFileGetName (ifcfg), s_ip4));
+	NM_SET_OUT (out_route_content, write_route_file (s_ip4));
 
 	timeout = nm_setting_ip_config_get_dad_timeout (s_ip4);
 	if (timeout < 0)
@@ -2418,7 +2392,10 @@ write_ip6_setting_dhcp_hostname (NMSettingIPConfig *s_ip6, shvarFile *ifcfg)
 }
 
 static gboolean
-write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
+write_ip6_setting (NMConnection *connection,
+                   shvarFile *ifcfg,
+                   GString **out_route6_content,
+                   GError **error)
 {
 	NMSettingIPConfig *s_ip6;
 	NMSettingIPConfig *s_ip4;
@@ -2430,9 +2407,9 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	gint64 route_metric;
 	NMIPRouteTableSyncMode route_table;
 	GString *ip_str1, *ip_str2, *ip_ptr;
-	gs_free char *route6_path = NULL;
 	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
-	nm_auto_free_gstring GString *routes_file = NULL;
+
+	NM_SET_OUT (out_route6_content, NULL);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	if (!s_ip6) {
@@ -2606,24 +2583,7 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	else
 		svUnsetValue (ifcfg, "IPV6_DNS_PRIORITY");
 
-	/* Static routes go to route6-<dev> file */
-	route6_path = utils_get_route6_path (svFileGetName (ifcfg));
-	if (!route6_path) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "Could not get route6 file path for '%s'", svFileGetName (ifcfg));
-		return FALSE;
-	}
-
-	routes_file = write_route_file (s_ip6);
-	if (!routes_file)
-		(void) unlink (route6_path);
-	else {
-		if (!g_file_set_contents (route6_path, routes_file->str, routes_file->len, NULL)) {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-			             "Writing route6 file '%s' failed", route6_path);
-			return FALSE;
-		}
-	}
+	NM_SET_OUT (out_route6_content, write_route_file (s_ip6));
 
 	return TRUE;
 }
@@ -2720,6 +2680,12 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 	const char *type;
 	gboolean no_8021x = FALSE;
 	gboolean wired = FALSE;
+	gboolean route_path_is_svformat;
+	gs_free char *route_path = NULL;
+	gs_free char *route6_path = NULL;
+	nm_auto_free_gstring GString *route_content = NULL;
+	nm_auto_shvar_file_close shvarFile *route_content_svformat = NULL;
+	nm_auto_free_gstring GString *route6_content = NULL;
 
 	nm_assert (NM_IS_CONNECTION (connection));
 	nm_assert (_nm_connection_verify (connection, NULL) == NM_SETTING_VERIFY_SUCCESS);
@@ -2776,6 +2742,20 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 		}
 
 		ifcfg = svCreateFile (ifcfg_name);
+	}
+
+	route_path = utils_get_route_path (svFileGetName (ifcfg));
+	if (!route_path) {
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+		             "Could not get route file path for '%s'", svFileGetName (ifcfg));
+		return FALSE;
+	}
+
+	route6_path = utils_get_route6_path (svFileGetName (ifcfg));
+	if (!route6_path) {
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+		             "Could not get route6 file path for '%s'", svFileGetName (ifcfg));
+		return FALSE;
 	}
 
 	type = nm_setting_connection_get_connection_type (s_con);
@@ -2844,11 +2824,21 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 	svUnsetValue (ifcfg, "DHCP_HOSTNAME");
 	svUnsetValue (ifcfg, "DHCP_FQDN");
 
-	if (!write_ip4_setting (connection, ifcfg, error))
+	route_path_is_svformat = utils_has_route_file_new_syntax (route_path);
+
+	if (!write_ip4_setting (connection,
+	                        ifcfg,
+	                        route_path_is_svformat ? &route_content_svformat : NULL,
+	                        route_path_is_svformat ? NULL                      :&route_content,
+	                        error))
 		return FALSE;
+
 	write_ip4_aliases (connection, ifcfg_name);
 
-	if (!write_ip6_setting (connection, ifcfg, error))
+	if (!write_ip6_setting (connection,
+	                        ifcfg,
+	                        &route6_content,
+	                        error))
 		return FALSE;
 
 	if (!write_res_options (connection, ifcfg, error))
@@ -2858,6 +2848,31 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 
 	if (!svWriteFile (ifcfg, 0644, error))
 		return FALSE;
+
+	if (!route_content && !route_content_svformat)
+		(void) unlink (route_path);
+	else {
+		if (route_path_is_svformat) {
+			if (!svWriteFile (route_content_svformat, 0644, error))
+				return FALSE;
+		} else {
+			if (!g_file_set_contents (route_path, route_content->str, route_content->len, NULL)) {
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+				             "Writing route file '%s' failed", route_path);
+				return FALSE;
+			}
+		}
+	}
+
+	if (!route6_content)
+		(void) unlink (route6_path);
+	else {
+		if (!g_file_set_contents (route6_path, route6_content->str, route6_content->len, NULL)) {
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+			             "Writing route6 file '%s' failed", route6_path);
+			return FALSE;
+		}
+	}
 
 	if (out_reread || out_reread_same) {
 		gs_unref_object NMConnection *reread = NULL;
