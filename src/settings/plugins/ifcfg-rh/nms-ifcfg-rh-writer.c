@@ -1886,23 +1886,19 @@ get_route_attributes_string (NMIPRoute *route, int family)
 	return g_string_free (str, FALSE);
 }
 
-static gboolean
-write_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError **error)
+static GString *
+write_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4)
 {
-	nm_auto_free_gstring GString *contents = NULL;
+	GString *contents;
 	NMIPRoute *route;
 	guint32 i, num;
 
 	g_return_val_if_fail (filename != NULL, FALSE);
 	g_return_val_if_fail (s_ip4 != NULL, FALSE);
-	g_return_val_if_fail (error != NULL, FALSE);
-	g_return_val_if_fail (*error == NULL, FALSE);
 
 	num = nm_setting_ip_config_get_num_routes (s_ip4);
-	if (num == 0) {
-		unlink (filename);
-		return TRUE;
-	}
+	if (num == 0)
+		return NULL;
 
 	contents = g_string_new ("");
 
@@ -1931,13 +1927,7 @@ write_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError 
 		g_string_append_c (contents, '\n');
 	}
 
-	if (!g_file_set_contents (filename, contents->str, contents->len, NULL)) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "Writing route file '%s' failed", filename);
-		return FALSE;
-	}
-
-	return TRUE;
+	return contents;
 }
 
 static gboolean
@@ -2019,7 +2009,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	const char *value;
 	char *tmp;
 	char tag[64];
-	char *route_path = NULL;
+	gs_free char *route_path = NULL;
 	gint j;
 	guint i, num, n;
 	gint64 route_metric;
@@ -2054,8 +2044,6 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 
 	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
-		int result;
-
 		/* IPv4 disabled, clear IPv4 related parameters */
 		svUnsetValue (ifcfg, "BOOTPROTO");
 		for (j = -1; j < 256; j++) {
@@ -2066,8 +2054,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		}
 
 		route_path = utils_get_route_path (svFileGetName (ifcfg));
-		result = unlink (route_path);
-		g_free (route_path);
+		(void) unlink (route_path);
 		return TRUE;
 	}
 
@@ -2241,10 +2228,8 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		if (!routefile) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 			             "Could not create route file '%s'", route_path);
-			g_free (route_path);
 			return FALSE;
 		}
-		g_free (route_path);
 
 		num = nm_setting_ip_config_get_num_routes (s_ip4);
 		for (i = 0; i < 256; i++) {
@@ -2302,10 +2287,20 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		}
 		svCloseFile (routefile);
 	} else {
-		write_route_file_legacy (route_path, s_ip4, error);
-		g_free (route_path);
-		if (error && *error)
-			return FALSE;
+		nm_auto_free_gstring GString *routes_file = NULL;
+
+		routes_file = write_route_file_legacy (route_path, s_ip4);
+		if (!routes_file)
+			(void) unlink (route_path);
+		else {
+			if (!g_file_set_contents (route_path, routes_file->str, routes_file->len, NULL)) {
+				if (error) {
+					g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+					             "Writing route file '%s' failed", route_path);
+					return FALSE;
+				}
+			}
+		}
 	}
 
 	timeout = nm_setting_ip_config_get_dad_timeout (s_ip4);
@@ -2411,22 +2406,19 @@ write_ip4_aliases (NMConnection *connection, char *base_ifcfg_path)
 	}
 }
 
-static gboolean
-write_route6_file (const char *filename, NMSettingIPConfig *s_ip6, GError **error)
+static GString *
+write_route6_file (const char *filename, NMSettingIPConfig *s_ip6)
 {
-	nm_auto_free_gstring GString *contents = NULL;
+	GString *contents = NULL;
 	NMIPRoute *route;
 	guint32 i, num;
 
 	g_return_val_if_fail (filename, FALSE);
 	g_return_val_if_fail (s_ip6, FALSE);
-	g_return_val_if_fail (!error || !*error, FALSE);
 
 	num = nm_setting_ip_config_get_num_routes (s_ip6);
-	if (num == 0) {
-		unlink (filename);
-		return TRUE;
-	}
+	if (num == 0)
+		return NULL;
 
 	contents = g_string_new ("");
 
@@ -2455,13 +2447,7 @@ write_route6_file (const char *filename, NMSettingIPConfig *s_ip6, GError **erro
 		g_string_append_c (contents, '\n');
 	}
 
-	if (!g_file_set_contents (filename, contents->str, contents->len, NULL)) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "Writing route6 file '%s' failed", filename);
-		return FALSE;
-	}
-
-	return TRUE;
+	return contents;
 }
 
 static void
@@ -2494,8 +2480,9 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	gint64 route_metric;
 	NMIPRouteTableSyncMode route_table;
 	GString *ip_str1, *ip_str2, *ip_ptr;
-	char *route6_path;
+	gs_free char *route6_path = NULL;
 	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
+	nm_auto_free_gstring GString *routes_file = NULL;
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	if (!s_ip6) {
@@ -2676,10 +2663,19 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		             "Could not get route6 file path for '%s'", svFileGetName (ifcfg));
 		return FALSE;
 	}
-	write_route6_file (route6_path, s_ip6, error);
-	g_free (route6_path);
-	if (error && *error)
-		return FALSE;
+
+	routes_file = write_route6_file (route6_path, s_ip6);
+	if (!routes_file)
+		(void) unlink (route6_path);
+	else {
+		if (!g_file_set_contents (route6_path, routes_file->str, routes_file->len, NULL)) {
+			if (error) {
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+				             "Writing route6 file '%s' failed", route6_path);
+				return FALSE;
+			}
+		}
+	}
 
 	return TRUE;
 }
