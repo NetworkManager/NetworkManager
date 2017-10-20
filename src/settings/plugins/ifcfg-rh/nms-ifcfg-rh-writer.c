@@ -1886,6 +1886,61 @@ get_route_attributes_string (NMIPRoute *route, int family)
 	return g_string_free (str, FALSE);
 }
 
+static shvarFile *
+write_route_file_svformat (const char *filename, NMSettingIPConfig *s_ip4)
+{
+	shvarFile *routefile;
+	guint i, num;
+
+	routefile = utils_get_route_ifcfg (filename, TRUE);
+
+	svUnsetAll (routefile, SV_KEY_TYPE_ROUTE_SVFORMAT);
+
+	num = nm_setting_ip_config_get_num_routes (s_ip4);
+	for (i = 0; i < num; i++) {
+		char buf[INET_ADDRSTRLEN];
+		NMIPRoute *route;
+		guint32 netmask;
+		gint64 metric;
+		char addr_key[64];
+		char gw_key[64];
+		char netmask_key[64];
+		char metric_key[64];
+		char options_key[64];
+		gs_free char *options = NULL;
+
+		numbered_tag (addr_key, "ADDRESS", i);
+		numbered_tag (netmask_key, "NETMASK", i);
+		numbered_tag (gw_key, "GATEWAY", i);
+
+		route = nm_setting_ip_config_get_route (s_ip4, i);
+
+		svSetValueStr (routefile, addr_key, nm_ip_route_get_dest (route));
+
+		netmask = _nm_utils_ip4_prefix_to_netmask (nm_ip_route_get_prefix (route));
+		svSetValueStr (routefile, netmask_key,
+		               nm_utils_inet4_ntop (netmask, buf));
+
+		svSetValueStr (routefile, gw_key, nm_ip_route_get_next_hop (route));
+
+		metric = nm_ip_route_get_metric (route);
+		if (metric != -1) {
+			svSetValueInt64 (routefile,
+			                 numbered_tag (metric_key, "METRIC", i),
+			                 metric);
+		}
+
+		options = get_route_attributes_string (route, AF_INET);
+		if (options) {
+			svSetValueStr (routefile,
+			               numbered_tag (options_key, "OPTIONS", i),
+			               options);
+		}
+	}
+
+	return routefile;
+}
+
 static GString *
 write_route_file (NMSettingIPConfig *s_ip)
 {
@@ -2222,70 +2277,11 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	}
 
 	if (utils_has_route_file_new_syntax (route_path)) {
-		shvarFile *routefile;
+		nm_auto_shvar_file_close shvarFile *routefile = NULL;
 
-		routefile = utils_get_route_ifcfg (svFileGetName (ifcfg), TRUE);
-		if (!routefile) {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-			             "Could not create route file '%s'", route_path);
+		routefile = write_route_file_svformat (svFileGetName (ifcfg), s_ip4);
+		if (!svWriteFile (routefile, 0644, error))
 			return FALSE;
-		}
-
-		num = nm_setting_ip_config_get_num_routes (s_ip4);
-		for (i = 0; i < 256; i++) {
-			char buf[INET_ADDRSTRLEN];
-			NMIPRoute *route;
-			guint32 netmask;
-			gint64 metric;
-			char addr_key[64];
-			char gw_key[64];
-			char netmask_key[64];
-			char metric_key[64];
-			char options_key[64];
-
-			numbered_tag (addr_key, "ADDRESS", i);
-			numbered_tag (netmask_key, "NETMASK", i);
-			numbered_tag (gw_key, "GATEWAY", i);
-			numbered_tag (metric_key, "METRIC", i);
-			numbered_tag (options_key, "OPTIONS", i);
-
-			if (i >= num) {
-				svUnsetValue (routefile, addr_key);
-				svUnsetValue (routefile, netmask_key);
-				svUnsetValue (routefile, gw_key);
-				svUnsetValue (routefile, metric_key);
-				svUnsetValue (routefile, options_key);
-			} else {
-				gs_free char *options = NULL;
-
-				route = nm_setting_ip_config_get_route (s_ip4, i);
-
-				svSetValueStr (routefile, addr_key, nm_ip_route_get_dest (route));
-
-				memset (buf, 0, sizeof (buf));
-				netmask = _nm_utils_ip4_prefix_to_netmask (nm_ip_route_get_prefix (route));
-				inet_ntop (AF_INET, (const void *) &netmask, &buf[0], sizeof (buf));
-				svSetValueStr (routefile, netmask_key, &buf[0]);
-
-				svSetValueStr (routefile, gw_key, nm_ip_route_get_next_hop (route));
-
-				memset (buf, 0, sizeof (buf));
-				metric = nm_ip_route_get_metric (route);
-				if (metric == -1)
-					svUnsetValue (routefile, metric_key);
-				else
-					svSetValueInt64 (routefile, metric_key, (guint32) metric);
-
-				options = get_route_attributes_string (route, AF_INET);
-				if (options)
-					svSetValueStr (routefile, options_key, options);
-			}
-		}
-		if (!svWriteFile (routefile, 0644, error)) {
-			svCloseFile (routefile);
-			return FALSE;
-		}
-		svCloseFile (routefile);
 	} else {
 		nm_auto_free_gstring GString *routes_file = NULL;
 
