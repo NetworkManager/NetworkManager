@@ -43,34 +43,12 @@ AC_DEFUN([GNOME_CODE_COVERAGE],[
 			AC_MSG_ERROR([not compiling with gcc, which is required for gcov code coverage])
 		])
 
-		# List of supported lcov versions.
-		lcov_version_list="1.6 1.7 1.8 1.9 1.10"
-
 		AC_CHECK_PROG([LCOV], [lcov], [lcov])
 		AC_CHECK_PROG([GENHTML], [genhtml], [genhtml])
 
-		AS_IF([ test "$LCOV" ], [
-			AC_CACHE_CHECK([for lcov version], gnome_cv_lcov_version, [
-				gnome_cv_lcov_version=invalid
-				lcov_version=`$LCOV -v 2>/dev/null | $SED -e 's/^.* //'`
-				for lcov_check_version in $lcov_version_list; do
-					if test "$lcov_version" = "$lcov_check_version"; then
-						gnome_cv_lcov_version="$lcov_check_version (ok)"
-					fi
-				done
-			])
-		], [
-			lcov_msg="To enable code coverage reporting you must have one of the following lcov versions installed: $lcov_version_list"
-			AC_MSG_ERROR([$lcov_msg])
+		AS_IF([ test -z "$LCOV" ], [
+			AC_MSG_ERROR([lcov is needed to enable code coverage reporting])
 		])
-
-		case $gnome_cv_lcov_version in
-			""|invalid[)]
-				lcov_msg="You must have one of the following versions of lcov: $lcov_version_list (found: $lcov_version)."
-				AC_MSG_ERROR([$lcov_msg])
-				LCOV="exit 0;"
-			;;
-		esac
 
 		AS_IF([ test -z "$GENHTML" ], [
 			AC_MSG_ERROR([Could not find genhtml from the lcov package])
