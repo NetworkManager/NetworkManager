@@ -1175,6 +1175,7 @@ make_proxy_setting (shvarFile *ifcfg, GError **error)
 static NMSetting *
 make_ip4_setting (shvarFile *ifcfg,
                   const char *network_file,
+                  gboolean routes_read,
                   gboolean *out_has_defroute,
                   GError **error)
 {
@@ -1424,8 +1425,8 @@ make_ip4_setting (shvarFile *ifcfg,
 	/* Static routes  - route-<name> file */
 	route_path = utils_get_route_path (svFileGetName (ifcfg));
 
-	if (utils_has_complex_routes (route_path)) {
-		PARSE_WARNING ("'rule-' or 'rule6-' file is present; you will need to use a dispatcher script to apply these routes");
+	if (!routes_read) {
+		/* NOP */
 	} else if (utils_has_route_file_new_syntax (route_path)) {
 		/* Parse route file in new syntax */
 		route_ifcfg = utils_get_route_ifcfg (svFileGetName (ifcfg), FALSE);
@@ -1591,6 +1592,7 @@ read_aliases (NMSettingIPConfig *s_ip4, gboolean read_defroute, const char *file
 static NMSetting *
 make_ip6_setting (shvarFile *ifcfg,
                   const char *network_file,
+                  gboolean routes_read,
                   GError **error)
 {
 	NMSettingIPConfig *s_ip6 = NULL;
@@ -1847,12 +1849,13 @@ make_ip6_setting (shvarFile *ifcfg,
 
 	/* DNS searches ('DOMAIN' key) are read by make_ip4_setting() and included in NMSettingIPConfig */
 
-	if (!utils_has_complex_routes (svFileGetName (ifcfg))) {
+	if (!routes_read) {
+		/* NOP */
+	} else {
 		/* Read static routes from route6-<interface> file */
 		route6_path = utils_get_route6_path (svFileGetName (ifcfg));
 		if (!read_route_file (AF_INET6, route6_path, s_ip6, error))
 			goto error;
-
 		g_free (route6_path);
 	}
 
@@ -5158,6 +5161,8 @@ connection_from_file_full (const char *filename,
 	NMSetting *s_ip4, *s_ip6, *s_proxy, *s_port, *s_dcb = NULL, *s_user;
 	const char *ifcfg_name = NULL;
 	gboolean has_ip4_defroute = FALSE;
+	gboolean has_complex_routes_v4;
+	gboolean has_complex_routes_v6;
 
 	g_return_val_if_fail (filename != NULL, NULL);
 	g_return_val_if_fail (out_unhandled && !*out_unhandled, NULL);
@@ -5369,13 +5374,32 @@ connection_from_file_full (const char *filename,
 	if (!connection)
 		return NULL;
 
-	s_ip6 = make_ip6_setting (parsed, network_file, error);
+	has_complex_routes_v4 = utils_has_complex_routes (filename, AF_INET);
+	has_complex_routes_v6 = utils_has_complex_routes (filename, AF_INET6);
+
+	if (has_complex_routes_v4 || has_complex_routes_v6) {
+		if (has_complex_routes_v4 && !has_complex_routes_v6)
+			PARSE_WARNING ("'rule-' file is present; you will need to use a dispatcher script to apply these routes");
+		else if (has_complex_routes_v6 && !has_complex_routes_v4)
+			PARSE_WARNING ("'rule6-' file is present; you will need to use a dispatcher script to apply these routes");
+		else
+			PARSE_WARNING ("'rule-' and 'rule6-' files are present; you will need to use a dispatcher script to apply these routes");
+	}
+
+	s_ip6 = make_ip6_setting (parsed,
+	                          network_file,
+	                          !has_complex_routes_v4 && !has_complex_routes_v6,
+	                          error);
 	if (!s_ip6)
 		return NULL;
 	else
 		nm_connection_add_setting (connection, s_ip6);
 
-	s_ip4 = make_ip4_setting (parsed, network_file, &has_ip4_defroute, error);
+	s_ip4 = make_ip4_setting (parsed,
+	                          network_file,
+	                          !has_complex_routes_v4 && !has_complex_routes_v6,
+	                          &has_ip4_defroute,
+	                          error);
 	if (!s_ip4)
 		return NULL;
 	else {

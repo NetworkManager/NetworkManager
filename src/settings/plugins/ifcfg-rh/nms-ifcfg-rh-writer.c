@@ -2121,6 +2121,9 @@ write_ip4_setting (NMConnection *connection,
 	const char *method = NULL;
 	gboolean has_netmask;
 
+	NM_SET_OUT (out_route_content_svformat, NULL);
+	NM_SET_OUT (out_route_content, NULL);
+
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	if (!s_ip4) {
 		/* slave-type: clear IPv4 settings.
@@ -2721,6 +2724,9 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 	gs_free char *route_path = NULL;
 	gs_free char *route6_path = NULL;
 	nm_auto_free_gstring GString *route_content = NULL;
+	gboolean route_ignore = FALSE;
+	gboolean has_complex_routes_v4;
+	gboolean has_complex_routes_v6;
 	nm_auto_shvar_file_close shvarFile *route_content_svformat = NULL;
 	nm_auto_free_gstring GString *route6_content = NULL;
 	gs_unref_hashtable GHashTable *secrets = NULL;
@@ -2729,13 +2735,6 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 	nm_assert (NM_IS_CONNECTION (connection));
 	nm_assert (_nm_connection_verify (connection, NULL) == NM_SETTING_VERIFY_SUCCESS);
 	nm_assert (!out_reread || !*out_reread);
-
-	if (   filename
-	    && utils_has_complex_routes (filename)) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		             "Cannot modify a connection that has an associated 'rule-' or 'rule6-' file");
-		return FALSE;
-	}
 
 	if (!nms_ifcfg_rh_writer_can_write_connection (connection, error))
 		return FALSE;
@@ -2868,16 +2867,36 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 
 	route_path_is_svformat = utils_has_route_file_new_syntax (route_path);
 
+	has_complex_routes_v4 = utils_has_complex_routes (ifcfg_name, AF_INET);
+	has_complex_routes_v6 = utils_has_complex_routes (ifcfg_name, AF_INET6);
+
+	if (has_complex_routes_v4 || has_complex_routes_v6) {
+		NMSettingIPConfig *s_ip4, *s_ip6;
+
+		s_ip4 = nm_connection_get_setting_ip4_config (connection);
+		s_ip6 = nm_connection_get_setting_ip6_config (connection);
+		if (   (   s_ip4
+		        && nm_setting_ip_config_get_num_routes (s_ip4) > 0)
+		    || (   s_ip6
+		        && nm_setting_ip_config_get_num_routes (s_ip6) > 0)) {
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+			             "Cannot configure static routes on a connection that has an associated 'rule%s-' file",
+			             has_complex_routes_v4 ? "" : "6");
+			return FALSE;
+		}
+		route_ignore = TRUE;
+	}
+
 	if (!write_ip4_setting (connection,
 	                        ifcfg,
-	                        route_path_is_svformat ? &route_content_svformat : NULL,
-	                        route_path_is_svformat ? NULL                      :&route_content,
+	                        !route_ignore && route_path_is_svformat ? &route_content_svformat : NULL,
+	                        !route_ignore && route_path_is_svformat ? NULL                      :&route_content,
 	                        error))
 		return FALSE;
 
 	if (!write_ip6_setting (connection,
 	                        ifcfg,
-	                        &route6_content,
+	                        !route_ignore ? &route6_content : NULL,
 	                        error))
 		return FALSE;
 
@@ -2901,28 +2920,32 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 	if (!write_secrets (ifcfg, secrets, error))
 		return FALSE;
 
-	if (!route_content && !route_content_svformat)
-		(void) unlink (route_path);
-	else {
-		if (route_path_is_svformat) {
-			if (!svWriteFile (route_content_svformat, 0644, error))
-				return FALSE;
-		} else {
-			if (!g_file_set_contents (route_path, route_content->str, route_content->len, NULL)) {
-				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-				             "Writing route file '%s' failed", route_path);
-				return FALSE;
+	if (!route_ignore) {
+		if (!route_content && !route_content_svformat)
+			(void) unlink (route_path);
+		else {
+			if (route_path_is_svformat) {
+				if (!svWriteFile (route_content_svformat, 0644, error))
+					return FALSE;
+			} else {
+				if (!g_file_set_contents (route_path, route_content->str, route_content->len, NULL)) {
+					g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+					             "Writing route file '%s' failed", route_path);
+					return FALSE;
+				}
 			}
 		}
 	}
 
-	if (!route6_content)
-		(void) unlink (route6_path);
-	else {
-		if (!g_file_set_contents (route6_path, route6_content->str, route6_content->len, NULL)) {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-			             "Writing route6 file '%s' failed", route6_path);
-			return FALSE;
+	if (!route_ignore) {
+		if (!route6_content)
+			(void) unlink (route6_path);
+		else {
+			if (!g_file_set_contents (route6_path, route6_content->str, route6_content->len, NULL)) {
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+				             "Writing route6 file '%s' failed", route6_path);
+				return FALSE;
+			}
 		}
 	}
 
