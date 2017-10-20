@@ -215,6 +215,7 @@ static gboolean
 write_object (NMSetting8021x *s_8021x,
               shvarFile *ifcfg,
               GHashTable *secrets,
+              GHashTable *blobs,
               const Setting8021xSchemeVtable *objtype,
               GError **error)
 {
@@ -268,7 +269,7 @@ write_object (NMSetting8021x *s_8021x,
 	 * 802.1x and thus we clear out the paths and certs.
 	 */
 	if (!value && !blob) {
-		gs_free char *standard_file = NULL;
+		char *standard_file;
 
 		/* Since no cert/private key is now being used, delete any standard file
 		 * that was created for this connection, but leave other files alone.
@@ -277,9 +278,7 @@ write_object (NMSetting8021x *s_8021x,
 		 * will be deleted, but /etc/pki/tls/cert.pem will not.
 		 */
 		standard_file = utils_cert_path (svFileGetName (ifcfg), objtype->vtable->file_suffix, extension);
-		if (g_file_test (standard_file, G_FILE_TEST_EXISTS))
-			(void) unlink (standard_file);
-
+		g_hash_table_replace (blobs, standard_file, NULL);
 		svUnsetValue (ifcfg, objtype->ifcfg_rh_key);
 		return TRUE;
 	}
@@ -294,47 +293,60 @@ write_object (NMSetting8021x *s_8021x,
 
 	/* If it's raw certificate data, write the data out to the standard file */
 	if (blob) {
-		gboolean success;
 		char *new_file;
-		GError *write_error = NULL;
 
 		new_file = utils_cert_path (svFileGetName (ifcfg), objtype->vtable->file_suffix, extension);
-		if (!new_file) {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-			             "Could not create file path for %s / %s",
-			             NM_SETTING_802_1X_SETTING_NAME, objtype->vtable->setting_key);
-			return FALSE;
+		g_hash_table_replace (blobs, new_file, g_bytes_ref (blob));
+		svSetValueStr (ifcfg, objtype->ifcfg_rh_key, new_file);
+		return TRUE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
+write_blobs (GHashTable *blobs, GError **error)
+{
+	GHashTableIter iter;
+	const char *filename;
+	GBytes *blob;
+
+	if (!blobs)
+		return TRUE;
+
+	g_hash_table_iter_init (&iter, blobs);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &filename, (gpointer *) &blob)) {
+		GError *write_error = NULL;
+
+		if (!blob) {
+			(void) unlink (filename);
+			continue;
 		}
 
 		/* Write the raw certificate data out to the standard file so that we
 		 * can use paths from now on instead of pushing around the certificate
 		 * data itself.
 		 */
-		success = nm_utils_file_set_contents (new_file,
-		                                      (const char *) g_bytes_get_data (blob, NULL),
-		                                      g_bytes_get_size (blob),
-		                                      0600,
-		                                      &write_error);
-		if (success) {
-			svSetValueStr (ifcfg, objtype->ifcfg_rh_key, new_file);
-			g_free (new_file);
-			return TRUE;
-		} else {
+		if (!nm_utils_file_set_contents (filename,
+		                                 (const char *) g_bytes_get_data (blob, NULL),
+		                                 g_bytes_get_size (blob),
+		                                 0600,
+		                                 &write_error)) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-			             "Could not write certificate/key for %s / %s: %s",
-			             NM_SETTING_802_1X_SETTING_NAME, objtype->vtable->setting_key,
-			             (write_error && write_error->message) ? write_error->message : "(unknown)");
-			g_clear_error (&write_error);
+			             "Could not write certificate to file \"%s\": %s",
+			             filename,
+			             write_error->message);
+			return FALSE;
 		}
-		g_free (new_file);
 	}
 
-	return FALSE;
+	return TRUE;
 }
 
 static gboolean
 write_8021x_certs (NMSetting8021x *s_8021x,
                    GHashTable *secrets,
+                   GHashTable *blobs,
                    gboolean phase2,
                    shvarFile *ifcfg,
                    GError **error)
@@ -342,7 +354,7 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 	const Setting8021xSchemeVtable *otype = NULL;
 
 	/* CA certificate */
-	if (!write_object (s_8021x, ifcfg, secrets,
+	if (!write_object (s_8021x, ifcfg, secrets, blobs,
 	                   phase2
 	                       ? &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CA_CERT]
 	                       : &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_CA_CERT],
@@ -356,7 +368,7 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 		otype = &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PRIVATE_KEY];
 
 	/* Save the private key */
-	if (!write_object (s_8021x, ifcfg, secrets, otype, error))
+	if (!write_object (s_8021x, ifcfg, secrets, blobs, otype, error))
 		return FALSE;
 
 	/* Client certificate */
@@ -369,7 +381,7 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 		               NULL);
 	} else {
 		/* Save the client certificate */
-		if (!write_object (s_8021x, ifcfg, secrets,
+		if (!write_object (s_8021x, ifcfg, secrets, blobs,
 		                   phase2
 		                       ? &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CLIENT_CERT]
 		                       : &setting_8021x_scheme_vtable[NM_SETTING_802_1X_SCHEME_TYPE_CLIENT_CERT],
@@ -384,6 +396,7 @@ static gboolean
 write_8021x_setting (NMConnection *connection,
                      shvarFile *ifcfg,
                      GHashTable *secrets,
+                     GHashTable *blobs,
                      gboolean wired,
                      GError **error)
 {
@@ -538,11 +551,11 @@ write_8021x_setting (NMConnection *connection,
 	else
 		svUnsetValue (ifcfg, "IEEE_8021X_AUTH_TIMEOUT");
 
-	if (!write_8021x_certs (s_8021x, secrets, FALSE, ifcfg, error))
+	if (!write_8021x_certs (s_8021x, secrets, blobs, FALSE, ifcfg, error))
 		return FALSE;
 
 	/* phase2/inner certs */
-	if (!write_8021x_certs (s_8021x, secrets, TRUE, ifcfg, error))
+	if (!write_8021x_certs (s_8021x, secrets, blobs, TRUE, ifcfg, error))
 		return FALSE;
 
 	return TRUE;
@@ -2711,6 +2724,7 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 	nm_auto_shvar_file_close shvarFile *route_content_svformat = NULL;
 	nm_auto_free_gstring GString *route6_content = NULL;
 	gs_unref_hashtable GHashTable *secrets = NULL;
+	gs_unref_hashtable GHashTable *blobs = NULL;
 
 	nm_assert (NM_IS_CONNECTION (connection));
 	nm_assert (_nm_connection_verify (connection, NULL) == NM_SETTING_VERIFY_SUCCESS);
@@ -2829,7 +2843,8 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 	}
 
 	if (!no_8021x) {
-		if (!write_8021x_setting (connection, ifcfg, secrets, wired, error))
+		blobs = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, (GDestroyNotify) g_bytes_unref);
+		if (!write_8021x_setting (connection, ifcfg, secrets, blobs, wired, error))
 			return FALSE;
 	}
 
@@ -2879,6 +2894,9 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 		return FALSE;
 
 	write_ip4_aliases (connection, ifcfg_name);
+
+	if (!write_blobs (blobs, error))
+		return FALSE;
 
 	if (!write_secrets (ifcfg, secrets, error))
 		return FALSE;
