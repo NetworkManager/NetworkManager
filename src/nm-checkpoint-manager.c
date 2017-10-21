@@ -35,6 +35,7 @@
 
 struct _NMCheckpointManager {
 	NMManager *_manager;
+	GParamSpec *property_spec;
 	GHashTable *checkpoints;
 	CList list;
 	guint rollback_timeout_id;
@@ -66,6 +67,12 @@ typedef struct {
 static void update_rollback_timeout (NMCheckpointManager *self);
 
 static void
+notify_checkpoints (NMCheckpointManager *self) {
+	g_object_notify_by_pspec ((GObject *) GET_MANAGER (self),
+	                          self->property_spec);
+}
+
+static void
 item_destroy (gpointer data)
 {
 	CheckpointItem *item = data;
@@ -83,6 +90,7 @@ rollback_timeout_cb (NMCheckpointManager *self)
 	GVariant *result;
 	gint64 ts, now;
 	const char *path;
+	gboolean removed = FALSE;
 
 	now = nm_utils_get_monotonic_timestamp_ms ();
 
@@ -95,11 +103,15 @@ rollback_timeout_cb (NMCheckpointManager *self)
 			path = nm_exported_object_get_path (NM_EXPORTED_OBJECT (item->checkpoint));
 			if (!g_hash_table_remove (self->checkpoints, path))
 				nm_assert_not_reached();
+			removed = TRUE;
 		}
 	}
 
 	self->rollback_timeout_id = 0;
 	update_rollback_timeout (self);
+
+	if (removed)
+		notify_checkpoints (self);
 
 	return G_SOURCE_REMOVE;
 }
@@ -230,6 +242,7 @@ nm_checkpoint_manager_create (NMCheckpointManager *self,
 	                             item))
 		g_return_val_if_reached (NULL);
 
+	notify_checkpoints (self);
 	update_rollback_timeout (self);
 
 	return checkpoint;
@@ -242,6 +255,7 @@ nm_checkpoint_manager_destroy_all (NMCheckpointManager *self,
 	g_return_val_if_fail (self, FALSE);
 
 	g_hash_table_remove_all (self->checkpoints);
+	notify_checkpoints (self);
 
 	return TRUE;
 }
@@ -259,7 +273,9 @@ nm_checkpoint_manager_destroy (NMCheckpointManager *self,
 
 	if (!nm_streq (checkpoint_path, "/")) {
 		ret = g_hash_table_remove (self->checkpoints, checkpoint_path);
-		if (!ret) {
+		if (ret) {
+			notify_checkpoints (self);
+		} else {
 			g_set_error (error,
 			             NM_MANAGER_ERROR,
 			             NM_MANAGER_ERROR_INVALID_ARGUMENTS,
@@ -292,14 +308,37 @@ nm_checkpoint_manager_rollback (NMCheckpointManager *self,
 
 	*results = nm_checkpoint_rollback (item->checkpoint);
 	g_hash_table_remove (self->checkpoints, checkpoint_path);
+	notify_checkpoints (self);
 
 	return TRUE;
+}
+
+char **
+nm_checkpoint_manager_get_checkpoint_paths (NMCheckpointManager *self)
+{
+	CheckpointItem *item;
+	char **strv;
+	guint num, i = 0;
+
+	num = g_hash_table_size (self->checkpoints);
+	if (!num) {
+		nm_assert (c_list_is_empty (&self->list));
+		return NULL;
+	}
+
+	strv = g_new (char *, num + 1);
+	c_list_for_each_entry (item, &self->list, list)
+		strv[i++] = g_strdup (nm_exported_object_get_path (NM_EXPORTED_OBJECT (item->checkpoint)));
+	nm_assert (i == num);
+	strv[i] = NULL;
+
+	return strv;
 }
 
 /*****************************************************************************/
 
 NMCheckpointManager *
-nm_checkpoint_manager_new (NMManager *manager)
+nm_checkpoint_manager_new (NMManager *manager, GParamSpec *spec)
 {
 	NMCheckpointManager *self;
 
@@ -316,6 +355,7 @@ nm_checkpoint_manager_new (NMManager *manager)
 	self->_manager = manager;
 	self->checkpoints = g_hash_table_new_full (nm_str_hash, g_str_equal,
 	                                           NULL, item_destroy);
+	self->property_spec = spec;
 	c_list_init (&self->list);
 
 	return self;
