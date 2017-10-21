@@ -175,10 +175,12 @@ nm_checkpoint_manager_create (NMCheckpointManager *self,
 	if (!NM_FLAGS_HAS (flags, NM_CHECKPOINT_CREATE_FLAG_DESTROY_ALL)) {
 		for (i = 0; i < devices->len; i++) {
 			device = devices->pdata[i];
-			if (find_checkpoint_for_device (self, device)) {
+			checkpoint = find_checkpoint_for_device (self, device);
+			if (checkpoint) {
 				g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_INVALID_ARGUMENTS,
-				             "a checkpoint for device '%s' already exists",
-				             nm_device_get_iface (device));
+				             "device '%s' is already included in checkpoint %s",
+				             nm_device_get_iface (device),
+				             nm_exported_object_get_path (NM_EXPORTED_OBJECT (checkpoint)));
 				return NULL;
 			}
 		}
