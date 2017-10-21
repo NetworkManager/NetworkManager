@@ -403,6 +403,45 @@ const char *nm_client_get_dns_rc_manager      (NMClient *client);
 NM_AVAILABLE_IN_1_6
 const GPtrArray  *nm_client_get_dns_configuration (NMClient *client);
 
+
+NM_AVAILABLE_IN_1_12
+const GPtrArray *nm_client_get_checkpoints (NMClient *client);
+
+NM_AVAILABLE_IN_1_12
+void nm_client_checkpoint_create_async (NMClient *client,
+                                        const GPtrArray *devices,
+                                        guint32 rollback_timeout,
+                                        NMCheckpointCreateFlags flags,
+                                        GCancellable *cancellable,
+                                        GAsyncReadyCallback callback,
+                                        gpointer user_data);
+NM_AVAILABLE_IN_1_12
+NMCheckpoint *nm_client_checkpoint_create_finish (NMClient *client,
+                                                  GAsyncResult *result,
+                                                  GError **error);
+
+NM_AVAILABLE_IN_1_12
+void nm_client_checkpoint_destroy_async (NMClient *client,
+                                         NMCheckpoint *checkpoint,
+                                         GCancellable *cancellable,
+                                         GAsyncReadyCallback callback,
+                                         gpointer user_data);
+NM_AVAILABLE_IN_1_12
+gboolean nm_client_checkpoint_destroy_finish (NMClient *client,
+                                              GAsyncResult *result,
+                                              GError **error);
+
+NM_AVAILABLE_IN_1_12
+void nm_client_checkpoint_rollback_async (NMClient *client,
+                                          NMCheckpoint *checkpoint,
+                                          GCancellable *cancellable,
+                                          GAsyncReadyCallback callback,
+                                          gpointer user_data);
+NM_AVAILABLE_IN_1_12
+GHashTable *nm_client_checkpoint_rollback_finish (NMClient *client,
+                                                  GAsyncResult *result,
+                                                  GError **error);
+
 G_END_DECLS
 
 #endif /* __NM_CLIENT_H__ */

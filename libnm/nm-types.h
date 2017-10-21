@@ -28,6 +28,7 @@
 
 typedef struct _NMAccessPoint        NMAccessPoint;
 typedef struct _NMActiveConnection   NMActiveConnection;
+typedef struct _NMCheckpoint         NMCheckpoint;
 typedef struct _NMClient             NMClient;
 typedef struct _NMDevice             NMDevice;
 typedef struct _NMDeviceAdsl         NMDeviceAdsl;
