@@ -72,6 +72,7 @@
 #include "nm-arping-manager.h"
 #include "nm-connectivity.h"
 #include "nm-dbus-interface.h"
+#include "nm-device-vlan.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF (NMDevice);
@@ -7346,6 +7347,7 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 	})
 	if (   (mtu_desired && mtu_desired != mtu_plat)
 	    || (ip6_mtu && ip6_mtu != _IP6_MTU_SYS ())) {
+		gboolean anticipated_failure = FALSE;
 
 		if (!priv->mtu_initial && !priv->ip6_mtu_initial) {
 			/* before touching any of the MTU paramters, record the
@@ -7355,13 +7357,30 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 		}
 
 		if (mtu_desired && mtu_desired != mtu_plat) {
-			nm_platform_link_set_mtu (nm_device_get_platform (self), ifindex, mtu_desired);
+			if (nm_platform_link_set_mtu (nm_device_get_platform (self), ifindex, mtu_desired) == NM_PLATFORM_ERROR_CANT_SET_MTU) {
+				anticipated_failure = TRUE;
+				_LOGW (LOGD_DEVICE, "mtu: failure to set MTU. %s",
+				       NM_IS_DEVICE_VLAN (self)
+				         ? "Is the parent's MTU size large enough?"
+				         : (!c_list_is_empty (&priv->slaves)
+				              ? "Are the MTU sizes of the slaves large enough?"
+				              : "Did you configure the MTU correctly?"));
+			}
 			priv->carrier_wait_until_ms = nm_utils_get_monotonic_timestamp_ms () + CARRIER_WAIT_TIME_AFTER_MTU_MS;
 		}
 
 		if (ip6_mtu && ip6_mtu != _IP6_MTU_SYS ()) {
-			nm_device_ipv6_sysctl_set (self, "mtu",
-			                           nm_sprintf_buf (sbuf, "%u", (unsigned) ip6_mtu));
+			if (!nm_device_ipv6_sysctl_set (self, "mtu",
+			                                nm_sprintf_buf (sbuf, "%u", (unsigned) ip6_mtu))) {
+				int errsv = errno;
+
+				_NMLOG (anticipated_failure && errsv == EINVAL ? LOGL_DEBUG : LOGL_WARN,
+				        LOGD_DEVICE,
+				        "mtu: failure to set IPv6 MTU%s",
+				        anticipated_failure && errsv == EINVAL
+				           ? ": Is the underlying MTU value successfully set?"
+				           : "");
+			}
 			priv->carrier_wait_until_ms = nm_utils_get_monotonic_timestamp_ms () + CARRIER_WAIT_TIME_AFTER_MTU_MS;
 		}
 	}
