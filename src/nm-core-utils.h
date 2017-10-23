@@ -253,6 +253,8 @@ const char *NM_ASSERT_VALID_PATH_COMPONENT (const char *name);
 
 const char *nm_utils_sysctl_ip_conf_path (int addr_family, char *buf, const char *ifname, const char *property);
 
+gboolean nm_utils_sysctl_ip_conf_is_path (int addr_family, const char *path, const char *ifname, const char *property);
+
 gboolean nm_utils_is_specific_hostname (const char *name);
 
 int nm_utils_fd_get_contents (int fd,
