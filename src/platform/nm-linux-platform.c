@@ -4426,25 +4426,38 @@ do_delete_object (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 	return success;
 }
 
-static WaitForNlResponseResult
-do_change_link_request (NMPlatform *platform,
-                        int ifindex,
-                        struct nl_msg *nlmsg)
+static NMPlatformError
+do_change_link (NMPlatform *platform,
+                ChangeLinkType change_link_type,
+                int ifindex,
+                struct nl_msg *nlmsg,
+                const ChangeLinkData *data)
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
-	WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
 	int nle;
+	WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+	char s_buf[256];
+	NMPlatformError result = NM_PLATFORM_ERROR_SUCCESS;
+	NMLogLevel log_level = LOGL_DEBUG;
+	const char *log_result = "failure";
+	const char *log_detail = "";
+	gs_free char *log_detail_free = NULL;
+	const NMPObject *obj_cache;
 
-	if (!nm_platform_netns_push (platform, &netns))
-		return WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+	if (!nm_platform_netns_push (platform, &netns)) {
+		log_level = LOGL_ERR;
+		log_detail = ", failure to change network namespace";
+		goto out;
+	}
 
 retry:
 	nle = _nl_send_nlmsg (platform, nlmsg, &seq_result, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
 	if (nle < 0) {
-		_LOGE ("do-change-link[%d]: failure sending netlink request \"%s\" (%d)",
-		       ifindex,
-		       nl_geterror (nle), -nle);
-		return WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+		log_level = LOGL_ERR;
+		log_detail_free = g_strdup_printf (", failure sending netlink request: %s (%d)",
+		                                   nl_geterror (nle), -nle);
+		log_detail = log_detail_free;
+		goto out;
 	}
 
 	/* always refetch the link after changing it. There seems to be issues
@@ -4460,24 +4473,6 @@ retry:
 		nlmsg_hdr (nlmsg)->nlmsg_type = RTM_SETLINK;
 		goto retry;
 	}
-	return seq_result;
-}
-
-static NMPlatformError
-do_change_link (NMPlatform *platform,
-                ChangeLinkType change_link_type,
-                int ifindex,
-                struct nl_msg *nlmsg,
-                const ChangeLinkData *data)
-{
-	WaitForNlResponseResult seq_result;
-	char s_buf[256];
-	NMPlatformError result = NM_PLATFORM_ERROR_SUCCESS;
-	NMLogLevel log_level = LOGL_DEBUG;
-	const char *log_result = "failure", *log_detail = "";
-	const NMPObject *obj_cache;
-
-	seq_result = do_change_link_request (platform, ifindex, nlmsg);
 
 	if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK) {
 		log_result = "success";
@@ -4507,13 +4502,14 @@ do_change_link (NMPlatform *platform,
 		log_level = LOGL_WARN;
 		result = NM_PLATFORM_ERROR_UNSPECIFIED;
 	}
+
+out:
 	_NMLOG (log_level,
 	        "do-change-link[%d]: %s changing link: %s%s",
 	        ifindex,
 	        log_result,
 	        wait_for_nl_response_to_string (seq_result, s_buf, sizeof (s_buf)),
 	        log_detail);
-
 	return result;
 }
 
