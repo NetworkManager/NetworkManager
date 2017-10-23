@@ -1500,7 +1500,7 @@ nm_platform_link_set_noarp (NMPlatform *self, int ifindex)
  *
  * Set interface MTU.
  */
-gboolean
+NMPlatformError
 nm_platform_link_set_mtu (NMPlatform *self, int ifindex, guint32 mtu)
 {
 	_CHECK_SELF (self, klass, FALSE);

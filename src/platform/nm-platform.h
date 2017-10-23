@@ -719,7 +719,7 @@ typedef struct {
 	                                        guint8 *buf,
 	                                        size_t *length);
 	NMPlatformError (*link_set_address) (NMPlatform *, int ifindex, gconstpointer address, size_t length);
-	gboolean (*link_set_mtu) (NMPlatform *, int ifindex, guint32 mtu);
+	NMPlatformError (*link_set_mtu) (NMPlatform *, int ifindex, guint32 mtu);
 	gboolean (*link_set_name) (NMPlatform *, int ifindex, const char *name);
 	gboolean (*link_set_sriov_num_vfs) (NMPlatform *, int ifindex, guint num_vfs);
 
@@ -1061,7 +1061,7 @@ gboolean nm_platform_link_set_ipv6_token (NMPlatform *self, int ifindex, NMUtils
 
 gboolean nm_platform_link_get_permanent_address (NMPlatform *self, int ifindex, guint8 *buf, size_t *length);
 NMPlatformError nm_platform_link_set_address (NMPlatform *self, int ifindex, const void *address, size_t length);
-gboolean nm_platform_link_set_mtu (NMPlatform *self, int ifindex, guint32 mtu);
+NMPlatformError nm_platform_link_set_mtu (NMPlatform *self, int ifindex, guint32 mtu);
 gboolean nm_platform_link_set_name (NMPlatform *self, int ifindex, const char *name);
 gboolean nm_platform_link_set_sriov_num_vfs (NMPlatform *self, int ifindex, guint num_vfs);
 

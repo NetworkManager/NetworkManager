@@ -76,7 +76,7 @@ test_bogus(void)
 	g_assert (!addrlen);
 	g_assert (!nm_platform_link_get_address (NM_PLATFORM_GET, BOGUS_IFINDEX, NULL));
 
-	g_assert (!nm_platform_link_set_mtu (NM_PLATFORM_GET, BOGUS_IFINDEX, MTU));
+	g_assert (nm_platform_link_set_mtu (NM_PLATFORM_GET, BOGUS_IFINDEX, MTU) != NM_PLATFORM_ERROR_SUCCESS);
 
 	g_assert (!nm_platform_link_get_mtu (NM_PLATFORM_GET, BOGUS_IFINDEX));
 
@@ -603,7 +603,7 @@ test_internal (void)
 	accept_signal (link_changed);
 
 	/* Set MTU */
-	g_assert (nm_platform_link_set_mtu (NM_PLATFORM_GET, ifindex, MTU));
+	g_assert (nm_platform_link_set_mtu (NM_PLATFORM_GET, ifindex, MTU) == NM_PLATFORM_ERROR_SUCCESS);
 	g_assert_cmpint (nm_platform_link_get_mtu (NM_PLATFORM_GET, ifindex), ==, MTU);
 	accept_signal (link_changed);
 

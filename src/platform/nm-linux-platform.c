@@ -4859,7 +4859,7 @@ link_get_permanent_address (NMPlatform *platform,
 	return nmp_utils_ethtool_get_permanent_address (ifindex, buf, length);
 }
 
-static gboolean
+static NMPlatformError
 link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
@@ -4877,7 +4877,7 @@ link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 
 	NLA_PUT_U32 (nlmsg, IFLA_MTU, mtu);
 
-	return do_change_link (platform, CHANGE_LINK_TYPE_SET_MTU, ifindex, nlmsg, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+	return do_change_link (platform, CHANGE_LINK_TYPE_SET_MTU, ifindex, nlmsg, NULL);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
