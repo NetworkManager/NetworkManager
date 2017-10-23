@@ -2934,7 +2934,7 @@ sysctl_set (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 	nm_auto_pop_netns NMPNetns *netns = NULL;
 	int fd, tries;
 	gssize nwrote;
-	gsize len;
+	gssize len;
 	char *actual;
 	gs_free char *actual_free = NULL;
 	int errsv;
@@ -2989,6 +2989,7 @@ sysctl_set (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 	 * about to write.
 	 */
 	len = strlen (value) + 1;
+	nm_assert (len > 0);
 	if (len > 512)
 		actual = actual_free = g_malloc (len + 1);
 	else
