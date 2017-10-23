@@ -531,8 +531,10 @@ start (NMNDisc *ndisc)
 static inline int
 ipv6_sysctl_get (NMPlatform *platform, const char *ifname, const char *property, int min, int max, int defval)
 {
+	char buf[NM_UTILS_IP_PROPERTY_PATH_BUFSIZE];
+
 	return (int) nm_platform_sysctl_get_int_checked (platform,
-	                                                 NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_ip6_property_path (ifname, property)),
+	                                                 NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_ip6_property_path (buf, ifname, property)),
 	                                                 10,
 	                                                 min,
 	                                                 max,

@@ -248,8 +248,11 @@ gint64 nm_utils_monotonic_timestamp_as_boottime (gint64 timestamp, gint64 timest
 
 gboolean    nm_utils_is_valid_path_component (const char *name);
 const char *NM_ASSERT_VALID_PATH_COMPONENT (const char *name);
-const char *nm_utils_ip6_property_path (const char *ifname, const char *property);
-const char *nm_utils_ip4_property_path (const char *ifname, const char *property);
+
+#define NM_UTILS_IP_PROPERTY_PATH_BUFSIZE 100
+
+const char *nm_utils_ip6_property_path (char *buf, const char *ifname, const char *property);
+const char *nm_utils_ip4_property_path (char *buf, const char *ifname, const char *property);
 
 gboolean nm_utils_is_specific_hostname (const char *name);
 
