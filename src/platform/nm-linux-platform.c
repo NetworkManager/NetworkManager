@@ -3026,11 +3026,13 @@ sysctl_set (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 			break;
 		}
 	}
-	if (nwrote == -1 && errsv != EEXIST) {
+	if (nwrote == -1) {
 		NMLogLevel level = LOGL_ERR;
 
-		if (   errsv == EINVAL
-		    && nm_utils_sysctl_ip_conf_is_path (AF_INET6, path, NULL, "mtu")) {
+		if (errsv == EEXIST) {
+			level = LOGL_DEBUG;
+		} else if (   errsv == EINVAL
+		           && nm_utils_sysctl_ip_conf_is_path (AF_INET6, path, NULL, "mtu")) {
 			/* setting the MTU can fail under regular conditions. Suppress
 			 * logging a warning. */
 			level = LOGL_DEBUG;
