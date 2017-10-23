@@ -206,6 +206,11 @@ typedef enum {
 	INFINIBAND_ACTION_DELETE_CHILD,
 } InfinibandAction;
 
+typedef enum {
+	CHANGE_LINK_TYPE_UNSPEC,
+	CHANGE_LINK_TYPE_SET_MTU,
+} ChangeLinkType;
+
 enum {
 	DELAYED_ACTION_IDX_REFRESH_ALL_LINKS,
 	DELAYED_ACTION_IDX_REFRESH_ALL_IP4_ADDRESSES,
@@ -4450,6 +4455,7 @@ retry:
 
 static NMPlatformError
 do_change_link_result (NMPlatform *platform,
+                       ChangeLinkType change_link_type,
                        int ifindex,
                        WaitForNlResponseResult seq_result)
 {
@@ -4465,6 +4471,10 @@ do_change_link_result (NMPlatform *platform,
 	} else if (NM_IN_SET (-((int) seq_result), ESRCH, ENOENT)) {
 		log_detail = ", firmware not found";
 		result = NM_PLATFORM_ERROR_NO_FIRMWARE;
+	} else if (   NM_IN_SET (-((int) seq_result), ERANGE)
+	           && change_link_type == CHANGE_LINK_TYPE_SET_MTU) {
+		log_detail = ", setting MTU to requested size is not possible";
+		result = NM_PLATFORM_ERROR_CANT_SET_MTU;
 	} else if (NM_IN_SET (-((int) seq_result), ENODEV)) {
 		log_level = LOGL_DEBUG;
 		result = NM_PLATFORM_ERROR_NOT_FOUND;
@@ -4484,13 +4494,14 @@ do_change_link_result (NMPlatform *platform,
 
 static NMPlatformError
 do_change_link (NMPlatform *platform,
+                ChangeLinkType change_link_type,
                 int ifindex,
                 struct nl_msg *nlmsg)
 {
 	WaitForNlResponseResult seq_result;
 
 	seq_result = do_change_link_request (platform, ifindex, nlmsg);
-	return do_change_link_result (platform, ifindex, seq_result);
+	return do_change_link_result (platform, change_link_type, ifindex, seq_result);
 }
 
 static gboolean
@@ -4584,7 +4595,7 @@ link_set_netns (NMPlatform *platform,
 		return FALSE;
 
 	NLA_PUT (nlmsg, IFLA_NET_NS_FD, 4, &netns_fd);
-	return do_change_link (platform, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
+	return do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
 
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
@@ -4614,7 +4625,7 @@ link_change_flags (NMPlatform *platform,
 	                          flags_set);
 	if (!nlmsg)
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
-	return do_change_link (platform, ifindex, nlmsg);
+	return do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg);
 }
 
 static gboolean
@@ -4683,7 +4694,7 @@ link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enable
 	    || !_nl_msg_new_link_set_afspec (nlmsg, mode, NULL))
 		g_return_val_if_reached (NM_PLATFORM_ERROR_BUG);
 
-	return do_change_link (platform, ifindex, nlmsg);
+	return do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg);
 }
 
 static gboolean
@@ -4698,7 +4709,7 @@ link_set_token (NMPlatform *platform, int ifindex, NMUtilsIPv6IfaceId iid)
 	if (!nlmsg || !_nl_msg_new_link_set_afspec (nlmsg, -1, &iid))
 		g_return_val_if_reached (FALSE);
 
-	return do_change_link (platform, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
+	return do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static gboolean
@@ -4806,7 +4817,7 @@ link_set_address (NMPlatform *platform, int ifindex, gconstpointer address, size
 		}
 	}
 
-	return do_change_link_result (platform, ifindex, seq_result);
+	return do_change_link_result (platform, ifindex, CHANGE_LINK_TYPE_UNSPEC, seq_result);
 
 nla_put_failure:
 	g_return_val_if_reached (NM_PLATFORM_ERROR_UNSPECIFIED);
@@ -4830,7 +4841,7 @@ link_set_name (NMPlatform *platform, int ifindex, const char *name)
 
 	NLA_PUT (nlmsg, IFLA_IFNAME, strlen (name) + 1, name);
 
-	return do_change_link (platform, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
+	return do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -4867,7 +4878,7 @@ link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 
 	NLA_PUT_U32 (nlmsg, IFLA_MTU, mtu);
 
-	return do_change_link (platform, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
+	return do_change_link (platform, CHANGE_LINK_TYPE_SET_MTU, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -5575,7 +5586,7 @@ link_vlan_change (NMPlatform *platform,
 	                                            new_n_egress_map))
 		g_return_val_if_reached (FALSE);
 
-	return do_change_link (platform, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
+	return do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static int
@@ -5655,7 +5666,7 @@ link_enslave (NMPlatform *platform, int master, int slave)
 
 	NLA_PUT_U32 (nlmsg, IFLA_MASTER, master);
 
-	return do_change_link (platform, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
+	return do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg) == NM_PLATFORM_ERROR_SUCCESS;
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
