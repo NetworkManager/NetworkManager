@@ -3027,8 +3027,17 @@ sysctl_set (NMPlatform *platform, const char *pathid, int dirfd, const char *pat
 		}
 	}
 	if (nwrote == -1 && errsv != EEXIST) {
-		_LOGE ("sysctl: failed to set '%s' to '%s': (%d) %s",
-		       path, value, errsv, strerror (errsv));
+		NMLogLevel level = LOGL_ERR;
+
+		if (   errsv == EINVAL
+		    && nm_utils_sysctl_ip_conf_is_path (AF_INET6, path, NULL, "mtu")) {
+			/* setting the MTU can fail under regular conditions. Suppress
+			 * logging a warning. */
+			level = LOGL_DEBUG;
+		}
+
+		_NMLOG (level, "sysctl: failed to set '%s' to '%s': (%d) %s",
+		        path, value, errsv, strerror (errsv));
 	} else if (nwrote < len - 1) {
 		_LOGE ("sysctl: failed to set '%s' to '%s' after three attempts",
 		       path, value);
