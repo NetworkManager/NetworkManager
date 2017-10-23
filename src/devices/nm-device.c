@@ -3932,6 +3932,12 @@ check_ip_state (NMDevice *self, gboolean may_fail)
 	if (nm_device_get_state (self) != NM_DEVICE_STATE_IP_CONFIG)
 		return;
 
+	/* Don't progress into IP_CHECK or SECONDARIES if we're waiting for the
+	 * master to enslave us. */
+	if (   nm_active_connection_get_master (NM_ACTIVE_CONNECTION (priv->act_request))
+	    && !priv->is_enslaved)
+		return;
+
 	s_ip4 = (NMSettingIPConfig *) nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP4_CONFIG);
 	if (s_ip4 && nm_streq0 (nm_setting_ip_config_get_method (s_ip4),
 	                        NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
@@ -4026,10 +4032,8 @@ nm_device_slave_notify_enslave (NMDevice *self, gboolean success)
 	}
 
 	if (activating) {
-		_set_ip_state (self, AF_INET, IP_DONE);
-		_set_ip_state (self, AF_INET6, IP_DONE);
 		if (success)
-			nm_device_queue_state (self, NM_DEVICE_STATE_SECONDARIES, NM_DEVICE_STATE_REASON_NONE);
+			check_ip_state (self, FALSE);
 		else
 			nm_device_queue_state (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_UNKNOWN);
 	} else
@@ -8022,12 +8026,6 @@ nm_device_activate_stage3_ip4_start (NMDevice *self)
 
 	g_assert (priv->ip4_state == IP_WAIT);
 
-	/* Slaves stay in IP_CONFIG state until master is ready, and then
-	 * they go directly to SECONDARIES without configuring IPv4.
-	 */
-	if (nm_active_connection_get_master (NM_ACTIVE_CONNECTION (priv->act_request)))
-		return TRUE;
-
 	_set_ip_state (self, AF_INET, IP_CONF);
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage3_ip4_config_start (self, &ip4_config, &failure_reason);
 	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
@@ -8069,12 +8067,6 @@ nm_device_activate_stage3_ip6_start (NMDevice *self)
 
 	g_assert (priv->ip6_state == IP_WAIT);
 
-	/* Slaves stay in IP_CONFIG state until master is ready, and then
-	 * they go directly to SECONDARIES without configuring IPv6.
-	 */
-	if (nm_active_connection_get_master (NM_ACTIVE_CONNECTION (priv->act_request)))
-		return TRUE;
-
 	_set_ip_state (self, AF_INET6, IP_CONF);
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage3_ip6_config_start (self, &ip6_config, &failure_reason);
 	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
@@ -8113,10 +8105,6 @@ nm_device_activate_stage3_ip6_start (NMDevice *self)
 static void
 activate_stage3_ip_config_start (NMDevice *self)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMActiveConnection *master;
-	NMDevice *master_device;
-
 	_set_ip_state (self, AF_INET, IP_WAIT);
 	_set_ip_state (self, AF_INET6, IP_WAIT);
 
@@ -8128,26 +8116,6 @@ activate_stage3_ip_config_start (NMDevice *self)
 	/* Device should be up before we can do anything with it */
 	if (!nm_platform_link_is_up (nm_device_get_platform (self), nm_device_get_ip_ifindex (self)))
 		_LOGW (LOGD_DEVICE, "interface %s not up for IP configuration", nm_device_get_ip_iface (self));
-
-	/* If the device is a slave, then we don't do any IP configuration but we
-	 * use the IP config stage to indicate to the master we're ready for
-	 * enslavement.  If the master is already activating, it will have tried to
-	 * enslave us when we changed state to IP_CONFIG, causing us to queue a
-	 * transition to SECONDARIES (or FAILED if the enslavement failed), with
-	 * our IP states set to IP_DONE either way.  If the master isn't yet
-	 * activating, then they'll still be in IP_WAIT.  Either way, we bail out
-	 * of IP config here.
-	 */
-	master = nm_active_connection_get_master (NM_ACTIVE_CONNECTION (priv->act_request));
-	if (master) {
-		master_device = nm_active_connection_get_device (master);
-		if (priv->ip4_state == IP_WAIT && priv->ip6_state == IP_WAIT) {
-			_LOGI (LOGD_DEVICE, "Activation: connection '%s' waiting on master '%s'",
-			       nm_connection_get_id (nm_device_get_applied_connection (self)),
-			       master_device ? nm_device_get_iface (master_device) : "(unknown)");
-		}
-		return;
-	}
 
 	/* IPv4 */
 	if (   nm_device_activate_ip4_state_in_wait (self)
