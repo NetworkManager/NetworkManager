@@ -4464,17 +4464,20 @@ retry:
 }
 
 static NMPlatformError
-do_change_link_result (NMPlatform *platform,
-                       ChangeLinkType change_link_type,
-                       int ifindex,
-                       WaitForNlResponseResult seq_result,
-                       const ChangeLinkData *data)
+do_change_link (NMPlatform *platform,
+                ChangeLinkType change_link_type,
+                int ifindex,
+                struct nl_msg *nlmsg,
+                const ChangeLinkData *data)
 {
+	WaitForNlResponseResult seq_result;
 	char s_buf[256];
 	NMPlatformError result = NM_PLATFORM_ERROR_SUCCESS;
 	NMLogLevel log_level = LOGL_DEBUG;
 	const char *log_result = "failure", *log_detail = "";
 	const NMPObject *obj_cache;
+
+	seq_result = do_change_link_request (platform, ifindex, nlmsg);
 
 	if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK) {
 		log_result = "success";
@@ -4512,19 +4515,6 @@ do_change_link_result (NMPlatform *platform,
 	        log_detail);
 
 	return result;
-}
-
-static NMPlatformError
-do_change_link (NMPlatform *platform,
-                ChangeLinkType change_link_type,
-                int ifindex,
-                struct nl_msg *nlmsg,
-                const ChangeLinkData *data)
-{
-	WaitForNlResponseResult seq_result;
-
-	seq_result = do_change_link_request (platform, ifindex, nlmsg);
-	return do_change_link_result (platform, change_link_type, ifindex, seq_result, data);
 }
 
 static gboolean
