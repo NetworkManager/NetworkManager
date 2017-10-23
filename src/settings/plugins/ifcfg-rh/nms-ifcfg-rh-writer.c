@@ -2958,6 +2958,13 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 		}
 	}
 
+	/* Note that we just wrote the connection to disk, and re-read it from there.
+	 * That is racy if somebody else modifies the connection.
+	 *
+	 * A better solution might be, to re-read the connection only based on the
+	 * in-memory representation of what we collected above. But the reader
+	 * does not yet allow to inject the configuration. */
+
 	if (out_reread || out_reread_same) {
 		gs_unref_object NMConnection *reread = NULL;
 		gs_free_error GError *local = NULL;
