@@ -1326,7 +1326,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	 * added to the automatic ones. Note that this is not currently supported by
 	 * the legacy 'network' service (ifup-eth).
 	 */
-	for (i = -1; i < 256; i++) {
+	for (i = -1;; i++) {
 		NMIPAddress *addr = NULL;
 
 		/* gateway will only be set if still unset. Hence, we don't leak gateway
@@ -1430,7 +1430,7 @@ make_ip4_setting (shvarFile *ifcfg,
 		/* Parse route file in new syntax */
 		route_ifcfg = utils_get_route_ifcfg (svFileGetName (ifcfg), FALSE);
 		if (route_ifcfg) {
-			for (i = 0; i < 256; i++) {
+			for (i = 0;; i++) {
 				NMIPRoute *route = NULL;
 
 				if (!read_one_ip4_route (route_ifcfg, i, &route, error)) {
