@@ -1197,6 +1197,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	gint priority;
 	char inet_buf[NM_UTILS_INET_ADDRSTRLEN];
 	const char *const *item;
+	guint32 route_table;
 
 	nm_assert (out_has_defroute && !*out_has_defroute);
 
@@ -1282,6 +1283,15 @@ make_ip4_setting (shvarFile *ifcfg,
 		return NULL;
 	}
 
+	/* the route table (policy routing) is ignored if we don't handle routes. */
+	route_table = svGetValueInt64 (ifcfg, "IPV4_ROUTE_TABLE", 10,
+	                               0, G_MAXUINT32, 0);
+	if (   route_table != 0
+	    && !routes_read) {
+		PARSE_WARNING ("'rule-' or 'rule6-' files are present; Policy routing (IPV4_ROUTE_TABLE) is ignored");
+		route_table = 0;
+	}
+
 	g_object_set (s_ip4,
 	              NM_SETTING_IP_CONFIG_METHOD, method,
 	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, !svGetValueBoolean (ifcfg, "PEERDNS", TRUE),
@@ -1290,8 +1300,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, !svGetValueBoolean (ifcfg, "IPV4_FAILURE_FATAL", FALSE),
 	              NM_SETTING_IP_CONFIG_ROUTE_METRIC, svGetValueInt64 (ifcfg, "IPV4_ROUTE_METRIC", 10,
 	                                                                  -1, G_MAXUINT32, -1),
-	              NM_SETTING_IP_CONFIG_ROUTE_TABLE, (guint) svGetValueInt64 (ifcfg, "IPV4_ROUTE_TABLE", 10,
-	                                                                         0, G_MAXUINT32, 0),
+	              NM_SETTING_IP_CONFIG_ROUTE_TABLE, (guint) route_table,
 	              NULL);
 
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0)
@@ -1614,6 +1623,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	gboolean never_default = FALSE;
 	gboolean ip6_privacy = FALSE, ip6_privacy_prefer_public_ip;
 	NMSettingIP6ConfigPrivacy ip6_privacy_val;
+	guint32 route_table;
 
 	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 
@@ -1715,6 +1725,15 @@ make_ip6_setting (shvarFile *ifcfg,
 	                      NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
 	g_free (str_value);
 
+	/* the route table (policy routing) is ignored if we don't handle routes. */
+	route_table = svGetValueInt64 (ifcfg, "IPV6_ROUTE_TABLE", 10,
+	                               0, G_MAXUINT32, 0);
+	if (   route_table != 0
+	    && !routes_read) {
+		PARSE_WARNING ("'rule-' or 'rule6-' files are present; Policy routing (IPV6_ROUTE_TABLE) is ignored");
+		route_table = 0;
+	}
+
 	g_object_set (s_ip6,
 	              NM_SETTING_IP_CONFIG_METHOD, method,
 	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, !svGetValueBoolean (ifcfg, "IPV6_PEERDNS", TRUE),
@@ -1723,8 +1742,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, !svGetValueBoolean (ifcfg, "IPV6_FAILURE_FATAL", FALSE),
 	              NM_SETTING_IP_CONFIG_ROUTE_METRIC, svGetValueInt64 (ifcfg, "IPV6_ROUTE_METRIC", 10,
 	                                                                  -1, G_MAXUINT32, -1),
-	              NM_SETTING_IP_CONFIG_ROUTE_TABLE, (guint) svGetValueInt64 (ifcfg, "IPV6_ROUTE_TABLE", 10,
-	                                                                         0, G_MAXUINT32, 0),
+	              NM_SETTING_IP_CONFIG_ROUTE_TABLE, (guint) route_table,
 	              NM_SETTING_IP6_CONFIG_IP6_PRIVACY, ip6_privacy_val,
 	              NULL);
 

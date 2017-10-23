@@ -2884,6 +2884,15 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 			             has_complex_routes_v4 ? "" : "6");
 			return FALSE;
 		}
+		if (   (   s_ip4
+		        && nm_setting_ip_config_get_route_table (s_ip4) != 0)
+		    || (   s_ip6
+		        && nm_setting_ip_config_get_route_table (s_ip6) != 0)) {
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+			             "Cannot configure a route table for policy routing on a connection that has an associated 'rule%s-' file",
+			             has_complex_routes_v4 ? "" : "6");
+			return FALSE;
+		}
 		route_ignore = TRUE;
 	}
 
