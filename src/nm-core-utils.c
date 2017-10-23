@@ -2525,63 +2525,39 @@ nm_utils_monotonic_timestamp_as_boottime (gint64 timestamp, gint64 timestamp_ns_
 #define IPV6_PROPERTY_DIR "/proc/sys/net/ipv6/conf/"
 #define IPV4_PROPERTY_DIR "/proc/sys/net/ipv4/conf/"
 G_STATIC_ASSERT (sizeof (IPV4_PROPERTY_DIR) == sizeof (IPV6_PROPERTY_DIR));
-G_STATIC_ASSERT (NM_STRLEN (IPV6_PROPERTY_DIR) + IFNAMSIZ + 60 == NM_UTILS_IP_PROPERTY_PATH_BUFSIZE);
+G_STATIC_ASSERT (NM_STRLEN (IPV6_PROPERTY_DIR) + IFNAMSIZ + 60 == NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE);
 
-static const char *
-_get_property_path (char *buf,
-                    const char *ifname,
-                    const char *property,
-                    gboolean ipv6)
+/**
+ * nm_utils_sysctl_ip_conf_path:
+ * @addr_family: either AF_INET or AF_INET6.
+ * @buf: the output buffer where to write the path. It
+ *   must be at least NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE bytes
+ *   long.
+ * @ifname: an interface name
+ * @property: a property name
+ *
+ * Returns: the path to IPv6 property @property on @ifname. Note that
+ * this returns the input argument @buf.
+ */
+const char *
+nm_utils_sysctl_ip_conf_path (int addr_family, char *buf, const char *ifname, const char *property)
 {
 	int len;
 
 	nm_assert (buf);
+	nm_assert_addr_family (addr_family);
 
 	ifname = NM_ASSERT_VALID_PATH_COMPONENT (ifname);
 	property = NM_ASSERT_VALID_PATH_COMPONENT (property);
 
 	len = g_snprintf (buf,
-	                  NM_UTILS_IP_PROPERTY_PATH_BUFSIZE,
+	                  NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE,
 	                  "%s%s/%s",
-	                  ipv6 ? IPV6_PROPERTY_DIR : IPV4_PROPERTY_DIR,
+	                  addr_family == AF_INET6 ? IPV6_PROPERTY_DIR : IPV4_PROPERTY_DIR,
 	                  ifname,
 	                  property);
-	g_assert (len < NM_UTILS_IP_PROPERTY_PATH_BUFSIZE - 1);
+	g_assert (len < NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE - 1);
 	return buf;
-}
-
-/**
- * nm_utils_ip6_property_path:
- * @buf: the output buffer where to write the path. It
- *   must be at least NM_UTILS_IP_PROPERTY_PATH_BUFSIZE bytes
- *   long.
- * @ifname: an interface name
- * @property: a property name
- *
- * Returns: the path to IPv6 property @property on @ifname. Note that
- * this returns the input argument @buf.
- */
-const char *
-nm_utils_ip6_property_path (char *buf, const char *ifname, const char *property)
-{
-	return _get_property_path (buf, ifname, property, TRUE);
-}
-
-/**
- * nm_utils_ip4_property_path:
- * @buf: the output buffer where to write the path. It
- *   must be at least NM_UTILS_IP_PROPERTY_PATH_BUFSIZE bytes
- *   long.
- * @ifname: an interface name
- * @property: a property name
- *
- * Returns: the path to IPv6 property @property on @ifname. Note that
- * this returns the input argument @buf.
- */
-const char *
-nm_utils_ip4_property_path (char *buf, const char *ifname, const char *property)
-{
-	return _get_property_path (buf, ifname, property, FALSE);
 }
 
 gboolean
