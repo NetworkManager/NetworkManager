@@ -391,7 +391,7 @@ device_state_changed (NMDevice *device,
 		 * where a retry attempt would just fail again.
 		 */
 		if (connection) {
-			nm_settings_connection_set_autoconnect_blocked_reason (connection,
+			nm_settings_connection_autoconnect_blocked_reason_set (connection,
 			                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED);
 		}
 		break;

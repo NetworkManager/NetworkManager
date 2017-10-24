@@ -485,11 +485,11 @@ handle_auth_or_fail (NMDeviceMacsec *self,
 	applied_connection = nm_act_request_get_applied_connection (req);
 	settings_connection = nm_act_request_get_settings_connection (req);
 
-	tries_left = nm_settings_connection_get_autoconnect_retries (settings_connection);
+	tries_left = nm_settings_connection_autoconnect_retries_get (settings_connection);
 	if (tries_left == 0)
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	if (tries_left > 0)
-		nm_settings_connection_set_autoconnect_retries (settings_connection, tries_left - 1);
+		nm_settings_connection_autoconnect_retries_set (settings_connection, tries_left - 1);
 
 	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
 
@@ -748,7 +748,7 @@ reset_autoconnect_retries (NMDevice *device)
 		connection = nm_act_request_get_settings_connection (req);
 		g_return_if_fail (connection);
 		/* Reset autoconnect retries on success, failure, or when deactivating */
-		nm_settings_connection_reset_autoconnect_retries (connection);
+		nm_settings_connection_autoconnect_retries_reset (connection);
 	}
 }
 

@@ -213,15 +213,15 @@ void nm_settings_connection_add_seen_bssid (NMSettingsConnection *self,
 
 void nm_settings_connection_read_and_fill_seen_bssids (NMSettingsConnection *self);
 
-int nm_settings_connection_get_autoconnect_retries (NMSettingsConnection *self);
-void nm_settings_connection_set_autoconnect_retries (NMSettingsConnection *self,
+int nm_settings_connection_autoconnect_retries_get (NMSettingsConnection *self);
+void nm_settings_connection_autoconnect_retries_set (NMSettingsConnection *self,
                                                      int retries);
-void nm_settings_connection_reset_autoconnect_retries (NMSettingsConnection *self);
+void nm_settings_connection_autoconnect_retries_reset (NMSettingsConnection *self);
 
-gint32 nm_settings_connection_get_autoconnect_retry_time (NMSettingsConnection *self);
+gint32 nm_settings_connection_autoconnect_blocked_until_get (NMSettingsConnection *self);
 
-NMSettingsAutoconnectBlockedReason nm_settings_connection_get_autoconnect_blocked_reason (NMSettingsConnection *self);
-void                               nm_settings_connection_set_autoconnect_blocked_reason (NMSettingsConnection *self,
+NMSettingsAutoconnectBlockedReason nm_settings_connection_autoconnect_blocked_reason_get (NMSettingsConnection *self);
+void                               nm_settings_connection_autoconnect_blocked_reason_set (NMSettingsConnection *self,
                                                                                           NMSettingsAutoconnectBlockedReason reason);
 
 gboolean nm_settings_connection_can_autoconnect (NMSettingsConnection *self);
