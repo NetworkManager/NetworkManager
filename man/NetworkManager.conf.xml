@@ -742,6 +742,11 @@ ipv6.ip6-privacy=0
           <listitem><para>If left unspecified, the default value
           "<literal>optional</literal>" will be used.</para></listitem>
         </varlistentry>
+        <varlistentry>
+          <term><varname>802-1x.auth-retries</varname></term>
+          <listitem><para>If left unspecified, the default value is 3 tries before failing the connection.
+          </para></listitem>
+        </varlistentry>
       </variablelist>
     </para>
     </refsect2>

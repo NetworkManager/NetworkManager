@@ -409,8 +409,8 @@ write_8021x_setting (NMConnection *connection,
 	GString *phase2_auth;
 	GString *str;
 	guint32 i, num;
-	gint timeout;
 	gsize size;
+	int vint;
 
 	s_8021x = nm_connection_get_setting_802_1x (connection);
 	if (!s_8021x) {
@@ -562,11 +562,11 @@ write_8021x_setting (NMConnection *connection,
 	svSetValueStr (ifcfg, "IEEE_8021X_PHASE2_DOMAIN_SUFFIX_MATCH",
 	               nm_setting_802_1x_get_phase2_domain_suffix_match (s_8021x));
 
-	timeout = nm_setting_802_1x_get_auth_timeout (s_8021x);
-	if (timeout > 0)
-		svSetValueInt64 (ifcfg, "IEEE_8021X_AUTH_TIMEOUT", timeout);
-	else
-		svUnsetValue (ifcfg, "IEEE_8021X_AUTH_TIMEOUT");
+	vint = nm_setting_802_1x_get_auth_timeout (s_8021x);
+	svSetValueInt64_cond (ifcfg, "IEEE_8021X_AUTH_TIMEOUT", vint > 0, vint);
+
+	vint = nm_setting_802_1x_get_auth_retries (s_8021x);
+	svSetValueInt64_cond (ifcfg, "IEEE_8021X_AUTH_RETRIES", vint > 0, vint);
 
 	if (!write_8021x_certs (s_8021x, secrets, blobs, FALSE, ifcfg, error))
 		return FALSE;
