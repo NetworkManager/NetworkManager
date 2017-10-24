@@ -156,7 +156,6 @@ const char *nm_config_data_get_config_description (const NMConfigData *config_da
 gboolean nm_config_data_has_group (const NMConfigData *self, const char *group);
 gboolean nm_config_data_has_value (const NMConfigData *self, const char *group, const char *key, NMConfigGetValueFlags flags);
 char *nm_config_data_get_value (const NMConfigData *config_data, const char *group, const char *key, NMConfigGetValueFlags flags);
-const char *nm_config_data_get_value_cached (const NMConfigData *config_data, const char *group, const char *key, NMConfigGetValueFlags flags);
 gint nm_config_data_get_value_boolean (const NMConfigData *self, const char *group, const char *key, gint default_value);
 gint64 nm_config_data_get_value_int64 (const NMConfigData *self, const char *group, const char *key, guint base, gint64 min, gint64 max, gint64 fallback);
 

@@ -2547,7 +2547,6 @@ nm_settings_connection_autoconnect_retries_get (NMSettingsConnection *self)
 	if (G_UNLIKELY (priv->autoconnect_retries == AUTOCONNECT_RETRIES_UNSET)) {
 		NMSettingConnection *s_con;
 		int retries = -1;
-		const char *value;
 
 		s_con = nm_connection_get_setting_connection ((NMConnection *) self);
 		if (s_con)
@@ -2555,14 +2554,11 @@ nm_settings_connection_autoconnect_retries_get (NMSettingsConnection *self)
 
 		/* -1 means 'default' */
 		if (retries == -1) {
-			value = nm_config_data_get_value_cached (NM_CONFIG_GET_DATA,
-			                                         NM_CONFIG_KEYFILE_GROUP_MAIN,
-			                                         "autoconnect-retries-default",
-			                                         NM_CONFIG_GET_VALUE_STRIP);
-
-			retries = _nm_utils_ascii_str_to_int64 (value,
-			                                        10, 0, G_MAXINT32,
-			                                        AUTOCONNECT_RETRIES_DEFAULT);
+			retries = nm_config_data_get_value_int64 (NM_CONFIG_GET_DATA,
+			                                          NM_CONFIG_KEYFILE_GROUP_MAIN,
+			                                          "autoconnect-retries-default",
+			                                          10, 0, G_MAXINT32,
+			                                          AUTOCONNECT_RETRIES_DEFAULT);
 		}
 
 		/* 0 means 'forever', which is translated to a retry count of -1 */

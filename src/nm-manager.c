@@ -2548,13 +2548,13 @@ platform_query_devices (NMManager *self)
 	gs_unref_ptrarray GPtrArray *links = NULL;
 	int i;
 	gboolean guess_assume;
-	const char *order;
+	gs_free char *order = NULL;
 
 	guess_assume = nm_config_get_first_start (nm_config_get ());
-	order = nm_config_data_get_value_cached (NM_CONFIG_GET_DATA,
-	                                         NM_CONFIG_KEYFILE_GROUP_MAIN,
-	                                         NM_CONFIG_KEYFILE_KEY_MAIN_SLAVES_ORDER,
-	                                         NM_CONFIG_GET_VALUE_STRIP);
+	order = nm_config_data_get_value (NM_CONFIG_GET_DATA,
+	                                  NM_CONFIG_KEYFILE_GROUP_MAIN,
+	                                  NM_CONFIG_KEYFILE_KEY_MAIN_SLAVES_ORDER,
+	                                  NM_CONFIG_GET_VALUE_STRIP);
 	links = nm_platform_link_get_all (priv->platform, !nm_streq0 (order, "index"));
 	if (!links)
 		return;
@@ -3139,14 +3139,15 @@ autoconnect_slaves (NMManager *self,
 	if (should_connect_slaves (NM_CONNECTION (master_connection), master_device)) {
 		gs_free SlaveConnectionInfo *slaves = NULL;
 		guint i, n_slaves = 0;
-		const char *value;
 
 		slaves = find_slaves (self, master_connection, master_device, &n_slaves);
 		if (n_slaves > 1) {
-			value = nm_config_data_get_value_cached (NM_CONFIG_GET_DATA,
-			                                         NM_CONFIG_KEYFILE_GROUP_MAIN,
-			                                         NM_CONFIG_KEYFILE_KEY_MAIN_SLAVES_ORDER,
-			                                         NM_CONFIG_GET_VALUE_STRIP);
+			gs_free char *value = NULL;
+
+			value = nm_config_data_get_value (NM_CONFIG_GET_DATA,
+			                                  NM_CONFIG_KEYFILE_GROUP_MAIN,
+			                                  NM_CONFIG_KEYFILE_KEY_MAIN_SLAVES_ORDER,
+			                                  NM_CONFIG_GET_VALUE_STRIP);
 			g_qsort_with_data (slaves, n_slaves, sizeof (slaves[0]),
 			                   compare_slaves,
 			                   GINT_TO_POINTER (!nm_streq0 (value, "index")));
