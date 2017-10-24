@@ -240,6 +240,7 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_nm_platform_error_to_string, NMPlatformError
 	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_NO_FIRMWARE, "no-firmware"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_OPNOTSUPP,   "not-supported"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_NETLINK,     "netlink"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_ERROR_CANT_SET_MTU, "cant-set-mtu"),
 	NM_UTILS_LOOKUP_ITEM_IGNORE (_NM_PLATFORM_ERROR_MININT),
 );
 
@@ -413,6 +414,7 @@ nm_platform_sysctl_set_ip6_hop_limit_safe (NMPlatform *self, const char *iface, 
 {
 	const char *path;
 	gint64 cur;
+	char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
 
 	_CHECK_SELF (self, klass, FALSE);
 
@@ -424,7 +426,7 @@ nm_platform_sysctl_set_ip6_hop_limit_safe (NMPlatform *self, const char *iface, 
 	if (value < 10)
 		return FALSE;
 
-	path = nm_utils_ip6_property_path (iface, "hop_limit");
+	path = nm_utils_sysctl_ip_conf_path (AF_INET6, buf, iface, "hop_limit");
 	cur = nm_platform_sysctl_get_int_checked (self, NMP_SYSCTL_PATHID_ABSOLUTE (path), 10, 1, G_MAXINT32, -1);
 
 	/* only allow increasing the hop-limit to avoid DOS by an attacker
@@ -1498,7 +1500,7 @@ nm_platform_link_set_noarp (NMPlatform *self, int ifindex)
  *
  * Set interface MTU.
  */
-gboolean
+NMPlatformError
 nm_platform_link_set_mtu (NMPlatform *self, int ifindex, guint32 mtu)
 {
 	_CHECK_SELF (self, klass, FALSE);

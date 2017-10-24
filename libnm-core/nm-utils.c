@@ -32,6 +32,7 @@
 #include <libintl.h>
 #include <gmodule.h>
 #include <sys/stat.h>
+#include <net/if.h>
 
 #if WITH_JANSSON
 #include <jansson.h>
@@ -3675,36 +3676,41 @@ _nm_utils_generate_mac_address_mask_parse (const char *value,
 gboolean
 nm_utils_is_valid_iface_name (const char *name, GError **error)
 {
-	g_return_val_if_fail (name != NULL, FALSE);
+	int i;
 
-	if (*name == '\0') {
+	g_return_val_if_fail (name, FALSE);
+
+	if (name[0] == '\0') {
 		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 		                     _("interface name is too short"));
 		return FALSE;
 	}
 
-	if (strlen (name) >= 16) {
-		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-		                     _("interface name is longer than 15 characters"));
-		return FALSE;
-	}
-
-	if (!strcmp (name, ".") || !strcmp (name, "..")) {
+	if (   name[0] == '.'
+	    && (   name[1] == '\0'
+	        || (   name[1] == '.'
+	            && name[2] == '\0'))) {
 		g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 		                     _("interface name is reserved"));
 		return FALSE;
 	}
 
-	while (*name) {
-		if (*name == '/' || g_ascii_isspace (*name)) {
+	for (i = 0; i < IFNAMSIZ; i++) {
+		char ch = name[i];
+
+		if (ch == '\0')
+			return TRUE;
+		if (   NM_IN_SET (ch, '/', ':')
+		    || g_ascii_isspace (ch)) {
 			g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 			                     _("interface name contains an invalid character"));
 			return FALSE;
 		}
-		name++;
 	}
 
-	return TRUE;
+	g_set_error_literal (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+	                     _("interface name is longer than 15 characters"));
+	return FALSE;
 }
 
 /**

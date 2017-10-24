@@ -585,7 +585,7 @@ link_set_address (NMPlatform *platform, int ifindex, gconstpointer addr, size_t 
 	return NM_PLATFORM_ERROR_SUCCESS;
 }
 
-static gboolean
+static NMPlatformError
 link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
@@ -593,13 +593,13 @@ link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 
 	if (!device) {
 		_LOGE ("failure changing link: netlink error (No such device)");
-		return FALSE;
+		return NM_PLATFORM_ERROR_EXISTS;
 	}
 
 	obj_tmp = nmp_object_clone (device->obj, FALSE);
 	obj_tmp->link.mtu = mtu;
 	link_set_obj (platform, device, obj_tmp);
-	return TRUE;
+	return NM_PLATFORM_ERROR_SUCCESS;
 }
 
 static gboolean

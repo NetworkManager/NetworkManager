@@ -272,6 +272,32 @@ test_nm_utils_log_connection_diff (void)
 
 /*****************************************************************************/
 
+static void
+do_test_sysctl_ip_conf (int addr_family,
+                        const char *iface,
+                        const char *property)
+{
+	char path[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
+	const char *pp;
+
+	pp = nm_utils_sysctl_ip_conf_path (addr_family, path, iface, property);
+	g_assert (pp == path);
+	g_assert (path[0] == '/');
+
+	g_assert (nm_utils_sysctl_ip_conf_is_path (addr_family, path, iface, property));
+	g_assert (nm_utils_sysctl_ip_conf_is_path (addr_family, path, NULL, property));
+}
+
+static void
+test_nm_utils_sysctl_ip_conf_path (void)
+{
+	do_test_sysctl_ip_conf (AF_INET6, "a", "mtu");
+	do_test_sysctl_ip_conf (AF_INET6, "eth0", "mtu");
+	do_test_sysctl_ip_conf (AF_INET6, "e23456789012345", "mtu");
+}
+
+/*****************************************************************************/
+
 static NMConnection *
 _match_connection_new (void)
 {
@@ -1715,6 +1741,8 @@ main (int argc, char **argv)
 	g_test_add_func ("/general/nm_utils_ip6_address_clear_host_address", test_nm_utils_ip6_address_clear_host_address);
 	g_test_add_func ("/general/nm_utils_ip6_address_same_prefix", test_nm_utils_ip6_address_same_prefix);
 	g_test_add_func ("/general/nm_utils_log_connection_diff", test_nm_utils_log_connection_diff);
+
+	g_test_add_func ("/general/nm_utils_sysctl_ip_conf_path", test_nm_utils_sysctl_ip_conf_path);
 
 	g_test_add_func ("/general/exp10", test_nm_utils_exp10);
 

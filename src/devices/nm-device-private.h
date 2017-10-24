@@ -118,6 +118,8 @@ gint64 nm_device_get_configured_mtu_from_connection_default (NMDevice *self,
 
 guint32 nm_device_get_configured_mtu_for_wired (NMDevice *self, gboolean *out_is_user_config);
 
+void nm_device_commit_mtu (NMDevice *self);
+
 /*****************************************************************************/
 
 #define NM_DEVICE_CLASS_DECLARE_TYPES(klass, conn_type, ...) \
