@@ -663,6 +663,7 @@ gboolean nm_device_unrealize          (NMDevice *device,
 void nm_device_update_from_platform_link (NMDevice *self,
                                           const NMPlatformLink *plink);
 
+void nm_device_autoconnect_retries_reset (NMDevice *device, GType required_applied_setting);
 gboolean nm_device_get_autoconnect (NMDevice *device);
 void nm_device_set_autoconnect_intern (NMDevice *device, gboolean autoconnect);
 void nm_device_emit_recheck_auto_activate (NMDevice *device);

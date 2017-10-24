@@ -738,21 +738,6 @@ link_changed (NMDevice *device,
 
 
 static void
-reset_autoconnect_retries (NMDevice *device)
-{
-	NMActRequest *req;
-	NMSettingsConnection *connection;
-
-	req = nm_device_get_act_request (device);
-	if (req) {
-		connection = nm_act_request_get_settings_connection (req);
-		g_return_if_fail (connection);
-		/* Reset autoconnect retries on success, failure, or when deactivating */
-		nm_settings_connection_autoconnect_retries_reset (connection);
-	}
-}
-
-static void
 device_state_changed (NMDevice *device,
                       NMDeviceState new_state,
                       NMDeviceState old_state,
@@ -764,7 +749,7 @@ device_state_changed (NMDevice *device,
 	if (   new_state == NM_DEVICE_STATE_ACTIVATED
 	    || new_state == NM_DEVICE_STATE_FAILED
 	    || new_state == NM_DEVICE_STATE_DISCONNECTED)
-		reset_autoconnect_retries (device);
+		nm_device_autoconnect_retries_reset (device, G_TYPE_NONE);
 }
 
 /******************************************************************/

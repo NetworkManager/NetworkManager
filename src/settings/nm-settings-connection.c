@@ -2576,9 +2576,12 @@ void
 nm_settings_connection_autoconnect_retries_set (NMSettingsConnection *self,
                                                 int retries)
 {
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+	NMSettingsConnectionPrivate *priv;
 
+	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
 	nm_assert (retries == AUTOCONNECT_RETRIES_UNSET || retries >= 0);
+
+	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
 	if (priv->autoconnect_retries != retries) {
 		_LOGT ("autoconnect-retries: set %d", retries);

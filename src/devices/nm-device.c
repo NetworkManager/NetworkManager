@@ -4213,6 +4213,29 @@ nm_device_set_enabled (NMDevice *self, gboolean enabled)
 		NM_DEVICE_GET_CLASS (self)->set_enabled (self, enabled);
 }
 
+void
+nm_device_autoconnect_retries_reset (NMDevice *device, GType required_applied_setting)
+{
+	NMActRequest *req;
+	NMSettingsConnection *connection;
+
+	req = nm_device_get_act_request (device);
+	if (!req)
+		return;
+
+	if (   !NM_IN_SET (required_applied_setting, G_TYPE_INVALID, G_TYPE_NONE)
+	    && !nm_device_get_applied_setting (device, required_applied_setting)) {
+		/* if the setting doesn't have the required setting in the applied
+		 * connection, we do nothing. */
+		return;
+	}
+
+	connection = nm_act_request_get_settings_connection (req);
+
+	/* Reset autoconnect retries on success, failure, or when deactivating */
+	nm_settings_connection_autoconnect_retries_reset (connection);
+}
+
 /**
  * nm_device_get_autoconnect:
  * @self: the #NMDevice
