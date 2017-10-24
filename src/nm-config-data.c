@@ -211,12 +211,34 @@ nm_config_data_get_value_boolean (const NMConfigData *self, const char *group, c
 	g_return_val_if_fail (key && *key, default_value);
 
 	/* when parsing the boolean, base it on the raw value from g_key_file_get_value(). */
-	str = g_key_file_get_value (NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile, group, key, NULL);
+	str = nm_config_keyfile_get_value (NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile, group, key, NM_CONFIG_GET_VALUE_RAW);
 	if (str) {
 		value = nm_config_parse_boolean (str, default_value);
 		g_free (str);
 	}
 	return value;
+}
+
+gint64
+nm_config_data_get_value_int64 (const NMConfigData *self, const char *group, const char *key, guint base, gint64 min, gint64 max, gint64 fallback)
+{
+	int errsv;
+	gint64 val;
+	char *str;
+
+	g_return_val_if_fail (NM_IS_CONFIG_DATA (self), fallback);
+	g_return_val_if_fail (group && *group, fallback);
+	g_return_val_if_fail (key && *key, fallback);
+
+	str = nm_config_keyfile_get_value (NM_CONFIG_DATA_GET_PRIVATE (self)->keyfile, group, key, NM_CONFIG_GET_VALUE_NONE);
+	val = _nm_utils_ascii_str_to_int64 (str, base, min, max, fallback);
+	if (str) {
+		/* preserve errno from the parsing. */
+		errsv = errno;
+		g_free (str);
+		errno = errsv;
+	}
+	return val;
 }
 
 char **
