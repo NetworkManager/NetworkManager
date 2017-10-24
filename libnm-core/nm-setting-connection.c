@@ -1665,7 +1665,9 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 *
 	 * The number of times a connection should be tried when autoactivating before
 	 * giving up. Zero means forever, -1 means the global default (4 times if not
-	 * overridden). Setting this to 1 means to try activation once and never retry.
+	 * overridden). Setting this to 1 means to try activation only once before
+	 * blocking autoconnect. Note that after a timeout, NetworkManager will try
+	 * to autoconnect again.
 	 */
 	/* ---ifcfg-rh---
 	 * property: autoconnect-retries
