@@ -1458,9 +1458,10 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 {
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 	NMPlatformIP4Address address;
-	NMIP4Config *config;
 	guint32 u32, route_metric;
+	NMSettingIPConfig *s_ip;
 	guint32 route_table;
+	NMIP4Config *config;
 	GVariantIter *iter;
 	const char *str;
 	GVariant *v;
@@ -1615,12 +1616,14 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 		never_default = b;
 
 	/* Merge in user overrides from the NMConnection's IPv4 setting */
+	s_ip = nm_connection_get_setting_ip4_config (_get_applied_connection (self));
 	nm_ip4_config_merge_setting (config,
-	                             nm_connection_get_setting_ip4_config (_get_applied_connection (self)),
+	                             s_ip,
 	                             route_table,
 	                             route_metric);
 
-	if (!never_default) {
+	if (   !never_default
+	    && !nm_setting_ip_config_get_never_default (s_ip)) {
 		const NMPlatformIP4Route r = {
 			.ifindex   = ip_ifindex,
 			.rt_source = NM_IP_CONFIG_SOURCE_VPN,
@@ -1658,6 +1661,7 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 	NMPlatformIP6Address address;
 	guint32 u32, route_metric;
+	NMSettingIPConfig *s_ip;
 	guint32 route_table;
 	NMIP6Config *config;
 	GVariantIter *iter;
@@ -1802,12 +1806,14 @@ next:
 		never_default = b;
 
 	/* Merge in user overrides from the NMConnection's IPv6 setting */
+	s_ip = nm_connection_get_setting_ip6_config (_get_applied_connection (self));
 	nm_ip6_config_merge_setting (config,
-	                             nm_connection_get_setting_ip6_config (_get_applied_connection (self)),
+	                             s_ip,
 	                             route_table,
 	                             route_metric);
 
-	if (!never_default) {
+	if (   !never_default
+	    && !nm_setting_ip_config_get_never_default (s_ip)) {
 		const NMPlatformIP6Route r = {
 			.ifindex   = ip_ifindex,
 			.rt_source = NM_IP_CONFIG_SOURCE_VPN,
