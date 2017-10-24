@@ -5785,7 +5785,11 @@ ip4_config_merge_and_apply (NMDevice *self,
 		if (s_ip4) {
 			ignore_auto_routes = nm_setting_ip_config_get_ignore_auto_routes (s_ip4);
 			ignore_auto_dns = nm_setting_ip_config_get_ignore_auto_dns (s_ip4);
-			ignore_default_routes = nm_setting_ip_config_get_never_default (s_ip4);
+
+			/* if the connection has an explicit gateway, we also ignore
+			 * the default routes from other sources. */
+			ignore_default_routes =    nm_setting_ip_config_get_never_default (s_ip4)
+			                        || nm_setting_ip_config_get_gateway (s_ip4);
 		}
 	}
 
@@ -6439,7 +6443,11 @@ ip6_config_merge_and_apply (NMDevice *self,
 
 			ignore_auto_routes = nm_setting_ip_config_get_ignore_auto_routes (s_ip6);
 			ignore_auto_dns = nm_setting_ip_config_get_ignore_auto_dns (s_ip6);
-			ignore_default_routes = nm_setting_ip_config_get_never_default (s_ip6);
+
+			/* if the connection has an explicit gateway, we also ignore
+			 * the default routes from other sources. */
+			ignore_default_routes =    nm_setting_ip_config_get_never_default (s_ip6)
+			                        || nm_setting_ip_config_get_gateway (s_ip6);
 
 			if (nm_setting_ip6_config_get_addr_gen_mode (ip6) == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64)
 				token = nm_setting_ip6_config_get_token (ip6);
