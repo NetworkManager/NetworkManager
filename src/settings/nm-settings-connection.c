@@ -2599,6 +2599,19 @@ nm_settings_connection_autoconnect_retries_reset (NMSettingsConnection *self)
 	nm_settings_connection_autoconnect_retries_set (self, AUTOCONNECT_RETRIES_UNSET);
 }
 
+gboolean
+nm_settings_connection_autoconnect_retries_try_next (NMSettingsConnection *self)
+{
+	int tries;
+
+	tries = nm_settings_connection_autoconnect_retries_get (self);
+	if (tries == 0)
+		return FALSE;
+	if (tries > 0)
+		nm_settings_connection_autoconnect_retries_set (self, tries - 1);
+	return TRUE;
+}
+
 gint32
 nm_settings_connection_autoconnect_blocked_until_get (NMSettingsConnection *self)
 {

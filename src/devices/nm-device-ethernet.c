@@ -667,16 +667,12 @@ handle_auth_or_fail (NMDeviceEthernet *self,
 	const char *setting_name;
 	NMConnection *applied_connection;
 	NMSettingsConnection *settings_connection;
-	int tries_left;
 
 	applied_connection = nm_act_request_get_applied_connection (req);
 	settings_connection = nm_act_request_get_settings_connection (req);
 
-	tries_left = nm_settings_connection_autoconnect_retries_get (settings_connection);
-	if (tries_left == 0)
+	if (!nm_settings_connection_autoconnect_retries_try_next (settings_connection))
 		return NM_ACT_STAGE_RETURN_FAILURE;
-	if (tries_left > 0)
-		nm_settings_connection_autoconnect_retries_set (settings_connection, tries_left - 1);
 
 	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
 
