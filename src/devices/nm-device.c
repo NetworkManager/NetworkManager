@@ -4213,29 +4213,6 @@ nm_device_set_enabled (NMDevice *self, gboolean enabled)
 		NM_DEVICE_GET_CLASS (self)->set_enabled (self, enabled);
 }
 
-void
-nm_device_autoconnect_retries_reset (NMDevice *device, GType required_applied_setting)
-{
-	NMActRequest *req;
-	NMSettingsConnection *connection;
-
-	req = nm_device_get_act_request (device);
-	if (!req)
-		return;
-
-	if (   !NM_IN_SET (required_applied_setting, G_TYPE_INVALID, G_TYPE_NONE)
-	    && !nm_device_get_applied_setting (device, required_applied_setting)) {
-		/* if the setting doesn't have the required setting in the applied
-		 * connection, we do nothing. */
-		return;
-	}
-
-	connection = nm_act_request_get_settings_connection (req);
-
-	/* Reset autoconnect retries on success, failure, or when deactivating */
-	nm_settings_connection_autoconnect_retries_reset (connection);
-}
-
 /**
  * nm_device_get_autoconnect:
  * @self: the #NMDevice
@@ -14044,6 +14021,52 @@ nm_device_get_supplicant_timeout (NMDevice *self)
 	                                               self);
 	return _nm_utils_ascii_str_to_int64 (value, 10, 1, G_MAXINT32,
 	                                     SUPPLICANT_DEFAULT_TIMEOUT);
+}
+
+gboolean
+nm_device_802_1x_auth_retries_try_next (NMDevice *self, int *p_auth_retries)
+{
+	NMConnection *applied_connection;
+	NMSetting8021x *security;
+	int auth_retries = *p_auth_retries;
+
+	if (G_UNLIKELY (auth_retries == NM_DEVICE_802_1X_AUTH_RETRIES_UNSET)) {
+		auth_retries = -1;
+
+		applied_connection = nm_device_get_applied_connection (NM_DEVICE (self));
+		if (applied_connection) {
+			security = nm_connection_get_setting_802_1x (applied_connection);
+			if (security)
+				auth_retries = nm_setting_802_1x_get_auth_retries (security);
+		}
+
+		if (auth_retries == -1) {
+			gs_free char *value = NULL;
+
+			value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+			                                               "802-1x.auth-retries",
+			                                               self);
+			auth_retries = _nm_utils_ascii_str_to_int64 (value, 10, -1, G_MAXINT32, -1);
+		}
+
+		if (auth_retries == 0)
+			auth_retries = NM_DEVICE_802_1X_AUTH_RETRIES_INFINITY;
+		else if (auth_retries == -1)
+			auth_retries = NM_DEVICE_802_1X_AUTH_RETRIES_DEFAULT;
+		else
+			nm_assert (auth_retries > 0);
+
+		*p_auth_retries = auth_retries;
+	}
+
+	if (auth_retries == NM_DEVICE_802_1X_AUTH_RETRIES_INFINITY)
+		return TRUE;
+	if (auth_retries <= 0) {
+		nm_assert (auth_retries == 0);
+		return FALSE;
+	}
+	(*p_auth_retries)--;
+	return TRUE;
 }
 
 /*****************************************************************************/

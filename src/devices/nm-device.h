@@ -663,7 +663,6 @@ gboolean nm_device_unrealize          (NMDevice *device,
 void nm_device_update_from_platform_link (NMDevice *self,
                                           const NMPlatformLink *plink);
 
-void nm_device_autoconnect_retries_reset (NMDevice *device, GType required_applied_setting);
 gboolean nm_device_get_autoconnect (NMDevice *device);
 void nm_device_set_autoconnect_intern (NMDevice *device, gboolean autoconnect);
 void nm_device_emit_recheck_auto_activate (NMDevice *device);
@@ -736,6 +735,13 @@ void nm_device_update_initial_hw_address (NMDevice *self);
 void nm_device_update_permanent_hw_address (NMDevice *self, gboolean force_freeze);
 void nm_device_update_dynamic_ip_setup (NMDevice *self);
 guint nm_device_get_supplicant_timeout (NMDevice *self);
+
+#define NM_DEVICE_802_1X_AUTH_RETRIES_UNSET    -1
+#define NM_DEVICE_802_1X_AUTH_RETRIES_INFINITY -2
+#define NM_DEVICE_802_1X_AUTH_RETRIES_DEFAULT  3
+
+gboolean nm_device_802_1x_auth_retries_try_next (NMDevice *self, int *p_auth_retry);
+
 gboolean nm_device_hw_addr_get_cloned (NMDevice *self,
                                        NMConnection *connection,
                                        gboolean is_wifi,
