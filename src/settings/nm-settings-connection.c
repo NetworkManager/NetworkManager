@@ -2531,6 +2531,8 @@ nm_settings_connection_read_and_fill_seen_bssids (NMSettingsConnection *self)
 	}
 }
 
+/*****************************************************************************/
+
 /**
  * nm_settings_connection_autoconnect_retries_get:
  * @self: the settings connection
@@ -2623,30 +2625,7 @@ nm_settings_connection_autoconnect_blocked_reason_set (NMSettingsConnection *sel
 	NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->autoconnect_blocked_reason = reason;
 }
 
-gboolean
-nm_settings_connection_can_autoconnect (NMSettingsConnection *self)
-{
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-	NMSettingConnection *s_con;
-	const char *permission;
-
-	if (   !priv->visible
-	    || nm_settings_connection_autoconnect_retries_get (self) == 0
-	    || priv->autoconnect_blocked_reason != NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE)
-		return FALSE;
-
-	s_con = nm_connection_get_setting_connection (NM_CONNECTION (self));
-	if (!nm_setting_connection_get_autoconnect (s_con))
-		return FALSE;
-
-	permission = nm_utils_get_shared_wifi_permission (NM_CONNECTION (self));
-	if (permission) {
-		if (nm_settings_connection_check_permission (self, permission) == FALSE)
-			return FALSE;
-	}
-
-	return TRUE;
-}
+/*****************************************************************************/
 
 /**
  * nm_settings_connection_get_nm_generated:

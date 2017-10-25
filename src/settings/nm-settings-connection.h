@@ -224,8 +224,6 @@ NMSettingsAutoconnectBlockedReason nm_settings_connection_autoconnect_blocked_re
 void                               nm_settings_connection_autoconnect_blocked_reason_set (NMSettingsConnection *self,
                                                                                           NMSettingsAutoconnectBlockedReason reason);
 
-gboolean nm_settings_connection_can_autoconnect (NMSettingsConnection *self);
-
 gboolean nm_settings_connection_get_nm_generated (NMSettingsConnection *self);
 gboolean nm_settings_connection_get_volatile (NMSettingsConnection *self);
 
