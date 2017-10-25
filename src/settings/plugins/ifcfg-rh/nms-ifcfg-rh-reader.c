@@ -1175,6 +1175,7 @@ make_proxy_setting (shvarFile *ifcfg, GError **error)
 static NMSetting *
 make_ip4_setting (shvarFile *ifcfg,
                   const char *network_file,
+                  gboolean routes_read,
                   gboolean *out_has_defroute,
                   GError **error)
 {
@@ -1196,6 +1197,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	gint priority;
 	char inet_buf[NM_UTILS_INET_ADDRSTRLEN];
 	const char *const *item;
+	guint32 route_table;
 
 	nm_assert (out_has_defroute && !*out_has_defroute);
 
@@ -1281,6 +1283,15 @@ make_ip4_setting (shvarFile *ifcfg,
 		return NULL;
 	}
 
+	/* the route table (policy routing) is ignored if we don't handle routes. */
+	route_table = svGetValueInt64 (ifcfg, "IPV4_ROUTE_TABLE", 10,
+	                               0, G_MAXUINT32, 0);
+	if (   route_table != 0
+	    && !routes_read) {
+		PARSE_WARNING ("'rule-' or 'rule6-' files are present; Policy routing (IPV4_ROUTE_TABLE) is ignored");
+		route_table = 0;
+	}
+
 	g_object_set (s_ip4,
 	              NM_SETTING_IP_CONFIG_METHOD, method,
 	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, !svGetValueBoolean (ifcfg, "PEERDNS", TRUE),
@@ -1289,8 +1300,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, !svGetValueBoolean (ifcfg, "IPV4_FAILURE_FATAL", FALSE),
 	              NM_SETTING_IP_CONFIG_ROUTE_METRIC, svGetValueInt64 (ifcfg, "IPV4_ROUTE_METRIC", 10,
 	                                                                  -1, G_MAXUINT32, -1),
-	              NM_SETTING_IP_CONFIG_ROUTE_TABLE, (guint) svGetValueInt64 (ifcfg, "IPV4_ROUTE_TABLE", 10,
-	                                                                         0, G_MAXUINT32, 0),
+	              NM_SETTING_IP_CONFIG_ROUTE_TABLE, (guint) route_table,
 	              NULL);
 
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0)
@@ -1326,7 +1336,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	 * added to the automatic ones. Note that this is not currently supported by
 	 * the legacy 'network' service (ifup-eth).
 	 */
-	for (i = -1; i < 256; i++) {
+	for (i = -1;; i++) {
 		NMIPAddress *addr = NULL;
 
 		/* gateway will only be set if still unset. Hence, we don't leak gateway
@@ -1424,13 +1434,13 @@ make_ip4_setting (shvarFile *ifcfg,
 	/* Static routes  - route-<name> file */
 	route_path = utils_get_route_path (svFileGetName (ifcfg));
 
-	if (utils_has_complex_routes (route_path)) {
-		PARSE_WARNING ("'rule-' or 'rule6-' file is present; you will need to use a dispatcher script to apply these routes");
+	if (!routes_read) {
+		/* NOP */
 	} else if (utils_has_route_file_new_syntax (route_path)) {
 		/* Parse route file in new syntax */
 		route_ifcfg = utils_get_route_ifcfg (svFileGetName (ifcfg), FALSE);
 		if (route_ifcfg) {
-			for (i = 0; i < 256; i++) {
+			for (i = 0;; i++) {
 				NMIPRoute *route = NULL;
 
 				if (!read_one_ip4_route (route_ifcfg, i, &route, error)) {
@@ -1591,6 +1601,7 @@ read_aliases (NMSettingIPConfig *s_ip4, gboolean read_defroute, const char *file
 static NMSetting *
 make_ip6_setting (shvarFile *ifcfg,
                   const char *network_file,
+                  gboolean routes_read,
                   GError **error)
 {
 	NMSettingIPConfig *s_ip6 = NULL;
@@ -1612,6 +1623,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	gboolean never_default = FALSE;
 	gboolean ip6_privacy = FALSE, ip6_privacy_prefer_public_ip;
 	NMSettingIP6ConfigPrivacy ip6_privacy_val;
+	guint32 route_table;
 
 	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 
@@ -1713,6 +1725,15 @@ make_ip6_setting (shvarFile *ifcfg,
 	                      NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
 	g_free (str_value);
 
+	/* the route table (policy routing) is ignored if we don't handle routes. */
+	route_table = svGetValueInt64 (ifcfg, "IPV6_ROUTE_TABLE", 10,
+	                               0, G_MAXUINT32, 0);
+	if (   route_table != 0
+	    && !routes_read) {
+		PARSE_WARNING ("'rule-' or 'rule6-' files are present; Policy routing (IPV6_ROUTE_TABLE) is ignored");
+		route_table = 0;
+	}
+
 	g_object_set (s_ip6,
 	              NM_SETTING_IP_CONFIG_METHOD, method,
 	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, !svGetValueBoolean (ifcfg, "IPV6_PEERDNS", TRUE),
@@ -1721,8 +1742,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, !svGetValueBoolean (ifcfg, "IPV6_FAILURE_FATAL", FALSE),
 	              NM_SETTING_IP_CONFIG_ROUTE_METRIC, svGetValueInt64 (ifcfg, "IPV6_ROUTE_METRIC", 10,
 	                                                                  -1, G_MAXUINT32, -1),
-	              NM_SETTING_IP_CONFIG_ROUTE_TABLE, (guint) svGetValueInt64 (ifcfg, "IPV6_ROUTE_TABLE", 10,
-	                                                                         0, G_MAXUINT32, 0),
+	              NM_SETTING_IP_CONFIG_ROUTE_TABLE, (guint) route_table,
 	              NM_SETTING_IP6_CONFIG_IP6_PRIVACY, ip6_privacy_val,
 	              NULL);
 
@@ -1847,12 +1867,13 @@ make_ip6_setting (shvarFile *ifcfg,
 
 	/* DNS searches ('DOMAIN' key) are read by make_ip4_setting() and included in NMSettingIPConfig */
 
-	if (!utils_has_complex_routes (svFileGetName (ifcfg))) {
+	if (!routes_read) {
+		/* NOP */
+	} else {
 		/* Read static routes from route6-<interface> file */
 		route6_path = utils_get_route6_path (svFileGetName (ifcfg));
 		if (!read_route_file (AF_INET6, route6_path, s_ip6, error))
 			goto error;
-
 		g_free (route6_path);
 	}
 
@@ -5158,6 +5179,8 @@ connection_from_file_full (const char *filename,
 	NMSetting *s_ip4, *s_ip6, *s_proxy, *s_port, *s_dcb = NULL, *s_user;
 	const char *ifcfg_name = NULL;
 	gboolean has_ip4_defroute = FALSE;
+	gboolean has_complex_routes_v4;
+	gboolean has_complex_routes_v6;
 
 	g_return_val_if_fail (filename != NULL, NULL);
 	g_return_val_if_fail (out_unhandled && !*out_unhandled, NULL);
@@ -5369,13 +5392,32 @@ connection_from_file_full (const char *filename,
 	if (!connection)
 		return NULL;
 
-	s_ip6 = make_ip6_setting (parsed, network_file, error);
+	has_complex_routes_v4 = utils_has_complex_routes (filename, AF_INET);
+	has_complex_routes_v6 = utils_has_complex_routes (filename, AF_INET6);
+
+	if (has_complex_routes_v4 || has_complex_routes_v6) {
+		if (has_complex_routes_v4 && !has_complex_routes_v6)
+			PARSE_WARNING ("'rule-' file is present; you will need to use a dispatcher script to apply these routes");
+		else if (has_complex_routes_v6 && !has_complex_routes_v4)
+			PARSE_WARNING ("'rule6-' file is present; you will need to use a dispatcher script to apply these routes");
+		else
+			PARSE_WARNING ("'rule-' and 'rule6-' files are present; you will need to use a dispatcher script to apply these routes");
+	}
+
+	s_ip6 = make_ip6_setting (parsed,
+	                          network_file,
+	                          !has_complex_routes_v4 && !has_complex_routes_v6,
+	                          error);
 	if (!s_ip6)
 		return NULL;
 	else
 		nm_connection_add_setting (connection, s_ip6);
 
-	s_ip4 = make_ip4_setting (parsed, network_file, &has_ip4_defroute, error);
+	s_ip4 = make_ip4_setting (parsed,
+	                          network_file,
+	                          !has_complex_routes_v4 && !has_complex_routes_v6,
+	                          &has_ip4_defroute,
+	                          error);
 	if (!s_ip4)
 		return NULL;
 	else {
@@ -5433,11 +5475,11 @@ connection_from_file (const char *filename,
 }
 
 NMConnection *
-connection_from_file_test (const char *filename,
-                           const char *network_file,
-                           const char *test_type,
-                           char **out_unhandled,
-                           GError **error)
+nmtst_connection_from_file (const char *filename,
+                            const char *network_file,
+                            const char *test_type,
+                            char **out_unhandled,
+                            GError **error)
 {
 	return connection_from_file_full (filename,
 	                                  network_file,
@@ -5451,7 +5493,6 @@ guint
 devtimeout_from_file (const char *filename)
 {
 	shvarFile *ifcfg;
-	char *devtimeout_str;
 	guint devtimeout;
 
 	g_return_val_if_fail (filename != NULL, 0);
@@ -5460,14 +5501,7 @@ devtimeout_from_file (const char *filename)
 	if (!ifcfg)
 		return 0;
 
-	devtimeout_str = svGetValueStr_cp (ifcfg, "DEVTIMEOUT");
-	if (devtimeout_str) {
-		devtimeout = _nm_utils_ascii_str_to_int64 (devtimeout_str, 10, 0, G_MAXUINT, 0);
-		g_free (devtimeout_str);
-	} else
-		devtimeout = 0;
-
+	devtimeout = svGetValueInt64 (ifcfg, "DEVTIMEOUT", 10, 0, G_MAXUINT, 0);
 	svCloseFile (ifcfg);
-
 	return devtimeout;
 }

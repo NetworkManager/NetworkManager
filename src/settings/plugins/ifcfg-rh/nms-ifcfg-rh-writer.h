@@ -18,26 +18,20 @@
  * Copyright (C) 2009 Red Hat, Inc.
  */
 
-#ifndef _WRITER_H_
-#define _WRITER_H_
+#ifndef __NMS_IFCFG_RH_WRITER_H__
+#define __NMS_IFCFG_RH_WRITER_H__
 
 #include "nm-connection.h"
 
-gboolean writer_can_write_connection (NMConnection *connection,
-                                      GError **error);
+gboolean nms_ifcfg_rh_writer_can_write_connection (NMConnection *connection,
+                                                   GError **error);
 
-gboolean writer_new_connection (NMConnection *connection,
-                                const char *ifcfg_dir,
-                                char **out_filename,
-                                NMConnection **out_reread,
-                                gboolean *out_reread_same,
-                                GError **error);
+gboolean nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
+                                               const char *ifcfg_dir,
+                                               const char *filename,
+                                               char **out_filename,
+                                               NMConnection **out_reread,
+                                               gboolean *out_reread_same,
+                                               GError **error);
 
-gboolean writer_update_connection (NMConnection *connection,
-                                   const char *ifcfg_dir,
-                                   const char *filename,
-                                   NMConnection **out_reread,
-                                   gboolean *out_reread_same,
-                                   GError **error);
-
-#endif /* _WRITER_H_ */
+#endif /* __NMS_IFCFG_RH_WRITER_H__ */

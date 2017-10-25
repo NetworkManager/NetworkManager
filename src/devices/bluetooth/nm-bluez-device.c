@@ -1219,7 +1219,7 @@ dispose (GObject *object)
 	if (to_delete) {
 		nm_log_dbg (LOGD_BT, "bluez[%s] removing Bluetooth connection for NAP device: '%s' (%s)", priv->path,
 		            nm_connection_get_id (to_delete), nm_connection_get_uuid (to_delete));
-		nm_settings_connection_delete (NM_SETTINGS_CONNECTION (to_delete), NULL, NULL);
+		nm_settings_connection_delete (NM_SETTINGS_CONNECTION (to_delete), NULL);
 		g_object_unref (to_delete);
 	}
 

@@ -91,7 +91,6 @@ EXPORT(nm_inotify_helper_remove_watch)
 
 EXPORT(nm_settings_connection_get_type)
 EXPORT(nm_settings_connection_replace_settings)
-EXPORT(nm_settings_connection_replace_and_commit)
 
 /*****************************************************************************/
 
@@ -1774,7 +1773,7 @@ nm_settings_device_removed (NMSettings *self, NMDevice *device, gboolean quittin
 		 * remains up and can be assumed if NM starts again.
 		 */
 		if (quitting == FALSE)
-			nm_settings_connection_delete (connection, NULL, NULL);
+			nm_settings_connection_delete (connection, NULL);
 	}
 }
 

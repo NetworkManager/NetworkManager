@@ -74,89 +74,81 @@ nm_ifnet_connection_get_conn_name (NMIfnetConnection *connection)
 	return NM_IFNET_CONNECTION_GET_PRIVATE (connection)->conn_name;
 }
 
-static void
+static gboolean
 commit_changes (NMSettingsConnection *connection,
+                NMConnection *new_connection,
                 NMSettingsConnectionCommitReason commit_reason,
-                NMSettingsConnectionCommitFunc callback,
-                gpointer user_data)
+                NMConnection **out_reread_connection,
+                char **out_logmsg_change,
+                GError **error)
 {
-	GError *error = NULL;
 	NMIfnetConnectionPrivate *priv = NM_IFNET_CONNECTION_GET_PRIVATE ((NMIfnetConnection *) connection);
-	gchar *new_name = NULL;
+	char *new_name = NULL;
 	gboolean success = FALSE;
+	gboolean added = FALSE;
+
+	nm_assert (out_reread_connection && !*out_reread_connection);
+	nm_assert (!out_logmsg_change || !*out_logmsg_change);
 
 	g_signal_emit (connection, signals[IFNET_CANCEL_MONITORS], 0);
 
 	if (priv->conn_name) {
-		/* Existing connection; update it */
 		success = ifnet_update_parsers_by_connection (NM_CONNECTION (connection),
 		                                              priv->conn_name,
 		                                              CONF_NET_FILE,
 		                                              WPA_SUPPLICANT_CONF,
 		                                              &new_name,
 		                                              NULL,
-		                                              &error);
+		                                              error);
 	} else {
-		/* New connection, add it */
+		added = TRUE;
 		success = ifnet_add_new_connection (NM_CONNECTION (connection),
 		                                    CONF_NET_FILE,
 		                                    WPA_SUPPLICANT_CONF,
 		                                    &new_name,
 		                                    NULL,
-		                                    &error);
-		if (success)
-			reload_parsers ();
+		                                    error);
 	}
 
+	g_assert (!!success == (new_name != NULL));
 	if (success) {
-		/* update connection name */
-		g_assert (new_name);
 		g_free (priv->conn_name);
 		priv->conn_name = new_name;
-
-		NM_SETTINGS_CONNECTION_CLASS (nm_ifnet_connection_parent_class)->commit_changes (connection, commit_reason, callback, user_data);
-		nm_log_info (LOGD_SETTINGS, "Successfully updated %s", priv->conn_name);
-	} else {
-		nm_log_warn (LOGD_SETTINGS, "Failed to update %s",
-		             priv->conn_name ? priv->conn_name :
-		             nm_connection_get_id (NM_CONNECTION (connection)));
-		reload_parsers ();
-		callback (connection, error, user_data);
-		g_error_free (error);
 	}
 
+	reload_parsers ();
+
 	g_signal_emit (connection, signals[IFNET_SETUP_MONITORS], 0);
+
+	if (success) {
+		NM_SET_OUT (out_logmsg_change,
+		            g_strdup_printf ("ifcfg-rh: %s %s",
+		                             added ? "persist" : "updated",
+		                             new_name));
+	}
+	return success;
 }
 
-static void
-do_delete (NMSettingsConnection *connection,
-           NMSettingsConnectionDeleteFunc callback,
-           gpointer user_data)
+static gboolean
+delete (NMSettingsConnection *connection,
+        GError **error)
 {
-	GError *error = NULL;
 	NMIfnetConnectionPrivate *priv = NM_IFNET_CONNECTION_GET_PRIVATE ((NMIfnetConnection *) connection);
-
-	g_signal_emit (connection, signals[IFNET_CANCEL_MONITORS], 0);
 
 	/* Only connections which exist in /etc/conf.d/net will have a conn_name */
 	if (priv->conn_name) {
+		g_signal_emit (connection, signals[IFNET_CANCEL_MONITORS], 0);
+
 		if (!ifnet_delete_connection_in_parsers (priv->conn_name, CONF_NET_FILE, WPA_SUPPLICANT_CONF, NULL)) {
 			nm_log_warn (LOGD_SETTINGS, "Failed to delete %s", priv->conn_name);
 			reload_parsers ();
-			callback (connection, error, user_data);
-			g_error_free (error);
-			g_signal_emit (connection, signals[IFNET_SETUP_MONITORS], 0);
-			return;
+			/* let's not return an error. */
 		}
+
+		g_signal_emit (connection, signals[IFNET_SETUP_MONITORS], 0);
 	}
 
-	NM_SETTINGS_CONNECTION_CLASS (nm_ifnet_connection_parent_class)->delete (connection, callback, user_data);
-
-	g_signal_emit (connection, signals[IFNET_SETUP_MONITORS], 0);
-
-	nm_log_info (LOGD_SETTINGS, "Successfully deleted %s",
-	             priv->conn_name ? priv->conn_name :
-	             nm_connection_get_id (NM_CONNECTION (connection)));
+	return TRUE;
 }
 
 /*****************************************************************************/
@@ -222,7 +214,7 @@ nm_ifnet_connection_class_init (NMIfnetConnectionClass * ifnet_connection_class)
 
 	object_class->finalize = finalize;
 
-	settings_class->delete = do_delete;
+	settings_class->delete = delete;
 	settings_class->commit_changes = commit_changes;
 
 	signals[IFNET_SETUP_MONITORS] =

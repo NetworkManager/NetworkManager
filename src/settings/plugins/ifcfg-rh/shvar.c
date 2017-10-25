@@ -794,7 +794,7 @@ svOpenFileInternal (const char *name, gboolean create, GError **error)
 	int errsv = 0;
 	char *arena;
 	const char *p, *q;
-	GError *local = NULL;
+	gs_free_error GError *local = NULL;
 	nm_auto_close int fd = -1;
 
 	if (create)
@@ -824,11 +824,13 @@ svOpenFileInternal (const char *name, gboolean create, GError **error)
 	                              &arena,
 	                              NULL,
 	                              &local) < 0) {
+		if (create)
+			return svFile_new (name);
+
 		g_set_error (error, G_FILE_ERROR,
 		             local->domain == G_FILE_ERROR ? local->code : G_FILE_ERROR_FAILED,
 		             "Could not read file '%s': %s",
 		             name, local->message);
-		g_error_free (local);
 		return NULL;
 	}
 
@@ -1118,6 +1120,71 @@ svGetValueEnum (shvarFile *s, const char *key,
 
 /*****************************************************************************/
 
+static gboolean
+_is_all_digits (const char *str)
+{
+	return    str[0]
+	       && NM_STRCHAR_ALL (str, ch, g_ascii_isdigit (ch));
+}
+
+#define IS_NUMBERED_TAG(key, tab_name) \
+	({ \
+		const char *_key = (key); \
+		\
+		(   (strncmp (_key, tab_name, NM_STRLEN (tab_name)) == 0) \
+		 && _is_all_digits (&_key[NM_STRLEN (tab_name)])); \
+	})
+
+gboolean
+svUnsetAll (shvarFile *s, SvKeyType match_key_type)
+{
+	CList *current;
+	shvarLine *line;
+	gboolean changed = FALSE;
+
+	g_return_val_if_fail (s, FALSE);
+
+	c_list_for_each (current, &s->lst_head) {
+		line = c_list_entry (current, shvarLine, lst);
+		ASSERT_shvarLine (line);
+		if (!line->key)
+			continue;
+
+		if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_ANY))
+			goto do_clear;
+		if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_ROUTE_SVFORMAT)) {
+			if (   IS_NUMBERED_TAG (line->key, "ADDRESS")
+			    || IS_NUMBERED_TAG (line->key, "NETMASK")
+			    || IS_NUMBERED_TAG (line->key, "GATEWAY")
+			    || IS_NUMBERED_TAG (line->key, "METRIC")
+			    || IS_NUMBERED_TAG (line->key, "OPTIONS"))
+				goto do_clear;
+		}
+		if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_IP4_ADDRESS)) {
+			if (   IS_NUMBERED_TAG (line->key, "IPADDR")
+			    || IS_NUMBERED_TAG (line->key, "PREFIX")
+			    || IS_NUMBERED_TAG (line->key, "NETMASK")
+			    || IS_NUMBERED_TAG (line->key, "GATEWAY"))
+				goto do_clear;
+		}
+		if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_USER)) {
+			if (g_str_has_prefix (line->key, "NM_USER_"))
+				goto do_clear;
+		}
+
+		continue;
+do_clear:
+		if (nm_clear_g_free (&line->line)) {
+			ASSERT_shvarLine (line);
+			changed = TRUE;
+		}
+	}
+
+	if (changed)
+		s->modified = TRUE;
+	return changed;
+}
+
 /* Same as svSetValueStr() but it preserves empty @value -- contrary to
  * svSetValueStr() for which "" effectively means to remove the value. */
 gboolean
@@ -1214,27 +1281,6 @@ gboolean
 svUnsetValue (shvarFile *s, const char *key)
 {
 	return svSetValue (s, key, NULL);
-}
-
-void
-svUnsetValuesWithPrefix (shvarFile *s, const char *prefix)
-{
-	CList *current;
-
-	g_return_if_fail (s);
-	g_return_if_fail (prefix);
-
-	c_list_for_each (current, &s->lst_head) {
-		shvarLine *line = c_list_entry (current, shvarLine, lst);
-
-		ASSERT_shvarLine (line);
-		if (   line->key
-		    && g_str_has_prefix (line->key, prefix)) {
-			if (nm_clear_g_free (&line->line))
-				s->modified = TRUE;
-		}
-		ASSERT_shvarLine (line);
-	}
 }
 
 /*****************************************************************************/

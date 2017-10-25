@@ -139,7 +139,10 @@ bind_device_to_connection (SettingsPluginIfupdown *self,
 		g_object_set (s_wifi, NM_SETTING_WIRELESS_MAC_ADDRESS, address, NULL);
 	}
 
-	nm_settings_connection_commit_changes (NM_SETTINGS_CONNECTION (exported), NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE, NULL, NULL);
+	nm_settings_connection_commit_changes (NM_SETTINGS_CONNECTION (exported),
+	                                       NULL,
+	                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
+	                                       NULL);
 }
 
 static void
@@ -409,7 +412,7 @@ init (NMSettingsPlugin *config)
 			exported = g_hash_table_lookup (priv->connections, block->name);
 			if (exported) {
 				nm_log_info (LOGD_SETTINGS, "deleting %s from connections", block->name);
-				nm_settings_connection_delete (NM_SETTINGS_CONNECTION (exported), NULL, NULL);
+				nm_settings_connection_delete (NM_SETTINGS_CONNECTION (exported), NULL);
 				g_hash_table_remove (priv->connections, block->name);
 			}
 

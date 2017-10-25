@@ -306,75 +306,52 @@ nm_ifcfg_connection_get_unrecognized_spec (NMIfcfgConnection *self)
 	return NM_IFCFG_CONNECTION_GET_PRIVATE (self)->unrecognized_spec;
 }
 
-static void
-replace_and_commit (NMSettingsConnection *connection,
-                    NMConnection *new_connection,
-                    NMSettingsConnectionCommitFunc callback,
-                    gpointer user_data)
-{
-	const char *filename;
-	GError *error = NULL;
-
-	filename = nm_settings_connection_get_filename (connection);
-	if (filename && utils_has_complex_routes (filename)) {
-		if (callback) {
-			error = g_error_new_literal (NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-			                             "Cannot modify a connection that has an associated 'rule-' or 'rule6-' file");
-			callback (connection, error, user_data);
-			g_clear_error (&error);
-		}
-		return;
-	}
-
-	NM_SETTINGS_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->replace_and_commit (connection, new_connection, callback, user_data);
-}
-
-static void
+static gboolean
 commit_changes (NMSettingsConnection *connection,
+                NMConnection *new_connection,
                 NMSettingsConnectionCommitReason commit_reason,
-                NMSettingsConnectionCommitFunc callback,
-                gpointer user_data)
+                NMConnection **out_reread_connection,
+                char **out_logmsg_change,
+                GError **error)
 {
-	GError *error = NULL;
-	gboolean success = FALSE;
-	char *ifcfg_path = NULL;
 	const char *filename;
+	gs_unref_object NMConnection *reread = NULL;
+	gboolean reread_same = TRUE;
+	const char *operation_message;
+	gs_free char *ifcfg_path = NULL;
+
+	nm_assert (out_reread_connection && !*out_reread_connection);
+	nm_assert (!out_logmsg_change || !*out_logmsg_change);
 
 	filename = nm_settings_connection_get_filename (connection);
-	if (filename) {
-		success = writer_update_connection (NM_CONNECTION (connection),
-		                                    IFCFG_DIR,
-		                                    filename,
-		                                    NULL,
-		                                    NULL,
-		                                    &error);
-	} else {
-		success = writer_new_connection (NM_CONNECTION (connection),
-		                                 IFCFG_DIR,
-		                                 &ifcfg_path,
-		                                 NULL,
-		                                 NULL,
-		                                 &error);
-		if (success) {
-			nm_settings_connection_set_filename (connection, ifcfg_path);
-			g_free (ifcfg_path);
-		}
-	}
+	if (!nms_ifcfg_rh_writer_write_connection (new_connection ?: NM_CONNECTION (connection),
+	                                           IFCFG_DIR,
+	                                           filename,
+	                                           &ifcfg_path,
+	                                           &reread,
+	                                           &reread_same,
+	                                           error))
+		return FALSE;
 
-	if (success) {
-		/* Chain up to parent to handle success */
-		NM_SETTINGS_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->commit_changes (connection, commit_reason, callback, user_data);
-	} else {
-		/* Otherwise immediate error */
-		callback (connection, error, user_data);
-		g_error_free (error);
-	}
+	nm_assert ((!filename && ifcfg_path) || (filename && !ifcfg_path));
+	if (ifcfg_path) {
+		nm_settings_connection_set_filename (connection, ifcfg_path);
+		operation_message = "persist";
+	} else
+		operation_message = "update";
+
+	if (reread && !reread_same)
+		*out_reread_connection = g_steal_pointer (&reread);
+
+	NM_SET_OUT (out_logmsg_change,
+	            g_strdup_printf ("ifcfg-rh: %s %s",
+	                             operation_message, filename));
+	return TRUE;
 }
 
-static void
-do_delete (NMSettingsConnection *connection,
-	       NMSettingsConnectionDeleteFunc callback,
-	       gpointer user_data)
+static gboolean
+delete (NMSettingsConnection *connection,
+        GError **error)
 {
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE ((NMIfcfgConnection *) connection);
 	const char *filename;
@@ -390,7 +367,7 @@ do_delete (NMSettingsConnection *connection,
 			g_unlink (priv->route6file);
 	}
 
-	NM_SETTINGS_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->delete (connection, callback, user_data);
+	return TRUE;
 }
 
 /*****************************************************************************/
@@ -529,8 +506,7 @@ nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 	object_class->get_property = get_property;
 	object_class->dispose      = dispose;
 
-	settings_class->delete = do_delete;
-	settings_class->replace_and_commit = replace_and_commit;
+	settings_class->delete = delete;
 	settings_class->commit_changes = commit_changes;
 
 	obj_properties[PROP_UNMANAGED_SPEC] =

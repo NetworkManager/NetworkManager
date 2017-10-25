@@ -280,25 +280,22 @@ gone:
 }
 
 gboolean
-utils_has_complex_routes (const char *filename)
+utils_has_complex_routes (const char *filename, int addr_family)
 {
-	char *rules;
+	g_return_val_if_fail (filename, TRUE);
 
-	g_return_val_if_fail (filename != NULL, TRUE);
+	if (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET)) {
+		gs_free char *rules = utils_get_extra_path (filename, RULE_TAG);
 
-	rules = utils_get_extra_path (filename, RULE_TAG);
-	if (g_file_test (rules, G_FILE_TEST_EXISTS)) {
-		g_free (rules);
-		return TRUE;
+		if (g_file_test (rules, G_FILE_TEST_EXISTS))
+			return TRUE;
 	}
-	g_free (rules);
 
-	rules = utils_get_extra_path (filename, RULE6_TAG);
-	if (g_file_test (rules, G_FILE_TEST_EXISTS)) {
-		g_free (rules);
-		return TRUE;
+	if (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET6)) {
+		gs_free char *rules = utils_get_extra_path (filename, RULE6_TAG);
+		if (g_file_test (rules, G_FILE_TEST_EXISTS))
+			return TRUE;
 	}
-	g_free (rules);
 
 	return FALSE;
 }

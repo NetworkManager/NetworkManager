@@ -259,8 +259,8 @@ activate:
 					nm_connection_replace_settings_from_connection (NM_CONNECTION (connection),
 					                                                dev_checkpoint->settings_connection);
 					nm_settings_connection_commit_changes (connection,
-					                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
 					                                       NULL,
+					                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
 					                                       NULL);
 				}
 			} else {
@@ -343,7 +343,7 @@ next_dev:
 			                            nm_settings_connection_get_uuid (con))) {
 				_LOGD ("rollback: deleting new connection %s",
 				       nm_settings_connection_get_uuid (con));
-				nm_settings_connection_delete (con, NULL, NULL);
+				nm_settings_connection_delete (con, NULL);
 			}
 		}
 	}
