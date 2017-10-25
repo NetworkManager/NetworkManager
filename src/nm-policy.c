@@ -146,32 +146,6 @@ static void schedule_activate_check (NMPolicy *self, NMDevice *device);
 
 /*****************************************************************************/
 
-static gboolean
-_autocnct_can_autoconnect (NMSettingsConnection *connection)
-{
-	NMSettingConnection *s_con;
-	const char *permission;
-
-	if (   !nm_settings_connection_is_visible (connection)
-	    || nm_settings_connection_autoconnect_retries_get (connection) == 0
-	    || nm_settings_connection_autoconnect_blocked_reason_get (connection) != NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE)
-		return FALSE;
-
-	s_con = nm_connection_get_setting_connection (NM_CONNECTION (connection));
-	if (!nm_setting_connection_get_autoconnect (s_con))
-		return FALSE;
-
-	permission = nm_utils_get_shared_wifi_permission (NM_CONNECTION (connection));
-	if (permission) {
-		if (nm_settings_connection_check_permission (connection, permission) == FALSE)
-			return FALSE;
-	}
-
-	return TRUE;
-}
-
-/*****************************************************************************/
-
 typedef struct {
 	NMPlatformIP6Address prefix;
 	NMDevice *device;             /* The requesting ("uplink") device */
@@ -1261,9 +1235,23 @@ auto_activate_device (NMPolicy *self,
 	best_connection = NULL;
 	for (i = 0; i < len; i++) {
 		NMSettingsConnection *candidate = NM_SETTINGS_CONNECTION (connections[i]);
+		NMSettingConnection *s_con;
+		const char *permission;
 
-		if (!_autocnct_can_autoconnect (candidate))
+		if (   !nm_settings_connection_is_visible (candidate)
+		    || nm_settings_connection_autoconnect_retries_get (candidate) == 0
+		    || nm_settings_connection_autoconnect_blocked_reason_get (candidate) != NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE)
 			continue;
+
+		s_con = nm_connection_get_setting_connection (NM_CONNECTION (candidate));
+		if (!nm_setting_connection_get_autoconnect (s_con))
+			continue;
+
+		permission = nm_utils_get_shared_wifi_permission (NM_CONNECTION (candidate));
+		if (   permission
+		    && !nm_settings_connection_check_permission (candidate, permission))
+			continue;
+
 		if (nm_device_can_auto_connect (device, (NMConnection *) candidate, &specific_object)) {
 			best_connection = candidate;
 			break;
