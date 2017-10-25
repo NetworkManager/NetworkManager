@@ -20,11 +20,13 @@ yum install \
     dbus-glib-devel \
     dbus-python \
     dbus-x11 \
+    dhclient \
     gettext-devel \
     git \
     gobject-introspection-devel \
     gtk-doc \
     intltool \
+    iptables \
     jansson-devel \
     libcurl-devel \
     libndp-devel \
