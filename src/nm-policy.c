@@ -1748,6 +1748,28 @@ device_state_changed (NMDevice *device,
 	NMIP6Config *ip6_config;
 	NMSettingConnection *s_con = NULL;
 
+	switch (nm_device_state_reason_check (reason)) {
+	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_DENIED:
+	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_NOT_SEARCHING:
+	case NM_DEVICE_STATE_REASON_GSM_SIM_NOT_INSERTED:
+	case NM_DEVICE_STATE_REASON_GSM_SIM_PIN_REQUIRED:
+	case NM_DEVICE_STATE_REASON_GSM_SIM_PUK_REQUIRED:
+	case NM_DEVICE_STATE_REASON_GSM_SIM_WRONG:
+	case NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT:
+	case NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED:
+	case NM_DEVICE_STATE_REASON_GSM_APN_FAILED:
+		/* Block autoconnect of the just-failed connection for situations
+		 * where a retry attempt would just fail again.
+		 */
+		if (connection) {
+			nm_settings_connection_autoconnect_blocked_reason_set (connection,
+			                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED);
+		}
+		break;
+	default:
+		break;
+	}
+
 	switch (new_state) {
 	case NM_DEVICE_STATE_FAILED:
 		/* Mark the connection invalid if it failed during activation so that
