@@ -3638,8 +3638,6 @@ con_settings (NMConnection *connection, const NMMetaSettingValidPartItem *const*
 	}
 
 	con_type = nm_setting_connection_get_connection_type (s_con);
-	if (!con_type)
-		con_type = NM_SETTING_GENERIC_SETTING_NAME;
 	*type_settings = get_valid_settings_array (con_type);
 	if (!*type_settings) {
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
