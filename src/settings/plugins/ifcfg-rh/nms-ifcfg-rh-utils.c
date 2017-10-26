@@ -173,7 +173,7 @@ utils_get_extra_path (const char *parent, const char *tag)
 
 	dirname = g_path_get_dirname (parent);
 	if (!dirname)
-		return NULL;
+		g_return_val_if_reached (NULL);
 
 	name = utils_get_ifcfg_name (parent, FALSE);
 	if (name) {
