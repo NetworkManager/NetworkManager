@@ -1884,7 +1884,10 @@ delete_auth_cb (NMSettingsConnection *self,
                 GError *error,
                 gpointer data)
 {
+	gs_unref_object NMSettingsConnection *self_keep_alive = NULL;
 	gs_free_error GError *local = NULL;
+
+	self_keep_alive = g_object_ref (self);
 
 	if (error) {
 		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_DELETE, self, FALSE, NULL, subject,
