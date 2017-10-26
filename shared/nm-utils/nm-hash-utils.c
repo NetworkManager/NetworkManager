@@ -107,7 +107,7 @@ nm_hash_ptr (gconstpointer ptr)
 	if (sizeof (ptr) <= sizeof (guint))
 		h = h ^ ((guint) ((uintptr_t) ptr));
 	else
-		h = h ^ ((guint) (((uintptr_t) ptr) >> 32)) ^ ((guint) ((uintptr_t) ptr));
+		h = h ^ ((guint) (((guint64) (uintptr_t) ptr) >> 32)) ^ ((guint) ((uintptr_t) ptr));
 
 	return h ?: 2907677551u;
 }
