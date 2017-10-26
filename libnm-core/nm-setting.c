@@ -1322,6 +1322,7 @@ nm_setting_diff (NMSetting *a,
 	NMSettingDiffResult a_result_default = NM_SETTING_DIFF_RESULT_IN_A_DEFAULT;
 	NMSettingDiffResult b_result_default = NM_SETTING_DIFF_RESULT_IN_B_DEFAULT;
 	gboolean results_created = FALSE;
+	gboolean compared_any = FALSE;
 
 	g_return_val_if_fail (results != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_SETTING (a), FALSE);
@@ -1369,6 +1370,8 @@ nm_setting_diff (NMSetting *a,
 			continue;
 		if (strcmp (prop_spec->name, NM_SETTING_NAME) == 0)
 			continue;
+
+		compared_any = TRUE;
 
 		if (b) {
 			gboolean different;
@@ -1426,6 +1429,13 @@ nm_setting_diff (NMSetting *a,
 		}
 	}
 	g_free (property_specs);
+
+	if (!compared_any && !b) {
+		/* special case: the setting has no properties, and the opposite
+		 * setting @b is not given. The settings differ, and we signal that
+		 * by returning an empty results hash. */
+		return FALSE;
+	}
 
 	/* Don't return an empty hash table */
 	if (results_created && !g_hash_table_size (*results)) {

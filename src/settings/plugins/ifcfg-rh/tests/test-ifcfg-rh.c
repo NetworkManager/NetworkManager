@@ -4309,8 +4309,10 @@ test_write_wired_static_with_generic (void)
 	{
 		gs_unref_hashtable GHashTable *diffs = NULL;
 
-		g_assert (nm_connection_diff (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT, &diffs));
-		g_assert (!diffs);
+		g_assert (!nm_connection_diff (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT, &diffs));
+		g_assert (diffs);
+		g_assert (g_hash_table_size (diffs) == 1);
+		g_assert (g_hash_table_lookup (diffs, "generic"));
 		g_assert (!nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
 	}
 	g_assert (!nm_connection_get_setting (reread, NM_TYPE_SETTING_GENERIC));
