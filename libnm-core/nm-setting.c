@@ -1322,6 +1322,8 @@ nm_setting_diff (NMSetting *a,
 	NMSettingDiffResult a_result_default = NM_SETTING_DIFF_RESULT_IN_A_DEFAULT;
 	NMSettingDiffResult b_result_default = NM_SETTING_DIFF_RESULT_IN_B_DEFAULT;
 	gboolean results_created = FALSE;
+	gboolean compared_any = FALSE;
+	gboolean diff_found = FALSE;
 
 	g_return_val_if_fail (results != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_SETTING (a), FALSE);
@@ -1369,6 +1371,8 @@ nm_setting_diff (NMSetting *a,
 			continue;
 		if (strcmp (prop_spec->name, NM_SETTING_NAME) == 0)
 			continue;
+
+		compared_any = TRUE;
 
 		if (b) {
 			gboolean different;
@@ -1418,6 +1422,7 @@ nm_setting_diff (NMSetting *a,
 		if (r != NM_SETTING_DIFF_RESULT_UNKNOWN) {
 			void *p;
 
+			diff_found = TRUE;
 			if (g_hash_table_lookup_extended (*results, prop_spec->name, NULL, &p)) {
 				if ((r & GPOINTER_TO_UINT (p)) != r)
 					g_hash_table_insert (*results, g_strdup (prop_spec->name), GUINT_TO_POINTER (r | GPOINTER_TO_UINT (p)));
@@ -1427,13 +1432,28 @@ nm_setting_diff (NMSetting *a,
 	}
 	g_free (property_specs);
 
-	/* Don't return an empty hash table */
-	if (results_created && !g_hash_table_size (*results)) {
-		g_hash_table_destroy (*results);
-		*results = NULL;
+	if (!compared_any && !b) {
+		/* special case: the setting has no properties, and the opposite
+		 * setting @b is not given. The settings differ, and we signal that
+		 * by returning an empty results hash. */
+		diff_found = TRUE;
 	}
 
-	return !(*results);
+	if (diff_found) {
+		/* if there is a difference, we always return FALSE. It also means, we might
+		 * have allocated a new @results hash, and return if to the caller. */
+		return FALSE;
+	} else {
+		if (results_created) {
+			/* the allocated hash is unused. Clear it again. */
+			g_hash_table_destroy (*results);
+			*results = NULL;
+		} else {
+			/* we found no diff, and return false. However, the input
+			 * @result is returned unmodified. */
+		}
+		return TRUE;
+	}
 }
 
 #define CMP_AND_RETURN(n_a, n_b, name) \

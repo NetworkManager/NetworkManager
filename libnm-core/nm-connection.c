@@ -516,7 +516,7 @@ nm_connection_compare (NMConnection *a,
 }
 
 
-static void
+static gboolean
 diff_one_connection (NMConnection *a,
                      NMConnection *b,
                      NMSettingCompareFlags flags,
@@ -526,6 +526,7 @@ diff_one_connection (NMConnection *a,
 	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (a);
 	GHashTableIter iter;
 	NMSetting *a_setting = NULL;
+	gboolean diff_found = FALSE;
 
 	g_hash_table_iter_init (&iter, priv->settings);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &a_setting)) {
@@ -541,11 +542,14 @@ diff_one_connection (NMConnection *a,
 		if (results)
 			new_results = FALSE;
 
-		if (!nm_setting_diff (a_setting, b_setting, flags, invert_results, &results)) {
-			if (new_results)
-				g_hash_table_insert (diffs, g_strdup (setting_name), results);
-		}
+		if (!nm_setting_diff (a_setting, b_setting, flags, invert_results, &results))
+			diff_found = TRUE;
+
+		if (new_results && results)
+			g_hash_table_insert (diffs, g_strdup (setting_name), results);
 	}
+
+	return diff_found;
 }
 
 /**
@@ -574,12 +578,11 @@ nm_connection_diff (NMConnection *a,
                     GHashTable **out_settings)
 {
 	GHashTable *diffs;
+	gboolean diff_found = FALSE;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (a), FALSE);
-	g_return_val_if_fail (out_settings != NULL, FALSE);
-	g_return_val_if_fail (*out_settings == NULL, FALSE);
-	if (b)
-		g_return_val_if_fail (NM_IS_CONNECTION (b), FALSE);
+	g_return_val_if_fail (!out_settings || !*out_settings, FALSE);
+	g_return_val_if_fail (!b || NM_IS_CONNECTION (b), FALSE);
 
 	if (a == b)
 		return TRUE;
@@ -587,16 +590,22 @@ nm_connection_diff (NMConnection *a,
 	diffs = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, (GDestroyNotify) g_hash_table_destroy);
 
 	/* Diff A to B, then B to A to capture keys in B that aren't in A */
-	diff_one_connection (a, b, flags, FALSE, diffs);
-	if (b)
-		diff_one_connection (b, a, flags, TRUE, diffs);
+	if (diff_one_connection (a, b, flags, FALSE, diffs))
+		diff_found = TRUE;
+	if (   b
+	    && diff_one_connection (b, a, flags, TRUE, diffs))
+		diff_found = TRUE;
 
-	if (g_hash_table_size (diffs) == 0)
+	nm_assert (diff_found == (g_hash_table_size (diffs) != 0));
+
+	if (g_hash_table_size (diffs) == 0) {
 		g_hash_table_destroy (diffs);
-	else
-		*out_settings = diffs;
+		diffs = NULL;
+	}
 
-	return *out_settings ? FALSE : TRUE;
+	NM_SET_OUT (out_settings, diffs);
+
+	return !diff_found;
 }
 
 NMSetting *
