@@ -6255,8 +6255,15 @@ static gboolean
 connection_requires_carrier (NMConnection *connection)
 {
 	NMSettingIPConfig *s_ip4, *s_ip6;
+	NMSettingConnection *s_con;
 	gboolean ip4_carrier_wanted, ip6_carrier_wanted;
 	gboolean ip4_used = FALSE, ip6_used = FALSE;
+
+	/* We can progress to IP_CONFIG now, so that we're enslaved.
+	 * That may actually cause carrier to go up and thus continue acivation. */
+	s_con = nm_connection_get_setting_connection (connection);
+	if (nm_setting_connection_get_master (s_con))
+		return FALSE;
 
 	ip4_carrier_wanted = connection_ip4_method_requires_carrier (connection, &ip4_used);
 	if (ip4_carrier_wanted) {
