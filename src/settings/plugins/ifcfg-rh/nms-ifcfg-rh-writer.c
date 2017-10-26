@@ -1385,7 +1385,7 @@ get_setting_default_boolean (NMSetting *setting, const char *prop)
 }
 
 static gboolean
-write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
+write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired, GError **error)
 {
 	NMSettingBridge *s_bridge;
 	guint32 i;
@@ -1460,6 +1460,8 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, GError **error
 	g_string_free (opts, TRUE);
 
 	svSetValueStr (ifcfg, "TYPE", TYPE_BRIDGE);
+
+	*wired = write_wired_for_virtual (connection, ifcfg);
 
 	return TRUE;
 }
@@ -2833,7 +2835,7 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 		if (!write_team_setting (connection, ifcfg, &wired, error))
 			return FALSE;
 	} else if (!strcmp (type, NM_SETTING_BRIDGE_SETTING_NAME)) {
-		if (!write_bridge_setting (connection, ifcfg, error))
+		if (!write_bridge_setting (connection, ifcfg, &wired, error))
 			return FALSE;
 	} else {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
