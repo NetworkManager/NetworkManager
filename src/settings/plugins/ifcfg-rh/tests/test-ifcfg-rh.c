@@ -4162,6 +4162,169 @@ test_write_wired_static (void)
 }
 
 static void
+test_write_wired_static_with_generic (void)
+{
+	nmtst_auto_unlinkfile char *testfile = NULL;
+	nmtst_auto_unlinkfile char *route6file = NULL;
+	gs_unref_object NMConnection *connection = NULL;
+	gs_unref_object NMConnection *reread = NULL;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIPConfig *s_ip4, *reread_s_ip4;
+	NMSettingIPConfig *s_ip6, *reread_s_ip6;
+	NMIPAddress *addr;
+	NMIPAddress *addr6;
+	NMIPRoute *route6;
+	GError *error = NULL;
+
+	connection = nm_simple_connection_new ();
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wired Static",
+	              NM_SETTING_CONNECTION_UUID, nm_utils_uuid_generate_a (),
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES, 1,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NULL);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	g_object_set (s_wired,
+	              NM_SETTING_WIRED_MAC_ADDRESS, "31:33:33:37:be:cd",
+	              NM_SETTING_WIRED_MTU, (guint32) 1492,
+	              NULL);
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.1",
+	              NM_SETTING_IP_CONFIG_ROUTE_METRIC, (gint64) 204,
+	              NULL);
+
+	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
+
+	addr = nm_ip_address_new (AF_INET, "1.1.1.5", 24, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
+
+	nm_setting_ip_config_add_dns (s_ip4, "4.2.2.1");
+	nm_setting_ip_config_add_dns (s_ip4, "4.2.2.2");
+
+	nm_setting_ip_config_add_dns_search (s_ip4, "foobar.com");
+	nm_setting_ip_config_add_dns_search (s_ip4, "lab.foobar.com");
+
+	/* IP6 setting */
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_ROUTE_METRIC, (gint64) 206,
+	              NULL);
+
+	/* Add addresses */
+	addr6 = nm_ip_address_new (AF_INET6, "1003:1234:abcd::1", 11, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip6, addr6);
+	nm_ip_address_unref (addr6);
+
+	addr6 = nm_ip_address_new (AF_INET6, "2003:1234:abcd::2", 22, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip6, addr6);
+	nm_ip_address_unref (addr6);
+
+	addr6 = nm_ip_address_new (AF_INET6, "3003:1234:abcd::3", 33, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip6, addr6);
+	nm_ip_address_unref (addr6);
+
+	/* Add routes */
+	route6 = nm_ip_route_new (AF_INET6,
+	                          "2222:aaaa:bbbb:cccc::", 64,
+	                          "2222:aaaa:bbbb:cccc:dddd:eeee:5555:6666", 99, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_route (s_ip6, route6);
+	nm_ip_route_unref (route6);
+
+	route6 = nm_ip_route_new (AF_INET6, "::", 128, "2222:aaaa::9999", 1, &error);
+	g_assert_no_error (error);
+	nm_ip_route_set_attribute (route6, NM_IP_ROUTE_ATTRIBUTE_CWND, g_variant_new_uint32 (100));
+	nm_ip_route_set_attribute (route6, NM_IP_ROUTE_ATTRIBUTE_MTU, g_variant_new_uint32 (1280));
+	nm_ip_route_set_attribute (route6, NM_IP_ROUTE_ATTRIBUTE_LOCK_CWND, g_variant_new_boolean (TRUE));
+	nm_ip_route_set_attribute (route6, NM_IP_ROUTE_ATTRIBUTE_FROM, g_variant_new_string ("2222::bbbb/32"));
+	nm_ip_route_set_attribute (route6, NM_IP_ROUTE_ATTRIBUTE_SRC, g_variant_new_string ("::42"));
+	nm_setting_ip_config_add_route (s_ip6, route6);
+	nm_ip_route_unref (route6);
+
+	/* DNS servers */
+	nm_setting_ip_config_add_dns (s_ip6, "fade:0102:0103::face");
+	nm_setting_ip_config_add_dns (s_ip6, "cafe:ffff:eeee:dddd:cccc:bbbb:aaaa:feed");
+
+	/* DNS domains */
+	nm_setting_ip_config_add_dns_search (s_ip6, "foobar6.com");
+	nm_setting_ip_config_add_dns_search (s_ip6, "lab6.foobar.com");
+
+	nm_connection_add_setting (connection, nm_setting_generic_new ());
+
+	nmtst_assert_connection_verifies (connection);
+
+	_writer_new_connection_FIXME (connection,
+	                              TEST_SCRATCH_DIR "/network-scripts/",
+	                              &testfile);
+	route6file = utils_get_route6_path (testfile);
+
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
+
+	/* FIXME: currently DNS domains from IPv6 setting are stored in 'DOMAIN' key in ifcfg-file
+	 * However after re-reading they are dropped into IPv4 setting.
+	 * So, in order to comparison succeeded, move DNS domains back to IPv6 setting.
+	 */
+	reread_s_ip4 = nm_connection_get_setting_ip4_config (reread);
+	reread_s_ip6 = nm_connection_get_setting_ip6_config (reread);
+	nm_setting_ip_config_add_dns_search (reread_s_ip6, nm_setting_ip_config_get_dns_search (reread_s_ip4, 2));
+	nm_setting_ip_config_add_dns_search (reread_s_ip6, nm_setting_ip_config_get_dns_search (reread_s_ip4, 3));
+	nm_setting_ip_config_remove_dns_search (reread_s_ip4, 3);
+	nm_setting_ip_config_remove_dns_search (reread_s_ip4, 2);
+
+	g_assert_cmpint (nm_setting_ip_config_get_route_metric (reread_s_ip4), ==, 204);
+	g_assert_cmpint (nm_setting_ip_config_get_route_metric (reread_s_ip6), ==, 206);
+
+	nm_connection_add_setting (connection, nm_setting_proxy_new ());
+
+	{
+		gs_unref_hashtable GHashTable *diffs = NULL;
+
+		g_assert (nm_connection_diff (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT, &diffs));
+		g_assert (!diffs);
+		g_assert (!nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+	}
+	g_assert (!nm_connection_get_setting (reread, NM_TYPE_SETTING_GENERIC));
+	nm_connection_add_setting (reread, nm_setting_generic_new ());
+	{
+		gs_unref_hashtable GHashTable *diffs = NULL;
+
+		g_assert (nm_connection_diff (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT, &diffs));
+		g_assert (!diffs);
+		g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+	}
+}
+
+static void
 test_write_wired_dhcp (void)
 {
 	nmtst_auto_unlinkfile char *testfile = NULL;
@@ -9503,6 +9666,7 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "wired/read/unkwnown-ethtool-opt", test_read_wired_unknown_ethtool_opt);
 
 	g_test_add_func (TPATH "wired/write/static", test_write_wired_static);
+	g_test_add_func (TPATH "wired/write/static-with-generic", test_write_wired_static_with_generic);
 	g_test_add_func (TPATH "wired/write/static-ip6-only", test_write_wired_static_ip6_only);
 	g_test_add_func (TPATH "wired/write-static-routes", test_write_wired_static_routes);
 	g_test_add_func (TPATH "wired/read-write-static-routes-legacy", test_read_write_static_routes_legacy);
