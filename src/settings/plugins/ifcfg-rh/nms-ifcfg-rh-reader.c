@@ -89,6 +89,60 @@ get_uint (const char *str, guint32 *value)
 	return TRUE;
 }
 
+static void
+check_if_bond_slave (shvarFile *ifcfg,
+                     NMSettingConnection *s_con)
+{
+	gs_free char *value = NULL;
+	const char *v;
+
+	v = svGetValueStr (ifcfg, "MASTER_UUID", &value);
+	if (!v)
+		v = svGetValueStr (ifcfg, "MASTER", &value);
+
+	if (v) {
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER, v,
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BOND_SETTING_NAME,
+		              NULL);
+	}
+
+	/* We should be checking for SLAVE=yes as well, but NM used to not set that,
+	 * so for backward-compatibility, we don't check.
+	 */
+}
+
+static gboolean
+check_if_team_slave (shvarFile *ifcfg,
+                     NMSettingConnection *s_con)
+{
+	gs_free char *value = NULL;
+	const char *v;
+
+	v = svGetValueStr (ifcfg, "TEAM_MASTER_UUID", &value);
+	if (!v)
+		v = svGetValueStr (ifcfg, "TEAM_MASTER", &value);
+	if (!v)
+		return FALSE;
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_MASTER, v,
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_TEAM_SETTING_NAME,
+	              NULL);
+	return TRUE;
+}
+
+static void
+check_if_slave (shvarFile *ifcfg,
+                NMSettingConnection *s_con)
+{
+	g_return_if_fail (NM_IS_SETTING_CONNECTION (s_con));
+
+	if (check_if_team_slave (ifcfg, s_con))
+		return;
+	check_if_bond_slave (ifcfg, s_con);
+}
+
 static char *
 make_connection_name (shvarFile *ifcfg,
                       const char *ifcfg_name,
@@ -1895,60 +1949,6 @@ error:
 	g_free (route6_path);
 	g_object_unref (s_ip6);
 	return NULL;
-}
-
-static void
-check_if_bond_slave (shvarFile *ifcfg,
-                     NMSettingConnection *s_con)
-{
-	gs_free char *value = NULL;
-	const char *v;
-
-	v = svGetValueStr (ifcfg, "MASTER_UUID", &value);
-	if (!v)
-		v = svGetValueStr (ifcfg, "MASTER", &value);
-
-	if (v) {
-		g_object_set (s_con,
-		              NM_SETTING_CONNECTION_MASTER, v,
-		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BOND_SETTING_NAME,
-		              NULL);
-	}
-
-	/* We should be checking for SLAVE=yes as well, but NM used to not set that,
-	 * so for backward-compatibility, we don't check.
-	 */
-}
-
-static gboolean
-check_if_team_slave (shvarFile *ifcfg,
-                     NMSettingConnection *s_con)
-{
-	gs_free char *value = NULL;
-	const char *v;
-
-	v = svGetValueStr (ifcfg, "TEAM_MASTER_UUID", &value);
-	if (!v)
-		v = svGetValueStr (ifcfg, "TEAM_MASTER", &value);
-	if (!v)
-		return FALSE;
-
-	g_object_set (s_con,
-	              NM_SETTING_CONNECTION_MASTER, v,
-	              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_TEAM_SETTING_NAME,
-	              NULL);
-	return TRUE;
-}
-
-static void
-check_if_slave (shvarFile *ifcfg,
-                NMSettingConnection *s_con)
-{
-	g_return_if_fail (NM_IS_SETTING_CONNECTION (s_con));
-
-	if (check_if_team_slave (ifcfg, s_con))
-		return;
-	check_if_bond_slave (ifcfg, s_con);
 }
 
 typedef struct {
