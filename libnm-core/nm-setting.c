@@ -219,7 +219,7 @@ _nm_setting_get_base_type_priority (NMSetting *setting)
 GType
 nm_setting_lookup_type (const char *name)
 {
-	SettingInfo *info;
+	const SettingInfo *info;
 
 	g_return_val_if_fail (name, G_TYPE_INVALID);
 

@@ -4655,6 +4655,344 @@ test_connection_normalize_shared_addresses (void)
 }
 
 static void
+test_connection_normalize_ovs_interface_type_system (gconstpointer test_data)
+{
+	const guint TEST_CASE = GPOINTER_TO_UINT (test_data);
+	gs_unref_object NMConnection *con = NULL;
+	NMSettingConnection *s_con;
+	NMSettingOvsInterface *s_ovs_if;
+
+	con = nmtst_create_minimal_connection ("test_connection_normalize_ovs_interface_type_system",
+	                                       NULL,
+	                                       NM_SETTING_WIRED_SETTING_NAME, &s_con);
+
+	switch (TEST_CASE) {
+	case 1:
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER, "master0",
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_OVS_PORT_SETTING_NAME,
+		              NULL);
+
+		nmtst_assert_connection_verifies_after_normalization (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_SETTING);
+
+		nmtst_connection_normalize (con);
+		nmtst_assert_connection_has_settings (con, NM_SETTING_CONNECTION_SETTING_NAME,
+		                                           NM_SETTING_WIRED_SETTING_NAME,
+		                                           NM_SETTING_OVS_INTERFACE_SETTING_NAME);
+		s_ovs_if = nm_connection_get_setting_ovs_interface (con);
+		g_assert (s_ovs_if);
+		g_assert_cmpstr (nm_setting_ovs_interface_get_interface_type (s_ovs_if), ==, "system");
+		break;
+	case 2:
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER, "master0",
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_OVS_PORT_SETTING_NAME,
+		              NULL);
+
+		s_ovs_if = NM_SETTING_OVS_INTERFACE (nm_setting_ovs_interface_new ());
+		nm_connection_add_setting (con, NM_SETTING (s_ovs_if));
+
+		nmtst_assert_connection_verifies_after_normalization (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY);
+
+		nmtst_connection_normalize (con);
+		nmtst_assert_connection_has_settings (con, NM_SETTING_CONNECTION_SETTING_NAME,
+		                                           NM_SETTING_WIRED_SETTING_NAME,
+		                                           NM_SETTING_OVS_INTERFACE_SETTING_NAME);
+		g_assert (s_ovs_if == nm_connection_get_setting_ovs_interface (con));
+		g_assert_cmpstr (nm_setting_ovs_interface_get_interface_type (s_ovs_if), ==, "system");
+		break;
+	case 3:
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER, "master0",
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_OVS_PORT_SETTING_NAME,
+		              NULL);
+
+		s_ovs_if = NM_SETTING_OVS_INTERFACE (nm_setting_ovs_interface_new ());
+		nm_connection_add_setting (con, NM_SETTING (s_ovs_if));
+
+		g_object_set (s_ovs_if,
+		              NM_SETTING_OVS_INTERFACE_TYPE, "system",
+		              NULL);
+		nmtst_assert_connection_verifies_without_normalization (con);
+		nmtst_assert_connection_has_settings (con, NM_SETTING_CONNECTION_SETTING_NAME,
+		                                           NM_SETTING_WIRED_SETTING_NAME,
+		                                           NM_SETTING_OVS_INTERFACE_SETTING_NAME);
+		break;
+	case 4:
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER, "master0",
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_OVS_PORT_SETTING_NAME,
+		              NULL);
+
+		s_ovs_if = NM_SETTING_OVS_INTERFACE (nm_setting_ovs_interface_new ());
+		nm_connection_add_setting (con, NM_SETTING (s_ovs_if));
+
+		g_object_set (s_ovs_if,
+		              NM_SETTING_OVS_INTERFACE_TYPE, "internal",
+		              NULL);
+		/* the setting doesn't verify, because the interface-type must be "system". */
+		nmtst_assert_connection_unnormalizable (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+		break;
+	case 5:
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER, "master0",
+		              NULL);
+
+		s_ovs_if = NM_SETTING_OVS_INTERFACE (nm_setting_ovs_interface_new ());
+		nm_connection_add_setting (con, NM_SETTING (s_ovs_if));
+
+		g_object_set (s_ovs_if,
+		              NM_SETTING_OVS_INTERFACE_TYPE, "system",
+		              NULL);
+		nmtst_assert_connection_verifies_after_normalization (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY);
+		nmtst_connection_normalize (con);
+		nmtst_assert_connection_has_settings (con, NM_SETTING_CONNECTION_SETTING_NAME,
+		                                           NM_SETTING_WIRED_SETTING_NAME,
+		                                           NM_SETTING_OVS_INTERFACE_SETTING_NAME);
+		g_assert (s_con == nm_connection_get_setting_connection (con));
+		g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_OVS_PORT_SETTING_NAME);
+		break;
+	case 6:
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER, "master0",
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BRIDGE_SETTING_NAME,
+		              NULL);
+
+		s_ovs_if = NM_SETTING_OVS_INTERFACE (nm_setting_ovs_interface_new ());
+		nm_connection_add_setting (con, NM_SETTING (s_ovs_if));
+
+		g_object_set (s_ovs_if,
+		              NM_SETTING_OVS_INTERFACE_TYPE, "system",
+		              NULL);
+		nmtst_assert_connection_unnormalizable (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+		break;
+	case 7:
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER, "master0",
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BRIDGE_SETTING_NAME,
+		              NULL);
+
+		nm_connection_add_setting (con, nm_setting_bridge_port_new ());
+
+		s_ovs_if = NM_SETTING_OVS_INTERFACE (nm_setting_ovs_interface_new ());
+		nm_connection_add_setting (con, NM_SETTING (s_ovs_if));
+
+		g_object_set (s_ovs_if,
+		              NM_SETTING_OVS_INTERFACE_TYPE, "system",
+		              NULL);
+		nmtst_assert_connection_unnormalizable (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+		break;
+	default:
+		g_assert_not_reached ();
+		break;
+	}
+}
+
+static void
+test_connection_normalize_ovs_interface_type_ovs_interface (gconstpointer test_data)
+{
+	const guint TEST_CASE = GPOINTER_TO_UINT (test_data);
+	gs_unref_object NMConnection *con = NULL;
+	NMSettingConnection *s_con;
+	NMSettingOvsInterface *s_ovs_if;
+	NMSettingOvsPatch *s_ovs_patch;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+
+	con = nmtst_create_minimal_connection ("test_connection_normalize_ovs_interface_type_ovs_interface",
+	                                       NULL,
+	                                       NM_SETTING_OVS_INTERFACE_SETTING_NAME, &s_con);
+	s_ovs_if = nm_connection_get_setting_ovs_interface (con);
+	g_assert (s_ovs_if);
+
+	switch (TEST_CASE) {
+	case 1:
+		nmtst_assert_connection_unnormalizable (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+		break;
+	case 2:
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER, "master0",
+		              NULL);
+		nmtst_assert_connection_verifies_after_normalization (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY);
+		nmtst_connection_normalize (con);
+		nmtst_assert_connection_has_settings (con, NM_SETTING_CONNECTION_SETTING_NAME,
+		                                           NM_SETTING_IP4_CONFIG_SETTING_NAME,
+		                                           NM_SETTING_IP6_CONFIG_SETTING_NAME,
+		                                           NM_SETTING_PROXY_SETTING_NAME,
+		                                           NM_SETTING_OVS_INTERFACE_SETTING_NAME);
+		g_assert (s_con == nm_connection_get_setting_connection (con));
+		g_assert (s_ovs_if == nm_connection_get_setting_ovs_interface (con));
+		g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_OVS_PORT_SETTING_NAME);
+		g_assert_cmpstr (nm_setting_ovs_interface_get_interface_type (s_ovs_if), ==, "internal");
+		break;
+	case 3:
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER, "master0",
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_OVS_PORT_SETTING_NAME,
+		              NULL);
+		nmtst_assert_connection_verifies_after_normalization (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY);
+		nmtst_connection_normalize (con);
+		nmtst_assert_connection_has_settings (con, NM_SETTING_CONNECTION_SETTING_NAME,
+		                                           NM_SETTING_IP4_CONFIG_SETTING_NAME,
+		                                           NM_SETTING_IP6_CONFIG_SETTING_NAME,
+		                                           NM_SETTING_PROXY_SETTING_NAME,
+		                                           NM_SETTING_OVS_INTERFACE_SETTING_NAME);
+		g_assert (s_con == nm_connection_get_setting_connection (con));
+		g_assert (s_ovs_if == nm_connection_get_setting_ovs_interface (con));
+		g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_OVS_PORT_SETTING_NAME);
+		g_assert_cmpstr (nm_setting_ovs_interface_get_interface_type (s_ovs_if), ==, "internal");
+		break;
+	case 4:
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER, "master0",
+		              NULL);
+		g_object_set (s_ovs_if,
+		              NM_SETTING_OVS_INTERFACE_TYPE, "internal",
+		              NULL);
+		nmtst_assert_connection_verifies_after_normalization (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY);
+		nmtst_connection_normalize (con);
+		nmtst_assert_connection_has_settings (con, NM_SETTING_CONNECTION_SETTING_NAME,
+		                                           NM_SETTING_IP4_CONFIG_SETTING_NAME,
+		                                           NM_SETTING_IP6_CONFIG_SETTING_NAME,
+		                                           NM_SETTING_PROXY_SETTING_NAME,
+		                                           NM_SETTING_OVS_INTERFACE_SETTING_NAME);
+		g_assert (s_con == nm_connection_get_setting_connection (con));
+		g_assert (s_ovs_if == nm_connection_get_setting_ovs_interface (con));
+		g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_OVS_PORT_SETTING_NAME);
+		g_assert_cmpstr (nm_setting_ovs_interface_get_interface_type (s_ovs_if), ==, "internal");
+		break;
+	case 5:
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER, "master0",
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_OVS_PORT_SETTING_NAME,
+		              NULL);
+		g_object_set (s_ovs_if,
+		              NM_SETTING_OVS_INTERFACE_TYPE, "internal",
+		              NULL);
+		nm_connection_add_setting (con, nm_setting_ip4_config_new ());
+		nm_connection_add_setting (con, nm_setting_ip6_config_new ());
+		nm_connection_add_setting (con, nm_setting_proxy_new ());
+		s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting_ip4_config (con));
+		s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting_ip6_config (con));
+		g_object_set (s_ip4,
+		              NM_SETTING_IP_CONFIG_METHOD, "auto",
+		              NULL);
+		g_object_set (s_ip6,
+		              NM_SETTING_IP_CONFIG_METHOD, "auto",
+		              NULL);
+		nmtst_assert_connection_verifies_without_normalization (con);
+		nmtst_assert_connection_has_settings (con, NM_SETTING_CONNECTION_SETTING_NAME,
+		                                           NM_SETTING_IP4_CONFIG_SETTING_NAME,
+		                                           NM_SETTING_IP6_CONFIG_SETTING_NAME,
+		                                           NM_SETTING_PROXY_SETTING_NAME,
+		                                           NM_SETTING_OVS_INTERFACE_SETTING_NAME);
+		break;
+	case 6:
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER, "master0",
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_OVS_PORT_SETTING_NAME,
+		              NULL);
+		g_object_set (s_ovs_if,
+		              NM_SETTING_OVS_INTERFACE_TYPE, "internal",
+		              NULL);
+		nmtst_assert_connection_verifies_and_normalizable (con);
+		nmtst_connection_normalize (con);
+		nmtst_assert_connection_has_settings (con, NM_SETTING_CONNECTION_SETTING_NAME,
+		                                           NM_SETTING_IP4_CONFIG_SETTING_NAME,
+		                                           NM_SETTING_IP6_CONFIG_SETTING_NAME,
+		                                           NM_SETTING_PROXY_SETTING_NAME,
+		                                           NM_SETTING_OVS_INTERFACE_SETTING_NAME);
+		g_assert (s_con == nm_connection_get_setting_connection (con));
+		g_assert (s_ovs_if == nm_connection_get_setting_ovs_interface (con));
+		g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_OVS_PORT_SETTING_NAME);
+		g_assert_cmpstr (nm_setting_ovs_interface_get_interface_type (s_ovs_if), ==, "internal");
+		break;
+	case 7:
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER, "master0",
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_OVS_PORT_SETTING_NAME,
+		              NULL);
+		g_object_set (s_ovs_if,
+		              NM_SETTING_OVS_INTERFACE_TYPE, "system",
+		              NULL);
+		nmtst_assert_connection_unnormalizable (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+		break;
+	case 8:
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER, "master0",
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_OVS_PORT_SETTING_NAME,
+		              NULL);
+		g_object_set (s_ovs_if,
+		              NM_SETTING_OVS_INTERFACE_TYPE, "bogus",
+		              NULL);
+		nmtst_assert_connection_unnormalizable (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+		break;
+	case 9:
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER, "master0",
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_OVS_PORT_SETTING_NAME,
+		              NULL);
+		g_object_set (s_ovs_if,
+		              NM_SETTING_OVS_INTERFACE_TYPE, "patch",
+		              NULL);
+		nmtst_assert_connection_unnormalizable (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_SETTING);
+		break;
+	case 10:
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER, "master0",
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_OVS_PORT_SETTING_NAME,
+		              NULL);
+		g_object_set (s_ovs_if,
+		              NM_SETTING_OVS_INTERFACE_TYPE, "patch",
+		              NULL);
+		nm_connection_add_setting (con, nm_setting_ovs_patch_new ());
+		nmtst_assert_connection_unnormalizable (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY);
+		break;
+	case 11:
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER, "master0",
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_OVS_PORT_SETTING_NAME,
+		              NM_SETTING_CONNECTION_INTERFACE_NAME, "adsf",
+		              NULL);
+		g_object_set (s_ovs_if,
+		              NM_SETTING_OVS_INTERFACE_TYPE, "patch",
+		              NULL);
+		nm_connection_add_setting (con, nm_setting_ovs_patch_new ());
+		nmtst_assert_connection_unnormalizable (con, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY);
+		break;
+	case 12:
+		g_object_set (s_con,
+		              NM_SETTING_CONNECTION_MASTER, "master0",
+		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_OVS_PORT_SETTING_NAME,
+		              NM_SETTING_CONNECTION_INTERFACE_NAME, "adsf",
+		              NULL);
+		g_object_set (s_ovs_if,
+		              NM_SETTING_OVS_INTERFACE_TYPE, "patch",
+		              NULL);
+		s_ovs_patch = NM_SETTING_OVS_PATCH (nm_setting_ovs_patch_new ());
+		nm_connection_add_setting (con, NM_SETTING (s_ovs_patch));
+		g_object_set (s_ovs_patch,
+		              NM_SETTING_OVS_PATCH_PEER, "1.2.3.4",
+		              NULL);
+		nmtst_assert_connection_verifies_and_normalizable (con);
+		nmtst_connection_normalize (con);
+		nmtst_assert_connection_has_settings (con, NM_SETTING_CONNECTION_SETTING_NAME,
+		                                           NM_SETTING_IP4_CONFIG_SETTING_NAME,
+		                                           NM_SETTING_IP6_CONFIG_SETTING_NAME,
+		                                           NM_SETTING_PROXY_SETTING_NAME,
+		                                           NM_SETTING_OVS_INTERFACE_SETTING_NAME,
+		                                           NM_SETTING_OVS_PATCH_SETTING_NAME);
+		g_assert (s_con == nm_connection_get_setting_connection (con));
+		g_assert (s_ovs_if == nm_connection_get_setting_ovs_interface (con));
+		g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_OVS_PORT_SETTING_NAME);
+		g_assert_cmpstr (nm_setting_ovs_interface_get_interface_type (s_ovs_if), ==, "patch");
+		break;
+	default:
+		g_assert_not_reached ();
+	}
+}
+
+static void
 test_setting_ip4_gateway (void)
 {
 	NMConnection *conn;
@@ -6540,6 +6878,25 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_connection_normalize_gateway_never_default", test_connection_normalize_gateway_never_default);
 	g_test_add_func ("/core/general/test_connection_normalize_may_fail", test_connection_normalize_may_fail);
 	g_test_add_func ("/core/general/test_connection_normalize_shared_addresses", test_connection_normalize_shared_addresses);
+	g_test_add_data_func ("/core/general/test_connection_normalize_ovs_interface_type_system/1", GUINT_TO_POINTER (1), test_connection_normalize_ovs_interface_type_system);
+	g_test_add_data_func ("/core/general/test_connection_normalize_ovs_interface_type_system/2", GUINT_TO_POINTER (2), test_connection_normalize_ovs_interface_type_system);
+	g_test_add_data_func ("/core/general/test_connection_normalize_ovs_interface_type_system/3", GUINT_TO_POINTER (3), test_connection_normalize_ovs_interface_type_system);
+	g_test_add_data_func ("/core/general/test_connection_normalize_ovs_interface_type_system/4", GUINT_TO_POINTER (4), test_connection_normalize_ovs_interface_type_system);
+	g_test_add_data_func ("/core/general/test_connection_normalize_ovs_interface_type_system/5", GUINT_TO_POINTER (5), test_connection_normalize_ovs_interface_type_system);
+	g_test_add_data_func ("/core/general/test_connection_normalize_ovs_interface_type_system/6", GUINT_TO_POINTER (6), test_connection_normalize_ovs_interface_type_system);
+	g_test_add_data_func ("/core/general/test_connection_normalize_ovs_interface_type_system/7", GUINT_TO_POINTER (7), test_connection_normalize_ovs_interface_type_system);
+	g_test_add_data_func ("/core/general/test_connection_normalize_ovs_interface_type_ovs_interface/1",  GUINT_TO_POINTER (1),  test_connection_normalize_ovs_interface_type_ovs_interface);
+	g_test_add_data_func ("/core/general/test_connection_normalize_ovs_interface_type_ovs_interface/2",  GUINT_TO_POINTER (2),  test_connection_normalize_ovs_interface_type_ovs_interface);
+	g_test_add_data_func ("/core/general/test_connection_normalize_ovs_interface_type_ovs_interface/3",  GUINT_TO_POINTER (3),  test_connection_normalize_ovs_interface_type_ovs_interface);
+	g_test_add_data_func ("/core/general/test_connection_normalize_ovs_interface_type_ovs_interface/4",  GUINT_TO_POINTER (4),  test_connection_normalize_ovs_interface_type_ovs_interface);
+	g_test_add_data_func ("/core/general/test_connection_normalize_ovs_interface_type_ovs_interface/5",  GUINT_TO_POINTER (5),  test_connection_normalize_ovs_interface_type_ovs_interface);
+	g_test_add_data_func ("/core/general/test_connection_normalize_ovs_interface_type_ovs_interface/6",  GUINT_TO_POINTER (6),  test_connection_normalize_ovs_interface_type_ovs_interface);
+	g_test_add_data_func ("/core/general/test_connection_normalize_ovs_interface_type_ovs_interface/7",  GUINT_TO_POINTER (7),  test_connection_normalize_ovs_interface_type_ovs_interface);
+	g_test_add_data_func ("/core/general/test_connection_normalize_ovs_interface_type_ovs_interface/8",  GUINT_TO_POINTER (8),  test_connection_normalize_ovs_interface_type_ovs_interface);
+	g_test_add_data_func ("/core/general/test_connection_normalize_ovs_interface_type_ovs_interface/9",  GUINT_TO_POINTER (9),  test_connection_normalize_ovs_interface_type_ovs_interface);
+	g_test_add_data_func ("/core/general/test_connection_normalize_ovs_interface_type_ovs_interface/10", GUINT_TO_POINTER (10), test_connection_normalize_ovs_interface_type_ovs_interface);
+	g_test_add_data_func ("/core/general/test_connection_normalize_ovs_interface_type_ovs_interface/11", GUINT_TO_POINTER (11), test_connection_normalize_ovs_interface_type_ovs_interface);
+	g_test_add_data_func ("/core/general/test_connection_normalize_ovs_interface_type_ovs_interface/12", GUINT_TO_POINTER (12), test_connection_normalize_ovs_interface_type_ovs_interface);
 
 	g_test_add_func ("/core/general/test_setting_connection_permissions_helpers", test_setting_connection_permissions_helpers);
 	g_test_add_func ("/core/general/test_setting_connection_permissions_property", test_setting_connection_permissions_property);

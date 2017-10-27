@@ -1114,33 +1114,21 @@ static gboolean
 _normalize_ovs_interface_type (NMConnection *self, GHashTable *parameters)
 {
 	NMSettingOvsInterface *s_ovs_interface = nm_connection_get_setting_ovs_interface (self);
-	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
-	const char *interface_type;
+	gboolean modified;
+	int v;
 
-	if (strcmp (nm_connection_get_connection_type (self), NM_SETTING_OVS_INTERFACE_SETTING_NAME) == 0) {
-		/* OpenVSwitch managed interface. */
-		if (nm_connection_get_setting_ovs_patch (self))
-			interface_type = "patch";
-		else
-			interface_type = "internal";
-	} else if (g_strcmp0 (nm_setting_connection_get_slave_type (s_con), NM_SETTING_OVS_PORT_SETTING_NAME) == 0) {
-		/* A regular device enslaved to a port. */
-		interface_type = "";
-	} else {
-		/* Something else. */
+	if (!s_ovs_interface)
 		return FALSE;
-	}
 
-	if (!s_ovs_interface) {
-		s_ovs_interface = NM_SETTING_OVS_INTERFACE (nm_setting_ovs_interface_new ());
-		nm_connection_add_setting (self, NM_SETTING (s_ovs_interface));
-	}
+	v = _nm_setting_ovs_interface_verify_interface_type (s_ovs_interface,
+	                                                     self,
+	                                                     TRUE,
+	                                                     &modified,
+	                                                     NULL);
+	if (v != TRUE)
+		g_return_val_if_reached (modified);
 
-	g_object_set (s_ovs_interface,
-	              NM_SETTING_OVS_INTERFACE_TYPE, interface_type,
-	              NULL);
-
-	return TRUE;
+	return modified;
 }
 
 static gboolean
@@ -1465,6 +1453,7 @@ nm_connection_normalize (NMConnection *connection,
 			                     NM_CONNECTION_ERROR_FAILED,
 			                     _("Unexpected failure to normalize the connection"));
 		}
+		g_warning ("connection did not verify after normalization: %s", error ? (*error)->message : "??");
 		g_return_val_if_reached (FALSE);
 	}
 
