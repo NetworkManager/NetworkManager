@@ -688,7 +688,7 @@ write_wireless_security_setting (NMConnection *connection,
 						key = ascii_key;
 					}
 				} else {
-					_LOGW ("invalid WEP key '%s'", key);
+					g_warn_if_reached ();
 					key_valid = FALSE;
 				}
 
@@ -1921,7 +1921,7 @@ get_route_attributes_string (NMIPRoute *route, int family)
 
 			g_string_append_printf (str, "%s %s", arg, g_variant_get_string (attr, NULL));
 		} else {
-			_LOGW ("unknown route option '%s'", names[i]);
+			g_warn_if_reached ();
 			continue;
 		}
 		if (names[i + 1])
@@ -2333,7 +2333,7 @@ write_ip4_setting (NMConnection *connection,
 }
 
 static void
-write_ip4_aliases (NMConnection *connection, char *base_ifcfg_path)
+write_ip4_aliases (NMConnection *connection, const char *base_ifcfg_path)
 {
 	NMSettingIPConfig *s_ip4;
 	gs_free char *base_ifcfg_dir = NULL, *base_ifcfg_name = NULL;
@@ -2707,42 +2707,44 @@ escape_id (const char *id)
 	return escaped;
 }
 
-gboolean
-nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
-                                      const char *ifcfg_dir,
-                                      const char *filename,
-                                      char **out_filename,
-                                      NMConnection **out_reread,
-                                      gboolean *out_reread_same,
-                                      GError **error)
+static gboolean
+do_write_construct (NMConnection *connection,
+                    const char *ifcfg_dir,
+                    const char *filename,
+                    shvarFile **out_ifcfg,
+                    GHashTable **out_blobs,
+                    GHashTable **out_secrets,
+                    gboolean *out_route_ignore,
+                    shvarFile **out_route_content_svformat,
+                    GString **out_route_content,
+                    GString **out_route6_content,
+                    GError **error)
 {
 	NMSettingConnection *s_con;
 	nm_auto_shvar_file_close shvarFile *ifcfg = NULL;
 	gs_free char *ifcfg_name = NULL;
-	const char *type;
-	gboolean no_8021x = FALSE;
-	gboolean wired = FALSE;
-	gboolean route_path_is_svformat;
 	gs_free char *route_path = NULL;
 	gs_free char *route6_path = NULL;
-	nm_auto_free_gstring GString *route_content = NULL;
-	gboolean route_ignore = FALSE;
+	const char *type;
+	gs_unref_hashtable GHashTable *blobs = NULL;
+	gs_unref_hashtable GHashTable *secrets = NULL;
+	gboolean wired;
+	gboolean no_8021x;
+	gboolean route_path_is_svformat;
 	gboolean has_complex_routes_v4;
 	gboolean has_complex_routes_v6;
+	gboolean route_ignore;
 	nm_auto_shvar_file_close shvarFile *route_content_svformat = NULL;
+	nm_auto_free_gstring GString *route_content = NULL;
 	nm_auto_free_gstring GString *route6_content = NULL;
-	gs_unref_hashtable GHashTable *secrets = NULL;
-	gs_unref_hashtable GHashTable *blobs = NULL;
 
 	nm_assert (NM_IS_CONNECTION (connection));
 	nm_assert (_nm_connection_verify (connection, NULL) == NM_SETTING_VERIFY_SUCCESS);
-	nm_assert (!out_reread || !*out_reread);
 
 	if (!nms_ifcfg_rh_writer_can_write_connection (connection, error))
 		return FALSE;
 
 	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
 
 	if (filename) {
 		/* For existing connections, 'filename' should be full path to ifcfg file */
@@ -2751,7 +2753,7 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 			return FALSE;
 
 		ifcfg_name = g_strdup (filename);
-	} else {
+	} else if (ifcfg_dir) {
 		char *escaped;
 
 		escaped = escape_id (nm_setting_connection_get_id (s_con));
@@ -2782,7 +2784,8 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 		}
 
 		ifcfg = svCreateFile (ifcfg_name);
-	}
+	} else
+		ifcfg = svCreateFile ("/tmp/ifcfg-dummy");
 
 	route_path = utils_get_route_path (svFileGetName (ifcfg));
 	if (!route_path) {
@@ -2807,6 +2810,8 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 
 	secrets = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 
+	wired = FALSE;
+	no_8021x = FALSE;
 	if (!strcmp (type, NM_SETTING_WIRED_SETTING_NAME)) {
 		// FIXME: can't write PPPoE at this time
 		if (nm_connection_get_setting_pppoe (connection)) {
@@ -2896,7 +2901,8 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 			return FALSE;
 		}
 		route_ignore = TRUE;
-	}
+	} else
+		route_ignore = FALSE;
 
 	if (!write_ip4_setting (connection,
 	                        ifcfg,
@@ -2916,6 +2922,27 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 
 	write_connection_setting (s_con, ifcfg);
 
+	NM_SET_OUT (out_ifcfg, g_steal_pointer (&ifcfg));
+	NM_SET_OUT (out_blobs, g_steal_pointer (&blobs));
+	NM_SET_OUT (out_secrets, g_steal_pointer (&secrets));
+	NM_SET_OUT (out_route_ignore, route_ignore);
+	NM_SET_OUT (out_route_content_svformat, g_steal_pointer (&route_content_svformat));
+	NM_SET_OUT (out_route_content, g_steal_pointer (&route_content));
+	NM_SET_OUT (out_route6_content, g_steal_pointer (&route6_content));
+	return TRUE;
+}
+
+static gboolean
+do_write_to_disk (NMConnection *connection,
+                  shvarFile *ifcfg,
+                  GHashTable *blobs,
+                  GHashTable *secrets,
+                  gboolean route_ignore,
+                  shvarFile *route_content_svformat,
+                  GString *route_content,
+                  GString *route6_content,
+                  GError **error)
+{
 	/* From here on, we persist data to disk. Before, it was all in-memory
 	 * only. But we loaded the ifcfg files from disk, and managled our
 	 * new settings (in-momory). */
@@ -2923,7 +2950,7 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 	if (!svWriteFile (ifcfg, 0644, error))
 		return FALSE;
 
-	write_ip4_aliases (connection, ifcfg_name);
+	write_ip4_aliases (connection, svFileGetName (ifcfg));
 
 	if (!write_blobs (blobs, error))
 		return FALSE;
@@ -2932,10 +2959,13 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 		return FALSE;
 
 	if (!route_ignore) {
+		gs_free char *route_path = utils_get_route_path (svFileGetName (ifcfg));
+
 		if (!route_content && !route_content_svformat)
 			(void) unlink (route_path);
 		else {
-			if (route_path_is_svformat) {
+			nm_assert (route_content_svformat || route_content);
+			if (route_content_svformat) {
 				if (!svWriteFile (route_content_svformat, 0644, error))
 					return FALSE;
 			} else {
@@ -2949,6 +2979,8 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 	}
 
 	if (!route_ignore) {
+		gs_free char *route6_path = utils_get_route6_path (svFileGetName (ifcfg));
+
 		if (!route6_content)
 			(void) unlink (route6_path);
 		else {
@@ -2960,50 +2992,131 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 		}
 	}
 
+	return TRUE;
+}
+
+static gboolean
+do_write_reread (NMConnection *connection,
+                 const char *ifcfg_name,
+                 NMConnection **out_reread,
+                 gboolean *out_reread_same,
+                 GError **error)
+{
+	gs_unref_object NMConnection *reread = NULL;
+	gs_free_error GError *local = NULL;
+	gs_free char *unhandled = NULL;
+	gboolean reread_same = FALSE;
+
+	nm_assert (!out_reread || !*out_reread);
+
+	reread = connection_from_file (ifcfg_name, &unhandled, &local, NULL);
+
+	if (!reread) {
+		g_propagate_error (error, local);
+		local = NULL;
+		return FALSE;
+	}
+	if (unhandled) {
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+		             "connection is unhandled");
+		return FALSE;
+	}
+	if (out_reread_same) {
+		if (nm_connection_compare (reread, connection, NM_SETTING_COMPARE_FLAG_EXACT))
+			reread_same = TRUE;
+
+		nm_assert (reread_same == nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+		nm_assert (reread_same == ({
+		                                gs_unref_hashtable GHashTable *_settings = NULL;
+
+		                                (   nm_connection_diff (reread, connection, NM_SETTING_COMPARE_FLAG_EXACT, &_settings)
+		                                 && !_settings);
+		                           }));
+	}
+
+	NM_SET_OUT (out_reread, g_steal_pointer (&reread));
+	NM_SET_OUT (out_reread_same, reread_same);
+	return TRUE;
+}
+
+gboolean
+nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
+                                      const char *ifcfg_dir,
+                                      const char *filename,
+                                      char **out_filename,
+                                      NMConnection **out_reread,
+                                      gboolean *out_reread_same,
+                                      GError **error)
+{
+	nm_auto_shvar_file_close shvarFile *ifcfg = NULL;
+	nm_auto_free_gstring GString *route_content = NULL;
+	gboolean route_ignore = FALSE;
+	nm_auto_shvar_file_close shvarFile *route_content_svformat = NULL;
+	nm_auto_free_gstring GString *route6_content = NULL;
+	gs_unref_hashtable GHashTable *secrets = NULL;
+	gs_unref_hashtable GHashTable *blobs = NULL;
+	GError *local = NULL;
+
+	nm_assert (!out_reread || !*out_reread);
+
+	if (!do_write_construct (connection,
+	                         ifcfg_dir,
+	                         filename,
+	                         &ifcfg,
+	                         &blobs,
+	                         &secrets,
+	                         &route_ignore,
+	                         &route_content_svformat,
+	                         &route_content,
+	                         &route6_content,
+	                         error))
+		return FALSE;
+
+	_LOGT ("write: write connection %s (%s) to file \"%s\"",
+	       nm_connection_get_id (connection),
+	       nm_connection_get_uuid (connection),
+	       svFileGetName (ifcfg));
+
+	if (!do_write_to_disk (connection,
+	                       ifcfg,
+	                       blobs,
+	                       secrets,
+	                       route_ignore,
+	                       route_content_svformat,
+	                       route_content,
+	                       route6_content,
+	                       error))
+		return FALSE;
+
 	/* Note that we just wrote the connection to disk, and re-read it from there.
 	 * That is racy if somebody else modifies the connection.
 	 *
 	 * A better solution might be, to re-read the connection only based on the
 	 * in-memory representation of what we collected above. But the reader
 	 * does not yet allow to inject the configuration. */
-
 	if (out_reread || out_reread_same) {
-		gs_unref_object NMConnection *reread = NULL;
-		gs_free_error GError *local = NULL;
-		gs_free char *unhandled = NULL;
-		gboolean reread_same = FALSE;
-
-		reread = connection_from_file (ifcfg_name, &unhandled, &local, NULL);
-
-		if (unhandled) {
-			_LOGW ("failure to re-read the new connection from file \"%s\": %s",
-			       ifcfg_name, "connection is unhandled");
-			g_clear_object (&reread);
-		} else if (!reread) {
-			_LOGW ("failure to re-read the new connection from file \"%s\": %s",
-			       ifcfg_name, local ? local->message : "<unknown>");
+		if (!do_write_reread (connection,
+		                         svFileGetName (ifcfg),
+		                         out_reread,
+		                         out_reread_same,
+		                         &local)) {
+			_LOGW ("write: failure to re-read connection \"%s\": %s",
+			       svFileGetName (ifcfg), local->message);
+			g_clear_error (&local);
 		} else {
-			if (out_reread_same) {
-				if (nm_connection_compare (reread, connection, NM_SETTING_COMPARE_FLAG_EXACT))
-					reread_same = TRUE;
-
-				nm_assert (reread_same == nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
-				nm_assert (reread_same == ({
-				                                gs_unref_hashtable GHashTable *_settings = NULL;
-
-				                                (   nm_connection_diff (reread, connection, NM_SETTING_COMPARE_FLAG_EXACT, &_settings)
-				                                 && !_settings);
-				                           }));
+			if (   out_reread_same
+			    && !*out_reread_same) {
+				_LOGD ("write: connection %s (%s) was modified by persisting it to \"%s\" ",
+				       nm_connection_get_id (connection),
+				       nm_connection_get_uuid (connection),
+				       svFileGetName (ifcfg));
 			}
 		}
-
-		NM_SET_OUT (out_reread, g_steal_pointer (&reread));
-		NM_SET_OUT (out_reread_same, reread_same);
 	}
 
 	/* Only return the filename if this was a newly written ifcfg */
 	if (out_filename && !filename)
-		*out_filename = g_steal_pointer (&ifcfg_name);
+		*out_filename = g_strdup (svFileGetName (ifcfg));
 
 	return TRUE;
 }
@@ -3011,25 +3124,26 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 gboolean
 nms_ifcfg_rh_writer_can_write_connection (NMConnection *connection, GError **error)
 {
-	NMSettingConnection *s_con;
+	const char *type, *id;
 
-	if (   (   nm_connection_is_type (connection, NM_SETTING_WIRED_SETTING_NAME)
-	        && !nm_connection_get_setting_pppoe (connection))
-	    || nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)
-	    || nm_connection_is_type (connection, NM_SETTING_WIRELESS_SETTING_NAME)
-	    || nm_connection_is_type (connection, NM_SETTING_INFINIBAND_SETTING_NAME)
-	    || nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)
-	    || nm_connection_is_type (connection, NM_SETTING_TEAM_SETTING_NAME)
-	    || nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME))
+	type = nm_connection_get_connection_type (connection);
+	if (NM_IN_STRSET (type,
+	                  NM_SETTING_VLAN_SETTING_NAME,
+	                  NM_SETTING_WIRELESS_SETTING_NAME,
+	                  NM_SETTING_INFINIBAND_SETTING_NAME,
+	                  NM_SETTING_BOND_SETTING_NAME,
+	                  NM_SETTING_TEAM_SETTING_NAME,
+	                  NM_SETTING_BRIDGE_SETTING_NAME))
+		return TRUE;
+	if (   nm_streq0 (type, NM_SETTING_WIRED_SETTING_NAME)
+	    && !nm_connection_get_setting_pppoe (connection))
 		return TRUE;
 
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
+	id = nm_connection_get_id (connection);
 	g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-	             "The ifcfg-rh plugin cannot write the connection '%s' (type '%s' pppoe %d)",
-	             nm_connection_get_id (connection),
-	             nm_setting_connection_get_connection_type (s_con),
-	             !!nm_connection_get_setting_pppoe (connection));
+	             "The ifcfg-rh plugin cannot write the connection %s%s%s (type %s%s%s)",
+	             NM_PRINT_FMT_QUOTE_STRING (id),
+	             NM_PRINT_FMT_QUOTE_STRING (type));
 	return FALSE;
 }
 
