@@ -95,12 +95,20 @@ check_if_bond_slave (shvarFile *ifcfg,
 {
 	gs_free char *value = NULL;
 	const char *v;
+	const char *master;
 
 	v = svGetValueStr (ifcfg, "MASTER_UUID", &value);
 	if (!v)
 		v = svGetValueStr (ifcfg, "MASTER", &value);
 
 	if (v) {
+		master = nm_setting_connection_get_master (s_con);
+		if (master) {
+			PARSE_WARNING ("Already configured as slave of %s. Ignoring MASTER{_UUID}=\"%s\"",
+			               master, v);
+			return;
+		}
+
 		g_object_set (s_con,
 		              NM_SETTING_CONNECTION_MASTER, v,
 		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BOND_SETTING_NAME,
@@ -112,35 +120,31 @@ check_if_bond_slave (shvarFile *ifcfg,
 	 */
 }
 
-static gboolean
+static void
 check_if_team_slave (shvarFile *ifcfg,
                      NMSettingConnection *s_con)
 {
 	gs_free char *value = NULL;
 	const char *v;
+	const char *master;
 
 	v = svGetValueStr (ifcfg, "TEAM_MASTER_UUID", &value);
 	if (!v)
 		v = svGetValueStr (ifcfg, "TEAM_MASTER", &value);
 	if (!v)
-		return FALSE;
+		return;
+
+	master = nm_setting_connection_get_master (s_con);
+	if (master) {
+		PARSE_WARNING ("Already configured as slave of %s. Ignoring TEAM_MASTER{_UUID}=\"%s\"",
+		               master, v);
+		return;
+	}
 
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_MASTER, v,
 	              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_TEAM_SETTING_NAME,
 	              NULL);
-	return TRUE;
-}
-
-static void
-check_if_slave (shvarFile *ifcfg,
-                NMSettingConnection *s_con)
-{
-	g_return_if_fail (NM_IS_SETTING_CONNECTION (s_con));
-
-	if (check_if_team_slave (ifcfg, s_con))
-		return;
-	check_if_bond_slave (ifcfg, s_con);
 }
 
 static char *
@@ -296,6 +300,9 @@ make_connection_setting (const char *file,
 			              NM_SETTING_BRIDGE_SETTING_NAME, NULL);
 		}
 	}
+
+	check_if_bond_slave (ifcfg, s_con);
+	check_if_team_slave (ifcfg, s_con);
 
 	nm_clear_g_free (&value);
 	v = svGetValueStr (ifcfg, "GATEWAY_PING_TIMEOUT", &value);
@@ -4220,7 +4227,6 @@ wired_connection_from_ifcfg (const char *file,
 		g_object_unref (connection);
 		return NULL;
 	}
-	check_if_slave (ifcfg, (NMSettingConnection *) con_setting);
 	nm_connection_add_setting (connection, con_setting);
 
 	wired_setting = make_wired_setting (ifcfg, file, &s_8021x, error);
@@ -4370,7 +4376,6 @@ infiniband_connection_from_ifcfg (const char *file,
 		g_object_unref (connection);
 		return NULL;
 	}
-	check_if_slave (ifcfg, (NMSettingConnection *) con_setting);
 	nm_connection_add_setting (connection, con_setting);
 
 	infiniband_setting = make_infiniband_setting (ifcfg, file, error);
@@ -5060,7 +5065,6 @@ vlan_connection_from_ifcfg (const char *file,
 		g_object_unref (connection);
 		return NULL;
 	}
-	check_if_slave (ifcfg, (NMSettingConnection *) con_setting);
 	nm_connection_add_setting (connection, con_setting);
 
 	vlan_setting = make_vlan_setting (ifcfg, file, error);
