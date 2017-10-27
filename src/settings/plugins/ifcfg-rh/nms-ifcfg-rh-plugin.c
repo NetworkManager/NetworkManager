@@ -679,15 +679,16 @@ add_connection (NMSettingsPlugin *config,
 {
 	SettingsPluginIfcfg *self = SETTINGS_PLUGIN_IFCFG (config);
 	gs_free char *path = NULL;
+	gs_unref_object NMConnection *reread = NULL;
 
 	if (save_to_disk) {
-		if (!nms_ifcfg_rh_writer_write_connection (connection, IFCFG_DIR, NULL, &path, NULL, NULL, error))
+		if (!nms_ifcfg_rh_writer_write_connection (connection, IFCFG_DIR, NULL, &path, &reread, NULL, error))
 			return NULL;
 	} else {
 		if (!nms_ifcfg_rh_writer_can_write_connection (connection, error))
 			return NULL;
 	}
-	return NM_SETTINGS_CONNECTION (update_connection (self, connection, path, NULL, FALSE, NULL, error));
+	return NM_SETTINGS_CONNECTION (update_connection (self, reread ?: connection, path, NULL, FALSE, NULL, error));
 }
 
 static void

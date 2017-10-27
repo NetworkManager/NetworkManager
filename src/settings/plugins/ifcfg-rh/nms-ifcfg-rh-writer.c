@@ -3094,15 +3094,24 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 	 * A better solution might be, to re-read the connection only based on the
 	 * in-memory representation of what we collected above. But the reader
 	 * does not yet allow to inject the configuration. */
-	if (   (out_reread || out_reread_same)
-	    && !do_write_reread (connection,
-	                         svFileGetName (ifcfg),
-	                         out_reread,
-	                         out_reread_same,
-	                         &local)) {
-		_LOGW ("write: failure to re-read connection \"%s\": %s",
-		       svFileGetName (ifcfg), local->message);
-		g_clear_error (&local);
+	if (out_reread || out_reread_same) {
+		if (!do_write_reread (connection,
+		                         svFileGetName (ifcfg),
+		                         out_reread,
+		                         out_reread_same,
+		                         &local)) {
+			_LOGW ("write: failure to re-read connection \"%s\": %s",
+			       svFileGetName (ifcfg), local->message);
+			g_clear_error (&local);
+		} else {
+			if (   out_reread_same
+			    && !*out_reread_same) {
+				_LOGD ("write: connection %s (%s) was modified by persisting it to \"%s\" ",
+				       nm_connection_get_id (connection),
+				       nm_connection_get_uuid (connection),
+				       svFileGetName (ifcfg));
+			}
+		}
 	}
 
 	/* Only return the filename if this was a newly written ifcfg */
