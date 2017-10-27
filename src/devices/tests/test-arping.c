@@ -86,7 +86,7 @@ test_arping_common (test_fixture *fixture, TestInfo *info)
 	g_signal_connect (manager, NM_ARPING_MANAGER_PROBE_TERMINATED,
 	                  G_CALLBACK (arping_manager_probe_terminated), loop);
 	g_assert (nm_arping_manager_start_probe (manager, 100, NULL));
-	g_assert (nmtst_main_loop_run (loop, 1000));
+	g_assert (nmtst_main_loop_run (loop, 2000));
 
 	for (i = 0; info->addresses[i]; i++) {
 		g_assert_cmpint (nm_arping_manager_check_address (manager, info->addresses[i]),
