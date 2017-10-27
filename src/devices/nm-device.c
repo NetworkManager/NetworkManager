@@ -4384,6 +4384,8 @@ nm_device_generate_connection (NMDevice *self,
 		s_ip6 = nm_ip6_config_create_setting (priv->ip6_config);
 		nm_connection_add_setting (connection, s_ip6);
 
+		nm_connection_add_setting (connection, nm_setting_proxy_new ());
+
 		pllink = nm_platform_link_get (nm_device_get_platform (self), priv->ifindex);
 		if (pllink && pllink->inet6_token.id) {
 			g_object_set (s_ip6,
