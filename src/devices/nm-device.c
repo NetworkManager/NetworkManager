@@ -2666,7 +2666,7 @@ device_link_changed (NMDevice *self)
 	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (self);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	gboolean ip_ifname_changed = FALSE;
-	NMPlatformLink info;
+	nm_auto_nmpobj const NMPObject *pllink_keep_alive = NULL;
 	const NMPlatformLink *pllink;
 	int ifindex;
 	gboolean was_up;
@@ -2680,20 +2680,20 @@ device_link_changed (NMDevice *self)
 	if (!pllink)
 		return G_SOURCE_REMOVE;
 
-	nm_device_update_from_platform_link (self, pllink);
+	pllink_keep_alive = nmp_object_ref (NMP_OBJECT_UP_CAST (pllink));
 
-	info = *pllink;
+	nm_device_update_from_platform_link (self, pllink);
 
 	had_hw_addr = (priv->hw_addr != NULL);
 	nm_device_update_hw_address (self);
 	got_hw_addr = (!had_hw_addr && priv->hw_addr);
 	nm_device_update_permanent_hw_address (self, FALSE);
 
-	if (info.name[0] && strcmp (priv->iface, info.name) != 0) {
+	if (pllink->name[0] && strcmp (priv->iface, pllink->name) != 0) {
 		_LOGI (LOGD_DEVICE, "interface index %d renamed iface from '%s' to '%s'",
-		       priv->ifindex, priv->iface, info.name);
+		       priv->ifindex, priv->iface, pllink->name);
 		g_free (priv->iface);
-		priv->iface = g_strdup (info.name);
+		priv->iface = g_strdup (pllink->name);
 
 		/* If the device has no explicit ip_iface, then changing iface changes ip_iface too. */
 		ip_ifname_changed = !priv->ip_iface;
@@ -2716,8 +2716,8 @@ device_link_changed (NMDevice *self)
 		nm_device_emit_recheck_auto_activate (self);
 	}
 
-	if (priv->ndisc && info.inet6_token.id) {
-		if (nm_ndisc_set_iid (priv->ndisc, info.inet6_token))
+	if (priv->ndisc && pllink->inet6_token.id) {
+		if (nm_ndisc_set_iid (priv->ndisc, pllink->inet6_token))
 			_LOGD (LOGD_DEVICE, "IPv6 tokenized identifier present on device %s", priv->iface);
 	}
 
@@ -2726,16 +2726,16 @@ device_link_changed (NMDevice *self)
 	    && !nm_device_has_capability (self, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
 		nm_device_set_carrier (self, pllink->connected);
 
-	klass->link_changed (self, &info);
+	klass->link_changed (self, pllink);
 
 	/* Update DHCP, etc, if needed */
 	if (ip_ifname_changed)
 		nm_device_update_dynamic_ip_setup (self);
 
 	was_up = priv->up;
-	priv->up = NM_FLAGS_HAS (info.n_ifi_flags, IFF_UP);
+	priv->up = NM_FLAGS_HAS (pllink->n_ifi_flags, IFF_UP);
 
-	if (   info.initialized
+	if (   pllink->initialized
 	    && nm_device_get_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT)) {
 		NMDeviceStateReason reason;
 
@@ -2765,7 +2765,7 @@ device_link_changed (NMDevice *self)
 
 	set_unmanaged_external_down (self, FALSE);
 
-	device_recheck_slave_status (self, &info);
+	device_recheck_slave_status (self, pllink);
 
 	if (priv->up && !was_up) {
 		/* the link was down and just came up. That happens for example, while changing MTU.
