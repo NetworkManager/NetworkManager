@@ -21,3 +21,7 @@ sudo sh ./contrib/fedora/REQUIRED_PACKAGES
 #
 sudo dnf install ./contrib/fedora/rpm/latest/RPMS/x86_64/*rpm
 
+
+
+# To generate a clean build from git using mock, run:
+./contrib/fedora/rpm/mockbuild.sh
