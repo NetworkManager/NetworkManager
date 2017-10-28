@@ -1798,6 +1798,60 @@ _for_each_sort (NMSetting **p_a, NMSetting **p_b, void *unused)
 }
 
 /**
+ * nm_connection_get_settings:
+ * @connection: the #NMConnection instance
+ * @out_length: (allow-none): (out): the length of the returned array
+ *
+ * Retrieves the settings in @connection.
+ *
+ * The returned array is %NULL-terminated.
+ *
+ * Returns: (array length=out_length) (transfer container): a
+ *   %NULL-terminated array containing every setting of
+ *   @connection.
+ *   If the connection has no settings, %NULL is returned.
+ *
+ * Since: 1.10
+ */
+NMSetting **
+nm_connection_get_settings (NMConnection *connection,
+                            guint *out_length)
+{
+	NMConnectionPrivate *priv;
+	NMSetting **arr;
+	GHashTableIter iter;
+	NMSetting *setting;
+	guint i, size;
+
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	priv = NM_CONNECTION_GET_PRIVATE (connection);
+
+	size = g_hash_table_size (priv->settings);
+
+	if (!size) {
+		NM_SET_OUT (out_length, 0);
+		return NULL;
+	}
+
+	arr = g_new (NMSetting *, size + 1);
+
+	g_hash_table_iter_init (&iter, priv->settings);
+	for (i = 0; g_hash_table_iter_next (&iter, NULL, (gpointer *) &setting); i++)
+		arr[i] = setting;
+	nm_assert (i == size);
+	arr[size] = NULL;
+
+	/* sort the settings. This has an effect on the order in which keyfile
+	 * prints them. */
+	if (size > 1)
+		g_qsort_with_data (arr, size, sizeof (NMSetting *), (GCompareDataFunc) _for_each_sort, NULL);
+
+	NM_SET_OUT (out_length, size);
+	return arr;
+}
+
+/**
  * nm_connection_for_each_setting_value:
  * @connection: the #NMConnection
  * @func: (scope call): user-supplied function called for each setting's property
@@ -1811,39 +1865,15 @@ nm_connection_for_each_setting_value (NMConnection *connection,
                                       NMSettingValueIterFn func,
                                       gpointer user_data)
 {
-	NMConnectionPrivate *priv;
-	gs_free NMSetting **arr_free = NULL;
-	NMSetting *arr_temp[20], **arr;
-	GHashTableIter iter;
-	gpointer value;
-	guint i, size;
+	gs_free NMSetting **settings = NULL;
+	guint i, length = 0;
 
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 	g_return_if_fail (func);
 
-	priv = NM_CONNECTION_GET_PRIVATE (connection);
-
-	size = g_hash_table_size (priv->settings);
-	if (!size)
-		return;
-
-	if (size > G_N_ELEMENTS (arr_temp))
-		arr = arr_free = g_new (NMSetting *, size);
-	else
-		arr = arr_temp;
-
-	g_hash_table_iter_init (&iter, priv->settings);
-	for (i = 0; g_hash_table_iter_next (&iter, NULL, &value); i++)
-		arr[i] = NM_SETTING (value);
-	g_assert (i == size);
-
-	/* sort the settings. This has an effect on the order in which keyfile
-	 * prints them. */
-	if (size > 1)
-		g_qsort_with_data (arr, size, sizeof (NMSetting *), (GCompareDataFunc) _for_each_sort, NULL);
-
-	for (i = 0; i < size; i++)
-		nm_setting_enumerate_values (arr[i], func, user_data);
+	settings = nm_connection_get_settings (connection, &length);
+	for (i = 0; i < length; i++)
+		nm_setting_enumerate_values (settings[i], func, user_data);
 }
 
 /**

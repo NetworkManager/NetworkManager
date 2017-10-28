@@ -179,6 +179,10 @@ void          nm_connection_for_each_setting_value (NMConnection *connection,
                                                     NMSettingValueIterFn func,
                                                     gpointer user_data);
 
+NM_AVAILABLE_IN_1_10
+NMSetting **  nm_connection_get_settings (NMConnection *connection,
+                                          guint *out_length);
+
 void          nm_connection_dump          (NMConnection *connection);
 
 /* Helpers */
