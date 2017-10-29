@@ -1697,6 +1697,63 @@ nmtst_assert_setting_verifies (NMSetting *setting)
 	g_assert (success);
 }
 
+#if defined(__NM_SIMPLE_CONNECTION_H__)
+static inline void
+_nmtst_assert_connection_has_settings (NMConnection *connection, gboolean has_at_least, gboolean has_at_most, ...)
+{
+	gs_unref_hashtable GHashTable *names = NULL;
+	gs_free NMSetting **settings = NULL;
+	va_list ap;
+	const char *name;
+	guint i, len;
+	gs_unref_ptrarray GPtrArray *names_arr = NULL;
+
+	g_assert (NM_IS_CONNECTION (connection));
+
+	names = g_hash_table_new (g_str_hash, g_str_equal);
+	names_arr = g_ptr_array_new ();
+
+	va_start (ap, has_at_most);
+	while ((name = va_arg (ap, const char *))) {
+		if (!nm_g_hash_table_add (names, (gpointer) name))
+			g_assert_not_reached ();
+		g_ptr_array_add (names_arr, (gpointer) name);
+	}
+	va_end (ap);
+
+	g_ptr_array_add (names_arr, NULL);
+
+	settings = nm_connection_get_settings (connection, &len);
+	for (i = 0; i < len; i++) {
+		if (   !g_hash_table_remove (names, nm_setting_get_name (settings[i]))
+		    && has_at_most) {
+			g_error ("nmtst_assert_connection_has_settings(): has setting \"%s\" which is not expected",
+			         nm_setting_get_name (settings[i]));
+		}
+	}
+	if (   g_hash_table_size (names) > 0
+	    && has_at_least) {
+		gs_free char *expected_str = g_strjoinv (" ", (char **) names_arr->pdata);
+		gs_free const char **settings_names = NULL;
+		gs_free char *has_str = NULL;
+
+		settings_names = g_new0 (const char *, len + 1);
+		for (i = 0; i < len; i++)
+			settings_names[i] = nm_setting_get_name (settings[i]);
+		has_str = g_strjoinv (" ", (char **) settings_names);
+
+		g_error ("nmtst_assert_connection_has_settings(): the setting lacks %u expected settings (expected: [%s] vs. has: [%s])",
+		         g_hash_table_size (names),
+		         expected_str,
+		         has_str);
+	}
+}
+#define nmtst_assert_connection_has_settings(connection, ...)          _nmtst_assert_connection_has_settings ((connection), TRUE,  TRUE,  __VA_ARGS__, NULL)
+#define nmtst_assert_connection_has_settings_at_least(connection, ...) _nmtst_assert_connection_has_settings ((connection), TRUE,  FALSE, __VA_ARGS__, NULL)
+#define nmtst_assert_connection_has_settings_at_most(connection, ...)  _nmtst_assert_connection_has_settings ((connection), FALSE, TRUE,  __VA_ARGS__, NULL)
+
+#endif /* __NM_SIMPLE_CONNECTION_H__ */
+
 static inline void
 nmtst_assert_setting_verify_fails (NMSetting *setting,
                                    GQuark expect_error_domain,
