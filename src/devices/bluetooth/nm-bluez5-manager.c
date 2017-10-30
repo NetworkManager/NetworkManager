@@ -380,12 +380,12 @@ object_manager_interfaces_added (GDBusProxy      *proxy,
 	if (g_variant_lookup (dict, NM_BLUEZ5_DEVICE_INTERFACE, "a{sv}", NULL))
 		device_added (proxy, path, self);
 	if (g_variant_lookup (dict, NM_BLUEZ5_NETWORK_SERVER_INTERFACE, "a{sv}", NULL)) {
-		GVariant *adapter = g_variant_lookup_value (dict, NM_BLUEZ5_ADAPTER_INTERFACE, G_VARIANT_TYPE_DICTIONARY);
+		gs_unref_variant GVariant *adapter = g_variant_lookup_value (dict, NM_BLUEZ5_ADAPTER_INTERFACE, G_VARIANT_TYPE_DICTIONARY);
 		const char *address;
 
-		g_variant_lookup (adapter, "Address", "&s", &address);
-		network_server_added (proxy, path, address, self);
-		g_variant_unref (adapter);
+		if (   adapter
+		    && g_variant_lookup (adapter, "Address", "&s", &address))
+			network_server_added (proxy, path, address, self);
 	}
 }
 

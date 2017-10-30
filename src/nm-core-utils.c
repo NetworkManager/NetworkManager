@@ -2832,7 +2832,7 @@ nm_utils_fd_get_contents (int fd,
 		gsize n_have, n_alloc;
 		int fd2;
 
-		if (close_fd)
+		if (fd_keeper >= 0)
 			fd2 = nm_steal_fd (&fd_keeper);
 		else {
 			fd2 = dup (fd);

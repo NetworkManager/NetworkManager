@@ -3939,13 +3939,14 @@ do_request_link_no_delayed_actions (NMPlatform *platform, int ifindex, const cha
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+	int nle;
 
 	if (name && !name[0])
 		name = NULL;
 
 	g_return_if_fail (ifindex > 0 || name);
 
-	_LOGD ("do-request-link: %d %s", ifindex, name ? name : "");
+	_LOGD ("do-request-link: %d %s", ifindex, name ?: "");
 
 	if (ifindex > 0) {
 		const NMDedupMultiEntry *entry;
@@ -3965,8 +3966,15 @@ do_request_link_no_delayed_actions (NMPlatform *platform, int ifindex, const cha
 	                          name,
 	                          0,
 	                          0);
-	if (nlmsg)
-		_nl_send_nlmsg (platform, nlmsg, NULL, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
+	if (nlmsg) {
+		nle = _nl_send_nlmsg (platform, nlmsg, NULL, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
+		if (nle < 0) {
+			_LOGE ("do-request-link: %d %s: failed sending netlink request \"%s\" (%d)",
+			       ifindex, name ?: "",
+			       nl_geterror (nle), -nle);
+			return;
+		}
+	}
 }
 
 static void

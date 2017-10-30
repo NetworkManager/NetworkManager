@@ -402,7 +402,7 @@ nm_setting_new_from_hash (GType setting_type, GHashTable *hash)
 			continue;
 		}
 
-		nm_g_object_set_property ((GObject *) setting, prop_name, src_value, NULL);
+		(void) nm_g_object_set_property ((GObject *) setting, prop_name, src_value, NULL);
 	}
 
 	g_type_class_unref (class);

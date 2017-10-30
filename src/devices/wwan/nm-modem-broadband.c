@@ -894,7 +894,15 @@ static_stage3_ip4_done (NMModemBroadband *self)
 
 	/* Missing gateway not a hard failure */
 	gw_string = mm_bearer_ip_config_get_gateway (self->_priv.ipv4_config);
-	nm_utils_parse_inaddr_bin (AF_INET, gw_string, &gw);
+	if (   !gw_string
+	    || !nm_utils_parse_inaddr_bin (AF_INET, gw_string, &gw)) {
+		error = g_error_new (NM_DEVICE_ERROR,
+		                     NM_DEVICE_ERROR_INVALID_CONNECTION,
+		                     "(%s) retrieving IP4 configuration failed: invalid gateway address %s%s%s",
+		                     nm_modem_get_uid (NM_MODEM (self)),
+		                     NM_PRINT_FMT_QUOTE_STRING (gw_string));
+		goto out;
+	}
 
 	data_port = mm_bearer_get_interface (self->_priv.bearer);
 	g_assert (data_port);
