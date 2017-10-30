@@ -878,6 +878,7 @@ _output_selection_parse (const NMMetaAbstractInfo *const*fields,
 
 	if (!selection->num) {
 		g_set_error (error, NMCLI_ERROR, 1, _("failure to select field"));
+		g_free (selection);
 		return FALSE;
 	}
 
