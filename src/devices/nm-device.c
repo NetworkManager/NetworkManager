@@ -10054,7 +10054,6 @@ nm_device_set_ip4_config (NMDevice *self,
 	NMIP4Config *old_config = NULL;
 	gboolean has_changes = FALSE;
 	gboolean success = TRUE;
-	int ip_ifindex = 0;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
@@ -10063,8 +10062,12 @@ nm_device_set_ip4_config (NMDevice *self,
 
 	nm_assert (   !new_config
 	           || (   new_config
-	               && ((ip_ifindex = nm_device_get_ip_ifindex (self)) > 0)
-	               && ip_ifindex == nm_ip4_config_get_ifindex (new_config)));
+	               && ({
+	                    int ip_ifindex = nm_device_get_ip_ifindex (self);
+
+	                    (   ip_ifindex > 0
+	                     && ip_ifindex == nm_ip4_config_get_ifindex (new_config));
+	                  })));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
@@ -10226,7 +10229,6 @@ nm_device_set_ip6_config (NMDevice *self,
 	NMIP6Config *old_config = NULL;
 	gboolean has_changes = FALSE;
 	gboolean success = TRUE;
-	int ip_ifindex = 0;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
@@ -10235,8 +10237,12 @@ nm_device_set_ip6_config (NMDevice *self,
 
 	nm_assert (   !new_config
 	           || (   new_config
-	               && ((ip_ifindex = nm_device_get_ip_ifindex (self)) > 0)
-	               && ip_ifindex == nm_ip6_config_get_ifindex (new_config)));
+	               && ({
+	                    int ip_ifindex = nm_device_get_ip_ifindex (self);
+
+	                    (   ip_ifindex > 0
+	                     && ip_ifindex == nm_ip6_config_get_ifindex (new_config));
+	                  })));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
