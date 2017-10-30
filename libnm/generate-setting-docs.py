@@ -257,6 +257,9 @@ for settingxml in settings:
 
         prop_upper = prop.upper().replace('-', '_')
 
+        if value_desc is None:
+            raise Exception("%s.%s needs a documentation description" % (setting.props.name, prop))
+
         if default_value is not None:
             outfile.write("    <property name=\"%s\" name_upper=\"%s\" type=\"%s\" default=\"%s\" description=\"%s\" />\n" %
                           (prop, prop_upper, value_type, escape(default_value), escape(value_desc)))

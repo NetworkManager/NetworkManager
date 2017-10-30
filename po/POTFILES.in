@@ -75,6 +75,10 @@ libnm-core/nm-setting-ip-tunnel.c
 libnm-core/nm-setting-macsec.c
 libnm-core/nm-setting-macvlan.c
 libnm-core/nm-setting-olpc-mesh.c
+libnm-core/nm-setting-ovs-interface.c
+libnm-core/nm-setting-ovs-patch.c
+libnm-core/nm-setting-ovs-port.c
+libnm-core/nm-setting-ovs-bridge.c
 libnm-core/nm-setting-ppp.c
 libnm-core/nm-setting-pppoe.c
 libnm-core/nm-setting-proxy.c
@@ -137,6 +141,9 @@ libnm/nm-device-ip-tunnel.c
 libnm/nm-device-macvlan.c
 libnm/nm-device-modem.c
 libnm/nm-device-olpc-mesh.c
+libnm/nm-device-ovs-bridge.c
+libnm/nm-device-ovs-interface.c
+libnm/nm-device-ovs-port.c
 libnm/nm-device-team.c
 libnm/nm-device-vlan.c
 libnm/nm-device-vxlan.c

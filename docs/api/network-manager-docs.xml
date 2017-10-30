@@ -76,6 +76,7 @@
     <xi:include href="../../man/nm-settings-keyfile.xml"><xi:fallback /></xi:include>
     <xi:include href="../../man/nm-settings-ifcfg-rh.xml"><xi:fallback /></xi:include>
     <xi:include href="../../man/nm-online.xml"/>
+    <xi:include href="../../man/nm-openvswitch.xml"/>
   </part>
 
   <part id="ref-settings">

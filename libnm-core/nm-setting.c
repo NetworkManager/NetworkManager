@@ -219,7 +219,7 @@ _nm_setting_get_base_type_priority (NMSetting *setting)
 GType
 nm_setting_lookup_type (const char *name)
 {
-	SettingInfo *info;
+	const SettingInfo *info;
 
 	g_return_val_if_fail (name, G_TYPE_INVALID);
 
@@ -258,6 +258,10 @@ _nm_setting_slave_type_is_valid (const char *slave_type, const char **out_port_t
 		;
 	else if (!strcmp (slave_type, NM_SETTING_BRIDGE_SETTING_NAME))
 		port_type = NM_SETTING_BRIDGE_PORT_SETTING_NAME;
+	else if (!strcmp (slave_type, NM_SETTING_OVS_BRIDGE_SETTING_NAME))
+		port_type = NM_SETTING_OVS_PORT_SETTING_NAME;
+	else if (!strcmp (slave_type, NM_SETTING_OVS_PORT_SETTING_NAME))
+		port_type = NM_SETTING_OVS_INTERFACE_SETTING_NAME;
 	else if (!strcmp (slave_type, NM_SETTING_TEAM_SETTING_NAME))
 		port_type = NM_SETTING_TEAM_PORT_SETTING_NAME;
 	else

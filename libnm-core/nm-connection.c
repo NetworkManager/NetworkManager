@@ -729,6 +729,10 @@ _nm_connection_detect_slave_type (NMConnection *connection, NMSetting **out_s_po
 			i_slave_type = NM_SETTING_BRIDGE_SETTING_NAME;
 		else if (!strcmp (name, NM_SETTING_TEAM_PORT_SETTING_NAME))
 			i_slave_type = NM_SETTING_TEAM_SETTING_NAME;
+		else if (!strcmp (name, NM_SETTING_OVS_PORT_SETTING_NAME))
+			i_slave_type = NM_SETTING_OVS_BRIDGE_SETTING_NAME;
+		else if (!strcmp (name, NM_SETTING_OVS_INTERFACE_SETTING_NAME))
+			i_slave_type = NM_SETTING_OVS_PORT_SETTING_NAME;
 		else
 			continue;
 
@@ -809,9 +813,20 @@ _normalize_ethernet_link_neg (NMConnection *self)
 }
 
 static gboolean
+_without_ip_config (NMConnection *self)
+{
+	const char *connection_type = nm_connection_get_connection_type (self);
+
+	g_return_val_if_fail (connection_type, FALSE);
+	if (strcmp (connection_type, NM_SETTING_OVS_INTERFACE_SETTING_NAME) == 0)
+		return FALSE;
+
+	return !!nm_setting_connection_get_master (nm_connection_get_setting_connection (self));
+}
+
+static gboolean
 _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 {
-	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
 	const char *default_ip4_method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 	const char *default_ip6_method = NULL;
 	NMSettingIPConfig *s_ip4, *s_ip6;
@@ -829,7 +844,7 @@ _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 	s_ip6 = nm_connection_get_setting_ip6_config (self);
 	s_proxy = nm_connection_get_setting_proxy (self);
 
-	if (nm_setting_connection_get_master (s_con)) {
+	if (_without_ip_config (self)) {
 		/* Slave connections don't have IP configuration. */
 
 		if (s_ip4)
@@ -1096,6 +1111,27 @@ _normalize_bluetooth_type (NMConnection *self, GHashTable *parameters)
 }
 
 static gboolean
+_normalize_ovs_interface_type (NMConnection *self, GHashTable *parameters)
+{
+	NMSettingOvsInterface *s_ovs_interface = nm_connection_get_setting_ovs_interface (self);
+	gboolean modified;
+	int v;
+
+	if (!s_ovs_interface)
+		return FALSE;
+
+	v = _nm_setting_ovs_interface_verify_interface_type (s_ovs_interface,
+	                                                     self,
+	                                                     TRUE,
+	                                                     &modified,
+	                                                     NULL);
+	if (v != TRUE)
+		g_return_val_if_reached (modified);
+
+	return modified;
+}
+
+static gboolean
 _normalize_required_settings (NMConnection *self, GHashTable *parameters)
 {
 	NMSettingBluetooth *s_bt = nm_connection_get_setting_bluetooth (self);
@@ -1252,40 +1288,42 @@ _nm_connection_verify (NMConnection *connection, GError **error)
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	s_proxy = nm_connection_get_setting_proxy (connection);
 
-	if (nm_setting_connection_get_master (s_con)) {
-		if (   NM_IN_SET (normalizable_error_type, NM_SETTING_VERIFY_SUCCESS,
-		                                           NM_SETTING_VERIFY_NORMALIZABLE)
-		    && (s_ip4 || s_ip6 || s_proxy)) {
-			g_clear_error (&normalizable_error);
-			g_set_error_literal (&normalizable_error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_SETTING,
-			                     _("setting not allowed in slave connection"));
-			g_prefix_error (&normalizable_error, "%s: ",
-			                s_ip4
-			                ? NM_SETTING_IP4_CONFIG_SETTING_NAME
-			                : (s_ip6
-			                   ? NM_SETTING_IP6_CONFIG_SETTING_NAME
-			                   : NM_SETTING_PROXY_SETTING_NAME));
-			/* having a slave with IP config *was* and is a verify() error. */
-			normalizable_error_type = NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
-		}
-	} else {
-		if (   NM_IN_SET (normalizable_error_type, NM_SETTING_VERIFY_SUCCESS)
-		    && (!s_ip4 || !s_ip6 || !s_proxy)) {
-			g_set_error_literal (&normalizable_error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_MISSING_SETTING,
-			                     _("setting is required for non-slave connections"));
-			g_prefix_error (&normalizable_error, "%s: ",
-			                !s_ip4
-			                ? NM_SETTING_IP4_CONFIG_SETTING_NAME
-			                : (!s_ip6
-			                   ? NM_SETTING_IP6_CONFIG_SETTING_NAME
-			                   : NM_SETTING_PROXY_SETTING_NAME));
-			/* having a master without IP config was not a verify() error, accept
-			 * it for backward compatibility. */
-			normalizable_error_type = NM_SETTING_VERIFY_NORMALIZABLE;
+	nm_assert (normalizable_error_type != NM_SETTING_VERIFY_ERROR);
+	if (NM_IN_SET (normalizable_error_type, NM_SETTING_VERIFY_SUCCESS,
+	                                        NM_SETTING_VERIFY_NORMALIZABLE)) {
+		if (_without_ip_config (connection)) {
+			if (s_ip4 || s_ip6 || s_proxy) {
+				g_clear_error (&normalizable_error);
+				g_set_error_literal (&normalizable_error,
+				                     NM_CONNECTION_ERROR,
+				                     NM_CONNECTION_ERROR_INVALID_SETTING,
+				                     _("setting not allowed in slave connection"));
+				g_prefix_error (&normalizable_error, "%s: ",
+				                s_ip4
+				                ? NM_SETTING_IP4_CONFIG_SETTING_NAME
+				                : (s_ip6
+				                   ? NM_SETTING_IP6_CONFIG_SETTING_NAME
+				                   : NM_SETTING_PROXY_SETTING_NAME));
+				/* having a slave with IP config *was* and is a verify() error. */
+				normalizable_error_type = NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+			}
+		} else {
+			if (   normalizable_error_type == NM_SETTING_VERIFY_SUCCESS
+			    && (!s_ip4 || !s_ip6 || !s_proxy)) {
+				g_set_error_literal (&normalizable_error,
+				                     NM_CONNECTION_ERROR,
+				                     NM_CONNECTION_ERROR_MISSING_SETTING,
+				                     _("setting is required for non-slave connections"));
+				g_prefix_error (&normalizable_error, "%s: ",
+				                !s_ip4
+				                ? NM_SETTING_IP4_CONFIG_SETTING_NAME
+				                : (!s_ip6
+				                   ? NM_SETTING_IP6_CONFIG_SETTING_NAME
+				                   : NM_SETTING_PROXY_SETTING_NAME));
+				/* having a master without IP config was not a verify() error, accept
+				 * it for backward compatibility. */
+				normalizable_error_type = NM_SETTING_VERIFY_NORMALIZABLE;
+			}
 		}
 	}
 
@@ -1397,6 +1435,7 @@ nm_connection_normalize (NMConnection *connection,
 	was_modified |= _normalize_team_config (connection, parameters);
 	was_modified |= _normalize_team_port_config (connection, parameters);
 	was_modified |= _normalize_bluetooth_type (connection, parameters);
+	was_modified |= _normalize_ovs_interface_type (connection, parameters);
 
 	/* Verify anew. */
 	success = _nm_connection_verify (connection, error);
@@ -1414,6 +1453,7 @@ nm_connection_normalize (NMConnection *connection,
 			                     NM_CONNECTION_ERROR_FAILED,
 			                     _("Unexpected failure to normalize the connection"));
 		}
+		g_warning ("connection did not verify after normalization: %s", error ? (*error)->message : "??");
 		g_return_val_if_reached (FALSE);
 	}
 
@@ -1747,6 +1787,60 @@ _for_each_sort (NMSetting **p_a, NMSetting **p_b, void *unused)
 }
 
 /**
+ * nm_connection_get_settings:
+ * @connection: the #NMConnection instance
+ * @out_length: (allow-none): (out): the length of the returned array
+ *
+ * Retrieves the settings in @connection.
+ *
+ * The returned array is %NULL-terminated.
+ *
+ * Returns: (array length=out_length) (transfer container): a
+ *   %NULL-terminated array containing every setting of
+ *   @connection.
+ *   If the connection has no settings, %NULL is returned.
+ *
+ * Since: 1.10
+ */
+NMSetting **
+nm_connection_get_settings (NMConnection *connection,
+                            guint *out_length)
+{
+	NMConnectionPrivate *priv;
+	NMSetting **arr;
+	GHashTableIter iter;
+	NMSetting *setting;
+	guint i, size;
+
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	priv = NM_CONNECTION_GET_PRIVATE (connection);
+
+	size = g_hash_table_size (priv->settings);
+
+	if (!size) {
+		NM_SET_OUT (out_length, 0);
+		return NULL;
+	}
+
+	arr = g_new (NMSetting *, size + 1);
+
+	g_hash_table_iter_init (&iter, priv->settings);
+	for (i = 0; g_hash_table_iter_next (&iter, NULL, (gpointer *) &setting); i++)
+		arr[i] = setting;
+	nm_assert (i == size);
+	arr[size] = NULL;
+
+	/* sort the settings. This has an effect on the order in which keyfile
+	 * prints them. */
+	if (size > 1)
+		g_qsort_with_data (arr, size, sizeof (NMSetting *), (GCompareDataFunc) _for_each_sort, NULL);
+
+	NM_SET_OUT (out_length, size);
+	return arr;
+}
+
+/**
  * nm_connection_for_each_setting_value:
  * @connection: the #NMConnection
  * @func: (scope call): user-supplied function called for each setting's property
@@ -1760,39 +1854,15 @@ nm_connection_for_each_setting_value (NMConnection *connection,
                                       NMSettingValueIterFn func,
                                       gpointer user_data)
 {
-	NMConnectionPrivate *priv;
-	gs_free NMSetting **arr_free = NULL;
-	NMSetting *arr_temp[20], **arr;
-	GHashTableIter iter;
-	gpointer value;
-	guint i, size;
+	gs_free NMSetting **settings = NULL;
+	guint i, length = 0;
 
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 	g_return_if_fail (func);
 
-	priv = NM_CONNECTION_GET_PRIVATE (connection);
-
-	size = g_hash_table_size (priv->settings);
-	if (!size)
-		return;
-
-	if (size > G_N_ELEMENTS (arr_temp))
-		arr = arr_free = g_new (NMSetting *, size);
-	else
-		arr = arr_temp;
-
-	g_hash_table_iter_init (&iter, priv->settings);
-	for (i = 0; g_hash_table_iter_next (&iter, NULL, &value); i++)
-		arr[i] = NM_SETTING (value);
-	g_assert (i == size);
-
-	/* sort the settings. This has an effect on the order in which keyfile
-	 * prints them. */
-	if (size > 1)
-		g_qsort_with_data (arr, size, sizeof (NMSetting *), (GCompareDataFunc) _for_each_sort, NULL);
-
-	for (i = 0; i < size; i++)
-		nm_setting_enumerate_values (arr[i], func, user_data);
+	settings = nm_connection_get_settings (connection, &length);
+	for (i = 0; i < length; i++)
+		nm_setting_enumerate_values (settings[i], func, user_data);
 }
 
 /**
@@ -1983,6 +2053,9 @@ nm_connection_is_virtual (NMConnection *connection)
 	    || !strcmp (type, NM_SETTING_IP_TUNNEL_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_MACSEC_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_MACVLAN_SETTING_NAME)
+	    || !strcmp (type, NM_SETTING_OVS_BRIDGE_SETTING_NAME)
+	    || !strcmp (type, NM_SETTING_OVS_INTERFACE_SETTING_NAME)
+	    || !strcmp (type, NM_SETTING_OVS_PORT_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_VXLAN_SETTING_NAME))
 		return TRUE;
 
@@ -2333,6 +2406,70 @@ NMSettingOlpcMesh *
 nm_connection_get_setting_olpc_mesh (NMConnection *connection)
 {
 	return _connection_get_setting_check (connection, NM_TYPE_SETTING_OLPC_MESH);
+}
+
+/**
+ * nm_connection_get_setting_ovs_bridge:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingOvsBridge the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingOvsBridge if the connection contains one, otherwise %NULL
+ *
+ * Since: 1.10
+ **/
+NMSettingOvsBridge *
+nm_connection_get_setting_ovs_bridge (NMConnection *connection)
+{
+	return _connection_get_setting_check (connection, NM_TYPE_SETTING_OVS_BRIDGE);
+}
+
+/**
+ * nm_connection_get_setting_ovs_interface:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingOvsInterface the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingOvsInterface if the connection contains one, otherwise %NULL
+ *
+ * Since: 1.10
+ **/
+NMSettingOvsInterface *
+nm_connection_get_setting_ovs_interface (NMConnection *connection)
+{
+	return _connection_get_setting_check (connection, NM_TYPE_SETTING_OVS_INTERFACE);
+}
+
+/**
+ * nm_connection_get_setting_ovs_patch:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingOvsPatch the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingOvsPatch if the connection contains one, otherwise %NULL
+ *
+ * Since: 1.10
+ **/
+NMSettingOvsPatch *
+nm_connection_get_setting_ovs_patch (NMConnection *connection)
+{
+	return _connection_get_setting_check (connection, NM_TYPE_SETTING_OVS_PATCH);
+}
+ 
+/**
+ * nm_connection_get_setting_ovs_port:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingOvsPort the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingOvsPort if the connection contains one, otherwise %NULL
+ *
+ * Since: 1.10
+ **/
+NMSettingOvsPort *
+nm_connection_get_setting_ovs_port (NMConnection *connection)
+{
+	return _connection_get_setting_check (connection, NM_TYPE_SETTING_OVS_PORT);
 }
 
 /**

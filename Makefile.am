@@ -206,6 +206,12 @@ introspection_sources = \
 	introspection/org.freedesktop.NetworkManager.Device.Modem.h \
 	introspection/org.freedesktop.NetworkManager.Device.OlpcMesh.c \
 	introspection/org.freedesktop.NetworkManager.Device.OlpcMesh.h \
+	introspection/org.freedesktop.NetworkManager.Device.OvsInterface.c \
+	introspection/org.freedesktop.NetworkManager.Device.OvsInterface.h \
+	introspection/org.freedesktop.NetworkManager.Device.OvsPort.c \
+	introspection/org.freedesktop.NetworkManager.Device.OvsPort.h \
+	introspection/org.freedesktop.NetworkManager.Device.OvsBridge.c \
+	introspection/org.freedesktop.NetworkManager.Device.OvsBridge.h \
 	introspection/org.freedesktop.NetworkManager.Device.Ppp.c \
 	introspection/org.freedesktop.NetworkManager.Device.Ppp.h \
 	introspection/org.freedesktop.NetworkManager.Device.Statistics.c \
@@ -281,6 +287,9 @@ DBUS_INTERFACE_DOCS = \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Tun.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Bridge.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.OlpcMesh.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.OvsInterface.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.OvsPort.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.OvsBridge.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Ppp.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.DHCP4Config.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Generic.xml \
@@ -329,6 +338,9 @@ dbusinterfaces_DATA = \
 	introspection/org.freedesktop.NetworkManager.Device.Macvlan.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Modem.xml \
 	introspection/org.freedesktop.NetworkManager.Device.OlpcMesh.xml \
+	introspection/org.freedesktop.NetworkManager.Device.OvsInterface.xml \
+	introspection/org.freedesktop.NetworkManager.Device.OvsPort.xml \
+	introspection/org.freedesktop.NetworkManager.Device.OvsBridge.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Ppp.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Statistics.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Team.xml \
@@ -393,6 +405,10 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-setting-macsec.h \
 	libnm-core/nm-setting-macvlan.h \
 	libnm-core/nm-setting-olpc-mesh.h \
+	libnm-core/nm-setting-ovs-bridge.h \
+	libnm-core/nm-setting-ovs-interface.h \
+	libnm-core/nm-setting-ovs-patch.h \
+	libnm-core/nm-setting-ovs-port.h \
 	libnm-core/nm-setting-ppp.h \
 	libnm-core/nm-setting-pppoe.h \
 	libnm-core/nm-setting-proxy.h \
@@ -474,6 +490,10 @@ libnm_core_lib_c_real = \
 	libnm-core/nm-setting-macsec.c \
 	libnm-core/nm-setting-macvlan.c \
 	libnm-core/nm-setting-olpc-mesh.c \
+	libnm-core/nm-setting-ovs-bridge.c \
+	libnm-core/nm-setting-ovs-interface.c \
+	libnm-core/nm-setting-ovs-patch.c \
+	libnm-core/nm-setting-ovs-port.c \
 	libnm-core/nm-setting-ppp.c \
 	libnm-core/nm-setting-pppoe.c \
 	libnm-core/nm-setting-proxy.c \
@@ -731,6 +751,9 @@ libnm_lib_h_pub_real = \
 	libnm/nm-device-macvlan.h \
 	libnm/nm-device-modem.h \
 	libnm/nm-device-olpc-mesh.h \
+	libnm/nm-device-ovs-interface.h \
+	libnm/nm-device-ovs-port.h \
+	libnm/nm-device-ovs-bridge.h \
 	libnm/nm-device-ppp.h \
 	libnm/nm-device-team.h \
 	libnm/nm-device-tun.h \
@@ -784,6 +807,9 @@ libnm_lib_c_real = \
 	libnm/nm-device-macvlan.c \
 	libnm/nm-device-modem.c \
 	libnm/nm-device-olpc-mesh.c \
+	libnm/nm-device-ovs-interface.c \
+	libnm/nm-device-ovs-port.c \
+	libnm/nm-device-ovs-bridge.c \
 	libnm/nm-device-ppp.c \
 	libnm/nm-device-team.c \
 	libnm/nm-device-tun.c \
@@ -2743,6 +2769,63 @@ check_local += check-local-devices-team
 endif
 
 ###############################################################################
+# src/devices/ovs
+###############################################################################
+
+if WITH_OPENVSWITCH
+
+if HAVE_SYSTEMD
+
+systemdnmunitdir = $(systemdsystemunitdir)/NetworkManager.service.d
+systemdnmunit_DATA = \
+	data/NetworkManager-ovs.conf
+
+endif
+
+core_plugins += src/devices/ovs/libnm-device-plugin-ovs.la
+
+src_devices_ovs_libnm_device_plugin_ovs_la_SOURCES = \
+	src/devices/ovs/nm-ovsdb.c \
+	src/devices/ovs/nm-ovsdb.h \
+	src/devices/ovs/nm-ovs-factory.c \
+	src/devices/ovs/nm-device-ovs-interface.c \
+	src/devices/ovs/nm-device-ovs-interface.h \
+	src/devices/ovs/nm-device-ovs-port.c \
+	src/devices/ovs/nm-device-ovs-port.h \
+	src/devices/ovs/nm-device-ovs-bridge.c \
+	src/devices/ovs/nm-device-ovs-bridge.h
+
+src_devices_ovs_libnm_device_plugin_ovs_la_CPPFLAGS = \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(builddir)/libnm-core \
+	-I$(srcdir)/libnm-core \
+	\
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON \
+	-DRUNSTATEDIR=\"$(runstatedir)\" \
+	\
+	$(JANSSON_CFLAGS) \
+	$(GLIB_CFLAGS)
+
+src_devices_ovs_libnm_device_plugin_ovs_la_LDFLAGS = \
+	-module -avoid-version \
+	-Wl,--version-script="$(srcdir)/linker-script-devices.ver"
+
+src_devices_ovs_libnm_device_plugin_ovs_la_LIBADD = \
+	introspection/libnmdbus.la \
+	$(JANSSON_LIBS) \
+	$(GLIB_LIBS)
+
+check-local-devices-ovs: src/devices/ovs/libnm-device-plugin-ovs.la
+	$(srcdir)/tools/check-exports.sh $(builddir)/src/devices/ovs/.libs/libnm-device-plugin-ovs.so "$(srcdir)/linker-script-devices.ver"
+	$(call check_so_symbols,$(builddir)/src/devices/ovs/.libs/libnm-device-plugin-ovs.so)
+
+endif
+
+###############################################################################
 # src/dnsmasq/tests
 ###############################################################################
 
@@ -4291,6 +4374,13 @@ man_pages += \
 man_pages_autogen += \
 	man/nm-settings-keyfile.5 \
 	man/nm-settings.5
+
+if WITH_OPENVSWITCH
+man_pages += man/nm-openvswitch.7
+else
+EXTRA_DIST += man/nm-openvswitch.7
+dist_dependencies += man/nm-openvswitch.7
+endif
 
 if CONFIG_PLUGIN_IFCFG_RH
 man_pages_autogen += man/nm-settings-ifcfg-rh.5

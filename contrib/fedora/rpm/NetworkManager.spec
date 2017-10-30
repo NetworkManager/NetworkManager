@@ -50,6 +50,7 @@
 %bcond_without wwan
 %bcond_without team
 %bcond_without wifi
+%bcond_without ovs
 %bcond_without ppp
 %bcond_without nmtui
 %bcond_without regen_docs
@@ -239,6 +240,19 @@ Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 This package contains NetworkManager support for mobile broadband (WWAN)
 devices.
 %endif
+
+
+%if %{with ovs}
+%package ovs
+Summary: OpenVSwitch device plugin for NetworkManager
+Group: System Environment/Base
+Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
+Requires: openvswitch
+
+%description ovs
+This package contains NetworkManager support for OpenVSwitch bridges.
+%endif
+
 
 %if %{with ppp}
 %package ppp
@@ -563,7 +577,7 @@ fi
 %dir %{nmlibdir}/VPN
 %{_mandir}/man1/*
 %{_mandir}/man5/*
-%{_mandir}/man7/*
+%{_mandir}/man7/nmcli-examples.7*
 %{_mandir}/man8/*
 %dir %{_localstatedir}/lib/NetworkManager
 %dir %{_sysconfdir}/NetworkManager/system-connections
@@ -606,6 +620,13 @@ fi
 %files wwan
 %{_libdir}/%{name}/libnm-device-plugin-wwan.so
 %{_libdir}/%{name}/libnm-wwan.so
+%endif
+
+%if %{with ovs}
+%files ovs
+%{_libdir}/%{name}/libnm-device-plugin-ovs.so
+%{systemd_dir}/NetworkManager.service.d/NetworkManager-ovs.conf
+%{_mandir}/man7/nm-openvswitch.7*
 %endif
 
 %if %{with ppp}

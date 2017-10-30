@@ -117,7 +117,7 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 				return;
 			}
 			if (renamed)
-				nm_manager_remove_device (nm_manager_get (), iface);
+				nm_manager_remove_device (nm_manager_get (), iface, NM_DEVICE_TYPE_PPP);
 
 			nm_device_activate_schedule_ip4_config_result (device, config);
 			return;
@@ -195,7 +195,7 @@ act_stage3_ip4_config_start (NMDevice *device,
 		if  (!nm_device_take_over_link (device, priv->pending_ifname, &renamed))
 			return NM_ACT_STAGE_RETURN_FAILURE;
 		if (renamed)
-			nm_manager_remove_device (nm_manager_get (), priv->pending_ifname);
+			nm_manager_remove_device (nm_manager_get (), priv->pending_ifname, NM_DEVICE_TYPE_PPP);
 		if (out_config)
 			*out_config = g_steal_pointer (&priv->pending_ip4_config);
 		else

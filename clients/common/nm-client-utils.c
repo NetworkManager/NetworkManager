@@ -243,9 +243,11 @@ nmc_device_state_to_string (NMDeviceState state)
 		return _("deactivating");
 	case NM_DEVICE_STATE_FAILED:
 		return _("connection failed");
-	default:
+	case NM_DEVICE_STATE_UNKNOWN:
 		return _("unknown");
 	}
+
+	return _("unknown");
 }
 
 const char *
@@ -260,9 +262,11 @@ nmc_device_metered_to_string (NMMetered value)
 		return _("yes (guessed)");
 	case NM_METERED_GUESS_NO:
 		return _("no (guessed)");
-	default:
+	case NM_METERED_UNKNOWN:
 		return _("unknown");
 	}
+
+	return _("unknown");
 }
 
 const char *
@@ -395,10 +399,13 @@ nmc_device_reason_to_string (NMDeviceStateReason reason)
 		return _("The device's parent changed");
 	case NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED:
 		return _("The device parent's management changed");
-	default:
-		/* TRANSLATORS: Unknown reason for a device state change (NMDeviceStateReason) */
-		return _("Unknown");
+
+	case NM_DEVICE_STATE_REASON_OVSDB_FAILED:
+		return _("OpenVSwitch database connection failed");
 	}
+
+	/* TRANSLATORS: Unknown reason for a device state change (NMDeviceStateReason) */
+	return _("Unknown");
 }
 
 const char *

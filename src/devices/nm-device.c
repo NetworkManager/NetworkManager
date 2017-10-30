@@ -646,6 +646,7 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_reason_to_string, NMDeviceStateReason,
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_REASON_NEW_ACTIVATION,                 "new-activation"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_REASON_PARENT_CHANGED,                 "parent-changed"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED,         "parent-managed-changed"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_REASON_OVSDB_FAILED,                   "ovsdb-failed"),
 );
 
 #define reason_to_string(reason) \
@@ -1661,6 +1662,10 @@ _get_route_metric_default (NMDevice *self)
 		return 700;
 	case NM_DEVICE_TYPE_BT:
 		return 750;
+	case NM_DEVICE_TYPE_OVS_BRIDGE:
+	case NM_DEVICE_TYPE_OVS_INTERFACE:
+	case NM_DEVICE_TYPE_OVS_PORT:
+		return 800;
 	case NM_DEVICE_TYPE_GENERIC:
 		return 950;
 	case NM_DEVICE_TYPE_UNKNOWN:
@@ -2538,11 +2543,26 @@ static void
 device_recheck_slave_status (NMDevice *self, const NMPlatformLink *plink)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevice *master;
+	nm_auto_nmpobj const NMPObject *plink_master_keep_alive = NULL;
+	const NMPlatformLink *plink_master;
 
 	g_return_if_fail (plink);
 
 	if (plink->master <= 0)
 		return;
+
+	master = nm_manager_get_device_by_ifindex (nm_manager_get (), plink->master);
+	plink_master = nm_platform_link_get (nm_device_get_platform (self), plink->master);
+	plink_master_keep_alive = nmp_object_ref (NMP_OBJECT_UP_CAST (plink_master));
+
+	if (   master == NULL
+	    && plink_master
+	    && g_strcmp0 (plink_master->name, "ovs-system") == 0
+	    && plink_master->type == NM_LINK_TYPE_OPENVSWITCH) {
+		_LOGD (LOGD_DEVICE, "the device claimed by openvswitch");
+		return;
+	}
 
 	if (priv->master) {
 		if (   plink->master > 0
@@ -2555,20 +2575,16 @@ device_recheck_slave_status (NMDevice *self, const NMPlatformLink *plink)
 
 		nm_device_master_release_one_slave (priv->master, self, FALSE, NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 	}
-	if (plink->master > 0) {
-		NMDevice *master;
 
-		master = nm_manager_get_device_by_ifindex (nm_manager_get (), plink->master);
-		if (master && NM_DEVICE_GET_CLASS (master)->enslave_slave)
-			nm_device_master_add_slave (master, self, FALSE);
-		else if (master) {
-			_LOGI (LOGD_DEVICE, "enslaved to non-master-type device %s; ignoring",
-			       nm_device_get_iface (master));
-		} else {
-			_LOGW (LOGD_DEVICE, "enslaved to unknown device %d %s",
-			       plink->master,
-			       nm_platform_link_get_name (nm_device_get_platform (self), plink->master));
-		}
+	if (master && NM_DEVICE_GET_CLASS (master)->enslave_slave)
+		nm_device_master_add_slave (master, self, FALSE);
+	else if (master) {
+		_LOGI (LOGD_DEVICE, "enslaved to non-master-type device %s; ignoring",
+		       nm_device_get_iface (master));
+	} else {
+		_LOGW (LOGD_DEVICE, "enslaved to unknown device %d (%s%s%s)",
+		       plink->master,
+		       NM_PRINT_FMT_QUOTED (plink_master, "\"", plink_master->name, "\"", "??"));
 	}
 }
 
@@ -2650,8 +2666,7 @@ device_link_changed (NMDevice *self)
 	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (self);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	gboolean ip_ifname_changed = FALSE;
-	const char *udi;
-	NMPlatformLink info;
+	nm_auto_nmpobj const NMPObject *pllink_keep_alive = NULL;
 	const NMPlatformLink *pllink;
 	int ifindex;
 	gboolean was_up;
@@ -2665,37 +2680,20 @@ device_link_changed (NMDevice *self)
 	if (!pllink)
 		return G_SOURCE_REMOVE;
 
-	info = *pllink;
+	pllink_keep_alive = nmp_object_ref (NMP_OBJECT_UP_CAST (pllink));
 
-	udi = nm_platform_link_get_udi (nm_device_get_platform (self), info.ifindex);
-	if (udi && !nm_streq0 (udi, priv->udi)) {
-		/* Update UDI to what udev gives us */
-		g_free (priv->udi);
-		priv->udi = g_strdup (udi);
-		_notify (self, PROP_UDI);
-	}
-
-	if (!nm_streq0 (info.driver, priv->driver)) {
-		g_free (priv->driver);
-		priv->driver = g_strdup (info.driver);
-		_notify (self, PROP_DRIVER);
-	}
-
-	_set_mtu (self, info.mtu);
-
-	if (ifindex == nm_device_get_ip_ifindex (self))
-		_stats_update_counters_from_pllink (self, &info);
+	nm_device_update_from_platform_link (self, pllink);
 
 	had_hw_addr = (priv->hw_addr != NULL);
 	nm_device_update_hw_address (self);
 	got_hw_addr = (!had_hw_addr && priv->hw_addr);
 	nm_device_update_permanent_hw_address (self, FALSE);
 
-	if (info.name[0] && strcmp (priv->iface, info.name) != 0) {
+	if (pllink->name[0] && strcmp (priv->iface, pllink->name) != 0) {
 		_LOGI (LOGD_DEVICE, "interface index %d renamed iface from '%s' to '%s'",
-		       priv->ifindex, priv->iface, info.name);
+		       priv->ifindex, priv->iface, pllink->name);
 		g_free (priv->iface);
-		priv->iface = g_strdup (info.name);
+		priv->iface = g_strdup (pllink->name);
 
 		/* If the device has no explicit ip_iface, then changing iface changes ip_iface too. */
 		ip_ifname_changed = !priv->ip_iface;
@@ -2718,8 +2716,8 @@ device_link_changed (NMDevice *self)
 		nm_device_emit_recheck_auto_activate (self);
 	}
 
-	if (priv->ndisc && info.inet6_token.id) {
-		if (nm_ndisc_set_iid (priv->ndisc, info.inet6_token))
+	if (priv->ndisc && pllink->inet6_token.id) {
+		if (nm_ndisc_set_iid (priv->ndisc, pllink->inet6_token))
 			_LOGD (LOGD_DEVICE, "IPv6 tokenized identifier present on device %s", priv->iface);
 	}
 
@@ -2728,16 +2726,16 @@ device_link_changed (NMDevice *self)
 	    && !nm_device_has_capability (self, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
 		nm_device_set_carrier (self, pllink->connected);
 
-	klass->link_changed (self, &info);
+	klass->link_changed (self, pllink);
 
 	/* Update DHCP, etc, if needed */
 	if (ip_ifname_changed)
 		nm_device_update_dynamic_ip_setup (self);
 
 	was_up = priv->up;
-	priv->up = NM_FLAGS_HAS (info.n_ifi_flags, IFF_UP);
+	priv->up = NM_FLAGS_HAS (pllink->n_ifi_flags, IFF_UP);
 
-	if (   info.initialized
+	if (   pllink->initialized
 	    && nm_device_get_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT)) {
 		NMDeviceStateReason reason;
 
@@ -2767,7 +2765,7 @@ device_link_changed (NMDevice *self)
 
 	set_unmanaged_external_down (self, FALSE);
 
-	device_recheck_slave_status (self, &info);
+	device_recheck_slave_status (self, pllink);
 
 	if (priv->up && !was_up) {
 		/* the link was down and just came up. That happens for example, while changing MTU.
@@ -3137,37 +3135,53 @@ nm_device_create_and_realize (NMDevice *self,
 	return TRUE;
 }
 
-static void
-update_device_from_platform_link (NMDevice *self, const NMPlatformLink *plink)
+void
+nm_device_update_from_platform_link (NMDevice *self, const NMPlatformLink *plink)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	const char *udi;
+	const char *str;
+	int ifindex;
+	guint32 mtu;
 
-	g_return_if_fail (plink != NULL);
+	g_return_if_fail (plink == NULL || link_type_compatible (self, plink->type, NULL, NULL));
 
-	udi = nm_platform_link_get_udi (nm_device_get_platform (self), plink->ifindex);
-	if (udi && !nm_streq0 (udi, priv->udi)) {
+	str = plink ? nm_platform_link_get_udi (nm_device_get_platform (self), plink->ifindex) : NULL;
+	if (g_strcmp0 (str, priv->udi)) {
 		g_free (priv->udi);
-		priv->udi = g_strdup (udi);
+		priv->udi = g_strdup (str);
 		_notify (self, PROP_UDI);
 	}
 
-	if (!g_strcmp0 (plink->name, priv->iface)) {
+	str = plink ? plink->name : NULL;
+	if (str && g_strcmp0 (str, priv->iface)) {
 		g_free (priv->iface);
-		priv->iface = g_strdup (plink->name);
+		priv->iface = g_strdup (str);
 		_notify (self, PROP_IFACE);
 	}
 
-	if (priv->ifindex != plink->ifindex) {
-		priv->ifindex = plink->ifindex;
-		_notify (self, PROP_IFINDEX);
+	str = plink ? plink->driver : NULL;
+	if (g_strcmp0 (str, priv->driver) != 0) {
+		g_free (priv->driver);
+		priv->driver = g_strdup (str);
+		_notify (self, PROP_DRIVER);
 	}
 
-	priv->up = NM_FLAGS_HAS (plink->n_ifi_flags, IFF_UP);
-	if (plink->driver && g_strcmp0 (plink->driver, priv->driver) != 0) {
-		g_free (priv->driver);
-		priv->driver = g_strdup (plink->driver);
-		_notify (self, PROP_DRIVER);
+	if (plink) {
+		priv->up = NM_FLAGS_HAS (plink->n_ifi_flags, IFF_UP);
+		if (plink->ifindex == nm_device_get_ip_ifindex (self))
+			_stats_update_counters_from_pllink (self, plink);
+	} else {
+		priv->up = FALSE;
+	}
+
+	mtu = plink ? plink->mtu : 0;
+	_set_mtu (self, mtu);
+
+	ifindex = plink ? plink->ifindex : 0;
+	if (priv->ifindex != ifindex) {
+		priv->ifindex = ifindex;
+		_notify (self, PROP_IFINDEX);
+		NM_DEVICE_GET_CLASS (self)->link_changed (self, plink);
 	}
 }
 
@@ -3282,11 +3296,8 @@ realize_start_setup (NMDevice *self,
 
 	nm_device_sys_iface_state_set (self, NM_DEVICE_SYS_IFACE_STATE_EXTERNAL);
 
-	if (plink) {
-		g_return_if_fail (link_type_compatible (self, plink->type, NULL, NULL));
-		update_device_from_platform_link (self, plink);
-		_stats_update_counters_from_pllink (self, plink);
-	}
+	if (plink)
+		nm_device_update_from_platform_link (self, plink);
 
 	if (priv->ifindex > 0) {
 		priv->physical_port_id = nm_platform_link_get_physical_port_id (nm_device_get_platform (self), priv->ifindex);
@@ -3883,6 +3894,113 @@ nm_device_get_master (NMDevice *self)
 	return NULL;
 }
 
+static gboolean
+get_ip_config_may_fail (NMDevice *self, int addr_family)
+{
+	NMConnection *connection;
+	NMSettingIPConfig *s_ip = NULL;
+
+	connection = nm_device_get_applied_connection (self);
+
+	/* Fail the connection if the failed IP method is required to complete */
+	switch (addr_family) {
+	case AF_INET:
+		s_ip = nm_connection_get_setting_ip4_config (connection);
+		break;
+	case AF_INET6:
+		s_ip = nm_connection_get_setting_ip6_config (connection);
+		break;
+	default:
+		nm_assert_not_reached ();
+	}
+
+	return !s_ip || nm_setting_ip_config_get_may_fail (s_ip);
+}
+
+/*
+ * check_ip_state
+ *
+ * Transition the device from IP_CONFIG to the next state according to the
+ * outcome of IPv4 and IPv6 configuration. @may_fail indicates that we are
+ * called just after the initial configuration and thus IPv4/IPv6 are allowed to
+ * fail if the ipvx.may-fail properties say so, because the IP methods couldn't
+ * even be started.
+ */
+static void
+check_ip_state (NMDevice *self, gboolean may_fail)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gboolean ip4_disabled = FALSE, ip6_ignore = FALSE;
+	NMSettingIPConfig *s_ip4, *s_ip6;
+	NMDeviceState state;
+
+	if (nm_device_get_state (self) != NM_DEVICE_STATE_IP_CONFIG)
+		return;
+
+	/* Don't progress into IP_CHECK or SECONDARIES if we're waiting for the
+	 * master to enslave us. */
+	if (   nm_active_connection_get_master (NM_ACTIVE_CONNECTION (priv->act_request))
+	    && !priv->is_enslaved)
+		return;
+
+	s_ip4 = (NMSettingIPConfig *) nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP4_CONFIG);
+	if (s_ip4 && nm_streq0 (nm_setting_ip_config_get_method (s_ip4),
+	                        NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
+		ip4_disabled = TRUE;
+
+	s_ip6 = (NMSettingIPConfig *) nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP6_CONFIG);
+	if (s_ip6 && nm_streq0 (nm_setting_ip_config_get_method (s_ip6),
+	                        NM_SETTING_IP6_CONFIG_METHOD_IGNORE))
+		ip6_ignore = TRUE;
+
+	if (   priv->ip4_state == IP_DONE
+	    && priv->ip6_state == IP_DONE) {
+		/* Both method completed (or disabled), proceed with activation */
+		nm_device_state_changed (self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
+		return;
+	}
+
+	if (   (priv->ip4_state == IP_FAIL || (ip4_disabled && priv->ip4_state == IP_DONE))
+	    && (priv->ip6_state == IP_FAIL || (ip6_ignore && priv->ip6_state == IP_DONE))) {
+		/* Either both methods failed, or only one failed and the other is
+		 * disabled */
+		if (nm_device_sys_iface_state_is_external_or_assume (self)) {
+			/* We have assumed configuration, but couldn't redo it. No problem,
+			 * move to check state. */
+			_set_ip_state (self, AF_INET, IP_DONE);
+			_set_ip_state (self, AF_INET6, IP_DONE);
+			state = NM_DEVICE_STATE_IP_CHECK;
+		} else if (   may_fail
+		           && get_ip_config_may_fail (self, AF_INET)
+		           && get_ip_config_may_fail (self, AF_INET6)) {
+			/* Couldn't start either IPv6 and IPv4 autoconfiguration,
+			 * but both are allowed to fail. */
+			state = NM_DEVICE_STATE_SECONDARIES;
+		} else {
+			/* Autoconfiguration attempted without success. */
+			state = NM_DEVICE_STATE_FAILED;
+		}
+
+		nm_device_state_changed (self,
+		                         state,
+		                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+		return;
+	}
+
+	/* If a method is still pending but required, wait */
+	if (priv->ip4_state != IP_DONE && !get_ip_config_may_fail (self, AF_INET))
+		return;
+	if (priv->ip6_state != IP_DONE && !get_ip_config_may_fail (self, AF_INET6))
+		return;
+
+	/* If at least a method has completed, proceed with activation */
+	if (   (priv->ip4_state == IP_DONE && !ip4_disabled)
+	    || (priv->ip6_state == IP_DONE && !ip6_ignore)) {
+		nm_device_state_changed (self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
+		return;
+	}
+}
+
 /**
  * nm_device_slave_notify_enslave:
  * @self: the slave device
@@ -3919,10 +4037,8 @@ nm_device_slave_notify_enslave (NMDevice *self, gboolean success)
 	}
 
 	if (activating) {
-		_set_ip_state (self, AF_INET, IP_DONE);
-		_set_ip_state (self, AF_INET6, IP_DONE);
 		if (success)
-			nm_device_queue_state (self, NM_DEVICE_STATE_SECONDARIES, NM_DEVICE_STATE_REASON_NONE);
+			check_ip_state (self, FALSE);
 		else
 			nm_device_queue_state (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_UNKNOWN);
 	} else
@@ -4893,29 +5009,6 @@ activation_source_is_scheduled (NMDevice *self,
 
 /*****************************************************************************/
 
-static gboolean
-get_ip_config_may_fail (NMDevice *self, int addr_family)
-{
-	NMConnection *connection;
-	NMSettingIPConfig *s_ip = NULL;
-
-	connection = nm_device_get_applied_connection (self);
-
-	/* Fail the connection if the failed IP method is required to complete */
-	switch (addr_family) {
-	case AF_INET:
-		s_ip = nm_connection_get_setting_ip4_config (connection);
-		break;
-	case AF_INET6:
-		s_ip = nm_connection_get_setting_ip6_config (connection);
-		break;
-	default:
-		nm_assert_not_reached ();
-	}
-
-	return !s_ip || nm_setting_ip_config_get_may_fail (s_ip);
-}
-
 static void
 master_ready (NMDevice *self,
               NMActiveConnection *active)
@@ -5208,84 +5301,6 @@ nm_device_activate_schedule_stage2_device_config (NMDevice *self)
 	}
 
 	activation_source_schedule (self, activate_stage2_device_config, AF_INET);
-}
-
-/*
- * check_ip_state
- *
- * Transition the device from IP_CONFIG to the next state according to the
- * outcome of IPv4 and IPv6 configuration. @may_fail indicates that we are
- * called just after the initial configuration and thus IPv4/IPv6 are allowed to
- * fail if the ipvx.may-fail properties say so, because the IP methods couldn't
- * even be started.
- */
-static void
-check_ip_state (NMDevice *self, gboolean may_fail)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	gboolean ip4_disabled = FALSE, ip6_ignore = FALSE;
-	NMSettingIPConfig *s_ip4, *s_ip6;
-	NMDeviceState state;
-
-	if (nm_device_get_state (self) != NM_DEVICE_STATE_IP_CONFIG)
-		return;
-
-	s_ip4 = (NMSettingIPConfig *) nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP4_CONFIG);
-	if (s_ip4 && nm_streq0 (nm_setting_ip_config_get_method (s_ip4),
-	                        NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
-		ip4_disabled = TRUE;
-
-	s_ip6 = (NMSettingIPConfig *) nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP6_CONFIG);
-	if (s_ip6 && nm_streq0 (nm_setting_ip_config_get_method (s_ip6),
-	                        NM_SETTING_IP6_CONFIG_METHOD_IGNORE))
-		ip6_ignore = TRUE;
-
-	if (   priv->ip4_state == IP_DONE
-	    && priv->ip6_state == IP_DONE) {
-		/* Both method completed (or disabled), proceed with activation */
-		nm_device_state_changed (self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
-		return;
-	}
-
-	if (   (priv->ip4_state == IP_FAIL || (ip4_disabled && priv->ip4_state == IP_DONE))
-	    && (priv->ip6_state == IP_FAIL || (ip6_ignore && priv->ip6_state == IP_DONE))) {
-		/* Either both methods failed, or only one failed and the other is
-		 * disabled */
-		if (nm_device_sys_iface_state_is_external_or_assume (self)) {
-			/* We have assumed configuration, but couldn't redo it. No problem,
-			 * move to check state. */
-			_set_ip_state (self, AF_INET, IP_DONE);
-			_set_ip_state (self, AF_INET6, IP_DONE);
-			state = NM_DEVICE_STATE_IP_CHECK;
-		} else if (   may_fail
-		           && get_ip_config_may_fail (self, AF_INET)
-		           && get_ip_config_may_fail (self, AF_INET6)) {
-			/* Couldn't start either IPv6 and IPv4 autoconfiguration,
-			 * but both are allowed to fail. */
-			state = NM_DEVICE_STATE_SECONDARIES;
-		} else {
-			/* Autoconfiguration attempted without success. */
-			state = NM_DEVICE_STATE_FAILED;
-		}
-
-		nm_device_state_changed (self,
-		                         state,
-		                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
-		return;
-	}
-
-	/* If a method is still pending but required, wait */
-	if (priv->ip4_state != IP_DONE && !get_ip_config_may_fail (self, AF_INET))
-		return;
-	if (priv->ip6_state != IP_DONE && !get_ip_config_may_fail (self, AF_INET6))
-		return;
-
-	/* If at least a method has completed, proceed with activation */
-	if (   (priv->ip4_state == IP_DONE && !ip4_disabled)
-	    || (priv->ip6_state == IP_DONE && !ip6_ignore)) {
-		nm_device_state_changed (self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
-		return;
-	}
 }
 
 void
@@ -6249,8 +6264,15 @@ static gboolean
 connection_requires_carrier (NMConnection *connection)
 {
 	NMSettingIPConfig *s_ip4, *s_ip6;
+	NMSettingConnection *s_con;
 	gboolean ip4_carrier_wanted, ip6_carrier_wanted;
 	gboolean ip4_used = FALSE, ip6_used = FALSE;
+
+	/* We can progress to IP_CONFIG now, so that we're enslaved.
+	 * That may actually cause carrier to go up and thus continue acivation. */
+	s_con = nm_connection_get_setting_connection (connection);
+	if (nm_setting_connection_get_master (s_con))
+		return FALSE;
 
 	ip4_carrier_wanted = connection_ip4_method_requires_carrier (connection, &ip4_used);
 	if (ip4_carrier_wanted) {
@@ -8009,12 +8031,6 @@ nm_device_activate_stage3_ip4_start (NMDevice *self)
 
 	g_assert (priv->ip4_state == IP_WAIT);
 
-	/* Slaves stay in IP_CONFIG state until master is ready, and then
-	 * they go directly to SECONDARIES without configuring IPv4.
-	 */
-	if (nm_active_connection_get_master (NM_ACTIVE_CONNECTION (priv->act_request)))
-		return TRUE;
-
 	_set_ip_state (self, AF_INET, IP_CONF);
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage3_ip4_config_start (self, &ip4_config, &failure_reason);
 	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
@@ -8056,12 +8072,6 @@ nm_device_activate_stage3_ip6_start (NMDevice *self)
 
 	g_assert (priv->ip6_state == IP_WAIT);
 
-	/* Slaves stay in IP_CONFIG state until master is ready, and then
-	 * they go directly to SECONDARIES without configuring IPv6.
-	 */
-	if (nm_active_connection_get_master (NM_ACTIVE_CONNECTION (priv->act_request)))
-		return TRUE;
-
 	_set_ip_state (self, AF_INET6, IP_CONF);
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage3_ip6_config_start (self, &ip6_config, &failure_reason);
 	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
@@ -8100,10 +8110,6 @@ nm_device_activate_stage3_ip6_start (NMDevice *self)
 static void
 activate_stage3_ip_config_start (NMDevice *self)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMActiveConnection *master;
-	NMDevice *master_device;
-
 	_set_ip_state (self, AF_INET, IP_WAIT);
 	_set_ip_state (self, AF_INET6, IP_WAIT);
 
@@ -8115,26 +8121,6 @@ activate_stage3_ip_config_start (NMDevice *self)
 	/* Device should be up before we can do anything with it */
 	if (!nm_platform_link_is_up (nm_device_get_platform (self), nm_device_get_ip_ifindex (self)))
 		_LOGW (LOGD_DEVICE, "interface %s not up for IP configuration", nm_device_get_ip_iface (self));
-
-	/* If the device is a slave, then we don't do any IP configuration but we
-	 * use the IP config stage to indicate to the master we're ready for
-	 * enslavement.  If the master is already activating, it will have tried to
-	 * enslave us when we changed state to IP_CONFIG, causing us to queue a
-	 * transition to SECONDARIES (or FAILED if the enslavement failed), with
-	 * our IP states set to IP_DONE either way.  If the master isn't yet
-	 * activating, then they'll still be in IP_WAIT.  Either way, we bail out
-	 * of IP config here.
-	 */
-	master = nm_active_connection_get_master (NM_ACTIVE_CONNECTION (priv->act_request));
-	if (master) {
-		master_device = nm_active_connection_get_device (master);
-		if (priv->ip4_state == IP_WAIT && priv->ip6_state == IP_WAIT) {
-			_LOGI (LOGD_DEVICE, "Activation: connection '%s' waiting on master '%s'",
-			       nm_connection_get_id (nm_device_get_applied_connection (self)),
-			       master_device ? nm_device_get_iface (master_device) : "(unknown)");
-		}
-		return;
-	}
 
 	/* IPv4 */
 	if (   nm_device_activate_ip4_state_in_wait (self)
@@ -8901,7 +8887,7 @@ delete_on_deactivate_link_delete (gpointer user_data)
 
 		if (!nm_device_unrealize (data->device, TRUE, &error))
 			_LOGD (LOGD_DEVICE, "delete_on_deactivate: unrealizing %d failed (%s)", data->ifindex, error->message);
-	} else
+	} else if (data->ifindex > 0)
 		nm_platform_link_delete (nm_device_get_platform (self), data->ifindex);
 
 	g_free (data);
@@ -8932,8 +8918,6 @@ delete_on_deactivate_check_and_schedule (NMDevice *self, int ifindex)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	DeleteOnDeactivateData *data;
 
-	if (ifindex <= 0)
-		return;
 	if (!priv->nm_owned)
 		return;
 	if (priv->queued_act_request)

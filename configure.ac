@@ -871,6 +871,20 @@ if test "$with_dhcpcanon" != "no"; then
 else
     AC_DEFINE(WITH_DHCPCANON, 0, [Define if you have dhcpcanon])
 fi
+
+# OpenVSwitch integration
+AC_ARG_ENABLE(ovs, AS_HELP_STRING([--enable-ovs], [enable OpenVSwitch support]))
+if test "${enable_ovs}" != "no"; then
+	enable_ovs='yes'
+	if test "$have_jansson" = "no"; then
+		AC_MSG_ERROR(Jansson is required for ovs support)
+	fi
+	AC_DEFINE(WITH_OPENVSWITCH, 1, [Define if you have OpenVSwitch support])
+else
+	AC_DEFINE(WITH_OPENVSWITCH, 0, [Define if you have OpenVSwitch support])
+fi
+AM_CONDITIONAL(WITH_OPENVSWITCH, test "${enable_ovs}" = "yes")
+
 # DHCP client support
 AC_ARG_WITH([dhclient],
             AS_HELP_STRING([--with-dhclient=yes|no|path], [Enable dhclient 4.x support]))
@@ -1282,6 +1296,8 @@ if test "$build_docs" != "yes" -a \
         -f "$srcdir"/man/nmcli.1 -a \
         -f "$srcdir"/man/nmtui.1 -a \
         \
+        -f "$srcdir"/man/nm-openvswitch.7 -a \
+        \
         -f "$srcdir"/man/nm-settings-ifcfg-rh.5 -a \
         -f "$srcdir"/man/nm-settings-keyfile.5 -a \
         -f "$srcdir"/man/nm-settings.5 -a \
@@ -1359,6 +1375,7 @@ echo "  modemmanager-1: $with_modem_manager_1"
 echo "  ofono: $with_ofono"
 echo "  concheck: $enable_concheck"
 echo "  libteamdctl: $enable_teamdctl"
+echo "  ovs: $enable_ovs"
 echo "  libnm-glib: $with_libnm_glib"
 echo "  nmcli: $build_nmcli"
 echo "  nmtui: $build_nmtui"

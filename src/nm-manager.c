@@ -1270,22 +1270,38 @@ nm_manager_iface_for_uuid (NMManager *self, const char *uuid)
 	return nm_connection_get_interface_name (NM_CONNECTION (connection));
 }
 
-gboolean
-nm_manager_remove_device (NMManager *self, const char *ifname)
+NMDevice *
+nm_manager_get_device (NMManager *self, const char *ifname, NMDeviceType device_type)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GSList *iter;
 	NMDevice *d;
 
+	g_return_val_if_fail (ifname, NULL);
+	g_return_val_if_fail (device_type != NM_DEVICE_TYPE_UNKNOWN, NULL);
+
 	for (iter = priv->devices; iter; iter = iter->next) {
 		d = iter->data;
-		if (nm_streq0 (nm_device_get_iface (d), ifname)) {
-			remove_device (self, d, FALSE, FALSE);
-			return TRUE;
-		}
+
+		if (   nm_device_get_device_type (d) == device_type
+		    && nm_streq0 (nm_device_get_iface (d), ifname))
+			return d;
 	}
 
-	return FALSE;
+	return NULL;
+}
+
+gboolean
+nm_manager_remove_device (NMManager *self, const char *ifname, NMDeviceType device_type)
+{
+	NMDevice *d;
+
+	d = nm_manager_get_device (self, ifname, device_type);
+	if (!d)
+		return FALSE;
+
+	remove_device (self, d, FALSE, FALSE);
+	return TRUE;
 }
 
 /**
@@ -2031,6 +2047,7 @@ device_ip_iface_changed (NMDevice *device,
                          NMManager *self)
 {
 	const char *ip_iface = nm_device_get_ip_iface (device);
+	NMDeviceType device_type = nm_device_get_device_type (device);
 	GSList *iter;
 
 	/* Remove NMDevice objects that are actually child devices of others,
@@ -2043,6 +2060,7 @@ device_ip_iface_changed (NMDevice *device,
 
 		if (   candidate != device
 		    && g_strcmp0 (nm_device_get_iface (candidate), ip_iface) == 0
+		    && nm_device_get_device_type (candidate) == device_type
 		    && nm_device_is_real (candidate)) {
 			remove_device (self, candidate, FALSE, FALSE);
 			break;
@@ -2339,6 +2357,9 @@ platform_link_added (NMManager *self,
 		gboolean compatible = TRUE;
 		gs_free_error GError *error = NULL;
 
+		if (nm_device_get_link_type (candidate) != plink->type)
+			continue;
+
 		if (strcmp (nm_device_get_iface (candidate), plink->name))
 			continue;
 
@@ -2346,6 +2367,7 @@ platform_link_added (NMManager *self,
 			/* Ignore the link added event since there's already a realized
 			 * device with the link's name.
 			 */
+			nm_device_update_from_platform_link (candidate, plink);
 			return;
 		} else if (nm_device_realize_start (candidate,
 		                                    plink,
@@ -2476,6 +2498,8 @@ _platform_link_cb_idle (PlatformLinkCbData *data)
 					_LOG2W (LOGD_DEVICE, device, "failed to unrealize: %s", error->message);
 					g_clear_error (&error);
 					remove_device (self, device, FALSE, TRUE);
+				} else {
+					nm_device_update_from_platform_link (device, NULL);
 				}
 			} else {
 				/* Hardware and external devices always get removed when their kernel link is gone */

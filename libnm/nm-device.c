@@ -261,6 +261,9 @@ coerce_type (NMDeviceType type)
 	case NM_DEVICE_TYPE_WIFI:
 	case NM_DEVICE_TYPE_BT:
 	case NM_DEVICE_TYPE_OLPC_MESH:
+	case NM_DEVICE_TYPE_OVS_INTERFACE:
+	case NM_DEVICE_TYPE_OVS_PORT:
+	case NM_DEVICE_TYPE_OVS_BRIDGE:
 	case NM_DEVICE_TYPE_WIMAX:
 	case NM_DEVICE_TYPE_MODEM:
 	case NM_DEVICE_TYPE_INFINIBAND:
@@ -1522,6 +1525,12 @@ get_type_name (NMDevice *device)
 		return _("Bluetooth");
 	case NM_DEVICE_TYPE_OLPC_MESH:
 		return _("OLPC Mesh");
+	case NM_DEVICE_TYPE_OVS_INTERFACE:
+		return _("OpenVSwitch Interface");
+	case NM_DEVICE_TYPE_OVS_PORT:
+		return _("OpenVSwitch Port");
+	case NM_DEVICE_TYPE_OVS_BRIDGE:
+		return _("OpenVSwitch Bridge");
 	case NM_DEVICE_TYPE_WIMAX:
 		return _("WiMAX");
 	case NM_DEVICE_TYPE_MODEM:
