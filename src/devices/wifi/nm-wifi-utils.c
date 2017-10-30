@@ -777,10 +777,8 @@ nm_wifi_utils_level_to_quality (gint val)
 		val = 100 - (int) ((100.0 * (double) val) / 60.0);
 	} else {
 		/* Assume signal is a "quality" percentage */
-		val = CLAMP (val, 0, 100);
 	}
-	g_assert (val >= 0);
 
-	return (guint32) val;
+	return CLAMP (val, 0, 100);
 }
 
