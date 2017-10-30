@@ -29,6 +29,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/auxv.h>
 #include <sys/prctl.h>
 
 #include "nm-client-utils.h"
@@ -1489,7 +1490,8 @@ nmc_terminal_spawn_pager (const NmcConfig *nmc_config)
 	    || nm_cli.pager_pid > 0
 	    || nmc_config->print_output == NMC_PRINT_TERSE
 	    || !use_colors (nmc_config->use_colors)
-	    || g_strcmp0 (pager, "") == 0)
+	    || g_strcmp0 (pager, "") == 0
+	    || getauxval (AT_SECURE))
 		return;
 
 	if (pipe (fd) == -1) {
