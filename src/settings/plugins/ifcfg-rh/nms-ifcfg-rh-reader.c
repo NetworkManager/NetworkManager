@@ -2971,7 +2971,8 @@ eap_peap_reader (const char *eap_method,
 
 	/* Handle options for the inner auth method */
 	list = nm_utils_strsplit_set (v, " ");
-	for (iter = list; iter && *iter; iter++) {
+	iter = list;
+	if (iter) {
 		if (NM_IN_STRSET (*iter, "MSCHAPV2",
 		                         "MD5",
 		                         "GTC")) {
@@ -2993,7 +2994,6 @@ eap_peap_reader (const char *eap_method,
 			lower = g_ascii_strdown (*iter, -1);
 			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTH, lower, NULL);
 		}
-		break;
 	}
 
 	if (!nm_setting_802_1x_get_phase2_auth (s_8021x)) {
@@ -3049,7 +3049,8 @@ eap_ttls_reader (const char *eap_method,
 
 	/* Handle options for the inner auth method */
 	list = nm_utils_strsplit_set (inner_auth, " ");
-	for (iter = list; iter && *iter; iter++) {
+	iter = list;
+	if (iter) {
 		if (NM_IN_STRSET (*iter, "mschapv2",
 		                         "mschap",
 		                         "pap",
@@ -3073,7 +3074,6 @@ eap_ttls_reader (const char *eap_method,
 			             *iter);
 			return FALSE;
 		}
-		break;
 	}
 
 	return TRUE;
@@ -3144,7 +3144,8 @@ eap_fast_reader (const char *eap_method,
 
 	/* Handle options for the inner auth method */
 	list = nm_utils_strsplit_set (inner_auth, " ");
-	for (iter = list; iter && *iter; iter++) {
+	iter = list;
+	if (iter) {
 		if (   !strcmp (*iter, "MSCHAPV2")
 		    || !strcmp (*iter, "GTC")) {
 			if (!eap_simple_reader (*iter, ifcfg, keys, s_8021x, TRUE, error))
@@ -3159,7 +3160,6 @@ eap_fast_reader (const char *eap_method,
 		lower = g_ascii_strdown (*iter, -1);
 		g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTH, lower, NULL);
 		g_free (lower);
-		break;
 	}
 
 	if (!nm_setting_802_1x_get_phase2_auth (s_8021x)) {
