@@ -60,7 +60,13 @@ _slog_level_to_nm (int slevel)
 	}
 }
 
-#define log_get_max_level_realm(realm) (LOG_DEBUG)
+static inline int
+_nm_log_get_max_level_realm (void)
+{
+	/* inline function, to avoid coverity warning about constant expression. */
+	return LOG_DEBUG;
+}
+#define log_get_max_level_realm(realm) _nm_log_get_max_level_realm ()
 
 #define log_internal_realm(level, error, file, line, func, format, ...) \
 ({ \
