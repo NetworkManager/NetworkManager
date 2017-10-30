@@ -6205,6 +6205,53 @@ static const NMMetaPropertyInfo *const property_infos_TEAM_PORT[] = {
 			.validate_fcn =             _validate_fcn_team_config,
 		),
 	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_PORT_QUEUE_ID,
+		.property_type =                &_pt_gobject_int,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
+			.value_infos =          INT_VALUE_INFOS (
+				{
+					.value = -1,
+					.nick = "default",
+				}
+			),
+		),
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_PORT_PRIO,
+		.property_type =                &_pt_gobject_int,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
+			.value_infos =          INT_VALUE_INFOS (
+				{
+					.value = 0,
+					.nick = "default",
+				}
+			),
+		),
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_PORT_STICKY,
+		.property_type =                &_pt_gobject_bool,
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_PORT_LACP_PRIO,
+		.property_type =                &_pt_gobject_int,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
+			.value_infos =          INT_VALUE_INFOS (
+				{
+					.value = 255,
+					.nick = "default",
+				}
+			),
+		),
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_PORT_LACP_KEY,
+		.property_type =                &_pt_gobject_int,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
+			.value_infos =          INT_VALUE_INFOS (
+				{
+					.value = 0,
+					.nick = "default",
+				}
+			),
+		),
+	),
 	NULL
 };
 
