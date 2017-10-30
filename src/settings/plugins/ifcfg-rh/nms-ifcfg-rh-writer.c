@@ -1867,18 +1867,18 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 static char *
 get_route_attributes_string (NMIPRoute *route, int family)
 {
-	gs_strfreev char **names = NULL;
+	gs_free const char **names = NULL;
 	GVariant *attr, *lock;
 	GString *str;
-	int i;
+	guint i, len;
 
-	names = nm_ip_route_get_attribute_names (route);
-	if (!names || !names[0])
+	names = _nm_ip_route_get_attribute_names (route, TRUE, &len);
+	if (!len)
 		return NULL;
 
 	str = g_string_new ("");
 
-	for (i = 0; names[i]; i++) {
+	for (i = 0; i < len; i++) {
 		attr = nm_ip_route_get_attribute (route, names[i]);
 
 		if (!nm_ip_route_attribute_validate (names[i], attr, family, NULL, NULL))

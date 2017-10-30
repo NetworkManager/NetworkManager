@@ -193,14 +193,9 @@ write_ip_values (GKeyFile *file,
 
 		if (is_route) {
 			gs_free char *attributes = NULL;
-			gs_strfreev char **names = NULL;
-			gs_unref_hashtable GHashTable *hash = g_hash_table_new (g_str_hash, g_str_equal);
-			int j;
+			GHashTable *hash;
 
-			names = nm_ip_route_get_attribute_names (array->pdata[i]);
-			for (j = 0; names && names[j]; j++)
-				g_hash_table_insert (hash, names[j], nm_ip_route_get_attribute (array->pdata[i], names[j]));
-
+			hash = _nm_ip_route_get_attributes_direct (array->pdata[i]);
 			attributes = nm_utils_format_variant_attributes (hash, ',', '=');
 			if (attributes) {
 				g_strlcat (key_name, "_options", sizeof (key_name));

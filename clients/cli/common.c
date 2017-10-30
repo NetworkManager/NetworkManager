@@ -42,7 +42,7 @@
 static char **
 _ip_config_get_routes (NMIPConfig *cfg)
 {
-	gs_unref_hashtable GHashTable *hash = g_hash_table_new (nm_str_hash, g_str_equal);
+	gs_unref_hashtable GHashTable *hash = NULL;
 	GPtrArray *ptr_array;
 	char **arr;
 	guint i;
@@ -55,10 +55,10 @@ _ip_config_get_routes (NMIPConfig *cfg)
 	for (i = 0; i < ptr_array->len; i++) {
 		NMIPRoute *route = g_ptr_array_index (ptr_array, i);
 		gs_strfreev char **names = NULL;
-		gs_free char *attributes = NULL;
 		gsize j;
 		GString *str;
 		guint64 metric;
+		gs_free char *attributes = NULL;
 
 		str = g_string_new (NULL);
 		g_string_append_printf (str,
@@ -76,13 +76,20 @@ _ip_config_get_routes (NMIPConfig *cfg)
 		}
 
 		names = nm_ip_route_get_attribute_names (route);
-		g_hash_table_remove_all (hash);
-		for (j = 0; names && names[j]; j++)
-			g_hash_table_insert (hash, names[j], nm_ip_route_get_attribute (route, names[j]));
-		attributes = nm_utils_format_variant_attributes (hash, ',', '=');
-		if (attributes) {
-			g_string_append (str, ", ");
-			g_string_append (str, attributes);
+		if (names[0]) {
+			if (!hash)
+				hash = g_hash_table_new (nm_str_hash, g_str_equal);
+			else
+				g_hash_table_remove_all (hash);
+
+			for (j = 0; names[j]; j++)
+				g_hash_table_insert (hash, names[j], nm_ip_route_get_attribute (route, names[j]));
+
+			attributes = nm_utils_format_variant_attributes (hash, ',', '=');
+			if (attributes) {
+				g_string_append (str, ", ");
+				g_string_append (str, attributes);
+			}
 		}
 
 		arr[i] = g_string_free (str, FALSE);

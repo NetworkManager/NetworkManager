@@ -1112,6 +1112,54 @@ nm_ip_route_set_metric (NMIPRoute *route,
 	route->metric = metric;
 }
 
+GHashTable *
+_nm_ip_route_get_attributes_direct (NMIPRoute *route)
+{
+	nm_assert (route);
+
+	return route->attributes;
+}
+
+/**
+ * _nm_ip_route_get_attribute_names:
+ * @route: the #NMIPRoute
+ * @sorted: whether to sort the names. Otherwise, their order is
+ *   undefined and unstable.
+ * @out_length: (allow-none): (out): the number of elements
+ *
+ * Gets an array of attribute names defined on @route.
+ *
+ * Returns: (array length=out_length) (transfer container): a %NULL-terminated array
+ *   of attribute names or %NULL if there are no attributes. The order of the returned
+ *   names is undefined.
+ **/
+const char **
+_nm_ip_route_get_attribute_names (const NMIPRoute *route, gboolean sorted, guint *out_length)
+{
+	const char **names;
+	guint length;
+
+	g_return_val_if_fail (route != NULL, NULL);
+
+	if (   !route->attributes
+	    || !g_hash_table_size (route->attributes)) {
+		NM_SET_OUT (out_length, 0);
+		return NULL;
+	}
+
+	names = (const char **) g_hash_table_get_keys_as_array (route->attributes, &length);
+	if (   sorted
+	    && length > 1) {
+		g_qsort_with_data (names,
+		                   length,
+		                   sizeof (char *),
+		                   nm_strcmp_p_with_data,
+		                   NULL);
+	}
+	NM_SET_OUT (out_length, length);
+	return names;
+}
+
 /**
  * nm_ip_route_get_attribute_names:
  * @route: the #NMIPRoute
@@ -1123,23 +1171,21 @@ nm_ip_route_set_metric (NMIPRoute *route,
 char **
 nm_ip_route_get_attribute_names (NMIPRoute *route)
 {
-	GHashTableIter iter;
-	const char *key;
-	GPtrArray *names;
+	char **names;
+	guint i, len;
 
 	g_return_val_if_fail (route != NULL, NULL);
 
-	names = g_ptr_array_new ();
+	names = (char **) _nm_ip_route_get_attribute_names (route, TRUE, &len);
+	if (!names)
+		return g_new0 (char *, 1);
 
-	if (route->attributes) {
-		g_hash_table_iter_init (&iter, route->attributes);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &key, NULL))
-			g_ptr_array_add (names, g_strdup (key));
+	nm_assert (len > 0 && names && names[len] == NULL);
+	for (i = 0; i < len; i++) {
+		nm_assert (names[i]);
+		names[i] = g_strdup (names[i]);
 	}
-	g_ptr_array_sort (names, nm_strcmp_p);
-	g_ptr_array_add (names, NULL);
-
-	return (char **) g_ptr_array_free (names, FALSE);
+	return names;
 }
 
 /**

@@ -1962,8 +1962,8 @@ nm_utils_ip_routes_to_variant (GPtrArray *routes)
 		for (i = 0; i < routes->len; i++) {
 			NMIPRoute *route = routes->pdata[i];
 			GVariantBuilder route_builder;
-			char **names;
-			int n;
+			gs_free const char **names = NULL;
+			guint j, len;
 
 			g_variant_builder_init (&route_builder, G_VARIANT_TYPE ("a{sv}"));
 			g_variant_builder_add (&route_builder, "{sv}",
@@ -1983,13 +1983,12 @@ nm_utils_ip_routes_to_variant (GPtrArray *routes)
 				                       g_variant_new_uint32 ((guint32) nm_ip_route_get_metric (route)));
 			}
 
-			names = nm_ip_route_get_attribute_names (route);
-			for (n = 0; names[n]; n++) {
+			names = _nm_ip_route_get_attribute_names (route, TRUE, &len);
+			for (j = 0; j < len; j++) {
 				g_variant_builder_add (&route_builder, "{sv}",
-				                       names[n],
-				                       nm_ip_route_get_attribute (route, names[n]));
+				                       names[j],
+				                       nm_ip_route_get_attribute (route, names[j]));
 			}
-			g_strfreev (names);
 
 			g_variant_builder_add (&builder, "a{sv}", &route_builder);
 		}
