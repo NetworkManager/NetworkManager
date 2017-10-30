@@ -600,7 +600,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 * A mask of group addresses to forward. Usually, group addresses in
 	 * the range from 01:80:C2:00:00:00 to 01:80:C2:00:00:0F are not
 	 * forwarded according to standards. This property is a mask of 16 bits,
-	 * each corrisponding to a group address in that range that must be
+	 * each corresponding to a group address in that range that must be
 	 * forwarded. The mask can't have bits 0, 1 or 2 set because they are
 	 * used for STP, MAC pause frames and LACP.
 	 *
