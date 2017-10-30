@@ -1157,7 +1157,7 @@ nm_steal_fd (int *p_fd)
 	int fd;
 
 	if (   p_fd
-	    && ((fd = *p_fd) > 0)) {
+	    && ((fd = *p_fd) >= 0)) {
 		*p_fd = -1;
 		return fd;
 	}
