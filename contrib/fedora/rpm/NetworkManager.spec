@@ -577,7 +577,7 @@ fi
 %dir %{nmlibdir}/VPN
 %{_mandir}/man1/*
 %{_mandir}/man5/*
-%{_mandir}/man7/*
+%{_mandir}/man7/nmcli-examples.7*
 %{_mandir}/man8/*
 %dir %{_localstatedir}/lib/NetworkManager
 %dir %{_sysconfdir}/NetworkManager/system-connections
@@ -626,6 +626,7 @@ fi
 %files ovs
 %{_libdir}/%{name}/libnm-device-plugin-ovs.so
 %{systemd_dir}/NetworkManager.service.d/NetworkManager-ovs.conf
+%{_mandir}/man7/nm-openvswitch.7*
 %endif
 
 %if %{with ppp}

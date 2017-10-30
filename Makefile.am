@@ -4375,6 +4375,13 @@ man_pages_autogen += \
 	man/nm-settings-keyfile.5 \
 	man/nm-settings.5
 
+if WITH_OPENVSWITCH
+man_pages += man/nm-openvswitch.7
+else
+EXTRA_DIST += man/nm-openvswitch.7
+dist_dependencies += man/nm-openvswitch.7
+endif
+
 if CONFIG_PLUGIN_IFCFG_RH
 man_pages_autogen += man/nm-settings-ifcfg-rh.5
 else

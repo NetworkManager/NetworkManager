@@ -1296,6 +1296,8 @@ if test "$build_docs" != "yes" -a \
         -f "$srcdir"/man/nmcli.1 -a \
         -f "$srcdir"/man/nmtui.1 -a \
         \
+        -f "$srcdir"/man/nm-openvswitch.7 -a \
+        \
         -f "$srcdir"/man/nm-settings-ifcfg-rh.5 -a \
         -f "$srcdir"/man/nm-settings-keyfile.5 -a \
         -f "$srcdir"/man/nm-settings.5 -a \
