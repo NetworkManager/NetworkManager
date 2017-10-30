@@ -309,7 +309,7 @@ _add_factory (NMDeviceFactory *factory,
 	for (i = 0; setting_types && setting_types[i]; i++) {
 		list = g_hash_table_lookup (factories_by_setting, (char *) setting_types[i]);
 		if (list)
-			g_slist_append (list, g_object_ref (factory));
+			(void) g_slist_append (list, g_object_ref (factory));
 		else {
 			list = g_slist_append (list, g_object_ref (factory));
 			g_hash_table_insert (factories_by_setting, (char *) setting_types[i], list);
