@@ -589,7 +589,8 @@ parse_route_line (const char *line,
                   GError **error)
 {
 	nm_auto_ip_route_unref NMIPRoute *route = NULL;
-	gs_free const char **words = NULL;
+	gs_free const char **words_free = NULL;
+	const char *const*words;
 	const char *s;
 	gsize i_words;
 	guint i;
@@ -653,10 +654,9 @@ parse_route_line (const char *line,
 	 * Maybe later we want to support some form of quotation here.
 	 * Which of course, would be incompatible with initscripts.
 	 */
-	words = nm_utils_strsplit_set (line, " \t\n");
+	words_free = nm_utils_strsplit_set (line, " \t\n");
 
-	if (!words)
-		words = (const char **) NM_PTRARRAY_EMPTY (const char *);
+	words = words_free ?: NM_PTRARRAY_EMPTY (const char *);
 
 	for (i_words = 0; words[i_words]; ) {
 		const gsize i_words0 = i_words;
