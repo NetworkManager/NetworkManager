@@ -1709,7 +1709,6 @@ nmp_cache_lookup_link_full (const NMPCache *cache,
 			if (strlen (ifname) >= IFNAMSIZ)
 				return NULL;
 			nmp_lookup_init_link_by_ifname (&lookup, ifname);
-			ifname = NULL;
 		} else
 			nmp_lookup_init_obj_type (&lookup, NMP_OBJECT_TYPE_LINK);
 
@@ -1720,8 +1719,6 @@ nmp_cache_lookup_link_full (const NMPCache *cache,
 			if (visible_only && !nmp_object_is_visible (obj))
 				continue;
 			if (link_type != NM_LINK_TYPE_NONE && obj->link.type != link_type)
-				continue;
-			if (ifname && strcmp (ifname, obj->link.name))
 				continue;
 			if (match_fn && !match_fn (obj, user_data))
 				continue;
