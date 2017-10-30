@@ -1334,6 +1334,28 @@ test_strength_wext (void)
 	g_assert_cmpint (nm_wifi_utils_level_to_quality (215), ==, 99);
 }
 
+#define _assert_strength_in_range(x) \
+	({ \
+		guint32 _x = (x); \
+		g_assert_cmpint (_x, >=, 0); \
+		g_assert_cmpint (_x, <=, 100); \
+	})
+
+static void
+test_strength_all (void)
+{
+	int val;
+
+	for (val = -200; val < 300; val++)
+		_assert_strength_in_range (nm_wifi_utils_level_to_quality (val));
+	_assert_strength_in_range (nm_wifi_utils_level_to_quality (G_MININT));
+	_assert_strength_in_range (nm_wifi_utils_level_to_quality (G_MAXINT));
+	_assert_strength_in_range (nm_wifi_utils_level_to_quality (G_MININT32));
+	_assert_strength_in_range (nm_wifi_utils_level_to_quality (G_MAXINT32));
+	_assert_strength_in_range (nm_wifi_utils_level_to_quality (G_MININT16));
+	_assert_strength_in_range (nm_wifi_utils_level_to_quality (G_MAXINT16));
+}
+
 /*****************************************************************************/
 
 NMTST_DEFINE ();
@@ -1497,6 +1519,8 @@ main (int argc, char **argv)
 	                 test_strength_percent);
 	g_test_add_func ("/wifi/strength/wext",
 	                 test_strength_wext);
+	g_test_add_func ("/wifi/strength/all",
+	                 test_strength_all);
 
 	return g_test_run ();
 }
