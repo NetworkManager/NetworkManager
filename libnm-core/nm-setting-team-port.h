@@ -39,6 +39,11 @@ G_BEGIN_DECLS
 #define NM_SETTING_TEAM_PORT_SETTING_NAME "team-port"
 
 #define NM_SETTING_TEAM_PORT_CONFIG     "config"
+#define NM_SETTING_TEAM_PORT_QUEUE_ID   "queue-id"
+#define NM_SETTING_TEAM_PORT_PRIO       "prio"
+#define NM_SETTING_TEAM_PORT_STICKY     "sticky"
+#define NM_SETTING_TEAM_PORT_LACP_PRIO  "lacp-prio"
+#define NM_SETTING_TEAM_PORT_LACP_KEY   "lacp-key"
 
 /**
  * NMSettingTeamPort:
@@ -61,6 +66,16 @@ GType nm_setting_team_port_get_type (void);
 NMSetting *  nm_setting_team_port_new (void);
 
 const char * nm_setting_team_port_get_config (NMSettingTeamPort *setting);
+NM_AVAILABLE_IN_1_10_2
+gint nm_setting_team_port_get_queue_id (NMSettingTeamPort *setting);
+NM_AVAILABLE_IN_1_10_2
+gint nm_setting_team_port_get_prio (NMSettingTeamPort *setting);
+NM_AVAILABLE_IN_1_10_2
+gboolean nm_setting_team_port_get_sticky (NMSettingTeamPort *setting);
+NM_AVAILABLE_IN_1_10_2
+gint nm_setting_team_port_get_lacp_prio (NMSettingTeamPort *setting);
+NM_AVAILABLE_IN_1_10_2
+gint nm_setting_team_port_get_lacp_key (NMSettingTeamPort *setting);
 
 G_END_DECLS
 

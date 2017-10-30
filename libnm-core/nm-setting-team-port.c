@@ -47,11 +47,21 @@ NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_TEAM_PORT)
 
 typedef struct {
 	char *config;
+	int queue_id;
+	int prio;
+	gboolean sticky;
+	int lacp_prio;
+	int lacp_key;
 } NMSettingTeamPortPrivate;
 
 enum {
 	PROP_0,
 	PROP_CONFIG,
+	PROP_QUEUE_ID,
+	PROP_PRIO,
+	PROP_STICKY,
+	PROP_LACP_PRIO,
+	PROP_LACP_KEY,
 	LAST_PROP
 };
 
@@ -80,6 +90,86 @@ nm_setting_team_port_get_config (NMSettingTeamPort *setting)
 	g_return_val_if_fail (NM_IS_SETTING_TEAM_PORT (setting), NULL);
 
 	return NM_SETTING_TEAM_PORT_GET_PRIVATE (setting)->config;
+}
+
+/**
+ * nm_setting_team_port_get_queue_id:
+ * @setting: the #NMSettingTeamPort
+ *
+ * Returns: the #NMSettingTeamPort:queue_id property of the setting
+ *
+ * Since: 1.10.2
+ **/
+gint
+nm_setting_team_port_get_queue_id (NMSettingTeamPort *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_TEAM_PORT (setting), -1);
+
+	return NM_SETTING_TEAM_PORT_GET_PRIVATE (setting)->queue_id;
+}
+
+/**
+ * nm_setting_team_port_get_prio:
+ * @setting: the #NMSettingTeamPort
+ *
+ * Returns: the #NMSettingTeamPort:prio property of the setting
+ *
+ * Since: 1.10.2
+ **/
+gint
+nm_setting_team_port_get_prio (NMSettingTeamPort *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_TEAM_PORT (setting), 0);
+
+	return NM_SETTING_TEAM_PORT_GET_PRIVATE (setting)->prio;
+}
+
+/**
+ * nm_setting_team_port_get_sticky:
+ * @setting: the #NMSettingTeamPort
+ *
+ * Returns: the #NMSettingTeamPort:sticky property of the setting
+ *
+ * Since: 1.10.2
+ **/
+gboolean
+nm_setting_team_port_get_sticky (NMSettingTeamPort *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_TEAM_PORT (setting), FALSE);
+
+	return NM_SETTING_TEAM_PORT_GET_PRIVATE (setting)->sticky;
+}
+
+/**
+ * nm_setting_team_port_get_lacp_prio:
+ * @setting: the #NMSettingTeamPort
+ *
+ * Returns: the #NMSettingTeamPort:lacp-prio property of the setting
+ *
+ * Since: 1.10.2
+ **/
+gint
+nm_setting_team_port_get_lacp_prio (NMSettingTeamPort *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_TEAM_PORT (setting), 0);
+
+	return NM_SETTING_TEAM_PORT_GET_PRIVATE (setting)->lacp_prio;
+}
+
+/**
+ * nm_setting_team_port_get_lacp_key:
+ * @setting: the #NMSettingTeamPort
+ *
+ * Returns: the #NMSettingTeamPort:lacp-key property of the setting
+ *
+ * Since: 1.10.2
+ **/
+gint
+nm_setting_team_port_get_lacp_key (NMSettingTeamPort *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_TEAM_PORT (setting), 0);
+
+	return NM_SETTING_TEAM_PORT_GET_PRIVATE (setting)->lacp_key;
 }
 
 static gboolean
@@ -171,6 +261,10 @@ compare_property (NMSetting *setting,
 static void
 nm_setting_team_port_init (NMSettingTeamPort *setting)
 {
+	NMSettingTeamPortPrivate *priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (setting);
+
+	priv->queue_id = -1;
+	priv->lacp_prio = 255;
 }
 
 static void
@@ -184,6 +278,21 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->config);
 		priv->config = g_value_dup_string (value);
 		break;
+	case PROP_QUEUE_ID:
+		priv->queue_id = g_value_get_int (value);
+		break;
+	case PROP_PRIO:
+		priv->prio = g_value_get_int (value);
+		break;
+	case PROP_STICKY:
+		priv->sticky = g_value_get_boolean (value);
+		break;
+	case PROP_LACP_PRIO:
+		priv->lacp_prio = g_value_get_int (value);
+		break;
+	case PROP_LACP_KEY:
+		priv->lacp_key = g_value_get_int (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -195,10 +304,26 @@ get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
 	NMSettingTeamPort *setting = NM_SETTING_TEAM_PORT (object);
+	NMSettingTeamPortPrivate *priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (setting);
 
 	switch (prop_id) {
 	case PROP_CONFIG:
 		g_value_set_string (value, nm_setting_team_port_get_config (setting));
+		break;
+	case PROP_QUEUE_ID:
+		g_value_set_int (value, priv->queue_id);
+		break;
+	case PROP_PRIO:
+		g_value_set_int (value, priv->prio);
+		break;
+	case PROP_STICKY:
+		g_value_set_boolean (value, priv->sticky);
+		break;
+	case PROP_LACP_PRIO:
+		g_value_set_int (value, priv->lacp_prio);
+		break;
+	case PROP_LACP_KEY:
+		g_value_set_int (value, priv->lacp_key);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -253,4 +378,77 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *setting_class)
 		                      G_PARAM_READWRITE |
 		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingTeamPort:queue-id:
+	 *
+	 * Corresponds to the teamd ports.PORTIFNAME.queue_id.
+	 * When set to -1 means the parameter is skipped from the json config.
+	 *
+	 * Since: 1.10.2
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_QUEUE_ID,
+		 g_param_spec_int (NM_SETTING_TEAM_PORT_QUEUE_ID, "", "",
+		                   G_MININT32, G_MAXINT32, 0,
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingTeamPort:prio:
+	 *
+	 * Corresponds to the teamd ports.PORTIFNAME.prio.
+	 *
+	 * Since: 1.10.2
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_PRIO,
+		 g_param_spec_int (NM_SETTING_TEAM_PORT_PRIO, "", "",
+		                   G_MININT32, G_MAXINT32, 0,
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingTeamPort:sticky:
+	 *
+	 * Corresponds to the teamd ports.PORTIFNAME.sticky.
+	 *
+	 * Since: 1.10.2
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_STICKY,
+		 g_param_spec_boolean (NM_SETTING_TEAM_PORT_STICKY, "", "",
+		                       FALSE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingTeamPort:lacp-prio:
+	 *
+	 * Corresponds to the teamd ports.PORTIFNAME.lacp_prio.
+	 *
+	 * Since: 1.10.2
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_LACP_PRIO,
+		 g_param_spec_int (NM_SETTING_TEAM_PORT_LACP_PRIO, "", "",
+		                   G_MININT32, G_MAXINT32, 0,
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingTeamPort:lacp-key:
+	 *
+	 * Corresponds to the teamd ports.PORTIFNAME.lacp_key.
+	 *
+	 * Since: 1.10.2
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_LACP_KEY,
+		 g_param_spec_int (NM_SETTING_TEAM_PORT_LACP_KEY, "", "",
+		                   G_MININT32, G_MAXINT32, 0,
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_STATIC_STRINGS));
+
+
 }
