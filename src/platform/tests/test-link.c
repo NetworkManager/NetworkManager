@@ -295,7 +295,7 @@ test_slave (int master, int type, SignalData *master_changed)
 	ensure_no_signal (link_changed);
 	g_assert (nm_platform_link_enslave (NM_PLATFORM_GET, master, ifindex));
 	accept_signals (link_changed, 0, 2);
-	ensure_no_signal (master_changed);
+	accept_signals (master_changed, 0, 2);
 
 	/* Set slave option */
 	switch (type) {
