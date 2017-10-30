@@ -1915,7 +1915,7 @@ nm_utils_resolve_conf_parse (int addr_family,
 
 	for (l = 0; lines[l]; l++) {
 		const char *const line = lines[l];
-		const char *s;
+		const char *s = NULL;
 
 		if (RC_MATCH (line, "nameserver", s)) {
 			gs_free char *s_cpy = NULL;

@@ -1016,7 +1016,7 @@ read_route_file (int addr_family,
                  GError **error)
 {
 	gs_free char *contents = NULL;
-	char *contents_rest;
+	char *contents_rest = NULL;
 	const char *line;
 	gsize len = 0;
 	gsize line_num;
