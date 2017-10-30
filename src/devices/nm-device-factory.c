@@ -295,7 +295,7 @@ _add_factory (NMDeviceFactory *factory,
 {
 	const NMLinkType *link_types = NULL;
 	const char *const*setting_types = NULL;
-	GSList *list;
+	GSList *list, *list2;
 	int i;
 
 	g_return_val_if_fail (factories_by_link, FALSE);
@@ -308,9 +308,10 @@ _add_factory (NMDeviceFactory *factory,
 		g_hash_table_insert (factories_by_link, GUINT_TO_POINTER (link_types[i]), g_object_ref (factory));
 	for (i = 0; setting_types && setting_types[i]; i++) {
 		list = g_hash_table_lookup (factories_by_setting, (char *) setting_types[i]);
-		if (list)
-			(void) g_slist_append (list, g_object_ref (factory));
-		else {
+		if (list) {
+			list2 = g_slist_append (list, g_object_ref (factory));
+			nm_assert (list == list2);
+		} else {
 			list = g_slist_append (list, g_object_ref (factory));
 			g_hash_table_insert (factories_by_setting, (char *) setting_types[i], list);
 		}
