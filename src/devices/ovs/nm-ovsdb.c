@@ -1125,13 +1125,13 @@ ovsdb_got_msg (NMOvsdb *self, json_t *msg)
 	if (id > -1) {
 		/* This is a response to a method call. */
 		if (!priv->calls->len) {
-			_LOGE ("there are no queued calls expecting response %ld", id);
+			_LOGE ("there are no queued calls expecting response %" G_GUINT64_FORMAT, id);
 			ovsdb_disconnect (self);
 			return;
 		}
 		call = &g_array_index (priv->calls, OvsdbMethodCall, 0);
 		if (call->id != id) {
-			_LOGE ("expected a response to call %ld, not %ld", call->id, id);
+			_LOGE ("expected a response to call %" G_GUINT64_FORMAT ", not %" G_GUINT64_FORMAT, call->id, id);
 			ovsdb_disconnect (self);
 			return;
 		}
