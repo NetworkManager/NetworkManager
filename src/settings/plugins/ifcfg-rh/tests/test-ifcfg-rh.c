@@ -1966,9 +1966,9 @@ static void
 test_read_write_802_1x_password_raw (void)
 {
 	nmtst_auto_unlinkfile char *testfile = NULL;
+	nmtst_auto_unlinkfile char *keyfile = NULL;
 	gs_unref_object NMConnection *connection = NULL;
 	gs_unref_object NMConnection *reread = NULL;
-	gs_free char *keyfile = NULL;
 	NMSetting8021x *s_8021x;
 	GBytes *bytes;
 	gconstpointer data;
