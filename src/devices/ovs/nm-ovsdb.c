@@ -35,6 +35,14 @@
 #define json_boolean(val) ((val) ? json_true() : json_false())
 #endif
 
+/* Added in Jansson v2.5 (released Sep 19 2013), but travis.ci has v2.2. */
+#ifndef json_array_foreach
+#define json_array_foreach(array, index, value) \
+	for (index = 0; \
+	     index < json_array_size(array) && (value = json_array_get(array, index)); \
+	     index++)
+#endif
+
 /*****************************************************************************/
 
 typedef struct {
