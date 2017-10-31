@@ -226,6 +226,7 @@ write_object (NMSetting8021x *s_8021x,
 	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
 	char *secret_name, *secret_flags;
 	const char *extension;
+	char *standard_file;
 
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
 	g_return_val_if_fail (objtype != NULL, FALSE);
@@ -265,24 +266,6 @@ write_object (NMSetting8021x *s_8021x,
 	else
 		extension = "pem";
 
-	/* If certificate/private key wasn't sent, the connection may no longer be
-	 * 802.1x and thus we clear out the paths and certs.
-	 */
-	if (!value && !blob) {
-		char *standard_file;
-
-		/* Since no cert/private key is now being used, delete any standard file
-		 * that was created for this connection, but leave other files alone.
-		 * Thus, for example,
-		 * /etc/sysconfig/network-scripts/ca-cert-Test_Write_Wifi_WPA_EAP-TLS.der
-		 * will be deleted, but /etc/pki/tls/cert.pem will not.
-		 */
-		standard_file = utils_cert_path (svFileGetName (ifcfg), objtype->vtable->file_suffix, extension);
-		g_hash_table_replace (blobs, standard_file, NULL);
-		svUnsetValue (ifcfg, objtype->ifcfg_rh_key);
-		return TRUE;
-	}
-
 	/* If the object path was specified, prefer that over any raw cert data that
 	 * may have been sent.
 	 */
@@ -301,6 +284,18 @@ write_object (NMSetting8021x *s_8021x,
 		return TRUE;
 	}
 
+	/* If certificate/private key wasn't sent, the connection may no longer be
+	 * 802.1x and thus we clear out the paths and certs.
+	 *
+	 * Since no cert/private key is now being used, delete any standard file
+	 * that was created for this connection, but leave other files alone.
+	 * Thus, for example,
+	 * /etc/sysconfig/network-scripts/ca-cert-Test_Write_Wifi_WPA_EAP-TLS.der
+	 * will be deleted, but /etc/pki/tls/cert.pem will not.
+	 */
+	standard_file = utils_cert_path (svFileGetName (ifcfg), objtype->vtable->file_suffix, extension);
+	g_hash_table_replace (blobs, standard_file, NULL);
+	svUnsetValue (ifcfg, objtype->ifcfg_rh_key);
 	return TRUE;
 }
 
