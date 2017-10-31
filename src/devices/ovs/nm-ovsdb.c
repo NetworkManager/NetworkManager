@@ -43,6 +43,14 @@
 	     index++)
 #endif
 
+/* Added in Jansson v2.3 (released Jan 27 2012) */
+#ifndef json_object_foreach
+#define json_object_foreach(object, key, value) \
+    for(key = json_object_iter_key(json_object_iter(object)); \
+        key && (value = json_object_iter_value(json_object_key_to_iter(key))); \
+        key = json_object_iter_key(json_object_iter_next(object, json_object_key_to_iter(key))))
+#endif
+
 /*****************************************************************************/
 
 typedef struct {
