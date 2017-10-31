@@ -2684,6 +2684,23 @@ parse_wpa_psk (shvarFile *ifcfg,
 	return g_steal_pointer (&psk);
 }
 
+static void
+read_8021x_password (shvarFile *ifcfg, shvarFile *keys_ifcfg, const char *name,
+                     char **value, NMSettingSecretFlags *flags)
+{
+	gs_free char *flags_key = NULL;
+
+	*value = NULL;
+	flags_key = g_strdup_printf ("%s_FLAGS", name);
+	*flags = read_secret_flags (ifcfg, flags_key);
+
+	if (*flags == NM_SETTING_SECRET_FLAG_NONE) {
+		*value = svGetValueStr_cp (ifcfg, name);
+		if (!*value && keys_ifcfg)
+			*value = svGetValueStr_cp (keys_ifcfg, name);
+	}
+}
+
 static gboolean
 eap_simple_reader (const char *eap_method,
                    shvarFile *ifcfg,
@@ -2693,6 +2710,7 @@ eap_simple_reader (const char *eap_method,
                    GError **error)
 {
 	NMSettingSecretFlags flags;
+	GBytes *bytes;
 	char *value;
 
 	value = svGetValueStr_cp (ifcfg, "IEEE_8021X_IDENTITY");
@@ -2703,22 +2721,29 @@ eap_simple_reader (const char *eap_method,
 		return FALSE;
 	}
 	g_object_set (s_8021x, NM_SETTING_802_1X_IDENTITY, value, NULL);
-	g_free (value);
+	nm_clear_g_free (&value);
 
-	flags = read_secret_flags (ifcfg, "IEEE_8021X_PASSWORD_FLAGS");
+	read_8021x_password (ifcfg, keys, "IEEE_8021X_PASSWORD", &value, &flags);
 	g_object_set (s_8021x, NM_SETTING_802_1X_PASSWORD_FLAGS, flags, NULL);
+	if (value) {
+		g_object_set (s_8021x, NM_SETTING_802_1X_PASSWORD, value, NULL);
+		nm_clear_g_free (&value);
+	}
 
-	/* Only read the password if it's system-owned */
-	if (flags == NM_SETTING_SECRET_FLAG_NONE) {
-		value = svGetValueStr_cp (ifcfg, "IEEE_8021X_PASSWORD");
-		if (!value && keys) {
-			/* Try the lookaside keys file */
-			value = svGetValueStr_cp (keys, "IEEE_8021X_PASSWORD");
+	read_8021x_password (ifcfg, keys, "IEEE_8021X_PASSWORD_RAW", &value, &flags);
+	g_object_set (s_8021x, NM_SETTING_802_1X_PASSWORD_RAW_FLAGS, flags, NULL);
+	if (value) {
+		bytes = nm_utils_hexstr2bin (value);
+		if (!bytes) {
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Invalid hex string '%s' in IEEE_8021X_PASSWORD_RAW.",
+			             value);
+			g_free (value);
+			return FALSE;
 		}
-
-		if (value)
-			g_object_set (s_8021x, NM_SETTING_802_1X_PASSWORD, value, NULL);
-		g_free (value);
+		g_object_set (s_8021x, NM_SETTING_802_1X_PASSWORD_RAW, bytes, NULL);
+		g_bytes_unref (bytes);
+		nm_clear_g_free (&value);
 	}
 
 	return TRUE;

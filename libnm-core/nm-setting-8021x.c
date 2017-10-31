@@ -4527,8 +4527,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: password-raw
-	 * variable: (none)
-	 * description: The property is not handled by ifcfg-rh plugin.
+	 * variable: IEEE_8021X_PASSWORD_RAW(+)
+	 * description: password used for EAP, encoded as a hexadecimal string. It
+	 *   can also go to "key-" lookaside file.
+	 * example: IEEE_8021X_PASSWORD_RAW=041c8320083aa4bf
 	 * ---end---
 	 */
 	g_object_class_install_property

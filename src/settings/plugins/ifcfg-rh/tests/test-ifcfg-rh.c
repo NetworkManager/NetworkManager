@@ -1963,6 +1963,46 @@ test_read_802_1x_ttls_eapgtc (void)
 }
 
 static void
+test_read_write_802_1x_password_raw (void)
+{
+	nmtst_auto_unlinkfile char *testfile = NULL;
+	gs_unref_object NMConnection *connection = NULL;
+	gs_unref_object NMConnection *reread = NULL;
+	gs_free char *keyfile = NULL;
+	NMSetting8021x *s_8021x;
+	GBytes *bytes;
+	gconstpointer data;
+	gsize size;
+
+	/* Test that the 802-1x.password-raw is correctly read and written. */
+
+	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-802-1x-password-raw",
+	                                    NULL, TYPE_ETHERNET, NULL);
+
+	/* ===== 802.1x SETTING ===== */
+	s_8021x = nm_connection_get_setting_802_1x (connection);
+	g_assert (s_8021x);
+
+	bytes = nm_setting_802_1x_get_password_raw (s_8021x);
+	g_assert (bytes);
+	data = g_bytes_get_data (bytes, &size);
+	g_assert_cmpmem (data, size, "\x04\x08\x15\x16\x23\x42\x00\x01", 8);
+
+	g_assert_cmpint (nm_setting_802_1x_get_password_raw_flags (s_8021x),
+	                 ==,
+	                 NM_SETTING_SECRET_FLAG_NONE);
+
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
+	keyfile = utils_get_keys_path (testfile);
+	g_assert (g_file_test (keyfile, G_FILE_TEST_EXISTS));
+
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
+}
+
+static void
 test_read_wired_aliases_good (gconstpointer test_data)
 {
 	const int N = GPOINTER_TO_INT (test_data);
@@ -9605,6 +9645,7 @@ int main (int argc, char **argv)
 
 	g_test_add_func (TPATH "802-1x/subj-matches", test_read_write_802_1X_subj_matches);
 	g_test_add_func (TPATH "802-1x/ttls-eapgtc", test_read_802_1x_ttls_eapgtc);
+	g_test_add_func (TPATH "802-1x/password_raw", test_read_write_802_1x_password_raw);
 	g_test_add_data_func (TPATH "wired/read/aliases/good/0", GINT_TO_POINTER (0), test_read_wired_aliases_good);
 	g_test_add_data_func (TPATH "wired/read/aliases/good/3", GINT_TO_POINTER (3), test_read_wired_aliases_good);
 	g_test_add_func (TPATH "wired/read/aliases/bad1", test_read_wired_aliases_bad_1);

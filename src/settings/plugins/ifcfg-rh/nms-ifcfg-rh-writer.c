@@ -403,11 +403,14 @@ write_8021x_setting (NMConnection *connection,
 	NMSetting8021x *s_8021x;
 	NMSetting8021xAuthFlags auth_flags;
 	const char *value, *match;
+	gconstpointer ptr;
+	GBytes* bytes;
 	char *tmp = NULL;
 	GString *phase2_auth;
 	GString *str;
 	guint32 i, num;
 	gint timeout;
+	gsize size;
 
 	s_8021x = nm_connection_get_setting_802_1x (connection);
 	if (!s_8021x) {
@@ -442,6 +445,20 @@ write_8021x_setting (NMConnection *connection,
 	            nm_setting_802_1x_get_password (s_8021x),
 	            "IEEE_8021X_PASSWORD_FLAGS",
 	            nm_setting_802_1x_get_password_flags (s_8021x));
+
+	tmp = NULL;
+	bytes = nm_setting_802_1x_get_password_raw (s_8021x);
+	if (bytes) {
+		ptr = g_bytes_get_data (bytes, &size);
+		tmp = nm_utils_bin2hexstr (ptr, size, -1);
+	}
+	set_secret (ifcfg,
+	            secrets,
+	            "IEEE_8021X_PASSWORD_RAW",
+	            tmp,
+	            "IEEE_8021X_PASSWORD_RAW_FLAGS",
+	            nm_setting_802_1x_get_password_raw_flags (s_8021x));
+	g_free (tmp);
 
 	/* PEAP version */
 	value = nm_setting_802_1x_get_phase1_peapver (s_8021x);
