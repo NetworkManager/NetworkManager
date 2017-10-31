@@ -3356,7 +3356,10 @@ next:
 	g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_DOMAIN_SUFFIX_MATCH, v, NULL);
 
 	timeout = svGetValueInt64 (ifcfg, "IEEE_8021X_AUTH_TIMEOUT", 10, 0, G_MAXINT32, 0);
-	g_object_set (s_8021x, NM_SETTING_802_1X_AUTH_TIMEOUT, (gint32) timeout, NULL);
+	g_object_set (s_8021x, NM_SETTING_802_1X_AUTH_TIMEOUT, (gint) timeout, NULL);
+
+	timeout = svGetValueInt64 (ifcfg, "IEEE_8021X_AUTH_RETRIES", 10, -1, G_MAXINT32, -1);
+	g_object_set (s_8021x, NM_SETTING_802_1X_AUTH_RETRIES, (gint) timeout, NULL);
 
 	return g_steal_pointer (&s_8021x);
 }

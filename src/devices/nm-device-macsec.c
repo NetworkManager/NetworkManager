@@ -72,6 +72,7 @@ typedef struct {
 	Supplicant supplicant;
 	guint supplicant_timeout_id;
 	NMActRequestGetSecretsCallId macsec_secrets_id;
+	int auth_retries;
 } NMDeviceMacsecPrivate;
 
 struct _NMDeviceMacsec {
@@ -477,24 +478,21 @@ handle_auth_or_fail (NMDeviceMacsec *self,
                      NMActRequest *req,
                      gboolean new_secrets)
 {
+	NMDeviceMacsecPrivate *priv;
 	const char *setting_name;
-	int tries_left;
 	NMConnection *applied_connection;
-	NMSettingsConnection *settings_connection;
 
-	applied_connection = nm_act_request_get_applied_connection (req);
-	settings_connection = nm_act_request_get_settings_connection (req);
+	priv = NM_DEVICE_MACSEC_GET_PRIVATE (self);
 
-	tries_left = nm_settings_connection_get_autoconnect_retries (settings_connection);
-	if (tries_left == 0)
+	if (!nm_device_802_1x_auth_retries_try_next (NM_DEVICE (self),
+	                                             &priv->auth_retries))
 		return NM_ACT_STAGE_RETURN_FAILURE;
-	if (tries_left > 0)
-		nm_settings_connection_set_autoconnect_retries (settings_connection, tries_left - 1);
 
 	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
 
 	nm_active_connection_clear_secrets (NM_ACTIVE_CONNECTION (req));
 
+	applied_connection = nm_act_request_get_applied_connection (req);
 	setting_name = nm_connection_need_secrets (applied_connection, NULL);
 	if (setting_name) {
 		macsec_secrets_get_secrets (self, setting_name,
@@ -738,33 +736,22 @@ link_changed (NMDevice *device,
 
 
 static void
-reset_autoconnect_retries (NMDevice *device)
-{
-	NMActRequest *req;
-	NMSettingsConnection *connection;
-
-	req = nm_device_get_act_request (device);
-	if (req) {
-		connection = nm_act_request_get_settings_connection (req);
-		g_return_if_fail (connection);
-		/* Reset autoconnect retries on success, failure, or when deactivating */
-		nm_settings_connection_reset_autoconnect_retries (connection);
-	}
-}
-
-static void
 device_state_changed (NMDevice *device,
                       NMDeviceState new_state,
                       NMDeviceState old_state,
                       NMDeviceStateReason reason)
 {
+	NMDeviceMacsecPrivate *priv;
+
 	if (new_state > NM_DEVICE_STATE_ACTIVATED)
 		macsec_secrets_cancel (NM_DEVICE_MACSEC (device));
 
-	if (   new_state == NM_DEVICE_STATE_ACTIVATED
-	    || new_state == NM_DEVICE_STATE_FAILED
-	    || new_state == NM_DEVICE_STATE_DISCONNECTED)
-		reset_autoconnect_retries (device);
+	if (NM_IN_SET (new_state, NM_DEVICE_STATE_ACTIVATED,
+	                          NM_DEVICE_STATE_FAILED,
+	                          NM_DEVICE_STATE_DISCONNECTED)) {
+		priv = NM_DEVICE_MACSEC_GET_PRIVATE (NM_DEVICE_MACSEC (device));
+		priv->auth_retries = NM_DEVICE_802_1X_AUTH_RETRIES_UNSET;
+	}
 }
 
 /******************************************************************/
@@ -821,8 +808,11 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
-nm_device_macsec_init (NMDeviceMacsec * self)
+nm_device_macsec_init (NMDeviceMacsec *self)
 {
+	NMDeviceMacsecPrivate *priv = NM_DEVICE_MACSEC_GET_PRIVATE (self);
+
+	priv->auth_retries = NM_DEVICE_802_1X_AUTH_RETRIES_UNSET;
 }
 
 static void

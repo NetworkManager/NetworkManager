@@ -14023,6 +14023,52 @@ nm_device_get_supplicant_timeout (NMDevice *self)
 	                                     SUPPLICANT_DEFAULT_TIMEOUT);
 }
 
+gboolean
+nm_device_802_1x_auth_retries_try_next (NMDevice *self, int *p_auth_retries)
+{
+	NMConnection *applied_connection;
+	NMSetting8021x *security;
+	int auth_retries = *p_auth_retries;
+
+	if (G_UNLIKELY (auth_retries == NM_DEVICE_802_1X_AUTH_RETRIES_UNSET)) {
+		auth_retries = -1;
+
+		applied_connection = nm_device_get_applied_connection (NM_DEVICE (self));
+		if (applied_connection) {
+			security = nm_connection_get_setting_802_1x (applied_connection);
+			if (security)
+				auth_retries = nm_setting_802_1x_get_auth_retries (security);
+		}
+
+		if (auth_retries == -1) {
+			gs_free char *value = NULL;
+
+			value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+			                                               "802-1x.auth-retries",
+			                                               self);
+			auth_retries = _nm_utils_ascii_str_to_int64 (value, 10, -1, G_MAXINT32, -1);
+		}
+
+		if (auth_retries == 0)
+			auth_retries = NM_DEVICE_802_1X_AUTH_RETRIES_INFINITY;
+		else if (auth_retries == -1)
+			auth_retries = NM_DEVICE_802_1X_AUTH_RETRIES_DEFAULT;
+		else
+			nm_assert (auth_retries > 0);
+
+		*p_auth_retries = auth_retries;
+	}
+
+	if (auth_retries == NM_DEVICE_802_1X_AUTH_RETRIES_INFINITY)
+		return TRUE;
+	if (auth_retries <= 0) {
+		nm_assert (auth_retries == 0);
+		return FALSE;
+	}
+	(*p_auth_retries)--;
+	return TRUE;
+}
+
 /*****************************************************************************/
 
 static const char *

@@ -364,9 +364,8 @@ device_state_changed (NMDevice *device,
 {
 	NMDeviceModem *self = NM_DEVICE_MODEM (device);
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (self);
-	NMSettingsConnection *connection = nm_device_get_settings_connection (device);
 
-	g_assert (priv->modem);
+	g_return_if_fail (priv->modem);
 
 	if (new_state == NM_DEVICE_STATE_UNAVAILABLE &&
 	    old_state < NM_DEVICE_STATE_UNAVAILABLE) {
@@ -374,30 +373,7 @@ device_state_changed (NMDevice *device,
 		_LOGI (LOGD_MB, "modem state '%s'",
 		       nm_modem_state_to_string (nm_modem_get_state (priv->modem)));
 	}
-
 	nm_modem_device_state_changed (priv->modem, new_state, old_state);
-
-	switch (nm_device_state_reason_check (reason)) {
-	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_DENIED:
-	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_NOT_SEARCHING:
-	case NM_DEVICE_STATE_REASON_GSM_SIM_NOT_INSERTED:
-	case NM_DEVICE_STATE_REASON_GSM_SIM_PIN_REQUIRED:
-	case NM_DEVICE_STATE_REASON_GSM_SIM_PUK_REQUIRED:
-	case NM_DEVICE_STATE_REASON_GSM_SIM_WRONG:
-	case NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT:
-	case NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED:
-	case NM_DEVICE_STATE_REASON_GSM_APN_FAILED:
-		/* Block autoconnect of the just-failed connection for situations
-		 * where a retry attempt would just fail again.
-		 */
-		if (connection) {
-			nm_settings_connection_set_autoconnect_blocked_reason (connection,
-			                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED);
-		}
-		break;
-	default:
-		break;
-	}
 }
 
 static NMDeviceCapabilities
