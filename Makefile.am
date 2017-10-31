@@ -2825,6 +2825,9 @@ check-local-devices-ovs: src/devices/ovs/libnm-device-plugin-ovs.la
 
 endif
 
+EXTRA_DIST += \
+	data/NetworkManager-ovs.conf
+
 ###############################################################################
 # src/dnsmasq/tests
 ###############################################################################
