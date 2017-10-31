@@ -856,6 +856,9 @@ nm_device_ipv4_sysctl_set (NMDevice *self, const char *property, const char *val
 	const char *value_to_set;
 	char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
 
+	if (!nm_device_get_ip_ifindex (self))
+		return FALSE;
+
 	if (value) {
 		value_to_set = value;
 	} else {
@@ -875,6 +878,9 @@ nm_device_ipv4_sysctl_get_uint32 (NMDevice *self, const char *property, guint32 
 {
 	char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
 
+	if (!nm_device_get_ip_ifindex (self))
+		return fallback;
+
 	return nm_platform_sysctl_get_int_checked (nm_device_get_platform (self),
 	                                           NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET, buf, nm_device_get_ip_iface (self), property)),
 	                                           10,
@@ -888,6 +894,9 @@ nm_device_ipv6_sysctl_set (NMDevice *self, const char *property, const char *val
 {
 	char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
 
+	if (!nm_device_get_ip_ifindex (self))
+		return FALSE;
+
 	return nm_platform_sysctl_set (nm_device_get_platform (self), NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET6, buf, nm_device_get_ip_iface (self), property)), value);
 }
 
@@ -895,6 +904,9 @@ static guint32
 nm_device_ipv6_sysctl_get_uint32 (NMDevice *self, const char *property, guint32 fallback)
 {
 	char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
+
+	if (!nm_device_get_ip_ifindex (self))
+		return fallback;
 
 	return nm_platform_sysctl_get_int_checked (nm_device_get_platform (self),
 	                                           NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET6, buf, nm_device_get_ip_iface (self), property)),
@@ -7735,6 +7747,9 @@ save_ip6_properties (NMDevice *self)
 
 	g_hash_table_remove_all (priv->ip6_saved_properties);
 
+	if (!nm_device_get_ip_ifindex (self))
+		return;
+
 	for (i = 0; i < G_N_ELEMENTS (ip6_properties_to_save); i++) {
 		char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
 
@@ -7862,6 +7877,9 @@ _ip6_privacy_get (NMDevice *self)
 	                                            NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
 	if (ip6_privacy != NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
 		return ip6_privacy;
+
+	if (!nm_device_get_ip_ifindex (self))
+		return NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;;
 
 	/* 3.) No valid default-value configured. Fallback to reading sysctl.
 	 *
@@ -8402,6 +8420,8 @@ start_sharing (NMDevice *self, NMIP4Config *config)
 	g_return_val_if_fail (config != NULL, FALSE);
 
 	ip_iface = nm_device_get_ip_iface (self);
+	if (!ip_iface)
+		return FALSE;
 
 	ip4_addr = nm_ip4_config_get_first_address (config);
 	if (!ip4_addr || !ip4_addr->address)
@@ -8670,6 +8690,8 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 
 	/* Interface must be IFF_UP before IP config can be applied */
 	ip_ifindex = nm_device_get_ip_ifindex (self);
+	g_return_if_fail (ip_ifindex);
+
 	if (!nm_platform_link_is_up (nm_device_get_platform (self), ip_ifindex) && !nm_device_sys_iface_state_is_external_or_assume (self)) {
 		nm_platform_link_set_up (nm_device_get_platform (self), ip_ifindex, NULL);
 		if (!nm_platform_link_is_up (nm_device_get_platform (self), ip_ifindex))
