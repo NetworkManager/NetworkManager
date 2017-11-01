@@ -2616,7 +2616,7 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_WIRELESS_HARDWARE_ENABLED:
 		if (priv->manager)
-			g_object_get_property (G_OBJECT (priv->settings), pspec->name, value);
+			g_object_get_property (G_OBJECT (priv->manager), pspec->name, value);
 		else
 			g_value_set_boolean (value, FALSE);
 		break;
@@ -2625,7 +2625,7 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_WWAN_HARDWARE_ENABLED:
 		if (priv->manager)
-			g_object_get_property (G_OBJECT (priv->settings), pspec->name, value);
+			g_object_get_property (G_OBJECT (priv->manager), pspec->name, value);
 		else
 			g_value_set_boolean (value, FALSE);
 		break;
@@ -2634,7 +2634,7 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_WIMAX_HARDWARE_ENABLED:
 		if (priv->manager)
-			g_object_get_property (G_OBJECT (priv->settings), pspec->name, value);
+			g_object_get_property (G_OBJECT (priv->manager), pspec->name, value);
 		else
 			g_value_set_boolean (value, FALSE);
 		break;
@@ -2655,7 +2655,7 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_METERED:
 		if (priv->manager)
-			g_object_get_property (G_OBJECT (priv->settings), pspec->name, value);
+			g_object_get_property (G_OBJECT (priv->manager), pspec->name, value);
 		else
 			g_value_set_uint (value, NM_METERED_UNKNOWN);
 		break;
