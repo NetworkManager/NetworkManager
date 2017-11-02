@@ -4372,8 +4372,14 @@ nm_device_can_auto_connect (NMDevice *self,
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (!specific_object || !*specific_object, FALSE);
 
-	if (!nm_device_autoconnect_allowed (self))
-		return FALSE;
+	/* the caller must ensure that nm_device_autoconnect_allowed() returns
+	 * TRUE as well. This is done, because nm_device_can_auto_connect()
+	 * has only one caller, and it iterates over a list of available
+	 * connections.
+	 *
+	 * Hence, we don't need to re-check nm_device_autoconnect_allowed()
+	 * over and over again. The caller is supposed to do that. */
+	nm_assert (nm_device_autoconnect_allowed (self));
 
 	s_con = nm_connection_get_setting_connection (connection);
 	if (!nm_setting_connection_get_autoconnect (s_con))
