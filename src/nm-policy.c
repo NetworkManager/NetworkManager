@@ -1159,8 +1159,7 @@ activate_data_free (ActivateData *data)
 	nm_device_remove_pending_action (data->device, NM_PENDING_ACTION_AUTOACTIVATE, TRUE);
 	priv->pending_activation_checks = g_slist_remove (priv->pending_activation_checks, data);
 
-	if (data->autoactivate_id)
-		g_source_remove (data->autoactivate_id);
+	nm_clear_g_source (&data->autoactivate_id);
 	g_object_unref (data->device);
 
 	g_slice_free (ActivateData, data);
@@ -1996,8 +1995,7 @@ device_autoconnect_changed (NMDevice *device,
 	NMPolicyPrivate *priv = user_data;
 	NMPolicy *self = _PRIV_TO_SELF (priv);
 
-	if (nm_device_autoconnect_allowed (device))
-		schedule_activate_check (self, device);
+	schedule_activate_check (self, device);
 }
 
 static void
