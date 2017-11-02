@@ -552,6 +552,7 @@ typedef enum {
  * @NM_DEVICE_STATE_REASON_PARENT_CHANGED: the device's parent changed
  * @NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED: the device parent's management changed
  * @NM_DEVICE_STATE_REASON_OVSDB_FAILED: problem communicating with OpenVSwitch database
+ * @NM_DEVICE_STATE_REASON_IP_ADDRESS_DUPLICATE: a duplicate IP address was detected
  *
  * Device state change reason codes
  */
@@ -620,6 +621,7 @@ typedef enum {
 	NM_DEVICE_STATE_REASON_PARENT_CHANGED                 = 61,
 	NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED         = 62,
 	NM_DEVICE_STATE_REASON_OVSDB_FAILED                   = 63,
+	NM_DEVICE_STATE_REASON_IP_ADDRESS_DUPLICATE           = 64,
 } NMDeviceStateReason;
 
 /**
