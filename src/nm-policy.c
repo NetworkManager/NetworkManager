@@ -1517,9 +1517,6 @@ schedule_activate_check (NMPolicy *self, NMDevice *device)
 	if (nm_manager_get_state (priv->manager) == NM_STATE_ASLEEP)
 		return;
 
-	if (!nm_device_get_enabled (device))
-		return;
-
 	if (!nm_device_autoconnect_allowed (device))
 		return;
 

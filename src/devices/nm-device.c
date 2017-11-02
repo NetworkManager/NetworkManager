@@ -4304,6 +4304,9 @@ nm_device_autoconnect_allowed (NMDevice *self)
 	    && !klass->get_autoconnect_allowed (self))
 		return FALSE;
 
+	if (!nm_device_get_enabled (self))
+		return FALSE;
+
 	/* Unrealized devices can always autoconnect. */
 	if (nm_device_is_real (self) && priv->state < NM_DEVICE_STATE_DISCONNECTED)
 		return FALSE;
