@@ -4272,12 +4272,6 @@ nm_device_set_autoconnect_both (NMDevice *self, gboolean autoconnect)
 }
 
 static gboolean
-get_autoconnect_allowed (NMDevice *self)
-{
-	return TRUE;
-}
-
-static gboolean
 autoconnect_allowed_accumulator (GSignalInvocationHint *ihint,
                                  GValue *return_accu,
                                  const GValue *handler_return, gpointer data)
@@ -4303,8 +4297,11 @@ nm_device_autoconnect_allowed (NMDevice *self)
 	GValue instance = G_VALUE_INIT;
 	GValue retval = G_VALUE_INIT;
 
-	if (   !nm_device_get_autoconnect (self)
-	    || !klass->get_autoconnect_allowed (self))
+	if (!nm_device_get_autoconnect (self))
+		return FALSE;
+
+	if (   klass->get_autoconnect_allowed
+	    && !klass->get_autoconnect_allowed (self))
 		return FALSE;
 
 	/* Unrealized devices can always autoconnect. */
@@ -14668,7 +14665,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->act_stage4_ip6_config_timeout = act_stage4_ip6_config_timeout;
 
 	klass->get_type_description = get_type_description;
-	klass->get_autoconnect_allowed = get_autoconnect_allowed;
 	klass->can_auto_connect = can_auto_connect;
 	klass->check_connection_compatible = check_connection_compatible;
 	klass->check_connection_available = check_connection_available;
