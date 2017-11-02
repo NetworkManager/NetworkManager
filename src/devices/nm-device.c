@@ -5395,8 +5395,8 @@ ipv4_manual_method_apply (NMDevice *self, NMIP4Config **configs, gboolean succes
 		nm_device_activate_schedule_ip4_config_result (self, empty);
 		g_object_unref (empty);
 	} else {
-		nm_device_queue_state (self, NM_DEVICE_STATE_FAILED,
-		                       NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+		nm_device_ip_method_failed (self, AF_INET,
+		                            NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 	}
 }
 
@@ -5976,8 +5976,8 @@ dhcp4_dad_cb (NMDevice *self, NMIP4Config **configs, gboolean success)
 	if (success)
 		nm_device_activate_schedule_ip4_config_result (self, configs[1]);
 	else {
-		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED,
-		                         NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+		nm_device_ip_method_failed (self, AF_INET,
+		                            NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 	}
 }
 
