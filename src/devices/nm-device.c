@@ -89,6 +89,10 @@ _LOG_DECLARE_SELF (NMDevice);
 #define CARRIER_WAIT_TIME_MS 5000
 #define CARRIER_WAIT_TIME_AFTER_MTU_MS 10000
 
+#define NM_DEVICE_AUTH_RETRIES_UNSET    -1
+#define NM_DEVICE_AUTH_RETRIES_INFINITY -2
+#define NM_DEVICE_AUTH_RETRIES_DEFAULT  3
+
 /*****************************************************************************/
 
 typedef void (*ActivationHandleFunc) (NMDevice *self);
@@ -237,6 +241,8 @@ typedef struct _NMDevicePrivate {
 	int           ifindex;
 
 	int parent_ifindex;
+
+	int auth_retries;
 
 	union {
 		const guint8 hw_addr_len; /* read-only */
@@ -12877,6 +12883,10 @@ _set_state_full (NMDevice *self,
 	                        NM_DEVICE_SYS_IFACE_STATE_ASSUME))
 		nm_device_sys_iface_state_set (self, NM_DEVICE_SYS_IFACE_STATE_MANAGED);
 
+	if (   state <= NM_DEVICE_STATE_DISCONNECTED
+	    || state >= NM_DEVICE_STATE_ACTIVATED)
+		priv->auth_retries = NM_DEVICE_AUTH_RETRIES_UNSET;
+
 	if (state > NM_DEVICE_STATE_DISCONNECTED)
 		nm_device_assume_state_reset (self);
 
@@ -14024,10 +14034,16 @@ nm_device_get_supplicant_timeout (NMDevice *self)
 }
 
 gboolean
-nm_device_auth_retries_try_next (NMDevice *self, int *p_auth_retries)
+nm_device_auth_retries_try_next (NMDevice *self)
 {
+	NMDevicePrivate *priv;
 	NMSettingConnection *s_con;
-	int auth_retries = *p_auth_retries;
+	int auth_retries;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	auth_retries = priv->auth_retries;
 
 	if (G_UNLIKELY (auth_retries == NM_DEVICE_AUTH_RETRIES_UNSET)) {
 		auth_retries = -1;
@@ -14052,7 +14068,7 @@ nm_device_auth_retries_try_next (NMDevice *self, int *p_auth_retries)
 		else
 			nm_assert (auth_retries > 0);
 
-		*p_auth_retries = auth_retries;
+		priv->auth_retries = auth_retries;
 	}
 
 	if (auth_retries == NM_DEVICE_AUTH_RETRIES_INFINITY)
@@ -14061,7 +14077,7 @@ nm_device_auth_retries_try_next (NMDevice *self, int *p_auth_retries)
 		nm_assert (auth_retries == 0);
 		return FALSE;
 	}
-	(*p_auth_retries)--;
+	priv->auth_retries--;
 	return TRUE;
 }
 
@@ -14100,6 +14116,7 @@ nm_device_init (NMDevice *self)
 
 	priv->netns = g_object_ref (NM_NETNS_GET);
 
+	priv->auth_retries = NM_DEVICE_AUTH_RETRIES_UNSET;
 	priv->type = NM_DEVICE_TYPE_UNKNOWN;
 	priv->capabilities = NM_DEVICE_CAP_NM_SUPPORTED;
 	priv->state = NM_DEVICE_STATE_UNMANAGED;
