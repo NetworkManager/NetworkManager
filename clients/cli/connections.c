@@ -2397,10 +2397,6 @@ nmc_activate_connection (NmCli *nmc,
 		                  NM_SECRET_AGENT_SIMPLE_REQUEST_SECRETS,
 		                  G_CALLBACK (nmc_secrets_requested),
 		                  nmc);
-		if (connection) {
-			nm_secret_agent_simple_enable (NM_SECRET_AGENT_SIMPLE (nmc->secret_agent),
-			                               nm_object_get_path (NM_OBJECT (connection)));
-		}
 	}
 
 	info = g_malloc0 (sizeof (ActivateConnectionInfo));
@@ -6182,6 +6178,7 @@ typedef struct {
 	NMDevice *device;
 	NMActiveConnection *ac;
 	guint monitor_id;
+	NmCli *nmc;
 } MonitorACInfo;
 
 static gboolean nmc_editor_cb_called;
@@ -6259,6 +6256,14 @@ progress_activation_editor_cb (gpointer user_data)
 		goto finish; /* we are done */
 	}
 
+	if (info->nmc->secret_agent) {
+		NMRemoteConnection *connection;
+
+		connection = nm_active_connection_get_connection (ac);
+		nm_secret_agent_simple_enable (NM_SECRET_AGENT_SIMPLE (info->nmc->secret_agent),
+		                               nm_object_get_path (NM_OBJECT (connection)));
+	}
+
 	return TRUE;
 
 finish:
@@ -6294,6 +6299,7 @@ activate_connection_editor_cb (GObject *client,
 			monitor_ac_info->device = g_object_ref (device);
 			monitor_ac_info->ac = active;
 			monitor_ac_info->monitor_id = g_timeout_add (120, progress_activation_editor_cb, monitor_ac_info);
+			monitor_ac_info->nmc = info->nmc;
 		} else
 			g_object_unref (active);
 	}

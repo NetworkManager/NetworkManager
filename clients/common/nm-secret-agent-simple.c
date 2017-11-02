@@ -748,7 +748,12 @@ nm_secret_agent_simple_cancel_get_secrets (NMSecretAgentOld *agent,
                                            const gchar      *connection_path,
                                            const gchar      *setting_name)
 {
-	/* We don't support cancellation. Sorry! */
+	NMSecretAgentSimple *self = NM_SECRET_AGENT_SIMPLE (agent);
+	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (self);
+	gs_free char *request_id = NULL;
+
+	request_id = g_strdup_printf ("%s/%s", connection_path, setting_name);
+	g_hash_table_remove (priv->requests, request_id);
 }
 
 static void
