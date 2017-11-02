@@ -1,7 +1,7 @@
 [Unit]
 Description=Network Manager Wait Online
 Documentation=man:nm-online(1)
-Requisite=NetworkManager.service
+Requires=NetworkManager.service
 After=NetworkManager.service
 Before=network-online.target
 
