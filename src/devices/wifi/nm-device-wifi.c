@@ -997,9 +997,6 @@ get_autoconnect_allowed (NMDevice *device)
 {
 	NMDeviceWifiPrivate *priv;
 
-	if (!NM_DEVICE_CLASS (nm_device_wifi_parent_class)->get_autoconnect_allowed (device))
-		return FALSE;
-
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (NM_DEVICE_WIFI (device));
 	return !priv->requested_scan;
 }
