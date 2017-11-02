@@ -115,8 +115,6 @@ typedef struct _NMDeviceEthernetPrivate {
 	DcbWait       dcb_wait;
 	guint         dcb_timeout_id;
 
-	int           auth_retries;
-
 	bool          dcb_handle_carrier_changes:1;
 } NMDeviceEthernetPrivate;
 
@@ -262,18 +260,8 @@ device_state_changed (NMDevice *device,
                       NMDeviceState old_state,
                       NMDeviceStateReason reason)
 {
-	NMDeviceEthernetPrivate *priv;
-
 	if (new_state > NM_DEVICE_STATE_ACTIVATED)
 		wired_secrets_cancel (NM_DEVICE_ETHERNET (device));
-
-	if (NM_IN_SET (new_state,
-	               NM_DEVICE_STATE_ACTIVATED,
-	               NM_DEVICE_STATE_FAILED,
-	               NM_DEVICE_STATE_DISCONNECTED)) {
-		priv = NM_DEVICE_ETHERNET_GET_PRIVATE (NM_DEVICE_ETHERNET (device));
-		priv->auth_retries = NM_DEVICE_802_1X_AUTH_RETRIES_UNSET;
-	}
 }
 
 static void
@@ -284,7 +272,6 @@ nm_device_ethernet_init (NMDeviceEthernet *self)
 	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_DEVICE_ETHERNET, NMDeviceEthernetPrivate);
 	self->_priv = priv;
 
-	priv->auth_retries = NM_DEVICE_802_1X_AUTH_RETRIES_UNSET;
 	priv->s390_options = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 }
 
@@ -677,8 +664,7 @@ handle_auth_or_fail (NMDeviceEthernet *self,
 
 	priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
-	if (!nm_device_802_1x_auth_retries_try_next (NM_DEVICE (self),
-	                                             &priv->auth_retries))
+	if (!nm_device_auth_retries_try_next (NM_DEVICE (self)))
 		return NM_ACT_STAGE_RETURN_FAILURE;
 
 	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
@@ -1342,9 +1328,6 @@ deactivate (NMDevice *device)
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMSettingDcb *s_dcb;
 	GError *error = NULL;
-
-	/* Clear wired secrets tries when deactivating */
-	priv->auth_retries = NM_DEVICE_802_1X_AUTH_RETRIES_UNSET;
 
 	nm_clear_g_source (&priv->pppoe_wait_id);
 

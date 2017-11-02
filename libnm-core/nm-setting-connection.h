@@ -63,6 +63,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT "gateway-ping-timeout"
 #define NM_SETTING_CONNECTION_METERED        "metered"
 #define NM_SETTING_CONNECTION_LLDP           "lldp"
+#define NM_SETTING_CONNECTION_AUTH_RETRIES   "auth-retries"
 
 /* Types for property values */
 /**
@@ -165,6 +166,9 @@ NM_AVAILABLE_IN_1_2
 NMMetered   nm_setting_connection_get_metered (NMSettingConnection *setting);
 NM_AVAILABLE_IN_1_2
 NMSettingConnectionLldp nm_setting_connection_get_lldp (NMSettingConnection *setting);
+
+NM_AVAILABLE_IN_1_10
+gint        nm_setting_connection_get_auth_retries     (NMSettingConnection *setting);
 
 G_END_DECLS
 

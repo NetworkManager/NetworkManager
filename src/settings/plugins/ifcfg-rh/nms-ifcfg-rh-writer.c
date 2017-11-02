@@ -560,9 +560,6 @@ write_8021x_setting (NMConnection *connection,
 	vint = nm_setting_802_1x_get_auth_timeout (s_8021x);
 	svSetValueInt64_cond (ifcfg, "IEEE_8021X_AUTH_TIMEOUT", vint > 0, vint);
 
-	vint = nm_setting_802_1x_get_auth_retries (s_8021x);
-	svSetValueInt64_cond (ifcfg, "IEEE_8021X_AUTH_RETRIES", vint > 0, vint);
-
 	if (!write_8021x_certs (s_8021x, secrets, blobs, FALSE, ifcfg, error))
 		return FALSE;
 
@@ -1723,7 +1720,8 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	guint32 n, i;
 	GString *str;
 	const char *master, *master_iface = NULL, *type;
-	gint i_int;
+	gint vint;
+	guint32 vuint32;
 	const char *tmp;
 
 	svSetValueStr (ifcfg, "NAME", nm_setting_connection_get_id (s_con));
@@ -1732,17 +1730,15 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	svSetValueStr (ifcfg, "DEVICE", nm_setting_connection_get_interface_name (s_con));
 	svSetValueBoolean (ifcfg, "ONBOOT", nm_setting_connection_get_autoconnect (s_con));
 
-	i_int = nm_setting_connection_get_autoconnect_priority (s_con);
-	if (i_int != NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_DEFAULT)
-		svSetValueInt64 (ifcfg, "AUTOCONNECT_PRIORITY", i_int);
-	else
-		svUnsetValue (ifcfg, "AUTOCONNECT_PRIORITY");
+	vint = nm_setting_connection_get_autoconnect_priority (s_con);
+	svSetValueInt64_cond (ifcfg, "AUTOCONNECT_PRIORITY",
+	                      vint != NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_DEFAULT,
+	                      vint);
 
-	i_int = nm_setting_connection_get_autoconnect_retries (s_con);
-	if (i_int != -1)
-		svSetValueInt64 (ifcfg, "AUTOCONNECT_RETRIES", i_int);
-	else
-		svUnsetValue (ifcfg, "AUTOCONNECT_RETRIES");
+	vint = nm_setting_connection_get_autoconnect_retries (s_con);
+	svSetValueInt64_cond (ifcfg, "AUTOCONNECT_RETRIES",
+	                      vint != -1,
+	                      vint);
 
 	/* Only save the value for master connections */
 	type = nm_setting_connection_get_connection_type (s_con);
@@ -1858,11 +1854,10 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 		g_string_free (str, TRUE);
 	}
 
-	if (nm_setting_connection_get_gateway_ping_timeout (s_con)) {
-		svSetValueInt64 (ifcfg, "GATEWAY_PING_TIMEOUT",
-		                 nm_setting_connection_get_gateway_ping_timeout (s_con));
-	} else
-		svUnsetValue (ifcfg, "GATEWAY_PING_TIMEOUT");
+	vuint32 = nm_setting_connection_get_gateway_ping_timeout (s_con);
+	svSetValueInt64_cond (ifcfg, "GATEWAY_PING_TIMEOUT",
+	                      vuint32 != 0,
+	                      vuint32);
 
 	switch (nm_setting_connection_get_metered (s_con)) {
 	case NM_METERED_YES:
@@ -1874,6 +1869,9 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	default:
 		svUnsetValue (ifcfg, "CONNECTION_METERED");
 	}
+
+	vint = nm_setting_connection_get_auth_retries (s_con);
+	svSetValueInt64_cond (ifcfg, "AUTH_RETRIES", vint >= 0, vint);
 }
 
 static char *

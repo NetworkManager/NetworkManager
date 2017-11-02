@@ -736,11 +736,7 @@ void nm_device_update_permanent_hw_address (NMDevice *self, gboolean force_freez
 void nm_device_update_dynamic_ip_setup (NMDevice *self);
 guint nm_device_get_supplicant_timeout (NMDevice *self);
 
-#define NM_DEVICE_802_1X_AUTH_RETRIES_UNSET    -1
-#define NM_DEVICE_802_1X_AUTH_RETRIES_INFINITY -2
-#define NM_DEVICE_802_1X_AUTH_RETRIES_DEFAULT  3
-
-gboolean nm_device_802_1x_auth_retries_try_next (NMDevice *self, int *p_auth_retry);
+gboolean nm_device_auth_retries_try_next (NMDevice *self);
 
 gboolean nm_device_hw_addr_get_cloned (NMDevice *self,
                                        NMConnection *connection,

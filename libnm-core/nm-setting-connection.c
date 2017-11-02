@@ -80,6 +80,7 @@ typedef struct {
 	guint gateway_ping_timeout;
 	NMMetered metered;
 	NMSettingConnectionLldp lldp;
+	gint auth_retries;
 } NMSettingConnectionPrivate;
 
 enum {
@@ -103,6 +104,7 @@ enum {
 	PROP_METERED,
 	PROP_LLDP,
 	PROP_STABLE_ID,
+	PROP_AUTH_RETRIES,
 
 	LAST_PROP
 };
@@ -550,6 +552,25 @@ nm_setting_connection_get_autoconnect_retries (NMSettingConnection *setting)
 	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), -1);
 
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->autoconnect_retries;
+}
+
+/**
+ * nm_setting_connection_get_auth_retries:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns the value contained in the #NMSettingConnection:auth-retries property.
+ *
+ * Returns: the configured authentication retries. Zero means
+ * infinity and -1 means a global default value.
+ *
+ * Since: 1.10
+ **/
+gint
+nm_setting_connection_get_auth_retries (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), -1);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->auth_retries;
 }
 
 /**
@@ -1308,6 +1329,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_LLDP:
 		priv->lldp = g_value_get_int (value);
 		break;
+	case PROP_AUTH_RETRIES:
+		priv->auth_retries = g_value_get_int (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1392,6 +1416,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_LLDP:
 		g_value_set_int (value, priv->lldp);
+		break;
+	case PROP_AUTH_RETRIES:
+		g_value_set_int (value, priv->auth_retries);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1927,5 +1954,32 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                   NM_SETTING_PARAM_FUZZY_IGNORE |
 		                   G_PARAM_READWRITE |
 		                   G_PARAM_CONSTRUCT |
+		                   G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingConnection:auth-retries:
+	 *
+	 * The number of retries for the authentication. Zero means to try indefinitely; -1 means
+	 * to use a global default. If the global default is not set, the authentication
+	 * retries for 3 times before failing the connection.
+	 *
+	 * Currently this only applies to 802-1x authentication.
+	 *
+	 * Since: 1.10
+	 **/
+	/* ---ifcfg-rh---
+	 * property: auth-retries
+	 * variable: AUTH_RETRIES(+)
+	 * default: 0
+	 * description: Number of retries for authentication.
+	 * ---end---
+	 */
+	g_object_class_install_property
+		(object_class, PROP_AUTH_RETRIES,
+		 g_param_spec_int (NM_SETTING_CONNECTION_AUTH_RETRIES, "", "",
+		                   -1, G_MAXINT32, -1,
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_CONSTRUCT |
+		                   NM_SETTING_PARAM_FUZZY_IGNORE |
 		                   G_PARAM_STATIC_STRINGS));
 }

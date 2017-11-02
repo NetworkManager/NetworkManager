@@ -72,7 +72,6 @@ typedef struct {
 	Supplicant supplicant;
 	guint supplicant_timeout_id;
 	NMActRequestGetSecretsCallId macsec_secrets_id;
-	int auth_retries;
 } NMDeviceMacsecPrivate;
 
 struct _NMDeviceMacsec {
@@ -484,8 +483,7 @@ handle_auth_or_fail (NMDeviceMacsec *self,
 
 	priv = NM_DEVICE_MACSEC_GET_PRIVATE (self);
 
-	if (!nm_device_802_1x_auth_retries_try_next (NM_DEVICE (self),
-	                                             &priv->auth_retries))
+	if (!nm_device_auth_retries_try_next (NM_DEVICE (self)))
 		return NM_ACT_STAGE_RETURN_FAILURE;
 
 	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
@@ -741,17 +739,8 @@ device_state_changed (NMDevice *device,
                       NMDeviceState old_state,
                       NMDeviceStateReason reason)
 {
-	NMDeviceMacsecPrivate *priv;
-
 	if (new_state > NM_DEVICE_STATE_ACTIVATED)
 		macsec_secrets_cancel (NM_DEVICE_MACSEC (device));
-
-	if (NM_IN_SET (new_state, NM_DEVICE_STATE_ACTIVATED,
-	                          NM_DEVICE_STATE_FAILED,
-	                          NM_DEVICE_STATE_DISCONNECTED)) {
-		priv = NM_DEVICE_MACSEC_GET_PRIVATE (NM_DEVICE_MACSEC (device));
-		priv->auth_retries = NM_DEVICE_802_1X_AUTH_RETRIES_UNSET;
-	}
 }
 
 /******************************************************************/
@@ -810,9 +799,6 @@ get_property (GObject *object, guint prop_id,
 static void
 nm_device_macsec_init (NMDeviceMacsec *self)
 {
-	NMDeviceMacsecPrivate *priv = NM_DEVICE_MACSEC_GET_PRIVATE (self);
-
-	priv->auth_retries = NM_DEVICE_802_1X_AUTH_RETRIES_UNSET;
 }
 
 static void

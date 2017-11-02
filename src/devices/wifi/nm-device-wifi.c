@@ -63,8 +63,6 @@ _LOG_DECLARE_SELF(NMDeviceWifi);
 
 #define SCAN_RAND_MAC_ADDRESS_EXPIRE_MIN 5
 
-static NM_CACHED_QUARK_FCN ("wireless-secrets-tries", wireless_secrets_tries_quark)
-
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceWifi,
@@ -2336,7 +2334,6 @@ handle_auth_or_fail (NMDeviceWifi *self,
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	const char *setting_name;
-	guint32 tries;
 	NMConnection *applied_connection;
 	NMSettingWirelessSecurity *s_wsec;
 	const char *bssid = NULL;
@@ -2352,14 +2349,12 @@ handle_auth_or_fail (NMDeviceWifi *self,
 		g_return_val_if_fail (req, FALSE);
 	}
 
-	applied_connection = nm_act_request_get_applied_connection (req);
-
-	tries = GPOINTER_TO_UINT (g_object_get_qdata (G_OBJECT (applied_connection), wireless_secrets_tries_quark ()));
-	if (tries > 3)
+	if (!nm_device_auth_retries_try_next (NM_DEVICE (self)))
 		return FALSE;
 
 	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
 
+	applied_connection = nm_act_request_get_applied_connection (req);
 	s_wsec = nm_connection_get_setting_wireless_security (applied_connection);
 	wps_method = nm_setting_wireless_security_get_wps_method (s_wsec);
 
@@ -2408,7 +2403,6 @@ handle_auth_or_fail (NMDeviceWifi *self,
 	if (new_secrets)
 		get_secret_flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
 	wifi_secrets_get_secrets (self, setting_name, get_secret_flags);
-	g_object_set_qdata (G_OBJECT (applied_connection), wireless_secrets_tries_quark (), GUINT_TO_POINTER (++tries));
 	return TRUE;
 }
 
@@ -3074,9 +3068,6 @@ activation_success_handler (NMDevice *device)
 	/* Clear any critical protocol notification in the wifi stack */
 	nm_platform_wifi_indicate_addressing_running (nm_device_get_platform (device), ifindex, FALSE);
 
-	/* Clear wireless secrets tries on success */
-	g_object_set_qdata (G_OBJECT (applied_connection), wireless_secrets_tries_quark (), NULL);
-
 	/* There should always be a current AP, either a fake one because we haven't
 	 * seen a scan result for the activated AP yet, or a real one from the
 	 * supplicant's scan list.
@@ -3120,21 +3111,6 @@ activation_success_handler (NMDevice *device)
 
 	/* Reset scan interval to something reasonable */
 	priv->scan_interval = SCAN_INTERVAL_MIN + (SCAN_INTERVAL_STEP * 2);
-}
-
-static void
-activation_failure_handler (NMDevice *device)
-{
-	NMConnection *applied_connection;
-
-	applied_connection = nm_device_get_applied_connection (device);
-	g_assert (applied_connection);
-
-	/* Clear wireless secrets tries on failure */
-	g_object_set_qdata (G_OBJECT (applied_connection), wireless_secrets_tries_quark (), NULL);
-
-	/* Clear any critical protocol notification in the wifi stack */
-	nm_platform_wifi_indicate_addressing_running (nm_device_get_platform (device), nm_device_get_ifindex (device), FALSE);
 }
 
 static void
@@ -3191,7 +3167,8 @@ device_state_changed (NMDevice *device,
 		activation_success_handler (device);
 		break;
 	case NM_DEVICE_STATE_FAILED:
-		activation_failure_handler (device);
+		/* Clear any critical protocol notification in the wifi stack */
+		nm_platform_wifi_indicate_addressing_running (nm_device_get_platform (device), nm_device_get_ifindex (device), FALSE);
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
 		/* Kick off a scan to get latest results */

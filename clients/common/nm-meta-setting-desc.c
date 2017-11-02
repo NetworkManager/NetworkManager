@@ -4691,9 +4691,6 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_AUTH_TIMEOUT,
 		.property_type =                &_pt_gobject_int,
 	),
-	PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_AUTH_RETRIES,
-		.property_type =                &_pt_gobject_int,
-	),
 	NULL
 };
 
@@ -4971,6 +4968,9 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
 				}
 			),
 		),
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_AUTH_RETRIES,
+		.property_type =                &_pt_gobject_int,
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_TIMESTAMP,
 		.property_type =                &_pt_gobject_readonly,
