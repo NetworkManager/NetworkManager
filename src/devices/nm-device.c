@@ -4337,15 +4337,8 @@ can_auto_connect (NMDevice *self,
                   NMConnection *connection,
                   char **specific_object)
 {
-	NMSettingConnection *s_con;
-
 	nm_assert (!specific_object || !*specific_object);
-
-	s_con = nm_connection_get_setting_connection (connection);
-	if (!nm_setting_connection_get_autoconnect (s_con))
-		return FALSE;
-
-	return nm_device_check_connection_available (self, connection, NM_DEVICE_CHECK_CON_AVAILABLE_NONE, NULL);
+	return TRUE;
 }
 
 /**
@@ -4370,13 +4363,26 @@ nm_device_can_auto_connect (NMDevice *self,
                             NMConnection *connection,
                             char **specific_object)
 {
+	NMSettingConnection *s_con;
+
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
-	g_return_val_if_fail (specific_object && !*specific_object, FALSE);
+	g_return_val_if_fail (!specific_object || !*specific_object, FALSE);
 
-	if (nm_device_autoconnect_allowed (self))
-		return NM_DEVICE_GET_CLASS (self)->can_auto_connect (self, connection, specific_object);
-	return FALSE;
+	if (!nm_device_autoconnect_allowed (self))
+		return FALSE;
+
+	s_con = nm_connection_get_setting_connection (connection);
+	if (!nm_setting_connection_get_autoconnect (s_con))
+		return FALSE;
+
+	if (!nm_device_check_connection_available (self, connection, NM_DEVICE_CHECK_CON_AVAILABLE_NONE, NULL))
+		return FALSE;
+
+	if (!NM_DEVICE_GET_CLASS (self)->can_auto_connect (self, connection, specific_object))
+		return FALSE;
+
+	return TRUE;
 }
 
 static gboolean
