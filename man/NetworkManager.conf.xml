@@ -642,6 +642,11 @@ ipv6.ip6-privacy=0
       explicitly allows for that.
       <variablelist>
         <varlistentry>
+          <term><varname>connection.auth-retries</varname></term>
+          <listitem><para>If left unspecified, the default value is 3 tries before failing the connection.
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>connection.autoconnect-slaves</varname></term>
         </varlistentry>
         <varlistentry>
@@ -741,11 +746,6 @@ ipv6.ip6-privacy=0
           <term><varname>wifi-sec.pmf</varname></term>
           <listitem><para>If left unspecified, the default value
           "<literal>optional</literal>" will be used.</para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><varname>802-1x.auth-retries</varname></term>
-          <listitem><para>If left unspecified, the default value is 3 tries before failing the connection.
-          </para></listitem>
         </varlistentry>
       </variablelist>
     </para>

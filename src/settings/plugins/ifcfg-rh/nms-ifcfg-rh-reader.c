@@ -193,6 +193,7 @@ make_connection_setting (const char *file,
 	const char *v;
 	gs_free char *stable_id = NULL;
 	const char *const *iter;
+	int vint64;
 
 	ifcfg_name = utils_get_ifcfg_name (file, TRUE);
 	if (!ifcfg_name)
@@ -328,6 +329,9 @@ make_connection_setting (const char *file,
 		g_object_set (s_con, NM_SETTING_CONNECTION_METERED, NM_METERED_NO, NULL);
 		break;
 	}
+
+	vint64 = svGetValueInt64 (ifcfg, "AUTH_RETRIES", 10, -1, G_MAXINT32, -1);
+	g_object_set (s_con, NM_SETTING_CONNECTION_AUTH_RETRIES, (gint) vint64, NULL);
 
 	return NM_SETTING (s_con);
 }
@@ -3357,9 +3361,6 @@ next:
 
 	timeout = svGetValueInt64 (ifcfg, "IEEE_8021X_AUTH_TIMEOUT", 10, 0, G_MAXINT32, 0);
 	g_object_set (s_8021x, NM_SETTING_802_1X_AUTH_TIMEOUT, (gint) timeout, NULL);
-
-	timeout = svGetValueInt64 (ifcfg, "IEEE_8021X_AUTH_RETRIES", 10, -1, G_MAXINT32, -1);
-	g_object_set (s_8021x, NM_SETTING_802_1X_AUTH_RETRIES, (gint) timeout, NULL);
 
 	return g_steal_pointer (&s_8021x);
 }
