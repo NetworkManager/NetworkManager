@@ -650,6 +650,7 @@ NM_UTILS_LOOKUP_STR_DEFINE (nm_device_state_reason_to_str, NMDeviceStateReason,
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_REASON_PARENT_CHANGED,                 "parent-changed"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED,         "parent-managed-changed"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_REASON_OVSDB_FAILED,                   "ovsdb-failed"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_REASON_IP_ADDRESS_DUPLICATE,           "ip-address-duplicate"),
 );
 
 #define reason_to_string(reason) \
@@ -5493,7 +5494,7 @@ ipv4_manual_method_apply (NMDevice *self, NMIP4Config **configs, gboolean succes
 		g_object_unref (empty);
 	} else {
 		nm_device_ip_method_failed (self, AF_INET,
-		                            NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+		                            NM_DEVICE_STATE_REASON_IP_ADDRESS_DUPLICATE);
 	}
 }
 
@@ -6077,7 +6078,7 @@ dhcp4_dad_cb (NMDevice *self, NMIP4Config **configs, gboolean success)
 		nm_device_activate_schedule_ip4_config_result (self, configs[1]);
 	else {
 		nm_device_ip_method_failed (self, AF_INET,
-		                            NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+		                            NM_DEVICE_STATE_REASON_IP_ADDRESS_DUPLICATE);
 	}
 }
 
