@@ -438,6 +438,11 @@ intltoolize --automake --copy --force
 %else
 	--enable-teamdctl=no \
 %endif
+%if %{with ovs}
+	--enable-ovs=yes \
+%else
+	--enable-ovs=no \
+%endif
 	--with-selinux=yes \
 	--enable-polkit=yes \
 	--enable-polkit-agent \
