@@ -29,6 +29,80 @@
 
 G_BEGIN_DECLS
 
+/**
+ * NMTeamLinkWatcherArpPingFlags:
+ * @NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_NONE: no one among the arp_ping link watcher
+ *    boolean options ('validate_active', 'validate_inactive', 'send_always') is
+ *    enabled (set to true).
+ * @NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE: the arp_ping link watcher
+ *    option 'validate_active' is enabled (set to true).
+ * @NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE: the arp_ping link watcher
+ *    option 'validate_inactive' is enabled (set to true).
+ * @NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS: the arp_ping link watcher option
+ *    'send_always' is enabled (set to true).
+ */
+typedef enum { /*< flags >*/
+	NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_NONE              = 0, /*< skip >*/
+	NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE   = (1 << 1),
+	NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE = (1 << 2),
+	NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS       = (1 << 3)
+} NMTeamLinkWatcherArpPingFlags;
+
+#define NM_TEAM_LINK_WATCHER_ETHTOOL   "ethtool"
+#define NM_TEAM_LINK_WATCHER_ARP_PING  "arp_ping"
+#define NM_TEAM_LINK_WATCHER_NSNA_PING "nsna_ping"
+
+
+typedef struct NMTeamLinkWatcher NMTeamLinkWatcher;
+
+GType nm_team_link_watcher_get_type              (void);
+
+NM_AVAILABLE_IN_1_12
+NMTeamLinkWatcher *nm_team_link_watcher_new_ethtool (gint delay_up,
+                                                     gint delay_down,
+                                                     GError **error);
+NM_AVAILABLE_IN_1_12
+NMTeamLinkWatcher *nm_team_link_watcher_new_nsna_ping (gint init_wait,
+                                                       gint interval,
+                                                       gint missed_max,
+                                                       const char *target_host,
+                                                       GError **error);
+NM_AVAILABLE_IN_1_12
+NMTeamLinkWatcher *nm_team_link_watcher_new_arp_ping (gint init_wait,
+                                                      gint interval,
+                                                      gint missed_max,
+                                                      const char *target_host,
+                                                      const char *source_host,
+                                                      NMTeamLinkWatcherArpPingFlags flags,
+                                                      GError **error);
+NM_AVAILABLE_IN_1_12
+void nm_team_link_watcher_ref                    (NMTeamLinkWatcher *watcher);
+NM_AVAILABLE_IN_1_12
+void nm_team_link_watcher_unref                  (NMTeamLinkWatcher *watcher);
+NM_AVAILABLE_IN_1_12
+gboolean nm_team_link_watcher_equal              (NMTeamLinkWatcher *watcher, NMTeamLinkWatcher *other);
+NM_AVAILABLE_IN_1_12
+NMTeamLinkWatcher *nm_team_link_watcher_dup      (NMTeamLinkWatcher *watcher);
+NM_AVAILABLE_IN_1_12
+const char *nm_team_link_watcher_get_name        (NMTeamLinkWatcher *watcher);
+NM_AVAILABLE_IN_1_12
+int nm_team_link_watcher_get_delay_up            (NMTeamLinkWatcher *watcher);
+NM_AVAILABLE_IN_1_12
+int nm_team_link_watcher_get_delay_down          (NMTeamLinkWatcher *watcher);
+NM_AVAILABLE_IN_1_12
+int nm_team_link_watcher_get_init_wait           (NMTeamLinkWatcher *watcher);
+NM_AVAILABLE_IN_1_12
+int nm_team_link_watcher_get_interval            (NMTeamLinkWatcher *watcher);
+NM_AVAILABLE_IN_1_12
+int nm_team_link_watcher_get_missed_max          (NMTeamLinkWatcher *watcher);
+NM_AVAILABLE_IN_1_12
+const char *nm_team_link_watcher_get_target_host (NMTeamLinkWatcher *watcher);
+NM_AVAILABLE_IN_1_12
+const char *nm_team_link_watcher_get_source_host (NMTeamLinkWatcher *watcher);
+NM_AVAILABLE_IN_1_12
+NMTeamLinkWatcherArpPingFlags nm_team_link_watcher_get_flags (NMTeamLinkWatcher *watcher);
+
+
 #define NM_TYPE_SETTING_TEAM            (nm_setting_team_get_type ())
 #define NM_SETTING_TEAM(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTING_TEAM, NMSettingTeam))
 #define NM_SETTING_TEAM_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SETTING_TEAM, NMSettingTeamClass))
@@ -77,6 +151,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT 50
 #define NM_SETTING_TEAM_RUNNER_SYS_PRIO_DEFAULT             255
 #define NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_DEFAULT    NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_LACP_PRIO
+
 
 /**
  * NMSettingTeam:
