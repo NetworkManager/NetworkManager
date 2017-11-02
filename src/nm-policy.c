@@ -1213,6 +1213,9 @@ auto_activate_device (NMPolicy *self,
 	gs_free char *specific_object = NULL;
 	gs_free NMSettingsConnection **connections = NULL;
 	guint i, len;
+	GError *error = NULL;
+	NMAuthSubject *subject;
+	NMActiveConnection *ac;
 
 	nm_assert (NM_IS_POLICY (self));
 	nm_assert (NM_IS_DEVICE (device));
@@ -1260,46 +1263,43 @@ auto_activate_device (NMPolicy *self,
 		}
 	}
 
-	if (best_connection) {
-		GError *error = NULL;
-		NMAuthSubject *subject;
-		NMActiveConnection *ac;
+	if (!best_connection)
+		return;
 
-		_LOGI (LOGD_DEVICE, "auto-activating connection '%s'",
-		       nm_settings_connection_get_id (best_connection));
-		subject = nm_auth_subject_new_internal ();
-		ac = nm_manager_activate_connection (priv->manager,
-		                                     best_connection,
-		                                     NULL,
-		                                     specific_object,
-		                                     device,
-		                                     subject,
-		                                     NM_ACTIVATION_TYPE_MANAGED,
-		                                     &error);
-		if (!ac) {
-			_LOGI (LOGD_DEVICE, "connection '%s' auto-activation failed: (%d) %s",
-			       nm_settings_connection_get_id (best_connection),
-			       error->code,
-			       error->message);
-			g_error_free (error);
-			nm_settings_connection_autoconnect_blocked_reason_set (best_connection,
-			                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED);
-			schedule_activate_check (self, device);
-			return;
-		}
-
-		/* Subscribe to AC state-changed signal to detect when the
-		 * activation fails in early stages without changing device
-		 * state.
-		 */
-		if (nm_g_hash_table_add (priv->pending_active_connections, ac)) {
-			g_signal_connect (ac, NM_ACTIVE_CONNECTION_STATE_CHANGED,
-			                  G_CALLBACK (pending_ac_state_changed), g_object_ref (self));
-			g_object_weak_ref (G_OBJECT (ac), (GWeakNotify) pending_ac_gone, self);
-		}
-
-		g_object_unref (subject);
+	_LOGI (LOGD_DEVICE, "auto-activating connection '%s'",
+	       nm_settings_connection_get_id (best_connection));
+	subject = nm_auth_subject_new_internal ();
+	ac = nm_manager_activate_connection (priv->manager,
+	                                     best_connection,
+	                                     NULL,
+	                                     specific_object,
+	                                     device,
+	                                     subject,
+	                                     NM_ACTIVATION_TYPE_MANAGED,
+	                                     &error);
+	if (!ac) {
+		_LOGI (LOGD_DEVICE, "connection '%s' auto-activation failed: (%d) %s",
+		       nm_settings_connection_get_id (best_connection),
+		       error->code,
+		       error->message);
+		g_error_free (error);
+		nm_settings_connection_autoconnect_blocked_reason_set (best_connection,
+		                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED);
+		schedule_activate_check (self, device);
+		return;
 	}
+
+	/* Subscribe to AC state-changed signal to detect when the
+	 * activation fails in early stages without changing device
+	 * state.
+	 */
+	if (nm_g_hash_table_add (priv->pending_active_connections, ac)) {
+		g_signal_connect (ac, NM_ACTIVE_CONNECTION_STATE_CHANGED,
+		                  G_CALLBACK (pending_ac_state_changed), g_object_ref (self));
+		g_object_weak_ref (G_OBJECT (ac), (GWeakNotify) pending_ac_gone, self);
+	}
+
+	g_object_unref (subject);
 }
 
 static gboolean
