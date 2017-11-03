@@ -25,7 +25,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <xlocale.h>
 
 #include "alloc-util.h"
 #if 0 /* NM_IGNORED */
