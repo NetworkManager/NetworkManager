@@ -1,4 +1,55 @@
 ============================================
+NetworkManager-1.9.90 (1.10-rc1)
+Overview of changes since NetworkManager-1.8
+============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* NetworkManager includes now basic OpenVSwitch support, good enough
+    to be capable of setting up simple OpenVSwitch configurations.
+* Added support for activating PPP connections on non-Ethernet
+  interfaces.
+* It is now possible to authenticate to a Wi-Fi network using WPS
+    (Wi-Fi Protected Setup).
+* Implemented support for Wi-Fi PMF (Protected Management Frames,
+    802.11w), which can be configured via the wifi-sec.pmf property.
+* Now the maximum rate of wireless access points supporting 802.11 is
+    properly calculated and exposed on D-Bus.
+* Background scanning is now disabled for non-WPA-Enterprise Wi-Fi
+    networks.
+* Added support for the Bluetooth NAP (Network Access Point) profile.
+* Added support for disabling connectivity checking via the D-Bus
+    interface.
+* The internal DHCP client now understands the domain-search option
+* Bridge connections support the group-forward-mask property.
+* NetworkManager can now configure multiple IPv6 default routes
+    received through RA and each gets configured with the announced
+    preference.
+* It is possible to specify the routing table for each static route.
+* Support specifying a explicit routing table for any non-static-route,
+    including routes from DHCP, device-routes, IPv6 autoconf.
+* Device are left configured when a user sets them as unmanaged by
+    NetworkManager.
+* New connection.auth-retry property to configure how often authentication
+    is prompted before failing the configuration.
+* The platform code that handles synchronization with kernel status
+    via netlink has been reworked and is more efficient.
+* Allowed the update of connections that have an associated ifcfg-rh
+  routing rules file.
+* Improve bash completion for nmcli.
+* Non-UTF8 properties are now escaped when they are exported on D-Bus.
+* NetworkManager-wait-online.service now starts NetworkManager.service
+    if needed.
+* The MAC address for bond connections can be changed in nmtui.
+* Fixed dependency problems when setting the MTU of VLAN and master
+    devices.
+* The systemd-resolved DNS plugin properly handles the DNS priority
+    setting.
+* Fixed setting a DHCP timeout greater than 60 seconds (dhclient).
+* Fixed some memory leaks.
+* Many other bug fixes and improvements.
+
+============================================
 NetworkManager-1.8
 Overview of changes since NetworkManager-1.6
 ============================================
