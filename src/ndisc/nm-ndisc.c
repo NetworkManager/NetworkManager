@@ -280,7 +280,7 @@ nm_ndisc_add_gateway (NMNDisc *ndisc, const NMNDiscGateway *new)
 	if (new->lifetime) {
 		g_array_insert_val (rdata->gateways,
 		                    insert_idx == G_MAXUINT
-		                      ? 0u
+		                      ? rdata->gateways->len
 		                      : insert_idx,
 		                    *new);
 	}

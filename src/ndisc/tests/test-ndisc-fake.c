@@ -298,7 +298,67 @@ test_everything (void)
 }
 
 static void
-test_preference_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_int, TestData *data)
+test_preference_order_cb (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_int, TestData *data)
+{
+	NMNDiscConfigMap changed = changed_int;
+
+	if (data->counter == 1) {
+		g_assert_cmpint (changed, ==, NM_NDISC_CONFIG_GATEWAYS |
+		                              NM_NDISC_CONFIG_ADDRESSES |
+		                              NM_NDISC_CONFIG_ROUTES);
+
+		g_assert_cmpint (rdata->gateways_n, ==, 2);
+		match_gateway (rdata, 0, "fe80::1", data->timestamp1, 10, NM_ICMPV6_ROUTER_PREF_HIGH);
+		match_gateway (rdata, 1, "fe80::2", data->timestamp1 + 1, 10, NM_ICMPV6_ROUTER_PREF_LOW);
+		g_assert_cmpint (rdata->addresses_n, ==, 2);
+		match_address (rdata, 0, "2001:db8:a:a::1", data->timestamp1, 10, 10);
+		match_address (rdata, 1, "2001:db8:a:b::1", data->timestamp1 + 1, 10, 10);
+		g_assert_cmpint (rdata->routes_n, ==, 2);
+		match_route (rdata, 0, "2001:db8:a:b::", 64, "fe80::2", data->timestamp1 + 1, 10, 10);
+		match_route (rdata, 1, "2001:db8:a:a::", 64, "fe80::1", data->timestamp1, 10, 5);
+
+		g_assert (nm_fake_ndisc_done (NM_FAKE_NDISC (ndisc)));
+		g_main_loop_quit (data->loop);
+	}
+
+	data->counter++;
+}
+
+static void
+test_preference_order (void)
+{
+	NMFakeNDisc *ndisc = ndisc_new ();
+	guint32 now = nm_utils_get_monotonic_timestamp_s ();
+	TestData data = { g_main_loop_new (NULL, FALSE), 0, 0, now };
+	guint id;
+
+	/* Test insertion order of gateways */
+
+	id = nm_fake_ndisc_add_ra (ndisc, 1, NM_NDISC_DHCP_LEVEL_NONE, 4, 1500);
+	g_assert (id);
+	nm_fake_ndisc_add_gateway (ndisc, id, "fe80::1", now, 10, NM_ICMPV6_ROUTER_PREF_HIGH);
+	nm_fake_ndisc_add_prefix (ndisc, id, "2001:db8:a:a::", 64, "fe80::1", now, 10, 10, 5);
+
+	id = nm_fake_ndisc_add_ra (ndisc, 1, NM_NDISC_DHCP_LEVEL_NONE, 4, 1500);
+	g_assert (id);
+	nm_fake_ndisc_add_gateway (ndisc, id, "fe80::2", ++now, 10, NM_ICMPV6_ROUTER_PREF_LOW);
+	nm_fake_ndisc_add_prefix (ndisc, id, "2001:db8:a:b::", 64, "fe80::2", now, 10, 10, 10);
+
+	g_signal_connect (ndisc,
+	                  NM_NDISC_CONFIG_RECEIVED,
+	                  G_CALLBACK (test_preference_order_cb),
+	                  &data);
+
+	nm_ndisc_start (NM_NDISC (ndisc));
+	g_main_loop_run (data.loop);
+	g_assert_cmpint (data.counter, ==, 2);
+
+	g_object_unref (ndisc);
+	g_main_loop_unref (data.loop);
+}
+
+static void
+test_preference_changed_cb (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_int, TestData *data)
 {
 	NMNDiscConfigMap changed = changed_int;
 
@@ -338,7 +398,7 @@ test_preference_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed
 }
 
 static void
-test_preference (void)
+test_preference_changed (void)
 {
 	NMFakeNDisc *ndisc = ndisc_new ();
 	guint32 now = nm_utils_get_monotonic_timestamp_s ();
@@ -367,7 +427,7 @@ test_preference (void)
 
 	g_signal_connect (ndisc,
 	                  NM_NDISC_CONFIG_RECEIVED,
-	                  G_CALLBACK (test_preference_changed),
+	                  G_CALLBACK (test_preference_changed_cb),
 	                  &data);
 
 	nm_ndisc_start (NM_NDISC (ndisc));
@@ -476,7 +536,8 @@ main (int argc, char **argv)
 
 	g_test_add_func ("/ndisc/simple", test_simple);
 	g_test_add_func ("/ndisc/everything-changed", test_everything);
-	g_test_add_func ("/ndisc/preference-changed", test_preference);
+	g_test_add_func ("/ndisc/preference-order", test_preference_order);
+	g_test_add_func ("/ndisc/preference-changed", test_preference_changed);
 	g_test_add_func ("/ndisc/dns-solicit-loop", test_dns_solicit_loop);
 
 	return g_test_run ();
