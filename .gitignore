@@ -6,7 +6,7 @@
 *.gcno
 *.gcda
 *.la
-*.gir
+*-*.gir
 *.typelib
 **.stamp
 .dirstamp
@@ -177,6 +177,7 @@ test-*.trs
 /libnm-util/tests/test-setting-8021x
 /libnm-util/tests/test-setting-dcb
 
+/libnm/fake-typelib/typelibs.c
 /libnm/nm-settings-ifcfg-rh-docs.xml
 /libnm/nm-property-docs.xml
 /libnm/nm-settings-docs.xml

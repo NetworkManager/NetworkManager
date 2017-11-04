@@ -322,9 +322,12 @@ GLIB_CFLAGS="$GLIB_CFLAGS -DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_32 -DGLIB_V
 AC_SUBST(GLIB_CFLAGS)
 AC_SUBST(GLIB_LIBS)
 
+GOBJECT_INTROSPECTION_CHECK([0.9.6])
+
 AC_ARG_WITH(libnm-glib,
             AS_HELP_STRING([--without-libnm-glib],
-                           [don't build legacy libraries]))
+                           [don"'"t build legacy libraries]))
+fake_typelibs=no
 if test "$with_libnm_glib" != "no"; then
 	PKG_CHECK_MODULES(DBUS, dbus-1 >= 1.1 dbus-glib-1 >= 0.94, :,
 	                  [AC_MSG_FAILURE([$DBUS_PKG_ERRORS
@@ -333,12 +336,23 @@ Configure with --without-libnm-glib if you do not need the legacy libraries])
 	                  ])
 
 	with_libnm_glib=yes
+
+	if test "${found_introspection}" = "yes"; then
+		AC_PATH_PROG(GLIB_COMPILE_RESOURCES, glib-compile-resources)
+		if ! test x"$GLIB_COMPILE_RESOURCES" = x""; then
+			fake_typelibs=yes
+		fi
+	fi
 fi
 AM_CONDITIONAL(WITH_LEGACY_LIBRARIES, test "$with_libnm_glib" != "no")
+if test "$fake_typelibs" = "yes"; then
+	AC_DEFINE(WITH_FAKE_TYPELIBS, 1, [Define for libnm to prevent GIR from loading libnm-glib])
+else
+	AC_DEFINE(WITH_FAKE_TYPELIBS, 0, [Define for libnm to prevent GIR from loading libnm-glib])
+fi
+AM_CONDITIONAL(WITH_FAKE_TYPELIBS, test "${fake_typelibs}" = "yes")
 
 PKG_CHECK_MODULES([LIBUDEV], [libudev >= 175])
-
-GOBJECT_INTROSPECTION_CHECK([0.9.6])
 
 # Qt4
 PKG_CHECK_MODULES(QT, [QtCore >= 4 QtDBus QtNetwork], [have_qt=yes],[have_qt=no])
