@@ -127,6 +127,7 @@ NMTeamLinkWatcherArpPingFlags nm_team_link_watcher_get_flags (NMTeamLinkWatcher 
 #define NM_SETTING_TEAM_RUNNER_SYS_PRIO             "runner-sys-prio"
 #define NM_SETTING_TEAM_RUNNER_MIN_PORTS            "runner-min-ports"
 #define NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY    "runner-agg-select-policy"
+#define NM_SETTING_TEAM_LINK_WATCHERS               "link-watchers"
 
 #define NM_SETTING_TEAM_RUNNER_BROADCAST    "broadcast"
 #define NM_SETTING_TEAM_RUNNER_ROUNDROBIN   "roundrobin"
@@ -210,6 +211,20 @@ NM_AVAILABLE_IN_1_10_2
 void nm_setting_team_remove_runner_tx_hash (NMSettingTeam *setting, int idx);
 NM_AVAILABLE_IN_1_10_2
 gboolean nm_setting_team_add_runner_tx_hash (NMSettingTeam *setting, const char *txhash);
+NM_AVAILABLE_IN_1_10_2
+guint nm_setting_team_get_num_link_watchers (NMSettingTeam *setting);
+NM_AVAILABLE_IN_1_10_2
+NMTeamLinkWatcher * nm_setting_team_get_link_watcher (NMSettingTeam *setting, guint idx);
+NM_AVAILABLE_IN_1_10_2
+gboolean nm_setting_team_add_link_watcher (NMSettingTeam *setting,
+                                           NMTeamLinkWatcher *link_watcher);
+NM_AVAILABLE_IN_1_10_2
+void nm_setting_team_remove_link_watcher (NMSettingTeam *setting, guint idx);
+NM_AVAILABLE_IN_1_10_2
+gboolean nm_setting_team_remove_link_watcher_by_value (NMSettingTeam *setting,
+                                                       NMTeamLinkWatcher *link_watcher);
+NM_AVAILABLE_IN_1_10_2
+void nm_setting_team_clear_link_watchers (NMSettingTeam *setting);
 G_END_DECLS
 
 #endif /* __NM_SETTING_TEAM_H__ */
