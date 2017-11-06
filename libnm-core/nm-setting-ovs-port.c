@@ -440,7 +440,7 @@ nm_setting_ovs_port_class_init (NMSettingOvsPortClass *setting_class)
 	/**
 	 * NMSettingOvsPort:bond-updelay:
 	 *
-	 * The time port must be active befor it starts forwarding traffic.
+	 * The time port must be active before it starts forwarding traffic.
 	 *
 	 * Since: 1.10
 	 **/

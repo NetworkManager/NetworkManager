@@ -274,7 +274,7 @@
 #define DESCRIBE_DOC_NM_SETTING_OVS_PATCH_PEER N_("Specifies the unicast destination IP address of a remote OpenVSwitch bridge port to connect to.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_PORT_BOND_DOWNDELAY N_("The time port must be inactive in order to be considered down.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_PORT_BOND_MODE N_("Bonding mode. One of \"active-backup\", \"balance-slb\", or \"balance-tcp\".")
-#define DESCRIBE_DOC_NM_SETTING_OVS_PORT_BOND_UPDELAY N_("The time port must be active befor it starts forwarding traffic.")
+#define DESCRIBE_DOC_NM_SETTING_OVS_PORT_BOND_UPDELAY N_("The time port must be active before it starts forwarding traffic.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_PORT_LACP N_("LACP mode. One of \"active\", \"off\", or \"passive\".")
 #define DESCRIBE_DOC_NM_SETTING_OVS_PORT_NAME N_("The setting's name, which uniquely identifies the setting within the connection.  Each setting type has a name unique to that type, for example \"ppp\" or \"wireless\" or \"wired\".")
 #define DESCRIBE_DOC_NM_SETTING_OVS_PORT_TAG N_("The VLAN tag in the range 0-4095.")
