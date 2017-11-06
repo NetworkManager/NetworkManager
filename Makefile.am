@@ -967,7 +967,7 @@ libnm/fake-typelib/NMClient.typelib: libnm/fake-typelib/NMClient.gir
 	$(AM_V_GEN) $(INTROSPECTION_COMPILER) $< -o $@
 
 libnm/fake-typelib/typelibs.c: libnm/fake-typelib/typelibs.gresource.xml libnm/fake-typelib/NetworkManager.typelib libnm/fake-typelib/NMClient.typelib
-	$(AM_V_GEN) $(GLIB_COMPILE_RESOURCES) $< --target=$@ --sourcedir=$(srcdir)/libnm/fake-typelib --generate-source --manual-register --internal
+	$(AM_V_GEN) $(GLIB_COMPILE_RESOURCES) $< --target=$@ --sourcedir=$(srcdir)/libnm/fake-typelib --generate-source --manual-register
 
 nodist_libnm_libnm_utils_la_SOURCES = \
 	libnm/fake-typelib/typelibs.c
