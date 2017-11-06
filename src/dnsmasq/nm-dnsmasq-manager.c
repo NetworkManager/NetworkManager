@@ -175,7 +175,8 @@ create_dm_cmd_line (const char *iface,
 	cmd = nm_cmd_line_new ();
 	nm_cmd_line_add_string (cmd, dm_binary);
 
-	if (getenv ("NM_DNSMASQ_DEBUG")) {
+	if (   nm_logging_enabled (LOGL_TRACE, LOGD_SHARING)
+	    || getenv ("NM_DNSMASQ_DEBUG")) {
 		nm_cmd_line_add_string (cmd, "--log-dhcp");
 		nm_cmd_line_add_string (cmd, "--log-queries");
 	}
