@@ -969,12 +969,17 @@ libnm/fake-typelib/NMClient.typelib: libnm/fake-typelib/NMClient.gir
 libnm/fake-typelib/typelibs.c: libnm/fake-typelib/typelibs.gresource.xml libnm/fake-typelib/NetworkManager.typelib libnm/fake-typelib/NMClient.typelib
 	$(AM_V_GEN) $(GLIB_COMPILE_RESOURCES) $< --target=$@ --sourcedir=$(srcdir)/libnm/fake-typelib --generate-source --manual-register --internal
 
-libnm_libnm_utils_la_SOURCES += \
+nodist_libnm_libnm_utils_la_SOURCES = \
 	libnm/fake-typelib/typelibs.c
 
 endif
 
 endif
+
+EXTRA_DIST += \
+	libnm/fake-typelib/NetworkManager.gir \
+	libnm/fake-typelib/NMClient.gir \
+	libnm/fake-typelib/typelibs.gresource.xml
 
 if HAVE_INTROSPECTION
 
