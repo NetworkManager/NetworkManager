@@ -1241,11 +1241,15 @@ global:
 	nm_client_checkpoint_rollback_async;
 	nm_client_checkpoint_rollback_finish;
 	nm_client_get_checkpoints;
+	nm_setting_team_add_link_watcher;
 	nm_setting_team_add_runner_tx_hash;
+	nm_setting_team_clear_link_watchers;
+	nm_setting_team_get_link_watcher;
 	nm_setting_team_get_mcast_rejoin_count;
 	nm_setting_team_get_mcast_rejoin_interval;
 	nm_setting_team_get_notify_peers_count;
 	nm_setting_team_get_notify_peers_interval;
+	nm_setting_team_get_num_link_watchers;
 	nm_setting_team_get_num_runner_tx_hash;
 	nm_setting_team_get_runner;
 	nm_setting_team_get_runner_hwaddr_policy;
@@ -1262,6 +1266,8 @@ global:
 	nm_setting_team_port_get_sticky;
 	nm_setting_team_port_get_lacp_prio;
 	nm_setting_team_port_get_lacp_key;
+	nm_setting_team_remove_link_watcher;
+	nm_setting_team_remove_link_watcher_by_value;
 	nm_setting_team_remove_runner_tx_hash;
 	nm_setting_team_remove_runner_tx_hash_by_value;
 	nm_setting_vpn_get_data_keys;
