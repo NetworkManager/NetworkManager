@@ -8863,6 +8863,63 @@ test_write_team_port (void)
 }
 
 static void
+test_write_team_infiniband_port (void)
+{
+	nmtst_auto_unlinkfile char *testfile = NULL;
+	gs_unref_object NMConnection *connection = NULL;
+	gs_unref_object NMConnection *reread = NULL;
+	NMSettingConnection *s_con;
+	NMSettingTeamPort *s_team_port;
+	NMSettingInfiniband *s_inf;
+	const char *expected_config = "{ \"inf1\": { \"prio\": -10, \"sticky\": true } }";
+	shvarFile *f;
+
+	connection = nm_simple_connection_new ();
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Team Infiniband Port",
+	              NM_SETTING_CONNECTION_UUID, nm_utils_uuid_generate_a (),
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_INFINIBAND_SETTING_NAME,
+	              NM_SETTING_CONNECTION_MASTER, "team0",
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_TEAM_SETTING_NAME,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, "inf1",
+	              NULL);
+
+	/* Team setting */
+	s_team_port = (NMSettingTeamPort *) nm_setting_team_port_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_team_port));
+	g_object_set (s_team_port, NM_SETTING_TEAM_PORT_CONFIG, expected_config, NULL);
+
+	/* Infiniband setting */
+	s_inf = (NMSettingInfiniband *) nm_setting_infiniband_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_inf));
+	g_object_set (s_inf, NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram", NULL);
+
+	nmtst_assert_connection_verifies (connection);
+
+	_writer_new_connec_exp (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_IFCFG_DIR "/network-scripts/ifcfg-Test_Write_Team_Infiniband_Port.cexpected",
+	                        &testfile);
+
+	f = _svOpenFile (testfile);
+	_svGetValue_check (f, "TYPE", "InfiniBand");
+	_svGetValue_check (f, "DEVICETYPE", "TeamPort");
+	_svGetValue_check (f, "TEAM_PORT_CONFIG", expected_config);
+	_svGetValue_check (f, "TEAM_MASTER", "team0");
+	svCloseFile (f);
+
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET,
+	                                NULL);
+
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
+}
+
+static void
 test_read_team_port_empty_config (void)
 {
 	NMConnection *connection;
@@ -9821,6 +9878,7 @@ int main (int argc, char **argv)
 	g_test_add_data_func (TPATH "team/read-port-1", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port-1", test_read_team_port);
 	g_test_add_data_func (TPATH "team/read-port-2", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port-2", test_read_team_port);
 	g_test_add_func (TPATH "team/write-port", test_write_team_port);
+	g_test_add_func (TPATH "team/write-infiniband-port", test_write_team_infiniband_port);
 	g_test_add_func (TPATH "team/read-port-empty-config", test_read_team_port_empty_config);
 	g_test_add_func (TPATH "team/reread-slave", test_team_reread_slave);
 
