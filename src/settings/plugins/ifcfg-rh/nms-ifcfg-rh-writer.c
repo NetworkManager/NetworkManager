@@ -1821,7 +1821,10 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 		} else if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_TEAM_SETTING_NAME)) {
 			svSetValueStr (ifcfg, "TEAM_MASTER_UUID", master);
 			svSetValueStr (ifcfg, "TEAM_MASTER", master_iface);
-			svUnsetValue (ifcfg, "TYPE");
+			if (NM_IN_STRSET (type,
+			                  NM_SETTING_WIRED_SETTING_NAME,
+			                  NM_SETTING_VLAN_SETTING_NAME))
+				svUnsetValue (ifcfg, "TYPE");
 		}
 	}
 

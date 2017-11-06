@@ -5261,8 +5261,12 @@ connection_from_file_full (const char *filename,
 		else if (!strcasecmp (devtype, TYPE_TEAM_PORT)) {
 			gs_free char *device = NULL;
 
+			type = svGetValueStr_cp (parsed, "TYPE");
 			device = svGetValueStr_cp (parsed, "DEVICE");
-			if (device && is_vlan_device (device, parsed))
+
+			if (type) {
+				/* nothing to do */
+			} else if (device && is_vlan_device (device, parsed))
 				type = g_strdup (TYPE_VLAN);
 			else
 				type = g_strdup (TYPE_ETHERNET);
@@ -5273,7 +5277,7 @@ connection_from_file_full (const char *filename,
 		gs_free char *t = NULL;
 
 		/* Team and TeamPort types are also accepted by the mere
-		 * presense of TEAM_CONFIG/TEAM_MASTER. They don't require
+		 * presence of TEAM_CONFIG/TEAM_MASTER. They don't require
 		 * DEVICETYPE. */
 		t = svGetValueStr_cp (parsed, "TEAM_CONFIG");
 		if (t)
