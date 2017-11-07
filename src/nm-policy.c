@@ -1467,34 +1467,6 @@ reset_autoconnect_for_failed_secrets (NMPolicy *self)
 }
 
 static void
-block_autoconnect_for_device (NMPolicy *self, NMDevice *device)
-{
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	gs_free NMSettingsConnection **connections = NULL;
-	guint i;
-
-	_LOGD (LOGD_DEVICE, "blocking autoconnect for all connections on %s",
-	       nm_device_get_iface (device));
-
-	/* NMDevice keeps its own autoconnect-able-ness state; we only need to
-	 * explicitly block connections for software devices, where the NMDevice
-	 * might be destroyed and recreated later.
-	 */
-	if (!nm_device_is_software (device))
-		return;
-
-	connections = nm_settings_get_connections_sorted (priv->settings, NULL);
-	for (i = 0; connections[i]; i++) {
-		NMSettingsConnection *connection = connections[i];
-
-		if (nm_device_check_connection_compatible (device, NM_CONNECTION (connection))) {
-			nm_settings_connection_autoconnect_blocked_reason_set (connection,
-			                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST);
-		}
-	}
-}
-
-static void
 sleeping_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
@@ -1844,17 +1816,12 @@ device_state_changed (NMDevice *device,
 		break;
 	case NM_DEVICE_STATE_DEACTIVATING:
 		if (nm_device_state_reason_check (reason) == NM_DEVICE_STATE_REASON_USER_REQUESTED) {
-			if (nm_device_autoconnect_blocked_get (device, NM_DEVICE_AUTOCONNECT_BLOCKED_ALL)) {
-				/* The device was disconnected; block all connections on it */
-				block_autoconnect_for_device (self, device);
-			} else {
-				if (connection) {
-					/* The connection was deactivated, so block just this connection */
-					_LOGD (LOGD_DEVICE, "blocking autoconnect of connection '%s' by user request",
-					       nm_settings_connection_get_id (connection));
-					nm_settings_connection_autoconnect_blocked_reason_set (connection,
-					                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST);
-				}
+			if (connection) {
+				/* The connection was deactivated, so block just this connection */
+				_LOGD (LOGD_DEVICE, "blocking autoconnect of connection '%s' by user request",
+				       nm_settings_connection_get_id (connection));
+				nm_settings_connection_autoconnect_blocked_reason_set (connection,
+				                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST);
 			}
 		}
 		ip6_remove_device_prefix_delegations (self, device);
