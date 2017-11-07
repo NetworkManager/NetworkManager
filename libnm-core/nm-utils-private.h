@@ -78,6 +78,8 @@ void        _nm_utils_bytes_from_dbus   (GVariant *dbus_value,
 
 char *      _nm_utils_hwaddr_canonical_or_invalid (const char *mac, gssize length);
 
+GPtrArray * _nm_utils_team_link_watchers_from_variant (GVariant *value);
+GVariant *  _nm_utils_team_link_watchers_to_variant (GPtrArray *link_watchers);
 
 /* JSON to GValue conversion macros */
 
