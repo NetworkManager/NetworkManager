@@ -54,6 +54,7 @@ dbus_type_name_map = {
     'ay': 'byte array',
     'a{ss}': 'dict of string to string',
     'a{sv}': 'vardict',
+    'aa{sv}': 'array of vardict',
     'aau': 'array of array of uint32',
     'aay': 'array of byte array',
     'a(ayuay)': 'array of legacy IPv6 address struct',
