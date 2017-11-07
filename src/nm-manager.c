@@ -4623,8 +4623,6 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 					nm_device_set_enabled (device, enabled);
 			}
 
-			nm_device_autoconnect_blocked_unset (device, NM_DEVICE_AUTOCONNECT_BLOCKED_INTERN);
-
 			nm_device_set_unmanaged_by_flags (device, NM_UNMANAGED_SLEEPING, FALSE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
 		}
 	}

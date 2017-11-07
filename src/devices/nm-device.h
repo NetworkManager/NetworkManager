@@ -665,11 +665,17 @@ void nm_device_update_from_platform_link (NMDevice *self,
 
 typedef enum {
 	NM_DEVICE_AUTOCONNECT_BLOCKED_NONE                  = 0,
+
 	NM_DEVICE_AUTOCONNECT_BLOCKED_USER                  = (1LL <<  0),
-	NM_DEVICE_AUTOCONNECT_BLOCKED_INTERN                = (1LL <<  1),
+
+	NM_DEVICE_AUTOCONNECT_BLOCKED_WRONG_PIN             = (1LL <<  1),
+	NM_DEVICE_AUTOCONNECT_BLOCKED_MANUAL_DISCONNECT     = (1LL <<  2),
 
 	_NM_DEVICE_AUTOCONNECT_BLOCKED_LAST,
+
 	NM_DEVICE_AUTOCONNECT_BLOCKED_ALL                   = (((_NM_DEVICE_AUTOCONNECT_BLOCKED_LAST - 1) << 1) - 1),
+
+	NM_DEVICE_AUTOCONNECT_BLOCKED_INTERNAL              = NM_DEVICE_AUTOCONNECT_BLOCKED_ALL & ~NM_DEVICE_AUTOCONNECT_BLOCKED_USER,
 } NMDeviceAutoconnectBlockedFlags;
 
 NMDeviceAutoconnectBlockedFlags nm_device_autoconnect_blocked_get (NMDevice *device, NMDeviceAutoconnectBlockedFlags mask);
