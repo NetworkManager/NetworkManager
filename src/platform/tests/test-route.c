@@ -417,7 +417,7 @@ test_ip_route_get (void)
 	g_assert (!NMP_OBJECT_IS_STACKINIT (route));
 	g_assert (route->parent._ref_count == 1);
 	r = NMP_OBJECT_CAST_IP4_ROUTE (route);
-	g_assert (r->rt_cloned);
+	g_assert (NM_FLAGS_HAS (r->r_rtm_flags, RTM_F_CLONED));
 	g_assert (r->ifindex == ifindex);
 	g_assert (r->network == a);
 	g_assert (r->plen == 32);
