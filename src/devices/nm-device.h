@@ -663,8 +663,31 @@ gboolean nm_device_unrealize          (NMDevice *device,
 void nm_device_update_from_platform_link (NMDevice *self,
                                           const NMPlatformLink *plink);
 
-gboolean nm_device_get_autoconnect (NMDevice *device);
-void nm_device_set_autoconnect_intern (NMDevice *device, gboolean autoconnect);
+typedef enum {
+	NM_DEVICE_AUTOCONNECT_BLOCKED_NONE                  = 0,
+	NM_DEVICE_AUTOCONNECT_BLOCKED_USER                  = (1LL <<  0),
+	NM_DEVICE_AUTOCONNECT_BLOCKED_INTERN                = (1LL <<  1),
+
+	_NM_DEVICE_AUTOCONNECT_BLOCKED_LAST,
+	NM_DEVICE_AUTOCONNECT_BLOCKED_ALL                   = (((_NM_DEVICE_AUTOCONNECT_BLOCKED_LAST - 1) << 1) - 1),
+} NMDeviceAutoconnectBlockedFlags;
+
+NMDeviceAutoconnectBlockedFlags nm_device_autoconnect_blocked_get (NMDevice *device, NMDeviceAutoconnectBlockedFlags mask);
+
+void nm_device_autoconnect_blocked_set_full (NMDevice *device, NMDeviceAutoconnectBlockedFlags mask, NMDeviceAutoconnectBlockedFlags values);
+
+static inline void
+nm_device_autoconnect_blocked_set (NMDevice *device, NMDeviceAutoconnectBlockedFlags mask)
+{
+	nm_device_autoconnect_blocked_set_full (device, mask, mask);
+}
+
+static inline void
+nm_device_autoconnect_blocked_unset (NMDevice *device, NMDeviceAutoconnectBlockedFlags mask)
+{
+	nm_device_autoconnect_blocked_set_full (device, mask, NM_DEVICE_AUTOCONNECT_BLOCKED_NONE);
+}
+
 void nm_device_emit_recheck_auto_activate (NMDevice *device);
 
 NMDeviceSysIfaceState nm_device_sys_iface_state_get (NMDevice *device);
