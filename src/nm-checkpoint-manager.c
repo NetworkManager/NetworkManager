@@ -153,7 +153,23 @@ nm_checkpoint_manager_create (NMCheckpointManager *self,
 	manager = GET_MANAGER (self);
 
 	if (!device_paths || !device_paths[0]) {
-		device_paths_free = nm_manager_get_device_paths (manager);
+		const char *device_path;
+		const GSList *iter;
+		GPtrArray *paths;
+
+		paths = g_ptr_array_new ();
+		for (iter = nm_manager_get_devices (manager);
+		     iter;
+		     iter = g_slist_next (iter)) {
+			device = NM_DEVICE (iter->data);
+			if (!nm_device_is_real (device))
+				continue;
+			device_path = nm_exported_object_get_path (NM_EXPORTED_OBJECT (device));
+			if (device_path)
+				g_ptr_array_add (paths, (gpointer) device_path);
+		}
+		g_ptr_array_add (paths, NULL);
+		device_paths_free = (const char **) g_ptr_array_free (paths, FALSE);
 		device_paths = (const char *const *) device_paths_free;
 	} else if (NM_FLAGS_HAS (flags, NM_CHECKPOINT_CREATE_FLAG_DISCONNECT_NEW_DEVICES)) {
 		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_INVALID_ARGUMENTS,
