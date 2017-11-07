@@ -441,23 +441,11 @@ typedef struct {
 	};
 } NMPlatformIPRoute;
 
-#if _NM_CC_SUPPORT_GENERIC
+#define NM_PLATFORM_IP_ROUTE_CAST(route) \
+	NM_CONSTCAST (NMPlatformIPRoute, (route), NMPlatformIPXRoute, NMPlatformIP4Route, NMPlatformIP6Route)
+
 #define NM_PLATFORM_IP_ROUTE_IS_DEFAULT(route) \
-	(_Generic ((route), \
-	           const NMPlatformIPRoute  *: ((const NMPlatformIPRoute *) (route))->plen, \
-	                 NMPlatformIPRoute  *: ((const NMPlatformIPRoute *) (route))->plen, \
-	           const NMPlatformIPXRoute *: ((const NMPlatformIPRoute *) (route))->plen, \
-	                 NMPlatformIPXRoute *: ((const NMPlatformIPRoute *) (route))->plen, \
-	           const NMPlatformIP4Route *: ((const NMPlatformIPRoute *) (route))->plen, \
-	                 NMPlatformIP4Route *: ((const NMPlatformIPRoute *) (route))->plen, \
-	           const NMPlatformIP6Route *: ((const NMPlatformIPRoute *) (route))->plen, \
-	                 NMPlatformIP6Route *: ((const NMPlatformIPRoute *) (route))->plen, \
-	           const void               *: ((const NMPlatformIPRoute *) (route))->plen, \
-	                 void               *: ((const NMPlatformIPRoute *) (route))->plen) == 0)
-#else
-#define NM_PLATFORM_IP_ROUTE_IS_DEFAULT(route) \
-	( ((const NMPlatformIPRoute *) (route))->plen <= 0 )
-#endif
+	(NM_PLATFORM_IP_ROUTE_CAST (route)->plen <= 0)
 
 struct _NMPlatformIP4Route {
 	__NMPlatformIPRoute_COMMON;
