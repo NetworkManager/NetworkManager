@@ -354,6 +354,8 @@ typedef struct _NMDevicePrivate {
 	bool            v4_route_table_initalized:1;
 	bool            v6_route_table_initalized:1;
 
+	NMDeviceAutoconnectBlockedFlags autoconnect_blocked_flags:4;
+
 	/* Generic DHCP stuff */
 	char *          dhcp_anycast_address;
 
@@ -466,10 +468,6 @@ typedef struct _NMDevicePrivate {
 
 	gboolean needs_ip6_subnet;
 
-	/* allow autoconnect feature */
-	bool autoconnect_intern:1;
-	bool autoconnect_user:1;
-
 	/* master interface for bridge/bond/team slave */
 	NMDevice *      master;
 	bool            is_enslaved;
@@ -532,9 +530,6 @@ static gboolean addrconf6_start_with_link_ready (NMDevice *self);
 static NMActStageReturn linklocal6_start (NMDevice *self);
 
 static void _carrier_wait_check_queued_act_request (NMDevice *self);
-
-static void nm_device_set_autoconnect_both (NMDevice *self, gboolean autoconnect);
-static void nm_device_set_autoconnect_full (NMDevice *self, int autoconnect_intern, int autoconnect_user);
 
 static const char *_activation_func_to_string (ActivationHandleFunc func);
 static void activation_source_handle_cb (NMDevice *self, int addr_family);
@@ -3280,6 +3275,7 @@ realize_start_setup (NMDevice *self,
 	NMDeviceCapabilities capabilities = 0;
 	NMConfig *config;
 	guint real_rate;
+	NMDeviceAutoconnectBlockedFlags autoconnect_blocked_flags;
 
 	/* plink is a NMPlatformLink type, however, we require it to come from the platform
 	 * cache (where else would it come from?). */
@@ -3392,7 +3388,12 @@ realize_start_setup (NMDevice *self,
 	if (real_rate)
 		priv->stats.timeout_id = g_timeout_add (real_rate, _stats_timeout_cb, self);
 
-	nm_device_set_autoconnect_full (self, !!DEFAULT_AUTOCONNECT, TRUE);
+	autoconnect_blocked_flags = NM_DEVICE_AUTOCONNECT_BLOCKED_NONE;
+	if (!DEFAULT_AUTOCONNECT)
+		autoconnect_blocked_flags |= NM_DEVICE_AUTOCONNECT_BLOCKED_INTERN;
+	nm_device_autoconnect_blocked_set_full (self,
+	                                        NM_DEVICE_AUTOCONNECT_BLOCKED_ALL,
+	                                        autoconnect_blocked_flags);
 
 	klass->realize_start_notify (self, plink);
 
@@ -3593,7 +3594,7 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	priv->real = FALSE;
 	_notify (self, PROP_REAL);
 
-	nm_device_set_autoconnect_both (self, FALSE);
+	nm_device_autoconnect_blocked_set (self, NM_DEVICE_AUTOCONNECT_BLOCKED_ALL);
 
 	g_object_thaw_notify (G_OBJECT (self));
 
@@ -4219,56 +4220,54 @@ nm_device_set_enabled (NMDevice *self, gboolean enabled)
 		NM_DEVICE_GET_CLASS (self)->set_enabled (self, enabled);
 }
 
-/**
- * nm_device_get_autoconnect:
- * @self: the #NMDevice
- *
- * Returns: %TRUE if the device allows autoconnect connections, or %FALSE if the
- * device is explicitly blocking all autoconnect connections.  Does not take
- * into account transient conditions like companion devices that may wish to
- * block the device.
- */
-gboolean
-nm_device_get_autoconnect (NMDevice *self)
+NM_UTILS_FLAGS2STR_DEFINE_STATIC (_autoconnect_blocked_flags_to_string, NMDeviceAutoconnectBlockedFlags,
+	NM_UTILS_FLAGS2STR (NM_DEVICE_AUTOCONNECT_BLOCKED_NONE,   "none"),
+	NM_UTILS_FLAGS2STR (NM_DEVICE_AUTOCONNECT_BLOCKED_USER,   "user"),
+	NM_UTILS_FLAGS2STR (NM_DEVICE_AUTOCONNECT_BLOCKED_INTERN, "intern"),
+);
+
+NMDeviceAutoconnectBlockedFlags
+nm_device_autoconnect_blocked_get (NMDevice *self, NMDeviceAutoconnectBlockedFlags mask)
 {
 	NMDevicePrivate *priv;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
-	priv = NM_DEVICE_GET_PRIVATE (self);
-	return priv->autoconnect_intern && priv->autoconnect_user;
-}
-
-static void
-nm_device_set_autoconnect_full (NMDevice *self, int autoconnect_intern, int autoconnect_user)
-{
-	NMDevicePrivate *priv;
-	gboolean old_value;
-
-	g_return_if_fail (NM_IS_DEVICE (self));
+	if (mask == 0)
+		mask = NM_DEVICE_AUTOCONNECT_BLOCKED_ALL;
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
-
-	old_value = nm_device_get_autoconnect (self);
-	if (autoconnect_intern != -1)
-		priv->autoconnect_intern = autoconnect_intern;
-	if (autoconnect_user != -1)
-		priv->autoconnect_user = autoconnect_user;
-	if (old_value != nm_device_get_autoconnect (self))
-		_notify (self, PROP_AUTOCONNECT);
+	return priv->autoconnect_blocked_flags & mask;
 }
 
 void
-nm_device_set_autoconnect_intern (NMDevice *self, gboolean autoconnect)
+nm_device_autoconnect_blocked_set_full (NMDevice *self, NMDeviceAutoconnectBlockedFlags mask, NMDeviceAutoconnectBlockedFlags value)
 {
-	nm_device_set_autoconnect_full (self, !!autoconnect, -1);
-}
+	NMDevicePrivate *priv;
+	gboolean changed;
+	char buf1[128], buf2[128];
 
-static void
-nm_device_set_autoconnect_both (NMDevice *self, gboolean autoconnect)
-{
-	autoconnect = !!autoconnect;
-	nm_device_set_autoconnect_full (self, autoconnect, autoconnect);
+	g_return_if_fail (NM_IS_DEVICE (self));
+	nm_assert (mask);
+	nm_assert (!NM_FLAGS_ANY (mask, ~NM_DEVICE_AUTOCONNECT_BLOCKED_ALL));
+	nm_assert (!NM_FLAGS_ANY (value, ~mask));
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	value = (priv->autoconnect_blocked_flags & ~mask) | (mask & value);
+	if (value == priv->autoconnect_blocked_flags)
+		return;
+
+	changed = ((!value) != (!priv->autoconnect_blocked_flags));
+
+	_LOGT (LOGD_DEVICE, "autoconnect-blocked: set \"%s\" (was \"%s\")",
+	       _autoconnect_blocked_flags_to_string (value, buf1, sizeof (buf1)),
+	       _autoconnect_blocked_flags_to_string (priv->autoconnect_blocked_flags, buf2, sizeof (buf2)));
+
+	priv->autoconnect_blocked_flags = value;
+	nm_assert (priv->autoconnect_blocked_flags == value);
+	if (changed)
+		_notify (self, PROP_AUTOCONNECT);
 }
 
 static gboolean
@@ -4297,7 +4296,7 @@ nm_device_autoconnect_allowed (NMDevice *self)
 	GValue instance = G_VALUE_INIT;
 	GValue retval = G_VALUE_INIT;
 
-	if (!nm_device_get_autoconnect (self))
+	if (nm_device_autoconnect_blocked_get (self, NM_DEVICE_AUTOCONNECT_BLOCKED_ALL))
 		return FALSE;
 
 	if (   klass->get_autoconnect_allowed
@@ -9741,7 +9740,7 @@ disconnect_cb (NMDevice *self,
 		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_DISCONNECT, self, FALSE, NULL, subject, local->message);
 		g_dbus_method_invocation_take_error (context, local);
 	} else {
-		nm_device_set_autoconnect_intern (self, FALSE);
+		nm_device_autoconnect_blocked_set (self, NM_DEVICE_AUTOCONNECT_BLOCKED_INTERN);
 
 		nm_device_state_changed (self,
 		                         NM_DEVICE_STATE_DEACTIVATING,
@@ -13000,7 +12999,7 @@ _set_state_full (NMDevice *self,
 	/* Reset autoconnect flag when the device is activating or connected. */
 	if (   state >= NM_DEVICE_STATE_PREPARE
 	    && state <= NM_DEVICE_STATE_ACTIVATED)
-		nm_device_set_autoconnect_intern  (self, TRUE);
+		nm_device_autoconnect_blocked_unset (self, NM_DEVICE_AUTOCONNECT_BLOCKED_INTERN);
 
 	_notify (self, PROP_STATE);
 	_notify (self, PROP_STATE_REASON);
@@ -14411,7 +14410,10 @@ set_property (GObject *object, guint prop_id,
 		}
 		break;
 	case PROP_AUTOCONNECT:
-		nm_device_set_autoconnect_both (self, g_value_get_boolean (value));
+		if (g_value_get_boolean (value))
+			nm_device_autoconnect_blocked_unset (self, NM_DEVICE_AUTOCONNECT_BLOCKED_ALL);
+		else
+			nm_device_autoconnect_blocked_set (self, NM_DEVICE_AUTOCONNECT_BLOCKED_USER);
 		break;
 	case PROP_FIRMWARE_MISSING:
 		/* construct-only */
@@ -14548,7 +14550,10 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, nm_device_get_state (self) > NM_DEVICE_STATE_UNMANAGED);
 		break;
 	case PROP_AUTOCONNECT:
-		g_value_set_boolean (value, nm_device_get_autoconnect (self));
+		g_value_set_boolean (value,
+		                     nm_device_autoconnect_blocked_get (self, NM_DEVICE_AUTOCONNECT_BLOCKED_ALL)
+		                       ? FALSE
+		                       : TRUE);
 		break;
 	case PROP_FIRMWARE_MISSING:
 		g_value_set_boolean (value, priv->firmware_missing);

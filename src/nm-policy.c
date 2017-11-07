@@ -1844,7 +1844,7 @@ device_state_changed (NMDevice *device,
 		break;
 	case NM_DEVICE_STATE_DEACTIVATING:
 		if (nm_device_state_reason_check (reason) == NM_DEVICE_STATE_REASON_USER_REQUESTED) {
-			if (!nm_device_get_autoconnect (device)) {
+			if (nm_device_autoconnect_blocked_get (device, NM_DEVICE_AUTOCONNECT_BLOCKED_ALL)) {
 				/* The device was disconnected; block all connections on it */
 				block_autoconnect_for_device (self, device);
 			} else {
