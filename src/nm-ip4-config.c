@@ -817,6 +817,7 @@ _nm_ip_config_merge_route_attributes (int addr_family,
 	NMIPAddr addr;
 	NMPlatformIP4Route *r4 = (NMPlatformIP4Route *) r;
 	NMPlatformIP6Route *r6 = (NMPlatformIP6Route *) r;
+	gboolean onlink;
 
 	nm_assert (s_route);
 	nm_assert_addr_family (addr_family);
@@ -836,8 +837,15 @@ _nm_ip_config_merge_route_attributes (int addr_family,
 	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_TABLE, table, UINT32, uint32, 0);
 	r->table_coerced = nm_platform_route_table_coerce (table ?: (route_table ?: RT_TABLE_MAIN));
 
-	if (addr_family == AF_INET)
+	if (addr_family == AF_INET) {
 		GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_TOS,        r4->tos,           BYTE,     byte, 0);
+		GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_ONLINK,     onlink,            BOOLEAN,  boolean, FALSE);
+	} else
+		onlink = FALSE;
+
+	r->r_rtm_flags = 0;
+	if (onlink)
+		r->r_rtm_flags = RTNH_F_ONLINK;
 
 	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_WINDOW,         r->window,         UINT32,   uint32, 0);
 	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_CWND,           r->cwnd,           UINT32,   uint32, 0);

@@ -512,12 +512,12 @@ typedef struct {
 
 	bool int_base_16:1;
 
-	/* the type, one of PARSE_LINE_TYPE_* */
-	char type;
-
 	/* whether the command line option was found, and @v is
 	 * initialized. */
 	bool has:1;
+
+	/* the type, one of PARSE_LINE_TYPE_* */
+	char type;
 
 	union {
 		guint8 uint8;
@@ -541,6 +541,7 @@ enum {
 	PARSE_LINE_ATTR_ROUTE_SRC,
 	PARSE_LINE_ATTR_ROUTE_FROM,
 	PARSE_LINE_ATTR_ROUTE_TOS,
+	PARSE_LINE_ATTR_ROUTE_ONLINK,
 	PARSE_LINE_ATTR_ROUTE_WINDOW,
 	PARSE_LINE_ATTR_ROUTE_CWND,
 	PARSE_LINE_ATTR_ROUTE_INITCWND,
@@ -562,6 +563,7 @@ enum {
 #define PARSE_LINE_TYPE_ADDR              'a'
 #define PARSE_LINE_TYPE_ADDR_WITH_PREFIX  'p'
 #define PARSE_LINE_TYPE_IFNAME            'i'
+#define PARSE_LINE_TYPE_FLAG              'f'
 
 /**
  * parse_route_line:
@@ -601,42 +603,45 @@ parse_route_line (const char *line,
 	char buf1[256];
 	char buf2[256];
 	ParseLineInfo infos[] = {
-		[PARSE_LINE_ATTR_ROUTE_TABLE]    = { .key = NM_IP_ROUTE_ATTRIBUTE_TABLE,
-		                                     .type = PARSE_LINE_TYPE_UINT32, },
-		[PARSE_LINE_ATTR_ROUTE_SRC]      = { .key = NM_IP_ROUTE_ATTRIBUTE_SRC,
-		                                     .type = PARSE_LINE_TYPE_ADDR, },
-		[PARSE_LINE_ATTR_ROUTE_FROM]     = { .key = NM_IP_ROUTE_ATTRIBUTE_FROM,
-		                                     .type = PARSE_LINE_TYPE_ADDR_WITH_PREFIX,
-		                                     .disabled = (addr_family != AF_INET6), },
-		[PARSE_LINE_ATTR_ROUTE_TOS]      = { .key = NM_IP_ROUTE_ATTRIBUTE_TOS,
-		                                     .type = PARSE_LINE_TYPE_UINT8,
-		                                     .int_base_16 = TRUE,
-		                                     .ignore = (addr_family != AF_INET), },
-		[PARSE_LINE_ATTR_ROUTE_WINDOW]   = { .key = NM_IP_ROUTE_ATTRIBUTE_WINDOW,
-		                                     .type = PARSE_LINE_TYPE_UINT32_WITH_LOCK, },
-		[PARSE_LINE_ATTR_ROUTE_CWND]     = { .key = NM_IP_ROUTE_ATTRIBUTE_CWND,
-		                                     .type = PARSE_LINE_TYPE_UINT32_WITH_LOCK, },
-		[PARSE_LINE_ATTR_ROUTE_INITCWND] = { .key = NM_IP_ROUTE_ATTRIBUTE_INITCWND,
-		                                     .type = PARSE_LINE_TYPE_UINT32_WITH_LOCK, },
-		[PARSE_LINE_ATTR_ROUTE_INITRWND] = { .key = NM_IP_ROUTE_ATTRIBUTE_INITRWND,
-		                                     .type = PARSE_LINE_TYPE_UINT32_WITH_LOCK, },
-		[PARSE_LINE_ATTR_ROUTE_MTU]      = { .key = NM_IP_ROUTE_ATTRIBUTE_MTU,
-		                                     .type = PARSE_LINE_TYPE_UINT32_WITH_LOCK, },
+		[PARSE_LINE_ATTR_ROUTE_TABLE]     = { .key = NM_IP_ROUTE_ATTRIBUTE_TABLE,
+		                                      .type = PARSE_LINE_TYPE_UINT32, },
+		[PARSE_LINE_ATTR_ROUTE_SRC]       = { .key = NM_IP_ROUTE_ATTRIBUTE_SRC,
+		                                      .type = PARSE_LINE_TYPE_ADDR, },
+		[PARSE_LINE_ATTR_ROUTE_FROM]      = { .key = NM_IP_ROUTE_ATTRIBUTE_FROM,
+		                                      .type = PARSE_LINE_TYPE_ADDR_WITH_PREFIX,
+		                                      .disabled = (addr_family != AF_INET6), },
+		[PARSE_LINE_ATTR_ROUTE_TOS]       = { .key = NM_IP_ROUTE_ATTRIBUTE_TOS,
+		                                      .type = PARSE_LINE_TYPE_UINT8,
+		                                      .int_base_16 = TRUE,
+		                                      .ignore = (addr_family != AF_INET), },
+		[PARSE_LINE_ATTR_ROUTE_ONLINK]    = { .key = NM_IP_ROUTE_ATTRIBUTE_ONLINK,
+		                                      .type = PARSE_LINE_TYPE_FLAG,
+		                                      .ignore = (addr_family != AF_INET), },
+		[PARSE_LINE_ATTR_ROUTE_WINDOW]    = { .key = NM_IP_ROUTE_ATTRIBUTE_WINDOW,
+		                                      .type = PARSE_LINE_TYPE_UINT32_WITH_LOCK, },
+		[PARSE_LINE_ATTR_ROUTE_CWND]      = { .key = NM_IP_ROUTE_ATTRIBUTE_CWND,
+		                                      .type = PARSE_LINE_TYPE_UINT32_WITH_LOCK, },
+		[PARSE_LINE_ATTR_ROUTE_INITCWND]  = { .key = NM_IP_ROUTE_ATTRIBUTE_INITCWND,
+		                                      .type = PARSE_LINE_TYPE_UINT32_WITH_LOCK, },
+		[PARSE_LINE_ATTR_ROUTE_INITRWND]  = { .key = NM_IP_ROUTE_ATTRIBUTE_INITRWND,
+		                                      .type = PARSE_LINE_TYPE_UINT32_WITH_LOCK, },
+		[PARSE_LINE_ATTR_ROUTE_MTU]       = { .key = NM_IP_ROUTE_ATTRIBUTE_MTU,
+		                                      .type = PARSE_LINE_TYPE_UINT32_WITH_LOCK, },
 
-		[PARSE_LINE_ATTR_ROUTE_TO]       = { .key = "to",
-		                                     .type = PARSE_LINE_TYPE_ADDR_WITH_PREFIX,
-		                                     .disabled = (options_route != NULL), },
-		[PARSE_LINE_ATTR_ROUTE_VIA]      = { .key = "via",
-		                                     .type = PARSE_LINE_TYPE_ADDR,
-		                                     .disabled = (options_route != NULL), },
-		[PARSE_LINE_ATTR_ROUTE_METRIC]   = { .key = "metric",
-		                                     .type = PARSE_LINE_TYPE_UINT32,
-		                                     .disabled = (options_route != NULL), },
+		[PARSE_LINE_ATTR_ROUTE_TO]        = { .key = "to",
+		                                      .type = PARSE_LINE_TYPE_ADDR_WITH_PREFIX,
+		                                      .disabled = (options_route != NULL), },
+		[PARSE_LINE_ATTR_ROUTE_VIA]       = { .key = "via",
+		                                      .type = PARSE_LINE_TYPE_ADDR,
+		                                      .disabled = (options_route != NULL), },
+		[PARSE_LINE_ATTR_ROUTE_METRIC]    = { .key = "metric",
+		                                      .type = PARSE_LINE_TYPE_UINT32,
+		                                      .disabled = (options_route != NULL), },
 
-		[PARSE_LINE_ATTR_ROUTE_DEV]      = { .key = "dev",
-		                                     .type = PARSE_LINE_TYPE_IFNAME,
-		                                     .ignore = TRUE,
-		                                     .disabled = (options_route != NULL), },
+		[PARSE_LINE_ATTR_ROUTE_DEV]       = { .key = "dev",
+		                                      .type = PARSE_LINE_TYPE_IFNAME,
+		                                      .ignore = TRUE,
+		                                      .disabled = (options_route != NULL), },
 	};
 
 	nm_assert (line);
@@ -705,6 +710,9 @@ parse_route_line (const char *line,
 			case PARSE_LINE_TYPE_IFNAME:
 				i_words++;
 				goto parse_line_type_ifname;
+			case PARSE_LINE_TYPE_FLAG:
+				i_words++;
+				goto next;
 			default:
 				nm_assert_not_reached ();
 			}
@@ -912,6 +920,15 @@ next:
 			                                                 info->v.addr.has_plen
 			                                                    ? nm_sprintf_buf (buf2, "/%u", (unsigned) info->v.addr.plen)
 			                                                    : ""));
+			break;
+		case PARSE_LINE_TYPE_FLAG:
+			/* XXX: the flag (for "onlink") only allows to explictly set "TRUE".
+			 * There is no way to express an explicit "FALSE" setting
+			 * of this attribute, hence, the file format cannot encode
+			 * that configuration. */
+			nm_ip_route_set_attribute (route,
+			                           info->key,
+			                           g_variant_new_boolean (TRUE));
 			break;
 		default:
 			nm_assert_not_reached ();
