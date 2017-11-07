@@ -66,6 +66,19 @@ typedef struct {
 
 extern const NMIPAddr nm_ip_addr_zero;
 
+static inline void
+nm_ip_addr_set (int addr_family, gpointer dst, const NMIPAddr *src)
+{
+	nm_assert_addr_family (addr_family);
+	nm_assert (dst);
+	nm_assert (src);
+
+	if (addr_family != AF_INET6)
+		*((in_addr_t *) dst) = src->addr4;
+	else
+		*((struct in6_addr *) dst) = src->addr6;
+}
+
 /*****************************************************************************/
 
 #define NM_CMP_RETURN(c) \
