@@ -113,6 +113,11 @@ const NMDedupMultiEntry *_nm_ip_config_lookup_ip_route (const NMDedupMultiIndex 
                                                         const NMPObject *needle,
                                                         NMPlatformIPRouteCmpType cmp_type);
 
+void _nm_ip_config_merge_route_attributes (int addr_family,
+                                           NMIPRoute *s_route,
+                                           NMPlatformIPRoute *r,
+                                           guint32 route_table);
+
 /*****************************************************************************/
 
 #define NM_TYPE_IP4_CONFIG (nm_ip4_config_get_type ())
