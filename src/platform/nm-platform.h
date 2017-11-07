@@ -375,13 +375,6 @@ typedef union {
 	\
 	guint8 plen; \
 	\
-	/* the route has rtm_flags set to RTM_F_CLONED. Such a route
-	 * is hidden by platform and does not exist from the point-of-view
-	 * of platform users. This flag is internal to track those hidden
-	 * routes. Such a route is not alive, according to nmp_object_is_alive(). */ \
-	bool rt_cloned:1; \
-	\
-	\
 	/* RTA_METRICS:
 	 *
 	 * For IPv4 routes, these properties are part of their
@@ -400,6 +393,17 @@ typedef union {
 	bool lock_initcwnd:1; \
 	bool lock_initrwnd:1; \
 	bool lock_mtu:1; \
+	\
+	/* rtnh_flags
+	 *
+	 * Routes with rtm_flags RTM_F_CLONED are hidden by platform and
+	 * do not exist from the point-of-view of platform users.
+	 * Such a route is not alive, according to nmp_object_is_alive().
+	 *
+	 * XXX: currently we ignore all flags except RTM_F_CLONED.
+	 * We also may not properly consider the flags as part of the ID
+	 * in route-cmp. */ \
+	unsigned r_rtm_flags; \
 	\
 	/* RTA_METRICS.RTAX_ADVMSS (iproute2: advmss) */ \
 	guint32 mss; \

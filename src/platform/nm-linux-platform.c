@@ -2291,17 +2291,7 @@ _new_from_nl_route (struct nlmsghdr *nlh, gboolean id_only)
 			obj->ip6_route.rt_pref = nla_get_u8 (tb[RTA_PREF]);
 	}
 
-	if (NM_FLAGS_HAS (rtm->rtm_flags, RTM_F_CLONED)) {
-		/* we must not straight way reject cloned routes, because we might have cached
-		 * a non-cloned route. If we now receive an update of the route with the route
-		 * being cloned, we must still return the object, so that we can remove the old
-		 * one from the cache.
-		 *
-		 * This happens, because this route is not nmp_object_is_alive().
-		 * */
-		obj->ip_route.rt_cloned = TRUE;
-	}
-
+	obj->ip_route.r_rtm_flags = rtm->rtm_flags;
 	obj->ip_route.rt_source = nmp_utils_ip_config_source_from_rtprot (rtm->rtm_protocol);
 
 	obj_result = obj;
@@ -4189,7 +4179,7 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 			gboolean resync_required = FALSE;
 			gboolean only_dirty = FALSE;
 
-			if (obj->ip_route.rt_cloned) {
+			if (NM_FLAGS_HAS (obj->ip_route.r_rtm_flags, RTM_F_CLONED)) {
 				/* a cloned route might be a response for RTM_GETROUTE. Check, whether it is. */
 				nm_assert (!nmp_object_is_alive (obj));
 				priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
