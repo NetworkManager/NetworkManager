@@ -5574,6 +5574,7 @@ nm_platform_ip4_route_hash_update (const NMPlatformIP4Route *obj, NMPlatformIPRo
 		                     obj->initcwnd,
 		                     obj->initrwnd,
 		                     obj->mtu,
+		                     obj->r_rtm_flags & RTNH_F_ONLINK,
 		                     NM_HASH_COMBINE_BOOLS (guint8,
 		                                            obj->lock_window,
 		                                            obj->lock_cwnd,
@@ -5599,7 +5600,7 @@ nm_platform_ip4_route_hash_update (const NMPlatformIP4Route *obj, NMPlatformIPRo
 		                     obj->initcwnd,
 		                     obj->initrwnd,
 		                     obj->mtu,
-		                     obj->r_rtm_flags & RTM_F_CLONED,
+		                     obj->r_rtm_flags & (RTM_F_CLONED | RTNH_F_ONLINK),
 		                     NM_HASH_COMBINE_BOOLS (guint8,
 		                                            obj->lock_window,
 		                                            obj->lock_cwnd,
@@ -5663,6 +5664,8 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 			NM_CMP_FIELD (a, b, initcwnd);
 			NM_CMP_FIELD (a, b, initrwnd);
 			NM_CMP_FIELD (a, b, mtu);
+			NM_CMP_DIRECT (a->r_rtm_flags & RTNH_F_ONLINK,
+			               b->r_rtm_flags & RTNH_F_ONLINK);
 			NM_CMP_FIELD_UNSAFE (a, b, lock_window);
 			NM_CMP_FIELD_UNSAFE (a, b, lock_cwnd);
 			NM_CMP_FIELD_UNSAFE (a, b, lock_initcwnd);
@@ -5697,8 +5700,8 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 		NM_CMP_FIELD (a, b, mss);
 		NM_CMP_FIELD (a, b, pref_src);
 		if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
-			NM_CMP_DIRECT (a->r_rtm_flags & RTM_F_CLONED,
-			               b->r_rtm_flags & RTM_F_CLONED);
+			NM_CMP_DIRECT (a->r_rtm_flags & (RTM_F_CLONED | RTNH_F_ONLINK),
+			               b->r_rtm_flags & (RTM_F_CLONED | RTNH_F_ONLINK));
 		} else
 			NM_CMP_FIELD (a, b, r_rtm_flags);
 		NM_CMP_FIELD (a, b, tos);
