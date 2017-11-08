@@ -430,6 +430,9 @@ pushd "$DIRNAME"
             fi
         elif [[ "$BUILD_TYPE" == "network-manager-applet" ]]; then
             RELEASE_BASE_COMMIT="$(sed -n 's/^NMA_GIT_SHA=\(.*\)/\1/p' configure 2>/dev/null)"
+            if [[ "$RELEASE_BASE_COMMIT" == "8d8e34f22d5fae476eda96cf36d828c3ae8b63d3" ]]; then
+                RELEASE_BASE_COMMIT="a2377d7534780b96a32405cce2e5548e81bbd081"
+            fi
         elif [[ "$BUILD_TYPE" == "glib2" ]]; then
             RELEASE_BASE_COMMIT="$(git rev-parse --verify -q "$(sed 's/.*\<glib-\([0-9]\+\.[0-9]\+\.[0-9]\+\)\.[a-z0-9_.]\+ *$/\1/' ../sources)^{commit}" 2>/dev/null)"
         elif [[ "$BUILD_TYPE" == "iproute" ]]; then
