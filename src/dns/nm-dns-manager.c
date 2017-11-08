@@ -197,19 +197,6 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_config_type_to_string, NMDnsIPConfigType,
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_IP_CONFIG_TYPE_VPN, "vpn"),
 );
 
-int
-nm_dns_ip_config_data_get_dns_priority (const NMDnsIPConfigData *config)
-{
-	g_return_val_if_fail (config, 0);
-
-	if (NM_IS_IP4_CONFIG (config->config))
-		return nm_ip4_config_get_dns_priority (config->config);
-	else if (NM_IS_IP6_CONFIG (config->config))
-		return nm_ip6_config_get_dns_priority (config->config);
-	else
-		g_return_val_if_reached (0);
-}
-
 static NMDnsIPConfigData *
 ip_config_data_new (gpointer config, NMDnsIPConfigType type, const char *iface)
 {
@@ -241,8 +228,8 @@ ip_config_data_compare (const NMDnsIPConfigData *a, const NMDnsIPConfigData *b)
 {
 	int a_prio, b_prio;
 
-	a_prio = nm_dns_ip_config_data_get_dns_priority (a);
-	b_prio = nm_dns_ip_config_data_get_dns_priority (b);
+	a_prio = nm_ip_config_get_dns_priority (a->config);
+	b_prio = nm_ip_config_get_dns_priority (b->config);
 
 	/* Configurations with lower priority value first */
 	if (a_prio < b_prio)
@@ -1018,7 +1005,7 @@ _collect_resolv_conf_data (NMDnsManager *self, /* only for logging context, no o
 
 			current = configs->pdata[i];
 
-			prio = nm_dns_ip_config_data_get_dns_priority (current);
+			prio = nm_ip_config_get_dns_priority (NM_IP_CONFIG_CAST (current->config));
 
 			if (i == 0)
 				first_prio = prio;

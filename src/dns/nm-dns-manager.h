@@ -44,8 +44,6 @@ typedef struct {
 	char *iface;
 } NMDnsIPConfigData;
 
-int nm_dns_ip_config_data_get_dns_priority (const NMDnsIPConfigData *config);
-
 #define NM_TYPE_DNS_MANAGER (nm_dns_manager_get_type ())
 #define NM_DNS_MANAGER(o) (G_TYPE_CHECK_INSTANCE_CAST ((o), NM_TYPE_DNS_MANAGER, NMDnsManager))
 #define NM_DNS_MANAGER_CLASS(k) (G_TYPE_CHECK_CLASS_CAST((k), NM_TYPE_DNS_MANAGER, NMDnsManagerClass))
