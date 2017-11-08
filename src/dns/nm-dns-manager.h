@@ -72,19 +72,12 @@ NMDnsManager * nm_dns_manager_get (void);
 void nm_dns_manager_begin_updates (NMDnsManager *self, const char *func);
 void nm_dns_manager_end_updates (NMDnsManager *self, const char *func);
 
-gboolean nm_dns_manager_add_ip4_config (NMDnsManager *self,
-                                        const char *iface,
-                                        NMIP4Config *config,
-                                        NMDnsIPConfigType cfg_type);
+gboolean nm_dns_manager_add_ip_config (NMDnsManager *self,
+                                       const char *iface,
+                                       gpointer config,
+                                       NMDnsIPConfigType cfg_type);
 
-gboolean nm_dns_manager_remove_ip4_config (NMDnsManager *self, NMIP4Config *config);
-
-gboolean nm_dns_manager_add_ip6_config (NMDnsManager *self,
-                                        const char *iface,
-                                        NMIP6Config *config,
-                                        NMDnsIPConfigType cfg_type);
-
-gboolean nm_dns_manager_remove_ip6_config (NMDnsManager *self, NMIP6Config *config);
+gboolean nm_dns_manager_remove_ip_config (NMDnsManager *self, gpointer config);
 
 void nm_dns_manager_set_initial_hostname (NMDnsManager *self,
                                           const char *hostname);

@@ -1305,7 +1305,7 @@ forget_data (NMDnsManager *self, NMDnsIPConfigData *data)
 	g_signal_handlers_disconnect_by_func (data->config, ip_config_dns_priority_changed, self);
 }
 
-static gboolean
+gboolean
 nm_dns_manager_add_ip_config (NMDnsManager *self,
                               const char *iface,
                               gpointer config,
@@ -1320,6 +1320,7 @@ nm_dns_manager_add_ip_config (NMDnsManager *self,
 	g_return_val_if_fail (NM_IS_DNS_MANAGER (self), FALSE);
 	g_return_val_if_fail (config, FALSE);
 	g_return_val_if_fail (iface && iface[0], FALSE);
+	nm_assert (NM_IP4_CONFIG (config) || NM_IS_IP6_CONFIG (config));
 
 	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
@@ -1368,24 +1369,6 @@ nm_dns_manager_add_ip_config (NMDnsManager *self,
 }
 
 gboolean
-nm_dns_manager_add_ip4_config (NMDnsManager *self,
-                               const char *iface,
-                               NMIP4Config *config,
-                               NMDnsIPConfigType cfg_type)
-{
-	return nm_dns_manager_add_ip_config (self, iface, config, cfg_type);
-}
-
-gboolean
-nm_dns_manager_add_ip6_config (NMDnsManager *self,
-                               const char *iface,
-                               NMIP6Config *config,
-                               NMDnsIPConfigType cfg_type)
-{
-	return nm_dns_manager_add_ip_config (self, iface, config, cfg_type);
-}
-
-static gboolean
 nm_dns_manager_remove_ip_config (NMDnsManager *self, gpointer config)
 {
 	NMDnsManagerPrivate *priv;
@@ -1395,6 +1378,7 @@ nm_dns_manager_remove_ip_config (NMDnsManager *self, gpointer config)
 
 	g_return_val_if_fail (NM_IS_DNS_MANAGER (self), FALSE);
 	g_return_val_if_fail (config, FALSE);
+	nm_assert (NM_IP4_CONFIG (config) || NM_IS_IP6_CONFIG (config));
 
 	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
@@ -1414,18 +1398,6 @@ nm_dns_manager_remove_ip_config (NMDnsManager *self, gpointer config)
 		}
 	}
 	return FALSE;
-}
-
-gboolean
-nm_dns_manager_remove_ip4_config (NMDnsManager *self, NMIP4Config *config)
-{
-	return nm_dns_manager_remove_ip_config (self, config);
-}
-
-gboolean
-nm_dns_manager_remove_ip6_config (NMDnsManager *self, NMIP6Config *config)
-{
-	return nm_dns_manager_remove_ip_config (self, config);
 }
 
 void
