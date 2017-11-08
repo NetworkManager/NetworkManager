@@ -572,7 +572,7 @@ object_created (GObject *obj, const char *path, gpointer user_data)
 			object_class->object_creation_failed (odata->self, path);
 	}
 
-	odata->objects[--odata->remaining] = obj ? g_object_ref (obj) : NULL;
+	odata->objects[odata->length - odata->remaining--] = obj ? g_object_ref (obj) : NULL;
 	object_property_maybe_complete (odata->self);
 }
 
