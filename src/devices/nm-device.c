@@ -4307,9 +4307,12 @@ nm_device_autoconnect_allowed (NMDevice *self)
 	if (!nm_device_get_enabled (self))
 		return FALSE;
 
-	/* Unrealized devices can always autoconnect. */
-	if (nm_device_is_real (self) && priv->state < NM_DEVICE_STATE_DISCONNECTED)
-		return FALSE;
+	if (nm_device_is_real (self)) {
+		if (priv->state < NM_DEVICE_STATE_DISCONNECTED)
+			return FALSE;
+	} else {
+		/* Unrealized devices can always autoconnect. */
+	}
 
 	/* The 'autoconnect-allowed' signal is emitted on a device to allow
 	 * other listeners to block autoconnect on the device if they wish.
