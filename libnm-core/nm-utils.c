@@ -4535,16 +4535,18 @@ _nm_utils_team_config_get (const char *conf,
 			json_object_set_new (json, "runner", json_element);
 		}
 		if (!runner) {
-			runner = "roundrobin";
+			runner = NM_SETTING_TEAM_RUNNER_DEFAULT;
 			json_object_set_new (json_element, "name", json_string (runner));
 		}
 
 
-		if (nm_streq (runner, "activebackup")) {
-			_json_add_object (json, "notify_peers", "count", NULL, json_integer (1));
-			_json_add_object (json, "mcast_rejoin", "count", NULL, json_integer (1));
-			_json_add_object (json, "runner", "hwaddr_policy", NULL, json_string ("same_all"));
-		} else if (nm_streq (runner, "loadbalance") || nm_streq (runner, "lacp")) {
+		if (nm_streq (runner, NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP)) {
+			_json_add_object (json, "notify_peers", "count", NULL,
+			                  json_integer (NM_SETTING_TEAM_NOTIFY_PEERS_COUNT_ACTIVEBACKUP_DEFAULT));
+			_json_add_object (json, "mcast_rejoin", "count", NULL,
+			                  json_integer (NM_SETTING_TEAM_NOTIFY_MCAST_COUNT_ACTIVEBACKUP_DEFAULT));
+		} else if (   nm_streq (runner, NM_SETTING_TEAM_RUNNER_LOADBALANCE)
+		           || nm_streq (runner, NM_SETTING_TEAM_RUNNER_LACP)) {
 			json_element = json_array ();
 			json_array_append_new (json_element, json_string ("eth"));
 			json_array_append_new (json_element, json_string ("ipv4"));

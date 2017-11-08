@@ -45,6 +45,9 @@ G_BEGIN_DECLS
 #define NM_SETTING_TEAM_PORT_LACP_PRIO  "lacp-prio"
 #define NM_SETTING_TEAM_PORT_LACP_KEY   "lacp-key"
 
+#define NM_SETTING_TEAM_PORT_QUEUE_ID_DEFAULT   -1
+#define NM_SETTING_TEAM_PORT_LACP_PRIO_DEFAULT 255
+
 /**
  * NMSettingTeamPort:
  *
