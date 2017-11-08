@@ -3762,6 +3762,22 @@ nm_utils_is_uuid (const char *str)
 
 static char _nm_utils_inet_ntop_buffer[NM_UTILS_INET_ADDRSTRLEN];
 
+const char *
+nm_utils_inet_ntop (int addr_family, gconstpointer addr, char *dst)
+{
+	const char *s;
+
+	nm_assert_addr_family (addr_family);
+	nm_assert (addr);
+
+	s = inet_ntop (addr_family,
+	               addr,
+	               dst ? dst : _nm_utils_inet_ntop_buffer,
+	               addr_family == AF_INET6 ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN);
+	nm_assert (s);
+	return s;
+}
+
 /**
  * nm_utils_inet4_ntop: (skip)
  * @inaddr: the address that should be converted to string.

@@ -429,6 +429,8 @@ NMSettingBluetooth *_nm_connection_get_setting_bluetooth_for_nap (NMConnection *
 
 /*****************************************************************************/
 
+const char *nm_utils_inet_ntop (int addr_family, gconstpointer addr, char *dst);
+
 gboolean _nm_utils_inet6_is_token (const struct in6_addr *in6addr);
 
 /*****************************************************************************/
