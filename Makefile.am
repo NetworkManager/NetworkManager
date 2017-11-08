@@ -960,18 +960,22 @@ INTROSPECTION_GIRS += libnm/NM-1.0.gir
 
 if WITH_FAKE_TYPELIBS
 
-libnm/fake-typelib/NetworkManager.typelib: libnm/fake-typelib/NetworkManager.gir
+libnm/fake-typelib/NetworkManager.typelib: libnm/fake-typelib/NetworkManager.gir libnm/fake-typelib/.dirstamp
 	$(AM_V_GEN)  $(INTROSPECTION_COMPILER) $< -o $@
 
-libnm/fake-typelib/NMClient.typelib: libnm/fake-typelib/NMClient.gir
+libnm/fake-typelib/NMClient.typelib: libnm/fake-typelib/NMClient.gir libnm/fake-typelib/.dirstamp
 	$(AM_V_GEN) $(INTROSPECTION_COMPILER) $< -o $@
 
 libnm/fake-typelib/typelibs.c: libnm/fake-typelib/typelibs.gresource.xml libnm/fake-typelib/NetworkManager.typelib libnm/fake-typelib/NMClient.typelib
-	$(AM_V_GEN) $(GLIB_COMPILE_RESOURCES) $< --target=$@ --sourcedir=$(srcdir)/libnm/fake-typelib --generate-source --manual-register
+	$(AM_V_GEN) $(GLIB_COMPILE_RESOURCES) $< --target=$@ --sourcedir=$(builddir)/libnm/fake-typelib --generate-source --manual-register
 
 nodist_libnm_libnm_utils_la_SOURCES = \
 	libnm/fake-typelib/typelibs.c
 
+CLEANFILES += \
+	libnm/fake-typelib/typelibs.c \
+	libnm/fake-typelib/NMClient.typelib \
+	libnm/fake-typelib/NetworkManager.typelib
 endif
 
 endif
