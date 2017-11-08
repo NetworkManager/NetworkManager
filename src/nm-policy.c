@@ -919,26 +919,6 @@ get_best_ip_config (NMPolicy *self,
 }
 
 static void
-update_ip4_dns (NMPolicy *self, NMDnsManager *dns_mgr)
-{
-	NMIP4Config *ip4_config;
-	const char *ip_iface = NULL;
-	NMVpnConnection *vpn = NULL;
-	NMDnsIPConfigType dns_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
-
-	ip4_config = get_best_ip_config (self, AF_INET, &ip_iface, NULL, NULL, &vpn);
-	if (ip4_config) {
-		if (vpn)
-			dns_type = NM_DNS_IP_CONFIG_TYPE_VPN;
-
-		/* Tell the DNS manager this config is preferred by re-adding it with
-		 * a different IP config type.
-		 */
-		nm_dns_manager_add_ip4_config (dns_mgr, ip_iface, ip4_config, dns_type);
-	}
-}
-
-static void
 update_ip4_routing (NMPolicy *self, gboolean force_update)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
@@ -1006,28 +986,6 @@ update_ip6_dns_delegation (NMPolicy *self)
 		if (device && nm_device_needs_ip6_subnet (device))
 			nm_device_copy_ip6_dns_config (device, priv->default_device6);
 	}
-}
-
-static void
-update_ip6_dns (NMPolicy *self, NMDnsManager *dns_mgr)
-{
-	NMIP6Config *ip6_config;
-	const char *ip_iface = NULL;
-	NMVpnConnection *vpn = NULL;
-	NMDnsIPConfigType dns_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
-
-	ip6_config = get_best_ip_config (self, AF_INET6, &ip_iface, NULL, NULL, &vpn);
-	if (ip6_config) {
-		if (vpn)
-			dns_type = NM_DNS_IP_CONFIG_TYPE_VPN;
-
-		/* Tell the DNS manager this config is preferred by re-adding it with
-		 * a different IP config type.
-		 */
-		nm_dns_manager_add_ip6_config (dns_mgr, ip_iface, ip6_config, dns_type);
-	}
-
-	update_ip6_dns_delegation (self);
 }
 
 static void
@@ -1104,14 +1062,42 @@ update_ip6_routing (NMPolicy *self, gboolean force_update)
 }
 
 static void
+update_ip_dns (NMPolicy *self, int addr_family)
+{
+	gpointer ip_config;
+	const char *ip_iface = NULL;
+	NMVpnConnection *vpn = NULL;
+	NMDnsIPConfigType dns_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
+
+	nm_assert_addr_family (addr_family);
+
+	ip_config = get_best_ip_config (self, addr_family, &ip_iface, NULL, NULL, &vpn);
+	if (ip_config) {
+		if (vpn)
+			dns_type = NM_DNS_IP_CONFIG_TYPE_VPN;
+
+		/* Tell the DNS manager this config is preferred by re-adding it with
+		 * a different IP config type.
+		 */
+		nm_dns_manager_add_ip_config (NM_POLICY_GET_PRIVATE (self)->dns_manager,
+		                              ip_iface,
+		                              ip_config,
+		                              dns_type);
+	}
+
+	if (addr_family == AF_INET6)
+		update_ip6_dns_delegation (self);
+}
+
+static void
 update_routing_and_dns (NMPolicy *self, gboolean force_update)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 
 	nm_dns_manager_begin_updates (priv->dns_manager, __func__);
 
-	update_ip4_dns (self, priv->dns_manager);
-	update_ip6_dns (self, priv->dns_manager);
+	update_ip_dns (self, AF_INET);
+	update_ip_dns (self, AF_INET6);
 
 	update_ip4_routing (self, force_update);
 	update_ip6_routing (self, force_update);
@@ -1800,10 +1786,10 @@ device_state_changed (NMDevice *device,
 
 		ip4_config = nm_device_get_ip4_config (device);
 		if (ip4_config)
-			nm_dns_manager_add_ip4_config (priv->dns_manager, ip_iface, ip4_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+			nm_dns_manager_add_ip_config (priv->dns_manager, ip_iface, ip4_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
 		ip6_config = nm_device_get_ip6_config (device);
 		if (ip6_config)
-			nm_dns_manager_add_ip6_config (priv->dns_manager, ip_iface, ip6_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+			nm_dns_manager_add_ip_config (priv->dns_manager, ip_iface, ip6_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
 
 		update_routing_and_dns (self, FALSE);
 
@@ -1903,17 +1889,17 @@ device_ip4_config_changed (NMDevice *device,
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
 		if (old_config != new_config) {
 			if (old_config)
-				nm_dns_manager_remove_ip4_config (priv->dns_manager, old_config);
+				nm_dns_manager_remove_ip_config (priv->dns_manager, old_config);
 			if (new_config)
-				nm_dns_manager_add_ip4_config (priv->dns_manager, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+				nm_dns_manager_add_ip_config (priv->dns_manager, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
 		}
-		update_ip4_dns (self, priv->dns_manager);
+		update_ip_dns (self, AF_INET);
 		update_ip4_routing (self, TRUE);
 		update_system_hostname (self, "ip4 conf");
 	} else {
 		/* Old configs get removed immediately */
 		if (old_config)
-			nm_dns_manager_remove_ip4_config (priv->dns_manager, old_config);
+			nm_dns_manager_remove_ip_config (priv->dns_manager, old_config);
 	}
 
 	nm_dns_manager_end_updates (priv->dns_manager, __func__);
@@ -1939,17 +1925,17 @@ device_ip6_config_changed (NMDevice *device,
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
 		if (old_config != new_config) {
 			if (old_config)
-				nm_dns_manager_remove_ip6_config (priv->dns_manager, old_config);
+				nm_dns_manager_remove_ip_config (priv->dns_manager, old_config);
 			if (new_config)
-				nm_dns_manager_add_ip6_config (priv->dns_manager, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+				nm_dns_manager_add_ip_config (priv->dns_manager, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
 		}
-		update_ip6_dns (self, priv->dns_manager);
+		update_ip_dns (self, AF_INET6);
 		update_ip6_routing (self, TRUE);
 		update_system_hostname (self, "ip6 conf");
 	} else {
 		/* Old configs get removed immediately */
 		if (old_config)
-			nm_dns_manager_remove_ip6_config (priv->dns_manager, old_config);
+			nm_dns_manager_remove_ip_config (priv->dns_manager, old_config);
 	}
 
 	nm_dns_manager_end_updates (priv->dns_manager, __func__);
@@ -2055,11 +2041,11 @@ vpn_connection_activated (NMPolicy *self, NMVpnConnection *vpn)
 
 	ip4_config = nm_vpn_connection_get_ip4_config (vpn);
 	if (ip4_config)
-		nm_dns_manager_add_ip4_config (priv->dns_manager, ip_iface, ip4_config, NM_DNS_IP_CONFIG_TYPE_VPN);
+		nm_dns_manager_add_ip_config (priv->dns_manager, ip_iface, ip4_config, NM_DNS_IP_CONFIG_TYPE_VPN);
 
 	ip6_config = nm_vpn_connection_get_ip6_config (vpn);
 	if (ip6_config)
-		nm_dns_manager_add_ip6_config (priv->dns_manager, ip_iface, ip6_config, NM_DNS_IP_CONFIG_TYPE_VPN);
+		nm_dns_manager_add_ip_config (priv->dns_manager, ip_iface, ip6_config, NM_DNS_IP_CONFIG_TYPE_VPN);
 
 	update_routing_and_dns (self, TRUE);
 
@@ -2078,13 +2064,13 @@ vpn_connection_deactivated (NMPolicy *self, NMVpnConnection *vpn)
 	ip4_config = nm_vpn_connection_get_ip4_config (vpn);
 	if (ip4_config) {
 		/* Remove the VPN connection's IP4 config from DNS */
-		nm_dns_manager_remove_ip4_config (priv->dns_manager, ip4_config);
+		nm_dns_manager_remove_ip_config (priv->dns_manager, ip4_config);
 	}
 
 	ip6_config = nm_vpn_connection_get_ip6_config (vpn);
 	if (ip6_config) {
 		/* Remove the VPN connection's IP6 config from DNS */
-		nm_dns_manager_remove_ip6_config (priv->dns_manager, ip6_config);
+		nm_dns_manager_remove_ip_config (priv->dns_manager, ip6_config);
 	}
 
 	update_routing_and_dns (self, TRUE);
