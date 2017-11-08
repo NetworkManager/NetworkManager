@@ -267,4 +267,37 @@ gboolean nm_ip4_config_nmpobj_remove (NMIP4Config *self,
 void nm_ip4_config_hash (const NMIP4Config *self, GChecksum *sum, gboolean dns_only);
 gboolean nm_ip4_config_equal (const NMIP4Config *a, const NMIP4Config *b);
 
+/*****************************************************************************/
+
+#include "nm-ip6-config.h"
+
+#if _NM_CC_SUPPORT_GENERIC
+#define NM_IP_CONFIG_CAST(config) \
+	({ \
+		const void *const _config = (config); \
+		\
+		nm_assert (_Generic ((config), \
+		                     const void        *: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+		                           void        *: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+		                     const NMIPConfig  *: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+		                           NMIPConfig  *: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+		                     const NMIP4Config *: (NM_IS_IP4_CONFIG (_config)), \
+		                           NMIP4Config *: (NM_IS_IP4_CONFIG (_config)), \
+		                     const NMIP6Config *: (NM_IS_IP6_CONFIG (_config)), \
+		                           NMIP6Config *: (NM_IS_IP6_CONFIG (_config)))); \
+		\
+		_Generic ((config), \
+		          const void        *: ((const NMIPConfig *) _config), \
+		                void        *: ((      NMIPConfig *) _config), \
+		          const NMIPConfig  *: ((const NMIPConfig *) _config), \
+		                NMIPConfig  *: ((      NMIPConfig *) _config), \
+		          const NMIP4Config *: ((const NMIPConfig *) _config), \
+		                NMIP4Config *: ((      NMIPConfig *) _config), \
+		          const NMIP6Config *: ((const NMIPConfig *) _config), \
+		                NMIP6Config *: ((      NMIPConfig *) _config)); \
+	})
+#else
+#define NM_IP_CONFIG_CAST(config) ((NMIPConfig *) (config))
+#endif
+
 #endif /* __NETWORKMANAGER_IP4_CONFIG_H__ */
