@@ -300,4 +300,15 @@ gboolean nm_ip4_config_equal (const NMIP4Config *a, const NMIP4Config *b);
 #define NM_IP_CONFIG_CAST(config) ((NMIPConfig *) (config))
 #endif
 
+static inline int
+nm_ip_config_get_dns_priority (const NMIPConfig *config)
+{
+	if (NM_IS_IP4_CONFIG (config))
+		return nm_ip4_config_get_dns_priority ((const NMIP4Config *) config);
+	else if (NM_IS_IP6_CONFIG (config))
+		return nm_ip6_config_get_dns_priority ((const NMIP6Config *) config);
+	else
+		g_return_val_if_reached (0);
+}
+
 #endif /* __NETWORKMANAGER_IP4_CONFIG_H__ */
