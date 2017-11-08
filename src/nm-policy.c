@@ -1159,8 +1159,7 @@ activate_data_free (ActivateData *data)
 	nm_device_remove_pending_action (data->device, NM_PENDING_ACTION_AUTOACTIVATE, TRUE);
 	priv->pending_activation_checks = g_slist_remove (priv->pending_activation_checks, data);
 
-	if (data->autoactivate_id)
-		g_source_remove (data->autoactivate_id);
+	nm_clear_g_source (&data->autoactivate_id);
 	g_object_unref (data->device);
 
 	g_slice_free (ActivateData, data);
@@ -1214,6 +1213,9 @@ auto_activate_device (NMPolicy *self,
 	gs_free char *specific_object = NULL;
 	gs_free NMSettingsConnection **connections = NULL;
 	guint i, len;
+	GError *error = NULL;
+	NMAuthSubject *subject;
+	NMActiveConnection *ac;
 
 	nm_assert (NM_IS_POLICY (self));
 	nm_assert (NM_IS_DEVICE (device));
@@ -1225,6 +1227,9 @@ auto_activate_device (NMPolicy *self,
 	// deactivate the device and activate the new connection instead of just
 	// bailing if the device is already active
 	if (nm_device_get_act_request (device))
+		return;
+
+	if (!nm_device_autoconnect_allowed (device))
 		return;
 
 	connections = nm_manager_get_activatable_connections (priv->manager, &len, TRUE);
@@ -1258,46 +1263,43 @@ auto_activate_device (NMPolicy *self,
 		}
 	}
 
-	if (best_connection) {
-		GError *error = NULL;
-		NMAuthSubject *subject;
-		NMActiveConnection *ac;
+	if (!best_connection)
+		return;
 
-		_LOGI (LOGD_DEVICE, "auto-activating connection '%s'",
-		       nm_settings_connection_get_id (best_connection));
-		subject = nm_auth_subject_new_internal ();
-		ac = nm_manager_activate_connection (priv->manager,
-		                                     best_connection,
-		                                     NULL,
-		                                     specific_object,
-		                                     device,
-		                                     subject,
-		                                     NM_ACTIVATION_TYPE_MANAGED,
-		                                     &error);
-		if (!ac) {
-			_LOGI (LOGD_DEVICE, "connection '%s' auto-activation failed: (%d) %s",
-			       nm_settings_connection_get_id (best_connection),
-			       error->code,
-			       error->message);
-			g_error_free (error);
-			nm_settings_connection_autoconnect_blocked_reason_set (best_connection,
-			                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED);
-			schedule_activate_check (self, device);
-			return;
-		}
-
-		/* Subscribe to AC state-changed signal to detect when the
-		 * activation fails in early stages without changing device
-		 * state.
-		 */
-		if (nm_g_hash_table_add (priv->pending_active_connections, ac)) {
-			g_signal_connect (ac, NM_ACTIVE_CONNECTION_STATE_CHANGED,
-			                  G_CALLBACK (pending_ac_state_changed), g_object_ref (self));
-			g_object_weak_ref (G_OBJECT (ac), (GWeakNotify) pending_ac_gone, self);
-		}
-
-		g_object_unref (subject);
+	_LOGI (LOGD_DEVICE, "auto-activating connection '%s'",
+	       nm_settings_connection_get_id (best_connection));
+	subject = nm_auth_subject_new_internal ();
+	ac = nm_manager_activate_connection (priv->manager,
+	                                     best_connection,
+	                                     NULL,
+	                                     specific_object,
+	                                     device,
+	                                     subject,
+	                                     NM_ACTIVATION_TYPE_MANAGED,
+	                                     &error);
+	if (!ac) {
+		_LOGI (LOGD_DEVICE, "connection '%s' auto-activation failed: (%d) %s",
+		       nm_settings_connection_get_id (best_connection),
+		       error->code,
+		       error->message);
+		g_error_free (error);
+		nm_settings_connection_autoconnect_blocked_reason_set (best_connection,
+		                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED);
+		schedule_activate_check (self, device);
+		return;
 	}
+
+	/* Subscribe to AC state-changed signal to detect when the
+	 * activation fails in early stages without changing device
+	 * state.
+	 */
+	if (nm_g_hash_table_add (priv->pending_active_connections, ac)) {
+		g_signal_connect (ac, NM_ACTIVE_CONNECTION_STATE_CHANGED,
+		                  G_CALLBACK (pending_ac_state_changed), g_object_ref (self));
+		g_object_weak_ref (G_OBJECT (ac), (GWeakNotify) pending_ac_gone, self);
+	}
+
+	g_object_unref (subject);
 }
 
 static gboolean
@@ -1465,34 +1467,6 @@ reset_autoconnect_for_failed_secrets (NMPolicy *self)
 }
 
 static void
-block_autoconnect_for_device (NMPolicy *self, NMDevice *device)
-{
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	gs_free NMSettingsConnection **connections = NULL;
-	guint i;
-
-	_LOGD (LOGD_DEVICE, "blocking autoconnect for all connections on %s",
-	       nm_device_get_iface (device));
-
-	/* NMDevice keeps its own autoconnect-able-ness state; we only need to
-	 * explicitly block connections for software devices, where the NMDevice
-	 * might be destroyed and recreated later.
-	 */
-	if (!nm_device_is_software (device))
-		return;
-
-	connections = nm_settings_get_connections_sorted (priv->settings, NULL);
-	for (i = 0; connections[i]; i++) {
-		NMSettingsConnection *connection = connections[i];
-
-		if (nm_device_check_connection_compatible (device, NM_CONNECTION (connection))) {
-			nm_settings_connection_autoconnect_blocked_reason_set (connection,
-			                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST);
-		}
-	}
-}
-
-static void
 sleeping_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
@@ -1515,9 +1489,6 @@ schedule_activate_check (NMPolicy *self, NMDevice *device)
 	const GSList *active_connections, *iter;
 
 	if (nm_manager_get_state (priv->manager) == NM_STATE_ASLEEP)
-		return;
-
-	if (!nm_device_get_enabled (device))
 		return;
 
 	if (!nm_device_autoconnect_allowed (device))
@@ -1845,17 +1816,12 @@ device_state_changed (NMDevice *device,
 		break;
 	case NM_DEVICE_STATE_DEACTIVATING:
 		if (nm_device_state_reason_check (reason) == NM_DEVICE_STATE_REASON_USER_REQUESTED) {
-			if (!nm_device_get_autoconnect (device)) {
-				/* The device was disconnected; block all connections on it */
-				block_autoconnect_for_device (self, device);
-			} else {
-				if (connection) {
-					/* The connection was deactivated, so block just this connection */
-					_LOGD (LOGD_DEVICE, "blocking autoconnect of connection '%s' by user request",
-					       nm_settings_connection_get_id (connection));
-					nm_settings_connection_autoconnect_blocked_reason_set (connection,
-					                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST);
-				}
+			if (connection) {
+				/* The connection was deactivated, so block just this connection */
+				_LOGD (LOGD_DEVICE, "blocking autoconnect of connection '%s' by user request",
+				       nm_settings_connection_get_id (connection));
+				nm_settings_connection_autoconnect_blocked_reason_set (connection,
+				                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST);
 			}
 		}
 		ip6_remove_device_prefix_delegations (self, device);
@@ -1999,8 +1965,7 @@ device_autoconnect_changed (NMDevice *device,
 	NMPolicyPrivate *priv = user_data;
 	NMPolicy *self = _PRIV_TO_SELF (priv);
 
-	if (nm_device_autoconnect_allowed (device))
-		schedule_activate_check (self, device);
+	schedule_activate_check (self, device);
 }
 
 static void
