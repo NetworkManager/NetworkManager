@@ -216,6 +216,7 @@ void nm_ip4_config_add_nameserver (NMIP4Config *self, guint32 nameserver);
 void nm_ip4_config_del_nameserver (NMIP4Config *self, guint i);
 guint nm_ip4_config_get_num_nameservers (const NMIP4Config *self);
 guint32 nm_ip4_config_get_nameserver (const NMIP4Config *self, guint i);
+const in_addr_t *_nm_ip4_config_get_nameserver (const NMIP4Config *self, guint i);
 
 void nm_ip4_config_reset_domains (NMIP4Config *self);
 void nm_ip4_config_add_domain (NMIP4Config *self, const char *domain);
@@ -300,15 +301,86 @@ gboolean nm_ip4_config_equal (const NMIP4Config *a, const NMIP4Config *b);
 #define NM_IP_CONFIG_CAST(config) ((NMIPConfig *) (config))
 #endif
 
+static inline gboolean
+NM_IS_IP_CONFIG (gconstpointer config)
+{
+	return NM_IS_IP4_CONFIG (config) || NM_IS_IP6_CONFIG (config);
+}
+
 static inline int
-nm_ip_config_get_dns_priority (const NMIPConfig *config)
+nm_ip_config_get_addr_family (const NMIPConfig *config)
 {
 	if (NM_IS_IP4_CONFIG (config))
-		return nm_ip4_config_get_dns_priority ((const NMIP4Config *) config);
-	else if (NM_IS_IP6_CONFIG (config))
-		return nm_ip6_config_get_dns_priority ((const NMIP6Config *) config);
-	else
-		g_return_val_if_reached (0);
+		return AF_INET;
+	if (NM_IS_IP6_CONFIG (config))
+		return AF_INET6;
+	g_return_val_if_reached (AF_UNSPEC);
+}
+
+#define _NM_IP_CONFIG_DISPATCH(config, v4_func, v6_func, dflt, ...) \
+	G_STMT_START { \
+		gconstpointer _config = (config); \
+		\
+		if (NM_IS_IP4_CONFIG (_config)) { \
+			return v4_func ((NMIP4Config *) _config, ##__VA_ARGS__); \
+		} else { \
+			nm_assert (NM_IS_IP6_CONFIG (_config)); \
+			return v6_func ((NMIP6Config *) _config, ##__VA_ARGS__); \
+		} \
+	} G_STMT_END
+
+static inline int
+nm_ip_config_get_dns_priority (const NMIPConfig *self)
+{
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_dns_priority, nm_ip6_config_get_dns_priority, 0);
+}
+
+static inline guint
+nm_ip_config_get_num_nameservers (const NMIPConfig *self)
+{
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_num_nameservers, nm_ip6_config_get_num_nameservers, 0);
+}
+
+static inline gconstpointer
+nm_ip_config_get_nameserver (const NMIPConfig *self, guint i)
+{
+	_NM_IP_CONFIG_DISPATCH (self, _nm_ip4_config_get_nameserver, nm_ip6_config_get_nameserver, 0, i);
+}
+
+static inline guint
+nm_ip_config_get_num_domains (const NMIPConfig *self)
+{
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_num_domains, nm_ip6_config_get_num_domains, 0);
+}
+
+static inline const char *
+nm_ip_config_get_domain (const NMIPConfig *self, guint i)
+{
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_domain, nm_ip6_config_get_domain, NULL, i);
+}
+
+static inline guint
+nm_ip_config_get_num_searches (const NMIPConfig *self)
+{
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_num_searches, nm_ip6_config_get_num_searches, 0);
+}
+
+static inline const char *
+nm_ip_config_get_search (const NMIPConfig *self, guint i)
+{
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_search, nm_ip6_config_get_search, NULL, i);
+}
+
+static inline guint
+nm_ip_config_get_num_dns_options (const NMIPConfig *self)
+{
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_num_dns_options, nm_ip6_config_get_num_dns_options, 0);
+}
+
+static inline const char *
+nm_ip_config_get_dns_option (const NMIPConfig *self, guint i)
+{
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_dns_option, nm_ip6_config_get_dns_option, NULL, i);
 }
 
 #endif /* __NETWORKMANAGER_IP4_CONFIG_H__ */
