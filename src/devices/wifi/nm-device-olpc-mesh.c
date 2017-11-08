@@ -107,12 +107,8 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 }
 
 static gboolean
-can_auto_connect (NMDevice *device,
-                  NMConnection *connection,
-                  char **specific_object)
+get_autoconnect_allowed (NMDevice *device)
 {
-	nm_assert (!specific_object || !*specific_object);
-
 	return FALSE;
 }
 
@@ -517,7 +513,7 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 	object_class->dispose = dispose;
 
 	parent_class->check_connection_compatible = check_connection_compatible;
-	parent_class->can_auto_connect = can_auto_connect;
+	parent_class->get_autoconnect_allowed = get_autoconnect_allowed;
 	parent_class->complete_connection = complete_connection;
 	parent_class->is_available = is_available;
 	parent_class->act_stage1_prepare = act_stage1_prepare;

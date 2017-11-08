@@ -491,8 +491,7 @@ modem_prepare_result (NMModem *modem,
 			 * the device to be auto-activated anymore, which would risk locking
 			 * the SIM if the incorrect PIN continues to be used.
 			 */
-			_LOGI (LOGD_MB, "disabling autoconnect due to failed SIM PIN");
-			nm_device_set_autoconnect_intern (device, FALSE);
+			nm_device_autoconnect_blocked_set (device, NM_DEVICE_AUTOCONNECT_BLOCKED_WRONG_PIN);
 		}
 
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
