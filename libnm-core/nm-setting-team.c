@@ -83,22 +83,26 @@ enum {
 
 /* Keep aligned with team properties enum */
 static const _NMUtilsTeamPropertyKeys _prop_to_keys[LAST_PROP] = {
-	[PROP_0] =                           { NULL, NULL, NULL },
-	[PROP_CONFIG] =                      { NULL, NULL, NULL },
-	[PROP_NOTIFY_PEERS_COUNT] =          { "notify_peers", "count", NULL },
-	[PROP_NOTIFY_PEERS_INTERVAL] =       { "notify_peers", "interval", NULL },
-	[PROP_MCAST_REJOIN_COUNT] =          { "mcast_rejoin", "count", NULL },
-	[PROP_MCAST_REJOIN_INTERVAL] =       { "mcast_rejoin", "interval", NULL },
-	[PROP_RUNNER] =                      { "runner", "name", NULL },
-	[PROP_RUNNER_HWADDR_POLICY] =        { "runner", "hwaddr_policy", NULL },
-	[PROP_RUNNER_TX_HASH] =              { "runner", "tx_hash", NULL },
-	[PROP_RUNNER_TX_BALANCER] =          { "runner", "tx_balancer", "name" },
-	[PROP_RUNNER_TX_BALANCER_INTERVAL] = { "runner", "tx_balancer", "interval" },
-	[PROP_RUNNER_ACTIVE] =               { "runner", "active", NULL },
-	[PROP_RUNNER_FAST_RATE] =            { "runner", "fast_rate", NULL },
-	[PROP_RUNNER_SYS_PRIO] =             { "runner", "sys_prio", NULL },
-	[PROP_RUNNER_MIN_PORTS] =            { "runner", "min_ports", NULL },
-	[PROP_RUNNER_AGG_SELECT_POLICY] =    { "runner", "agg_select_policy", NULL },
+	[PROP_0] =                           { NULL, NULL, NULL, 0 },
+	[PROP_CONFIG] =                      { NULL, NULL, NULL, 0 },
+	[PROP_NOTIFY_PEERS_COUNT] =          { "notify_peers", "count", NULL, 0 },
+	[PROP_NOTIFY_PEERS_INTERVAL] =       { "notify_peers", "interval", NULL, 0 },
+	[PROP_MCAST_REJOIN_COUNT] =          { "mcast_rejoin", "count", NULL, 0 },
+	[PROP_MCAST_REJOIN_INTERVAL] =       { "mcast_rejoin", "interval", NULL, 0 },
+	[PROP_RUNNER] =                      { "runner", "name", NULL,
+	                                       {.default_str = NM_SETTING_TEAM_RUNNER_DEFAULT} },
+	[PROP_RUNNER_HWADDR_POLICY] =        { "runner", "hwaddr_policy", NULL, 0 },
+	[PROP_RUNNER_TX_HASH] =              { "runner", "tx_hash", NULL, 0 },
+	[PROP_RUNNER_TX_BALANCER] =          { "runner", "tx_balancer", "name", 0 },
+	[PROP_RUNNER_TX_BALANCER_INTERVAL] = { "runner", "tx_balancer", "interval",
+	                                       NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT },
+	[PROP_RUNNER_ACTIVE] =               { "runner", "active", NULL, 0 },
+	[PROP_RUNNER_FAST_RATE] =            { "runner", "fast_rate", NULL, 0 },
+	[PROP_RUNNER_SYS_PRIO] =             { "runner", "sys_prio", NULL,
+	                                       NM_SETTING_TEAM_RUNNER_SYS_PRIO_DEFAULT },
+	[PROP_RUNNER_MIN_PORTS] =            { "runner", "min_ports", NULL, 0 },
+	[PROP_RUNNER_AGG_SELECT_POLICY] =    { "runner", "agg_select_policy", NULL,
+	                                       {.default_str = NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_DEFAULT} },
 };
 
 /**
@@ -540,6 +544,8 @@ nm_setting_team_init (NMSettingTeam *setting)
 	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
 
 	priv->runner = g_strdup (NM_SETTING_TEAM_RUNNER_ROUNDROBIN);
+	priv->runner_sys_prio = NM_SETTING_TEAM_RUNNER_SYS_PRIO_DEFAULT;
+	priv->runner_tx_balancer_interval = NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT;
 }
 
 static void
@@ -559,7 +565,7 @@ finalize (GObject *object)
 }
 
 
-#define JSON_TO_VAL(typ, id)   _nm_utils_json_extract_##typ (priv->config, _prop_to_keys[id])
+#define JSON_TO_VAL(typ, id)   _nm_utils_json_extract_##typ (priv->config, _prop_to_keys[id], FALSE)
 
 static void
 _align_team_properties (NMSettingTeam *setting)
@@ -651,7 +657,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_RUNNER:
 		g_free (priv->runner);
 		priv->runner = g_value_dup_string (value);
-		if (priv->runner && !nm_streq (priv->runner, "roundrobin"))
+		if (   priv->runner
+		    && !nm_streq (priv->runner,
+		                  NM_SETTING_TEAM_RUNNER_DEFAULT))
 			align_value = value;
 		align_config = TRUE;
 		break;
@@ -687,7 +695,8 @@ set_property (GObject *object, guint prop_id,
 		if (priv->runner_tx_balancer_interval == g_value_get_int (value))
 			break;
 		priv->runner_tx_balancer_interval = g_value_get_int (value);
-		if (priv->runner_tx_balancer_interval)
+		if (priv->runner_tx_balancer_interval !=
+		    NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT)
 			align_value = value;
 		align_config = TRUE;
 		break;
@@ -711,7 +720,7 @@ set_property (GObject *object, guint prop_id,
 		if (priv->runner_sys_prio == g_value_get_int (value))
 			break;
 		priv->runner_sys_prio = g_value_get_int (value);
-		if (priv->runner_sys_prio)
+		if (priv->runner_sys_prio != NM_SETTING_TEAM_RUNNER_SYS_PRIO_DEFAULT)
 			align_value = value;
 		align_config = TRUE;
 		break;

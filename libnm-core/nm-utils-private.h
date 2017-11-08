@@ -85,18 +85,24 @@ typedef struct {
 	const char *key1;
 	const char *key2;
 	const char *key3;
+	union {
+		int default_int;
+		gboolean default_bool;
+		const char *default_str;
+	};
 } _NMUtilsTeamPropertyKeys;
 
 static inline int
 _nm_utils_json_extract_int (char *conf,
-                            _NMUtilsTeamPropertyKeys key)
+                            _NMUtilsTeamPropertyKeys key,
+                            gboolean is_port)
 {
 	gs_free GValue *t_value = NULL;
 	int ret;
 
-	t_value = _nm_utils_team_config_get (conf, key.key1, key.key2, key.key3, FALSE);
+	t_value = _nm_utils_team_config_get (conf, key.key1, key.key2, key.key3, is_port);
 	if (!t_value)
-		return 0;
+		return key.default_int;
 
 	ret = g_value_get_int (t_value);
 	g_value_unset (t_value);
@@ -105,14 +111,15 @@ _nm_utils_json_extract_int (char *conf,
 
 static inline gboolean
 _nm_utils_json_extract_boolean (char *conf,
-                                _NMUtilsTeamPropertyKeys key)
+                                _NMUtilsTeamPropertyKeys key,
+                                gboolean is_port)
 {
 	gs_free GValue *t_value = NULL;
 	gboolean ret;
 
-	t_value = _nm_utils_team_config_get (conf, key.key1, key.key2, key.key3, FALSE);
+	t_value = _nm_utils_team_config_get (conf, key.key1, key.key2, key.key3, is_port);
 	if (!t_value)
-		return FALSE;
+		return key.default_bool;
 
 	ret = g_value_get_boolean (t_value);
 	g_value_unset (t_value);
@@ -121,14 +128,15 @@ _nm_utils_json_extract_boolean (char *conf,
 
 static inline char *
 _nm_utils_json_extract_string (char *conf,
-                               _NMUtilsTeamPropertyKeys key)
+                               _NMUtilsTeamPropertyKeys key,
+                               gboolean is_port)
 {
 	gs_free GValue *t_value = NULL;
 	char *ret;
 
-	t_value = _nm_utils_team_config_get (conf, key.key1, key.key2, key.key3, FALSE);
+	t_value = _nm_utils_team_config_get (conf, key.key1, key.key2, key.key3, is_port);
 	if (!t_value)
-		return NULL;
+		return g_strdup (key.default_str);
 
 	ret = g_value_dup_string (t_value);
 	g_value_unset (t_value);
@@ -137,12 +145,13 @@ _nm_utils_json_extract_string (char *conf,
 
 static inline char **
 _nm_utils_json_extract_strv (char *conf,
-                             _NMUtilsTeamPropertyKeys key)
+                             _NMUtilsTeamPropertyKeys key,
+                             gboolean is_port)
 {
 	gs_free GValue *t_value = NULL;
 	char **ret;
 
-	t_value = _nm_utils_team_config_get (conf, key.key1, key.key2, key.key3, FALSE);
+	t_value = _nm_utils_team_config_get (conf, key.key1, key.key2, key.key3, is_port);
 	if (!t_value)
 		return NULL;
 

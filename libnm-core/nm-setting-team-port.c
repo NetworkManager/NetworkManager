@@ -68,13 +68,13 @@ enum {
 
 /* Keep aligned with team-port properties enum */
 static const _NMUtilsTeamPropertyKeys _prop_to_keys[LAST_PROP] = {
-	[PROP_0] =         { NULL, NULL, NULL },
-	[PROP_CONFIG] =    { NULL, NULL, NULL },
-	[PROP_QUEUE_ID] =  { "queue_id", NULL, NULL },
-	[PROP_PRIO] =      { "prio", NULL, NULL },
-	[PROP_STICKY] =    { "sticky", NULL, NULL },
-	[PROP_LACP_PRIO] = { "lacp_prio", NULL, NULL },
-	[PROP_LACP_KEY] =  { "lacp_key", NULL, NULL },
+	[PROP_0] =         { NULL, NULL, NULL, 0 },
+	[PROP_CONFIG] =    { NULL, NULL, NULL, 0 },
+	[PROP_QUEUE_ID] =  { "queue_id", NULL, NULL, NM_SETTING_TEAM_PORT_QUEUE_ID_DEFAULT },
+	[PROP_PRIO] =      { "prio", NULL, NULL, 0 },
+	[PROP_STICKY] =    { "sticky", NULL, NULL, 0 },
+	[PROP_LACP_PRIO] = { "lacp_prio", NULL, NULL, NM_SETTING_TEAM_PORT_LACP_PRIO_DEFAULT },
+	[PROP_LACP_KEY] =  { "lacp_key", NULL, NULL, 0 },
 };
 
 
@@ -276,11 +276,11 @@ nm_setting_team_port_init (NMSettingTeamPort *setting)
 {
 	NMSettingTeamPortPrivate *priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (setting);
 
-	priv->queue_id = -1;
-	priv->lacp_prio = 255;
+	priv->queue_id = NM_SETTING_TEAM_PORT_QUEUE_ID_DEFAULT;
+	priv->lacp_prio = NM_SETTING_TEAM_PORT_LACP_PRIO_DEFAULT;
 }
 
-#define JSON_TO_VAL(typ, id)   _nm_utils_json_extract_##typ (priv->config, _prop_to_keys[id])
+#define JSON_TO_VAL(typ, id)   _nm_utils_json_extract_##typ (priv->config, _prop_to_keys[id], TRUE)
 
 static void
 set_property (GObject *object, guint prop_id,
@@ -304,7 +304,7 @@ set_property (GObject *object, guint prop_id,
 		if (priv->queue_id == g_value_get_int (value))
 			break;
 		priv->queue_id = g_value_get_int (value);
-		if (priv->queue_id > -1)
+		if (priv->queue_id != NM_SETTING_TEAM_PORT_QUEUE_ID_DEFAULT)
 			align_value = value;
 		align_config = TRUE;
 		break;
@@ -329,7 +329,7 @@ set_property (GObject *object, guint prop_id,
 			break;
 		priv->lacp_prio = g_value_get_int (value);
 		/* from libteam sources: lacp_prio default value is 0xff */
-		if (priv->lacp_prio != 255)
+		if (priv->lacp_prio != NM_SETTING_TEAM_PORT_LACP_PRIO_DEFAULT)
 			align_value = value;
 		align_config = TRUE;
 		break;
@@ -337,7 +337,7 @@ set_property (GObject *object, guint prop_id,
 		if (priv->lacp_key == g_value_get_int (value))
 			break;
 		priv->lacp_key = g_value_get_int (value);
-		if (priv->lacp_key > 0)
+		if (priv->lacp_key)
 			align_value = value;
 		align_config = TRUE;
 		break;
