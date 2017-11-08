@@ -7001,7 +7001,7 @@ nm_device_copy_ip6_dns_config (NMDevice *self, NMDevice *from_device)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMIP6Config *from_config = NULL;
-	int i;
+	guint i, len;
 
 	if (priv->ac_ip6_config) {
 		nm_ip6_config_reset_nameservers (priv->ac_ip6_config);
@@ -7014,14 +7014,16 @@ nm_device_copy_ip6_dns_config (NMDevice *self, NMDevice *from_device)
 	if (!from_config)
 		return;
 
-	for (i = 0; i < nm_ip6_config_get_num_nameservers (from_config); i++) {
+	len = nm_ip6_config_get_num_nameservers (from_config);
+	for (i = 0; i < len; i++) {
 		nm_ip6_config_add_nameserver (priv->ac_ip6_config,
 		                              nm_ip6_config_get_nameserver (from_config, i));
 	}
 
-	for (i = 0; i < nm_ip6_config_get_num_searches (from_config); i++) {
+	len = nm_ip6_config_get_num_searches (from_config);
+	for (i = 0; i < len; i++) {
 		nm_ip6_config_add_search (priv->ac_ip6_config,
-		                              nm_ip6_config_get_search (from_config, i));
+		                          nm_ip6_config_get_search (from_config, i));
 	}
 
 	if (!ip6_config_merge_and_apply (self, TRUE))
