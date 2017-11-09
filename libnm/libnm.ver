@@ -1221,3 +1221,18 @@ global:
 	nm_setting_wireless_security_pmf_get_type;
 	nm_setting_wireless_security_wps_method_get_type;
 } libnm_1_8_0;
+
+libnm_1_12_0 {
+global:
+	nm_checkpoint_get_created;
+	nm_checkpoint_get_devices;
+	nm_checkpoint_get_rollback_timeout;
+	nm_checkpoint_get_type;
+	nm_client_checkpoint_create_async;
+	nm_client_checkpoint_create_finish;
+	nm_client_checkpoint_destroy_async;
+	nm_client_checkpoint_destroy_finish;
+	nm_client_checkpoint_rollback_async;
+	nm_client_checkpoint_rollback_finish;
+	nm_client_get_checkpoints;
+} libnm_1_10_0;

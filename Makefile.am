@@ -737,6 +737,7 @@ libnm_lib_h_pub_real = \
 	libnm/NetworkManager.h \
 	libnm/nm-access-point.h \
 	libnm/nm-active-connection.h \
+	libnm/nm-checkpoint.h \
 	libnm/nm-client.h \
 	libnm/nm-device-adsl.h \
 	libnm/nm-device-bond.h \
@@ -792,6 +793,7 @@ libnm_lib_h_priv = \
 libnm_lib_c_real = \
 	libnm/nm-access-point.c \
 	libnm/nm-active-connection.c \
+	libnm/nm-checkpoint.c \
 	libnm/nm-client.c \
 	libnm/nm-dbus-helpers.c \
 	libnm/nm-device-adsl.c \

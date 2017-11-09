@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include "nm-utils.h"
+#include "nm-checkpoint.h"
 #include "nm-common-macros.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
@@ -61,6 +62,8 @@ typedef struct {
 	GPtrArray *devices;
 	GPtrArray *all_devices;
 	GPtrArray *active_connections;
+	GPtrArray *checkpoints;
+	GSList *added_checkpoints;
 	NMConnectivityState connectivity;
 	NMActiveConnection *primary_connection;
 	NMActiveConnection *activating_connection;
@@ -107,6 +110,7 @@ enum {
 	PROP_PRIMARY_CONNECTION,
 	PROP_ACTIVATING_CONNECTION,
 	PROP_DEVICES,
+	PROP_CHECKPOINTS,
 	PROP_METERED,
 	PROP_ALL_DEVICES,
 
@@ -120,6 +124,8 @@ enum {
 	ANY_DEVICE_REMOVED,
 	ACTIVE_CONNECTION_ADDED,
 	ACTIVE_CONNECTION_REMOVED,
+	CHECKPOINT_ADDED,
+	CHECKPOINT_REMOVED,
 	PERMISSION_CHANGED,
 
 	LAST_SIGNAL
@@ -128,6 +134,53 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 /*****************************************************************************/
+
+typedef struct {
+	NMManager *manager;
+	GSimpleAsyncResult *simple;
+	char *path;
+} CheckpointInfo;
+
+static CheckpointInfo *
+find_checkpoint_info (NMManager *manager, const char *path)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	CheckpointInfo *info;
+	GSList *iter;
+
+	for (iter = priv->added_checkpoints; iter; iter = g_slist_next (iter)) {
+		info = iter->data;
+		if (nm_streq (path, info->path))
+			return info;
+	}
+
+	return NULL;
+}
+
+static void
+checkpoint_info_complete (NMManager *self,
+                          CheckpointInfo *info,
+                          NMCheckpoint *checkpoint,
+                          GError *error)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+
+	g_return_if_fail (info);
+
+	if (checkpoint) {
+		g_simple_async_result_set_op_res_gpointer (info->simple,
+		                                           g_object_ref (checkpoint),
+		                                           g_object_unref);
+	} else
+		g_simple_async_result_set_from_error (info->simple, error);
+	g_simple_async_result_complete (info->simple);
+
+	g_object_unref (info->simple);
+	priv->added_checkpoints = g_slist_remove (priv->added_checkpoints, info);
+
+	g_free (info->path);
+	g_slice_free (CheckpointInfo, info);
+}
 
 static void
 nm_manager_init (NMManager *manager)
@@ -189,6 +242,7 @@ init_dbus (NMObject *object)
 		{ NM_MANAGER_PRIMARY_CONNECTION,        &priv->primary_connection, NULL, NM_TYPE_ACTIVE_CONNECTION },
 		{ NM_MANAGER_ACTIVATING_CONNECTION,     &priv->activating_connection, NULL, NM_TYPE_ACTIVE_CONNECTION },
 		{ NM_MANAGER_DEVICES,                   &priv->devices, NULL, NM_TYPE_DEVICE, "device" },
+		{ NM_MANAGER_CHECKPOINTS,               &priv->checkpoints, NULL, NM_TYPE_CHECKPOINT, "checkpoint" },
 		{ NM_MANAGER_METERED,                   &priv->metered },
 		{ NM_MANAGER_ALL_DEVICES,               &priv->all_devices, NULL, NM_TYPE_DEVICE, "any-device" },
 		{ NULL },
@@ -204,6 +258,23 @@ init_dbus (NMObject *object)
 	/* Permissions */
 	g_signal_connect_object (priv->proxy, "check-permissions",
 				 G_CALLBACK (manager_recheck_permissions), object, 0);
+}
+
+static void
+object_creation_failed (NMObject *object, const char *failed_path)
+{
+	NMManager *self = NM_MANAGER (object);
+	CheckpointInfo *info;
+	GError *add_error;
+
+	info = find_checkpoint_info (self, failed_path);
+	if (info) {
+		add_error = g_error_new_literal (NM_CLIENT_ERROR,
+		                                 NM_CLIENT_ERROR_OBJECT_CREATION_FAILED,
+		                                 _("Checkpoint was removed before it was initialized"));
+		checkpoint_info_complete (self, info, NULL, add_error);
+		g_error_free (add_error);
+	}
 }
 
 static NMClientPermission
@@ -1109,6 +1180,21 @@ active_connection_removed (NMManager *self, NMActiveConnection *ac)
 	recheck_pending_activations (self);
 }
 
+static void
+checkpoint_added (NMManager *manager, NMCheckpoint *checkpoint)
+{
+	CheckpointInfo *info;
+
+	info = find_checkpoint_info (manager, nm_object_get_path (NM_OBJECT (checkpoint)));
+	if (info)
+		checkpoint_info_complete (manager, info, checkpoint, NULL);
+}
+
+static void
+checkpoint_removed (NMManager *manager, NMCheckpoint *checkpoint)
+{
+}
+
 gboolean
 nm_manager_deactivate_connection (NMManager *manager,
                                   NMActiveConnection *active,
@@ -1204,6 +1290,226 @@ free_active_connections (NMManager *manager)
 		g_object_run_dispose (G_OBJECT (priv->active_connections->pdata[i]));
 	g_ptr_array_unref (priv->active_connections);
 	priv->active_connections = NULL;
+}
+
+/*****************************************************************************/
+
+static const char **
+get_device_paths (const GPtrArray *devices)
+{
+	const char **array;
+	guint i;
+
+	array = g_new (const char *, devices->len + 1);
+	for (i = 0; i < devices->len; i++)
+		array[i] = nm_object_get_path (NM_OBJECT (devices->pdata[i]));
+
+	array[i] = NULL;
+
+	return array;
+}
+
+const GPtrArray *
+nm_manager_get_checkpoints (NMManager *manager)
+{
+	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
+
+	return NM_MANAGER_GET_PRIVATE (manager)->checkpoints;
+}
+
+static void
+checkpoint_created_cb (GObject *object,
+                       GAsyncResult *result,
+                       gpointer user_data)
+{
+	CheckpointInfo *info = user_data;
+	GError *error = NULL;
+
+	nmdbus_manager_call_checkpoint_create_finish (NMDBUS_MANAGER (object),
+	                                              &info->path, result, &error);
+	if (error) {
+		g_dbus_error_strip_remote_error (error);
+		checkpoint_info_complete (info->manager, info, NULL, error);
+		g_clear_error (&error);
+	}
+}
+
+void
+nm_manager_checkpoint_create_async (NMManager *manager,
+                                    const GPtrArray *devices,
+                                    guint32 rollback_timeout,
+                                    NMCheckpointCreateFlags flags,
+                                    GCancellable *cancellable,
+                                    GAsyncReadyCallback callback,
+                                    gpointer user_data)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	gs_free const char **paths = NULL;
+	CheckpointInfo *info;
+
+	g_return_if_fail (NM_IS_MANAGER (manager));
+
+	info = g_slice_new0 (CheckpointInfo);
+	info->manager = manager;
+	info->simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
+	                                          nm_manager_checkpoint_create_async);
+	paths = get_device_paths (devices);
+	nmdbus_manager_call_checkpoint_create (NM_MANAGER_GET_PRIVATE (manager)->proxy,
+	                                       paths,
+	                                       rollback_timeout,
+	                                       flags,
+	                                       cancellable,
+	                                       checkpoint_created_cb,
+	                                       info);
+	priv->added_checkpoints = g_slist_append (priv->added_checkpoints, info);
+}
+
+NMCheckpoint *
+nm_manager_checkpoint_create_finish (NMManager *manager,
+                                     GAsyncResult *result,
+                                     GError **error)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
+	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error))
+		return NULL;
+	else
+		return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
+}
+
+static void
+checkpoint_destroy_cb (GObject *object,
+                       GAsyncResult *result,
+                       gpointer user_data)
+{
+	GSimpleAsyncResult *simple = user_data;
+	GError *error = NULL;
+
+	if (nmdbus_manager_call_checkpoint_destroy_finish (NMDBUS_MANAGER (object),
+	                                                   result, &error))
+		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+	else {
+		g_dbus_error_strip_remote_error (error);
+		g_simple_async_result_take_error (simple, error);
+	}
+	g_simple_async_result_complete (simple);
+	g_object_unref (simple);
+}
+
+void
+nm_manager_checkpoint_destroy_async (NMManager *manager,
+                                     NMCheckpoint *checkpoint,
+                                     GCancellable *cancellable,
+                                     GAsyncReadyCallback callback,
+                                     gpointer user_data)
+{
+	const char *path;
+	GSimpleAsyncResult *simple;
+
+	g_return_if_fail (NM_IS_MANAGER (manager));
+	g_return_if_fail (NM_IS_CHECKPOINT (checkpoint));
+
+	simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
+	                                    nm_manager_checkpoint_destroy_async);
+
+	path = nm_object_get_path (NM_OBJECT (checkpoint));
+	nmdbus_manager_call_checkpoint_destroy (NM_MANAGER_GET_PRIVATE (manager)->proxy,
+	                                        path,
+	                                        cancellable,
+	                                        checkpoint_destroy_cb, simple);
+}
+
+gboolean
+nm_manager_checkpoint_destroy_finish (NMManager *manager,
+                                      GAsyncResult *result,
+                                      GError **error)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (manager),
+	                                                      nm_manager_checkpoint_destroy_async),
+	                      FALSE);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error))
+		return FALSE;
+	else
+		return g_simple_async_result_get_op_res_gboolean (simple);
+}
+
+static void
+checkpoint_rollback_cb (GObject *object,
+                        GAsyncResult *result,
+                        gpointer user_data)
+{
+	GSimpleAsyncResult *simple = user_data;
+	GError *error = NULL;
+	GVariant *variant = NULL;
+	GVariantIter iter;
+	GHashTable *hash;
+	const char *path;
+	guint r;
+
+	if (nmdbus_manager_call_checkpoint_rollback_finish (NMDBUS_MANAGER (object),
+	                                                    &variant,
+	                                                    result,
+	                                                    &error)) {
+		hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+		g_variant_iter_init (&iter, variant);
+		while (g_variant_iter_next (&iter, "{&su}", &path, &r))
+			g_hash_table_insert (hash, g_strdup (path), GUINT_TO_POINTER (r));
+		g_simple_async_result_set_op_res_gpointer (simple, hash, (GDestroyNotify) g_hash_table_unref);
+	} else {
+		g_dbus_error_strip_remote_error (error);
+		g_simple_async_result_take_error (simple, error);
+	}
+	g_simple_async_result_complete (simple);
+	g_object_unref (simple);
+}
+
+void
+nm_manager_checkpoint_rollback_async (NMManager *manager,
+                                      NMCheckpoint *checkpoint,
+                                      GCancellable *cancellable,
+                                      GAsyncReadyCallback callback,
+                                      gpointer user_data)
+{
+	const char *path;
+	GSimpleAsyncResult *simple;
+
+	g_return_if_fail (NM_IS_MANAGER (manager));
+	g_return_if_fail (NM_IS_CHECKPOINT (checkpoint));
+
+	simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
+	                                    nm_manager_checkpoint_rollback_async);
+
+	path = nm_object_get_path (NM_OBJECT (checkpoint));
+	nmdbus_manager_call_checkpoint_rollback (NM_MANAGER_GET_PRIVATE (manager)->proxy,
+	                                         path,
+	                                         cancellable,
+	                                         checkpoint_rollback_cb, simple);
+}
+
+GHashTable *
+nm_manager_checkpoint_rollback_finish (NMManager *manager,
+                                       GAsyncResult *result,
+                                       GError **error)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (manager),
+	                                                      nm_manager_checkpoint_rollback_async),
+	                      NULL);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error))
+		return NULL;
+	else
+		return g_simple_async_result_get_op_res_gpointer (simple);
 }
 
 /*****************************************************************************/
@@ -1472,6 +1778,9 @@ get_property (GObject *object,
 	case PROP_DEVICES:
 		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_manager_get_devices (self)));
 		break;
+	case PROP_CHECKPOINTS:
+		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_manager_get_checkpoints (self)));
+		break;
 	case PROP_METERED:
 		g_value_set_uint (value, priv->metered);
 		break;
@@ -1500,11 +1809,14 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	object_class->finalize = finalize;
 
 	nm_object_class->init_dbus = init_dbus;
+	nm_object_class->object_creation_failed = object_creation_failed;
 
 	manager_class->device_added = device_added;
 	manager_class->device_removed = device_removed;
 	manager_class->active_connection_added = active_connection_added;
 	manager_class->active_connection_removed = active_connection_removed;
+	manager_class->checkpoint_added = checkpoint_added;
+	manager_class->checkpoint_removed = checkpoint_removed;
 
 	/* properties */
 
@@ -1612,6 +1924,12 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		                     G_TYPE_PTR_ARRAY,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_CHECKPOINTS,
+		 g_param_spec_boxed (NM_MANAGER_CHECKPOINTS, "", "",
+		                     G_TYPE_PTR_ARRAY,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 	/**
 	 * NMManager:metered:
 	 *
@@ -1683,6 +2001,23 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1,
 		              G_TYPE_OBJECT);
+	signals[CHECKPOINT_ADDED] =
+		g_signal_new ("checkpoint-added",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMManagerClass, checkpoint_added),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 1,
+		              G_TYPE_OBJECT);
+	signals[CHECKPOINT_REMOVED] =
+		g_signal_new ("checkpoint-removed",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMManagerClass, checkpoint_removed),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 1,
+		              G_TYPE_OBJECT);
+
 	signals[PERMISSION_CHANGED] =
 		g_signal_new ("permission-changed",
 		              G_OBJECT_CLASS_TYPE (object_class),

@@ -27,7 +27,7 @@
 
 typedef struct _NMCheckpointManager NMCheckpointManager;
 
-NMCheckpointManager *nm_checkpoint_manager_new (NMManager *manager);
+NMCheckpointManager *nm_checkpoint_manager_new (NMManager *manager, GParamSpec *spec);
 void nm_checkpoint_manager_unref (NMCheckpointManager *self);
 
 NMCheckpoint *nm_checkpoint_manager_create (NMCheckpointManager *self,
@@ -46,5 +46,7 @@ gboolean nm_checkpoint_manager_rollback (NMCheckpointManager *self,
                                          const char *checkpoint_path,
                                          GVariant **results,
                                          GError **error);
+
+char **nm_checkpoint_manager_get_checkpoint_paths (NMCheckpointManager *self);
 
 #endif /* __NM_CHECKPOINT_MANAGER_H__ */

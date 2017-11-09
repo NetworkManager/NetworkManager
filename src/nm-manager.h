@@ -54,6 +54,7 @@
 #define NM_MANAGER_METERED "metered"
 #define NM_MANAGER_GLOBAL_DNS_CONFIGURATION "global-dns-configuration"
 #define NM_MANAGER_ALL_DEVICES "all-devices"
+#define NM_MANAGER_CHECKPOINTS "checkpoints"
 
 /* Not exported */
 #define NM_MANAGER_SLEEPING "sleeping"
@@ -95,7 +96,6 @@ void          nm_manager_write_device_state (NMManager *manager);
 /* Device handling */
 
 const GSList *      nm_manager_get_devices             (NMManager *manager);
-const char **       nm_manager_get_device_paths        (NMManager *self);
 
 NMDevice *          nm_manager_get_device_by_ifindex   (NMManager *manager,
                                                         int ifindex);

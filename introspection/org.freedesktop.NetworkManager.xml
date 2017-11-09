@@ -270,6 +270,13 @@
     <property name="AllDevices" type="ao" access="read"/>
 
     <!--
+        Checkpoints:
+
+        The list of active checkpoints.
+    -->
+    <property name="Checkpoints" type="ao" access="read"/>
+
+    <!--
         NetworkingEnabled:
 
         Indicates if overall networking is currently enabled or not. See the

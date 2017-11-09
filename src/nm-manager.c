@@ -220,6 +220,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMManager,
 	PROP_METERED,
 	PROP_GLOBAL_DNS_CONFIGURATION,
 	PROP_ALL_DEVICES,
+	PROP_CHECKPOINTS,
 
 	/* Not exported */
 	PROP_SLEEPING,
@@ -2587,28 +2588,6 @@ nm_manager_get_devices (NMManager *manager)
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
 
 	return NM_MANAGER_GET_PRIVATE (manager)->devices;
-}
-
-const char **
-nm_manager_get_device_paths (NMManager *self)
-{
-	const GSList *devices, *iter;
-	GPtrArray *paths;
-	const char *path;
-
-	g_return_val_if_fail (NM_IS_MANAGER (self), NULL);
-	devices = NM_MANAGER_GET_PRIVATE (self)->devices;
-	paths = g_ptr_array_new ();
-
-	for (iter = devices; iter; iter = g_slist_next (iter)) {
-		path = nm_exported_object_get_path (NM_EXPORTED_OBJECT (iter->data));
-		if (path)
-			g_ptr_array_add (paths, (gpointer) path);
-	}
-
-	g_ptr_array_add (paths, NULL);
-
-	return (const char **) g_ptr_array_free (paths, FALSE);
 }
 
 static NMDevice *
@@ -5731,7 +5710,7 @@ _checkpoint_mgr_get (NMManager *self, gboolean create_as_needed)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
 	if (G_UNLIKELY (!priv->checkpoint_mgr) && create_as_needed)
-		priv->checkpoint_mgr = nm_checkpoint_manager_new (self);
+		priv->checkpoint_mgr = nm_checkpoint_manager_new (self, obj_properties[PROP_CHECKPOINTS]);
 	return priv->checkpoint_mgr;
 }
 
@@ -6273,6 +6252,7 @@ get_property (GObject *object, guint prop_id,
 	const NMGlobalDnsConfig *dns_config;
 	const char *type;
 	NMConnectivity *connectivity;
+	char **strv;
 
 	switch (prop_id) {
 	case PROP_VERSION:
@@ -6358,6 +6338,12 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_ALL_DEVICES:
 		nm_utils_g_value_set_object_path_array (value, priv->devices, NULL, NULL);
+		break;
+	case PROP_CHECKPOINTS:
+		strv = NULL;
+		if (priv->checkpoint_mgr)
+			strv = nm_checkpoint_manager_get_checkpoint_paths (priv->checkpoint_mgr);
+		g_value_take_boxed (value, strv);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -6709,6 +6695,12 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	 **/
 	obj_properties[PROP_ALL_DEVICES] =
 	    g_param_spec_boxed (NM_MANAGER_ALL_DEVICES, "", "",
+	                        G_TYPE_STRV,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_CHECKPOINTS] =
+	    g_param_spec_boxed (NM_MANAGER_CHECKPOINTS, "", "",
 	                        G_TYPE_STRV,
 	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS);

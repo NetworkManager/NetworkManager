@@ -51,6 +51,7 @@ G_BEGIN_DECLS
 #define NM_MANAGER_PRIMARY_CONNECTION "primary-connection"
 #define NM_MANAGER_ACTIVATING_CONNECTION "activating-connection"
 #define NM_MANAGER_DEVICES "devices"
+#define NM_MANAGER_CHECKPOINTS "checkpoints"
 #define NM_MANAGER_METERED "metered"
 #define NM_MANAGER_ALL_DEVICES "all-devices"
 
@@ -69,6 +70,8 @@ typedef struct {
 	void (*device_removed) (NMManager *manager, NMDevice *device);
 	void (*active_connection_added) (NMManager *manager, NMActiveConnection *ac);
 	void (*active_connection_removed) (NMManager *manager, NMActiveConnection *ac);
+	void (*checkpoint_added) (NMManager *manager, NMCheckpoint *checkpoint);
+	void (*checkpoint_removed) (NMManager *manager, NMCheckpoint *checkpoint);
 	void (*permission_changed) (NMManager *manager,
 	                            NMClientPermission permission,
 	                            NMClientPermissionResult result);
@@ -183,6 +186,34 @@ void     nm_manager_deactivate_connection_async  (NMManager *manager,
 gboolean nm_manager_deactivate_connection_finish (NMManager *manager,
                                                   GAsyncResult *result,
                                                   GError **error);
+
+const GPtrArray *nm_manager_get_checkpoints (NMManager *manager);
+void nm_manager_checkpoint_create_async (NMManager *manager,
+                                         const GPtrArray *devices,
+                                         guint32 rollback_timeout,
+                                         NMCheckpointCreateFlags flags,
+                                         GCancellable *cancellable,
+                                         GAsyncReadyCallback callback,
+                                         gpointer user_data);
+NMCheckpoint *nm_manager_checkpoint_create_finish (NMManager *manager,
+                                                   GAsyncResult *result,
+                                                   GError **error);
+void nm_manager_checkpoint_destroy_async (NMManager *manager,
+                                          NMCheckpoint *checkpoint,
+                                          GCancellable *cancellable,
+                                          GAsyncReadyCallback callback,
+                                          gpointer user_data);
+gboolean nm_manager_checkpoint_destroy_finish (NMManager *manager,
+                                               GAsyncResult *result,
+                                               GError **error);
+void nm_manager_checkpoint_rollback_async (NMManager *manager,
+                                           NMCheckpoint *checkpoint,
+                                           GCancellable *cancellable,
+                                           GAsyncReadyCallback callback,
+                                           gpointer user_data);
+GHashTable *nm_manager_checkpoint_rollback_finish (NMManager *manager,
+                                                   GAsyncResult *result,
+                                                   GError **error);
 
 G_END_DECLS
 
