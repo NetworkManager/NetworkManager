@@ -66,7 +66,7 @@ struct _NMDeviceVlanClass {
 
 G_DEFINE_TYPE (NMDeviceVlan, nm_device_vlan, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_VLAN_GET_PRIVATE(self) _NM_GET_PRIVATE2 (self, NMDeviceVlan, NM_IS_DEVICE_VLAN, NMDevice)
+#define NM_DEVICE_VLAN_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceVlan, NM_IS_DEVICE_VLAN, NMDevice)
 
 /*****************************************************************************/
 
