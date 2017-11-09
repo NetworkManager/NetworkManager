@@ -4441,6 +4441,280 @@ out:
 	return ret;
 }
 
+
+
+static void
+_json_add_object (json_t *json,
+                  const char *key1,
+                  const char *key2,
+                  const char *key3,
+                  json_t *value)
+{
+	json_t *json_element, *json_link;
+
+	json_element = json_object_get (json, key1);
+	if (!json_element) {
+		json_element = value;
+		if (key2) {
+			if (key3) {
+				json_element = json_object ();
+				json_object_set_new (json_element, key3, value);
+			}
+			json_link = json_object ();
+			json_object_set_new (json_link, key2, json_element);
+			json_element = json_link;
+		}
+		json_object_set_new (json, key1, json_element);
+		return;
+	}
+
+	if (!key2)
+		goto key_already_there;
+
+	json_link = json_element;
+	json_element = json_object_get (json_element, key2);
+	if (!json_element) {
+		json_element = value;
+		if (key3) {
+			json_element = json_object ();
+			json_object_set_new (json_element, key3, value);
+		}
+		json_object_set_new (json_link, key2, json_element);
+		return;
+	}
+
+	if (!key3)
+		goto key_already_there;
+
+	json_link = json_element;
+	json_element = json_object_get (json_element, key3);
+	if (!json_element) {
+		json_object_set_new (json_link, key3, value);
+		return;
+	}
+
+key_already_there:
+	json_decref (value);
+}
+
+GValue *
+_nm_utils_team_config_get (const char *conf,
+                           const char *key,
+                           const char *key2,
+                           const char *key3,
+                           gboolean port_config)
+{
+	json_t *json;
+	json_t *json_element;
+	GValue *value = NULL;
+	json_error_t jerror;
+	const char *runner = NULL;
+
+	if (!key)
+		return NULL;
+
+	json = json_loads (conf ?: "{}", JSON_REJECT_DUPLICATES, &jerror);
+
+	/* Invalid json in conf */
+	if (!json)
+		return NULL;
+
+	/* Some properties are added by teamd when missing from the initial
+	 * configuration.  Add them with the default value if necessary, depending
+	 * on the configuration type.
+	 */
+	if  (port_config) {
+		_json_add_object (json, "link_watch", "name", NULL, json_string ("ethtool"));
+	} else {
+		/* Retrieve runner or add default one */
+		json_element = json_object_get (json, "runner");
+		if (json_element) {
+			runner = json_string_value (json_object_get (json_element, "name"));
+		} else {
+			json_element = json_object ();
+			json_object_set_new (json, "runner", json_element);
+		}
+		if (!runner) {
+			runner = NM_SETTING_TEAM_RUNNER_DEFAULT;
+			json_object_set_new (json_element, "name", json_string (runner));
+		}
+
+
+		if (nm_streq (runner, NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP)) {
+			_json_add_object (json, "notify_peers", "count", NULL,
+			                  json_integer (NM_SETTING_TEAM_NOTIFY_PEERS_COUNT_ACTIVEBACKUP_DEFAULT));
+			_json_add_object (json, "mcast_rejoin", "count", NULL,
+			                  json_integer (NM_SETTING_TEAM_NOTIFY_MCAST_COUNT_ACTIVEBACKUP_DEFAULT));
+		} else if (   nm_streq (runner, NM_SETTING_TEAM_RUNNER_LOADBALANCE)
+		           || nm_streq (runner, NM_SETTING_TEAM_RUNNER_LACP)) {
+			json_element = json_array ();
+			json_array_append_new (json_element, json_string ("eth"));
+			json_array_append_new (json_element, json_string ("ipv4"));
+			json_array_append_new (json_element, json_string ("ipv6"));
+			_json_add_object (json, "runner", "tx_hash", NULL, json_element);
+		}
+	}
+	json_element = json_object_get (json, key);
+	if (json_element && key2)
+		json_element = json_object_get (json_element, key2);
+	if (json_element && key3)
+		json_element = json_object_get (json_element, key3);
+
+	if (json_element) {
+		value = g_new0 (GValue, 1);
+		if (json_is_string (json_element)) {
+			g_value_init (value, G_TYPE_STRING);
+			g_value_set_string (value, json_string_value (json_element));
+		} else if (json_is_integer (json_element)) {
+			g_value_init (value, G_TYPE_INT);
+			g_value_set_int (value, json_integer_value (json_element));
+		} else if (json_is_boolean (json_element)) {
+			g_value_init (value, G_TYPE_BOOLEAN);
+			g_value_set_boolean (value, json_boolean_value (json_element));
+		} else if (json_is_array (json_element)) {
+			GPtrArray *data = g_ptr_array_new_with_free_func ((GDestroyNotify) g_free);
+			json_t *str_element;
+			int index;
+
+			json_array_foreach (json_element, index, str_element) {
+				if (json_is_string (str_element))
+					g_ptr_array_add (data, g_strdup (json_string_value (str_element)));
+			}
+			if (data->len) {
+				g_value_init (value, G_TYPE_STRV);
+				g_value_take_boxed (value, _nm_utils_ptrarray_to_strv (data));
+			}
+			g_ptr_array_free (data, TRUE);
+		} else {
+			g_assert_not_reached ();
+			g_free (value);
+			value = NULL;
+		}
+	}
+
+	if (json)
+		json_decref (json);
+
+	return value;
+}
+
+/* if conf is updated in place returns TRUE */
+gboolean
+_nm_utils_team_config_set (char **conf,
+                           const char *key,
+                           const char *key2,
+                           const char *key3,
+                           const GValue *value)
+{
+	json_t *json, *json_element, *json_link, *json_value = NULL;
+	json_error_t jerror;
+	gboolean updated = FALSE;
+	char **strv;
+	const char *iter_key = key;
+	int i;
+
+	json = json_loads (*conf?: "{}", JSON_REJECT_DUPLICATES, &jerror);
+	if (!json)
+		return FALSE;
+
+	/* no new value? delete element */
+	if (!value) {
+		json_element = json;
+		json_link = NULL;
+
+		if (key2) {
+			json_link = json;
+			json_element = json_object_get (json, key);
+			if (!json_element)
+				goto done;
+			iter_key = key2;
+		}
+		if (key3) {
+			json_link = json_element;
+			json_element = json_object_get (json_element, key2);
+			if (!json_element)
+				goto done;
+			iter_key = key3;
+		}
+		if (json_object_del (json_element, iter_key) != 0)
+			goto done;
+
+		updated = TRUE;
+
+		/* 1st level key only */
+		if (!json_link)
+			goto done;
+
+		if (json_object_size (json_element) == 0)
+			json_object_del (json_link, (key3 ? key2 : key));
+
+		if (key3 && json_object_size (json_link) == 0)
+			json_object_del (json, key);
+
+		goto done;
+	}
+
+	/* insert new value */
+	updated = TRUE;
+	if (G_VALUE_HOLDS_STRING (value))
+		json_value = json_string (g_value_get_string (value));
+	else if (G_VALUE_HOLDS_INT (value))
+		json_value = json_integer (g_value_get_int (value));
+	else if (G_VALUE_HOLDS_BOOLEAN (value))
+		json_value = json_boolean (g_value_get_boolean (value));
+	else if (G_VALUE_HOLDS_BOXED (value)) {
+		strv = g_value_get_boxed (value);
+		if (strv) {
+			json_value = json_array ();
+			for (i = 0; strv[i]; i++)
+				json_array_append_new (json_value, json_string (strv[i]));
+		} else
+			return FALSE;
+	} else {
+		g_assert_not_reached ();
+		updated = FALSE;
+		goto done;
+	}
+
+	/* Simplest case: first level key only */
+	json_element = json;
+	json_link = NULL;
+
+	if (key2) {
+		json_link = json;
+		json_element = json_object_get (json, iter_key);
+		if (!json_element) {
+			json_element = json_object ();
+			json_object_set_new (json_link, iter_key, json_element);
+		}
+		iter_key = key2;
+	}
+	if (key3) {
+		json_link = json_element;
+		json_element = json_object_get (json_link, iter_key);
+		if (!json_element) {
+			json_element = json_object ();
+			json_object_set_new (json_link, iter_key, json_element);
+		}
+		iter_key = key3;
+	}
+
+	json_object_set_new (json_element, iter_key, json_value);
+
+done:
+	if (updated) {
+		g_free (*conf);
+		*conf = json_dumps (json, 0);
+		/* Don't save an empty config */
+		if (nm_streq0 (*conf, "{}")) {
+			g_free (*conf);
+			*conf = NULL;
+		}
+	}
+	json_decref (json);
+	return updated;
+}
+
 #else /* WITH_JANSSON */
 
 gboolean
@@ -4494,6 +4768,26 @@ _nm_utils_team_config_equal (const char *conf1,
                              gboolean port_config)
 {
 	return nm_streq0 (conf1, conf2);
+}
+
+GValue *
+_nm_utils_team_config_get (const char *conf,
+                           const char *key,
+                           const char *key2,
+                           const char *key3,
+                           gboolean port_config)
+{
+	return NULL;
+}
+
+gboolean
+_nm_utils_team_config_set (char **conf,
+                           const char *key,
+                           const char *key2,
+                           const char *key3,
+                           const GValue *value)
+{
+	return FALSE;
 }
 #endif
 

@@ -47,6 +47,11 @@
         index++)
 #endif
 
+/* Added in Jansson v2.7 */
+#ifndef json_boolean_value
+#define json_boolean_value json_is_true
+#endif
+
 /* Added in Jansson v2.8 */
 #ifndef json_object_foreach_safe
 #if JANSSON_VERSION_HEX < 0x020300
