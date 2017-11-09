@@ -28,8 +28,8 @@
 #include <sys/wait.h>
 #include <teamdctl.h>
 #include <stdlib.h>
-#include <jansson.h>
 
+#include "nm-utils/nm-jansson.h"
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device-private.h"
 #include "platform/nm-platform.h"

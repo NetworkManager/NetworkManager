@@ -34,10 +34,7 @@
 #include <sys/stat.h>
 #include <net/if.h>
 
-#if WITH_JANSSON
-#include <jansson.h>
-#endif
-
+#include "nm-utils/nm-jansson.h"
 #include "nm-utils/nm-enum-utils.h"
 #include "nm-utils/nm-hash-utils.h"
 #include "nm-common-macros.h"
@@ -4361,15 +4358,6 @@ nm_utils_is_json_object (const char *str, GError **error)
 	return TRUE;
 }
 
-/* json_object_foreach_safe() is only available since Jansson 2.8,
- * reimplement it */
-#define _json_object_foreach_safe(object, n, key, value) \
-    for (key = json_object_iter_key (json_object_iter (object)), \
-         n = json_object_iter_next (object, json_object_iter_at (object, key)); \
-         key && (value = json_object_iter_value (json_object_iter_at (object, key))); \
-         key = json_object_iter_key (n), \
-         n = json_object_iter_next (object, json_object_iter_at (object, key)))
-
 gboolean
 _nm_utils_team_config_equal (const char *conf1,
                              const char *conf2,
@@ -4433,7 +4421,7 @@ _nm_utils_team_config_equal (const char *conf1,
 	/* Only consider a given subset of nodes, others can change depending on
 	 * current state */
 	for (i = 0, json = json1; i < 2; i++, json = json2) {
-		_json_object_foreach_safe (json, tmp, key, value) {
+		json_object_foreach_safe (json, tmp, key, value) {
 			if (!NM_IN_STRSET (key, "runner", "link_watch"))
 				json_object_del (json, key);
 		}
