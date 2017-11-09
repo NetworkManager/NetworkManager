@@ -4081,6 +4081,7 @@ nm_device_slave_notify_release (NMDevice *self, NMDeviceStateReason reason)
 			break;
 		case NM_DEVICE_STATE_REASON_USER_REQUESTED:
 			new_state = NM_DEVICE_STATE_DEACTIVATING;
+			reason = NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED;
 			master_status = "deactivated by user request";
 			break;
 		default:
