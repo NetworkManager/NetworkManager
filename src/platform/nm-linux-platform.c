@@ -2867,7 +2867,7 @@ struct _NMLinuxPlatformClass {
 
 G_DEFINE_TYPE (NMLinuxPlatform, nm_linux_platform, NM_TYPE_PLATFORM)
 
-#define NM_LINUX_PLATFORM_GET_PRIVATE(self) _NM_GET_PRIVATE2(self, NMLinuxPlatform, NM_IS_LINUX_PLATFORM, NMPlatform)
+#define NM_LINUX_PLATFORM_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMLinuxPlatform, NM_IS_LINUX_PLATFORM, NMPlatform)
 
 NMPlatform *
 nm_linux_platform_new (gboolean log_with_ptr, gboolean netns_support)
