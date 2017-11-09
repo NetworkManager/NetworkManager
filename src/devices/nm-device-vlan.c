@@ -66,7 +66,7 @@ struct _NMDeviceVlanClass {
 
 G_DEFINE_TYPE (NMDeviceVlan, nm_device_vlan, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_VLAN_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceVlan, NM_IS_DEVICE_VLAN)
+#define NM_DEVICE_VLAN_GET_PRIVATE(self) _NM_GET_PRIVATE2 (self, NMDeviceVlan, NM_IS_DEVICE_VLAN, NMDevice)
 
 /*****************************************************************************/
 
@@ -418,7 +418,7 @@ complete_connection (NMDevice *device,
 static void
 update_connection (NMDevice *device, NMConnection *connection)
 {
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE ((NMDeviceVlan *) device);
+	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
 	NMSettingVlan *s_vlan = nm_connection_get_setting_vlan (connection);
 	int ifindex = nm_device_get_ifindex (device);
 	const char *setting_parent, *new_parent;
@@ -558,7 +558,7 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE ((NMDeviceVlan *) object);
+	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_VLAN_ID:
