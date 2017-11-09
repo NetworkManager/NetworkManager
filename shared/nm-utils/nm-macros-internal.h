@@ -270,25 +270,64 @@ NM_G_ERROR_MSG (GError *error)
 #endif
 
 #if _NM_CC_SUPPORT_GENERIC
-#define _NM_CONSTCAST(type, obj) \
-	(_Generic ((obj), \
-	           void *           : ((type *) (obj)), \
-	           void *const      : ((type *) (obj)), \
+#define _NM_CONSTCAST_FULL(type, obj_expr, obj) \
+	(_Generic ((obj_expr), \
 	           const void *     : ((const type *) (obj)), \
-	           const void *const: ((const type *) (obj)), \
-	           const type *     : (obj), \
-	           const type *const: (obj), \
-	           type *           : (obj), \
-	           type *const      : (obj)))
+	           void *           : ((      type *) (obj)), \
+	           const type *     : ((const type *) (obj)), \
+	           type *           : ((      type *) (obj))))
+#define _NM_CONSTCAST2_FULL(type, obj_expr, obj, alias_type2) \
+	(_Generic ((obj_expr), \
+	           const void        *: ((const type *) (obj)), \
+	                 void        *: ((      type *) (obj)), \
+	           const alias_type2 *: ((const type *) (obj)), \
+	                 alias_type2 *: ((      type *) (obj)), \
+	           const type        *: ((const type *) (obj)), \
+	                 type        *: ((      type *) (obj))))
+#define _NM_CONSTCAST3_FULL(type, obj_expr, obj, alias_type2, alias_type3) \
+	(_Generic ((obj_expr), \
+	           const void        *: ((const type *) (obj)), \
+	                 void        *: ((      type *) (obj)), \
+	           const alias_type2 *: ((const type *) (obj)), \
+	                 alias_type2 *: ((      type *) (obj)), \
+	           const alias_type3 *: ((const type *) (obj)), \
+	                 alias_type3 *: ((      type *) (obj)), \
+	           const type        *: ((const type *) (obj)), \
+	                 type        *: ((      type *) (obj))))
 #else
 /* _NM_CONSTCAST() is there to preserve constness of a pointer.
  * It uses C11's _Generic(). If that is not supported, we fall back
  * to casting away constness. So, with _Generic, we get some additional
  * static type checking by preserving constness, without, we cast it
  * to a non-const pointer. */
-#define _NM_CONSTCAST(type, obj) \
+#define _NM_CONSTCAST_FULL(type, obj_expr, obj) \
+	((type *) (obj))
+#define _NM_CONSTCAST2_FULL(type, obj_expr, obj, alias_type2) \
+	((type *) (obj))
+#define _NM_CONSTCAST3_FULL(type, obj_expr, obj, alias_type2, alias_type2) \
 	((type *) (obj))
 #endif
+
+#define _NM_CONSTCAST(type, obj) \
+	_NM_CONSTCAST_FULL(type, (obj), (obj))
+
+#define _NM_CONSTCAST2(type, obj, alias_type2) \
+	_NM_CONSTCAST2_FULL(type, (obj), (obj), alias_type2)
+
+#define _NM_GOBJECT_CAST(type, obj, is_check) \
+	({ \
+		const void *_obj = (obj); \
+		\
+		nm_assert (is_check (_obj)); \
+		_NM_CONSTCAST2_FULL (type, (obj), _obj, GObject); \
+	})
+#define _NM_GOBJECT_CAST2(type, obj, is_check, alias_type2) \
+	({ \
+		const void *_obj = (obj); \
+		\
+		nm_assert (is_check (_obj)); \
+		_NM_CONSTCAST3_FULL (type, (obj), _obj, GObject, alias_type2); \
+	})
 
 #if _NM_CC_SUPPORT_GENERIC
 /* returns @value, if the type of @value matches @type.
@@ -581,39 +620,10 @@ _notify (obj_type *obj, _PropertyEnums prop) \
 
 /*****************************************************************************/
 
-/* these are implemented as a macro, because they accept self
- * as both (type*) and (const type*), and return a const
- * private pointer accordingly. */
-#define __NM_GET_PRIVATE(self, type, is_check, addrop) \
-	({ \
-		/* preserve the const-ness of self. Unfortunately, that
-		 * way, @self cannot be a void pointer */ \
-		typeof (self) _self = (self); \
-		\
-		/* Get compiler error if variable is of wrong type */ \
-		_nm_unused const type *const _self2 = (_self); \
-		\
-		nm_assert (is_check (_self)); \
-		( addrop ( _NM_CONSTCAST (type, _self)->_priv) ); \
-	})
-
-#define _NM_GET_PRIVATE(self, type, is_check)     __NM_GET_PRIVATE(self, type, is_check, &)
-#define _NM_GET_PRIVATE_PTR(self, type, is_check) __NM_GET_PRIVATE(self, type, is_check,  )
-
-#define __NM_GET_PRIVATE_VOID(self, type, is_check, result_cmd) \
-	({ \
-		/* (self) can be any non-const pointer. It will be cast to "type *".
-		 * We don't explicitly cast but assign first to (void *) which
-		 * will fail if @self is pointing to const. */ \
-		void *const _self1 = (self); \
-		type *const _self = _self1; \
-		\
-		nm_assert (is_check (_self)); \
-		( result_cmd ); \
-	})
-
-#define _NM_GET_PRIVATE_VOID(self, type, is_check)     __NM_GET_PRIVATE_VOID(self, type, is_check, &_self->_priv)
-#define _NM_GET_PRIVATE_PTR_VOID(self, type, is_check) __NM_GET_PRIVATE_VOID(self, type, is_check,  _self->_priv)
+#define _NM_GET_PRIVATE(     self, type, is_check)               (&(_NM_GOBJECT_CAST  (type, (self), is_check             )->_priv))
+#define _NM_GET_PRIVATE_PTR( self, type, is_check)               ( (_NM_GOBJECT_CAST  (type, (self), is_check             )->_priv))
+#define _NM_GET_PRIVATE2(    self, type, is_check, alias_type2)  (&(_NM_GOBJECT_CAST2 (type, (self), is_check, alias_type2)->_priv))
+#define _NM_GET_PRIVATE2_PTR(self, type, is_check, alias_type2)  ( (_NM_GOBJECT_CAST2 (type, (self), is_check, alias_type2)->_priv))
 
 /*****************************************************************************/
 
