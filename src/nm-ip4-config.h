@@ -272,40 +272,56 @@ gboolean nm_ip4_config_equal (const NMIP4Config *a, const NMIP4Config *b);
 
 #include "nm-ip6-config.h"
 
-#if _NM_CC_SUPPORT_GENERIC
-#define NM_IP_CONFIG_CAST(config) \
-	({ \
-		const void *const _config = (config); \
-		\
-		nm_assert (_Generic ((config), \
-		                     const void        *: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
-		                           void        *: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
-		                     const NMIPConfig  *: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
-		                           NMIPConfig  *: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
-		                     const NMIP4Config *: (NM_IS_IP4_CONFIG (_config)), \
-		                           NMIP4Config *: (NM_IS_IP4_CONFIG (_config)), \
-		                     const NMIP6Config *: (NM_IS_IP6_CONFIG (_config)), \
-		                           NMIP6Config *: (NM_IS_IP6_CONFIG (_config)))); \
-		\
-		_Generic ((config), \
-		          const void        *: ((const NMIPConfig *) _config), \
-		                void        *: ((      NMIPConfig *) _config), \
-		          const NMIPConfig  *: ((const NMIPConfig *) _config), \
-		                NMIPConfig  *: ((      NMIPConfig *) _config), \
-		          const NMIP4Config *: ((const NMIPConfig *) _config), \
-		                NMIP4Config *: ((      NMIPConfig *) _config), \
-		          const NMIP6Config *: ((const NMIPConfig *) _config), \
-		                NMIP6Config *: ((      NMIPConfig *) _config)); \
-	})
-#else
-#define NM_IP_CONFIG_CAST(config) ((NMIPConfig *) (config))
-#endif
-
 static inline gboolean
 NM_IS_IP_CONFIG (gconstpointer config)
 {
 	return NM_IS_IP4_CONFIG (config) || NM_IS_IP6_CONFIG (config);
 }
+
+#if _NM_CC_SUPPORT_GENERIC
+/* _NM_IS_IP_CONFIG() is a bit unusual. If _Generic() is supported,
+ * it checks whether @config is either NM_IS_IP4_CONFIG() or NM_IS_IP6_CONFIG(),
+ * depending on the pointer type of @config.
+ *
+ * For example, with _Generic() support, the following assertions would fail:
+ *    NMIP6Config *ptr = (NMIP6Config *) nm_ip4_config_new(...);
+ *    g_assert (_NM_IS_IP_CONFIG (ptr, ptr));
+ * but the following would pass:
+ *    NMIP4Config *ptr = nm_ip4_config_new(...);
+ *    g_assert (_NM_IS_IP_CONFIG (ptr, ptr));
+ */
+#define _NM_IS_IP_CONFIG(typeexpr, config) \
+	({ \
+		const void *const _config = (config); \
+		_Generic ((typeexpr), \
+		          const void        *const: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+		          const void        *     : (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+		                void        *const: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+		                void        *     : (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+		          const NMIPConfig  *const: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+		          const NMIPConfig  *     : (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+		                NMIPConfig  *const: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+		                NMIPConfig  *     : (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+		          const NMIP4Config *const: (NM_IS_IP4_CONFIG (_config)), \
+		          const NMIP4Config *     : (NM_IS_IP4_CONFIG (_config)), \
+		                NMIP4Config *const: (NM_IS_IP4_CONFIG (_config)), \
+		                NMIP4Config *     : (NM_IS_IP4_CONFIG (_config)), \
+		          const NMIP6Config *const: (NM_IS_IP6_CONFIG (_config)), \
+		          const NMIP6Config *     : (NM_IS_IP6_CONFIG (_config)), \
+		                NMIP6Config *const: (NM_IS_IP6_CONFIG (_config)), \
+		                NMIP6Config *     : (NM_IS_IP6_CONFIG (_config))); \
+	})
+#else
+#define _NM_IS_IP_CONFIG(typeexpr, config) NM_IS_IP_CONFIG(config)
+#endif
+
+#define NM_IP_CONFIG_CAST(config) \
+	({ \
+		const void *const _configx = (config); \
+		\
+		nm_assert (!_configx || _NM_IS_IP_CONFIG ((config), _configx)); \
+		NM_CONSTCAST_FULL (NMIPConfig, (config), _configx, NMIP4Config, NMIP6Config); \
+	})
 
 static inline int
 nm_ip_config_get_addr_family (const NMIPConfig *config)
