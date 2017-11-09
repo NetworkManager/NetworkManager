@@ -1697,9 +1697,7 @@ device_state_changed (NMDevice *device,
 	NMPolicyPrivate *priv = user_data;
 	NMPolicy *self = _PRIV_TO_SELF (priv);
 	NMActiveConnection *ac;
-
 	NMSettingsConnection *connection = nm_device_get_settings_connection (device);
-
 	const char *ip_iface = nm_device_get_ip_iface (device);
 	NMIP4Config *ip4_config;
 	NMIP6Config *ip6_config;
@@ -1801,13 +1799,22 @@ device_state_changed (NMDevice *device,
 			update_routing_and_dns (self, FALSE);
 		break;
 	case NM_DEVICE_STATE_DEACTIVATING:
-		if (nm_device_state_reason_check (reason) == NM_DEVICE_STATE_REASON_USER_REQUESTED) {
+		if (NM_IN_SET (nm_device_state_reason_check (reason),
+		               NM_DEVICE_STATE_REASON_USER_REQUESTED,
+		               NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED)) {
 			if (connection) {
+				NMSettingsAutoconnectBlockedReason blocked_reason;
+
 				/* The connection was deactivated, so block just this connection */
-				_LOGD (LOGD_DEVICE, "blocking autoconnect of connection '%s' by user request",
-				       nm_settings_connection_get_id (connection));
-				nm_settings_connection_autoconnect_blocked_reason_set (connection,
-				                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST);
+				_LOGD (LOGD_DEVICE, "blocking autoconnect of connection '%s': %s",
+				       nm_settings_connection_get_id (connection),
+				       NM_UTILS_LOOKUP_STR (nm_device_state_reason_to_str,
+				                            nm_device_state_reason_check (reason)));
+				if (nm_device_state_reason_check (reason) == NM_DEVICE_STATE_REASON_USER_REQUESTED)
+					blocked_reason = NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST;
+				else
+					blocked_reason = NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED;
+				nm_settings_connection_autoconnect_blocked_reason_set (connection, blocked_reason);
 			}
 		}
 		ip6_remove_device_prefix_delegations (self, device);
