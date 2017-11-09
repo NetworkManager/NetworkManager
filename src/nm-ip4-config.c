@@ -2216,6 +2216,14 @@ nm_ip4_config_get_nameserver (const NMIP4Config *self, guint i)
 	return g_array_index (priv->nameservers, guint32, i);
 }
 
+const in_addr_t *
+_nm_ip4_config_get_nameserver (const NMIP4Config *self, guint i)
+{
+	const NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
+
+	return &g_array_index (priv->nameservers, guint32, i);
+}
+
 /*****************************************************************************/
 
 void
