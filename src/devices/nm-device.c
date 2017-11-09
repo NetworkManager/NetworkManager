@@ -582,7 +582,7 @@ nm_device_state_to_str (NMDeviceState state)
 	return queued_state_to_string (state) + NM_STRLEN (NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE);
 }
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_reason_to_string, NMDeviceStateReason,
+NM_UTILS_LOOKUP_STR_DEFINE (nm_device_state_reason_to_str, NMDeviceStateReason,
 	NM_UTILS_LOOKUP_DEFAULT (NULL),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_REASON_UNKNOWN,                        "unknown"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_REASON_NONE,                           "none"),
@@ -652,7 +652,7 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_reason_to_string, NMDeviceStateReason,
 );
 
 #define reason_to_string(reason) \
-	NM_UTILS_LOOKUP_STR (_reason_to_string, reason)
+	NM_UTILS_LOOKUP_STR (nm_device_state_reason_to_str, reason)
 
 /*****************************************************************************/
 

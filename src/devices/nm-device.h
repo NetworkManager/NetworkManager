@@ -794,5 +794,6 @@ struct _NMBtVTableNetworkServer {
 };
 
 const char *nm_device_state_to_str (NMDeviceState state);
+const char *nm_device_state_reason_to_str (NMDeviceStateReason reason);
 
 #endif /* __NETWORKMANAGER_DEVICE_H__ */
