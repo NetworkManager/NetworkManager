@@ -32,6 +32,10 @@
 
 /*****************************************************************************/
 
+#if JANSSON_VERSION_HEX < 0x020400
+#warning "requires at least libjansson 2.4"
+#endif
+
 typedef struct {
 	char *name;
 	char *connection_uuid;
