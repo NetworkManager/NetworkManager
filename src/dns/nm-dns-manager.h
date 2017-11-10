@@ -26,6 +26,7 @@
 
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
+#include "nm-setting-connection.h"
 
 typedef enum {
 	NM_DNS_IP_CONFIG_TYPE_DEFAULT = 0,
@@ -43,6 +44,12 @@ typedef struct {
 	NMDnsIPConfigType type;
 	char *iface;
 } NMDnsIPConfigData;
+
+typedef struct {
+	NMSettingConnectionMdns mdns;
+	char *iface;
+	int ifindex;
+} NMDnsConnectionConfigData;
 
 #define NM_TYPE_DNS_MANAGER (nm_dns_manager_get_type ())
 #define NM_DNS_MANAGER(o) (G_TYPE_CHECK_INSTANCE_CAST ((o), NM_TYPE_DNS_MANAGER, NMDnsManager))
@@ -82,6 +89,16 @@ void nm_dns_manager_set_initial_hostname (NMDnsManager *self,
 void nm_dns_manager_set_hostname         (NMDnsManager *self,
                                           const char *hostname,
                                           gboolean skip_update);
+gboolean nm_dns_manager_add_connection_config (NMDnsManager *self,
+                                               const char *iface,
+                                               int ifindex,
+                                               NMSettingConnectionMdns mdns);
+void nm_dns_manager_remove_connection_config (NMDnsManager *self,
+                                              const char *iface,
+                                              int ifindex);
+void nm_dns_manager_update_ifindex (NMDnsManager *self,
+                                    const char *ip_iface,
+                                    int new_ifindex);
 
 /**
  * NMDnsManagerResolvConfManager

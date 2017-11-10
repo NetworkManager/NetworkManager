@@ -1060,6 +1060,35 @@ update_ip6_routing (NMPolicy *self, gboolean force_update)
 }
 
 static void
+add_connection_dns (NMPolicy *self, NMConnection *connection, const char *iface, int ifindex)
+{
+	NMSettingConnection *s_con = NULL;
+
+	if (connection == NULL)
+		return;
+
+	s_con = nm_connection_get_setting_connection (connection);
+
+	if (s_con) {
+		NMSettingConnectionMdns mdns = nm_setting_connection_get_mdns (s_con);
+
+		if (mdns != NM_SETTING_CONNECTION_MDNS_UNKNOWN)
+			nm_dns_manager_add_connection_config (NM_POLICY_GET_PRIVATE (self)->dns_manager,
+		                                              iface,
+		                                              ifindex,
+		                                              mdns);
+	}
+}
+
+static void
+remove_connection_dns (NMPolicy *self, const char *iface, int ifindex)
+{
+	nm_dns_manager_remove_connection_config (NM_POLICY_GET_PRIVATE (self)->dns_manager,
+	                                         iface,
+	                                         ifindex);
+}
+
+static void
 update_ip_dns (NMPolicy *self, int addr_family)
 {
 	gpointer ip_config;
@@ -1794,6 +1823,9 @@ device_state_changed (NMDevice *device,
 			 */
 
 			nm_connection_clear_secrets (NM_CONNECTION (connection));
+
+			/* Add connection settings (currently link mDNS state) */
+			add_connection_dns (self, NM_CONNECTION (connection), ip_iface, nm_device_get_ip_ifindex (device));
 		}
 
 		/* Add device's new IPv4 and IPv6 configs to DNS */
@@ -1848,8 +1880,12 @@ device_state_changed (NMDevice *device,
 		    && old_state == NM_DEVICE_STATE_UNAVAILABLE)
 			reset_autoconnect_all (self, device, FALSE);
 
-		if (old_state > NM_DEVICE_STATE_DISCONNECTED)
+		if (old_state > NM_DEVICE_STATE_DISCONNECTED) {
 			update_routing_and_dns (self, FALSE);
+			/* Remove connection settings (currently link mDNS state) */
+			remove_connection_dns (self, ip_iface, nm_device_get_ip_ifindex (device));
+		}
+
 
 		/* Device is now available for auto-activation */
 		schedule_activate_check (self, device);
@@ -1983,6 +2019,19 @@ device_autoconnect_changed (NMDevice *device,
 }
 
 static void
+device_ifindex_changed (NMDevice *device,
+                        GParamSpec *pspec,
+                        gpointer user_data)
+{
+	NMPolicyPrivate *priv = user_data;
+	const char *ip_iface = nm_device_get_ip_iface (device);
+	int ifindex = nm_device_get_ifindex (device);
+
+	/* update ifindex mapping in DNS manager */
+	nm_dns_manager_update_ifindex (priv->dns_manager, ip_iface, ifindex);
+}
+
+static void
 device_recheck_auto_activate (NMDevice *device, gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
@@ -2010,6 +2059,7 @@ devices_list_register (NMPolicy *self, NMDevice *device)
 	g_signal_connect       (device, NM_DEVICE_IP6_CONFIG_CHANGED,     (GCallback) device_ip6_config_changed, priv);
 	g_signal_connect       (device, NM_DEVICE_IP6_PREFIX_DELEGATED,   (GCallback) device_ip6_prefix_delegated, priv);
 	g_signal_connect       (device, NM_DEVICE_IP6_SUBNET_NEEDED,      (GCallback) device_ip6_subnet_needed, priv);
+	g_signal_connect       (device, "notify::" NM_DEVICE_IFINDEX,     (GCallback) device_ifindex_changed, priv);
 	g_signal_connect       (device, "notify::" NM_DEVICE_AUTOCONNECT, (GCallback) device_autoconnect_changed, priv);
 	g_signal_connect       (device, NM_DEVICE_RECHECK_AUTO_ACTIVATE,  (GCallback) device_recheck_auto_activate, priv);
 }
@@ -2063,6 +2113,7 @@ vpn_connection_activated (NMPolicy *self, NMVpnConnection *vpn)
 	NMIP4Config *ip4_config;
 	NMIP6Config *ip6_config;
 	const char *ip_iface;
+	NMConnection *connection;
 
 	nm_dns_manager_begin_updates (priv->dns_manager, __func__);
 
@@ -2081,6 +2132,10 @@ vpn_connection_activated (NMPolicy *self, NMVpnConnection *vpn)
 	update_routing_and_dns (self, TRUE);
 
 	nm_dns_manager_end_updates (priv->dns_manager, __func__);
+
+	/* Make sure the connection settings are set */
+	connection = nm_active_connection_get_applied_connection (NM_ACTIVE_CONNECTION (vpn));
+	add_connection_dns (self, connection, ip_iface, nm_vpn_connection_get_ip_ifindex (vpn, TRUE));
 }
 
 static void
@@ -2107,6 +2162,10 @@ vpn_connection_deactivated (NMPolicy *self, NMVpnConnection *vpn)
 	update_routing_and_dns (self, TRUE);
 
 	nm_dns_manager_end_updates (priv->dns_manager, __func__);
+
+	remove_connection_dns(self,
+	                      nm_vpn_connection_get_ip_iface (vpn, TRUE),
+	                      nm_vpn_connection_get_ip_ifindex (vpn, TRUE));
 }
 
 static void

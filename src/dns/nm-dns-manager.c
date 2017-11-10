@@ -103,7 +103,8 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDnsManager,
 static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
-	GPtrArray *configs;
+	GPtrArray *ip_configs;
+	GPtrArray *connection_configs;
 	GVariant *config_variant;
 	NMDnsIPConfigData *best_conf4, *best_conf6;
 
@@ -214,6 +215,19 @@ ip_config_data_new (gpointer config, NMDnsIPConfigType type, const char *iface)
 	return data;
 }
 
+static NMDnsConnectionConfigData *
+connection_config_data_new (NMSettingConnectionMdns mdns, const char *iface, int ifindex)
+{
+	NMDnsConnectionConfigData *data;
+
+	data = g_slice_new0 (NMDnsConnectionConfigData);
+	data->mdns = mdns;
+	data->iface = g_strdup (iface);
+	data->ifindex = ifindex;
+
+	return data;
+}
+
 static void
 ip_config_data_destroy (gpointer ptr)
 {
@@ -225,6 +239,18 @@ ip_config_data_destroy (gpointer ptr)
 	g_object_unref (data->config);
 	g_free (data->iface);
 	g_slice_free (NMDnsIPConfigData, data);
+}
+
+static void
+connection_config_data_destroy (gpointer ptr)
+{
+	NMDnsConnectionConfigData *data = ptr;
+
+	if (!data)
+		return;
+
+	g_free (data->iface);
+	g_slice_free (NMDnsConnectionConfigData, data);
 }
 
 static gint
@@ -833,8 +859,8 @@ compute_hash (NMDnsManager *self, const NMGlobalDnsConfig *global, guint8 buffer
 	if (global)
 		nm_global_dns_config_update_checksum (global, sum);
 	else {
-		for (i = 0; i < priv->configs->len; i++) {
-			NMDnsIPConfigData *data = priv->configs->pdata[i];
+		for (i = 0; i < priv->ip_configs->len; i++) {
+			NMDnsIPConfigData *data = priv->ip_configs->pdata[i];
 
 			if (NM_IS_IP4_CONFIG (data->config))
 				nm_ip4_config_hash ((NMIP4Config *) data->config, sum, TRUE);
@@ -916,7 +942,7 @@ _ptrarray_to_strv (GPtrArray *parray)
 static void
 _collect_resolv_conf_data (NMDnsManager *self, /* only for logging context, no other side-effects */
                            NMGlobalDnsConfig *global_config,
-                           const GPtrArray *configs,
+                           const GPtrArray *ip_configs,
                            const char *hostname,
                            char ***out_searches,
                            char ***out_options,
@@ -940,10 +966,10 @@ _collect_resolv_conf_data (NMDnsManager *self, /* only for logging context, no o
 		int prio, first_prio = 0;
 		NMDnsIPConfigData *current;
 
-		for (i = 0; i < configs->len; i++) {
+		for (i = 0; i < ip_configs->len; i++) {
 			gboolean skip = FALSE;
 
-			current = configs->pdata[i];
+			current = ip_configs->pdata[i];
 
 			prio = nm_ip_config_get_dns_priority (current->config);
 
@@ -1046,14 +1072,14 @@ update_dns (NMDnsManager *self,
 	global_config = nm_config_data_get_global_dns_config (data);
 
 	if (priv->need_sort) {
-		g_ptr_array_sort (priv->configs, ip_config_data_ptr_compare);
+		g_ptr_array_sort (priv->ip_configs, ip_config_data_ptr_compare);
 		priv->need_sort = FALSE;
 	}
 
 	/* Update hash with config we're applying */
 	compute_hash (self, global_config, priv->hash);
 
-	_collect_resolv_conf_data (self, global_config, priv->configs, priv->hostname,
+	_collect_resolv_conf_data (self, global_config, priv->ip_configs, priv->hostname,
 	                           &searches, &options, &nameservers, &nis_servers, &nis_domain);
 
 	/* Let any plugins do their thing first */
@@ -1072,7 +1098,7 @@ update_dns (NMDnsManager *self,
 
 		_LOGD ("update-dns: updating plugin %s", plugin_name);
 		if (!nm_dns_plugin_update (plugin,
-		                           priv->configs,
+		                           priv->ip_configs,
 		                           global_config,
 		                           priv->hostname)) {
 			_LOGW ("update-dns: plugin %s update failed", plugin_name);
@@ -1222,7 +1248,7 @@ ip_config_dns_priority_changed (gpointer config,
 }
 
 static void
-forget_data (NMDnsManager *self, NMDnsIPConfigData *data)
+forget_ip_data (NMDnsManager *self, NMDnsIPConfigData *data)
 {
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
@@ -1232,6 +1258,40 @@ forget_data (NMDnsManager *self, NMDnsIPConfigData *data)
 		priv->best_conf6 = NULL;
 
 	g_signal_handlers_disconnect_by_func (data->config, ip_config_dns_priority_changed, self);
+}
+
+void nm_dns_manager_update_ifindex (NMDnsManager *self,
+                                    const char *iface,
+                                    int new_ifindex)
+{
+	NMDnsConnectionConfigData *data;
+	NMDnsManagerPrivate *priv;
+	NMDnsPlugin *plugin;
+	guint i;
+
+	g_return_if_fail (NM_IS_DNS_MANAGER (self));
+	g_return_if_fail (iface && iface[0]);
+	g_return_if_fail (new_ifindex > 0);
+
+	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	plugin = priv->plugin;
+
+	for (i = 0; i < priv->connection_configs->len; i++) {
+		data = priv->connection_configs->pdata[i];
+		if (nm_streq (data->iface, iface)) {
+			if (data->ifindex == new_ifindex)
+				return;
+
+			nm_dns_plugin_update_mdns (plugin,
+			                           data->ifindex,
+			                           NM_SETTING_CONNECTION_MDNS_UNKNOWN);
+			data->ifindex = new_ifindex;
+			nm_dns_plugin_update_mdns (plugin,
+			                           data->ifindex,
+			                           data->mdns);
+			return;
+		}
+	}
 }
 
 gboolean
@@ -1253,22 +1313,22 @@ nm_dns_manager_add_ip_config (NMDnsManager *self,
 
 	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
-	for (i = 0; i < priv->configs->len; i++) {
-		data = priv->configs->pdata[i];
+	for (i = 0; i < priv->ip_configs->len; i++) {
+		data = priv->ip_configs->pdata[i];
 		if (data->config == config) {
 			if (   nm_streq (data->iface, iface)
 			    && data->type == cfg_type)
 				return FALSE;
 			else {
-				forget_data (self, data);
-				g_ptr_array_remove_index_fast (priv->configs, i);
+				forget_ip_data (self, data);
+				g_ptr_array_remove_index_fast (priv->ip_configs, i);
 				break;
 			}
 		}
 	}
 
 	data = ip_config_data_new (config, cfg_type, iface);
-	g_ptr_array_add (priv->configs, data);
+	g_ptr_array_add (priv->ip_configs, data);
 	g_signal_connect (config,
 	                  v4 ?
 	                    "notify::" NM_IP4_CONFIG_DNS_PRIORITY :
@@ -1311,12 +1371,12 @@ nm_dns_manager_remove_ip_config (NMDnsManager *self, gpointer config)
 
 	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
-	for (i = 0; i < priv->configs->len; i++) {
-		data = priv->configs->pdata[i];
+	for (i = 0; i < priv->ip_configs->len; i++) {
+		data = priv->ip_configs->pdata[i];
 
 		if (data->config == config) {
-			forget_data (self, data);
-			g_ptr_array_remove_index (priv->configs, i);
+			forget_ip_data (self, data);
+			g_ptr_array_remove_index (priv->ip_configs, i);
 
 			if (!priv->updates_queue && !update_dns (self, FALSE, &error)) {
 				_LOGW ("could not commit DNS changes: %s", error->message);
@@ -1372,6 +1432,75 @@ nm_dns_manager_set_hostname (NMDnsManager *self,
 }
 
 gboolean
+nm_dns_manager_add_connection_config (NMDnsManager *self,
+                                      const char *iface,
+                                      int ifindex,
+                                      NMSettingConnectionMdns mdns)
+{
+	NMDnsConnectionConfigData *data;
+	NMDnsManagerPrivate *priv;
+	NMDnsPlugin *plugin;
+	guint i;
+
+	g_return_val_if_fail (NM_IS_DNS_MANAGER (self), FALSE);
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (iface != NULL && iface[0], FALSE);
+	g_return_val_if_fail (mdns != NM_SETTING_CONNECTION_MDNS_UNKNOWN, FALSE);
+
+	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	plugin = priv->plugin;
+
+	for (i = 0; i < priv->connection_configs->len; i++) {
+		data = priv->connection_configs->pdata[i];
+		if (nm_streq (data->iface, iface)) {
+			if (data->mdns == mdns)
+				/* already there */
+				return FALSE;
+			else {
+				data->mdns = mdns;
+				return nm_dns_plugin_update_mdns (plugin,
+				                                  ifindex,
+				                                  mdns);
+			}
+		}
+	}
+
+	data = connection_config_data_new (mdns, iface, ifindex);
+	g_ptr_array_add (priv->connection_configs, data);
+
+	return nm_dns_plugin_update_mdns (plugin, ifindex, mdns);
+}
+
+void
+nm_dns_manager_remove_connection_config (NMDnsManager *self,
+                                         const char *iface,
+                                         int ifindex)
+{
+	NMDnsConnectionConfigData *data;
+	NMDnsManagerPrivate *priv;
+	NMDnsPlugin *plugin;
+	guint i;
+
+	g_return_if_fail (NM_IS_DNS_MANAGER (self));
+	g_return_if_fail (iface != NULL && iface[0]);
+	g_return_if_fail (ifindex > 0);
+
+	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	plugin = priv->plugin;
+
+	for (i = 0; i < priv->connection_configs->len; i++) {
+		data = priv->connection_configs->pdata[i];
+		if (nm_streq (data->iface, iface)) {
+			nm_dns_plugin_update_mdns (plugin,
+			                           ifindex,
+			                           NM_SETTING_CONNECTION_MDNS_UNKNOWN);
+			g_ptr_array_remove_index_fast (priv->connection_configs, i);
+			return;
+		}
+	}
+}
+
+gboolean
 nm_dns_manager_get_resolv_conf_explicit (NMDnsManager *self)
 {
 	NMDnsManagerPrivate *priv;
@@ -1419,7 +1548,7 @@ nm_dns_manager_end_updates (NMDnsManager *self, const char *func)
 	g_return_if_fail (priv->updates_queue > 0);
 
 	if (priv->need_sort) {
-		g_ptr_array_sort (priv->configs, ip_config_data_ptr_compare);
+		g_ptr_array_sort (priv->ip_configs, ip_config_data_ptr_compare);
 		priv->need_sort = FALSE;
 	}
 
@@ -1833,8 +1962,8 @@ _get_config_variant (NMDnsManager *self)
 
 	g_variant_builder_init (&builder, G_VARIANT_TYPE ("aa{sv}"));
 
-	for (i = 0; i < priv->configs->len; i++) {
-		NMDnsIPConfigData *current = priv->configs->pdata[i];
+	for (i = 0; i < priv->ip_configs->len; i++) {
+		NMDnsIPConfigData *current = priv->ip_configs->pdata[i];
 		const NMIPConfig *config = current->config;
 		GVariantBuilder entry_builder;
 		GVariantBuilder strv_builder;
@@ -1932,7 +2061,8 @@ nm_dns_manager_init (NMDnsManager *self)
 	_LOGT ("creating...");
 
 	priv->config = g_object_ref (nm_config_get ());
-	priv->configs = g_ptr_array_new_full (8, ip_config_data_destroy);
+	priv->ip_configs = g_ptr_array_new_full (8, ip_config_data_destroy);
+	priv->connection_configs = g_ptr_array_new_full (8, connection_config_data_destroy);
 
 	/* Set the initial hash */
 	compute_hash (self, NULL, NM_DNS_MANAGER_GET_PRIVATE (self)->hash);
@@ -1949,7 +2079,7 @@ dispose (GObject *object)
 {
 	NMDnsManager *self = NM_DNS_MANAGER (object);
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
-	NMDnsIPConfigData *data;
+	NMDnsIPConfigData *ip_data;
 	guint i;
 
 	_LOGT ("disposing");
@@ -1964,13 +2094,18 @@ dispose (GObject *object)
 		g_clear_object (&priv->config);
 	}
 
-	if (priv->configs) {
-		for (i = 0; i < priv->configs->len; i++) {
-			data = priv->configs->pdata[i];
-			forget_data (self, data);
+	if (priv->ip_configs) {
+		for (i = 0; i < priv->ip_configs->len; i++) {
+			ip_data = priv->ip_configs->pdata[i];
+			forget_ip_data (self, ip_data);
 		}
-		g_ptr_array_free (priv->configs, TRUE);
-		priv->configs = NULL;
+		g_ptr_array_free (priv->ip_configs, TRUE);
+		priv->ip_configs = NULL;
+	}
+
+	if (priv->connection_configs) {
+		g_ptr_array_free (priv->connection_configs, TRUE);
+		priv->connection_configs = NULL;
 	}
 
 	nm_clear_g_source (&priv->plugin_ratelimit.timer);
@@ -2036,4 +2171,3 @@ nm_dns_manager_class_init (NMDnsManagerClass *klass)
 	                                        NMDBUS_TYPE_DNS_MANAGER_SKELETON,
 	                                        NULL);
 }
-
