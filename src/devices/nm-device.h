@@ -438,7 +438,7 @@ int             nm_device_get_ifindex           (NMDevice *dev);
 gboolean        nm_device_is_software           (NMDevice *dev);
 gboolean        nm_device_is_real               (NMDevice *dev);
 const char *    nm_device_get_ip_iface          (NMDevice *dev);
-int             nm_device_get_ip_ifindex        (NMDevice *dev);
+int             nm_device_get_ip_ifindex        (const NMDevice *dev);
 const char *    nm_device_get_driver            (NMDevice *dev);
 const char *    nm_device_get_driver_version    (NMDevice *dev);
 const char *    nm_device_get_type_desc         (NMDevice *dev);
