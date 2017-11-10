@@ -1,5 +1,5 @@
 ============================================
-NetworkManager-1.9.90 (1.10-rc1)
+NetworkManager-1.10
 Overview of changes since NetworkManager-1.8
 ============================================
 
@@ -20,7 +20,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * Added support for the Bluetooth NAP (Network Access Point) profile.
 * Added support for disabling connectivity checking via the D-Bus
     interface.
-* The internal DHCP client now understands the domain-search option
+* The internal DHCP client now understands the domain-search option.
 * Bridge connections support the group-forward-mask property.
 * NetworkManager can now configure multiple IPv6 default routes
     received through RA and each gets configured with the announced
@@ -35,8 +35,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * The platform code that handles synchronization with kernel status
     via netlink has been reworked and is more efficient.
 * Allowed the update of connections that have an associated ifcfg-rh
-  routing rules file.
-* Improve bash completion for nmcli.
+    routing rules file.
 * Non-UTF8 properties are now escaped when they are exported on D-Bus.
 * NetworkManager-wait-online.service now starts NetworkManager.service
     if needed.
