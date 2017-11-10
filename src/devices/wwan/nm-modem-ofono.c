@@ -831,11 +831,10 @@ context_property_changed (GDBusProxy *proxy,
 	gboolean ret = FALSE;
 	gs_unref_variant GVariant *v_dict = NULL;
 	const char *interface;
-	const gchar *s, *addr_s;
+	const gchar *s;
 	const gchar **array, **iter;
 	guint32 address_network, gateway_network;
 	guint32 ip4_route_table, ip4_route_metric;
-	guint prefix = 0;
 	int ifindex;
 
 	_LOGD ("PropertyChanged: %s", property);
@@ -881,102 +880,85 @@ context_property_changed (GDBusProxy *proxy,
 	/* TODO: verify handling of ip4_config; check other places it's used... */
 	g_clear_object (&priv->ip4_config);
 
-	memset (&addr, 0, sizeof (addr));
 
 	priv->ip4_config = nm_ip4_config_new (nm_platform_get_multi_idx (NM_PLATFORM_GET),
 	                                      ifindex);
 
-	/* TODO: simply if/else error logic! */
-
-	if (g_variant_lookup (v_dict, "Address", "&s", &addr_s)) {
-		_LOGD ("Address: %s", addr_s);
-
-		if (   addr_s
-		    && nm_utils_parse_inaddr_bin (AF_INET, addr_s, &address_network)) {
-			addr.address = address_network;
-			addr.addr_source = NM_IP_CONFIG_SOURCE_WWAN;
-		} else {
-			_LOGW ("can't convert 'Address' %s to addr", s);
-			goto out;
-		}
-
-	} else {
+	if (!g_variant_lookup (v_dict, "Address", "&s", &s)) {
 		_LOGW ("Settings 'Address' missing");
 		goto out;
 	}
+	if (   !s
+	    || !nm_utils_parse_inaddr_bin (AF_INET, s, &address_network)) {
+		_LOGW ("can't convert 'Address' %s to addr", s ?: "");
+		goto out;
+	}
+	memset (&addr, 0, sizeof (addr));
+	addr.ifindex = ifindex;
+	addr.address = address_network;
+	addr.addr_source = NM_IP_CONFIG_SOURCE_WWAN;
 
-	if (g_variant_lookup (v_dict, "Netmask", "&s", &s)) {
-		_LOGD ("Netmask: %s", s);
-
-		if (   s
-		    && nm_utils_parse_inaddr_bin (AF_INET, s, &address_network)) {
-			prefix = nm_utils_ip4_netmask_to_prefix (address_network);
-			if (prefix > 0)
-				addr.plen = prefix;
-		} else {
-			_LOGW ("invalid 'Netmask': %s", s);
-			goto out;
-		}
-	} else {
+	if (!g_variant_lookup (v_dict, "Netmask", "&s", &s)) {
 		_LOGW ("Settings 'Netmask' missing");
 		goto out;
 	}
+	if (   !s
+	    || !nm_utils_parse_inaddr_bin (AF_INET, s, &address_network)) {
+		_LOGW ("invalid 'Netmask': %s", s ?: "");
+		goto out;
+	}
+	addr.plen = nm_utils_ip4_netmask_to_prefix (address_network);
 
-	_LOGI ("Address: %s/%d", addr_s, prefix);
-
+	_LOGI ("Address: %s", nm_platform_ip4_address_to_string (&addr, NULL, 0));
 	nm_ip4_config_add_address (priv->ip4_config, &addr);
 
-	if (   g_variant_lookup (v_dict, "Gateway", "&s", &s)
-	    && s) {
-
-		if (!nm_utils_parse_inaddr_bin (AF_INET, s, &gateway_network)) {
-			_LOGW ("invalid 'Gateway': %s", s);
-			goto out;
-		}
-
-		nm_modem_get_route_parameters (NM_MODEM (self),
-		                               &ip4_route_table,
-		                               &ip4_route_metric,
-		                               NULL,
-		                               NULL);
-		{
-			const NMPlatformIP4Route r = {
-				.rt_source = NM_IP_CONFIG_SOURCE_WWAN,
-				.gateway = gateway_network,
-				.table_coerced = nm_platform_route_table_coerce (ip4_route_table),
-				.metric = ip4_route_metric,
-			};
-
-			_LOGI ("Gateway: %s", s);
-			nm_ip4_config_add_route (priv->ip4_config, &r, NULL);
-		}
-	} else {
+	if (   !g_variant_lookup (v_dict, "Gateway", "&s", &s)
+	    || !s) {
 		_LOGW ("Settings 'Gateway' missing");
 		goto out;
 	}
+	if (!nm_utils_parse_inaddr_bin (AF_INET, s, &gateway_network)) {
+		_LOGW ("invalid 'Gateway': %s", s);
+		goto out;
+	}
+	nm_modem_get_route_parameters (NM_MODEM (self),
+	                               &ip4_route_table,
+	                               &ip4_route_metric,
+	                               NULL,
+	                               NULL);
+	{
+		const NMPlatformIP4Route r = {
+			.rt_source = NM_IP_CONFIG_SOURCE_WWAN,
+			.gateway = gateway_network,
+			.table_coerced = nm_platform_route_table_coerce (ip4_route_table),
+			.metric = ip4_route_metric,
+		};
 
-	if (g_variant_lookup (v_dict, "DomainNameServers", "^a&s", &array)) {
-		if (array) {
-			for (iter = array; *iter; iter++) {
-				if (   nm_utils_parse_inaddr_bin (AF_INET, *iter, &address_network)
-				    && address_network) {
-					_LOGI ("DNS: %s", *iter);
-					nm_ip4_config_add_nameserver (priv->ip4_config, address_network);
-				} else {
-					_LOGW ("invalid NameServer: %s", *iter);
-				}
-			}
+		_LOGI ("Gateway: %s", s);
+		nm_ip4_config_add_route (priv->ip4_config, &r, NULL);
+	}
 
-			if (iter == array) {
-				_LOGW ("Settings: 'DomainNameServers': none specified");
-				g_free (array);
-				goto out;
-			}
-			g_free (array);
-		}
-	} else {
+	if (!g_variant_lookup (v_dict, "DomainNameServers", "^a&s", &array)) {
 		_LOGW ("Settings 'DomainNameServers' missing");
 		goto out;
+	}
+	if (array) {
+		for (iter = array; *iter; iter++) {
+			if (   nm_utils_parse_inaddr_bin (AF_INET, *iter, &address_network)
+			    && address_network) {
+				_LOGI ("DNS: %s", *iter);
+				nm_ip4_config_add_nameserver (priv->ip4_config, address_network);
+			} else {
+				_LOGW ("invalid NameServer: %s", *iter);
+			}
+		}
+
+		if (iter == array) {
+			_LOGW ("Settings: 'DomainNameServers': none specified");
+			g_free (array);
+			goto out;
+		}
+		g_free (array);
 	}
 
 	if (g_variant_lookup (v_dict, "MessageProxy", "&s", &s)) {
