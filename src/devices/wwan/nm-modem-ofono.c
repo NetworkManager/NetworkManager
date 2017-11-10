@@ -829,7 +829,7 @@ context_property_changed (GDBusProxy *proxy,
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
 	NMPlatformIP4Address addr;
 	gboolean ret = FALSE;
-	GVariant *v_dict;
+	gs_unref_variant GVariant *v_dict = NULL;
 	const gchar *s, *addr_s;
 	const gchar **array, **iter;
 	guint32 address_network, gateway_network;
@@ -859,14 +859,13 @@ context_property_changed (GDBusProxy *proxy,
 		if (s && strlen (s)) {
 			_LOGD ("Interface: %s", s);
 			g_object_set (self,
-			              NM_MODEM_DATA_PORT, g_strdup (s),
+			              NM_MODEM_DATA_PORT, s,
 			              NM_MODEM_IP4_METHOD, NM_MODEM_IP_METHOD_STATIC,
 			              NULL);
 		} else {
 			_LOGW ("Settings 'Interface'; empty");
 			goto out;
 		}
-
 	} else {
 		_LOGW ("Settings 'Interface' missing");
 		goto out;
