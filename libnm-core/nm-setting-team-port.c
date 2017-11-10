@@ -111,7 +111,7 @@ nm_setting_team_port_get_config (NMSettingTeamPort *setting)
  *
  * Returns: the #NMSettingTeamPort:queue_id property of the setting
  *
- * Since 1.12
+ * Since: 1.12
  **/
 gint
 nm_setting_team_port_get_queue_id (NMSettingTeamPort *setting)
@@ -127,7 +127,7 @@ nm_setting_team_port_get_queue_id (NMSettingTeamPort *setting)
  *
  * Returns: the #NMSettingTeamPort:prio property of the setting
  *
- * Since 1.12
+ * Since: 1.12
  **/
 gint
 nm_setting_team_port_get_prio (NMSettingTeamPort *setting)
@@ -143,7 +143,7 @@ nm_setting_team_port_get_prio (NMSettingTeamPort *setting)
  *
  * Returns: the #NMSettingTeamPort:sticky property of the setting
  *
- * Since 1.12
+ * Since: 1.12
  **/
 gboolean
 nm_setting_team_port_get_sticky (NMSettingTeamPort *setting)
@@ -159,7 +159,7 @@ nm_setting_team_port_get_sticky (NMSettingTeamPort *setting)
  *
  * Returns: the #NMSettingTeamPort:lacp-prio property of the setting
  *
- * Since 1.12
+ * Since: 1.12
  **/
 gint
 nm_setting_team_port_get_lacp_prio (NMSettingTeamPort *setting)
@@ -175,7 +175,7 @@ nm_setting_team_port_get_lacp_prio (NMSettingTeamPort *setting)
  *
  * Returns: the #NMSettingTeamPort:lacp-key property of the setting
  *
- * Since 1.12
+ * Since: 1.12
  **/
 gint
 nm_setting_team_port_get_lacp_key (NMSettingTeamPort *setting)

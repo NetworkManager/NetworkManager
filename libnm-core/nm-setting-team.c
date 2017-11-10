@@ -138,7 +138,7 @@ nm_setting_team_get_config (NMSettingTeam *setting)
  *
  * Returns: the ##NMSettingTeam:notify-peers-count property of the setting
  *
- * Since 1.12
+ * Since: 1.12
  **/
 gint
 nm_setting_team_get_notify_peers_count (NMSettingTeam *setting)
@@ -154,7 +154,7 @@ nm_setting_team_get_notify_peers_count (NMSettingTeam *setting)
  *
  * Returns: the ##NMSettingTeam:notify-peers-interval property of the setting
  *
- * Since 1.12
+ * Since: 1.12
  **/
 gint
 nm_setting_team_get_notify_peers_interval (NMSettingTeam *setting)
@@ -170,7 +170,7 @@ nm_setting_team_get_notify_peers_interval (NMSettingTeam *setting)
  *
  * Returns: the ##NMSettingTeam:mcast-rejoin-count property of the setting
  *
- * Since 1.12
+ * Since: 1.12
  **/
 gint
 nm_setting_team_get_mcast_rejoin_count (NMSettingTeam *setting)
@@ -186,7 +186,7 @@ nm_setting_team_get_mcast_rejoin_count (NMSettingTeam *setting)
  *
  * Returns: the ##NMSettingTeam:mcast-rejoin-interval property of the setting
  *
- * Since 1.12
+ * Since: 1.12
  **/
 gint
 nm_setting_team_get_mcast_rejoin_interval (NMSettingTeam *setting)
@@ -202,7 +202,7 @@ nm_setting_team_get_mcast_rejoin_interval (NMSettingTeam *setting)
  *
  * Returns: the ##NMSettingTeam:runner property of the setting
  *
- * Since 1.12
+ * Since: 1.12
  **/
 const char *
 nm_setting_team_get_runner (NMSettingTeam *setting)
@@ -218,7 +218,7 @@ nm_setting_team_get_runner (NMSettingTeam *setting)
  *
  * Returns: the ##NMSettingTeam:runner-hwaddr-policy property of the setting
  *
- * Since 1.12
+ * Since: 1.12
  **/
 const char *
 nm_setting_team_get_runner_hwaddr_policy (NMSettingTeam *setting)
@@ -234,7 +234,7 @@ nm_setting_team_get_runner_hwaddr_policy (NMSettingTeam *setting)
  *
  * Returns: the ##NMSettingTeam:runner-tx-balancer property of the setting
  *
- * Since 1.12
+ * Since: 1.12
  **/
 const char *
 nm_setting_team_get_runner_tx_balancer (NMSettingTeam *setting)
@@ -250,7 +250,7 @@ nm_setting_team_get_runner_tx_balancer (NMSettingTeam *setting)
  *
  * Returns: the ##NMSettingTeam:runner-tx-balancer_interval property of the setting
  *
- * Since 1.12
+ * Since: 1.12
  **/
 gint
 nm_setting_team_get_runner_tx_balancer_interval (NMSettingTeam *setting)
@@ -266,7 +266,7 @@ nm_setting_team_get_runner_tx_balancer_interval (NMSettingTeam *setting)
  *
  * Returns: the ##NMSettingTeam:runner_active property of the setting
  *
- * Since 1.12
+ * Since: 1.12
  **/
 gboolean
 nm_setting_team_get_runner_active (NMSettingTeam *setting)
@@ -282,7 +282,7 @@ nm_setting_team_get_runner_active (NMSettingTeam *setting)
  *
  * Returns: the ##NMSettingTeam:runner-fast-rate property of the setting
  *
- * Since 1.12
+ * Since: 1.12
  **/
 gboolean
 nm_setting_team_get_runner_fast_rate (NMSettingTeam *setting)
@@ -298,7 +298,7 @@ nm_setting_team_get_runner_fast_rate (NMSettingTeam *setting)
  *
  * Returns: the ##NMSettingTeam:runner-sys-prio property of the setting
  *
- * Since 1.12
+ * Since: 1.12
  **/
 gint
 nm_setting_team_get_runner_sys_prio (NMSettingTeam *setting)
@@ -314,7 +314,7 @@ nm_setting_team_get_runner_sys_prio (NMSettingTeam *setting)
  *
  * Returns: the ##NMSettingTeam:runner-min-ports property of the setting
  *
- * Since 1.12
+ * Since: 1.12
  **/
 gint
 nm_setting_team_get_runner_min_ports (NMSettingTeam *setting)
@@ -330,7 +330,7 @@ nm_setting_team_get_runner_min_ports (NMSettingTeam *setting)
  *
  * Returns: the ##NMSettingTeam:runner-agg-select-policy property of the setting
  *
- * Since 1.12
+ * Since: 1.12
  **/
 const char *
 nm_setting_team_get_runner_agg_select_policy (NMSettingTeam *setting)
@@ -349,7 +349,7 @@ nm_setting_team_get_runner_agg_select_policy (NMSettingTeam *setting)
  *
  * Returns: %TRUE if the txhash element was found and removed; %FALSE if it was not.
  *
- * Since 1.12
+ * Since: 1.12
  **/
 gboolean
 nm_setting_team_remove_runner_tx_hash_by_value (NMSettingTeam *setting,
@@ -397,7 +397,7 @@ nm_setting_team_get_num_runner_tx_hash (NMSettingTeam *setting)
  *
  * Returns: the txhash element at index @idx
  *
- * Since 1.12
+ * Since: 1.12
  **/
 const char *
 nm_setting_team_get_runner_tx_hash (NMSettingTeam *setting, int idx)
@@ -417,7 +417,7 @@ nm_setting_team_get_runner_tx_hash (NMSettingTeam *setting, int idx)
  *
  * Removes the txhash element at index @idx.
  *
- * Since 1.12
+ * Since: 1.12
  **/
 void
 nm_setting_team_remove_runner_tx_hash (NMSettingTeam *setting, int idx)
@@ -441,7 +441,7 @@ nm_setting_team_remove_runner_tx_hash (NMSettingTeam *setting, int idx)
  * Returns: %TRUE if the txhash element was added; %FALSE if the element
  * was already knnown.
  *
- * Since 1.12
+ * Since: 1.12
  **/
 gboolean
 nm_setting_team_add_runner_tx_hash (NMSettingTeam *setting, const char *txhash)
