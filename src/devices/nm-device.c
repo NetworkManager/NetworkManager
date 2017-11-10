@@ -4974,7 +4974,7 @@ static void
 activation_source_schedule (NMDevice *self, ActivationHandleFunc func, int addr_family)
 {
 	ActivationHandleData *act_data;
-	GSourceFunc source_func;
+	GSourceFunc source_func = NULL;
 	guint new_id = 0;
 
 	act_data = activation_source_get_by_family (self, addr_family, &source_func);
