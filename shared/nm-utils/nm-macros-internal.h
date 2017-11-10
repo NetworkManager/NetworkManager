@@ -263,7 +263,7 @@ NM_G_ERROR_MSG (GError *error)
 
 /*****************************************************************************/
 
-#if (defined (__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 9 ))) || (defined (__clang__))
+#if (defined (__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9 ))) || (defined (__clang__))
 #define _NM_CC_SUPPORT_GENERIC 1
 #else
 #define _NM_CC_SUPPORT_GENERIC 0
