@@ -7,9 +7,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
-"Report-Msgid-Bugs-To: https://bugzilla.gnome.org/enter_bug.cgi?"
-"product=NetworkManager&keywords=I18N+L10N&component=Translations\n"
-"POT-Creation-Date: 2017-11-06 15:24+0000\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-11-10 15:29+0100\n"
 "PO-Revision-Date: 2017-11-07 15:38+0100\n"
 "Last-Translator: Josef Andersson <l10nl18nsweja@gmail.com>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
@@ -5683,7 +5682,7 @@ msgstr "Användarinställningar"
 msgid "VLAN connection"
 msgstr "VLAN-anslutning"
 
-#: ../clients/common/nm-meta-setting-desc.c:6818 ../src/nm-manager.c:4213
+#: ../clients/common/nm-meta-setting-desc.c:6818 ../src/nm-manager.c:4191
 msgid "VPN connection"
 msgstr "VPN-anslutning"
 
@@ -12567,7 +12566,7 @@ msgstr "TUN-anslutning"
 msgid "Team connection"
 msgstr "Gruppanslutning"
 
-#: ../src/devices/wifi/nm-device-olpc-mesh.c:156
+#: ../src/devices/wifi/nm-device-olpc-mesh.c:152
 msgid "Mesh"
 msgstr "Mesh"
 
