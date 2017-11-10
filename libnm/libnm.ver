@@ -1345,6 +1345,8 @@ global:
 	nm_client_checkpoint_rollback_async;
 	nm_client_checkpoint_rollback_finish;
 	nm_client_get_checkpoints;
+	nm_setting_connection_get_mdns;
+	nm_setting_connection_mdns_get_type;
 	nm_setting_vpn_get_data_keys;
 	nm_setting_vpn_get_secret_keys;
 } libnm_1_10_0;
