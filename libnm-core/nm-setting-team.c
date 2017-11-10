@@ -1493,6 +1493,9 @@ set_property (GObject *object, guint prop_id,
 		priv->link_watchers = _nm_utils_copy_array (g_value_get_boxed (value),
 		                                            (NMUtilsCopyFunc) nm_team_link_watcher_dup,
 		                                            (GDestroyNotify) nm_team_link_watcher_unref);
+		if (priv->link_watchers->len)
+			align_value = value;
+		align_config = TRUE;
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

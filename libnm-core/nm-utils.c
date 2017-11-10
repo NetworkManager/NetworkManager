@@ -4590,6 +4590,72 @@ _nm_utils_team_config_get (const char *conf,
 	return value;
 }
 
+static json_t *
+_nm_utils_team_link_watcher_to_json (NMTeamLinkWatcher *watcher)
+{
+	const char *name;
+	int int_val;
+	const char *str_val;
+	NMTeamLinkWatcherArpPingFlags flags = 0;
+	json_t *json_element;
+
+	g_return_val_if_fail (watcher, NULL);
+
+	json_element = json_object ();
+	name = nm_team_link_watcher_get_name (watcher);
+	if (!name)
+		goto fail;
+
+	json_object_set_new (json_element, "name", json_string (name));
+
+	if (nm_streq (name, NM_TEAM_LINK_WATCHER_ETHTOOL)) {
+		int_val = nm_team_link_watcher_get_delay_up (watcher);
+		if (int_val)
+			json_object_set_new (json_element, "delay_up", json_integer (int_val));
+		int_val = nm_team_link_watcher_get_delay_down (watcher);
+		if (int_val)
+			json_object_set_new (json_element, "delay_down", json_integer (int_val));
+		return json_element;
+	}
+
+	int_val = nm_team_link_watcher_get_init_wait (watcher);
+	if (int_val)
+		json_object_set_new (json_element, "init_wait", json_integer (int_val));
+	int_val = nm_team_link_watcher_get_interval (watcher);
+	if (int_val)
+		json_object_set_new (json_element, "interval", json_integer (int_val));
+	int_val = nm_team_link_watcher_get_missed_max (watcher);
+	if (int_val != 3)
+		json_object_set_new (json_element, "missed_max", json_integer (int_val));
+	str_val = nm_team_link_watcher_get_target_host (watcher);
+	if (!str_val)
+		goto fail;
+	json_object_set_new (json_element, "target_host", json_string (str_val));
+
+	if (nm_streq (name, NM_TEAM_LINK_WATCHER_NSNA_PING))
+		return json_element;
+
+	str_val = nm_team_link_watcher_get_source_host (watcher);
+	if (!str_val)
+		goto fail;
+	json_object_set_new (json_element, "source_host", json_string (str_val));
+
+	flags = nm_team_link_watcher_get_flags (watcher);
+	if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE)
+		json_object_set_new (json_element, "validate_active", json_string ("true"));
+	if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE)
+		json_object_set_new (json_element, "validate_inactive", json_string ("true"));
+	if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS)
+		json_object_set_new (json_element, "send_always", json_string ("true"));
+
+	return json_element;
+
+fail:
+	json_decref (json_element);
+	return NULL;
+}
+
+
 /* if conf is updated in place returns TRUE */
 gboolean
 _nm_utils_team_config_set (char **conf,
@@ -4602,8 +4668,12 @@ _nm_utils_team_config_set (char **conf,
 	json_error_t jerror;
 	gboolean updated = FALSE;
 	char **strv;
+	GPtrArray *array;
 	const char *iter_key = key;
 	int i;
+	NMTeamLinkWatcher *watcher;
+
+	g_return_val_if_fail (key, FALSE);
 
 	json = json_loads (*conf?: "{}", JSON_REJECT_DUPLICATES, &jerror);
 	if (!json)
@@ -4655,14 +4725,51 @@ _nm_utils_team_config_set (char **conf,
 	else if (G_VALUE_HOLDS_BOOLEAN (value))
 		json_value = json_boolean (g_value_get_boolean (value));
 	else if (G_VALUE_HOLDS_BOXED (value)) {
-		strv = g_value_get_boxed (value);
-		if (strv) {
+		if (nm_streq (key, "link_watch")) {
+			array = g_value_get_boxed (value);
+			if (!array || !array->len) {
+				updated = FALSE;
+				goto done;
+			}
+
+			/*
+			 * json_value:   will hold the final link_watcher json (array) object
+			 * json_element: is the next link_watcher to append to json_value
+			 * json_link:    used to transit the json_value from a single link_watcher
+			 *               object to an array of link watcher objects
+			 */
+			json_value = NULL;
+			for (i = 0; i < array->len; i++) {
+				watcher = array->pdata[i];
+				json_element = _nm_utils_team_link_watcher_to_json (watcher);
+				if (!json_element)
+					continue;
+				if (!json_value) {
+					json_value = json_element;
+					continue;
+				}
+				if (!json_is_array (json_value)) {
+					json_link = json_value;
+					json_value = json_array ();
+					json_array_append_new (json_value, json_link);
+				}
+				json_array_append_new (json_value, json_element);
+			}
+		} else if (   nm_streq (key, "runner")
+		           && nm_streq0 (key2, "tx_hash")) {
+			strv = g_value_get_boxed (value);
+			if (!strv) {
+				updated = FALSE;
+				goto done;
+			}
 			json_value = json_array ();
 			for (i = 0; strv[i]; i++)
 				json_array_append_new (json_value, json_string (strv[i]));
-		} else
-			return FALSE;
-	} else {
+		} else {
+			updated = FALSE;
+			goto done;
+		}
+	} else {  /* G_VALUE_HOLDS_? */
 		g_assert_not_reached ();
 		updated = FALSE;
 		goto done;
