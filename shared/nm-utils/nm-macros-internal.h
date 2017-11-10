@@ -263,17 +263,24 @@ NM_G_ERROR_MSG (GError *error)
 
 /*****************************************************************************/
 
+#ifndef _NM_CC_SUPPORT_AUTO_TYPE
 #if (defined (__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9 )))
 #define _NM_CC_SUPPORT_AUTO_TYPE 1
-#define _nm_auto_type __auto_type
 #else
 #define _NM_CC_SUPPORT_AUTO_TYPE 0
 #endif
+#endif
 
+#ifndef _NM_CC_SUPPORT_GENERIC
 #if (defined (__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9 ))) || (defined (__clang__))
 #define _NM_CC_SUPPORT_GENERIC 1
 #else
 #define _NM_CC_SUPPORT_GENERIC 0
+#endif
+#endif
+
+#if _NM_CC_SUPPORT_AUTO_TYPE
+#define _nm_auto_type __auto_type
 #endif
 
 #if _NM_CC_SUPPORT_GENERIC
