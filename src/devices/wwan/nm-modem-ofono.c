@@ -830,6 +830,7 @@ context_property_changed (GDBusProxy *proxy,
 	NMPlatformIP4Address addr;
 	gboolean ret = FALSE;
 	gs_unref_variant GVariant *v_dict = NULL;
+	const char *interface;
 	const gchar *s, *addr_s;
 	const gchar **array, **iter;
 	guint32 address_network, gateway_network;
@@ -855,21 +856,20 @@ context_property_changed (GDBusProxy *proxy,
 
 	_LOGI ("IPv4 static Settings:");
 
-	if (g_variant_lookup (v_dict, "Interface", "&s", &s)) {
-		if (s && strlen (s)) {
-			_LOGD ("Interface: %s", s);
-			g_object_set (self,
-			              NM_MODEM_DATA_PORT, s,
-			              NM_MODEM_IP4_METHOD, NM_MODEM_IP_METHOD_STATIC,
-			              NULL);
-		} else {
-			_LOGW ("Settings 'Interface'; empty");
-			goto out;
-		}
-	} else {
+	if (!g_variant_lookup (v_dict, "Interface", "&s", &interface)) {
 		_LOGW ("Settings 'Interface' missing");
 		goto out;
 	}
+	if (!interface || !interface[0]) {
+		_LOGW ("Settings 'Interface'; empty");
+		goto out;
+	}
+
+	_LOGD ("Interface: %s", interface);
+	g_object_set (self,
+	              NM_MODEM_DATA_PORT, interface,
+	              NM_MODEM_IP4_METHOD, NM_MODEM_IP_METHOD_STATIC,
+	              NULL);
 
 	/* TODO: verify handling of ip4_config; check other places it's used... */
 	g_clear_object (&priv->ip4_config);
