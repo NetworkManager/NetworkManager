@@ -1347,6 +1347,8 @@ global:
 	nm_client_get_checkpoints;
 	nm_device_ip_tunnel_get_flags;
 	nm_ip_tunnel_flags_get_type;
+	nm_setting_connection_get_mdns;
+	nm_setting_connection_mdns_get_type;
 	nm_setting_ip_tunnel_get_flags;
 	nm_setting_vpn_get_data_keys;
 	nm_setting_vpn_get_secret_keys;
