@@ -89,6 +89,18 @@ nm_dns_plugin_update (NMDnsPlugin *self,
 	                                               hostname);
 }
 
+gboolean
+nm_dns_plugin_update_mdns (NMDnsPlugin *self,
+                           int ifindex,
+                           NMSettingConnectionMdns mdns)
+{
+	g_return_val_if_fail (NM_DNS_PLUGIN_GET_CLASS (self)->update_mdns != NULL, FALSE);
+
+	return NM_DNS_PLUGIN_GET_CLASS (self)->update_mdns (self,
+	                                                    ifindex,
+	                                                    mdns);
+}
+
 static gboolean
 is_caching (NMDnsPlugin *self)
 {
