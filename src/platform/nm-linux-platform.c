@@ -941,17 +941,21 @@ _nl_nlmsghdr_to_str (const struct nlmsghdr *hdr, char *buf, gsize len)
 	b = buf;
 
 	switch (hdr->nlmsg_type) {
-	case RTM_NEWLINK:  s = "NEWLINK";  break;
-	case RTM_DELLINK:  s = "DELLINK";  break;
-	case RTM_NEWADDR:  s = "NEWADDR";  break;
-	case RTM_DELADDR:  s = "DELADDR";  break;
-	case RTM_NEWROUTE: s = "NEWROUTE"; break;
-	case RTM_DELROUTE: s = "DELROUTE"; break;
-	default:           s = NULL;       break;
+	case RTM_NEWLINK:    s = "RTM_NEWLINK";  break;
+	case RTM_DELLINK:    s = "RTM_DELLINK";  break;
+	case RTM_NEWADDR:    s = "RTM_NEWADDR";  break;
+	case RTM_DELADDR:    s = "RTM_DELADDR";  break;
+	case RTM_NEWROUTE:   s = "RTM_NEWROUTE"; break;
+	case RTM_DELROUTE:   s = "RTM_DELROUTE"; break;
+	case NLMSG_NOOP:     s = "NLMSG_NOOP"; break;
+	case NLMSG_ERROR:    s = "NLMSG_ERROR"; break;
+	case NLMSG_DONE:     s = "NLMSG_DONE"; break;
+	case NLMSG_OVERRUN:  s = "NLMSG_OVERRUN"; break;
+	default:             s = NULL;       break;
 	}
 
 	if (s)
-		nm_utils_strbuf_append (&buf, &len, "RTM_%s", s);
+		nm_utils_strbuf_append_str (&buf, &len, s);
 	else
 		nm_utils_strbuf_append (&buf, &len, "(%u)", (unsigned) hdr->nlmsg_type);
 
