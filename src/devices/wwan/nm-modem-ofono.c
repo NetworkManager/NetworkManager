@@ -836,6 +836,7 @@ context_property_changed (GDBusProxy *proxy,
 	guint32 address_network, gateway_network;
 	guint32 ip4_route_table, ip4_route_metric;
 	guint prefix = 0;
+	int ifindex;
 
 	_LOGD ("PropertyChanged: %s", property);
 
@@ -865,6 +866,12 @@ context_property_changed (GDBusProxy *proxy,
 		goto out;
 	}
 
+	ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, interface);
+	if (ifindex <= 0) {
+		_LOGW ("Interface \"%s\" not found", interface);
+		goto out;
+	}
+
 	_LOGD ("Interface: %s", interface);
 	g_object_set (self,
 	              NM_MODEM_DATA_PORT, interface,
@@ -876,27 +883,8 @@ context_property_changed (GDBusProxy *proxy,
 
 	memset (&addr, 0, sizeof (addr));
 
-	/*
-	 * TODO:
-	 *
-	 * NM 1.2 changed the NMIP4Config constructor to take an ifindex
-	 * ( vs. void pre 1.2 ), to tie config instance to a specific
-	 * platform interface.
-	 *
-	 * This doesn't work for ofono, as the devices are created
-	 * dynamically ( eg. ril_0, ril_1 ) in NMModemManager.  The
-	 * device created doesn't really map directly to a platform
-	 * link.  The closest would be one of the devices owned by
-	 * rild ( eg. ccmin0 ), which is passed to us above as
-	 * 'Interface'.
-	 *
-	 * This needs discussion with upstream.
-	 *
-	 * FIXME: it is no longer allowed to omit the ifindex for NMIP4Config instances.
-	 * This is broken.
-	 */
 	priv->ip4_config = nm_ip4_config_new (nm_platform_get_multi_idx (NM_PLATFORM_GET),
-	                                      0);
+	                                      ifindex);
 
 	/* TODO: simply if/else error logic! */
 
