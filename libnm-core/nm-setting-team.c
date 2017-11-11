@@ -1351,6 +1351,9 @@ _align_team_properties (NMSettingTeam *setting)
 			nm_setting_team_add_runner_tx_hash (setting, strv[i]);
 		g_strfreev (strv);
 	}
+
+	g_ptr_array_unref (priv->link_watchers);
+	priv->link_watchers = JSON_TO_VAL (ptr_array, PROP_LINK_WATCHERS);
 }
 
 static void
