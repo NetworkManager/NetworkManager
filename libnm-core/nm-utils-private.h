@@ -162,6 +162,30 @@ _nm_utils_json_extract_strv (char *conf,
 	return ret;
 }
 
+static inline GPtrArray *
+_nm_utils_json_extract_ptr_array (char *conf,
+                             _NMUtilsTeamPropertyKeys key,
+                             gboolean is_port)
+{
+	gs_free GValue *t_value = NULL;
+	GPtrArray *data, *ret;
+	guint i;
+
+	ret = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_team_link_watcher_unref);
+	t_value = _nm_utils_team_config_get (conf, key.key1, key.key2, key.key3, is_port);
+	if (!t_value)
+		return ret;
+
+	data = g_value_get_boxed (t_value);
+	if (!data)
+		return ret;
+
+	for (i = 0; i < data->len; i++)
+		g_ptr_array_add (ret, nm_team_link_watcher_dup (data->pdata[i]));
+	g_value_unset (t_value);
+	return ret;
+}
+
 static inline void
 _nm_utils_json_append_gvalue (char **conf,
                               _NMUtilsTeamPropertyKeys key,

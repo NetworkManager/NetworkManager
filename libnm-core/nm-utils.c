@@ -4302,6 +4302,14 @@ const char **nm_utils_enum_get_values (GType type, gint from, gint to)
 
 #if WITH_JANSSON
 
+/* Added in Jansson v2.3 (released Jan 27 2012) */
+#ifndef json_object_foreach
+#define json_object_foreach(object, key, value) \
+    for(key = json_object_iter_key(json_object_iter(object)); \
+        key && (value = json_object_iter_value(json_object_iter_at (object, key) )); \
+        key = json_object_iter_key(json_object_iter_next(object, json_object_iter_at (object, key))))
+#endif
+
 /* Added in Jansson v2.4 (released Sep 23 2012), but travis.ci has v2.2. */
 #ifndef json_boolean
 #define json_boolean(val) ((val) ? json_true() : json_false())
@@ -4521,6 +4529,53 @@ key_already_there:
 	json_decref (value);
 }
 
+static NMTeamLinkWatcher *
+_nm_utils_team_link_watcher_from_json (json_t *json_element)
+{
+	const char *j_key;
+	json_t *j_val;
+	gs_free char *name = NULL, *target_host = NULL, *source_host = NULL;
+	int val1 = 0, val2 = 0, val3 = 3;
+	NMTeamLinkWatcherArpPingFlags flags = 0;
+
+	g_return_val_if_fail (json_element, NULL);
+
+	json_object_foreach (json_element, j_key, j_val) {
+		if (nm_streq (j_key, "name"))
+			name = strdup (json_string_value (j_val));
+		else if (nm_streq (j_key, "target_host"))
+			target_host = strdup (json_string_value (j_val));
+		else if (nm_streq (j_key, "source_host"))
+			source_host = strdup (json_string_value (j_val));
+		else if (NM_IN_STRSET (j_key, "delay_up", "init_wait"))
+			val1 = json_integer_value (j_val);
+		else if (NM_IN_STRSET (j_key, "delay_down", "interval"))
+			val2 = json_integer_value (j_val);
+		else if (nm_streq (j_key, "missed_max"))
+			val3 = json_integer_value (j_val);
+		else if (nm_streq (j_key, "validate_active")) {
+			if (json_is_true (j_val))
+				flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE;
+		} else if (nm_streq (j_key, "validate_inactive")) {
+			if (json_is_true (j_val))
+				flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE;
+		} else if (nm_streq (j_key, "send_always")) {
+			if (json_is_true (j_val))
+				flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS;
+		}
+	}
+
+	if (nm_streq0 (name, NM_TEAM_LINK_WATCHER_ETHTOOL))
+		return nm_team_link_watcher_new_ethtool (val1, val2, NULL);
+	else if (nm_streq0 (name, NM_TEAM_LINK_WATCHER_NSNA_PING))
+		return nm_team_link_watcher_new_nsna_ping (val1, val2, val3, target_host, NULL);
+	else if (nm_streq0 (name, NM_TEAM_LINK_WATCHER_ARP_PING)) {
+		return nm_team_link_watcher_new_arp_ping (val1, val2, val3, target_host,
+		                                          source_host, flags, NULL);
+	} else
+		return NULL;
+}
+
 GValue *
 _nm_utils_team_config_get (const char *conf,
                            const char *key,
@@ -4546,10 +4601,13 @@ _nm_utils_team_config_get (const char *conf,
 	/* Some properties are added by teamd when missing from the initial
 	 * configuration.  Add them with the default value if necessary, depending
 	 * on the configuration type.
+	 * Skip this for port config, as some properties change on the basis of the
+	 * runner specified in the master connection... but we don't want to check
+	 * against properties in another connection. Moreover, for team-port we have
+	 * the link-watchers property only here: and for this compound property it is
+	 * fine to show the default value only if explicitly set.
 	 */
-	if  (port_config) {
-		_json_add_object (json, "link_watch", "name", NULL, json_string ("ethtool"));
-	} else {
+	if (!port_config) {
 		/* Retrieve runner or add default one */
 		json_element = json_object_get (json, "runner");
 		if (json_element) {
@@ -4595,6 +4653,31 @@ _nm_utils_team_config_get (const char *conf,
 		} else if (json_is_boolean (json_element)) {
 			g_value_init (value, G_TYPE_BOOLEAN);
 			g_value_set_boolean (value, json_boolean_value (json_element));
+		} else if (nm_streq (key, "link_watch")) {
+			NMTeamLinkWatcher *watcher;
+			GPtrArray *data = g_ptr_array_new_with_free_func
+			                  ((GDestroyNotify) nm_team_link_watcher_unref);
+
+			if (json_is_array (json_element)) {
+				json_t *j_watcher;
+				int index;
+
+				json_array_foreach (json_element, index, j_watcher) {
+					watcher = _nm_utils_team_link_watcher_from_json (j_watcher);
+					if (watcher)
+						g_ptr_array_add (data, watcher);
+				}
+			} else {
+				watcher = _nm_utils_team_link_watcher_from_json (json_element);
+				if (watcher)
+					g_ptr_array_add (data, watcher);
+			}
+			if (data->len) {
+				g_value_init (value, G_TYPE_PTR_ARRAY);
+				g_value_take_boxed (value, data);
+			} else
+				g_ptr_array_free (data, TRUE);
+
 		} else if (json_is_array (json_element)) {
 			GPtrArray *data = g_ptr_array_new_with_free_func ((GDestroyNotify) g_free);
 			json_t *str_element;
