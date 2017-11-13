@@ -1,5 +1,5 @@
 DEVICE=team0
 ONBOOT=no
 BOOTPROTO=dhcp
-TEAM_CONFIG="{ \"device\": \"team0\", \"link_watch\": { \"name\": \"ethtool\" } }"
+TEAM_CONFIG="{\"device\": \"team0\", \"link_watch\": {\"name\": \"ethtool\"}}"
 

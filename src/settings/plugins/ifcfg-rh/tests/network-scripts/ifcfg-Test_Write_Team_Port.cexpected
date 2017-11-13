@@ -1,4 +1,4 @@
-TEAM_PORT_CONFIG="{ \"p4p1\": { \"prio\": -10, \"sticky\": true } }"
+TEAM_PORT_CONFIG="{\"p4p1\": {\"prio\": -10, \"sticky\": true}}"
 NAME="Test Write Team Port"
 UUID=${UUID}
 ONBOOT=yes
