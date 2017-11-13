@@ -263,10 +263,24 @@ NM_G_ERROR_MSG (GError *error)
 
 /*****************************************************************************/
 
-#if (defined (__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 9 ))) || (defined (__clang__))
+#ifndef _NM_CC_SUPPORT_AUTO_TYPE
+#if (defined (__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9 )))
+#define _NM_CC_SUPPORT_AUTO_TYPE 1
+#else
+#define _NM_CC_SUPPORT_AUTO_TYPE 0
+#endif
+#endif
+
+#ifndef _NM_CC_SUPPORT_GENERIC
+#if (defined (__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9 ))) || (defined (__clang__))
 #define _NM_CC_SUPPORT_GENERIC 1
 #else
 #define _NM_CC_SUPPORT_GENERIC 0
+#endif
+#endif
+
+#if _NM_CC_SUPPORT_AUTO_TYPE
+#define _nm_auto_type __auto_type
 #endif
 
 #if _NM_CC_SUPPORT_GENERIC
@@ -370,6 +384,16 @@ NM_G_ERROR_MSG (GError *error)
 #define _NM_ENSURE_TYPE(type, value) (_Generic ((value), type: (value)))
 #else
 #define _NM_ENSURE_TYPE(type, value) (value)
+#endif
+
+#if _NM_CC_SUPPORT_GENERIC
+#define NM_PROPAGATE_CONST(test_expr, ptr) \
+	(_Generic ((test_expr), \
+	           const typeof (*(test_expr)) *: ((const typeof (*(ptr)) *) (ptr)), \
+	                                 default: (_Generic ((test_expr), \
+	                                                     typeof (*(test_expr)) *: (ptr)))))
+#else
+#define NM_PROPAGATE_CONST(test_expr, ptr) (ptr)
 #endif
 
 /*****************************************************************************/
@@ -651,8 +675,17 @@ _notify (obj_type *obj, _PropertyEnums prop) \
 
 /*****************************************************************************/
 
-#define _NM_GET_PRIVATE(     self, type, is_check, ...)     (&(NM_GOBJECT_CAST_NON_NULL (type, (self), is_check, ##__VA_ARGS__)->_priv))
-#define _NM_GET_PRIVATE_PTR( self, type, is_check, ...)     ( (NM_GOBJECT_CAST_NON_NULL (type, (self), is_check, ##__VA_ARGS__)->_priv))
+#define _NM_GET_PRIVATE(self, type, is_check, ...) (&(NM_GOBJECT_CAST_NON_NULL (type, (self), is_check, ##__VA_ARGS__)->_priv))
+#if _NM_CC_SUPPORT_AUTO_TYPE
+#define _NM_GET_PRIVATE_PTR(self, type, is_check, ...) \
+	({ \
+		_nm_auto_type _self = NM_GOBJECT_CAST_NON_NULL (type, (self), is_check, ##__VA_ARGS__); \
+		\
+		NM_PROPAGATE_CONST (_self, _self->_priv); \
+	})
+#else
+#define _NM_GET_PRIVATE_PTR(self, type, is_check, ...) (NM_GOBJECT_CAST_NON_NULL (type, (self), is_check, ##__VA_ARGS__)->_priv)
+#endif
 
 /*****************************************************************************/
 

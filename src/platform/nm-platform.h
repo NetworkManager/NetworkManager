@@ -375,13 +375,6 @@ typedef union {
 	\
 	guint8 plen; \
 	\
-	/* the route has rtm_flags set to RTM_F_CLONED. Such a route
-	 * is hidden by platform and does not exist from the point-of-view
-	 * of platform users. This flag is internal to track those hidden
-	 * routes. Such a route is not alive, according to nmp_object_is_alive(). */ \
-	bool rt_cloned:1; \
-	\
-	\
 	/* RTA_METRICS:
 	 *
 	 * For IPv4 routes, these properties are part of their
@@ -400,6 +393,18 @@ typedef union {
 	bool lock_initcwnd:1; \
 	bool lock_initrwnd:1; \
 	bool lock_mtu:1; \
+	\
+	/* rtnh_flags
+	 *
+	 * Routes with rtm_flags RTM_F_CLONED are hidden by platform and
+	 * do not exist from the point-of-view of platform users.
+	 * Such a route is not alive, according to nmp_object_is_alive().
+	 *
+	 * XXX: currently we ignore all flags except RTM_F_CLONED
+	 * and RTNH_F_ONLINK for IPv4.
+	 * We also may not properly consider the flags as part of the ID
+	 * in route-cmp. */ \
+	unsigned r_rtm_flags; \
 	\
 	/* RTA_METRICS.RTAX_ADVMSS (iproute2: advmss) */ \
 	guint32 mss; \
@@ -441,23 +446,11 @@ typedef struct {
 	};
 } NMPlatformIPRoute;
 
-#if _NM_CC_SUPPORT_GENERIC
+#define NM_PLATFORM_IP_ROUTE_CAST(route) \
+	NM_CONSTCAST (NMPlatformIPRoute, (route), NMPlatformIPXRoute, NMPlatformIP4Route, NMPlatformIP6Route)
+
 #define NM_PLATFORM_IP_ROUTE_IS_DEFAULT(route) \
-	(_Generic ((route), \
-	           const NMPlatformIPRoute  *: ((const NMPlatformIPRoute *) (route))->plen, \
-	                 NMPlatformIPRoute  *: ((const NMPlatformIPRoute *) (route))->plen, \
-	           const NMPlatformIPXRoute *: ((const NMPlatformIPRoute *) (route))->plen, \
-	                 NMPlatformIPXRoute *: ((const NMPlatformIPRoute *) (route))->plen, \
-	           const NMPlatformIP4Route *: ((const NMPlatformIPRoute *) (route))->plen, \
-	                 NMPlatformIP4Route *: ((const NMPlatformIPRoute *) (route))->plen, \
-	           const NMPlatformIP6Route *: ((const NMPlatformIPRoute *) (route))->plen, \
-	                 NMPlatformIP6Route *: ((const NMPlatformIPRoute *) (route))->plen, \
-	           const void               *: ((const NMPlatformIPRoute *) (route))->plen, \
-	                 void               *: ((const NMPlatformIPRoute *) (route))->plen) == 0)
-#else
-#define NM_PLATFORM_IP_ROUTE_IS_DEFAULT(route) \
-	( ((const NMPlatformIPRoute *) (route))->plen <= 0 )
-#endif
+	(NM_PLATFORM_IP_ROUTE_CAST (route)->plen <= 0)
 
 struct _NMPlatformIP4Route {
 	__NMPlatformIPRoute_COMMON;
