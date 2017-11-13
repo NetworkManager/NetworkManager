@@ -4304,7 +4304,7 @@ const char **nm_utils_enum_get_values (GType type, gint from, gint to)
 
 /*****************************************************************************/
 
-#if WITH_JANSSON
+#if WITH_JSON_VALIDATION
 /**
  * nm_utils_is_json_object:
  * @str: the JSON string to test
@@ -4715,7 +4715,7 @@ done:
 	return updated;
 }
 
-#else /* WITH_JANSSON */
+#else /* !WITH_JSON_VALIDATION */
 
 gboolean
 nm_utils_is_json_object (const char *str, GError **error)

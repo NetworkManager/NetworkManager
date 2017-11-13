@@ -5848,7 +5848,7 @@ test_nm_utils_check_valid_json (void)
 {
 	_json_config_check_valid (NULL, FALSE);
 	_json_config_check_valid ("", FALSE);
-#if WITH_JANSSON
+#if WITH_JSON_VALIDATION
 	_json_config_check_valid ("{ }", TRUE);
 	_json_config_check_valid ("{ \"a\" : 1 }", TRUE);
 	_json_config_check_valid ("{ \"a\" : }", FALSE);
@@ -5873,7 +5873,7 @@ _team_config_equal_check (const char *conf1,
 static void
 test_nm_utils_team_config_equal (void)
 {
-#if WITH_JANSSON
+#if WITH_JSON_VALIDATION
 	_team_config_equal_check ("", "", TRUE, TRUE);
 	_team_config_equal_check ("{}",
 	                          "{ }",

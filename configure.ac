@@ -642,6 +642,14 @@ PKG_CHECK_MODULES(UUID, uuid)
 # Teamd control checks
 
 PKG_CHECK_MODULES(JANSSON, [jansson], [have_jansson=yes], [have_jansson=no])
+if test "$have_jansson" = "yes"; then
+	AC_DEFINE(WITH_JANSSON, 1, [Define if JANSSON is enabled])
+else
+	AC_DEFINE(WITH_JANSSON, 0, [Define if JANSSON is enabled])
+fi
+AM_CONDITIONAL(WITH_JANSSON, test "${have_jansson}" = "yes")
+
+
 PKG_CHECK_MODULES(LIBTEAMDCTL, [libteamdctl >= 1.9], [have_teamdctl=yes],[have_teamdctl=no])
 if test "$have_jansson" = "yes" -a "$have_teamdctl" = "yes"; then
 	have_team_prereq=yes
@@ -673,14 +681,13 @@ AC_ARG_ENABLE(json-validation,
               [enable_json_validation=${enableval}],
               [enable_json_validation=${have_jansson}])
 if (test "${enable_json_validation}" == "no"); then
-	AC_DEFINE(WITH_JANSSON, 0, [Define if JANSSON is enabled])
+	AC_DEFINE(WITH_JSON_VALIDATION, 0, [Define if JSON validation in libnm is enabled])
 else
 	if test "$have_jansson" = "no"; then
 		AC_MSG_ERROR([jansson is needed for team configuration validation. Use --disable-json-validation to build without it.])
 	fi
-		AC_DEFINE(WITH_JANSSON, 1, [Define if JANSSON is enabled])
+		AC_DEFINE(WITH_JSON_VALIDATION, 1, [Define if JSON validation in libnm is enabled])
 fi
-AM_CONDITIONAL(WITH_JANSSON, test "${enable_json_validation}" != "no")
 
 # we usually compile with polkit support. --enable-polkit=yes|no only sets the
 # default configuration for main.auth-polkit. User can always enable/disable polkit
