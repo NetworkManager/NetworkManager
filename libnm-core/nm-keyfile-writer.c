@@ -501,6 +501,15 @@ cert_writer (KeyfileWriterInfo *info,
 	cert_writer_default (info->connection, info->keyfile, &type_data);
 }
 
+static void
+team_link_watcher_writer (KeyfileWriterInfo *info,
+                          NMSetting *setting,
+                          const char *key,
+                          const GValue *value)
+{
+	/* skip */
+}
+
 /*****************************************************************************/
 
 typedef struct {
@@ -576,6 +585,9 @@ static KeyWriter key_writers[] = {
 	{ NM_SETTING_802_1X_SETTING_NAME,
 	  NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
 	  cert_writer },
+	{ NM_SETTING_TEAM_SETTING_NAME,
+	  NM_SETTING_TEAM_LINK_WATCHERS,
+	  team_link_watcher_writer},
 	{ NULL, NULL, NULL }
 };
 
