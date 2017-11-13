@@ -1164,9 +1164,9 @@ nm_device_get_ip_iface (NMDevice *self)
 }
 
 int
-nm_device_get_ip_ifindex (NMDevice *self)
+nm_device_get_ip_ifindex (const NMDevice *self)
 {
-	NMDevicePrivate *priv;
+	const NMDevicePrivate *priv;
 
 	g_return_val_if_fail (self != NULL, 0);
 
