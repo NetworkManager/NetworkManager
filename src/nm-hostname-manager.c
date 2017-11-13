@@ -131,8 +131,7 @@ read_hostname_slackware (const char *path)
 {
 	gs_free char *contents = NULL;
 	gs_strfreev char **all_lines = NULL;
-	char *tmp;
-	guint i, j = 0;
+	guint i = 0;
 
 	if (!g_file_get_contents (path, &contents, NULL, NULL))
 		return NULL;
@@ -142,17 +141,7 @@ read_hostname_slackware (const char *path)
 		g_strstrip (all_lines[i]);
 		if (all_lines[i][0] == '#' || all_lines[i][0] == '\0')
 			continue;
-		tmp = &all_lines[i][0];
-		/* We only want up to the first '.' -- the rest of the */
-		/* fqdn is defined in /etc/hosts */
-		while (tmp[j] != '\0') {
-			if (tmp[j] == '.') {
-				tmp[j] = '\0';
-				break;
-			}
-			j++;
-		}
-		return g_shell_unquote (tmp, NULL);
+		return g_shell_unquote (&all_lines[i][0], NULL);
 	}
 	return NULL;
 }
