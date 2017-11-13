@@ -6250,7 +6250,6 @@ get_property (GObject *object, guint prop_id,
 	NMConfigData *config_data;
 	const NMGlobalDnsConfig *dns_config;
 	const char *type;
-	NMConnectivity *connectivity;
 
 	switch (prop_id) {
 	case PROP_VERSION:
@@ -6300,8 +6299,16 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, nm_config_data_get_connectivity_uri (config_data) != NULL);
 		break;
 	case PROP_CONNECTIVITY_CHECK_ENABLED:
+#if WITH_CONCHECK
+	{
+		NMConnectivity *connectivity;
+
 		connectivity = nm_connectivity_get ();
 		g_value_set_boolean (value, nm_connectivity_check_enabled (connectivity));
+	}
+#else
+		g_value_set_boolean (value, FALSE);
+#endif
 		break;
 	case PROP_PRIMARY_CONNECTION:
 		nm_utils_g_value_set_object_path (value, priv->primary_connection);
