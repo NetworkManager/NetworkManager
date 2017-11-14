@@ -1246,12 +1246,11 @@ nm_steal_fd (int *p_fd)
 static inline int
 nm_close (int fd)
 {
-	if (fd >= 0) {
-		if (close (fd) == 0)
-			return 0;
-		nm_assert (errno != EBADF);
-	}
-	return -1;
+	int r;
+
+	r = close (fd);
+	nm_assert (r != -1 || fd < 0 || errno != EBADF);
+	return r;
 }
 
 #endif /* __NM_MACROS_INTERNAL_H__ */
