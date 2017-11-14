@@ -6758,7 +6758,6 @@ constructed (GObject *_object)
 
 	priv->event_channel = g_io_channel_unix_new (nl_socket_get_fd (priv->nlh));
 	g_io_channel_set_encoding (priv->event_channel, NULL, NULL);
-	g_io_channel_set_close_on_unref (priv->event_channel, TRUE);
 
 	channel_flags = g_io_channel_get_flags (priv->event_channel);
 	status = g_io_channel_set_flags (priv->event_channel,
