@@ -1703,8 +1703,8 @@ nmtstp_namespace_create (int unshare_flags, GError **error)
 		errsv = errno;
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 		             "pipe() failed with %d (%s)", errsv, strerror (errsv));
-		close (pipefd_c2p[0]);
-		close (pipefd_c2p[1]);
+		nm_close (pipefd_c2p[0]);
+		nm_close (pipefd_c2p[1]);
 		return FALSE;
 	}
 
@@ -1713,18 +1713,18 @@ nmtstp_namespace_create (int unshare_flags, GError **error)
 		errsv = errno;
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 		             "fork() failed with %d (%s)", errsv, strerror (errsv));
-		close (pipefd_c2p[0]);
-		close (pipefd_c2p[1]);
-		close (pipefd_p2c[0]);
-		close (pipefd_p2c[1]);
+		nm_close (pipefd_c2p[0]);
+		nm_close (pipefd_c2p[1]);
+		nm_close (pipefd_p2c[0]);
+		nm_close (pipefd_p2c[1]);
 		return FALSE;
 	}
 
 	if (pid == 0) {
 		char read_buf[1];
 
-		close (pipefd_c2p[0]); /* close read-end */
-		close (pipefd_p2c[1]); /* close write-end */
+		nm_close (pipefd_c2p[0]); /* close read-end */
+		nm_close (pipefd_p2c[1]); /* close write-end */
 
 		if (unshare (unshare_flags) != 0) {
 			errsv = errno;
@@ -1742,7 +1742,7 @@ nmtstp_namespace_create (int unshare_flags, GError **error)
 			if (errsv == 0)
 				errsv = -2;
 		}
-		close (pipefd_c2p[1]);
+		nm_close (pipefd_c2p[1]);
 
 		/* wait until parent process terminates (or kills us). */
 		if (errsv == 0) {
@@ -1750,19 +1750,19 @@ nmtstp_namespace_create (int unshare_flags, GError **error)
 				r = read (pipefd_p2c[0], read_buf, sizeof (read_buf));
 			} while (r < 0 && errno == EINTR);
 		}
-		close (pipefd_p2c[0]);
+		nm_close (pipefd_p2c[0]);
 		_exit (0);
 	}
 
-	close (pipefd_c2p[1]); /* close write-end */
-	close (pipefd_p2c[0]); /* close read-end */
+	nm_close (pipefd_c2p[1]); /* close write-end */
+	nm_close (pipefd_p2c[0]); /* close read-end */
 
 	/* sync with child process. */
 	do {
 		r = read (pipefd_c2p[0], &errsv, sizeof (errsv));
 	} while (r < 0 && errno == EINTR);
 
-	close (pipefd_c2p[0]);
+	nm_close (pipefd_c2p[0]);
 
 	if (   r != sizeof (errsv)
 	    || errsv != 0) {
@@ -1775,7 +1775,7 @@ nmtstp_namespace_create (int unshare_flags, GError **error)
 			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 			             "child process signaled failure %d (%s)", errsv, strerror (errsv));
 		}
-		close (pipefd_p2c[1]);
+		nm_close (pipefd_p2c[1]);
 		kill (pid, SIGKILL);
 		do {
 			pid2 = waitpid (pid, &status, 0);
@@ -1809,7 +1809,7 @@ nmtstp_namespace_handle_release (NMTstpNamespaceHandle *ns_handle)
 
 	g_return_if_fail (ns_handle->pid > 0);
 
-	close (ns_handle->pipe_fd);
+	nm_close (ns_handle->pipe_fd);
 	ns_handle->pipe_fd = 0;
 
 	kill (ns_handle->pid, SIGKILL);

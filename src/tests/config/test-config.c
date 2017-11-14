@@ -370,7 +370,7 @@ test_config_no_auto_default (void)
 	g_assert_cmpint (nwrote, ==, 18);
 	nwrote = write (fd, "44:44:44:44:44:44\n", 18);
 	g_assert_cmpint (nwrote, ==, 18);
-	close (fd);
+	nm_close (fd);
 
 	config = setup_config (NULL, SRCDIR "/NetworkManager.conf", "", NULL, "/no/such/dir", "",
 	                       "--no-auto-default", state_file,

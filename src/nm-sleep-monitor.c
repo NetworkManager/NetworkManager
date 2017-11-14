@@ -134,7 +134,7 @@ drop_inhibitor (NMSleepMonitor *self, gboolean force)
 
 	if (self->inhibit_fd >= 0) {
 		_LOGD ("inhibit: dropping sleep inhibitor %d", self->inhibit_fd);
-		close (self->inhibit_fd);
+		nm_close (self->inhibit_fd);
 		self->inhibit_fd = -1;
 	}
 

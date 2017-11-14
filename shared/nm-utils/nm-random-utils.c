@@ -120,7 +120,7 @@ fd_open:
 				goto fd_open;
 		} else {
 			r = nm_utils_fd_read_loop_exact (fd, buf, n, TRUE);
-			close (fd);
+			nm_close (fd);
 			if (r >= 0)
 				urandom_success = TRUE;
 		}
