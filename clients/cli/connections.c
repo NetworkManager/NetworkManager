@@ -8605,7 +8605,7 @@ do_connection_export (NmCli *nmc, int argc, char **argv)
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 			goto finish;
 		}
-		close (fd);
+		nm_close (fd);
 		path = tmpfile;
 	}
 

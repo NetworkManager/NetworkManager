@@ -336,7 +336,7 @@ nmt_newt_edit_string (const char *data)
 		len -= nwrote;
 		data += nwrote;
 	}
-	close (fd);
+	nm_close (fd);
 
 	argv[0] = (char *) g_getenv ("VISUAL");
 	if (!argv[0])

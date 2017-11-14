@@ -146,7 +146,7 @@ nmtstc_service_cleanup (NMTstcServiceInfo *info)
 	g_assert (i > 0);
 
 	g_object_unref (info->bus);
-	close (info->keepalive_fd);
+	nm_close (info->keepalive_fd);
 
 #if ((NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY)
 	g_clear_pointer (&info->libdbus.bus, dbus_g_connection_unref);

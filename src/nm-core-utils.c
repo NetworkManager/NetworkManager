@@ -2841,7 +2841,7 @@ nm_utils_fd_get_contents (int fd,
 		}
 
 		if (!(f = fdopen (fd2, "r"))) {
-			close (fd2);
+			nm_close (fd2);
 			return _get_contents_error (error, 0, "failure during fdopen");
 		}
 
@@ -4119,7 +4119,7 @@ nm_utils_file_set_contents (const gchar *filename,
 			if (errsv == EINTR)
 				continue;
 
-			close (fd);
+			nm_close (fd);
 			unlink (tmp_name);
 
 			g_set_error (error,
@@ -4148,7 +4148,7 @@ nm_utils_file_set_contents (const gchar *filename,
 	    && fsync (fd) != 0) {
 		errsv = errno;
 
-		close (fd);
+		nm_close (fd);
 		unlink (tmp_name);
 
 		g_set_error (error,
@@ -4160,7 +4160,7 @@ nm_utils_file_set_contents (const gchar *filename,
 		return FALSE;
 	}
 
-	close (fd);
+	nm_close (fd);
 
 	if (rename (tmp_name, filename)) {
 		errsv = errno;

@@ -1504,16 +1504,16 @@ nmc_terminal_spawn_pager (const NmcConfig *nmc_config)
 	nm_cli.pager_pid = fork ();
 	if (nm_cli.pager_pid == -1) {
 		g_printerr (_("Failed to fork pager: %s\n"), strerror (errno));
-		close (fd[0]);
-		close (fd[1]);
+		nm_close (fd[0]);
+		nm_close (fd[1]);
 		return;
 	}
 
 	/* In the child start the pager */
 	if (nm_cli.pager_pid == 0) {
 		dup2 (fd[0], STDIN_FILENO);
-		close (fd[0]);
-		close (fd[1]);
+		nm_close (fd[0]);
+		nm_close (fd[1]);
 
 		setenv ("LESS", "FRSXMK", 1);
 		setenv ("LESSCHARSET", "utf-8", 1);
@@ -1553,8 +1553,8 @@ nmc_terminal_spawn_pager (const NmcConfig *nmc_config)
 	if (dup2 (fd[1], STDERR_FILENO) < 0)
 		g_printerr (_("Failed to duplicate pager pipe: %s\n"), strerror (errno));
 
-	close (fd[0]);
-	close (fd[1]);
+	nm_close (fd[0]);
+	nm_close (fd[1]);
 }
 
 /*****************************************************************************/

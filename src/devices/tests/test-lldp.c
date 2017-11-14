@@ -366,7 +366,7 @@ _test_recv_fixture_setup (TestRecvFixture *fixture, gconstpointer user_data)
 	g_assert (s >= 0);
 	ifr.ifr_flags |= IFF_UP;
 	g_assert (ioctl (s, SIOCSIFFLAGS, &ifr) >= 0);
-	close (s);
+	nm_close (s);
 
 	link = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, TEST_IFNAME, NM_LINK_TYPE_TAP, 100);
 	fixture->ifindex = link->ifindex;

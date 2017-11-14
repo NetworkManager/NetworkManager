@@ -106,7 +106,7 @@ nm_main_utils_write_pidfile (const char *pidfile)
 	else
 		success = TRUE;
 
-	if (close (fd))
+	if (nm_close (fd))
 		fprintf (stderr, _("Closing %s failed: %s\n"), pidfile, strerror (errno));
 
 	return success;

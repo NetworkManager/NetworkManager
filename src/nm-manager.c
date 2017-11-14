@@ -5909,7 +5909,7 @@ rfkill_change (NMManager *self, const char *desc, RfKillType rtype, gboolean ena
 	if (fcntl (fd, F_SETFL, O_NONBLOCK) < 0) {
 		_LOGW (LOGD_RFKILL, "rfkill: (%s): failed to set killswitch device for "
 		       "non-blocking operation", desc);
-		close (fd);
+		nm_close (fd);
 		return;
 	}
 
@@ -5939,7 +5939,7 @@ rfkill_change (NMManager *self, const char *desc, RfKillType rtype, gboolean ena
 		_LOGW (LOGD_RFKILL, "rfkill: (%s): failed to change WiFi killswitch state", desc);
 	}
 
-	close (fd);
+	nm_close (fd);
 }
 
 static void

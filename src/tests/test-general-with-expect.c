@@ -184,7 +184,7 @@ test_nm_utils_kill_child_create_and_join_pgroup (void)
 
 	if (pgid == 0) {
 		/* child process... */
-		close (pipefd[0]);
+		nm_close (pipefd[0]);
 
 		err = setpgid (0, 0);
 		g_assert (err == 0);
@@ -192,16 +192,16 @@ test_nm_utils_kill_child_create_and_join_pgroup (void)
 		err = write (pipefd[1], &tmp, sizeof (tmp));
 		g_assert (err == sizeof (tmp));
 
-		close (pipefd[1]);
+		nm_close (pipefd[1]);
 		exit (0);
 	}
 
-	close (pipefd[1]);
+	nm_close (pipefd[1]);
 
 	err = read (pipefd[0], &tmp, sizeof (tmp));
 	g_assert (err == sizeof (tmp));
 
-	close (pipefd[0]);
+	nm_close (pipefd[0]);
 
 	err = setpgid (0, pgid);
 	g_assert (err == 0);
