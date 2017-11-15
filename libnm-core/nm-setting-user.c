@@ -210,7 +210,7 @@ nm_setting_user_check_val (const char *val, GError **error)
 static GHashTable *
 _create_data_hash (void)
 {
-	return g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	return g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 }
 
 /**

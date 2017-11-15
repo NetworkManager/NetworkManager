@@ -763,7 +763,7 @@ read_hash_of_string (GKeyFile *file, NMSetting *setting, const char *key)
 	if (NM_IS_SETTING_USER (setting)) {
 		gs_unref_hashtable GHashTable *data = NULL;
 
-		data = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+		data = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 		for (iter = (const char *const*) keys; *iter; iter++) {
 			gs_free char *to_free = NULL;
 			char *value = NULL;

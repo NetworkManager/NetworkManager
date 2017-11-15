@@ -892,7 +892,7 @@ nm_setting_bond_init (NMSettingBond *setting)
 {
 	NMSettingBondPrivate *priv = NM_SETTING_BOND_GET_PRIVATE (setting);
 
-	priv->options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	priv->options = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 
 	/* Default values: */
 	nm_setting_bond_add_option (setting, NM_SETTING_BOND_OPTION_MODE, "balance-rr");

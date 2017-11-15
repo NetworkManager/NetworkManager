@@ -6098,7 +6098,7 @@ test_g_ptr_array_insert (void)
 static void
 test_g_hash_table_get_keys_as_array (void)
 {
-	GHashTable *table = g_hash_table_new (g_str_hash, g_str_equal);
+	GHashTable *table = g_hash_table_new (nm_str_hash, g_str_equal);
 	guint length = 0;
 	char **keys;
 
@@ -6752,7 +6752,7 @@ test_route_attributes_format (void)
 	gs_unref_hashtable GHashTable *ht = NULL;
 	char *str;
 
-	ht = g_hash_table_new_full (g_str_hash, g_str_equal,
+	ht = g_hash_table_new_full (nm_str_hash, g_str_equal,
 	                            NULL, (GDestroyNotify) g_variant_unref);
 
 	str = nm_utils_format_variant_attributes (NULL, ' ', '=');
