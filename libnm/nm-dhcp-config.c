@@ -51,7 +51,7 @@ nm_dhcp_config_init (NMDhcpConfig *config)
 {
 	NMDhcpConfigPrivate *priv = NM_DHCP_CONFIG_GET_PRIVATE (config);
 
-	priv->options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	priv->options = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 }
 
 static gboolean

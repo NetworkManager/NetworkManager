@@ -1458,7 +1458,7 @@ checkpoint_rollback_cb (GObject *object,
 	                                                    &variant,
 	                                                    result,
 	                                                    &error)) {
-		hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+		hash = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
 		g_variant_iter_init (&iter, variant);
 		while (g_variant_iter_next (&iter, "{&su}", &path, &r))
 			g_hash_table_insert (hash, g_strdup (path), GUINT_TO_POINTER (r));

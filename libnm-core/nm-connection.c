@@ -587,7 +587,7 @@ nm_connection_diff (NMConnection *a,
 	if (a == b)
 		return TRUE;
 
-	diffs = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, (GDestroyNotify) g_hash_table_destroy);
+	diffs = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, (GDestroyNotify) g_hash_table_destroy);
 
 	/* Diff A to B, then B to A to capture keys in B that aren't in A */
 	if (diff_one_connection (a, b, flags, FALSE, diffs))
@@ -1370,7 +1370,7 @@ nm_connection_verify_secrets (NMConnection *connection, GError **error)
  * @parameters: (allow-none) (element-type utf8 gpointer): a #GHashTable with
  * normalization parameters to allow customization of the normalization by providing
  * specific arguments. Unknown arguments will be ignored and the default will be
- * used. The keys must be strings, hashed by g_str_hash() and g_str_equal() functions.
+ * used. The keys must be strings compared with g_str_equal() function.
  * The values are opaque and depend on the parameter name.
  * @modified: (out) (allow-none): outputs whether any settings were modified.
  * @error: location to store error, or %NULL. Contains the reason,
@@ -2716,7 +2716,7 @@ nm_connection_get_private (NMConnection *connection)
 		                         priv, (GDestroyNotify) nm_connection_private_free);
 
 		priv->self = connection;
-		priv->settings = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
+		priv->settings = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, g_object_unref);
 	}
 
 	return priv;

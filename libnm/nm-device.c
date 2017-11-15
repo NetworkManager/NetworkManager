@@ -2570,7 +2570,7 @@ nm_lldp_neighbor_new (void)
 
 	neigh = g_new0 (NMLldpNeighbor, 1);
 	neigh->refcount = 1;
-	neigh->attrs = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
+	neigh->attrs = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free,
 	                                      (GDestroyNotify) g_variant_unref);
 
 	return neigh;
