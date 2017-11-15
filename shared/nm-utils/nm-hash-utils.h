@@ -31,6 +31,8 @@ struct _NMHashState {
 
 typedef struct _NMHashState NMHashState;
 
+guint nm_hash_static (guint static_seed);
+
 void nm_hash_init (NMHashState *state, guint static_seed);
 
 static inline guint

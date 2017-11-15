@@ -51,8 +51,25 @@ _get_hash_key (void)
 		static gsize g_lock;
 
 		if (g_once_init_enter (&g_lock)) {
+			struct siphash state;
+			uint64_t h;
+			guint *p;
+
 			nm_utils_random_bytes (g_arr.v8, sizeof (g_arr.v8));
 			g_atomic_pointer_compare_and_exchange (&global_seed, NULL, g_arr.v8);
+
+			/* use siphash() of the key-size, to mangle the first guint. Otherwise,
+			 * the first guint has only the entropy that nm_utils_random_bytes()
+			 * generated for the first 4 bytes and relies on a good random generator. */
+			siphash24_init (&state, g_arr.v8);
+			siphash24_compress (g_arr.v8, sizeof (g_arr.v8), &state);
+			h = siphash24_finalize (&state);
+			p = (guint *) g_arr.v8;
+			if (sizeof (guint) < sizeof (h))
+				*p = *p ^ ((guint) (h & 0xFFFFFFFFu)) ^ ((guint) (h >> 32));
+			else
+				*p = *p ^ ((guint) (h & 0xFFFFFFFFu));
+
 			g = g_arr.v8;
 			g_once_init_leave (&g_lock, 1);
 		} else {
@@ -62,6 +79,23 @@ _get_hash_key (void)
 	}
 
 	return g;
+}
+
+guint
+nm_hash_static (guint static_seed)
+{
+	/* note that we only xor the static_seed with the key.
+	 * We don't use siphash24(), which would mix the bits better.
+	 * Note that this doesn't matter, because static_seed is not
+	 * supposed to be a value that you are hashing (for that, use
+	 * full siphash24()).
+	 * Instead, different callers may set a different static_seed
+	 * so that nm_hash_str(NULL) != nm_hash_ptr(NULL).
+	 *
+	 * Also, ensure that we don't return zero.
+	 */
+	return ((*((const guint *) _get_hash_key ())) ^ static_seed)
+	       ?: static_seed ?: 3679500967u;
 }
 
 void
