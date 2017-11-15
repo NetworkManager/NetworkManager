@@ -229,6 +229,10 @@ typedef struct {
 	NMPlatformQdisc _public;
 } NMPObjectQdisc;
 
+typedef struct {
+	NMPlatformTfilter _public;
+} NMPObjectTfilter;
+
 struct _NMPObject {
 	union {
 		NMDedupMultiObj parent;
@@ -283,6 +287,8 @@ struct _NMPObject {
 
 		NMPlatformQdisc         qdisc;
 		NMPObjectQdisc          _qdisc;
+		NMPlatformTfilter       tfilter;
+		NMPObjectTfilter        _tfilter;
 	};
 };
 
@@ -423,6 +429,13 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 		_obj ? &NM_CONSTCAST (NMPObject, _obj)->qdisc : NULL; \
 	})
 
+#define NMP_OBJECT_CAST_TFILTER(obj) \
+	({ \
+		typeof (obj) _obj = (obj); \
+		\
+		nm_assert (!_obj || NMP_OBJECT_GET_TYPE ((const NMPObject *) _obj) == NMP_OBJECT_TYPE_TFILTER); \
+		_obj ? &NM_CONSTCAST (NMPObject, _obj)->tfilter : NULL; \
+	})
 
 const NMPClass *nmp_class_from_type (NMPObjectType obj_type);
 

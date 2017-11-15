@@ -3998,7 +3998,8 @@ nm_platform_object_delete (NMPlatform *self,
 
 	if (!NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ROUTE,
 	                                           NMP_OBJECT_TYPE_IP6_ROUTE,
-	                                           NMP_OBJECT_TYPE_QDISC))
+	                                           NMP_OBJECT_TYPE_QDISC,
+	                                           NMP_OBJECT_TYPE_TFILTER))
 		g_return_val_if_reached (FALSE);
 
 	_LOGD ("%s: delete %s",
@@ -4391,6 +4392,72 @@ nm_platform_qdisc_sync (NMPlatform *self,
 
 			success &= (nm_platform_qdisc_add (self, NMP_NLM_FLAG_ADD,
 			                                   NMP_OBJECT_CAST_QDISC (q)) == NM_PLATFORM_ERROR_SUCCESS);
+		}
+	}
+
+	return success;
+}
+
+/*****************************************************************************/
+
+NMPlatformError
+nm_platform_tfilter_add (NMPlatform *self,
+                         NMPNlmFlags flags,
+                         const NMPlatformTfilter *tfilter)
+{
+	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
+
+	_LOGD ("adding or updating a tfilter: %s", nm_platform_tfilter_to_string (tfilter, NULL, 0));
+	return klass->tfilter_add (self, flags, tfilter);
+}
+
+gboolean
+nm_platform_tfilter_sync (NMPlatform *self,
+                          int ifindex,
+                          GPtrArray *known_tfilters)
+{
+	gs_unref_ptrarray GPtrArray *plat_tfilters = NULL;
+	NMPLookup lookup;
+	guint i;
+	gboolean success = TRUE;
+	gs_unref_hashtable GHashTable *known_tfilters_idx = NULL;
+
+	nm_assert (NM_IS_PLATFORM (self));
+	nm_assert (ifindex > 0);
+
+	known_tfilters_idx = g_hash_table_new ((GHashFunc) nmp_object_id_hash,
+	                                       (GEqualFunc) nmp_object_id_equal);
+
+	if (known_tfilters) {
+		for (i = 0; i < known_tfilters->len; i++) {
+			const NMPObject *q = g_ptr_array_index (known_tfilters, i);
+
+			g_hash_table_insert (known_tfilters_idx, (gpointer) q, (gpointer) q);
+		}
+	}
+
+	plat_tfilters = nm_platform_lookup_clone (self,
+	                                          nmp_lookup_init_object (&lookup,
+	                                                                  NMP_OBJECT_TYPE_TFILTER,
+	                                                                  ifindex),
+	                                          NULL, NULL);
+
+
+	if (plat_tfilters) {
+		for (i = 0; i < plat_tfilters->len; i++) {
+			const NMPObject *q = g_ptr_array_index (plat_tfilters, i);
+
+			if (!g_hash_table_lookup (known_tfilters_idx, q))
+				success &= nm_platform_object_delete (self, q);
+		}
+	}
+
+	if (known_tfilters) {
+		for (i = 0; i < known_tfilters->len; i++) {
+			const NMPObject *q = g_ptr_array_index (known_tfilters, i);
+
+			success &= (nm_platform_tfilter_add (self, NMP_NLM_FLAG_ADD,
+			                                     NMP_OBJECT_CAST_TFILTER (q)) == NM_PLATFORM_ERROR_SUCCESS);
 		}
 	}
 
@@ -5276,6 +5343,51 @@ nm_platform_qdisc_cmp (const NMPlatformQdisc *a, const NMPlatformQdisc *b)
 	return 0;
 }
 
+const char *
+nm_platform_tfilter_to_string (const NMPlatformTfilter *tfilter, char *buf, gsize len)
+{
+	char str_dev[TO_STRING_DEV_BUF_SIZE];
+
+	if (!nm_utils_to_string_buffer_init_null (tfilter, &buf, &len))
+		return buf;
+
+	g_snprintf (buf, len, "%s%s family %d handle %x parent %x info %x",
+	            tfilter->kind,
+	            _to_string_dev (NULL, tfilter->ifindex, str_dev, sizeof (str_dev)),
+	            tfilter->addr_family,
+	            tfilter->handle,
+	            tfilter->parent,
+	            tfilter->info);
+
+	return buf;
+}
+
+void
+nm_platform_tfilter_hash_update (const NMPlatformTfilter *obj, NMHashState *h)
+{
+	nm_hash_update_str (h, obj->kind);
+	nm_hash_update_vals (h,
+	                     obj->ifindex,
+	                     obj->addr_family,
+	                     obj->handle,
+	                     obj->parent,
+	                     obj->info);
+}
+
+int
+nm_platform_tfilter_cmp (const NMPlatformTfilter *a, const NMPlatformTfilter *b)
+{
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, ifindex);
+	NM_CMP_FIELD (a, b, parent);
+	NM_CMP_FIELD_STR_INTERNED (a, b, kind);
+	NM_CMP_FIELD (a, b, addr_family);
+	NM_CMP_FIELD (a, b, handle);
+	NM_CMP_FIELD (a, b, info);
+
+	return 0;
+}
+
 void
 nm_platform_link_hash_update (const NMPlatformLink *obj, NMHashState *h)
 {
@@ -6095,6 +6207,12 @@ log_qdisc (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatformQdis
 	_LOGD ("signal: qdisc %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_qdisc_to_string (qdisc, NULL, 0));
 }
 
+static void
+log_tfilter (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatformTfilter *tfilter, NMPlatformSignalChangeType change_type, gpointer user_data)
+{
+	_LOGD ("signal: tfilter %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_tfilter_to_string (tfilter, NULL, 0));
+}
+
 /*****************************************************************************/
 
 void
@@ -6369,4 +6487,5 @@ nm_platform_class_init (NMPlatformClass *platform_class)
 	SIGNAL (NM_PLATFORM_SIGNAL_ID_IP4_ROUTE,   NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,   log_ip4_route);
 	SIGNAL (NM_PLATFORM_SIGNAL_ID_IP6_ROUTE,   NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,   log_ip6_route);
 	SIGNAL (NM_PLATFORM_SIGNAL_ID_QDISC,       NM_PLATFORM_SIGNAL_QDISC_CHANGED,       log_qdisc);
+	SIGNAL (NM_PLATFORM_SIGNAL_ID_TFILTER,     NM_PLATFORM_SIGNAL_TFILTER_CHANGED,     log_tfilter);
 }
