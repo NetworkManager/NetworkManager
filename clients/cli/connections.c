@@ -3308,7 +3308,7 @@ _dynamic_options_set (const NMMetaAbstractInfo *abstract_info,
 	PropertyInfFlags v, v2;
 
 	if (G_UNLIKELY (!cache))
-		cache = g_hash_table_new (NULL, NULL);
+		cache = g_hash_table_new (nm_direct_hash, NULL);
 
 	if (g_hash_table_lookup_extended (cache, (gpointer) abstract_info, NULL, &p))
 		v = GPOINTER_TO_UINT (p);

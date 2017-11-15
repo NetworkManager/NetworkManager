@@ -432,7 +432,7 @@ test_nm_utils_array_remove_at_indexes (void)
 
 	idx = g_array_new (FALSE, FALSE, sizeof (guint));
 	array = g_array_new (FALSE, FALSE, sizeof (gssize));
-	unique = g_hash_table_new (NULL, NULL);
+	unique = g_hash_table_new (nm_direct_hash, NULL);
 	for (i_len = 1; i_len < 20; i_len++) {
 		for (i_idx_len = 1; i_idx_len <= i_len; i_idx_len++) {
 			for (i_rnd = 0; i_rnd < 20; i_rnd++) {

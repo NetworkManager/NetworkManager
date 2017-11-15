@@ -3016,7 +3016,7 @@ find_slaves (NMManager *manager,
 	s_con = nm_connection_get_setting_connection (NM_CONNECTION (connection));
 	g_return_val_if_fail (s_con, NULL);
 
-	devices = g_hash_table_new (NULL, NULL);
+	devices = g_hash_table_new (nm_direct_hash, NULL);
 
 	/* Search through all connections, not only inactive ones, because
 	 * even if a slave was already active, it might be deactivated during
@@ -5105,7 +5105,7 @@ nm_manager_write_device_state (NMManager *self)
 	gs_unref_hashtable GHashTable *seen_ifindexes = NULL;
 	gint nm_owned;
 
-	seen_ifindexes = g_hash_table_new (NULL, NULL);
+	seen_ifindexes = g_hash_table_new (nm_direct_hash, NULL);
 
 	for (devices = priv->devices; devices; devices = devices->next) {
 		NMDevice *device = NM_DEVICE (devices->data);
@@ -6233,7 +6233,7 @@ nm_manager_init (NMManager *self)
 	priv->timestamp_update_id = g_timeout_add_seconds (300, (GSourceFunc) periodic_update_active_connection_timestamps, self);
 
 	priv->metered = NM_METERED_UNKNOWN;
-	priv->sleep_devices = g_hash_table_new (NULL, NULL);
+	priv->sleep_devices = g_hash_table_new (nm_direct_hash, NULL);
 }
 
 static gboolean
