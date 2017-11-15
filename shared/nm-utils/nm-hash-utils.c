@@ -133,16 +133,13 @@ nm_str_hash (gconstpointer str)
 guint
 nm_hash_ptr (gconstpointer ptr)
 {
-	guint h;
+	NMHashState h;
 
-	h = ((const guint *) _get_hash_key ())[0];
-
-	if (sizeof (ptr) <= sizeof (guint))
-		h = h ^ ((guint) ((uintptr_t) ptr));
-	else
-		h = h ^ ((guint) (((guint64) (uintptr_t) ptr) >> 32)) ^ ((guint) ((uintptr_t) ptr));
-
-	return h ?: 2907677551u;
+	if (!ptr)
+		return nm_hash_static (2907677551u);
+	nm_hash_init (&h, 2907677551u);
+	nm_hash_update (&h, &ptr, sizeof (ptr));
+	return nm_hash_complete (&h);
 }
 
 guint
