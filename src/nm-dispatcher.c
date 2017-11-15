@@ -345,7 +345,7 @@ static void
 _ensure_requests (void)
 {
 	if (G_UNLIKELY (requests == NULL)) {
-		requests = g_hash_table_new_full (NULL,
+		requests = g_hash_table_new_full (nm_direct_hash,
 		                                  NULL,
 		                                  NULL,
 		                                  (GDestroyNotify) dispatcher_info_free);

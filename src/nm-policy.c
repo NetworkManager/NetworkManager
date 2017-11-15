@@ -333,7 +333,7 @@ device_ip6_prefix_delegated (NMDevice *device,
 		/* Allocate a delegation delegation for new prefix. */
 		g_array_set_size (priv->ip6_prefix_delegations, i + 1);
 		delegation = &g_array_index (priv->ip6_prefix_delegations, IP6PrefixDelegation, i);
-		delegation->subnets = g_hash_table_new (NULL, NULL);
+		delegation->subnets = g_hash_table_new (nm_direct_hash, NULL);
 		delegation->next_subnet = 0;
 	}
 
@@ -2484,8 +2484,8 @@ nm_policy_init (NMPolicy *self)
 	else /* default - full mode */
 		priv->hostname_mode = NM_POLICY_HOSTNAME_MODE_FULL;
 
-	priv->devices = g_hash_table_new (NULL, NULL);
-	priv->pending_active_connections = g_hash_table_new (NULL, NULL);
+	priv->devices = g_hash_table_new (nm_direct_hash, NULL);
+	priv->pending_active_connections = g_hash_table_new (nm_direct_hash, NULL);
 	priv->ip6_prefix_delegations = g_array_new (FALSE, FALSE, sizeof (IP6PrefixDelegation));
 	g_array_set_clear_func (priv->ip6_prefix_delegations, clear_ip6_prefix_delegation);
 }

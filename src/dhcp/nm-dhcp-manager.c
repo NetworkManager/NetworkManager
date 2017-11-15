@@ -429,7 +429,7 @@ nm_dhcp_manager_init (NMDhcpManager *self)
 	nm_log_info (LOGD_DHCP, "dhcp-init: Using DHCP client '%s'", client_factory->name);
 
 	priv->client_factory = client_factory;
-	priv->clients = g_hash_table_new_full (NULL, NULL,
+	priv->clients = g_hash_table_new_full (nm_direct_hash, NULL,
 	                                       NULL,
 	                                       (GDestroyNotify) g_object_unref);
 }

@@ -466,7 +466,7 @@ nm_checkpoint_init (NMCheckpoint *self)
 {
 	NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE (self);
 
-	priv->devices = g_hash_table_new_full (NULL, NULL,
+	priv->devices = g_hash_table_new_full (nm_direct_hash, NULL,
 	                                       NULL, device_checkpoint_destroy);
 }
 

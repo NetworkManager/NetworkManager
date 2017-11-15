@@ -300,7 +300,7 @@ nm_dhcp_listener_init (NMDhcpListener *self)
 	NMDhcpListenerPrivate *priv = NM_DHCP_LISTENER_GET_PRIVATE (self);
 
 	/* Maps GDBusConnection :: signal-id */
-	priv->connections = g_hash_table_new (NULL, NULL);
+	priv->connections = g_hash_table_new (nm_direct_hash, NULL);
 
 	priv->dbus_mgr = nm_bus_manager_get ();
 

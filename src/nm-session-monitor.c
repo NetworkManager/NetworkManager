@@ -258,7 +258,7 @@ ck_init (NMSessionMonitor *monitor)
 
 	if (g_file_query_exists (file, NULL)) {
 		if ((monitor->ck.monitor = g_file_monitor_file (file, G_FILE_MONITOR_NONE, NULL, &error))) {
-			monitor->ck.cache = g_hash_table_new_full (NULL, NULL, NULL, g_free);
+			monitor->ck.cache = g_hash_table_new_full (nm_direct_hash, NULL, NULL, g_free);
 			g_signal_connect (monitor->ck.monitor,
 			                  "changed",
 			                  G_CALLBACK (ck_changed),
