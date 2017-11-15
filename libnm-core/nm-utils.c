@@ -4696,7 +4696,7 @@ _nm_utils_team_config_set (char **conf,
 done:
 	if (updated) {
 		g_free (*conf);
-		*conf = json_dumps (json, 0);
+		*conf = json_dumps (json, JSON_PRESERVE_ORDER);
 		/* Don't save an empty config */
 		if (nm_streq0 (*conf, "{}")) {
 			g_free (*conf);
