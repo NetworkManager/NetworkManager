@@ -236,6 +236,7 @@ typedef enum { /*< skip >*/
 	NM_PLATFORM_SIGNAL_ID_IP6_ADDRESS,
 	NM_PLATFORM_SIGNAL_ID_IP4_ROUTE,
 	NM_PLATFORM_SIGNAL_ID_IP6_ROUTE,
+	NM_PLATFORM_SIGNAL_ID_QDISC,
 	_NM_PLATFORM_SIGNAL_ID_LAST,
 } NMPlatformSignalIdType;
 
@@ -529,6 +530,14 @@ typedef union {
 
 #undef __NMPlatformIPRoute_COMMON
 
+typedef struct {
+	__NMPlatformObject_COMMON;
+	const char *kind;
+	int addr_family;
+	guint32 handle;
+	guint32 parent;
+	guint32 info;
+} NMPlatformQdisc;
 
 #undef __NMPlatformObject_COMMON
 
@@ -832,6 +841,10 @@ typedef struct {
 	                                 int oif_ifindex,
 	                                 NMPObject **out_route);
 
+	NMPlatformError (*qdisc_add)   (NMPlatform *self,
+	                                NMPNlmFlags flags,
+	                                const NMPlatformQdisc *qdisc);
+
 	NMPlatformKernelSupportFlags (*check_kernel_support) (NMPlatform * self,
 	                                                      NMPlatformKernelSupportFlags request_flags);
 } NMPlatformClass;
@@ -852,6 +865,7 @@ typedef struct {
 #define NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED "ip6-address-changed"
 #define NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED "ip4-route-changed"
 #define NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED "ip6-route-changed"
+#define NM_PLATFORM_SIGNAL_QDISC_CHANGED "qdisc-changed"
 
 const char *nm_platform_signal_change_type_to_string (NMPlatformSignalChangeType change_type);
 
@@ -1247,6 +1261,13 @@ NMPlatformError nm_platform_ip_route_get (NMPlatform *self,
                                           int oif_ifindex,
                                           NMPObject **out_route);
 
+NMPlatformError nm_platform_qdisc_add   (NMPlatform *self,
+                                         NMPNlmFlags flags,
+                                         const NMPlatformQdisc *qdisc);
+gboolean nm_platform_qdisc_sync         (NMPlatform *self,
+                                         int ifindex,
+                                         GPtrArray *known_qdiscs);
+
 const char *nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len);
 const char *nm_platform_lnk_gre_to_string (const NMPlatformLnkGre *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_infiniband_to_string (const NMPlatformLnkInfiniband *lnk, char *buf, gsize len);
@@ -1261,6 +1282,7 @@ const char *nm_platform_ip4_address_to_string (const NMPlatformIP4Address *addre
 const char *nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address, char *buf, gsize len);
 const char *nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsize len);
 const char *nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsize len);
+const char *nm_platform_qdisc_to_string (const NMPlatformQdisc *qdisc, char *buf, gsize len);
 
 const char *nm_platform_vlan_qos_mapping_to_string (const char *name,
                                                     const NMVlanQosMapping *map,
@@ -1296,6 +1318,8 @@ nm_platform_ip6_route_cmp_full (const NMPlatformIP6Route *a, const NMPlatformIP6
 	return nm_platform_ip6_route_cmp (a, b, NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL);
 }
 
+int nm_platform_qdisc_cmp (const NMPlatformQdisc *a, const NMPlatformQdisc *b);
+
 void nm_platform_link_hash_update (const NMPlatformLink *obj, NMHashState *h);
 void nm_platform_ip4_address_hash_update (const NMPlatformIP4Address *obj, NMHashState *h);
 void nm_platform_ip6_address_hash_update (const NMPlatformIP6Address *obj, NMHashState *h);
@@ -1310,6 +1334,8 @@ void nm_platform_lnk_macvlan_hash_update (const NMPlatformLnkMacvlan *obj, NMHas
 void nm_platform_lnk_sit_hash_update (const NMPlatformLnkSit *obj, NMHashState *h);
 void nm_platform_lnk_vlan_hash_update (const NMPlatformLnkVlan *obj, NMHashState *h);
 void nm_platform_lnk_vxlan_hash_update (const NMPlatformLnkVxlan *obj, NMHashState *h);
+
+void nm_platform_qdisc_hash_update (const NMPlatformQdisc *obj, NMHashState *h);
 
 NMPlatformKernelSupportFlags nm_platform_check_kernel_support (NMPlatform *self,
                                                                NMPlatformKernelSupportFlags request_flags);

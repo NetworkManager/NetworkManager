@@ -225,6 +225,10 @@ typedef struct {
 	NMPlatformIP6Route _public;
 } NMPObjectIP6Route;
 
+typedef struct {
+	NMPlatformQdisc _public;
+} NMPObjectQdisc;
+
 struct _NMPObject {
 	union {
 		NMDedupMultiObj parent;
@@ -276,6 +280,9 @@ struct _NMPObject {
 		NMPlatformIP6Route      ip6_route;
 		NMPObjectIP4Route       _ip4_route;
 		NMPObjectIP6Route       _ip6_route;
+
+		NMPlatformQdisc         qdisc;
+		NMPObjectQdisc          _qdisc;
 	};
 };
 
@@ -407,6 +414,15 @@ NMP_OBJECT_GET_TYPE (const NMPObject *obj)
 		nm_assert (!_obj || NMP_OBJECT_GET_TYPE ((const NMPObject *) _obj) == NMP_OBJECT_TYPE_IP6_ROUTE); \
 		_obj ? &NM_CONSTCAST (NMPObject, _obj)->ip6_route : NULL; \
 	})
+
+#define NMP_OBJECT_CAST_QDISC(obj) \
+	({ \
+		typeof (obj) _obj = (obj); \
+		\
+		nm_assert (!_obj || NMP_OBJECT_GET_TYPE ((const NMPObject *) _obj) == NMP_OBJECT_TYPE_QDISC); \
+		_obj ? &NM_CONSTCAST (NMPObject, _obj)->qdisc : NULL; \
+	})
+
 
 const NMPClass *nmp_class_from_type (NMPObjectType obj_type);
 

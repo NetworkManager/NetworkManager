@@ -3997,7 +3997,8 @@ nm_platform_object_delete (NMPlatform *self,
 	_CHECK_SELF (self, klass, FALSE);
 
 	if (!NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ROUTE,
-	                                           NMP_OBJECT_TYPE_IP6_ROUTE))
+	                                           NMP_OBJECT_TYPE_IP6_ROUTE,
+	                                           NMP_OBJECT_TYPE_QDISC))
 		g_return_val_if_reached (FALSE);
 
 	_LOGD ("%s: delete %s",
@@ -4328,6 +4329,72 @@ nm_platform_ip4_dev_route_blacklist_set (NMPlatform *self,
 
 	if (needs_check)
 		_ip4_dev_route_blacklist_check_schedule (self);
+}
+
+/*****************************************************************************/
+
+NMPlatformError
+nm_platform_qdisc_add (NMPlatform *self,
+                       NMPNlmFlags flags,
+                       const NMPlatformQdisc *qdisc)
+{
+	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
+
+	_LOGD ("adding or updating a qdisc: %s", nm_platform_qdisc_to_string (qdisc, NULL, 0));
+	return klass->qdisc_add (self, flags, qdisc);
+}
+
+gboolean
+nm_platform_qdisc_sync (NMPlatform *self,
+                        int ifindex,
+                        GPtrArray *known_qdiscs)
+{
+	gs_unref_ptrarray GPtrArray *plat_qdiscs = NULL;
+	NMPLookup lookup;
+	guint i;
+	gboolean success = TRUE;
+	gs_unref_hashtable GHashTable *known_qdiscs_idx = NULL;
+
+	nm_assert (NM_IS_PLATFORM (self));
+	nm_assert (ifindex > 0);
+
+	known_qdiscs_idx = g_hash_table_new ((GHashFunc) nmp_object_id_hash,
+	                                     (GEqualFunc) nmp_object_id_equal);
+
+	if (known_qdiscs) {
+		for (i = 0; i < known_qdiscs->len; i++) {
+			const NMPObject *q = g_ptr_array_index (known_qdiscs, i);
+
+			g_hash_table_insert (known_qdiscs_idx, (gpointer) q, (gpointer) q);
+		}
+	}
+
+	plat_qdiscs = nm_platform_lookup_clone (self,
+	                                        nmp_lookup_init_object (&lookup,
+	                                                                NMP_OBJECT_TYPE_QDISC,
+	                                                                ifindex),
+	                                        NULL, NULL);
+
+
+	if (plat_qdiscs) {
+		for (i = 0; i < plat_qdiscs->len; i++) {
+			const NMPObject *q = g_ptr_array_index (plat_qdiscs, i);
+
+			if (!g_hash_table_lookup (known_qdiscs_idx, q))
+				success &= nm_platform_object_delete (self, q);
+		}
+	}
+
+	if (known_qdiscs) {
+		for (i = 0; i < known_qdiscs->len; i++) {
+			const NMPObject *q = g_ptr_array_index (known_qdiscs, i);
+
+			success &= (nm_platform_qdisc_add (self, NMP_NLM_FLAG_ADD,
+			                                   NMP_OBJECT_CAST_QDISC (q)) == NM_PLATFORM_ERROR_SUCCESS);
+		}
+	}
+
+	return success;
 }
 
 /*****************************************************************************/
@@ -5164,6 +5231,51 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	return buf;
 }
 
+const char *
+nm_platform_qdisc_to_string (const NMPlatformQdisc *qdisc, char *buf, gsize len)
+{
+	char str_dev[TO_STRING_DEV_BUF_SIZE];
+
+	if (!nm_utils_to_string_buffer_init_null (qdisc, &buf, &len))
+		return buf;
+
+	g_snprintf (buf, len, "%s%s family %d handle %x parent %x info %x",
+	            qdisc->kind,
+	            _to_string_dev (NULL, qdisc->ifindex, str_dev, sizeof (str_dev)),
+	            qdisc->addr_family,
+	            qdisc->handle,
+	            qdisc->parent,
+	            qdisc->info);
+
+	return buf;
+}
+
+void
+nm_platform_qdisc_hash_update (const NMPlatformQdisc *obj, NMHashState *h)
+{
+	nm_hash_update_str (h, obj->kind);
+	nm_hash_update_vals (h,
+	                     obj->ifindex,
+	                     obj->addr_family,
+	                     obj->handle,
+	                     obj->parent,
+	                     obj->info);
+}
+
+int
+nm_platform_qdisc_cmp (const NMPlatformQdisc *a, const NMPlatformQdisc *b)
+{
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, ifindex);
+	NM_CMP_FIELD (a, b, parent);
+	NM_CMP_FIELD_STR_INTERNED (a, b, kind);
+	NM_CMP_FIELD (a, b, addr_family);
+	NM_CMP_FIELD (a, b, handle);
+	NM_CMP_FIELD (a, b, info);
+
+	return 0;
+}
+
 void
 nm_platform_link_hash_update (const NMPlatformLink *obj, NMHashState *h)
 {
@@ -5977,6 +6089,12 @@ log_ip6_route (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatform
 	_LOGD ("signal: route   6 %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_ip6_route_to_string (route, NULL, 0));
 }
 
+static void
+log_qdisc (NMPlatform *self, NMPObjectType obj_type, int ifindex, NMPlatformQdisc *qdisc, NMPlatformSignalChangeType change_type, gpointer user_data)
+{
+	_LOGD ("signal: qdisc %7s: %s", nm_platform_signal_change_type_to_string (change_type), nm_platform_qdisc_to_string (qdisc, NULL, 0));
+}
+
 /*****************************************************************************/
 
 void
@@ -6250,4 +6368,5 @@ nm_platform_class_init (NMPlatformClass *platform_class)
 	SIGNAL (NM_PLATFORM_SIGNAL_ID_IP6_ADDRESS, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, log_ip6_address);
 	SIGNAL (NM_PLATFORM_SIGNAL_ID_IP4_ROUTE,   NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,   log_ip4_route);
 	SIGNAL (NM_PLATFORM_SIGNAL_ID_IP6_ROUTE,   NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,   log_ip6_route);
+	SIGNAL (NM_PLATFORM_SIGNAL_ID_QDISC,       NM_PLATFORM_SIGNAL_QDISC_CHANGED,       log_qdisc);
 }
