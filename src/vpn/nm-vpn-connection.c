@@ -1007,8 +1007,8 @@ print_vpn_config (NMVpnConnection *self)
 
 		if (priv->ip4_internal_gw)
 			_LOGI ("Data:   Internal Gateway: %s", nm_utils_inet4_ntop (priv->ip4_internal_gw, NULL));
-		_LOGI ("Data:   Internal Address: %s", nm_utils_inet4_ntop (address4->address, NULL));
-		_LOGI ("Data:   Internal Prefix: %d", address4->plen);
+		_LOGI ("Data:   Internal Address: %s", address4 ? nm_utils_inet4_ntop (address4->address, NULL) : "??");
+		_LOGI ("Data:   Internal Prefix: %d", address4 ? (int) address4->plen : -1);
 		_LOGI ("Data:   Internal Point-to-Point Address: %s", nm_utils_inet4_ntop (address4->peer_address, NULL));
 
 		nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, priv->ip4_config, &route) {
