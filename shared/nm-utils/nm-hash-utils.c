@@ -127,11 +127,10 @@ nm_hash_str (const char *str)
 {
 	NMHashState h;
 
-	if (str) {
-		nm_hash_init (&h, 1867854211u);
-		nm_hash_update_str (&h, str);
-	} else
-		nm_hash_init (&h, 842995561u);
+	if (!str)
+		return nm_hash_static (1867854211u);
+	nm_hash_init (&h, 1867854211u);
+	nm_hash_update_str (&h, str);
 	return nm_hash_complete (&h);
 }
 
