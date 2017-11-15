@@ -9416,8 +9416,8 @@ check_and_reapply_connection (NMDevice *self,
 	s_ip6_old = nm_connection_get_setting_ip6_config (con_old);
 	s_ip6_new = nm_connection_get_setting_ip6_config (con_new);
 
-	nm_device_reactivate_ip4_config (self, s_ip4_old, s_ip4_new, TRUE);
-	nm_device_reactivate_ip6_config (self, s_ip6_old, s_ip6_new, TRUE);
+	nm_device_reactivate_ip4_config (self, s_ip4_old, s_ip4_new, FALSE);
+	nm_device_reactivate_ip6_config (self, s_ip6_old, s_ip6_new, FALSE);
 
 	reactivate_proxy_config (self);
 
