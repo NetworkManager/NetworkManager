@@ -1212,6 +1212,7 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/sd-adapt/def.h \
 	src/systemd/sd-adapt/dirent-util.h \
 	src/systemd/sd-adapt/env-util.h \
+	src/systemd/sd-adapt/errno-list.h \
 	src/systemd/sd-adapt/format-util.h \
 	src/systemd/sd-adapt/gunicode.h \
 	src/systemd/sd-adapt/ioprio.h \
