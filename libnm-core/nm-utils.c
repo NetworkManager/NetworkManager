@@ -4536,6 +4536,49 @@ _nm_utils_team_link_watcher_from_json (json_t *json_element)
 		return NULL;
 }
 
+/*
+ * Removes the specified key1[.key2.key3] from json.
+ * Returns TRUE if json has been modified, FALSE otherwise. */
+static gboolean
+_json_del_object (json_t *json,
+                  const char *key1,
+                  const char *key2,
+                  const char *key3)
+{
+	json_t *json_element = json;
+	json_t *json_link = NULL;
+	const char *iter_key = key1;
+
+	if (key2) {
+		json_link = json;
+		json_element = json_object_get (json, key1);
+		if (!json_element)
+			return FALSE;
+		iter_key = key2;
+	}
+	if (key3) {
+		json_link = json_element;
+		json_element = json_object_get (json_element, key2);
+		if (!json_element)
+			return FALSE;
+		iter_key = key3;
+	}
+	if (json_object_del (json_element, iter_key) != 0)
+		return FALSE;
+
+	/* 1st level key only */
+	if (!json_link)
+		return TRUE;
+
+	if (json_object_size (json_element) == 0)
+		json_object_del (json_link, (key3 ? key2 : key1));
+
+	if (key3 && json_object_size (json_link) == 0)
+		json_object_del (json, key1);
+
+	return TRUE;
+}
+
 GValue *
 _nm_utils_team_config_get (const char *conf,
                            const char *key,
@@ -4756,38 +4799,7 @@ _nm_utils_team_config_set (char **conf,
 
 	/* no new value? delete element */
 	if (!value) {
-		json_element = json;
-		json_link = NULL;
-
-		if (key2) {
-			json_link = json;
-			json_element = json_object_get (json, key);
-			if (!json_element)
-				goto done;
-			iter_key = key2;
-		}
-		if (key3) {
-			json_link = json_element;
-			json_element = json_object_get (json_element, key2);
-			if (!json_element)
-				goto done;
-			iter_key = key3;
-		}
-		if (json_object_del (json_element, iter_key) != 0)
-			goto done;
-
-		updated = TRUE;
-
-		/* 1st level key only */
-		if (!json_link)
-			goto done;
-
-		if (json_object_size (json_element) == 0)
-			json_object_del (json_link, (key3 ? key2 : key));
-
-		if (key3 && json_object_size (json_link) == 0)
-			json_object_del (json, key);
-
+		updated = _json_del_object (json, key, key2, key3);
 		goto done;
 	}
 
