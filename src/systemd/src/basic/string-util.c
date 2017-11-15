@@ -278,6 +278,9 @@ char *strjoin_real(const char *x, ...) {
 char *strstrip(char *s) {
         char *e;
 
+        if (!s)
+                return NULL;
+
         /* Drops trailing whitespace. Modifies the string in
          * place. Returns pointer to first non-space character */
 
@@ -295,7 +298,13 @@ char *strstrip(char *s) {
 char *delete_chars(char *s, const char *bad) {
         char *f, *t;
 
-        /* Drops all whitespace, regardless where in the string */
+        /* Drops all specified bad characters, regardless where in the string */
+
+        if (!s)
+                return NULL;
+
+        if (!bad)
+                bad = WHITESPACE;
 
         for (f = s, t = s; *f; f++) {
                 if (strchr(bad, *f))
@@ -305,6 +314,26 @@ char *delete_chars(char *s, const char *bad) {
         }
 
         *t = 0;
+
+        return s;
+}
+
+char *delete_trailing_chars(char *s, const char *bad) {
+        char *p, *c = s;
+
+        /* Drops all specified bad characters, at the end of the string */
+
+        if (!s)
+                return NULL;
+
+        if (!bad)
+                bad = WHITESPACE;
+
+        for (p = s; *p; p++)
+                if (!strchr(bad, *p))
+                        c = p + 1;
+
+        *c = 0;
 
         return s;
 }
@@ -472,6 +501,10 @@ char *ellipsize_mem(const char *s, size_t old_length, size_t new_length, unsigne
 
         assert(s);
         assert(percent <= 100);
+
+        if (new_length == (size_t) -1)
+                return strndup(s, old_length);
+
         assert(new_length >= 3);
 
         /* if no multibyte characters use ascii_ellipsize_mem for speed */
@@ -539,6 +572,10 @@ char *ellipsize_mem(const char *s, size_t old_length, size_t new_length, unsigne
 }
 
 char *ellipsize(const char *s, size_t length, unsigned percent) {
+
+        if (length == (size_t) -1)
+                return strdup(s);
+
         return ellipsize_mem(s, strlen(s), length, percent);
 }
 
