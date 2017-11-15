@@ -4297,6 +4297,218 @@ const char **nm_utils_enum_get_values (GType type, gint from, gint to)
 /*****************************************************************************/
 
 #if WITH_JSON_VALIDATION
+
+static void
+_json_add_object (json_t *json,
+                  const char *key1,
+                  const char *key2,
+                  const char *key3,
+                  json_t *value)
+{
+	json_t *json_element, *json_link;
+
+	json_element = json_object_get (json, key1);
+	if (!json_element) {
+		json_element = value;
+		if (key2) {
+			if (key3) {
+				json_element = json_object ();
+				json_object_set_new (json_element, key3, value);
+			}
+			json_link = json_object ();
+			json_object_set_new (json_link, key2, json_element);
+			json_element = json_link;
+		}
+		json_object_set_new (json, key1, json_element);
+		return;
+	}
+
+	if (!key2)
+		goto key_already_there;
+
+	json_link = json_element;
+	json_element = json_object_get (json_element, key2);
+	if (!json_element) {
+		json_element = value;
+		if (key3) {
+			json_element = json_object ();
+			json_object_set_new (json_element, key3, value);
+		}
+		json_object_set_new (json_link, key2, json_element);
+		return;
+	}
+
+	if (!key3)
+		goto key_already_there;
+
+	json_link = json_element;
+	json_element = json_object_get (json_element, key3);
+	if (!json_element) {
+		json_object_set_new (json_link, key3, value);
+		return;
+	}
+
+key_already_there:
+	json_decref (value);
+}
+
+/*
+ * Removes the specified key1[.key2.key3] from json.
+ * Returns TRUE if json has been modified, FALSE otherwise. */
+static gboolean
+_json_del_object (json_t *json,
+                  const char *key1,
+                  const char *key2,
+                  const char *key3)
+{
+	json_t *json_element = json;
+	json_t *json_link = NULL;
+	const char *iter_key = key1;
+
+	if (key2) {
+		json_link = json;
+		json_element = json_object_get (json, key1);
+		if (!json_element)
+			return FALSE;
+		iter_key = key2;
+	}
+	if (key3) {
+		json_link = json_element;
+		json_element = json_object_get (json_element, key2);
+		if (!json_element)
+			return FALSE;
+		iter_key = key3;
+	}
+
+	if (json_object_del (json_element, iter_key) != 0)
+		return FALSE;
+
+	/* 1st level key only */
+	if (!json_link)
+		return TRUE;
+
+	if (json_object_size (json_element) == 0)
+		json_object_del (json_link, (key3 ? key2 : key1));
+
+	if (key3 && json_object_size (json_link) == 0)
+		json_object_del (json, key1);
+
+	return TRUE;
+}
+
+static NMTeamLinkWatcher *
+_nm_utils_team_link_watcher_from_json (json_t *json_element)
+{
+	const char *j_key;
+	json_t *j_val;
+	gs_free char *name = NULL, *target_host = NULL, *source_host = NULL;
+	int val1 = 0, val2 = 0, val3 = 3;
+	NMTeamLinkWatcherArpPingFlags flags = 0;
+
+	g_return_val_if_fail (json_element, NULL);
+
+	json_object_foreach (json_element, j_key, j_val) {
+		if (nm_streq (j_key, "name"))
+			name = strdup (json_string_value (j_val));
+		else if (nm_streq (j_key, "target_host"))
+			target_host = strdup (json_string_value (j_val));
+		else if (nm_streq (j_key, "source_host"))
+			source_host = strdup (json_string_value (j_val));
+		else if (NM_IN_STRSET (j_key, "delay_up", "init_wait"))
+			val1 = json_integer_value (j_val);
+		else if (NM_IN_STRSET (j_key, "delay_down", "interval"))
+			val2 = json_integer_value (j_val);
+		else if (nm_streq (j_key, "missed_max"))
+			val3 = json_integer_value (j_val);
+		else if (nm_streq (j_key, "validate_active")) {
+			if (json_is_true (j_val))
+				flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE;
+		} else if (nm_streq (j_key, "validate_inactive")) {
+			if (json_is_true (j_val))
+				flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE;
+		} else if (nm_streq (j_key, "send_always")) {
+			if (json_is_true (j_val))
+				flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS;
+		}
+	}
+
+	if (nm_streq0 (name, NM_TEAM_LINK_WATCHER_ETHTOOL))
+		return nm_team_link_watcher_new_ethtool (val1, val2, NULL);
+	else if (nm_streq0 (name, NM_TEAM_LINK_WATCHER_NSNA_PING))
+		return nm_team_link_watcher_new_nsna_ping (val1, val2, val3, target_host, NULL);
+	else if (nm_streq0 (name, NM_TEAM_LINK_WATCHER_ARP_PING)) {
+		return nm_team_link_watcher_new_arp_ping (val1, val2, val3, target_host,
+		                                          source_host, flags, NULL);
+	} else
+		return NULL;
+}
+
+static json_t *
+_nm_utils_team_link_watcher_to_json (NMTeamLinkWatcher *watcher)
+{
+	const char *name;
+	int int_val;
+	const char *str_val;
+	NMTeamLinkWatcherArpPingFlags flags = 0;
+	json_t *json_element;
+
+	g_return_val_if_fail (watcher, NULL);
+
+	json_element = json_object ();
+	name = nm_team_link_watcher_get_name (watcher);
+	if (!name)
+		goto fail;
+
+	json_object_set_new (json_element, "name", json_string (name));
+
+	if (nm_streq (name, NM_TEAM_LINK_WATCHER_ETHTOOL)) {
+		int_val = nm_team_link_watcher_get_delay_up (watcher);
+		if (int_val)
+			json_object_set_new (json_element, "delay_up", json_integer (int_val));
+		int_val = nm_team_link_watcher_get_delay_down (watcher);
+		if (int_val)
+			json_object_set_new (json_element, "delay_down", json_integer (int_val));
+		return json_element;
+	}
+
+	int_val = nm_team_link_watcher_get_init_wait (watcher);
+	if (int_val)
+		json_object_set_new (json_element, "init_wait", json_integer (int_val));
+	int_val = nm_team_link_watcher_get_interval (watcher);
+	if (int_val)
+		json_object_set_new (json_element, "interval", json_integer (int_val));
+	int_val = nm_team_link_watcher_get_missed_max (watcher);
+	if (int_val != 3)
+		json_object_set_new (json_element, "missed_max", json_integer (int_val));
+	str_val = nm_team_link_watcher_get_target_host (watcher);
+	if (!str_val)
+		goto fail;
+	json_object_set_new (json_element, "target_host", json_string (str_val));
+
+	if (nm_streq (name, NM_TEAM_LINK_WATCHER_NSNA_PING))
+		return json_element;
+
+	str_val = nm_team_link_watcher_get_source_host (watcher);
+	if (!str_val)
+		goto fail;
+	json_object_set_new (json_element, "source_host", json_string (str_val));
+
+	flags = nm_team_link_watcher_get_flags (watcher);
+	if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE)
+		json_object_set_new (json_element, "validate_active", json_string ("true"));
+	if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE)
+		json_object_set_new (json_element, "validate_inactive", json_string ("true"));
+	if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS)
+		json_object_set_new (json_element, "send_always", json_string ("true"));
+
+	return json_element;
+
+fail:
+	json_decref (json_element);
+	return NULL;
+}
+
+
 /**
  * nm_utils_is_json_object:
  * @str: the JSON string to test
@@ -4434,151 +4646,6 @@ out:
 }
 
 
-
-static void
-_json_add_object (json_t *json,
-                  const char *key1,
-                  const char *key2,
-                  const char *key3,
-                  json_t *value)
-{
-	json_t *json_element, *json_link;
-
-	json_element = json_object_get (json, key1);
-	if (!json_element) {
-		json_element = value;
-		if (key2) {
-			if (key3) {
-				json_element = json_object ();
-				json_object_set_new (json_element, key3, value);
-			}
-			json_link = json_object ();
-			json_object_set_new (json_link, key2, json_element);
-			json_element = json_link;
-		}
-		json_object_set_new (json, key1, json_element);
-		return;
-	}
-
-	if (!key2)
-		goto key_already_there;
-
-	json_link = json_element;
-	json_element = json_object_get (json_element, key2);
-	if (!json_element) {
-		json_element = value;
-		if (key3) {
-			json_element = json_object ();
-			json_object_set_new (json_element, key3, value);
-		}
-		json_object_set_new (json_link, key2, json_element);
-		return;
-	}
-
-	if (!key3)
-		goto key_already_there;
-
-	json_link = json_element;
-	json_element = json_object_get (json_element, key3);
-	if (!json_element) {
-		json_object_set_new (json_link, key3, value);
-		return;
-	}
-
-key_already_there:
-	json_decref (value);
-}
-
-static NMTeamLinkWatcher *
-_nm_utils_team_link_watcher_from_json (json_t *json_element)
-{
-	const char *j_key;
-	json_t *j_val;
-	gs_free char *name = NULL, *target_host = NULL, *source_host = NULL;
-	int val1 = 0, val2 = 0, val3 = 3;
-	NMTeamLinkWatcherArpPingFlags flags = 0;
-
-	g_return_val_if_fail (json_element, NULL);
-
-	json_object_foreach (json_element, j_key, j_val) {
-		if (nm_streq (j_key, "name"))
-			name = strdup (json_string_value (j_val));
-		else if (nm_streq (j_key, "target_host"))
-			target_host = strdup (json_string_value (j_val));
-		else if (nm_streq (j_key, "source_host"))
-			source_host = strdup (json_string_value (j_val));
-		else if (NM_IN_STRSET (j_key, "delay_up", "init_wait"))
-			val1 = json_integer_value (j_val);
-		else if (NM_IN_STRSET (j_key, "delay_down", "interval"))
-			val2 = json_integer_value (j_val);
-		else if (nm_streq (j_key, "missed_max"))
-			val3 = json_integer_value (j_val);
-		else if (nm_streq (j_key, "validate_active")) {
-			if (json_is_true (j_val))
-				flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE;
-		} else if (nm_streq (j_key, "validate_inactive")) {
-			if (json_is_true (j_val))
-				flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE;
-		} else if (nm_streq (j_key, "send_always")) {
-			if (json_is_true (j_val))
-				flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS;
-		}
-	}
-
-	if (nm_streq0 (name, NM_TEAM_LINK_WATCHER_ETHTOOL))
-		return nm_team_link_watcher_new_ethtool (val1, val2, NULL);
-	else if (nm_streq0 (name, NM_TEAM_LINK_WATCHER_NSNA_PING))
-		return nm_team_link_watcher_new_nsna_ping (val1, val2, val3, target_host, NULL);
-	else if (nm_streq0 (name, NM_TEAM_LINK_WATCHER_ARP_PING)) {
-		return nm_team_link_watcher_new_arp_ping (val1, val2, val3, target_host,
-		                                          source_host, flags, NULL);
-	} else
-		return NULL;
-}
-
-/*
- * Removes the specified key1[.key2.key3] from json.
- * Returns TRUE if json has been modified, FALSE otherwise. */
-static gboolean
-_json_del_object (json_t *json,
-                  const char *key1,
-                  const char *key2,
-                  const char *key3)
-{
-	json_t *json_element = json;
-	json_t *json_link = NULL;
-	const char *iter_key = key1;
-
-	if (key2) {
-		json_link = json;
-		json_element = json_object_get (json, key1);
-		if (!json_element)
-			return FALSE;
-		iter_key = key2;
-	}
-	if (key3) {
-		json_link = json_element;
-		json_element = json_object_get (json_element, key2);
-		if (!json_element)
-			return FALSE;
-		iter_key = key3;
-	}
-	if (json_object_del (json_element, iter_key) != 0)
-		return FALSE;
-
-	/* 1st level key only */
-	if (!json_link)
-		return TRUE;
-
-	if (json_object_size (json_element) == 0)
-		json_object_del (json_link, (key3 ? key2 : key1));
-
-	if (key3 && json_object_size (json_link) == 0)
-		json_object_del (json, key1);
-
-	return TRUE;
-}
-
 GValue *
 _nm_utils_team_config_get (const char *conf,
                            const char *key,
@@ -4707,72 +4774,6 @@ _nm_utils_team_config_get (const char *conf,
 
 	return value;
 }
-
-static json_t *
-_nm_utils_team_link_watcher_to_json (NMTeamLinkWatcher *watcher)
-{
-	const char *name;
-	int int_val;
-	const char *str_val;
-	NMTeamLinkWatcherArpPingFlags flags = 0;
-	json_t *json_element;
-
-	g_return_val_if_fail (watcher, NULL);
-
-	json_element = json_object ();
-	name = nm_team_link_watcher_get_name (watcher);
-	if (!name)
-		goto fail;
-
-	json_object_set_new (json_element, "name", json_string (name));
-
-	if (nm_streq (name, NM_TEAM_LINK_WATCHER_ETHTOOL)) {
-		int_val = nm_team_link_watcher_get_delay_up (watcher);
-		if (int_val)
-			json_object_set_new (json_element, "delay_up", json_integer (int_val));
-		int_val = nm_team_link_watcher_get_delay_down (watcher);
-		if (int_val)
-			json_object_set_new (json_element, "delay_down", json_integer (int_val));
-		return json_element;
-	}
-
-	int_val = nm_team_link_watcher_get_init_wait (watcher);
-	if (int_val)
-		json_object_set_new (json_element, "init_wait", json_integer (int_val));
-	int_val = nm_team_link_watcher_get_interval (watcher);
-	if (int_val)
-		json_object_set_new (json_element, "interval", json_integer (int_val));
-	int_val = nm_team_link_watcher_get_missed_max (watcher);
-	if (int_val != 3)
-		json_object_set_new (json_element, "missed_max", json_integer (int_val));
-	str_val = nm_team_link_watcher_get_target_host (watcher);
-	if (!str_val)
-		goto fail;
-	json_object_set_new (json_element, "target_host", json_string (str_val));
-
-	if (nm_streq (name, NM_TEAM_LINK_WATCHER_NSNA_PING))
-		return json_element;
-
-	str_val = nm_team_link_watcher_get_source_host (watcher);
-	if (!str_val)
-		goto fail;
-	json_object_set_new (json_element, "source_host", json_string (str_val));
-
-	flags = nm_team_link_watcher_get_flags (watcher);
-	if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE)
-		json_object_set_new (json_element, "validate_active", json_string ("true"));
-	if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE)
-		json_object_set_new (json_element, "validate_inactive", json_string ("true"));
-	if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS)
-		json_object_set_new (json_element, "send_always", json_string ("true"));
-
-	return json_element;
-
-fail:
-	json_decref (json_element);
-	return NULL;
-}
-
 
 /* if conf is updated in place returns TRUE */
 gboolean
