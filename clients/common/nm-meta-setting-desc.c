@@ -2449,7 +2449,7 @@ _complete_fcn_connection_master (ARGS_COMPLETE_FCN)
 			expected_type = nm_setting_connection_get_slave_type (s_con);
 	}
 
-	text_len = strlen (text);
+	text_len = text ? strlen (text) : 0;
 
 	result = g_new (char *, (2 * len) + 1);
 	for (i = 0, j = 0; i < len; i++) {
