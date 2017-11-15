@@ -178,6 +178,10 @@ _nm_g_return_if_fail_warning (const char *log_domain,
 #include "nm-utils/nm-macros-internal.h"
 #include "nm-utils/nm-shared-utils.h"
 
+#if ((NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY) == 0
+#include "nm-utils/nm-hash-utils.h"
+#endif
+
 #include "nm-version.h"
 
 /*****************************************************************************/

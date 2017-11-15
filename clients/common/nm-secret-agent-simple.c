@@ -33,8 +33,6 @@
 
 #include <string.h>
 
-#include "nm-utils/nm-hash-utils.h"
-
 #include "NetworkManager.h"
 #include "nm-vpn-service-plugin.h"
 

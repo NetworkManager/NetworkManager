@@ -26,7 +26,6 @@
 #include <string.h>
 
 #include "nm-utils/c-list-util.h"
-#include "nm-utils/nm-hash-utils.h"
 
 #include "nm-utils.h"
 #include "nm-setting-private.h"

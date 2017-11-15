@@ -25,7 +25,6 @@
 #include <arpa/inet.h>
 
 #include "nm-common-macros.h"
-#include "nm-utils/nm-hash-utils.h"
 #include "nm-utils/nm-enum-utils.h"
 
 #include "NetworkManager.h"
