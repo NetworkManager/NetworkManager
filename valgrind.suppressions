@@ -423,7 +423,7 @@
    fun:g_slice_alloc0
    fun:g_type_create_instance
    fun:g_object_new_internal
-   fun:g_object_newv
+   fun:g_object_new*
    fun:g_object_new
    fun:g_task_new
    fun:_g_socket_read_with_control_messages
