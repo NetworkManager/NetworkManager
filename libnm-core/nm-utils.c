@@ -4396,6 +4396,50 @@ _json_del_object (json_t *json,
 	return TRUE;
 }
 
+/* Adds in place to json the defaults for missing properties */
+static void
+_json_team_add_defaults (json_t *json,
+                         gboolean port_config)
+{
+	json_t *json_element;
+	const char *runner = NULL;
+
+	if (port_config) {
+		_json_add_object (json, "link_watch", "name", NULL,
+		                  json_string (NM_TEAM_LINK_WATCHER_ETHTOOL));
+	} else {
+		/* Retrieve runner or add default one */
+		json_element = json_object_get (json, "runner");
+		if (json_element) {
+			runner = json_string_value (json_object_get (json_element, "name"));
+		} else {
+			json_element = json_object ();
+			json_object_set_new (json, "runner", json_element);
+		}
+		if (!runner) {
+			runner = NM_SETTING_TEAM_RUNNER_DEFAULT;
+			json_object_set_new (json_element, "name", json_string (runner));
+		}
+
+
+		if (nm_streq (runner, NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP)) {
+			_json_add_object (json, "notify_peers", "count", NULL,
+			                  json_integer (NM_SETTING_TEAM_NOTIFY_PEERS_COUNT_ACTIVEBACKUP_DEFAULT));
+			_json_add_object (json, "mcast_rejoin", "count", NULL,
+			                  json_integer (NM_SETTING_TEAM_NOTIFY_MCAST_COUNT_ACTIVEBACKUP_DEFAULT));
+		} else if (   nm_streq (runner, NM_SETTING_TEAM_RUNNER_LOADBALANCE)
+		           || nm_streq (runner, NM_SETTING_TEAM_RUNNER_LACP)) {
+			json_element = json_array ();
+			json_array_append_new (json_element, json_string ("eth"));
+			json_array_append_new (json_element, json_string ("ipv4"));
+			json_array_append_new (json_element, json_string ("ipv6"));
+			_json_add_object (json, "runner", "tx_hash", NULL, json_element);
+		}
+	}
+}
+
+
+
 static NMTeamLinkWatcher *
 _nm_utils_team_link_watcher_from_json (json_t *json_element)
 {
@@ -4568,9 +4612,8 @@ _nm_utils_team_config_equal (const char *conf1,
                              gboolean port_config)
 {
 	json_t *json1 = NULL, *json2 = NULL, *json;
-	json_t *array, *name;
 	gs_free char *dump1 = NULL, *dump2 = NULL;
-	json_t *value, *property;
+	json_t *value;
 	json_error_t jerror;
 	const char *key;
 	gboolean ret;
@@ -4594,33 +4637,8 @@ _nm_utils_team_config_equal (const char *conf1,
 	 * configuration.  Add them with the default value if necessary, depending
 	 * on the configuration type.
 	 */
-	for (i = 0, json = json1; i < 2; i++, json = json2) {
-		if  (port_config) {
-			property = json_object_get (json, "link_watch");
-			if (!property) {
-				property = json_object ();
-				json_object_set_new (property, "name", json_string ("ethtool"));
-				json_object_set_new (json, "link_watch", property);
-			}
-		} else {
-			property = json_object_get (json, "runner");
-			if (!property) {
-				property = json_object ();
-				json_object_set_new (property, "name", json_string ("roundrobin"));
-				json_object_set_new (json, "runner", property);
-			} else if (   (name = json_object_get (property, "name"))
-			           && NM_IN_STRSET (json_string_value (name), "lacp", "loadbalance")) {
-				/* Add default tx_hash when missing */
-				if (!json_object_get (property, "tx_hash")) {
-					array = json_array ();
-					json_array_append_new (array, json_string ("eth"));
-					json_array_append_new (array, json_string ("ipv4"));
-					json_array_append_new (array, json_string ("ipv6"));
-					json_object_set_new (property, "tx_hash", array);
-				}
-			}
-		}
-	}
+	for (i = 0, json = json1; i < 2; i++, json = json2)
+		_json_team_add_defaults (json, port_config);
 
 	/* Only consider a given subset of nodes, others can change depending on
 	 * current state */
@@ -4657,7 +4675,6 @@ _nm_utils_team_config_get (const char *conf,
 	json_t *json_element;
 	GValue *value = NULL;
 	json_error_t jerror;
-	const char *runner = NULL;
 
 	if (!key)
 		return NULL;
@@ -4677,35 +4694,10 @@ _nm_utils_team_config_get (const char *conf,
 	 * the link-watchers property only here: and for this compound property it is
 	 * fine to show the default value only if explicitly set.
 	 */
-	if (!port_config) {
-		/* Retrieve runner or add default one */
-		json_element = json_object_get (json, "runner");
-		if (json_element) {
-			runner = json_string_value (json_object_get (json_element, "name"));
-		} else {
-			json_element = json_object ();
-			json_object_set_new (json, "runner", json_element);
-		}
-		if (!runner) {
-			runner = NM_SETTING_TEAM_RUNNER_DEFAULT;
-			json_object_set_new (json_element, "name", json_string (runner));
-		}
+	if (!port_config)
+		_json_team_add_defaults (json, port_config);
 
-
-		if (nm_streq (runner, NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP)) {
-			_json_add_object (json, "notify_peers", "count", NULL,
-			                  json_integer (NM_SETTING_TEAM_NOTIFY_PEERS_COUNT_ACTIVEBACKUP_DEFAULT));
-			_json_add_object (json, "mcast_rejoin", "count", NULL,
-			                  json_integer (NM_SETTING_TEAM_NOTIFY_MCAST_COUNT_ACTIVEBACKUP_DEFAULT));
-		} else if (   nm_streq (runner, NM_SETTING_TEAM_RUNNER_LOADBALANCE)
-		           || nm_streq (runner, NM_SETTING_TEAM_RUNNER_LACP)) {
-			json_element = json_array ();
-			json_array_append_new (json_element, json_string ("eth"));
-			json_array_append_new (json_element, json_string ("ipv4"));
-			json_array_append_new (json_element, json_string ("ipv6"));
-			_json_add_object (json, "runner", "tx_hash", NULL, json_element);
-		}
-	}
+	/* Now search the property to retrieve */
 	json_element = json_object_get (json, key);
 	if (json_element && key2)
 		json_element = json_object_get (json_element, key2);
