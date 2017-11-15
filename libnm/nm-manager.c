@@ -192,7 +192,7 @@ nm_manager_init (NMManager *manager)
 	priv->state = NM_STATE_UNKNOWN;
 	priv->connectivity = NM_CONNECTIVITY_UNKNOWN;
 
-	priv->permissions = g_hash_table_new (g_direct_hash, g_direct_equal);
+	priv->permissions = g_hash_table_new (NULL, NULL);
 	priv->devices = g_ptr_array_new ();
 	priv->all_devices = g_ptr_array_new ();
 	priv->active_connections = g_ptr_array_new ();

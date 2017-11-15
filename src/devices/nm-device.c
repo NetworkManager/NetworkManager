@@ -6217,7 +6217,7 @@ shared4_new_config (NMDevice *self, NMConnection *connection)
 		guint32 count = 0;
 
 		if (G_UNLIKELY (!shared_ips))
-			shared_ips = g_hash_table_new (g_direct_hash, g_direct_equal);
+			shared_ips = g_hash_table_new (NULL, NULL);
 		else {
 			while (g_hash_table_lookup (shared_ips, GUINT_TO_POINTER (start + count))) {
 				count += ntohl (0x100);
@@ -12072,7 +12072,7 @@ nm_device_recheck_available_connections (NMDevice *self)
 	priv = NM_DEVICE_GET_PRIVATE(self);
 
 	if (g_hash_table_size (priv->available_connections) > 0) {
-		prune_list = g_hash_table_new (g_direct_hash, g_direct_equal);
+		prune_list = g_hash_table_new (NULL, NULL);
 		g_hash_table_iter_init (&h_iter, priv->available_connections);
 		while (g_hash_table_iter_next (&h_iter, (gpointer *) &connection, NULL))
 			g_hash_table_add (prune_list, connection);
@@ -14131,7 +14131,7 @@ nm_device_init (NMDevice *self)
 	priv->rfkill_type = RFKILL_TYPE_UNKNOWN;
 	priv->unmanaged_flags = NM_UNMANAGED_PLATFORM_INIT;
 	priv->unmanaged_mask = priv->unmanaged_flags;
-	priv->available_connections = g_hash_table_new_full (g_direct_hash, g_direct_equal, g_object_unref, NULL);
+	priv->available_connections = g_hash_table_new_full (NULL, NULL, g_object_unref, NULL);
 	priv->ip6_saved_properties = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, g_free);
 	priv->sys_iface_state = NM_DEVICE_SYS_IFACE_STATE_EXTERNAL;
 
