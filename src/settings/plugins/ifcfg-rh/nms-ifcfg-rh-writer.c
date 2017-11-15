@@ -150,7 +150,7 @@ write_secrets (shvarFile *ifcfg,
 
 	/* sort the keys. */
 	secrets_keys = (const char **) g_hash_table_get_keys_as_array (secrets, &secrets_keys_n);
-	if (secrets_keys) {
+	if (secrets_keys_n > 1) {
 		g_qsort_with_data (secrets_keys,
 		                   secrets_keys_n,
 		                   sizeof (const char *),
