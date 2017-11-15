@@ -251,6 +251,7 @@ enum {
 	DELAYED_ACTION_IDX_REFRESH_ALL_IP4_ROUTES,
 	DELAYED_ACTION_IDX_REFRESH_ALL_IP6_ROUTES,
 	DELAYED_ACTION_IDX_REFRESH_ALL_QDISCS,
+	DELAYED_ACTION_IDX_REFRESH_ALL_TFILTERS,
 	_DELAYED_ACTION_IDX_REFRESH_ALL_NUM,
 };
 
@@ -262,10 +263,11 @@ typedef enum {
 	DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES      = (1LL << /* 3 */ DELAYED_ACTION_IDX_REFRESH_ALL_IP4_ROUTES),
 	DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES      = (1LL << /* 4 */ DELAYED_ACTION_IDX_REFRESH_ALL_IP6_ROUTES),
 	DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS          = (1LL << /* 5 */ DELAYED_ACTION_IDX_REFRESH_ALL_QDISCS),
-	DELAYED_ACTION_TYPE_REFRESH_LINK                = (1LL <<    6),
-	DELAYED_ACTION_TYPE_MASTER_CONNECTED            = (1LL <<   10),
-	DELAYED_ACTION_TYPE_READ_NETLINK                = (1LL <<   11),
-	DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE        = (1LL <<   12),
+	DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS        = (1LL << /* 6 */ DELAYED_ACTION_IDX_REFRESH_ALL_TFILTERS),
+	DELAYED_ACTION_TYPE_REFRESH_LINK                = (1LL <<    7),
+	DELAYED_ACTION_TYPE_MASTER_CONNECTED            = (1LL <<   11),
+	DELAYED_ACTION_TYPE_READ_NETLINK                = (1LL <<   12),
+	DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE        = (1LL <<   13),
 	__DELAYED_ACTION_TYPE_MAX,
 
 	DELAYED_ACTION_TYPE_REFRESH_ALL                 = DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS |
@@ -273,7 +275,8 @@ typedef enum {
 	                                                  DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES |
 	                                                  DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES |
 	                                                  DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES |
-	                                                  DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS,
+	                                                  DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS |
+	                                                  DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS,
 
 	DELAYED_ACTION_TYPE_MAX                         = __DELAYED_ACTION_TYPE_MAX -1,
 } DelayedActionType;
@@ -975,6 +978,8 @@ _nl_nlmsghdr_to_str (const struct nlmsghdr *hdr, char *buf, gsize len)
 	case RTM_DELROUTE:   s = "RTM_DELROUTE"; break;
 	case RTM_NEWQDISC:   s = "RTM_NEWQDISC"; break;
 	case RTM_DELQDISC:   s = "RTM_DELQDISC"; break;
+	case RTM_NEWTFILTER: s = "RTM_NEWTFILTER"; break;
+	case RTM_DELTFILTER: s = "RTM_DELTFILTER"; break;
 	case NLMSG_NOOP:     s = "NLMSG_NOOP"; break;
 	case NLMSG_ERROR:    s = "NLMSG_ERROR"; break;
 	case NLMSG_DONE:     s = "NLMSG_DONE"; break;
@@ -1022,6 +1027,7 @@ _nl_nlmsghdr_to_str (const struct nlmsghdr *hdr, char *buf, gsize len)
 	case RTM_NEWADDR:
 	case RTM_NEWROUTE:
 	case RTM_NEWQDISC:
+	case RTM_NEWTFILTER:
 		_F (NLM_F_REPLACE, "replace");
 		_F (NLM_F_EXCL, "excl");
 		_F (NLM_F_CREATE, "create");
@@ -1031,6 +1037,7 @@ _nl_nlmsghdr_to_str (const struct nlmsghdr *hdr, char *buf, gsize len)
 	case RTM_GETADDR:
 	case RTM_GETROUTE:
 	case RTM_DELQDISC:
+	case RTM_DELTFILTER:
 		_F (NLM_F_DUMP, "dump");
 		_F (NLM_F_ROOT, "root");
 		_F (NLM_F_MATCH, "match");
@@ -2368,6 +2375,40 @@ _new_from_nl_qdisc (struct nlmsghdr *nlh, gboolean id_only)
 	return obj;
 }
 
+static NMPObject *
+_new_from_nl_tfilter (struct nlmsghdr *nlh, gboolean id_only)
+{
+	NMPObject *obj = NULL;
+	const struct tcmsg *tcm;
+	struct nlattr *tb[TCA_MAX + 1];
+	int err;
+	static const struct nla_policy policy[TCA_MAX + 1] = {
+		[TCA_KIND] = { .type = NLA_STRING },
+	};
+
+	if (!nlmsg_valid_hdr (nlh, sizeof (*tcm)))
+		return NULL;
+	tcm = nlmsg_data (nlh);
+
+	err = nlmsg_parse (nlh, sizeof (*tcm), tb, TCA_MAX, policy);
+	if (err < 0)
+		return NULL;
+
+	if (!tb[TCA_KIND])
+		return NULL;
+
+	obj = nmp_object_new (NMP_OBJECT_TYPE_TFILTER, NULL);
+
+	obj->tfilter.kind = g_intern_string (nla_get_string (tb[TCA_KIND]));
+	obj->tfilter.ifindex = tcm->tcm_ifindex;
+	obj->tfilter.addr_family = tcm->tcm_family;
+	obj->tfilter.handle = tcm->tcm_handle;
+	obj->tfilter.parent = tcm->tcm_parent;
+	obj->tfilter.info = tcm->tcm_info;
+
+	return obj;
+}
+
 /**
  * nmp_object_new_from_nl:
  * @platform: (allow-none): for creating certain objects, the constructor wants to check
@@ -2408,6 +2449,10 @@ nmp_object_new_from_nl (NMPlatform *platform, const NMPCache *cache, struct nl_m
 	case RTM_DELQDISC:
 	case RTM_GETQDISC:
 		return _new_from_nl_qdisc (msghdr, id_only);
+	case RTM_NEWTFILTER:
+	case RTM_DELTFILTER:
+	case RTM_GETTFILTER:
+		return _new_from_nl_tfilter (msghdr, id_only);
 	default:
 		return NULL;
 	}
@@ -2890,6 +2935,93 @@ nla_put_failure:
 	g_return_val_if_reached (NULL);
 }
 
+static gboolean
+_add_action_simple (struct nl_msg *msg,
+                    const NMPlatformActionSimple *simple)
+{
+	struct nlattr *act_options;
+	struct tc_defact sel = { 0, };
+
+	if (!(act_options = nla_nest_start (msg, TCA_ACT_OPTIONS)))
+		goto nla_put_failure;
+
+	NLA_PUT (msg, TCA_DEF_PARMS, sizeof (sel), &sel);
+	NLA_PUT (msg, TCA_DEF_DATA, sizeof (simple->sdata), simple->sdata);
+
+	nla_nest_end (msg, act_options);
+
+	return TRUE;
+
+nla_put_failure:
+	return FALSE;
+}
+
+static gboolean
+_add_action (struct nl_msg *msg,
+             const NMPlatformAction *action)
+{
+	struct nlattr *prio;
+
+	if (!(prio = nla_nest_start (msg, 1 /* priority */)))
+		goto nla_put_failure;
+
+	NLA_PUT_STRING (msg, TCA_ACT_KIND, action->kind);
+
+	if (strcmp (action->kind, "simple") == 0)
+		_add_action_simple (msg, &action->simple);
+
+	nla_nest_end (msg, prio);
+
+	return TRUE;
+
+nla_put_failure:
+	return FALSE;
+}
+
+static struct nl_msg *
+_nl_msg_new_tfilter (int nlmsg_type,
+                     int nlmsg_flags,
+                     const NMPlatformTfilter *tfilter)
+{
+	struct nl_msg *msg;
+	struct nlattr *tc_options;
+	struct nlattr *act_tab;
+	struct tcmsg tcm = {
+		.tcm_family = tfilter->addr_family,
+		.tcm_ifindex = tfilter->ifindex,
+		.tcm_handle = tfilter->handle,
+		.tcm_parent = tfilter->parent,
+		.tcm_info = tfilter->info,
+	};
+
+	msg = nlmsg_alloc_simple (nlmsg_type, nlmsg_flags);
+	if (!msg)
+		return NULL;
+
+	if (nlmsg_append (msg, &tcm, sizeof (tcm), NLMSG_ALIGNTO) < 0)
+		goto nla_put_failure;
+
+	NLA_PUT_STRING (msg, TCA_KIND, tfilter->kind);
+
+	if (!(tc_options = nla_nest_start (msg, TCA_OPTIONS)))
+		goto nla_put_failure;
+
+	if (!(act_tab = nla_nest_start (msg, TCA_OPTIONS))) // 3 TCA_ACT_KIND TCA_ACT_KIND
+		goto nla_put_failure;
+
+	if (tfilter->action.kind)
+		_add_action (msg, &tfilter->action);
+
+	nla_nest_end (msg, tc_options);
+
+	nla_nest_end (msg, act_tab);
+
+	return msg;
+nla_put_failure:
+	nlmsg_free (msg);
+	g_return_val_if_reached (NULL);
+}
+
 /******************************************************************
  * NMPlatform types and functions
  ******************************************************************/
@@ -3292,6 +3424,7 @@ _NM_UTILS_LOOKUP_DEFINE (static, delayed_action_refresh_from_object_type, NMPObj
 	NM_UTILS_LOOKUP_ITEM (NMP_OBJECT_TYPE_IP4_ROUTE,   DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES),
 	NM_UTILS_LOOKUP_ITEM (NMP_OBJECT_TYPE_IP6_ROUTE,   DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES),
 	NM_UTILS_LOOKUP_ITEM (NMP_OBJECT_TYPE_QDISC,       DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS),
+	NM_UTILS_LOOKUP_ITEM (NMP_OBJECT_TYPE_TFILTER,     DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS),
 	NM_UTILS_LOOKUP_ITEM_IGNORE_OTHER (),
 );
 
@@ -3303,6 +3436,7 @@ _NM_UTILS_LOOKUP_DEFINE (static, delayed_action_refresh_to_object_type, DelayedA
 	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES,    NMP_OBJECT_TYPE_IP4_ROUTE),
 	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES,    NMP_OBJECT_TYPE_IP6_ROUTE),
 	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS,        NMP_OBJECT_TYPE_QDISC),
+	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS,      NMP_OBJECT_TYPE_TFILTER),
 	NM_UTILS_LOOKUP_ITEM_IGNORE_OTHER (),
 );
 
@@ -3314,6 +3448,7 @@ _NM_UTILS_LOOKUP_DEFINE (static, delayed_action_refresh_all_to_idx, DelayedActio
 	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES,    DELAYED_ACTION_IDX_REFRESH_ALL_IP4_ROUTES),
 	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES,    DELAYED_ACTION_IDX_REFRESH_ALL_IP6_ROUTES),
 	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS,        DELAYED_ACTION_IDX_REFRESH_ALL_QDISCS),
+	NM_UTILS_LOOKUP_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS,      DELAYED_ACTION_IDX_REFRESH_ALL_TFILTERS),
 	NM_UTILS_LOOKUP_ITEM_IGNORE_OTHER (),
 );
 
@@ -3325,6 +3460,7 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (delayed_action_to_string, DelayedActionType,
 	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES,    "refresh-all-ip4-routes"),
 	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES,    "refresh-all-ip6-routes"),
 	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS,        "refresh-all-qdiscs"),
+	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS,      "refresh-all-tfilters"),
 	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_REFRESH_LINK,              "refresh-link"),
 	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_MASTER_CONNECTED,          "master-connected"),
 	NM_UTILS_LOOKUP_STR_ITEM (DELAYED_ACTION_TYPE_READ_NETLINK,              "read-netlink"),
@@ -3762,7 +3898,7 @@ cache_on_change (NMPlatform *platform,
 		{
 			int ifindex = 0;
 
-			/* if we remove a link (from netlink), we must refresh the addresses, routes and qdiscs */
+			/* if we remove a link (from netlink), we must refresh the addresses, routes, qdiscs and tfilters */
 			if (   cache_op == NMP_CACHE_OPS_REMOVED
 			    && obj_old /* <-- nonsensical, make coverity happy */)
 				ifindex = obj_old->link.ifindex;
@@ -3778,7 +3914,8 @@ cache_on_change (NMPlatform *platform,
 				                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES |
 				                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES |
 				                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES |
-				                         DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS,
+				                         DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS |
+				                         DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS,
 				                         NULL);
 			}
 		}
@@ -4127,7 +4264,8 @@ do_request_all_no_delayed_actions (NMPlatform *platform, DelayedActionType actio
 		if (!nlmsg)
 			continue;
 
-		if (klass->obj_type == NMP_OBJECT_TYPE_QDISC) {
+		if (   klass->obj_type == NMP_OBJECT_TYPE_QDISC
+		    || klass->obj_type == NMP_OBJECT_TYPE_TFILTER) {
 			struct tcmsg tcmsg = {
 				.tcm_family = AF_UNSPEC,
 			};
@@ -4260,6 +4398,7 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 	case RTM_NEWLINK:
 	case RTM_NEWROUTE:
 	case RTM_NEWQDISC:
+	case RTM_NEWTFILTER:
 		is_dump = delayed_action_refresh_all_in_progress (platform,
 		                                                  delayed_action_refresh_from_object_type (NMP_OBJECT_GET_TYPE (obj)));
 		break;
@@ -4284,6 +4423,7 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 		case RTM_NEWADDR:
 		case RTM_GETLINK:
 		case RTM_NEWQDISC:
+		case RTM_NEWTFILTER:
 			cache_op = nmp_cache_update_netlink (cache, obj, is_dump, &obj_old, &obj_new);
 			if (cache_op != NMP_CACHE_OPS_UNCHANGED) {
 				cache_on_change (platform, cache_op, obj_old, obj_new);
@@ -4378,6 +4518,7 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 		case RTM_DELADDR:
 		case RTM_DELROUTE:
 		case RTM_DELQDISC:
+		case RTM_DELTFILTER:
 			cache_op = nmp_cache_remove_netlink (cache, obj, &obj_old, &obj_new);
 			if (cache_op != NMP_CACHE_OPS_UNCHANGED) {
 				cache_on_change (platform, cache_op, obj_old, obj_new);
@@ -6244,6 +6385,9 @@ object_delete (NMPlatform *platform,
 	case NMP_OBJECT_TYPE_QDISC:
 		nlmsg = _nl_msg_new_qdisc (RTM_DELQDISC, 0, NMP_OBJECT_CAST_QDISC (obj));
 		break;
+	case NMP_OBJECT_TYPE_TFILTER:
+		nlmsg = _nl_msg_new_tfilter (RTM_DELTFILTER, 0, NMP_OBJECT_CAST_TFILTER (obj));
+		break;
 	default:
 		break;
 	}
@@ -6363,6 +6507,45 @@ qdisc_add (NMPlatform *platform,
 	            ? LOGL_DEBUG
 	            : LOGL_WARN,
 	        "do-add-qdisc: %s",
+	        wait_for_nl_response_to_string (seq_result, s_buf, sizeof (s_buf)));
+
+	if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK)
+		return NM_PLATFORM_ERROR_SUCCESS;
+
+	return NM_PLATFORM_ERROR_UNSPECIFIED;
+}
+
+/*****************************************************************************/
+
+static NMPlatformError
+tfilter_add (NMPlatform *platform,
+             NMPNlmFlags flags,
+             const NMPlatformTfilter *tfilter)
+{
+	WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+	int nle;
+	char s_buf[256];
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
+
+	msg = _nl_msg_new_tfilter (RTM_NEWTFILTER, flags, tfilter);
+
+	event_handler_read_netlink (platform, FALSE);
+
+	nle = _nl_send_nlmsg (platform, msg, &seq_result, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
+	if (nle < 0) {
+		_LOGE ("do-add-tfilter: failed sending netlink request \"%s\" (%d)",
+		      nl_geterror (nle), -nle);
+		return NM_PLATFORM_ERROR_NETLINK;
+	}
+
+	delayed_action_handle_all (platform, FALSE);
+
+	nm_assert (seq_result);
+
+	_NMLOG (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK
+	            ? LOGL_DEBUG
+	            : LOGL_WARN,
+	        "do-add-tfilter: %s",
 	        wait_for_nl_response_to_string (seq_result, s_buf, sizeof (s_buf)));
 
 	if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK)
@@ -6655,7 +6838,8 @@ event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks)
 					                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES |
 					                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES |
 					                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES |
-					                         DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS,
+					                         DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS |
+					                         DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS,
 					                         NULL);
 					break;
 				default:
@@ -6941,7 +7125,8 @@ constructed (GObject *_object)
 	                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES |
 	                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES |
 	                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES |
-	                         DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS,
+	                         DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS |
+	                         DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS,
 	                         NULL);
 
 	delayed_action_handle_all (platform, FALSE);
@@ -7108,6 +7293,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->ip_route_get = ip_route_get;
 
 	platform_class->qdisc_add = qdisc_add;
+	platform_class->tfilter_add = tfilter_add;
 
 	platform_class->check_kernel_support = check_kernel_support;
 
