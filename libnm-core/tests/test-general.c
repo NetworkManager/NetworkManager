@@ -168,6 +168,9 @@ _test_hash_str (const char *str)
 static void
 test_nm_hash (void)
 {
+	g_assert (nm_hash_static (0));
+	g_assert (nm_hash_static (777));
+
 	_test_hash_str ("");
 	_test_hash_str ("a");
 	_test_hash_str ("aa");
