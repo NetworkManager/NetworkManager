@@ -26,7 +26,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "nm-utils/nm-hash-utils.h"
 #include "settings/nm-settings-plugin.h"
 
 #include "nms-ifnet-net-parser.h"

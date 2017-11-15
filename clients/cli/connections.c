@@ -31,8 +31,6 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-#include "nm-utils/nm-hash-utils.h"
-
 #include "nm-client-utils.h"
 #include "nm-vpn-helpers.h"
 #include "nm-meta-setting-access.h"

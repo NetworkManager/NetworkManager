@@ -21,8 +21,6 @@
 
 #include "NetworkManager.h"
 
-#include "nm-utils/nm-hash-utils.h"
-
 #include "nm-meta-setting-access.h"
 
 #include "nm-utils/nm-test-utils.h"

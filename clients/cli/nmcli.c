@@ -36,8 +36,6 @@
 
 #include "nm-client-utils.h"
 
-#include "nm-utils/nm-hash-utils.h"
-
 #include "polkit-agent.h"
 #include "utils.h"
 #include "common.h"

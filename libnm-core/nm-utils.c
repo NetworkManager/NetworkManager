@@ -36,7 +36,6 @@
 
 #include "nm-utils/nm-jansson.h"
 #include "nm-utils/nm-enum-utils.h"
-#include "nm-utils/nm-hash-utils.h"
 #include "nm-common-macros.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"

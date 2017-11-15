@@ -24,7 +24,6 @@
 
 #include <string.h>
 
-#include "nm-utils/nm-hash-utils.h"
 #include "nm-setting-connection.h"
 #include "nm-auth-subject.h"
 #include "nm-auth-manager.h"
