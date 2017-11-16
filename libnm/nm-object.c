@@ -955,7 +955,7 @@ _nm_object_register_properties (NMObject *object,
 	                  G_CALLBACK (properties_changed), object);
 	g_ptr_array_add (priv->proxies, proxy);
 
-	instance = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	instance = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 	priv->property_tables = g_slist_prepend (priv->property_tables, instance);
 
 	for (tmp = (NMPropertiesInfo *) info; tmp->name; tmp++) {

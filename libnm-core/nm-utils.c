@@ -36,7 +36,6 @@
 
 #include "nm-utils/nm-jansson.h"
 #include "nm-utils/nm-enum-utils.h"
-#include "nm-utils/nm-hash-utils.h"
 #include "nm-common-macros.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
@@ -145,7 +144,7 @@ init_lang_to_encodings_hash (void)
 	if (G_UNLIKELY (langToEncodings5 == NULL)) {
 		/* Five-letter codes */
 		enc = (struct IsoLangToEncodings *) &isoLangEntries5[0];
-		langToEncodings5 = g_hash_table_new (g_str_hash, g_str_equal);
+		langToEncodings5 = g_hash_table_new (nm_str_hash, g_str_equal);
 		while (enc->lang) {
 			g_hash_table_insert (langToEncodings5, (gpointer) enc->lang,
 			                     (gpointer) enc->encodings);
@@ -156,7 +155,7 @@ init_lang_to_encodings_hash (void)
 	if (G_UNLIKELY (langToEncodings2 == NULL)) {
 		/* Two-letter codes */
 		enc = (struct IsoLangToEncodings *) &isoLangEntries2[0];
-		langToEncodings2 = g_hash_table_new (g_str_hash, g_str_equal);
+		langToEncodings2 = g_hash_table_new (nm_str_hash, g_str_equal);
 		while (enc->lang) {
 			g_hash_table_insert (langToEncodings2, (gpointer) enc->lang,
 			                     (gpointer) enc->encodings);
@@ -513,7 +512,7 @@ _nm_utils_strdict_from_dbus (GVariant *dbus_value,
 	const char *key, *value;
 	GHashTable *hash;
 
-	hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	hash = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 	g_variant_iter_init (&iter, dbus_value);
 	while (g_variant_iter_next (&iter, "{&s&s}", &key, &value))
 		g_hash_table_insert (hash, g_strdup (key), g_strdup (value));
@@ -528,7 +527,7 @@ _nm_utils_copy_strdict (GHashTable *strdict)
 	GHashTableIter iter;
 	gpointer key, value;
 
-	copy = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	copy = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 	if (strdict) {
 		g_hash_table_iter_init (&iter, strdict);
 		while (g_hash_table_iter_next (&iter, &key, &value))
@@ -4862,7 +4861,7 @@ nm_utils_parse_variant_attributes (const char *string,
 	g_return_val_if_fail (key_value_separator, NULL);
 	g_return_val_if_fail (!error || !*error, NULL);
 
-	ht = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, (GDestroyNotify) g_variant_unref);
+	ht = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, (GDestroyNotify) g_variant_unref);
 
 	while (TRUE) {
 		gs_free char *name = NULL, *value = NULL;

@@ -6696,7 +6696,7 @@ nm_linux_platform_init (NMLinuxPlatform *self)
 	priv->delayed_action.list_master_connected = g_ptr_array_new ();
 	priv->delayed_action.list_refresh_link = g_ptr_array_new ();
 	priv->delayed_action.list_wait_for_nl_response = g_array_new (FALSE, TRUE, sizeof (DelayedActionWaitForNlResponseData));
-	priv->wifi_data = g_hash_table_new_full (NULL, NULL, NULL, (GDestroyNotify) wifi_utils_deinit);
+	priv->wifi_data = g_hash_table_new_full (nm_direct_hash, NULL, NULL, (GDestroyNotify) wifi_utils_deinit);
 }
 
 static void

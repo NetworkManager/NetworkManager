@@ -172,7 +172,7 @@ nm_inotify_helper_init (NMInotifyHelper *self)
 {
 	NMInotifyHelperPrivate *priv = NM_INOTIFY_HELPER_GET_PRIVATE (self);
 
-	priv->wd_refs = g_hash_table_new (g_direct_hash, g_direct_equal);
+	priv->wd_refs = g_hash_table_new (nm_direct_hash, NULL);
 }
 
 static void

@@ -21,8 +21,6 @@
 
 #include "NetworkManager.h"
 
-#include "nm-utils/nm-hash-utils.h"
-
 #include "nm-meta-setting-access.h"
 
 #include "nm-utils/nm-test-utils.h"
@@ -104,7 +102,7 @@ test_client_meta_check (void)
 
 		if (info->valid_parts) {
 			gsize i, l;
-			gs_unref_hashtable GHashTable *dup = g_hash_table_new (NULL, NULL);
+			gs_unref_hashtable GHashTable *dup = g_hash_table_new (nm_direct_hash, NULL);
 
 			l = NM_PTRARRAY_LEN (info->valid_parts);
 			g_assert (l >= 2);

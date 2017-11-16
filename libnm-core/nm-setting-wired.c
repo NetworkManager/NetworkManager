@@ -829,7 +829,7 @@ nm_setting_wired_init (NMSettingWired *setting)
 {
 	NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
 
-	priv->s390_options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	priv->s390_options = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 
 	/* We use GArray rather than GPtrArray so it will automatically be NULL-terminated */
 	priv->mac_address_blacklist = g_array_new (TRUE, FALSE, sizeof (char *));

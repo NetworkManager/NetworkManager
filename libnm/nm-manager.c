@@ -192,7 +192,7 @@ nm_manager_init (NMManager *manager)
 	priv->state = NM_STATE_UNKNOWN;
 	priv->connectivity = NM_CONNECTIVITY_UNKNOWN;
 
-	priv->permissions = g_hash_table_new (g_direct_hash, g_direct_equal);
+	priv->permissions = g_hash_table_new (nm_direct_hash, NULL);
 	priv->devices = g_ptr_array_new ();
 	priv->all_devices = g_ptr_array_new ();
 	priv->active_connections = g_ptr_array_new ();
@@ -1458,7 +1458,7 @@ checkpoint_rollback_cb (GObject *object,
 	                                                    &variant,
 	                                                    result,
 	                                                    &error)) {
-		hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+		hash = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
 		g_variant_iter_init (&iter, variant);
 		while (g_variant_iter_next (&iter, "{&su}", &path, &r))
 			g_hash_table_insert (hash, g_strdup (path), GUINT_TO_POINTER (r));

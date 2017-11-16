@@ -26,7 +26,6 @@
 #include <string.h>
 
 #include "nm-utils/c-list-util.h"
-#include "nm-utils/nm-hash-utils.h"
 
 #include "nm-utils.h"
 #include "nm-setting-private.h"
@@ -168,6 +167,17 @@ _test_hash_str (const char *str)
 static void
 test_nm_hash (void)
 {
+	g_assert (nm_hash_static (0));
+	g_assert (nm_hash_static (777));
+
+	g_assert (nm_hash_str (NULL));
+	g_assert (nm_hash_str (""));
+	g_assert (nm_hash_str ("a"));
+
+	g_assert (nm_hash_ptr (NULL));
+	g_assert (nm_hash_ptr (""));
+	g_assert (nm_hash_ptr ("a"));
+
 	_test_hash_str ("");
 	_test_hash_str ("a");
 	_test_hash_str ("aa");
@@ -6088,7 +6098,7 @@ test_g_ptr_array_insert (void)
 static void
 test_g_hash_table_get_keys_as_array (void)
 {
-	GHashTable *table = g_hash_table_new (g_str_hash, g_str_equal);
+	GHashTable *table = g_hash_table_new (nm_str_hash, g_str_equal);
 	guint length = 0;
 	char **keys;
 
@@ -6742,7 +6752,7 @@ test_route_attributes_format (void)
 	gs_unref_hashtable GHashTable *ht = NULL;
 	char *str;
 
-	ht = g_hash_table_new_full (g_str_hash, g_str_equal,
+	ht = g_hash_table_new_full (nm_str_hash, g_str_equal,
 	                            NULL, (GDestroyNotify) g_variant_unref);
 
 	str = nm_utils_format_variant_attributes (NULL, ' ', '=');

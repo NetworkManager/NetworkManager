@@ -728,8 +728,8 @@ nm_vpn_plugin_old_read_vpn_details (int fd,
 	if (out_secrets)
 		g_return_val_if_fail (*out_secrets == NULL, FALSE);
 
-	data = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
-	secrets = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, free_secret);
+	data = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
+	secrets = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, free_secret);
 
 	line = g_string_new (NULL);
 

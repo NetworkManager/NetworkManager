@@ -501,8 +501,8 @@ nm_exported_object_create_skeletons (NMExportedObject *self,
 
 		ifdata->property_changed_signal_id = g_signal_lookup ("properties-changed", G_OBJECT_TYPE (ifdata->interface));
 
-		ifdata->pending_notifies = g_hash_table_new_full (g_direct_hash,
-		                                                  g_direct_equal,
+		ifdata->pending_notifies = g_hash_table_new_full (nm_direct_hash,
+		                                                  NULL,
 		                                                  NULL,
 		                                                  (GDestroyNotify) g_variant_unref);
 	}

@@ -95,7 +95,7 @@ _ensure_registered (void)
 {
 	if (G_UNLIKELY (registered_settings == NULL)) {
 		nm_g_type_init ();
-		registered_settings = g_hash_table_new (g_str_hash, g_str_equal);
+		registered_settings = g_hash_table_new (nm_str_hash, g_str_equal);
 		registered_settings_by_type = g_hash_table_new (_nm_gtype_hash, _nm_gtype_equal);
 	}
 }
@@ -807,7 +807,7 @@ _nm_setting_new_from_dbus (GType setting_type,
 		GVariant *entry, *entry_key;
 		char *key;
 
-		keys = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+		keys = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
 
 		g_variant_iter_init (&iter, setting_dict);
 		while ((entry = g_variant_iter_next_value (&iter))) {
@@ -1359,7 +1359,7 @@ nm_setting_diff (NMSetting *a,
 	}
 
 	if (*results == NULL) {
-		*results = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+		*results = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
 		results_created = TRUE;
 	}
 

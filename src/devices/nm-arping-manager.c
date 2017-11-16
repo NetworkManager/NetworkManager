@@ -428,7 +428,7 @@ nm_arping_manager_init (NMArpingManager *self)
 {
 	NMArpingManagerPrivate *priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
 
-	priv->addresses = g_hash_table_new_full (g_direct_hash, g_direct_equal,
+	priv->addresses = g_hash_table_new_full (nm_direct_hash, NULL,
 	                                         NULL, destroy_address_info);
 	priv->state = STATE_INIT;
 }

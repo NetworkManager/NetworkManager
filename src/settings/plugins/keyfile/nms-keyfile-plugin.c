@@ -435,7 +435,7 @@ read_connections (NMSettingsPlugin *config)
 		return;
 	}
 
-	alive_connections = g_hash_table_new (NULL, NULL);
+	alive_connections = g_hash_table_new (nm_direct_hash, NULL);
 
 	filenames = g_ptr_array_new_with_free_func (g_free);
 	while ((item = g_dir_read_name (dir))) {

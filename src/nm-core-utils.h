@@ -25,8 +25,6 @@
 #include <stdio.h>
 #include <arpa/inet.h>
 
-#include "nm-utils/nm-hash-utils.h"
-
 #include "nm-connection.h"
 
 /*****************************************************************************/

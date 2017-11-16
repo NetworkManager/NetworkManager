@@ -351,7 +351,7 @@ nm_device_factory_manager_load_factories (NMDeviceFactoryManagerFactoryFunc call
 	g_return_if_fail (factories_by_link == NULL);
 	g_return_if_fail (factories_by_setting == NULL);
 
-	factories_by_link = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_object_unref);
+	factories_by_link = g_hash_table_new_full (nm_direct_hash, NULL, NULL, g_object_unref);
 	factories_by_setting = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, (GDestroyNotify) factories_list_unref);
 
 #define _ADD_INTERNAL(get_type_fcn) \

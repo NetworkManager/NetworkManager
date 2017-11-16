@@ -30,8 +30,6 @@
 
 #include "NetworkManager.h"
 
-#include "nm-utils/nm-hash-utils.h"
-
 #include "nmtui.h"
 #include "nmt-connect-connection-list.h"
 

@@ -307,7 +307,7 @@ private_server_new (const char *path,
 	g_signal_connect (server, "new-connection",
 	                  G_CALLBACK (private_server_new_connection), s);
 
-	s->obj_managers = g_hash_table_new_full (g_direct_hash, g_direct_equal,
+	s->obj_managers = g_hash_table_new_full (nm_direct_hash, NULL,
 	                                         (GDestroyNotify) private_server_manager_destroy,
 	                                         g_free);
 	s->manager = manager;

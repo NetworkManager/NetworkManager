@@ -594,7 +594,7 @@ nm_platform_link_get_all (NMPlatform *self, gboolean sort_by_name)
 	 * further by moving children/slaves to the end. */
 	g_ptr_array_sort_with_data (links, _link_get_all_presort, GINT_TO_POINTER (sort_by_name));
 
-	unseen = g_hash_table_new (g_direct_hash, g_direct_equal);
+	unseen = g_hash_table_new (nm_direct_hash, NULL);
 	for (i = 0; i < links->len; i++) {
 		item = NMP_OBJECT_CAST_LINK (links->pdata[i]);
 		nm_assert (item->ifindex > 0);
@@ -3175,7 +3175,7 @@ ip4_addr_subnets_build_index (const GPtrArray *addresses,
 
 	nm_assert (addresses && addresses->len);
 
-	subnets = g_hash_table_new (NULL, NULL);
+	subnets = g_hash_table_new (nm_direct_hash, NULL);
 
 	/* Build a hash table of all addresses per subnet */
 	for (i = 0; i < addresses->len; i++) {

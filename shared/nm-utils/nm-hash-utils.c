@@ -28,6 +28,8 @@
 #include "nm-shared-utils.h"
 #include "nm-random-utils.h"
 
+#include "siphash24.c"
+
 /*****************************************************************************/
 
 #define HASH_KEY_SIZE 16u
@@ -35,33 +37,77 @@
 
 G_STATIC_ASSERT (sizeof (guint) * HASH_KEY_SIZE_GUINT >= HASH_KEY_SIZE);
 
+static const guint8 *volatile global_seed = NULL;
+
 static const guint8 *
-_get_hash_key (void)
+_get_hash_key_init (void)
 {
-	static const guint8 *volatile global_seed = NULL;
+	/* the returned hash is aligned to guin64, hence, it is safe
+	 * to use it as guint* or guint64* pointer. */
+	static union {
+		guint8 v8[HASH_KEY_SIZE];
+	} g_arr _nm_alignas (guint64);
+	static gsize g_lock;
 	const guint8 *g;
+	struct siphash siph_state;
+	uint64_t h;
+	guint *p;
 
 	g = global_seed;
-	if (G_UNLIKELY (g == NULL)) {
-		/* the returned hash is aligned to guin64, hence, it is save
-		 * to use it as guint* or guint64* pointer. */
-		static union {
-			guint8 v8[HASH_KEY_SIZE];
-		} g_arr _nm_alignas (guint64);
-		static gsize g_lock;
-
-		if (g_once_init_enter (&g_lock)) {
-			nm_utils_random_bytes (g_arr.v8, sizeof (g_arr.v8));
-			g_atomic_pointer_compare_and_exchange (&global_seed, NULL, g_arr.v8);
-			g = g_arr.v8;
-			g_once_init_leave (&g_lock, 1);
-		} else {
-			g = global_seed;
-			nm_assert (g);
-		}
+	if (G_LIKELY (g != NULL)) {
+		nm_assert (g == g_arr.v8);
+		return g;
 	}
 
-	return g;
+	if (g_once_init_enter (&g_lock)) {
+
+		nm_utils_random_bytes (g_arr.v8, sizeof (g_arr.v8));
+
+		/* use siphash() of the key-size, to mangle the first guint. Otherwise,
+		 * the first guint has only the entropy that nm_utils_random_bytes()
+		 * generated for the first 4 bytes and relies on a good random generator. */
+		siphash24_init (&siph_state, g_arr.v8);
+		siphash24_compress (g_arr.v8, sizeof (g_arr.v8), &siph_state);
+		h = siphash24_finalize (&siph_state);
+		p = (guint *) g_arr.v8;
+		if (sizeof (guint) < sizeof (h))
+			*p = *p ^ ((guint) (h & 0xFFFFFFFFu)) ^ ((guint) (h >> 32));
+		else
+			*p = *p ^ ((guint) (h & 0xFFFFFFFFu));
+
+		g_atomic_pointer_compare_and_exchange (&global_seed, NULL, g_arr.v8);
+		g_once_init_leave (&g_lock, 1);
+	}
+
+	nm_assert (global_seed == g_arr.v8);
+	return g_arr.v8;
+}
+
+#define _get_hash_key() \
+	({ \
+		const guint8 *_g; \
+		\
+		_g = global_seed; \
+		if (G_UNLIKELY (_g == NULL)) \
+			_g = _get_hash_key_init (); \
+		_g; \
+	})
+
+guint
+nm_hash_static (guint static_seed)
+{
+	/* note that we only xor the static_seed with the key.
+	 * We don't use siphash24(), which would mix the bits better.
+	 * Note that this doesn't matter, because static_seed is not
+	 * supposed to be a value that you are hashing (for that, use
+	 * full siphash24()).
+	 * Instead, different callers may set a different static_seed
+	 * so that nm_hash_str(NULL) != nm_hash_ptr(NULL).
+	 *
+	 * Also, ensure that we don't return zero.
+	 */
+	return ((*((const guint *) _get_hash_key ())) ^ static_seed)
+	       ?: static_seed ?: 3679500967u;
 }
 
 void
@@ -83,11 +129,10 @@ nm_hash_str (const char *str)
 {
 	NMHashState h;
 
-	if (str) {
-		nm_hash_init (&h, 1867854211u);
-		nm_hash_update_str (&h, str);
-	} else
-		nm_hash_init (&h, 842995561u);
+	if (!str)
+		return nm_hash_static (1867854211u);
+	nm_hash_init (&h, 1867854211u);
+	nm_hash_update_str (&h, str);
 	return nm_hash_complete (&h);
 }
 
@@ -100,16 +145,13 @@ nm_str_hash (gconstpointer str)
 guint
 nm_hash_ptr (gconstpointer ptr)
 {
-	guint h;
+	NMHashState h;
 
-	h = ((const guint *) _get_hash_key ())[0];
-
-	if (sizeof (ptr) <= sizeof (guint))
-		h = h ^ ((guint) ((uintptr_t) ptr));
-	else
-		h = h ^ ((guint) (((guint64) (uintptr_t) ptr) >> 32)) ^ ((guint) ((uintptr_t) ptr));
-
-	return h ?: 2907677551u;
+	if (!ptr)
+		return nm_hash_static (2907677551u);
+	nm_hash_init (&h, 2907677551u);
+	nm_hash_update (&h, &ptr, sizeof (ptr));
+	return nm_hash_complete (&h);
 }
 
 guint
