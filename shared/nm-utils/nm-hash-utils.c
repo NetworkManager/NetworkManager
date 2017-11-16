@@ -28,6 +28,8 @@
 #include "nm-shared-utils.h"
 #include "nm-random-utils.h"
 
+#include "siphash24.c"
+
 /*****************************************************************************/
 
 #define HASH_KEY_SIZE 16u
