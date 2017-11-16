@@ -3786,6 +3786,82 @@ _validate_fcn_proxy_pac_script (const char *value, char **out_to_free, GError **
 	RETURN_STR_TO_FREE (script);
 }
 
+static gconstpointer
+_get_fcn_tc_config_qdiscs (ARGS_GET_FCN)
+{
+	NMSettingTCConfig *s_tc = NM_SETTING_TC_CONFIG (setting);
+	GString *printable;
+	guint num_qdiscs, i;
+	NMTCQdisc *qdisc;
+	char *str;
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
+
+	printable = g_string_new (NULL);
+
+	num_qdiscs = nm_setting_tc_config_get_num_qdiscs (s_tc);
+	for (i = 0; i < num_qdiscs; i++) {
+		qdisc = nm_setting_tc_config_get_qdisc (s_tc, i);
+
+		if (printable->len > 0)
+			g_string_append (printable, ", ");
+
+		str = nm_utils_tc_qdisc_to_str (qdisc, NULL);
+		if (str) {
+			g_string_append (printable, str);
+			g_free (str);
+		}
+	}
+
+	RETURN_STR_TO_FREE (g_string_free (printable, FALSE));
+}
+
+static gboolean
+_set_fcn_tc_config_qdiscs (ARGS_SET_FCN)
+{
+	gs_free const char **strv = NULL;
+	const char *const*iter;
+	NMTCQdisc *tc_qdisc;
+	GError *local = NULL;
+
+	strv = nm_utils_strsplit_set (value, ",");
+	for (iter = strv; strv && *iter; iter++) {
+		tc_qdisc = nm_utils_tc_qdisc_from_str (*iter, &local);
+		if (!tc_qdisc) {
+			g_set_error (error, 1, 0, "%s %s", local->message,
+			             _("The valid syntax is: '[root | parent <handle>] [handle <handle>] <qdisc>'"));
+			return FALSE;
+		}
+		nm_setting_tc_config_add_qdisc (NM_SETTING_TC_CONFIG (setting), tc_qdisc);
+		nm_tc_qdisc_unref (tc_qdisc);
+	}
+	return TRUE;
+}
+
+static gboolean
+_validate_and_remove_tc_qdisc (NMSettingTCConfig *setting,
+                               const char *value,
+                               GError **error)
+{
+	NMTCQdisc *qdisc;
+	gboolean ret;
+
+	qdisc = nm_utils_tc_qdisc_from_str (value, error);
+	if (!qdisc)
+		return FALSE;
+
+	ret = nm_setting_tc_config_remove_qdisc_by_value (setting, qdisc);
+	if (!ret)
+		g_set_error (error, 1, 0, _("the property doesn't contain qdisc '%s'"), value);
+	nm_tc_qdisc_unref (qdisc);
+	return ret;
+}
+DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_tc_config_qdiscs,
+                               NM_SETTING_TC_CONFIG,
+                               nm_setting_tc_config_get_num_qdiscs,
+                               nm_setting_tc_config_remove_qdisc,
+                               _validate_and_remove_tc_qdisc)
+
 static const char *
 _validate_fcn_team_config (const char *value, char **out_to_free, GError **error)
 {
@@ -6358,6 +6434,19 @@ static const NMMetaPropertyInfo *const property_infos_PROXY[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_TC_CONFIG
+static const NMMetaPropertyInfo *const property_infos_TC_CONFIG[] = {
+	PROPERTY_INFO (NM_SETTING_TC_CONFIG_QDISCS, DESCRIBE_DOC_NM_SETTING_TC_CONFIG_QDISCS,
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_tc_config_qdiscs,
+			.set_fcn =                  _set_fcn_tc_config_qdiscs,
+			.remove_fcn =               _remove_fcn_tc_config_qdiscs,
+		),
+	),
+	NULL
+};
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_TEAM
 static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_CONFIG,
@@ -7367,6 +7456,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_PPPOE               N_("PPPoE")
 #define SETTING_PRETTY_NAME_PROXY               N_("Proxy")
 #define SETTING_PRETTY_NAME_SERIAL              N_("Serial settings")
+#define SETTING_PRETTY_NAME_TC_CONFIG           N_("Traffic controls")
 #define SETTING_PRETTY_NAME_TEAM                N_("Team device")
 #define SETTING_PRETTY_NAME_TEAM_PORT           N_("Team port")
 #define SETTING_PRETTY_NAME_TUN                 N_("Tun device")
@@ -7552,6 +7642,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 		.setting_init_fcn =             _setting_init_fcn_proxy,
 	),
 	SETTING_INFO (SERIAL),
+	SETTING_INFO (TC_CONFIG),
 	SETTING_INFO (TEAM,
 		.valid_parts = NM_META_SETTING_VALID_PARTS (
 			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
@@ -7632,6 +7723,7 @@ const NMMetaSettingValidPartItem *const nm_meta_setting_info_valid_parts_default
 static const NMMetaSettingValidPartItem *const valid_settings_noslave[] = {
 	NM_META_SETTING_VALID_PART_ITEM (IP4_CONFIG, FALSE),
 	NM_META_SETTING_VALID_PART_ITEM (IP6_CONFIG, FALSE),
+	NM_META_SETTING_VALID_PART_ITEM (TC_CONFIG,  FALSE),
 	NM_META_SETTING_VALID_PART_ITEM (PROXY,      FALSE),
 	NULL,
 };

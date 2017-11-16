@@ -51,6 +51,7 @@
 #include "nm-setting-pppoe.h"
 #include "nm-setting-proxy.h"
 #include "nm-setting-serial.h"
+#include "nm-setting-tc-config.h"
 #include "nm-setting-team.h"
 #include "nm-setting-team-port.h"
 #include "nm-setting-tun.h"
@@ -278,6 +279,11 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
 		.meta_type =                NM_META_SETTING_TYPE_SERIAL,
 		.setting_name =             NM_SETTING_SERIAL_SETTING_NAME,
 		.get_setting_gtype =        nm_setting_serial_get_type,
+	},
+	[NM_META_SETTING_TYPE_TC_CONFIG] = {
+		.meta_type =                NM_META_SETTING_TYPE_TC_CONFIG,
+		.setting_name =             NM_SETTING_TC_CONFIG_SETTING_NAME,
+		.get_setting_gtype =        nm_setting_tc_config_get_type,
 	},
 	[NM_META_SETTING_TYPE_TEAM] = {
 		.meta_type =                NM_META_SETTING_TYPE_TEAM,

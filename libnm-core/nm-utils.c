@@ -2291,10 +2291,10 @@ nm_utils_tc_qdisc_from_str (const char *str, GError **error)
 	nm_assert (str);
 	nm_assert (!error || !*error);
 
-        ht = nm_utils_parse_variant_attributes (str,
-                                                ' ', ' ', FALSE,
-                                                tc_object_attribute_spec,
-                                                error);
+	ht = nm_utils_parse_variant_attributes (str,
+	                                        ' ', ' ', FALSE,
+	                                        tc_object_attribute_spec,
+	                                        error);
 	if (!ht)
 		return NULL;
 
