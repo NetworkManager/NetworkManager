@@ -16,7 +16,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2007 - 2013 Red Hat, Inc.
+ * Copyright 2007 - 2017 Red Hat, Inc.
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -2528,6 +2528,22 @@ NMSettingSerial *
 nm_connection_get_setting_serial (NMConnection *connection)
 {
 	return _connection_get_setting_check (connection, NM_TYPE_SETTING_SERIAL);
+}
+
+/**
+ * nm_connection_get_setting_tc_config:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingTCConfig the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingTCConfig if the connection contains one, otherwise %NULL
+ *
+ * Since: 1.10.2
+ **/
+NMSettingTCConfig *
+nm_connection_get_setting_tc_config (NMConnection *connection)
+{
+	return _connection_get_setting_check (connection, NM_TYPE_SETTING_TC_CONFIG);
 }
 
 /**

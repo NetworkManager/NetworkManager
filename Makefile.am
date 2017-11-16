@@ -413,6 +413,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-setting-pppoe.h \
 	libnm-core/nm-setting-proxy.h \
 	libnm-core/nm-setting-serial.h \
+	libnm-core/nm-setting-tc-config.h \
 	libnm-core/nm-setting-team-port.h \
 	libnm-core/nm-setting-team.h \
 	libnm-core/nm-setting-tun.h \
@@ -498,6 +499,7 @@ libnm_core_lib_c_real = \
 	libnm-core/nm-setting-pppoe.c \
 	libnm-core/nm-setting-proxy.c \
 	libnm-core/nm-setting-serial.c \
+	libnm-core/nm-setting-tc-config.c \
 	libnm-core/nm-setting-team-port.c \
 	libnm-core/nm-setting-team.c \
 	libnm-core/nm-setting-tun.c \
