@@ -3131,6 +3131,8 @@ $(src_tests_test_utils_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 src_tests_test_systemd_CPPFLAGS = $(src_libsystemd_nm_la_cppflags)
 src_tests_test_systemd_SOURCES = \
 	shared/nm-utils/nm-hash-utils.c \
+	shared/nm-utils/nm-random-utils.c \
+	shared/nm-utils/nm-shared-utils.c \
 	src/tests/test-systemd.c
 src_tests_test_systemd_LDADD = \
 	src/libsystemd-nm.la \
