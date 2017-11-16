@@ -3863,6 +3863,82 @@ DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_tc_config_qdiscs,
                                nm_setting_tc_config_remove_qdisc,
                                _validate_and_remove_tc_qdisc)
 
+static gconstpointer
+_get_fcn_tc_config_tfilters (ARGS_GET_FCN)
+{
+	NMSettingTCConfig *s_tc = NM_SETTING_TC_CONFIG (setting);
+	GString *printable;
+	guint num_tfilters, i;
+	NMTCTfilter *tfilter;
+	char *str;
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
+
+	printable = g_string_new (NULL);
+
+	num_tfilters = nm_setting_tc_config_get_num_tfilters (s_tc);
+	for (i = 0; i < num_tfilters; i++) {
+		tfilter = nm_setting_tc_config_get_tfilter (s_tc, i);
+
+		if (printable->len > 0)
+			g_string_append (printable, ", ");
+
+		str = nm_utils_tc_tfilter_to_str (tfilter, NULL);
+		if (str) {
+			g_string_append (printable, str);
+			g_free (str);
+		}
+	}
+
+	RETURN_STR_TO_FREE (g_string_free (printable, FALSE));
+}
+
+static gboolean
+_set_fcn_tc_config_tfilters (ARGS_SET_FCN)
+{
+	gs_free const char **strv = NULL;
+	const char *const*iter;
+	NMTCTfilter *tc_tfilter;
+	GError *local = NULL;
+
+	strv = nm_utils_strsplit_set (value, ",");
+	for (iter = strv; strv && *iter; iter++) {
+		tc_tfilter = nm_utils_tc_tfilter_from_str (*iter, &local);
+		if (!tc_tfilter) {
+			g_set_error (error, 1, 0, "%s %s", local->message,
+			             _("The valid syntax is: '[root | parent <handle>] [handle <handle>] <tfilter>'"));
+			return FALSE;
+		}
+		nm_setting_tc_config_add_tfilter (NM_SETTING_TC_CONFIG (setting), tc_tfilter);
+		nm_tc_tfilter_unref (tc_tfilter);
+	}
+	return TRUE;
+}
+
+static gboolean
+_validate_and_remove_tc_tfilter (NMSettingTCConfig *setting,
+                               const char *value,
+                               GError **error)
+{
+	NMTCTfilter *tfilter;
+	gboolean ret;
+
+	tfilter = nm_utils_tc_tfilter_from_str (value, error);
+	if (!tfilter)
+		return FALSE;
+
+	ret = nm_setting_tc_config_remove_tfilter_by_value (setting, tfilter);
+	if (!ret)
+		g_set_error (error, 1, 0, _("the property doesn't contain tfilter '%s'"), value);
+	nm_tc_tfilter_unref (tfilter);
+	return ret;
+}
+DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_tc_config_tfilters,
+                               NM_SETTING_TC_CONFIG,
+                               nm_setting_tc_config_get_num_tfilters,
+                               nm_setting_tc_config_remove_tfilter,
+                               _validate_and_remove_tc_tfilter)
+
 static const char *
 _validate_fcn_team_config (const char *value, char **out_to_free, GError **error)
 {
@@ -6442,6 +6518,13 @@ static const NMMetaPropertyInfo *const property_infos_TC_CONFIG[] = {
 			.get_fcn =                  _get_fcn_tc_config_qdiscs,
 			.set_fcn =                  _set_fcn_tc_config_qdiscs,
 			.remove_fcn =               _remove_fcn_tc_config_qdiscs,
+		),
+	),
+	PROPERTY_INFO (NM_SETTING_TC_CONFIG_TFILTERS, DESCRIBE_DOC_NM_SETTING_TC_CONFIG_TFILTERS,
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_tc_config_tfilters,
+			.set_fcn =                  _set_fcn_tc_config_tfilters,
+			.remove_fcn =               _remove_fcn_tc_config_tfilters,
 		),
 	),
 	NULL
