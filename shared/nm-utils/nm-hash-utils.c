@@ -35,10 +35,11 @@
 
 G_STATIC_ASSERT (sizeof (guint) * HASH_KEY_SIZE_GUINT >= HASH_KEY_SIZE);
 
+static const guint8 *volatile global_seed = NULL;
+
 static const guint8 *
-_get_hash_key (void)
+_get_hash_key_init (void)
 {
-	static const guint8 *volatile global_seed = NULL;
 	/* the returned hash is aligned to guin64, hence, it is safe
 	 * to use it as guint* or guint64* pointer. */
 	static union {
@@ -79,6 +80,16 @@ _get_hash_key (void)
 	nm_assert (global_seed == g_arr.v8);
 	return g_arr.v8;
 }
+
+#define _get_hash_key() \
+	({ \
+		const guint8 *_g; \
+		\
+		_g = global_seed; \
+		if (G_UNLIKELY (_g == NULL)) \
+			_g = _get_hash_key_init (); \
+		_g; \
+	})
 
 guint
 nm_hash_static (guint static_seed)
