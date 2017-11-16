@@ -588,6 +588,9 @@ static KeyWriter key_writers[] = {
 	{ NM_SETTING_TEAM_SETTING_NAME,
 	  NM_SETTING_TEAM_LINK_WATCHERS,
 	  team_link_watcher_writer},
+	{ NM_SETTING_TEAM_PORT_SETTING_NAME,
+	  NM_SETTING_TEAM_PORT_LINK_WATCHERS,
+	  team_link_watcher_writer},
 	{ NULL, NULL, NULL }
 };
 
