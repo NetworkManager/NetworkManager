@@ -1246,11 +1246,17 @@ global:
 	nm_setting_team_get_runner_sys_prio;
 	nm_setting_team_get_runner_min_ports;
 	nm_setting_team_get_runner_agg_select_policy;
+	nm_setting_team_port_add_link_watcher;
+	nm_setting_team_port_clear_link_watchers;
 	nm_setting_team_port_get_queue_id;
 	nm_setting_team_port_get_prio;
 	nm_setting_team_port_get_sticky;
 	nm_setting_team_port_get_lacp_prio;
 	nm_setting_team_port_get_lacp_key;
+	nm_setting_team_port_get_link_watcher;
+	nm_setting_team_port_get_num_link_watchers;
+	nm_setting_team_port_remove_link_watcher;
+	nm_setting_team_port_remove_link_watcher_by_value;
 	nm_setting_team_remove_link_watcher;
 	nm_setting_team_remove_link_watcher_by_value;
 	nm_setting_team_remove_runner_tx_hash;
