@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2014 Red Hat, Inc.
+ * Copyright 2014 - 2017 Red Hat, Inc.
  */
 
 #ifndef __NM_CORE_TYPES_H__
@@ -57,6 +57,7 @@ typedef struct _NMSettingOvsPort          NMSettingOvsPort;
 typedef struct _NMSettingPpp              NMSettingPpp;
 typedef struct _NMSettingPppoe            NMSettingPppoe;
 typedef struct _NMSettingSerial           NMSettingSerial;
+typedef struct _NMSettingTCConfig         NMSettingTCConfig;
 typedef struct _NMSettingTeam             NMSettingTeam;
 typedef struct _NMSettingTeamPort         NMSettingTeamPort;
 typedef struct _NMSettingTun              NMSettingTun;
