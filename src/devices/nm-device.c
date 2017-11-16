@@ -5813,6 +5813,9 @@ ip4_config_merge_and_apply (NMDevice *self,
 	GSList *iter;
 	gs_unref_ptrarray GPtrArray *ip4_dev_route_blacklist = NULL;
 
+	if (nm_device_sys_iface_state_is_external (self))
+		commit = 0;
+
 	/* Apply ignore-auto-routes and ignore-auto-dns settings */
 	connection = nm_device_get_applied_connection (self);
 	if (connection) {
@@ -6475,6 +6478,9 @@ ip6_config_merge_and_apply (NMDevice *self,
 	gboolean ignore_default_routes = FALSE;
 	const char *token = NULL;
 	GSList *iter;
+
+	if (nm_device_sys_iface_state_is_external (self))
+		commit = 0;
 
 	/* Apply ignore-auto-routes and ignore-auto-dns settings */
 	connection = nm_device_get_applied_connection (self);
