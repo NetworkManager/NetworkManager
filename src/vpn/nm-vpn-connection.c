@@ -1563,9 +1563,12 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 
 	route_table = get_route_table (self, AF_INET, TRUE);
 	route_metric = nm_vpn_connection_get_ip4_route_metric (self);
+	s_ip = nm_connection_get_setting_ip4_config (_get_applied_connection (self));
 
-	if (   g_variant_lookup (dict, NM_VPN_PLUGIN_IP4_CONFIG_PRESERVE_ROUTES, "b", &b)
-	    && b) {
+	if (nm_setting_ip_config_get_ignore_auto_routes (s_ip)) {
+		/* ignore VPN routes */
+	} else if (   g_variant_lookup (dict, NM_VPN_PLUGIN_IP4_CONFIG_PRESERVE_ROUTES, "b", &b)
+	           && b) {
 		if (priv->ip4_config) {
 			NMDedupMultiIter ipconf_iter;
 			const NMPlatformIP4Route *route;
@@ -1616,7 +1619,6 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 		never_default = b;
 
 	/* Merge in user overrides from the NMConnection's IPv4 setting */
-	s_ip = nm_connection_get_setting_ip4_config (_get_applied_connection (self));
 	nm_ip4_config_merge_setting (config,
 	                             s_ip,
 	                             route_table,
@@ -1756,9 +1758,12 @@ nm_vpn_connection_ip6_config_get (NMVpnConnection *self, GVariant *dict)
 
 	route_table = get_route_table (self, AF_INET6, TRUE);
 	route_metric = nm_vpn_connection_get_ip6_route_metric (self);
+	s_ip = nm_connection_get_setting_ip6_config (_get_applied_connection (self));
 
-	if (   g_variant_lookup (dict, NM_VPN_PLUGIN_IP6_CONFIG_PRESERVE_ROUTES, "b", &b)
-	    && b) {
+	if (nm_setting_ip_config_get_ignore_auto_routes (s_ip)) {
+		/* Ignore VPN routes */
+	} else if (   g_variant_lookup (dict, NM_VPN_PLUGIN_IP6_CONFIG_PRESERVE_ROUTES, "b", &b)
+	           && b) {
 		if (priv->ip6_config) {
 			NMDedupMultiIter ipconf_iter;
 			const NMPlatformIP6Route *route;
@@ -1806,7 +1811,6 @@ next:
 		never_default = b;
 
 	/* Merge in user overrides from the NMConnection's IPv6 setting */
-	s_ip = nm_connection_get_setting_ip6_config (_get_applied_connection (self));
 	nm_ip6_config_merge_setting (config,
 	                             s_ip,
 	                             route_table,
