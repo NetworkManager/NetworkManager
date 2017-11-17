@@ -1916,6 +1916,7 @@ _test_netns_check_skip (void)
 	static int support = -1;
 	static int support_errsv = 0;
 	NMPNetns *netns;
+	gs_unref_object NMPNetns *netns2 = NULL;
 
 	netns = nmp_netns_get_current ();
 	if (!netns) {
@@ -1931,10 +1932,20 @@ _test_netns_check_skip (void)
 			support_errsv = errno;
 	}
 	if (!support) {
-			_LOGD ("setns() failed with \"%s\". This indicates missing support (valgrind?)", g_strerror (support_errsv));
-			g_test_skip ("No netns support (setns failed)");
+		_LOGD ("setns() failed with \"%s\". This indicates missing support (valgrind?)", g_strerror (support_errsv));
+		g_test_skip ("No netns support (setns failed)");
 		return TRUE;
 	}
+
+	netns2 = nmp_netns_new ();
+	if (!netns2) {
+		/* skip tests for https://bugzilla.gnome.org/show_bug.cgi?id=790214 */
+		g_assert_cmpint (errno, ==, EINVAL);
+		g_test_skip ("No netns support to create another netns");
+		return TRUE;
+	}
+	nmp_netns_pop (netns2);
+
 	return FALSE;
 }
 
