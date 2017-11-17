@@ -99,6 +99,13 @@ G_DEFINE_TYPE (NMSecretAgent, nm_secret_agent, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
+NM_UTILS_FLAGS2STR_DEFINE_STATIC (_capabilities_to_string, NMSecretAgentCapabilities,
+	NM_UTILS_FLAGS2STR (NM_SECRET_AGENT_CAPABILITY_NONE, "none"),
+	NM_UTILS_FLAGS2STR (NM_SECRET_AGENT_CAPABILITY_VPN_HINTS, "vpn-hints"),
+);
+
+/*****************************************************************************/
+
 struct _NMSecretAgentCallId {
 	CList lst;
 	NMSecretAgent *agent;
@@ -668,6 +675,7 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 	char *owner_username = NULL;
 	char *description = NULL;
 	char buf_subject[64];
+	char buf_caps[150];
 	gulong uid;
 	GDBusConnection *connection;
 
@@ -696,12 +704,13 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 	priv->connection = g_object_ref (connection);
 	priv->connection_is_private = !!nm_bus_manager_connection_get_private_name (priv->bus_mgr, connection);
 
-	_LOGt ("constructed: %s, owner=%s%s%s (%s), private-connection=%d, unique-name=%s%s%s",
+	_LOGt ("constructed: %s, owner=%s%s%s (%s), private-connection=%d, unique-name=%s%s%s, capabilities=%s",
 	       (description = _create_description (dbus_owner, identifier, uid)),
 	       NM_PRINT_FMT_QUOTE_STRING (owner_username),
 	       nm_auth_subject_to_string (subject, buf_subject, sizeof (buf_subject)),
 	       priv->connection_is_private,
-	       NM_PRINT_FMT_QUOTE_STRING (g_dbus_connection_get_unique_name (priv->connection)));
+	       NM_PRINT_FMT_QUOTE_STRING (g_dbus_connection_get_unique_name (priv->connection)),
+	       _capabilities_to_string (capabilities, buf_caps, sizeof (buf_caps)));
 
 	priv->identifier = g_strdup (identifier);
 	priv->owner_username = owner_username;
