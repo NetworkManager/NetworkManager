@@ -185,13 +185,13 @@ static NMSettingsConnection *_get_settings_connection (NMVpnConnection *self,
 
 static void get_secrets (NMVpnConnection *self,
                          SecretsReq secrets_idx,
-                         const char **hints);
+                         const char *const*hints);
 
 static guint32 get_route_table (NMVpnConnection *self, int addr_family, gboolean fallback_main);
 
 static void plugin_interactive_secrets_required (NMVpnConnection *self,
                                                  const char *message,
-                                                 const char **secrets);
+                                                 const char *const*secrets);
 
 static void _set_vpn_state (NMVpnConnection *self,
                             VpnState vpn_state,
@@ -2047,7 +2047,7 @@ state_changed_cb (GDBusProxy *proxy,
 static void
 secrets_required_cb (GDBusProxy  *proxy,
                      const char  *message,
-                     const char **secrets,
+                     const char *const*secrets,
                      gpointer     user_data)
 {
 	NMVpnConnection *self = NM_VPN_CONNECTION (user_data);
@@ -2638,7 +2638,7 @@ get_secrets_cb (NMSettingsConnection *connection,
 static void
 get_secrets (NMVpnConnection *self,
              SecretsReq secrets_idx,
-             const char **hints)
+             const char *const*hints)
 {
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 	NMSecretAgentGetSecretsFlags flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE;
@@ -2683,12 +2683,13 @@ get_secrets (NMVpnConnection *self,
 static void
 plugin_interactive_secrets_required (NMVpnConnection *self,
                                      const char *message,
-                                     const char **secrets)
+                                     const char *const*secrets)
 {
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
-	guint32 secrets_len = secrets ? g_strv_length ((char **) secrets) : 0;
-	char **hints;
-	guint32 i;
+	const gsize secrets_len = NM_PTRARRAY_LEN (secrets);
+	gsize i;
+	gs_free const char **hints = NULL;
+	gs_free char *message_hint = NULL;
 
 	_LOGI ("VPN plugin: requested secrets; state %s (%d)",
 	       vpn_state_to_string (priv->vpn_state), priv->vpn_state);
@@ -2700,14 +2701,17 @@ plugin_interactive_secrets_required (NMVpnConnection *self,
 	_set_vpn_state (self, STATE_NEED_AUTH, NM_ACTIVE_CONNECTION_STATE_REASON_NONE, FALSE);
 
 	/* Copy hints and add message to the end */
-	hints = g_malloc0 (sizeof (char *) * (secrets_len + 2));
+	hints = g_new (const char *, secrets_len + 2);
 	for (i = 0; i < secrets_len; i++)
-		hints[i] = g_strdup (secrets[i]);
-	if (message)
-		hints[i] = g_strdup_printf ("x-vpn-message:%s", message);
+		hints[i] = secrets[i];
+	if (message) {
+		message_hint = g_strdup_printf ("x-vpn-message:%s", message);
+		hints[i++] = message_hint;
+	}
+	hints[i] = NULL;
+	nm_assert (i < secrets_len + 2);
 
-	get_secrets (self, SECRETS_REQ_INTERACTIVE, (const char **) hints);
-	g_strfreev (hints);
+	get_secrets (self, SECRETS_REQ_INTERACTIVE, hints);
 }
 
 /*****************************************************************************/

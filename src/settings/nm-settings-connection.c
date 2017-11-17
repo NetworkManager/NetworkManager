@@ -1228,7 +1228,7 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
                                     NMAuthSubject *subject,
                                     const char *setting_name,
                                     NMSecretAgentGetSecretsFlags flags,
-                                    const char **hints,
+                                    const char *const*hints,
                                     NMSettingsConnectionSecretsFunc callback,
                                     gpointer callback_data)
 {
