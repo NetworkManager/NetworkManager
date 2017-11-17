@@ -3924,6 +3924,78 @@ DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_team_link_watchers,
                                _validate_and_remove_team_link_watcher)
 
 static gconstpointer
+_get_fcn_team_port_link_watchers (ARGS_GET_FCN)
+{
+	NMSettingTeamPort *s_team_port = NM_SETTING_TEAM_PORT (setting);
+	GString *printable;
+	guint32 num_watchers, i;
+	NMTeamLinkWatcher *watcher;
+	char *watcher_str;
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
+
+	printable = g_string_new (NULL);
+
+	num_watchers = nm_setting_team_port_get_num_link_watchers (s_team_port);
+	for (i = 0; i < num_watchers; i++) {
+		watcher = nm_setting_team_port_get_link_watcher (s_team_port, i);
+		watcher_str = _dump_team_link_watcher (watcher);
+		if (watcher_str) {
+			if (printable->len > 0)
+				g_string_append (printable, ", ");
+			g_string_append (printable, watcher_str);
+			g_free (watcher_str);
+		}
+	}
+
+	RETURN_STR_TO_FREE (g_string_free (printable, FALSE));
+}
+
+static gboolean
+_set_fcn_team_port_link_watchers (ARGS_SET_FCN)
+{
+	gs_strfreev char **strv = NULL;
+	const char *const*iter;
+	NMTeamLinkWatcher *watcher;
+
+	strv = nmc_strsplit_set (value, ",", 0);
+	for (iter = (const char *const*) strv; *iter; iter++) {
+		watcher = _parse_team_link_watcher (*iter, error);
+		if (!watcher)
+			return FALSE;
+		nm_setting_team_port_add_link_watcher (NM_SETTING_TEAM_PORT (setting), watcher);
+		nm_team_link_watcher_unref (watcher);
+	}
+	return TRUE;
+}
+
+static gboolean
+_validate_and_remove_team_port_link_watcher (NMSettingTeamPort *setting,
+                                             const char *watcher_str,
+                                             GError **error)
+{
+	NMTeamLinkWatcher *watcher;
+	gboolean ret;
+
+	watcher = _parse_team_link_watcher (watcher_str, error);
+	if (!watcher)
+		return FALSE;
+
+	ret = nm_setting_team_port_remove_link_watcher_by_value (setting, watcher);
+	if (!ret) {
+		g_set_error (error, 1, 0, _("the property doesn't contain link watcher '%s'"),
+		             watcher_str);
+	}
+	nm_team_link_watcher_unref (watcher);
+	return ret;
+}
+DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_team_port_link_watchers,
+                               NM_SETTING_TEAM_PORT,
+                               nm_setting_team_port_get_num_link_watchers,
+                               nm_setting_team_port_remove_link_watcher,
+                               _validate_and_remove_team_port_link_watcher)
+
+static gconstpointer
 _get_fcn_vlan_flags (ARGS_GET_FCN)
 {
 	NMSettingVlan *s_vlan = NM_SETTING_VLAN (setting);
@@ -6492,6 +6564,14 @@ static const NMMetaPropertyInfo *const property_infos_TEAM_PORT[] = {
 					.nick = "default",
 				}
 			),
+		),
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_PORT_LINK_WATCHERS,
+		.describe_message =             TEAM_LINK_WATCHERS_DESCRIBE_MESSAGE,
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_team_port_link_watchers,
+			.set_fcn =                  _set_fcn_team_port_link_watchers,
+			.remove_fcn =               _remove_fcn_team_port_link_watchers,
 		),
 	),
 	NULL
