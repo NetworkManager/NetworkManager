@@ -167,7 +167,7 @@ NMSettingsConnectionCallId nm_settings_connection_get_secrets (NMSettingsConnect
                                                                NMAuthSubject *subject,
                                                                const char *setting_name,
                                                                NMSecretAgentGetSecretsFlags flags,
-                                                               const char **hints,
+                                                               const char *const*hints,
                                                                NMSettingsConnectionSecretsFunc callback,
                                                                gpointer callback_data);
 
