@@ -290,6 +290,7 @@ _netns_new (GError **error)
 		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 		             "Failed opening netns: %s",
 		             g_strerror (errsv));
+		errno = errsv;
 		return NULL;
 	}
 
@@ -300,6 +301,7 @@ _netns_new (GError **error)
 		             "Failed opening mntns: %s",
 		             g_strerror (errsv));
 		nm_close (fd_net);
+		errno = errsv;
 		return NULL;
 	}
 
@@ -479,6 +481,7 @@ nmp_netns_new (void)
 	if (!_stack_peek ()) {
 		/* there are no netns instances. We cannot create a new one
 		 * (because after unshare we couldn't return to the original one). */
+		errno = ENOTSUP;
 		return NULL;
 	}
 
@@ -508,6 +511,7 @@ nmp_netns_new (void)
 
 	self = _netns_new (&error);
 	if (!self) {
+		errsv = errno;
 		_LOGE (NULL, "failed to create netns after unshare: %s", error->message);
 		g_clear_error (&error);
 		goto err_out;
@@ -518,6 +522,7 @@ nmp_netns_new (void)
 	return self;
 err_out:
 	_netns_switch_pop (NULL, _CLONE_NS_ALL);
+	errno = errsv;
 	return NULL;
 }
 
