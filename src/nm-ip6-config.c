@@ -629,8 +629,6 @@ nm_ip6_config_merge_setting (NMIP6Config *self,
 	}
 
 	/* Routes */
-	if (nm_setting_ip_config_get_ignore_auto_routes (setting))
-		nm_ip6_config_reset_routes (self);
 	for (i = 0; i < nroutes; i++) {
 		NMIPRoute *s_route = nm_setting_ip_config_get_route (setting, i);
 		NMPlatformIP6Route route;

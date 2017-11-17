@@ -954,8 +954,6 @@ nm_ip4_config_merge_setting (NMIP4Config *self,
 	}
 
 	/* Routes */
-	if (nm_setting_ip_config_get_ignore_auto_routes (setting))
-		nm_ip4_config_reset_routes (self);
 	for (i = 0; i < nroutes; i++) {
 		NMIPRoute *s_route = nm_setting_ip_config_get_route (setting, i);
 		NMPlatformIP4Route route;
