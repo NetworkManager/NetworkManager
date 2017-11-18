@@ -14,7 +14,7 @@
 # Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301 USA.
 #
-# Copyright 2009 - 2014 Red Hat, Inc.
+# Copyright 2009 - 2017 Red Hat, Inc.
 
 from __future__ import print_function
 
@@ -59,6 +59,7 @@ dbus_type_name_map = {
     'aay': 'array of byte array',
     'a(ayuay)': 'array of legacy IPv6 address struct',
     'a(ayuayu)': 'array of legacy IPv6 route struct',
+    'aa{sv}': 'array of vardict',
 }
 
 ns_map = {
