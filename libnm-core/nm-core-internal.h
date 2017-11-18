@@ -472,4 +472,14 @@ nm_setting_ip_config_get_addr_family (NMSettingIPConfig *s_ip)
 
 /*****************************************************************************/
 
+guint32 _nm_utils_parse_tc_handle                (const char *str,
+                                                  GError **error);
+void _nm_utils_string_append_tc_parent           (GString *string,
+                                                  const char *prefix,
+                                                  guint32 parent);
+void _nm_utils_string_append_tc_qdisc_rest       (GString *string,
+                                                  NMTCQdisc *qdisc);
+
+/*****************************************************************************/
+
 #endif
