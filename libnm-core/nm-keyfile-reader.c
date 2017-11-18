@@ -1362,6 +1362,54 @@ qdisc_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 	g_ptr_array_unref (qdiscs);
 }
 
+static void
+tfilter_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
+{
+	const char *setting_name = nm_setting_get_name (setting);
+	GPtrArray *tfilters;
+	gs_strfreev gchar **keys = NULL;
+	gsize n_keys = 0;
+	int i;
+
+	tfilters = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_tc_tfilter_unref);
+
+	keys = nm_keyfile_plugin_kf_get_keys (info->keyfile, setting_name, &n_keys, NULL);
+	if (!keys || n_keys == 0)
+		return;
+
+	for (i = 0; i < n_keys; i++) {
+		NMTCTfilter *tfilter;
+		const char *tfilter_parent;
+		gs_free char *tfilter_rest = NULL;
+		gs_free char *tfilter_str = NULL;
+		gs_free_error GError *err = NULL;
+
+		if (!g_str_has_prefix (keys[i], "tfilter."))
+			continue;
+
+		tfilter_parent = keys[i] + sizeof ("tfilter.") - 1;
+		tfilter_rest = nm_keyfile_plugin_kf_get_string (info->keyfile, setting_name, keys[i], NULL);
+		tfilter_str = g_strdup_printf ("%s%s %s",
+		                             _nm_utils_parse_tc_handle (tfilter_parent, NULL) != TC_H_UNSPEC ? "parent " : "",
+		                             tfilter_parent,
+		                             tfilter_rest);
+
+		tfilter = nm_utils_tc_tfilter_from_str (tfilter_str, &err);
+		if (!tfilter) {
+			handle_warn (info, keys[i], NM_KEYFILE_WARN_SEVERITY_WARN,
+			             _("invalid tfilter: %s"),
+			             err->message);
+		} else {
+			g_ptr_array_add (tfilters, tfilter);
+		}
+	}
+
+	if (tfilters->len >= 1)
+		g_object_set (setting, key, tfilters, NULL);
+
+	g_ptr_array_unref (tfilters);
+}
+
 typedef struct {
 	const char *setting_name;
 	const char *key;
@@ -1492,6 +1540,10 @@ static KeyParser key_parsers[] = {
           NM_SETTING_TC_CONFIG_QDISCS,
 	  FALSE,
           qdisc_parser },
+        { NM_SETTING_TC_CONFIG_SETTING_NAME,
+          NM_SETTING_TC_CONFIG_TFILTERS,
+	  FALSE,
+          tfilter_parser },
 	{ NULL, NULL, FALSE }
 };
 
