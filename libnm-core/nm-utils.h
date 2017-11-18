@@ -15,7 +15,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2005 - 2014 Red Hat, Inc.
+ * Copyright 2005 - 2017 Red Hat, Inc.
  */
 
 #ifndef __NM_UTILS_H__
@@ -35,6 +35,7 @@
 
 #include "nm-core-enum-types.h"
 #include "nm-setting-wireless-security.h"
+#include "nm-setting-tc-config.h"
 
 G_BEGIN_DECLS
 
@@ -229,6 +230,13 @@ NM_AVAILABLE_IN_1_8
 char * nm_utils_format_variant_attributes (GHashTable *attributes,
                                            char attr_separator,
                                            char key_value_separator);
+
+/*****************************************************************************/
+
+NM_AVAILABLE_IN_1_10_2
+NMTCQdisc *nm_utils_tc_qdisc_from_str      (const char *str, GError **error);
+NM_AVAILABLE_IN_1_10_2
+char *nm_utils_tc_qdisc_to_str             (NMTCQdisc *qdisc, GError **error);
 
 G_END_DECLS
 

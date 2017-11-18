@@ -33,6 +33,7 @@
 #include <gmodule.h>
 #include <sys/stat.h>
 #include <net/if.h>
+#include <linux/pkt_sched.h>
 
 #if WITH_JANSSON
 #include <jansson.h>
@@ -2059,6 +2060,263 @@ next:
 	}
 
 	return routes;
+}
+
+/*****************************************************************************/
+
+static void
+_string_append_tc_handle (GString *string, guint32 handle)
+{
+	g_string_append_printf (string, "%x:", TC_H_MAJ (handle) >> 16);
+	if (TC_H_MIN (handle) != TC_H_UNSPEC)
+		g_string_append_printf (string, "%x", TC_H_MIN (handle));
+}
+
+/**
+ * _nm_utils_string_append_tc_parent:
+ * @string: the string to write the parent handle to
+ * @prefix: optional prefix for the numeric handle
+ * @parent: the parent handle
+ *
+ * This is used to either write out the parent handle to the tc qdisc string
+ * or to pretty-format (use symbolic name for root) the key in keyfile.
+ * The presence of prefix determnines which one is the case.
+ *
+ * Private API due to general uglyness and overall uselessness for anything
+ * sensible.
+ */
+void
+_nm_utils_string_append_tc_parent (GString *string, const char *prefix, guint32 parent)
+{
+	if (parent == TC_H_ROOT) {
+		g_string_append (string, "root");
+	} else {
+		if (prefix) {
+			if (parent == TC_H_INGRESS)
+				return;
+			g_string_append_printf (string, "%s ", prefix);
+		}
+		_string_append_tc_handle (string, parent);
+	}
+
+	if (prefix)
+		g_string_append_c (string, ' ');
+}
+
+/**
+ * _nm_utils_parse_tc_handle:
+ * @str: the string representation of a qdisc handle
+ * @error: location of the error
+ *
+ * Parses tc style handle number into a numeric representation.
+ * Don't use this, use nm_utils_tc_qdisc_from_str() instead.
+ */
+guint32
+_nm_utils_parse_tc_handle (const char *str, GError **error)
+{
+	gint64 maj, min;
+	char *sep;
+
+	maj = g_ascii_strtoll (str, &sep, 0x10);
+	if (*sep == ':')
+		min = g_ascii_strtoll (&sep[1], &sep, 0x10);
+	else
+		min = 0;
+
+	if (*sep != '\0' || maj <= 0 || maj > 0xffff || min < 0 || min > 0xffff) {
+		g_set_error (error, 1, 0, _("'%s' is not a valid handle."), str);
+		return TC_H_UNSPEC;
+	}
+
+	return TC_H_MAKE (maj << 16, min);
+}
+
+#define TC_ATTR_SPEC_PTR(name, type, no_value, consumes_rest, str_type) \
+	&(NMVariantAttributeSpec) { name, type, FALSE, FALSE, no_value, consumes_rest, str_type }
+
+static const NMVariantAttributeSpec * const tc_object_attribute_spec[] = {
+	TC_ATTR_SPEC_PTR ("root",    G_VARIANT_TYPE_BOOLEAN, TRUE,  FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("parent",  G_VARIANT_TYPE_STRING,  FALSE, FALSE, 'a' ),
+	TC_ATTR_SPEC_PTR ("handle",  G_VARIANT_TYPE_STRING,  FALSE, FALSE, 'a' ),
+	TC_ATTR_SPEC_PTR ("kind",    G_VARIANT_TYPE_STRING,  TRUE,  FALSE, 'a' ),
+	TC_ATTR_SPEC_PTR ("",        G_VARIANT_TYPE_STRING,  TRUE,  TRUE,  'a' ),
+	NULL,
+};
+
+/*****************************************************************************/
+
+/**
+ * _nm_utils_string_append_tc_qdisc_rest:
+ * @string: the string to write the formatted qdisc to
+ * @qdisc: the %NMTCQdisc
+ *
+ * This formats the rest of the qdisc string but the parent. Useful to format
+ * the keyfile value and nowhere else.
+ * Use nm_utils_tc_qdisc_to_str() that also includes the parent instead.
+ */
+void
+_nm_utils_string_append_tc_qdisc_rest (GString *string, NMTCQdisc *qdisc)
+{
+	guint32 handle = nm_tc_qdisc_get_handle (qdisc);
+	const char *kind = nm_tc_qdisc_get_kind (qdisc);
+
+	if (handle != TC_H_UNSPEC && strcmp (kind, "ingress") != 0) {
+		g_string_append (string, "handle ");
+		_string_append_tc_handle (string, handle);
+		g_string_append_c (string, ' ');
+	}
+
+	g_string_append (string, kind);
+}
+
+/**
+ * nm_utils_tc_qdisc_to_str:
+ * @qdisc: the %NMTCQdisc
+ * @error: location of the error
+ *
+ * Turns the %NMTCQdisc into a tc style string representation of the queueing
+ * discipline.
+ *
+ * Returns: formatted string or %NULL
+ *
+ * Since: 1.10.2
+ */
+char *
+nm_utils_tc_qdisc_to_str (NMTCQdisc *qdisc, GError **error)
+{
+	GString *string;
+
+	string = g_string_sized_new (60);
+
+	_nm_utils_string_append_tc_parent (string, "parent",
+	                                   nm_tc_qdisc_get_parent (qdisc));
+	_nm_utils_string_append_tc_qdisc_rest (string, qdisc);
+
+	return g_string_free (string, FALSE);
+}
+
+
+static gboolean
+_tc_read_common_opts (const char *str,
+                      guint32 *handle,
+                      guint32 *parent,
+                      char **kind,
+                      char **rest,
+                      GError **error)
+{
+	gs_unref_hashtable GHashTable *ht = NULL;
+	GVariant *variant;
+
+        ht = nm_utils_parse_variant_attributes (str,
+                                                ' ', ' ', FALSE,
+                                                tc_object_attribute_spec,
+                                                error);
+	if (!ht)
+		return FALSE;
+
+	if (g_hash_table_contains (ht, "root"))
+		*parent = TC_H_ROOT;
+
+	variant = g_hash_table_lookup (ht, "parent");
+	if (variant) {
+		if (*parent != TC_H_UNSPEC) {
+			g_set_error (error, 1, 0,
+			             _("'%s' unexpected: parent already specified."),
+			             g_variant_get_string (variant, NULL));
+			return FALSE;
+		}
+		*parent = _nm_utils_parse_tc_handle (g_variant_get_string (variant, NULL), error);
+		if (*parent == TC_H_UNSPEC)
+			return FALSE;
+	}
+
+	variant = g_hash_table_lookup (ht, "handle");
+	if (variant) {
+		*handle = _nm_utils_parse_tc_handle (g_variant_get_string (variant, NULL), error);
+		if (*handle == TC_H_UNSPEC)
+			return FALSE;
+		if (TC_H_MIN (*handle)) {
+			g_set_error (error, 1, 0,
+			             _("invalid handle: '%s'"),
+			             g_variant_get_string (variant, NULL));
+			return FALSE;
+		}
+	}
+
+	variant = g_hash_table_lookup (ht, "kind");
+	if (variant) {
+		*kind = g_variant_dup_string (variant, NULL);
+		if (strcmp (*kind, "ingress") == 0) {
+			if (*parent == TC_H_UNSPEC)
+				*parent = TC_H_INGRESS;
+			if (*handle == TC_H_UNSPEC)
+				*handle = TC_H_MAKE (TC_H_INGRESS, 0);
+		}
+	}
+
+	if (*parent == TC_H_UNSPEC) {
+		if (*kind) {
+			g_free (*kind);
+			*kind = NULL;
+		}
+		g_set_error_literal (error, 1, 0, _("parent not specified."));
+		return FALSE;
+	}
+
+	variant = g_hash_table_lookup (ht, "");
+	if (variant)
+		*rest = g_variant_dup_string (variant, NULL);
+
+	return TRUE;
+}
+
+/**
+ * nm_utils_tc_qdisc_from_str:
+ * @str: the string representation of a qdisc
+ * @error: location of the error
+ *
+ * Parces the tc style string qdisc representation of the queueing
+ * discipline to a %NMTCQdisc instance. Supports a subset of the tc language.
+ *
+ * Returns: the %NMTCQdisc or %NULL
+ *
+ * Since: 1.10.2
+ */
+NMTCQdisc *
+nm_utils_tc_qdisc_from_str (const char *str, GError **error)
+{
+	guint32 handle = TC_H_UNSPEC;
+	guint32 parent = TC_H_UNSPEC;
+	gs_free char *kind = NULL;
+	gs_free char *rest = NULL;
+	NMTCQdisc *qdisc = NULL;
+	gs_unref_hashtable GHashTable *ht = NULL;
+
+	nm_assert (str);
+	nm_assert (!error || !*error);
+
+        ht = nm_utils_parse_variant_attributes (str,
+                                                ' ', ' ', FALSE,
+                                                tc_object_attribute_spec,
+                                                error);
+	if (!ht)
+		return NULL;
+
+	if (!_tc_read_common_opts (str, &handle, &parent, &kind, &rest, error))
+		return NULL;
+
+	if (rest) {
+		g_set_error (error, 1, 0, _("unsupported qdisc option: '%s'."), rest);
+		return NULL;
+	}
+
+	qdisc = nm_tc_qdisc_new (kind, parent, error);
+	if (!qdisc)
+		return NULL;
+
+	nm_tc_qdisc_set_handle (qdisc, handle);
+
+	return qdisc;
 }
 
 /*****************************************************************************/
