@@ -1535,6 +1535,11 @@ static gboolean
 _resolvconf_resolved_managed (void)
 {
 	static const char *const RESOLVED_PATHS[] = {
+		"../run/systemd/resolve/stub-resolv.conf",
+		"../run/systemd/resolve/resolv.conf",
+		"../lib/systemd/resolv.conf",
+		"../usr/lib/systemd/resolv.conf",
+		"/run/systemd/resolve/stub-resolv.conf",
 		"/run/systemd/resolve/resolv.conf",
 		"/lib/systemd/resolv.conf",
 		"/usr/lib/systemd/resolv.conf",
