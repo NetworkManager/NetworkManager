@@ -1594,7 +1594,10 @@ _resolvconf_resolved_managed (void)
 	/* see if resolv.conf resolves to one of the candidate
 	 * paths (or whether it is hard-linked). */
 	for (i = 0; i < G_N_ELEMENTS (RESOLVED_PATHS); i++) {
-		if (   stat (RESOLVED_PATHS[i], &st_test) == 0
+		const char *p = RESOLVED_PATHS[i];
+
+		if (   p[0] == '/'
+		    && stat (p, &st_test) == 0
 		    && st.st_dev == st_test.st_dev
 		    && st.st_ino == st_test.st_ino)
 			return TRUE;
