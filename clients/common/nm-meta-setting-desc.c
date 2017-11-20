@@ -2310,6 +2310,9 @@ _complete_fcn_connection_type (ARGS_COMPLETE_FCN)
 		const NMMetaSettingInfoEditor *setting_info = &nm_meta_setting_infos_editor[i];
 		const char *v;
 
+		if (!setting_info->valid_parts)
+			continue;
+
 		v = setting_info->alias;
 		if (v) {
 			if (!text || strncmp (text, v, text_len) == 0)
