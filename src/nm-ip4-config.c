@@ -1477,10 +1477,11 @@ nm_ip4_config_subtract (NMIP4Config *dst,
 	g_object_thaw_notify (G_OBJECT (dst));
 }
 
-void
-nm_ip4_config_intersect (NMIP4Config *dst,
-                         const NMIP4Config *src,
-                         guint32 default_route_metric_penalty)
+static gboolean
+_nm_ip4_config_intersect_helper (NMIP4Config *dst,
+                                 const NMIP4Config *src,
+                                 guint32 default_route_metric_penalty,
+                                 gboolean update_dst)
 {
 	NMIP4ConfigPrivate *dst_priv;
 	const NMIP4ConfigPrivate *src_priv;
@@ -1488,15 +1489,16 @@ nm_ip4_config_intersect (NMIP4Config *dst,
 	const NMPlatformIP4Address *a;
 	const NMPlatformIP4Route *r;
 	const NMPObject *new_best_default_route;
-	gboolean changed;
+	gboolean changed, result = FALSE;
 
-	g_return_if_fail (src);
-	g_return_if_fail (dst);
+	g_return_val_if_fail (src, FALSE);
+	g_return_val_if_fail (dst, FALSE);
 
 	dst_priv = NM_IP4_CONFIG_GET_PRIVATE (dst);
 	src_priv = NM_IP4_CONFIG_GET_PRIVATE (src);
 
-	g_object_freeze_notify (G_OBJECT (dst));
+	if (update_dst)
+		g_object_freeze_notify (G_OBJECT (dst));
 
 	/* addresses */
 	changed = FALSE;
@@ -1506,13 +1508,18 @@ nm_ip4_config_intersect (NMIP4Config *dst,
 		                                     NMP_OBJECT_UP_CAST (a)))
 			continue;
 
+		if (!update_dst)
+			return TRUE;
+
 		if (nm_dedup_multi_index_remove_entry (dst_priv->multi_idx,
 		                                       ipconf_iter.current) != 1)
 			nm_assert_not_reached ();
 		changed = TRUE;
 	}
-	if (changed)
+	if (changed) {
 		_notify_addresses (dst);
+		result = TRUE;
+	}
 
 	/* ignore nameservers */
 
@@ -1544,6 +1551,9 @@ nm_ip4_config_intersect (NMIP4Config *dst,
 			continue;
 		}
 
+		if (!update_dst)
+			return TRUE;
+
 		if (nm_dedup_multi_index_remove_entry (dst_priv->multi_idx,
 		                                       ipconf_iter.current) != 1)
 			nm_assert_not_reached ();
@@ -1553,8 +1563,11 @@ nm_ip4_config_intersect (NMIP4Config *dst,
 		nm_assert (changed);
 		_notify (dst, PROP_GATEWAY);
 	}
-	if (changed)
+
+	if (changed) {
 		_notify_routes (dst);
+		result = TRUE;
+	}
 
 	/* ignore domains */
 	/* ignore dns searches */
@@ -1562,9 +1575,58 @@ nm_ip4_config_intersect (NMIP4Config *dst,
 	/* ignore NIS */
 	/* ignore WINS */
 
-	g_object_thaw_notify (G_OBJECT (dst));
+	if (update_dst)
+		g_object_thaw_notify (G_OBJECT (dst));
+	return result;
 }
 
+/**
+ * nm_ip4_config_intersect:
+ * @dst: a configuration to be updated
+ * @src: another configuration
+ * @default_route_metric_penalty: the default route metric penalty
+ *
+ * Computes the intersection between @src and @dst and updates @dst in place
+ * with the result.
+ */
+void
+nm_ip4_config_intersect (NMIP4Config *dst,
+                         const NMIP4Config *src,
+                         guint32 default_route_metric_penalty)
+{
+	_nm_ip4_config_intersect_helper (dst, src, default_route_metric_penalty, TRUE);
+}
+
+/**
+ * nm_ip4_config_intersect_alloc:
+ * @a: a configuration
+ * @b: another configuration
+ * @default_route_metric_penalty: the default route metric penalty
+ *
+ * Computes the intersection between @a and @b and returns the result in a newly
+ * allocated configuration.  As a special case, if @a and @b are identical (with
+ * respect to the only properties considered - addresses and routes) the
+ * functions returns NULL so that one of existing configuration can be reused
+ * without allocation.
+ *
+ * Returns: the intersection between @a and @b, or %NULL if the result is equal
+ * to @a and @b.
+ */
+NMIP4Config *
+nm_ip4_config_intersect_alloc (const NMIP4Config *a,
+                               const NMIP4Config *b,
+                               guint32 default_route_metric_penalty)
+{
+	NMIP4Config *a_copy;
+
+	if (_nm_ip4_config_intersect_helper ((NMIP4Config *) a, b,
+	                                     default_route_metric_penalty, FALSE)) {
+		a_copy = nm_ip4_config_clone (a);
+		_nm_ip4_config_intersect_helper (a_copy, b, default_route_metric_penalty, TRUE);
+		return a_copy;
+	} else
+		return NULL;
+}
 
 /**
  * nm_ip4_config_replace:

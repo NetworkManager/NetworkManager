@@ -187,6 +187,9 @@ void nm_ip4_config_subtract (NMIP4Config *dst,
 void nm_ip4_config_intersect (NMIP4Config *dst,
                               const NMIP4Config *src,
                               guint32 default_route_metric_penalty);
+NMIP4Config *nm_ip4_config_intersect_alloc (const NMIP4Config *a,
+                                            const NMIP4Config *b,
+                                            guint32 default_route_metric_penalty);
 gboolean nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relevant_changes);
 void nm_ip4_config_dump (const NMIP4Config *self, const char *detail);
 
@@ -455,4 +458,23 @@ nm_ip_config_merge (NMIPConfig *dst,
 	                               default_route_metric_penalty);
 }
 
+static inline NMIPConfig *
+nm_ip_config_intersect_alloc (const NMIPConfig *a,
+                              const NMIPConfig *b,
+                              guint32 default_route_metric_penalty)
+{
+	int family;
+
+	family = nm_ip_config_get_addr_family (a);
+	nm_assert (family == nm_ip_config_get_addr_family (b));
+
+	if (family == AF_INET)
+		return (NMIPConfig *) nm_ip4_config_intersect_alloc ((const NMIP4Config *) a,
+		                                                     (const NMIP4Config *) b,
+		                                                     default_route_metric_penalty);
+	else
+		return (NMIPConfig *) nm_ip6_config_intersect_alloc ((const NMIP6Config *) a,
+		                                                     (const NMIP6Config *) b,
+		                                                     default_route_metric_penalty);
+}
 #endif /* __NETWORKMANAGER_IP4_CONFIG_H__ */
