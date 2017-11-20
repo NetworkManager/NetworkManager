@@ -1070,7 +1070,7 @@ nmp_object_id_hash (const NMPObject *obj)
 	NMHashState h;
 
 	if (!obj)
-		return 0;
+		return nm_hash_static (914932607u);
 
 	nm_hash_init (&h, 914932607u);
 	nmp_object_id_hash_update (obj, &h);
