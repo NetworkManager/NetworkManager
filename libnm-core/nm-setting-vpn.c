@@ -155,6 +155,39 @@ nm_setting_vpn_get_persistent (NMSettingVpn *setting)
 	return NM_SETTING_VPN_GET_PRIVATE (setting)->persistent;
 }
 
+static const char **
+_get_keys (NMSettingVpn *setting,
+           gboolean is_secrets,
+           guint *out_length)
+{
+	NMSettingVpnPrivate *priv;
+	GHashTable *hash;
+	const char **keys;
+	guint len;
+
+	nm_assert (NM_IS_SETTING_VPN (setting));
+
+	priv = NM_SETTING_VPN_GET_PRIVATE (setting);
+
+	hash = is_secrets ? priv->secrets : priv->data;
+
+	if (!g_hash_table_size (hash)) {
+		NM_SET_OUT (out_length, 0);
+		return NULL;
+	}
+
+	keys = (const char **) g_hash_table_get_keys_as_array (hash, &len);
+	if (len > 1) {
+		g_qsort_with_data (keys,
+		                   len,
+		                   sizeof (const char *),
+		                   nm_strcmp_p_with_data,
+		                   NULL);
+	}
+	NM_SET_OUT (out_length, len);
+	return keys;
+}
+
 /**
  * nm_setting_vpn_get_num_data_items:
  * @setting: the #NMSettingVpn
@@ -213,6 +246,28 @@ nm_setting_vpn_get_data_item (NMSettingVpn *setting, const char *key)
 	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), NULL);
 
 	return (const char *) g_hash_table_lookup (NM_SETTING_VPN_GET_PRIVATE (setting)->data, key);
+}
+
+/**
+ * nm_setting_vpn_get_data_keys:
+ * @setting: the #NMSettingVpn
+ * @out_length: (allow-none): (out): the length of the returned array
+ *
+ * Retrieves every data key inside @setting, as an array.
+ *
+ * Returns: (array length=out_length) (transfer container): a
+ *   %NULL-terminated array containing each data key or %NULL if
+ *   there are no data items.
+ *
+ * Since: 1.12
+ */
+const char **
+nm_setting_vpn_get_data_keys (NMSettingVpn *setting,
+                              guint *out_length)
+{
+	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), NULL);
+
+	return _get_keys (setting, FALSE, out_length);
 }
 
 /**
@@ -345,6 +400,28 @@ nm_setting_vpn_get_secret (NMSettingVpn *setting, const char *key)
 	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), NULL);
 
 	return (const char *) g_hash_table_lookup (NM_SETTING_VPN_GET_PRIVATE (setting)->secrets, key);
+}
+
+/**
+ * nm_setting_vpn_get_secret_keys:
+ * @setting: the #NMSettingVpn
+ * @out_length: (allow-none): (out): the length of the returned array
+ *
+ * Retrieves every secret key inside @setting, as an array.
+ *
+ * Returns: (array length=out_length) (transfer container): a
+ *   %NULL-terminated array containing each secret key or %NULL if
+ *   there are no secrets.
+ *
+ * Since: 1.12
+ */
+const char **
+nm_setting_vpn_get_secret_keys (NMSettingVpn *setting,
+                                guint *out_length)
+{
+	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), NULL);
+
+	return _get_keys (setting, TRUE, out_length);
 }
 
 /**
