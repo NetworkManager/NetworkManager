@@ -99,6 +99,11 @@ test_encode_key (void)
 	do_test_encode_key_bijection (kf, "   ", "\\20 \\20");
 	do_test_encode_key_decode_surjection (kf, "f\\20c", "f c");
 	do_test_encode_key_decode_surjection (kf, "\\20\\20\\20", "\\20 \\20");
+
+	do_test_encode_key_bijection (kf, "\t", "\\09");
+	do_test_encode_key_bijection (kf, "\t=x", "\\09\\3Dx");
+	do_test_encode_key_bijection (kf, "(nm-openvpn-auth-dialog:10283): GdkPixbuf-DEBUG: \tCopy pixels == false",
+	                                  "(nm-openvpn-auth-dialog:10283): GdkPixbuf-DEBUG: \\09Copy pixels \\3D\\3D false");
 }
 
 /*****************************************************************************/
