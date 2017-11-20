@@ -842,31 +842,29 @@ nm_vpn_service_plugin_get_secret_flags (GHashTable *data,
                                         const char *secret_name,
                                         NMSettingSecretFlags *out_flags)
 {
-	char *flag_name;
-	const char *val;
-	unsigned long tmp;
-	gboolean success = FALSE;
+	gs_free char *flag_name_free = NULL;
+	const char *s;
+	gint64 t1;
+	NMSettingSecretFlags t0;
 
-	g_return_val_if_fail (data != NULL, FALSE);
-	g_return_val_if_fail (secret_name != NULL, FALSE);
-	g_return_val_if_fail (out_flags != NULL, FALSE);
-	g_return_val_if_fail (*out_flags == NM_SETTING_SECRET_FLAG_NONE, FALSE);
+	g_return_val_if_fail (data, FALSE);
+	g_return_val_if_fail (out_flags && *out_flags == NM_SETTING_SECRET_FLAG_NONE, FALSE);
+	if (!secret_name || !*secret_name)
+		g_return_val_if_reached (FALSE);
 
-	flag_name = g_strdup_printf ("%s-flags", secret_name);
 
-	/* Try new flags value first */
-	val = g_hash_table_lookup (data, flag_name);
-	if (val) {
-		errno = 0;
-		tmp = strtoul (val, NULL, 10);
-		if (errno == 0 && tmp <= NM_SETTING_SECRET_FLAGS_ALL) {
-			*out_flags = (NMSettingSecretFlags) tmp;
-			success = TRUE;
-		}
-	}
-
-	g_free (flag_name);
-	return success;
+	s = g_hash_table_lookup (data,
+	                         nm_construct_name_a ("%s-flags", secret_name, &flag_name_free));
+	if (!s)
+		return FALSE;
+	t1 = _nm_utils_ascii_str_to_int64 (s, 10, 0, G_MAXINT64, -1);
+	if (t1 == -1)
+		return FALSE;
+	t0 = (NMSettingSecretFlags) t1;
+	if ((gint64) t0 != t1)
+		return FALSE;
+	NM_SET_OUT (out_flags, t0);
+	return TRUE;
 }
 
 /*****************************************************************************/

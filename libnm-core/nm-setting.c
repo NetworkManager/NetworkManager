@@ -1800,21 +1800,19 @@ get_secret_flags (NMSetting *setting,
                   NMSettingSecretFlags *out_flags,
                   GError **error)
 {
-	char *flags_prop;
+	gs_free char *name_to_free = NULL;
 	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
 
 	if (verify_secret && !is_secret_prop (setting, secret_name, error)) {
-		if (out_flags)
-			*out_flags = NM_SETTING_SECRET_FLAG_NONE;
+		NM_SET_OUT (out_flags, NM_SETTING_SECRET_FLAG_NONE);
 		return FALSE;
 	}
 
-	flags_prop = g_strdup_printf ("%s-flags", secret_name);
-	g_object_get (G_OBJECT (setting), flags_prop, &flags, NULL);
-	g_free (flags_prop);
-
-	if (out_flags)
-		*out_flags = flags;
+	g_object_get (G_OBJECT (setting),
+	              nm_construct_name_a ("%s-flags", secret_name, &name_to_free),
+	              &flags,
+	              NULL);
+	NM_SET_OUT (out_flags, flags);
 	return TRUE;
 }
 
@@ -1850,14 +1848,15 @@ set_secret_flags (NMSetting *setting,
                   NMSettingSecretFlags flags,
                   GError **error)
 {
-	char *flags_prop;
+	gs_free char *name_to_free = NULL;
 
 	if (verify_secret)
 		g_return_val_if_fail (is_secret_prop (setting, secret_name, error), FALSE);
 
-	flags_prop = g_strdup_printf ("%s-flags", secret_name);
-	g_object_set (G_OBJECT (setting), flags_prop, flags, NULL);
-	g_free (flags_prop);
+	g_object_set (G_OBJECT (setting),
+	              nm_construct_name_a ("%s-flags", secret_name, &name_to_free),
+	              flags,
+	              NULL);
 	return TRUE;
 }
 
