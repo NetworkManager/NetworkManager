@@ -70,6 +70,30 @@ static inline int nm_close (int fd);
 GS_DEFINE_CLEANUP_FUNCTION(void*, _nm_auto_free_impl, free)
 
 static inline void
+nm_free_secret (char *secret)
+{
+	if (secret) {
+		memset (secret, 0, strlen (secret));
+		g_free (secret);
+	}
+}
+
+static inline void
+_nm_auto_free_secret_impl (char **v)
+{
+	nm_free_secret (*v);
+}
+
+/**
+ * nm_auto_free_secret:
+ *
+ * Call g_free() on a variable location when it goes out of scope.
+ * Also, previously, calls memset(loc, 0, strlen(loc)) to clear out
+ * the secret.
+ */
+#define nm_auto_free_secret nm_auto(_nm_auto_free_secret_impl)
+
+static inline void
 _nm_auto_unset_gvalue_impl (GValue *v)
 {
 	g_value_unset (v);
