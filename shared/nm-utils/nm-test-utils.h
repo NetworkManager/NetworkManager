@@ -1697,7 +1697,7 @@ nmtst_assert_setting_verifies (NMSetting *setting)
 	g_assert (success);
 }
 
-#if defined(__NM_SIMPLE_CONNECTION_H__)
+#if defined(__NM_SIMPLE_CONNECTION_H__) && NM_CHECK_VERSION (1, 10, 0) && (!defined (NM_VERSION_MAX_ALLOWED) || NM_VERSION_MAX_ALLOWED >= NM_VERSION_1_10)
 static inline void
 _nmtst_assert_connection_has_settings (NMConnection *connection, gboolean has_at_least, gboolean has_at_most, ...)
 {
@@ -1751,8 +1751,7 @@ _nmtst_assert_connection_has_settings (NMConnection *connection, gboolean has_at
 #define nmtst_assert_connection_has_settings(connection, ...)          _nmtst_assert_connection_has_settings ((connection), TRUE,  TRUE,  __VA_ARGS__, NULL)
 #define nmtst_assert_connection_has_settings_at_least(connection, ...) _nmtst_assert_connection_has_settings ((connection), TRUE,  FALSE, __VA_ARGS__, NULL)
 #define nmtst_assert_connection_has_settings_at_most(connection, ...)  _nmtst_assert_connection_has_settings ((connection), FALSE, TRUE,  __VA_ARGS__, NULL)
-
-#endif /* __NM_SIMPLE_CONNECTION_H__ */
+#endif
 
 static inline void
 nmtst_assert_setting_verify_fails (NMSetting *setting,
