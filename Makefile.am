@@ -670,6 +670,7 @@ libnm_core_tests_test_setting_dcb_CPPFLAGS = $(libnm_core_tests_cppflags)
 libnm_core_tests_test_settings_defaults_CPPFLAGS = $(libnm_core_tests_cppflags)
 
 libnm_core_tests_test_general_SOURCES = \
+	shared/nm-utils/nm-compat.c \
 	libnm-core/tests/test-general-enums.h \
 	libnm-core/tests/test-general.c
 
@@ -4565,6 +4566,8 @@ EXTRA_DIST += \
 	shared/nm-utils/c-list-util.c \
 	shared/nm-utils/c-list-util.h \
 	shared/nm-utils/gsystem-local-alloc.h \
+	shared/nm-utils/nm-compat.c \
+	shared/nm-utils/nm-compat.h \
 	shared/nm-utils/nm-glib.h \
 	shared/nm-utils/nm-jansson.h \
 	shared/nm-utils/nm-obj.h \
