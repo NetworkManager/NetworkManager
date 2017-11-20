@@ -295,32 +295,52 @@ nm_setting_vpn_remove_data_item (NMSettingVpn *setting, const char *key)
 }
 
 static void
-foreach_item_helper (GHashTable *hash,
+foreach_item_helper (NMSettingVpn *self,
+                     gboolean is_secrets,
                      NMVpnIterFunc func,
                      gpointer user_data)
 {
-	GList *keys, *liter;
-	GSList *copied = NULL, *siter;
+	NMSettingVpnPrivate *priv;
+	guint len, i;
+	gs_strfreev char **keys = NULL;
+	GHashTable *hash;
 
-	g_return_if_fail (hash != NULL);
+	nm_assert (NM_IS_SETTING_VPN (self));
+	nm_assert (func);
 
-	/* Grab keys and copy them so that the callback func can modify
-	 * the hash table items if it wants to.
-	 */
-	keys = g_hash_table_get_keys (hash);
-	for (liter = keys; liter; liter = g_list_next (liter))
-		copied = g_slist_prepend (copied, g_strdup (liter->data));
-	copied = g_slist_reverse (copied);
-	g_list_free (keys);
+	priv = NM_SETTING_VPN_GET_PRIVATE (self);
 
-	for (siter = copied; siter; siter = g_slist_next (siter)) {
-		gpointer value;
-
-		value = g_hash_table_lookup (hash, siter->data);
-		func (siter->data, value, user_data);
+	if (is_secrets) {
+		keys = (char **) nm_setting_vpn_get_secret_keys (self, &len);
+		hash = priv->secrets;
+	} else {
+		keys = (char **) nm_setting_vpn_get_data_keys (self, &len);
+		hash = priv->data;
 	}
 
-	g_slist_free_full (copied, g_free);
+	if (!len) {
+		nm_assert (!keys);
+		return;
+	}
+
+	for (i = 0; i < len; i++) {
+		nm_assert (keys[i]);
+		keys[i] = g_strdup (keys[i]);
+	}
+	nm_assert (!keys[i]);
+
+	for (i = 0; i < len; i++) {
+		const char *value;
+
+		value = g_hash_table_lookup (hash, keys[i]);
+		/* XXX: note that we call the function with a clone of @key,
+		 * not with the actual key from the dictionary.
+		 *
+		 * The @value on the other hand, is actually inside our dictionary,
+		 * it's not a clone. However, it might be %NULL, in case the key was
+		 * deleted while iterating. */
+		func (keys[i], value, user_data);
+	}
 }
 
 /**
@@ -339,8 +359,9 @@ nm_setting_vpn_foreach_data_item (NMSettingVpn *setting,
                                   gpointer user_data)
 {
 	g_return_if_fail (NM_IS_SETTING_VPN (setting));
+	g_return_if_fail (func);
 
-	foreach_item_helper (NM_SETTING_VPN_GET_PRIVATE (setting)->data, func, user_data);
+	foreach_item_helper (setting, FALSE, func, user_data);
 }
 
 /**
@@ -464,8 +485,9 @@ nm_setting_vpn_foreach_secret (NMSettingVpn *setting,
                                gpointer user_data)
 {
 	g_return_if_fail (NM_IS_SETTING_VPN (setting));
+	g_return_if_fail (func);
 
-	foreach_item_helper (NM_SETTING_VPN_GET_PRIVATE (setting)->secrets, func, user_data);
+	foreach_item_helper (setting, TRUE, func, user_data);
 }
 
 /**
