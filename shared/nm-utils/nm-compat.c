@@ -23,3 +23,66 @@
 
 #include "nm-compat.h"
 
+/*****************************************************************************/
+
+static void
+_get_keys_cb (const char *key, const char *val, gpointer user_data)
+{
+	GPtrArray *a = user_data;
+
+	g_ptr_array_add (a, g_strdup (key));
+}
+
+static const char **
+_get_keys (NMSettingVpn *setting,
+           gboolean is_secrets,
+           guint *out_length)
+{
+	guint len;
+	const char **keys = NULL;
+	gs_unref_ptrarray GPtrArray *a = NULL;
+
+	nm_assert (NM_IS_SETTING_VPN (setting));
+
+	a = g_ptr_array_new ();
+	if (is_secrets)
+		nm_setting_vpn_foreach_secret (setting, _get_keys_cb, a);
+	else
+		nm_setting_vpn_foreach_data_item (setting, _get_keys_cb, a);
+	len = a->len;
+
+	if (a->len) {
+		g_ptr_array_sort (a, nm_strcmp_p);
+		g_ptr_array_add (a, NULL);
+		keys = (const char **) g_ptr_array_free (g_steal_pointer (&a), FALSE);
+
+		/* we need to cache the keys *somewhere*. */
+		g_object_set_qdata_full (G_OBJECT (setting),
+		                         is_secrets
+		                         ? NM_CACHED_QUARK ("libnm._nm_setting_vpn_get_secret_keys")
+		                         : NM_CACHED_QUARK ("libnm._nm_setting_vpn_get_data_keys"),
+		                         keys,
+		                         (GDestroyNotify) g_strfreev);
+	}
+
+	NM_SET_OUT (out_length, len);
+	return keys;
+}
+
+const char **
+_nm_setting_vpn_get_data_keys (NMSettingVpn *setting,
+                               guint *out_length)
+{
+	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), NULL);
+
+	return _get_keys (setting, FALSE, out_length);
+}
+
+const char **
+_nm_setting_vpn_get_secret_keys (NMSettingVpn *setting,
+                                 guint *out_length)
+{
+	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), NULL);
+
+	return _get_keys (setting, TRUE, out_length);
+}

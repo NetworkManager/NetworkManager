@@ -670,7 +670,6 @@ libnm_core_tests_test_setting_dcb_CPPFLAGS = $(libnm_core_tests_cppflags)
 libnm_core_tests_test_settings_defaults_CPPFLAGS = $(libnm_core_tests_cppflags)
 
 libnm_core_tests_test_general_SOURCES = \
-	shared/nm-utils/nm-compat.c \
 	libnm-core/tests/test-general-enums.h \
 	libnm-core/tests/test-general.c
 
@@ -1067,6 +1066,7 @@ libnm_tests_test_remote_settings_client_CPPFLAGS = $(libnm_tests_cppflags)
 libnm_tests_test_secret_agent_CPPFLAGS = $(libnm_tests_cppflags)
 
 libnm_tests_test_general_SOURCES = \
+	shared/nm-utils/nm-compat.c \
 	libnm/tests/test-general.c
 
 libnm_tests_test_nm_client_SOURCES = \
