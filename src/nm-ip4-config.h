@@ -154,6 +154,7 @@ GType nm_ip4_config_get_type (void);
 NMIP4Config * nm_ip4_config_new (NMDedupMultiIndex *multi_idx,
                                  int ifindex);
 
+NMIP4Config *nm_ip4_config_clone (const NMIP4Config *self);
 int nm_ip4_config_get_ifindex (const NMIP4Config *self);
 
 NMDedupMultiIndex *nm_ip4_config_get_multi_idx (const NMIP4Config *self);

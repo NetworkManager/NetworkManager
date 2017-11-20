@@ -366,6 +366,17 @@ _nmtst_ip6_config_addresses_sort (NMIP6Config *self)
 }
 
 NMIP6Config *
+nm_ip6_config_clone (const NMIP6Config *self)
+{
+	NMIP6Config *copy;
+
+	copy = nm_ip6_config_new (nm_ip6_config_get_multi_idx (self), -1);
+	nm_ip6_config_replace (copy, self, NULL);
+
+	return copy;
+}
+
+NMIP6Config *
 nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int ifindex, gboolean capture_resolv_conf, NMSettingIP6ConfigPrivacy use_temporary)
 {
 	NMIP6Config *self;

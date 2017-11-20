@@ -582,6 +582,17 @@ sort_captured_addresses (const CList *lst_a, const CList *lst_b, gconstpointer u
 }
 
 NMIP4Config *
+nm_ip4_config_clone (const NMIP4Config *self)
+{
+	NMIP4Config *copy;
+
+	copy = nm_ip4_config_new (nm_ip4_config_get_multi_idx (self), -1);
+	nm_ip4_config_replace (copy, self, NULL);
+
+	return copy;
+}
+
+NMIP4Config *
 nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int ifindex, gboolean capture_resolv_conf)
 {
 	NMIP4Config *self;

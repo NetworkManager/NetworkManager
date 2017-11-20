@@ -246,8 +246,10 @@ test_nm_ip6_config_addresses_sort_check (NMIP6Config *config, NMSettingIP6Config
 	int *idx = g_new (int, addr_count);
 
 	nm_ip6_config_set_privacy (config, use_tempaddr);
-	copy = nmtst_ip6_config_clone (config);
-	copy2 = nmtst_ip6_config_clone (config);
+	copy = nm_ip6_config_clone (config);
+	g_assert (copy);
+	copy2 = nm_ip6_config_clone (config);
+	g_assert (copy2);
 
 	/* initialize the array of indeces, and keep shuffling them for every @repeat iteration. */
 	for (i = 0; i < addr_count; i++)

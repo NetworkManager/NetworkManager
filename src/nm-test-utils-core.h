@@ -313,18 +313,6 @@ nmtst_ip4_config_new (int ifindex)
 	return nm_ip4_config_new (multi_idx, ifindex);
 }
 
-static inline NMIP4Config *
-nmtst_ip4_config_clone (NMIP4Config *config)
-{
-	NMIP4Config *copy;
-
-	g_assert (config);
-	copy = nm_ip4_config_new (nm_ip4_config_get_multi_idx (config), -1);
-	g_assert (copy);
-	nm_ip4_config_replace (copy, config, NULL);
-	return copy;
-}
-
 #endif
 
 
@@ -338,18 +326,6 @@ nmtst_ip6_config_new (int ifindex)
 	nm_auto_unref_dedup_multi_index NMDedupMultiIndex *multi_idx = nm_dedup_multi_index_new ();
 
 	return nm_ip6_config_new (multi_idx, ifindex);
-}
-
-static inline NMIP6Config *
-nmtst_ip6_config_clone (NMIP6Config *config)
-{
-	NMIP6Config *copy;
-
-	g_assert (config);
-	copy = nm_ip6_config_new (nm_ip6_config_get_multi_idx (config), -1);
-	g_assert (copy);
-	nm_ip6_config_replace (copy, config, NULL);
-	return copy;
 }
 
 #endif
