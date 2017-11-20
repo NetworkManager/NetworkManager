@@ -730,10 +730,11 @@ nm_vpn_service_plugin_read_vpn_details (int fd,
                                         GHashTable **out_data,
                                         GHashTable **out_secrets)
 {
-	GHashTable *data, *secrets;
+	gs_unref_hashtable GHashTable *data = NULL;
+	gs_unref_hashtable GHashTable *secrets = NULL;
 	gboolean success = FALSE;
 	char *key = NULL, *val = NULL;
-	GString *line;
+	nm_auto_free_gstring GString *line = NULL;
 	gchar c;
 
 	if (out_data)
@@ -795,21 +796,9 @@ nm_vpn_service_plugin_read_vpn_details (int fd,
 	}
 
 	if (success) {
-		if (out_data)
-			*out_data = data;
-		else
-			g_hash_table_destroy (data);
-
-		if (out_secrets)
-			*out_secrets = secrets;
-		else
-			g_hash_table_destroy (secrets);
-	} else {
-		g_hash_table_destroy (data);
-		g_hash_table_destroy (secrets);
+		NM_SET_OUT (out_data, g_steal_pointer (&data));
+		NM_SET_OUT (out_secrets, g_steal_pointer (&secrets));
 	}
-
-	g_string_free (line, TRUE);
 	return success;
 }
 
