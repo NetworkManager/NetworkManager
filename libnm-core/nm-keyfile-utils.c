@@ -442,7 +442,7 @@ _keyfile_key_encode (const char *name,
 		        && g_ascii_isxdigit (name[i + 2]))
 		    || (   ch == ' '
 		        && name[i + 1] == '\0'))
-			g_string_append_printf (str, "\\%2X", ch);
+			g_string_append_printf (str, "\\%02X", ch);
 		else
 			g_string_append_c (str, (char) ch);
 	}
