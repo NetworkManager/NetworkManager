@@ -1178,6 +1178,25 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 	}
 }
 
+static gboolean
+secrets_filter_cb (NMSetting *setting,
+                   const char *secret,
+                   NMSettingSecretFlags flags,
+                   gpointer user_data)
+{
+	NMSettingSecretFlags filter_flags = GPOINTER_TO_UINT (user_data);
+
+	/* Returns TRUE to remove the secret */
+
+	/* Can't use bitops with SECRET_FLAG_NONE so handle that specifically */
+	if (   (flags == NM_SETTING_SECRET_FLAG_NONE)
+	    && (filter_flags == NM_SETTING_SECRET_FLAG_NONE))
+		return FALSE;
+
+	/* Otherwise if the secret has at least one of the desired flags keep it */
+	return (flags & filter_flags) ? FALSE : TRUE;
+}
+
 /**
  * nm_settings_add_connection:
  * @self: the #NMSettings object
@@ -1228,9 +1247,22 @@ nm_settings_add_connection (NMSettings *self,
 	for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
 		NMSettingsPlugin *plugin = NM_SETTINGS_PLUGIN (iter->data);
 		GError *add_error = NULL;
+		gs_unref_object NMConnection *simple = NULL;
+		gs_unref_variant GVariant *secrets = NULL;
+
+		/* Make a copy of agent-owned secrets because they won't be present in
+		 * the connection returned by plugins, as plugins return only what was
+		 * reread from the file. */
+		simple = nm_simple_connection_new_clone (connection);
+		nm_connection_clear_secrets_with_flags (simple,
+		                                        secrets_filter_cb,
+		                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
+		secrets = nm_connection_to_dbus (simple, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
 
 		added = nm_settings_plugin_add_connection (plugin, connection, save_to_disk, &add_error);
 		if (added) {
+			if (secrets)
+				nm_connection_update_secrets (NM_CONNECTION (added), NULL, secrets, NULL);
 			claim_connection (self, added);
 			return added;
 		}
@@ -1244,25 +1276,6 @@ nm_settings_add_connection (NMSettings *self,
 	g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 	                     "No plugin supported adding this connection");
 	return NULL;
-}
-
-static gboolean
-secrets_filter_cb (NMSetting *setting,
-                   const char *secret,
-                   NMSettingSecretFlags flags,
-                   gpointer user_data)
-{
-	NMSettingSecretFlags filter_flags = GPOINTER_TO_UINT (user_data);
-
-	/* Returns TRUE to remove the secret */
-
-	/* Can't use bitops with SECRET_FLAG_NONE so handle that specifically */
-	if (   (flags == NM_SETTING_SECRET_FLAG_NONE)
-	    && (filter_flags == NM_SETTING_SECRET_FLAG_NONE))
-		return FALSE;
-
-	/* Otherwise if the secret has at least one of the desired flags keep it */
-	return (flags & filter_flags) ? FALSE : TRUE;
 }
 
 static void
