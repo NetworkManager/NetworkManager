@@ -2828,6 +2828,9 @@ device_ip_link_changed (NMDevice *self)
 	if (!pllink)
 		return G_SOURCE_REMOVE;
 
+	if (priv->ifindex <= 0 && pllink->mtu)
+		_set_mtu (self, pllink->mtu);
+
 	_stats_update_counters_from_pllink (self, pllink);
 
 	if (_ip_iface_update (self, pllink->name))
