@@ -708,22 +708,12 @@ clear_secrets_with_flags (NMSetting *setting,
 }
 
 static void
-destroy_one_secret (gpointer data)
-{
-	char *secret = (char *) data;
-
-	/* Don't leave the secret lying around in memory */
-	memset (secret, 0, strlen (secret));
-	g_free (secret);
-}
-
-static void
 nm_setting_vpn_init (NMSettingVpn *setting)
 {
 	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
 
 	priv->data = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
-	priv->secrets = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, destroy_one_secret);
+	priv->secrets = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, (GDestroyNotify) nm_free_secret);
 }
 
 static void

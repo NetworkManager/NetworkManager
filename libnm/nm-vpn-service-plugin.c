@@ -710,15 +710,6 @@ nm_vpn_service_plugin_secrets_required (NMVpnServicePlugin *plugin,
 #define SECRET_KEY_TAG "SECRET_KEY="
 #define SECRET_VAL_TAG "SECRET_VAL="
 
-static void
-free_secret (gpointer data)
-{
-	char *secret = data;
-
-	memset (secret, 0, strlen (secret));
-	g_free (secret);
-}
-
 /**
  * nm_vpn_service_plugin_read_vpn_details:
  * @fd: file descriptor to read from, usually stdin (0)
@@ -751,7 +742,7 @@ nm_vpn_service_plugin_read_vpn_details (int fd,
 		g_return_val_if_fail (*out_secrets == NULL, FALSE);
 
 	data = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
-	secrets = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, free_secret);
+	secrets = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, (GDestroyNotify) nm_free_secret);
 
 	line = g_string_new (NULL);
 
