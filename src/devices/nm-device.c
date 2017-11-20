@@ -5219,6 +5219,50 @@ lldp_init (NMDevice *self, gboolean restart)
 	}
 }
 
+static gboolean
+tc_commit (NMDevice *self)
+{
+	NMConnection *connection = NULL;
+	gs_unref_ptrarray GPtrArray *qdiscs = NULL;
+	NMSettingTCConfig *s_tc = NULL;
+	int ip_ifindex;
+	guint nqdiscs;
+	int i;
+
+	connection = nm_device_get_applied_connection (self);
+	if (connection)
+		s_tc = nm_connection_get_setting_tc_config (connection);
+
+	ip_ifindex = nm_device_get_ip_ifindex (self);
+	if (!ip_ifindex)
+	       return s_tc == NULL;
+
+	if (s_tc) {
+		nqdiscs = nm_setting_tc_config_get_num_qdiscs (s_tc);
+		qdiscs = g_ptr_array_new_full (nqdiscs, (GDestroyNotify) nmp_object_unref);
+
+		for (i = 0; i < nqdiscs; i++) {
+			NMTCQdisc *s_qdisc = nm_setting_tc_config_get_qdisc (s_tc, i);
+			NMPObject *q = nmp_object_new (NMP_OBJECT_TYPE_QDISC, NULL);
+			NMPlatformQdisc *qdisc = NMP_OBJECT_CAST_QDISC (q);
+
+			qdisc->ifindex = ip_ifindex;
+			qdisc->kind = nm_tc_qdisc_get_kind (s_qdisc);
+			qdisc->addr_family = AF_UNSPEC;
+			qdisc->handle = nm_tc_qdisc_get_handle (s_qdisc);
+			qdisc->parent = nm_tc_qdisc_get_parent (s_qdisc);
+			qdisc->info = 0;
+
+			g_ptr_array_add (qdiscs, q);
+		}
+	}
+
+	if (!nm_platform_qdisc_sync (nm_device_get_platform (self), ip_ifindex, qdiscs))
+		return FALSE;
+
+	return TRUE;
+}
+
 /*
  * activate_stage2_device_config
  *
@@ -5239,6 +5283,11 @@ activate_stage2_device_config (NMDevice *self)
 	/* Assumed connections were already set up outside NetworkManager */
 	if (!nm_device_sys_iface_state_is_external_or_assume (self)) {
 		NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
+
+		if (!tc_commit (self)) {
+			_LOGW (LOGD_IP6, "failed applying traffic control rules");
+			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+		}
 
 		if (!nm_device_bring_up (self, FALSE, &no_firmware)) {
 			if (no_firmware)
@@ -12536,6 +12585,7 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 
 			nm_platform_ip_route_flush (platform, AF_UNSPEC, ifindex);
 			nm_platform_ip_address_flush (platform, AF_UNSPEC, ifindex);
+			nm_platform_qdisc_sync (platform, ifindex, NULL);
 		}
 	}
 
