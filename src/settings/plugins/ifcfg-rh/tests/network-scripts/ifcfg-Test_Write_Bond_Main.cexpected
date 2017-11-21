@@ -1,4 +1,4 @@
-BONDING_OPTS=mode=balance-rr
+BONDING_OPTS="downdelay=5 miimon=100 mode=balance-rr updelay=10"
 TYPE=Bond
 BONDING_MASTER=yes
 PROXY_METHOD=none

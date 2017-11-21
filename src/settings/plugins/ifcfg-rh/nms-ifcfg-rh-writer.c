@@ -1311,21 +1311,14 @@ write_bond_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired,
 	num_opts = nm_setting_bond_get_num_options (s_bond);
 	if (num_opts) {
 		nm_auto_free_gstring GString *str = NULL;
-		gs_free const char **options = NULL;
-		const char *value;
+		const char *name, *value;
 
 		str = g_string_sized_new (64);
-		options = g_new (const char *, num_opts);
-		for (i = 0; i < num_opts; i++)
-			nm_setting_bond_get_option (s_bond, i, &options[i], &value);
-		g_qsort_with_data (options, num_opts, sizeof (const char *),
-		                   nm_strcmp_p_with_data, NULL);
-
 		for (i = 0; i < num_opts; i++) {
 			if (str->len)
 				g_string_append_c (str, ' ');
-			value = nm_setting_bond_get_option_by_name (s_bond, options[i]);
-			g_string_append_printf (str, "%s=%s", options[i], value);
+			nm_setting_bond_get_option (s_bond, i, &name, &value);
+			g_string_append_printf (str, "%s=%s", name, value);
 		}
 
 		svSetValueStr (ifcfg, "BONDING_OPTS", str->str);

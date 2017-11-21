@@ -490,17 +490,45 @@ _nm_utils_strdict_to_dbus (const GValue *prop_value)
 {
 	GHashTable *hash;
 	GHashTableIter iter;
-	gpointer key, value;
+	const char *key, *value;
 	GVariantBuilder builder;
+	guint i, len;
 
 	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{ss}"));
+
 	hash = g_value_get_boxed (prop_value);
-	if (hash) {
-		g_hash_table_iter_init (&iter, hash);
-		while (g_hash_table_iter_next (&iter, &key, &value))
-			g_variant_builder_add (&builder, "{ss}", key, value);
+	if (!hash)
+		goto out;
+	len = g_hash_table_size (hash);
+	if (!len)
+		goto out;
+
+	g_hash_table_iter_init (&iter, hash);
+	if (!g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value))
+		nm_assert_not_reached ();
+
+	if (len == 1)
+		g_variant_builder_add (&builder, "{ss}", key, value);
+	else {
+		gs_free NMUtilsNamedValue *idx = NULL;
+
+		idx = g_new (NMUtilsNamedValue, len);
+		i = 0;
+		do {
+			idx[i].name = key;
+			idx[i].value_str = value;
+			i++;
+		} while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value));
+		nm_assert (i == len);
+
+		g_qsort_with_data (idx, len, sizeof (idx[0]),
+		                   nm_utils_named_entry_cmp_with_data, NULL);
+
+		for (i = 0; i < len; i++)
+			g_variant_builder_add (&builder, "{ss}", idx[i].name, idx[i].value_str);
 	}
 
+out:
 	return g_variant_builder_end (&builder);
 }
 
