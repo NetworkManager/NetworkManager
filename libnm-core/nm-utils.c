@@ -4396,10 +4396,13 @@ _json_del_object (json_t *json,
 	return TRUE;
 }
 
-/* Adds in place to json the defaults for missing properties */
+/* Adds in place to json the defaults for missing properties;
+ * the "add_implicit" allows to add to the json also the default
+ * values used but not shown with teamdctl */
 static void
 _json_team_add_defaults (json_t *json,
-                         gboolean port_config)
+                         gboolean port_config,
+                         gboolean add_implicit)
 {
 	json_t *json_element;
 	const char *runner = NULL;
@@ -4407,38 +4410,193 @@ _json_team_add_defaults (json_t *json,
 	if (port_config) {
 		_json_add_object (json, "link_watch", "name", NULL,
 		                  json_string (NM_TEAM_LINK_WATCHER_ETHTOOL));
+		return;
+	}
+
+	/* Retrieve runner or add default one */
+	json_element = json_object_get (json, "runner");
+	if (json_element) {
+		runner = json_string_value (json_object_get (json_element, "name"));
 	} else {
-		/* Retrieve runner or add default one */
-		json_element = json_object_get (json, "runner");
-		if (json_element) {
-			runner = json_string_value (json_object_get (json_element, "name"));
-		} else {
-			json_element = json_object ();
-			json_object_set_new (json, "runner", json_element);
-		}
-		if (!runner) {
-			runner = NM_SETTING_TEAM_RUNNER_DEFAULT;
-			json_object_set_new (json_element, "name", json_string (runner));
-		}
+		json_element = json_object ();
+		json_object_set_new (json, "runner", json_element);
+	}
+	if (!runner) {
+		runner = NM_SETTING_TEAM_RUNNER_DEFAULT;
+		json_object_set_new (json_element, "name", json_string (runner));
+	}
 
 
-		if (nm_streq (runner, NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP)) {
-			_json_add_object (json, "notify_peers", "count", NULL,
-			                  json_integer (NM_SETTING_TEAM_NOTIFY_PEERS_COUNT_ACTIVEBACKUP_DEFAULT));
-			_json_add_object (json, "mcast_rejoin", "count", NULL,
-			                  json_integer (NM_SETTING_TEAM_NOTIFY_MCAST_COUNT_ACTIVEBACKUP_DEFAULT));
-		} else if (   nm_streq (runner, NM_SETTING_TEAM_RUNNER_LOADBALANCE)
-		           || nm_streq (runner, NM_SETTING_TEAM_RUNNER_LACP)) {
-			json_element = json_array ();
-			json_array_append_new (json_element, json_string ("eth"));
-			json_array_append_new (json_element, json_string ("ipv4"));
-			json_array_append_new (json_element, json_string ("ipv6"));
-			_json_add_object (json, "runner", "tx_hash", NULL, json_element);
+	if (nm_streq (runner, NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP)) {
+		_json_add_object (json, "notify_peers", "count", NULL,
+				  json_integer (NM_SETTING_TEAM_NOTIFY_PEERS_COUNT_ACTIVEBACKUP_DEFAULT));
+		_json_add_object (json, "mcast_rejoin", "count", NULL,
+				  json_integer (NM_SETTING_TEAM_NOTIFY_MCAST_COUNT_ACTIVEBACKUP_DEFAULT));
+	} else if (   nm_streq (runner, NM_SETTING_TEAM_RUNNER_LOADBALANCE)
+		   || nm_streq (runner, NM_SETTING_TEAM_RUNNER_LACP)) {
+		json_element = json_array ();
+		json_array_append_new (json_element, json_string ("eth"));
+		json_array_append_new (json_element, json_string ("ipv4"));
+		json_array_append_new (json_element, json_string ("ipv6"));
+		_json_add_object (json, "runner", "tx_hash", NULL, json_element);
+	}
+
+	if (!add_implicit)
+		return;
+
+	if (nm_streq (runner, NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP))
+		_json_add_object (json, "runner", "hwaddr_policy", NULL, json_string ("same_all"));
+	else if (NM_IN_STRSET (runner,
+	                       NM_SETTING_TEAM_RUNNER_LOADBALANCE,
+	                       NM_SETTING_TEAM_RUNNER_LACP)) {
+		_json_add_object (json, "runner", "tx_balancer", "balancing_interval",
+		                  json_integer (NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT));
+		if (nm_streq (runner, NM_SETTING_TEAM_RUNNER_LACP)) {
+			_json_add_object (json, "runner", "active", NULL, json_boolean (TRUE));
+			_json_add_object (json, "runner", "sys_prio", NULL,
+			                  json_integer (NM_SETTING_TEAM_RUNNER_SYS_PRIO_DEFAULT));
+			_json_add_object (json, "runner", "min_ports", NULL, json_integer (0));
+			_json_add_object (json, "runner", "agg_select_policy", NULL,
+			                  json_string (NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_DEFAULT));
 		}
 	}
 }
 
+static json_t *
+_json_find_object (json_t *json,
+                   const char *key1,
+                   const char *key2,
+                   const char *key3)
+{
+	json_t *json_element;
 
+	if (!key1)
+		return NULL;
+	json_element = json_object_get (json, key1);
+	if (!key2 || !json_element)
+		return json_element;
+
+	json_element = json_object_get (json_element, key2);
+	if (!key3 || !json_element)
+		return json_element;
+
+	json_element = json_object_get (json_element, key3);
+	return json_element;
+}
+
+static inline void
+_json_delete_object_on_int_match (json_t *json,
+                                  const char *key1,
+                                  const char *key2,
+                                  const char *key3,
+                                  int val)
+{
+	json_t *json_element;
+
+	json_element = _json_find_object (json, key1, key2, key3);
+	if (!json_element || !json_is_integer (json_element))
+		return;
+	if (json_integer_value (json_element) == val)
+		_json_del_object (json, key1, key2, key3);
+}
+
+static inline void
+_json_delete_object_on_bool_match (json_t *json,
+                                   const char *key1,
+                                   const char *key2,
+                                   const char *key3,
+                                   gboolean val)
+{
+	json_t *json_element;
+
+	json_element = _json_find_object (json, key1, key2, key3);
+	if (!json_element || !json_is_boolean (json_element))
+		return;
+	if (json_boolean_value (json_element) == val)
+		_json_del_object (json, key1, key2, key3);
+}
+
+static inline void
+_json_delete_object_on_string_match (json_t *json,
+                                     const char *key1,
+                                     const char *key2,
+                                     const char *key3,
+                                     const char *val)
+{
+	json_t *json_element;
+
+	json_element = _json_find_object (json, key1, key2, key3);
+	if (!json_element || !json_is_string (json_element))
+		return;
+	if (nm_streq0 (json_string_value (json_element), val))
+		_json_del_object (json, key1, key2, key3);
+}
+
+static void
+_json_team_normalize_defaults (json_t *json, gboolean reset)
+{
+	json_t *json_element;
+	const char *runner = NM_SETTING_TEAM_RUNNER_DEFAULT;
+	int notify_peers_count = 0, notify_peers_interval = 0;
+	int mcast_rejoin_count = 0, mcast_rejoin_interval = 0;
+	int runner_tx_balancer_interval = -1;
+	gboolean runner_active = FALSE, runner_fast_rate = FALSE;
+	int runner_sys_prio = -1, runner_min_ports = -1;
+
+	json_element = _json_find_object (json, "runner", "name", NULL);
+	if (json_element) {
+		runner = json_string_value (json_element);
+		_json_delete_object_on_string_match (json, "runner", "name", NULL,
+		                                     NM_SETTING_TEAM_RUNNER_DEFAULT);
+	}
+
+	/* the runner changed: clear all the properties. Then team.config will be saved
+	 * and reloaded triggering the reset of the values through _nm_utils_team_config_get
+	 */
+	if (reset) {
+		_json_del_object (json, "notify_peers", "count", NULL);
+		_json_del_object (json, "notify_peers", "interval", NULL);
+		_json_del_object (json, "mcast_rejoin", "count", NULL);
+		_json_del_object (json, "mcast_rejoin", "interval", NULL);
+		_json_del_object (json, "runner", "hwaddr_policy", NULL);
+		_json_del_object (json, "runner", "tx_hash", NULL);
+		_json_del_object (json, "runner", "tx_balancer", "name");
+		_json_del_object (json, "runner", "tx_balancer", "balancing_interval");
+		_json_del_object (json, "runner", "active", NULL);
+		_json_del_object (json, "runner", "fast_rate", NULL);
+		_json_del_object (json, "runner", "sys_prio", NULL);
+		_json_del_object (json, "runner", "min_ports", NULL);
+		_json_del_object (json, "runner", "agg_select_policy", NULL);
+		return;
+	}
+
+	if (nm_streq (runner, NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP)) {
+		notify_peers_count = 1;
+		mcast_rejoin_count = 1;
+		_json_delete_object_on_string_match (json, "runner", "hwaddr_policy", NULL,
+		                                     NM_SETTING_TEAM_RUNNER_HWADDR_POLICY_DEFAULT);
+	} else if (nm_streq (runner, NM_SETTING_TEAM_RUNNER_LACP)) {
+		runner_tx_balancer_interval = 50;
+		runner_active = TRUE;
+		runner_sys_prio = 255;
+		runner_min_ports = 0;
+		_json_delete_object_on_string_match (json, "runner", "agg_select_policy", NULL,
+		                                     NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_DEFAULT);
+	} else if (nm_streq (runner, NM_SETTING_TEAM_RUNNER_LOADBALANCE))
+		runner_tx_balancer_interval = 50;
+
+	_json_delete_object_on_int_match (json, "notify_peers", "count", NULL, notify_peers_count);
+	_json_delete_object_on_int_match (json, "notify_peers", "interval", NULL, notify_peers_interval);
+	_json_delete_object_on_int_match (json, "mcast_rejoin", "count", NULL, mcast_rejoin_count);
+	_json_delete_object_on_int_match (json, "macst_rejoin", "interval", NULL, mcast_rejoin_interval);
+	_json_delete_object_on_int_match (json, "runner", "tx_balancer", "balancing_interval",
+	                                  runner_tx_balancer_interval);
+	_json_delete_object_on_int_match (json, "runner", "sys_prio", NULL, runner_sys_prio);
+	_json_delete_object_on_int_match (json, "runner", "min_ports", NULL, runner_min_ports);
+	_json_delete_object_on_bool_match (json, "runner", "active", NULL, runner_active);
+	_json_delete_object_on_bool_match (json, "runner", "active", NULL, runner_active);
+	_json_delete_object_on_bool_match (json, "runner", "fast_rate", NULL, runner_fast_rate);
+}
 
 static NMTeamLinkWatcher *
 _nm_utils_team_link_watcher_from_json (json_t *json_element)
@@ -4638,7 +4796,7 @@ _nm_utils_team_config_equal (const char *conf1,
 	 * on the configuration type.
 	 */
 	for (i = 0, json = json1; i < 2; i++, json = json2)
-		_json_team_add_defaults (json, port_config);
+		_json_team_add_defaults (json, port_config, FALSE);
 
 	/* Only consider a given subset of nodes, others can change depending on
 	 * current state */
@@ -4695,7 +4853,7 @@ _nm_utils_team_config_get (const char *conf,
 	 * fine to show the default value only if explicitly set.
 	 */
 	if (!port_config)
-		_json_team_add_defaults (json, port_config);
+		_json_team_add_defaults (json, port_config, TRUE);
 
 	/* Now search the property to retrieve */
 	json_element = json_object_get (json, key);
@@ -4882,6 +5040,8 @@ _nm_utils_team_config_set (char **conf,
 
 done:
 	if (updated) {
+		_json_team_normalize_defaults (json, (   nm_streq0 (key, "runner")
+		                                      && nm_streq0 (key2, "name")));
 		g_free (*conf);
 		*conf = json_dumps (json, JSON_PRESERVE_ORDER);
 		/* Don't save an empty config */
