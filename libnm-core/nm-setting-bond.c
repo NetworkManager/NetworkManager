@@ -54,6 +54,7 @@ enum {
 
 typedef struct {
 	GHashTable *options;
+	NMUtilsNamedValue *options_idx_cache;
 } NMSettingBondPrivate;
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingBond, nm_setting_bond, NM_TYPE_SETTING,
@@ -159,7 +160,6 @@ nm_setting_bond_get_option (NMSettingBond *setting,
 {
 	NMSettingBondPrivate *priv;
 	guint i, len;
-	gs_free NMUtilsNamedValue *options = NULL;
 	GHashTableIter iter;
 	const char *key, *value;
 
@@ -171,21 +171,26 @@ nm_setting_bond_get_option (NMSettingBond *setting,
 	if (idx >= len)
 		return FALSE;
 
-	i = 0;
-	options = g_new (NMUtilsNamedValue, len);
-	g_hash_table_iter_init (&iter, priv->options);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
-		options[i].name = key;
-		options[i].value_str = value;
-		i++;
+	if (!G_UNLIKELY (priv->options_idx_cache)) {
+		NMUtilsNamedValue *options;
+
+		i = 0;
+		options = g_new (NMUtilsNamedValue, len);
+		g_hash_table_iter_init (&iter, priv->options);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
+			options[i].name = key;
+			options[i].value_str = value;
+			i++;
+		}
+		nm_assert (i == len);
+
+		g_qsort_with_data (options, len, sizeof (options[0]),
+		                   nm_utils_named_entry_cmp_with_data, NULL);
+		priv->options_idx_cache = options;
 	}
-	nm_assert (i == len);
 
-	g_qsort_with_data (options, len, sizeof (options[0]),
-	                   nm_utils_named_entry_cmp_with_data, NULL);
-
-	NM_SET_OUT (out_name, options[idx].name);
-	NM_SET_OUT (out_value, options[idx].value_str);
+	NM_SET_OUT (out_name, priv->options_idx_cache[idx].name);
+	NM_SET_OUT (out_value, priv->options_idx_cache[idx].value_str);
 	return TRUE;
 }
 
@@ -365,6 +370,7 @@ nm_setting_bond_add_option (NMSettingBond *setting,
 
 	priv = NM_SETTING_BOND_GET_PRIVATE (setting);
 
+	nm_clear_g_free (&priv->options_idx_cache);
 	g_hash_table_insert (priv->options, g_strdup (name), g_strdup (value));
 
 	if (   !strcmp (name, NM_SETTING_BOND_OPTION_MIIMON)
@@ -398,6 +404,7 @@ gboolean
 nm_setting_bond_remove_option (NMSettingBond *setting,
                                const char *name)
 {
+	NMSettingBondPrivate *priv;
 	gboolean found;
 
 	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), FALSE);
@@ -405,7 +412,10 @@ nm_setting_bond_remove_option (NMSettingBond *setting,
 	if (!nm_setting_bond_validate_option (name, NULL))
 		return FALSE;
 
-	found = g_hash_table_remove (NM_SETTING_BOND_GET_PRIVATE (setting)->options, name);
+	priv = NM_SETTING_BOND_GET_PRIVATE (setting);
+
+	nm_clear_g_free (&priv->options_idx_cache);
+	found = g_hash_table_remove (priv->options, name);
 	if (found)
 		g_object_notify (G_OBJECT (setting), NM_SETTING_BOND_OPTIONS);
 	return found;
@@ -920,6 +930,7 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_OPTIONS:
+		nm_clear_g_free (&priv->options_idx_cache);
 		g_hash_table_unref (priv->options);
 		priv->options = _nm_utils_copy_strdict (g_value_get_boxed (value));
 		break;
@@ -960,6 +971,7 @@ finalize (GObject *object)
 {
 	NMSettingBondPrivate *priv = NM_SETTING_BOND_GET_PRIVATE (object);
 
+	nm_clear_g_free (&priv->options_idx_cache);
 	g_hash_table_destroy (priv->options);
 
 	G_OBJECT_CLASS (nm_setting_bond_parent_class)->finalize (object);
