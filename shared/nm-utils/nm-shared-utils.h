@@ -407,6 +407,26 @@ char *nm_utils_str_utf8safe_escape_take (char *str, NMUtilsStrUtf8SafeFlags flag
 
 /*****************************************************************************/
 
+typedef struct {
+	const char *name;
+} NMUtilsNamedEntry;
+
+typedef struct {
+	union {
+		NMUtilsNamedEntry named_entry;
+		const char *name;
+	};
+	union {
+		const char *value_str;
+		gconstpointer value_ptr;
+	};
+} NMUtilsNamedValue;
+
+#define nm_utils_named_entry_cmp           nm_strcmp_p
+#define nm_utils_named_entry_cmp_with_data nm_strcmp_p_with_data
+
+/*****************************************************************************/
+
 #define NM_UTILS_NS_PER_SECOND  ((gint64) 1000000000)
 #define NM_UTILS_NS_PER_MSEC    ((gint64) 1000000)
 #define NM_UTILS_NS_TO_MSEC_CEIL(nsec)      (((nsec) + (NM_UTILS_NS_PER_MSEC - 1)) / NM_UTILS_NS_PER_MSEC)
