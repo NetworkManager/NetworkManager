@@ -8058,6 +8058,10 @@ test_write_bond_main (void)
 	s_bond = (NMSettingBond *) nm_setting_bond_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_bond));
 
+	nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_DOWNDELAY, "5");
+	nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_UPDELAY, "10");
+	nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_MIIMON, "100");
+
 	/* IP4 setting */
 	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
