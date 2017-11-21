@@ -158,26 +158,34 @@ nm_setting_bond_get_option (NMSettingBond *setting,
                             const char **out_value)
 {
 	NMSettingBondPrivate *priv;
-	GList *keys;
-	const char *_key = NULL, *_value = NULL;
+	guint i, len;
+	gs_free NMUtilsNamedValue *options = NULL;
+	GHashTableIter iter;
+	const char *key, *value;
 
 	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), FALSE);
 
 	priv = NM_SETTING_BOND_GET_PRIVATE (setting);
 
-	if (idx >= nm_setting_bond_get_num_options (setting))
+	len = g_hash_table_size (priv->options);
+	if (idx >= len)
 		return FALSE;
 
-	keys = g_hash_table_get_keys (priv->options);
-	_key = g_list_nth_data (keys, idx);
-	_value = g_hash_table_lookup (priv->options, _key);
+	i = 0;
+	options = g_new (NMUtilsNamedValue, len);
+	g_hash_table_iter_init (&iter, priv->options);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
+		options[i].name = key;
+		options[i].value_str = value;
+		i++;
+	}
+	nm_assert (i == len);
 
-	if (out_name)
-		*out_name = _key;
-	if (out_value)
-		*out_value = _value;
+	g_qsort_with_data (options, len, sizeof (options[0]),
+	                   nm_utils_named_entry_cmp_with_data, NULL);
 
-	g_list_free (keys);
+	NM_SET_OUT (out_name, options[idx].name);
+	NM_SET_OUT (out_value, options[idx].value_str);
 	return TRUE;
 }
 
