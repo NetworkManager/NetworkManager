@@ -1309,25 +1309,26 @@ write_bond_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired,
 	svUnsetValue (ifcfg, "BONDING_OPTS");
 
 	num_opts = nm_setting_bond_get_num_options (s_bond);
-	if (num_opts > 0) {
-		GString *str = g_string_sized_new (64);
+	if (num_opts) {
+		nm_auto_free_gstring GString *str = NULL;
+		gs_free const char **options = NULL;
+		const char *value;
 
-		for (i = 0; i < nm_setting_bond_get_num_options (s_bond); i++) {
-			const char *key, *value;
+		str = g_string_sized_new (64);
+		options = g_new (const char *, num_opts);
+		for (i = 0; i < num_opts; i++)
+			nm_setting_bond_get_option (s_bond, i, &options[i], &value);
+		g_qsort_with_data (options, num_opts, sizeof (const char *),
+		                   nm_strcmp_p_with_data, NULL);
 
-			if (!nm_setting_bond_get_option (s_bond, i, &key, &value))
-				continue;
-
+		for (i = 0; i < num_opts; i++) {
 			if (str->len)
 				g_string_append_c (str, ' ');
-
-			g_string_append_printf (str, "%s=%s", key, value);
+			value = nm_setting_bond_get_option_by_name (s_bond, options[i]);
+			g_string_append_printf (str, "%s=%s", options[i], value);
 		}
 
-		if (str->len)
-			svSetValueStr (ifcfg, "BONDING_OPTS", str->str);
-
-		g_string_free (str, TRUE);
+		svSetValueStr (ifcfg, "BONDING_OPTS", str->str);
 	}
 
 	svSetValueStr (ifcfg, "TYPE", TYPE_BOND);
