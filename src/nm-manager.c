@@ -511,26 +511,16 @@ _get_activatable_connections_filter (NMSettings *settings,
 	return !active_connection_find_first (user_data, connection, NULL, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING);
 }
 
-/* Filter out connections that are already active.
- * nm_settings_get_connections_sorted() returns sorted list. We need to preserve the
- * order so that we didn't change auto-activation order (recent timestamps
- * are first).
- * Caller is responsible for freeing the returned list with g_slist_free().
- */
 NMSettingsConnection **
 nm_manager_get_activatable_connections (NMManager *manager, guint *out_len, gboolean sort)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	NMSettingsConnection **connections;
-	guint len;
 
-	connections = nm_settings_get_connections_clone (priv->settings, &len,
-	                                                 _get_activatable_connections_filter,
-	                                                 manager);
-	if (sort && len > 1)
-		g_qsort_with_data (connections, len, sizeof (connections[0]), nm_settings_connection_cmp_autoconnect_priority_p_with_data, NULL);
-	NM_SET_OUT (out_len, len);
-	return connections;
+	return nm_settings_get_connections_clone (priv->settings, out_len,
+	                                          _get_activatable_connections_filter,
+	                                          manager,
+	                                          sort ? nm_settings_connection_cmp_autoconnect_priority_p_with_data : NULL,
+	                                          NULL);
 }
 
 static NMActiveConnection *
@@ -1392,7 +1382,9 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	}
 
 	/* Create backing resources if the device has any autoconnect connections */
-	connections = nm_settings_get_connections_sorted (priv->settings, NULL);
+	connections = nm_settings_get_connections_clone (priv->settings, NULL,
+	                                                 NULL, NULL,
+	                                                 nm_settings_connection_cmp_autoconnect_priority_p_with_data, NULL);
 	for (i = 0; connections[i]; i++) {
 		NMConnection *candidate = NM_CONNECTION (connections[i]);
 		NMSettingConnection *s_con;
@@ -1436,7 +1428,9 @@ retry_connections_for_parent_device (NMManager *self, NMDevice *device)
 
 	g_return_if_fail (device);
 
-	connections = nm_settings_get_connections_sorted (priv->settings, NULL);
+	connections = nm_settings_get_connections_clone (priv->settings, NULL,
+	                                                 NULL, NULL,
+	                                                 nm_settings_connection_cmp_autoconnect_priority_p_with_data, NULL);
 	for (i = 0; connections[i]; i++) {
 		NMConnection *candidate = NM_CONNECTION (connections[i]);
 		gs_free_error GError *error = NULL;
@@ -3022,7 +3016,9 @@ find_slaves (NMManager *manager,
 	 * even if a slave was already active, it might be deactivated during
 	 * master reactivation.
 	 */
-	all_connections = nm_settings_get_connections_sorted (priv->settings, &n_all_connections);
+	all_connections = nm_settings_get_connections_clone (priv->settings, &n_all_connections,
+	                                                     NULL, NULL,
+	                                                     nm_settings_connection_cmp_autoconnect_priority_p_with_data, NULL);
 	for (i = 0; i < n_all_connections; i++) {
 		NMSettingsConnection *master_connection = NULL;
 		NMDevice *master_device = NULL, *slave_device;
@@ -4167,7 +4163,9 @@ impl_manager_add_and_activate_connection (NMManager *self,
 		gs_free NMSettingsConnection **connections = NULL;
 		guint i, len;
 
-		connections = nm_settings_get_connections_sorted (priv->settings, &len);
+		connections = nm_settings_get_connections_clone (priv->settings, &len,
+		                                                 NULL, NULL,
+		                                                 nm_settings_connection_cmp_autoconnect_priority_p_with_data, NULL);
 		all_connections = NULL;
 		for (i = len; i > 0; ) {
 			i--;
@@ -5226,7 +5224,9 @@ nm_manager_start (NMManager *self, GError **error)
 	 * connection-added signals thus devices have to be created manually.
 	 */
 	_LOGD (LOGD_CORE, "creating virtual devices...");
-	connections = nm_settings_get_connections_sorted (priv->settings, NULL);
+	connections = nm_settings_get_connections_clone (priv->settings, NULL,
+	                                                 NULL, NULL,
+	                                                 nm_settings_connection_cmp_autoconnect_priority_p_with_data, NULL);
 	for (i = 0; connections[i]; i++)
 		connection_changed (self, NM_CONNECTION (connections[i]));
 
