@@ -4750,7 +4750,7 @@ make_bridge_setting (shvarFile *ifcfg,
 
 	s_bridge = NM_SETTING_BRIDGE (nm_setting_bridge_new ());
 
-	value = svGetValueStr_cp (ifcfg, "MACADDR");
+	value = svGetValueStr_cp (ifcfg, "BRIDGE_MACADDR");
 	if (value) {
 		value = g_strstrip (value);
 		g_object_set (s_bridge, NM_SETTING_BRIDGE_MAC_ADDRESS, value, NULL);

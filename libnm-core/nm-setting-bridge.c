@@ -443,10 +443,10 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 * ---end---
 	 * ---ifcfg-rh---
 	 * property: mac-address
-	 * variable: MACADDR(+)
+	 * variable: BRIDGE_MACADDR(+)
 	 * description: MAC address of the bridge. Note that this requires a recent
 	 *   kernel support, originally introduced in 3.15 upstream kernel)
-	 *   MACADDR for bridges is an NM extension.
+	 *   BRIDGE_MACADDR for bridges is an NM extension.
 	 * ---end---
 	 */
 	g_object_class_install_property
