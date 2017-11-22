@@ -1743,7 +1743,7 @@ device_state_changed (NMDevice *device,
 			} else if (tries != 0) {
 				if (tries > 0) {
 					_LOGD (LOGD_DEVICE, "connection '%s' failed to autoconnect; %d tries left",
-					       nm_settings_connection_get_id (connection), tries);
+					       nm_settings_connection_get_id (connection), tries - 1);
 					_connection_autoconnect_retries_set (self, connection, tries - 1);
 				} else {
 					_LOGD (LOGD_DEVICE, "connection '%s' failed to autoconnect; infinite tries left",
