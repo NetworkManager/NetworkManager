@@ -100,10 +100,9 @@ NMSettingsConnection *const* nm_settings_get_connections (NMSettings *settings, 
 NMSettingsConnection **nm_settings_get_connections_clone (NMSettings *self,
                                                           guint *out_len,
                                                           NMSettingsConnectionFilterFunc func,
-                                                          gpointer func_data);
-
-NMSettingsConnection **nm_settings_get_connections_sorted (NMSettings *self,
-                                                           guint *out_len);
+                                                          gpointer func_data,
+                                                          GCompareDataFunc sort_compare_func,
+                                                          gpointer sort_data);
 
 NMSettingsConnection *nm_settings_add_connection (NMSettings *settings,
                                                   NMConnection *connection,

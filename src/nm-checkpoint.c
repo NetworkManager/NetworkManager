@@ -335,7 +335,9 @@ next_dev:
 		guint i;
 
 		g_return_val_if_fail (priv->connection_uuids, NULL);
-		list = nm_settings_get_connections_sorted (nm_settings_get (), NULL);
+		list = nm_settings_get_connections_clone (nm_settings_get (), NULL,
+		                                          NULL, NULL,
+		                                          nm_settings_connection_cmp_autoconnect_priority_p_with_data, NULL);
 
 		for (i = 0; list[i]; i++) {
 			con = list[i];

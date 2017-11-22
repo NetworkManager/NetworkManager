@@ -431,6 +431,9 @@ nm_settings_get_connections (NMSettings *self, guint *out_len)
  * @out_len: (allow-none): optional output argument
  * @func: caller-supplied function for filtering connections
  * @func_data: caller-supplied data passed to @func
+ * @sort_compare_func: (allow-none): optional function pointer for
+ *   sorting the returned list.
+ * @sort_data: user data for @sort_compare_func.
  *
  * Returns: (transfer container) (element-type NMSettingsConnection):
  *   an NULL terminated array of #NMSettingsConnection objects that were
@@ -443,7 +446,9 @@ NMSettingsConnection **
 nm_settings_get_connections_clone (NMSettings *self,
                                    guint *out_len,
                                    NMSettingsConnectionFilterFunc func,
-                                   gpointer func_data)
+                                   gpointer func_data,
+                                   GCompareDataFunc sort_compare_func,
+                                   gpointer sort_data)
 {
 	NMSettingsConnection *const*list_cached;
 	NMSettingsConnection **list;
@@ -471,29 +476,13 @@ nm_settings_get_connections_clone (NMSettings *self,
 	} else
 		memcpy (list, list_cached, sizeof (list[0]) * ((gsize) len + 1));
 
+	if (   len > 1
+	    && sort_compare_func) {
+		g_qsort_with_data (list, len, sizeof (NMSettingsConnection *),
+		                   sort_compare_func, sort_data);
+	}
 	NM_SET_OUT (out_len, len);
 	return list;
-}
-
-/* Returns a list of NMSettingsConnections.
- * The list is sorted in the order suitable for auto-connecting, i.e.
- * first go connections with autoconnect=yes and most recent timestamp.
- * Caller must free the list with g_free(), but not the list items.
- */
-NMSettingsConnection **
-nm_settings_get_connections_sorted (NMSettings *self, guint *out_len)
-{
-	NMSettingsConnection **connections;
-	guint len;
-
-	g_return_val_if_fail (NM_IS_SETTINGS (self), NULL);
-
-	connections = nm_settings_get_connections_clone (self, &len, NULL, NULL);
-	if (len > 1)
-		g_qsort_with_data (connections, len, sizeof (NMSettingsConnection *), nm_settings_connection_cmp_autoconnect_priority_p_with_data, NULL);
-
-	NM_SET_OUT (out_len, len);
-	return connections;
 }
 
 NMSettingsConnection *
