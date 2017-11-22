@@ -8394,7 +8394,9 @@ share_init (NMDevice *self, GError **error)
 	char **iter;
 	int errsv;
 
-	if (!nm_platform_sysctl_set (nm_device_get_platform (self), NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv4/ip_forward"), "1")) {
+	if (nm_platform_sysctl_get_int32 (nm_device_get_platform (self), NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv4/ip_forward"), -1) == 1) {
+		/* nothing to do. */
+	} else if (!nm_platform_sysctl_set (nm_device_get_platform (self), NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv4/ip_forward"), "1")) {
 		errsv = errno;
 		_LOGD (LOGD_SHARING, "share: error enabling IPv4 forwarding: (%d) %s",
 		       errsv, g_strerror (errsv));
@@ -8403,7 +8405,9 @@ share_init (NMDevice *self, GError **error)
 		return FALSE;
 	}
 
-	if (!nm_platform_sysctl_set (nm_device_get_platform (self), NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv4/ip_dynaddr"), "1")) {
+	if (nm_platform_sysctl_get_int32 (nm_device_get_platform (self), NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv4/ip_dynaddr"), -1) == 1) {
+		/* nothing to do. */
+	} else if (!nm_platform_sysctl_set (nm_device_get_platform (self), NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv4/ip_dynaddr"), "1")) {
 		errsv = errno;
 		_LOGD (LOGD_SHARING, "share: error enabling dynamic addresses: (%d) %s",
 		       errsv, strerror (errsv));
