@@ -25,6 +25,7 @@
 #include "nm-setting-8021x.h"
 #include "nm-setting-bond.h"
 #include "nm-setting-dcb.h"
+#include "nm-setting-team.h"
 #include "nm-connection.h"
 #include "nm-simple-connection.h"
 #include "nm-setting-connection.h"
@@ -864,6 +865,265 @@ test_dcb_bandwidth_sums (void)
 
 /*****************************************************************************/
 
+static void
+_test_team_config_sync (const char *team_config,
+                        int notify_peer_count,
+                        int notify_peers_interval,
+                        int mcast_rejoin_count,
+                        int mcast_rejoin_interval,
+                        char *runner,
+                        char *runner_hwaddr_policy,      /* activebackup */
+                        GPtrArray *runner_tx_hash,       /* lacp, loadbalance */
+                        char *runner_tx_balancer,        /* lacp, loadbalance */
+                        int runner_tx_balancer_interval, /* lacp, loadbalance */
+                        gboolean runner_active,          /* lacp */
+                        gboolean runner_fast_rate,       /* lacp */
+                        int runner_sys_prio,             /* lacp */
+                        int runner_min_ports,            /* lacp */
+                        char *runner_agg_select_policy,  /* lacp */
+                        GPtrArray *link_watchers)
+{
+	gs_unref_object NMSettingTeam *s_team = NULL;
+	guint i, j;
+	gboolean found;
+
+	s_team = (NMSettingTeam *) nm_setting_team_new ();
+	g_assert (s_team);
+
+	g_object_set (s_team, NM_SETTING_TEAM_CONFIG, team_config, NULL);
+	g_assert (nm_setting_team_get_notify_peers_count (s_team) == notify_peer_count);
+	g_assert (nm_setting_team_get_notify_peers_interval (s_team) == notify_peers_interval);
+	g_assert (nm_setting_team_get_mcast_rejoin_count (s_team) == mcast_rejoin_count);
+	g_assert (nm_setting_team_get_mcast_rejoin_interval (s_team) == mcast_rejoin_interval);
+	g_assert (nm_setting_team_get_runner_tx_balancer_interval (s_team) == runner_tx_balancer_interval);
+	g_assert (nm_setting_team_get_runner_active (s_team) == runner_active);
+	g_assert (nm_setting_team_get_runner_fast_rate (s_team) == runner_fast_rate);
+	g_assert (nm_setting_team_get_runner_sys_prio (s_team) == runner_sys_prio);
+	g_assert (nm_setting_team_get_runner_min_ports (s_team) == runner_min_ports);
+	g_assert (nm_streq0 (nm_setting_team_get_runner (s_team), runner));
+	g_assert (nm_streq0 (nm_setting_team_get_runner_hwaddr_policy (s_team), runner_hwaddr_policy));
+	g_assert (nm_streq0 (nm_setting_team_get_runner_tx_balancer (s_team), runner_tx_balancer));
+	g_assert (nm_streq0 (nm_setting_team_get_runner_agg_select_policy (s_team), runner_agg_select_policy));
+
+	if (runner_tx_hash) {
+		g_assert (runner_tx_hash->len == nm_setting_team_get_num_runner_tx_hash (s_team));
+		for (i = 0; i < runner_tx_hash->len; i++) {
+			found = FALSE;
+			for (j = 0; j < nm_setting_team_get_num_runner_tx_hash (s_team); j++) {
+				if (nm_streq0 (nm_setting_team_get_runner_tx_hash (s_team, j),
+				               runner_tx_hash->pdata[i])) {
+					found = TRUE;
+					break;
+				}
+			}
+			g_assert (found);
+		}
+	}
+
+	if (link_watchers) {
+		g_assert (link_watchers->len == nm_setting_team_get_num_link_watchers (s_team));
+		for (i = 0; i < link_watchers->len; i++) {
+			found = FALSE;
+			for (j = 0; j < nm_setting_team_get_num_link_watchers (s_team); j++) {
+				if (nm_team_link_watcher_equal (link_watchers->pdata[i],
+				                                nm_setting_team_get_link_watcher (s_team, j))) {
+					found = TRUE;
+					break;
+				}
+			}
+			g_assert (found);
+		}
+	}
+
+	g_assert (nm_setting_verify ((NMSetting *) s_team, NULL, NULL));
+}
+
+
+static void
+test_runner_roundrobin_sync_from_config (void)
+{
+	_test_team_config_sync ("",
+	                        0, 0, 0, 0,
+	                        NM_SETTING_TEAM_RUNNER_ROUNDROBIN,
+	                        NULL,
+	                        NULL, NULL, -1,
+	                        FALSE, FALSE, -1, -1, NULL,
+	                        NULL);
+}
+
+static void
+test_runner_broadcast_sync_from_config (void)
+{
+	_test_team_config_sync ("{\"runner\": {\"name\": \"broadcast\"}}",
+	                        0, 0, 0, 0,
+	                        NM_SETTING_TEAM_RUNNER_BROADCAST,
+	                        NULL,
+	                        NULL, NULL, -1,
+	                        FALSE, FALSE, -1, -1, NULL,
+	                        NULL);
+}
+
+static void
+test_runner_activebackup_sync_from_config (void)
+{
+	_test_team_config_sync ("{\"runner\": {\"name\": \"activebackup\"}}",
+	                        NM_SETTING_TEAM_NOTIFY_PEERS_COUNT_ACTIVEBACKUP_DEFAULT, 0,
+	                        NM_SETTING_TEAM_NOTIFY_MCAST_COUNT_ACTIVEBACKUP_DEFAULT, 0,
+	                        NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP,
+	                        NM_SETTING_TEAM_RUNNER_HWADDR_POLICY_DEFAULT,
+	                        NULL, NULL, -1,
+	                        FALSE, FALSE, -1, -1, NULL,
+	                        NULL);
+}
+
+static void
+test_runner_loadbalance_sync_from_config (void)
+{
+	gs_unref_ptrarray GPtrArray *tx_hash = NULL;
+
+	tx_hash = g_ptr_array_new_with_free_func ((GDestroyNotify) g_free);
+	g_ptr_array_add (tx_hash, g_strdup ("eth"));
+	g_ptr_array_add (tx_hash, g_strdup ("ipv4"));
+	g_ptr_array_add (tx_hash, g_strdup ("ipv6"));
+
+	_test_team_config_sync ("{\"runner\": {\"name\": \"loadbalance\"}}",
+	                        0, 0, 0, 0,
+	                        NM_SETTING_TEAM_RUNNER_LOADBALANCE,
+	                        NULL,
+	                        tx_hash, NULL, NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT,
+	                        FALSE, FALSE, -1, -1, NULL,
+	                        NULL);
+
+	_test_team_config_sync ("{\"runner\": {\"name\": \"loadbalance\", "
+	                        "\"tx_hash\": [\"eth\", \"ipv4\", \"ipv6\"]}}",
+	                        0, 0, 0, 0,
+	                        NM_SETTING_TEAM_RUNNER_LOADBALANCE,
+	                        NULL,
+	                        tx_hash, NULL, NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT,
+	                        FALSE, FALSE, -1, -1, NULL,
+	                        NULL);
+
+	_test_team_config_sync ("{\"runner\": {\"name\": \"loadbalance\", \"tx_hash\": [\"eth\", \"ipv4\", \"ipv6\"], "
+	                        "\"tx_balancer\": {\"name\": \"basic\", \"balancing_interval\": 30}}}",
+	                        0, 0, 0, 0,
+	                        NM_SETTING_TEAM_RUNNER_LOADBALANCE,
+	                        NULL,
+	                        tx_hash, "basic", 30,
+	                        FALSE, FALSE, -1, -1, NULL,
+	                        NULL);
+}
+
+static void
+test_runner_lacp_sync_from_config (void)
+{
+	gs_unref_ptrarray GPtrArray *tx_hash = NULL;
+
+	tx_hash = g_ptr_array_new_with_free_func ((GDestroyNotify) g_free);
+	g_ptr_array_add (tx_hash, g_strdup ("eth"));
+	g_ptr_array_add (tx_hash, g_strdup ("ipv4"));
+	g_ptr_array_add (tx_hash, g_strdup ("ipv6"));
+
+	_test_team_config_sync ("{\"runner\": {\"name\": \"lacp\", \"tx_hash\": [\"eth\", \"ipv4\", \"ipv6\"]}}",
+	                        0, 0, 0, 0,
+	                        NM_SETTING_TEAM_RUNNER_LACP,
+	                        NULL,
+	                        tx_hash, NULL, NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT,
+	                        TRUE, FALSE, NM_SETTING_TEAM_RUNNER_SYS_PRIO_DEFAULT, 0,
+	                        NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_DEFAULT,
+	                        NULL);
+
+	_test_team_config_sync ("{\"runner\": {\"name\": \"lacp\", \"tx_hash\": [\"eth\", \"ipv4\", \"ipv6\"], "
+	                        "\"active\": false, \"fast_rate\": true, \"sys_prio\": 10, \"min_ports\": 5, "
+	                        "\"agg_select_policy\": \"port_config\"}}",
+	                        0, 0, 0, 0,
+	                        NM_SETTING_TEAM_RUNNER_LACP,
+	                        NULL,
+	                        tx_hash, NULL, NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT,
+	                        FALSE, TRUE, 10, 5, "port_config",
+	                        NULL);
+}
+
+static void
+test_watcher_ethtool_sync_from_config (void)
+{
+	gs_unref_ptrarray GPtrArray *link_watchers = NULL;
+
+	link_watchers = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_team_link_watcher_unref);
+	g_ptr_array_add (link_watchers, nm_team_link_watcher_new_ethtool (0, 0, NULL));
+	_test_team_config_sync ("{\"link_watch\": {\"name\": \"ethtool\"}}",
+	                        0, 0, 0, 0,
+	                        "roundrobin",
+	                        NULL,
+	                        NULL, NULL, -1,
+	                        FALSE, FALSE, -1, -1, NULL,
+	                        link_watchers);
+}
+
+static void
+test_watcher_nsna_ping_sync_from_config (void)
+{
+	gs_unref_ptrarray GPtrArray *link_watchers = NULL;
+
+	link_watchers = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_team_link_watcher_unref);
+	g_ptr_array_add (link_watchers, nm_team_link_watcher_new_nsna_ping (0, 0, 3, "target.host", NULL));
+	_test_team_config_sync ("{\"link_watch\": {\"name\": \"nsna_ping\", \"target_host\": \"target.host\"}}",
+	                        0, 0, 0, 0,
+	                        "roundrobin",
+	                        NULL,
+	                        NULL, NULL, -1,
+	                        FALSE, FALSE, -1, -1, NULL,
+	                        link_watchers);
+}
+
+static void
+test_watcher_arp_ping_sync_from_config (void)
+{
+	gs_unref_ptrarray GPtrArray *link_watchers = NULL;
+
+	link_watchers = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_team_link_watcher_unref);
+	g_ptr_array_add (link_watchers,
+	                 nm_team_link_watcher_new_arp_ping (0, 0, 3, "target.host", "source.host", 0, NULL));
+	_test_team_config_sync ("{\"link_watch\": {\"name\": \"arp_ping\", \"target_host\": \"target.host\", "
+	                        "\"source_host\": \"source.host\"}}",
+	                        0, 0, 0, 0,
+	                        "roundrobin",
+	                        NULL,
+	                        NULL, NULL, -1,
+	                        FALSE, FALSE, -1, -1, NULL,
+	                        link_watchers);
+}
+
+static void
+test_multiple_watchers_sync_from_config (void)
+{
+	gs_unref_ptrarray GPtrArray *link_watchers = NULL;
+
+	link_watchers = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_team_link_watcher_unref);
+	g_ptr_array_add (link_watchers, nm_team_link_watcher_new_ethtool (2, 4, NULL));
+	g_ptr_array_add (link_watchers, nm_team_link_watcher_new_nsna_ping (3, 6, 9, "target.host", NULL));
+	g_ptr_array_add (link_watchers,
+	                 nm_team_link_watcher_new_arp_ping (5, 10, 15, "target.host", "source.host",
+	                                                      NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE
+	                                                    | NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE
+	                                                    | NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS,
+	                                                    NULL));
+	_test_team_config_sync ("{\"link_watch\": ["
+	                        "{\"name\": \"ethtool\", \"delay_up\": 2, \"delay_down\": 4}, "
+	                        "{\"name\": \"arp_ping\", \"init_wait\": 5, \"interval\": 10, \"missed_max\": 15, "
+	                        "\"target_host\": \"target.host\", \"source_host\": \"source.host\", "
+	                        "\"validate_active\": true, \"validate_inactive\": true, \"send_always\": true}, "
+	                        "{\"name\": \"nsna_ping\", \"init_wait\": 3, \"interval\": 6, \"missed_max\": 9, "
+	                        "\"target_host\": \"target.host\"}]}",
+	                        0, 0, 0, 0,
+	                        "roundrobin",
+	                        NULL,
+	                        NULL, NULL, -1,
+	                        FALSE, FALSE, -1, -1, NULL,
+	                        link_watchers);
+}
+
+/*****************************************************************************/
+
 
 NMTST_DEFINE ();
 
@@ -894,6 +1154,27 @@ main (int argc, char **argv)
 	g_test_add_func ("/libnm/settings/dcb/app-priorities", test_dcb_app_priorities);
 	g_test_add_func ("/libnm/settings/dcb/priorities", test_dcb_priorities_valid);
 	g_test_add_func ("/libnm/settings/dcb/bandwidth-sums", test_dcb_bandwidth_sums);
+
+#if WITH_JSON_VALIDATION
+	g_test_add_func ("/libnm/settings/team/sync_runner_from_config_roundrobin",
+	                 test_runner_roundrobin_sync_from_config);
+	g_test_add_func ("/libnm/settings/team/sync_runner_from_config_broadcast",
+	                 test_runner_broadcast_sync_from_config);
+	g_test_add_func ("/libnm/settings/team/sync_runner_from_config_activebackup",
+	                 test_runner_activebackup_sync_from_config);
+	g_test_add_func ("/libnm/settings/team/sync_runner_from_config_loadbalance",
+	                 test_runner_loadbalance_sync_from_config);
+	g_test_add_func ("/libnm/settings/team/sync_runner_from_config_lacp",
+	                 test_runner_lacp_sync_from_config);
+	g_test_add_func ("/libnm/settings/team/sync_watcher_from_config_ethtool",
+	                 test_watcher_ethtool_sync_from_config);
+	g_test_add_func ("/libnm/settings/team/sync_watcher_from_config_nsna_ping",
+	                 test_watcher_nsna_ping_sync_from_config);
+	g_test_add_func ("/libnm/settings/team/sync_watcher_from_config_arp_ping",
+	                 test_watcher_arp_ping_sync_from_config);
+	g_test_add_func ("/libnm/settings/team/sync_watcher_from_config_all",
+	                 test_multiple_watchers_sync_from_config);
+#endif
 
 	return g_test_run ();
 }
