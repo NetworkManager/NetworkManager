@@ -2550,7 +2550,7 @@ nm_settings_connection_autoconnect_retries_get (NMSettingsConnection *self)
 		if (retries == 0)
 			retries = AUTOCONNECT_RETRIES_FOREVER;
 
-		_LOGT ("autoconnect-retries: init %d", retries);
+		_LOGT ("autoconnect: retries init %d", retries);
 		priv->autoconnect_retries = retries;
 	}
 
@@ -2569,7 +2569,7 @@ nm_settings_connection_autoconnect_retries_set (NMSettingsConnection *self,
 	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
 	if (priv->autoconnect_retries != retries) {
-		_LOGT ("autoconnect-retries: set %d", retries);
+		_LOGT ("autoconnect: retries set %d", retries);
 		priv->autoconnect_retries = retries;
 	}
 	if (retries)
@@ -2605,12 +2605,19 @@ void
 nm_settings_connection_autoconnect_blocked_reason_set (NMSettingsConnection *self,
                                                        NMSettingsAutoconnectBlockedReason reason)
 {
-	g_return_if_fail (NM_IN_SET (reason,
-	                             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE,
-	                             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST,
-	                             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
-	                             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS));
-	NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->autoconnect_blocked_reason = reason;
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+
+	nm_assert (NM_IN_SET (reason,
+	                      NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE,
+	                      NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST,
+	                      NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
+	                      NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS));
+
+	if (priv->autoconnect_blocked_reason == reason)
+		return;
+
+	_LOGT ("autoconnect: blocked reason: %d", (int) reason);
+	priv->autoconnect_blocked_reason = reason;
 }
 
 /*****************************************************************************/
