@@ -1530,6 +1530,29 @@ reset_connections_retries (gpointer user_data)
 }
 
 static void
+_connection_autoconnect_retries_set (NMPolicy *self,
+                                     NMSettingsConnection *connection,
+                                     int tries)
+{
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+
+	nm_assert (NM_IS_SETTINGS_CONNECTION (connection));
+	nm_assert (tries >= 0);
+
+	nm_settings_connection_autoconnect_retries_set (connection, tries);
+
+	if (tries == 0) {
+		/* Schedule a handler to reset retries count */
+		if (!priv->reset_retries_id) {
+			gint32 retry_time = nm_settings_connection_autoconnect_retries_blocked_until (connection);
+
+			g_warn_if_fail (retry_time != 0);
+			priv->reset_retries_id = g_timeout_add_seconds (MAX (0, retry_time - nm_utils_get_monotonic_timestamp_s ()), reset_connections_retries, self);
+		}
+	}
+}
+
+static void
 activate_slave_connections (NMPolicy *self, NMDevice *device)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
@@ -1723,24 +1746,13 @@ device_state_changed (NMDevice *device,
 				if (tries > 0) {
 					_LOGD (LOGD_DEVICE, "connection '%s' failed to autoconnect; %d tries left",
 					       nm_settings_connection_get_id (connection), tries);
-					nm_settings_connection_autoconnect_retries_set (connection, --tries);
+					_connection_autoconnect_retries_set (self, connection, tries - 1);
 				} else {
 					_LOGD (LOGD_DEVICE, "connection '%s' failed to autoconnect; infinite tries left",
 					       nm_settings_connection_get_id (connection));
 				}
 			}
 
-			if (nm_settings_connection_autoconnect_retries_get (connection) == 0) {
-				_LOGI (LOGD_DEVICE, "disabling autoconnect for connection '%s'.",
-				       nm_settings_connection_get_id (connection));
-				/* Schedule a handler to reset retries count */
-				if (!priv->reset_retries_id) {
-					gint32 retry_time = nm_settings_connection_autoconnect_retries_blocked_until (connection);
-
-					g_warn_if_fail (retry_time != 0);
-					priv->reset_retries_id = g_timeout_add_seconds (MAX (0, retry_time - nm_utils_get_monotonic_timestamp_s ()), reset_connections_retries, self);
-				}
-			}
 			nm_connection_clear_secrets (NM_CONNECTION (connection));
 		}
 		break;
