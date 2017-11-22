@@ -1579,15 +1579,13 @@ activate_slave_connections (NMPolicy *self, NMDevice *device)
 		    || nm_streq0 (slave_master, master_uuid_applied)
 		    || nm_streq0 (slave_master, master_uuid_settings)) {
 			NMSettingsConnection *settings = NM_SETTINGS_CONNECTION (slave);
-			NMSettingsAutoconnectBlockedReason reason;
 
 			if (!internal_activation)
 				nm_settings_connection_autoconnect_retries_reset (settings);
 
-			reason = nm_settings_connection_autoconnect_blocked_reason_get (settings);
-			if (reason == NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED) {
-				reason = NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE;
-				nm_settings_connection_autoconnect_blocked_reason_set (settings, reason);
+			if (nm_settings_connection_autoconnect_blocked_reason_get (settings) == NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED) {
+				nm_settings_connection_autoconnect_blocked_reason_set (settings,
+				                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE);
 			}
 		}
 	}
