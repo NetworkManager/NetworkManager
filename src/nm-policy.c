@@ -1191,7 +1191,7 @@ auto_activate_device (NMPolicy *self,
 	gs_free char *specific_object = NULL;
 	gs_free NMSettingsConnection **connections = NULL;
 	guint i, len;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 	NMAuthSubject *subject;
 	NMActiveConnection *ac;
 
@@ -1256,11 +1256,9 @@ auto_activate_device (NMPolicy *self,
 	                                     NM_ACTIVATION_TYPE_MANAGED,
 	                                     &error);
 	if (!ac) {
-		_LOGI (LOGD_DEVICE, "connection '%s' auto-activation failed: (%d) %s",
+		_LOGI (LOGD_DEVICE, "connection '%s' auto-activation failed: %s",
 		       nm_settings_connection_get_id (best_connection),
-		       error->code,
 		       error->message);
-		g_error_free (error);
 		nm_settings_connection_autoconnect_blocked_reason_set (best_connection,
 		                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED);
 		schedule_activate_check (self, device);
