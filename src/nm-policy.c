@@ -1463,8 +1463,10 @@ sleeping_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 	g_object_get (G_OBJECT (manager), NM_MANAGER_NETWORKING_ENABLED, &enabled, NULL);
 
 	/* Reset retries on all connections so they'll checked on wakeup */
-	if (sleeping || !enabled)
+	if (sleeping || !enabled) {
 		reset_autoconnect_all (self, NULL);
+		schedule_activate_all (self);
+	}
 }
 
 static void
