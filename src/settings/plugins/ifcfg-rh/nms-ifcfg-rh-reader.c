@@ -4805,6 +4805,8 @@ bridge_connection_from_ifcfg (const char *file,
 	NMConnection *connection = NULL;
 	NMSetting *con_setting = NULL;
 	NMSetting *bridge_setting = NULL;
+	NMSetting *wired_setting = NULL;
+	NMSetting8021x *s_8021x = NULL;
 
 	g_return_val_if_fail (file != NULL, NULL);
 	g_return_val_if_fail (ifcfg != NULL, NULL);
@@ -4826,6 +4828,16 @@ bridge_connection_from_ifcfg (const char *file,
 		return NULL;
 	}
 	nm_connection_add_setting (connection, bridge_setting);
+
+	wired_setting = make_wired_setting (ifcfg, file, &s_8021x, error);
+	if (!wired_setting) {
+		g_object_unref (connection);
+		return NULL;
+	}
+	nm_connection_add_setting (connection, wired_setting);
+
+	if (s_8021x)
+		nm_connection_add_setting (connection, NM_SETTING (s_8021x));
 
 	return connection;
 }
