@@ -2574,8 +2574,13 @@ nm_settings_connection_autoconnect_retries_set (NMSettingsConnection *self,
 	}
 	if (retries)
 		priv->autoconnect_blocked_until = 0;
-	else
+	else {
+		/* XXX: the blocked time must be identical for all connections, otherwise
+		 * the tracking of resetting the retry count in NMPolicy needs adjustment
+		 * (as it would need to re-evaluate the next-timeout everytime a
+		 * connection gets blocked). */
 		priv->autoconnect_blocked_until = nm_utils_get_monotonic_timestamp_s () + AUTOCONNECT_RESET_RETRIES_TIMER;
+	}
 }
 
 void
