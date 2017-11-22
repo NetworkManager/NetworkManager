@@ -65,7 +65,7 @@ typedef struct {
 	NMManager *manager;
 	NMNetns *netns;
 	NMFirewallManager *firewall_manager;
-	GSList *pending_activation_checks;
+	CList pending_activation_checks;
 
 	GHashTable *devices;
 	GHashTable *pending_active_connections;
@@ -1132,6 +1132,7 @@ check_activating_devices (NMPolicy *self)
 }
 
 typedef struct {
+	CList pending_lst;
 	NMPolicy *policy;
 	NMDevice *device;
 	guint autoactivate_id;
@@ -1140,14 +1141,10 @@ typedef struct {
 static void
 activate_data_free (ActivateData *data)
 {
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (data->policy);
-
 	nm_device_remove_pending_action (data->device, NM_PENDING_ACTION_AUTOACTIVATE, TRUE);
-	priv->pending_activation_checks = g_slist_remove (priv->pending_activation_checks, data);
-
+	c_list_unlink (&data->pending_lst);
 	nm_clear_g_source (&data->autoactivate_id);
 	g_object_unref (data->device);
-
 	g_slice_free (ActivateData, data);
 }
 
@@ -1304,13 +1301,14 @@ auto_activate_device_cb (gpointer user_data)
 }
 
 static ActivateData *
-find_pending_activation (GSList *list, NMDevice *device)
+find_pending_activation (NMPolicy *self, NMDevice *device)
 {
-	GSList *iter;
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+	ActivateData *data;
 
-	for (iter = list; iter; iter = g_slist_next (iter)) {
-		if (((ActivateData *) iter->data)->device == device)
-			return iter->data;
+	c_list_for_each_entry (data, &priv->pending_activation_checks, pending_lst) {
+		if (data->device == device)
+			return data;
 	}
 	return NULL;
 }
@@ -1482,7 +1480,7 @@ schedule_activate_check (NMPolicy *self, NMDevice *device)
 	if (!nm_device_autoconnect_allowed (device))
 		return;
 
-	if (find_pending_activation (priv->pending_activation_checks, device))
+	if (find_pending_activation (self, device))
 		return;
 
 	active_connections = nm_manager_get_active_connections (priv->manager);
@@ -1497,18 +1495,7 @@ schedule_activate_check (NMPolicy *self, NMDevice *device)
 	data->policy = self;
 	data->device = g_object_ref (device);
 	data->autoactivate_id = g_idle_add (auto_activate_device_cb, data);
-	priv->pending_activation_checks = g_slist_append (priv->pending_activation_checks, data);
-}
-
-static void
-clear_pending_activate_check (NMPolicy *self, NMDevice *device)
-{
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	ActivateData *data;
-
-	data = find_pending_activation (priv->pending_activation_checks, device);
-	if (data && data->autoactivate_id)
-		activate_data_free (data);
+	c_list_link_tail (&priv->pending_activation_checks, &data->pending_lst);
 }
 
 static gboolean
@@ -2016,13 +2003,16 @@ device_removed (NMManager *manager, NMDevice *device, gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
 	NMPolicy *self = _PRIV_TO_SELF (priv);
+	ActivateData *data;
 
 	/* XXX is this needed? The delegations are cleaned up
 	 * on transition to deactivated too. */
 	ip6_remove_device_prefix_delegations (self, device);
 
 	/* Clear any idle callbacks for this device */
-	clear_pending_activate_check (self, device);
+	data = find_pending_activation (self, device);
+	if (data && data->autoactivate_id)
+		activate_data_free (data);
 
 	if (g_hash_table_remove (priv->devices, device))
 		devices_list_unregister (self, device);
@@ -2471,6 +2461,8 @@ nm_policy_init (NMPolicy *self)
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	const char *hostname_mode;
 
+	c_list_init (&priv->pending_activation_checks);
+
 	priv->netns = g_object_ref (nm_netns_get ());
 
 	priv->hostname_manager = g_object_ref (nm_hostname_manager_get ());
@@ -2562,6 +2554,7 @@ dispose (GObject *object)
 	const GSList *connections;
 	GHashTableIter h_iter;
 	NMDevice *device;
+	ActivateData *data, *data_safe;
 
 	nm_clear_g_cancellable (&priv->lookup.cancellable);
 	g_clear_object (&priv->lookup.addr);
@@ -2573,8 +2566,8 @@ dispose (GObject *object)
 	nm_clear_g_object (&priv->activating_device6);
 	g_clear_pointer (&priv->pending_active_connections, g_hash_table_unref);
 
-	while (priv->pending_activation_checks)
-		activate_data_free (priv->pending_activation_checks->data);
+	c_list_for_each_entry_safe (data, data_safe, &priv->pending_activation_checks, pending_lst)
+		activate_data_free (data);
 
 	g_slist_free_full (priv->pending_secondaries, (GDestroyNotify) pending_secondary_data_free);
 	priv->pending_secondaries = NULL;
