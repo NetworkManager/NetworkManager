@@ -2530,7 +2530,7 @@ _autoconnect_retries_initial (NMSettingsConnection *self)
 	if (retries == -1) {
 		retries = nm_config_data_get_value_int64 (NM_CONFIG_GET_DATA,
 		                                          NM_CONFIG_KEYFILE_GROUP_MAIN,
-		                                          "autoconnect-retries-default",
+		                                          NM_CONFIG_KEYFILE_KEY_MAIN_AUTOCONNECT_RETRIES_DEFAULT,
 		                                          10, 0, G_MAXINT32,
 		                                          AUTOCONNECT_RETRIES_DEFAULT);
 	}

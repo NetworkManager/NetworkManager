@@ -60,6 +60,7 @@
 #define NM_CONFIG_KEYFILE_GROUP_IFNET                       "ifnet"
 
 #define NM_CONFIG_KEYFILE_KEY_MAIN_AUTH_POLKIT              "auth-polkit"
+#define NM_CONFIG_KEYFILE_KEY_MAIN_AUTOCONNECT_RETRIES_DEFAULT "autoconnect-retries-default"
 #define NM_CONFIG_KEYFILE_KEY_MAIN_DHCP                     "dhcp"
 #define NM_CONFIG_KEYFILE_KEY_MAIN_DEBUG                    "debug"
 #define NM_CONFIG_KEYFILE_KEY_MAIN_HOSTNAME_MODE            "hostname-mode"
