@@ -1401,48 +1401,44 @@ hostname_changed (NMHostnameManager *hostname_manager, GParamSpec *pspec, gpoint
 	update_system_hostname (self, "hostname changed");
 }
 
-static void
-reset_autoconnect_all (NMPolicy *self, NMDevice *device)
+static gboolean
+reset_autoconnect_all (NMPolicy *self,
+                       NMDevice *device, /* if present, only reset connections compatible with @device */
+                       gboolean only_for_failed_secrets)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	NMSettingsConnection *const*connections = NULL;
 	guint i;
+	gboolean changed;
 
-	if (device) {
-		_LOGD (LOGD_DEVICE, "re-enabling autoconnect for all connections on %s",
-		       nm_device_get_iface (device));
-	} else
-		_LOGD (LOGD_DEVICE, "re-enabling autoconnect for all connections");
+	_LOGD (LOGD_DEVICE, "re-enabling autoconnect for all connections%s%s%s",
+	       device ? " on " : "",
+	       device ? nm_device_get_iface (device) : "",
+	       only_for_failed_secrets ? " only for failed secrets" : "");
 
 	connections = nm_settings_get_connections (priv->settings, NULL);
 	for (i = 0; connections[i]; i++) {
 		NMSettingsConnection *connection = connections[i];
 
-		if (!device || nm_device_check_connection_compatible (device, NM_CONNECTION (connection))) {
-			nm_settings_connection_autoconnect_retries_reset (connection);
-			nm_settings_connection_autoconnect_blocked_reason_set (connection, NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE);
+		if (   only_for_failed_secrets
+		    && nm_settings_connection_autoconnect_blocked_reason_get (connection) != NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS)
+			continue;
+
+		if (   device
+		    && !nm_device_check_connection_compatible (device, NM_CONNECTION (connection)))
+			continue;
+
+		if (nm_settings_connection_autoconnect_retries_get (connection) == 0)
+			changed = TRUE;
+		nm_settings_connection_autoconnect_retries_reset (connection);
+
+		if (nm_settings_connection_autoconnect_blocked_reason_get (connection) != NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE) {
+			changed = TRUE;
+			nm_settings_connection_autoconnect_blocked_reason_set (connection,
+			                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE);
 		}
 	}
-}
-
-static void
-reset_autoconnect_for_failed_secrets (NMPolicy *self)
-{
-	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	NMSettingsConnection *const*connections = NULL;
-	guint i;
-
-	_LOGD (LOGD_DEVICE, "re-enabling autoconnect for all connections with failed secrets");
-
-	connections = nm_settings_get_connections (priv->settings, NULL);
-	for (i = 0; connections[i]; i++) {
-		NMSettingsConnection *connection = connections[i];
-
-		if (nm_settings_connection_autoconnect_blocked_reason_get (connection) == NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS) {
-			nm_settings_connection_autoconnect_retries_reset (connection);
-			nm_settings_connection_autoconnect_blocked_reason_set (connection, NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE);
-		}
-	}
+	return changed;
 }
 
 static void
@@ -1457,8 +1453,8 @@ sleeping_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 
 	/* Reset retries on all connections so they'll checked on wakeup */
 	if (sleeping || !enabled) {
-		reset_autoconnect_all (self, NULL);
-		schedule_activate_all (self);
+		if (reset_autoconnect_all (self, NULL, FALSE))
+			schedule_activate_all (self);
 	}
 }
 
@@ -1809,7 +1805,7 @@ device_state_changed (NMDevice *device,
 		 */
 		if (   nm_device_state_reason_check (reason) == NM_DEVICE_STATE_REASON_CARRIER
 		    && old_state == NM_DEVICE_STATE_UNAVAILABLE)
-			reset_autoconnect_all (self, device);
+			reset_autoconnect_all (self, device, FALSE);
 
 		if (old_state > NM_DEVICE_STATE_DISCONNECTED)
 			update_routing_and_dns (self, FALSE);
@@ -2359,8 +2355,8 @@ secret_agent_registered (NMSettings *settings,
 	 * reset retries count here and schedule activation, so that the
 	 * connections failed due to missing secrets may re-try auto-connection.
 	 */
-	reset_autoconnect_for_failed_secrets (self);
-	schedule_activate_all (self);
+	if (reset_autoconnect_all (self, NULL, TRUE))
+		schedule_activate_all (self);
 }
 
 NMDevice *
