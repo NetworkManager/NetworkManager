@@ -1584,30 +1584,24 @@ activate_slave_connections (NMPolicy *self, NMDevice *device)
 
 	connections = nm_settings_get_connections (priv->settings, NULL);
 	for (i = 0; connections[i]; i++) {
-		NMConnection *slave;
+		NMSettingsConnection *connection = connections[i];
 		NMSettingConnection *s_slave_con;
 		const char *slave_master;
 
-		slave = NM_CONNECTION (connections[i]);
-
-		s_slave_con = nm_connection_get_setting_connection (slave);
-		g_assert (s_slave_con);
+		s_slave_con = nm_connection_get_setting_connection (NM_CONNECTION (connection));
 		slave_master = nm_setting_connection_get_master (s_slave_con);
 		if (!slave_master)
 			continue;
+		if (!NM_IN_STRSET (slave_master, master_device,
+		                                 master_uuid_applied,
+		                                 master_uuid_settings))
+			continue;
 
-		if (   nm_streq0 (slave_master, master_device)
-		    || nm_streq0 (slave_master, master_uuid_applied)
-		    || nm_streq0 (slave_master, master_uuid_settings)) {
-			NMSettingsConnection *settings = NM_SETTINGS_CONNECTION (slave);
-
-			if (!internal_activation)
-				nm_settings_connection_autoconnect_retries_reset (settings);
-
-			if (nm_settings_connection_autoconnect_blocked_reason_get (settings) == NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED) {
-				nm_settings_connection_autoconnect_blocked_reason_set (settings,
-				                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE);
-			}
+		if (!internal_activation)
+			nm_settings_connection_autoconnect_retries_reset (connection);
+		if (nm_settings_connection_autoconnect_blocked_reason_get (connection) == NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED) {
+			nm_settings_connection_autoconnect_blocked_reason_set (connection,
+			                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE);
 		}
 	}
 
