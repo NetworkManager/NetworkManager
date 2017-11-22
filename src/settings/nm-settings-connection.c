@@ -46,7 +46,6 @@
 
 #define AUTOCONNECT_RETRIES_UNSET        -2
 #define AUTOCONNECT_RETRIES_FOREVER      -1
-#define AUTOCONNECT_RETRIES_DEFAULT       4
 #define AUTOCONNECT_RESET_RETRIES_TIMER 300
 
 /*****************************************************************************/
@@ -2527,18 +2526,14 @@ _autoconnect_retries_initial (NMSettingsConnection *self)
 		retries = nm_setting_connection_get_autoconnect_retries (s_con);
 
 	/* -1 means 'default' */
-	if (retries == -1) {
-		retries = nm_config_data_get_value_int64 (NM_CONFIG_GET_DATA,
-		                                          NM_CONFIG_KEYFILE_GROUP_MAIN,
-		                                          NM_CONFIG_KEYFILE_KEY_MAIN_AUTOCONNECT_RETRIES_DEFAULT,
-		                                          10, 0, G_MAXINT32,
-		                                          AUTOCONNECT_RETRIES_DEFAULT);
-	}
+	if (retries == -1)
+		retries = nm_config_data_get_autoconnect_retries_default (NM_CONFIG_GET_DATA);
 
 	/* 0 means 'forever', which is translated to a retry count of -1 */
 	if (retries == 0)
 		retries = AUTOCONNECT_RETRIES_FOREVER;
 
+	nm_assert (retries == AUTOCONNECT_RETRIES_FOREVER || retries >= 0);
 	return retries;
 }
 
