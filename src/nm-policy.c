@@ -1412,7 +1412,7 @@ static void
 reset_autoconnect_all (NMPolicy *self, NMDevice *device)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	gs_free NMSettingsConnection **connections = NULL;
+	NMSettingsConnection *const*connections = NULL;
 	guint i;
 
 	if (device) {
@@ -1421,7 +1421,7 @@ reset_autoconnect_all (NMPolicy *self, NMDevice *device)
 	} else
 		_LOGD (LOGD_DEVICE, "re-enabling autoconnect for all connections");
 
-	connections = nm_settings_get_connections_sorted (priv->settings, NULL);
+	connections = nm_settings_get_connections (priv->settings, NULL);
 	for (i = 0; connections[i]; i++) {
 		NMSettingsConnection *connection = connections[i];
 
@@ -1436,12 +1436,12 @@ static void
 reset_autoconnect_for_failed_secrets (NMPolicy *self)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	gs_free NMSettingsConnection **connections = NULL;
+	NMSettingsConnection *const*connections = NULL;
 	guint i;
 
 	_LOGD (LOGD_DEVICE, "re-enabling autoconnect for all connections with failed secrets");
 
-	connections = nm_settings_get_connections_sorted (priv->settings, NULL);
+	connections = nm_settings_get_connections (priv->settings, NULL);
 	for (i = 0; connections[i]; i++) {
 		NMSettingsConnection *connection = connections[i];
 
@@ -1514,7 +1514,7 @@ reset_connections_retries (gpointer user_data)
 {
 	NMPolicy *self = (NMPolicy *) user_data;
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	gs_free NMSettingsConnection **connections = NULL;
+	NMSettingsConnection *const*connections = NULL;
 	guint i;
 	gint32 con_stamp, min_stamp, now;
 	gboolean changed = FALSE;
@@ -1523,7 +1523,7 @@ reset_connections_retries (gpointer user_data)
 
 	min_stamp = 0;
 	now = nm_utils_get_monotonic_timestamp_s ();
-	connections = nm_settings_get_connections_sorted (priv->settings, NULL);
+	connections = nm_settings_get_connections (priv->settings, NULL);
 	for (i = 0; connections[i]; i++) {
 		NMSettingsConnection *connection = connections[i];
 
@@ -1557,7 +1557,7 @@ activate_slave_connections (NMPolicy *self, NMDevice *device)
 	guint i;
 	NMActRequest *req;
 	gboolean internal_activation = FALSE;
-	gs_free NMSettingsConnection **connections = NULL;
+	NMSettingsConnection *const*connections;
 
 	master_device = nm_device_get_iface (device);
 	g_assert (master_device);
@@ -1581,7 +1581,7 @@ activate_slave_connections (NMPolicy *self, NMDevice *device)
 		internal_activation = subject && nm_auth_subject_is_internal (subject);
 	}
 
-	connections = nm_settings_get_connections_sorted (priv->settings, NULL);
+	connections = nm_settings_get_connections (priv->settings, NULL);
 	for (i = 0; connections[i]; i++) {
 		NMConnection *slave;
 		NMSettingConnection *s_slave_con;
