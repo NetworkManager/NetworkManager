@@ -218,7 +218,7 @@ void nm_settings_connection_autoconnect_retries_set (NMSettingsConnection *self,
                                                      int retries);
 void nm_settings_connection_autoconnect_retries_reset (NMSettingsConnection *self);
 
-gint32 nm_settings_connection_autoconnect_blocked_until_get (NMSettingsConnection *self);
+gint32 nm_settings_connection_autoconnect_retries_blocked_until (NMSettingsConnection *self);
 
 NMSettingsAutoconnectBlockedReason nm_settings_connection_autoconnect_blocked_reason_get (NMSettingsConnection *self);
 void                               nm_settings_connection_autoconnect_blocked_reason_set (NMSettingsConnection *self,

@@ -1507,7 +1507,7 @@ reset_connections_retries (gpointer user_data)
 	for (i = 0; connections[i]; i++) {
 		NMSettingsConnection *connection = connections[i];
 
-		con_stamp = nm_settings_connection_autoconnect_blocked_until_get (connection);
+		con_stamp = nm_settings_connection_autoconnect_retries_blocked_until (connection);
 		if (con_stamp == 0)
 			continue;
 
@@ -1737,7 +1737,7 @@ device_state_changed (NMDevice *device,
 				       nm_settings_connection_get_id (connection));
 				/* Schedule a handler to reset retries count */
 				if (!priv->reset_retries_id) {
-					gint32 retry_time = nm_settings_connection_autoconnect_blocked_until_get (connection);
+					gint32 retry_time = nm_settings_connection_autoconnect_retries_blocked_until (connection);
 
 					g_warn_if_fail (retry_time != 0);
 					priv->reset_retries_id = g_timeout_add_seconds (MAX (0, retry_time - nm_utils_get_monotonic_timestamp_s ()), reset_connections_retries, self);
