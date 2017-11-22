@@ -33,6 +33,7 @@
 #include "nm-dbus-helpers.h"
 #include "nm-core-internal.h"
 #include "nm-simple-connection.h"
+#include "nm-vpn-service-plugin.h"
 
 #include "introspection/org.freedesktop.NetworkManager.VPN.Plugin.h"
 
@@ -683,20 +684,6 @@ nm_vpn_plugin_old_secrets_required (NMVpnPluginOld *plugin,
 
 /*****************************************************************************/
 
-#define DATA_KEY_TAG "DATA_KEY="
-#define DATA_VAL_TAG "DATA_VAL="
-#define SECRET_KEY_TAG "SECRET_KEY="
-#define SECRET_VAL_TAG "SECRET_VAL="
-
-static void
-free_secret (gpointer data)
-{
-	char *secret = data;
-
-	memset (secret, 0, strlen (secret));
-	g_free (secret);
-}
-
 /**
  * nm_vpn_plugin_old_read_vpn_details:
  * @fd: file descriptor to read from, usually stdin (0)
@@ -717,87 +704,7 @@ nm_vpn_plugin_old_read_vpn_details (int fd,
                                     GHashTable **out_data,
                                     GHashTable **out_secrets)
 {
-	GHashTable *data, *secrets;
-	gboolean success = FALSE;
-	char *key = NULL, *val = NULL;
-	GString *line;
-	gchar c;
-
-	if (out_data)
-		g_return_val_if_fail (*out_data == NULL, FALSE);
-	if (out_secrets)
-		g_return_val_if_fail (*out_secrets == NULL, FALSE);
-
-	data = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
-	secrets = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, free_secret);
-
-	line = g_string_new (NULL);
-
-	/* Read stdin for data and secret items until we get a DONE */
-	while (1) {
-		ssize_t nr;
-		GHashTable *hash = NULL;
-
-		errno = 0;
-		nr = read (fd, &c, 1);
-		if (nr == -1) {
-			if (errno == EAGAIN) {
-				g_usleep (100);
-				continue;
-			}
-			break;
-		}
-
-		if (c != '\n') {
-			g_string_append_c (line, c);
-			continue;
-		}
-
-		/* Check for the finish marker */
-		if (strcmp (line->str, "DONE") == 0)
-			break;
-
-		/* Otherwise it's a data/secret item */
-		if (strncmp (line->str, DATA_KEY_TAG, strlen (DATA_KEY_TAG)) == 0) {
-			hash = data;
-			key = g_strdup (line->str + strlen (DATA_KEY_TAG));
-		} else if (strncmp (line->str, DATA_VAL_TAG, strlen (DATA_VAL_TAG)) == 0) {
-			hash = data;
-			val = g_strdup (line->str + strlen (DATA_VAL_TAG));
-		} else if (strncmp (line->str, SECRET_KEY_TAG, strlen (SECRET_KEY_TAG)) == 0) {
-			hash = secrets;
-			key = g_strdup (line->str + strlen (SECRET_KEY_TAG));
-		} else if (strncmp (line->str, SECRET_VAL_TAG, strlen (SECRET_VAL_TAG)) == 0) {
-			hash = secrets;
-			val = g_strdup (line->str + strlen (SECRET_VAL_TAG));
-		}
-		g_string_truncate (line, 0);
-
-		if (key && val && hash) {
-			g_hash_table_insert (hash, key, val);
-			key = NULL;
-			val = NULL;
-			success = TRUE;  /* Got at least one value */
-		}
-	}
-
-	if (success) {
-		if (out_data)
-			*out_data = data;
-		else
-			g_hash_table_destroy (data);
-
-		if (out_secrets)
-			*out_secrets = secrets;
-		else
-			g_hash_table_destroy (secrets);
-	} else {
-		g_hash_table_destroy (data);
-		g_hash_table_destroy (secrets);
-	}
-
-	g_string_free (line, TRUE);
-	return success;
+	return nm_vpn_service_plugin_read_vpn_details (fd, out_data, out_secrets);
 }
 
 /**
@@ -820,31 +727,7 @@ nm_vpn_plugin_old_get_secret_flags (GHashTable *data,
                                     const char *secret_name,
                                     NMSettingSecretFlags *out_flags)
 {
-	char *flag_name;
-	const char *val;
-	unsigned long tmp;
-	gboolean success = FALSE;
-
-	g_return_val_if_fail (data != NULL, FALSE);
-	g_return_val_if_fail (secret_name != NULL, FALSE);
-	g_return_val_if_fail (out_flags != NULL, FALSE);
-	g_return_val_if_fail (*out_flags == NM_SETTING_SECRET_FLAG_NONE, FALSE);
-
-	flag_name = g_strdup_printf ("%s-flags", secret_name);
-
-	/* Try new flags value first */
-	val = g_hash_table_lookup (data, flag_name);
-	if (val) {
-		errno = 0;
-		tmp = strtoul (val, NULL, 10);
-		if (errno == 0 && tmp <= NM_SETTING_SECRET_FLAGS_ALL) {
-			*out_flags = (NMSettingSecretFlags) tmp;
-			success = TRUE;
-		}
-	}
-
-	g_free (flag_name);
-	return success;
+	return nm_vpn_service_plugin_get_secret_flags (data, secret_name, out_flags);
 }
 
 /*****************************************************************************/
