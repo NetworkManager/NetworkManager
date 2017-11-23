@@ -2162,8 +2162,9 @@ test_read_dns_options (void)
 	NMSettingIPConfig *s_ip4, *s_ip6;
 	char *unmanaged = NULL;
 	const char *option;
-	const char *options[] = { "ndots:3", "single-request-reopen", "inet6" };
-	guint32 i, options_len = sizeof (options) / sizeof (options[0]);
+	const char *options4[] = { "ndots:3", "single-request-reopen" };
+	const char *options6[] = { "inet6" };
+	guint32 i, num;
 
 	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dns-options",
 	                                    NULL, TYPE_ETHERNET, &unmanaged);
@@ -2175,18 +2176,20 @@ test_read_dns_options (void)
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
 
-	i = nm_setting_ip_config_get_num_dns_options (s_ip4);
-	g_assert_cmpint (i, ==, options_len);
+	num = nm_setting_ip_config_get_num_dns_options (s_ip4);
+	g_assert_cmpint (num, ==, G_N_ELEMENTS (options4));
 
-	i = nm_setting_ip_config_get_num_dns_options (s_ip6);
-	g_assert_cmpint (i, ==, options_len);
-
-	for (i = 0; i < options_len; i++) {
+	for (i = 0; i < num; i++) {
 		option = nm_setting_ip_config_get_dns_option (s_ip4, i);
-		g_assert_cmpstr (options[i], ==, option);
+		g_assert_cmpstr (options4[i], ==, option);
+	}
 
+	num = nm_setting_ip_config_get_num_dns_options (s_ip6);
+	g_assert_cmpint (num, ==, G_N_ELEMENTS (options6));
+
+	for (i = 0; i < num; i++) {
 		option = nm_setting_ip_config_get_dns_option (s_ip6, i);
-		g_assert_cmpstr (options[i], ==, option);
+		g_assert_cmpstr (options6[i], ==, option);
 	}
 
 	g_object_unref (connection);
@@ -2297,6 +2300,8 @@ test_write_dns_options (void)
 	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
 
+	nm_setting_ip_config_add_dns_option (s_ip4, "debug");
+
 	/* IP6 setting */
 	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
@@ -2312,25 +2317,15 @@ test_write_dns_options (void)
 	nm_setting_ip_config_add_address (s_ip6, addr6);
 	nm_ip_address_unref (addr6);
 
-	nm_setting_ip_config_add_dns_option (s_ip4, "debug");
 	nm_setting_ip_config_add_dns_option (s_ip6, "timeout:3");
 
 	nmtst_assert_connection_verifies (connection);
 
-	_writer_new_connection_FIXME (connection,
-	                              TEST_SCRATCH_DIR "/network-scripts/",
-	                              &testfile);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
-
-	/* RES_OPTIONS is copied to both IPv4 and IPv6 settings */
-	nm_setting_ip_config_clear_dns_options (s_ip4, TRUE);
-	nm_setting_ip_config_add_dns_option (s_ip4, "debug");
-	nm_setting_ip_config_add_dns_option (s_ip4, "timeout:3");
-
-	nm_setting_ip_config_clear_dns_options (s_ip6, TRUE);
-	nm_setting_ip_config_add_dns_option (s_ip6, "debug");
-	nm_setting_ip_config_add_dns_option (s_ip6, "timeout:3");
 
 	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 }

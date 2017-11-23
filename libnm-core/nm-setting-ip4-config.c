@@ -689,6 +689,14 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *ip4_class)
 	 */
 
 	/* ---ifcfg-rh---
+	 * property: dns-options
+	 * variable: RES_OPTIONS(+)
+	 * description: List of DNS options to be added to /etc/resolv.conf
+	 * example: RES_OPTIONS=ndots:2 timeout:3
+	 * ---end---
+	 */
+
+	/* ---ifcfg-rh---
 	 * property: dns-priority
 	 * variable: IPV4_DNS_PRIORITY(+)
 	 * description: The priority for DNS servers of this connection. Lower values have higher priority.
