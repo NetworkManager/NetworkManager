@@ -77,18 +77,6 @@
 
 /*****************************************************************************/
 
-static gboolean
-get_uint32 (const char *str, guint32 *value)
-{
-	gint64 tmp;
-
-	tmp = _nm_utils_ascii_str_to_int64 (str, 0, 0, G_MAXUINT32, -1);
-	if (tmp == -1)
-		return FALSE;
-	*value = tmp;
-	return TRUE;
-}
-
 static void
 check_if_bond_slave (shvarFile *ifcfg,
                      NMSettingConnection *s_con)
@@ -4650,28 +4638,43 @@ team_connection_from_ifcfg (const char *file,
 	return connection;
 }
 
+typedef enum {
+	BRIDGE_OPT_TYPE_MAIN,
+	BRIDGE_OPT_TYPE_OPTION,
+	BRIDGE_OPT_TYPE_PORT_MAIN,
+	BRIDGE_OPT_TYPE_PORT_OPTION,
+} BridgeOptType;
+
 typedef void (*BridgeOptFunc) (NMSetting *setting,
                                gboolean stp,
                                const char *key,
-                               const char *value);
+                               const char *value,
+                               BridgeOptType opt_type);
 
 static void
 handle_bridge_option (NMSetting *setting,
                       gboolean stp,
                       const char *key,
-                      const char *value)
+                      const char *value,
+                      BridgeOptType opt_type)
 {
 	static const struct {
 		const char *key;
 		const char *property_name;
+		BridgeOptType opt_type;
 		gboolean only_with_stp;
+		gboolean extended_bool;
 	} m/*etadata*/[] = {
-		{ "priority",           NM_SETTING_BRIDGE_PRIORITY,           TRUE  },
-		{ "hello_time",         NM_SETTING_BRIDGE_HELLO_TIME,         TRUE  },
-		{ "max_age",            NM_SETTING_BRIDGE_MAX_AGE,            TRUE  },
-		{ "ageing_time",        NM_SETTING_BRIDGE_AGEING_TIME,        FALSE },
-		{ "multicast_snooping", NM_SETTING_BRIDGE_MULTICAST_SNOOPING, FALSE },
-		{ "group_fwd_mask",     NM_SETTING_BRIDGE_GROUP_FORWARD_MASK, FALSE },
+		{ "DELAY",              NM_SETTING_BRIDGE_FORWARD_DELAY,      BRIDGE_OPT_TYPE_MAIN,   .only_with_stp = TRUE },
+		{ "priority",           NM_SETTING_BRIDGE_PRIORITY,           BRIDGE_OPT_TYPE_OPTION, .only_with_stp = TRUE },
+		{ "hello_time",         NM_SETTING_BRIDGE_HELLO_TIME,         BRIDGE_OPT_TYPE_OPTION, .only_with_stp = TRUE },
+		{ "max_age",            NM_SETTING_BRIDGE_MAX_AGE,            BRIDGE_OPT_TYPE_OPTION, .only_with_stp = TRUE },
+		{ "ageing_time",        NM_SETTING_BRIDGE_AGEING_TIME,        BRIDGE_OPT_TYPE_OPTION },
+		{ "multicast_snooping", NM_SETTING_BRIDGE_MULTICAST_SNOOPING, BRIDGE_OPT_TYPE_OPTION },
+		{ "group_fwd_mask",     NM_SETTING_BRIDGE_GROUP_FORWARD_MASK, BRIDGE_OPT_TYPE_OPTION },
+		{ "priority",           NM_SETTING_BRIDGE_PORT_PRIORITY,      BRIDGE_OPT_TYPE_PORT_OPTION },
+		{ "path_cost",          NM_SETTING_BRIDGE_PORT_PATH_COST,     BRIDGE_OPT_TYPE_PORT_OPTION },
+		{ "hairpin_mode",       NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE,  BRIDGE_OPT_TYPE_PORT_OPTION, .extended_bool = TRUE, },
 	};
 	const char *error_message = NULL;
 	int i;
@@ -4680,6 +4683,8 @@ handle_bridge_option (NMSetting *setting,
 	for (i = 0; i < G_N_ELEMENTS (m); i++) {
 		GParamSpec *param_spec;
 
+		if (opt_type != m[i].opt_type)
+			continue;
 		if (!nm_streq (key, m[i].key))
 			continue;
 		if (m[i].only_with_stp && !stp) {
@@ -4690,10 +4695,21 @@ handle_bridge_option (NMSetting *setting,
 		param_spec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), m[i].property_name);
 		switch (param_spec->value_type) {
 		case G_TYPE_BOOLEAN:
-			v = _nm_utils_ascii_str_to_int64 (value, 10, 0, 1, -1);
-			if (v == -1) {
-				error_message = g_strerror (errno);
-				goto warn;
+			if (m[i].extended_bool) {
+				if (!strcasecmp (value, "on") || !strcasecmp (value, "yes") || !strcmp (value, "1"))
+					v = TRUE;
+				else if (!strcasecmp (value, "off") || !strcasecmp (value, "no"))
+					v = FALSE;
+				else {
+					error_message = "is not a boolean";
+					goto warn;
+				}
+			} else {
+				v = _nm_utils_ascii_str_to_int64 (value, 10, 0, 1, -1);
+				if (v == -1) {
+					error_message = g_strerror (errno);
+					goto warn;
+				}
 			}
 			if (!nm_g_object_set_property_boolean (G_OBJECT (setting), m[i].property_name, v, NULL)) {
 				error_message = "number is out of range";
@@ -4728,7 +4744,8 @@ static void
 handle_bridging_opts (NMSetting *setting,
                       gboolean stp,
                       const char *value,
-                      BridgeOptFunc func)
+                      BridgeOptFunc func,
+                      BridgeOptType opt_type)
 {
 	gs_free const char **items = NULL;
 	const char *const *iter;
@@ -4743,7 +4760,7 @@ handle_bridging_opts (NMSetting *setting,
 			key = *keys;
 			val = *(keys + 1);
 			if (val && key[0] && val[0])
-				func (setting, stp, key, val);
+				func (setting, stp, key, val, opt_type);
 		}
 	}
 }
@@ -4756,7 +4773,6 @@ make_bridge_setting (shvarFile *ifcfg,
 	gs_unref_object NMSettingBridge *s_bridge = NULL;
 	gs_free char *value_to_free = NULL;
 	const char *value;
-	guint32 u;
 	gboolean stp = FALSE;
 	gboolean stp_set = FALSE;
 
@@ -4797,19 +4813,13 @@ make_bridge_setting (shvarFile *ifcfg,
 
 	value = svGetValueStr (ifcfg, "DELAY", &value_to_free);
 	if (value) {
-		if (stp) {
-			if (get_uint32 (value, &u))
-				g_object_set (s_bridge, NM_SETTING_BRIDGE_FORWARD_DELAY, u, NULL);
-			else
-				PARSE_WARNING ("invalid forward delay value '%s'", value);
-		} else
-			PARSE_WARNING ("DELAY invalid when STP is disabled");
+		handle_bridge_option (NM_SETTING (s_bridge), stp, "DELAY", value, BRIDGE_OPT_TYPE_MAIN);
 		nm_clear_g_free (&value_to_free);
 	}
 
 	value = svGetValueStr (ifcfg, "BRIDGING_OPTS", &value_to_free);
 	if (value) {
-		handle_bridging_opts (NM_SETTING (s_bridge), stp, value, handle_bridge_option);
+		handle_bridging_opts (NM_SETTING (s_bridge), stp, value, handle_bridge_option, BRIDGE_OPT_TYPE_OPTION);
 		nm_clear_g_free (&value_to_free);
 	}
 
@@ -4861,54 +4871,27 @@ bridge_connection_from_ifcfg (const char *file,
 	return connection;
 }
 
-static void
-handle_bridge_port_option (NMSetting *setting,
-                           gboolean stp,
-                           const char *key,
-                           const char *value)
-{
-	guint32 u = 0;
-
-	if (!strcmp (key, "priority")) {
-		if (get_uint32 (value, &u))
-			g_object_set (setting, NM_SETTING_BRIDGE_PORT_PRIORITY, u, NULL);
-		else
-			PARSE_WARNING ("invalid priority value '%s'", value);
-	} else if (!strcmp (key, "path_cost")) {
-		if (get_uint32 (value, &u))
-			g_object_set (setting, NM_SETTING_BRIDGE_PORT_PATH_COST, u, NULL);
-		else
-			PARSE_WARNING ("invalid path_cost value '%s'", value);
-	} else if (!strcmp (key, "hairpin_mode")) {
-		if (!strcasecmp (value, "on") || !strcasecmp (value, "yes") || !strcmp (value, "1"))
-			g_object_set (setting, NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, TRUE, NULL);
-		else if (!strcasecmp (value, "off") || !strcasecmp (value, "no"))
-			g_object_set (setting, NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, FALSE, NULL);
-		else
-			PARSE_WARNING ("invalid hairpin_mode value '%s'", value);
-	} else
-			PARSE_WARNING ("unhandled bridge port option '%s'", key);
-}
-
 static NMSetting *
 make_bridge_port_setting (shvarFile *ifcfg)
 {
 	NMSetting *s_port = NULL;
-	char *value;
+	gs_free char *value_to_free = NULL;
+	const char *value;
 
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
 
-	value = svGetValueStr_cp (ifcfg, "BRIDGE_UUID");
+	value = svGetValueStr (ifcfg, "BRIDGE_UUID", &value_to_free);
 	if (!value)
-		value = svGetValueStr_cp (ifcfg, "BRIDGE");
+		value = svGetValueStr (ifcfg, "BRIDGE", &value_to_free);
 	if (value) {
-		g_free (value);
+		nm_clear_g_free (&value_to_free);
 
 		s_port = nm_setting_bridge_port_new ();
-		value = svGetValueStr_cp (ifcfg, "BRIDGING_OPTS");
-		if (value)
-			handle_bridging_opts (s_port, FALSE, value, handle_bridge_port_option);
-		g_free (value);
+		value = svGetValueStr (ifcfg, "BRIDGING_OPTS", &value_to_free);
+		if (value) {
+			handle_bridging_opts (s_port, FALSE, value, handle_bridge_option, BRIDGE_OPT_TYPE_PORT_OPTION);
+			nm_clear_g_free (&value_to_free);
+		}
 	}
 
 	return s_port;
