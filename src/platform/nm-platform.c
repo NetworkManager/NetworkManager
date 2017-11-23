@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2012 Red Hat, Inc.
+ * Copyright (C) 2012 - 2017 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -3346,9 +3346,9 @@ delete_and_next:
 	}
 
 	plat_addresses = nm_platform_lookup_clone (self,
-	                                           nmp_lookup_init_addrroute (&lookup,
-	                                                                      NMP_OBJECT_TYPE_IP4_ADDRESS,
-	                                                                      ifindex),
+	                                           nmp_lookup_init_object (&lookup,
+	                                                                   NMP_OBJECT_TYPE_IP4_ADDRESS,
+	                                                                   ifindex),
 	                                           NULL, NULL);
 	if (plat_addresses)
 		plat_subnets = ip4_addr_subnets_build_index (plat_addresses, TRUE, TRUE);
@@ -3488,9 +3488,9 @@ nm_platform_ip6_address_sync (NMPlatform *self,
 
 	/* Delete unknown addresses */
 	plat_addresses = nm_platform_lookup_clone (self,
-	                                           nmp_lookup_init_addrroute (&lookup,
-	                                                                      NMP_OBJECT_TYPE_IP6_ADDRESS,
-	                                                                      ifindex),
+	                                           nmp_lookup_init_object (&lookup,
+	                                                                   NMP_OBJECT_TYPE_IP6_ADDRESS,
+	                                                                   ifindex),
 	                                           NULL, NULL);
 	if (plat_addresses) {
 		for (i = 0; i < plat_addresses->len; i++) {
@@ -3611,11 +3611,11 @@ nm_platform_ip_route_get_prune_list (NMPlatform *self,
 	                                        NM_IP_ROUTE_TABLE_SYNC_MODE_FULL,
 	                                        NM_IP_ROUTE_TABLE_SYNC_MODE_ALL));
 
-	nmp_lookup_init_addrroute (&lookup,
-	                           addr_family == AF_INET
-	                             ? NMP_OBJECT_TYPE_IP4_ROUTE
-	                             : NMP_OBJECT_TYPE_IP6_ROUTE,
-	                           ifindex);
+	nmp_lookup_init_object (&lookup,
+	                        addr_family == AF_INET
+	                          ? NMP_OBJECT_TYPE_IP4_ROUTE
+	                          : NMP_OBJECT_TYPE_IP6_ROUTE,
+	                        ifindex);
 	head_entry = nm_platform_lookup (self, &lookup);
 	if (!head_entry)
 		return NULL;

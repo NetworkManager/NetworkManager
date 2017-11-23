@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2016 Red Hat, Inc.
+ * Copyright 2016 - 2017 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -78,9 +78,9 @@ _ipx_address_get_all (NMPlatform *self, int ifindex, NMPObjectType obj_type)
 	g_assert (NM_IS_PLATFORM (self));
 	g_assert (ifindex > 0);
 	g_assert (NM_IN_SET (obj_type, NMP_OBJECT_TYPE_IP4_ADDRESS, NMP_OBJECT_TYPE_IP6_ADDRESS));
-	nmp_lookup_init_addrroute (&lookup,
-	                           obj_type,
-	                           ifindex);
+	nmp_lookup_init_object (&lookup,
+	                        obj_type,
+	                        ifindex);
 	return nmp_cache_lookup_to_array (nm_platform_lookup (self, &lookup),
 	                                  obj_type,
 	                                  FALSE /*addresses are always visible. */);
@@ -108,9 +108,9 @@ nmtstp_platform_ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t n
 	nm_platform_process_events (platform);
 
 	nm_dedup_multi_iter_for_each (&iter,
-	                              nm_platform_lookup_addrroute (platform,
-	                                                            NMP_OBJECT_TYPE_IP4_ROUTE,
-	                                                            ifindex)) {
+	                              nm_platform_lookup_object (platform,
+	                                                         NMP_OBJECT_TYPE_IP4_ROUTE,
+	                                                         ifindex)) {
 		const NMPlatformIP4Route *r = NMP_OBJECT_CAST_IP4_ROUTE (iter.current->obj);
 
 		if (   r->ifindex != ifindex
@@ -134,9 +134,9 @@ nmtstp_platform_ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_
 	nm_platform_process_events (platform);
 
 	nm_dedup_multi_iter_for_each (&iter,
-	                              nm_platform_lookup_addrroute (platform,
-	                                                            NMP_OBJECT_TYPE_IP6_ROUTE,
-	                                                            ifindex)) {
+	                              nm_platform_lookup_object (platform,
+	                                                         NMP_OBJECT_TYPE_IP6_ROUTE,
+	                                                         ifindex)) {
 		const NMPlatformIP6Route *r = NMP_OBJECT_CAST_IP6_ROUTE (iter.current->obj);
 
 		if (   r->ifindex != ifindex

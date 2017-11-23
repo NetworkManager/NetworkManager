@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2012-2015 Red Hat, Inc.
+ * Copyright (C) 2012 - 2017 Red Hat, Inc.
  */
 #include "nm-default.h"
 
@@ -5878,15 +5878,15 @@ link_can_assume (NMPlatform *platform, int ifindex)
 	if (link->link.master > 0)
 		return TRUE;
 
-	nmp_lookup_init_addrroute (&lookup,
-	                           NMP_OBJECT_TYPE_IP4_ADDRESS,
-	                           ifindex);
+	nmp_lookup_init_object (&lookup,
+	                        NMP_OBJECT_TYPE_IP4_ADDRESS,
+	                        ifindex);
 	if (nmp_cache_lookup (cache, &lookup))
 		return TRUE;
 
-	nmp_lookup_init_addrroute (&lookup,
-	                           NMP_OBJECT_TYPE_IP6_ADDRESS,
-	                           ifindex);
+	nmp_lookup_init_object (&lookup,
+	                        NMP_OBJECT_TYPE_IP6_ADDRESS,
+	                        ifindex);
 	nmp_cache_iter_for_each (&iter,
 	                         nmp_cache_lookup (cache, &lookup),
 	                         &o) {
