@@ -4661,49 +4661,67 @@ handle_bridge_option (NMSetting *setting,
                       const char *key,
                       const char *value)
 {
+	static const struct {
+		const char *key;
+		const char *property_name;
+		gboolean only_with_stp;
+	} m/*etadata*/[] = {
+		{ "priority",           NM_SETTING_BRIDGE_PRIORITY,           TRUE  },
+		{ "hello_time",         NM_SETTING_BRIDGE_HELLO_TIME,         TRUE  },
+		{ "max_age",            NM_SETTING_BRIDGE_MAX_AGE,            TRUE  },
+		{ "ageing_time",        NM_SETTING_BRIDGE_AGEING_TIME,        FALSE },
+		{ "multicast_snooping", NM_SETTING_BRIDGE_MULTICAST_SNOOPING, FALSE },
+		{ "group_fwd_mask",     NM_SETTING_BRIDGE_GROUP_FORWARD_MASK, FALSE },
+	};
+	const char *error_message = NULL;
+	int i;
 	gint64 v;
-	guint32 u = 0;
 
-	if (!strcmp (key, "priority")) {
-		if (stp == FALSE)
-			PARSE_WARNING ("'priority' invalid when STP is disabled");
-		else if ((v = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT16, -1)) != -1)
-			g_object_set (setting, NM_SETTING_BRIDGE_PRIORITY, (guint) v, NULL);
-		else
-			PARSE_WARNING ("invalid priority value '%s'", value);
-	} else if (!strcmp (key, "hello_time")) {
-		if (stp == FALSE)
-			PARSE_WARNING ("'hello_time' invalid when STP is disabled");
-		else if (get_uint32 (value, &u))
-			g_object_set (setting, NM_SETTING_BRIDGE_HELLO_TIME, u, NULL);
-		else
-			PARSE_WARNING ("invalid hello_time value '%s'", value);
-	} else if (!strcmp (key, "max_age")) {
-		if (stp == FALSE)
-			PARSE_WARNING ("'max_age' invalid when STP is disabled");
-		else if (get_uint32 (value, &u))
-			g_object_set (setting, NM_SETTING_BRIDGE_MAX_AGE, u, NULL);
-		else
-			PARSE_WARNING ("invalid max_age value '%s'", value);
-	} else if (!strcmp (key, "ageing_time")) {
-		if (get_uint32 (value, &u))
-			g_object_set (setting, NM_SETTING_BRIDGE_AGEING_TIME, u, NULL);
-		else
-			PARSE_WARNING ("invalid ageing_time value '%s'", value);
-	} else if (!strcmp (key, "multicast_snooping")) {
-		if (get_uint32 (value, &u))
-			g_object_set (setting, NM_SETTING_BRIDGE_MULTICAST_SNOOPING,
-			              (gboolean) u, NULL);
-		else
-			PARSE_WARNING ("invalid multicast_snooping value '%s'", value);
-	} else if (!strcmp (key, "group_fwd_mask")) {
-		if (get_uint32 (value, &u) && u <= 0xFFFF && !NM_FLAGS_ANY (u, 7))
-			g_object_set (setting, NM_SETTING_BRIDGE_GROUP_FORWARD_MASK,
-			              (gboolean) u, NULL);
-		else
-			PARSE_WARNING ("invalid group_fwd_mask value '%s'", value);
-	} else
-			PARSE_WARNING ("unhandled bridge option '%s'", key);
+	for (i = 0; i < G_N_ELEMENTS (m); i++) {
+		GParamSpec *param_spec;
+
+		if (!nm_streq (key, m[i].key))
+			continue;
+		if (m[i].only_with_stp && !stp) {
+			PARSE_WARNING ("'%s' invalid when STP is disabled", key);
+			return;
+		}
+
+		param_spec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), m[i].property_name);
+		switch (param_spec->value_type) {
+		case G_TYPE_BOOLEAN:
+			v = _nm_utils_ascii_str_to_int64 (value, 10, 0, 1, -1);
+			if (v == -1) {
+				error_message = g_strerror (errno);
+				goto warn;
+			}
+			if (!nm_g_object_set_property_boolean (G_OBJECT (setting), m[i].property_name, v, NULL)) {
+				error_message = "number is out of range";
+				goto warn;
+			}
+			return;
+		case G_TYPE_UINT:
+			v = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT, -1);
+			if (v == -1) {
+				error_message = g_strerror (errno);
+				goto warn;
+			}
+			if (!nm_g_object_set_property_uint (G_OBJECT (setting), m[i].property_name, v, NULL)) {
+				error_message = "number is out of range";
+				goto warn;
+			}
+			return;
+		default:
+			nm_assert_not_reached ();
+			continue;
+		}
+
+warn:
+		PARSE_WARNING ("invalid %s value '%s': %s", key, value, error_message);
+		return;
+	}
+
+	PARSE_WARNING ("unhandled bridge option '%s'", key);
 }
 
 static void
