@@ -78,7 +78,7 @@
 /*****************************************************************************/
 
 static gboolean
-get_uint (const char *str, guint32 *value)
+get_uint32 (const char *str, guint32 *value)
 {
 	gint64 tmp;
 
@@ -4666,37 +4666,37 @@ handle_bridge_option (NMSetting *setting,
 	if (!strcmp (key, "priority")) {
 		if (stp == FALSE)
 			PARSE_WARNING ("'priority' invalid when STP is disabled");
-		else if (get_uint (value, &u))
+		else if (get_uint32 (value, &u))
 			g_object_set (setting, NM_SETTING_BRIDGE_PRIORITY, u, NULL);
 		else
 			PARSE_WARNING ("invalid priority value '%s'", value);
 	} else if (!strcmp (key, "hello_time")) {
 		if (stp == FALSE)
 			PARSE_WARNING ("'hello_time' invalid when STP is disabled");
-		else if (get_uint (value, &u))
+		else if (get_uint32 (value, &u))
 			g_object_set (setting, NM_SETTING_BRIDGE_HELLO_TIME, u, NULL);
 		else
 			PARSE_WARNING ("invalid hello_time value '%s'", value);
 	} else if (!strcmp (key, "max_age")) {
 		if (stp == FALSE)
 			PARSE_WARNING ("'max_age' invalid when STP is disabled");
-		else if (get_uint (value, &u))
+		else if (get_uint32 (value, &u))
 			g_object_set (setting, NM_SETTING_BRIDGE_MAX_AGE, u, NULL);
 		else
 			PARSE_WARNING ("invalid max_age value '%s'", value);
 	} else if (!strcmp (key, "ageing_time")) {
-		if (get_uint (value, &u))
+		if (get_uint32 (value, &u))
 			g_object_set (setting, NM_SETTING_BRIDGE_AGEING_TIME, u, NULL);
 		else
 			PARSE_WARNING ("invalid ageing_time value '%s'", value);
 	} else if (!strcmp (key, "multicast_snooping")) {
-		if (get_uint (value, &u))
+		if (get_uint32 (value, &u))
 			g_object_set (setting, NM_SETTING_BRIDGE_MULTICAST_SNOOPING,
 			              (gboolean) u, NULL);
 		else
 			PARSE_WARNING ("invalid multicast_snooping value '%s'", value);
 	} else if (!strcmp (key, "group_fwd_mask")) {
-		if (get_uint (value, &u) && u <= 0xFFFF && !NM_FLAGS_ANY (u, 7))
+		if (get_uint32 (value, &u) && u <= 0xFFFF && !NM_FLAGS_ANY (u, 7))
 			g_object_set (setting, NM_SETTING_BRIDGE_GROUP_FORWARD_MASK,
 			              (gboolean) u, NULL);
 		else
@@ -4779,7 +4779,7 @@ make_bridge_setting (shvarFile *ifcfg,
 	value = svGetValueStr (ifcfg, "DELAY", &value_to_free);
 	if (value) {
 		if (stp) {
-			if (get_uint (value, &u))
+			if (get_uint32 (value, &u))
 				g_object_set (s_bridge, NM_SETTING_BRIDGE_FORWARD_DELAY, u, NULL);
 			else
 				PARSE_WARNING ("invalid forward delay value '%s'", value);
@@ -4851,12 +4851,12 @@ handle_bridge_port_option (NMSetting *setting,
 	guint32 u = 0;
 
 	if (!strcmp (key, "priority")) {
-		if (get_uint (value, &u))
+		if (get_uint32 (value, &u))
 			g_object_set (setting, NM_SETTING_BRIDGE_PORT_PRIORITY, u, NULL);
 		else
 			PARSE_WARNING ("invalid priority value '%s'", value);
 	} else if (!strcmp (key, "path_cost")) {
-		if (get_uint (value, &u))
+		if (get_uint32 (value, &u))
 			g_object_set (setting, NM_SETTING_BRIDGE_PORT_PATH_COST, u, NULL);
 		else
 			PARSE_WARNING ("invalid path_cost value '%s'", value);
