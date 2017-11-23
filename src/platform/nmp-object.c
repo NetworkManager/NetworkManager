@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2015 Red Hat, Inc.
+ * Copyright (C) 2015 - 2017 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -186,7 +186,7 @@ _idx_obj_part (const DedupMultiIdxType *idx_type,
 		}
 		return 1;
 
-	case NMP_CACHE_ID_TYPE_ADDRROUTE_BY_IFINDEX:
+	case NMP_CACHE_ID_TYPE_OBJECT_BY_IFINDEX:
 		if (   !NM_IN_SET (NMP_OBJECT_GET_TYPE (obj_a), NMP_OBJECT_TYPE_IP4_ADDRESS,
 		                                                NMP_OBJECT_TYPE_IP6_ADDRESS,
 		                                                NMP_OBJECT_TYPE_IP4_ROUTE,
@@ -1205,13 +1205,13 @@ static const guint8 _supported_cache_ids_link[] = {
 
 static const guint8 _supported_cache_ids_ipx_address[] = {
 	NMP_CACHE_ID_TYPE_OBJECT_TYPE,
-	NMP_CACHE_ID_TYPE_ADDRROUTE_BY_IFINDEX,
+	NMP_CACHE_ID_TYPE_OBJECT_BY_IFINDEX,
 	0,
 };
 
 static const guint8 _supported_cache_ids_ipx_route[] = {
 	NMP_CACHE_ID_TYPE_OBJECT_TYPE,
-	NMP_CACHE_ID_TYPE_ADDRROUTE_BY_IFINDEX,
+	NMP_CACHE_ID_TYPE_OBJECT_BY_IFINDEX,
 	NMP_CACHE_ID_TYPE_DEFAULT_ROUTES,
 	NMP_CACHE_ID_TYPE_ROUTES_BY_WEAK_ID,
 	0,
@@ -1523,9 +1523,9 @@ nmp_lookup_init_link_by_ifname (NMPLookup *lookup,
 }
 
 const NMPLookup *
-nmp_lookup_init_addrroute (NMPLookup *lookup,
-                           NMPObjectType obj_type,
-                           int ifindex)
+nmp_lookup_init_object (NMPLookup *lookup,
+                        NMPObjectType obj_type,
+                        int ifindex)
 {
 	NMPObject *o;
 
@@ -1542,7 +1542,7 @@ nmp_lookup_init_addrroute (NMPLookup *lookup,
 
 	o = _nmp_object_stackinit_from_type (&lookup->selector_obj, obj_type);
 	o->object.ifindex = ifindex;
-	lookup->cache_id_type = NMP_CACHE_ID_TYPE_ADDRROUTE_BY_IFINDEX;
+	lookup->cache_id_type = NMP_CACHE_ID_TYPE_OBJECT_BY_IFINDEX;
 	return _L (lookup);
 }
 

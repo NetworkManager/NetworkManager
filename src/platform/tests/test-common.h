@@ -245,22 +245,22 @@ static inline GPtrArray *
 nmtstp_ip4_route_get_all (NMPlatform *platform,
                           int ifindex)
 {
-	return nm_platform_lookup_addrroute_clone (platform,
-	                                           NMP_OBJECT_TYPE_IP4_ROUTE,
-	                                           ifindex,
-	                                           nm_platform_lookup_predicate_routes_main_skip_rtprot_kernel,
-	                                           NULL);
+	return nm_platform_lookup_object_clone (platform,
+	                                        NMP_OBJECT_TYPE_IP4_ROUTE,
+	                                        ifindex,
+	                                        nm_platform_lookup_predicate_routes_main_skip_rtprot_kernel,
+	                                        NULL);
 }
 
 static inline GPtrArray *
 nmtstp_ip6_route_get_all (NMPlatform *platform,
                           int ifindex)
 {
-	return nm_platform_lookup_addrroute_clone (platform,
-	                                           NMP_OBJECT_TYPE_IP6_ROUTE,
-	                                           ifindex,
-	                                           nm_platform_lookup_predicate_routes_main_skip_rtprot_kernel,
-	                                           NULL);
+	return nm_platform_lookup_object_clone (platform,
+	                                        NMP_OBJECT_TYPE_IP6_ROUTE,
+	                                        ifindex,
+	                                        nm_platform_lookup_predicate_routes_main_skip_rtprot_kernel,
+	                                        NULL);
 }
 
 /*****************************************************************************/

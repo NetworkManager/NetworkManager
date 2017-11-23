@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2015 Red Hat, Inc.
+ * Copyright (C) 2015 - 2017 Red Hat, Inc.
  */
 
 #ifndef __NMP_OBJECT_H__
@@ -48,12 +48,12 @@ typedef enum { /*< skip >*/
  * but only route objects can be indexed by NMP_CACHE_ID_TYPE_ROUTES_VISIBLE_NO_DEFAULT.
  *
  * Of one index type, there can be multiple indexes or not.
- * For example, of the index type NMP_CACHE_ID_TYPE_ADDRROUTE_BY_IFINDEX there
+ * For example, of the index type NMP_CACHE_ID_TYPE_OBJECT_BY_IFINDEX there
  * are multiple instances (for different route/addresses, v4/v6, per-ifindex).
  *
  * But one object, can only be indexed by one particular index of a
  * type. For example, a certain address instance is only indexed by
- * the index NMP_CACHE_ID_TYPE_ADDRROUTE_BY_IFINDEX with
+ * the index NMP_CACHE_ID_TYPE_OBJECT_BY_IFINDEX with
  * matching v4/v6 and ifindex -- or maybe not at all if it isn't visible.
  * */
 typedef enum { /*< skip >*/
@@ -82,8 +82,8 @@ typedef enum { /*< skip >*/
 	 * separate for IPv4 and IPv6. */
 	NMP_CACHE_ID_TYPE_DEFAULT_ROUTES,
 
-	/* all the addresses/routes (by object-type) for an ifindex. */
-	NMP_CACHE_ID_TYPE_ADDRROUTE_BY_IFINDEX,
+	/* all the objects that have an ifindex (by object-type) for an ifindex. */
+	NMP_CACHE_ID_TYPE_OBJECT_BY_IFINDEX,
 
 	/* Consider all the destination fields of a route, that is, the ID without the ifindex
 	 * and gateway (meaning: network/plen,metric).
@@ -542,9 +542,9 @@ const NMPLookup *nmp_lookup_init_obj_type (NMPLookup *lookup,
                                            NMPObjectType obj_type);
 const NMPLookup *nmp_lookup_init_link_by_ifname (NMPLookup *lookup,
                                                  const char *ifname);
-const NMPLookup *nmp_lookup_init_addrroute (NMPLookup *lookup,
-                                            NMPObjectType obj_type,
-                                            int ifindex);
+const NMPLookup *nmp_lookup_init_object (NMPLookup *lookup,
+                                         NMPObjectType obj_type,
+                                         int ifindex);
 const NMPLookup *nmp_lookup_init_route_default (NMPLookup *lookup,
                                                 NMPObjectType obj_type);
 const NMPLookup *nmp_lookup_init_route_by_weak_id (NMPLookup *lookup,
@@ -723,26 +723,26 @@ nm_platform_lookup_link_by_ifname (NMPlatform *platform,
 }
 
 static inline const NMDedupMultiHeadEntry *
-nm_platform_lookup_addrroute (NMPlatform *platform,
-                              NMPObjectType obj_type,
-                              int ifindex)
+nm_platform_lookup_object (NMPlatform *platform,
+                           NMPObjectType obj_type,
+                           int ifindex)
 {
 	NMPLookup lookup;
 
-	nmp_lookup_init_addrroute (&lookup, obj_type, ifindex);
+	nmp_lookup_init_object (&lookup, obj_type, ifindex);
 	return nm_platform_lookup (platform, &lookup);
 }
 
 static inline GPtrArray *
-nm_platform_lookup_addrroute_clone (NMPlatform *platform,
-                                    NMPObjectType obj_type,
-                                    int ifindex,
-                                    NMPObjectPredicateFunc predicate,
-                                    gpointer user_data)
+nm_platform_lookup_object_clone (NMPlatform *platform,
+                                 NMPObjectType obj_type,
+                                 int ifindex,
+                                 NMPObjectPredicateFunc predicate,
+                                 gpointer user_data)
 {
 	NMPLookup lookup;
 
-	nmp_lookup_init_addrroute (&lookup, obj_type, ifindex);
+	nmp_lookup_init_object (&lookup, obj_type, ifindex);
 	return nm_platform_lookup_clone (platform, &lookup, predicate, user_data);
 }
 

@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2012–2013 Red Hat, Inc.
+ * Copyright (C) 2012–2017 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -1056,11 +1056,11 @@ ipx_address_delete (NMPlatform *platform,
 	peer_addr_i = peer_addr ? *((guint32 *) peer_addr) : 0;
 
 	nmp_cache_iter_for_each (&iter,
-	                         nm_platform_lookup_addrroute (platform,
-	                                                       addr_family == AF_INET
-	                                                         ? NMP_OBJECT_TYPE_IP4_ADDRESS
-	                                                         : NMP_OBJECT_TYPE_IP6_ADDRESS,
-	                                                       0),
+	                         nm_platform_lookup_object (platform,
+	                                                    addr_family == AF_INET
+	                                                      ? NMP_OBJECT_TYPE_IP4_ADDRESS
+	                                                      : NMP_OBJECT_TYPE_IP6_ADDRESS,
+	                                                    0),
 	                         &o) {
 		const NMPObject *obj_old = NULL;
 
@@ -1144,9 +1144,9 @@ ipx_route_delete (NMPlatform *platform,
 	}
 
 	nmp_cache_iter_for_each (&iter,
-	                         nm_platform_lookup_addrroute (platform,
-	                                                       obj_type,
-	                                                       ifindex),
+	                         nm_platform_lookup_object (platform,
+	                                                    obj_type,
+	                                                    ifindex),
 	                         &o) {
 		const NMPObject *obj_old = NULL;
 
@@ -1254,9 +1254,9 @@ ip_route_add (NMPlatform *platform,
 		gboolean has_route_to_gw = FALSE;
 
 		nmp_cache_iter_for_each (&iter,
-		                         nm_platform_lookup_addrroute (platform,
-		                                                       NMP_OBJECT_GET_TYPE (obj),
-		                                                       0),
+		                         nm_platform_lookup_object (platform,
+		                                                    NMP_OBJECT_GET_TYPE (obj),
+		                                                    0),
 		                         &o) {
 			if (addr_family == AF_INET) {
 				const NMPlatformIP4Route *item = NMP_OBJECT_CAST_IP4_ROUTE (o);

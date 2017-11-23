@@ -3020,9 +3020,9 @@ _v4_has_shadowed_routes_detect (NMDevice *self)
 	platform = nm_device_get_platform (self);
 
 	head_entry = nm_platform_lookup (platform,
-	                                 nmp_lookup_init_addrroute (&lookup,
-	                                                            NMP_OBJECT_TYPE_IP4_ROUTE,
-	                                                            ifindex));
+	                                 nmp_lookup_init_object (&lookup,
+	                                                         NMP_OBJECT_TYPE_IP4_ROUTE,
+	                                                         ifindex));
 	if (!head_entry)
 		return FALSE;
 
