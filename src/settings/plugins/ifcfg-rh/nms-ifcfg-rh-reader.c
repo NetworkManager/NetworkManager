@@ -1678,8 +1678,6 @@ make_ip6_setting (shvarFile *ifcfg,
 	char *value = NULL;
 	char *str_value;
 	char *route6_path = NULL;
-	gs_free char *dns_options_free = NULL;
-	const char *dns_options = NULL;
 	gboolean ipv6init, ipv6forwarding, dhcp6 = FALSE;
 	char *method = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
 	char *ipv6addr, *ipv6addr_secondaries;
@@ -1717,7 +1715,6 @@ make_ip6_setting (shvarFile *ifcfg,
 		value = svGetValueStr_cp (ifcfg, "DEVICE");
 		ipv6_defaultgw = svGetValueStr_cp (network_ifcfg, "IPV6_DEFAULTGW");
 		ipv6_defaultdev = svGetValueStr_cp (network_ifcfg, "IPV6_DEFAULTDEV");
-		dns_options = svGetValue (network_ifcfg, "RES_OPTIONS", &dns_options_free);
 
 		if (ipv6_defaultgw) {
 			default_dev = strchr (ipv6_defaultgw, '%');
@@ -1948,8 +1945,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	}
 
 	/* DNS options */
-	parse_dns_options (s_ip6, svGetValue (ifcfg, "RES_OPTIONS", &value));
-	parse_dns_options (s_ip6, dns_options);
+	parse_dns_options (s_ip6, svGetValue (ifcfg, "IPV6_RES_OPTIONS", &value));
 	g_free (value);
 
 	/* DNS priority */

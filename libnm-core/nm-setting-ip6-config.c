@@ -671,6 +671,14 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 	 * ---end---
 	 */
 
+	/* ---ifcfg-rh---
+	 * property: dns-options
+	 * variable: IPV6_RES_OPTIONS(+)
+	 * description: List of DNS options to be added to /etc/resolv.conf
+	 * example: IPV6_RES_OPTIONS=ndots:2 timeout:3
+	 * ---end---
+	 */
+
 	/**
 	 * NMSettingIP6Config:ip6-privacy:
 	 *
