@@ -60,7 +60,7 @@ NMAgentManagerCallId nm_agent_manager_get_secrets (NMAgentManager *manager,
                                                    GVariant *existing_secrets,
                                                    const char *setting_name,
                                                    NMSecretAgentGetSecretsFlags flags,
-                                                   const char **hints,
+                                                   const char *const*hints,
                                                    NMAgentSecretsResultFunc callback,
                                                    gpointer callback_data);
 

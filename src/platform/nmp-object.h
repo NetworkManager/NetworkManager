@@ -471,7 +471,13 @@ const NMPObject *nmp_object_stackinit_id_ip6_address (NMPObject *obj, int ifinde
 const char *nmp_object_to_string (const NMPObject *obj, NMPObjectToStringMode to_string_mode, char *buf, gsize buf_size);
 void nmp_object_hash_update (const NMPObject *obj, NMHashState *h);
 int nmp_object_cmp (const NMPObject *obj1, const NMPObject *obj2);
-gboolean nmp_object_equal (const NMPObject *obj1, const NMPObject *obj2);
+
+static inline gboolean
+nmp_object_equal (const NMPObject *obj1, const NMPObject *obj2)
+{
+	return nmp_object_cmp (obj1, obj2) == 0;
+}
+
 void nmp_object_copy (NMPObject *dst, const NMPObject *src, gboolean id_only);
 NMPObject *nmp_object_clone (const NMPObject *obj, gboolean id_only);
 

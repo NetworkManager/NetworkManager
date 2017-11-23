@@ -1258,4 +1258,6 @@ global:
 	nm_setting_team_port_get_lacp_key;
 	nm_setting_team_remove_runner_tx_hash;
 	nm_setting_team_remove_runner_tx_hash_by_value;
+	nm_setting_vpn_get_data_keys;
+	nm_setting_vpn_get_secret_keys;
 } libnm_1_10_0;

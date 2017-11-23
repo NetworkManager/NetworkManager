@@ -531,10 +531,10 @@ vpn_openconnect_get_secrets (NMConnection *connection, GPtrArray *secrets)
 {
 	GError *error = NULL;
 	NMSettingVpn *s_vpn;
-	const char *vpn_type, *gw, *port;
-	char *cookie = NULL;
-	char *gateway = NULL;
-	char *gwcert = NULL;
+	const char *gw, *port;
+	gs_free char *cookie = NULL;
+	gs_free char *gateway = NULL;
+	gs_free char *gwcert = NULL;
 	int status = 0;
 	int i;
 	gboolean ret;
@@ -546,8 +546,7 @@ vpn_openconnect_get_secrets (NMConnection *connection, GPtrArray *secrets)
 		return FALSE;
 
 	s_vpn = nm_connection_get_setting_vpn (connection);
-	vpn_type = nm_setting_vpn_get_service_type (s_vpn);
-	if (g_strcmp0 (vpn_type, NM_DBUS_INTERFACE ".openconnect"))
+	if (!nm_streq0 (nm_setting_vpn_get_service_type (s_vpn), NM_SECRET_AGENT_VPN_TYPE_OPENCONNECT))
 		return FALSE;
 
 	/* Get gateway and port */
@@ -570,34 +569,31 @@ vpn_openconnect_get_secrets (NMConnection *connection, GPtrArray *secrets)
 
 	/* Append port to the host value */
 	if (gateway && port) {
-		char *tmp = gateway;
-		gateway = g_strdup_printf ("%s%s", gateway, port);
-		g_free (tmp);
+		gs_free char *tmp = gateway;
+
+		gateway = g_strdup_printf ("%s%s", tmp, port);
 	}
 
 	/* Fill secrets to the array */
 	for (i = 0; i < secrets->len; i++) {
 		NMSecretAgentSimpleSecret *secret = secrets->pdata[i];
 
-		if (!g_strcmp0 (secret->vpn_type, vpn_type)) {
-			if (!g_strcmp0 (secret->vpn_property, "cookie")) {
-				g_free (secret->value);
-				secret->value = cookie;
-				cookie = NULL;
-			} else if (!g_strcmp0 (secret->vpn_property, "gateway")) {
-				g_free (secret->value);
-				secret->value = gateway;
-				gateway = NULL;
-			} else if (!g_strcmp0 (secret->vpn_property, "gwcert")) {
-				g_free (secret->value);
-				secret->value = gwcert;
-				gwcert = NULL;
-			}
+		if (secret->secret_type != NM_SECRET_AGENT_SECRET_TYPE_VPN_SECRET)
+			continue;
+		if (!nm_streq0 (secret->vpn_type, NM_SECRET_AGENT_VPN_TYPE_OPENCONNECT))
+			continue;
+
+		if (nm_streq0 (secret->entry_id, NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRET "cookie")) {
+			g_free (secret->value);
+			secret->value = g_steal_pointer (&cookie);
+		} else if (nm_streq0 (secret->entry_id, NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRET "gateway")) {
+			g_free (secret->value);
+			secret->value = g_steal_pointer (&gateway);
+		} else if (nm_streq0 (secret->entry_id, NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRET "gwcert")) {
+			g_free (secret->value);
+			secret->value = g_steal_pointer (&gwcert);
 		}
 	}
-	g_free (cookie);
-	g_free (gateway);
-	g_free (gwcert);
 
 	return TRUE;
 }
@@ -624,7 +620,7 @@ get_secrets_from_user (const char *request_id,
 
 		/* First try to find the password in provided passwords file,
 		 * then ask user. */
-		if (pwds_hash && (pwd = g_hash_table_lookup (pwds_hash, secret->prop_name))) {
+		if (pwds_hash && (pwd = g_hash_table_lookup (pwds_hash, secret->entry_id))) {
 			pwd = g_strdup (pwd);
 		} else {
 			if (ask) {
@@ -640,8 +636,10 @@ get_secrets_from_user (const char *request_id,
 				}
 				if (msg)
 					g_print ("%s\n", msg);
-				pwd = nmc_readline_echo (secret->password ? echo_on : TRUE,
-				                         "%s (%s): ", secret->name, secret->prop_name);
+				pwd = nmc_readline_echo (secret->is_secret
+				                         ? echo_on
+				                         : TRUE,
+				                         "%s (%s): ", secret->pretty_name, secret->entry_id);
 				if (!pwd)
 					pwd = g_strdup ("");
 			} else {
@@ -649,7 +647,7 @@ get_secrets_from_user (const char *request_id,
 					g_print ("%s\n", msg);
 				g_printerr (_("Warning: password for '%s' not given in 'passwd-file' "
 				              "and nmcli cannot ask without '--ask' option.\n"),
-				            secret->prop_name);
+				            secret->entry_id);
 			}
 		}
 		/* No password provided, cancel the secrets. */

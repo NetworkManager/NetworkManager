@@ -861,12 +861,6 @@ _vt_cmd_obj_cmp_lnk_vlan (const NMPObject *obj1, const NMPObject *obj2)
 	return c;
 }
 
-gboolean
-nmp_object_equal (const NMPObject *obj1, const NMPObject *obj2)
-{
-	return nmp_object_cmp (obj1, obj2) == 0;
-}
-
 /* @src is a const object, which is not entirely correct for link types, where
  * we increase the ref count for src->_link.udev.device.
  * Hence, nmp_object_copy() can violate the const promise of @src.
@@ -1076,7 +1070,7 @@ nmp_object_id_hash (const NMPObject *obj)
 	NMHashState h;
 
 	if (!obj)
-		return 0;
+		return nm_hash_static (914932607u);
 
 	nm_hash_init (&h, 914932607u);
 	nmp_object_id_hash_update (obj, &h);

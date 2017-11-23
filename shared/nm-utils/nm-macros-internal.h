@@ -1172,6 +1172,28 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro)
 		_buf; \
 	})
 
+/* aims to alloca() a buffer and fill it with printf(format, name).
+ * Note that format must not contain any format specifier except
+ * "%s".
+ * If the resulting string would be too large for stack allocation,
+ * it allocates a buffer with g_malloc() and assigns it to *p_val_to_free. */
+#define nm_construct_name_a(format, name, p_val_to_free) \
+	({ \
+		const char *const _name = (name); \
+		char **const _p_val_to_free = (p_val_to_free); \
+		const gsize _name_len = strlen (_name); \
+		char *_buf2; \
+		\
+		nm_assert (_p_val_to_free && !*_p_val_to_free); \
+		if (NM_STRLEN (format) + _name_len < 200) \
+			_buf2 = nm_sprintf_bufa (NM_STRLEN (format) + _name_len, format, _name); \
+		else { \
+			_buf2 = g_strdup_printf (format, _name); \
+			*_p_val_to_free = _buf2; \
+		} \
+		(const char *) _buf2; \
+	})
+
 /*****************************************************************************/
 
 /**

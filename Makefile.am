@@ -1066,6 +1066,7 @@ libnm_tests_test_remote_settings_client_CPPFLAGS = $(libnm_tests_cppflags)
 libnm_tests_test_secret_agent_CPPFLAGS = $(libnm_tests_cppflags)
 
 libnm_tests_test_general_SOURCES = \
+	shared/nm-utils/nm-compat.c \
 	libnm/tests/test-general.c
 
 libnm_tests_test_nm_client_SOURCES = \
@@ -4565,6 +4566,8 @@ EXTRA_DIST += \
 	shared/nm-utils/c-list-util.c \
 	shared/nm-utils/c-list-util.h \
 	shared/nm-utils/gsystem-local-alloc.h \
+	shared/nm-utils/nm-compat.c \
+	shared/nm-utils/nm-compat.h \
 	shared/nm-utils/nm-glib.h \
 	shared/nm-utils/nm-jansson.h \
 	shared/nm-utils/nm-obj.h \

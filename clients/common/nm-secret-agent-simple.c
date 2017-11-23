@@ -147,7 +147,6 @@ strv_has (gchar **haystack,
 
 typedef struct {
 	NMSecretAgentSimpleSecret base;
-
 	NMSetting *setting;
 	char *property;
 } NMSecretAgentSimpleSecretReal;
@@ -157,11 +156,10 @@ nm_secret_agent_simple_secret_free (NMSecretAgentSimpleSecret *secret)
 {
 	NMSecretAgentSimpleSecretReal *real = (NMSecretAgentSimpleSecretReal *)secret;
 
-	g_free (secret->name);
-	g_free (secret->prop_name);
+	g_free ((char *) secret->pretty_name);
+	g_free ((char *) secret->entry_id);
 	g_free (secret->value);
-	g_free (secret->vpn_property);
-	g_free (secret->vpn_type);
+	g_free ((char *) secret->vpn_type);
 	g_free (real->property);
 	g_clear_object (&real->setting);
 
@@ -169,33 +167,45 @@ nm_secret_agent_simple_secret_free (NMSecretAgentSimpleSecret *secret)
 }
 
 static NMSecretAgentSimpleSecret *
-nm_secret_agent_simple_secret_new (const char *name,
+nm_secret_agent_simple_secret_new (NMSecretAgentSecretType secret_type,
+                                   const char *pretty_name,
                                    NMSetting  *setting,
                                    const char *property,
-                                   const char *vpn_property,
-                                   const char *vpn_type,
-                                   gboolean    password)
+                                   const char *vpn_type)
 {
 	NMSecretAgentSimpleSecretReal *real;
+	const char *vpn_prefix;
+	const char *value;
+
+	nm_assert (property);
+	nm_assert (NM_IS_SETTING (setting));
 
 	real = g_slice_new0 (NMSecretAgentSimpleSecretReal);
-	real->base.name = g_strdup (name);
-	real->base.prop_name = vpn_property ?
-	                         g_strdup_printf ("%s.%s.%s", nm_setting_get_name (setting), property, vpn_property) :
-	                         g_strdup_printf ("%s.%s", nm_setting_get_name (setting), property);
-	real->base.vpn_property = g_strdup (vpn_property);
-	real->base.vpn_type = g_strdup (vpn_type);
-	real->base.password = password;
-
-	if (setting) {
-		real->setting = g_object_ref (setting);
-		real->property = g_strdup (property);
-
-		if (vpn_property)
-			real->base.value = g_strdup (nm_setting_vpn_get_secret (NM_SETTING_VPN (setting), vpn_property));
-		else
-			g_object_get (setting, property, &real->base.value, NULL);
+	*((NMSecretAgentSecretType *) &real->base.secret_type) = secret_type;
+	real->setting = g_object_ref (setting);
+	real->base.pretty_name = g_strdup (pretty_name);
+	real->property = g_strdup (property);
+	switch (secret_type) {
+	case NM_SECRET_AGENT_SECRET_TYPE_PROPERTY:
+	case NM_SECRET_AGENT_SECRET_TYPE_SECRET:
+		nm_assert (!vpn_type);
+		nm_assert (g_object_class_find_property (G_OBJECT_GET_CLASS (setting), property));
+		nm_assert ((secret_type == NM_SECRET_AGENT_SECRET_TYPE_SECRET) == nm_setting_get_secret_flags (setting, property, NULL, NULL));
+		real->base.entry_id = g_strdup_printf ("%s.%s", nm_setting_get_name (setting), property);
+		g_object_get (setting, property, &real->base.value, NULL);
+		real->base.is_secret = (secret_type != NM_SECRET_AGENT_SECRET_TYPE_PROPERTY);
+		break;
+	case NM_SECRET_AGENT_SECRET_TYPE_VPN_SECRET:
+		vpn_prefix = NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRET;
+		value = nm_setting_vpn_get_secret (NM_SETTING_VPN (setting), property);
+		real->base.entry_id = g_strdup_printf ("%s%s", vpn_prefix, property);
+		nm_assert (vpn_type);
+		real->base.vpn_type = g_strdup (vpn_type);
+		real->base.value = g_strdup (value);
+		real->base.is_secret = TRUE;
+		break;
 	}
+	nm_assert (real->base.entry_id);
 
 	return &real->base;
 }
@@ -220,37 +230,33 @@ add_8021x_secrets (NMSecretAgentSimpleRequest *request,
 		 * is not visible here since we only care about phase2 authentication
 		 * (and don't even care of which one)
 		 */
-		secret = nm_secret_agent_simple_secret_new (_("Username"),
+		secret = nm_secret_agent_simple_secret_new (NM_SECRET_AGENT_SECRET_TYPE_PROPERTY,
+		                                            _("Username"),
 		                                            NM_SETTING (s_8021x),
 		                                            NM_SETTING_802_1X_IDENTITY,
-		                                            NULL,
-		                                            NULL,
-		                                            FALSE);
+		                                            NULL);
 		g_ptr_array_add (secrets, secret);
-		secret = nm_secret_agent_simple_secret_new (_("Password"),
+		secret = nm_secret_agent_simple_secret_new (NM_SECRET_AGENT_SECRET_TYPE_SECRET,
+		                                            _("Password"),
 		                                            NM_SETTING (s_8021x),
 		                                            NM_SETTING_802_1X_PASSWORD,
-		                                            NULL,
-		                                            NULL,
-		                                            TRUE);
+		                                            NULL);
 		g_ptr_array_add (secrets, secret);
 		return TRUE;
 	}
 
 	if (!strcmp (eap_method, "tls")) {
-		secret = nm_secret_agent_simple_secret_new (_("Identity"),
+		secret = nm_secret_agent_simple_secret_new (NM_SECRET_AGENT_SECRET_TYPE_PROPERTY,
+		                                            _("Identity"),
 		                                            NM_SETTING (s_8021x),
 		                                            NM_SETTING_802_1X_IDENTITY,
-		                                            NULL,
-		                                            NULL,
-		                                            FALSE);
+		                                            NULL);
 		g_ptr_array_add (secrets, secret);
-		secret = nm_secret_agent_simple_secret_new (_("Private key password"),
+		secret = nm_secret_agent_simple_secret_new (NM_SECRET_AGENT_SECRET_TYPE_SECRET,
+		                                            _("Private key password"),
 		                                            NM_SETTING (s_8021x),
 		                                            NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD,
-		                                            NULL,
-		                                            NULL,
-		                                            TRUE);
+		                                            NULL);
 		g_ptr_array_add (secrets, secret);
 		return TRUE;
 	}
@@ -270,12 +276,11 @@ add_wireless_secrets (NMSecretAgentSimpleRequest *request,
 		return FALSE;
 
 	if (!strcmp (key_mgmt, "wpa-none") || !strcmp (key_mgmt, "wpa-psk")) {
-		secret = nm_secret_agent_simple_secret_new (_("Password"),
+		secret = nm_secret_agent_simple_secret_new (NM_SECRET_AGENT_SECRET_TYPE_SECRET,
+		                                            _("Password"),
 		                                            NM_SETTING (s_wsec),
 		                                            NM_SETTING_WIRELESS_SECURITY_PSK,
-		                                            NULL,
-		                                            NULL,
-		                                            TRUE);
+		                                            NULL);
 		g_ptr_array_add (secrets, secret);
 		return TRUE;
 	}
@@ -286,12 +291,11 @@ add_wireless_secrets (NMSecretAgentSimpleRequest *request,
 
 		index = nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec);
 		key = g_strdup_printf ("wep-key%d", index);
-		secret = nm_secret_agent_simple_secret_new (_("Key"),
+		secret = nm_secret_agent_simple_secret_new (NM_SECRET_AGENT_SECRET_TYPE_SECRET,
+		                                            _("Key"),
 		                                            NM_SETTING (s_wsec),
 		                                            key,
-		                                            NULL,
-		                                            NULL,
-		                                            TRUE);
+		                                            NULL);
 		g_free (key);
 
 		g_ptr_array_add (secrets, secret);
@@ -300,12 +304,11 @@ add_wireless_secrets (NMSecretAgentSimpleRequest *request,
 
 	if (!strcmp (key_mgmt, "iee8021x")) {
 		if (!g_strcmp0 (nm_setting_wireless_security_get_auth_alg (s_wsec), "leap")) {
-			secret = nm_secret_agent_simple_secret_new (_("Password"),
+			secret = nm_secret_agent_simple_secret_new (NM_SECRET_AGENT_SECRET_TYPE_SECRET,
+			                                            _("Password"),
 			                                            NM_SETTING (s_wsec),
 			                                            NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD,
-			                                            NULL,
-			                                            NULL,
-			                                            TRUE);
+			                                            NULL);
 			g_ptr_array_add (secrets, secret);
 			return TRUE;
 		} else
@@ -325,26 +328,23 @@ add_pppoe_secrets (NMSecretAgentSimpleRequest *request,
 	NMSettingPppoe *s_pppoe = nm_connection_get_setting_pppoe (request->connection);
 	NMSecretAgentSimpleSecret *secret;
 
-	secret = nm_secret_agent_simple_secret_new (_("Username"),
+	secret = nm_secret_agent_simple_secret_new (NM_SECRET_AGENT_SECRET_TYPE_PROPERTY,
+	                                            _("Username"),
 	                                            NM_SETTING (s_pppoe),
 	                                            NM_SETTING_PPPOE_USERNAME,
-	                                            NULL,
-	                                            NULL,
-	                                            FALSE);
+	                                            NULL);
 	g_ptr_array_add (secrets, secret);
-	secret = nm_secret_agent_simple_secret_new (_("Service"),
+	secret = nm_secret_agent_simple_secret_new (NM_SECRET_AGENT_SECRET_TYPE_PROPERTY,
+	                                            _("Service"),
 	                                            NM_SETTING (s_pppoe),
 	                                            NM_SETTING_PPPOE_SERVICE,
-	                                            NULL,
-	                                            NULL,
-	                                            FALSE);
+	                                            NULL);
 	g_ptr_array_add (secrets, secret);
-	secret = nm_secret_agent_simple_secret_new (_("Password"),
+	secret = nm_secret_agent_simple_secret_new (NM_SECRET_AGENT_SECRET_TYPE_SECRET,
+	                                            _("Password"),
 	                                            NM_SETTING (s_pppoe),
 	                                            NM_SETTING_PPPOE_PASSWORD,
-	                                            NULL,
-	                                            NULL,
-	                                            TRUE);
+	                                            NULL);
 	g_ptr_array_add (secrets, secret);
 	return TRUE;
 }
@@ -369,23 +369,27 @@ add_vpn_secret_helper (GPtrArray *secrets, NMSettingVpn *s_vpn, const char *name
 	NMSettingSecretFlags flags;
 	int i;
 
-	/* Check for duplicates */
-	for (i = 0; i < secrets->len; i++) {
-		secret = secrets->pdata[i];
-
-		if (g_strcmp0 (secret->vpn_property, name) == 0)
-			return;
-	}
-
 	flags = get_vpn_secret_flags (s_vpn, name);
 	if (   flags & NM_SETTING_SECRET_FLAG_AGENT_OWNED
 	    || flags & NM_SETTING_SECRET_FLAG_NOT_SAVED) {
-		secret = nm_secret_agent_simple_secret_new (ui_name,
+		secret = nm_secret_agent_simple_secret_new (NM_SECRET_AGENT_SECRET_TYPE_VPN_SECRET,
+		                                            ui_name,
 		                                            NM_SETTING (s_vpn),
-		                                            NM_SETTING_VPN_SECRETS,
 		                                            name,
-		                                            nm_setting_vpn_get_service_type (s_vpn),
-		                                            TRUE);
+		                                            nm_setting_vpn_get_service_type (s_vpn));
+
+		/* Check for duplicates */
+		for (i = 0; i < secrets->len; i++) {
+			NMSecretAgentSimpleSecret *s = secrets->pdata[i];
+
+			if (   s->secret_type == secret->secret_type
+			    && nm_streq0 (s->vpn_type, secret->vpn_type)
+			    && nm_streq0 (s->entry_id, secret->entry_id)) {
+				nm_secret_agent_simple_secret_free (secret);
+				return;
+			}
+		}
+
 		g_ptr_array_add (secrets, secret);
 	}
 }
@@ -489,24 +493,22 @@ request_secrets_from_ui (NMSecretAgentSimpleRequest *request)
 			title = _("PIN code required");
 			msg = g_strdup (_("PIN code is needed for the mobile broadband device"));
 
-			secret = nm_secret_agent_simple_secret_new (_("PIN"),
+			secret = nm_secret_agent_simple_secret_new (NM_SECRET_AGENT_SECRET_TYPE_PROPERTY,
+			                                            _("PIN"),
 			                                            NM_SETTING (s_gsm),
 			                                            NM_SETTING_GSM_PIN,
-			                                            NULL,
-			                                            NULL,
-			                                            FALSE);
+			                                            NULL);
 			g_ptr_array_add (secrets, secret);
 		} else {
 			title = _("Mobile broadband network password");
 			msg = g_strdup_printf (_("A password is required to connect to '%s'."),
 			                       nm_connection_get_id (request->connection));
 
-			secret = nm_secret_agent_simple_secret_new (_("Password"),
+			secret = nm_secret_agent_simple_secret_new (NM_SECRET_AGENT_SECRET_TYPE_SECRET,
+			                                            _("Password"),
 			                                            NM_SETTING (s_gsm),
 			                                            NM_SETTING_GSM_PASSWORD,
-			                                            NULL,
-			                                            NULL,
-			                                            TRUE);
+			                                            NULL);
 			g_ptr_array_add (secrets, secret);
 		}
 	} else if (nm_connection_is_type (request->connection, NM_SETTING_MACSEC_SETTING_NAME)) {
@@ -517,12 +519,11 @@ request_secrets_from_ui (NMSecretAgentSimpleRequest *request)
 
 		if (nm_setting_macsec_get_mode (s_macsec) == NM_SETTING_MACSEC_MODE_PSK) {
 			title = _("MACsec PSK authentication");
-			secret = nm_secret_agent_simple_secret_new (_("MKA CAK"),
+			secret = nm_secret_agent_simple_secret_new (NM_SECRET_AGENT_SECRET_TYPE_SECRET,
+			                                            _("MKA CAK"),
 			                                            NM_SETTING (s_macsec),
 			                                            NM_SETTING_MACSEC_MKA_CAK,
-			                                            NULL,
-			                                            NULL,
-			                                            TRUE);
+			                                            NULL);
 			g_ptr_array_add (secrets, secret);
 		} else {
 			title = _("MACsec EAP authentication");
@@ -535,12 +536,11 @@ request_secrets_from_ui (NMSecretAgentSimpleRequest *request)
 		msg = g_strdup_printf (_("A password is required to connect to '%s'."),
 		                       nm_connection_get_id (request->connection));
 
-		secret = nm_secret_agent_simple_secret_new (_("Password"),
+		secret = nm_secret_agent_simple_secret_new (NM_SECRET_AGENT_SECRET_TYPE_SECRET,
+		                                            _("Password"),
 		                                            NM_SETTING (s_cdma),
 		                                            NM_SETTING_CDMA_PASSWORD,
-		                                            NULL,
-		                                            NULL,
-		                                            TRUE);
+		                                            NULL);
 		g_ptr_array_add (secrets, secret);
 	} else if (nm_connection_is_type (request->connection, NM_SETTING_BLUETOOTH_SETTING_NAME)) {
 		NMSetting *setting = NULL;
@@ -558,12 +558,11 @@ request_secrets_from_ui (NMSecretAgentSimpleRequest *request)
 			msg = g_strdup_printf (_("A password is required to connect to '%s'."),
 			                       nm_connection_get_id (request->connection));
 
-			secret = nm_secret_agent_simple_secret_new (_("Password"),
+			secret = nm_secret_agent_simple_secret_new (NM_SECRET_AGENT_SECRET_TYPE_SECRET,
+			                                            _("Password"),
 			                                            setting,
 			                                            "password",
-			                                            NULL,
-			                                            NULL,
-			                                            TRUE);
+			                                            NULL);
 			g_ptr_array_add (secrets, secret);
 		} else
 			ok = FALSE;
@@ -690,9 +689,7 @@ nm_secret_agent_simple_response (NMSecretAgentSimple *self,
 		GHashTable *settings;
 		GHashTableIter iter;
 		const char *name;
-		const char *vpn_secrets_base_name = NULL;
-
-		g_variant_builder_init (&vpn_secrets_builder, G_VARIANT_TYPE ("a{ss}"));
+		gboolean has_vpn = FALSE;
 
 		settings = g_hash_table_new (nm_str_hash, g_str_equal);
 		for (i = 0; i < secrets->len; i++) {
@@ -705,22 +702,27 @@ nm_secret_agent_simple_response (NMSecretAgentSimple *self,
 				                     setting_builder);
 			}
 
-			if (secret->base.vpn_property) {
-				/* VPN secrets need slightly different treatment.
-				 * "secrets" property is actually a hash table of secrets. */
-				vpn_secrets_base_name = secret->property;
-				g_variant_builder_add (&vpn_secrets_builder, "{ss}",
-				                       secret->base.vpn_property, secret->base.value);
-			} else {
+			switch (secret->base.secret_type) {
+			case NM_SECRET_AGENT_SECRET_TYPE_PROPERTY:
+			case NM_SECRET_AGENT_SECRET_TYPE_SECRET:
 				g_variant_builder_add (setting_builder, "{sv}",
 				                       secret->property,
 				                       g_variant_new_string (secret->base.value));
+				break;
+			case NM_SECRET_AGENT_SECRET_TYPE_VPN_SECRET:
+				if (!has_vpn) {
+					g_variant_builder_init (&vpn_secrets_builder, G_VARIANT_TYPE ("a{ss}"));
+					has_vpn = TRUE;
+				}
+				g_variant_builder_add (&vpn_secrets_builder, "{ss}",
+				                       secret->property, secret->base.value);
+				break;
 			}
 		}
 
-		if (vpn_secrets_base_name) {
+		if (has_vpn) {
 			g_variant_builder_add (setting_builder, "{sv}",
-			                       vpn_secrets_base_name,
+			                       "secrets",
 			                       g_variant_builder_end (&vpn_secrets_builder));
 		}
 

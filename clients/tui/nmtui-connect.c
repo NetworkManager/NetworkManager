@@ -100,41 +100,38 @@ secrets_requested (NMSecretAgentSimple *agent,
 {
 	NmtNewtForm *form;
 	NMConnection *connection = NM_CONNECTION (user_data);
-	char *cookie = NULL;
-	char *gateway = NULL;
-	char *gwcert = NULL;
 	int i;
 
 	/* Get secrets for OpenConnect VPN */
-	if (connection && nm_connection_is_type (connection, NM_SETTING_VPN_SETTING_NAME)) {
+	if (   connection
+	    && nm_connection_is_type (connection, NM_SETTING_VPN_SETTING_NAME)) {
 		NMSettingVpn *s_vpn = nm_connection_get_setting_vpn (connection);
-		const char *vpn_type = nm_setting_vpn_get_service_type (s_vpn);
 
-		if (!g_strcmp0 (vpn_type, NM_DBUS_INTERFACE ".openconnect")) {
+		if (nm_streq0 (nm_setting_vpn_get_service_type (s_vpn), NM_SECRET_AGENT_VPN_TYPE_OPENCONNECT)) {
+			gs_free char *cookie = NULL;
+			gs_free char *gateway = NULL;
+			gs_free char *gwcert = NULL;
+
 			openconnect_authenticate (connection, &cookie, &gateway, &gwcert);
 
 			for (i = 0; i < secrets->len; i++) {
 				NMSecretAgentSimpleSecret *secret = secrets->pdata[i];
 
-				if (!g_strcmp0 (secret->vpn_type, NM_DBUS_INTERFACE ".openconnect")) {
-					if (!g_strcmp0 (secret->vpn_property, "cookie")) {
-						g_free (secret->value);
-						secret->value = cookie;
-						cookie = NULL;
-					} else if (!g_strcmp0 (secret->vpn_property, "gateway")) {
-						g_free (secret->value);
-						secret->value = gateway;
-						gateway = NULL;
-					} else if (!g_strcmp0 (secret->vpn_property, "gwcert")) {
-						g_free (secret->value);
-						secret->value = gwcert;
-						gwcert = NULL;
-					}
+				if (secret->secret_type != NM_SECRET_AGENT_SECRET_TYPE_VPN_SECRET)
+					continue;
+				if (!nm_streq0 (secret->vpn_type, NM_SECRET_AGENT_VPN_TYPE_OPENCONNECT))
+					continue;
+				if (nm_streq0 (secret->entry_id, NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRET "cookie")) {
+					g_free (secret->value);
+					secret->value = g_steal_pointer (&cookie);
+				} else if (nm_streq0 (secret->entry_id, NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRET "gateway")) {
+					g_free (secret->value);
+					secret->value = g_steal_pointer (&gateway);
+				} else if (nm_streq0 (secret->entry_id, NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRET "gwcert")) {
+					g_free (secret->value);
+					secret->value = g_steal_pointer (&gwcert);
 				}
 			}
-			g_free (cookie);
-			g_free (gateway);
-			g_free (gwcert);
 		}
 	}
 
