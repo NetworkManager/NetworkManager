@@ -845,6 +845,32 @@ nm_g_object_set_property (GObject *object,
 	return TRUE;
 }
 
+gboolean
+nm_g_object_set_property_boolean (GObject *object,
+                                  const gchar  *property_name,
+                                  gboolean value,
+                                  GError **error)
+{
+	nm_auto_unset_gvalue GValue gvalue = { 0 };
+
+	g_value_init (&gvalue, G_TYPE_BOOLEAN);
+	g_value_set_boolean (&gvalue, !!value);
+	return nm_g_object_set_property (object, property_name, &gvalue, error);
+}
+
+gboolean
+nm_g_object_set_property_uint (GObject *object,
+                               const gchar  *property_name,
+                               guint value,
+                               GError **error)
+{
+	nm_auto_unset_gvalue GValue gvalue = { 0 };
+
+	g_value_init (&gvalue, G_TYPE_UINT);
+	g_value_set_uint (&gvalue, value);
+	return nm_g_object_set_property (object, property_name, &gvalue, error);
+}
+
 GParamSpec *
 nm_g_object_class_find_property_from_gtype (GType gtype,
                                             const char *property_name)

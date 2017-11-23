@@ -386,6 +386,16 @@ gboolean nm_g_object_set_property (GObject *object,
                                    const GValue *value,
                                    GError **error);
 
+gboolean nm_g_object_set_property_boolean (GObject *object,
+                                           const gchar  *property_name,
+                                           gboolean value,
+                                           GError **error);
+
+gboolean nm_g_object_set_property_uint (GObject *object,
+                                        const gchar  *property_name,
+                                        guint value,
+                                        GError **error);
+
 GParamSpec *nm_g_object_class_find_property_from_gtype (GType gtype,
                                                         const char *property_name);
 
