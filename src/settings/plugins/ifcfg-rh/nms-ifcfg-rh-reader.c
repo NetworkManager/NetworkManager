@@ -4734,30 +4734,30 @@ make_bridge_setting (shvarFile *ifcfg,
                      const char *file,
                      GError **error)
 {
-	NMSettingBridge *s_bridge;
-	char *value;
+	gs_unref_object NMSettingBridge *s_bridge = NULL;
+	gs_free char *value_to_free = NULL;
+	const char *value;
 	guint32 u;
 	gboolean stp = FALSE;
 	gboolean stp_set = FALSE;
 
-	value = svGetValueStr_cp (ifcfg, "DEVICE");
+	value = svGetValueStr (ifcfg, "DEVICE", &value_to_free);
 	if (!value) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "mandatory DEVICE keyword missing");
 		return NULL;
 	}
-	g_free (value);
+	nm_clear_g_free (&value_to_free);
 
 	s_bridge = NM_SETTING_BRIDGE (nm_setting_bridge_new ());
 
-	value = svGetValueStr_cp (ifcfg, "BRIDGE_MACADDR");
+	value = svGetValueStr (ifcfg, "BRIDGE_MACADDR", &value_to_free);
 	if (value) {
-		value = g_strstrip (value);
 		g_object_set (s_bridge, NM_SETTING_BRIDGE_MAC_ADDRESS, value, NULL);
-		g_free (value);
+		nm_clear_g_free (&value_to_free);
 	}
 
-	value = svGetValueStr_cp (ifcfg, "STP");
+	value = svGetValueStr (ifcfg, "STP", &value_to_free);
 	if (value) {
 		if (!strcasecmp (value, "on") || !strcasecmp (value, "yes")) {
 			g_object_set (s_bridge, NM_SETTING_BRIDGE_STP, TRUE, NULL);
@@ -4768,7 +4768,7 @@ make_bridge_setting (shvarFile *ifcfg,
 			stp_set = TRUE;
 		} else
 			PARSE_WARNING ("invalid STP value '%s'", value);
-		g_free (value);
+		nm_clear_g_free (&value_to_free);
 	}
 
 	if (!stp_set) {
@@ -4776,7 +4776,7 @@ make_bridge_setting (shvarFile *ifcfg,
 		g_object_set (s_bridge, NM_SETTING_BRIDGE_STP, FALSE, NULL);
 	}
 
-	value = svGetValueStr_cp (ifcfg, "DELAY");
+	value = svGetValueStr (ifcfg, "DELAY", &value_to_free);
 	if (value) {
 		if (stp) {
 			if (get_uint (value, &u))
@@ -4785,16 +4785,16 @@ make_bridge_setting (shvarFile *ifcfg,
 				PARSE_WARNING ("invalid forward delay value '%s'", value);
 		} else
 			PARSE_WARNING ("DELAY invalid when STP is disabled");
-		g_free (value);
+		nm_clear_g_free (&value_to_free);
 	}
 
-	value = svGetValueStr_cp (ifcfg, "BRIDGING_OPTS");
+	value = svGetValueStr (ifcfg, "BRIDGING_OPTS", &value_to_free);
 	if (value) {
 		handle_bridging_opts (NM_SETTING (s_bridge), stp, value, handle_bridge_option);
-		g_free (value);
+		nm_clear_g_free (&value_to_free);
 	}
 
-	return (NMSetting *) s_bridge;
+	return (NMSetting *) g_steal_pointer (&s_bridge);
 }
 
 static NMConnection *
