@@ -819,8 +819,8 @@ update_system_hostname (NMPolicy *self, const char *msg)
 
 static void
 update_default_ac (NMPolicy *self,
-                   NMActiveConnection *best,
-                   void (*set_active_func)(NMActiveConnection*, gboolean))
+                   int addr_family,
+                   NMActiveConnection *best)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	const CList *tmp_list;
@@ -832,12 +832,12 @@ update_default_ac (NMPolicy *self,
 	 */
 	nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
 		if (ac != best)
-			set_active_func (ac, FALSE);
+			nm_active_connection_set_default (ac, addr_family, FALSE);
 	}
 
 	/* Mark new default active connection */
 	if (best)
-		set_active_func (best, TRUE);
+		nm_active_connection_set_default (best, addr_family, TRUE);
 }
 
 static gpointer
@@ -959,7 +959,7 @@ update_ip4_routing (NMPolicy *self, gboolean force_update)
 	if (vpn)
 		best = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
 
-	update_default_ac (self, best_ac, nm_active_connection_set_default);
+	update_default_ac (self, AF_INET, best_ac);
 
 	if (!nm_g_object_ref_set (&priv->default_device4, best))
 		return;
@@ -1042,7 +1042,7 @@ update_ip6_routing (NMPolicy *self, gboolean force_update)
 	if (vpn)
 		best = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
 
-	update_default_ac (self, best_ac, nm_active_connection_set_default6);
+	update_default_ac (self, AF_INET6, best_ac);
 
 	if (!nm_g_object_ref_set (&priv->default_device6, best))
 		return;

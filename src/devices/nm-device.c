@@ -12446,7 +12446,7 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 	nm_assert (priv->needs_ip6_subnet == FALSE);
 
 	if (priv->act_request) {
-		nm_active_connection_set_default (NM_ACTIVE_CONNECTION (priv->act_request), FALSE);
+		nm_active_connection_set_default (NM_ACTIVE_CONNECTION (priv->act_request), AF_INET, FALSE);
 
 		priv->master_ready_handled = FALSE;
 		nm_clear_g_signal_handler (priv->act_request, &priv->master_ready_id);

@@ -137,14 +137,10 @@ void          nm_active_connection_set_specific_object (NMActiveConnection *self
                                                         const char *specific_object);
 
 void          nm_active_connection_set_default (NMActiveConnection *self,
+                                                int addr_family,
                                                 gboolean is_default);
 
-gboolean      nm_active_connection_get_default (NMActiveConnection *self);
-
-void          nm_active_connection_set_default6 (NMActiveConnection *self,
-                                                 gboolean is_default6);
-
-gboolean      nm_active_connection_get_default6 (NMActiveConnection *self);
+gboolean      nm_active_connection_get_default (NMActiveConnection *self, int addr_family);
 
 NMActiveConnectionState nm_active_connection_get_state (NMActiveConnection *self);
 

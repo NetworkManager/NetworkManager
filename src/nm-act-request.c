@@ -454,10 +454,8 @@ device_state_changed (NMActiveConnection *active,
 	}
 
 	if (   ac_state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED
-	    || ac_state == NM_ACTIVE_CONNECTION_STATE_UNKNOWN) {
-		nm_active_connection_set_default (active, FALSE);
-		nm_active_connection_set_default6 (active, FALSE);
-	}
+	    || ac_state == NM_ACTIVE_CONNECTION_STATE_UNKNOWN)
+		nm_active_connection_set_default (active, AF_UNSPEC, FALSE);
 
 	nm_active_connection_set_state (active, ac_state, ac_state_reason);
 }
