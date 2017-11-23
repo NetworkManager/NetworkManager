@@ -4661,13 +4661,14 @@ handle_bridge_option (NMSetting *setting,
                       const char *key,
                       const char *value)
 {
+	gint64 v;
 	guint32 u = 0;
 
 	if (!strcmp (key, "priority")) {
 		if (stp == FALSE)
 			PARSE_WARNING ("'priority' invalid when STP is disabled");
-		else if (get_uint32 (value, &u))
-			g_object_set (setting, NM_SETTING_BRIDGE_PRIORITY, u, NULL);
+		else if ((v = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT16, -1)) != -1)
+			g_object_set (setting, NM_SETTING_BRIDGE_PRIORITY, (guint) v, NULL);
 		else
 			PARSE_WARNING ("invalid priority value '%s'", value);
 	} else if (!strcmp (key, "hello_time")) {
