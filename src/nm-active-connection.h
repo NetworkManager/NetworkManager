@@ -24,6 +24,8 @@
 #include "nm-exported-object.h"
 #include "nm-connection.h"
 
+#include "nm-utils/c-list.h"
+
 #define NM_TYPE_ACTIVE_CONNECTION            (nm_active_connection_get_type ())
 #define NM_ACTIVE_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_ACTIVE_CONNECTION, NMActiveConnection))
 #define NM_ACTIVE_CONNECTION_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_ACTIVE_CONNECTION, NMActiveConnectionClass))
@@ -71,6 +73,10 @@ struct _NMActiveConnectionPrivate;
 struct _NMActiveConnection {
 	NMExportedObject parent;
 	struct _NMActiveConnectionPrivate *_priv;
+
+	/* active connection can be tracked in a list by NMManager. This is
+	 * the list node. */
+	CList active_connections_lst;
 };
 
 typedef struct {

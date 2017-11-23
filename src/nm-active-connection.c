@@ -1289,6 +1289,8 @@ nm_active_connection_init (NMActiveConnection *self)
 	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_ACTIVE_CONNECTION, NMActiveConnectionPrivate);
 	self->_priv = priv;
 
+	c_list_init (&self->active_connections_lst);
+
 	_LOGT ("creating");
 
 	priv->activation_type = NM_ACTIVATION_TYPE_MANAGED;
@@ -1330,6 +1332,8 @@ dispose (GObject *object)
 {
 	NMActiveConnection *self = NM_ACTIVE_CONNECTION (object);
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+
+	nm_assert (!c_list_is_linked (&self->active_connections_lst));
 
 	_LOGD ("disposing");
 

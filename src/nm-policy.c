@@ -312,8 +312,9 @@ device_ip6_prefix_delegated (NMDevice *device,
 	NMPolicyPrivate *priv = user_data;
 	NMPolicy *self = _PRIV_TO_SELF (priv);
 	IP6PrefixDelegation *delegation = NULL;
-	const GSList *connections, *iter;
 	guint i;
+	const CList *tmp_list;
+	NMActiveConnection *ac;
 
 	_LOGI (LOGD_IP6, "ipv6-pd: received a prefix %s/%d from %s",
 	       nm_utils_inet6_ntop (&prefix->address, NULL),
@@ -344,10 +345,10 @@ device_ip6_prefix_delegated (NMDevice *device,
 	 * so traversing it from the beginning makes it likely for newly
 	 * activated connections that have no subnet assigned to be served
 	 * first. That is a simple yet fair policy, which is good. */
-	connections = nm_manager_get_active_connections (priv->manager);
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMDevice *to_device = nm_active_connection_get_device (iter->data);
+	nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
+		NMDevice *to_device;
 
+		to_device = nm_active_connection_get_device (ac);
 		if (nm_device_needs_ip6_subnet (to_device))
 			ip6_subnet_from_delegation (delegation, to_device);
 	}
@@ -822,16 +823,16 @@ update_default_ac (NMPolicy *self,
                    void (*set_active_func)(NMActiveConnection*, gboolean))
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	const GSList *connections, *iter;
+	const CList *tmp_list;
+	NMActiveConnection *ac;
 
 	/* Clear the 'default[6]' flag on all active connections that aren't the new
 	 * default active connection.  We'll set the new default after; this ensures
 	 * we don't ever have two marked 'default[6]' simultaneously.
 	 */
-	connections = nm_manager_get_active_connections (priv->manager);
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		if (NM_ACTIVE_CONNECTION (iter->data) != best)
-			set_active_func (NM_ACTIVE_CONNECTION (iter->data), FALSE);
+	nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
+		if (ac != best)
+			set_active_func (ac, FALSE);
 	}
 
 	/* Mark new default active connection */
@@ -850,19 +851,19 @@ get_best_ip_config (NMPolicy *self,
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	NMDevice *device;
 	gpointer conf;
-	const GSList *iter;
+	const CList *tmp_list;
+	NMActiveConnection *ac;
 
 	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 
-	for (iter = nm_manager_get_active_connections (priv->manager); iter; iter = iter->next) {
-		NMActiveConnection *active = NM_ACTIVE_CONNECTION (iter->data);
+	nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
 		NMVpnConnection *candidate;
 		NMVpnConnectionState vpn_state;
 
-		if (!NM_IS_VPN_CONNECTION (active))
+		if (!NM_IS_VPN_CONNECTION (ac))
 			continue;
 
-		candidate = NM_VPN_CONNECTION (active);
+		candidate = NM_VPN_CONNECTION (ac);
 
 		vpn_state = nm_vpn_connection_get_vpn_state (candidate);
 		if (vpn_state != NM_VPN_CONNECTION_STATE_ACTIVATED)
@@ -887,7 +888,7 @@ get_best_ip_config (NMPolicy *self,
 		 * best metric. */
 		NM_SET_OUT (out_device, NULL);
 		NM_SET_OUT (out_vpn, candidate);
-		NM_SET_OUT (out_ac, active);
+		NM_SET_OUT (out_ac, ac);
 		NM_SET_OUT (out_ip_iface, nm_vpn_connection_get_ip_iface (candidate, TRUE));
 		return conf;
 	}
@@ -926,6 +927,8 @@ update_ip4_routing (NMPolicy *self, gboolean force_update)
 	NMVpnConnection *vpn = NULL;
 	NMActiveConnection *best_ac = NULL;
 	const char *ip_iface = NULL;
+	const CList *tmp_list;
+	NMActiveConnection *ac;
 
 	/* Note that we might have an IPv4 VPN tunneled over an IPv6-only device,
 	 * so we can get (vpn != NULL && best == NULL).
@@ -945,16 +948,11 @@ update_ip4_routing (NMPolicy *self, gboolean force_update)
 		return;
 
 	if (best) {
-		const GSList *connections, *iter;
-
-		connections = nm_manager_get_active_connections (priv->manager);
-		for (iter = connections; iter; iter = g_slist_next (iter)) {
-			NMActiveConnection *active = iter->data;
-
-			if (   NM_IS_VPN_CONNECTION (active)
-			    && nm_vpn_connection_get_ip4_config (NM_VPN_CONNECTION (active))
-			    && !nm_active_connection_get_device (active))
-				nm_active_connection_set_device (active, best);
+		nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
+			if (   NM_IS_VPN_CONNECTION (ac)
+			    && nm_vpn_connection_get_ip4_config (NM_VPN_CONNECTION (ac))
+			    && !nm_active_connection_get_device (ac))
+				nm_active_connection_set_device (ac, best);
 		}
 	}
 
@@ -977,12 +975,12 @@ static void
 update_ip6_dns_delegation (NMPolicy *self)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	const GSList *connections, *iter;
+	NMDevice *device;
+	NMActiveConnection *ac;
+	const CList *tmp_list;
 
-	connections = nm_manager_get_active_connections (priv->manager);
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMDevice *device = nm_active_connection_get_device (iter->data);
-
+	nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
+		device = nm_active_connection_get_device (ac);
 		if (device && nm_device_needs_ip6_subnet (device))
 			nm_device_copy_ip6_dns_config (device, priv->default_device6);
 	}
@@ -992,13 +990,13 @@ static void
 update_ip6_prefix_delegation (NMPolicy *self)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	const GSList *connections, *iter;
+	NMDevice *device;
+	NMActiveConnection *ac;
+	const CList *tmp_list;
 
 	/* There's new default IPv6 connection, try to get a prefix for everyone. */
-	connections = nm_manager_get_active_connections (priv->manager);
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMDevice *device = nm_active_connection_get_device (iter->data);
-
+	nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
+		device = nm_active_connection_get_device (ac);
 		if (device && nm_device_needs_ip6_subnet (device))
 			ip6_subnet_from_device (self, priv->default_device6, device);
 	}
@@ -1012,6 +1010,8 @@ update_ip6_routing (NMPolicy *self, gboolean force_update)
 	NMVpnConnection *vpn = NULL;
 	NMActiveConnection *best_ac = NULL;
 	const char *ip_iface = NULL;
+	NMActiveConnection *ac;
+	const CList *tmp_list;
 
 	/* Note that we might have an IPv6 VPN tunneled over an IPv4-only device,
 	 * so we can get (vpn != NULL && best == NULL).
@@ -1031,16 +1031,11 @@ update_ip6_routing (NMPolicy *self, gboolean force_update)
 		return;
 
 	if (best) {
-		const GSList *connections, *iter;
-
-		connections = nm_manager_get_active_connections (priv->manager);
-		for (iter = connections; iter; iter = g_slist_next (iter)) {
-			NMActiveConnection *active = iter->data;
-
-			if (   NM_IS_VPN_CONNECTION (active)
-			    && nm_vpn_connection_get_ip6_config (NM_VPN_CONNECTION (active))
-			    && !nm_active_connection_get_device (active))
-				nm_active_connection_set_device (active, best);
+		nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
+			if (   NM_IS_VPN_CONNECTION (ac)
+			    && nm_vpn_connection_get_ip6_config (NM_VPN_CONNECTION (ac))
+			    && !nm_active_connection_get_device (ac))
+				nm_active_connection_set_device (ac, best);
 		}
 	}
 
@@ -1472,7 +1467,8 @@ schedule_activate_check (NMPolicy *self, NMDevice *device)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	ActivateData *data;
-	const GSList *active_connections, *iter;
+	NMActiveConnection *ac;
+	const CList *tmp_list;
 
 	if (nm_manager_get_state (priv->manager) == NM_STATE_ASLEEP)
 		return;
@@ -1483,9 +1479,8 @@ schedule_activate_check (NMPolicy *self, NMDevice *device)
 	if (find_pending_activation (self, device))
 		return;
 
-	active_connections = nm_manager_get_active_connections (priv->manager);
-	for (iter = active_connections; iter; iter = iter->next) {
-		if (nm_active_connection_get_device (NM_ACTIVE_CONNECTION (iter->data)) == device)
+	nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
+		if (nm_active_connection_get_device (ac) == device)
 			return;
 	}
 
@@ -2302,19 +2297,21 @@ connection_updated (NMSettings *settings,
 }
 
 static void
-_deactivate_if_active (NMManager *manager, NMSettingsConnection *connection)
+_deactivate_if_active (NMPolicy *self, NMSettingsConnection *connection)
 {
-	const GSList *active, *iter;
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
+	NMActiveConnection *ac;
+	const CList *tmp_list;
+	GError *error = NULL;
 
-	active = nm_manager_get_active_connections (manager);
-	for (iter = active; iter; iter = g_slist_next (iter)) {
-		NMActiveConnection *ac = iter->data;
+	nm_assert (NM_IS_SETTINGS_CONNECTION (connection));
+
+	nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
 		NMActiveConnectionState state = nm_active_connection_get_state (ac);
-		GError *error = NULL;
 
-		if (nm_active_connection_get_settings_connection (ac) == connection &&
-		    (state <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED)) {
-			if (!nm_manager_deactivate_connection (manager,
+		if (   nm_active_connection_get_settings_connection (ac) == connection
+		    && (state <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED)) {
+			if (!nm_manager_deactivate_connection (priv->manager,
 			                                       ac,
 			                                       NM_DEVICE_STATE_REASON_CONNECTION_REMOVED,
 			                                       &error)) {
@@ -2333,9 +2330,7 @@ connection_removed (NMSettings *settings,
                     NMSettingsConnection *connection,
                     gpointer user_data)
 {
-	NMPolicyPrivate *priv = user_data;
-
-	_deactivate_if_active (priv->manager, connection);
+	_deactivate_if_active (user_data, connection);
 }
 
 static void
@@ -2349,7 +2344,7 @@ connection_visibility_changed (NMSettings *settings,
 	if (nm_settings_connection_is_visible (connection))
 		schedule_activate_all (self);
 	else
-		_deactivate_if_active (priv->manager, connection);
+		_deactivate_if_active (self, connection);
 }
 
 static void
@@ -2551,7 +2546,6 @@ dispose (GObject *object)
 {
 	NMPolicy *self = NM_POLICY (object);
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	const GSList *connections;
 	GHashTableIter h_iter;
 	NMDevice *device;
 	ActivateData *data, *data_safe;
@@ -2592,8 +2586,7 @@ dispose (GObject *object)
 	 * will have called active_connection_removed() and thus we don't need
 	 * to clean anything up.  Assert that this is TRUE.
 	 */
-	connections = nm_manager_get_active_connections (priv->manager);
-	g_assert (connections == NULL);
+	nm_assert (c_list_is_empty (nm_manager_get_active_connections (priv->manager)));
 
 	nm_clear_g_source (&priv->reset_retries_id);
 	nm_clear_g_source (&priv->schedule_activate_all_id);
