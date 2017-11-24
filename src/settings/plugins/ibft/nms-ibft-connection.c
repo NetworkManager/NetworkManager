@@ -62,7 +62,7 @@ nms_ibft_connection_new (const GPtrArray *block, GError **error)
 	/* Update settings with what was read from iscsiadm */
 	if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
 	                                              source,
-	                                              FALSE,
+	                                              NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
 	                                              NULL,
 	                                              error))
 		g_clear_object (&object);

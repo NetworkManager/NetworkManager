@@ -552,13 +552,13 @@ nm_settings_connection_replace_settings_prepare (NMSettingsConnection *self,
 	return TRUE;
 }
 
-gboolean
-nm_settings_connection_replace_settings_full (NMSettingsConnection *self,
-                                              NMConnection *new_connection,
-                                              gboolean prepare_new_connection,
-                                              gboolean update_unsaved,
-                                              const char *log_diff_name,
-                                              GError **error)
+static gboolean
+_replace_settings_full (NMSettingsConnection *self,
+                        NMConnection *new_connection,
+                        gboolean prepare_new_connection,
+                        NMSettingsConnectionPersistMode persist_mode,
+                        const char *log_diff_name,
+                        GError **error)
 {
 	NMSettingsConnectionPrivate *priv;
 
@@ -619,8 +619,16 @@ nm_settings_connection_replace_settings_full (NMSettingsConnection *self,
 	/* Manually emit changed signal since we disconnected the handler, but
 	 * only update Unsaved if the caller wanted us to.
 	 */
-	if (update_unsaved)
+	switch (persist_mode) {
+	case NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY:
 		set_unsaved (self, TRUE);
+		break;
+	case NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK:
+		set_unsaved (self, FALSE);
+		break;
+	case NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP:
+		break;
+	}
 
 	g_signal_handlers_unblock_by_func (self, G_CALLBACK (connection_changed_cb), NULL);
 
@@ -635,16 +643,16 @@ nm_settings_connection_replace_settings_full (NMSettingsConnection *self,
 gboolean
 nm_settings_connection_replace_settings (NMSettingsConnection *self,
                                          NMConnection *new_connection,
-                                         gboolean update_unsaved,
+                                         NMSettingsConnectionPersistMode persist_mode,
                                          const char *log_diff_name,
                                          GError **error)
 {
-	return nm_settings_connection_replace_settings_full (self,
-	                                                     new_connection,
-	                                                     TRUE,
-	                                                     update_unsaved,
-	                                                     log_diff_name,
-	                                                     error);
+	return _replace_settings_full (self,
+	                               new_connection,
+	                               TRUE,
+	                               persist_mode,
+	                               log_diff_name,
+	                               error);
 }
 
 gboolean
@@ -694,14 +702,14 @@ nm_settings_connection_commit_changes (NMSettingsConnection *self,
 	}
 
 	if (reread_connection || new_connection) {
-		if (!nm_settings_connection_replace_settings_full (self,
-		                                                   reread_connection ?: new_connection,
-		                                                   !reread_connection,
-		                                                   FALSE,
-		                                                   new_connection
-		                                                     ? "update-during-write"
-		                                                     : "replace-and-commit-disk",
-		                                                   &local)) {
+		if (!_replace_settings_full (self,
+		                             reread_connection ?: new_connection,
+		                             !reread_connection,
+		                             NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
+		                             new_connection
+		                               ? "update-during-write"
+		                               : "replace-and-commit-disk",
+		                             &local)) {
 			/* this can't really happen, because at this point replace-settings
 			 * is no longer supposed to fail. It's a bug. */
 			_LOGE ("write: replacing setting failed: %s",
@@ -1711,7 +1719,7 @@ update_auth_cb (NMSettingsConnection *self,
 		if (info->new_settings) {
 			nm_settings_connection_replace_settings (self,
 			                                         info->new_settings,
-			                                         TRUE,
+			                                         NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY,
 			                                         "replace-unsaved",
 			                                         &local);
 		}

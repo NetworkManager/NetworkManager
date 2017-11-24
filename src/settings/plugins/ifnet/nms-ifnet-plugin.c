@@ -271,7 +271,7 @@ reload_connections (NMSettingsPlugin *config)
 				/* Update existing connection with new settings */
 				if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (old),
 				                                              NM_CONNECTION (new),
-				                                              FALSE,  /* don't set Unsaved */
+				                                              NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
 				                                              "ifnet-update",
 				                                              &error)) {
 					/* Shouldn't ever get here as 'new' was verified by the reader already

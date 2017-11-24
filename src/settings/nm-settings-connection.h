@@ -140,18 +140,17 @@ gboolean nm_settings_connection_replace_settings_prepare (NMSettingsConnection *
                                                           NMConnection *new_connection,
                                                           GError **error);
 
+typedef enum {
+	NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
+	NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
+	NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY,
+} NMSettingsConnectionPersistMode;
+
 gboolean nm_settings_connection_replace_settings (NMSettingsConnection *self,
                                                   NMConnection *new_connection,
-                                                  gboolean update_unsaved,
+                                                  NMSettingsConnectionPersistMode persist_mode,
                                                   const char *log_diff_name,
                                                   GError **error);
-
-gboolean nm_settings_connection_replace_settings_full (NMSettingsConnection *self,
-                                                       NMConnection *new_connection,
-                                                       gboolean prepare_new_connection,
-                                                       gboolean update_unsaved,
-                                                       const char *log_diff_name,
-                                                       GError **error);
 
 gboolean nm_settings_connection_delete (NMSettingsConnection *self,
                                         GError **error);
