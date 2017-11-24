@@ -1781,21 +1781,24 @@ device_state_changed (NMDevice *device,
 			update_routing_and_dns (self, FALSE);
 		break;
 	case NM_DEVICE_STATE_DEACTIVATING:
-		if (NM_IN_SET (nm_device_state_reason_check (reason),
-		               NM_DEVICE_STATE_REASON_USER_REQUESTED,
-		               NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED)) {
-			if (connection) {
-				NMSettingsAutoconnectBlockedReason blocked_reason;
+		if (connection) {
+			NMSettingsAutoconnectBlockedReason blocked_reason = NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE;
 
-				/* The connection was deactivated, so block just this connection */
+			switch (nm_device_state_reason_check (reason)) {
+			case NM_DEVICE_STATE_REASON_USER_REQUESTED:
+				 blocked_reason = NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST;
+				break;
+			case NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED:
+				blocked_reason = NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED;
+				break;
+			default:
+				break;
+			}
+			if (blocked_reason != NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE) {
 				_LOGD (LOGD_DEVICE, "blocking autoconnect of connection '%s': %s",
 				       nm_settings_connection_get_id (connection),
 				       NM_UTILS_LOOKUP_STR (nm_device_state_reason_to_str,
 				                            nm_device_state_reason_check (reason)));
-				if (nm_device_state_reason_check (reason) == NM_DEVICE_STATE_REASON_USER_REQUESTED)
-					blocked_reason = NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST;
-				else
-					blocked_reason = NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED;
 				nm_settings_connection_autoconnect_blocked_reason_set (connection, blocked_reason);
 			}
 		}
