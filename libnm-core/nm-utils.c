@@ -4688,13 +4688,10 @@ nm_utils_parse_variant_attributes (const char *string,
 				}
 				variant = g_variant_new_byte ((guchar) num);
 			} else if (g_variant_type_equal ((*s)->type, G_VARIANT_TYPE_BOOLEAN)) {
-				gboolean b;
+				int b;
 
-				if (nm_streq (value, "true"))
-					b = TRUE;
-				else if (nm_streq (value, "false"))
-					b = FALSE;
-				else {
+				b = _nm_utils_ascii_str_to_bool (value, -1);
+				if (b == -1) {
 					g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
 					             _("invalid boolean value '%s' for attribute '%s'"), value, name);
 					return NULL;
