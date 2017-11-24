@@ -28,6 +28,8 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "nm-utils/c-list.h"
+
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"
 #include "devices/nm-device.h"
@@ -41,7 +43,7 @@ typedef struct {
 } ShareRule;
 
 typedef struct {
-	GSList *secrets_calls;
+	CList call_ids_lst_head;
 	gboolean shared;
 	GSList *share_rules;
 } NMActRequestPrivate;
@@ -90,6 +92,7 @@ nm_act_request_get_applied_connection (NMActRequest *req)
 /*****************************************************************************/
 
 struct _NMActRequestGetSecretsCallId {
+	CList call_ids_lst;
 	NMActRequest *self;
 	NMActRequestSecretsFunc callback;
 	gpointer callback_data;
@@ -97,23 +100,12 @@ struct _NMActRequestGetSecretsCallId {
 	bool has_ref;
 };
 
-static NMActRequestGetSecretsCallId *
-_get_secrets_call_id_new (NMActRequest *self, gboolean ref_self, NMActRequestSecretsFunc callback, gpointer callback_data)
-{
-	NMActRequestGetSecretsCallId *call_id;
-
-	call_id = g_slice_new0 (NMActRequestGetSecretsCallId);
-	call_id->has_ref = ref_self;
-	call_id->self = ref_self ? g_object_ref (self) : self;
-	call_id->callback = callback;
-	call_id->callback_data = callback_data;
-
-	return call_id;
-}
-
 static void
 _get_secrets_call_id_free (NMActRequestGetSecretsCallId *call_id)
 {
+	nm_assert (call_id);
+	nm_assert (!c_list_is_linked (&call_id->call_ids_lst));
+
 	if (call_id->has_ref)
 		g_object_unref (call_id->self);
 	g_slice_free (NMActRequestGetSecretsCallId, call_id);
@@ -138,9 +130,9 @@ get_secrets_cb (NMSettingsConnection *connection,
 
 	priv = NM_ACT_REQUEST_GET_PRIVATE (call_id->self);
 
-	g_return_if_fail (g_slist_find (priv->secrets_calls, call_id));
+	nm_assert (c_list_contains (&priv->call_ids_lst_head, &call_id->call_ids_lst));
 
-	priv->secrets_calls = g_slist_remove (priv->secrets_calls, call_id);
+	c_list_unlink_init (&call_id->call_ids_lst);
 
 	if (call_id->callback)
 		call_id->callback (call_id->self, call_id, connection, error, call_id->callback_data);
@@ -192,9 +184,12 @@ nm_act_request_get_secrets (NMActRequest *self,
 	settings_connection = nm_act_request_get_settings_connection (self);
 	applied_connection = nm_act_request_get_applied_connection (self);
 
-	call_id = _get_secrets_call_id_new (self, ref_self, callback, callback_data);
-
-	priv->secrets_calls = g_slist_append (priv->secrets_calls, call_id);
+	call_id = g_slice_new0 (NMActRequestGetSecretsCallId);
+	call_id->has_ref = ref_self;
+	call_id->self = ref_self ? g_object_ref (self) : self;
+	call_id->callback = callback;
+	call_id->callback_data = callback_data;
+	c_list_link_tail (&priv->call_ids_lst_head, &call_id->call_ids_lst);
 
 	if (nm_active_connection_get_user_requested (NM_ACTIVE_CONNECTION (self)))
 		flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_USER_REQUESTED;
@@ -218,9 +213,9 @@ _do_cancel_secrets (NMActRequest *self, NMActRequestGetSecretsCallId *call_id, g
 	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (self);
 
 	nm_assert (call_id && call_id->self == self);
-	nm_assert (g_slist_find (priv->secrets_calls, call_id));
+	nm_assert (c_list_contains (&priv->call_ids_lst_head, &call_id->call_ids_lst));
 
-	priv->secrets_calls = g_slist_remove (priv->secrets_calls, call_id);
+	c_list_unlink_init (&call_id->call_ids_lst);
 
 	nm_settings_connection_cancel_secrets (nm_act_request_get_settings_connection (self), call_id->call_id);
 
@@ -262,7 +257,7 @@ nm_act_request_cancel_secrets (NMActRequest *self, NMActRequestGetSecretsCallId 
 
 	priv = NM_ACT_REQUEST_GET_PRIVATE (self);
 
-	if (!g_slist_find (priv->secrets_calls, call_id))
+	if (!c_list_is_linked (&call_id->call_ids_lst))
 		g_return_if_reached ();
 
 	_do_cancel_secrets (self, call_id, FALSE);
@@ -535,6 +530,9 @@ get_property (GObject *object, guint prop_id,
 static void
 nm_act_request_init (NMActRequest *req)
 {
+	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (req);
+
+	c_list_init (&priv->call_ids_lst_head);
 }
 
 /**
@@ -580,10 +578,11 @@ dispose (GObject *object)
 {
 	NMActRequest *self = NM_ACT_REQUEST (object);
 	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (self);
+	NMActRequestGetSecretsCallId *call_id, *call_id_safe;
 
 	/* Kill any in-progress secrets requests */
-	while (priv->secrets_calls)
-		_do_cancel_secrets (self, priv->secrets_calls->data, TRUE);
+	c_list_for_each_entry_safe (call_id, call_id_safe, &priv->call_ids_lst_head, call_ids_lst)
+		_do_cancel_secrets (self, call_id, TRUE);
 
 	/* Clear any share rules */
 	if (priv->share_rules) {
