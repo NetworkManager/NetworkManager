@@ -97,14 +97,12 @@ struct _NMActRequestGetSecretsCallId {
 	bool has_ref;
 };
 
-typedef struct _NMActRequestGetSecretsCallId GetSecretsInfo;
-
-static GetSecretsInfo *
+static NMActRequestGetSecretsCallId *
 _get_secrets_info_new (NMActRequest *self, gboolean ref_self, NMActRequestSecretsFunc callback, gpointer callback_data)
 {
-	GetSecretsInfo *info;
+	NMActRequestGetSecretsCallId *info;
 
-	info = g_slice_new0 (GetSecretsInfo);
+	info = g_slice_new0 (NMActRequestGetSecretsCallId);
 	info->has_ref = ref_self;
 	info->self = ref_self ? g_object_ref (self) : self;
 	info->callback = callback;
@@ -114,11 +112,11 @@ _get_secrets_info_new (NMActRequest *self, gboolean ref_self, NMActRequestSecret
 }
 
 static void
-_get_secrets_info_free (GetSecretsInfo *info)
+_get_secrets_info_free (NMActRequestGetSecretsCallId *info)
 {
 	if (info->has_ref)
 		g_object_unref (info->self);
-	g_slice_free (GetSecretsInfo, info);
+	g_slice_free (NMActRequestGetSecretsCallId, info);
 }
 
 static void
@@ -129,7 +127,7 @@ get_secrets_cb (NMSettingsConnection *connection,
                 GError *error,
                 gpointer user_data)
 {
-	GetSecretsInfo *info = user_data;
+	NMActRequestGetSecretsCallId *info = user_data;
 	NMActRequestPrivate *priv;
 
 	g_return_if_fail (info && info->call_id == call_id_s);
@@ -181,7 +179,7 @@ nm_act_request_get_secrets (NMActRequest *self,
                             gpointer callback_data)
 {
 	NMActRequestPrivate *priv;
-	GetSecretsInfo *info;
+	NMActRequestGetSecretsCallId *info;
 	NMSettingsConnectionCallId call_id_s;
 	NMSettingsConnection *settings_connection;
 	NMConnection *applied_connection;
@@ -215,7 +213,7 @@ nm_act_request_get_secrets (NMActRequest *self,
 }
 
 static void
-_do_cancel_secrets (NMActRequest *self, GetSecretsInfo *info, gboolean is_disposing)
+_do_cancel_secrets (NMActRequest *self, NMActRequestGetSecretsCallId *info, gboolean is_disposing)
 {
 	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (self);
 
