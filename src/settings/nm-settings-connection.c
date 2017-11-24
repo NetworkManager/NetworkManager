@@ -85,7 +85,7 @@ typedef struct _NMSettingsConnectionPrivate {
 
 	bool timestamp_set:1;
 
-	NMSettingsAutoconnectBlockedReason autoconnect_blocked_reason:3;
+	NMSettingsAutoconnectBlockedReason autoconnect_blocked_reason:4;
 
 	GSList *pending_auths; /* List of pending authentication requests */
 
@@ -2610,29 +2610,40 @@ nm_settings_connection_autoconnect_retries_blocked_until (NMSettingsConnection *
 	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->autoconnect_retries_blocked_until;
 }
 
+NM_UTILS_FLAGS2STR_DEFINE_STATIC (_autoconnect_blocked_reason_to_string, NMSettingsAutoconnectBlockedReason,
+	NM_UTILS_FLAGS2STR (NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE, "none"),
+	NM_UTILS_FLAGS2STR (NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST, "user-request"),
+	NM_UTILS_FLAGS2STR (NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED, "failed"),
+	NM_UTILS_FLAGS2STR (NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS, "no-secrets"),
+);
+
 NMSettingsAutoconnectBlockedReason
-nm_settings_connection_autoconnect_blocked_reason_get (NMSettingsConnection *self)
+nm_settings_connection_autoconnect_blocked_reason_get (NMSettingsConnection *self, NMSettingsAutoconnectBlockedReason mask)
 {
-	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->autoconnect_blocked_reason;
+	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->autoconnect_blocked_reason & (mask ?: NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_ALL);
 }
 
-void
-nm_settings_connection_autoconnect_blocked_reason_set (NMSettingsConnection *self,
-                                                       NMSettingsAutoconnectBlockedReason reason)
+gboolean
+nm_settings_connection_autoconnect_blocked_reason_set_full (NMSettingsConnection *self,
+                                                            NMSettingsAutoconnectBlockedReason mask,
+                                                            NMSettingsAutoconnectBlockedReason value)
 {
+	NMSettingsAutoconnectBlockedReason v;
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+	char buf[100];
 
-	nm_assert (NM_IN_SET (reason,
-	                      NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE,
-	                      NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST,
-	                      NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
-	                      NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS));
+	nm_assert (mask);
+	nm_assert (!NM_FLAGS_ANY (value, ~mask));
 
-	if (priv->autoconnect_blocked_reason == reason)
-		return;
+	v = priv->autoconnect_blocked_reason;
+	v = (v & ~mask) | (value & mask);
 
-	_LOGT ("autoconnect: blocked reason: %d", (int) reason);
-	priv->autoconnect_blocked_reason = reason;
+	if (priv->autoconnect_blocked_reason == v)
+		return FALSE;
+
+	_LOGT ("autoconnect: blocked reason: %s", _autoconnect_blocked_reason_to_string (v, buf, sizeof (buf)));
+	priv->autoconnect_blocked_reason = v;
+	return TRUE;
 }
 
 /*****************************************************************************/
