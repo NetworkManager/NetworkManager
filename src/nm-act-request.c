@@ -171,7 +171,7 @@ get_secrets_cb (NMSettingsConnection *connection,
  *
  * Returns: a call-id.
  */
-NMActRequestGetSecretsCallId
+NMActRequestGetSecretsCallId *
 nm_act_request_get_secrets (NMActRequest *self,
                             gboolean ref_self,
                             const char *setting_name,
@@ -247,7 +247,7 @@ _do_cancel_secrets (NMActRequest *self, GetSecretsInfo *info, gboolean is_dispos
  * synchronously.
  */
 void
-nm_act_request_cancel_secrets (NMActRequest *self, NMActRequestGetSecretsCallId call_id)
+nm_act_request_cancel_secrets (NMActRequest *self, NMActRequestGetSecretsCallId *call_id)
 {
 	NMActRequestPrivate *priv;
 
