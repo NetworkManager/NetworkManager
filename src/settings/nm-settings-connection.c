@@ -1222,7 +1222,7 @@ get_secrets_idle_cb (GetSecretsInfo *info)
  *
  * Returns: a call ID which may be used to cancel the ongoing secrets request.
  **/
-NMSettingsConnectionCallId
+NMSettingsConnectionCallId *
 nm_settings_connection_get_secrets (NMSettingsConnection *self,
                                     NMConnection *applied_connection,
                                     NMAuthSubject *subject,
@@ -1337,7 +1337,7 @@ _get_secrets_cancel (NMSettingsConnection *self,
 
 void
 nm_settings_connection_cancel_secrets (NMSettingsConnection *self,
-                                       NMSettingsConnectionCallId call_id)
+                                       NMSettingsConnectionCallId *call_id)
 {
 	_LOGD ("(%p) secrets canceled", call_id);
 
@@ -1951,7 +1951,7 @@ out_err:
 
 static void
 dbus_get_agent_secrets_cb (NMSettingsConnection *self,
-                           NMSettingsConnectionCallId call_id,
+                           NMSettingsConnectionCallId *call_id,
                            const char *agent_username,
                            const char *setting_name,
                            GError *error,
