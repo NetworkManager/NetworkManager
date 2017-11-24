@@ -508,6 +508,7 @@ nm_platform_sysctl_get_int_checked (NMPlatform *self, const char *pathid, int di
 {
 	char *value = NULL;
 	gint32 ret;
+	int errsv;
 
 	_CHECK_SELF (self, klass, fallback);
 
@@ -522,7 +523,9 @@ nm_platform_sysctl_get_int_checked (NMPlatform *self, const char *pathid, int di
 	}
 
 	ret = _nm_utils_ascii_str_to_int64 (value, base, min, max, fallback);
+	errsv = errno;
 	g_free (value);
+	errno = errsv;
 	return ret;
 }
 
