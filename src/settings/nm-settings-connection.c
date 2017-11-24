@@ -1638,8 +1638,7 @@ update_complete (NMSettingsConnection *self,
 	g_clear_object (&info->agent_mgr);
 	g_clear_object (&info->new_settings);
 	g_free (info->audit_args);
-	memset (info, 0, sizeof (*info));
-	g_free (info);
+	g_slice_free (UpdateInfo, info);
 }
 
 static void
@@ -1814,7 +1813,7 @@ settings_connection_update_helper (NMSettingsConnection *self,
 		goto error;
 	}
 
-	info = g_malloc0 (sizeof (*info));
+	info = g_slice_new0 (UpdateInfo);
 	info->context = context;
 	info->agent_mgr = g_object_ref (priv->agent_mgr);
 	info->subject = subject;
