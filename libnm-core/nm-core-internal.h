@@ -80,6 +80,20 @@
 #include "nm-core-types-internal.h"
 #include "nm-vpn-editor-plugin.h"
 
+/* IEEE 802.1D-1998 timer values */
+#define NM_BR_MIN_HELLO_TIME    1
+#define NM_BR_MAX_HELLO_TIME    10
+
+#define NM_BR_MIN_FORWARD_DELAY 2
+#define NM_BR_MAX_FORWARD_DELAY 30
+
+#define NM_BR_MIN_MAX_AGE       6
+#define NM_BR_MAX_MAX_AGE       40
+
+/* IEEE 802.1D-1998 Table 7.4 */
+#define NM_BR_MIN_AGEING_TIME   0
+#define NM_BR_MAX_AGEING_TIME   1000000
+
 /* NM_SETTING_COMPARE_FLAG_INFERRABLE: check whether a device-generated
  * connection can be replaced by a already-defined connection. This flag only
  * takes into account properties marked with the %NM_SETTING_PARAM_INFERRABLE
