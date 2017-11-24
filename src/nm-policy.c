@@ -1568,6 +1568,7 @@ activate_slave_connections (NMPolicy *self, NMDevice *device)
 	NMActRequest *req;
 	gboolean internal_activation = FALSE;
 	NMSettingsConnection *const*connections;
+	gboolean changed;
 
 	master_device = nm_device_get_iface (device);
 	g_assert (master_device);
@@ -1591,6 +1592,7 @@ activate_slave_connections (NMPolicy *self, NMDevice *device)
 		internal_activation = subject && nm_auth_subject_is_internal (subject);
 	}
 
+	changed = FALSE;
 	connections = nm_settings_get_connections (priv->settings, NULL);
 	for (i = 0; connections[i]; i++) {
 		NMSettingsConnection *connection = connections[i];
@@ -1606,14 +1608,19 @@ activate_slave_connections (NMPolicy *self, NMDevice *device)
 		                                 master_uuid_settings))
 			continue;
 
-		if (!internal_activation)
+		if (!internal_activation) {
+			if (nm_settings_connection_autoconnect_retries_get (connection) == 0)
+				changed = TRUE;
 			nm_settings_connection_autoconnect_retries_reset (connection);
-		nm_settings_connection_autoconnect_blocked_reason_set (connection,
-		                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
-		                                                       FALSE);
+		}
+		if (nm_settings_connection_autoconnect_blocked_reason_set (connection,
+		                                                           NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
+		                                                           FALSE))
+			changed = TRUE;
 	}
 
-	schedule_activate_all (self);
+	if (changed)
+		schedule_activate_all (self);
 }
 
 static gboolean
