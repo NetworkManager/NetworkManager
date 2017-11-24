@@ -98,25 +98,25 @@ struct _NMActRequestGetSecretsCallId {
 };
 
 static NMActRequestGetSecretsCallId *
-_get_secrets_info_new (NMActRequest *self, gboolean ref_self, NMActRequestSecretsFunc callback, gpointer callback_data)
+_get_secrets_call_id_new (NMActRequest *self, gboolean ref_self, NMActRequestSecretsFunc callback, gpointer callback_data)
 {
-	NMActRequestGetSecretsCallId *info;
+	NMActRequestGetSecretsCallId *call_id;
 
-	info = g_slice_new0 (NMActRequestGetSecretsCallId);
-	info->has_ref = ref_self;
-	info->self = ref_self ? g_object_ref (self) : self;
-	info->callback = callback;
-	info->callback_data = callback_data;
+	call_id = g_slice_new0 (NMActRequestGetSecretsCallId);
+	call_id->has_ref = ref_self;
+	call_id->self = ref_self ? g_object_ref (self) : self;
+	call_id->callback = callback;
+	call_id->callback_data = callback_data;
 
-	return info;
+	return call_id;
 }
 
 static void
-_get_secrets_info_free (NMActRequestGetSecretsCallId *info)
+_get_secrets_call_id_free (NMActRequestGetSecretsCallId *call_id)
 {
-	if (info->has_ref)
-		g_object_unref (info->self);
-	g_slice_free (NMActRequestGetSecretsCallId, info);
+	if (call_id->has_ref)
+		g_object_unref (call_id->self);
+	g_slice_free (NMActRequestGetSecretsCallId, call_id);
 }
 
 static void
@@ -127,25 +127,25 @@ get_secrets_cb (NMSettingsConnection *connection,
                 GError *error,
                 gpointer user_data)
 {
-	NMActRequestGetSecretsCallId *info = user_data;
+	NMActRequestGetSecretsCallId *call_id = user_data;
 	NMActRequestPrivate *priv;
 
-	g_return_if_fail (info && info->call_id == call_id_s);
-	g_return_if_fail (NM_IS_ACT_REQUEST (info->self));
+	g_return_if_fail (call_id && call_id->call_id == call_id_s);
+	g_return_if_fail (NM_IS_ACT_REQUEST (call_id->self));
 
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
 
-	priv = NM_ACT_REQUEST_GET_PRIVATE (info->self);
+	priv = NM_ACT_REQUEST_GET_PRIVATE (call_id->self);
 
-	g_return_if_fail (g_slist_find (priv->secrets_calls, info));
+	g_return_if_fail (g_slist_find (priv->secrets_calls, call_id));
 
-	priv->secrets_calls = g_slist_remove (priv->secrets_calls, info);
+	priv->secrets_calls = g_slist_remove (priv->secrets_calls, call_id);
 
-	if (info->callback)
-		info->callback (info->self, info, connection, error, info->callback_data);
+	if (call_id->callback)
+		call_id->callback (call_id->self, call_id, connection, error, call_id->callback_data);
 
-	_get_secrets_info_free (info);
+	_get_secrets_call_id_free (call_id);
 }
 
 /**
@@ -179,7 +179,7 @@ nm_act_request_get_secrets (NMActRequest *self,
                             gpointer callback_data)
 {
 	NMActRequestPrivate *priv;
-	NMActRequestGetSecretsCallId *info;
+	NMActRequestGetSecretsCallId *call_id;
 	NMSettingsConnectionCallId call_id_s;
 	NMSettingsConnection *settings_connection;
 	NMConnection *applied_connection;
@@ -192,9 +192,9 @@ nm_act_request_get_secrets (NMActRequest *self,
 	settings_connection = nm_act_request_get_settings_connection (self);
 	applied_connection = nm_act_request_get_applied_connection (self);
 
-	info = _get_secrets_info_new (self, ref_self, callback, callback_data);
+	call_id = _get_secrets_call_id_new (self, ref_self, callback, callback_data);
 
-	priv->secrets_calls = g_slist_append (priv->secrets_calls, info);
+	priv->secrets_calls = g_slist_append (priv->secrets_calls, call_id);
 
 	if (nm_active_connection_get_user_requested (NM_ACTIVE_CONNECTION (self)))
 		flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_USER_REQUESTED;
@@ -206,32 +206,32 @@ nm_act_request_get_secrets (NMActRequest *self,
 	                                                flags,
 	                                                hints,
 	                                                get_secrets_cb,
-	                                                info);
-	info->call_id = call_id_s;
+	                                                call_id);
+	call_id->call_id = call_id_s;
 	g_return_val_if_fail (call_id_s, NULL);
-	return info;
+	return call_id;
 }
 
 static void
-_do_cancel_secrets (NMActRequest *self, NMActRequestGetSecretsCallId *info, gboolean is_disposing)
+_do_cancel_secrets (NMActRequest *self, NMActRequestGetSecretsCallId *call_id, gboolean is_disposing)
 {
 	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (self);
 
-	nm_assert (info && info->self == self);
-	nm_assert (g_slist_find (priv->secrets_calls, info));
+	nm_assert (call_id && call_id->self == self);
+	nm_assert (g_slist_find (priv->secrets_calls, call_id));
 
-	priv->secrets_calls = g_slist_remove (priv->secrets_calls, info);
+	priv->secrets_calls = g_slist_remove (priv->secrets_calls, call_id);
 
-	nm_settings_connection_cancel_secrets (nm_act_request_get_settings_connection (self), info->call_id);
+	nm_settings_connection_cancel_secrets (nm_act_request_get_settings_connection (self), call_id->call_id);
 
-	if (info->callback) {
+	if (call_id->callback) {
 		gs_free_error GError *error = NULL;
 
 		nm_utils_error_set_cancelled (&error, is_disposing, "NMActRequest");
-		info->callback (self, info, NULL, error, info->callback_data);
+		call_id->callback (self, call_id, NULL, error, call_id->callback_data);
 	}
 
-	_get_secrets_info_free (info);
+	_get_secrets_call_id_free (call_id);
 }
 
 /**
