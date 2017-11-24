@@ -1440,7 +1440,8 @@ reset_autoconnect_all (NMPolicy *self,
 			nm_settings_connection_autoconnect_retries_reset (connection);
 
 			if (nm_settings_connection_autoconnect_blocked_reason_set (connection,
-			                                                           NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_ALL,
+			                                                             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_ALL
+			                                                           & ~NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST,
 			                                                           FALSE))
 				changed = TRUE;
 		}
