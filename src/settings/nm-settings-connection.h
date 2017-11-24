@@ -84,9 +84,14 @@ typedef enum { /*< skip >*/
 
 typedef enum {
 	NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE                    = 0,
-	NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST            = 1,
-	NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED                  = 2,
-	NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS              = 3,
+
+	NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST            = (1LL << 0),
+	NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED                  = (1LL << 1),
+	NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS              = (1LL << 2),
+
+	NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_ALL                     = (  NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST
+	                                                                   | NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED
+	                                                                   | NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS),
 } NMSettingsAutoconnectBlockedReason;
 
 struct _NMSettingsConnectionCallId;
@@ -220,9 +225,19 @@ void nm_settings_connection_autoconnect_retries_reset (NMSettingsConnection *sel
 
 gint32 nm_settings_connection_autoconnect_retries_blocked_until (NMSettingsConnection *self);
 
-NMSettingsAutoconnectBlockedReason nm_settings_connection_autoconnect_blocked_reason_get (NMSettingsConnection *self);
-void                               nm_settings_connection_autoconnect_blocked_reason_set (NMSettingsConnection *self,
-                                                                                          NMSettingsAutoconnectBlockedReason reason);
+NMSettingsAutoconnectBlockedReason nm_settings_connection_autoconnect_blocked_reason_get (NMSettingsConnection *self,
+                                                                                          NMSettingsAutoconnectBlockedReason mask);
+gboolean nm_settings_connection_autoconnect_blocked_reason_set_full (NMSettingsConnection *self,
+                                                                     NMSettingsAutoconnectBlockedReason mask,
+                                                                     NMSettingsAutoconnectBlockedReason value);
+
+static inline gboolean
+nm_settings_connection_autoconnect_blocked_reason_set (NMSettingsConnection *self,
+                                                       NMSettingsAutoconnectBlockedReason mask,
+                                                       gboolean set)
+{
+	return nm_settings_connection_autoconnect_blocked_reason_set_full (self, mask, set ? mask : NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE);
+}
 
 gboolean nm_settings_connection_get_nm_generated (NMSettingsConnection *self);
 gboolean nm_settings_connection_get_volatile (NMSettingsConnection *self);
