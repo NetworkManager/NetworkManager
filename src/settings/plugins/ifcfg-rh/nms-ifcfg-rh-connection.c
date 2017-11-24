@@ -429,17 +429,11 @@ nm_ifcfg_connection_new (NMConnection *source,
 	NMConnection *tmp;
 	char *unhandled_spec = NULL;
 	const char *unmanaged_spec = NULL, *unrecognized_spec = NULL;
-	gboolean update_unsaved = TRUE;
 
 	g_assert (source || full_path);
 
 	if (out_ignore_error)
 		*out_ignore_error = FALSE;
-
-	if (full_path) {
-		/* The connection already is on the disk */
-		update_unsaved = FALSE;
-	}
 
 	/* If we're given a connection already, prefer that instead of re-reading */
 	if (source)
@@ -466,7 +460,9 @@ nm_ifcfg_connection_new (NMConnection *source,
 	/* Update our settings with what was read from the file */
 	if (nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
 	                                             tmp,
-	                                             update_unsaved,
+	                                             full_path
+	                                               ? NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP /* connection is already on disk */
+	                                               : NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY,
 	                                             NULL,
 	                                             error))
 		nm_ifcfg_connection_check_devtimeout (NM_IFCFG_CONNECTION (object));

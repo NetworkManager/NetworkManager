@@ -161,7 +161,9 @@ nms_keyfile_connection_new (NMConnection *source,
 	/* Update our settings with what was read from the file */
 	if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
 	                                              tmp,
-	                                              update_unsaved,
+	                                              update_unsaved
+	                                                ? NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY
+	                                                : NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
 	                                              NULL,
 	                                              error)) {
 		g_object_unref (object);

@@ -315,7 +315,7 @@ update_connection (SettingsPluginIfcfg *self,
 
 			if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (connection_by_uuid),
 			                                              NM_CONNECTION (connection_new),
-			                                              FALSE,  /* don't set Unsaved */
+			                                              NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
 			                                              "ifcfg-update",
 			                                              &local)) {
 				/* Shouldn't ever get here as 'connection_new' was verified by the reader already
