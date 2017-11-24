@@ -1608,12 +1608,9 @@ activate_slave_connections (NMPolicy *self, NMDevice *device)
 
 		if (!internal_activation)
 			nm_settings_connection_autoconnect_retries_reset (connection);
-		if (nm_settings_connection_autoconnect_blocked_reason_get (connection,
-		                                                           NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED)) {
-			nm_settings_connection_autoconnect_blocked_reason_set (connection,
-			                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_ALL,
-			                                                       FALSE);
-		}
+		nm_settings_connection_autoconnect_blocked_reason_set (connection,
+		                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
+		                                                       FALSE);
 	}
 
 	schedule_activate_all (self);
