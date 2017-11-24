@@ -25,6 +25,8 @@
 
 #include <string.h>
 
+#include "nm-utils/c-list.h"
+
 #include "nm-common-macros.h"
 #include "nm-config.h"
 #include "nm-config-data.h"
@@ -88,7 +90,7 @@ typedef struct _NMSettingsConnectionPrivate {
 
 	GSList *pending_auths; /* List of pending authentication requests */
 
-	GSList *get_secret_requests;  /* in-progress secrets requests */
+	CList call_ids_lst_head; /* in-progress secrets requests */
 
 	/* Caches secrets from on-disk connections; were they not cached any
 	 * call to nm_connection_clear_secrets() wipes them out and we'd have
@@ -801,6 +803,7 @@ typedef enum {
 
 struct _NMSettingsConnectionCallId {
 	NMSettingsConnection *self;
+	CList call_ids_lst;
 	gboolean had_applied_connection;
 	NMConnection *applied_connection;
 	NMSettingsConnectionSecretsFunc callback;
@@ -817,28 +820,6 @@ struct _NMSettingsConnectionCallId {
 		} idle;
 	} t;
 };
-
-static NMSettingsConnectionCallId *
-_call_id_new (NMSettingsConnection *self,
-              NMConnection *applied_connection,
-              NMSettingsConnectionSecretsFunc callback,
-              gpointer callback_data)
-{
-	NMSettingsConnectionCallId *call_id;
-
-	call_id = g_slice_new0 (NMSettingsConnectionCallId);
-
-	call_id->self = self;
-	if (applied_connection) {
-		call_id->had_applied_connection = TRUE;
-		call_id->applied_connection = applied_connection;
-		g_object_add_weak_pointer (G_OBJECT (applied_connection), (gpointer *) &call_id->applied_connection);
-	}
-	call_id->callback = callback;
-	call_id->callback_data = callback_data;
-
-	return call_id;
-}
 
 static void
 _get_secrets_info_callback (NMSettingsConnectionCallId *call_id,
@@ -860,6 +841,7 @@ static void
 _get_secrets_info_free (NMSettingsConnectionCallId *call_id)
 {
 	g_return_if_fail (call_id && call_id->self);
+	nm_assert (!c_list_is_linked (&call_id->call_ids_lst));
 
 	if (call_id->applied_connection)
 		g_object_remove_weak_pointer (G_OBJECT (call_id->applied_connection), (gpointer *) &call_id->applied_connection);
@@ -1038,9 +1020,9 @@ get_secrets_done_cb (NMAgentManager *manager,
 
 	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
-	g_return_if_fail (g_slist_find (priv->get_secret_requests, call_id));
+	nm_assert (c_list_contains (&priv->call_ids_lst_head, &call_id->call_ids_lst));
 
-	priv->get_secret_requests = g_slist_remove (priv->get_secret_requests, call_id);
+	c_list_unlink_init (&call_id->call_ids_lst);
 
 	if (error) {
 		_LOGD ("(%s:%p) secrets request error: %s",
@@ -1185,9 +1167,9 @@ get_secrets_idle_cb (NMSettingsConnectionCallId *call_id)
 
 	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (call_id->self);
 
-	g_return_val_if_fail (g_slist_find (priv->get_secret_requests, call_id), G_SOURCE_REMOVE);
+	nm_assert (c_list_contains (&priv->call_ids_lst_head, &call_id->call_ids_lst));
 
-	priv->get_secret_requests = g_slist_remove (priv->get_secret_requests, call_id);
+	c_list_unlink_init (&call_id->call_ids_lst);
 
 	_get_secrets_info_callback (call_id, NULL, NULL, call_id->t.idle.error);
 
@@ -1242,12 +1224,16 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	                      || (   NM_IS_CONNECTION (applied_connection)
 	                          && (((NMConnection *) self) != applied_connection)), NULL);
 
-	call_id = _call_id_new (self,
-	                        applied_connection,
-	                        callback,
-	                        callback_data);
-
-	priv->get_secret_requests = g_slist_append (priv->get_secret_requests, call_id);
+	call_id = g_slice_new0 (NMSettingsConnectionCallId);
+	call_id->self = self;
+	if (applied_connection) {
+		call_id->had_applied_connection = TRUE;
+		call_id->applied_connection = applied_connection;
+		g_object_add_weak_pointer (G_OBJECT (applied_connection), (gpointer *) &call_id->applied_connection);
+	}
+	call_id->callback = callback;
+	call_id->callback_data = callback_data;
+	c_list_link_tail (&priv->call_ids_lst_head, &call_id->call_ids_lst);
 
 	/* Use priv->secrets to work around the fact that nm_connection_clear_secrets()
 	 * will clear secrets on this object's settings.
@@ -1316,10 +1302,9 @@ _get_secrets_cancel (NMSettingsConnection *self,
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	gs_free_error GError *error = NULL;
 
-	if (!g_slist_find (priv->get_secret_requests, call_id))
-		g_return_if_reached ();
+	nm_assert (c_list_contains (&priv->call_ids_lst_head, &call_id->call_ids_lst));
 
-	priv->get_secret_requests = g_slist_remove (priv->get_secret_requests, call_id);
+	c_list_unlink_init (&call_id->call_ids_lst);
 
 	if (call_id->type == CALL_ID_TYPE_REQ)
 		nm_agent_manager_cancel_secrets (priv->agent_mgr, call_id->t.req.id);
@@ -2769,17 +2754,14 @@ dispose (GObject *object)
 {
 	NMSettingsConnection *self = NM_SETTINGS_CONNECTION (object);
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+	NMSettingsConnectionCallId *call_id, *call_id_safe;
 
 	_LOGD ("disposing");
 
 	/* Cancel in-progress secrets requests */
 	if (priv->agent_mgr) {
-		while (priv->get_secret_requests) {
-			NMSettingsConnectionCallId *call_id = priv->get_secret_requests->data;
-
+		c_list_for_each_entry_safe (call_id, call_id_safe, &priv->call_ids_lst_head, call_ids_lst)
 			_get_secrets_cancel (self, call_id, TRUE);
-			g_return_if_fail (!priv->get_secret_requests || (call_id != priv->get_secret_requests->data));
-		}
 	}
 
 	/* Disconnect handlers.
