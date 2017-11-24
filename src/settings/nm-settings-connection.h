@@ -90,7 +90,7 @@ typedef enum {
 } NMSettingsAutoconnectBlockedReason;
 
 struct _NMSettingsConnectionCallId;
-typedef struct _NMSettingsConnectionCallId *NMSettingsConnectionCallId;
+typedef struct _NMSettingsConnectionCallId NMSettingsConnectionCallId;
 
 typedef struct _NMSettingsConnectionClass NMSettingsConnectionClass;
 
@@ -150,7 +150,7 @@ gboolean nm_settings_connection_delete (NMSettingsConnection *self,
                                         GError **error);
 
 typedef void (*NMSettingsConnectionSecretsFunc) (NMSettingsConnection *self,
-                                                 NMSettingsConnectionCallId call_id,
+                                                 NMSettingsConnectionCallId *call_id,
                                                  const char *agent_username,
                                                  const char *setting_name,
                                                  GError *error,
@@ -162,17 +162,17 @@ gboolean nm_settings_connection_new_secrets (NMSettingsConnection *self,
                                              GVariant *secrets,
                                              GError **error);
 
-NMSettingsConnectionCallId nm_settings_connection_get_secrets (NMSettingsConnection *self,
-                                                               NMConnection *applied_connection,
-                                                               NMAuthSubject *subject,
-                                                               const char *setting_name,
-                                                               NMSecretAgentGetSecretsFlags flags,
-                                                               const char *const*hints,
-                                                               NMSettingsConnectionSecretsFunc callback,
-                                                               gpointer callback_data);
+NMSettingsConnectionCallId *nm_settings_connection_get_secrets (NMSettingsConnection *self,
+                                                                NMConnection *applied_connection,
+                                                                NMAuthSubject *subject,
+                                                                const char *setting_name,
+                                                                NMSecretAgentGetSecretsFlags flags,
+                                                                const char *const*hints,
+                                                                NMSettingsConnectionSecretsFunc callback,
+                                                                gpointer callback_data);
 
 void nm_settings_connection_cancel_secrets (NMSettingsConnection *self,
-                                            NMSettingsConnectionCallId call_id);
+                                            NMSettingsConnectionCallId *call_id);
 
 gboolean nm_settings_connection_is_visible (NMSettingsConnection *self);
 

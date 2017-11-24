@@ -103,7 +103,7 @@ typedef struct {
 	gboolean service_can_persist;
 	gboolean connection_can_persist;
 
-	NMSettingsConnectionCallId secrets_id;
+	NMSettingsConnectionCallId *secrets_id;
 	SecretsReq secrets_idx;
 	char *username;
 
@@ -2571,7 +2571,7 @@ plugin_new_secrets_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_da
 
 static void
 get_secrets_cb (NMSettingsConnection *connection,
-                NMSettingsConnectionCallId call_id,
+                NMSettingsConnectionCallId *call_id,
                 const char *agent_username,
                 const char *setting_name,
                 GError *error,
