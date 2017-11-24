@@ -94,7 +94,7 @@ typedef struct _NMModemPrivate {
 
 	NMActRequest *act_request;
 	guint32 secrets_tries;
-	NMActRequestGetSecretsCallId secrets_id;
+	NMActRequestGetSecretsCallId *secrets_id;
 
 	guint32 mm_ip_timeout;
 
@@ -880,7 +880,7 @@ cancel_get_secrets (NMModem *self)
 
 static void
 modem_secrets_cb (NMActRequest *req,
-                  NMActRequestGetSecretsCallId call_id,
+                  NMActRequestGetSecretsCallId *call_id,
                   NMSettingsConnection *connection,
                   GError *error,
                   gpointer user_data)

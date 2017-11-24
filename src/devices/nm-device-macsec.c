@@ -71,7 +71,7 @@ typedef struct {
 	gulong parent_state_id;
 	Supplicant supplicant;
 	guint supplicant_timeout_id;
-	NMActRequestGetSecretsCallId macsec_secrets_id;
+	NMActRequestGetSecretsCallId *macsec_secrets_id;
 } NMDeviceMacsecPrivate;
 
 struct _NMDeviceMacsec {
@@ -276,7 +276,7 @@ supplicant_iface_assoc_cb (NMSupplicantInterface *iface,
 
 static void
 macsec_secrets_cb (NMActRequest *req,
-                   NMActRequestGetSecretsCallId call_id,
+                   NMActRequestGetSecretsCallId *call_id,
                    NMSettingsConnection *connection,
                    GError *error,
                    gpointer user_data)

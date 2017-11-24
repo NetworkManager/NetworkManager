@@ -170,7 +170,7 @@ struct _NMAgentManagerCallId {
 
 	/* Current agent being asked for secrets */
 	NMSecretAgent *current;
-	NMSecretAgentCallId current_call_id;
+	NMSecretAgentCallId *current_call_id;
 
 	/* Stores the sorted list of NMSecretAgents which will be asked for secrets */
 	GSList *pending;
@@ -832,7 +832,7 @@ out:
 
 static void
 _con_get_request_done (NMSecretAgent *agent,
-                       NMSecretAgentCallId call_id,
+                       NMSecretAgentCallId *call_id,
                        GVariant *secrets,
                        GError *error,
                        gpointer user_data)
@@ -1276,7 +1276,7 @@ nm_agent_manager_cancel_secrets (NMAgentManager *self,
 
 static void
 _con_save_request_done (NMSecretAgent *agent,
-                        NMSecretAgentCallId call_id,
+                        NMSecretAgentCallId *call_id,
                         GVariant *secrets,
                         GError *error,
                         gpointer user_data)
@@ -1362,7 +1362,7 @@ nm_agent_manager_save_secrets (NMAgentManager *self,
 
 static void
 _con_del_request_done (NMSecretAgent *agent,
-                       NMSecretAgentCallId call_id,
+                       NMSecretAgentCallId *call_id,
                        GVariant *secrets,
                        GError *error,
                        gpointer user_data)
