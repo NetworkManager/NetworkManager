@@ -1408,7 +1408,7 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 	svUnsetValue (ifcfg, "DELAY");
 
 	mac = nm_setting_bridge_get_mac_address (s_bridge);
-	svSetValueStr (ifcfg, "MACADDR", mac);
+	svSetValueStr (ifcfg, "BRIDGE_MACADDR", mac);
 
 	/* Bridge options */
 	opts = g_string_sized_new (32);

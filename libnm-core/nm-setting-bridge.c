@@ -213,20 +213,6 @@ nm_setting_bridge_get_multicast_snooping (NMSettingBridge *setting)
 	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->multicast_snooping;
 }
 
-/* IEEE 802.1D-1998 timer values */
-#define BR_MIN_HELLO_TIME    1
-#define BR_MAX_HELLO_TIME    10
-
-#define BR_MIN_FORWARD_DELAY 2
-#define BR_MAX_FORWARD_DELAY 30
-
-#define BR_MIN_MAX_AGE       6
-#define BR_MAX_MAX_AGE       40
-
-/* IEEE 802.1D-1998 Table 7.4 */
-#define BR_MIN_AGEING_TIME   0
-#define BR_MAX_AGEING_TIME   1000000
-
 static inline gboolean
 check_range (guint32 val,
              guint32 min,
@@ -265,32 +251,32 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	}
 
 	if (!check_range (priv->forward_delay,
-	                  BR_MIN_FORWARD_DELAY,
-	                  BR_MAX_FORWARD_DELAY,
+	                  NM_BR_MIN_FORWARD_DELAY,
+	                  NM_BR_MAX_FORWARD_DELAY,
 	                  !priv->stp,
 	                  NM_SETTING_BRIDGE_FORWARD_DELAY,
 	                  error))
 		return FALSE;
 
 	if (!check_range (priv->hello_time,
-	                  BR_MIN_HELLO_TIME,
-	                  BR_MAX_HELLO_TIME,
+	                  NM_BR_MIN_HELLO_TIME,
+	                  NM_BR_MAX_HELLO_TIME,
 	                  !priv->stp,
 	                  NM_SETTING_BRIDGE_HELLO_TIME,
 	                  error))
 		return FALSE;
 
 	if (!check_range (priv->max_age,
-	                  BR_MIN_MAX_AGE,
-	                  BR_MAX_MAX_AGE,
+	                  NM_BR_MIN_MAX_AGE,
+	                  NM_BR_MAX_MAX_AGE,
 	                  !priv->stp,
 	                  NM_SETTING_BRIDGE_MAX_AGE,
 	                  error))
 		return FALSE;
 
 	if (!check_range (priv->ageing_time,
-	                  BR_MIN_AGEING_TIME,
-	                  BR_MAX_AGEING_TIME,
+	                  NM_BR_MIN_AGEING_TIME,
+	                  NM_BR_MAX_AGEING_TIME,
 	                  !priv->stp,
 	                  NM_SETTING_BRIDGE_AGEING_TIME,
 	                  error))
@@ -432,6 +418,8 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 * "ethernet.cloned-mac-address" anyway overwrites the MAC address of
 	 * the bridge later while activating the bridge. Hence, this property
 	 * is deprecated.
+	 *
+	 * Deprecated: 1.12: Use the ethernet.cloned-mac-address property instead.
 	 **/
 	/* ---keyfile---
 	 * property: mac-address
@@ -443,10 +431,10 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 * ---end---
 	 * ---ifcfg-rh---
 	 * property: mac-address
-	 * variable: MACADDR(+)
+	 * variable: BRIDGE_MACADDR(+)
 	 * description: MAC address of the bridge. Note that this requires a recent
 	 *   kernel support, originally introduced in 3.15 upstream kernel)
-	 *   MACADDR for bridges is an NM extension.
+	 *   BRIDGE_MACADDR for bridges is an NM extension.
 	 * ---end---
 	 */
 	g_object_class_install_property
@@ -522,7 +510,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_FORWARD_DELAY,
 		 g_param_spec_uint (NM_SETTING_BRIDGE_FORWARD_DELAY, "", "",
-		                    0, BR_MAX_FORWARD_DELAY, 15,
+		                    0, NM_BR_MAX_FORWARD_DELAY, 15,
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_CONSTRUCT |
 		                    NM_SETTING_PARAM_INFERRABLE |
@@ -544,7 +532,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_HELLO_TIME,
 		 g_param_spec_uint (NM_SETTING_BRIDGE_HELLO_TIME, "", "",
-		                    0, BR_MAX_HELLO_TIME, 2,
+		                    0, NM_BR_MAX_HELLO_TIME, 2,
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_CONSTRUCT |
 		                    NM_SETTING_PARAM_INFERRABLE |
@@ -566,7 +554,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_MAX_AGE,
 		 g_param_spec_uint (NM_SETTING_BRIDGE_MAX_AGE, "", "",
-		                    0, BR_MAX_MAX_AGE, 20,
+		                    0, NM_BR_MAX_MAX_AGE, 20,
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_CONSTRUCT |
 		                    NM_SETTING_PARAM_INFERRABLE |
@@ -588,7 +576,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_AGEING_TIME,
 		 g_param_spec_uint (NM_SETTING_BRIDGE_AGEING_TIME, "", "",
-		                    0, BR_MAX_AGEING_TIME, 300,
+		                    NM_BR_MIN_AGEING_TIME, NM_BR_MAX_AGEING_TIME, 300,
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_CONSTRUCT |
 		                    NM_SETTING_PARAM_INFERRABLE |

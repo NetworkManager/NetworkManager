@@ -7403,6 +7403,7 @@ test_read_bridge_main (void)
 {
 	NMConnection *connection;
 	NMSettingBridge *s_bridge;
+	NMSettingWired *s_wired;
 	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
 
@@ -7425,7 +7426,9 @@ test_read_bridge_main (void)
 	g_assert (!nm_setting_bridge_get_multicast_snooping (s_bridge));
 
 	/* MAC address */
-	mac = nm_setting_bridge_get_mac_address (s_bridge);
+	s_wired = nm_connection_get_setting_wired (connection);
+	g_assert (s_wired);
+	mac = nm_setting_wired_get_cloned_mac_address (s_wired);
 	g_assert (mac);
 	g_assert (nm_utils_hwaddr_matches (mac, -1, expected_mac_address, ETH_ALEN));
 
@@ -7440,8 +7443,8 @@ test_write_bridge_main (void)
 	gs_unref_object NMConnection *reread = NULL;
 	NMSettingConnection *s_con;
 	NMSettingBridge *s_bridge;
-	NMSettingIPConfig *s_ip4;
-	NMSettingIPConfig *s_ip6;
+	NMSettingIPConfig *s_ip4, *s_ip6;
+	NMSettingWired *s_wired;
 	NMIPAddress *addr;
 	static const char *mac = "31:33:33:37:be:cd";
 	GError *error = NULL;
@@ -7492,6 +7495,10 @@ test_write_bridge_main (void)
 	g_object_set (s_ip6,
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 	              NULL);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
 	nm_connection_add_setting (connection, nm_setting_proxy_new ());
 
