@@ -1897,7 +1897,7 @@ nm_settings_init (NMSettings *self)
 
 	priv->config = g_object_ref (nm_config_get ());
 
-	g_signal_connect (priv->agent_mgr, "agent-registered", G_CALLBACK (secret_agent_registered), self);
+	g_signal_connect (priv->agent_mgr, NM_AGENT_MANAGER_AGENT_REGISTERED, G_CALLBACK (secret_agent_registered), self);
 }
 
 NMSettings *

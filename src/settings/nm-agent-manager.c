@@ -1627,7 +1627,7 @@ nm_agent_manager_class_init (NMAgentManagerClass *agent_manager_class)
 	object_class->dispose = dispose;
 
 	signals[AGENT_REGISTERED] =
-	    g_signal_new ("agent-registered",
+	    g_signal_new (NM_AGENT_MANAGER_AGENT_REGISTERED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0,
