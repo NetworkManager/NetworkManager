@@ -8385,7 +8385,7 @@ nm_device_activate_schedule_ip6_config_timeout (NMDevice *self)
 }
 
 static gboolean
-share_init (NMDevice *self)
+share_init (NMDevice *self, GError **error)
 {
 	char *modules[] = { "ip_tables", "iptable_nat", "nf_nat_ftp", "nf_nat_irc",
 	                    "nf_nat_sip", "nf_nat_tftp", "nf_nat_pptp", "nf_nat_h323",
@@ -8393,17 +8393,23 @@ share_init (NMDevice *self)
 	char **iter;
 	int errsv;
 
-	if (!nm_platform_sysctl_set (nm_device_get_platform (self), NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv4/ip_forward"), "1")) {
+	if (nm_platform_sysctl_get_int32 (nm_device_get_platform (self), NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv4/ip_forward"), -1) == 1) {
+		/* nothing to do. */
+	} else if (!nm_platform_sysctl_set (nm_device_get_platform (self), NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv4/ip_forward"), "1")) {
 		errsv = errno;
-		nm_log_err (LOGD_SHARING, "share: error enabling IPv4 forwarding: (%d) %s",
-		            errsv, strerror (errsv));
+		_LOGD (LOGD_SHARING, "share: error enabling IPv4 forwarding: (%d) %s",
+		       errsv, g_strerror (errsv));
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		             "cannot set ipv4/ip_forward: %s", g_strerror (errsv));
 		return FALSE;
 	}
 
-	if (!nm_platform_sysctl_set (nm_device_get_platform (self), NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv4/ip_dynaddr"), "1")) {
+	if (nm_platform_sysctl_get_int32 (nm_device_get_platform (self), NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv4/ip_dynaddr"), -1) == 1) {
+		/* nothing to do. */
+	} else if (!nm_platform_sysctl_set (nm_device_get_platform (self), NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv4/ip_dynaddr"), "1")) {
 		errsv = errno;
-		nm_log_err (LOGD_SHARING, "share: error enabling dynamic addresses: (%d) %s",
-		            errsv, strerror (errsv));
+		_LOGD (LOGD_SHARING, "share: error enabling dynamic addresses: (%d) %s",
+		       errsv, strerror (errsv));
 	}
 
 	for (iter = modules; *iter; iter++)
@@ -8420,40 +8426,44 @@ share_init (NMDevice *self)
 	} G_STMT_END
 
 static gboolean
-start_sharing (NMDevice *self, NMIP4Config *config)
+start_sharing (NMDevice *self, NMIP4Config *config, GError **error)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActRequest *req;
-	GError *error = NULL;
-	char str_addr[INET_ADDRSTRLEN + 1];
-	char str_mask[INET_ADDRSTRLEN + 1];
+	char str_addr[INET_ADDRSTRLEN];
+	char str_mask[INET_ADDRSTRLEN];
 	guint32 netmask, network;
 	const NMPlatformIP4Address *ip4_addr = NULL;
 	const char *ip_iface;
+	GError *local = NULL;
 
-	g_return_val_if_fail (config != NULL, FALSE);
+	g_return_val_if_fail (config, FALSE);
 
 	ip_iface = nm_device_get_ip_iface (self);
-	if (!ip_iface)
+	if (!ip_iface) {
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		             "device has no ip interface");
 		return FALSE;
+	}
 
 	ip4_addr = nm_ip4_config_get_first_address (config);
-	if (!ip4_addr || !ip4_addr->address)
+	if (!ip4_addr || !ip4_addr->address) {
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		             "could not determine IPv4 address");
 		return FALSE;
+	}
 
-	netmask = _nm_utils_ip4_prefix_to_netmask (ip4_addr->plen);
-	if (!inet_ntop (AF_INET, &netmask, str_mask, sizeof (str_mask)))
-		return FALSE;
-
-	network = ip4_addr->address & netmask;
-	if (!inet_ntop (AF_INET, &network, str_addr, sizeof (str_addr)))
-		return FALSE;
-
-	if (!share_init (self))
+	if (!share_init (self, error))
 		return FALSE;
 
 	req = nm_device_get_act_request (self);
 	g_assert (req);
+
+	netmask = _nm_utils_ip4_prefix_to_netmask (ip4_addr->plen);
+	nm_utils_inet4_ntop (netmask, str_mask);
+
+	network = ip4_addr->address & netmask;
+	nm_utils_inet4_ntop (network, str_addr);
 
 	add_share_rule (req, "nat", "POSTROUTING --source %s/%s ! --destination %s/%s --jump MASQUERADE", str_addr, str_mask, str_addr, str_mask);
 	add_share_rule (req, "filter", "FORWARD --destination %s/%s --out-interface %s --match state --state ESTABLISHED,RELATED --jump ACCEPT", str_addr, str_mask, ip_iface);
@@ -8468,10 +8478,10 @@ start_sharing (NMDevice *self, NMIP4Config *config)
 
 	nm_act_request_set_shared (req, TRUE);
 
-	if (!nm_dnsmasq_manager_start (priv->dnsmasq_manager, config, &error)) {
-		_LOGE (LOGD_SHARING, "share: (%s) failed to start dnsmasq: %s",
-		       ip_iface, error->message);
-		g_error_free (error);
+	if (!nm_dnsmasq_manager_start (priv->dnsmasq_manager, config, &local)) {
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
+		             "could not start dnsmasq due to %s", local->message);
+		g_error_free (local);
 		nm_act_request_set_shared (req, FALSE);
 		return FALSE;
 	}
@@ -8573,8 +8583,10 @@ activate_stage5_ip4_config_result (NMDevice *self)
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
 
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) == 0) {
-		if (!start_sharing (self, priv->ip4_config)) {
-			_LOGW (LOGD_SHARING, "Activation: Stage 5 of 5 (IPv4 Commit) start sharing failed.");
+		gs_free_error GError *error = NULL;
+
+		if (!start_sharing (self, priv->ip4_config, &error)) {
+			_LOGW (LOGD_SHARING, "Activation: Stage 5 of 5 (IPv4 Commit) start sharing failed: %s", error->message);
 			nm_device_ip_method_failed (self, AF_INET, NM_DEVICE_STATE_REASON_SHARED_START_FAILED);
 			return;
 		}
