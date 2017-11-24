@@ -96,7 +96,7 @@ typedef struct {
 
 	NMActRequest *act_req;
 	GDBusMethodInvocation *pending_secrets_context;
-	NMActRequestGetSecretsCallId secrets_id;
+	NMActRequestGetSecretsCallId *secrets_id;
 	const char *secrets_setting_name;
 
 	guint ppp_watch_id;
@@ -287,7 +287,7 @@ extract_details_from_connection (NMConnection *connection,
 
 static void
 ppp_secrets_cb (NMActRequest *req,
-                NMActRequestGetSecretsCallId call_id,
+                NMActRequestGetSecretsCallId *call_id,
                 NMSettingsConnection *settings_connection, /* unused (we pass NULL here) */
                 GError *error,
                 gpointer user_data)

@@ -104,7 +104,7 @@ typedef struct _NMDeviceEthernetPrivate {
 	char *              s390_nettype;
 	GHashTable *        s390_options;
 
-	NMActRequestGetSecretsCallId wired_secrets_id;
+	NMActRequestGetSecretsCallId *wired_secrets_id;
 
 	/* PPPoE */
 	NMPPPManager *ppp_manager;
@@ -416,7 +416,7 @@ supplicant_interface_release (NMDeviceEthernet *self)
 
 static void
 wired_secrets_cb (NMActRequest *req,
-                  NMActRequestGetSecretsCallId call_id,
+                  NMActRequestGetSecretsCallId *call_id,
                   NMSettingsConnection *connection,
                   GError *error,
                   gpointer user_data)
