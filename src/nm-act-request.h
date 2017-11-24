@@ -32,7 +32,7 @@
 #define NM_ACT_REQUEST_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_ACT_REQUEST, NMActRequestClass))
 
 struct _NMActRequestGetSecretsCallId;
-typedef struct _NMActRequestGetSecretsCallId *NMActRequestGetSecretsCallId;
+typedef struct _NMActRequestGetSecretsCallId NMActRequestGetSecretsCallId;
 
 GType nm_act_request_get_type (void);
 
@@ -58,20 +58,20 @@ void                  nm_act_request_add_share_rule (NMActRequest *req,
 /* Secrets handling */
 
 typedef void (*NMActRequestSecretsFunc) (NMActRequest *req,
-                                         NMActRequestGetSecretsCallId call_id,
+                                         NMActRequestGetSecretsCallId *call_id,
                                          NMSettingsConnection *connection,
                                          GError *error,
                                          gpointer user_data);
 
-NMActRequestGetSecretsCallId nm_act_request_get_secrets (NMActRequest *req,
-                                                         gboolean take_ref,
-                                                         const char *setting_name,
-                                                         NMSecretAgentGetSecretsFlags flags,
-                                                         const char *hint,
-                                                         NMActRequestSecretsFunc callback,
-                                                         gpointer callback_data);
+NMActRequestGetSecretsCallId *nm_act_request_get_secrets (NMActRequest *req,
+                                                          gboolean take_ref,
+                                                          const char *setting_name,
+                                                          NMSecretAgentGetSecretsFlags flags,
+                                                          const char *hint,
+                                                          NMActRequestSecretsFunc callback,
+                                                          gpointer callback_data);
 
-void nm_act_request_cancel_secrets (NMActRequest *req, NMActRequestGetSecretsCallId call_id);
+void nm_act_request_cancel_secrets (NMActRequest *req, NMActRequestGetSecretsCallId *call_id);
 void nm_act_request_clear_secrets (NMActRequest *self);
 
 #endif /* __NM_ACT_REQUEST_H__ */

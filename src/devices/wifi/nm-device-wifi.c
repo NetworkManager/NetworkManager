@@ -107,7 +107,7 @@ typedef struct {
 
 	NM80211Mode       mode;
 
-	NMActRequestGetSecretsCallId wifi_secrets_id;
+	NMActRequestGetSecretsCallId *wifi_secrets_id;
 
 	guint             periodic_source_id;
 	guint             link_timeout_id;
@@ -1786,7 +1786,7 @@ cleanup_supplicant_failures (NMDeviceWifi *self)
 
 static void
 wifi_secrets_cb (NMActRequest *req,
-                 NMActRequestGetSecretsCallId call_id,
+                 NMActRequestGetSecretsCallId *call_id,
                  NMSettingsConnection *connection,
                  GError *error,
                  gpointer user_data)
