@@ -1403,7 +1403,7 @@ hostname_changed (NMHostnameManager *hostname_manager, GParamSpec *pspec, gpoint
 static gboolean
 reset_autoconnect_all (NMPolicy *self,
                        NMDevice *device, /* if present, only reset connections compatible with @device */
-                       gboolean only_for_failed_secrets)
+                       gboolean only_no_secrets)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	NMSettingsConnection *const*connections = NULL;
@@ -1413,29 +1413,37 @@ reset_autoconnect_all (NMPolicy *self,
 	_LOGD (LOGD_DEVICE, "re-enabling autoconnect for all connections%s%s%s",
 	       device ? " on " : "",
 	       device ? nm_device_get_iface (device) : "",
-	       only_for_failed_secrets ? " only for failed secrets" : "");
+	       only_no_secrets ? " (only clear no-secrets flag)" : "");
 
 	connections = nm_settings_get_connections (priv->settings, NULL);
 	for (i = 0; connections[i]; i++) {
 		NMSettingsConnection *connection = connections[i];
 
-		if (   only_for_failed_secrets
-		    && !nm_settings_connection_autoconnect_blocked_reason_get (connection,
-		                                                               NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS))
-			continue;
-
 		if (   device
 		    && !nm_device_check_connection_compatible (device, NM_CONNECTION (connection)))
 			continue;
 
-		if (nm_settings_connection_autoconnect_retries_get (connection) == 0)
-			changed = TRUE;
-		nm_settings_connection_autoconnect_retries_reset (connection);
+		if (only_no_secrets) {
+			/* we only reset the no-secrets blocked flag. */
+			if (nm_settings_connection_autoconnect_blocked_reason_set (connection,
+			                                                           NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS,
+			                                                           FALSE)) {
+				/* maybe the connection is still blocked afterwards for other reasons
+				 * and in the larger picture nothing changed. But it's too complicated
+				 * to find out exactly. Just assume, something changed to be sure. */
+				changed = TRUE;
+			}
+		} else {
+			/* we reset the tries-count and any blocked-reason */
+			if (nm_settings_connection_autoconnect_retries_get (connection) == 0)
+				changed = TRUE;
+			nm_settings_connection_autoconnect_retries_reset (connection);
 
-		if (nm_settings_connection_autoconnect_blocked_reason_set (connection,
-		                                                           NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_ALL,
-		                                                           FALSE))
-			changed = TRUE;
+			if (nm_settings_connection_autoconnect_blocked_reason_set (connection,
+			                                                           NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_ALL,
+			                                                           FALSE))
+				changed = TRUE;
+		}
 	}
 	return changed;
 }
