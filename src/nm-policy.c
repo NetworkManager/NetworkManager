@@ -1430,7 +1430,8 @@ reset_autoconnect_all (NMPolicy *self,
 				/* maybe the connection is still blocked afterwards for other reasons
 				 * and in the larger picture nothing changed. But it's too complicated
 				 * to find out exactly. Just assume, something changed to be sure. */
-				changed = TRUE;
+				if (!nm_settings_connection_autoconnect_is_blocked (connection))
+					changed = TRUE;
 			}
 		} else {
 			/* we reset the tries-count and any blocked-reason */
@@ -1441,8 +1442,10 @@ reset_autoconnect_all (NMPolicy *self,
 			if (nm_settings_connection_autoconnect_blocked_reason_set (connection,
 			                                                             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_ALL
 			                                                           & ~NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST,
-			                                                           FALSE))
-				changed = TRUE;
+			                                                           FALSE)) {
+				if (!nm_settings_connection_autoconnect_is_blocked (connection))
+					changed = TRUE;
+			}
 		}
 	}
 	return changed;
@@ -1615,8 +1618,10 @@ activate_slave_connections (NMPolicy *self, NMDevice *device)
 		}
 		if (nm_settings_connection_autoconnect_blocked_reason_set (connection,
 		                                                           NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
-		                                                           FALSE))
-			changed = TRUE;
+		                                                           FALSE)) {
+			if (!nm_settings_connection_autoconnect_is_blocked (connection))
+				changed = TRUE;
+		}
 	}
 
 	if (changed)
