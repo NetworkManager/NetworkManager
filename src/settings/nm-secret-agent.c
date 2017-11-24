@@ -352,7 +352,7 @@ get_callback (GObject *proxy,
 	request_free (r);
 }
 
-NMSecretAgentCallId
+NMSecretAgentCallId *
 nm_secret_agent_get_secrets (NMSecretAgent *self,
                              const char *path,
                              NMConnection *connection,
@@ -474,7 +474,7 @@ do_cancel_secrets (NMSecretAgent *self, Request *r, gboolean disposing)
  * callback before nm_secret_agent_cancel_secrets() returns.
  */
 void
-nm_secret_agent_cancel_secrets (NMSecretAgent *self, NMSecretAgentCallId call_id)
+nm_secret_agent_cancel_secrets (NMSecretAgent *self, NMSecretAgentCallId *call_id)
 {
 	Request *r = call_id;
 
@@ -511,7 +511,7 @@ agent_save_cb (GObject *proxy,
 	request_free (r);
 }
 
-NMSecretAgentCallId
+NMSecretAgentCallId *
 nm_secret_agent_save_secrets (NMSecretAgent *self,
                               const char *path,
                               NMConnection *connection,
@@ -563,7 +563,7 @@ agent_delete_cb (GObject *proxy,
 	request_free (r);
 }
 
-NMSecretAgentCallId
+NMSecretAgentCallId *
 nm_secret_agent_delete_secrets (NMSecretAgent *self,
                                 const char *path,
                                 NMConnection *connection,
