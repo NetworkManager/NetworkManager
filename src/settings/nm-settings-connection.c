@@ -2646,6 +2646,15 @@ nm_settings_connection_autoconnect_blocked_reason_set_full (NMSettingsConnection
 	return TRUE;
 }
 
+gboolean
+nm_settings_connection_autoconnect_is_blocked (NMSettingsConnection *self)
+{
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+
+	return    !priv->autoconnect_blocked_reason
+	       && priv->autoconnect_retries != 0;
+}
+
 /*****************************************************************************/
 
 /**

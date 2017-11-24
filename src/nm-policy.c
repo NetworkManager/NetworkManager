@@ -1222,8 +1222,7 @@ auto_activate_device (NMPolicy *self,
 		const char *permission;
 
 		if (   !nm_settings_connection_is_visible (candidate)
-		    || nm_settings_connection_autoconnect_retries_get (candidate) == 0
-		    || nm_settings_connection_autoconnect_blocked_reason_get (candidate, NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_ALL))
+		    || nm_settings_connection_autoconnect_is_blocked (candidate))
 			continue;
 
 		s_con = nm_connection_get_setting_connection (NM_CONNECTION (candidate));

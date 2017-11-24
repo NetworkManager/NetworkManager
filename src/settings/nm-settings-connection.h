@@ -239,6 +239,8 @@ nm_settings_connection_autoconnect_blocked_reason_set (NMSettingsConnection *sel
 	return nm_settings_connection_autoconnect_blocked_reason_set_full (self, mask, set ? mask : NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE);
 }
 
+gboolean nm_settings_connection_autoconnect_is_blocked (NMSettingsConnection *self);
+
 gboolean nm_settings_connection_get_nm_generated (NMSettingsConnection *self);
 gboolean nm_settings_connection_get_volatile (NMSettingsConnection *self);
 
