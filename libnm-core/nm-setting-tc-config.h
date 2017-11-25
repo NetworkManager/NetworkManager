@@ -61,6 +61,41 @@ void        nm_tc_qdisc_set_handle           (NMTCQdisc *qdisc,
 NM_AVAILABLE_IN_1_10_2
 guint32     nm_tc_qdisc_get_parent           (NMTCQdisc *qdisc);
 
+NM_AVAILABLE_IN_1_10_2
+typedef struct NMTCAction NMTCAction;
+
+NM_AVAILABLE_IN_1_10_2
+GType       nm_tc_action_get_type            (void);
+
+NM_AVAILABLE_IN_1_10_2
+NMTCAction  *nm_tc_action_new                (const char *kind,
+                                              GError **error);
+
+NM_AVAILABLE_IN_1_10_2
+void        nm_tc_action_ref                 (NMTCAction *action);
+NM_AVAILABLE_IN_1_10_2
+void        nm_tc_action_unref               (NMTCAction *action);
+NM_AVAILABLE_IN_1_10_2
+gboolean    nm_tc_action_equal               (NMTCAction *action,
+                                              NMTCAction *other);
+
+NM_AVAILABLE_IN_1_10_2
+NMTCAction  *nm_tc_action_dup                (NMTCAction  *action);
+
+
+NM_AVAILABLE_IN_1_10_2
+const char *nm_tc_action_get_kind            (NMTCAction *action);
+
+NM_AVAILABLE_IN_1_10_2
+char      **nm_tc_action_get_attribute_names (NMTCAction *action);
+NM_AVAILABLE_IN_1_10_2
+GVariant   *nm_tc_action_get_attribute       (NMTCAction *action,
+                                              const char *name);
+NM_AVAILABLE_IN_1_10_2
+void        nm_tc_action_set_attribute       (NMTCAction *action,
+                                              const char *name,
+                                              GVariant *value);
+
 #define NM_TYPE_SETTING_TC_CONFIG            (nm_setting_tc_config_get_type ())
 #define NM_SETTING_TC_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTING_TC_CONFIG, NMSettingTCConfig))
 #define NM_SETTING_TC_CONFIG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SETTING_TC_CONFIG, NMSettingTCConfigClass))

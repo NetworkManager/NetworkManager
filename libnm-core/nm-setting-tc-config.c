@@ -249,6 +249,241 @@ nm_tc_qdisc_get_parent (NMTCQdisc *qdisc)
 
 /*****************************************************************************/
 
+G_DEFINE_BOXED_TYPE (NMTCAction, nm_tc_action, nm_tc_action_dup, nm_tc_action_unref)
+
+struct NMTCAction {
+	guint refcount;
+
+	char *kind;
+
+	GHashTable *attributes;
+};
+
+/**
+ * nm_tc_action_new:
+ * @kind: name of the queueing discipline
+ * @error: location to store error, or %NULL
+ *
+ * Creates a new #NMTCAction object.
+ *
+ * Returns: (transfer full): the new #NMTCAction object, or %NULL on error
+ *
+ * Since: 1.10.2
+ **/
+NMTCAction *
+nm_tc_action_new (const char *kind,
+                  GError **error)
+{
+	NMTCAction *action;
+
+	action = g_slice_new0 (NMTCAction);
+	action->refcount = 1;
+
+	action->kind = g_strdup (kind);
+
+	return action;
+}
+
+/**
+ * nm_tc_action_ref:
+ * @action: the #NMTCAction
+ *
+ * Increases the reference count of the object.
+ *
+ * Since: 1.10.2
+ **/
+void
+nm_tc_action_ref (NMTCAction *action)
+{
+	g_return_if_fail (action != NULL);
+	g_return_if_fail (action->refcount > 0);
+
+	action->refcount++;
+}
+
+/**
+ * nm_tc_action_unref:
+ * @action: the #NMTCAction
+ *
+ * Decreases the reference count of the object.  If the reference count
+ * reaches zero, the object will be destroyed.
+ *
+ * Since: 1.10.2
+ **/
+void
+nm_tc_action_unref (NMTCAction *action)
+{
+	g_return_if_fail (action != NULL);
+	g_return_if_fail (action->refcount > 0);
+
+	action->refcount--;
+	if (action->refcount == 0) {
+		g_free (action->kind);
+		if (action->attributes)
+			g_hash_table_unref (action->attributes);
+		g_slice_free (NMTCAction, action);
+	}
+}
+
+/**
+ * nm_tc_action_equal:
+ * @action: the #NMTCAction
+ * @other: the #NMTCAction to compare @action to.
+ *
+ * Determines if two #NMTCAction objects contain the same kind, family,
+ * handle, parent and info.
+ *
+ * Returns: %TRUE if the objects contain the same values, %FALSE if they do not.
+ *
+ * Since: 1.10.2
+ **/
+gboolean
+nm_tc_action_equal (NMTCAction *action, NMTCAction *other)
+{
+	if (action == NULL && other == NULL)
+		return TRUE;
+
+	if (action == NULL || other == NULL)
+		return FALSE;
+
+	g_return_val_if_fail (action->refcount > 0, FALSE);
+	g_return_val_if_fail (other->refcount > 0, FALSE);
+
+	if (g_strcmp0 (action->kind, other->kind) != 0)
+		return FALSE;
+
+	return TRUE;
+}
+
+/**
+ * nm_tc_action_dup:
+ * @action: the #NMTCAction
+ *
+ * Creates a copy of @action
+ *
+ * Returns: (transfer full): a copy of @action
+ *
+ * Since: 1.10.2
+ **/
+NMTCAction *
+nm_tc_action_dup (NMTCAction *action)
+{
+	NMTCAction *copy;
+
+	g_return_val_if_fail (action != NULL, NULL);
+	g_return_val_if_fail (action->refcount > 0, NULL);
+
+	copy = nm_tc_action_new (action->kind, NULL);
+
+	if (action->attributes) {
+		GHashTableIter iter;
+		const char *key;
+		GVariant *value;
+
+		g_hash_table_iter_init (&iter, action->attributes);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value))
+			nm_tc_action_set_attribute (copy, key, value);
+	}
+
+	return copy;
+}
+
+/**
+ * nm_tc_action_get_kind:
+ * @action: the #NMTCAction
+ *
+ * Returns:
+ *
+ * Since: 1.10.2
+ **/
+const char *
+nm_tc_action_get_kind (NMTCAction *action)
+{
+	g_return_val_if_fail (action != NULL, NULL);
+	g_return_val_if_fail (action->refcount > 0, NULL);
+
+	return action->kind;
+}
+
+/**
+ * nm_tc_action_get_attribute_names:
+ * @action: the #NMTCAction
+ *
+ * Gets an array of attribute names defined on @action.
+ *
+ * Returns: (transfer full): a %NULL-terminated array of attribute names,
+ **/
+char **
+nm_tc_action_get_attribute_names (NMTCAction *action)
+{
+	GHashTableIter iter;
+	const char *key;
+	GPtrArray *names;
+
+	g_return_val_if_fail (action != NULL, NULL);
+
+	names = g_ptr_array_new ();
+
+	if (action->attributes) {
+		g_hash_table_iter_init (&iter, action->attributes);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &key, NULL))
+			g_ptr_array_add (names, g_strdup (key));
+	}
+	g_ptr_array_add (names, NULL);
+
+	return (char **) g_ptr_array_free (names, FALSE);
+}
+
+/**
+ * nm_tc_action_get_attribute:
+ * @action: the #NMTCAction
+ * @name: the name of an action attribute
+ *
+ * Gets the value of the attribute with name @name on @action
+ *
+ * Returns: (transfer none): the value of the attribute with name @name on
+ *   @action, or %NULL if @action has no such attribute.
+ **/
+GVariant *
+nm_tc_action_get_attribute (NMTCAction *action, const char *name)
+{
+	g_return_val_if_fail (action != NULL, NULL);
+	g_return_val_if_fail (name != NULL && *name != '\0', NULL);
+
+	if (action->attributes)
+		return g_hash_table_lookup (action->attributes, name);
+	else
+		return NULL;
+}
+
+/**
+ * nm_tc_action_set_attribute:
+ * @action: the #NMTCAction
+ * @name: the name of an action attribute
+ * @value: (transfer none) (allow-none): the value
+ *
+ * Sets or clears the named attribute on @action to the given value.
+ **/
+void
+nm_tc_action_set_attribute (NMTCAction *action, const char *name, GVariant *value)
+{
+	g_return_if_fail (action != NULL);
+	g_return_if_fail (name != NULL && *name != '\0');
+	g_return_if_fail (strcmp (name, "kind") != 0);
+
+	if (!action->attributes) {
+		action->attributes = g_hash_table_new_full (g_str_hash, g_str_equal,
+		                                            g_free, (GDestroyNotify) g_variant_unref);
+	}
+
+	if (value)
+		g_hash_table_insert (action->attributes, g_strdup (name), g_variant_ref_sink (value));
+	else
+		g_hash_table_remove (action->attributes, name);
+}
+
+/*****************************************************************************/
+
 enum {
 	PROP_0,
 	PROP_QDISCS,
