@@ -1,0 +1,46 @@
+sources = files(
+  'nm-device-ovs-bridge.c',
+  'nm-device-ovs-interface.c',
+  'nm-device-ovs-port.c',
+  'nm-ovsdb.c',
+  'nm-ovs-factory.c'
+)
+
+deps = [
+  core_dep,
+  jansson_dep,
+  libnmdbus_dep
+]
+
+cflags = '-DRUNSTATEDIR="@0@"'.format(nm_runstatedir)
+
+ldflags = []
+if have_version_script
+  ldflags += '-Wl,--version-script,@0@'.format(linker_script_devices)
+endif
+
+libnm_device_plugin_ovs = shared_module(
+  'nm-device-plugin-ovs',
+  sources: sources,
+  dependencies: deps,
+  c_args: cflags,
+  link_args: ldflags,
+  link_depends: linker_script_devices,
+  install: true,
+  install_dir: nm_pkglibdir
+)
+
+core_plugins += libnm_device_plugin_ovs
+
+run_target(
+  'check-local-devices-ovs',
+  command: [check_exports, libnm_device_plugin_ovs.full_path(), linker_script_devices],
+  depends: libnm_device_plugin_ovs
+)
+
+# FIXME: check_so_symbols replacement
+'''
+check-local-devices-ovs: src/devices/ovs/libnm-device-plugin-ovs.la
+  $(srcdir)/tools/check-exports.sh $(builddir)/src/devices/ovs/.libs/libnm-device-plugin-ovs.so "$(srcdir)/linker-script-devices.ver"
+  $(call check_so_symbols,$(builddir)/src/devices/ovs/.libs/libnm-device-plugin-ovs.so)
+'''

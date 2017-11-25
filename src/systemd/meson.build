@@ -1,0 +1,76 @@
+sources = files(
+  'sd-adapt/nm-sd-adapt.c',
+  'src/basic/alloc-util.c',
+  'src/basic/escape.c',
+  'src/basic/ether-addr-util.c',
+  'src/basic/extract-word.c',
+  'src/basic/fd-util.c',
+  'src/basic/fileio.c',
+  'src/basic/fs-util.c',
+  'src/basic/hash-funcs.c',
+  'src/basic/hashmap.c',
+  'src/basic/hexdecoct.c',
+  'src/basic/hostname-util.c',
+  'src/basic/in-addr-util.c',
+  'src/basic/io-util.c',
+  'src/basic/mempool.c',
+  'src/basic/parse-util.c',
+  'src/basic/path-util.c',
+  'src/basic/prioq.c',
+  'src/basic/process-util.c',
+  'src/basic/random-util.c',
+  'src/basic/socket-util.c',
+  'src/basic/string-table.c',
+  'src/basic/string-util.c',
+  'src/basic/strv.c',
+  'src/basic/time-util.c',
+  'src/basic/utf8.c',
+  'src/basic/util.c',
+  'src/libsystemd-network/arp-util.c',
+  'src/libsystemd-network/dhcp-identifier.c',
+  'src/libsystemd-network/dhcp-network.c',
+  'src/libsystemd-network/dhcp-option.c',
+  'src/libsystemd-network/dhcp-packet.c',
+  'src/libsystemd-network/dhcp6-network.c',
+  'src/libsystemd-network/dhcp6-option.c',
+  'src/libsystemd-network/lldp-neighbor.c',
+  'src/libsystemd-network/lldp-network.c',
+  'src/libsystemd-network/network-internal.c',
+  'src/libsystemd-network/sd-dhcp-client.c',
+  'src/libsystemd-network/sd-dhcp-lease.c',
+  'src/libsystemd-network/sd-dhcp6-client.c',
+  'src/libsystemd-network/sd-dhcp6-lease.c',
+  'src/libsystemd-network/sd-ipv4acd.c',
+  'src/libsystemd-network/sd-ipv4ll.c',
+  'src/libsystemd-network/sd-lldp.c',
+  'src/libsystemd/sd-event/sd-event.c',
+  'src/libsystemd/sd-id128/id128-util.c',
+  'src/libsystemd/sd-id128/sd-id128.c',
+  'src/shared/dns-domain.c',
+  'nm-sd.c'
+)
+
+incs = [
+  top_inc,
+  shared_inc,
+  libnm_core_inc,
+  libnm_inc,
+  src_inc,
+  include_directories(
+    'sd-adapt',
+    'src/basic',
+    'src/libsystemd-network',
+    'src/shared',
+    'src/systemd'
+  )
+]
+
+cflags = '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD'
+
+libsystemd_nm = static_library(
+  'systemd-nm',
+  sources: sources + [libnm_core_enums_h],
+  include_directories: incs,
+  dependencies: glib_dep,
+  c_args: cflags
+)
