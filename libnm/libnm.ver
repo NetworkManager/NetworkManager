@@ -1307,6 +1307,16 @@ global:
 	nm_setting_tc_config_remove_qdisc_by_value;
 	nm_setting_vpn_get_data_keys;
 	nm_setting_vpn_get_secret_keys;
+	nm_tc_action_dup;
+	nm_tc_action_equal;
+	nm_tc_action_get_attribute;
+	nm_tc_action_get_attribute_names;
+	nm_tc_action_get_kind;
+	nm_tc_action_get_type;
+	nm_tc_action_new;
+	nm_tc_action_ref;
+	nm_tc_action_set_attribute;
+	nm_tc_action_unref;
 	nm_tc_qdisc_dup;
 	nm_tc_qdisc_equal;
 	nm_tc_qdisc_get_handle;
