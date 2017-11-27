@@ -7779,6 +7779,8 @@ editor_menu_main (NmCli *nmc, NMConnection *connection)
 		g_object_unref (rem_con);
 	g_weak_ref_clear (&weak);
 
+	quit ();
+
 	/* Save history file */
 	save_history_cmds (nm_connection_get_uuid (connection));
 
