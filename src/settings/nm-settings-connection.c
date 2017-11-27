@@ -2791,6 +2791,7 @@ nm_settings_connection_init (NMSettingsConnection *self)
 
 	priv->visible = FALSE;
 	priv->ready = TRUE;
+	c_list_init (&priv->call_ids_lst_head);
 
 	priv->session_monitor = g_object_ref (nm_session_monitor_get ());
 	priv->session_changed_id = g_signal_connect (priv->session_monitor,
