@@ -1428,8 +1428,8 @@ build_hidden_probe_list (NMDeviceWifi *self)
 
 	connections = nm_settings_get_connections_clone (nm_device_get_settings ((NMDevice *) self),
 	                                                 &len,
-	                                                 hidden_filter_func,
-	                                                 NULL);
+	                                                 hidden_filter_func, NULL,
+	                                                 NULL, NULL);
 	if (!connections[0])
 		return NULL;
 

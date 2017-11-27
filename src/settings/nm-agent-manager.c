@@ -62,6 +62,8 @@ typedef struct {
 	GHashTable *agents;
 
 	CList requests;
+
+	guint64 agent_version_id;
 } NMAgentManagerPrivate;
 
 struct _NMAgentManager {
@@ -134,6 +136,16 @@ static void _con_save_request_start (Request *req);
 static void _con_del_request_start (Request *req);
 
 static gboolean _con_get_try_complete_early (Request *req);
+
+/*****************************************************************************/
+
+guint64
+nm_agent_manager_get_agent_version_id (NMAgentManager *self)
+{
+	g_return_val_if_fail (NM_IS_AGENT_MANAGER (self), 0);
+
+	return NM_AGENT_MANAGER_GET_PRIVATE (self)->agent_version_id;
+}
 
 /*****************************************************************************/
 
@@ -336,6 +348,7 @@ agent_register_permissions_done (NMAuthChain *chain,
 		if (result == NM_AUTH_CALL_RESULT_YES)
 			nm_secret_agent_add_permission (agent, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN, TRUE);
 
+		priv->agent_version_id += 1;
 		sender = nm_secret_agent_get_dbus_owner (agent);
 		g_hash_table_insert (priv->agents, g_strdup (sender), agent);
 		_LOGD (agent, "agent registered");
@@ -1558,6 +1571,7 @@ nm_agent_manager_init (NMAgentManager *self)
 {
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
 
+	priv->agent_version_id = 1;
 	c_list_init (&priv->requests);
 	priv->agents = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_object_unref);
 }
@@ -1627,7 +1641,7 @@ nm_agent_manager_class_init (NMAgentManagerClass *agent_manager_class)
 	object_class->dispose = dispose;
 
 	signals[AGENT_REGISTERED] =
-	    g_signal_new ("agent-registered",
+	    g_signal_new (NM_AGENT_MANAGER_AGENT_REGISTERED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0,

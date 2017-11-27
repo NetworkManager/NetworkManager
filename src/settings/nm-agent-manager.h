@@ -33,6 +33,8 @@
 #define NM_IS_AGENT_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_AGENT_MANAGER))
 #define NM_AGENT_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_AGENT_MANAGER, NMAgentManagerClass))
 
+#define NM_AGENT_MANAGER_AGENT_REGISTERED "agent-registered"
+
 typedef struct _NMAgentManagerCallId *NMAgentManagerCallId;
 
 typedef struct _NMAgentManagerClass NMAgentManagerClass;
@@ -40,6 +42,8 @@ typedef struct _NMAgentManagerClass NMAgentManagerClass;
 GType nm_agent_manager_get_type (void);
 
 NMAgentManager *nm_agent_manager_get (void);
+
+guint64 nm_agent_manager_get_agent_version_id (NMAgentManager *self);
 
 /* If no agent fulfilled the secrets request, agent_dbus_owner will be NULL */
 typedef void (*NMAgentSecretsResultFunc) (NMAgentManager *manager,

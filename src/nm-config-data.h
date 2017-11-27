@@ -165,6 +165,8 @@ const char *nm_config_data_get_connectivity_uri (const NMConfigData *config_data
 guint nm_config_data_get_connectivity_interval (const NMConfigData *config_data);
 const char *nm_config_data_get_connectivity_response (const NMConfigData *config_data);
 
+int nm_config_data_get_autoconnect_retries_default (const NMConfigData *config_data);
+
 const char *const*nm_config_data_get_no_auto_default (const NMConfigData *config_data);
 gboolean          nm_config_data_get_no_auto_default_for_device (const NMConfigData *self, NMDevice *device);
 

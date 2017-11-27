@@ -84,13 +84,18 @@ typedef enum { /*< skip >*/
 
 typedef enum {
 	NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE                    = 0,
-	NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST            = 1,
-	NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED                  = 2,
-	NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS              = 3,
+
+	NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST            = (1LL << 0),
+	NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED                  = (1LL << 1),
+	NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS              = (1LL << 2),
+
+	NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_ALL                     = (  NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST
+	                                                                   | NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED
+	                                                                   | NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS),
 } NMSettingsAutoconnectBlockedReason;
 
 struct _NMSettingsConnectionCallId;
-typedef struct _NMSettingsConnectionCallId *NMSettingsConnectionCallId;
+typedef struct _NMSettingsConnectionCallId NMSettingsConnectionCallId;
 
 typedef struct _NMSettingsConnectionClass NMSettingsConnectionClass;
 
@@ -119,6 +124,8 @@ struct _NMSettingsConnectionClass {
 };
 
 GType nm_settings_connection_get_type (void);
+
+guint64 nm_settings_connection_get_last_secret_agent_version_id (NMSettingsConnection *self);
 
 gboolean nm_settings_connection_has_unmodified_applied_connection (NMSettingsConnection *self,
                                                                    NMConnection *applied_connection,
@@ -150,7 +157,7 @@ gboolean nm_settings_connection_delete (NMSettingsConnection *self,
                                         GError **error);
 
 typedef void (*NMSettingsConnectionSecretsFunc) (NMSettingsConnection *self,
-                                                 NMSettingsConnectionCallId call_id,
+                                                 NMSettingsConnectionCallId *call_id,
                                                  const char *agent_username,
                                                  const char *setting_name,
                                                  GError *error,
@@ -162,17 +169,17 @@ gboolean nm_settings_connection_new_secrets (NMSettingsConnection *self,
                                              GVariant *secrets,
                                              GError **error);
 
-NMSettingsConnectionCallId nm_settings_connection_get_secrets (NMSettingsConnection *self,
-                                                               NMConnection *applied_connection,
-                                                               NMAuthSubject *subject,
-                                                               const char *setting_name,
-                                                               NMSecretAgentGetSecretsFlags flags,
-                                                               const char *const*hints,
-                                                               NMSettingsConnectionSecretsFunc callback,
-                                                               gpointer callback_data);
+NMSettingsConnectionCallId *nm_settings_connection_get_secrets (NMSettingsConnection *self,
+                                                                NMConnection *applied_connection,
+                                                                NMAuthSubject *subject,
+                                                                const char *setting_name,
+                                                                NMSecretAgentGetSecretsFlags flags,
+                                                                const char *const*hints,
+                                                                NMSettingsConnectionSecretsFunc callback,
+                                                                gpointer callback_data);
 
 void nm_settings_connection_cancel_secrets (NMSettingsConnection *self,
-                                            NMSettingsConnectionCallId call_id);
+                                            NMSettingsConnectionCallId *call_id);
 
 gboolean nm_settings_connection_is_visible (NMSettingsConnection *self);
 
@@ -218,11 +225,23 @@ void nm_settings_connection_autoconnect_retries_set (NMSettingsConnection *self,
                                                      int retries);
 void nm_settings_connection_autoconnect_retries_reset (NMSettingsConnection *self);
 
-gint32 nm_settings_connection_autoconnect_blocked_until_get (NMSettingsConnection *self);
+gint32 nm_settings_connection_autoconnect_retries_blocked_until (NMSettingsConnection *self);
 
-NMSettingsAutoconnectBlockedReason nm_settings_connection_autoconnect_blocked_reason_get (NMSettingsConnection *self);
-void                               nm_settings_connection_autoconnect_blocked_reason_set (NMSettingsConnection *self,
-                                                                                          NMSettingsAutoconnectBlockedReason reason);
+NMSettingsAutoconnectBlockedReason nm_settings_connection_autoconnect_blocked_reason_get (NMSettingsConnection *self,
+                                                                                          NMSettingsAutoconnectBlockedReason mask);
+gboolean nm_settings_connection_autoconnect_blocked_reason_set_full (NMSettingsConnection *self,
+                                                                     NMSettingsAutoconnectBlockedReason mask,
+                                                                     NMSettingsAutoconnectBlockedReason value);
+
+static inline gboolean
+nm_settings_connection_autoconnect_blocked_reason_set (NMSettingsConnection *self,
+                                                       NMSettingsAutoconnectBlockedReason mask,
+                                                       gboolean set)
+{
+	return nm_settings_connection_autoconnect_blocked_reason_set_full (self, mask, set ? mask : NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE);
+}
+
+gboolean nm_settings_connection_autoconnect_is_blocked (NMSettingsConnection *self);
 
 gboolean nm_settings_connection_get_nm_generated (NMSettingsConnection *self);
 gboolean nm_settings_connection_get_volatile (NMSettingsConnection *self);

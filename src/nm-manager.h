@@ -24,6 +24,7 @@
 
 #include "nm-exported-object.h"
 #include "settings/nm-settings-connection.h"
+#include "nm-utils/c-list.h"
 
 #define NM_TYPE_MANAGER            (nm_manager_get_type ())
 #define NM_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MANAGER, NMManager))
@@ -85,7 +86,19 @@ gboolean      nm_manager_start                         (NMManager *manager,
                                                         GError **error);
 void          nm_manager_stop                          (NMManager *manager);
 NMState       nm_manager_get_state                     (NMManager *manager);
-const GSList *nm_manager_get_active_connections        (NMManager *manager);
+const CList * nm_manager_get_active_connections        (NMManager *manager);
+
+#define nm_manager_for_each_active_connection(manager, iter, tmp_list) \
+	for (tmp_list = nm_manager_get_active_connections (manager), \
+	     iter = c_list_entry (tmp_list->next, NMActiveConnection, active_connections_lst); \
+	     ({ \
+	         gboolean _has_next = (&iter->active_connections_lst != tmp_list); \
+	         \
+	         if (!_has_next) \
+	             iter = NULL; \
+	         _has_next; \
+	    }); \
+	    iter = c_list_entry (iter->active_connections_lst.next, NMActiveConnection, active_connections_lst))
 
 NMSettingsConnection **nm_manager_get_activatable_connections (NMManager *manager,
                                                                guint *out_len,

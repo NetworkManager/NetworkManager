@@ -95,6 +95,8 @@ typedef struct {
 		guint interval;
 	} connectivity;
 
+	int autoconnect_retries_default;
+
 	struct {
 		char **arr;
 		GSList *specs;
@@ -273,6 +275,14 @@ nm_config_data_get_connectivity_response (const NMConfigData *self)
 	g_return_val_if_fail (self != NULL, NULL);
 
 	return NM_CONFIG_DATA_GET_PRIVATE (self)->connectivity.response;
+}
+
+int
+nm_config_data_get_autoconnect_retries_default (const NMConfigData *self)
+{
+	g_return_val_if_fail (self, FALSE);
+
+	return NM_CONFIG_DATA_GET_PRIVATE (self)->autoconnect_retries_default;
 }
 
 const char *const*
@@ -1527,7 +1537,7 @@ constructed (GObject *object)
 {
 	NMConfigData *self = NM_CONFIG_DATA (object);
 	NMConfigDataPrivate *priv = NM_CONFIG_DATA_GET_PRIVATE (self);
-	char *interval;
+	char *str;
 
 	priv->keyfile = _merge_keyfiles (priv->keyfile_user, priv->keyfile_intern);
 
@@ -1538,13 +1548,15 @@ constructed (GObject *object)
 	priv->connectivity.uri = nm_strstrip (g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "uri", NULL));
 	priv->connectivity.response = g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "response", NULL);
 
+	str = nm_config_keyfile_get_value (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, NM_CONFIG_KEYFILE_KEY_MAIN_AUTOCONNECT_RETRIES_DEFAULT, NM_CONFIG_GET_VALUE_NONE);
+	priv->autoconnect_retries_default = _nm_utils_ascii_str_to_int64 (str, 10, 0, G_MAXINT32, 4);
+	g_free (str);
+
 	/* On missing config value, fallback to 300. On invalid value, disable connectivity checking by setting
 	 * the interval to zero. */
-	interval = g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "interval", NULL);
-	priv->connectivity.interval = interval
-	    ? _nm_utils_ascii_str_to_int64 (interval, 10, 0, G_MAXUINT, 0)
-	    : NM_CONFIG_DEFAULT_CONNECTIVITY_INTERVAL;
-	g_free (interval);
+	str = g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY, "interval", NULL);
+	priv->connectivity.interval = _nm_utils_ascii_str_to_int64 (str, 10, 0, G_MAXUINT, NM_CONFIG_DEFAULT_CONNECTIVITY_INTERVAL);
+	g_free (str);
 
 	priv->dns_mode = nm_strstrip (g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "dns", NULL));
 	priv->rc_manager = nm_strstrip (g_key_file_get_string (priv->keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "rc-manager", NULL));
