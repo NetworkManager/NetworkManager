@@ -44,6 +44,7 @@
 #include "nm-manager.h"
 #include "settings/nm-settings.h"
 #include "settings/nm-settings-connection.h"
+#include "settings/nm-agent-manager.h"
 #include "nm-dhcp4-config.h"
 #include "nm-dhcp6-config.h"
 #include "nm-config.h"
@@ -66,6 +67,8 @@ typedef struct {
 	NMNetns *netns;
 	NMFirewallManager *firewall_manager;
 	CList pending_activation_checks;
+
+	NMAgentManager *agent_mgr;
 
 	GHashTable *devices;
 	GHashTable *pending_active_connections;
@@ -2374,8 +2377,7 @@ secret_agent_registered (NMSettings *settings,
                          NMSecretAgent *agent,
                          gpointer user_data)
 {
-	NMPolicyPrivate *priv = user_data;
-	NMPolicy *self = _PRIV_TO_SELF (priv);
+	NMPolicy *self = NM_POLICY (user_data);
 
 	/* The registered secret agent may provide some missing secrets. Thus we
 	 * reset retries count here and schedule activation, so that the
@@ -2520,6 +2522,8 @@ constructed (GObject *object)
 	_LOGT (LOGD_DNS, "hostname-original: set to %s%s%s",
 	       NM_PRINT_FMT_QUOTE_STRING (priv->orig_hostname));
 
+	priv->agent_mgr = g_object_ref (nm_agent_manager_get ());
+
 	priv->firewall_manager = g_object_ref (nm_firewall_manager_get ());
 	g_signal_connect (priv->firewall_manager, NM_FIREWALL_MANAGER_STATE_CHANGED,
 	                  G_CALLBACK (firewall_state_changed), self);
@@ -2544,7 +2548,8 @@ constructed (GObject *object)
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,            (GCallback) connection_updated, priv);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_REMOVED,            (GCallback) connection_removed, priv);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED, (GCallback) connection_visibility_changed, priv);
-	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_AGENT_REGISTERED,              (GCallback) secret_agent_registered, priv);
+
+	g_signal_connect (priv->agent_mgr, NM_AGENT_MANAGER_AGENT_REGISTERED, G_CALLBACK (secret_agent_registered), self);
 
 	G_OBJECT_CLASS (nm_policy_parent_class)->constructed (object);
 
@@ -2591,6 +2596,11 @@ dispose (GObject *object)
 	if (priv->firewall_manager) {
 		g_signal_handlers_disconnect_by_func (priv->firewall_manager, firewall_state_changed, self);
 		g_clear_object (&priv->firewall_manager);
+	}
+
+	if (priv->agent_mgr) {
+		g_signal_handlers_disconnect_by_func (priv->agent_mgr, secret_agent_registered, self);
+		g_clear_object (&priv->agent_mgr);
 	}
 
 	if (priv->dns_manager) {
