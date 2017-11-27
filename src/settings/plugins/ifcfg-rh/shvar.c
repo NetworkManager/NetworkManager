@@ -1318,7 +1318,7 @@ svWriteFile (shvarFile *s, int mode, GError **error)
 			return FALSE;
 		}
 
-		tmpfd = dup (s->fd);
+		tmpfd = fcntl (s->fd, F_DUPFD_CLOEXEC, 0);
 		if (tmpfd == -1) {
 			int errsv = errno;
 

@@ -2835,7 +2835,7 @@ nm_utils_fd_get_contents (int fd,
 		if (fd_keeper >= 0)
 			fd2 = nm_steal_fd (&fd_keeper);
 		else {
-			fd2 = dup (fd);
+			fd2 = fcntl (fd, F_DUPFD_CLOEXEC, 0);
 			if (fd2 < 0)
 				return _get_contents_error (error, 0, "error during dup");
 		}
