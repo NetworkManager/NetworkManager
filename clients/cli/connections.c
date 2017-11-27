@@ -7569,6 +7569,8 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	g_free (menu_ctx.valid_props_str);
 	g_weak_ref_clear (&weak);
 
+	quit ();
+
 	/* Save history file */
 	save_history_cmds (nm_connection_get_uuid (connection));
 
