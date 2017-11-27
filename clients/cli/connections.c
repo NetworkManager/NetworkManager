@@ -2654,7 +2654,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 		const GPtrArray *connections;
 		const char *selector = NULL;
 
-		if (arg_num == 1)
+		if (arg_num == 1 && nmc->complete)
 			nmc_complete_strings (*arg_ptr, "id", "uuid", "path", "apath", NULL);
 
 		if (   strcmp (*arg_ptr, "id") == 0
