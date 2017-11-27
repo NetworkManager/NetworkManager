@@ -479,6 +479,9 @@ void _nm_utils_string_append_tc_parent           (GString *string,
                                                   guint32 parent);
 void _nm_utils_string_append_tc_qdisc_rest       (GString *string,
                                                   NMTCQdisc *qdisc);
+gboolean _nm_utils_string_append_tc_tfilter_rest (GString *string,
+                                                  NMTCTfilter *tfilter,
+                                                  GError **error);
 
 /*****************************************************************************/
 

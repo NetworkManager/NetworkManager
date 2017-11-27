@@ -510,9 +510,257 @@ nm_tc_action_set_attribute (NMTCAction *action, const char *name, GVariant *valu
 
 /*****************************************************************************/
 
+G_DEFINE_BOXED_TYPE (NMTCTfilter, nm_tc_tfilter, nm_tc_tfilter_dup, nm_tc_tfilter_unref)
+
+struct NMTCTfilter {
+	guint refcount;
+
+	const char *kind;
+	guint32 handle;
+	guint32 parent;
+	NMTCAction *action;
+};
+
+/**
+ * nm_tc_tfilter_new:
+ * @kind: name of the queueing discipline
+ * @parent: the parent queueing discipline
+ * @error: location to store error, or %NULL
+ *
+ * Creates a new #NMTCTfilter object.
+ *
+ * Returns: (transfer full): the new #NMTCTfilter object, or %NULL on error
+ *
+ * Since: 1.10.2
+ **/
+NMTCTfilter *
+nm_tc_tfilter_new (const char *kind,
+                   guint32 parent,
+                   GError **error)
+{
+	NMTCTfilter *tfilter;
+
+	tfilter = g_slice_new0 (NMTCTfilter);
+	tfilter->refcount = 1;
+
+	tfilter->kind = g_intern_string (kind);
+	tfilter->parent = parent;
+
+	return tfilter;
+}
+
+/**
+ * nm_tc_tfilter_ref:
+ * @tfilter: the #NMTCTfilter
+ *
+ * Increases the reference count of the object.
+ *
+ * Since: 1.10.2
+ **/
+void
+nm_tc_tfilter_ref (NMTCTfilter *tfilter)
+{
+	g_return_if_fail (tfilter != NULL);
+	g_return_if_fail (tfilter->refcount > 0);
+
+	tfilter->refcount++;
+}
+
+/**
+ * nm_tc_tfilter_unref:
+ * @tfilter: the #NMTCTfilter
+ *
+ * Decreases the reference count of the object.  If the reference count
+ * reaches zero, the object will be destroyed.
+ *
+ * Since: 1.10.2
+ **/
+void
+nm_tc_tfilter_unref (NMTCTfilter *tfilter)
+{
+	g_return_if_fail (tfilter != NULL);
+	g_return_if_fail (tfilter->refcount > 0);
+
+	tfilter->refcount--;
+	if (tfilter->refcount == 0) {
+		if (tfilter->action)
+			nm_tc_action_unref (tfilter->action);
+		g_slice_free (NMTCTfilter, tfilter);
+	}
+}
+
+/**
+ * nm_tc_tfilter_equal:
+ * @tfilter: the #NMTCTfilter
+ * @other: the #NMTCTfilter to compare @tfilter to.
+ *
+ * Determines if two #NMTCTfilter objects contain the same kind, family,
+ * handle, parent and info.
+ *
+ * Returns: %TRUE if the objects contain the same values, %FALSE if they do not.
+ *
+ * Since: 1.10.2
+ **/
+gboolean
+nm_tc_tfilter_equal (NMTCTfilter *tfilter, NMTCTfilter *other)
+{
+	g_return_val_if_fail (tfilter != NULL, FALSE);
+	g_return_val_if_fail (tfilter->refcount > 0, FALSE);
+
+	g_return_val_if_fail (other != NULL, FALSE);
+	g_return_val_if_fail (other->refcount > 0, FALSE);
+
+	if (   tfilter->handle != other->handle
+	    || tfilter->parent != other->parent
+	    || g_strcmp0 (tfilter->kind, other->kind) != 0
+	    || !nm_tc_action_equal (tfilter->action, other->action))
+		return FALSE;
+
+	return TRUE;
+}
+
+/**
+ * nm_tc_tfilter_dup:
+ * @tfilter: the #NMTCTfilter
+ *
+ * Creates a copy of @tfilter
+ *
+ * Returns: (transfer full): a copy of @tfilter
+ *
+ * Since: 1.10.2
+ **/
+NMTCTfilter *
+nm_tc_tfilter_dup (NMTCTfilter *tfilter)
+{
+	NMTCTfilter *copy;
+
+	g_return_val_if_fail (tfilter != NULL, NULL);
+	g_return_val_if_fail (tfilter->refcount > 0, NULL);
+
+	copy = nm_tc_tfilter_new (tfilter->kind, tfilter->parent, NULL);
+	nm_tc_tfilter_set_handle (copy, tfilter->handle);
+	nm_tc_tfilter_set_action (copy, tfilter->action);
+
+	return copy;
+}
+
+/**
+ * nm_tc_tfilter_get_kind:
+ * @tfilter: the #NMTCTfilter
+ *
+ * Returns:
+ *
+ * Since: 1.10.2
+ **/
+const char *
+nm_tc_tfilter_get_kind (NMTCTfilter *tfilter)
+{
+	g_return_val_if_fail (tfilter != NULL, NULL);
+	g_return_val_if_fail (tfilter->refcount > 0, NULL);
+
+	return tfilter->kind;
+}
+
+/**
+ * nm_tc_tfilter_get_handle:
+ * @tfilter: the #NMTCTfilter
+ *
+ * Returns: the queueing discipline handle
+ *
+ * Since: 1.10.2
+ **/
+guint32
+nm_tc_tfilter_get_handle (NMTCTfilter *tfilter)
+{
+	g_return_val_if_fail (tfilter != NULL, TC_H_UNSPEC);
+	g_return_val_if_fail (tfilter->refcount > 0, TC_H_UNSPEC);
+
+	return tfilter->handle;
+}
+
+/**
+ * nm_tc_tfilter_set_handle:
+ * @tfilter: the #NMTCTfilter
+ * @handle: the queueing discipline handle
+ *
+ * Sets the queueing discipline handle.
+ *
+ * Since: 1.10.2
+ **/
+void
+nm_tc_tfilter_set_handle (NMTCTfilter *tfilter, guint32 handle)
+{
+	g_return_if_fail (tfilter != NULL);
+	g_return_if_fail (tfilter->refcount > 0);
+
+	tfilter->handle = handle;
+}
+
+/**
+ * nm_tc_tfilter_get_parent:
+ * @tfilter: the #NMTCTfilter
+ *
+ * Returns: the parent class
+ *
+ * Since: 1.10.2
+ **/
+guint32
+nm_tc_tfilter_get_parent (NMTCTfilter *tfilter)
+{
+	g_return_val_if_fail (tfilter != NULL, TC_H_UNSPEC);
+	g_return_val_if_fail (tfilter->refcount > 0, TC_H_UNSPEC);
+
+	return tfilter->parent;
+}
+
+/**
+ * nm_tc_tfilter_get_action:
+ * @tfilter: the #NMTCTfilter
+ *
+ * Returns: the action associated with a traffic filter.
+ *
+ * Since: 1.10.2
+ **/
+NMTCAction *
+nm_tc_tfilter_get_action (NMTCTfilter *tfilter)
+{
+	g_return_val_if_fail (tfilter != NULL, TC_H_UNSPEC);
+	g_return_val_if_fail (tfilter->refcount > 0, TC_H_UNSPEC);
+
+	if (tfilter->action == NULL)
+		return NULL;
+
+	return tfilter->action;
+}
+
+/**
+ * nm_tc_tfilter_set_action:
+ * @tfilter: the #NMTCTfilter
+ * @action: the action object
+ *
+ * Sets the action associated with a traffic filter.
+ *
+ * Since: 1.10.2
+ **/
+void
+nm_tc_tfilter_set_action (NMTCTfilter *tfilter, NMTCAction *action)
+{
+	g_return_if_fail (tfilter != NULL);
+	g_return_if_fail (tfilter->refcount > 0);
+
+	if (action)
+		nm_tc_action_ref (action);
+	if (tfilter->action)
+		nm_tc_action_unref (tfilter->action);
+	tfilter->action = action;
+}
+
+/*****************************************************************************/
+
 enum {
 	PROP_0,
 	PROP_QDISCS,
+	PROP_TFILTERS,
 
 	LAST_PROP
 };
@@ -527,6 +775,7 @@ enum {
 struct _NMSettingTCConfig {
         NMSetting parent;
 	GPtrArray *qdiscs;
+	GPtrArray *tfilters;
 };
 
 struct _NMSettingTCConfigClass {
@@ -687,6 +936,140 @@ nm_setting_tc_config_clear_qdiscs (NMSettingTCConfig *self)
 }
 
 /*****************************************************************************/
+/**
+ * nm_setting_tc_config_get_num_tfilters:
+ * @setting: the #NMSettingTCConfig
+ *
+ * Returns: the number of configured queueing disciplines
+ *
+ * Since: 1.10.2
+ **/
+guint
+nm_setting_tc_config_get_num_tfilters (NMSettingTCConfig *self)
+{
+	g_return_val_if_fail (NM_IS_SETTING_TC_CONFIG (self), 0);
+
+	return self->tfilters->len;
+}
+
+/**
+ * nm_setting_tc_config_get_tfilter:
+ * @setting: the #NMSettingTCConfig
+ * @idx: index number of the tfilter to return
+ *
+ * Returns: (transfer none): the tfilter at index @idx
+ *
+ * Since: 1.10.2
+ **/
+NMTCTfilter *
+nm_setting_tc_config_get_tfilter (NMSettingTCConfig *self, guint idx)
+{
+	g_return_val_if_fail (NM_IS_SETTING_TC_CONFIG (self), NULL);
+	g_return_val_if_fail (idx < self->tfilters->len, NULL);
+
+	return self->tfilters->pdata[idx];
+}
+
+/**
+ * nm_setting_tc_config_add_tfilter:
+ * @setting: the #NMSettingTCConfig
+ * @tfilter: the tfilter to add
+ *
+ * Appends a new tfilter and associated information to the setting.  The
+ * given tfilter is duplicated internally and is not changed by this function.
+ * If an identical tfilter (considering attributes as well) already exists, the
+ * tfilter is not added and the function returns %FALSE.
+ *
+ * Returns: %TRUE if the tfilter was added; %FALSE if the tfilter was already known.
+ *
+ * Since: 1.10.2
+ **/
+gboolean
+nm_setting_tc_config_add_tfilter (NMSettingTCConfig *self,
+                                  NMTCTfilter *tfilter)
+{
+	guint i;
+
+	g_return_val_if_fail (NM_IS_SETTING_TC_CONFIG (self), FALSE);
+	g_return_val_if_fail (tfilter != NULL, FALSE);
+
+	for (i = 0; i < self->tfilters->len; i++) {
+		if (nm_tc_tfilter_equal (self->tfilters->pdata[i], tfilter))
+			return FALSE;
+	}
+
+	g_ptr_array_add (self->tfilters, nm_tc_tfilter_dup (tfilter));
+	g_object_notify (G_OBJECT (self), NM_SETTING_TC_CONFIG_TFILTERS);
+	return TRUE;
+}
+
+/**
+ * nm_setting_tc_config_remove_tfilter:
+ * @setting: the #NMSettingTCConfig
+ * @idx: index number of the tfilter
+ *
+ * Removes the tfilter at index @idx.
+ *
+ * Since: 1.10.2
+ **/
+void
+nm_setting_tc_config_remove_tfilter (NMSettingTCConfig *self, guint idx)
+{
+	g_return_if_fail (NM_IS_SETTING_TC_CONFIG (self));
+	g_return_if_fail (idx < self->tfilters->len);
+
+	g_ptr_array_remove_index (self->tfilters, idx);
+	g_object_notify (G_OBJECT (self), NM_SETTING_TC_CONFIG_TFILTERS);
+}
+
+/**
+ * nm_setting_tc_config_remove_tfilter_by_value:
+ * @setting: the #NMSettingTCConfig
+ * @tfilter: the tfilter to remove
+ *
+ * Removes the first matching tfilter that matches @tfilter.
+ *
+ * Returns: %TRUE if the tfilter was found and removed; %FALSE if it was not.
+ *
+ * Since: 1.10.2
+ **/
+gboolean
+nm_setting_tc_config_remove_tfilter_by_value (NMSettingTCConfig *self,
+                                              NMTCTfilter *tfilter)
+{
+	guint i;
+
+	g_return_val_if_fail (NM_IS_SETTING_TC_CONFIG (self), FALSE);
+	g_return_val_if_fail (tfilter != NULL, FALSE);
+
+	for (i = 0; i < self->tfilters->len; i++) {
+		if (nm_tc_tfilter_equal (self->tfilters->pdata[i], tfilter)) {
+			g_ptr_array_remove_index (self->tfilters, i);
+			g_object_notify (G_OBJECT (self), NM_SETTING_TC_CONFIG_TFILTERS);
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+/**
+ * nm_setting_tc_config_clear_tfilters:
+ * @setting: the #NMSettingTCConfig
+ *
+ * Removes all configured queueing disciplines.
+ *
+ * Since: 1.10.2
+ **/
+void
+nm_setting_tc_config_clear_tfilters (NMSettingTCConfig *self)
+{
+	g_return_if_fail (NM_IS_SETTING_TC_CONFIG (self));
+
+	g_ptr_array_set_size (self->tfilters, 0);
+	g_object_notify (G_OBJECT (self), NM_SETTING_TC_CONFIG_TFILTERS);
+}
+
+/*****************************************************************************/
 
 static void
 set_property (GObject *object, guint prop_id,
@@ -700,6 +1083,12 @@ set_property (GObject *object, guint prop_id,
 		self->qdiscs = _nm_utils_copy_array (g_value_get_boxed (value),
 		                                     (NMUtilsCopyFunc) nm_tc_qdisc_dup,
 		                                     (GDestroyNotify) nm_tc_qdisc_unref);
+		break;
+	case PROP_TFILTERS:
+		g_ptr_array_unref (self->tfilters);
+		self->tfilters = _nm_utils_copy_array (g_value_get_boxed (value),
+		                                       (NMUtilsCopyFunc) nm_tc_tfilter_dup,
+		                                       (GDestroyNotify) nm_tc_tfilter_unref);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -719,6 +1108,11 @@ get_property (GObject *object, guint prop_id,
 		                                                 (NMUtilsCopyFunc) nm_tc_qdisc_dup,
 		                                                 (GDestroyNotify) nm_tc_qdisc_unref));
 		break;
+	case PROP_TFILTERS:
+		g_value_take_boxed (value, _nm_utils_copy_array (self->tfilters,
+		                                                 (NMUtilsCopyFunc) nm_tc_tfilter_dup,
+		                                                 (GDestroyNotify) nm_tc_tfilter_unref));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -731,6 +1125,7 @@ finalize (GObject *object)
 	NMSettingTCConfig *self = NM_SETTING_TC_CONFIG (object);
 
 	g_ptr_array_unref (self->qdiscs);
+	g_ptr_array_unref (self->tfilters);
 
 	G_OBJECT_CLASS (nm_setting_tc_config_parent_class)->finalize (object);
 }
@@ -756,6 +1151,16 @@ compare_property (NMSetting *setting,
 		return TRUE;
 	}
 
+	if (nm_streq (prop_spec->name, NM_SETTING_TC_CONFIG_TFILTERS)) {
+		if (a_tc_config->tfilters->len != b_tc_config->tfilters->len)
+			return FALSE;
+		for (i = 0; i < a_tc_config->tfilters->len; i++) {
+			if (!nm_tc_tfilter_equal (a_tc_config->tfilters->pdata[i], b_tc_config->tfilters->pdata[i]))
+				return FALSE;
+		}
+		return TRUE;
+	}
+
 	/* Otherwise chain up to parent to handle generic compare */
 	parent_class = NM_SETTING_CLASS (nm_setting_tc_config_parent_class);
 	return parent_class->compare_property (setting, other, prop_spec, flags);
@@ -765,6 +1170,7 @@ static void
 nm_setting_tc_config_init (NMSettingTCConfig *self)
 {
 	self->qdiscs = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_tc_qdisc_unref);
+	self->tfilters = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_tc_tfilter_unref);
 }
 
 /**
@@ -892,6 +1298,193 @@ tc_qdiscs_set (NMSetting *setting,
 	return TRUE;
 }
 
+static GVariant *
+_action_to_variant (NMTCAction *action)
+{
+	GVariantBuilder builder;
+	gs_strfreev char **attrs = nm_tc_action_get_attribute_names (action);
+	int i;
+
+	g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
+
+	g_variant_builder_add (&builder, "{sv}", "kind",
+	                       g_variant_new_string (nm_tc_action_get_kind (action)));
+
+	for (i = 0; attrs[i]; i++) {
+		g_variant_builder_add (&builder, "{sv}", attrs[i],
+				       nm_tc_action_get_attribute (action, attrs[i]));
+	}
+
+	return g_variant_builder_end (&builder);
+}
+
+/**
+ * _tfilters_to_variant:
+ * @tfilters: (element-type NMTCTfilter): an array of #NMTCTfilter objects
+ *
+ * Utility function to convert a #GPtrArray of #NMTCTfilter objects representing
+ * TC tfilters into a #GVariant of type 'aa{sv}' representing an array
+ * of NetworkManager TC tfilters.
+ *
+ * Returns: (transfer none): a new floating #GVariant representing @tfilters.
+ **/
+static GVariant *
+_tfilters_to_variant (GPtrArray *tfilters)
+{
+	GVariantBuilder builder;
+	int i;
+
+	g_variant_builder_init (&builder, G_VARIANT_TYPE ("aa{sv}"));
+
+	if (tfilters) {
+		for (i = 0; i < tfilters->len; i++) {
+			NMTCTfilter *tfilter = tfilters->pdata[i];
+			NMTCAction  *action = nm_tc_tfilter_get_action (tfilter);
+			GVariantBuilder tfilter_builder;
+
+			g_variant_builder_init (&tfilter_builder, G_VARIANT_TYPE ("a{sv}"));
+
+			g_variant_builder_add (&tfilter_builder, "{sv}", "kind",
+			                       g_variant_new_string (nm_tc_tfilter_get_kind (tfilter)));
+			g_variant_builder_add (&tfilter_builder, "{sv}", "handle",
+			                       g_variant_new_uint32 (nm_tc_tfilter_get_handle (tfilter)));
+			g_variant_builder_add (&tfilter_builder, "{sv}", "parent",
+			                       g_variant_new_uint32 (nm_tc_tfilter_get_parent (tfilter)));
+
+			if (action) {
+				g_variant_builder_add (&tfilter_builder, "{sv}", "action",
+				                       _action_to_variant (action));
+			}
+
+			g_variant_builder_add (&builder, "a{sv}", &tfilter_builder);
+		}
+	}
+
+	return g_variant_builder_end (&builder);
+}
+
+/**
+ * _tfilters_from_variant:
+ * @value: a #GVariant of type 'aa{sv}'
+ *
+ * Utility function to convert a #GVariant representing a list of TC tfilters
+ * into a #GPtrArray of * #NMTCTfilter objects.
+ *
+ * Returns: (transfer full) (element-type NMTCTfilter): a newly allocated
+ *   #GPtrArray of #NMTCTfilter objects
+ **/
+static GPtrArray *
+_tfilters_from_variant (GVariant *value)
+{
+	GPtrArray *tfilters;
+	GVariant *tfilter_var;
+	GVariantIter iter;
+	GError *error = NULL;
+
+	g_return_val_if_fail (g_variant_is_of_type (value, G_VARIANT_TYPE ("aa{sv}")), NULL);
+
+	g_variant_iter_init (&iter, value);
+	tfilters = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_tc_tfilter_unref);
+
+	while (g_variant_iter_next (&iter, "@a{sv}", &tfilter_var)) {
+		NMTCTfilter *tfilter = NULL;
+		const char *kind;
+		guint32 handle;
+		guint32 parent;
+		NMTCAction *action;
+		const char *action_kind = NULL;
+		char *action_key;
+		GVariantIter action_iter;
+		GVariant *action_var = NULL;
+		GVariant *action_val;
+
+		if (   !g_variant_lookup (tfilter_var, "kind", "&s", &kind)
+		    || !g_variant_lookup (tfilter_var, "parent", "u", &parent)) {
+			g_warning ("Ignoring invalid tfilter");
+			goto next;
+		}
+
+		tfilter = nm_tc_tfilter_new (kind, parent, &error);
+		if (!tfilter) {
+			g_warning ("Ignoring invalid tfilter: %s", error->message);
+			g_clear_error (&error);
+			goto next;
+		}
+
+		if (g_variant_lookup (tfilter_var, "handle", "u", &handle))
+			nm_tc_tfilter_set_handle (tfilter, handle);
+
+		action_var = g_variant_lookup_value (tfilter_var, "action", G_VARIANT_TYPE_VARDICT);
+
+
+		if (action_var) {
+			if (!g_variant_lookup (action_var, "kind", "&s", &action_kind)) {
+				g_warning ("Ignoring tfilter with invalid action");
+				goto next;
+			}
+
+			action = nm_tc_action_new (action_kind, &error);
+			if (!action) {
+				g_warning ("Ignoring tfilter with invalid action: %s", error->message);
+				g_clear_error (&error);
+				goto next;
+			}
+
+			g_variant_iter_init (&action_iter, action_var);
+			while (g_variant_iter_next (&action_iter, "{&sv}", &action_key, &action_val)) {
+				if (strcmp (action_key, "kind") != 0)
+					nm_tc_action_set_attribute (action, action_key, action_val);
+				g_variant_unref (action_val);
+			}
+
+			nm_tc_tfilter_set_action (tfilter, action);
+			nm_tc_action_unref (action);
+		}
+
+		nm_tc_tfilter_ref (tfilter);
+		g_ptr_array_add (tfilters, tfilter);
+next:
+		if (tfilter)
+			nm_tc_tfilter_unref (tfilter);
+		if (action_var)
+			g_variant_unref (action_var);
+		g_variant_unref (tfilter_var);
+	}
+
+	return tfilters;
+}
+
+static GVariant *
+tc_tfilters_get (NMSetting *setting,
+                 const char *property)
+{
+	GPtrArray *tfilters;
+	GVariant *ret;
+
+	g_object_get (setting, NM_SETTING_TC_CONFIG_TFILTERS, &tfilters, NULL);
+	ret = _tfilters_to_variant (tfilters);
+	g_ptr_array_unref (tfilters);
+
+	return ret;
+}
+
+static gboolean
+tc_tfilters_set (NMSetting *setting,
+                 GVariant *connection_dict,
+                 const char *property,
+                 GVariant *value,
+                 NMSettingParseFlags parse_flags,
+                 GError **error)
+{
+	GPtrArray *tfilters;
+
+	tfilters = _tfilters_from_variant (value);
+	g_object_set (setting, NM_SETTING_TC_CONFIG_TFILTERS, tfilters, NULL);
+	g_ptr_array_unref (tfilters);
+
+	return TRUE;
+}
+
 static void
 nm_setting_tc_config_class_init (NMSettingTCConfigClass *setting_class)
 {
@@ -928,4 +1521,25 @@ nm_setting_tc_config_class_init (NMSettingTCConfigClass *setting_class)
 	                                     tc_qdiscs_set,
 	                                     NULL);
 
+	/**
+	 * NMSettingTCConfig:tfilters:
+	 *
+	 * Array of TC traffic filters.
+	 *
+	 * Element-Type: NMTCTfilter
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_TFILTERS,
+		 g_param_spec_boxed (NM_SETTING_TC_CONFIG_TFILTERS, "", "",
+		                     G_TYPE_PTR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
+
+	_nm_setting_class_override_property (parent_class,
+	                                     NM_SETTING_TC_CONFIG_TFILTERS,
+	                                     G_VARIANT_TYPE ("aa{sv}"),
+	                                     tc_tfilters_get,
+	                                     tc_tfilters_set,
+	                                     NULL);
 }
