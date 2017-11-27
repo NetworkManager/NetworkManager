@@ -106,13 +106,17 @@ typedef struct _NMSettingsConnectionPrivate {
 	 */
 	NMConnection *agent_secrets;
 
-	guint64 timestamp;   /* Up-to-date timestamp of connection use */
+	char *filename;
+
 	GHashTable *seen_bssids; /* Up-to-date BSSIDs that's been seen for the connection */
+
+	guint64 timestamp;   /* Up-to-date timestamp of connection use */
+
+	guint64 last_secret_agent_version_id;
 
 	int autoconnect_retries;
 	gint32 autoconnect_retries_blocked_until;
 
-	char *filename;
 } NMSettingsConnectionPrivate;
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingsConnection, nm_settings_connection, NM_TYPE_EXPORTED_OBJECT,
@@ -167,6 +171,16 @@ nm_settings_connection_has_unmodified_applied_connection (NMSettingsConnection *
 	compare_flags |= NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS | NM_SETTING_COMPARE_FLAG_IGNORE_TIMESTAMP;
 
 	return nm_connection_compare (NM_CONNECTION (self), applied_connection, compare_flags);
+}
+
+/*****************************************************************************/
+
+guint64
+nm_settings_connection_get_last_secret_agent_version_id (NMSettingsConnection *self)
+{
+	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), 0);
+
+	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->last_secret_agent_version_id;
 }
 
 /*****************************************************************************/
@@ -1261,6 +1275,14 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	existing_secrets = nm_connection_to_dbus (priv->system_secrets, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
 	if (existing_secrets)
 		g_variant_ref_sink (existing_secrets);
+
+	/* we remember the current version-id of the secret-agents. The version-id is strictly increasing,
+	 * as new agents register the number. We know hence, that this request was made against a certain
+	 * set of secret-agents.
+	 * If after making this request a new secret-agent registeres, the version-id increases.
+	 * Then we know that the this request probably did not yet include the latest secret-agent. */
+	priv->last_secret_agent_version_id = nm_agent_manager_get_agent_version_id (priv->agent_mgr);
+
 	call_id_a = nm_agent_manager_get_secrets (priv->agent_mgr,
 	                                          nm_connection_get_path (NM_CONNECTION (self)),
 	                                          NM_CONNECTION (self),

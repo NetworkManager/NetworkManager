@@ -125,6 +125,8 @@ struct _NMSettingsConnectionClass {
 
 GType nm_settings_connection_get_type (void);
 
+guint64 nm_settings_connection_get_last_secret_agent_version_id (NMSettingsConnection *self);
+
 gboolean nm_settings_connection_has_unmodified_applied_connection (NMSettingsConnection *self,
                                                                    NMConnection *applied_connection,
                                                                    NMSettingCompareFlags compare_flage);

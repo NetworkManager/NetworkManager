@@ -1750,20 +1750,35 @@ device_state_changed (NMDevice *device,
 		if (   connection
 		    && old_state >= NM_DEVICE_STATE_PREPARE
 		    && old_state <= NM_DEVICE_STATE_ACTIVATED) {
+			gboolean block_no_secrets = FALSE;
 			int tries;
+			guint64 con_v;
 
-			tries = nm_settings_connection_autoconnect_retries_get (connection);
 			if (nm_device_state_reason_check (reason) == NM_DEVICE_STATE_REASON_NO_SECRETS) {
+				/* we want to block the connection from auto-connect if it failed due to no-secrets.
+				 * However, if a secret-agent registered, since the connection made the last
+				 * secret-request, we do not block it. The new secret-agent might not yet
+				 * been consulted, and it may be able to provide the secrets.
+				 *
+				 * We detect this by using a version-id of the agent-manager, which increments
+				 * whenever new agents register. */
+				con_v = nm_settings_connection_get_last_secret_agent_version_id (connection);
+				if (   con_v == 0
+				    || con_v != nm_agent_manager_get_agent_version_id (priv->agent_mgr))
+					block_no_secrets = TRUE;
+			}
+
+			if (block_no_secrets) {
 				_LOGD (LOGD_DEVICE, "connection '%s' now blocked from autoconnect due to no secrets",
 				       nm_settings_connection_get_id (connection));
-
 				nm_settings_connection_autoconnect_blocked_reason_set (connection, NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS, TRUE);
-			} else if (tries != 0) {
+			} else {
+				tries = nm_settings_connection_autoconnect_retries_get (connection);
 				if (tries > 0) {
 					_LOGD (LOGD_DEVICE, "connection '%s' failed to autoconnect; %d tries left",
 					       nm_settings_connection_get_id (connection), tries - 1);
 					_connection_autoconnect_retries_set (self, connection, tries - 1);
-				} else {
+				} else if (tries != 0) {
 					_LOGD (LOGD_DEVICE, "connection '%s' failed to autoconnect; infinite tries left",
 					       nm_settings_connection_get_id (connection));
 				}
