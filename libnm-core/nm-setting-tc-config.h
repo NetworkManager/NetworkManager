@@ -96,6 +96,43 @@ void        nm_tc_action_set_attribute       (NMTCAction *action,
                                               const char *name,
                                               GVariant *value);
 
+NM_AVAILABLE_IN_1_12
+typedef struct NMTCTfilter NMTCTfilter;
+
+NM_AVAILABLE_IN_1_12
+GType       nm_tc_tfilter_get_type           (void);
+
+NM_AVAILABLE_IN_1_12
+NMTCTfilter  *nm_tc_tfilter_new              (const char *kind,
+                                              guint32 parent,
+                                              GError **error);
+
+NM_AVAILABLE_IN_1_12
+void        nm_tc_tfilter_ref                (NMTCTfilter *tfilter);
+NM_AVAILABLE_IN_1_12
+void        nm_tc_tfilter_unref              (NMTCTfilter *tfilter);
+NM_AVAILABLE_IN_1_12
+gboolean    nm_tc_tfilter_equal              (NMTCTfilter *tfilter,
+                                              NMTCTfilter *other);
+
+NM_AVAILABLE_IN_1_12
+NMTCTfilter  *nm_tc_tfilter_dup              (NMTCTfilter  *tfilter);
+
+NM_AVAILABLE_IN_1_12
+const char *nm_tc_tfilter_get_kind           (NMTCTfilter *tfilter);
+NM_AVAILABLE_IN_1_12
+guint32     nm_tc_tfilter_get_handle         (NMTCTfilter *tfilter);
+NM_AVAILABLE_IN_1_12
+void        nm_tc_tfilter_set_handle         (NMTCTfilter *tfilter,
+                                              guint32 handle);
+NM_AVAILABLE_IN_1_12
+guint32     nm_tc_tfilter_get_parent         (NMTCTfilter *tfilter);
+NM_AVAILABLE_IN_1_12
+NMTCAction *nm_tc_tfilter_get_action         (NMTCTfilter *tfilter);
+NM_AVAILABLE_IN_1_12
+void        nm_tc_tfilter_set_action         (NMTCTfilter *tfilter, NMTCAction *action);
+
+
 #define NM_TYPE_SETTING_TC_CONFIG            (nm_setting_tc_config_get_type ())
 #define NM_SETTING_TC_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTING_TC_CONFIG, NMSettingTCConfig))
 #define NM_SETTING_TC_CONFIG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SETTING_TC_CONFIG, NMSettingTCConfigClass))
@@ -106,6 +143,7 @@ void        nm_tc_action_set_attribute       (NMTCAction *action,
 #define NM_SETTING_TC_CONFIG_SETTING_NAME    "tc"
 
 #define NM_SETTING_TC_CONFIG_QDISCS          "qdiscs"
+#define NM_SETTING_TC_CONFIG_TFILTERS        "tfilters"
 
 typedef struct _NMSettingTCConfigClass NMSettingTCConfigClass;
 
@@ -130,6 +168,23 @@ gboolean   nm_setting_tc_config_remove_qdisc_by_value   (NMSettingTCConfig *sett
                                                          NMTCQdisc *qdisc);
 NM_AVAILABLE_IN_1_12
 void       nm_setting_tc_config_clear_qdiscs            (NMSettingTCConfig *setting);
+
+NM_AVAILABLE_IN_1_12
+guint      nm_setting_tc_config_get_num_tfilters        (NMSettingTCConfig *setting);
+NM_AVAILABLE_IN_1_12
+NMTCTfilter *nm_setting_tc_config_get_tfilter           (NMSettingTCConfig *setting,
+                                                         guint idx);
+NM_AVAILABLE_IN_1_12
+gboolean   nm_setting_tc_config_add_tfilter             (NMSettingTCConfig *setting,
+                                                         NMTCTfilter *tfilter);
+NM_AVAILABLE_IN_1_12
+void       nm_setting_tc_config_remove_tfilter          (NMSettingTCConfig *setting,
+                                                         guint idx);
+NM_AVAILABLE_IN_1_12
+gboolean   nm_setting_tc_config_remove_tfilter_by_value (NMSettingTCConfig *setting,
+                                                         NMTCTfilter *tfilter);
+NM_AVAILABLE_IN_1_12
+void       nm_setting_tc_config_clear_tfilters          (NMSettingTCConfig *setting);
 
 G_END_DECLS
 

@@ -1319,7 +1319,7 @@ qdisc_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
 	const char *setting_name = nm_setting_get_name (setting);
 	GPtrArray *qdiscs;
-	gchar **keys = NULL;
+	gs_strfreev gchar **keys = NULL;
 	gsize n_keys = 0;
 	int i;
 
