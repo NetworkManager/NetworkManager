@@ -50,16 +50,13 @@ typedef struct {
 	char *owner_username;
 	char *dbus_owner;
 	NMSecretAgentCapabilities capabilities;
-
 	GSList *permissions;
-
 	NMDBusSecretAgent *proxy;
 	NMBusManager *bus_mgr;
 	GDBusConnection *connection;
-	gboolean connection_is_private;
-	gulong on_disconnected_id;
-
 	CList requests;
+	gulong on_disconnected_id;
+	bool connection_is_private:1;
 } NMSecretAgentPrivate;
 
 struct _NMSecretAgent {

@@ -96,7 +96,7 @@ struct _NMActRequestGetSecretsCallId {
 	NMActRequest *self;
 	NMActRequestSecretsFunc callback;
 	gpointer callback_data;
-	NMSettingsConnectionCallId call_id;
+	NMSettingsConnectionCallId *call_id;
 	bool has_ref;
 };
 
@@ -113,7 +113,7 @@ _get_secrets_call_id_free (NMActRequestGetSecretsCallId *call_id)
 
 static void
 get_secrets_cb (NMSettingsConnection *connection,
-                NMSettingsConnectionCallId call_id_s,
+                NMSettingsConnectionCallId *call_id_s,
                 const char *agent_username,
                 const char *setting_name,
                 GError *error,
@@ -172,7 +172,7 @@ nm_act_request_get_secrets (NMActRequest *self,
 {
 	NMActRequestPrivate *priv;
 	NMActRequestGetSecretsCallId *call_id;
-	NMSettingsConnectionCallId call_id_s;
+	NMSettingsConnectionCallId *call_id_s;
 	NMSettingsConnection *settings_connection;
 	NMConnection *applied_connection;
 	const char *hints[2] = { hint, NULL };
@@ -454,10 +454,8 @@ device_state_changed (NMActiveConnection *active,
 	}
 
 	if (   ac_state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED
-	    || ac_state == NM_ACTIVE_CONNECTION_STATE_UNKNOWN) {
-		nm_active_connection_set_default (active, FALSE);
-		nm_active_connection_set_default6 (active, FALSE);
-	}
+	    || ac_state == NM_ACTIVE_CONNECTION_STATE_UNKNOWN)
+		nm_active_connection_set_default (active, AF_UNSPEC, FALSE);
 
 	nm_active_connection_set_state (active, ac_state, ac_state_reason);
 }

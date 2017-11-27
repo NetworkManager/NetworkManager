@@ -128,7 +128,6 @@ enum {
 	CONNECTION_UPDATED,
 	CONNECTION_REMOVED,
 	CONNECTION_VISIBILITY_CHANGED,
-	AGENT_REGISTERED,
 	NEW_CONNECTION, /* exported, not used internally */
 	LAST_SIGNAL
 };
@@ -431,6 +430,9 @@ nm_settings_get_connections (NMSettings *self, guint *out_len)
  * @out_len: (allow-none): optional output argument
  * @func: caller-supplied function for filtering connections
  * @func_data: caller-supplied data passed to @func
+ * @sort_compare_func: (allow-none): optional function pointer for
+ *   sorting the returned list.
+ * @sort_data: user data for @sort_compare_func.
  *
  * Returns: (transfer container) (element-type NMSettingsConnection):
  *   an NULL terminated array of #NMSettingsConnection objects that were
@@ -443,7 +445,9 @@ NMSettingsConnection **
 nm_settings_get_connections_clone (NMSettings *self,
                                    guint *out_len,
                                    NMSettingsConnectionFilterFunc func,
-                                   gpointer func_data)
+                                   gpointer func_data,
+                                   GCompareDataFunc sort_compare_func,
+                                   gpointer sort_data)
 {
 	NMSettingsConnection *const*list_cached;
 	NMSettingsConnection **list;
@@ -471,29 +475,13 @@ nm_settings_get_connections_clone (NMSettings *self,
 	} else
 		memcpy (list, list_cached, sizeof (list[0]) * ((gsize) len + 1));
 
+	if (   len > 1
+	    && sort_compare_func) {
+		g_qsort_with_data (list, len, sizeof (NMSettingsConnection *),
+		                   sort_compare_func, sort_data);
+	}
 	NM_SET_OUT (out_len, len);
 	return list;
-}
-
-/* Returns a list of NMSettingsConnections.
- * The list is sorted in the order suitable for auto-connecting, i.e.
- * first go connections with autoconnect=yes and most recent timestamp.
- * Caller must free the list with g_free(), but not the list items.
- */
-NMSettingsConnection **
-nm_settings_get_connections_sorted (NMSettings *self, guint *out_len)
-{
-	NMSettingsConnection **connections;
-	guint len;
-
-	g_return_val_if_fail (NM_IS_SETTINGS (self), NULL);
-
-	connections = nm_settings_get_connections_clone (self, &len, NULL, NULL);
-	if (len > 1)
-		g_qsort_with_data (connections, len, sizeof (NMSettingsConnection *), nm_settings_connection_cmp_autoconnect_priority_p_with_data, NULL);
-
-	NM_SET_OUT (out_len, len);
-	return connections;
 }
 
 NMSettingsConnection *
@@ -887,18 +875,6 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 	check_startup_complete (self);
 
 	g_object_unref (connection);
-}
-
-static void
-secret_agent_registered (NMAgentManager *agent_mgr,
-                         NMSecretAgent *agent,
-                         gpointer user_data)
-{
-	/* Re-emit for listeners like NMPolicy */
-	g_signal_emit (NM_SETTINGS (user_data),
-	               signals[AGENT_REGISTERED],
-	               0,
-	               agent);
 }
 
 #define NM_DBUS_SERVICE_OPENCONNECT    "org.freedesktop.NetworkManager.openconnect"
@@ -1899,16 +1875,8 @@ nm_settings_init (NMSettings *self)
 
 	priv->connections = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, g_object_unref);
 
-	/* Hold a reference to the agent manager so it stays alive; the only
-	 * other holders are NMSettingsConnection objects which are often
-	 * transient, and we don't want the agent manager to get destroyed and
-	 * recreated often.
-	 */
 	priv->agent_mgr = g_object_ref (nm_agent_manager_get ());
-
 	priv->config = g_object_ref (nm_config_get ());
-
-	g_signal_connect (priv->agent_mgr, "agent-registered", G_CALLBACK (secret_agent_registered), self);
 }
 
 NMSettings *
@@ -2032,15 +2000,6 @@ nm_settings_class_init (NMSettingsClass *class)
 	                  0, NULL, NULL,
 	                  g_cclosure_marshal_VOID__OBJECT,
 	                  G_TYPE_NONE, 1, NM_TYPE_SETTINGS_CONNECTION);
-
-	signals[AGENT_REGISTERED] =
-	    g_signal_new (NM_SETTINGS_SIGNAL_AGENT_REGISTERED,
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_FIRST,
-	                  0, NULL, NULL,
-	                  g_cclosure_marshal_VOID__OBJECT,
-	                  G_TYPE_NONE, 1, NM_TYPE_SECRET_AGENT);
-
 
 	signals[NEW_CONNECTION] =
 	    g_signal_new ("new-connection",

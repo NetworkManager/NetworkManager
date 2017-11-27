@@ -125,10 +125,10 @@ find_settings_connection (NMCheckpoint *self,
                           gboolean *need_activation)
 {
 	NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE (self);
-	const GSList *active_connections, *iter;
-	NMActiveConnection *active = NULL;
+	NMActiveConnection *active;
 	NMSettingsConnection *connection;
 	const char *uuid, *ac_uuid;
+	const CList *tmp_clist;
 
 	*need_activation = FALSE;
 	*need_update = FALSE;
@@ -149,9 +149,7 @@ find_settings_connection (NMCheckpoint *self,
 	}
 
 	/* ... is active, ... */
-	active_connections = nm_manager_get_active_connections (priv->manager);
-	for (iter = active_connections; iter; iter = g_slist_next (iter)) {
-		active = iter->data;
+	nm_manager_for_each_active_connection (priv->manager, active, tmp_clist) {
 		ac_uuid = nm_settings_connection_get_uuid (nm_active_connection_get_settings_connection (active));
 		if (nm_streq (uuid, ac_uuid)) {
 			_LOGT ("rollback: connection %s is active", uuid);
@@ -159,7 +157,7 @@ find_settings_connection (NMCheckpoint *self,
 		}
 	}
 
-	if (!iter) {
+	if (!active) {
 		_LOGT ("rollback: connection %s is not active", uuid);
 		*need_activation = TRUE;
 		return connection;
@@ -335,7 +333,9 @@ next_dev:
 		guint i;
 
 		g_return_val_if_fail (priv->connection_uuids, NULL);
-		list = nm_settings_get_connections_sorted (nm_settings_get (), NULL);
+		list = nm_settings_get_connections_clone (nm_settings_get (), NULL,
+		                                          NULL, NULL,
+		                                          nm_settings_connection_cmp_autoconnect_priority_p_with_data, NULL);
 
 		for (i = 0; list[i]; i++) {
 			con = list[i];

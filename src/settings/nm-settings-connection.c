@@ -25,6 +25,8 @@
 
 #include <string.h>
 
+#include "nm-utils/c-list.h"
+
 #include "nm-common-macros.h"
 #include "nm-config.h"
 #include "nm-config-data.h"
@@ -42,9 +44,8 @@
 #define SETTINGS_TIMESTAMPS_FILE  NMSTATEDIR "/timestamps"
 #define SETTINGS_SEEN_BSSIDS_FILE NMSTATEDIR "/seen-bssids"
 
-#define AUTOCONNECT_RETRIES_UNSET       -2
-#define AUTOCONNECT_RETRIES_FOREVER     -1
-#define AUTOCONNECT_RETRIES_DEFAULT      4
+#define AUTOCONNECT_RETRIES_UNSET        -2
+#define AUTOCONNECT_RETRIES_FOREVER      -1
 #define AUTOCONNECT_RESET_RETRIES_TIMER 300
 
 /*****************************************************************************/
@@ -84,11 +85,11 @@ typedef struct _NMSettingsConnectionPrivate {
 
 	bool timestamp_set:1;
 
-	NMSettingsAutoconnectBlockedReason autoconnect_blocked_reason:3;
+	NMSettingsAutoconnectBlockedReason autoconnect_blocked_reason:4;
 
 	GSList *pending_auths; /* List of pending authentication requests */
 
-	GSList *get_secret_requests;  /* in-progress secrets requests */
+	CList call_ids_lst_head; /* in-progress secrets requests */
 
 	/* Caches secrets from on-disk connections; were they not cached any
 	 * call to nm_connection_clear_secrets() wipes them out and we'd have
@@ -105,13 +106,17 @@ typedef struct _NMSettingsConnectionPrivate {
 	 */
 	NMConnection *agent_secrets;
 
-	guint64 timestamp;   /* Up-to-date timestamp of connection use */
+	char *filename;
+
 	GHashTable *seen_bssids; /* Up-to-date BSSIDs that's been seen for the connection */
 
-	int autoconnect_retries;
-	gint32 autoconnect_blocked_until;
+	guint64 timestamp;   /* Up-to-date timestamp of connection use */
 
-	char *filename;
+	guint64 last_secret_agent_version_id;
+
+	int autoconnect_retries;
+	gint32 autoconnect_retries_blocked_until;
+
 } NMSettingsConnectionPrivate;
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingsConnection, nm_settings_connection, NM_TYPE_EXPORTED_OBJECT,
@@ -166,6 +171,16 @@ nm_settings_connection_has_unmodified_applied_connection (NMSettingsConnection *
 	compare_flags |= NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS | NM_SETTING_COMPARE_FLAG_IGNORE_TIMESTAMP;
 
 	return nm_connection_compare (NM_CONNECTION (self), applied_connection, compare_flags);
+}
+
+/*****************************************************************************/
+
+guint64
+nm_settings_connection_get_last_secret_agent_version_id (NMSettingsConnection *self)
+{
+	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), 0);
+
+	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->last_secret_agent_version_id;
 }
 
 /*****************************************************************************/
@@ -795,18 +810,19 @@ nm_settings_connection_delete (NMSettingsConnection *self,
 
 
 typedef enum {
-	GET_SECRETS_INFO_TYPE_REQ,
-	GET_SECRETS_INFO_TYPE_IDLE,
-} GetSecretsInfoType;
+	CALL_ID_TYPE_REQ,
+	CALL_ID_TYPE_IDLE,
+} CallIdType;
 
 struct _NMSettingsConnectionCallId {
 	NMSettingsConnection *self;
+	CList call_ids_lst;
 	gboolean had_applied_connection;
 	NMConnection *applied_connection;
 	NMSettingsConnectionSecretsFunc callback;
 	gpointer callback_data;
 
-	GetSecretsInfoType type;
+	CallIdType type;
 	union {
 		struct {
 			NMAgentManagerCallId id;
@@ -818,59 +834,36 @@ struct _NMSettingsConnectionCallId {
 	} t;
 };
 
-typedef struct _NMSettingsConnectionCallId GetSecretsInfo;
-
-static GetSecretsInfo *
-_get_secrets_info_new (NMSettingsConnection *self,
-                       NMConnection *applied_connection,
-                       NMSettingsConnectionSecretsFunc callback,
-                       gpointer callback_data)
-{
-	GetSecretsInfo *info;
-
-	info = g_slice_new0 (GetSecretsInfo);
-
-	info->self = self;
-	if (applied_connection) {
-		info->had_applied_connection = TRUE;
-		info->applied_connection = applied_connection;
-		g_object_add_weak_pointer (G_OBJECT (applied_connection), (gpointer *) &info->applied_connection);
-	}
-	info->callback = callback;
-	info->callback_data = callback_data;
-
-	return info;
-}
-
 static void
-_get_secrets_info_callback (GetSecretsInfo *info,
+_get_secrets_info_callback (NMSettingsConnectionCallId *call_id,
                             const char *agent_username,
                             const char *setting_name,
                             GError *error)
 {
-	if (info->callback) {
-		info->callback (info->self,
-		                info,
-		                agent_username,
-		                setting_name,
-		                error,
-		                info->callback_data);
+	if (call_id->callback) {
+		call_id->callback (call_id->self,
+		                   call_id,
+		                   agent_username,
+		                   setting_name,
+		                   error,
+		                   call_id->callback_data);
 	}
 }
 
 static void
-_get_secrets_info_free (GetSecretsInfo *info)
+_get_secrets_info_free (NMSettingsConnectionCallId *call_id)
 {
-	g_return_if_fail (info && info->self);
+	g_return_if_fail (call_id && call_id->self);
+	nm_assert (!c_list_is_linked (&call_id->call_ids_lst));
 
-	if (info->applied_connection)
-		g_object_remove_weak_pointer (G_OBJECT (info->applied_connection), (gpointer *) &info->applied_connection);
+	if (call_id->applied_connection)
+		g_object_remove_weak_pointer (G_OBJECT (call_id->applied_connection), (gpointer *) &call_id->applied_connection);
 
-	if (info->type == GET_SECRETS_INFO_TYPE_IDLE)
-		g_clear_error (&info->t.idle.error);
+	if (call_id->type == CALL_ID_TYPE_IDLE)
+		g_clear_error (&call_id->t.idle.error);
 
-	memset (info, 0, sizeof (*info));
-	g_slice_free (GetSecretsInfo, info);
+	memset (call_id, 0, sizeof (*call_id));
+	g_slice_free (NMSettingsConnectionCallId, call_id);
 }
 
 static gboolean
@@ -907,7 +900,7 @@ secret_is_system_owned (NMSettingSecretFlags flags,
 
 static void
 get_cmp_flags (NMSettingsConnection *self, /* only needed for logging */
-               GetSecretsInfo *info, /* only needed for logging */
+               NMSettingsConnectionCallId *call_id, /* only needed for logging */
                NMConnection *connection,
                const char *agent_dbus_owner,
                gboolean agent_has_modify,
@@ -930,7 +923,7 @@ get_cmp_flags (NMSettingsConnection *self, /* only needed for logging */
 		if (is_self) {
 			_LOGD ("(%s:%p) secrets returned from agent %s",
 			       setting_name,
-			       info,
+			       call_id,
 			       agent_dbus_owner);
 		}
 
@@ -949,7 +942,7 @@ get_cmp_flags (NMSettingsConnection *self, /* only needed for logging */
 				if (is_self) {
 					_LOGD ("(%s:%p) interaction forbidden but agent %s returned system secrets",
 					       setting_name,
-					       info,
+					       call_id,
 					       agent_dbus_owner);
 				}
 
@@ -961,7 +954,7 @@ get_cmp_flags (NMSettingsConnection *self, /* only needed for logging */
 				if (is_self) {
 					_LOGD ("(%s:%p) agent failed to authenticate but provided system secrets",
 					       setting_name,
-					       info);
+					       call_id);
 				}
 
 				cmp_flags->required |= NM_SETTING_SECRET_FLAG_AGENT_OWNED;
@@ -971,7 +964,7 @@ get_cmp_flags (NMSettingsConnection *self, /* only needed for logging */
 		if (is_self) {
 			_LOGD ("(%s:%p) existing secrets returned",
 			       setting_name,
-			       info);
+			       call_id);
 		}
 	}
 
@@ -1023,7 +1016,7 @@ get_secrets_done_cb (NMAgentManager *manager,
                      GError *error,
                      gpointer user_data)
 {
-	GetSecretsInfo *info = user_data;
+	NMSettingsConnectionCallId *call_id = user_data;
 	NMSettingsConnection *self;
 	NMSettingsConnectionPrivate *priv;
 	NMConnection *applied_connection;
@@ -1035,36 +1028,36 @@ get_secrets_done_cb (NMAgentManager *manager,
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
 
-	self = info->self;
+	self = call_id->self;
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
 
 	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
-	g_return_if_fail (g_slist_find (priv->get_secret_requests, info));
+	nm_assert (c_list_contains (&priv->call_ids_lst_head, &call_id->call_ids_lst));
 
-	priv->get_secret_requests = g_slist_remove (priv->get_secret_requests, info);
+	c_list_unlink_init (&call_id->call_ids_lst);
 
 	if (error) {
 		_LOGD ("(%s:%p) secrets request error: %s",
-		       setting_name, info, error->message);
+		       setting_name, call_id, error->message);
 
-		_get_secrets_info_callback (info, NULL, setting_name, error);
+		_get_secrets_info_callback (call_id, NULL, setting_name, error);
 		goto out;
 	}
 
-	if (   info->had_applied_connection
-	    && !info->applied_connection) {
+	if (   call_id->had_applied_connection
+	    && !call_id->applied_connection) {
 		g_set_error_literal (&local, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_SETTING_NOT_FOUND,
 		                     "Applied connection deleted since requesting secrets");
-		_get_secrets_info_callback (info, NULL, setting_name, local);
+		_get_secrets_info_callback (call_id, NULL, setting_name, local);
 		goto out;
 	}
 
-	if (   info->had_applied_connection
-	    && !nm_settings_connection_has_unmodified_applied_connection (self, info->applied_connection, NM_SETTING_COMPARE_FLAG_NONE)) {
+	if (   call_id->had_applied_connection
+	    && !nm_settings_connection_has_unmodified_applied_connection (self, call_id->applied_connection, NM_SETTING_COMPARE_FLAG_NONE)) {
 		g_set_error_literal (&local, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		                     "The connection was modified since activation");
-		_get_secrets_info_callback (info, NULL, setting_name, local);
+		_get_secrets_info_callback (call_id, NULL, setting_name, local);
 		goto out;
 	}
 
@@ -1072,12 +1065,12 @@ get_secrets_done_cb (NMAgentManager *manager,
 		g_set_error (&local, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_SETTING_NOT_FOUND,
 		             "Connection didn't have requested setting '%s'.",
 		             setting_name);
-		_get_secrets_info_callback (info, NULL, setting_name, local);
+		_get_secrets_info_callback (call_id, NULL, setting_name, local);
 		goto out;
 	}
 
 	get_cmp_flags (self,
-	               info,
+	               call_id,
 	               NM_CONNECTION (self),
 	               agent_dbus_owner,
 	               agent_has_modify,
@@ -1089,7 +1082,7 @@ get_secrets_done_cb (NMAgentManager *manager,
 
 	_LOGD ("(%s:%p) secrets request completed",
 	       setting_name,
-	       info);
+	       call_id);
 
 	dict = nm_connection_to_dbus (priv->system_secrets, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
 
@@ -1119,7 +1112,7 @@ get_secrets_done_cb (NMAgentManager *manager,
 			if (agent_had_system) {
 				_LOGD ("(%s:%p) saving new secrets to backing storage",
 				       setting_name,
-				       info);
+				       call_id);
 
 				nm_settings_connection_commit_changes (self,
 				                                       NULL,
@@ -1128,27 +1121,27 @@ get_secrets_done_cb (NMAgentManager *manager,
 			} else {
 				_LOGD ("(%s:%p) new agent secrets processed",
 				       setting_name,
-				       info);
+				       call_id);
 			}
 
 		} else {
 			_LOGD ("(%s:%p) failed to update with agent secrets: %s",
 			       setting_name,
-			       info,
+			       call_id,
 			       local->message);
 		}
 		g_variant_unref (filtered_secrets);
 	} else {
 		_LOGD ("(%s:%p) failed to update with existing secrets: %s",
 		       setting_name,
-		       info,
+		       call_id,
 		       local->message);
 	}
 
-	applied_connection = info->applied_connection;
+	applied_connection = call_id->applied_connection;
 	if (applied_connection) {
 		get_cmp_flags (self,
-		               info,
+		               call_id,
 		               applied_connection,
 		               agent_dbus_owner,
 		               agent_has_modify,
@@ -1169,31 +1162,31 @@ get_secrets_done_cb (NMAgentManager *manager,
 		}
 	}
 
-	_get_secrets_info_callback (info, agent_username, setting_name, local);
+	_get_secrets_info_callback (call_id, agent_username, setting_name, local);
 	g_clear_error (&local);
 	if (dict)
 		g_variant_unref (dict);
 
 out:
-	_get_secrets_info_free (info);
+	_get_secrets_info_free (call_id);
 }
 
 static gboolean
-get_secrets_idle_cb (GetSecretsInfo *info)
+get_secrets_idle_cb (NMSettingsConnectionCallId *call_id)
 {
 	NMSettingsConnectionPrivate *priv;
 
-	g_return_val_if_fail (info && NM_IS_SETTINGS_CONNECTION (info->self), G_SOURCE_REMOVE);
+	g_return_val_if_fail (call_id && NM_IS_SETTINGS_CONNECTION (call_id->self), G_SOURCE_REMOVE);
 
-	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (info->self);
+	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (call_id->self);
 
-	g_return_val_if_fail (g_slist_find (priv->get_secret_requests, info), G_SOURCE_REMOVE);
+	nm_assert (c_list_contains (&priv->call_ids_lst_head, &call_id->call_ids_lst));
 
-	priv->get_secret_requests = g_slist_remove (priv->get_secret_requests, info);
+	c_list_unlink_init (&call_id->call_ids_lst);
 
-	_get_secrets_info_callback (info, NULL, NULL, info->t.idle.error);
+	_get_secrets_info_callback (call_id, NULL, NULL, call_id->t.idle.error);
 
-	_get_secrets_info_free (info);
+	_get_secrets_info_free (call_id);
 	return G_SOURCE_REMOVE;
 }
 
@@ -1222,7 +1215,7 @@ get_secrets_idle_cb (GetSecretsInfo *info)
  *
  * Returns: a call ID which may be used to cancel the ongoing secrets request.
  **/
-NMSettingsConnectionCallId
+NMSettingsConnectionCallId *
 nm_settings_connection_get_secrets (NMSettingsConnection *self,
                                     NMConnection *applied_connection,
                                     NMAuthSubject *subject,
@@ -1236,7 +1229,7 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	GVariant *existing_secrets;
 	NMAgentManagerCallId call_id_a;
 	gs_free char *joined_hints = NULL;
-	GetSecretsInfo *info;
+	NMSettingsConnectionCallId *call_id;
 	GError *local = NULL;
 
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), NULL);
@@ -1244,12 +1237,16 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	                      || (   NM_IS_CONNECTION (applied_connection)
 	                          && (((NMConnection *) self) != applied_connection)), NULL);
 
-	info = _get_secrets_info_new (self,
-	                              applied_connection,
-	                              callback,
-	                              callback_data);
-
-	priv->get_secret_requests = g_slist_append (priv->get_secret_requests, info);
+	call_id = g_slice_new0 (NMSettingsConnectionCallId);
+	call_id->self = self;
+	if (applied_connection) {
+		call_id->had_applied_connection = TRUE;
+		call_id->applied_connection = applied_connection;
+		g_object_add_weak_pointer (G_OBJECT (applied_connection), (gpointer *) &call_id->applied_connection);
+	}
+	call_id->callback = callback;
+	call_id->callback_data = callback_data;
+	c_list_link_tail (&priv->call_ids_lst_head, &call_id->call_ids_lst);
 
 	/* Use priv->secrets to work around the fact that nm_connection_clear_secrets()
 	 * will clear secrets on this object's settings.
@@ -1278,6 +1275,14 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	existing_secrets = nm_connection_to_dbus (priv->system_secrets, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
 	if (existing_secrets)
 		g_variant_ref_sink (existing_secrets);
+
+	/* we remember the current version-id of the secret-agents. The version-id is strictly increasing,
+	 * as new agents register the number. We know hence, that this request was made against a certain
+	 * set of secret-agents.
+	 * If after making this request a new secret-agent registeres, the version-id increases.
+	 * Then we know that the this request probably did not yet include the latest secret-agent. */
+	priv->last_secret_agent_version_id = nm_agent_manager_get_agent_version_id (priv->agent_mgr);
+
 	call_id_a = nm_agent_manager_get_secrets (priv->agent_mgr,
 	                                          nm_connection_get_path (NM_CONNECTION (self)),
 	                                          NM_CONNECTION (self),
@@ -1287,7 +1292,7 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	                                          flags,
 	                                          hints,
 	                                          get_secrets_done_cb,
-	                                          info);
+	                                          call_id);
 	g_assert (call_id_a);
 	if (existing_secrets)
 		g_variant_unref (existing_secrets);
@@ -1299,45 +1304,44 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	       (hints && hints[0]) ? (joined_hints = g_strjoinv (",", (char **) hints)) : "(none)");
 
 	if (call_id_a) {
-		info->type = GET_SECRETS_INFO_TYPE_REQ;
-		info->t.req.id = call_id_a;
+		call_id->type = CALL_ID_TYPE_REQ;
+		call_id->t.req.id = call_id_a;
 	} else {
 schedule_dummy:
-		info->type = GET_SECRETS_INFO_TYPE_IDLE;
-		g_propagate_error (&info->t.idle.error, local);
-		info->t.idle.id = g_idle_add ((GSourceFunc) get_secrets_idle_cb, info);
+		call_id->type = CALL_ID_TYPE_IDLE;
+		g_propagate_error (&call_id->t.idle.error, local);
+		call_id->t.idle.id = g_idle_add ((GSourceFunc) get_secrets_idle_cb, call_id);
 	}
-	return info;
+	return call_id;
 }
 
 static void
 _get_secrets_cancel (NMSettingsConnection *self,
-                     GetSecretsInfo *info,
+                     NMSettingsConnectionCallId *call_id,
                      gboolean is_disposing)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	gs_free_error GError *error = NULL;
 
-	if (!g_slist_find (priv->get_secret_requests, info))
-		g_return_if_reached ();
+	nm_assert (c_list_contains (&priv->call_ids_lst_head, &call_id->call_ids_lst));
 
-	priv->get_secret_requests = g_slist_remove (priv->get_secret_requests, info);
+	c_list_unlink_init (&call_id->call_ids_lst);
 
-	if (info->type == GET_SECRETS_INFO_TYPE_REQ)
-		nm_agent_manager_cancel_secrets (priv->agent_mgr, info->t.req.id);
+	if (call_id->type == CALL_ID_TYPE_REQ)
+		nm_agent_manager_cancel_secrets (priv->agent_mgr, call_id->t.req.id);
 	else
-		g_source_remove (info->t.idle.id);
+		g_source_remove (call_id->t.idle.id);
 
 	nm_utils_error_set_cancelled (&error, is_disposing, "NMSettingsConnection");
 
-	_get_secrets_info_callback (info, NULL, NULL, error);
+	_get_secrets_info_callback (call_id, NULL, NULL, error);
 
-	_get_secrets_info_free (info);
+	_get_secrets_info_free (call_id);
 }
 
 void
 nm_settings_connection_cancel_secrets (NMSettingsConnection *self,
-                                       NMSettingsConnectionCallId call_id)
+                                       NMSettingsConnectionCallId *call_id)
 {
 	_LOGD ("(%p) secrets canceled", call_id);
 
@@ -1656,8 +1660,7 @@ update_complete (NMSettingsConnection *self,
 	g_clear_object (&info->agent_mgr);
 	g_clear_object (&info->new_settings);
 	g_free (info->audit_args);
-	memset (info, 0, sizeof (*info));
-	g_free (info);
+	g_slice_free (UpdateInfo, info);
 }
 
 static void
@@ -1832,7 +1835,7 @@ settings_connection_update_helper (NMSettingsConnection *self,
 		goto error;
 	}
 
-	info = g_malloc0 (sizeof (*info));
+	info = g_slice_new0 (UpdateInfo);
 	info->context = context;
 	info->agent_mgr = g_object_ref (priv->agent_mgr);
 	info->subject = subject;
@@ -1951,7 +1954,7 @@ out_err:
 
 static void
 dbus_get_agent_secrets_cb (NMSettingsConnection *self,
-                           NMSettingsConnectionCallId call_id,
+                           NMSettingsConnectionCallId *call_id,
                            const char *agent_username,
                            const char *setting_name,
                            GError *error,
@@ -2533,6 +2536,54 @@ nm_settings_connection_read_and_fill_seen_bssids (NMSettingsConnection *self)
 
 /*****************************************************************************/
 
+static int
+_autoconnect_retries_initial (NMSettingsConnection *self)
+{
+	NMSettingConnection *s_con;
+	int retries = -1;
+
+	s_con = nm_connection_get_setting_connection ((NMConnection *) self);
+	if (s_con)
+		retries = nm_setting_connection_get_autoconnect_retries (s_con);
+
+	/* -1 means 'default' */
+	if (retries == -1)
+		retries = nm_config_data_get_autoconnect_retries_default (NM_CONFIG_GET_DATA);
+
+	/* 0 means 'forever', which is translated to a retry count of -1 */
+	if (retries == 0)
+		retries = AUTOCONNECT_RETRIES_FOREVER;
+
+	nm_assert (retries == AUTOCONNECT_RETRIES_FOREVER || retries >= 0);
+	return retries;
+}
+
+static void
+_autoconnect_retries_set (NMSettingsConnection *self,
+                          int retries,
+                          gboolean is_reset)
+{
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+
+	g_return_if_fail (retries == AUTOCONNECT_RETRIES_FOREVER || retries >= 0);
+
+	if (priv->autoconnect_retries != retries) {
+		_LOGT ("autoconnect: retries set %d%s", retries,
+		       is_reset ? " (reset)" : "");
+		priv->autoconnect_retries = retries;
+	}
+
+	if (retries)
+		priv->autoconnect_retries_blocked_until = 0;
+	else {
+		/* XXX: the blocked time must be identical for all connections, otherwise
+		 * the tracking of resetting the retry count in NMPolicy needs adjustment
+		 * in _connection_autoconnect_retries_set() (as it would need to re-evaluate
+		 * the next-timeout everytime a connection gets blocked). */
+		priv->autoconnect_retries_blocked_until = nm_utils_get_monotonic_timestamp_s () + AUTOCONNECT_RESET_RETRIES_TIMER;
+	}
+}
+
 /**
  * nm_settings_connection_autoconnect_retries_get:
  * @self: the settings connection
@@ -2547,30 +2598,10 @@ nm_settings_connection_autoconnect_retries_get (NMSettingsConnection *self)
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
 	if (G_UNLIKELY (priv->autoconnect_retries == AUTOCONNECT_RETRIES_UNSET)) {
-		NMSettingConnection *s_con;
-		int retries = -1;
-
-		s_con = nm_connection_get_setting_connection ((NMConnection *) self);
-		if (s_con)
-			retries = nm_setting_connection_get_autoconnect_retries (s_con);
-
-		/* -1 means 'default' */
-		if (retries == -1) {
-			retries = nm_config_data_get_value_int64 (NM_CONFIG_GET_DATA,
-			                                          NM_CONFIG_KEYFILE_GROUP_MAIN,
-			                                          "autoconnect-retries-default",
-			                                          10, 0, G_MAXINT32,
-			                                          AUTOCONNECT_RETRIES_DEFAULT);
-		}
-
-		/* 0 means 'forever', which is translated to a retry count of -1 */
-		if (retries == 0)
-			retries = AUTOCONNECT_RETRIES_FOREVER;
-
-		_LOGT ("autoconnect-retries: init %d", retries);
-		priv->autoconnect_retries = retries;
+		_autoconnect_retries_set (self,
+		                          _autoconnect_retries_initial (self),
+		                          TRUE);
 	}
-
 	return priv->autoconnect_retries;
 }
 
@@ -2578,51 +2609,71 @@ void
 nm_settings_connection_autoconnect_retries_set (NMSettingsConnection *self,
                                                 int retries)
 {
-	NMSettingsConnectionPrivate *priv;
-
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
-	nm_assert (retries == AUTOCONNECT_RETRIES_UNSET || retries >= 0);
+	g_return_if_fail (retries >= 0);
 
-	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-
-	if (priv->autoconnect_retries != retries) {
-		_LOGT ("autoconnect-retries: set %d", retries);
-		priv->autoconnect_retries = retries;
-	}
-	if (retries)
-		priv->autoconnect_blocked_until = 0;
-	else
-		priv->autoconnect_blocked_until = nm_utils_get_monotonic_timestamp_s () + AUTOCONNECT_RESET_RETRIES_TIMER;
+	_autoconnect_retries_set (self, retries, FALSE);
 }
 
 void
 nm_settings_connection_autoconnect_retries_reset (NMSettingsConnection *self)
 {
-	nm_settings_connection_autoconnect_retries_set (self, AUTOCONNECT_RETRIES_UNSET);
+	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (self));
+
+	_autoconnect_retries_set (self,
+	                          _autoconnect_retries_initial (self),
+	                          TRUE);
 }
 
 gint32
-nm_settings_connection_autoconnect_blocked_until_get (NMSettingsConnection *self)
+nm_settings_connection_autoconnect_retries_blocked_until (NMSettingsConnection *self)
 {
-	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->autoconnect_blocked_until;
+	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->autoconnect_retries_blocked_until;
 }
+
+NM_UTILS_FLAGS2STR_DEFINE_STATIC (_autoconnect_blocked_reason_to_string, NMSettingsAutoconnectBlockedReason,
+	NM_UTILS_FLAGS2STR (NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE, "none"),
+	NM_UTILS_FLAGS2STR (NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST, "user-request"),
+	NM_UTILS_FLAGS2STR (NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED, "failed"),
+	NM_UTILS_FLAGS2STR (NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS, "no-secrets"),
+);
 
 NMSettingsAutoconnectBlockedReason
-nm_settings_connection_autoconnect_blocked_reason_get (NMSettingsConnection *self)
+nm_settings_connection_autoconnect_blocked_reason_get (NMSettingsConnection *self, NMSettingsAutoconnectBlockedReason mask)
 {
-	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->autoconnect_blocked_reason;
+	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->autoconnect_blocked_reason & (mask ?: NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_ALL);
 }
 
-void
-nm_settings_connection_autoconnect_blocked_reason_set (NMSettingsConnection *self,
-                                                       NMSettingsAutoconnectBlockedReason reason)
+gboolean
+nm_settings_connection_autoconnect_blocked_reason_set_full (NMSettingsConnection *self,
+                                                            NMSettingsAutoconnectBlockedReason mask,
+                                                            NMSettingsAutoconnectBlockedReason value)
 {
-	g_return_if_fail (NM_IN_SET (reason,
-	                             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE,
-	                             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST,
-	                             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
-	                             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS));
-	NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->autoconnect_blocked_reason = reason;
+	NMSettingsAutoconnectBlockedReason v;
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+	char buf[100];
+
+	nm_assert (mask);
+	nm_assert (!NM_FLAGS_ANY (value, ~mask));
+
+	v = priv->autoconnect_blocked_reason;
+	v = (v & ~mask) | (value & mask);
+
+	if (priv->autoconnect_blocked_reason == v)
+		return FALSE;
+
+	_LOGT ("autoconnect: blocked reason: %s", _autoconnect_blocked_reason_to_string (v, buf, sizeof (buf)));
+	priv->autoconnect_blocked_reason = v;
+	return TRUE;
+}
+
+gboolean
+nm_settings_connection_autoconnect_is_blocked (NMSettingsConnection *self)
+{
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+
+	return    !priv->autoconnect_blocked_reason
+	       && priv->autoconnect_retries != 0;
 }
 
 /*****************************************************************************/
@@ -2771,17 +2822,14 @@ dispose (GObject *object)
 {
 	NMSettingsConnection *self = NM_SETTINGS_CONNECTION (object);
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+	NMSettingsConnectionCallId *call_id, *call_id_safe;
 
 	_LOGD ("disposing");
 
 	/* Cancel in-progress secrets requests */
 	if (priv->agent_mgr) {
-		while (priv->get_secret_requests) {
-			GetSecretsInfo *info = priv->get_secret_requests->data;
-
-			_get_secrets_cancel (self, info, TRUE);
-			g_return_if_fail (!priv->get_secret_requests || (info != priv->get_secret_requests->data));
-		}
+		c_list_for_each_entry_safe (call_id, call_id_safe, &priv->call_ids_lst_head, call_ids_lst)
+			_get_secrets_cancel (self, call_id, TRUE);
 	}
 
 	/* Disconnect handlers.

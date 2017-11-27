@@ -47,7 +47,6 @@
 #define NM_SETTINGS_SIGNAL_CONNECTION_UPDATED            "connection-updated"
 #define NM_SETTINGS_SIGNAL_CONNECTION_REMOVED            "connection-removed"
 #define NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED "connection-visibility-changed"
-#define NM_SETTINGS_SIGNAL_AGENT_REGISTERED              "agent-registered"
 
 /**
  * NMConnectionFilterFunc:
@@ -100,10 +99,9 @@ NMSettingsConnection *const* nm_settings_get_connections (NMSettings *settings, 
 NMSettingsConnection **nm_settings_get_connections_clone (NMSettings *self,
                                                           guint *out_len,
                                                           NMSettingsConnectionFilterFunc func,
-                                                          gpointer func_data);
-
-NMSettingsConnection **nm_settings_get_connections_sorted (NMSettings *self,
-                                                           guint *out_len);
+                                                          gpointer func_data,
+                                                          GCompareDataFunc sort_compare_func,
+                                                          gpointer sort_data);
 
 NMSettingsConnection *nm_settings_add_connection (NMSettings *settings,
                                                   NMConnection *connection,
