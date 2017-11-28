@@ -623,7 +623,7 @@ static const _NMUtilsTeamPropertyKeys _prop_to_keys[LAST_PROP] = {
 	[PROP_RUNNER_HWADDR_POLICY] =        { "runner", "hwaddr_policy", NULL, 0 },
 	[PROP_RUNNER_TX_HASH] =              { "runner", "tx_hash", NULL, 0 },
 	[PROP_RUNNER_TX_BALANCER] =          { "runner", "tx_balancer", "name", 0 },
-	[PROP_RUNNER_TX_BALANCER_INTERVAL] = { "runner", "tx_balancer", "interval",
+	[PROP_RUNNER_TX_BALANCER_INTERVAL] = { "runner", "tx_balancer", "balancing_interval",
 	                                       NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT },
 	[PROP_RUNNER_ACTIVE] =               { "runner", "active", NULL, 0 },
 	[PROP_RUNNER_FAST_RATE] =            { "runner", "fast_rate", NULL, 0 },
