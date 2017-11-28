@@ -2370,7 +2370,10 @@ connection_removed (NMSettings *settings,
                     NMSettingsConnection *connection,
                     gpointer user_data)
 {
-	_deactivate_if_active (user_data, connection);
+	NMPolicyPrivate *priv = user_data;
+	NMPolicy *self = _PRIV_TO_SELF (priv);
+
+	_deactivate_if_active (self, connection);
 }
 
 static void
