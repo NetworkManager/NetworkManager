@@ -89,6 +89,9 @@ _LOG_DECLARE_SELF (NMDevice);
 #define CARRIER_WAIT_TIME_MS 5000
 #define CARRIER_WAIT_TIME_AFTER_MTU_MS 10000
 
+#define CARRIER_DEFER_TIME_MS 4000
+#define CARRIER_DEFER_TIME_AFTER_MTU_MS 10000
+
 #define NM_DEVICE_AUTH_RETRIES_UNSET    -1
 #define NM_DEVICE_AUTH_RETRIES_INFINITY -2
 #define NM_DEVICE_AUTH_RETRIES_DEFAULT  3
@@ -335,6 +338,7 @@ typedef struct _NMDevicePrivate {
 	 * NM changes the MTU it sets @carrier_wait_until_ms to CARRIER_WAIT_TIME_AFTER_MTU_MS
 	 * in the future. This is used to extend the grace period in this particular case. */
 	gint64          carrier_wait_until_ms;
+	gint64          carrier_defer_until_ms;
 
 	bool            carrier:1;
 	bool            ignore_carrier:1;
@@ -2465,8 +2469,6 @@ carrier_changed (NMDevice *self, gboolean carrier)
 	}
 }
 
-#define LINK_DISCONNECT_DELAY 4
-
 static gboolean
 carrier_disconnected_action_cb (gpointer user_data)
 {
@@ -2523,10 +2525,13 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 			_LOGD (LOGD_DEVICE, "carrier: link disconnected");
 			carrier_changed (self, FALSE);
 		} else {
-			priv->carrier_defer_id = g_timeout_add_seconds (LINK_DISCONNECT_DELAY,
-			                                                carrier_disconnected_action_cb, self);
-			_LOGD (LOGD_DEVICE, "carrier: link disconnected (deferring action for %d seconds) (id=%u)",
-			       LINK_DISCONNECT_DELAY, priv->carrier_defer_id);
+			gint64 now_ms, until_ms;
+
+			now_ms = nm_utils_get_monotonic_timestamp_ms ();
+			until_ms = NM_MAX (now_ms + CARRIER_DEFER_TIME_MS, priv->carrier_defer_until_ms);
+			priv->carrier_defer_id = g_timeout_add (until_ms - now_ms, carrier_disconnected_action_cb, self);
+			_LOGD (LOGD_DEVICE, "carrier: link disconnected (deferring action for %ld milli seconds) (id=%u)",
+			       (long) (until_ms - now_ms), priv->carrier_defer_id);
 		}
 	}
 }
@@ -7410,6 +7415,7 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 	if (   (mtu_desired && mtu_desired != mtu_plat)
 	    || (ip6_mtu && ip6_mtu != _IP6_MTU_SYS ())) {
 		gboolean anticipated_failure = FALSE;
+		gint64 now_ms;
 
 		if (!priv->mtu_initial && !priv->ip6_mtu_initial) {
 			/* before touching any of the MTU paramters, record the
@@ -7428,7 +7434,9 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 				              ? "Are the MTU sizes of the slaves large enough?"
 				              : "Did you configure the MTU correctly?"));
 			}
-			priv->carrier_wait_until_ms = nm_utils_get_monotonic_timestamp_ms () + CARRIER_WAIT_TIME_AFTER_MTU_MS;
+			now_ms = nm_utils_get_monotonic_timestamp_ms ();
+			priv->carrier_wait_until_ms = now_ms + CARRIER_WAIT_TIME_AFTER_MTU_MS;
+			priv->carrier_defer_until_ms = now_ms + CARRIER_DEFER_TIME_AFTER_MTU_MS;
 		}
 
 		if (ip6_mtu && ip6_mtu != _IP6_MTU_SYS ()) {
@@ -7443,7 +7451,9 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 				           ? ": Is the underlying MTU value successfully set?"
 				           : "");
 			}
-			priv->carrier_wait_until_ms = nm_utils_get_monotonic_timestamp_ms () + CARRIER_WAIT_TIME_AFTER_MTU_MS;
+			now_ms = nm_utils_get_monotonic_timestamp_ms ();
+			priv->carrier_wait_until_ms = now_ms + CARRIER_WAIT_TIME_AFTER_MTU_MS;
+			priv->carrier_defer_until_ms = now_ms + CARRIER_DEFER_TIME_AFTER_MTU_MS;
 		}
 	}
 #undef _IP6_MTU_SYS
@@ -12571,8 +12581,12 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 			_LOGT (LOGD_DEVICE, "mtu: reset device-mtu: %u, ipv6-mtu: %u, ifindex: %d",
 			       (guint) priv->mtu_initial, (guint) priv->ip6_mtu_initial, ifindex);
 			if (priv->mtu_initial) {
+				gint64 now;
+
 				nm_platform_link_set_mtu (nm_device_get_platform (self), ifindex, priv->mtu_initial);
-				priv->carrier_wait_until_ms = nm_utils_get_monotonic_timestamp_ms () + CARRIER_WAIT_TIME_AFTER_MTU_MS;
+				now = nm_utils_get_monotonic_timestamp_ms ();
+				priv->carrier_wait_until_ms = now + CARRIER_WAIT_TIME_AFTER_MTU_MS;
+				priv->carrier_defer_until_ms = now + CARRIER_DEFER_TIME_AFTER_MTU_MS;
 			}
 			if (priv->ip6_mtu_initial) {
 				char sbuf[64];
