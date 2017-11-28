@@ -35,6 +35,7 @@
 #include <fcntl.h>
 #include <linux/if_addr.h>
 #include <linux/rtnetlink.h>
+#include <linux/pkt_sched.h>
 
 #include "nm-utils/nm-dedup-multi.h"
 
@@ -5329,9 +5330,10 @@ tc_commit (NMDevice *self)
 {
 	NMConnection *connection = NULL;
 	gs_unref_ptrarray GPtrArray *qdiscs = NULL;
+	gs_unref_ptrarray GPtrArray *tfilters = NULL;
 	NMSettingTCConfig *s_tc = NULL;
 	int ip_ifindex;
-	guint nqdiscs;
+	guint nqdiscs, ntfilters;
 	int i;
 
 	connection = nm_device_get_applied_connection (self);
@@ -5360,9 +5362,41 @@ tc_commit (NMDevice *self)
 
 			g_ptr_array_add (qdiscs, q);
 		}
+
+		ntfilters = nm_setting_tc_config_get_num_tfilters (s_tc);
+		tfilters = g_ptr_array_new_full (ntfilters, (GDestroyNotify) nmp_object_unref);
+
+		for (i = 0; i < ntfilters; i++) {
+			NMTCTfilter *s_tfilter = nm_setting_tc_config_get_tfilter (s_tc, i);
+			NMTCAction *action;
+			NMPObject *q = nmp_object_new (NMP_OBJECT_TYPE_TFILTER, NULL);
+			NMPlatformTfilter *tfilter = NMP_OBJECT_CAST_TFILTER (q);
+
+			tfilter->ifindex = ip_ifindex;
+			tfilter->kind = nm_tc_tfilter_get_kind (s_tfilter);
+			tfilter->addr_family = AF_UNSPEC;
+			tfilter->handle = nm_tc_tfilter_get_handle (s_tfilter);
+			tfilter->parent = nm_tc_tfilter_get_parent (s_tfilter);
+			tfilter->info = TC_H_MAKE (0, htons (ETH_P_ALL));
+
+			action = nm_tc_tfilter_get_action (s_tfilter);
+			if (action) {
+				tfilter->action.kind = nm_tc_action_get_kind (action);
+				if (strcmp (tfilter->action.kind, "simple") == 0) {
+					strncpy (tfilter->action.simple.sdata,
+					         g_variant_get_bytestring (nm_tc_action_get_attribute (action, "sdata")),
+					         sizeof (tfilter->action.simple.sdata));
+				}
+			}
+
+			g_ptr_array_add (tfilters, q);
+		}
 	}
 
 	if (!nm_platform_qdisc_sync (nm_device_get_platform (self), ip_ifindex, qdiscs))
+		return FALSE;
+
+	if (!nm_platform_tfilter_sync (nm_device_get_platform (self), ip_ifindex, tfilters))
 		return FALSE;
 
 	return TRUE;
