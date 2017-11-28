@@ -1836,6 +1836,7 @@ EXTRA_DIST += \
 	src/settings/plugins/keyfile/tests/keyfiles/Test_Enum_Property \
 	src/settings/plugins/keyfile/tests/keyfiles/Test_Flags_Property \
 	src/settings/plugins/keyfile/tests/keyfiles/Test_dcb_connection \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_TC_Config \
 	\
 	src/settings/plugins/keyfile/tests/keyfiles/test-ca-cert.pem \
 	src/settings/plugins/keyfile/tests/keyfiles/test-key-and-cert.pem
