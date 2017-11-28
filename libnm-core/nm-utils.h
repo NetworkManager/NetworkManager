@@ -238,6 +238,11 @@ NMTCQdisc *nm_utils_tc_qdisc_from_str      (const char *str, GError **error);
 NM_AVAILABLE_IN_1_10_2
 char *nm_utils_tc_qdisc_to_str             (NMTCQdisc *qdisc, GError **error);
 
+NM_AVAILABLE_IN_1_10_2
+NMTCAction *nm_utils_tc_action_from_str    (const char *str, GError **error);
+NM_AVAILABLE_IN_1_10_2
+char *nm_utils_tc_action_to_str            (NMTCAction *action, GError **error);
+
 G_END_DECLS
 
 #endif /* __NM_UTILS_H__ */

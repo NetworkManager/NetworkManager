@@ -1308,6 +1308,8 @@ global:
 	nm_team_link_watcher_new_nsna_ping;
 	nm_team_link_watcher_ref;
 	nm_team_link_watcher_unref;
+	nm_utils_tc_action_from_str;
+	nm_utils_tc_action_to_str;
 	nm_utils_tc_qdisc_from_str;
 	nm_utils_tc_qdisc_to_str;
 } libnm_1_10_0;

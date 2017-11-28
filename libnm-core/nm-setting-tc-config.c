@@ -276,6 +276,14 @@ nm_tc_action_new (const char *kind,
 {
 	NMTCAction *action;
 
+	if (!kind || !*kind || strchr (kind, ' ') || strchr (kind, '\t')) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("'%s' is not a valid kind"), kind);
+		return NULL;
+	}
+
 	action = g_slice_new0 (NMTCAction);
 	action->refcount = 1;
 

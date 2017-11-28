@@ -2318,6 +2318,154 @@ nm_utils_tc_qdisc_from_str (const char *str, GError **error)
 
 	return qdisc;
 }
+/*****************************************************************************/
+
+static const NMVariantAttributeSpec * const tc_action_simple_attribute_spec[] = {
+	TC_ATTR_SPEC_PTR ("sdata",   G_VARIANT_TYPE_BYTESTRING,  FALSE, FALSE, 0   ),
+	NULL,
+};
+
+static const NMVariantAttributeSpec * const tc_action_attribute_spec[] = {
+	TC_ATTR_SPEC_PTR ("kind",    G_VARIANT_TYPE_STRING,      TRUE,  FALSE, 'a' ),
+	TC_ATTR_SPEC_PTR ("",        G_VARIANT_TYPE_STRING,      TRUE,  TRUE,  'a' ),
+	NULL,
+};
+
+static gboolean
+_string_append_tc_action (GString *string, NMTCAction *action, GError **error)
+{
+	gs_unref_hashtable GHashTable *ht = NULL;
+	const char *kind = nm_tc_action_get_kind (action);
+	gs_strfreev char **attr_names = NULL;
+	gs_free char *str = NULL;
+	int i;
+
+	ht = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, NULL);
+
+	g_string_append (string, kind);
+
+	attr_names = nm_tc_action_get_attribute_names (action);
+	for (i = 0; attr_names[i]; i++) {
+		g_hash_table_insert (ht, attr_names[i],
+		                     nm_tc_action_get_attribute (action, attr_names[i]));
+	}
+
+	if (i) {
+		str = nm_utils_format_variant_attributes (ht, ' ', ' ');
+		g_string_append_c (string, ' ');
+		g_string_append (string, str);
+	}
+
+	return TRUE;
+}
+
+/**
+ * nm_utils_tc_action_to_str:
+ * @action: the %NMTCAction
+ * @error: location of the error
+ *
+ * Turns the %NMTCAction into a tc style string representation of the queueing
+ * discipline.
+ *
+ * Returns: formatted string or %NULL
+ *
+ * Since: 1.10.2
+ */
+char *
+nm_utils_tc_action_to_str (NMTCAction *action, GError **error)
+{
+	GString *string;
+
+	string = g_string_sized_new (60);
+	if (!_string_append_tc_action (string, action, error)) {
+		g_string_free (string, TRUE);
+		return NULL;
+	}
+
+	return g_string_free (string, FALSE);
+}
+
+/**
+ * nm_utils_tc_action_from_str:
+ * @str: the string representation of a action
+ * @error: location of the error
+ *
+ * Parces the tc style string action representation of the queueing
+ * discipline to a %NMTCAction instance. Supports a subset of the tc language.
+ *
+ * Returns: the %NMTCAction or %NULL
+ *
+ * Since: 1.10.2
+ */
+NMTCAction *
+nm_utils_tc_action_from_str (const char *str, GError **error)
+{
+	const char *kind = NULL;
+	const char *rest = NULL;
+	NMTCAction *action = NULL;
+	gs_unref_hashtable GHashTable *ht = NULL;
+	gs_unref_hashtable GHashTable *options = NULL;
+	GVariant *variant;
+	const NMVariantAttributeSpec * const *attrs;
+
+	nm_assert (str);
+	nm_assert (!error || !*error);
+
+        ht = nm_utils_parse_variant_attributes (str,
+                                                ' ', ' ', FALSE,
+                                                tc_action_attribute_spec,
+                                                error);
+	if (!ht)
+		return FALSE;
+
+	variant = g_hash_table_lookup (ht, "kind");
+	if (variant) {
+		kind = g_variant_get_string (variant, NULL);
+	} else {
+		g_set_error_literal (error, 1, 0, _("action name missing."));
+		return NULL;
+	}
+
+	kind = g_variant_get_string (variant, NULL);
+	if (strcmp (kind, "simple") == 0)
+		attrs = tc_action_simple_attribute_spec;
+	else
+		attrs = NULL;
+
+	variant = g_hash_table_lookup (ht, "");
+	if (variant)
+		rest = g_variant_get_string (variant, NULL);
+
+	action = nm_tc_action_new (kind, error);
+	if (!action)
+		return NULL;
+
+	if (rest) {
+		GHashTableIter iter;
+		gpointer key, value;
+
+		if (!attrs) {
+			nm_tc_action_unref (action);
+			g_set_error (error, 1, 0, _("unsupported action option: '%s'."), rest);
+			return NULL;
+		}
+
+	        options = nm_utils_parse_variant_attributes (rest,
+	                                                     ' ', ' ', FALSE,
+	                                                     attrs,
+	                                                     error);
+		if (!options) {
+			nm_tc_action_unref (action);
+			return NULL;
+		}
+
+		g_hash_table_iter_init (&iter, options);
+		while (g_hash_table_iter_next (&iter, &key, &value))
+			nm_tc_action_set_attribute (action, key, g_variant_ref_sink (value));
+	}
+
+	return action;
+}
 
 /*****************************************************************************/
 
