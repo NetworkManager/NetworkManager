@@ -158,7 +158,7 @@ static void
 _network_server_free (NMBluez5Manager *self, NetworkServer *network_server)
 {
 	_network_server_unregister (self, network_server);
-	c_list_unlink (&network_server->lst_ns);
+	c_list_unlink_stale (&network_server->lst_ns);
 	g_free (network_server->path);
 	g_free (network_server->addr);
 	g_slice_free (NetworkServer, network_server);

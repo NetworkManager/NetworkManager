@@ -776,7 +776,7 @@ line_free (shvarLine *line)
 	ASSERT_shvarLine (line);
 	g_free (line->line);
 	g_free (line->key_with_prefix);
-	c_list_unlink (&line->lst);
+	c_list_unlink_stale (&line->lst);
 	g_slice_free (shvarLine, line);
 }
 

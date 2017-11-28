@@ -1140,7 +1140,7 @@ static void
 activate_data_free (ActivateData *data)
 {
 	nm_device_remove_pending_action (data->device, NM_PENDING_ACTION_AUTOACTIVATE, TRUE);
-	c_list_unlink (&data->pending_lst);
+	c_list_unlink_stale (&data->pending_lst);
 	nm_clear_g_source (&data->autoactivate_id);
 	g_object_unref (data->device);
 	g_slice_free (ActivateData, data);

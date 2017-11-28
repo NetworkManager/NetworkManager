@@ -1035,7 +1035,7 @@ get_secrets_done_cb (NMAgentManager *manager,
 
 	nm_assert (c_list_contains (&priv->call_ids_lst_head, &call_id->call_ids_lst));
 
-	c_list_unlink_init (&call_id->call_ids_lst);
+	c_list_unlink (&call_id->call_ids_lst);
 
 	if (error) {
 		_LOGD ("(%s:%p) secrets request error: %s",
@@ -1182,7 +1182,7 @@ get_secrets_idle_cb (NMSettingsConnectionCallId *call_id)
 
 	nm_assert (c_list_contains (&priv->call_ids_lst_head, &call_id->call_ids_lst));
 
-	c_list_unlink_init (&call_id->call_ids_lst);
+	c_list_unlink (&call_id->call_ids_lst);
 
 	_get_secrets_info_callback (call_id, NULL, NULL, call_id->t.idle.error);
 
@@ -1325,7 +1325,7 @@ _get_secrets_cancel (NMSettingsConnection *self,
 
 	nm_assert (c_list_contains (&priv->call_ids_lst_head, &call_id->call_ids_lst));
 
-	c_list_unlink_init (&call_id->call_ids_lst);
+	c_list_unlink (&call_id->call_ids_lst);
 
 	if (call_id->type == CALL_ID_TYPE_REQ)
 		nm_agent_manager_cancel_secrets (priv->agent_mgr, call_id->t.req.id);

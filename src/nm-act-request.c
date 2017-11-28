@@ -132,7 +132,7 @@ get_secrets_cb (NMSettingsConnection *connection,
 
 	nm_assert (c_list_contains (&priv->call_ids_lst_head, &call_id->call_ids_lst));
 
-	c_list_unlink_init (&call_id->call_ids_lst);
+	c_list_unlink (&call_id->call_ids_lst);
 
 	if (call_id->callback)
 		call_id->callback (call_id->self, call_id, connection, error, call_id->callback_data);
@@ -215,7 +215,7 @@ _do_cancel_secrets (NMActRequest *self, NMActRequestGetSecretsCallId *call_id, g
 	nm_assert (call_id && call_id->self == self);
 	nm_assert (c_list_contains (&priv->call_ids_lst_head, &call_id->call_ids_lst));
 
-	c_list_unlink_init (&call_id->call_ids_lst);
+	c_list_unlink (&call_id->call_ids_lst);
 
 	nm_settings_connection_cancel_secrets (nm_act_request_get_settings_connection (self), call_id->call_id);
 

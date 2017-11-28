@@ -622,7 +622,7 @@ req_complete (Request *req,
 
 	nm_assert (c_list_contains (&NM_AGENT_MANAGER_GET_PRIVATE (self)->requests, &req->lst_request));
 
-	c_list_unlink_init (&req->lst_request);
+	c_list_unlink (&req->lst_request);
 
 	req_complete_release (req, secrets, agent_dbus_owner, agent_username, error);
 }
@@ -1280,7 +1280,7 @@ nm_agent_manager_cancel_secrets (NMAgentManager *self,
 
 	nm_assert (c_list_contains (&NM_AGENT_MANAGER_GET_PRIVATE (self)->requests, &request_id->lst_request));
 
-	c_list_unlink_init (&request_id->lst_request);
+	c_list_unlink (&request_id->lst_request);
 
 	req_complete_cancel (request_id, FALSE);
 }
@@ -1602,7 +1602,7 @@ dispose (GObject *object)
 
 cancel_more:
 	c_list_for_each (iter, &priv->requests) {
-		c_list_unlink_init (iter);
+		c_list_unlink (iter);
 		req_complete_cancel (c_list_entry (iter, Request, lst_request), TRUE);
 		goto cancel_more;
 	}

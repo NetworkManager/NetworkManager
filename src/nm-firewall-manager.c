@@ -186,7 +186,7 @@ _cb_info_create (NMFirewallManager *self,
 static void
 _cb_info_free (CBInfo *info)
 {
-	c_list_unlink (&info->lst);
+	c_list_unlink_stale (&info->lst);
 	if (info->mode != CB_INFO_MODE_IDLE) {
 		if (info->dbus.arg)
 			g_variant_unref (info->dbus.arg);
@@ -213,7 +213,7 @@ _cb_info_complete_normal (CBInfo *info, GError *error)
 
 	nm_assert (c_list_contains (&priv->pending_calls, &info->lst));
 
-	c_list_unlink_init (&info->lst);
+	c_list_unlink (&info->lst);
 
 	_cb_info_callback (info, error);
 	_cb_info_free (info);
@@ -428,7 +428,7 @@ nm_firewall_manager_cancel_call (NMFirewallManagerCallId call)
 
 	nm_assert (c_list_contains (&priv->pending_calls, &info->lst));
 
-	c_list_unlink_init (&info->lst);
+	c_list_unlink (&info->lst);
 
 	nm_utils_error_set_cancelled (&error, FALSE, "NMFirewallManager");
 
@@ -527,7 +527,7 @@ again:
 			_handle_dbus_start (self, info);
 		} else {
 			_LOGD (info, "complete: fake success");
-			c_list_unlink_init (&info->lst);
+			c_list_unlink (&info->lst);
 			_cb_info_callback (info, NULL);
 			_cb_info_free (info);
 			goto again;

@@ -330,7 +330,7 @@ test_c_list_sort (void)
 
 				if (headless) {
 					lst = head.next;
-					c_list_unlink (&head);
+					c_list_unlink_stale (&head);
 					lst = c_list_sort_headless (lst, _c_list_sort_cmp, NULL);
 					g_assert (lst);
 					g_assert (lst->next);

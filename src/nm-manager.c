@@ -321,7 +321,7 @@ active_connection_remove (NMManager *self, NMActiveConnection *active)
 
 	notify = nm_exported_object_is_exported (NM_EXPORTED_OBJECT (active));
 
-	c_list_unlink_init (&active->active_connections_lst);
+	c_list_unlink (&active->active_connections_lst);
 	g_signal_emit (self, signals[ACTIVE_CONNECTION_REMOVED], 0, active);
 	g_signal_handlers_disconnect_by_func (active, active_connection_state_changed, self);
 	g_signal_handlers_disconnect_by_func (active, active_connection_default_changed, self);
@@ -2457,7 +2457,7 @@ _platform_link_cb_idle (PlatformLinkCbData *data)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	const NMPlatformLink *plink;
 
-	c_list_unlink (&data->lst);
+	c_list_unlink_stale (&data->lst);
 	g_slice_free (PlatformLinkCbData, data);
 
 	plink = nm_platform_link_get (priv->platform, ifindex);
@@ -6403,7 +6403,7 @@ dispose (GObject *object)
 		PlatformLinkCbData *data = c_list_entry (iter, PlatformLinkCbData, lst);
 
 		g_source_remove (data->idle_id);
-		c_list_unlink (iter);
+		c_list_unlink_stale (iter);
 		g_slice_free (PlatformLinkCbData, data);
 	}
 
