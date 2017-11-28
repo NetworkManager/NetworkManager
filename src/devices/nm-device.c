@@ -328,7 +328,7 @@ typedef struct _NMDevicePrivate {
 	guint32         v4_route_table;
 	guint32         v6_route_table;
 
-	/* when carrier goes away, we give a grace period of CARRIER_WAIT_TIME_MS
+	/* when carrier goes away, we give a grace period of _get_carrier_wait_ms()
 	 * until taking action.
 	 *
 	 * When changing MTU, the device might take longer then that. So, whenever
@@ -530,6 +530,7 @@ static gboolean addrconf6_start_with_link_ready (NMDevice *self);
 static NMActStageReturn linklocal6_start (NMDevice *self);
 
 static void _carrier_wait_check_queued_act_request (NMDevice *self);
+static gint64 _get_carrier_wait_ms (NMDevice *self);
 
 static const char *_activation_func_to_string (ActivationHandleFunc func);
 static void activation_source_handle_cb (NMDevice *self, int addr_family);
@@ -2464,8 +2465,6 @@ carrier_changed (NMDevice *self, gboolean carrier)
 	}
 }
 
-#define LINK_DISCONNECT_DELAY 4
-
 static gboolean
 carrier_disconnected_action_cb (gpointer user_data)
 {
@@ -2522,10 +2521,13 @@ nm_device_set_carrier (NMDevice *self, gboolean carrier)
 			_LOGD (LOGD_DEVICE, "carrier: link disconnected");
 			carrier_changed (self, FALSE);
 		} else {
-			priv->carrier_defer_id = g_timeout_add_seconds (LINK_DISCONNECT_DELAY,
-			                                                carrier_disconnected_action_cb, self);
-			_LOGD (LOGD_DEVICE, "carrier: link disconnected (deferring action for %d seconds) (id=%u)",
-			       LINK_DISCONNECT_DELAY, priv->carrier_defer_id);
+			gint64 now_ms, until_ms;
+
+			now_ms = nm_utils_get_monotonic_timestamp_ms ();
+			until_ms = NM_MAX (now_ms + _get_carrier_wait_ms (self), priv->carrier_wait_until_ms);
+			priv->carrier_defer_id = g_timeout_add (until_ms - now_ms, carrier_disconnected_action_cb, self);
+			_LOGD (LOGD_DEVICE, "carrier: link disconnected (deferring action for %ld milli seconds) (id=%u)",
+			       (long) (until_ms - now_ms), priv->carrier_defer_id);
 		}
 	}
 }
@@ -10697,6 +10699,18 @@ nm_device_is_up (NMDevice *self)
 	return ifindex > 0 ? nm_platform_link_is_up (nm_device_get_platform (self), ifindex) : TRUE;
 }
 
+static gint64
+_get_carrier_wait_ms (NMDevice *self)
+{
+	gs_free char *value = NULL;
+
+	value = nm_config_data_get_device_config (NM_CONFIG_GET_DATA,
+	                                          NM_CONFIG_KEYFILE_KEY_DEVICE_CARRIER_WAIT_TIMEOUT,
+	                                          self,
+	                                          NULL);
+	return _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXINT32, CARRIER_WAIT_TIME_MS);
+}
+
 gboolean
 nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 {
@@ -10771,7 +10785,7 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 			nm_device_add_pending_action (self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
 
 		now_ms = nm_utils_get_monotonic_timestamp_ms ();
-		until_ms = NM_MAX (now_ms + CARRIER_WAIT_TIME_MS, priv->carrier_wait_until_ms);
+		until_ms = NM_MAX (now_ms + _get_carrier_wait_ms (self), priv->carrier_wait_until_ms);
 		priv->carrier_wait_id = g_timeout_add (until_ms - now_ms, carrier_wait_timeout, self);
 	}
 

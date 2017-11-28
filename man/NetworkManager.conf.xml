@@ -856,6 +856,24 @@ managed=1
             </para>
           </listitem>
         </varlistentry>
+        <varlistentry id="carrier-wait-timeout">
+          <term><varname>carrier-wait-timeout</varname></term>
+          <listitem>
+            <para>
+              Specify the timeout for waiting for carrier in milliseconds.
+              When the device loses carrier, NetworkManager does not react
+              immediately. Instead, it waits for this timeout before considering
+              the link lost. Also, on startup, NetworkManager considers the
+              device as busy for this time, as long as the device has no carrier.
+              This delays startup-complete signal and NetworkManager-wait-online.
+              Configuring this too high means to block NetworkManager-wait-online
+              longer then necessary. Configuring it too low, means that NetworkManager
+              will declare startup-complete, although carrier is about to come
+              and auto-activation to kick in.
+              The default is 5000 milliseconds.
+            </para>
+          </listitem>
+        </varlistentry>
         <varlistentry id="ignore-carrier">
           <term><varname>ignore-carrier</varname></term>
           <listitem>
