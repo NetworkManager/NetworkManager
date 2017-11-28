@@ -2262,7 +2262,7 @@ nm_device_master_release_one_slave (NMDevice *self, NMDevice *slave, gboolean co
 	 * Transfers ownership from slave_priv->master.  */
 	self_free = self;
 
-	c_list_unlink_init (&info->lst_slave);
+	c_list_unlink (&info->lst_slave);
 	slave_priv->master = NULL;
 
 	g_signal_handler_disconnect (slave, info->watch_id);

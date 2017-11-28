@@ -77,7 +77,7 @@ item_destroy (gpointer data)
 {
 	CheckpointItem *item = data;
 
-	c_list_unlink (&item->list);
+	c_list_unlink_stale (&item->list);
 	nm_exported_object_unexport (NM_EXPORTED_OBJECT (item->checkpoint));
 	g_object_unref (G_OBJECT (item->checkpoint));
 	g_slice_free (CheckpointItem, item);

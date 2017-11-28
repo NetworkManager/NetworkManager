@@ -877,7 +877,7 @@ activate_info_complete (ActivateInfo *info,
 		g_simple_async_result_set_from_error (info->simple, error);
 	g_simple_async_result_complete (info->simple);
 
-	c_list_unlink (&info->lst);
+	c_list_unlink_stale (&info->lst);
 
 	g_free (info->active_path);
 	g_free (info->new_connection_path);

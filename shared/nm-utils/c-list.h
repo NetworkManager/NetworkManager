@@ -142,7 +142,7 @@ static inline void c_list_link_after(CList *where, CList *what) {
 #define c_list_link_front(_list, _what) c_list_link_after((_list), (_what))
 
 /**
- * c_list_unlink() - unlink element from list
+ * c_list_unlink_stale() - unlink element from list
  * @what:               element to unlink
  *
  * This unlinks @what. If @what was initialized via C_LIST_INIT(), it has no
@@ -150,9 +150,9 @@ static inline void c_list_link_after(CList *where, CList *what) {
  *
  * Note that this does not modify @what. It just modifies the previous and next
  * elements in the list to no longer reference @what. If you want to make sure
- * @what is re-initialized after removal, use c_list_unlink_init().
+ * @what is re-initialized after removal, use c_list_unlink().
  */
-static inline void c_list_unlink(CList *what) {
+static inline void c_list_unlink_stale(CList *what) {
         CList *prev = what->prev, *next = what->next;
 
         next->prev = prev;
@@ -160,15 +160,15 @@ static inline void c_list_unlink(CList *what) {
 }
 
 /**
- * c_list_unlink_init() - unlink element from list and re-initialize
+ * c_list_unlink() - unlink element from list and re-initialize
  * @what:               element to unlink
  *
- * This is like c_list_unlink() but re-initializes @what after removal.
+ * This is like c_list_unlink_stale() but re-initializes @what after removal.
  */
-static inline void c_list_unlink_init(CList *what) {
+static inline void c_list_unlink(CList *what) {
         /* condition is not needed, but avoids STOREs in fast-path */
         if (c_list_is_linked(what)) {
-                c_list_unlink(what);
+                c_list_unlink_stale(what);
                 *what = (CList)C_LIST_INIT(*what);
         }
 }

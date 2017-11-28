@@ -161,7 +161,7 @@ typedef struct {
 static void
 notify_item_free (NotifyItem *item)
 {
-	c_list_unlink (&item->lst);
+	c_list_unlink_stale (&item->lst);
 	g_clear_object (&item->changed);
 	g_slice_free (NotifyItem, item);
 }
@@ -187,7 +187,7 @@ deferred_notify_cb (gpointer data)
 	 * list we're iterating.
 	 */
 	c_list_link_after (&priv->notify_items, &props);
-	c_list_unlink_init (&priv->notify_items);
+	c_list_unlink (&priv->notify_items);
 
 	g_object_ref (object);
 
@@ -344,7 +344,7 @@ odata_free (gpointer data)
 {
 	ObjectCreatedData *odata = data;
 
-	c_list_unlink (&odata->lst_pending);
+	c_list_unlink_stale (&odata->lst_pending);
 	g_object_unref (odata->self);
 	g_free (odata->objects);
 	g_slice_free (ObjectCreatedData, odata);

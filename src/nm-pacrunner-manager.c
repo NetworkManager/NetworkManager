@@ -128,7 +128,7 @@ config_unref (Config *config)
 	if (config->refcount == 1) {
 		g_variant_unref (config->args);
 		g_free (config->path);
-		c_list_unlink (&config->lst);
+		c_list_unlink_stale (&config->lst);
 		g_slice_free (Config, config);
 	} else
 		config->refcount--;
@@ -524,7 +524,7 @@ nm_pacrunner_manager_remove (NMPacrunnerManager *self, NMPacrunnerCallId *call_i
 		}
 	}
 
-	c_list_unlink_init (&config->lst);
+	c_list_unlink (&config->lst);
 	config_unref (config);
 }
 
@@ -570,7 +570,7 @@ dispose (GObject *object)
 	CList *iter, *safe;
 
 	c_list_for_each_safe (iter, safe, &priv->configs) {
-		c_list_unlink_init (iter);
+		c_list_unlink (iter);
 		config_unref (c_list_entry (iter, Config, lst));
 	}
 

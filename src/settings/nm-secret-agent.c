@@ -146,7 +146,7 @@ request_free (NMSecretAgentCallId *r)
 	NMSecretAgent *self = r->agent;
 
 	_LOGt ("request "LOG_REQ_FMT": destroyed", LOG_REQ_ARG (r));
-	c_list_unlink (&r->lst);
+	c_list_unlink_stale (&r->lst);
 	g_free (r->path);
 	g_free (r->setting_name);
 	if (r->cancellable)
@@ -165,7 +165,7 @@ request_check_return (NMSecretAgentCallId *r)
 	nm_assert (c_list_contains (&NM_SECRET_AGENT_GET_PRIVATE (r->agent)->requests,
 	                            &r->lst));
 
-	c_list_unlink_init (&r->lst);
+	c_list_unlink (&r->lst);
 
 	return TRUE;
 }
@@ -479,7 +479,7 @@ nm_secret_agent_cancel_secrets (NMSecretAgent *self, NMSecretAgentCallId *call_i
 	nm_assert (c_list_contains (&NM_SECRET_AGENT_GET_PRIVATE (self)->requests,
 	                            &r->lst));
 
-	c_list_unlink_init (&r->lst);
+	c_list_unlink (&r->lst);
 
 	do_cancel_secrets (self, r, FALSE);
 }
@@ -763,7 +763,7 @@ dispose (GObject *object)
 
 again:
 	c_list_for_each (iter, &priv->requests) {
-		c_list_unlink_init (iter);
+		c_list_unlink (iter);
 		do_cancel_secrets (self, c_list_entry (iter, NMSecretAgentCallId, lst), TRUE);
 		goto again;
 	}
