@@ -351,8 +351,8 @@ typedef struct _NMDevicePrivate {
 
 	NMDeviceSysIfaceState sys_iface_state:2;
 
-	bool            v4_route_table_initalized:1;
-	bool            v6_route_table_initalized:1;
+	bool            v4_route_table_initialized:1;
+	bool            v6_route_table_initialized:1;
 
 	NMDeviceAutoconnectBlockedFlags autoconnect_blocked_flags:4;
 
@@ -1487,7 +1487,7 @@ _stats_set_refresh_rate (NMDevice *self, guint refresh_rate_ms)
 	if (!refresh_rate_ms)
 		return;
 
-	/* trigger an inital refresh of the data whenever the refresh-rate changes.
+	/* trigger an initial refresh of the data whenever the refresh-rate changes.
 	 * As we process the result in an idle handler with device_link_changed(),
 	 * we don't get the result right away. */
 	ifindex = nm_device_get_ip_ifindex (self);
@@ -1789,10 +1789,10 @@ nm_device_get_route_table (NMDevice *self,
 	/* the route table setting affects how we sync routes. We shall
 	 * not change it while the device is active, hence, cache it. */
 	if (addr_family == AF_INET) {
-		if (priv->v4_route_table_initalized)
+		if (priv->v4_route_table_initialized)
 			return priv->v4_route_table ?: (fallback_main ? RT_TABLE_MAIN : 0);
 	} else {
-		if (priv->v6_route_table_initalized)
+		if (priv->v6_route_table_initialized)
 			return priv->v6_route_table ?: (fallback_main ? RT_TABLE_MAIN : 0);
 	}
 
@@ -1822,10 +1822,10 @@ nm_device_get_route_table (NMDevice *self,
 	}
 
 	if (addr_family == AF_INET) {
-		priv->v4_route_table_initalized = TRUE;
+		priv->v4_route_table_initialized = TRUE;
 		priv->v4_route_table = route_table;
 	} else {
-		priv->v6_route_table_initalized = TRUE;
+		priv->v6_route_table_initialized = TRUE;
 		priv->v6_route_table = route_table;
 	}
 
@@ -12420,8 +12420,8 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 	priv->v4_commit_first_time = TRUE;
 	priv->v6_commit_first_time = TRUE;
 
-	priv->v4_route_table_initalized = FALSE;
-	priv->v6_route_table_initalized = FALSE;
+	priv->v4_route_table_initialized = FALSE;
+	priv->v6_route_table_initialized = FALSE;
 
 	priv->default_route_metric_penalty_ip4_has = FALSE;
 	priv->default_route_metric_penalty_ip6_has = FALSE;
@@ -13386,7 +13386,7 @@ nm_device_update_hw_address (NMDevice *self)
 	        && !nm_device_is_activating (self))) {
 		/* when we get a hw_addr the first time or while the device
 		 * is not activated (with no explict hw address set), always
-		 * update our inital hw-address as well. */
+		 * update our initial hw-address as well. */
 		nm_device_update_initial_hw_address (self);
 	}
 	return TRUE;

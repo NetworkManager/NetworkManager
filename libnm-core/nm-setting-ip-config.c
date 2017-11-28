@@ -1791,7 +1791,7 @@ nm_setting_ip_config_get_num_dns_options (NMSettingIPConfig *setting)
  * or the options are left undefined. The latter means to use
  * a default configuration, while the former explicitly means "no-options".
  *
- * Returns: whether DNS options are initalized or left unset (the default).
+ * Returns: whether DNS options are initialized or left unset (the default).
  **/
 gboolean
 nm_setting_ip_config_has_dns_options (NMSettingIPConfig *setting)
