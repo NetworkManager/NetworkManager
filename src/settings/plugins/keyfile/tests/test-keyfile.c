@@ -2630,6 +2630,8 @@ test_read_tc_config (void)
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingTCConfig *s_tc;
 	NMTCQdisc *qdisc1, *qdisc2;
+	NMTCAction *action1, *action2;
+	NMTCTfilter *tfilter1, *tfilter2;
 	gs_free_error GError *error = NULL;
 	gboolean success;
 
@@ -2655,6 +2657,30 @@ test_read_tc_config (void)
 	g_assert (g_strcmp0 (nm_tc_qdisc_get_kind (qdisc2), "ingress") == 0);
 	g_assert (nm_tc_qdisc_get_handle (qdisc2) == TC_H_MAKE (TC_H_INGRESS, 0));
 	g_assert (nm_tc_qdisc_get_parent (qdisc2) == TC_H_INGRESS);
+
+	g_assert (nm_setting_tc_config_get_num_tfilters (s_tc) == 2);
+
+	tfilter1 = nm_setting_tc_config_get_tfilter (s_tc, 0);
+	g_assert (tfilter1);
+	g_assert (g_strcmp0 (nm_tc_tfilter_get_kind (tfilter1), "matchall") == 0);
+	g_assert (nm_tc_tfilter_get_handle (tfilter1) == TC_H_UNSPEC);
+	g_assert (nm_tc_tfilter_get_parent (tfilter1) == TC_H_MAKE (0x1234 << 16, 0x0000));
+
+	action1 = nm_tc_tfilter_get_action (tfilter1);
+	g_assert (action1);
+	g_assert (g_strcmp0 (nm_tc_action_get_kind (action1), "drop") == 0);
+
+	tfilter2 = nm_setting_tc_config_get_tfilter (s_tc, 1);
+	g_assert (tfilter2);
+	g_assert (g_strcmp0 (nm_tc_tfilter_get_kind (tfilter2), "matchall") == 0);
+	g_assert (nm_tc_tfilter_get_handle (tfilter2) == TC_H_UNSPEC);
+	g_assert (nm_tc_tfilter_get_parent (tfilter2) == TC_H_MAKE (TC_H_INGRESS, 0));
+
+	action2 = nm_tc_tfilter_get_action (tfilter2);
+	g_assert (action2);
+	g_assert (g_strcmp0 (nm_tc_action_get_kind (action2), "simple") == 0);
+	g_assert (g_strcmp0 (g_variant_get_bytestring (nm_tc_action_get_attribute (action2, "sdata")),
+	                     "Hello") == 0);
 }
 
 static void
@@ -2663,6 +2689,8 @@ test_write_tc_config (void)
 	gs_unref_object NMConnection *connection = NULL;
 	NMSetting *s_tc;
 	NMTCQdisc *qdisc1, *qdisc2;
+	NMTCTfilter *tfilter1, *tfilter2;
+	NMTCAction *action;
 	GError *error = NULL;
 
 	connection = nmtst_create_minimal_connection ("Test TC",
@@ -2680,6 +2708,29 @@ test_write_tc_config (void)
 	nmtst_assert_success (qdisc2, error);
 	nm_tc_qdisc_set_handle (qdisc2, TC_H_MAKE (TC_H_INGRESS, 0));
 	nm_setting_tc_config_add_qdisc (NM_SETTING_TC_CONFIG (s_tc), qdisc2);
+
+	tfilter1 = nm_tc_tfilter_new ("matchall",
+	                              TC_H_MAKE (0x1234 << 16, 0x0000),
+	                              &error);
+	nmtst_assert_success (tfilter1, error);
+	action = nm_tc_action_new ("drop", &error);
+	nmtst_assert_success (action, error);
+	nm_tc_tfilter_set_action (tfilter1, action);
+	nm_tc_action_unref (action);
+	nm_setting_tc_config_add_tfilter (NM_SETTING_TC_CONFIG (s_tc), tfilter1);
+	nm_tc_tfilter_unref (tfilter1);
+
+	tfilter2 = nm_tc_tfilter_new ("matchall",
+	                              TC_H_MAKE (TC_H_INGRESS, 0),
+	                              &error);
+	nmtst_assert_success (tfilter2, error);
+	action = nm_tc_action_new ("simple", &error);
+	nmtst_assert_success (action, error);
+	nm_tc_action_set_attribute (action, "sdata", g_variant_new_bytestring ("Hello"));
+	nm_tc_tfilter_set_action (tfilter2, action);
+	nm_tc_action_unref (action);
+	nm_setting_tc_config_add_tfilter (NM_SETTING_TC_CONFIG (s_tc), tfilter2);
+	nm_tc_tfilter_unref (tfilter2);
 
 	nm_connection_add_setting (connection, s_tc);
 
