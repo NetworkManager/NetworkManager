@@ -515,7 +515,7 @@ G_DEFINE_BOXED_TYPE (NMTCTfilter, nm_tc_tfilter, nm_tc_tfilter_dup, nm_tc_tfilte
 struct NMTCTfilter {
 	guint refcount;
 
-	const char *kind;
+	char *kind;
 	guint32 handle;
 	guint32 parent;
 	NMTCAction *action;
@@ -540,10 +540,26 @@ nm_tc_tfilter_new (const char *kind,
 {
 	NMTCTfilter *tfilter;
 
+	if (!kind || !*kind || strchr (kind, ' ') || strchr (kind, '\t')) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("'%s' is not a valid kind"), kind);
+		return NULL;
+	}
+
+	if (!parent) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("parent handle missing"));
+		return NULL;
+	}
+
 	tfilter = g_slice_new0 (NMTCTfilter);
 	tfilter->refcount = 1;
 
-	tfilter->kind = g_intern_string (kind);
+	tfilter->kind = g_strdup (kind);
 	tfilter->parent = parent;
 
 	return tfilter;
@@ -583,6 +599,7 @@ nm_tc_tfilter_unref (NMTCTfilter *tfilter)
 
 	tfilter->refcount--;
 	if (tfilter->refcount == 0) {
+		g_free (tfilter->kind);
 		if (tfilter->action)
 			nm_tc_action_unref (tfilter->action);
 		g_slice_free (NMTCTfilter, tfilter);
