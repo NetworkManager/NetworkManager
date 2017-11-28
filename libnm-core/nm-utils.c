@@ -2470,6 +2470,145 @@ nm_utils_tc_action_from_str (const char *str, GError **error)
 /*****************************************************************************/
 
 /**
+ * _nm_utils_string_append_tc_tfilter_rest:
+ * @string: the string to write the formatted tfilter to
+ * @tfilter: the %NMTCTfilter
+ *
+ * This formats the rest of the tfilter string but the parent. Useful to format
+ * the keyfile value and nowhere else.
+ * Use nm_utils_tc_tfilter_to_str() that also includes the parent instead.
+ */
+gboolean
+_nm_utils_string_append_tc_tfilter_rest (GString *string, NMTCTfilter *tfilter, GError **error)
+{
+	guint32 handle = nm_tc_tfilter_get_handle (tfilter);
+	const char *kind = nm_tc_tfilter_get_kind (tfilter);
+	NMTCAction *action;
+
+	if (handle != TC_H_UNSPEC) {
+		g_string_append (string, "handle ");
+		_string_append_tc_handle (string, handle);
+		g_string_append_c (string, ' ');
+	}
+
+	g_string_append (string, kind);
+
+	action = nm_tc_tfilter_get_action (tfilter);
+	if (action) {
+		g_string_append (string, " action ");
+		if (!_string_append_tc_action (string, action, error))
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+/**
+ * nm_utils_tc_tfilter_to_str:
+ * @tfilter: the %NMTCTfilter
+ * @error: location of the error
+ *
+ * Turns the %NMTCTfilter into a tc style string representation of the queueing
+ * discipline.
+ *
+ * Returns: formatted string or %NULL
+ *
+ * Since: 1.10.2
+ */
+char *
+nm_utils_tc_tfilter_to_str (NMTCTfilter *tfilter, GError **error)
+{
+	GString *string;
+
+	string = g_string_sized_new (60);
+
+	_nm_utils_string_append_tc_parent (string, "parent",
+	                                   nm_tc_tfilter_get_parent (tfilter));
+	if (!_nm_utils_string_append_tc_tfilter_rest (string, tfilter, error)) {
+		g_string_free (string, TRUE);
+		return NULL;
+	}
+
+	return g_string_free (string, FALSE);
+}
+
+static const NMVariantAttributeSpec * const tc_tfilter_attribute_spec[] = {
+	TC_ATTR_SPEC_PTR ("action",  G_VARIANT_TYPE_BOOLEAN,     TRUE,  FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("",        G_VARIANT_TYPE_STRING,      TRUE,  TRUE,  'a' ),
+	NULL,
+};
+
+/**
+ * nm_utils_tc_tfilter_from_str:
+ * @str: the string representation of a tfilter
+ * @error: location of the error
+ *
+ * Parces the tc style string tfilter representation of the queueing
+ * discipline to a %NMTCTfilter instance. Supports a subset of the tc language.
+ *
+ * Returns: the %NMTCTfilter or %NULL
+ *
+ * Since: 1.10.2
+ */
+NMTCTfilter *
+nm_utils_tc_tfilter_from_str (const char *str, GError **error)
+{
+	guint32 handle = TC_H_UNSPEC;
+	guint32 parent = TC_H_UNSPEC;
+	gs_free char *kind = NULL;
+	gs_free char *rest = NULL;
+	NMTCAction *action = NULL;
+	const char *extra_opts = NULL;
+	NMTCTfilter *tfilter = NULL;
+	gs_unref_hashtable GHashTable *ht = NULL;
+	GVariant *variant;
+
+	nm_assert (str);
+	nm_assert (!error || !*error);
+
+	if (!_tc_read_common_opts (str, &handle, &parent, &kind, &rest, error))
+		return NULL;
+
+	if (rest) {
+	        ht = nm_utils_parse_variant_attributes (rest,
+	                                                ' ', ' ', FALSE,
+	                                                tc_tfilter_attribute_spec,
+	                                                error);
+		if (!ht)
+			return NULL;
+
+		variant = g_hash_table_lookup (ht, "");
+		if (variant)
+			extra_opts = g_variant_get_string (variant, NULL);
+
+		if (g_hash_table_contains (ht, "action")) {
+			action = nm_utils_tc_action_from_str (extra_opts, error);
+			if (!action) {
+				g_prefix_error (error, _("invalid action: "));
+				return NULL;
+			}
+		} else {
+			g_set_error (error, 1, 0, _("unsupported tfilter option: '%s'."), rest);
+			return NULL;
+		}
+	}
+
+	tfilter = nm_tc_tfilter_new (kind, parent, error);
+	if (!tfilter)
+		return NULL;
+
+	nm_tc_tfilter_set_handle (tfilter, handle);
+	if (action) {
+		nm_tc_tfilter_set_action (tfilter, action);
+		nm_tc_action_unref (action);
+	}
+
+	return tfilter;
+}
+
+/*****************************************************************************/
+
+/**
  * nm_utils_uuid_generate_buf_:
  * @buf: input buffer, must contain at least 37 bytes
  *
