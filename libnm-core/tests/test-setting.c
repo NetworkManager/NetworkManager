@@ -1320,6 +1320,58 @@ test_tc_config_qdisc (void)
 }
 
 static void
+test_tc_config_action (void)
+{
+	NMTCAction *action1, *action2;
+	char *str;
+	GError *error = NULL;
+
+	action1 = nm_tc_action_new ("drop", &error);
+	nmtst_assert_success (action1, error);
+	action2 = nm_tc_action_new ("drop", &error);
+	nmtst_assert_success (action2, error);
+
+	g_assert (nm_tc_action_equal (action1, action2));
+	g_assert_cmpstr (nm_tc_action_get_kind (action1), ==, "drop");
+
+	nm_tc_action_unref (action1);
+	action1 = nm_tc_action_new ("simple", &error);
+	nmtst_assert_success (action1, error);
+	nm_tc_action_set_attribute (action1, "sdata", g_variant_new_bytestring ("Hello"));
+
+	g_assert (!nm_tc_action_equal (action1, action2));
+
+	str = nm_utils_tc_action_to_str (action1, &error);
+	nmtst_assert_success (str, error);
+	g_assert_cmpstr (str, ==, "simple sdata Hello");
+	g_free (str);
+
+	str = nm_utils_tc_action_to_str (action2, &error);
+	nmtst_assert_success (str, error);
+	g_assert_cmpstr (str, ==, "drop");
+	g_free (str);
+
+	nm_tc_action_unref (action2);
+	action2 = nm_tc_action_dup (action1);
+
+	g_assert (nm_tc_action_equal (action1, action2));
+
+	nm_tc_action_unref (action1);
+	action1 = nm_utils_tc_action_from_str ("narodil sa kristus pan",  &error);
+	nmtst_assert_no_success (action1, error);
+	g_clear_error (&error);
+
+	action1 = nm_utils_tc_action_from_str ("simple sdata Hello",  &error);
+	nmtst_assert_success (action1, error);
+
+	g_assert_cmpstr (nm_tc_action_get_kind (action1), ==, "simple");
+	g_assert_cmpstr (g_variant_get_bytestring (nm_tc_action_get_attribute (action1, "sdata")), ==, "Hello");
+
+	nm_tc_action_unref (action1);
+	nm_tc_action_unref (action2);
+}
+
+static void
 test_tc_config_setting (void)
 {
 	gs_unref_object NMSettingTCConfig *s_tc = NULL;
@@ -1448,6 +1500,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/libnm/settings/dcb/bandwidth-sums", test_dcb_bandwidth_sums);
 
 	g_test_add_func ("/libnm/settings/tc_config/qdisc", test_tc_config_qdisc);
+	g_test_add_func ("/libnm/settings/tc_config/action", test_tc_config_action);
 	g_test_add_func ("/libnm/settings/tc_config/setting", test_tc_config_setting);
 	g_test_add_func ("/libnm/settings/tc_config/dbus", test_tc_config_dbus);
 
