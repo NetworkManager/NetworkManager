@@ -793,7 +793,7 @@ again_find_idx:
 			order_len--;
 
 			r->ifindex = iface_data[idx].ifindex;
-			g_assert (nm_platform_ip_route_delete (platform, &o));
+			g_assert (nm_platform_object_delete (platform, &o));
 		}
 
 		head_entry = nm_platform_lookup (platform,

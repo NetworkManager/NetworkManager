@@ -119,7 +119,7 @@ nmtstp_platform_ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t n
 			continue;
 		}
 
-		return nm_platform_ip_route_delete (platform, NMP_OBJECT_UP_CAST (r));
+		return nm_platform_object_delete (platform, NMP_OBJECT_UP_CAST (r));
 	}
 
 	return TRUE;
@@ -145,7 +145,7 @@ nmtstp_platform_ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_
 			continue;
 		}
 
-		return nm_platform_ip_route_delete (platform, NMP_OBJECT_UP_CAST (r));
+		return nm_platform_object_delete (platform, NMP_OBJECT_UP_CAST (r));
 	}
 
 	return TRUE;

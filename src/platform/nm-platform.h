@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 - 2010 Red Hat, Inc.
+ * Copyright (C) 2009 - 2017 Red Hat, Inc.
  */
 
 #ifndef __NETWORKMANAGER_PLATFORM_H__
@@ -800,6 +800,8 @@ typedef struct {
 	gboolean    (*mesh_set_channel)      (NMPlatform *, int ifindex, guint32 channel);
 	gboolean    (*mesh_set_ssid)         (NMPlatform *, int ifindex, const guint8 *ssid, gsize len);
 
+	gboolean (*object_delete) (NMPlatform *, const NMPObject *obj);
+
 	gboolean (*ip4_address_add) (NMPlatform *,
 	                             int ifindex,
 	                             in_addr_t address,
@@ -824,8 +826,6 @@ typedef struct {
 	                                 NMPNlmFlags flags,
 	                                 int addr_family,
 	                                 const NMPlatformIPRoute *route);
-	gboolean (*ip_route_delete) (NMPlatform *, const NMPObject *obj);
-
 	NMPlatformError (*ip_route_get) (NMPlatform *self,
 	                                 int addr_family,
 	                                 gconstpointer address,
@@ -1189,6 +1189,8 @@ NMPlatformError nm_platform_link_sit_add (NMPlatform *self,
 
 const NMPlatformIP6Address *nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr address);
 
+gboolean nm_platform_object_delete (NMPlatform *self, const NMPObject *route);
+
 gboolean nm_platform_ip4_address_add (NMPlatform *self,
                                       int ifindex,
                                       in_addr_t address,
@@ -1222,8 +1224,6 @@ NMPlatformError nm_platform_ip_route_add (NMPlatform *self,
                                           const NMPObject *route);
 NMPlatformError nm_platform_ip4_route_add (NMPlatform *self, NMPNlmFlags flags, const NMPlatformIP4Route *route);
 NMPlatformError nm_platform_ip6_route_add (NMPlatform *self, NMPNlmFlags flags, const NMPlatformIP6Route *route);
-
-gboolean nm_platform_ip_route_delete (NMPlatform *self, const NMPObject *route);
 
 GPtrArray *nm_platform_ip_route_get_prune_list (NMPlatform *self,
                                                 int addr_family,

@@ -1190,7 +1190,7 @@ ipx_route_delete (NMPlatform *platform,
 }
 
 static gboolean
-ip_route_delete (NMPlatform *platform, const NMPObject *obj)
+object_delete (NMPlatform *platform, const NMPObject *obj)
 {
 	g_assert (NM_IS_FAKE_PLATFORM (platform));
 	g_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ROUTE,
@@ -1462,5 +1462,5 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->ip6_address_delete = ip6_address_delete;
 
 	platform_class->ip_route_add = ip_route_add;
-	platform_class->ip_route_delete = ip_route_delete;
+	platform_class->object_delete = object_delete;
 }
