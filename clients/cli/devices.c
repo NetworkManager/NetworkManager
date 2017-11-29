@@ -451,11 +451,8 @@ usage_device_lldp (void)
 static void
 quit (void)
 {
-	if (progress_id) {
-		g_source_remove (progress_id);
+	if (nm_clear_g_source (&progress_id))
 		nmc_terminal_erase_line ();
-	}
-
 	g_main_loop_quit (loop);
 }
 

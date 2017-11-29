@@ -502,12 +502,8 @@ usage_connection_export (void)
 static void
 quit (void)
 {
-	if (progress_id) {
-		g_source_remove (progress_id);
-		progress_id = 0;
+	if (nm_clear_g_source (&progress_id))
 		nmc_terminal_erase_line ();
-	}
-
 	g_main_loop_quit (loop);
 }
 
