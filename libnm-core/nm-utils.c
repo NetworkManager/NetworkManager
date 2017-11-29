@@ -846,41 +846,6 @@ _nm_utils_strv_equal (char **strv1, char **strv2)
 	return !*strv1 && !*strv2;
 }
 
-/**
- * _nm_utils_strsplit_set:
- * @str: string to split
- * @delimiters: string of delimiter characters
- * @max_tokens: the maximum number of tokens to split string into. When it is
- * less than 1, the @str is split completely.
- *
- * Utility function for splitting string into a string array. It is a wrapper
- * for g_strsplit_set(), but it also removes empty strings from the vector as
- * they are not useful in most cases.
- *
- * Returns: (transfer full): a newly allocated NULL-terminated array of strings.
- * The caller must free the returned array with g_strfreev().
- **/
-char **
-_nm_utils_strsplit_set (const char *str, const char *delimiters, int max_tokens)
-{
-	char **result;
-	uint i;
-	uint j;
-
-	result = g_strsplit_set (str, delimiters, max_tokens);
-
-	/* remove empty strings */
-	for (i = 0; result && result[i]; i++) {
-		if (*result[i] == '\0') {
-			g_free (result[i]);
-			for (j = i; result[j]; j++)
-				result[j] = result[j + 1];
-			i--;
-		}
-	}
-	return result;
-}
-
 static gboolean
 device_supports_ap_ciphers (guint32 dev_caps,
                             guint32 ap_flags,
