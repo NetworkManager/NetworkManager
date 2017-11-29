@@ -3732,7 +3732,7 @@ nm_platform_ip_route_sync (NMPlatform *self,
 
 				/* we need to replace the existing route with a (slightly) differnt
 				 * one. Delete it first. */
-				if (!nm_platform_ip_route_delete (self, plat_o)) {
+				if (!nm_platform_object_delete (self, plat_o)) {
 					/* ignore error. */
 				}
 			}
@@ -3813,7 +3813,7 @@ nm_platform_ip_route_sync (NMPlatform *self,
 			                               prune_o))
 				continue;
 
-			if (!nm_platform_ip_route_delete (self, prune_o)) {
+			if (!nm_platform_object_delete (self, prune_o)) {
 				/* ignore error... */
 			}
 		}
@@ -3991,8 +3991,8 @@ nm_platform_ip6_route_add (NMPlatform *self,
 }
 
 gboolean
-nm_platform_ip_route_delete (NMPlatform *self,
-                             const NMPObject *obj)
+nm_platform_object_delete (NMPlatform *self,
+                           const NMPObject *obj)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
@@ -4000,11 +4000,11 @@ nm_platform_ip_route_delete (NMPlatform *self,
 	                                           NMP_OBJECT_TYPE_IP6_ROUTE))
 		g_return_val_if_reached (FALSE);
 
-	_LOGD ("route: delete     IPv%c route %s",
-	       NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_IP4_ROUTE ? '4' : '6',
+	_LOGD ("%s: delete %s",
+	       NMP_OBJECT_GET_CLASS (obj)->obj_type_name,
 	       nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 
-	return klass->ip_route_delete (self, obj);
+	return klass->object_delete (self, obj);
 }
 
 /*****************************************************************************/
@@ -4115,7 +4115,7 @@ again:
 
 		_LOGT ("ip4-dev-route: delete %s",
 		       nmp_object_to_string (p_obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
-		nm_platform_ip_route_delete (self, p_obj);
+		nm_platform_object_delete (self, p_obj);
 		goto again;
 	}
 

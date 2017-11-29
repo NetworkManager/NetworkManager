@@ -6116,19 +6116,24 @@ ip_route_add (NMPlatform *platform,
 }
 
 static gboolean
-ip_route_delete (NMPlatform *platform,
-                 const NMPObject *obj)
+object_delete (NMPlatform *platform,
+               const NMPObject *obj)
 {
 	nm_auto_nmpobj const NMPObject *obj_keep_alive = NULL;
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 
-	nm_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ROUTE,
-	                                                 NMP_OBJECT_TYPE_IP6_ROUTE));
-
 	if (!NMP_OBJECT_IS_STACKINIT (obj))
 		obj_keep_alive = nmp_object_ref (obj);
 
-	nlmsg = _nl_msg_new_route (RTM_DELROUTE, 0, obj);
+	switch (NMP_OBJECT_GET_TYPE (obj)) {
+	case NMP_OBJECT_TYPE_IP4_ROUTE:
+	case NMP_OBJECT_TYPE_IP6_ROUTE:
+		nlmsg = _nl_msg_new_route (RTM_DELROUTE, 0, obj);
+		break;
+	default:
+		break;
+	}
+
 	if (!nlmsg)
 		g_return_val_if_reached (FALSE);
 	return do_delete_object (platform, obj, nlmsg);
@@ -6937,13 +6942,13 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_ipip_add = link_ipip_add;
 	platform_class->link_sit_add = link_sit_add;
 
+	platform_class->object_delete = object_delete;
 	platform_class->ip4_address_add = ip4_address_add;
 	platform_class->ip6_address_add = ip6_address_add;
 	platform_class->ip4_address_delete = ip4_address_delete;
 	platform_class->ip6_address_delete = ip6_address_delete;
 
 	platform_class->ip_route_add = ip_route_add;
-	platform_class->ip_route_delete = ip_route_delete;
 	platform_class->ip_route_get = ip_route_get;
 
 	platform_class->check_kernel_support = check_kernel_support;
