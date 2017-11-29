@@ -3635,13 +3635,12 @@ make_wireless_setting (shvarFile *ifcfg,
 	g_object_set (s_wireless, NM_SETTING_WIRELESS_GENERATE_MAC_ADDRESS_MASK, value, NULL);
 	g_free (value);
 
-	value = svGetValueStr_cp (ifcfg, "HWADDR_BLACKLIST");
-	if (value) {
-		char **strv;
+	cvalue = svGetValueStr (ifcfg, "HWADDR_BLACKLIST", &value);
+	if (cvalue) {
+		gs_strfreev char **strv = NULL;
 
-		strv = transform_hwaddr_blacklist (value);
+		strv = transform_hwaddr_blacklist (cvalue);
 		g_object_set (s_wireless, NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST, strv, NULL);
-		g_strfreev (strv);
 		g_free (value);
 	}
 
@@ -4101,6 +4100,7 @@ make_wired_setting (shvarFile *ifcfg,
                     GError **error)
 {
 	gs_unref_object NMSettingWired *s_wired = NULL;
+	const char *cvalue;
 	gs_free char *value = NULL;
 	char *nettype;
 
@@ -4209,11 +4209,11 @@ make_wired_setting (shvarFile *ifcfg,
 	              NULL);
 	nm_clear_g_free (&value);
 
-	value = svGetValueStr_cp (ifcfg, "HWADDR_BLACKLIST");
-	if (value) {
+	cvalue = svGetValueStr (ifcfg, "HWADDR_BLACKLIST", &value);
+	if (cvalue) {
 		gs_strfreev char **strv = NULL;
 
-		strv = transform_hwaddr_blacklist (value);
+		strv = transform_hwaddr_blacklist (cvalue);
 		g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST, strv, NULL);
 		nm_clear_g_free (&value);
 	}
