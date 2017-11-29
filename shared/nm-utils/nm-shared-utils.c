@@ -569,7 +569,7 @@ nm_utils_strsplit_set (const char *str, const char *delimiters)
 
 			/* reallocate the buffer. Note that for now the string
 			 * continues to be in ptr0/s0. We fix that at the end. */
-			alloc_size += 2;
+			alloc_size *= 2;
 			ptr = g_malloc ((sizeof (const char *) * (alloc_size + 1)) + str_len);
 			memcpy (ptr, ptr_old, sizeof (const char *) * plen);
 			if (ptr_old != ptr0)
