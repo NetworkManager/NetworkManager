@@ -561,56 +561,60 @@ _replace_settings_full (NMSettingsConnection *self,
                         GError **error)
 {
 	NMSettingsConnectionPrivate *priv;
+	gboolean replaced = FALSE;
 
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
-	g_return_val_if_fail (NM_IS_CONNECTION (new_connection), FALSE);
+	g_return_val_if_fail (!new_connection || NM_IS_CONNECTION (new_connection), FALSE);
 
 	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
 	if (   prepare_new_connection
+	    && new_connection
 	    && !nm_settings_connection_replace_settings_prepare (self,
 	                                                         new_connection,
 	                                                         error))
 		return FALSE;
-
-	/* Do nothing if there's nothing to update */
-	if (nm_connection_compare (NM_CONNECTION (self),
-	                           new_connection,
-	                           NM_SETTING_COMPARE_FLAG_EXACT)) {
-		return TRUE;
-	}
 
 	/* Disconnect the changed signal to ensure we don't set Unsaved when
 	 * it's not required.
 	 */
 	g_signal_handlers_block_by_func (self, G_CALLBACK (connection_changed_cb), NULL);
 
-	if (log_diff_name)
-		nm_utils_log_connection_diff (new_connection, NM_CONNECTION (self), LOGL_DEBUG, LOGD_CORE, log_diff_name, "++ ");
+	/* Do nothing if there's nothing to update */
+	if (   new_connection
+	    && !nm_connection_compare (NM_CONNECTION (self),
+	                               new_connection,
+	                               NM_SETTING_COMPARE_FLAG_EXACT)) {
+		if (log_diff_name)
+			nm_utils_log_connection_diff (new_connection, NM_CONNECTION (self), LOGL_DEBUG, LOGD_CORE, log_diff_name, "++ ");
 
-	nm_connection_replace_settings_from_connection (NM_CONNECTION (self), new_connection);
+		nm_connection_replace_settings_from_connection (NM_CONNECTION (self), new_connection);
 
-	_LOGD ("replace settings from connection %p (%s)", new_connection, nm_connection_get_id (NM_CONNECTION (self)));
+		replaced = TRUE;
+		_LOGD ("replace settings from connection %p (%s)", new_connection, nm_connection_get_id (NM_CONNECTION (self)));
+	}
 
 	nm_settings_connection_set_flags (self,
 	                                  NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED | NM_SETTINGS_CONNECTION_FLAGS_VOLATILE,
 	                                  FALSE);
 
-	/* Cache the just-updated system secrets in case something calls
-	 * nm_connection_clear_secrets() and clears them.
-	 */
-	update_system_secrets_cache (self);
+	if (replaced) {
+		/* Cache the just-updated system secrets in case something calls
+		 * nm_connection_clear_secrets() and clears them.
+		 */
+		update_system_secrets_cache (self);
 
-	/* Add agent and always-ask secrets back; they won't necessarily be
-	 * in the replacement connection data if it was eg reread from disk.
-	 */
-	if (priv->agent_secrets) {
-		GVariant *dict;
+		/* Add agent and always-ask secrets back; they won't necessarily be
+		 * in the replacement connection data if it was eg reread from disk.
+		 */
+		if (priv->agent_secrets) {
+			GVariant *dict;
 
-		dict = nm_connection_to_dbus (priv->agent_secrets, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
-		if (dict) {
-			(void) nm_connection_update_secrets (NM_CONNECTION (self), NULL, dict, NULL);
-			g_variant_unref (dict);
+			dict = nm_connection_to_dbus (priv->agent_secrets, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
+			if (dict) {
+				(void) nm_connection_update_secrets (NM_CONNECTION (self), NULL, dict, NULL);
+				g_variant_unref (dict);
+			}
 		}
 	}
 
@@ -1740,28 +1744,25 @@ update_auth_cb (NMSettingsConnection *self,
 	}
 
 	if (!info->save_to_disk) {
-		if (info->new_settings) {
-			_replace_settings_full (self,
-			                        info->new_settings,
-			                        FALSE,
-			                        NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY,
-			                        "replace-unsaved",
-			                        &local);
-		}
-		goto out;
+		_replace_settings_full (self,
+		                        info->new_settings,
+		                        FALSE,
+		                        NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY,
+		                        "replace-unsaved",
+		                        &local);
+	} else {
+		commit_reason = NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION;
+		if (   info->new_settings
+		    && !nm_streq0 (nm_connection_get_id (NM_CONNECTION (self)),
+		                   nm_connection_get_id (info->new_settings)))
+			commit_reason |= NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED;
+
+		_commit_changes_full (self,
+		                      info->new_settings,
+		                      FALSE,
+		                      commit_reason,
+		                      &local);
 	}
-
-	commit_reason = NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION;
-	if (   info->new_settings
-	    && !nm_streq0 (nm_connection_get_id (NM_CONNECTION (self)),
-	                   nm_connection_get_id (info->new_settings)))
-		commit_reason |= NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED;
-
-	_commit_changes_full (self,
-	                      info->new_settings,
-	                      FALSE,
-	                      commit_reason,
-	                      &local);
 
 out:
 	if (!local) {
