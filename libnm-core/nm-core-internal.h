@@ -244,10 +244,6 @@ gssize _nm_utils_ptrarray_find_first (gconstpointer *list, gssize len, gconstpoi
 gssize _nm_utils_ptrarray_find_binary_search (gconstpointer *list, gsize len, gconstpointer needle, GCompareDataFunc cmpfcn, gpointer user_data);
 gssize _nm_utils_array_find_binary_search (gconstpointer list, gsize elem_size, gsize len, gconstpointer needle, GCompareDataFunc cmpfcn, gpointer user_data);
 
-char **     _nm_utils_strsplit_set (const char *str,
-                                    const char *delimiters,
-                                    int max_tokens);
-
 GSList *    _nm_utils_strv_to_slist (char **strv, gboolean deep_copy);
 char **     _nm_utils_slist_to_strv (GSList *slist, gboolean deep_copy);
 
