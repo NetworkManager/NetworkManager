@@ -2115,6 +2115,13 @@ nm_settings_connection_get_unsaved (NMSettingsConnection *self)
 
 /*****************************************************************************/
 
+NM_UTILS_FLAGS2STR_DEFINE_STATIC (_settings_connection_flags_to_string, NMSettingsConnectionFlags,
+	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_FLAGS_NONE,          "none"),
+	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_FLAGS_UNSAVED,       "unsaved"),
+	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED,  "nm-generatd"),
+	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_FLAGS_VOLATILE,      "volatile"),
+);
+
 NMSettingsConnectionFlags
 nm_settings_connection_get_flags (NMSettingsConnection *self)
 {
@@ -2151,7 +2158,11 @@ nm_settings_connection_set_flags_all (NMSettingsConnection *self, NMSettingsConn
 
 	old_flags = priv->flags;
 	if (old_flags != flags) {
-		_LOGT ("update settings-connection flags to 0x%x (was 0x%x)", (guint) flags, (guint) priv->flags);
+		char buf1[255], buf2[255];
+
+		_LOGT ("update settings-connection flags to %s (was %s)",
+		       _settings_connection_flags_to_string (flags, buf1, sizeof (buf1)),
+		       _settings_connection_flags_to_string (priv->flags, buf2, sizeof (buf2)));
 		priv->flags = flags;
 		_notify (self, PROP_FLAGS);
 		if (NM_FLAGS_HAS (old_flags, NM_SETTINGS_CONNECTION_FLAGS_UNSAVED) != NM_FLAGS_HAS (flags, NM_SETTINGS_CONNECTION_FLAGS_UNSAVED))

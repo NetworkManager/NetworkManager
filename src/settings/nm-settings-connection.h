@@ -65,9 +65,9 @@
  *
  * #NMSettingsConnection flags.
  **/
-typedef enum
-{
+typedef enum {
 	NM_SETTINGS_CONNECTION_FLAGS_NONE                               = 0x00,
+
 	NM_SETTINGS_CONNECTION_FLAGS_UNSAVED                            = 0x01,
 	NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED                       = 0x02,
 	NM_SETTINGS_CONNECTION_FLAGS_VOLATILE                           = 0x04,
@@ -76,7 +76,7 @@ typedef enum
 	NM_SETTINGS_CONNECTION_FLAGS_ALL = ((__NM_SETTINGS_CONNECTION_FLAGS_LAST - 1) << 1) - 1,
 } NMSettingsConnectionFlags;
 
-typedef enum { /*< skip >*/
+typedef enum {
 	NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE                       = 0,
 	NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION                = (1LL << 0),
 	NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED                 = (1LL << 1),
