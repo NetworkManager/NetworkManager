@@ -655,11 +655,12 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 	                               error);
 }
 
-gboolean
-nm_settings_connection_commit_changes (NMSettingsConnection *self,
-                                       NMConnection *new_connection,
-                                       NMSettingsConnectionCommitReason commit_reason,
-                                       GError **error)
+static gboolean
+_commit_changes_full (NMSettingsConnection *self,
+                      NMConnection *new_connection,
+                      gboolean prepare_new_connection,
+                      NMSettingsConnectionCommitReason commit_reason,
+                      GError **error)
 {
 	NMSettingsConnectionClass *klass;
 	gs_free_error GError *local = NULL;
@@ -679,7 +680,8 @@ nm_settings_connection_commit_changes (NMSettingsConnection *self,
 		return FALSE;
 	}
 
-	if (   new_connection
+	if (   prepare_new_connection
+	    && new_connection
 	    && !nm_settings_connection_replace_settings_prepare (self,
 	                                                         new_connection,
 	                                                         &local)) {
@@ -729,6 +731,19 @@ nm_settings_connection_commit_changes (NMSettingsConnection *self,
 		_LOGI ("write: successfully commited (%s)", logmsg_change);
 
 	return TRUE;
+}
+
+gboolean
+nm_settings_connection_commit_changes (NMSettingsConnection *self,
+                                       NMConnection *new_connection,
+                                       NMSettingsConnectionCommitReason commit_reason,
+                                       GError **error)
+{
+	return _commit_changes_full (self,
+	                             new_connection,
+	                             TRUE,
+	                             commit_reason,
+	                             error);
 }
 
 static void
