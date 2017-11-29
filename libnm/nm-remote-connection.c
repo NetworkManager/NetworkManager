@@ -87,23 +87,25 @@ nm_remote_connection_commit_changes (NMRemoteConnection *connection,
                                      GError **error)
 {
 	NMRemoteConnectionPrivate *priv;
-	GVariant *settings;
+	gs_unref_variant GVariant *result = NULL;
 	gboolean ret;
+	GVariantBuilder args;
 
 	g_return_val_if_fail (NM_IS_REMOTE_CONNECTION (connection), FALSE);
 
 	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (connection);
 
-	settings = nm_connection_to_dbus (NM_CONNECTION (connection), NM_CONNECTION_SERIALIZE_ALL);
-	if (save_to_disk) {
-		ret = nmdbus_settings_connection_call_update_sync (priv->proxy,
-		                                                   settings,
-		                                                   cancellable, error);
-	} else {
-		ret = nmdbus_settings_connection_call_update_unsaved_sync (priv->proxy,
-		                                                           settings,
-		                                                           cancellable, error);
-	}
+	g_variant_builder_init (&args, G_VARIANT_TYPE ("a{sv}"));
+	ret = nmdbus_settings_connection_call_update2_sync (priv->proxy,
+	                                                    nm_connection_to_dbus (NM_CONNECTION (connection),
+	                                                                           NM_CONNECTION_SERIALIZE_ALL),
+	                                                    save_to_disk
+	                                                      ? NM_SETTINGS_UPDATE2_FLAG_TO_DISK
+	                                                      : NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY,
+	                                                    g_variant_builder_end (&args),
+	                                                    &result,
+	                                                    cancellable,
+	                                                    error);
 	if (error && *error)
 		g_dbus_error_strip_remote_error (*error);
 	return ret;
@@ -113,11 +115,13 @@ static void
 update_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 {
 	GSimpleAsyncResult *simple = user_data;
-	gboolean (*finish_func) (NMDBusSettingsConnection *, GAsyncResult *, GError **);
 	GError *error = NULL;
+	gs_unref_variant GVariant *v = NULL;
 
-	finish_func = g_object_get_data (G_OBJECT (simple), "finish_func");
-	if (finish_func (NMDBUS_SETTINGS_CONNECTION (proxy), result, &error))
+	if (nmdbus_settings_connection_call_update2_finish (NMDBUS_SETTINGS_CONNECTION (proxy),
+	                                                    &v,
+	                                                    result,
+	                                                    &error))
 		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
 	else {
 		g_dbus_error_strip_remote_error (error);
@@ -149,7 +153,7 @@ nm_remote_connection_commit_changes_async (NMRemoteConnection *connection,
 {
 	NMRemoteConnectionPrivate *priv;
 	GSimpleAsyncResult *simple;
-	GVariant *settings;
+	GVariantBuilder args;
 
 	g_return_if_fail (NM_IS_REMOTE_CONNECTION (connection));
 
@@ -158,22 +162,17 @@ nm_remote_connection_commit_changes_async (NMRemoteConnection *connection,
 	simple = g_simple_async_result_new (G_OBJECT (connection), callback, user_data,
 	                                    nm_remote_connection_commit_changes_async);
 
-	settings = nm_connection_to_dbus (NM_CONNECTION (connection), NM_CONNECTION_SERIALIZE_ALL);
-	if (save_to_disk) {
-		g_object_set_data (G_OBJECT (simple), "finish_func",
-		                   nmdbus_settings_connection_call_update_finish);
-		nmdbus_settings_connection_call_update (priv->proxy,
-		                                        settings,
-		                                        cancellable,
-		                                        update_cb, simple);
-	} else {
-		g_object_set_data (G_OBJECT (simple), "finish_func",
-		                   nmdbus_settings_connection_call_update_unsaved_finish);
-		nmdbus_settings_connection_call_update_unsaved (priv->proxy,
-		                                                settings,
-		                                                cancellable,
-		                                                update_cb, simple);
-	}
+	g_variant_builder_init (&args, G_VARIANT_TYPE ("a{sv}"));
+	nmdbus_settings_connection_call_update2 (priv->proxy,
+	                                         nm_connection_to_dbus (NM_CONNECTION (connection),
+	                                                                NM_CONNECTION_SERIALIZE_ALL),
+	                                         save_to_disk
+	                                           ? NM_SETTINGS_UPDATE2_FLAG_TO_DISK
+	                                           : NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY,
+	                                         g_variant_builder_end (&args),
+	                                         cancellable,
+	                                         update_cb,
+	                                         simple);
 }
 
 /**

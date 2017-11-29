@@ -261,6 +261,7 @@ GQuark nm_secret_agent_error_quark (void);
  * @NM_SETTINGS_ERROR_READ_ONLY_CONNECTION: attempted to modify a read-only connection
  * @NM_SETTINGS_ERROR_UUID_EXISTS: a connection with that UUID already exists
  * @NM_SETTINGS_ERROR_INVALID_HOSTNAME: attempted to set an invalid hostname
+ * @NM_SETTINGS_ERROR_INVALID_ARGUMENTS: invalid arguments
  *
  * Errors related to the settings/persistent configuration interface of
  * NetworkManager.
@@ -277,6 +278,7 @@ typedef enum {
 	NM_SETTINGS_ERROR_READ_ONLY_CONNECTION, /*< nick=ReadOnlyConnection >*/
 	NM_SETTINGS_ERROR_UUID_EXISTS,          /*< nick=UuidExists >*/
 	NM_SETTINGS_ERROR_INVALID_HOSTNAME,     /*< nick=InvalidHostname >*/
+	NM_SETTINGS_ERROR_INVALID_ARGUMENTS,    /*< nick=InvalidArguments >*/
 } NMSettingsError;
 
 GQuark nm_settings_error_quark (void);
