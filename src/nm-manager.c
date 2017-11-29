@@ -4489,7 +4489,7 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 	waking_from_suspend = sleeping_changed && !priv->sleeping;
 
 	if (manager_sleeping (self)) {
-		_LOGI (LOGD_SUSPEND, "%s...", suspending ? "sleeping" : "disabling");
+		_LOGD (LOGD_SUSPEND, "sleep: %s...", suspending ? "sleeping" : "disabling");
 
 		/* FIXME: are there still hardware devices that need to be disabled around
 		 * suspend/resume?
@@ -4520,7 +4520,7 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 			}
 		}
 	} else {
-		_LOGI (LOGD_SUSPEND, "%s...", waking_from_suspend ? "waking up" : "re-enabling");
+		_LOGD (LOGD_SUSPEND, "sleep: %s...", waking_from_suspend ? "waking up" : "re-enabling");
 
 		if (waking_from_suspend) {
 			sleep_devices_clear (self);
@@ -4577,7 +4577,6 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 					       enabled ? "enabling" : "disabling",
 					       rstate->desc, rstate->hw_enabled, rstate->sw_enabled, rstate->user_enabled);
 				}
-
 				if (nm_device_get_rfkill_type (device) == rstate->rtype)
 					nm_device_set_enabled (device, enabled);
 			}
@@ -4601,7 +4600,7 @@ _internal_sleep (NMManager *self, gboolean do_sleep)
 	if (priv->sleeping == do_sleep)
 		return;
 
-	_LOGI (LOGD_SUSPEND, "%s requested (sleeping: %s  enabled: %s)",
+	_LOGI (LOGD_SUSPEND, "sleep: %s requested (sleeping: %s  enabled: %s)",
 	       do_sleep ? "sleep" : "wake",
 	       priv->sleeping ? "yes" : "no",
 	       priv->net_enabled ? "yes" : "no");
@@ -4713,7 +4712,7 @@ sleeping_cb (NMSleepMonitor *monitor, gboolean is_about_to_suspend, gpointer use
 {
 	NMManager *self = user_data;
 
-	_LOGD (LOGD_SUSPEND, "Received %s signal", is_about_to_suspend ? "sleeping" : "resuming");
+	_LOGT (LOGD_SUSPEND, "sleep: received %s signal", is_about_to_suspend ? "sleeping" : "resuming");
 	_internal_sleep (self, is_about_to_suspend);
 }
 
