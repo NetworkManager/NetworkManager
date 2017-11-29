@@ -1716,7 +1716,9 @@ update_auth_cb (NMSettingsConnection *self,
 			 */
 			update_agent_secrets_cache (self, info->new_settings);
 		}
+	}
 
+	if (info->new_settings) {
 		if (nm_audit_manager_audit_enabled (nm_audit_manager_get ())) {
 			gs_unref_hashtable GHashTable *diff = NULL;
 			gboolean same;
@@ -1730,22 +1732,23 @@ update_auth_cb (NMSettingsConnection *self,
 		}
 	}
 
-	if (!info->save_to_disk) {
-		if (info->new_settings) {
-			nm_settings_connection_replace_settings (self,
-			                                         info->new_settings,
-			                                         NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY,
-			                                         "replace-unsaved",
-			                                         &local);
-		}
-		goto out;
-	}
-
 	if (info->new_settings) {
 		if (!nm_settings_connection_replace_settings_prepare (self,
 		                                                      info->new_settings,
 		                                                      &local))
 			goto out;
+	}
+
+	if (!info->save_to_disk) {
+		if (info->new_settings) {
+			_replace_settings_full (self,
+			                        info->new_settings,
+			                        FALSE,
+			                        NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY,
+			                        "replace-unsaved",
+			                        &local);
+		}
+		goto out;
 	}
 
 	commit_reason = NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION;
@@ -1754,10 +1757,11 @@ update_auth_cb (NMSettingsConnection *self,
 	                   nm_connection_get_id (info->new_settings)))
 		commit_reason |= NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED;
 
-	nm_settings_connection_commit_changes (self,
-	                                       info->new_settings,
-	                                       commit_reason,
-	                                       &local);
+	_commit_changes_full (self,
+	                      info->new_settings,
+	                      FALSE,
+	                      commit_reason,
+	                      &local);
 
 out:
 	if (!local) {
