@@ -1589,8 +1589,9 @@ typedef struct {
 	NMAgentManager *agent_mgr;
 	NMAuthSubject *subject;
 	NMConnection *new_settings;
-	gboolean save_to_disk;
+	NMSettingsUpdate2Flags flags;
 	char *audit_args;
+	bool is_update2:1;
 } UpdateInfo;
 
 static void
@@ -1654,7 +1655,13 @@ update_complete (NMSettingsConnection *self,
 {
 	if (error)
 		g_dbus_method_invocation_return_gerror (info->context, error);
-	else
+	else if (info->is_update2) {
+		GVariantBuilder result;
+
+		g_variant_builder_init (&result, G_VARIANT_TYPE ("a{sv}"));
+		g_dbus_method_invocation_return_value (info->context,
+		                                       g_variant_new ("(@a{sv})", g_variant_builder_end (&result)));
+	} else
 		g_dbus_method_invocation_return_value (info->context, NULL);
 
 	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_UPDATE, self, !error, info->audit_args,
@@ -1677,6 +1684,8 @@ update_auth_cb (NMSettingsConnection *self,
 	UpdateInfo *info = data;
 	NMSettingsConnectionCommitReason commit_reason;
 	gs_free_error GError *local = NULL;
+	NMSettingsConnectionPersistMode persist_mode;
+	const char *log_diff_name;
 
 	if (error) {
 		update_complete (self, info, error);
@@ -1719,19 +1728,25 @@ update_auth_cb (NMSettingsConnection *self,
 	                   nm_connection_get_id (info->new_settings)))
 		commit_reason |= NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED;
 
+	if (NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_TO_DISK))
+		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
+	else if (NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY))
+		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY;
+	else
+		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP;
+
+	if (   persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY
+	    || (   persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP
+	        && nm_settings_connection_get_unsaved (self)))
+		log_diff_name = info->new_settings ? "update-unsaved" : "make-unsaved";
+	else
+		log_diff_name = info->new_settings ? "update-settings" : "write-out-to-disk";
+
 	_update (self,
 	         info->new_settings,
-	         info->save_to_disk
-	           ? NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK
-	           : NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY,
+	         persist_mode,
 	         commit_reason,
-	         !info->save_to_disk
-	           ? (info->new_settings
-	                ? "update-unsaved"
-	                : "make-unsaved")
-	           : (info->new_settings
-	                ? "update-settings"
-	                : "write-out-to-disk"),
+	         log_diff_name,
 	         &local);
 
 	if (!local) {
@@ -1782,10 +1797,11 @@ get_update_modify_permission (NMConnection *old, NMConnection *new)
 }
 
 static void
-settings_connection_update_helper (NMSettingsConnection *self,
-                                   GDBusMethodInvocation *context,
-                                   GVariant *new_settings,
-                                   gboolean save_to_disk)
+settings_connection_update (NMSettingsConnection *self,
+                            gboolean is_update2,
+                            GDBusMethodInvocation *context,
+                            GVariant *new_settings,
+                            NMSettingsUpdate2Flags flags)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	NMAuthSubject *subject = NULL;
@@ -1794,8 +1810,6 @@ settings_connection_update_helper (NMSettingsConnection *self,
 	UpdateInfo *info;
 	const char *permission;
 	char *error_desc = NULL;
-
-	g_assert (new_settings != NULL || save_to_disk == TRUE);
 
 	/* If the connection is read-only, that has to be changed at the source of
 	 * the problem (ex a system settings plugin that can't write connections out)
@@ -1806,12 +1820,22 @@ settings_connection_update_helper (NMSettingsConnection *self,
 
 	/* Check if the settings are valid first */
 	if (new_settings) {
-		tmp = _nm_simple_connection_new_from_dbus (new_settings,
-		                                             NM_SETTING_PARSE_FLAGS_STRICT
-		                                           | NM_SETTING_PARSE_FLAGS_NORMALIZE,
-		                                           &error);
-		if (!tmp)
+		if (!g_variant_is_of_type (new_settings, NM_VARIANT_TYPE_CONNECTION)) {
+			g_set_error_literal (&error,
+			                     NM_SETTINGS_ERROR,
+			                     NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
+			                     "settings is of invalid type");
 			goto error;
+		}
+
+		if (g_variant_n_children (new_settings) > 0) {
+			tmp = _nm_simple_connection_new_from_dbus (new_settings,
+			                                             NM_SETTING_PARSE_FLAGS_STRICT
+			                                           | NM_SETTING_PARSE_FLAGS_NORMALIZE,
+			                                           &error);
+			if (!tmp)
+				goto error;
+		}
 	}
 
 	subject = _new_auth_subject (context, &error);
@@ -1833,10 +1857,11 @@ settings_connection_update_helper (NMSettingsConnection *self,
 	}
 
 	info = g_slice_new0 (UpdateInfo);
+	info->is_update2 = is_update2;
 	info->context = context;
 	info->agent_mgr = g_object_ref (priv->agent_mgr);
 	info->subject = subject;
-	info->save_to_disk = save_to_disk;
+	info->flags = flags;
 	info->new_settings = tmp;
 
 	permission = get_update_modify_permission (NM_CONNECTION (self),
@@ -1859,7 +1884,7 @@ impl_settings_connection_update (NMSettingsConnection *self,
                                  GDBusMethodInvocation *context,
                                  GVariant *new_settings)
 {
-	settings_connection_update_helper (self, context, new_settings, TRUE);
+	settings_connection_update (self, FALSE, context, new_settings, NM_SETTINGS_UPDATE2_FLAG_TO_DISK);
 }
 
 static void
@@ -1867,14 +1892,68 @@ impl_settings_connection_update_unsaved (NMSettingsConnection *self,
                                          GDBusMethodInvocation *context,
                                          GVariant *new_settings)
 {
-	settings_connection_update_helper (self, context, new_settings, FALSE);
+	settings_connection_update (self, FALSE, context, new_settings, NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY);
 }
 
 static void
 impl_settings_connection_save (NMSettingsConnection *self,
                                GDBusMethodInvocation *context)
 {
-	settings_connection_update_helper (self, context, NULL, TRUE);
+	settings_connection_update (self, FALSE, context, NULL, NM_SETTINGS_UPDATE2_FLAG_TO_DISK);
+}
+
+static void
+impl_settings_connection_update2 (NMSettingsConnection *self,
+                                  GDBusMethodInvocation *context,
+                                  GVariant *settings,
+                                  guint32 flags_u,
+                                  GVariant *args)
+{
+	GError *error = NULL;
+	GVariantIter iter;
+	const char *args_name;
+	const NMSettingsUpdate2Flags flags = (NMSettingsUpdate2Flags) flags_u;
+
+	if (NM_FLAGS_ANY (flags_u, ~((guint32) (NM_SETTINGS_UPDATE2_FLAG_TO_DISK |
+	                                        NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY)))) {
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
+		                             "Unknown flags");
+		g_dbus_method_invocation_take_error (context, error);
+		return;
+	}
+
+	if (NM_FLAGS_ALL (flags, NM_SETTINGS_UPDATE2_FLAG_TO_DISK |
+	                         NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY)) {
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
+		                             "Conflicting flags");
+		g_dbus_method_invocation_take_error (context, error);
+		return;
+	}
+
+	if (!g_variant_is_of_type (args, G_VARIANT_TYPE ("a{sv}"))) {
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
+		                             "args is of invalid type");
+		g_dbus_method_invocation_take_error (context, error);
+		return;
+	}
+
+	g_variant_iter_init (&iter, args);
+	while (g_variant_iter_next (&iter, "{&sv}", &args_name, NULL)) {
+		error = g_error_new (NM_SETTINGS_ERROR,
+		                     NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
+		                     "Unsupported argument '%s'", args_name);
+		g_dbus_method_invocation_take_error (context, error);
+		return;
+	}
+
+	settings_connection_update (self,
+	                            TRUE,
+	                            context,
+	                            settings,
+	                            flags);
 }
 
 static void
@@ -3005,6 +3084,7 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 	                                        "GetSecrets", impl_settings_connection_get_secrets,
 	                                        "ClearSecrets", impl_settings_connection_clear_secrets,
 	                                        "Save", impl_settings_connection_save,
+	                                        "Update2", impl_settings_connection_update2,
 	                                        NULL);
 }
 

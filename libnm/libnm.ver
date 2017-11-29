@@ -1260,4 +1260,5 @@ global:
 	nm_setting_team_remove_runner_tx_hash_by_value;
 	nm_setting_vpn_get_data_keys;
 	nm_setting_vpn_get_secret_keys;
+	nm_settings_update2_flags_get_type;
 } libnm_1_10_0;
