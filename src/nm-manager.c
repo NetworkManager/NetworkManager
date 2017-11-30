@@ -3875,6 +3875,9 @@ _activation_auth_done (NMActiveConnection *active,
 
 	if (success) {
 		if (_internal_activate_generic (self, active, &error)) {
+			nm_settings_connection_autoconnect_blocked_reason_set (connection,
+			                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST,
+			                                                       FALSE);
 			g_dbus_method_invocation_return_value (context,
 			                                       g_variant_new ("(o)",
 			                                       nm_exported_object_get_path (NM_EXPORTED_OBJECT (active))));
