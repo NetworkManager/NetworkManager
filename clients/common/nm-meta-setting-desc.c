@@ -3468,6 +3468,13 @@ DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv6_config_dns_options,
                                _validate_and_remove_ipv6_dns_option)
 
 static gboolean
+_dns_options_is_default (NMSettingIPConfig *setting)
+{
+	return    nm_setting_ip_config_has_dns_options (setting)
+	       && !nm_setting_ip_config_get_num_dns_options (setting);
+}
+
+static gboolean
 _set_fcn_ip6_config_addresses (ARGS_SET_FCN)
 {
 	gs_strfreev char **strv = NULL;
@@ -5313,7 +5320,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 			.remove_fcn =               _remove_fcn_ipv4_config_dns_options,
 		),
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (get_with_default,
-			.fcn =                      GET_FCN_WITH_DEFAULT (NMSettingIPConfig, nm_setting_ip_config_has_dns_options),
+			.fcn =                      GET_FCN_WITH_DEFAULT (NMSettingIPConfig, _dns_options_is_default),
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_PRIORITY, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DNS_PRIORITY,
@@ -5476,7 +5483,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 			.remove_fcn =               _remove_fcn_ipv6_config_dns_options,
 		),
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (get_with_default,
-			.fcn =     GET_FCN_WITH_DEFAULT (NMSettingIPConfig, nm_setting_ip_config_has_dns_options),
+			.fcn =     GET_FCN_WITH_DEFAULT (NMSettingIPConfig, _dns_options_is_default),
 		),
 	),
 	PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_PRIORITY, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DNS_PRIORITY,
