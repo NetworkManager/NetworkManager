@@ -254,10 +254,8 @@ activate:
 				if (need_update) {
 					_LOGD ("rollback: updating connection %s",
 					        nm_settings_connection_get_uuid (connection));
-					nm_connection_replace_settings_from_connection (NM_CONNECTION (connection),
-					                                                dev_checkpoint->settings_connection);
 					nm_settings_connection_commit_changes (connection,
-					                                       NULL,
+					                                       dev_checkpoint->settings_connection,
 					                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
 					                                       NULL);
 				}
