@@ -136,10 +136,6 @@ gboolean  nm_settings_connection_commit_changes (NMSettingsConnection *self,
                                                  NMSettingsConnectionCommitReason commit_reason,
                                                  GError **error);
 
-gboolean nm_settings_connection_replace_settings_prepare (NMSettingsConnection *self,
-                                                          NMConnection *new_connection,
-                                                          GError **error);
-
 typedef enum {
 	NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
 	NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
