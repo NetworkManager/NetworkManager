@@ -252,6 +252,8 @@ struct _NMPlatformObject {
 	__NMPlatformObject_COMMON;
 };
 
+#define NM_PLATFORM_IP_ADDRESS_CAST(address) \
+	NM_CONSTCAST (NMPlatformIPAddress, (address), NMPlatformIPXAddress, NMPlatformIP4Address, NMPlatformIP6Address)
 
 #define __NMPlatformIPAddress_COMMON \
 	__NMPlatformObject_COMMON; \
