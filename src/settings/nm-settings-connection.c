@@ -1742,6 +1742,12 @@ update_auth_cb (NMSettingsConnection *self,
 	else
 		log_diff_name = info->new_settings ? "update-settings" : "write-out-to-disk";
 
+	if (NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT)) {
+		nm_settings_connection_autoconnect_blocked_reason_set (self,
+		                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST,
+		                                                       TRUE);
+	}
+
 	_update (self,
 	         info->new_settings,
 	         persist_mode,
@@ -1915,7 +1921,8 @@ impl_settings_connection_update2 (NMSettingsConnection *self,
 	const NMSettingsUpdate2Flags flags = (NMSettingsUpdate2Flags) flags_u;
 
 	if (NM_FLAGS_ANY (flags_u, ~((guint32) (NM_SETTINGS_UPDATE2_FLAG_TO_DISK |
-	                                        NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY)))) {
+	                                        NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY |
+	                                        NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT)))) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
 		                             "Unknown flags");

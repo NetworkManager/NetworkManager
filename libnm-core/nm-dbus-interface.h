@@ -898,6 +898,10 @@ typedef enum { /*< flags >*/
  * @NM_SETTINGS_UPDATE2_FLAG_NONE: an alias for numeric zero, no flags set.
  * @NM_SETTINGS_UPDATE2_FLAG_TO_DISK: to persist the connection to disk.
  * @NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY: to make the connection in-memory only.
+ * @NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT: usually, when the connection
+ *   has autoconnect enabled and is modified, it becomes elegible to autoconnect
+ *   right away. Setting this flag, disables autoconnect until the connection
+ *   is manually activated.
  *
  * Since: 1.10.2
  */
@@ -905,6 +909,7 @@ typedef enum { /*< flags >*/
 	NM_SETTINGS_UPDATE2_FLAG_NONE                       = 0,
 	NM_SETTINGS_UPDATE2_FLAG_TO_DISK                    = (1LL <<  0),
 	NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY                  = (1LL <<  1),
+	NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT          = (1LL <<  5),
 } NMSettingsUpdate2Flags;
 
 #endif /* __NM_DBUS_INTERFACE_H__ */
