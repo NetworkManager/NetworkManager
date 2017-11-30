@@ -150,6 +150,16 @@ G_DEFINE_TYPE_WITH_CODE (NMSettingsConnection, nm_settings_connection, NM_TYPE_E
 
 /*****************************************************************************/
 
+static gboolean _commit_changes_full (NMSettingsConnection *self,
+                                      NMConnection *new_connection,
+                                      gboolean prepare_new_connection,
+                                      NMSettingsConnectionPersistMode persist_mode,
+                                      NMSettingsConnectionCommitReason commit_reason,
+                                      const char *log_diff_name,
+                                      GError **error);
+
+/*****************************************************************************/
+
 static void
 _emit_updated (NMSettingsConnection *self, gboolean by_user)
 {
@@ -651,37 +661,48 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
                                          const char *log_diff_name,
                                          GError **error)
 {
-	return _replace_settings_full (self,
-	                               new_connection,
-	                               TRUE,
-	                               persist_mode,
-	                               log_diff_name,
-	                               error);
+	return _commit_changes_full (self,
+	                             new_connection,
+	                             TRUE,
+	                             persist_mode,
+	                             NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
+	                             log_diff_name,
+	                             error);
 }
 
 static gboolean
 _commit_changes_full (NMSettingsConnection *self,
                       NMConnection *new_connection,
                       gboolean prepare_new_connection,
+                      NMSettingsConnectionPersistMode persist_mode,
                       NMSettingsConnectionCommitReason commit_reason,
+                      const char *log_diff_name,
                       GError **error)
 {
-	NMSettingsConnectionClass *klass;
+	NMSettingsConnectionClass *klass = NULL;
 	gs_free_error GError *local = NULL;
 	gs_unref_object NMConnection *reread_connection = NULL;
 	gs_free char *logmsg_change = NULL;
 
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
 
-	klass = NM_SETTINGS_CONNECTION_GET_CLASS (self);
-	if (!klass->commit_changes) {
-		_LOGW ("write: setting plugin %s does not support to write connection",
-		       G_OBJECT_TYPE_NAME (self));
-		g_set_error (error,
-		             NM_SETTINGS_ERROR,
-		             NM_SETTINGS_ERROR_FAILED,
-		             "writing settings not supported");
-		return FALSE;
+	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP) {
+		persist_mode =   nm_settings_connection_get_unsaved (self)
+		               ? NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY
+		               : NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
+	}
+
+	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK) {
+		klass = NM_SETTINGS_CONNECTION_GET_CLASS (self);
+		if (!klass->commit_changes) {
+			_LOGW ("write: setting plugin %s does not support to write connection",
+			       G_OBJECT_TYPE_NAME (self));
+			g_set_error (error,
+			             NM_SETTINGS_ERROR,
+			             NM_SETTINGS_ERROR_FAILED,
+			             "writing settings not supported");
+			return FALSE;
+		}
 	}
 
 	if (   prepare_new_connection
@@ -695,36 +716,27 @@ _commit_changes_full (NMSettingsConnection *self,
 		return FALSE;
 	}
 
-	if (!klass->commit_changes (self,
-	                            new_connection,
-	                            commit_reason,
-	                            &reread_connection,
-	                            &logmsg_change,
-	                            &local)) {
-		_LOGW ("write: failure to write setting: %s",
-		       local->message);
-		g_propagate_error (error, g_steal_pointer (&local));
-		return FALSE;
-	}
-
-	if (reread_connection || new_connection) {
-		if (!_replace_settings_full (self,
-		                             reread_connection ?: new_connection,
-		                             !reread_connection,
-		                             NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
-		                             new_connection
-		                               ? "update-during-write"
-		                               : "replace-and-commit-disk",
-		                             &local)) {
-			/* this can't really happen, because at this point replace-settings
-			 * is no longer supposed to fail. It's a bug. */
-			_LOGE ("write: replacing setting failed: %s",
+	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK) {
+		if (!klass->commit_changes (self,
+		                            new_connection,
+		                            commit_reason,
+		                            &reread_connection,
+		                            &logmsg_change,
+		                            &local)) {
+			_LOGW ("write: failure to write setting: %s",
 			       local->message);
 			g_propagate_error (error, g_steal_pointer (&local));
-			g_return_val_if_reached (FALSE);
+			return FALSE;
 		}
-	} else
-		set_unsaved (self, FALSE);
+	}
+
+	if (!_replace_settings_full (self,
+	                             reread_connection ?: new_connection,
+	                             !reread_connection,
+	                             persist_mode,
+	                             log_diff_name,
+	                             error))
+		return FALSE;
 
 	if (reread_connection)
 		_LOGI ("write: successfully updated (%s), connection was modified in the process", logmsg_change);
@@ -745,7 +757,11 @@ nm_settings_connection_commit_changes (NMSettingsConnection *self,
 	return _commit_changes_full (self,
 	                             new_connection,
 	                             TRUE,
+	                             NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
 	                             commit_reason,
+	                             new_connection
+	                               ? "update-during-write"
+	                               : "replace-and-commit-disk",
 	                             error);
 }
 
@@ -1742,26 +1758,27 @@ update_auth_cb (NMSettingsConnection *self,
 			goto out;
 	}
 
-	if (!info->save_to_disk) {
-		_replace_settings_full (self,
-		                        info->new_settings,
-		                        FALSE,
-		                        NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY,
-		                        "replace-unsaved",
-		                        &local);
-	} else {
-		commit_reason = NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION;
-		if (   info->new_settings
-		    && !nm_streq0 (nm_connection_get_id (NM_CONNECTION (self)),
-		                   nm_connection_get_id (info->new_settings)))
-			commit_reason |= NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED;
+	commit_reason = NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION;
+	if (   info->new_settings
+	    && !nm_streq0 (nm_connection_get_id (NM_CONNECTION (self)),
+	                   nm_connection_get_id (info->new_settings)))
+		commit_reason |= NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED;
 
-		_commit_changes_full (self,
-		                      info->new_settings,
-		                      FALSE,
-		                      commit_reason,
-		                      &local);
-	}
+	_commit_changes_full (self,
+	                      info->new_settings,
+	                      FALSE,
+	                      info->save_to_disk
+	                        ? NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK
+	                        : NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY,
+	                      commit_reason,
+	                      !info->save_to_disk
+	                        ? (info->new_settings
+	                           ? "update-unsaved"
+	                           : "make-unsaved")
+	                        : (info->new_settings
+	                             ? "update-settings"
+	                             : "write-out-to-disk"),
+	                      &local);
 
 out:
 	if (!local) {
