@@ -67,6 +67,111 @@ typedef struct {
 
 /*****************************************************************************/
 
+static void
+update2_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
+{
+	GSimpleAsyncResult *simple = user_data;
+	GError *error = NULL;
+	GVariant *v;
+
+	if (nmdbus_settings_connection_call_update2_finish (NMDBUS_SETTINGS_CONNECTION (proxy),
+	                                                    &v,
+	                                                    result,
+	                                                    &error))
+		g_simple_async_result_set_op_res_gpointer (simple,
+		                                           v,
+		                                           (GDestroyNotify) g_variant_unref);
+	else {
+		g_dbus_error_strip_remote_error (error);
+		g_simple_async_result_take_error (simple, error);
+	}
+	g_simple_async_result_complete (simple);
+	g_object_unref (simple);
+}
+
+/**
+ * nm_remote_connection_update2:
+ * @connection: the #NMRemoteConnection
+ * @settings: (allow-none): optional connection to update the settings.
+ * @flags: update-flags
+ * @args: (allow-none): optional arguments.
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: callback to be called when the commit operation completes
+ * @user_data: caller-specific data passed to @callback
+ *
+ * Asynchronously calls the Update2() D-Bus method.
+ *
+ * Since: 1.10.2
+ **/
+void
+nm_remote_connection_update2 (NMRemoteConnection *connection,
+                              GVariant *settings,
+                              NMSettingsUpdate2Flags flags,
+                              GVariant *args,
+                              GCancellable *cancellable,
+                              GAsyncReadyCallback callback,
+                              gpointer user_data)
+{
+	NMRemoteConnectionPrivate *priv;
+	GSimpleAsyncResult *simple;
+	GVariantBuilder builder;
+
+	g_return_if_fail (NM_IS_REMOTE_CONNECTION (connection));
+	g_return_if_fail (!settings || g_variant_is_of_type (settings, NM_VARIANT_TYPE_CONNECTION));
+	g_return_if_fail (!args || g_variant_is_of_type (args, G_VARIANT_TYPE ("a{sv}")));
+	g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
+
+	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (connection);
+
+	simple = g_simple_async_result_new (G_OBJECT (connection), callback, user_data,
+	                                    nm_remote_connection_update2);
+
+	if (!settings) {
+		g_variant_builder_init (&builder, NM_VARIANT_TYPE_CONNECTION);
+		settings = g_variant_builder_end (&builder);
+	}
+	if (!args) {
+		g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
+		args = g_variant_builder_end (&builder);
+	}
+	nmdbus_settings_connection_call_update2 (priv->proxy,
+	                                         settings,
+	                                         flags,
+	                                         args,
+	                                         cancellable,
+	                                         update2_cb,
+	                                         simple);
+}
+
+/**
+ * nm_remote_connection_update2_finish:
+ * @connection: the #NMRemoteConnection
+ * @result: the result passed to the #GAsyncReadyCallback
+ * @error: location for a #GError, or %NULL
+ *
+ * Gets the result of a call to nm_remote_connection_commit_changes_async().
+ *
+ * Returns: on success, a #GVariant of type "a{sv}" with the result. On failure,
+ *   %NULL.
+ **/
+GVariant *
+nm_remote_connection_update2_finish (NMRemoteConnection *connection,
+                                     GAsyncResult *result,
+                                     GError **error)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (connection), nm_remote_connection_update2), FALSE);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error))
+		return NULL;
+	else
+		return g_variant_ref (g_simple_async_result_get_op_res_gpointer (simple));
+}
+
+/*****************************************************************************/
+
 /**
  * nm_remote_connection_commit_changes:
  * @connection: the #NMRemoteConnection
@@ -201,6 +306,8 @@ nm_remote_connection_commit_changes_finish (NMRemoteConnection *connection,
 		return g_simple_async_result_get_op_res_gboolean (simple);
 }
 
+/*****************************************************************************/
+
 /**
  * nm_remote_connection_save:
  * @connection: the #NMRemoteConnection
@@ -300,6 +407,8 @@ nm_remote_connection_save_finish (NMRemoteConnection *connection,
 	else
 		return g_simple_async_result_get_op_res_gboolean (simple);
 }
+
+/*****************************************************************************/
 
 /**
  * nm_remote_connection_delete:
