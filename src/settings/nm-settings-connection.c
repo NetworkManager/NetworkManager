@@ -150,16 +150,6 @@ G_DEFINE_TYPE_WITH_CODE (NMSettingsConnection, nm_settings_connection, NM_TYPE_E
 
 /*****************************************************************************/
 
-static gboolean _commit_changes_full (NMSettingsConnection *self,
-                                      NMConnection *new_connection,
-                                      gboolean prepare_new_connection,
-                                      NMSettingsConnectionPersistMode persist_mode,
-                                      NMSettingsConnectionCommitReason commit_reason,
-                                      const char *log_diff_name,
-                                      GError **error);
-
-/*****************************************************************************/
-
 static void
 _emit_updated (NMSettingsConnection *self, gboolean by_user)
 {
@@ -563,27 +553,65 @@ nm_settings_connection_replace_settings_prepare (NMSettingsConnection *self,
 }
 
 static gboolean
-_replace_settings_full (NMSettingsConnection *self,
-                        NMConnection *new_connection,
-                        gboolean prepare_new_connection,
-                        NMSettingsConnectionPersistMode persist_mode,
-                        const char *log_diff_name,
-                        GError **error)
+_commit_changes_full (NMSettingsConnection *self,
+                      NMConnection *new_connection,
+                      NMSettingsConnectionPersistMode persist_mode,
+                      NMSettingsConnectionCommitReason commit_reason,
+                      const char *log_diff_name,
+                      GError **error)
 {
 	NMSettingsConnectionPrivate *priv;
+	NMSettingsConnectionClass *klass = NULL;
+	gs_unref_object NMConnection *reread_connection = NULL;
+	NMConnection *replace_connection;
 	gboolean replaced = FALSE;
+	gs_free char *logmsg_change = NULL;
+	GError *local = NULL;
 
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
-	g_return_val_if_fail (!new_connection || NM_IS_CONNECTION (new_connection), FALSE);
 
 	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
-	if (   prepare_new_connection
-	    && new_connection
+	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP) {
+		persist_mode =   nm_settings_connection_get_unsaved (self)
+		               ? NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY
+		               : NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
+	}
+
+	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK) {
+		klass = NM_SETTINGS_CONNECTION_GET_CLASS (self);
+		if (!klass->commit_changes) {
+			g_set_error (&local,
+			             NM_SETTINGS_ERROR,
+			             NM_SETTINGS_ERROR_FAILED,
+			             "writing settings not supported");
+			goto out;
+		}
+	}
+
+	if (   new_connection
 	    && !nm_settings_connection_replace_settings_prepare (self,
 	                                                         new_connection,
-	                                                         error))
-		return FALSE;
+	                                                         &local))
+		goto out;
+
+	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK) {
+		if (!klass->commit_changes (self,
+		                            new_connection,
+		                            commit_reason,
+		                            &reread_connection,
+		                            &logmsg_change,
+		                            &local))
+			goto out;
+
+		if (   reread_connection
+		    && !nm_settings_connection_replace_settings_prepare (self,
+		                                                         reread_connection,
+		                                                         &local))
+			goto out;
+	}
+
+	replace_connection = reread_connection ?: new_connection;
 
 	/* Disconnect the changed signal to ensure we don't set Unsaved when
 	 * it's not required.
@@ -591,17 +619,16 @@ _replace_settings_full (NMSettingsConnection *self,
 	g_signal_handlers_block_by_func (self, G_CALLBACK (connection_changed_cb), NULL);
 
 	/* Do nothing if there's nothing to update */
-	if (   new_connection
+	if (   replace_connection
 	    && !nm_connection_compare (NM_CONNECTION (self),
-	                               new_connection,
+	                               replace_connection,
 	                               NM_SETTING_COMPARE_FLAG_EXACT)) {
 		if (log_diff_name)
-			nm_utils_log_connection_diff (new_connection, NM_CONNECTION (self), LOGL_DEBUG, LOGD_CORE, log_diff_name, "++ ");
+			nm_utils_log_connection_diff (replace_connection, NM_CONNECTION (self), LOGL_DEBUG, LOGD_CORE, log_diff_name, "++ ");
 
-		nm_connection_replace_settings_from_connection (NM_CONNECTION (self), new_connection);
+		nm_connection_replace_settings_from_connection (NM_CONNECTION (self), replace_connection);
 
 		replaced = TRUE;
-		_LOGD ("replace settings from connection %p (%s)", new_connection, nm_connection_get_id (NM_CONNECTION (self)));
 	}
 
 	nm_settings_connection_set_flags (self,
@@ -648,7 +675,38 @@ _replace_settings_full (NMSettingsConnection *self,
 
 	_emit_updated (self, TRUE);
 
+out:
+	if (local) {
+		_LOGI ("write: failure to update connection: %s", local->message);
+		g_propagate_error (error, local);
+		return FALSE;
+	}
+
+	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK) {
+		if (reread_connection)
+			_LOGI ("write: successfully updated (%s), connection was modified in the process", logmsg_change);
+		else if (new_connection)
+			_LOGI ("write: successfully updated (%s)", logmsg_change);
+		else
+			_LOGI ("write: successfully commited (%s)", logmsg_change);
+	}
 	return TRUE;
+}
+
+gboolean
+nm_settings_connection_commit_changes (NMSettingsConnection *self,
+                                       NMConnection *new_connection,
+                                       NMSettingsConnectionCommitReason commit_reason,
+                                       GError **error)
+{
+	return _commit_changes_full (self,
+	                             new_connection,
+	                             NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
+	                             commit_reason,
+	                             new_connection
+	                               ? "update-during-write"
+	                               : "replace-and-commit-disk",
+	                             error);
 }
 
 /* Update the settings of this connection to match that of 'new_connection',
@@ -663,105 +721,9 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 {
 	return _commit_changes_full (self,
 	                             new_connection,
-	                             TRUE,
 	                             persist_mode,
 	                             NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
 	                             log_diff_name,
-	                             error);
-}
-
-static gboolean
-_commit_changes_full (NMSettingsConnection *self,
-                      NMConnection *new_connection,
-                      gboolean prepare_new_connection,
-                      NMSettingsConnectionPersistMode persist_mode,
-                      NMSettingsConnectionCommitReason commit_reason,
-                      const char *log_diff_name,
-                      GError **error)
-{
-	NMSettingsConnectionClass *klass = NULL;
-	gs_free_error GError *local = NULL;
-	gs_unref_object NMConnection *reread_connection = NULL;
-	gs_free char *logmsg_change = NULL;
-
-	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
-
-	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP) {
-		persist_mode =   nm_settings_connection_get_unsaved (self)
-		               ? NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY
-		               : NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
-	}
-
-	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK) {
-		klass = NM_SETTINGS_CONNECTION_GET_CLASS (self);
-		if (!klass->commit_changes) {
-			_LOGW ("write: setting plugin %s does not support to write connection",
-			       G_OBJECT_TYPE_NAME (self));
-			g_set_error (error,
-			             NM_SETTINGS_ERROR,
-			             NM_SETTINGS_ERROR_FAILED,
-			             "writing settings not supported");
-			return FALSE;
-		}
-	}
-
-	if (   prepare_new_connection
-	    && new_connection
-	    && !nm_settings_connection_replace_settings_prepare (self,
-	                                                         new_connection,
-	                                                         &local)) {
-		_LOGW ("write: failed to prepare connection for writing: %s",
-		       local->message);
-		g_propagate_error (error, g_steal_pointer (&local));
-		return FALSE;
-	}
-
-	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK) {
-		if (!klass->commit_changes (self,
-		                            new_connection,
-		                            commit_reason,
-		                            &reread_connection,
-		                            &logmsg_change,
-		                            &local)) {
-			_LOGW ("write: failure to write setting: %s",
-			       local->message);
-			g_propagate_error (error, g_steal_pointer (&local));
-			return FALSE;
-		}
-	}
-
-	if (!_replace_settings_full (self,
-	                             reread_connection ?: new_connection,
-	                             !reread_connection,
-	                             persist_mode,
-	                             log_diff_name,
-	                             error))
-		return FALSE;
-
-	if (reread_connection)
-		_LOGI ("write: successfully updated (%s), connection was modified in the process", logmsg_change);
-	else if (new_connection)
-		_LOGI ("write: successfully updated (%s)", logmsg_change);
-	else
-		_LOGI ("write: successfully commited (%s)", logmsg_change);
-
-	return TRUE;
-}
-
-gboolean
-nm_settings_connection_commit_changes (NMSettingsConnection *self,
-                                       NMConnection *new_connection,
-                                       NMSettingsConnectionCommitReason commit_reason,
-                                       GError **error)
-{
-	return _commit_changes_full (self,
-	                             new_connection,
-	                             TRUE,
-	                             NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
-	                             commit_reason,
-	                             new_connection
-	                               ? "update-during-write"
-	                               : "replace-and-commit-disk",
 	                             error);
 }
 
@@ -1751,13 +1713,6 @@ update_auth_cb (NMSettingsConnection *self,
 		}
 	}
 
-	if (info->new_settings) {
-		if (!nm_settings_connection_replace_settings_prepare (self,
-		                                                      info->new_settings,
-		                                                      &local))
-			goto out;
-	}
-
 	commit_reason = NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION;
 	if (   info->new_settings
 	    && !nm_streq0 (nm_connection_get_id (NM_CONNECTION (self)),
@@ -1766,7 +1721,6 @@ update_auth_cb (NMSettingsConnection *self,
 
 	_commit_changes_full (self,
 	                      info->new_settings,
-	                      FALSE,
 	                      info->save_to_disk
 	                        ? NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK
 	                        : NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY,
@@ -1780,7 +1734,6 @@ update_auth_cb (NMSettingsConnection *self,
 	                             : "write-out-to-disk"),
 	                      &local);
 
-out:
 	if (!local) {
 		gs_unref_object NMConnection *for_agent = NULL;
 
