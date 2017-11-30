@@ -405,4 +405,54 @@ nm_ip_config_get_dns_option (const NMIPConfig *self, guint i)
 	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_dns_option, nm_ip6_config_get_dns_option, i);
 }
 
+#define _NM_IP_CONFIG_DISPATCH_SET_OP(dst, src, v4_func, v6_func, ...) \
+	G_STMT_START { \
+		gpointer _dst = (dst); \
+		gconstpointer _src = (src); \
+		int family = nm_ip_config_get_addr_family (_dst); \
+		\
+		nm_assert (family == nm_ip_config_get_addr_family (_src)); \
+		if (family == AF_INET) { \
+			v4_func ((NMIP4Config *) _dst, (const NMIP4Config *) _src, ##__VA_ARGS__); \
+		} else { \
+			nm_assert (family == AF_INET6); \
+			v6_func ((NMIP6Config *) _dst, (const NMIP6Config *) _src, ##__VA_ARGS__); \
+		} \
+	} G_STMT_END
+
+static inline void
+nm_ip_config_intersect (NMIPConfig *dst,
+                        const NMIPConfig *src,
+                        guint32 default_route_metric_penalty)
+{
+	_NM_IP_CONFIG_DISPATCH_SET_OP (dst, src,
+	                               nm_ip4_config_intersect,
+	                               nm_ip6_config_intersect,
+	                               default_route_metric_penalty);
+}
+
+static inline void
+nm_ip_config_subtract (NMIPConfig *dst,
+                       const NMIPConfig *src,
+                       guint32 default_route_metric_penalty)
+{
+	_NM_IP_CONFIG_DISPATCH_SET_OP (dst, src,
+	                               nm_ip4_config_subtract,
+	                               nm_ip6_config_subtract,
+	                               default_route_metric_penalty);
+}
+
+static inline void
+nm_ip_config_merge (NMIPConfig *dst,
+                    const NMIPConfig *src,
+                    NMIPConfigMergeFlags merge_flags,
+                    guint32 default_route_metric_penalty)
+{
+	_NM_IP_CONFIG_DISPATCH_SET_OP (dst, src,
+	                               nm_ip4_config_merge,
+	                               nm_ip6_config_merge,
+	                               merge_flags,
+	                               default_route_metric_penalty);
+}
+
 #endif /* __NETWORKMANAGER_IP4_CONFIG_H__ */
