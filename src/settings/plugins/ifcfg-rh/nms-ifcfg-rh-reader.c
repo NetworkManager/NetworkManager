@@ -1244,7 +1244,7 @@ make_proxy_setting (shvarFile *ifcfg, GError **error)
 
 static NMSetting *
 make_ip4_setting (shvarFile *ifcfg,
-                  const char *network_file,
+                  shvarFile *network_ifcfg,
                   gboolean routes_read,
                   gboolean *out_has_defroute,
                   GError **error)
@@ -1260,7 +1260,6 @@ make_ip4_setting (shvarFile *ifcfg,
 	int i;
 	guint32 a;
 	gboolean has_key;
-	shvarFile *network_ifcfg;
 	shvarFile *route_ifcfg;
 	gboolean never_default;
 	gint64 timeout;
@@ -1287,7 +1286,6 @@ make_ip4_setting (shvarFile *ifcfg,
 	}
 
 	/* Then check if GATEWAYDEV; it's global and overrides DEFROUTE */
-	network_ifcfg = svOpenFile (network_file, NULL);
 	if (network_ifcfg) {
 		gs_free char *gatewaydev_value = NULL;
 		const char *gatewaydev;
@@ -1304,7 +1302,6 @@ make_ip4_setting (shvarFile *ifcfg,
 			never_default = !!strcmp (v, gatewaydev);
 
 		nm_clear_g_free (&value);
-		svCloseFile (network_ifcfg);
 	}
 
 	v = svGetValueStr (ifcfg, "BOOTPROTO", &value);
@@ -1429,12 +1426,10 @@ make_ip4_setting (shvarFile *ifcfg,
 
 	/* Gateway */
 	if (!gateway) {
-		network_ifcfg = svOpenFile (network_file, NULL);
 		if (network_ifcfg) {
 			gboolean read_success;
 
 			read_success = read_ip4_address (network_ifcfg, "GATEWAY", &has_key, &a, error);
-			svCloseFile (network_ifcfg);
 			if (!read_success)
 				return NULL;
 			if (has_key) {
@@ -1670,7 +1665,7 @@ read_aliases (NMSettingIPConfig *s_ip4, gboolean read_defroute, const char *file
 
 static NMSetting *
 make_ip6_setting (shvarFile *ifcfg,
-                  const char *network_file,
+                  shvarFile *network_ifcfg,
                   gboolean routes_read,
                   GError **error)
 {
@@ -1678,8 +1673,6 @@ make_ip6_setting (shvarFile *ifcfg,
 	char *value = NULL;
 	char *str_value;
 	char *route6_path = NULL;
-	gs_free char *dns_options_free = NULL;
-	const char *dns_options = NULL;
 	gboolean ipv6init, ipv6forwarding, dhcp6 = FALSE;
 	char *method = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
 	char *ipv6addr, *ipv6addr_secondaries;
@@ -1689,7 +1682,6 @@ make_ip6_setting (shvarFile *ifcfg,
 	int i_val;
 	GError *local = NULL;
 	gint priority;
-	shvarFile *network_ifcfg;
 	gboolean never_default = FALSE;
 	gboolean ip6_privacy = FALSE, ip6_privacy_prefer_public_ip;
 	NMSettingIP6ConfigPrivacy ip6_privacy_val;
@@ -1708,7 +1700,6 @@ make_ip6_setting (shvarFile *ifcfg,
 	 * they are global and override IPV6_DEFROUTE
 	 * When both are set, the device specified in IPV6_DEFAULTGW takes preference.
 	 */
-	network_ifcfg = svOpenFile (network_file, NULL);
 	if (network_ifcfg) {
 		char *ipv6_defaultgw, *ipv6_defaultdev;
 		char *default_dev = NULL;
@@ -1717,7 +1708,6 @@ make_ip6_setting (shvarFile *ifcfg,
 		value = svGetValueStr_cp (ifcfg, "DEVICE");
 		ipv6_defaultgw = svGetValueStr_cp (network_ifcfg, "IPV6_DEFAULTGW");
 		ipv6_defaultdev = svGetValueStr_cp (network_ifcfg, "IPV6_DEFAULTDEV");
-		dns_options = svGetValue (network_ifcfg, "RES_OPTIONS", &dns_options_free);
 
 		if (ipv6_defaultgw) {
 			default_dev = strchr (ipv6_defaultgw, '%');
@@ -1736,7 +1726,6 @@ make_ip6_setting (shvarFile *ifcfg,
 		g_free (ipv6_defaultgw);
 		g_free (ipv6_defaultdev);
 		g_free (value);
-		svCloseFile (network_ifcfg);
 	}
 
 	/* Find out method property */
@@ -1744,11 +1733,8 @@ make_ip6_setting (shvarFile *ifcfg,
 	str_value = svGetValueStr_cp (ifcfg, "IPV6INIT");
 	ipv6init = svGetValueBoolean (ifcfg, "IPV6INIT", FALSE);
 	if (!str_value) {
-		network_ifcfg = svOpenFile (network_file, NULL);
-		if (network_ifcfg) {
+		if (network_ifcfg)
 			ipv6init = svGetValueBoolean (network_ifcfg, "IPV6INIT", FALSE);
-			svCloseFile (network_ifcfg);
-		}
 	}
 	g_free (str_value);
 
@@ -1870,11 +1856,8 @@ make_ip6_setting (shvarFile *ifcfg,
 		value = svGetValueStr_cp (ifcfg, "IPV6_DEFAULTGW");
 		if (!value) {
 			/* If no gateway in the ifcfg, try global /etc/sysconfig/network instead */
-			network_ifcfg = svOpenFile (network_file, NULL);
-			if (network_ifcfg) {
+			if (network_ifcfg)
 				value = svGetValueStr_cp (network_ifcfg, "IPV6_DEFAULTGW");
-				svCloseFile (network_ifcfg);
-			}
 		}
 		if (value) {
 			char *ptr;
@@ -1948,8 +1931,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	}
 
 	/* DNS options */
-	parse_dns_options (s_ip6, svGetValue (ifcfg, "RES_OPTIONS", &value));
-	parse_dns_options (s_ip6, dns_options);
+	parse_dns_options (s_ip6, svGetValue (ifcfg, "IPV6_RES_OPTIONS", &value));
 	g_free (value);
 
 	/* DNS priority */
@@ -2200,7 +2182,6 @@ read_dcb_percent_array (shvarFile *ifcfg,
 
 static gboolean
 make_dcb_setting (shvarFile *ifcfg,
-                  const char *network_file,
                   NMSetting **out_setting,
                   GError **error)
 {
@@ -5237,6 +5218,7 @@ connection_from_file_full (const char *filename,
                            gboolean *out_ignore_error)
 {
 	nm_auto_shvar_file_close shvarFile *parsed = NULL;
+	nm_auto_shvar_file_close shvarFile *network_ifcfg = NULL;
 	gs_unref_object NMConnection *connection = NULL;
 	gs_free char *type = NULL;
 	char *devtype, *bootproto;
@@ -5263,6 +5245,8 @@ connection_from_file_full (const char *filename,
 	parsed = svOpenFile (filename, error);
 	if (!parsed)
 		return NULL;
+
+	network_ifcfg = svOpenFile (network_file, NULL);
 
 	if (!svGetValueBoolean (parsed, "NM_CONTROLLED", TRUE)) {
 		connection = create_unhandled_connection (filename, parsed, "unmanaged", out_unhandled);
@@ -5473,7 +5457,7 @@ connection_from_file_full (const char *filename,
 	}
 
 	s_ip6 = make_ip6_setting (parsed,
-	                          network_file,
+	                          network_ifcfg,
 	                          !has_complex_routes_v4 && !has_complex_routes_v6,
 	                          error);
 	if (!s_ip6)
@@ -5482,7 +5466,7 @@ connection_from_file_full (const char *filename,
 		nm_connection_add_setting (connection, s_ip6);
 
 	s_ip4 = make_ip4_setting (parsed,
-	                          network_file,
+	                          network_ifcfg,
 	                          !has_complex_routes_v4 && !has_complex_routes_v6,
 	                          &has_ip4_defroute,
 	                          error);
@@ -5519,7 +5503,7 @@ connection_from_file_full (const char *filename,
 	if (s_port)
 		nm_connection_add_setting (connection, s_port);
 
-	if (!make_dcb_setting (parsed, network_file, &s_dcb, error))
+	if (!make_dcb_setting (parsed, &s_dcb, error))
 		return NULL;
 	if (s_dcb)
 		nm_connection_add_setting (connection, s_dcb);
