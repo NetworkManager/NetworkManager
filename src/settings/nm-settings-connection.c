@@ -711,7 +711,7 @@ _commit_changes_full (NMSettingsConnection *self,
 		if (!_replace_settings_full (self,
 		                             reread_connection ?: new_connection,
 		                             !reread_connection,
-		                             NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
+		                             NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
 		                             new_connection
 		                               ? "update-during-write"
 		                               : "replace-and-commit-disk",
@@ -723,9 +723,8 @@ _commit_changes_full (NMSettingsConnection *self,
 			g_propagate_error (error, g_steal_pointer (&local));
 			g_return_val_if_reached (FALSE);
 		}
-	}
-
-	set_unsaved (self, FALSE);
+	} else
+		set_unsaved (self, FALSE);
 
 	if (reread_connection)
 		_LOGI ("write: successfully updated (%s), connection was modified in the process", logmsg_change);
