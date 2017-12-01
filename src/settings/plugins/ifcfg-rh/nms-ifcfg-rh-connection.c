@@ -96,14 +96,6 @@ G_DEFINE_TYPE (NMIfcfgConnection, nm_ifcfg_connection, NM_TYPE_SETTINGS_CONNECTI
 
 /*****************************************************************************/
 
-static NMInotifyHelper *
-_get_inotify_helper (NMIfcfgConnectionPrivate *priv)
-{
-	if (!priv->inotify_helper)
-		priv->inotify_helper = g_object_ref (nm_inotify_helper_get ());
-	return priv->inotify_helper;
-}
-
 static gboolean
 devtimeout_ready (gpointer user_data)
 {
@@ -225,35 +217,29 @@ static void
 path_watch_stop (NMIfcfgConnection *self)
 {
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (self);
-	NMInotifyHelper *ih;
 
-	ih = _get_inotify_helper (priv);
-
-	nm_clear_g_signal_handler (ih, &priv->ih_event_id);
+	nm_clear_g_signal_handler (priv->inotify_helper, &priv->ih_event_id);
 
 	if (priv->file_wd >= 0) {
-		nm_inotify_helper_remove_watch (ih, priv->file_wd);
+		nm_inotify_helper_remove_watch (priv->inotify_helper, priv->file_wd);
 		priv->file_wd = -1;
 	}
 
-	g_free (priv->keyfile);
-	priv->keyfile = NULL;
+	nm_clear_g_free (&priv->keyfile);
 	if (priv->keyfile_wd >= 0) {
-		nm_inotify_helper_remove_watch (ih, priv->keyfile_wd);
+		nm_inotify_helper_remove_watch (priv->inotify_helper, priv->keyfile_wd);
 		priv->keyfile_wd = -1;
 	}
 
-	g_free (priv->routefile);
-	priv->routefile = NULL;
+	nm_clear_g_free (&priv->routefile);
 	if (priv->routefile_wd >= 0) {
-		nm_inotify_helper_remove_watch (ih, priv->routefile_wd);
+		nm_inotify_helper_remove_watch (priv->inotify_helper, priv->routefile_wd);
 		priv->routefile_wd = -1;
 	}
 
-	g_free (priv->route6file);
-	priv->route6file = NULL;
+	nm_clear_g_free (&priv->route6file);
 	if (priv->route6file_wd >= 0) {
-		nm_inotify_helper_remove_watch (ih, priv->route6file_wd);
+		nm_inotify_helper_remove_watch (priv->inotify_helper, priv->route6file_wd);
 		priv->route6file_wd = -1;
 	}
 }
@@ -280,7 +266,9 @@ filename_changed (GObject *object,
 	if (nm_config_get_monitor_connection_files (nm_config_get ())) {
 		NMInotifyHelper *ih;
 
-		ih = _get_inotify_helper (priv);
+		if (!priv->inotify_helper)
+			priv->inotify_helper = g_object_ref (nm_inotify_helper_get ());
+		ih = priv->inotify_helper;
 
 		priv->ih_event_id = g_signal_connect (ih, "event", G_CALLBACK (files_changed_cb), self);
 		priv->file_wd = nm_inotify_helper_add_watch (ih, ifcfg_path);
