@@ -552,13 +552,13 @@ _update_prepare (NMSettingsConnection *self,
 	return TRUE;
 }
 
-static gboolean
-_update (NMSettingsConnection *self,
-         NMConnection *new_connection,
-         NMSettingsConnectionPersistMode persist_mode,
-         NMSettingsConnectionCommitReason commit_reason,
-         const char *log_diff_name,
-         GError **error)
+gboolean
+nm_settings_connection_update (NMSettingsConnection *self,
+                               NMConnection *new_connection,
+                               NMSettingsConnectionPersistMode persist_mode,
+                               NMSettingsConnectionCommitReason commit_reason,
+                               const char *log_diff_name,
+                               GError **error)
 {
 	NMSettingsConnectionPrivate *priv;
 	NMSettingsConnectionClass *klass = NULL;
@@ -691,22 +691,6 @@ out:
 			_LOGI ("write: successfully commited (%s)", logmsg_change);
 	}
 	return TRUE;
-}
-
-gboolean
-nm_settings_connection_update (NMSettingsConnection *self,
-                               NMConnection *new_connection,
-                               NMSettingsConnectionPersistMode persist_mode,
-                               NMSettingsConnectionCommitReason commit_reason,
-                               const char *log_diff_name,
-                               GError **error)
-{
-	return _update (self,
-	                new_connection,
-	                persist_mode,
-	                commit_reason,
-	                log_diff_name,
-	                error);
 }
 
 static void
@@ -1734,12 +1718,12 @@ update_auth_cb (NMSettingsConnection *self,
 		                                                       TRUE);
 	}
 
-	_update (self,
-	         info->new_settings,
-	         persist_mode,
-	         commit_reason,
-	         log_diff_name,
-	         &local);
+	nm_settings_connection_update (self,
+	                               info->new_settings,
+	                               persist_mode,
+	                               commit_reason,
+	                               log_diff_name,
+	                               &local);
 
 	if (!local) {
 		gs_unref_object NMConnection *for_agent = NULL;
