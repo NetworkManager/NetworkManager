@@ -526,6 +526,29 @@ connection_changed_cb (NMSettingsConnection *self, gpointer unused)
 }
 
 static gboolean
+_delete (NMSettingsConnection *self, GError **error)
+{
+	NMSettingsConnectionClass *klass;
+
+	nm_assert (NM_IS_SETTINGS_CONNECTION (self));
+
+	klass = NM_SETTINGS_CONNECTION_GET_CLASS (self);
+	if (!klass->delete) {
+		g_set_error (error,
+		             NM_SETTINGS_ERROR,
+		             NM_SETTINGS_ERROR_FAILED,
+		             "delete not supported");
+		return FALSE;
+	}
+	if (!klass->delete (self,
+	                    error))
+		return FALSE;
+
+	nm_settings_connection_set_filename (self, NULL);
+	return TRUE;
+}
+
+static gboolean
 _update_prepare (NMSettingsConnection *self,
                  NMConnection *new_connection,
                  GError **error)
@@ -734,28 +757,15 @@ nm_settings_connection_delete (NMSettingsConnection *self,
                                GError **error)
 {
 	gs_unref_object NMSettingsConnection *self_keep_alive = NULL;
-	NMSettingsConnectionClass *klass;
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	NMConnection *for_agents;
 
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
 
-	klass = NM_SETTINGS_CONNECTION_GET_CLASS (self);
-
 	self_keep_alive = g_object_ref (self);
 
-	if (!klass->delete) {
-		g_set_error (error,
-		             NM_SETTINGS_ERROR,
-		             NM_SETTINGS_ERROR_FAILED,
-		             "delete not supported");
+	if (!_delete (self, error))
 		return FALSE;
-	}
-	if (!klass->delete (self,
-	                    error))
-		return FALSE;
-
-	nm_settings_connection_set_filename (self, NULL);
 
 	set_visible (self, FALSE);
 
