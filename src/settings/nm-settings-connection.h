@@ -131,16 +131,18 @@ gboolean nm_settings_connection_has_unmodified_applied_connection (NMSettingsCon
                                                                    NMConnection *applied_connection,
                                                                    NMSettingCompareFlags compare_flage);
 
-gboolean  nm_settings_connection_commit_changes (NMSettingsConnection *self,
-                                                 NMConnection *new_connection,
-                                                 NMSettingsConnectionCommitReason commit_reason,
-                                                 GError **error);
-
 typedef enum {
 	NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
 	NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
 	NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY,
 } NMSettingsConnectionPersistMode;
+
+gboolean  nm_settings_connection_commit_changes (NMSettingsConnection *self,
+                                                 NMConnection *new_connection,
+                                                 NMSettingsConnectionPersistMode persist_mode,
+                                                 NMSettingsConnectionCommitReason commit_reason,
+                                                 const char *log_diff_name,
+                                                 GError **error);
 
 gboolean nm_settings_connection_replace_settings (NMSettingsConnection *self,
                                                   NMConnection *new_connection,
