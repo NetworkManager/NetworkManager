@@ -755,6 +755,8 @@ nm_settings_connection_delete (NMSettingsConnection *self,
 	                    error))
 		return FALSE;
 
+	nm_settings_connection_set_filename (self, NULL);
+
 	set_visible (self, FALSE);
 
 	/* Tell agents to remove secrets for this connection */
