@@ -108,6 +108,9 @@
         @flags: optional flags argument. Currently supported flags are:
           "0x1" (to-disk),
           "0x2" (in-memory),
+          "0x4" (in-memory-detached),
+          "0x8" (in-memory-only),
+          "0x10" (volatile),
           "0x20" (block-autoconnect).
           Unknown flags cause the call to fail.
         @args: optional arguments dictionary, for extensibility. Currently no

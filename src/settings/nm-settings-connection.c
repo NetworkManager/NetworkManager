@@ -488,26 +488,41 @@ secrets_cleared_cb (NMSettingsConnection *self)
 }
 
 static void
-set_unsaved (NMSettingsConnection *self, gboolean now_unsaved)
+set_persist_mode (NMSettingsConnection *self, NMSettingsConnectionPersistMode persist_mode)
 {
-	NMSettingsConnectionFlags flags;
+	NMSettingsConnectionFlags flags = NM_SETTINGS_CONNECTION_FLAGS_NONE;
 	const NMSettingsConnectionFlags ALL =   NM_SETTINGS_CONNECTION_FLAGS_UNSAVED
 	                                      | NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED
 	                                      | NM_SETTINGS_CONNECTION_FLAGS_VOLATILE;
 
-	if (NM_FLAGS_HAS (nm_settings_connection_get_flags (self), NM_SETTINGS_CONNECTION_FLAGS_UNSAVED) != !!now_unsaved) {
-		if (now_unsaved)
-			flags = NM_SETTINGS_CONNECTION_FLAGS_UNSAVED;
-		else
-			flags = NM_SETTINGS_CONNECTION_FLAGS_NONE;
-		nm_settings_connection_set_flags_full (self, ALL, flags);
+	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP)
+		return;
+
+	switch (persist_mode) {
+	case NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK:
+		flags = NM_SETTINGS_CONNECTION_FLAGS_NONE;
+		break;
+	case NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY:
+	case NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED:
+	case NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY:
+		flags = NM_SETTINGS_CONNECTION_FLAGS_UNSAVED;
+		break;
+	case NM_SETTINGS_CONNECTION_PERSIST_MODE_VOLATILE_DETACHED:
+	case NM_SETTINGS_CONNECTION_PERSIST_MODE_VOLATILE_ONLY:
+		flags = NM_SETTINGS_CONNECTION_FLAGS_UNSAVED |
+		        NM_SETTINGS_CONNECTION_FLAGS_VOLATILE;
+		break;
+	case NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP:
+		g_return_if_reached ();
 	}
+
+	nm_settings_connection_set_flags_full (self, ALL, flags);
 }
 
 static void
 connection_changed_cb (NMSettingsConnection *self, gpointer unused)
 {
-	set_unsaved (self, TRUE);
+	set_persist_mode (self, NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY);
 	_emit_updated (self, FALSE);
 }
 
@@ -515,23 +530,34 @@ static gboolean
 _delete (NMSettingsConnection *self, GError **error)
 {
 	NMSettingsConnectionClass *klass;
+	GError *local = NULL;
+	const char *filename;
 
 	nm_assert (NM_IS_SETTINGS_CONNECTION (self));
 
 	klass = NM_SETTINGS_CONNECTION_GET_CLASS (self);
 	if (!klass->delete) {
-		g_set_error (error,
+		g_set_error (&local,
 		             NM_SETTINGS_ERROR,
 		             NM_SETTINGS_ERROR_FAILED,
 		             "delete not supported");
-		return FALSE;
+		goto fail;
 	}
 	if (!klass->delete (self,
-	                    error))
-		return FALSE;
+	                    &local))
+		goto fail;
 
-	nm_settings_connection_set_filename (self, NULL);
+	filename = nm_settings_connection_get_filename (self);
+	if (filename) {
+		_LOGD ("delete: success deleting connection (\"%s\")", filename);
+		nm_settings_connection_set_filename (self, NULL);
+	} else
+		_LOGT ("delete: success deleting connection (no-file)");
 	return TRUE;
+fail:
+	_LOGD ("delete: failure deleting connection: %s", local->message);
+	g_propagate_error (error, local);
+	return FALSE;
 }
 
 static gboolean
@@ -576,18 +602,17 @@ nm_settings_connection_update (NMSettingsConnection *self,
 	gboolean replaced = FALSE;
 	gs_free char *logmsg_change = NULL;
 	GError *local = NULL;
+	gboolean save_to_disk;
 
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
 
 	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
-	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP) {
-		persist_mode =   nm_settings_connection_get_unsaved (self)
-		               ? NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY
-		               : NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
-	}
+	save_to_disk =    (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK)
+	               || (   persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP
+	                   && !nm_settings_connection_get_unsaved (self));
 
-	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK) {
+	if (save_to_disk) {
 		klass = NM_SETTINGS_CONNECTION_GET_CLASS (self);
 		if (!klass->commit_changes) {
 			g_set_error (&local,
@@ -604,7 +629,7 @@ nm_settings_connection_update (NMSettingsConnection *self,
 	                         &local))
 		goto out;
 
-	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK) {
+	if (save_to_disk) {
 		if (!klass->commit_changes (self,
 		                            new_connection ?: NM_CONNECTION (self),
 		                            commit_reason,
@@ -666,19 +691,14 @@ nm_settings_connection_update (NMSettingsConnection *self,
 
 	nm_settings_connection_recheck_visibility (self);
 
-	/* Manually emit changed signal since we disconnected the handler, but
-	 * only update Unsaved if the caller wanted us to.
-	 */
-	switch (persist_mode) {
-	case NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY:
-		set_unsaved (self, TRUE);
-		break;
-	case NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK:
-		set_unsaved (self, FALSE);
-		break;
-	case NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP:
-		break;
-	}
+	set_persist_mode (self, persist_mode);
+
+	if (NM_IN_SET (persist_mode, NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY,
+	                             NM_SETTINGS_CONNECTION_PERSIST_MODE_VOLATILE_ONLY))
+		_delete (self, NULL);
+	else if (NM_IN_SET (persist_mode, NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED,
+	                                  NM_SETTINGS_CONNECTION_PERSIST_MODE_VOLATILE_DETACHED))
+		nm_settings_connection_set_filename (self, NULL);
 
 	g_signal_handlers_unblock_by_func (self, G_CALLBACK (connection_changed_cb), NULL);
 
@@ -1700,15 +1720,23 @@ update_auth_cb (NMSettingsConnection *self,
 		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
 	else if (NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY))
 		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY;
-	else
+	else if (NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED)) {
+		persist_mode = NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_VOLATILE)
+		               ? NM_SETTINGS_CONNECTION_PERSIST_MODE_VOLATILE_DETACHED
+		               : NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED;
+	} else if (NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY)) {
+		persist_mode = NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_VOLATILE)
+		               ? NM_SETTINGS_CONNECTION_PERSIST_MODE_VOLATILE_ONLY
+		               : NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY;
+	} else
 		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP;
 
-	if (   persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY
+	if (   persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK
 	    || (   persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP
-	        && nm_settings_connection_get_unsaved (self)))
-		log_diff_name = info->new_settings ? "update-unsaved" : "make-unsaved";
-	else
+	        && !nm_settings_connection_get_unsaved (self)))
 		log_diff_name = info->new_settings ? "update-settings" : "write-out-to-disk";
+	else
+		log_diff_name = info->new_settings ? "update-unsaved" : "make-unsaved";
 
 	if (NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT)) {
 		nm_settings_connection_autoconnect_blocked_reason_set (self,
@@ -1887,9 +1915,13 @@ impl_settings_connection_update2 (NMSettingsConnection *self,
 	GVariantIter iter;
 	const char *args_name;
 	const NMSettingsUpdate2Flags flags = (NMSettingsUpdate2Flags) flags_u;
+	const NMSettingsUpdate2Flags ALL_PERSIST_MODES =   NM_SETTINGS_UPDATE2_FLAG_TO_DISK
+	                                                 | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY
+	                                                 | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED
+	                                                 | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY;
 
-	if (NM_FLAGS_ANY (flags_u, ~((guint32) (NM_SETTINGS_UPDATE2_FLAG_TO_DISK |
-	                                        NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY |
+	if (NM_FLAGS_ANY (flags_u, ~((guint32) (ALL_PERSIST_MODES |
+	                                        NM_SETTINGS_UPDATE2_FLAG_VOLATILE |
 	                                        NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT)))) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
@@ -1898,8 +1930,11 @@ impl_settings_connection_update2 (NMSettingsConnection *self,
 		return;
 	}
 
-	if (NM_FLAGS_ALL (flags, NM_SETTINGS_UPDATE2_FLAG_TO_DISK |
-	                         NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY)) {
+	if (   (   NM_FLAGS_ANY (flags, ALL_PERSIST_MODES)
+	        && !nm_utils_is_power_of_two (flags & ALL_PERSIST_MODES))
+	    || (   NM_FLAGS_HAS (flags, NM_SETTINGS_UPDATE2_FLAG_VOLATILE)
+	        && !NM_FLAGS_ANY (flags, NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED |
+	                                 NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY))) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
 		                             "Conflicting flags");
