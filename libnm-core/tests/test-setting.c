@@ -26,6 +26,7 @@
 #include "nm-setting-bond.h"
 #include "nm-setting-dcb.h"
 #include "nm-setting-team.h"
+#include "nm-setting-team-port.h"
 #include "nm-connection.h"
 #include "nm-simple-connection.h"
 #include "nm-setting-connection.h"
@@ -1124,6 +1125,127 @@ test_multiple_watchers_sync_from_config (void)
 
 /*****************************************************************************/
 
+static void
+_test_team_port_config_sync (const char *team_port_config,
+                             int queue_id,
+                             int prio,
+                             gboolean sticky,
+                             int lacp_prio,
+                             int lacp_key,
+                             GPtrArray *link_watchers)
+{
+	NMSettingTeamPort *s_team_port;
+	guint i, j;
+	gboolean found;
+
+	s_team_port = (NMSettingTeamPort *) nm_setting_team_port_new ();
+	g_assert (s_team_port);
+
+	g_object_set (s_team_port, NM_SETTING_TEAM_CONFIG, team_port_config, NULL);
+	g_assert (nm_setting_team_port_get_queue_id (s_team_port) == queue_id);
+	g_assert (nm_setting_team_port_get_prio (s_team_port) == prio);
+	g_assert (nm_setting_team_port_get_sticky (s_team_port) == sticky);
+	g_assert (nm_setting_team_port_get_lacp_prio (s_team_port) == lacp_prio);
+	g_assert (nm_setting_team_port_get_lacp_key (s_team_port) == lacp_key);
+
+	if (link_watchers) {
+		g_assert (link_watchers->len == nm_setting_team_port_get_num_link_watchers (s_team_port));
+		for (i = 0; i < link_watchers->len; i++) {
+			found = FALSE;
+			for (j = 0; j < nm_setting_team_port_get_num_link_watchers (s_team_port); j++) {
+				if (nm_team_link_watcher_equal (link_watchers->pdata[i],
+				                                nm_setting_team_port_get_link_watcher (s_team_port,
+				                                                                       j))) {
+					found = TRUE;
+					break;
+				}
+			}
+			g_assert (found);
+		}
+	}
+
+	g_assert (nm_setting_verify ((NMSetting *) s_team_port, NULL, NULL));
+}
+
+
+static void
+test_team_port_default (void)
+{
+	_test_team_port_config_sync ("", -1, 0, FALSE, 255, 0, NULL);
+}
+
+static void
+test_team_port_queue_id (void)
+{
+	_test_team_port_config_sync ("{\"queue_id\": 3}",
+	                             3, 0, FALSE, 255, 0, NULL);
+	_test_team_port_config_sync ("{\"queue_id\": 0}",
+	                             0, 0, FALSE, 255, 0, NULL);
+}
+
+static void
+test_team_port_prio (void)
+{
+	_test_team_port_config_sync ("{\"prio\": 6}",
+	                             -1, 6, FALSE, 255, 0, NULL);
+	_test_team_port_config_sync ("{\"prio\": 0}",
+	                             -1, 0, FALSE, 255, 0, NULL);
+}
+
+static void
+test_team_port_sticky (void)
+{
+	_test_team_port_config_sync ("{\"sticky\": true}",
+	                             -1, 0, TRUE, 255, 0, NULL);
+	_test_team_port_config_sync ("{\"sticky\": false}",
+	                             -1, 0, FALSE, 255, 0, NULL);
+}
+
+static void
+test_team_port_lacp_prio (void)
+{
+	_test_team_port_config_sync ("{\"lacp_prio\": 9}",
+	                             -1, 0, FALSE, 9, 0, NULL);
+	_test_team_port_config_sync ("{\"lacp_prio\": 0}",
+	                             -1, 0, FALSE, 0, 0, NULL);
+}
+
+static void
+test_team_port_lacp_key (void)
+{
+	_test_team_port_config_sync ("{\"lacp_key\": 12}",
+	                             -1, 0, FALSE, 255, 12, NULL);
+	_test_team_port_config_sync ("{\"lacp_key\": 0}",
+	                             -1, 0, FALSE, 255, 0, NULL);
+}
+
+static void
+test_team_port_full_config (void)
+{
+	gs_unref_ptrarray GPtrArray *link_watchers = NULL;
+
+	link_watchers = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_team_link_watcher_unref);
+	g_ptr_array_add (link_watchers,
+	                 nm_team_link_watcher_new_arp_ping (0, 3, 3, "1.2.3.2", "1.2.3.1",
+	                                                    NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE,
+	                                                    NULL));
+	g_ptr_array_add (link_watchers,
+	                 nm_team_link_watcher_new_arp_ping (1, 1, 0, "1.2.3.4", "1.2.3.1",
+	                                                     NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS,
+	                                                     NULL));
+
+	_test_team_port_config_sync ("{\"queue_id\": 10, \"prio\": 20, \"sticky\": true, \"lacp_prio\": 30, "
+	                             "\"lacp_key\": 40, \"link_watch\": ["
+	                             "{\"name\": \"arp_ping\", \"interval\": 3, \"target_host\": \"1.2.3.2\", "
+	                             "\"source_host\": \"1.2.3.1\", \"validate_inactive\": true}, "
+	                             "{\"name\": \"arp_ping\", \"init_wait\": 1, \"interval\": 1, "
+	                             "\"target_host\": \"1.2.3.4\", \"source_host\": \"1.2.3.1\", "
+	                             "\"send_always\": true}]}",
+	                             10, 20, true, 30, 40, NULL);
+}
+
+/*****************************************************************************/
+
 
 NMTST_DEFINE ();
 
@@ -1174,6 +1296,15 @@ main (int argc, char **argv)
 	                 test_watcher_arp_ping_sync_from_config);
 	g_test_add_func ("/libnm/settings/team/sync_watcher_from_config_all",
 	                 test_multiple_watchers_sync_from_config);
+
+	g_test_add_func ("/libnm/settings/team-port/sync_from_config_defaults", test_team_port_default);
+	g_test_add_func ("/libnm/settings/team-port/sync_from_config_queue_id", test_team_port_queue_id);
+	g_test_add_func ("/libnm/settings/team-port/sync_from_config_prio", test_team_port_prio);
+	g_test_add_func ("/libnm/settings/team-port/sync_from_config_sticky", test_team_port_sticky);
+	g_test_add_func ("/libnm/settings/team-port/sync_from_config_lacp_prio", test_team_port_lacp_prio);
+	g_test_add_func ("/libnm/settings/team-port/sync_from_config_lacp_key", test_team_port_lacp_key);
+	g_test_add_func ("/libnm/settings/team-port/sycn_from_config_full", test_team_port_full_config);
+
 #endif
 
 	return g_test_run ();
