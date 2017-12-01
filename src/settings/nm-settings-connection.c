@@ -716,13 +716,14 @@ gboolean
 nm_settings_connection_replace_settings (NMSettingsConnection *self,
                                          NMConnection *new_connection,
                                          NMSettingsConnectionPersistMode persist_mode,
+                                         NMSettingsConnectionCommitReason commit_reason,
                                          const char *log_diff_name,
                                          GError **error)
 {
 	return _update (self,
 	                new_connection,
 	                persist_mode,
-	                NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
+	                commit_reason,
 	                log_diff_name,
 	                error);
 }
