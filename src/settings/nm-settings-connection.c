@@ -694,31 +694,12 @@ out:
 }
 
 gboolean
-nm_settings_connection_commit_changes (NMSettingsConnection *self,
-                                       NMConnection *new_connection,
-                                       NMSettingsConnectionPersistMode persist_mode,
-                                       NMSettingsConnectionCommitReason commit_reason,
-                                       const char *log_diff_name,
-                                       GError **error)
-{
-	return _update (self,
-	                new_connection,
-	                persist_mode,
-	                commit_reason,
-	                log_diff_name,
-	                error);
-}
-
-/* Update the settings of this connection to match that of 'new_connection',
- * taking care to make a private copy of secrets.
- */
-gboolean
-nm_settings_connection_replace_settings (NMSettingsConnection *self,
-                                         NMConnection *new_connection,
-                                         NMSettingsConnectionPersistMode persist_mode,
-                                         NMSettingsConnectionCommitReason commit_reason,
-                                         const char *log_diff_name,
-                                         GError **error)
+nm_settings_connection_update (NMSettingsConnection *self,
+                               NMConnection *new_connection,
+                               NMSettingsConnectionPersistMode persist_mode,
+                               NMSettingsConnectionCommitReason commit_reason,
+                               const char *log_diff_name,
+                               GError **error)
 {
 	return _update (self,
 	                new_connection,
@@ -1002,12 +983,12 @@ nm_settings_connection_new_secrets (NMSettingsConnection *self,
 	update_system_secrets_cache (self);
 	update_agent_secrets_cache (self, NULL);
 
-	nm_settings_connection_commit_changes (self,
-	                                       NULL,
-	                                       NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
-	                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
-	                                       "new-secrets",
-	                                       NULL);
+	nm_settings_connection_update (self,
+	                               NULL,
+	                               NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
+	                               NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
+	                               "new-secrets",
+	                               NULL);
 	return TRUE;
 }
 
@@ -1121,12 +1102,12 @@ get_secrets_done_cb (NMAgentManager *manager,
 				       setting_name,
 				       call_id);
 
-				nm_settings_connection_commit_changes (self,
-				                                       NULL,
-				                                       NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
-				                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
-				                                       "get-new-secrets",
-				                                       NULL);
+				nm_settings_connection_update (self,
+				                               NULL,
+				                               NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
+				                               NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
+				                               "get-new-secrets",
+				                               NULL);
 			} else {
 				_LOGD ("(%s:%p) new agent secrets processed",
 				       setting_name,
@@ -2143,12 +2124,12 @@ dbus_clear_secrets_auth_cb (NMSettingsConnection *self,
 	                                 nm_connection_get_path (NM_CONNECTION (self)),
 	                                 NM_CONNECTION (self));
 
-	nm_settings_connection_commit_changes (self,
-	                                       NULL,
-	                                       NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
-	                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
-	                                       "clear-secrets",
-	                                       &local);
+	nm_settings_connection_update (self,
+	                               NULL,
+	                               NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
+	                               NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
+	                               "clear-secrets",
+	                               &local);
 
 	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_CLEAR_SECRETS, self,
 	                            !local, NULL, subject, local ? local->message : NULL);

@@ -159,14 +159,14 @@ nms_keyfile_connection_new (NMConnection *source,
 	                                   NULL);
 
 	/* Update our settings with what was read from the file */
-	if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
-	                                              tmp,
-	                                              update_unsaved
-	                                                ? NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY
-	                                                : NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
-	                                              NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
-	                                              NULL,
-	                                              error)) {
+	if (!nm_settings_connection_update (NM_SETTINGS_CONNECTION (object),
+	                                    tmp,
+	                                    update_unsaved
+	                                      ? NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY
+	                                      : NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
+	                                    NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
+	                                    NULL,
+	                                    error)) {
 		g_object_unref (object);
 		object = NULL;
 	}

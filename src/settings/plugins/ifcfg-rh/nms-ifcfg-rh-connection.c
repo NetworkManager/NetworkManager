@@ -458,14 +458,14 @@ nm_ifcfg_connection_new (NMConnection *source,
 	                                   NM_IFCFG_CONNECTION_UNRECOGNIZED_SPEC, unrecognized_spec,
 	                                   NULL);
 	/* Update our settings with what was read from the file */
-	if (nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
-	                                             tmp,
-	                                             full_path
-	                                               ? NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP /* connection is already on disk */
-	                                               : NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY,
-	                                             NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
-	                                             NULL,
-	                                             error))
+	if (nm_settings_connection_update (NM_SETTINGS_CONNECTION (object),
+	                                   tmp,
+	                                   full_path
+	                                     ? NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP /* connection is already on disk */
+	                                     : NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY,
+	                                   NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
+	                                   NULL,
+	                                   error))
 		nm_ifcfg_connection_check_devtimeout (NM_IFCFG_CONNECTION (object));
 	else
 		g_clear_object (&object);

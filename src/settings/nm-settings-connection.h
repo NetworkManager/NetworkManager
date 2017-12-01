@@ -137,19 +137,12 @@ typedef enum {
 	NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY,
 } NMSettingsConnectionPersistMode;
 
-gboolean  nm_settings_connection_commit_changes (NMSettingsConnection *self,
-                                                 NMConnection *new_connection,
-                                                 NMSettingsConnectionPersistMode persist_mode,
-                                                 NMSettingsConnectionCommitReason commit_reason,
-                                                 const char *log_diff_name,
-                                                 GError **error);
-
-gboolean nm_settings_connection_replace_settings (NMSettingsConnection *self,
-                                                  NMConnection *new_connection,
-                                                  NMSettingsConnectionPersistMode persist_mode,
-                                                  NMSettingsConnectionCommitReason commit_reason,
-                                                  const char *log_diff_name,
-                                                  GError **error);
+gboolean  nm_settings_connection_update (NMSettingsConnection *self,
+                                         NMConnection *new_connection,
+                                         NMSettingsConnectionPersistMode persist_mode,
+                                         NMSettingsConnectionCommitReason commit_reason,
+                                         const char *log_diff_name,
+                                         GError **error);
 
 gboolean nm_settings_connection_delete (NMSettingsConnection *self,
                                         GError **error);

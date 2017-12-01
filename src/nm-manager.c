@@ -4022,12 +4022,12 @@ activation_add_done (NMSettings *settings,
 		nm_active_connection_set_settings_connection (active, new_connection);
 
 		if (_internal_activate_generic (self, active, &local)) {
-			nm_settings_connection_commit_changes (new_connection,
-			                                       NULL,
-			                                       NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
-			                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION | NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED,
-			                                       "add-and-activate",
-			                                       NULL);
+			nm_settings_connection_update (new_connection,
+			                               NULL,
+			                               NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
+			                               NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION | NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED,
+			                               "add-and-activate",
+			                               NULL);
 			g_dbus_method_invocation_return_value (
 			    context,
 			    g_variant_new ("(oo)",
