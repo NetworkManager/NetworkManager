@@ -2751,7 +2751,8 @@ nm_settings_connection_autoconnect_is_blocked (NMSettingsConnection *self)
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
 	return    priv->autoconnect_blocked_reason != NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE
-	       || priv->autoconnect_retries == 0;
+	       || priv->autoconnect_retries == 0
+	       || NM_FLAGS_HAS (nm_settings_connection_get_flags (self), NM_SETTINGS_CONNECTION_FLAGS_VOLATILE);
 }
 
 /*****************************************************************************/
