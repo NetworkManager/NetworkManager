@@ -93,7 +93,7 @@ commit_changes (NMSettingsConnection *connection,
 	g_signal_emit (connection, signals[IFNET_CANCEL_MONITORS], 0);
 
 	if (priv->conn_name) {
-		success = ifnet_update_parsers_by_connection (NM_CONNECTION (connection),
+		success = ifnet_update_parsers_by_connection (new_connection,
 		                                              priv->conn_name,
 		                                              CONF_NET_FILE,
 		                                              WPA_SUPPLICANT_CONF,
@@ -102,7 +102,7 @@ commit_changes (NMSettingsConnection *connection,
 		                                              error);
 	} else {
 		added = TRUE;
-		success = ifnet_add_new_connection (NM_CONNECTION (connection),
+		success = ifnet_add_new_connection (new_connection,
 		                                    CONF_NET_FILE,
 		                                    WPA_SUPPLICANT_CONF,
 		                                    &new_name,

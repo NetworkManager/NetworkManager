@@ -65,7 +65,7 @@ commit_changes (NMSettingsConnection *connection,
 	nm_assert (out_reread_connection && !*out_reread_connection);
 	nm_assert (!out_logmsg_change || !*out_logmsg_change);
 
-	if (!nms_keyfile_writer_connection (new_connection ?: NM_CONNECTION (connection),
+	if (!nms_keyfile_writer_connection (new_connection,
 	                                    nm_settings_connection_get_filename (connection),
 	                                    NM_FLAGS_ALL (commit_reason,   NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION
 	                                                                 | NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED),

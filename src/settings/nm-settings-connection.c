@@ -597,7 +597,7 @@ nm_settings_connection_update (NMSettingsConnection *self,
 
 	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK) {
 		if (!klass->commit_changes (self,
-		                            new_connection,
+		                            new_connection ?: NM_CONNECTION (self),
 		                            commit_reason,
 		                            &reread_connection,
 		                            &logmsg_change,
