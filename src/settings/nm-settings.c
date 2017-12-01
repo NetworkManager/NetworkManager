@@ -75,7 +75,6 @@
 #include "nm-audit-manager.h"
 #include "NetworkManagerUtils.h"
 #include "nm-dispatcher.h"
-#include "nm-inotify-helper.h"
 #include "nm-hostname-manager.h"
 
 #include "introspection/org.freedesktop.NetworkManager.Settings.h"
@@ -83,11 +82,6 @@
 /*****************************************************************************/
 
 #define EXPORT(sym) void * __export_##sym = &sym;
-
-EXPORT(nm_inotify_helper_get_type)
-EXPORT(nm_inotify_helper_get)
-EXPORT(nm_inotify_helper_add_watch)
-EXPORT(nm_inotify_helper_remove_watch)
 
 EXPORT(nm_settings_connection_get_type)
 EXPORT(nm_settings_connection_update)

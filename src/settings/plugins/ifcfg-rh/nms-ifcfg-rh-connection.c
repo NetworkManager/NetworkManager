@@ -36,13 +36,13 @@
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"
 #include "platform/nm-platform.h"
-#include "settings/nm-inotify-helper.h"
 #include "nm-config.h"
 
 #include "nms-ifcfg-rh-common.h"
 #include "nms-ifcfg-rh-reader.h"
 #include "nms-ifcfg-rh-writer.h"
 #include "nms-ifcfg-rh-utils.h"
+#include "nm-inotify-helper.h"
 
 /*****************************************************************************/
 
