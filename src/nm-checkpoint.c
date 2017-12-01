@@ -254,12 +254,12 @@ activate:
 				if (need_update) {
 					_LOGD ("rollback: updating connection %s",
 					        nm_settings_connection_get_uuid (connection));
-					nm_settings_connection_commit_changes (connection,
-					                                       dev_checkpoint->settings_connection,
-					                                       NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
-					                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
-					                                       "checkpoint-rollback",
-					                                       NULL);
+					nm_settings_connection_update (connection,
+					                               dev_checkpoint->settings_connection,
+					                               NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
+					                               NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
+					                               "checkpoint-rollback",
+					                               NULL);
 				}
 			} else {
 				/* The connection was deleted, recreate it */
