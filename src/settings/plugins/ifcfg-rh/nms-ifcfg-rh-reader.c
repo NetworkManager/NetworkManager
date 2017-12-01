@@ -2336,9 +2336,8 @@ add_one_wep_key (shvarFile *ifcfg,
                  NMSettingWirelessSecurity *s_wsec,
                  GError **error)
 {
-	char *key = NULL;
-	char *value = NULL;
-	gboolean success = FALSE;
+	gs_free char *key = NULL;
+	gs_free char *value = NULL;
 
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
 	g_return_val_if_fail (shvar_key != NULL, FALSE);
@@ -2351,13 +2350,8 @@ add_one_wep_key (shvarFile *ifcfg,
 
 	/* Validate keys */
 	if (passphrase) {
-		if (strlen (value) && strlen (value) < 64) {
+		if (strlen (value) && strlen (value) < 64)
 			key = g_strdup (value);
-			g_object_set (G_OBJECT (s_wsec),
-			              NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE,
-			              NM_WEP_KEY_TYPE_PASSPHRASE,
-			              NULL);
-		}
 	} else {
 		if (strlen (value) == 10 || strlen (value) == 26) {
 			/* Hexadecimal WEP key */
@@ -2367,7 +2361,7 @@ add_one_wep_key (shvarFile *ifcfg,
 				if (!g_ascii_isxdigit (*p)) {
 					g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 					             "Invalid hexadecimal WEP key.");
-					goto out;
+					return FALSE;
 				}
 				p++;
 			}
@@ -2381,7 +2375,7 @@ add_one_wep_key (shvarFile *ifcfg,
 				if (!g_ascii_isprint ((int) (*p))) {
 					g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 					             "Invalid ASCII WEP key.");
-					goto out;
+					return FALSE;
 				}
 				p++;
 			}
@@ -2396,47 +2390,47 @@ add_one_wep_key (shvarFile *ifcfg,
 		}
 	}
 
-	if (key) {
-		nm_setting_wireless_security_set_wep_key (s_wsec, key_idx, key);
-		g_free (key);
-		success = TRUE;
-	} else {
+	if (!key) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Invalid WEP key length.");
+		return FALSE;
 	}
 
-out:
-	g_free (value);
-	return success;
+	nm_setting_wireless_security_set_wep_key (s_wsec, key_idx, key);
+
+	return TRUE;
 }
 
 static gboolean
 read_wep_keys (shvarFile *ifcfg,
+               NMWepKeyType key_type,
                guint8 def_idx,
                NMSettingWirelessSecurity *s_wsec,
                GError **error)
 {
-	/* Try hex/ascii keys first */
-	if (!add_one_wep_key (ifcfg, "KEY1", 0, FALSE, s_wsec, error))
-		return FALSE;
-	if (!add_one_wep_key (ifcfg, "KEY2", 1, FALSE, s_wsec, error))
-		return FALSE;
-	if (!add_one_wep_key (ifcfg, "KEY3", 2, FALSE, s_wsec, error))
-		return FALSE;
-	if (!add_one_wep_key (ifcfg, "KEY4", 3, FALSE, s_wsec, error))
-		return FALSE;
-	if (!add_one_wep_key (ifcfg, "KEY", def_idx, FALSE, s_wsec, error))
-		return FALSE;
+	if (key_type != NM_WEP_KEY_TYPE_PASSPHRASE) {
+		if (!add_one_wep_key (ifcfg, "KEY1", 0, FALSE, s_wsec, error))
+			return FALSE;
+		if (!add_one_wep_key (ifcfg, "KEY2", 1, FALSE, s_wsec, error))
+			return FALSE;
+		if (!add_one_wep_key (ifcfg, "KEY3", 2, FALSE, s_wsec, error))
+			return FALSE;
+		if (!add_one_wep_key (ifcfg, "KEY4", 3, FALSE, s_wsec, error))
+			return FALSE;
+		if (!add_one_wep_key (ifcfg, "KEY", def_idx, FALSE, s_wsec, error))
+			return FALSE;
+	}
 
-	/* And then passphrases */
-	if (!add_one_wep_key (ifcfg, "KEY_PASSPHRASE1", 0, TRUE, s_wsec, error))
-		return FALSE;
-	if (!add_one_wep_key (ifcfg, "KEY_PASSPHRASE2", 1, TRUE, s_wsec, error))
-		return FALSE;
-	if (!add_one_wep_key (ifcfg, "KEY_PASSPHRASE3", 2, TRUE, s_wsec, error))
-		return FALSE;
-	if (!add_one_wep_key (ifcfg, "KEY_PASSPHRASE4", 3, TRUE, s_wsec, error))
-		return FALSE;
+	if (key_type != NM_WEP_KEY_TYPE_KEY) {
+		if (!add_one_wep_key (ifcfg, "KEY_PASSPHRASE1", 0, TRUE, s_wsec, error))
+			return FALSE;
+		if (!add_one_wep_key (ifcfg, "KEY_PASSPHRASE2", 1, TRUE, s_wsec, error))
+			return FALSE;
+		if (!add_one_wep_key (ifcfg, "KEY_PASSPHRASE3", 2, TRUE, s_wsec, error))
+			return FALSE;
+		if (!add_one_wep_key (ifcfg, "KEY_PASSPHRASE4", 3, TRUE, s_wsec, error))
+			return FALSE;
+	}
 
 	return TRUE;
 }
@@ -2501,19 +2495,40 @@ make_wep_setting (shvarFile *ifcfg,
 
 	/* Read keys in the ifcfg file if they are system-owned */
 	if (key_flags == NM_SETTING_SECRET_FLAG_NONE) {
-		if (!read_wep_keys (ifcfg, default_key_idx, s_wsec, error))
+		NMWepKeyType key_type;
+		const char *v;
+		gs_free char *to_free = NULL;
+
+		v = svGetValueStr (ifcfg, "KEY_TYPE", &to_free);
+		if (!v)
+			key_type = NM_WEP_KEY_TYPE_UNKNOWN;
+		else if (nm_streq (v, "key"))
+			key_type = NM_WEP_KEY_TYPE_KEY;
+		else if (nm_streq (v, "passphrase"))
+			key_type = NM_WEP_KEY_TYPE_PASSPHRASE;
+		else {
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "Invalid KEY_TYPE value '%s'", v);
+			return FALSE;
+		}
+
+		if (!read_wep_keys (ifcfg, key_type, default_key_idx, s_wsec, error))
 			return NULL;
 
 		/* Try to get keys from the "shadow" key file */
 		keys_ifcfg = utils_get_keys_ifcfg (file, FALSE);
 		if (keys_ifcfg) {
-			if (!read_wep_keys (keys_ifcfg, default_key_idx, s_wsec, error)) {
+			if (!read_wep_keys (keys_ifcfg, key_type, default_key_idx, s_wsec, error)) {
 				svCloseFile (keys_ifcfg);
 				return NULL;
 			}
 			svCloseFile (keys_ifcfg);
 			g_assert (error == NULL || *error == NULL);
 		}
+
+		g_object_set (G_OBJECT (s_wsec),
+		              NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, key_type,
+		              NULL);
 	}
 
 	value = svGetValueStr_cp (ifcfg, "SECURITYMODE");
