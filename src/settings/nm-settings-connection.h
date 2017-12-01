@@ -147,6 +147,7 @@ gboolean  nm_settings_connection_commit_changes (NMSettingsConnection *self,
 gboolean nm_settings_connection_replace_settings (NMSettingsConnection *self,
                                                   NMConnection *new_connection,
                                                   NMSettingsConnectionPersistMode persist_mode,
+                                                  NMSettingsConnectionCommitReason commit_reason,
                                                   const char *log_diff_name,
                                                   GError **error);
 

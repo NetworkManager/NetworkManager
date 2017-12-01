@@ -63,6 +63,7 @@ nms_ibft_connection_new (const GPtrArray *block, GError **error)
 	if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
 	                                              source,
 	                                              NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
+	                                              NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
 	                                              NULL,
 	                                              error))
 		g_clear_object (&object);

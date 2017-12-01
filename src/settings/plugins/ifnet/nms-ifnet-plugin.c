@@ -272,6 +272,7 @@ reload_connections (NMSettingsPlugin *config)
 				if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (old),
 				                                              NM_CONNECTION (new),
 				                                              NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
+				                                              NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
 				                                              "ifnet-update",
 				                                              &error)) {
 					/* Shouldn't ever get here as 'new' was verified by the reader already

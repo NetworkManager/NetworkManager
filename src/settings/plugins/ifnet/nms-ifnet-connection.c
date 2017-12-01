@@ -191,6 +191,7 @@ nm_ifnet_connection_new (NMConnection *source, const char *conn_name)
 	                                              update_unsaved
 	                                                ? NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY
 	                                                : NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
+	                                              NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
 	                                              NULL,
 	                                              NULL)) {
 		g_object_unref (object);
