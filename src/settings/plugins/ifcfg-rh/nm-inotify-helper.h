@@ -43,4 +43,17 @@ int nm_inotify_helper_add_watch (NMInotifyHelper *helper, const char *path);
 
 void nm_inotify_helper_remove_watch (NMInotifyHelper *helper, int wd);
 
+static inline gboolean
+nm_inotify_helper_clear_watch (NMInotifyHelper *helper, int *wd)
+{
+	int x;
+
+	if (wd && ((x = *wd) >= 0)) {
+		*wd = -1;
+		nm_inotify_helper_remove_watch (helper, x);
+		return TRUE;
+	}
+	return FALSE;
+}
+
 #endif  /* __NM_INOTIFY_HELPER_H__ */
