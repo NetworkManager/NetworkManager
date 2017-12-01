@@ -220,28 +220,14 @@ path_watch_stop (NMIfcfgConnection *self)
 
 	nm_clear_g_signal_handler (priv->inotify_helper, &priv->ih_event_id);
 
-	if (priv->file_wd >= 0) {
-		nm_inotify_helper_remove_watch (priv->inotify_helper, priv->file_wd);
-		priv->file_wd = -1;
-	}
+	nm_inotify_helper_clear_watch (priv->inotify_helper, &priv->file_wd);
+	nm_inotify_helper_clear_watch (priv->inotify_helper, &priv->keyfile_wd);
+	nm_inotify_helper_clear_watch (priv->inotify_helper, &priv->routefile_wd);
+	nm_inotify_helper_clear_watch (priv->inotify_helper, &priv->route6file_wd);
 
 	nm_clear_g_free (&priv->keyfile);
-	if (priv->keyfile_wd >= 0) {
-		nm_inotify_helper_remove_watch (priv->inotify_helper, priv->keyfile_wd);
-		priv->keyfile_wd = -1;
-	}
-
 	nm_clear_g_free (&priv->routefile);
-	if (priv->routefile_wd >= 0) {
-		nm_inotify_helper_remove_watch (priv->inotify_helper, priv->routefile_wd);
-		priv->routefile_wd = -1;
-	}
-
 	nm_clear_g_free (&priv->route6file);
-	if (priv->route6file_wd >= 0) {
-		nm_inotify_helper_remove_watch (priv->inotify_helper, priv->route6file_wd);
-		priv->route6file_wd = -1;
-	}
 }
 
 static void
