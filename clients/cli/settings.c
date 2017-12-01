@@ -371,7 +371,11 @@ _env_warn_fcn_handle (const NMMetaEnvironment *environment,
                       const char *fmt_l10n, /* the untranslated format string, but it is marked for translation using N_(). */
                       va_list ap)
 {
+	NmCli *nmc = environment_user_data;
 	gs_free char *m = NULL;
+
+	if (nmc->complete)
+		return;
 
 	NM_PRAGMA_WARNING_DISABLE("-Wformat-nonliteral")
 	m = g_strdup_vprintf (_(fmt_l10n), ap);
