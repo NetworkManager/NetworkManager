@@ -256,7 +256,9 @@ activate:
 					        nm_settings_connection_get_uuid (connection));
 					nm_settings_connection_commit_changes (connection,
 					                                       dev_checkpoint->settings_connection,
+					                                       NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
 					                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
+					                                       "checkpoint-rollback",
 					                                       NULL);
 				}
 			} else {
