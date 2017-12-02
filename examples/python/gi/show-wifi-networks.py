@@ -49,8 +49,8 @@ def print_device_info(device):
     if active_ap is not None:
         ssid = ssid_to_utf8(active_ap)
     info = "Device: %s | Driver: %s | Active AP: %s" % (dev.get_iface(), dev.get_driver(), ssid)
-    print info
-    print '=' * len(info)
+    print(info)
+    print('=' * len(info))
 
 def mode_to_string(mode):
     if mode == getattr(NM, '80211Mode').INFRA:
@@ -114,16 +114,16 @@ def print_ap_info(ap):
     flags = ap.get_flags()
     wpa_flags = ap.get_wpa_flags()
     rsn_flags = ap.get_rsn_flags()
-    print "SSID:      %s"      % (ssid_to_utf8(ap))
-    print "BSSID:     %s"      % (ap.get_bssid())
-    print "Frequency: %s"      % (frequency)
-    print "Channel:   %s"      % (NM.utils_wifi_freq_to_channel(frequency))
-    print "Mode:      %s"      % (mode_to_string(ap.get_mode()))
-    print "Flags:     %s"      % (flags_to_string(flags))
-    print "WPA flags: %s"      % (security_flags_to_string(wpa_flags))
-    print "RSN flags: %s"      % (security_flags_to_string(rsn_flags))
-    print "Security:  %s"      % (flags_to_security(flags, wpa_flags, rsn_flags))
-    print "Strength:  %s %s%%" % (NM.utils_wifi_strength_bars(strength), strength)
+    print("SSID:      %s"      % (ssid_to_utf8(ap)))
+    print("BSSID:     %s"      % (ap.get_bssid()))
+    print("Frequency: %s"      % (frequency))
+    print("Channel:   %s"      % (NM.utils_wifi_freq_to_channel(frequency)))
+    print("Mode:      %s"      % (mode_to_string(ap.get_mode())))
+    print("Flags:     %s"      % (flags_to_string(flags)))
+    print("WPA flags: %s"      % (security_flags_to_string(wpa_flags)))
+    print("RSN flags: %s"      % (security_flags_to_string(rsn_flags)))
+    print("Security:  %s"      % (flags_to_security(flags, wpa_flags, rsn_flags)))
+    print("Strength:  %s %s%%" % (NM.utils_wifi_strength_bars(strength), strength))
     print
 
 if __name__ == "__main__":

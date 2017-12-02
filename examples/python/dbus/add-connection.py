@@ -38,7 +38,7 @@ s_con = dbus.Dictionary({
 
 addr1 = dbus.Dictionary({
     'address': '10.1.2.3',
-    'prefix': dbus.UInt32(8L)})
+    'prefix': dbus.UInt32(8)})
 s_ip4 = dbus.Dictionary({
             'address-data': dbus.Array([addr1], signature=dbus.Signature('a{sv}')),
             'gateway': '10.1.2.1',
@@ -53,7 +53,7 @@ con = dbus.Dictionary({
     'ipv6': s_ip6})
 
 
-print "Creating connection:", s_con['id'], "-", s_con['uuid']
+print("Creating connection:", s_con['id'], "-", s_con['uuid'])
 
 bus = dbus.SystemBus()
 proxy = bus.get_object("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager/Settings")

@@ -37,7 +37,7 @@ import sys, uuid
 main_loop = None
 
 def print_values(setting, key, value, flags, data):
-    print "  %s.%s: %s" % (setting.get_name(), key, value)
+    print("  %s.%s: %s" % (setting.get_name(), key, value))
 
 # create an Ethernet connection and return it
 def create_profile(name):
@@ -70,7 +70,7 @@ def added_cb(client, result, data):
     try:
         client.add_connection_finish(result)
         print("The connection profile has been succesfully added to NetworkManager.")
-    except Exception, e:
+    except Exception as e:
         sys.stderr.write("Error: %s\n" % e)
     main_loop.quit()
 

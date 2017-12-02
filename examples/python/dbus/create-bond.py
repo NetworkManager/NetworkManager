@@ -26,7 +26,7 @@
 
 import dbus, sys, uuid
 from dbus.mainloop.glib import DBusGMainLoop
-import gobject
+from gi.repository import GObject
 
 DBusGMainLoop(set_as_default=True)
 
@@ -54,7 +54,7 @@ def create_bond(bond_name):
         'connection': s_con,
         'ipv4': s_ip4,
         'ipv6': s_ip6})
-    print "Creating bond connection: %s" % bond_name
+    print("Creating bond connection: %s" % bond_name)
     return add_connection(con)
 
 def create_slave(device, master):
@@ -72,11 +72,11 @@ def create_slave(device, master):
     con = dbus.Dictionary({
         '802-3-ethernet': s_wired,
         'connection': s_con})
-    print "Creating slave connection: %s" % slave_name
+    print("Creating slave connection: %s" % slave_name)
     add_connection(con)
 
 def usage():
-    print "Usage: %s <bond_name> <ifname1> ..." % sys.argv[0]
+    print("Usage: %s <bond_name> <ifname1> ..." % sys.argv[0])
     sys.exit(0)
 
 
@@ -94,17 +94,17 @@ bus = dbus.SystemBus()
 proxy = bus.get_object("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager")
 manager = dbus.Interface(proxy, "org.freedesktop.NetworkManager")
 ac = manager.ActivateConnection(bond_path, "/", "/")
-print "Activating bond: %s (%s)" % (bond_name, ac)
+print("Activating bond: %s (%s)" % (bond_name, ac))
 
 # Monitor the active bond connection
-loop = gobject.MainLoop()
+loop = GObject.MainLoop()
 def properties_changed(props):
     if 'State' in props:
         if props['State'] == 2:
-            print "Succesfully connected"
+            print("Succesfully connected")
             loop.quit()
         if props['State'] == 3 or props['State'] == 4:
-            print "Bond activation failed"
+            print("Bond activation failed")
             loop.quit()
 
 obj = bus.get_object("org.freedesktop.NetworkManager", ac)

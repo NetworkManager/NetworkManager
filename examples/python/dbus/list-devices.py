@@ -69,20 +69,20 @@ for d in devices:
     dev_proxy = bus.get_object("org.freedesktop.NetworkManager", d)
     prop_iface = dbus.Interface(dev_proxy, "org.freedesktop.DBus.Properties")
     props = prop_iface.GetAll("org.freedesktop.NetworkManager.Device")
-    print "============================"
+    print("============================")
 
-    print "Interface: %s" % props['Interface']
+    print("Interface: %s" % props['Interface'])
     try: 
         devtype = devtypes[props['DeviceType']]
     except KeyError:
         devtype = "Unknown"
-    print "Type: %s" % devtype
+    print("Type: %s" % devtype)
 
-    print "Driver: %s" % props['Driver']
+    print("Driver: %s" % props['Driver'])
 
     try:
         state = states[props['State']]
     except KeyError:
         state = "Unknown"
-    print "State: %s" % state
+    print("State: %s" % state)
 

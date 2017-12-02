@@ -32,7 +32,7 @@ manager = dbus.Interface(proxy, "org.freedesktop.NetworkManager")
 
 all_aps = []
 
-print "Associated APs:"
+print("Associated APs:")
 
 # Get all network devices
 devices = manager.GetDevices()
@@ -69,10 +69,10 @@ for d in devices:
 
             # Print the current AP's BSSID
             if path == connected_path:
-                print "%s (%s)" % (bssid, iface)
+                print("%s (%s)" % (bssid, iface))
 
 # and print out all APs the wifi devices can see
-print"\nFound APs:"
+print("\nFound APs:")
 for bssid in all_aps:
-    print bssid
+    print(bssid)
 

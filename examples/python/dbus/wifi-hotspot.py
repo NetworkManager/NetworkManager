@@ -34,7 +34,7 @@ s_con = dbus.Dictionary({
     'id': 'Test Hotspot'})
 
 s_wifi = dbus.Dictionary({
-    'ssid': dbus.ByteArray("My Hotspot"),
+    'ssid': dbus.ByteArray("My Hotspot".encode("utf-8")),
     'mode': "ap",
     'band': "bg",
     'channel': dbus.UInt32(1)})
@@ -55,7 +55,7 @@ con = dbus.Dictionary({
      })
 
 def usage():	
-    print "Usage: %s <ifname> [up|down]" % sys.argv[0]
+    print("Usage: %s <ifname> [up|down]" % sys.argv[0])
     sys.exit(0)
 
 bus = dbus.SystemBus()
@@ -99,10 +99,10 @@ if operation == "up":
     while time.time() < start + 10:
         state = active_props.Get("org.freedesktop.NetworkManager.Connection.Active", "State")
         if state == 2:  # NM_ACTIVE_CONNECTION_STATE_ACTIVATED
-            print "Access point started"
+            print("Access point started")
             sys.exit(0)
         time.sleep(1)
-    print "Failed to start access point"
+    print("Failed to start access point")
 elif operation == "down":
     device.Disconnect()
 else:

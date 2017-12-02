@@ -35,7 +35,7 @@ def merge_secrets(proxy, config, setting_name):
         for setting in secrets:
             for key in secrets[setting]:
                 config[setting_name][key] = secrets[setting][key]
-    except Exception, e:
+    except Exception as e:
         pass
 
 def dict_to_string(d, indent):
@@ -64,9 +64,9 @@ def dict_to_string(d, indent):
 def connection_to_string(config):
     # dump a connection configuration to a the console
     for setting_name in config:
-        print "        Setting: %s" % setting_name
-        print dict_to_string(config[setting_name], "            ")
-    print ""
+        print("        Setting: %s" % setting_name)
+        print(dict_to_string(config[setting_name], "            "))
+    print("")
 
 
 def print_connections():
@@ -95,13 +95,13 @@ def print_connections():
 
         # Get the details of the 'connection' setting
         s_con = config['connection']
-        print "    name: %s" % s_con['id']
-        print "    uuid: %s" % s_con['uuid']
-        print "    type: %s" % s_con['type']
-        print "    ------------------------------------------"
+        print("    name: %s" % s_con['id'])
+        print("    uuid: %s" % s_con['uuid'])
+        print("    type: %s" % s_con['type'])
+        print("    ------------------------------------------")
         connection_to_string(config)
 
-    print ""
+    print("")
 
 print_connections()
 

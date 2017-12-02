@@ -61,7 +61,7 @@ def list_uuids():
         iface = dbus.Interface(proxy, dbus_interface='org.freedesktop.NetworkManager.Settings.Connection')
         settings = iface.GetSettings()
         conn = settings['connection']
-        print "%s - %s (%s)" % (conn['uuid'], conn['id'], conn['type'])
+        print("%s - %s (%s)" % (conn['uuid'], conn['id'], conn['type']))
 
 
 def get_active_connection_path(uuid):
@@ -102,7 +102,7 @@ def get_wifi_device_path():
 def activate_connection(connection_path, device_path):
 
     def reply_handler(opath):
-        print "Success: device activating"
+        print("Success: device activating")
         sys.exit(0)
 
     def error_handler(*args):
@@ -126,26 +126,26 @@ if UID != 0:
 
 # Are we configured?
 if not len(CONNECTION_UUID):
-    print "missing connection UUID"
+    print("missing connection UUID")
     sys.exit(0)
 
 connection_path = get_connection_by_uuid(CONNECTION_UUID)
 if not connection_path:
     # Configured VPN connection is not known to NM, check CONNECTION_UUID.
-    print "couldn't find the connection"
+    print("couldn't find the connection")
     sys.exit(1)
 
 device_path = get_wifi_device_path()
 if not device_path:
-    print "no wifi device found"
+    print("no wifi device found")
     sys.exit(1)
 
 # Is it already activated?
 if get_active_connection_path(CONNECTION_UUID):
-    print "already connected"
+    print("already connected")
     sys.exit(0)
 
-print "Activating connection..."
+print("Activating connection...")
 activate_connection(connection_path, device_path)
 loop = gobject.MainLoop()
 loop.run()

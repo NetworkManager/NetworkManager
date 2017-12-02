@@ -36,7 +36,7 @@ bus = dbus.SystemBus()
 proxy = bus.get_object("org.freedesktop.DBus", "/org/freedesktop/DBus")
 busdaemon = dbus.Interface(proxy, "org.freedesktop.DBus")
 if not busdaemon.NameHasOwner(NM_SERVICE_NAME):
-    print "NetworkManager not running"
+    print("NetworkManager not running")
     sys.exit(1)
 
 # Get a proxy for the NetworkManager object
@@ -46,11 +46,11 @@ props = dbus.Interface(proxy, DBUS_PROPS_IFACE)
 
 def found_connection_type(ctype):
     if ctype == '':
-        print "No active connection"
+        print("No active connection")
     elif ctype in ["gsm", "cdma", "bluetooth"]:
-        print "WWAN is default"
+        print("WWAN is default")
     else:
-        print "WWAN is not default"
+        print("WWAN is not default")
         sys.exit(0)
 
 # Shortcut #1, for NM 1.0
@@ -94,7 +94,7 @@ for a in active:
         break
 
 if default_is_wwan:
-    print "WWAN is default"
+    print("WWAN is default")
 else:
-    print "WWAN is not default"
+    print("WWAN is not default")
 

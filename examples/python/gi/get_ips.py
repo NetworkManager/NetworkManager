@@ -116,8 +116,8 @@ if __name__ == "__main__":
     dev = c.get_device_by_iface(dev_iface)
     if dev is None:
         sys.exit('Device \'%s\' not found' % dev_iface)
-    print "Device: %s - %s" % (dev_iface, dev.get_device_type().value_name)
-    print "---------------------------------------"
+    print("Device: %s - %s" % (dev_iface, dev.get_device_type().value_name))
+    print("---------------------------------------")
 
     print("IPv4 addresses:")
     print("---------------")
@@ -134,7 +134,7 @@ if __name__ == "__main__":
     show_routes(dev, socket.AF_INET)
     print
 
-    print "IPv6 addresses:"
+    print("IPv6 addresses:")
     print("---------------")
     show_addresses(dev, socket.AF_INET6)
     print
@@ -144,17 +144,17 @@ if __name__ == "__main__":
     show_gateway(dev, socket.AF_INET6)
     print
 
-    print "IPv6 routes:"
+    print("IPv6 routes:")
     print("------------")
     show_routes(dev, socket.AF_INET6)
     print
 
-    print "IPv4 DNS:"
+    print("IPv4 DNS:")
     print("------------")
     show_dns(dev, socket.AF_INET)
     print
 
-    print "IPv6 DNS:"
+    print("IPv6 DNS:")
     print("------------")
     show_dns(dev, socket.AF_INET6)
     print

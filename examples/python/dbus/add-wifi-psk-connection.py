@@ -25,7 +25,7 @@ s_con = dbus.Dictionary({
     'id': 'My-WPA-PSK'})
 
 s_wifi = dbus.Dictionary({
-    'ssid': dbus.ByteArray("best-wifi"),
+    'ssid': dbus.ByteArray("best-wifi".encode("utf-8")),
     'mode': 'infrastructure',
 })
 

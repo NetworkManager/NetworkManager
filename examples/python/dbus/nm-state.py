@@ -69,9 +69,9 @@ for d in devices:
 
     # and print them out
     if state == 100 :   # activated
-        print "Device %s is activated" % name
+        print("Device %s is activated" % name)
     else:
-        print "Device %s is not activated (state=%s)" % (name, device_states[state])
+        print("Device %s is not activated (state=%s)" % (name, device_states[state]))
 
 
 # Get active connection state
@@ -91,4 +91,4 @@ for a in active:
     con_details = con_iface.GetSettings()
     con_name = con_details['connection']['id']
 
-    print "Connection '%s' is %s" % (con_name, connectivity_states[state].lower())
+    print("Connection '%s' is %s" % (con_name, connectivity_states[state].lower()))

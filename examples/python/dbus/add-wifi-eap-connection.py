@@ -20,7 +20,7 @@
 import dbus, uuid
 
 def path_to_value(path):
-    return dbus.ByteArray("file://" + path + "\0")
+    return dbus.ByteArray("file://".encode("utf-8") + path.encode("utf-8") + "\0".encode("utf-8"))
 
 s_con = dbus.Dictionary({
     'type': '802-11-wireless',
@@ -28,7 +28,7 @@ s_con = dbus.Dictionary({
     'id': 'My Wifi'})
 
 s_wifi = dbus.Dictionary({
-    'ssid': dbus.ByteArray("homewifi"),
+    'ssid': dbus.ByteArray("homewifi".encode("utf-8")),
     'security': '802-11-wireless-security'})
 
 s_wsec = dbus.Dictionary({'key-mgmt': 'wpa-eap'})

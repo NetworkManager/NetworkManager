@@ -31,12 +31,12 @@
 import dbus, sys
 
 if len(sys.argv) < 3:
-    print "Usage: %s <uuid> <auto|static> [address prefix gateway]" % sys.argv[0]
+    print("Usage: %s <uuid> <auto|static> [address prefix gateway]" % sys.argv[0])
     sys.exit(1)
 
 method = sys.argv[2]
 if method == "static" and len(sys.argv) < 5:
-    print "Usage: %s %s static address prefix [gateway]" % (sys.argv[0], sys.argv[1])
+    print("Usage: %s %s static address prefix [gateway]" % (sys.argv[0], sys.argv[1]))
     sys.exit(1)
 
 # Convert method to NM method
