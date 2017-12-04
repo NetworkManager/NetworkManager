@@ -15,7 +15,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2005 - 2014 Red Hat, Inc.
+ * Copyright 2005 - 2017 Red Hat, Inc.
  */
 
 #ifndef __NM_UTILS_PRIVATE_H__
@@ -33,6 +33,8 @@ struct _NMVariantAttributeSpec {
 	const GVariantType *type;
 	bool v4:1;
 	bool v6:1;
+	bool no_value:1;
+	bool consumes_rest:1;
 	char str_type;
 };
 
