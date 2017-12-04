@@ -662,12 +662,26 @@ write_wireless_security_setting (NMConnection *connection,
 
 	/* And write the new ones out */
 	if (wep) {
+		NMWepKeyType key_type;
+		const char *key_type_str = NULL;
+
 		/* Default WEP TX key index */
 		svSetValueInt64 (ifcfg, "DEFAULTKEY", nm_setting_wireless_security_get_wep_tx_keyidx(s_wsec) + 1);
 
-		for (i = 0; i < 4; i++) {
-			NMWepKeyType key_type;
+		key_type = nm_setting_wireless_security_get_wep_key_type (s_wsec);
+		switch (key_type) {
+		case NM_WEP_KEY_TYPE_KEY:
+			key_type_str = "key";
+			break;
+		case NM_WEP_KEY_TYPE_PASSPHRASE:
+			key_type_str = "passphrase";
+			break;
+		case NM_WEP_KEY_TYPE_UNKNOWN:
+			break;
+		}
+		svSetValue (ifcfg, "KEY_TYPE", key_type_str);
 
+		for (i = 0; i < 4; i++) {
 			key = nm_setting_wireless_security_get_wep_key (s_wsec, i);
 			if (key) {
 				gs_free char *ascii_key = NULL;
@@ -678,7 +692,6 @@ write_wireless_security_setting (NMConnection *connection,
 				 * are some passphrases that are indistinguishable from WEP hex
 				 * keys.
 				 */
-				key_type = nm_setting_wireless_security_get_wep_key_type (s_wsec);
 				if (key_type == NM_WEP_KEY_TYPE_UNKNOWN) {
 					if (nm_utils_wep_key_valid (key, NM_WEP_KEY_TYPE_KEY))
 						key_type = NM_WEP_KEY_TYPE_KEY;

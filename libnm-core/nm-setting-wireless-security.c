@@ -1814,10 +1814,11 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 **/
 	/* ---ifcfg-rh---
 	 * property: wep-key-type
-	 * variable: KEY<i> or KEY_PASSPHRASE<i>(+)
+	 * variable: KEY<i> or KEY_PASSPHRASE<i>(+); KEY_TYPE(+)
 	 * description: KEY is used for "key" type (10 or 26 hexadecimal characters,
 	 *   or 5 or 13 character string prefixed with "s:"). KEY_PASSPHRASE is used
-	 *   for WEP passphrases.
+	 *   for WEP passphrases. KEY_TYPE specifies the key type and can be either
+	 *   'key' or 'passphrase'. KEY_TYPE is redundant and can be omitted.
 	 * example: KEY1=s:ahoj, KEY1=0a1c45bc02, KEY_PASSPHRASE1=mysupersecretkey
 	 * ---end---
 	 */
