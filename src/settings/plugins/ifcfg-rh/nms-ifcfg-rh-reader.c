@@ -2336,22 +2336,23 @@ add_one_wep_key (shvarFile *ifcfg,
                  NMSettingWirelessSecurity *s_wsec,
                  GError **error)
 {
-	gs_free char *key = NULL;
-	gs_free char *value = NULL;
+	gs_free char *value_free = NULL;
+	const char *value;
+	const char *key = NULL;
 
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
 	g_return_val_if_fail (shvar_key != NULL, FALSE);
 	g_return_val_if_fail (key_idx <= 3, FALSE);
 	g_return_val_if_fail (s_wsec != NULL, FALSE);
 
-	value = svGetValueStr_cp (ifcfg, shvar_key);
+	value = svGetValueStr (ifcfg, shvar_key, &value_free);
 	if (!value)
 		return TRUE;
 
 	/* Validate keys */
 	if (passphrase) {
 		if (value[0] && strlen (value) < 64)
-			key = g_strdup (value);
+			key = value;
 	} else {
 		if (NM_IN_SET (strlen (value), 10, 26)) {
 			/* Hexadecimal WEP key */
@@ -2360,7 +2361,7 @@ add_one_wep_key (shvarFile *ifcfg,
 				             "Invalid hexadecimal WEP key.");
 				return FALSE;
 			}
-			key = g_strdup (value);
+			key = value;
 		} else if (   !strncmp (value, "s:", 2)
 		           && NM_IN_SET (strlen (value), 7, 15)) {
 			/* ASCII key */
@@ -2376,7 +2377,7 @@ add_one_wep_key (shvarFile *ifcfg,
 			 * before passing to wpa_supplicant, this prevents two unnecessary conversions. And mainly,
 			 * ASCII WEP key doesn't change to HEX WEP key in UI, which could confuse users.
 			 */
-			key = g_strdup (value + 2);
+			key = value + 2;
 		}
 	}
 
@@ -2387,7 +2388,6 @@ add_one_wep_key (shvarFile *ifcfg,
 	}
 
 	nm_setting_wireless_security_set_wep_key (s_wsec, key_idx, key);
-
 	return TRUE;
 }
 
