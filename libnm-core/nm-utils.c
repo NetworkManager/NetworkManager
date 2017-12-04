@@ -5511,6 +5511,8 @@ nm_utils_parse_variant_attributes (const char *string,
 				variant = g_variant_new_boolean (b);
 			} else if (g_variant_type_equal ((*s)->type, G_VARIANT_TYPE_STRING)) {
 				variant = g_variant_new_take_string (g_steal_pointer (&value));
+			} else if (g_variant_type_equal ((*s)->type, G_VARIANT_TYPE_BYTESTRING)) {
+				variant = g_variant_new_bytestring (value);
 			} else {
 				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
 				             _("unsupported attribute '%s' of type '%s'"), (*s)->name,
@@ -5580,6 +5582,8 @@ nm_utils_format_variant_attributes (GHashTable *attributes,
 			value = g_variant_get_boolean (variant) ? "true" : "false";
 		else if (g_variant_is_of_type (variant, G_VARIANT_TYPE_STRING))
 			value = g_variant_get_string (variant, NULL);
+		else if (g_variant_is_of_type (variant, G_VARIANT_TYPE_BYTESTRING))
+			value = g_variant_get_bytestring (variant);
 		else
 			continue;
 
