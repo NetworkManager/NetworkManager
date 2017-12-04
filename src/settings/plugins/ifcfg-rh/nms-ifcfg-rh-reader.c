@@ -2350,10 +2350,10 @@ add_one_wep_key (shvarFile *ifcfg,
 
 	/* Validate keys */
 	if (passphrase) {
-		if (strlen (value) && strlen (value) < 64)
+		if (value[0] && strlen (value) < 64)
 			key = g_strdup (value);
 	} else {
-		if (strlen (value) == 10 || strlen (value) == 26) {
+		if (NM_IN_SET (strlen (value), 10, 26)) {
 			/* Hexadecimal WEP key */
 			if (NM_STRCHAR_ANY (value, ch, !g_ascii_isxdigit (ch))) {
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -2362,7 +2362,7 @@ add_one_wep_key (shvarFile *ifcfg,
 			}
 			key = g_strdup (value);
 		} else if (   !strncmp (value, "s:", 2)
-		           && (strlen (value) == 7 || strlen (value) == 15)) {
+		           && NM_IN_SET (strlen (value), 7, 15)) {
 			/* ASCII key */
 			if (NM_STRCHAR_ANY (value + 2, ch, !g_ascii_isprint (ch))) {
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
