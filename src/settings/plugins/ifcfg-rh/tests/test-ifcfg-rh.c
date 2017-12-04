@@ -2686,7 +2686,7 @@ test_read_wifi_wep_passphrase (void)
 	g_assert (s_wsec);
 	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "none");
 	g_assert_cmpint (nm_setting_wireless_security_get_wep_tx_keyidx (s_wsec), ==, 0);
-	g_assert_cmpint (nm_setting_wireless_security_get_wep_key_type (s_wsec), ==, NM_WEP_KEY_TYPE_PASSPHRASE);
+	g_assert_cmpint (nm_setting_wireless_security_get_wep_key_type (s_wsec), ==, NM_WEP_KEY_TYPE_UNKNOWN);
 	g_assert_cmpstr (nm_setting_wireless_security_get_wep_key (s_wsec, 0), ==, "foobar222blahblah");
 	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 1));
 	g_assert (!nm_setting_wireless_security_get_wep_key (s_wsec, 2));
@@ -5758,6 +5758,7 @@ test_write_wifi_wep_40_ascii (void)
 	g_object_set (s_wsec,
 	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none",
 	              NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, 2,
+	              NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, NM_WEP_KEY_TYPE_KEY,
 	              NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "shared",
 	              NULL);
 	nm_setting_wireless_security_set_wep_key (s_wsec, 0, "lorem");
@@ -5845,6 +5846,7 @@ test_write_wifi_wep_104_ascii (void)
 	g_object_set (s_wsec,
 	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none",
 	              NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, 0,
+	              NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, NM_WEP_KEY_TYPE_UNKNOWN,
 	              NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open",
 	              NULL);
 	nm_setting_wireless_security_set_wep_key (s_wsec, 0, "LoremIpsumSit");
