@@ -4296,7 +4296,7 @@ const char **nm_utils_enum_get_values (GType type, gint from, gint to)
 
 /*****************************************************************************/
 
-#if WITH_JSON_VALIDATION
+#if WITH_TEAM
 
 static void
 _json_add_object (json_t *json,
@@ -5054,7 +5054,7 @@ done:
 	return updated;
 }
 
-#else /* !WITH_JSON_VALIDATION */
+#else /* !WITH_TEAM */
 
 gboolean
 nm_utils_is_json_object (const char *str, GError **error)

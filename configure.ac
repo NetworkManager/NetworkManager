@@ -657,10 +657,10 @@ else
 	have_team_prereq=no
 fi
 
-AC_ARG_ENABLE(teamdctl,
-              AS_HELP_STRING([--enable-teamdctl], [enable Teamd control support]),
-              [enable_teamdctl=${enableval}], [enable_teamdctl=${have_team_prereq}])
-if (test "${enable_teamdctl}" = "yes"); then
+AC_ARG_ENABLE(team,
+              AS_HELP_STRING([--enable-team], [enable Teamd control support]),
+              [enable_team=${enableval}], [enable_team=${have_team_prereq}])
+if (test "${enable_team}" = "yes"); then
 	if test "$have_teamdctl" = "no"; then
 		AC_MSG_ERROR(Libteamdctl is required for team support)
 	fi
@@ -669,25 +669,11 @@ if (test "${enable_teamdctl}" = "yes"); then
 	fi
 	# temporary bug workaround
 	LIBTEAMDCTL_CFLAGS=`echo $LIBTEAMDCTL_CFLAGS | sed -e 's:/teamdctl.h::'`
-	AC_DEFINE(WITH_TEAMDCTL, 1, [Define if you have Teamd control support])
+	AC_DEFINE(WITH_TEAM, 1, [Define if you have Teamd control support])
 else
-	AC_DEFINE(WITH_TEAMDCTL, 0, [Define if you have Teamd control support])
+	AC_DEFINE(WITH_TEAM, 0, [Define if you have Teamd control support])
 fi
-AM_CONDITIONAL(WITH_TEAMDCTL, test "${enable_teamdctl}" = "yes")
-
-# Jansson for team configuration validation
-AC_ARG_ENABLE(json-validation,
-              AS_HELP_STRING([--enable-json-validation], [Enable JSON validation in libnm]),
-              [enable_json_validation=${enableval}],
-              [enable_json_validation=${have_jansson}])
-if (test "${enable_json_validation}" == "no"); then
-	AC_DEFINE(WITH_JSON_VALIDATION, 0, [Define if JSON validation in libnm is enabled])
-else
-	if test "$have_jansson" = "no"; then
-		AC_MSG_ERROR([jansson is needed for team configuration validation. Use --disable-json-validation to build without it.])
-	fi
-		AC_DEFINE(WITH_JSON_VALIDATION, 1, [Define if JSON validation in libnm is enabled])
-fi
+AM_CONDITIONAL(WITH_TEAM, test "${enable_team}" = "yes")
 
 # we usually compile with polkit support. --enable-polkit=yes|no only sets the
 # default configuration for main.auth-polkit. User can always enable/disable polkit
@@ -1411,7 +1397,7 @@ echo "  ppp: $enable_ppp ${PPPD_PLUGIN_DIR}"
 echo "  modemmanager-1: $with_modem_manager_1"
 echo "  ofono: $with_ofono"
 echo "  concheck: $enable_concheck"
-echo "  libteamdctl: $enable_teamdctl"
+echo "  team: $enable_team"
 echo "  ovs: $enable_ovs"
 echo "  libnm-glib: $with_libnm_glib"
 echo "  nmcli: $build_nmcli"
@@ -1450,7 +1436,6 @@ echo "  valgrind: $with_valgrind   $with_valgrind_suppressions"
 echo "  code coverage: $enable_code_coverage"
 echo "  LTO: $enable_lto"
 echo "  linker garbage collection: $enable_ld_gc"
-echo "  JSON validation for libnm: $enable_json_validation"
 echo "  sanitizers: $sanitizers"
 echo "  Mozilla Public Suffix List: $with_libpsl"
 echo
