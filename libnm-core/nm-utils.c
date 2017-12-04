@@ -5444,6 +5444,10 @@ nm_utils_parse_variant_attributes (const char *string,
 				return NULL;
 			}
 
+			/* The attribute and key/value separators are the same. Look for the next one. */
+			if (ptr == sep)
+				goto next;
+
 			name = attribute_unescape (start, sep);
 			value = attribute_unescape (sep + 1, ptr);
 
