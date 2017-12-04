@@ -121,7 +121,6 @@ enum {
 	CONNECTION_ADDED,
 	CONNECTION_UPDATED,
 	CONNECTION_REMOVED,
-	CONNECTION_VISIBILITY_CHANGED,
 	CONNECTION_FLAGS_CHANGED,
 	NEW_CONNECTION, /* exported, not used internally */
 	LAST_SIGNAL
@@ -821,18 +820,6 @@ connection_updated (NMSettingsConnection *connection, gboolean by_user, gpointer
 }
 
 static void
-connection_visibility_changed (NMSettingsConnection *connection,
-                               GParamSpec *pspec,
-                               gpointer user_data)
-{
-	/* Re-emit for listeners like NMPolicy */
-	g_signal_emit (NM_SETTINGS (user_data),
-	               signals[CONNECTION_VISIBILITY_CHANGED],
-	               0,
-	               connection);
-}
-
-static void
 connection_flags_changed (NMSettingsConnection *connection,
                           GParamSpec *pspec,
                           gpointer user_data)
@@ -861,7 +848,6 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_removed), self);
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_updated), self);
-	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_visibility_changed), self);
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_flags_changed), self);
 	if (!priv->startup_complete)
 		g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_ready_changed), self);
@@ -986,9 +972,6 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 	                        G_CALLBACK (connection_removed), self);
 	g_signal_connect (connection, NM_SETTINGS_CONNECTION_UPDATED_INTERNAL,
 	                  G_CALLBACK (connection_updated), self);
-	g_signal_connect (connection, "notify::" NM_SETTINGS_CONNECTION_VISIBLE,
-	                  G_CALLBACK (connection_visibility_changed),
-	                  self);
 	g_signal_connect (connection, "notify::" NM_SETTINGS_CONNECTION_FLAGS,
 	                  G_CALLBACK (connection_flags_changed),
 	                  self);
@@ -1997,14 +1980,6 @@ nm_settings_class_init (NMSettingsClass *class)
 
 	signals[CONNECTION_REMOVED] =
 	    g_signal_new (NM_SETTINGS_SIGNAL_CONNECTION_REMOVED,
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_FIRST,
-	                  0, NULL, NULL,
-	                  g_cclosure_marshal_VOID__OBJECT,
-	                  G_TYPE_NONE, 1, NM_TYPE_SETTINGS_CONNECTION);
-
-	signals[CONNECTION_VISIBILITY_CHANGED] =
-	    g_signal_new (NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0, NULL, NULL,

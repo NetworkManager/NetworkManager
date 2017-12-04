@@ -2375,9 +2375,9 @@ connection_removed (NMSettings *settings,
 }
 
 static void
-connection_visibility_changed (NMSettings *settings,
-                               NMSettingsConnection *connection,
-                               gpointer user_data)
+connection_flags_changed (NMSettings *settings,
+                          NMSettingsConnection *connection,
+                          gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
 	NMPolicy *self = _PRIV_TO_SELF (priv);
@@ -2560,10 +2560,10 @@ constructed (GObject *object)
 	g_signal_connect (priv->manager, NM_MANAGER_ACTIVE_CONNECTION_ADDED,       (GCallback) active_connection_added, priv);
 	g_signal_connect (priv->manager, NM_MANAGER_ACTIVE_CONNECTION_REMOVED,     (GCallback) active_connection_removed, priv);
 
-	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_ADDED,              (GCallback) connection_added, priv);
-	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,            (GCallback) connection_updated, priv);
-	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_REMOVED,            (GCallback) connection_removed, priv);
-	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED, (GCallback) connection_visibility_changed, priv);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_ADDED,         (GCallback) connection_added, priv);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,       (GCallback) connection_updated, priv);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_REMOVED,       (GCallback) connection_removed, priv);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_FLAGS_CHANGED, (GCallback) connection_flags_changed, priv);
 
 	g_signal_connect (priv->agent_mgr, NM_AGENT_MANAGER_AGENT_REGISTERED, G_CALLBACK (secret_agent_registered), self);
 
