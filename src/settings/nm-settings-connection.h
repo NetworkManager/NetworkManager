@@ -189,7 +189,7 @@ gboolean nm_settings_connection_get_unsaved (NMSettingsConnection *self);
 
 NMSettingsConnectionFlags nm_settings_connection_get_flags (NMSettingsConnection *self);
 NMSettingsConnectionFlags nm_settings_connection_set_flags (NMSettingsConnection *self, NMSettingsConnectionFlags flags, gboolean set);
-NMSettingsConnectionFlags nm_settings_connection_set_flags_all (NMSettingsConnection *self, NMSettingsConnectionFlags flags);
+NMSettingsConnectionFlags nm_settings_connection_set_flags_full (NMSettingsConnection *self, NMSettingsConnectionFlags mask, NMSettingsConnectionFlags value);
 
 int nm_settings_connection_cmp_timestamp (NMSettingsConnection *ac, NMSettingsConnection *ab);
 int nm_settings_connection_cmp_timestamp_p_with_data (gconstpointer pa, gconstpointer pb, gpointer user_data);
