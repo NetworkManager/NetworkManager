@@ -497,17 +497,17 @@ secrets_cleared_cb (NMSettingsConnection *self)
 static void
 set_unsaved (NMSettingsConnection *self, gboolean now_unsaved)
 {
-	NMSettingsConnectionFlags flags = nm_settings_connection_get_flags (self);
+	NMSettingsConnectionFlags flags;
+	const NMSettingsConnectionFlags ALL =   NM_SETTINGS_CONNECTION_FLAGS_UNSAVED
+	                                      | NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED
+	                                      | NM_SETTINGS_CONNECTION_FLAGS_VOLATILE;
 
-	if (NM_FLAGS_HAS (flags, NM_SETTINGS_CONNECTION_FLAGS_UNSAVED) != !!now_unsaved) {
+	if (NM_FLAGS_HAS (nm_settings_connection_get_flags (self), NM_SETTINGS_CONNECTION_FLAGS_UNSAVED) != !!now_unsaved) {
 		if (now_unsaved)
-			flags |= NM_SETTINGS_CONNECTION_FLAGS_UNSAVED;
-		else {
-			flags &= ~(NM_SETTINGS_CONNECTION_FLAGS_UNSAVED |
-			           NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED |
-			           NM_SETTINGS_CONNECTION_FLAGS_VOLATILE);
-		}
-		nm_settings_connection_set_flags_all (self, flags);
+			flags = NM_SETTINGS_CONNECTION_FLAGS_UNSAVED;
+		else
+			flags = NM_SETTINGS_CONNECTION_FLAGS_NONE;
+		nm_settings_connection_set_flags_full (self, ALL, flags);
 	}
 }
 
@@ -2194,40 +2194,38 @@ nm_settings_connection_get_flags (NMSettingsConnection *self)
 NMSettingsConnectionFlags
 nm_settings_connection_set_flags (NMSettingsConnection *self, NMSettingsConnectionFlags flags, gboolean set)
 {
-	NMSettingsConnectionFlags new_flags;
-
-	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), NM_SETTINGS_CONNECTION_FLAGS_NONE);
-	g_return_val_if_fail ((flags & ~NM_SETTINGS_CONNECTION_FLAGS_ALL) == 0, NM_SETTINGS_CONNECTION_FLAGS_NONE);
-
-	new_flags = NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->flags;
-	if (set)
-		new_flags |= flags;
-	else
-		new_flags &= ~flags;
-	return nm_settings_connection_set_flags_all (self, new_flags);
+	return nm_settings_connection_set_flags_full (self,
+	                                              flags,
+	                                              set ? flags : NM_SETTINGS_CONNECTION_FLAGS_NONE);
 }
 
 NMSettingsConnectionFlags
-nm_settings_connection_set_flags_all (NMSettingsConnection *self, NMSettingsConnectionFlags flags)
+nm_settings_connection_set_flags_full (NMSettingsConnection *self,
+                                       NMSettingsConnectionFlags mask,
+                                       NMSettingsConnectionFlags value)
 {
 	NMSettingsConnectionPrivate *priv;
 	NMSettingsConnectionFlags old_flags;
 
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), NM_SETTINGS_CONNECTION_FLAGS_NONE);
-	g_return_val_if_fail ((flags & ~NM_SETTINGS_CONNECTION_FLAGS_ALL) == 0, NM_SETTINGS_CONNECTION_FLAGS_NONE);
+	nm_assert (mask && !NM_FLAGS_ANY (mask, ~NM_SETTINGS_CONNECTION_FLAGS_ALL));
+	nm_assert (!NM_FLAGS_ANY (value, ~mask));
+
 	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
+	value = (priv->flags & ~mask) | value;
+
 	old_flags = priv->flags;
-	if (old_flags != flags) {
+	if (old_flags != value) {
 		char buf1[255], buf2[255];
 
 		_LOGT ("update settings-connection flags to %s (was %s)",
-		       _settings_connection_flags_to_string (flags, buf1, sizeof (buf1)),
+		       _settings_connection_flags_to_string (value, buf1, sizeof (buf1)),
 		       _settings_connection_flags_to_string (priv->flags, buf2, sizeof (buf2)));
-		priv->flags = flags;
-		nm_assert (priv->flags == flags);
+		priv->flags = value;
+		nm_assert (priv->flags == value);
 		_notify (self, PROP_FLAGS);
-		if (NM_FLAGS_HAS (old_flags, NM_SETTINGS_CONNECTION_FLAGS_UNSAVED) != NM_FLAGS_HAS (flags, NM_SETTINGS_CONNECTION_FLAGS_UNSAVED))
+		if (NM_FLAGS_HAS (old_flags, NM_SETTINGS_CONNECTION_FLAGS_UNSAVED) != NM_FLAGS_HAS (value, NM_SETTINGS_CONNECTION_FLAGS_UNSAVED))
 			_notify (self, PROP_UNSAVED);
 	}
 	return old_flags;
