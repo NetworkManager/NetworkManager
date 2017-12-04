@@ -44,8 +44,9 @@
 #define NM_SETTINGS_CONNECTION_UPDATED_INTERNAL "updated-internal"
 
 /* Properties */
-#define NM_SETTINGS_CONNECTION_VISIBLE  "visible"
 #define NM_SETTINGS_CONNECTION_UNSAVED  "unsaved"
+
+/* Internal properties */
 #define NM_SETTINGS_CONNECTION_READY    "ready"
 #define NM_SETTINGS_CONNECTION_FLAGS    "flags"
 #define NM_SETTINGS_CONNECTION_FILENAME "filename"
@@ -61,16 +62,19 @@
  * @NM_SETTINGS_CONNECTION_FLAGS_VOLATILE: The connection will be deleted
  *  when it disconnects. That is for in-memory connections (unsaved), which are
  *  currently active but cleanup on disconnect.
+ * @NM_SETTINGS_CONNECTION_FLAGS_VISIBLE: The connection is visible
  * @NM_SETTINGS_CONNECTION_FLAGS_ALL: special mask, for all known flags
  *
  * #NMSettingsConnection flags.
  **/
 typedef enum {
-	NM_SETTINGS_CONNECTION_FLAGS_NONE                               = 0x00,
+	NM_SETTINGS_CONNECTION_FLAGS_NONE                               = 0,
 
-	NM_SETTINGS_CONNECTION_FLAGS_UNSAVED                            = 0x01,
-	NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED                       = 0x02,
-	NM_SETTINGS_CONNECTION_FLAGS_VOLATILE                           = 0x04,
+	NM_SETTINGS_CONNECTION_FLAGS_UNSAVED                            = (1LL <<  0),
+	NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED                       = (1LL <<  1),
+	NM_SETTINGS_CONNECTION_FLAGS_VOLATILE                           = (1LL <<  2),
+
+	NM_SETTINGS_CONNECTION_FLAGS_VISIBLE                            = (1LL <<  3),
 
 	__NM_SETTINGS_CONNECTION_FLAGS_LAST,
 	NM_SETTINGS_CONNECTION_FLAGS_ALL = ((__NM_SETTINGS_CONNECTION_FLAGS_LAST - 1) << 1) - 1,

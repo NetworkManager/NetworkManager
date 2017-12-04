@@ -53,7 +53,6 @@
 static void nm_settings_connection_connection_interface_init (NMConnectionInterface *iface);
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMSettingsConnection,
-	PROP_VISIBLE,
 	PROP_UNSAVED,
 	PROP_READY,
 	PROP_FLAGS,
@@ -75,13 +74,10 @@ typedef struct _NMSettingsConnectionPrivate {
 	NMSessionMonitor *session_monitor;
 	gulong session_changed_id;
 
-	NMSettingsConnectionFlags flags;
+	NMSettingsConnectionFlags flags:5;
 
 	bool removed:1;
 	bool ready:1;
-
-	/* Is this connection visible by some session? */
-	bool visible:1;
 
 	bool timestamp_set:1;
 
@@ -323,12 +319,9 @@ find_secret (NMConnection *self,
 static void
 set_visible (NMSettingsConnection *self, gboolean new_visible)
 {
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-
-	if (new_visible == priv->visible)
-		return;
-	priv->visible = new_visible;
-	_notify (self, PROP_VISIBLE);
+	nm_settings_connection_set_flags (self,
+	                                  NM_SETTINGS_CONNECTION_FLAGS_VISIBLE,
+	                                  new_visible);
 }
 
 gboolean
@@ -336,7 +329,7 @@ nm_settings_connection_is_visible (NMSettingsConnection *self)
 {
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
 
-	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->visible;
+	return NM_FLAGS_HAS (NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->flags, NM_SETTINGS_CONNECTION_FLAGS_VISIBLE);
 }
 
 void
@@ -404,7 +397,7 @@ nm_settings_connection_check_permission (NMSettingsConnection *self,
 
 	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
-	if (priv->visible == FALSE)
+	if (!nm_settings_connection_is_visible (self))
 		return FALSE;
 
 	s_con = nm_connection_get_setting_connection (NM_CONNECTION (self));
@@ -2187,6 +2180,7 @@ NM_UTILS_FLAGS2STR_DEFINE_STATIC (_settings_connection_flags_to_string, NMSettin
 	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_FLAGS_UNSAVED,       "unsaved"),
 	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED,  "nm-generatd"),
 	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_FLAGS_VOLATILE,      "volatile"),
+	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_FLAGS_VISIBLE,       "visible"),
 );
 
 NMSettingsConnectionFlags
@@ -2231,6 +2225,7 @@ nm_settings_connection_set_flags_all (NMSettingsConnection *self, NMSettingsConn
 		       _settings_connection_flags_to_string (flags, buf1, sizeof (buf1)),
 		       _settings_connection_flags_to_string (priv->flags, buf2, sizeof (buf2)));
 		priv->flags = flags;
+		nm_assert (priv->flags == flags);
 		_notify (self, PROP_FLAGS);
 		if (NM_FLAGS_HAS (old_flags, NM_SETTINGS_CONNECTION_FLAGS_UNSAVED) != NM_FLAGS_HAS (flags, NM_SETTINGS_CONNECTION_FLAGS_UNSAVED))
 			_notify (self, PROP_UNSAVED);
@@ -2868,7 +2863,6 @@ nm_settings_connection_init (NMSettingsConnection *self)
 	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_SETTINGS_CONNECTION, NMSettingsConnectionPrivate);
 	self->_priv = priv;
 
-	priv->visible = FALSE;
 	priv->ready = TRUE;
 	c_list_init (&priv->call_ids_lst_head);
 
@@ -2946,12 +2940,8 @@ get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
 	NMSettingsConnection *self = NM_SETTINGS_CONNECTION (object);
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
 	switch (prop_id) {
-	case PROP_VISIBLE:
-		g_value_set_boolean (value, priv->visible);
-		break;
 	case PROP_UNSAVED:
 		g_value_set_boolean (value, nm_settings_connection_get_unsaved (self));
 		break;
@@ -3003,12 +2993,6 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 	object_class->set_property = set_property;
 
 	class->supports_secrets = supports_secrets;
-
-	obj_properties[PROP_VISIBLE] =
-	     g_param_spec_boolean (NM_SETTINGS_CONNECTION_VISIBLE, "", "",
-	                           FALSE,
-	                           G_PARAM_READABLE |
-	                           G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_UNSAVED] =
 	     g_param_spec_boolean (NM_SETTINGS_CONNECTION_UNSAVED, "", "",
