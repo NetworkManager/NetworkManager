@@ -2355,29 +2355,19 @@ add_one_wep_key (shvarFile *ifcfg,
 	} else {
 		if (strlen (value) == 10 || strlen (value) == 26) {
 			/* Hexadecimal WEP key */
-			char *p = value;
-
-			while (*p) {
-				if (!g_ascii_isxdigit (*p)) {
-					g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-					             "Invalid hexadecimal WEP key.");
-					return FALSE;
-				}
-				p++;
+			if (NM_STRCHAR_ANY (value, ch, !g_ascii_isxdigit (ch))) {
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+				             "Invalid hexadecimal WEP key.");
+				return FALSE;
 			}
 			key = g_strdup (value);
 		} else if (   !strncmp (value, "s:", 2)
 		           && (strlen (value) == 7 || strlen (value) == 15)) {
 			/* ASCII key */
-			char *p = value + 2;
-
-			while (*p) {
-				if (!g_ascii_isprint ((int) (*p))) {
-					g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-					             "Invalid ASCII WEP key.");
-					return FALSE;
-				}
-				p++;
+			if (NM_STRCHAR_ANY (value + 2, ch, !g_ascii_isprint (ch))) {
+				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+				             "Invalid ASCII WEP key.");
+				return FALSE;
 			}
 
 			/* Remove 's:' prefix.
