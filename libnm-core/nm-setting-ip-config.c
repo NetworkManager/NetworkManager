@@ -16,7 +16,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2007 - 2014 Red Hat, Inc.
+ * Copyright 2007 - 2017 Red Hat, Inc.
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -1238,7 +1238,7 @@ nm_ip_route_set_attribute (NMIPRoute *route, const char *name, GVariant *value)
 }
 
 #define ATTR_SPEC_PTR(name, type, v4, v6, str_type) \
-	&(NMVariantAttributeSpec) { name, type, v4, v6, str_type }
+	&(NMVariantAttributeSpec) { name, type, v4, v6, FALSE, FALSE, str_type }
 
 static const NMVariantAttributeSpec * const ip_route_attribute_spec[] = {
 	ATTR_SPEC_PTR (NM_IP_ROUTE_ATTRIBUTE_TABLE,           G_VARIANT_TYPE_UINT32,   TRUE,  TRUE,  0 ),

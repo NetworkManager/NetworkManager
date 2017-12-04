@@ -5477,21 +5477,15 @@ nm_utils_parse_variant_attributes (const char *string,
 					break;
 			}
 
-			if (*sep != key_value_separator) {
-				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
-				             _("missing key-value separator '%c'"), key_value_separator);
-				return NULL;
-			}
-
-			/* The attribute and key/value separators are the same. Look for the next one. */
-			if (ptr == sep)
-				goto next;
-
 			name = attribute_unescape (start, sep);
-			value = attribute_unescape (sep + 1, ptr);
 
 			for (s = spec; *s; s++) {
+				if (g_hash_table_contains (ht, (*s)->name))
+					continue;
 				if (nm_streq (name, (*s)->name))
+					break;
+				if (   (*s)->no_value
+				    && g_variant_type_equal ((*s)->type, G_VARIANT_TYPE_STRING))
 					break;
 			}
 
@@ -5505,12 +5499,33 @@ nm_utils_parse_variant_attributes (const char *string,
 				}
 			}
 
+			if ((*s)->no_value) {
+				if ((*s)->consumes_rest) {
+					value = g_strdup (start);
+					ptr = strchr (start, '\0');
+				} else {
+					value = g_steal_pointer (&name);
+				}
+			} else {
+				if (*sep != key_value_separator) {
+					g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+					             _("missing key-value separator '%c' after '%s'"), key_value_separator, name);
+					return NULL;
+				}
+
+				/* The attribute and key/value separators are the same. Look for the next one. */
+				if (ptr == sep)
+					goto next;
+
+				value = attribute_unescape (sep + 1, ptr);
+			}
+
 			if (g_variant_type_equal ((*s)->type, G_VARIANT_TYPE_UINT32)) {
 				gint64 num = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT32, -1);
 
 				if (num == -1) {
 					g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
-					             _("invalid uint32 value '%s' for attribute '%s'"), value, name);
+					             _("invalid uint32 value '%s' for attribute '%s'"), value, (*s)->name);
 					return NULL;
 				}
 				variant = g_variant_new_uint32 (num);
@@ -5519,17 +5534,17 @@ nm_utils_parse_variant_attributes (const char *string,
 
 				if (num == -1) {
 					g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
-					             _("invalid uint8 value '%s' for attribute '%s'"), value, name);
+					             _("invalid uint8 value '%s' for attribute '%s'"), value, (*s)->name);
 					return NULL;
 				}
 				variant = g_variant_new_byte ((guchar) num);
 			} else if (g_variant_type_equal ((*s)->type, G_VARIANT_TYPE_BOOLEAN)) {
 				int b;
 
-				b = _nm_utils_ascii_str_to_bool (value, -1);
+				b = (*s)->no_value ? TRUE :_nm_utils_ascii_str_to_bool (value, -1);
 				if (b == -1) {
 					g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
-					             _("invalid boolean value '%s' for attribute '%s'"), value, name);
+					             _("invalid boolean value '%s' for attribute '%s'"), value, (*s)->name);
 					return NULL;
 				}
 				variant = g_variant_new_boolean (b);
@@ -5537,12 +5552,12 @@ nm_utils_parse_variant_attributes (const char *string,
 				variant = g_variant_new_take_string (g_steal_pointer (&value));
 			} else {
 				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
-				             _("unsupported attribute '%s' of type '%s'"), name,
+				             _("unsupported attribute '%s' of type '%s'"), (*s)->name,
 				             (char *) (*s)->type);
 				return NULL;
 			}
 
-			g_hash_table_insert (ht, g_steal_pointer (&name), variant);
+			g_hash_table_insert (ht, g_strdup ((*s)->name), variant);
 			start = NULL;
 		}
 next:
