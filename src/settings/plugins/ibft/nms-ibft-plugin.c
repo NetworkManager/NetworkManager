@@ -202,5 +202,5 @@ settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface)
 G_MODULE_EXPORT GObject *
 nm_settings_plugin_factory (void)
 {
-	return g_object_ref (nms_ibft_plugin_get ());
+	return (GObject*)g_object_ref (nms_ibft_plugin_get ());
 }
