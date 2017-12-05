@@ -176,6 +176,9 @@ typedef struct {
 
 	bool sleeping:1;
 	bool net_enabled:1;
+
+	guint delete_volatile_connection_idle_id;
+	CList delete_volatile_connection_lst_head;
 } NMManagerPrivate;
 
 struct _NMManager {
@@ -308,6 +311,11 @@ static void active_connection_parent_active (NMActiveConnection *active,
                                              NMActiveConnection *parent_ac,
                                              NMManager *self);
 
+static NMActiveConnection *active_connection_find_first (NMManager *self,
+                                                         NMSettingsConnection *settings_connection,
+                                                         const char *uuid,
+                                                         NMActiveConnectionState max_state);
+
 /*****************************************************************************/
 
 static NM_CACHED_QUARK_FCN ("active-connection-add-and-activate", active_connection_add_and_activate_quark)
@@ -316,12 +324,34 @@ static NM_CACHED_QUARK_FCN ("autoconnect-root", autoconnect_root_quark)
 
 /*****************************************************************************/
 
+static void
+_delete_volatile_connection_do (NMManager *self,
+                                NMSettingsConnection *connection)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+
+	if (!NM_FLAGS_HAS (nm_settings_connection_get_flags (connection),
+	                   NM_SETTINGS_CONNECTION_FLAGS_VOLATILE))
+		return;
+	if (active_connection_find_first (self,
+	                                  connection,
+	                                  NULL,
+	                                  NM_ACTIVE_CONNECTION_STATE_DEACTIVATED))
+		return;
+	if (!nm_settings_has_connection (priv->settings, connection))
+		return;
+
+	_LOGD (LOGD_DEVICE, "volatile connection disconnected. Deleting connection '%s' (%s)",
+	       nm_settings_connection_get_id (connection), nm_settings_connection_get_uuid (connection));
+	nm_settings_connection_delete (connection, NULL);
+}
+
 /* Returns: whether to notify D-Bus of the removal or not */
 static gboolean
 active_connection_remove (NMManager *self, NMActiveConnection *active)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMSettingsConnection *connection;
+	gs_unref_object NMSettingsConnection *connection = NULL;
 	gboolean notify;
 
 	nm_assert (NM_IS_ACTIVE_CONNECTION (active));
@@ -335,23 +365,12 @@ active_connection_remove (NMManager *self, NMActiveConnection *active)
 	g_signal_handlers_disconnect_by_func (active, active_connection_default_changed, self);
 	g_signal_handlers_disconnect_by_func (active, active_connection_parent_active, self);
 
-	if (   (connection = nm_active_connection_get_settings_connection (active))
-	    && NM_FLAGS_HAS (nm_settings_connection_get_flags (connection),
-	                     NM_SETTINGS_CONNECTION_FLAGS_VOLATILE))
-		g_object_ref (connection);
-	else
-		connection = NULL;
+	connection = nm_g_object_ref (nm_active_connection_get_settings_connection (active));
 
 	nm_exported_object_clear_and_unexport (&active);
 
-	if (connection) {
-		if (nm_settings_has_connection (priv->settings, connection)) {
-			_LOGD (LOGD_DEVICE, "assumed connection disconnected. Deleting generated connection '%s' (%s)",
-			       nm_settings_connection_get_id (connection), nm_settings_connection_get_uuid (connection));
-			nm_settings_connection_delete (connection, NULL);
-		}
-		g_object_unref (connection);
-	}
+	if (connection)
+		_delete_volatile_connection_do (self, connection);
 
 	return notify;
 }
@@ -1481,6 +1500,74 @@ connection_updated_cb (NMSettings *settings,
 	if (by_user)
 		connection_changed (self, connection);
 }
+
+/*****************************************************************************/
+
+typedef struct {
+	CList delete_volatile_connection_lst;
+	NMSettingsConnection *connection;
+} DeleteVolatileConnectionData;
+
+static void
+_delete_volatile_connection_all (NMManager *self, gboolean do_delete)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	CList *lst;
+	DeleteVolatileConnectionData *data;
+
+	while ((lst = c_list_first (&priv->delete_volatile_connection_lst_head))) {
+		gs_unref_object NMSettingsConnection *connection = NULL;
+
+		data = c_list_entry (lst,
+		                     DeleteVolatileConnectionData,
+		                     delete_volatile_connection_lst);
+		connection = data->connection;
+		c_list_unlink_stale (&data->delete_volatile_connection_lst);
+		g_slice_free (DeleteVolatileConnectionData, data);
+
+		if (do_delete)
+			_delete_volatile_connection_do (self, connection);
+	}
+}
+
+static gboolean
+_delete_volatile_connection_cb (gpointer user_data)
+{
+	NMManager *self = user_data;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+
+	priv->delete_volatile_connection_idle_id = 0;
+	_delete_volatile_connection_all (self, TRUE);
+	return G_SOURCE_REMOVE;
+}
+
+static void
+connection_flags_changed (NMSettings *settings,
+                          NMSettingsConnection *connection,
+                          gpointer user_data)
+{
+	NMManager *self = user_data;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	DeleteVolatileConnectionData *data;
+
+	if (!NM_FLAGS_HAS (nm_settings_connection_get_flags (connection),
+	                   NM_SETTINGS_CONNECTION_FLAGS_VOLATILE))
+		return;
+
+	if (active_connection_find_first (self, connection, NULL, NM_ACTIVE_CONNECTION_STATE_DEACTIVATED)) {
+		/* the connection still have an active-connection. It will be purged
+		 * when the active connection(s) get(s) removed. */
+		return;
+	}
+
+	data = g_slice_new (DeleteVolatileConnectionData);
+	data->connection = g_object_ref (connection);
+	c_list_link_tail (&priv->delete_volatile_connection_lst_head, &data->delete_volatile_connection_lst);
+	if (!priv->delete_volatile_connection_idle_id)
+		priv->delete_volatile_connection_idle_id = g_idle_add (_delete_volatile_connection_cb, self);
+}
+
+/*****************************************************************************/
 
 static void
 system_unmanaged_devices_changed_cb (NMSettings *settings,
@@ -6101,6 +6188,7 @@ constructed (GObject *object)
 	                  G_CALLBACK (connection_added_cb), self);
 	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,
 	                  G_CALLBACK (connection_updated_cb), self);
+	g_signal_connect (priv->settings, NM_SETTINGS_SIGNAL_CONNECTION_FLAGS_CHANGED, G_CALLBACK (connection_flags_changed), self);
 
 	priv->hostname_manager = g_object_ref (nm_hostname_manager_get ());
 	g_signal_connect (priv->hostname_manager, "notify::" NM_HOSTNAME_MANAGER_HOSTNAME,
@@ -6159,6 +6247,7 @@ nm_manager_init (NMManager *self)
 
 	c_list_init (&priv->link_cb_lst);
 	c_list_init (&priv->active_connections_lst_head);
+	c_list_init (&priv->delete_volatile_connection_lst_head);
 
 	priv->platform = g_object_ref (NM_PLATFORM_GET);
 
@@ -6412,6 +6501,11 @@ dispose (GObject *object)
 	CList *iter, *iter_safe;
 	NMActiveConnection *ac, *ac_safe;
 
+	nm_clear_g_source (&priv->delete_volatile_connection_idle_id);
+	_delete_volatile_connection_all (self, FALSE);
+	nm_assert (!priv->delete_volatile_connection_idle_id);
+	nm_assert (c_list_is_empty (&priv->delete_volatile_connection_lst_head));
+
 	g_signal_handlers_disconnect_by_func (priv->platform,
 	                                      G_CALLBACK (platform_link_cb),
 	                                      self);
@@ -6466,6 +6560,7 @@ dispose (GObject *object)
 		g_signal_handlers_disconnect_by_func (priv->settings, system_unmanaged_devices_changed_cb, self);
 		g_signal_handlers_disconnect_by_func (priv->settings, connection_added_cb, self);
 		g_signal_handlers_disconnect_by_func (priv->settings, connection_updated_cb, self);
+		g_signal_handlers_disconnect_by_func (priv->settings, connection_flags_changed, self);
 		g_clear_object (&priv->settings);
 	}
 
