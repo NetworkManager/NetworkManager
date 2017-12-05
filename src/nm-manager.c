@@ -161,6 +161,8 @@ typedef struct {
 
 	NMAuthManager *auth_mgr;
 
+	GHashTable *device_route_metrics;
+
 	GSList *auth_chains;
 	GHashTable *sleep_devices;
 
@@ -322,6 +324,237 @@ static NMActiveConnection *active_connection_find_first (NMManager *self,
 static NM_CACHED_QUARK_FCN ("active-connection-add-and-activate", active_connection_add_and_activate_quark)
 
 static NM_CACHED_QUARK_FCN ("autoconnect-root", autoconnect_root_quark)
+
+/*****************************************************************************/
+
+typedef struct {
+	int ifindex;
+	guint32 aspired_metric;
+	guint32 effective_metric;
+} DeviceRouteMetricData;
+
+static DeviceRouteMetricData *
+_device_route_metric_data_new (int ifindex, guint32 metric)
+{
+	DeviceRouteMetricData *data;
+
+	nm_assert (ifindex > 0);
+
+	/* For IPv4, metrics can use the entire uint32 bit range. For IPv6,
+	 * zero is treated like 1024. Since we handle IPv4 and IPv6 identically,
+	 * we cannot allow a zero metric here.
+	 */
+	nm_assert (metric > 0);
+
+	data = g_slice_new0 (DeviceRouteMetricData);
+	data->ifindex = ifindex;
+	data->aspired_metric = metric;
+	data->effective_metric = metric;
+	return data;
+}
+
+static guint
+_device_route_metric_data_by_ifindex_hash (gconstpointer p)
+{
+	const DeviceRouteMetricData *data = p;
+	NMHashState h;
+
+	nm_hash_init (&h, 1030338191);
+	nm_hash_update_vals (&h, data->ifindex);
+	return nm_hash_complete (&h);
+}
+
+static gboolean
+_device_route_metric_data_by_ifindex_equal (gconstpointer pa, gconstpointer pb)
+{
+	const DeviceRouteMetricData *a = pa;
+	const DeviceRouteMetricData *b = pb;
+
+	return a->ifindex == b->ifindex;
+}
+
+static guint32
+_device_route_metric_get (NMManager *self,
+                          int ifindex,
+                          NMDeviceType device_type,
+                          gboolean lookup_only)
+{
+	NMManagerPrivate *priv;
+	const DeviceRouteMetricData *d2;
+	DeviceRouteMetricData *data;
+	DeviceRouteMetricData data_lookup;
+	const NMDedupMultiHeadEntry *all_links_head;
+	NMPObject links_needle;
+	guint n_links;
+	gboolean cleaned = FALSE;
+	GHashTableIter h_iter;
+
+	g_return_val_if_fail (NM_IS_MANAGER (self), 0);
+
+	if (ifindex <= 0) {
+		if (lookup_only)
+			return 0;
+		return nm_device_get_route_metric_default (device_type);
+	}
+
+	priv = NM_MANAGER_GET_PRIVATE (self);
+
+	if (   lookup_only
+	    && !priv->device_route_metrics)
+		return 0;
+
+	if (G_UNLIKELY (!priv->device_route_metrics)) {
+		const GHashTable *h;
+		const NMConfigDeviceStateData *device_state;
+
+		priv->device_route_metrics = g_hash_table_new_full (_device_route_metric_data_by_ifindex_hash,
+		                                                    _device_route_metric_data_by_ifindex_equal,
+		                                                    NULL,
+		                                                    nm_g_slice_free_fcn (DeviceRouteMetricData));
+		cleaned = TRUE;
+
+		/* we need to pre-populate the cache for all (still existing) devices from the state-file */
+		h = nm_config_device_state_get_all (priv->config);
+		if (!h)
+			goto initited;
+
+		g_hash_table_iter_init (&h_iter, (GHashTable *) h);
+		while (g_hash_table_iter_next (&h_iter, NULL, (gpointer *) &device_state)) {
+			if (!device_state->route_metric_default)
+				continue;
+			if (!nm_platform_link_get (priv->platform, device_state->ifindex)) {
+				/* we have the entry in the state file, but (currently) no such
+				 * ifindex exists in platform. Most likely the entry is obsolete,
+				 * hence we skip it. */
+				continue;
+			}
+			if (!nm_g_hash_table_add (priv->device_route_metrics,
+			                          _device_route_metric_data_new (device_state->ifindex,
+			                                                         device_state->route_metric_default)))
+				nm_assert_not_reached ();
+		}
+	}
+
+initited:
+	data_lookup.ifindex = ifindex;
+
+	data = g_hash_table_lookup (priv->device_route_metrics, &data_lookup);
+	if (data)
+		return data->effective_metric;
+	if (lookup_only)
+		return 0;
+
+	if (!cleaned) {
+		/* get the number of all links in the platform cache. */
+		all_links_head = nm_platform_lookup_all (priv->platform,
+		                                         NMP_CACHE_ID_TYPE_OBJECT_TYPE,
+		                                         nmp_object_stackinit_id_link (&links_needle, 1));
+		n_links = all_links_head ? all_links_head->len : 0;
+
+		/* on systems where a lot of devices are created and go away, the index contains
+		 * a lot of stale entries. We must from time to time clean them up.
+		 *
+		 * Do do this cleanup, whenever we have more enties then 2 times the number of links. */
+		if (G_UNLIKELY (g_hash_table_size (priv->device_route_metrics) > NM_MAX (20, n_links * 2))) {
+			/* from time to time, we need to do some house-keeping and prune stale entries.
+			 * Otherwise, on a system where interfaces frequently come and go (docker), we
+			 * keep growing this cache for ifindexes that no longer exist. */
+			g_hash_table_iter_init (&h_iter, priv->device_route_metrics);
+			while (g_hash_table_iter_next (&h_iter, NULL, (gpointer *) &d2)) {
+				if (!nm_platform_link_get (priv->platform, d2->ifindex))
+					g_hash_table_iter_remove (&h_iter);
+			}
+			cleaned = TRUE;
+		}
+	}
+
+	data = _device_route_metric_data_new (ifindex, nm_device_get_route_metric_default (device_type));
+
+	/* unfortunately, there is no stright forward way to lookup all reserved metrics.
+	 * Note, that we don't only have to know which metrics are currently reserved,
+	 * but also, which metrics are now seemingly un-used but caused another reserved
+	 * metric to be bumped. Hence, the naive O(n^2) search :( */
+again:
+	g_hash_table_iter_init (&h_iter, priv->device_route_metrics);
+	while (g_hash_table_iter_next (&h_iter, NULL, (gpointer *) &d2)) {
+		if (   data->effective_metric < d2->aspired_metric
+		    || data->effective_metric > d2->effective_metric) {
+			/* no overlap. Skip. */
+			continue;
+		}
+		if (   !cleaned
+		    && !nm_platform_link_get (priv->platform, d2->ifindex)) {
+			/* the metric seems taken, but there is no such interface. This entry
+			 * is stale, forget about it. */
+			g_hash_table_iter_remove (&h_iter);
+			continue;
+		}
+		data->effective_metric = d2->effective_metric;
+		if (data->effective_metric == G_MAXUINT32) {
+			/* we cannot bump any further. Done. */
+			break;
+		}
+
+		if (data->effective_metric - data->aspired_metric > 50) {
+			/* as one active interface reserves an entire range of metrics
+			 * (from aspired_metric to effective_metric), that means if you
+			 * alternatingly activate two interfaces, their metric will
+			 * juggle up.
+			 *
+			 * Limit this, don't bump the metric more then 50 times. */
+			break;
+		}
+
+		/* bump the metric, and search again. */
+		data->effective_metric++;
+		goto again;
+	}
+
+	_LOGT (LOGD_DEVICE, "default-route-metric: ifindex %d reserves metric %u (aspired %u)",
+	       data->ifindex, data->effective_metric, data->aspired_metric);
+
+	if (!nm_g_hash_table_add (priv->device_route_metrics, data))
+		nm_assert_not_reached ();
+
+	return data->effective_metric;
+}
+
+guint32
+nm_manager_device_route_metric_reserve (NMManager *self,
+                                        int ifindex,
+                                        NMDeviceType device_type)
+{
+	guint32 metric;
+
+	metric = _device_route_metric_get (self, ifindex, device_type, FALSE);
+	nm_assert (metric != 0);
+	return metric;
+}
+
+guint32
+nm_manager_device_route_metric_get (NMManager *self,
+                                    int ifindex)
+{
+	return _device_route_metric_get (self, ifindex, NM_DEVICE_TYPE_UNKNOWN, TRUE);
+}
+
+void
+nm_manager_device_route_metric_clear (NMManager *self,
+                                      int ifindex)
+{
+	NMManagerPrivate *priv;
+	DeviceRouteMetricData data_lookup;
+
+	priv = NM_MANAGER_GET_PRIVATE (self);
+
+	if (!priv->device_route_metrics)
+		return;
+	data_lookup.ifindex = ifindex;
+	if (g_hash_table_remove (priv->device_route_metrics, &data_lookup)) {
+		_LOGT (LOGD_DEVICE, "default-route-metric: ifindex %d released",
+		       ifindex);
+	}
+}
 
 /*****************************************************************************/
 
@@ -5229,7 +5462,7 @@ nm_manager_write_device_state (NMManager *self)
 
 		nm_owned = nm_device_is_software (device) ? nm_device_is_nm_owned (device) : -1;
 
-		route_metric_default = 0;
+		route_metric_default = nm_manager_device_route_metric_get (self, ifindex);
 
 		if (nm_config_device_state_write (ifindex,
 		                                  managed_type,
@@ -6614,6 +6847,8 @@ dispose (GObject *object)
 	nm_device_factory_manager_for_each_factory (_deinit_device_factory, self);
 
 	nm_clear_g_source (&priv->timestamp_update_id);
+
+	g_clear_pointer (&priv->device_route_metrics, g_hash_table_destroy);
 
 	G_OBJECT_CLASS (nm_manager_parent_class)->dispose (object);
 }

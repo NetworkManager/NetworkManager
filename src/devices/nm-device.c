@@ -1870,7 +1870,10 @@ nm_device_get_route_metric (NMDevice *self,
 		if (route_metric >= 0)
 			goto out;
 	}
-	route_metric = nm_device_get_route_metric_default (nm_device_get_device_type (self));
+
+	route_metric = nm_manager_device_route_metric_reserve (nm_manager_get (),
+	                                                       nm_device_get_ip_ifindex (self),
+	                                                       nm_device_get_device_type (self));
 out:
 	return nm_utils_ip_route_metric_normalize (addr_family, route_metric);
 }
@@ -12608,6 +12611,11 @@ _cleanup_generic_pre (NMDevice *self, CleanupType cleanup_type)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	_cancel_activation (self);
+
+	if (cleanup_type != CLEANUP_TYPE_KEEP) {
+		nm_manager_device_route_metric_clear (nm_manager_get (),
+		                                      nm_device_get_ip_ifindex (self));
+	}
 
 	if (   cleanup_type == CLEANUP_TYPE_DECONFIGURE
 	    && priv->fw_state >= FIREWALL_STATE_INITIALIZED
