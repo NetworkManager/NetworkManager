@@ -62,41 +62,7 @@
 #include "introspection/org.freedesktop.NetworkManager.h"
 #include "introspection/org.freedesktop.NetworkManager.Device.h"
 
-static gboolean add_device (NMManager *self, NMDevice *device, GError **error);
-
-static NMActiveConnection *_new_active_connection (NMManager *self,
-                                                   NMConnection *connection,
-                                                   NMConnection *applied,
-                                                   const char *specific_object,
-                                                   NMDevice *device,
-                                                   NMAuthSubject *subject,
-                                                   NMActivationType activation_type,
-                                                   GError **error);
-
-static void policy_activating_device_changed (GObject *object, GParamSpec *pspec, gpointer user_data);
-
-static gboolean find_master (NMManager *self,
-                             NMConnection *connection,
-                             NMDevice *device,
-                             NMSettingsConnection **out_master_connection,
-                             NMDevice **out_master_device,
-                             NMActiveConnection **out_master_ac,
-                             GError **error);
-
-static void nm_manager_update_state (NMManager *manager);
-
-static void connection_changed (NMManager *self, NMConnection *connection);
-static void device_sleep_cb (NMDevice *device,
-                             GParamSpec *pspec,
-                             NMManager *self);
-
-static void settings_startup_complete_changed (NMSettings *settings,
-                                               GParamSpec *pspec,
-                                               NMManager *self);
-
-static void retry_connections_for_parent_device (NMManager *self, NMDevice *device);
-
-static NM_CACHED_QUARK_FCN ("active-connection-add-and-activate", active_connection_add_and_activate_quark)
+/*****************************************************************************/
 
 typedef struct {
 	gboolean user_enabled;
@@ -108,6 +74,50 @@ typedef struct {
 	const char *prop;
 	const char *hw_prop;
 } RadioState;
+
+enum {
+	DEVICE_ADDED,
+	INTERNAL_DEVICE_ADDED,
+	DEVICE_REMOVED,
+	INTERNAL_DEVICE_REMOVED,
+	STATE_CHANGED,
+	CHECK_PERMISSIONS,
+	ACTIVE_CONNECTION_ADDED,
+	ACTIVE_CONNECTION_REMOVED,
+	CONFIGURE_QUIT,
+
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
+
+NM_GOBJECT_PROPERTIES_DEFINE (NMManager,
+	PROP_VERSION,
+	PROP_CAPABILITIES,
+	PROP_STATE,
+	PROP_STARTUP,
+	PROP_NETWORKING_ENABLED,
+	PROP_WIRELESS_ENABLED,
+	PROP_WIRELESS_HARDWARE_ENABLED,
+	PROP_WWAN_ENABLED,
+	PROP_WWAN_HARDWARE_ENABLED,
+	PROP_WIMAX_ENABLED,
+	PROP_WIMAX_HARDWARE_ENABLED,
+	PROP_ACTIVE_CONNECTIONS,
+	PROP_CONNECTIVITY,
+	PROP_CONNECTIVITY_CHECK_AVAILABLE,
+	PROP_CONNECTIVITY_CHECK_ENABLED,
+	PROP_PRIMARY_CONNECTION,
+	PROP_PRIMARY_CONNECTION_TYPE,
+	PROP_ACTIVATING_CONNECTION,
+	PROP_DEVICES,
+	PROP_METERED,
+	PROP_GLOBAL_DNS_CONFIGURATION,
+	PROP_ALL_DEVICES,
+
+	/* Not exported */
+	PROP_SLEEPING,
+);
 
 typedef struct {
 	NMPlatform *platform;
@@ -181,49 +191,7 @@ G_DEFINE_TYPE (NMManager, nm_manager, NM_TYPE_EXPORTED_OBJECT)
 
 #define NM_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMManager, NM_IS_MANAGER)
 
-enum {
-	DEVICE_ADDED,
-	INTERNAL_DEVICE_ADDED,
-	DEVICE_REMOVED,
-	INTERNAL_DEVICE_REMOVED,
-	STATE_CHANGED,
-	CHECK_PERMISSIONS,
-	ACTIVE_CONNECTION_ADDED,
-	ACTIVE_CONNECTION_REMOVED,
-	CONFIGURE_QUIT,
-
-	LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL] = { 0 };
-
-NM_GOBJECT_PROPERTIES_DEFINE (NMManager,
-	PROP_VERSION,
-	PROP_CAPABILITIES,
-	PROP_STATE,
-	PROP_STARTUP,
-	PROP_NETWORKING_ENABLED,
-	PROP_WIRELESS_ENABLED,
-	PROP_WIRELESS_HARDWARE_ENABLED,
-	PROP_WWAN_ENABLED,
-	PROP_WWAN_HARDWARE_ENABLED,
-	PROP_WIMAX_ENABLED,
-	PROP_WIMAX_HARDWARE_ENABLED,
-	PROP_ACTIVE_CONNECTIONS,
-	PROP_CONNECTIVITY,
-	PROP_CONNECTIVITY_CHECK_AVAILABLE,
-	PROP_CONNECTIVITY_CHECK_ENABLED,
-	PROP_PRIMARY_CONNECTION,
-	PROP_PRIMARY_CONNECTION_TYPE,
-	PROP_ACTIVATING_CONNECTION,
-	PROP_DEVICES,
-	PROP_METERED,
-	PROP_GLOBAL_DNS_CONFIGURATION,
-	PROP_ALL_DEVICES,
-
-	/* Not exported */
-	PROP_SLEEPING,
-);
+/*****************************************************************************/
 
 NM_DEFINE_SINGLETON_INSTANCE (NMManager);
 
@@ -296,7 +264,39 @@ NM_DEFINE_SINGLETON_INSTANCE (NMManager);
 
 /*****************************************************************************/
 
-static NM_CACHED_QUARK_FCN ("autoconnect-root", autoconnect_root_quark)
+static gboolean add_device (NMManager *self, NMDevice *device, GError **error);
+
+static NMActiveConnection *_new_active_connection (NMManager *self,
+                                                   NMConnection *connection,
+                                                   NMConnection *applied,
+                                                   const char *specific_object,
+                                                   NMDevice *device,
+                                                   NMAuthSubject *subject,
+                                                   NMActivationType activation_type,
+                                                   GError **error);
+
+static void policy_activating_device_changed (GObject *object, GParamSpec *pspec, gpointer user_data);
+
+static gboolean find_master (NMManager *self,
+                             NMConnection *connection,
+                             NMDevice *device,
+                             NMSettingsConnection **out_master_connection,
+                             NMDevice **out_master_device,
+                             NMActiveConnection **out_master_ac,
+                             GError **error);
+
+static void nm_manager_update_state (NMManager *manager);
+
+static void connection_changed (NMManager *self, NMConnection *connection);
+static void device_sleep_cb (NMDevice *device,
+                             GParamSpec *pspec,
+                             NMManager *self);
+
+static void settings_startup_complete_changed (NMSettings *settings,
+                                               GParamSpec *pspec,
+                                               NMManager *self);
+
+static void retry_connections_for_parent_device (NMManager *self, NMDevice *device);
 
 static void active_connection_state_changed (NMActiveConnection *active,
                                              GParamSpec *pspec,
@@ -307,6 +307,14 @@ static void active_connection_default_changed (NMActiveConnection *active,
 static void active_connection_parent_active (NMActiveConnection *active,
                                              NMActiveConnection *parent_ac,
                                              NMManager *self);
+
+/*****************************************************************************/
+
+static NM_CACHED_QUARK_FCN ("active-connection-add-and-activate", active_connection_add_and_activate_quark)
+
+static NM_CACHED_QUARK_FCN ("autoconnect-root", autoconnect_root_quark)
+
+/*****************************************************************************/
 
 /* Returns: whether to notify D-Bus of the removal or not */
 static gboolean
