@@ -114,6 +114,16 @@ NMDevice *          nm_manager_get_device_by_ifindex   (NMManager *manager,
 NMDevice *          nm_manager_get_device_by_path      (NMManager *manager,
                                                         const char *path);
 
+guint32             nm_manager_device_route_metric_reserve (NMManager *self,
+                                                            int ifindex,
+                                                            NMDeviceType device_type);
+
+guint32             nm_manager_device_route_metric_get (NMManager *self,
+                                                        int ifindex);
+
+void                nm_manager_device_route_metric_clear (NMManager *self,
+                                                          int ifindex);
+
 char *              nm_manager_get_connection_iface (NMManager *self,
                                                      NMConnection *connection,
                                                      NMDevice **out_parent,
