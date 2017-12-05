@@ -2734,11 +2734,25 @@ nm_settings_connection_autoconnect_blocked_reason_set_full (NMSettingsConnection
 gboolean
 nm_settings_connection_autoconnect_is_blocked (NMSettingsConnection *self)
 {
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+	NMSettingsConnectionPrivate *priv;
+	NMSettingsConnectionFlags flags;
 
-	return    priv->autoconnect_blocked_reason != NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE
-	       || priv->autoconnect_retries == 0
-	       || NM_FLAGS_HAS (nm_settings_connection_get_flags (self), NM_SETTINGS_CONNECTION_FLAGS_VOLATILE);
+	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), TRUE);
+
+	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+
+	if (priv->autoconnect_blocked_reason != NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE)
+		return TRUE;
+	if (priv->autoconnect_retries == 0)
+		return TRUE;
+
+	flags = priv->flags;
+	if (NM_FLAGS_HAS (flags, NM_SETTINGS_CONNECTION_FLAGS_VOLATILE))
+		return TRUE;
+	if (!NM_FLAGS_HAS (flags, NM_SETTINGS_CONNECTION_FLAGS_VISIBLE))
+		return TRUE;
+
+	return FALSE;
 }
 
 /*****************************************************************************/
