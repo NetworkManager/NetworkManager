@@ -329,7 +329,8 @@ active_connection_remove (NMManager *self, NMActiveConnection *active)
 	g_signal_handlers_disconnect_by_func (active, active_connection_parent_active, self);
 
 	if (   (connection = nm_active_connection_get_settings_connection (active))
-	    && nm_settings_connection_get_volatile (connection))
+	    && NM_FLAGS_HAS (nm_settings_connection_get_flags (connection),
+	                     NM_SETTINGS_CONNECTION_FLAGS_VOLATILE))
 		g_object_ref (connection);
 	else
 		connection = NULL;
@@ -498,7 +499,8 @@ _get_activatable_connections_filter (NMSettings *settings,
                                      NMSettingsConnection *connection,
                                      gpointer user_data)
 {
-	if (nm_settings_connection_get_volatile (connection))
+	if (NM_FLAGS_HAS (nm_settings_connection_get_flags (connection),
+	                  NM_SETTINGS_CONNECTION_FLAGS_VOLATILE))
 		return FALSE;
 	return !active_connection_find_first (user_data, connection, NULL, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING);
 }

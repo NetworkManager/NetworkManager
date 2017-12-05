@@ -1185,7 +1185,8 @@ dispose (GObject *object)
 	if (priv->pan_connection) {
 		/* Check whether we want to remove the created connection. If so, we take a reference
 		 * and delete it at the end of dispose(). */
-		if (nm_settings_connection_get_nm_generated (NM_SETTINGS_CONNECTION (priv->pan_connection)))
+		if (NM_FLAGS_HAS (nm_settings_connection_get_flags (NM_SETTINGS_CONNECTION (priv->pan_connection)),
+		                  NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED))
 			to_delete = g_object_ref (priv->pan_connection);
 
 		priv->pan_connection = NULL;
