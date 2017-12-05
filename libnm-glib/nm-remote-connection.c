@@ -479,7 +479,7 @@ updated_get_settings_cb (DBusGProxy *proxy,
 	} else {
 		gs_unref_object NMConnection *self_alive = NULL;
 
-		self_alive = g_object_ref (self);
+		self_alive = (NMConnection*)g_object_ref (self);
 		_nm_connection_replace_settings (NM_CONNECTION (self), new_settings);
 		g_signal_emit (self, signals[UPDATED], 0, new_settings);
 		g_hash_table_destroy (new_settings);
@@ -611,7 +611,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	                        G_TYPE_INVALID))
 		return FALSE;
 	priv->visible = TRUE;
-	self_alive = g_object_ref (initable);
+	self_alive = (NMConnection*)g_object_ref (initable);
 	_nm_connection_replace_settings (NM_CONNECTION (initable), hash);
 	g_signal_emit (initable, signals[UPDATED], 0, hash);
 	g_hash_table_destroy (hash);
@@ -687,7 +687,7 @@ init_get_settings_cb (DBusGProxy *proxy,
 	}
 
 	priv->visible = TRUE;
-	self_alive = g_object_ref (init_data->connection);
+	self_alive = (NMConnection*)g_object_ref (init_data->connection);
 	_nm_connection_replace_settings (NM_CONNECTION (init_data->connection), settings);
 	g_signal_emit (init_data->connection, signals[UPDATED], 0, settings);
 	g_hash_table_destroy (settings);
