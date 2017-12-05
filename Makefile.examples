@@ -171,6 +171,7 @@ EXTRA_DIST += \
 	examples/python/gi/get-active-connections.py \
 	examples/python/gi/get_ips.py \
 	examples/python/gi/list-connections.py \
+	examples/python/gi/nm-connection-update-stable-id.py \
 	examples/python/gi/setting-user-data.py \
 	examples/python/gi/show-wifi-networks.py \
 	examples/python/gi/update-ip4-method.py \

@@ -53,7 +53,6 @@
 static void nm_settings_connection_connection_interface_init (NMConnectionInterface *iface);
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMSettingsConnection,
-	PROP_VISIBLE,
 	PROP_UNSAVED,
 	PROP_READY,
 	PROP_FLAGS,
@@ -75,13 +74,10 @@ typedef struct _NMSettingsConnectionPrivate {
 	NMSessionMonitor *session_monitor;
 	gulong session_changed_id;
 
-	NMSettingsConnectionFlags flags;
+	NMSettingsConnectionFlags flags:5;
 
 	bool removed:1;
 	bool ready:1;
-
-	/* Is this connection visible by some session? */
-	bool visible:1;
 
 	bool timestamp_set:1;
 
@@ -323,20 +319,9 @@ find_secret (NMConnection *self,
 static void
 set_visible (NMSettingsConnection *self, gboolean new_visible)
 {
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-
-	if (new_visible == priv->visible)
-		return;
-	priv->visible = new_visible;
-	_notify (self, PROP_VISIBLE);
-}
-
-gboolean
-nm_settings_connection_is_visible (NMSettingsConnection *self)
-{
-	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
-
-	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->visible;
+	nm_settings_connection_set_flags (self,
+	                                  NM_SETTINGS_CONNECTION_FLAGS_VISIBLE,
+	                                  new_visible);
 }
 
 void
@@ -404,7 +389,8 @@ nm_settings_connection_check_permission (NMSettingsConnection *self,
 
 	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
-	if (priv->visible == FALSE)
+	if (!NM_FLAGS_HAS (nm_settings_connection_get_flags (self),
+	                   NM_SETTINGS_CONNECTION_FLAGS_VISIBLE))
 		return FALSE;
 
 	s_con = nm_connection_get_setting_connection (NM_CONNECTION (self));
@@ -502,33 +488,82 @@ secrets_cleared_cb (NMSettingsConnection *self)
 }
 
 static void
-set_unsaved (NMSettingsConnection *self, gboolean now_unsaved)
+set_persist_mode (NMSettingsConnection *self, NMSettingsConnectionPersistMode persist_mode)
 {
-	NMSettingsConnectionFlags flags = nm_settings_connection_get_flags (self);
+	NMSettingsConnectionFlags flags = NM_SETTINGS_CONNECTION_FLAGS_NONE;
+	const NMSettingsConnectionFlags ALL =   NM_SETTINGS_CONNECTION_FLAGS_UNSAVED
+	                                      | NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED
+	                                      | NM_SETTINGS_CONNECTION_FLAGS_VOLATILE;
 
-	if (NM_FLAGS_HAS (flags, NM_SETTINGS_CONNECTION_FLAGS_UNSAVED) != !!now_unsaved) {
-		if (now_unsaved)
-			flags |= NM_SETTINGS_CONNECTION_FLAGS_UNSAVED;
-		else {
-			flags &= ~(NM_SETTINGS_CONNECTION_FLAGS_UNSAVED |
-			           NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED |
-			           NM_SETTINGS_CONNECTION_FLAGS_VOLATILE);
-		}
-		nm_settings_connection_set_flags_all (self, flags);
+	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP)
+		return;
+
+	switch (persist_mode) {
+	case NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK:
+		flags = NM_SETTINGS_CONNECTION_FLAGS_NONE;
+		break;
+	case NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY:
+	case NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED:
+	case NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY:
+		flags = NM_SETTINGS_CONNECTION_FLAGS_UNSAVED;
+		break;
+	case NM_SETTINGS_CONNECTION_PERSIST_MODE_VOLATILE_DETACHED:
+	case NM_SETTINGS_CONNECTION_PERSIST_MODE_VOLATILE_ONLY:
+		flags = NM_SETTINGS_CONNECTION_FLAGS_UNSAVED |
+		        NM_SETTINGS_CONNECTION_FLAGS_VOLATILE;
+		break;
+	case NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP:
+		g_return_if_reached ();
 	}
+
+	nm_settings_connection_set_flags_full (self, ALL, flags);
 }
 
 static void
 connection_changed_cb (NMSettingsConnection *self, gpointer unused)
 {
-	set_unsaved (self, TRUE);
+	set_persist_mode (self, NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY);
 	_emit_updated (self, FALSE);
 }
 
-gboolean
-nm_settings_connection_replace_settings_prepare (NMSettingsConnection *self,
-                                                 NMConnection *new_connection,
-                                                 GError **error)
+static gboolean
+_delete (NMSettingsConnection *self, GError **error)
+{
+	NMSettingsConnectionClass *klass;
+	GError *local = NULL;
+	const char *filename;
+
+	nm_assert (NM_IS_SETTINGS_CONNECTION (self));
+
+	klass = NM_SETTINGS_CONNECTION_GET_CLASS (self);
+	if (!klass->delete) {
+		g_set_error (&local,
+		             NM_SETTINGS_ERROR,
+		             NM_SETTINGS_ERROR_FAILED,
+		             "delete not supported");
+		goto fail;
+	}
+	if (!klass->delete (self,
+	                    &local))
+		goto fail;
+
+	filename = nm_settings_connection_get_filename (self);
+	if (filename) {
+		_LOGD ("delete: success deleting connection (\"%s\")", filename);
+		nm_settings_connection_set_filename (self, NULL);
+	} else
+		_LOGT ("delete: success deleting connection (no-file)");
+	return TRUE;
+fail:
+	_LOGD ("delete: failure deleting connection: %s", local->message);
+	g_propagate_error (error, local);
+	return FALSE;
+}
+
+static gboolean
+_update_prepare (NMSettingsConnection *self,
+                 NMConnection *new_connection,
+                 GError **error)
 {
 	NMSettingsConnectionPrivate *priv;
 
@@ -553,173 +588,137 @@ nm_settings_connection_replace_settings_prepare (NMSettingsConnection *self,
 }
 
 gboolean
-nm_settings_connection_replace_settings_full (NMSettingsConnection *self,
-                                              NMConnection *new_connection,
-                                              gboolean prepare_new_connection,
-                                              gboolean update_unsaved,
-                                              const char *log_diff_name,
-                                              GError **error)
+nm_settings_connection_update (NMSettingsConnection *self,
+                               NMConnection *new_connection,
+                               NMSettingsConnectionPersistMode persist_mode,
+                               NMSettingsConnectionCommitReason commit_reason,
+                               const char *log_diff_name,
+                               GError **error)
 {
 	NMSettingsConnectionPrivate *priv;
+	NMSettingsConnectionClass *klass = NULL;
+	gs_unref_object NMConnection *reread_connection = NULL;
+	NMConnection *replace_connection;
+	gboolean replaced = FALSE;
+	gs_free char *logmsg_change = NULL;
+	GError *local = NULL;
+	gboolean save_to_disk;
 
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
-	g_return_val_if_fail (NM_IS_CONNECTION (new_connection), FALSE);
 
 	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
-	if (   prepare_new_connection
-	    && !nm_settings_connection_replace_settings_prepare (self,
-	                                                         new_connection,
-	                                                         error))
-		return FALSE;
+	save_to_disk =    (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK)
+	               || (   persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP
+	                   && !nm_settings_connection_get_unsaved (self));
 
-	/* Do nothing if there's nothing to update */
-	if (nm_connection_compare (NM_CONNECTION (self),
-	                           new_connection,
-	                           NM_SETTING_COMPARE_FLAG_EXACT)) {
-		return TRUE;
+	if (save_to_disk) {
+		klass = NM_SETTINGS_CONNECTION_GET_CLASS (self);
+		if (!klass->commit_changes) {
+			g_set_error (&local,
+			             NM_SETTINGS_ERROR,
+			             NM_SETTINGS_ERROR_FAILED,
+			             "writing settings not supported");
+			goto out;
+		}
 	}
+
+	if (   new_connection
+	    && !_update_prepare (self,
+	                         new_connection,
+	                         &local))
+		goto out;
+
+	if (save_to_disk) {
+		if (!klass->commit_changes (self,
+		                            new_connection ?: NM_CONNECTION (self),
+		                            commit_reason,
+		                            &reread_connection,
+		                            &logmsg_change,
+		                            &local))
+			goto out;
+
+		if (   reread_connection
+		    && !_update_prepare (self,
+		                         reread_connection,
+		                         &local))
+			goto out;
+	}
+
+	replace_connection = reread_connection ?: new_connection;
 
 	/* Disconnect the changed signal to ensure we don't set Unsaved when
 	 * it's not required.
 	 */
 	g_signal_handlers_block_by_func (self, G_CALLBACK (connection_changed_cb), NULL);
 
-	if (log_diff_name)
-		nm_utils_log_connection_diff (new_connection, NM_CONNECTION (self), LOGL_DEBUG, LOGD_CORE, log_diff_name, "++ ");
+	/* Do nothing if there's nothing to update */
+	if (   replace_connection
+	    && !nm_connection_compare (NM_CONNECTION (self),
+	                               replace_connection,
+	                               NM_SETTING_COMPARE_FLAG_EXACT)) {
+		if (log_diff_name)
+			nm_utils_log_connection_diff (replace_connection, NM_CONNECTION (self), LOGL_DEBUG, LOGD_CORE, log_diff_name, "++ ");
 
-	nm_connection_replace_settings_from_connection (NM_CONNECTION (self), new_connection);
+		nm_connection_replace_settings_from_connection (NM_CONNECTION (self), replace_connection);
 
-	_LOGD ("replace settings from connection %p (%s)", new_connection, nm_connection_get_id (NM_CONNECTION (self)));
+		replaced = TRUE;
+	}
 
 	nm_settings_connection_set_flags (self,
 	                                  NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED | NM_SETTINGS_CONNECTION_FLAGS_VOLATILE,
 	                                  FALSE);
 
-	/* Cache the just-updated system secrets in case something calls
-	 * nm_connection_clear_secrets() and clears them.
-	 */
-	update_system_secrets_cache (self);
+	if (replaced) {
+		/* Cache the just-updated system secrets in case something calls
+		 * nm_connection_clear_secrets() and clears them.
+		 */
+		update_system_secrets_cache (self);
 
-	/* Add agent and always-ask secrets back; they won't necessarily be
-	 * in the replacement connection data if it was eg reread from disk.
-	 */
-	if (priv->agent_secrets) {
-		GVariant *dict;
+		/* Add agent and always-ask secrets back; they won't necessarily be
+		 * in the replacement connection data if it was eg reread from disk.
+		 */
+		if (priv->agent_secrets) {
+			GVariant *dict;
 
-		dict = nm_connection_to_dbus (priv->agent_secrets, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
-		if (dict) {
-			(void) nm_connection_update_secrets (NM_CONNECTION (self), NULL, dict, NULL);
-			g_variant_unref (dict);
+			dict = nm_connection_to_dbus (priv->agent_secrets, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
+			if (dict) {
+				(void) nm_connection_update_secrets (NM_CONNECTION (self), NULL, dict, NULL);
+				g_variant_unref (dict);
+			}
 		}
 	}
 
 	nm_settings_connection_recheck_visibility (self);
 
-	/* Manually emit changed signal since we disconnected the handler, but
-	 * only update Unsaved if the caller wanted us to.
-	 */
-	if (update_unsaved)
-		set_unsaved (self, TRUE);
+	set_persist_mode (self, persist_mode);
+
+	if (NM_IN_SET (persist_mode, NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY,
+	                             NM_SETTINGS_CONNECTION_PERSIST_MODE_VOLATILE_ONLY))
+		_delete (self, NULL);
+	else if (NM_IN_SET (persist_mode, NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED,
+	                                  NM_SETTINGS_CONNECTION_PERSIST_MODE_VOLATILE_DETACHED))
+		nm_settings_connection_set_filename (self, NULL);
 
 	g_signal_handlers_unblock_by_func (self, G_CALLBACK (connection_changed_cb), NULL);
 
 	_emit_updated (self, TRUE);
 
-	return TRUE;
-}
-
-/* Update the settings of this connection to match that of 'new_connection',
- * taking care to make a private copy of secrets.
- */
-gboolean
-nm_settings_connection_replace_settings (NMSettingsConnection *self,
-                                         NMConnection *new_connection,
-                                         gboolean update_unsaved,
-                                         const char *log_diff_name,
-                                         GError **error)
-{
-	return nm_settings_connection_replace_settings_full (self,
-	                                                     new_connection,
-	                                                     TRUE,
-	                                                     update_unsaved,
-	                                                     log_diff_name,
-	                                                     error);
-}
-
-gboolean
-nm_settings_connection_commit_changes (NMSettingsConnection *self,
-                                       NMConnection *new_connection,
-                                       NMSettingsConnectionCommitReason commit_reason,
-                                       GError **error)
-{
-	NMSettingsConnectionClass *klass;
-	gs_free_error GError *local = NULL;
-	gs_unref_object NMConnection *reread_connection = NULL;
-	gs_free char *logmsg_change = NULL;
-
-	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
-
-	klass = NM_SETTINGS_CONNECTION_GET_CLASS (self);
-	if (!klass->commit_changes) {
-		_LOGW ("write: setting plugin %s does not support to write connection",
-		       G_OBJECT_TYPE_NAME (self));
-		g_set_error (error,
-		             NM_SETTINGS_ERROR,
-		             NM_SETTINGS_ERROR_FAILED,
-		             "writing settings not supported");
+out:
+	if (local) {
+		_LOGI ("write: failure to update connection: %s", local->message);
+		g_propagate_error (error, local);
 		return FALSE;
 	}
 
-	if (   new_connection
-	    && !nm_settings_connection_replace_settings_prepare (self,
-	                                                         new_connection,
-	                                                         &local)) {
-		_LOGW ("write: failed to prepare connection for writing: %s",
-		       local->message);
-		g_propagate_error (error, g_steal_pointer (&local));
-		return FALSE;
+	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK) {
+		if (reread_connection)
+			_LOGI ("write: successfully updated (%s), connection was modified in the process", logmsg_change);
+		else if (new_connection)
+			_LOGI ("write: successfully updated (%s)", logmsg_change);
+		else
+			_LOGI ("write: successfully commited (%s)", logmsg_change);
 	}
-
-	if (!klass->commit_changes (self,
-	                            new_connection,
-	                            commit_reason,
-	                            &reread_connection,
-	                            &logmsg_change,
-	                            &local)) {
-		_LOGW ("write: failure to write setting: %s",
-		       local->message);
-		g_propagate_error (error, g_steal_pointer (&local));
-		return FALSE;
-	}
-
-	if (reread_connection || new_connection) {
-		if (!nm_settings_connection_replace_settings_full (self,
-		                                                   reread_connection ?: new_connection,
-		                                                   !reread_connection,
-		                                                   FALSE,
-		                                                   new_connection
-		                                                     ? "update-during-write"
-		                                                     : "replace-and-commit-disk",
-		                                                   &local)) {
-			/* this can't really happen, because at this point replace-settings
-			 * is no longer supposed to fail. It's a bug. */
-			_LOGE ("write: replacing setting failed: %s",
-			       local->message);
-			g_propagate_error (error, g_steal_pointer (&local));
-			g_return_val_if_reached (FALSE);
-		}
-	}
-
-	set_unsaved (self, FALSE);
-
-	if (reread_connection)
-		_LOGI ("write: successfully updated (%s), connection was modified in the process", logmsg_change);
-	else if (new_connection)
-		_LOGI ("write: successfully updated (%s)", logmsg_change);
-	else
-		_LOGI ("write: successfully commited (%s)", logmsg_change);
-
 	return TRUE;
 }
 
@@ -764,25 +763,14 @@ nm_settings_connection_delete (NMSettingsConnection *self,
                                GError **error)
 {
 	gs_unref_object NMSettingsConnection *self_keep_alive = NULL;
-	NMSettingsConnectionClass *klass;
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	NMConnection *for_agents;
 
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
 
-	klass = NM_SETTINGS_CONNECTION_GET_CLASS (self);
-
 	self_keep_alive = g_object_ref (self);
 
-	if (!klass->delete) {
-		g_set_error (error,
-		             NM_SETTINGS_ERROR,
-		             NM_SETTINGS_ERROR_FAILED,
-		             "delete not supported");
-		return FALSE;
-	}
-	if (!klass->delete (self,
-	                    error))
+	if (!_delete (self, error))
 		return FALSE;
 
 	set_visible (self, FALSE);
@@ -997,10 +985,12 @@ nm_settings_connection_new_secrets (NMSettingsConnection *self,
 	update_system_secrets_cache (self);
 	update_agent_secrets_cache (self, NULL);
 
-	nm_settings_connection_commit_changes (self,
-	                                       NULL,
-	                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
-	                                       NULL);
+	nm_settings_connection_update (self,
+	                               NULL,
+	                               NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
+	                               NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
+	                               "new-secrets",
+	                               NULL);
 	return TRUE;
 }
 
@@ -1114,10 +1104,12 @@ get_secrets_done_cb (NMAgentManager *manager,
 				       setting_name,
 				       call_id);
 
-				nm_settings_connection_commit_changes (self,
-				                                       NULL,
-				                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
-				                                       NULL);
+				nm_settings_connection_update (self,
+				                               NULL,
+				                               NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
+				                               NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
+				                               "get-new-secrets",
+				                               NULL);
 			} else {
 				_LOGD ("(%s:%p) new agent secrets processed",
 				       setting_name,
@@ -1585,8 +1577,9 @@ typedef struct {
 	NMAgentManager *agent_mgr;
 	NMAuthSubject *subject;
 	NMConnection *new_settings;
-	gboolean save_to_disk;
+	NMSettingsUpdate2Flags flags;
 	char *audit_args;
+	bool is_update2:1;
 } UpdateInfo;
 
 static void
@@ -1650,7 +1643,13 @@ update_complete (NMSettingsConnection *self,
 {
 	if (error)
 		g_dbus_method_invocation_return_gerror (info->context, error);
-	else
+	else if (info->is_update2) {
+		GVariantBuilder result;
+
+		g_variant_builder_init (&result, G_VARIANT_TYPE ("a{sv}"));
+		g_dbus_method_invocation_return_value (info->context,
+		                                       g_variant_new ("(@a{sv})", g_variant_builder_end (&result)));
+	} else
 		g_dbus_method_invocation_return_value (info->context, NULL);
 
 	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_UPDATE, self, !error, info->audit_args,
@@ -1673,6 +1672,8 @@ update_auth_cb (NMSettingsConnection *self,
 	UpdateInfo *info = data;
 	NMSettingsConnectionCommitReason commit_reason;
 	gs_free_error GError *local = NULL;
+	NMSettingsConnectionPersistMode persist_mode;
+	const char *log_diff_name;
 
 	if (error) {
 		update_complete (self, info, error);
@@ -1693,7 +1694,9 @@ update_auth_cb (NMSettingsConnection *self,
 			 */
 			update_agent_secrets_cache (self, info->new_settings);
 		}
+	}
 
+	if (info->new_settings) {
 		if (nm_audit_manager_audit_enabled (nm_audit_manager_get ())) {
 			gs_unref_hashtable GHashTable *diff = NULL;
 			gboolean same;
@@ -1707,36 +1710,47 @@ update_auth_cb (NMSettingsConnection *self,
 		}
 	}
 
-	if (!info->save_to_disk) {
-		if (info->new_settings) {
-			nm_settings_connection_replace_settings (self,
-			                                         info->new_settings,
-			                                         TRUE,
-			                                         "replace-unsaved",
-			                                         &local);
-		}
-		goto out;
-	}
-
-	if (info->new_settings) {
-		if (!nm_settings_connection_replace_settings_prepare (self,
-		                                                      info->new_settings,
-		                                                      &local))
-			goto out;
-	}
-
 	commit_reason = NM_SETTINGS_CONNECTION_COMMIT_REASON_USER_ACTION;
 	if (   info->new_settings
 	    && !nm_streq0 (nm_connection_get_id (NM_CONNECTION (self)),
 	                   nm_connection_get_id (info->new_settings)))
 		commit_reason |= NM_SETTINGS_CONNECTION_COMMIT_REASON_ID_CHANGED;
 
-	nm_settings_connection_commit_changes (self,
-	                                       info->new_settings,
-	                                       commit_reason,
-	                                       &local);
+	if (NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_TO_DISK))
+		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK;
+	else if (NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY))
+		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY;
+	else if (NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED)) {
+		persist_mode = NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_VOLATILE)
+		               ? NM_SETTINGS_CONNECTION_PERSIST_MODE_VOLATILE_DETACHED
+		               : NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED;
+	} else if (NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY)) {
+		persist_mode = NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_VOLATILE)
+		               ? NM_SETTINGS_CONNECTION_PERSIST_MODE_VOLATILE_ONLY
+		               : NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY;
+	} else
+		persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP;
 
-out:
+	if (   persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK
+	    || (   persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP
+	        && !nm_settings_connection_get_unsaved (self)))
+		log_diff_name = info->new_settings ? "update-settings" : "write-out-to-disk";
+	else
+		log_diff_name = info->new_settings ? "update-unsaved" : "make-unsaved";
+
+	if (NM_FLAGS_HAS (info->flags, NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT)) {
+		nm_settings_connection_autoconnect_blocked_reason_set (self,
+		                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST,
+		                                                       TRUE);
+	}
+
+	nm_settings_connection_update (self,
+	                               info->new_settings,
+	                               persist_mode,
+	                               commit_reason,
+	                               log_diff_name,
+	                               &local);
+
 	if (!local) {
 		gs_unref_object NMConnection *for_agent = NULL;
 
@@ -1785,10 +1799,11 @@ get_update_modify_permission (NMConnection *old, NMConnection *new)
 }
 
 static void
-settings_connection_update_helper (NMSettingsConnection *self,
-                                   GDBusMethodInvocation *context,
-                                   GVariant *new_settings,
-                                   gboolean save_to_disk)
+settings_connection_update (NMSettingsConnection *self,
+                            gboolean is_update2,
+                            GDBusMethodInvocation *context,
+                            GVariant *new_settings,
+                            NMSettingsUpdate2Flags flags)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	NMAuthSubject *subject = NULL;
@@ -1797,8 +1812,6 @@ settings_connection_update_helper (NMSettingsConnection *self,
 	UpdateInfo *info;
 	const char *permission;
 	char *error_desc = NULL;
-
-	g_assert (new_settings != NULL || save_to_disk == TRUE);
 
 	/* If the connection is read-only, that has to be changed at the source of
 	 * the problem (ex a system settings plugin that can't write connections out)
@@ -1809,12 +1822,22 @@ settings_connection_update_helper (NMSettingsConnection *self,
 
 	/* Check if the settings are valid first */
 	if (new_settings) {
-		tmp = _nm_simple_connection_new_from_dbus (new_settings,
-		                                             NM_SETTING_PARSE_FLAGS_STRICT
-		                                           | NM_SETTING_PARSE_FLAGS_NORMALIZE,
-		                                           &error);
-		if (!tmp)
+		if (!g_variant_is_of_type (new_settings, NM_VARIANT_TYPE_CONNECTION)) {
+			g_set_error_literal (&error,
+			                     NM_SETTINGS_ERROR,
+			                     NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
+			                     "settings is of invalid type");
 			goto error;
+		}
+
+		if (g_variant_n_children (new_settings) > 0) {
+			tmp = _nm_simple_connection_new_from_dbus (new_settings,
+			                                             NM_SETTING_PARSE_FLAGS_STRICT
+			                                           | NM_SETTING_PARSE_FLAGS_NORMALIZE,
+			                                           &error);
+			if (!tmp)
+				goto error;
+		}
 	}
 
 	subject = _new_auth_subject (context, &error);
@@ -1836,10 +1859,11 @@ settings_connection_update_helper (NMSettingsConnection *self,
 	}
 
 	info = g_slice_new0 (UpdateInfo);
+	info->is_update2 = is_update2;
 	info->context = context;
 	info->agent_mgr = g_object_ref (priv->agent_mgr);
 	info->subject = subject;
-	info->save_to_disk = save_to_disk;
+	info->flags = flags;
 	info->new_settings = tmp;
 
 	permission = get_update_modify_permission (NM_CONNECTION (self),
@@ -1862,7 +1886,7 @@ impl_settings_connection_update (NMSettingsConnection *self,
                                  GDBusMethodInvocation *context,
                                  GVariant *new_settings)
 {
-	settings_connection_update_helper (self, context, new_settings, TRUE);
+	settings_connection_update (self, FALSE, context, new_settings, NM_SETTINGS_UPDATE2_FLAG_TO_DISK);
 }
 
 static void
@@ -1870,14 +1894,76 @@ impl_settings_connection_update_unsaved (NMSettingsConnection *self,
                                          GDBusMethodInvocation *context,
                                          GVariant *new_settings)
 {
-	settings_connection_update_helper (self, context, new_settings, FALSE);
+	settings_connection_update (self, FALSE, context, new_settings, NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY);
 }
 
 static void
 impl_settings_connection_save (NMSettingsConnection *self,
                                GDBusMethodInvocation *context)
 {
-	settings_connection_update_helper (self, context, NULL, TRUE);
+	settings_connection_update (self, FALSE, context, NULL, NM_SETTINGS_UPDATE2_FLAG_TO_DISK);
+}
+
+static void
+impl_settings_connection_update2 (NMSettingsConnection *self,
+                                  GDBusMethodInvocation *context,
+                                  GVariant *settings,
+                                  guint32 flags_u,
+                                  GVariant *args)
+{
+	GError *error = NULL;
+	GVariantIter iter;
+	const char *args_name;
+	const NMSettingsUpdate2Flags flags = (NMSettingsUpdate2Flags) flags_u;
+	const NMSettingsUpdate2Flags ALL_PERSIST_MODES =   NM_SETTINGS_UPDATE2_FLAG_TO_DISK
+	                                                 | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY
+	                                                 | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED
+	                                                 | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY;
+
+	if (NM_FLAGS_ANY (flags_u, ~((guint32) (ALL_PERSIST_MODES |
+	                                        NM_SETTINGS_UPDATE2_FLAG_VOLATILE |
+	                                        NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT)))) {
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
+		                             "Unknown flags");
+		g_dbus_method_invocation_take_error (context, error);
+		return;
+	}
+
+	if (   (   NM_FLAGS_ANY (flags, ALL_PERSIST_MODES)
+	        && !nm_utils_is_power_of_two (flags & ALL_PERSIST_MODES))
+	    || (   NM_FLAGS_HAS (flags, NM_SETTINGS_UPDATE2_FLAG_VOLATILE)
+	        && !NM_FLAGS_ANY (flags, NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED |
+	                                 NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY))) {
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
+		                             "Conflicting flags");
+		g_dbus_method_invocation_take_error (context, error);
+		return;
+	}
+
+	if (!g_variant_is_of_type (args, G_VARIANT_TYPE ("a{sv}"))) {
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
+		                             "args is of invalid type");
+		g_dbus_method_invocation_take_error (context, error);
+		return;
+	}
+
+	g_variant_iter_init (&iter, args);
+	while (g_variant_iter_next (&iter, "{&sv}", &args_name, NULL)) {
+		error = g_error_new (NM_SETTINGS_ERROR,
+		                     NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
+		                     "Unsupported argument '%s'", args_name);
+		g_dbus_method_invocation_take_error (context, error);
+		return;
+	}
+
+	settings_connection_update (self,
+	                            TRUE,
+	                            context,
+	                            settings,
+	                            flags);
 }
 
 static void
@@ -2055,10 +2141,12 @@ dbus_clear_secrets_auth_cb (NMSettingsConnection *self,
 	                                 nm_connection_get_path (NM_CONNECTION (self)),
 	                                 NM_CONNECTION (self));
 
-	nm_settings_connection_commit_changes (self,
-	                                       NULL,
-	                                       NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
-	                                       &local);
+	nm_settings_connection_update (self,
+	                               NULL,
+	                               NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
+	                               NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
+	                               "clear-secrets",
+	                               &local);
 
 	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_CLEAR_SECRETS, self,
 	                            !local, NULL, subject, local ? local->message : NULL);
@@ -2115,6 +2203,14 @@ nm_settings_connection_get_unsaved (NMSettingsConnection *self)
 
 /*****************************************************************************/
 
+NM_UTILS_FLAGS2STR_DEFINE_STATIC (_settings_connection_flags_to_string, NMSettingsConnectionFlags,
+	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_FLAGS_NONE,          "none"),
+	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_FLAGS_UNSAVED,       "unsaved"),
+	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED,  "nm-generatd"),
+	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_FLAGS_VOLATILE,      "volatile"),
+	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_FLAGS_VISIBLE,       "visible"),
+);
+
 NMSettingsConnectionFlags
 nm_settings_connection_get_flags (NMSettingsConnection *self)
 {
@@ -2126,35 +2222,38 @@ nm_settings_connection_get_flags (NMSettingsConnection *self)
 NMSettingsConnectionFlags
 nm_settings_connection_set_flags (NMSettingsConnection *self, NMSettingsConnectionFlags flags, gboolean set)
 {
-	NMSettingsConnectionFlags new_flags;
-
-	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), NM_SETTINGS_CONNECTION_FLAGS_NONE);
-	g_return_val_if_fail ((flags & ~NM_SETTINGS_CONNECTION_FLAGS_ALL) == 0, NM_SETTINGS_CONNECTION_FLAGS_NONE);
-
-	new_flags = NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->flags;
-	if (set)
-		new_flags |= flags;
-	else
-		new_flags &= ~flags;
-	return nm_settings_connection_set_flags_all (self, new_flags);
+	return nm_settings_connection_set_flags_full (self,
+	                                              flags,
+	                                              set ? flags : NM_SETTINGS_CONNECTION_FLAGS_NONE);
 }
 
 NMSettingsConnectionFlags
-nm_settings_connection_set_flags_all (NMSettingsConnection *self, NMSettingsConnectionFlags flags)
+nm_settings_connection_set_flags_full (NMSettingsConnection *self,
+                                       NMSettingsConnectionFlags mask,
+                                       NMSettingsConnectionFlags value)
 {
 	NMSettingsConnectionPrivate *priv;
 	NMSettingsConnectionFlags old_flags;
 
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), NM_SETTINGS_CONNECTION_FLAGS_NONE);
-	g_return_val_if_fail ((flags & ~NM_SETTINGS_CONNECTION_FLAGS_ALL) == 0, NM_SETTINGS_CONNECTION_FLAGS_NONE);
+	nm_assert (mask && !NM_FLAGS_ANY (mask, ~NM_SETTINGS_CONNECTION_FLAGS_ALL));
+	nm_assert (!NM_FLAGS_ANY (value, ~mask));
+
 	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
+	value = (priv->flags & ~mask) | value;
+
 	old_flags = priv->flags;
-	if (old_flags != flags) {
-		_LOGT ("update settings-connection flags to 0x%x (was 0x%x)", (guint) flags, (guint) priv->flags);
-		priv->flags = flags;
+	if (old_flags != value) {
+		char buf1[255], buf2[255];
+
+		_LOGT ("update settings-connection flags to %s (was %s)",
+		       _settings_connection_flags_to_string (value, buf1, sizeof (buf1)),
+		       _settings_connection_flags_to_string (priv->flags, buf2, sizeof (buf2)));
+		priv->flags = value;
+		nm_assert (priv->flags == value);
 		_notify (self, PROP_FLAGS);
-		if (NM_FLAGS_HAS (old_flags, NM_SETTINGS_CONNECTION_FLAGS_UNSAVED) != NM_FLAGS_HAS (flags, NM_SETTINGS_CONNECTION_FLAGS_UNSAVED))
+		if (NM_FLAGS_HAS (old_flags, NM_SETTINGS_CONNECTION_FLAGS_UNSAVED) != NM_FLAGS_HAS (value, NM_SETTINGS_CONNECTION_FLAGS_UNSAVED))
 			_notify (self, PROP_UNSAVED);
 	}
 	return old_flags;
@@ -2670,44 +2769,28 @@ nm_settings_connection_autoconnect_blocked_reason_set_full (NMSettingsConnection
 gboolean
 nm_settings_connection_autoconnect_is_blocked (NMSettingsConnection *self)
 {
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+	NMSettingsConnectionPrivate *priv;
+	NMSettingsConnectionFlags flags;
 
-	return    priv->autoconnect_blocked_reason != NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE
-	       || priv->autoconnect_retries == 0;
+	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), TRUE);
+
+	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+
+	if (priv->autoconnect_blocked_reason != NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE)
+		return TRUE;
+	if (priv->autoconnect_retries == 0)
+		return TRUE;
+
+	flags = priv->flags;
+	if (NM_FLAGS_HAS (flags, NM_SETTINGS_CONNECTION_FLAGS_VOLATILE))
+		return TRUE;
+	if (!NM_FLAGS_HAS (flags, NM_SETTINGS_CONNECTION_FLAGS_VISIBLE))
+		return TRUE;
+
+	return FALSE;
 }
 
 /*****************************************************************************/
-
-/**
- * nm_settings_connection_get_nm_generated:
- * @self: an #NMSettingsConnection
- *
- * Gets the "nm-generated" flag on @self.
- *
- * A connection is "nm-generated" if it was generated by
- * nm_device_generate_connection() and has not been modified or
- * saved by the user since then.
- */
-gboolean
-nm_settings_connection_get_nm_generated (NMSettingsConnection *self)
-{
-	return NM_FLAGS_HAS (nm_settings_connection_get_flags (self), NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED);
-}
-
-/**
- * nm_settings_connection_get_volatile:
- * @self: an #NMSettingsConnection
- *
- * Gets the "volatile" flag on @self.
- *
- * The connection is marked as volatile and will be removed when
- * it disconnects.
- */
-gboolean
-nm_settings_connection_get_volatile (NMSettingsConnection *self)
-{
-	return NM_FLAGS_HAS (nm_settings_connection_get_flags (self), NM_SETTINGS_CONNECTION_FLAGS_VOLATILE);
-}
 
 gboolean
 nm_settings_connection_get_ready (NMSettingsConnection *self)
@@ -2789,7 +2872,6 @@ nm_settings_connection_init (NMSettingsConnection *self)
 	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_SETTINGS_CONNECTION, NMSettingsConnectionPrivate);
 	self->_priv = priv;
 
-	priv->visible = FALSE;
 	priv->ready = TRUE;
 	c_list_init (&priv->call_ids_lst_head);
 
@@ -2867,12 +2949,8 @@ get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
 	NMSettingsConnection *self = NM_SETTINGS_CONNECTION (object);
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
 	switch (prop_id) {
-	case PROP_VISIBLE:
-		g_value_set_boolean (value, priv->visible);
-		break;
 	case PROP_UNSAVED:
 		g_value_set_boolean (value, nm_settings_connection_get_unsaved (self));
 		break;
@@ -2924,12 +3002,6 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 	object_class->set_property = set_property;
 
 	class->supports_secrets = supports_secrets;
-
-	obj_properties[PROP_VISIBLE] =
-	     g_param_spec_boolean (NM_SETTINGS_CONNECTION_VISIBLE, "", "",
-	                           FALSE,
-	                           G_PARAM_READABLE |
-	                           G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_UNSAVED] =
 	     g_param_spec_boolean (NM_SETTINGS_CONNECTION_UNSAVED, "", "",
@@ -2997,6 +3069,7 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 	                                        "GetSecrets", impl_settings_connection_get_secrets,
 	                                        "ClearSecrets", impl_settings_connection_clear_secrets,
 	                                        "Save", impl_settings_connection_save,
+	                                        "Update2", impl_settings_connection_update2,
 	                                        NULL);
 }
 

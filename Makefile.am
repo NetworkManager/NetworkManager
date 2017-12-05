@@ -1473,8 +1473,6 @@ src_libNetworkManager_la_SOURCES = \
 	\
 	src/settings/nm-agent-manager.c \
 	src/settings/nm-agent-manager.h \
-	src/settings/nm-inotify-helper.c \
-	src/settings/nm-inotify-helper.h \
 	src/settings/nm-secret-agent.c \
 	src/settings/nm-secret-agent.h \
 	src/settings/nm-settings-connection.c \
@@ -1991,6 +1989,8 @@ src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_SOURCES = \
 	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-common.h \
 	src/settings/plugins/ifcfg-rh/shvar.c \
 	src/settings/plugins/ifcfg-rh/shvar.h \
+	src/settings/plugins/ifcfg-rh/nm-inotify-helper.c \
+	src/settings/plugins/ifcfg-rh/nm-inotify-helper.h \
 	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-utils.c \
 	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-utils.h \
 	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c \

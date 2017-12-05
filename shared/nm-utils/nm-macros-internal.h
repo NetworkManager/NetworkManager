@@ -553,7 +553,7 @@ _NM_IN_STRSET_streq (const char *x, const char *s)
 
 /* NM_CACHED_QUARK_FCN() is essentially the same as G_DEFINE_QUARK
  * with two differences:
- * - @string must be a quited string-literal
+ * - @string must be a quoted string-literal
  * - @fcn must be the full function name, while G_DEFINE_QUARK() appends
  *   "_quark" to the function name.
  * Both properties of G_DEFINE_QUARK() are non favorable, because you can no

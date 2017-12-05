@@ -258,11 +258,12 @@ update_connection (NMSKeyfilePlugin *self,
 			else
 				_LOGI ("update and persist "NMS_KEYFILE_CONNECTION_LOG_FMT, NMS_KEYFILE_CONNECTION_LOG_ARG (connection_new));
 
-			if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (connection_by_uuid),
-			                                              NM_CONNECTION (connection_new),
-			                                              FALSE,  /* don't set Unsaved */
-			                                              "keyfile-update",
-			                                              &local)) {
+			if (!nm_settings_connection_update (NM_SETTINGS_CONNECTION (connection_by_uuid),
+			                                    NM_CONNECTION (connection_new),
+			                                    NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
+			                                    NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
+			                                    "keyfile-update",
+			                                    &local)) {
 				/* Shouldn't ever get here as 'connection_new' was verified by the reader already
 				 * and the UUID did not change. */
 				g_assert_not_reached ();

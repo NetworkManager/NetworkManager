@@ -36,13 +36,13 @@
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"
 #include "platform/nm-platform.h"
-#include "settings/nm-inotify-helper.h"
 #include "nm-config.h"
 
 #include "nms-ifcfg-rh-common.h"
 #include "nms-ifcfg-rh-reader.h"
 #include "nms-ifcfg-rh-writer.h"
 #include "nms-ifcfg-rh-utils.h"
+#include "nm-inotify-helper.h"
 
 /*****************************************************************************/
 
@@ -95,14 +95,6 @@ G_DEFINE_TYPE (NMIfcfgConnection, nm_ifcfg_connection, NM_TYPE_SETTINGS_CONNECTI
 #define NM_IFCFG_CONNECTION_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMIfcfgConnection, NM_IS_IFCFG_CONNECTION)
 
 /*****************************************************************************/
-
-static NMInotifyHelper *
-_get_inotify_helper (NMIfcfgConnectionPrivate *priv)
-{
-	if (!priv->inotify_helper)
-		priv->inotify_helper = g_object_ref (nm_inotify_helper_get ());
-	return priv->inotify_helper;
-}
 
 static gboolean
 devtimeout_ready (gpointer user_data)
@@ -225,37 +217,17 @@ static void
 path_watch_stop (NMIfcfgConnection *self)
 {
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (self);
-	NMInotifyHelper *ih;
 
-	ih = _get_inotify_helper (priv);
+	nm_clear_g_signal_handler (priv->inotify_helper, &priv->ih_event_id);
 
-	nm_clear_g_signal_handler (ih, &priv->ih_event_id);
+	nm_inotify_helper_clear_watch (priv->inotify_helper, &priv->file_wd);
+	nm_inotify_helper_clear_watch (priv->inotify_helper, &priv->keyfile_wd);
+	nm_inotify_helper_clear_watch (priv->inotify_helper, &priv->routefile_wd);
+	nm_inotify_helper_clear_watch (priv->inotify_helper, &priv->route6file_wd);
 
-	if (priv->file_wd >= 0) {
-		nm_inotify_helper_remove_watch (ih, priv->file_wd);
-		priv->file_wd = -1;
-	}
-
-	g_free (priv->keyfile);
-	priv->keyfile = NULL;
-	if (priv->keyfile_wd >= 0) {
-		nm_inotify_helper_remove_watch (ih, priv->keyfile_wd);
-		priv->keyfile_wd = -1;
-	}
-
-	g_free (priv->routefile);
-	priv->routefile = NULL;
-	if (priv->routefile_wd >= 0) {
-		nm_inotify_helper_remove_watch (ih, priv->routefile_wd);
-		priv->routefile_wd = -1;
-	}
-
-	g_free (priv->route6file);
-	priv->route6file = NULL;
-	if (priv->route6file_wd >= 0) {
-		nm_inotify_helper_remove_watch (ih, priv->route6file_wd);
-		priv->route6file_wd = -1;
-	}
+	nm_clear_g_free (&priv->keyfile);
+	nm_clear_g_free (&priv->routefile);
+	nm_clear_g_free (&priv->route6file);
 }
 
 static void
@@ -280,7 +252,9 @@ filename_changed (GObject *object,
 	if (nm_config_get_monitor_connection_files (nm_config_get ())) {
 		NMInotifyHelper *ih;
 
-		ih = _get_inotify_helper (priv);
+		if (!priv->inotify_helper)
+			priv->inotify_helper = g_object_ref (nm_inotify_helper_get ());
+		ih = priv->inotify_helper;
 
 		priv->ih_event_id = g_signal_connect (ih, "event", G_CALLBACK (files_changed_cb), self);
 		priv->file_wd = nm_inotify_helper_add_watch (ih, ifcfg_path);
@@ -324,7 +298,7 @@ commit_changes (NMSettingsConnection *connection,
 	nm_assert (!out_logmsg_change || !*out_logmsg_change);
 
 	filename = nm_settings_connection_get_filename (connection);
-	if (!nms_ifcfg_rh_writer_write_connection (new_connection ?: NM_CONNECTION (connection),
+	if (!nms_ifcfg_rh_writer_write_connection (new_connection,
 	                                           IFCFG_DIR,
 	                                           filename,
 	                                           &ifcfg_path,
@@ -429,17 +403,11 @@ nm_ifcfg_connection_new (NMConnection *source,
 	NMConnection *tmp;
 	char *unhandled_spec = NULL;
 	const char *unmanaged_spec = NULL, *unrecognized_spec = NULL;
-	gboolean update_unsaved = TRUE;
 
 	g_assert (source || full_path);
 
 	if (out_ignore_error)
 		*out_ignore_error = FALSE;
-
-	if (full_path) {
-		/* The connection already is on the disk */
-		update_unsaved = FALSE;
-	}
 
 	/* If we're given a connection already, prefer that instead of re-reading */
 	if (source)
@@ -464,11 +432,14 @@ nm_ifcfg_connection_new (NMConnection *source,
 	                                   NM_IFCFG_CONNECTION_UNRECOGNIZED_SPEC, unrecognized_spec,
 	                                   NULL);
 	/* Update our settings with what was read from the file */
-	if (nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
-	                                             tmp,
-	                                             update_unsaved,
-	                                             NULL,
-	                                             error))
+	if (nm_settings_connection_update (NM_SETTINGS_CONNECTION (object),
+	                                   tmp,
+	                                   full_path
+	                                     ? NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP /* connection is already on disk */
+	                                     : NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY,
+	                                   NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
+	                                   NULL,
+	                                   error))
 		nm_ifcfg_connection_check_devtimeout (NM_IFCFG_CONNECTION (object));
 	else
 		g_clear_object (&object);

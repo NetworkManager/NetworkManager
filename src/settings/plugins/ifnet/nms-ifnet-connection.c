@@ -93,7 +93,7 @@ commit_changes (NMSettingsConnection *connection,
 	g_signal_emit (connection, signals[IFNET_CANCEL_MONITORS], 0);
 
 	if (priv->conn_name) {
-		success = ifnet_update_parsers_by_connection (NM_CONNECTION (connection),
+		success = ifnet_update_parsers_by_connection (new_connection,
 		                                              priv->conn_name,
 		                                              CONF_NET_FILE,
 		                                              WPA_SUPPLICANT_CONF,
@@ -102,7 +102,7 @@ commit_changes (NMSettingsConnection *connection,
 		                                              error);
 	} else {
 		added = TRUE;
-		success = ifnet_add_new_connection (NM_CONNECTION (connection),
+		success = ifnet_add_new_connection (new_connection,
 		                                    CONF_NET_FILE,
 		                                    WPA_SUPPLICANT_CONF,
 		                                    &new_name,
@@ -186,11 +186,14 @@ nm_ifnet_connection_new (NMConnection *source, const char *conn_name)
 	object = (GObject *) g_object_new (NM_TYPE_IFNET_CONNECTION, NULL);
 
 	NM_IFNET_CONNECTION_GET_PRIVATE ((NMIfnetConnection *) object)->conn_name = g_strdup (conn_name);
-	if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (object),
-	                                              tmp,
-	                                              update_unsaved,
-	                                              NULL,
-	                                              NULL)) {
+	if (!nm_settings_connection_update (NM_SETTINGS_CONNECTION (object),
+	                                    tmp,
+	                                    update_unsaved
+	                                      ? NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY
+	                                      : NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
+	                                    NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
+	                                    NULL,
+	                                    NULL)) {
 		g_object_unref (object);
 		return NULL;
 	}

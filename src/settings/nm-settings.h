@@ -46,7 +46,7 @@
 #define NM_SETTINGS_SIGNAL_CONNECTION_ADDED              "connection-added"
 #define NM_SETTINGS_SIGNAL_CONNECTION_UPDATED            "connection-updated"
 #define NM_SETTINGS_SIGNAL_CONNECTION_REMOVED            "connection-removed"
-#define NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED "connection-visibility-changed"
+#define NM_SETTINGS_SIGNAL_CONNECTION_FLAGS_CHANGED      "connection-flags-changed"
 
 /**
  * NMConnectionFilterFunc:

@@ -1221,3 +1221,10 @@ global:
 	nm_setting_wireless_security_pmf_get_type;
 	nm_setting_wireless_security_wps_method_get_type;
 } libnm_1_8_0;
+
+libnm_1_10_2 {
+global:
+	nm_remote_connection_update2;
+	nm_remote_connection_update2_finish;
+	nm_settings_update2_flags_get_type;
+} libnm_1_10_0;

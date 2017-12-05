@@ -893,4 +893,48 @@ typedef enum { /*< flags >*/
 	NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES          = (1LL <<  5),
 } NMActivationStateFlags;
 
+/**
+ * NMSettingsUpdate2Flags:
+ * @NM_SETTINGS_UPDATE2_FLAG_NONE: an alias for numeric zero, no flags set.
+ * @NM_SETTINGS_UPDATE2_FLAG_TO_DISK: to persist the connection to disk.
+ * @NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY: to make the connection in-memory only.
+ *   If the connection was previously persistent, the corresponding file on disk
+ *   is not deleted but merely the connection is decoupled from the file
+ *   on disk. If you later delete an in-memory connection, the connection
+ *   on disk will be deleted as well.
+ * @NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED: this is like @NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY,
+ *   but if the connection has a corresponding file on disk, the association between
+ *   the connection and the file is forgotten but the file is not modified.
+ *   The difference to %NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY is if you later
+ *   save the connection again to disk, a new file name will be chosen without
+ *   overwriting the remaining file on disk. Also, if you delete the connection
+ *   later, the file on disk will not be deleted.
+ * @NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY: this is like @NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY,
+ *   but if the connection has a corresponding file on disk, the file on
+ *   disk will be deleted.
+ * @NM_SETTINGS_UPDATE2_FLAG_VOLATILE: This can be specified with either
+ *   %NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED or %NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY.
+ *   After making the connection in-memory only, the connection is marked
+ *   as volatile. That means, if the connection is currently not active
+ *   it will be deleted right away. Otherwise, it is marked to for deletion
+ *   once the connection deactivates. A volatile connection cannot autoactivate
+ *   again (because it's about to be deleted), but a manual activation will
+ *   clear the volatile flag.
+ * @NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT: usually, when the connection
+ *   has autoconnect enabled and is modified, it becomes elegible to autoconnect
+ *   right away. Setting this flag, disables autoconnect until the connection
+ *   is manually activated.
+ *
+ * Since: 1.10.2
+ */
+typedef enum { /*< flags >*/
+	NM_SETTINGS_UPDATE2_FLAG_NONE                       = 0,
+	NM_SETTINGS_UPDATE2_FLAG_TO_DISK                    = (1LL <<  0),
+	NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY                  = (1LL <<  1),
+	NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED         = (1LL <<  2),
+	NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY             = (1LL <<  3),
+	NM_SETTINGS_UPDATE2_FLAG_VOLATILE                   = (1LL <<  4),
+	NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT          = (1LL <<  5),
+} NMSettingsUpdate2Flags;
+
 #endif /* __NM_DBUS_INTERFACE_H__ */

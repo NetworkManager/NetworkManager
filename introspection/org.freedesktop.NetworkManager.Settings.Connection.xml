@@ -102,6 +102,44 @@
     <signal name="Updated"/>
 
     <!--
+        Update2:
+        @settings: New connection settings, properties, and (optionally) secrets.
+          Provide an empty array, to use the current settings.
+        @flags: optional flags argument. Currently supported flags are:
+          "0x1" (to-disk),
+          "0x2" (in-memory),
+          "0x4" (in-memory-detached),
+          "0x8" (in-memory-only),
+          "0x10" (volatile),
+          "0x20" (block-autoconnect).
+          Unknown flags cause the call to fail.
+        @args: optional arguments dictionary, for extensibility. Currently no
+          arguments are accepted. Specifying unknown keys causes the call
+          to fail.
+        @result: output argument, currently no results are returned.
+
+        Update the connection with new settings and properties (replacing all
+        previous settings and properties). If the flag 0x1 is present,
+        the connection is persisted to disk. If the flag 0x2 is present,
+        the change is only made in memory (without touching an eventual
+        profile on disk). If neither 0x1 nor 0x2 is set, the change is made
+        in memory only, if the connection is already in memory only.
+        Secrets may be part of the update request, and will be either stored in persistent
+        storage or sent to a Secret Agent for storage, depending on the flags
+        associated with each secret.
+
+        Update2 is a extensible alternative to Update, UpdateUnsaved and Save.
+
+        Since: 1.10.2
+    -->
+    <method name="Update2">
+      <arg name="settings" type="a{sa{sv}}" direction="in"/>
+      <arg name="flags" type="u" direction="in"/>
+      <arg name="args" type="a{sv}" direction="in"/>
+      <arg name="result" type="a{sv}" direction="out"/>
+    </method>
+
+    <!--
         Removed:
 
         Emitted when this connection is no longer available. This happens when the
