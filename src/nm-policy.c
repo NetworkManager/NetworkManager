@@ -1224,7 +1224,8 @@ auto_activate_device (NMPolicy *self,
 		NMSettingConnection *s_con;
 		const char *permission;
 
-		if (   !nm_settings_connection_is_visible (candidate)
+		if (   !NM_FLAGS_HAS (nm_settings_connection_get_flags (candidate),
+		                      NM_SETTINGS_CONNECTION_FLAGS_VISIBLE)
 		    || nm_settings_connection_autoconnect_is_blocked (candidate))
 			continue;
 
@@ -2382,7 +2383,8 @@ connection_flags_changed (NMSettings *settings,
 	NMPolicyPrivate *priv = user_data;
 	NMPolicy *self = _PRIV_TO_SELF (priv);
 
-	if (nm_settings_connection_is_visible (connection))
+	if (NM_FLAGS_HAS (nm_settings_connection_get_flags (connection),
+	                  NM_SETTINGS_CONNECTION_FLAGS_VISIBLE))
 		schedule_activate_all (self);
 	else
 		_deactivate_if_active (self, connection);

@@ -176,8 +176,6 @@ NMSettingsConnectionCallId *nm_settings_connection_get_secrets (NMSettingsConnec
 void nm_settings_connection_cancel_secrets (NMSettingsConnection *self,
                                             NMSettingsConnectionCallId *call_id);
 
-gboolean nm_settings_connection_is_visible (NMSettingsConnection *self);
-
 void nm_settings_connection_recheck_visibility (NMSettingsConnection *self);
 
 gboolean nm_settings_connection_check_permission (NMSettingsConnection *self,
@@ -237,9 +235,6 @@ nm_settings_connection_autoconnect_blocked_reason_set (NMSettingsConnection *sel
 }
 
 gboolean nm_settings_connection_autoconnect_is_blocked (NMSettingsConnection *self);
-
-gboolean nm_settings_connection_get_nm_generated (NMSettingsConnection *self);
-gboolean nm_settings_connection_get_volatile (NMSettingsConnection *self);
 
 gboolean nm_settings_connection_get_ready (NMSettingsConnection *self);
 void     nm_settings_connection_set_ready (NMSettingsConnection *self,

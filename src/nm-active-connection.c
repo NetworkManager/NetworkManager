@@ -866,7 +866,8 @@ _settings_connection_notify_flags (NMSettingsConnection *settings_connection,
 	nm_assert (nm_active_connection_get_activation_type (self) == NM_ACTIVATION_TYPE_EXTERNAL);
 	nm_assert (NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->settings_connection == settings_connection);
 
-	if (nm_settings_connection_get_nm_generated (settings_connection))
+	if (NM_FLAGS_HAS (nm_settings_connection_get_flags (settings_connection),
+	                  NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED))
 		return;
 
 	_set_activation_type_managed (self);
