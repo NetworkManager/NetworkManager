@@ -1081,5 +1081,5 @@ settings_plugin_interface_init (NMSettingsPluginInterface *plugin_iface)
 G_MODULE_EXPORT GObject *
 nm_settings_plugin_factory (void)
 {
-	return (GObject*)g_object_ref (settings_plugin_ifcfg_get ());
+	return G_OBJECT (g_object_ref (settings_plugin_ifcfg_get ()));
 }
