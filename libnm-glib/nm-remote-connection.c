@@ -477,9 +477,9 @@ updated_get_settings_cb (DBusGProxy *proxy,
 		priv->visible = FALSE;
 		g_signal_emit (self, signals[VISIBLE], 0, FALSE);
 	} else {
-		gs_unref_object NMConnection *self_alive = NULL;
+		gs_unref_object NMRemoteConnection *self_alive = NULL;
 
-		self_alive = (NMConnection*)g_object_ref (self);
+		self_alive = g_object_ref (self);
 		_nm_connection_replace_settings (NM_CONNECTION (self), new_settings);
 		g_signal_emit (self, signals[UPDATED], 0, new_settings);
 		g_hash_table_destroy (new_settings);
@@ -601,9 +601,10 @@ constructed (GObject *object)
 static gboolean
 init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 {
-	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (initable);
+	NMRemoteConnection *self = NM_REMOTE_CONNECTION (initable);
+	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
 	GHashTable *hash;
-	gs_unref_object NMConnection *self_alive = NULL;
+	gs_unref_object NMRemoteConnection *self_alive = NULL;
 
 	if (!dbus_g_proxy_call (priv->proxy, "GetSettings", error,
 	                        G_TYPE_INVALID,
@@ -611,9 +612,9 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	                        G_TYPE_INVALID))
 		return FALSE;
 	priv->visible = TRUE;
-	self_alive = (NMConnection*)g_object_ref (initable);
-	_nm_connection_replace_settings (NM_CONNECTION (initable), hash);
-	g_signal_emit (initable, signals[UPDATED], 0, hash);
+	self_alive = g_object_ref (self);
+	_nm_connection_replace_settings (NM_CONNECTION (self), hash);
+	g_signal_emit (self, signals[UPDATED], 0, hash);
 	g_hash_table_destroy (hash);
 
 	/* Get properties */
@@ -676,7 +677,7 @@ init_get_settings_cb (DBusGProxy *proxy,
 	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (init_data->connection);
 	GHashTable *settings;
 	GError *error = NULL;
-	gs_unref_object NMConnection *self_alive = NULL;
+	gs_unref_object NMRemoteConnection *self_alive = NULL;
 
 	dbus_g_proxy_end_call (proxy, call, &error,
 	                       DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, &settings,
@@ -687,7 +688,7 @@ init_get_settings_cb (DBusGProxy *proxy,
 	}
 
 	priv->visible = TRUE;
-	self_alive = (NMConnection*)g_object_ref (init_data->connection);
+	self_alive = g_object_ref (init_data->connection);
 	_nm_connection_replace_settings (NM_CONNECTION (init_data->connection), settings);
 	g_signal_emit (init_data->connection, signals[UPDATED], 0, settings);
 	g_hash_table_destroy (settings);
