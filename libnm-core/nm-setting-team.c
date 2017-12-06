@@ -927,12 +927,12 @@ nm_setting_team_get_num_runner_tx_hash (NMSettingTeam *setting)
  * Since: 1.12
  **/
 const char *
-nm_setting_team_get_runner_tx_hash (NMSettingTeam *setting, int idx)
+nm_setting_team_get_runner_tx_hash (NMSettingTeam *setting, guint idx)
 {
 	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
 
 	g_return_val_if_fail (NM_IS_SETTING_TEAM (setting), NULL);
-	g_return_val_if_fail (idx >= 0 && idx < priv->runner_tx_hash->len, NULL);
+	g_return_val_if_fail (idx < priv->runner_tx_hash->len, NULL);
 
 	return priv->runner_tx_hash->pdata[idx];
 }
@@ -947,12 +947,12 @@ nm_setting_team_get_runner_tx_hash (NMSettingTeam *setting, int idx)
  * Since: 1.12
  **/
 void
-nm_setting_team_remove_runner_tx_hash (NMSettingTeam *setting, int idx)
+nm_setting_team_remove_runner_tx_hash (NMSettingTeam *setting, guint idx)
 {
 	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
 
 	g_return_if_fail (NM_IS_SETTING_TEAM (setting));
-	g_return_if_fail (idx >= 0 && idx < priv->runner_tx_hash->len);
+	g_return_if_fail (idx < priv->runner_tx_hash->len);
 
 	g_ptr_array_remove_index (priv->runner_tx_hash, idx);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_TEAM_RUNNER_TX_HASH);
