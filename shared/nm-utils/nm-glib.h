@@ -481,4 +481,9 @@ _nm_g_variant_new_printf (const char *format_string, ...)
 	})
 #endif
 
+#if !GLIB_CHECK_VERSION (2, 56, 0)
+#define g_object_ref(Obj)      ((typeof(Obj)) g_object_ref (Obj))
+#define g_object_ref_sink(Obj) ((typeof(Obj)) g_object_ref_sink (Obj))
+#endif
+
 #endif  /* __NM_GLIB_H__ */
