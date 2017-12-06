@@ -1616,8 +1616,8 @@ nm_device_get_metered (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->metered;
 }
 
-static guint32
-_get_route_metric_default (NMDevice *self)
+guint32
+nm_device_get_route_metric_default (NMDeviceType device_type)
 {
 	/* Device 'priority' is used for the default route-metric and is based on
 	 * the device type. The settings ipv4.route-metric and ipv6.route-metric
@@ -1636,7 +1636,7 @@ _get_route_metric_default (NMDevice *self)
 	 * metrics (except for IPv6, where 0 means 1024).
 	 */
 
-	switch (nm_device_get_device_type (self)) {
+	switch (device_type) {
 	/* 50 is reserved for VPN (NM_VPN_ROUTE_METRIC_DEFAULT) */
 	case NM_DEVICE_TYPE_ETHERNET:
 	case NM_DEVICE_TYPE_VETH:
@@ -1765,7 +1765,7 @@ nm_device_get_route_metric (NMDevice *self,
 		if (route_metric >= 0)
 			goto out;
 	}
-	route_metric = _get_route_metric_default (self);
+	route_metric = nm_device_get_route_metric_default (nm_device_get_device_type (self));
 out:
 	return nm_utils_ip_route_metric_normalize (addr_family, route_metric);
 }
