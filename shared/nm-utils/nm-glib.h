@@ -452,4 +452,9 @@ _nm_g_variant_new_take_string (gchar *string)
 }
 #define g_variant_new_take_string _nm_g_variant_new_take_string
 
+#if !GLIB_CHECK_VERSION (2, 56, 0)
+#define g_object_ref(Obj)      ((typeof(Obj)) g_object_ref (Obj))
+#define g_object_ref_sink(Obj) ((typeof(Obj)) g_object_ref_sink (Obj))
+#endif
+
 #endif  /* __NM_GLIB_H__ */
