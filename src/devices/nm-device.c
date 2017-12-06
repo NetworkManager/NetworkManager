@@ -13639,6 +13639,7 @@ nm_device_update_permanent_hw_address (NMDevice *self, gboolean force_freeze)
 	gboolean success_read;
 	int ifindex;
 	const NMPlatformLink *pllink;
+	const NMConfigDeviceStateData *dev_state;
 
 	if (priv->hw_addr_perm) {
 		/* the permanent hardware address is only read once and not
@@ -13698,23 +13699,19 @@ nm_device_update_permanent_hw_address (NMDevice *self, gboolean force_freeze)
 	/* We also persist our choice of the fake address to the device state
 	 * file to use the same address on restart of NetworkManager.
 	 * First, try to reload the address from the state file. */
-	{
-		gs_free NMConfigDeviceStateData *dev_state = NULL;
-
-		dev_state = nm_config_device_state_load (ifindex);
-		if (   dev_state
-		    && dev_state->perm_hw_addr_fake
-		    && nm_utils_hwaddr_aton (dev_state->perm_hw_addr_fake, buf, priv->hw_addr_len)
-		    && !nm_utils_hwaddr_matches (buf, priv->hw_addr_len, priv->hw_addr, -1)) {
-			_LOGD (LOGD_PLATFORM | LOGD_ETHER, "hw-addr: %s (use from statefile: %s, current: %s)",
-			       success_read
-			           ? "read HW addr length of permanent MAC address differs"
-			           : "unable to read permanent MAC address",
-			       dev_state->perm_hw_addr_fake,
-			       priv->hw_addr);
-			priv->hw_addr_perm = nm_utils_hwaddr_ntoa (buf, priv->hw_addr_len);
-			goto notify_and_out;
-		}
+	dev_state = nm_config_device_state_get (nm_config_get (), ifindex);
+	if (   dev_state
+	    && dev_state->perm_hw_addr_fake
+	    && nm_utils_hwaddr_aton (dev_state->perm_hw_addr_fake, buf, priv->hw_addr_len)
+	    && !nm_utils_hwaddr_matches (buf, priv->hw_addr_len, priv->hw_addr, -1)) {
+		_LOGD (LOGD_PLATFORM | LOGD_ETHER, "hw-addr: %s (use from statefile: %s, current: %s)",
+		       success_read
+		           ? "read HW addr length of permanent MAC address differs"
+		           : "unable to read permanent MAC address",
+		       dev_state->perm_hw_addr_fake,
+		       priv->hw_addr);
+		priv->hw_addr_perm = nm_utils_hwaddr_ntoa (buf, priv->hw_addr_len);
+		goto notify_and_out;
 	}
 
 	_LOGD (LOGD_PLATFORM | LOGD_ETHER, "hw-addr: %s (use current: %s)",

@@ -2641,10 +2641,9 @@ platform_query_devices (NMManager *self)
 		return;
 	for (i = 0; i < links->len; i++) {
 		const NMPlatformLink *link = NMP_OBJECT_CAST_LINK (links->pdata[i]);
-		gs_free NMConfigDeviceStateData *dev_state = NULL;
+		const NMConfigDeviceStateData *dev_state;
 
-		dev_state = nm_config_device_state_load (link->ifindex);
-
+		dev_state = nm_config_device_state_get (priv->config, link->ifindex);
 		platform_link_added (self,
 		                     link->ifindex,
 		                     link,

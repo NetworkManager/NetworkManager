@@ -225,12 +225,17 @@ struct _NMConfigDeviceStateData {
 };
 
 NMConfigDeviceStateData *nm_config_device_state_load (int ifindex);
+GHashTable *nm_config_device_state_load_all (void);
 gboolean nm_config_device_state_write (int ifindex,
                                        NMConfigDeviceStateManagedType managed,
                                        const char *perm_hw_addr_fake,
                                        const char *connection_uuid,
                                        gint nm_owned);
 void nm_config_device_state_prune_unseen (GHashTable *seen_ifindexes);
+
+const GHashTable *nm_config_device_state_get_all (NMConfig *self);
+const NMConfigDeviceStateData *nm_config_device_state_get (NMConfig *self,
+                                                           int ifindex);
 
 /*****************************************************************************/
 
