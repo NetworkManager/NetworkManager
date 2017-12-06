@@ -166,6 +166,13 @@ gint nm_config_keyfile_get_boolean (const GKeyFile *keyfile,
                                     const char *section,
                                     const char *key,
                                     gint default_value);
+gint64 nm_config_keyfile_get_int64 (const GKeyFile *keyfile,
+                                    const char *section,
+                                    const char *key,
+                                    guint base,
+                                    gint64 min,
+                                    gint64 max,
+                                    gint64 fallback);
 char *nm_config_keyfile_get_value (const GKeyFile *keyfile,
                                    const char *section,
                                    const char *key,

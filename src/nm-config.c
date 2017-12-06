@@ -182,6 +182,33 @@ nm_config_keyfile_get_boolean (const GKeyFile *keyfile,
 	return nm_config_parse_boolean (str, default_value);
 }
 
+gint64
+nm_config_keyfile_get_int64 (const GKeyFile *keyfile,
+                             const char *section,
+                             const char *key,
+                             guint base,
+                             gint64 min,
+                             gint64 max,
+                             gint64 fallback)
+{
+	gint64 v;
+	int errsv;
+	char *str;
+
+	g_return_val_if_fail (keyfile, fallback);
+	g_return_val_if_fail (section, fallback);
+	g_return_val_if_fail (key, fallback);
+
+	str = g_key_file_get_value ((GKeyFile *) keyfile, section, key, NULL);
+	v = _nm_utils_ascii_str_to_int64 (str, base, min, max, fallback);
+	if (str) {
+		errsv = errno;
+		g_free (str);
+		errno = errsv;
+	}
+	return v;
+}
+
 char *
 nm_config_keyfile_get_value (const GKeyFile *keyfile,
                              const char *section,
