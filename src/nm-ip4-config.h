@@ -154,6 +154,7 @@ GType nm_ip4_config_get_type (void);
 NMIP4Config * nm_ip4_config_new (NMDedupMultiIndex *multi_idx,
                                  int ifindex);
 
+NMIP4Config *nm_ip4_config_clone (const NMIP4Config *self);
 int nm_ip4_config_get_ifindex (const NMIP4Config *self);
 
 NMDedupMultiIndex *nm_ip4_config_get_multi_idx (const NMIP4Config *self);
@@ -186,6 +187,9 @@ void nm_ip4_config_subtract (NMIP4Config *dst,
 void nm_ip4_config_intersect (NMIP4Config *dst,
                               const NMIP4Config *src,
                               guint32 default_route_metric_penalty);
+NMIP4Config *nm_ip4_config_intersect_alloc (const NMIP4Config *a,
+                                            const NMIP4Config *b,
+                                            guint32 default_route_metric_penalty);
 gboolean nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relevant_changes);
 void nm_ip4_config_dump (const NMIP4Config *self, const char *detail);
 
@@ -218,6 +222,13 @@ const NMPlatformIP4Route *nm_ip4_config_get_direct_route_for_host (const NMIP4Co
 
 void nm_ip4_config_reset_nameservers (NMIP4Config *self);
 void nm_ip4_config_add_nameserver (NMIP4Config *self, guint32 nameserver);
+
+static inline void
+_nm_ip4_config_add_nameserver (NMIP4Config *self, const guint32 *nameserver)
+{
+	nm_ip4_config_add_nameserver (self, *nameserver);
+}
+
 void nm_ip4_config_del_nameserver (NMIP4Config *self, guint i);
 guint nm_ip4_config_get_num_nameservers (const NMIP4Config *self);
 guint32 nm_ip4_config_get_nameserver (const NMIP4Config *self, guint i);
@@ -338,7 +349,7 @@ nm_ip_config_get_addr_family (const NMIPConfig *config)
 	g_return_val_if_reached (AF_UNSPEC);
 }
 
-#define _NM_IP_CONFIG_DISPATCH(config, v4_func, v6_func, dflt, ...) \
+#define _NM_IP_CONFIG_DISPATCH(config, v4_func, v6_func, ...) \
 	G_STMT_START { \
 		gconstpointer _config = (config); \
 		\
@@ -350,58 +361,169 @@ nm_ip_config_get_addr_family (const NMIPConfig *config)
 		} \
 	} G_STMT_END
 
+#define _NM_IP_CONFIG_DISPATCH_VOID(config, v4_func, v6_func, ...) \
+	G_STMT_START { \
+		gconstpointer _config = (config); \
+		\
+		if (NM_IS_IP4_CONFIG (_config)) { \
+			v4_func ((NMIP4Config *) _config, ##__VA_ARGS__); \
+		} else { \
+			nm_assert (NM_IS_IP6_CONFIG (_config)); \
+			v6_func ((NMIP6Config *) _config, ##__VA_ARGS__); \
+		} \
+	} G_STMT_END
+
+static inline void
+nm_ip_config_add_address (NMIPConfig *self, const NMPlatformIPAddress *address)
+{
+	_NM_IP_CONFIG_DISPATCH_VOID (self, nm_ip4_config_add_address, nm_ip6_config_add_address, (gconstpointer) address);
+}
+
 static inline int
 nm_ip_config_get_dns_priority (const NMIPConfig *self)
 {
-	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_dns_priority, nm_ip6_config_get_dns_priority, 0);
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_dns_priority, nm_ip6_config_get_dns_priority);
+}
+
+static inline void
+nm_ip_config_add_nameserver (NMIPConfig *self, const NMIPAddr *ns)
+{
+	_NM_IP_CONFIG_DISPATCH_VOID (self, _nm_ip4_config_add_nameserver, nm_ip6_config_add_nameserver, (gconstpointer) ns);
+}
+
+static inline void
+nm_ip_config_reset_nameservers (const NMIPConfig *self)
+{
+	_NM_IP_CONFIG_DISPATCH_VOID (self, nm_ip4_config_reset_nameservers, nm_ip6_config_reset_nameservers);
 }
 
 static inline guint
 nm_ip_config_get_num_nameservers (const NMIPConfig *self)
 {
-	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_num_nameservers, nm_ip6_config_get_num_nameservers, 0);
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_num_nameservers, nm_ip6_config_get_num_nameservers);
 }
 
 static inline gconstpointer
 nm_ip_config_get_nameserver (const NMIPConfig *self, guint i)
 {
-	_NM_IP_CONFIG_DISPATCH (self, _nm_ip4_config_get_nameserver, nm_ip6_config_get_nameserver, 0, i);
+	_NM_IP_CONFIG_DISPATCH (self, _nm_ip4_config_get_nameserver, nm_ip6_config_get_nameserver, i);
 }
 
 static inline guint
 nm_ip_config_get_num_domains (const NMIPConfig *self)
 {
-	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_num_domains, nm_ip6_config_get_num_domains, 0);
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_num_domains, nm_ip6_config_get_num_domains);
 }
 
 static inline const char *
 nm_ip_config_get_domain (const NMIPConfig *self, guint i)
 {
-	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_domain, nm_ip6_config_get_domain, NULL, i);
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_domain, nm_ip6_config_get_domain, i);
+}
+
+static inline void
+nm_ip_config_reset_searches (const NMIPConfig *self)
+{
+	_NM_IP_CONFIG_DISPATCH_VOID (self, nm_ip4_config_reset_searches, nm_ip6_config_reset_searches);
+}
+
+static inline void
+nm_ip_config_add_search (const NMIPConfig *self, const char *new)
+{
+	_NM_IP_CONFIG_DISPATCH_VOID (self, nm_ip4_config_add_search, nm_ip6_config_add_search, new);
 }
 
 static inline guint
 nm_ip_config_get_num_searches (const NMIPConfig *self)
 {
-	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_num_searches, nm_ip6_config_get_num_searches, 0);
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_num_searches, nm_ip6_config_get_num_searches);
 }
 
 static inline const char *
 nm_ip_config_get_search (const NMIPConfig *self, guint i)
 {
-	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_search, nm_ip6_config_get_search, NULL, i);
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_search, nm_ip6_config_get_search, i);
 }
 
 static inline guint
 nm_ip_config_get_num_dns_options (const NMIPConfig *self)
 {
-	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_num_dns_options, nm_ip6_config_get_num_dns_options, 0);
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_num_dns_options, nm_ip6_config_get_num_dns_options);
 }
 
 static inline const char *
 nm_ip_config_get_dns_option (const NMIPConfig *self, guint i)
 {
-	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_dns_option, nm_ip6_config_get_dns_option, NULL, i);
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_dns_option, nm_ip6_config_get_dns_option, i);
 }
 
+#define _NM_IP_CONFIG_DISPATCH_SET_OP(dst, src, v4_func, v6_func, ...) \
+	G_STMT_START { \
+		gpointer _dst = (dst); \
+		gconstpointer _src = (src); \
+		int family = nm_ip_config_get_addr_family (_dst); \
+		\
+		nm_assert (family == nm_ip_config_get_addr_family (_src)); \
+		if (family == AF_INET) { \
+			v4_func ((NMIP4Config *) _dst, (const NMIP4Config *) _src, ##__VA_ARGS__); \
+		} else { \
+			nm_assert (family == AF_INET6); \
+			v6_func ((NMIP6Config *) _dst, (const NMIP6Config *) _src, ##__VA_ARGS__); \
+		} \
+	} G_STMT_END
+
+static inline void
+nm_ip_config_intersect (NMIPConfig *dst,
+                        const NMIPConfig *src,
+                        guint32 default_route_metric_penalty)
+{
+	_NM_IP_CONFIG_DISPATCH_SET_OP (dst, src,
+	                               nm_ip4_config_intersect,
+	                               nm_ip6_config_intersect,
+	                               default_route_metric_penalty);
+}
+
+static inline void
+nm_ip_config_subtract (NMIPConfig *dst,
+                       const NMIPConfig *src,
+                       guint32 default_route_metric_penalty)
+{
+	_NM_IP_CONFIG_DISPATCH_SET_OP (dst, src,
+	                               nm_ip4_config_subtract,
+	                               nm_ip6_config_subtract,
+	                               default_route_metric_penalty);
+}
+
+static inline void
+nm_ip_config_merge (NMIPConfig *dst,
+                    const NMIPConfig *src,
+                    NMIPConfigMergeFlags merge_flags,
+                    guint32 default_route_metric_penalty)
+{
+	_NM_IP_CONFIG_DISPATCH_SET_OP (dst, src,
+	                               nm_ip4_config_merge,
+	                               nm_ip6_config_merge,
+	                               merge_flags,
+	                               default_route_metric_penalty);
+}
+
+static inline NMIPConfig *
+nm_ip_config_intersect_alloc (const NMIPConfig *a,
+                              const NMIPConfig *b,
+                              guint32 default_route_metric_penalty)
+{
+	int family;
+
+	family = nm_ip_config_get_addr_family (a);
+	nm_assert (family == nm_ip_config_get_addr_family (b));
+
+	if (family == AF_INET)
+		return (NMIPConfig *) nm_ip4_config_intersect_alloc ((const NMIP4Config *) a,
+		                                                     (const NMIP4Config *) b,
+		                                                     default_route_metric_penalty);
+	else
+		return (NMIPConfig *) nm_ip6_config_intersect_alloc ((const NMIP6Config *) a,
+		                                                     (const NMIP6Config *) b,
+		                                                     default_route_metric_penalty);
+}
 #endif /* __NETWORKMANAGER_IP4_CONFIG_H__ */

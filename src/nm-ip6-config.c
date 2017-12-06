@@ -366,6 +366,17 @@ _nmtst_ip6_config_addresses_sort (NMIP6Config *self)
 }
 
 NMIP6Config *
+nm_ip6_config_clone (const NMIP6Config *self)
+{
+	NMIP6Config *copy;
+
+	copy = nm_ip6_config_new (nm_ip6_config_get_multi_idx (self), -1);
+	nm_ip6_config_replace (copy, self, NULL);
+
+	return copy;
+}
+
+NMIP6Config *
 nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int ifindex, gboolean capture_resolv_conf, NMSettingIP6ConfigPrivacy use_temporary)
 {
 	NMIP6Config *self;
@@ -1070,26 +1081,28 @@ nm_ip6_config_subtract (NMIP6Config *dst,
 	g_object_thaw_notify (G_OBJECT (dst));
 }
 
-void
-nm_ip6_config_intersect (NMIP6Config *dst,
-                         const NMIP6Config *src,
-                         guint32 default_route_metric_penalty)
+static gboolean
+_nm_ip6_config_intersect_helper (NMIP6Config *dst,
+                                 const NMIP6Config *src,
+                                 guint32 default_route_metric_penalty,
+                                 gboolean update_dst)
 {
 	NMIP6ConfigPrivate *dst_priv;
 	const NMIP6ConfigPrivate *src_priv;
 	NMDedupMultiIter ipconf_iter;
 	const NMPlatformIP6Address *a;
 	const NMPlatformIP6Route *r;
-	gboolean changed;
+	gboolean changed, result = FALSE;
 	const NMPObject *new_best_default_route;
 
-	g_return_if_fail (src);
-	g_return_if_fail (dst);
+	g_return_val_if_fail (src, FALSE);
+	g_return_val_if_fail (dst, FALSE);
 
 	dst_priv = NM_IP6_CONFIG_GET_PRIVATE (dst);
 	src_priv = NM_IP6_CONFIG_GET_PRIVATE (src);
 
-	g_object_freeze_notify (G_OBJECT (dst));
+	if (update_dst)
+		g_object_freeze_notify (G_OBJECT (dst));
 
 	/* addresses */
 	changed = FALSE;
@@ -1099,13 +1112,18 @@ nm_ip6_config_intersect (NMIP6Config *dst,
 		                                     NMP_OBJECT_UP_CAST (a)))
 			continue;
 
+		if (!update_dst)
+			return TRUE;
+
 		if (nm_dedup_multi_index_remove_entry (dst_priv->multi_idx,
 		                                       ipconf_iter.current) != 1)
 			nm_assert_not_reached ();
 		changed = TRUE;
 	}
-	if (changed)
+	if (changed) {
 		_notify_addresses (dst);
+		result = TRUE;
+	}
 
 	/* ignore nameservers */
 
@@ -1137,6 +1155,9 @@ nm_ip6_config_intersect (NMIP6Config *dst,
 			continue;
 		}
 
+		if (!update_dst)
+			return TRUE;
+
 		if (nm_dedup_multi_index_remove_entry (dst_priv->multi_idx,
 		                                       ipconf_iter.current) != 1)
 			nm_assert_not_reached ();
@@ -1146,14 +1167,67 @@ nm_ip6_config_intersect (NMIP6Config *dst,
 		nm_assert (changed);
 		_notify (dst, PROP_GATEWAY);
 	}
-	if (changed)
+	if (changed) {
 		_notify_routes (dst);
+		result = TRUE;
+	}
 
 	/* ignore domains */
 	/* ignore dns searches */
 	/* ignore dns options */
 
-	g_object_thaw_notify (G_OBJECT (dst));
+	if (update_dst)
+		g_object_thaw_notify (G_OBJECT (dst));
+
+	return result;
+}
+
+/**
+ * nm_ip6_config_intersect:
+ * @dst: a configuration to be updated
+ * @src: another configuration
+ * @default_route_metric_penalty: the default route metric penalty
+ *
+ * Computes the intersection between @src and @dst and updates @dst in place
+ * with the result.
+ */
+void
+nm_ip6_config_intersect (NMIP6Config *dst,
+                         const NMIP6Config *src,
+                         guint32 default_route_metric_penalty)
+{
+	_nm_ip6_config_intersect_helper (dst, src, default_route_metric_penalty, TRUE);
+}
+
+/**
+ * nm_ip6_config_intersect_alloc:
+ * @a: a configuration
+ * @b: another configuration
+ * @default_route_metric_penalty: the default route metric penalty
+ *
+ * Computes the intersection between @a and @b and returns the result in a newly
+ * allocated configuration.  As a special case, if @a and @b are identical (with
+ * respect to the only properties considered - addresses and routes) the
+ * functions returns NULL so that one of existing configuration can be reused
+ * without allocation.
+ *
+ * Returns: the intersection between @a and @b, or %NULL if the result is equal
+ * to @a and @b.
+ */
+NMIP6Config *
+nm_ip6_config_intersect_alloc (const NMIP6Config *a,
+                               const NMIP6Config *b,
+                               guint32 default_route_metric_penalty)
+{
+	NMIP6Config *a_copy;
+
+	if (_nm_ip6_config_intersect_helper ((NMIP6Config *) a, b,
+	                                     default_route_metric_penalty, FALSE)) {
+		a_copy = nm_ip6_config_clone (a);
+		_nm_ip6_config_intersect_helper (a_copy, b, default_route_metric_penalty, TRUE);
+		return a_copy;
+	} else
+		return NULL;
 }
 
 /**

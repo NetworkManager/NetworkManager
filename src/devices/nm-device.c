@@ -152,6 +152,12 @@ typedef enum {
 	FIREWALL_STATE_WAIT_IP_CONFIG,
 } FirewallState;
 
+typedef struct {
+	NMIPConfig *orig;      /* the original configuration applied to the device */
+	NMIPConfig *current;   /* configuration after external changes.  NULL means
+	                          that the original configuration didn't change. */
+} AppliedConfig;
+
 /*****************************************************************************/
 
 enum {
@@ -373,9 +379,9 @@ typedef struct _NMDevicePrivate {
 		IpState         ip4_state_;
 	};
 	NMIP4Config *   con_ip4_config; /* config from the setting */
-	NMIP4Config *   dev_ip4_config; /* Config from DHCP, PPP, LLv4, etc */
+	AppliedConfig   dev_ip4_config; /* Config from DHCP, PPP, LLv4, etc */
+	AppliedConfig   wwan_ip4_config; /* WWAN configuration */
 	NMIP4Config *   ext_ip4_config; /* Stuff added outside NM */
-	NMIP4Config *   wwan_ip4_config; /* WWAN configuration */
 	GSList *        vpn4_configs;   /* VPNs which use this device */
 
 	bool v4_has_shadowed_routes;
@@ -429,7 +435,8 @@ typedef struct _NMDevicePrivate {
 		IpState         ip6_state_;
 	};
 	NMIP6Config *  con_ip6_config; /* config from the setting */
-	NMIP6Config *  wwan_ip6_config;
+	AppliedConfig  wwan_ip6_config;
+	AppliedConfig  ac_ip6_config;	/* config from IPv6 autoconfiguration */
 	NMIP6Config *  ext_ip6_config; /* Stuff added outside NM */
 	NMIP6Config *  ext_ip6_config_captured; /* Configuration captured from platform. */
 	GSList *       vpn6_configs;   /* VPNs which use this device */
@@ -442,8 +449,6 @@ typedef struct _NMDevicePrivate {
 	gulong         ndisc_changed_id;
 	gulong         ndisc_timeout_id;
 	NMSettingIP6ConfigPrivacy ndisc_use_tempaddr;
-	/* IP6 config from autoconf */
-	NMIP6Config *  ac_ip6_config;
 
 	guint          linklocal6_timeout_id;
 	guint8         linklocal6_dad_counter;
@@ -457,7 +462,7 @@ typedef struct _NMDevicePrivate {
 		gulong           prefix_sigid;
 		NMDhcp6Config *  config;
 		/* IP6 config from DHCP */
-		NMIP6Config *    ip6_config;
+		AppliedConfig    ip6_config;
 		/* Event ID of the current IP6 config from DHCP */
 		char *           event_id;
 		guint            restart_id;
@@ -693,6 +698,105 @@ _ip6_config_new (NMDevice *self)
 {
 	return nm_ip6_config_new (nm_device_get_multi_index (self),
 	                          nm_device_get_ip_ifindex (self));
+}
+
+static NMIPConfig *
+_ip_config_new (NMDevice *self, int addr_family)
+{
+	nm_assert_addr_family (addr_family);
+
+	return addr_family == AF_INET
+	       ? (gpointer) _ip4_config_new (self)
+	       : (gpointer) _ip6_config_new (self);
+}
+
+static void
+applied_config_clear (AppliedConfig *config)
+{
+	g_clear_object (&config->current);
+	g_clear_object (&config->orig);
+}
+
+static void
+applied_config_init (AppliedConfig *config, gpointer ip_config)
+{
+	nm_g_object_ref (ip_config);
+	applied_config_clear (config);
+	config->orig = ip_config;
+}
+
+static void
+applied_config_init_new (AppliedConfig *config, NMDevice *self, int addr_family)
+{
+	gs_unref_object NMIPConfig *c = _ip_config_new (self, addr_family);
+
+	applied_config_init (config, c);
+}
+
+static NMIPConfig *
+applied_config_get_current (AppliedConfig *config)
+{
+	return config->current ?: config->orig;
+}
+
+static void
+applied_config_add_address (AppliedConfig *config, const NMPlatformIPAddress *address)
+{
+	if (config->orig)
+		nm_ip_config_add_address (config->orig, address);
+	else
+		nm_assert (!config->current);
+
+	if (config->current)
+		nm_ip_config_add_address (config->current, address);
+}
+
+static void
+applied_config_add_nameserver (AppliedConfig *config, const NMIPAddr *ns)
+{
+	if (config->orig)
+		nm_ip_config_add_nameserver (config->orig, ns);
+	else
+		nm_assert (!config->current);
+
+	if (config->current)
+		nm_ip_config_add_nameserver (config->current, ns);
+}
+
+static void
+applied_config_add_search (AppliedConfig *config, const char *new)
+{
+	if (config->orig)
+		nm_ip_config_add_search (config->orig, new);
+	else
+		nm_assert (!config->current);
+
+	if (config->current)
+		nm_ip_config_add_search (config->current, new);
+}
+
+static void
+applied_config_reset_searches (AppliedConfig *config)
+{
+	if (config->orig)
+		nm_ip_config_reset_searches (config->orig);
+	else
+		nm_assert (!config->current);
+
+	if (config->current)
+		nm_ip_config_reset_searches (config->current);
+}
+
+static void
+applied_config_reset_nameservers (AppliedConfig *config)
+{
+	if (config->orig)
+		nm_ip_config_reset_nameservers (config->orig);
+	else
+		nm_assert (!config->current);
+
+	if (config->current)
+		nm_ip_config_reset_nameservers (config->current);
 }
 
 /*****************************************************************************/
@@ -5625,8 +5729,7 @@ nm_device_handle_ipv4ll_event (sd_ipv4ll *ll, int event, void *data)
 			nm_clear_g_source (&priv->ipv4ll_timeout);
 			nm_device_activate_schedule_ip4_config_result (self, config);
 		} else if (priv->ip4_state == IP_DONE) {
-			g_clear_object (&priv->dev_ip4_config);
-			priv->dev_ip4_config = g_object_ref (config);
+			applied_config_init (&priv->dev_ip4_config, config);
 			if (!ip4_config_merge_and_apply (self, TRUE)) {
 				_LOGE (LOGD_AUTOIP4, "failed to update IP4 config for autoip change.");
 				nm_device_ip_method_failed (self, AF_INET, NM_DEVICE_STATE_REASON_AUTOIP_FAILED);
@@ -5811,7 +5914,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
 	gboolean success;
-	NMIP4Config *composite;
+	NMIP4Config *composite, *config;
 	gboolean ignore_auto_routes = FALSE;
 	gboolean ignore_auto_dns = FALSE;
 	gboolean ignore_default_routes = FALSE;
@@ -5849,8 +5952,9 @@ ip4_config_merge_and_apply (NMDevice *self,
 	if (commit)
 		priv->default_route_metric_penalty_ip4_has = default_route_metric_penalty_detect (self);
 
-	if (priv->dev_ip4_config) {
-		nm_ip4_config_merge (composite, priv->dev_ip4_config,
+	config = (NMIP4Config *) applied_config_get_current (&priv->dev_ip4_config);
+	if (config) {
+		nm_ip4_config_merge (composite, config,
 		                       (ignore_auto_routes ? NM_IP_CONFIG_MERGE_NO_ROUTES : 0)
 		                     | (ignore_default_routes ? NM_IP_CONFIG_MERGE_NO_DEFAULT_ROUTES : 0)
 		                     | (ignore_auto_dns ? NM_IP_CONFIG_MERGE_NO_DNS : 0),
@@ -5866,8 +5970,9 @@ ip4_config_merge_and_apply (NMDevice *self,
 	/* Merge WWAN config *last* to ensure modem-given settings overwrite
 	 * any external stuff set by pppd or other scripts.
 	 */
-	if (priv->wwan_ip4_config) {
-		nm_ip4_config_merge (composite, priv->wwan_ip4_config,
+	config = (NMIP4Config *) applied_config_get_current (&priv->wwan_ip4_config);
+	if (config) {
+		nm_ip4_config_merge (composite, config,
 		                       (ignore_auto_routes ? NM_IP_CONFIG_MERGE_NO_ROUTES : 0)
 		                     | (ignore_default_routes ? NM_IP_CONFIG_MERGE_NO_DEFAULT_ROUTES : 0)
 		                     | (ignore_auto_dns ? NM_IP_CONFIG_MERGE_NO_DNS : 0),
@@ -5908,8 +6013,7 @@ dhcp4_lease_change (NMDevice *self, NMIP4Config *config)
 
 	g_return_val_if_fail (config, FALSE);
 
-	g_clear_object (&priv->dev_ip4_config);
-	priv->dev_ip4_config = g_object_ref (config);
+	applied_config_init (&priv->dev_ip4_config, config);
 
 	if (!ip4_config_merge_and_apply (self, TRUE)) {
 		_LOGW (LOGD_DHCP4, "failed to update IPv4 config for DHCP change.");
@@ -6447,7 +6551,7 @@ dhcp6_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	priv->dhcp6.mode = NM_NDISC_DHCP_LEVEL_NONE;
-	g_clear_object (&priv->dhcp6.ip6_config);
+	applied_config_clear (&priv->dhcp6.ip6_config);
 	g_clear_pointer (&priv->dhcp6.event_id, g_free);
 	nm_clear_g_source (&priv->dhcp6.restart_id);
 
@@ -6477,7 +6581,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
 	gboolean success;
-	NMIP6Config *composite;
+	NMIP6Config *composite, *config;
 	gboolean ignore_auto_routes = FALSE;
 	gboolean ignore_auto_dns = FALSE;
 	gboolean ignore_default_routes = FALSE;
@@ -6525,15 +6629,18 @@ ip6_config_merge_and_apply (NMDevice *self,
 		priv->default_route_metric_penalty_ip6_has = default_route_metric_penalty_detect (self);
 
 	/* Merge all the IP configs into the composite config */
-	if (priv->ac_ip6_config) {
-		nm_ip6_config_merge (composite, priv->ac_ip6_config,
+	config = (NMIP6Config *) applied_config_get_current (&priv->ac_ip6_config);
+	if (config) {
+		nm_ip6_config_merge (composite, config,
 		                       (ignore_auto_routes ? NM_IP_CONFIG_MERGE_NO_ROUTES : 0)
 		                     | (ignore_default_routes ? NM_IP_CONFIG_MERGE_NO_DEFAULT_ROUTES : 0)
 		                     | (ignore_auto_dns ? NM_IP_CONFIG_MERGE_NO_DNS : 0),
 		                     default_route_metric_penalty_get (self, AF_INET6));
 	}
-	if (priv->dhcp6.ip6_config) {
-		nm_ip6_config_merge (composite, priv->dhcp6.ip6_config,
+
+	config = (NMIP6Config *) applied_config_get_current (&priv->dhcp6.ip6_config);
+	if (config) {
+		nm_ip6_config_merge (composite, config,
 		                       (ignore_auto_routes ? NM_IP_CONFIG_MERGE_NO_ROUTES : 0)
 		                     | (ignore_default_routes ? NM_IP_CONFIG_MERGE_NO_DEFAULT_ROUTES : 0)
 		                     | (ignore_auto_dns ? NM_IP_CONFIG_MERGE_NO_DNS : 0),
@@ -6549,8 +6656,9 @@ ip6_config_merge_and_apply (NMDevice *self,
 	/* Merge WWAN config *last* to ensure modem-given settings overwrite
 	 * any external stuff set by pppd or other scripts.
 	 */
-	if (priv->wwan_ip6_config) {
-		nm_ip6_config_merge (composite, priv->wwan_ip6_config,
+	config = (NMIP6Config *) applied_config_get_current (&priv->wwan_ip6_config);
+	if (config) {
+		nm_ip6_config_merge (composite, config,
 		                       (ignore_auto_routes ? NM_IP_CONFIG_MERGE_NO_ROUTES : 0)
 		                     | (ignore_default_routes ? NM_IP_CONFIG_MERGE_NO_DEFAULT_ROUTES : 0)
 		                     | (ignore_auto_dns ? NM_IP_CONFIG_MERGE_NO_DNS : 0),
@@ -6606,7 +6714,7 @@ dhcp6_lease_change (NMDevice *self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMSettingsConnection *settings_connection;
 
-	if (priv->dhcp6.ip6_config == NULL) {
+	if (!applied_config_get_current (&priv->dhcp6.ip6_config)) {
 		_LOGW (LOGD_DHCP6, "failed to get DHCPv6 config for rebind");
 		return FALSE;
 	}
@@ -6770,22 +6878,22 @@ dhcp6_state_changed (NMDhcpClient *client,
 			const NMPlatformIP6Address *a;
 
 			nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, ip6_config, &a)
-				nm_ip6_config_add_address (priv->dhcp6.ip6_config, a);
+				applied_config_add_address (&priv->dhcp6.ip6_config, NM_PLATFORM_IP_ADDRESS_CAST (a));
 		} else {
-			g_clear_object (&priv->dhcp6.ip6_config);
 			g_clear_pointer (&priv->dhcp6.event_id, g_free);
 			if (ip6_config) {
-				priv->dhcp6.ip6_config = g_object_ref (ip6_config);
+				applied_config_init (&priv->dhcp6.ip6_config, ip6_config);
 				priv->dhcp6.event_id = g_strdup (event_id);
 				nm_dhcp6_config_set_options (priv->dhcp6.config, options);
 				_notify (self, PROP_DHCP6_CONFIG);
-			}
+			} else
+				applied_config_clear (&priv->dhcp6.ip6_config);
 		}
 
 		priv->dhcp6.num_tries_left = DHCP_NUM_TRIES_MAX;
 
 		if (priv->ip6_state == IP_CONF) {
-			if (priv->dhcp6.ip6_config == NULL) {
+			if (!applied_config_get_current (&priv->dhcp6.ip6_config)) {
 				nm_device_ip_method_failed (self, AF_INET6, NM_DEVICE_STATE_REASON_DHCP_FAILED);
 				break;
 			}
@@ -6905,8 +7013,8 @@ dhcp6_start (NMDevice *self, gboolean wait_for_ll)
 	nm_exported_object_clear_and_unexport (&priv->dhcp6.config);
 	priv->dhcp6.config = nm_dhcp6_config_new ();
 
-	g_warn_if_fail (priv->dhcp6.ip6_config == NULL);
-	g_clear_object (&priv->dhcp6.ip6_config);
+	nm_assert (!applied_config_get_current (&priv->dhcp6.ip6_config));
+	applied_config_clear (&priv->dhcp6.ip6_config);
 	g_clear_pointer (&priv->dhcp6.event_id, g_free);
 
 	connection = nm_device_get_applied_connection (self);
@@ -6989,12 +7097,12 @@ nm_device_use_ip6_subnet (NMDevice *self, const NMPlatformIP6Address *subnet)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMPlatformIP6Address address = *subnet;
 
-	if (!priv->ac_ip6_config)
-		priv->ac_ip6_config = _ip6_config_new (self);
+	if (!applied_config_get_current (&priv->ac_ip6_config))
+		applied_config_init_new (&priv->ac_ip6_config, self, AF_INET6);
 
 	/* Assign a ::1 address in the subnet for us. */
 	address.address.s6_addr32[3] |= htonl (1);
-	nm_ip6_config_add_address (priv->ac_ip6_config, &address);
+	applied_config_add_address (&priv->ac_ip6_config, NM_PLATFORM_IP_ADDRESS_CAST (&address));
 
 	_LOGD (LOGD_IP6, "ipv6-pd: using %s address (preferred for %u seconds)",
 	       nm_utils_inet6_ntop (&address.address, NULL),
@@ -7016,11 +7124,11 @@ nm_device_copy_ip6_dns_config (NMDevice *self, NMDevice *from_device)
 	NMIP6Config *from_config = NULL;
 	guint i, len;
 
-	if (priv->ac_ip6_config) {
-		nm_ip6_config_reset_nameservers (priv->ac_ip6_config);
-		nm_ip6_config_reset_searches (priv->ac_ip6_config);
+	if (applied_config_get_current (&priv->ac_ip6_config)) {
+		applied_config_reset_nameservers (&priv->ac_ip6_config);
+		applied_config_reset_searches (&priv->ac_ip6_config);
 	} else
-		priv->ac_ip6_config = _ip6_config_new (self);
+		applied_config_init_new (&priv->ac_ip6_config, self, AF_INET6);
 
 	if (from_device)
 		from_config = nm_device_get_ip6_config (from_device);
@@ -7029,14 +7137,14 @@ nm_device_copy_ip6_dns_config (NMDevice *self, NMDevice *from_device)
 
 	len = nm_ip6_config_get_num_nameservers (from_config);
 	for (i = 0; i < len; i++) {
-		nm_ip6_config_add_nameserver (priv->ac_ip6_config,
-		                              nm_ip6_config_get_nameserver (from_config, i));
+		applied_config_add_nameserver (&priv->ac_ip6_config,
+		                               (const NMIPAddr *) nm_ip6_config_get_nameserver (from_config, i));
 	}
 
 	len = nm_ip6_config_get_num_searches (from_config);
 	for (i = 0; i < len; i++) {
-		nm_ip6_config_add_search (priv->ac_ip6_config,
-		                          nm_ip6_config_get_search (from_config, i));
+		applied_config_add_search (&priv->ac_ip6_config,
+		                           nm_ip6_config_get_search (from_config, i));
 	}
 
 	if (!ip6_config_merge_and_apply (self, TRUE))
@@ -7476,8 +7584,8 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 
 	g_return_if_fail (priv->act_request);
 
-	if (!priv->ac_ip6_config)
-		priv->ac_ip6_config = _ip6_config_new (self);
+	if (!applied_config_get_current (&priv->ac_ip6_config))
+		applied_config_init_new (&priv->ac_ip6_config, self, AF_INET6);
 
 	if (changed & NM_NDISC_CONFIG_ADDRESSES) {
 		guint8 plen;
@@ -7498,16 +7606,23 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 		} else
 			plen = 128;
 
-		nm_ip6_config_reset_addresses_ndisc (priv->ac_ip6_config,
+		nm_ip6_config_reset_addresses_ndisc ((NMIP6Config *) priv->ac_ip6_config.orig,
 		                                     rdata->addresses,
 		                                     rdata->addresses_n,
 		                                     plen,
 		                                     ifa_flags);
+		if (priv->ac_ip6_config.current) {
+			nm_ip6_config_reset_addresses_ndisc ((NMIP6Config *) priv->ac_ip6_config.current,
+			                                     rdata->addresses,
+			                                     rdata->addresses_n,
+			                                     plen,
+			                                     ifa_flags);
+		}
 	}
 
 	if (NM_FLAGS_ANY (changed,   NM_NDISC_CONFIG_ROUTES
 	                           | NM_NDISC_CONFIG_GATEWAYS)) {
-		nm_ip6_config_reset_routes_ndisc (priv->ac_ip6_config,
+		nm_ip6_config_reset_routes_ndisc ((NMIP6Config *) priv->ac_ip6_config.orig,
 		                                  rdata->gateways,
 		                                  rdata->gateways_n,
 		                                  rdata->routes,
@@ -7516,22 +7631,34 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 		                                  nm_device_get_route_metric (self, AF_INET6),
 		                                  nm_platform_check_kernel_support (nm_device_get_platform (self),
 		                                                                    NM_PLATFORM_KERNEL_SUPPORT_RTA_PREF));
+		if (priv->ac_ip6_config.current) {
+			nm_ip6_config_reset_routes_ndisc ((NMIP6Config *) priv->ac_ip6_config.current,
+			                                  rdata->gateways,
+			                                  rdata->gateways_n,
+			                                  rdata->routes,
+			                                  rdata->routes_n,
+			                                  nm_device_get_route_table (self, AF_INET6, TRUE),
+			                                  nm_device_get_route_metric (self, AF_INET6),
+			                                  nm_platform_check_kernel_support (nm_device_get_platform (self),
+			                                                                    NM_PLATFORM_KERNEL_SUPPORT_RTA_PREF));
+		}
+
 	}
 
 	if (changed & NM_NDISC_CONFIG_DNS_SERVERS) {
 		/* Rebuild DNS server list from neighbor discovery cache. */
-		nm_ip6_config_reset_nameservers (priv->ac_ip6_config);
+		applied_config_reset_nameservers (&priv->ac_ip6_config);
 
 		for (i = 0; i < rdata->dns_servers_n; i++)
-			nm_ip6_config_add_nameserver (priv->ac_ip6_config, &rdata->dns_servers[i].address);
+			applied_config_add_nameserver (&priv->ac_ip6_config, (const NMIPAddr *) &rdata->dns_servers[i].address);
 	}
 
 	if (changed & NM_NDISC_CONFIG_DNS_DOMAINS) {
 		/* Rebuild domain list from neighbor discovery cache. */
-		nm_ip6_config_reset_searches (priv->ac_ip6_config);
+		applied_config_reset_searches (&priv->ac_ip6_config);
 
 		for (i = 0; i < rdata->dns_domains_n; i++)
-			nm_ip6_config_add_search (priv->ac_ip6_config, rdata->dns_domains[i].domain);
+			applied_config_add_search (&priv->ac_ip6_config, rdata->dns_domains[i].domain);
 	}
 
 	if (changed & NM_NDISC_CONFIG_DHCP_LEVEL) {
@@ -7676,11 +7803,8 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 	connection = nm_device_get_applied_connection (self);
 	g_assert (connection);
 
-	g_warn_if_fail (priv->ac_ip6_config == NULL);
-	if (priv->ac_ip6_config) {
-		g_object_unref (priv->ac_ip6_config);
-		priv->ac_ip6_config = NULL;
-	}
+	nm_assert (!applied_config_get_current (&priv->ac_ip6_config));
+	applied_config_clear (&priv->ac_ip6_config);
 
 	g_clear_pointer (&priv->rt6_temporary_not_available, g_hash_table_unref);
 	nm_clear_g_source (&priv->rt6_temporary_not_available_id);
@@ -7738,7 +7862,7 @@ addrconf6_cleanup (NMDevice *self)
 
 	nm_device_remove_pending_action (self, NM_PENDING_ACTION_AUTOCONF6, FALSE);
 
-	g_clear_object (&priv->ac_ip6_config);
+	applied_config_clear (&priv->ac_ip6_config);
 	g_clear_pointer (&priv->rt6_temporary_not_available, g_hash_table_unref);
 	nm_clear_g_source (&priv->rt6_temporary_not_available_id);
 	g_clear_object (&priv->ndisc);
@@ -8118,8 +8242,8 @@ nm_device_activate_stage3_ip6_start (NMDevice *self)
 		/* Here we get a static IPv6 config, like for Shared where it's
 		 * autogenerated or from modems where it comes from ModemManager.
 		 */
-		g_warn_if_fail (priv->ac_ip6_config == NULL);
-		priv->ac_ip6_config = ip6_config;
+		nm_assert (!applied_config_get_current (&priv->ac_ip6_config));
+		applied_config_init (&priv->ac_ip6_config, ip6_config);
 		nm_device_activate_schedule_ip6_config_result (self);
 	} else if (ret == NM_ACT_STAGE_RETURN_IP_DONE) {
 		_set_ip_state (self, AF_INET6, IP_DONE);
@@ -8578,7 +8702,6 @@ activate_stage5_ip4_config_result (NMDevice *self)
 			_LOGW (LOGD_DEVICE, "interface %s not up for IP configuration", nm_device_get_ip_iface (self));
 	}
 
-	/* NULL to use the existing priv->dev_ip4_config */
 	if (!ip4_config_merge_and_apply (self, TRUE)) {
 		_LOGD (LOGD_DEVICE | LOGD_IP4, "Activation: Stage 5 of 5 (IPv4 Commit) failed");
 		nm_device_ip_method_failed (self, AF_INET, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
@@ -8627,10 +8750,7 @@ nm_device_activate_schedule_ip4_config_result (NMDevice *self, NMIP4Config *conf
 	g_return_if_fail (NM_IS_DEVICE (self));
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	g_clear_object (&priv->dev_ip4_config);
-	if (config)
-		priv->dev_ip4_config = g_object_ref (config);
-
+	applied_config_init (&priv->dev_ip4_config, config);
 	activation_source_schedule (self, activate_stage5_ip4_config_result, AF_INET);
 }
 
@@ -8663,10 +8783,10 @@ static NMIP6Config *
 dad6_get_pending_addresses (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMIP6Config *confs[] = { priv->ac_ip6_config,
-	                         priv->dhcp6.ip6_config,
+	NMIP6Config *confs[] = { (NMIP6Config *) applied_config_get_current (&priv->ac_ip6_config),
+	                         (NMIP6Config *) applied_config_get_current (&priv->dhcp6.ip6_config),
 	                         priv->con_ip6_config,
-	                         priv->wwan_ip6_config };
+	                         (NMIP6Config *) applied_config_get_current (&priv->wwan_ip6_config) };
 	const NMPlatformIP6Address *addr, *pl_addr;
 	NMIP6Config *dad6_config = NULL;
 	NMDedupMultiIter ipconf_iter;
@@ -8733,7 +8853,7 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 	if (ip6_config_merge_and_apply (self, TRUE)) {
 		if (   priv->dhcp6.mode != NM_NDISC_DHCP_LEVEL_NONE
 		    && priv->ip6_state == IP_CONF) {
-			if (priv->dhcp6.ip6_config) {
+			if (applied_config_get_current (&priv->dhcp6.ip6_config)) {
 				/* If IPv6 wasn't the first IP to complete, and DHCP was used,
 				 * then ensure dispatcher scripts get the DHCP lease information.
 				 */
@@ -9096,8 +9216,7 @@ _nm_device_hash_check_invalid_keys (GHashTable *hash, const char *setting_name,
 void
 nm_device_reactivate_ip4_config (NMDevice *self,
                                  NMSettingIPConfig *s_ip4_old,
-                                 NMSettingIPConfig *s_ip4_new,
-                                 gboolean force_restart)
+                                 NMSettingIPConfig *s_ip4_new)
 {
 	NMDevicePrivate *priv;
 	const char *method_old, *method_new;
@@ -9108,23 +9227,22 @@ nm_device_reactivate_ip4_config (NMDevice *self,
 	if (priv->ip4_state != IP_NONE) {
 		g_clear_object (&priv->con_ip4_config);
 		g_clear_object (&priv->ext_ip4_config);
+		g_clear_object (&priv->dev_ip4_config.current);
+		g_clear_object (&priv->wwan_ip4_config.current);
 		priv->con_ip4_config = _ip4_config_new (self);
 		nm_ip4_config_merge_setting (priv->con_ip4_config,
 		                             s_ip4_new,
 		                             nm_device_get_route_table (self, AF_INET, TRUE),
 		                             nm_device_get_route_metric (self, AF_INET));
 
-		if (!force_restart) {
-			method_old = s_ip4_old
-			             ? nm_setting_ip_config_get_method (s_ip4_old)
-			             : NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
-			method_new = s_ip4_new
-			             ? nm_setting_ip_config_get_method (s_ip4_new)
-			             : NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
-			force_restart = !nm_streq0 (method_old, method_new);
-		}
+		method_old = s_ip4_old
+		             ? nm_setting_ip_config_get_method (s_ip4_old)
+		             : NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
+		method_new = s_ip4_new
+		             ? nm_setting_ip_config_get_method (s_ip4_new)
+		             : NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
 
-		if (force_restart) {
+		if (!nm_streq0 (method_old, method_new)) {
 			_cleanup_ip4_pre (self, CLEANUP_TYPE_DECONFIGURE);
 			_set_ip_state (self, AF_INET, IP_WAIT);
 			if (!nm_device_activate_stage3_ip4_start (self))
@@ -9139,8 +9257,7 @@ nm_device_reactivate_ip4_config (NMDevice *self,
 void
 nm_device_reactivate_ip6_config (NMDevice *self,
                                  NMSettingIPConfig *s_ip6_old,
-                                 NMSettingIPConfig *s_ip6_new,
-                                 gboolean force_restart)
+                                 NMSettingIPConfig *s_ip6_new)
 {
 	NMDevicePrivate *priv;
 	const char *method_old, *method_new;
@@ -9151,23 +9268,23 @@ nm_device_reactivate_ip6_config (NMDevice *self,
 	if (priv->ip6_state != IP_NONE) {
 		g_clear_object (&priv->con_ip6_config);
 		g_clear_object (&priv->ext_ip6_config);
+		g_clear_object (&priv->ac_ip6_config.current);
+		g_clear_object (&priv->dhcp6.ip6_config.current);
+		g_clear_object (&priv->wwan_ip6_config.current);
 		priv->con_ip6_config = _ip6_config_new (self);
 		nm_ip6_config_merge_setting (priv->con_ip6_config,
 		                             s_ip6_new,
 		                             nm_device_get_route_table (self, AF_INET6, TRUE),
 		                             nm_device_get_route_metric (self, AF_INET6));
 
-		if (!force_restart) {
-			method_old = s_ip6_old
-			             ? nm_setting_ip_config_get_method (s_ip6_old)
-			             : NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
-			method_new = s_ip6_new
-			             ? nm_setting_ip_config_get_method (s_ip6_new)
-			             : NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
-			force_restart = !nm_streq0 (method_old, method_new);
-		}
+		method_old = s_ip6_old
+		             ? nm_setting_ip_config_get_method (s_ip6_old)
+		             : NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
+		method_new = s_ip6_new
+		             ? nm_setting_ip_config_get_method (s_ip6_new)
+		             : NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
 
-		if (force_restart) {
+		if (!nm_streq0 (method_old, method_new)) {
 			_cleanup_ip6_pre (self, CLEANUP_TYPE_DECONFIGURE);
 			_set_ip_state (self, AF_INET6, IP_WAIT);
 			if (!nm_device_activate_stage3_ip6_start (self))
@@ -9416,8 +9533,8 @@ check_and_reapply_connection (NMDevice *self,
 	s_ip6_old = nm_connection_get_setting_ip6_config (con_old);
 	s_ip6_new = nm_connection_get_setting_ip6_config (con_new);
 
-	nm_device_reactivate_ip4_config (self, s_ip4_old, s_ip4_new, TRUE);
-	nm_device_reactivate_ip6_config (self, s_ip6_old, s_ip6_new, TRUE);
+	nm_device_reactivate_ip4_config (self, s_ip4_old, s_ip4_new);
+	nm_device_reactivate_ip6_config (self, s_ip6_old, s_ip6_new);
 
 	reactivate_proxy_config (self);
 
@@ -10152,7 +10269,7 @@ nm_device_set_ip4_config (NMDevice *self,
 		_LOGD (LOGD_IP4, "ip4-config: clear IP4Config instance (%s)",
 		       nm_exported_object_get_path (NM_EXPORTED_OBJECT (old_config)));
 		/* Device config is invalid if combined config is invalid */
-		g_clear_object (&priv->dev_ip4_config);
+		applied_config_clear (&priv->dev_ip4_config);
 	}
 
 	concheck_periodic_update (self);
@@ -10250,14 +10367,7 @@ nm_device_set_wwan_ip4_config (NMDevice *self, NMIP4Config *config)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->wwan_ip4_config == config)
-		return;
-
-	g_clear_object (&priv->wwan_ip4_config);
-	if (config)
-		priv->wwan_ip4_config = g_object_ref (config);
-
-	/* NULL to use existing configs */
+	applied_config_init (&priv->wwan_ip4_config, config);
 	if (!ip4_config_merge_and_apply (self, TRUE))
 		_LOGW (LOGD_IP4, "failed to set WWAN IPv4 configuration");
 }
@@ -10392,14 +10502,7 @@ nm_device_set_wwan_ip6_config (NMDevice *self, NMIP6Config *config)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->wwan_ip6_config == config)
-		return;
-
-	g_clear_object (&priv->wwan_ip6_config);
-	if (config)
-		priv->wwan_ip6_config = g_object_ref (config);
-
-	/* NULL to use existing configs */
+	applied_config_init (&priv->wwan_ip6_config, config);
 	if (!ip6_config_merge_and_apply (self, TRUE))
 		_LOGW (LOGD_IP6, "failed to set WWAN IPv6 configuration");
 }
@@ -10978,6 +11081,32 @@ capture_lease_config (NMDevice *self,
 	}
 }
 
+static void
+intersect_ext_config (NMDevice *self, AppliedConfig *config)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMIPConfig *ext;
+	guint32 penalty;
+	int family;
+
+	if (!config->orig)
+		return;
+
+	family = nm_ip_config_get_addr_family (config->orig);
+	penalty = default_route_metric_penalty_get (self, family);
+	ext = family == AF_INET
+	      ? (NMIPConfig *) priv->ext_ip4_config
+	      : (NMIPConfig *) priv->ext_ip6_config;
+
+	if (config->current)
+		nm_ip_config_intersect (config->current, ext, penalty);
+	else {
+		config->current = nm_ip_config_intersect_alloc (config->orig,
+		                                                ext,
+		                                                penalty);
+	}
+}
+
 static gboolean
 update_ext_ip_config (NMDevice *self, int addr_family, gboolean initial, gboolean intersect_configs)
 {
@@ -11004,8 +11133,11 @@ update_ext_ip_config (NMDevice *self, int addr_family, gboolean initial, gboolea
 		                                              capture_resolv_conf);
 		if (priv->ext_ip4_config) {
 			if (initial) {
-				g_clear_object (&priv->dev_ip4_config);
-				capture_lease_config (self, priv->ext_ip4_config, &priv->dev_ip4_config, NULL, NULL);
+				applied_config_clear (&priv->dev_ip4_config);
+				capture_lease_config (self,
+				                      priv->ext_ip4_config,
+				                      (NMIP4Config **) &priv->dev_ip4_config.orig,
+				                      NULL, NULL);
 			}
 
 			if (intersect_configs) {
@@ -11017,14 +11149,10 @@ update_ext_ip_config (NMDevice *self, int addr_family, gboolean initial, gboolea
 					nm_ip4_config_intersect (priv->con_ip4_config, priv->ext_ip4_config,
 					                         default_route_metric_penalty_get (self, AF_INET));
 				}
-				if (priv->dev_ip4_config) {
-					nm_ip4_config_intersect (priv->dev_ip4_config, priv->ext_ip4_config,
-					                         default_route_metric_penalty_get (self, AF_INET));
-				}
-				if (priv->wwan_ip4_config) {
-					nm_ip4_config_intersect (priv->wwan_ip4_config, priv->ext_ip4_config,
-					                         default_route_metric_penalty_get (self, AF_INET));
-				}
+
+				intersect_ext_config (self, &priv->dev_ip4_config);
+				intersect_ext_config (self, &priv->wwan_ip4_config);
+
 				for (iter = priv->vpn4_configs; iter; iter = iter->next)
 					nm_ip4_config_intersect (iter->data, priv->ext_ip4_config, 0);
 			}
@@ -11036,13 +11164,15 @@ update_ext_ip_config (NMDevice *self, int addr_family, gboolean initial, gboolea
 				nm_ip4_config_subtract (priv->ext_ip4_config, priv->con_ip4_config,
 				                        default_route_metric_penalty_get (self, AF_INET));
 			}
-			if (priv->dev_ip4_config) {
-				nm_ip4_config_subtract (priv->ext_ip4_config, priv->dev_ip4_config,
-				                        default_route_metric_penalty_get (self, AF_INET));
+			if (applied_config_get_current (&priv->dev_ip4_config)) {
+				nm_ip_config_subtract ((NMIPConfig *) priv->ext_ip4_config,
+				                       applied_config_get_current (&priv->dev_ip4_config),
+				                       default_route_metric_penalty_get (self, AF_INET));
 			}
-			if (priv->wwan_ip4_config) {
-				nm_ip4_config_subtract (priv->ext_ip4_config, priv->wwan_ip4_config,
-				                        default_route_metric_penalty_get (self, AF_INET));
+			if (applied_config_get_current (&priv->wwan_ip4_config)) {
+				nm_ip_config_subtract ((NMIPConfig *) priv->ext_ip4_config,
+				                       applied_config_get_current (&priv->wwan_ip4_config),
+				                       default_route_metric_penalty_get (self, AF_INET));
 			}
 			for (iter = priv->vpn4_configs; iter; iter = iter->next)
 				nm_ip4_config_subtract (priv->ext_ip4_config, iter->data, 0);
@@ -11071,18 +11201,11 @@ update_ext_ip_config (NMDevice *self, int addr_family, gboolean initial, gboolea
 					nm_ip6_config_intersect (priv->con_ip6_config, priv->ext_ip6_config,
 					                         default_route_metric_penalty_get (self, AF_INET6));
 				}
-				if (priv->ac_ip6_config) {
-					nm_ip6_config_intersect (priv->ac_ip6_config, priv->ext_ip6_config,
-					                         default_route_metric_penalty_get (self, AF_INET6));
-				}
-				if (priv->dhcp6.ip6_config) {
-					nm_ip6_config_intersect (priv->dhcp6.ip6_config, priv->ext_ip6_config,
-					                         default_route_metric_penalty_get (self, AF_INET6));
-				}
-				if (priv->wwan_ip6_config) {
-					nm_ip6_config_intersect (priv->wwan_ip6_config, priv->ext_ip6_config,
-					                         default_route_metric_penalty_get (self, AF_INET6));
-				}
+
+				intersect_ext_config (self, &priv->ac_ip6_config);
+				intersect_ext_config (self, &priv->dhcp6.ip6_config);
+				intersect_ext_config (self, &priv->wwan_ip6_config);
+
 				for (iter = priv->vpn6_configs; iter; iter = iter->next)
 					nm_ip6_config_intersect (iter->data, priv->ext_ip6_config, 0);
 			}
@@ -11094,17 +11217,20 @@ update_ext_ip_config (NMDevice *self, int addr_family, gboolean initial, gboolea
 				nm_ip6_config_subtract (priv->ext_ip6_config, priv->con_ip6_config,
 				                        default_route_metric_penalty_get (self, AF_INET6));
 			}
-			if (priv->ac_ip6_config) {
-				nm_ip6_config_subtract (priv->ext_ip6_config, priv->ac_ip6_config,
-				                        default_route_metric_penalty_get (self, AF_INET6));
+			if (applied_config_get_current (&priv->ac_ip6_config)) {
+				nm_ip_config_subtract ((NMIPConfig *) priv->ext_ip6_config,
+				                       applied_config_get_current (&priv->ac_ip6_config),
+				                       default_route_metric_penalty_get (self, AF_INET6));
 			}
-			if (priv->dhcp6.ip6_config) {
-				nm_ip6_config_subtract (priv->ext_ip6_config, priv->dhcp6.ip6_config,
-				                        default_route_metric_penalty_get (self, AF_INET6));
+			if (applied_config_get_current (&priv->dhcp6.ip6_config)) {
+				nm_ip_config_subtract ((NMIPConfig *) priv->ext_ip6_config,
+				                       applied_config_get_current (&priv->dhcp6.ip6_config),
+				                       default_route_metric_penalty_get (self, AF_INET6));
 			}
-			if (priv->wwan_ip6_config) {
-				nm_ip6_config_subtract (priv->ext_ip6_config, priv->wwan_ip6_config,
-				                        default_route_metric_penalty_get (self, AF_INET6));
+			if (applied_config_get_current (&priv->wwan_ip6_config)) {
+				nm_ip_config_subtract ((NMIPConfig *) priv->ext_ip6_config,
+				                       applied_config_get_current (&priv->wwan_ip6_config),
+				                       default_route_metric_penalty_get (self, AF_INET6));
 			}
 			for (iter = priv->vpn6_configs; iter; iter = iter->next)
 				nm_ip6_config_subtract (priv->ext_ip6_config, iter->data, 0);
@@ -12437,15 +12563,15 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 	nm_device_set_ip6_config (self, NULL, TRUE);
 	g_clear_object (&priv->proxy_config);
 	g_clear_object (&priv->con_ip4_config);
-	g_clear_object (&priv->dev_ip4_config);
+	applied_config_clear (&priv->dev_ip4_config);
+	applied_config_clear (&priv->wwan_ip4_config);
 	g_clear_object (&priv->ext_ip4_config);
-	g_clear_object (&priv->wwan_ip4_config);
 	g_clear_object (&priv->ip4_config);
 	g_clear_object (&priv->con_ip6_config);
-	g_clear_object (&priv->ac_ip6_config);
+	applied_config_clear (&priv->ac_ip6_config);
 	g_clear_object (&priv->ext_ip6_config);
 	g_clear_object (&priv->ext_ip6_config_captured);
-	g_clear_object (&priv->wwan_ip6_config);
+	applied_config_clear (&priv->wwan_ip6_config);
 	g_clear_object (&priv->ip6_config);
 	g_clear_object (&priv->dad6_ip6_config);
 
