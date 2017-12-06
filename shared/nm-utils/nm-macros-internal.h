@@ -721,6 +721,7 @@ nm_g_object_ref (gpointer obj)
 		g_object_ref (obj);
 	return obj;
 }
+#define nm_g_object_ref(obj) ((typeof (obj)) nm_g_object_ref (obj))
 
 static inline void
 nm_g_object_unref (gpointer obj)
