@@ -121,6 +121,14 @@ typedef struct {
 	 * because the state changes only on explicit actions from the daemon
 	 * itself. */
 	State *state;
+
+	/* the hash table of device states. It is only loaded from disk
+	 * once and kept immutable afterwards.
+	 *
+	 * We also read all state file at once. We don't want to support
+	 * that they are changed outside of NM (at least not while NM is running).
+	 * Hence, we read them once, that's it. */
+	GHashTable *device_states;
 } NMConfigPrivate;
 
 struct _NMConfig {
@@ -1945,45 +1953,44 @@ _config_device_state_data_new (int ifindex, GKeyFile *kf)
 	gint nm_owned = -1;
 	char *p;
 
+	nm_assert (kf);
 	nm_assert (ifindex > 0);
 
-	if (kf) {
-		switch (nm_config_keyfile_get_boolean (kf,
-		                                       DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
-		                                       DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_MANAGED,
-		                                       -1)) {
-		case TRUE:
-			managed_type = NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_MANAGED;
-			connection_uuid = nm_config_keyfile_get_value (kf,
-			                                               DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
-			                                               DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_CONNECTION_UUID,
-			                                               NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY);
-			break;
-		case FALSE:
-			managed_type = NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_UNMANAGED;
-			break;
-		case -1:
-			/* missing property in keyfile. */
-			break;
-		}
-
-		perm_hw_addr_fake = nm_config_keyfile_get_value (kf,
-		                                                 DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
-		                                                 DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_PERM_HW_ADDR_FAKE,
-		                                                 NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY);
-		if (perm_hw_addr_fake) {
-			char *normalized;
-
-			normalized = nm_utils_hwaddr_canonical (perm_hw_addr_fake, -1);
-			g_free (perm_hw_addr_fake);
-			perm_hw_addr_fake = normalized;
-		}
-
-		nm_owned = nm_config_keyfile_get_boolean (kf,
-		                                          DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
-		                                          DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_NM_OWNED,
-		                                          -1);
+	switch (nm_config_keyfile_get_boolean (kf,
+	                                       DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
+	                                       DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_MANAGED,
+	                                       -1)) {
+	case TRUE:
+		managed_type = NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_MANAGED;
+		connection_uuid = nm_config_keyfile_get_value (kf,
+		                                               DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
+		                                               DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_CONNECTION_UUID,
+		                                               NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY);
+		break;
+	case FALSE:
+		managed_type = NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_UNMANAGED;
+		break;
+	case -1:
+		/* missing property in keyfile. */
+		break;
 	}
+
+	perm_hw_addr_fake = nm_config_keyfile_get_value (kf,
+	                                                 DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
+	                                                 DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_PERM_HW_ADDR_FAKE,
+	                                                 NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY);
+	if (perm_hw_addr_fake) {
+		char *normalized;
+
+		normalized = nm_utils_hwaddr_canonical (perm_hw_addr_fake, -1);
+		g_free (perm_hw_addr_fake);
+		perm_hw_addr_fake = normalized;
+	}
+
+	nm_owned = nm_config_keyfile_get_boolean (kf,
+	                                          DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
+	                                          DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_NM_OWNED,
+	                                          -1);
 
 	connection_uuid_len = connection_uuid ? strlen (connection_uuid) + 1 : 0;
 	perm_hw_addr_fake_len = perm_hw_addr_fake ? strlen (perm_hw_addr_fake) + 1 : 0;
@@ -2034,13 +2041,12 @@ nm_config_device_state_load (int ifindex)
 
 	kf = nm_config_create_keyfile ();
 	if (!g_key_file_load_from_file (kf, path, G_KEY_FILE_NONE, NULL))
-		g_clear_pointer (&kf, g_key_file_unref);
+		return NULL;
 
 	device_state = _config_device_state_data_new (ifindex, kf);
 	nm_owned_str = device_state->nm_owned == TRUE ?
 	               ", nm-owned=1" :
 	               (device_state->nm_owned == FALSE ? ", nm-owned=0" : "");
-
 
 	_LOGT ("device-state: %s #%d (%s); managed=%s%s%s%s%s%s%s%s",
 	       kf ? "read" : "miss",
@@ -2051,6 +2057,49 @@ nm_config_device_state_load (int ifindex)
 	       nm_owned_str);
 
 	return device_state;
+}
+
+static int
+_device_state_parse_filename (const char *filename)
+{
+	if (!filename || !filename[0])
+		return 0;
+	if (!NM_STRCHAR_ALL (filename, ch, g_ascii_isdigit (ch)))
+		return 0;
+	return _nm_utils_ascii_str_to_int64 (filename, 10, 1, G_MAXINT, 0);
+}
+
+GHashTable *
+nm_config_device_state_load_all (void)
+{
+	GHashTable *states;
+	GDir *dir;
+	const char *fn;
+	int ifindex;
+
+	states = g_hash_table_new_full (nm_direct_hash, NULL, NULL, g_free);
+
+	dir = g_dir_open (NM_CONFIG_DEVICE_STATE_DIR, 0, NULL);
+	if (!dir)
+		return states;
+
+	while ((fn = g_dir_read_name (dir))) {
+		NMConfigDeviceStateData *state;
+
+		ifindex = _device_state_parse_filename (fn);
+		if (ifindex <= 0)
+			continue;
+
+		state = nm_config_device_state_load (ifindex);
+		if (!state)
+			continue;
+
+		if (!nm_g_hash_table_insert (states, GINT_TO_POINTER (ifindex), state))
+			nm_assert_not_reached ();
+	}
+	g_dir_close (dir);
+
+	return states;
 }
 
 gboolean
@@ -2121,7 +2170,6 @@ nm_config_device_state_prune_unseen (GHashTable *seen_ifindexes)
 	const char *fn;
 	int ifindex;
 	gsize fn_len;
-	gsize i;
 	char buf[NM_STRLEN (NM_CONFIG_DEVICE_STATE_DIR"/") + 30 + 3] = NM_CONFIG_DEVICE_STATE_DIR"/";
 	char *buf_p = &buf[NM_STRLEN (NM_CONFIG_DEVICE_STATE_DIR"/")];
 
@@ -2132,29 +2180,65 @@ nm_config_device_state_prune_unseen (GHashTable *seen_ifindexes)
 		return;
 
 	while ((fn = g_dir_read_name (dir))) {
-		fn_len = strlen (fn);
-
-		/* skip over file names that are not plain integers. */
-		for (i = 0; i < fn_len; i++) {
-			if (!g_ascii_isdigit (fn[i]))
-				break;
-		}
-		if (fn_len == 0 || i != fn_len)
+		ifindex = _device_state_parse_filename (fn);
+		if (ifindex <= 0)
 			continue;
-
-		ifindex = _nm_utils_ascii_str_to_int64 (fn, 10, 1, G_MAXINT, 0);
-		if (!ifindex)
-			continue;
-
 		if (g_hash_table_contains (seen_ifindexes, GINT_TO_POINTER (ifindex)))
 			continue;
 
-		memcpy (buf_p, fn, fn_len + 1);
+		fn_len = strlen (fn) + 1;
+		nm_assert (&buf_p[fn_len] < &buf[G_N_ELEMENTS (buf)]);
+		memcpy (buf_p, fn, fn_len);
+		nm_assert (({
+		                char bb[30];
+		                nm_sprintf_buf (bb, "%d", ifindex);
+		                nm_streq0 (bb, buf_p);
+		           }));
 		_LOGT ("device-state: prune #%d (%s)", ifindex, buf);
 		(void) unlink (buf);
 	}
 
 	g_dir_close (dir);
+}
+
+/*****************************************************************************/
+
+static GHashTable *
+_device_state_get_all (NMConfig *self)
+{
+	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (self);
+
+	if (G_UNLIKELY (!priv->device_states))
+		priv->device_states = nm_config_device_state_load_all ();
+	return priv->device_states;
+}
+
+/**
+ * nm_config_device_state_get_all:
+ * @self: the #NMConfig
+ *
+ * This function exists to give convenient access to all
+ * device states. Do not ever try to modify the returned
+ * hash, it's supposed to be immutable.
+ *
+ * Returns: the internal #GHashTable object with all device states.
+ */
+const GHashTable *
+nm_config_device_state_get_all (NMConfig *self)
+{
+	g_return_val_if_fail (NM_IS_CONFIG (self), NULL);
+
+	return _device_state_get_all (self);
+}
+
+const NMConfigDeviceStateData *
+nm_config_device_state_get (NMConfig *self,
+                            int ifindex)
+{
+	g_return_val_if_fail (NM_IS_CONFIG (self), NULL);
+	g_return_val_if_fail (ifindex > 0 , NULL);
+
+	return g_hash_table_lookup (_device_state_get_all (self), GINT_TO_POINTER (ifindex));
 }
 
 /*****************************************************************************/
