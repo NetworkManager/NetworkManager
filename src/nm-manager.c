@@ -5198,6 +5198,7 @@ nm_manager_write_device_state (NMManager *self)
 		const char *uuid = NULL;
 		const char *perm_hw_addr_fake = NULL;
 		gboolean perm_hw_addr_is_fake;
+		guint32 route_metric_default;
 
 		ifindex = nm_device_get_ip_ifindex (device);
 		if (ifindex <= 0)
@@ -5227,11 +5228,14 @@ nm_manager_write_device_state (NMManager *self)
 
 		nm_owned = nm_device_is_software (device) ? nm_device_is_nm_owned (device) : -1;
 
+		route_metric_default = 0;
+
 		if (nm_config_device_state_write (ifindex,
 		                                  managed_type,
 		                                  perm_hw_addr_fake,
 		                                  uuid,
-		                                  nm_owned))
+		                                  nm_owned,
+		                                  route_metric_default))
 			g_hash_table_add (seen_ifindexes, GINT_TO_POINTER (ifindex));
 	}
 

@@ -212,6 +212,9 @@ struct _NMConfigDeviceStateData {
 	int ifindex;
 	NMConfigDeviceStateManagedType managed;
 
+	/* a value of zero means that no metric is set. */
+	guint32 route_metric_default;
+
 	/* the UUID of the last settings-connection active
 	 * on the device. */
 	const char *connection_uuid;
@@ -220,7 +223,7 @@ struct _NMConfigDeviceStateData {
 
 	/* whether the device was nm-owned (0/1) or -1 for
 	 * non-software devices. */
-	gint nm_owned;
+	int nm_owned:3;
 };
 
 NMConfigDeviceStateData *nm_config_device_state_load (int ifindex);
@@ -229,7 +232,9 @@ gboolean nm_config_device_state_write (int ifindex,
                                        NMConfigDeviceStateManagedType managed,
                                        const char *perm_hw_addr_fake,
                                        const char *connection_uuid,
-                                       gint nm_owned);
+                                       gint nm_owned,
+                                       guint32 route_metric_default);
+
 void nm_config_device_state_prune_unseen (GHashTable *seen_ifindexes);
 
 const GHashTable *nm_config_device_state_get_all (NMConfig *self);

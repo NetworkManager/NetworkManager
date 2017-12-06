@@ -1933,6 +1933,7 @@ _nm_config_state_set (NMConfig *self,
 #define DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_PERM_HW_ADDR_FAKE   "perm-hw-addr-fake"
 #define DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_CONNECTION_UUID     "connection-uuid"
 #define DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_NM_OWNED            "nm-owned"
+#define DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_ROUTE_METRIC_DEFAULT "route-metric-default"
 
 NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_device_state_managed_type_to_str, NMConfigDeviceStateManagedType,
 	NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT ("unknown"),
@@ -1952,6 +1953,7 @@ _config_device_state_data_new (int ifindex, GKeyFile *kf)
 	gsize perm_hw_addr_fake_len;
 	gint nm_owned = -1;
 	char *p;
+	guint32 route_metric_default;
 
 	nm_assert (kf);
 	nm_assert (ifindex > 0);
@@ -1992,6 +1994,13 @@ _config_device_state_data_new (int ifindex, GKeyFile *kf)
 	                                          DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_NM_OWNED,
 	                                          -1);
 
+	/* metric zero is not a valid metric. While zero valid for IPv4, for IPv6 it is an alias
+	 * for 1024. Since we handle here IPv4 and IPv6 the same, we cannot allow zero. */
+	route_metric_default = nm_config_keyfile_get_int64 (kf,
+	                                                    DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
+	                                                    DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_ROUTE_METRIC_DEFAULT,
+	                                                    10, 1, G_MAXUINT32, 0);
+
 	connection_uuid_len = connection_uuid ? strlen (connection_uuid) + 1 : 0;
 	perm_hw_addr_fake_len = perm_hw_addr_fake ? strlen (perm_hw_addr_fake) + 1 : 0;
 
@@ -2004,6 +2013,7 @@ _config_device_state_data_new (int ifindex, GKeyFile *kf)
 	device_state->connection_uuid = NULL;
 	device_state->perm_hw_addr_fake = NULL;
 	device_state->nm_owned = nm_owned;
+	device_state->route_metric_default = route_metric_default;
 
 	p = (char *) (&device_state[1]);
 	if (connection_uuid) {
@@ -2048,13 +2058,14 @@ nm_config_device_state_load (int ifindex)
 	               ", nm-owned=1" :
 	               (device_state->nm_owned == FALSE ? ", nm-owned=0" : "");
 
-	_LOGT ("device-state: %s #%d (%s); managed=%s%s%s%s%s%s%s%s",
+	_LOGT ("device-state: %s #%d (%s); managed=%s%s%s%s%s%s%s%s, route-metric-default=%"G_GUINT32_FORMAT,
 	       kf ? "read" : "miss",
 	       ifindex, path,
 	       _device_state_managed_type_to_str (device_state->managed),
 	       NM_PRINT_FMT_QUOTED (device_state->connection_uuid, ", connection-uuid=", device_state->connection_uuid, "", ""),
 	       NM_PRINT_FMT_QUOTED (device_state->perm_hw_addr_fake, ", perm-hw-addr-fake=", device_state->perm_hw_addr_fake, "", ""),
-	       nm_owned_str);
+	       nm_owned_str,
+	       device_state->route_metric_default);
 
 	return device_state;
 }
@@ -2107,7 +2118,8 @@ nm_config_device_state_write (int ifindex,
                               NMConfigDeviceStateManagedType managed,
                               const char *perm_hw_addr_fake,
                               const char *connection_uuid,
-                              gint nm_owned)
+                              gint nm_owned,
+                              guint32 route_metric_default)
 {
 	char path[NM_STRLEN (NM_CONFIG_DEVICE_STATE_DIR) + 60];
 	GError *local = NULL;
@@ -2149,17 +2161,24 @@ nm_config_device_state_write (int ifindex,
 		                        nm_owned);
 	}
 
+	if (route_metric_default != 0) {
+		g_key_file_set_int64 (kf,
+		                      DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
+		                      DEVICE_RUN_STATE_KEYFILE_KEY_DEVICE_ROUTE_METRIC_DEFAULT,
+		                      route_metric_default);
+	}
 
 	if (!g_key_file_save_to_file (kf, path, &local)) {
 		_LOGW ("device-state: write #%d (%s) failed: %s", ifindex, path, local->message);
 		g_error_free (local);
 		return FALSE;
 	}
-	_LOGT ("device-state: write #%d (%s); managed=%s%s%s%s%s%s%s",
+	_LOGT ("device-state: write #%d (%s); managed=%s%s%s%s%s%s%s, route-metric-default=%"G_GUINT32_FORMAT,
 	       ifindex, path,
 	       _device_state_managed_type_to_str (managed),
 	       NM_PRINT_FMT_QUOTED (connection_uuid, ", connection-uuid=", connection_uuid, "", ""),
-	       NM_PRINT_FMT_QUOTED (perm_hw_addr_fake, ", perm-hw-addr-fake=", perm_hw_addr_fake, "", ""));
+	       NM_PRINT_FMT_QUOTED (perm_hw_addr_fake, ", perm-hw-addr-fake=", perm_hw_addr_fake, "", ""),
+	       route_metric_default);
 	return TRUE;
 }
 
