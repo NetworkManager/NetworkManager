@@ -1670,6 +1670,7 @@ make_ip6_setting (shvarFile *ifcfg,
                   GError **error)
 {
 	NMSettingIPConfig *s_ip6 = NULL;
+	const char *v;
 	char *value = NULL;
 	char *str_value;
 	char *route6_path = NULL;
@@ -1918,8 +1919,6 @@ make_ip6_setting (shvarFile *ifcfg,
 		g_free (value);
 	}
 
-	/* DNS searches ('DOMAIN' key) are read by make_ip4_setting() and included in NMSettingIPConfig */
-
 	if (!routes_read) {
 		/* NOP */
 	} else {
@@ -1930,7 +1929,23 @@ make_ip6_setting (shvarFile *ifcfg,
 		g_free (route6_path);
 	}
 
+	/* DNS searches */
+	nm_clear_g_free (&value);
+	v = svGetValueStr (ifcfg, "IPV6_DOMAIN", &value);
+	if (v) {
+		gs_free const char **searches = NULL;
+
+		searches = nm_utils_strsplit_set (v, " ");
+		if (searches) {
+			for (iter = searches; *iter; iter++) {
+				if (!nm_setting_ip_config_add_dns_search (s_ip6, *iter))
+					PARSE_WARNING ("duplicate DNS domain '%s'", *iter);
+			}
+		}
+	}
+
 	/* DNS options */
+	nm_clear_g_free (&value);
 	parse_dns_options (s_ip6, svGetValue (ifcfg, "IPV6_RES_OPTIONS", &value));
 	g_free (value);
 
@@ -5484,9 +5499,9 @@ connection_from_file_full (const char *filename,
 		nm_connection_add_setting (connection, s_ip4);
 	}
 
-	/* There is only one DOMAIN variable and it is read and put to IPv4 config
-	 * But if IPv4 is disabled or the config fails for some reason, we read
-	 * DOMAIN and put the values into IPv6 config instead.
+	/* For backwards compatibility, if IPv4 is disabled or the
+	 * config fails for some reason, we read DOMAIN and put the
+	 * values into IPv6 config instead of IPv4.
 	 */
 	check_dns_search_domains (parsed, s_ip4, s_ip6);
 
