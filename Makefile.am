@@ -2020,7 +2020,7 @@ src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_SOURCES = \
 	src/settings/plugins/ifcfg-rh/shvar.c \
 	src/settings/plugins/ifcfg-rh/shvar.h \
 	src/settings/plugins/ifcfg-rh/nm-inotify-helper.c \
-	src/plugins/ifcfg-rh/settings/nm-inotify-helper.h \
+	src/settings/plugins/ifcfg-rh/nm-inotify-helper.h \
 	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-utils.c \
 	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-utils.h \
 	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c \
