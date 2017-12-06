@@ -206,9 +206,9 @@ gboolean nm_setting_team_remove_runner_tx_hash_by_value (NMSettingTeam *setting,
 NM_AVAILABLE_IN_1_10_2
 guint nm_setting_team_get_num_runner_tx_hash (NMSettingTeam *setting);
 NM_AVAILABLE_IN_1_10_2
-const char *nm_setting_team_get_runner_tx_hash (NMSettingTeam *setting, int idx);
+const char *nm_setting_team_get_runner_tx_hash (NMSettingTeam *setting, guint idx);
 NM_AVAILABLE_IN_1_10_2
-void nm_setting_team_remove_runner_tx_hash (NMSettingTeam *setting, int idx);
+void nm_setting_team_remove_runner_tx_hash (NMSettingTeam *setting, guint idx);
 NM_AVAILABLE_IN_1_10_2
 gboolean nm_setting_team_add_runner_tx_hash (NMSettingTeam *setting, const char *txhash);
 NM_AVAILABLE_IN_1_10_2
