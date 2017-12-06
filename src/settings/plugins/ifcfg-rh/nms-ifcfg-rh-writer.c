@@ -2593,21 +2593,20 @@ write_ip6_setting (NMConnection *connection,
 		}
 	}
 
-	/* Write out DNS domains - 'DOMAIN' key is shared for both IPv4 and IPv6 domains */
+	/* Write out DNS domains */
 	num = nm_setting_ip_config_get_num_dns_searches (s_ip6);
 	if (num > 0) {
-		gs_free char *ip4_domains = NULL;
 		nm_auto_free_gstring GString *searches = NULL;
 
-		searches = g_string_new (svGetValueStr (ifcfg, "DOMAIN", &ip4_domains));
+		searches = g_string_new (NULL);
 		for (i = 0; i < num; i++) {
 			if (searches->len > 0)
 				g_string_append_c (searches, ' ');
 			g_string_append (searches, nm_setting_ip_config_get_dns_search (s_ip6, i));
 		}
-		svSetValueStr (ifcfg, "DOMAIN", searches->str);
-	}
-
+		svSetValueStr (ifcfg, "IPV6_DOMAIN", searches->str);
+	} else
+		svUnsetValue (ifcfg, "IPV6_DOMAIN");
 
 	/* handle IPV6_DEFROUTE */
 	/* IPV6_DEFROUTE has the opposite meaning from 'never-default' */

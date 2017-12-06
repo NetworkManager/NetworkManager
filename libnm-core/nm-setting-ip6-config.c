@@ -550,7 +550,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 
 	/* ---ifcfg-rh---
 	 * property: dns-search
-	 * variable: DOMAIN
+	 * variable: IPV6_DOMAIN
 	 * format:   string (space-separated domains)
 	 * description: List of DNS search domains.
 	 * ---end---

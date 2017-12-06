@@ -4187,23 +4187,15 @@ test_write_wired_static (void)
 
 	nmtst_assert_connection_verifies (connection);
 
-	_writer_new_connection_FIXME (connection,
-	                              TEST_SCRATCH_DIR "/network-scripts/",
-	                              &testfile);
+	_writer_new_connection (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        &testfile);
 	route6file = utils_get_route6_path (testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 
-	/* FIXME: currently DNS domains from IPv6 setting are stored in 'DOMAIN' key in ifcfg-file
-	 * However after re-reading they are dropped into IPv4 setting.
-	 * So, in order to comparison succeeded, move DNS domains back to IPv6 setting.
-	 */
 	reread_s_ip4 = nm_connection_get_setting_ip4_config (reread);
 	reread_s_ip6 = nm_connection_get_setting_ip6_config (reread);
-	nm_setting_ip_config_add_dns_search (reread_s_ip6, nm_setting_ip_config_get_dns_search (reread_s_ip4, 2));
-	nm_setting_ip_config_add_dns_search (reread_s_ip6, nm_setting_ip_config_get_dns_search (reread_s_ip4, 3));
-	nm_setting_ip_config_remove_dns_search (reread_s_ip4, 3);
-	nm_setting_ip_config_remove_dns_search (reread_s_ip4, 2);
 
 	g_assert_cmpint (nm_setting_ip_config_get_route_metric (reread_s_ip4), ==, 204);
 	g_assert_cmpint (nm_setting_ip_config_get_route_metric (reread_s_ip6), ==, 206);
@@ -4341,17 +4333,8 @@ test_write_wired_static_with_generic (void)
 	route6file = utils_get_route6_path (testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
-
-	/* FIXME: currently DNS domains from IPv6 setting are stored in 'DOMAIN' key in ifcfg-file
-	 * However after re-reading they are dropped into IPv4 setting.
-	 * So, in order to comparison succeeded, move DNS domains back to IPv6 setting.
-	 */
 	reread_s_ip4 = nm_connection_get_setting_ip4_config (reread);
 	reread_s_ip6 = nm_connection_get_setting_ip6_config (reread);
-	nm_setting_ip_config_add_dns_search (reread_s_ip6, nm_setting_ip_config_get_dns_search (reread_s_ip4, 2));
-	nm_setting_ip_config_add_dns_search (reread_s_ip6, nm_setting_ip_config_get_dns_search (reread_s_ip4, 3));
-	nm_setting_ip_config_remove_dns_search (reread_s_ip4, 3);
-	nm_setting_ip_config_remove_dns_search (reread_s_ip4, 2);
 
 	g_assert_cmpint (nm_setting_ip_config_get_route_metric (reread_s_ip4), ==, 204);
 	g_assert_cmpint (nm_setting_ip_config_get_route_metric (reread_s_ip6), ==, 206);
