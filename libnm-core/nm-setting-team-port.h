@@ -26,6 +26,7 @@
 #endif
 
 #include "nm-setting.h"
+#include "nm-setting-team.h"
 
 G_BEGIN_DECLS
 
@@ -38,12 +39,13 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_TEAM_PORT_SETTING_NAME "team-port"
 
-#define NM_SETTING_TEAM_PORT_CONFIG     "config"
-#define NM_SETTING_TEAM_PORT_QUEUE_ID   "queue-id"
-#define NM_SETTING_TEAM_PORT_PRIO       "prio"
-#define NM_SETTING_TEAM_PORT_STICKY     "sticky"
-#define NM_SETTING_TEAM_PORT_LACP_PRIO  "lacp-prio"
-#define NM_SETTING_TEAM_PORT_LACP_KEY   "lacp-key"
+#define NM_SETTING_TEAM_PORT_CONFIG        "config"
+#define NM_SETTING_TEAM_PORT_QUEUE_ID      "queue-id"
+#define NM_SETTING_TEAM_PORT_PRIO          "prio"
+#define NM_SETTING_TEAM_PORT_STICKY        "sticky"
+#define NM_SETTING_TEAM_PORT_LACP_PRIO     "lacp-prio"
+#define NM_SETTING_TEAM_PORT_LACP_KEY      "lacp-key"
+#define NM_SETTING_TEAM_PORT_LINK_WATCHERS "link-watchers"
 
 #define NM_SETTING_TEAM_PORT_QUEUE_ID_DEFAULT   -1
 #define NM_SETTING_TEAM_PORT_LACP_PRIO_DEFAULT 255
@@ -79,7 +81,24 @@ NM_AVAILABLE_IN_1_12
 gint nm_setting_team_port_get_lacp_prio (NMSettingTeamPort *setting);
 NM_AVAILABLE_IN_1_12
 gint nm_setting_team_port_get_lacp_key (NMSettingTeamPort *setting);
-
+NM_AVAILABLE_IN_1_12
+guint nm_setting_team_port_get_num_link_watchers (NMSettingTeamPort *setting);
+NM_AVAILABLE_IN_1_12
+NMTeamLinkWatcher *
+nm_setting_team_port_get_link_watcher (NMSettingTeamPort *setting, guint idx);
+NM_AVAILABLE_IN_1_12
+gboolean
+nm_setting_team_port_add_link_watcher (NMSettingTeamPort *setting,
+                                       NMTeamLinkWatcher *link_watcher);
+NM_AVAILABLE_IN_1_12
+void
+nm_setting_team_port_remove_link_watcher (NMSettingTeamPort *setting, guint idx);
+NM_AVAILABLE_IN_1_12
+gboolean
+nm_setting_team_port_remove_link_watcher_by_value (NMSettingTeamPort *setting,
+                                                   NMTeamLinkWatcher *link_watcher);
+NM_AVAILABLE_IN_1_12
+void nm_setting_team_port_clear_link_watchers (NMSettingTeamPort *setting);
 G_END_DECLS
 
 #endif /* __NM_SETTING_TEAM_PORT_H__ */

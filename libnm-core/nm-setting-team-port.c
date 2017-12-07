@@ -15,6 +15,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
+ * Copyright 2017 Red Hat, Inc.
  * Copyright 2013 Jiri Pirko <jiri@resnulli.us>
  */
 
@@ -29,7 +30,6 @@
 #include "nm-utils-private.h"
 #include "nm-connection-private.h"
 #include "nm-setting-connection.h"
-#include "nm-setting-team.h"
 
 /**
  * SECTION:nm-setting-team-port
@@ -52,6 +52,7 @@ typedef struct {
 	gboolean sticky;
 	int lacp_prio;
 	int lacp_key;
+	GPtrArray *link_watchers; /* Array of NMTeamLinkWatcher */
 } NMSettingTeamPortPrivate;
 
 /* Keep aligned with _prop_to_keys[] */
@@ -63,18 +64,20 @@ enum {
 	PROP_STICKY,
 	PROP_LACP_PRIO,
 	PROP_LACP_KEY,
+	PROP_LINK_WATCHERS,
 	LAST_PROP
 };
 
 /* Keep aligned with team-port properties enum */
 static const _NMUtilsTeamPropertyKeys _prop_to_keys[LAST_PROP] = {
-	[PROP_0] =         { NULL, NULL, NULL, 0 },
-	[PROP_CONFIG] =    { NULL, NULL, NULL, 0 },
-	[PROP_QUEUE_ID] =  { "queue_id", NULL, NULL, NM_SETTING_TEAM_PORT_QUEUE_ID_DEFAULT },
-	[PROP_PRIO] =      { "prio", NULL, NULL, 0 },
-	[PROP_STICKY] =    { "sticky", NULL, NULL, 0 },
-	[PROP_LACP_PRIO] = { "lacp_prio", NULL, NULL, NM_SETTING_TEAM_PORT_LACP_PRIO_DEFAULT },
-	[PROP_LACP_KEY] =  { "lacp_key", NULL, NULL, 0 },
+	[PROP_0] =             { NULL, NULL, NULL, 0 },
+	[PROP_CONFIG] =        { NULL, NULL, NULL, 0 },
+	[PROP_QUEUE_ID] =      { "queue_id", NULL, NULL, NM_SETTING_TEAM_PORT_QUEUE_ID_DEFAULT },
+	[PROP_PRIO] =          { "prio", NULL, NULL, 0 },
+	[PROP_STICKY] =        { "sticky", NULL, NULL, 0 },
+	[PROP_LACP_PRIO] =     { "lacp_prio", NULL, NULL, NM_SETTING_TEAM_PORT_LACP_PRIO_DEFAULT },
+	[PROP_LACP_KEY] =      { "lacp_key", NULL, NULL, 0 },
+	[PROP_LINK_WATCHERS] = { "link_watch", NULL, NULL, 0 }
 };
 
 
@@ -185,6 +188,159 @@ nm_setting_team_port_get_lacp_key (NMSettingTeamPort *setting)
 	return NM_SETTING_TEAM_PORT_GET_PRIVATE (setting)->lacp_key;
 }
 
+/**
+ * nm_setting_team_port_get_num_link_watchers:
+ * @setting: the #NMSettingTeamPort
+ *
+ * Returns: the number of configured link watchers
+ *
+ * Since: 1.12
+ **/
+guint
+nm_setting_team_port_get_num_link_watchers (NMSettingTeamPort *setting)
+{
+	NMSettingTeamPortPrivate *priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (setting);
+
+	g_return_val_if_fail (NM_IS_SETTING_TEAM_PORT (setting), 0);
+
+	return priv->link_watchers->len;
+}
+
+/**
+ * nm_setting_team_port_get_link_watcher:
+ * @setting: the #NMSettingTeamPort
+ * @idx: index number of the link watcher to return
+ *
+ * Returns: (transfer none): the link watcher at index @idx.
+ *
+ * Since: 1.12
+ **/
+NMTeamLinkWatcher *
+nm_setting_team_port_get_link_watcher (NMSettingTeamPort *setting, guint idx)
+{
+	NMSettingTeamPortPrivate *priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (setting);
+
+	g_return_val_if_fail (NM_IS_SETTING_TEAM_PORT (setting), NULL);
+	g_return_val_if_fail (idx < priv->link_watchers->len, NULL);
+
+	return priv->link_watchers->pdata[idx];
+}
+
+/**
+ * nm_setting_team_port_add_link_watcher:
+ * @setting: the #NMSettingTeamPort
+ * @link_watcher: the link watcher to add
+ *
+ * Appends a new link watcher to the setting.
+ *
+ * Returns: %TRUE if the link watcher is added; %FALSE if an identical link
+ * watcher was already there.
+ *
+ * Since: 1.12
+ **/
+gboolean
+nm_setting_team_port_add_link_watcher (NMSettingTeamPort *setting,
+                                       NMTeamLinkWatcher *link_watcher)
+{
+	NMSettingTeamPortPrivate *priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (setting);
+	guint i;
+
+	g_return_val_if_fail (NM_IS_SETTING_TEAM_PORT (setting), FALSE);
+	g_return_val_if_fail (link_watcher != NULL, FALSE);
+
+	for (i = 0; i < priv->link_watchers->len; i++) {
+		if (nm_team_link_watcher_equal (priv->link_watchers->pdata[i], link_watcher))
+			return FALSE;
+	}
+
+	g_ptr_array_add (priv->link_watchers, nm_team_link_watcher_dup (link_watcher));
+	g_object_notify (G_OBJECT (setting), NM_SETTING_TEAM_PORT_LINK_WATCHERS);
+	return TRUE;
+}
+
+/**
+ * nm_setting_team_port_remove_link_watcher:
+ * @setting: the #NMSettingTeamPort
+ * @idx: index number of the link watcher to remove
+ *
+ * Removes the link watcher at index #idx.
+ *
+ * Since: 1.12
+ **/
+void
+nm_setting_team_port_remove_link_watcher (NMSettingTeamPort *setting, guint idx)
+{
+	NMSettingTeamPortPrivate *priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (setting);
+
+	g_return_if_fail (NM_IS_SETTING_TEAM_PORT (setting));
+	g_return_if_fail (idx < priv->link_watchers->len);
+
+	g_ptr_array_remove_index (priv->link_watchers, idx);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_TEAM_PORT_LINK_WATCHERS);
+}
+
+/**
+ * nm_setting_team_port_remove_link_watcher_by_value:
+ * @setting: the #NMSettingTeamPort
+ * @link_watcher: the link watcher to remove
+ *
+ * Removes the link watcher entry matching link_watcher.
+ *
+ * Returns: %TRUE if the link watcher was found and removed, %FALSE otherwise.
+ *
+ * Since: 1.12
+ **/
+gboolean
+nm_setting_team_port_remove_link_watcher_by_value (NMSettingTeamPort *setting,
+                                                   NMTeamLinkWatcher *link_watcher)
+{
+	NMSettingTeamPortPrivate *priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (setting);
+	guint i;
+
+	g_return_val_if_fail (NM_IS_SETTING_TEAM_PORT (setting), FALSE);
+
+	for (i = 0; i < priv->link_watchers->len; i++) {
+		if (nm_team_link_watcher_equal (priv->link_watchers->pdata[i], link_watcher)) {
+			g_ptr_array_remove_index (priv->link_watchers, i);
+			g_object_notify (G_OBJECT (setting), NM_SETTING_TEAM_PORT_LINK_WATCHERS);
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+/**
+ * nm_setting_team_port_clear_link_watchers:
+ * @setting: the #NMSettingTeamPort
+ *
+ * Removes all configured link watchers.
+ *
+ * Since: 1.12
+ **/
+void
+nm_setting_team_port_clear_link_watchers (NMSettingTeamPort *setting)
+{
+	NMSettingTeamPortPrivate *priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (setting);
+
+	g_return_if_fail (NM_IS_SETTING_TEAM_PORT (setting));
+
+	g_ptr_array_set_size (priv->link_watchers, 0);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_TEAM_PORT_LINK_WATCHERS);
+}
+
+static GVariant *
+team_link_watchers_to_dbus (const GValue *prop_value)
+{
+	return _nm_utils_team_link_watchers_to_variant (g_value_get_boxed (prop_value));
+}
+
+static void
+team_link_watchers_from_dbus (GVariant   *dbus_value,
+                              GValue     *prop_value)
+{
+	g_value_take_boxed (prop_value, _nm_utils_team_link_watchers_from_variant (dbus_value));
+}
+
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
@@ -253,6 +409,8 @@ compare_property (NMSetting *setting,
                   NMSettingCompareFlags flags)
 {
 	NMSettingClass *parent_class;
+	NMSettingTeamPortPrivate *a_priv, *b_priv;
+	guint i, j;
 
 	/* If we are trying to match a connection in order to assume it (and thus
 	 * @flags contains INFERRABLE), use the "relaxed" matching for team
@@ -264,6 +422,24 @@ compare_property (NMSetting *setting,
 		return _nm_utils_team_config_equal (NM_SETTING_TEAM_PORT_GET_PRIVATE (setting)->config,
 		                                    NM_SETTING_TEAM_PORT_GET_PRIVATE (other)->config,
 		                                    TRUE);
+	}
+	if (nm_streq0 (prop_spec->name, NM_SETTING_TEAM_PORT_LINK_WATCHERS)) {
+		a_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (setting);
+		b_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (other);
+
+		if (a_priv->link_watchers->len != b_priv->link_watchers->len)
+			return FALSE;
+		for (i = 0; i < a_priv->link_watchers->len; i++) {
+			for (j = 0; j < b_priv->link_watchers->len; j++) {
+				if (nm_team_link_watcher_equal (a_priv->link_watchers->pdata[i],
+				                                b_priv->link_watchers->pdata[j])) {
+					break;
+				}
+			}
+			if (j == b_priv->link_watchers->len)
+				return FALSE;
+		}
+		return TRUE;
 	}
 
 	/* Otherwise chain up to parent to handle generic compare */
@@ -278,6 +454,7 @@ nm_setting_team_port_init (NMSettingTeamPort *setting)
 
 	priv->queue_id = NM_SETTING_TEAM_PORT_QUEUE_ID_DEFAULT;
 	priv->lacp_prio = NM_SETTING_TEAM_PORT_LACP_PRIO_DEFAULT;
+	priv->link_watchers = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_team_link_watcher_unref);
 }
 
 #define JSON_TO_VAL(typ, id)   _nm_utils_json_extract_##typ (priv->config, _prop_to_keys[id], TRUE)
@@ -299,6 +476,9 @@ set_property (GObject *object, guint prop_id,
 		priv->sticky =    JSON_TO_VAL (boolean, PROP_STICKY);
 		priv->lacp_prio = JSON_TO_VAL (int, PROP_LACP_PRIO);
 		priv->lacp_key =  JSON_TO_VAL (int, PROP_LACP_KEY);
+
+		g_ptr_array_unref (priv->link_watchers);
+		priv->link_watchers = JSON_TO_VAL (ptr_array, PROP_LINK_WATCHERS);
 		break;
 	case PROP_QUEUE_ID:
 		if (priv->queue_id == g_value_get_int (value))
@@ -341,6 +521,15 @@ set_property (GObject *object, guint prop_id,
 			align_value = value;
 		align_config = TRUE;
 		break;
+	case PROP_LINK_WATCHERS:
+		g_ptr_array_unref (priv->link_watchers);
+		priv->link_watchers = _nm_utils_copy_array (g_value_get_boxed (value),
+		                                            (NMUtilsCopyFunc) nm_team_link_watcher_dup,
+		                                            (GDestroyNotify) nm_team_link_watcher_unref);
+		if (priv->link_watchers->len)
+			align_value = value;
+		align_config = TRUE;
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -375,6 +564,11 @@ get_property (GObject *object, guint prop_id,
 	case PROP_LACP_KEY:
 		g_value_set_int (value, priv->lacp_key);
 		break;
+	case PROP_LINK_WATCHERS:
+		g_value_take_boxed (value, _nm_utils_copy_array (priv->link_watchers,
+		                                                 (NMUtilsCopyFunc) nm_team_link_watcher_dup,
+		                                                 (GDestroyNotify) nm_team_link_watcher_unref));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -387,6 +581,7 @@ finalize (GObject *object)
 	NMSettingTeamPortPrivate *priv = NM_SETTING_TEAM_PORT_GET_PRIVATE (object);
 
 	g_free (priv->config);
+	g_ptr_array_unref (priv->link_watchers);
 
 	G_OBJECT_CLASS (nm_setting_team_port_parent_class)->finalize (object);
 }
@@ -500,5 +695,31 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *setting_class)
 		                   G_PARAM_READWRITE |
 		                   G_PARAM_STATIC_STRINGS));
 
+	/**
+	 * NMSettingTeamPort:link-watchers:
+	 *
+	 * Link watchers configuration for the connection: each link watcher is
+	 * defined by a dictionary, whose keys depend upon the selected link
+	 * watcher. Available link watchers are 'ethtool', 'nsna_ping' and
+	 * 'arp_ping' and it is specified in the dictionary with the key 'name'.
+	 * Available keys are:   ethtool: 'delay-up', 'delay-down', 'init-wait';
+	 * nsna_ping: 'init-wait', 'interval', 'missed-max', 'target-host';
+	 * arp_ping: all the ones in nsna_ping and 'source-host', 'validate-active',
+	 * 'validate-incative', 'send-always'. See teamd.conf man for more details.
+	 *
+	 * Element-Type: NMTeamLinkWatcher
+	 * Since: 1.12
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_LINK_WATCHERS,
+		 g_param_spec_boxed (NM_SETTING_TEAM_PORT_LINK_WATCHERS, "", "",
+		                     G_TYPE_PTR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class,
+	                                      NM_SETTING_TEAM_PORT_LINK_WATCHERS,
+	                                      G_VARIANT_TYPE ("aa{sv}"),
+	                                      team_link_watchers_to_dbus,
+	                                      team_link_watchers_from_dbus);
 
 }

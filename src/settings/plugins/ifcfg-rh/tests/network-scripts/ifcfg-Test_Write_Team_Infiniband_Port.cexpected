@@ -1,6 +1,6 @@
 CONNECTED_MODE=no
 TYPE=InfiniBand
-TEAM_PORT_CONFIG="{ \"inf1\": { \"prio\": -10, \"sticky\": true } }"
+TEAM_PORT_CONFIG="{\"inf1\": {\"prio\": -10, \"sticky\": true}}"
 NAME="Test Write Team Infiniband Port"
 UUID=${UUID}
 DEVICE=inf1
