@@ -6139,7 +6139,7 @@ static void
 _test_find_binary_search_do (const int *array, gsize len)
 {
 	gsize i;
-	gssize idx;
+	gssize idx, idx_first, idx_last;
 	gs_free gconstpointer *parray = g_new (gconstpointer, len);
 	const int NEEDLE = 0;
 	gconstpointer pneedle = GINT_TO_POINTER (NEEDLE);
@@ -6150,10 +6150,10 @@ _test_find_binary_search_do (const int *array, gsize len)
 
 	expected_result = _nm_utils_ptrarray_find_first (parray, len, pneedle);
 
-	idx = _nm_utils_ptrarray_find_binary_search (parray, len, pneedle, _test_find_binary_search_cmp, NULL);
-	if (expected_result >= 0)
+	idx = _nm_utils_ptrarray_find_binary_search (parray, len, pneedle, _test_find_binary_search_cmp, NULL, &idx_first, &idx_last);
+	if (expected_result >= 0) {
 		g_assert_cmpint (expected_result, ==, idx);
-	else {
+	} else {
 		gssize idx2 = ~idx;
 		g_assert_cmpint (idx, <, 0);
 
@@ -6162,6 +6162,8 @@ _test_find_binary_search_do (const int *array, gsize len)
 		g_assert (idx2 - 1 < 0 || _test_find_binary_search_cmp (parray[idx2 - 1], pneedle, NULL) < 0);
 		g_assert (idx2 >= len || _test_find_binary_search_cmp (parray[idx2], pneedle, NULL) > 0);
 	}
+	g_assert_cmpint (idx, ==, idx_first);
+	g_assert_cmpint (idx, ==, idx_last);
 	for (i = 0; i < len; i++) {
 		int cmp;
 
@@ -6260,6 +6262,94 @@ test_nm_utils_ptrarray_find_binary_search (void)
 	test_find_binary_search_do (-3, -2, -1, 1, 2);
 	test_find_binary_search_do (-3, -2, -1, 1, 2, 3);
 	test_find_binary_search_do (-3, -2, -1, 1, 2, 3, 4);
+}
+
+/*****************************************************************************/
+
+#define BIN_SEARCH_W_DUPS_LEN    100
+#define BIN_SEARCH_W_DUPS_JITTER 10
+
+static int
+_test_bin_search2_cmp (gconstpointer pa,
+                       gconstpointer pb,
+                       gpointer user_data)
+{
+	int a = GPOINTER_TO_INT (pa);
+	int b = GPOINTER_TO_INT (pb);
+
+	g_assert (a >= 0 && a <= BIN_SEARCH_W_DUPS_LEN + BIN_SEARCH_W_DUPS_JITTER);
+	g_assert (b >= 0 && b <= BIN_SEARCH_W_DUPS_LEN + BIN_SEARCH_W_DUPS_JITTER);
+	NM_CMP_DIRECT (a, b);
+	return 0;
+}
+
+static int
+_test_bin_search2_cmp_p (gconstpointer pa,
+                         gconstpointer pb,
+                         gpointer user_data)
+{
+	return _test_bin_search2_cmp (*((gpointer *) pa), *((gpointer *) pb), NULL);
+}
+
+static void
+test_nm_utils_ptrarray_find_binary_search_with_duplicates (void)
+{
+	gssize idx, idx2, idx_first2, idx_first, idx_last;
+	int i_test, i_len, i;
+	gssize j;
+	gconstpointer arr[BIN_SEARCH_W_DUPS_LEN];
+	const int N_TEST = 10;
+
+	for (i_test = 0; i_test < N_TEST; i_test++) {
+		for (i_len = 0; i_len < BIN_SEARCH_W_DUPS_LEN; i_len++) {
+
+			/* fill with random numbers... surely there are some duplicates
+			 * there... or maybe even there are none... */
+			for (i = 0; i < i_len; i++)
+				arr[i] = GINT_TO_POINTER (nmtst_get_rand_int () % (i_len + BIN_SEARCH_W_DUPS_JITTER));
+			g_qsort_with_data (arr,
+			                   i_len,
+			                   sizeof (gpointer),
+			                   _test_bin_search2_cmp_p,
+			                   NULL);
+			for (i = 0; i < i_len + BIN_SEARCH_W_DUPS_JITTER; i++) {
+				gconstpointer p = GINT_TO_POINTER (i);
+
+				idx = _nm_utils_ptrarray_find_binary_search (arr, i_len, p, _test_bin_search2_cmp, NULL, &idx_first, &idx_last);
+
+				idx_first2 = _nm_utils_ptrarray_find_first (arr, i_len, p);
+
+				idx2 = _nm_utils_array_find_binary_search (arr, sizeof (gpointer), i_len, &p, _test_bin_search2_cmp_p, NULL);
+				g_assert_cmpint (idx, ==, idx2);
+
+				if (idx_first2 < 0) {
+					g_assert_cmpint (idx, <, 0);
+					g_assert_cmpint (idx, ==, idx_first);
+					g_assert_cmpint (idx, ==, idx_last);
+					idx = ~idx;
+					g_assert_cmpint (idx, >=, 0);
+					g_assert_cmpint (idx, <=, i_len);
+					if (i_len == 0)
+						g_assert_cmpint (idx, ==, 0);
+					else {
+						g_assert (idx == i_len || GPOINTER_TO_INT (arr[idx]) > i);
+						g_assert (idx == 0     || GPOINTER_TO_INT (arr[idx - 1]) < i);
+					}
+				} else {
+					g_assert_cmpint (idx_first, ==, idx_first2);
+					g_assert_cmpint (idx_first, >=, 0);
+					g_assert_cmpint (idx_last, <, i_len);
+					g_assert_cmpint (idx_first, <=, idx_last);
+					g_assert_cmpint (idx, >=, idx_first);
+					g_assert_cmpint (idx, <=, idx_last);
+					for (j = idx_first; j < idx_last; j++)
+						g_assert (GPOINTER_TO_INT (arr[j]) == i);
+					g_assert (idx_first == 0 || GPOINTER_TO_INT (arr[idx_first - 1]) < i);
+					g_assert (idx_last == i_len - 1 || GPOINTER_TO_INT (arr[idx_last + 1]) > i);
+				}
+			}
+		}
+	}
 }
 
 /*****************************************************************************/
@@ -6952,6 +7042,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/_glib_compat_g_ptr_array_insert", test_g_ptr_array_insert);
 	g_test_add_func ("/core/general/_glib_compat_g_hash_table_get_keys_as_array", test_g_hash_table_get_keys_as_array);
 	g_test_add_func ("/core/general/_nm_utils_ptrarray_find_binary_search", test_nm_utils_ptrarray_find_binary_search);
+	g_test_add_func ("/core/general/_nm_utils_ptrarray_find_binary_search_with_duplicates", test_nm_utils_ptrarray_find_binary_search_with_duplicates);
 	g_test_add_func ("/core/general/_nm_utils_strstrdictkey", test_nm_utils_strstrdictkey);
 	g_test_add_func ("/core/general/nm_ptrarray_len", test_nm_ptrarray_len);
 

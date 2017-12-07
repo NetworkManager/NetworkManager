@@ -241,7 +241,13 @@ GPtrArray *_nm_utils_copy_object_array (const GPtrArray *array);
 
 gssize _nm_utils_ptrarray_find_first (gconstpointer *list, gssize len, gconstpointer needle);
 
-gssize _nm_utils_ptrarray_find_binary_search (gconstpointer *list, gsize len, gconstpointer needle, GCompareDataFunc cmpfcn, gpointer user_data);
+gssize _nm_utils_ptrarray_find_binary_search (gconstpointer *list,
+                                              gsize len,
+                                              gconstpointer needle,
+                                              GCompareDataFunc cmpfcn,
+                                              gpointer user_data,
+                                              gssize *out_idx_first,
+                                              gssize *out_idx_last);
 gssize _nm_utils_array_find_binary_search (gconstpointer list, gsize elem_size, gsize len, gconstpointer needle, GCompareDataFunc cmpfcn, gpointer user_data);
 
 GSList *    _nm_utils_strv_to_slist (char **strv, gboolean deep_copy);
