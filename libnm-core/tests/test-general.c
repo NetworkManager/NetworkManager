@@ -210,6 +210,10 @@ static void
 test_nm_g_slice_free_fcn (void)
 {
 	gpointer p;
+	struct {
+		char a1;
+		char a2;
+	} xx;
 
 	p = g_slice_new (gint64);
 	(nm_g_slice_free_fcn (gint64)) (p);
@@ -222,6 +226,9 @@ test_nm_g_slice_free_fcn (void)
 
 	p = g_slice_new (gint64);
 	nm_g_slice_free_fcn_gint64 (p);
+
+	p = g_slice_alloc (sizeof (xx));
+	(nm_g_slice_free_fcn (xx)) (p);
 }
 
 /*****************************************************************************/
