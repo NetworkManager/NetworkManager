@@ -389,6 +389,13 @@ set_property (GObject *object, guint prop_id,
 static void
 nm_ifcfg_connection_init (NMIfcfgConnection *connection)
 {
+	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (connection);
+
+	priv->file_wd = -1;
+	priv->keyfile_wd = -1;
+	priv->routefile_wd = -1;
+	priv->route6file_wd = -1;
+
 	g_signal_connect (connection, "notify::" NM_SETTINGS_CONNECTION_FILENAME,
 	                  G_CALLBACK (filename_changed), NULL);
 }
