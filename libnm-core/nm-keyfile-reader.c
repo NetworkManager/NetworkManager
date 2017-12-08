@@ -1480,6 +1480,13 @@ read_one_setting_value (NMSetting *setting,
 	    && !strcmp (key, NM_SETTING_CONNECTION_READ_ONLY))
 		return;
 
+	if (   (   NM_IS_SETTING_TEAM (setting)
+	        || NM_IS_SETTING_TEAM_PORT (setting))
+	    && !NM_IN_STRSET (key, NM_SETTING_TEAM_CONFIG)) {
+		/* silently ignore all team properties (except "config"). */
+		return;
+	}
+
 	setting_name = nm_setting_get_name (setting);
 
 	/* Look through the list of handlers for non-standard format key values */
@@ -1491,15 +1498,11 @@ read_one_setting_value (NMSetting *setting,
 		parser++;
 	}
 
-	/* VPN properties don't have the exact key name */
 	if (NM_IS_SETTING_VPN (setting))
 		check_for_key = FALSE;
-
-	if (NM_IS_SETTING_USER (setting))
+	else if (NM_IS_SETTING_USER (setting))
 		check_for_key = FALSE;
-
-	/* Bonding 'options' don't have the exact key name. The options are right under [bond] group. */
-	if (NM_IS_SETTING_BOND (setting))
+	else if (NM_IS_SETTING_BOND (setting))
 		check_for_key = FALSE;
 
 	/* Check for the exact key in the GKeyFile if required.  Most setting
