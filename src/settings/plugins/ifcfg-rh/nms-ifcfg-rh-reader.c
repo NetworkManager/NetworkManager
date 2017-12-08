@@ -1964,6 +1964,59 @@ error:
 	return NULL;
 }
 
+static NMSetting *
+make_tc_setting (shvarFile *ifcfg)
+{
+	NMSettingTCConfig *s_tc = NULL;
+	char tag[256];
+	int i;
+
+	s_tc = (NMSettingTCConfig *) nm_setting_tc_config_new ();
+
+	for (i = 1;; i++) {
+		NMTCQdisc *qdisc = NULL;
+		gs_free char *value_to_free = NULL;
+		const char *value = NULL;
+		GError *local = NULL;
+
+		value = svGetValueStr (ifcfg, numbered_tag (tag, "QDISC", i), &value_to_free);
+		if (!value)
+			break;
+
+		qdisc = nm_utils_tc_qdisc_from_str (value, &local);
+		if (!qdisc)
+			PARSE_WARNING ("ignoring bad qdisc: '%s': %s", value, local->message);
+
+		if (!nm_setting_tc_config_add_qdisc (s_tc, qdisc))
+			PARSE_WARNING ("duplicate qdisc");
+	}
+
+	for (i = 1;; i++) {
+		NMTCTfilter *tfilter = NULL;
+		gs_free char *value_to_free = NULL;
+		const char *value = NULL;
+		GError *local = NULL;
+
+		value = svGetValueStr (ifcfg, numbered_tag (tag, "FILTER", i), &value_to_free);
+		if (!value)
+			break;
+
+		tfilter = nm_utils_tc_tfilter_from_str (value, &local);
+		if (!tfilter)
+			PARSE_WARNING ("ignoring bad tfilter: '%s': %s", value, local->message);
+
+		if (!nm_setting_tc_config_add_tfilter (s_tc, tfilter))
+			PARSE_WARNING ("duplicate filter");
+	}
+
+	if (   nm_setting_tc_config_get_num_qdiscs (s_tc) > 0
+	    || nm_setting_tc_config_get_num_tfilters (s_tc) > 0)
+		return NM_SETTING (s_tc);
+
+	g_object_unref (s_tc);
+	return NULL;
+}
+
 typedef struct {
 	const char *enable_key;
 	const char *advertise_key;
@@ -5242,7 +5295,7 @@ connection_from_file_full (const char *filename,
 	gs_unref_object NMConnection *connection = NULL;
 	gs_free char *type = NULL;
 	char *devtype, *bootproto;
-	NMSetting *s_ip4, *s_ip6, *s_proxy, *s_port, *s_dcb = NULL, *s_user;
+	NMSetting *s_ip4, *s_ip6, *s_tc, *s_proxy, *s_port, *s_dcb = NULL, *s_user;
 	const char *ifcfg_name = NULL;
 	gboolean has_ip4_defroute = FALSE;
 	gboolean has_complex_routes_v4;
@@ -5498,6 +5551,10 @@ connection_from_file_full (const char *filename,
 		              filename);
 		nm_connection_add_setting (connection, s_ip4);
 	}
+
+	s_tc = make_tc_setting (parsed);
+	if (s_tc)
+		nm_connection_add_setting (connection, s_tc);
 
 	/* For backwards compatibility, if IPv4 is disabled or the
 	 * config fails for some reason, we read DOMAIN and put the

@@ -1171,6 +1171,11 @@ svUnsetAll (shvarFile *s, SvKeyType match_key_type)
 			if (g_str_has_prefix (line->key, "NM_USER_"))
 				goto do_clear;
 		}
+		if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_TC)) {
+			if (   IS_NUMBERED_TAG (line->key, "QDISC")
+			    || IS_NUMBERED_TAG (line->key, "FILTER"))
+				goto do_clear;
+		}
 
 		continue;
 do_clear:
