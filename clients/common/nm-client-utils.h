@@ -32,8 +32,6 @@ typedef enum {
 
 const char *nmc_string_is_valid (const char *input, const char **allowed, GError **error);
 
-char **nmc_strsplit_set (const char *str, const char *delimiter, int max_tokens);
-
 gboolean nmc_string_to_uint (const char *str,
                              gboolean range_check,
                              unsigned long int min,
