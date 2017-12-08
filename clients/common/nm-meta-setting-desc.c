@@ -3122,14 +3122,14 @@ _get_fcn_ip_config_addresses (ARGS_GET_FCN)
 {
 	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
 	GString *printable;
-	guint32 num_addresses, i;
+	guint num_addresses, i;
 	NMIPAddress *addr;
 
 	RETURN_UNSUPPORTED_GET_TYPE ();
 
 	printable = g_string_new (NULL);
 
-	num_addresses = nm_setting_ip_config_get_num_addresses (s_ip);
+	num_addresses = NM_MIN ((guint) G_MAXINT, nm_setting_ip_config_get_num_addresses (s_ip));
 	for (i = 0; i < num_addresses; i++) {
 		addr = nm_setting_ip_config_get_address (s_ip, i);
 
@@ -3149,14 +3149,14 @@ _get_fcn_ip_config_routes (ARGS_GET_FCN)
 {
 	NMSettingIPConfig *s_ip = NM_SETTING_IP_CONFIG (setting);
 	GString *printable;
-	guint32 num_routes, i;
+	guint num_routes, i;
 	NMIPRoute *route;
 
 	RETURN_UNSUPPORTED_GET_TYPE ();
 
 	printable = g_string_new (NULL);
 
-	num_routes = nm_setting_ip_config_get_num_routes (s_ip);
+	num_routes = NM_MIN ((guint) G_MAXINT, nm_setting_ip_config_get_num_routes (s_ip));
 	for (i = 0; i < num_routes; i++) {
 		gs_free char *attr_str = NULL;
 		gs_strfreev char **attr_names = NULL;
@@ -3856,7 +3856,7 @@ _get_fcn_team_link_watchers (ARGS_GET_FCN)
 {
 	NMSettingTeam *s_team = NM_SETTING_TEAM (setting);
 	GString *printable;
-	guint32 num_watchers, i;
+	guint num_watchers, i;
 	NMTeamLinkWatcher *watcher;
 	char *watcher_str;
 
@@ -3928,7 +3928,7 @@ _get_fcn_team_port_link_watchers (ARGS_GET_FCN)
 {
 	NMSettingTeamPort *s_team_port = NM_SETTING_TEAM_PORT (setting);
 	GString *printable;
-	guint32 num_watchers, i;
+	guint num_watchers, i;
 	NMTeamLinkWatcher *watcher;
 	char *watcher_str;
 
