@@ -5855,50 +5855,80 @@ typedef enum {
 	NMC_EDITOR_MAIN_CMD_QUIT,
 } NmcEditorMainCmd;
 
+static void
+_split_cmd (const char *cmd, char **out_arg0, const char **out_argr)
+{
+	gs_free char *arg0 = NULL;
+	const char *argr = NULL;
+	gsize l;
+
+	NM_SET_OUT (out_arg0, NULL);
+	NM_SET_OUT (out_argr, NULL);
+
+	if (!cmd)
+		return;
+	while (NM_IN_SET (cmd[0], ' ', '\t'))
+		cmd++;
+	if (!cmd[0])
+		return;
+
+	l = strcspn (cmd, " \t");
+	arg0 = g_strndup (cmd, l);
+	cmd += l;
+	if (cmd[0]) {
+		while (NM_IN_SET (cmd[0], ' ', '\t'))
+			cmd++;
+		if (cmd[0])
+			argr = cmd;
+	}
+
+	NM_SET_OUT (out_arg0, g_steal_pointer (&arg0));
+	NM_SET_OUT (out_argr, argr);
+}
+
 static NmcEditorMainCmd
 parse_editor_main_cmd (const char *cmd, char **cmd_arg)
 {
 	NmcEditorMainCmd editor_cmd = NMC_EDITOR_MAIN_CMD_UNKNOWN;
-	char **vec;
+	gs_free char *cmd_arg0 = NULL;
+	const char *cmd_argr;
 
-	vec = nmc_strsplit_set (cmd, " \t", 2);
-	if (g_strv_length (vec) < 1) {
-		if (cmd_arg)
-			*cmd_arg = NULL;
-		return NMC_EDITOR_MAIN_CMD_UNKNOWN;
-	}
+	_split_cmd (cmd, &cmd_arg0, &cmd_argr);
+	if (!cmd_arg0)
+		goto fail;
 
-	if (matches (vec[0], "goto"))
+	if (matches (cmd_arg0, "goto"))
 		editor_cmd = NMC_EDITOR_MAIN_CMD_GOTO;
-	else if (matches (vec[0], "remove"))
+	else if (matches (cmd_arg0, "remove"))
 		editor_cmd = NMC_EDITOR_MAIN_CMD_REMOVE;
-	else if (matches (vec[0], "set"))
+	else if (matches (cmd_arg0, "set"))
 		editor_cmd = NMC_EDITOR_MAIN_CMD_SET;
-	else if (matches (vec[0], "describe"))
+	else if (matches (cmd_arg0, "describe"))
 		editor_cmd = NMC_EDITOR_MAIN_CMD_DESCRIBE;
-	else if (matches (vec[0], "print"))
+	else if (matches (cmd_arg0, "print"))
 		editor_cmd = NMC_EDITOR_MAIN_CMD_PRINT;
-	else if (matches (vec[0], "verify"))
+	else if (matches (cmd_arg0, "verify"))
 		editor_cmd = NMC_EDITOR_MAIN_CMD_VERIFY;
-	else if (matches (vec[0], "save"))
+	else if (matches (cmd_arg0, "save"))
 		editor_cmd = NMC_EDITOR_MAIN_CMD_SAVE;
-	else if (matches (vec[0], "activate"))
+	else if (matches (cmd_arg0, "activate"))
 		editor_cmd = NMC_EDITOR_MAIN_CMD_ACTIVATE;
-	else if (matches (vec[0], "back"))
+	else if (matches (cmd_arg0, "back"))
 		editor_cmd = NMC_EDITOR_MAIN_CMD_BACK;
-	else if (matches (vec[0], "help") || strcmp (vec[0], "?") == 0)
+	else if (matches (cmd_arg0, "help") || strcmp (cmd_arg0, "?") == 0)
 		editor_cmd = NMC_EDITOR_MAIN_CMD_HELP;
-	else if (matches (vec[0], "quit"))
+	else if (matches (cmd_arg0, "quit"))
 		editor_cmd = NMC_EDITOR_MAIN_CMD_QUIT;
-	else if (matches (vec[0], "nmcli"))
+	else if (matches (cmd_arg0, "nmcli"))
 		editor_cmd = NMC_EDITOR_MAIN_CMD_NMCLI;
+	else
+		goto fail;
 
-	/* set pointer to command argument */
-	if (cmd_arg)
-		*cmd_arg = vec[1] ? g_strstrip (g_strdup (vec[1])) : NULL;
-
-	g_strfreev (vec);
+	NM_SET_OUT (cmd_arg, g_strdup (cmd_argr));
 	return editor_cmd;
+fail:
+	NM_SET_OUT (cmd_arg, NULL);
+	return NMC_EDITOR_MAIN_CMD_UNKNOWN;
 }
 
 static void
@@ -6047,40 +6077,39 @@ static NmcEditorSubCmd
 parse_editor_sub_cmd (const char *cmd, char **cmd_arg)
 {
 	NmcEditorSubCmd editor_cmd = NMC_EDITOR_SUB_CMD_UNKNOWN;
-	char **vec;
+	gs_free char *cmd_arg0 = NULL;
+	const char *cmd_argr;
 
-	vec = nmc_strsplit_set (cmd, " \t", 2);
-	if (g_strv_length (vec) < 1) {
-		if (cmd_arg)
-			*cmd_arg = NULL;
-		return NMC_EDITOR_SUB_CMD_UNKNOWN;
-	}
+	_split_cmd (cmd, &cmd_arg0, &cmd_argr);
+	if (!cmd_arg0)
+		goto fail;
 
-	if (matches (vec[0], "set"))
+	if (matches (cmd_arg0, "set"))
 		editor_cmd = NMC_EDITOR_SUB_CMD_SET;
-	else if (matches (vec[0], "add"))
+	else if (matches (cmd_arg0, "add"))
 		editor_cmd = NMC_EDITOR_SUB_CMD_ADD;
-	else if (matches (vec[0], "change"))
+	else if (matches (cmd_arg0, "change"))
 		editor_cmd = NMC_EDITOR_SUB_CMD_CHANGE;
-	else if (matches (vec[0], "remove"))
+	else if (matches (cmd_arg0, "remove"))
 		editor_cmd = NMC_EDITOR_SUB_CMD_REMOVE;
-	else if (matches (vec[0], "describe"))
+	else if (matches (cmd_arg0, "describe"))
 		editor_cmd = NMC_EDITOR_SUB_CMD_DESCRIBE;
-	else if (matches (vec[0], "print"))
+	else if (matches (cmd_arg0, "print"))
 		editor_cmd = NMC_EDITOR_SUB_CMD_PRINT;
-	else if (matches (vec[0], "back"))
+	else if (matches (cmd_arg0, "back"))
 		editor_cmd = NMC_EDITOR_SUB_CMD_BACK;
-	else if (matches (vec[0], "help") || strcmp (vec[0], "?") == 0)
+	else if (matches (cmd_arg0, "help") || strcmp (cmd_arg0, "?") == 0)
 		editor_cmd = NMC_EDITOR_SUB_CMD_HELP;
-	else if (matches (vec[0], "quit"))
+	else if (matches (cmd_arg0, "quit"))
 		editor_cmd = NMC_EDITOR_SUB_CMD_QUIT;
+	else
+		goto fail;
 
-	/* set pointer to command argument */
-	if (cmd_arg)
-		*cmd_arg = g_strdup (vec[1]);
-
-	g_strfreev (vec);
+	NM_SET_OUT (cmd_arg, g_strdup (cmd_argr));
 	return editor_cmd;
+fail:
+	NM_SET_OUT (cmd_arg, NULL);
+	return NMC_EDITOR_SUB_CMD_UNKNOWN;
 }
 
 static void
@@ -6616,29 +6645,26 @@ property_edit_submenu (NmCli *nmc,
 static void
 split_editor_main_cmd_args (const char *str, char **setting, char **property, char **value)
 {
-	char **args, **items;
+	gs_free char *cmd_arg0 = NULL;
+	const char *cmd_argr;
+	const char *s;
 
-	if (!str)
+	NM_SET_OUT (setting, NULL);
+	NM_SET_OUT (property, NULL);
+	NM_SET_OUT (value, NULL);
+
+	_split_cmd (str, &cmd_arg0, &cmd_argr);
+	if (!cmd_arg0)
 		return;
 
-	args = nmc_strsplit_set (str, " \t", 2);
-	if (args[0]) {
-		items = nmc_strsplit_set (args[0], ".", 2);
-		if (g_strv_length (items) == 2) {
-			if (setting)
-				*setting = g_strdup (items[0]);
-			if (property)
-				*property = g_strdup (items[1]);
-		} else {
-			if (property)
-				*property = g_strdup (items[0]);
-		}
-		g_strfreev (items);
-
-		if (value && args[1])
-			*value = g_strstrip (g_strdup (args[1]));
+	NM_SET_OUT (value, g_strdup (cmd_argr));
+	s = strchr (cmd_arg0, '.');
+	if (s && s > cmd_arg0) {
+		NM_SET_OUT (setting, g_strndup (cmd_arg0, s - cmd_arg0));
+		NM_SET_OUT (property, g_strdup (&s[1]));
+	} else {
+		NM_SET_OUT (property, cmd_arg0);
 	}
-	g_strfreev (args);
 }
 
 static NMSetting *
