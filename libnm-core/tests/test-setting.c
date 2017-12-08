@@ -1134,7 +1134,7 @@ _test_team_port_config_sync (const char *team_port_config,
                              int lacp_key,
                              GPtrArray *link_watchers)
 {
-	NMSettingTeamPort *s_team_port;
+	gs_unref_object NMSettingTeamPort *s_team_port = NULL;
 	guint i, j;
 	gboolean found;
 
