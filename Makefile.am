@@ -533,10 +533,6 @@ dflt_cppflags_libnm_core = \
 	$(GLIB_CFLAGS) \
 	$(LIBUDEV_CFLAGS)
 
-if WITH_JANSSON
-dflt_cppflags_libnm_core += $(JANSSON_CFLAGS)
-endif
-
 if WITH_GNUTLS
 dflt_cppflags_libnm_core += $(GNUTLS_CFLAGS)
 endif
@@ -579,6 +575,10 @@ libnm_core_libnm_core_la_CPPFLAGS = \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB
 
+if WITH_JSON_VALIDATION
+libnm_core_libnm_core_la_CPPFLAGS += $(JANSSON_CFLAGS)
+endif
+
 libnm_core_libnm_core_la_SOURCES = \
 	$(libnm_core_lib_h_pub_real) \
 	$(libnm_core_lib_h_priv) \
@@ -593,7 +593,7 @@ libnm_core_libnm_core_la_LIBADD = \
 	$(UUID_LIBS) \
 	$(LIBUDEV_LIBS)
 
-if WITH_JANSSON
+if WITH_JSON_VALIDATION
 libnm_core_libnm_core_la_LIBADD += $(JANSSON_LIBS)
 endif
 
