@@ -628,7 +628,7 @@ test_team_conf_read_valid (void)
 static void
 test_team_conf_read_invalid (void)
 {
-#if WITH_TEAM
+#if WITH_JSON_VALIDATION
 	GKeyFile *keyfile = NULL;
 	gs_unref_object NMConnection *con = NULL;
 	NMSettingTeam *s_team;

@@ -2753,7 +2753,7 @@ endif
 # src/devices/team
 ###############################################################################
 
-if WITH_TEAM
+if WITH_TEAMDCTL
 
 core_plugins += src/devices/team/libnm-device-plugin-team.la
 

@@ -434,9 +434,9 @@ intltoolize --automake --copy --force
 	--disable-gtk-doc \
 %endif
 %if %{with team}
-	--enable-team=yes \
+	--enable-teamdctl=yes \
 %else
-	--enable-team=no \
+	--enable-teamdctl=no \
 %endif
 %if %{with ovs}
 	--enable-ovs=yes \
@@ -472,7 +472,8 @@ intltoolize --automake --copy --force
 	--with-dist-version=%{version}-%{release} \
 	--with-config-plugins-default='ifcfg-rh,ibft' \
 	--with-config-dns-rc-manager-default=symlink \
-	--with-config-logging-backend-default=journal
+	--with-config-logging-backend-default=journal \
+	--enable-json-validation
 
 make %{?_smp_mflags}
 
