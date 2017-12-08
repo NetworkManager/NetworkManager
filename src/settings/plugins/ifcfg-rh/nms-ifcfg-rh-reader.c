@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2008 - 2015 Red Hat, Inc.
+ * Copyright 2008 - 2017 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -1146,7 +1146,7 @@ error:
 }
 
 static NMSetting *
-make_user_setting (shvarFile *ifcfg, GError **error)
+make_user_setting (shvarFile *ifcfg)
 {
 	gboolean has_user_data = FALSE;
 	gs_unref_object NMSettingUser *s_user = NULL;
@@ -1194,7 +1194,7 @@ make_user_setting (shvarFile *ifcfg, GError **error)
 }
 
 static NMSetting *
-make_proxy_setting (shvarFile *ifcfg, GError **error)
+make_proxy_setting (shvarFile *ifcfg)
 {
 	NMSettingProxy *s_proxy = NULL;
 	gs_free char *value = NULL;
@@ -5505,11 +5505,11 @@ connection_from_file_full (const char *filename,
 	 */
 	check_dns_search_domains (parsed, s_ip4, s_ip6);
 
-	s_proxy = make_proxy_setting (parsed, error);
+	s_proxy = make_proxy_setting (parsed);
 	if (s_proxy)
 		nm_connection_add_setting (connection, s_proxy);
 
-	s_user = make_user_setting (parsed, error);
+	s_user = make_user_setting (parsed);
 	if (s_user)
 		nm_connection_add_setting (connection, s_user);
 
