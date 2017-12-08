@@ -1226,22 +1226,6 @@ libnm_1_10_2 {
 global:
 	nm_remote_connection_update2;
 	nm_remote_connection_update2_finish;
-	nm_settings_update2_flags_get_type;
-} libnm_1_10_0;
-
-libnm_1_12_0 {
-global:
-	nm_checkpoint_get_created;
-	nm_checkpoint_get_devices;
-	nm_checkpoint_get_rollback_timeout;
-	nm_checkpoint_get_type;
-	nm_client_checkpoint_create_async;
-	nm_client_checkpoint_create_finish;
-	nm_client_checkpoint_destroy_async;
-	nm_client_checkpoint_destroy_finish;
-	nm_client_checkpoint_rollback_async;
-	nm_client_checkpoint_rollback_finish;
-	nm_client_get_checkpoints;
 	nm_setting_team_add_link_watcher;
 	nm_setting_team_add_runner_tx_hash;
 	nm_setting_team_clear_link_watchers;
@@ -1277,8 +1261,7 @@ global:
 	nm_setting_team_remove_link_watcher_by_value;
 	nm_setting_team_remove_runner_tx_hash;
 	nm_setting_team_remove_runner_tx_hash_by_value;
-	nm_setting_vpn_get_data_keys;
-	nm_setting_vpn_get_secret_keys;
+	nm_settings_update2_flags_get_type;
 	nm_team_link_watcher_arp_ping_flags_get_type;
 	nm_team_link_watcher_dup;
 	nm_team_link_watcher_equal;
@@ -1297,4 +1280,21 @@ global:
 	nm_team_link_watcher_new_nsna_ping;
 	nm_team_link_watcher_ref;
 	nm_team_link_watcher_unref;
+} libnm_1_10_0;
+
+libnm_1_12_0 {
+global:
+	nm_checkpoint_get_created;
+	nm_checkpoint_get_devices;
+	nm_checkpoint_get_rollback_timeout;
+	nm_checkpoint_get_type;
+	nm_client_checkpoint_create_async;
+	nm_client_checkpoint_create_finish;
+	nm_client_checkpoint_destroy_async;
+	nm_client_checkpoint_destroy_finish;
+	nm_client_checkpoint_rollback_async;
+	nm_client_checkpoint_rollback_finish;
+	nm_client_get_checkpoints;
+	nm_setting_vpn_get_data_keys;
+	nm_setting_vpn_get_secret_keys;
 } libnm_1_10_0;
