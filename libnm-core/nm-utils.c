@@ -5531,8 +5531,8 @@ nm_utils_format_variant_attributes (GHashTable *attributes,
 	const char *name, *value;
 	char *escaped;
 	char buf[64];
-	gs_free_list GList *keys = NULL;
-	GList *iter;
+	gs_free NMUtilsNamedValue *values = NULL;
+	guint i, len;
 
 	g_return_val_if_fail (attr_separator, NULL);
 	g_return_val_if_fail (key_value_separator, NULL);
@@ -5540,12 +5540,13 @@ nm_utils_format_variant_attributes (GHashTable *attributes,
 	if (!attributes || !g_hash_table_size (attributes))
 		return NULL;
 
-	keys = g_list_sort (g_hash_table_get_keys (attributes), (GCompareFunc) g_strcmp0);
+	values = nm_utils_named_values_from_str_dict (attributes, &len);
+
 	str = g_string_new ("");
 
-	for (iter = keys; iter; iter = g_list_next (iter)) {
-		name = iter->data;
-		variant = g_hash_table_lookup (attributes, name);
+	for (i = 0; i < len; i++) {
+		name = values[i].name;
+		variant = (GVariant *) values[i].value_ptr;
 		value = NULL;
 
 		if (g_variant_is_of_type (variant, G_VARIANT_TYPE_UINT32))

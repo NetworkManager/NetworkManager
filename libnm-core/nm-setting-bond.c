@@ -159,9 +159,7 @@ nm_setting_bond_get_option (NMSettingBond *setting,
                             const char **out_value)
 {
 	NMSettingBondPrivate *priv;
-	guint i, len;
-	GHashTableIter iter;
-	const char *key, *value;
+	guint len;
 
 	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), FALSE);
 
@@ -171,23 +169,8 @@ nm_setting_bond_get_option (NMSettingBond *setting,
 	if (idx >= len)
 		return FALSE;
 
-	if (!G_UNLIKELY (priv->options_idx_cache)) {
-		NMUtilsNamedValue *options;
-
-		i = 0;
-		options = g_new (NMUtilsNamedValue, len);
-		g_hash_table_iter_init (&iter, priv->options);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
-			options[i].name = key;
-			options[i].value_str = value;
-			i++;
-		}
-		nm_assert (i == len);
-
-		g_qsort_with_data (options, len, sizeof (options[0]),
-		                   nm_utils_named_entry_cmp_with_data, NULL);
-		priv->options_idx_cache = options;
-	}
+	if (!G_UNLIKELY (priv->options_idx_cache))
+		priv->options_idx_cache = nm_utils_named_values_from_str_dict (priv->options, NULL);
 
 	NM_SET_OUT (out_name, priv->options_idx_cache[idx].name);
 	NM_SET_OUT (out_value, priv->options_idx_cache[idx].value_str);
