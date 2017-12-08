@@ -168,7 +168,6 @@ nm_team_link_watcher_new_nsna_ping (gint init_wait,
                                     GError **error)
 {
 	NMTeamLinkWatcher *watcher;
-	gs_strfreev gchar **strv = NULL;
 	const char *val_fail = NULL;
 
 	if (!target_host) {
@@ -177,8 +176,7 @@ nm_team_link_watcher_new_nsna_ping (gint init_wait,
 		return NULL;
 	}
 
-	strv = g_strsplit_set (target_host, " \\/\t=\"\'", 0);
-	if (strv[1]) {
+	if (strpbrk (target_host, " \\/\t=\"\'")) {
 		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
 		             _("target-host '%s' contains invalid characters"), target_host);
 		return NULL;
@@ -236,7 +234,6 @@ nm_team_link_watcher_new_arp_ping (gint init_wait,
                                    GError **error)
 {
 	NMTeamLinkWatcher *watcher;
-	gs_strfreev gchar **strv = NULL;
 	const char *val_fail = NULL;
 
 	if (!target_host || !source_host) {
@@ -246,16 +243,13 @@ nm_team_link_watcher_new_arp_ping (gint init_wait,
 		return NULL;
 	}
 
-	strv = g_strsplit_set (target_host, " \\/\t=\"\'", 0);
-	if (strv[1]) {
+	if (strpbrk (target_host, " \\/\t=\"\'")) {
 		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
 		             _("target-host '%s' contains invalid characters"), target_host);
 		return NULL;
 	}
-	g_strfreev (strv);
 
-	strv = g_strsplit_set (source_host, " \\/\t=\"\'", 0);
-	if (strv[1]) {
+	if (strpbrk (target_host, " \\/\t=\"\'")) {
 		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
 		             _("source-host '%s' contains invalid characters"), source_host);
 		return NULL;
