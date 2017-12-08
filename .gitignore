@@ -308,3 +308,6 @@ test-*.trs
 /libnm/nm-setting-docs.xml
 /libnm/nm-setting-docs-overrides.xml
 /clients/cli/settings-docs.c
+/libnm-core/tests/test-setting-8021x
+/libnm-core/tests/test-setting-bond
+/libnm-core/tests/test-setting-dcb
