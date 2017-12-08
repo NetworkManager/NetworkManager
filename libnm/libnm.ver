@@ -1223,6 +1223,7 @@ global:
 } libnm_1_8_0;
 
 libnm_1_10_2 {
+global:
 	nm_remote_connection_update2;
 	nm_remote_connection_update2_finish;
 	nm_settings_update2_flags_get_type;
