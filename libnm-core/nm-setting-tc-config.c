@@ -1262,13 +1262,13 @@ _qdiscs_from_variant (GVariant *value)
 
 		if (   !g_variant_lookup (qdisc_var, "kind", "&s", &kind)
 		    || !g_variant_lookup (qdisc_var, "parent", "u", &parent)) {
-			g_warning ("Ignoring invalid qdisc");
+			//g_warning ("Ignoring invalid qdisc");
 			goto next;
 		}
 
 		qdisc = nm_tc_qdisc_new (kind, parent, &error);
 		if (!qdisc) {
-			g_warning ("Ignoring invalid qdisc: %s", error->message);
+			//g_warning ("Ignoring invalid qdisc: %s", error->message);
 			g_clear_error (&error);
 			goto next;
 		}
@@ -1417,13 +1417,13 @@ _tfilters_from_variant (GVariant *value)
 
 		if (   !g_variant_lookup (tfilter_var, "kind", "&s", &kind)
 		    || !g_variant_lookup (tfilter_var, "parent", "u", &parent)) {
-			g_warning ("Ignoring invalid tfilter");
+			//g_warning ("Ignoring invalid tfilter");
 			goto next;
 		}
 
 		tfilter = nm_tc_tfilter_new (kind, parent, &error);
 		if (!tfilter) {
-			g_warning ("Ignoring invalid tfilter: %s", error->message);
+			//g_warning ("Ignoring invalid tfilter: %s", error->message);
 			g_clear_error (&error);
 			goto next;
 		}
@@ -1436,13 +1436,13 @@ _tfilters_from_variant (GVariant *value)
 
 		if (action_var) {
 			if (!g_variant_lookup (action_var, "kind", "&s", &action_kind)) {
-				g_warning ("Ignoring tfilter with invalid action");
+				//g_warning ("Ignoring tfilter with invalid action");
 				goto next;
 			}
 
 			action = nm_tc_action_new (action_kind, &error);
 			if (!action) {
-				g_warning ("Ignoring tfilter with invalid action: %s", error->message);
+				//g_warning ("Ignoring tfilter with invalid action: %s", error->message);
 				g_clear_error (&error);
 				goto next;
 			}
