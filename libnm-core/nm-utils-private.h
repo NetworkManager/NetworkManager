@@ -78,6 +78,8 @@ void        _nm_utils_bytes_from_dbus   (GVariant *dbus_value,
 
 char *      _nm_utils_hwaddr_canonical_or_invalid (const char *mac, gssize length);
 
+GPtrArray * _nm_utils_team_link_watchers_from_variant (GVariant *value);
+GVariant *  _nm_utils_team_link_watchers_to_variant (GPtrArray *link_watchers);
 
 /* JSON to GValue conversion macros */
 
@@ -156,6 +158,30 @@ _nm_utils_json_extract_strv (char *conf,
 		return NULL;
 
 	ret = g_strdupv (g_value_get_boxed (t_value));
+	g_value_unset (t_value);
+	return ret;
+}
+
+static inline GPtrArray *
+_nm_utils_json_extract_ptr_array (char *conf,
+                             _NMUtilsTeamPropertyKeys key,
+                             gboolean is_port)
+{
+	gs_free GValue *t_value = NULL;
+	GPtrArray *data, *ret;
+	guint i;
+
+	ret = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_team_link_watcher_unref);
+	t_value = _nm_utils_team_config_get (conf, key.key1, key.key2, key.key3, is_port);
+	if (!t_value)
+		return ret;
+
+	data = g_value_get_boxed (t_value);
+	if (!data)
+		return ret;
+
+	for (i = 0; i < data->len; i++)
+		g_ptr_array_add (ret, nm_team_link_watcher_dup (data->pdata[i]));
 	g_value_unset (t_value);
 	return ret;
 }

@@ -15,6 +15,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
+ * Copyright 2017 Red Hat, Inc.
  * Copyright 2013 Jiri Pirko <jiri@resnulli.us>
  */
 
@@ -35,6 +36,532 @@
  * The #NMSettingTeam object is a #NMSetting subclass that describes properties
  * necessary for team connections.
  **/
+
+/*****************************************************************************
+ * NMTeamLinkWatch
+ *****************************************************************************/
+
+G_DEFINE_BOXED_TYPE (NMTeamLinkWatcher, nm_team_link_watcher,
+                     nm_team_link_watcher_dup, nm_team_link_watcher_unref)
+
+enum LinkWatcherTypes {
+	LINK_WATCHER_ETHTOOL   = 0,
+	LINK_WATCHER_NSNA_PING = 1,
+	LINK_WATCHER_ARP_PING  = 2
+};
+
+static const char* _link_watcher_name[] = {
+	[LINK_WATCHER_ETHTOOL]   = NM_TEAM_LINK_WATCHER_ETHTOOL,
+	[LINK_WATCHER_NSNA_PING] = NM_TEAM_LINK_WATCHER_NSNA_PING,
+	[LINK_WATCHER_ARP_PING]  = NM_TEAM_LINK_WATCHER_ARP_PING
+};
+
+struct NMTeamLinkWatcher {
+	guint refcount;
+
+	guint8 type;	/* LinkWatcherTypes */
+
+	/*
+	 * The union is constructed in order to allow mapping the options of all the
+	 * watchers on the arp_ping one: this would allow to manipulate all the watchers
+	 * by using the arp_ping struct. See for instance the nm_team_link_watcher_unref()
+	 * and nm_team_link_watcher_equal() functions. So, if you need to change the union
+	 * be careful.
+	 */
+	union {
+		struct {
+			int delay_up;
+			int delay_down;
+		} ethtool;
+		struct {
+			int init_wait;
+			int interval;
+			int missed_max;
+			char *target_host;
+		} nsna_ping;
+		struct {
+			int init_wait;
+			int interval;
+			int missed_max;
+			char *target_host;
+			char *source_host;
+			NMTeamLinkWatcherArpPingFlags flags;
+		} arp_ping;
+	};
+};
+
+#define _CHECK_WATCHER_VOID(watcher) \
+	G_STMT_START { \
+		g_return_if_fail (watcher != NULL); \
+		g_return_if_fail (watcher->refcount > 0); \
+		g_return_if_fail (watcher->type <= LINK_WATCHER_ARP_PING); \
+	} G_STMT_END
+
+#define _CHECK_WATCHER(watcher, err_val) \
+	G_STMT_START { \
+		g_return_val_if_fail (watcher != NULL, err_val); \
+		g_return_val_if_fail (watcher->refcount > 0, err_val); \
+		g_return_val_if_fail (watcher->type <= LINK_WATCHER_ARP_PING, err_val); \
+	} G_STMT_END
+
+/**
+ * nm_team_link_watcher_new_ethtool:
+ * @delay_up: delay_up value
+ * @delay_down: delay_down value
+ * @error: this call never fails, so this var is not used but kept for format
+ *   consistency with the link_watcher constructors of other type
+ *
+ * Creates a new ethtool #NMTeamLinkWatcher object
+ *
+ * Returns: (transfer full): the new #NMTeamLinkWatcher object
+ *
+ * Since: 1.10.2
+ **/
+NMTeamLinkWatcher *
+nm_team_link_watcher_new_ethtool (gint delay_up,
+                                  gint delay_down,
+                                  GError **error)
+{
+	NMTeamLinkWatcher *watcher;
+	const char *val_fail = NULL;
+
+	if (delay_up < 0 || delay_up > G_MAXINT32)
+		val_fail = "delay-up";
+	if (delay_down < 0 || delay_down > G_MAXINT32)
+		val_fail = "delay-down";
+	if (val_fail) {
+		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+		             _("%s is out of range [0, %d]"), val_fail, G_MAXINT32);
+		return NULL;
+	}
+
+	watcher = g_slice_new0 (NMTeamLinkWatcher);
+	watcher->refcount = 1;
+
+	watcher->type = LINK_WATCHER_ETHTOOL;
+	watcher->ethtool.delay_up = delay_up;
+	watcher->ethtool.delay_down = delay_down;
+
+	return watcher;
+}
+
+/**
+ * nm_team_link_watcher_new_nsna_ping:
+ * @init_wait: init_wait value
+ * @interval: interval value
+ * @missed_max: missed_max value
+ * @target_host: the host name or the ipv6 address that will be used as
+ *   target address in the NS packet
+ * @error: (out) (allow-none): location to store the error on failure
+ *
+ * Creates a new nsna_ping #NMTeamLinkWatcher object
+ *
+ * Returns: (transfer full): the new #NMTeamLinkWatcher object, or %NULL on error
+ *
+ * Since: 1.10.2
+ **/
+NMTeamLinkWatcher *
+nm_team_link_watcher_new_nsna_ping (gint init_wait,
+                                    gint interval,
+                                    gint missed_max,
+                                    const char *target_host,
+                                    GError **error)
+{
+	NMTeamLinkWatcher *watcher;
+	gs_strfreev gchar **strv = NULL;
+	const char *val_fail = NULL;
+
+	if (!target_host) {
+		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+		             _("Missing target-host in nsna_ping link watcher"));
+		return NULL;
+	}
+
+	strv = g_strsplit_set (target_host, " \\/\t=\"\'", 0);
+	if (strv[1]) {
+		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+		             _("target-host '%s' contains invalid characters"), target_host);
+		return NULL;
+	}
+
+	if (init_wait < 0 || init_wait > G_MAXINT32)
+		val_fail = "init-wait";
+	if (interval < 0 || interval > G_MAXINT32)
+		val_fail = "interval";
+	if (missed_max < 0 || missed_max > G_MAXINT32)
+		val_fail = "missed-max";
+	if (val_fail) {
+		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+		             _("%s is out of range [0, %d]"), val_fail, G_MAXINT32);
+		return NULL;
+	}
+
+	watcher = g_slice_new0 (NMTeamLinkWatcher);
+	watcher->refcount = 1;
+
+	watcher->type = LINK_WATCHER_NSNA_PING;
+	watcher->nsna_ping.init_wait = init_wait;
+	watcher->nsna_ping.interval = interval;
+	watcher->nsna_ping.missed_max = missed_max;
+	watcher->nsna_ping.target_host = g_strdup (target_host);
+
+	return watcher;
+}
+
+/**
+ * nm_team_link_watcher_new_arp_ping:
+ * @init_wait: init_wait value
+ * @interval: interval value
+ * @missed_max: missed_max value
+ * @target_host: the host name or the ip address that will be used as destination
+ *   address in the arp request
+ * @source_host: the host name or the ip address that will be used as source
+ *   address in the arp request
+ * @flags: the watcher #NMTeamLinkWatcherArpPingFlags
+ * @error: (out) (allow-none): location to store the error on failure
+ *
+ * Creates a new arp_ping #NMTeamLinkWatcher object
+ *
+ * Returns: (transfer full): the new #NMTeamLinkWatcher object, or %NULL on error
+ *
+ * Since: 1.10.2
+ **/
+NMTeamLinkWatcher *
+nm_team_link_watcher_new_arp_ping (gint init_wait,
+                                   gint interval,
+                                   gint missed_max,
+                                   const char *target_host,
+                                   const char *source_host,
+                                   NMTeamLinkWatcherArpPingFlags flags,
+                                   GError **error)
+{
+	NMTeamLinkWatcher *watcher;
+	gs_strfreev gchar **strv = NULL;
+	const char *val_fail = NULL;
+
+	if (!target_host || !source_host) {
+		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+		             _("Missing %s in arp_ping link watcher"),
+		             target_host ? "source-host" : "target-host");
+		return NULL;
+	}
+
+	strv = g_strsplit_set (target_host, " \\/\t=\"\'", 0);
+	if (strv[1]) {
+		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+		             _("target-host '%s' contains invalid characters"), target_host);
+		return NULL;
+	}
+	g_strfreev (strv);
+
+	strv = g_strsplit_set (source_host, " \\/\t=\"\'", 0);
+	if (strv[1]) {
+		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+		             _("source-host '%s' contains invalid characters"), source_host);
+		return NULL;
+	}
+
+	if (init_wait < 0 || init_wait > G_MAXINT32)
+		val_fail = "init-wait";
+	if (interval < 0 || interval > G_MAXINT32)
+		val_fail = "interval";
+	if (missed_max < 0 || missed_max > G_MAXINT32)
+		val_fail = "missed-max";
+	if (val_fail) {
+		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+		             _("%s is out of range [0, %d]"), val_fail, G_MAXINT32);
+		return NULL;
+	}
+
+	watcher = g_slice_new0 (NMTeamLinkWatcher);
+	watcher->refcount = 1;
+
+	watcher->type = LINK_WATCHER_ARP_PING;
+	watcher->arp_ping.init_wait = init_wait;
+	watcher->arp_ping.interval = interval;
+	watcher->arp_ping.missed_max = missed_max;
+	watcher->arp_ping.target_host = g_strdup (target_host);
+	watcher->arp_ping.source_host = g_strdup (source_host);
+	watcher->arp_ping.flags = flags;
+
+	return watcher;
+}
+
+/**
+ * nm_team_link_watcher_ref:
+ * @watcher: the #NMTeamLinkWatcher
+ *
+ * Increases the reference count of the object.
+ *
+ * Since: 1.10.2
+ **/
+void
+nm_team_link_watcher_ref (NMTeamLinkWatcher *watcher){
+	_CHECK_WATCHER_VOID (watcher);
+
+	watcher->refcount++;
+}
+
+/**
+ * nm_team_link_watcher_unref:
+ * @watcher: the #NMTeamLinkWatcher
+ *
+ * Decreases the reference count of the object.  If the reference count
+ * reaches zero, the object will be destroyed.
+ *
+ * Since: 1.10.2
+ **/
+void
+nm_team_link_watcher_unref (NMTeamLinkWatcher *watcher)
+{
+	_CHECK_WATCHER_VOID (watcher);
+
+	watcher->refcount--;
+	if (watcher->refcount == 0) {
+		g_free (watcher->arp_ping.target_host);
+		g_free (watcher->arp_ping.source_host);
+		g_slice_free (NMTeamLinkWatcher, watcher);
+	}
+}
+
+/**
+ * nm_team_link_watcher_equal:
+ * @watcher: the #NMTeamLinkWatcher
+ * @other: the #NMTeamLinkWatcher to compare @watcher to.
+ *
+ * Determines if two #NMTeamLinkWatcher objects contain the same values
+ * in all the properties.
+ *
+ * Returns: %TRUE if the objects contain the same values, %FALSE if they do not.
+ *
+ * Since: 1.10.2
+ **/
+gboolean
+nm_team_link_watcher_equal (NMTeamLinkWatcher *watcher, NMTeamLinkWatcher *other)
+{
+	_CHECK_WATCHER (watcher, FALSE);
+	_CHECK_WATCHER (other, FALSE);
+
+	if (   watcher->type != other->type
+	    || !nm_streq0 (watcher->arp_ping.target_host, other->arp_ping.target_host)
+	    || !nm_streq0 (watcher->arp_ping.source_host, other->arp_ping.source_host)
+	    || watcher->arp_ping.init_wait != other->arp_ping.init_wait
+	    || watcher->arp_ping.interval != other->arp_ping.interval
+	    || watcher->arp_ping.missed_max != other->arp_ping.missed_max
+	    || watcher->arp_ping.flags != other->arp_ping.flags)
+		return FALSE;
+
+	return TRUE;
+}
+
+/**
+ * nm_team_link_watcher_dup:
+ * @watcher: the #NMTeamLinkWatcher
+ *
+ * Creates a copy of @watcher
+ *
+ * Returns: (transfer full): a copy of @watcher
+ *
+ * Since: 1.10.2
+ **/
+NMTeamLinkWatcher *
+nm_team_link_watcher_dup (NMTeamLinkWatcher *watcher)
+{
+	_CHECK_WATCHER (watcher, NULL);
+
+	switch (watcher->type) {
+	case LINK_WATCHER_ETHTOOL:
+		return nm_team_link_watcher_new_ethtool (watcher->ethtool.delay_up,
+		                                         watcher->ethtool.delay_down,
+		                                         NULL);
+		break;
+	case LINK_WATCHER_NSNA_PING:
+		return nm_team_link_watcher_new_nsna_ping (watcher->nsna_ping.init_wait,
+		                                           watcher->nsna_ping.interval,
+		                                           watcher->nsna_ping.missed_max,
+		                                           watcher->nsna_ping.target_host,
+		                                           NULL);
+		break;
+	case LINK_WATCHER_ARP_PING:
+		return nm_team_link_watcher_new_arp_ping (watcher->arp_ping.init_wait,
+		                                          watcher->arp_ping.interval,
+		                                          watcher->arp_ping.missed_max,
+		                                          watcher->arp_ping.target_host,
+		                                          watcher->arp_ping.source_host,
+		                                          watcher->arp_ping.flags,
+		                                          NULL);
+	default:
+		g_assert_not_reached ();
+		return NULL;
+	}
+}
+
+/**
+ * nm_team_link_watcher_get_name:
+ * @watcher: the #NMTeamLinkWatcher
+ *
+ * Gets the name of the link watcher to be used.
+ *
+ * Since: 1.10.2
+ **/
+const char *
+nm_team_link_watcher_get_name (NMTeamLinkWatcher *watcher)
+{
+	_CHECK_WATCHER (watcher, NULL);
+
+	return _link_watcher_name[watcher->type];
+}
+
+/**
+ * nm_team_link_watcher_get_delay_up:
+ * @watcher: the #NMTeamLinkWatcher
+ *
+ * Gets the delay_up interval (in milliseconds) that elapses between the link
+ * coming up and the runner beeing notified about it.
+ *
+ * Since: 1.10.2
+ **/
+int
+nm_team_link_watcher_get_delay_up (NMTeamLinkWatcher *watcher)
+{
+	_CHECK_WATCHER (watcher, 0);
+
+	if (watcher->type != LINK_WATCHER_ETHTOOL)
+		return -1;
+	return watcher->ethtool.delay_up;
+}
+
+/**
+ * nm_team_link_watcher_get_delay_down:
+ * @watcher: the #NMTeamLinkWatcher
+ *
+ * Gets the delay_down interval (in milliseconds) that elapses between the link
+ * going down and the runner beeing notified about it.
+ *
+ * Since: 1.10.2
+ **/
+int
+nm_team_link_watcher_get_delay_down (NMTeamLinkWatcher *watcher)
+{
+	_CHECK_WATCHER (watcher, 0);
+
+	if (watcher->type != LINK_WATCHER_ETHTOOL)
+		return -1;
+	return watcher->ethtool.delay_down;
+}
+
+/**
+ * nm_team_link_watcher_get_init_wait:
+ * @watcher: the #NMTeamLinkWatcher
+ *
+ * Gets the init_wait interval (in milliseconds) that the team slave should
+ * wait before sending the first packet to the target host.
+ *
+ * Since: 1.10.2
+ **/
+int
+nm_team_link_watcher_get_init_wait (NMTeamLinkWatcher *watcher)
+{
+	_CHECK_WATCHER (watcher, 0);
+
+	if (!NM_IN_SET (watcher->type,
+	                LINK_WATCHER_NSNA_PING,
+	                LINK_WATCHER_ARP_PING))
+		return -1;
+	return watcher->arp_ping.init_wait;
+}
+
+/**
+ * nm_team_link_watcher_get_interval:
+ * @watcher: the #NMTeamLinkWatcher
+ *
+ * Gets the interval (in milliseconds) that the team slave should wait between
+ * sending two check packets to the target host.
+ *
+ * Since: 1.10.2
+ **/
+int
+nm_team_link_watcher_get_interval (NMTeamLinkWatcher *watcher)
+{
+	_CHECK_WATCHER (watcher, 0);
+
+	if (!NM_IN_SET (watcher->type,
+	                LINK_WATCHER_NSNA_PING,
+	                LINK_WATCHER_ARP_PING))
+		return -1;
+	return watcher->arp_ping.interval;
+}
+
+/**
+ * nm_team_link_watcher_get_missed_max:
+ * @watcher: the #NMTeamLinkWatcher
+ *
+ * Gets the number of missed replies after which the link is considered down.
+ *
+ * Since: 1.10.2
+ **/
+int
+nm_team_link_watcher_get_missed_max (NMTeamLinkWatcher *watcher)
+{
+	_CHECK_WATCHER (watcher, 0);
+
+	if (!NM_IN_SET (watcher->type,
+	                LINK_WATCHER_NSNA_PING,
+	                LINK_WATCHER_ARP_PING))
+		return -1;
+	return watcher->arp_ping.missed_max;
+}
+
+/**
+ * nm_team_link_watcher_get_target_host:
+ * @watcher: the #NMTeamLinkWatcher
+ *
+ * Gets the host name/ip address to be used as destination for the link probing
+ * packets.
+ *
+ * Since: 1.10.2
+ **/
+const char *
+nm_team_link_watcher_get_target_host (NMTeamLinkWatcher *watcher)
+{
+	_CHECK_WATCHER (watcher, NULL);
+
+	return watcher->arp_ping.target_host;
+}
+
+/**
+ * nm_team_link_watcher_get_source_host:
+ * @watcher: the #NMTeamLinkWatcher
+ *
+ * Gets the ip address to be used as source for the link probing packets.
+ *
+ * Since: 1.10.2
+ **/
+const char *
+nm_team_link_watcher_get_source_host (NMTeamLinkWatcher *watcher)
+{
+	_CHECK_WATCHER (watcher, NULL);
+
+	return watcher->arp_ping.source_host;
+}
+
+/**
+ * nm_team_link_watcher_get_flags:
+ * @watcher: the #NMTeamLinkWatcher
+ *
+ * Gets the arp ping watcher flags.
+ *
+ * Since: 1.10.2
+ **/
+NMTeamLinkWatcherArpPingFlags
+nm_team_link_watcher_get_flags (NMTeamLinkWatcher *watcher)
+{
+	_CHECK_WATCHER (watcher, 0);
+
+	return watcher->arp_ping.flags;
+}
+
+/*****************************************************************************/
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingTeam, nm_setting_team, NM_TYPE_SETTING,
                          _nm_register_setting (TEAM, NM_SETTING_PRIORITY_HW_BASE))
@@ -58,6 +585,7 @@ typedef struct {
 	gint runner_sys_prio;
 	gint runner_min_ports;
 	char *runner_agg_select_policy;
+	GPtrArray *link_watchers; /* Array of NMTeamLinkWatcher */
 } NMSettingTeamPrivate;
 
 /* Keep aligned with _prop_to_keys[] */
@@ -78,6 +606,7 @@ enum {
 	PROP_RUNNER_SYS_PRIO,
 	PROP_RUNNER_MIN_PORTS,
 	PROP_RUNNER_AGG_SELECT_POLICY,
+	PROP_LINK_WATCHERS,
 	LAST_PROP
 };
 
@@ -94,15 +623,13 @@ static const _NMUtilsTeamPropertyKeys _prop_to_keys[LAST_PROP] = {
 	[PROP_RUNNER_HWADDR_POLICY] =        { "runner", "hwaddr_policy", NULL, 0 },
 	[PROP_RUNNER_TX_HASH] =              { "runner", "tx_hash", NULL, 0 },
 	[PROP_RUNNER_TX_BALANCER] =          { "runner", "tx_balancer", "name", 0 },
-	[PROP_RUNNER_TX_BALANCER_INTERVAL] = { "runner", "tx_balancer", "interval",
-	                                       NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT },
+	[PROP_RUNNER_TX_BALANCER_INTERVAL] = { "runner", "tx_balancer", "balancing_interval", -1 },
 	[PROP_RUNNER_ACTIVE] =               { "runner", "active", NULL, 0 },
 	[PROP_RUNNER_FAST_RATE] =            { "runner", "fast_rate", NULL, 0 },
-	[PROP_RUNNER_SYS_PRIO] =             { "runner", "sys_prio", NULL,
-	                                       NM_SETTING_TEAM_RUNNER_SYS_PRIO_DEFAULT },
-	[PROP_RUNNER_MIN_PORTS] =            { "runner", "min_ports", NULL, 0 },
-	[PROP_RUNNER_AGG_SELECT_POLICY] =    { "runner", "agg_select_policy", NULL,
-	                                       {.default_str = NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_DEFAULT} },
+	[PROP_RUNNER_SYS_PRIO] =             { "runner", "sys_prio", NULL, -1 },
+	[PROP_RUNNER_MIN_PORTS] =            { "runner", "min_ports", NULL, -1 },
+	[PROP_RUNNER_AGG_SELECT_POLICY] =    { "runner", "agg_select_policy", NULL, 0 },
+	[PROP_LINK_WATCHERS] =               { "link_watch", NULL, NULL, 0 }
 };
 
 /**
@@ -400,12 +927,12 @@ nm_setting_team_get_num_runner_tx_hash (NMSettingTeam *setting)
  * Since: 1.10.2
  **/
 const char *
-nm_setting_team_get_runner_tx_hash (NMSettingTeam *setting, int idx)
+nm_setting_team_get_runner_tx_hash (NMSettingTeam *setting, guint idx)
 {
 	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
 
 	g_return_val_if_fail (NM_IS_SETTING_TEAM (setting), NULL);
-	g_return_val_if_fail (idx >= 0 && idx < priv->runner_tx_hash->len, NULL);
+	g_return_val_if_fail (idx < priv->runner_tx_hash->len, NULL);
 
 	return priv->runner_tx_hash->pdata[idx];
 }
@@ -420,12 +947,12 @@ nm_setting_team_get_runner_tx_hash (NMSettingTeam *setting, int idx)
  * Since: 1.10.2
  **/
 void
-nm_setting_team_remove_runner_tx_hash (NMSettingTeam *setting, int idx)
+nm_setting_team_remove_runner_tx_hash (NMSettingTeam *setting, guint idx)
 {
 	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
 
 	g_return_if_fail (NM_IS_SETTING_TEAM (setting));
-	g_return_if_fail (idx >= 0 && idx < priv->runner_tx_hash->len);
+	g_return_if_fail (idx < priv->runner_tx_hash->len);
 
 	g_ptr_array_remove_index (priv->runner_tx_hash, idx);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_TEAM_RUNNER_TX_HASH);
@@ -465,10 +992,163 @@ nm_setting_team_add_runner_tx_hash (NMSettingTeam *setting, const char *txhash)
 	return TRUE;
 }
 
+/**
+ * nm_setting_team_get_num_link_watchers:
+ * @setting: the #NMSettingTeam
+ *
+ * Returns: the number of configured link watchers
+ *
+ * Since: 1.10.2
+ **/
+guint
+nm_setting_team_get_num_link_watchers (NMSettingTeam *setting)
+{
+	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
+
+	g_return_val_if_fail (NM_IS_SETTING_TEAM (setting), 0);
+
+	return priv->link_watchers->len;
+}
+
+/**
+ * nm_setting_team_get_link_watcher:
+ * @setting: the #NMSettingTeam
+ * @idx: index number of the link watcher to return
+ *
+ * Returns: (transfer none): the link watcher at index @idx.
+ *
+ * Since: 1.10.2
+ **/
+NMTeamLinkWatcher *
+nm_setting_team_get_link_watcher (NMSettingTeam *setting, guint idx)
+{
+	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
+
+	g_return_val_if_fail (NM_IS_SETTING_TEAM (setting), NULL);
+	g_return_val_if_fail (idx < priv->link_watchers->len, NULL);
+
+	return priv->link_watchers->pdata[idx];
+}
+
+/**
+ * nm_setting_team_add_link_watcher:
+ * @setting: the #NMSettingTeam
+ * @link_watcher: the link watcher to add
+ *
+ * Appends a new link watcher to the setting.
+ *
+ * Returns: %TRUE if the link watcher is added; %FALSE if an identical link
+ * watcher was already there.
+ *
+ * Since: 1.10.2
+ **/
+gboolean
+nm_setting_team_add_link_watcher (NMSettingTeam *setting,
+                                  NMTeamLinkWatcher *link_watcher)
+{
+	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
+	guint i;
+
+	g_return_val_if_fail (NM_IS_SETTING_TEAM (setting), FALSE);
+	g_return_val_if_fail (link_watcher != NULL, FALSE);
+
+	for (i = 0; i < priv->link_watchers->len; i++) {
+		if (nm_team_link_watcher_equal (priv->link_watchers->pdata[i], link_watcher))
+			return FALSE;
+	}
+
+	g_ptr_array_add (priv->link_watchers, nm_team_link_watcher_dup (link_watcher));
+	g_object_notify (G_OBJECT (setting), NM_SETTING_TEAM_LINK_WATCHERS);
+	return TRUE;
+}
+
+/**
+ * nm_setting_team_remove_link_watcher:
+ * @setting: the #NMSettingTeam
+ * @idx: index number of the link watcher to remove
+ *
+ * Removes the link watcher at index #idx.
+ *
+ * Since: 1.10.2
+ **/
+void
+nm_setting_team_remove_link_watcher (NMSettingTeam *setting, guint idx)
+{
+	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
+
+	g_return_if_fail (NM_IS_SETTING_TEAM (setting));
+	g_return_if_fail (idx < priv->link_watchers->len);
+
+	g_ptr_array_remove_index (priv->link_watchers, idx);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_TEAM_LINK_WATCHERS);
+}
+
+/**
+ * nm_setting_team_remove_link_watcher_by_value:
+ * @setting: the #NMSettingTeam
+ * @link_watcher: the link watcher to remove
+ *
+ * Removes the link watcher entry matching link_watcher.
+ *
+ * Returns: %TRUE if the link watcher was found and removed, %FALSE otherwise.
+ *
+ * Since: 1.10.2
+ **/
+gboolean
+nm_setting_team_remove_link_watcher_by_value (NMSettingTeam *setting,
+                                              NMTeamLinkWatcher *link_watcher)
+{
+	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
+	guint i;
+
+	g_return_val_if_fail (NM_IS_SETTING_TEAM (setting), FALSE);
+
+	for (i = 0; i < priv->link_watchers->len; i++) {
+		if (nm_team_link_watcher_equal (priv->link_watchers->pdata[i], link_watcher)) {
+			g_ptr_array_remove_index (priv->link_watchers, i);
+			g_object_notify (G_OBJECT (setting), NM_SETTING_TEAM_LINK_WATCHERS);
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+/**
+ * nm_setting_team_clear_link_watchers:
+ * @setting: the #NMSettingTeam
+ *
+ * Removes all configured link watchers.
+ *
+ * Since: 1.10.2
+ **/
+void
+nm_setting_team_clear_link_watchers (NMSettingTeam *setting) {
+	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
+
+	g_return_if_fail (NM_IS_SETTING_TEAM (setting));
+
+	g_ptr_array_set_size (priv->link_watchers, 0);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_TEAM_LINK_WATCHERS);
+}
+
+static GVariant *
+team_link_watchers_to_dbus (const GValue *prop_value)
+{
+	return _nm_utils_team_link_watchers_to_variant (g_value_get_boxed (prop_value));
+}
+
+static void
+team_link_watchers_from_dbus (GVariant   *dbus_value,
+                              GValue     *prop_value)
+{
+	g_value_take_boxed (prop_value, _nm_utils_team_link_watchers_from_variant (dbus_value));
+}
+
 static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
+	guint i;
 
 	if (!_nm_connection_verify_required_interface_name (connection, error))
 		return FALSE;
@@ -507,6 +1187,48 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
+	/* Validate link watchers */
+	for (i = 0; i < priv->link_watchers->len; i++) {
+		NMTeamLinkWatcher *link_watcher = priv->link_watchers->pdata[i];
+		const char *name = nm_team_link_watcher_get_name (link_watcher);
+
+		if (!name) {
+			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_SETTING,
+				     _("missing link watcher name"));
+			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting),
+					NM_SETTING_TEAM_LINK_WATCHERS);
+			return FALSE;
+		}
+		if (!NM_IN_STRSET (name,
+		                   NM_TEAM_LINK_WATCHER_ETHTOOL,
+		                   NM_TEAM_LINK_WATCHER_ARP_PING,
+		                   NM_TEAM_LINK_WATCHER_NSNA_PING)) {
+			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_SETTING,
+				     _("unknown link watcher \"%s\""), name);
+			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting),
+					NM_SETTING_TEAM_LINK_WATCHERS);
+			return FALSE;
+		}
+
+		if (NM_IN_STRSET (name,
+		                  NM_TEAM_LINK_WATCHER_ARP_PING,
+		                  NM_TEAM_LINK_WATCHER_NSNA_PING)
+		    && !nm_team_link_watcher_get_target_host (link_watcher)) {
+			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_SETTING,
+				     _("missing target host"));
+			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting),
+					NM_SETTING_TEAM_LINK_WATCHERS);
+			return FALSE;
+		}
+		if (nm_streq (name, NM_TEAM_LINK_WATCHER_ARP_PING)
+		    && !nm_team_link_watcher_get_source_host (link_watcher)) {
+			g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_SETTING,
+				     _("missing source address"));
+			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting),
+					NM_SETTING_TEAM_LINK_WATCHERS);
+			return FALSE;
+		}
+	}
 	/* NOTE: normalizable/normalizable-errors must appear at the end with decreasing severity.
 	 * Take care to properly order statements with priv->config above. */
 
@@ -519,7 +1241,9 @@ compare_property (NMSetting *setting,
                   const GParamSpec *prop_spec,
                   NMSettingCompareFlags flags)
 {
+	NMSettingTeamPrivate *a_priv, *b_priv;
 	NMSettingClass *parent_class;
+	guint i, j;
 
 	/* If we are trying to match a connection in order to assume it (and thus
 	 * @flags contains INFERRABLE), use the "relaxed" matching for team
@@ -531,6 +1255,24 @@ compare_property (NMSetting *setting,
 		return _nm_utils_team_config_equal (NM_SETTING_TEAM_GET_PRIVATE (setting)->config,
 		                                    NM_SETTING_TEAM_GET_PRIVATE (other)->config,
 		                                    FALSE);
+	}
+	if (nm_streq0 (prop_spec->name, NM_SETTING_TEAM_LINK_WATCHERS)) {
+		a_priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
+		b_priv = NM_SETTING_TEAM_GET_PRIVATE (other);
+
+		if (a_priv->link_watchers->len != b_priv->link_watchers->len)
+			return FALSE;
+		for (i = 0; i < a_priv->link_watchers->len; i++) {
+			for (j = 0; j < b_priv->link_watchers->len; j++) {
+				if (nm_team_link_watcher_equal (a_priv->link_watchers->pdata[i],
+				                                b_priv->link_watchers->pdata[j])) {
+					break;
+				}
+				if (j == b_priv->link_watchers->len)
+					return FALSE;
+			}
+		}
+		return TRUE;
 	}
 
 	/* Otherwise chain up to parent to handle generic compare */
@@ -544,8 +1286,10 @@ nm_setting_team_init (NMSettingTeam *setting)
 	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
 
 	priv->runner = g_strdup (NM_SETTING_TEAM_RUNNER_ROUNDROBIN);
-	priv->runner_sys_prio = NM_SETTING_TEAM_RUNNER_SYS_PRIO_DEFAULT;
-	priv->runner_tx_balancer_interval = NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT;
+	priv->runner_tx_balancer_interval = -1;
+	priv->runner_sys_prio = -1;
+	priv->runner_min_ports = -1;
+	priv->link_watchers = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_team_link_watcher_unref);
 }
 
 static void
@@ -560,6 +1304,7 @@ finalize (GObject *object)
 	g_free (priv->runner_agg_select_policy);
 	if (priv->runner_tx_hash)
 		g_ptr_array_unref (priv->runner_tx_hash);
+	g_ptr_array_unref (priv->link_watchers);
 
 	G_OBJECT_CLASS (nm_setting_team_parent_class)->finalize (object);
 }
@@ -604,6 +1349,9 @@ _align_team_properties (NMSettingTeam *setting)
 			nm_setting_team_add_runner_tx_hash (setting, strv[i]);
 		g_strfreev (strv);
 	}
+
+	g_ptr_array_unref (priv->link_watchers);
+	priv->link_watchers = JSON_TO_VAL (ptr_array, PROP_LINK_WATCHERS);
 }
 
 static void
@@ -626,51 +1374,45 @@ set_property (GObject *object, guint prop_id,
 		if (priv->notify_peers_count == g_value_get_int (value))
 			break;
 		priv->notify_peers_count = g_value_get_int (value);
-		if (priv->notify_peers_count)
-			align_value = value;
+		align_value = value;
 		align_config = TRUE;
 		break;
 	case PROP_NOTIFY_PEERS_INTERVAL:
 		if (priv->notify_peers_interval == g_value_get_int (value))
 			break;
 		priv->notify_peers_interval = g_value_get_int (value);
-		if (priv->notify_peers_interval)
-			align_value = value;
+		align_value = value;
 		align_config = TRUE;
 		break;
 	case PROP_MCAST_REJOIN_COUNT:
 		if (priv->mcast_rejoin_count == g_value_get_int (value))
 			break;
 		priv->mcast_rejoin_count = g_value_get_int (value);
-		if (priv->mcast_rejoin_count)
-			align_value = value;
+		align_value = value;
 		align_config = TRUE;
 		break;
 	case PROP_MCAST_REJOIN_INTERVAL:
 		if (priv->mcast_rejoin_interval == g_value_get_int (value))
 			break;
 		priv->mcast_rejoin_interval = g_value_get_int (value);
-		if (priv->mcast_rejoin_interval)
-			align_value = value;
+		align_value = value;
 		align_config = TRUE;
 		break;
 	case PROP_RUNNER:
+		if (   !g_value_get_string (value)
+		    || nm_streq (priv->runner, g_value_get_string (value)))
+			break;
 		g_free (priv->runner);
 		priv->runner = g_value_dup_string (value);
-		if (   priv->runner
-		    && !nm_streq (priv->runner,
-		                  NM_SETTING_TEAM_RUNNER_DEFAULT))
-			align_value = value;
-		align_config = TRUE;
+		_nm_utils_json_append_gvalue (&priv->config, _prop_to_keys[prop_id], value);
+		_align_team_properties (setting);
 		break;
 	case PROP_RUNNER_HWADDR_POLICY:
+		if (nm_streq0 (priv->runner_hwaddr_policy, g_value_get_string (value)))
+			break;
 		g_free (priv->runner_hwaddr_policy);
 		priv->runner_hwaddr_policy = g_value_dup_string (value);
-		if (   priv->runner_hwaddr_policy
-		    && !nm_streq (priv->runner_hwaddr_policy,
-		                  NM_SETTING_TEAM_RUNNER_HWADDR_POLICY_SAME_ALL)) {
-			align_value = value;
-		}
+		align_value = value;
 		align_config = TRUE;
 		break;
 	case PROP_RUNNER_TX_HASH:
@@ -685,59 +1427,62 @@ set_property (GObject *object, guint prop_id,
 		align_config = TRUE;
 		break;
 	case PROP_RUNNER_TX_BALANCER:
+		if (nm_streq0 (priv->runner_tx_balancer, g_value_get_string (value)))
+			break;
 		g_free (priv->runner_tx_balancer);
 		priv->runner_tx_balancer = g_value_dup_string (value);
-		if (priv->runner_tx_balancer)
-			align_value = value;
+		align_value = value;
 		align_config = TRUE;
 		break;
 	case PROP_RUNNER_TX_BALANCER_INTERVAL:
 		if (priv->runner_tx_balancer_interval == g_value_get_int (value))
 			break;
 		priv->runner_tx_balancer_interval = g_value_get_int (value);
-		if (priv->runner_tx_balancer_interval !=
-		    NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT)
-			align_value = value;
+		align_value = value;
 		align_config = TRUE;
 		break;
 	case PROP_RUNNER_ACTIVE:
 		if (priv->runner_active == g_value_get_boolean (value))
 			break;
 		priv->runner_active = g_value_get_boolean (value);
-		if (priv->runner_active)
-			align_value = value;
+		align_value = value;
 		align_config = TRUE;
 		break;
 	case PROP_RUNNER_FAST_RATE:
 		if (priv->runner_fast_rate == g_value_get_boolean (value))
 			break;
 		priv->runner_fast_rate = g_value_get_boolean (value);
-		if (priv->runner_fast_rate)
-			align_value = value;
+		align_value = value;
 		align_config = TRUE;
 		break;
 	case PROP_RUNNER_SYS_PRIO:
 		if (priv->runner_sys_prio == g_value_get_int (value))
 			break;
 		priv->runner_sys_prio = g_value_get_int (value);
-		if (priv->runner_sys_prio != NM_SETTING_TEAM_RUNNER_SYS_PRIO_DEFAULT)
-			align_value = value;
+		align_value = value;
 		align_config = TRUE;
 		break;
 	case PROP_RUNNER_MIN_PORTS:
 		if (priv->runner_min_ports == g_value_get_int (value))
 			break;
 		priv->runner_min_ports = g_value_get_int (value);
-		if (priv->runner_min_ports)
-			align_value = value;
+		align_value = value;
 		align_config = TRUE;
 		break;
 	case PROP_RUNNER_AGG_SELECT_POLICY:
+		if (nm_streq0 (priv->runner_agg_select_policy, g_value_get_string (value)))
+			break;
 		g_free (priv->runner_agg_select_policy);
 		priv->runner_agg_select_policy = g_value_dup_string (value);
-		if (   priv->runner_agg_select_policy
-		    && !nm_streq (priv->runner_agg_select_policy,
-		                  NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_LACP_PRIO))
+		align_value = value;
+		align_config = TRUE;
+		break;
+	case PROP_LINK_WATCHERS:
+		g_ptr_array_unref (priv->link_watchers);
+		priv->link_watchers = _nm_utils_copy_array (g_value_get_boxed (value),
+		                                            (NMUtilsCopyFunc) nm_team_link_watcher_dup,
+		                                            (GDestroyNotify) nm_team_link_watcher_unref);
+		if (priv->link_watchers->len)
 			align_value = value;
 		align_config = TRUE;
 		break;
@@ -803,6 +1548,11 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_RUNNER_AGG_SELECT_POLICY:
 		g_value_set_string (value, nm_setting_team_get_runner_agg_select_policy (setting));
+		break;
+	case PROP_LINK_WATCHERS:
+		g_value_take_boxed (value, _nm_utils_copy_array (priv->link_watchers,
+		                                                 (NMUtilsCopyFunc) nm_team_link_watcher_dup,
+		                                                 (GDestroyNotify) nm_team_link_watcher_unref));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1046,6 +1796,33 @@ nm_setting_team_class_init (NMSettingTeamClass *setting_class)
 		                      NULL,
 		                      G_PARAM_READWRITE |
 		                      G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingTeam:link-watchers:
+	 *
+	 * Link watchers configuration for the connection: each link watcher is
+	 * defined by a dictionary, whose keys depend upon the selected link
+	 * watcher. Available link watchers are 'ethtool', 'nsna_ping' and
+	 * 'arp_ping' and it is specified in the dictionary with the key 'name'.
+	 * Available keys are:   ethtool: 'delay-up', 'delay-down', 'init-wait';
+	 * nsna_ping: 'init-wait', 'interval', 'missed-max', 'target-host';
+	 * arp_ping: all the ones in nsna_ping and 'source-host', 'validate-active',
+	 * 'validate-incative', 'send-always'. See teamd.conf man for more details.
+	 *
+	 * Element-Type: NMTeamLinkWatcher
+	 * Since: 1.10.2
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_LINK_WATCHERS,
+		 g_param_spec_boxed (NM_SETTING_TEAM_LINK_WATCHERS, "", "",
+		                     G_TYPE_PTR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class,
+	                                     NM_SETTING_TEAM_LINK_WATCHERS,
+	                                     G_VARIANT_TYPE ("aa{sv}"),
+	                                     team_link_watchers_to_dbus,
+	                                     team_link_watchers_from_dbus);
 
 	/* ---dbus---
 	 * property: interface-name
