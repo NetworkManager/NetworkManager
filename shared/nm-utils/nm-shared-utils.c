@@ -1115,3 +1115,36 @@ nm_utils_fd_read_loop_exact (int fd, void *buf, size_t nbytes, bool do_poll)
 
 	return 0;
 }
+
+NMUtilsNamedValue *
+nm_utils_named_values_from_str_dict (GHashTable *hash, guint *out_len)
+{
+	GHashTableIter iter;
+	NMUtilsNamedValue *values;
+	guint i, len;
+
+	if (   !hash
+	    || !(len = g_hash_table_size (hash))) {
+		NM_SET_OUT (out_len, 0);
+		return NULL;
+	}
+
+	i = 0;
+	values = g_new (NMUtilsNamedValue, len + 1);
+	g_hash_table_iter_init (&iter, hash);
+	while (g_hash_table_iter_next (&iter,
+	                               (gpointer *) &values[i].name,
+	                               (gpointer *) &values[i].value_ptr))
+		i++;
+	nm_assert (i == len);
+	values[i].name = NULL;
+	values[i].value_ptr = NULL;
+
+	if (len > 1) {
+		g_qsort_with_data (values, len, sizeof (values[0]),
+		                   nm_utils_named_entry_cmp_with_data, NULL);
+	}
+
+	NM_SET_OUT (out_len, len);
+	return values;
+}

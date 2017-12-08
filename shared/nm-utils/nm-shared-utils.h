@@ -435,6 +435,8 @@ typedef struct {
 #define nm_utils_named_entry_cmp           nm_strcmp_p
 #define nm_utils_named_entry_cmp_with_data nm_strcmp_p_with_data
 
+NMUtilsNamedValue *nm_utils_named_values_from_str_dict (GHashTable *hash, guint *out_len);
+
 /*****************************************************************************/
 
 #define NM_UTILS_NS_PER_SECOND  ((gint64) 1000000000)
