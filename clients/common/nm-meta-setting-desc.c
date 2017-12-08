@@ -2148,29 +2148,27 @@ _get_fcn_802_1x_phase2_private_key (ARGS_GET_FCN)
 	static gboolean \
 	def_func (ARGS_SET_FCN) \
 	{ \
-		char **strv = NULL; \
-		char *val_strip = g_strstrip (g_strdup (value)); \
-		char *p = val_strip; \
-		const char *path, *password; \
+		gs_free char *path = NULL; \
 		gs_free char *password_free = NULL; \
+		char *password; \
 		NMSetting8021xCKScheme scheme = NM_SETTING_802_1X_CK_SCHEME_PATH; \
-		gboolean success; \
 		\
-		if (strncmp (val_strip, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11)) == 0) \
+		value = nm_str_skip_leading_spaces (value); \
+		\
+		if (strncmp (value, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PKCS11)) == 0) \
 			scheme = NM_SETTING_802_1X_CK_SCHEME_PKCS11; \
-		else if (strncmp (val_strip, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)) == 0) \
-			p += NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH); \
+		else if (strncmp (value, NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH)) == 0) \
+			value += NM_STRLEN (NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH); \
 		\
-		strv = nmc_strsplit_set (p, " \t,", 2); \
-		path = strv[0]; \
-		if (g_strv_length (strv) == 2) \
-			password = strv[1]; \
-		else \
+		path = g_strdup (value); \
+		password = path + strcspn (path, " \t"); \
+		if (password[0] != '\0') { \
+			password[0] = '\0'; \
+			while (NM_IN_SET (password[0], ' ', '\t')) \
+				password++; \
+		} else \
 			password = password_free = g_strdup (pwd_func (NM_SETTING_802_1X (setting))); \
-		success = set_func (NM_SETTING_802_1X (setting), path, password, scheme, NULL, error); \
-		g_free (val_strip); \
-		g_strfreev (strv); \
-		return success; \
+		return set_func (NM_SETTING_802_1X (setting), path, password, scheme, NULL, error); \
 	}
 
 DEFINE_SETTER_STR_LIST_MULTI (check_and_add_eap_method,
