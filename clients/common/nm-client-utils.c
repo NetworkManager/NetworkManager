@@ -173,18 +173,6 @@ finish:
 	return ret;
 }
 
-/*
- * Wrapper function for g_strsplit_set() that removes empty strings
- * from the vector as they are not useful in most cases.
- */
-char **
-nmc_strsplit_set (const char *str, const char *delimiter, int max_tokens)
-{
-	/* remove empty strings */
-	return _nm_utils_strv_cleanup (g_strsplit_set (str, delimiter, max_tokens),
-	                               FALSE, TRUE, FALSE);
-}
-
 gboolean
 matches (const char *cmd, const char *pattern)
 {

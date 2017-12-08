@@ -1555,18 +1555,18 @@ get_invisible_active_connections (NmCli *nmc)
 static GArray *
 parse_preferred_connection_order (const char *order, GError **error)
 {
-	char **strv, **iter;
+	gs_free const char **strv = NULL;
+	const char *const*iter;
 	const char *str;
 	GArray *order_arr;
 	NmcSortOrder val;
 	gboolean inverse, unique;
 	int i;
 
-	strv = nmc_strsplit_set (order, ":", -1);
-	if (!strv || !*strv) {
+	strv = nm_utils_strsplit_set (order, ":");
+	if (!strv) {
 		g_set_error (error, NMCLI_ERROR, 0,
 		             _("incorrect string '%s' of '--order' option"), order);
-		g_strfreev (strv);
 		return NULL;
 	}
 
@@ -1608,7 +1608,6 @@ parse_preferred_connection_order (const char *order, GError **error)
 			g_array_append_val (order_arr, val);
 	}
 
-	g_strfreev (strv);
 	return order_arr;
 }
 
@@ -2261,48 +2260,50 @@ activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_dat
 static GHashTable *
 parse_passwords (const char *passwd_file, GError **error)
 {
-	GHashTable *pwds_hash;
-	char *contents = NULL;
+	gs_unref_hashtable GHashTable *pwds_hash = NULL;
+	gs_free char *contents = NULL;
 	gsize len = 0;
 	GError *local_err = NULL;
-	char **lines, **iter;
+	gs_free const char **strv = NULL;
+	const char *const*iter;
 	char *pwd_spec, *pwd, *prop;
 	const char *setting;
 
 	pwds_hash = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 
 	if (!passwd_file)
-		return pwds_hash;
+		return g_steal_pointer (&pwds_hash);
 
-        /* Read the passwords file */
+	/* Read the passwords file */
 	if (!g_file_get_contents (passwd_file, &contents, &len, &local_err)) {
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 		             _("failed to read passwd-file '%s': %s"),
 		             passwd_file, local_err->message);
 		g_error_free (local_err);
-		g_hash_table_destroy (pwds_hash);
 		return NULL;
 	}
 
-	lines = nmc_strsplit_set (contents, "\r\n", -1);
-	for (iter = lines; *iter; iter++) {
-		pwd = strchr (*iter, ':');
+	strv = nm_utils_strsplit_set (contents, "\r\n");
+	for (iter = strv; *iter; iter++) {
+		gs_free char *iter_s = g_strdup (*iter);
+
+		pwd = strchr (iter_s, ':');
 		if (!pwd) {
 			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			             _("missing colon in 'password' entry '%s'"), *iter);
-			goto failure;
+			return NULL;
 		}
 		*(pwd++) = '\0';
 
-		prop = strchr (*iter, '.');
+		prop = strchr (iter_s, '.');
 		if (!prop) {
 			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			             _("missing dot in 'password' entry '%s'"), *iter);
-			goto failure;
+			return NULL;
 		}
 		*(prop++) = '\0';
 
-		setting = *iter;
+		setting = iter_s;
 		while (g_ascii_isspace (*setting))
 			setting++;
 		/* Accept wifi-sec or wifi instead of cumbersome '802-11-wireless-security' */
@@ -2311,21 +2312,13 @@ parse_passwords (const char *passwd_file, GError **error)
 		if (nm_setting_lookup_type (setting) == G_TYPE_INVALID) {
 			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			             _("invalid setting name in 'password' entry '%s'"), setting);
-			goto failure;
+			return NULL;
 		}
 
 		pwd_spec = g_strdup_printf ("%s.%s", setting, prop);
 		g_hash_table_insert (pwds_hash, pwd_spec, g_strdup (pwd));
 	}
-	g_strfreev (lines);
-	g_free (contents);
-	return pwds_hash;
-
-failure:
-	g_strfreev (lines);
-	g_free (contents);
-	g_hash_table_destroy (pwds_hash);
-	return NULL;
+	return g_steal_pointer (&pwds_hash);
 }
 
 

@@ -117,7 +117,6 @@ _parse_ip_route (int family,
                  GError **error)
 {
 	const int MAX_PREFIX = (family == AF_INET) ? 32 : 128;
-	char *plen = NULL;
 	const char *next_hop = NULL;
 	const char *canon_dest;
 	int prefix;
@@ -125,9 +124,11 @@ _parse_ip_route (int family,
 	GError *local = NULL;
 	gint64 metric = -1;
 	guint i;
-	gs_strfreev char **routev = NULL;
+	gs_free const char **routev = NULL;
 	gs_free char *str_clean = NULL;
-	char *dest;
+	gs_free char *dest_clone = NULL;
+	const char *dest;
+	const char *plen;
 	gs_unref_hashtable GHashTable *attrs = NULL;
 	GHashTable *tmp_attrs;
 #define ROUTE_SYNTAX _("The valid syntax is: 'ip[/prefix] [next-hop] [metric] [attribute=val]... [,ip[/prefix] ...]'")
@@ -137,8 +138,8 @@ _parse_ip_route (int family,
 	nm_assert (!error || !*error);
 
 	str_clean = g_strstrip (g_strdup (str));
-	routev = nmc_strsplit_set (str_clean, " \t", 0);
-	if (!routev || !routev[0]) {
+	routev = nm_utils_strsplit_set (str_clean, " \t");
+	if (!routev) {
 		g_set_error (error, 1, 0,
 		             "'%s' is not valid. %s",
 		             str, ROUTE_SYNTAX);
@@ -147,8 +148,13 @@ _parse_ip_route (int family,
 
 	dest = routev[0];
 	plen = strchr (dest, '/');  /* prefix delimiter */
-	if (plen)
-		*plen++ = '\0';
+	if (plen) {
+		dest_clone = g_strdup (dest);
+		plen = &dest_clone[plen - dest];
+		dest = dest_clone;
+		*((char *) plen) = '\0';
+		plen++;
+	}
 	prefix = MAX_PREFIX;
 	if (plen) {
 		if ((prefix = _nm_utils_ascii_str_to_int64 (plen, 10, 1, MAX_PREFIX, -1)) == -1) {
@@ -295,7 +301,7 @@ static NMTeamLinkWatcher *
 _parse_team_link_watcher (const char *str,
                           GError **error)
 {
-	gs_strfreev char **watcherv = NULL;
+	gs_free const char **watcherv = NULL;
 	gs_free char *str_clean = NULL;
 	guint i;
 	gs_free const char *name = NULL;
@@ -308,17 +314,17 @@ _parse_team_link_watcher (const char *str,
 	nm_assert (!error || !*error);
 
 	str_clean = g_strstrip (g_strdup (str));
-	watcherv = nmc_strsplit_set (str_clean, " \t", 0);
-	if (!watcherv || !watcherv[0]) {
+	watcherv = nm_utils_strsplit_set (str_clean, " \t");
+	if (!watcherv) {
 		g_set_error (error, 1, 0, "'%s' is not valid", str);
 		return NULL;
 	}
 
 	for (i = 0; watcherv[i]; i++) {
-		gs_strfreev char **pair = NULL;
+		gs_free const char **pair = NULL;
 
-		pair = nmc_strsplit_set (watcherv[i], "=", 0);
-		if (!pair[0]) {
+		pair = nm_utils_strsplit_set (watcherv[i], "=");
+		if (!pair) {
 			g_set_error (error, 1, 0, "'%s' is not valid: %s", watcherv[i],
 			             "properties should be specified as 'key=value'");
 			return NULL;
@@ -1170,22 +1176,21 @@ _set_fcn_gobject_mac (ARGS_SET_FCN)
 static gboolean
 _set_fcn_gobject_secret_flags (ARGS_SET_FCN)
 {
-	char **strv = NULL, **iter;
+	gs_free const char **strv = NULL;
+	const char **iter;
 	unsigned long flags = 0, val_int;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
-	strv = nmc_strsplit_set (value, " \t,", 0);
+	strv = nm_utils_strsplit_set (value, " \t,");
 	for (iter = strv; iter && *iter; iter++) {
 		if (!nmc_string_to_uint (*iter, TRUE, 0, ALL_SECRET_FLAGS, &val_int)) {
 			g_set_error (error, 1, 0, _("'%s' is not a valid flag number; use <0-%d>"),
 			             *iter, ALL_SECRET_FLAGS);
-			g_strfreev (strv);
 			return FALSE;
 		}
 		flags += val_int;
 	}
-	g_strfreev (strv);
 
 	/* Validate the flags number */
 	if (flags > ALL_SECRET_FLAGS) {
@@ -1572,18 +1577,19 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 	          const char **valid_strv, \
 	          GError **error) \
 	{ \
-		char **strv = NULL, **iter; \
+		gs_free const char **strv = NULL; \
+		gsize i; \
 		const char *item; \
-		g_return_val_if_fail (error == NULL || *error == NULL, FALSE); \
-		strv = nmc_strsplit_set (value, " \t,", 0); \
-		for (iter = strv; iter && *iter; iter++) { \
-			if (!(item = nmc_string_is_valid (g_strstrip (*iter), valid_strv, error))) { \
-				g_strfreev (strv); \
-				return FALSE; \
+		nm_assert (!error || !*error); \
+		strv = nm_utils_strsplit_set (value, " \t,"); \
+		if (strv) { \
+			for (i = 0; strv[i]; i++) { \
+				if (!(item = nmc_string_is_valid (strv[i], valid_strv, error))) { \
+					return FALSE; \
+				} \
+				set_func (s_macro (setting), item); \
 			} \
-			set_func (s_macro (setting), item); \
 		} \
-		g_strfreev (strv); \
 		return TRUE; \
 	}
 
@@ -1591,43 +1597,42 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 	static gboolean \
 	def_func (ARGS_SET_FCN) \
 	{ \
-		char **strv = NULL, **iter; \
+		gs_free const char **strv = NULL; \
+		const char **iter; \
 		const char **(*valid_func1_p) (s_type *) = valid_func1; \
 		const char * (*valid_func2_p) (const char *, const char *, GError **) = valid_func2; \
 		const char *opt_name, *opt_val; \
 		\
-		g_return_val_if_fail (error == NULL || *error == NULL, FALSE); \
+		nm_assert (!error || !*error); \
 		\
-		strv = nmc_strsplit_set (value, ",", 0); \
+		strv = nm_utils_strsplit_set (value, ","); \
 		for (iter = strv; iter && *iter; iter++) { \
-			char *left = g_strstrip (*iter); \
+			gs_free char *left_clone = g_strstrip (g_strdup (*iter)); \
+			char *left = left_clone; \
 			char *right = strchr (left, '='); \
 			if (!right) { \
 				g_set_error (error, 1, 0, _("'%s' is not valid; use <option>=<value>"), *iter); \
-				g_strfreev (strv); \
 				return FALSE; \
 			} \
 			*right++ = '\0'; \
+			g_strchomp (left); \
 			\
 			if (valid_func1_p) { \
 				const char **valid_options = valid_func1_p (s_macro (setting)); \
-				if (!(opt_name = nmc_string_is_valid (g_strstrip (left), valid_options, error))) { \
-					g_strfreev (strv); \
+				if (!(opt_name = nmc_string_is_valid (left, valid_options, error))) { \
 					return FALSE; \
 				} \
 			} else \
-				opt_name = g_strstrip (left);\
+				opt_name = left;\
 			\
-			opt_val = g_strstrip (right); \
+			opt_val = g_strchug (right); \
 			if (valid_func2_p) { \
 				if (!(opt_val = valid_func2_p ((const char *) left, (const char *) opt_val, error))) { \
-					g_strfreev (strv); \
 					return FALSE; \
 				}\
 			}\
 			add_func (s_macro (setting), opt_name, opt_val); \
 		} \
-		g_strfreev (strv); \
 		return TRUE; \
 	}
 
@@ -1682,47 +1687,46 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 	def_func (ARGS_SET_FCN) \
 	{ \
 		guint8 buf[32]; \
-		char **list = NULL, **iter; \
-		GSList *macaddr_blacklist = NULL; \
+		gs_free const char **strv = NULL; \
+		const char *const*iter; \
 		\
-		g_return_val_if_fail (error == NULL || *error == NULL, FALSE); \
+		nm_assert (!error || !*error); \
 		\
-		list = nmc_strsplit_set (value, " \t,", 0); \
-		for (iter = list; iter && *iter; iter++) { \
+		strv = nm_utils_strsplit_set (value, " \t,"); \
+		for (iter = strv; strv && *iter; iter++) { \
 			if (!nm_utils_hwaddr_aton (*iter, buf, ETH_ALEN)) { \
 				g_set_error (error, 1, 0, _("'%s' is not a valid MAC"), *iter); \
-				g_strfreev (list); \
-				g_slist_free (macaddr_blacklist); \
 				return FALSE; \
 			} \
 		} \
 		\
-		for (iter = list; iter && *iter; iter++) \
+		for (iter = strv; strv && *iter; iter++) \
 			add_func (s_macro (setting), *iter); \
 		\
-		g_strfreev (list); \
 		return TRUE; \
 	}
 
 
 static gboolean
-verify_string_list (char **strv,
+verify_string_list (const char *const*strv,
                     const char *prop,
                     gboolean (*validate_func) (const char *),
                     GError **error)
 {
-	char **iter;
+	const char *const*iter;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
-	for (iter = strv; iter && *iter; iter++) {
-		if (**iter == '\0')
-			continue;
-		if (validate_func) {
-			if (!validate_func (*iter)) {
-				g_set_error (error, 1, 0, _("'%s' is not valid"),
-				             *iter);
-				return FALSE;
+	if (strv) {
+		for (iter = strv; *iter; iter++) {
+			if (**iter == '\0')
+				continue;
+			if (validate_func) {
+				if (!validate_func (*iter)) {
+					g_set_error (error, 1, 0, _("'%s' is not valid"),
+					             *iter);
+					return FALSE;
+				}
 			}
 		}
 	}
@@ -1778,7 +1782,7 @@ check_and_set_string (NMSetting *setting,
 {
 	const char *checked_val;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
 	checked_val = nmc_string_is_valid (val, valid_strv, error);
 	if (!checked_val)
@@ -1793,7 +1797,7 @@ _set_fcn_gobject_flags (ARGS_SET_FCN)
 {
 	unsigned long val_int;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
 	if (!nmc_string_to_uint (value, TRUE, 0, G_MAXUINT, &val_int)) {
 		g_set_error (error, 1, 0, _("'%s' is not a valid number (or out of range)"), value);
@@ -1813,7 +1817,7 @@ _set_fcn_gobject_ssid (ARGS_SET_FCN)
 {
 	GBytes *ssid;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
 	if (strlen (value) > 32) {
 		g_set_error (error, 1, 0, _("'%s' is not valid"), value);
@@ -1829,7 +1833,7 @@ _set_fcn_gobject_ssid (ARGS_SET_FCN)
 static gboolean
 _set_fcn_gobject_ifname (ARGS_SET_FCN)
 {
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
 	if (!nm_utils_is_valid_iface_name (value, error))
 		return FALSE;
@@ -1891,14 +1895,13 @@ static gboolean
 nmc_property_set_bytes (NMSetting *setting, const char *prop, const char *value, GError **error)
 {
 	gs_free char *val_strip = NULL;
-	gs_strfreev char **strv = NULL;
-	const char *delimiters = " \t,";
-	char **iter;
+	gs_free const char **strv = NULL;
+	const char **iter;
 	GBytes *bytes;
 	GByteArray *array = NULL;
 	gboolean success = TRUE;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
 	val_strip = g_strstrip (g_strdup (value));
 
@@ -1908,8 +1911,8 @@ nmc_property_set_bytes (NMSetting *setting, const char *prop, const char *value,
 		goto done;
 
 	/* Otherwise, consider the following format: AA b 0xCc D */
-	strv = nmc_strsplit_set (val_strip, delimiters, 0);
-	array = g_byte_array_sized_new (g_strv_length (strv));
+	strv = nm_utils_strsplit_set (val_strip, " \t");
+	array = g_byte_array_sized_new (NM_PTRARRAY_LEN (strv));
 	for (iter = strv; iter && *iter; iter++) {
 		int v;
 		guint8 v8;
@@ -2113,15 +2116,16 @@ _get_fcn_802_1x_phase2_private_key (ARGS_GET_FCN)
 	static gboolean \
 	def_func (ARGS_SET_FCN) \
 	{ \
-		char **strv = NULL; \
-		guint i = 0; \
+		const char **strv = NULL; \
+		gsize i; \
 		\
-		g_return_val_if_fail (error == NULL || *error == NULL, FALSE); \
+		nm_assert (error == NULL || *error == NULL); \
 		\
-		strv = nmc_strsplit_set (value, " \t,", 0); \
-		while (strv && strv[i]) \
-			set_func (NM_SETTING_802_1X (setting), strv[i++]); \
-		g_strfreev (strv); \
+		strv = nm_utils_strsplit_set (value, " \t,"); \
+		if (strv) { \
+			for (i = 0; strv[i]; i++) \
+				set_func (NM_SETTING_802_1X (setting), strv[i++]); \
+		} \
 		return TRUE; \
 	}
 
@@ -2500,25 +2504,20 @@ permissions_valid (const char *perm)
 static gboolean
 _set_fcn_connection_permissions (ARGS_SET_FCN)
 {
-	char **strv = NULL;
-	guint i = 0;
+	gs_free const char **strv = NULL;
+	gsize i;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
-	strv = nmc_strsplit_set (value, " \t,", 0);
-	if (!verify_string_list (strv, property_info->property_name, permissions_valid, error)) {
-		g_strfreev (strv);
+	strv = nm_utils_strsplit_set (value, " \t,");
+	if (!verify_string_list (strv, property_info->property_name, permissions_valid, error))
 		return FALSE;
-	}
 
 	for (i = 0; strv && strv[i]; i++) {
-		const char *user;
+		const char *user = strv[i];
 
-		if (strncmp (strv[i], PERM_USER_PREFIX, strlen (PERM_USER_PREFIX)) == 0)
-			user = strv[i]+strlen (PERM_USER_PREFIX);
-		else
-			user = strv[i];
-
+		if (strncmp (user, PERM_USER_PREFIX, NM_STRLEN (PERM_USER_PREFIX)) == 0)
+			user += NM_STRLEN (PERM_USER_PREFIX);
 		nm_setting_connection_add_permission (NM_SETTING_CONNECTION (setting), "user", user, NULL);
 	}
 
@@ -2546,7 +2545,7 @@ DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_connection_permissions,
 static gboolean
 _set_fcn_connection_master (ARGS_SET_FCN)
 {
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
 	if (!value)
 		;
@@ -2632,15 +2631,13 @@ _complete_fcn_connection_master (ARGS_COMPLETE_FCN)
 static gboolean
 _set_fcn_connection_secondaries (ARGS_SET_FCN)
 {
-	gs_strfreev char **strv = NULL;
-	char **iter;
+	gs_free const char **strv = NULL;
+	const char *const*iter;
 
-	strv = nmc_strsplit_set (value, " \t,", 0);
+	strv = nm_utils_strsplit_set (value, " \t,");
 	if (strv) {
-		for (iter = strv; *iter; iter++) {
-			if (**iter)
-				nm_setting_connection_add_secondary (NM_SETTING_CONNECTION (setting), *iter);
-		}
+		for (iter = strv; *iter; iter++)
+			nm_setting_connection_add_secondary (NM_SETTING_CONNECTION (setting), *iter);
 	}
 	return TRUE;
 }
@@ -2827,19 +2824,21 @@ DEFINE_DCB_UINT_GETTER (_get_fcn_dcb_priority_traffic_class, nm_setting_dcb_get_
 static gboolean
 _set_fcn_dcb_flags (ARGS_SET_FCN)
 {
-	char **strv = NULL, **iter;
 	NMSettingDcbFlags flags = NM_SETTING_DCB_FLAG_NONE;
 	long int t;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
 	/* Check for overall hex numeric value */
 	t = _nm_utils_ascii_str_to_int64 (value, 0, 0, DCB_ALL_FLAGS, -1);
 	if (t != -1)
 		flags = (guint) t;
 	else {
+		gs_free const char **strv = NULL;
+		const char *const*iter;
+
 		/* Check for individual flag numbers */
-		strv = nmc_strsplit_set (value, " \t,", 0);
+		strv = nm_utils_strsplit_set (value, " \t,");
 		for (iter = strv; iter && *iter; iter++) {
 			t = _nm_utils_ascii_str_to_int64 (*iter, 0, 0, DCB_ALL_FLAGS, -1);
 
@@ -2862,7 +2861,6 @@ _set_fcn_dcb_flags (ARGS_SET_FCN)
 				return FALSE;
 			}
 		}
-		g_strfreev (strv);
 	}
 
 	/* Validate the flags according to the property spec */
@@ -2939,7 +2937,7 @@ _set_fcn_dcb_priority_flow_control (ARGS_SET_FCN)
 	guint i = 0;
 	guint nums[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
 	if (!dcb_parse_uint_array (value, 1, 0, nums, error))
 		return FALSE;
@@ -2957,7 +2955,7 @@ _set_fcn_dcb_priority_group_id (ARGS_SET_FCN)
 	guint i = 0;
 	guint nums[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
 	if (!dcb_parse_uint_array (value, 7, 15, nums, error))
 		return FALSE;
@@ -2975,7 +2973,7 @@ _set_fcn_dcb_priority_group_bandwidth (ARGS_SET_FCN)
 	guint i = 0, sum = 0;
 	guint nums[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
 	if (!dcb_parse_uint_array (value, 100, 0, nums, error))
 		return FALSE;
@@ -3000,7 +2998,7 @@ _set_fcn_dcb_priority_bandwidth (ARGS_SET_FCN)
 	guint i = 0;
 	guint nums[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
 	if (!dcb_parse_uint_array (value, 100, 0, nums, error))
 		return FALSE;
@@ -3018,7 +3016,7 @@ _set_fcn_dcb_priority_strict (ARGS_SET_FCN)
 	guint i = 0;
 	guint nums[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
 	if (!dcb_parse_uint_array (value, 1, 0, nums, error))
 		return FALSE;
@@ -3036,7 +3034,7 @@ _set_fcn_dcb_priority_traffic_class (ARGS_SET_FCN)
 	guint i = 0;
 	guint nums[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
 	if (!dcb_parse_uint_array (value, 7, 0, nums, error))
 		return FALSE;
@@ -3053,7 +3051,7 @@ _set_fcn_gsm_sim_operator_id (ARGS_SET_FCN)
 {
 	const char *p = value;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
 	if (strlen (value) != 5 && strlen (value) != 6) {
 		g_set_error_literal (error, 1, 0, _("SIM operator ID must be a 5 or 6 number MCCMNC code"));
@@ -3079,7 +3077,7 @@ _set_fcn_infiniband_p_key (ARGS_SET_FCN)
 	const gint64 INVALID = G_MININT64;
 	gint64 p_key;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
 	if (nm_streq (value, "default"))
 		p_key = -1;
@@ -3234,22 +3232,22 @@ _set_fcn_ip4_config_method (ARGS_SET_FCN)
 static gboolean
 _set_fcn_ip4_config_dns (ARGS_SET_FCN)
 {
-	char **strv = NULL, **iter, *addr;
-	guint32 ip4_addr;
+	const char **strv = NULL;
+	const char *const*iter;
+	in_addr_t ip4_addr;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
-	strv = nmc_strsplit_set (value, " \t,", 0);
+	strv = nm_utils_strsplit_set (value, " \t,");
 	for (iter = strv; iter && *iter; iter++) {
-		addr = g_strstrip (*iter);
+		gs_free char *addr = g_strstrip (g_strdup (*iter));
+
 		if (inet_pton (AF_INET, addr, &ip4_addr) < 1) {
 			g_set_error (error, 1, 0, _("invalid IPv4 address '%s'"), addr);
-			g_strfreev (strv);
 			return FALSE;
 		}
 		nm_setting_ip_config_add_dns (NM_SETTING_IP_CONFIG (setting), addr);
 	}
-	g_strfreev (strv);
 	return TRUE;
 }
 
@@ -3280,21 +3278,19 @@ DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv4_config_dns,
 static gboolean
 _set_fcn_ip4_config_dns_search (ARGS_SET_FCN)
 {
-	char **strv = NULL;
-	guint i = 0;
+	gs_free const char **strv = NULL;
+	gsize i;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
-	strv = nmc_strsplit_set (value, " \t,", 0);
-	if (!verify_string_list (strv, property_info->property_name, nmc_util_is_domain, error)) {
-		g_strfreev (strv);
+	strv = nm_utils_strsplit_set (value, " \t,");
+	if (!verify_string_list (strv, property_info->property_name, nmc_util_is_domain, error))
 		return FALSE;
+
+	if (strv) {
+		for (i = 0; strv[i]; i++)
+			nm_setting_ip_config_add_dns_search (NM_SETTING_IP_CONFIG (setting), strv[i]);
 	}
-
-	while (strv && strv[i])
-		nm_setting_ip_config_add_dns_search (NM_SETTING_IP_CONFIG (setting), strv[i++]);
-	g_strfreev (strv);
-
 	return TRUE;
 }
 
@@ -3321,17 +3317,17 @@ DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv4_config_dns_search,
 static gboolean
 _set_fcn_ip4_config_dns_options (ARGS_SET_FCN)
 {
-	char **strv = NULL;
-	guint i = 0;
+	gs_free const char **strv = NULL;
+	gsize i;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
 	nm_setting_ip_config_clear_dns_options (NM_SETTING_IP_CONFIG (setting), TRUE);
-	strv = nmc_strsplit_set (value, " \t,", 0);
-	while (strv && strv[i])
-		nm_setting_ip_config_add_dns_option (NM_SETTING_IP_CONFIG (setting), strv[i++]);
-	g_strfreev (strv);
-
+	strv = nm_utils_strsplit_set (value, " \t,");
+	if (strv) {
+		for (i = 0; strv[i]; i++)
+			nm_setting_ip_config_add_dns_option (NM_SETTING_IP_CONFIG (setting), strv[i]);
+	}
 	return TRUE;
 }
 
@@ -3358,12 +3354,12 @@ DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv4_config_dns_options,
 static gboolean
 _set_fcn_ip4_config_addresses (ARGS_SET_FCN)
 {
-	gs_strfreev char **strv = NULL;
+	gs_free const char **strv = NULL;
 	const char *const*iter;
 	NMIPAddress *ip4addr;
 
-	strv = nmc_strsplit_set (value, ",", 0);
-	for (iter = (const char *const*) strv; *iter; iter++) {
+	strv = nm_utils_strsplit_set (value, ",");
+	for (iter = strv; *iter; iter++) {
 		ip4addr = _parse_ip_address (AF_INET, *iter, error);
 		if (!ip4addr)
 			return FALSE;
@@ -3418,12 +3414,12 @@ _set_fcn_ip4_config_gateway (ARGS_SET_FCN)
 static gboolean
 _set_fcn_ip4_config_routes (ARGS_SET_FCN)
 {
-	gs_strfreev char **strv = NULL;
+	gs_free const char **strv = NULL;
 	const char *const*iter;
 	NMIPRoute *ip4route;
 
-	strv = nmc_strsplit_set (value, ",", 0);
-	for (iter = (const char *const*) strv; *iter; iter++) {
+	strv = nm_utils_strsplit_set (value, ",");
+	for (iter = strv; *iter; iter++) {
 		ip4route = _parse_ip_route (AF_INET, *iter, error);
 		if (!ip4route)
 			return FALSE;
@@ -3488,22 +3484,22 @@ _set_fcn_ip6_config_method (ARGS_SET_FCN)
 static gboolean
 _set_fcn_ip6_config_dns (ARGS_SET_FCN)
 {
-	char **strv = NULL, **iter, *addr;
+	gs_free const char **strv = NULL;
+	const char *const*iter;
 	struct in6_addr ip6_addr;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
-	strv = nmc_strsplit_set (value, " \t,", 0);
+	strv = nm_utils_strsplit_set (value, " \t,");
 	for (iter = strv; iter && *iter; iter++) {
-		addr = g_strstrip (*iter);
+		gs_free char *addr  = g_strstrip (g_strdup (*iter));
+
 		if (inet_pton (AF_INET6, addr, &ip6_addr) < 1) {
 			g_set_error (error, 1, 0, _("invalid IPv6 address '%s'"), addr);
-			g_strfreev (strv);
 			return FALSE;
 		}
 		nm_setting_ip_config_add_dns (NM_SETTING_IP_CONFIG (setting), addr);
 	}
-	g_strfreev (strv);
 	return TRUE;
 }
 
@@ -3534,21 +3530,19 @@ DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv6_config_dns,
 static gboolean
 _set_fcn_ip6_config_dns_search (ARGS_SET_FCN)
 {
-	char **strv = NULL;
-	guint i = 0;
+	gs_free const char **strv = NULL;
+	gsize i;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
-	strv = nmc_strsplit_set (value, " \t,", 0);
-	if (!verify_string_list (strv, property_info->property_name, nmc_util_is_domain, error)) {
-		g_strfreev (strv);
+	strv = nm_utils_strsplit_set (value, " \t,");
+	if (!verify_string_list (strv, property_info->property_name, nmc_util_is_domain, error))
 		return FALSE;
+
+	if (strv) {
+		for (i = 0; strv[i]; i++)
+			nm_setting_ip_config_add_dns_search (NM_SETTING_IP_CONFIG (setting), strv[i]);
 	}
-
-	while (strv && strv[i])
-		nm_setting_ip_config_add_dns_search (NM_SETTING_IP_CONFIG (setting), strv[i++]);
-	g_strfreev (strv);
-
 	return TRUE;
 }
 
@@ -3575,17 +3569,17 @@ DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv6_config_dns_search,
 static gboolean
 _set_fcn_ip6_config_dns_options (ARGS_SET_FCN)
 {
-	char **strv = NULL;
-	guint i = 0;
+	gs_free const char **strv = NULL;
+	gsize i;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
 	nm_setting_ip_config_clear_dns_options (NM_SETTING_IP_CONFIG (setting), TRUE);
-	strv = nmc_strsplit_set (value, " \t,", 0);
-	while (strv && strv[i])
-		nm_setting_ip_config_add_dns_option (NM_SETTING_IP_CONFIG (setting), strv[i++]);
-	g_strfreev (strv);
-
+	strv = nm_utils_strsplit_set (value, " \t,");
+	if (strv) {
+		for (i = 0; strv[i]; i++)
+			nm_setting_ip_config_add_dns_option (NM_SETTING_IP_CONFIG (setting), strv[i]);
+	}
 	return TRUE;
 }
 
@@ -3619,12 +3613,12 @@ _dns_options_is_default (NMSettingIPConfig *setting)
 static gboolean
 _set_fcn_ip6_config_addresses (ARGS_SET_FCN)
 {
-	gs_strfreev char **strv = NULL;
+	gs_free const char **strv = NULL;
 	const char *const*iter;
 	NMIPAddress *ip6addr;
 
-	strv = nmc_strsplit_set (value, ",", 0);
-	for (iter = (const char *const*) strv; *iter; iter++) {
+	strv = nm_utils_strsplit_set (value, ",");
+	for (iter = strv; strv && *iter; iter++) {
 		ip6addr = _parse_ip_address (AF_INET6, *iter, error);
 		if (!ip6addr)
 			return FALSE;
@@ -3679,12 +3673,12 @@ _set_fcn_ip6_config_gateway (ARGS_SET_FCN)
 static gboolean
 _set_fcn_ip6_config_routes (ARGS_SET_FCN)
 {
-	gs_strfreev char **strv = NULL;
+	gs_free const char **strv = NULL;
 	const char *const*iter;
 	NMIPRoute *ip6route;
 
-	strv = nmc_strsplit_set (value, ",", 0);
-	for (iter = (const char *const*) strv; *iter; iter++) {
+	strv = nm_utils_strsplit_set (value, ",");
+	for (iter = strv; strv && *iter; iter++) {
 		ip6route = _parse_ip_route (AF_INET6, *iter, error);
 		if (!ip6route)
 			return FALSE;
@@ -3723,7 +3717,7 @@ _set_fcn_ip6_config_ip6_privacy (ARGS_SET_FCN)
 {
 	unsigned long val_int;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
 	if (!nmc_string_to_uint (value, FALSE, 0, 0, &val_int)) {
 		g_set_error (error, 1, 0, _("'%s' is not a number"), value);
@@ -3764,7 +3758,7 @@ _set_fcn_olpc_mesh_channel (ARGS_SET_FCN)
 {
 	unsigned long chan_int;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
 	if (!nmc_string_to_uint (value, TRUE, 1, 13, &chan_int)) {
 		g_set_error (error, 1, 0, _("'%s' is not a valid channel; use <1-13>"), value);
@@ -3959,24 +3953,22 @@ _is_valid_team_runner_tx_hash_element (const char *tx_hash_element)
 static gboolean
 _set_fcn_team_runner_tx_hash (ARGS_SET_FCN)
 {
-	char **strv = NULL;
-	guint i = 0;
+	gs_free const char **strv = NULL;
+	gsize i;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
-	strv = _nm_utils_strv_cleanup (g_strsplit_set (value, " \t,", 0),
-	                               TRUE, TRUE, TRUE);
-	if (!verify_string_list (strv, property_info->property_name,
+	strv = nm_utils_strsplit_set (value, " \t,");
+	if (!verify_string_list (strv,
+	                         property_info->property_name,
 	                         _is_valid_team_runner_tx_hash_element,
-	                         error)) {
-		g_strfreev (strv);
+	                         error))
 		return FALSE;
+
+	if (strv) {
+		for (i = 0; strv[i]; i++)
+			nm_setting_team_add_runner_tx_hash (NM_SETTING_TEAM (setting), strv[i]);
 	}
-
-	while (strv && strv[i])
-		nm_setting_team_add_runner_tx_hash (NM_SETTING_TEAM (setting), strv[i++]);
-	g_strfreev (strv);
-
 	return TRUE;
 }
 
@@ -4031,12 +4023,12 @@ _get_fcn_team_link_watchers (ARGS_GET_FCN)
 static gboolean
 _set_fcn_team_link_watchers (ARGS_SET_FCN)
 {
-	gs_strfreev char **strv = NULL;
+	gs_free const char **strv = NULL;
 	const char *const*iter;
 	NMTeamLinkWatcher *watcher;
 
-	strv = nmc_strsplit_set (value, ",", 0);
-	for (iter = (const char *const*) strv; *iter; iter++) {
+	strv = nm_utils_strsplit_set (value, ",");
+	for (iter = strv; strv && *iter; iter++) {
 		watcher = _parse_team_link_watcher (*iter, error);
 		if (!watcher)
 			return FALSE;
@@ -4103,12 +4095,12 @@ _get_fcn_team_port_link_watchers (ARGS_GET_FCN)
 static gboolean
 _set_fcn_team_port_link_watchers (ARGS_SET_FCN)
 {
-	gs_strfreev char **strv = NULL;
+	gs_free const char **strv = NULL;
 	const char *const*iter;
 	NMTeamLinkWatcher *watcher;
 
-	strv = nmc_strsplit_set (value, ",", 0);
-	for (iter = (const char *const*) strv; *iter; iter++) {
+	strv = nm_utils_strsplit_set (value, ",");
+	for (iter = strv; strv && *iter; iter++) {
 		watcher = _parse_team_link_watcher (*iter, error);
 		if (!watcher)
 			return FALSE;
@@ -4369,20 +4361,18 @@ DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_wired_mac_address_blacklist,
 static gboolean
 _set_fcn_wired_s390_subchannels (ARGS_SET_FCN)
 {
-	char **strv = NULL;
-	int len;
+	gs_free const char **strv = NULL;
+	gsize len;
 
-	strv = nmc_strsplit_set (value, " ,\t", 0);
-	len = g_strv_length (strv);
+	strv = nm_utils_strsplit_set (value, " ,\t");
+	len = NM_PTRARRAY_LEN (strv);
 	if (len != 2 && len != 3) {
 		g_set_error (error, 1, 0, _("'%s' is not valid; 2 or 3 strings should be provided"),
 		             value);
-		g_strfreev (strv);
 		return FALSE;
 	}
 
 	g_object_set (setting, property_info->property_name, strv, NULL);
-	g_strfreev (strv);
 	return TRUE;
 }
 
@@ -4454,7 +4444,7 @@ _set_fcn_wireless_channel (ARGS_SET_FCN)
 {
 	unsigned long chan_int;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
 	if (!nmc_string_to_uint (value, FALSE, 0, 0, &chan_int)) {
 		g_set_error (error, 1, 0, _("'%s' is not a valid channel"), value);
@@ -4650,7 +4640,7 @@ _set_fcn_wireless_wep_key (ARGS_SET_FCN)
 	NMWepKeyType type;
 	guint32 prev_idx, idx;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+	nm_assert (!error || !*error);
 
 	/* Get currently set type */
 	type = nm_setting_wireless_security_get_wep_key_type (NM_SETTING_WIRELESS_SECURITY (setting));
