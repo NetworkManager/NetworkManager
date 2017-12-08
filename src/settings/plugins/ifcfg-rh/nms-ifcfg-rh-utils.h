@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2008 - 2012 Red Hat, Inc.
+ * (C) Copyright 2008 - 2017 Red Hat, Inc.
  */
 
 #ifndef _UTILS_H_
@@ -45,7 +45,6 @@ char *utils_get_route6_path (const char *parent);
 shvarFile *utils_get_extra_ifcfg (const char *parent, const char *tag, gboolean should_create);
 shvarFile *utils_get_keys_ifcfg (const char *parent, gboolean should_create);
 shvarFile *utils_get_route_ifcfg (const char *parent, gboolean should_create);
-shvarFile *utils_get_route6_ifcfg (const char *parent, gboolean should_create);
 
 gboolean utils_has_route_file_new_syntax (const char *filename);
 gboolean utils_has_complex_routes (const char *filename, int addr_family);
