@@ -2706,7 +2706,9 @@ src_devices_wifi_libnm_device_plugin_wifi_la_SOURCES = \
 if WITH_IWD
 src_devices_wifi_libnm_device_plugin_wifi_la_SOURCES += \
 	src/devices/wifi/nm-device-iwd.c \
-	src/devices/wifi/nm-device-iwd.h
+	src/devices/wifi/nm-device-iwd.h \
+	src/devices/wifi/nm-iwd-manager.c \
+	src/devices/wifi/nm-iwd-manager.h
 endif
 
 src_devices_wifi_libnm_device_plugin_wifi_la_CPPFLAGS = \

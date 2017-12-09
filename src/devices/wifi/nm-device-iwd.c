@@ -1610,6 +1610,47 @@ properties_changed (GDBusProxy *proxy, GVariant *changed_properties,
 	g_variant_iter_free (iter);
 }
 
+void
+nm_device_iwd_set_dbus_object (NMDeviceIwd *self, GDBusObject *object)
+{
+	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	GDBusInterface *interface;
+
+	if (!nm_g_object_ref_set ((GObject **) &priv->dbus_obj, (GObject *) object))
+		return;
+
+	if (priv->dbus_proxy) {
+		g_signal_handlers_disconnect_by_func (priv->dbus_proxy,
+		                                      properties_changed, self);
+
+		g_clear_object (&priv->dbus_proxy);
+	}
+
+	if (priv->enabled)
+		nm_device_queue_recheck_available (NM_DEVICE (self),
+		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
+		                                   NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
+
+	if (!object) {
+		priv->can_scan = FALSE;
+
+		cleanup_association_attempt (self, FALSE);
+		return;
+	}
+
+	interface = g_dbus_object_get_interface (object, NM_IWD_DEVICE_INTERFACE);
+	priv->dbus_proxy = G_DBUS_PROXY (interface);
+
+	g_signal_connect (priv->dbus_proxy, "g-properties-changed",
+	                  G_CALLBACK (properties_changed), self);
+
+	/* Call Disconnect to make sure IWD's autoconnect is disabled.  We've
+	 * most likely just brought the device UP so it would be in
+	 * autoconnect by default.
+	 */
+	send_disconnect (self);
+}
+
 /*****************************************************************************/
 
 static void

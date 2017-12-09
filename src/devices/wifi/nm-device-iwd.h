@@ -53,4 +53,6 @@ GType nm_device_iwd_get_type (void);
 
 NMDevice *nm_device_iwd_new (const char *iface, NMDeviceWifiCapabilities capabilities);
 
+void nm_device_iwd_set_dbus_object (NMDeviceIwd *device, GDBusObject *object);
+
 #endif /* __NETWORKMANAGER_DEVICE_IWD_H__ */
