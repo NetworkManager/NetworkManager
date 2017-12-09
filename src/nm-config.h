@@ -65,6 +65,7 @@
 #define NM_CONFIG_KEYFILE_KEY_MAIN_DEBUG                    "debug"
 #define NM_CONFIG_KEYFILE_KEY_MAIN_HOSTNAME_MODE            "hostname-mode"
 #define NM_CONFIG_KEYFILE_KEY_MAIN_SLAVES_ORDER             "slaves-order"
+#define NM_CONFIG_KEYFILE_KEY_MAIN_WIFI_BACKEND             "wifi-backend"
 #define NM_CONFIG_KEYFILE_KEY_LOGGING_BACKEND               "backend"
 #define NM_CONFIG_KEYFILE_KEY_CONFIG_ENABLE                 "enable"
 #define NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS            ".was"
