@@ -1430,3 +1430,88 @@ nm_wifi_ap_class_init (NMWifiAPClass *ap_class)
 	                                        NULL);
 }
 
+/*****************************************************************************/
+
+static int
+ap_id_compare (gconstpointer p_a, gconstpointer p_b, gpointer user_data)
+{
+	guint64 a_id = nm_wifi_ap_get_id (*((NMWifiAP **) p_a));
+	guint64 b_id = nm_wifi_ap_get_id (*((NMWifiAP **) p_b));
+
+	return a_id < b_id ? -1 : (a_id == b_id ? 0 : 1);
+}
+
+NMWifiAP **
+nm_wifi_aps_get_sorted (GHashTable *aps, gboolean include_without_ssid)
+{
+	NMWifiAP **list;
+	GHashTableIter iter;
+	NMWifiAP *ap;
+	gsize i, n;
+
+	n = g_hash_table_size (aps);
+	list = g_new (NMWifiAP *, n + 1);
+
+	i = 0;
+	if (n > 0) {
+		g_hash_table_iter_init (&iter, aps);
+		while (g_hash_table_iter_next (&iter, NULL, (gpointer) &ap)) {
+			nm_assert (i < n);
+			if (   include_without_ssid
+			    || nm_wifi_ap_get_ssid (ap))
+				list[i++] = ap;
+		}
+		nm_assert (i <= n);
+		nm_assert (!include_without_ssid || i == n);
+
+		g_qsort_with_data (list,
+		                   i,
+		                   sizeof (gpointer),
+		                   ap_id_compare,
+		                   NULL);
+	}
+	list[i] = NULL;
+	return list;
+}
+
+const char **
+nm_wifi_aps_get_sorted_paths (GHashTable *aps, gboolean include_without_ssid)
+{
+	gpointer *list;
+	gsize i, j;
+
+	list = (gpointer *) nm_wifi_aps_get_sorted (aps, include_without_ssid);
+	for (i = 0, j = 0; list[i]; i++) {
+		NMWifiAP *ap = list[i];
+		const char *path;
+
+		/* update @list inplace to hold instead the export-path. */
+		path = nm_exported_object_get_path (NM_EXPORTED_OBJECT (ap));
+		nm_assert (path);
+		list[j++] = (gpointer) path;
+	}
+	return (const char **) list;
+}
+
+NMWifiAP *
+nm_wifi_aps_find_first_compatible (GHashTable *aps,
+                                   NMConnection *connection,
+                                   gboolean allow_unstable_order)
+{
+	GHashTableIter iter;
+	NMWifiAP *ap;
+	NMWifiAP *cand_ap = NULL;
+
+	g_return_val_if_fail (connection != NULL, NULL);
+
+	g_hash_table_iter_init (&iter, aps);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &ap)) {
+		if (!nm_wifi_ap_check_compatible (ap, connection))
+			continue;
+		if (allow_unstable_order)
+			return ap;
+		if (!cand_ap || (nm_wifi_ap_get_id (cand_ap) < nm_wifi_ap_get_id (ap)))
+			cand_ap = ap;
+	}
+	return cand_ap;
+}

@@ -95,4 +95,12 @@ const char       *nm_wifi_ap_to_string                (const NMWifiAP *self,
                                                        gulong buf_len,
                                                        gint32 now_s);
 
+NMWifiAP        **nm_wifi_aps_get_sorted              (GHashTable *aps,
+                                                       gboolean include_without_ssid);
+const char      **nm_wifi_aps_get_sorted_paths        (GHashTable *aps,
+                                                       gboolean include_without_ssid);
+NMWifiAP         *nm_wifi_aps_find_first_compatible   (GHashTable *aps,
+                                                       NMConnection *connection,
+                                                       gboolean allow_unstable_order);
+
 #endif /* __NM_WIFI_AP_H__ */
