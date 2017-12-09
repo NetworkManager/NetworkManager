@@ -280,6 +280,26 @@ else
 fi
 
 dnl
+dnl Default to using wpa_supplicant but allow IWD as wifi backend
+dnl
+AC_ARG_WITH(iwd,
+            AS_HELP_STRING([--with-iwd=yes],
+                           [Support IWD as wifi-backend in addition to wpa_supplicant (experimental)]),
+            ac_with_iwd=$withval, ac_with_iwd="no")
+if test "$ac_with_iwd" != 'no'; then
+	ac_with_iwd='yes'
+fi
+if test x"$ac_with_iwd" = x"yes"; then
+	if test "$enable_wifi" != "yes"; then
+		AC_MSG_ERROR(Enabling IWD support and disabling Wi-Fi makes no sense)
+	fi
+	AC_DEFINE(WITH_IWD, 1, [Define to compile with the IWD wifi-backend])
+else
+	AC_DEFINE(WITH_IWD, 0, [Define to compile without the IWD wifi-backend])
+fi
+AM_CONDITIONAL(WITH_IWD, test x"${ac_with_iwd}" = x"yes")
+
+dnl
 dnl Check for newer VLAN flags
 dnl
 AC_MSG_CHECKING([Linux kernel VLAN_FLAG_LOOSE_BINDING enum value])
@@ -1417,6 +1437,7 @@ echo "  ovs: $enable_ovs"
 echo "  libnm-glib: $with_libnm_glib"
 echo "  nmcli: $build_nmcli"
 echo "  nmtui: $build_nmtui"
+echo "  iwd: $ac_with_iwd"
 echo
 
 echo "Configuration plugins (main.plugins=${config_plugins_default})"
