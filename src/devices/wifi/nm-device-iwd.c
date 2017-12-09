@@ -1651,6 +1651,33 @@ nm_device_iwd_set_dbus_object (NMDeviceIwd *self, GDBusObject *object)
 	send_disconnect (self);
 }
 
+const gchar *
+nm_device_iwd_agent_psk_query (NMDeviceIwd *self)
+{
+	NMActRequest *req;
+	NMConnection *connection;
+	NMSettingWireless *s_wireless;
+	NMSettingWirelessSecurity *s_wireless_sec;
+
+	req = nm_device_get_act_request (NM_DEVICE (self));
+	if (!req)
+		return NULL;
+
+	connection = nm_act_request_get_applied_connection (req);
+	if (!connection)
+		return NULL;
+
+	s_wireless = nm_connection_get_setting_wireless (connection);
+	if (!s_wireless)
+		return NULL;
+
+	s_wireless_sec = nm_connection_get_setting_wireless_security (connection);
+	if (!s_wireless_sec)
+		return NULL;
+
+	return nm_setting_wireless_security_get_psk (s_wireless_sec);
+}
+
 /*****************************************************************************/
 
 static void

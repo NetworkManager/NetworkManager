@@ -28,6 +28,7 @@
 #include "nm-logging.h"
 #include "nm-manager.h"
 #include "nm-device-iwd.h"
+#include "nm-utils/nm-random-utils.h"
 
 /*****************************************************************************/
 
@@ -35,6 +36,8 @@ typedef struct {
 	GCancellable *cancellable;
 	gboolean running;
 	GDBusObjectManager *object_manager;
+	guint agent_id;
+	gchar *agent_path;
 } NMIwdManagerPrivate;
 
 struct _NMIwdManager {
@@ -69,6 +72,165 @@ G_DEFINE_TYPE (NMIwdManager, nm_iwd_manager, G_TYPE_OBJECT)
 			          __prefix _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
 		} \
 	} G_STMT_END
+
+/*****************************************************************************/
+
+static void
+psk_agent_dbus_method_cb (GDBusConnection *connection,
+                          const gchar *sender, const gchar *object_path,
+                          const gchar *interface_name, const gchar *method_name,
+                          GVariant *parameters,
+                          GDBusMethodInvocation *invocation,
+                          gpointer user_data)
+{
+	NMIwdManager *self = user_data;
+	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
+	GDBusObjectManagerClient *omc = G_DBUS_OBJECT_MANAGER_CLIENT (priv->object_manager);
+	const gchar *network_path, *device_path, *ifname;
+	gs_unref_object GDBusInterface *network = NULL, *device_obj = NULL;
+	gs_unref_variant GVariant *value = NULL;
+	gint ifindex;
+	NMManager *manager;
+	NMDevice *device;
+	const gchar *psk;
+
+	/* Be paranoid and check the sender address */
+	if (!nm_streq0 (g_dbus_object_manager_client_get_name_owner (omc), sender))
+		goto return_error;
+
+	g_variant_get (parameters, "(&o)", &network_path);
+
+	network = g_dbus_object_manager_get_interface (priv->object_manager,
+	                                               network_path,
+	                                               NM_IWD_NETWORK_INTERFACE);
+	value = g_dbus_proxy_get_cached_property (G_DBUS_PROXY (network), "Device");
+	device_path = g_variant_get_string (value, NULL);
+
+	if (!device_path) {
+		_LOGE ("Device not cached for network %s in IWD Agent request",
+		       network_path);
+		goto return_error;
+	}
+
+	device_obj = g_dbus_object_manager_get_interface (priv->object_manager,
+	                                              device_path,
+	                                              NM_IWD_DEVICE_INTERFACE);
+	g_variant_unref (value);
+	value = g_dbus_proxy_get_cached_property (G_DBUS_PROXY (device_obj), "Name");
+	ifname = g_variant_get_string (value, NULL);
+
+	if (!ifname) {
+		_LOGE ("Name not cached for device %s in IWD Agent request",
+		       device_path);
+		goto return_error;
+	}
+
+	ifindex = if_nametoindex (ifname);
+	if (!ifindex) {
+		_LOGE ("if_nametoindex failed for Name %s for Device at %s: %i",
+		       ifname, device_path, errno);
+		goto return_error;
+	}
+
+	manager = nm_manager_get ();
+
+	device = nm_manager_get_device_by_ifindex (manager, ifindex);
+	if (!NM_IS_DEVICE_IWD (device)) {
+		_LOGE ("IWD device named %s is not a Wifi device in IWD Agent request",
+                       ifname);
+		goto return_error;
+	}
+
+	psk = nm_device_iwd_agent_psk_query (NM_DEVICE_IWD (device));
+	if (!psk) {
+		_LOGW ("Device %s had no PSK for the IWD Agent", ifname);
+		goto return_error;
+	}
+
+	_LOGI ("Sending the PSK to the IWD Agent for device %s", ifname);
+	g_dbus_method_invocation_return_value (invocation,
+	                                       g_variant_new ("(s)", psk));
+	return;
+
+return_error:
+	/* IWD doesn't look at the specific error */
+	g_dbus_method_invocation_return_error_literal (invocation, NM_DEVICE_ERROR,
+	                                               NM_DEVICE_ERROR_INVALID_CONNECTION,
+	                                               "No PSK available for this connection");
+}
+
+
+static guint
+psk_agent_export (GDBusConnection *connection, gpointer user_data,
+                  gchar **agent_path, GError **error)
+{
+	static const GDBusArgInfo request_passphrase_arg_network = {
+		-1,
+		(gchar *) "network",
+		(gchar *) "o",
+		NULL,
+	};
+	static const GDBusArgInfo *const request_passphrase_in_args[] = {
+		&request_passphrase_arg_network,
+		NULL,
+	};
+	static const GDBusArgInfo request_passphrase_arg_passphrase = {
+		-1,
+		(gchar *) "passphrase",
+		(gchar *) "s",
+		NULL,
+	};
+	static const GDBusArgInfo *const request_passphrase_out_args[] = {
+		&request_passphrase_arg_passphrase,
+		NULL,
+	};
+	static const GDBusMethodInfo request_passphrase_info = {
+		-1,
+		(gchar *) "RequestPassphrase",
+		(GDBusArgInfo **) &request_passphrase_in_args,
+		(GDBusArgInfo **) &request_passphrase_out_args,
+		NULL,
+	};
+	static const GDBusMethodInfo *const method_info[] = {
+		&request_passphrase_info,
+		NULL,
+	};
+	static GDBusInterfaceInfo interface_info = {
+		-1,
+		(gchar *) "net.connman.iwd.Agent",
+		(GDBusMethodInfo **) &method_info,
+		NULL,
+		NULL,
+		NULL,
+	};
+	static GDBusInterfaceVTable vtable = {
+		psk_agent_dbus_method_cb,
+		NULL,
+		NULL,
+	};
+
+	gchar path[50];
+	unsigned int rnd;
+	guint id;
+
+	if  (!nm_utils_random_bytes (&rnd, sizeof (rnd))) {
+		g_set_error_literal (error,
+		                     NM_DEVICE_ERROR,
+		                     NM_DEVICE_ERROR_FAILED,
+		                     "Can't read urandom.");
+		return 0;
+	}
+
+	nm_sprintf_buf (path, "/agent/%u", rnd);
+
+	id = g_dbus_connection_register_object (connection, path,
+	                                        &interface_info, &vtable,
+	                                        user_data, NULL, error);
+
+	if (id)
+		*agent_path = g_strdup (path);
+	return id;
+}
 
 /*****************************************************************************/
 
@@ -193,6 +355,23 @@ name_owner_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 			object_added (self, G_DBUS_OBJECT (iter->data));
 
 		g_list_free_full (objects, g_object_unref);
+
+		if (priv->agent_id) {
+			GDBusInterface *agent_manager;
+
+			agent_manager = g_dbus_object_manager_get_interface (object_manager,
+			                                                     "/",
+			                                                     NM_IWD_AGENT_MANAGER_INTERFACE);
+
+			/* Register our agent */
+			g_dbus_proxy_call (G_DBUS_PROXY (agent_manager),
+			                   "RegisterAgent",
+			                   g_variant_new ("(o)", priv->agent_path),
+			                   G_DBUS_CALL_FLAGS_NONE, -1,
+			                   NULL, NULL, NULL);
+
+			g_object_unref (agent_manager);
+		}
 	} else {
 		NMManager *manager = nm_manager_get ();
 		const GSList *devices, *iter;
@@ -292,6 +471,14 @@ got_object_manager (GObject *object, GAsyncResult *result, gpointer user_data)
 
 	connection = g_dbus_object_manager_client_get_connection (G_DBUS_OBJECT_MANAGER_CLIENT (object_manager));
 
+	priv->agent_id = psk_agent_export (connection, self,
+	                                   &priv->agent_path, &error);
+	if (!priv->agent_id) {
+		_LOGE ("failed to export the IWD Agent: PSK/8021x WiFi networks will not work: %s",
+		       NM_G_ERROR_MSG (error));
+		g_clear_error (&error);
+	}
+
 	name_owner_changed (G_OBJECT (object_manager), NULL, self);
 
 	g_signal_connect (manager, "device-added",
@@ -331,8 +518,25 @@ dispose (GObject *object)
 	NMIwdManager *self = (NMIwdManager *) object;
 	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
 
-	if (priv->object_manager)
+	if (priv->object_manager) {
+		if (priv->agent_id) {
+			GDBusConnection *connection;
+			GDBusObjectManagerClient *omc = G_DBUS_OBJECT_MANAGER_CLIENT (priv->object_manager);
+
+			/* No need to unregister the agent as IWD will detect
+			 * our DBus connection being closed.
+			 */
+
+			connection = g_dbus_object_manager_client_get_connection (omc);
+
+			g_dbus_connection_unregister_object (connection, priv->agent_id);
+			priv->agent_id = 0;
+		}
+
 		g_clear_object (&priv->object_manager);
+	}
+
+	nm_clear_g_free (&priv->agent_path);
 
 	nm_clear_g_cancellable (&priv->cancellable);
 

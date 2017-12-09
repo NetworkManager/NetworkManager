@@ -55,4 +55,6 @@ NMDevice *nm_device_iwd_new (const char *iface, NMDeviceWifiCapabilities capabil
 
 void nm_device_iwd_set_dbus_object (NMDeviceIwd *device, GDBusObject *object);
 
+const gchar *nm_device_iwd_agent_psk_query (NMDeviceIwd *device);
+
 #endif /* __NETWORKMANAGER_DEVICE_IWD_H__ */
