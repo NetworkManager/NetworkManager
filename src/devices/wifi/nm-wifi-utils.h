@@ -39,4 +39,6 @@ gboolean nm_wifi_utils_complete_connection (const GByteArray *ssid,
 
 guint32 nm_wifi_utils_level_to_quality (gint val);
 
+gboolean nm_wifi_utils_is_manf_default_ssid (const GByteArray *ssid);
+
 #endif  /* __NM_WIFI_UTILS_H__ */

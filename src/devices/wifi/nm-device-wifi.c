@@ -48,6 +48,7 @@
 #include "nm-auth-utils.h"
 #include "settings/nm-settings-connection.h"
 #include "settings/nm-settings.h"
+#include "nm-wifi-utils.h"
 #include "nm-core-internal.h"
 #include "nm-config.h"
 
@@ -728,39 +729,6 @@ check_connection_available (NMDevice *device,
 }
 
 static gboolean
-is_manf_default_ssid (const GByteArray *ssid)
-{
-	int i;
-	/*
-	 * List of manufacturer default SSIDs that are often unchanged by users.
-	 *
-	 * NOTE: this list should *not* contain networks that you would like to
-	 * automatically roam to like "Starbucks" or "AT&T" or "T-Mobile HotSpot".
-	 */
-	static const char *manf_defaults[] = {
-		"linksys",
-		"linksys-a",
-		"linksys-g",
-		"default",
-		"belkin54g",
-		"NETGEAR",
-		"o2DSL",
-		"WLAN",
-		"ALICE-WLAN",
-		"Speedport W 501V",
-		"TURBONETT",
-	};
-
-	for (i = 0; i < G_N_ELEMENTS (manf_defaults); i++) {
-		if (ssid->len == strlen (manf_defaults[i])) {
-			if (memcmp (manf_defaults[i], ssid->data, ssid->len) == 0)
-				return TRUE;
-		}
-	}
-	return FALSE;
-}
-
-static gboolean
 complete_connection (NMDevice *device,
                      NMConnection *connection,
                      const char *specific_object,
@@ -880,7 +848,7 @@ complete_connection (NMDevice *device,
 		 */
 		if (!nm_wifi_ap_complete_connection (ap,
 		                                     connection,
-		                                     is_manf_default_ssid (ssid),
+		                                     nm_wifi_utils_is_manf_default_ssid (ssid),
 		                                     error)) {
 			if (tmp_ssid)
 				g_byte_array_unref (tmp_ssid);
