@@ -1136,28 +1136,9 @@ _nm_ip_route_get_attributes_direct (NMIPRoute *route)
 const char **
 _nm_ip_route_get_attribute_names (const NMIPRoute *route, gboolean sorted, guint *out_length)
 {
-	const char **names;
-	guint length;
-
 	g_return_val_if_fail (route != NULL, NULL);
 
-	if (   !route->attributes
-	    || !g_hash_table_size (route->attributes)) {
-		NM_SET_OUT (out_length, 0);
-		return NULL;
-	}
-
-	names = (const char **) g_hash_table_get_keys_as_array (route->attributes, &length);
-	if (   sorted
-	    && length > 1) {
-		g_qsort_with_data (names,
-		                   length,
-		                   sizeof (char *),
-		                   nm_strcmp_p_with_data,
-		                   NULL);
-	}
-	NM_SET_OUT (out_length, length);
-	return names;
+	return nm_utils_strdict_get_keys (route->attributes, sorted, out_length);
 }
 
 /**
@@ -1171,21 +1152,14 @@ _nm_ip_route_get_attribute_names (const NMIPRoute *route, gboolean sorted, guint
 char **
 nm_ip_route_get_attribute_names (NMIPRoute *route)
 {
-	char **names;
-	guint i, len;
+	const char **names;
 
 	g_return_val_if_fail (route != NULL, NULL);
 
-	names = (char **) _nm_ip_route_get_attribute_names (route, TRUE, &len);
+	names = _nm_ip_route_get_attribute_names (route, TRUE, NULL);
 	if (!names)
 		return g_new0 (char *, 1);
-
-	nm_assert (len > 0 && names && names[len] == NULL);
-	for (i = 0; i < len; i++) {
-		nm_assert (names[i]);
-		names[i] = g_strdup (names[i]);
-	}
-	return names;
+	return nm_utils_strv_make_deep_copied (names);
 }
 
 /**
