@@ -2453,10 +2453,10 @@ nm_utils_tc_action_from_str (const char *str, GError **error)
 	nm_assert (str);
 	nm_assert (!error || !*error);
 
-        ht = nm_utils_parse_variant_attributes (str,
-                                                ' ', ' ', FALSE,
-                                                tc_action_attribute_spec,
-                                                error);
+	ht = nm_utils_parse_variant_attributes (str,
+	                                        ' ', ' ', FALSE,
+	                                        tc_action_attribute_spec,
+	                                        error);
 	if (!ht)
 		return FALSE;
 
@@ -2492,10 +2492,10 @@ nm_utils_tc_action_from_str (const char *str, GError **error)
 			return NULL;
 		}
 
-	        options = nm_utils_parse_variant_attributes (rest,
-	                                                     ' ', ' ', FALSE,
-	                                                     attrs,
-	                                                     error);
+		options = nm_utils_parse_variant_attributes (rest,
+		                                             ' ', ' ', FALSE,
+		                                             attrs,
+		                                             error);
 		if (!options) {
 			nm_tc_action_unref (action);
 			return NULL;
