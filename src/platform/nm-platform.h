@@ -549,6 +549,8 @@ typedef struct {
 	};
 } NMPlatformAction;
 
+#define NM_PLATFORM_ACTION_KIND_SIMPLE "simple"
+
 typedef struct {
 	__NMPlatformObject_COMMON;
 	const char *kind;
