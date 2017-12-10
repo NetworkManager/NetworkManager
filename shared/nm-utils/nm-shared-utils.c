@@ -1175,3 +1175,20 @@ nm_utils_strdict_get_keys (const GHashTable *hash,
 	NM_SET_OUT (out_length, length);
 	return names;
 }
+
+char **
+nm_utils_strv_make_deep_copied (const char **strv)
+{
+	gsize i;
+
+	/* it takes a strv dictionary, and copies each
+	 * strings. Note that this updates @strv *in-place*
+	 * and returns it. */
+
+	if (!strv)
+		return NULL;
+	for (i = 0; strv[i]; i++)
+		strv[i] = g_strdup (strv[i]);
+
+	return (char **) strv;
+}
