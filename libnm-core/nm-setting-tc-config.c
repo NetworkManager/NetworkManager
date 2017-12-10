@@ -340,17 +340,35 @@ nm_tc_action_unref (NMTCAction *action)
 gboolean
 nm_tc_action_equal (NMTCAction *action, NMTCAction *other)
 {
-	if (action == NULL && other == NULL)
+	GHashTableIter iter;
+	const char *key;
+	GVariant *value, *value2;
+	guint n;
+
+	g_return_val_if_fail (!action || action->refcount > 0, FALSE);
+	g_return_val_if_fail (!other || other->refcount > 0, FALSE);
+
+	if (action == other)
 		return TRUE;
-
-	if (action == NULL || other == NULL)
+	if (!action || !other)
 		return FALSE;
-
-	g_return_val_if_fail (action->refcount > 0, FALSE);
-	g_return_val_if_fail (other->refcount > 0, FALSE);
 
 	if (g_strcmp0 (action->kind, other->kind) != 0)
 		return FALSE;
+
+	n = action->attributes ? g_hash_table_size (action->attributes) : 0;
+	if (n != (other->attributes ? g_hash_table_size (other->attributes) : 0))
+		return FALSE;
+	if (n) {
+		g_hash_table_iter_init (&iter, action->attributes);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
+			value2 = g_hash_table_lookup (other->attributes, key);
+			if (!value2)
+				return FALSE;
+			if (!g_variant_equal (value, value2))
+				return FALSE;
+		}
+	}
 
 	return TRUE;
 }
