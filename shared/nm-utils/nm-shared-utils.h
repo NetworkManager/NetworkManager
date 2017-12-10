@@ -443,6 +443,10 @@ typedef struct {
 
 NMUtilsNamedValue *nm_utils_named_values_from_str_dict (GHashTable *hash, guint *out_len);
 
+const char **nm_utils_strdict_get_keys (const GHashTable *hash,
+                                        gboolean sorted,
+                                        guint *out_length);
+
 /*****************************************************************************/
 
 #define NM_UTILS_NS_PER_SECOND  ((gint64) 1000000000)
