@@ -447,6 +447,14 @@ const char **nm_utils_strdict_get_keys (const GHashTable *hash,
                                         gboolean sorted,
                                         guint *out_length);
 
+char **nm_utils_strv_make_deep_copied (const char **strv);
+
+static inline char **
+nm_utils_strv_make_deep_copied_nonnull (const char **strv)
+{
+	return nm_utils_strv_make_deep_copied (strv) ?: g_new0 (char *, 1);
+}
+
 /*****************************************************************************/
 
 #define NM_UTILS_NS_PER_SECOND  ((gint64) 1000000000)
