@@ -2962,12 +2962,14 @@ _add_action (struct nl_msg *msg,
 {
 	struct nlattr *prio;
 
+	nm_assert (action || action->kind);
+
 	if (!(prio = nla_nest_start (msg, 1 /* priority */)))
 		goto nla_put_failure;
 
 	NLA_PUT_STRING (msg, TCA_ACT_KIND, action->kind);
 
-	if (strcmp (action->kind, "simple") == 0)
+	if (nm_streq (action->kind, NM_PLATFORM_ACTION_KIND_SIMPLE))
 		_add_action_simple (msg, &action->simple);
 
 	nla_nest_end (msg, prio);

@@ -5347,17 +5347,39 @@ const char *
 nm_platform_tfilter_to_string (const NMPlatformTfilter *tfilter, char *buf, gsize len)
 {
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
+	char act_buf[300];
+	char *p;
+	gsize l;
 
 	if (!nm_utils_to_string_buffer_init_null (tfilter, &buf, &len))
 		return buf;
 
-	g_snprintf (buf, len, "%s%s family %d handle %x parent %x info %x",
+	if (tfilter->action.kind) {
+		p = act_buf;
+		l = sizeof (act_buf);
+
+		nm_utils_strbuf_append (&p, &l, " \"%s\"", tfilter->action.kind);
+		if (nm_streq (tfilter->action.kind, NM_PLATFORM_ACTION_KIND_SIMPLE)) {
+			gs_free char *t = NULL;
+
+			nm_utils_strbuf_append (&p, &l,
+			                        " (\"%s\")",
+			                        nm_utils_str_utf8safe_escape (tfilter->action.kind,
+			                                                        NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL
+			                                                      | NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII,
+			                                                      &t));
+		}
+	} else
+		act_buf[0] = '\0';
+
+	g_snprintf (buf, len, "%s%s family %d handle %x parent %x info %x%s",
 	            tfilter->kind,
 	            _to_string_dev (NULL, tfilter->ifindex, str_dev, sizeof (str_dev)),
 	            tfilter->addr_family,
 	            tfilter->handle,
 	            tfilter->parent,
-	            tfilter->info);
+	            tfilter->info,
+	            act_buf);
 
 	return buf;
 }
@@ -5372,6 +5394,11 @@ nm_platform_tfilter_hash_update (const NMPlatformTfilter *obj, NMHashState *h)
 	                     obj->handle,
 	                     obj->parent,
 	                     obj->info);
+	nm_hash_update_str (h, obj->action.kind);
+	if (obj->action.kind) {
+		if (nm_streq (obj->action.kind, NM_PLATFORM_ACTION_KIND_SIMPLE))
+			nm_hash_update_str (h, obj->action.simple.sdata);
+	}
 }
 
 int
@@ -5384,6 +5411,12 @@ nm_platform_tfilter_cmp (const NMPlatformTfilter *a, const NMPlatformTfilter *b)
 	NM_CMP_FIELD (a, b, addr_family);
 	NM_CMP_FIELD (a, b, handle);
 	NM_CMP_FIELD (a, b, info);
+
+	NM_CMP_FIELD_STR_INTERNED (a, b, action.kind);
+	if (a->action.kind) {
+		if (nm_streq (a->action.kind, NM_PLATFORM_ACTION_KIND_SIMPLE))
+			NM_CMP_FIELD_STR (a, b, action.simple.sdata);
+	}
 
 	return 0;
 }
