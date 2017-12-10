@@ -537,22 +537,14 @@ nm_ip_address_set_prefix (NMIPAddress *address,
 char **
 nm_ip_address_get_attribute_names (NMIPAddress *address)
 {
-	GHashTableIter iter;
-	const char *key;
-	GPtrArray *names;
+	const char **names;
 
 	g_return_val_if_fail (address != NULL, NULL);
 
-	names = g_ptr_array_new ();
-
-	if (address->attributes) {
-		g_hash_table_iter_init (&iter, address->attributes);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &key, NULL))
-			g_ptr_array_add (names, g_strdup (key));
-	}
-	g_ptr_array_add (names, NULL);
-
-	return (char **) g_ptr_array_free (names, FALSE);
+	names = nm_utils_strdict_get_keys (address->attributes, TRUE, NULL);
+	if (!names)
+		return g_new0 (char *, 1);
+	return nm_utils_strv_make_deep_copied (names);
 }
 
 /**
