@@ -1,3 +1,19 @@
+===============================================
+NetworkManager-1.10.2
+Overview of changes since NetworkManager-1.10.0
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Added support for 'onlink' IPv4 routes attribute.
+* Wait longer for the carrier to come up after a MTU change.
+* Implemented abstraction for team connections that exposes team
+    configuration items as distinct properties.
+* Added basic support for tc queueing disciplines and filters.
+* Introduced an Update2() D-Bus method to update connection settings
+  with more flexibility.
+* Many bug fixes and improvements.
+
 ============================================
 NetworkManager-1.10
 Overview of changes since NetworkManager-1.8
