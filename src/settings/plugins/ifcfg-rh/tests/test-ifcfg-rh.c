@@ -2079,7 +2079,7 @@ test_read_wired_aliases_good (gconstpointer test_data)
 		g_assert (j < expected_num_addresses);
 
 		g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 24);
-		label = nm_ip_address_get_attribute (ip4_addr, "label");
+		label = nm_ip_address_get_attribute (ip4_addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL);
 		if (expected_label[j])
 			g_assert_cmpstr (g_variant_get_string (label, NULL), ==, expected_label[j]);
 		else
@@ -2131,7 +2131,7 @@ test_read_wired_aliases_bad (const char *base, const char *expected_id)
 	g_assert (ip4_addr != NULL);
 	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "192.168.1.5");
 	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 24);
-	g_assert (nm_ip_address_get_attribute (ip4_addr, "label") == NULL);
+	g_assert (nm_ip_address_get_attribute (ip4_addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL) == NULL);
 
 	/* Gateway */
 	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "192.168.1.1");
@@ -5141,7 +5141,7 @@ test_write_wired_aliases (void)
 		addr = nm_ip_address_new (AF_INET, ip[i], 24, &error);
 		g_assert_no_error (error);
 		if (label[i])
-			nm_ip_address_set_attribute (addr, "label", g_variant_new_string (label[i]));
+			nm_ip_address_set_attribute (addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL, g_variant_new_string (label[i]));
 		nm_setting_ip_config_add_address (s_ip4, addr);
 		nm_ip_address_unref (addr);
 	}
@@ -5200,9 +5200,9 @@ test_write_wired_aliases (void)
 		else {
 			g_assert_cmpint (nm_ip_address_get_prefix (addr), ==, 24);
 			if (label[j])
-				g_assert_cmpstr (g_variant_get_string (nm_ip_address_get_attribute (addr, "label"), NULL), ==, label[j]);
+				g_assert_cmpstr (g_variant_get_string (nm_ip_address_get_attribute (addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL), NULL), ==, label[j]);
 			else
-				g_assert (nm_ip_address_get_attribute (addr, "label") == NULL);
+				g_assert (nm_ip_address_get_attribute (addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL) == NULL);
 			ip[j] = NULL;
 		}
 	}

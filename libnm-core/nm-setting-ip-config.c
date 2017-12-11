@@ -2527,7 +2527,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			return FALSE;
 		}
 
-		label = nm_ip_address_get_attribute (addr, "label");
+		label = nm_ip_address_get_attribute (addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL);
 		if (label) {
 			if (!g_variant_is_of_type (label, G_VARIANT_TYPE_STRING)) {
 				g_set_error (error,
