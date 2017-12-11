@@ -54,6 +54,29 @@
 #include "nm-utils/unaligned.h"
 #include "nm-utils/nm-udev-utils.h"
 
+/*****************************************************************************/
+
+/* re-implement <linux/tc_act/tc_defact.h> to build against kernel
+ * headers that lack this. */
+
+#include <linux/pkt_cls.h>
+
+struct tc_defact {
+	tc_gen;
+};
+
+enum {
+	TCA_DEF_UNSPEC,
+	TCA_DEF_TM,
+	TCA_DEF_PARMS,
+	TCA_DEF_DATA,
+	TCA_DEF_PAD,
+	__TCA_DEF_MAX
+};
+#define TCA_DEF_MAX (__TCA_DEF_MAX - 1)
+
+/*****************************************************************************/
+
 #define VLAN_FLAG_MVRP 0x8
 
 /* nm-internal error codes for libnl. Make sure they don't overlap. */
