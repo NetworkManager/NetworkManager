@@ -959,7 +959,7 @@ test_setting_ip4_config_labels (void)
 	nmtst_assert_setting_verifies (NM_SETTING (s_ip4));
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 0);
-	label = nm_ip_address_get_attribute (addr, "label");
+	label = nm_ip_address_get_attribute (addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL);
 	g_assert (label == NULL);
 
 	/* The 'address-labels' property should be omitted from the serialization if
@@ -984,28 +984,28 @@ test_setting_ip4_config_labels (void)
 	/* addr 2 */
 	addr = nm_ip_address_new (AF_INET, "2.3.4.5", 24, &error);
 	g_assert_no_error (error);
-	nm_ip_address_set_attribute (addr, "label", g_variant_new_string ("eth0:1"));
+	nm_ip_address_set_attribute (addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL, g_variant_new_string ("eth0:1"));
 
 	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
 	nmtst_assert_setting_verifies (NM_SETTING (s_ip4));
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 1);
-	label = nm_ip_address_get_attribute (addr, "label");
+	label = nm_ip_address_get_attribute (addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL);
 	g_assert (label != NULL);
 	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
 
 	/* addr 3 */
 	addr = nm_ip_address_new (AF_INET, "3.4.5.6", 24, &error);
 	g_assert_no_error (error);
-	nm_ip_address_set_attribute (addr, "label", NULL);
+	nm_ip_address_set_attribute (addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL, NULL);
 
 	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
 	nmtst_assert_setting_verifies (NM_SETTING (s_ip4));
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 2);
-	label = nm_ip_address_get_attribute (addr, "label");
+	label = nm_ip_address_get_attribute (addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL);
 	g_assert (label == NULL);
 
 	/* Remove addr 1 and re-verify remaining addresses */
@@ -1014,13 +1014,13 @@ test_setting_ip4_config_labels (void)
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 0);
 	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.3.4.5");
-	label = nm_ip_address_get_attribute (addr, "label");
+	label = nm_ip_address_get_attribute (addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL);
 	g_assert (label != NULL);
 	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 1);
 	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.4.5.6");
-	label = nm_ip_address_get_attribute (addr, "label");
+	label = nm_ip_address_get_attribute (addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL);
 	g_assert (label == NULL);
 
 	/* If we serialize as the daemon, the labels should appear in the D-Bus
@@ -1051,11 +1051,11 @@ test_setting_ip4_config_labels (void)
 	g_assert (addrs != NULL);
 	g_assert_cmpint (addrs->len, ==, 2);
 	addr = addrs->pdata[0];
-	label = nm_ip_address_get_attribute (addr, "label");
+	label = nm_ip_address_get_attribute (addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL);
 	g_assert (label != NULL);
 	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
 	addr = addrs->pdata[1];
-	label = nm_ip_address_get_attribute (addr, "label");
+	label = nm_ip_address_get_attribute (addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL);
 	g_assert (label == NULL);
 	g_ptr_array_unref (addrs);
 
@@ -1078,13 +1078,13 @@ test_setting_ip4_config_labels (void)
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 0);
 	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.3.4.5");
-	label = nm_ip_address_get_attribute (addr, "label");
+	label = nm_ip_address_get_attribute (addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL);
 	g_assert (label != NULL);
 	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 1);
 	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.4.5.6");
-	label = nm_ip_address_get_attribute (addr, "label");
+	label = nm_ip_address_get_attribute (addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL);
 	g_assert (label == NULL);
 
 	g_object_unref (conn);
@@ -1101,12 +1101,12 @@ test_setting_ip4_config_labels (void)
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 0);
 	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.3.4.5");
-	label = nm_ip_address_get_attribute (addr, "label");
+	label = nm_ip_address_get_attribute (addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL);
 	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 1);
 	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.4.5.6");
-	label = nm_ip_address_get_attribute (addr, "label");
+	label = nm_ip_address_get_attribute (addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL);
 	g_assert (label == NULL);
 
 	/* Test explicit property assignment */
@@ -1126,13 +1126,13 @@ test_setting_ip4_config_labels (void)
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 0);
 	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.3.4.5");
-	label = nm_ip_address_get_attribute (addr, "label");
+	label = nm_ip_address_get_attribute (addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL);
 	g_assert (label != NULL);
 	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
 
 	addr = nm_setting_ip_config_get_address (s_ip4, 1);
 	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.4.5.6");
-	label = nm_ip_address_get_attribute (addr, "label");
+	label = nm_ip_address_get_attribute (addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL);
 	g_assert (label == NULL);
 
 	g_object_unref (conn);
@@ -3057,10 +3057,10 @@ test_setting_compare_addresses (void)
 
 	a = nm_ip_address_new (AF_INET, "192.168.7.5", 24, NULL);
 
-	nm_ip_address_set_attribute (a, "label", g_variant_new_string ("xoxoxo"));
+	nm_ip_address_set_attribute (a, NM_IP_ADDRESS_ATTRIBUTE_LABEL, g_variant_new_string ("xoxoxo"));
 	nm_setting_ip_config_add_address ((NMSettingIPConfig *) s1, a);
 
-	nm_ip_address_set_attribute (a, "label", g_variant_new_string ("hello"));
+	nm_ip_address_set_attribute (a, NM_IP_ADDRESS_ATTRIBUTE_LABEL, g_variant_new_string ("hello"));
 	nm_setting_ip_config_add_address ((NMSettingIPConfig *) s2, a);
 
 	nm_ip_address_unref (a);
@@ -3089,10 +3089,10 @@ test_setting_compare_routes (void)
 
 	r = nm_ip_route_new (AF_INET, "192.168.12.0", 24, "192.168.11.1", 473, NULL);
 
-	nm_ip_route_set_attribute (r, "label", g_variant_new_string ("xoxoxo"));
+	nm_ip_route_set_attribute (r, NM_IP_ADDRESS_ATTRIBUTE_LABEL, g_variant_new_string ("xoxoxo"));
 	nm_setting_ip_config_add_route ((NMSettingIPConfig *) s1, r);
 
-	nm_ip_route_set_attribute (r, "label", g_variant_new_string ("hello"));
+	nm_ip_route_set_attribute (r, NM_IP_ADDRESS_ATTRIBUTE_LABEL, g_variant_new_string ("hello"));
 	nm_setting_ip_config_add_route ((NMSettingIPConfig *) s2, r);
 
 	nm_ip_route_unref (r);
