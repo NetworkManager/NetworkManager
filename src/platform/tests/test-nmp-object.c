@@ -54,27 +54,20 @@ test_obj_base (void)
 	gs_unref_object GCancellable *obj_cancellable = g_cancellable_new ();
 	nm_auto_nmpobj NMPObject *obj_link = nmp_object_new_link (10);
 
-#define STATIC_ASSERT(cond) \
-	G_STMT_START { \
-		G_STATIC_ASSERT (cond); \
-		G_STATIC_ASSERT_EXPR (cond); \
-		g_assert (cond); \
-	} G_STMT_END
+	g_assert (&g->g_type_instance              == (void *) &o->_class);
+	g_assert (&g->g_type_instance.g_class      == (void *) &o->_class);
 
-	STATIC_ASSERT (&g->g_type_instance              == (void *) &o->_class);
-	STATIC_ASSERT (&g->g_type_instance.g_class      == (void *) &o->_class);
+	g_assert (sizeof (o->parent.parent)        == sizeof (GTypeInstance));
 
-	STATIC_ASSERT (sizeof (o->parent.parent)        == sizeof (GTypeInstance));
+	g_assert (&c->parent                       == (void *) c);
+	g_assert (&c->parent.parent.g_type_class   == (void *) c);
+	g_assert (&c->parent.parent.g_type         == (void *) c);
+	g_assert (&c->parent.parent.g_type         == &k->g_type);
 
-	STATIC_ASSERT (&c->parent                       == (void *) c);
-	STATIC_ASSERT (&c->parent.parent.g_type_class   == (void *) c);
-	STATIC_ASSERT (&c->parent.parent.g_type         == (void *) c);
-	STATIC_ASSERT (&c->parent.parent.g_type         == &k->g_type);
+	g_assert (sizeof (c->parent.parent)        == sizeof (GTypeClass));
 
-	STATIC_ASSERT (sizeof (c->parent.parent)        == sizeof (GTypeClass));
-
-	STATIC_ASSERT (&o->parent                       == (void *) o);
-	STATIC_ASSERT (&o->parent.klass                 == (void *) &o->_class);
+	g_assert (&o->parent                       == (void *) o);
+	g_assert (&o->parent.klass                 == (void *) &o->_class);
 
 	obj = (NMObjBaseInst *) obj_cancellable;
 	g_assert (!NMP_CLASS_IS_VALID ((NMPClass *) obj->klass));
