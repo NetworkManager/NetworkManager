@@ -495,9 +495,6 @@ set_persist_mode (NMSettingsConnection *self, NMSettingsConnectionPersistMode pe
 	                                      | NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED
 	                                      | NM_SETTINGS_CONNECTION_FLAGS_VOLATILE;
 
-	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP)
-		return;
-
 	switch (persist_mode) {
 	case NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK:
 		flags = NM_SETTINGS_CONNECTION_FLAGS_NONE;
@@ -512,8 +509,16 @@ set_persist_mode (NMSettingsConnection *self, NMSettingsConnectionPersistMode pe
 		flags = NM_SETTINGS_CONNECTION_FLAGS_UNSAVED |
 		        NM_SETTINGS_CONNECTION_FLAGS_VOLATILE;
 		break;
+	case NM_SETTINGS_CONNECTION_PERSIST_MODE_UNSAVED:
+		/* only set the connection as unsaved, but preserve the nm-generated
+		 * and volatile flag. */
+		nm_settings_connection_set_flags (self,
+		                                  NM_SETTINGS_CONNECTION_FLAGS_UNSAVED,
+		                                  TRUE);
+		return;
 	case NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP:
-		g_return_if_reached ();
+		/* Nothing to do */
+		return;
 	}
 
 	nm_settings_connection_set_flags_full (self, ALL, flags);
@@ -522,7 +527,7 @@ set_persist_mode (NMSettingsConnection *self, NMSettingsConnectionPersistMode pe
 static void
 connection_changed_cb (NMSettingsConnection *self, gpointer unused)
 {
-	set_persist_mode (self, NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY);
+	set_persist_mode (self, NM_SETTINGS_CONNECTION_PERSIST_MODE_UNSAVED);
 	_emit_updated (self, FALSE);
 }
 
