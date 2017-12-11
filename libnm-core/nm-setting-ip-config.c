@@ -526,6 +526,14 @@ nm_ip_address_set_prefix (NMIPAddress *address,
 	address->prefix = prefix;
 }
 
+const char **
+_nm_ip_address_get_attribute_names (const NMIPAddress *address, gboolean sorted, guint *out_length)
+{
+	nm_assert (address);
+
+	return nm_utils_strdict_get_keys (address->attributes, sorted, out_length);
+}
+
 /**
  * nm_ip_address_get_attribute_names:
  * @address: the #NMIPAddress
@@ -541,7 +549,7 @@ nm_ip_address_get_attribute_names (NMIPAddress *address)
 
 	g_return_val_if_fail (address, NULL);
 
-	names = nm_utils_strdict_get_keys (address->attributes, TRUE, NULL);
+	names = _nm_ip_address_get_attribute_names (address, TRUE, NULL);
 	return nm_utils_strv_make_deep_copied_nonnull (names);
 }
 
@@ -1126,7 +1134,7 @@ _nm_ip_route_get_attributes_direct (NMIPRoute *route)
 const char **
 _nm_ip_route_get_attribute_names (const NMIPRoute *route, gboolean sorted, guint *out_length)
 {
-	g_return_val_if_fail (route != NULL, NULL);
+	nm_assert (route);
 
 	return nm_utils_strdict_get_keys (route->attributes, sorted, out_length);
 }
