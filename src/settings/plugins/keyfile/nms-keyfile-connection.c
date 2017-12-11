@@ -162,7 +162,7 @@ nms_keyfile_connection_new (NMConnection *source,
 	if (!nm_settings_connection_update (NM_SETTINGS_CONNECTION (object),
 	                                    tmp,
 	                                    update_unsaved
-	                                      ? NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY
+	                                      ? NM_SETTINGS_CONNECTION_PERSIST_MODE_UNSAVED
 	                                      : NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
 	                                    NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
 	                                    NULL,
