@@ -6206,7 +6206,9 @@ _test_find_binary_search_do_uint32 (const int *int_array, gsize len)
 	const int OFFSET = 100;
 	const int NEEDLE = 0 + OFFSET;
 	gssize expected_result = -1;
-	guint32 array[len];
+	guint32 array[30];
+
+	g_assert (len <= G_N_ELEMENTS (array));
 
 	/* the test data has negative values. Shift them... */
 	for (idx = 0; idx < len; idx++) {
