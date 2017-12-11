@@ -15,7 +15,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2014 Red Hat, Inc.
+ * Copyright 2014 - 2017 Red Hat, Inc.
  */
 
 #ifndef __NETWORKMANAGER_H__
@@ -84,6 +84,7 @@
 #include "nm-setting-pppoe.h"
 #include "nm-setting-proxy.h"
 #include "nm-setting-serial.h"
+#include "nm-setting-tc-config.h"
 #include "nm-setting-team.h"
 #include "nm-setting-team-port.h"
 #include "nm-setting-tun.h"

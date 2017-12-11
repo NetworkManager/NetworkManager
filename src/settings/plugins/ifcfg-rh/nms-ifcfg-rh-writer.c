@@ -2125,6 +2125,51 @@ write_user_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	return TRUE;
 }
 
+static gboolean
+write_tc_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
+{
+	NMSettingTCConfig *s_tc;
+	guint i, num, n;
+	char tag[64];
+
+	svUnsetAll (ifcfg, SV_KEY_TYPE_TC);
+
+	s_tc = nm_connection_get_setting_tc_config (connection);
+	if (!s_tc)
+		return TRUE;
+
+	num = nm_setting_tc_config_get_num_qdiscs (s_tc);
+	for (n = 1, i = 0; i < num; i++) {
+		NMTCQdisc *qdisc;
+		gs_free char *str = NULL;
+
+		qdisc = nm_setting_tc_config_get_qdisc (s_tc, i);
+		str = nm_utils_tc_qdisc_to_str (qdisc, error);
+		if (!str)
+			return FALSE;
+
+		svSetValueStr (ifcfg, numbered_tag (tag, "QDISC", n), str);
+		n++;
+	}
+
+
+	num = nm_setting_tc_config_get_num_tfilters (s_tc);
+	for (n = 1, i = 0; i < num; i++) {
+		NMTCTfilter *tfilter;
+		gs_free char *str = NULL;
+
+		tfilter = nm_setting_tc_config_get_tfilter (s_tc, i);
+		str = nm_utils_tc_tfilter_to_str (tfilter, error);
+		if (!str)
+			return FALSE;
+
+		svSetValueStr (ifcfg, numbered_tag (tag, "FILTER", n), str);
+		n++;
+	}
+
+	return TRUE;
+}
+
 static void
 write_res_options (shvarFile *ifcfg, NMSettingIPConfig *s_ip, const char *var)
 {
@@ -2858,6 +2903,9 @@ do_write_construct (NMConnection *connection,
 		return FALSE;
 
 	if (!write_user_setting (connection, ifcfg, error))
+		return FALSE;
+
+	if (!write_tc_setting (connection, ifcfg, error))
 		return FALSE;
 
 	svUnsetValue (ifcfg, "DHCP_HOSTNAME");

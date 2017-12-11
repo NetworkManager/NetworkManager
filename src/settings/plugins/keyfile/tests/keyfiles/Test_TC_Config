@@ -1,0 +1,11 @@
+
+[connection]
+id=Test TC Config
+uuid=32a51666-95ea-1337-b371-dcf5e54b1001
+type=802-3-ethernet
+
+[tc]
+qdisc.root=handle 1234 fq_codel
+qdisc.ffff:fff1=ingress
+tfilter.1234:=matchall action drop
+tfilter.ffff:=matchall action simple sdata Hello

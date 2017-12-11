@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2012 Red Hat, Inc.
+ * Copyright (C) 2012 - 2017 Red Hat, Inc.
  */
 
 #ifndef __NETWORKMANAGER_TYPES_H__
@@ -176,6 +176,10 @@ typedef enum {
 	NMP_OBJECT_TYPE_IP6_ADDRESS,
 	NMP_OBJECT_TYPE_IP4_ROUTE,
 	NMP_OBJECT_TYPE_IP6_ROUTE,
+
+	NMP_OBJECT_TYPE_QDISC,
+
+	NMP_OBJECT_TYPE_TFILTER,
 
 	NMP_OBJECT_TYPE_LNK_GRE,
 	NMP_OBJECT_TYPE_LNK_INFINIBAND,

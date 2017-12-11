@@ -413,6 +413,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-setting-pppoe.h \
 	libnm-core/nm-setting-proxy.h \
 	libnm-core/nm-setting-serial.h \
+	libnm-core/nm-setting-tc-config.h \
 	libnm-core/nm-setting-team-port.h \
 	libnm-core/nm-setting-team.h \
 	libnm-core/nm-setting-tun.h \
@@ -497,6 +498,7 @@ libnm_core_lib_c_real = \
 	libnm-core/nm-setting-pppoe.c \
 	libnm-core/nm-setting-proxy.c \
 	libnm-core/nm-setting-serial.c \
+	libnm-core/nm-setting-tc-config.c \
 	libnm-core/nm-setting-team-port.c \
 	libnm-core/nm-setting-team.c \
 	libnm-core/nm-setting-tun.c \
@@ -1864,6 +1866,7 @@ EXTRA_DIST += \
 	src/settings/plugins/keyfile/tests/keyfiles/Test_Enum_Property \
 	src/settings/plugins/keyfile/tests/keyfiles/Test_Flags_Property \
 	src/settings/plugins/keyfile/tests/keyfiles/Test_dcb_connection \
+	src/settings/plugins/keyfile/tests/keyfiles/Test_TC_Config \
 	\
 	src/settings/plugins/keyfile/tests/keyfiles/test-ca-cert.pem \
 	src/settings/plugins/keyfile/tests/keyfiles/test-key-and-cert.pem

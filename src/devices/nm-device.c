@@ -35,6 +35,7 @@
 #include <fcntl.h>
 #include <linux/if_addr.h>
 #include <linux/rtnetlink.h>
+#include <linux/pkt_sched.h>
 
 #include "nm-utils/nm-dedup-multi.h"
 
@@ -3020,9 +3021,9 @@ _v4_has_shadowed_routes_detect (NMDevice *self)
 	platform = nm_device_get_platform (self);
 
 	head_entry = nm_platform_lookup (platform,
-	                                 nmp_lookup_init_addrroute (&lookup,
-	                                                            NMP_OBJECT_TYPE_IP4_ROUTE,
-	                                                            ifindex));
+	                                 nmp_lookup_init_object (&lookup,
+	                                                         NMP_OBJECT_TYPE_IP4_ROUTE,
+	                                                         ifindex));
 	if (!head_entry)
 		return FALSE;
 
@@ -5324,6 +5325,83 @@ lldp_init (NMDevice *self, gboolean restart)
 	}
 }
 
+static gboolean
+tc_commit (NMDevice *self)
+{
+	NMConnection *connection = NULL;
+	gs_unref_ptrarray GPtrArray *qdiscs = NULL;
+	gs_unref_ptrarray GPtrArray *tfilters = NULL;
+	NMSettingTCConfig *s_tc = NULL;
+	int ip_ifindex;
+	guint nqdiscs, ntfilters;
+	int i;
+
+	connection = nm_device_get_applied_connection (self);
+	if (connection)
+		s_tc = nm_connection_get_setting_tc_config (connection);
+
+	ip_ifindex = nm_device_get_ip_ifindex (self);
+	if (!ip_ifindex)
+	       return s_tc == NULL;
+
+	if (s_tc) {
+		nqdiscs = nm_setting_tc_config_get_num_qdiscs (s_tc);
+		qdiscs = g_ptr_array_new_full (nqdiscs, (GDestroyNotify) nmp_object_unref);
+
+		for (i = 0; i < nqdiscs; i++) {
+			NMTCQdisc *s_qdisc = nm_setting_tc_config_get_qdisc (s_tc, i);
+			NMPObject *q = nmp_object_new (NMP_OBJECT_TYPE_QDISC, NULL);
+			NMPlatformQdisc *qdisc = NMP_OBJECT_CAST_QDISC (q);
+
+			qdisc->ifindex = ip_ifindex;
+			qdisc->kind = nm_tc_qdisc_get_kind (s_qdisc);
+			qdisc->addr_family = AF_UNSPEC;
+			qdisc->handle = nm_tc_qdisc_get_handle (s_qdisc);
+			qdisc->parent = nm_tc_qdisc_get_parent (s_qdisc);
+			qdisc->info = 0;
+
+			g_ptr_array_add (qdiscs, q);
+		}
+
+		ntfilters = nm_setting_tc_config_get_num_tfilters (s_tc);
+		tfilters = g_ptr_array_new_full (ntfilters, (GDestroyNotify) nmp_object_unref);
+
+		for (i = 0; i < ntfilters; i++) {
+			NMTCTfilter *s_tfilter = nm_setting_tc_config_get_tfilter (s_tc, i);
+			NMTCAction *action;
+			NMPObject *q = nmp_object_new (NMP_OBJECT_TYPE_TFILTER, NULL);
+			NMPlatformTfilter *tfilter = NMP_OBJECT_CAST_TFILTER (q);
+
+			tfilter->ifindex = ip_ifindex;
+			tfilter->kind = nm_tc_tfilter_get_kind (s_tfilter);
+			tfilter->addr_family = AF_UNSPEC;
+			tfilter->handle = nm_tc_tfilter_get_handle (s_tfilter);
+			tfilter->parent = nm_tc_tfilter_get_parent (s_tfilter);
+			tfilter->info = TC_H_MAKE (0, htons (ETH_P_ALL));
+
+			action = nm_tc_tfilter_get_action (s_tfilter);
+			if (action) {
+				tfilter->action.kind = nm_tc_action_get_kind (action);
+				if (strcmp (tfilter->action.kind, "simple") == 0) {
+					strncpy (tfilter->action.simple.sdata,
+					         g_variant_get_bytestring (nm_tc_action_get_attribute (action, "sdata")),
+					         sizeof (tfilter->action.simple.sdata));
+				}
+			}
+
+			g_ptr_array_add (tfilters, q);
+		}
+	}
+
+	if (!nm_platform_qdisc_sync (nm_device_get_platform (self), ip_ifindex, qdiscs))
+		return FALSE;
+
+	if (!nm_platform_tfilter_sync (nm_device_get_platform (self), ip_ifindex, tfilters))
+		return FALSE;
+
+	return TRUE;
+}
+
 /*
  * activate_stage2_device_config
  *
@@ -5344,6 +5422,11 @@ activate_stage2_device_config (NMDevice *self)
 	/* Assumed connections were already set up outside NetworkManager */
 	if (!nm_device_sys_iface_state_is_external_or_assume (self)) {
 		NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
+
+		if (!tc_commit (self)) {
+			_LOGW (LOGD_IP6, "failed applying traffic control rules");
+			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+		}
 
 		if (!nm_device_bring_up (self, FALSE, &no_firmware)) {
 			if (no_firmware)
@@ -12663,6 +12746,8 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 
 			nm_platform_ip_route_flush (platform, AF_UNSPEC, ifindex);
 			nm_platform_ip_address_flush (platform, AF_UNSPEC, ifindex);
+			nm_platform_tfilter_sync (platform, ifindex, NULL);
+			nm_platform_qdisc_sync (platform, ifindex, NULL);
 		}
 	}
 

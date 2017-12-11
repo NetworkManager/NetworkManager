@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 - 2014 Red Hat, Inc.
+ * Copyright (C) 2008 - 2017 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -27,6 +27,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <linux/pkt_sched.h>
 
 #include "nm-core-internal.h"
 
@@ -2624,6 +2625,125 @@ test_write_flags_property (void)
 /*****************************************************************************/
 
 static void
+test_read_tc_config (void)
+{
+	gs_unref_object NMConnection *connection = NULL;
+	NMSettingTCConfig *s_tc;
+	NMTCQdisc *qdisc1, *qdisc2;
+	NMTCAction *action1, *action2;
+	NMTCTfilter *tfilter1, *tfilter2;
+	gs_free_error GError *error = NULL;
+	gboolean success;
+
+	connection = nms_keyfile_reader_from_file (TEST_KEYFILES_DIR "/Test_TC_Config", NULL);
+	g_assert (connection);
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	s_tc = nm_connection_get_setting_tc_config (connection);
+	g_assert (s_tc);
+
+	g_assert (nm_setting_tc_config_get_num_qdiscs (s_tc) == 2);
+
+	qdisc1 = nm_setting_tc_config_get_qdisc (s_tc, 0);
+	g_assert (qdisc1);
+	g_assert (g_strcmp0 (nm_tc_qdisc_get_kind (qdisc1), "fq_codel") == 0);
+	g_assert (nm_tc_qdisc_get_handle (qdisc1) == TC_H_MAKE (0x1234 << 16, 0x0000));
+	g_assert (nm_tc_qdisc_get_parent (qdisc1) == TC_H_ROOT);
+
+	qdisc2 = nm_setting_tc_config_get_qdisc (s_tc, 1);
+	g_assert (qdisc2);
+	g_assert (g_strcmp0 (nm_tc_qdisc_get_kind (qdisc2), "ingress") == 0);
+	g_assert (nm_tc_qdisc_get_handle (qdisc2) == TC_H_MAKE (TC_H_INGRESS, 0));
+	g_assert (nm_tc_qdisc_get_parent (qdisc2) == TC_H_INGRESS);
+
+	g_assert (nm_setting_tc_config_get_num_tfilters (s_tc) == 2);
+
+	tfilter1 = nm_setting_tc_config_get_tfilter (s_tc, 0);
+	g_assert (tfilter1);
+	g_assert (g_strcmp0 (nm_tc_tfilter_get_kind (tfilter1), "matchall") == 0);
+	g_assert (nm_tc_tfilter_get_handle (tfilter1) == TC_H_UNSPEC);
+	g_assert (nm_tc_tfilter_get_parent (tfilter1) == TC_H_MAKE (0x1234 << 16, 0x0000));
+
+	action1 = nm_tc_tfilter_get_action (tfilter1);
+	g_assert (action1);
+	g_assert (g_strcmp0 (nm_tc_action_get_kind (action1), "drop") == 0);
+
+	tfilter2 = nm_setting_tc_config_get_tfilter (s_tc, 1);
+	g_assert (tfilter2);
+	g_assert (g_strcmp0 (nm_tc_tfilter_get_kind (tfilter2), "matchall") == 0);
+	g_assert (nm_tc_tfilter_get_handle (tfilter2) == TC_H_UNSPEC);
+	g_assert (nm_tc_tfilter_get_parent (tfilter2) == TC_H_MAKE (TC_H_INGRESS, 0));
+
+	action2 = nm_tc_tfilter_get_action (tfilter2);
+	g_assert (action2);
+	g_assert (g_strcmp0 (nm_tc_action_get_kind (action2), "simple") == 0);
+	g_assert (g_strcmp0 (g_variant_get_bytestring (nm_tc_action_get_attribute (action2, "sdata")),
+	                     "Hello") == 0);
+}
+
+static void
+test_write_tc_config (void)
+{
+	gs_unref_object NMConnection *connection = NULL;
+	NMSetting *s_tc;
+	NMTCQdisc *qdisc1, *qdisc2;
+	NMTCTfilter *tfilter1, *tfilter2;
+	NMTCAction *action;
+	GError *error = NULL;
+
+	connection = nmtst_create_minimal_connection ("Test TC",
+	                                               NULL,
+	                                               NM_SETTING_WIRED_SETTING_NAME,
+	                                               NULL);
+	s_tc = nm_setting_tc_config_new ();
+
+	qdisc1 = nm_tc_qdisc_new ("fq_codel", TC_H_ROOT, &error);
+	nmtst_assert_success (qdisc1, error);
+	nm_tc_qdisc_set_handle (qdisc1, TC_H_MAKE (0x1234 << 16, 0x0000));
+	nm_setting_tc_config_add_qdisc (NM_SETTING_TC_CONFIG (s_tc), qdisc1);
+
+	qdisc2 = nm_tc_qdisc_new ("ingress", TC_H_INGRESS, &error);
+	nmtst_assert_success (qdisc2, error);
+	nm_tc_qdisc_set_handle (qdisc2, TC_H_MAKE (TC_H_INGRESS, 0));
+	nm_setting_tc_config_add_qdisc (NM_SETTING_TC_CONFIG (s_tc), qdisc2);
+
+	tfilter1 = nm_tc_tfilter_new ("matchall",
+	                              TC_H_MAKE (0x1234 << 16, 0x0000),
+	                              &error);
+	nmtst_assert_success (tfilter1, error);
+	action = nm_tc_action_new ("drop", &error);
+	nmtst_assert_success (action, error);
+	nm_tc_tfilter_set_action (tfilter1, action);
+	nm_tc_action_unref (action);
+	nm_setting_tc_config_add_tfilter (NM_SETTING_TC_CONFIG (s_tc), tfilter1);
+	nm_tc_tfilter_unref (tfilter1);
+
+	tfilter2 = nm_tc_tfilter_new ("matchall",
+	                              TC_H_MAKE (TC_H_INGRESS, 0),
+	                              &error);
+	nmtst_assert_success (tfilter2, error);
+	action = nm_tc_action_new ("simple", &error);
+	nmtst_assert_success (action, error);
+	nm_tc_action_set_attribute (action, "sdata", g_variant_new_bytestring ("Hello"));
+	nm_tc_tfilter_set_action (tfilter2, action);
+	nm_tc_action_unref (action);
+	nm_setting_tc_config_add_tfilter (NM_SETTING_TC_CONFIG (s_tc), tfilter2);
+	nm_tc_tfilter_unref (tfilter2);
+
+	nm_connection_add_setting (connection, s_tc);
+
+	nmtst_connection_normalize (connection);
+	write_test_connection_and_reread (connection, FALSE);
+
+	nm_tc_qdisc_unref (qdisc1);
+	nm_tc_qdisc_unref (qdisc2);
+}
+
+/*****************************************************************************/
+
+static void
 _escape_filename (const char *filename, gboolean would_be_ignored)
 {
 	gs_free char *esc = NULL;
@@ -2747,6 +2867,9 @@ int main (int argc, char **argv)
 	g_test_add_func ("/keyfile/test_write_enum_property", test_write_enum_property);
 	g_test_add_func ("/keyfile/test_read_flags_property", test_read_flags_property);
 	g_test_add_func ("/keyfile/test_write_flags_property", test_write_flags_property);
+
+	g_test_add_func ("/keyfile/test_read_tc_config", test_read_tc_config);
+	g_test_add_func ("/keyfile/test_write_tc_config", test_write_tc_config);
 
 	g_test_add_func ("/keyfile/test_nm_keyfile_plugin_utils_escape_filename", test_nm_keyfile_plugin_utils_escape_filename);
 

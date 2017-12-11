@@ -1,5 +1,4 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-
 /*
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +15,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2014 Red Hat, Inc.
+ * (C) Copyright 2014 - 2017 Red Hat, Inc.
  */
 
 #ifndef NM_CORE_NM_INTERNAL_H
@@ -63,6 +62,7 @@
 #include "nm-setting-ppp.h"
 #include "nm-setting-pppoe.h"
 #include "nm-setting-serial.h"
+#include "nm-setting-tc-config.h"
 #include "nm-setting-team-port.h"
 #include "nm-setting-team.h"
 #include "nm-setting-tun.h"
@@ -469,6 +469,19 @@ nm_setting_ip_config_get_addr_family (NMSettingIPConfig *s_ip)
 		return AF_INET6;
 	g_return_val_if_reached (AF_UNSPEC);
 }
+
+/*****************************************************************************/
+
+guint32 _nm_utils_parse_tc_handle                (const char *str,
+                                                  GError **error);
+void _nm_utils_string_append_tc_parent           (GString *string,
+                                                  const char *prefix,
+                                                  guint32 parent);
+void _nm_utils_string_append_tc_qdisc_rest       (GString *string,
+                                                  NMTCQdisc *qdisc);
+gboolean _nm_utils_string_append_tc_tfilter_rest (GString *string,
+                                                  NMTCTfilter *tfilter,
+                                                  GError **error);
 
 /*****************************************************************************/
 

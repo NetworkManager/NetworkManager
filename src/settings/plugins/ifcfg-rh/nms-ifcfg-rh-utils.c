@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2008 - 2012 Red Hat, Inc.
+ * (C) Copyright 2008 - 2017 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -241,12 +241,6 @@ shvarFile *
 utils_get_route_ifcfg (const char *parent, gboolean should_create)
 {
 	return utils_get_extra_ifcfg (parent, ROUTE_TAG, should_create);
-}
-
-shvarFile *
-utils_get_route6_ifcfg (const char *parent, gboolean should_create)
-{
-	return utils_get_extra_ifcfg (parent, ROUTE6_TAG, should_create);
 }
 
 /* Finds out if route file has new or older format

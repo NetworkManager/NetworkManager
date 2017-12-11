@@ -1,6 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-/* NetworkManager audit support
- *
+/*
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -15,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2016 Red Hat, Inc.
+ * Copyright 2016 - 2017 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -48,9 +47,9 @@ _wait_for_ipv4_addr_device_route (NMPlatform *platform,
 
 		nmp_cache_iter_for_each (&iter,
 		                         nm_platform_lookup (platform,
-		                                             nmp_lookup_init_addrroute (&lookup,
-		                                                                        NMP_OBJECT_TYPE_IP4_ROUTE,
-		                                                                        ifindex)),
+		                                             nmp_lookup_init_object (&lookup,
+		                                                                     NMP_OBJECT_TYPE_IP4_ROUTE,
+		                                                                     ifindex)),
 		                         &o) {
 			const NMPlatformIP4Route *r = NMP_OBJECT_CAST_IP4_ROUTE (o);
 
@@ -794,7 +793,7 @@ again_find_idx:
 			order_len--;
 
 			r->ifindex = iface_data[idx].ifindex;
-			g_assert (nm_platform_ip_route_delete (platform, &o));
+			g_assert (nm_platform_object_delete (platform, &o));
 		}
 
 		head_entry = nm_platform_lookup (platform,

@@ -16,7 +16,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2005 - 2014 Red Hat, Inc.
+ * Copyright 2005 - 2017 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -33,6 +33,7 @@
 #include <gmodule.h>
 #include <sys/stat.h>
 #include <net/if.h>
+#include <linux/pkt_sched.h>
 
 #include "nm-utils/nm-jansson.h"
 #include "nm-utils/nm-enum-utils.h"
@@ -2055,6 +2056,550 @@ next:
 	}
 
 	return routes;
+}
+
+/*****************************************************************************/
+
+static void
+_string_append_tc_handle (GString *string, guint32 handle)
+{
+	g_string_append_printf (string, "%x:", TC_H_MAJ (handle) >> 16);
+	if (TC_H_MIN (handle) != TC_H_UNSPEC)
+		g_string_append_printf (string, "%x", TC_H_MIN (handle));
+}
+
+/**
+ * _nm_utils_string_append_tc_parent:
+ * @string: the string to write the parent handle to
+ * @prefix: optional prefix for the numeric handle
+ * @parent: the parent handle
+ *
+ * This is used to either write out the parent handle to the tc qdisc string
+ * or to pretty-format (use symbolic name for root) the key in keyfile.
+ * The presence of prefix determnines which one is the case.
+ *
+ * Private API due to general uglyness and overall uselessness for anything
+ * sensible.
+ */
+void
+_nm_utils_string_append_tc_parent (GString *string, const char *prefix, guint32 parent)
+{
+	if (parent == TC_H_ROOT) {
+		g_string_append (string, "root");
+	} else {
+		if (prefix) {
+			if (parent == TC_H_INGRESS)
+				return;
+			g_string_append_printf (string, "%s ", prefix);
+		}
+		_string_append_tc_handle (string, parent);
+	}
+
+	if (prefix)
+		g_string_append_c (string, ' ');
+}
+
+/**
+ * _nm_utils_parse_tc_handle:
+ * @str: the string representation of a qdisc handle
+ * @error: location of the error
+ *
+ * Parses tc style handle number into a numeric representation.
+ * Don't use this, use nm_utils_tc_qdisc_from_str() instead.
+ */
+guint32
+_nm_utils_parse_tc_handle (const char *str, GError **error)
+{
+	gint64 maj, min;
+	char *sep;
+
+	maj = g_ascii_strtoll (str, &sep, 0x10);
+	if (*sep == ':')
+		min = g_ascii_strtoll (&sep[1], &sep, 0x10);
+	else
+		min = 0;
+
+	if (*sep != '\0' || maj <= 0 || maj > 0xffff || min < 0 || min > 0xffff) {
+		g_set_error (error, 1, 0, _("'%s' is not a valid handle."), str);
+		return TC_H_UNSPEC;
+	}
+
+	return TC_H_MAKE (maj << 16, min);
+}
+
+#define TC_ATTR_SPEC_PTR(name, type, no_value, consumes_rest, str_type) \
+	&(NMVariantAttributeSpec) { name, type, FALSE, FALSE, no_value, consumes_rest, str_type }
+
+static const NMVariantAttributeSpec * const tc_object_attribute_spec[] = {
+	TC_ATTR_SPEC_PTR ("root",    G_VARIANT_TYPE_BOOLEAN, TRUE,  FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("parent",  G_VARIANT_TYPE_STRING,  FALSE, FALSE, 'a' ),
+	TC_ATTR_SPEC_PTR ("handle",  G_VARIANT_TYPE_STRING,  FALSE, FALSE, 'a' ),
+	TC_ATTR_SPEC_PTR ("kind",    G_VARIANT_TYPE_STRING,  TRUE,  FALSE, 'a' ),
+	TC_ATTR_SPEC_PTR ("",        G_VARIANT_TYPE_STRING,  TRUE,  TRUE,  'a' ),
+	NULL,
+};
+
+/*****************************************************************************/
+
+/**
+ * _nm_utils_string_append_tc_qdisc_rest:
+ * @string: the string to write the formatted qdisc to
+ * @qdisc: the %NMTCQdisc
+ *
+ * This formats the rest of the qdisc string but the parent. Useful to format
+ * the keyfile value and nowhere else.
+ * Use nm_utils_tc_qdisc_to_str() that also includes the parent instead.
+ */
+void
+_nm_utils_string_append_tc_qdisc_rest (GString *string, NMTCQdisc *qdisc)
+{
+	guint32 handle = nm_tc_qdisc_get_handle (qdisc);
+	const char *kind = nm_tc_qdisc_get_kind (qdisc);
+
+	if (handle != TC_H_UNSPEC && strcmp (kind, "ingress") != 0) {
+		g_string_append (string, "handle ");
+		_string_append_tc_handle (string, handle);
+		g_string_append_c (string, ' ');
+	}
+
+	g_string_append (string, kind);
+}
+
+/**
+ * nm_utils_tc_qdisc_to_str:
+ * @qdisc: the %NMTCQdisc
+ * @error: location of the error
+ *
+ * Turns the %NMTCQdisc into a tc style string representation of the queueing
+ * discipline.
+ *
+ * Returns: formatted string or %NULL
+ *
+ * Since: 1.12
+ */
+char *
+nm_utils_tc_qdisc_to_str (NMTCQdisc *qdisc, GError **error)
+{
+	GString *string;
+
+	string = g_string_sized_new (60);
+
+	_nm_utils_string_append_tc_parent (string, "parent",
+	                                   nm_tc_qdisc_get_parent (qdisc));
+	_nm_utils_string_append_tc_qdisc_rest (string, qdisc);
+
+	return g_string_free (string, FALSE);
+}
+
+
+static gboolean
+_tc_read_common_opts (const char *str,
+                      guint32 *handle,
+                      guint32 *parent,
+                      char **kind,
+                      char **rest,
+                      GError **error)
+{
+	gs_unref_hashtable GHashTable *ht = NULL;
+	GVariant *variant;
+
+        ht = nm_utils_parse_variant_attributes (str,
+                                                ' ', ' ', FALSE,
+                                                tc_object_attribute_spec,
+                                                error);
+	if (!ht)
+		return FALSE;
+
+	if (g_hash_table_contains (ht, "root"))
+		*parent = TC_H_ROOT;
+
+	variant = g_hash_table_lookup (ht, "parent");
+	if (variant) {
+		if (*parent != TC_H_UNSPEC) {
+			g_set_error (error, 1, 0,
+			             _("'%s' unexpected: parent already specified."),
+			             g_variant_get_string (variant, NULL));
+			return FALSE;
+		}
+		*parent = _nm_utils_parse_tc_handle (g_variant_get_string (variant, NULL), error);
+		if (*parent == TC_H_UNSPEC)
+			return FALSE;
+	}
+
+	variant = g_hash_table_lookup (ht, "handle");
+	if (variant) {
+		*handle = _nm_utils_parse_tc_handle (g_variant_get_string (variant, NULL), error);
+		if (*handle == TC_H_UNSPEC)
+			return FALSE;
+		if (TC_H_MIN (*handle)) {
+			g_set_error (error, 1, 0,
+			             _("invalid handle: '%s'"),
+			             g_variant_get_string (variant, NULL));
+			return FALSE;
+		}
+	}
+
+	variant = g_hash_table_lookup (ht, "kind");
+	if (variant) {
+		*kind = g_variant_dup_string (variant, NULL);
+		if (strcmp (*kind, "ingress") == 0) {
+			if (*parent == TC_H_UNSPEC)
+				*parent = TC_H_INGRESS;
+			if (*handle == TC_H_UNSPEC)
+				*handle = TC_H_MAKE (TC_H_INGRESS, 0);
+		}
+	}
+
+	if (*parent == TC_H_UNSPEC) {
+		if (*kind) {
+			g_free (*kind);
+			*kind = NULL;
+		}
+		g_set_error_literal (error, 1, 0, _("parent not specified."));
+		return FALSE;
+	}
+
+	variant = g_hash_table_lookup (ht, "");
+	if (variant)
+		*rest = g_variant_dup_string (variant, NULL);
+
+	return TRUE;
+}
+
+/**
+ * nm_utils_tc_qdisc_from_str:
+ * @str: the string representation of a qdisc
+ * @error: location of the error
+ *
+ * Parces the tc style string qdisc representation of the queueing
+ * discipline to a %NMTCQdisc instance. Supports a subset of the tc language.
+ *
+ * Returns: the %NMTCQdisc or %NULL
+ *
+ * Since: 1.12
+ */
+NMTCQdisc *
+nm_utils_tc_qdisc_from_str (const char *str, GError **error)
+{
+	guint32 handle = TC_H_UNSPEC;
+	guint32 parent = TC_H_UNSPEC;
+	gs_free char *kind = NULL;
+	gs_free char *rest = NULL;
+	NMTCQdisc *qdisc = NULL;
+	gs_unref_hashtable GHashTable *ht = NULL;
+
+	nm_assert (str);
+	nm_assert (!error || !*error);
+
+	ht = nm_utils_parse_variant_attributes (str,
+	                                        ' ', ' ', FALSE,
+	                                        tc_object_attribute_spec,
+	                                        error);
+	if (!ht)
+		return NULL;
+
+	if (!_tc_read_common_opts (str, &handle, &parent, &kind, &rest, error))
+		return NULL;
+
+	if (rest) {
+		g_set_error (error, 1, 0, _("unsupported qdisc option: '%s'."), rest);
+		return NULL;
+	}
+
+	qdisc = nm_tc_qdisc_new (kind, parent, error);
+	if (!qdisc)
+		return NULL;
+
+	nm_tc_qdisc_set_handle (qdisc, handle);
+
+	return qdisc;
+}
+/*****************************************************************************/
+
+static const NMVariantAttributeSpec * const tc_action_simple_attribute_spec[] = {
+	TC_ATTR_SPEC_PTR ("sdata",   G_VARIANT_TYPE_BYTESTRING,  FALSE, FALSE, 0   ),
+	NULL,
+};
+
+static const NMVariantAttributeSpec * const tc_action_attribute_spec[] = {
+	TC_ATTR_SPEC_PTR ("kind",    G_VARIANT_TYPE_STRING,      TRUE,  FALSE, 'a' ),
+	TC_ATTR_SPEC_PTR ("",        G_VARIANT_TYPE_STRING,      TRUE,  TRUE,  'a' ),
+	NULL,
+};
+
+static gboolean
+_string_append_tc_action (GString *string, NMTCAction *action, GError **error)
+{
+	gs_unref_hashtable GHashTable *ht = NULL;
+	const char *kind = nm_tc_action_get_kind (action);
+	gs_strfreev char **attr_names = NULL;
+	gs_free char *str = NULL;
+	int i;
+
+	ht = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, NULL);
+
+	g_string_append (string, kind);
+
+	attr_names = nm_tc_action_get_attribute_names (action);
+	for (i = 0; attr_names[i]; i++) {
+		g_hash_table_insert (ht, attr_names[i],
+		                     nm_tc_action_get_attribute (action, attr_names[i]));
+	}
+
+	if (i) {
+		str = nm_utils_format_variant_attributes (ht, ' ', ' ');
+		g_string_append_c (string, ' ');
+		g_string_append (string, str);
+	}
+
+	return TRUE;
+}
+
+/**
+ * nm_utils_tc_action_to_str:
+ * @action: the %NMTCAction
+ * @error: location of the error
+ *
+ * Turns the %NMTCAction into a tc style string representation of the queueing
+ * discipline.
+ *
+ * Returns: formatted string or %NULL
+ *
+ * Since: 1.12
+ */
+char *
+nm_utils_tc_action_to_str (NMTCAction *action, GError **error)
+{
+	GString *string;
+
+	string = g_string_sized_new (60);
+	if (!_string_append_tc_action (string, action, error)) {
+		g_string_free (string, TRUE);
+		return NULL;
+	}
+
+	return g_string_free (string, FALSE);
+}
+
+/**
+ * nm_utils_tc_action_from_str:
+ * @str: the string representation of a action
+ * @error: location of the error
+ *
+ * Parces the tc style string action representation of the queueing
+ * discipline to a %NMTCAction instance. Supports a subset of the tc language.
+ *
+ * Returns: the %NMTCAction or %NULL
+ *
+ * Since: 1.12
+ */
+NMTCAction *
+nm_utils_tc_action_from_str (const char *str, GError **error)
+{
+	const char *kind = NULL;
+	const char *rest = NULL;
+	NMTCAction *action = NULL;
+	gs_unref_hashtable GHashTable *ht = NULL;
+	gs_unref_hashtable GHashTable *options = NULL;
+	GVariant *variant;
+	const NMVariantAttributeSpec * const *attrs;
+
+	nm_assert (str);
+	nm_assert (!error || !*error);
+
+        ht = nm_utils_parse_variant_attributes (str,
+                                                ' ', ' ', FALSE,
+                                                tc_action_attribute_spec,
+                                                error);
+	if (!ht)
+		return FALSE;
+
+	variant = g_hash_table_lookup (ht, "kind");
+	if (variant) {
+		kind = g_variant_get_string (variant, NULL);
+	} else {
+		g_set_error_literal (error, 1, 0, _("action name missing."));
+		return NULL;
+	}
+
+	kind = g_variant_get_string (variant, NULL);
+	if (strcmp (kind, "simple") == 0)
+		attrs = tc_action_simple_attribute_spec;
+	else
+		attrs = NULL;
+
+	variant = g_hash_table_lookup (ht, "");
+	if (variant)
+		rest = g_variant_get_string (variant, NULL);
+
+	action = nm_tc_action_new (kind, error);
+	if (!action)
+		return NULL;
+
+	if (rest) {
+		GHashTableIter iter;
+		gpointer key, value;
+
+		if (!attrs) {
+			nm_tc_action_unref (action);
+			g_set_error (error, 1, 0, _("unsupported action option: '%s'."), rest);
+			return NULL;
+		}
+
+	        options = nm_utils_parse_variant_attributes (rest,
+	                                                     ' ', ' ', FALSE,
+	                                                     attrs,
+	                                                     error);
+		if (!options) {
+			nm_tc_action_unref (action);
+			return NULL;
+		}
+
+		g_hash_table_iter_init (&iter, options);
+		while (g_hash_table_iter_next (&iter, &key, &value))
+			nm_tc_action_set_attribute (action, key, g_variant_ref_sink (value));
+	}
+
+	return action;
+}
+
+/*****************************************************************************/
+
+/**
+ * _nm_utils_string_append_tc_tfilter_rest:
+ * @string: the string to write the formatted tfilter to
+ * @tfilter: the %NMTCTfilter
+ *
+ * This formats the rest of the tfilter string but the parent. Useful to format
+ * the keyfile value and nowhere else.
+ * Use nm_utils_tc_tfilter_to_str() that also includes the parent instead.
+ */
+gboolean
+_nm_utils_string_append_tc_tfilter_rest (GString *string, NMTCTfilter *tfilter, GError **error)
+{
+	guint32 handle = nm_tc_tfilter_get_handle (tfilter);
+	const char *kind = nm_tc_tfilter_get_kind (tfilter);
+	NMTCAction *action;
+
+	if (handle != TC_H_UNSPEC) {
+		g_string_append (string, "handle ");
+		_string_append_tc_handle (string, handle);
+		g_string_append_c (string, ' ');
+	}
+
+	g_string_append (string, kind);
+
+	action = nm_tc_tfilter_get_action (tfilter);
+	if (action) {
+		g_string_append (string, " action ");
+		if (!_string_append_tc_action (string, action, error))
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+/**
+ * nm_utils_tc_tfilter_to_str:
+ * @tfilter: the %NMTCTfilter
+ * @error: location of the error
+ *
+ * Turns the %NMTCTfilter into a tc style string representation of the queueing
+ * discipline.
+ *
+ * Returns: formatted string or %NULL
+ *
+ * Since: 1.12
+ */
+char *
+nm_utils_tc_tfilter_to_str (NMTCTfilter *tfilter, GError **error)
+{
+	GString *string;
+
+	string = g_string_sized_new (60);
+
+	_nm_utils_string_append_tc_parent (string, "parent",
+	                                   nm_tc_tfilter_get_parent (tfilter));
+	if (!_nm_utils_string_append_tc_tfilter_rest (string, tfilter, error)) {
+		g_string_free (string, TRUE);
+		return NULL;
+	}
+
+	return g_string_free (string, FALSE);
+}
+
+static const NMVariantAttributeSpec * const tc_tfilter_attribute_spec[] = {
+	TC_ATTR_SPEC_PTR ("action",  G_VARIANT_TYPE_BOOLEAN,     TRUE,  FALSE, 0   ),
+	TC_ATTR_SPEC_PTR ("",        G_VARIANT_TYPE_STRING,      TRUE,  TRUE,  'a' ),
+	NULL,
+};
+
+/**
+ * nm_utils_tc_tfilter_from_str:
+ * @str: the string representation of a tfilter
+ * @error: location of the error
+ *
+ * Parces the tc style string tfilter representation of the queueing
+ * discipline to a %NMTCTfilter instance. Supports a subset of the tc language.
+ *
+ * Returns: the %NMTCTfilter or %NULL
+ *
+ * Since: 1.12
+ */
+NMTCTfilter *
+nm_utils_tc_tfilter_from_str (const char *str, GError **error)
+{
+	guint32 handle = TC_H_UNSPEC;
+	guint32 parent = TC_H_UNSPEC;
+	gs_free char *kind = NULL;
+	gs_free char *rest = NULL;
+	NMTCAction *action = NULL;
+	const char *extra_opts = NULL;
+	NMTCTfilter *tfilter = NULL;
+	gs_unref_hashtable GHashTable *ht = NULL;
+	GVariant *variant;
+
+	nm_assert (str);
+	nm_assert (!error || !*error);
+
+	if (!_tc_read_common_opts (str, &handle, &parent, &kind, &rest, error))
+		return NULL;
+
+	if (rest) {
+	        ht = nm_utils_parse_variant_attributes (rest,
+	                                                ' ', ' ', FALSE,
+	                                                tc_tfilter_attribute_spec,
+	                                                error);
+		if (!ht)
+			return NULL;
+
+		variant = g_hash_table_lookup (ht, "");
+		if (variant)
+			extra_opts = g_variant_get_string (variant, NULL);
+
+		if (g_hash_table_contains (ht, "action")) {
+			action = nm_utils_tc_action_from_str (extra_opts, error);
+			if (!action) {
+				g_prefix_error (error, _("invalid action: "));
+				return NULL;
+			}
+		} else {
+			g_set_error (error, 1, 0, _("unsupported tfilter option: '%s'."), rest);
+			return NULL;
+		}
+	}
+
+	tfilter = nm_tc_tfilter_new (kind, parent, error);
+	if (!tfilter)
+		return NULL;
+
+	nm_tc_tfilter_set_handle (tfilter, handle);
+	if (action) {
+		nm_tc_tfilter_set_action (tfilter, action);
+		nm_tc_action_unref (action);
+	}
+
+	return tfilter;
 }
 
 /*****************************************************************************/
@@ -5407,8 +5952,10 @@ nm_utils_parse_variant_attributes (const char *string,
 		if (*ptr == '\\') {
 			ptr++;
 			if (!*ptr) {
-				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
-				             _("unterminated escape sequence"));
+				g_set_error_literal (error,
+				                     NM_CONNECTION_ERROR,
+				                     NM_CONNECTION_ERROR_FAILED,
+				                     _("unterminated escape sequence"));
 				return NULL;
 			}
 			goto next;
@@ -5425,8 +5972,10 @@ nm_utils_parse_variant_attributes (const char *string,
 				if (*sep == '\\') {
 					sep++;
 					if (!*sep) {
-						g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
-						             _("unterminated escape sequence"));
+						g_set_error_literal (error,
+						                     NM_CONNECTION_ERROR,
+						                     NM_CONNECTION_ERROR_FAILED,
+						                     _("unterminated escape sequence"));
 						return NULL;
 					}
 				}
@@ -5434,17 +5983,15 @@ nm_utils_parse_variant_attributes (const char *string,
 					break;
 			}
 
-			if (*sep != key_value_separator) {
-				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
-				             _("missing key-value separator '%c'"), key_value_separator);
-				return NULL;
-			}
-
 			name = attribute_unescape (start, sep);
-			value = attribute_unescape (sep + 1, ptr);
 
 			for (s = spec; *s; s++) {
+				if (g_hash_table_contains (ht, (*s)->name))
+					continue;
 				if (nm_streq (name, (*s)->name))
+					break;
+				if (   (*s)->no_value
+				    && g_variant_type_equal ((*s)->type, G_VARIANT_TYPE_STRING))
 					break;
 			}
 
@@ -5458,12 +6005,33 @@ nm_utils_parse_variant_attributes (const char *string,
 				}
 			}
 
+			if ((*s)->no_value) {
+				if ((*s)->consumes_rest) {
+					value = g_strdup (start);
+					ptr = strchr (start, '\0');
+				} else {
+					value = g_steal_pointer (&name);
+				}
+			} else {
+				if (*sep != key_value_separator) {
+					g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
+					             _("missing key-value separator '%c' after '%s'"), key_value_separator, name);
+					return NULL;
+				}
+
+				/* The attribute and key/value separators are the same. Look for the next one. */
+				if (ptr == sep)
+					goto next;
+
+				value = attribute_unescape (sep + 1, ptr);
+			}
+
 			if (g_variant_type_equal ((*s)->type, G_VARIANT_TYPE_UINT32)) {
 				gint64 num = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT32, -1);
 
 				if (num == -1) {
 					g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
-					             _("invalid uint32 value '%s' for attribute '%s'"), value, name);
+					             _("invalid uint32 value '%s' for attribute '%s'"), value, (*s)->name);
 					return NULL;
 				}
 				variant = g_variant_new_uint32 (num);
@@ -5472,30 +6040,32 @@ nm_utils_parse_variant_attributes (const char *string,
 
 				if (num == -1) {
 					g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
-					             _("invalid uint8 value '%s' for attribute '%s'"), value, name);
+					             _("invalid uint8 value '%s' for attribute '%s'"), value, (*s)->name);
 					return NULL;
 				}
 				variant = g_variant_new_byte ((guchar) num);
 			} else if (g_variant_type_equal ((*s)->type, G_VARIANT_TYPE_BOOLEAN)) {
 				int b;
 
-				b = _nm_utils_ascii_str_to_bool (value, -1);
+				b = (*s)->no_value ? TRUE :_nm_utils_ascii_str_to_bool (value, -1);
 				if (b == -1) {
 					g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
-					             _("invalid boolean value '%s' for attribute '%s'"), value, name);
+					             _("invalid boolean value '%s' for attribute '%s'"), value, (*s)->name);
 					return NULL;
 				}
 				variant = g_variant_new_boolean (b);
 			} else if (g_variant_type_equal ((*s)->type, G_VARIANT_TYPE_STRING)) {
 				variant = g_variant_new_take_string (g_steal_pointer (&value));
+			} else if (g_variant_type_equal ((*s)->type, G_VARIANT_TYPE_BYTESTRING)) {
+				variant = g_variant_new_bytestring (value);
 			} else {
 				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
-				             _("unsupported attribute '%s' of type '%s'"), name,
+				             _("unsupported attribute '%s' of type '%s'"), (*s)->name,
 				             (char *) (*s)->type);
 				return NULL;
 			}
 
-			g_hash_table_insert (ht, g_steal_pointer (&name), variant);
+			g_hash_table_insert (ht, g_strdup ((*s)->name), variant);
 			start = NULL;
 		}
 next:
@@ -5557,6 +6127,8 @@ nm_utils_format_variant_attributes (GHashTable *attributes,
 			value = g_variant_get_boolean (variant) ? "true" : "false";
 		else if (g_variant_is_of_type (variant, G_VARIANT_TYPE_STRING))
 			value = g_variant_get_string (variant, NULL);
+		else if (g_variant_is_of_type (variant, G_VARIANT_TYPE_BYTESTRING))
+			value = g_variant_get_bytestring (variant);
 		else
 			continue;
 

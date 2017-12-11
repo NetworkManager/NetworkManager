@@ -19,6 +19,7 @@
 
 #include "nm-default.h"
 
+#include <linux/pkt_sched.h>
 #include <string.h>
 
 #include "nm-utils.h"
@@ -27,6 +28,8 @@
 #include "nm-setting-dcb.h"
 #include "nm-setting-team.h"
 #include "nm-setting-team-port.h"
+#include "nm-setting-tc-config.h"
+#include "nm-setting-dummy.h"
 #include "nm-connection.h"
 #include "nm-simple-connection.h"
 #include "nm-setting-connection.h"
@@ -1246,6 +1249,318 @@ test_team_port_full_config (void)
 
 /*****************************************************************************/
 
+static void
+test_tc_config_qdisc (void)
+{
+	NMTCQdisc *qdisc1, *qdisc2;
+	char *str;
+	GError *error = NULL;
+
+	qdisc1 = nm_tc_qdisc_new ("fq_codel", TC_H_ROOT, &error);
+	nmtst_assert_success (qdisc1, error);
+
+	qdisc2 = nm_tc_qdisc_new ("fq_codel", TC_H_ROOT, &error);
+	nmtst_assert_success (qdisc2, error);
+
+	g_assert (nm_tc_qdisc_equal (qdisc1, qdisc2));
+
+	nm_tc_qdisc_unref (qdisc2);
+	qdisc2 = nm_tc_qdisc_dup (qdisc1);
+
+	g_assert (nm_tc_qdisc_equal (qdisc1, qdisc2));
+
+	g_assert_cmpstr (nm_tc_qdisc_get_kind (qdisc1), ==, "fq_codel");
+	g_assert (nm_tc_qdisc_get_handle (qdisc1) == TC_H_UNSPEC);
+	g_assert (nm_tc_qdisc_get_parent (qdisc1) == TC_H_ROOT);
+
+	str = nm_utils_tc_qdisc_to_str (qdisc1, &error);
+	nmtst_assert_success (str, error);
+	g_assert_cmpstr (str, ==, "root fq_codel");
+	g_free (str);
+
+	nm_tc_qdisc_unref (qdisc1);
+	qdisc1 = nm_tc_qdisc_new ("ingress", TC_H_INGRESS, &error);
+	nmtst_assert_success (qdisc1, error);
+
+	g_assert (!nm_tc_qdisc_equal (qdisc1, qdisc2));
+
+	str = nm_utils_tc_qdisc_to_str (qdisc1, &error);
+	nmtst_assert_success (str, error);
+	g_assert_cmpstr (str, ==, "ingress");
+	g_free (str);
+
+	nm_tc_qdisc_unref (qdisc1);
+	qdisc1 = nm_utils_tc_qdisc_from_str ("narodil sa kristus pan",  &error);
+	nmtst_assert_no_success (qdisc1, error);
+	g_clear_error (&error);
+
+	qdisc1 = nm_utils_tc_qdisc_from_str ("handle 1234 parent fff1:1 pfifo_fast",  &error);
+	nmtst_assert_success (qdisc1, error);
+
+	g_assert_cmpstr (nm_tc_qdisc_get_kind (qdisc1), ==, "pfifo_fast");
+	g_assert (nm_tc_qdisc_get_handle (qdisc1) == TC_H_MAKE (0x1234 << 16, 0x0000));
+	g_assert (nm_tc_qdisc_get_parent (qdisc1) == TC_H_MAKE (0xfff1 << 16, 0x0001));
+
+	str = nm_utils_tc_qdisc_to_str (qdisc1, &error);
+	nmtst_assert_success (str, error);
+	g_assert_cmpstr (str, ==, "parent fff1:1 handle 1234: pfifo_fast");
+	g_free (str);
+
+	nm_tc_qdisc_unref (qdisc2);
+	str = nm_utils_tc_qdisc_to_str (qdisc1, &error);
+	nmtst_assert_success (str, error);
+	qdisc2 = nm_utils_tc_qdisc_from_str (str, &error);
+	nmtst_assert_success (qdisc2, error);
+	g_free (str);
+
+	g_assert (nm_tc_qdisc_equal (qdisc1, qdisc2));
+
+	nm_tc_qdisc_unref (qdisc1);
+	nm_tc_qdisc_unref (qdisc2);
+}
+
+static void
+test_tc_config_action (void)
+{
+	NMTCAction *action1, *action2;
+	char *str;
+	GError *error = NULL;
+
+	action1 = nm_tc_action_new ("drop", &error);
+	nmtst_assert_success (action1, error);
+	action2 = nm_tc_action_new ("drop", &error);
+	nmtst_assert_success (action2, error);
+
+	g_assert (nm_tc_action_equal (action1, action2));
+	g_assert_cmpstr (nm_tc_action_get_kind (action1), ==, "drop");
+
+	nm_tc_action_unref (action1);
+	action1 = nm_tc_action_new ("simple", &error);
+	nmtst_assert_success (action1, error);
+	nm_tc_action_set_attribute (action1, "sdata", g_variant_new_bytestring ("Hello"));
+
+	g_assert (!nm_tc_action_equal (action1, action2));
+
+	str = nm_utils_tc_action_to_str (action1, &error);
+	nmtst_assert_success (str, error);
+	g_assert_cmpstr (str, ==, "simple sdata Hello");
+	g_free (str);
+
+	str = nm_utils_tc_action_to_str (action2, &error);
+	nmtst_assert_success (str, error);
+	g_assert_cmpstr (str, ==, "drop");
+	g_free (str);
+
+	nm_tc_action_unref (action2);
+	action2 = nm_tc_action_dup (action1);
+
+	g_assert (nm_tc_action_equal (action1, action2));
+
+	nm_tc_action_unref (action1);
+	action1 = nm_utils_tc_action_from_str ("narodil sa kristus pan",  &error);
+	nmtst_assert_no_success (action1, error);
+	g_clear_error (&error);
+
+	action1 = nm_utils_tc_action_from_str ("simple sdata Hello",  &error);
+	nmtst_assert_success (action1, error);
+
+	g_assert_cmpstr (nm_tc_action_get_kind (action1), ==, "simple");
+	g_assert_cmpstr (g_variant_get_bytestring (nm_tc_action_get_attribute (action1, "sdata")), ==, "Hello");
+
+	nm_tc_action_unref (action1);
+	nm_tc_action_unref (action2);
+}
+
+static void
+test_tc_config_tfilter (void)
+{
+	NMTCAction *action1;
+	NMTCTfilter *tfilter1, *tfilter2;
+	char *str;
+	GError *error = NULL;
+
+	tfilter1 = nm_tc_tfilter_new ("matchall",
+	                              TC_H_MAKE (0x1234 << 16, 0x0000),
+	                              &error);
+	nmtst_assert_success (tfilter1, error);
+
+	tfilter2 = nm_tc_tfilter_new ("matchall",
+	                              TC_H_MAKE (0x1234 << 16, 0x0000),
+	                              &error);
+	nmtst_assert_success (tfilter2, error);
+
+	g_assert (nm_tc_tfilter_equal (tfilter1, tfilter2));
+
+	action1 = nm_tc_action_new ("simple", &error);
+	nmtst_assert_success (action1, error);
+	nm_tc_action_set_attribute (action1, "sdata", g_variant_new_bytestring ("Hello"));
+	nm_tc_tfilter_set_action (tfilter1, action1);
+	nm_tc_action_unref (action1);
+
+	g_assert (!nm_tc_tfilter_equal (tfilter1, tfilter2));
+
+	str = nm_utils_tc_tfilter_to_str (tfilter1, &error);
+	nmtst_assert_success (str, error);
+	g_assert_cmpstr (str, ==, "parent 1234: matchall action simple sdata Hello");
+	g_free (str);
+
+	nm_tc_tfilter_unref (tfilter2);
+	tfilter2 = nm_tc_tfilter_dup (tfilter1);
+
+	g_assert (nm_tc_tfilter_equal (tfilter1, tfilter2));
+
+	nm_tc_tfilter_unref (tfilter1);
+	tfilter1 = nm_utils_tc_tfilter_from_str ("narodil sa kristus pan",  &error);
+	nmtst_assert_no_success (tfilter1, error);
+	g_clear_error (&error);
+
+	str = nm_utils_tc_tfilter_to_str (tfilter2, &error);
+	nmtst_assert_success (str, error);
+	tfilter1 = nm_utils_tc_tfilter_from_str (str, &error);
+	nmtst_assert_success (tfilter1, error);
+	g_free (str);
+
+	g_assert (nm_tc_tfilter_equal (tfilter1, tfilter2));
+
+	nm_tc_tfilter_unref (tfilter1);
+	nm_tc_tfilter_unref (tfilter2);
+}
+
+static void
+test_tc_config_setting (void)
+{
+	gs_unref_object NMSettingTCConfig *s_tc = NULL;
+	NMTCQdisc *qdisc1, *qdisc2;
+	GError *error = NULL;
+
+	s_tc = (NMSettingTCConfig *) nm_setting_tc_config_new ();
+
+	qdisc1 = nm_tc_qdisc_new ("fq_codel", TC_H_ROOT, &error);
+	nmtst_assert_success (qdisc1, error);
+
+	qdisc2 = nm_tc_qdisc_new ("pfifo_fast",
+	                          TC_H_MAKE (0xfff1 << 16, 0x0001),
+	                          &error);
+	nmtst_assert_success (qdisc2, error);
+	nm_tc_qdisc_set_handle (qdisc2, TC_H_MAKE (0x1234 << 16, 0x0000));
+
+	g_assert (nm_setting_tc_config_get_num_qdiscs (s_tc) == 0);
+	g_assert (nm_setting_tc_config_add_qdisc (s_tc, qdisc1) == TRUE);
+	g_assert (nm_setting_tc_config_get_num_qdiscs (s_tc) == 1);
+	g_assert (nm_setting_tc_config_get_qdisc (s_tc, 0) != NULL);
+	g_assert (nm_setting_tc_config_remove_qdisc_by_value (s_tc, qdisc2) == FALSE);
+	g_assert (nm_setting_tc_config_add_qdisc (s_tc, qdisc2) == TRUE);
+	g_assert (nm_setting_tc_config_get_num_qdiscs (s_tc) == 2);
+	g_assert (nm_setting_tc_config_remove_qdisc_by_value (s_tc, qdisc1) == TRUE);
+	g_assert (nm_setting_tc_config_get_num_qdiscs (s_tc) == 1);
+	nm_setting_tc_config_clear_qdiscs (s_tc);
+	g_assert (nm_setting_tc_config_get_num_qdiscs (s_tc) == 0);
+
+	nm_tc_qdisc_unref (qdisc1);
+	nm_tc_qdisc_unref (qdisc2);
+}
+
+static void
+test_tc_config_dbus (void)
+{
+	NMConnection *connection1, *connection2;
+	NMSetting *s_tc;
+	NMTCQdisc *qdisc1, *qdisc2;
+	NMTCTfilter *tfilter1, *tfilter2;
+	NMTCAction *action;
+	GVariant *dbus, *tc_dbus, *var1, *var2;
+	GError *error = NULL;
+	gboolean success;
+
+	connection1 = nmtst_create_minimal_connection ("dummy",
+	                                               NULL,
+	                                               NM_SETTING_DUMMY_SETTING_NAME,
+	                                               NULL);
+
+	s_tc = nm_setting_tc_config_new ();
+
+	qdisc1 = nm_tc_qdisc_new ("fq_codel", TC_H_ROOT, &error);
+	nmtst_assert_success (qdisc1, error);
+	nm_tc_qdisc_set_handle (qdisc1, TC_H_MAKE (0x1234 << 16, 0x0000));
+	nm_setting_tc_config_add_qdisc (NM_SETTING_TC_CONFIG (s_tc), qdisc1);
+
+	qdisc2 = nm_tc_qdisc_new ("ingress", TC_H_INGRESS, &error);
+	nmtst_assert_success (qdisc2, error);
+	nm_tc_qdisc_set_handle (qdisc2, TC_H_MAKE (TC_H_INGRESS, 0));
+	nm_setting_tc_config_add_qdisc (NM_SETTING_TC_CONFIG (s_tc), qdisc2);
+
+	tfilter1 = nm_tc_tfilter_new ("matchall",
+	                              TC_H_MAKE (0x1234 << 16, 0x0000),
+	                              &error);
+	nmtst_assert_success (tfilter1, error);
+	action = nm_tc_action_new ("drop", &error);
+	nmtst_assert_success (action, error);
+	nm_tc_tfilter_set_action (tfilter1, action);
+	nm_tc_action_unref (action);
+	nm_setting_tc_config_add_tfilter (NM_SETTING_TC_CONFIG (s_tc), tfilter1);
+	nm_tc_tfilter_unref (tfilter1);
+
+	tfilter2 = nm_tc_tfilter_new ("matchall",
+	                              TC_H_MAKE (TC_H_INGRESS, 0),
+	                              &error);
+	nmtst_assert_success (tfilter2, error);
+	action = nm_tc_action_new ("simple", &error);
+	nmtst_assert_success (action, error);
+	nm_tc_action_set_attribute (action, "sdata", g_variant_new_bytestring ("Hello"));
+	nm_tc_tfilter_set_action (tfilter2, action);
+	nm_tc_action_unref (action);
+	nm_setting_tc_config_add_tfilter (NM_SETTING_TC_CONFIG (s_tc), tfilter2);
+	nm_tc_tfilter_unref (tfilter2);
+
+	nm_connection_add_setting (connection1, s_tc);
+
+	dbus = nm_connection_to_dbus (connection1, NM_CONNECTION_SERIALIZE_ALL);
+
+	tc_dbus = g_variant_lookup_value (dbus, "tc", G_VARIANT_TYPE_VARDICT);
+	g_assert (tc_dbus);
+
+	var1 = g_variant_lookup_value (tc_dbus, "qdiscs", G_VARIANT_TYPE ("aa{sv}"));
+	var2 = g_variant_new_parsed ("[{'kind':   <'fq_codel'>,"
+	                             "  'handle': <uint32 0x12340000>,"
+	                             "  'parent': <uint32 0xffffffff>},"
+	                             " {'kind':   <'ingress'>,"
+	                             "  'handle': <uint32 0xffff0000>,"
+	                             "  'parent': <uint32 0xfffffff1>}]");
+	g_assert (g_variant_equal (var1, var2));
+	g_variant_unref (var1);
+	g_variant_unref (var2);
+
+	var1 = g_variant_lookup_value (tc_dbus, "tfilters", G_VARIANT_TYPE ("aa{sv}"));
+	var2 = g_variant_new_parsed ("[{'kind':   <'matchall'>,"
+	                             "  'handle': <uint32 0>,"
+	                             "  'parent': <uint32 0x12340000>,"
+	                             "  'action': <{'kind': <'drop'>}>},"
+	                             " {'kind':   <'matchall'>,"
+	                             "  'handle': <uint32 0>,"
+	                             "  'parent': <uint32 0xffff0000>,"
+	                             "  'action': <{'kind':  <'simple'>,"
+	                             "              'sdata': <b'Hello'>}>}]");
+	g_variant_unref (var1);
+	g_variant_unref (var2);
+
+	g_variant_unref (tc_dbus);
+
+	connection2 = nm_simple_connection_new ();
+	success = nm_connection_replace_settings (connection2, dbus, &error);
+	nmtst_assert_success (success, error);
+
+	g_assert (nm_connection_diff (connection1, connection2, NM_SETTING_COMPARE_FLAG_EXACT, NULL));
+
+	g_variant_unref (dbus);
+
+	nm_tc_qdisc_unref (qdisc1);
+	nm_tc_qdisc_unref (qdisc2);
+
+	g_object_unref (connection1);
+	g_object_unref (connection2);
+}
+
+/*****************************************************************************/
 
 NMTST_DEFINE ();
 
@@ -1276,6 +1591,12 @@ main (int argc, char **argv)
 	g_test_add_func ("/libnm/settings/dcb/app-priorities", test_dcb_app_priorities);
 	g_test_add_func ("/libnm/settings/dcb/priorities", test_dcb_priorities_valid);
 	g_test_add_func ("/libnm/settings/dcb/bandwidth-sums", test_dcb_bandwidth_sums);
+
+	g_test_add_func ("/libnm/settings/tc_config/qdisc", test_tc_config_qdisc);
+	g_test_add_func ("/libnm/settings/tc_config/action", test_tc_config_action);
+	g_test_add_func ("/libnm/settings/tc_config/tfilter", test_tc_config_tfilter);
+	g_test_add_func ("/libnm/settings/tc_config/setting", test_tc_config_setting);
+	g_test_add_func ("/libnm/settings/tc_config/dbus", test_tc_config_dbus);
 
 #if WITH_JSON_VALIDATION
 	g_test_add_func ("/libnm/settings/team/sync_runner_from_config_roundrobin",
