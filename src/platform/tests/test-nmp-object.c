@@ -502,10 +502,10 @@ test_cache_qdisc (void)
 	nm_auto_unref_dedup_multi_index NMDedupMultiIndex *multi_idx = NULL;
 	NMPLookup lookup;
 	const NMDedupMultiHeadEntry *head_entry;
-	NMPObject *obj1a = nmp_object_new (NMP_OBJECT_TYPE_QDISC, (NMPlatformObject *) &pl_qdisc_1a);
-	NMPObject *obj1b = nmp_object_new (NMP_OBJECT_TYPE_QDISC, (NMPlatformObject *) &pl_qdisc_1b);
-	NMPObject *obj1c = nmp_object_new (NMP_OBJECT_TYPE_QDISC, (NMPlatformObject *) &pl_qdisc_1c);
-	NMPObject *obj2 = nmp_object_new (NMP_OBJECT_TYPE_QDISC, (NMPlatformObject *) &pl_qdisc_2);
+	nm_auto_nmpobj NMPObject *obj1a = nmp_object_new (NMP_OBJECT_TYPE_QDISC, (NMPlatformObject *) &pl_qdisc_1a);
+	nm_auto_nmpobj NMPObject *obj1b = nmp_object_new (NMP_OBJECT_TYPE_QDISC, (NMPlatformObject *) &pl_qdisc_1b);
+	nm_auto_nmpobj NMPObject *obj1c = nmp_object_new (NMP_OBJECT_TYPE_QDISC, (NMPlatformObject *) &pl_qdisc_1c);
+	nm_auto_nmpobj NMPObject *obj2 = nmp_object_new (NMP_OBJECT_TYPE_QDISC, (NMPlatformObject *) &pl_qdisc_2);
 
 	multi_idx = nm_dedup_multi_index_new ();
 	cache = nmp_cache_new (multi_idx, nmtst_get_rand_int () % 2);
