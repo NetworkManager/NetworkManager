@@ -283,7 +283,7 @@ typedef enum {
 
 #define FOR_EACH_DELAYED_ACTION(iflags, flags_all) \
 	for ((iflags) = (DelayedActionType) 0x1LL; (iflags) <= DELAYED_ACTION_TYPE_MAX; (iflags) <<= 1) \
-		if (NM_FLAGS_HAS (flags_all, iflags))
+		if (NM_FLAGS_ANY (flags_all, iflags))
 
 typedef enum {
 	/* Negative values are errors from kernel. Add dummy member to

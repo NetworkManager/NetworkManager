@@ -537,7 +537,7 @@ _nm_setting_bond_option_supported (const char *option, NMBondMode mode)
 
 	for (i = 0; i < G_N_ELEMENTS (bond_unsupp_modes); i++) {
 		if (nm_streq (option, bond_unsupp_modes[i].option))
-		    return !NM_FLAGS_HAS (bond_unsupp_modes[i].unsupp_modes, BIT (mode));
+			return !NM_FLAGS_ANY (bond_unsupp_modes[i].unsupp_modes, BIT (mode));
 	}
 
 	return TRUE;

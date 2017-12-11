@@ -12246,7 +12246,7 @@ nm_device_check_connection_available (NMDevice *self,
 
 		for (i = 0; i <= NM_DEVICE_CHECK_CON_AVAILABLE_ALL; i++) {
 			for (j = 1; j <= NM_DEVICE_CHECK_CON_AVAILABLE_ALL; j <<= 1) {
-				if (NM_FLAGS_HAS (i, j)) {
+				if (NM_FLAGS_ANY (i, j)) {
 					k = i & ~j;
 					nm_assert (   available_all[i] == available_all[k]
 					           || available_all[i]);

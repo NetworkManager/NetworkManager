@@ -123,7 +123,7 @@ build_message (GPtrArray *fields, AuditBackend backend)
 	for (i = 0; i < fields->len; i++) {
 		field = fields->pdata[i];
 
-		if (!NM_FLAGS_HAS (field->backends, backend))
+		if (!NM_FLAGS_ANY (field->backends, backend))
 			continue;
 
 		if (first)
