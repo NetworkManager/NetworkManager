@@ -607,17 +607,12 @@ nm_settings_connection_update (NMSettingsConnection *self,
 	gboolean replaced = FALSE;
 	gs_free char *logmsg_change = NULL;
 	GError *local = NULL;
-	gboolean save_to_disk;
 
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
 
 	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
-	save_to_disk =    (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK)
-	               || (   persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP
-	                   && !nm_settings_connection_get_unsaved (self));
-
-	if (save_to_disk) {
+	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK) {
 		klass = NM_SETTINGS_CONNECTION_GET_CLASS (self);
 		if (!klass->commit_changes) {
 			g_set_error (&local,
@@ -634,7 +629,7 @@ nm_settings_connection_update (NMSettingsConnection *self,
 	                         &local))
 		goto out;
 
-	if (save_to_disk) {
+	if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK) {
 		if (!klass->commit_changes (self,
 		                            new_connection ?: NM_CONNECTION (self),
 		                            commit_reason,
