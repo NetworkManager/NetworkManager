@@ -691,7 +691,11 @@ nm_settings_connection_update (NMSettingsConnection *self,
 
 	nm_settings_connection_recheck_visibility (self);
 
-	set_persist_mode (self, persist_mode);
+	if (   replaced
+	    && persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP)
+		set_persist_mode (self, NM_SETTINGS_CONNECTION_PERSIST_MODE_UNSAVED);
+	else
+		set_persist_mode (self, persist_mode);
 
 	if (NM_IN_SET (persist_mode, NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY,
 	                             NM_SETTINGS_CONNECTION_PERSIST_MODE_VOLATILE_ONLY))
