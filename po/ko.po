@@ -21,7 +21,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-11-10 15:29+0100\n"
+"POT-Creation-Date: 2017-12-12 10:50+0100\n"
 "PO-Revision-Date: 2017-04-21 05:38-0400\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: GNOME Korea <gnome-kr@googlegroups.com>\n"
@@ -199,7 +199,7 @@ msgstr "연결 (이름, UUID, 또는 경로): "
 msgid "Connection(s) (name, UUID, path or apath)"
 msgstr "연결 (이름, UUID, 또는 경로): "
 
-#: ../clients/cli/connections.c:196
+#: ../clients/cli/connections.c:197
 #, c-format
 msgid ""
 "Usage: nmcli connection { COMMAND | help }\n"
@@ -240,7 +240,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: ../clients/cli/connections.c:218
+#: ../clients/cli/connections.c:219
 #, c-format
 msgid ""
 "Usage: nmcli connection show { ARGUMENTS | help }\n"
@@ -287,7 +287,7 @@ msgstr ""
 "고려됩니다. 글로벌 --show-secrets 옵션을 사용하면 관련 Secret도 함께 표시할 "
 "수 있습니다.\n"
 
-#: ../clients/cli/connections.c:239
+#: ../clients/cli/connections.c:240
 #, c-format
 msgid ""
 "Usage: nmcli connection up { ARGUMENTS | help }\n"
@@ -331,7 +331,7 @@ msgstr ""
 "passwd-file - 연결을 활성화하는 데 필요한 암호가 있는 파일\n"
 "\n"
 
-#: ../clients/cli/connections.c:260
+#: ../clients/cli/connections.c:261
 #, c-format
 msgid ""
 "Usage: nmcli connection down { ARGUMENTS | help }\n"
@@ -353,7 +353,7 @@ msgstr ""
 "식별됩니다.\n"
 "\n"
 
-#: ../clients/cli/connections.c:272
+#: ../clients/cli/connections.c:273
 #, c-format
 msgid ""
 "Usage: nmcli connection add { ARGUMENTS | help }\n"
@@ -505,7 +505,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: ../clients/cli/connections.c:390
+#: ../clients/cli/connections.c:391
 #, c-format
 msgid ""
 "Usage: nmcli connection modify { ARGUMENTS | help }\n"
@@ -551,7 +551,7 @@ msgstr ""
 "nmcli con mod bond0 -bond.options downdelay\n"
 "\n"
 
-#: ../clients/cli/connections.c:413
+#: ../clients/cli/connections.c:414
 #, c-format
 msgid ""
 "Usage: nmcli connection clone { ARGUMENTS | help }\n"
@@ -573,7 +573,7 @@ msgstr ""
 "ID(<새 이름> 인수로 제공됨)는 예외입니다.\n"
 "\n"
 
-#: ../clients/cli/connections.c:425
+#: ../clients/cli/connections.c:426
 #, c-format
 msgid ""
 "Usage: nmcli connection edit { ARGUMENTS | help }\n"
@@ -600,7 +600,7 @@ msgstr ""
 "상호 대화식 편집기에서 새 연결 프로파일을 추가합니다.\n"
 "\n"
 
-#: ../clients/cli/connections.c:440
+#: ../clients/cli/connections.c:441
 #, c-format
 msgid ""
 "Usage: nmcli connection delete { ARGUMENTS | help }\n"
@@ -619,7 +619,7 @@ msgstr ""
 "프로파일은 이름, UUID, D-Bus 경로로 식별합니다.\n"
 "\n"
 
-#: ../clients/cli/connections.c:451
+#: ../clients/cli/connections.c:452
 #, c-format
 msgid ""
 "Usage: nmcli connection monitor { ARGUMENTS | help }\n"
@@ -640,7 +640,7 @@ msgstr ""
 "아무 것도 지정되지 않은 경우 모든 연결 프로파일을 모니터링합니다.\n"
 "\n"
 
-#: ../clients/cli/connections.c:463
+#: ../clients/cli/connections.c:464
 #, c-format
 msgid ""
 "Usage: nmcli connection reload { help }\n"
@@ -653,7 +653,7 @@ msgstr ""
 "디스크에서 모든 연결 파일을 다시 불러옵니다.\n"
 "\n"
 
-#: ../clients/cli/connections.c:471
+#: ../clients/cli/connections.c:472
 #, c-format
 msgid ""
 "Usage: nmcli connection load { ARGUMENTS | help }\n"
@@ -676,7 +676,7 @@ msgstr ""
 "이 명령을 사용합니다.\n"
 "\n"
 
-#: ../clients/cli/connections.c:483
+#: ../clients/cli/connections.c:484
 #, c-format
 msgid ""
 "Usage: nmcli connection import { ARGUMENTS | help }\n"
@@ -700,7 +700,7 @@ msgstr ""
 "네트워크 관리자 VPN 플러그인을 통해 가져옵니다.\n"
 "\n"
 
-#: ../clients/cli/connections.c:496
+#: ../clients/cli/connections.c:497
 #, c-format
 msgid ""
 "Usage: nmcli connection export { ARGUMENTS | help }\n"
@@ -719,23 +719,23 @@ msgstr ""
 "데이터는 표준 출력으로 이동되거나 파일로 디렉션됩니다(이름이 주어진 경우).\n"
 "\n"
 
-#: ../clients/cli/connections.c:530
+#: ../clients/cli/connections.c:531
 msgid "activating"
 msgstr "활성화중"
 
-#: ../clients/cli/connections.c:532
+#: ../clients/cli/connections.c:533
 msgid "activated"
 msgstr "활성화됨"
 
-#: ../clients/cli/connections.c:534 ../clients/common/nm-client-utils.c:243
+#: ../clients/cli/connections.c:535 ../clients/common/nm-client-utils.c:243
 msgid "deactivating"
 msgstr "활성화 해제하는 중"
 
-#: ../clients/cli/connections.c:536
+#: ../clients/cli/connections.c:537
 msgid "deactivated"
 msgstr "비활성화됨"
 
-#: ../clients/cli/connections.c:539 ../clients/cli/connections.c:562
+#: ../clients/cli/connections.c:540 ../clients/cli/connections.c:563
 #: ../clients/cli/devices.c:1210 ../clients/cli/devices.c:1254
 #: ../clients/cli/devices.c:1256 ../clients/cli/general.c:41
 #: ../clients/cli/general.c:79 ../clients/cli/general.c:146
@@ -743,65 +743,65 @@ msgstr "비활성화됨"
 #: ../clients/common/nm-client-utils.c:250
 #: ../clients/common/nm-client-utils.c:266
 #: ../clients/common/nm-client-utils.c:269
-#: ../clients/common/nm-meta-setting-desc.c:1335
-#: ../clients/common/nm-meta-setting-desc.c:1403
-#: ../clients/common/nm-meta-setting-desc.c:2545
-#: ../clients/common/nm-meta-setting-desc.c:2599
+#: ../clients/common/nm-meta-setting-desc.c:1480
+#: ../clients/common/nm-meta-setting-desc.c:1548
+#: ../clients/common/nm-meta-setting-desc.c:2693
+#: ../clients/common/nm-meta-setting-desc.c:2747
 msgid "unknown"
 msgstr "알 수 없음"
 
-#: ../clients/cli/connections.c:548
+#: ../clients/cli/connections.c:549
 msgid "VPN connecting (prepare)"
 msgstr "VPN 연결 중 (준비)"
 
-#: ../clients/cli/connections.c:550
+#: ../clients/cli/connections.c:551
 msgid "VPN connecting (need authentication)"
 msgstr "VPN 연결 중 (인증 필요)"
 
-#: ../clients/cli/connections.c:552
+#: ../clients/cli/connections.c:553
 msgid "VPN connecting"
 msgstr "VPN 연결 중"
 
-#: ../clients/cli/connections.c:554
+#: ../clients/cli/connections.c:555
 msgid "VPN connecting (getting IP configuration)"
 msgstr "VPN 연결 중 (IP 설정 얻는 중)"
 
-#: ../clients/cli/connections.c:556
+#: ../clients/cli/connections.c:557
 msgid "VPN connected"
 msgstr "VPN 연결 됨"
 
-#: ../clients/cli/connections.c:558
+#: ../clients/cli/connections.c:559
 msgid "VPN connection failed"
 msgstr "VPN 연결 실패"
 
-#: ../clients/cli/connections.c:560
+#: ../clients/cli/connections.c:561
 msgid "VPN disconnected"
 msgstr "VPN 연결 끊겼음"
 
-#: ../clients/cli/connections.c:630
+#: ../clients/cli/connections.c:631
 #, c-format
 msgid "Error updating secrets for %s: %s\n"
 msgstr "%s의 secret 업데이트 도중 오류 발생: %s\n"
 
-#: ../clients/cli/connections.c:650
+#: ../clients/cli/connections.c:651
 msgid "Connection profile details"
 msgstr "연결 프로파일 세부 정보"
 
-#: ../clients/cli/connections.c:663 ../clients/cli/connections.c:1113
+#: ../clients/cli/connections.c:664 ../clients/cli/connections.c:1114
 #, c-format
 msgid "Error: 'connection show': %s"
 msgstr "오류: 'connection show': %s"
 
-#: ../clients/cli/connections.c:881
+#: ../clients/cli/connections.c:882
 msgid "never"
 msgstr "하지않음"
 
 #. "CAPABILITIES"
-#: ../clients/cli/connections.c:882 ../clients/cli/connections.c:884
-#: ../clients/cli/connections.c:886 ../clients/cli/connections.c:919
-#: ../clients/cli/connections.c:986 ../clients/cli/connections.c:987
-#: ../clients/cli/connections.c:989 ../clients/cli/connections.c:4432
-#: ../clients/cli/connections.c:6370 ../clients/cli/connections.c:6371
+#: ../clients/cli/connections.c:883 ../clients/cli/connections.c:885
+#: ../clients/cli/connections.c:887 ../clients/cli/connections.c:920
+#: ../clients/cli/connections.c:987 ../clients/cli/connections.c:988
+#: ../clients/cli/connections.c:990 ../clients/cli/connections.c:4433
+#: ../clients/cli/connections.c:6371 ../clients/cli/connections.c:6372
 #: ../clients/cli/devices.c:884 ../clients/cli/devices.c:1173
 #: ../clients/cli/devices.c:1174 ../clients/cli/devices.c:1175
 #: ../clients/cli/devices.c:1176 ../clients/cli/devices.c:1177
@@ -812,16 +812,16 @@ msgstr "하지않음"
 #: ../clients/cli/devices.c:1252 ../clients/cli/devices.c:1253
 #: ../clients/cli/devices.c:1255 ../clients/cli/devices.c:1257
 #: ../clients/cli/general.c:152 ../clients/common/nm-client-utils.c:258
-#: ../clients/common/nm-meta-setting-desc.c:575
-#: ../clients/common/nm-meta-setting-desc.c:2538
+#: ../clients/common/nm-meta-setting-desc.c:720
+#: ../clients/common/nm-meta-setting-desc.c:2686
 msgid "yes"
 msgstr "예"
 
-#: ../clients/cli/connections.c:882 ../clients/cli/connections.c:884
-#: ../clients/cli/connections.c:886 ../clients/cli/connections.c:986
-#: ../clients/cli/connections.c:987 ../clients/cli/connections.c:989
-#: ../clients/cli/connections.c:4431 ../clients/cli/connections.c:6370
-#: ../clients/cli/connections.c:6371 ../clients/cli/devices.c:884
+#: ../clients/cli/connections.c:883 ../clients/cli/connections.c:885
+#: ../clients/cli/connections.c:887 ../clients/cli/connections.c:987
+#: ../clients/cli/connections.c:988 ../clients/cli/connections.c:990
+#: ../clients/cli/connections.c:4432 ../clients/cli/connections.c:6371
+#: ../clients/cli/connections.c:6372 ../clients/cli/devices.c:884
 #: ../clients/cli/devices.c:1173 ../clients/cli/devices.c:1174
 #: ../clients/cli/devices.c:1175 ../clients/cli/devices.c:1176
 #: ../clients/cli/devices.c:1177 ../clients/cli/devices.c:1214
@@ -832,65 +832,65 @@ msgstr "예"
 #: ../clients/cli/devices.c:1253 ../clients/cli/devices.c:1255
 #: ../clients/cli/devices.c:1257 ../clients/cli/general.c:153
 #: ../clients/common/nm-client-utils.c:260
-#: ../clients/common/nm-meta-setting-desc.c:575
-#: ../clients/common/nm-meta-setting-desc.c:2541
+#: ../clients/common/nm-meta-setting-desc.c:720
+#: ../clients/common/nm-meta-setting-desc.c:2689
 msgid "no"
 msgstr "아니요"
 
-#: ../clients/cli/connections.c:1103
+#: ../clients/cli/connections.c:1104
 msgid "Activate connection details"
 msgstr "연결 세부 정보 활성화"
 
-#: ../clients/cli/connections.c:1350
+#: ../clients/cli/connections.c:1351
 #, c-format
 msgid "invalid field '%s'; allowed fields: %s and %s, or %s,%s"
 msgstr "잘못된 필드 '%s', 허용된 필드: %s 및 %s 또는 %s,%s"
 
-#: ../clients/cli/connections.c:1365 ../clients/cli/connections.c:1373
+#: ../clients/cli/connections.c:1366 ../clients/cli/connections.c:1374
 #, c-format
 msgid "'%s' has to be alone"
 msgstr "'%s'은(는) 독립형이어야 합니다."
 
-#: ../clients/cli/connections.c:1573
+#: ../clients/cli/connections.c:1574
 #, c-format
 msgid "incorrect string '%s' of '--order' option"
 msgstr "'--order' 옵션의 문자열 '%s'이(가) 잘못되었습니다."
 
-#: ../clients/cli/connections.c:1599
+#: ../clients/cli/connections.c:1600
 #, c-format
 msgid "incorrect item '%s' in '--order' option"
 msgstr "'--order' 옵션의 항목 '%s'이(가) 잘못되었습니다."
 
-#: ../clients/cli/connections.c:1629
+#: ../clients/cli/connections.c:1630
 msgid "No connection specified"
 msgstr ""
 
-#: ../clients/cli/connections.c:1644
+#: ../clients/cli/connections.c:1645
 #, c-format
 msgid "%s argument is missing"
 msgstr ""
 
-#: ../clients/cli/connections.c:1654
+#: ../clients/cli/connections.c:1655
 #, c-format
 msgid "unknown connection '%s'"
 msgstr ""
 
-#: ../clients/cli/connections.c:1687
+#: ../clients/cli/connections.c:1688
 msgid "'--order' argument is missing"
 msgstr "'--order' 인수가 누락되었습니다."
 
-#: ../clients/cli/connections.c:1742
+#: ../clients/cli/connections.c:1743
 msgid "NetworkManager active profiles"
 msgstr "NetworkManager 활성 프로파일"
 
-#: ../clients/cli/connections.c:1743
+#: ../clients/cli/connections.c:1744
 msgid "NetworkManager connection profiles"
 msgstr "NetworkManager 연결 프로파일"
 
-#: ../clients/cli/connections.c:1796 ../clients/cli/connections.c:2471
-#: ../clients/cli/connections.c:2483 ../clients/cli/connections.c:2495
-#: ../clients/cli/connections.c:2671 ../clients/cli/connections.c:8431
-#: ../clients/cli/connections.c:8448 ../clients/cli/devices.c:2681
+#: ../clients/cli/connections.c:1797 ../clients/cli/connections.c:2472
+#: ../clients/cli/connections.c:2484 ../clients/cli/connections.c:2496
+#: ../clients/cli/connections.c:2672 ../clients/cli/connections.c:8434
+#: ../clients/cli/connections.c:8451 ../clients/cli/devices.c:2681
 #: ../clients/cli/devices.c:2692 ../clients/cli/devices.c:2934
 #: ../clients/cli/devices.c:2945 ../clients/cli/devices.c:2963
 #: ../clients/cli/devices.c:2972 ../clients/cli/devices.c:2993
@@ -904,14 +904,14 @@ msgstr "NetworkManager 연결 프로파일"
 msgid "Error: %s argument is missing."
 msgstr "오류: %s 인자가 없습니다."
 
-#: ../clients/cli/connections.c:1815
+#: ../clients/cli/connections.c:1816
 #, c-format
 msgid "Error: %s - no such connection profile."
 msgstr "오류: %s - 해당 연결 프로파일이 없습니다."
 
-#: ../clients/cli/connections.c:1879 ../clients/cli/connections.c:2458
-#: ../clients/cli/connections.c:2522 ../clients/cli/connections.c:7941
-#: ../clients/cli/connections.c:8052 ../clients/cli/connections.c:8562
+#: ../clients/cli/connections.c:1880 ../clients/cli/connections.c:2459
+#: ../clients/cli/connections.c:2523 ../clients/cli/connections.c:7944
+#: ../clients/cli/connections.c:8055 ../clients/cli/connections.c:8565
 #: ../clients/cli/devices.c:1582 ../clients/cli/devices.c:1868
 #: ../clients/cli/devices.c:2037 ../clients/cli/devices.c:2145
 #: ../clients/cli/devices.c:2334 ../clients/cli/devices.c:3590
@@ -920,237 +920,237 @@ msgstr "오류: %s - 해당 연결 프로파일이 없습니다."
 msgid "Error: %s."
 msgstr "오류: %s."
 
-#: ../clients/cli/connections.c:1977
+#: ../clients/cli/connections.c:1978
 #, c-format
 msgid "no active connection on device '%s'"
 msgstr "장치 '%s'에 활성화된 연결이 없습니다"
 
-#: ../clients/cli/connections.c:1985
+#: ../clients/cli/connections.c:1986
 msgid "no active connection or device"
 msgstr "활성화된 연결이나 장치가 없습니다"
 
-#: ../clients/cli/connections.c:2005
+#: ../clients/cli/connections.c:2006
 #, c-format
 msgid "device '%s' not compatible with connection '%s':"
 msgstr ""
 
-#: ../clients/cli/connections.c:2041
+#: ../clients/cli/connections.c:2042
 #, c-format
 msgid "device '%s' not compatible with connection '%s'"
 msgstr "'%s' 장치는 '%s' 연결과 호환되지 않습니다"
 
-#: ../clients/cli/connections.c:2044
+#: ../clients/cli/connections.c:2045
 #, c-format
 msgid "no device found for connection '%s'"
 msgstr "연결 '%s'에 대한 장치를 찾을 수 없습니다"
 
-#: ../clients/cli/connections.c:2072
+#: ../clients/cli/connections.c:2073
 #, fuzzy, c-format
 msgid "Connection successfully activated (%s) (D-Bus active path: %s)\n"
 msgstr "연결이 성공적으로 활성화되었습니다 (D-Bus 활성 경로: %s)\n"
 
-#: ../clients/cli/connections.c:2076 ../clients/cli/connections.c:2224
-#: ../clients/cli/connections.c:6249
+#: ../clients/cli/connections.c:2077 ../clients/cli/connections.c:2225
+#: ../clients/cli/connections.c:6250
 #, c-format
 msgid "Connection successfully activated (D-Bus active path: %s)\n"
 msgstr "연결이 성공적으로 활성화되었습니다 (D-Bus 활성 경로: %s)\n"
 
-#: ../clients/cli/connections.c:2083 ../clients/cli/connections.c:2204
+#: ../clients/cli/connections.c:2084 ../clients/cli/connections.c:2205
 #, c-format
 msgid "Error: Connection activation failed: %s"
 msgstr "오류: 연결 활성화가 실패했습니다: %s"
 
-#: ../clients/cli/connections.c:2119
+#: ../clients/cli/connections.c:2120
 #, c-format
 msgid "Error: Timeout expired (%d seconds)"
 msgstr ""
 
-#: ../clients/cli/connections.c:2285
+#: ../clients/cli/connections.c:2286
 #, c-format
 msgid "failed to read passwd-file '%s': %s"
 msgstr "passwd-file '%s' 읽기 실패: %s"
 
-#: ../clients/cli/connections.c:2297
+#: ../clients/cli/connections.c:2298
 #, c-format
 msgid "missing colon in 'password' entry '%s'"
 msgstr "'암호' 항목 '%s'에 콜론 누락"
 
-#: ../clients/cli/connections.c:2305
+#: ../clients/cli/connections.c:2306
 #, c-format
 msgid "missing dot in 'password' entry '%s'"
 msgstr "'암호' 항목 '%s'에 점 누락"
 
-#: ../clients/cli/connections.c:2318
+#: ../clients/cli/connections.c:2319
 #, c-format
 msgid "invalid setting name in 'password' entry '%s'"
 msgstr "'암호' 항목 '%s'의 설정 이름이 잘못됨"
 
-#: ../clients/cli/connections.c:2374
+#: ../clients/cli/connections.c:2375
 #, c-format
 msgid "unknown device '%s'."
 msgstr "알 수 없는 장치 '%s'."
 
-#: ../clients/cli/connections.c:2379
+#: ../clients/cli/connections.c:2380
 msgid "neither a valid connection nor device given"
 msgstr "유효한 연결 및 장치 모두 지정되어 있지 않습니다 "
 
-#: ../clients/cli/connections.c:2505 ../clients/cli/devices.c:1533
+#: ../clients/cli/connections.c:2506 ../clients/cli/devices.c:1533
 #: ../clients/cli/devices.c:2699 ../clients/cli/devices.c:3035
 #: ../clients/cli/devices.c:3644
 #, c-format
 msgid "Unknown parameter: %s\n"
 msgstr "알려져있지 않은 매개변수입니다: %s\n"
 
-#: ../clients/cli/connections.c:2530
+#: ../clients/cli/connections.c:2531
 msgid "preparing"
 msgstr "준비하는 중"
 
-#: ../clients/cli/connections.c:2550
+#: ../clients/cli/connections.c:2551
 #, c-format
 msgid "Connection '%s' (%s) successfully deleted.\n"
 msgstr "연결 '%s'(%s)이(가) 성공적으로 삭제되었습니다.\n"
 
-#: ../clients/cli/connections.c:2566
+#: ../clients/cli/connections.c:2567
 #, c-format
 msgid "Connection '%s' successfully deactivated (D-Bus active path: %s)\n"
 msgstr "연결 '%s'이(가) 성공적으로 비활성화되었습니다(D-Bus 활성 경로: %s).\n"
 
-#: ../clients/cli/connections.c:2647 ../clients/cli/connections.c:8167
-#: ../clients/cli/connections.c:8199 ../clients/cli/connections.c:8356
+#: ../clients/cli/connections.c:2648 ../clients/cli/connections.c:8170
+#: ../clients/cli/connections.c:8202 ../clients/cli/connections.c:8359
 #, c-format
 msgid "Error: No connection specified."
 msgstr "오류: 연결이 지정되어 있지 않습니다. "
 
-#: ../clients/cli/connections.c:2688
+#: ../clients/cli/connections.c:2689
 #, c-format
 msgid "Error: '%s' is not an active connection.\n"
 msgstr "오류: '%s'는 활성 연결이 아닙니다.\n"
 
-#: ../clients/cli/connections.c:2689
+#: ../clients/cli/connections.c:2690
 #, c-format
 msgid "Error: not all active connections found."
 msgstr "오류: 일부 활성 연결을 찾을 수 없습니다. "
 
-#: ../clients/cli/connections.c:2698
+#: ../clients/cli/connections.c:2699
 #, c-format
 msgid "Error: no active connection provided."
 msgstr "오류: 활성 연결이 제공되지 않았습니다."
 
-#: ../clients/cli/connections.c:2732
+#: ../clients/cli/connections.c:2733
 #, fuzzy, c-format
 msgid "Connection '%s' deactivation failed: %s\n"
 msgstr "오류: 연결 활성화가 실패했습니다: %s"
 
-#: ../clients/cli/connections.c:2988 ../clients/cli/connections.c:3045
+#: ../clients/cli/connections.c:2989 ../clients/cli/connections.c:3046
 #: ../clients/common/nm-client-utils.c:169
 #, c-format
 msgid "'%s' not among [%s]"
 msgstr "'%s'는 [%s]에 없습니다 "
 
 #. We should not really come here
-#: ../clients/cli/connections.c:3008 ../clients/cli/connections.c:3068
+#: ../clients/cli/connections.c:3009 ../clients/cli/connections.c:3069
 #: ../clients/common/nm-client-utils.c:279
 #, c-format
 msgid "Unknown error"
 msgstr "알 수 없는 오류 "
 
-#: ../clients/cli/connections.c:3202
+#: ../clients/cli/connections.c:3203
 #, c-format
 msgid "Warning: master='%s' doesn't refer to any existing profile.\n"
 msgstr "경고: master='%s'이(가) 기존 프로필을 참조하지 않습니다.\n"
 
-#: ../clients/cli/connections.c:3539
+#: ../clients/cli/connections.c:3540
 #, c-format
 msgid "Error: invalid property '%s': %s."
 msgstr "오류: 잘못된 속성 '%s': %s."
 
-#: ../clients/cli/connections.c:3556
+#: ../clients/cli/connections.c:3557
 #, c-format
 msgid "Error: failed to modify %s.%s: %s."
 msgstr "오류: %s.%s 수정에 실패했습니다: %s."
 
-#: ../clients/cli/connections.c:3575
+#: ../clients/cli/connections.c:3576
 #, c-format
 msgid "Error: failed to remove a value from %s.%s: %s."
 msgstr "오류: %s.%s의 값 제거 실패: %s."
 
-#: ../clients/cli/connections.c:3609
+#: ../clients/cli/connections.c:3610
 #, fuzzy, c-format
 msgid "Error: '%s' is mandatory."
 msgstr "오류: '%s' 설정이 없습니다\n"
 
-#: ../clients/cli/connections.c:3636
+#: ../clients/cli/connections.c:3637
 #, fuzzy, c-format
 msgid "Error: invalid slave type; %s."
 msgstr "오류: 잘못된 연결 유형; %s."
 
-#: ../clients/cli/connections.c:3644
+#: ../clients/cli/connections.c:3645
 #, c-format
 msgid "Error: invalid connection type; %s."
 msgstr "오류: 잘못된 연결 유형; %s."
 
-#: ../clients/cli/connections.c:3721
+#: ../clients/cli/connections.c:3722
 #, fuzzy, c-format
 msgid "Error: bad connection type: %s"
 msgstr "오류: 잘못된 연결 유형; %s."
 
-#: ../clients/cli/connections.c:3767
+#: ../clients/cli/connections.c:3768
 #, c-format
 msgid "Error: '%s': %s"
 msgstr ""
 
-#: ../clients/cli/connections.c:3788
+#: ../clients/cli/connections.c:3789
 #, fuzzy
 msgid "Error: master is required"
 msgstr "오류: 'master'가 필요합니다. "
 
-#: ../clients/cli/connections.c:3847
+#: ../clients/cli/connections.c:3848
 #, fuzzy, c-format
 msgid "Error: error adding bond option '%s=%s'."
 msgstr "오류: 알 수 없는 연결 '%s'."
 
-#: ../clients/cli/connections.c:3878
+#: ../clients/cli/connections.c:3879
 #, c-format
 msgid "Error: '%s' is not a valid monitoring mode; use '%s' or '%s'.\n"
 msgstr ""
 "오류: '%s'는 올바른 모니터링 모드가 아닙니다; '%s' 또는 '%s'를 사용합니다.\n"
 
-#: ../clients/cli/connections.c:3909
+#: ../clients/cli/connections.c:3910
 #, fuzzy, c-format
 msgid "Error: 'bt-type': '%s' not valid; use [%s, %s, %s (%s), %s]."
 msgstr ""
 "오류: 'bt-type': '%s'이 올바르지 않습니다; [%s, %s (%s), %s]를 사용합니다."
 
-#: ../clients/cli/connections.c:4158
+#: ../clients/cli/connections.c:4159
 #, c-format
 msgid "Error: value for '%s' is missing."
 msgstr "오류: '%s'의 값이 누락되었습니다."
 
-#: ../clients/cli/connections.c:4204
+#: ../clients/cli/connections.c:4205
 msgid "Error: <setting>.<property> argument is missing."
 msgstr "오류: <setting>.<property> 인수가 누락되어 있습니다."
 
-#: ../clients/cli/connections.c:4227
+#: ../clients/cli/connections.c:4228
 #, c-format
 msgid "Error: invalid or not allowed setting '%s': %s."
 msgstr "오류: 잘못된 또는 허용되지 않는 설정 '%s': %s."
 
-#: ../clients/cli/connections.c:4273 ../clients/cli/connections.c:4289
+#: ../clients/cli/connections.c:4274 ../clients/cli/connections.c:4290
 #, fuzzy, c-format
 msgid "Error: '%s' is ambiguous (%s.%s or %s.%s)."
 msgstr "'%s'는 애매모호합니다 (%s x %s)"
 
-#: ../clients/cli/connections.c:4307
+#: ../clients/cli/connections.c:4308
 #, c-format
 msgid "Error: invalid <setting>.<property> '%s'."
 msgstr "오류: 잘못된 <setting>.<property> '%s'입니다."
 
-#: ../clients/cli/connections.c:4351 ../clients/cli/connections.c:7992
+#: ../clients/cli/connections.c:4352 ../clients/cli/connections.c:7995
 #, c-format
 msgid "Error: Failed to add '%s' connection: %s"
 msgstr "오류: '%s' 연결 추가 실패: %s"
 
-#: ../clients/cli/connections.c:4369
+#: ../clients/cli/connections.c:4370
 #, c-format
 msgid ""
 "Warning: There is another connection with the name '%1$s'. Reference the "
@@ -1160,46 +1160,46 @@ msgid_plural ""
 "the connection by its uuid '%2$s'\n"
 msgstr[0] ""
 
-#: ../clients/cli/connections.c:4378
+#: ../clients/cli/connections.c:4379
 #, c-format
 msgid "Connection '%s' (%s) successfully added.\n"
 msgstr "연결 '%s' (%s)이 성공적으로 추가되었습니다.\n"
 
-#: ../clients/cli/connections.c:4516
+#: ../clients/cli/connections.c:4517
 #, c-format
 msgid ""
 "You can specify this option more than once. Press <Enter> when you're done.\n"
 msgstr ""
 
 #. Ask for optional arguments.
-#: ../clients/cli/connections.c:4615
+#: ../clients/cli/connections.c:4616
 #, fuzzy, c-format
 msgid "There is %d optional setting for %s.\n"
 msgid_plural "There are %d optional settings for %s.\n"
 msgstr[0] "'%s' 연결 유형에는 1 개의 옵션 인수가 있습니다.\n"
 
-#: ../clients/cli/connections.c:4618
+#: ../clients/cli/connections.c:4619
 #, c-format
 msgid "Do you want to provide it? %s"
 msgid_plural "Do you want to provide them? %s"
 msgstr[0] "지정하시겠습니까? %s"
 
-#: ../clients/cli/connections.c:4754 ../clients/cli/utils.c:303
+#: ../clients/cli/connections.c:4755 ../clients/cli/utils.c:303
 #, c-format
 msgid "Error: value for '%s' argument is required."
 msgstr "오류: '%s' 인수 값이 필요합니다. "
 
-#: ../clients/cli/connections.c:4760
+#: ../clients/cli/connections.c:4761
 #, c-format
 msgid "Error: 'save': %s."
 msgstr "오류: 'save': %s."
 
-#: ../clients/cli/connections.c:4848 ../clients/cli/connections.c:4859
+#: ../clients/cli/connections.c:4849 ../clients/cli/connections.c:4860
 #, fuzzy, c-format
 msgid "Error: '%s' argument is required."
 msgstr "오류: 'type' 인수가 필요합니다. "
 
-#: ../clients/cli/connections.c:5837
+#: ../clients/cli/connections.c:5838
 #, c-format
 msgid "['%s' setting values]\n"
 msgstr "['%s' 설정 값]\n"
@@ -1207,7 +1207,7 @@ msgstr "['%s' 설정 값]\n"
 #. TRANSLATORS: do not translate command names and keywords before ::
 #. *              However, you should translate terms enclosed in <>.
 #.
-#: ../clients/cli/connections.c:5916
+#: ../clients/cli/connections.c:5917
 #, c-format
 msgid ""
 "---[ Main menu ]---\n"
@@ -1239,7 +1239,7 @@ msgstr ""
 "nmcli    <conf-option> <value>       :: nmcli 구성\n"
 "quit                                 :: nmcli 종료\n"
 
-#: ../clients/cli/connections.c:5943
+#: ../clients/cli/connections.c:5944
 #, c-format
 msgid ""
 "goto <setting>[.<prop>] | <prop>  :: enter setting/property for editing\n"
@@ -1258,7 +1258,7 @@ msgstr ""
 "          nmcli connection> goto secondaries\n"
 "          nmcli> goto ipv4.addresses\n"
 
-#: ../clients/cli/connections.c:5950
+#: ../clients/cli/connections.c:5951
 #, c-format
 msgid ""
 "remove <setting>[.<prop>]  :: remove setting or reset property value\n"
@@ -1279,7 +1279,7 @@ msgstr ""
 "예: nmcli> remove wifi-sec\n"
 "          nmcli> remove eth.mtu\n"
 
-#: ../clients/cli/connections.c:5957
+#: ../clients/cli/connections.c:5958
 #, c-format
 msgid ""
 "set [<setting>.<prop> <value>]  :: set property value\n"
@@ -1294,7 +1294,7 @@ msgstr ""
 "\n"
 "예: nmcli> set con.id My connection\n"
 
-#: ../clients/cli/connections.c:5962
+#: ../clients/cli/connections.c:5963
 #, c-format
 msgid ""
 "describe [<setting>.<prop>]  :: describe property\n"
@@ -1307,7 +1307,7 @@ msgstr ""
 "속성 설명을 표시합니다. NM 설정 및 속성에 대한 자세한 설명은 nm-settings(5) "
 "man 페이지에서 참조하십시오.\n"
 
-#: ../clients/cli/connections.c:5967
+#: ../clients/cli/connections.c:5968
 #, c-format
 msgid ""
 "print [all]  :: print setting or connection values\n"
@@ -1322,7 +1322,7 @@ msgstr ""
 "\n"
 "예: nmcli ipv4> print all\n"
 
-#: ../clients/cli/connections.c:5972
+#: ../clients/cli/connections.c:5973
 #, c-format
 msgid ""
 "verify [all | fix]  :: verify setting or connection validity\n"
@@ -1346,7 +1346,7 @@ msgstr ""
 "          nmcli> verify fix\n"
 "          nmcli bond> verify\n"
 
-#: ../clients/cli/connections.c:5981
+#: ../clients/cli/connections.c:5982
 #, c-format
 msgid ""
 "save [persistent|temporary]  :: save the connection\n"
@@ -1371,7 +1371,7 @@ msgstr ""
 "          nmcli> verify fix\n"
 "          nmcli bond> verify\n"
 
-#: ../clients/cli/connections.c:5992
+#: ../clients/cli/connections.c:5993
 #, c-format
 msgid ""
 "activate [<ifname>] [/<ap>|<nsp>]  :: activate the connection\n"
@@ -1392,7 +1392,7 @@ msgstr ""
 "연결이 활성화될 장치 (prepend with / when <ifname>이 지정되어 있지 않을 경"
 "우 /를 선두에 붙임)\n"
 
-#: ../clients/cli/connections.c:5999 ../clients/cli/connections.c:6158
+#: ../clients/cli/connections.c:6000 ../clients/cli/connections.c:6159
 #, c-format
 msgid ""
 "back  :: go to upper menu level\n"
@@ -1401,7 +1401,7 @@ msgstr ""
 "back  :: 위의 메뉴 레벨로 이동\n"
 "\n"
 
-#: ../clients/cli/connections.c:6002
+#: ../clients/cli/connections.c:6003
 #, c-format
 msgid ""
 "help/? [<command>]  :: help for the nmcli commands\n"
@@ -1410,7 +1410,7 @@ msgstr ""
 "help/? [<command>]  :: nmcli 명령 도움말\n"
 "\n"
 
-#: ../clients/cli/connections.c:6005
+#: ../clients/cli/connections.c:6006
 #, c-format
 msgid ""
 "nmcli [<conf-option> <value>]  :: nmcli configuration\n"
@@ -1437,7 +1437,7 @@ msgstr ""
 "          nmcli> nmcli save-confirmation no\n"
 "          nmcli> nmcli prompt-color 3\n"
 
-#: ../clients/cli/connections.c:6027 ../clients/cli/connections.c:6164
+#: ../clients/cli/connections.c:6028 ../clients/cli/connections.c:6165
 #, c-format
 msgid ""
 "quit  :: exit nmcli\n"
@@ -1450,8 +1450,8 @@ msgstr ""
 "이 명령은 nmcli를 종료합니다. 편집된 연결을 저장하지 않으면 사용자에게 확인"
 "이 요구됩니다.\n"
 
-#: ../clients/cli/connections.c:6032 ../clients/cli/connections.c:6169
-#: ../clients/cli/connections.c:6605 ../clients/cli/connections.c:7562
+#: ../clients/cli/connections.c:6033 ../clients/cli/connections.c:6170
+#: ../clients/cli/connections.c:6606 ../clients/cli/connections.c:7563
 #, c-format
 msgid "Unknown command: '%s'\n"
 msgstr "알 수 없는 명령: '%s'\n"
@@ -1459,7 +1459,7 @@ msgstr "알 수 없는 명령: '%s'\n"
 #. TRANSLATORS: do not translate command names and keywords before ::
 #. *              However, you should translate terms enclosed in <>.
 #.
-#: ../clients/cli/connections.c:6098
+#: ../clients/cli/connections.c:6099
 #, c-format
 msgid ""
 "---[ Property menu ]---\n"
@@ -1485,7 +1485,7 @@ msgstr ""
 "help/?[<command>]           :: 이 도움말 또는 명령의 상세 정보 출력\n"
 "quit          :: nmcli 종료\n"
 
-#: ../clients/cli/connections.c:6123
+#: ../clients/cli/connections.c:6124
 #, c-format
 msgid ""
 "set [<value>]  :: set new value\n"
@@ -1496,7 +1496,7 @@ msgstr ""
 "\n"
 "이 명령은 속성에 지정된 <value>를 설정합니다\n"
 
-#: ../clients/cli/connections.c:6127
+#: ../clients/cli/connections.c:6128
 #, c-format
 msgid ""
 "add [<value>]  :: append new value to the property\n"
@@ -1510,7 +1510,7 @@ msgstr ""
 "이 명령은 속성이 컨테이너 유형인 경우 제공된 <값>을 이 속성에 추가합니다.단"
 "일 값 속성에 대해 속성 값이 교체됩니다.('set'와 동일).\n"
 
-#: ../clients/cli/connections.c:6133
+#: ../clients/cli/connections.c:6134
 #, c-format
 msgid ""
 "change  :: change current value\n"
@@ -1521,7 +1521,7 @@ msgstr ""
 "\n"
 "현재 값을 표시하고 이를 편집할 수 있습니다.\n"
 
-#: ../clients/cli/connections.c:6137
+#: ../clients/cli/connections.c:6138
 #, c-format
 msgid ""
 "remove [<value>|<index>|<option name>]  :: delete the value\n"
@@ -1553,7 +1553,7 @@ msgstr ""
 "          nmcli bond.options> remove downdelay\n"
 "\n"
 
-#: ../clients/cli/connections.c:6148
+#: ../clients/cli/connections.c:6149
 #, c-format
 msgid ""
 "describe  :: describe property\n"
@@ -1566,7 +1566,7 @@ msgstr ""
 "속성 설명을 표시합니다. NM 설정 및 속성에 대한 자세한 설명은 nm-settings(5) "
 "man 페이지에서 참조하십시오.\n"
 
-#: ../clients/cli/connections.c:6153
+#: ../clients/cli/connections.c:6154
 #, c-format
 msgid ""
 "print [property|setting|connection]  :: print property (setting, connection) "
@@ -1580,7 +1580,7 @@ msgstr ""
 "속성 값을 표시합니다. 인수를 지정하여 전체 설정 또는 연결에 대한 값을 표시할 "
 "수 있습니다.\n"
 
-#: ../clients/cli/connections.c:6161
+#: ../clients/cli/connections.c:6162
 #, c-format
 msgid ""
 "help/? [<command>]  :: help for nmcli commands\n"
@@ -1589,28 +1589,28 @@ msgstr ""
 "help/? [<command>]  :: nmcli 명령 도움말\n"
 "\n"
 
-#: ../clients/cli/connections.c:6255
+#: ../clients/cli/connections.c:6256
 #, c-format
 msgid "Error: Connection activation failed.\n"
 msgstr "오류: 연결 활성화에 실패했습니다.\n"
 
-#: ../clients/cli/connections.c:6350
+#: ../clients/cli/connections.c:6351
 #, c-format
 msgid "Error: setting '%s' is mandatory and cannot be removed.\n"
 msgstr "오류: 설정 '%s'은 필수 항목이므로 삭제할 수 없습니다.\n"
 
 #. TRANSLATORS: status line in nmcli connection editor
-#: ../clients/cli/connections.c:6368
+#: ../clients/cli/connections.c:6369
 #, c-format
 msgid "[ Type: %s | Name: %s | UUID: %s | Dirty: %s | Temp: %s ]\n"
 msgstr "[ Type: %s | Name: %s | UUID: %s | Dirty: %s | Temp: %s ]\n"
 
-#: ../clients/cli/connections.c:6404
+#: ../clients/cli/connections.c:6405
 #, c-format
 msgid "The connection is not saved. Do you really want to quit? %s"
 msgstr "연결이 저장되지 않았습니다. 정말로 종료하시겠습니까? %s"
 
-#: ../clients/cli/connections.c:6453
+#: ../clients/cli/connections.c:6454
 #, c-format
 msgid ""
 "The connection profile has been removed from another client. You may type "
@@ -1619,66 +1619,66 @@ msgstr ""
 "연결 프로파일이 다른 클라이언트에서 삭제되었습니다. 메인 메뉴에서 'save'를 입"
 "력하면 이를 복구할 수 있습니다.\n"
 
-#: ../clients/cli/connections.c:6483 ../clients/cli/connections.c:6897
-#: ../clients/cli/connections.c:6955
+#: ../clients/cli/connections.c:6484 ../clients/cli/connections.c:6898
+#: ../clients/cli/connections.c:6956
 #, c-format
 msgid "Allowed values for '%s' property: %s\n"
 msgstr "'%s' 속성에 대해 허용되는 값: %s\n"
 
-#: ../clients/cli/connections.c:6486 ../clients/cli/connections.c:6900
-#: ../clients/cli/connections.c:6958
+#: ../clients/cli/connections.c:6487 ../clients/cli/connections.c:6901
+#: ../clients/cli/connections.c:6959
 #, c-format
 msgid "Enter '%s' value: "
 msgstr "'%s' 값 입력: "
 
-#: ../clients/cli/connections.c:6501 ../clients/cli/connections.c:6523
-#: ../clients/cli/connections.c:6904 ../clients/cli/connections.c:6963
+#: ../clients/cli/connections.c:6502 ../clients/cli/connections.c:6524
+#: ../clients/cli/connections.c:6905 ../clients/cli/connections.c:6964
 #, c-format
 msgid "Error: failed to set '%s' property: %s\n"
 msgstr "오류: '%s' 속성을 설정하는데 실패했습니다: %s\n"
 
-#: ../clients/cli/connections.c:6517
+#: ../clients/cli/connections.c:6518
 #, c-format
 msgid "Edit '%s' value: "
 msgstr "'%s' 값 편집: "
 
-#: ../clients/cli/connections.c:6546 ../clients/cli/settings.c:388
+#: ../clients/cli/connections.c:6547 ../clients/cli/settings.c:392
 #, c-format
 msgid "Error: %s\n"
 msgstr "오류: %s\n"
 
-#: ../clients/cli/connections.c:6552 ../clients/cli/connections.c:7058
-#: ../clients/cli/connections.c:7109
+#: ../clients/cli/connections.c:6553 ../clients/cli/connections.c:7059
+#: ../clients/cli/connections.c:7110
 #, c-format
 msgid "Error: failed to remove value of '%s': %s\n"
 msgstr "오류: '%s' 값을 삭제하는데 실패했습니다: %s\n"
 
-#: ../clients/cli/connections.c:6573
+#: ../clients/cli/connections.c:6574
 #, c-format
 msgid "Unknown command argument: '%s'\n"
 msgstr "알 수 없는 명령 인수: '%s'\n"
 
-#: ../clients/cli/connections.c:6676
+#: ../clients/cli/connections.c:6677
 #, c-format
 msgid "Available settings: %s\n"
 msgstr "사용 가능한 설정: %s\n"
 
-#: ../clients/cli/connections.c:6688
+#: ../clients/cli/connections.c:6689
 #, c-format
 msgid "Error: invalid setting name; %s\n"
 msgstr "오류: 잘못된 설정 이름; %s\n"
 
-#: ../clients/cli/connections.c:6705
+#: ../clients/cli/connections.c:6706
 #, c-format
 msgid "Available properties: %s\n"
 msgstr "사용 가능한 속성: %s\n"
 
-#: ../clients/cli/connections.c:6713
+#: ../clients/cli/connections.c:6714
 #, c-format
 msgid "Error: property %s\n"
 msgstr "오류: 속성 %s\n"
 
-#: ../clients/cli/connections.c:6754
+#: ../clients/cli/connections.c:6755
 #, c-format
 msgid ""
 "Saving the connection with 'autoconnect=yes'. That might result in an "
@@ -1689,12 +1689,12 @@ msgstr ""
 "니다.\n"
 "그래도 저장하시겠습니까? %s"
 
-#: ../clients/cli/connections.c:6837
+#: ../clients/cli/connections.c:6838
 #, c-format
 msgid "You may edit the following settings: %s\n"
 msgstr "다음 설정을 편집할 수 있습니다: %s\n"
 
-#: ../clients/cli/connections.c:6867
+#: ../clients/cli/connections.c:6868
 #, c-format
 msgid ""
 "The connection profile has been removed from another client. You may type "
@@ -1703,410 +1703,410 @@ msgstr ""
 "연결 프로파일이 다른 클라이언트에서 삭제되었습니다. 'save'를 입력하여 이를 복"
 "구할 수 있습니다.\n"
 
-#: ../clients/cli/connections.c:6908 ../clients/cli/connections.c:7153
-#: ../clients/cli/connections.c:7185
+#: ../clients/cli/connections.c:6909 ../clients/cli/connections.c:7154
+#: ../clients/cli/connections.c:7186
 #, c-format
 msgid "Error: no setting selected; valid are [%s]\n"
 msgstr "오류: 설정이 선택되어 있지 않습니다; 유효한 설정은 [%s]입니다\n"
 
-#: ../clients/cli/connections.c:6909
+#: ../clients/cli/connections.c:6910
 #, c-format
 msgid "use 'goto <setting>' first, or 'set <setting>.<property>'\n"
 msgstr ""
 "'goto <setting>'를 먼저 사용하거나 'set <setting>.<property>'를 사용합니다.\n"
 
-#: ../clients/cli/connections.c:6924 ../clients/cli/connections.c:7085
-#: ../clients/cli/connections.c:7175
+#: ../clients/cli/connections.c:6925 ../clients/cli/connections.c:7086
+#: ../clients/cli/connections.c:7176
 #, c-format
 msgid "Error: invalid setting argument '%s'; valid are [%s]\n"
 msgstr "오류: 잘못된 설정 인수 '%s'; 올바른 인수는 [%s]입니다\n"
 
-#: ../clients/cli/connections.c:6933
+#: ../clients/cli/connections.c:6934
 #, c-format
 msgid "Error: missing setting for '%s' property\n"
 msgstr "오류: '%s' 속성 설정이 누락되어 있음\n"
 
-#: ../clients/cli/connections.c:6940
+#: ../clients/cli/connections.c:6941
 #, c-format
 msgid "Error: invalid property: %s\n"
 msgstr "오류: 잘못된 속성: %s\n"
 
-#: ../clients/cli/connections.c:6994
+#: ../clients/cli/connections.c:6995
 #, c-format
 msgid "Error: unknown setting '%s'\n"
 msgstr "오류: 알 수 없는 설정 '%s'\n"
 
-#: ../clients/cli/connections.c:7019
+#: ../clients/cli/connections.c:7020
 #, c-format
 msgid "You may edit the following properties: %s\n"
 msgstr "다음 속성을 편집할 수 있습니다: %s\n"
 
-#: ../clients/cli/connections.c:7063
+#: ../clients/cli/connections.c:7064
 #, c-format
 msgid "Error: no argument given; valid are [%s]\n"
 msgstr "오류: 인수가 지정되어 있지 않습니다; 올바른 인수는 [%s]입니다\n"
 
-#: ../clients/cli/connections.c:7082
+#: ../clients/cli/connections.c:7083
 #, c-format
 msgid "Setting '%s' is not present in the connection.\n"
 msgstr "연결에 설정 '%s'이 없습니다.\n"
 
-#: ../clients/cli/connections.c:7130
+#: ../clients/cli/connections.c:7131
 #, c-format
 msgid "Error: %s properties, nor it is a setting name.\n"
 msgstr "오류: %s 속성, 설정 이름이 아닙니다.\n"
 
-#: ../clients/cli/connections.c:7154 ../clients/cli/connections.c:7186
+#: ../clients/cli/connections.c:7155 ../clients/cli/connections.c:7187
 #, c-format
 msgid "use 'goto <setting>' first, or 'describe <setting>.<property>'\n"
 msgstr ""
 "'goto <setting>'를 먼저 사용하거나 'describe <setting>.<property>'를 사용합니"
 "다.\n"
 
-#: ../clients/cli/connections.c:7209
+#: ../clients/cli/connections.c:7210
 #, c-format
 msgid "Error: invalid property: %s, neither a valid setting name.\n"
 msgstr "오류: 잘못된 속성: %s, 올바른 설정 이름이 아닙니다.\n"
 
-#: ../clients/cli/connections.c:7239
+#: ../clients/cli/connections.c:7240
 #, c-format
 msgid "Error: unknown setting: '%s'\n"
 msgstr "오류: 알 수 없는 설정: '%s'\n"
 
-#: ../clients/cli/connections.c:7244
+#: ../clients/cli/connections.c:7245
 #, c-format
 msgid "Error: '%s' setting not present in the connection\n"
 msgstr "오류: '%s' 설정이 연결에 없습니다.\n"
 
-#: ../clients/cli/connections.c:7275
+#: ../clients/cli/connections.c:7276
 #, c-format
 msgid "Error: invalid property: %s%s\n"
 msgstr "오류: 잘못된 속성: %s%s\n"
 
-#: ../clients/cli/connections.c:7277
+#: ../clients/cli/connections.c:7278
 msgid ", neither a valid setting name"
 msgstr ", 유효한 설정 이름이 아닙니다."
 
-#: ../clients/cli/connections.c:7293
+#: ../clients/cli/connections.c:7294
 #, c-format
 msgid "Invalid verify option: %s\n"
 msgstr "잘못된 확인 옵션: %s\n"
 
-#: ../clients/cli/connections.c:7301
+#: ../clients/cli/connections.c:7302
 #, c-format
 msgid "Verify setting '%s': %s\n"
 msgstr "'%s' 설정 확인: %s\n"
 
-#: ../clients/cli/connections.c:7316
+#: ../clients/cli/connections.c:7317
 #, c-format
 msgid "Verify connection: %s\n"
 msgstr "연결 확인: %s\n"
 
-#: ../clients/cli/connections.c:7319
+#: ../clients/cli/connections.c:7320
 #, c-format
 msgid "The error cannot be fixed automatically.\n"
 msgstr "오류를 자동으로 수정할 수 없습니다.\n"
 
-#: ../clients/cli/connections.c:7336
+#: ../clients/cli/connections.c:7337
 #, c-format
 msgid "Error: invalid argument '%s'\n"
 msgstr "오류: 잘못된 인수 '%s'\n"
 
-#: ../clients/cli/connections.c:7368
+#: ../clients/cli/connections.c:7369
 #, c-format
 msgid "Error: Failed to save '%s' (%s) connection: %s\n"
 msgstr "오류: '%s'(%s) 연결 저장 실패: %s\n"
 
-#: ../clients/cli/connections.c:7375
+#: ../clients/cli/connections.c:7376
 #, c-format
 msgid "Connection '%s' (%s) successfully saved.\n"
 msgstr "연결 '%s' (%s)이 성공적으로 저장되었습니다.\n"
 
-#: ../clients/cli/connections.c:7376
+#: ../clients/cli/connections.c:7377
 #, c-format
 msgid "Connection '%s' (%s) successfully updated.\n"
 msgstr "연결 '%s'(%s)이(가) 성공적으로 업데이트되었습니다.\n"
 
-#: ../clients/cli/connections.c:7408
+#: ../clients/cli/connections.c:7409
 #, c-format
 msgid "Error: connection verification failed: %s\n"
 msgstr "오류: 연결 확인에 실패했습니다: %s\n"
 
-#: ../clients/cli/connections.c:7409
+#: ../clients/cli/connections.c:7410
 msgid "(unknown error)"
 msgstr "(알 수 없는 오류)"
 
-#: ../clients/cli/connections.c:7410
+#: ../clients/cli/connections.c:7411
 #, c-format
 msgid "You may try running 'verify fix' to fix errors.\n"
 msgstr "오류를 수정하려면 'verify fix'를 실행해 볼 수 있습니다.\n"
 
-#: ../clients/cli/connections.c:7432
+#: ../clients/cli/connections.c:7433
 #, c-format
 msgid "Error: connection is not saved. Type 'save' first.\n"
 msgstr "오류: 연결이 저장되어 있지 않습니다. 먼저 'save'를 입력합니다.\n"
 
-#: ../clients/cli/connections.c:7436
+#: ../clients/cli/connections.c:7437
 #, c-format
 msgid "Error: connection is not valid: %s\n"
 msgstr "오류: 연결이 올바르지 않습니다: %s\n"
 
-#: ../clients/cli/connections.c:7446
+#: ../clients/cli/connections.c:7447
 #, c-format
 msgid "Error: Cannot activate connection: %s.\n"
 msgstr "오류: 연결을 활성화할 수 없음: %s.\n"
 
-#: ../clients/cli/connections.c:7455
+#: ../clients/cli/connections.c:7456
 #, c-format
 msgid "Error: Failed to activate '%s' (%s) connection: %s\n"
 msgstr "오류: '%s'(%s) 연결 활성화 실패: %s\n"
 
-#: ../clients/cli/connections.c:7461
+#: ../clients/cli/connections.c:7462
 msgid "Monitoring connection activation (press any key to continue)\n"
 msgstr "모니터링 연결 활성화 (아무키나 눌러 계속 진행합니다)\n"
 
-#: ../clients/cli/connections.c:7497
+#: ../clients/cli/connections.c:7498
 #, c-format
 msgid "Error: status-line: %s\n"
 msgstr "오류: status-line: %s\n"
 
-#: ../clients/cli/connections.c:7505
+#: ../clients/cli/connections.c:7506
 #, c-format
 msgid "Error: save-confirmation: %s\n"
 msgstr "오류: save-confirmation: %s\n"
 
-#: ../clients/cli/connections.c:7513
+#: ../clients/cli/connections.c:7514
 #, c-format
 msgid "Error: show-secrets: %s\n"
 msgstr "오류: show-secrets: %s\n"
 
-#: ../clients/cli/connections.c:7522
+#: ../clients/cli/connections.c:7523
 #, c-format
 msgid "Error: bad color: %s\n"
 msgstr "오류: 색 오류: %s\n"
 
-#: ../clients/cli/connections.c:7537
+#: ../clients/cli/connections.c:7538
 #, c-format
 msgid "Current nmcli configuration:\n"
 msgstr "현재 nmcli 설정:\n"
 
-#: ../clients/cli/connections.c:7547
+#: ../clients/cli/connections.c:7548
 #, c-format
 msgid "Invalid configuration option '%s'; allowed [%s]\n"
 msgstr "잘못된 설정 옵션 '%s'; [%s] 허용됨\n"
 
-#: ../clients/cli/connections.c:7765
+#: ../clients/cli/connections.c:7768
 #, c-format
 msgid "Error: only one of 'id', uuid, or 'path' can be provided."
 msgstr "오류: 'id', uuid, 'path' 중 하나만 지정할 수 있습니다."
 
-#: ../clients/cli/connections.c:7780 ../clients/cli/connections.c:7949
+#: ../clients/cli/connections.c:7783 ../clients/cli/connections.c:7952
 #, c-format
 msgid "Error: Unknown connection '%s'."
 msgstr "오류: 알 수 없는 연결 '%s'."
 
-#: ../clients/cli/connections.c:7798
+#: ../clients/cli/connections.c:7801
 #, c-format
 msgid "Warning: editing existing connection '%s'; 'type' argument is ignored\n"
 msgstr "경고: 기존 연결 '%s'을 편집하는 중입니다; 'type' 인수를 무시합니다\n"
 
-#: ../clients/cli/connections.c:7801
+#: ../clients/cli/connections.c:7804
 #, c-format
 msgid ""
 "Warning: editing existing connection '%s'; 'con-name' argument is ignored\n"
 msgstr ""
 "경고: 기존 연결 '%s'을 편집하는 중입니다; 'con-name' 인수를 무시합니다 \n"
 
-#: ../clients/cli/connections.c:7823
+#: ../clients/cli/connections.c:7826
 #, c-format
 msgid "Valid connection types: %s\n"
 msgstr "올바른 연결 유형: %s\n"
 
-#: ../clients/cli/connections.c:7825
+#: ../clients/cli/connections.c:7828
 #, c-format
 msgid "Error: invalid connection type; %s\n"
 msgstr "오류: 잘못된 연결 유형; %s\n"
 
-#: ../clients/cli/connections.c:7865
+#: ../clients/cli/connections.c:7868
 #, c-format
 msgid "===| nmcli interactive connection editor |==="
 msgstr "===| nmcli 상호 대화식 연결 편집기 |==="
 
-#: ../clients/cli/connections.c:7868
+#: ../clients/cli/connections.c:7871
 #, c-format
 msgid "Editing existing '%s' connection: '%s'"
 msgstr "기존 '%s' 연결을 편집하는 중입니다: '%s'"
 
-#: ../clients/cli/connections.c:7870
+#: ../clients/cli/connections.c:7873
 #, c-format
 msgid "Adding a new '%s' connection"
 msgstr "새로운 '%s' 연결을 추가하고 있습니다 "
 
-#: ../clients/cli/connections.c:7872
+#: ../clients/cli/connections.c:7875
 #, c-format
 msgid "Type 'help' or '?' for available commands."
 msgstr "사용 가능한 명령을 보려면 'help' 또는 '?'를 입력합니다."
 
-#: ../clients/cli/connections.c:7874
+#: ../clients/cli/connections.c:7877
 #, c-format
 msgid "Type 'describe [<setting>.<prop>]' for detailed property description."
 msgstr ""
 "상세 속성 정보를 표시하려면 'describe [<setting>.<prop>]'를 입력합니다."
 
-#: ../clients/cli/connections.c:7909
+#: ../clients/cli/connections.c:7912
 #, c-format
 msgid "Error: Failed to modify connection '%s': %s"
 msgstr "오류: 연결 '%s' 수정 실패: %s"
 
-#: ../clients/cli/connections.c:7916
+#: ../clients/cli/connections.c:7919
 #, c-format
 msgid "Connection '%s' (%s) successfully modified.\n"
 msgstr "연결 '%s' (%s)이 성공적으로 추가되었습니다.\n"
 
-#: ../clients/cli/connections.c:7997
+#: ../clients/cli/connections.c:8000
 #, c-format
 msgid "%s (%s) cloned as %s (%s).\n"
 msgstr "%s(%s)(이)가 %s(%s)(으)로 복제되었습니다.\n"
 
-#: ../clients/cli/connections.c:8063
+#: ../clients/cli/connections.c:8066
 msgid "New connection name: "
 msgstr "새 연결 이름: "
 
-#: ../clients/cli/connections.c:8065
+#: ../clients/cli/connections.c:8068
 #, c-format
 msgid "Error: <new name> argument is missing."
 msgstr "오류: <new name> 인수가 누락되었습니다."
 
-#: ../clients/cli/connections.c:8071 ../clients/cli/connections.c:8573
+#: ../clients/cli/connections.c:8074 ../clients/cli/connections.c:8576
 #, c-format
 msgid "Error: unknown extra argument: '%s'."
 msgstr "오류: 알 수 없는 추가 인수: '%s'."
 
-#: ../clients/cli/connections.c:8122
+#: ../clients/cli/connections.c:8125
 #, c-format
 msgid "Error: not all connections deleted."
 msgstr "오류: 일부 연결이 삭제되지 않았습니다."
 
-#: ../clients/cli/connections.c:8123
+#: ../clients/cli/connections.c:8126
 #, c-format
 msgid "Error: Connection deletion failed: %s"
 msgstr "오류: 연결 삭제에 실패했습니다: %s"
 
-#: ../clients/cli/connections.c:8184 ../clients/cli/connections.c:8309
+#: ../clients/cli/connections.c:8187 ../clients/cli/connections.c:8312
 #, c-format
 msgid "Error: %s.\n"
 msgstr ""
 
-#: ../clients/cli/connections.c:8185 ../clients/cli/connections.c:8310
+#: ../clients/cli/connections.c:8188 ../clients/cli/connections.c:8313
 #, c-format
 msgid "Error: not all connections found."
 msgstr "오류: 일부 연결을 찾을 수 없습니다."
 
 #. truncate trailing ", "
-#: ../clients/cli/connections.c:8228
+#: ../clients/cli/connections.c:8231
 #, c-format
 msgid "Error: cannot delete unknown connection(s): %s."
 msgstr "오류: 알 수 없는 연결을 삭제할 수 없습니다: %s."
 
-#: ../clients/cli/connections.c:8240
+#: ../clients/cli/connections.c:8243
 #, c-format
 msgid "%s: connection profile changed\n"
 msgstr "%s: 연결 프로파일이 변경되었습니다.\n"
 
-#: ../clients/cli/connections.c:8266
+#: ../clients/cli/connections.c:8269
 #, c-format
 msgid "%s: connection profile created\n"
 msgstr "%s: 연결 프로파일이 생성되었습니다.\n"
 
-#: ../clients/cli/connections.c:8275
+#: ../clients/cli/connections.c:8278
 #, c-format
 msgid "%s: connection profile removed\n"
 msgstr "%s: 연결 프로파일이 제거되었습니다.\n"
 
-#: ../clients/cli/connections.c:8338
+#: ../clients/cli/connections.c:8341
 #, c-format
 msgid "Error: failed to reload connections: %s."
 msgstr "오류: 연결 다시 불러오기 실패: %s."
 
-#: ../clients/cli/connections.c:8371
+#: ../clients/cli/connections.c:8374
 #, c-format
 msgid "Error: failed to load connection: %s."
 msgstr "오류: 연결 불러오기 실패: %s."
 
-#: ../clients/cli/connections.c:8379
+#: ../clients/cli/connections.c:8382
 #, c-format
 msgid "Could not load file '%s'\n"
 msgstr "파일 '%s'을 불러올 수 없습니다\n"
 
-#: ../clients/cli/connections.c:8386
+#: ../clients/cli/connections.c:8389
 msgid "File to import: "
 msgstr "가져올 파일: "
 
-#: ../clients/cli/connections.c:8417
+#: ../clients/cli/connections.c:8420
 #, c-format
 msgid "Error: No arguments provided."
 msgstr "오류: 인수가 지정되어 있지 않습니다."
 
-#: ../clients/cli/connections.c:8442
+#: ../clients/cli/connections.c:8445
 #, c-format
 msgid "Warning: 'type' already specified, ignoring extra one.\n"
 msgstr "경고: '유형'이 이미 지정되어 있어 추가 유형을 무시합니다.\n"
 
-#: ../clients/cli/connections.c:8457
+#: ../clients/cli/connections.c:8460
 #, c-format
 msgid "Warning: 'file' already specified, ignoring extra one.\n"
 msgstr "경고: '파일'이 이미 지정되어 있어 추가 파일을 무시합니다.\n"
 
-#: ../clients/cli/connections.c:8459
+#: ../clients/cli/connections.c:8462
 #, c-format
 msgid "Unknown parameter: %s"
 msgstr "알 수 없는 매개변수: %s"
 
-#: ../clients/cli/connections.c:8471
+#: ../clients/cli/connections.c:8474
 #, c-format
 msgid "Error: 'type' argument is required."
 msgstr "오류: 'type' 인수가 필요합니다. "
 
-#: ../clients/cli/connections.c:8476
+#: ../clients/cli/connections.c:8479
 #, c-format
 msgid "Error: 'file' argument is required."
 msgstr "오류: 'file' 인수가 필요합니다."
 
-#: ../clients/cli/connections.c:8483
+#: ../clients/cli/connections.c:8486
 #, fuzzy, c-format
 msgid "Error: failed to find VPN plugin for %s."
 msgstr "오류: %s.%s 수정에 실패했습니다: %s."
 
-#: ../clients/cli/connections.c:8491 ../clients/cli/connections.c:8592
+#: ../clients/cli/connections.c:8494 ../clients/cli/connections.c:8595
 #, c-format
 msgid "Error: failed to load VPN plugin: %s."
 msgstr "오류: VPN 플러그인 불러오기 실패: %s."
 
-#: ../clients/cli/connections.c:8499
+#: ../clients/cli/connections.c:8502
 #, c-format
 msgid "Error: failed to import '%s': %s."
 msgstr "오류: '%s' 가져오기 실패: %s."
 
-#: ../clients/cli/connections.c:8579
+#: ../clients/cli/connections.c:8582
 msgid "Output file name: "
 msgstr "출력 파일 이름: "
 
-#: ../clients/cli/connections.c:8583
+#: ../clients/cli/connections.c:8586
 #, c-format
 msgid "Error: the connection is not VPN."
 msgstr "오류: 연결이 VPN이 아닙니다."
 
-#: ../clients/cli/connections.c:8604
+#: ../clients/cli/connections.c:8607
 #, c-format
 msgid "Error: failed to create temporary file %s."
 msgstr "오류: 임시 파일 %s을(를) 생성할 수 없습니다."
 
-#: ../clients/cli/connections.c:8613
+#: ../clients/cli/connections.c:8616
 #, c-format
 msgid "Error: failed to export '%s': %s."
 msgstr "오류: '%s' 내보내기 실패: %s."
 
-#: ../clients/cli/connections.c:8624
+#: ../clients/cli/connections.c:8627
 #, c-format
 msgid "Error: failed to read temporary file '%s': %s."
 msgstr "오류: 임시 파일 '%s' 읽기 실패: %s."
@@ -3544,29 +3544,29 @@ msgstr "'%s'은(는) VPN 연결 프로파일이 아닙니다."
 msgid "'%s' is not a name of any exiting profile"
 msgstr "'%s'은(는) 기존 프로파일의 이름이 아닙니다."
 
-#: ../clients/cli/settings.c:382
+#: ../clients/cli/settings.c:386
 #, c-format
 msgid "Warning: %s\n"
 msgstr ""
 
-#: ../clients/cli/settings.c:385
+#: ../clients/cli/settings.c:389
 #, fuzzy, c-format
 msgid "Info: %s\n"
 msgstr "오류: %s\n"
 
-#: ../clients/cli/settings.c:477
+#: ../clients/cli/settings.c:481
 msgid "don't know how to get the property value"
 msgstr "속성 값을 가져오는 방법을 모릅니다 "
 
-#: ../clients/cli/settings.c:567 ../clients/cli/settings.c:609
+#: ../clients/cli/settings.c:571 ../clients/cli/settings.c:613
 msgid "the property can't be changed"
 msgstr "속성을 변경할 수 없습니다 "
 
-#: ../clients/cli/settings.c:729
+#: ../clients/cli/settings.c:733
 msgid "[NM property description]"
 msgstr "[NM 속성 설명]"
 
-#: ../clients/cli/settings.c:739
+#: ../clients/cli/settings.c:743
 msgid "[nmcli specific description]"
 msgstr "[nmcli 상세 설명]"
 
@@ -4076,245 +4076,245 @@ msgstr ""
 msgid "default route cannot be added (NetworkManager handles it by itself)"
 msgstr "기본 라우팅을 추가할 수 없습니다(네트워크 관리자가 자동으로 처리)"
 
-#: ../clients/common/nm-meta-setting-desc.c:281
+#: ../clients/common/nm-meta-setting-desc.c:425
 #, c-format
 msgid "invalid priority map '%s'"
 msgstr "잘못된 속성 맵 '%s'"
 
-#: ../clients/common/nm-meta-setting-desc.c:288
-#: ../clients/common/nm-meta-setting-desc.c:294
+#: ../clients/common/nm-meta-setting-desc.c:432
+#: ../clients/common/nm-meta-setting-desc.c:438
 #, c-format
 msgid "priority '%s' is not valid (<0-%ld>)"
 msgstr "우선 순위 '%s'가 잘못되었습니다 (<0-%ld>)"
 
-#: ../clients/common/nm-meta-setting-desc.c:346
+#: ../clients/common/nm-meta-setting-desc.c:490
 #, c-format
 msgid "cannot read pac-script from file '%s'"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:353
+#: ../clients/common/nm-meta-setting-desc.c:497
 #, c-format
 msgid "file '%s' contains non-valid utf-8"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:366
+#: ../clients/common/nm-meta-setting-desc.c:510
 #, c-format
 msgid "'%s' does not contain a valid PAC Script"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:369
+#: ../clients/common/nm-meta-setting-desc.c:513
 #, c-format
 msgid "Not a valid PAC Script"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:423
+#: ../clients/common/nm-meta-setting-desc.c:567
 #, c-format
 msgid "cannot read team config from file '%s'"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:430
+#: ../clients/common/nm-meta-setting-desc.c:574
 #, c-format
 msgid "team config file '%s' contains non-valid utf-8"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:442
+#: ../clients/common/nm-meta-setting-desc.c:586
 #, c-format
 msgid "'%s' does not contain a valid team configuration"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:445
+#: ../clients/common/nm-meta-setting-desc.c:589
 #, c-format
 msgid "team configuration must be a JSON object"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:538
+#: ../clients/common/nm-meta-setting-desc.c:683
 #: ../clients/tui/nmt-mtu-entry.c:84
 msgid "(default)"
 msgstr "(기본값)"
 
-#: ../clients/common/nm-meta-setting-desc.c:653
+#: ../clients/common/nm-meta-setting-desc.c:798
 msgid "auto"
 msgstr "자동"
 
-#: ../clients/common/nm-meta-setting-desc.c:801
+#: ../clients/common/nm-meta-setting-desc.c:946
 #, c-format
 msgid "%s (%s)"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:925
+#: ../clients/common/nm-meta-setting-desc.c:1070
 #, c-format
 msgid "'%s' is out of range [%lli, %lli]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:931
+#: ../clients/common/nm-meta-setting-desc.c:1076
 #, c-format
 msgid "'%s' is not a valid number"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:981
+#: ../clients/common/nm-meta-setting-desc.c:1126
 #, c-format
 msgid "'%s' is out of range [0, %u]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:1018
+#: ../clients/common/nm-meta-setting-desc.c:1163
 #, c-format
 msgid "'%s' is not a valid Ethernet MAC"
 msgstr "'%s'은 올바른 이더넷 MAC이 아닙니다 "
 
-#: ../clients/common/nm-meta-setting-desc.c:1037
+#: ../clients/common/nm-meta-setting-desc.c:1182
 #, c-format
 msgid "'%s' is not a valid flag number; use <0-%d>"
 msgstr "'%s'은(는) 유효한 플래그 번호가 아닙니다. <0-%d>을(를) 사용하십시오."
 
-#: ../clients/common/nm-meta-setting-desc.c:1051
+#: ../clients/common/nm-meta-setting-desc.c:1196
 #, fuzzy, c-format
 msgid "'%s' sum is higher than all flags => all flags set"
 msgstr "경고: '%s' 합계가 모든 플래그보다 높습니다. => 설정된 모든 플래그\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:1155
+#: ../clients/common/nm-meta-setting-desc.c:1300
 #, fuzzy, c-format
 msgid "invalid option '%s', use a combination of [%s]"
 msgstr "잘못된 옵션 '%s', [%s] 중 하나를 사용하십시오."
 
-#: ../clients/common/nm-meta-setting-desc.c:1160
-#: ../libnm-core/nm-keyfile-reader.c:622
+#: ../clients/common/nm-meta-setting-desc.c:1305
+#: ../libnm-core/nm-keyfile-reader.c:623
 #, c-format
 msgid "invalid option '%s', use one of [%s]"
 msgstr "잘못된 옵션 '%s', [%s] 중 하나를 사용하십시오."
 
-#: ../clients/common/nm-meta-setting-desc.c:1283
+#: ../clients/common/nm-meta-setting-desc.c:1428
 #, c-format
 msgid "%d (key)"
 msgstr "%d(키)"
 
-#: ../clients/common/nm-meta-setting-desc.c:1285
+#: ../clients/common/nm-meta-setting-desc.c:1430
 #, c-format
 msgid "%d (passphrase)"
 msgstr "%d(암호)"
 
-#: ../clients/common/nm-meta-setting-desc.c:1288
-#: ../clients/common/nm-meta-setting-desc.c:1377
+#: ../clients/common/nm-meta-setting-desc.c:1433
+#: ../clients/common/nm-meta-setting-desc.c:1522
 #, c-format
 msgid "%d (unknown)"
 msgstr "%d (알 수 없음)"
 
-#: ../clients/common/nm-meta-setting-desc.c:1320
+#: ../clients/common/nm-meta-setting-desc.c:1465
 msgid "0 (NONE)"
 msgstr "0 (없음)"
 
-#: ../clients/common/nm-meta-setting-desc.c:1326
+#: ../clients/common/nm-meta-setting-desc.c:1471
 msgid "REORDER_HEADERS, "
 msgstr "REORDER_HEADERS, "
 
-#: ../clients/common/nm-meta-setting-desc.c:1328
+#: ../clients/common/nm-meta-setting-desc.c:1473
 msgid "GVRP, "
 msgstr "GVRP, "
 
-#: ../clients/common/nm-meta-setting-desc.c:1330
+#: ../clients/common/nm-meta-setting-desc.c:1475
 msgid "LOOSE_BINDING, "
 msgstr "LOOSE_BINDING, "
 
-#: ../clients/common/nm-meta-setting-desc.c:1332
+#: ../clients/common/nm-meta-setting-desc.c:1477
 msgid "MVRP, "
 msgstr "MVRP, "
 
-#: ../clients/common/nm-meta-setting-desc.c:1371
+#: ../clients/common/nm-meta-setting-desc.c:1516
 #, c-format
 msgid "%d (disabled)"
 msgstr "%d (비활성화됨)"
 
-#: ../clients/common/nm-meta-setting-desc.c:1373
+#: ../clients/common/nm-meta-setting-desc.c:1518
 #, c-format
 msgid "%d (enabled, prefer public IP)"
 msgstr "%d (활성화됨, 공개 IP를 선호)"
 
-#: ../clients/common/nm-meta-setting-desc.c:1375
+#: ../clients/common/nm-meta-setting-desc.c:1520
 #, c-format
 msgid "%d (enabled, prefer temporary IP)"
 msgstr "%d (활성화됨, 임시 IP를 선호)"
 
-#: ../clients/common/nm-meta-setting-desc.c:1390
+#: ../clients/common/nm-meta-setting-desc.c:1535
 msgid "0 (none)"
 msgstr "0 (없음)"
 
-#: ../clients/common/nm-meta-setting-desc.c:1396
+#: ../clients/common/nm-meta-setting-desc.c:1541
 msgid "agent-owned, "
 msgstr "에이전트 소유 "
 
-#: ../clients/common/nm-meta-setting-desc.c:1398
+#: ../clients/common/nm-meta-setting-desc.c:1543
 msgid "not saved, "
 msgstr "저장되지 않음 "
 
-#: ../clients/common/nm-meta-setting-desc.c:1400
+#: ../clients/common/nm-meta-setting-desc.c:1545
 msgid "not required, "
 msgstr "필요하지 않음 "
 
-#: ../clients/common/nm-meta-setting-desc.c:1462
+#: ../clients/common/nm-meta-setting-desc.c:1607
 #, c-format
 msgid "'%s' is not valid; use <option>=<value>"
 msgstr "'%s'가 올바르지 않습니다; <option>=<value>를 사용합니다 "
 
-#: ../clients/common/nm-meta-setting-desc.c:1504
+#: ../clients/common/nm-meta-setting-desc.c:1649
 msgid "no item to remove"
 msgstr "삭제할 항목이 없습니다 "
 
-#: ../clients/common/nm-meta-setting-desc.c:1508
+#: ../clients/common/nm-meta-setting-desc.c:1653
 #, c-format
 msgid "index '%d' is not in range <0-%d>"
 msgstr "인덱스 '%d'가 범위 <0-%d>에 없습니다 "
 
-#: ../clients/common/nm-meta-setting-desc.c:1523
+#: ../clients/common/nm-meta-setting-desc.c:1668
 #, c-format
 msgid "invalid option '%s'"
 msgstr "잘못된 옵션 '%s'"
 
-#: ../clients/common/nm-meta-setting-desc.c:1525
+#: ../clients/common/nm-meta-setting-desc.c:1670
 msgid "missing option"
 msgstr "누락된 옵션 "
 
-#: ../clients/common/nm-meta-setting-desc.c:1549
+#: ../clients/common/nm-meta-setting-desc.c:1694
 #, c-format
 msgid "'%s' is not a valid MAC"
 msgstr "'%s'은 올바른 MAC이 아닙니다 "
 
-#: ../clients/common/nm-meta-setting-desc.c:1579
-#: ../clients/common/nm-meta-setting-desc.c:1675
-#: ../clients/common/nm-meta-setting-desc.c:4163
+#: ../clients/common/nm-meta-setting-desc.c:1724
+#: ../clients/common/nm-meta-setting-desc.c:1820
+#: ../clients/common/nm-meta-setting-desc.c:4668
 #, c-format
 msgid "'%s' is not valid"
 msgstr "'%s'이 올바르지 않습니다 "
 
-#: ../clients/common/nm-meta-setting-desc.c:1619
+#: ../clients/common/nm-meta-setting-desc.c:1764
 #, c-format
 msgid "'%u' flags are not valid; use combination of %s"
 msgstr "'%u' 플래그가 유효하지 않습니다. %s 결합을 사용하십시오."
 
-#: ../clients/common/nm-meta-setting-desc.c:1655
+#: ../clients/common/nm-meta-setting-desc.c:1800
 #, c-format
 msgid "'%s' is not a valid number (or out of range)"
 msgstr "'%s'은 올바른 번호가 아닙니다 (또는 범위 밖의 번호)"
 
-#: ../clients/common/nm-meta-setting-desc.c:1775
+#: ../clients/common/nm-meta-setting-desc.c:1920
 #, c-format
 msgid "'%s' is not a valid hex character"
 msgstr "'%s'는 올바른 16 진수 문자가 아닙니다 "
 
-#: ../clients/common/nm-meta-setting-desc.c:2055
+#: ../clients/common/nm-meta-setting-desc.c:2200
 #, c-format
 msgid "the property doesn't contain EAP method '%s'"
 msgstr "속성에 EAP 메서드가 포함되어 있지 않습니다.'%s'"
 
-#: ../clients/common/nm-meta-setting-desc.c:2078
+#: ../clients/common/nm-meta-setting-desc.c:2223
 #, c-format
 msgid "the property doesn't contain alternative subject match '%s'"
 msgstr "속성에 대체 주체 일치 항목 '%s'(이)가 포함되어 있지 않습니다."
 
-#: ../clients/common/nm-meta-setting-desc.c:2104
+#: ../clients/common/nm-meta-setting-desc.c:2249
 #, c-format
 msgid "the property doesn't contain \"phase2\" alternative subject match '%s'"
 msgstr "속성에 'phase2' 대체 주제 항목 '%s'(이)가 포함되어 있지 않습니다."
 
-#: ../clients/common/nm-meta-setting-desc.c:2225
+#: ../clients/common/nm-meta-setting-desc.c:2370
 #, c-format
 msgid ""
 "Enter a list of bonding options formatted as:\n"
@@ -4352,183 +4352,214 @@ msgstr ""
 #. * hacky: we can not see if the type is already set, because
 #. * nmc_setting_set_property() is called only after the property
 #. * we're setting (type) has been removed.
-#: ../clients/common/nm-meta-setting-desc.c:2285
+#: ../clients/common/nm-meta-setting-desc.c:2430
 #, fuzzy, c-format
 msgid "Can not change the connection type"
 msgstr "연결 유형 입력: "
 
-#: ../clients/common/nm-meta-setting-desc.c:2392
+#: ../clients/common/nm-meta-setting-desc.c:2540
 #, c-format
 msgid "the property doesn't contain permission '%s'"
 msgstr "속성에 권한 '%s'(이)가 포함되어 있지 않습니다."
 
-#: ../clients/common/nm-meta-setting-desc.c:2413
+#: ../clients/common/nm-meta-setting-desc.c:2561
 #, c-format
 msgid "'%s' is not valid master; use ifname or connection UUID"
 msgstr "'%s'는 올바른 마스터가 아닙니다; ifname 또는 연결 UUID를 사용합니다 "
 
-#: ../clients/common/nm-meta-setting-desc.c:2512
+#: ../clients/common/nm-meta-setting-desc.c:2660
 #, c-format
 msgid "the value '%s' is not a valid UUID"
 msgstr "값 '%s'은(는) 유효한 UUID가 아닙니다."
 
-#: ../clients/common/nm-meta-setting-desc.c:2519
+#: ../clients/common/nm-meta-setting-desc.c:2667
 #, c-format
 msgid "the property doesn't contain UUID '%s'"
 msgstr "속성에 UUID '%s'(이)가 포함되어 있지 않습니다."
 
-#: ../clients/common/nm-meta-setting-desc.c:2586
+#: ../clients/common/nm-meta-setting-desc.c:2734
 msgid "0 (disabled)"
 msgstr "0 (비활성화됨)"
 
-#: ../clients/common/nm-meta-setting-desc.c:2592
+#: ../clients/common/nm-meta-setting-desc.c:2740
 msgid "enabled, "
 msgstr "활성화됨, "
 
-#: ../clients/common/nm-meta-setting-desc.c:2594
+#: ../clients/common/nm-meta-setting-desc.c:2742
 msgid "advertise, "
 msgstr "통지,"
 
-#: ../clients/common/nm-meta-setting-desc.c:2596
+#: ../clients/common/nm-meta-setting-desc.c:2744
 msgid "willing, "
 msgstr "준비됨,"
 
-#: ../clients/common/nm-meta-setting-desc.c:2716
+#: ../clients/common/nm-meta-setting-desc.c:2864
 #, c-format
 msgid "'%s' is not a valid DCB flag"
 msgstr "'%s'은(는) 올바른 DCB 플래그가 아닙니다"
 
-#: ../clients/common/nm-meta-setting-desc.c:2746
+#: ../clients/common/nm-meta-setting-desc.c:2894
 msgid "must contain 8 comma-separated numbers"
 msgstr "쉼표로 구분된 8 개의 번호가 포함되어 있어야 합니다 "
 
-#: ../clients/common/nm-meta-setting-desc.c:2762
+#: ../clients/common/nm-meta-setting-desc.c:2910
 #, c-format
 msgid "'%s' not a number between 0 and %u (inclusive) or %u"
 msgstr "'%s'은 0에서 %u (포함) 또는 %u 사이의 숫자가 아닙니다 "
 
-#: ../clients/common/nm-meta-setting-desc.c:2765
+#: ../clients/common/nm-meta-setting-desc.c:2913
 #, c-format
 msgid "'%s' not a number between 0 and %u (inclusive)"
 msgstr "'%s'은 0에서 %u (포함) 사이의 숫자가 아닙니다 "
 
-#: ../clients/common/nm-meta-setting-desc.c:2786
+#: ../clients/common/nm-meta-setting-desc.c:2934
 #, fuzzy, c-format
 msgid "changes will have no effect until '%s' includes 1 (enabled)"
 msgstr ""
 "경고: 변경 사항은 '%s'에 1 (활성화)를 포함할 때 까지 효력이 없습니다\n"
 "\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:2841
+#: ../clients/common/nm-meta-setting-desc.c:2989
 #, c-format
 msgid "bandwidth percentages must total 100%%"
 msgstr "대역폭 비율은 총 100%%가 되어야 합니다 "
 
-#: ../clients/common/nm-meta-setting-desc.c:2914
-#: ../clients/common/nm-meta-setting-desc.c:2920
+#: ../clients/common/nm-meta-setting-desc.c:3062
+#: ../clients/common/nm-meta-setting-desc.c:3068
 msgid "SIM operator ID must be a 5 or 6 number MCCMNC code"
 msgstr "SIM 연산자 ID는 5 또는 6자리 MCCMNC 코드여야 합니다."
 
-#: ../clients/common/nm-meta-setting-desc.c:2944
+#: ../clients/common/nm-meta-setting-desc.c:3092
 #, c-format
 msgid "'%s' is not a valid IBoIP P_Key"
 msgstr "'%s'는 올바른 IBoIP P_Key가 아닙니다 "
 
-#: ../clients/common/nm-meta-setting-desc.c:2967
+#: ../clients/common/nm-meta-setting-desc.c:3115
 msgid "default"
 msgstr "기본값 "
 
-#: ../clients/common/nm-meta-setting-desc.c:3101
-#: ../clients/common/nm-meta-setting-desc.c:3120
+#: ../clients/common/nm-meta-setting-desc.c:3249
+#: ../clients/common/nm-meta-setting-desc.c:3268
 #, c-format
 msgid "invalid IPv4 address '%s'"
 msgstr "잘못된 IPv4 주소 '%s'"
 
-#: ../clients/common/nm-meta-setting-desc.c:3126
-#: ../clients/common/nm-meta-setting-desc.c:3380
+#: ../clients/common/nm-meta-setting-desc.c:3274
+#: ../clients/common/nm-meta-setting-desc.c:3528
 #, c-format
 msgid "the property doesn't contain DNS server '%s'"
 msgstr "속성에 DNS 서버 '%s'(이)가 포함되어 있지 않습니다."
 
-#: ../clients/common/nm-meta-setting-desc.c:3166
-#: ../clients/common/nm-meta-setting-desc.c:3420
+#: ../clients/common/nm-meta-setting-desc.c:3314
+#: ../clients/common/nm-meta-setting-desc.c:3568
 #, c-format
 msgid "the property doesn't contain DNS search domain '%s'"
 msgstr "속성에 DNS 검색 도메인 '%s'(이)가 포함되어 있지 않습니다."
 
-#: ../clients/common/nm-meta-setting-desc.c:3203
-#: ../clients/common/nm-meta-setting-desc.c:3457
+#: ../clients/common/nm-meta-setting-desc.c:3351
+#: ../clients/common/nm-meta-setting-desc.c:3605
 #, c-format
 msgid "the property doesn't contain DNS option '%s'"
 msgstr "속성에 DNS 옵션 '%s'(이)가 포함되어 있지 않습니다."
 
-#: ../clients/common/nm-meta-setting-desc.c:3246
-#: ../clients/common/nm-meta-setting-desc.c:3499
+#: ../clients/common/nm-meta-setting-desc.c:3394
+#: ../clients/common/nm-meta-setting-desc.c:3654
 #, c-format
 msgid "the property doesn't contain IP address '%s'"
 msgstr "속성에 IP 주소 '%s'(이)가 포함되어 있지 않습니다."
 
-#: ../clients/common/nm-meta-setting-desc.c:3266
-#: ../clients/common/nm-meta-setting-desc.c:3518
+#: ../clients/common/nm-meta-setting-desc.c:3414
+#: ../clients/common/nm-meta-setting-desc.c:3673
 #, c-format
 msgid "invalid gateway address '%s'"
 msgstr "잘못된 게이트웨이 주소 '%s'"
 
-#: ../clients/common/nm-meta-setting-desc.c:3305
-#: ../clients/common/nm-meta-setting-desc.c:3559
+#: ../clients/common/nm-meta-setting-desc.c:3453
+#: ../clients/common/nm-meta-setting-desc.c:3714
 #, c-format
 msgid "the property doesn't contain route '%s'"
 msgstr "속성에 라우팅 '%s'이(가) 포함되어 있지 않습니다."
 
-#: ../clients/common/nm-meta-setting-desc.c:3355
-#: ../clients/common/nm-meta-setting-desc.c:3374
+#: ../clients/common/nm-meta-setting-desc.c:3503
+#: ../clients/common/nm-meta-setting-desc.c:3522
 #, c-format
 msgid "invalid IPv6 address '%s'"
 msgstr "잘못된 IPv6 주소 '%s'"
 
-#: ../clients/common/nm-meta-setting-desc.c:3577
+#: ../clients/common/nm-meta-setting-desc.c:3732
 #: ../libnm-core/nm-setting-gsm.c:381 ../libnm-util/nm-setting-gsm.c:364
 #, c-format
 msgid "'%s' is not a number"
 msgstr "'%s'은 번호가 아닙니다 "
 
-#: ../clients/common/nm-meta-setting-desc.c:3584
+#: ../clients/common/nm-meta-setting-desc.c:3739
 #, c-format
 msgid "'%s' is not valid; use 0, 1, or 2"
 msgstr "'%s'은 올바르지 않습니다; 0, 1, 2를 사용합니다 "
 
-#: ../clients/common/nm-meta-setting-desc.c:3618
+#: ../clients/common/nm-meta-setting-desc.c:3773
 #, c-format
 msgid "'%s' is not a valid channel; use <1-13>"
 msgstr "'%s'은 올바른 채널이 아닙니다; <1-13>을 사용합니다 "
 
-#: ../clients/common/nm-meta-setting-desc.c:3724
+#: ../clients/common/nm-meta-setting-desc.c:3833
+msgid ""
+"The valid syntax is: '[root | parent <handle>] [handle <handle>] <qdisc>'"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:3856
+#, fuzzy, c-format
+msgid "the property doesn't contain qdisc '%s'"
+msgstr "속성에 UUID '%s'(이)가 포함되어 있지 않습니다."
+
+#: ../clients/common/nm-meta-setting-desc.c:3909
+msgid ""
+"The valid syntax is: '[root | parent <handle>] [handle <handle>] <tfilter>'"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:3932
+#, fuzzy, c-format
+msgid "the property doesn't contain tfilter '%s'"
+msgstr "속성에 라우팅 '%s'이(가) 포함되어 있지 않습니다."
+
+#: ../clients/common/nm-meta-setting-desc.c:3993
+#, fuzzy, c-format
+msgid "the property doesn't contain string '%s'"
+msgstr "속성에 매핑 '%s'이(가) 포함되어 있지 않습니다."
+
+#: ../clients/common/nm-meta-setting-desc.c:4066
+#: ../clients/common/nm-meta-setting-desc.c:4138
+#, fuzzy, c-format
+msgid "the property doesn't contain link watcher '%s'"
+msgstr "속성에 라우팅 '%s'이(가) 포함되어 있지 않습니다."
+
+#: ../clients/common/nm-meta-setting-desc.c:4229
 #, fuzzy, c-format
 msgid "only one mapping at a time is supported; taking the first one (%s)"
 msgstr ""
 "경고: 한 번에 1회의 매핑만 지원됩니다. 첫 번째 항목(%s)을 가져옵니다.\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:3732
+#: ../clients/common/nm-meta-setting-desc.c:4237
 #, c-format
 msgid "the property doesn't contain mapping '%s'"
 msgstr "속성에 매핑 '%s'이(가) 포함되어 있지 않습니다."
 
-#: ../clients/common/nm-meta-setting-desc.c:3740
+#: ../clients/common/nm-meta-setting-desc.c:4245
 msgid "no priority to remove"
 msgstr "삭제할 우선 순위가 없습니다 "
 
-#: ../clients/common/nm-meta-setting-desc.c:3744
+#: ../clients/common/nm-meta-setting-desc.c:4249
 #, c-format
 msgid "index '%d' is not in the range of <0-%d>"
 msgstr "인덱스 '%d'가 범위 <0-%d>에 없습니다 "
 
-#: ../clients/common/nm-meta-setting-desc.c:3813
+#: ../clients/common/nm-meta-setting-desc.c:4318
 #, c-format
 msgid "'%s' cannot be empty"
 msgstr "'%s'은(는) 비어 있을 수 없습니다."
 
-#: ../clients/common/nm-meta-setting-desc.c:3852
-#: ../clients/common/nm-meta-setting-desc.c:3985
+#: ../clients/common/nm-meta-setting-desc.c:4357
+#: ../clients/common/nm-meta-setting-desc.c:4490
 #: ../libnm-core/nm-setting-wired.c:664 ../libnm-core/nm-setting-wireless.c:857
 #: ../libnm-core/nm-setting-wireless.c:869 ../libnm-util/nm-setting-wired.c:646
 #: ../libnm-util/nm-setting-wireless.c:859
@@ -4537,23 +4568,23 @@ msgstr "'%s'은(는) 비어 있을 수 없습니다."
 msgid "'%s' is not a valid MAC address"
 msgstr "'%s'은 올바른 MAC 주소가 아닙니다 "
 
-#: ../clients/common/nm-meta-setting-desc.c:3858
-#: ../clients/common/nm-meta-setting-desc.c:3991
+#: ../clients/common/nm-meta-setting-desc.c:4363
+#: ../clients/common/nm-meta-setting-desc.c:4496
 #, c-format
 msgid "the property doesn't contain MAC address '%s'"
 msgstr "속성에 MAC 주소 '%s'(이)가 포함되어 있지 않습니다."
 
-#: ../clients/common/nm-meta-setting-desc.c:3876
+#: ../clients/common/nm-meta-setting-desc.c:4381
 #, c-format
 msgid "'%s' is not valid; 2 or 3 strings should be provided"
 msgstr "'%s'이(가) 유효하지 않습니다. 2개 또는 3개 문자열을 입력해야 합니다."
 
-#: ../clients/common/nm-meta-setting-desc.c:3892
+#: ../clients/common/nm-meta-setting-desc.c:4397
 #, c-format
 msgid "'%s' string value should consist of 1 - 199 characters"
 msgstr "'%s' 문자열 값은 1~199자로 구성해야 합니다."
 
-#: ../clients/common/nm-meta-setting-desc.c:3924
+#: ../clients/common/nm-meta-setting-desc.c:4429
 #, c-format
 msgid ""
 "Enter a list of S/390 options formatted as:\n"
@@ -4564,24 +4595,24 @@ msgstr ""
 "  option = <value>, option = <value>,...\n"
 "올바른 옵션은 다음과 같습니다: %s\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:3958
+#: ../clients/common/nm-meta-setting-desc.c:4463
 #, c-format
 msgid "'%s' is not a valid channel"
 msgstr "'%s'는 올바른 채널이 아닙니다 "
 
-#: ../clients/common/nm-meta-setting-desc.c:3964
+#: ../clients/common/nm-meta-setting-desc.c:4469
 #, c-format
 msgid "'%ld' is not a valid channel"
 msgstr "'%ld'는 올바른 채널이 아닙니다 "
 
-#: ../clients/common/nm-meta-setting-desc.c:4063
-#: ../clients/common/nm-meta-setting-desc.c:4099
-#: ../clients/common/nm-meta-setting-desc.c:4135
+#: ../clients/common/nm-meta-setting-desc.c:4568
+#: ../clients/common/nm-meta-setting-desc.c:4604
+#: ../clients/common/nm-meta-setting-desc.c:4640
 #, c-format
 msgid "the property doesn't contain protocol '%s'"
 msgstr "속성에 프로토콜 '%s'(이)가 포함되어 있지 않습니다."
 
-#: ../clients/common/nm-meta-setting-desc.c:4172
+#: ../clients/common/nm-meta-setting-desc.c:4677
 #, c-format
 msgid ""
 "'%s' not compatible with %s '%s', please change the key or set the right %s "
@@ -4590,65 +4621,65 @@ msgstr ""
 "'%s'은(는) %s '%s'(와)과 호환되지 않습니다. 키를 변경하거나 올바른 %s(을)를 "
 "먼저 설정하십시오."
 
-#: ../clients/common/nm-meta-setting-desc.c:4182
+#: ../clients/common/nm-meta-setting-desc.c:4687
 #, fuzzy, c-format
 msgid "WEP key is guessed to be of '%s'"
 msgstr "WEP 키는 '%s'라고 가정합니다\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:4187
+#: ../clients/common/nm-meta-setting-desc.c:4692
 #, fuzzy, c-format
 msgid "WEP key index set to '%d'"
 msgstr "WEP 키 인덱스가 '%d'으(로) 설정되었습니다.\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:4226
+#: ../clients/common/nm-meta-setting-desc.c:4731
 #, fuzzy, c-format
 msgid "'%s' is not compatible with '%s' type, please change or delete the key."
 msgstr ""
 "경고: '%s'은(는) '%s' 유형과 호환되지 않습니다. 키를 변경하거나 삭제하십시"
 "오.\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:4236
+#: ../clients/common/nm-meta-setting-desc.c:4741
 #, c-format
 msgid "'%s' is not a valid PSK"
 msgstr "'%s'는 올바른 PSK가 아닙니다 "
 
-#: ../clients/common/nm-meta-setting-desc.c:4268
+#: ../clients/common/nm-meta-setting-desc.c:4773
 #, fuzzy
 msgid "Bonding primary interface [none]"
 msgstr "본딩 기본 인터페이스 [none]: "
 
 #. this is a virtual property, only needed during "ask" mode.
-#: ../clients/common/nm-meta-setting-desc.c:4275
+#: ../clients/common/nm-meta-setting-desc.c:4780
 #, fuzzy
 msgid "Bonding monitoring mode"
 msgstr "링크 모니터링 "
 
-#: ../clients/common/nm-meta-setting-desc.c:4284
+#: ../clients/common/nm-meta-setting-desc.c:4789
 #, fuzzy
 msgid "Bonding miimon [100]"
 msgstr "본딩 miimon [100]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:4292
+#: ../clients/common/nm-meta-setting-desc.c:4797
 #, fuzzy
 msgid "Bonding downdelay [0]"
 msgstr "본딩 downdelay [0]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:4300
+#: ../clients/common/nm-meta-setting-desc.c:4805
 #, fuzzy
 msgid "Bonding updelay [0]"
 msgstr "본딩 updelay [0]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:4308
+#: ../clients/common/nm-meta-setting-desc.c:4813
 #, fuzzy
 msgid "Bonding arp-interval [0]"
 msgstr "본딩 arp-interval [0]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:4316
+#: ../clients/common/nm-meta-setting-desc.c:4821
 #, fuzzy
 msgid "Bonding arp-ip-target [none]"
 msgstr "본딩 arp-ip-target [none]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:4324
+#: ../clients/common/nm-meta-setting-desc.c:4829
 msgid "LACP rate ('slow' or 'fast') [slow]"
 msgstr ""
 
@@ -4656,7 +4687,7 @@ msgstr ""
 #. * that the actual type is (gboolean(*)(type *)).
 #. macro that returns @func as const (guint32(*)(NMSetting*)) type, but checks
 #. * that the actual type is (guint32(*)(type *)).
-#: ../clients/common/nm-meta-setting-desc.c:4436
+#: ../clients/common/nm-meta-setting-desc.c:4941
 msgid ""
 "nmcli can accepts both direct JSON configuration data and a file name "
 "containing the configuration. In the latter case the file is read and the "
@@ -4673,7 +4704,33 @@ msgstr ""
 "\"roundrobin\"}, \"ports\": {\"eth1\": {}, \"eth2\": {}} }\n"
 "          set team.config /etc/my-team.conf\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:4477
+#: ../clients/common/nm-meta-setting-desc.c:4949
+msgid ""
+"Enter a list of link watchers formatted as dictionaries where the keys are "
+"teamd properties. Dictionary pairs are in the form: key=value and pairs are "
+"separated by ' '. Dictionaries are separated with ','.\n"
+"The keys allowed/required in the dictionary change on the basis of the link "
+"watcher type, while the only property common to all the link watchers is  "
+"'name'*, which defines the link watcher to be specified.\n"
+"\n"
+"Properties available for the 'ethtool' link watcher:\n"
+"  'delay-up', 'delay-down'\n"
+"\n"
+"Properties available for the 'nsna_ping' link watcher:\n"
+"  'init-wait', 'interval', 'missed-max', 'target-host'*\n"
+"\n"
+"Properties available for the 'arp_ping' include all the ones for 'nsna_ping' "
+"and:\n"
+"  'source-host', 'validate-active', 'validate-inactive', 'send-always'.\n"
+"\n"
+"Properties flagged with a '*' are mandatory.\n"
+"\n"
+"Example:\n"
+"   name=arp_ping,source-host=172.16.1.1,target-host=172.16.1.254; "
+"name=ethtool,delay-up=3\n"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:5000
 msgid ""
 "Enter file path to CA certificate (optionally prefixed with file://).\n"
 "  [file://]<file path>\n"
@@ -4685,7 +4742,7 @@ msgstr ""
 "nmcli는 인증서를 원시 blob 데이터로 지정하도록 지원하지 않습니다.\n"
 "예: /home/cimrman/cacert.crt\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:4511
+#: ../clients/common/nm-meta-setting-desc.c:5034
 msgid ""
 "Enter file path to client certificate (optionally prefixed with file://).\n"
 "  [file://]<file path>\n"
@@ -4698,7 +4755,7 @@ msgstr ""
 "nmcli는 인증서를 원시 blob 데이터로 지정하도록 지원하지 않습니다.\n"
 "예: /home/cimrman/jara.crt\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:4568
+#: ../clients/common/nm-meta-setting-desc.c:5091
 msgid ""
 "Enter file path to CA certificate for inner authentication (optionally "
 "prefixed\n"
@@ -4713,7 +4770,7 @@ msgstr ""
 "nmcli는 인증서를 원시 blob 데이터로 지정하도록 지원하지 않습니다.\n"
 "예: /home/cimrman/ca-zweite-phase.crt\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:4603
+#: ../clients/common/nm-meta-setting-desc.c:5126
 msgid ""
 "Enter file path to client certificate for inner authentication (optionally "
 "prefixed\n"
@@ -4729,7 +4786,7 @@ msgstr ""
 "nmcli는 인증서를 원시 blob 데이터로 지정하도록 지원하지 않습니다.\n"
 "예: /home/cimrman/jara-zweite-phase.crt\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:4630
+#: ../clients/common/nm-meta-setting-desc.c:5153
 msgid ""
 "Enter bytes as a list of hexadecimal values.\n"
 "Two formats are accepted:\n"
@@ -4751,8 +4808,8 @@ msgstr ""
 "      예: ab0455a6ea3a74C2\n"
 "          ab 4 55 0xa6 ea 3a 74 C2\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:4647
-#: ../clients/common/nm-meta-setting-desc.c:4665
+#: ../clients/common/nm-meta-setting-desc.c:5170
+#: ../clients/common/nm-meta-setting-desc.c:5188
 msgid ""
 "Enter path to a private key and the key password (if not set yet):\n"
 "  [file://]<file path> [<password>]\n"
@@ -4768,96 +4825,96 @@ msgstr ""
 #. * is not visible here since we only care about phase2 authentication
 #. * (and don't even care of which one)
 #.
-#: ../clients/common/nm-meta-setting-desc.c:4704
+#: ../clients/common/nm-meta-setting-desc.c:5227
 #: ../clients/common/nm-secret-agent-simple.c:225
 #: ../clients/common/nm-secret-agent-simple.c:330
-#: ../clients/tui/nmt-page-dsl.c:66 ../clients/tui/nmt-page-wifi.c:320
+#: ../clients/tui/nmt-page-dsl.c:66 ../clients/tui/nmt-page-wifi.c:332
 msgid "Username"
 msgstr "사용자 이름 "
 
-#: ../clients/common/nm-meta-setting-desc.c:4710
-#: ../clients/common/nm-meta-setting-desc.c:4894
-#: ../clients/common/nm-meta-setting-desc.c:5177
-#: ../clients/common/nm-meta-setting-desc.c:5801
+#: ../clients/common/nm-meta-setting-desc.c:5233
+#: ../clients/common/nm-meta-setting-desc.c:5417
+#: ../clients/common/nm-meta-setting-desc.c:5700
+#: ../clients/common/nm-meta-setting-desc.c:6324
 #, fuzzy
 msgid "Password [none]"
 msgstr "암호 [none]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:4756
+#: ../clients/common/nm-meta-setting-desc.c:5279
 #, fuzzy
 msgid "Bluetooth device address"
 msgstr "블루투스 장치 주소: "
 
-#: ../clients/common/nm-meta-setting-desc.c:4801
-#: ../clients/common/nm-meta-setting-desc.c:5231
-#: ../clients/common/nm-meta-setting-desc.c:6301
-#: ../clients/common/nm-meta-setting-desc.c:6339
-#: ../clients/common/nm-meta-setting-desc.c:6476
+#: ../clients/common/nm-meta-setting-desc.c:5324
+#: ../clients/common/nm-meta-setting-desc.c:5754
+#: ../clients/common/nm-meta-setting-desc.c:7031
+#: ../clients/common/nm-meta-setting-desc.c:7069
+#: ../clients/common/nm-meta-setting-desc.c:7206
 #, fuzzy
 msgid "MAC [none]"
 msgstr "MAC [none]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:4807
+#: ../clients/common/nm-meta-setting-desc.c:5330
 #, fuzzy
 msgid "Enable STP [no]"
 msgstr "STP 활성화 (예/아니오) [예]:"
 
-#: ../clients/common/nm-meta-setting-desc.c:4813
+#: ../clients/common/nm-meta-setting-desc.c:5336
 #, fuzzy
 msgid "STP priority [32768]"
 msgstr "STP 우선 순위 [128]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:4819
+#: ../clients/common/nm-meta-setting-desc.c:5342
 #, fuzzy
 msgid "Forward delay [15]"
 msgstr "포워드 지연 [15]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:4825
+#: ../clients/common/nm-meta-setting-desc.c:5348
 #, fuzzy
 msgid "Hello time [2]"
 msgstr "Hello 타임 [2]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:4831
+#: ../clients/common/nm-meta-setting-desc.c:5354
 #, fuzzy
 msgid "Max age [20]"
 msgstr "최대 경과 시간 [20]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:4837
+#: ../clients/common/nm-meta-setting-desc.c:5360
 #, fuzzy
 msgid "MAC address ageing time [300]"
 msgstr "MAC 주소 경과 시간 [300]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:4843
+#: ../clients/common/nm-meta-setting-desc.c:5366
 msgid "Group forward mask [0]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4849
+#: ../clients/common/nm-meta-setting-desc.c:5372
 msgid "Enable IGMP snooping [no]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:4861
+#: ../clients/common/nm-meta-setting-desc.c:5384
 #, fuzzy
 msgid "Bridge port priority [32]"
 msgstr "브리지 포트 우선 순위 [32]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:4867
+#: ../clients/common/nm-meta-setting-desc.c:5390
 #, fuzzy
 msgid "Bridge port STP path cost [100]"
 msgstr "브리지 포트 STP 경로 비용 [100]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:4873
+#: ../clients/common/nm-meta-setting-desc.c:5396
 #, fuzzy
 msgid "Hairpin [no]"
 msgstr "Hairpin 모드 "
 
-#: ../clients/common/nm-meta-setting-desc.c:4888
-#: ../clients/common/nm-meta-setting-desc.c:5171
-#: ../clients/common/nm-meta-setting-desc.c:6191
+#: ../clients/common/nm-meta-setting-desc.c:5411
+#: ../clients/common/nm-meta-setting-desc.c:5694
+#: ../clients/common/nm-meta-setting-desc.c:6921
 #, fuzzy
 msgid "Username [none]"
 msgstr "사용자 이름 [none]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:4983
+#: ../clients/common/nm-meta-setting-desc.c:5506
 msgid ""
 "Enter a list of user permissions. This is a list of user names formatted "
 "as:\n"
@@ -4873,7 +4930,7 @@ msgstr ""
 "\n"
 "예: alice bob charlie\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5025
+#: ../clients/common/nm-meta-setting-desc.c:5548
 msgid ""
 "Enter secondary connections that should be activated when this connection "
 "is\n"
@@ -4893,7 +4950,7 @@ msgstr ""
 "\n"
 "예: private-openvpn, fe6ba5d8-c2fc-4aae-b2e3-97efddd8d9a7\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5042
+#: ../clients/common/nm-meta-setting-desc.c:5565
 msgid ""
 "Enter a value which indicates whether the connection is subject to a data\n"
 "quota, usage costs or other limitations. Accepted options are:\n"
@@ -4908,29 +4965,29 @@ msgstr ""
 "연결을 데이터 통신으로 설정하지 않은 경우: 'false', 'no', 'off'\n"
 "네트워크 관리자가 일부 추론을 사용하여 값을 선택하게 하는 경우: 'unknown'\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5188
+#: ../clients/common/nm-meta-setting-desc.c:5711
 #, fuzzy
 msgid "APN"
 msgstr "AP"
 
-#: ../clients/common/nm-meta-setting-desc.c:5240
-#: ../clients/common/nm-meta-setting-desc.c:6364
-#: ../clients/common/nm-meta-setting-desc.c:6510
+#: ../clients/common/nm-meta-setting-desc.c:5763
+#: ../clients/common/nm-meta-setting-desc.c:7094
+#: ../clients/common/nm-meta-setting-desc.c:7240
 #, fuzzy
 msgid "MTU [auto]"
 msgstr "MTU [auto]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:5259
+#: ../clients/common/nm-meta-setting-desc.c:5782
 #, fuzzy
 msgid "P_KEY [none]"
 msgstr "P_KEY [none]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:5268
+#: ../clients/common/nm-meta-setting-desc.c:5791
 #, fuzzy
 msgid "Parent interface [none]"
 msgstr "부모 인터페이스 [none]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:5291
+#: ../clients/common/nm-meta-setting-desc.c:5814
 msgid ""
 "Enter a list of IPv4 addresses of DNS servers.\n"
 "\n"
@@ -4940,12 +4997,12 @@ msgstr ""
 "\n"
 "Example: 8.8.8.8, 8.8.4.4\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5323
+#: ../clients/common/nm-meta-setting-desc.c:5846
 #, fuzzy
 msgid "IPv4 address (IP[/plen]) [none]"
 msgstr "IPv4 주소 (IP[/plen] [gateway]) [none]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:5325
+#: ../clients/common/nm-meta-setting-desc.c:5848
 msgid ""
 "Enter a list of IPv4 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -4959,12 +5016,12 @@ msgstr ""
 "\n"
 "예: 192.168.1.5/24, 10.0.0.11/24\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5338
+#: ../clients/common/nm-meta-setting-desc.c:5861
 #, fuzzy
 msgid "IPv4 gateway [none]"
 msgstr "IPv4 주소 (IP[/plen] [gateway]) [none]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:5346
+#: ../clients/common/nm-meta-setting-desc.c:5869
 msgid ""
 "Enter a list of IPv4 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -4986,7 +5043,7 @@ msgstr ""
 "예: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
 "          10.1.2.0/24\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5448
+#: ../clients/common/nm-meta-setting-desc.c:5971
 msgid ""
 "Enter a list of IPv6 addresses of DNS servers.  If the IPv6 configuration "
 "method is 'auto' these DNS servers are appended to those (if any) returned "
@@ -5005,12 +5062,12 @@ msgstr ""
 "\n"
 "예: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5486
+#: ../clients/common/nm-meta-setting-desc.c:6009
 #, fuzzy
 msgid "IPv6 address (IP[/plen]) [none]"
 msgstr "IPv6 주소 (IP[/plen] [gateway]) [none]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:5488
+#: ../clients/common/nm-meta-setting-desc.c:6011
 msgid ""
 "Enter a list of IPv6 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -5024,12 +5081,12 @@ msgstr ""
 "\n"
 "예: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5501
+#: ../clients/common/nm-meta-setting-desc.c:6024
 #, fuzzy
 msgid "IPv6 gateway [none]"
 msgstr "IPv6 주소 (IP[/plen] [gateway]) [none]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:5509
+#: ../clients/common/nm-meta-setting-desc.c:6032
 msgid ""
 "Enter a list of IPv6 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -5053,185 +5110,185 @@ msgstr ""
 "beef::3 2\n"
 "          abbe::/64 55\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5602
-#: ../clients/common/nm-meta-setting-desc.c:6224
+#: ../clients/common/nm-meta-setting-desc.c:6125
+#: ../clients/common/nm-meta-setting-desc.c:6954
 #, fuzzy
 msgid "Parent device [none]"
 msgstr "부모 인터페이스 [none]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:5608
+#: ../clients/common/nm-meta-setting-desc.c:6131
 #, fuzzy
 msgid "Local endpoint [none]"
 msgstr "부모 인터페이스 [none]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:5615
-#: ../clients/common/nm-meta-setting-desc.c:6244
+#: ../clients/common/nm-meta-setting-desc.c:6138
+#: ../clients/common/nm-meta-setting-desc.c:6974
 #, fuzzy
 msgid "Remote"
 msgstr "삭제"
 
-#: ../clients/common/nm-meta-setting-desc.c:5652
+#: ../clients/common/nm-meta-setting-desc.c:6175
 msgid "MACsec parent device or connection UUID"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5673
+#: ../clients/common/nm-meta-setting-desc.c:6196
 msgid "Enable encryption [yes]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5679
+#: ../clients/common/nm-meta-setting-desc.c:6202
 #: ../clients/common/nm-secret-agent-simple.c:522
 msgid "MKA CAK"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5689
+#: ../clients/common/nm-meta-setting-desc.c:6212
 msgid "MKA_CKN"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5695
+#: ../clients/common/nm-meta-setting-desc.c:6218
 msgid "SCI port [1]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5718
+#: ../clients/common/nm-meta-setting-desc.c:6241
 #, fuzzy
 msgid "MACVLAN parent device or connection UUID"
 msgstr "VLAN 부모 장치 또는 연결 UUID: "
 
-#: ../clients/common/nm-meta-setting-desc.c:5739
+#: ../clients/common/nm-meta-setting-desc.c:6262
 msgid "Tap [no]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5752
-#: ../clients/common/nm-meta-setting-desc.c:6431
-#: ../clients/tui/nmt-page-wifi.c:212
+#: ../clients/common/nm-meta-setting-desc.c:6275
+#: ../clients/common/nm-meta-setting-desc.c:7161
+#: ../clients/tui/nmt-page-wifi.c:224
 msgid "SSID"
 msgstr "SSID"
 
-#: ../clients/common/nm-meta-setting-desc.c:5761
+#: ../clients/common/nm-meta-setting-desc.c:6284
 #, fuzzy
 msgid "OLPC Mesh channel [1]"
 msgstr "OLPC 메시 채널 [1]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:5770
+#: ../clients/common/nm-meta-setting-desc.c:6293
 #, fuzzy
 msgid "DHCP anycast MAC address [none]"
 msgstr "DHCP anycast MAC 주소 [none]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:5782
+#: ../clients/common/nm-meta-setting-desc.c:6305
 #, fuzzy
 msgid "PPPoE parent device"
 msgstr "부모 인터페이스 [none]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:5788
+#: ../clients/common/nm-meta-setting-desc.c:6311
 #, fuzzy
 msgid "Service [none]"
 msgstr "서비스 [none]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:5795
+#: ../clients/common/nm-meta-setting-desc.c:6318
 #, fuzzy
 msgid "PPPoE username"
 msgstr "PPPoE 사용자 이름: "
 
-#: ../clients/common/nm-meta-setting-desc.c:5969
+#: ../clients/common/nm-meta-setting-desc.c:6492
 msgid "Browser only [no]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5975
+#: ../clients/common/nm-meta-setting-desc.c:6498
 msgid "PAC URL"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5981
+#: ../clients/common/nm-meta-setting-desc.c:6504
 msgid "PAC script"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:5996
-#: ../clients/common/nm-meta-setting-desc.c:6012
+#: ../clients/common/nm-meta-setting-desc.c:6539
+#: ../clients/common/nm-meta-setting-desc.c:6687
 #, fuzzy
 msgid "Team JSON configuration [none]"
 msgstr "팀 JSON 설정 [none]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:6094
+#: ../clients/common/nm-meta-setting-desc.c:6824
 #, fuzzy
 msgid "User ID [none]"
 msgstr "사용자 이름 [none]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:6100
+#: ../clients/common/nm-meta-setting-desc.c:6830
 #, fuzzy
 msgid "Group ID [none]"
 msgstr "MAC [none]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:6106
+#: ../clients/common/nm-meta-setting-desc.c:6836
 #, fuzzy
 msgid "Enable PI [no]"
 msgstr "STP 활성화 (예/아니오) [예]:"
 
-#: ../clients/common/nm-meta-setting-desc.c:6112
+#: ../clients/common/nm-meta-setting-desc.c:6842
 msgid "Enable VNET header [no]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6118
+#: ../clients/common/nm-meta-setting-desc.c:6848
 msgid "Enable multi queue [no]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6131
+#: ../clients/common/nm-meta-setting-desc.c:6861
 #, fuzzy
 msgid "VLAN parent device or connection UUID"
 msgstr "VLAN 부모 장치 또는 연결 UUID: "
 
-#: ../clients/common/nm-meta-setting-desc.c:6138
+#: ../clients/common/nm-meta-setting-desc.c:6868
 #, fuzzy
 msgid "VLAN ID (<0-4094>)"
 msgstr "VLAN ID <0-4095>: "
 
-#: ../clients/common/nm-meta-setting-desc.c:6144
+#: ../clients/common/nm-meta-setting-desc.c:6874
 #, fuzzy
 msgid "VLAN flags (<0-7>) [none]"
 msgstr "VLAN 플래그 (<0-7>) [none]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:6153
+#: ../clients/common/nm-meta-setting-desc.c:6883
 #, fuzzy
 msgid "Ingress priority maps [none]"
 msgstr "Ingress 우선 순위 맵 [none]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:6163
+#: ../clients/common/nm-meta-setting-desc.c:6893
 #, fuzzy
 msgid "Egress priority maps [none]"
 msgstr "Egress 우선 순위 맵 [none]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:6231
+#: ../clients/common/nm-meta-setting-desc.c:6961
 #, fuzzy
 msgid "VXLAN ID"
 msgstr "VLAN ID <0-4095>: "
 
-#: ../clients/common/nm-meta-setting-desc.c:6237
+#: ../clients/common/nm-meta-setting-desc.c:6967
 #, fuzzy
 msgid "Local address [none]"
 msgstr "DHCP anycast MAC 주소 [none]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:6250
+#: ../clients/common/nm-meta-setting-desc.c:6980
 msgid "Minimum source port [0]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6256
+#: ../clients/common/nm-meta-setting-desc.c:6986
 msgid "Maximum source port [0]"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6262
+#: ../clients/common/nm-meta-setting-desc.c:6992
 #, fuzzy
 msgid "Destination port [8472]"
 msgstr "대상 "
 
-#: ../clients/common/nm-meta-setting-desc.c:6308
+#: ../clients/common/nm-meta-setting-desc.c:7038
 #, fuzzy
 msgid "WiMAX NSP name"
 msgstr "WiMAX NSP 이름: "
 
-#: ../clients/common/nm-meta-setting-desc.c:6345
-#: ../clients/common/nm-meta-setting-desc.c:6481
+#: ../clients/common/nm-meta-setting-desc.c:7075
+#: ../clients/common/nm-meta-setting-desc.c:7211
 #, fuzzy
 msgid "Cloned MAC [none]"
 msgstr "복제된 MAC [none]: "
 
-#: ../clients/common/nm-meta-setting-desc.c:6372
+#: ../clients/common/nm-meta-setting-desc.c:7102
 msgid ""
 "Enter a list of subchannels (comma or space separated).\n"
 "\n"
@@ -5241,7 +5298,7 @@ msgstr ""
 "\n"
 "예: 0.0.0e20 0.0.0e21 0.0.0e22\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:6626
+#: ../clients/common/nm-meta-setting-desc.c:7356
 msgid ""
 "Enter the type of WEP keys. The accepted values are: 0 or unknown, 1 or key, "
 "and 2 or passphrase.\n"
@@ -5250,177 +5307,181 @@ msgstr ""
 "없음, 1 또는 키, 2 또는 암호입니다.\n"
 
 #. ***************************************************************************
-#: ../clients/common/nm-meta-setting-desc.c:6786
+#: ../clients/common/nm-meta-setting-desc.c:7516
 msgid "802-1x settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6787
+#: ../clients/common/nm-meta-setting-desc.c:7517
 #: ../src/devices/adsl/nm-device-adsl.c:137
 msgid "ADSL connection"
 msgstr "ADSL 연결"
 
-#: ../clients/common/nm-meta-setting-desc.c:6788
+#: ../clients/common/nm-meta-setting-desc.c:7518
 #, fuzzy
 msgid "bluetooth connection"
 msgstr "Bond 연결 %d"
 
-#: ../clients/common/nm-meta-setting-desc.c:6789
+#: ../clients/common/nm-meta-setting-desc.c:7519
 #, fuzzy
 msgid "Bond device"
 msgstr "이더넷"
 
-#: ../clients/common/nm-meta-setting-desc.c:6790
+#: ../clients/common/nm-meta-setting-desc.c:7520
 #, fuzzy
 msgid "Bridge device"
 msgstr "이더넷"
 
-#: ../clients/common/nm-meta-setting-desc.c:6791
+#: ../clients/common/nm-meta-setting-desc.c:7521
 #, fuzzy
 msgid "Bridge port"
 msgstr "브리지 "
 
-#: ../clients/common/nm-meta-setting-desc.c:6792
+#: ../clients/common/nm-meta-setting-desc.c:7522
 #, fuzzy
 msgid "CDMA mobile broadband connection"
 msgstr "모바일 광대역 연결 %d"
 
-#: ../clients/common/nm-meta-setting-desc.c:6793
+#: ../clients/common/nm-meta-setting-desc.c:7523
 msgid "General settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6794
+#: ../clients/common/nm-meta-setting-desc.c:7524
 msgid "DCB settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6795
+#: ../clients/common/nm-meta-setting-desc.c:7525
 msgid "Dummy settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6796
+#: ../clients/common/nm-meta-setting-desc.c:7526
 msgid "Generic settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6797
+#: ../clients/common/nm-meta-setting-desc.c:7527
 #, fuzzy
 msgid "GSM mobile broadband connection"
 msgstr "모바일 광대역 연결 %d"
 
-#: ../clients/common/nm-meta-setting-desc.c:6798
+#: ../clients/common/nm-meta-setting-desc.c:7528
 #: ../src/devices/nm-device-infiniband.c:192
 msgid "InfiniBand connection"
 msgstr "InfiniBand 연결"
 
-#: ../clients/common/nm-meta-setting-desc.c:6799
+#: ../clients/common/nm-meta-setting-desc.c:7529
 msgid "IPv4 protocol"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6800
+#: ../clients/common/nm-meta-setting-desc.c:7530
 msgid "IPv6 protocol"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6801
+#: ../clients/common/nm-meta-setting-desc.c:7531
 msgid "IP-tunnel settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6802
+#: ../clients/common/nm-meta-setting-desc.c:7532
 msgid "MACsec connection"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6803
+#: ../clients/common/nm-meta-setting-desc.c:7533
 #, fuzzy
 msgid "macvlan connection"
 msgstr "Bond 연결 %d"
 
-#: ../clients/common/nm-meta-setting-desc.c:6804
+#: ../clients/common/nm-meta-setting-desc.c:7534
 #, fuzzy
 msgid "OLPC Mesh connection"
 msgstr "CDMA 연결 %d"
 
-#: ../clients/common/nm-meta-setting-desc.c:6805
+#: ../clients/common/nm-meta-setting-desc.c:7535
 msgid "OpenVSwitch bridge settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6806
+#: ../clients/common/nm-meta-setting-desc.c:7536
 msgid "OpenVSwitch interface settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6807
+#: ../clients/common/nm-meta-setting-desc.c:7537
 msgid "OpenVSwitch patch interface settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6808
+#: ../clients/common/nm-meta-setting-desc.c:7538
 msgid "OpenVSwitch port settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6809
+#: ../clients/common/nm-meta-setting-desc.c:7539
 msgid "PPP settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6810
+#: ../clients/common/nm-meta-setting-desc.c:7540
 msgid "PPPoE"
 msgstr "PPPoE"
 
-#: ../clients/common/nm-meta-setting-desc.c:6811
+#: ../clients/common/nm-meta-setting-desc.c:7541
 msgid "Proxy"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6812
+#: ../clients/common/nm-meta-setting-desc.c:7542
 msgid "Serial settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6813
+#: ../clients/common/nm-meta-setting-desc.c:7543
+msgid "Traffic controls"
+msgstr ""
+
+#: ../clients/common/nm-meta-setting-desc.c:7544
 #, fuzzy
 msgid "Team device"
 msgstr "장치가 제거되었습니다 "
 
-#: ../clients/common/nm-meta-setting-desc.c:6814
+#: ../clients/common/nm-meta-setting-desc.c:7545
 #, fuzzy
 msgid "Team port"
 msgstr "팀 "
 
-#: ../clients/common/nm-meta-setting-desc.c:6815
+#: ../clients/common/nm-meta-setting-desc.c:7546
 #, fuzzy
 msgid "Tun device"
 msgstr "장치가 제거되었습니다 "
 
-#: ../clients/common/nm-meta-setting-desc.c:6816
+#: ../clients/common/nm-meta-setting-desc.c:7547
 msgid "User settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:6817
+#: ../clients/common/nm-meta-setting-desc.c:7548
 #: ../src/devices/nm-device-vlan.c:394
 msgid "VLAN connection"
 msgstr "VLAN 연결"
 
-#: ../clients/common/nm-meta-setting-desc.c:6818 ../src/nm-manager.c:4191
+#: ../clients/common/nm-meta-setting-desc.c:7549 ../src/nm-manager.c:4276
 msgid "VPN connection"
 msgstr "VPN 연결"
 
-#: ../clients/common/nm-meta-setting-desc.c:6819
+#: ../clients/common/nm-meta-setting-desc.c:7550
 #: ../src/devices/nm-device-vxlan.c:331
 msgid "VXLAN connection"
 msgstr "VXLAN 연결"
 
-#: ../clients/common/nm-meta-setting-desc.c:6820
+#: ../clients/common/nm-meta-setting-desc.c:7551
 #, fuzzy
 msgid "WiMAX connection"
 msgstr "CDMA 연결 %d"
 
-#: ../clients/common/nm-meta-setting-desc.c:6821
+#: ../clients/common/nm-meta-setting-desc.c:7552
 #, fuzzy
 msgid "Wired Ethernet"
 msgstr "이더넷"
 
-#: ../clients/common/nm-meta-setting-desc.c:6822
+#: ../clients/common/nm-meta-setting-desc.c:7553
 #, fuzzy
 msgid "Wi-Fi connection"
 msgstr "Wi-Fi 연결 %d"
 
-#: ../clients/common/nm-meta-setting-desc.c:6823
+#: ../clients/common/nm-meta-setting-desc.c:7554
 msgid "Wi-Fi security settings"
 msgstr ""
 
-#: ../clients/common/nm-meta-setting-desc.c:7138
+#: ../clients/common/nm-meta-setting-desc.c:7871
 #, fuzzy
 msgid "name"
 msgstr "사용자 이름 "
@@ -5440,8 +5501,8 @@ msgstr "인증 세션이 이미 진행 중입니다."
 #: ../clients/common/nm-vpn-helpers.c:123
 #: ../clients/common/nm-vpn-helpers.c:129
 #: ../clients/common/nm-vpn-helpers.c:134 ../clients/tui/nmt-page-dsl.c:75
-#: ../clients/tui/nmt-page-wifi.c:265 ../clients/tui/nmt-page-wifi.c:296
-#: ../clients/tui/nmt-page-wifi.c:329
+#: ../clients/tui/nmt-page-wifi.c:277 ../clients/tui/nmt-page-wifi.c:308
+#: ../clients/tui/nmt-page-wifi.c:341
 msgid "Password"
 msgstr "암호 "
 
@@ -5454,7 +5515,7 @@ msgid "Private key password"
 msgstr "개인 키 암호"
 
 #: ../clients/common/nm-secret-agent-simple.c:291
-#: ../clients/tui/nmt-page-wifi.c:277
+#: ../clients/tui/nmt-page-wifi.c:289
 msgid "Key"
 msgstr "키 "
 
@@ -5626,14 +5687,15 @@ msgstr ""
 #: ../clients/common/settings-docs.c.in:301
 #: ../clients/common/settings-docs.c.in:309
 #: ../clients/common/settings-docs.c.in:314
-#: ../clients/common/settings-docs.c.in:319
-#: ../clients/common/settings-docs.c.in:321
+#: ../clients/common/settings-docs.c.in:318
 #: ../clients/common/settings-docs.c.in:325
-#: ../clients/common/settings-docs.c.in:330
-#: ../clients/common/settings-docs.c.in:335
-#: ../clients/common/settings-docs.c.in:338
-#: ../clients/common/settings-docs.c.in:352
+#: ../clients/common/settings-docs.c.in:342
+#: ../clients/common/settings-docs.c.in:349
+#: ../clients/common/settings-docs.c.in:354
+#: ../clients/common/settings-docs.c.in:359
 #: ../clients/common/settings-docs.c.in:362
+#: ../clients/common/settings-docs.c.in:376
+#: ../clients/common/settings-docs.c.in:386
 msgid ""
 "The setting's name, which uniquely identifies the setting within the "
 "connection.  Each setting type has a name unique to that type, for example "
@@ -7513,7 +7575,15 @@ msgid ""
 "The 1 in \"8n1\" for example."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:318
+#: ../clients/common/settings-docs.c.in:319
+msgid "Array of TC queuening disciplines."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:320
+msgid "Array of TC traffic filters."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:321
 msgid ""
 "The JSON configuration for the team network interface.  The property should "
 "contain raw JSON configuration data suitable for teamd, because the value is "
@@ -7521,7 +7591,78 @@ msgid ""
 "used.  See man teamd.conf for the format details."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:320
+#: ../clients/common/settings-docs.c.in:322
+#: ../clients/common/settings-docs.c.in:341
+msgid ""
+"Link watchers configuration for the connection: each link watcher is defined "
+"by a dictionary, whose keys depend upon the selected link watcher. Available "
+"link watchers are 'ethtool', 'nsna_ping' and 'arp_ping' and it is specified "
+"in the dictionary with the key 'name'. Available keys are:   ethtool: 'delay-"
+"up', 'delay-down', 'init-wait'; nsna_ping: 'init-wait', 'interval', 'missed-"
+"max', 'target-host'; arp_ping: all the ones in nsna_ping and 'source-host', "
+"'validate-active', 'validate-incative', 'send-always'. See teamd.conf man "
+"for more details."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:323
+msgid "Corresponds to the teamd mcast_rejoin.count."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:324
+msgid "Corresponds to the teamd mcast_rejoin.interval."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:326
+msgid "Corresponds to the teamd notify_peers.count."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:327
+msgid "Corresponds to the teamd notify_peers.interval."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:328
+msgid ""
+"Corresponds to the teamd runner.name. Permitted values are: \"roundrobin\", "
+"\"broadcast\", \"activebackup\", \"loadbalance\", \"lacp\"."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:329
+msgid "Corresponds to the teamd runner.active."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:330
+msgid "Corresponds to the teamd runner.agg_select_policy."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:331
+msgid "Corresponds to the teamd runner.fast_rate."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:332
+msgid "Corresponds to the teamd runner.hwaddr_policy."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:333
+msgid "Corresponds to the teamd runner.min_ports."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:334
+msgid "Corresponds to the teamd runner.sys_prio."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:335
+msgid "Corresponds to the teamd runner.tx_balancer.name."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:336
+msgid "Corresponds to the teamd runner.tx_balancer.interval."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:337
+msgid "Corresponds to the teamd runner.tx_hash."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:338
 msgid ""
 "The JSON configuration for the team port. The property should contain raw "
 "JSON configuration data suitable for teamd, because the value is passed "
@@ -7529,45 +7670,67 @@ msgid ""
 "man teamd.conf for the format details."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:322
+#: ../clients/common/settings-docs.c.in:339
+msgid "Corresponds to the teamd ports.PORTIFNAME.lacp_key."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:340
+msgid "Corresponds to the teamd ports.PORTIFNAME.lacp_prio."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:343
+msgid "Corresponds to the teamd ports.PORTIFNAME.prio."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:344
+msgid ""
+"Corresponds to the teamd ports.PORTIFNAME.queue_id. When set to -1 means the "
+"parameter is skipped from the json config."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:345
+msgid "Corresponds to the teamd ports.PORTIFNAME.sticky."
+msgstr ""
+
+#: ../clients/common/settings-docs.c.in:346
 msgid ""
 "The group ID which will own the device. If set to NULL everyone will be able "
 "to use the device."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:323
+#: ../clients/common/settings-docs.c.in:347
 msgid ""
 "The operating mode of the virtual device. Allowed values are "
 "NM_SETTING_TUN_MODE_TUN (1) to create a layer 3 device and "
 "NM_SETTING_TUN_MODE_TAP (2) to create an Ethernet-like layer 2 one."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:324
+#: ../clients/common/settings-docs.c.in:348
 msgid ""
 "If the property is set to TRUE, the interface will support multiple file "
 "descriptors (queues) to parallelize packet sending or receiving. Otherwise, "
 "the interface will only support a single queue."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:326
+#: ../clients/common/settings-docs.c.in:350
 msgid ""
 "The user ID which will own the device. If set to NULL everyone will be able "
 "to use the device."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:327
+#: ../clients/common/settings-docs.c.in:351
 msgid ""
 "If TRUE the interface will prepend a 4 byte header describing the physical "
 "interface to the packets."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:328
+#: ../clients/common/settings-docs.c.in:352
 msgid ""
 "If TRUE the IFF_VNET_HDR the tunnel packets will include a virtio network "
 "header."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:329
+#: ../clients/common/settings-docs.c.in:353
 msgid ""
 "A dictionary of key/value pairs with user data. This data is ignored by "
 "NetworkManager and can be used at the users discretion. The keys only "
@@ -7575,14 +7738,14 @@ msgid ""
 "up to a certain length."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:331
+#: ../clients/common/settings-docs.c.in:355
 msgid ""
 "For outgoing packets, a list of mappings from Linux SKB priorities to 802.1p "
 "priorities.  The mapping is given in the format \"from:to\" where both \"from"
 "\" and \"to\" are unsigned integers, ie \"7:3\"."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:332
+#: ../clients/common/settings-docs.c.in:356
 msgid ""
 "One or more flags which control the behavior and features of the VLAN "
 "interface.  Flags include NM_VLAN_FLAG_REORDER_HEADERS (0x1) (reordering of "
@@ -7595,20 +7758,20 @@ msgid ""
 "missing property on D-Bus is still considered as 0."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:333
+#: ../clients/common/settings-docs.c.in:357
 msgid ""
 "The VLAN identifier that the interface created by this connection should be "
 "assigned. The valid range is from 0 to 4094, without the reserved id 4095."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:334
+#: ../clients/common/settings-docs.c.in:358
 msgid ""
 "For incoming packets, a list of mappings from 802.1p priorities to Linux SKB "
 "priorities.  The mapping is given in the format \"from:to\" where both \"from"
 "\" and \"to\" are unsigned integers, ie \"7:3\"."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:336
+#: ../clients/common/settings-docs.c.in:360
 msgid ""
 "If given, specifies the parent interface name or parent connection UUID from "
 "which this VLAN interface should be created.  If this property is not "
@@ -7616,32 +7779,32 @@ msgid ""
 "\"mac-address\" property."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:337
+#: ../clients/common/settings-docs.c.in:361
 msgid ""
 "Dictionary of key/value pairs of VPN plugin specific data.  Both keys and "
 "values must be strings."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:339
+#: ../clients/common/settings-docs.c.in:363
 msgid ""
 "If the VPN service supports persistence, and this property is TRUE, the VPN "
 "will attempt to stay connected across link changes and outages, until "
 "explicitly disconnected."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:340
+#: ../clients/common/settings-docs.c.in:364
 msgid ""
 "Dictionary of key/value pairs of VPN plugin specific secrets like passwords "
 "or private keys.  Both keys and values must be strings."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:341
+#: ../clients/common/settings-docs.c.in:365
 msgid ""
 "D-Bus service name of the VPN plugin that this setting uses to connect to "
 "its network.  i.e. org.freedesktop.NetworkManager.vpnc for the vpnc plugin."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:342
+#: ../clients/common/settings-docs.c.in:366
 msgid ""
 "Timeout for the VPN service to establish the connection. Some services may "
 "take quite a long time to connect. Value of 0 means a default timeout, which "
@@ -7649,7 +7812,7 @@ msgid ""
 "Values greater than zero mean timeout in seconds."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:343
+#: ../clients/common/settings-docs.c.in:367
 msgid ""
 "If the VPN connection requires a user name for authentication, that name "
 "should be provided here.  If the connection is available to more than one "
@@ -7659,93 +7822,93 @@ msgid ""
 "connection."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:344
+#: ../clients/common/settings-docs.c.in:368
 msgid "Specifies the lifetime in seconds of FDB entries learnt by the kernel."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:345
+#: ../clients/common/settings-docs.c.in:369
 msgid ""
 "Specifies the UDP destination port to communicate to the remote VXLAN tunnel "
 "endpoint."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:346
+#: ../clients/common/settings-docs.c.in:370
 msgid ""
 "Specifies the VXLAN Network Identifier (or VXLAN Segment Identifier) to use."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:347
+#: ../clients/common/settings-docs.c.in:371
 msgid "Specifies whether netlink LL ADDR miss notifications are generated."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:348
+#: ../clients/common/settings-docs.c.in:372
 msgid "Specifies whether netlink IP ADDR miss notifications are generated."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:349
+#: ../clients/common/settings-docs.c.in:373
 msgid ""
 "Specifies whether unknown source link layer addresses and IP addresses are "
 "entered into the VXLAN device forwarding database."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:350
+#: ../clients/common/settings-docs.c.in:374
 msgid ""
 "Specifies the maximum number of FDB entries. A value of zero means that the "
 "kernel will store unlimited entries."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:351
+#: ../clients/common/settings-docs.c.in:375
 msgid "If given, specifies the source IP address to use in outgoing packets."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:353
+#: ../clients/common/settings-docs.c.in:377
 msgid ""
 "If given, specifies the parent interface name or parent connection UUID."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:354
+#: ../clients/common/settings-docs.c.in:378
 msgid "Specifies whether ARP proxy is turned on."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:355
+#: ../clients/common/settings-docs.c.in:379
 msgid ""
 "Specifies the unicast destination IP address to use in outgoing packets when "
 "the destination link layer address is not known in the VXLAN device "
 "forwarding database, or the multicast IP address to join."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:356
+#: ../clients/common/settings-docs.c.in:380
 msgid "Specifies whether route short circuit is turned on."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:357
+#: ../clients/common/settings-docs.c.in:381
 msgid ""
 "Specifies the maximum UDP source port to communicate to the remote VXLAN "
 "tunnel endpoint."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:358
+#: ../clients/common/settings-docs.c.in:382
 msgid ""
 "Specifies the minimum UDP source port to communicate to the remote VXLAN "
 "tunnel endpoint."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:359
+#: ../clients/common/settings-docs.c.in:383
 msgid "Specifies the TOS value to use in outgoing packets."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:360
+#: ../clients/common/settings-docs.c.in:384
 msgid "Specifies the time-to-live value to use in outgoing packets."
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:361
+#: ../clients/common/settings-docs.c.in:385
 msgid ""
 "If specified, this connection will only apply to the WiMAX device whose MAC "
 "address matches. This property does not change the MAC address of the device "
 "(known as MAC spoofing). Deprecated: 1"
 msgstr ""
 
-#: ../clients/common/settings-docs.c.in:363
+#: ../clients/common/settings-docs.c.in:387
 msgid ""
 "Network Service Provider (NSP) name of the WiMAX network this connection "
 "should use. Deprecated: 1"
@@ -7878,7 +8041,7 @@ msgstr "DSL 연결 %d"
 #: ../clients/tui/nm-editor-utils.c:190 ../libnm-core/nm-connection.c:2106
 #: ../libnm-glib/nm-device.c:1835 ../libnm-util/nm-connection.c:1626
 #: ../libnm/nm-device.c:1541
-#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4504
+#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4563
 msgid "Bond"
 msgstr "본딩 "
 
@@ -7890,7 +8053,7 @@ msgstr "Bond 연결 %d"
 #: ../clients/tui/nm-editor-utils.c:199 ../libnm-core/nm-connection.c:2110
 #: ../libnm-glib/nm-device.c:1839 ../libnm-util/nm-connection.c:1630
 #: ../libnm/nm-device.c:1545
-#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4797
+#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4899
 msgid "Bridge"
 msgstr "브리지 "
 
@@ -7902,7 +8065,7 @@ msgstr "브리지 연결 %d"
 #: ../clients/tui/nm-editor-utils.c:208 ../libnm-core/nm-connection.c:2108
 #: ../libnm-glib/nm-device.c:1837 ../libnm-util/nm-connection.c:1628
 #: ../libnm/nm-device.c:1543
-#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4607
+#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:4666
 msgid "Team"
 msgstr "팀 "
 
@@ -8065,7 +8228,7 @@ msgid "Slaves"
 msgstr "슬레이브 "
 
 #: ../clients/tui/nmt-page-bond.c:375 ../clients/tui/nmt-page-ip-tunnel.c:148
-#: ../clients/tui/nmt-page-wifi.c:218
+#: ../clients/tui/nmt-page-wifi.c:230
 msgid "Mode"
 msgstr "모드"
 
@@ -8100,7 +8263,7 @@ msgid "ARP targets"
 msgstr "ARP 대상 "
 
 #: ../clients/tui/nmt-page-bond.c:428 ../clients/tui/nmt-page-ethernet.c:77
-#: ../clients/tui/nmt-page-vlan.c:110 ../clients/tui/nmt-page-wifi.c:352
+#: ../clients/tui/nmt-page-vlan.c:110 ../clients/tui/nmt-page-wifi.c:364
 msgid "Cloned MAC address"
 msgstr "복제된 MAC 주소"
 
@@ -8165,7 +8328,7 @@ msgstr "이더넷"
 #: ../clients/tui/nmt-page-ethernet.c:83
 #: ../clients/tui/nmt-page-infiniband.c:94
 #: ../clients/tui/nmt-page-ip-tunnel.c:186 ../clients/tui/nmt-page-vlan.c:116
-#: ../clients/tui/nmt-page-wifi.c:358
+#: ../clients/tui/nmt-page-wifi.c:370
 msgid "MTU"
 msgstr "MTU"
 
@@ -8397,124 +8560,124 @@ msgstr "팀 "
 msgid "VLAN id"
 msgstr "VLAN id"
 
-#: ../clients/tui/nmt-page-wifi.c:57
+#: ../clients/tui/nmt-page-wifi.c:64
 msgctxt "Wi-Fi"
 msgid "Client"
 msgstr "클라이언트"
 
-#: ../clients/tui/nmt-page-wifi.c:58
+#: ../clients/tui/nmt-page-wifi.c:65
 msgid "Access Point"
 msgstr "액세스 지점 "
 
-#: ../clients/tui/nmt-page-wifi.c:59
+#: ../clients/tui/nmt-page-wifi.c:66
 msgid "Ad-Hoc Network"
 msgstr "애드혹 네트워크 "
 
-#: ../clients/tui/nmt-page-wifi.c:64
+#: ../clients/tui/nmt-page-wifi.c:71
 msgctxt "Wi-Fi"
 msgid "Automatic"
 msgstr "자동 "
 
 #. 802.11a Wi-Fi network
-#: ../clients/tui/nmt-page-wifi.c:66
+#: ../clients/tui/nmt-page-wifi.c:73
 msgid "A (5 GHz)"
 msgstr "A (5 GHz)"
 
 #. 802.11b / 802.11g Wi-Fi network
-#: ../clients/tui/nmt-page-wifi.c:68
+#: ../clients/tui/nmt-page-wifi.c:75
 msgid "B/G (2.4 GHz)"
 msgstr "B/G (2.4 GHz)"
 
-#: ../clients/tui/nmt-page-wifi.c:73
+#: ../clients/tui/nmt-page-wifi.c:80
 msgctxt "Wi-Fi security"
 msgid "None"
 msgstr "없음"
 
-#: ../clients/tui/nmt-page-wifi.c:74
+#: ../clients/tui/nmt-page-wifi.c:81
 msgid "WPA & WPA2 Personal"
 msgstr "WPA 및 WPA2 개인용"
 
-#: ../clients/tui/nmt-page-wifi.c:75
+#: ../clients/tui/nmt-page-wifi.c:82
 msgid "WPA & WPA2 Enterprise"
 msgstr "WPA 및 WPA2 기업용"
 
-#: ../clients/tui/nmt-page-wifi.c:76
+#: ../clients/tui/nmt-page-wifi.c:83
 msgid "WEP 40/128-bit Key (Hex or ASCII)"
 msgstr "WEP 40/128비트 키(16진수 또는 ASCII)"
 
-#: ../clients/tui/nmt-page-wifi.c:77
+#: ../clients/tui/nmt-page-wifi.c:84
 msgid "WEP 128-bit Passphrase"
 msgstr "WEP 128비트 암호글"
 
-#: ../clients/tui/nmt-page-wifi.c:78
+#: ../clients/tui/nmt-page-wifi.c:85
 msgid "Dynamic WEP (802.1x)"
 msgstr "동적 WEP (802.1x)"
 
-#: ../clients/tui/nmt-page-wifi.c:79
+#: ../clients/tui/nmt-page-wifi.c:86
 msgid "LEAP"
 msgstr "LEAP"
 
-#: ../clients/tui/nmt-page-wifi.c:84
+#: ../clients/tui/nmt-page-wifi.c:91
 msgctxt "WEP key index"
 msgid "1 (Default)"
 msgstr "1 (기본값)"
 
-#: ../clients/tui/nmt-page-wifi.c:85
+#: ../clients/tui/nmt-page-wifi.c:92
 msgctxt "WEP key index"
 msgid "2"
 msgstr "2"
 
-#: ../clients/tui/nmt-page-wifi.c:86
+#: ../clients/tui/nmt-page-wifi.c:93
 msgctxt "WEP key index"
 msgid "3"
 msgstr "3"
 
-#: ../clients/tui/nmt-page-wifi.c:87
+#: ../clients/tui/nmt-page-wifi.c:94
 msgctxt "WEP key index"
 msgid "4"
 msgstr "4"
 
-#: ../clients/tui/nmt-page-wifi.c:92
+#: ../clients/tui/nmt-page-wifi.c:99
 msgid "Open System"
 msgstr "공개 시스템"
 
-#: ../clients/tui/nmt-page-wifi.c:93
+#: ../clients/tui/nmt-page-wifi.c:100
 msgid "Shared Key"
 msgstr "공유 키"
 
-#: ../clients/tui/nmt-page-wifi.c:202
+#: ../clients/tui/nmt-page-wifi.c:214
 msgid "WI-FI"
 msgstr "WI-FI"
 
-#: ../clients/tui/nmt-page-wifi.c:244
+#: ../clients/tui/nmt-page-wifi.c:256
 msgid "Channel"
 msgstr "채널"
 
-#: ../clients/tui/nmt-page-wifi.c:249
+#: ../clients/tui/nmt-page-wifi.c:261
 msgid "Security"
 msgstr "보안"
 
 #. "wpa-enterprise"
 #. FIXME
-#: ../clients/tui/nmt-page-wifi.c:270
+#: ../clients/tui/nmt-page-wifi.c:282
 msgid "(No support for wpa-enterprise yet...)"
 msgstr "(WPA 기업용은 아직 지원하지 않습니다...)"
 
-#: ../clients/tui/nmt-page-wifi.c:280 ../clients/tui/nmt-page-wifi.c:299
+#: ../clients/tui/nmt-page-wifi.c:292 ../clients/tui/nmt-page-wifi.c:311
 msgid "WEP index"
 msgstr "WEP 인덱스"
 
-#: ../clients/tui/nmt-page-wifi.c:288 ../clients/tui/nmt-page-wifi.c:307
+#: ../clients/tui/nmt-page-wifi.c:300 ../clients/tui/nmt-page-wifi.c:319
 msgid "Authentication"
 msgstr "인증"
 
 #. "dynamic-wep"
 #. FIXME
-#: ../clients/tui/nmt-page-wifi.c:313
+#: ../clients/tui/nmt-page-wifi.c:325
 msgid "(No support for dynamic-wep yet...)"
 msgstr "(동적 WEP는 아직 지원하지 않습니다...) "
 
-#: ../clients/tui/nmt-page-wifi.c:346
+#: ../clients/tui/nmt-page-wifi.c:358
 msgid "BSSID"
 msgstr "BSSID"
 
@@ -9046,7 +9209,7 @@ msgstr "연결을 정규화하는 데 예상치 못한 오류가 발생했습니
 #: ../libnm-core/nm-setting-connection.c:894
 #: ../libnm-core/nm-setting-connection.c:937
 #: ../libnm-core/nm-setting-connection.c:1066
-#: ../libnm-core/nm-setting-ip-config.c:2513
+#: ../libnm-core/nm-setting-ip-config.c:2514
 #: ../libnm-core/nm-setting-ip-tunnel.c:352
 #: ../libnm-core/nm-setting-olpc-mesh.c:120
 #: ../libnm-core/nm-setting-ovs-patch.c:95 ../libnm-core/nm-setting-pppoe.c:161
@@ -9085,165 +9248,175 @@ msgstr "IP 터널"
 msgid "Method returned type '%s', but expected '%s'"
 msgstr "메소드가 유형 '%s'(을)를 반환했지만 '%s'(이)가 예상됩니다"
 
-#: ../libnm-core/nm-keyfile-reader.c:143
+#: ../libnm-core/nm-keyfile-reader.c:144
 msgid "ignoring missing number"
 msgstr "누락된 숫자 무시"
 
-#: ../libnm-core/nm-keyfile-reader.c:151
+#: ../libnm-core/nm-keyfile-reader.c:152
 #, c-format
 msgid "ignoring invalid number '%s'"
 msgstr "잘못된 숫자 '%s' 무시"
 
-#: ../libnm-core/nm-keyfile-reader.c:172
+#: ../libnm-core/nm-keyfile-reader.c:173
 #, c-format
 msgid "ignoring invalid %s address: %s"
 msgstr "잘못된 %s 주소 무시: %s"
 
-#: ../libnm-core/nm-keyfile-reader.c:214
+#: ../libnm-core/nm-keyfile-reader.c:215
 #, c-format
 msgid "ignoring invalid gateway '%s' for %s route"
 msgstr "%s 라우팅에 대한 잘못된 게이트웨이 '%s' 무시"
 
-#: ../libnm-core/nm-keyfile-reader.c:235
+#: ../libnm-core/nm-keyfile-reader.c:236
 #, c-format
 msgid "ignoring invalid %s route: %s"
 msgstr "잘못된 %s 라우팅 무시: %s"
 
-#: ../libnm-core/nm-keyfile-reader.c:361
+#: ../libnm-core/nm-keyfile-reader.c:362
 #, c-format
 msgid "unexpected character '%c' for address %s: '%s' (position %td)"
 msgstr "예기치 못한 문자 '%c'(이)가 주소 %s에 사용됨: '%s'(위치 %td)"
 
-#: ../libnm-core/nm-keyfile-reader.c:371
+#: ../libnm-core/nm-keyfile-reader.c:372
 #, c-format
 msgid "unexpected character '%c' for %s: '%s' (position %td)"
 msgstr "예기치 못한 문자 '%c'(이)가 %s에 사용됨: '%s'(위치 %td)"
 
-#: ../libnm-core/nm-keyfile-reader.c:380
+#: ../libnm-core/nm-keyfile-reader.c:381
 #, c-format
 msgid "unexpected character '%c' in prefix length for %s: '%s' (position %td)"
 msgstr "예기치 못한 문자 '%c'(이)가 %s의 접두사 길이에 사용됨: '%s'(위치 %td)"
 
-#: ../libnm-core/nm-keyfile-reader.c:391
+#: ../libnm-core/nm-keyfile-reader.c:392
 #, c-format
 msgid "garbage at the end of value %s: '%s'"
 msgstr "값 %s 끝에 가비지: '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:397
+#: ../libnm-core/nm-keyfile-reader.c:398
 #, c-format
 msgid "deprecated semicolon at the end of value %s: '%s'"
 msgstr "값 %s 끝에 세미콜론 사용하지 않음: '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:412
+#: ../libnm-core/nm-keyfile-reader.c:413
 #, c-format
 msgid "invalid prefix length for %s '%s', defaulting to %d"
 msgstr "%s '%s'의 접두사 길이가 잘못되었습니다. %d(을)를 기본값으로 설정합니다"
 
-#: ../libnm-core/nm-keyfile-reader.c:419
+#: ../libnm-core/nm-keyfile-reader.c:420
 #, c-format
 msgid "missing prefix length for %s '%s', defaulting to %d"
 msgstr "%s '%s'의 접두사 길이가 누락되었습니다. %d(을)를 기본값으로 설정합니다"
 
-#: ../libnm-core/nm-keyfile-reader.c:553
+#: ../libnm-core/nm-keyfile-reader.c:554
 #, c-format
 msgid "ignoring invalid DNS server IPv4 address '%s'"
 msgstr "잘못된 DNS 서버 IPv4 주소 '%s' 무시"
 
-#: ../libnm-core/nm-keyfile-reader.c:592
+#: ../libnm-core/nm-keyfile-reader.c:593
 #, c-format
 msgid "ignoring invalid DNS server IPv6 address '%s'"
 msgstr "잘못된 DNS 서버 IPv6 주소 '%s' 무시"
 
-#: ../libnm-core/nm-keyfile-reader.c:686 ../libnm-core/nm-keyfile-reader.c:1613
+#: ../libnm-core/nm-keyfile-reader.c:687 ../libnm-core/nm-keyfile-reader.c:1721
 #, c-format
 msgid "ignoring invalid byte element '%d' (not between 0 and 255 inclusive)"
 msgstr "잘못된 바이트 요소 '%d' 무시(0~255 포함되지 않음)."
 
-#: ../libnm-core/nm-keyfile-reader.c:697
+#: ../libnm-core/nm-keyfile-reader.c:698
 msgid "ignoring invalid MAC address"
 msgstr "잘못된 MAC 주소 무시"
 
-#: ../libnm-core/nm-keyfile-reader.c:934
+#: ../libnm-core/nm-keyfile-reader.c:935
 msgid "ignoring invalid SSID"
 msgstr "잘못된 SSID 무시"
 
-#: ../libnm-core/nm-keyfile-reader.c:950
+#: ../libnm-core/nm-keyfile-reader.c:951
 msgid "ignoring invalid raw password"
 msgstr "잘못된 원시 암호 무시"
 
-#: ../libnm-core/nm-keyfile-reader.c:1025
-#: ../libnm-core/nm-keyfile-reader.c:1201
+#: ../libnm-core/nm-keyfile-reader.c:1026
+#: ../libnm-core/nm-keyfile-reader.c:1202
 #, c-format
 msgid "certificate or key file '%s' does not exist"
 msgstr "인증서 또는 키 파일 '%s'(이)가 존재하지 않습니다"
 
-#: ../libnm-core/nm-keyfile-reader.c:1030
+#: ../libnm-core/nm-keyfile-reader.c:1031
 #, c-format
 msgid "invalid key/cert value path \"%s\""
 msgstr "잘못된 키/인증 값 경로 \"%s\""
 
-#: ../libnm-core/nm-keyfile-reader.c:1040
+#: ../libnm-core/nm-keyfile-reader.c:1041
 #, c-format
 msgid "invalid PKCS#11 URI \"%s\""
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:1078
+#: ../libnm-core/nm-keyfile-reader.c:1079
 msgid "invalid key/cert value data:;base64, is not base64"
 msgstr "잘못된 키/인증서 값 data:;base64,가 base64가 아닙니다"
 
-#: ../libnm-core/nm-keyfile-reader.c:1091
+#: ../libnm-core/nm-keyfile-reader.c:1092
 msgid "invalid key/cert value data:;base64,file://"
 msgstr "잘못된 키/인증서 data:;base64,file://"
 
-#: ../libnm-core/nm-keyfile-reader.c:1238
+#: ../libnm-core/nm-keyfile-reader.c:1239
 msgid "invalid key/cert value is not a valid blob"
 msgstr "잘못된 키/인증서 값이 유효한 blob가 아닙니다"
 
-#: ../libnm-core/nm-keyfile-reader.c:1243
+#: ../libnm-core/nm-keyfile-reader.c:1244
 msgid "invalid key/cert value"
 msgstr "잘못된 키/인증 값"
 
-#: ../libnm-core/nm-keyfile-reader.c:1290
+#: ../libnm-core/nm-keyfile-reader.c:1291
 #, c-format
 msgid "invalid parity value '%s'"
 msgstr "잘못된 패리티 값 '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:1308
+#: ../libnm-core/nm-keyfile-reader.c:1309
 #, c-format
 msgid "ignoring invalid team configuration: %s"
 msgstr ""
 
-#: ../libnm-core/nm-keyfile-reader.c:1514
+#: ../libnm-core/nm-keyfile-reader.c:1352
+#, fuzzy, c-format
+msgid "invalid qdisc: %s"
+msgstr "잘못된 IP 주소: %s"
+
+#: ../libnm-core/nm-keyfile-reader.c:1400
+#, fuzzy, c-format
+msgid "invalid tfilter: %s"
+msgstr "잘못된 라우팅: %s'"
+
+#: ../libnm-core/nm-keyfile-reader.c:1622
 #, c-format
 msgid "error loading setting value: %s"
 msgstr "설정 값 불러오기 오류: %s"
 
-#: ../libnm-core/nm-keyfile-reader.c:1546
+#: ../libnm-core/nm-keyfile-reader.c:1654
 #, c-format
 msgid "invalid negative value (%i)"
 msgstr "잘못된 음수 값(%i)"
 
-#: ../libnm-core/nm-keyfile-reader.c:1567
+#: ../libnm-core/nm-keyfile-reader.c:1675
 #, c-format
 msgid "invalid char value (%i)"
 msgstr "잘못된 문자 값(%i)"
 
-#: ../libnm-core/nm-keyfile-reader.c:1590
+#: ../libnm-core/nm-keyfile-reader.c:1698
 #, c-format
 msgid "invalid int64 value (%s)"
 msgstr "잘못된 int64 값(%s)"
 
-#: ../libnm-core/nm-keyfile-reader.c:1649
+#: ../libnm-core/nm-keyfile-reader.c:1757
 #, c-format
 msgid "too large FLAGS property '%s' (%llu)"
 msgstr "너무 큰 FLAGS 속성 '%s'(%llu)"
 
-#: ../libnm-core/nm-keyfile-reader.c:1662
+#: ../libnm-core/nm-keyfile-reader.c:1770
 #, c-format
 msgid "unhandled setting property type '%s'"
 msgstr "처리되지 않은 설정 속성 유형 '%s'"
 
-#: ../libnm-core/nm-keyfile-reader.c:1693
+#: ../libnm-core/nm-keyfile-reader.c:1801
 #, c-format
 msgid "invalid setting name '%s'"
 msgstr "잘못된 설정 이름 '%s'"
@@ -9295,7 +9468,7 @@ msgstr "잘못된 phase2 개인 키"
 #: ../libnm-core/nm-setting-connection.c:901
 #: ../libnm-core/nm-setting-connection.c:949 ../libnm-core/nm-setting-gsm.c:299
 #: ../libnm-core/nm-setting-gsm.c:356 ../libnm-core/nm-setting-gsm.c:393
-#: ../libnm-core/nm-setting-gsm.c:402 ../libnm-core/nm-setting-ip-config.c:2520
+#: ../libnm-core/nm-setting-gsm.c:402 ../libnm-core/nm-setting-ip-config.c:2521
 #: ../libnm-core/nm-setting-ip4-config.c:198
 #: ../libnm-core/nm-setting-ip4-config.c:205
 #: ../libnm-core/nm-setting-pppoe.c:168 ../libnm-core/nm-setting-pppoe.c:177
@@ -9411,80 +9584,80 @@ msgstr "'%s' 연결에는 '%s' 또는 '%s' 설정이 필요합니다."
 msgid "'%s' connection requires '%s' setting"
 msgstr "'%s' 연결에는 '%s' 또는 '%s' 설정이 필요합니다."
 
-#: ../libnm-core/nm-setting-bond.c:568 ../libnm-util/nm-setting-bond.c:517
+#: ../libnm-core/nm-setting-bond.c:583 ../libnm-util/nm-setting-bond.c:517
 #, c-format
 msgid "invalid option '%s' or its value '%s'"
 msgstr "잘못된 옵션 '%s' 또는 옵션 값 '%s'"
 
-#: ../libnm-core/nm-setting-bond.c:593 ../libnm-util/nm-setting-bond.c:536
+#: ../libnm-core/nm-setting-bond.c:608 ../libnm-util/nm-setting-bond.c:536
 #, c-format
 msgid "only one of '%s' and '%s' can be set"
 msgstr "'%s' 및 '%s' 중 하나만 설정할 수 있습니다 "
 
-#: ../libnm-core/nm-setting-bond.c:606 ../libnm-util/nm-setting-bond.c:547
+#: ../libnm-core/nm-setting-bond.c:621 ../libnm-util/nm-setting-bond.c:547
 #, c-format
 msgid "mandatory option '%s' is missing"
 msgstr "필수 옵션 '%s'이 누락되어 있습니다 "
 
-#: ../libnm-core/nm-setting-bond.c:616 ../libnm-util/nm-setting-bond.c:556
+#: ../libnm-core/nm-setting-bond.c:631 ../libnm-util/nm-setting-bond.c:556
 #, c-format
 msgid "'%s' is not a valid value for '%s'"
 msgstr "'%s'은 '%s'의 올바른 값이 아닙니다 "
 
-#: ../libnm-core/nm-setting-bond.c:630 ../libnm-util/nm-setting-bond.c:569
+#: ../libnm-core/nm-setting-bond.c:645 ../libnm-util/nm-setting-bond.c:569
 #, c-format
 msgid "'%s=%s' is incompatible with '%s > 0'"
 msgstr "'%s=%s'은 '%s > 0'와 호환하지 않습니다 "
 
-#: ../libnm-core/nm-setting-bond.c:645
+#: ../libnm-core/nm-setting-bond.c:660
 #, c-format
 msgid "'%s' is not valid for the '%s' option: %s"
 msgstr ""
 
-#: ../libnm-core/nm-setting-bond.c:656 ../libnm-util/nm-setting-bond.c:592
+#: ../libnm-core/nm-setting-bond.c:671 ../libnm-util/nm-setting-bond.c:592
 #, c-format
 msgid "'%s' option is only valid for '%s=%s'"
 msgstr "'%s' 옵션은 '%s=%s'에만 유효합니다 "
 
-#: ../libnm-core/nm-setting-bond.c:669 ../libnm-util/nm-setting-bond.c:605
+#: ../libnm-core/nm-setting-bond.c:684 ../libnm-util/nm-setting-bond.c:605
 #, c-format
 msgid "'%s=%s' is not a valid configuration for '%s'"
 msgstr "'%s=%s'은 '%s'의 올바른 설정이 아닙니다 "
 
-#: ../libnm-core/nm-setting-bond.c:682 ../libnm-core/nm-setting-bond.c:691
-#: ../libnm-core/nm-setting-bond.c:711 ../libnm-core/nm-setting-bond.c:747
+#: ../libnm-core/nm-setting-bond.c:697 ../libnm-core/nm-setting-bond.c:706
+#: ../libnm-core/nm-setting-bond.c:726 ../libnm-core/nm-setting-bond.c:762
 #: ../libnm-util/nm-setting-bond.c:618 ../libnm-util/nm-setting-bond.c:627
 #: ../libnm-util/nm-setting-bond.c:647 ../libnm-util/nm-setting-bond.c:683
 #, c-format
 msgid "'%s' option requires '%s' option to be set"
 msgstr "'%s' 옵션을 사용하는 경우 '%s' 옵션을 설정해야 합니다 "
 
-#: ../libnm-core/nm-setting-bond.c:722 ../libnm-util/nm-setting-bond.c:658
+#: ../libnm-core/nm-setting-bond.c:737 ../libnm-util/nm-setting-bond.c:658
 #, c-format
 msgid "'%s' option is empty"
 msgstr "'%s' 옵션이 비어있습니다 "
 
-#: ../libnm-core/nm-setting-bond.c:734 ../libnm-util/nm-setting-bond.c:670
+#: ../libnm-core/nm-setting-bond.c:749 ../libnm-util/nm-setting-bond.c:670
 #, c-format
 msgid "'%s' is not a valid IPv4 address for '%s' option"
 msgstr "'%s'는 '%s' 옵션의 올바른 IPv4 주소가 아닙니다 "
 
-#: ../libnm-core/nm-setting-bond.c:762 ../libnm-util/nm-setting-bond.c:697
+#: ../libnm-core/nm-setting-bond.c:777 ../libnm-util/nm-setting-bond.c:697
 #, c-format
 msgid "'%s' option is only valid with mode '%s'"
 msgstr "'%s' 옵션은 모드 '%s'에서만 유효합니다."
 
-#: ../libnm-core/nm-setting-bond.c:773
+#: ../libnm-core/nm-setting-bond.c:788
 #, c-format
 msgid "'%s' and '%s' cannot have different values"
 msgstr "'%s' 및 '%s'에는 다른 값이 포함될 수 없습니다"
 
-#: ../libnm-core/nm-setting-bond.c:789
+#: ../libnm-core/nm-setting-bond.c:804
 #, c-format
 msgid "'%s' option should be string"
 msgstr "'%s' 옵션은 문자열이어야 합니다."
 
-#: ../libnm-core/nm-setting-bond.c:805
+#: ../libnm-core/nm-setting-bond.c:820
 #, fuzzy, c-format
 msgid "'%s' option is not valid with mode '%s'"
 msgstr "'%s' 옵션은 모드 '%s'에서만 유효합니다."
@@ -9493,7 +9666,7 @@ msgstr "'%s' 옵션은 모드 '%s'에서만 유효합니다."
 #: ../libnm-core/nm-setting-ovs-interface.c:262
 #: ../libnm-core/nm-setting-ovs-port.c:189
 #: ../libnm-core/nm-setting-ovs-bridge.c:152
-#: ../libnm-core/nm-setting-team-port.c:99
+#: ../libnm-core/nm-setting-team-port.c:358
 #, c-format
 msgid "missing setting"
 msgstr "누락된 설정"
@@ -9501,7 +9674,7 @@ msgstr "누락된 설정"
 #: ../libnm-core/nm-setting-bridge-port.c:138
 #: ../libnm-core/nm-setting-ovs-interface.c:283
 #: ../libnm-core/nm-setting-ovs-port.c:210
-#: ../libnm-core/nm-setting-team-port.c:110
+#: ../libnm-core/nm-setting-team-port.c:369
 #, c-format
 msgid ""
 "A connection with a '%s' setting must have the slave-type set to '%s'. "
@@ -9510,19 +9683,19 @@ msgstr ""
 "'%s' 설정이 있는 연결에는 슬레이브 유형을 '%s'(으)로 설정해야 합니다. 현재 "
 "'%s'입니다"
 
-#: ../libnm-core/nm-setting-bridge.c:245 ../libnm-util/nm-setting-bridge.c:269
+#: ../libnm-core/nm-setting-bridge.c:231 ../libnm-util/nm-setting-bridge.c:269
 #, c-format
 msgid "value '%d' is out of range <%d-%d>"
 msgstr "값 '%d'이 범위 <%d-%d> 밖에 있습니다 "
 
-#: ../libnm-core/nm-setting-bridge.c:262 ../libnm-core/nm-setting-wired.c:652
+#: ../libnm-core/nm-setting-bridge.c:248 ../libnm-core/nm-setting-wired.c:652
 #: ../libnm-core/nm-setting-wired.c:714 ../libnm-core/nm-setting-wired.c:756
 #: ../libnm-util/nm-setting-bridge.c:286 ../libnm-util/nm-setting-wired.c:633
 #: ../libnm-util/nm-setting-wired.c:691
 msgid "is not a valid MAC address"
 msgstr "올바른 MAC 주소가 아닙니다 "
 
-#: ../libnm-core/nm-setting-bridge.c:303
+#: ../libnm-core/nm-setting-bridge.c:289
 msgid "the mask can't contain bits 0 (STP), 1 (MAC) or 2 (LACP)"
 msgstr ""
 
@@ -9710,82 +9883,82 @@ msgstr "잘못된 IPv6 주소 접두어 '%u'"
 msgid "Invalid routing metric '%s'"
 msgstr "잘못된 라우팅 메트릭 '%s'"
 
-#: ../libnm-core/nm-setting-ip-config.c:1316
+#: ../libnm-core/nm-setting-ip-config.c:1317
 #, fuzzy
 msgid "unknown attribute"
 msgstr "알 수 없는 설정 이름"
 
-#: ../libnm-core/nm-setting-ip-config.c:1326
+#: ../libnm-core/nm-setting-ip-config.c:1327
 #, fuzzy, c-format
 msgid "invalid attribute type '%s'"
 msgstr "잘못된 패리티 값 '%s'"
 
-#: ../libnm-core/nm-setting-ip-config.c:1337
+#: ../libnm-core/nm-setting-ip-config.c:1338
 #, c-format
 msgid "attribute is not valid for a IPv4 route"
 msgstr ""
 
-#: ../libnm-core/nm-setting-ip-config.c:1338
+#: ../libnm-core/nm-setting-ip-config.c:1339
 #, c-format
 msgid "attribute is not valid for a IPv6 route"
 msgstr ""
 
-#: ../libnm-core/nm-setting-ip-config.c:1354
-#: ../libnm-core/nm-setting-ip-config.c:1378
+#: ../libnm-core/nm-setting-ip-config.c:1355
+#: ../libnm-core/nm-setting-ip-config.c:1379
 #, fuzzy, c-format
 msgid "'%s' is not a valid IPv4 address"
 msgstr "'%s'은(는) 유효한 IP 주소가 아닙니다."
 
-#: ../libnm-core/nm-setting-ip-config.c:1355
-#: ../libnm-core/nm-setting-ip-config.c:1379
+#: ../libnm-core/nm-setting-ip-config.c:1356
+#: ../libnm-core/nm-setting-ip-config.c:1380
 #, fuzzy, c-format
 msgid "'%s' is not a valid IPv6 address"
 msgstr "'%s'은(는) 유효한 IP 주소가 아닙니다."
 
-#: ../libnm-core/nm-setting-ip-config.c:1369
+#: ../libnm-core/nm-setting-ip-config.c:1370
 #, fuzzy, c-format
 msgid "invalid prefix %s"
 msgstr "잘못된 라우팅: %s'"
 
-#: ../libnm-core/nm-setting-ip-config.c:2533
+#: ../libnm-core/nm-setting-ip-config.c:2534
 #, c-format
 msgid "%d. DNS server address is invalid"
 msgstr "%d. DNS 서버는 잘못되어 있습니다 "
 
-#: ../libnm-core/nm-setting-ip-config.c:2549
+#: ../libnm-core/nm-setting-ip-config.c:2550
 #, c-format
 msgid "%d. IP address is invalid"
 msgstr "%d. IP 주소가 유효하지 않습니다."
 
-#: ../libnm-core/nm-setting-ip-config.c:2561
+#: ../libnm-core/nm-setting-ip-config.c:2562
 #, c-format
 msgid "%d. IP address has 'label' property with invalid type"
 msgstr "%d. IP 주소에 잘못된 유형의 'label' 속성이 있습니다."
 
-#: ../libnm-core/nm-setting-ip-config.c:2570
+#: ../libnm-core/nm-setting-ip-config.c:2571
 #, c-format
 msgid "%d. IP address has invalid label '%s'"
 msgstr "%d. IP 주소에 잘못된 레이블 '%s'이(가) 있습니다."
 
-#: ../libnm-core/nm-setting-ip-config.c:2584
+#: ../libnm-core/nm-setting-ip-config.c:2585
 msgid "gateway cannot be set if there are no addresses configured"
 msgstr "주소를 구성하지 않으면 게이트웨이를 설정할 수 없습니다"
 
-#: ../libnm-core/nm-setting-ip-config.c:2593
+#: ../libnm-core/nm-setting-ip-config.c:2594
 msgid "gateway is invalid"
 msgstr "게이트웨이가 잘못되었습니다."
 
-#: ../libnm-core/nm-setting-ip-config.c:2607
+#: ../libnm-core/nm-setting-ip-config.c:2608
 #, c-format
 msgid "%d. route is invalid"
 msgstr "%d. 라우팅이 잘못되어 있습니다 "
 
-#: ../libnm-core/nm-setting-ip-config.c:2616
+#: ../libnm-core/nm-setting-ip-config.c:2617
 #, c-format
 msgid "%d. route cannot be a default route"
 msgstr "%d. 라우팅은 기본 라우팅을 사용할 수 없습니다"
 
-#: ../libnm-core/nm-setting-ip-config.c:2627
+#: ../libnm-core/nm-setting-ip-config.c:2628
 #, fuzzy, c-format
 msgid "a gateway is incompatible with '%s'"
 msgstr "'%s=%s'은 '%s > 0'와 호환하지 않습니다 "
@@ -10075,10 +10248,75 @@ msgstr ""
 msgid "the script lacks FindProxyForURL function"
 msgstr ""
 
-#: ../libnm-core/nm-setting-team.c:93 ../libnm-core/nm-setting-team-port.c:122
+#: ../libnm-core/nm-setting-tc-config.c:68
+#: ../libnm-core/nm-setting-tc-config.c:283
+#: ../libnm-core/nm-setting-tc-config.c:547
+#, fuzzy, c-format
+msgid "'%s' is not a valid kind"
+msgstr "'%s'는 올바른 밴드가 아닙니다 "
+
+#: ../libnm-core/nm-setting-tc-config.c:76
+#: ../libnm-core/nm-setting-tc-config.c:555
+#, fuzzy
+msgid "parent handle missing"
+msgstr "데이터 누락"
+
+#: ../libnm-core/nm-setting-team.c:134 ../libnm-core/nm-setting-team.c:193
+#: ../libnm-core/nm-setting-team.c:266
+#, fuzzy, c-format
+msgid "%s is out of range [0, %d]"
+msgstr "값 '%d'이 범위 <%d-%d> 밖에 있습니다 "
+
+#: ../libnm-core/nm-setting-team.c:175
+#, c-format
+msgid "Missing target-host in nsna_ping link watcher"
+msgstr ""
+
+#: ../libnm-core/nm-setting-team.c:181 ../libnm-core/nm-setting-team.c:248
+#, fuzzy, c-format
+msgid "target-host '%s' contains invalid characters"
+msgstr "IV에 16진수 숫자가 아닌 문자가 있습니다."
+
+#: ../libnm-core/nm-setting-team.c:241
+#, c-format
+msgid "Missing %s in arp_ping link watcher"
+msgstr ""
+
+#: ../libnm-core/nm-setting-team.c:254
+#, fuzzy, c-format
+msgid "source-host '%s' contains invalid characters"
+msgstr "IV에 16진수 숫자가 아닌 문자가 있습니다."
+
+#: ../libnm-core/nm-setting-team.c:1153
+#: ../libnm-core/nm-setting-team-port.c:381
 #, c-format
 msgid "team config exceeds size limit"
 msgstr ""
+
+#: ../libnm-core/nm-setting-team.c:1178
+#, fuzzy, c-format
+msgid "invalid runner \"%s\""
+msgstr "잘못된 라우팅: %s'"
+
+#: ../libnm-core/nm-setting-team.c:1191
+#, fuzzy, c-format
+msgid "missing link watcher name"
+msgstr "누락된 파일 이름"
+
+#: ../libnm-core/nm-setting-team.c:1201
+#, fuzzy, c-format
+msgid "unknown link watcher \"%s\""
+msgstr "알려지지 않은 로그 영역 '%s'"
+
+#: ../libnm-core/nm-setting-team.c:1212
+#, fuzzy, c-format
+msgid "missing target host"
+msgstr "누락된 설정"
+
+#: ../libnm-core/nm-setting-team.c:1220
+#, fuzzy, c-format
+msgid "missing source address"
+msgstr "누락된 IPv4 주소"
 
 #: ../libnm-core/nm-setting-tun.c:187
 #, c-format
@@ -10341,134 +10579,178 @@ msgstr "Secret을 찾을 수 없음"
 msgid "secret is not set"
 msgstr "Secret이 설정되지 않았습니다"
 
-#: ../libnm-core/nm-utils.c:2412
+#: ../libnm-core/nm-utils.c:2127
+#, fuzzy, c-format
+msgid "'%s' is not a valid handle."
+msgstr "'%s'는 올바른 밴드가 아닙니다 "
+
+#: ../libnm-core/nm-utils.c:2224
+#, c-format
+msgid "'%s' unexpected: parent already specified."
+msgstr ""
+
+#: ../libnm-core/nm-utils.c:2240
+#, fuzzy, c-format
+msgid "invalid handle: '%s'"
+msgstr "잘못된 옵션 '%s'"
+
+#: ../libnm-core/nm-utils.c:2262
+#, fuzzy
+msgid "parent not specified."
+msgstr "서비스 이름이 지정되지 않았습니다."
+
+#: ../libnm-core/nm-utils.c:2309
+#, c-format
+msgid "unsupported qdisc option: '%s'."
+msgstr ""
+
+#: ../libnm-core/nm-utils.c:2425
+#, fuzzy
+msgid "action name missing."
+msgstr "데이터 누락"
+
+#: ../libnm-core/nm-utils.c:2449
+#, c-format
+msgid "unsupported action option: '%s'."
+msgstr ""
+
+#: ../libnm-core/nm-utils.c:2587
+#, fuzzy
+msgid "invalid action: "
+msgstr "잘못된 옵션 '%s'"
+
+#: ../libnm-core/nm-utils.c:2591
+#, c-format
+msgid "unsupported tfilter option: '%s'."
+msgstr ""
+
+#: ../libnm-core/nm-utils.c:2950
 #, c-format
 msgid "failed stat file %s: %s"
 msgstr "실패한 통계 파일 %s: %s"
 
-#: ../libnm-core/nm-utils.c:2421
+#: ../libnm-core/nm-utils.c:2959
 #, c-format
 msgid "not a file (%s)"
 msgstr "파일이 아닙니다(%s)."
 
-#: ../libnm-core/nm-utils.c:2432
+#: ../libnm-core/nm-utils.c:2970
 #, fuzzy, c-format
 msgid "invalid file owner %d for %s"
 msgstr "잘못된 필드 '%s'; 허용되는 필드: %s"
 
-#: ../libnm-core/nm-utils.c:2443
+#: ../libnm-core/nm-utils.c:2981
 #, c-format
 msgid "file permissions for %s"
 msgstr "%s의 파일 권한"
 
-#: ../libnm-core/nm-utils.c:2453
+#: ../libnm-core/nm-utils.c:2991
 #, c-format
 msgid "reject %s"
 msgstr "%s 거부"
 
-#: ../libnm-core/nm-utils.c:2473
+#: ../libnm-core/nm-utils.c:3011
 #, c-format
 msgid "path is not absolute (%s)"
 msgstr "절대 경로가 아닙니다(%s)"
 
-#: ../libnm-core/nm-utils.c:2487
+#: ../libnm-core/nm-utils.c:3025
 #, c-format
 msgid "Plugin file does not exist (%s)"
 msgstr "플러그인 파일이 존재하지 않습니다(%s)"
 
-#: ../libnm-core/nm-utils.c:2495
+#: ../libnm-core/nm-utils.c:3033
 #, c-format
 msgid "Plugin is not a valid file (%s)"
 msgstr "플러그인이 유효한 파일이 아닙니다(%s)"
 
-#: ../libnm-core/nm-utils.c:2505
+#: ../libnm-core/nm-utils.c:3043
 #, c-format
 msgid "libtool archives are not supported (%s)"
 msgstr "립툴 아카이브가 지원되지 않습니다(%s)"
 
-#: ../libnm-core/nm-utils.c:2587 ../libnm-util/nm-utils.c:1798
+#: ../libnm-core/nm-utils.c:3125 ../libnm-util/nm-utils.c:1798
 #, c-format
 msgid "Could not find \"%s\" binary"
 msgstr "'%s' 바이너리를 찾을 수 없습니다"
 
-#: ../libnm-core/nm-utils.c:3633
+#: ../libnm-core/nm-utils.c:4171
 #, c-format
 msgid "not a valid ethernet MAC address for mask at position %lld"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:3648
+#: ../libnm-core/nm-utils.c:4186
 #, c-format
 msgid "not a valid ethernet MAC address #%u at position %lld"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:3684
+#: ../libnm-core/nm-utils.c:4222
 msgid "interface name is too short"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:3693
+#: ../libnm-core/nm-utils.c:4231
 msgid "interface name is reserved"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:3705
+#: ../libnm-core/nm-utils.c:4243
 msgid "interface name contains an invalid character"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:3711
+#: ../libnm-core/nm-utils.c:4249
 msgid "interface name is longer than 15 characters"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:4319 ../libnm-core/nm-utils.c:4464
+#: ../libnm-core/nm-utils.c:5313 ../libnm-core/nm-utils.c:5665
 msgid "value is NULL"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:4319 ../libnm-core/nm-utils.c:4464
+#: ../libnm-core/nm-utils.c:5313 ../libnm-core/nm-utils.c:5665
 msgid "value is empty"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:4328
+#: ../libnm-core/nm-utils.c:5322
 #, c-format
 msgid "invalid JSON at position %d (%s)"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:4340 ../libnm-core/nm-utils.c:4483
+#: ../libnm-core/nm-utils.c:5334 ../libnm-core/nm-utils.c:5684
 msgid "is not a JSON object"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:4453
+#: ../libnm-core/nm-utils.c:5654
 msgid "not valid utf-8"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:4578 ../libnm-core/nm-utils.c:4596
-#, c-format
+#: ../libnm-core/nm-utils.c:5997 ../libnm-core/nm-utils.c:6017
 msgid "unterminated escape sequence"
 msgstr ""
 
-#: ../libnm-core/nm-utils.c:4606
-#, c-format
-msgid "missing key-value separator '%c'"
-msgstr ""
-
-#: ../libnm-core/nm-utils.c:4623
+#: ../libnm-core/nm-utils.c:6042
 #, fuzzy, c-format
 msgid "unknown attribute '%s'"
 msgstr "알 수 없는 장치 '%s'."
 
-#: ../libnm-core/nm-utils.c:4633
+#: ../libnm-core/nm-utils.c:6057
+#, c-format
+msgid "missing key-value separator '%c' after '%s'"
+msgstr ""
+
+#: ../libnm-core/nm-utils.c:6073
 #, fuzzy, c-format
 msgid "invalid uint32 value '%s' for attribute '%s'"
 msgstr "잘못된 옵션 '%s' 또는 옵션 값 '%s'"
 
-#: ../libnm-core/nm-utils.c:4642
+#: ../libnm-core/nm-utils.c:6082
 #, fuzzy, c-format
 msgid "invalid uint8 value '%s' for attribute '%s'"
 msgstr "잘못된 옵션 '%s' 또는 옵션 값 '%s'"
 
-#: ../libnm-core/nm-utils.c:4655
+#: ../libnm-core/nm-utils.c:6092
 #, fuzzy, c-format
 msgid "invalid boolean value '%s' for attribute '%s'"
 msgstr "잘못된 옵션 '%s' 또는 옵션 값 '%s'"
 
-#: ../libnm-core/nm-utils.c:4663
+#: ../libnm-core/nm-utils.c:6102
 #, c-format
 msgid "unsupported attribute '%s' of type '%s'"
 msgstr ""
