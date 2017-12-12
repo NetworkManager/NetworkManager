@@ -1246,8 +1246,8 @@ typedef struct {
 static gboolean
 match_device_s390_subchannels_parse (const char *s390_subchannels, guint32 *out_a, guint32 *out_b, guint32 *out_c)
 {
-	const int BUFSIZE = 30;
-	char buf[BUFSIZE + 1];
+	char buf[30 + 1];
+	const int BUFSIZE = G_N_ELEMENTS (buf) - 1;
 	guint i = 0;
 	char *pa = NULL, *pb = NULL, *pc = NULL;
 	gint64 a, b, c;

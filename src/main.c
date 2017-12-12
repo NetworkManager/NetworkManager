@@ -93,8 +93,10 @@ static void
 _init_nm_debug (NMConfig *config)
 {
 	gs_free char *debug = NULL;
-	const guint D_RLIMIT_CORE = 1;
-	const guint D_FATAL_WARNINGS = 2;
+	enum {
+		D_RLIMIT_CORE =    (1 << 0),
+		D_FATAL_WARNINGS = (1 << 1),
+	};
 	GDebugKey keys[] = {
 		{ "RLIMIT_CORE", D_RLIMIT_CORE },
 		{ "fatal-warnings", D_FATAL_WARNINGS },
