@@ -249,7 +249,7 @@ nm_team_link_watcher_new_arp_ping (gint init_wait,
 		return NULL;
 	}
 
-	if (strpbrk (target_host, " \\/\t=\"\'")) {
+	if (strpbrk (source_host, " \\/\t=\"\'")) {
 		g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_FAILED,
 		             _("source-host '%s' contains invalid characters"), source_host);
 		return NULL;
