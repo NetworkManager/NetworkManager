@@ -1960,8 +1960,7 @@ nm_utils_resolve_conf_parse (int addr_family,
 				gsize i_tokens;
 
 				tokens = nm_utils_strsplit_set (s, " \t");
-				nm_assert (tokens);
-				for (i_tokens = 0; tokens[i_tokens]; i_tokens++) {
+				for (i_tokens = 0; tokens && tokens[i_tokens]; i_tokens++) {
 					gs_free char *t = g_strstrip (g_strdup (tokens[i_tokens]));
 
 					if (   _nm_utils_dns_option_validate (t, NULL, NULL,
