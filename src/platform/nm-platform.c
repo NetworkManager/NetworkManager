@@ -667,6 +667,7 @@ skip:
 			/* There is a loop, pop the first (remaining) element from the list.
 			 * This can happen for veth pairs where each peer is parent of the other end. */
 			item = NMP_OBJECT_CAST_LINK (links->pdata[first_idx]);
+			nm_assert (item);
 			g_hash_table_remove (unseen, GINT_TO_POINTER (item->ifindex));
 			g_ptr_array_add (result, links->pdata[first_idx]);
 			links->pdata[first_idx] = NULL;
