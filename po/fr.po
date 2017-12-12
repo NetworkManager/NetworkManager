@@ -9,24 +9,21 @@
 # Sam Friedmann <sam.friedmann@redhat.com>, 2010.
 # Claude Paroz <claude@2xlibre.net>, 2011
 # Sam Friedmann <sfriedma@redhat.com>, 2010, 2014.
-# Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
-# Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
-# Thomas Haller <thaller@redhat.com>, 2017. #zanata
-# Yvan Masson <yvan.masson@openmailbox.org>, 2017. #zanata
+# lrintel <lrintel@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-12-12 10:50+0100\n"
-"PO-Revision-Date: 2017-05-15 12:03-0400\n"
-"Last-Translator: Yvan Masson <yvan.masson@openmailbox.org>\n"
+"PO-Revision-Date: 2017-11-07 06:49+0000\n"
+"Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: French <trans-fr@lists.fedoraproject.org>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n>1;\n"
-"X-Generator: Zanata 3.9.6\n"
+"X-Generator: Zanata 4.3.2\n"
 
 #: ../clients/cli/agent.c:40
 #, c-format
@@ -398,7 +395,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/connections.c:273
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection add { ARGUMENTS | help }\n"
 "\n"
@@ -548,162 +545,6 @@ msgid ""
 "                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n"
 "\n"
 msgstr ""
-"Usage: nmcli connection add { ARGUMENTS | help }\n"
-"\n"
-"ARGUMENTS := OPTIONS_COMMUNES OPTIONS_SPÉCIFIQUES OPTIONS_ESCLAVES "
-"OPTIONS_IP [-- ([+|-]<paramètre>.<propriété> <valeur>)+]\n"
-"\n"
-"OPTIONS_COMMUNES:\n"
-"                  type <type>\n"
-"                  ifname <nom d'interface> | \"*\"\n"
-"                  [con-name <nom connexion>]\n"
-"                  [autoconnect yes|no]\n"
-"                  [save yes|no]\n"
-"                  [master <maître (nom d'interface, UUID de connexion ou "
-"nom)>]\n"
-"                  [slave-type <type de connexion maître>]\n"
-"\n"
-"  TYPE_SPECIFIC_OPTIONS:\n"
-"    ethernet:     [mac <adresse MAC>]\n"
-"                  [cloned-mac <adresse MAC clonée>]\n"
-"                  [mtu <MTU>]\n"
-"\n"
-"    wifi:         ssid <SSID>\n"
-"                  [mac <adresse MAC>]\n"
-"                  [cloned-mac <adresse MAC clonée>]\n"
-"                  [mtu <MTU>]\n"
-"                  [mode infrastructure|ap|adhoc]\n"
-"\n"
-"    wimax:        [mac <adresse MAC>]\n"
-"                  [nsp <NSP>]\n"
-"\n"
-"    pppoe:        username <nom d'utilisateur PPPoE>\n"
-"                  [password <mot de passe PPPoE>]\n"
-"                  [service <nom du service PPPoE>]\n"
-"                  [mtu <MTU>]\n"
-"                  [mac <adresse MAC>]\n"
-"\n"
-"    gsm:          apn <APN>\n"
-"                  [user <nom d'utilisateur>]\n"
-"                  [password <mot de passe>]\n"
-"\n"
-"    cdma:         [user <nom d'utilisateur>]\n"
-"                  [password <mot de passe>]\n"
-"\n"
-"    infiniband:   [mac <adresse MAC>]\n"
-"                  [mtu <MTU>]\n"
-"                  [transport-mode datagram | connected]\n"
-"                  [parent <nom interface>]\n"
-"                  [p-key <IPoIB P_Key>]\n"
-"\n"
-"    bluetooth:    [addr <adresse bluetooth>]\n"
-"                  [bt-type panu|dun-gsm|dun-cdma]\n"
-"\n"
-"    vlan:         dev <périphérique parent (UUID de connexion, nom "
-"d'interface, ou MAC)>\n"
-"                  id <ID du VLAN>\n"
-"                  [flags <drapeaux du VLAN>]\n"
-"                  [ingress <mapping priorité entrante>]\n"
-"                  [egress <mapping priorité sortante>]\n"
-"                  [mtu <MTU>]\n"
-"\n"
-"    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) "
-"| broadcast (3) |\n"
-"                        802.3ad    (4) | balance-tlb   (5) | balance-alb "
-"(6)]\n"
-"                  [primary <nom d'interface>]\n"
-"                  [miimon <nombre>]\n"
-"                  [downdelay <nombre>]\n"
-"                  [updelay <nombre>]\n"
-"                  [arp-interval <nombre>]\n"
-"                  [arp-ip-target <nombre>]\n"
-"                  [lacp-rate slow (0) | fast (1)]\n"
-"\n"
-"    bond-slave:   master <maître (nom d'interface, UUID de connexion ou "
-"nom)>\n"
-"\n"
-"    team:         [config <fichier>|<données JSON brutes>]\n"
-"\n"
-"    team-slave:   master <maître (nom d'interface, UUID de connexion ou "
-"nom)>\n"
-"                  [config <fichier>|<données JSON brutes>]\n"
-"\n"
-"    bridge:       [stp yes|no]\n"
-"                  [priority <nombre>]\n"
-"                  [forward-delay <2-30>]\n"
-"                  [hello-time <1-10>]\n"
-"                  [max-age <6-40>]\n"
-"                  [ageing-time <0-1000000>]\n"
-"                  [multicast-snooping yes|no]\n"
-"                  [mac <adresse MAC>]\n"
-"\n"
-"    bridge-slave: master <maître (nom d'interface, UUID de connexion ou "
-"nom)>\n"
-"                  [priority <0-63>]\n"
-"                  [path-cost <1-65535>]\n"
-"                  [hairpin yes|no]\n"
-"\n"
-"    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan|libreswan|"
-"ssh|l2tp|iodine|...\n"
-"                  [user <nom d'utilisateur>]\n"
-"\n"
-"    olpc-mesh:    ssid <SSID>\n"
-"                  [channel <1-13>]\n"
-"                  [dhcp-anycast <adresse MAC>]\n"
-"\n"
-"    adsl:         username <nom d'utilisateur>\n"
-"                  protocol pppoa|pppoe|ipoatm\n"
-"                  [password <mot de passe>]\n"
-"                  [encapsulation vcmux|llc]\n"
-"\n"
-"    tun:          mode tun|tap\n"
-"                  [owner <UID>]\n"
-"                  [group <GID>]\n"
-"                  [pi yes|no]\n"
-"                  [vnet-hdr yes|no]\n"
-"                  [multi-queue yes|no]\n"
-"\n"
-"    ip-tunnel:    mode ipip|gre|sit|isatap|vti|ip6ip6|ipip6|ip6gre|vti6\n"
-"                  remote <IP distante>\n"
-"                  [local <IP locale>]\n"
-"                  [dev <périphérique parent (nom d'interface ou UUID de "
-"connexion)>]\n"
-"\n"
-"    macsec:       dev <périphérique parent (UUID de connexion, nom "
-"d'interface ou MAC)>\n"
-"                  mode <psk|eap>\n"
-"                  [cak <clé> ckn <clé>]\n"
-"                  [encrypt yes|no]\n"
-"                  [port 1-65534]\n"
-"\n"
-"\n"
-"    macvlan:      dev <périphérique parent (UUID de connexion, nom "
-"d'interface ou MAC)>\n"
-"                  mode vepa|bridge|private|passthru|source\n"
-"                  [tap yes|no]\n"
-"\n"
-"    vxlan:        id <ID VXLAN>\n"
-"                  remote <IP ou groupe multicast ou adresse distante>\n"
-"                  [local <IP source>]\n"
-"                  [dev <périphérique parent (nom d'interface ou UUID de "
-"connexion)>]\n"
-"                  [source-port-min <0-65535>]\n"
-"                  [source-port-max <0-65535>]\n"
-"                  [destination-port <0-65535>]\n"
-"\n"
-"    dummy:         \n"
-"\n"
-"  SLAVE_OPTIONS:\n"
-"    bridge:       [priority <0-63>]\n"
-"                  [path-cost <1-65535>]\n"
-"                  [hairpin yes|no]\n"
-"\n"
-"    team:         [config <fichier>|<données JSON brutes>]\n"
-"\n"
-"  IP_OPTIONS:\n"
-"                  [ip4 <IPv4 adresse>] [gw4 <IPv4 passerelle>]\n"
-"                  [ip6 <IPv6 adresse>] [gw6 <IPv6 passerelle>]\n"
-"\n"
 
 #: ../clients/cli/connections.c:391
 #, c-format
@@ -1156,9 +997,9 @@ msgid "no device found for connection '%s'"
 msgstr "aucun périphérique trouvé pour la connexion « %s »"
 
 #: ../clients/cli/connections.c:2073
-#, fuzzy, c-format
+#, c-format
 msgid "Connection successfully activated (%s) (D-Bus active path: %s)\n"
-msgstr "Connexion activée (chemin D-Bus actif : %s)\n"
+msgstr ""
 
 #: ../clients/cli/connections.c:2077 ../clients/cli/connections.c:2225
 #: ../clients/cli/connections.c:6250
@@ -1329,9 +1170,9 @@ msgstr ""
 "« %s ».\n"
 
 #: ../clients/cli/connections.c:3910
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'bt-type': '%s' not valid; use [%s, %s, %s (%s), %s]."
-msgstr "Erreur : « bt-type » : « %s » non valide ; utilisez [%s, %s (%s), %s]."
+msgstr ""
 
 #: ../clients/cli/connections.c:4159
 #, c-format
@@ -4447,9 +4288,8 @@ msgid "The device parent's management changed"
 msgstr "Le gestionnaire du périphérique parent a changé"
 
 #: ../clients/common/nm-client-utils.c:404
-#, fuzzy
 msgid "OpenVSwitch database connection failed"
-msgstr "Échec de la connexion maître"
+msgstr ""
 
 #. TRANSLATORS: Unknown reason for a device state change (NMDeviceStateReason)
 #. TRANSLATORS: Unknown reason for a connection state change (NMActiveConnectionStateReason)
@@ -5693,9 +5533,8 @@ msgid "DHCP anycast MAC address [none]"
 msgstr "Adresse MAC anycast DHCP [none] : "
 
 #: ../clients/common/nm-meta-setting-desc.c:6305
-#, fuzzy
 msgid "PPPoE parent device"
-msgstr "Périphérique parent [none] : "
+msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:6311
 #, fuzzy
@@ -7887,19 +7726,16 @@ msgid "The bridge failure mode. One of \"secure\", \"standalone\" or empty."
 msgstr ""
 
 #: ../clients/common/settings-docs.c.in:267
-#, fuzzy
 msgid "Enable or disable multicast snooping."
-msgstr "Activer ou désactiver le réseau système"
+msgstr ""
 
 #: ../clients/common/settings-docs.c.in:269
-#, fuzzy
 msgid "Enable or disable RSTP."
-msgstr "Activer ou désactiver des périphériques WiFi"
+msgstr ""
 
 #: ../clients/common/settings-docs.c.in:270
-#, fuzzy
 msgid "Enable or disable STP."
-msgstr "Activer ou désactiver des périphériques WiFi"
+msgstr ""
 
 #: ../clients/common/settings-docs.c.in:272
 msgid "The interface type. Either \"internal\", or empty."
@@ -8949,9 +8785,8 @@ msgid "Ignore automatically obtained routes"
 msgstr "Ignorer les routes obtenues automatiquement"
 
 #: ../clients/tui/nmt-page-ip4.c:185 ../clients/tui/nmt-page-ip6.c:183
-#, fuzzy
 msgid "Ignore automatically obtained DNS parameters"
-msgstr "Ignorer les routes obtenues automatiquement"
+msgstr ""
 
 #: ../clients/tui/nmt-page-ip4.c:193
 msgid "Require IPv4 addressing for this connection"
@@ -9290,9 +9125,9 @@ msgid "openconnect failed with signal %d"
 msgstr "openconnect a échoué avec un signal %d"
 
 #: ../clients/tui/nmtui-connect.c:186
-#, fuzzy, c-format
+#, c-format
 msgid "Activation failed: %s"
-msgstr "Échec de l'activation"
+msgstr ""
 
 #: ../clients/tui/nmtui-connect.c:257
 msgid "Connecting..."
@@ -10143,9 +9978,9 @@ msgid "'%s' connection requires '%s' or '%s' setting"
 msgstr "la connexion « %s » requiert une configuration « %s » ou « %s »"
 
 #: ../libnm-core/nm-setting-bluetooth.c:219
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' connection requires '%s' setting"
-msgstr "la connexion « %s » requiert une configuration « %s » ou « %s »"
+msgstr ""
 
 #: ../libnm-core/nm-setting-bond.c:583 ../libnm-util/nm-setting-bond.c:517
 #, c-format
@@ -10221,9 +10056,9 @@ msgid "'%s' option should be string"
 msgstr "l'option « %s » doit correspondre à une chaîne"
 
 #: ../libnm-core/nm-setting-bond.c:820
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' option is not valid with mode '%s'"
-msgstr "l'option « %s » est uniquement valide en mode « %s »"
+msgstr ""
 
 #: ../libnm-core/nm-setting-bridge-port.c:127
 #: ../libnm-core/nm-setting-ovs-interface.c:262
@@ -10297,9 +10132,9 @@ msgid "Cannot set '%s' without '%s'"
 msgstr "Ne peut pas définir « %s » sans « %s »"
 
 #: ../libnm-core/nm-setting-connection.c:1041
-#, fuzzy, c-format
+#, c-format
 msgid "Only '%s' connections can be enslaved to '%s'"
-msgstr "aucune connexion active sur le périphérique « %s »"
+msgstr ""
 
 #: ../libnm-core/nm-setting-connection.c:1054
 #, c-format
@@ -10687,16 +10522,14 @@ msgid "'%d' is not a valid channel"
 msgstr "« %d » n'est pas un canal valide"
 
 #: ../libnm-core/nm-setting-ovs-interface.c:113
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid interface type"
-msgstr "« %s » n'est pas un nom d'interface valide"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-interface.c:135
-#, fuzzy, c-format
+#, c-format
 msgid "A connection with a '%s' setting needs connection.type explicitly set"
 msgstr ""
-"Une connexion qui aurait pour configuration « %s » doit avoir le type "
-"d'esclave (slave-type) défini sur « %s » au lieu de « %s »"
 
 #: ../libnm-core/nm-setting-ovs-interface.c:147
 #, c-format
@@ -10709,34 +10542,28 @@ msgid "A connection of type '%s' cannot have an ovs-interface.type \"%s\""
 msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-interface.c:175
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "A connection with '%s' setting must be of connection.type \"ovs-interface\" "
 "but is \"%s\""
 msgstr ""
-"Une connexion qui aurait pour configuration « %s » doit avoir le type "
-"d'esclave (slave-type) défini sur « %s » au lieu de « %s »"
 
 #: ../libnm-core/nm-setting-ovs-interface.c:186
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "A connection with '%s' setting needs to be of 'patch' interface type, not "
 "'%s'"
 msgstr ""
-"Une connexion qui aurait pour configuration « %s » doit avoir le type "
-"d'esclave (slave-type) défini sur « %s » au lieu de « %s »"
 
 #: ../libnm-core/nm-setting-ovs-interface.c:201
-#, fuzzy, c-format
+#, c-format
 msgid "A connection with ovs-interface.type '%s' setting a 'ovs-patch' setting"
 msgstr ""
-"Une connexion esclave avec « %s » défini à « %s » ne peut pas avoir un "
-"paramètre « %s »"
 
 #: ../libnm-core/nm-setting-ovs-interface.c:221
-#, fuzzy, c-format
+#, c-format
 msgid "Missing ovs interface setting"
-msgstr "paramètre \"plugin\" manquant"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-interface.c:227
 #, c-format
@@ -10745,11 +10572,9 @@ msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-interface.c:271
 #: ../libnm-core/nm-setting-ovs-port.c:198
-#, fuzzy, c-format
+#, c-format
 msgid "A connection with a '%s' setting must have a master."
 msgstr ""
-"Une connexion qui aurait pour configuration « %s » doit avoir le type "
-"d'esclave (slave-type) défini sur « %s » au lieu de « %s »"
 
 #: ../libnm-core/nm-setting-ovs-patch.c:110
 #: ../libnm-core/nm-setting-vxlan.c:375
@@ -10758,36 +10583,34 @@ msgid "'%s' is not a valid IP address"
 msgstr "« %s » n'est pas une adresse IP valide"
 
 #: ../libnm-core/nm-setting-ovs-port.c:223
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not allowed in vlan_mode"
-msgstr "« %s » n'est pas un mode Wi-Fi valide"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-port.c:233
-#, fuzzy, c-format
+#, c-format
 msgid "the tag id must be in range 0-4094 but is %u"
-msgstr "l'id de vlan doit être entre 0-4094 mais est à %u"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-port.c:243
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not allowed in lacp"
-msgstr "« %s » n'est pas un marqueur DCB valide"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-port.c:253
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not allowed in bond_mode"
-msgstr "« %s » n'est pas un mode Wi-Fi valide"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-bridge.c:161
-#, fuzzy, c-format
+#, c-format
 msgid "A connection with a '%s' setting must not have a master."
 msgstr ""
-"Une connexion esclave avec « %s » défini à « %s » ne peut pas avoir un "
-"paramètre « %s »"
 
 #: ../libnm-core/nm-setting-ovs-bridge.c:172
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not allowed in fail_mode"
-msgstr "« %s » n'est pas un mode Wi-Fi valide"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ppp.c:365 ../libnm-util/nm-setting-ppp.c:387
 #, c-format
@@ -11593,9 +11416,9 @@ msgid "The connection was not a Bluetooth connection."
 msgstr "La connexion n'était pas une connexion Bluetooth"
 
 #: ../libnm/nm-device-bt.c:143
-#, fuzzy, c-format
+#, c-format
 msgid "The connection is of Bluetooth NAP type."
-msgstr "La connexion n'était pas une connexion Bluetooth"
+msgstr ""
 
 #: ../libnm/nm-device-bt.c:152
 msgid "Invalid device Bluetooth address."
@@ -11706,19 +11529,16 @@ msgid "The connection was not an OLPC Mesh connection."
 msgstr "La connexion n'était pas une connexion « OLPC Mesh »."
 
 #: ../libnm/nm-device-ovs-bridge.c:61
-#, fuzzy
 msgid "The connection was not a ovs_bridge connection."
-msgstr "La connexion n'était pas une connexion de pontage"
+msgstr ""
 
 #: ../libnm/nm-device-ovs-interface.c:61
-#, fuzzy
 msgid "The connection was not a ovs_interface connection."
-msgstr "La connexion n'était pas une connexion team."
+msgstr ""
 
 #: ../libnm/nm-device-ovs-port.c:60
-#, fuzzy
 msgid "The connection was not a ovs_port connection."
-msgstr "La connexion n'était pas une connexion tun."
+msgstr ""
 
 #: ../libnm/nm-device-team.c:138
 msgid "The connection was not a team connection."
@@ -11791,9 +11611,8 @@ msgid "Dummy"
 msgstr ""
 
 #: ../libnm/nm-device.c:1565
-#, fuzzy
 msgid "PPP"
-msgstr "PPPoE"
+msgstr ""
 
 #: ../libnm/nm-device.c:2456
 #, c-format
@@ -11980,16 +11799,12 @@ msgstr ""
 "périphériques WiFi"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:31
-#, fuzzy
 msgid "Enable or disable connectivity checking"
-msgstr "Activer ou désactiver le réseau système"
+msgstr ""
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:32
-#, fuzzy
 msgid "System policy prevents enabling or disabling connectivity checking"
 msgstr ""
-"La politique du système empêche l'activation ou la désactivation de "
-"périphériques WiFi"
 
 #: ../shared/nm-utils/nm-shared-utils.c:794
 #, c-format
@@ -12608,23 +12423,3 @@ msgstr "Niveau de journalisation « %s » inconnu"
 #, c-format
 msgid "Unknown log domain '%s'"
 msgstr "Domaine de journalisation « %s » inconnu"
-
-#~ msgid "Invalid reason"
-#~ msgstr "Raison invalide"
-
-#~ msgid ""
-#~ "Connection successfully activated (master waiting for slaves) (D-Bus "
-#~ "active path: %s)\n"
-#~ msgstr ""
-#~ "Connexion activée (maître attendant les esclaves) (chemin D-Bus actif : "
-#~ "%s)\n"
-
-#~ msgid "%d (default)"
-#~ msgstr "%d (par défaut)"
-
-#, fuzzy
-#~ msgid "%d (forever)"
-#~ msgstr "%d (non)"
-
-#~ msgid "%d (off)"
-#~ msgstr "%d (désactivé)"

@@ -14,15 +14,13 @@
 # 주의:
 # - 이 프로그램의 이름인 "Network Manager"는 "네트워크 관리" 혹은
 #  "네트워크 관리 프로그램"으로 번역.
-# Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
-# Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
-# Thomas Haller <thaller@redhat.com>, 2017. #zanata
+# lrintel <lrintel@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-12-12 10:50+0100\n"
-"PO-Revision-Date: 2017-04-21 05:38-0400\n"
+"PO-Revision-Date: 2017-11-07 06:49+0000\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: GNOME Korea <gnome-kr@googlegroups.com>\n"
 "Language: ko\n"
@@ -30,7 +28,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Zanata 3.9.6\n"
+"X-Generator: Zanata 4.3.2\n"
 
 #: ../clients/cli/agent.c:40
 #, c-format
@@ -945,9 +943,9 @@ msgid "no device found for connection '%s'"
 msgstr "연결 '%s'에 대한 장치를 찾을 수 없습니다"
 
 #: ../clients/cli/connections.c:2073
-#, fuzzy, c-format
+#, c-format
 msgid "Connection successfully activated (%s) (D-Bus active path: %s)\n"
-msgstr "연결이 성공적으로 활성화되었습니다 (D-Bus 활성 경로: %s)\n"
+msgstr ""
 
 #: ../clients/cli/connections.c:2077 ../clients/cli/connections.c:2225
 #: ../clients/cli/connections.c:6250
@@ -1116,10 +1114,9 @@ msgstr ""
 "오류: '%s'는 올바른 모니터링 모드가 아닙니다; '%s' 또는 '%s'를 사용합니다.\n"
 
 #: ../clients/cli/connections.c:3910
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'bt-type': '%s' not valid; use [%s, %s, %s (%s), %s]."
 msgstr ""
-"오류: 'bt-type': '%s'이 올바르지 않습니다; [%s, %s (%s), %s]를 사용합니다."
 
 #: ../clients/cli/connections.c:4159
 #, c-format
@@ -3943,9 +3940,8 @@ msgid "The device parent's management changed"
 msgstr "장치 부모 항목의 관리가 변경되었습니다."
 
 #: ../clients/common/nm-client-utils.c:404
-#, fuzzy
 msgid "OpenVSwitch database connection failed"
-msgstr "연결 실패함"
+msgstr ""
 
 #. TRANSLATORS: Unknown reason for a device state change (NMDeviceStateReason)
 #. TRANSLATORS: Unknown reason for a connection state change (NMActiveConnectionStateReason)
@@ -5174,9 +5170,8 @@ msgid "DHCP anycast MAC address [none]"
 msgstr "DHCP anycast MAC 주소 [none]: "
 
 #: ../clients/common/nm-meta-setting-desc.c:6305
-#, fuzzy
 msgid "PPPoE parent device"
-msgstr "부모 인터페이스 [none]: "
+msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:6311
 #, fuzzy
@@ -7357,19 +7352,16 @@ msgid "The bridge failure mode. One of \"secure\", \"standalone\" or empty."
 msgstr ""
 
 #: ../clients/common/settings-docs.c.in:267
-#, fuzzy
 msgid "Enable or disable multicast snooping."
-msgstr "시스템 네트워크 사용 여부"
+msgstr ""
 
 #: ../clients/common/settings-docs.c.in:269
-#, fuzzy
 msgid "Enable or disable RSTP."
-msgstr "WiFi 장치 사용 여부"
+msgstr ""
 
 #: ../clients/common/settings-docs.c.in:270
-#, fuzzy
 msgid "Enable or disable STP."
-msgstr "WiFi 장치 사용 여부"
+msgstr ""
 
 #: ../clients/common/settings-docs.c.in:272
 msgid "The interface type. Either \"internal\", or empty."
@@ -8407,9 +8399,8 @@ msgid "Ignore automatically obtained routes"
 msgstr "자동으로 가져온 라우팅을 무시합니다"
 
 #: ../clients/tui/nmt-page-ip4.c:185 ../clients/tui/nmt-page-ip6.c:183
-#, fuzzy
 msgid "Ignore automatically obtained DNS parameters"
-msgstr "자동으로 가져온 라우팅을 무시합니다"
+msgstr ""
 
 #: ../clients/tui/nmt-page-ip4.c:193
 msgid "Require IPv4 addressing for this connection"
@@ -8745,9 +8736,9 @@ msgid "openconnect failed with signal %d"
 msgstr "openconnect에 실패했습니다(신호 %d)."
 
 #: ../clients/tui/nmtui-connect.c:186
-#, fuzzy, c-format
+#, c-format
 msgid "Activation failed: %s"
-msgstr "활성화 실패 "
+msgstr ""
 
 #: ../clients/tui/nmtui-connect.c:257
 msgid "Connecting..."
@@ -9580,9 +9571,9 @@ msgid "'%s' connection requires '%s' or '%s' setting"
 msgstr "'%s' 연결에는 '%s' 또는 '%s' 설정이 필요합니다."
 
 #: ../libnm-core/nm-setting-bluetooth.c:219
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' connection requires '%s' setting"
-msgstr "'%s' 연결에는 '%s' 또는 '%s' 설정이 필요합니다."
+msgstr ""
 
 #: ../libnm-core/nm-setting-bond.c:583 ../libnm-util/nm-setting-bond.c:517
 #, c-format
@@ -9658,9 +9649,9 @@ msgid "'%s' option should be string"
 msgstr "'%s' 옵션은 문자열이어야 합니다."
 
 #: ../libnm-core/nm-setting-bond.c:820
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' option is not valid with mode '%s'"
-msgstr "'%s' 옵션은 모드 '%s'에서만 유효합니다."
+msgstr ""
 
 #: ../libnm-core/nm-setting-bridge-port.c:127
 #: ../libnm-core/nm-setting-ovs-interface.c:262
@@ -9734,9 +9725,9 @@ msgid "Cannot set '%s' without '%s'"
 msgstr "'%s' 없이는 '%s'을(를) 설정할 수 없습니다"
 
 #: ../libnm-core/nm-setting-connection.c:1041
-#, fuzzy, c-format
+#, c-format
 msgid "Only '%s' connections can be enslaved to '%s'"
-msgstr "장치 '%s'에 활성화된 연결이 없습니다"
+msgstr ""
 
 #: ../libnm-core/nm-setting-connection.c:1054
 #, c-format
@@ -10111,16 +10102,14 @@ msgid "'%d' is not a valid channel"
 msgstr "'%d'은 올바른 채널이 아닙니다 "
 
 #: ../libnm-core/nm-setting-ovs-interface.c:113
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid interface type"
-msgstr "'%s'은(는) 올바른 인터페이스 이름이 아닙니다"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-interface.c:135
-#, fuzzy, c-format
+#, c-format
 msgid "A connection with a '%s' setting needs connection.type explicitly set"
 msgstr ""
-"'%s' 설정이 있는 연결에는 슬레이브 유형을 '%s'(으)로 설정해야 합니다. 현재 "
-"'%s'입니다"
 
 #: ../libnm-core/nm-setting-ovs-interface.c:147
 #, c-format
@@ -10133,34 +10122,28 @@ msgid "A connection of type '%s' cannot have an ovs-interface.type \"%s\""
 msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-interface.c:175
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "A connection with '%s' setting must be of connection.type \"ovs-interface\" "
 "but is \"%s\""
 msgstr ""
-"'%s' 설정이 있는 연결에는 슬레이브 유형을 '%s'(으)로 설정해야 합니다. 현재 "
-"'%s'입니다"
 
 #: ../libnm-core/nm-setting-ovs-interface.c:186
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "A connection with '%s' setting needs to be of 'patch' interface type, not "
 "'%s'"
 msgstr ""
-"'%s' 설정이 있는 연결에는 슬레이브 유형을 '%s'(으)로 설정해야 합니다. 현재 "
-"'%s'입니다"
 
 #: ../libnm-core/nm-setting-ovs-interface.c:201
-#, fuzzy, c-format
+#, c-format
 msgid "A connection with ovs-interface.type '%s' setting a 'ovs-patch' setting"
 msgstr ""
-"'%s'(으)로 설정되고 포트 유형이 '%s'인 슬레이브 연결을 감지합니다. '%s'은"
-"(는) '%s'(으)로 설정해야 합니다"
 
 #: ../libnm-core/nm-setting-ovs-interface.c:221
-#, fuzzy, c-format
+#, c-format
 msgid "Missing ovs interface setting"
-msgstr "누락된 \"plugin\" 설정"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-interface.c:227
 #, c-format
@@ -10169,11 +10152,9 @@ msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-interface.c:271
 #: ../libnm-core/nm-setting-ovs-port.c:198
-#, fuzzy, c-format
+#, c-format
 msgid "A connection with a '%s' setting must have a master."
 msgstr ""
-"'%s' 설정이 있는 연결에는 슬레이브 유형을 '%s'(으)로 설정해야 합니다. 현재 "
-"'%s'입니다"
 
 #: ../libnm-core/nm-setting-ovs-patch.c:110
 #: ../libnm-core/nm-setting-vxlan.c:375
@@ -10182,36 +10163,34 @@ msgid "'%s' is not a valid IP address"
 msgstr "'%s'은(는) 유효한 IP 주소가 아닙니다."
 
 #: ../libnm-core/nm-setting-ovs-port.c:223
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not allowed in vlan_mode"
-msgstr "'%s'은 올바른 Wi-Fi 모드가 아닙니다 "
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-port.c:233
-#, fuzzy, c-format
+#, c-format
 msgid "the tag id must be in range 0-4094 but is %u"
-msgstr "vlan ID가 0~4094 범위에 속해야 하지만 현재 %u입니다"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-port.c:243
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not allowed in lacp"
-msgstr "'%s'은(는) 올바른 DCB 플래그가 아닙니다"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-port.c:253
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not allowed in bond_mode"
-msgstr "'%s'은 올바른 Wi-Fi 모드가 아닙니다 "
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-bridge.c:161
-#, fuzzy, c-format
+#, c-format
 msgid "A connection with a '%s' setting must not have a master."
 msgstr ""
-"'%s'(으)로 설정되고 포트 유형이 '%s'인 슬레이브 연결을 감지합니다. '%s'은"
-"(는) '%s'(으)로 설정해야 합니다"
 
 #: ../libnm-core/nm-setting-ovs-bridge.c:172
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not allowed in fail_mode"
-msgstr "'%s'은 올바른 Wi-Fi 모드가 아닙니다 "
+msgstr ""
 
 #: ../libnm-core/nm-setting-ppp.c:365 ../libnm-util/nm-setting-ppp.c:387
 #, c-format
@@ -11006,9 +10985,9 @@ msgid "The connection was not a Bluetooth connection."
 msgstr "연결이 블루투스 연결이 아니었습니다."
 
 #: ../libnm/nm-device-bt.c:143
-#, fuzzy, c-format
+#, c-format
 msgid "The connection is of Bluetooth NAP type."
-msgstr "연결이 블루투스 연결이 아니었습니다."
+msgstr ""
 
 #: ../libnm/nm-device-bt.c:152
 msgid "Invalid device Bluetooth address."
@@ -11112,19 +11091,16 @@ msgid "The connection was not an OLPC Mesh connection."
 msgstr "연결이 OLPC 메시 연결이 아니었습니다."
 
 #: ../libnm/nm-device-ovs-bridge.c:61
-#, fuzzy
 msgid "The connection was not a ovs_bridge connection."
-msgstr "연결이 브리지 연결이 아니었습니다."
+msgstr ""
 
 #: ../libnm/nm-device-ovs-interface.c:61
-#, fuzzy
 msgid "The connection was not a ovs_interface connection."
-msgstr "연결이 팀 연결이 아니었습니다."
+msgstr ""
 
 #: ../libnm/nm-device-ovs-port.c:60
-#, fuzzy
 msgid "The connection was not a ovs_port connection."
-msgstr "연결이 tun 연결이 아니었습니다."
+msgstr ""
 
 #: ../libnm/nm-device-team.c:138
 msgid "The connection was not a team connection."
@@ -11187,9 +11163,8 @@ msgid "Dummy"
 msgstr ""
 
 #: ../libnm/nm-device.c:1565
-#, fuzzy
 msgid "PPP"
-msgstr "PPPoE"
+msgstr ""
 
 #: ../libnm/nm-device.c:2456
 #, c-format
@@ -11345,14 +11320,12 @@ msgid "System policy prevents enabling or disabling device statistics"
 msgstr ""
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:31
-#, fuzzy
 msgid "Enable or disable connectivity checking"
-msgstr "시스템 네트워크 사용 여부"
+msgstr ""
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:32
-#, fuzzy
 msgid "System policy prevents enabling or disabling connectivity checking"
-msgstr "시스템 정책이 WiFi 장치 사용 여부 설정을 금지합니다"
+msgstr ""
 
 #: ../shared/nm-utils/nm-shared-utils.c:794
 #, c-format
@@ -11933,20 +11906,3 @@ msgstr "알려지지 않은 로그 수준 '%s'"
 #, c-format
 msgid "Unknown log domain '%s'"
 msgstr "알려지지 않은 로그 영역 '%s'"
-
-#, fuzzy
-#~ msgid "Invalid reason"
-#~ msgstr "잘못된 라우팅: %s'"
-
-#~ msgid ""
-#~ "Connection successfully activated (master waiting for slaves) (D-Bus "
-#~ "active path: %s)\n"
-#~ msgstr ""
-#~ "연결이 성공적으로 활성화되었습니다(마스터가 슬레이브 대기 중)(D-Bus 활성 "
-#~ "경로: %s).\n"
-
-#~ msgid "%d (default)"
-#~ msgstr "%d(기본값)"
-
-#~ msgid "%d (off)"
-#~ msgstr "%d(끄기)"
