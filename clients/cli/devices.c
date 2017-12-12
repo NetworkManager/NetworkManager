@@ -1113,8 +1113,8 @@ show_device_info (NMDevice *device, NmCli *nmc)
 		                                   (const NMMetaAbstractInfo *const*) nmc_fields_dev_show_general,
 		                                   FALSE, NULL, NULL);
 
-		row = g_new0 (NmcOutputField, _NM_META_SETTING_TYPE_NUM + 1);
-		for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++)
+		row = g_new0 (NmcOutputField, G_N_ELEMENTS (nmc_fields_dev_show_general));
+		for (i = 0; i < G_N_ELEMENTS (nmc_fields_dev_show_general); i++)
 			row[i].info = (const NMMetaAbstractInfo *) &nmc_fields_dev_show_general[i];
 
 		print_required_fields (&nmc->nmc_config, NMC_OF_FLAG_MAIN_HEADER_ONLY,
