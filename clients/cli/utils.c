@@ -603,9 +603,14 @@ int
 nmc_string_to_arg_array (const char *line, const char *delim, gboolean unquote,
                          char ***argv, int *argc)
 {
+	gs_free const char **arr0 = NULL;
 	char **arr;
 
-	arr = nmc_strsplit_set (line ? line : "", delim ? delim : " \t", 0);
+	arr0 = nm_utils_strsplit_set (line ?: "", delim ?: " \t");
+	if (!arr0)
+		arr = g_new0 (char *, 1);
+	else
+		arr = g_strdupv ((char **) arr0);
 
 	if (unquote) {
 		int i = 0;
@@ -613,7 +618,7 @@ nmc_string_to_arg_array (const char *line, const char *delim, gboolean unquote,
 		size_t l;
 		const char *quotes = "\"'";
 
-		while (arr && arr[i]) {
+		while (arr[i]) {
 			s = arr[i];
 			l = strlen (s);
 			if (l >= 2) {
@@ -628,7 +633,6 @@ nmc_string_to_arg_array (const char *line, const char *delim, gboolean unquote,
 
 	*argv = arr;
 	*argc = g_strv_length (arr);
-
 	return 0;
 }
 

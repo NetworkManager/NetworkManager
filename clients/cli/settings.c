@@ -313,16 +313,18 @@ _set_fcn_precheck_connection_secondaries (const char *value,
 {
 	const GPtrArray *connections;
 	NMConnection *con;
+	gs_free const char **strv0 = NULL;
 	gs_strfreev char **strv = NULL;
 	char **iter;
-	gboolean modified;
+	gboolean modified = FALSE;
 
-	strv = nmc_strsplit_set (value, " \t,", 0);
-	if (!strv)
+	strv0 = nm_utils_strsplit_set (value, " \t,");
+	if (!strv0)
 		return TRUE;
 
 	connections = nm_client_get_connections (nm_cli.client);
 
+	strv = g_strdupv ((char **) strv0);
 	for (iter = strv; *iter; iter++) {
 		if (nm_utils_is_uuid (*iter)) {
 			con = nmc_find_connection (connections, "uuid", *iter, NULL, FALSE);
