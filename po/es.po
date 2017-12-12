@@ -10,22 +10,20 @@
 # Gladys Guerrero  <gguerrer@redhat.com>, 2010.
 # Jorge González <jorgegonz@svn.gnome.org>, 2007, 2008, 2010, 2011.
 # Daniel Mustieles <daniel.mustieles@gmail.com>, 2012.
-# Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
-# Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
-# Thomas Haller <thaller@redhat.com>, 2017. #zanata
+# lrintel <lrintel@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-12-12 10:22+0100\n"
-"PO-Revision-Date: 2017-04-21 06:16-0400\n"
+"PO-Revision-Date: 2017-11-07 06:49+0000\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Español <gnome-es-list@gnome.org>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Zanata 3.9.6\n"
+"X-Generator: Zanata 4.3.2\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: ../clients/cli/agent.c:40
@@ -955,11 +953,10 @@ msgstr "dispositivo «%s» incompatible con conexión «%s»"
 msgid "no device found for connection '%s'"
 msgstr "no se encontró dispositivo para conexión «%s»"
 
-# auto translated by TM merge from project: NetworkManager, version: 0.9.8.2, DocId: NetworkManager
 #: ../clients/cli/connections.c:2067
-#, fuzzy, c-format
+#, c-format
 msgid "Connection successfully activated (%s) (D-Bus active path: %s)\n"
-msgstr "Conexión activada con éxito (D-Bus active path: %s)\n"
+msgstr ""
 
 # auto translated by TM merge from project: NetworkManager, version: 0.9.8.2, DocId: NetworkManager
 #: ../clients/cli/connections.c:2071 ../clients/cli/connections.c:2219
@@ -1137,9 +1134,9 @@ msgstr ""
 "Error: '%s' modo de monitorización no es válido; utilice '%s' o '%s'.\n"
 
 #: ../clients/cli/connections.c:3904
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'bt-type': '%s' not valid; use [%s, %s, %s (%s), %s]."
-msgstr "Error: 'bt-type': '%s' no es válido; utilice [%s, %s (%s), %s]."
+msgstr ""
 
 #: ../clients/cli/connections.c:4153
 #, c-format
@@ -4069,9 +4066,8 @@ msgid "The device parent's management changed"
 msgstr "Se cambió la administración del padre del dispositivo"
 
 #: ../clients/common/nm-client-utils.c:403
-#, fuzzy
 msgid "OpenVSwitch database connection failed"
-msgstr "conexión falló"
+msgstr ""
 
 #: ../clients/common/nm-client-utils.c:405
 msgid "A duplicate IP address was detected"
@@ -5325,9 +5321,8 @@ msgid "DHCP anycast MAC address [none]"
 msgstr "Dirección MAC DHCP anycast [none]: "
 
 #: ../clients/common/nm-meta-setting-desc.c:6304
-#, fuzzy
 msgid "PPPoE parent device"
-msgstr "Interfaz principal [none]: "
+msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:6310
 #, fuzzy
@@ -7514,19 +7509,16 @@ msgid "The bridge failure mode. One of \"secure\", \"standalone\" or empty."
 msgstr ""
 
 #: ../clients/common/settings-docs.c.in:267
-#, fuzzy
 msgid "Enable or disable multicast snooping."
-msgstr "Activar o desactivar la red del sistema"
+msgstr ""
 
 #: ../clients/common/settings-docs.c.in:269
-#, fuzzy
 msgid "Enable or disable RSTP."
-msgstr "Activar o desactivar los dispositivos inalámbricos"
+msgstr ""
 
 #: ../clients/common/settings-docs.c.in:270
-#, fuzzy
 msgid "Enable or disable STP."
-msgstr "Activar o desactivar los dispositivos inalámbricos"
+msgstr ""
 
 #: ../clients/common/settings-docs.c.in:272
 msgid "The interface type. Either \"internal\", or empty."
@@ -8580,9 +8572,8 @@ msgid "Ignore automatically obtained routes"
 msgstr "Ignorar rutas obtenidas automáticamente"
 
 #: ../clients/tui/nmt-page-ip4.c:185 ../clients/tui/nmt-page-ip6.c:183
-#, fuzzy
 msgid "Ignore automatically obtained DNS parameters"
-msgstr "Ignorar rutas obtenidas automáticamente"
+msgstr ""
 
 #: ../clients/tui/nmt-page-ip4.c:193
 msgid "Require IPv4 addressing for this connection"
@@ -8918,9 +8909,9 @@ msgid "openconnect failed with signal %d"
 msgstr "Falló openconnect con señal %d"
 
 #: ../clients/tui/nmtui-connect.c:183
-#, fuzzy, c-format
+#, c-format
 msgid "Activation failed: %s"
-msgstr "Activación falló"
+msgstr ""
 
 #: ../clients/tui/nmtui-connect.c:254
 msgid "Connecting..."
@@ -9761,9 +9752,9 @@ msgid "'%s' connection requires '%s' or '%s' setting"
 msgstr "la conexión '%s' requiere '%s' o el parámetro '%s'"
 
 #: ../libnm-core/nm-setting-bluetooth.c:219
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' connection requires '%s' setting"
-msgstr "la conexión '%s' requiere '%s' o el parámetro '%s'"
+msgstr ""
 
 #: ../libnm-core/nm-setting-bond.c:566 ../libnm-util/nm-setting-bond.c:517
 #, c-format
@@ -9839,9 +9830,9 @@ msgid "'%s' option should be string"
 msgstr "opción '%s' debe ser una cadena"
 
 #: ../libnm-core/nm-setting-bond.c:803
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' option is not valid with mode '%s'"
-msgstr "La opción '%s' no es válida con modo '%s'"
+msgstr ""
 
 #: ../libnm-core/nm-setting-bridge-port.c:127
 #: ../libnm-core/nm-setting-ovs-interface.c:262
@@ -9915,9 +9906,9 @@ msgid "Cannot set '%s' without '%s'"
 msgstr "No se puede establecer '%s' sin '%s'"
 
 #: ../libnm-core/nm-setting-connection.c:1041
-#, fuzzy, c-format
+#, c-format
 msgid "Only '%s' connections can be enslaved to '%s'"
-msgstr "conexión no activa en el dispositivo «%s»"
+msgstr ""
 
 #: ../libnm-core/nm-setting-connection.c:1054
 #, c-format
@@ -10298,16 +10289,14 @@ msgid "'%d' is not a valid channel"
 msgstr "'%d' no es un canal válido"
 
 #: ../libnm-core/nm-setting-ovs-interface.c:113
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid interface type"
-msgstr "'%s' no es un nombre de interfaz válido"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-interface.c:135
-#, fuzzy, c-format
+#, c-format
 msgid "A connection with a '%s' setting needs connection.type explicitly set"
 msgstr ""
-"Una conexión con un parámetro '%s' debe tener un tipo de esclavo establecido "
-"para '%s'. En su lugar es '%s'"
 
 #: ../libnm-core/nm-setting-ovs-interface.c:147
 #, c-format
@@ -10320,34 +10309,28 @@ msgid "A connection of type '%s' cannot have an ovs-interface.type \"%s\""
 msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-interface.c:175
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "A connection with '%s' setting must be of connection.type \"ovs-interface\" "
 "but is \"%s\""
 msgstr ""
-"Una conexión con un parámetro '%s' debe tener un tipo de esclavo establecido "
-"para '%s'. En su lugar es '%s'"
 
 #: ../libnm-core/nm-setting-ovs-interface.c:186
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "A connection with '%s' setting needs to be of 'patch' interface type, not "
 "'%s'"
 msgstr ""
-"Una conexión con un parámetro '%s' debe tener un tipo de esclavo establecido "
-"para '%s'. En su lugar es '%s'"
 
 #: ../libnm-core/nm-setting-ovs-interface.c:201
-#, fuzzy, c-format
+#, c-format
 msgid "A connection with ovs-interface.type '%s' setting a 'ovs-patch' setting"
 msgstr ""
-"Se detecta una conexión esclava sin establecer '%s' ni tipo de puerto '%s'. "
-"'%s' debe establecerse como '%s'"
 
 #: ../libnm-core/nm-setting-ovs-interface.c:221
-#, fuzzy, c-format
+#, c-format
 msgid "Missing ovs interface setting"
-msgstr "Falta el parámetro 'plugin'"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-interface.c:227
 #, c-format
@@ -10356,11 +10339,9 @@ msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-interface.c:271
 #: ../libnm-core/nm-setting-ovs-port.c:198
-#, fuzzy, c-format
+#, c-format
 msgid "A connection with a '%s' setting must have a master."
 msgstr ""
-"Una conexión con un parámetro '%s' debe tener un tipo de esclavo establecido "
-"para '%s'. En su lugar es '%s'"
 
 #: ../libnm-core/nm-setting-ovs-patch.c:110
 #: ../libnm-core/nm-setting-vxlan.c:375
@@ -10369,36 +10350,34 @@ msgid "'%s' is not a valid IP address"
 msgstr "'%s' no es una dirección IP válida"
 
 #: ../libnm-core/nm-setting-ovs-port.c:223
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not allowed in vlan_mode"
-msgstr "'%s' no es un modo Wi-Fi válido"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-port.c:233
-#, fuzzy, c-format
+#, c-format
 msgid "the tag id must be in range 0-4094 but is %u"
-msgstr "El ID de vlan debe estar en el rango 0-4094 pero es %u"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-port.c:243
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not allowed in lacp"
-msgstr "'%s' no es un indicador DCB válido"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-port.c:253
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not allowed in bond_mode"
-msgstr "'%s' no es un modo Wi-Fi válido"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-bridge.c:161
-#, fuzzy, c-format
+#, c-format
 msgid "A connection with a '%s' setting must not have a master."
 msgstr ""
-"Se detecta una conexión esclava sin establecer '%s' ni tipo de puerto '%s'. "
-"'%s' debe establecerse como '%s'"
 
 #: ../libnm-core/nm-setting-ovs-bridge.c:172
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not allowed in fail_mode"
-msgstr "'%s' no es un modo Wi-Fi válido"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ppp.c:365 ../libnm-util/nm-setting-ppp.c:387
 #, c-format
@@ -11200,9 +11179,9 @@ msgid "The connection was not a Bluetooth connection."
 msgstr "La conexión no era Bluetooth."
 
 #: ../libnm/nm-device-bt.c:143
-#, fuzzy, c-format
+#, c-format
 msgid "The connection is of Bluetooth NAP type."
-msgstr "La conexión no era Bluetooth."
+msgstr ""
 
 #: ../libnm/nm-device-bt.c:152
 msgid "Invalid device Bluetooth address."
@@ -11310,19 +11289,16 @@ msgid "The connection was not an OLPC Mesh connection."
 msgstr "La conexión no era OLPC Mesh. "
 
 #: ../libnm/nm-device-ovs-bridge.c:61
-#, fuzzy
 msgid "The connection was not a ovs_bridge connection."
-msgstr "La conexión no era de puente."
+msgstr ""
 
 #: ../libnm/nm-device-ovs-interface.c:61
-#, fuzzy
 msgid "The connection was not a ovs_interface connection."
-msgstr "La conexión no era de equipo."
+msgstr ""
 
 #: ../libnm/nm-device-ovs-port.c:60
-#, fuzzy
 msgid "The connection was not a ovs_port connection."
-msgstr "La conexión no era tun."
+msgstr ""
 
 #: ../libnm/nm-device-team.c:138
 msgid "The connection was not a team connection."
@@ -11388,9 +11364,8 @@ msgid "Dummy"
 msgstr ""
 
 #: ../libnm/nm-device.c:1565
-#, fuzzy
 msgid "PPP"
-msgstr "PPPoE"
+msgstr ""
 
 #: ../libnm/nm-device.c:2456
 #, c-format
@@ -11569,16 +11544,12 @@ msgid "System policy prevents enabling or disabling device statistics"
 msgstr ""
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:31
-#, fuzzy
 msgid "Enable or disable connectivity checking"
-msgstr "Activar o desactivar la red del sistema"
+msgstr ""
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:32
-#, fuzzy
 msgid "System policy prevents enabling or disabling connectivity checking"
 msgstr ""
-"La política de sistema evita activar o desactivar los dispositivos "
-"inalámbricos"
 
 #: ../shared/nm-utils/nm-shared-utils.c:794
 #, c-format
@@ -12183,21 +12154,3 @@ msgstr "Nivel de registro desconocido «%s»"
 #, c-format
 msgid "Unknown log domain '%s'"
 msgstr "Dominio de registro desconocido «%s»"
-
-#, fuzzy
-#~ msgid "Invalid reason"
-#~ msgstr "Ruta inválida: %s"
-
-# auto translated by TM merge from project: NetworkManager, version: 0.9.8.2, DocId: NetworkManager
-#~ msgid ""
-#~ "Connection successfully activated (master waiting for slaves) (D-Bus "
-#~ "active path: %s)\n"
-#~ msgstr ""
-#~ "Conexión activada correctamente (maestro en espera de esclavos) (ruta "
-#~ "activa D-Bus: %s)\n"
-
-#~ msgid "%d (default)"
-#~ msgstr "%d (predeterminado)"
-
-#~ msgid "%d (off)"
-#~ msgstr "%d (off)"

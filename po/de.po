@@ -15,20 +15,21 @@
 # Christian Kirbach <christian.kirbach@gmail.com>, 2009-2014.
 # Benjamin Steinwender <b@stbe.at>, 2014.
 # Hedda Peters <hpeters@redhat.com>, 2014.
+# lrintel <lrintel@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
-"Project-Id-Version: NetworkManager HEAD\n"
+"Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-12-12 10:22+0100\n"
-"PO-Revision-Date: 2017-09-14 00:26+0200\n"
-"Last-Translator: Christian Kirbach <christian.kirbach@gmail.com>\n"
+"PO-Revision-Date: 2017-11-07 06:49+0000\n"
+"Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Deutsch <gnome-de@gnome.org>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 1.8.7.1\n"
+"X-Generator: Zanata 4.3.2\n"
 
 #: ../clients/cli/agent.c:40
 #, c-format
@@ -1153,9 +1154,9 @@ msgid "no device found for connection '%s'"
 msgstr "Für die Verbindung »%s« wurde kein Gerät gefunden"
 
 #: ../clients/cli/connections.c:2067
-#, fuzzy, c-format
+#, c-format
 msgid "Connection successfully activated (%s) (D-Bus active path: %s)\n"
-msgstr "Verbindung wurde erfolgreich aktiviert (aktiver D-Bus-Pfad: %s)\n"
+msgstr ""
 
 #: ../clients/cli/connections.c:2071 ../clients/cli/connections.c:2219
 #: ../clients/cli/connections.c:6244
@@ -4372,9 +4373,8 @@ msgid "The device parent's management changed"
 msgstr "Die Verwaltung des übergeordneten Geräts wurde geändert"
 
 #: ../clients/common/nm-client-utils.c:403
-#, fuzzy
 msgid "OpenVSwitch database connection failed"
-msgstr "Master-Verbindung ist fehlgeschlagen"
+msgstr ""
 
 #: ../clients/common/nm-client-utils.c:405
 msgid "A duplicate IP address was detected"
@@ -5773,23 +5773,20 @@ msgid "OLPC Mesh connection"
 msgstr "»OLPC Mesh«-Verbindung"
 
 #: ../clients/common/nm-meta-setting-desc.c:7534
-#, fuzzy
 msgid "OpenVSwitch bridge settings"
-msgstr "Allgemeine Einstellungen"
+msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:7535
-#, fuzzy
 msgid "OpenVSwitch interface settings"
-msgstr "Allgemeine Einstellungen"
+msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:7536
 msgid "OpenVSwitch patch interface settings"
 msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:7537
-#, fuzzy
 msgid "OpenVSwitch port settings"
-msgstr "Allgemeine Einstellungen"
+msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:7538
 msgid "PPP settings"
@@ -7757,19 +7754,16 @@ msgid "The bridge failure mode. One of \"secure\", \"standalone\" or empty."
 msgstr ""
 
 #: ../clients/common/settings-docs.c.in:267
-#, fuzzy
 msgid "Enable or disable multicast snooping."
-msgstr "System-Netzwerke aktivieren oder deaktivieren"
+msgstr ""
 
 #: ../clients/common/settings-docs.c.in:269
-#, fuzzy
 msgid "Enable or disable RSTP."
-msgstr "WLAN-Geräte aktivieren oder deaktivieren"
+msgstr ""
 
 #: ../clients/common/settings-docs.c.in:270
-#, fuzzy
 msgid "Enable or disable STP."
-msgstr "WLAN-Geräte aktivieren oder deaktivieren"
+msgstr ""
 
 #: ../clients/common/settings-docs.c.in:272
 msgid "The interface type. Either \"internal\", or empty."
@@ -9153,9 +9147,9 @@ msgid "openconnect failed with signal %d"
 msgstr "»openconnect« fehlgeschlagen mit Signal %d"
 
 #: ../clients/tui/nmtui-connect.c:183
-#, fuzzy, c-format
+#, c-format
 msgid "Activation failed: %s"
-msgstr "Aktivierung fehlgeschlagen"
+msgstr ""
 
 #: ../clients/tui/nmtui-connect.c:254
 msgid "Connecting..."
@@ -10154,9 +10148,9 @@ msgid "Cannot set '%s' without '%s'"
 msgstr "»%s« kann nicht ohne »%s« gesetzt werden"
 
 #: ../libnm-core/nm-setting-connection.c:1041
-#, fuzzy, c-format
+#, c-format
 msgid "Only '%s' connections can be enslaved to '%s'"
-msgstr "Keine aktive Verbindung auf Gerät »%s«"
+msgstr ""
 
 #: ../libnm-core/nm-setting-connection.c:1054
 #, c-format
@@ -10539,16 +10533,14 @@ msgid "'%d' is not a valid channel"
 msgstr "»%d« ist kein gültiger Kanal"
 
 #: ../libnm-core/nm-setting-ovs-interface.c:113
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid interface type"
-msgstr "»%s« ist kein gültiger Schnittstellenname"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-interface.c:135
-#, fuzzy, c-format
+#, c-format
 msgid "A connection with a '%s' setting needs connection.type explicitly set"
 msgstr ""
-"Für Verbindungen mit einer »%s«-Einstellung muss der Slave-Typ auf »%s« "
-"gesetzt sein, hier ist es jedoch »%s«."
 
 #: ../libnm-core/nm-setting-ovs-interface.c:147
 #, c-format
@@ -10561,34 +10553,28 @@ msgid "A connection of type '%s' cannot have an ovs-interface.type \"%s\""
 msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-interface.c:175
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "A connection with '%s' setting must be of connection.type \"ovs-interface\" "
 "but is \"%s\""
 msgstr ""
-"Für Verbindungen mit einer »%s«-Einstellung muss der Slave-Typ auf »%s« "
-"gesetzt sein, hier ist es jedoch »%s«."
 
 #: ../libnm-core/nm-setting-ovs-interface.c:186
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "A connection with '%s' setting needs to be of 'patch' interface type, not "
 "'%s'"
 msgstr ""
-"Für Verbindungen mit einer »%s«-Einstellung muss der Slave-Typ auf »%s« "
-"gesetzt sein, hier ist es jedoch »%s«."
 
 #: ../libnm-core/nm-setting-ovs-interface.c:201
-#, fuzzy, c-format
+#, c-format
 msgid "A connection with ovs-interface.type '%s' setting a 'ovs-patch' setting"
 msgstr ""
-"Eine Slave-Verbindung mit gesetztem »%s« und dem Port-Typ »%s« erkennen. "
-"»%s« sollte auf »%s« gesetzt werden."
 
 #: ../libnm-core/nm-setting-ovs-interface.c:221
-#, fuzzy, c-format
+#, c-format
 msgid "Missing ovs interface setting"
-msgstr "Einstellung »Erweiterung« fehlt"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-interface.c:227
 #, c-format
@@ -10597,11 +10583,9 @@ msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-interface.c:271
 #: ../libnm-core/nm-setting-ovs-port.c:198
-#, fuzzy, c-format
+#, c-format
 msgid "A connection with a '%s' setting must have a master."
 msgstr ""
-"Für Verbindungen mit einer »%s«-Einstellung muss der Slave-Typ auf »%s« "
-"gesetzt sein, hier ist es jedoch »%s«."
 
 #: ../libnm-core/nm-setting-ovs-patch.c:110
 #: ../libnm-core/nm-setting-vxlan.c:375
@@ -10610,36 +10594,34 @@ msgid "'%s' is not a valid IP address"
 msgstr "»%s« ist keine gültige IP-Adresse"
 
 #: ../libnm-core/nm-setting-ovs-port.c:223
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not allowed in vlan_mode"
-msgstr "»%s« ist kein gültiger WLAN-Modus"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-port.c:233
-#, fuzzy, c-format
+#, c-format
 msgid "the tag id must be in range 0-4094 but is %u"
-msgstr "Die vlan-ID muss im Bereich 0-4094 sein, ist aber %u"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-port.c:243
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not allowed in lacp"
-msgstr "»%s« ist kein gültiges DCB-Flag"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-port.c:253
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not allowed in bond_mode"
-msgstr "»%s« ist kein gültiger WLAN-Modus"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-bridge.c:161
-#, fuzzy, c-format
+#, c-format
 msgid "A connection with a '%s' setting must not have a master."
 msgstr ""
-"Eine Slave-Verbindung mit gesetztem »%s« und dem Port-Typ »%s« erkennen. "
-"»%s« sollte auf »%s« gesetzt werden."
 
 #: ../libnm-core/nm-setting-ovs-bridge.c:172
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not allowed in fail_mode"
-msgstr "»%s« ist kein gültiger WLAN-Modus"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ppp.c:365 ../libnm-util/nm-setting-ppp.c:387
 #, c-format
@@ -11557,19 +11539,16 @@ msgid "The connection was not an OLPC Mesh connection."
 msgstr "Die Verbindung war keine »OLPC Mesh«-Verbindung."
 
 #: ../libnm/nm-device-ovs-bridge.c:61
-#, fuzzy
 msgid "The connection was not a ovs_bridge connection."
-msgstr "Die Verbindung war keine Brückenverbindung."
+msgstr ""
 
 #: ../libnm/nm-device-ovs-interface.c:61
-#, fuzzy
 msgid "The connection was not a ovs_interface connection."
-msgstr "Die Verbindung war keine Team-Verbindung."
+msgstr ""
 
 #: ../libnm/nm-device-ovs-port.c:60
-#, fuzzy
 msgid "The connection was not a ovs_port connection."
-msgstr "Die Verbindung war keine tun-Verbindung."
+msgstr ""
 
 #: ../libnm/nm-device-team.c:138
 msgid "The connection was not a team connection."
@@ -12446,21 +12425,3 @@ msgstr "Unbekannte Protokollstufe »%s«"
 #, c-format
 msgid "Unknown log domain '%s'"
 msgstr "Unbekannte Protokolldomäne »%s«"
-
-#~ msgid "Invalid reason"
-#~ msgstr "Ungültiger Grund"
-
-#~ msgid ""
-#~ "Connection successfully activated (master waiting for slaves) (D-Bus "
-#~ "active path: %s)\n"
-#~ msgstr ""
-#~ "Verbindung wurde erfolgreich aktiviert (master wartet auf slaves) "
-#~ "(aktiver D-Bus-Pfad: %s)\n"
-
-#~ msgid "None"
-#~ msgstr "Nichts"
-
-#, fuzzy
-#~| msgid "invalid parity value '%s'"
-#~ msgid "invalid route table sync value %d"
-#~ msgstr "ungültiger Paritätswert »%s«"

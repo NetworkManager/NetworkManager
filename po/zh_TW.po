@@ -8,23 +8,21 @@
 # Chester Cheng <ccheng@紅帽子>, 2010.
 # Terry Chuang <tchuang at redhat>, 2010.
 # Terry Chuang <tchuang@redhat.com>, 2010.
-# Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
-# Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
-# Thomas Haller <thaller@redhat.com>, 2017. #zanata
+# lrintel <lrintel@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-12-12 10:22+0100\n"
-"PO-Revision-Date: 2017-04-21 06:25-0400\n"
+"PO-Revision-Date: 2017-11-07 06:49+0000\n"
 "Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
 "Language-Team: Traditional Chinese <zh@li.org>\n"
-"Language: zh-TW\n"
+"Language: zh_Hant\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Zanata 3.9.6\n"
+"X-Generator: Zanata 4.3.2\n"
 
 #: ../clients/cli/agent.c:40
 #, c-format
@@ -867,9 +865,9 @@ msgid "no device found for connection '%s'"
 msgstr "連線「%s」沒有找到任何裝置"
 
 #: ../clients/cli/connections.c:2067
-#, fuzzy, c-format
+#, c-format
 msgid "Connection successfully activated (%s) (D-Bus active path: %s)\n"
-msgstr "連線已成功啟用（D-Bus 啟用路徑：%s）\n"
+msgstr ""
 
 #: ../clients/cli/connections.c:2071 ../clients/cli/connections.c:2219
 #: ../clients/cli/connections.c:6244
@@ -1037,9 +1035,9 @@ msgid "Error: '%s' is not a valid monitoring mode; use '%s' or '%s'.\n"
 msgstr "錯誤：「%s」不是個有效的監控模式；請使用「%s」或是「%s」。\n"
 
 #: ../clients/cli/connections.c:3904
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'bt-type': '%s' not valid; use [%s, %s, %s (%s), %s]."
-msgstr "錯誤：「bt-type」：「%s」無效；請使用 [%s, %s (%s), %s]。"
+msgstr ""
 
 #: ../clients/cli/connections.c:4153
 #, fuzzy, c-format
@@ -3822,9 +3820,8 @@ msgid "The device parent's management changed"
 msgstr "裝置已移除"
 
 #: ../clients/common/nm-client-utils.c:403
-#, fuzzy
 msgid "OpenVSwitch database connection failed"
-msgstr "連線失敗"
+msgstr ""
 
 #: ../clients/common/nm-client-utils.c:405
 msgid "A duplicate IP address was detected"
@@ -5012,9 +5009,8 @@ msgid "DHCP anycast MAC address [none]"
 msgstr "DHCP anycast MAC address [none]："
 
 #: ../clients/common/nm-meta-setting-desc.c:6304
-#, fuzzy
 msgid "PPPoE parent device"
-msgstr "父介面卡 [none]："
+msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:6310
 #, fuzzy
@@ -7203,19 +7199,16 @@ msgid "The bridge failure mode. One of \"secure\", \"standalone\" or empty."
 msgstr ""
 
 #: ../clients/common/settings-docs.c.in:267
-#, fuzzy
 msgid "Enable or disable multicast snooping."
-msgstr "啟用或停用系統網路"
+msgstr ""
 
 #: ../clients/common/settings-docs.c.in:269
-#, fuzzy
 msgid "Enable or disable RSTP."
-msgstr "啟用或停用 WiFi 裝置"
+msgstr ""
 
 #: ../clients/common/settings-docs.c.in:270
-#, fuzzy
 msgid "Enable or disable STP."
-msgstr "啟用或停用 WiFi 裝置"
+msgstr ""
 
 #: ../clients/common/settings-docs.c.in:272
 msgid "The interface type. Either \"internal\", or empty."
@@ -8592,9 +8585,9 @@ msgid "openconnect failed with signal %d"
 msgstr ""
 
 #: ../clients/tui/nmtui-connect.c:183
-#, fuzzy, c-format
+#, c-format
 msgid "Activation failed: %s"
-msgstr "啟用失敗"
+msgstr ""
 
 #: ../clients/tui/nmtui-connect.c:254
 msgid "Connecting..."
@@ -9438,9 +9431,9 @@ msgid "'%s' connection requires '%s' or '%s' setting"
 msgstr "需要 '%s' 或 '%s' 設定"
 
 #: ../libnm-core/nm-setting-bluetooth.c:219
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' connection requires '%s' setting"
-msgstr "需要 '%s' 或 '%s' 設定"
+msgstr ""
 
 #: ../libnm-core/nm-setting-bond.c:566 ../libnm-util/nm-setting-bond.c:517
 #, c-format
@@ -9516,9 +9509,9 @@ msgid "'%s' option should be string"
 msgstr "未設定 '%s' 選項"
 
 #: ../libnm-core/nm-setting-bond.c:803
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' option is not valid with mode '%s'"
-msgstr "'%s' 選項僅適用於 '%s=%s'"
+msgstr ""
 
 #: ../libnm-core/nm-setting-bridge-port.c:127
 #: ../libnm-core/nm-setting-ovs-interface.c:262
@@ -9590,9 +9583,9 @@ msgid "Cannot set '%s' without '%s'"
 msgstr ""
 
 #: ../libnm-core/nm-setting-connection.c:1041
-#, fuzzy, c-format
+#, c-format
 msgid "Only '%s' connections can be enslaved to '%s'"
-msgstr "裝置「%s」上沒有使用中的連線"
+msgstr ""
 
 #: ../libnm-core/nm-setting-connection.c:1054
 #, fuzzy, c-format
@@ -9962,14 +9955,14 @@ msgid "'%d' is not a valid channel"
 msgstr "'%d' 不是合於規定的頻道"
 
 #: ../libnm-core/nm-setting-ovs-interface.c:113
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid interface type"
-msgstr "「%s」不是組有效的介面卡名稱"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-interface.c:135
-#, fuzzy, c-format
+#, c-format
 msgid "A connection with a '%s' setting needs connection.type explicitly set"
-msgstr "需要 '%s' 或 '%s' 設定"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-interface.c:147
 #, c-format
@@ -9996,14 +9989,14 @@ msgid ""
 msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-interface.c:201
-#, fuzzy, c-format
+#, c-format
 msgid "A connection with ovs-interface.type '%s' setting a 'ovs-patch' setting"
-msgstr "需要 '%s' 或 '%s' 設定"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-interface.c:221
-#, fuzzy, c-format
+#, c-format
 msgid "Missing ovs interface setting"
-msgstr "遺失選項"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-interface.c:227
 #, c-format
@@ -10012,9 +10005,9 @@ msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-interface.c:271
 #: ../libnm-core/nm-setting-ovs-port.c:198
-#, fuzzy, c-format
+#, c-format
 msgid "A connection with a '%s' setting must have a master."
-msgstr "需要 '%s' 或 '%s' 設定"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-patch.c:110
 #: ../libnm-core/nm-setting-vxlan.c:375
@@ -10023,9 +10016,9 @@ msgid "'%s' is not a valid IP address"
 msgstr "「%s」不是個有效的 MAC 位址"
 
 #: ../libnm-core/nm-setting-ovs-port.c:223
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not allowed in vlan_mode"
-msgstr "「%s」不是個有效的 Wi-Fi 模式"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-port.c:233
 #, c-format
@@ -10033,24 +10026,24 @@ msgid "the tag id must be in range 0-4094 but is %u"
 msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-port.c:243
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not allowed in lacp"
-msgstr "「%s」不是有效的 DCB 旗標"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-port.c:253
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not allowed in bond_mode"
-msgstr "「%s」不是個有效的 Wi-Fi 模式"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-bridge.c:161
-#, fuzzy, c-format
+#, c-format
 msgid "A connection with a '%s' setting must not have a master."
-msgstr "需要 '%s' 或 '%s' 設定"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ovs-bridge.c:172
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not allowed in fail_mode"
-msgstr "「%s」不是個有效的 Wi-Fi 模式"
+msgstr ""
 
 #: ../libnm-core/nm-setting-ppp.c:365 ../libnm-util/nm-setting-ppp.c:387
 #, c-format
@@ -10849,9 +10842,9 @@ msgid "The connection was not a Bluetooth connection."
 msgstr "「bluetooth」連線類型有一項選用性引數。\n"
 
 #: ../libnm/nm-device-bt.c:143
-#, fuzzy, c-format
+#, c-format
 msgid "The connection is of Bluetooth NAP type."
-msgstr "「bluetooth」連線類型有一項選用性引數。\n"
+msgstr ""
 
 #: ../libnm/nm-device-bt.c:152
 msgid "Invalid device Bluetooth address."
@@ -10966,19 +10959,16 @@ msgid "The connection was not an OLPC Mesh connection."
 msgstr "「OLPC Mesh」連線類型有兩個選用性引數。\n"
 
 #: ../libnm/nm-device-ovs-bridge.c:61
-#, fuzzy
 msgid "The connection was not a ovs_bridge connection."
-msgstr "正在連線（正在啟用次要連線）"
+msgstr ""
 
 #: ../libnm/nm-device-ovs-interface.c:61
-#, fuzzy
 msgid "The connection was not a ovs_interface connection."
-msgstr "連線已移除"
+msgstr ""
 
 #: ../libnm/nm-device-ovs-port.c:60
-#, fuzzy
 msgid "The connection was not a ovs_port connection."
-msgstr "正在連線（正在啟用次要連線）"
+msgstr ""
 
 #: ../libnm/nm-device-team.c:138
 #, fuzzy
@@ -11045,9 +11035,8 @@ msgid "Dummy"
 msgstr ""
 
 #: ../libnm/nm-device.c:1565
-#, fuzzy
 msgid "PPP"
-msgstr "PAP"
+msgstr ""
 
 #: ../libnm/nm-device.c:2456
 #, fuzzy, c-format
@@ -11207,14 +11196,12 @@ msgid "System policy prevents enabling or disabling device statistics"
 msgstr ""
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:31
-#, fuzzy
 msgid "Enable or disable connectivity checking"
-msgstr "啟用或停用系統網路"
+msgstr ""
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:32
-#, fuzzy
 msgid "System policy prevents enabling or disabling connectivity checking"
-msgstr "系統政策防止啟用或停用 WiFi 裝置"
+msgstr ""
 
 #: ../shared/nm-utils/nm-shared-utils.c:794
 #, c-format
@@ -11816,21 +11803,3 @@ msgstr "不明日誌層級「%s」"
 #, c-format
 msgid "Unknown log domain '%s'"
 msgstr "不明日誌網域「%s」"
-
-#, fuzzy
-#~ msgid "Invalid reason"
-#~ msgstr "無效的 IPv4 路由「%s」"
-
-#, fuzzy
-#~ msgid ""
-#~ "Connection successfully activated (master waiting for slaves) (D-Bus "
-#~ "active path: %s)\n"
-#~ msgstr "連線已成功啟用（D-Bus 啟用路徑：%s）\n"
-
-#, fuzzy
-#~ msgid "%d (default)"
-#~ msgstr "（預設）"
-
-#, fuzzy
-#~ msgid "%d (off)"
-#~ msgstr "%d（不明）"
