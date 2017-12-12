@@ -5155,13 +5155,16 @@ _nm_utils_team_link_watcher_from_json (json_t *json_element)
 	g_return_val_if_fail (json_element, NULL);
 
 	json_object_foreach (json_element, j_key, j_val) {
-		if (nm_streq (j_key, "name"))
+		if (nm_streq (j_key, "name")) {
+			g_free (name);
 			name = strdup (json_string_value (j_val));
-		else if (nm_streq (j_key, "target_host"))
+		} else if (nm_streq (j_key, "target_host")) {
+			g_free (target_host);
 			target_host = strdup (json_string_value (j_val));
-		else if (nm_streq (j_key, "source_host"))
+		} else if (nm_streq (j_key, "source_host")) {
+			g_free (source_host);
 			source_host = strdup (json_string_value (j_val));
-		else if (NM_IN_STRSET (j_key, "delay_up", "init_wait"))
+		} else if (NM_IN_STRSET (j_key, "delay_up", "init_wait"))
 			val1 = json_integer_value (j_val);
 		else if (NM_IN_STRSET (j_key, "delay_down", "interval"))
 			val2 = json_integer_value (j_val);
