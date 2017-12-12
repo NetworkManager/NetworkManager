@@ -667,6 +667,7 @@ skip:
 			/* There is a loop, pop the first (remaining) element from the list.
 			 * This can happen for veth pairs where each peer is parent of the other end. */
 			item = NMP_OBJECT_CAST_LINK (links->pdata[first_idx]);
+			nm_assert (item);
 			g_hash_table_remove (unseen, GINT_TO_POINTER (item->ifindex));
 			g_ptr_array_add (result, links->pdata[first_idx]);
 			links->pdata[first_idx] = NULL;
@@ -5320,7 +5321,7 @@ nm_platform_qdisc_to_string (const NMPlatformQdisc *qdisc, char *buf, gsize len)
 void
 nm_platform_qdisc_hash_update (const NMPlatformQdisc *obj, NMHashState *h)
 {
-	nm_hash_update_str (h, obj->kind);
+	nm_hash_update_str0 (h, obj->kind);
 	nm_hash_update_vals (h,
 	                     obj->ifindex,
 	                     obj->addr_family,
@@ -5387,17 +5388,17 @@ nm_platform_tfilter_to_string (const NMPlatformTfilter *tfilter, char *buf, gsiz
 void
 nm_platform_tfilter_hash_update (const NMPlatformTfilter *obj, NMHashState *h)
 {
-	nm_hash_update_str (h, obj->kind);
+	nm_hash_update_str0 (h, obj->kind);
 	nm_hash_update_vals (h,
 	                     obj->ifindex,
 	                     obj->addr_family,
 	                     obj->handle,
 	                     obj->parent,
 	                     obj->info);
-	nm_hash_update_str (h, obj->action.kind);
 	if (obj->action.kind) {
+		nm_hash_update_str (h, obj->action.kind);
 		if (nm_streq (obj->action.kind, NM_PLATFORM_ACTION_KIND_SIMPLE))
-			nm_hash_update_str (h, obj->action.simple.sdata);
+			nm_hash_update_strarr (h, obj->action.simple.sdata);
 	}
 }
 
