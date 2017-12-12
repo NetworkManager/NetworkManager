@@ -1409,7 +1409,7 @@ reset_autoconnect_all (NMPolicy *self,
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	NMSettingsConnection *const*connections = NULL;
 	guint i;
-	gboolean changed;
+	gboolean changed = FALSE;
 
 	_LOGD (LOGD_DEVICE, "re-enabling autoconnect for all connections%s%s%s",
 	       device ? " on " : "",
