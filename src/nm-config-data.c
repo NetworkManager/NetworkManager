@@ -1196,6 +1196,7 @@ _match_section_infos_lookup (const MatchSectionInfo *match_section_infos,
                              GKeyFile *keyfile,
                              const char *property,
                              NMDevice *device,
+                             const NMPlatformLink *pllink,
                              char **out_value)
 {
 	if (!match_section_infos)
@@ -1216,9 +1217,15 @@ _match_section_infos_lookup (const MatchSectionInfo *match_section_infos,
 		if (!value && !match_section_infos->stop_match)
 			continue;
 
-		match = TRUE;
-		if (match_section_infos->match_device.has)
-			match = device && nm_device_spec_match_list (device, match_section_infos->match_device.spec);
+		if (match_section_infos->match_device.has) {
+			if (device)
+				match = nm_device_spec_match_list (device, match_section_infos->match_device.spec);
+			else if (pllink)
+				match = nm_match_spec_device_by_pllink (pllink, match_section_infos->match_device.spec, FALSE);
+			else
+				match = FALSE;
+		} else
+			match = TRUE;
 
 		if (match) {
 			*out_value = value;
@@ -1248,6 +1255,32 @@ nm_config_data_get_device_config (const NMConfigData *self,
 	                                               priv->keyfile,
 	                                               property,
 	                                               device,
+	                                               NULL,
+	                                               &value);
+	NM_SET_OUT (has_match, !!connection_info);
+	return value;
+}
+
+char *
+nm_config_data_get_device_config_by_pllink (const NMConfigData *self,
+                                            const char *property,
+                                            const NMPlatformLink *pllink,
+                                            gboolean *has_match)
+{
+	const NMConfigDataPrivate *priv;
+	const MatchSectionInfo *connection_info;
+	char *value = NULL;
+
+	g_return_val_if_fail (self, NULL);
+	g_return_val_if_fail (property && *property, NULL);
+
+	priv = NM_CONFIG_DATA_GET_PRIVATE (self);
+
+	connection_info = _match_section_infos_lookup (&priv->device_infos[0],
+	                                               priv->keyfile,
+	                                               property,
+	                                               NULL,
+	                                               pllink,
 	                                               &value);
 	NM_SET_OUT (has_match, !!connection_info);
 	return value;
@@ -1287,6 +1320,7 @@ nm_config_data_get_connection_default (const NMConfigData *self,
 	                             priv->keyfile,
 	                             property,
 	                             device,
+	                             NULL,
 	                             &value);
 	return value;
 }
