@@ -915,6 +915,7 @@ ip6_start (NMDhcpClient *client,
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
 	const char *iface = nm_dhcp_client_get_iface (client);
 	const GByteArray *hwaddr;
+	const char *hostname;
 	int r, i;
 
 	g_assert (priv->client4 == NULL);
@@ -992,6 +993,13 @@ ip6_start (NMDhcpClient *client,
 	r = sd_dhcp6_client_set_local_address (priv->client6, ll_addr);
 	if (r < 0) {
 		_LOGW ("failed to set local address (%d)", r);
+		goto error;
+	}
+
+	hostname = nm_dhcp_client_get_hostname (client);
+	r = sd_dhcp6_client_set_fqdn (priv->client6, hostname);
+	if (r < 0) {
+		_LOGW ("failed to set DHCP hostname to '%s' (%d)", hostname, r);
 		goto error;
 	}
 
