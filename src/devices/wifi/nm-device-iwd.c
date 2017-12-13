@@ -284,7 +284,7 @@ get_ordered_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 		return;
 	}
 
-	priv->new_aps = g_hash_table_new (g_str_hash, g_str_equal);
+	priv->new_aps = g_hash_table_new (nm_str_hash, g_str_equal);
 
 	g_variant_get (variant, "(a(osns))", &networks);
 
@@ -1791,7 +1791,7 @@ nm_device_iwd_init (NMDeviceIwd *self)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 
-	priv->aps = g_hash_table_new (g_str_hash, g_str_equal);
+	priv->aps = g_hash_table_new (nm_str_hash, g_str_equal);
 
 	/* Make sure the manager is running */
 	(void) nm_iwd_manager_get ();
