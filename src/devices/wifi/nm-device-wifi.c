@@ -48,6 +48,7 @@
 #include "nm-auth-utils.h"
 #include "settings/nm-settings-connection.h"
 #include "settings/nm-settings.h"
+#include "nm-wifi-utils.h"
 #include "nm-core-internal.h"
 #include "nm-config.h"
 
@@ -680,35 +681,14 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	return TRUE;
 }
 
-static NMWifiAP *
-find_first_compatible_ap (NMDeviceWifi *self,
-                          NMConnection *connection,
-                          gboolean allow_unstable_order)
-{
-	GHashTableIter iter;
-	NMWifiAP *ap;
-	NMWifiAP *cand_ap = NULL;
-
-	g_return_val_if_fail (connection != NULL, NULL);
-
-	g_hash_table_iter_init (&iter, NM_DEVICE_WIFI_GET_PRIVATE (self)->aps);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &ap)) {
-		if (!nm_wifi_ap_check_compatible (ap, connection))
-			continue;
-		if (allow_unstable_order)
-			return ap;
-		if (!cand_ap || (nm_wifi_ap_get_id (cand_ap) < nm_wifi_ap_get_id (ap)))
-			cand_ap = ap;
-	}
-	return cand_ap;
-}
-
 static gboolean
 check_connection_available (NMDevice *device,
                             NMConnection *connection,
                             NMDeviceCheckConAvailableFlags flags,
                             const char *specific_object)
 {
+	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMSettingWireless *s_wifi;
 	const char *mode;
 
@@ -721,7 +701,7 @@ check_connection_available (NMDevice *device,
 	if (specific_object) {
 		NMWifiAP *ap;
 
-		ap = get_ap_by_path (NM_DEVICE_WIFI (device), specific_object);
+		ap = get_ap_by_path (self, specific_object);
 		return ap ? nm_wifi_ap_check_compatible (ap, connection) : FALSE;
 	}
 
@@ -745,40 +725,7 @@ check_connection_available (NMDevice *device,
 		return TRUE;
 
 	/* check at least one AP is compatible with this connection */
-	return !!find_first_compatible_ap (NM_DEVICE_WIFI (device), connection, TRUE);
-}
-
-static gboolean
-is_manf_default_ssid (const GByteArray *ssid)
-{
-	int i;
-	/*
-	 * List of manufacturer default SSIDs that are often unchanged by users.
-	 *
-	 * NOTE: this list should *not* contain networks that you would like to
-	 * automatically roam to like "Starbucks" or "AT&T" or "T-Mobile HotSpot".
-	 */
-	static const char *manf_defaults[] = {
-		"linksys",
-		"linksys-a",
-		"linksys-g",
-		"default",
-		"belkin54g",
-		"NETGEAR",
-		"o2DSL",
-		"WLAN",
-		"ALICE-WLAN",
-		"Speedport W 501V",
-		"TURBONETT",
-	};
-
-	for (i = 0; i < G_N_ELEMENTS (manf_defaults); i++) {
-		if (ssid->len == strlen (manf_defaults[i])) {
-			if (memcmp (manf_defaults[i], ssid->data, ssid->len) == 0)
-				return TRUE;
-		}
-	}
-	return FALSE;
+	return !!nm_wifi_aps_find_first_compatible (priv->aps, connection, TRUE);
 }
 
 static gboolean
@@ -789,6 +736,7 @@ complete_connection (NMDevice *device,
                      GError **error)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMSettingWireless *s_wifi;
 	const char *setting_mac;
 	char *str_ssid = NULL;
@@ -825,7 +773,7 @@ complete_connection (NMDevice *device,
 
 		if (!nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_AP)) {
 			/* Find a compatible AP in the scan list */
-			ap = find_first_compatible_ap (self, connection, FALSE);
+			ap = nm_wifi_aps_find_first_compatible (priv->aps, connection, FALSE);
 
 			/* If we still don't have an AP, then the WiFI settings needs to be
 			 * fully specified by the client.  Might not be able to find an AP
@@ -900,7 +848,7 @@ complete_connection (NMDevice *device,
 		 */
 		if (!nm_wifi_ap_complete_connection (ap,
 		                                     connection,
-		                                     is_manf_default_ssid (ssid),
+		                                     nm_wifi_utils_is_manf_default_ssid (ssid),
 		                                     error)) {
 			if (tmp_ssid)
 				g_byte_array_unref (tmp_ssid);
@@ -1007,6 +955,7 @@ can_auto_connect (NMDevice *device,
                   char **specific_object)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMSettingWireless *s_wifi;
 	NMWifiAP *ap;
 	const char *method, *mode;
@@ -1038,7 +987,7 @@ can_auto_connect (NMDevice *device,
 			return FALSE;
 	}
 
-	ap = find_first_compatible_ap (self, connection, FALSE);
+	ap = nm_wifi_aps_find_first_compatible (priv->aps, connection, FALSE);
 	if (ap) {
 		/* All good; connection is usable */
 		NM_SET_OUT (specific_object, g_strdup (nm_exported_object_get_path (NM_EXPORTED_OBJECT (ap))));
@@ -1048,78 +997,15 @@ can_auto_connect (NMDevice *device,
 	return FALSE;
 }
 
-static int
-ap_id_compare (gconstpointer p_a, gconstpointer p_b, gpointer user_data)
-{
-	guint64 a_id = nm_wifi_ap_get_id (*((NMWifiAP **) p_a));
-	guint64 b_id = nm_wifi_ap_get_id (*((NMWifiAP **) p_b));
-
-	return a_id < b_id ? -1 : (a_id == b_id ? 0 : 1);
-}
-
-static NMWifiAP **
-ap_list_get_sorted (NMDeviceWifi *self, gboolean include_without_ssid)
-{
-	NMDeviceWifiPrivate *priv;
-	NMWifiAP **list;
-	GHashTableIter iter;
-	NMWifiAP *ap;
-	gsize i, n;
-
-	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-
-	n = g_hash_table_size (priv->aps);
-	list = g_new (NMWifiAP *, n + 1);
-
-	i = 0;
-	if (n > 0) {
-		g_hash_table_iter_init (&iter, priv->aps);
-		while (g_hash_table_iter_next (&iter, NULL, (gpointer) &ap)) {
-			nm_assert (i < n);
-			if (   include_without_ssid
-			    || nm_wifi_ap_get_ssid (ap))
-				list[i++] = ap;
-		}
-		nm_assert (i <= n);
-		nm_assert (!include_without_ssid || i == n);
-
-		g_qsort_with_data (list,
-		                   i,
-		                   sizeof (gpointer),
-		                   ap_id_compare,
-		                   NULL);
-	}
-	list[i] = NULL;
-	return list;
-}
-
-static const char **
-ap_list_get_sorted_paths (NMDeviceWifi *self, gboolean include_without_ssid)
-{
-	gpointer *list;
-	gsize i, j;
-
-	list = (gpointer *) ap_list_get_sorted (self, include_without_ssid);
-	for (i = 0, j = 0; list[i]; i++) {
-		NMWifiAP *ap = list[i];
-		const char *path;
-
-		/* update @list inplace to hold instead the export-path. */
-		path = nm_exported_object_get_path (NM_EXPORTED_OBJECT (ap));
-		nm_assert (path);
-		list[j++] = (gpointer) path;
-	}
-	return (const char **) list;
-}
-
 static void
 impl_device_wifi_get_access_points (NMDeviceWifi *self,
                                     GDBusMethodInvocation *context)
 {
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	gs_free const char **list = NULL;
 	GVariant *v;
 
-	list = ap_list_get_sorted_paths (self, FALSE);
+	list = nm_wifi_aps_get_sorted_paths (priv->aps, FALSE);
 	v = g_variant_new_objv (list, -1);
 	g_dbus_method_invocation_return_value (context, g_variant_new_tuple (&v, 1));
 }
@@ -1128,10 +1014,11 @@ static void
 impl_device_wifi_get_all_access_points (NMDeviceWifi *self,
                                         GDBusMethodInvocation *context)
 {
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	gs_free const char **list = NULL;
 	GVariant *v;
 
-	list = ap_list_get_sorted_paths (self, TRUE);
+	list = nm_wifi_aps_get_sorted_paths (priv->aps, TRUE);
 	v = g_variant_new_objv (list, -1);
 	g_dbus_method_invocation_return_value (context, g_variant_new_tuple (&v, 1));
 }
@@ -1616,7 +1503,7 @@ ap_list_dump (gpointer user_data)
 		       now_s,
 		       priv->last_scan,
 		       priv->scheduled_scan_time);
-		list = ap_list_get_sorted (self, TRUE);
+		list = nm_wifi_aps_get_sorted (priv->aps, TRUE);
 		for (i = 0; list[i]; i++)
 			_ap_dump (self, LOGL_DEBUG, list[i], "dump", now_s);
 	}
@@ -2658,7 +2545,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		if (ap)
 			goto done;
 
-		ap = find_first_compatible_ap (self, connection, FALSE);
+		ap = nm_wifi_aps_find_first_compatible (priv->aps, connection, FALSE);
 	}
 
 	if (ap) {
@@ -3291,7 +3178,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->capabilities);
 		break;
 	case PROP_ACCESS_POINTS:
-		list = (char **) ap_list_get_sorted_paths (self, TRUE);
+		list = (char **) nm_wifi_aps_get_sorted_paths (priv->aps, TRUE);
 		for (i = 0; list[i]; i++)
 			list[i] = g_strdup (list[i]);
 		g_value_take_boxed (value, list);

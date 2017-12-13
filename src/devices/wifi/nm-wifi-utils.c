@@ -782,3 +782,35 @@ nm_wifi_utils_level_to_quality (gint val)
 	return CLAMP (val, 0, 100);
 }
 
+gboolean
+nm_wifi_utils_is_manf_default_ssid (const GByteArray *ssid)
+{
+	int i;
+	/*
+	 * List of manufacturer default SSIDs that are often unchanged by users.
+	 *
+	 * NOTE: this list should *not* contain networks that you would like to
+	 * automatically roam to like "Starbucks" or "AT&T" or "T-Mobile HotSpot".
+	 */
+	static const char *manf_defaults[] = {
+		"linksys",
+		"linksys-a",
+		"linksys-g",
+		"default",
+		"belkin54g",
+		"NETGEAR",
+		"o2DSL",
+		"WLAN",
+		"ALICE-WLAN",
+		"Speedport W 501V",
+		"TURBONETT",
+	};
+
+	for (i = 0; i < G_N_ELEMENTS (manf_defaults); i++) {
+		if (ssid->len == strlen (manf_defaults[i])) {
+			if (memcmp (manf_defaults[i], ssid->data, ssid->len) == 0)
+				return TRUE;
+		}
+	}
+	return FALSE;
+}
