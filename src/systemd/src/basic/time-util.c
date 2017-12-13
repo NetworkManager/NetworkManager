@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: LGPL-2.1+ */
 /***
   This file is part of systemd.
 
@@ -897,7 +898,7 @@ int parse_timestamp(const char *t, usec_t *usec) {
         if (last_space != NULL && timezone_is_valid(last_space + 1))
                 tz = last_space + 1;
 
-        if (tz == NULL || endswith_no_case(t, " UTC"))
+        if (!tz || endswith_no_case(t, " UTC"))
                 return parse_timestamp_impl(t, usec, false);
 
         shared = mmap(NULL, sizeof *shared, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, -1, 0);
@@ -1387,8 +1388,7 @@ bool clock_supported(clockid_t clock) {
                 if (!clock_boottime_supported())
                         return false;
 
-                /* fall through */
-
+                _fallthrough_;
         default:
                 /* For everything else, check properly */
                 return clock_gettime(clock, &ts) >= 0;
@@ -1462,5 +1462,11 @@ usec_t usec_shift_clock(usec_t x, clockid_t from, clockid_t to) {
         else
                 /* x lies in the past */
                 return usec_sub_unsigned(b, usec_sub_unsigned(a, x));
+}
+
+bool in_utc_timezone(void) {
+        tzset();
+
+        return timezone == 0 && daylight == 0;
 }
 #endif /* NM_IGNORED */

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: LGPL-2.1+ */
 /***
   This file is part of systemd.
 
@@ -106,7 +107,6 @@ int rmdir_parents(const char *path, const char *stop) {
 
         return 0;
 }
-
 
 int rename_noreplace(int olddirfd, const char *oldpath, int newdirfd, const char *newpath) {
         struct stat buf;
@@ -516,7 +516,7 @@ static int getenv_tmp_dir(const char **ret_path) {
                         r = -ENOTDIR;
                         goto next;
                 }
-                if (!path_is_safe(e)) {
+                if (!path_is_normalized(e)) {
                         r = -EPERM;
                         goto next;
                 }
@@ -628,10 +628,7 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
          * Suggested usage: whenever you want to canonicalize a path, use this function. Pass the absolute path you got
          * as-is: fully qualified and relative to your host's root. Optionally, specify the root parameter to tell this
          * function what to do when encountering a symlink with an absolute path as directory: prefix it by the
-         * specified path.
-         *
-         * Note: there's also chase_symlinks_prefix() (see below), which as first step prefixes the passed path by the
-         * passed root. */
+         * specified path. */
 
         if (original_root) {
                 r = path_make_absolute_cwd(original_root, &root);
@@ -668,9 +665,18 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
 
                 todo += m;
 
-                /* Just a single slash? Then we reached the end. */
-                if (isempty(first) || path_equal(first, "/"))
+                /* Empty? Then we reached the end. */
+                if (isempty(first))
                         break;
+
+                /* Just a single slash? Then we reached the end. */
+                if (path_equal(first, "/")) {
+                        /* Preserve the trailing slash */
+                        if (!strextend(&done, "/", NULL))
+                                return -ENOMEM;
+
+                        break;
+                }
 
                 /* Just a dot? Then let's eat this up. */
                 if (path_equal(first, "/."))
@@ -714,11 +720,15 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
 
                         if (errno == ENOENT &&
                             (flags & CHASE_NONEXISTENT) &&
-                            (isempty(todo) || path_is_safe(todo))) {
+                            (isempty(todo) || path_is_normalized(todo))) {
 
                                 /* If CHASE_NONEXISTENT is set, and the path does not exist, then that's OK, return
                                  * what we got so far. But don't allow this if the remaining path contains "../ or "./"
                                  * or something else weird. */
+
+                                /* If done is "/", as first also contains slash at the head, then remove this redundant slash. */
+                                if (streq_ptr(done, "/"))
+                                        *done = '\0';
 
                                 if (!strextend(&done, first, todo, NULL))
                                         return -ENOMEM;
@@ -733,7 +743,7 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
                 if (fstat(child, &st) < 0)
                         return -errno;
                 if ((flags & CHASE_NO_AUTOFS) &&
-                    fd_check_fstype(child, AUTOFS_SUPER_MAGIC) > 0)
+                    fd_is_fs_type(child, AUTOFS_SUPER_MAGIC) > 0)
                         return -EREMOTE;
 
                 if (S_ISLNK(st.st_mode)) {
@@ -792,6 +802,10 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
                         done = first;
                         first = NULL;
                 } else {
+                        /* If done is "/", as first also contains slash at the head, then remove this redundant slash. */
+                        if (streq(done, "/"))
+                                *done = '\0';
+
                         if (!strextend(&done, first, NULL))
                                 return -ENOMEM;
                 }
@@ -815,5 +829,20 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
         }
 
         return exists;
+}
+
+int access_fd(int fd, int mode) {
+        char p[strlen("/proc/self/fd/") + DECIMAL_STR_MAX(fd) + 1];
+        int r;
+
+        /* Like access() but operates on an already open fd */
+
+        xsprintf(p, "/proc/self/fd/%i", fd);
+
+        r = access(p, mode);
+        if (r < 0)
+                r = -errno;
+
+        return r;
 }
 #endif /* NM_IGNORED */

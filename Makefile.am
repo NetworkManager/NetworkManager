@@ -1204,14 +1204,17 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/sd-adapt/condition.h \
 	src/systemd/sd-adapt/conf-parser.h \
 	src/systemd/sd-adapt/def.h \
+	src/systemd/sd-adapt/device-nodes.h \
 	src/systemd/sd-adapt/dirent-util.h \
 	src/systemd/sd-adapt/env-util.h \
 	src/systemd/sd-adapt/errno-list.h \
 	src/systemd/sd-adapt/format-util.h \
+	src/systemd/sd-adapt/glob-util.h \
 	src/systemd/sd-adapt/gunicode.h \
 	src/systemd/sd-adapt/ioprio.h \
 	src/systemd/sd-adapt/khash.h \
 	src/systemd/sd-adapt/libudev.h \
+	src/systemd/sd-adapt/memfd-util.h \
 	src/systemd/sd-adapt/missing.h \
 	src/systemd/sd-adapt/mkdir.h \
 	src/systemd/sd-adapt/raw-clone.h \
@@ -1221,7 +1224,6 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/sd-adapt/udev.h \
 	src/systemd/sd-adapt/user-util.h \
 	src/systemd/sd-adapt/virt.h \
-	src/systemd/sd-adapt/glob-util.h \
 	src/systemd/src/basic/alloc-util.c \
 	src/systemd/src/basic/alloc-util.h \
 	src/systemd/src/basic/async.h \

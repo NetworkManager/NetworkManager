@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: LGPL-2.1+ */
 #pragma once
 
 /***
@@ -98,3 +99,5 @@ static inline void unlink_and_free(char *p) {
         free(p);
 }
 DEFINE_TRIVIAL_CLEANUP_FUNC(char*, unlink_and_free);
+
+int access_fd(int fd, int mode);

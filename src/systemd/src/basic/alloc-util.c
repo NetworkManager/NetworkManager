@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: LGPL-2.1+ */
 /***
   This file is part of systemd.
 
@@ -39,7 +40,7 @@ void* memdup(const void *p, size_t l) {
         return ret;
 }
 
-void* memdup_suffix0(const void*p, size_t l) {
+void* memdup_suffix0(const void *p, size_t l) {
         void *ret;
 
         assert(l == 0 || p);

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: LGPL-2.1+ */
 /***
   This file is part of systemd.
 
@@ -201,7 +202,6 @@ int fd_wait_for_event(int fd, int event, usec_t t) {
         r = ppoll(&pollfd, 1, t == USEC_INFINITY ? NULL : timespec_store(&ts, t), NULL);
         if (r < 0)
                 return -errno;
-
         if (r == 0)
                 return 0;
 

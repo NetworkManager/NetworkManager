@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: LGPL-2.1+ */
 /***
   This file is part of systemd.
 
@@ -394,9 +395,7 @@ static int lease_parse_domain(const uint8_t *option, size_t len, char **ret) {
         if (dns_name_is_root(normalized))
                 return -EINVAL;
 
-        free(*ret);
-        *ret = normalized;
-        normalized = NULL;
+        free_and_replace(*ret, normalized);
 
         return 0;
 }
@@ -685,9 +684,7 @@ int dhcp_lease_parse_options(uint8_t code, uint8_t len, const void *option, void
                         return 0;
                 }
 
-                free(lease->timezone);
-                lease->timezone = tz;
-                tz = NULL;
+                free_and_replace(lease->timezone, tz);
 
                 break;
         }

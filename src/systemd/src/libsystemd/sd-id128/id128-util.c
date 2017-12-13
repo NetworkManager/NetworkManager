@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: LGPL-2.1+ */
 /***
   This file is part of systemd.
 
@@ -120,7 +121,7 @@ int id128_read_fd(int fd, Id128Format f, sd_id128_t *ret) {
                 if (buffer[32] != '\n')
                         return -EINVAL;
 
-                /* fall through */
+                _fallthrough_;
         case 32: /* plain UUID without trailing newline */
                 if (f == ID128_UUID)
                         return -EINVAL;
@@ -132,7 +133,7 @@ int id128_read_fd(int fd, Id128Format f, sd_id128_t *ret) {
                 if (buffer[36] != '\n')
                         return -EINVAL;
 
-                /* fall through */
+                _fallthrough_;
         case 36: /* RFC UUID without trailing newline */
                 if (f == ID128_PLAIN)
                         return -EINVAL;
