@@ -1040,7 +1040,7 @@ _hw_addr_set_scanning (NMDeviceWifi *self, gboolean do_reset)
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
 	randomize = nm_config_data_get_device_config_boolean (NM_CONFIG_GET_DATA,
-	                                                      "wifi.scan-rand-mac-address",
+	                                                      NM_CONFIG_KEYFILE_KEY_DEVICE_WIFI_SCAN_RAND_MAC_ADDRESS,
 	                                                      device,
 	                                                      TRUE, TRUE);
 
