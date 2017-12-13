@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: LGPL-2.1+ */
 /***
   This file is part of systemd.
 
@@ -70,7 +71,7 @@ int ether_addr_from_string(const char *s, struct ether_addr *ret, size_t *offset
                         if (s[pos] == '\0')                     \
                                 break;                          \
                         hexoff = strchr(hex, s[pos]);           \
-                        if (hexoff == NULL)                     \
+                        if (!hexoff)                            \
                                 break;                          \
                         assert(hexoff >= hex);                  \
                         x = hexoff - hex;                       \
@@ -98,7 +99,7 @@ int ether_addr_from_string(const char *s, struct ether_addr *ret, size_t *offset
         sep = s[strspn(s, hex)];
         if (sep == '\n')
                 return -EINVAL;
-        if (strchr(":.-", sep) == NULL)
+        if (!strchr(":.-", sep))
                 return -EINVAL;
 
         if (sep == '.') {

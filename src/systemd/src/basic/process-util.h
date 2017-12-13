@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: LGPL-2.1+ */
 #pragma once
 
 /***
@@ -137,3 +138,5 @@ static inline bool pid_is_valid(pid_t p) {
 int ioprio_parse_priority(const char *s, int *ret);
 
 pid_t getpid_cached(void);
+
+int must_be_root(void);

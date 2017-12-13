@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: LGPL-2.1+ */
 /***
   This file is part of systemd.
 
@@ -29,7 +30,9 @@
 #include "dhcp6-internal.h"
 #include "dhcp6-lease-internal.h"
 #include "dhcp6-protocol.h"
+#include "dns-domain.h"
 #include "fd-util.h"
+#include "hostname-util.h"
 #include "in-addr-util.h"
 #include "network-internal.h"
 #include "random-util.h"
@@ -59,6 +62,7 @@ struct sd_dhcp6_client {
         be16_t *req_opts;
         size_t req_opts_allocated;
         size_t req_opts_len;
+        char *fqdn;
         sd_event_source *receive_message;
         usec_t retransmit_time;
         uint8_t retransmit_count;
@@ -231,6 +235,20 @@ int sd_dhcp6_client_set_iaid(sd_dhcp6_client *client, uint32_t iaid) {
         return 0;
 }
 
+int sd_dhcp6_client_set_fqdn(
+                sd_dhcp6_client *client,
+                const char *fqdn) {
+
+        assert_return(client, -EINVAL);
+
+        /* Make sure FQDN qualifies as DNS and as Linux hostname */
+        if (fqdn &&
+            !(hostname_is_valid(fqdn, false) && dns_name_is_valid(fqdn) > 0))
+                return -EINVAL;
+
+        return free_and_strdup(&client->fqdn, fqdn);
+}
+
 int sd_dhcp6_client_set_information_request(sd_dhcp6_client *client, int enabled) {
         assert_return(client, -EINVAL);
         assert_return(IN_SET(client->state, DHCP6_STATE_STOPPED), -EBUSY);
@@ -389,6 +407,12 @@ static int client_send_message(sd_dhcp6_client *client, usec_t time_now) {
                 if (r < 0)
                         return r;
 
+                if (client->fqdn) {
+                        r = dhcp6_option_append_fqdn(&opt, &optlen, client->fqdn);
+                        if (r < 0)
+                                return r;
+                }
+
                 break;
 
         case DHCP6_STATE_REQUEST:
@@ -409,6 +433,12 @@ static int client_send_message(sd_dhcp6_client *client, usec_t time_now) {
                 if (r < 0)
                         return r;
 
+                if (client->fqdn) {
+                        r = dhcp6_option_append_fqdn(&opt, &optlen, client->fqdn);
+                        if (r < 0)
+                                return r;
+                }
+
                 break;
 
         case DHCP6_STATE_REBIND:
@@ -417,6 +447,12 @@ static int client_send_message(sd_dhcp6_client *client, usec_t time_now) {
                 r = dhcp6_option_append_ia(&opt, &optlen, &client->lease->ia);
                 if (r < 0)
                         return r;
+
+                if (client->fqdn) {
+                        r = dhcp6_option_append_fqdn(&opt, &optlen, client->fqdn);
+                        if (r < 0)
+                                return r;
+                }
 
                 break;
 
@@ -999,7 +1035,7 @@ static int client_receive_message(
                         break;
                 }
 
-                /* fall through */ /* for Soliciation Rapid Commit option check */
+                _fallthrough_; /* for Soliciation Rapid Commit option check */
         case DHCP6_STATE_REQUEST:
         case DHCP6_STATE_RENEW:
         case DHCP6_STATE_REBIND:
@@ -1064,7 +1100,7 @@ static int client_start(sd_dhcp6_client *client, enum DHCP6State state) {
                         return 0;
                 }
 
-                /* fall through */
+                _fallthrough_;
         case DHCP6_STATE_SOLICITATION:
                 client->state = DHCP6_STATE_SOLICITATION;
 
@@ -1300,6 +1336,7 @@ sd_dhcp6_client *sd_dhcp6_client_unref(sd_dhcp6_client *client) {
         sd_dhcp6_client_detach_event(client);
 
         free(client->req_opts);
+        free(client->fqdn);
         return mfree(client);
 }
 

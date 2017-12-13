@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: LGPL-2.1+ */
 #pragma once
 
 /***
@@ -178,7 +179,9 @@ char *strreplace(const char *text, const char *old_string, const char *new_strin
 
 char *strip_tab_ansi(char **p, size_t *l);
 
-char *strextend(char **x, ...) _sentinel_;
+char *strextend_with_separator(char **x, const char *separator, ...) _sentinel_;
+
+#define strextend(x, ...) strextend_with_separator(x, NULL, __VA_ARGS__)
 
 char *strrep(const char *s, unsigned n);
 

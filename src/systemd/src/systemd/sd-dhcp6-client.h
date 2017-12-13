@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: LGPL-2.1+ */
 #ifndef foosddhcp6clienthfoo
 #define foosddhcp6clienthfoo
 
@@ -68,6 +69,8 @@ enum {
 
         /* option code 35 is unassigned */
 
+        SD_DHCP6_OPTION_FQDN                       = 39,  /* RFC 4704 */
+
         SD_DHCP6_OPTION_NTP_SERVER                 = 56,  /* RFC 5908 */
 
         /* option codes 89-142 are unassigned */
@@ -101,6 +104,9 @@ int sd_dhcp6_client_set_duid(
 int sd_dhcp6_client_set_iaid(
                 sd_dhcp6_client *client,
                 uint32_t iaid);
+int sd_dhcp6_client_set_fqdn(
+                sd_dhcp6_client *client,
+                const char *fqdn);
 int sd_dhcp6_client_set_information_request(
                 sd_dhcp6_client *client,
                 int enabled);

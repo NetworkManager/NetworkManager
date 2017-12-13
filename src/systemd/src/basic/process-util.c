@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: LGPL-2.1+ */
 /***
   This file is part of systemd.
 
@@ -1050,6 +1051,15 @@ pid_t getpid_cached(void) {
         default: /* Properly initialized */
                 return current_value;
         }
+}
+
+int must_be_root(void) {
+
+        if (geteuid() == 0)
+                return 0;
+
+        log_error("Need to be root.");
+        return -EPERM;
 }
 
 static const char *const ioprio_class_table[] = {
