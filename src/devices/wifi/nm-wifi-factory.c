@@ -110,7 +110,11 @@ create_device (NMDeviceFactory *factory,
 	                                                      NULL);
 	nm_strstrip (backend);
 
-	nm_log_dbg (LOGD_PLATFORM | LOGD_WIFI, "(%s) config: backend is %s, %i", iface, backend, WITH_IWD);
+	nm_log_dbg (LOGD_PLATFORM | LOGD_WIFI,
+	            "(%s) config: backend is %s%s%s%s",
+	            iface,
+	            NM_PRINT_FMT_QUOTE_STRING (backend),
+	            WITH_IWD ? " (iwd support enabled)" : "");
 	if (!backend || !strcasecmp (backend, "wpa_supplicant"))
 		return nm_device_wifi_new (iface, capabilities);
 #if WITH_IWD
