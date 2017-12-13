@@ -927,6 +927,15 @@ managed=1
             </para>
           </listitem>
         </varlistentry>
+        <varlistentry id="wifi.backend">
+          <term><varname>wifi.backend</varname></term>
+          <listitem>
+            <para>
+              Specify the Wi-Fi backend used for the device. Currently supported
+              are <literal>wpa_supplicant</literal> and <literal>iwd</literal> (experimental).
+            </para>
+          </listitem>
+        </varlistentry>
         <varlistentry>
           <term><varname>wifi.scan-generate-mac-address-mask</varname></term>
           <listitem>
