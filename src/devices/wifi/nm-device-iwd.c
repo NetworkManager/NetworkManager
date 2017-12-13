@@ -737,7 +737,6 @@ dbus_request_scan_cb (NMDevice *device,
 	NMDeviceIwd *self = NM_DEVICE_IWD (device);
 	NMDeviceIwdPrivate *priv;
 	gs_unref_variant GVariant *scan_options = user_data;
-	gs_unref_ptrarray GPtrArray *ssids = NULL;
 
 	if (error) {
 		g_dbus_method_invocation_return_gerror (context, error);
@@ -1028,7 +1027,6 @@ network_connect_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	NMDeviceIwd *self = user_data;
 	NMDevice *device = NM_DEVICE (self);
 	gs_free_error GError *error = NULL;
-	gs_unref_variant GVariant *variant = NULL;
 	NMConnection *connection;
 	NMSettingWireless *s_wifi;
 	GBytes *ssid;
