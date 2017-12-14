@@ -11,7 +11,7 @@ deps = [
 ]
 
 cflags = [
-  '-DBUILD_DIR="@0@"'.format(meson.current_source_dir()),
+  '-DBUILD_DIR="@0@"'.format(meson.current_build_dir()),
   '-DTEST_CERT_DIR="@0@"'.format(test_cert_dir)
 ]
 
