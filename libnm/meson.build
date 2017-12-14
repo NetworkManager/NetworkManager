@@ -259,9 +259,6 @@ if enable_introspection
     )
   endif
 
-  # FIXME: uses the following variables
-  # GI_TYPELIB_PATH=$(abs_builddir)/libnm$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH};',
-  # LD_LIBRARY_PATH=$(abs_builddir)/libnm/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH};',
   generate_setting_docs = join_paths(meson.current_source_dir(), 'generate-setting-docs.py')
 
   name = 'nm-property-docs.xml'
@@ -269,46 +266,18 @@ if enable_introspection
     name,
     input: libnm_gir[0],
     output: name,
-    command: [generate_setting_docs, '--gir', '@INPUT@', '--output', '@OUTPUT@']
+    command: [generate_setting_docs, '--lib-path', meson.current_build_dir(), '--gir', '@INPUT@', '--output', '@OUTPUT@'],
+    depends: libnm
   )
-
-  # FIXME: the makefile command
-  '''
-  # When the python scripts loads libnm and the address sanitizers is
-  # enabled, we must LD_PRELOAD libasan otherwise it will complain that
-  # it was not loaded as initial library.
-    'nm-property-docs.xml: libnm/generate-setting-docs.py $(libnm_docs_sources) | libnm/NM-1.0.gir libnm/NM-1.0.typelib libnm/libnm.la
-    $(AM_V_GEN)',
-    export GI_TYPELIB_PATH=$(abs_builddir)/libnm$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH};',
-    export LD_LIBRARY_PATH=$(abs_builddir)/libnm/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH};',
-    $(call set_sanitizer_env,$(abs_builddir)/libnm/.libs/libnm.so);',
-    "$(PYTHON)"',
-    $(srcdir)/libnm/generate-setting-docs.py',
-      --gir $(builddir)/libnm/NM-1.0.gir',
-      --output $@
-  '''
 
   name = 'nm-settings-docs.xml'
   nm_settings_docs = custom_target(
     name,
     input: libnm_gir[0],
     output: name,
-    command: [generate_setting_docs, '--gir', '@INPUT@', '--overrides', nm_settings_docs_overrides, '--output', '@OUTPUT@']
+    command: [generate_setting_docs, '--lib-path', meson.current_build_dir(), '--gir', '@INPUT@', '--overrides', nm_settings_docs_overrides, '--output', '@OUTPUT@'],
+    depends: libnm
   )
-
-  # FIXME: the makefile command
-  '''
-    'nm-settings-docs.xml: libnm/generate-setting-docs.py libnm/nm-settings-docs-overrides.xml $(libnm_docs_sources) | libnm/NM-1.0.gir libnm/NM-1.0.typelib libnm/libnm.la
-    $(AM_V_GEN)',
-    export GI_TYPELIB_PATH=$(abs_builddir)/libnm$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH};',
-    export LD_LIBRARY_PATH=$(abs_builddir)/libnm/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH};',
-    $(call set_sanitizer_env,$(abs_builddir)/libnm/.libs/libnm.so);',
-    "$(PYTHON)"',
-    $(srcdir)/libnm/generate-setting-docs.py',
-      --gir $(builddir)/libnm/NM-1.0.gir',
-      --overrides $(word 2,$^)',
-      --output $@
-  '''
 endif
 
 if enable_tests
