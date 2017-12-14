@@ -50,10 +50,8 @@ test_cert_dir = join_paths(meson.current_source_dir(), 'certs')
 cflags = '-DTEST_CERT_DIR="@0@"'.format(test_cert_dir)
 
 foreach test_unit: test_units
-  name = 'libnm-core-' + test_unit
-
   exe = executable(
-    name,
+    'libnm-core-' + test_unit,
     [test_unit + '.c', enums_c, enums_h],
     include_directories: incs,
     dependencies: glib_dep,
@@ -61,5 +59,5 @@ foreach test_unit: test_units
     link_with: libnm_core
   )
 
-  test(name, exe)
+  test(test_unit, exe)
 endforeach

@@ -12,24 +12,21 @@ test_units = [
 ]
 
 foreach test_unit: test_units
-  name = 'tests-' + test_unit
-
   exe = executable(
-    name,
+    test_unit,
     test_unit + '.c',
     dependencies: test_core_dep
   )
 
-  test(name, exe)
+  test(test_unit, exe)
 endforeach
 
 test_unit = 'test-systemd'
-name = 'tests-' + test_unit
 
 cflags = '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD'
 
 exe = executable(
-  name,
+  test_unit,
   [test_unit + '.c', libnm_core_enums_h] + shared_siphash,
   include_directories: core_incs,
   dependencies: glib_dep,
@@ -37,4 +34,4 @@ exe = executable(
   link_with: libsystemd_nm
 )
 
-test(name, exe)
+test(test_unit, exe)

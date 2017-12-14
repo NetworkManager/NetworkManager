@@ -35,10 +35,8 @@ test_units = [
 ]
 
 foreach test_unit: test_units
-  name = 'libnm-utils-' + test_unit[0]
-
   exe = executable(
-    name,
+    'libnm-util-' + test_unit[0],
     [test_unit[0] + '.c', libnm_utils_enums_h],
     include_directories: incs,
     dependencies: deps,
@@ -47,5 +45,5 @@ foreach test_unit: test_units
     link_depends: test_unit[2]
   )
 
-  test(name, exe)
+  test(test_unit[0], exe)
 endforeach

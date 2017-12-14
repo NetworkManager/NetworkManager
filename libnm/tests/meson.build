@@ -23,10 +23,8 @@ cflags = [
 ]
 
 foreach test_unit: test_units
-  name = 'libnm-' + test_unit[0]
-
   exe = executable(
-    name,
+    'libnm-' + test_unit[0],
     [test_unit[0] + '.c'] + test_unit[1],
     include_directories: incs,
     dependencies: deps,
@@ -34,7 +32,7 @@ foreach test_unit: test_units
     link_with: test_unit[2]
   )
 
-  test(name, exe)
+  test(test_unit[0], exe)
 endforeach
 
 incs = [

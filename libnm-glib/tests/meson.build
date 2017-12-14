@@ -22,15 +22,13 @@ test_units = [
 ]
 
 foreach test_unit: test_units
-  name = 'libnm-glib-' + test_unit
-
   exe = executable(
-    name,
+    test_unit,
     [test_unit + '.c', libnm_utils_enums_h] + shared_test_utils,
     include_directories: incs,
     dependencies: deps,
     c_args: cflags
   )
 
-  test(name, exe)
+  test(test_unit, exe)
 endforeach
