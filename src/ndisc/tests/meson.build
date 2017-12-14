@@ -1,15 +1,19 @@
-test_units = [
-  'test-ndisc-fake',
-  'test-ndisc-linux'
-]
+test_unit = 'test-ndisc-fake'
 
-foreach test_unit: test_units
-  exe = executable(
-    test_unit,
-    test_unit + '.c',
-    dependencies: test_core_dep,
-    c_args: test_cflags_platform
-  )
+exe = executable(
+  test_unit,
+  test_unit + '.c',
+  dependencies: test_core_dep,
+  c_args: test_cflags_platform
+)
 
-  test(test_unit, exe)
-endforeach
+test(test_unit, exe)
+
+test = 'test-ndisc-linux'
+
+exe = executable(
+  test,
+  test + '.c',
+  dependencies: test_core_dep,
+  c_args: test_cflags_platform
+)
