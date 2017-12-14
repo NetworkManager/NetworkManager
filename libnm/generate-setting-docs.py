@@ -183,6 +183,7 @@ def usage():
     exit()
 
 parser = argparse.ArgumentParser()
+parser.add_argument('-l', '--lib-path', metavar='PATH', action='append', help='path to scan for shared libraries')
 parser.add_argument('-g', '--gir', metavar='FILE', help='NM-1.0.gir file')
 parser.add_argument('-x', '--overrides', metavar='FILE', help='documentation overrides file')
 parser.add_argument('-o', '--output', metavar='FILE', help='output file')
@@ -190,6 +191,10 @@ parser.add_argument('-o', '--output', metavar='FILE', help='output file')
 args = parser.parse_args()
 if args.gir is None or args.output is None:
     usage()
+
+if args.lib_path:
+    for lib in args.lib_path:
+        GIRepository.Repository.prepend_library_path(lib)
 
 girxml = ET.parse(args.gir).getroot()
 outfile = open(args.output, mode='w')
