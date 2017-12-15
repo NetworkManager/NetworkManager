@@ -399,6 +399,29 @@ deactivate (NMDevice *device)
 	cleanup_association_attempt (NM_DEVICE_IWD (device), TRUE);
 }
 
+static NMIwdNetworkSecurity
+get_connection_iwd_security (NMConnection *connection)
+{
+	NMSettingWirelessSecurity *s_wireless_sec;
+	const char *key_mgmt = NULL;
+
+	s_wireless_sec = nm_connection_get_setting_wireless_security (connection);
+	if (!s_wireless_sec)
+		return NM_IWD_NETWORK_SECURITY_NONE;
+
+	key_mgmt = nm_setting_wireless_security_get_key_mgmt (s_wireless_sec);
+	nm_assert (key_mgmt);
+
+	if (!strcmp (key_mgmt, "none") || !strcmp (key_mgmt, "ieee8021x"))
+		return NM_IWD_NETWORK_SECURITY_WEP;
+
+	if (!strcmp (key_mgmt, "wpa-psk"))
+		return NM_IWD_NETWORK_SECURITY_PSK;
+
+	nm_assert (!strcmp (key_mgmt, "wpa-eap"));
+	return NM_IWD_NETWORK_SECURITY_8021X;
+}
+
 static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
@@ -1029,6 +1052,7 @@ network_connect_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	NMConnection *connection;
 	NMSettingWireless *s_wifi;
 	GBytes *ssid;
+	gs_free gchar *str_ssid = NULL;
 
 	if (!_nm_dbus_proxy_call_finish (G_DBUS_PROXY (source), res,
 	                                 G_VARIANT_TYPE ("()"),
@@ -1083,11 +1107,17 @@ network_connect_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	if (!ssid)
 		goto failed;
 
+	str_ssid = nm_utils_ssid_to_utf8 (g_bytes_get_data (ssid, NULL),
+	                                  g_bytes_get_size (ssid));
+
 	_LOGI (LOGD_DEVICE | LOGD_WIFI,
 	       "Activation: (wifi) Stage 2 of 5 (Device Configure) successful.  Connected to '%s'.",
-	       ssid ? nm_utils_escape_ssid (g_bytes_get_data (ssid, NULL),
-	                                    g_bytes_get_size (ssid)) : "(none)");
+	       str_ssid);
 	nm_device_activate_schedule_stage3_ip_config_start (device);
+
+	nm_iwd_manager_network_connected (nm_iwd_manager_get (), str_ssid,
+	                                  get_connection_iwd_security (connection));
+
 	return;
 
 failed:
