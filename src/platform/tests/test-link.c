@@ -2230,7 +2230,7 @@ test_netns_push (gpointer fixture, gconstpointer test_data)
 		p = pl_base;
 		for (j = nstack; j >= 1; ) {
 			j--;
-			if (NM_FLAGS_HAS (stack[j].ns_types, ns_type)) {
+			if (NM_FLAGS_ANY (stack[j].ns_types, ns_type)) {
 				p = stack[j].pl;
 				break;
 			}

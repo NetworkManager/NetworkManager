@@ -663,7 +663,7 @@ _nm_log_impl (const char *file,
 				NMLogDomain dom = dom_all & _nm_logging_enabled_state[level];
 
 				for (diter = &global.domain_desc[0]; diter->name; diter++) {
-					if (!NM_FLAGS_HAS (dom_all, diter->num))
+					if (!NM_FLAGS_ANY (dom_all, diter->num))
 						continue;
 
 					/* construct a list of all domains (not only the enabled ones).
@@ -681,7 +681,7 @@ _nm_log_impl (const char *file,
 						g_string_append (s_domain_all, diter->name);
 					}
 
-					if (NM_FLAGS_HAS (dom, diter->num)) {
+					if (NM_FLAGS_ANY (dom, diter->num)) {
 						if (i_domain > 0) {
 							/* SYSLOG_FACILITY is specified multiple times for each domain that is actually enabled. */
 							_iovec_set_format_a (iov++, _MAX_LEN (30, diter->name), "SYSLOG_FACILITY=%s", diter->name);

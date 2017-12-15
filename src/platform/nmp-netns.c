@@ -200,8 +200,8 @@ _stack_current_ns_types (NMPNetns *netns, int ns_types)
 		}
 
 		for (i = 0; i < G_N_ELEMENTS (ns_types_check); i++) {
-			if (   NM_FLAGS_HAS (ns_types, ns_types_check[i])
-			    && NM_FLAGS_HAS (info->ns_types, ns_types_check[i])) {
+			if (   NM_FLAGS_ANY (ns_types, ns_types_check[i])
+			    && NM_FLAGS_ANY (info->ns_types, ns_types_check[i])) {
 				res = NM_FLAGS_SET (res, ns_types_check[i]);
 				ns_types = NM_FLAGS_UNSET (ns_types, ns_types_check[i]);
 			}

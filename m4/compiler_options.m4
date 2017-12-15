@@ -79,6 +79,7 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 		      -Wshift-negative-value \
 		      -Wstrict-prototypes \
 		      -Wundef \
+		      -Wvla \
 		      -Wno-duplicate-decl-specifier \
 		      -Wno-format-truncation \
 		      -Wno-format-y2k \

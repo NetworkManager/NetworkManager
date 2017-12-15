@@ -326,12 +326,18 @@ _nm_g_slice_free_fcn_define (16)
 		/* If mem_size is a compile time constant, the compiler
 		 * will be able to optimize this. Hence, you don't want
 		 * to call this with a non-constant size argument. */ \
-		switch (mem_size) { \
+		G_STATIC_ASSERT_EXPR (   ((mem_size) ==  1) \
+		                      || ((mem_size) ==  2) \
+		                      || ((mem_size) ==  4) \
+		                      || ((mem_size) ==  8) \
+		                      || ((mem_size) == 12) \
+		                      || ((mem_size) == 16)); \
+		switch ((mem_size)) { \
 		case  1: _fcn = _nm_g_slice_free_fcn_1;  break; \
 		case  2: _fcn = _nm_g_slice_free_fcn_2;  break; \
 		case  4: _fcn = _nm_g_slice_free_fcn_4;  break; \
 		case  8: _fcn = _nm_g_slice_free_fcn_8;  break; \
-		case 12: _fcn = _nm_g_slice_free_fcn_12;  break; \
+		case 12: _fcn = _nm_g_slice_free_fcn_12; break; \
 		case 16: _fcn = _nm_g_slice_free_fcn_16; break; \
 		default: g_assert_not_reached (); _fcn = NULL; break; \
 		} \

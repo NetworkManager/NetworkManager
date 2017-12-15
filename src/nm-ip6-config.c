@@ -2477,9 +2477,9 @@ nm_ip6_config_equal (const NMIP6Config *a, const NMIP6Config *b)
 {
 	GChecksum *a_checksum = g_checksum_new (G_CHECKSUM_SHA1);
 	GChecksum *b_checksum = g_checksum_new (G_CHECKSUM_SHA1);
-	gsize a_len = g_checksum_type_get_length (G_CHECKSUM_SHA1);
-	gsize b_len = g_checksum_type_get_length (G_CHECKSUM_SHA1);
-	guchar a_data[a_len], b_data[b_len];
+	guchar a_data[20], b_data[20];
+	gsize a_len = sizeof (a_data);
+	gsize b_len = sizeof (b_data);
 	gboolean equal;
 
 	if (a)
@@ -2490,7 +2490,8 @@ nm_ip6_config_equal (const NMIP6Config *a, const NMIP6Config *b)
 	g_checksum_get_digest (a_checksum, a_data, &a_len);
 	g_checksum_get_digest (b_checksum, b_data, &b_len);
 
-	g_assert (a_len == b_len);
+	nm_assert (a_len == sizeof (a_data));
+	nm_assert (b_len == sizeof (b_data));
 	equal = !memcmp (a_data, b_data, a_len);
 
 	g_checksum_free (a_checksum);
