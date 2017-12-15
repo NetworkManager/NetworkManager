@@ -561,3 +561,17 @@ nmc_wifi_strength_bars (guint8 strength)
 	else
 		return /* ____ */ "____";
 }
+
+/**
+ * nmc_utils_password_subst_char:
+ *
+ * Returns: the string substituted when hiding actual password glyphs
+ */
+const char *
+nmc_password_subst_char (void)
+{
+	if (can_show_graphics ())
+		return "\u2022"; /* Bullet */
+	else
+		return "*";
+}

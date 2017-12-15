@@ -16,7 +16,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2012 - 2014 Red Hat, Inc.
+ * Copyright 2012 - 2017 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -26,7 +26,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <termios.h>
 #include <sys/ioctl.h>
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -880,6 +879,31 @@ nmc_readline (const char *prompt_fmt, ...)
 	return str;
 }
 
+static void
+nmc_secret_redisplay (void)
+{
+	int save_point = rl_point;
+	int save_end = rl_end;
+	char *save_line_buffer = rl_line_buffer;
+	const char *subst = nmc_password_subst_char ();
+	int subst_len = strlen (subst);
+	int i;
+
+	rl_point = g_utf8_strlen (save_line_buffer, save_point) * subst_len;
+	rl_end = g_utf8_strlen (rl_line_buffer, -1) * subst_len;
+	rl_line_buffer = g_slice_alloc (rl_end + 1);
+
+	for (i = 0; i + subst_len <= rl_end; i += subst_len)
+		memcpy (&rl_line_buffer[i], subst, subst_len);
+	rl_line_buffer[i] = '\0';
+
+	rl_redisplay ();
+	g_slice_free1 (rl_end + 1, rl_line_buffer);
+	rl_line_buffer = save_line_buffer;
+	rl_end = save_end;
+	rl_point = save_point;
+}
+
 /**
  * nmc_readline_echo:
  *
@@ -891,7 +915,6 @@ nmc_readline_echo (gboolean echo_on, const char *prompt_fmt, ...)
 {
 	va_list args;
 	char *prompt, *str;
-	struct termios termios_orig, termios_new;
 	HISTORY_STATE *saved_history;
 	HISTORY_STATE passwd_history = { 0, };
 
@@ -899,25 +922,20 @@ nmc_readline_echo (gboolean echo_on, const char *prompt_fmt, ...)
 	prompt = g_strdup_vprintf (prompt_fmt, args);
 	va_end (args);
 
-	/* Disable echoing characters */
+	/* Hide the actual password */
 	if (!echo_on) {
 		saved_history = history_get_history_state ();
 		history_set_history_state (&passwd_history);
-		tcgetattr (STDIN_FILENO, &termios_orig);
-		termios_new = termios_orig;
-		termios_new.c_lflag &= ~(ECHO);
-		tcsetattr (STDIN_FILENO, TCSADRAIN, &termios_new);
+		rl_redisplay_function = nmc_secret_redisplay;
 	}
 
 	str = nmc_readline_helper (prompt);
 
 	g_free (prompt);
 
-	/* Restore original terminal settings */
+	/* Restore the non-hiding behavior */
 	if (!echo_on) {
-		tcsetattr (STDIN_FILENO, TCSADRAIN, &termios_orig);
-		/* New line - setting ECHONL | ICANON did not help */
-		fprintf (stdout, "\n");
+		rl_redisplay_function = rl_redisplay;
 		history_set_history_state (saved_history);
 	}
 
