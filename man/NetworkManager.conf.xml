@@ -183,13 +183,17 @@ plugins-=remove-me
         <term><varname>dhcp</varname></term>
         <listitem><para>This key sets up what DHCP client
         NetworkManager will use. Allowed values are
-        <literal>dhclient</literal>, <literal>dhcpcd</literal>, and
-        <literal>internal</literal>. The <literal>dhclient</literal>
-        and <literal>dhcpcd</literal> options require the indicated
+        <literal>dhclient</literal>, <literal>dhcpcd</literal> and
+        <literal>internal</literal>. <literal>dhcpcanon</literal>
+        (experimental) is also available when NetworkManager has
+        been compiled with "--with-dhcpcanon" option. 
+        The <literal>dhclient</literal> and <literal>dhcpcd</literal>
+        (as well as <literal>dhcpcanon</literal>)options require the indicated
         clients to be installed. The <literal>internal</literal>
         option uses a built-in DHCP client which is not currently as
         featureful as the external clients.</para>
-        <para>If this key is missing, it defaults to <literal>&NM_CONFIG_DEFAULT_MAIN_DHCP;</literal>.
+        <para>If this key is missing, it defaults to 
+        <literal>&NM_CONFIG_DEFAULT_MAIN_DHCP;</literal>.
         It the chosen plugin is not available, clients are looked for
         in this order: <literal>dhclient</literal>, <literal>dhcpcd</literal>,
         <literal>internal</literal>.</para></listitem>
