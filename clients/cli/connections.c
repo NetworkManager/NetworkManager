@@ -6656,7 +6656,7 @@ split_editor_main_cmd_args (const char *str, char **setting, char **property, ch
 		NM_SET_OUT (setting, g_strndup (cmd_arg0, s - cmd_arg0));
 		NM_SET_OUT (property, g_strdup (&s[1]));
 	} else {
-		NM_SET_OUT (property, cmd_arg0);
+		NM_SET_OUT (property, g_steal_pointer (&cmd_arg0));
 	}
 }
 
