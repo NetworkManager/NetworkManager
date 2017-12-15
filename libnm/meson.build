@@ -236,26 +236,26 @@ if enable_introspection
   name = 'nm-settings-keyfile-docs.xml'
   nm_settings_keyfile_docs = custom_target(
     name,
-    input: meson.source_root(),
+    input: libnm_core_settings_sources,
     output: name,
-    command: [perl, generate_plugin_docs, 'keyfile', '@INPUT@', '@OUTPUT@']
+    command: [perl, generate_plugin_docs, 'keyfile', '@OUTPUT@', '@INPUT@']
   )
 
   name = 'nm-settings-docs-overrides.xml'
   nm_settings_docs_overrides = custom_target(
     name,
-    input: meson.source_root(),
+    input: libnm_core_settings_sources,
     output: name,
-    command: [perl, generate_plugin_docs, 'dbus', '@INPUT@', '@OUTPUT@']
+    command: [perl, generate_plugin_docs, 'dbus', '@OUTPUT@', '@INPUT@']
   )
 
   if enable_ifcfg_rh
     name = 'nm-settings-ifcfg-rh-docs.xml'
     nm_settings_ifcfg_rh_docs = custom_target(
       name,
-      input: meson.source_root(),
+      input: libnm_core_settings_sources,
       output: name,
-      command: [perl, generate_plugin_docs, 'ifcfg-rh', '@INPUT@', '@OUTPUT@']
+      command: [perl, generate_plugin_docs, 'ifcfg-rh', '@OUTPUT@', '@INPUT@']
     )
   endif
 

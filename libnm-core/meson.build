@@ -54,16 +54,7 @@ libnm_core_headers = files(
   'nm-vpn-plugin-info.h'
 )
 
-libnm_core_sources = files(
-  'crypto.c',
-  'crypto_' + crypto + '.c',
-  'nm-connection.c',
-  'nm-dbus-utils.c',
-  'nm-errors.c',
-  'nm-keyfile-reader.c',
-  'nm-keyfile-utils.c',
-  'nm-keyfile-writer.c',
-  'nm-property-compare.c',
+libnm_core_settings_sources = files(
   'nm-setting-8021x.c',
   'nm-setting-adsl.c',
   'nm-setting-bluetooth.c',
@@ -103,7 +94,19 @@ libnm_core_sources = files(
   'nm-setting-wimax.c',
   'nm-setting-wired.c',
   'nm-setting-wireless-security.c',
-  'nm-setting-wireless.c',
+  'nm-setting-wireless.c'
+)
+
+libnm_core_sources = libnm_core_settings_sources + files(
+  'crypto.c',
+  'crypto_' + crypto + '.c',
+  'nm-connection.c',
+  'nm-dbus-utils.c',
+  'nm-errors.c',
+  'nm-keyfile-reader.c',
+  'nm-keyfile-utils.c',
+  'nm-keyfile-writer.c',
+  'nm-property-compare.c',
   'nm-setting.c',
   'nm-simple-connection.c',
   'nm-utils.c',
