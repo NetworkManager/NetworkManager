@@ -892,6 +892,8 @@ nmc_readline_echo (gboolean echo_on, const char *prompt_fmt, ...)
 	va_list args;
 	char *prompt, *str;
 	struct termios termios_orig, termios_new;
+	HISTORY_STATE *saved_history;
+	HISTORY_STATE passwd_history = { 0, };
 
 	va_start (args, prompt_fmt);
 	prompt = g_strdup_vprintf (prompt_fmt, args);
@@ -899,6 +901,8 @@ nmc_readline_echo (gboolean echo_on, const char *prompt_fmt, ...)
 
 	/* Disable echoing characters */
 	if (!echo_on) {
+		saved_history = history_get_history_state ();
+		history_set_history_state (&passwd_history);
 		tcgetattr (STDIN_FILENO, &termios_orig);
 		termios_new = termios_orig;
 		termios_new.c_lflag &= ~(ECHO);
@@ -914,6 +918,7 @@ nmc_readline_echo (gboolean echo_on, const char *prompt_fmt, ...)
 		tcsetattr (STDIN_FILENO, TCSADRAIN, &termios_orig);
 		/* New line - setting ECHONL | ICANON did not help */
 		fprintf (stdout, "\n");
+		history_set_history_state (saved_history);
 	}
 
 	return str;
