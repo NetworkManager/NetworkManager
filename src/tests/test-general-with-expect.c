@@ -167,7 +167,7 @@ test_nm_utils_kill_child_spawn (char **argv, gboolean do_not_reap_child)
 }
 
 static pid_t
-test_nm_utils_kill_child_create_and_join_pgroup (void)
+do_test_nm_utils_kill_child_create_and_join_pgroup (void)
 {
 	int err, tmp = 0;
 	int pipefd[2];
@@ -177,10 +177,7 @@ test_nm_utils_kill_child_create_and_join_pgroup (void)
 	g_assert (err == 0);
 
 	pgid = fork();
-	if (pgid < 0) {
-		g_assert_not_reached ();
-		return pgid;
-	}
+	g_assert (pgid >= 0);
 
 	if (pgid == 0) {
 		/* child process... */
@@ -205,7 +202,6 @@ test_nm_utils_kill_child_create_and_join_pgroup (void)
 
 	err = setpgid (0, pgid);
 	g_assert (err == 0);
-
 
 	do {
 		err = waitpid (pgid, &tmp, 0);
@@ -279,7 +275,6 @@ do_test_nm_utils_kill_child (void)
 
 	/* give processes time to start (and potentially block signals) ... */
 	g_usleep (G_USEC_PER_SEC / 10);
-
 
 	fatal_mask = g_log_set_always_fatal (G_LOG_FATAL_MASK);
 
@@ -365,16 +360,38 @@ static void
 test_nm_utils_kill_child (void)
 {
 	int err;
+	int exit_status;
 	pid_t gpid;
+	pid_t child_pid;
 
-	gpid = test_nm_utils_kill_child_create_and_join_pgroup ();
+	/* the tests spawns several processes, we want to clean them up
+	 * by sending a SIGKILL to the process group.
+	 *
+	 * The current process might be a session leader, which prevents it from
+	 * creating a new process group. Hence, first fork and let the child
+	 * create a new process group, run the tests, and kill all pending
+	 * processes. */
+	child_pid = fork ();
+	g_assert (child_pid >= 0);
 
-	do_test_nm_utils_kill_child ();
+	if (child_pid == 0) {
+		gpid = do_test_nm_utils_kill_child_create_and_join_pgroup ();
 
-	err = setpgid (0, 0);
-	g_assert (err == 0);
+		do_test_nm_utils_kill_child ();
 
-	kill (-gpid, SIGKILL);
+		err = setpgid (0, 0);
+		g_assert (err == 0);
+
+		kill (-gpid, SIGKILL);
+
+		exit (0);
+	};
+
+	do {
+		err = waitpid (child_pid, &exit_status, 0);
+	} while (err == -1 && errno == EINTR);
+	g_assert (err == child_pid);
+	g_assert (WIFEXITED (exit_status) && WEXITSTATUS(exit_status) == 0);
 }
 
 /*****************************************************************************/
