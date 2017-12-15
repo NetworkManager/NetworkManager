@@ -81,7 +81,7 @@ typedef struct {
 	NMMetered metered;
 	NMSettingConnectionLldp lldp;
 	gint auth_retries;
-	NMSettingConnectionMdns mdns;
+	int mdns;
 } NMSettingConnectionPrivate;
 
 enum {
@@ -1073,6 +1073,17 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		             _("metered value %d is not valid"), priv->metered);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME,
 		                NM_SETTING_CONNECTION_METERED);
+		return FALSE;
+	}
+
+	if (   priv->mdns < NM_SETTING_CONNECTION_MDNS_UNKNOWN
+	    || priv->mdns > NM_SETTING_CONNECTION_MDNS_RESOLVE) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("mdns value %d is not valid"), priv->mdns);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME,
+		                NM_SETTING_CONNECTION_MDNS);
 		return FALSE;
 	}
 
