@@ -38,6 +38,7 @@
 #include "nm-ip6-config.h"
 #include "nm-bus-manager.h"
 #include "nm-manager.h"
+#include "nm-setting-connection.h"
 #include "devices/nm-device.h"
 #include "NetworkManagerUtils.h"
 
@@ -57,6 +58,7 @@ typedef struct {
 	GDBusProxy *resolve;
 	GCancellable *init_cancellable;
 	GCancellable *update_cancellable;
+	GCancellable *mdns_cancellable;
 	GQueue dns_updates;
 	GQueue domain_updates;
 } NMDnsSystemdResolvedPrivate;
@@ -316,6 +318,45 @@ update (NMDnsPlugin *plugin,
 	return TRUE;
 }
 
+static gboolean
+update_mdns (NMDnsPlugin *plugin, int ifindex, NMSettingConnectionMdns mdns)
+{
+	NMDnsSystemdResolved *self = NM_DNS_SYSTEMD_RESOLVED (plugin);
+	NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
+	char *value;
+
+	_LOGI ("update_mdns: %i/%d", ifindex, mdns);
+
+	nm_clear_g_cancellable (&priv->mdns_cancellable);
+
+	if (!priv->resolve)
+		return FALSE;
+
+	priv->mdns_cancellable = g_cancellable_new ();
+
+	switch (mdns) {
+		case NM_SETTING_CONNECTION_MDNS_YES:
+			value = "yes";
+			break;
+		case NM_SETTING_CONNECTION_MDNS_NO:
+			value = "no";
+			break;
+		case NM_SETTING_CONNECTION_MDNS_RESOLVE:
+			value = "resolve";
+			break;
+		default:
+			/* reset to system default */
+			value = "";
+	}
+
+	g_dbus_proxy_call (priv->resolve, "SetLinkMulticastDNS",
+                           g_variant_new ("(is)", ifindex, value),
+	                   G_DBUS_CALL_FLAGS_NONE,
+	                   -1, priv->mdns_cancellable, call_done, self);
+
+	return TRUE;
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -404,6 +445,7 @@ dispose (GObject *object)
 	g_clear_object (&priv->resolve);
 	nm_clear_g_cancellable (&priv->init_cancellable);
 	nm_clear_g_cancellable (&priv->update_cancellable);
+	nm_clear_g_cancellable (&priv->mdns_cancellable);
 
 	G_OBJECT_CLASS (nm_dns_systemd_resolved_parent_class)->dispose (object);
 }
@@ -418,5 +460,6 @@ nm_dns_systemd_resolved_class_init (NMDnsSystemdResolvedClass *dns_class)
 
 	plugin_class->is_caching = is_caching;
 	plugin_class->update = update;
+	plugin_class->update_mdns = update_mdns;
 	plugin_class->get_name = get_name;
 }

@@ -60,6 +60,11 @@ typedef struct {
 	 */
 	gboolean (*is_caching) (NMDnsPlugin *self);
 
+	/* Subclasses wishing to control interface mDNS status should override. */
+	gboolean (*update_mdns) (NMDnsPlugin *self,
+	                         int ifindex,
+	                         NMSettingConnectionMdns mdns);
+
 	/* Subclasses should override this and return their plugin name */
 	const char *(*get_name) (NMDnsPlugin *self);
 
@@ -83,6 +88,10 @@ gboolean nm_dns_plugin_update (NMDnsPlugin *self,
                                const GPtrArray *configs,
                                const NMGlobalDnsConfig *global_config,
                                const char *hostname);
+
+gboolean nm_dns_plugin_update_mdns (NMDnsPlugin *self,
+                                    int ifindex,
+                                    NMSettingConnectionMdns mdns);
 
 void nm_dns_plugin_stop (NMDnsPlugin *self);
 
