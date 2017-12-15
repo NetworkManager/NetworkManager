@@ -493,6 +493,13 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	if (g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_INFRA) != 0)
 		return FALSE;
 
+	/* 8021x networks can only be used if they've been provisioned on the IWD side and
+	 * thus are Known Networks.
+	 */
+	if (get_connection_iwd_security (connection) == NM_IWD_NETWORK_SECURITY_8021X)
+		if (!is_connection_known_network (connection))
+			return FALSE;
+
 	return TRUE;
 }
 
@@ -517,6 +524,22 @@ check_connection_available (NMDevice *device,
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_return_val_if_fail (s_wifi, FALSE);
 
+	/* Only Infrastrusture mode at this time */
+	mode = nm_setting_wireless_get_mode (s_wifi);
+	if (g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_INFRA) != 0)
+		return FALSE;
+
+	/* Hidden SSIDs not supported yet */
+	if (nm_setting_wireless_get_hidden (s_wifi))
+		return FALSE;
+
+	/* 8021x networks can only be used if they've been provisioned on the IWD side and
+	 * thus are Known Networks.
+	 */
+	if (get_connection_iwd_security (connection) == NM_IWD_NETWORK_SECURITY_8021X)
+		if (!is_connection_known_network (connection))
+			return FALSE;
+
 	/* a connection that is available for a certain @specific_object, MUST
 	 * also be available in general (without @specific_object). */
 
@@ -526,15 +549,6 @@ check_connection_available (NMDevice *device,
 		ap = get_ap_by_path (self, specific_object);
 		return ap ? nm_wifi_ap_check_compatible (ap, connection) : FALSE;
 	}
-
-	/* Only Infrastrusture mode at this time */
-	mode = nm_setting_wireless_get_mode (s_wifi);
-	if (g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_INFRA) != 0)
-		return FALSE;
-
-	/* Hidden SSIDs not supported yet */
-	if (nm_setting_wireless_get_hidden (s_wifi))
-		return FALSE;
 
 	if (NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP))
 		return TRUE;
@@ -653,6 +667,18 @@ complete_connection (NMDevice *device,
 	if (tmp_ssid)
 		g_byte_array_unref (tmp_ssid);
 
+	/* 8021x networks can only be used if they've been provisioned on the IWD side and
+	 * thus are Known Networks.
+	 */
+	if (get_connection_iwd_security (connection) == NM_IWD_NETWORK_SECURITY_8021X)
+		if (!is_connection_known_network (connection)) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_DEVICE_ERROR_INVALID_CONNECTION,
+			                     "This 8021x network has not been provisioned on this machine");
+			return FALSE;
+		}
+
 	perm_hw_addr = nm_device_get_permanent_hw_address (device);
 	if (perm_hw_addr) {
 		setting_mac = nm_setting_wireless_get_mac_address (s_wifi);
@@ -726,6 +752,13 @@ can_auto_connect (NMDevice *device,
 		if (timestamp == 0)
 			return FALSE;
 	}
+
+	/* 8021x networks can only be used if they've been provisioned on the IWD side and
+	 * thus are Known Networks.
+	 */
+	if (get_connection_iwd_security (connection) == NM_IWD_NETWORK_SECURITY_8021X)
+		if (!is_connection_known_network (connection))
+			return FALSE;
 
 	ap = nm_wifi_aps_find_first_compatible (priv->aps, connection, FALSE);
 	if (ap) {
