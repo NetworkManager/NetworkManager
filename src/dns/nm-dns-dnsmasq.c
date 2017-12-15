@@ -155,6 +155,51 @@ add_dnsmasq_nameserver (NMDnsDnsmasq *self,
 	g_variant_builder_close (servers);
 }
 
+static char *
+ip6_addr_to_string (const struct in6_addr *addr, const char *iface)
+{
+	char buf[NM_UTILS_INET_ADDRSTRLEN];
+
+	if (IN6_IS_ADDR_V4MAPPED (addr))
+		nm_utils_inet4_ntop (addr->s6_addr32[3], buf);
+	else
+		nm_utils_inet6_ntop (addr, buf);
+
+	/* Need to scope link-local addresses with %<zone-id>. Before dnsmasq 2.58,
+	 * only '@' was supported as delimiter. Since 2.58, '@' and '%' are
+	 * supported. Due to a bug, since 2.73 only '%' works properly as "server"
+	 * address.
+	 */
+	return g_strdup_printf ("%s%c%s",
+	                        buf,
+	                        IN6_IS_ADDR_LINKLOCAL (addr) ? '%' : '@',
+	                        iface);
+}
+
+static void
+add_global_config (NMDnsDnsmasq *self, GVariantBuilder *dnsmasq_servers, const NMGlobalDnsConfig *config)
+{
+	guint i, j;
+
+	g_return_if_fail (config);
+
+	for (i = 0; i < nm_global_dns_config_get_num_domains (config); i++) {
+		NMGlobalDnsDomain *domain = nm_global_dns_config_get_domain (config, i);
+		const char *const *servers = nm_global_dns_domain_get_servers (domain);
+		const char *name = nm_global_dns_domain_get_name (domain);
+
+		g_return_if_fail (name);
+
+		for (j = 0; servers && servers[j]; j++) {
+			if (!strcmp (name, "*"))
+				add_dnsmasq_nameserver (self, dnsmasq_servers, servers[j], NULL);
+			else
+				add_dnsmasq_nameserver (self, dnsmasq_servers, servers[j], name);
+		}
+
+	}
+}
+
 static gboolean
 add_ip4_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP4Config *ip4,
                 const char *iface, gboolean split)
@@ -224,51 +269,6 @@ add_ip4_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP4Config *ip4,
 	}
 
 	return TRUE;
-}
-
-static char *
-ip6_addr_to_string (const struct in6_addr *addr, const char *iface)
-{
-	char buf[NM_UTILS_INET_ADDRSTRLEN];
-
-	if (IN6_IS_ADDR_V4MAPPED (addr))
-		nm_utils_inet4_ntop (addr->s6_addr32[3], buf);
-	else
-		nm_utils_inet6_ntop (addr, buf);
-
-	/* Need to scope link-local addresses with %<zone-id>. Before dnsmasq 2.58,
-	 * only '@' was supported as delimiter. Since 2.58, '@' and '%' are
-	 * supported. Due to a bug, since 2.73 only '%' works properly as "server"
-	 * address.
-	 */
-	return g_strdup_printf ("%s%c%s",
-	                        buf,
-	                        IN6_IS_ADDR_LINKLOCAL (addr) ? '%' : '@',
-	                        iface);
-}
-
-static void
-add_global_config (NMDnsDnsmasq *self, GVariantBuilder *dnsmasq_servers, const NMGlobalDnsConfig *config)
-{
-	guint i, j;
-
-	g_return_if_fail (config);
-
-	for (i = 0; i < nm_global_dns_config_get_num_domains (config); i++) {
-		NMGlobalDnsDomain *domain = nm_global_dns_config_get_domain (config, i);
-		const char *const *servers = nm_global_dns_domain_get_servers (domain);
-		const char *name = nm_global_dns_domain_get_name (domain);
-
-		g_return_if_fail (name);
-
-		for (j = 0; servers && servers[j]; j++) {
-			if (!strcmp (name, "*"))
-				add_dnsmasq_nameserver (self, dnsmasq_servers, servers[j], NULL);
-			else
-				add_dnsmasq_nameserver (self, dnsmasq_servers, servers[j], name);
-		}
-
-	}
 }
 
 static gboolean
