@@ -1727,7 +1727,8 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	guint32 n, i;
 	GString *str;
 	const char *master, *master_iface = NULL, *type;
-	gint vint, i_val;
+	gint vint;
+	NMSettingConnectionMdns mdns;
 	guint32 vuint32;
 	const char *tmp;
 
@@ -1883,10 +1884,10 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	vint = nm_setting_connection_get_auth_retries (s_con);
 	svSetValueInt64_cond (ifcfg, "AUTH_RETRIES", vint >= 0, vint);
 
-	i_val = nm_setting_connection_get_mdns (s_con);
-	if (i_val != NM_SETTING_CONNECTION_MDNS_UNKNOWN) {
+	mdns = nm_setting_connection_get_mdns (s_con);
+	if (mdns != NM_SETTING_CONNECTION_MDNS_DEFAULT) {
 		svSetValueEnum (ifcfg, "MDNS", nm_setting_connection_mdns_get_type (),
-		                i_val);
+		                mdns);
 	} else {
 		svUnsetValue (ifcfg, "MDNS");
 	}

@@ -100,20 +100,20 @@ typedef enum {
 
 /**
  * NMSettingConnectionMdns:
- * @NM_SETTING_CONNECTION_MDNS_UNKNOWN: default value
- * @NM_SETTING_CONNECTION_MDNS_YES: disable mDNS
- * @NM_SETTING_CONNECTION_MDNS_NO: enable mDNS
+ * @NM_SETTING_CONNECTION_MDNS_DEFAULT: default value
+ * @NM_SETTING_CONNECTION_MDNS_NO: disable mDNS
  * @NM_SETTING_CONNECTION_MDNS_RESOLVE: support only resolving, do not register hostname
+ * @NM_SETTING_CONNECTION_MDNS_YES: enable mDNS
  *
  * #NMSettingConnectionMdns values indicate whether mDNS should be enabled.
  *
  * Since: 1.12
  */
 typedef enum {
-	NM_SETTING_CONNECTION_MDNS_UNKNOWN = 0,
-	NM_SETTING_CONNECTION_MDNS_YES = 1,
-	NM_SETTING_CONNECTION_MDNS_NO = 2,
-	NM_SETTING_CONNECTION_MDNS_RESOLVE = 3,
+	NM_SETTING_CONNECTION_MDNS_DEFAULT      = -1,
+	NM_SETTING_CONNECTION_MDNS_NO           = 0,
+	NM_SETTING_CONNECTION_MDNS_RESOLVE      = 1,
+	NM_SETTING_CONNECTION_MDNS_YES          = 2,
 } NMSettingConnectionMdns;
 
 /**
