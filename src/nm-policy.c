@@ -1072,11 +1072,12 @@ add_connection_dns (NMPolicy *self, NMConnection *connection, const char *iface,
 	if (s_con) {
 		NMSettingConnectionMdns mdns = nm_setting_connection_get_mdns (s_con);
 
-		if (mdns != NM_SETTING_CONNECTION_MDNS_UNKNOWN)
+		if (mdns != NM_SETTING_CONNECTION_MDNS_DEFAULT) {
 			nm_dns_manager_add_connection_config (NM_POLICY_GET_PRIVATE (self)->dns_manager,
-		                                              iface,
-		                                              ifindex,
-		                                              mdns);
+			                                      iface,
+			                                      ifindex,
+			                                      mdns);
+		}
 	}
 }
 
@@ -2163,9 +2164,9 @@ vpn_connection_deactivated (NMPolicy *self, NMVpnConnection *vpn)
 
 	nm_dns_manager_end_updates (priv->dns_manager, __func__);
 
-	remove_connection_dns(self,
-	                      nm_vpn_connection_get_ip_iface (vpn, TRUE),
-	                      nm_vpn_connection_get_ip_ifindex (vpn, TRUE));
+	remove_connection_dns (self,
+	                       nm_vpn_connection_get_ip_iface (vpn, TRUE),
+	                       nm_vpn_connection_get_ip_ifindex (vpn, TRUE));
 }
 
 static void

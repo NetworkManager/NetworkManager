@@ -1445,7 +1445,10 @@ nm_dns_manager_add_connection_config (NMDnsManager *self,
 	g_return_val_if_fail (NM_IS_DNS_MANAGER (self), FALSE);
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (iface != NULL && iface[0], FALSE);
-	g_return_val_if_fail (mdns != NM_SETTING_CONNECTION_MDNS_UNKNOWN, FALSE);
+	g_return_val_if_fail (NM_IN_SET (mdns,
+	                                 NM_SETTING_CONNECTION_MDNS_NO,
+	                                 NM_SETTING_CONNECTION_MDNS_YES,
+	                                 NM_SETTING_CONNECTION_MDNS_RESOLVE), FALSE);
 
 	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 	plugin = priv->plugin;

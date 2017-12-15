@@ -231,4 +231,6 @@ typedef struct _NMSettingsConnection NMSettingsConnection;
 /* utils */
 typedef struct _NMUtilsIPv6IfaceId   NMUtilsIPv6IfaceId;
 
+#define NM_SETTING_CONNECTION_MDNS_UNKNOWN ((NMSettingConnectionMdns) -42)
+
 #endif  /* NM_TYPES_H */

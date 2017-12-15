@@ -876,7 +876,7 @@ NMSettingConnectionMdns
 nm_setting_connection_get_mdns (NMSettingConnection *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting),
-	                      NM_SETTING_CONNECTION_MDNS_UNKNOWN);
+	                      NM_SETTING_CONNECTION_MDNS_DEFAULT);
 
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->mdns;
 }
@@ -1076,7 +1076,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (   priv->mdns < NM_SETTING_CONNECTION_MDNS_UNKNOWN
+	if (   priv->mdns < NM_SETTING_CONNECTION_MDNS_DEFAULT
 	    || priv->mdns > NM_SETTING_CONNECTION_MDNS_RESOLVE) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
@@ -1244,6 +1244,9 @@ compare_property (NMSetting *setting,
 static void
 nm_setting_connection_init (NMSettingConnection *setting)
 {
+	NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
+
+	priv->mdns = NM_SETTING_CONNECTION_MDNS_DEFAULT;
 }
 
 static void
@@ -2048,8 +2051,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		(object_class, PROP_MDNS,
 		 g_param_spec_int (NM_SETTING_CONNECTION_MDNS, "", "",
 		                   G_MININT32, G_MAXINT32,
-		                   NM_SETTING_CONNECTION_MDNS_UNKNOWN,
+		                   NM_SETTING_CONNECTION_MDNS_DEFAULT,
 		                   G_PARAM_READWRITE |
-		                   G_PARAM_CONSTRUCT |
 		                   G_PARAM_STATIC_STRINGS));
 }

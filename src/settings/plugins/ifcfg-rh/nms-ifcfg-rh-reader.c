@@ -321,11 +321,11 @@ make_connection_setting (const char *file,
 	vint64 = svGetValueInt64 (ifcfg, "AUTH_RETRIES", 10, -1, G_MAXINT32, -1);
 	g_object_set (s_con, NM_SETTING_CONNECTION_AUTH_RETRIES, (gint) vint64, NULL);
 
-	i_val = NM_SETTING_CONNECTION_MDNS_UNKNOWN;
+	i_val = NM_SETTING_CONNECTION_MDNS_DEFAULT;
 	if (!svGetValueEnum (ifcfg, "MDNS",
 	                     nm_setting_connection_mdns_get_type (),
-	                     &i_val, NULL)) {
-	}
+	                     &i_val, NULL))
+		PARSE_WARNING ("invalid MDNS setting");
 	g_object_set (s_con, NM_SETTING_CONNECTION_MDNS, i_val, NULL);
 
 	return NM_SETTING (s_con);
