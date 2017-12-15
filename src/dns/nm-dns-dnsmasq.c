@@ -201,142 +201,144 @@ add_global_config (NMDnsDnsmasq *self, GVariantBuilder *dnsmasq_servers, const N
 }
 
 static gboolean
-add_ip4_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP4Config *ip4,
-                const char *iface, gboolean split)
+add_ip_config (NMDnsDnsmasq *self,
+               GVariantBuilder *servers,
+               NMIPConfig *ip_config,
+               const char *iface,
+               gboolean split)
 {
-	char buf[INET_ADDRSTRLEN + 1 + IFNAMSIZ];
-	char buf2[INET_ADDRSTRLEN];
-	in_addr_t addr;
-	int nnameservers, i_nameserver, n, i;
-	gboolean added = FALSE;
+	int addr_family = nm_ip_config_get_addr_family (ip_config);
 
-	g_return_val_if_fail (iface, FALSE);
-	nnameservers = nm_ip4_config_get_num_nameservers (ip4);
+	if (addr_family == AF_INET) {
+		NMIP4Config *ip4 = (NMIP4Config *) ip_config;
+		char buf[INET_ADDRSTRLEN + 1 + IFNAMSIZ];
+		char buf2[INET_ADDRSTRLEN];
+		in_addr_t addr;
+		int nnameservers, i_nameserver, n, i;
+		gboolean added = FALSE;
 
-	if (split) {
-		char **domains, **iter;
+		g_return_val_if_fail (iface, FALSE);
+		nnameservers = nm_ip4_config_get_num_nameservers (ip4);
 
-		if (nnameservers == 0)
-			return FALSE;
+		if (split) {
+			char **domains, **iter;
 
-		for (i_nameserver = 0; i_nameserver < nnameservers; i_nameserver++) {
-			addr = nm_ip4_config_get_nameserver (ip4, i_nameserver);
-			g_snprintf (buf, sizeof (buf), "%s@%s",
-			            nm_utils_inet4_ntop (addr, buf2), iface);
+			if (nnameservers == 0)
+				return FALSE;
 
-			/* searches are preferred over domains */
-			n = nm_ip4_config_get_num_searches (ip4);
-			for (i = 0; i < n; i++) {
-				add_dnsmasq_nameserver (self,
-				                        servers,
-				                        buf,
-				                        nm_ip4_config_get_search (ip4, i));
-				added = TRUE;
-			}
+			for (i_nameserver = 0; i_nameserver < nnameservers; i_nameserver++) {
+				addr = nm_ip4_config_get_nameserver (ip4, i_nameserver);
+				g_snprintf (buf, sizeof (buf), "%s@%s",
+				            nm_utils_inet4_ntop (addr, buf2), iface);
 
-			if (n == 0) {
-				/* If not searches, use any domains */
-				n = nm_ip4_config_get_num_domains (ip4);
+				/* searches are preferred over domains */
+				n = nm_ip4_config_get_num_searches (ip4);
 				for (i = 0; i < n; i++) {
 					add_dnsmasq_nameserver (self,
 					                        servers,
 					                        buf,
-					                        nm_ip4_config_get_domain (ip4, i));
+					                        nm_ip4_config_get_search (ip4, i));
 					added = TRUE;
 				}
-			}
 
-			/* Ensure reverse-DNS works by directing queries for in-addr.arpa
-			 * domains to the split domain's nameserver.
-			 */
-			domains = get_ip4_rdns_domains (ip4);
-			if (domains) {
-				for (iter = domains; iter && *iter; iter++)
-					add_dnsmasq_nameserver (self, servers, buf, *iter);
-				g_strfreev (domains);
-			}
-		}
-	}
+				if (n == 0) {
+					/* If not searches, use any domains */
+					n = nm_ip4_config_get_num_domains (ip4);
+					for (i = 0; i < n; i++) {
+						add_dnsmasq_nameserver (self,
+						                        servers,
+						                        buf,
+						                        nm_ip4_config_get_domain (ip4, i));
+						added = TRUE;
+					}
+				}
 
-	/* If no searches or domains, just add the nameservers */
-	if (!added) {
-		for (i = 0; i < nnameservers; i++) {
-			addr = nm_ip4_config_get_nameserver (ip4, i);
-			g_snprintf (buf, sizeof (buf), "%s@%s",
-			            nm_utils_inet4_ntop (addr, buf2), iface);
-			add_dnsmasq_nameserver (self, servers, buf, NULL);
-		}
-	}
-
-	return TRUE;
-}
-
-static gboolean
-add_ip6_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP6Config *ip6,
-                const char *iface, gboolean split)
-{
-	const struct in6_addr *addr;
-	char *buf = NULL;
-	int nnameservers, i_nameserver, n, i;
-	gboolean added = FALSE;
-
-	g_return_val_if_fail (iface, FALSE);
-	nnameservers = nm_ip6_config_get_num_nameservers (ip6);
-
-	if (split) {
-		char **domains, **iter;
-
-		if (nnameservers == 0)
-			return FALSE;
-
-		for (i_nameserver = 0; i_nameserver < nnameservers; i_nameserver++) {
-			addr = nm_ip6_config_get_nameserver (ip6, i_nameserver);
-			buf = ip6_addr_to_string (addr, iface);
-
-			/* searches are preferred over domains */
-			n = nm_ip6_config_get_num_searches (ip6);
-			for (i = 0; i < n; i++) {
-				add_dnsmasq_nameserver (self,
-				                        servers,
-				                        buf,
-				                        nm_ip6_config_get_search (ip6, i));
-				added = TRUE;
-			}
-
-			if (n == 0) {
-				/* If not searches, use any domains */
-				n = nm_ip6_config_get_num_domains (ip6);
-				for (i = 0; i < n; i++) {
-					add_dnsmasq_nameserver (self,
-					                        servers,
-					                        buf,
-					                        nm_ip6_config_get_domain (ip6, i));
-					added = TRUE;
+				/* Ensure reverse-DNS works by directing queries for in-addr.arpa
+				 * domains to the split domain's nameserver.
+				 */
+				domains = get_ip4_rdns_domains (ip4);
+				if (domains) {
+					for (iter = domains; iter && *iter; iter++)
+						add_dnsmasq_nameserver (self, servers, buf, *iter);
+					g_strfreev (domains);
 				}
 			}
-
-			/* Ensure reverse-DNS works by directing queries for ip6.arpa
-			 * domains to the split domain's nameserver.
-			 */
-			domains = get_ip6_rdns_domains (ip6);
-			if (domains) {
-				for (iter = domains; iter && *iter; iter++)
-					add_dnsmasq_nameserver (self, servers, buf, *iter);
-				g_strfreev (domains);
-			}
-
-			g_free (buf);
 		}
-	}
 
-	/* If no searches or domains, just add the nameservers */
-	if (!added) {
-		for (i = 0; i < nnameservers; i++) {
-			addr = nm_ip6_config_get_nameserver (ip6, i);
-			buf = ip6_addr_to_string (addr, iface);
-			if (buf) {
+		/* If no searches or domains, just add the nameservers */
+		if (!added) {
+			for (i = 0; i < nnameservers; i++) {
+				addr = nm_ip4_config_get_nameserver (ip4, i);
+				g_snprintf (buf, sizeof (buf), "%s@%s",
+				            nm_utils_inet4_ntop (addr, buf2), iface);
 				add_dnsmasq_nameserver (self, servers, buf, NULL);
+			}
+		}
+	} else {
+		NMIP6Config *ip6 = (NMIP6Config *) ip_config;
+		const struct in6_addr *addr;
+		char *buf = NULL;
+		int nnameservers, i_nameserver, n, i;
+		gboolean added = FALSE;
+
+		g_return_val_if_fail (iface, FALSE);
+		nnameservers = nm_ip6_config_get_num_nameservers (ip6);
+
+		if (split) {
+			char **domains, **iter;
+
+			if (nnameservers == 0)
+				return FALSE;
+
+			for (i_nameserver = 0; i_nameserver < nnameservers; i_nameserver++) {
+				addr = nm_ip6_config_get_nameserver (ip6, i_nameserver);
+				buf = ip6_addr_to_string (addr, iface);
+
+				/* searches are preferred over domains */
+				n = nm_ip6_config_get_num_searches (ip6);
+				for (i = 0; i < n; i++) {
+					add_dnsmasq_nameserver (self,
+					                        servers,
+					                        buf,
+					                        nm_ip6_config_get_search (ip6, i));
+					added = TRUE;
+				}
+
+				if (n == 0) {
+					/* If not searches, use any domains */
+					n = nm_ip6_config_get_num_domains (ip6);
+					for (i = 0; i < n; i++) {
+						add_dnsmasq_nameserver (self,
+						                        servers,
+						                        buf,
+						                        nm_ip6_config_get_domain (ip6, i));
+						added = TRUE;
+					}
+				}
+
+				/* Ensure reverse-DNS works by directing queries for ip6.arpa
+				 * domains to the split domain's nameserver.
+				 */
+				domains = get_ip6_rdns_domains (ip6);
+				if (domains) {
+					for (iter = domains; iter && *iter; iter++)
+						add_dnsmasq_nameserver (self, servers, buf, *iter);
+					g_strfreev (domains);
+				}
+
 				g_free (buf);
+			}
+		}
+
+		/* If no searches or domains, just add the nameservers */
+		if (!added) {
+			for (i = 0; i < nnameservers; i++) {
+				addr = nm_ip6_config_get_nameserver (ip6, i);
+				buf = ip6_addr_to_string (addr, iface);
+				if (buf) {
+					add_dnsmasq_nameserver (self, servers, buf, NULL);
+					g_free (buf);
+				}
 			}
 		}
 	}
@@ -347,20 +349,11 @@ add_ip6_config (NMDnsDnsmasq *self, GVariantBuilder *servers, NMIP6Config *ip6,
 static gboolean
 add_ip_config_data (NMDnsDnsmasq *self, GVariantBuilder *servers, const NMDnsIPConfigData *data)
 {
-	if (NM_IS_IP4_CONFIG (data->config)) {
-		return add_ip4_config (self,
-		                       servers,
-		                       (NMIP4Config *) data->config,
-		                       data->iface,
-		                       data->type == NM_DNS_IP_CONFIG_TYPE_VPN);
-	} else if (NM_IS_IP6_CONFIG (data->config)) {
-		return add_ip6_config (self,
-		                       servers,
-		                       (NMIP6Config *) data->config,
-		                       data->iface,
-		                       data->type == NM_DNS_IP_CONFIG_TYPE_VPN);
-	} else
-		g_return_val_if_reached (FALSE);
+	return add_ip_config (self,
+	                      servers,
+	                      data->config,
+	                      data->iface,
+	                      data->type == NM_DNS_IP_CONFIG_TYPE_VPN);
 }
 
 static void
