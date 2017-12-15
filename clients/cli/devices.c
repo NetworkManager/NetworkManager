@@ -831,7 +831,7 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	strength_str = g_strdup_printf ("%u", strength);
 	wpa_flags_str = ap_wpa_rsn_flags_to_string (wpa_flags);
 	rsn_flags_str = ap_wpa_rsn_flags_to_string (rsn_flags);
-	sig_bars = nm_utils_wifi_strength_bars (strength);
+	sig_bars = nmc_wifi_strength_bars (strength);
 
 	security_str = g_string_new (NULL);
 

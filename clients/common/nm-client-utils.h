@@ -54,4 +54,6 @@ NMActiveConnectionState nmc_activation_get_effective_state (NMActiveConnection *
                                                             NMDevice *device,
                                                             const char **reason);
 
+const char *nmc_wifi_strength_bars (guint8 strength);
+
 #endif /* __NM_CLIENT_UTILS_H__ */

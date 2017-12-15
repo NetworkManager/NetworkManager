@@ -3438,59 +3438,28 @@ nm_utils_wifi_5ghz_freqs (void)
  * @strength: the access point strength, from 0 to 100
  *
  * Converts @strength into a 4-character-wide graphical representation of
- * strength suitable for printing to stdout. If the current locale and terminal
- * support it, this will use unicode graphics characters to represent
- * "bars". Otherwise it will use 0 to 4 asterisks.
+ * strength suitable for printing to stdout.
+ *
+ * Previous versions used to take a guess at the terminal type and possibly
+ * return a wide UTF-8 encoded string. Now it always returns a 7-bit
+ * clean strings of one to 0 to 4 asterisks. Users that actually need
+ * the functionality are encouraged to make their implementations instead.
  *
  * Returns: the graphical representation of the access point strength
  */
 const char *
 nm_utils_wifi_strength_bars (guint8 strength)
 {
-	static const char *strength_full, *strength_high, *strength_med, *strength_low, *strength_none;
-
-	if (G_UNLIKELY (strength_full == NULL)) {
-		gboolean can_show_graphics = TRUE;
-		char *locale_str;
-
-		if (!g_get_charset (NULL)) {
-			/* Non-UTF-8 locale */
-			locale_str = g_locale_from_utf8 ("\342\226\202\342\226\204\342\226\206\342\226\210", -1, NULL, NULL, NULL);
-			if (locale_str)
-				g_free (locale_str);
-			else
-				can_show_graphics = FALSE;
-		}
-
-		/* The linux console font doesn't have these characters */
-		if (g_strcmp0 (g_getenv ("TERM"), "linux") == 0)
-			can_show_graphics = FALSE;
-
-		if (can_show_graphics) {
-			strength_full = /* ▂▄▆█ */ "\342\226\202\342\226\204\342\226\206\342\226\210";
-			strength_high = /* ▂▄▆_ */ "\342\226\202\342\226\204\342\226\206_";
-			strength_med  = /* ▂▄__ */ "\342\226\202\342\226\204__";
-			strength_low  = /* ▂___ */ "\342\226\202___";
-			strength_none = /* ____ */ "____";
-		} else {
-			strength_full = "****";
-			strength_high = "*** ";
-			strength_med  = "**  ";
-			strength_low  = "*   ";
-			strength_none = "    ";
-		}
-	}
-
 	if (strength > 80)
-		return strength_full;
+		return "****";
 	else if (strength > 55)
-		return strength_high;
+		return "*** ";
 	else if (strength > 30)
-		return strength_med;
+		return "**  ";
 	else if (strength > 5)
-		return strength_low;
+		return "*   ";
 	else
-		return strength_none;
+		return "    ";
 }
 
 /**

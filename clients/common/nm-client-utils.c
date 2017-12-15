@@ -20,6 +20,7 @@
 #include "nm-default.h"
 
 #include "nm-client-utils.h"
+#include "nm-utils.h"
 
 #include "nm-device-bond.h"
 #include "nm-device-bridge.h"
@@ -504,4 +505,59 @@ nmc_activation_get_effective_state (NMActiveConnection *active,
 	}
 
 	return ac_state;
+}
+
+static gboolean
+can_show_graphics (void)
+{
+	static gboolean can_show_graphics_set = FALSE;
+	gboolean can_show_graphics = TRUE;
+	char *locale_str;
+
+	if (G_LIKELY (can_show_graphics_set))
+		return can_show_graphics;
+
+	if (!g_get_charset (NULL)) {
+		/* Non-UTF-8 locale */
+		locale_str = g_locale_from_utf8 ("\342\226\202\342\226\204\342\226\206\342\226\210", -1, NULL, NULL, NULL);
+		if (locale_str)
+			g_free (locale_str);
+		else
+			can_show_graphics = FALSE;
+	}
+
+	/* The linux console font typically doesn't have characters we need */
+	if (g_strcmp0 (g_getenv ("TERM"), "linux") == 0)
+		can_show_graphics = FALSE;
+
+	return can_show_graphics;
+}
+
+/**
+ * nmc_wifi_strength_bars:
+ * @strength: the access point strength, from 0 to 100
+ *
+ * Converts @strength into a 4-character-wide graphical representation of
+ * strength suitable for printing to stdout. If the current locale and terminal
+ * support it, this will use unicode graphics characters to represent
+ * "bars". Otherwise it will use 0 to 4 asterisks.
+ *
+ * Returns: the graphical representation of the access point strength
+ */
+const char *
+nmc_wifi_strength_bars (guint8 strength)
+{
+	if (!can_show_graphics ())
+		return nm_utils_wifi_strength_bars (strength);
+
+	if (strength > 80)
+		return /* ▂▄▆█ */ "\342\226\202\342\226\204\342\226\206\342\226\210";
+	else if (strength > 55)
+		return /* ▂▄▆_ */ "\342\226\202\342\226\204\342\226\206_";
+	else if (strength > 30)
+		return /* ▂▄__ */ "\342\226\202\342\226\204__";
+	else if (strength > 5)
+		return /* ▂___ */ "\342\226\202___";
+	else
+		return /* ____ */ "____";
 }
