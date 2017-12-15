@@ -423,6 +423,29 @@ get_connection_iwd_security (NMConnection *connection)
 }
 
 static gboolean
+is_connection_known_network (NMConnection *connection)
+{
+	NMSettingWireless *s_wireless;
+	GBytes *ssid;
+	gs_free gchar *str_ssid = NULL;
+
+	s_wireless = nm_connection_get_setting_wireless (connection);
+	if (!s_wireless)
+		return FALSE;
+
+	ssid = nm_setting_wireless_get_ssid (s_wireless);
+	if (!ssid)
+		return FALSE;
+
+	str_ssid = nm_utils_ssid_to_utf8 (g_bytes_get_data (ssid, NULL),
+	                                  g_bytes_get_size (ssid));
+
+	return nm_iwd_manager_is_known_network (nm_iwd_manager_get (),
+	                                        str_ssid,
+	                                        get_connection_iwd_security (connection));
+}
+
+static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
 	NMSettingConnection *s_con;
@@ -1019,9 +1042,24 @@ handle_8021x_or_psk_auth_fail (NMDeviceIwd *self)
 	NMActRequest *req;
 	const char *setting_name = NULL;
 	gboolean handled = FALSE;
+	NMConnection *connection;
 
 	req = nm_device_get_act_request (device);
 	g_return_val_if_fail (req != NULL, FALSE);
+
+	/* If this is an IWD Known Network, even if the failure was caused by bad secrets,
+	 * IWD won't ask our agent for new secrets until we call ForgetNetwork.  For 8021x
+	 * this is not a good idea since the IWD network config file is assumed to be
+	 * provisioned by the system admin and the admin needs to intervene anyway.  For
+	 * PSK we may want to do this here (TODO).
+	 */
+	connection = nm_act_request_get_applied_connection (req);
+	if (is_connection_known_network (connection)) {
+		_LOGI (LOGD_DEVICE | LOGD_WIFI,
+		       "Activation: (wifi) disconnected during association to an IWD Known Network, giving up");
+
+		return FALSE;
+	}
 
 	if (   need_new_8021x_secrets (self, &setting_name)
 	    || need_new_wpa_psk (self, &setting_name)) {
@@ -1235,8 +1273,14 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	s_wireless = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wireless);
 
-	/* If we need secrets, get them */
-	setting_name = nm_connection_need_secrets (connection, NULL);
+	/* If we need secrets, get them.  If a network is an IWD Known Network the secrets
+	 * will have been stored by IWD and we don't require any secrets here.
+	 */
+	if (!is_connection_known_network (connection))
+		setting_name = nm_connection_need_secrets (connection, NULL);
+	else
+		setting_name = NULL;
+
 	if (setting_name) {
 		_LOGI (LOGD_DEVICE | LOGD_WIFI,
 		       "Activation: (wifi) access point '%s' has security, but secrets are required.",
