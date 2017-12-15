@@ -70,6 +70,24 @@
 #define PLUGIN_RATELIMIT_BURST       5
 #define PLUGIN_RATELIMIT_DELAY       300
 
+/*****************************************************************************/
+
+typedef enum {
+	SR_SUCCESS,
+	SR_NOTFOUND,
+	SR_ERROR
+} SpawnResult;
+
+typedef struct {
+	GPtrArray *nameservers;
+	GPtrArray *searches;
+	GPtrArray *options;
+	const char *nis_domain;
+	GPtrArray *nis_servers;
+} NMResolvConfData;
+
+/*****************************************************************************/
+
 enum {
 	CONFIG_CHANGED,
 
@@ -83,38 +101,6 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDnsManager,
 );
 
 static guint signals[LAST_SIGNAL] = { 0 };
-
-typedef enum {
-	SR_SUCCESS,
-	SR_NOTFOUND,
-	SR_ERROR
-} SpawnResult;
-
-NM_DEFINE_SINGLETON_GETTER (NMDnsManager, nm_dns_manager_get, NM_TYPE_DNS_MANAGER);
-
-/*****************************************************************************/
-
-#define _NMLOG_PREFIX_NAME                "dns-mgr"
-#define _NMLOG_DOMAIN                     LOGD_DNS
-#define _NMLOG(level, ...) \
-    G_STMT_START { \
-        const NMLogLevel __level = (level); \
-        \
-        if (nm_logging_enabled (__level, _NMLOG_DOMAIN)) { \
-            char __prefix[20]; \
-            const NMDnsManager *const __self = (self); \
-            \
-            _nm_log (__level, _NMLOG_DOMAIN, 0, NULL, NULL, \
-                     "%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
-                     _NMLOG_PREFIX_NAME, \
-                     ((!__self || __self == singleton_instance) \
-                        ? "" \
-                        : nm_sprintf_buf (__prefix, "[%p]", __self)) \
-                     _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
-        } \
-    } G_STMT_END
-
-/*****************************************************************************/
 
 typedef struct {
 	GPtrArray *configs;
@@ -157,6 +143,32 @@ G_DEFINE_TYPE (NMDnsManager, nm_dns_manager, NM_TYPE_EXPORTED_OBJECT)
 
 #define NM_DNS_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDnsManager, NM_IS_DNS_MANAGER)
 
+NM_DEFINE_SINGLETON_GETTER (NMDnsManager, nm_dns_manager_get, NM_TYPE_DNS_MANAGER);
+
+/*****************************************************************************/
+
+#define _NMLOG_PREFIX_NAME                "dns-mgr"
+#define _NMLOG_DOMAIN                     LOGD_DNS
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        const NMLogLevel __level = (level); \
+        \
+        if (nm_logging_enabled (__level, _NMLOG_DOMAIN)) { \
+            char __prefix[20]; \
+            const NMDnsManager *const __self = (self); \
+            \
+            _nm_log (__level, _NMLOG_DOMAIN, 0, NULL, NULL, \
+                     "%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                     _NMLOG_PREFIX_NAME, \
+                     ((!__self || __self == singleton_instance) \
+                        ? "" \
+                        : nm_sprintf_buf (__prefix, "[%p]", __self)) \
+                     _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+        } \
+    } G_STMT_END
+
+/*****************************************************************************/
+
 static gboolean
 domain_is_valid (const gchar *domain, gboolean check_public_suffix)
 {
@@ -170,14 +182,6 @@ domain_is_valid (const gchar *domain, gboolean check_public_suffix)
 }
 
 /*****************************************************************************/
-
-typedef struct {
-	GPtrArray *nameservers;
-	GPtrArray *searches;
-	GPtrArray *options;
-	const char *nis_domain;
-	GPtrArray *nis_servers;
-} NMResolvConfData;
 
 NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_rc_manager_to_string, NMDnsManagerResolvConfManager,
 	NM_UTILS_LOOKUP_DEFAULT_WARN (NULL),
