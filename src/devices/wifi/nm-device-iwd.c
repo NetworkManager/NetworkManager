@@ -455,7 +455,6 @@ get_ap_by_path (NMDeviceIwd *self, const char *path)
 {
 	g_return_val_if_fail (path != NULL, NULL);
 	return g_hash_table_lookup (NM_DEVICE_IWD_GET_PRIVATE (self)->aps, path);
-
 }
 
 static gboolean
@@ -1243,8 +1242,6 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	                                               NM_IWD_NETWORK_INTERFACE,
 	                                               NULL, &error);
 	if (!network_proxy) {
-		return FALSE;
-
 		_LOGE (LOGD_DEVICE | LOGD_WIFI,
 		       "Activation: (wifi) could not get Network interface proxy for %s: %s",
 		       nm_wifi_ap_get_supplicant_path (ap),
