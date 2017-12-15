@@ -969,12 +969,6 @@ subdir('introspection')
 subdir('shared')
 subdir('libnm-core')
 subdir('libnm')
-
-install_headers(
-  libnm_core_headers + libnm_headers + libnm_headers_nointrospect + [version_header],
-  subdir: 'libnm'
-)
-
 subdir('src')
 subdir('dispatcher')
 subdir('clients')

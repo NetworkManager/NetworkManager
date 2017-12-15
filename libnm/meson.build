@@ -67,19 +67,21 @@ libnm_headers = files(
   'nm-ip-config.h',
   'nm-object.h',
   'nm-remote-connection.h',
+  'nm-secret-agent-old.h',
   'nm-types.h',
   'nm-vpn-connection.h',
   'nm-vpn-editor.h',
+  'nm-vpn-plugin-old.h',
+  'nm-vpn-service-plugin.h',
   'nm-wimax-nsp.h'
 )
 
-libnm_headers_nointrospect = files(
-  'nm-secret-agent-old.h',
-  'nm-vpn-plugin-old.h',
-  'nm-vpn-service-plugin.h'
+install_headers(
+  libnm_core_headers + libnm_headers + [version_header],
+  subdir: 'libnm'
 )
 
-enums_headers = libnm_headers + libnm_headers_nointrospect + [version_header]
+enums_headers = libnm_headers + [version_header]
 enums = 'nm-enum-types'
 
 libnm_enums_h = gnome.mkenums(
@@ -210,7 +212,7 @@ run_target(
 )
 
 if enable_introspection
-  gir_sources = libnm_core_enums + libnm_core_headers + libnm_core_sources + libnm_enums + libnm_headers + libnm_headers_nointrospect + libnm_sources + [version_header]
+  gir_sources = libnm_core_enums + libnm_core_headers + libnm_core_sources + libnm_enums + libnm_headers + libnm_sources + [version_header]
 
   gir_dir = join_paths(nm_datadir, 'gir-' + nm_gir_version)
   typelib_dir = join_paths(nm_libdir, 'girepository-' + nm_gir_version)

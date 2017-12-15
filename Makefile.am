@@ -762,14 +762,13 @@ libnm_lib_h_pub_real = \
 	libnm/nm-ip-config.h \
 	libnm/nm-object.h \
 	libnm/nm-remote-connection.h \
+	libnm/nm-secret-agent-old.h \
 	libnm/nm-types.h \
 	libnm/nm-vpn-connection.h \
 	libnm/nm-vpn-editor.h \
-	libnm/nm-wimax-nsp.h
-libnm_lib_h_pub_nointrospect = \
-	libnm/nm-secret-agent-old.h \
 	libnm/nm-vpn-plugin-old.h \
-	libnm/nm-vpn-service-plugin.h
+	libnm/nm-vpn-service-plugin.h \
+	libnm/nm-wimax-nsp.h
 libnm_lib_h_pub_mkenums = \
 	libnm/nm-enum-types.h
 libnm_lib_h_priv = \
@@ -844,8 +843,7 @@ libnm_lib_cppflags = \
 	-DNMRUNDIR=\"$(nmrundir)\"
 
 libnminclude_HEADERS += \
-	$(libnm_lib_h_pub_real) \
-	$(libnm_lib_h_pub_nointrospect)
+	$(libnm_lib_h_pub_real)
 
 nodist_libnminclude_HEADERS += \
 	$(libnm_lib_h_pub_mkenums)
@@ -877,8 +875,7 @@ GLIB_GENERATED += \
 	$(libnm_lib_c_mkenums)
 nm_enum_types_sources = \
 	$(libnm_lib_h_pub_mkenums) \
-	$(libnm_lib_h_pub_real) \
-	$(libnm_lib_h_pub_nointrospect)
+	$(libnm_lib_h_pub_real)
 nm_enum_types_MKENUMS_H_FLAGS = --identifier-prefix NM --fhead '\#include <nm-core-enum-types.h>\n'
 nm_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
 
@@ -893,7 +890,6 @@ libnm_libnm_la_CPPFLAGS = \
 
 libnm_libnm_la_SOURCES = \
 	$(libnm_lib_h_pub_real) \
-	$(libnm_lib_h_pub_nointrospect) \
 	$(libnm_lib_h_priv) \
 	$(libnm_lib_c_real)
 
@@ -945,7 +941,6 @@ libnm_NM_1_0_gir_FILES = \
 	$(libnm_core_lib_c_real) \
 	$(libnm_lib_h_pub_mkenums) \
 	$(libnm_lib_h_pub_real) \
-	$(libnm_lib_h_pub_nointrospect) \
 	$(libnm_lib_c_mkenums) \
 	$(libnm_lib_c_real)
 libnm_NM_1_0_gir_SCANNERFLAGS = --warn-all --identifier-prefix=NM --symbol-prefix=nm
