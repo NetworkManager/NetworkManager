@@ -165,6 +165,13 @@ gint nm_config_keyfile_get_boolean (const GKeyFile *keyfile,
                                     const char *section,
                                     const char *key,
                                     gint default_value);
+gint64 nm_config_keyfile_get_int64 (const GKeyFile *keyfile,
+                                    const char *section,
+                                    const char *key,
+                                    guint base,
+                                    gint64 min,
+                                    gint64 max,
+                                    gint64 fallback);
 char *nm_config_keyfile_get_value (const GKeyFile *keyfile,
                                    const char *section,
                                    const char *key,
@@ -205,6 +212,9 @@ struct _NMConfigDeviceStateData {
 	int ifindex;
 	NMConfigDeviceStateManagedType managed;
 
+	/* a value of zero means that no metric is set. */
+	guint32 route_metric_default;
+
 	/* the UUID of the last settings-connection active
 	 * on the device. */
 	const char *connection_uuid;
@@ -213,16 +223,23 @@ struct _NMConfigDeviceStateData {
 
 	/* whether the device was nm-owned (0/1) or -1 for
 	 * non-software devices. */
-	gint nm_owned;
+	int nm_owned:3;
 };
 
 NMConfigDeviceStateData *nm_config_device_state_load (int ifindex);
+GHashTable *nm_config_device_state_load_all (void);
 gboolean nm_config_device_state_write (int ifindex,
                                        NMConfigDeviceStateManagedType managed,
                                        const char *perm_hw_addr_fake,
                                        const char *connection_uuid,
-                                       gint nm_owned);
+                                       gint nm_owned,
+                                       guint32 route_metric_default);
+
 void nm_config_device_state_prune_unseen (GHashTable *seen_ifindexes);
+
+const GHashTable *nm_config_device_state_get_all (NMConfig *self);
+const NMConfigDeviceStateData *nm_config_device_state_get (NMConfig *self,
+                                                           int ifindex);
 
 /*****************************************************************************/
 
