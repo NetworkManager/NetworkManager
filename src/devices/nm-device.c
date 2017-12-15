@@ -1721,8 +1721,8 @@ nm_device_get_metered (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->metered;
 }
 
-static guint32
-_get_route_metric_default (NMDevice *self)
+guint32
+nm_device_get_route_metric_default (NMDeviceType device_type)
 {
 	/* Device 'priority' is used for the default route-metric and is based on
 	 * the device type. The settings ipv4.route-metric and ipv6.route-metric
@@ -1741,7 +1741,7 @@ _get_route_metric_default (NMDevice *self)
 	 * metrics (except for IPv6, where 0 means 1024).
 	 */
 
-	switch (nm_device_get_device_type (self)) {
+	switch (device_type) {
 	/* 50 is reserved for VPN (NM_VPN_ROUTE_METRIC_DEFAULT) */
 	case NM_DEVICE_TYPE_ETHERNET:
 	case NM_DEVICE_TYPE_VETH:
@@ -1870,7 +1870,10 @@ nm_device_get_route_metric (NMDevice *self,
 		if (route_metric >= 0)
 			goto out;
 	}
-	route_metric = _get_route_metric_default (self);
+
+	route_metric = nm_manager_device_route_metric_reserve (nm_manager_get (),
+	                                                       nm_device_get_ip_ifindex (self),
+	                                                       nm_device_get_device_type (self));
 out:
 	return nm_utils_ip_route_metric_normalize (addr_family, route_metric);
 }
@@ -12609,6 +12612,11 @@ _cleanup_generic_pre (NMDevice *self, CleanupType cleanup_type)
 
 	_cancel_activation (self);
 
+	if (cleanup_type != CLEANUP_TYPE_KEEP) {
+		nm_manager_device_route_metric_clear (nm_manager_get (),
+		                                      nm_device_get_ip_ifindex (self));
+	}
+
 	if (   cleanup_type == CLEANUP_TYPE_DECONFIGURE
 	    && priv->fw_state >= FIREWALL_STATE_INITIALIZED
 	    && priv->fw_mgr
@@ -13639,6 +13647,7 @@ nm_device_update_permanent_hw_address (NMDevice *self, gboolean force_freeze)
 	gboolean success_read;
 	int ifindex;
 	const NMPlatformLink *pllink;
+	const NMConfigDeviceStateData *dev_state;
 
 	if (priv->hw_addr_perm) {
 		/* the permanent hardware address is only read once and not
@@ -13698,23 +13707,19 @@ nm_device_update_permanent_hw_address (NMDevice *self, gboolean force_freeze)
 	/* We also persist our choice of the fake address to the device state
 	 * file to use the same address on restart of NetworkManager.
 	 * First, try to reload the address from the state file. */
-	{
-		gs_free NMConfigDeviceStateData *dev_state = NULL;
-
-		dev_state = nm_config_device_state_load (ifindex);
-		if (   dev_state
-		    && dev_state->perm_hw_addr_fake
-		    && nm_utils_hwaddr_aton (dev_state->perm_hw_addr_fake, buf, priv->hw_addr_len)
-		    && !nm_utils_hwaddr_matches (buf, priv->hw_addr_len, priv->hw_addr, -1)) {
-			_LOGD (LOGD_PLATFORM | LOGD_ETHER, "hw-addr: %s (use from statefile: %s, current: %s)",
-			       success_read
-			           ? "read HW addr length of permanent MAC address differs"
-			           : "unable to read permanent MAC address",
-			       dev_state->perm_hw_addr_fake,
-			       priv->hw_addr);
-			priv->hw_addr_perm = nm_utils_hwaddr_ntoa (buf, priv->hw_addr_len);
-			goto notify_and_out;
-		}
+	dev_state = nm_config_device_state_get (nm_config_get (), ifindex);
+	if (   dev_state
+	    && dev_state->perm_hw_addr_fake
+	    && nm_utils_hwaddr_aton (dev_state->perm_hw_addr_fake, buf, priv->hw_addr_len)
+	    && !nm_utils_hwaddr_matches (buf, priv->hw_addr_len, priv->hw_addr, -1)) {
+		_LOGD (LOGD_PLATFORM | LOGD_ETHER, "hw-addr: %s (use from statefile: %s, current: %s)",
+		       success_read
+		           ? "read HW addr length of permanent MAC address differs"
+		           : "unable to read permanent MAC address",
+		       dev_state->perm_hw_addr_fake,
+		       priv->hw_addr);
+		priv->hw_addr_perm = nm_utils_hwaddr_ntoa (buf, priv->hw_addr_len);
+		goto notify_and_out;
 	}
 
 	_LOGD (LOGD_PLATFORM | LOGD_ETHER, "hw-addr: %s (use current: %s)",

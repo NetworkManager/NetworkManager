@@ -450,6 +450,8 @@ NMMetered       nm_device_get_metered           (NMDevice *dev);
 guint32         nm_device_get_route_table       (NMDevice *self, int addr_family, gboolean fallback_main);
 guint32         nm_device_get_route_metric      (NMDevice *dev, int addr_family);
 
+guint32         nm_device_get_route_metric_default (NMDeviceType device_type);
+
 const char *    nm_device_get_hw_address        (NMDevice *dev);
 const char *    nm_device_get_permanent_hw_address (NMDevice *self);
 const char *    nm_device_get_permanent_hw_address_full (NMDevice *self,

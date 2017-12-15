@@ -646,36 +646,82 @@ _nm_utils_ptrarray_find_first (gconstpointer *list, gssize len, gconstpointer ne
 }
 
 gssize
-_nm_utils_ptrarray_find_binary_search (gconstpointer *list, gsize len, gconstpointer needle, GCompareDataFunc cmpfcn, gpointer user_data)
+_nm_utils_ptrarray_find_binary_search (gconstpointer *list,
+                                       gsize len,
+                                       gconstpointer needle,
+                                       GCompareDataFunc cmpfcn,
+                                       gpointer user_data,
+                                       gssize *out_idx_first,
+                                       gssize *out_idx_last)
 {
-	gssize imin, imax, imid;
+	gssize imin, imax, imid, i2min, i2max, i2mid;
 	int cmp;
 
 	g_return_val_if_fail (list || !len, ~((gssize) 0));
 	g_return_val_if_fail (cmpfcn, ~((gssize) 0));
 
 	imin = 0;
-	if (len == 0)
-		return ~imin;
+	if (len > 0) {
+		imax = len - 1;
 
-	imax = len - 1;
+		while (imin <= imax) {
+			imid = imin + (imax - imin) / 2;
 
-	while (imin <= imax) {
-		imid = imin + (imax - imin) / 2;
+			cmp = cmpfcn (list[imid], needle, user_data);
+			if (cmp == 0) {
+				/* we found a matching entry at index imid.
+				 *
+				 * Does the caller request the first/last index as well (in case that
+				 * there are multiple entries which compare equal). */
 
-		cmp = cmpfcn (list[imid], needle, user_data);
-		if (cmp == 0)
-			return imid;
+				if (out_idx_first) {
+					i2min = imin;
+					i2max = imid + 1;
+					while (i2min <= i2max) {
+						i2mid = i2min + (i2max - i2min) / 2;
 
-		if (cmp < 0)
-			imin = imid + 1;
-		else
-			imax = imid - 1;
+						cmp = cmpfcn (list[i2mid], needle, user_data);
+						if (cmp == 0)
+							i2max = i2mid -1;
+						else {
+							nm_assert (cmp < 0);
+							i2min = i2mid + 1;
+						}
+					}
+					*out_idx_first = i2min;
+				}
+				if (out_idx_last) {
+					i2min = imid + 1;
+					i2max = imax;
+					while (i2min <= i2max) {
+						i2mid = i2min + (i2max - i2min) / 2;
+
+						cmp = cmpfcn (list[i2mid], needle, user_data);
+						if (cmp == 0)
+							i2min = i2mid + 1;
+						else {
+							nm_assert (cmp > 0);
+							i2max = i2mid - 1;
+						}
+					}
+					*out_idx_last = i2min - 1;
+				}
+				return imid;
+			}
+
+			if (cmp < 0)
+				imin = imid + 1;
+			else
+				imax = imid - 1;
+		}
 	}
 
 	/* return the inverse of @imin. This is a negative number, but
 	 * also is ~imin the position where the value should be inserted. */
-	return ~imin;
+	imin = ~imin;
+	NM_SET_OUT (out_idx_first, imin);
+	NM_SET_OUT (out_idx_last, imin);
+	return imin;
 }
 
 gssize
