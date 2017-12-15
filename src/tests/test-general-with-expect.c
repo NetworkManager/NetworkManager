@@ -219,9 +219,8 @@ test_nm_utils_kill_child_create_and_join_pgroup (void)
 #define TEST_TOKEN  "nm_test_kill_child_process"
 
 static void
-test_nm_utils_kill_child (void)
+do_test_nm_utils_kill_child (void)
 {
-	int err;
 	GLogLevelFlags fatal_mask;
 	char *argv_watchdog[] = {
 			"bash",
@@ -255,15 +254,12 @@ test_nm_utils_kill_child (void)
 			"trap \"while true; do :; done\" TERM; while true; do :; done; #" TEST_TOKEN,
 			NULL,
 		};
-	pid_t gpid;
 	pid_t pid1a_1, pid1a_2, pid1a_3, pid2a, pid3a, pid4a;
 	pid_t pid1s_1, pid1s_2, pid1s_3, pid2s, pid3s, pid4s;
 
 	const int expected_exit_47 = 12032; /* exit with status 47 */
 	const int expected_signal_TERM = SIGTERM;
 	const int expected_signal_KILL = SIGKILL;
-
-	gpid = test_nm_utils_kill_child_create_and_join_pgroup ();
 
 	test_nm_utils_kill_child_spawn (argv_watchdog, FALSE);
 
@@ -360,14 +356,25 @@ test_nm_utils_kill_child (void)
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_DEBUG, "*kill child process 'test-a-4' (*): terminated by signal 9 (* usec elapsed)");
 	test_nm_utils_kill_child_async_do ("test-a-4", pid4a, SIGTERM, 1, TRUE, &expected_signal_KILL);
 
+	g_log_set_always_fatal (fatal_mask);
+
+	g_test_assert_expected_messages ();
+}
+
+static void
+test_nm_utils_kill_child (void)
+{
+	int err;
+	pid_t gpid;
+
+	gpid = test_nm_utils_kill_child_create_and_join_pgroup ();
+
+	do_test_nm_utils_kill_child ();
+
 	err = setpgid (0, 0);
 	g_assert (err == 0);
 
 	kill (-gpid, SIGKILL);
-
-	g_log_set_always_fatal (fatal_mask);
-
-	g_test_assert_expected_messages ();
 }
 
 /*****************************************************************************/
