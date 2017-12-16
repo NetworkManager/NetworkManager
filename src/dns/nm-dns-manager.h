@@ -29,9 +29,11 @@
 #include "nm-setting-connection.h"
 
 typedef enum {
+	NM_DNS_IP_CONFIG_TYPE_REMOVED = -1,
+
 	NM_DNS_IP_CONFIG_TYPE_DEFAULT = 0,
 	NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE,
-	NM_DNS_IP_CONFIG_TYPE_VPN
+	NM_DNS_IP_CONFIG_TYPE_VPN,
 } NMDnsIPConfigType;
 
 enum {
@@ -39,17 +41,22 @@ enum {
 	NM_DNS_PRIORITY_DEFAULT_VPN     = 50,
 };
 
-typedef struct {
-	gpointer config;
-	NMDnsIPConfigType type;
-	char *iface;
-} NMDnsIPConfigData;
+struct _NMDnsConfigData;
+struct _NMDnsManager;
 
 typedef struct {
-	NMSettingConnectionMdns mdns;
-	char *iface;
+	struct _NMDnsConfigData *data;
+	NMIPConfig *ip_config;
+	CList data_lst;
+	CList ip_config_lst;
+	NMDnsIPConfigType ip_config_type;
+} NMDnsIPConfigData;
+
+typedef struct _NMDnsConfigData {
+	struct _NMDnsManager *self;
+	CList data_lst_head;
 	int ifindex;
-} NMDnsConnectionConfigData;
+} NMDnsConfigData;
 
 #define NM_TYPE_DNS_MANAGER (nm_dns_manager_get_type ())
 #define NM_DNS_MANAGER(o) (G_TYPE_CHECK_INSTANCE_CAST ((o), NM_TYPE_DNS_MANAGER, NMDnsManager))
@@ -77,28 +84,15 @@ NMDnsManager * nm_dns_manager_get (void);
 void nm_dns_manager_begin_updates (NMDnsManager *self, const char *func);
 void nm_dns_manager_end_updates (NMDnsManager *self, const char *func);
 
-gboolean nm_dns_manager_add_ip_config (NMDnsManager *self,
-                                       const char *iface,
-                                       gpointer config,
-                                       NMDnsIPConfigType cfg_type);
-
-gboolean nm_dns_manager_remove_ip_config (NMDnsManager *self, gpointer config);
+gboolean nm_dns_manager_set_ip_config (NMDnsManager *self,
+                                       NMIPConfig *ip_config,
+                                       NMDnsIPConfigType ip_config_type);
 
 void nm_dns_manager_set_initial_hostname (NMDnsManager *self,
                                           const char *hostname);
 void nm_dns_manager_set_hostname         (NMDnsManager *self,
                                           const char *hostname,
                                           gboolean skip_update);
-gboolean nm_dns_manager_add_connection_config (NMDnsManager *self,
-                                               const char *iface,
-                                               int ifindex,
-                                               NMSettingConnectionMdns mdns);
-void nm_dns_manager_remove_connection_config (NMDnsManager *self,
-                                              const char *iface,
-                                              int ifindex);
-void nm_dns_manager_update_ifindex (NMDnsManager *self,
-                                    const char *ip_iface,
-                                    int new_ifindex);
 
 /**
  * NMDnsManagerResolvConfManager

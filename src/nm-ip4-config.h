@@ -380,6 +380,12 @@ nm_ip_config_get_ifindex (const NMIPConfig *self)
 }
 
 static inline void
+nm_ip_config_hash (const NMIPConfig *self, GChecksum *sum, gboolean dns_only)
+{
+	_NM_IP_CONFIG_DISPATCH_VOID (self, nm_ip4_config_hash, nm_ip6_config_hash, sum, dns_only);
+}
+
+static inline void
 nm_ip_config_add_address (NMIPConfig *self, const NMPlatformIPAddress *address)
 {
 	_NM_IP_CONFIG_DISPATCH_VOID (self, nm_ip4_config_add_address, nm_ip6_config_add_address, (gconstpointer) address);

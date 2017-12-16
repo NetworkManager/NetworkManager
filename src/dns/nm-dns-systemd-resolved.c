@@ -282,8 +282,8 @@ send_updates (NMDnsSystemdResolved *self)
 
 static gboolean
 update (NMDnsPlugin *plugin,
-        const GPtrArray *configs,
         const NMGlobalDnsConfig *global_config,
+        const CList *ip_config_lst_head,
         const char *hostname)
 {
 	NMDnsSystemdResolved *self = NM_DNS_SYSTEMD_RESOLVED (plugin);
@@ -292,23 +292,26 @@ update (NMDnsPlugin *plugin,
 	guint interfaces_len;
 	guint i;
 	int prio, first_prio = 0;
+	NMDnsIPConfigData *ip_data;
+	gboolean is_first = TRUE;
 
 	interfaces = g_hash_table_new_full (nm_direct_hash, NULL,
 	                                    NULL, (GDestroyNotify) _interface_config_free);
 
-	for (i = 0; i < configs->len; i++) {
-		const NMDnsIPConfigData *data = configs->pdata[i];
+	c_list_for_each_entry (ip_data, ip_config_lst_head, ip_config_lst) {
 		gboolean skip = FALSE;
 		InterfaceConfig *ic = NULL;
 		int ifindex;
 
-		prio = nm_ip_config_get_dns_priority (data->config);
-		if (i == 0)
+		prio = nm_ip_config_get_dns_priority (ip_data->ip_config);
+		if (is_first) {
+			is_first = FALSE;
 			first_prio = prio;
-		else if (first_prio < 0 && first_prio != prio)
+		} else if (first_prio < 0 && first_prio != prio)
 			skip = TRUE;
 
-		ifindex = nm_ip_config_get_ifindex (data->config);
+		ifindex = ip_data->data->ifindex;
+		nm_assert (ifindex == nm_ip_config_get_ifindex (ip_data->ip_config));
 
 		ic = g_hash_table_lookup (interfaces, GINT_TO_POINTER (ifindex));
 		if (!ic) {
@@ -320,7 +323,7 @@ update (NMDnsPlugin *plugin,
 
 		if (!skip) {
 			c_list_link_tail (&ic->configs_lst_head,
-			                  &nm_c_list_elem_new_stale (data->config)->lst);
+			                  &nm_c_list_elem_new_stale (ip_data->ip_config)->lst);
 		}
 	}
 
@@ -341,45 +344,6 @@ update (NMDnsPlugin *plugin,
 	}
 
 	send_updates (self);
-
-	return TRUE;
-}
-
-static gboolean
-update_mdns (NMDnsPlugin *plugin, int ifindex, NMSettingConnectionMdns mdns)
-{
-	NMDnsSystemdResolved *self = NM_DNS_SYSTEMD_RESOLVED (plugin);
-	NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
-	char *value;
-
-	_LOGI ("update_mdns: %i/%d", ifindex, mdns);
-
-	nm_clear_g_cancellable (&priv->mdns_cancellable);
-
-	if (!priv->resolve)
-		return FALSE;
-
-	priv->mdns_cancellable = g_cancellable_new ();
-
-	switch (mdns) {
-		case NM_SETTING_CONNECTION_MDNS_YES:
-			value = "yes";
-			break;
-		case NM_SETTING_CONNECTION_MDNS_NO:
-			value = "no";
-			break;
-		case NM_SETTING_CONNECTION_MDNS_RESOLVE:
-			value = "resolve";
-			break;
-		default:
-			/* reset to system default */
-			value = "";
-	}
-
-	g_dbus_proxy_call (priv->resolve, "SetLinkMulticastDNS",
-                           g_variant_new ("(is)", ifindex, value),
-	                   G_DBUS_CALL_FLAGS_NONE,
-	                   -1, priv->mdns_cancellable, call_done, self);
 
 	return TRUE;
 }
@@ -486,6 +450,5 @@ nm_dns_systemd_resolved_class_init (NMDnsSystemdResolvedClass *dns_class)
 
 	plugin_class->is_caching = is_caching;
 	plugin_class->update = update;
-	plugin_class->update_mdns = update_mdns;
 	plugin_class->get_name = get_name;
 }
