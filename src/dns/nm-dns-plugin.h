@@ -50,8 +50,8 @@ typedef struct {
 	 * configuration.
 	 */
 	gboolean (*update) (NMDnsPlugin *self,
-	                    const GPtrArray *configs,
 	                    const NMGlobalDnsConfig *global_config,
+	                    const CList *ip_config_lst_head,
 	                    const char *hostname);
 
 	/* Subclasses should override and return TRUE if they start a local
@@ -59,11 +59,6 @@ typedef struct {
 	 * other local caching nameserver from operating.
 	 */
 	gboolean (*is_caching) (NMDnsPlugin *self);
-
-	/* Subclasses wishing to control interface mDNS status should override. */
-	gboolean (*update_mdns) (NMDnsPlugin *self,
-	                         int ifindex,
-	                         NMSettingConnectionMdns mdns);
 
 	/* Subclasses should override this and return their plugin name */
 	const char *(*get_name) (NMDnsPlugin *self);
@@ -85,13 +80,9 @@ gboolean nm_dns_plugin_is_caching (NMDnsPlugin *self);
 const char *nm_dns_plugin_get_name (NMDnsPlugin *self);
 
 gboolean nm_dns_plugin_update (NMDnsPlugin *self,
-                               const GPtrArray *configs,
                                const NMGlobalDnsConfig *global_config,
+                               const CList *ip_config_lst_head,
                                const char *hostname);
-
-gboolean nm_dns_plugin_update_mdns (NMDnsPlugin *self,
-                                    int ifindex,
-                                    NMSettingConnectionMdns mdns);
 
 void nm_dns_plugin_stop (NMDnsPlugin *self);
 

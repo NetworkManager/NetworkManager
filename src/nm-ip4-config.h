@@ -350,10 +350,28 @@ nm_ip_config_get_addr_family (const NMIPConfig *config)
 		} \
 	} G_STMT_END
 
+#define _NM_IP_CONFIG_DISPATCH_VOID(config, v4_func, v6_func, ...) \
+	G_STMT_START { \
+		gconstpointer _config = (config); \
+		\
+		if (NM_IS_IP4_CONFIG (_config)) { \
+			v4_func ((NMIP4Config *) _config, ##__VA_ARGS__); \
+		} else { \
+			nm_assert (NM_IS_IP6_CONFIG (_config)); \
+			v6_func ((NMIP6Config *) _config, ##__VA_ARGS__); \
+		} \
+	} G_STMT_END
+
 static inline int
 nm_ip_config_get_ifindex (const NMIPConfig *self)
 {
 	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_ifindex, nm_ip6_config_get_ifindex);
+}
+
+static inline void
+nm_ip_config_hash (const NMIPConfig *self, GChecksum *sum, gboolean dns_only)
+{
+	_NM_IP_CONFIG_DISPATCH_VOID (self, nm_ip4_config_hash, nm_ip6_config_hash, sum, dns_only);
 }
 
 static inline int
