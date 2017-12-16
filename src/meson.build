@@ -20,7 +20,7 @@ core_incs = [
 ]
 
 core_dep = declare_dependency(
-  sources: libnm_core_enums_h,
+  sources: libnm_core_enum[1],
   include_directories: core_incs,
   dependencies: glib_dep,
   compile_args: core_cflags

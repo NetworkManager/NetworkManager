@@ -45,7 +45,7 @@ incs = [
 # just test, that we can build "nm-vpn-plugin-utils.c"
 libnm_vpn_plugin_utils_test = static_library(
   'nm-vpn-plugin-utils-test',
-  sources: shared_vpn_plugin_utils + [libnm_enums_h],
+  sources: shared_vpn_plugin_utils + [libnm_enum[1]],
   include_directories: incs,
   dependencies: glib_dep
 )

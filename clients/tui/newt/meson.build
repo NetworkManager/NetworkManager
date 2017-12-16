@@ -23,7 +23,7 @@ sources = files(
 
 libnmt_newt = static_library(
   'nmt-newt',
-  sources: sources + [libnm_core_enums_h],
+  sources: sources + [libnm_core_enum[1]],
   include_directories: incs,
   dependencies: deps,
   c_args: cflags

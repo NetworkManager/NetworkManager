@@ -69,7 +69,7 @@ cflags = '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD'
 
 libsystemd_nm = static_library(
   'systemd-nm',
-  sources: sources + [libnm_core_enums_h],
+  sources: sources + [libnm_core_enum[1]],
   include_directories: incs,
   dependencies: glib_dep,
   c_args: cflags

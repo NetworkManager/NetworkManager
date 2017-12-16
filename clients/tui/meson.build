@@ -71,7 +71,7 @@ endif
 
 executable(
   'nmtui',
-  sources + [libnm_core_enums_h],
+  sources + [libnm_core_enum[1]],
   include_directories: incs,
   dependencies: deps,
   c_args: cflags,

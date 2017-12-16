@@ -13,7 +13,7 @@ cflags = [
 nm_pppd_plugin = shared_module(
   name,
   name_prefix: '',
-  sources: [name + '.c', libnm_core_enums_h],
+  sources: [name + '.c', libnm_core_enum[1]],
   include_directories: core_incs,
   dependencies: deps,
   c_args: cflags,

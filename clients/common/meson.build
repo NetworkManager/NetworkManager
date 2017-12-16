@@ -26,7 +26,7 @@ sources = shared_utils + files(
 
 libnmc_base = static_library(
   'nmc-base',
-  sources: sources + [libnm_core_enums_h],
+  sources: sources + [libnm_core_enum[1]],
   include_directories: incs,
   dependencies: deps,
   c_args: common_cflags
@@ -74,7 +74,7 @@ sources += settings_docs_source
 
 libnmc = static_library(
   'nmc',
-  sources: sources + [libnm_core_enums_h],
+  sources: sources + [libnm_core_enum[1]],
   include_directories: incs,
   dependencies: deps,
   c_args: common_cflags,

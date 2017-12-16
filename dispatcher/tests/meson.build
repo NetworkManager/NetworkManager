@@ -11,7 +11,7 @@ cflags = '-DSRCDIR="@0@"'.format(meson.current_source_dir())
 
 exe = executable(
   test_unit,
-  [test_unit + '.c', libnm_core_enums_h],
+  [test_unit + '.c', libnm_core_enum[1]],
   include_directories: incs,
   dependencies: glib_dep,
   c_args: cflags,

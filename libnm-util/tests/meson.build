@@ -19,7 +19,7 @@ test = 'test-libnm-linking'
 
 test_libnm_linking = executable(
   test,
-  [test + '.c', libnm_utils_enums_h],
+  [test + '.c', libnm_utils_enum[1]],
   include_directories: incs,
   dependencies: deps + [libnm_dep],
   c_args: cflags
@@ -37,7 +37,7 @@ test_units = [
 foreach test_unit: test_units
   exe = executable(
     'libnm-util-' + test_unit[0],
-    [test_unit[0] + '.c', libnm_utils_enums_h],
+    [test_unit[0] + '.c', libnm_utils_enum[1]],
     include_directories: incs,
     dependencies: deps,
     c_args: cflags,

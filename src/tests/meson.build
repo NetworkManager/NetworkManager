@@ -27,7 +27,7 @@ cflags = '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD'
 
 exe = executable(
   test_unit,
-  [test_unit + '.c', libnm_core_enums_h] + shared_siphash,
+  [test_unit + '.c', libnm_core_enum[1]] + shared_siphash,
   include_directories: core_incs,
   dependencies: glib_dep,
   c_args: cflags,

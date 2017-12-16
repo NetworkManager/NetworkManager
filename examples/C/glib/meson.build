@@ -1,7 +1,7 @@
 examples = [
-  ['add-connection-gdbus', [uuid_dep], [libnm_core_enums_h, libnm_enums_h]],
+  ['add-connection-gdbus', [uuid_dep], [libnm_core_enum[1], libnm_enum[1]]],
   ['add-connection-libnm', [libnm_dep], []],
-  ['get-active-connections-gdbus', [], [libnm_core_enums_h, libnm_enums_h]],
+  ['get-active-connections-gdbus', [], [libnm_core_enum[1], libnm_enum[1]]],
   ['get-ap-info-libnm', [libnm_dep], []],
   ['list-connections-gdbus', [], []],
   ['list-connections-libnm', [libnm_dep], []],

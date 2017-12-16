@@ -1,0 +1,86 @@
+/*** BEGIN file-header ***/
+#include "config.h"
+
+#include "nm-core-enum-types.h"
+#include "nm-default.h"
+
+#include "nm-version-macros.h"
+#include "nm-connection.h"
+#include "nm-core-types.h"
+#include "nm-dbus-interface.h"
+#include "nm-errors.h"
+#include "nm-setting-8021x.h"
+#include "nm-setting-adsl.h"
+#include "nm-setting-bluetooth.h"
+#include "nm-setting-bond.h"
+#include "nm-setting-bridge-port.h"
+#include "nm-setting-bridge.h"
+#include "nm-setting-cdma.h"
+#include "nm-setting-connection.h"
+#include "nm-setting-dcb.h"
+#include "nm-setting-dummy.h"
+#include "nm-setting-generic.h"
+#include "nm-setting-gsm.h"
+#include "nm-setting-infiniband.h"
+#include "nm-setting-ip-config.h"
+#include "nm-setting-ip-tunnel.h"
+#include "nm-setting-ip4-config.h"
+#include "nm-setting-ip6-config.h"
+#include "nm-setting-macsec.h"
+#include "nm-setting-macvlan.h"
+#include "nm-setting-olpc-mesh.h"
+#include "nm-setting-ovs-bridge.h"
+#include "nm-setting-ovs-interface.h"
+#include "nm-setting-ovs-patch.h"
+#include "nm-setting-ovs-port.h"
+#include "nm-setting-ppp.h"
+#include "nm-setting-pppoe.h"
+#include "nm-setting-proxy.h"
+#include "nm-setting-serial.h"
+#include "nm-setting-team-port.h"
+#include "nm-setting-team.h"
+#include "nm-setting-tun.h"
+#include "nm-setting-user.h"
+#include "nm-setting-vlan.h"
+#include "nm-setting-vpn.h"
+#include "nm-setting-vxlan.h"
+#include "nm-setting-wimax.h"
+#include "nm-setting-wired.h"
+#include "nm-setting-wireless-security.h"
+#include "nm-setting-wireless.h"
+#include "nm-setting.h"
+#include "nm-simple-connection.h"
+#include "nm-utils.h"
+#include "nm-version.h"
+#include "nm-vpn-dbus-interface.h"
+#include "nm-vpn-editor-plugin.h"
+#include "nm-vpn-plugin-info.h"
+/*** END file-header ***/
+
+/*** BEGIN value-header ***/
+GType
+@enum_name@_get_type (void)
+{
+  static volatile gsize g_define_type_id__volatile = 0;
+
+  if (g_once_init_enter (&g_define_type_id__volatile))
+    {
+      static const G@Type@Value values[] = {
+/*** END value-header ***/
+
+/*** BEGIN value-production ***/
+        { @VALUENAME@, "@VALUENAME@", "@valuenick@" },
+/*** END value-production ***/
+
+/*** BEGIN value-tail ***/
+        { 0, NULL, NULL }
+      };
+      GType g_define_type_id =
+        g_@type@_register_static (g_intern_static_string ("@EnumName@"), values);
+      g_once_init_leave (&g_define_type_id__volatile, g_define_type_id);
+    }
+
+  return g_define_type_id__volatile;
+}
+
+/*** END value-tail ***/
