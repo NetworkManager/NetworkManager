@@ -490,15 +490,17 @@ ip_address_or_route_parser (KeyfileReaderInfo *info, NMSetting *setting, const c
 		const char **key_basename;
 
 		for (key_basename = key_names; *key_basename; key_basename++) {
-			char *key_name;
+			char key_name_buf[100];
+			const char *key_name;
 			gpointer item;
 			char options_key[128];
 
 			/* -1 means no suffix */
-			if (i >= 0)
-				key_name = g_strdup_printf ("%s%d", *key_basename, i);
-			else
-				key_name = g_strdup (*key_basename);
+			key_name = *key_basename;
+			if (i >= 0) {
+				nm_sprintf_buf (key_name_buf, "%s%d", key_name, i);
+				key_name = key_name_buf;
+			}
 
 			item = read_one_ip_address_or_route (info, key, setting_name, key_name, ipv6, routes,
 			                                     gateway ? NULL : &gateway, setting);
@@ -506,8 +508,6 @@ ip_address_or_route_parser (KeyfileReaderInfo *info, NMSetting *setting, const c
 				nm_sprintf_buf (options_key, "%s_options", key_name);
 				fill_route_attributes (info->keyfile, item, setting_name, options_key, ipv6 ? AF_INET6 : AF_INET);
 			}
-
-			g_free (key_name);
 
 			if (info->error) {
 				g_ptr_array_unref (list);

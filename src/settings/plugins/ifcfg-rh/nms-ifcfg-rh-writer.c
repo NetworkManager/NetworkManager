@@ -2275,7 +2275,7 @@ write_ip4_setting (NMConnection *connection,
 		if (i > 0) {
 			GVariant *label;
 
-			label = nm_ip_address_get_attribute (addr, "label");
+			label = nm_ip_address_get_attribute (addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL);
 			if (label)
 				continue;
 		}
@@ -2478,7 +2478,7 @@ write_ip4_aliases (NMConnection *connection, const char *base_ifcfg_path)
 
 		addr = nm_setting_ip_config_get_address (s_ip4, i);
 
-		label_var = nm_ip_address_get_attribute (addr, "label");
+		label_var = nm_ip_address_get_attribute (addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL);
 		if (!label_var)
 			continue;
 		label = g_variant_get_string (label_var, NULL);

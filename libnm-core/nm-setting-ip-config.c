@@ -526,6 +526,14 @@ nm_ip_address_set_prefix (NMIPAddress *address,
 	address->prefix = prefix;
 }
 
+const char **
+_nm_ip_address_get_attribute_names (const NMIPAddress *address, gboolean sorted, guint *out_length)
+{
+	nm_assert (address);
+
+	return nm_utils_strdict_get_keys (address->attributes, sorted, out_length);
+}
+
 /**
  * nm_ip_address_get_attribute_names:
  * @address: the #NMIPAddress
@@ -537,22 +545,12 @@ nm_ip_address_set_prefix (NMIPAddress *address,
 char **
 nm_ip_address_get_attribute_names (NMIPAddress *address)
 {
-	GHashTableIter iter;
-	const char *key;
-	GPtrArray *names;
+	const char **names;
 
-	g_return_val_if_fail (address != NULL, NULL);
+	g_return_val_if_fail (address, NULL);
 
-	names = g_ptr_array_new ();
-
-	if (address->attributes) {
-		g_hash_table_iter_init (&iter, address->attributes);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &key, NULL))
-			g_ptr_array_add (names, g_strdup (key));
-	}
-	g_ptr_array_add (names, NULL);
-
-	return (char **) g_ptr_array_free (names, FALSE);
+	names = _nm_ip_address_get_attribute_names (address, TRUE, NULL);
+	return nm_utils_strv_make_deep_copied_nonnull (names);
 }
 
 /**
@@ -1136,28 +1134,9 @@ _nm_ip_route_get_attributes_direct (NMIPRoute *route)
 const char **
 _nm_ip_route_get_attribute_names (const NMIPRoute *route, gboolean sorted, guint *out_length)
 {
-	const char **names;
-	guint length;
+	nm_assert (route);
 
-	g_return_val_if_fail (route != NULL, NULL);
-
-	if (   !route->attributes
-	    || !g_hash_table_size (route->attributes)) {
-		NM_SET_OUT (out_length, 0);
-		return NULL;
-	}
-
-	names = (const char **) g_hash_table_get_keys_as_array (route->attributes, &length);
-	if (   sorted
-	    && length > 1) {
-		g_qsort_with_data (names,
-		                   length,
-		                   sizeof (char *),
-		                   nm_strcmp_p_with_data,
-		                   NULL);
-	}
-	NM_SET_OUT (out_length, length);
-	return names;
+	return nm_utils_strdict_get_keys (route->attributes, sorted, out_length);
 }
 
 /**
@@ -1171,21 +1150,12 @@ _nm_ip_route_get_attribute_names (const NMIPRoute *route, gboolean sorted, guint
 char **
 nm_ip_route_get_attribute_names (NMIPRoute *route)
 {
-	char **names;
-	guint i, len;
+	const char **names;
 
 	g_return_val_if_fail (route != NULL, NULL);
 
-	names = (char **) _nm_ip_route_get_attribute_names (route, TRUE, &len);
-	if (!names)
-		return g_new0 (char *, 1);
-
-	nm_assert (len > 0 && names && names[len] == NULL);
-	for (i = 0; i < len; i++) {
-		nm_assert (names[i]);
-		names[i] = g_strdup (names[i]);
-	}
-	return names;
+	names = _nm_ip_route_get_attribute_names (route, TRUE, NULL);
+	return nm_utils_strv_make_deep_copied_nonnull (names);
 }
 
 /**
@@ -2553,7 +2523,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			return FALSE;
 		}
 
-		label = nm_ip_address_get_attribute (addr, "label");
+		label = nm_ip_address_get_attribute (addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL);
 		if (label) {
 			if (!g_variant_is_of_type (label, G_VARIANT_TYPE_STRING)) {
 				g_set_error (error,

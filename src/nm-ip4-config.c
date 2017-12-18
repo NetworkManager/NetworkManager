@@ -957,7 +957,7 @@ nm_ip4_config_merge_setting (NMIP4Config *self,
 		address.preferred = NM_PLATFORM_LIFETIME_PERMANENT;
 		address.addr_source = NM_IP_CONFIG_SOURCE_USER;
 
-		label = nm_ip_address_get_attribute (s_addr, "label");
+		label = nm_ip_address_get_attribute (s_addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL);
 		if (label)
 			g_strlcpy (address.label, g_variant_get_string (label, NULL), sizeof (address.label));
 
@@ -1069,7 +1069,7 @@ nm_ip4_config_create_setting (const NMIP4Config *self)
 
 		s_addr = nm_ip_address_new_binary (AF_INET, &address->address, address->plen, NULL);
 		if (*address->label)
-			nm_ip_address_set_attribute (s_addr, "label", g_variant_new_string (address->label));
+			nm_ip_address_set_attribute (s_addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL, g_variant_new_string (address->label));
 
 		nm_setting_ip_config_add_address (s_ip4, s_addr);
 		nm_ip_address_unref (s_addr);
@@ -2963,7 +2963,7 @@ get_property (GObject *object, guint prop_id,
 
 				if (*address->label) {
 					g_variant_builder_add (&addr_builder, "{sv}",
-					                       "label",
+					                       NM_IP_ADDRESS_ATTRIBUTE_LABEL,
 					                       g_variant_new_string (address->label));
 				}
 
