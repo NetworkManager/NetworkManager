@@ -28,7 +28,6 @@
 
 G_BEGIN_DECLS
 
-NM_AVAILABLE_IN_1_12
 typedef struct NMTCQdisc NMTCQdisc;
 
 NM_AVAILABLE_IN_1_12
@@ -61,7 +60,6 @@ void        nm_tc_qdisc_set_handle           (NMTCQdisc *qdisc,
 NM_AVAILABLE_IN_1_12
 guint32     nm_tc_qdisc_get_parent           (NMTCQdisc *qdisc);
 
-NM_AVAILABLE_IN_1_12
 typedef struct NMTCAction NMTCAction;
 
 NM_AVAILABLE_IN_1_12
@@ -96,7 +94,6 @@ void        nm_tc_action_set_attribute       (NMTCAction *action,
                                               const char *name,
                                               GVariant *value);
 
-NM_AVAILABLE_IN_1_12
 typedef struct NMTCTfilter NMTCTfilter;
 
 NM_AVAILABLE_IN_1_12
