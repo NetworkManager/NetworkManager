@@ -380,12 +380,11 @@ run_netconfig (NMDnsManager *self, GError **error, gint *stdin_fd)
 static void
 write_to_netconfig (NMDnsManager *self, gint fd, const char *key, const char *value)
 {
-	char *str;
+	gs_free char *str = NULL;
 
 	str = g_strdup_printf ("%s='%s'\n", key, value);
-	_LOGD ("writing to netconfig: %s", str);
-	write (fd, str, strlen (str));
-	g_free (str);
+	_LOGD ("writing to netconfig: %s='%s'", key, value);
+	(void) write (fd, str, strlen (str));
 }
 
 static SpawnResult

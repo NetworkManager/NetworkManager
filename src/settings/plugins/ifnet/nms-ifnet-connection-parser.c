@@ -2597,7 +2597,7 @@ ifnet_update_parsers_by_connection (NMConnection *connection,
 	gboolean success = FALSE;
 	const char *type;
 	gboolean no_8021x = FALSE;
-	gboolean wired = FALSE, pppoe = TRUE;
+	gboolean wired = FALSE;
 	const char *new_name = NULL;
 
 	if (!ifnet_can_write_connection (connection, error))
@@ -2630,7 +2630,6 @@ ifnet_update_parsers_by_connection (NMConnection *connection,
 		s_pppoe = nm_connection_get_setting_pppoe (connection);
 		if (!write_pppoe_setting (conn_name, s_pppoe))
 			goto out;
-		pppoe = TRUE;
 		wired = TRUE;
 		no_8021x = TRUE;
 	} else {
