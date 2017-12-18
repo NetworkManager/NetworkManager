@@ -326,21 +326,6 @@ if enable_wext
 endif
 config_h.set10('HAVE_WEXT', enable_wext)
 
-# FIXME: it's not used at all?
-# Check for newer VLAN flags
-vlan_src = '''
-  #ifndef __user
-  #define __user
-  #endif
-  #include <sys/types.h>
-  #include <linux/types.h>
-  #include <linux/if_vlan.h>
-  int main() {
-    unsigned a = VLAN_FLAG_LOOSE_BINDING;
-  }
-'''
-config_h.set('HAVE_VLAN_FLAG_LOOSE_BINDING', cc.compiles(vlan_src))
-
 # Checks for libdl - on certain platforms its part of libc
 dl_dep = cc.find_library('dl')
 '''

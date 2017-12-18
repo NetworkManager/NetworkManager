@@ -53,9 +53,6 @@
 /* Define if systemd support is available */
 #mesondefine HAVE_SYSTEMD
 
-/* Define if you have VLAN_FLAG_LOOSE_BINDING */
-#mesondefine HAVE_VLAN_FLAG_LOOSE_BINDING
-
 /* Define if you have Linux Wireless Extensions support */
 #mesondefine HAVE_WEXT
 

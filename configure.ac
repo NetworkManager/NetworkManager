@@ -300,28 +300,6 @@ fi
 AM_CONDITIONAL(WITH_IWD, test x"${ac_with_iwd}" = x"yes")
 
 dnl
-dnl Check for newer VLAN flags
-dnl
-AC_MSG_CHECKING([Linux kernel VLAN_FLAG_LOOSE_BINDING enum value])
-AC_COMPILE_IFELSE(
-                  [AC_LANG_PROGRAM(
-                                   [[#ifndef __user
-                                     #define __user
-                                     #endif
-                                     #include <sys/types.h>
-                                     #include <linux/types.h>
-                                     #include <linux/if_vlan.h>]],
-                                   [[unsigned a = VLAN_FLAG_LOOSE_BINDING;]])],
-                  [ac_have_vlan_flag_loose_binding=yes],
-                  [ac_have_vlan_flag_loose_binding=no])
-AC_MSG_RESULT($ac_have_vlan_flag_loose_binding)
-if test "$ac_have_vlan_flag_loose_binding" = yes; then
-	AC_DEFINE(HAVE_VLAN_FLAG_LOOSE_BINDING, 1, [Define if you have VLAN_FLAG_LOOSE_BINDING])
-else
-	AC_DEFINE(HAVE_VLAN_FLAG_LOOSE_BINDING, 0, [Define if you have VLAN_FLAG_LOOSE_BINDING])
-fi
-
-dnl
 dnl Checks for libdl - on certain platforms its part of libc
 dnl
 AC_SEARCH_LIBS([dlopen], [dl dld], [], [ac_cv_search_dlopen=])
