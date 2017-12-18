@@ -1625,7 +1625,7 @@ read_aliases (NMSettingIPConfig *s_ip4, gboolean read_defroute, const char *file
 			                            read_defroute ? &gateway : NULL,
 			                            &err);
 			if (ok) {
-				nm_ip_address_set_attribute (addr, "label", g_variant_new_string (device));
+				nm_ip_address_set_attribute (addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL, g_variant_new_string (device));
 				if (!nm_setting_ip_config_add_address (s_ip4, addr))
 					PARSE_WARNING ("duplicate IP4 address in alias file %s", item);
 				if (nm_streq0 (nm_setting_ip_config_get_method (s_ip4), NM_SETTING_IP4_CONFIG_METHOD_DISABLED))

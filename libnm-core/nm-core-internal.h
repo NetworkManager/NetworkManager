@@ -216,6 +216,8 @@ GHashTable *_nm_utils_copy_strdict (GHashTable *strdict);
 
 typedef gpointer (*NMUtilsCopyFunc) (gpointer);
 
+const char **_nm_ip_address_get_attribute_names (const NMIPAddress *addr, gboolean sorted, guint *out_length);
+
 gboolean _nm_ip_route_attribute_validate_all (const NMIPRoute *route);
 const char **_nm_ip_route_get_attribute_names (const NMIPRoute *route, gboolean sorted, guint *out_length);
 GHashTable *_nm_ip_route_get_attributes_direct (NMIPRoute *route);

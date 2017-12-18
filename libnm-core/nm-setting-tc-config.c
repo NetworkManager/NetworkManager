@@ -442,22 +442,14 @@ nm_tc_action_get_kind (NMTCAction *action)
 char **
 nm_tc_action_get_attribute_names (NMTCAction *action)
 {
-	GHashTableIter iter;
-	const char *key;
-	GPtrArray *names;
+	const char **names;
 
 	g_return_val_if_fail (action != NULL, NULL);
 
-	names = g_ptr_array_new ();
-
-	if (action->attributes) {
-		g_hash_table_iter_init (&iter, action->attributes);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &key, NULL))
-			g_ptr_array_add (names, g_strdup (key));
-	}
-	g_ptr_array_add (names, NULL);
-
-	return (char **) g_ptr_array_free (names, FALSE);
+	names = nm_utils_strdict_get_keys (action->attributes, TRUE, NULL);
+	if (!names)
+		return g_new0 (char *, 1);
+	return nm_utils_strv_make_deep_copied (names);
 }
 
 /**
@@ -1329,7 +1321,7 @@ _action_to_variant (NMTCAction *action)
 
 	for (i = 0; attrs[i]; i++) {
 		g_variant_builder_add (&builder, "{sv}", attrs[i],
-				       nm_tc_action_get_attribute (action, attrs[i]));
+		                       nm_tc_action_get_attribute (action, attrs[i]));
 	}
 
 	return g_variant_builder_end (&builder);

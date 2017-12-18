@@ -1878,7 +1878,7 @@ GVariant *
 nm_utils_ip_addresses_to_variant (GPtrArray *addresses)
 {
 	GVariantBuilder builder;
-	int i;
+	guint i;
 
 	g_variant_builder_init (&builder, G_VARIANT_TYPE ("aa{sv}"));
 
@@ -1886,8 +1886,8 @@ nm_utils_ip_addresses_to_variant (GPtrArray *addresses)
 		for (i = 0; i < addresses->len; i++) {
 			NMIPAddress *addr = addresses->pdata[i];
 			GVariantBuilder addr_builder;
-			char **names;
-			int n;
+			gs_free const char **names = NULL;
+			guint j, len;
 
 			g_variant_builder_init (&addr_builder, G_VARIANT_TYPE ("a{sv}"));
 			g_variant_builder_add (&addr_builder, "{sv}",
@@ -1897,13 +1897,12 @@ nm_utils_ip_addresses_to_variant (GPtrArray *addresses)
 			                       "prefix",
 			                       g_variant_new_uint32 (nm_ip_address_get_prefix (addr)));
 
-			names = nm_ip_address_get_attribute_names (addr);
-			for (n = 0; names[n]; n++) {
+			names = _nm_ip_address_get_attribute_names (addr, TRUE, &len);
+			for (j = 0; j < len; j++) {
 				g_variant_builder_add (&addr_builder, "{sv}",
-				                       names[n],
-				                       nm_ip_address_get_attribute (addr, names[n]));
+				                       names[j],
+				                       nm_ip_address_get_attribute (addr, names[j]));
 			}
-			g_strfreev (names);
 
 			g_variant_builder_add (&builder, "a{sv}", &addr_builder);
 		}
@@ -2453,10 +2452,10 @@ nm_utils_tc_action_from_str (const char *str, GError **error)
 	nm_assert (str);
 	nm_assert (!error || !*error);
 
-        ht = nm_utils_parse_variant_attributes (str,
-                                                ' ', ' ', FALSE,
-                                                tc_action_attribute_spec,
-                                                error);
+	ht = nm_utils_parse_variant_attributes (str,
+	                                        ' ', ' ', FALSE,
+	                                        tc_action_attribute_spec,
+	                                        error);
 	if (!ht)
 		return FALSE;
 
@@ -2492,10 +2491,10 @@ nm_utils_tc_action_from_str (const char *str, GError **error)
 			return NULL;
 		}
 
-	        options = nm_utils_parse_variant_attributes (rest,
-	                                                     ' ', ' ', FALSE,
-	                                                     attrs,
-	                                                     error);
+		options = nm_utils_parse_variant_attributes (rest,
+		                                             ' ', ' ', FALSE,
+		                                             attrs,
+		                                             error);
 		if (!options) {
 			nm_tc_action_unref (action);
 			return NULL;

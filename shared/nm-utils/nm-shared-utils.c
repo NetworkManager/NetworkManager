@@ -1148,3 +1148,47 @@ nm_utils_named_values_from_str_dict (GHashTable *hash, guint *out_len)
 	NM_SET_OUT (out_len, len);
 	return values;
 }
+
+const char **
+nm_utils_strdict_get_keys (const GHashTable *hash,
+                           gboolean sorted,
+                           guint *out_length)
+{
+	const char **names;
+	guint length;
+
+	if (   !hash
+	    || !g_hash_table_size ((GHashTable *) hash)) {
+		NM_SET_OUT (out_length, 0);
+		return NULL;
+	}
+
+	names = (const char **) g_hash_table_get_keys_as_array ((GHashTable *) hash, &length);
+	if (   sorted
+	    && length > 1) {
+		g_qsort_with_data (names,
+		                   length,
+		                   sizeof (char *),
+		                   nm_strcmp_p_with_data,
+		                   NULL);
+	}
+	NM_SET_OUT (out_length, length);
+	return names;
+}
+
+char **
+nm_utils_strv_make_deep_copied (const char **strv)
+{
+	gsize i;
+
+	/* it takes a strv dictionary, and copies each
+	 * strings. Note that this updates @strv *in-place*
+	 * and returns it. */
+
+	if (!strv)
+		return NULL;
+	for (i = 0; strv[i]; i++)
+		strv[i] = g_strdup (strv[i]);
+
+	return (char **) strv;
+}
