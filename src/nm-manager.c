@@ -6638,7 +6638,7 @@ get_property (GObject *object, guint prop_id,
 #else
 		vbool = FALSE;
 #endif
-		g_value_set_boolean (value, FALSE);
+		g_value_set_boolean (value, vbool);
 		break;
 	case PROP_PRIMARY_CONNECTION:
 		nm_utils_g_value_set_object_path (value, priv->primary_connection);
