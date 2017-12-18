@@ -789,7 +789,7 @@ nm_settings_connection_delete (NMSettingsConnection *self,
 	/* Remove connection from seen-bssids database file */
 	remove_entry_from_db (self, "seen-bssids");
 
-	nm_settings_connection_signal_remove (self, FALSE);
+	nm_settings_connection_signal_remove (self);
 	return TRUE;
 }
 
@@ -2183,15 +2183,24 @@ impl_settings_connection_clear_secrets (NMSettingsConnection *self,
 /*****************************************************************************/
 
 void
-nm_settings_connection_signal_remove (NMSettingsConnection *self, gboolean allow_reuse)
+nm_settings_connection_added (NMSettingsConnection *self)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
-	if (!allow_reuse) {
-		if (priv->removed)
-			g_return_if_reached ();
-		priv->removed = TRUE;
-	}
+	/* FIXME: we should always dispose connections that are removed
+	 * and not reuse them, but currently plugins keep alive unmanaged
+	 * (e.g. NM_CONTROLLED=no) connections. */
+	priv->removed = FALSE;
+}
+
+void
+nm_settings_connection_signal_remove (NMSettingsConnection *self)
+{
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+
+	if (priv->removed)
+		return;
+	priv->removed = TRUE;
 	g_signal_emit_by_name (self, NM_SETTINGS_CONNECTION_REMOVED);
 }
 

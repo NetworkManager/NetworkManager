@@ -1004,6 +1004,8 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 		/* Exported D-Bus signal */
 		g_signal_emit (self, signals[NEW_CONNECTION], 0, connection);
 	}
+
+	nm_settings_connection_added (connection);
 }
 
 static gboolean
