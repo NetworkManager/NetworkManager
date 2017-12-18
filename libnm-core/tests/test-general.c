@@ -2436,6 +2436,7 @@ test_setting_connection_permissions_property (void)
 
 	/* Ensure a valid call results in success */
 	success = nm_setting_connection_add_permission (s_con, "user", TEST_UNAME, NULL);
+	g_assert (success);
 	g_assert_cmpint (nm_setting_connection_get_num_permissions (s_con), ==, 1);
 
 	check_permission (s_con, 0, TEST_UNAME);

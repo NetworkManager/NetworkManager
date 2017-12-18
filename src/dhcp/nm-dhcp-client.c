@@ -763,8 +763,8 @@ nm_dhcp_client_handle_event (gpointer unused,
 
 	old_state = priv->state;
 	new_state = reason_to_state (self, priv->iface, reason);
-	_LOGD ("DHCP reason '%s' -> state '%s'",
-	       reason, state_to_string (new_state));
+	_LOGD ("DHCP state '%s' -> '%s' (reason: '%s')",
+	       state_to_string (old_state), state_to_string (new_state), reason);
 
 	if (new_state == NM_DHCP_STATE_BOUND) {
 		GVariantIter iter;

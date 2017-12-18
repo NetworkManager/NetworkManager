@@ -424,6 +424,11 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 			g_array_append_val (debug_messages, msg);
 		}
 	} else {
+		/* We're intentionally assigning a value to static variables
+		 * s_tests_x and p_tests_x without using it afterwards, just
+		 * so that valgrind doesn't complain about the leak. */
+		NM_PRAGMA_WARNING_DISABLE("-Wunused-but-set-variable")
+
 		/* g_test_init() is a variadic function, so we cannot pass it
 		 * (variadic) arguments. If you need to pass additional parameters,
 		 * call nmtst_init() with argc==NULL and call g_test_init() yourself. */
@@ -497,6 +502,8 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 				s_tests = NULL;
 			}
 		}
+
+		NM_PRAGMA_WARNING_REENABLE
 	}
 
 	if (test_quick_set)
@@ -1499,13 +1506,12 @@ _nmtst_connection_normalize (NMConnection *connection, ...)
 static inline NMConnection *
 _nmtst_connection_duplicate_and_normalize (NMConnection *connection, ...)
 {
-	gboolean was_modified;
 	va_list args;
 
 	connection = nmtst_clone_connection (connection);
 
 	va_start (args, connection);
-	was_modified = _nmtst_connection_normalize_v (connection, args);
+	_nmtst_connection_normalize_v (connection, args);
 	va_end (args);
 
 	return connection;

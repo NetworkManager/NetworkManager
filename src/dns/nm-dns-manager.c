@@ -381,11 +381,10 @@ static void
 write_to_netconfig (NMDnsManager *self, gint fd, const char *key, const char *value)
 {
 	char *str;
-	int x;
 
 	str = g_strdup_printf ("%s='%s'\n", key, value);
 	_LOGD ("writing to netconfig: %s", str);
-	x = write (fd, str, strlen (str));
+	write (fd, str, strlen (str));
 	g_free (str);
 }
 
@@ -919,7 +918,7 @@ _collect_resolv_conf_data (NMDnsManager *self, /* only for logging context, no o
                            char ***out_nis_servers,
                            const char **out_nis_domain)
 {
-	guint i, j, num, len;
+	guint i, num, len;
 	NMResolvConfData rc = {
 		.nameservers = g_ptr_array_new (),
 		.searches = g_ptr_array_new (),
@@ -935,7 +934,7 @@ _collect_resolv_conf_data (NMDnsManager *self, /* only for logging context, no o
 		int prio, first_prio = 0;
 		NMDnsIPConfigData *current;
 
-		for (i = 0, j = 0; i < configs->len; i++) {
+		for (i = 0; i < configs->len; i++) {
 			gboolean skip = FALSE;
 
 			current = configs->pdata[i];

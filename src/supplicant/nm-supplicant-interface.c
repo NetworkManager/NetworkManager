@@ -1198,7 +1198,6 @@ static void
 interface_get_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
 	NMSupplicantInterface *self;
-	NMSupplicantInterfacePrivate *priv;
 	gs_unref_variant GVariant *variant = NULL;
 	gs_free_error GError *error = NULL;
 	const char *path;
@@ -1210,7 +1209,6 @@ interface_get_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 		return;
 
 	self = NM_SUPPLICANT_INTERFACE (user_data);
-	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
 	if (variant) {
 		g_variant_get (variant, "(&o)", &path);

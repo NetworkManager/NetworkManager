@@ -670,7 +670,6 @@ nm_ip4_config_add_dependent_routes (NMIP4Config *self,
                                     guint32 route_metric,
                                     GPtrArray **out_ip4_dev_route_blacklist)
 {
-	const NMIP4ConfigPrivate *priv;
 	GPtrArray *ip4_dev_route_blacklist = NULL;
 	const NMPlatformIP4Address *my_addr;
 	const NMPlatformIP4Route *my_route;
@@ -678,8 +677,6 @@ nm_ip4_config_add_dependent_routes (NMIP4Config *self,
 	NMDedupMultiIter iter;
 
 	g_return_if_fail (NM_IS_IP4_CONFIG (self));
-
-	priv = NM_IP4_CONFIG_GET_PRIVATE (self);
 
 	ifindex = nm_ip4_config_get_ifindex (self);
 	g_return_if_fail (ifindex > 0);
@@ -907,7 +904,6 @@ nm_ip4_config_merge_setting (NMIP4Config *self,
                              guint32 route_table,
                              guint32 route_metric)
 {
-	NMIP4ConfigPrivate *priv;
 	guint naddresses, nroutes, nnameservers, nsearches;
 	int i, priority;
 	const char *gateway_str;
@@ -917,8 +913,6 @@ nm_ip4_config_merge_setting (NMIP4Config *self,
 		return;
 
 	g_return_if_fail (NM_IS_SETTING_IP4_CONFIG (setting));
-
-	priv = NM_IP4_CONFIG_GET_PRIVATE (self);
 
 	g_object_freeze_notify (G_OBJECT (self));
 

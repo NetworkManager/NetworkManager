@@ -1383,7 +1383,6 @@ intern_config_write (const char *filename,
 	GKeyFile *keyfile;
 	gs_strfreev char **groups = NULL;
 	guint g, k;
-	gboolean has_intern = FALSE;
 	gboolean success = FALSE;
 	GError *local = NULL;
 
@@ -1449,10 +1448,7 @@ intern_config_write (const char *filename,
 
 			value_set = g_key_file_get_value (keyfile_intern, group, key, NULL);
 
-			if (is_intern) {
-				has_intern = TRUE;
-				g_key_file_set_value (keyfile, group, key, value_set);
-			} else if (is_atomic)
+			if (is_intern || is_atomic)
 				g_key_file_set_value (keyfile, group, key, value_set);
 			else {
 				gs_free char *value_was = NULL;

@@ -466,19 +466,18 @@ static void
 pacrunner_remove_done (GObject *source, GAsyncResult *res, gpointer user_data)
 {
 	Config *config = user_data;
-	NMPacrunnerManager *self;
 	gs_free_error GError *error = NULL;
 	gs_unref_variant GVariant *ret = NULL;
 
 	ret = g_dbus_proxy_call_finish (G_DBUS_PROXY (source), res, &error);
-	if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-		goto out;
-
-	self = NM_PACRUNNER_MANAGER (config->manager_maybe_dangling);
-	if (!ret)
+	if (!ret) {
+		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+			goto out;
 		_LOG2D (config, "remove failed: %s", error->message);
-	else
-		_LOG2D (config, "removed");
+		goto out;
+	}
+
+	_LOG2D (config, "removed");
 
 out:
 	config_unref (config);

@@ -477,11 +477,8 @@ handle_auth_or_fail (NMDeviceMacsec *self,
                      NMActRequest *req,
                      gboolean new_secrets)
 {
-	NMDeviceMacsecPrivate *priv;
 	const char *setting_name;
 	NMConnection *applied_connection;
-
-	priv = NM_DEVICE_MACSEC_GET_PRIVATE (self);
 
 	if (!nm_device_auth_retries_try_next (NM_DEVICE (self)))
 		return NM_ACT_STAGE_RETURN_FAILURE;

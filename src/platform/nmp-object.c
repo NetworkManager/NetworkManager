@@ -1526,8 +1526,6 @@ const NMPLookup *
 nmp_lookup_init_obj_type (NMPLookup *lookup,
                           NMPObjectType obj_type)
 {
-	NMPObject *o;
-
 	nm_assert (lookup);
 
 	switch (obj_type) {
@@ -1538,7 +1536,7 @@ nmp_lookup_init_obj_type (NMPLookup *lookup,
 	case NMP_OBJECT_TYPE_IP6_ROUTE:
 	case NMP_OBJECT_TYPE_QDISC:
 	case NMP_OBJECT_TYPE_TFILTER:
-		o = _nmp_object_stackinit_from_type (&lookup->selector_obj, obj_type);
+		_nmp_object_stackinit_from_type (&lookup->selector_obj, obj_type);
 		lookup->cache_id_type = NMP_CACHE_ID_TYPE_OBJECT_TYPE;
 		return _L (lookup);
 	default:

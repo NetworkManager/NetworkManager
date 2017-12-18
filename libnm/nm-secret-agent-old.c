@@ -603,12 +603,10 @@ reg_request_cb (GObject *proxy,
 {
 	GSimpleAsyncResult *simple = user_data;
 	NMSecretAgentOld *self;
-	NMSecretAgentOldPrivate *priv;
 	GError *error = NULL;
 
 	self = NM_SECRET_AGENT_OLD (g_async_result_get_source_object (G_ASYNC_RESULT (simple)));
 	g_object_unref (self); /* drop extra ref added by get_source_object() */
-	priv = NM_SECRET_AGENT_OLD_GET_PRIVATE (self);
 
 	if (!nmdbus_agent_manager_call_register_finish (NMDBUS_AGENT_MANAGER (proxy), result, &error))
 		g_dbus_error_strip_remote_error (error);

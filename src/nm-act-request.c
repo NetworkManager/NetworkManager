@@ -242,8 +242,6 @@ _do_cancel_secrets (NMActRequest *self, NMActRequestGetSecretsCallId *call_id, g
 void
 nm_act_request_cancel_secrets (NMActRequest *self, NMActRequestGetSecretsCallId *call_id)
 {
-	NMActRequestPrivate *priv;
-
 	g_return_if_fail (call_id);
 
 	if (self) {
@@ -254,8 +252,6 @@ nm_act_request_cancel_secrets (NMActRequest *self, NMActRequestGetSecretsCallId 
 		g_return_if_fail (NM_IS_ACT_REQUEST (call_id->self));
 		self = call_id->self;
 	}
-
-	priv = NM_ACT_REQUEST_GET_PRIVATE (self);
 
 	if (!c_list_is_linked (&call_id->call_ids_lst))
 		g_return_if_reached ();

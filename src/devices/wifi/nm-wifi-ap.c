@@ -636,7 +636,7 @@ get_max_rate_vht_160_ss3 (int mcs)
 static gboolean
 get_max_rate_ht (const guint8 *bytes, guint len, guint32 *out_maxrate)
 {
-	guint32 mcs, i;
+	guint32 i;
 	guint8 ht_cap_info;
 	const guint8 *supported_mcs_set;
 	guint32 rate;
@@ -653,7 +653,6 @@ get_max_rate_ht (const guint8 *bytes, guint len, guint32 *out_maxrate)
 	*out_maxrate = 0;
 
 	/* Find the maximum supported mcs rate */
-	mcs = -1;
 	for (i = 0; i <= 76; i++) {
 		unsigned int mcs_octet = i / 8;
 		unsigned int MCS_RATE_BIT = 1 << i % 8;

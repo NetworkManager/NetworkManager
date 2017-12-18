@@ -163,12 +163,10 @@ remove_route (NmtWidgetList *list,
               gpointer       table)
 {
 	NmtRouteTablePrivate *priv = NMT_ROUTE_TABLE_GET_PRIVATE (table);
-	NMIPRoute *route;
 
 	if (num >= priv->routes->len)
 		return;
 
-	route = priv->routes->pdata[num];
 	g_ptr_array_remove_index (priv->routes, num);
 	nmt_widget_list_set_length (list, priv->routes->len);
 

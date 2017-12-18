@@ -1094,7 +1094,6 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 	const char *fields_str = NULL;
 	const NMMetaAbstractInfo *const*tmpl;
 	NmcOutputField *arr;
-	size_t tmpl_len;
 	const char *base_hdr = _("Activate connection details");
 	gboolean was_output = FALSE;
 
@@ -1148,7 +1147,6 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 
 			/* Add field names */
 			tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_con_active_details_general;
-			tmpl_len = sizeof (nmc_fields_con_active_details_general);
 			out_indices = parse_output_fields (group_fld,
 			                                   tmpl, FALSE, NULL, NULL);
 			arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_FIELD_NAMES);

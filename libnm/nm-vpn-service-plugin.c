@@ -192,13 +192,11 @@ nm_vpn_service_plugin_failure (NMVpnServicePlugin *plugin,
 gboolean
 nm_vpn_service_plugin_disconnect (NMVpnServicePlugin *plugin, GError **err)
 {
-	NMVpnServicePluginPrivate *priv;
 	gboolean ret = FALSE;
 	NMVpnServiceState state;
 
 	g_return_val_if_fail (NM_IS_VPN_SERVICE_PLUGIN (plugin), FALSE);
 
-	priv = NM_VPN_SERVICE_PLUGIN_GET_PRIVATE (plugin);
 	state = nm_vpn_service_plugin_get_state (plugin);
 	switch (state) {
 	case NM_VPN_SERVICE_STATE_STOPPING:

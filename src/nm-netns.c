@@ -38,7 +38,6 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 typedef struct {
 	NMPlatform *platform;
 	NMPNetns *platform_netns;
-	bool log_with_ptr;
 } NMNetnsPrivate;
 
 struct _NMNetns {
@@ -113,12 +112,9 @@ constructed (GObject *object)
 {
 	NMNetns *self = NM_NETNS (object);
 	NMNetnsPrivate *priv = NM_NETNS_GET_PRIVATE (self);
-	gboolean log_with_ptr;
 
 	if (!priv->platform)
 		g_return_if_reached ();
-
-	log_with_ptr = nm_platform_get_log_with_ptr (priv->platform);
 
 	priv->platform_netns = nm_platform_netns_get (priv->platform);
 

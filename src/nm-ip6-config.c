@@ -452,15 +452,12 @@ nm_ip6_config_add_dependent_routes (NMIP6Config *self,
                                     guint32 route_table,
                                     guint32 route_metric)
 {
-	const NMIP6ConfigPrivate *priv;
 	const NMPlatformIP6Address *my_addr;
 	const NMPlatformIP6Route *my_route;
 	int ifindex;
 	NMDedupMultiIter iter;
 
 	g_return_if_fail (NM_IS_IP6_CONFIG (self));
-
-	priv = NM_IP6_CONFIG_GET_PRIVATE (self);
 
 	ifindex = nm_ip6_config_get_ifindex (self);
 	g_return_if_fail (ifindex > 0);
@@ -588,7 +585,6 @@ nm_ip6_config_merge_setting (NMIP6Config *self,
                              guint32 route_table,
                              guint32 route_metric)
 {
-	NMIP6ConfigPrivate *priv;
 	guint naddresses, nroutes, nnameservers, nsearches;
 	const char *gateway_str;
 	struct in6_addr gateway_bin;
@@ -598,8 +594,6 @@ nm_ip6_config_merge_setting (NMIP6Config *self,
 		return;
 
 	g_return_if_fail (NM_IS_SETTING_IP6_CONFIG (setting));
-
-	priv = NM_IP6_CONFIG_GET_PRIVATE (self);
 
 	naddresses = nm_setting_ip_config_get_num_addresses (setting);
 	nroutes = nm_setting_ip_config_get_num_routes (setting);
@@ -828,17 +822,12 @@ nm_ip6_config_merge (NMIP6Config *dst,
                      NMIPConfigMergeFlags merge_flags,
                      guint32 default_route_metric_penalty)
 {
-	NMIP6ConfigPrivate *dst_priv;
-	const NMIP6ConfigPrivate *src_priv;
 	guint32 i;
 	NMDedupMultiIter ipconf_iter;
 	const NMPlatformIP6Address *address = NULL;
 
 	g_return_if_fail (src != NULL);
 	g_return_if_fail (dst != NULL);
-
-	dst_priv = NM_IP6_CONFIG_GET_PRIVATE (dst);
-	src_priv = NM_IP6_CONFIG_GET_PRIVATE (src);
 
 	g_object_freeze_notify (G_OBJECT (dst));
 
@@ -1705,13 +1694,10 @@ nm_ip6_config_lookup_address (const NMIP6Config *self,
 const NMPlatformIP6Address *
 nm_ip6_config_get_address_first_nontentative (const NMIP6Config *self, gboolean linklocal)
 {
-	const NMIP6ConfigPrivate *priv;
 	const NMPlatformIP6Address *addr;
 	NMDedupMultiIter iter;
 
 	g_return_val_if_fail (NM_IS_IP6_CONFIG (self), NULL);
-
-	priv = NM_IP6_CONFIG_GET_PRIVATE (self);
 
 	linklocal = !!linklocal;
 

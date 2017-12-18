@@ -83,7 +83,6 @@ static int
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingOvsPatch *self = NM_SETTING_OVS_PATCH (setting);
-	int family = AF_UNSPEC;
 
 	if (!_nm_connection_verify_required_interface_name (connection, error))
 		return FALSE;
@@ -99,11 +98,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (nm_utils_ipaddr_valid (AF_INET, self->peer))
-		family = AF_INET;
-	else if (nm_utils_ipaddr_valid (AF_INET6, self->peer))
-		family = AF_INET6;
-	else {
+	if (   !nm_utils_ipaddr_valid (AF_INET, self->peer)
+	    && !nm_utils_ipaddr_valid (AF_INET6, self->peer)) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,

@@ -369,7 +369,6 @@ nm_supplicant_config_add_setting_macsec (NMSupplicantConfig * self,
                                          NMSettingMacsec * setting,
                                          GError **error)
 {
-	NMSupplicantConfigPrivate *priv;
 	gs_unref_bytes GBytes *bytes = NULL;
 	const char *value;
 	char buf[32];
@@ -378,8 +377,6 @@ nm_supplicant_config_add_setting_macsec (NMSupplicantConfig * self,
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
 	g_return_val_if_fail (setting != NULL, FALSE);
 	g_return_val_if_fail (!error || !*error, FALSE);
-
-	priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
 
 	if (!nm_supplicant_config_add_option (self, "macsec_policy", "1", -1, NULL, error))
 		return FALSE;

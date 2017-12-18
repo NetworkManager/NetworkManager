@@ -3249,8 +3249,6 @@ ensure_master_active_connection (NMManager *self,
 		             NM_MANAGER_ERROR_DEPENDENCY_FAILED,
 		             "Device unmanaged or not available for activation");
 	} else if (master_connection) {
-		gboolean found_device = FALSE;
-
 		/* Find a compatible device and activate it using this connection */
 		for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
 			NMDevice *candidate = NM_DEVICE (iter->data);
@@ -3263,7 +3261,6 @@ ensure_master_active_connection (NMManager *self,
 			if (!nm_device_check_connection_available (candidate, NM_CONNECTION (master_connection), NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST, NULL))
 				continue;
 
-			found_device = TRUE;
 			if (!nm_device_is_software (candidate)) {
 				master_state = nm_device_get_state (candidate);
 				if (nm_device_is_real (candidate) && master_state != NM_DEVICE_STATE_DISCONNECTED)

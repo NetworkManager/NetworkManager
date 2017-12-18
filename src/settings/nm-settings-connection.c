@@ -570,12 +570,8 @@ _update_prepare (NMSettingsConnection *self,
                  NMConnection *new_connection,
                  GError **error)
 {
-	NMSettingsConnectionPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (new_connection), FALSE);
-
-	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
 	if (!nm_connection_normalize (new_connection, NULL, NULL, error))
 		return FALSE;

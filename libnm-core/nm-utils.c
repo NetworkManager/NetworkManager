@@ -4616,9 +4616,6 @@ _nm_utils_strstrdictkey_hash (gconstpointer a)
 
 		nm_hash_update_val (&h, k->type);
 		if (k->type & STRSTRDICTKEY_ALL_SET) {
-			gsize n;
-
-			n = 0;
 			p = strchr (k->data, '\0');
 			if (k->type == STRSTRDICTKEY_ALL_SET) {
 				/* the key contains two strings. Continue... */

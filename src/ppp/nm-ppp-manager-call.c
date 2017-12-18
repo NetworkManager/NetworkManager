@@ -44,11 +44,9 @@ nm_ppp_manager_create (const char *iface, GError **error)
 	GError *error_local = NULL;
 	NMPPPOps *ops;
 	struct stat st;
-	int errsv;
 
 	if (G_UNLIKELY (!ppp_ops)) {
 		if (stat (PPP_PLUGIN_PATH, &st) != 0) {
-			errsv = errno;
 			g_set_error_literal (error,
 			                     NM_MANAGER_ERROR, NM_MANAGER_ERROR_MISSING_PLUGIN,
 			                     "the PPP plugin " PPP_PLUGIN_PATH " is not installed");

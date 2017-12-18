@@ -1126,7 +1126,6 @@ dbus_request_scan_cb (NMDevice *device,
                       gpointer user_data)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
-	NMDeviceWifiPrivate *priv;
 	gs_unref_variant GVariant *scan_options = user_data;
 	gs_unref_ptrarray GPtrArray *ssids = NULL;
 
@@ -1142,8 +1141,6 @@ dbus_request_scan_cb (NMDevice *device,
 		                                               "Scanning not allowed at this time");
 		return;
 	}
-
-	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
 	if (scan_options) {
 		gs_unref_variant GVariant *val = g_variant_lookup_value (scan_options, "ssids", NULL);
@@ -2942,12 +2939,9 @@ activation_success_handler (NMDevice *device)
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	int ifindex = nm_device_get_ifindex (device);
 	NMActRequest *req;
-	NMConnection *applied_connection;
 
 	req = nm_device_get_act_request (device);
 	g_assert (req);
-
-	applied_connection = nm_act_request_get_applied_connection (req);
 
 	/* Clear any critical protocol notification in the wifi stack */
 	nm_platform_wifi_indicate_addressing_running (nm_device_get_platform (device), ifindex, FALSE);

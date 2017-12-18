@@ -2455,8 +2455,6 @@ nm_device_update_dynamic_ip_setup (NMDevice *self)
 {
 	NMDevicePrivate *priv;
 	GError *error = NULL;
-	gconstpointer addr;
-	size_t addr_length;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -2489,8 +2487,6 @@ nm_device_update_dynamic_ip_setup (NMDevice *self)
 
 	if (priv->lldp_listener && nm_lldp_listener_is_running (priv->lldp_listener)) {
 		nm_lldp_listener_stop (priv->lldp_listener);
-		addr = nm_platform_link_get_address (nm_device_get_platform (self), priv->ifindex, &addr_length);
-
 		if (!nm_lldp_listener_start (priv->lldp_listener, nm_device_get_ifindex (self), &error)) {
 			_LOGD (LOGD_DEVICE, "LLDP listener %p could not be restarted: %s",
 			       priv->lldp_listener, error->message);
@@ -4822,14 +4818,11 @@ nm_device_check_connection_compatible (NMDevice *self, NMConnection *connection)
 gboolean
 nm_device_check_slave_connection_compatible (NMDevice *self, NMConnection *slave)
 {
-	NMDevicePrivate *priv;
 	NMSettingConnection *s_con;
 	const char *connection_type, *slave_type;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (slave), FALSE);
-
-	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (!nm_device_is_master (self))
 		return FALSE;
@@ -5298,8 +5291,6 @@ lldp_init (NMDevice *self, gboolean restart)
 
 	if (priv->ifindex > 0 && lldp_rx_enabled (self)) {
 		gs_free_error GError *error = NULL;
-		gconstpointer addr;
-		size_t addr_length;
 
 		if (priv->lldp_listener) {
 			if (restart && nm_lldp_listener_is_running (priv->lldp_listener))
@@ -5313,8 +5304,6 @@ lldp_init (NMDevice *self, gboolean restart)
 		}
 
 		if (!nm_lldp_listener_is_running (priv->lldp_listener)) {
-			addr = nm_platform_link_get_address (nm_device_get_platform (self), priv->ifindex, &addr_length);
-
 			if (nm_lldp_listener_start (priv->lldp_listener, nm_device_get_ifindex (self), &error))
 				_LOGD (LOGD_DEVICE, "LLDP listener %p started", priv->lldp_listener);
 			else {
@@ -5527,12 +5516,8 @@ nm_device_ip_method_failed (NMDevice *self,
                             int addr_family,
                             NMDeviceStateReason reason)
 {
-	NMDevicePrivate *priv;
-
 	g_return_if_fail (NM_IS_DEVICE (self));
 	g_return_if_fail (NM_IN_SET (addr_family, AF_INET, AF_INET6));
-
-	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	_set_ip_state (self, addr_family, IP_FAIL);
 
@@ -10066,7 +10051,6 @@ impl_device_delete (NMDevice *self, GDBusMethodInvocation *context)
 static gboolean
 _device_activate (NMDevice *self, NMActRequest *req)
 {
-	NMDevicePrivate *priv;
 	NMConnection *connection;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
@@ -10078,8 +10062,6 @@ _device_activate (NMDevice *self, NMActRequest *req)
 	 */
 	if (nm_active_connection_get_state (NM_ACTIVE_CONNECTION (req)) >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING)
 		return FALSE;
-
-	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	connection = nm_act_request_get_applied_connection (req);
 	g_assert (connection);

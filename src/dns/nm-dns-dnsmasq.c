@@ -367,7 +367,6 @@ static void
 dnsmasq_update_done (GDBusProxy *proxy, GAsyncResult *res, gpointer user_data)
 {
 	NMDnsDnsmasq *self;
-	NMDnsDnsmasqPrivate *priv;
 	gs_free_error GError *error = NULL;
 	gs_unref_variant GVariant *response = NULL;
 
@@ -376,7 +375,6 @@ dnsmasq_update_done (GDBusProxy *proxy, GAsyncResult *res, gpointer user_data)
 		return;
 
 	self = NM_DNS_DNSMASQ (user_data);
-	priv = NM_DNS_DNSMASQ_GET_PRIVATE (self);
 
 	if (!response)
 		_LOGW ("dnsmasq update failed: %s", error->message);

@@ -2549,7 +2549,6 @@ static void
 plugin_new_secrets_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
 	NMVpnConnection *self;
-	NMVpnConnectionPrivate *priv;
 	gs_unref_variant GVariant *reply = NULL;
 	gs_free_error GError *error = NULL;
 
@@ -2558,7 +2557,6 @@ plugin_new_secrets_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_da
 		return;
 
 	self = NM_VPN_CONNECTION (user_data);
-	priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
 	if (error) {
 		g_dbus_error_strip_remote_error (error);

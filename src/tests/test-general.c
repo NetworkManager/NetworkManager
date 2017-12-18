@@ -1460,6 +1460,11 @@ test_nm_utils_strbuf_append (void)
 static void
 test_duplicate_decl_specifier (void)
 {
+	/* We're intentionally assigning values to static arrays v_const
+	 * and v_result without using it afterwards just so that valgrind
+	 * doesn't complain about the leak. */
+	NM_PRAGMA_WARNING_DISABLE("-Wunused-but-set-variable")
+
 	/* have some static variables, so that the result is certainly not optimized out. */
 	static const int v_const[1] = { 1 };
 	static int v_result[1] = { };
@@ -1477,6 +1482,8 @@ test_duplicate_decl_specifier (void)
 	})
 
 	v_result[0] = TEST_MAX (v_const[0], nmtst_get_rand_int () % 5) + v2;
+
+	NM_PRAGMA_WARNING_REENABLE
 }
 
 static void

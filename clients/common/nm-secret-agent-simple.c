@@ -471,10 +471,6 @@ request_secrets_from_ui (NMSecretAgentSimpleRequest *request)
 
 		ok = add_wireless_secrets (request, secrets);
 	} else if (nm_connection_is_type (request->connection, NM_SETTING_WIRED_SETTING_NAME)) {
-		NMSettingConnection *s_con;
-
-		s_con = nm_connection_get_setting_connection (request->connection);
-
 		title = _("Wired 802.1X authentication");
 		msg = g_strdup_printf (_("Secrets are required to access the wired network '%s'"),
 		                       nm_connection_get_id (request->connection));
@@ -567,10 +563,6 @@ request_secrets_from_ui (NMSecretAgentSimpleRequest *request)
 		} else
 			ok = FALSE;
 	} else if (nm_connection_is_type (request->connection, NM_SETTING_VPN_SETTING_NAME)) {
-		NMSettingConnection *s_con;
-
-		s_con = nm_connection_get_setting_connection (request->connection);
-
 		title = _("VPN password required");
 		msg = NULL;
 
@@ -612,8 +604,6 @@ nm_secret_agent_simple_get_secrets (NMSecretAgentOld                 *agent,
 	NMSecretAgentSimple *self = NM_SECRET_AGENT_SIMPLE (agent);
 	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (self);
 	NMSecretAgentSimpleRequest *request;
-	NMSettingConnection *s_con;
-	const char *connection_type;
 	char *request_id;
 	GError *error;
 
@@ -628,9 +618,6 @@ nm_secret_agent_simple_get_secrets (NMSecretAgentOld                 *agent,
 		g_free (request_id);
 		return;
 	}
-
-	s_con = nm_connection_get_setting_connection (connection);
-	connection_type = nm_setting_connection_get_connection_type (s_con);
 
 	if (!(flags & NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION)) {
 		/* We don't do stored passwords */
