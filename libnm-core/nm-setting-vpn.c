@@ -713,17 +713,15 @@ need_secrets (NMSetting *setting)
 }
 
 static gboolean
-compare_one_secret (NMSettingVpn *a,
-                    NMSettingVpn *b,
-                    NMSettingCompareFlags flags)
+_compare_secrets (NMSettingVpn *a,
+                  NMSettingVpn *b,
+                  NMSettingCompareFlags flags)
 {
-	GHashTable *a_secrets, *b_secrets;
+	GHashTable *a_secrets;
 	GHashTableIter iter;
 	const char *key, *val;
 
 	a_secrets = NM_SETTING_VPN_GET_PRIVATE (a)->secrets;
-	b_secrets = NM_SETTING_VPN_GET_PRIVATE (b)->secrets;
-
 	g_hash_table_iter_init (&iter, a_secrets);
 	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &val)) {
 		NMSettingSecretFlags a_secret_flags = NM_SETTING_SECRET_FLAG_NONE;
@@ -748,6 +746,19 @@ compare_one_secret (NMSettingVpn *a,
 		if (g_strcmp0 (val, nm_setting_vpn_get_secret (b, key)) != 0)
 			return FALSE;
 	}
+
+	return TRUE;
+}
+
+static gboolean
+compare_one_secret (NMSettingVpn *a,
+                    NMSettingVpn *b,
+                    NMSettingCompareFlags flags)
+{
+	if (!_compare_secrets (a, b, flags))
+		return FALSE;
+	if (!_compare_secrets (b, a, flags))
+		return FALSE;
 
 	return TRUE;
 }
