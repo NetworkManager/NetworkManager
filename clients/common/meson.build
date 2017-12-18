@@ -44,9 +44,7 @@ sources = shared_meta_setting + files(
 
 settings_docs = 'settings-docs.c'
 
-# FIXME: there is a problem with the generated file
-#if enable_introspection
-if false
+if enable_introspection
   settings_docs_source = custom_target(
     settings_docs,
     input: nm_property_docs,

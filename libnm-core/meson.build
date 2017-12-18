@@ -177,9 +177,7 @@ foreach docbook: docbooks
     input: docbook[1],
     output: output,
     capture: true,
-    command: [perl, enums_to_docbook, docbook[0], docbook[2], '@INPUT@'],
-    # FIXME: used to built properly api documentation
-    build_by_default: true
+    command: [perl, enums_to_docbook, docbook[0], docbook[2], '@INPUT@']
   )
 
   content_files += xml.full_path()

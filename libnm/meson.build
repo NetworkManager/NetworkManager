@@ -219,7 +219,6 @@ if enable_introspection
     install_dir_typelib: typelib_dir
   )
 
-  # FIXME: the script parses the meson.source_root()/Makefile.am file
   generate_plugin_docs = join_paths(meson.current_source_dir(), 'generate-plugin-docs.pl')
 
   name = 'nm-settings-keyfile-docs.xml'

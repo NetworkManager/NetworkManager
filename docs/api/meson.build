@@ -7,9 +7,7 @@ settings_xml = custom_target(
   output,
   input: nm_settings_docs,
   output: output,
-  command: [xsltproc, '--output', '@OUTPUT@', join_paths(meson.current_source_dir(), settings + '.xsl'), '@INPUT@'],
-  # FIXME: used to built properly api documentation
-  build_by_default: true
+  command: [xsltproc, '--output', '@OUTPUT@', join_paths(meson.current_source_dir(), settings + '.xsl'), '@INPUT@']
 )
 
 configure_file(
