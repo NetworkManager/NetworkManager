@@ -190,7 +190,9 @@ void nm_settings_connection_recheck_visibility (NMSettingsConnection *self);
 gboolean nm_settings_connection_check_permission (NMSettingsConnection *self,
                                                   const char *permission);
 
-void nm_settings_connection_signal_remove (NMSettingsConnection *self, gboolean allow_reuse);
+void nm_settings_connection_added (NMSettingsConnection *self);
+
+void nm_settings_connection_signal_remove (NMSettingsConnection *self);
 
 gboolean nm_settings_connection_get_unsaved (NMSettingsConnection *self);
 
