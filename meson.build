@@ -142,7 +142,6 @@ if nm_debug
     '-Wno-missing-field-initializers',
     '-Wno-pragmas',
     '-Wno-sign-compare',
-    '-Wno-unused-but-set-variable',
     '-Wno-unused-parameter',
     '-Wparentheses-equality',
     '-Wpointer-arith',
