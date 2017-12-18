@@ -453,23 +453,7 @@ libnm_core_lib_h_priv = \
 	libnm-core/nm-property-compare.h \
 	libnm-core/nm-setting-private.h \
 	libnm-core/nm-utils-private.h
-libnm_core_lib_c_real = \
-	shared/nm-utils/c-list-util.c \
-	shared/nm-utils/nm-dedup-multi.c \
-	shared/nm-utils/nm-enum-utils.c \
-	shared/nm-utils/nm-hash-utils.c \
-	shared/nm-utils/nm-shared-utils.c \
-	shared/nm-utils/nm-random-utils.c \
-	shared/nm-utils/nm-udev-utils.c \
-	shared/nm-meta-setting.c \
-	libnm-core/crypto.c \
-	libnm-core/nm-connection.c \
-	libnm-core/nm-dbus-utils.c \
-	libnm-core/nm-errors.c \
-	libnm-core/nm-keyfile-reader.c \
-	libnm-core/nm-keyfile-utils.c \
-	libnm-core/nm-keyfile-writer.c \
-	libnm-core/nm-property-compare.c \
+libnm_core_lib_c_settings_real = \
 	libnm-core/nm-setting-8021x.c \
 	libnm-core/nm-setting-adsl.c \
 	libnm-core/nm-setting-bluetooth.c \
@@ -509,7 +493,25 @@ libnm_core_lib_c_real = \
 	libnm-core/nm-setting-wimax.c \
 	libnm-core/nm-setting-wired.c \
 	libnm-core/nm-setting-wireless-security.c \
-	libnm-core/nm-setting-wireless.c \
+	libnm-core/nm-setting-wireless.c
+libnm_core_lib_c_real = \
+	$(libnm_core_lib_c_settings_real) \
+	shared/nm-utils/c-list-util.c \
+	shared/nm-utils/nm-dedup-multi.c \
+	shared/nm-utils/nm-enum-utils.c \
+	shared/nm-utils/nm-hash-utils.c \
+	shared/nm-utils/nm-shared-utils.c \
+	shared/nm-utils/nm-random-utils.c \
+	shared/nm-utils/nm-udev-utils.c \
+	shared/nm-meta-setting.c \
+	libnm-core/crypto.c \
+	libnm-core/nm-connection.c \
+	libnm-core/nm-dbus-utils.c \
+	libnm-core/nm-errors.c \
+	libnm-core/nm-keyfile-reader.c \
+	libnm-core/nm-keyfile-utils.c \
+	libnm-core/nm-keyfile-writer.c \
+	libnm-core/nm-property-compare.c \
 	libnm-core/nm-setting.c \
 	libnm-core/nm-simple-connection.c \
 	libnm-core/nm-utils.c \
@@ -760,14 +762,13 @@ libnm_lib_h_pub_real = \
 	libnm/nm-ip-config.h \
 	libnm/nm-object.h \
 	libnm/nm-remote-connection.h \
+	libnm/nm-secret-agent-old.h \
 	libnm/nm-types.h \
 	libnm/nm-vpn-connection.h \
 	libnm/nm-vpn-editor.h \
-	libnm/nm-wimax-nsp.h
-libnm_lib_h_pub_nointrospect = \
-	libnm/nm-secret-agent-old.h \
 	libnm/nm-vpn-plugin-old.h \
-	libnm/nm-vpn-service-plugin.h
+	libnm/nm-vpn-service-plugin.h \
+	libnm/nm-wimax-nsp.h
 libnm_lib_h_pub_mkenums = \
 	libnm/nm-enum-types.h
 libnm_lib_h_priv = \
@@ -842,8 +843,7 @@ libnm_lib_cppflags = \
 	-DNMRUNDIR=\"$(nmrundir)\"
 
 libnminclude_HEADERS += \
-	$(libnm_lib_h_pub_real) \
-	$(libnm_lib_h_pub_nointrospect)
+	$(libnm_lib_h_pub_real)
 
 nodist_libnminclude_HEADERS += \
 	$(libnm_lib_h_pub_mkenums)
@@ -875,8 +875,7 @@ GLIB_GENERATED += \
 	$(libnm_lib_c_mkenums)
 nm_enum_types_sources = \
 	$(libnm_lib_h_pub_mkenums) \
-	$(libnm_lib_h_pub_real) \
-	$(libnm_lib_h_pub_nointrospect)
+	$(libnm_lib_h_pub_real)
 nm_enum_types_MKENUMS_H_FLAGS = --identifier-prefix NM --fhead '\#include <nm-core-enum-types.h>\n'
 nm_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
 
@@ -891,7 +890,6 @@ libnm_libnm_la_CPPFLAGS = \
 
 libnm_libnm_la_SOURCES = \
 	$(libnm_lib_h_pub_real) \
-	$(libnm_lib_h_pub_nointrospect) \
 	$(libnm_lib_h_priv) \
 	$(libnm_lib_c_real)
 
@@ -943,7 +941,6 @@ libnm_NM_1_0_gir_FILES = \
 	$(libnm_core_lib_c_real) \
 	$(libnm_lib_h_pub_mkenums) \
 	$(libnm_lib_h_pub_real) \
-	$(libnm_lib_h_pub_nointrospect) \
 	$(libnm_lib_c_mkenums) \
 	$(libnm_lib_c_real)
 libnm_NM_1_0_gir_SCANNERFLAGS = --warn-all --identifier-prefix=NM --symbol-prefix=nm
@@ -991,10 +988,10 @@ libnm_noinst_data = \
 
 noinst_DATA += $(libnm_noinst_data)
 
-libnm_docs_sources = $(libnm_core_lib_c_real)
+libnm_docs_sources = $(libnm_core_lib_c_settings_real)
 
 libnm/nm-settings-docs-overrides.xml: libnm/generate-plugin-docs.pl $(libnm_docs_sources)
-	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl dbus "$(srcdir)" $@
+	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl dbus $@ $(libnm_docs_sources)
 
 # When the python scripts loads libnm and the address sanitizers is
 # enabled, we must LD_PRELOAD libasan otherwise it will complain that
@@ -1021,9 +1018,9 @@ libnm/nm-settings-docs.xml: libnm/generate-setting-docs.py libnm/nm-settings-doc
 		--output $@
 
 libnm/nm-settings-keyfile-docs.xml: libnm/generate-plugin-docs.pl $(libnm_docs_sources)
-	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl keyfile "$(srcdir)" $@
+	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl keyfile $@ $(libnm_docs_sources)
 libnm/nm-settings-ifcfg-rh-docs.xml: libnm/generate-plugin-docs.pl $(libnm_docs_sources)
-	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl ifcfg-rh "$(srcdir)" $@
+	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl ifcfg-rh $@ $(libnm_docs_sources)
 
 EXTRA_DIST += $(libnm_noinst_data)
 
