@@ -43,11 +43,20 @@ common_cflags = [
   '-DNMPLUGINDIR="@0@"'.format(nm_pkglibdir),
   '-DNMRUNDIR="@0@"'.format(nm_pkgrundir),
   '-DNMSTATEDIR="@0@"'.format(nm_pkgstatedir),
-  '-DNMLIBDIR="@0@"'.format(nm_pkglibdir),
-  '-DDHCPCANON_PATH="@0@"'.format(dhcpcanon_path),
-  '-DDHCLIENT_PATH="@0@"'.format(dhclient_path),
-  '-DDHCPCD_PATH="@0@"'.format(dhcpcd_path)
+  '-DNMLIBDIR="@0@"'.format(nm_pkglibdir)
 ]
+
+if enable_dhcpcanon
+  common_cflags += '-DDHCPCANON_PATH="@0@"'.format(dhcpcanon.path())
+endif
+
+if enable_dhclient
+  common_cflags += '-DDHCLIENT_PATH="@0@"'.format(dhclient.path())
+endif
+
+if enable_dhcpcd
+  common_cflags += '-DDHCPCD_PATH="@0@"'.format(dhcpcd.path())
+endif
 
 sources = files(
   'dhcp/nm-dhcp-client.c',

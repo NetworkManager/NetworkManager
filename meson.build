@@ -6,7 +6,7 @@ project(
     'buildtype=debugoptimized',
     'c_std=gnu99'
   ],
-  meson_version: '>= 0.43.0'
+  meson_version: '>= 0.44.0'
 )
 
 nm_name = meson.project_name()
@@ -538,12 +538,9 @@ enable_ppp = get_option('ppp')
 if enable_ppp
   assert(cc.has_header('pppd/pppd.h'), 'couldn\'t find pppd.h. pppd development headers are required')
 
-  pppd_path = get_option('pppd')
-  if pppd_path == ''
-    pppd = find_program('pppd', '/sbin/pppd', '/usr/sbin/pppd', required: false)
-    assert(pppd.found(), 'pppd required but not found, please provide a valid pppd path or use -Dppp=false to disable it')
-    pppd_path = pppd.path()
-  endif
+  locations = get_option('pppd')
+  pppd = find_program(locations, required: false)
+  assert(pppd.found(), 'pppd required but not found, please provide a valid pppd path or use -Dppp=false to disable it')
 
   pppd_plugin_dir = get_option('pppd_plugin_dir')
   if pppd_plugin_dir == ''
@@ -571,104 +568,63 @@ enable_ofono = get_option('ofono')
 config_h.set10('WITH_OFONO', enable_ofono)
 
 # DHCP client support with dhcpcanon
-dhcpcanon_path = get_option('dhcpcanon')
-enable_dhcpcanon = (dhcpcanon_path != 'no')
+locations = get_option('dhcpcanon')
+enable_dhcpcanon = (locations != ['no'])
 if enable_dhcpcanon
-  if dhcpcanon_path == ''
-    name = 'dhcpcanon'
-    locations = [
-      name,
-      '/sbin/' + name,
-      '/usr/sbin/' + name,
-      '/usr/local/sbin/' + name,
-      '/usr/bin/' + name,
-      '/usr/local/bin/' + name
-    ]
-  else
-    locations = dhcpcanon_path
-  endif
-
   dhcpcanon = find_program(locations, required: false)
   enable_dhcpcanon = dhcpcanon.found()
-  dhcpcanon_path = (enable_dhcpcanon ? dhcpcanon.path() : '')
-endif
 
-if enable_dhcpcanon
-  config_h.set_quoted('DHCPCANON_PATH', dhcpcanon_path)
+  if enable_dhcpcanon
+    config_h.set_quoted('DHCPCANON_PATH', dhcpcanon.path())
+  endif
 endif
 config_h.set10('WITH_DHCPCANON', enable_dhcpcanon)
 
 # DHCP client support
-dhclient_path = get_option('dhclient')
-enable_dhclient = (dhclient_path != 'no')
+locations = get_option('dhclient')
+enable_dhclient = (locations != ['no'])
 if enable_dhclient
-  if dhclient_path == ''
-    name = 'dhclient'
-    locations = [
-      name,
-      '/sbin/' + name,
-      '/usr/sbin/' + name,
-      '/usr/local/sbin/' + name
-    ]
-  else
-    locations = dhclient_path
-  endif
-
   dhclient = find_program(locations, required: false)
   enable_dhclient = dhclient.found()
-  dhclient_path = (enable_dhclient ? dhclient.path() : '')
-endif
 
-if enable_dhclient
-  res = run_command(dhclient, '--version')
-  # FIXME: dhcp outputs the version string through stderr!?
-  if not res.stderr().strip().contains('isc-dhclient-4.')
-    message('Seems version of dhclient ' + dhclient_path + ' is too old, version 4.x or newer is required')
+  if enable_dhclient
+    res = run_command(dhclient, '--version')
+    # FIXME: dhcp outputs the version string through stderr!?
+    if not res.stderr().strip().contains('isc-dhclient-4.')
+      message('Seems version of dhclient ' + dhclient.path() + ' is too old, version 4.x or newer is required')
+    endif
+    config_h.set_quoted('DHCLIENT_PATH', dhclient.path())
   endif
-  config_h.set_quoted('DHCLIENT_PATH', dhclient_path)
 endif
 config_h.set10('WITH_DHCLIENT', enable_dhclient)
 
-dhcpcd_path = get_option('dhcpcd')
-enable_dhcpcd = (dhcpcd_path != 'no')
-if enable_dhcpcd
-  if dhcpcd_path == ''
-    name = 'dhcpcd'
-    locations = [
-      name,
-      '/sbin/' + name,
-      '/usr/sbin/' + name,
-      '/usr/local/sbin/' + name
-    ]
-  else
-    locations = dhcpcd_path
-  endif
-
-  dhcpcd = find_program(locations, required: false)
-  enable_dhcpcd = dhcpcd.found()
-  dhcpcd_path = (enable_dhcpcd ? dhcpcd.path() : '')
-endif
-
+locations = get_option('dhcpcd')
+enable_dhcpcd = (locations != ['no'])
 enable_dhcpcd_supports_ipv6 = false
 if enable_dhcpcd
-  res = run_command(dhcpcd, '--version').stdout().strip()
-  dhcpcd_version = res.split(' ')[1]
-  if not dhcpcd_version.version_compare('> 4')
-    message('Seems version of dhcpcd ' + dhcpcd_path + ' is too old, version 4.x or newer is required')
-  endif
+  dhcpcd = find_program(locations, required: false)
+  enable_dhcpcd = dhcpcd.found()
 
-  enable_dhcpcd_supports_ipv6 = get_option('dhcpcd_supports_ipv6')
-  if dhcpcd_version.version_compare('> 6')
-    if not enable_dhcpcd_supports_ipv6
-      message('Seems version of dhcpcd ' + dhcpcd_path + ' supports IPv6, but compiling without IPv6 support.')
+  if enable_dhcpcd
+    res = run_command(dhcpcd, '--version').stdout().strip()
+    dhcpcd_version = res.split(' ')[1]
+    if not dhcpcd_version.version_compare('> 4')
+      message('Seems version of dhcpcd ' + dhcpcd.path() + ' is too old, version 4.x or newer is required')
     endif
-  else
-    if enable_dhcpcd_supports_ipv6
-      message('Seems version of dhcpcd ' + dhcpcd_path +'  does not support IPv6, but compiling with IPv6 support.')
+
+    enable_dhcpcd_supports_ipv6 = get_option('dhcpcd_supports_ipv6')
+    if dhcpcd_version.version_compare('> 6')
+      if not enable_dhcpcd_supports_ipv6
+        message('Seems version of dhcpcd ' + dhcpcd.path() + ' supports IPv6, but compiling without IPv6 support.')
+      endif
+    else
+      if enable_dhcpcd_supports_ipv6
+        message('Seems version of dhcpcd ' + dhcpcd.path() +'  does not support IPv6, but compiling with IPv6 support.')
+      endif
     endif
+    config_h.set('DHCPCD_SUPPORTS_IPV6', enable_dhcpcd_supports_ipv6)
+    config_h.set_quoted('DHCPCD_PATH', dhcpcd.path())
   endif
-  config_h.set('DHCPCD_SUPPORTS_IPV6', enable_dhcpcd_supports_ipv6)
-  config_h.set_quoted('DHCPCD_PATH', dhcpcd_path)
 endif
 config_h.set10('WITH_DHCPCD', enable_dhcpcd)
 
@@ -694,48 +650,26 @@ if enable_ovs
 endif
 
 # resolvconf and netconfig support
-resolvconf_path = get_option('resolvconf')
-enable_resolvconf = (resolvconf_path != 'no')
+locations = get_option('resolvconf')
+enable_resolvconf = (locations != ['no'])
 if enable_resolvconf
-  if resolvconf_path == ''
-    name = 'resolvconf'
-    locations = [
-      name,
-      '/sbin/' + name,
-      '/usr/sbin/' + name,
-      '/usr/local/sbin/' + name
-    ]
-  else
-    locations = resolvconf_path
-  endif
-
   resolvconf = find_program(locations, required: false)
   enable_resolvconf = resolvconf.found()
-endif
-if enable_resolvconf
-  config_h.set_quoted('RESOLVCONF_PATH', resolvconf.path())
-endif
 
-netconfig_path = get_option('netconfig')
-enable_netconfig = (netconfig_path != 'no')
-if enable_netconfig
-  if netconfig_path == ''
-    name = 'netconfig'
-    locations = [
-      name,
-      '/sbin/' + name,
-      '/usr/sbin/' + name,
-      '/usr/local/sbin/' + name
-    ]
-  else
-    locations = netconfig_path
+  if enable_resolvconf
+    config_h.set_quoted('RESOLVCONF_PATH', resolvconf.path())
   endif
+endif
 
+locations = get_option('netconfig')
+enable_netconfig = (locations != ['no'])
+if enable_netconfig
   netconfig = find_program(locations, required: false)
   enable_netconfig = netconfig.found()
-endif
-if enable_netconfig
-  config_h.set_quoted('NETCONFIG_PATH', netconfig.path())
+
+  if enable_netconfig
+    config_h.set_quoted('NETCONFIG_PATH', netconfig.path())
+  endif
 endif
 
 config_dns_rc_manager_default = get_option('config_dns_rc_manager_default')
@@ -750,36 +684,14 @@ endif
 config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_RC_MANAGER', config_dns_rc_manager_default)
 
 # iptables path
-iptables_path = get_option('iptables')
-if iptables_path == ''
-  iptables_path = find_program('iptables', '/sbin/iptables', '/usr/sbin/iptables').path()
-endif
-config_h.set_quoted('IPTABLES_PATH', iptables_path)
+config_h.set_quoted('IPTABLES_PATH', find_program(get_option('iptables')).path())
 
 # dnsmasq path
-dnsmasq_path = get_option('dnsmasq')
-if dnsmasq_path == ''
-  dnsmasq_path = find_program('dnsmasq', '/sbin/dnsmasq', '/usr/sbin/dnsmasq').path()
-endif
-config_h.set_quoted('DNSMASQ_PATH', dnsmasq_path)
+config_h.set_quoted('DNSMASQ_PATH', find_program(get_option('dnsmasq')).path())
 
 # dnssec-trigger-script path
-dnssec_trigger_path = get_option('dnssec_trigger')
-if dnssec_trigger_path == ''
-  locations = [
-    'dnssec-trigger-script',
-    '/usr/local/libexec/dnssec-trigger-script',
-    '/usr/local/lib/dnssec-trigger-script',
-    '/usr/local/lib/dnssec-trigger/dnssec-trigger-script',
-    '/usr/libexec/dnssec-trigger-script',
-    '/usr/lib/dnssec-trigger-script',
-    '/usr/lib/dnssec-trigger/dnssec-trigger-script'
-  ]
-
-  dnssec_trigger_script = find_program(locations, required: false)
-  dnssec_trigger_path = (dnssec_trigger_script.found() ? dnssec_trigger_script.path() : '/usr/libexec/dnssec-trigger-script')
-endif
-config_h.set_quoted('DNSSEC_TRIGGER_SCRIPT', dnssec_trigger_path)
+dnssec_trigger_script = find_program(get_option('dnssec_trigger'), required: false)
+config_h.set_quoted('DNSSEC_TRIGGER_SCRIPT', (dnssec_trigger_script.found() ? dnssec_trigger_script.path() : '/usr/libexec/dnssec-trigger-script'))
 
 # system CA certificates path
 system_ca_path = get_option('system_ca_path')
@@ -861,13 +773,13 @@ enable_tests = (tests != 'no')
 require_root_tests = (tests == 'root')
 
 # valgrind
-valgrind_path = get_option('valgrind')
-if valgrind_path != 'no'
-  valgrind = find_program('valgrind', required: false)
-  valgrind_path = (valgrind.found() ? valgrind.path() : 'no')
+locations = get_option('valgrind')
+enable_valgrind = (locations != ['no'])
+if enable_valgrind
+  valgrind = find_program(locations, required: false)
+  enable_valgrind = valgrind.found()
 endif
 
-enable_valgrind = (valgrind_path != 'no')
 if enable_valgrind
   valgrind_suppressions_path = get_option('valgrind_suppressions')
   if valgrind_suppressions_path == ''
@@ -1051,7 +963,7 @@ output += '  wifi: ' + enable_wifi.to_string() + '\n'
 output += '  iwd:  ' + enable_iwd.to_string() + '\n'
 output += '  pppd: ' + enable_ppp.to_string()
 if enable_ppp
-  output += ' ' + pppd_path
+  output += ' ' + pppd.path()
 endif
 output += '\n'
 output += '  modemmanager-1: ' + enable_modem_manager.to_string() + '\n'
@@ -1082,17 +994,17 @@ output += '  config-dns-rc-manager-default: ' + config_dns_rc_manager_default + 
 output += '\nDHCP clients (default ' + config_dhcp_default + '):\n'
 output += '  dhcpcanon: ' + enable_dhcpcanon.to_string()
 if enable_dhcpcd
-  output += ' ' + dhcpcanon_path
+  output += ' ' + dhcpcanon.path()
 endif
 output += '\n'
 output += '  dhclient: ' + enable_dhclient.to_string()
 if enable_dhclient
-  output += ' ' + dhclient_path
+  output += ' ' + dhclient.path()
 endif
 output += '\n'
 output += '  dhcpcd: ' + enable_dhcpcd.to_string()
 if enable_dhcpcd
-  output += ' ' + dhcpcd_path
+  output += ' ' + dhcpcd.path()
 endif
 output += '\n'
 output += '  dhcpcd-supports-ipv6: ' + enable_dhcpcd_supports_ipv6.to_string() + '\n'
@@ -1105,7 +1017,11 @@ output += '  tests: ' + tests + '\n'
 output += '  more-asserts: @0@\n'.format(more_asserts)
 output += '  more-logging: ' + more_logging.to_string() + '\n'
 output += '  warning-level: ' + get_option('warning_level') + '\n'
-output += '  valgrind: ' + valgrind_path + '\n'
+output += '  valgrind: ' + enable_valgrind.to_string()
+if enable_valgrind
+  output += ' ' + valgrind.path()
+endif
+output += '\n'
 output += '  code coverage: ' + get_option('b_coverage').to_string() + '\n'
 output += '  LTO: ' + get_option('b_lto').to_string() + '\n'
 output += '  Linker garbage collection: ' + enable_ld_gc.to_string() + '\n'
