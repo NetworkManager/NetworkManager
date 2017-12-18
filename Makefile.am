@@ -991,7 +991,7 @@ noinst_DATA += $(libnm_noinst_data)
 libnm_docs_sources = $(libnm_core_lib_c_settings_real)
 
 libnm/nm-settings-docs-overrides.xml: libnm/generate-plugin-docs.pl $(libnm_docs_sources)
-	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl dbus $@ $(libnm_docs_sources)
+	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl dbus $@ $(filter-out $<,$^)
 
 # When the python scripts loads libnm and the address sanitizers is
 # enabled, we must LD_PRELOAD libasan otherwise it will complain that
@@ -1018,9 +1018,9 @@ libnm/nm-settings-docs.xml: libnm/generate-setting-docs.py libnm/nm-settings-doc
 		--output $@
 
 libnm/nm-settings-keyfile-docs.xml: libnm/generate-plugin-docs.pl $(libnm_docs_sources)
-	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl keyfile $@ $(libnm_docs_sources)
+	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl keyfile $@ $(filter-out $<,$^)
 libnm/nm-settings-ifcfg-rh-docs.xml: libnm/generate-plugin-docs.pl $(libnm_docs_sources)
-	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl ifcfg-rh $@ $(libnm_docs_sources)
+	$(AM_V_GEN) $(srcdir)/libnm/generate-plugin-docs.pl ifcfg-rh $@ $(filter-out $<,$^)
 
 EXTRA_DIST += $(libnm_noinst_data)
 
