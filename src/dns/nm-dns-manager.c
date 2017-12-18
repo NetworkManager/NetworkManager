@@ -378,56 +378,59 @@ run_netconfig (NMDnsManager *self, GError **error, gint *stdin_fd)
 }
 
 static void
-write_to_netconfig (NMDnsManager *self, gint fd, const char *key, const char *value)
+netconfig_construct_str (NMDnsManager *self, GString *str, const char *key, const char *value)
 {
-	gs_free char *str = NULL;
+	if (value) {
+		_LOGD ("writing to netconfig: %s='%s'", key, value);
+		g_string_append_printf (str, "%s='%s'\n", key, value);
+	}
+}
 
-	str = g_strdup_printf ("%s='%s'\n", key, value);
-	_LOGD ("writing to netconfig: %s='%s'", key, value);
-	(void) write (fd, str, strlen (str));
+static void
+netconfig_construct_strv (NMDnsManager *self, GString *str, const char *key, const char *const*values)
+{
+	if (values) {
+		gs_free char *value = NULL;
+
+		value = g_strjoinv (" ", (char **) values);
+		netconfig_construct_str (self, str, key, value);
+	}
 }
 
 static SpawnResult
 dispatch_netconfig (NMDnsManager *self,
-                    char **searches,
-                    char **nameservers,
+                    const char *const*searches,
+                    const char *const*nameservers,
                     const char *nis_domain,
-                    char **nis_servers,
+                    const char *const*nis_servers,
                     GError **error)
 {
-	char *str;
 	GPid pid;
 	gint fd;
 	int status;
+	gssize l;
+	nm_auto_free_gstring GString *str = NULL;
 
 	pid = run_netconfig (self, error, &fd);
 	if (pid <= 0)
 		return SR_NOTFOUND;
 
+	str = g_string_new ("");
+
 	/* NM is writing already-merged DNS information to netconfig, so it
 	 * does not apply to a specific network interface.
 	 */
-	write_to_netconfig (self, fd, "INTERFACE", "NetworkManager");
+	netconfig_construct_str (self, str, "INTERFACE", "NetworkManager");
+	netconfig_construct_strv (self, str, "DNSSEARCH", searches);
+	netconfig_construct_strv (self, str, "DNSSERVERS", nameservers);
+	netconfig_construct_str (self, str, "NISDOMAIN", nis_domain);
+	netconfig_construct_strv (self, str, "NISSERVERS", nis_servers);
 
-	if (searches) {
-		str = g_strjoinv (" ", searches);
-		write_to_netconfig (self, fd, "DNSSEARCH", str);
-		g_free (str);
-	}
-
-	if (nameservers) {
-		str = g_strjoinv (" ", nameservers);
-		write_to_netconfig (self, fd, "DNSSERVERS", str);
-		g_free (str);
-	}
-
-	if (nis_domain)
-		write_to_netconfig (self, fd, "NISDOMAIN", nis_domain);
-
-	if (nis_servers) {
-		str = g_strjoinv (" ", nis_servers);
-		write_to_netconfig (self, fd, "NISSERVERS", str);
-		g_free (str);
+again:
+	l = write (fd, str->str, str->len);
+	if (l == -1)  {
+		if (errno == EINTR)
+			goto again;
 	}
 
 	nm_close (fd);
@@ -1112,8 +1115,12 @@ update_dns (NMDnsManager *self,
 			result = dispatch_resolvconf (self, searches, nameservers, options, error);
 			break;
 		case NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG:
-			result = dispatch_netconfig (self, searches, nameservers, nis_domain,
-			                             nis_servers, error);
+			result = dispatch_netconfig (self,
+			                             (const char *const*) searches,
+			                             (const char *const*) nameservers,
+			                             nis_domain,
+			                             (const char *const*) nis_servers,
+			                             error);
 			break;
 		default:
 			g_assert_not_reached ();
