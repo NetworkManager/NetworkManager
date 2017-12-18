@@ -86,7 +86,6 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 		      -Wno-missing-field-initializers \
 		      -Wno-pragmas \
 		      -Wno-sign-compare \
-		      -Wno-unused-but-set-variable \
 		      -Wno-unused-parameter \
 		      ; do
 		dnl GCC 4.4 does not warn when checking for -Wno-* flags (https://gcc.gnu.org/wiki/FAQ#wnowarning)
