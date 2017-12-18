@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2008 Red Hat, Inc.
+ * (C) Copyright 2008 - 2017 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -44,6 +44,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
 	int ifd;
+	guint inotify_id;
 	GHashTable *wd_refs;
 } NMInotifyHelperPrivate;
 
@@ -142,7 +143,6 @@ init_inotify (NMInotifyHelper *self)
 {
 	NMInotifyHelperPrivate *priv = NM_INOTIFY_HELPER_GET_PRIVATE (self);
 	GIOChannel *channel;
-	guint source_id;
 
 	priv->ifd = inotify_init1 (IN_CLOEXEC);
 	if (priv->ifd == -1) {
@@ -157,10 +157,10 @@ init_inotify (NMInotifyHelper *self)
 	g_io_channel_set_flags (channel, G_IO_FLAG_NONBLOCK, NULL);
 	g_io_channel_set_encoding (channel, NULL, NULL);
 
-	source_id = g_io_add_watch (channel,
-	                            G_IO_IN | G_IO_ERR,
-	                            (GIOFunc) inotify_event_handler,
-	                            (gpointer) self);
+	priv->inotify_id = g_io_add_watch (channel,
+	                                   G_IO_IN | G_IO_ERR,
+	                                   (GIOFunc) inotify_event_handler,
+	                                   (gpointer) self);
 	g_io_channel_unref (channel);
 	return TRUE;
 }
@@ -188,6 +188,7 @@ finalize (GObject *object)
 {
 	NMInotifyHelperPrivate *priv = NM_INOTIFY_HELPER_GET_PRIVATE ((NMInotifyHelper *) object);
 
+	nm_clear_g_source (&priv->inotify_id);
 	nm_close (priv->ifd);
 
 	g_hash_table_destroy (priv->wd_refs);
