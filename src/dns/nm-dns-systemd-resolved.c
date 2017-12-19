@@ -31,6 +31,7 @@
 #include <sys/stat.h>
 #include <linux/if.h>
 
+#include "nm-utils/nm-c-list.h"
 #include "nm-core-internal.h"
 #include "platform/nm-platform.h"
 #include "nm-utils.h"
@@ -49,7 +50,7 @@
 
 typedef struct {
 	int ifindex;
-	GList *configs;
+	CList configs_lst_head;
 } InterfaceConfig;
 
 /*****************************************************************************/
@@ -84,6 +85,13 @@ G_DEFINE_TYPE (NMDnsSystemdResolved, nm_dns_systemd_resolved, NM_TYPE_DNS_PLUGIN
 /*****************************************************************************/
 
 static void
+_interface_config_free (InterfaceConfig *config)
+{
+	nm_c_list_elem_free_all (&config->configs_lst_head, NULL);
+	g_slice_free (InterfaceConfig, config);
+}
+
+static void
 call_done (GObject *source, GAsyncResult *r, gpointer user_data)
 {
 	GVariant *v;
@@ -97,42 +105,6 @@ call_done (GObject *source, GAsyncResult *r, gpointer user_data)
 		_LOGW ("Failed: %s\n", error->message);
 		g_error_free (error);
 	}
-}
-
-static void
-add_interface_configuration (NMDnsSystemdResolved *self,
-                             GArray *interfaces,
-                             const NMDnsIPConfigData *data,
-                             gboolean skip)
-{
-	int i;
-	InterfaceConfig *ic = NULL;
-	int ifindex;
-
-	if (NM_IS_IP4_CONFIG (data->config))
-		ifindex = nm_ip4_config_get_ifindex (data->config);
-	else if (NM_IS_IP6_CONFIG  (data->config))
-		ifindex = nm_ip6_config_get_ifindex (data->config);
-	else
-		g_return_if_reached ();
-
-	for (i = 0; i < interfaces->len; i++) {
-		InterfaceConfig *tic = &g_array_index (interfaces, InterfaceConfig, i);
-		if (ifindex == tic->ifindex) {
-			ic = tic;
-			break;
-		}
-	}
-
-	if (!ic) {
-		g_array_set_size (interfaces, interfaces->len + 1);
-		ic = &g_array_index (interfaces, InterfaceConfig,
-		                     interfaces->len - 1);
-		ic->ifindex = ifindex;
-	}
-
-	if (!skip)
-		ic->configs = g_list_append (ic->configs, data->config);
 }
 
 static void
@@ -227,7 +199,7 @@ prepare_one_interface (NMDnsSystemdResolved *self, InterfaceConfig *ic)
 {
 	NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
 	GVariantBuilder dns, domains;
-	GList *l;
+	NMCListElem *elem;
 
 	g_variant_builder_init (&dns, G_VARIANT_TYPE ("(ia(iay))"));
 	g_variant_builder_add (&dns, "i", ic->ifindex);
@@ -237,8 +209,8 @@ prepare_one_interface (NMDnsSystemdResolved *self, InterfaceConfig *ic)
 	g_variant_builder_add (&domains, "i", ic->ifindex);
 	g_variant_builder_open (&domains, G_VARIANT_TYPE ("a(sb)"));
 
-	for (l = ic->configs; l; l = l->next)
-		update_add_ip_config (self, &dns, &domains, l->data);
+	c_list_for_each_entry (elem, &ic->configs_lst_head, lst)
+		update_add_ip_config (self, &dns, &domains, elem->data);
 
 	g_variant_builder_close (&dns);
 	g_variant_builder_close (&domains);
@@ -284,32 +256,58 @@ update (NMDnsPlugin *plugin,
         const char *hostname)
 {
 	NMDnsSystemdResolved *self = NM_DNS_SYSTEMD_RESOLVED (plugin);
-	GArray *interfaces = g_array_new (TRUE, TRUE, sizeof (InterfaceConfig));
+	gs_unref_hashtable GHashTable *interfaces = NULL;
+	gs_free gpointer *interfaces_keys = NULL;
+	guint interfaces_len;
 	guint i;
 	int prio, first_prio = 0;
+
+	interfaces = g_hash_table_new_full (nm_direct_hash, NULL,
+	                                    NULL, (GDestroyNotify) _interface_config_free);
 
 	for (i = 0; i < configs->len; i++) {
 		const NMDnsIPConfigData *data = configs->pdata[i];
 		gboolean skip = FALSE;
+		InterfaceConfig *ic = NULL;
+		int ifindex;
 
 		prio = nm_ip_config_get_dns_priority (data->config);
 		if (i == 0)
 			first_prio = prio;
 		else if (first_prio < 0 && first_prio != prio)
 			skip = TRUE;
-		add_interface_configuration (self, interfaces, data, skip);
+
+		ifindex = nm_ip_config_get_ifindex (data->config);
+
+		ic = g_hash_table_lookup (interfaces, GINT_TO_POINTER (ifindex));
+		if (!ic) {
+			ic = g_slice_new (InterfaceConfig);
+			ic->ifindex = ifindex;
+			c_list_init (&ic->configs_lst_head);
+			g_hash_table_insert (interfaces, GINT_TO_POINTER (ifindex), ic);
+		}
+
+		if (!skip) {
+			c_list_link_tail (&ic->configs_lst_head,
+			                  &nm_c_list_elem_new_stale (data->config)->lst);
+		}
 	}
 
 	free_pending_updates (self);
 
-	for (i = 0; i < interfaces->len; i++) {
-		InterfaceConfig *ic = &g_array_index (interfaces, InterfaceConfig, i);
+	interfaces_keys = g_hash_table_get_keys_as_array (interfaces, &interfaces_len);
+	if (interfaces_len > 1) {
+		g_qsort_with_data (interfaces_keys,
+		                   interfaces_len,
+		                   sizeof (gpointer),
+		                   nm_cmp_int2ptr_p_with_data,
+		                   NULL);
+	}
+	for (i = 0; i < interfaces_len; i++) {
+		InterfaceConfig *ic = g_hash_table_lookup (interfaces, GINT_TO_POINTER (interfaces_keys[i]));
 
 		prepare_one_interface (self, ic);
-		g_list_free (ic->configs);
 	}
-
-	g_array_free (interfaces, TRUE);
 
 	send_updates (self);
 
