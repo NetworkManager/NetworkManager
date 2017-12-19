@@ -685,9 +685,8 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
 		return NM_ACT_STAGE_RETURN_SUCCESS;
 
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) != 0) {
-		_LOGW ("unhandled WWAN IPv4 method '%s'; will fail",
-		       method);
-		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+		_LOGE ("unhandled WWAN IPv4 method '%s'; will fail", method);
+		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_IP_METHOD_UNSUPPORTED);
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
