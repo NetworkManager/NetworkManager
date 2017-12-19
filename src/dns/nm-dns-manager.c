@@ -313,7 +313,7 @@ add_dns_option_item (GPtrArray *array, const char *str)
 
 static void
 merge_one_ip_config (NMResolvConfData *rc,
-                     const NMIPConfig *config,
+                     const NMIPConfig *ip_config,
                      const char *iface)
 {
 	int addr_family;
@@ -321,15 +321,15 @@ merge_one_ip_config (NMResolvConfData *rc,
 	char buf[NM_UTILS_INET_ADDRSTRLEN + 50];
 	const char *str;
 
-	addr_family = nm_ip_config_get_addr_family (config);
+	addr_family = nm_ip_config_get_addr_family (ip_config);
 
 	nm_assert_addr_family (addr_family);
 
-	num = nm_ip_config_get_num_nameservers (config);
+	num = nm_ip_config_get_num_nameservers (ip_config);
 	for (i = 0; i < num; i++) {
 		const NMIPAddr *addr;
 
-		addr = nm_ip_config_get_nameserver (config, i);
+		addr = nm_ip_config_get_nameserver (ip_config, i);
 		if (addr_family == AF_INET)
 			nm_utils_inet_ntop (addr_family, addr, buf);
 		else if (IN6_IS_ADDR_V4MAPPED (addr))
@@ -345,41 +345,41 @@ merge_one_ip_config (NMResolvConfData *rc,
 		add_string_item (rc->nameservers, buf);
 	}
 
-	num_domains = nm_ip_config_get_num_domains (config);
-	num_searches = nm_ip_config_get_num_searches (config);
+	num_domains = nm_ip_config_get_num_domains (ip_config);
+	num_searches = nm_ip_config_get_num_searches (ip_config);
 	for (i = 0; i < num_searches; i++) {
-		str = nm_ip_config_get_search (config, i);
+		str = nm_ip_config_get_search (ip_config, i);
 		if (domain_is_valid (str, FALSE))
 			add_string_item (rc->searches, str);
 	}
 	if (num_domains > 1 || !num_searches) {
 		for (i = 0; i < num_domains; i++) {
-			str = nm_ip_config_get_domain (config, i);
+			str = nm_ip_config_get_domain (ip_config, i);
 			if (domain_is_valid (str, FALSE))
 				add_string_item (rc->searches, str);
 		}
 	}
 
-	num = nm_ip_config_get_num_dns_options (config);
+	num = nm_ip_config_get_num_dns_options (ip_config);
 	for (i = 0; i < num; i++) {
 		add_dns_option_item (rc->options,
-		                     nm_ip_config_get_dns_option (config, i));
+		                     nm_ip_config_get_dns_option (ip_config, i));
 	}
 
 	if (addr_family == AF_INET) {
-		const NMIP4Config *config4 = (const NMIP4Config *) config;
+		const NMIP4Config *ip4_config = (const NMIP4Config *) ip_config;
 
 		/* NIS stuff */
-		num = nm_ip4_config_get_num_nis_servers (config4);
+		num = nm_ip4_config_get_num_nis_servers (ip4_config);
 		for (i = 0; i < num; i++) {
 			add_string_item (rc->nis_servers,
-			                 nm_utils_inet4_ntop (nm_ip4_config_get_nis_server (config4, i), buf));
+			                 nm_utils_inet4_ntop (nm_ip4_config_get_nis_server (ip4_config, i), buf));
 		}
 
-		if (nm_ip4_config_get_nis_domain (config4)) {
+		if (nm_ip4_config_get_nis_domain (ip4_config)) {
 			/* FIXME: handle multiple domains */
 			if (!rc->nis_domain)
-				rc->nis_domain = nm_ip4_config_get_nis_domain (config4);
+				rc->nis_domain = nm_ip4_config_get_nis_domain (ip4_config);
 		}
 	}
 }
