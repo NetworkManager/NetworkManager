@@ -373,6 +373,12 @@ nm_ip_config_get_addr_family (const NMIPConfig *config)
 		} \
 	} G_STMT_END
 
+static inline int
+nm_ip_config_get_ifindex (const NMIPConfig *self)
+{
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_ifindex, nm_ip6_config_get_ifindex);
+}
+
 static inline void
 nm_ip_config_add_address (NMIPConfig *self, const NMPlatformIPAddress *address)
 {
