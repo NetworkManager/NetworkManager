@@ -473,7 +473,11 @@ initited:
 	/* unfortunately, there is no stright forward way to lookup all reserved metrics.
 	 * Note, that we don't only have to know which metrics are currently reserved,
 	 * but also, which metrics are now seemingly un-used but caused another reserved
-	 * metric to be bumped. Hence, the naive O(n^2) search :( */
+	 * metric to be bumped. Hence, the naive O(n^2) search :(
+	 *
+	 * Well, technically, since we limit bumping the metric to 50, this entire
+	 * loop runs at most 50 times, so it's still O(n). Let's just say, it's not
+	 * very efficient. */
 again:
 	g_hash_table_iter_init (&h_iter, priv->device_route_metrics);
 	while (g_hash_table_iter_next (&h_iter, NULL, (gpointer *) &d2)) {
@@ -489,24 +493,30 @@ again:
 			g_hash_table_iter_remove (&h_iter);
 			continue;
 		}
-		data->effective_metric = d2->effective_metric;
-		if (data->effective_metric == G_MAXUINT32) {
-			/* we cannot bump any further. Done. */
+
+		if (d2->effective_metric == G_MAXUINT32) {
+			/* we cannot bump the metric any further. Done.
+			 *
+			 * Actually, this can currently not happen because the aspired_metric
+			 * are small numbers and we limit the bumping to 50. Still, for
+			 * completeness... */
+			data->effective_metric = G_MAXUINT32;
 			break;
 		}
 
-		if (data->effective_metric - data->aspired_metric > 50) {
+		if (d2->effective_metric - data->aspired_metric >= 50) {
 			/* as one active interface reserves an entire range of metrics
 			 * (from aspired_metric to effective_metric), that means if you
 			 * alternatingly activate two interfaces, their metric will
-			 * juggle up.
+			 * bump each other.
 			 *
-			 * Limit this, don't bump the metric more then 50 times. */
+			 * Limit this, bump the metric at most 50 points. */
+			data->effective_metric = data->aspired_metric + 50;
 			break;
 		}
 
 		/* bump the metric, and search again. */
-		data->effective_metric++;
+		data->effective_metric = d2->effective_metric + 1;
 		goto again;
 	}
 
