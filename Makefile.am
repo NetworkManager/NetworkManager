@@ -4545,6 +4545,7 @@ EXTRA_DIST += \
 	shared/nm-utils/c-list-util.c \
 	shared/nm-utils/c-list-util.h \
 	shared/nm-utils/gsystem-local-alloc.h \
+	shared/nm-utils/nm-c-list.h \
 	shared/nm-utils/nm-glib.h \
 	shared/nm-utils/nm-obj.h \
 	shared/nm-utils/nm-macros-internal.h \
