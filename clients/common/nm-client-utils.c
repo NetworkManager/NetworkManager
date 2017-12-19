@@ -392,7 +392,8 @@ nmc_device_reason_to_string (NMDeviceStateReason reason)
 		return _("OpenVSwitch database connection failed");
 	case NM_DEVICE_STATE_REASON_IP_ADDRESS_DUPLICATE:
 		return _("A duplicate IP address was detected");
-
+	case NM_DEVICE_STATE_REASON_IP_METHOD_UNSUPPORTED:
+		return _("The selected IP method is not supported");
 	}
 
 	/* TRANSLATORS: Unknown reason for a device state change (NMDeviceStateReason) */
