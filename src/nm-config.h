@@ -213,7 +213,8 @@ struct _NMConfigDeviceStateData {
 	NMConfigDeviceStateManagedType managed;
 
 	/* a value of zero means that no metric is set. */
-	guint32 route_metric_default;
+	guint32 route_metric_default_aspired;
+	guint32 route_metric_default_effective;
 
 	/* the UUID of the last settings-connection active
 	 * on the device. */
@@ -233,7 +234,8 @@ gboolean nm_config_device_state_write (int ifindex,
                                        const char *perm_hw_addr_fake,
                                        const char *connection_uuid,
                                        gint nm_owned,
-                                       guint32 route_metric_default);
+                                       guint32 route_metric_default_aspired,
+                                       guint32 route_metric_default_effective);
 
 void nm_config_device_state_prune_unseen (GHashTable *seen_ifindexes);
 

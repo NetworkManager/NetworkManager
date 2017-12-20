@@ -118,9 +118,6 @@ guint32             nm_manager_device_route_metric_reserve (NMManager *self,
                                                             int ifindex,
                                                             NMDeviceType device_type);
 
-guint32             nm_manager_device_route_metric_get (NMManager *self,
-                                                        int ifindex);
-
 void                nm_manager_device_route_metric_clear (NMManager *self,
                                                           int ifindex);
 
