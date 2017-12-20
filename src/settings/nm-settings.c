@@ -89,21 +89,6 @@ EXPORT(nm_settings_connection_update)
 /*****************************************************************************/
 
 static NM_CACHED_QUARK_FCN ("plugin-module-path", plugin_module_path_quark)
-
-#if (defined(HOSTNAME_PERSIST_SUSE) + defined(HOSTNAME_PERSIST_SLACKWARE) + defined(HOSTNAME_PERSIST_GENTOO)) > 1
-#error "Can only define one of HOSTNAME_PERSIST_*"
-#endif
-
-#if defined(HOSTNAME_PERSIST_SUSE)
-#define HOSTNAME_FILE           HOSTNAME_FILE_UCASE_HOSTNAME
-#elif defined(HOSTNAME_PERSIST_SLACKWARE)
-#define HOSTNAME_FILE           HOSTNAME_FILE_UCASE_HOSTNAME
-#elif defined(HOSTNAME_PERSIST_GENTOO)
-#define HOSTNAME_FILE           HOSTNAME_FILE_GENTOO
-#else
-#define HOSTNAME_FILE           HOSTNAME_FILE_DEFAULT
-#endif
-
 static NM_CACHED_QUARK_FCN ("default-wired-connection", _default_wired_connection_quark)
 static NM_CACHED_QUARK_FCN ("default-wired-device", _default_wired_device_quark)
 
