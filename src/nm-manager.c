@@ -334,7 +334,7 @@ typedef struct {
 } DeviceRouteMetricData;
 
 static DeviceRouteMetricData *
-_device_route_metric_data_new (int ifindex, guint32 metric)
+_device_route_metric_data_new (int ifindex, guint32 aspired_metric, guint32 effective_metric)
 {
 	DeviceRouteMetricData *data;
 
@@ -344,12 +344,13 @@ _device_route_metric_data_new (int ifindex, guint32 metric)
 	 * zero is treated like 1024. Since we handle IPv4 and IPv6 identically,
 	 * we cannot allow a zero metric here.
 	 */
-	nm_assert (metric > 0);
+	nm_assert (aspired_metric > 0);
+	nm_assert (effective_metric == 0 || aspired_metric <= effective_metric);
 
 	data = g_slice_new0 (DeviceRouteMetricData);
 	data->ifindex = ifindex;
-	data->aspired_metric = metric;
-	data->effective_metric = metric;
+	data->aspired_metric = aspired_metric;
+	data->effective_metric = effective_metric ?: aspired_metric;
 	return data;
 }
 
@@ -377,7 +378,8 @@ static guint32
 _device_route_metric_get (NMManager *self,
                           int ifindex,
                           NMDeviceType device_type,
-                          gboolean lookup_only)
+                          gboolean lookup_only,
+                          guint32 *out_aspired_metric)
 {
 	NMManagerPrivate *priv;
 	const DeviceRouteMetricData *d2;
@@ -388,13 +390,18 @@ _device_route_metric_get (NMManager *self,
 	guint n_links;
 	gboolean cleaned = FALSE;
 	GHashTableIter h_iter;
+	guint32 metric;
 
 	g_return_val_if_fail (NM_IS_MANAGER (self), 0);
+
+	NM_SET_OUT (out_aspired_metric, 0);
 
 	if (ifindex <= 0) {
 		if (lookup_only)
 			return 0;
-		return nm_device_get_route_metric_default (device_type);
+		metric = nm_device_get_route_metric_default (device_type);
+		NM_SET_OUT (out_aspired_metric, metric);
+		return metric;
 	}
 
 	priv = NM_MANAGER_GET_PRIVATE (self);
@@ -420,7 +427,7 @@ _device_route_metric_get (NMManager *self,
 
 		g_hash_table_iter_init (&h_iter, (GHashTable *) h);
 		while (g_hash_table_iter_next (&h_iter, NULL, (gpointer *) &device_state)) {
-			if (!device_state->route_metric_default)
+			if (!device_state->route_metric_default_effective)
 				continue;
 			if (!nm_platform_link_get (priv->platform, device_state->ifindex)) {
 				/* we have the entry in the state file, but (currently) no such
@@ -430,7 +437,8 @@ _device_route_metric_get (NMManager *self,
 			}
 			if (!nm_g_hash_table_add (priv->device_route_metrics,
 			                          _device_route_metric_data_new (device_state->ifindex,
-			                                                         device_state->route_metric_default)))
+			                                                         device_state->route_metric_default_aspired,
+			                                                         device_state->route_metric_default_effective)))
 				nm_assert_not_reached ();
 		}
 	}
@@ -440,7 +448,7 @@ initited:
 
 	data = g_hash_table_lookup (priv->device_route_metrics, &data_lookup);
 	if (data)
-		return data->effective_metric;
+		goto out;
 	if (lookup_only)
 		return 0;
 
@@ -468,7 +476,7 @@ initited:
 		}
 	}
 
-	data = _device_route_metric_data_new (ifindex, nm_device_get_route_metric_default (device_type));
+	data = _device_route_metric_data_new (ifindex, nm_device_get_route_metric_default (device_type), 0);
 
 	/* unfortunately, there is no stright forward way to lookup all reserved metrics.
 	 * Note, that we don't only have to know which metrics are currently reserved,
@@ -526,6 +534,8 @@ again:
 	if (!nm_g_hash_table_add (priv->device_route_metrics, data))
 		nm_assert_not_reached ();
 
+out:
+	NM_SET_OUT (out_aspired_metric, data->aspired_metric);
 	return data->effective_metric;
 }
 
@@ -536,16 +546,9 @@ nm_manager_device_route_metric_reserve (NMManager *self,
 {
 	guint32 metric;
 
-	metric = _device_route_metric_get (self, ifindex, device_type, FALSE);
+	metric = _device_route_metric_get (self, ifindex, device_type, FALSE, NULL);
 	nm_assert (metric != 0);
 	return metric;
-}
-
-guint32
-nm_manager_device_route_metric_get (NMManager *self,
-                                    int ifindex)
-{
-	return _device_route_metric_get (self, ifindex, NM_DEVICE_TYPE_UNKNOWN, TRUE);
 }
 
 void
@@ -5439,7 +5442,8 @@ nm_manager_write_device_state (NMManager *self)
 		const char *uuid = NULL;
 		const char *perm_hw_addr_fake = NULL;
 		gboolean perm_hw_addr_is_fake;
-		guint32 route_metric_default;
+		guint32 route_metric_default_aspired;
+		guint32 route_metric_default_effective;
 
 		ifindex = nm_device_get_ip_ifindex (device);
 		if (ifindex <= 0)
@@ -5469,14 +5473,16 @@ nm_manager_write_device_state (NMManager *self)
 
 		nm_owned = nm_device_is_software (device) ? nm_device_is_nm_owned (device) : -1;
 
-		route_metric_default = nm_manager_device_route_metric_get (self, ifindex);
+		route_metric_default_effective = _device_route_metric_get (self, ifindex, NM_DEVICE_TYPE_UNKNOWN,
+		                                                           TRUE, &route_metric_default_aspired);
 
 		if (nm_config_device_state_write (ifindex,
 		                                  managed_type,
 		                                  perm_hw_addr_fake,
 		                                  uuid,
 		                                  nm_owned,
-		                                  route_metric_default))
+		                                  route_metric_default_aspired,
+		                                  route_metric_default_effective))
 			g_hash_table_add (seen_ifindexes, GINT_TO_POINTER (ifindex));
 	}
 
