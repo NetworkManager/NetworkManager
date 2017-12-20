@@ -268,17 +268,48 @@ private_server_authorize (GDBusAuthObserver *observer,
 	return g_credentials_get_unix_user (credentials, NULL) == 0;
 }
 
-static PrivateServer *
-private_server_new (NMBusManager *self,
-                    const char *path,
-                    const char *tag)
+static void
+private_server_free (gpointer ptr)
 {
+	PrivateServer *s = ptr;
+
+	c_list_unlink_stale (&s->private_servers_lst);
+
+	unlink (s->address);
+	g_free (s->address);
+	g_hash_table_destroy (s->obj_managers);
+
+	g_dbus_server_stop (s->server);
+
+	g_object_unref (s->server);
+
+	g_slice_free (PrivateServer, s);
+}
+
+void
+nm_bus_manager_private_server_register (NMBusManager *self,
+                                        const char *path,
+                                        const char *tag)
+{
+	NMBusManagerPrivate *priv;
 	PrivateServer *s;
 	gs_unref_object GDBusAuthObserver *auth_observer = NULL;
 	GDBusServer *server;
 	GError *error = NULL;
 	gs_free char *address = NULL;
 	gs_free char *guid = NULL;
+
+	g_return_if_fail (NM_IS_BUS_MANAGER (self));
+	g_return_if_fail (path);
+	g_return_if_fail (tag);
+
+	priv = NM_BUS_MANAGER_GET_PRIVATE (self);
+
+	/* Only one instance per tag; but don't warn */
+	c_list_for_each_entry (s, &priv->private_servers_lst_head, private_servers_lst) {
+		if (nm_streq0 (tag, s->tag))
+			return;
+	}
 
 	unlink (path);
 	address = g_strdup_printf ("unix:path=%s", path);
@@ -299,7 +330,7 @@ private_server_new (NMBusManager *self,
 		_LOGW ("(%s) failed to set up private socket %s: %s",
 		       tag, address, error->message);
 		g_error_free (error);
-		return NULL;
+		return;
 	}
 
 	s = g_slice_new0 (PrivateServer);
@@ -315,51 +346,9 @@ private_server_new (NMBusManager *self,
 	s->detail = g_quark_from_string (tag);
 	s->tag = g_quark_to_string (s->detail);
 
-	c_list_link_tail (&NM_BUS_MANAGER_GET_PRIVATE (self)->private_servers_lst_head, &s->private_servers_lst);
+	c_list_link_tail (&priv->private_servers_lst_head, &s->private_servers_lst);
 
 	g_dbus_server_start (server);
-
-	return s;
-}
-
-static void
-private_server_free (gpointer ptr)
-{
-	PrivateServer *s = ptr;
-
-	c_list_unlink_stale (&s->private_servers_lst);
-
-	unlink (s->address);
-	g_free (s->address);
-	g_hash_table_destroy (s->obj_managers);
-
-	g_dbus_server_stop (s->server);
-	g_object_unref (s->server);
-
-	g_slice_free (PrivateServer, s);
-}
-
-void
-nm_bus_manager_private_server_register (NMBusManager *self,
-                                        const char *path,
-                                        const char *tag)
-{
-	NMBusManagerPrivate *priv;
-	PrivateServer *s;
-
-	g_return_if_fail (NM_IS_BUS_MANAGER (self));
-	g_return_if_fail (path);
-	g_return_if_fail (tag);
-
-	priv = NM_BUS_MANAGER_GET_PRIVATE (self);
-
-	/* Only one instance per tag; but don't warn */
-	c_list_for_each_entry (s, &priv->private_servers_lst_head, private_servers_lst) {
-		if (nm_streq0 (tag, s->tag))
-			return;
-	}
-
-	private_server_new (self, path, tag);
 }
 
 static const char *
