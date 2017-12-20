@@ -21,6 +21,8 @@
 #ifndef __NETWORKMANAGER_IP4_CONFIG_H__
 #define __NETWORKMANAGER_IP4_CONFIG_H__
 
+#include "nm-setting-connection.h"
+
 #include "nm-exported-object.h"
 #include "nm-setting-ip4-config.h"
 
@@ -172,6 +174,7 @@ gboolean nm_ip4_config_commit (const NMIP4Config *self,
 
 void nm_ip4_config_merge_setting (NMIP4Config *self,
                                   NMSettingIPConfig *setting,
+                                  NMSettingConnectionMdns mdns,
                                   guint32 route_table,
                                   guint32 route_metric);
 NMSetting *nm_ip4_config_create_setting (const NMIP4Config *self);
@@ -197,6 +200,10 @@ const NMPObject *nm_ip4_config_best_default_route_get (const NMIP4Config *self);
 const NMPObject *_nm_ip4_config_best_default_route_find (const NMIP4Config *self);
 
 in_addr_t nmtst_ip4_config_get_gateway (NMIP4Config *config);
+
+NMSettingConnectionMdns nm_ip4_config_mdns_get (const NMIP4Config *self);
+void                    nm_ip4_config_mdns_set (NMIP4Config *self,
+                                                NMSettingConnectionMdns mdns);
 
 const NMDedupMultiHeadEntry *nm_ip4_config_lookup_addresses (const NMIP4Config *self);
 void nm_ip4_config_reset_addresses (NMIP4Config *self);

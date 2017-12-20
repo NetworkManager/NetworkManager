@@ -293,6 +293,7 @@ typedef struct {
 	int ifindex;
 	NMIPConfigSource mtu_source;
 	gint dns_priority;
+	NMSettingConnectionMdns mdns;
 	GArray *nameservers;
 	GPtrArray *domains;
 	GPtrArray *searches;
@@ -901,6 +902,7 @@ _nm_ip_config_merge_route_attributes (int addr_family,
 void
 nm_ip4_config_merge_setting (NMIP4Config *self,
                              NMSettingIPConfig *setting,
+                             NMSettingConnectionMdns mdns,
                              guint32 route_table,
                              guint32 route_metric)
 {
@@ -1016,6 +1018,8 @@ nm_ip4_config_merge_setting (NMIP4Config *self,
 	priority = nm_setting_ip_config_get_dns_priority (setting);
 	if (priority)
 		nm_ip4_config_set_dns_priority (self, priority);
+
+	nm_ip4_config_mdns_set (self, mdns);
 
 	g_object_thaw_notify (G_OBJECT (self));
 }
@@ -1231,6 +1235,11 @@ nm_ip4_config_merge (NMIP4Config *dst,
 	/* DNS priority */
 	if (nm_ip4_config_get_dns_priority (src))
 		nm_ip4_config_set_dns_priority (dst, nm_ip4_config_get_dns_priority (src));
+
+	/* mdns */
+	nm_ip4_config_mdns_set (dst,
+	                        NM_MAX (nm_ip4_config_mdns_get (src),
+	                                nm_ip4_config_mdns_get (dst)));
 
 	g_object_thaw_notify (G_OBJECT (dst));
 }
@@ -1468,6 +1477,10 @@ nm_ip4_config_subtract (NMIP4Config *dst,
 	if (nm_ip4_config_get_dns_priority (src) == nm_ip4_config_get_dns_priority (dst))
 		nm_ip4_config_set_dns_priority (dst, 0);
 
+	/* mdns */
+	if (nm_ip4_config_mdns_get (src) == nm_ip4_config_mdns_get (dst))
+		nm_ip4_config_mdns_set (dst, NM_SETTING_CONNECTION_MDNS_DEFAULT);
+
 	g_object_thaw_notify (G_OBJECT (dst));
 }
 
@@ -1568,6 +1581,7 @@ _nm_ip4_config_intersect_helper (NMIP4Config *dst,
 	/* ignore dns options */
 	/* ignore NIS */
 	/* ignore WINS */
+	/* ignore mdns */
 
 	if (update_dst)
 		g_object_thaw_notify (G_OBJECT (dst));
@@ -1845,6 +1859,8 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 			nm_ip4_config_add_dns_option (dst, nm_ip4_config_get_dns_option (src, i));
 		has_relevant_changes = TRUE;
 	}
+
+	dst_priv->mdns = src_priv->mdns;
 
 	/* DNS priority */
 	if (src_priv->dns_priority != dst_priv->dns_priority) {
@@ -2523,6 +2539,21 @@ nm_ip4_config_get_dns_option (const NMIP4Config *self, guint i)
 
 /*****************************************************************************/
 
+NMSettingConnectionMdns
+nm_ip4_config_mdns_get (const NMIP4Config *self)
+{
+	return NM_IP4_CONFIG_GET_PRIVATE (self)->mdns;
+}
+
+void
+nm_ip4_config_mdns_set (NMIP4Config *self,
+                        NMSettingConnectionMdns mdns)
+{
+	NM_IP4_CONFIG_GET_PRIVATE (self)->mdns = mdns;
+}
+
+/*****************************************************************************/
+
 void
 nm_ip4_config_set_dns_priority (NMIP4Config *self, gint priority)
 {
@@ -3133,6 +3164,7 @@ nm_ip4_config_init (NMIP4Config *self)
 	nm_ip_config_dedup_multi_idx_type_init ((NMIPConfigDedupMultiIdxType *) &priv->idx_ip4_routes,
 	                                        NMP_OBJECT_TYPE_IP4_ROUTE);
 
+	priv->mdns = NM_SETTING_CONNECTION_MDNS_DEFAULT;
 	priv->nameservers = g_array_new (FALSE, FALSE, sizeof (guint32));
 	priv->domains = g_ptr_array_new_with_free_func (g_free);
 	priv->searches = g_ptr_array_new_with_free_func (g_free);

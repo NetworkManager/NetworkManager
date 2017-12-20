@@ -1460,6 +1460,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 	NMPlatformIP4Address address;
 	guint32 u32, route_metric;
 	NMSettingIPConfig *s_ip;
+	NMSettingConnection *s_con;
 	guint32 route_table;
 	NMIP4Config *config;
 	GVariantIter *iter;
@@ -1564,6 +1565,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 	route_table = get_route_table (self, AF_INET, TRUE);
 	route_metric = nm_vpn_connection_get_ip4_route_metric (self);
 	s_ip = nm_connection_get_setting_ip4_config (_get_applied_connection (self));
+	s_con = nm_connection_get_setting_connection (_get_applied_connection (self));
 
 	if (nm_setting_ip_config_get_ignore_auto_routes (s_ip)) {
 		/* ignore VPN routes */
@@ -1621,6 +1623,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 	/* Merge in user overrides from the NMConnection's IPv4 setting */
 	nm_ip4_config_merge_setting (config,
 	                             s_ip,
+	                             nm_setting_connection_get_mdns (s_con),
 	                             route_table,
 	                             route_metric);
 

@@ -228,6 +228,8 @@ prepare_one_interface (NMDnsSystemdResolved *self, InterfaceConfig *ic)
 	NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
 	GVariantBuilder dns, domains;
 	NMCListElem *elem;
+	NMSettingConnectionMdns mdns = NM_SETTING_CONNECTION_MDNS_DEFAULT;
+	const char *mdns_arg = NULL;
 
 	g_variant_builder_init (&dns, G_VARIANT_TYPE ("(ia(iay))"));
 	g_variant_builder_add (&dns, "i", ic->ifindex);
@@ -237,11 +239,33 @@ prepare_one_interface (NMDnsSystemdResolved *self, InterfaceConfig *ic)
 	g_variant_builder_add (&domains, "i", ic->ifindex);
 	g_variant_builder_open (&domains, G_VARIANT_TYPE ("a(sb)"));
 
-	c_list_for_each_entry (elem, &ic->configs_lst_head, lst)
-		update_add_ip_config (self, &dns, &domains, elem->data);
+	c_list_for_each_entry (elem, &ic->configs_lst_head, lst) {
+		NMIPConfig *ip_config = elem->data;
+
+		update_add_ip_config (self, &dns, &domains, ip_config);
+
+		if (NM_IS_IP4_CONFIG (ip_config))
+			mdns = NM_MAX (mdns, nm_ip4_config_mdns_get (NM_IP4_CONFIG (ip_config)));
+	}
 
 	g_variant_builder_close (&dns);
 	g_variant_builder_close (&domains);
+
+	switch (mdns) {
+	case NM_SETTING_CONNECTION_MDNS_NO:
+		mdns_arg = "no";
+		break;
+	case NM_SETTING_CONNECTION_MDNS_RESOLVE:
+		mdns_arg = "resolve";
+		break;
+	case NM_SETTING_CONNECTION_MDNS_YES:
+		mdns_arg = "yes";
+		break;
+	case NM_SETTING_CONNECTION_MDNS_DEFAULT:
+		mdns_arg = "";
+		break;
+	}
+	nm_assert (mdns_arg);
 
 	_request_item_append (&priv->request_queue_lst_head,
 	                      "SetLinkDNS",
@@ -249,6 +273,9 @@ prepare_one_interface (NMDnsSystemdResolved *self, InterfaceConfig *ic)
 	_request_item_append (&priv->request_queue_lst_head,
 	                      "SetLinkDomains",
 	                      g_variant_builder_end (&domains));
+	_request_item_append (&priv->request_queue_lst_head,
+	                      "SetLinkMulticastDNS",
+	                      g_variant_new ("(is)", ic->ifindex, mdns_arg ?: ""));
 }
 
 static void

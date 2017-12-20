@@ -24,6 +24,7 @@
 
 #include <netinet/in.h>
 
+#include "nm-setting-connection.h"
 #include "nm-exported-object.h"
 #include "nm-dbus-interface.h"
 #include "nm-connection.h"

@@ -1888,9 +1888,8 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	if (mdns != NM_SETTING_CONNECTION_MDNS_DEFAULT) {
 		svSetValueEnum (ifcfg, "MDNS", nm_setting_connection_mdns_get_type (),
 		                mdns);
-	} else {
+	} else
 		svUnsetValue (ifcfg, "MDNS");
-	}
 }
 
 static char *
