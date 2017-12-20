@@ -1788,6 +1788,34 @@ out:
 	return nm_utils_ip_route_metric_normalize (addr_family, route_metric);
 }
 
+static NMSettingConnectionMdns
+_get_mdns (NMDevice *self)
+{
+	NMConnection *connection;
+	NMSettingConnectionMdns mdns = NM_SETTING_CONNECTION_MDNS_DEFAULT;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), NM_SETTING_CONNECTION_MDNS_DEFAULT);
+
+	connection = nm_device_get_applied_connection (self);
+	if (connection)
+		mdns = nm_setting_connection_get_mdns (nm_connection_get_setting_connection (connection));
+
+	if (mdns == NM_SETTING_CONNECTION_MDNS_DEFAULT) {
+		gs_free char *value = NULL;
+
+		value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+		                                               "connection.mdns",
+		                                               self);
+		mdns = _nm_utils_ascii_str_to_int64 (value,
+		                                     10,
+		                                     NM_SETTING_CONNECTION_MDNS_NO,
+		                                     NM_SETTING_CONNECTION_MDNS_YES,
+		                                     NM_SETTING_CONNECTION_MDNS_DEFAULT);
+	}
+
+	return mdns;
+}
+
 guint32
 nm_device_get_route_table (NMDevice *self,
                            int addr_family,
@@ -5867,6 +5895,7 @@ ensure_con_ip4_config (NMDevice *self)
 	priv->con_ip4_config = _ip4_config_new (self);
 	nm_ip4_config_merge_setting (priv->con_ip4_config,
 	                             nm_connection_get_setting_ip4_config (connection),
+	                             _get_mdns (self),
 	                             nm_device_get_route_table (self, AF_INET, TRUE),
 	                             nm_device_get_route_metric (self, AF_INET));
 
@@ -6177,6 +6206,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 			manual = _ip4_config_new (self);
 			nm_ip4_config_merge_setting (manual,
 			                             nm_connection_get_setting_ip4_config (connection),
+			                             NM_SETTING_CONNECTION_MDNS_DEFAULT,
 			                             nm_device_get_route_table (self, AF_INET, TRUE),
 			                             nm_device_get_route_metric (self, AF_INET));
 
@@ -6555,6 +6585,7 @@ act_stage3_ip4_config_start (NMDevice *self,
 		config = _ip4_config_new (self);
 		nm_ip4_config_merge_setting (config,
 		                             nm_connection_get_setting_ip4_config (connection),
+		                             NM_SETTING_CONNECTION_MDNS_DEFAULT,
 		                             nm_device_get_route_table (self, AF_INET, TRUE),
 		                             nm_device_get_route_metric (self, AF_INET));
 
@@ -9250,6 +9281,7 @@ nm_device_reactivate_ip4_config (NMDevice *self,
 		priv->con_ip4_config = _ip4_config_new (self);
 		nm_ip4_config_merge_setting (priv->con_ip4_config,
 		                             s_ip4_new,
+		                             _get_mdns (self),
 		                             nm_device_get_route_table (self, AF_INET, TRUE),
 		                             nm_device_get_route_metric (self, AF_INET));
 
