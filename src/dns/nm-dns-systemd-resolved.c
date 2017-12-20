@@ -53,6 +53,12 @@ typedef struct {
 	CList configs_lst_head;
 } InterfaceConfig;
 
+typedef struct {
+	CList request_queue_lst;
+	const char *operation;
+	GVariant *argument;
+} RequestItem;
+
 /*****************************************************************************/
 
 typedef struct {
@@ -60,8 +66,7 @@ typedef struct {
 	GCancellable *init_cancellable;
 	GCancellable *update_cancellable;
 	GCancellable *mdns_cancellable;
-	GQueue dns_updates;
-	GQueue domain_updates;
+	CList request_queue_lst_head;
 } NMDnsSystemdResolvedPrivate;
 
 struct _NMDnsSystemdResolved {
@@ -81,6 +86,29 @@ G_DEFINE_TYPE (NMDnsSystemdResolved, nm_dns_systemd_resolved, NM_TYPE_DNS_PLUGIN
 
 #define _NMLOG_DOMAIN      LOGD_DNS
 #define _NMLOG(level, ...) __NMLOG_DEFAULT_WITH_ADDR (level, _NMLOG_DOMAIN, "dns-sd-resolved", __VA_ARGS__)
+
+/*****************************************************************************/
+
+static void
+_request_item_free (RequestItem *request_item)
+{
+	c_list_unlink_stale (&request_item->request_queue_lst);
+	g_variant_unref (request_item->argument);
+	g_slice_free (RequestItem, request_item);
+}
+
+static void
+_request_item_append (CList *request_queue_lst_head,
+                      const char *operation,
+                      GVariant *argument)
+{
+	RequestItem *request_item;
+
+	request_item = g_slice_new (RequestItem);
+	request_item->operation = operation;
+	request_item->argument = g_variant_ref_sink (argument);
+	c_list_link_tail (request_queue_lst_head, &request_item->request_queue_lst);
+}
 
 /*****************************************************************************/
 
@@ -185,13 +213,13 @@ static void
 free_pending_updates (NMDnsSystemdResolved *self)
 {
 	NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
-	GVariant *v;
+	RequestItem *request_item, *request_item_safe;
 
-	while ((v = g_queue_pop_head (&priv->dns_updates)) != NULL)
-		g_variant_unref (v);
-
-	while ((v = g_queue_pop_head (&priv->domain_updates)) != NULL)
-		g_variant_unref (v);
+	c_list_for_each_entry_safe (request_item,
+	                            request_item_safe,
+	                            &priv->request_queue_lst_head,
+	                            request_queue_lst)
+		_request_item_free (request_item);
 }
 
 static void
@@ -215,17 +243,19 @@ prepare_one_interface (NMDnsSystemdResolved *self, InterfaceConfig *ic)
 	g_variant_builder_close (&dns);
 	g_variant_builder_close (&domains);
 
-	g_queue_push_tail (&priv->dns_updates,
-	                   g_variant_ref_sink (g_variant_builder_end (&dns)));
-	g_queue_push_tail (&priv->domain_updates,
-	                   g_variant_ref_sink (g_variant_builder_end (&domains)));
+	_request_item_append (&priv->request_queue_lst_head,
+	                      "SetLinkDNS",
+	                      g_variant_builder_end (&dns));
+	_request_item_append (&priv->request_queue_lst_head,
+	                      "SetLinkDomains",
+	                      g_variant_builder_end (&domains));
 }
 
 static void
 send_updates (NMDnsSystemdResolved *self)
 {
 	NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
-	GVariant *v;
+	RequestItem *request_item, *request_item_safe;
 
 	nm_clear_g_cancellable (&priv->update_cancellable);
 
@@ -234,18 +264,19 @@ send_updates (NMDnsSystemdResolved *self)
 
 	priv->update_cancellable = g_cancellable_new ();
 
-	while ((v = g_queue_pop_head (&priv->dns_updates)) != NULL) {
-		g_dbus_proxy_call (priv->resolve, "SetLinkDNS", v,
+	c_list_for_each_entry_safe (request_item,
+	                            request_item_safe,
+	                            &priv->request_queue_lst_head,
+	                            request_queue_lst) {
+		g_dbus_proxy_call (priv->resolve,
+		                   request_item->operation,
+		                   request_item->argument,
 		                   G_DBUS_CALL_FLAGS_NONE,
-		                   -1, priv->update_cancellable, call_done, self);
-		g_variant_unref (v);
-	}
-
-	while ((v = g_queue_pop_head (&priv->domain_updates)) != NULL) {
-		g_dbus_proxy_call (priv->resolve, "SetLinkDomains", v,
-		                   G_DBUS_CALL_FLAGS_NONE,
-		                   -1, priv->update_cancellable, call_done, self);
-		g_variant_unref (v);
+		                   -1,
+		                   priv->update_cancellable,
+		                   call_done,
+		                   self);
+		_request_item_free (request_item);
 	}
 }
 
@@ -403,8 +434,7 @@ nm_dns_systemd_resolved_init (NMDnsSystemdResolved *self)
 	NMBusManager *dbus_mgr;
 	GDBusConnection *connection;
 
-	g_queue_init (&priv->dns_updates);
-	g_queue_init (&priv->domain_updates);
+	c_list_init (&priv->request_queue_lst_head);
 
 	dbus_mgr = nm_bus_manager_get ();
 	g_return_if_fail (dbus_mgr);
