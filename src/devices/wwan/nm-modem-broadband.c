@@ -883,24 +883,25 @@ static_stage3_ip4_done (NMModemBroadband *self)
 
 	/* Fully fail if invalid IP address retrieved */
 	address_string = mm_bearer_ip_config_get_address (self->_priv.ipv4_config);
-	if (!nm_utils_parse_inaddr_bin (AF_INET, address_string, &address_network)) {
+	if (   !address_string
+	    || !nm_utils_parse_inaddr_bin (AF_INET, address_string, &address_network)) {
 		error = g_error_new (NM_DEVICE_ERROR,
 		                     NM_DEVICE_ERROR_INVALID_CONNECTION,
-		                     "(%s) retrieving IP4 configuration failed: invalid address given '%s'",
+		                     "(%s) retrieving IP4 configuration failed: invalid address given %s%s%s",
 		                     nm_modem_get_uid (NM_MODEM (self)),
-		                     address_string);
+		                     NM_PRINT_FMT_QUOTE_STRING (address_string));
 		goto out;
 	}
 
 	/* Missing gateway not a hard failure */
 	gw_string = mm_bearer_ip_config_get_gateway (self->_priv.ipv4_config);
-	if (   !gw_string
-	    || !nm_utils_parse_inaddr_bin (AF_INET, gw_string, &gw)) {
+	if (   gw_string
+	    && !nm_utils_parse_inaddr_bin (AF_INET, gw_string, &gw)) {
 		error = g_error_new (NM_DEVICE_ERROR,
 		                     NM_DEVICE_ERROR_INVALID_CONNECTION,
-		                     "(%s) retrieving IP4 configuration failed: invalid gateway address %s%s%s",
+		                     "(%s) retrieving IP4 configuration failed: invalid gateway address \"%s\"",
 		                     nm_modem_get_uid (NM_MODEM (self)),
-		                     NM_PRINT_FMT_QUOTE_STRING (gw_string));
+		                     gw_string);
 		goto out;
 	}
 
