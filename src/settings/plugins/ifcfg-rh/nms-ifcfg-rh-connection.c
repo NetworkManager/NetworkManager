@@ -442,7 +442,7 @@ nm_ifcfg_connection_new (NMConnection *source,
 	if (nm_settings_connection_update (NM_SETTINGS_CONNECTION (object),
 	                                   tmp,
 	                                   full_path
-	                                     ? NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP /* connection is already on disk */
+	                                     ? NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP_SAVED
 	                                     : NM_SETTINGS_CONNECTION_PERSIST_MODE_UNSAVED,
 	                                   NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
 	                                   NULL,

@@ -517,6 +517,7 @@ set_persist_mode (NMSettingsConnection *self, NMSettingsConnectionPersistMode pe
 		                                  TRUE);
 		return;
 	case NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP:
+	case NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP_SAVED:
 		/* Nothing to do */
 		return;
 	}

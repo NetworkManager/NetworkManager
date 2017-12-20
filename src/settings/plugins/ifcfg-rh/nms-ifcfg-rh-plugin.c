@@ -315,7 +315,7 @@ update_connection (SettingsPluginIfcfg *self,
 
 			if (!nm_settings_connection_update (NM_SETTINGS_CONNECTION (connection_by_uuid),
 			                                    NM_CONNECTION (connection_new),
-			                                    NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
+			                                    NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP_SAVED,
 			                                    NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
 			                                    "ifcfg-update",
 			                                    &local)) {

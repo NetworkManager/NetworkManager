@@ -137,6 +137,9 @@ gboolean nm_settings_connection_has_unmodified_applied_connection (NMSettingsCon
 
 typedef enum {
 	NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
+
+	/* like KEEP, but always clears the UNSAVED flag */
+	NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP_SAVED,
 	NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK,
 
 	/* unsaved, only sets the unsaved flag, but it doesn't touch
