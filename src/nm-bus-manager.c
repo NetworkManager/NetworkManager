@@ -281,6 +281,8 @@ private_server_free (gpointer ptr)
 
 	g_dbus_server_stop (s->server);
 
+	g_signal_handlers_disconnect_by_func (s->server, G_CALLBACK (private_server_new_connection), s);
+
 	g_object_unref (s->server);
 
 	g_slice_free (PrivateServer, s);
