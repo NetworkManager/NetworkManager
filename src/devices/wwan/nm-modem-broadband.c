@@ -875,6 +875,8 @@ static_stage3_ip4_done (NMModemBroadband *self)
 	NMPlatformIP4Address address;
 	const gchar **dns;
 	guint i;
+	guint32 ip4_route_table, ip4_route_metric;
+	NMPlatformIP4Route *r;
 
 	g_assert (self->_priv.ipv4_config);
 	g_assert (self->_priv.bearer);
@@ -920,26 +922,20 @@ static_stage3_ip4_done (NMModemBroadband *self)
 
 	_LOGI ("  address %s/%d", address_string, address.plen);
 
-	if (gw) {
-		guint32 ip4_route_table, ip4_route_metric;
 
-		nm_modem_get_route_parameters (NM_MODEM (self),
-		                               &ip4_route_table,
-		                               &ip4_route_metric,
-		                               NULL,
-		                               NULL);
-		{
-			const NMPlatformIP4Route r = {
-				.rt_source = NM_IP_CONFIG_SOURCE_WWAN,
-				.gateway = gw,
-				.table_coerced = nm_platform_route_table_coerce (ip4_route_table),
-				.metric = ip4_route_metric,
-			};
-
-			_LOGI ("  gateway %s", gw_string);
-			nm_ip4_config_add_route (config, &r, NULL);
-		}
-	}
+	nm_modem_get_route_parameters (NM_MODEM (self),
+	                               &ip4_route_table,
+	                               &ip4_route_metric,
+	                               NULL,
+	                               NULL);
+	r = &(NMPlatformIP4Route) {
+		.rt_source = NM_IP_CONFIG_SOURCE_WWAN,
+		.gateway = gw,
+		.table_coerced = nm_platform_route_table_coerce (ip4_route_table),
+		.metric = ip4_route_metric,
+	};
+	nm_ip4_config_add_route (config, r, NULL);
+	_LOGI ("  gateway %s", gw_string);
 
 	/* DNS servers */
 	dns = mm_bearer_ip_config_get_dns (self->_priv.ipv4_config);
