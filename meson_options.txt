@@ -46,9 +46,7 @@ option('bluez5_dun', type: 'boolean', value: false, description: 'enable Bluez5 
 option('config_plugins_default', type: 'string', value: '', description: 'Default configuration option for main.plugins setting, used as fallback if the configuration option is unset')
 option('config_plugin_ibft', type: 'boolean', value: true, description: 'enable ibft configuration plugin')
 option('ifcfg_rh', type: 'boolean', value: false, description: 'enable ifcfg-rh configuration plugin (Fedora/RHEL)')
-option('ifcfg_suse', type: 'boolean', value: false, description: 'enable ifcfg-suse configuration plugin (SUSE) (deprecated)')
 option('ifupdown', type: 'boolean', value: false, description: 'enable ifupdown configuration plugin (Debian/Ubuntu)')
-option('ifnet', type: 'boolean', value: false, description: 'enable ifnet configuration plugin (Gentoo)')
 
 # handlers for resolv.conf
 option('resolvconf', type: 'array', value: ['resolvconf', '/sbin/resolvconf', '/usr/sbin/resolvconf', '/usr/local/sbin/resolvconf'], description: 'Enable resolvconf support')
