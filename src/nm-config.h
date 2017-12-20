@@ -57,7 +57,6 @@
 
 #define NM_CONFIG_KEYFILE_GROUP_KEYFILE                     "keyfile"
 #define NM_CONFIG_KEYFILE_GROUP_IFUPDOWN                    "ifupdown"
-#define NM_CONFIG_KEYFILE_GROUP_IFNET                       "ifnet"
 
 #define NM_CONFIG_KEYFILE_KEY_MAIN_AUTH_POLKIT              "auth-polkit"
 #define NM_CONFIG_KEYFILE_KEY_MAIN_AUTOCONNECT_RETRIES_DEFAULT "autoconnect-retries-default"
