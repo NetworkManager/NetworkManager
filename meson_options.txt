@@ -47,7 +47,6 @@ option('config_plugins_default', type: 'string', value: '', description: 'Defaul
 option('config_plugin_ibft', type: 'boolean', value: true, description: 'enable ibft configuration plugin')
 option('ifcfg_rh', type: 'boolean', value: false, description: 'enable ifcfg-rh configuration plugin (Fedora/RHEL)')
 option('ifupdown', type: 'boolean', value: false, description: 'enable ifupdown configuration plugin (Debian/Ubuntu)')
-option('ifnet', type: 'boolean', value: false, description: 'enable ifnet configuration plugin (Gentoo)')
 
 # handlers for resolv.conf
 option('resolvconf', type: 'array', value: ['resolvconf', '/sbin/resolvconf', '/usr/sbin/resolvconf', '/usr/local/sbin/resolvconf'], description: 'Enable resolvconf support')

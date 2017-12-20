@@ -10,10 +10,6 @@ if enable_ifupdown
   subdir('ifupdown')
 endif
 
-if enable_ifnet
-  subdir('ifnet')
-endif
-
 if enable_config_plugin_ibft
   subdir('ibft')
 endif
