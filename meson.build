@@ -221,7 +221,6 @@ else
 endif
 
 enable_ifcfg_rh = get_option('ifcfg_rh') or (distro == 'redhat')
-enable_ifcfg_suse = get_option('ifcfg_suse') or (distro == 'suse')
 enable_ifupdown = get_option('ifupdown') or (distro == 'debian')
 enable_ifnet = get_option('ifnet') or (distro == 'gentoo')
 
@@ -234,10 +233,6 @@ if config_plugins_default == ''
 
   if enable_ifcfg_rh
     config_plugins += ['ifcfg-rh']
-  endif
-
-  if enable_ifcfg_suse
-    config_plugins += ['ifcfg-suse']
   endif
 
   if enable_ifupdown
