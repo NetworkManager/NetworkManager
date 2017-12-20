@@ -881,6 +881,8 @@ static_stage3_ip4_done (NMModemBroadband *self)
 	g_assert (self->_priv.ipv4_config);
 	g_assert (self->_priv.bearer);
 
+	self->_priv.idle_id_ip4 = 0;
+
 	_LOGI ("IPv4 static configuration:");
 
 	/* Fully fail if invalid IP address retrieved */
@@ -986,6 +988,7 @@ stage3_ip6_done (NMModemBroadband *self)
 
 	g_assert (self->_priv.ipv6_config);
 
+	self->_priv.idle_id_ip6 = 0;
 	memset (&address, 0, sizeof (address));
 
 	ip_method = get_bearer_ip_method (self->_priv.ipv6_config);
