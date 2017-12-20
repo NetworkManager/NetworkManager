@@ -376,9 +376,9 @@
         <term><option>--plugins</option></term>
         <listitem><para>List plugins used to manage system-wide
         connection settings.  This list has preference over plugins
-        specified in the configuration file.  Currently supported
-        plugins are: keyfile, <option>ifcfg-rh</option>,
-        <option>ifcfg-suse</option>, <option>ifupdown</option>.
+        specified in the configuration file.  See <literal>main.plugins</literal>
+        setting in <link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>
+        for supported options.
         </para></listitem>
       </varlistentry>
       <varlistentry>
