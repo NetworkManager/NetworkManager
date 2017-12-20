@@ -190,7 +190,7 @@ nm_ifnet_connection_new (NMConnection *source, const char *conn_name)
 	                                    tmp,
 	                                    update_unsaved
 	                                      ? NM_SETTINGS_CONNECTION_PERSIST_MODE_UNSAVED
-	                                      : NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
+	                                      : NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP_SAVED,
 	                                    NM_SETTINGS_CONNECTION_COMMIT_REASON_NONE,
 	                                    NULL,
 	                                    NULL)) {
