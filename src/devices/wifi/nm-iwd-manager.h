@@ -36,6 +36,13 @@
 #define NM_IWD_KNOWN_NETWORKS_INTERFACE "net.connman.iwd.KnownNetworks"
 #define NM_IWD_SIGNAL_AGENT_INTERFACE   "net.connman.iwd.SignalLevelAgent"
 
+typedef enum {
+	NM_IWD_NETWORK_SECURITY_NONE,
+	NM_IWD_NETWORK_SECURITY_WEP,
+	NM_IWD_NETWORK_SECURITY_PSK,
+	NM_IWD_NETWORK_SECURITY_8021X,
+} NMIwdNetworkSecurity;
+
 #define NM_TYPE_IWD_MANAGER              (nm_iwd_manager_get_type ())
 #define NM_IWD_MANAGER(obj)              (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_IWD_MANAGER, NMIwdManager))
 #define NM_IWD_MANAGER_CLASS(klass)      (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_IWD_MANAGER, NMIwdManagerClass))
@@ -49,5 +56,10 @@ typedef struct _NMIwdManagerClass NMIwdManagerClass;
 GType nm_iwd_manager_get_type (void);
 
 NMIwdManager *nm_iwd_manager_get (void);
+
+gboolean nm_iwd_manager_is_known_network (NMIwdManager *self, const gchar *name,
+                                          NMIwdNetworkSecurity security);
+void nm_iwd_manager_network_connected (NMIwdManager *self, const gchar *name,
+                                       NMIwdNetworkSecurity security);
 
 #endif /* __NETWORKMANAGER_IWD_MANAGER_H__ */
