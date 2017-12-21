@@ -677,8 +677,8 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 			continue;
 		}
 
-		if (!strcmp (pname, "ifcfg-suse")) {
-			_LOGW ("skipping deprecated plugin ifcfg-suse");
+		if (NM_IN_STRSET (pname, "ifcfg-suse", "ifnet")) {
+			_LOGW ("skipping deprecated plugin %s", pname);
 			continue;
 		}
 

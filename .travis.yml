@@ -18,7 +18,7 @@ before_install:
   - sudo apt-get install libnl-3-dev libndp-dev automake libcurl4-gnutls-dev
 
 script: |
-    sh autogen.sh --with-systemd-logind=no --enable-more-warnings=no --enable-ifcfg-rh --enable-ifupdown --enable-ifnet --enable-tests &&
+    sh autogen.sh --with-systemd-logind=no --enable-more-warnings=no --enable-ifcfg-rh --enable-ifupdown --enable-tests &&
     make -j4 &&
     ./contrib/travis/travis-check.sh
 

@@ -221,9 +221,7 @@ else
 endif
 
 enable_ifcfg_rh = get_option('ifcfg_rh') or (distro == 'redhat')
-enable_ifcfg_suse = get_option('ifcfg_suse') or (distro == 'suse')
 enable_ifupdown = get_option('ifupdown') or (distro == 'debian')
-enable_ifnet = get_option('ifnet') or (distro == 'gentoo')
 
 enable_config_plugin_ibft = get_option('config_plugin_ibft')
 config_h.set10('WITH_SETTINGS_PLUGIN_IBFT', enable_config_plugin_ibft)
@@ -236,16 +234,8 @@ if config_plugins_default == ''
     config_plugins += ['ifcfg-rh']
   endif
 
-  if enable_ifcfg_suse
-    config_plugins += ['ifcfg-suse']
-  endif
-
   if enable_ifupdown
     config_plugins += ['ifupdown']
-  endif
-
-  if enable_ifnet
-    config_plugins += ['ifnet']
   endif
 
   if enable_config_plugin_ibft
@@ -977,7 +967,6 @@ output += '\nConfiguration_plugins (main.plugins=' + config_plugins_default + ')
 output += '  ibft: ' + enable_config_plugin_ibft.to_string() + '\n'
 output += '  ifcfg-rh: ' + enable_ifcfg_rh.to_string() + '\n'
 output += '  ifupdown: ' + enable_ifupdown.to_string() + '\n'
-output += '  ifnet: ' + enable_ifnet.to_string() + '\n'
 output += '\nHandlers for /etc/resolv.conf:\n'
 output += '  resolvconf: ' + enable_resolvconf.to_string()
 if enable_resolvconf
