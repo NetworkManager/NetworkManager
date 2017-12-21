@@ -399,6 +399,52 @@ deactivate (NMDevice *device)
 	cleanup_association_attempt (NM_DEVICE_IWD (device), TRUE);
 }
 
+static NMIwdNetworkSecurity
+get_connection_iwd_security (NMConnection *connection)
+{
+	NMSettingWirelessSecurity *s_wireless_sec;
+	const char *key_mgmt = NULL;
+
+	s_wireless_sec = nm_connection_get_setting_wireless_security (connection);
+	if (!s_wireless_sec)
+		return NM_IWD_NETWORK_SECURITY_NONE;
+
+	key_mgmt = nm_setting_wireless_security_get_key_mgmt (s_wireless_sec);
+	nm_assert (key_mgmt);
+
+	if (!strcmp (key_mgmt, "none") || !strcmp (key_mgmt, "ieee8021x"))
+		return NM_IWD_NETWORK_SECURITY_WEP;
+
+	if (!strcmp (key_mgmt, "wpa-psk"))
+		return NM_IWD_NETWORK_SECURITY_PSK;
+
+	nm_assert (!strcmp (key_mgmt, "wpa-eap"));
+	return NM_IWD_NETWORK_SECURITY_8021X;
+}
+
+static gboolean
+is_connection_known_network (NMConnection *connection)
+{
+	NMSettingWireless *s_wireless;
+	GBytes *ssid;
+	gs_free gchar *str_ssid = NULL;
+
+	s_wireless = nm_connection_get_setting_wireless (connection);
+	if (!s_wireless)
+		return FALSE;
+
+	ssid = nm_setting_wireless_get_ssid (s_wireless);
+	if (!ssid)
+		return FALSE;
+
+	str_ssid = nm_utils_ssid_to_utf8 (g_bytes_get_data (ssid, NULL),
+	                                  g_bytes_get_size (ssid));
+
+	return nm_iwd_manager_is_known_network (nm_iwd_manager_get (),
+	                                        str_ssid,
+	                                        get_connection_iwd_security (connection));
+}
+
 static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
@@ -447,6 +493,14 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	if (g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_INFRA) != 0)
 		return FALSE;
 
+	/* 8021x networks can only be used if they've been provisioned on the IWD side and
+	 * thus are Known Networks.
+	 */
+	if (get_connection_iwd_security (connection) == NM_IWD_NETWORK_SECURITY_8021X) {
+		if (!is_connection_known_network (connection))
+			return FALSE;
+	}
+
 	return TRUE;
 }
 
@@ -455,7 +509,6 @@ get_ap_by_path (NMDeviceIwd *self, const char *path)
 {
 	g_return_val_if_fail (path != NULL, NULL);
 	return g_hash_table_lookup (NM_DEVICE_IWD_GET_PRIVATE (self)->aps, path);
-
 }
 
 static gboolean
@@ -472,6 +525,23 @@ check_connection_available (NMDevice *device,
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_return_val_if_fail (s_wifi, FALSE);
 
+	/* Only Infrastrusture mode at this time */
+	mode = nm_setting_wireless_get_mode (s_wifi);
+	if (g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_INFRA) != 0)
+		return FALSE;
+
+	/* Hidden SSIDs not supported yet */
+	if (nm_setting_wireless_get_hidden (s_wifi))
+		return FALSE;
+
+	/* 8021x networks can only be used if they've been provisioned on the IWD side and
+	 * thus are Known Networks.
+	 */
+	if (get_connection_iwd_security (connection) == NM_IWD_NETWORK_SECURITY_8021X) {
+		if (!is_connection_known_network (connection))
+			return FALSE;
+	}
+
 	/* a connection that is available for a certain @specific_object, MUST
 	 * also be available in general (without @specific_object). */
 
@@ -481,15 +551,6 @@ check_connection_available (NMDevice *device,
 		ap = get_ap_by_path (self, specific_object);
 		return ap ? nm_wifi_ap_check_compatible (ap, connection) : FALSE;
 	}
-
-	/* Only Infrastrusture mode at this time */
-	mode = nm_setting_wireless_get_mode (s_wifi);
-	if (g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_INFRA) != 0)
-		return FALSE;
-
-	/* Hidden SSIDs not supported yet */
-	if (nm_setting_wireless_get_hidden (s_wifi))
-		return FALSE;
 
 	if (NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP))
 		return TRUE;
@@ -608,6 +669,19 @@ complete_connection (NMDevice *device,
 	if (tmp_ssid)
 		g_byte_array_unref (tmp_ssid);
 
+	/* 8021x networks can only be used if they've been provisioned on the IWD side and
+	 * thus are Known Networks.
+	 */
+	if (get_connection_iwd_security (connection) == NM_IWD_NETWORK_SECURITY_8021X) {
+		if (!is_connection_known_network (connection)) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_DEVICE_ERROR_INVALID_CONNECTION,
+			                     "This 8021x network has not been provisioned on this machine");
+			return FALSE;
+		}
+	}
+
 	perm_hw_addr = nm_device_get_permanent_hw_address (device);
 	if (perm_hw_addr) {
 		setting_mac = nm_setting_wireless_get_mac_address (s_wifi);
@@ -679,6 +753,14 @@ can_auto_connect (NMDevice *device,
 	 */
 	if (nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (connection), &timestamp)) {
 		if (timestamp == 0)
+			return FALSE;
+	}
+
+	/* 8021x networks can only be used if they've been provisioned on the IWD side and
+	 * thus are Known Networks.
+	 */
+	if (get_connection_iwd_security (connection) == NM_IWD_NETWORK_SECURITY_8021X) {
+		if (!is_connection_known_network (connection))
 			return FALSE;
 	}
 
@@ -997,9 +1079,24 @@ handle_8021x_or_psk_auth_fail (NMDeviceIwd *self)
 	NMActRequest *req;
 	const char *setting_name = NULL;
 	gboolean handled = FALSE;
+	NMConnection *connection;
 
 	req = nm_device_get_act_request (device);
 	g_return_val_if_fail (req != NULL, FALSE);
+
+	/* If this is an IWD Known Network, even if the failure was caused by bad secrets,
+	 * IWD won't ask our agent for new secrets until we call ForgetNetwork.  For 8021x
+	 * this is not a good idea since the IWD network config file is assumed to be
+	 * provisioned by the system admin and the admin needs to intervene anyway.  For
+	 * PSK we may want to do this here (TODO).
+	 */
+	connection = nm_act_request_get_applied_connection (req);
+	if (is_connection_known_network (connection)) {
+		_LOGI (LOGD_DEVICE | LOGD_WIFI,
+		       "Activation: (wifi) disconnected during association to an IWD Known Network, giving up");
+
+		return FALSE;
+	}
 
 	if (   need_new_8021x_secrets (self, &setting_name)
 	    || need_new_wpa_psk (self, &setting_name)) {
@@ -1030,6 +1127,7 @@ network_connect_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	NMConnection *connection;
 	NMSettingWireless *s_wifi;
 	GBytes *ssid;
+	gs_free gchar *str_ssid = NULL;
 
 	if (!_nm_dbus_proxy_call_finish (G_DBUS_PROXY (source), res,
 	                                 G_VARIANT_TYPE ("()"),
@@ -1084,11 +1182,17 @@ network_connect_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	if (!ssid)
 		goto failed;
 
+	str_ssid = nm_utils_ssid_to_utf8 (g_bytes_get_data (ssid, NULL),
+	                                  g_bytes_get_size (ssid));
+
 	_LOGI (LOGD_DEVICE | LOGD_WIFI,
 	       "Activation: (wifi) Stage 2 of 5 (Device Configure) successful.  Connected to '%s'.",
-	       ssid ? nm_utils_escape_ssid (g_bytes_get_data (ssid, NULL),
-	                                    g_bytes_get_size (ssid)) : "(none)");
+	       str_ssid);
 	nm_device_activate_schedule_stage3_ip_config_start (device);
+
+	nm_iwd_manager_network_connected (nm_iwd_manager_get (), str_ssid,
+	                                  get_connection_iwd_security (connection));
+
 	return;
 
 failed:
@@ -1206,8 +1310,14 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	s_wireless = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wireless);
 
-	/* If we need secrets, get them */
-	setting_name = nm_connection_need_secrets (connection, NULL);
+	/* If we need secrets, get them.  If a network is an IWD Known Network the secrets
+	 * will have been stored by IWD and we don't require any secrets here.
+	 */
+	if (!is_connection_known_network (connection))
+		setting_name = nm_connection_need_secrets (connection, NULL);
+	else
+		setting_name = NULL;
+
 	if (setting_name) {
 		_LOGI (LOGD_DEVICE | LOGD_WIFI,
 		       "Activation: (wifi) access point '%s' has security, but secrets are required.",
@@ -1243,8 +1353,6 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	                                               NM_IWD_NETWORK_INTERFACE,
 	                                               NULL, &error);
 	if (!network_proxy) {
-		return FALSE;
-
 		_LOGE (LOGD_DEVICE | LOGD_WIFI,
 		       "Activation: (wifi) could not get Network interface proxy for %s: %s",
 		       nm_wifi_ap_get_supplicant_path (ap),

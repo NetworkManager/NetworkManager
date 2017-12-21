@@ -26,6 +26,7 @@
 #include <net/if.h>
 
 #include "nm-logging.h"
+#include "nm-core-internal.h"
 #include "nm-manager.h"
 #include "nm-device-iwd.h"
 #include "nm-utils/nm-random-utils.h"
@@ -33,11 +34,17 @@
 /*****************************************************************************/
 
 typedef struct {
+	gchar *name;
+	NMIwdNetworkSecurity security;
+} KnownNetworkData;
+
+typedef struct {
 	GCancellable *cancellable;
 	gboolean running;
 	GDBusObjectManager *object_manager;
 	guint agent_id;
 	gchar *agent_path;
+	GSList *known_networks;
 } NMIwdManagerPrivate;
 
 struct _NMIwdManager {
@@ -232,6 +239,26 @@ psk_agent_export (GDBusConnection *connection, gpointer user_data,
 	return id;
 }
 
+static void
+register_agent (NMIwdManager *self)
+{
+	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
+	GDBusInterface *agent_manager;
+
+	agent_manager = g_dbus_object_manager_get_interface (priv->object_manager,
+	                                                     "/",
+	                                                     NM_IWD_AGENT_MANAGER_INTERFACE);
+
+	/* Register our agent */
+	g_dbus_proxy_call (G_DBUS_PROXY (agent_manager),
+	                   "RegisterAgent",
+	                   g_variant_new ("(o)", priv->agent_path),
+	                   G_DBUS_CALL_FLAGS_NONE, -1,
+	                   NULL, NULL, NULL);
+
+	g_object_unref (agent_manager);
+}
+
 /*****************************************************************************/
 
 static void
@@ -337,6 +364,99 @@ object_added (NMIwdManager *self, GDBusObject *object)
 }
 
 static void
+known_network_free (KnownNetworkData *network)
+{
+	g_free (network->name);
+	g_free (network);
+}
+
+static void
+list_known_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
+{
+	NMIwdManager *self = user_data;
+	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
+	gs_free_error GError *error = NULL;
+	gs_unref_variant GVariant *variant = NULL;
+	GVariantIter *networks, *props;
+
+	variant = _nm_dbus_proxy_call_finish (G_DBUS_PROXY (source), res,
+	                                      G_VARIANT_TYPE ("(aa{sv})"),
+	                                      &error);
+	if (!variant) {
+		_LOGE ("ListKnownNetworks() failed: %s", error->message);
+		return;
+	}
+
+	g_slist_free_full (priv->known_networks, (GDestroyNotify) known_network_free);
+	priv->known_networks = NULL;
+
+	g_variant_get (variant, "(aa{sv})", &networks);
+
+	while (g_variant_iter_next (networks, "a{sv}", &props)) {
+		const gchar *key;
+		const gchar *name = NULL;
+		const gchar *type = NULL;
+		GVariant *val;
+		KnownNetworkData *network_data;
+
+		while (g_variant_iter_next (props, "{&sv}", &key, &val)) {
+			if (!strcmp (key, "Name"))
+				name = g_variant_get_string (val, NULL);
+
+			if (!strcmp (key, "Type"))
+				type = g_variant_get_string (val, NULL);
+
+			g_variant_unref (val);
+		}
+
+		if (!name || !type)
+			goto next;
+
+		network_data = g_new (KnownNetworkData, 1);
+		network_data->name = g_strdup (name);
+		if (!strcmp (type, "open"))
+			network_data->security = NM_IWD_NETWORK_SECURITY_NONE;
+		else if (!strcmp (type, "psk"))
+			network_data->security = NM_IWD_NETWORK_SECURITY_PSK;
+		else if (!strcmp (type, "8021x"))
+			network_data->security = NM_IWD_NETWORK_SECURITY_8021X;
+
+		priv->known_networks = g_slist_append (priv->known_networks,
+		                                       network_data);
+
+next:
+		g_variant_iter_free (props);
+	}
+
+	g_variant_iter_free (networks);
+
+	/* For completness we may want to call nm_device_emit_recheck_auto_activate
+	 * and nm_device_recheck_available_connections for all affected devices
+	 * now but the ListKnownNetworks call should have been really fast,
+	 * faster than any scan on any newly created devices could have happened.
+	 */
+}
+
+static void
+update_known_networks (NMIwdManager *self)
+{
+	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
+	GDBusInterface *known_networks_if;
+
+	known_networks_if = g_dbus_object_manager_get_interface (priv->object_manager,
+	                                                         "/",
+	                                                         NM_IWD_KNOWN_NETWORKS_INTERFACE);
+
+	g_dbus_proxy_call (G_DBUS_PROXY (known_networks_if),
+	                   "ListKnownNetworks",
+	                   g_variant_new ("()"),
+	                   G_DBUS_CALL_FLAGS_NONE, -1,
+	                   priv->cancellable, list_known_networks_cb, self);
+
+	g_object_unref (known_networks_if);
+}
+
+static void
 name_owner_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 {
 	NMIwdManager *self = user_data;
@@ -356,22 +476,10 @@ name_owner_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 
 		g_list_free_full (objects, g_object_unref);
 
-		if (priv->agent_id) {
-			GDBusInterface *agent_manager;
+		if (priv->agent_id)
+			register_agent (self);
 
-			agent_manager = g_dbus_object_manager_get_interface (object_manager,
-			                                                     "/",
-			                                                     NM_IWD_AGENT_MANAGER_INTERFACE);
-
-			/* Register our agent */
-			g_dbus_proxy_call (G_DBUS_PROXY (agent_manager),
-			                   "RegisterAgent",
-			                   g_variant_new ("(o)", priv->agent_path),
-			                   G_DBUS_CALL_FLAGS_NONE, -1,
-			                   NULL, NULL, NULL);
-
-			g_object_unref (agent_manager);
-		}
+		update_known_networks (self);
 	} else {
 		NMManager *manager = nm_manager_get ();
 		const GSList *devices, *iter;
@@ -498,6 +606,39 @@ prepare_object_manager (NMIwdManager *self)
 	                                          got_object_manager, self);
 }
 
+gboolean
+nm_iwd_manager_is_known_network (NMIwdManager *self, const gchar *name,
+                                 NMIwdNetworkSecurity security)
+{
+	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
+	const GSList *iter;
+
+	for (iter = priv->known_networks; iter; iter = g_slist_next (iter)) {
+		const KnownNetworkData *network = iter->data;
+
+		if (!strcmp (network->name, name) && network->security == security)
+			return true;
+	}
+
+	return false;
+}
+
+void
+nm_iwd_manager_network_connected (NMIwdManager *self, const gchar *name,
+                                  NMIwdNetworkSecurity security)
+{
+	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
+	KnownNetworkData *network_data;
+
+	if (nm_iwd_manager_is_known_network (self, name, security))
+		return;
+
+	network_data = g_new (KnownNetworkData, 1);
+	network_data->name = g_strdup (name);
+	network_data->security = security;
+	priv->known_networks = g_slist_append (priv->known_networks, network_data);
+}
+
 /*****************************************************************************/
 
 NM_DEFINE_SINGLETON_GETTER (NMIwdManager, nm_iwd_manager_get,
@@ -539,6 +680,9 @@ dispose (GObject *object)
 	nm_clear_g_free (&priv->agent_path);
 
 	nm_clear_g_cancellable (&priv->cancellable);
+
+	g_slist_free_full (priv->known_networks, (GDestroyNotify) known_network_free);
+	priv->known_networks = NULL;
 
 	G_OBJECT_CLASS (nm_iwd_manager_parent_class)->dispose (object);
 }
