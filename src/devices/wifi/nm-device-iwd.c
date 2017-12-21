@@ -496,9 +496,10 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	/* 8021x networks can only be used if they've been provisioned on the IWD side and
 	 * thus are Known Networks.
 	 */
-	if (get_connection_iwd_security (connection) == NM_IWD_NETWORK_SECURITY_8021X)
+	if (get_connection_iwd_security (connection) == NM_IWD_NETWORK_SECURITY_8021X) {
 		if (!is_connection_known_network (connection))
 			return FALSE;
+	}
 
 	return TRUE;
 }
@@ -536,9 +537,10 @@ check_connection_available (NMDevice *device,
 	/* 8021x networks can only be used if they've been provisioned on the IWD side and
 	 * thus are Known Networks.
 	 */
-	if (get_connection_iwd_security (connection) == NM_IWD_NETWORK_SECURITY_8021X)
+	if (get_connection_iwd_security (connection) == NM_IWD_NETWORK_SECURITY_8021X) {
 		if (!is_connection_known_network (connection))
 			return FALSE;
+	}
 
 	/* a connection that is available for a certain @specific_object, MUST
 	 * also be available in general (without @specific_object). */
@@ -670,7 +672,7 @@ complete_connection (NMDevice *device,
 	/* 8021x networks can only be used if they've been provisioned on the IWD side and
 	 * thus are Known Networks.
 	 */
-	if (get_connection_iwd_security (connection) == NM_IWD_NETWORK_SECURITY_8021X)
+	if (get_connection_iwd_security (connection) == NM_IWD_NETWORK_SECURITY_8021X) {
 		if (!is_connection_known_network (connection)) {
 			g_set_error_literal (error,
 			                     NM_CONNECTION_ERROR,
@@ -678,6 +680,7 @@ complete_connection (NMDevice *device,
 			                     "This 8021x network has not been provisioned on this machine");
 			return FALSE;
 		}
+	}
 
 	perm_hw_addr = nm_device_get_permanent_hw_address (device);
 	if (perm_hw_addr) {
@@ -756,9 +759,10 @@ can_auto_connect (NMDevice *device,
 	/* 8021x networks can only be used if they've been provisioned on the IWD side and
 	 * thus are Known Networks.
 	 */
-	if (get_connection_iwd_security (connection) == NM_IWD_NETWORK_SECURITY_8021X)
+	if (get_connection_iwd_security (connection) == NM_IWD_NETWORK_SECURITY_8021X) {
 		if (!is_connection_known_network (connection))
 			return FALSE;
+	}
 
 	ap = nm_wifi_aps_find_first_compatible (priv->aps, connection, FALSE);
 	if (ap) {
