@@ -40,7 +40,7 @@ _get_keys (NMSettingVpn *setting,
 {
 	guint len;
 	const char **keys = NULL;
-	gs_unref_ptrarray GPtrArray *a = NULL;
+	GPtrArray *a;
 
 	nm_assert (NM_IS_SETTING_VPN (setting));
 
@@ -49,7 +49,7 @@ _get_keys (NMSettingVpn *setting,
 	else
 		len = nm_setting_vpn_get_num_data_items (setting);
 
-	a = g_ptr_array_new_full (len + 1, (GDestroyNotify) g_free);
+	a = g_ptr_array_sized_new (len + 1);
 
 	if (is_secrets)
 		nm_setting_vpn_foreach_secret (setting, _get_keys_cb, a);
@@ -57,20 +57,20 @@ _get_keys (NMSettingVpn *setting,
 		nm_setting_vpn_foreach_data_item (setting, _get_keys_cb, a);
 
 	len = a->len;
-
 	if (len) {
 		g_ptr_array_sort (a, nm_strcmp_p);
 		g_ptr_array_add (a, NULL);
-		keys = g_memdup (a->pdata, a->len * sizeof *keys);
+		keys = g_memdup (a->pdata, a->len * sizeof (gpointer));
 
 		/* we need to cache the keys *somewhere*. */
 		g_object_set_qdata_full (G_OBJECT (setting),
 		                         is_secrets
 		                         ? NM_CACHED_QUARK ("libnm._nm_setting_vpn_get_secret_keys")
 		                         : NM_CACHED_QUARK ("libnm._nm_setting_vpn_get_data_keys"),
-		                         g_ptr_array_ref (a),
-		                         (GDestroyNotify) g_ptr_array_unref);
-	}
+		                         g_ptr_array_free (a, FALSE),
+		                         (GDestroyNotify) g_strfreev);
+	} else
+		g_ptr_array_free (a, TRUE);
 
 	NM_SET_OUT (out_length, len);
 	return keys;
