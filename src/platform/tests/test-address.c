@@ -148,7 +148,7 @@ test_ip6_address_general (void)
 
 	/* Add address again (aka update) */
 	nmtstp_ip6_address_add (NULL, EX, ifindex, addr, IP6_PLEN, in6addr_any, lifetime, preferred, flags);
-	accept_signals (address_changed, 0, 1);
+	accept_signals (address_changed, 0, 2);
 
 	/* Test address listing */
 	addresses = nmtstp_platform_ip6_address_get_all (NM_PLATFORM_GET, ifindex);
