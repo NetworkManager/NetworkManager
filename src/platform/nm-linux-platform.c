@@ -36,6 +36,7 @@
 #include <linux/if_link.h>
 #include <linux/if_tun.h>
 #include <linux/if_tunnel.h>
+#include <linux/ip6_tunnel.h>
 #include <netlink/netlink.h>
 #include <netlink/msg.h>
 #include <libudev.h>
@@ -1292,6 +1293,7 @@ _parse_lnk_ip6tnl (const char *kind, struct nlattr *info_data)
 		[IFLA_IPTUN_ENCAP_LIMIT] = { .type = NLA_U8 },
 		[IFLA_IPTUN_FLOWINFO]    = { .type = NLA_U32 },
 		[IFLA_IPTUN_PROTO]       = { .type = NLA_U8 },
+		[IFLA_IPTUN_FLAGS]       = { .type = NLA_U32 },
 	};
 	struct nlattr *tb[IFLA_IPTUN_MAX + 1];
 	int err;
@@ -1326,6 +1328,8 @@ _parse_lnk_ip6tnl (const char *kind, struct nlattr *info_data)
 	}
 	if (tb[IFLA_IPTUN_PROTO])
 		props->proto = nla_get_u8 (tb[IFLA_IPTUN_PROTO]);
+	if (tb[IFLA_IPTUN_FLAGS])
+		props->flags = nla_get_u32 (tb[IFLA_IPTUN_FLAGS]);
 
 	return obj;
 }
@@ -5386,6 +5390,7 @@ link_ip6tnl_add (NMPlatform *platform,
 	            & IP6_FLOWINFO_TCLASS_MASK;
 	NLA_PUT_U32 (nlmsg, IFLA_IPTUN_FLOWINFO, htonl (flowinfo));
 	NLA_PUT_U8 (nlmsg, IFLA_IPTUN_PROTO, props->proto);
+	NLA_PUT_U32 (nlmsg, IFLA_IPTUN_FLAGS, props->flags);
 
 	nla_nest_end (nlmsg, data);
 	nla_nest_end (nlmsg, info);

@@ -46,6 +46,7 @@ typedef struct {
 	char *output_key;
 	guint8 encap_limit;
 	guint32 flow_label;
+	guint32 flags;
 } NMDeviceIPTunnelPrivate;
 
 enum {
@@ -61,6 +62,7 @@ enum {
 	PROP_OUTPUT_KEY,
 	PROP_ENCAPSULATION_LIMIT,
 	PROP_FLOW_LABEL,
+	PROP_FLAGS,
 
 	LAST_PROP
 };
@@ -242,6 +244,22 @@ nm_device_ip_tunnel_get_flow_label (NMDeviceIPTunnel *device)
 	return NM_DEVICE_IP_TUNNEL_GET_PRIVATE (device)->flow_label;
 }
 
+/**
+ * nm_device_ip_tunnel_get_flags:
+ * @device: a #NMDeviceIPTunnel
+ *
+ * Returns: the tunnel flags
+ *
+ * Since: 1.12
+ **/
+NMIPTunnelFlags
+nm_device_ip_tunnel_get_flags (NMDeviceIPTunnel *device)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_IP_TUNNEL (device), NM_IP_TUNNEL_FLAG_NONE);
+
+	return NM_DEVICE_IP_TUNNEL_GET_PRIVATE (device)->flags;
+}
+
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
@@ -286,6 +304,7 @@ init_dbus (NMObject *object)
 		{ NM_DEVICE_IP_TUNNEL_OUTPUT_KEY,           &priv->output_key },
 		{ NM_DEVICE_IP_TUNNEL_ENCAPSULATION_LIMIT,  &priv->encap_limit },
 		{ NM_DEVICE_IP_TUNNEL_FLOW_LABEL,           &priv->flow_label },
+		{ NM_DEVICE_IP_TUNNEL_FLAGS,                &priv->flags },
 		{ NULL },
 	};
 
@@ -351,6 +370,9 @@ get_property (GObject *object,
 		break;
 	case PROP_FLOW_LABEL:
 		g_value_set_uint (value, nm_device_ip_tunnel_get_flow_label (device));
+		break;
+	case PROP_FLAGS:
+		g_value_set_uint (value, nm_device_ip_tunnel_get_flags (device));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -534,6 +556,20 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *bond_class)
 		(object_class, PROP_FLOW_LABEL,
 		 g_param_spec_uint (NM_DEVICE_IP_TUNNEL_FLOW_LABEL, "", "",
 		                    0, (1 << 20) - 1, 0,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMDeviceIPTunnel:flags:
+	 *
+	 * Tunnel flags.
+	 *
+	 * Since: 1.12
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_FLAGS,
+		 g_param_spec_uint (NM_DEVICE_IP_TUNNEL_FLAGS, "", "",
+		                    0, G_MAXUINT32, 0,
 		                    G_PARAM_READABLE |
 		                    G_PARAM_STATIC_STRINGS));
 }

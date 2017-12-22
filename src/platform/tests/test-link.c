@@ -760,13 +760,27 @@ test_software_detect (gconstpointer user_data)
 			gracefully_skip = nm_utils_modprobe (NULL, TRUE, "ip6_tunnel", NULL) != 0;
 		}
 
-		lnk_ip6tnl.local = *nmtst_inet6_from_string ("fd01::15");
-		lnk_ip6tnl.remote = *nmtst_inet6_from_string ("fd01::16");
-		lnk_ip6tnl.parent_ifindex = ifindex_parent;
-		lnk_ip6tnl.tclass = 20;
-		lnk_ip6tnl.encap_limit = 6;
-		lnk_ip6tnl.flow_label = 1337;
-		lnk_ip6tnl.proto = IPPROTO_IPV6;
+		switch (test_data->test_mode) {
+		case 0:
+			lnk_ip6tnl.local = *nmtst_inet6_from_string ("fd01::15");
+			lnk_ip6tnl.remote = *nmtst_inet6_from_string ("fd01::16");
+			lnk_ip6tnl.parent_ifindex = ifindex_parent;
+			lnk_ip6tnl.tclass = 20;
+			lnk_ip6tnl.encap_limit = 6;
+			lnk_ip6tnl.flow_label = 1337;
+			lnk_ip6tnl.proto = IPPROTO_IPV6;
+			break;
+		case 1:
+			lnk_ip6tnl.local = *nmtst_inet6_from_string ("fd01::17");
+			lnk_ip6tnl.remote = *nmtst_inet6_from_string ("fd01::18");
+			lnk_ip6tnl.parent_ifindex = ifindex_parent;
+			lnk_ip6tnl.tclass = 0;
+			lnk_ip6tnl.encap_limit = 0;
+			lnk_ip6tnl.flow_label = 1338;
+			lnk_ip6tnl.proto = IPPROTO_IPV6;
+			lnk_ip6tnl.flags = IP6_TNL_F_IGN_ENCAP_LIMIT | IP6_TNL_F_USE_ORIG_TCLASS;
+			break;
+		}
 
 		if (!nmtstp_link_ip6tnl_add (NULL, ext, DEVICE_NAME, &lnk_ip6tnl)) {
 			if (gracefully_skip) {
@@ -930,15 +944,31 @@ test_software_detect (gconstpointer user_data)
 		case NM_LINK_TYPE_IP6TNL: {
 			const NMPlatformLnkIp6Tnl *plnk = &lnk->lnk_ip6tnl;
 
-			g_assert (plnk == nm_platform_link_get_lnk_ip6tnl (NM_PLATFORM_GET, ifindex, NULL));
-			g_assert_cmpint (plnk->parent_ifindex, ==, ifindex_parent);
-			nmtst_assert_ip6_address (&plnk->local, "fd01::15");
-			nmtst_assert_ip6_address (&plnk->remote, "fd01::16");
-			g_assert_cmpint (plnk->ttl, ==, 0);
-			g_assert_cmpint (plnk->tclass, ==, 20);
-			g_assert_cmpint (plnk->encap_limit, ==, 6);
-			g_assert_cmpint (plnk->flow_label, ==, 1337);
-			g_assert_cmpint (plnk->proto, ==, IPPROTO_IPV6);
+			switch (test_data->test_mode) {
+			case 0:
+				g_assert (plnk == nm_platform_link_get_lnk_ip6tnl (NM_PLATFORM_GET, ifindex, NULL));
+				g_assert_cmpint (plnk->parent_ifindex, ==, ifindex_parent);
+				nmtst_assert_ip6_address (&plnk->local, "fd01::15");
+				nmtst_assert_ip6_address (&plnk->remote, "fd01::16");
+				g_assert_cmpint (plnk->ttl, ==, 0);
+				g_assert_cmpint (plnk->tclass, ==, 20);
+				g_assert_cmpint (plnk->encap_limit, ==, 6);
+				g_assert_cmpint (plnk->flow_label, ==, 1337);
+				g_assert_cmpint (plnk->proto, ==, IPPROTO_IPV6);
+				break;
+			case 1:
+				g_assert (plnk == nm_platform_link_get_lnk_ip6tnl (NM_PLATFORM_GET, ifindex, NULL));
+				g_assert_cmpint (plnk->parent_ifindex, ==, ifindex_parent);
+				nmtst_assert_ip6_address (&plnk->local, "fd01::17");
+				nmtst_assert_ip6_address (&plnk->remote, "fd01::18");
+				g_assert_cmpint (plnk->ttl, ==, 0);
+				g_assert_cmpint (plnk->flow_label, ==, 1338);
+				g_assert_cmpint (plnk->proto, ==, IPPROTO_IPV6);
+				g_assert_cmpint (plnk->flags & 0xFFFF, /* ignore kernel internal flags */
+				                 ==,
+				                 IP6_TNL_F_IGN_ENCAP_LIMIT | IP6_TNL_F_USE_ORIG_TCLASS);
+				break;
+			}
 			break;
 		}
 		case NM_LINK_TYPE_IPIP: {
@@ -2528,7 +2558,8 @@ _nmtstp_setup_tests (void)
 		g_test_add_func ("/link/external", test_external);
 
 		test_software_detect_add ("/link/software/detect/gre", NM_LINK_TYPE_GRE, 0);
-		test_software_detect_add ("/link/software/detect/ip6tnl", NM_LINK_TYPE_IP6TNL, 0);
+		test_software_detect_add ("/link/software/detect/ip6tnl/0", NM_LINK_TYPE_IP6TNL, 0);
+		test_software_detect_add ("/link/software/detect/ip6tnl/1", NM_LINK_TYPE_IP6TNL, 1);
 		test_software_detect_add ("/link/software/detect/ipip", NM_LINK_TYPE_IPIP, 0);
 		test_software_detect_add ("/link/software/detect/macvlan", NM_LINK_TYPE_MACVLAN, 0);
 		test_software_detect_add ("/link/software/detect/macvtap", NM_LINK_TYPE_MACVTAP, 0);

@@ -25,6 +25,7 @@
 #include <linux/if.h>
 #include <linux/if_addr.h>
 #include <linux/if_link.h>
+#include <linux/ip6_tunnel.h>
 
 #include "nm-dbus-interface.h"
 #include "nm-core-types-internal.h"
@@ -32,6 +33,7 @@
 #include "nm-core-utils.h"
 #include "nm-setting-vlan.h"
 #include "nm-setting-wired.h"
+#include "nm-setting-ip-tunnel.h"
 
 #define NM_TYPE_PLATFORM            (nm_platform_get_type ())
 #define NM_PLATFORM(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_PLATFORM, NMPlatform))
@@ -606,6 +608,7 @@ typedef struct {
 	guint8 encap_limit;
 	guint8 proto;
 	guint flow_label;
+	guint32 flags;
 } NMPlatformLnkIp6Tnl;
 
 typedef struct {

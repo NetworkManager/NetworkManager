@@ -194,6 +194,7 @@
 #define DESCRIBE_DOC_NM_SETTING_INFINIBAND_PARENT N_("The interface name of the parent device of this device. Normally NULL, but if the \"p_key\" property is set, then you must specify the base device by setting either this property or \"mac-address\".")
 #define DESCRIBE_DOC_NM_SETTING_INFINIBAND_TRANSPORT_MODE N_("The IP-over-InfiniBand transport mode. Either \"datagram\" or \"connected\".")
 #define DESCRIBE_DOC_NM_SETTING_IP_TUNNEL_ENCAPSULATION_LIMIT N_("How many additional levels of encapsulation are permitted to be prepended to packets. This property applies only to IPv6 tunnels.")
+#define DESCRIBE_DOC_NM_SETTING_IP_TUNNEL_FLAGS N_("Tunnel flags. Currently the following values are supported: NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT (0x1), NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_TCLASS (0x2), NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FLOWLABEL (0x4), NM_IP_TUNNEL_FLAG_IP6_MIP6_DEV (0x8), NM_IP_TUNNEL_FLAG_IP6_RCV_DSCP_COPY (0x10), NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FWMARK (0x20). They are valid only for IPv6 tunnels.")
 #define DESCRIBE_DOC_NM_SETTING_IP_TUNNEL_FLOW_LABEL N_("The flow label to assign to tunnel packets. This property applies only to IPv6 tunnels.")
 #define DESCRIBE_DOC_NM_SETTING_IP_TUNNEL_INPUT_KEY N_("The key used for tunnel input packets; the property is valid only for certain tunnel modes (GRE, IP6GRE). If empty, no key is used.")
 #define DESCRIBE_DOC_NM_SETTING_IP_TUNNEL_LOCAL N_("The local endpoint of the tunnel; the value can be empty, otherwise it must contain an IPv4 or IPv6 address.")

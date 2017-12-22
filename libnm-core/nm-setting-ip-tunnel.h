@@ -50,6 +50,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_IP_TUNNEL_ENCAPSULATION_LIMIT "encapsulation-limit"
 #define NM_SETTING_IP_TUNNEL_FLOW_LABEL          "flow-label"
 #define NM_SETTING_IP_TUNNEL_MTU                 "mtu"
+#define NM_SETTING_IP_TUNNEL_FLAGS               "flags"
 
 /**
  * NMSettingIPTunnel:
@@ -66,6 +67,33 @@ typedef struct {
 	/*< private >*/
 	gpointer padding[4];
 } NMSettingIPTunnelClass;
+
+/*
+ * NMIPTunnelFlags:
+ * @NM_IP_TUNNEL_FLAG_NONE: no flag
+ * @NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT: don't add encapsulation limit
+ *     if one isn't present in inner packet
+ * @NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_TCLASS: copy the traffic class field
+ *     from the inner packet
+ * @NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FLOWLABEL: copy the flowlabel from the
+ *     inner packet
+ * @NM_IP_TUNNEL_FLAG_IP6_MIP6_DEV: used for Mobile IPv6
+ * @NM_IP_TUNNEL_FLAG_IP6_RCV_DSCP_COPY: copy DSCP from the outer packet
+ * @NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FWMARK: copy fwmark from inner packet
+ *
+ * IP tunnel flags.
+ *
+ * Since: 1.12
+ */
+typedef enum { /*< flags, prefix=NM_IP_TUNNEL_FLAG >*/
+	NM_IP_TUNNEL_FLAG_NONE                           = 0x0,
+	NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT            = 0x1,
+	NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_TCLASS            = 0x2,
+	NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FLOWLABEL         = 0x4,
+	NM_IP_TUNNEL_FLAG_IP6_MIP6_DEV                   = 0x8,
+	NM_IP_TUNNEL_FLAG_IP6_RCV_DSCP_COPY              = 0x10,
+	NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FWMARK            = 0x20,
+} NMIPTunnelFlags;
 
 NM_AVAILABLE_IN_1_2
 GType nm_setting_ip_tunnel_get_type (void);
@@ -97,6 +125,8 @@ NM_AVAILABLE_IN_1_2
 guint nm_setting_ip_tunnel_get_flow_label (NMSettingIPTunnel *setting);
 NM_AVAILABLE_IN_1_2
 guint nm_setting_ip_tunnel_get_mtu (NMSettingIPTunnel *setting);
+NM_AVAILABLE_IN_1_12
+NMIPTunnelFlags nm_setting_ip_tunnel_get_flags (NMSettingIPTunnel *setting);
 
 G_END_DECLS
 

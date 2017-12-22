@@ -6149,6 +6149,14 @@ static const NMMetaPropertyInfo *const property_infos_IP_TUNNEL[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_IP_TUNNEL_MTU,
 		.property_type =                &_pt_gobject_mtu,
 	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_IP_TUNNEL_FLAGS,
+		.property_type =                &_pt_gobject_enum,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+			PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+				.get_gtype =            nm_ip_tunnel_flags_get_type,
+			),
+		),
+	),
 	NULL
 };
 

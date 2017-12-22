@@ -89,6 +89,13 @@
     <property name="FlowLabel" type="u" access="read"/>
 
     <!--
+        Flags:
+
+        Tunnel flags.
+    -->
+    <property name="Flags" type="u" access="read"/>
+
+    <!--
         PropertiesChanged:
         @properties: A dictionary mapping property names to variant boxed values
 

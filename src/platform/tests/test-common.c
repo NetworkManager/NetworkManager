@@ -1283,6 +1283,10 @@ nmtstp_link_ip6tnl_add (NMPlatform *platform,
 	const NMPlatformLink *pllink = NULL;
 	gboolean success;
 	char buffer[INET6_ADDRSTRLEN];
+	char encap[20];
+	char tclass[20];
+	gboolean encap_ignore;
+	gboolean tclass_inherit;
 
 	g_assert (nm_utils_is_valid_iface_name (name, NULL));
 
@@ -1308,15 +1312,18 @@ nmtstp_link_ip6tnl_add (NMPlatform *platform,
 			g_assert_not_reached ();
 		}
 
-		success = !nmtstp_run_command ("ip -6 tunnel add %s mode %s %s local %s remote %s ttl %u tclass %02x encaplimit %u flowlabel %x",
+		encap_ignore = NM_FLAGS_HAS (lnk->flags, IP6_TNL_F_IGN_ENCAP_LIMIT);
+		tclass_inherit = NM_FLAGS_HAS (lnk->flags, IP6_TNL_F_USE_ORIG_TCLASS);
+
+		success = !nmtstp_run_command ("ip -6 tunnel add %s mode %s %s local %s remote %s ttl %u tclass %s encaplimit %s flowlabel %x",
 		                                name,
 		                                mode,
 		                                dev,
 		                                nm_utils_inet6_ntop (&lnk->local, NULL),
 		                                nm_utils_inet6_ntop (&lnk->remote, buffer),
 		                                lnk->ttl,
-		                                lnk->tclass,
-		                                lnk->encap_limit,
+		                                tclass_inherit ? "inherit" : nm_sprintf_buf (tclass, "%02x", lnk->tclass),
+		                                encap_ignore ? "none" : nm_sprintf_buf (encap, "%u", lnk->encap_limit),
 		                                lnk->flow_label);
 		if (success)
 			pllink = nmtstp_assert_wait_for_link (platform, name, NM_LINK_TYPE_IP6TNL, 100);

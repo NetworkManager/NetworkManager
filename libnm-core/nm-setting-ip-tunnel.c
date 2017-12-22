@@ -49,6 +49,7 @@ typedef struct {
 	guint encapsulation_limit;
 	guint flow_label;
 	guint mtu;
+	guint32 flags;
 } NMSettingIPTunnelPrivate;
 
 enum {
@@ -65,6 +66,7 @@ enum {
 	PROP_ENCAPSULATION_LIMIT,
 	PROP_FLOW_LABEL,
 	PROP_MTU,
+	PROP_FLAGS,
 
 	LAST_PROP
 };
@@ -285,6 +287,24 @@ nm_setting_ip_tunnel_get_mtu (NMSettingIPTunnel *setting)
 	return NM_SETTING_IP_TUNNEL_GET_PRIVATE (setting)->mtu;
 }
 
+/*
+ * nm_setting_ip_tunnel_get_flags:
+ * @setting: the #NMSettingIPTunnel
+ *
+ * Returns the #NMSettingIPTunnel:flags property of the setting.
+ *
+ * Returns: the tunnel flags
+ *
+ * Since: 1.12
+ **/
+NMIPTunnelFlags
+nm_setting_ip_tunnel_get_flags (NMSettingIPTunnel *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP_TUNNEL (setting), NM_IP_TUNNEL_FLAG_NONE);
+
+	return NM_SETTING_IP_TUNNEL_GET_PRIVATE (setting)->flags;
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -292,6 +312,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingIPTunnelPrivate *priv = NM_SETTING_IP_TUNNEL_GET_PRIVATE (setting);
 	int family = AF_UNSPEC;
+	guint32 flags;
 
 	switch (priv->mode) {
 	case NM_IP_TUNNEL_MODE_IPIP:
@@ -419,6 +440,20 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
+	flags = priv->flags;
+	if (NM_IN_SET (priv->mode, NM_IP_TUNNEL_MODE_IPIP6, NM_IP_TUNNEL_MODE_IP6IP6))
+		flags &= (guint32) (~_NM_IP_TUNNEL_FLAG_ALL_IP6TNL);
+	if (flags) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("some flags are invalid for the select mode: %s"),
+		             nm_utils_enum_to_str (nm_ip_tunnel_flags_get_type (), flags));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP_TUNNEL_SETTING_NAME,
+		                NM_SETTING_IP_TUNNEL_FLAGS);
+		return FALSE;
+	}
+
 	return TRUE;
 }
 
@@ -491,6 +526,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_MTU:
 		priv->mtu = g_value_get_uint (value);
 		break;
+	case PROP_FLAGS:
+		priv->flags = g_value_get_uint (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -540,6 +578,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_MTU:
 		g_value_set_uint (value, priv->mtu);
+		break;
+	case PROP_FLAGS:
+		g_value_set_uint (value, priv->flags);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -771,6 +812,25 @@ nm_setting_ip_tunnel_class_init (NMSettingIPTunnelClass *setting_class)
 		                    0, G_MAXUINT, 0,
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_CONSTRUCT |
+		                    NM_SETTING_PARAM_FUZZY_IGNORE |
+		                    G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingIPTunnel:flags:
+	 *
+	 * Tunnel flags. Currently the following values are supported:
+	 * %NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT, %NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_TCLASS,
+	 * %NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FLOWLABEL, %NM_IP_TUNNEL_FLAG_IP6_MIP6_DEV,
+	 * %NM_IP_TUNNEL_FLAG_IP6_RCV_DSCP_COPY, %NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FWMARK.
+	 * They are valid only for IPv6 tunnels.
+	 *
+	 * Since: 1.12
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_FLAGS,
+		 g_param_spec_uint (NM_SETTING_IP_TUNNEL_FLAGS, "", "",
+		                    0, G_MAXUINT32, 0,
+		                    G_PARAM_READWRITE |
 		                    NM_SETTING_PARAM_FUZZY_IGNORE |
 		                    G_PARAM_STATIC_STRINGS));
 }

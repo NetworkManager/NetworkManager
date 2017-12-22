@@ -4751,6 +4751,7 @@ nm_platform_lnk_ip6tnl_to_string (const NMPlatformLnkIp6Tnl *lnk, char *buf, gsi
 	            "%s" /* encap limit */
 	            "%s" /* flow label */
 	            "%s" /* proto */
+	            " flags 0x%x"
 	            "",
 	            nm_sprintf_buf (str_remote, " remote %s", nm_utils_inet6_ntop (&lnk->remote, str_remote1)),
 	            nm_sprintf_buf (str_local, " local %s", nm_utils_inet6_ntop (&lnk->local, str_local1)),
@@ -4759,7 +4760,8 @@ nm_platform_lnk_ip6tnl_to_string (const NMPlatformLnkIp6Tnl *lnk, char *buf, gsi
 	            lnk->tclass == 1 ? " tclass inherit" : nm_sprintf_buf (str_tclass, " tclass 0x%x", lnk->tclass),
 	            nm_sprintf_buf (str_encap, " encap-limit %u", lnk->encap_limit),
 	            nm_sprintf_buf (str_flow, " flow-label 0x05%x", lnk->flow_label),
-	            nm_sprintf_buf (str_proto, " proto %u", lnk->proto));
+	            nm_sprintf_buf (str_proto, " proto %u", lnk->proto),
+	            (guint) lnk->flags);
 	return buf;
 }
 
@@ -5575,7 +5577,8 @@ nm_platform_lnk_ip6tnl_hash_update (const NMPlatformLnkIp6Tnl *obj, NMHashState 
 	                     obj->tclass,
 	                     obj->encap_limit,
 	                     obj->proto,
-	                     obj->flow_label);
+	                     obj->flow_label,
+	                     obj->flags);
 }
 
 int
@@ -5590,6 +5593,7 @@ nm_platform_lnk_ip6tnl_cmp (const NMPlatformLnkIp6Tnl *a, const NMPlatformLnkIp6
 	NM_CMP_FIELD (a, b, encap_limit);
 	NM_CMP_FIELD (a, b, flow_label);
 	NM_CMP_FIELD (a, b, proto);
+	NM_CMP_FIELD (a, b, flags);
 	return 0;
 }
 
