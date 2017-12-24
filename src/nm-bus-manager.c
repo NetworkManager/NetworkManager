@@ -29,6 +29,7 @@
 #include <errno.h>
 #include <string.h>
 
+#include "nm-utils/c-list.h"
 #include "nm-dbus-interface.h"
 #include "nm-core-internal.h"
 #include "nm-dbus-compat.h"
@@ -58,7 +59,7 @@ typedef struct {
 	GDBusObjectManagerServer *obj_manager;
 	gboolean started;
 
-	GSList *private_servers;
+	CList private_servers_lst_head;
 
 	GDBusProxy *proxy;
 
@@ -123,6 +124,8 @@ nm_bus_manager_setup (NMBusManager *instance)
 /*****************************************************************************/
 
 typedef struct {
+	CList private_servers_lst;
+
 	const char *tag;
 	GQuark detail;
 	char *address;
@@ -130,17 +133,22 @@ typedef struct {
 
 	/* With peer bus connections, we'll get a new connection for each
 	 * client.  For each connection we create an ObjectManager for
-	 * that connection to handle exporting our objects.  This table
-	 * maps GDBusObjectManager :: 'fake sender'.
+	 * that connection to handle exporting our objects.
 	 *
 	 * Note that even for connections that don't export any objects
 	 * we'll still create GDBusObjectManager since that's where we store
 	 * the pointer to the GDBusConnection.
 	 */
-	GHashTable *obj_managers;
+	CList object_mgr_lst_head;
 
 	NMBusManager *manager;
 } PrivateServer;
+
+typedef struct {
+	CList object_mgr_lst;
+	GDBusObjectManagerServer *manager;
+	char *fake_sender;
+} ObjectMgrData;
 
 typedef struct {
 	GDBusConnection *connection;
@@ -148,13 +156,35 @@ typedef struct {
 	gboolean remote_peer_vanished;
 } CloseConnectionInfo;
 
+/*****************************************************************************/
+
+static void
+_object_mgr_data_free (ObjectMgrData *obj_mgr_data)
+{
+	GDBusConnection *connection;
+
+	c_list_unlink_stale (&obj_mgr_data->object_mgr_lst);
+
+	connection = g_dbus_object_manager_server_get_connection (obj_mgr_data->manager);
+	if (!g_dbus_connection_is_closed (connection))
+		g_dbus_connection_close (connection, NULL, NULL, NULL);
+	g_dbus_object_manager_server_set_connection (obj_mgr_data->manager, NULL);
+	g_object_unref (obj_mgr_data->manager);
+	g_object_unref (connection);
+
+	g_free (obj_mgr_data->fake_sender);
+
+	g_slice_free (ObjectMgrData, obj_mgr_data);
+}
+
+/*****************************************************************************/
+
 static gboolean
 close_connection_in_idle (gpointer user_data)
 {
 	CloseConnectionInfo *info = user_data;
 	PrivateServer *server = info->server;
-	GHashTableIter iter;
-	GDBusObjectManagerServer *manager;
+	ObjectMgrData *obj_mgr_data, *obj_mgr_data_safe;
 
 	/* Emit this for the manager */
 	g_signal_emit (server->manager,
@@ -169,13 +199,12 @@ close_connection_in_idle (gpointer user_data)
 	if (info->remote_peer_vanished)
 		g_dbus_connection_close (info->connection, NULL, NULL, NULL);
 
-	g_hash_table_iter_init (&iter, server->obj_managers);
-	while (g_hash_table_iter_next (&iter, (gpointer) &manager, NULL)) {
+	c_list_for_each_entry_safe (obj_mgr_data, obj_mgr_data_safe, &server->object_mgr_lst_head, object_mgr_lst) {
 		gs_unref_object GDBusConnection *connection = NULL;
 
-		connection = g_dbus_object_manager_server_get_connection (manager);
+		connection = g_dbus_object_manager_server_get_connection (obj_mgr_data->manager);
 		if (connection == info->connection) {
-			g_hash_table_iter_remove (&iter);
+			_object_mgr_data_free (obj_mgr_data);
 			break;
 		}
 	}
@@ -216,6 +245,7 @@ private_server_new_connection (GDBusServer *server,
                                gpointer user_data)
 {
 	PrivateServer *s = user_data;
+	ObjectMgrData *obj_mgr_data;
 	static guint32 counter = 0;
 	GDBusObjectManagerServer *manager;
 	char *sender;
@@ -227,7 +257,11 @@ private_server_new_connection (GDBusServer *server,
 
 	manager = g_dbus_object_manager_server_new (OBJECT_MANAGER_SERVER_BASE_PATH);
 	g_dbus_object_manager_server_set_connection (manager, conn);
-	g_hash_table_insert (s->obj_managers, manager, sender);
+
+	obj_mgr_data = g_slice_new (ObjectMgrData);
+	obj_mgr_data->manager = manager;
+	obj_mgr_data->fake_sender = sender;
+	c_list_link_tail (&s->object_mgr_lst_head, &obj_mgr_data->object_mgr_lst);
 
 	_LOGD ("(%s) accepted connection %p on private socket", s->tag, conn);
 
@@ -244,18 +278,6 @@ private_server_new_connection (GDBusServer *server,
 	return TRUE;
 }
 
-static void
-private_server_manager_destroy (GDBusObjectManagerServer *manager)
-{
-	GDBusConnection *connection = g_dbus_object_manager_server_get_connection (manager);
-
-	if (!g_dbus_connection_is_closed (connection))
-		g_dbus_connection_close (connection, NULL, NULL, NULL);
-	g_dbus_object_manager_server_set_connection (manager, NULL);
-	g_object_unref (manager);
-	g_object_unref (connection);
-}
-
 static gboolean
 private_server_authorize (GDBusAuthObserver *observer,
                           GIOStream         *stream,
@@ -265,16 +287,53 @@ private_server_authorize (GDBusAuthObserver *observer,
 	return g_credentials_get_unix_user (credentials, NULL) == 0;
 }
 
-static PrivateServer *
-private_server_new (const char *path,
-                    const char *tag,
-                    NMBusManager *manager)
+static void
+private_server_free (gpointer ptr)
 {
+	PrivateServer *s = ptr;
+	ObjectMgrData *obj_mgr_data, *obj_mgr_data_safe;
+
+	c_list_unlink_stale (&s->private_servers_lst);
+
+	unlink (s->address);
+	g_free (s->address);
+
+	c_list_for_each_entry_safe (obj_mgr_data, obj_mgr_data_safe, &s->object_mgr_lst_head, object_mgr_lst)
+		_object_mgr_data_free (obj_mgr_data);
+
+	g_dbus_server_stop (s->server);
+
+	g_signal_handlers_disconnect_by_func (s->server, G_CALLBACK (private_server_new_connection), s);
+
+	g_object_unref (s->server);
+
+	g_slice_free (PrivateServer, s);
+}
+
+void
+nm_bus_manager_private_server_register (NMBusManager *self,
+                                        const char *path,
+                                        const char *tag)
+{
+	NMBusManagerPrivate *priv;
 	PrivateServer *s;
-	GDBusAuthObserver *auth_observer;
+	gs_unref_object GDBusAuthObserver *auth_observer = NULL;
 	GDBusServer *server;
 	GError *error = NULL;
-	char *address, *guid;
+	gs_free char *address = NULL;
+	gs_free char *guid = NULL;
+
+	g_return_if_fail (NM_IS_BUS_MANAGER (self));
+	g_return_if_fail (path);
+	g_return_if_fail (tag);
+
+	priv = NM_BUS_MANAGER_GET_PRIVATE (self);
+
+	/* Only one instance per tag; but don't warn */
+	c_list_for_each_entry (s, &priv->private_servers_lst_head, private_servers_lst) {
+		if (nm_streq0 (tag, s->tag))
+			return;
+	}
 
 	unlink (path);
 	address = g_strdup_printf ("unix:path=%s", path);
@@ -290,93 +349,45 @@ private_server_new (const char *path,
 	                                 guid,
 	                                 auth_observer,
 	                                 NULL, &error);
-	g_free (guid);
-	g_object_unref (auth_observer);
 
 	if (!server) {
 		_LOGW ("(%s) failed to set up private socket %s: %s",
 		       tag, address, error->message);
 		g_error_free (error);
-		g_free (address);
-		return NULL;
+		return;
 	}
 
-	s = g_malloc0 (sizeof (*s));
-	s->address = address;
+	s = g_slice_new0 (PrivateServer);
+	s->address = g_steal_pointer (&address);
 	s->server = server;
 	g_signal_connect (server, "new-connection",
 	                  G_CALLBACK (private_server_new_connection), s);
 
-	s->obj_managers = g_hash_table_new_full (nm_direct_hash, NULL,
-	                                         (GDestroyNotify) private_server_manager_destroy,
-	                                         g_free);
-	s->manager = manager;
+	c_list_init (&s->object_mgr_lst_head);
+
+	s->manager = self;
 	s->detail = g_quark_from_string (tag);
 	s->tag = g_quark_to_string (s->detail);
 
+	c_list_link_tail (&priv->private_servers_lst_head, &s->private_servers_lst);
+
 	g_dbus_server_start (server);
-
-	return s;
-}
-
-static void
-private_server_free (gpointer ptr)
-{
-	PrivateServer *s = ptr;
-
-	unlink (s->address);
-	g_free (s->address);
-	g_hash_table_destroy (s->obj_managers);
-
-	g_dbus_server_stop (s->server);
-	g_object_unref (s->server);
-
-	memset (s, 0, sizeof (*s));
-	g_free (s);
-}
-
-void
-nm_bus_manager_private_server_register (NMBusManager *self,
-                                        const char *path,
-                                        const char *tag)
-{
-	NMBusManagerPrivate *priv = NM_BUS_MANAGER_GET_PRIVATE (self);
-	PrivateServer *s;
-	GSList *iter;
-
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (path != NULL);
-	g_return_if_fail (tag != NULL);
-
-	/* Only one instance per tag; but don't warn */
-	for (iter = priv->private_servers; iter; iter = g_slist_next (iter)) {
-		s = iter->data;
-		if (g_strcmp0 (tag, s->tag) == 0)
-			return;
-	}
-
-	s = private_server_new (path, tag, self);
-	if (s)
-		priv->private_servers = g_slist_append (priv->private_servers, s);
 }
 
 static const char *
 private_server_get_connection_owner (PrivateServer *s, GDBusConnection *connection)
 {
-	GHashTableIter iter;
-	GDBusObjectManagerServer *manager;
-	const char *owner;
+	ObjectMgrData *obj_mgr_data;
 
-	g_return_val_if_fail (s != NULL, NULL);
-	g_return_val_if_fail (connection != NULL, NULL);
+	nm_assert (s);
+	nm_assert (G_IS_DBUS_CONNECTION (connection));
 
-	g_hash_table_iter_init (&iter, s->obj_managers);
-	while (g_hash_table_iter_next (&iter, (gpointer) &manager, (gpointer) &owner)) {
+	c_list_for_each_entry (obj_mgr_data, &s->object_mgr_lst_head, object_mgr_lst) {
 		gs_unref_object GDBusConnection *c = NULL;
 
-		c = g_dbus_object_manager_server_get_connection (manager);
+		c = g_dbus_object_manager_server_get_connection (obj_mgr_data->manager);
 		if (c == connection)
-			return owner;
+			return obj_mgr_data->fake_sender;
 	}
 	return NULL;
 }
@@ -384,14 +395,14 @@ private_server_get_connection_owner (PrivateServer *s, GDBusConnection *connecti
 static GDBusConnection *
 private_server_get_connection_by_owner (PrivateServer *s, const char *owner)
 {
-	GHashTableIter iter;
-	GDBusObjectManagerServer *manager;
-	const char *priv_sender;
+	ObjectMgrData *obj_mgr_data;
 
-	g_hash_table_iter_init (&iter, s->obj_managers);
-	while (g_hash_table_iter_next (&iter, (gpointer) &manager, (gpointer) &priv_sender)) {
-		if (g_strcmp0 (owner, priv_sender) == 0)
-			return g_dbus_object_manager_server_get_connection (manager);
+	nm_assert (s);
+	nm_assert (owner);
+
+	c_list_for_each_entry (obj_mgr_data, &s->object_mgr_lst_head, object_mgr_lst) {
+		if (nm_streq (owner, obj_mgr_data->fake_sender))
+			return g_dbus_object_manager_server_get_connection (obj_mgr_data->manager);
 	}
 	return NULL;
 }
@@ -463,7 +474,6 @@ _get_caller_info (NMBusManager *self,
 {
 	NMBusManagerPrivate *priv = NM_BUS_MANAGER_GET_PRIVATE (self);
 	const char *sender;
-	GSList *iter;
 
 	if (context) {
 		connection = g_dbus_method_invocation_get_connection (context);
@@ -477,10 +487,10 @@ _get_caller_info (NMBusManager *self,
 	g_assert (connection);
 
 	if (!sender) {
-		/* Might be a private connection, for which we fake a sender */
-		for (iter = priv->private_servers; iter; iter = g_slist_next (iter)) {
-			PrivateServer *s = iter->data;
+		PrivateServer *s;
 
+		/* Might be a private connection, for which we fake a sender */
+		c_list_for_each_entry (s, &priv->private_servers_lst_head, private_servers_lst) {
 			sender = private_server_get_connection_owner (s, connection);
 			if (sender) {
 				if (out_uid)
@@ -605,17 +615,17 @@ nm_bus_manager_get_unix_user (NMBusManager *self,
                               gulong *out_uid)
 {
 	NMBusManagerPrivate *priv = NM_BUS_MANAGER_GET_PRIVATE (self);
-	GSList *iter;
+	PrivateServer *s;
 	GError *error = NULL;
 
 	g_return_val_if_fail (sender != NULL, FALSE);
 	g_return_val_if_fail (out_uid != NULL, FALSE);
 
 	/* Check if it's a private connection sender, which we fake */
-	for (iter = priv->private_servers; iter; iter = iter->next) {
+	c_list_for_each_entry (s, &priv->private_servers_lst_head, private_servers_lst) {
 		gs_unref_object GDBusConnection *connection = NULL;
 
-		connection = private_server_get_connection_by_owner (iter->data, sender);
+		connection = private_server_get_connection_by_owner (s, sender);
 		if (connection) {
 			*out_uid = 0;
 			return TRUE;
@@ -873,7 +883,7 @@ nm_bus_manager_connection_get_private_name (NMBusManager *self,
                                             GDBusConnection *connection)
 {
 	NMBusManagerPrivate *priv;
-	GSList *iter;
+	PrivateServer *s;
 	const char *owner;
 
 	g_return_val_if_fail (NM_IS_BUS_MANAGER (self), FALSE);
@@ -885,9 +895,7 @@ nm_bus_manager_connection_get_private_name (NMBusManager *self,
 	}
 
 	priv = NM_BUS_MANAGER_GET_PRIVATE (self);
-	for (iter = priv->private_servers; iter; iter = g_slist_next (iter)) {
-		PrivateServer *s = iter->data;
-
+	c_list_for_each_entry (s, &priv->private_servers_lst_head, private_servers_lst) {
 		if ((owner = private_server_get_connection_owner (s, connection)))
 			return owner;
 	}
@@ -955,6 +963,7 @@ nm_bus_manager_init (NMBusManager *self)
 {
 	NMBusManagerPrivate *priv = NM_BUS_MANAGER_GET_PRIVATE (self);
 
+	c_list_init (&priv->private_servers_lst_head);
 	priv->obj_manager = g_dbus_object_manager_server_new (OBJECT_MANAGER_SERVER_BASE_PATH);
 }
 
@@ -964,9 +973,10 @@ dispose (GObject *object)
 	NMBusManager *self = NM_BUS_MANAGER (object);
 	NMBusManagerPrivate *priv = NM_BUS_MANAGER_GET_PRIVATE (self);
 	GList *exported, *iter;
+	PrivateServer *s, *s_safe;
 
-	g_slist_free_full (priv->private_servers, private_server_free);
-	priv->private_servers = NULL;
+	c_list_for_each_entry_safe (s, s_safe, &priv->private_servers_lst_head, private_servers_lst)
+		private_server_free (s);
 
 	nm_bus_manager_cleanup (self);
 
