@@ -122,8 +122,7 @@ libnm_glib_vpn = shared_library(
   c_args: common_cflags,
   link_args: ldflags,
   link_depends: symbol_map,
-  install: true,
-  install_dir: get_option('libdir')
+  install: true
 )
 
 libnm_glib_vpn_dep = declare_dependency(
@@ -139,8 +138,7 @@ pkg.generate(
   filebase: 'libnm-glib-vpn',
   subdirs: 'libnm-glib',
   requires: 'NetworkManager >= ' + nm_version + ' glib-2.0 dbus-glib-1',
-  variables: 'exec_prefix=${prefix}',
-  install_dir: join_paths(nm_libdir, 'pkgconfig')
+  variables: 'exec_prefix=${prefix}'
 )
 
 sources = shared_udev_utils + files(
@@ -221,8 +219,7 @@ libnm_glib = shared_library(
   link_with: libdeprecated_nm_glib,
   link_args: ldflags,
   link_depends: symbol_map,
-  install: true,
-  install_dir: get_option('libdir')
+  install: true
 )
 
 libnm_glib_dep = declare_dependency(
@@ -238,8 +235,7 @@ pkg.generate(
   filebase: 'libnm-glib',
   subdirs: 'libnm-glib',
   requires: 'libnm-util >= ' + nm_version + ' NetworkManager >= ' + nm_version + ' gobject-2.0 dbus-glib-1',
-  variables: 'exec_prefix=${prefix}',
-  install_dir: join_paths(nm_libdir, 'pkgconfig')
+  variables: 'exec_prefix=${prefix}'
 )
 
 if enable_introspection
@@ -256,9 +252,6 @@ if enable_introspection
     'Gio-2.0'
   ]
 
-  gir_dir = join_paths(nm_datadir, 'gir-' + nm_gir_version)
-  typelib_dir = join_paths(nm_libdir, 'girepository-' + nm_gir_version)
-
   libnm_glib_gir = gnome.generate_gir(
     libnm_glib,
     sources: gir_sources,
@@ -270,9 +263,7 @@ if enable_introspection
     export_packages: ['libnm-glib', 'libnm-glib-vpn'],
     includes: gir_includes,
     extra_args: common_cflags + ['--include-uninstalled=' + libnm_util_gir[0].full_path()],
-    install: true,
-    install_dir_gir: gir_dir,
-    install_dir_typelib: typelib_dir
+    install: true
   )
 endif
 

@@ -77,6 +77,5 @@ executable(
   c_args: cflags,
   link_args: ldflags,
   link_depends: linker_script_binary,
-  install: true,
-  install_dir: nm_bindir
+  install: true
 )

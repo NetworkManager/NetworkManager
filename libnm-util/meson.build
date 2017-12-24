@@ -126,8 +126,7 @@ libnm_util = shared_library(
   c_args: cflags,
   link_args: ldflags,
   link_depends: symbol_map,
-  install: true,
-  install_dir: get_option('libdir')
+  install: true
 )
 
 libnm_util_dep = declare_dependency(
@@ -143,8 +142,7 @@ pkg.generate(
   filebase: 'libnm-util',
   subdirs: nm_name,
   requires: 'NetworkManager >= ' + nm_version + ' glib-2.0 dbus-glib-1',
-  variables: 'exec_prefix=${prefix}',
-  install_dir: join_paths(nm_libdir, 'pkgconfig')
+  variables: 'exec_prefix=${prefix}'
 )
 
 if enable_introspection
@@ -155,9 +153,6 @@ if enable_introspection
     'GObject-2.0'
   ]
 
-  gir_dir = join_paths(nm_datadir, 'gir-' + nm_gir_version)
-  typelib_dir = join_paths(nm_libdir, 'girepository-' + nm_gir_version)
-
   libnm_util_gir = gnome.generate_gir(
     libnm_util,
     sources: gir_sources,
@@ -167,9 +162,7 @@ if enable_introspection
     symbol_prefix: nm_id_prefix.to_lower(),
     export_packages: 'libnm-util',
     includes: gir_includes,
-    install: true,
-    install_dir_gir: gir_dir,
-    install_dir_typelib: typelib_dir
+    install: true
   )
 
   libnm_util_gir_dep = declare_dependency(

@@ -31,8 +31,6 @@ configure_file(
   configuration: version_conf
 )
 
-doc_path = join_paths(nm_datadir, 'gtk-doc', 'html', doc_module)
-
 gnome.gtkdoc(
   doc_module,
   main_xml: doc_module + '-docs.xml',
@@ -47,9 +45,8 @@ gnome.gtkdoc(
     '--ignore-headers=' + ' '.join(private_headers)
   ],
   scanobjs_args: '--type-init-func="g_type_init();"',
-  fixxref_args: '--html-dir=' + doc_path,
+  fixxref_args: '--html-dir=' + join_paths(nm_prefix, gnome.gtkdoc_html_dir(doc_module)),
   gobject_typesfile: doc_module + '.types',
   html_assets: doc_module + '.png',
-  install: true,
-  install_dir: doc_path
+  install: true
 )

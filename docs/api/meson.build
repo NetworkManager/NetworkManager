@@ -18,13 +18,10 @@ configure_file(
 
 content_files += join_paths(meson.source_root(), 'COPYING')
 
-doc_path = join_paths(nm_datadir, 'gtk-doc', 'html', doc_module)
-
 gnome.gtkdoc(
   doc_module,
   main_xml: 'network-manager-docs.xml',
   src_dir: meson.current_source_dir(),
   content_files: content_files,
-  install: true,
-  install_dir: doc_path
+  install: true
 )

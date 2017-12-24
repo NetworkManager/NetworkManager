@@ -168,8 +168,7 @@ libnm = shared_library(
   link_whole: libnm_core,
   link_args: ldflags,
   link_depends: symbol_map,
-  install: true,
-  install_dir: get_option('libdir')
+  install: true
 )
 
 libnm_dep = declare_dependency(
@@ -188,8 +187,7 @@ pkg.generate(
   variables: [
     'exec_prefix=${prefix}',
     'vpnservicedir=' + join_paths(nm_pkglibdir, 'VPN')
-  ],
-  install_dir: join_paths(nm_libdir, 'pkgconfig')
+  ]
 )
 
 run_target(
@@ -201,9 +199,6 @@ run_target(
 if enable_introspection
   gir_sources = libnm_core_enum + libnm_core_headers + libnm_core_sources + libnm_enum + libnm_headers + libnm_sources + [version_header]
 
-  gir_dir = join_paths(nm_datadir, 'gir-' + nm_gir_version)
-  typelib_dir = join_paths(nm_libdir, 'girepository-' + nm_gir_version)
-
   libnm_gir = gnome.generate_gir(
     libnm,
     sources: gir_sources,
@@ -214,9 +209,7 @@ if enable_introspection
     export_packages: 'libnm',
     includes: 'Gio-2.0',
     extra_args: cflags,
-    install: true,
-    install_dir_gir: gir_dir,
-    install_dir_typelib: typelib_dir
+    install: true
   )
 
   generate_plugin_docs = join_paths(meson.current_source_dir(), 'generate-plugin-docs.pl')

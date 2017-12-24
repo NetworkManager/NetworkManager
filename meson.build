@@ -899,8 +899,7 @@ pkg.generate(
     'libgnome_serverdir=' + nm_libexecdir,
     'plugindir=' + nm_pkglibdir,
     'configdir=' + nm_pkgconfdir
-  ],
-  install_dir: join_paths(nm_libdir, 'pkgconfig')
+  ]
 )
 
 config = 'config.h'
