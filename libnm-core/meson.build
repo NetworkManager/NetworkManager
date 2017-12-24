@@ -177,7 +177,10 @@ foreach docbook: docbooks
     input: docbook[1],
     output: output,
     capture: true,
-    command: [perl, enums_to_docbook, docbook[0], docbook[2], '@INPUT@']
+    command: [perl, enums_to_docbook, docbook[0], docbook[2], '@INPUT@'],
+    # FIXME: gtkdoc does not depend directly on this.
+    #        https://github.com/mesonbuild/meson/pull/2806
+    build_by_default: true
   )
 
   content_files += xml.full_path()
