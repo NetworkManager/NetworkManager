@@ -664,7 +664,17 @@ else
 	if test "$have_jansson" = "no"; then
 		AC_MSG_ERROR([jansson is needed for team configuration validation. Use --disable-json-validation to build without it.])
 	fi
-		AC_DEFINE(WITH_JANSSON, 1, [Define if JANSSON is enabled])
+
+	AC_DEFINE(WITH_JANSSON, 1, [Define if JANSSON is enabled])
+
+	AC_CHECK_TOOLS(READELF, [eu-readelf readelf])
+	JANSSON_LIBDIR=`$PKG_CONFIG --variable=libdir jansson`
+	JANSSON_SONAME=`$READELF -d $JANSSON_LIBDIR/libjansson.so |sed -n 's/.*SONAME.*\[[\([^]]*\)]]/\1/p'`
+
+	if test "$JANSSON_SONAME" = ""; then
+		AC_MSG_ERROR(Unable to locate the Jansson library)
+	fi
+	AC_DEFINE_UNQUOTED(JANSSON_SONAME, "$JANSSON_SONAME", [Define to path to the Jansson shared library])
 fi
 AM_CONDITIONAL(WITH_JANSSON, test "${enable_json_validation}" != "no")
 
