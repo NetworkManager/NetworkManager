@@ -179,6 +179,20 @@ libnl_dep = dependency('libnl-3.0', version: '>= 3.2.8', required: false)
 jansson_dep = dependency('jansson', required: false)
 config_h.set10('WITH_JANSSON', jansson_dep.found())
 
+if jansson_dep.found()
+  jansson_libdir = jansson_dep.get_pkgconfig_variable('libdir')
+  readelf = find_program('readelf', 'readelf')
+  res = run_command(readelf, '-d', join_paths(jansson_libdir, 'libjansson.so'))
+  jansson_soname = ''
+  foreach line: res.stdout().split('\n')
+    if line.strip().contains('SONAME')
+       jansson_soname = line.split('[')[1].split(']')[0]
+    endif
+  endforeach
+  assert(jansson_soname != '', 'Unable to determine Jansson SONAME')
+  config_h.set_quoted('JANSSON_SONAME', jansson_soname)
+endif
+
 libsystemd_dep = dependency('libsystemd', version: '>= 209', required: false)
 config_h.set10('HAVE_LIBSYSTEMD', libsystemd_dep.found())
 

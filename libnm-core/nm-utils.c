@@ -35,6 +35,10 @@
 #include <net/if.h>
 #include <linux/pkt_sched.h>
 
+#if WITH_JSON_VALIDATION
+#include "nm-jansson.h"
+#endif
+
 #include "nm-utils/nm-jansson.h"
 #include "nm-utils/nm-enum-utils.h"
 #include "nm-common-macros.h"
@@ -4852,6 +4856,41 @@ const char **nm_utils_enum_get_values (GType type, gint from, gint to)
 
 /*****************************************************************************/
 
+static gboolean
+_nm_utils_is_json_object_no_validation (const char *str, GError **error)
+{
+	if (str) {
+		/* libjansson also requires only utf-8 encoding. */
+		if (!g_utf8_validate (str, -1, NULL)) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("not valid utf-8"));
+			return FALSE;
+		}
+		while (g_ascii_isspace (str[0]))
+			str++;
+	}
+
+	/* do some very basic validation to see if this might be a JSON object. */
+	if (str[0] == '{') {
+		gsize l;
+
+		l = strlen (str) - 1;
+		while (l > 0 && g_ascii_isspace (str[l]))
+			l--;
+
+		if (str[l] == '}')
+			return TRUE;
+	}
+
+	g_set_error_literal (error,
+	                     NM_CONNECTION_ERROR,
+	                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+	                     _("is not a JSON object"));
+	return FALSE;
+}
+
 #if WITH_JSON_VALIDATION
 
 static void
@@ -5298,6 +5337,9 @@ nm_utils_is_json_object (const char *str, GError **error)
 		return FALSE;
 	}
 
+	if (!nm_jansson_load ())
+		return _nm_utils_is_json_object_no_validation (str, error);
+
 	json = json_loads (str, JSON_REJECT_DUPLICATES, &jerror);
 	if (!json) {
 		g_set_error (error,
@@ -5339,6 +5381,8 @@ _nm_utils_team_config_equal (const char *conf1,
 
 	if (nm_streq0 (conf1, conf2))
 		return TRUE;
+	else if (!nm_jansson_load ())
+		return FALSE;
 
 	/* A NULL configuration is equivalent to default value '{}' */
 	json1 = json_loads (conf1 ?: "{}", JSON_REJECT_DUPLICATES, &jerror);
@@ -5394,6 +5438,9 @@ _nm_utils_team_config_get (const char *conf,
 	json_error_t jerror;
 
 	if (!key)
+		return NULL;
+
+	if (!nm_jansson_load ())
 		return NULL;
 
 	json = json_loads (conf ?: "{}", JSON_REJECT_DUPLICATES, &jerror);
@@ -5502,6 +5549,9 @@ _nm_utils_team_config_set (char **conf,
 	NMTeamLinkWatcher *watcher;
 
 	g_return_val_if_fail (key, FALSE);
+
+	if (!nm_jansson_load ())
+		return FALSE;
 
 	json = json_loads (*conf?: "{}", JSON_REJECT_DUPLICATES, &jerror);
 	if (!json)
@@ -5620,19 +5670,6 @@ nm_utils_is_json_object (const char *str, GError **error)
 {
 	g_return_val_if_fail (!error || !*error, FALSE);
 
-	if (str) {
-		/* libjansson also requires only utf-8 encoding. */
-		if (!g_utf8_validate (str, -1, NULL)) {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("not valid utf-8"));
-			return FALSE;
-		}
-		while (g_ascii_isspace (str[0]))
-			str++;
-	}
-
 	if (!str || !str[0]) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
@@ -5641,23 +5678,7 @@ nm_utils_is_json_object (const char *str, GError **error)
 		return FALSE;
 	}
 
-	/* do some very basic validation to see if this might be a JSON object. */
-	if (str[0] == '{') {
-		gsize l;
-
-		l = strlen (str) - 1;
-		while (l > 0 && g_ascii_isspace (str[l]))
-			l--;
-
-		if (str[l] == '}')
-			return TRUE;
-	}
-
-	g_set_error_literal (error,
-	                     NM_CONNECTION_ERROR,
-	                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-	                     _("is not a JSON object"));
-	return FALSE;
+	return _nm_utils_is_json_object_no_validation (str, error);
 }
 
 gboolean

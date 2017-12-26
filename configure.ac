@@ -629,11 +629,19 @@ PKG_CHECK_MODULES(UUID, uuid)
 PKG_CHECK_MODULES(JANSSON, [jansson], [have_jansson=yes], [have_jansson=no])
 if test "$have_jansson" = "yes"; then
 	AC_DEFINE(WITH_JANSSON, 1, [Define if JANSSON is enabled])
+
+	AC_CHECK_TOOLS(READELF, [eu-readelf readelf])
+	JANSSON_LIBDIR=`$PKG_CONFIG --variable=libdir jansson`
+	JANSSON_SONAME=`$READELF -d $JANSSON_LIBDIR/libjansson.so |sed -n 's/.*SONAME.*\[[\([^]]*\)]]/\1/p'`
+
+	if test "$JANSSON_SONAME" = ""; then
+		AC_MSG_ERROR(Unable to locate the Jansson library)
+	fi
+	AC_DEFINE_UNQUOTED(JANSSON_SONAME, "$JANSSON_SONAME", [Define to path to the Jansson shared library])
 else
 	AC_DEFINE(WITH_JANSSON, 0, [Define if JANSSON is enabled])
 fi
 AM_CONDITIONAL(WITH_JANSSON, test "${have_jansson}" = "yes")
-
 
 PKG_CHECK_MODULES(LIBTEAMDCTL, [libteamdctl >= 1.9], [have_teamdctl=yes],[have_teamdctl=no])
 if test "$have_jansson" = "yes" -a "$have_teamdctl" = "yes"; then
