@@ -107,6 +107,7 @@ create_device (NMDeviceFactory *factory,
 	backend = nm_config_data_get_device_config_by_pllink (NM_CONFIG_GET_DATA,
 	                                                      NM_CONFIG_KEYFILE_KEY_DEVICE_WIFI_BACKEND,
 	                                                      plink,
+	                                                      "wifi",
 	                                                      NULL);
 	nm_strstrip (backend);
 

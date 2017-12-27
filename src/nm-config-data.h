@@ -191,6 +191,7 @@ char *nm_config_data_get_device_config (const NMConfigData *self,
 char *nm_config_data_get_device_config_by_pllink (const NMConfigData *self,
                                                   const char *property,
                                                   const NMPlatformLink *pllink,
+                                                  const char *match_device_type,
                                                   gboolean *has_match);
 
 gboolean nm_config_data_get_device_config_boolean (const NMConfigData *self,

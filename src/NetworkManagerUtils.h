@@ -65,6 +65,7 @@ void nm_utils_g_value_set_object_path_array (GValue *value,
                                              gpointer user_data);
 
 int nm_match_spec_device_by_pllink (const NMPlatformLink *pllink,
+                                    const char *match_device_type,
                                     const GSList *specs,
                                     int no_match_value);
 
