@@ -58,39 +58,35 @@ c_list_relink (CList *lst)
 /*****************************************************************************/
 
 static CList *
-_c_list_sort (CList *ls,
-              CListSortCmp cmp,
-              const void *user_data)
+_c_list_srt_split (CList *ls)
 {
-	CList *ls1, *ls2;
-	CList head;
+	CList *ls2;
 
-	if (!ls->next)
-		return ls;
-
-	/* split list in two halfs @ls1 and @ls2. */
-	ls1 = ls;
 	ls2 = ls;
 	ls = ls->next;
-	while (ls) {
+	if (!ls)
+		return NULL;
+	do {
 		ls = ls->next;
 		if (!ls)
 			break;
 		ls = ls->next;
 		ls2 = ls2->next;
-	}
-	ls = ls2;
-	ls2 = ls->next;
-	ls->next = NULL;
+	} while (ls);
+	ls = ls2->next;
+	ls2->next = NULL;
+	return ls;
+}
 
-	/* recurse */
-	ls1 = _c_list_sort (ls1, cmp, user_data);
-	if (!ls2)
-		return ls1;
+static CList *
+_c_list_srt_merge (CList *ls1,
+                   CList *ls2,
+                   CListSortCmp cmp,
+                   const void *user_data)
+{
+	CList *ls;
+	CList head;
 
-	ls2 = _c_list_sort (ls2, cmp, user_data);
-
-	/* merge */
 	ls = &head;
 	for (;;) {
 		/* while invoking the @cmp function, the list
@@ -113,6 +109,28 @@ _c_list_sort (CList *ls,
 	ls->next = ls1 ?: ls2;
 
 	return head.next;
+}
+
+static CList *
+_c_list_sort (CList *ls,
+              CListSortCmp cmp,
+              const void *user_data)
+{
+	CList *ls1, *ls2;
+
+	if (!ls->next)
+		return ls;
+	ls1 = ls;
+
+	ls2 = _c_list_srt_split (ls1);
+
+	ls1 = _c_list_sort (ls1, cmp, user_data);
+	if (!ls2)
+		return ls1;
+
+	ls2 = _c_list_sort (ls2, cmp, user_data);
+
+	return _c_list_srt_merge (ls1, ls2, cmp, user_data);
 }
 
 /**
