@@ -1786,6 +1786,16 @@ nm_device_iwd_agent_psk_query (NMDeviceIwd *self)
 
 /*****************************************************************************/
 
+static const char *
+get_type_description (NMDevice *device)
+{
+	nm_assert (NM_IS_DEVICE_IWD (device));
+
+	return "wifi";
+}
+
+/*****************************************************************************/
+
 static void
 nm_device_iwd_init (NMDeviceIwd *self)
 {
@@ -1863,6 +1873,7 @@ nm_device_iwd_class_init (NMDeviceIwdClass *klass)
 	parent_class->complete_connection = complete_connection;
 	parent_class->get_enabled = get_enabled;
 	parent_class->set_enabled = set_enabled;
+	parent_class->get_type_description = get_type_description;
 
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->act_stage2_config = act_stage2_config;
