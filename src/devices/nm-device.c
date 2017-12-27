@@ -269,7 +269,6 @@ typedef struct _NMDevicePrivate {
 	int           ip_ifindex;
 	NMDeviceType  type;
 	char *        type_desc;
-	char *        type_description;
 	NMLinkType    link_type;
 	NMDeviceCapabilities capabilities;
 	char *        driver;
@@ -1988,18 +1987,23 @@ nm_device_get_type_description (NMDevice *self)
 static const char *
 get_type_description (NMDevice *self)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDeviceClass *klass;
 
-	if (!priv->type_description) {
+	nm_assert (NM_IS_DEVICE (self));
+
+	klass = NM_DEVICE_GET_CLASS (self);
+	if (G_UNLIKELY (!klass->default_type_description)) {
 		const char *typename;
+		gs_free char *s = NULL;
 
 		typename = G_OBJECT_TYPE_NAME (self);
 		if (g_str_has_prefix (typename, "NMDevice"))
 			typename += 8;
-		priv->type_description = g_ascii_strdown (typename, -1);
+		s = g_ascii_strdown (typename, -1);
+		klass->default_type_description = g_intern_string (s);
 	}
 
-	return priv->type_description;
+	return klass->default_type_description;
 }
 
 gboolean
@@ -14581,7 +14585,6 @@ finalize (GObject *object)
 	g_free (priv->driver_version);
 	g_free (priv->firmware_version);
 	g_free (priv->type_desc);
-	g_free (priv->type_description);
 	g_free (priv->dhcp_anycast_address);
 	g_free (priv->current_stable_id);
 

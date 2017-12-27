@@ -64,6 +64,11 @@ void nm_utils_g_value_set_object_path_array (GValue *value,
                                              NMUtilsObjectFunc filter_func,
                                              gpointer user_data);
 
+int nm_match_spec_device_by_pllink (const NMPlatformLink *pllink,
+                                    const char *match_device_type,
+                                    const GSList *specs,
+                                    int no_match_value);
+
 /*****************************************************************************/
 
 #endif /* __NETWORKMANAGER_UTILS_H__ */

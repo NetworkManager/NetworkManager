@@ -935,3 +935,38 @@ nm_utils_g_value_set_object_path_array (GValue *value,
 }
 
 /*****************************************************************************/
+
+int
+nm_match_spec_device_by_pllink (const NMPlatformLink *pllink,
+                                const char *match_device_type,
+                                const GSList *specs,
+                                int no_match_value)
+{
+	NMMatchSpecMatchType m;
+
+	/* we can only match by certain properties that are available on the
+	 * platform link (and even @pllink might be missing.
+	 *
+	 * It's still useful because of specs like "*" and "except:interface-name:eth0",
+	 * which match even in that case. */
+	m = nm_match_spec_device (specs,
+	                          pllink ? pllink->name : NULL,
+	                          match_device_type,
+	                          pllink ? pllink->driver : NULL,
+	                          NULL,
+	                          NULL,
+	                          NULL);
+
+	switch (m) {
+	case NM_MATCH_SPEC_MATCH:
+		return TRUE;
+	case NM_MATCH_SPEC_NEG_MATCH:
+		return FALSE;
+	case NM_MATCH_SPEC_NO_MATCH:
+		return no_match_value;
+	}
+	nm_assert_not_reached ();
+	return no_match_value;
+}
+
+

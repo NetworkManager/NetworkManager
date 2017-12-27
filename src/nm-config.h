@@ -64,7 +64,6 @@
 #define NM_CONFIG_KEYFILE_KEY_MAIN_DEBUG                    "debug"
 #define NM_CONFIG_KEYFILE_KEY_MAIN_HOSTNAME_MODE            "hostname-mode"
 #define NM_CONFIG_KEYFILE_KEY_MAIN_SLAVES_ORDER             "slaves-order"
-#define NM_CONFIG_KEYFILE_KEY_MAIN_WIFI_BACKEND             "wifi-backend"
 #define NM_CONFIG_KEYFILE_KEY_LOGGING_BACKEND               "backend"
 #define NM_CONFIG_KEYFILE_KEY_CONFIG_ENABLE                 "enable"
 #define NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS            ".was"
@@ -79,6 +78,8 @@
 #define NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED                "managed"
 #define NM_CONFIG_KEYFILE_KEY_DEVICE_IGNORE_CARRIER         "ignore-carrier"
 #define NM_CONFIG_KEYFILE_KEY_DEVICE_SRIOV_NUM_VFS          "sriov-num-vfs"
+#define NM_CONFIG_KEYFILE_KEY_DEVICE_WIFI_BACKEND           "wifi.backend"
+#define NM_CONFIG_KEYFILE_KEY_DEVICE_WIFI_SCAN_RAND_MAC_ADDRESS "wifi.scan-rand-mac-address"
 #define NM_CONFIG_KEYFILE_KEY_DEVICE_CARRIER_WAIT_TIMEOUT   "carrier-wait-timeout"
 
 #define NM_CONFIG_KEYFILE_KEYPREFIX_WAS                     ".was."

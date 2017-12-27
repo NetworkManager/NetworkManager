@@ -104,12 +104,18 @@ create_device (NMDeviceFactory *factory,
 	if (plink->type != NM_LINK_TYPE_WIFI)
 		return nm_device_olpc_mesh_new (iface);
 
-	backend = nm_config_data_get_value (NM_CONFIG_GET_DATA,
-	                                    NM_CONFIG_KEYFILE_GROUP_MAIN,
-	                                    NM_CONFIG_KEYFILE_KEY_MAIN_WIFI_BACKEND,
-	                                    NM_CONFIG_GET_VALUE_STRIP);
+	backend = nm_config_data_get_device_config_by_pllink (NM_CONFIG_GET_DATA,
+	                                                      NM_CONFIG_KEYFILE_KEY_DEVICE_WIFI_BACKEND,
+	                                                      plink,
+	                                                      "wifi",
+	                                                      NULL);
+	nm_strstrip (backend);
 
-	nm_log_dbg (LOGD_PLATFORM | LOGD_WIFI, "(%s) config: backend is %s, %i", iface, backend, WITH_IWD);
+	nm_log_dbg (LOGD_PLATFORM | LOGD_WIFI,
+	            "(%s) config: backend is %s%s%s%s",
+	            iface,
+	            NM_PRINT_FMT_QUOTE_STRING (backend),
+	            WITH_IWD ? " (iwd support enabled)" : "");
 	if (!backend || !strcasecmp (backend, "wpa_supplicant"))
 		return nm_device_wifi_new (iface, capabilities);
 #if WITH_IWD

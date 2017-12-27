@@ -192,6 +192,8 @@ typedef enum { /*< skip >*/
 typedef struct {
 	NMExportedObjectClass parent;
 
+	const char *default_type_description;
+
 	const char *connection_type;
 	const NMLinkType *link_types;
 
