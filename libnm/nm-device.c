@@ -1716,7 +1716,7 @@ nm_device_disambiguate_names (NMDevice **devices,
 
 			g_free (names[i]);
 			name = get_device_type_name_with_iface (devices[i]);
-			/* Translators: the first %s is a bus name (eg, "USB") or
+			/* TRANSLATORS: the first %s is a bus name (eg, "USB") or
 			 * product name, the second is a device type (eg,
 			 * "Ethernet"). You can change this to something like
 			 * "%2$s (%1$s)" if there's no grammatical way to combine

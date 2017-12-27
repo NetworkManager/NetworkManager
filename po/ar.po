@@ -3510,7 +3510,7 @@ msgstr ""
 msgid "Failed to duplicate pager pipe: %s\n"
 msgstr ""
 
-#. Translators: the first %s is the partial value entered by
+#. TRANSLATORS: the first %s is the partial value entered by
 #. * the user, the second %s a list of compatible values.
 #.
 #: ../clients/common/nm-client-utils.c:71
@@ -7854,7 +7854,7 @@ msgstr ""
 msgid "Hostname"
 msgstr ""
 
-#. Translators: this indicates the result. ie, "I have set the hostname to ..."
+#. TRANSLATORS: this indicates the result. ie, "I have set the hostname to ..."
 #: ../clients/tui/nmtui-hostname.c:116
 #, c-format
 msgid "Set hostname to '%s'"
@@ -9653,7 +9653,7 @@ msgstr ""
 msgid "USB"
 msgstr ""
 
-#. Translators: the first %s is a bus name (eg, "USB") or
+#. TRANSLATORS: the first %s is a bus name (eg, "USB") or
 #. * product name, the second is a device type (eg,
 #. * "Ethernet"). You can change this to something like
 #. * "%2$s (%1$s)" if there's no grammatical way to combine
@@ -10102,7 +10102,7 @@ msgid ""
 "type '%s'"
 msgstr ""
 
-#. Translators: the first %s is a prefix for the connection id, such
+#. TRANSLATORS: the first %s is a prefix for the connection id, such
 #. * as "Wired Connection" or "VPN Connection". The %d is a number
 #. * that is combined with the first argument to create a unique
 #. * connection id.

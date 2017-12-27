@@ -110,7 +110,7 @@ get_new_connection_name (NMConnection *const*existing_connections,
 	for (i = 1; TRUE; i++) {
 		char *temp;
 
-		/* Translators: the first %s is a prefix for the connection id, such
+		/* TRANSLATORS: the first %s is a prefix for the connection id, such
 		 * as "Wired Connection" or "VPN Connection". The %d is a number
 		 * that is combined with the first argument to create a unique
 		 * connection id. */

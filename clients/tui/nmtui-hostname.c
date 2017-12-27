@@ -112,7 +112,7 @@ nmtui_hostname (gboolean is_top, int argc, char **argv)
 		nmt_sync_op_init (&op);
 		nm_client_save_hostname_async (nm_client, hostname, NULL, hostname_set, &op);
 		if (nmt_sync_op_wait_boolean (&op, &error)) {
-			/* Translators: this indicates the result. ie, "I have set the hostname to ..." */
+			/* TRANSLATORS: this indicates the result. ie, "I have set the hostname to ..." */
 			nmt_newt_message_dialog (_("Set hostname to '%s'"), hostname);
 		} else {
 			nmt_newt_message_dialog (_("Unable to set hostname: %s"), error->message);
