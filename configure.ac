@@ -119,21 +119,24 @@ AC_CHECK_FUNCS([__secure_getenv secure_getenv])
 
 # Alternative configuration plugins
 AC_ARG_ENABLE(config-plugin-ibft, AS_HELP_STRING([--enable-config-plugin-ibft], [enable ibft configuration plugin]))
-AC_ARG_ENABLE(ifcfg-rh, AS_HELP_STRING([--enable-ifcfg-rh], [enable ifcfg-rh configuration plugin (Fedora/RHEL)]))
+AC_ARG_ENABLE(config-plugin-ifcfg, AS_HELP_STRING([--enable-config-plugin-ifcfg], [enable ifcfg configuration plugin (Fedora/RHEL)]))
 AC_ARG_ENABLE(ifupdown, AS_HELP_STRING([--enable-ifupdown], [enable ifupdown configuration plugin (Debian/Ubuntu)]))
+# Legacy
+AC_ARG_ENABLE(ifcfg-rh, AS_HELP_STRING([--enable-ifcfg-rh], [enable ifcfg-rh configuration plugin (Fedora/RHEL)]))
+AS_IF([test -n "$enable_ifcfg_rh"], enable_config_plugin_ifcfg="$enable_ifcfg_rh"])
 # Default alternative plugins by distribution
-AS_IF([test -z "$enable_ifcfg_rh"], AC_CHECK_FILE(/etc/redhat-release, enable_ifcfg_rh=yes))
-AS_IF([test -z "$enable_ifcfg_rh"], AC_CHECK_FILE(/etc/fedora-release, enable_ifcfg_rh=yes))
-AS_IF([test -z "$enable_ifcfg_rh"], AC_CHECK_FILE(/etc/mandriva-release, enable_ifcfg_rh=yes))
+AS_IF([test -z "$enable_ifcfg"], AC_CHECK_FILE(/etc/redhat-release, enable_ifcfg=yes))
+AS_IF([test -z "$enable_ifcfg"], AC_CHECK_FILE(/etc/fedora-release, enable_ifcfg=yes))
+AS_IF([test -z "$enable_ifcfg"], AC_CHECK_FILE(/etc/mandriva-release, enable_ifcfg=yes))
 AS_IF([test -z "$enable_ifupdown"], AC_CHECK_FILE(/etc/debian_version, enable_ifupdown=yes))
 # Otherwise plugins default to "no"
-AS_IF([test -z "$enable_ifcfg_rh"], enable_ifcfg_rh=no)
+AS_IF([test -z "$enable_ifcfg"], enable_ifcfg=no)
 AS_IF([test -z "$enable_ifupdown"], enable_ifupdown=no)
 # Enable ibft by default
 AS_IF([test -z "$enable_config_plugin_ibft"], enable_config_plugin_ibft="yes")
 # Create automake conditionals
 AM_CONDITIONAL(CONFIG_PLUGIN_IBFT, test "$enable_config_plugin_ibft" = "yes")
-AM_CONDITIONAL(CONFIG_PLUGIN_IFCFG_RH, test "$enable_ifcfg_rh" = "yes")
+AM_CONDITIONAL(CONFIG_PLUGIN_IFCFG_RH, test "$enable_ifcfg" = "yes")
 AM_CONDITIONAL(CONFIG_PLUGIN_IFUPDOWN, test "$enable_ifupdown" = "yes")
 
 AC_ARG_WITH(config-plugins-default,
@@ -142,13 +145,13 @@ AC_ARG_WITH(config-plugins-default,
             [config_plugins_default="$withval"], [config_plugins_default=""])
 if test -z "$config_plugins_default" -o "$config_plugins_default" = no; then
 	config_plugins_default=''
-	test "$enable_ifcfg_rh" = "yes"           && config_plugins_default="$config_plugins_default,ifcfg-rh"
+	test "$enable_ifcfg" = "yes"           && config_plugins_default="$config_plugins_default,ifcfg-rh"
 	test "$enable_ifupdown" = "yes"           && config_plugins_default="$config_plugins_default,ifupdown"
 	test "$enable_config_plugin_ibft" = "yes" && config_plugins_default="$config_plugins_default,ibft"
 	config_plugins_default="${config_plugins_default#,}"
 fi
 
-test "$enable_ifcfg_rh" = "yes"           && distro_plugins="$distro_plugins,ifcfg-rh"
+test "$enable_ifcfg" = "yes"           && distro_plugins="$distro_plugins,ifcfg"
 test "$enable_ifupdown" = "yes"           && distro_plugins="$distro_plugins,ifupdown"
 distro_plugins="${distro_plugins#,}"
 
@@ -159,7 +162,7 @@ else
 	AC_DEFINE(WITH_SETTINGS_PLUGIN_IBFT, 0, [Whether compilation of ibft setting plugin is enabled])
 fi
 
-if test "$enable_ifcfg_rh" = "yes"; then
+if test "$enable_ifcfg" = "yes"; then
 	DISTRO_NETWORK_SERVICE=network.service
 fi
 AC_SUBST(DISTRO_NETWORK_SERVICE)
@@ -1409,7 +1412,7 @@ echo
 
 echo "Configuration plugins (main.plugins=${config_plugins_default})"
 echo "  ibft: ${enable_config_plugin_ibft}"
-echo "  ifcfg-rh: ${enable_ifcfg_rh}"
+echo "  ifcfg: ${enable_config_plugin_ifcfg}"
 echo "  ifupdown: ${enable_ifupdown}"
 echo
 

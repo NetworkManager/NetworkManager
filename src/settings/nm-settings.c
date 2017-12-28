@@ -776,9 +776,9 @@ load_plugin:
 				g_object_unref (obj);
 		}
 next:
-		if (add_ibft && !strcmp (pname, "ifcfg-rh")) {
-			/* The plugin ibft is not explicitly mentioned but we just enabled "ifcfg-rh".
-			 * Enable "ibft" by default after "ifcfg-rh". */
+		if (add_ibft && !strcmp (pname, "ifcfg")) {
+			/* The plugin ibft is not explicitly mentioned but we just enabled "ifcfg".
+			 * Enable "ibft" by default after "ifcfg". */
 			pname = "ibft";
 			add_ibft = FALSE;
 			goto load_plugin;
