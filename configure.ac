@@ -128,6 +128,7 @@ AS_IF([test -n "$enable_ifcfg_rh"], enable_config_plugin_ifcfg="$enable_ifcfg_rh
 AS_IF([test -z "$enable_ifcfg"], AC_CHECK_FILE(/etc/redhat-release, enable_ifcfg=yes))
 AS_IF([test -z "$enable_ifcfg"], AC_CHECK_FILE(/etc/fedora-release, enable_ifcfg=yes))
 AS_IF([test -z "$enable_ifcfg"], AC_CHECK_FILE(/etc/mandriva-release, enable_ifcfg=yes))
+AS_IF([test -z "$enable_ifcfg"], AC_CHECK_FILE(/etc/mageia-release, enable_ifcfg=yes))
 AS_IF([test -z "$enable_ifupdown"], AC_CHECK_FILE(/etc/debian_version, enable_ifupdown=yes))
 # Otherwise plugins default to "no"
 AS_IF([test -z "$enable_ifcfg"], enable_ifcfg=no)
