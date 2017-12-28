@@ -125,10 +125,7 @@ AC_ARG_ENABLE(ifupdown, AS_HELP_STRING([--enable-ifupdown], [enable ifupdown con
 AC_ARG_ENABLE(ifcfg-rh, AS_HELP_STRING([--enable-ifcfg-rh], [enable ifcfg-rh configuration plugin (Fedora/RHEL)]))
 AS_IF([test -n "$enable_ifcfg_rh"], enable_config_plugin_ifcfg="$enable_ifcfg_rh"])
 # Default alternative plugins by distribution
-AS_IF([test -z "$enable_ifcfg"], AC_CHECK_FILE(/etc/redhat-release, enable_ifcfg=yes))
-AS_IF([test -z "$enable_ifcfg"], AC_CHECK_FILE(/etc/fedora-release, enable_ifcfg=yes))
-AS_IF([test -z "$enable_ifcfg"], AC_CHECK_FILE(/etc/mandriva-release, enable_ifcfg=yes))
-AS_IF([test -z "$enable_ifcfg"], AC_CHECK_FILE(/etc/mageia-release, enable_ifcfg=yes))
+AS_IF([test -z "$enable_ifcfg"], AC_CHECK_FILE(/etc/sysconfig/network-scripts, enable_ifcfg=yes))
 AS_IF([test -z "$enable_ifupdown"], AC_CHECK_FILE(/etc/debian_version, enable_ifupdown=yes))
 # Otherwise plugins default to "no"
 AS_IF([test -z "$enable_ifcfg"], enable_ifcfg=no)
