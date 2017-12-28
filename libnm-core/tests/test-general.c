@@ -296,7 +296,6 @@ test_nm_utils_strsplit_set (void)
 
 typedef struct {
 	int val;
-	int idx;
 	CList lst;
 } CListSort;
 
@@ -320,71 +319,86 @@ _c_list_sort_cmp (const CList *lst_a, const CList *lst_b, const void *user_data)
 }
 
 static void
-test_c_list_sort (void)
+_do_test_c_list_sort (CListSort *elements, guint n_list, gboolean headless)
 {
-	guint i, n_list, repeat, headless;
 	CList head, *iter, *iter_prev, *lst;
-	CListSort elements[30];
+	guint i;
 	const CListSort *el_prev;
+	CListSort *el;
 
 	c_list_init (&head);
-	c_list_sort (&head, _c_list_sort_cmp, NULL);
-	g_assert (c_list_length (&head) == 0);
-	g_assert (c_list_is_empty (&head));
+	for (i = 0; i < n_list; i++) {
+		el = &elements[i];
+		el->val = nmtst_get_rand_int () % (2*n_list);
+		c_list_link_tail (&head, &el->lst);
+	}
 
-	for (repeat = 0; repeat < 10; repeat++) {
-		for (n_list = 1; n_list < G_N_ELEMENTS (elements); n_list++) {
-			for (headless = 0; headless < 2; headless++) {
-				c_list_init (&head);
-				for (i = 0; i < n_list; i++) {
-					CListSort *el;
+	if (headless) {
+		lst = head.next;
+		c_list_unlink_stale (&head);
+		lst = c_list_sort_headless (lst, _c_list_sort_cmp, NULL);
+		g_assert (lst);
+		g_assert (lst->next);
+		g_assert (lst->prev);
+		g_assert (c_list_length (lst) == n_list - 1);
+		iter_prev = lst->prev;
+		for (iter = lst; iter != lst; iter = iter->next) {
+			g_assert (iter);
+			g_assert (iter->next);
+			g_assert (iter->prev == iter_prev);
+		}
+		c_list_link_before (lst, &head);
+	} else
+		c_list_sort (&head, _c_list_sort_cmp, NULL);
 
-					el = &elements[i];
-					el->val = nmtst_get_rand_int () % (2*n_list);
-					el->idx = i;
-					c_list_link_tail (&head, &el->lst);
-				}
+	g_assert (!c_list_is_empty (&head));
+	g_assert (c_list_length (&head) == n_list);
 
-				if (headless) {
-					lst = head.next;
-					c_list_unlink_stale (&head);
-					lst = c_list_sort_headless (lst, _c_list_sort_cmp, NULL);
-					g_assert (lst);
-					g_assert (lst->next);
-					g_assert (lst->prev);
-					g_assert (c_list_length (lst) == n_list - 1);
-					iter_prev = lst->prev;
-					for (iter = lst; iter != lst; iter = iter->next) {
-						g_assert (iter);
-						g_assert (iter->next);
-						g_assert (iter->prev == iter_prev);
-					}
-					c_list_link_before (lst, &head);
-				} else {
-					c_list_sort (&head, _c_list_sort_cmp, NULL);
-				}
+	el_prev = NULL;
+	c_list_for_each (iter, &head) {
+		el = c_list_entry (iter, CListSort, lst);
+		g_assert (el >= elements && el < &elements[n_list]);
+		if (el_prev) {
+			if (el_prev->val == el->val)
+				g_assert (el_prev < el);
+			else
+				g_assert (el_prev->val < el->val);
+			g_assert (iter->prev == &el_prev->lst);
+			g_assert (el_prev->lst.next == iter);
+		}
+		el_prev = el;
+	}
+	g_assert (head.prev == &el_prev->lst);
+}
 
-				g_assert (!c_list_is_empty (&head));
-				g_assert (c_list_length (&head) == n_list);
+static void
+test_c_list_sort (void)
+{
+	const guint N_ELEMENTS = 10000;
+	guint n_list, repeat;
+	gs_free CListSort *elements = NULL;
 
-				el_prev = NULL;
-				c_list_for_each (iter, &head) {
-					CListSort *el;
+	{
+		CList head;
 
-					el = c_list_entry (iter, CListSort, lst);
-					g_assert (el->idx >= 0 && el->idx < n_list);
-					g_assert (el == &elements[el->idx]);
-					if (el_prev) {
-						g_assert (el_prev->val <= el->val);
-						if (el_prev->val == el->val)
-							g_assert (el_prev->idx < el->idx);
-						g_assert (iter->prev == &el_prev->lst);
-						g_assert (el_prev->lst.next == iter);
-					}
-					el_prev = el;
-				}
-				g_assert (head.prev == &el_prev->lst);
-			}
+		c_list_init (&head);
+		c_list_sort (&head, _c_list_sort_cmp, NULL);
+		g_assert (c_list_length (&head) == 0);
+		g_assert (c_list_is_empty (&head));
+	}
+
+	elements = g_new0 (CListSort, N_ELEMENTS);
+	for (n_list = 1; n_list < N_ELEMENTS; n_list++) {
+		if (n_list > 150) {
+			n_list += nmtst_get_rand_int () % n_list;
+			if (n_list >= N_ELEMENTS)
+				break;
+		}
+		{
+			const guint N_REPEAT = n_list > 50 ? 1 : 5;
+
+			for (repeat = 0; repeat < N_REPEAT; repeat++)
+				_do_test_c_list_sort (elements, n_list, nmtst_get_rand_int () % 2);
 		}
 	}
 }
