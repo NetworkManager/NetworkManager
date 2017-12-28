@@ -111,26 +111,52 @@ _c_list_srt_merge (CList *ls1,
 	return head.next;
 }
 
+typedef struct {
+	CList *ls1;
+	CList *ls2;
+	char ls1_sorted;
+} SortStack;
+
 static CList *
 _c_list_sort (CList *ls,
               CListSortCmp cmp,
               const void *user_data)
 {
-	CList *ls1, *ls2;
+	/* reserve a huge stack-size. We need roughly log2(n) entries, hence this
+	 * is much more we will ever need. We don't guard for stack-overflow either. */
+	SortStack stack_arr[70];
+	SortStack *stack_head = stack_arr;
 
-	if (!ls->next)
-		return ls;
-	ls1 = ls;
+	stack_arr[0].ls1 = ls;
 
-	ls2 = _c_list_srt_split (ls1);
+	/* A simple top-down, non-recursive, stable merge-sort.
+	 *
+	 * Maybe natural merge-sort would be better, to do better for
+	 * partially sorted lists. */
+_split:
+	stack_head[0].ls2 = _c_list_srt_split (stack_head[0].ls1);
+	if (stack_head[0].ls2) {
+		stack_head[0].ls1_sorted = 0;
+		stack_head[1].ls1 = stack_head[0].ls1;
+		stack_head++;
+		goto _split;
+	}
 
-	ls1 = _c_list_sort (ls1, cmp, user_data);
-	if (!ls2)
-		return ls1;
+_backtrack:
+	if (stack_head == stack_arr)
+		return stack_arr[0].ls1;
 
-	ls2 = _c_list_sort (ls2, cmp, user_data);
+	stack_head--;
+	if (!stack_head[0].ls1_sorted) {
+		stack_head[0].ls1 = stack_head[1].ls1;
+		stack_head[0].ls1_sorted = 1;
+		stack_head[1].ls1 = stack_head[0].ls2;
+		stack_head++;
+		goto _split;
+	}
 
-	return _c_list_srt_merge (ls1, ls2, cmp, user_data);
+	stack_head[0].ls1 = _c_list_srt_merge (stack_head[0].ls1, stack_head[1].ls1, cmp, user_data);
+	goto _backtrack;
 }
 
 /**
