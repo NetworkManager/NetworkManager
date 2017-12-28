@@ -51,8 +51,8 @@ if have_version_script
   ldflags += '-Wl,--version-script,@0@'.format(linker_script_settings)
 endif
 
-libnm_settings_plugin_ifcfg_rh = shared_module(
-  'nm-settings-plugin-ifcfg-rh',
+libnm_settings_plugin_ifcfg = shared_module(
+  'nm-settings-plugin-ifcfg',
   sources: sources,
   dependencies: deps,
   c_args: cflags,
@@ -63,14 +63,14 @@ libnm_settings_plugin_ifcfg_rh = shared_module(
   install_dir: nm_pkglibdir
 )
 
-core_plugins += libnm_settings_plugin_ifcfg_rh
+core_plugins += libnm_settings_plugin_ifcfg
 
 # FIXME: check_so_symbols replacement
 '''
 run_target(
   'check-local-symbols-settings-ifcfg-rh',
-  command: [check_so_symbols, libnm_settings_plugin_ifcfg_rh.full_path()],
-  depends: libnm_settings_plugin_ifcfg_rh
+  command: [check_so_symbols, libnm_settings_plugin_ifcfg.full_path()],
+  depends: libnm_settings_plugin_ifcfg
 )
 
 check-local-symbols-settings-ifcfg-rh: src/settings/plugins/ifcfg-rh/libnm-settings-plugin-ifcfg-rh.la
