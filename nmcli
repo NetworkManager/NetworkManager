@@ -1,0 +1,10 @@
+#/bin/sh
+
+command="./clients/cli/nmcli"
+arguments=""
+
+export LD_LIBRARY_PATH=./libnm/.libs
+
+ldd $command | grep libnm
+
+$command $arguments "$@"

@@ -425,5 +425,12 @@ nm_device_factory_manager_load_factories (NMDeviceFactoryManagerFactoryFunc call
 	_ADD_INTERNAL (nm_vlan_device_factory_get_type);
 	_ADD_INTERNAL (nm_vxlan_device_factory_get_type);
 
+#if DEVELOP
+	load_factories_from_dir (callback, user_data, "./src/devices/adsl/.libs");
+	load_factories_from_dir (callback, user_data, "./src/devices/bluetooth/.libs");
+	load_factories_from_dir (callback, user_data, "./src/devices/wifi/.libs");
+	load_factories_from_dir (callback, user_data, "./src/devices/wwan/.libs");
+#else
 	load_factories_from_dir (NMPLUGINDIR);
+#endif
 }

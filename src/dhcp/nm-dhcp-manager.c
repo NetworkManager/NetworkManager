@@ -62,8 +62,11 @@ G_DEFINE_TYPE (NMDhcpManager, nm_dhcp_manager, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
-/* default to installed helper, but can be modified for testing */
+#if DEVELOP
+const char *nm_dhcp_helper_path = LIBEXECDIR "./src/dhcp/nm-dhcp-helper";
+#else
 const char *nm_dhcp_helper_path = LIBEXECDIR "/nm-dhcp-helper";
+#endif
 
 /*****************************************************************************/
 

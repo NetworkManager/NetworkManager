@@ -1,0 +1,8 @@
+#/bin/sh
+
+command="src/NetworkManager"
+arguments="-d"
+
+ldd $command | grep libnm
+
+$command $arguments "$@"

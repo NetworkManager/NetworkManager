@@ -4213,12 +4213,19 @@ nm_utils_validate_plugin (const char *path, struct stat *st, GError **error)
 		return FALSE;
 	}
 
+#if DEVELOP
+	/* Do not check plugin ownership when running NetworkManager from the
+	 * build directory. It will typically belong to the user who is using
+	 * sudo to run NetworkManager as root.
+	 */
+#else
 	if (st->st_uid != 0) {
 		g_set_error_literal (error,
 		                     NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
 		                     "file has invalid owner (should be root)");
 		return FALSE;
 	}
+#endif
 
 	if (st->st_mode & (S_IWGRP | S_IWOTH | S_ISUID)) {
 		g_set_error_literal (error,
