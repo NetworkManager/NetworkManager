@@ -71,7 +71,6 @@ static struct {
 	gboolean print_config;
 	gboolean become_daemon;
 	gboolean g_fatal_warnings;
-	gboolean run_from_build_dir;
 	char *opt_log_level;
 	char *opt_log_domains;
 	char *pidfile;
@@ -200,7 +199,6 @@ do_early_setup (int *argc, char **argv[], NMConfigCmdLineOptions *config_cli)
 		  "PLATFORM,RFKILL,WIFI" },
 		{ "g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &global_opt.g_fatal_warnings, N_("Make all warnings fatal"), NULL },
 		{ "pid-file", 'p', 0, G_OPTION_ARG_FILENAME, &global_opt.pidfile, N_("Specify the location of a PID file"), NM_DEFAULT_PID_FILE },
-		{ "run-from-build-dir", 0, 0, G_OPTION_ARG_NONE, &global_opt.run_from_build_dir, "Run from build directory", NULL },
 		{ "print-config", 0, 0, G_OPTION_ARG_NONE, &global_opt.print_config, N_("Print NetworkManager configuration and exit"), NULL },
 		{NULL}
 	};
@@ -273,29 +271,6 @@ main (int argc, char *argv[])
 
 	nm_main_utils_ensure_statedir ();
 	nm_main_utils_ensure_rundir ();
-
-	/* When running from the build directory, determine our build directory
-	 * base and set helper paths in the build tree */
-	if (global_opt.run_from_build_dir) {
-		char *path, *slash;
-		int g;
-
-		/* exe is <basedir>/src/.libs/lt-NetworkManager, so chop off
-		 * the last three components */
-		path = realpath ("/proc/self/exe", NULL);
-		g_assert (path != NULL);
-		for (g = 0; g < 3; ++g) {
-			slash = strrchr (path, '/');
-			g_assert (slash != NULL);
-			*slash = '\0';
-		}
-
-		/* don't free these strings, we need them for the entire
-		 * process lifetime */
-		nm_dhcp_helper_path = g_strdup_printf ("%s/src/dhcp/nm-dhcp-helper", path);
-
-		g_free (path);
-	}
 
 	if (!nm_logging_setup (global_opt.opt_log_level,
 	                       global_opt.opt_log_domains,
