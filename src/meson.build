@@ -54,10 +54,6 @@ if enable_dhclient
   common_cflags += '-DDHCLIENT_PATH="@0@"'.format(dhclient.path())
 endif
 
-if enable_dhcpcd
-  common_cflags += '-DDHCPCD_PATH="@0@"'.format(dhcpcd.path())
-endif
-
 sources = files(
   'dhcp/nm-dhcp-client.c',
   'dhcp/nm-dhcp-manager.c',
@@ -124,7 +120,6 @@ sources = files(
   'dhcp/nm-dhcp-dhclient.c',
   'dhcp/nm-dhcp-dhclient-utils.c',
   'dhcp/nm-dhcp-dhcpcanon.c',
-  'dhcp/nm-dhcp-dhcpcd.c',
   'dhcp/nm-dhcp-listener.c',
   'dns/nm-dns-dnsmasq.c',
   'dns/nm-dns-manager.c',

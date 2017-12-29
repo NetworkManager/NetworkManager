@@ -425,7 +425,7 @@ test_config_confdir (void)
 	config = setup_config (NULL, SRCDIR "/NetworkManager.conf", "", NULL, SRCDIR "/conf.d", "", NULL);
 
 	g_assert_cmpstr (nm_config_data_get_config_main_file (nm_config_get_data_orig (config)), ==, SRCDIR "/NetworkManager.conf");
-	g_assert_cmpstr (_config_get_dhcp_client_a (config), ==, "dhcpcd");
+	g_assert_cmpstr (_config_get_dhcp_client_a (config), ==, "internal");
 	g_assert_cmpstr (nm_config_get_log_level (config), ==, "INFO");
 	g_assert_cmpstr (nm_config_get_log_domains (config), ==, "PLATFORM,DNS,WIFI");
 	g_assert_cmpstr (nm_config_data_get_connectivity_uri (nm_config_get_data_orig (config)), ==, "http://example.net");

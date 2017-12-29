@@ -51,9 +51,6 @@ const NMDhcpClientFactory *const _nm_dhcp_manager_factories[4] = {
 #if WITH_DHCLIENT
 	&_nm_dhcp_client_factory_dhclient,
 #endif
-#if WITH_DHCPCD
-	&_nm_dhcp_client_factory_dhcpcd,
-#endif
 	&_nm_dhcp_client_factory_internal,
 };
 

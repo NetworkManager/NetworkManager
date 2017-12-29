@@ -1139,7 +1139,6 @@ src_cppflags = \
 	\
 	-DDHCPCANON_PATH=\"$(DHCPCANON_PATH)\" \
 	-DDHCLIENT_PATH=\"$(DHCLIENT_PATH)\" \
-	-DDHCPCD_PATH=\"$(DHCPCD_PATH)\" \
 	\
 	$(LIBUDEV_CFLAGS) \
 	$(LIBNL_CFLAGS) \
@@ -1462,7 +1461,6 @@ src_libNetworkManager_la_SOURCES = \
 	\
 	src/dhcp/nm-dhcp-dhcpcanon.c \
 	src/dhcp/nm-dhcp-dhclient.c \
-	src/dhcp/nm-dhcp-dhcpcd.c \
 	src/dhcp/nm-dhcp-helper-api.h \
 	src/dhcp/nm-dhcp-listener.c \
 	src/dhcp/nm-dhcp-listener.h \

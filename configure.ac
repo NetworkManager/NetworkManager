@@ -918,58 +918,8 @@ else
 	AC_DEFINE(WITH_DHCLIENT, 0, [Define if you have dhclient])
 fi
 
-AC_ARG_WITH([dhcpcd],
-            AS_HELP_STRING([--with-dhcpcd=yes|no|path], [Enable dhcpcd 4.x support]))
-AC_ARG_WITH([dhcpcd-supports-ipv6],
-            AS_HELP_STRING([--with-dhcpcd-supports-ipv6=yes|no|auto],
-                           [Whether using dhcpcd >= 6.x which has IPv6 support]),
-            [with_dhcpcd_supports_ipv6=$withval], [with_dhcpcd_supports_ipv6=auto])
-if test "$with_dhcpcd" != "no"; then
-	with_dhcpcd_="$with_dhcpcd"
-	AC_PATH_PROGS(with_dhcpcd, dhcpcd, no, /sbin:/usr/sbin:/usr/local/sbin)
-	if test "$with_dhcpcd" == "no"; then
-		if test "$with_dhcpcd_" == yes; then
-			AC_MSG_WARN([dhcpcd not found, assume path /usr/sbin/dhcpcd])
-			with_dhcpcd=/usr/sbin/dhcpcd
-			if test "$with_dhcpcd_supports_ipv6" == auto; then
-				with_dhcpcd_supports_ipv6=yes
-			fi
-		fi
-	else
-		if ! $with_dhcpcd --version 2>&1 | grep -q "^dhcpcd [[456789]]\."; then
-			AC_MSG_WARN([Seems version of dhcpcd $with_dhcpcd is too old, version 4.x or newer is required])
-		fi
-	fi
-fi
-if test "$with_dhcpcd" != "no"; then
-	if $with_dhcpcd --version 2>&1 | grep -q "^dhcpcd [[6789]]\."; then
-		if test "$with_dhcpcd_supports_ipv6" == no; then
-			AC_MSG_WARN([Seems version of dhcpcd $with_dhcpcd supports IPv6, but compiling --with-dhcpcd-supports-ipv6=no])
-		else
-			with_dhcpcd_supports_ipv6=yes
-		fi
-	else
-		if test "$with_dhcpcd_supports_ipv6" == yes; then
-			AC_MSG_WARN([Seems version of dhcpcd $with_dhcpcd does not support IPv6, but compiling --with-dhcpcd-supports-ipv6=yes])
-		else
-			with_dhcpcd_supports_ipv6=no
-		fi
-	fi
-	if test "$with_dhcpcd_supports_ipv6" != no; then
-		AC_DEFINE(DHCPCD_SUPPORTS_IPV6, 1, [Define if dhcpcd supports IPv6 (6.x+)])
-	fi
-else
-	with_dhcpcd_supports_ipv6=no
-fi
-if test "$with_dhcpcd" != "no"; then
-	AC_DEFINE(WITH_DHCPCD, 1, [Define if you have dhcpcd])
-	AC_SUBST(DHCPCD_PATH, $with_dhcpcd)
-else
-	AC_DEFINE(WITH_DHCPCD, 0, [Define if you have dhcpcd])
-fi
-
 AC_ARG_WITH(config-dhcp-default,
-            AS_HELP_STRING([--with-config-dhcp-default=dhclient|dhcpcd|internal],
+            AS_HELP_STRING([--with-config-dhcp-default=dhclient|internal],
                            [Default configuration option for main.dhcp setting, used as fallback if the configuration option is unset]),
             [config_dhcp_default="$withval"], [config_dhcp_default=""])
 if test "$config_dhcp_default" = yes -o "$config_dhcp_default" = no; then
@@ -977,7 +927,6 @@ if test "$config_dhcp_default" = yes -o "$config_dhcp_default" = no; then
 fi
 test -z "$config_dhcp_default" -a "$with_dhcpcanon" != "no" && config_dhcp_default='dhcpcanon'
 test -z "$config_dhcp_default" -a "$with_dhclient" != "no" && config_dhcp_default='dhclient'
-test -z "$config_dhcp_default" -a "$with_dhcpcd"   != "no" && config_dhcp_default='dhcpcd'
 test -z "$config_dhcp_default"                             && config_dhcp_default='internal'
 AC_DEFINE_UNQUOTED(NM_CONFIG_DEFAULT_MAIN_DHCP, "$config_dhcp_default", [Default configuration option for main.dhcp setting])
 AC_SUBST(NM_CONFIG_DEFAULT_MAIN_DHCP, $config_dhcp_default)
@@ -1422,8 +1371,6 @@ echo
 echo "DHCP clients (default $config_dhcp_default):"
 echo "  dhcpcanon: $with_dhcpcanon"
 echo "  dhclient: $with_dhclient"
-echo "  dhcpcd: $with_dhcpcd"
-echo "  dhcpcd-supports-ipv6: $with_dhcpcd_supports_ipv6"
 echo
 
 echo "Miscellaneous:"

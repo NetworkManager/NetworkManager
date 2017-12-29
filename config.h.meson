@@ -10,12 +10,6 @@
 /* Define to path of dhcpcanon binary */
 #mesondefine DHCPCANON_PATH
 
-/* Define to path of dhcpcd binary */
-#mesondefine DHCPCD_PATH
-
-/* Define if dhcpcd supports IPv6 (6.x+) */
-#mesondefine DHCPCD_SUPPORTS_IPV6
-
 /* Define to path of dnsmasq binary */
 #mesondefine DNSMASQ_PATH
 
@@ -188,9 +182,6 @@
 
 /* Define if you have dhcpcanon */
 #mesondefine WITH_DHCPCANON
-
-/* Define if you have dhcpcd */
-#mesondefine WITH_DHCPCD
 
 /* Define for libnm to prevent GIR from loading libnm-glib */
 #mesondefine WITH_FAKE_TYPELIBS
