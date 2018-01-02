@@ -1,13 +1,12 @@
 language: c
-dist: precise
+dist: trusty
+sudo: required
 compiler:
   - gcc
   - clang
 
 addons:
   apt:
-    sources:
-    - sourceline: 'deb http://archive.ubuntu.com/ubuntu trusty-backports main restricted universe multiverse'
     packages:
     - autoconf
     - libtool
@@ -22,7 +21,7 @@ addons:
     - libnl-genl-3-dev
     - ppp-dev
     - libpolkit-gobject-1-dev
-    - libgnutls28-dev
+    - libgnutls-dev
     - libgcrypt11-dev
     - uuid-dev
     - libudev-dev
