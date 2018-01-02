@@ -33,6 +33,7 @@
 #include "format-util.h"
 #include "ioprio.h"
 #include "macro.h"
+#include "time-util.h"
 
 #define procfs_file_alloca(pid, field)                                  \
         ({                                                              \
@@ -41,7 +42,7 @@
                 if (_pid_ == 0) {                                       \
                         _r_ = ("/proc/self/" field);                    \
                 } else {                                                \
-                        _r_ = alloca(strlen("/proc/") + DECIMAL_STR_MAX(pid_t) + 1 + sizeof(field)); \
+                        _r_ = alloca(STRLEN("/proc/") + DECIMAL_STR_MAX(pid_t) + 1 + sizeof(field)); \
                         sprintf((char*) _r_, "/proc/"PID_FMT"/" field, _pid_);                       \
                 }                                                       \
                 _r_;                                                    \
@@ -61,6 +62,7 @@ int get_process_ppid(pid_t pid, pid_t *ppid);
 
 int wait_for_terminate(pid_t pid, siginfo_t *status);
 int wait_for_terminate_and_warn(const char *name, pid_t pid, bool check_exit_code);
+int wait_for_terminate_with_timeout(pid_t pid, usec_t timeout);
 
 void sigkill_wait(pid_t pid);
 void sigkill_waitp(pid_t *pid);
@@ -142,3 +144,19 @@ int ioprio_parse_priority(const char *s, int *ret);
 pid_t getpid_cached(void);
 
 int must_be_root(void);
+
+typedef enum ForkFlags {
+        FORK_RESET_SIGNALS = 1U << 0,
+        FORK_CLOSE_ALL_FDS = 1U << 1,
+        FORK_DEATHSIG      = 1U << 2,
+        FORK_NULL_STDIO    = 1U << 3,
+        FORK_REOPEN_LOG    = 1U << 4,
+} ForkFlags;
+
+int safe_fork_full(const char *name, const int except_fds[], size_t n_except_fds, ForkFlags flags, pid_t *ret_pid);
+
+static inline int safe_fork(const char *name, ForkFlags flags, pid_t *ret_pid) {
+        return safe_fork_full(name, NULL, 0, flags, ret_pid);
+}
+
+int fork_agent(const char *name, const int except[], unsigned n_except, pid_t *pid, const char *path, ...);
