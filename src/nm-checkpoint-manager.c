@@ -237,9 +237,7 @@ nm_checkpoint_manager_create (NMCheckpointManager *self,
 	item->checkpoint = checkpoint;
 	c_list_link_tail (&self->list, &item->list);
 
-	if (!nm_g_hash_table_insert (self->checkpoints,
-	                             (gpointer) checkpoint_path,
-	                             item))
+	if (!g_hash_table_insert (self->checkpoints, (gpointer) checkpoint_path, item))
 		g_return_val_if_reached (NULL);
 
 	notify_checkpoints (self);

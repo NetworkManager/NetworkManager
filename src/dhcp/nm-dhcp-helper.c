@@ -134,8 +134,6 @@ main (int argc, char *argv[])
 	guint try_count = 0;
 	gint64 time_end;
 
-	nm_g_type_init ();
-
 	/* FIXME: g_dbus_connection_new_for_address_sync() tries to connect to the socket in
 	 * non-blocking mode, which can easily fail with EAGAIN, causing the creation of the
 	 * socket to fail with "Could not connect: Resource temporarily unavailable".

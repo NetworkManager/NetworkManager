@@ -347,8 +347,6 @@ main (int argc, char *argv[])
 	guint sd_id;
 	char sysctl_path_buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
 
-	nm_g_type_init ();
-
 	setpgid (getpid (), getpid ());
 
 	if (!do_early_setup (&argc, &argv))

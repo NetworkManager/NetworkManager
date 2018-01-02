@@ -835,10 +835,8 @@ nm_bus_manager_register_object (NMBusManager *self,
 	priv = NM_BUS_MANAGER_GET_PRIVATE (self);
 
 #if NM_MORE_ASSERTS >= 1
-#if GLIB_CHECK_VERSION(2,34,0)
 	if (g_dbus_object_manager_server_is_exported (priv->obj_manager, object))
 		g_return_if_reached ();
-#endif
 #endif
 
 	g_dbus_object_manager_server_export (priv->obj_manager, object);
@@ -866,10 +864,8 @@ nm_bus_manager_unregister_object (NMBusManager *self,
 	priv = NM_BUS_MANAGER_GET_PRIVATE (self);
 
 #if NM_MORE_ASSERTS >= 1
-#if GLIB_CHECK_VERSION(2,34,0)
 	if (!g_dbus_object_manager_server_is_exported (priv->obj_manager, object))
 		g_return_if_reached ();
-#endif
 #endif
 
 	g_object_get (G_OBJECT (object), "g-object-path", &path, NULL);

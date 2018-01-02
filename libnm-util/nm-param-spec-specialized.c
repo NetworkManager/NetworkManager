@@ -956,8 +956,6 @@ main (int argc, char *argv[])
 {
 	DBusGConnection *bus;
 
-	nm_g_type_init ();
-
 	bus = dbus_g_bus_get (DBUS_BUS_SESSION, NULL);
 
 	compare_ints ();

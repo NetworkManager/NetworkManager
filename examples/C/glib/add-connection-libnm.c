@@ -105,11 +105,6 @@ main (int argc, char *argv[])
 	GMainLoop *loop;
 	GError *error = NULL;
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	/* Initialize GType system */
-	g_type_init ();
-#endif
-
 	loop = g_main_loop_new (NULL, FALSE);
 
 	/* Connect to NetworkManager */

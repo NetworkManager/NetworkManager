@@ -332,8 +332,6 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 
 	__nmtst_internal.assert_logging = !!assert_logging;
 
-	nm_g_type_init ();
-
 	is_debug = g_test_verbose ();
 
 	nmtst_debug = g_getenv ("NMTST_DEBUG");
@@ -540,13 +538,10 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 		*out_set_logging = TRUE;
 #endif
 		g_assert (success);
-#if GLIB_CHECK_VERSION(2,34,0)
 		if (__nmtst_internal.no_expect_message)
 			g_log_set_always_fatal (G_LOG_FATAL_MASK);
-#else
 		/* g_test_expect_message() is a NOP, so allow any messages */
 		g_log_set_always_fatal (G_LOG_FATAL_MASK);
-#endif
 	} else if (__nmtst_internal.no_expect_message) {
 		/* We have a test that would be assert_logging, but the user specified no_expect_message.
 		 * This transforms g_test_expect_message() into a NOP, but we also have to relax
@@ -566,14 +561,9 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 		}
 #endif
 	} else {
-#if GLIB_CHECK_VERSION(2,34,0)
 		/* We were called not to set logging levels. This means, that the user
 		 * expects to assert against (all) messages. Any uncought message is fatal. */
 		g_log_set_always_fatal (G_LOG_LEVEL_MASK);
-#else
-		/* g_test_expect_message() is a NOP, so allow any messages */
-		g_log_set_always_fatal (G_LOG_FATAL_MASK);
-#endif
 	}
 
 	if ((!__nmtst_internal.assert_logging || (__nmtst_internal.assert_logging && __nmtst_internal.no_expect_message)) &&
@@ -640,7 +630,6 @@ nmtst_test_quick (void)
 	return __nmtst_internal.test_quick;
 }
 
-#if GLIB_CHECK_VERSION(2,34,0)
 #undef g_test_expect_message
 #define g_test_expect_message(...) \
 	G_STMT_START { \
@@ -664,11 +653,8 @@ nmtst_test_quick (void)
 		if (__nmtst_internal.assert_logging && __nmtst_internal.no_expect_message) \
 			g_debug ("nmtst: assert-logging: g_test_assert_expected_messages(%s, %s:%d, %s)", _domain?:"", _file?:"", _line, _func?:""); \
 		\
-		G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
 		g_test_assert_expected_messages_internal (_domain, _file, _line, _func); \
-		G_GNUC_END_IGNORE_DEPRECATIONS \
 	} G_STMT_END
-#endif
 
 #define NMTST_EXPECT(domain, level, msg)        g_test_expect_message (domain, level, msg)
 
@@ -1739,7 +1725,7 @@ _nmtst_assert_connection_has_settings (NMConnection *connection, gboolean has_at
 
 	va_start (ap, has_at_most);
 	while ((name = va_arg (ap, const char *))) {
-		if (!nm_g_hash_table_add (names, (gpointer) name))
+		if (!g_hash_table_add (names, (gpointer) name))
 			g_assert_not_reached ();
 		g_ptr_array_add (names_arr, (gpointer) name);
 	}

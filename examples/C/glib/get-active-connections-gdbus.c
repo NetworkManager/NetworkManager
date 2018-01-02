@@ -251,11 +251,6 @@ main (int argc, char *argv[])
 {
 	GDBusProxy *props_proxy;
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	/* Initialize GType system */
-	g_type_init ();
-#endif
-
 	/* Create a D-Bus proxy to get the object properties from the NM Manager
 	 * object.  NM_DBUS_* defines are from nm-dbus-interface.h.
 	 */

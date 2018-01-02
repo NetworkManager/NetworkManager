@@ -400,8 +400,6 @@ main (int argc, char *argv[])
 {
 	NMClient *client;
 
-	nm_g_type_init ();
-
 	client = nm_client_new ();
 	if (!client) {
 		exit (1);

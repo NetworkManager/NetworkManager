@@ -86,7 +86,7 @@ test_client_meta_check (void)
 				g_assert (pi->setting_info == info);
 				g_assert (pi->property_name);
 
-				g_assert (nm_g_hash_table_add (property_names, (gpointer) pi->property_name));
+				g_assert (g_hash_table_add (property_names, (gpointer) pi->property_name));
 
 				g_assert_cmpstr (pi->property_name, ==, pi->meta_type->get_name ((const NMMetaAbstractInfo *) pi, FALSE));
 				g_assert_cmpstr (pi->property_name, ==, pi->meta_type->get_name ((const NMMetaAbstractInfo *) pi, TRUE));
@@ -107,7 +107,7 @@ test_client_meta_check (void)
 
 			for (i = 0; info->valid_parts[i]; i++) {
 				g_assert (info->valid_parts[i]->setting_info);
-				g_assert (nm_g_hash_table_add (dup, (gpointer) info->valid_parts[i]->setting_info));
+				g_assert (g_hash_table_add (dup, (gpointer) info->valid_parts[i]->setting_info));
 
 				if (i == 0) {
 					g_assert (info->valid_parts[i]->setting_info == &nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_CONNECTION]);

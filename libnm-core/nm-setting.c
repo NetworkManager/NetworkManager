@@ -94,7 +94,6 @@ static void
 _ensure_registered (void)
 {
 	if (G_UNLIKELY (registered_settings == NULL)) {
-		nm_g_type_init ();
 		registered_settings = g_hash_table_new (nm_str_hash, g_str_equal);
 		registered_settings_by_type = g_hash_table_new (_nm_gtype_hash, _nm_gtype_equal);
 	}
@@ -816,7 +815,7 @@ _nm_setting_new_from_dbus (GType setting_type,
 			g_variant_unref (entry_key);
 			g_variant_unref (entry);
 
-			if (!nm_g_hash_table_add (keys, key)) {
+			if (!g_hash_table_add (keys, key)) {
 				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_SETTING,
 				             _("duplicate property"));
 				g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), key);

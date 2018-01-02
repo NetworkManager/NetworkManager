@@ -626,8 +626,6 @@ main (int argc, char *argv[])
 	textdomain (GETTEXT_PACKAGE);
 #endif
 
-	nm_g_type_init ();
-
 	/* Save terminal settings */
 	tcgetattr (STDIN_FILENO, &termios_orig);
 

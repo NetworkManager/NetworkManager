@@ -495,8 +495,6 @@ libnm_glib_init (void)
 {
 	libnm_glib_ctx	*ctx = NULL;
 
-	nm_g_type_init ();
-
 	if (!g_thread_supported ())
 		g_thread_init (NULL);
 	dbus_g_thread_init ();

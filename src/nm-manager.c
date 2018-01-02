@@ -435,10 +435,10 @@ _device_route_metric_get (NMManager *self,
 				 * hence we skip it. */
 				continue;
 			}
-			if (!nm_g_hash_table_add (priv->device_route_metrics,
-			                          _device_route_metric_data_new (device_state->ifindex,
-			                                                         device_state->route_metric_default_aspired,
-			                                                         device_state->route_metric_default_effective)))
+			if (!g_hash_table_add (priv->device_route_metrics,
+			                       _device_route_metric_data_new (device_state->ifindex,
+			                                                      device_state->route_metric_default_aspired,
+			                                                      device_state->route_metric_default_effective)))
 				nm_assert_not_reached ();
 		}
 	}
@@ -531,7 +531,7 @@ again:
 	_LOGT (LOGD_DEVICE, "default-route-metric: ifindex %d reserves metric %u (aspired %u)",
 	       data->ifindex, data->effective_metric, data->aspired_metric);
 
-	if (!nm_g_hash_table_add (priv->device_route_metrics, data))
+	if (!g_hash_table_add (priv->device_route_metrics, data))
 		nm_assert_not_reached ();
 
 out:

@@ -65,11 +65,6 @@ main (int argc, char *argv[])
 {
 	GDBusProxy *proxy;
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	/* Initialize GType system */
-	g_type_init ();
-#endif
-
 	/* Create a D-Bus proxy; NM_DBUS_* defined in nm-dbus-interface.h */
 	proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
 	                                       G_DBUS_PROXY_FLAGS_NONE,

@@ -2113,7 +2113,7 @@ nm_config_device_state_load_all (void)
 		if (!state)
 			continue;
 
-		if (!nm_g_hash_table_insert (states, GINT_TO_POINTER (ifindex), state))
+		if (!g_hash_table_insert (states, GINT_TO_POINTER (ifindex), state))
 			nm_assert_not_reached ();
 	}
 	g_dir_close (dir);

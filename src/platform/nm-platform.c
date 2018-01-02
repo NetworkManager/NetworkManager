@@ -601,7 +601,7 @@ nm_platform_link_get_all (NMPlatform *self, gboolean sort_by_name)
 	for (i = 0; i < links->len; i++) {
 		item = NMP_OBJECT_CAST_LINK (links->pdata[i]);
 		nm_assert (item->ifindex > 0);
-		if (!nm_g_hash_table_insert (unseen, GINT_TO_POINTER (item->ifindex), NULL))
+		if (!g_hash_table_insert (unseen, GINT_TO_POINTER (item->ifindex), NULL))
 			nm_assert_not_reached ();
 	}
 
@@ -3338,7 +3338,7 @@ nm_platform_ip4_address_sync (NMPlatform *self,
 				known_addresses_idx = g_hash_table_new ((GHashFunc) nmp_object_id_hash,
 				                                        (GEqualFunc) nmp_object_id_equal);
 			}
-			if (!nm_g_hash_table_insert (known_addresses_idx, (gpointer) o, (gpointer) o)) {
+			if (!g_hash_table_insert (known_addresses_idx, (gpointer) o, (gpointer) o)) {
 				/* duplicate? Keep only the first instance. */
 				goto delete_and_next;
 			}
@@ -3750,7 +3750,7 @@ nm_platform_ip_route_sync (NMPlatform *self,
 				routes_idx = g_hash_table_new ((GHashFunc) nmp_object_id_hash,
 				                               (GEqualFunc) nmp_object_id_equal);
 			}
-			if (!nm_g_hash_table_insert (routes_idx, (gpointer) conf_o, (gpointer) conf_o)) {
+			if (!g_hash_table_insert (routes_idx, (gpointer) conf_o, (gpointer) conf_o)) {
 				_LOGD ("route-sync: skip adding duplicate route %s",
 				       nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)));
 				continue;

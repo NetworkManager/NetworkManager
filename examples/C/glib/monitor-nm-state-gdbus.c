@@ -90,11 +90,6 @@ main (int argc, char *argv[])
 	GDBusProxyFlags flags;
 	GDBusProxy *proxy;
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	/* Initialize GType system */
-	g_type_init ();
-#endif
-
 	/* Monitor 'StateChanged' signal on 'org.freedesktop.NetworkManager' interface */
 	g_print ("Monitor NetworkManager's state\n");
 	g_print ("==============================\n");

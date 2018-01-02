@@ -15,9 +15,6 @@ DOC_SOURCE_DIR=$(top_srcdir)/libnm-glib
 # Extra options to supply to gtkdoc-scan.
 SCAN_OPTIONS=
 
-# Extra options to supply to gtkdoc-scangobj.
-SCANGOBJ_OPTIONS=--type-init-func 'g_type_init();'
-
 # Extra options to supply to gtkdoc-mkdb.
 MKDB_OPTIONS=--sgml-mode --output-format=xml
 

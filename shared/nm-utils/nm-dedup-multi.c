@@ -386,10 +386,10 @@ _add (NMDedupMultiIndex *self,
 	head_entry->len++;
 
 	if (   add_head_entry
-	    && !nm_g_hash_table_add (self->idx_entries, head_entry))
+	    && !g_hash_table_add (self->idx_entries, head_entry))
 		nm_assert_not_reached ();
 
-	if (!nm_g_hash_table_add (self->idx_entries, entry))
+	if (!g_hash_table_add (self->idx_entries, entry))
 		nm_assert_not_reached ();
 
 	NM_SET_OUT (out_entry, entry);
@@ -870,7 +870,7 @@ nm_dedup_multi_index_obj_intern (NMDedupMultiIndex *self,
 	nm_assert (obj_new);
 	nm_assert (!obj_new->_multi_idx);
 
-	if (!nm_g_hash_table_add (self->idx_objs, (gpointer) obj_new))
+	if (!g_hash_table_add (self->idx_objs, (gpointer) obj_new))
 		nm_assert_not_reached ();
 
 	((NMDedupMultiObj *) obj_new)->_multi_idx = self;

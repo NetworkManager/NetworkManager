@@ -402,8 +402,6 @@ plugin_init (void)
 	GDBusConnection *bus;
 	GError *err = NULL;
 
-	nm_g_type_init ();
-
 	g_message ("nm-ppp-plugin: (%s): initializing", __func__);
 
 	bus = g_bus_get_sync (G_BUS_TYPE_SYSTEM, NULL, &err);

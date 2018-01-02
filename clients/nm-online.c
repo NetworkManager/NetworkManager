@@ -244,8 +244,6 @@ main (int argc, char *argv[])
 	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 	textdomain (GETTEXT_PACKAGE);
 
-	nm_g_type_init ();
-
 	data.start_timestamp_ms = _now_ms ();
 
 	opt_ctx = g_option_context_new (NULL);

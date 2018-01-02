@@ -17,9 +17,6 @@ DOC_SOURCE_DIR= \
 # Extra options to supply to gtkdoc-scan.
 SCAN_OPTIONS=--rebuild-types --rebuild-sections
 
-# Extra options to supply to gtkdoc-scangobj.
-SCANGOBJ_OPTIONS=--type-init-func 'g_type_init();'
-
 # Extra options to supply to gtkdoc-mkdb.
 MKDB_OPTIONS=--sgml-mode --output-format=xml
 

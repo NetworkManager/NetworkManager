@@ -69,11 +69,6 @@ main (int argc, char *argv[])
 	const GPtrArray *connections;
 	int i;
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	/* Initialize GType system */
-	g_type_init ();
-#endif
-
 	if (!(client = nm_client_new (NULL, &error))) {
 		g_message ("Error: Could not connect to NetworkManager: %s.", error->message);
 		g_error_free (error);

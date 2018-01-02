@@ -253,8 +253,6 @@ _nm_utils_init (void)
 	bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
 	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 
-	nm_g_type_init ();
-
 	_nm_dbus_errors_init ();
 }
 

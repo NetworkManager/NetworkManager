@@ -202,11 +202,6 @@ main (int argc, char *argv[])
 	int i;
 	GError *error = NULL;
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	/* Initialize GType system */
-	g_type_init ();
-#endif
-
 	/* Get NMClient object */
 	client = nm_client_new (NULL, &error);
 	if (!client) {
