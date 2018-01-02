@@ -7,11 +7,6 @@ install_data(
 
 subdir('systemd')
 
-core_cflags = [
-  '-DG_LOG_DOMAIN="@0@"'.format(nm_name),
-  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON'
-]
-
 core_incs = [
   top_inc,
   shared_inc,
@@ -23,7 +18,9 @@ core_dep = declare_dependency(
   sources: libnm_core_enum[1],
   include_directories: core_incs,
   dependencies: glib_dep,
-  compile_args: core_cflags
+  compile_args: [
+    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON',
+  ],
 )
 
 core_plugins = []
@@ -43,7 +40,8 @@ common_cflags = [
   '-DNMPLUGINDIR="@0@"'.format(nm_pkglibdir),
   '-DNMRUNDIR="@0@"'.format(nm_pkgrundir),
   '-DNMSTATEDIR="@0@"'.format(nm_pkgstatedir),
-  '-DNMLIBDIR="@0@"'.format(nm_pkglibdir)
+  '-DNMLIBDIR="@0@"'.format(nm_pkglibdir),
+  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON',
 ]
 
 if enable_dhcpcanon
@@ -297,13 +295,20 @@ if enable_tests
     libudev_dep
   ]
 
-  test_cflags = []
+  test_cflags = [
+    '-DNETWORKMANAGER_COMPILATION_TEST',
+    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON',
+  ]
   if require_root_tests
     test_cflags += ['-DREQUIRE_ROOT_TESTS=1']
   endif
 
   platform = (host_machine.system().contains('linux') ? 'linux' : 'fake')
-  test_cflags_platform = '-DSETUP=nm_' + platform + '_platform_setup'
+  test_cflags_platform = [
+    '-DSETUP=nm_' + platform + '_platform_setup',
+    '-DNETWORKMANAGER_COMPILATION_TEST',
+    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON',
+  ]
 
   libnetwork_manager_test = static_library(
     'NetworkManagerTest',

@@ -21,8 +21,8 @@
 #ifndef __NETWORKMANAGER_TYPES_H__
 #define __NETWORKMANAGER_TYPES_H__
 
-#ifdef __NM_UTILS_PRIVATE_H__
-#error "nm-utils-private.h" must not be used outside of libnm-core/. Do you want "nm-core-internal.h"?
+#if !((NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_DAEMON)
+#error Cannot use this header.
 #endif
 
 #define _NM_SD_MAX_CLIENT_ID_LEN (sizeof (guint32) + 128)

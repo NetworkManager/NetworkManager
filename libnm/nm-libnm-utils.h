@@ -21,6 +21,10 @@
 #ifndef __NM_LIBNM_UTILS_H__
 #define __NM_LIBNM_UTILS_H__
 
+#if !((NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_PRIVATE)
+#error Cannot use this header.
+#endif
+
 char *nm_utils_fixup_desc_string (const char *desc);
 
 #endif /* __NM_LIBNM_UTILS_H__ */

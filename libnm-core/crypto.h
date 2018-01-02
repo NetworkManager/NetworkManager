@@ -24,6 +24,10 @@
 #ifndef __CRYPTO_H__
 #define __CRYPTO_H__
 
+#if !((NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_CORE_PRIVATE)
+#error Cannot use this header.
+#endif
+
 #define MD5_HASH_LEN 20
 #define CIPHER_DES_EDE3_CBC "DES-EDE3-CBC"
 #define CIPHER_DES_CBC "DES-CBC"

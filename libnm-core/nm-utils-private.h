@@ -21,8 +21,8 @@
 #ifndef __NM_UTILS_PRIVATE_H__
 #define __NM_UTILS_PRIVATE_H__
 
-#ifdef __NETWORKMANAGER_TYPES_H__
-#error "nm-utils-private.h" must not be used outside of libnm-core/. Do you want "nm-core-internal.h"?
+#if !((NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_CORE_PRIVATE)
+#error Cannot use this header.
 #endif
 
 #include "nm-setting-private.h"

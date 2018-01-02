@@ -105,7 +105,7 @@ G_STMT_START { \
  * itself.
  *****************************************************************************/
 
-#if (NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_SYSTEMD
+#if (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_SYSTEMD
 
 #include <netinet/in.h>
 #include <string.h>
@@ -186,7 +186,7 @@ static inline pid_t gettid(void) {
         return (pid_t) syscall(SYS_gettid);
 }
 
-#endif /* (NETWORKMANAGER_COMPILATION) == NM_NETWORKMANAGER_COMPILATION_SYSTEMD */
+#endif /* (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_SYSTEMD */
 
 #endif /* NM_SD_ADAPT_H */
 

@@ -21,9 +21,11 @@
 #ifndef __NM_DHCP6_CONFIG_H__
 #define __NM_DHCP6_CONFIG_H__
 
-#include "nm-dhcp-config.h"
+#if !((NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_PRIVATE)
+#error Cannot use this header.
+#endif
 
-G_BEGIN_DECLS
+#include "nm-dhcp-config.h"
 
 #define NM_TYPE_DHCP6_CONFIG            (nm_dhcp6_config_get_type ())
 #define NM_DHCP6_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP6_CONFIG, NMDhcp6Config))
@@ -40,13 +42,8 @@ typedef struct {
 
 typedef struct {
 	NMDhcpConfigClass parent;
-
-	/*< private >*/
-	gpointer padding[4];
 } NMDhcp6ConfigClass;
 
 GType nm_dhcp6_config_get_type (void);
-
-G_END_DECLS
 
 #endif /* __NM_DHCP6_CONFIG_H__ */

@@ -13,9 +13,8 @@ deps = [
   libnm_dep
 ]
 
-cflags = [
+cflags = clients_cflags + [
   '-DG_LOG_DOMAIN="libnmc"',
-  '-DNMLOCALEDIR="@0@"'.format(nm_localedir)
 ]
 
 sources = shared_utils + files(
@@ -29,7 +28,7 @@ libnmc_base = static_library(
   sources: sources + [libnm_core_enum[1]],
   include_directories: incs,
   dependencies: deps,
-  c_args: common_cflags
+  c_args: cflags,
 )
 
 libnmc_base_dep = declare_dependency(
@@ -75,7 +74,7 @@ libnmc = static_library(
   sources: sources + [libnm_core_enum[1]],
   include_directories: incs,
   dependencies: deps,
-  c_args: common_cflags,
+  c_args: cflags,
   link_with: libnmc_base,
   link_depends: settings_docs_source
 )

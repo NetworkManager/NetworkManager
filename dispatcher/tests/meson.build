@@ -4,10 +4,15 @@ incs = [
   top_inc,
   shared_inc,
   libnm_core_inc,
+  libnm_inc,
   dispatcher_inc
 ]
 
-cflags = '-DSRCDIR="@0@"'.format(meson.current_source_dir())
+cflags = [
+  '-DNETWORKMANAGER_COMPILATION_TEST',
+  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
+  '-DSRCDIR="@0@"'.format(meson.current_source_dir()),
+]
 
 exe = executable(
   test_unit,

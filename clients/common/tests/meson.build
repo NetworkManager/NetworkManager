@@ -10,7 +10,9 @@ exe = executable(
   test_unit + '.c',
   include_directories: incs,
   dependencies: deps,
-  c_args: cflags
+  c_args: clients_cflags + [
+    '-DNETWORKMANAGER_COMPILATION_TEST',
+  ],
 )
 
 test(test_unit, exe)

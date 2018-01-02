@@ -21,6 +21,10 @@
 #ifndef __NM_TEST_UTILS_H__
 #define __NM_TEST_UTILS_H__
 
+#if defined(NETWORKMANAGER_COMPILATION) && !defined(NETWORKMANAGER_COMPILATION_TEST)
+#error Need to mark the compilation with NETWORKMANAGER_COMPILATION_TEST.
+#endif
+
 /*******************************************************************************
  * HOWTO run tests.
  *
