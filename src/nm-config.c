@@ -2397,15 +2397,15 @@ _set_config_data (NMConfig *self, NMConfigData *new_data, NMConfigChangeFlags re
 	}
 
 	if (new_data) {
-		_LOGI ("config: signal %s (%s)",
+		_LOGI ("signal: %s (%s)",
 		       nm_config_change_flags_to_string (changes, NULL, 0),
 		       nm_config_data_get_config_description (new_data));
 		nm_config_data_log (new_data, "CONFIG: ", "  ", NULL);
 		priv->config_data = new_data;
 	} else if (had_new_data)
-		_LOGI ("config: signal %s (no changes from disk)", nm_config_change_flags_to_string (changes, NULL, 0));
+		_LOGI ("signal: %s (no changes from disk)", nm_config_change_flags_to_string (changes, NULL, 0));
 	else
-		_LOGI ("config: signal %s", nm_config_change_flags_to_string (changes, NULL, 0));
+		_LOGI ("signal: %s", nm_config_change_flags_to_string (changes, NULL, 0));
 	g_signal_emit (self, signals[SIGNAL_CONFIG_CHANGED], 0,
 	               new_data ? new_data : old_data,
 	               changes, old_data);
