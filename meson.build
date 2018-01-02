@@ -182,7 +182,7 @@ libndp_dep = dependency('libndp')
 # libnl support for the linux platform
 libnl_dep = dependency('libnl-3.0', version: '>= 3.2.8', required: false)
 
-jansson_dep = dependency('jansson', required: false)
+jansson_dep = dependency('jansson', version: '>= 2.5', required: false)
 config_h.set10('WITH_JANSSON', jansson_dep.found())
 
 if jansson_dep.found()

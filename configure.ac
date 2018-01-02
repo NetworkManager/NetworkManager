@@ -565,7 +565,7 @@ PKG_CHECK_MODULES(UUID, uuid)
 
 # Teamd control checks
 
-PKG_CHECK_MODULES(JANSSON, [jansson], [have_jansson=yes], [have_jansson=no])
+PKG_CHECK_MODULES(JANSSON, [jansson >= 2.5], [have_jansson=yes], [have_jansson=no])
 if test "$have_jansson" = "yes"; then
 	AC_DEFINE(WITH_JANSSON, 1, [Define if JANSSON is enabled])
 
