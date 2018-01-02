@@ -1,7 +1,8 @@
 incs = [
   top_inc,
   shared_inc,
-  libnm_core_inc
+  libnm_core_inc,
+  libnm_inc,
 ]
 
 deps = [
@@ -9,7 +10,10 @@ deps = [
   newt_dep
 ]
 
-cflags = ['-DG_LOG_DOMAIN="nmtui"']
+cflags = clients_cflags + [
+  '-DG_LOG_DOMAIN="nmtui"',
+  '-DLOCALEDIR="@0@"'.format(nm_localedir),
+]
 
 subdir('newt')
 
@@ -61,8 +65,6 @@ deps += [
   libnmc_base_dep,
   libnmt_newt_dep
 ]
-
-cflags += '-DLOCALEDIR="@0@"'.format(nm_localedir)
 
 ldflags = []
 if have_version_script

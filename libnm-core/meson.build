@@ -142,7 +142,7 @@ deps = [
 
 cflags = [
   '-DG_LOG_DOMAIN="libnm"',
-  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB',
+  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE',
   '-DLIBEXECDIR="@0@"'.format(nm_libexecdir),
   '-DLOCALEDIR="@0@"'.format(nm_localedir),
   '-DNMCONFDIR="@0@"'.format(nm_pkgconfdir),

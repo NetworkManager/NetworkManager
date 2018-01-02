@@ -5,18 +5,16 @@ deps = [
   glib_dep
 ]
 
-cflags = [
-  '-DG_LOG_DOMAIN="@0@"'.format(name),
-  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_INSIDE_DAEMON'
-]
-
 nm_pppd_plugin = shared_module(
   name,
   name_prefix: '',
   sources: [name + '.c', libnm_core_enum[1]],
   include_directories: core_incs,
   dependencies: deps,
-  c_args: cflags,
+  c_args: [
+    '-DG_LOG_DOMAIN="nm-pppd-plugin"',
+    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_GLIB',
+  ],
   install: true,
   install_dir: pppd_plugin_dir
 )
@@ -28,7 +26,10 @@ deps = [
   libnmdbus_dep
 ]
 
-cflags = '-DPPPD_PLUGIN_DIR="@0@"'.format(pppd_plugin_dir)
+cflags = [
+  '-DPPPD_PLUGIN_DIR="@0@"'.format(pppd_plugin_dir),
+  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON',
+]
 
 symbol_map = join_paths(meson.current_source_dir(), name + '.ver')
 

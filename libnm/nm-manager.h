@@ -22,10 +22,12 @@
 #ifndef __NM_MANAGER_H__
 #define __NM_MANAGER_H__
 
+#if !((NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_PRIVATE)
+#error Cannot use this header.
+#endif
+
 #include "nm-object.h"
 #include "nm-client.h"
-
-G_BEGIN_DECLS
 
 #define NM_TYPE_MANAGER            (nm_manager_get_type ())
 #define NM_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MANAGER, NMManager))
@@ -75,8 +77,6 @@ typedef struct {
 	void (*permission_changed) (NMManager *manager,
 	                            NMClientPermission permission,
 	                            NMClientPermissionResult result);
-
-	/* nm-manager.h is internal API. We can add more slots without breaking ABI. */
 } NMManagerClass;
 
 GType nm_manager_get_type (void);
@@ -102,13 +102,10 @@ gboolean  nm_manager_wimax_get_enabled (NMManager *manager);
 void      nm_manager_wimax_set_enabled (NMManager *manager, gboolean enabled);
 gboolean  nm_manager_wimax_hardware_get_enabled (NMManager *manager);
 
-NM_AVAILABLE_IN_1_10
 gboolean  nm_manager_connectivity_check_get_available (NMManager *manager);
 
-NM_AVAILABLE_IN_1_10
 gboolean  nm_manager_connectivity_check_get_enabled (NMManager *manager);
 
-NM_AVAILABLE_IN_1_10
 void      nm_manager_connectivity_check_set_enabled (NMManager *manager,
                                                      gboolean enabled);
 
@@ -140,7 +137,6 @@ NMConnectivityState nm_manager_check_connectivity_finish (NMManager *manager,
 /* Devices */
 
 const GPtrArray *nm_manager_get_devices    (NMManager *manager);
-NM_AVAILABLE_IN_1_2
 const GPtrArray *nm_manager_get_all_devices(NMManager *manager);
 NMDevice *nm_manager_get_device_by_path    (NMManager *manager, const char *object_path);
 NMDevice *nm_manager_get_device_by_iface   (NMManager *manager, const char *iface);
@@ -214,7 +210,5 @@ void nm_manager_checkpoint_rollback_async (NMManager *manager,
 GHashTable *nm_manager_checkpoint_rollback_finish (NMManager *manager,
                                                    GAsyncResult *result,
                                                    GError **error);
-
-G_END_DECLS
 
 #endif /* __NM_MANAGER_H__ */

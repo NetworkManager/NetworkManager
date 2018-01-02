@@ -11,9 +11,13 @@ deps = [
   libnm_dep
 ]
 
-cflags = [
+clients_cflags = [
+  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
+  '-DNMLOCALEDIR="@0@"'.format(nm_localedir),
+]
+
+cflags = clients_cflags + [
   '-DG_LOG_DOMAIN="@0@"'.format(name),
-  '-DNMLOCALEDIR="@0@"'.format(nm_localedir)
 ]
 
 ldflags = []

@@ -36,7 +36,9 @@
 #include <pppd/ipv6cp.h>
 
 #include "nm-default.h"
+
 #include "nm-dbus-interface.h"
+
 #include "nm-pppd-plugin.h"
 #include "nm-ppp-status.h"
 

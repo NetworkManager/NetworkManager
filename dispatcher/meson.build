@@ -39,7 +39,9 @@ deps = [
 cflags = [
   '-DLIBEXECDIR="@0@"'.format(nm_libexecdir),
   '-DSYSCONFDIR="@0@"'.format(nm_sysconfdir),
-  '-DNMCONFDIR="@0@"'.format(nm_pkgconfdir)
+  '-DNMCONFDIR="@0@"'.format(nm_pkgconfdir),
+  '-DG_LOG_DOMAIN="@0@"'.format(name),
+  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
 ]
 
 libnm_dispatcher_core = static_library(

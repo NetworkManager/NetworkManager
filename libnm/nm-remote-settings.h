@@ -22,9 +22,11 @@
 #ifndef __NM_REMOTE_SETTINGS_H__
 #define __NM_REMOTE_SETTINGS_H__
 
-#include "nm-object.h"
+#if !((NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_PRIVATE)
+#error Cannot use this header.
+#endif
 
-G_BEGIN_DECLS
+#include "nm-object.h"
 
 #define NM_TYPE_REMOTE_SETTINGS            (nm_remote_settings_get_type ())
 #define NM_REMOTE_SETTINGS(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_REMOTE_SETTINGS, NMRemoteSettings))
@@ -53,14 +55,10 @@ struct _NMRemoteSettings {
 struct _NMRemoteSettingsClass {
 	NMObjectClass parent;
 
-	/* Signals */
 	void (*connection_added)   (NMRemoteSettings *settings,
 	                            NMRemoteConnection *connection);
 	void (*connection_removed) (NMRemoteSettings *settings,
 	                            NMRemoteConnection *connection);
-
-	/*< private >*/
-	gpointer padding[8];
 };
 
 GType nm_remote_settings_get_type (void);
@@ -124,7 +122,5 @@ void     nm_remote_settings_save_hostname_async  (NMRemoteSettings *settings,
 gboolean nm_remote_settings_save_hostname_finish (NMRemoteSettings *settings,
                                                   GAsyncResult *result,
                                                   GError **error);
-
-G_END_DECLS
 
 #endif /* __NM_REMOTE_SETTINGS_H__ */

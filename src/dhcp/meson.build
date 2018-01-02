@@ -2,7 +2,8 @@ name = 'nm-dhcp-helper'
 
 cflags = [
   '-DG_LOG_DOMAIN="@0@"'.format(name),
-  '-DNMRUNDIR="@0@"'.format(nm_pkgrundir)
+  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_GLIB',
+  '-DNMRUNDIR="@0@"'.format(nm_pkgrundir),
 ]
 
 ldflags = []

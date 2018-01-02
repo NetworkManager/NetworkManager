@@ -11,11 +11,6 @@ deps = [
   libnm_util_dep
 ]
 
-cflags = [
-  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY',
-  '-DTEST_NM_SERVICE="@0@"'.format(join_paths(meson.source_root(), 'tools', 'test-networkmanager-service.py'))
-]
-
 test_units = [
   'test-nm-client',
   'test-remote-settings-client'
@@ -27,7 +22,10 @@ foreach test_unit: test_units
     [test_unit + '.c', libnm_utils_enum[1]] + shared_test_utils,
     include_directories: incs,
     dependencies: deps,
-    c_args: cflags
+    c_args: common_cflags + [
+      '-DNETWORKMANAGER_COMPILATION_TEST',
+      '-DTEST_NM_SERVICE="@0@"'.format(join_paths(meson.source_root(), 'tools', 'test-networkmanager-service.py')),
+    ],
   )
 
   test(test_unit, exe)
