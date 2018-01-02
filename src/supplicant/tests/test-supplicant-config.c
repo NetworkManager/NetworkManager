@@ -140,7 +140,6 @@ build_supplicant_config (NMConnection *connection, guint mtu, guint fixed_freq)
 	return nm_supplicant_config_to_variant (config);
 }
 
-#define EXPECT(msg) g_test_expect_message ("NetworkManager", G_LOG_LEVEL_INFO, msg)
 
 static NMConnection *
 new_basic_connection (const char *id,
@@ -199,11 +198,11 @@ test_wifi_open (void)
 	g_assert_no_error (error);
 	g_assert (success);
 
-	EXPECT ("*added 'ssid' value 'Test SSID'*");
-	EXPECT ("*added 'scan_ssid' value '1'*");
-	EXPECT ("*added 'bssid' value '11:22:33:44:55:66'*");
-	EXPECT ("*added 'freq_list' value *");
-	EXPECT ("*added 'key_mgmt' value 'NONE'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'ssid' value 'Test SSID'*");
+	NMTST_EXPECT_NM_INFO ("Config: added 'scan_ssid' value '1'*");
+	NMTST_EXPECT_NM_INFO ("Config: added 'bssid' value '11:22:33:44:55:66'*");
+	NMTST_EXPECT_NM_INFO ("Config: added 'freq_list' value *");
+	NMTST_EXPECT_NM_INFO ("Config: added 'key_mgmt' value 'NONE'");
 	config_dict = build_supplicant_config (connection, 1500, 0);
 	g_test_assert_expected_messages ();
 	g_assert (config_dict);
@@ -249,17 +248,17 @@ test_wifi_wep_key (const char *detail,
 	g_assert_no_error (error);
 	g_assert (success);
 
-	EXPECT ("*added 'ssid' value 'Test SSID'*");
-	EXPECT ("*added 'scan_ssid' value '1'*");
+	NMTST_EXPECT_NM_INFO ("Config: added 'ssid' value 'Test SSID'*");
+	NMTST_EXPECT_NM_INFO ("Config: added 'scan_ssid' value '1'*");
 	if (test_bssid)
-		EXPECT ("*added 'bssid' value '11:22:33:44:55:66'*");
+		NMTST_EXPECT_NM_INFO ("Config: added 'bssid' value '11:22:33:44:55:66'*");
 
-	EXPECT ("*added 'freq_list' value *");
-	EXPECT ("*added 'key_mgmt' value 'NONE'");
-	EXPECT ("*added 'wep_key0' value *");
-	EXPECT ("*added 'wep_tx_keyidx' value '0'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'freq_list' value *");
+	NMTST_EXPECT_NM_INFO ("Config: added 'key_mgmt' value 'NONE'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'wep_key0' value *");
+	NMTST_EXPECT_NM_INFO ("Config: added 'wep_tx_keyidx' value '0'");
 	if (!test_bssid)
-		EXPECT ("*added 'bgscan' value 'simple:30:-80:86400'*");
+		NMTST_EXPECT_NM_INFO ("Config: added 'bgscan' value 'simple:30:-80:86400'*");
 
 	config_dict = build_supplicant_config (connection, 1500, 0);
 	g_test_assert_expected_messages ();
@@ -341,16 +340,16 @@ test_wifi_wpa_psk (const char *detail,
 	g_assert_no_error (error);
 	g_assert (success);
 
-	EXPECT ("*added 'ssid' value 'Test SSID'*");
-	EXPECT ("*added 'scan_ssid' value '1'*");
-	EXPECT ("*added 'bssid' value '11:22:33:44:55:66'*");
-	EXPECT ("*added 'freq_list' value *");
-	EXPECT ("*added 'key_mgmt' value 'WPA-PSK WPA-PSK-SHA256'");
-	EXPECT ("*added 'psk' value *");
-	EXPECT ("*added 'proto' value 'WPA RSN'");
-	EXPECT ("*added 'pairwise' value 'TKIP CCMP'");
-	EXPECT ("*added 'group' value 'TKIP CCMP'");
-	EXPECT ("*added 'ieee80211w' value '1'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'ssid' value 'Test SSID'*");
+	NMTST_EXPECT_NM_INFO ("Config: added 'scan_ssid' value '1'*");
+	NMTST_EXPECT_NM_INFO ("Config: added 'bssid' value '11:22:33:44:55:66'*");
+	NMTST_EXPECT_NM_INFO ("Config: added 'freq_list' value *");
+	NMTST_EXPECT_NM_INFO ("Config: added 'key_mgmt' value 'WPA-PSK WPA-PSK-SHA256'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'psk' value *");
+	NMTST_EXPECT_NM_INFO ("Config: added 'proto' value 'WPA RSN'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'pairwise' value 'TKIP CCMP'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'group' value 'TKIP CCMP'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'ieee80211w' value '1'");
 	config_dict = build_supplicant_config (connection, 1500, 0);
 
 	g_test_assert_expected_messages ();
@@ -436,19 +435,19 @@ test_wifi_eap_locked_bssid (void)
 
 	connection = generate_wifi_eap_connection ("Test Wifi EAP-TLS Locked", ssid, bssid_str);
 
-	EXPECT ("*added 'ssid' value 'Test SSID'*");
-	EXPECT ("*added 'scan_ssid' value '1'*");
-	EXPECT ("*added 'bssid' value '11:22:33:44:55:66'*");
-	EXPECT ("*added 'freq_list' value *");
-	EXPECT ("*added 'key_mgmt' value 'WPA-EAP'");
-	EXPECT ("*added 'proto' value 'WPA RSN'");
-	EXPECT ("*added 'pairwise' value 'TKIP CCMP'");
-	EXPECT ("*added 'group' value 'TKIP CCMP'");
-	EXPECT ("*Config: added 'eap' value 'TLS'");
-	EXPECT ("*Config: added 'fragment_size' value '1086'");
-	EXPECT ("* Config: added 'ca_cert' value '*/test-ca-cert.pem'");
-	EXPECT ("* Config: added 'private_key' value '*/test-cert.p12'");
-	EXPECT ("*Config: added 'proactive_key_caching' value '1'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'ssid' value 'Test SSID'*");
+	NMTST_EXPECT_NM_INFO ("Config: added 'scan_ssid' value '1'*");
+	NMTST_EXPECT_NM_INFO ("Config: added 'bssid' value '11:22:33:44:55:66'*");
+	NMTST_EXPECT_NM_INFO ("Config: added 'freq_list' value *");
+	NMTST_EXPECT_NM_INFO ("Config: added 'key_mgmt' value 'WPA-EAP'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'proto' value 'WPA RSN'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'pairwise' value 'TKIP CCMP'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'group' value 'TKIP CCMP'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'eap' value 'TLS'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'fragment_size' value '1086'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'ca_cert' value '*/test-ca-cert.pem'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'private_key' value '*/test-cert.p12'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'proactive_key_caching' value '1'");
 	config_dict = build_supplicant_config (connection, mtu, 0);
 	g_test_assert_expected_messages ();
 	g_assert (config_dict);
@@ -477,19 +476,19 @@ test_wifi_eap_unlocked_bssid (void)
 
 	connection = generate_wifi_eap_connection ("Test Wifi EAP-TLS Unlocked", ssid, NULL);
 
-	EXPECT ("*added 'ssid' value 'Test SSID'*");
-	EXPECT ("*added 'scan_ssid' value '1'*");
-	EXPECT ("*added 'freq_list' value *");
-	EXPECT ("*added 'key_mgmt' value 'WPA-EAP'");
-	EXPECT ("*added 'proto' value 'WPA RSN'");
-	EXPECT ("*added 'pairwise' value 'TKIP CCMP'");
-	EXPECT ("*added 'group' value 'TKIP CCMP'");
-	EXPECT ("*Config: added 'eap' value 'TLS'");
-	EXPECT ("*Config: added 'fragment_size' value '1086'");
-	EXPECT ("* Config: added 'ca_cert' value '*/test-ca-cert.pem'");
-	EXPECT ("* Config: added 'private_key' value '*/test-cert.p12'");
-	EXPECT ("*Config: added 'proactive_key_caching' value '1'");
-	EXPECT ("*Config: added 'bgscan' value 'simple:30:-65:300'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'ssid' value 'Test SSID'*");
+	NMTST_EXPECT_NM_INFO ("Config: added 'scan_ssid' value '1'*");
+	NMTST_EXPECT_NM_INFO ("Config: added 'freq_list' value *");
+	NMTST_EXPECT_NM_INFO ("Config: added 'key_mgmt' value 'WPA-EAP'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'proto' value 'WPA RSN'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'pairwise' value 'TKIP CCMP'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'group' value 'TKIP CCMP'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'eap' value 'TLS'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'fragment_size' value '1086'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'ca_cert' value '*/test-ca-cert.pem'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'private_key' value '*/test-cert.p12'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'proactive_key_caching' value '1'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'bgscan' value 'simple:30:-65:300'");
 	config_dict = build_supplicant_config (connection, mtu, 0);
 	g_test_assert_expected_messages ();
 	g_assert (config_dict);

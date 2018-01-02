@@ -605,8 +605,7 @@ test_read_miscellaneous_variables (void)
 	int mac_blacklist_num, i;
 	guint64 expected_timestamp = 0;
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*invalid MAC in HWADDR_BLACKLIST 'XX:aa:invalid'*");
+	NMTST_EXPECT_NM_WARN ("*invalid MAC in HWADDR_BLACKLIST 'XX:aa:invalid'*");
 	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-misc-variables",
 	                                    NULL, TYPE_ETHERNET, NULL);
 	g_test_assert_expected_messages ();
@@ -859,8 +858,7 @@ test_read_wired_static_no_prefix (gconstpointer user_data)
 	file = g_strdup_printf (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-static-no-prefix-%u", expected_prefix);
 	expected_id = g_strdup_printf ("System test-wired-static-no-prefix-%u", expected_prefix);
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*missing PREFIX, assuming*");
+	NMTST_EXPECT_NM_WARN ("*missing PREFIX, assuming*");
 	connection = _connection_from_file (file, NULL, TYPE_ETHERNET, NULL);
 	g_test_assert_expected_messages ();
 
@@ -1081,8 +1079,7 @@ test_read_wired_global_gateway_ignore (void)
 	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ignoring GATEWAY (/etc/sysconfig/network) for * because the connection has no static addresses");
+	NMTST_EXPECT_NM_WARN ("*ignoring GATEWAY (/etc/sysconfig/network) for * because the connection has no static addresses");
 	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-global-gateway-ignore",
 	                                    TEST_IFCFG_DIR"/network-scripts/network-test-wired-global-gateway-ignore",
 	                                    TYPE_ETHERNET, &unmanaged);
@@ -1513,8 +1510,7 @@ test_read_wired_ipv6_manual (void)
 	NMIPAddress *ip6_addr;
 	NMIPRoute *ip6_route;
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ignoring manual default route*");
+	NMTST_EXPECT_NM_WARN ("*ignoring manual default route*");
 	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-ipv6-manual",
 	                                    NULL, TYPE_ETHERNET, &unmanaged);
 	g_test_assert_expected_messages ();
@@ -1897,8 +1893,7 @@ test_read_write_802_1X_subj_matches (void)
 	gs_unref_object NMConnection *reread = NULL;
 	NMSetting8021x *s_8021x;
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*missing IEEE_8021X_CA_CERT*peap*");
+	NMTST_EXPECT_NM_WARN ("*missing IEEE_8021X_CA_CERT*peap*");
 	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-802-1X-subj-matches",
 	                                    NULL, TYPE_ETHERNET, NULL);
 	g_test_assert_expected_messages ();
@@ -1919,16 +1914,14 @@ test_read_write_802_1X_subj_matches (void)
 	g_assert_cmpstr (nm_setting_802_1x_get_phase2_altsubject_match (s_8021x, 0), ==, "x.yourdomain.tld");
 	g_assert_cmpstr (nm_setting_802_1x_get_phase2_altsubject_match (s_8021x, 1), ==, "y.yourdomain.tld");
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*missing IEEE_8021X_CA_CERT for EAP method 'peap'; this is insecure!");
+	NMTST_EXPECT_NM_WARN ("*missing IEEE_8021X_CA_CERT for EAP method 'peap'; this is insecure!");
 	_writer_new_connec_exp (connection,
 	                        TEST_SCRATCH_DIR "/network-scripts/",
 	                        TEST_IFCFG_DIR "/network-scripts/ifcfg-System_test-wired-802-1X-subj-matches.cexpected",
 	                        &testfile);
 	g_test_assert_expected_messages ();
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*missing IEEE_8021X_CA_CERT for EAP method 'peap'; this is insecure!");
+	NMTST_EXPECT_NM_WARN ("*missing IEEE_8021X_CA_CERT for EAP method 'peap'; this is insecure!");
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 	g_test_assert_expected_messages ();
 
@@ -2142,16 +2135,14 @@ test_read_wired_aliases_bad (const char *base, const char *expected_id)
 static void
 test_read_wired_aliases_bad_1 (void)
 {
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*aliasem1:1*has no DEVICE*");
+	NMTST_EXPECT_NM_WARN ("*aliasem1:1*has no DEVICE*");
 	test_read_wired_aliases_bad (TEST_IFCFG_DIR "/network-scripts/ifcfg-aliasem1", "System aliasem1");
 }
 
 static void
 test_read_wired_aliases_bad_2 (void)
 {
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*aliasem2:1*has invalid DEVICE*");
+	NMTST_EXPECT_NM_WARN ("*aliasem2:1*has invalid DEVICE*");
 	test_read_wired_aliases_bad (TEST_IFCFG_DIR "/network-scripts/ifcfg-aliasem2", "System aliasem2");
 }
 
@@ -7713,8 +7704,7 @@ test_read_vlan_reorder_hdr_1 (void)
 	NMConnection *connection;
 	NMSettingVlan *s_vlan;
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*REORDER_HDR key is deprecated, use VLAN_FLAGS*");
+	NMTST_EXPECT_NM_WARN ("*REORDER_HDR key is deprecated, use VLAN_FLAGS*");
 	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-reorder-hdr-1",
 	                                        NULL, TYPE_ETHERNET, NULL);
 	g_test_assert_expected_messages ();
@@ -8508,8 +8498,7 @@ test_read_dcb_bad_booleans (void)
 {
 	gs_free_error GError *error = NULL;
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*invalid DCB_PG_STRICT value*not all 0s and 1s*");
+	NMTST_EXPECT_NM_WARN ("*invalid DCB_PG_STRICT value*not all 0s and 1s*");
 	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-bad-booleans",
 	                            NULL, TYPE_ETHERNET, &error);
 	g_test_assert_expected_messages ();
@@ -8523,8 +8512,7 @@ test_read_dcb_short_booleans (void)
 {
 	gs_free_error GError *error = NULL;
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*DCB_PG_STRICT value*8 characters*");
+	NMTST_EXPECT_NM_WARN ("*DCB_PG_STRICT value*8 characters*");
 	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-short-booleans",
 	                            NULL, TYPE_ETHERNET, &error);
 	g_test_assert_expected_messages ();
@@ -8538,8 +8526,7 @@ test_read_dcb_bad_uints (void)
 {
 	gs_free_error GError *error = NULL;
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*invalid DCB_PG_UP2TC value*not 0 - 7*");
+	NMTST_EXPECT_NM_WARN ("*invalid DCB_PG_UP2TC value*not 0 - 7*");
 	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-bad-uints",
 	                            NULL, TYPE_ETHERNET, &error);
 	g_test_assert_expected_messages ();
@@ -8553,8 +8540,7 @@ test_read_dcb_short_uints (void)
 {
 	gs_free_error GError *error = NULL;
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*DCB_PG_UP2TC value*8 characters*");
+	NMTST_EXPECT_NM_WARN ("*DCB_PG_UP2TC value*8 characters*");
 	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-short-uints",
 	                            NULL, TYPE_ETHERNET, &error);
 	g_test_assert_expected_messages ();
@@ -8568,8 +8554,7 @@ test_read_dcb_bad_percent (void)
 {
 	gs_free_error GError *error = NULL;
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*invalid DCB_PG_PCT percentage value*");
+	NMTST_EXPECT_NM_WARN ("*invalid DCB_PG_PCT percentage value*");
 	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-bad-percent",
 	                            NULL, TYPE_ETHERNET, &error);
 	g_test_assert_expected_messages ();
@@ -8583,8 +8568,7 @@ test_read_dcb_short_percent (void)
 {
 	gs_free_error GError *error = NULL;
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*invalid DCB_PG_PCT percentage list value*");
+	NMTST_EXPECT_NM_WARN ("*invalid DCB_PG_PCT percentage list value*");
 	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-short-percent",
 	                            NULL, TYPE_ETHERNET, &error);
 	g_test_assert_expected_messages ();
@@ -8598,8 +8582,7 @@ test_read_dcb_pgpct_not_100 (void)
 {
 	gs_free_error GError *error = NULL;
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*DCB_PG_PCT percentages do not equal 100*");
+	NMTST_EXPECT_NM_WARN ("*DCB_PG_PCT percentages do not equal 100*");
 	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-pgpct-not-100",
 	                            NULL, TYPE_ETHERNET, &error);
 	g_test_assert_expected_messages ();
@@ -8720,7 +8703,7 @@ test_read_team_master_invalid (gconstpointer user_data)
 	NMSettingConnection *s_con;
 	NMSettingTeam *s_team;
 
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE, "*ignoring invalid team configuration*");
+	NMTST_EXPECT_NM_WARN ("*ignoring invalid team configuration*");
 	connection = _connection_from_file (PATH_NAME, NULL, TYPE_ETHERNET, NULL);
 	g_test_assert_expected_messages ();
 
