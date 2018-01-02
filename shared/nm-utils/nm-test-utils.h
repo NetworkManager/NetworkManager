@@ -670,6 +670,20 @@ nmtst_test_quick (void)
 	} G_STMT_END
 #endif
 
+#define NMTST_EXPECT(domain, level, msg)        g_test_expect_message (domain, level, msg)
+
+#if (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_UTIL
+#define NMTST_EXPECT_LIBNM_U(level, msg)        NMTST_EXPECT ("libnm-util", level, msg)
+#define NMTST_EXPECT_LIBNM_G(level, msg)        NMTST_EXPECT ("libnm-glib", level, msg)
+
+#define NMTST_EXPECT_LIBNM_U_CRITICAL(msg)      NMTST_EXPECT_LIBNM_U (G_LOG_LEVEL_CRITICAL, msg)
+#define NMTST_EXPECT_LIBNM_G_CRITICAL(msg)      NMTST_EXPECT_LIBNM_G (G_LOG_LEVEL_CRITICAL, msg)
+#else
+#define NMTST_EXPECT_LIBNM(level, msg)          NMTST_EXPECT ("libnm", level, msg)
+
+#define NMTST_EXPECT_LIBNM_CRITICAL(msg)        NMTST_EXPECT_LIBNM (G_LOG_LEVEL_CRITICAL, msg)
+#endif
+
 /*****************************************************************************/
 
 typedef struct _NmtstTestData NmtstTestData;
