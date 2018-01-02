@@ -96,23 +96,23 @@ test_dcb_flags_invalid (void)
 	s_dcb = (NMSettingDcb *) nm_setting_dcb_new ();
 	g_assert (s_dcb);
 
-	g_test_expect_message ("GLib-GObject", G_LOG_LEVEL_WARNING, "*invalid or out of range*");
+	NMTST_EXPECT ("GLib-GObject", G_LOG_LEVEL_WARNING, "*invalid or out of range*");
 	TEST_FLAG (NM_SETTING_DCB_APP_FCOE_FLAGS, nm_setting_dcb_get_app_fcoe_flags, 0x332523);
 	g_test_assert_expected_messages ();
 
-	g_test_expect_message ("GLib-GObject", G_LOG_LEVEL_WARNING, "*invalid or out of range*");
+	NMTST_EXPECT ("GLib-GObject", G_LOG_LEVEL_WARNING, "*invalid or out of range*");
 	TEST_FLAG (NM_SETTING_DCB_APP_ISCSI_FLAGS, nm_setting_dcb_get_app_iscsi_flags, 0xFF);
 	g_test_assert_expected_messages ();
 
-	g_test_expect_message ("GLib-GObject", G_LOG_LEVEL_WARNING, "*invalid or out of range*");
+	NMTST_EXPECT ("GLib-GObject", G_LOG_LEVEL_WARNING, "*invalid or out of range*");
 	TEST_FLAG (NM_SETTING_DCB_APP_FIP_FLAGS, nm_setting_dcb_get_app_fip_flags, 0x1111);
 	g_test_assert_expected_messages ();
 
-	g_test_expect_message ("GLib-GObject", G_LOG_LEVEL_WARNING, "*invalid or out of range*");
+	NMTST_EXPECT ("GLib-GObject", G_LOG_LEVEL_WARNING, "*invalid or out of range*");
 	TEST_FLAG (NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS, nm_setting_dcb_get_priority_flow_control_flags, G_MAXUINT32);
 	g_test_assert_expected_messages ();
 
-	g_test_expect_message ("GLib-GObject", G_LOG_LEVEL_WARNING, "*invalid or out of range*");
+	NMTST_EXPECT ("GLib-GObject", G_LOG_LEVEL_WARNING, "*invalid or out of range*");
 	TEST_FLAG (NM_SETTING_DCB_PRIORITY_GROUP_FLAGS, nm_setting_dcb_get_priority_group_flags,
 	           (NM_SETTING_DCB_FLAG_ENABLE | NM_SETTING_DCB_FLAG_ADVERTISE | NM_SETTING_DCB_FLAG_WILLING) + 1);
 	g_test_assert_expected_messages ();
