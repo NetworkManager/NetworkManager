@@ -58,39 +58,35 @@ c_list_relink (CList *lst)
 /*****************************************************************************/
 
 static CList *
-_c_list_sort (CList *ls,
-              CListSortCmp cmp,
-              const void *user_data)
+_c_list_srt_split (CList *ls)
 {
-	CList *ls1, *ls2;
-	CList head;
+	CList *ls2;
 
-	if (!ls->next)
-		return ls;
-
-	/* split list in two halfs @ls1 and @ls2. */
-	ls1 = ls;
 	ls2 = ls;
 	ls = ls->next;
-	while (ls) {
+	if (!ls)
+		return NULL;
+	do {
 		ls = ls->next;
 		if (!ls)
 			break;
 		ls = ls->next;
 		ls2 = ls2->next;
-	}
-	ls = ls2;
-	ls2 = ls->next;
-	ls->next = NULL;
+	} while (ls);
+	ls = ls2->next;
+	ls2->next = NULL;
+	return ls;
+}
 
-	/* recurse */
-	ls1 = _c_list_sort (ls1, cmp, user_data);
-	if (!ls2)
-		return ls1;
+static CList *
+_c_list_srt_merge (CList *ls1,
+                   CList *ls2,
+                   CListSortCmp cmp,
+                   const void *user_data)
+{
+	CList *ls;
+	CList head;
 
-	ls2 = _c_list_sort (ls2, cmp, user_data);
-
-	/* merge */
 	ls = &head;
 	for (;;) {
 		/* while invoking the @cmp function, the list
@@ -113,6 +109,54 @@ _c_list_sort (CList *ls,
 	ls->next = ls1 ?: ls2;
 
 	return head.next;
+}
+
+typedef struct {
+	CList *ls1;
+	CList *ls2;
+	char ls1_sorted;
+} SortStack;
+
+static CList *
+_c_list_sort (CList *ls,
+              CListSortCmp cmp,
+              const void *user_data)
+{
+	/* reserve a huge stack-size. We need roughly log2(n) entries, hence this
+	 * is much more we will ever need. We don't guard for stack-overflow either. */
+	SortStack stack_arr[70];
+	SortStack *stack_head = stack_arr;
+
+	stack_arr[0].ls1 = ls;
+
+	/* A simple top-down, non-recursive, stable merge-sort.
+	 *
+	 * Maybe natural merge-sort would be better, to do better for
+	 * partially sorted lists. */
+_split:
+	stack_head[0].ls2 = _c_list_srt_split (stack_head[0].ls1);
+	if (stack_head[0].ls2) {
+		stack_head[0].ls1_sorted = 0;
+		stack_head[1].ls1 = stack_head[0].ls1;
+		stack_head++;
+		goto _split;
+	}
+
+_backtrack:
+	if (stack_head == stack_arr)
+		return stack_arr[0].ls1;
+
+	stack_head--;
+	if (!stack_head[0].ls1_sorted) {
+		stack_head[0].ls1 = stack_head[1].ls1;
+		stack_head[0].ls1_sorted = 1;
+		stack_head[1].ls1 = stack_head[0].ls2;
+		stack_head++;
+		goto _split;
+	}
+
+	stack_head[0].ls1 = _c_list_srt_merge (stack_head[0].ls1, stack_head[1].ls1, cmp, user_data);
+	goto _backtrack;
 }
 
 /**
