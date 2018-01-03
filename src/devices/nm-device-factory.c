@@ -340,42 +340,16 @@ factories_list_unref (GSList *list)
 	g_slist_free_full (list, g_object_unref);
 }
 
-void
-nm_device_factory_manager_load_factories (NMDeviceFactoryManagerFactoryFunc callback,
-                                          gpointer user_data)
+static void
+load_factories_from_dir (const char *dirname,
+                         NMDeviceFactoryManagerFactoryFunc callback,
+                         gpointer user_data)
 {
 	NMDeviceFactory *factory;
 	GError *error = NULL;
 	char **path, **paths;
 
-	g_return_if_fail (factories_by_link == NULL);
-	g_return_if_fail (factories_by_setting == NULL);
-
-	factories_by_link = g_hash_table_new_full (nm_direct_hash, NULL, NULL, g_object_unref);
-	factories_by_setting = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, (GDestroyNotify) factories_list_unref);
-
-#define _ADD_INTERNAL(get_type_fcn) \
-	G_STMT_START { \
-		GType get_type_fcn (void); \
-		_load_internal_factory (get_type_fcn (), \
-		                        callback, user_data); \
-	} G_STMT_END
-
-	_ADD_INTERNAL (nm_bond_device_factory_get_type);
-	_ADD_INTERNAL (nm_bridge_device_factory_get_type);
-	_ADD_INTERNAL (nm_dummy_device_factory_get_type);
-	_ADD_INTERNAL (nm_ethernet_device_factory_get_type);
-	_ADD_INTERNAL (nm_infiniband_device_factory_get_type);
-	_ADD_INTERNAL (nm_ip_tunnel_device_factory_get_type);
-	_ADD_INTERNAL (nm_macsec_device_factory_get_type);
-	_ADD_INTERNAL (nm_macvlan_device_factory_get_type);
-	_ADD_INTERNAL (nm_ppp_device_factory_get_type);
-	_ADD_INTERNAL (nm_tun_device_factory_get_type);
-	_ADD_INTERNAL (nm_veth_device_factory_get_type);
-	_ADD_INTERNAL (nm_vlan_device_factory_get_type);
-	_ADD_INTERNAL (nm_vxlan_device_factory_get_type);
-
-	paths = nm_utils_read_plugin_paths (NMPLUGINDIR, PLUGIN_PREFIX);
+	paths = nm_utils_read_plugin_paths (dirname, PLUGIN_PREFIX);
 	if (!paths)
 		return;
 
@@ -420,3 +394,36 @@ nm_device_factory_manager_load_factories (NMDeviceFactoryManagerFactoryFunc call
 	g_strfreev (paths);
 }
 
+void
+nm_device_factory_manager_load_factories (NMDeviceFactoryManagerFactoryFunc callback,
+                                          gpointer user_data)
+{
+	g_return_if_fail (factories_by_link == NULL);
+	g_return_if_fail (factories_by_setting == NULL);
+
+	factories_by_link = g_hash_table_new_full (nm_direct_hash, NULL, NULL, g_object_unref);
+	factories_by_setting = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, (GDestroyNotify) factories_list_unref);
+
+#define _ADD_INTERNAL(get_type_fcn) \
+	G_STMT_START { \
+		GType get_type_fcn (void); \
+		_load_internal_factory (get_type_fcn (), \
+		                        callback, user_data); \
+	} G_STMT_END
+
+	_ADD_INTERNAL (nm_bond_device_factory_get_type);
+	_ADD_INTERNAL (nm_bridge_device_factory_get_type);
+	_ADD_INTERNAL (nm_dummy_device_factory_get_type);
+	_ADD_INTERNAL (nm_ethernet_device_factory_get_type);
+	_ADD_INTERNAL (nm_infiniband_device_factory_get_type);
+	_ADD_INTERNAL (nm_ip_tunnel_device_factory_get_type);
+	_ADD_INTERNAL (nm_macsec_device_factory_get_type);
+	_ADD_INTERNAL (nm_macvlan_device_factory_get_type);
+	_ADD_INTERNAL (nm_ppp_device_factory_get_type);
+	_ADD_INTERNAL (nm_tun_device_factory_get_type);
+	_ADD_INTERNAL (nm_veth_device_factory_get_type);
+	_ADD_INTERNAL (nm_vlan_device_factory_get_type);
+	_ADD_INTERNAL (nm_vxlan_device_factory_get_type);
+
+	load_factories_from_dir (NMPLUGINDIR, callback, user_data);
+}
