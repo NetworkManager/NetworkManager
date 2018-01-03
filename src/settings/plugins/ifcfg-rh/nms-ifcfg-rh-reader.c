@@ -64,7 +64,7 @@
 /*****************************************************************************/
 
 #define _NMLOG_DOMAIN      LOGD_SETTINGS
-#define _NMLOG_PREFIX_NAME "ifcfg-rh"
+#define _NMLOG_PREFIX_NAME "ifcfg"
 #define _NMLOG(level, ...) \
     G_STMT_START { \
         nm_log ((level), (_NMLOG_DOMAIN), NULL, NULL, \

@@ -59,7 +59,7 @@
 /*****************************************************************************/
 
 #define _NMLOG_DOMAIN      LOGD_SETTINGS
-#define _NMLOG_PREFIX_NAME "ifcfg-rh"
+#define _NMLOG_PREFIX_NAME "ifcfg"
 #define _NMLOG(level, ...) \
     G_STMT_START { \
         nm_log ((level), (_NMLOG_DOMAIN), NULL, NULL, \
@@ -3177,7 +3177,7 @@ nms_ifcfg_rh_writer_can_write_connection (NMConnection *connection, GError **err
 
 	id = nm_connection_get_id (connection);
 	g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-	             "The ifcfg-rh plugin cannot write the connection %s%s%s (type %s%s%s)",
+	             "The ifcfg plugin cannot write the connection %s%s%s (type %s%s%s)",
 	             NM_PRINT_FMT_QUOTE_STRING (id),
 	             NM_PRINT_FMT_QUOTE_STRING (type));
 	return FALSE;

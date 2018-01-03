@@ -220,7 +220,7 @@ else
   distro = 'unknown'
 endif
 
-enable_ifcfg_rh = get_option('ifcfg_rh') or (distro == 'redhat')
+enable_ifcfg = get_option('ifcfg') or get_option('ifcfg_rh') or (distro == 'redhat')
 enable_ifupdown = get_option('ifupdown') or (distro == 'debian')
 
 enable_config_plugin_ibft = get_option('config_plugin_ibft')
@@ -230,8 +230,8 @@ config_plugins_default = get_option('config_plugins_default')
 if config_plugins_default == ''
   config_plugins = []
 
-  if enable_ifcfg_rh
-    config_plugins += ['ifcfg-rh']
+  if enable_ifcfg
+    config_plugins += ['ifcfg']
   endif
 
   if enable_ifupdown
@@ -964,7 +964,7 @@ output += '  nmcli: ' + enable_nmcli.to_string() + '\n'
 output += '  nmtui: ' + enable_nmtui.to_string() + '\n'
 output += '\nConfiguration_plugins (main.plugins=' + config_plugins_default + ')\n'
 output += '  ibft: ' + enable_config_plugin_ibft.to_string() + '\n'
-output += '  ifcfg-rh: ' + enable_ifcfg_rh.to_string() + '\n'
+output += '  ifcfg: ' + enable_ifcfg.to_string() + '\n'
 output += '  ifupdown: ' + enable_ifupdown.to_string() + '\n'
 output += '\nHandlers for /etc/resolv.conf:\n'
 output += '  resolvconf: ' + enable_resolvconf.to_string()
