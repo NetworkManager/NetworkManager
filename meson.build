@@ -587,46 +587,12 @@ if enable_dhclient
 endif
 config_h.set10('WITH_DHCLIENT', enable_dhclient)
 
-locations = get_option('dhcpcd')
-enable_dhcpcd = (locations != ['no'])
-enable_dhcpcd_supports_ipv6 = false
-if enable_dhcpcd
-  dhcpcd = find_program(locations, required: false)
-  enable_dhcpcd = dhcpcd.found()
-
-  if enable_dhcpcd
-    res = run_command(dhcpcd, '--version').stdout().strip()
-    dhcpcd_version = res.split(' ')[1]
-    if not dhcpcd_version.version_compare('> 4')
-      message('Seems version of dhcpcd ' + dhcpcd.path() + ' is too old, version 4.x or newer is required')
-    endif
-
-    enable_dhcpcd_supports_ipv6 = get_option('dhcpcd_supports_ipv6')
-    if dhcpcd_version.version_compare('> 6')
-      if not enable_dhcpcd_supports_ipv6
-        message('Seems version of dhcpcd ' + dhcpcd.path() + ' supports IPv6, but compiling without IPv6 support.')
-      endif
-    else
-      if enable_dhcpcd_supports_ipv6
-        message('Seems version of dhcpcd ' + dhcpcd.path() +'  does not support IPv6, but compiling with IPv6 support.')
-      endif
-    endif
-    config_h.set('DHCPCD_SUPPORTS_IPV6', enable_dhcpcd_supports_ipv6)
-    config_h.set_quoted('DHCPCD_PATH', dhcpcd.path())
-  endif
-endif
-config_h.set10('WITH_DHCPCD', enable_dhcpcd)
-
 config_dhcp_default = get_option('config_dhcp_default')
 if config_dhcp_default == 'dhcpcanon' and not enable_dhcpcanon
   error(config_dhcp_default + ' has not been enabled. Please don\'t disable it or use another configuration option for main.dhcp setting')
 endif
 
 if config_dhcp_default == 'dhclient' and not enable_dhclient
-  error(config_dhcp_default + ' has not been enabled. Please don\'t disable it or use another configuration option for main.dhcp setting')
-endif
-
-if config_dhcp_default == 'dhcpcd' and not enable_dhcpcd
   error(config_dhcp_default + ' has not been enabled. Please don\'t disable it or use another configuration option for main.dhcp setting')
 endif
 
@@ -980,21 +946,12 @@ output += '\n'
 output += '  config-dns-rc-manager-default: ' + config_dns_rc_manager_default + '\n'
 output += '\nDHCP clients (default ' + config_dhcp_default + '):\n'
 output += '  dhcpcanon: ' + enable_dhcpcanon.to_string()
-if enable_dhcpcd
-  output += ' ' + dhcpcanon.path()
-endif
 output += '\n'
 output += '  dhclient: ' + enable_dhclient.to_string()
 if enable_dhclient
   output += ' ' + dhclient.path()
 endif
 output += '\n'
-output += '  dhcpcd: ' + enable_dhcpcd.to_string()
-if enable_dhcpcd
-  output += ' ' + dhcpcd.path()
-endif
-output += '\n'
-output += '  dhcpcd-supports-ipv6: ' + enable_dhcpcd_supports_ipv6.to_string() + '\n'
 output += '\nMiscellaneous:\n'
 output += '  have introspection: ' + enable_introspection.to_string() + '\n'
 output += '  build documentation and manpages: ' + enable_docs.to_string() + '\n'

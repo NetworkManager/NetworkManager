@@ -56,9 +56,7 @@ option('config_dns_rc_manager_default', type: 'combo', choices: ['symlink', 'fil
 # dhcp clients
 option('dhcpcanon', type: 'array', value: ['dhcpcanon', '/sbin/dhcpcanon', '/usr/sbin/dhcpcanon', '/usr/local/sbin/dhcpcanon', '/usr/bin/dhcpcanon', '/usr/local/bin/dhcpcanon'], description: 'Enable dhcpcanon support (experimental)')
 option('dhclient', type: 'array', value: ['dhclient', '/sbin/dhclient', '/usr/sbin/dhclient', '/usr/local/sbin/dhclient'], description: 'Enable dhclient 4.x support')
-option('dhcpcd', type: 'array', value: ['dhcpcd', '/sbin/dhcpcd', '/usr/sbin/dhcpcd', '/usr/local/sbin/dhcpcd'], description: 'Enable dhcpcd 4.x support')
-option('config_dhcp_default', type: 'combo', choices: ['dhcpcanon', 'dhclient', 'dhcpcd', 'internal'], value: 'internal', description: 'Default configuration option for main.dhcp setting, used as fallback if the configuration option is unset')
-option('dhcpcd_supports_ipv6', type: 'boolean', value: true, description: 'Whether using dhcpcd >= 6.x which has IPv6 support')
+option('config_dhcp_default', type: 'combo', choices: ['dhcpcanon', 'dhclient', 'internal'], value: 'internal', description: 'Default configuration option for main.dhcp setting, used as fallback if the configuration option is unset')
 
 # miscellaneous
 option('introspection', type: 'boolean', value: true, description: 'Enable introspection for this build')

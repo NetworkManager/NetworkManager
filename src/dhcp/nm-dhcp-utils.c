@@ -35,73 +35,6 @@
 
 /*****************************************************************************/
 
-static gboolean
-ip4_process_dhcpcd_rfc3442_routes (const char *iface,
-                                   const char *str,
-                                   guint32 route_table,
-                                   guint32 route_metric,
-                                   NMIP4Config *ip4_config,
-                                   guint32 *gwaddr)
-{
-	char **routes, **r;
-	gboolean have_routes = FALSE;
-
-	routes = g_strsplit (str, " ", 0);
-	if (g_strv_length (routes) == 0)
-		goto out;
-
-	if ((g_strv_length (routes) % 2) != 0) {
-		_LOG2W (LOGD_DHCP4, iface, "  classless static routes provided, but invalid");
-		goto out;
-	}
-
-	for (r = routes; *r; r += 2) {
-		char *slash;
-		NMPlatformIP4Route route;
-		int rt_cidr = 32;
-		guint32 rt_addr, rt_route;
-
-		slash = strchr(*r, '/');
-		if (slash) {
-			*slash = '\0';
-			errno = 0;
-			rt_cidr = strtol (slash + 1, NULL, 10);
-			if (errno || rt_cidr > 32) {
-				_LOG2W (LOGD_DHCP4, iface, "DHCP provided invalid classless static route cidr: '%s'", slash + 1);
-				continue;
-			}
-		}
-		if (inet_pton (AF_INET, *r, &rt_addr) <= 0) {
-			_LOG2W (LOGD_DHCP4, iface, "DHCP provided invalid classless static route address: '%s'", *r);
-			continue;
-		}
-		if (inet_pton (AF_INET, *(r + 1), &rt_route) <= 0) {
-			_LOG2W (LOGD_DHCP4, iface, "DHCP provided invalid classless static route gateway: '%s'", *(r + 1));
-			continue;
-		}
-
-		have_routes = TRUE;
-		if (rt_cidr == 0 && rt_addr == 0) {
-			/* FIXME: how to handle multiple routers? */
-			*gwaddr = rt_route;
-		} else {
-			_LOG2I (LOGD_DHCP4, iface, "  classless static route %s/%d gw %s", *r, rt_cidr, *(r + 1));
-			memset (&route, 0, sizeof (route));
-			route.network = nm_utils_ip4_address_clear_host_address (rt_addr, rt_cidr);
-			route.plen = rt_cidr;
-			route.gateway = rt_route;
-			route.rt_source = NM_IP_CONFIG_SOURCE_DHCP;
-			route.metric = route_metric;
-			route.table_coerced = nm_platform_route_table_coerce (route_table);
-			nm_ip4_config_add_route (ip4_config, &route, NULL);
-		}
-	}
-
-out:
-	g_strfreev (routes);
-	return have_routes;
-}
-
 static const char **
 process_dhclient_rfc3442_route (const char **octets,
                                 NMPlatformIP4Route *route,
@@ -239,11 +172,6 @@ ip4_process_classless_routes (const char *iface,
 	 * which results in:
 	 *
 	 * 0 192.168.0.113 25.129.210.177.132 192.168.0.113 7.2 10.34.255.6
-	 *
-	 * dhcpcd supports classless static routes natively and uses this same
-	 * option identifier with the following format:
-	 *
-	 * 192.168.10.0/24 192.168.1.1 10.0.0.0/8 10.17.66.41
 	 */
 	str = g_hash_table_lookup (options, "classless_static_routes");
 
@@ -273,11 +201,6 @@ ip4_process_classless_routes (const char *iface,
 		}
 		p++;
 	};
-
-	if (strchr (str, '/')) {
-		/* dhcpcd format */
-		return ip4_process_dhcpcd_rfc3442_routes (iface, str, route_table, route_metric, ip4_config, gwaddr);
-	}
 
 	return ip4_process_dhclient_rfc3442_routes (iface, str, route_table, route_metric, ip4_config, gwaddr);
 }

@@ -274,34 +274,6 @@ test_classless_static_routes_1 (void)
 }
 
 static void
-test_classless_static_routes_2 (void)
-{
-	GHashTable *options;
-	gs_unref_object NMIP4Config *ip4_config = NULL;
-	const char *expected_route1_dest = "192.168.10.0";
-	const char *expected_route1_gw = "192.168.1.1";
-	const char *expected_route2_dest = "10.0.0.0";
-	const char *expected_route2_gw = "10.17.66.41";
-	static const Option data[] = {
-		/* dhcpcd format */
-		{ "classless_static_routes", "192.168.10.0/24 192.168.1.1 10.0.0.0/8 10.17.66.41" },
-		{ NULL, NULL }
-	};
-
-	options = fill_table (generic_options, NULL);
-	options = fill_table (data, options);
-	ip4_config = _ip4_config_from_options (1, "eth0", options, 0);
-
-	/* IP4 routes */
-	g_assert_cmpint (nm_ip4_config_get_num_routes (ip4_config), ==, 3);
-	ip4_test_route (ip4_config, 0, expected_route1_dest, expected_route1_gw, 24);
-	ip4_test_route (ip4_config, 1, expected_route2_dest, expected_route2_gw, 8);
-	ip4_test_route (ip4_config, 2, "0.0.0.0", expected_route1_gw, 0);
-
-	g_hash_table_destroy (options);
-}
-
-static void
 test_fedora_dhclient_classless_static_routes (void)
 {
 	GHashTable *options;
@@ -363,40 +335,6 @@ test_dhclient_invalid_classless_routes_1 (void)
 }
 
 static void
-test_dhcpcd_invalid_classless_routes_1 (void)
-{
-	GHashTable *options;
-	gs_unref_object NMIP4Config *ip4_config = NULL;
-	const char *expected_route1_dest = "10.1.1.5";
-	const char *expected_route1_gw = "10.1.1.1";
-	const char *expected_route2_dest = "100.99.88.56";
-	const char *expected_route2_gw = "10.1.1.1";
-	static const Option data[] = {
-		/* dhcpcd format */
-		{ "classless_static_routes", "192.168.10.0/24 192.168.1.1 10.0.adfadf/44 10.17.66.41" },
-		{ NULL, NULL }
-	};
-
-	options = fill_table (generic_options, NULL);
-	options = fill_table (data, options);
-
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ignoring invalid classless static routes*");
-	ip4_config = _ip4_config_from_options (1, "eth0", options, 0);
-	g_test_assert_expected_messages ();
-
-	/* Test falling back to old-style static routes if the classless static
-	 * routes are invalid.
-	 */
-	g_assert_cmpint (nm_ip4_config_get_num_routes (ip4_config), ==, 3);
-	ip4_test_route (ip4_config, 0, expected_route1_dest, expected_route1_gw, 32);
-	ip4_test_route (ip4_config, 1, expected_route2_dest, expected_route2_gw, 32);
-	ip4_test_route (ip4_config, 2, "0.0.0.0", "192.168.1.1", 0);
-
-	g_hash_table_destroy (options);
-}
-
-static void
 test_dhclient_invalid_classless_routes_2 (void)
 {
 	GHashTable *options;
@@ -421,41 +359,6 @@ test_dhclient_invalid_classless_routes_2 (void)
 	/* Test falling back to old-style static routes if the classless static
 	 * routes are invalid.
 	 */
-	g_assert_cmpint (nm_ip4_config_get_num_routes (ip4_config), ==, 3);
-	ip4_test_route (ip4_config, 0, expected_route1_dest, expected_route1_gw, 32);
-	ip4_test_route (ip4_config, 1, expected_route2_dest, expected_route2_gw, 32);
-	ip4_test_route (ip4_config, 2, "0.0.0.0", "192.168.1.1", 0);
-
-	g_hash_table_destroy (options);
-}
-
-static void
-test_dhcpcd_invalid_classless_routes_2 (void)
-{
-	GHashTable *options;
-	gs_unref_object NMIP4Config *ip4_config = NULL;
-	const char *expected_route1_dest = "10.1.1.5";
-	const char *expected_route1_gw = "10.1.1.1";
-	const char *expected_route2_dest = "100.99.88.56";
-	const char *expected_route2_gw = "10.1.1.1";
-	static const Option data[] = {
-		{ "classless_static_routes", "10.0.adfadf/44 10.17.66.41 192.168.10.0/24 192.168.1.1" },
-		{ NULL, NULL }
-	};
-
-	options = fill_table (generic_options, NULL);
-	options = fill_table (data, options);
-
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*ignoring invalid classless static routes*");
-	ip4_config = _ip4_config_from_options (1, "eth0", options, 0);
-	g_test_assert_expected_messages ();
-
-	/* Test falling back to old-style static routes if the classless static
-	 * routes are invalid.
-	 */
-
-	/* Routes */
 	g_assert_cmpint (nm_ip4_config_get_num_routes (ip4_config), ==, 3);
 	ip4_test_route (ip4_config, 0, expected_route1_dest, expected_route1_gw, 32);
 	ip4_test_route (ip4_config, 1, expected_route2_dest, expected_route2_gw, 32);
@@ -493,34 +396,6 @@ test_dhclient_invalid_classless_routes_3 (void)
 }
 
 static void
-test_dhcpcd_invalid_classless_routes_3 (void)
-{
-	GHashTable *options;
-	gs_unref_object NMIP4Config *ip4_config = NULL;
-	const char *expected_route1_dest = "192.168.10.0";
-	const char *expected_route1_gw = "192.168.1.1";
-	static Option data[] = {
-		{ "classless_static_routes", "192.168.10.0/24 192.168.1.1 128/32 10.17.66.41" },
-		{ NULL, NULL }
-	};
-
-	options = fill_table (generic_options, NULL);
-	options = fill_table (data, options);
-
-	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
-	                       "*DHCP provided invalid classless static route*");
-	ip4_config = _ip4_config_from_options (1, "eth0", options, 0);
-	g_test_assert_expected_messages ();
-
-	/* IP4 routes */
-	g_assert_cmpint (nm_ip4_config_get_num_routes (ip4_config), ==, 2);
-	ip4_test_route (ip4_config, 0, expected_route1_dest, expected_route1_gw, 24);
-	ip4_test_route (ip4_config, 1, "0.0.0.0", expected_route1_gw, 0);
-
-	g_hash_table_destroy (options);
-}
-
-static void
 test_dhclient_gw_in_classless_routes (void)
 {
 	GHashTable *options;
@@ -530,34 +405,6 @@ test_dhclient_gw_in_classless_routes (void)
 	const char *expected_gateway = "192.2.3.4";
 	static Option data[] = {
 		{ "rfc3442_classless_static_routes", "24 192 168 10 192 168 1 1 0 192 2 3 4" },
-		{ NULL, NULL }
-	};
-
-	options = fill_table (generic_options, NULL);
-	options = fill_table (data, options);
-	ip4_config = _ip4_config_from_options (1, "eth0", options, 0);
-
-	/* IP4 routes */
-	g_assert_cmpint (nm_ip4_config_get_num_routes (ip4_config), ==, 2);
-	ip4_test_route (ip4_config, 0, expected_route1_dest, expected_route1_gw, 24);
-	ip4_test_route (ip4_config, 1, "0.0.0.0", "192.2.3.4", 0);
-
-	/* Gateway */
-	ip4_test_gateway (ip4_config, expected_gateway);
-
-	g_hash_table_destroy (options);
-}
-
-static void
-test_dhcpcd_gw_in_classless_routes (void)
-{
-	GHashTable *options;
-	gs_unref_object NMIP4Config *ip4_config = NULL;
-	const char *expected_route1_dest = "192.168.10.0";
-	const char *expected_route1_gw = "192.168.1.1";
-	const char *expected_gateway = "192.2.3.4";
-	static Option data[] = {
-		{ "classless_static_routes", "192.168.10.0/24 192.168.1.1 0.0.0.0/0 192.2.3.4" },
 		{ NULL, NULL }
 	};
 
@@ -736,16 +583,11 @@ int main (int argc, char **argv)
 	g_test_add_func ("/dhcp/generic-options", test_generic_options);
 	g_test_add_func ("/dhcp/wins-options", test_wins_options);
 	g_test_add_func ("/dhcp/classless-static-routes-1", test_classless_static_routes_1);
-	g_test_add_func ("/dhcp/classless-static-routes-2", test_classless_static_routes_2);
 	g_test_add_func ("/dhcp/fedora-dhclient-classless-static-routes", test_fedora_dhclient_classless_static_routes);
 	g_test_add_func ("/dhcp/dhclient-invalid-classless-routes-1", test_dhclient_invalid_classless_routes_1);
-	g_test_add_func ("/dhcp/dhcpcd-invalid-classless-routes-1", test_dhcpcd_invalid_classless_routes_1);
 	g_test_add_func ("/dhcp/dhclient-invalid-classless-routes-2", test_dhclient_invalid_classless_routes_2);
-	g_test_add_func ("/dhcp/dhcpcd-invalid-classless-routes-2", test_dhcpcd_invalid_classless_routes_2);
 	g_test_add_func ("/dhcp/dhclient-invalid-classless-routes-3", test_dhclient_invalid_classless_routes_3);
-	g_test_add_func ("/dhcp/dhcpcd-invalid-classless-routes-3", test_dhcpcd_invalid_classless_routes_3);
 	g_test_add_func ("/dhcp/dhclient-gw-in-classless-routes", test_dhclient_gw_in_classless_routes);
-	g_test_add_func ("/dhcp/dhcpcd-gw-in-classless-routes", test_dhcpcd_gw_in_classless_routes);
 	g_test_add_func ("/dhcp/escaped-domain-searches", test_escaped_domain_searches);
 	g_test_add_func ("/dhcp/invalid-escaped-domain-searches", test_invalid_escaped_domain_searches);
 	g_test_add_func ("/dhcp/ip4-missing-prefix-24", test_ip4_missing_prefix_24);

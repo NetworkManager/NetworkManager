@@ -186,7 +186,7 @@ ip6_start (NMDhcpClient *client,
 {
 	NMDhcpDhcpcanon *self = NM_DHCP_DHCPCANON (client);
 
-	_LOGW ("the dhcpcd backend does not support IPv6");
+	_LOGW ("the DHCP backend does not support IPv6");
 	return FALSE;
 }
 static void
