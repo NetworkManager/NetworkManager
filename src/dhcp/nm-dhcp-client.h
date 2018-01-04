@@ -173,7 +173,14 @@ gboolean nm_dhcp_client_handle_event (gpointer unused,
                                       const char *reason,
                                       NMDhcpClient *self);
 
-void nm_dhcp_client_set_client_id (NMDhcpClient *self, GBytes *client_id);
+void nm_dhcp_client_set_client_id (NMDhcpClient *self,
+                                   GBytes *client_id);
+void nm_dhcp_client_set_client_id_bin (NMDhcpClient *self,
+                                       guint8 type,
+                                       const guint8 *client_id,
+                                       gsize len);
+void nm_dhcp_client_set_client_id_str (NMDhcpClient *self,
+                                       const char *dhcp_client_id);
 
 /*****************************************************************************
  * Client data

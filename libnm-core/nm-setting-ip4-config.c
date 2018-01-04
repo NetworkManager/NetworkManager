@@ -191,7 +191,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (priv->dhcp_client_id && !strlen (priv->dhcp_client_id)) {
+	if (priv->dhcp_client_id && !priv->dhcp_client_id[0]) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,

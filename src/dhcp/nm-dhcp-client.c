@@ -186,19 +186,69 @@ nm_dhcp_client_get_client_id (NMDhcpClient *self)
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->client_id;
 }
 
+static void
+_set_client_id (NMDhcpClient *self, GBytes *client_id, gboolean take)
+{
+	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
+
+	nm_assert (!client_id || g_bytes_get_size (client_id) >= 2);
+
+	if (   priv->client_id == client_id
+	    || (   priv->client_id
+	        && g_bytes_equal (priv->client_id, client_id))) {
+		if (take && client_id)
+			g_bytes_unref (client_id);
+		return;
+	}
+
+	if (priv->client_id)
+		g_bytes_unref (priv->client_id);
+	priv->client_id = client_id;
+	if (!take && client_id)
+		g_bytes_ref (client_id);
+}
+
 void
 nm_dhcp_client_set_client_id (NMDhcpClient *self, GBytes *client_id)
 {
-	NMDhcpClientPrivate *priv;
+	g_return_if_fail (NM_IS_DHCP_CLIENT (self));
+	g_return_if_fail (!client_id || g_bytes_get_size (client_id) >= 2);
+
+	_set_client_id (self, client_id, FALSE);
+}
+
+void
+nm_dhcp_client_set_client_id_bin (NMDhcpClient *self,
+                                  guint8 type,
+                                  const guint8 *client_id,
+                                  gsize len)
+{
+	guint8 *buf;
+	GBytes *b;
 
 	g_return_if_fail (NM_IS_DHCP_CLIENT (self));
+	g_return_if_fail (client_id);
+	g_return_if_fail (len > 0);
 
-	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
+	buf = g_malloc (len + 1);
+	buf[0] = type;
+	memcpy (buf + 1, client_id, len);
+	b = g_bytes_new_take (buf, len + 1);
+	_set_client_id (self, b, TRUE);
+}
 
-	if (priv->client_id && client_id && g_bytes_equal (priv->client_id, client_id))
-		return;
-	g_clear_pointer (&priv->client_id, g_bytes_unref);
-	priv->client_id = client_id ? g_bytes_ref (client_id) : NULL;
+void
+nm_dhcp_client_set_client_id_str (NMDhcpClient *self,
+                                  const char *dhcp_client_id)
+{
+	g_return_if_fail (NM_IS_DHCP_CLIENT (self));
+	g_return_if_fail (!dhcp_client_id || dhcp_client_id[0]);
+
+	_set_client_id (self,
+	                dhcp_client_id
+	                  ? nm_dhcp_utils_client_id_string_to_bytes (dhcp_client_id)
+	                  : NULL,
+	                TRUE);
 }
 
 const char *
@@ -448,7 +498,6 @@ nm_dhcp_client_start_ip4 (NMDhcpClient *self,
                           const char *last_ip4_address)
 {
 	NMDhcpClientPrivate *priv;
-	gs_unref_bytes GBytes *tmp = NULL;
 
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
 
@@ -462,9 +511,7 @@ nm_dhcp_client_start_ip4 (NMDhcpClient *self,
 	else
 		_LOGI ("activation: beginning transaction (timeout in %u seconds)", (guint) priv->timeout);
 
-	if (dhcp_client_id)
-		tmp = nm_dhcp_utils_client_id_string_to_bytes (dhcp_client_id);
-	nm_dhcp_client_set_client_id (self, tmp);
+	nm_dhcp_client_set_client_id_str (self, dhcp_client_id);
 
 	g_clear_pointer (&priv->hostname, g_free);
 	priv->hostname = g_strdup (hostname);

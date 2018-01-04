@@ -750,8 +750,15 @@ nm_dhcp_utils_client_id_string_to_bytes (const char *client_id)
 	g_return_val_if_fail (client_id && client_id[0], NULL);
 
 	/* Try as hex encoded */
-	if (strchr (client_id, ':'))
+	if (strchr (client_id, ':')) {
 		bytes = nm_utils_hexstr2bin (client_id);
+
+		/* the result must be at least two bytes long,
+		 * because @client_id contains a delimiter
+		 * but nm_utils_hexstr2bin() does not allow
+		 * leading nor trailing delimiters. */
+		nm_assert (!bytes || g_bytes_get_size (bytes) >= 2);
+	}
 	if (!bytes) {
 		/* Fall back to string */
 		len = strlen (client_id);
