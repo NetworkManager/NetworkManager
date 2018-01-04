@@ -178,7 +178,7 @@ read_client_id (const char *str)
 	gs_free char *s = NULL;
 	char *p;
 
-	g_assert (!strncmp (str, CLIENTID_TAG, NM_STRLEN (CLIENTID_TAG)));
+	nm_assert (!strncmp (str, CLIENTID_TAG, NM_STRLEN (CLIENTID_TAG)));
 
 	str += NM_STRLEN (CLIENTID_TAG);
 	while (g_ascii_isspace (*str))
@@ -197,6 +197,9 @@ read_client_id (const char *str)
 	g_strchomp (s);
 	if (s[strlen (s) - 1] == ';')
 		s[strlen (s) - 1] = '\0';
+
+	if (!s[0])
+		return NULL;
 
 	return nm_dhcp_utils_client_id_string_to_bytes (s);
 }
@@ -329,8 +332,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 					continue;
 
 				/* Otherwise capture and return the existing client id */
-				if (out_new_client_id)
-					*out_new_client_id = read_client_id (p);
+				NM_SET_OUT (out_new_client_id, read_client_id (p));
 			}
 
 			/* Override config file hostname and use one from the connection */

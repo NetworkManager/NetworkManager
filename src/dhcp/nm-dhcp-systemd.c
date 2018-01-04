@@ -489,19 +489,13 @@ _save_client_id (NMDhcpSystemd *self,
                  const uint8_t *client_id,
                  size_t len)
 {
-	gs_unref_bytes GBytes *b = NULL;
-	gs_free char *buf = NULL;
-
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (client_id != NULL);
 	g_return_if_fail (len > 0);
 
 	if (!nm_dhcp_client_get_client_id (NM_DHCP_CLIENT (self))) {
-		buf = g_malloc (len + 1);
-		buf[0] = type;
-		memcpy (buf + 1, client_id, len);
-		b = g_bytes_new (buf, len + 1);
-		nm_dhcp_client_set_client_id (NM_DHCP_CLIENT (self), b);
+		nm_dhcp_client_set_client_id_bin (NM_DHCP_CLIENT (self),
+		                                  type, client_id, len);
 	}
 }
 
@@ -543,7 +537,7 @@ bound4_handle (NMDhcpSystemd *self)
 		add_requests_to_options (options, dhcp4_requests);
 		dhcp_lease_save (lease, priv->lease_file);
 
-		sd_dhcp_client_get_client_id(priv->client4, &type, &client_id, &client_id_len);
+		sd_dhcp_client_get_client_id (priv->client4, &type, &client_id, &client_id_len);
 		if (client_id)
 			_save_client_id (self, type, client_id, client_id_len);
 
@@ -691,14 +685,14 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 	override_client_id = nm_dhcp_client_get_client_id (client);
 	if (override_client_id) {
 		client_id = g_bytes_get_data (override_client_id, &client_id_len);
-		g_assert (client_id && client_id_len);
+		nm_assert (client_id && client_id_len >= 2);
 		sd_dhcp_client_set_client_id (priv->client4,
 		                              client_id[0],
 		                              client_id + 1,
-		                              client_id_len - 1);
+		                              NM_MIN (client_id_len - 1, _NM_SD_MAX_CLIENT_ID_LEN));
 	} else if (lease) {
 		r = sd_dhcp_lease_get_client_id (lease, (const void **) &client_id, &client_id_len);
-		if (r == 0 && client_id_len) {
+		if (r == 0 && client_id_len >= 2) {
 			sd_dhcp_client_set_client_id (priv->client4,
 			                              client_id[0],
 			                              client_id + 1,
