@@ -399,6 +399,53 @@ deactivate (NMDevice *device)
 	cleanup_association_attempt (NM_DEVICE_IWD (device), TRUE);
 }
 
+static gboolean
+deactivate_async_finish (NMDevice *device, GAsyncResult *res, GError **error)
+{
+	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (NM_DEVICE_IWD (device));
+	gs_unref_variant GVariant *variant;
+
+	variant = g_dbus_proxy_call_finish (priv->dbus_proxy, res, error);
+
+	return variant != NULL;
+}
+
+typedef struct {
+	NMDeviceIwd *self;
+	GAsyncReadyCallback callback;
+	gpointer user_data;
+} DeactivateContext;
+
+static void
+disconnect_cb (GObject *source, GAsyncResult *res, gpointer user_data)
+{
+	DeactivateContext *ctx = user_data;
+
+	ctx->callback (G_OBJECT (ctx->self), res, ctx->user_data);
+
+	g_object_unref (ctx->self);
+	g_slice_free (DeactivateContext, ctx);
+}
+
+static void
+deactivate_async (NMDevice *device,
+                  GCancellable *cancellable,
+                  GAsyncReadyCallback callback,
+                  gpointer user_data)
+{
+	NMDeviceIwd *self = NM_DEVICE_IWD (device);
+	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	DeactivateContext *ctx;
+
+	ctx = g_slice_new0 (DeactivateContext);
+	ctx->self = g_object_ref (self);
+	ctx->callback = callback;
+	ctx->user_data = user_data;
+
+	g_dbus_proxy_call (priv->dbus_proxy, "Disconnect", g_variant_new ("()"),
+	                   G_DBUS_CALL_FLAGS_NONE, -1, cancellable, disconnect_cb, ctx);
+}
+
 static NMIwdNetworkSecurity
 get_connection_iwd_security (NMConnection *connection)
 {
@@ -1884,6 +1931,8 @@ nm_device_iwd_class_init (NMDeviceIwdClass *klass)
 	parent_class->act_stage2_config = act_stage2_config;
 	parent_class->get_configured_mtu = get_configured_mtu;
 	parent_class->deactivate = deactivate;
+	parent_class->deactivate_async = deactivate_async;
+	parent_class->deactivate_async_finish = deactivate_async_finish;
 	parent_class->can_reapply_change = can_reapply_change;
 
 	parent_class->state_changed = device_state_changed;
