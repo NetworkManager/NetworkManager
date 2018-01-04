@@ -1628,21 +1628,27 @@ state_changed (NMDeviceIwd *self, const gchar *new_state)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 	NMDevice *device = NM_DEVICE (self);
+	NMDeviceState dev_state = nm_device_get_state (device);
+	gboolean iwd_connection = FALSE;
 
 	_LOGI (LOGD_DEVICE | LOGD_WIFI, "new IWD device state is %s", new_state);
+
+	if (   dev_state >= NM_DEVICE_STATE_CONFIG
+	    && dev_state <= NM_DEVICE_STATE_ACTIVATED
+	    && dev_state != NM_DEVICE_STATE_NEED_AUTH)
+		iwd_connection = TRUE;
 
 	/* Don't allow scanning while connecting, disconnecting or roaming */
 	priv->can_scan = NM_IN_STRSET (new_state, "connected", "disconnected");
 
 	if (NM_IN_STRSET (new_state, "connecting", "connected", "roaming")) {
-		/* If we're activating, do nothing, the confirmation of
+		/* If we were connecting, do nothing, the confirmation of
 		 * a connection success is handled in the Device.Connect
 		 * method return callback.  Otherwise IWD must have connected
 		 * without Network Manager's will so for simplicity force a
 		 * disconnect.
 		 */
-		if (   nm_device_is_activating (device)
-		    || nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED)
+		if (iwd_connection)
 			return;
 
 		_LOGW (LOGD_DEVICE | LOGD_WIFI,
@@ -1651,8 +1657,7 @@ state_changed (NMDeviceIwd *self, const gchar *new_state)
 
 		return;
 	} else if (NM_IN_STRSET (new_state, "disconnecting", "disconnected")) {
-		if (   !nm_device_is_activating (device)
-		    && nm_device_get_state (device) != NM_DEVICE_STATE_ACTIVATED)
+		if (!iwd_connection)
 			return;
 
 		/* Call Disconnect on the IWD device object to make sure it
