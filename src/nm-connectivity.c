@@ -30,34 +30,55 @@
 #include <curl/curl.h>
 #endif
 
+#include "nm-utils/c-list.h"
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"
 
+#define HEADER_STATUS_ONLINE "X-NetworkManager-Status: online\r\n"
+
 /*****************************************************************************/
 
-NM_UTILS_LOOKUP_STR_DEFINE (nm_connectivity_state_to_string, NMConnectivityState,
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_state_to_string, int /*NMConnectivityState*/,
 	NM_UTILS_LOOKUP_DEFAULT_WARN ("???"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_UNKNOWN,  "UNKNOWN"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_NONE,     "NONE"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_LIMITED,  "LIMITED"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_PORTAL,   "PORTAL"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_FULL,     "FULL"),
+
+	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_ERROR,    "ERROR"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_FAKE,     "FAKE"),
 );
+
+const char *
+nm_connectivity_state_to_string (NMConnectivityState state)
+{
+	return _state_to_string (state);
+}
 
 /*****************************************************************************/
 
-#if WITH_CONCHECK
+struct _NMConnectivityCheckHandle {
+	CList handles_lst;
+	NMConnectivity *self;
+	NMConnectivityCheckCallback callback;
+	gpointer user_data;
 
-typedef struct {
-	GSimpleAsyncResult *simple;
-	char *response;
-	CURL *curl_ehandle;
-	size_t msg_size;
-	char *msg;
-	struct curl_slist *request_headers;
-	guint timeout_id;
 	char *ifspec;
-} NMConnectivityCheckHandle;
+
+#if WITH_CONCHECK
+	struct {
+		char *response;
+
+		CURL *curl_ehandle;
+		struct curl_slist *request_headers;
+
+		GString *recv_msg;
+	} concheck;
+#endif
+
+	guint timeout_id;
+};
 
 enum {
 	PERIODIC_CHECK,
@@ -68,14 +89,19 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
+	CList handles_lst_head;
 	char *uri;
 	char *response;
 	gboolean enabled;
 	guint interval;
 	NMConfig *config;
-	guint periodic_check_id;
-	CURLM *curl_mhandle;
-	guint curl_timer;
+#if WITH_CONCHECK
+	struct {
+		CURLM *curl_mhandle;
+		guint curl_timer;
+		guint periodic_check_id;
+	} concheck;
+#endif
 } NMConnectivityPrivate;
 
 struct _NMConnectivity {
@@ -105,111 +131,172 @@ NM_DEFINE_SINGLETON_GETTER (NMConnectivity, nm_connectivity_get, NM_TYPE_CONNECT
         \
         if (nm_logging_enabled (__level, _NMLOG2_DOMAIN)) { \
             _nm_log (__level, _NMLOG2_DOMAIN, 0, \
-                        &cb_data->ifspec[3], NULL, \
-                        "connectivity: (%s) " \
-                        _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
-                        &cb_data->ifspec[3] \
-                        _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
+                     (cb_data->ifspec ? &cb_data->ifspec[3] : NULL), \
+                     NULL, \
+                     "connectivity: (%s) " \
+                     _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
+                     (cb_data->ifspec ? &cb_data->ifspec[3] : "") \
+                     _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
         } \
     } G_STMT_END
 
 /*****************************************************************************/
 
 static void
-finish_cb_data (NMConnectivityCheckHandle *cb_data, NMConnectivityState new_state)
+cb_data_invoke_callback (NMConnectivityCheckHandle *cb_data,
+                         NMConnectivityState state,
+                         GError *error,
+                         const char *log_message)
 {
-	/* Contrary to what cURL manual claim it is *not* safe to remove
-	 * the easy handle "at any moment"; specifically not from the
-	 * write function. Thus here we just dissociate the cb_data from
-	 * the easy handle and the easy handle will be cleaned up when the
-	 * message goes to CURLMSG_DONE in curl_check_connectivity(). */
-	curl_easy_setopt (cb_data->curl_ehandle, CURLOPT_PRIVATE, NULL);
+	NMConnectivityCheckCallback callback;
 
-	g_simple_async_result_set_op_res_gssize (cb_data->simple, new_state);
-	g_simple_async_result_complete (cb_data->simple);
-	g_object_unref (cb_data->simple);
-	curl_slist_free_all (cb_data->request_headers);
-	g_free (cb_data->response);
-	g_free (cb_data->msg);
-	g_free (cb_data->ifspec);
-	g_source_remove (cb_data->timeout_id);
-	g_slice_free (NMConnectivityCheckHandle, cb_data);
+	nm_assert (cb_data);
+	nm_assert (NM_IS_CONNECTIVITY (cb_data->self));
+
+	callback = cb_data->callback;
+	if (!callback)
+		return;
+
+	cb_data->callback = NULL;
+
+	nm_assert (log_message);
+
+	_LOG2D ("check completed: %s; %s",
+	        nm_connectivity_state_to_string (state),
+	        log_message);
+
+	callback (cb_data->self,
+	          cb_data,
+	          state,
+	          error,
+	          cb_data->user_data);
 }
 
 static void
-curl_check_connectivity (CURLM *mhandle, CURLMcode ret)
+cb_data_free (NMConnectivityCheckHandle *cb_data,
+              NMConnectivityState state,
+              GError *error,
+              const char *log_message)
+{
+	NMConnectivity *self;
+
+	nm_assert (cb_data);
+
+	self = cb_data->self;
+
+	nm_assert (NM_IS_CONNECTIVITY (self));
+
+	c_list_unlink (&cb_data->handles_lst);
+
+#if WITH_CONCHECK
+	if (cb_data->concheck.curl_ehandle) {
+		NMConnectivityPrivate *priv;
+
+		/* Contrary to what cURL manual claim it is *not* safe to remove
+		 * the easy handle "at any moment"; specifically not from the
+		 * write function. Thus here we just dissociate the cb_data from
+		 * the easy handle and the easy handle will be cleaned up when the
+		 * message goes to CURLMSG_DONE in curl_check_connectivity(). */
+		curl_easy_setopt (cb_data->concheck.curl_ehandle, CURLOPT_WRITEFUNCTION, NULL);
+		curl_easy_setopt (cb_data->concheck.curl_ehandle, CURLOPT_WRITEDATA, NULL);
+		curl_easy_setopt (cb_data->concheck.curl_ehandle, CURLOPT_HEADERFUNCTION, NULL);
+		curl_easy_setopt (cb_data->concheck.curl_ehandle, CURLOPT_HEADERDATA, NULL);
+		curl_easy_setopt (cb_data->concheck.curl_ehandle, CURLOPT_PRIVATE, NULL);
+		curl_easy_setopt (cb_data->concheck.curl_ehandle, CURLOPT_HTTPHEADER, NULL);
+
+		priv = NM_CONNECTIVITY_GET_PRIVATE (self);
+
+		curl_multi_remove_handle (priv->concheck.curl_mhandle, cb_data->concheck.curl_ehandle);
+		curl_easy_cleanup (cb_data->concheck.curl_ehandle);
+
+		curl_slist_free_all (cb_data->concheck.request_headers);
+	}
+#endif
+
+	nm_clear_g_source (&cb_data->timeout_id);
+
+	cb_data_invoke_callback (cb_data, state, error, log_message);
+
+#if WITH_CONCHECK
+	g_free (cb_data->concheck.response);
+	if (cb_data->concheck.recv_msg)
+		g_string_free (cb_data->concheck.recv_msg, TRUE);
+#endif
+	g_free (cb_data->ifspec);
+	g_slice_free (NMConnectivityCheckHandle, cb_data);
+}
+
+/*****************************************************************************/
+
+#if WITH_CONCHECK
+static const char *
+_check_handle_get_response (NMConnectivityCheckHandle *cb_data)
+{
+	return cb_data->concheck.response ?: NM_CONFIG_DEFAULT_CONNECTIVITY_RESPONSE;
+}
+
+static void
+curl_check_connectivity (CURLM *mhandle, int sockfd, int ev_bitmask)
 {
 	NMConnectivityCheckHandle *cb_data;
 	CURLMsg *msg;
 	CURLcode eret;
-	CURL *easy_handle;
 	gint m_left;
 	long response_code;
+	CURLMcode ret;
+	int running_handles;
 
+	ret = curl_multi_socket_action (mhandle, sockfd, ev_bitmask, &running_handles);
 	if (ret != CURLM_OK)
-		_LOGW ("connectivity check failed");
+		_LOGE ("connectivity check failed: %d", ret);
 
 	while ((msg = curl_multi_info_read (mhandle, &m_left))) {
+
 		if (msg->msg != CURLMSG_DONE)
 			continue;
 
 		/* Here we have completed a session. Check easy session result. */
 		eret = curl_easy_getinfo (msg->easy_handle, CURLINFO_PRIVATE, (char **) &cb_data);
 		if (eret != CURLE_OK) {
-			_LOG2E ("curl cannot extract cb_data for easy handle %p, skipping msg", msg->easy_handle);
+			_LOGE ("curl cannot extract cb_data for easy handle, skipping msg");
 			continue;
 		}
 
-		if (cb_data) {
-			NMConnectivityState c;
+		if (!cb_data->callback) {
+			/* callback was already invoked earlier. */
+			cb_data_free (cb_data, NM_CONNECTIVITY_UNKNOWN, NULL, NULL);
+		} else if (msg->data.result != CURLE_OK) {
+			gs_free char *log_message = NULL;
 
-			/* If cb_data is still there this message hasn't been
-			 * taken care of. Do so now. */
-			if (msg->data.result != CURLE_OK) {
-				_LOG2D ("check failed (%d)", msg->data.result);
-				c = NM_CONNECTIVITY_LIMITED;
-			} else if (   !cb_data->response[0]
-			           && (curl_easy_getinfo (msg->easy_handle, CURLINFO_RESPONSE_CODE, &response_code) == CURLE_OK)
-			           && response_code == 204) {
-				/* If we got a 204 response code (no content) and we actually
-				 * requested no content, report full connectivity. */
-				_LOG2D ("response with no content received, check successful");
-				c = NM_CONNECTIVITY_FULL;
-			} else {
-				/* If we get here, it means that easy_write_cb() didn't read enough
-				 * bytes to be able to do a match, or that we were asking for no content
-				 * (204 response code) and we actually got some. Either way, that is
-				 * an indication of a captive portal */
-				_LOG2I ("response did not match expected response '%s'; assuming captive portal.",
-				        cb_data->response);
-				c = NM_CONNECTIVITY_PORTAL;
-			}
-
-			finish_cb_data (cb_data, c);
+			log_message = g_strdup_printf ("check failed with curl status %d", msg->data.result);
+			cb_data_free (cb_data, NM_CONNECTIVITY_LIMITED, NULL,
+			              log_message);
+		} else if (   !((_check_handle_get_response (cb_data))[0])
+		           && (curl_easy_getinfo (msg->easy_handle, CURLINFO_RESPONSE_CODE, &response_code) == CURLE_OK)
+		           && response_code == 204) {
+			/* If we got a 204 response code (no content) and we actually
+			 * requested no content, report full connectivity. */
+			cb_data_free (cb_data, NM_CONNECTIVITY_FULL, NULL,
+			              "no content, as expected");
+		} else {
+			/* If we get here, it means that easy_write_cb() didn't read enough
+			 * bytes to be able to do a match, or that we were asking for no content
+			 * (204 response code) and we actually got some. Either way, that is
+			 * an indication of a captive portal */
+			cb_data_free (cb_data, NM_CONNECTIVITY_PORTAL, NULL,
+			              "unexpected short response");
 		}
-
-		/* Do not use message data after calling curl_multi_remove_handle() */
-		easy_handle = msg->easy_handle;
-		curl_multi_remove_handle (mhandle, easy_handle);
-		curl_easy_cleanup (easy_handle);
 	}
 }
 
 static gboolean
 curl_timeout_cb (gpointer user_data)
 {
-	NMConnectivity *self = NM_CONNECTIVITY (user_data);
+	gs_unref_object NMConnectivity *self = g_object_ref (NM_CONNECTIVITY (user_data));
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
-	CURLMcode ret;
-	int pending_conn;
 
-	priv->curl_timer = 0;
-
-	ret = curl_multi_socket_action (priv->curl_mhandle, CURL_SOCKET_TIMEOUT, 0, &pending_conn);
-	_LOGT ("timeout elapsed - multi_socket_action (%d conn remaining)", pending_conn);
-
-	curl_check_connectivity (priv->curl_mhandle, ret);
-
+	priv->concheck.curl_timer = 0;
+	curl_check_connectivity (priv->concheck.curl_mhandle, CURL_SOCKET_TIMEOUT, 0);
 	return G_SOURCE_REMOVE;
 }
 
@@ -219,21 +306,17 @@ multi_timer_cb (CURLM *multi, long timeout_ms, void *userdata)
 	NMConnectivity *self = NM_CONNECTIVITY (userdata);
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
-	nm_clear_g_source (&priv->curl_timer);
+	nm_clear_g_source (&priv->concheck.curl_timer);
 	if (timeout_ms != -1)
-		priv->curl_timer = g_timeout_add (timeout_ms, curl_timeout_cb, self);
-
+		priv->concheck.curl_timer = g_timeout_add (timeout_ms, curl_timeout_cb, self);
 	return 0;
 }
 
 static gboolean
-curl_socketevent_cb (GIOChannel *ch, GIOCondition condition, gpointer data)
+curl_socketevent_cb (GIOChannel *ch, GIOCondition condition, gpointer user_data)
 {
-	NMConnectivity *self = NM_CONNECTIVITY (data);
+	gs_unref_object NMConnectivity *self = g_object_ref (NM_CONNECTIVITY (user_data));
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
-	CURLMcode ret;
-	int pending_conn = 0;
-	gboolean bret = TRUE;
 	int fd = g_io_channel_unix_get_fd (ch);
 	int action = 0;
 
@@ -241,16 +324,11 @@ curl_socketevent_cb (GIOChannel *ch, GIOCondition condition, gpointer data)
 		action |= CURL_CSELECT_IN;
 	if (condition & G_IO_OUT)
 		action |= CURL_CSELECT_OUT;
+	if (condition & G_IO_ERR)
+		action |= CURL_CSELECT_ERR;
 
-	ret = curl_multi_socket_action (priv->curl_mhandle, fd, 0, &pending_conn);
-
-	curl_check_connectivity (priv->curl_mhandle, ret);
-
-	if (pending_conn == 0) {
-		nm_clear_g_source (&priv->curl_timer);
-		bret = FALSE;
-	}
-	return bret;
+	curl_check_connectivity (priv->concheck.curl_mhandle, fd, action);
+	return G_SOURCE_CONTINUE;
 }
 
 typedef struct {
@@ -263,11 +341,12 @@ multi_socket_cb (CURL *e_handle, curl_socket_t s, int what, void *userdata, void
 {
 	NMConnectivity *self = NM_CONNECTIVITY (userdata);
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
-	CurlSockData *fdp = (CurlSockData *) socketp;
+	CurlSockData *fdp = socketp;
 	GIOCondition condition = 0;
 
 	if (what == CURL_POLL_REMOVE) {
 		if (fdp) {
+			curl_multi_assign (priv->concheck.curl_mhandle, s, NULL);
 			nm_clear_g_source (&fdp->ev);
 			g_io_channel_unref (fdp->ch);
 			g_slice_free (CurlSockData, fdp);
@@ -276,6 +355,7 @@ multi_socket_cb (CURL *e_handle, curl_socket_t s, int what, void *userdata, void
 		if (!fdp) {
 			fdp = g_slice_new0 (CurlSockData);
 			fdp->ch = g_io_channel_unix_new (s);
+			curl_multi_assign (priv->concheck.curl_mhandle, s, fdp);
 		} else
 			nm_clear_g_source (&fdp->ev);
 
@@ -283,18 +363,15 @@ multi_socket_cb (CURL *e_handle, curl_socket_t s, int what, void *userdata, void
 			condition = G_IO_IN;
 		else if (what == CURL_POLL_OUT)
 			condition = G_IO_OUT;
-		else if (condition == CURL_POLL_INOUT)
+		else if (what == CURL_POLL_INOUT)
 			condition = G_IO_IN | G_IO_OUT;
 
 		if (condition)
 			fdp->ev = g_io_add_watch (fdp->ch, condition, curl_socketevent_cb, self);
-		curl_multi_assign (priv->curl_mhandle, s, fdp);
 	}
 
 	return CURLM_OK;
 }
-
-#define HEADER_STATUS_ONLINE "X-NetworkManager-Status: online\r\n"
 
 static size_t
 easy_header_cb (char *buffer, size_t size, size_t nitems, void *userdata)
@@ -304,8 +381,8 @@ easy_header_cb (char *buffer, size_t size, size_t nitems, void *userdata)
 
 	if (   len >= sizeof (HEADER_STATUS_ONLINE) - 1
 	    && !g_ascii_strncasecmp (buffer, HEADER_STATUS_ONLINE, sizeof (HEADER_STATUS_ONLINE) - 1)) {
-		_LOG2D ("status header found, check successful");
-		finish_cb_data (cb_data, NM_CONNECTIVITY_FULL);
+		cb_data_invoke_callback (cb_data, NM_CONNECTIVITY_FULL,
+		                         NULL, "status header found");
 		return 0;
 	}
 
@@ -317,23 +394,24 @@ easy_write_cb (void *buffer, size_t size, size_t nmemb, void *userdata)
 {
 	NMConnectivityCheckHandle *cb_data = userdata;
 	size_t len = size * nmemb;
+	const char *response = _check_handle_get_response (cb_data);;
 
-	cb_data->msg = g_realloc (cb_data->msg, cb_data->msg_size + len);
-	memcpy (cb_data->msg + cb_data->msg_size, buffer, len);
-	cb_data->msg_size += len;
+	if (!cb_data->concheck.recv_msg)
+		cb_data->concheck.recv_msg = g_string_sized_new (len + 10);
 
-	/* Check matching prefix if a expected response is given */
-	if (   cb_data->response[0]
-	    && cb_data->msg_size >= strlen (cb_data->response)) {
+	g_string_append_len (cb_data->concheck.recv_msg, buffer, len);
+
+	if (   response
+	    && cb_data->concheck.recv_msg->len >= strlen (response)) {
 		/* We already have enough data -- check response */
-		if (g_str_has_prefix (cb_data->msg, cb_data->response)) {
-			_LOG2D ("check successful.");
-			finish_cb_data (cb_data, NM_CONNECTIVITY_FULL);
+		if (g_str_has_prefix (cb_data->concheck.recv_msg->str, response)) {
+			cb_data_invoke_callback (cb_data, NM_CONNECTIVITY_FULL, NULL,
+			                         "expected response");
 		} else {
-			_LOG2I ("response did not match expected response '%s'; assuming captive portal.",
-			        cb_data->response);
-			finish_cb_data (cb_data, NM_CONNECTIVITY_PORTAL);
+			cb_data_invoke_callback (cb_data, NM_CONNECTIVITY_PORTAL, NULL,
+			                         "unexpected response");
 		}
+
 		return 0;
 	}
 
@@ -341,89 +419,122 @@ easy_write_cb (void *buffer, size_t size, size_t nmemb, void *userdata)
 }
 
 static gboolean
-timeout_cb (gpointer user_data)
+_timeout_cb (gpointer user_data)
 {
 	NMConnectivityCheckHandle *cb_data = user_data;
-	NMConnectivity *self = NM_CONNECTIVITY (g_async_result_get_source_object (G_ASYNC_RESULT (cb_data->simple)));
-	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
-	CURL *ehandle = cb_data->curl_ehandle;
+	NMConnectivity *self;
 
-	_LOG2I ("timed out");
-	finish_cb_data (cb_data, NM_CONNECTIVITY_LIMITED);
-	curl_multi_remove_handle (priv->curl_mhandle, ehandle);
-	curl_easy_cleanup (ehandle);
+	nm_assert (NM_IS_CONNECTIVITY (cb_data->self));
 
+	self = cb_data->self;
+
+	nm_assert (c_list_contains (&NM_CONNECTIVITY_GET_PRIVATE (self)->handles_lst_head, &cb_data->handles_lst));
+
+	cb_data_free (cb_data, NM_CONNECTIVITY_LIMITED, NULL, "timeout");
+	return G_SOURCE_REMOVE;
+}
+#endif
+
+static gboolean
+_idle_cb (gpointer user_data)
+{
+	NMConnectivityCheckHandle *cb_data = user_data;
+
+	nm_assert (NM_IS_CONNECTIVITY (cb_data->self));
+	nm_assert (c_list_contains (&NM_CONNECTIVITY_GET_PRIVATE (cb_data->self)->handles_lst_head, &cb_data->handles_lst));
+
+	cb_data->timeout_id = 0;
+	if (!cb_data->ifspec) {
+		gs_free_error GError *error = NULL;
+
+		/* the invocation was with an invalid ifname. It is a fail. */
+		g_set_error (&error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+		             "no interface specified for connectivity check");
+		cb_data_free (cb_data, NM_CONNECTIVITY_ERROR, NULL, "missing interface");
+	} else
+		cb_data_free (cb_data, NM_CONNECTIVITY_FAKE, NULL, "fake result");
 	return G_SOURCE_REMOVE;
 }
 
-void
-nm_connectivity_check_async (NMConnectivity      *self,
-                             const char          *iface,
-                             GAsyncReadyCallback  callback,
-                             gpointer             user_data)
+NMConnectivityCheckHandle *
+nm_connectivity_check_start (NMConnectivity *self,
+                             const char *iface,
+                             NMConnectivityCheckCallback callback,
+                             gpointer user_data)
 {
 	NMConnectivityPrivate *priv;
-	GSimpleAsyncResult *simple;
-	CURL *ehandle = NULL;
+	NMConnectivityCheckHandle *cb_data;
 
-	g_return_if_fail (NM_IS_CONNECTIVITY (self));
+	g_return_val_if_fail (NM_IS_CONNECTIVITY (self), NULL);
+	g_return_val_if_fail (!iface || iface[0], NULL);
+	g_return_val_if_fail (callback, NULL);
+
 	priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
-	simple = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
-	                                    nm_connectivity_check_async);
+	cb_data = g_slice_new0 (NMConnectivityCheckHandle);
+	cb_data->self = self;
+	c_list_link_tail (&priv->handles_lst_head, &cb_data->handles_lst);
+	cb_data->callback = callback;
+	cb_data->user_data = user_data;
 
-	if (priv->enabled)
-		ehandle = curl_easy_init ();
-
-	if (ehandle) {
-		NMConnectivityCheckHandle *cb_data = g_slice_new0 (NMConnectivityCheckHandle);
-
-		cb_data->curl_ehandle = ehandle;
-		cb_data->request_headers = curl_slist_append (NULL, "Connection: close");
+	if (iface)
 		cb_data->ifspec = g_strdup_printf ("if!%s", iface);
-		cb_data->simple = simple;
-		if (priv->response)
-			cb_data->response = g_strdup (priv->response);
-		else
-			cb_data->response = g_strdup (NM_CONFIG_DEFAULT_CONNECTIVITY_RESPONSE);
 
-		curl_easy_setopt (ehandle, CURLOPT_URL, priv->uri);
-		curl_easy_setopt (ehandle, CURLOPT_WRITEFUNCTION, easy_write_cb);
-		curl_easy_setopt (ehandle, CURLOPT_WRITEDATA, cb_data);
-		curl_easy_setopt (ehandle, CURLOPT_HEADERFUNCTION, easy_header_cb);
-		curl_easy_setopt (ehandle, CURLOPT_HEADERDATA, cb_data);
-		curl_easy_setopt (ehandle, CURLOPT_PRIVATE, cb_data);
-		curl_easy_setopt (ehandle, CURLOPT_HTTPHEADER, cb_data->request_headers);
-		curl_easy_setopt (ehandle, CURLOPT_INTERFACE, cb_data->ifspec);
-		curl_multi_add_handle (priv->curl_mhandle, ehandle);
+#if WITH_CONCHECK
+	if (iface) {
+		CURL *ehandle;
 
-		cb_data->timeout_id = g_timeout_add_seconds (30, timeout_cb, cb_data);
+		if (   priv->enabled
+		    && (ehandle = curl_easy_init ())) {
 
-		_LOG2D ("sending request to '%s'", priv->uri);
-		return;
-	} else {
-		_LOGD ("(%s) faking request. Connectivity check disabled", iface);
+			cb_data->concheck.response = g_strdup (priv->response);
+			cb_data->concheck.curl_ehandle = ehandle;
+			cb_data->concheck.request_headers = curl_slist_append (NULL, "Connection: close");
+			curl_easy_setopt (ehandle, CURLOPT_URL, priv->uri);
+			curl_easy_setopt (ehandle, CURLOPT_WRITEFUNCTION, easy_write_cb);
+			curl_easy_setopt (ehandle, CURLOPT_WRITEDATA, cb_data);
+			curl_easy_setopt (ehandle, CURLOPT_HEADERFUNCTION, easy_header_cb);
+			curl_easy_setopt (ehandle, CURLOPT_HEADERDATA, cb_data);
+			curl_easy_setopt (ehandle, CURLOPT_PRIVATE, cb_data);
+			curl_easy_setopt (ehandle, CURLOPT_HTTPHEADER, cb_data->concheck.request_headers);
+			curl_easy_setopt (ehandle, CURLOPT_INTERFACE, cb_data->ifspec);
+			curl_multi_add_handle (priv->concheck.curl_mhandle, ehandle);
+
+			cb_data->timeout_id = g_timeout_add_seconds (30, _timeout_cb, cb_data);
+
+			_LOG2D ("start request to '%s'", priv->uri);
+			return cb_data;
+		}
 	}
+#endif
 
-	g_simple_async_result_set_op_res_gssize (simple, NM_CONNECTIVITY_UNKNOWN);
-	g_simple_async_result_complete_in_idle (simple);
-	g_object_unref (simple);
+	_LOG2D ("start fake request");
+	cb_data->timeout_id = g_idle_add (_idle_cb, cb_data);
+	return cb_data;
 }
 
-NMConnectivityState
-nm_connectivity_check_finish (NMConnectivity  *self,
-                              GAsyncResult    *result,
-                              GError         **error)
+void
+nm_connectivity_check_cancel (NMConnectivityCheckHandle *cb_data)
 {
-	GSimpleAsyncResult *simple;
+	NMConnectivity *self;
+	gs_free_error GError *error = NULL;
 
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (self), nm_connectivity_check_async), NM_CONNECTIVITY_UNKNOWN);
+	g_return_if_fail (cb_data);
 
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-	if (g_simple_async_result_propagate_error (simple, error))
-		return NM_CONNECTIVITY_UNKNOWN;
-	return (NMConnectivityState) g_simple_async_result_get_op_res_gssize (simple);
+	self = cb_data->self;
+
+	g_return_if_fail (NM_IS_CONNECTIVITY (self));
+	g_return_if_fail (!c_list_is_empty (&cb_data->handles_lst));
+	g_return_if_fail (cb_data->callback);
+
+	nm_assert (c_list_contains (&NM_CONNECTIVITY_GET_PRIVATE (self)->handles_lst_head, &cb_data->handles_lst));
+
+	nm_utils_error_set_cancelled (&error, FALSE, "NMConnectivity");
+
+	cb_data_free (cb_data, NM_CONNECTIVITY_ERROR, error, "cancelled");
 }
+
+/*****************************************************************************/
 
 gboolean
 nm_connectivity_check_enabled (NMConnectivity *self)
@@ -435,12 +546,14 @@ nm_connectivity_check_enabled (NMConnectivity *self)
 
 /*****************************************************************************/
 
+#if WITH_CONCHECK
 static gboolean
 periodic_check (gpointer user_data)
 {
 	g_signal_emit (NM_CONNECTIVITY (user_data), signals[PERIODIC_CHECK], 0);
 	return G_SOURCE_CONTINUE;
 }
+#endif
 
 static void
 update_config (NMConnectivity *self, NMConfigData *config_data)
@@ -484,13 +597,16 @@ update_config (NMConnectivity *self, NMConfigData *config_data)
 		changed = TRUE;
 	}
 
-	/* Set enabled flag. */
-	enabled = nm_config_data_get_connectivity_enabled (config_data);
+	enabled = FALSE;
+#if WITH_CONCHECK
 	/* connectivity checking also requires a valid URI, interval and
 	 * curl_mhandle */
-	if (!(priv->uri && priv->interval && priv->curl_mhandle)) {
-		enabled = FALSE;
-	}
+	if (   priv->uri
+	    && priv->interval
+	    && priv->concheck.curl_mhandle)
+		enabled = nm_config_data_get_connectivity_enabled (config_data);
+#endif
+
 	if (priv->enabled != enabled) {
 		priv->enabled = enabled;
 		changed = TRUE;
@@ -498,7 +614,7 @@ update_config (NMConnectivity *self, NMConfigData *config_data)
 
 	/* Set the response. */
 	response = nm_config_data_get_connectivity_response (config_data);
-	if (g_strcmp0 (response, priv->response) != 0) {
+	if (!nm_streq0 (response, priv->response)) {
 		/* a response %NULL means, NM_CONFIG_DEFAULT_CONNECTIVITY_RESPONSE. Any other response
 		 * (including "") is accepted. */
 		g_free (priv->response);
@@ -506,11 +622,13 @@ update_config (NMConnectivity *self, NMConfigData *config_data)
 		changed = TRUE;
 	}
 
+#if WITH_CONCHECK
 	if (changed) {
-		nm_clear_g_source (&priv->periodic_check_id);
+		nm_clear_g_source (&priv->concheck.periodic_check_id);
 		if (nm_connectivity_check_enabled (self))
-			priv->periodic_check_id = g_timeout_add_seconds (priv->interval, periodic_check, self);
+			priv->concheck.periodic_check_id = g_timeout_add_seconds (priv->interval, periodic_check, self);
 	}
+#endif
 }
 
 static void
@@ -523,34 +641,37 @@ config_changed_cb (NMConfig *config,
 	update_config (self, config_data);
 }
 
+/*****************************************************************************/
+
 static void
 nm_connectivity_init (NMConnectivity *self)
 {
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
-	CURLcode retv;
 
-	retv = curl_global_init (CURL_GLOBAL_ALL);
-	if (retv == CURLE_OK)
-		priv->curl_mhandle = curl_multi_init ();
-
-	if (!priv->curl_mhandle)
-		 _LOGE ("unable to init cURL, connectivity check will not work");
-	else {
-		curl_multi_setopt (priv->curl_mhandle, CURLMOPT_SOCKETFUNCTION, multi_socket_cb);
-		curl_multi_setopt (priv->curl_mhandle, CURLMOPT_SOCKETDATA, self);
-		curl_multi_setopt (priv->curl_mhandle, CURLMOPT_TIMERFUNCTION, multi_timer_cb);
-		curl_multi_setopt (priv->curl_mhandle, CURLMOPT_TIMERDATA, self);
-		curl_multi_setopt (priv->curl_mhandle, CURLOPT_VERBOSE, 1);
-	}
+	c_list_init (&priv->handles_lst_head);
 
 	priv->config = g_object_ref (nm_config_get ());
-
-	update_config (self, nm_config_get_data (priv->config));
 	g_signal_connect (G_OBJECT (priv->config),
 	                  NM_CONFIG_SIGNAL_CONFIG_CHANGED,
 	                  G_CALLBACK (config_changed_cb),
 	                  self);
 
+#if WITH_CONCHECK
+	if (curl_global_init (CURL_GLOBAL_ALL) == CURLE_OK)
+		priv->concheck.curl_mhandle = curl_multi_init ();
+
+	if (!priv->concheck.curl_mhandle)
+		 _LOGE ("unable to init cURL, connectivity check will not work");
+	else {
+		curl_multi_setopt (priv->concheck.curl_mhandle, CURLMOPT_SOCKETFUNCTION, multi_socket_cb);
+		curl_multi_setopt (priv->concheck.curl_mhandle, CURLMOPT_SOCKETDATA, self);
+		curl_multi_setopt (priv->concheck.curl_mhandle, CURLMOPT_TIMERFUNCTION, multi_timer_cb);
+		curl_multi_setopt (priv->concheck.curl_mhandle, CURLMOPT_TIMERDATA, self);
+		curl_multi_setopt (priv->concheck.curl_mhandle, CURLOPT_VERBOSE, 1);
+	}
+#endif
+
+	update_config (self, nm_config_get_data (priv->config));
 }
 
 static void
@@ -558,18 +679,33 @@ dispose (GObject *object)
 {
 	NMConnectivity *self = NM_CONNECTIVITY (object);
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
+	NMConnectivityCheckHandle *cb_data;
+	GError *error = NULL;
+
+again:
+	c_list_for_each_entry (cb_data, &priv->handles_lst_head, handles_lst) {
+		if (!error)
+			nm_utils_error_set_cancelled (&error, TRUE, "NMConnectivity");
+		cb_data_free (cb_data, NM_CONNECTIVITY_ERROR, error, "shutting down");
+		goto again;
+	}
+	g_clear_error (&error);
 
 	g_clear_pointer (&priv->uri, g_free);
 	g_clear_pointer (&priv->response, g_free);
+
+#if WITH_CONCHECK
+	nm_clear_g_source (&priv->concheck.curl_timer);
+
+	curl_multi_cleanup (priv->concheck.curl_mhandle);
+	curl_global_cleanup ();
+	nm_clear_g_source (&priv->concheck.periodic_check_id);
+#endif
 
 	if (priv->config) {
 		g_signal_handlers_disconnect_by_func (priv->config, config_changed_cb, self);
 		g_clear_object (&priv->config);
 	}
-
-	curl_multi_cleanup (priv->curl_mhandle);
-	curl_global_cleanup ();
-	nm_clear_g_source (&priv->periodic_check_id);
 
 	G_OBJECT_CLASS (nm_connectivity_parent_class)->dispose (object);
 }
@@ -588,5 +724,3 @@ nm_connectivity_class_init (NMConnectivityClass *klass)
 
 	object_class->dispose = dispose;
 }
-
-#endif /* WITH_CONCHECK */
