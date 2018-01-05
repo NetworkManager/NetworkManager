@@ -41,7 +41,7 @@ typedef struct {
 	struct curl_slist *request_headers;
 	guint timeout_id;
 	char *ifspec;
-} ConCheckCbData;
+} NMConnectivityCheckHandle;
 
 enum {
 	PERIODIC_CHECK,
@@ -111,7 +111,7 @@ NM_UTILS_LOOKUP_STR_DEFINE (nm_connectivity_state_to_string, NMConnectivityState
 /*****************************************************************************/
 
 static void
-finish_cb_data (ConCheckCbData *cb_data, NMConnectivityState new_state)
+finish_cb_data (NMConnectivityCheckHandle *cb_data, NMConnectivityState new_state)
 {
 	/* Contrary to what cURL manual claim it is *not* safe to remove
 	 * the easy handle "at any moment"; specifically not from the
@@ -128,13 +128,13 @@ finish_cb_data (ConCheckCbData *cb_data, NMConnectivityState new_state)
 	g_free (cb_data->msg);
 	g_free (cb_data->ifspec);
 	g_source_remove (cb_data->timeout_id);
-	g_slice_free (ConCheckCbData, cb_data);
+	g_slice_free (NMConnectivityCheckHandle, cb_data);
 }
 
 static void
 curl_check_connectivity (CURLM *mhandle, CURLMcode ret)
 {
-	ConCheckCbData *cb_data;
+	NMConnectivityCheckHandle *cb_data;
 	CURLMsg *msg;
 	CURLcode eret;
 	CURL *easy_handle;
@@ -291,7 +291,7 @@ multi_socket_cb (CURL *e_handle, curl_socket_t s, int what, void *userdata, void
 static size_t
 easy_header_cb (char *buffer, size_t size, size_t nitems, void *userdata)
 {
-	ConCheckCbData *cb_data = userdata;
+	NMConnectivityCheckHandle *cb_data = userdata;
 	size_t len = size * nitems;
 
 	if (   len >= sizeof (HEADER_STATUS_ONLINE) - 1
@@ -307,7 +307,7 @@ easy_header_cb (char *buffer, size_t size, size_t nitems, void *userdata)
 static size_t
 easy_write_cb (void *buffer, size_t size, size_t nmemb, void *userdata)
 {
-	ConCheckCbData *cb_data = userdata;
+	NMConnectivityCheckHandle *cb_data = userdata;
 	size_t len = size * nmemb;
 
 	cb_data->msg = g_realloc (cb_data->msg, cb_data->msg_size + len);
@@ -335,7 +335,7 @@ easy_write_cb (void *buffer, size_t size, size_t nmemb, void *userdata)
 static gboolean
 timeout_cb (gpointer user_data)
 {
-	ConCheckCbData *cb_data = user_data;
+	NMConnectivityCheckHandle *cb_data = user_data;
 	NMConnectivity *self = NM_CONNECTIVITY (g_async_result_get_source_object (G_ASYNC_RESULT (cb_data->simple)));
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 	CURL *ehandle = cb_data->curl_ehandle;
@@ -368,7 +368,7 @@ nm_connectivity_check_async (NMConnectivity      *self,
 		ehandle = curl_easy_init ();
 
 	if (ehandle) {
-		ConCheckCbData *cb_data = g_slice_new0 (ConCheckCbData);
+		NMConnectivityCheckHandle *cb_data = g_slice_new0 (NMConnectivityCheckHandle);
 
 		cb_data->curl_ehandle = ehandle;
 		cb_data->request_headers = curl_slist_append (NULL, "Connection: close");
