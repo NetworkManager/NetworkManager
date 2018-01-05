@@ -33,6 +33,25 @@
 /*****************************************************************************/
 
 typedef struct {
+	GSimpleAsyncResult *simple;
+	char *response;
+	CURL *curl_ehandle;
+	size_t msg_size;
+	char *msg;
+	struct curl_slist *request_headers;
+	guint timeout_id;
+	char *ifspec;
+} ConCheckCbData;
+
+enum {
+	PERIODIC_CHECK,
+
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
+
+typedef struct {
 	char *uri;
 	char *response;
 	gboolean enabled;
@@ -57,14 +76,6 @@ G_DEFINE_TYPE (NMConnectivity, nm_connectivity, G_TYPE_OBJECT)
 #define NM_CONNECTIVITY_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMConnectivity, NM_IS_CONNECTIVITY)
 
 NM_DEFINE_SINGLETON_GETTER (NMConnectivity, nm_connectivity_get, NM_TYPE_CONNECTIVITY);
-
-enum {
-	PERIODIC_CHECK,
-
-	LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL] = { 0 };
 
 /*****************************************************************************/
 
@@ -98,17 +109,6 @@ NM_UTILS_LOOKUP_STR_DEFINE (nm_connectivity_state_to_string, NMConnectivityState
 );
 
 /*****************************************************************************/
-
-typedef struct {
-	GSimpleAsyncResult *simple;
-	char *response;
-	CURL *curl_ehandle;
-	size_t msg_size;
-	char *msg;
-	struct curl_slist *request_headers;
-	guint timeout_id;
-	char *ifspec;
-} ConCheckCbData;
 
 static void
 finish_cb_data (ConCheckCbData *cb_data, NMConnectivityState new_state)
