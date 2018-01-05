@@ -775,12 +775,20 @@ gboolean nm_device_hw_addr_get_cloned (NMDevice *self,
                                        gboolean *preserve,
                                        GError **error);
 
+typedef struct _NMDeviceConnectivityHandle NMDeviceConnectivityHandle;
+
 typedef void (*NMDeviceConnectivityCallback) (NMDevice *self,
+                                              NMDeviceConnectivityHandle *handle,
                                               NMConnectivityState state,
+                                              GError *error,
                                               gpointer user_data);
-void nm_device_check_connectivity (NMDevice *self,
-                                   NMDeviceConnectivityCallback callback,
-                                   gpointer user_data);
+
+NMDeviceConnectivityHandle *nm_device_check_connectivity (NMDevice *self,
+                                                          NMDeviceConnectivityCallback callback,
+                                                          gpointer user_data);
+
+void nm_device_check_connectivity_cancel (NMDeviceConnectivityHandle *handle);
+
 NMConnectivityState nm_device_get_connectivity_state (NMDevice *self);
 
 typedef struct _NMBtVTableNetworkServer NMBtVTableNetworkServer;
