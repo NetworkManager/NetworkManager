@@ -54,7 +54,6 @@ incs = [
   top_inc,
   shared_inc,
   libnm_core_inc,
-  libnm_inc,
   src_inc,
   include_directories(
     'sd-adapt',
