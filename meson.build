@@ -219,16 +219,13 @@ glib_dep = declare_dependency(
   ]
 )
 
-check_distro = join_paths(meson.source_root(), 'check-distro.py')
-
-redhat_releases =  ['/etc/redhat-release', '/etc/fedora-release', '/etc/mandriva-release']
-if run_command(check_distro, redhat_releases).returncode() == 0
+if run_command('test', '-e', '/etc/sysconfig/network-scripts').returncode() == 0
   distro = 'redhat'
-elif run_command(check_distro, '/etc/SuSE-release').returncode() == 0
+elif run_command('test', '-e', '/etc/SuSE-release').returncode() == 0
   distro = 'suse'
-elif run_command(check_distro, '/etc/debian_version').returncode() == 0
+elif run_command('test', '-e', '/etc/debian_version').returncode() == 0
   distro = 'debian'
-elif run_command(check_distro, '/etc/gentoo-release').returncode() == 0
+elif run_command('test', '-e', '/etc/gentoo-release').returncode() == 0
   distro = 'gentoo'
 else
   distro = 'unknown'
