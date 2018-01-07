@@ -1,14 +1,9 @@
-incs = [
-  top_inc,
-  shared_inc
-]
-
 deps = [
   dbus_dep,
   dbus_glib_dep,
-  glib_dep,
   libnm_glib_dep,
-  libnm_util_dep
+  libnm_util_dep,
+  shared_dep
 ]
 
 test_units = [
@@ -19,8 +14,7 @@ test_units = [
 foreach test_unit: test_units
   exe = executable(
     test_unit,
-    [test_unit + '.c', libnm_utils_enum[1]] + shared_test_utils,
-    include_directories: incs,
+    [test_unit + '.c'] + shared_test_utils,
     dependencies: deps,
     c_args: common_cflags + [
       '-DNETWORKMANAGER_COMPILATION_TEST',

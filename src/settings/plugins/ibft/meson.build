@@ -8,7 +8,7 @@ cflags = [
 libnms_ibft_core = static_library(
   'nms-ibft-core',
   'nms-ibft-reader.c',
-  dependencies: core_dep,
+  dependencies: nm_dep,
   c_args: cflags
 )
 
@@ -25,7 +25,7 @@ endif
 libnm_settings_plugin_ibft = shared_module(
   name,
   sources: sources,
-  dependencies: core_dep,
+  dependencies: nm_dep,
   c_args: cflags,
   link_with: libnms_ibft_core,
   link_args: ldflags,

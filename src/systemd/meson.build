@@ -51,9 +51,6 @@ sources = files(
 )
 
 incs = [
-  top_inc,
-  shared_inc,
-  libnm_core_inc,
   src_inc,
   include_directories(
     'sd-adapt',
@@ -64,12 +61,10 @@ incs = [
   )
 ]
 
-cflags = '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD'
-
 libsystemd_nm = static_library(
   'systemd-nm',
-  sources: sources + [libnm_core_enum[1]],
+  sources: sources,
   include_directories: incs,
-  dependencies: glib_dep,
-  c_args: cflags
+  dependencies: nm_core_dep,
+  c_args: '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD'
 )

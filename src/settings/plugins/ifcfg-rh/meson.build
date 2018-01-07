@@ -33,8 +33,8 @@ sources = files(
 )
 
 deps = [
-  core_dep,
-  crypto_dep
+  crypto_dep,
+  nm_dep
 ]
 
 libnms_ifcfg_rh_core = static_library(

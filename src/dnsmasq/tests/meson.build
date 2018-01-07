@@ -1,16 +1,10 @@
 test_unit = 'test-dnsmasq-utils'
 
-cflags = [
-  '-DTESTDIR="@0@"'.format(meson.source_root()),
-  '-DNETWORKMANAGER_COMPILATION_TEST',
-  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON',
-]
-
 exe = executable(
   test_unit,
   test_unit + '.c',
-  dependencies: test_core_dep,
-  c_args: cflags
+  dependencies: test_nm_dep,
+  c_args: '-DTESTDIR="@0@"'.format(meson.source_root())
 )
 
 test(test_unit, exe)

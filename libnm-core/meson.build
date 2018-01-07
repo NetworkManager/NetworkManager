@@ -127,16 +127,11 @@ libnm_core_enum = gnome.mkenums(
   install_dir: libnm_pkgincludedir
 )
 
-incs = [
-  top_inc,
-  shared_inc
-]
-
 deps = [
   crypto_dep,
   dl_dep,
-  glib_dep,
   libudev_dep,
+  shared_dep,
   uuid_dep
 ]
 
@@ -158,9 +153,14 @@ endif
 libnm_core = static_library(
   'nm-core',
   sources: libnm_core_sources + libnm_core_enum + shared_sources + [version_header],
-  include_directories: incs,
   dependencies: deps,
   c_args: cflags
+)
+
+nm_core_dep = declare_dependency(
+  sources: libnm_core_enum[1],
+  include_directories: libnm_core_inc,
+  dependencies: shared_dep
 )
 
 enums_to_docbook = join_paths(meson.source_root(), 'tools', 'enums-to-docbook.pl')

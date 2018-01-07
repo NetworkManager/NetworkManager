@@ -6,17 +6,11 @@ if have_fake_typelibs
   subdir('fake-typelib')
 endif
 
-incs = [
-  top_inc,
-  shared_inc,
-  libnm_core_inc
-]
-
 deps = [
   # FIXME: this makes GIR mandatory?
   gir_dep,
-  glib_dep,
-  libnmdbus_dep
+  libnmdbus_dep,
+  shared_dep
 ]
 
 cflags = [
@@ -28,7 +22,7 @@ cflags = [
 libnm_utils = static_library(
   'nm-utils',
   sources: sources,
-  include_directories: incs,
+  include_directories: libnm_core_inc,
   dependencies: deps,
   c_args: cflags
 )
@@ -145,8 +139,8 @@ libnm_sources = files(
 
 deps = [
   dl_dep,
-  glib_dep,
   libudev_dep,
+  shared_dep,
   uuid_dep
 ]
 
@@ -161,7 +155,7 @@ libnm = shared_library(
   'nm',
   sources: libnm_sources + libnm_enum,
   version: libnm_version,
-  include_directories: incs + [libnm_core_inc],
+  include_directories: libnm_core_inc,
   dependencies: deps,
   c_args: cflags,
   link_with: libnm_utils,
@@ -172,8 +166,9 @@ libnm = shared_library(
 )
 
 libnm_dep = declare_dependency(
-  link_with: libnm,
-  include_directories: libnm_inc
+  sources: libnm_enum[1],
+  include_directories: libnm_inc,
+  link_with: libnm
 )
 
 pkg.generate(

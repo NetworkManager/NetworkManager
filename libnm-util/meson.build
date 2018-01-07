@@ -91,16 +91,11 @@ sources = shared_utils + files(
   'nm-value-transforms.c'
 )
 
-incs = [
-  top_inc,
-  shared_inc
-]
-
 deps = [
   crypto_dep,
   dbus_dep,
   dbus_glib_dep,
-  glib_dep,
+  shared_dep,
   uuid_dep
 ]
 
@@ -110,7 +105,7 @@ common_cflags = [
 ]
 
 cflags = common_cflags + [
-  '-DG_LOG_DOMAIN="libnm-util"',
+  '-DG_LOG_DOMAIN="libnm-util"'
 ]
 
 symbol_map = join_paths(meson.current_source_dir(), 'libnm-util.ver')
@@ -124,7 +119,6 @@ libnm_util = shared_library(
   'nm-util',
   sources: sources + libnm_utils_enum,
   version: libnm_util_version,
-  include_directories: incs,
   dependencies: deps,
   c_args: cflags,
   link_args: ldflags,
@@ -133,8 +127,9 @@ libnm_util = shared_library(
 )
 
 libnm_util_dep = declare_dependency(
-  link_with: libnm_util,
-  include_directories: libnm_util_inc
+  sources: libnm_utils_enum[1],
+  include_directories: libnm_util_inc,
+  link_with: libnm_util
 )
 
 pkg.generate(
@@ -169,8 +164,8 @@ if enable_introspection
   )
 
   libnm_util_gir_dep = declare_dependency(
-    link_with: libnm_util,
-    sources: libnm_util_gir
+    sources: libnm_util_gir,
+    link_with: libnm_util
   )
 endif
 
@@ -187,13 +182,12 @@ sources = files(
 
 deps = [
   crypto_dep,
-  glib_dep
+  shared_dep
 ]
 
 libtest_crypto = static_library(
   'test-crypto',
   sources: sources,
-  include_directories: incs,
   dependencies: deps,
   c_args: cflags
 )

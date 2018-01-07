@@ -10,7 +10,7 @@ cflags = [
 exe = executable(
   test_unit,
   test_unit + '.c',
-  dependencies: test_core_dep,
+  dependencies: test_nm_dep,
   c_args: cflags
 )
 

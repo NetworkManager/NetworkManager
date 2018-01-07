@@ -7,25 +7,17 @@ install_data(
 
 subdir('systemd')
 
-core_incs = [
-  top_inc,
-  shared_inc,
-  libnm_core_inc,
-  src_inc
-]
-
-core_dep = declare_dependency(
-  sources: libnm_core_enum[1],
-  include_directories: core_incs,
-  dependencies: glib_dep,
-  compile_args: [
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON',
-  ],
-)
-
 core_plugins = []
 
-common_cflags = [
+nm_cflags = ['-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON']
+
+nm_dep = declare_dependency(
+  include_directories: src_inc,
+  dependencies: nm_core_dep,
+  compile_args: nm_cflags
+)
+
+cflags = nm_cflags + [
   '-DPREFIX="@0@"'.format(nm_prefix),
   '-DBINDIR="@0@"'.format(nm_bindir),
   '-DDATADIR="@0@"'.format(nm_datadir),
@@ -40,20 +32,19 @@ common_cflags = [
   '-DNMPLUGINDIR="@0@"'.format(nm_pkglibdir),
   '-DNMRUNDIR="@0@"'.format(nm_pkgrundir),
   '-DNMSTATEDIR="@0@"'.format(nm_pkgstatedir),
-  '-DNMLIBDIR="@0@"'.format(nm_pkglibdir),
-  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON',
+  '-DNMLIBDIR="@0@"'.format(nm_pkglibdir)
 ]
 
 if enable_dhcpcanon
-  common_cflags += '-DDHCPCANON_PATH="@0@"'.format(dhcpcanon.path())
+  cflags += '-DDHCPCANON_PATH="@0@"'.format(dhcpcanon.path())
 endif
 
 if enable_dhclient
-  common_cflags += '-DDHCLIENT_PATH="@0@"'.format(dhclient.path())
+  cflags += '-DDHCLIENT_PATH="@0@"'.format(dhclient.path())
 endif
 
 if enable_dhcpcd
-  common_cflags += '-DDHCPCD_PATH="@0@"'.format(dhcpcd.path())
+  cflags += '-DDHCPCD_PATH="@0@"'.format(dhcpcd.path())
 endif
 
 sources = files(
@@ -80,11 +71,11 @@ sources = files(
 )
 
 deps = [
-  core_dep,
   libnl_dep,
   libnmdbus_dep,
   libsystemd_dep,
-  libudev_dep
+  libudev_dep,
+  nm_core_dep
 ]
 
 if enable_wext
@@ -95,7 +86,7 @@ libnetwork_manager_base = static_library(
   'NetworkManagerBase',
   sources: sources,
   dependencies: deps,
-  c_args: common_cflags,
+  c_args: cflags,
   link_with: libnm_core
 )
 
@@ -176,11 +167,14 @@ sources = files(
 )
 
 deps = [
-  core_dep,
   dl_dep,
   libndp_dep,
   libnl_dep,
-  libudev_dep
+  # FIXME: Some files use introspection/dbus* headers, so
+  #        this dependency might be needed
+  #libnmdbus_dep,
+  libudev_dep,
+  nm_core_dep
 ]
 
 if enable_concheck
@@ -209,7 +203,7 @@ libnetwork_manager = static_library(
   'NetworkManager',
   sources: sources,
   dependencies: deps,
-  c_args: common_cflags,
+  c_args: cflags,
   link_with: [libnetwork_manager_base, libsystemd_nm]
 )
 
@@ -247,7 +241,7 @@ network_manager = executable(
   meson.project_name(),
   'main.c',
   dependencies: deps,
-  c_args: common_cflags,
+  c_args: cflags,
   link_with: libnetwork_manager,
   link_args: ldflags,
   link_depends: symbol_map,
@@ -256,11 +250,11 @@ network_manager = executable(
 )
 
 deps = [
-  core_dep,
   dl_dep,
   libndp_dep,
   libnl_dep,
-  libudev_dep
+  libudev_dep,
+  nm_core_dep
 ]
 
 ldflags = []
@@ -274,7 +268,7 @@ executable(
   name,
   name + '.c',
   dependencies: deps,
-  c_args: common_cflags,
+  c_args: cflags,
   link_with: [libnetwork_manager_base, libsystemd_nm],
   link_args: ldflags,
   link_depends: linker_script_binary,
@@ -290,36 +284,29 @@ if enable_tests
   )
 
   deps = [
-    core_dep,
     libnl_dep,
-    libudev_dep
+    libudev_dep,
+    nm_core_dep
   ]
 
-  test_cflags = [
-    '-DNETWORKMANAGER_COMPILATION_TEST',
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON',
-  ]
+  test_cflags = ['-DNETWORKMANAGER_COMPILATION_TEST']
   if require_root_tests
     test_cflags += ['-DREQUIRE_ROOT_TESTS=1']
   endif
 
   platform = (host_machine.system().contains('linux') ? 'linux' : 'fake')
-  test_cflags_platform = [
-    '-DSETUP=nm_' + platform + '_platform_setup',
-    '-DNETWORKMANAGER_COMPILATION_TEST',
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON',
-  ]
+  test_cflags_platform = '-DSETUP=nm_' + platform + '_platform_setup'
 
   libnetwork_manager_test = static_library(
     'NetworkManagerTest',
     sources: sources,
     dependencies: deps,
-    c_args: test_cflags,
+    c_args: cflags + test_cflags,
     link_with: libnetwork_manager
   )
 
-  test_core_dep = declare_dependency(
-    dependencies: core_dep,
+  test_nm_dep = declare_dependency(
+    dependencies: nm_dep,
     compile_args: test_cflags,
     link_with: libnetwork_manager_test
   )

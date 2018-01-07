@@ -1,14 +1,8 @@
 name = 'nm-online'
 
-incs = [
-  top_inc,
-  shared_inc,
-  libnm_core_inc
-]
-
 deps = [
-  glib_dep,
-  libnm_dep
+  libnm_dep,
+  nm_core_dep
 ]
 
 clients_cflags = [
@@ -27,8 +21,7 @@ endif
 
 executable(
   name,
-  [name + '.c', libnm_core_enum[1]],
-  include_directories: incs,
+  name + '.c',
   dependencies: deps,
   c_args: cflags,
   link_args: ldflags,

@@ -1,14 +1,11 @@
-dbus_binding_tool = find_program('dbus-binding-tool')
+libnm_glib_inc = include_directories('.')
 
-common_incs = [
-  top_inc,
-  shared_inc
-]
+dbus_binding_tool = find_program('dbus-binding-tool')
 
 common_deps = [
   dbus_dep,
   dbus_glib_dep,
-  glib_dep
+  shared_dep
 ]
 
 common_cflags = [
@@ -16,10 +13,8 @@ common_cflags = [
 ]
 
 cflags = common_cflags + [
-  '-DG_LOG_DOMAIN="libnm-glib"',
+  '-DG_LOG_DOMAIN="libnm-glib"'
 ]
-
-libnm_glib_inc = include_directories('.')
 
 vpn_headers = files(
   'nm-vpn-plugin.h',
@@ -65,12 +60,10 @@ install_headers(
   subdir: 'libnm-glib'
 )
 
-incs = common_incs + [libnm_util_inc]
-
 libdeprecated_nm_glib = static_library(
   'deprecated-nm-glib',
   sources: 'libnm_glib.c',
-  include_directories: incs,
+  include_directories: libnm_util_inc,
   dependencies: common_deps,
   c_args: cflags + [
     '-Wno-deprecated-declarations',
@@ -116,9 +109,8 @@ endif
 
 libnm_glib_vpn = shared_library(
   'nm-glib-vpn',
-  sources: sources + libnm_glib_vpn_enum + [libnm_utils_enum[1]],
+  sources: sources + libnm_glib_vpn_enum,
   version: libnm_glib_vpn_version,
-  include_directories: common_incs,
   dependencies: deps,
   c_args: cflags,
   link_args: ldflags,
@@ -127,8 +119,8 @@ libnm_glib_vpn = shared_library(
 )
 
 libnm_glib_vpn_dep = declare_dependency(
-  link_with: libnm_glib_vpn,
-  include_directories: libnm_glib_inc
+  include_directories: libnm_glib_inc,
+  link_with: libnm_glib_vpn
 )
 
 pkg.generate(
@@ -197,8 +189,8 @@ libnm_glib_enum = gnome.mkenums(
 )
 
 deps = common_deps + [
-  libudev_dep,
-  libnm_util_dep
+  libnm_util_dep,
+  libudev_dep
 ]
 
 symbol_map = join_paths(meson.current_source_dir(), 'libnm-glib.ver')
@@ -210,9 +202,8 @@ endif
 
 libnm_glib = shared_library(
   'nm-glib',
-  sources: sources + libnm_glib_enum + [nm_secret_agent_glue, libnm_utils_enum[1]],
+  sources: sources + libnm_glib_enum + [nm_secret_agent_glue],
   version: libnm_glib_version,
-  include_directories: common_incs,
   dependencies: deps,
   c_args: cflags + [
     '-DNMRUNDIR="@0@"'.format(nm_pkgrundir),
@@ -224,8 +215,8 @@ libnm_glib = shared_library(
 )
 
 libnm_glib_dep = declare_dependency(
-  link_with: libnm_glib,
-  include_directories: libnm_glib_inc
+  include_directories: libnm_glib_inc,
+  link_with: libnm_glib
 )
 
 pkg.generate(
@@ -276,8 +267,7 @@ deps = common_deps + [libnm_util_dep]
 
 executable(
   name,
-  [name + '.c', libnm_utils_enum[1]],
-  include_directories: common_incs,
+  name + '.c',
   dependencies: deps,
   c_args: cflags,
   link_with: libnm_glib

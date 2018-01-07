@@ -4,9 +4,9 @@ sources = files(
 )
 
 deps = [
-  core_dep,
   libnmdbus_dep,
-  libudev_dep
+  libudev_dep,
+  nm_dep
 ]
 
 ldflags = []

@@ -1,13 +1,8 @@
-incs = [
-  top_inc,
-  shared_inc
-]
-
 deps = [
   dbus_dep,
   dbus_glib_dep,
-  glib_dep,
-  libnm_util_dep
+  libnm_util_dep,
+  shared_dep
 ]
 
 cflags = common_cflags + [
@@ -20,8 +15,7 @@ test = 'test-libnm-linking'
 
 test_libnm_linking = executable(
   test,
-  [test + '.c', libnm_utils_enum[1]],
-  include_directories: incs,
+  test + '.c',
   dependencies: deps + [libnm_dep],
   c_args: cflags
 )
@@ -38,8 +32,7 @@ test_units = [
 foreach test_unit: test_units
   exe = executable(
     'libnm-util-' + test_unit[0],
-    [test_unit[0] + '.c', libnm_utils_enum[1]],
-    include_directories: incs,
+    test_unit[0] + '.c',
     dependencies: deps,
     c_args: cflags,
     link_with: test_unit[1],

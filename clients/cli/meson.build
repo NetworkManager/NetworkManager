@@ -16,23 +16,17 @@ sources = files(
   'utils.c'
 )
 
-incs = [
-  top_inc,
-  shared_inc,
-  libnm_core_inc
-]
-
 deps = [
-  glib_dep,
   libnm_dep,
-  libnmc_dep,
   libnmc_base_dep,
+  libnmc_dep,
+  nm_core_dep,
   readline_dep
 ]
 
 cflags = clients_cflags + [
   '-DG_LOG_DOMAIN="nmcli"',
-  '-DNMCLI_LOCALEDIR="@0@"'.format(nm_localedir),
+  '-DNMCLI_LOCALEDIR="@0@"'.format(nm_localedir)
 ]
 
 ldflags = []
@@ -48,8 +42,7 @@ endif
 
 executable(
   'nmcli',
-  sources + [libnm_core_enum[1]],
-  include_directories: incs,
+  sources,
   dependencies: deps,
   c_args: cflags,
   link_args: ldflags,

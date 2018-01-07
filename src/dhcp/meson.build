@@ -14,8 +14,7 @@ endif
 executable(
   name,
   name + '.c',
-  include_directories: core_incs,
-  dependencies: glib_dep,
+  dependencies: nm_core_dep,
   c_args: cflags,
   link_args: ldflags,
   link_depends: linker_script_binary,

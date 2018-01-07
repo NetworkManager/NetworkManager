@@ -4,10 +4,10 @@ sources = files(
 )
 
 deps = [
-  core_dep,
   jansson_dep,
   libnmdbus_dep,
-  libteamdctl_dep
+  libteamdctl_dep,
+  nm_dep
 ]
 
 ldflags = []

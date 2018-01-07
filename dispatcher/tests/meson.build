@@ -1,11 +1,8 @@
 test_unit = 'test-dispatcher-envp'
 
 incs = [
-  top_inc,
-  shared_inc,
-  libnm_core_inc,
-  libnm_inc,
-  dispatcher_inc
+  dispatcher_inc,
+  libnm_inc
 ]
 
 cflags = [
@@ -16,9 +13,9 @@ cflags = [
 
 exe = executable(
   test_unit,
-  [test_unit + '.c', libnm_core_enum[1]],
+  test_unit + '.c',
   include_directories: incs,
-  dependencies: glib_dep,
+  dependencies: nm_core_dep,
   c_args: cflags,
   link_with: libnm_dispatcher_core
 )

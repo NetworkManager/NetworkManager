@@ -4,8 +4,8 @@ sources = files(
 )
 
 deps = [
-  core_dep,
-  libudev_dep
+  libudev_dep,
+  nm_dep
 ]
 
 cflags = '-DSYSCONFDIR="@0@"'.format(nm_sysconfdir)

@@ -1,18 +1,11 @@
-incs = [
-  top_inc,
-  shared_inc,
-  libnm_core_inc,
-  libnm_inc,
-]
-
 deps = [
-  glib_dep,
-  newt_dep
+  newt_dep,
+  nm_core_dep
 ]
 
 cflags = clients_cflags + [
   '-DG_LOG_DOMAIN="nmtui"',
-  '-DLOCALEDIR="@0@"'.format(nm_localedir),
+  '-DLOCALEDIR="@0@"'.format(nm_localedir)
 ]
 
 subdir('newt')
@@ -73,8 +66,7 @@ endif
 
 executable(
   'nmtui',
-  sources + [libnm_core_enum[1]],
-  include_directories: incs,
+  sources,
   dependencies: deps,
   c_args: cflags,
   link_args: ldflags,
