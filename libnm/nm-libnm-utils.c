@@ -23,8 +23,6 @@
 
 #include "nm-libnm-utils.h"
 
-#include <girepository.h>
-
 /*****************************************************************************/
 
 char *
@@ -175,6 +173,8 @@ next:
  * while the inability to resolve any methods and attributes is potentially
  * recoverable.
  */
+
+#include <girepository.h>
 
 GResource *typelibs_get_resource (void);
 void typelibs_register_resource (void);
