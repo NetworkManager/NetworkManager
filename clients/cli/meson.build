@@ -30,9 +30,9 @@ deps = [
   readline_dep
 ]
 
-cflags = [
+cflags = clients_cflags + [
   '-DG_LOG_DOMAIN="nmcli"',
-  '-DNMCLI_LOCALEDIR="@0@"'.format(nm_localedir)
+  '-DNMCLI_LOCALEDIR="@0@"'.format(nm_localedir),
 ]
 
 ldflags = []

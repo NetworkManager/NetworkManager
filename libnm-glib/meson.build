@@ -12,8 +12,11 @@ common_deps = [
 ]
 
 common_cflags = [
+  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_GLIB',
+]
+
+cflags = common_cflags + [
   '-DG_LOG_DOMAIN="libnm-glib"',
-  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY'
 ]
 
 libnm_glib_inc = include_directories('.')
@@ -64,17 +67,15 @@ install_headers(
 
 incs = common_incs + [libnm_util_inc]
 
-cflags = common_cflags + [
-  '-Wno-deprecated-declarations',
-  '-Wno-deprecated'
-]
-
 libdeprecated_nm_glib = static_library(
   'deprecated-nm-glib',
   sources: 'libnm_glib.c',
   include_directories: incs,
   dependencies: common_deps,
-  c_args: cflags
+  c_args: cflags + [
+    '-Wno-deprecated-declarations',
+    '-Wno-deprecated',
+  ],
 )
 
 sources = files(
@@ -119,7 +120,7 @@ libnm_glib_vpn = shared_library(
   version: libnm_glib_vpn_version,
   include_directories: common_incs,
   dependencies: deps,
-  c_args: common_cflags,
+  c_args: cflags,
   link_args: ldflags,
   link_depends: symbol_map,
   install: true
@@ -200,8 +201,6 @@ deps = common_deps + [
   libnm_util_dep
 ]
 
-cflags = common_cflags + ['-DNMRUNDIR="@0@"'.format(nm_pkgrundir)]
-
 symbol_map = join_paths(meson.current_source_dir(), 'libnm-glib.ver')
 
 ldflags = []
@@ -215,7 +214,9 @@ libnm_glib = shared_library(
   version: libnm_glib_version,
   include_directories: common_incs,
   dependencies: deps,
-  c_args: cflags,
+  c_args: cflags + [
+    '-DNMRUNDIR="@0@"'.format(nm_pkgrundir),
+  ],
   link_with: libdeprecated_nm_glib,
   link_args: ldflags,
   link_depends: symbol_map,
@@ -262,7 +263,9 @@ if enable_introspection
     symbol_prefix: nm_id_prefix.to_lower(),
     export_packages: ['libnm-glib', 'libnm-glib-vpn'],
     includes: gir_includes,
-    extra_args: common_cflags + ['--include-uninstalled=' + libnm_util_gir[0].full_path()],
+    extra_args: cflags + [
+      '--include-uninstalled=' + libnm_util_gir[0].full_path(),
+    ],
     install: true
   )
 endif
@@ -276,7 +279,7 @@ executable(
   [name + '.c', libnm_utils_enum[1]],
   include_directories: common_incs,
   dependencies: deps,
-  c_args: common_cflags,
+  c_args: cflags,
   link_with: libnm_glib
 )
 

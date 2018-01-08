@@ -22,6 +22,10 @@
 #ifndef NM_CORE_TYPES_INTERNAL_H
 #define NM_CORE_TYPES_INTERNAL_H
 
+#if !((NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_CORE_INTERNAL)
+#error Cannot use this header.
+#endif
+
 typedef struct {
 	guint32 from;
 	guint32 to;

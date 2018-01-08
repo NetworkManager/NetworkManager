@@ -30,6 +30,14 @@
 
 /*****************************************************************************/
 
+#define NMTST_EXPECT_NM(level, msg)     NMTST_EXPECT ("NetworkManager", level, msg)
+
+#define NMTST_EXPECT_NM_ERROR(msg)      NMTST_EXPECT_NM (G_LOG_LEVEL_MESSAGE, "*<error> [*] "msg)
+#define NMTST_EXPECT_NM_WARN(msg)       NMTST_EXPECT_NM (G_LOG_LEVEL_MESSAGE, "*<warn>  [*] "msg)
+#define NMTST_EXPECT_NM_INFO(msg)       NMTST_EXPECT_NM (G_LOG_LEVEL_INFO,    "*<info>  [*] "msg)
+#define NMTST_EXPECT_NM_DEBUG(msg)      NMTST_EXPECT_NM (G_LOG_LEVEL_DEBUG,   "*<debug> [*] "msg)
+#define NMTST_EXPECT_NM_TRACE(msg)      NMTST_EXPECT_NM (G_LOG_LEVEL_DEBUG,   "*<trace> [*] "msg)
+
 static inline void
 nmtst_init_with_logging (int *argc, char ***argv, const char *log_level, const char *log_domains)
 {

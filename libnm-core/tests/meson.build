@@ -35,7 +35,11 @@ incs = [
 
 test_cert_dir = join_paths(meson.current_source_dir(), 'certs')
 
-cflags = '-DTEST_CERT_DIR="@0@"'.format(test_cert_dir)
+cflags = [
+  '-DNETWORKMANAGER_COMPILATION_TEST',
+  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE',
+  '-DTEST_CERT_DIR="@0@"'.format(test_cert_dir),
+]
 
 foreach test_unit: test_units
   exe = executable(

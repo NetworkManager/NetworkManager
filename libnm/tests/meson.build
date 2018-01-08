@@ -18,7 +18,8 @@ deps = [
 ]
 
 cflags = [
-  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB',
+  '-DNETWORKMANAGER_COMPILATION_TEST',
+  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM',
   '-DTEST_NM_SERVICE="@0@"'.format(join_paths(meson.source_root(), 'tools', 'test-networkmanager-service.py'))
 ]
 
@@ -47,5 +48,6 @@ libnm_vpn_plugin_utils_test = static_library(
   'nm-vpn-plugin-utils-test',
   sources: shared_vpn_plugin_utils + [libnm_enum[1]],
   include_directories: incs,
-  dependencies: glib_dep
+  dependencies: glib_dep,
+  c_args: cflags,
 )

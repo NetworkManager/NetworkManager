@@ -104,10 +104,13 @@ deps = [
   uuid_dep
 ]
 
-cflags = [
+common_cflags = [
+  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_UTIL',
+  '-DLOCALEDIR="@0@"'.format(nm_localedir),
+]
+
+cflags = common_cflags + [
   '-DG_LOG_DOMAIN="libnm-util"',
-  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIB_LEGACY',
-  '-DLOCALEDIR="@0@"'.format(nm_localedir)
 ]
 
 symbol_map = join_paths(meson.current_source_dir(), 'libnm-util.ver')
