@@ -374,7 +374,8 @@ $(src_libNetworkManager_la_OBJECTS):            $(introspection_sources)
 $(src_libNetworkManagerBase_la_OBJECTS):        $(introspection_sources)
 
 EXTRA_DIST += \
-	$(dbusinterfaces_DATA)
+	$(dbusinterfaces_DATA) \
+	introspection/meson.build
 
 ###############################################################################
 
@@ -620,7 +621,10 @@ endif
 
 EXTRA_DIST += \
 	libnm-core/crypto_gnutls.c \
-	libnm-core/crypto_nss.c
+	libnm-core/crypto_nss.c	\
+	libnm-core/nm-core-enum-types.c.template \
+	libnm-core/nm-core-enum-types.h.template \
+	libnm-core/meson.build
 
 libnm-core/nm-vpn-dbus-types.xml: libnm-core/nm-vpn-dbus-interface.h tools/enums-to-docbook.pl
 	@$(MKDIR_P) libnm-core/
@@ -729,7 +733,10 @@ EXTRA_DIST += \
 	libnm-core/tests/certs/test-key-and-cert.pem \
 	libnm-core/tests/certs/test-key-only-decrypted.der \
 	libnm-core/tests/certs/test-key-only-decrypted.pem \
-	libnm-core/tests/certs/test-key-only.pem
+	libnm-core/tests/certs/test-key-only.pem \
+	libnm-core/tests/nm-core-tests-enum-types.c.template \
+	libnm-core/tests/nm-core-tests-enum-types.h.template \
+	libnm-core/tests/meson.build
 
 ###############################################################################
 
@@ -981,7 +988,8 @@ endif
 EXTRA_DIST += \
 	libnm/fake-typelib/NetworkManager.gir \
 	libnm/fake-typelib/NMClient.gir \
-	libnm/fake-typelib/typelibs.gresource.xml
+	libnm/fake-typelib/typelibs.gresource.xml \
+	libnm/fake-typelib/meson.build
 
 if HAVE_INTROSPECTION
 
@@ -1034,7 +1042,10 @@ endif
 
 EXTRA_DIST += \
 	libnm/generate-setting-docs.py \
-	libnm/generate-plugin-docs.pl
+	libnm/generate-plugin-docs.pl \
+	libnm/nm-enum-types.c.template \
+	libnm/nm-enum-types.h.template \
+	libnm/meson.build
 
 ###############################################################################
 
@@ -1117,6 +1128,9 @@ libnm_tests_libnm_vpn_plugin_utils_test_la_CFLAGS = \
 
 libnm_tests_libnm_vpn_plugin_utils_test_la_LIBADD = \
 	$(GLIB_LIBS)
+
+EXTRA_DIST += \
+	libnm/tests/meson.build
 
 ###############################################################################
 # src/
@@ -1342,6 +1356,9 @@ src_libsystemd_nm_la_SOURCES = \
 src_libsystemd_nm_la_CPPFLAGS = $(src_libsystemd_nm_la_cppflags)
 src_libsystemd_nm_la_LIBADD = $(src_libsystemd_nm_la_libadd)
 $(src_libsystemd_nm_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+EXTRA_DIST += \
+	src/systemd/meson.build
 
 ###############################################################################
 
@@ -1693,7 +1710,8 @@ $(src_nm_iface_helper_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
 	src/org.freedesktop.NetworkManager.conf \
-	src/nm-test-utils-core.h
+	src/nm-test-utils-core.h \
+	src/meson.build
 
 ###############################################################################
 # src/dhcp
@@ -1718,6 +1736,9 @@ src_dhcp_nm_dhcp_helper_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
 
 src_dhcp_nm_dhcp_helper_LDADD = $(GLIB_LIBS)
+
+EXTRA_DIST += \
+	src/dhcp/meson.build
 
 ###############################################################################
 # src/dhcp/tests
@@ -1749,7 +1770,8 @@ EXTRA_DIST += \
 	src/dhcp/tests/leases/basic.leases \
 	src/dhcp/tests/leases/malformed1.leases \
 	src/dhcp/tests/leases/malformed2.leases \
-	src/dhcp/tests/leases/malformed3.leases
+	src/dhcp/tests/leases/malformed3.leases \
+	src/dhcp/tests/meson.build
 
 ###############################################################################
 # src/ppp
@@ -1816,6 +1838,9 @@ $(src_ppp_libnm_ppp_plugin_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 endif
 
+EXTRA_DIST += \
+	src/ppp/meson.build
+
 ###############################################################################
 # src/settings/plugins/keyfile/tests
 ###############################################################################
@@ -1874,7 +1899,9 @@ EXTRA_DIST += \
 	src/settings/plugins/keyfile/tests/keyfiles/Test_TC_Config \
 	\
 	src/settings/plugins/keyfile/tests/keyfiles/test-ca-cert.pem \
-	src/settings/plugins/keyfile/tests/keyfiles/test-key-and-cert.pem
+	src/settings/plugins/keyfile/tests/keyfiles/test-key-and-cert.pem \
+	\
+	src/settings/plugins/keyfile/tests/meson.build
 
 ###############################################################################
 # src/settings/plugins/ibft
@@ -1964,6 +1991,10 @@ check-local-symbols-settings-ibft: src/settings/plugins/ibft/libnm-settings-plug
 check_local += check-local-symbols-settings-ibft
 
 endif
+
+EXTRA_DIST += \
+	src/settings/plugins/ibft/meson.build \
+	src/settings/plugins/ibft/tests/meson.build
 
 ###############################################################################
 # src/settings/plugins/ifcfg-rh
@@ -2302,7 +2333,9 @@ endif
 
 EXTRA_DIST += \
 	src/settings/plugins/ifcfg-rh/nm-ifcfg-rh.conf \
-	src/settings/plugins/ifcfg-rh/nm-ifcfg-rh.xml
+	src/settings/plugins/ifcfg-rh/nm-ifcfg-rh.xml \
+	src/settings/plugins/ifcfg-rh/meson.build \
+	src/settings/plugins/ifcfg-rh/tests/meson.build
 
 ###############################################################################
 # src/settings/plugins/ifupdown
@@ -2410,7 +2443,16 @@ EXTRA_DIST += \
 	src/settings/plugins/ifupdown/tests/test20-source-stanza.eth0 \
 	src/settings/plugins/ifupdown/tests/test20-source-stanza.eth1 \
 	src/settings/plugins/ifupdown/tests/test21-source-dir-stanza \
-	src/settings/plugins/ifupdown/tests/test21-source-dir-stanza.d
+	src/settings/plugins/ifupdown/tests/test21-source-dir-stanza.d \
+	src/settings/plugins/ifupdown/meson.build \
+	src/settings/plugins/ifupdown/tests/meson.build
+
+###############################################################################
+# src/devices
+###############################################################################
+
+EXTRA_DIST += \
+	src/devices/meson.build
 
 ###############################################################################
 # src/devices/adsl
@@ -2447,6 +2489,9 @@ check-local-devices-adsl: src/devices/adsl/libnm-device-plugin-adsl.la
 	$(call check_so_symbols,$(builddir)/src/devices/adsl/.libs/libnm-device-plugin-adsl.so)
 
 check_local += check-local-devices-adsl
+
+EXTRA_DIST += \
+	src/devices/adsl/meson.build
 
 ###############################################################################
 # src/devices/wwan
@@ -2527,7 +2572,8 @@ check_local += check-local-devices-wwan
 endif
 
 EXTRA_DIST += \
-	src/devices/wwan/libnm-wwan.ver
+	src/devices/wwan/libnm-wwan.ver \
+	src/devices/wwan/meson.build
 
 ###############################################################################
 # src/devices/bluetooth
@@ -2590,6 +2636,9 @@ check-local-devices-bluetooth: src/devices/bluetooth/libnm-device-plugin-bluetoo
 check_local += check-local-devices-bluetooth
 
 endif
+
+EXTRA_DIST += \
+	src/devices/bluetooth/meson.build
 
 ###############################################################################
 # src/devices/wifi
@@ -2668,6 +2717,10 @@ $(src_devices_wifi_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 endif
 
+EXTRA_DIST += \
+	src/devices/wifi/meson.build \
+	src/devices/wifi/tests/meson.build
+
 ###############################################################################
 # src/devices/team
 ###############################################################################
@@ -2710,6 +2763,9 @@ check-local-devices-team: src/devices/team/libnm-device-plugin-team.la
 check_local += check-local-devices-team
 
 endif
+
+EXTRA_DIST += \
+	src/devices/team/meson.build
 
 ###############################################################################
 # src/devices/ovs
@@ -2768,7 +2824,8 @@ check-local-devices-ovs: src/devices/ovs/libnm-device-plugin-ovs.la
 endif
 
 EXTRA_DIST += \
-	data/NetworkManager-ovs.conf
+	data/NetworkManager-ovs.conf \
+	src/devices/ovs/meson.build
 
 ###############################################################################
 # src/dnsmasq/tests
@@ -2784,6 +2841,9 @@ src_dnsmasq_tests_test_dnsmasq_utils_LDADD = \
 	src/libNetworkManagerTest.la
 
 $(src_dnsmasq_tests_test_dnsmasq_utils_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+EXTRA_DIST += \
+	src/dnsmasq/tests/meson.build
 
 ###############################################################################
 # src/platform/tests
@@ -2877,6 +2937,9 @@ $(src_platform_tests_test_cleanup_linux_OBJECTS): $(libnm_core_lib_h_pub_mkenums
 $(src_platform_tests_test_nmp_object_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_platform_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
+EXTRA_DIST += \
+	src/platform/tests/meson.build
+
 ###############################################################################
 # src/devices/tests
 ###############################################################################
@@ -2900,6 +2963,9 @@ src_devices_tests_test_arping_LDADD = \
 
 $(src_devices_tests_test_lldp_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_devices_tests_test_arping_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+EXTRA_DIST += \
+	src/devices/tests/meson.build
 
 ###############################################################################
 # src/ndisc/tests
@@ -2926,6 +2992,9 @@ src_ndisc_tests_test_ndisc_fake_LDADD = $(src_ndisc_tests_ldadd)
 $(src_ndisc_tests_test_ndisc_linux_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_ndisc_tests_test_ndisc_fake_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
+EXTRA_DIST += \
+	src/ndisc/tests/meson.build
+
 ###############################################################################
 # src/supplicant/tests
 ###############################################################################
@@ -2943,7 +3012,8 @@ $(src_supplicant_tests_test_supplicant_config_OBJECTS): $(libnm_core_lib_h_pub_m
 
 EXTRA_DIST += \
 	src/supplicant/tests/certs/test-ca-cert.pem \
-	src/supplicant/tests/certs/test-cert.p12
+	src/supplicant/tests/certs/test-cert.p12 \
+	src/supplicant/tests/meson.build
 
 ###############################################################################
 # src/tests/config
@@ -2974,7 +3044,8 @@ EXTRA_DIST += \
 	src/tests/config/conf.d/00-overrides.conf \
 	src/tests/config/conf.d/10-more.conf \
 	src/tests/config/conf.d/20-config-enable-1.conf \
-	src/tests/config/conf.d/90-last.conf
+	src/tests/config/conf.d/90-last.conf \
+	src/tests/config/meson.build
 
 ###############################################################################
 # src/tests
@@ -3051,7 +3122,8 @@ src_tests_test_systemd_LDADD = \
 $(src_tests_test_systemd_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
-	src/tests/test-secret-agent.py
+	src/tests/test-secret-agent.py \
+	src/tests/meson.build
 
 ###############################################################################
 # dispatcher
@@ -3152,7 +3224,8 @@ dbusservice_DATA += dispatcher/nm-dispatcher.conf
 EXTRA_DIST += \
 	dispatcher/nm-dispatcher.conf \
 	dispatcher/org.freedesktop.nm_dispatcher.service.in \
-	dispatcher/nm-dispatcher.xml
+	dispatcher/nm-dispatcher.xml \
+	dispatcher/meson.build
 
 ###############################################################################
 # dispatcher/tests
@@ -3188,7 +3261,8 @@ EXTRA_DIST += \
 	dispatcher/tests/dispatcher-external \
 	dispatcher/tests/dispatcher-up \
 	dispatcher/tests/dispatcher-vpn-down \
-	dispatcher/tests/dispatcher-vpn-up
+	dispatcher/tests/dispatcher-vpn-up \
+	dispatcher/tests/meson.build
 
 ###############################################################################
 # clients
@@ -3216,6 +3290,9 @@ clients_nm_online_LDADD = \
 	$(GLIB_LIBS)
 
 $(clients_nm_online_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+EXTRA_DIST += \
+	clients/meson.build
 
 ###############################################################################
 # clients/common
@@ -3287,7 +3364,6 @@ endif
 EXTRA_DIST += \
 	$(clients_common_settings_doc_c) \
 	$(clients_common_settings_doc_c).in
-
 
 if HAVE_INTROSPECTION
 check_ltlibraries += clients/common/libnmc.la
@@ -3412,7 +3488,10 @@ endif
 
 EXTRA_DIST += \
 	clients/cli/nmcli-completion \
-	clients/common/settings-docs.xsl
+	clients/cli/meson.build \
+	clients/common/settings-docs.xsl \
+	clients/common/meson.build \
+	clients/common/tests/meson.build
 
 ###############################################################################
 # clients/tui
@@ -3606,6 +3685,10 @@ uninstall_hook += uninstall-hook-nmtui
 
 endif
 
+EXTRA_DIST += \
+	clients/tui/meson.build \
+	clients/tui/newt/meson.build
+
 ###############################################################################
 # data
 ###############################################################################
@@ -3674,7 +3757,8 @@ EXTRA_DIST += \
 	data/org.freedesktop.NetworkManager.service.in \
 	data/84-nm-drivers.rules \
 	data/85-nm-unmanaged.rules \
-	data/server.conf.in
+	data/server.conf.in \
+	data/meson.build
 
 CLEANFILES += \
 	data/NetworkManager.service \
@@ -3864,7 +3948,10 @@ DISTCLEANFILES += libnm-util/libnm-util.pc
 EXTRA_DIST += \
 	libnm-util/COPYING \
 	libnm-util/libnm-util.pc.in \
-	libnm-util/libnm-util.ver
+	libnm-util/libnm-util.ver \
+	libnm-util/nm-utils-enum-types.c.template \
+	libnm-util/nm-utils-enum-types.h.template \
+	libnm-util/meson.build
 
 if HAVE_INTROSPECTION
 libnm-util/NetworkManager-1.0.gir: libnm-util/libnm-util.la
@@ -3963,6 +4050,9 @@ $(libnm_util_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(libnm_util_tests_test_setting_8021x_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(libnm_util_tests_test_setting_dcb_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(libnm_util_tests_test_libnm_linking_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+EXTRA_DIST += \
+	libnm-util/tests/meson.build
 
 ###############################################################################
 # libnm-glib
@@ -4198,7 +4288,12 @@ EXTRA_DIST += \
 	libnm-glib/libnm-glib.pc.in \
 	libnm-glib/libnm-glib-vpn.pc.in \
 	libnm-glib/libnm-glib.ver \
-	libnm-glib/libnm-glib-vpn.ver
+	libnm-glib/libnm-glib-vpn.ver \
+	libnm-glib/nm-vpn-enum-types.c.template \
+	libnm-glib/nm-vpn-enum-types.h.template \
+	libnm-glib/nm-glib-enum-types.c.template \
+	libnm-glib/nm-glib-enum-types.h.template \
+	libnm-glib/meson.build
 
 if HAVE_INTROSPECTION
 libnm-glib/NMClient-1.0.gir: libnm-glib/libnm-glib.la $(builddir)/libnm-util/NetworkManager-1.0.gir
@@ -4289,6 +4384,9 @@ libnm_glib_tests_test_remote_settings_client_LDADD = \
 $(libnm_glib_tests_test_remote_settings_client_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 endif
+
+EXTRA_DIST += \
+	libnm-glib/tests/meson.build
 
 ###############################################################################
 # man
@@ -4399,6 +4497,9 @@ endif
 dist_dependencies += $(man_pages)
 dist_dependencies += $(man_pages_autogen)
 
+EXTRA_DIST += \
+	man/meson.build
+
 ###############################################################################
 # vapi
 ###############################################################################
@@ -4445,7 +4546,8 @@ EXTRA_DIST += \
 	vapi/NMClient-1.0.metadata \
 	vapi/libnm.deps \
 	vapi/libnm-util.deps \
-	vapi/libnm-glib.deps
+	vapi/libnm-glib.deps \
+	vapi/meson.build
 
 ###############################################################################
 
@@ -4487,6 +4589,13 @@ EXTRA_DIST += \
 	Makefile.glib \
 	autogen.sh \
 	valgrind.suppressions \
+	meson.build \
+	meson_options.txt \
+	meson_post_install.py \
+	config.h.meson \
+	docs/meson.build \
+	\
+	po/meson.build \
 	\
 	shared/nm-common-macros.h \
 	shared/nm-dbus-compat.h \
@@ -4516,6 +4625,7 @@ EXTRA_DIST += \
 	shared/nm-utils/siphash24.h \
 	shared/nm-utils/unaligned.h \
 	shared/nm-version-macros.h.in \
+	shared/meson.build \
 	\
 	tools/check-exports.sh \
 	tools/create-exports-NetworkManager.sh \
@@ -4526,6 +4636,7 @@ EXTRA_DIST += \
 	tools/enums-to-docbook.pl \
 	\
 	src/settings/plugins/README \
+	src/settings/plugins/meson.build
 	\
 	$(NULL)
 

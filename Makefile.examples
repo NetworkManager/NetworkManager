@@ -66,6 +66,9 @@ examples_C_glib_monitor_nm_state_gdbus_CPPFLAGS = $(examples_C_glib_cppflags_gdb
 examples_C_glib_monitor_nm_state_gdbus_LDADD = \
 	$(GLIB_LIBS)
 
+EXTRA_DIST += \
+	examples/C/glib/meson.build
+
 ###############################################################################
 # examples/C/qt
 ###############################################################################
@@ -123,7 +126,8 @@ EXTRA_DIST += \
 	examples/C/qt/add-connection-wired.cpp \
 	examples/C/qt/list-connections.cpp \
 	examples/C/qt/change-ipv4-addresses.cpp \
-	examples/C/qt/monitor-nm-running.cpp
+	examples/C/qt/monitor-nm-running.cpp \
+	examples/C/qt/meson.build
 
 ###############################################################################
 # examples

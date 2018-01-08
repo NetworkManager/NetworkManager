@@ -86,7 +86,7 @@ GTKDOC_LIBS =  \
 # include common portion ...
 include $(top_srcdir)/gtk-doc.make
 
-EXTRA_DIST += version.xml.in
+EXTRA_DIST += version.xml.in meson.build
 
 CLEANFILES += \
 	libnm-sections.txt \

@@ -101,7 +101,7 @@ include $(top_srcdir)/gtk-doc.make
 
 ####################################
 
-EXTRA_DIST += version.xml.in settings-spec.xsl $(GENERATED_FILES)
+EXTRA_DIST += version.xml.in settings-spec.xsl meson.build $(GENERATED_FILES)
 CLEANFILES += html/* tmpl/* xml/* \
 	NetworkManager-sections.txt \
 	NetworkManager-overrides.txt
