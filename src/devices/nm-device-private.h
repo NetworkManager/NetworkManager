@@ -46,6 +46,7 @@ enum NMActStageReturn {
 NMSettings *nm_device_get_settings (NMDevice *self);
 
 gboolean nm_device_set_ip_ifindex (NMDevice *self, int ifindex);
+
 gboolean nm_device_set_ip_iface (NMDevice *self, const char *iface);
 
 void nm_device_activate_schedule_stage3_ip_config_start (NMDevice *device);
@@ -58,7 +59,7 @@ gboolean nm_device_bring_up (NMDevice *self, gboolean wait, gboolean *no_firmwar
 
 void nm_device_take_down (NMDevice *self, gboolean block);
 
-gboolean nm_device_take_over_link (NMDevice *self, const char *ifname, gboolean *renamed);
+gboolean nm_device_take_over_link (NMDevice *self, int ifindex, char **old_name);
 
 gboolean nm_device_hw_addr_set (NMDevice *device,
                                 const char *addr,

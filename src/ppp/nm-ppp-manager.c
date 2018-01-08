@@ -76,6 +76,7 @@ GType nm_ppp_manager_get_type (void);
 
 enum {
 	STATE_CHANGED,
+	IFINDEX_SET,
 	IP4_CONFIG,
 	IP6_CONFIG,
 	STATS,
@@ -93,6 +94,8 @@ typedef struct {
 	GPid pid;
 
 	char *parent_iface;
+	char *ip_iface;
+	int ifindex;
 
 	NMActRequest *act_req;
 	GDBusMethodInvocation *pending_secrets_context;
@@ -103,7 +106,6 @@ typedef struct {
 	guint ppp_timeout_handler;
 
 	/* Monitoring */
-	char *ip_iface;
 	int monitor_fd;
 	guint monitor_id;
 
@@ -174,24 +176,28 @@ monitor_cb (gpointer user_data)
 {
 	NMPPPManager *manager = NM_PPP_MANAGER (user_data);
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
-	struct ifreq req;
-	struct ppp_stats stats;
+	const char *ifname;
 
-	memset (&req, 0, sizeof (req));
-	memset (&stats, 0, sizeof (stats));
-	req.ifr_data = (caddr_t) &stats;
+	ifname = nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex);
 
-	strncpy (req.ifr_name, priv->ip_iface, sizeof (req.ifr_name));
-	if (ioctl (priv->monitor_fd, SIOCGPPPSTATS, &req) < 0) {
-		if (errno != ENODEV)
-			_LOGW ("could not read ppp stats: %s", strerror (errno));
-	} else {
-		g_signal_emit (manager, signals[STATS], 0,
-		               (guint) stats.p.ppp_ibytes,
-		               (guint) stats.p.ppp_obytes);
+	if (ifname) {
+		struct ppp_stats stats = { };
+		struct ifreq req = {
+			.ifr_data = (caddr_t) &stats,
+		};
+
+		nm_utils_ifname_cpy (req.ifr_name, ifname);
+		if (ioctl (priv->monitor_fd, SIOCGPPPSTATS, &req) < 0) {
+			if (errno != ENODEV)
+				_LOGW ("could not read ppp stats: %s", strerror (errno));
+		} else {
+			g_signal_emit (manager, signals[STATS], 0,
+			               (guint) stats.p.ppp_ibytes,
+			               (guint) stats.p.ppp_obytes);
+		}
 	}
 
-	return TRUE;
+	return G_SOURCE_CONTINUE;
 }
 
 static void
@@ -399,23 +405,54 @@ impl_ppp_manager_set_state (NMPPPManager *manager,
 	g_dbus_method_invocation_return_value (context, NULL);
 }
 
+static void
+impl_ppp_manager_set_ifindex (NMPPPManager *manager,
+                              GDBusMethodInvocation *context,
+                              gint32 ifindex)
+{
+	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
+	const NMPlatformLink *plink = NULL;
+	nm_auto_nmpobj const NMPObject *obj_keep_alive = NULL;
+
+	_LOGD ("set-ifindex %d", (int) ifindex);
+
+	if (priv->ifindex >= 0) {
+		_LOGW ("can't change the ifindex from %d to %d", priv->ifindex, (int) ifindex);
+		return;
+	}
+
+	if (ifindex > 0) {
+		plink = nm_platform_link_get (NM_PLATFORM_GET, ifindex);
+		if (!plink) {
+			nm_platform_process_events (NM_PLATFORM_GET);
+			plink = nm_platform_link_get (NM_PLATFORM_GET, ifindex);
+		}
+	}
+
+	if (!plink) {
+		_LOGW ("unknown interface with ifindex %d", ifindex);
+		ifindex = 0;
+	}
+
+	priv->ifindex = ifindex;
+
+	obj_keep_alive = nmp_object_ref (NMP_OBJECT_UP_CAST (plink));
+
+	g_signal_emit (manager, signals[IFINDEX_SET], 0, ifindex, plink->name);
+	g_dbus_method_invocation_return_value (context, NULL);
+}
+
 static gboolean
 set_ip_config_common (NMPPPManager *self,
                       GVariant *config_dict,
-                      const char *iface_prop,
                       guint32 *out_mtu)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (self);
 	NMConnection *applied_connection;
 	NMSettingPpp *s_ppp;
-	const char *iface;
 
-	if (!g_variant_lookup (config_dict, iface_prop, "&s", &iface)) {
-		_LOGE ("no interface received!");
+	if (priv->ifindex <= 0)
 		return FALSE;
-	}
-	if (priv->ip_iface == NULL)
-		priv->ip_iface = g_strdup (iface);
 
 	/* Got successful IP config; obviously the secrets worked */
 	applied_connection = nm_act_request_get_applied_connection (priv->act_req);
@@ -441,20 +478,15 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 	NMPlatformIP4Address address;
 	guint32 u32, mtu;
 	GVariantIter *iter;
-	int ifindex;
 
 	_LOGI ("(IPv4 Config Get) reply received.");
 
 	nm_clear_g_source (&priv->ppp_timeout_handler);
 
-	if (!set_ip_config_common (manager, config_dict, NM_PPP_IP4_CONFIG_INTERFACE, &mtu))
+	if (!set_ip_config_common (manager, config_dict, &mtu))
 		goto out;
 
-	ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, priv->ip_iface);
-	if (ifindex <= 0)
-		goto out;
-
-	config = nm_ip4_config_new (nm_platform_get_multi_idx (NM_PLATFORM_GET), ifindex);
+	config = nm_ip4_config_new (nm_platform_get_multi_idx (NM_PLATFORM_GET), priv->ifindex);
 
 	if (mtu)
 		nm_ip4_config_set_mtu (config, mtu, NM_IP_CONFIG_SOURCE_PPP);
@@ -467,7 +499,7 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 
 	if (g_variant_lookup (config_dict, NM_PPP_IP4_CONFIG_GATEWAY, "u", &u32)) {
 		const NMPlatformIP4Route r = {
-			.ifindex   = ifindex,
+			.ifindex   = priv->ifindex,
 			.rt_source = NM_IP_CONFIG_SOURCE_PPP,
 			.gateway   = u32,
 			.table_coerced = nm_platform_route_table_coerce (priv->ip4_route_table),
@@ -503,7 +535,7 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 	}
 
 	/* Push the IP4 config up to the device */
-	g_signal_emit (manager, signals[IP4_CONFIG], 0, priv->ip_iface, config);
+	g_signal_emit (manager, signals[IP4_CONFIG], 0, config);
 
 out:
 	g_dbus_method_invocation_return_value (context, NULL);
@@ -549,27 +581,22 @@ impl_ppp_manager_set_ip6_config (NMPPPManager *manager,
 	struct in6_addr a;
 	NMUtilsIPv6IfaceId iid = NM_UTILS_IPV6_IFACE_ID_INIT;
 	gboolean has_peer = FALSE;
-	int ifindex;
 
 	_LOGI ("(IPv6 Config Get) reply received.");
 
 	nm_clear_g_source (&priv->ppp_timeout_handler);
 
-	if (!set_ip_config_common (manager, config_dict, NM_PPP_IP6_CONFIG_INTERFACE, NULL))
+	if (!set_ip_config_common (manager, config_dict, NULL))
 		goto out;
 
-	ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, priv->ip_iface);
-	if (ifindex <= 0)
-		goto out;
-
-	config = nm_ip6_config_new (nm_platform_get_multi_idx (NM_PLATFORM_GET), ifindex);
+	config = nm_ip6_config_new (nm_platform_get_multi_idx (NM_PLATFORM_GET), priv->ifindex);
 
 	memset (&addr, 0, sizeof (addr));
 	addr.plen = 64;
 
 	if (iid_value_to_ll6_addr (config_dict, NM_PPP_IP6_CONFIG_PEER_IID, &a, NULL)) {
 		const NMPlatformIP6Route r = {
-			.ifindex   = ifindex,
+			.ifindex   = priv->ifindex,
 			.rt_source = NM_IP_CONFIG_SOURCE_PPP,
 			.gateway   = a,
 			.table_coerced = nm_platform_route_table_coerce (priv->ip6_route_table),
@@ -587,7 +614,7 @@ impl_ppp_manager_set_ip6_config (NMPPPManager *manager,
 		nm_ip6_config_add_address (config, &addr);
 
 		/* Push the IPv6 config and interface identifier up to the device */
-		g_signal_emit (manager, signals[IP6_CONFIG], 0, priv->ip_iface, &iid, config);
+		g_signal_emit (manager, signals[IP6_CONFIG], 0, &iid, config);
 	} else
 		_LOGE ("invalid IPv6 address received!");
 
@@ -1244,6 +1271,7 @@ nm_ppp_manager_init (NMPPPManager *manager)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
 
+	priv->ifindex = -1;
 	priv->monitor_fd = -1;
 	priv->ip4_route_table = RT_TABLE_MAIN;
 	priv->ip4_route_metric = 460;
@@ -1284,7 +1312,6 @@ finalize (GObject *object)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE ((NMPPPManager *) object);
 
-	g_free (priv->ip_iface);
 	g_free (priv->parent_iface);
 
 	G_OBJECT_CLASS (nm_ppp_manager_parent_class)->finalize (object);
@@ -1320,14 +1347,23 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 	                  G_TYPE_NONE, 1,
 	                  G_TYPE_UINT);
 
+	signals[IFINDEX_SET] =
+	    g_signal_new (NM_PPP_MANAGER_SIGNAL_IFINDEX_SET,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0,
+	                  NULL, NULL, NULL,
+	                  G_TYPE_NONE, 2,
+	                  G_TYPE_INT,
+	                  G_TYPE_STRING);
+
 	signals[IP4_CONFIG] =
 	    g_signal_new (NM_PPP_MANAGER_SIGNAL_IP4_CONFIG,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0,
 	                  NULL, NULL, NULL,
-	                  G_TYPE_NONE, 2,
-	                  G_TYPE_STRING,
+	                  G_TYPE_NONE, 1,
 	                  G_TYPE_OBJECT);
 
 	signals[IP6_CONFIG] =
@@ -1336,7 +1372,9 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 	                  G_SIGNAL_RUN_FIRST,
 	                  0,
 	                  NULL, NULL, NULL,
-	                  G_TYPE_NONE, 3, G_TYPE_STRING, G_TYPE_POINTER, G_TYPE_OBJECT);
+	                  G_TYPE_NONE, 2,
+	                  G_TYPE_POINTER,
+	                  G_TYPE_OBJECT);
 
 	signals[STATS] =
 	    g_signal_new (NM_PPP_MANAGER_SIGNAL_STATS,
@@ -1354,6 +1392,7 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 	                                        "SetIp4Config", impl_ppp_manager_set_ip4_config,
 	                                        "SetIp6Config", impl_ppp_manager_set_ip6_config,
 	                                        "SetState", impl_ppp_manager_set_state,
+	                                        "SetIfindex", impl_ppp_manager_set_ifindex,
 	                                        NULL);
 }
 

@@ -28,6 +28,7 @@
 #include <pppd/ipcp.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <net/if.h>
 #include <arpa/inet.h>
 #include <dlfcn.h>
 
@@ -128,6 +129,15 @@ nm_phasechange (void *data, int arg)
 		                   NULL,
 		                   NULL, NULL);
 	}
+
+	if (ppp_status == PHASE_RUNNING) {
+		g_dbus_proxy_call (proxy,
+		                   "SetIfindex",
+		                   g_variant_new ("(i)", if_nametoindex (ifname)),
+		                   G_DBUS_CALL_FLAGS_NONE, -1,
+		                   NULL,
+		                   NULL, NULL);
+	}
 }
 
 static void
@@ -150,6 +160,9 @@ nm_ip_up (void *data, int arg)
 
 	g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
 
+	/* Keep sending the interface name to be backwards compatible
+	 * with older versions of NM during a package upgrade, where
+	 * NM is not restarted and the pppd plugin was not loaded. */
 	g_variant_builder_add (&builder, "{sv}",
 	                       NM_PPP_IP4_CONFIG_INTERFACE,
 	                       g_variant_new_string (ifname));
@@ -244,6 +257,9 @@ nm_ip6_up (void *data, int arg)
 	g_message ("nm-ppp-plugin: (%s): ip6-up event", __func__);
 
 	g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
+	/* Keep sending the interface name to be backwards compatible
+	 * with older versions of NM during a package upgrade, where
+	 * NM is not restarted and the pppd plugin was not loaded. */
 	g_variant_builder_add (&builder, "{sv}",
 	                       NM_PPP_IP6_CONFIG_INTERFACE,
 	                       g_variant_new_string (ifname));

@@ -450,20 +450,26 @@ ppp_state_changed (NMPPPManager *ppp_manager, NMPPPStatus status, gpointer user_
 }
 
 static void
-set_data_port (NMModem *self, const char *new_data_port)
+ppp_ifindex_set (NMPPPManager *ppp_manager,
+                 int ifindex,
+                 const char *iface,
+                 gpointer user_data)
 {
+	NMModem *self = NM_MODEM (user_data);
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
 
-	if (g_strcmp0 (priv->data_port, new_data_port) != 0) {
+	/* Notify about the new data port to use.
+	 *
+	 * @iface might be %NULL. */
+	if (g_strcmp0 (priv->data_port, iface) != 0) {
 		g_free (priv->data_port);
-		priv->data_port = g_strdup (new_data_port);
+		priv->data_port = g_strdup (iface);
 		_notify (self, PROP_DATA_PORT);
 	}
 }
 
 static void
 ppp_ip4_config (NMPPPManager *ppp_manager,
-                const char *iface,
                 NMIP4Config *config,
                 gpointer user_data)
 {
@@ -474,9 +480,6 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 	guint32 bad_dns2 = htonl (0x0A0B0C0E);
 	guint32 good_dns2 = htonl (0x04020202);  /* GTE nameserver */
 	gboolean dns_workaround = FALSE;
-
-	/* Notify about the new data port to use */
-	set_data_port (self, iface);
 
 	/* Work around a PPP bug (#1732) which causes many mobile broadband
 	 * providers to return 10.11.12.13 and 10.11.12.14 for the DNS servers.
@@ -519,15 +522,11 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 
 static void
 ppp_ip6_config (NMPPPManager *ppp_manager,
-                const char *iface,
                 const NMUtilsIPv6IfaceId *iid,
                 NMIP6Config *config,
                 gpointer user_data)
 {
 	NMModem *self = NM_MODEM (user_data);
-
-	/* Notify about the new data port to use */
-	set_data_port (self, iface);
 
 	NM_MODEM_GET_PRIVATE (self)->iid = *iid;
 
@@ -638,6 +637,9 @@ ppp_stage3_ip_config_start (NMModem *self,
 
 	g_signal_connect (priv->ppp_manager, NM_PPP_MANAGER_SIGNAL_STATE_CHANGED,
 	                  G_CALLBACK (ppp_state_changed),
+	                  self);
+	g_signal_connect (priv->ppp_manager, NM_PPP_MANAGER_SIGNAL_IFINDEX_SET,
+	                  G_CALLBACK (ppp_ifindex_set),
 	                  self);
 	g_signal_connect (priv->ppp_manager, NM_PPP_MANAGER_SIGNAL_IP4_CONFIG,
 	                  G_CALLBACK (ppp_ip4_config),
