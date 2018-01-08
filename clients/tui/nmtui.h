@@ -19,8 +19,6 @@
 #ifndef NMTUI_H
 #define NMTUI_H
 
-#include "NetworkManager.h"
-
 extern NMClient *nm_client;
 
 void nmtui_quit (void);

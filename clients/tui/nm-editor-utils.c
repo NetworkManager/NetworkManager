@@ -27,8 +27,6 @@
 
 #include "nm-default.h"
 
-#include "NetworkManager.h"
-
 #include "nm-editor-utils.h"
 #if 0
 #include "nm-vpn-helpers.h"

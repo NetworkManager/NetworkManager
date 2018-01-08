@@ -19,8 +19,6 @@
 #ifndef NMT_EDITOR_H
 #define NMT_EDITOR_H
 
-#include "NetworkManager.h"
-
 #include "nmt-newt.h"
 
 #define NMT_TYPE_EDITOR            (nmt_editor_get_type ())

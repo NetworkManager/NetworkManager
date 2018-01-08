@@ -27,8 +27,6 @@
 
 #include <stdlib.h>
 
-#include "NetworkManager.h"
-
 #include "nmtui.h"
 #include "nmtui-edit.h"
 #include "nmt-edit-connection-list.h"

@@ -28,8 +28,6 @@
 
 #include <stdlib.h>
 
-#include "NetworkManager.h"
-
 #include "nmtui.h"
 #include "nmt-connect-connection-list.h"
 #include "nm-client-utils.h"

@@ -27,7 +27,6 @@
 #include "nm-common-macros.h"
 #include "nm-utils/nm-enum-utils.h"
 
-#include "NetworkManager.h"
 #include "nm-vpn-helpers.h"
 #include "nm-client-utils.h"
 #include "nm-meta-setting-access.h"

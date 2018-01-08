@@ -19,8 +19,6 @@
 
 #include "nm-default.h"
 
-#include "NetworkManager.h"
-
 #include "nm-meta-setting-access.h"
 
 #include "nm-utils/nm-test-utils.h"

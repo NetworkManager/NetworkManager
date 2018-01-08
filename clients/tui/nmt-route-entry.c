@@ -32,8 +32,6 @@
 #include <netinet/in.h>
 #include <stdlib.h>
 
-#include "NetworkManager.h"
-
 #include "nmt-route-entry.h"
 #include "nmt-ip-entry.h"
 
