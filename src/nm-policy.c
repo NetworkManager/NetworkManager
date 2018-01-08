@@ -1894,13 +1894,24 @@ device_state_changed (NMDevice *device,
 }
 
 static void
-device_ip4_config_changed (NMDevice *device,
-                           NMIP4Config *new_config,
-                           NMIP4Config *old_config,
-                           gpointer user_data)
+device_ip_config_changed (NMDevice *device,
+                          NMIPConfig *new_config,
+                          NMIPConfig *old_config,
+                          gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
 	NMPolicy *self = _PRIV_TO_SELF (priv);
+	int addr_family;
+
+	nm_assert (new_config || old_config);
+	nm_assert (!new_config || NM_IS_IP_CONFIG (new_config));
+	nm_assert (!old_config || NM_IS_IP_CONFIG (old_config));
+
+	if (new_config) {
+		addr_family = nm_ip_config_get_addr_family (new_config);
+		nm_assert (!old_config || addr_family == nm_ip_config_get_addr_family (old_config));
+	} else
+		addr_family = nm_ip_config_get_addr_family (old_config);
 
 	nm_dns_manager_begin_updates (priv->dns_manager, __func__);
 
@@ -1912,52 +1923,23 @@ device_ip4_config_changed (NMDevice *device,
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
 		if (old_config != new_config) {
 			if (new_config)
-				nm_dns_manager_set_ip_config (priv->dns_manager, NM_IP_CONFIG_CAST (new_config), NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+				nm_dns_manager_set_ip_config (priv->dns_manager, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
 			if (old_config)
-				nm_dns_manager_set_ip_config (priv->dns_manager, NM_IP_CONFIG_CAST (old_config), NM_DNS_IP_CONFIG_TYPE_REMOVED);
+				nm_dns_manager_set_ip_config (priv->dns_manager, old_config, NM_DNS_IP_CONFIG_TYPE_REMOVED);
 		}
-		update_ip_dns (self, AF_INET);
-		update_ip4_routing (self, TRUE);
-		update_system_hostname (self, "ip4 conf");
+		update_ip_dns (self, addr_family);
+		if (addr_family == AF_INET)
+			update_ip4_routing (self, TRUE);
+		else
+			update_ip6_routing (self, TRUE);
+		update_system_hostname (self,
+		                        addr_family == AF_INET
+		                          ? "ip4 conf"
+		                          : "ip6 conf");
 	} else {
 		/* Old configs get removed immediately */
 		if (old_config)
-			nm_dns_manager_set_ip_config (priv->dns_manager, NM_IP_CONFIG_CAST (old_config), NM_DNS_IP_CONFIG_TYPE_REMOVED);
-	}
-
-	nm_dns_manager_end_updates (priv->dns_manager, __func__);
-}
-
-static void
-device_ip6_config_changed (NMDevice *device,
-                           NMIP6Config *new_config,
-                           NMIP6Config *old_config,
-                           gpointer user_data)
-{
-	NMPolicyPrivate *priv = user_data;
-	NMPolicy *self = _PRIV_TO_SELF (priv);
-
-	nm_dns_manager_begin_updates (priv->dns_manager, __func__);
-
-	/* We catch already all the IP events registering on the device state changes but
-	 * the ones where the IP changes but the device state keep stable (i.e., activated):
-	 * ignore IP config changes but when the device is in activated state.
-	 * Prevents unecessary changes to DNS information.
-	 */
-	if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
-		if (old_config != new_config) {
-			if (new_config)
-				nm_dns_manager_set_ip_config (priv->dns_manager, NM_IP_CONFIG_CAST (new_config), NM_DNS_IP_CONFIG_TYPE_DEFAULT);
-			if (old_config)
-				nm_dns_manager_set_ip_config (priv->dns_manager, NM_IP_CONFIG_CAST (old_config), NM_DNS_IP_CONFIG_TYPE_REMOVED);
-		}
-		update_ip_dns (self, AF_INET6);
-		update_ip6_routing (self, TRUE);
-		update_system_hostname (self, "ip6 conf");
-	} else {
-		/* Old configs get removed immediately */
-		if (old_config)
-			nm_dns_manager_set_ip_config (priv->dns_manager, NM_IP_CONFIG_CAST (old_config), NM_DNS_IP_CONFIG_TYPE_REMOVED);
+			nm_dns_manager_set_ip_config (priv->dns_manager, old_config, NM_DNS_IP_CONFIG_TYPE_REMOVED);
 	}
 
 	nm_dns_manager_end_updates (priv->dns_manager, __func__);
@@ -2000,8 +1982,8 @@ devices_list_register (NMPolicy *self, NMDevice *device)
 
 	/* Connect state-changed with _after, so that the handler is invoked after other handlers. */
 	g_signal_connect_after (device, NM_DEVICE_STATE_CHANGED,          (GCallback) device_state_changed, priv);
-	g_signal_connect       (device, NM_DEVICE_IP4_CONFIG_CHANGED,     (GCallback) device_ip4_config_changed, priv);
-	g_signal_connect       (device, NM_DEVICE_IP6_CONFIG_CHANGED,     (GCallback) device_ip6_config_changed, priv);
+	g_signal_connect       (device, NM_DEVICE_IP4_CONFIG_CHANGED,     (GCallback) device_ip_config_changed, priv);
+	g_signal_connect       (device, NM_DEVICE_IP6_CONFIG_CHANGED,     (GCallback) device_ip_config_changed, priv);
 	g_signal_connect       (device, NM_DEVICE_IP6_PREFIX_DELEGATED,   (GCallback) device_ip6_prefix_delegated, priv);
 	g_signal_connect       (device, NM_DEVICE_IP6_SUBNET_NEEDED,      (GCallback) device_ip6_subnet_needed, priv);
 	g_signal_connect       (device, "notify::" NM_DEVICE_AUTOCONNECT, (GCallback) device_autoconnect_changed, priv);
