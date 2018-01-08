@@ -20,7 +20,6 @@
 #ifndef NMC_NMCLI_H
 #define NMC_NMCLI_H
 
-#include "NetworkManager.h"
 #include "nm-secret-agent-old.h"
 
 #include "nm-meta-setting-desc.h"

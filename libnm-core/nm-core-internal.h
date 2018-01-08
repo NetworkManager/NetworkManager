@@ -31,6 +31,9 @@
  * statically against libnm-core. This basically means libnm-core, libnm, NetworkManager
  * and some test programs.
  **/
+#if !((NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_CORE_INTERNAL)
+#error Cannot use this header.
+#endif
 
 
 #include "nm-connection.h"

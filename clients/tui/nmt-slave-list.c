@@ -26,8 +26,6 @@
 
 #include "nm-default.h"
 
-#include "NetworkManager.h"
-
 #include "nmt-slave-list.h"
 
 G_DEFINE_TYPE (NmtSlaveList, nmt_slave_list, NMT_TYPE_EDIT_CONNECTION_LIST)

@@ -38,8 +38,6 @@
 #include <getopt.h>
 #include <locale.h>
 
-#include "NetworkManager.h"
-
 #define PROGRESS_STEPS 15
 
 #define EXIT_FAILURE_OFFLINE     1

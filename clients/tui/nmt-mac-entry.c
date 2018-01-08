@@ -32,7 +32,6 @@
 
 #include <string.h>
 
-#include "NetworkManager.h"
 #include "nm-common-macros.h"
 
 

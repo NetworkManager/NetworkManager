@@ -33,7 +33,6 @@
 
 #include <string.h>
 
-#include "NetworkManager.h"
 #include "nm-vpn-service-plugin.h"
 
 #include "nm-vpn-helpers.h"

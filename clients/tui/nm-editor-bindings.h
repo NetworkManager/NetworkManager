@@ -19,8 +19,6 @@
 #ifndef NM_EDITOR_BINDINGS_H
 #define NM_EDITOR_BINDINGS_H
 
-#include "NetworkManager.h"
-
 void nm_editor_bindings_init (void);
 
 void nm_editor_bind_ip_addresses_with_prefix_to_strv  (int            family,

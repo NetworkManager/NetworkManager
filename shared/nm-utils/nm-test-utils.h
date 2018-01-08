@@ -21,6 +21,10 @@
 #ifndef __NM_TEST_UTILS_H__
 #define __NM_TEST_UTILS_H__
 
+#if defined(NETWORKMANAGER_COMPILATION) && !defined(NETWORKMANAGER_COMPILATION_TEST)
+#error Need to mark the compilation with NETWORKMANAGER_COMPILATION_TEST.
+#endif
+
 /*******************************************************************************
  * HOWTO run tests.
  *
@@ -664,6 +668,20 @@ nmtst_test_quick (void)
 		g_test_assert_expected_messages_internal (_domain, _file, _line, _func); \
 		G_GNUC_END_IGNORE_DEPRECATIONS \
 	} G_STMT_END
+#endif
+
+#define NMTST_EXPECT(domain, level, msg)        g_test_expect_message (domain, level, msg)
+
+#if (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_UTIL
+#define NMTST_EXPECT_LIBNM_U(level, msg)        NMTST_EXPECT ("libnm-util", level, msg)
+#define NMTST_EXPECT_LIBNM_G(level, msg)        NMTST_EXPECT ("libnm-glib", level, msg)
+
+#define NMTST_EXPECT_LIBNM_U_CRITICAL(msg)      NMTST_EXPECT_LIBNM_U (G_LOG_LEVEL_CRITICAL, msg)
+#define NMTST_EXPECT_LIBNM_G_CRITICAL(msg)      NMTST_EXPECT_LIBNM_G (G_LOG_LEVEL_CRITICAL, msg)
+#else
+#define NMTST_EXPECT_LIBNM(level, msg)          NMTST_EXPECT ("libnm", level, msg)
+
+#define NMTST_EXPECT_LIBNM_CRITICAL(msg)        NMTST_EXPECT_LIBNM (G_LOG_LEVEL_CRITICAL, msg)
 #endif
 
 /*****************************************************************************/
