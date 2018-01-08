@@ -1281,6 +1281,60 @@ nm_device_get_ip_ifindex (const NMDevice *self)
 	return priv->ip_iface ? priv->ip_ifindex : priv->ifindex;
 }
 
+gboolean
+nm_device_set_ip_ifindex (NMDevice *self, int ifindex)
+{
+	NMDevicePrivate *priv;
+	NMPlatform *platform;
+	const char *name = NULL;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	platform = nm_device_get_platform (self);
+
+	if (ifindex > 0) {
+		const NMPlatformLink *plink;
+
+		plink = nm_platform_link_get (platform, ifindex);
+		if (!plink) {
+			nm_platform_process_events (platform);
+			plink = nm_platform_link_get (NM_PLATFORM_GET, ifindex);
+		}
+		if (!plink) {
+			_LOGW (LOGD_DEVICE, "ip-ifindex: ifindex %d not found", ifindex);
+			return FALSE;
+		}
+		name = plink->name;
+	}
+
+	if (priv->ip_ifindex == ifindex)
+		return FALSE;
+
+	_LOGD (LOGD_DEVICE, "ip-ifindex: update ifindex to %d", ifindex);
+	priv->ip_ifindex = ifindex;
+	if (!nm_streq0 (priv->ip_iface, name)) {
+		_LOGD (LOGD_DEVICE, "ip-ifindex: update ip-iface to %s%s%s",
+		       NM_PRINT_FMT_QUOTED (name, "\"", name, "\"", "NULL"));
+		priv->ip_iface = g_strdup (name);
+		_notify (self, PROP_IP_IFACE);
+	}
+
+	if (priv->ip_ifindex > 0) {
+		if (nm_platform_check_kernel_support (nm_device_get_platform (self),
+		                                      NM_PLATFORM_KERNEL_SUPPORT_USER_IPV6LL))
+			nm_platform_link_set_user_ipv6ll_enabled (nm_device_get_platform (self), priv->ip_ifindex, TRUE);
+
+		if (!nm_platform_link_is_up (nm_device_get_platform (self), priv->ip_ifindex))
+			nm_platform_link_set_up (nm_device_get_platform (self), priv->ip_ifindex, NULL);
+	}
+
+	/* We don't care about any saved values from the old iface */
+	g_hash_table_remove_all (priv->ip6_saved_properties);
+
+	return TRUE;
+}
+
 /**
  * nm_device_set_ip_iface:
  * @self: the #NMDevice
