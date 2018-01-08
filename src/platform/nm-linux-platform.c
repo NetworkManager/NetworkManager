@@ -4680,7 +4680,10 @@ do_delete_object (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 	        wait_for_nl_response_to_string (seq_result, s_buf, sizeof (s_buf)),
 	        log_detail);
 
-	if (NMP_OBJECT_GET_TYPE (obj_id) == NMP_OBJECT_TYPE_IP6_ADDRESS) {
+	if (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj_id),
+	               NMP_OBJECT_TYPE_IP6_ADDRESS,
+	               NMP_OBJECT_TYPE_QDISC,
+	               NMP_OBJECT_TYPE_TFILTER)) {
 		/* In rare cases, the object is still there after we receive the ACK from
 		 * kernel. Need to refetch.
 		 *
