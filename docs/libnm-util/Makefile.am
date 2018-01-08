@@ -33,7 +33,6 @@ CFILE_GLOB=$(top_srcdir)/libnm-util/*.c
 # Header files to ignore when scanning.
 IGNORE_HFILES= \
 	crypto.h \
-	nm-setting-template.h \
 	nm-utils-private.h \
 	nm-setting-private.h \
 	nm-param-spec-specialized.h \

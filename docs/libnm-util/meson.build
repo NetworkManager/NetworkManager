@@ -2,7 +2,6 @@ doc_module = 'libnm-util'
 
 private_headers = [
   'crypto.h',
-  'nm-setting-template.h',
   'nm-utils-private.h',
   'nm-setting-private.h',
   'nm-param-spec-specialized.h',
