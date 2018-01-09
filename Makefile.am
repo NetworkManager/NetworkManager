@@ -521,9 +521,9 @@ libnm_core_lib_c_real = \
 
 if WITH_JANSSON
 libnm_core_lib_h_priv += \
-	libnm-core/nm-jansson.h
+	libnm-core/nm-json.h
 libnm_core_lib_c_real += \
-	libnm-core/nm-jansson.c
+	libnm-core/nm-json.c
 endif
 
 libnm_core_lib_c_mkenums = \

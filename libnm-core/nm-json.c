@@ -22,7 +22,7 @@
 #include "nm-default.h"
 
 #define NM_JAONSSON_C
-#include "nm-jansson.h"
+#include "nm-json.h"
 
 void *_nm_jansson_json_object_iter_value;
 void *_nm_jansson_json_object_key_to_iter;
