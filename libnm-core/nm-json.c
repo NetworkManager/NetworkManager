@@ -5,106 +5,174 @@
 
 #include "nm-default.h"
 
-#define NM_JANSSON_C
 #include "nm-json.h"
 
 #include <dlfcn.h>
 
-void *_nm_jansson_json_object_iter_value;
-void *_nm_jansson_json_object_key_to_iter;
-void *_nm_jansson_json_integer;
-void *_nm_jansson_json_object_del;
-void *_nm_jansson_json_array_get;
-void *_nm_jansson_json_array_size;
-void *_nm_jansson_json_array_append_new;
-void *_nm_jansson_json_string;
-void *_nm_jansson_json_object_iter_next;
-void *_nm_jansson_json_loads;
-void *_nm_jansson_json_dumps;
-void *_nm_jansson_json_object_iter_key;
-void *_nm_jansson_json_object;
-void *_nm_jansson_json_object_get;
-void *_nm_jansson_json_array;
-void *_nm_jansson_json_false;
-void *_nm_jansson_json_delete;
-void *_nm_jansson_json_true;
-void *_nm_jansson_json_object_size;
-void *_nm_jansson_json_object_set_new;
-void *_nm_jansson_json_object_iter;
-void *_nm_jansson_json_integer_value;
-void *_nm_jansson_json_string_value;
+typedef struct {
+	NMJsonVt vt;
+	void *dl_handle;
+} NMJsonVtInternal;
 
-#define TRY_BIND_SYMBOL(symbol) \
-	G_STMT_START { \
-		void *sym = dlsym (handle, #symbol); \
-		if (_nm_jansson_ ## symbol && sym != _nm_jansson_ ## symbol) \
-			return FALSE; \
-		_nm_jansson_ ## symbol = sym; \
-	} G_STMT_END
-
-static gboolean
-bind_symbols (void *handle)
+static NMJsonVtInternal *
+_nm_json_vt_internal_load (void)
 {
-	TRY_BIND_SYMBOL (json_object_iter_value);
-	TRY_BIND_SYMBOL (json_object_key_to_iter);
-	TRY_BIND_SYMBOL (json_integer);
-	TRY_BIND_SYMBOL (json_object_del);
-	TRY_BIND_SYMBOL (json_array_get);
-	TRY_BIND_SYMBOL (json_array_size);
-	TRY_BIND_SYMBOL (json_array_append_new);
-	TRY_BIND_SYMBOL (json_string);
-	TRY_BIND_SYMBOL (json_object_iter_next);
-	TRY_BIND_SYMBOL (json_loads);
-	TRY_BIND_SYMBOL (json_dumps);
-	TRY_BIND_SYMBOL (json_object_iter_key);
-	TRY_BIND_SYMBOL (json_object);
-	TRY_BIND_SYMBOL (json_object_get);
-	TRY_BIND_SYMBOL (json_array);
-	TRY_BIND_SYMBOL (json_false);
-	TRY_BIND_SYMBOL (json_delete);
-	TRY_BIND_SYMBOL (json_true);
-	TRY_BIND_SYMBOL (json_object_size);
-	TRY_BIND_SYMBOL (json_object_set_new);
-	TRY_BIND_SYMBOL (json_object_iter);
-	TRY_BIND_SYMBOL (json_integer_value);
-	TRY_BIND_SYMBOL (json_string_value);
-
-	return TRUE;
-}
-
-gboolean
-nm_jansson_load (void)
-{
-	static enum {
-		UNKNOWN,
-		AVAILABLE,
-		MISSING,
-	} state = UNKNOWN;
-	void *handle;
+	NMJsonVtInternal *v;
+	void *handle = NULL;
 	int mode;
 
-	if (G_LIKELY (state != UNKNOWN))
-		goto out;
+	v = g_new0 (NMJsonVtInternal, 1);
 
-	/* First just resolve the symbols to see if there's a conflict already. */
-	if (!bind_symbols (RTLD_DEFAULT))
-		goto out;
+#ifndef JANSSON_SONAME
+#define JANSSON_SONAME ""
+#endif
 
 	mode = RTLD_LAZY | RTLD_LOCAL | RTLD_NODELETE | RTLD_DEEPBIND;
 #if defined (ASAN_BUILD)
 	/* Address sanitizer is incompatible with RTLD_DEEPBIND. */
 	mode &= ~RTLD_DEEPBIND;
 #endif
-	handle = dlopen (JANSSON_SONAME, mode);
+
+	if (strlen (JANSSON_SONAME) > 0)
+		handle = dlopen (JANSSON_SONAME, mode);
 
 	if (!handle)
-		goto out;
+		return v;
 
-	/* Now do the actual binding. */
-	if (!bind_symbols (handle))
-		goto out;
+#define TRY_BIND_SYMBOL(symbol) \
+	G_STMT_START { \
+		void *_sym = dlsym (handle, "json" #symbol); \
+		\
+		if (!_sym) \
+			goto fail_symbol; \
+		v->vt.nm_json ## symbol = _sym; \
+	} G_STMT_END
 
-	state = AVAILABLE;
-out:
-	return state == AVAILABLE;
+	TRY_BIND_SYMBOL (_array);
+	TRY_BIND_SYMBOL (_array_append_new);
+	TRY_BIND_SYMBOL (_array_get);
+	TRY_BIND_SYMBOL (_array_size);
+	TRY_BIND_SYMBOL (_delete);
+	TRY_BIND_SYMBOL (_dumps);
+	TRY_BIND_SYMBOL (_false);
+	TRY_BIND_SYMBOL (_integer);
+	TRY_BIND_SYMBOL (_integer_value);
+	TRY_BIND_SYMBOL (_loads);
+	TRY_BIND_SYMBOL (_object);
+	TRY_BIND_SYMBOL (_object_del);
+	TRY_BIND_SYMBOL (_object_get);
+	TRY_BIND_SYMBOL (_object_iter);
+	TRY_BIND_SYMBOL (_object_iter_key);
+	TRY_BIND_SYMBOL (_object_iter_next);
+	TRY_BIND_SYMBOL (_object_iter_value);
+	TRY_BIND_SYMBOL (_object_key_to_iter);
+	TRY_BIND_SYMBOL (_object_set_new);
+	TRY_BIND_SYMBOL (_object_size);
+	TRY_BIND_SYMBOL (_string);
+	TRY_BIND_SYMBOL (_string_value);
+	TRY_BIND_SYMBOL (_true);
+
+	v->vt.loaded = TRUE;
+	v->dl_handle = handle;
+	return v;
+
+fail_symbol:
+	dlclose (&handle);
+	*v = (NMJsonVtInternal) { };
+	return v;
 }
+
+const NMJsonVt *_nm_json_vt_ptr = NULL;
+
+const NMJsonVt *
+_nm_json_vt_init (void)
+{
+	NMJsonVtInternal *v;
+
+again:
+	v = g_atomic_pointer_get ((gpointer *) &_nm_json_vt_ptr);
+	if (G_UNLIKELY (!v)) {
+		v = _nm_json_vt_internal_load ();
+		if (!g_atomic_pointer_compare_and_exchange ((gpointer *) &_nm_json_vt_ptr, NULL, v)) {
+			if (v->dl_handle)
+				dlclose (v->dl_handle);
+			g_free (v);
+			goto again;
+		}
+
+		/* we transfer ownership. */
+	}
+
+	nm_assert (v && v == g_atomic_pointer_get ((gpointer *) &_nm_json_vt_ptr));
+	return &v->vt;
+}
+
+const NMJsonVt *
+nmtst_json_vt_reset (gboolean loaded)
+{
+	NMJsonVtInternal *v_old;
+	NMJsonVtInternal *v;
+
+	v_old = g_atomic_pointer_get ((gpointer *) &_nm_json_vt_ptr);
+
+	if (!loaded) {
+		/* load a fake instance for testing. */
+		v = g_new0 (NMJsonVtInternal, 1);
+	} else
+		v = _nm_json_vt_internal_load ();
+
+	if (!g_atomic_pointer_compare_and_exchange ((gpointer *) &_nm_json_vt_ptr, v_old, v))
+		g_assert_not_reached ();
+
+	if (v_old) {
+		if (v_old->dl_handle)
+			dlclose (v_old->dl_handle);
+		g_free ((gpointer *) v_old);
+	}
+
+	return v->vt.loaded ? &v->vt : NULL;
+}
+
+#define DEF_FCN(name, rval, args_t, args_v) \
+rval name args_t \
+{ \
+	const NMJsonVt *vt = nm_json_vt (); \
+	\
+	nm_assert (vt && vt->loaded && vt->name); \
+	nm_assert (vt->name != name); \
+	return (vt->name) args_v; \
+}
+
+#define DEF_VOI(name, args_t, args_v) \
+void name args_t \
+{ \
+	const NMJsonVt *vt = nm_json_vt (); \
+	\
+	nm_assert (vt && vt->loaded && vt->name); \
+	nm_assert (vt->name != name); \
+	(vt->name) args_v; \
+}
+
+DEF_FCN (nm_json_array,              json_t *,     (void), ());
+DEF_FCN (nm_json_array_append_new,   int,          (json_t *json, json_t *value), (json, value));
+DEF_FCN (nm_json_array_get,          json_t *,     (const json_t *json, size_t index), (json, index));
+DEF_FCN (nm_json_array_size,         size_t,       (const json_t *json), (json));
+DEF_VOI (nm_json_delete,                           (json_t *json), (json));
+DEF_FCN (nm_json_dumps,              char *,       (const json_t *json, size_t flags), (json, flags));
+DEF_FCN (nm_json_false,              json_t *,     (void), ());
+DEF_FCN (nm_json_integer,            json_t *,     (json_int_t value),              (value));
+DEF_FCN (nm_json_integer_value,      json_int_t,   (const json_t *json), (json));
+DEF_FCN (nm_json_loads,              json_t *,     (const char *string, size_t flags, json_error_t *error), (string, flags, error));
+DEF_FCN (nm_json_object,             json_t *,     (void), ());
+DEF_FCN (nm_json_object_del,         int,          (json_t *json, const char *key), (json, key));
+DEF_FCN (nm_json_object_get,         json_t *,     (const json_t *json, const char *key), (json, key));
+DEF_FCN (nm_json_object_iter,        void *,       (json_t *json), (json));
+DEF_FCN (nm_json_object_iter_key,    const char *, (void *iter), (iter));
+DEF_FCN (nm_json_object_iter_next,   void *,       (json_t *json, void *iter), (json, iter));
+DEF_FCN (nm_json_object_iter_value,  json_t *,     (void *iter),                    (iter));
+DEF_FCN (nm_json_object_key_to_iter, void *,       (const char *key),               (key));
+DEF_FCN (nm_json_object_set_new,     int,          (json_t *json, const char *key, json_t *value), (json, key, value));
+DEF_FCN (nm_json_object_size,        size_t,       (const json_t *json), (json));
+DEF_FCN (nm_json_string,             json_t *,     (const char *value), (value));
+DEF_FCN (nm_json_string_value,       const char *, (const json_t *json), (json));
+DEF_FCN (nm_json_true,               json_t *,     (void), ());

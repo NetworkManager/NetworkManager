@@ -1870,7 +1870,7 @@ nm_team_setting_config_set (NMTeamSetting *self, const char *js_str)
 	{
 		nm_auto_decref_json json_t *root_js_obj = NULL;
 
-		if (nm_jansson_load ())
+		if (nm_json_vt ())
 			root_js_obj = json_loads (js_str, 0, NULL);
 
 		if (   !root_js_obj

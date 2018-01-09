@@ -5507,7 +5507,7 @@ nm_utils_is_json_object (const char *str, GError **error)
 		return FALSE;
 	}
 
-	if (!nm_jansson_load ())
+	if (!nm_json_vt ())
 		return _nm_utils_is_json_object_no_validation (str, error);
 
 	json = json_loads (str, JSON_REJECT_DUPLICATES, &jerror);
