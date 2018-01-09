@@ -13,7 +13,7 @@ common_cflags = [
 ]
 
 cflags = common_cflags + [
-  '-DG_LOG_DOMAIN="libnm-glib"'
+  '-DG_LOG_DOMAIN="@0@"'.format(libnm_glib_name)
 ]
 
 vpn_headers = files(
@@ -57,7 +57,7 @@ deprecated_headers = files('libnm_glib.h')
 
 install_headers(
   headers + vpn_headers + deprecated_headers,
-  subdir: 'libnm-glib'
+  subdir: libnm_glib_name
 )
 
 libdeprecated_nm_glib = static_library(
@@ -126,10 +126,10 @@ libnm_glib_vpn_dep = declare_dependency(
 pkg.generate(
   libraries: libnm_glib_vpn,
   version: nm_version,
-  name: 'libnm-glib-vpn',
+  name: libnm_glib_vpn_name,
   description: 'Convenience library for NetworkManager VPN plugins',
-  filebase: 'libnm-glib-vpn',
-  subdirs: 'libnm-glib',
+  filebase: libnm_glib_vpn_name,
+  subdirs: libnm_glib_name,
   requires: 'NetworkManager >= ' + nm_version + ' glib-2.0 dbus-glib-1',
   variables: 'exec_prefix=${prefix}'
 )
@@ -222,10 +222,10 @@ libnm_glib_dep = declare_dependency(
 pkg.generate(
   libraries: libnm_glib,
   version: nm_version,
-  name: 'libnm-glib',
+  name: libnm_glib_name,
   description: 'Convenience library for clients of NetworkManager',
-  filebase: 'libnm-glib',
-  subdirs: 'libnm-glib',
+  filebase: libnm_glib_name,
+  subdirs: libnm_glib_name,
   requires: 'libnm-util >= ' + nm_version + ' NetworkManager >= ' + nm_version + ' gobject-2.0 dbus-glib-1',
   variables: 'exec_prefix=${prefix}'
 )
@@ -252,7 +252,7 @@ if enable_introspection
     namespace: 'NMClient',
     identifier_prefix: nm_id_prefix,
     symbol_prefix: nm_id_prefix.to_lower(),
-    export_packages: ['libnm-glib', 'libnm-glib-vpn'],
+    export_packages: [libnm_glib_name, libnm_glib_vpn_name],
     includes: gir_includes,
     extra_args: cflags + [
       '--include-uninstalled=' + libnm_util_gir[0].full_path(),
@@ -261,7 +261,7 @@ if enable_introspection
   )
 endif
 
-name = 'libnm-glib-test'
+name = libnm_glib_name + '-test'
 
 deps = common_deps + [libnm_util_dep]
 
@@ -274,7 +274,7 @@ executable(
 )
 
 run_target(
-  'check-local-exports-libnm-glib',
+  'check-local-exports-' + libnm_glib_name,
   command: [check_exports, libnm_glib.full_path(), symbol_map],
   depends: libnm_glib
 )

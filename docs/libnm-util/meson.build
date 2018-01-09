@@ -1,4 +1,4 @@
-doc_module = 'libnm-util'
+doc_module = libnm_util_name
 
 private_headers = [
   'crypto.h',

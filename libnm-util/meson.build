@@ -105,7 +105,7 @@ common_cflags = [
 ]
 
 cflags = common_cflags + [
-  '-DG_LOG_DOMAIN="libnm-util"'
+  '-DG_LOG_DOMAIN="@0@"'.format(libnm_util_name)
 ]
 
 symbol_map = join_paths(meson.current_source_dir(), 'libnm-util.ver')
@@ -135,9 +135,9 @@ libnm_util_dep = declare_dependency(
 pkg.generate(
   libraries: libnm_util,
   version: nm_version,
-  name: 'libnm-util',
+  name: libnm_util_name,
   description: 'Convenience library for clients of NetworkManager',
-  filebase: 'libnm-util',
+  filebase: libnm_util_name,
   subdirs: nm_name,
   requires: 'NetworkManager >= ' + nm_version + ' glib-2.0 dbus-glib-1',
   variables: 'exec_prefix=${prefix}'
@@ -158,7 +158,7 @@ if enable_introspection
     namespace: nm_name,
     identifier_prefix: nm_id_prefix,
     symbol_prefix: nm_id_prefix.to_lower(),
-    export_packages: 'libnm-util',
+    export_packages: libnm_util_name,
     includes: gir_includes,
     install: true
   )
@@ -170,7 +170,7 @@ if enable_introspection
 endif
 
 run_target(
-  'check-local-exports-libnm-util',
+  'check-local-exports-' + libnm_util_name,
   command: [check_exports, libnm_util.full_path(), symbol_map],
   depends: libnm_util
 )

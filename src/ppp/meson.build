@@ -12,7 +12,7 @@ nm_pppd_plugin = shared_module(
   include_directories: src_inc,
   dependencies: deps,
   c_args: [
-    '-DG_LOG_DOMAIN="nm-pppd-plugin"',
+    '-DG_LOG_DOMAIN="@0@"'.format(name),
     '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_GLIB',
   ],
   install: true,
@@ -26,7 +26,7 @@ deps = [
   nm_dep
 ]
 
-symbol_map = join_paths(meson.current_source_dir(), name + '.ver')
+symbol_map = join_paths(meson.current_source_dir(), 'nm-ppp-plugin.ver')
 
 ldflags = []
 if have_version_script

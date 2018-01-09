@@ -1,10 +1,12 @@
+name = 'nmtui'
+
 deps = [
   newt_dep,
   nm_core_dep
 ]
 
 cflags = clients_cflags + [
-  '-DG_LOG_DOMAIN="nmtui"',
+  '-DG_LOG_DOMAIN="@0@"'.format(name),
   '-DLOCALEDIR="@0@"'.format(nm_localedir)
 ]
 
@@ -65,7 +67,7 @@ if have_version_script
 endif
 
 executable(
-  'nmtui',
+  name,
   sources,
   dependencies: deps,
   c_args: cflags,

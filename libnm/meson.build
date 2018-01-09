@@ -14,7 +14,7 @@ deps = [
 ]
 
 cflags = [
-  '-DG_LOG_DOMAIN="libnm"',
+  '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
   '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM',
   '-DNMRUNDIR="@0@"'.format(nm_pkgrundir)
 ]
@@ -72,7 +72,7 @@ libnm_headers = files(
 
 install_headers(
   libnm_core_headers + libnm_headers + [version_header],
-  subdir: 'libnm'
+  subdir: libnm_name
 )
 
 enum_headers = libnm_headers + [version_header]
@@ -174,10 +174,10 @@ libnm_dep = declare_dependency(
 pkg.generate(
   libraries: libnm,
   version: nm_version,
-  name: 'libnm',
+  name: libnm_name,
   description: 'Convenience library for clients of NetworkManager',
-  filebase: 'libnm',
-  subdirs: 'libnm',
+  filebase: libnm_name,
+  subdirs: libnm_name,
   requires: 'gio-2.0',
   variables: [
     'exec_prefix=${prefix}',
@@ -186,7 +186,7 @@ pkg.generate(
 )
 
 run_target(
-  'check-local-exports-libnm',
+  'check-local-exports-' + libnm_name,
   command: [check_exports, libnm.full_path(), symbol_map],
   depends: libnm
 )
@@ -201,7 +201,7 @@ if enable_introspection
     namespace: 'NM',
     identifier_prefix: nm_id_prefix,
     symbol_prefix: nm_id_prefix.to_lower(),
-    export_packages: 'libnm',
+    export_packages: libnm_name,
     includes: 'Gio-2.0',
     extra_args: cflags,
     install: true

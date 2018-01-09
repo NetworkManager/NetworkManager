@@ -83,7 +83,7 @@ if enable_wext
 endif
 
 libnetwork_manager_base = static_library(
-  'NetworkManagerBase',
+  nm_name + 'Base',
   sources: sources,
   dependencies: deps,
   c_args: cflags,
@@ -200,7 +200,7 @@ if enable_session_tracking
 endif
 
 libnetwork_manager = static_library(
-  'NetworkManager',
+  nm_name,
   sources: sources,
   dependencies: deps,
   c_args: cflags,
@@ -238,7 +238,7 @@ endif
 '''
 
 network_manager = executable(
-  meson.project_name(),
+  nm_name,
   'main.c',
   dependencies: deps,
   c_args: cflags,
@@ -298,7 +298,7 @@ if enable_tests
   test_cflags_platform = '-DSETUP=nm_' + platform + '_platform_setup'
 
   libnetwork_manager_test = static_library(
-    'NetworkManagerTest',
+    nm_name + 'Test',
     sources: sources,
     dependencies: deps,
     c_args: cflags + test_cflags,

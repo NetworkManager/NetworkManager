@@ -1,3 +1,5 @@
+name = 'nmcli'
+
 # FIXME: nmcli-completion should be renamed to nmcli
 install_data(
   'nmcli-completion',
@@ -25,7 +27,7 @@ deps = [
 ]
 
 cflags = clients_cflags + [
-  '-DG_LOG_DOMAIN="nmcli"',
+  '-DG_LOG_DOMAIN="@0@"'.format(name),
   '-DNMCLI_LOCALEDIR="@0@"'.format(nm_localedir)
 ]
 
@@ -41,7 +43,7 @@ if enable_polkit_agent
 endif
 
 executable(
-  'nmcli',
+  name,
   sources,
   dependencies: deps,
   c_args: cflags,

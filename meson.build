@@ -42,24 +42,31 @@ nm_pkglibdir = join_paths(nm_libdir, nm_name)
 nm_pkgrundir = join_paths(nm_runstatedir, nm_name)
 nm_pkgstatedir = join_paths(nm_localstatedir, nm_name)
 
+libnm_name = 'libnm'
+
 current = 1
 revision = 0
 age = 1
 libnm_version = '@0@.@1@.@2@'.format(current - age, age, revision)
 
-libnm_pkgincludedir = join_paths(nm_includedir, 'libnm')
+libnm_pkgincludedir = join_paths(nm_includedir, libnm_name)
+
+libnm_util_name = 'libnm-util'
 
 current = 9
 revision = 0
 age = 7
 libnm_util_version = '@0@.@1@.@2@'.format(current - age, age, revision)
 
+libnm_glib_name = 'libnm-glib'
+libnm_glib_vpn_name = libnm_glib_name + '-vpn'
+
 current = 13
 revision = 0
 age = 9
 libnm_glib_version = '@0@.@1@.@2@'.format(current - age, age, revision)
 
-libnm_glib_pkgincludedir = join_paths(nm_includedir, 'libnm-glib')
+libnm_glib_pkgincludedir = join_paths(nm_includedir, libnm_glib_name)
 
 current = 3
 revision = 0
