@@ -5336,7 +5336,7 @@ nm_utils_is_json_object (const char *str, GError **error)
 		return FALSE;
 	}
 
-	if (!nm_jansson_load ())
+	if (!nm_json_init ())
 		return _nm_utils_is_json_object_no_validation (str, error);
 
 	json = json_loads (str, JSON_REJECT_DUPLICATES, &jerror);
@@ -5380,7 +5380,7 @@ _nm_utils_team_config_equal (const char *conf1,
 
 	if (nm_streq0 (conf1, conf2))
 		return TRUE;
-	else if (!nm_jansson_load ())
+	else if (!nm_json_init ())
 		return FALSE;
 
 	/* A NULL configuration is equivalent to default value '{}' */
@@ -5439,7 +5439,7 @@ _nm_utils_team_config_get (const char *conf,
 	if (!key)
 		return NULL;
 
-	if (!nm_jansson_load ())
+	if (!nm_json_init ())
 		return NULL;
 
 	json = json_loads (conf ?: "{}", JSON_REJECT_DUPLICATES, &jerror);
@@ -5549,7 +5549,7 @@ _nm_utils_team_config_set (char **conf,
 
 	g_return_val_if_fail (key, FALSE);
 
-	if (!nm_jansson_load ())
+	if (!nm_json_init ())
 		return FALSE;
 
 	json = json_loads (*conf?: "{}", JSON_REJECT_DUPLICATES, &jerror);
