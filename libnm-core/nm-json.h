@@ -18,7 +18,7 @@
 
 gboolean nm_jansson_load (void);
 
-#ifndef NM_JAONSSON_C
+#ifndef NM_JANSSON_C
 #define json_object_iter_value  (*_nm_jansson_json_object_iter_value)
 #define json_object_key_to_iter (*_nm_jansson_json_object_key_to_iter)
 #define json_integer            (*_nm_jansson_json_integer)
