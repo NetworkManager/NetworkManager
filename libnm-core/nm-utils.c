@@ -4893,7 +4893,8 @@ _nm_utils_is_json_object_no_validation (const char *str, GError **error)
 #if WITH_JSON_VALIDATION
 
 static void
-_json_add_object (json_t *json,
+_json_add_object (const NMJsonVt *vt,
+                  json_t *json,
                   const char *key1,
                   const char *key2,
                   const char *key3,
@@ -4901,19 +4902,19 @@ _json_add_object (json_t *json,
 {
 	json_t *json_element, *json_link;
 
-	json_element = json_object_get (json, key1);
+	json_element = vt->nm_json_object_get (json, key1);
 	if (!json_element) {
 		json_element = value;
 		if (key2) {
 			if (key3) {
-				json_element = json_object ();
-				json_object_set_new (json_element, key3, value);
+				json_element = vt->nm_json_object ();
+				vt->nm_json_object_set_new (json_element, key3, value);
 			}
-			json_link = json_object ();
-			json_object_set_new (json_link, key2, json_element);
+			json_link = vt->nm_json_object ();
+			vt->nm_json_object_set_new (json_link, key2, json_element);
 			json_element = json_link;
 		}
-		json_object_set_new (json, key1, json_element);
+		vt->nm_json_object_set_new (json, key1, json_element);
 		return;
 	}
 
@@ -4921,14 +4922,14 @@ _json_add_object (json_t *json,
 		goto key_already_there;
 
 	json_link = json_element;
-	json_element = json_object_get (json_element, key2);
+	json_element = vt->nm_json_object_get (json_element, key2);
 	if (!json_element) {
 		json_element = value;
 		if (key3) {
-			json_element = json_object ();
-			json_object_set_new (json_element, key3, value);
+			json_element = vt->nm_json_object ();
+			vt->nm_json_object_set_new (json_element, key3, value);
 		}
-		json_object_set_new (json_link, key2, json_element);
+		vt->nm_json_object_set_new (json_link, key2, json_element);
 		return;
 	}
 
@@ -4936,21 +4937,22 @@ _json_add_object (json_t *json,
 		goto key_already_there;
 
 	json_link = json_element;
-	json_element = json_object_get (json_element, key3);
+	json_element = vt->nm_json_object_get (json_element, key3);
 	if (!json_element) {
-		json_object_set_new (json_link, key3, value);
+		vt->nm_json_object_set_new (json_link, key3, value);
 		return;
 	}
 
 key_already_there:
-	json_decref (value);
+	nm_json_decref (vt, value);
 }
 
 /*
  * Removes the specified key1[.key2.key3] from json.
  * Returns TRUE if json has been modified, FALSE otherwise. */
 static gboolean
-_json_del_object (json_t *json,
+_json_del_object (const NMJsonVt *vt,
+                  json_t *json,
                   const char *key1,
                   const char *key2,
                   const char *key3)
@@ -4961,31 +4963,31 @@ _json_del_object (json_t *json,
 
 	if (key2) {
 		json_link = json;
-		json_element = json_object_get (json, key1);
+		json_element = vt->nm_json_object_get (json, key1);
 		if (!json_element)
 			return FALSE;
 		iter_key = key2;
 	}
 	if (key3) {
 		json_link = json_element;
-		json_element = json_object_get (json_element, key2);
+		json_element = vt->nm_json_object_get (json_element, key2);
 		if (!json_element)
 			return FALSE;
 		iter_key = key3;
 	}
 
-	if (json_object_del (json_element, iter_key) != 0)
+	if (vt->nm_json_object_del (json_element, iter_key) != 0)
 		return FALSE;
 
 	/* 1st level key only */
 	if (!json_link)
 		return TRUE;
 
-	if (json_object_size (json_element) == 0)
-		json_object_del (json_link, (key3 ? key2 : key1));
+	if (vt->nm_json_object_size (json_element) == 0)
+		vt->nm_json_object_del (json_link, (key3 ? key2 : key1));
 
-	if (key3 && json_object_size (json_link) == 0)
-		json_object_del (json, key1);
+	if (key3 && vt->nm_json_object_size (json_link) == 0)
+		vt->nm_json_object_del (json, key1);
 
 	return TRUE;
 }
@@ -4994,7 +4996,8 @@ _json_del_object (json_t *json,
  * the "add_implicit" allows to add to the json also the default
  * values used but not shown with teamdctl */
 static void
-_json_team_add_defaults (json_t *json,
+_json_team_add_defaults (const NMJsonVt *vt,
+                         json_t *json,
                          gboolean port_config,
                          gboolean add_implicit)
 {
@@ -5002,62 +5005,63 @@ _json_team_add_defaults (json_t *json,
 	const char *runner = NULL;
 
 	if (port_config) {
-		_json_add_object (json, "link_watch", "name", NULL,
-		                  json_string (NM_TEAM_LINK_WATCHER_ETHTOOL));
+		_json_add_object (vt, json, "link_watch", "name", NULL,
+		                  vt->nm_json_string (NM_TEAM_LINK_WATCHER_ETHTOOL));
 		return;
 	}
 
 	/* Retrieve runner or add default one */
-	json_element = json_object_get (json, "runner");
+	json_element = vt->nm_json_object_get (json, "runner");
 	if (json_element) {
-		runner = json_string_value (json_object_get (json_element, "name"));
+		runner = vt->nm_json_string_value (vt->nm_json_object_get (json_element, "name"));
 	} else {
-		json_element = json_object ();
-		json_object_set_new (json, "runner", json_element);
+		json_element = vt->nm_json_object ();
+		vt->nm_json_object_set_new (json, "runner", json_element);
 	}
 	if (!runner) {
 		runner = NM_SETTING_TEAM_RUNNER_DEFAULT;
-		json_object_set_new (json_element, "name", json_string (runner));
+		vt->nm_json_object_set_new (json_element, "name", vt->nm_json_string (runner));
 	}
 
 
 	if (nm_streq (runner, NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP)) {
-		_json_add_object (json, "notify_peers", "count", NULL,
-				  json_integer (NM_SETTING_TEAM_NOTIFY_PEERS_COUNT_ACTIVEBACKUP_DEFAULT));
-		_json_add_object (json, "mcast_rejoin", "count", NULL,
-				  json_integer (NM_SETTING_TEAM_NOTIFY_MCAST_COUNT_ACTIVEBACKUP_DEFAULT));
+		_json_add_object (vt, json, "notify_peers", "count", NULL,
+		                  vt->nm_json_integer (NM_SETTING_TEAM_NOTIFY_PEERS_COUNT_ACTIVEBACKUP_DEFAULT));
+		_json_add_object (vt, json, "mcast_rejoin", "count", NULL,
+		                  vt->nm_json_integer (NM_SETTING_TEAM_NOTIFY_MCAST_COUNT_ACTIVEBACKUP_DEFAULT));
 	} else if (   nm_streq (runner, NM_SETTING_TEAM_RUNNER_LOADBALANCE)
 		   || nm_streq (runner, NM_SETTING_TEAM_RUNNER_LACP)) {
-		json_element = json_array ();
-		json_array_append_new (json_element, json_string ("eth"));
-		json_array_append_new (json_element, json_string ("ipv4"));
-		json_array_append_new (json_element, json_string ("ipv6"));
-		_json_add_object (json, "runner", "tx_hash", NULL, json_element);
+		json_element = vt->nm_json_array ();
+		vt->nm_json_array_append_new (json_element, vt->nm_json_string ("eth"));
+		vt->nm_json_array_append_new (json_element, vt->nm_json_string ("ipv4"));
+		vt->nm_json_array_append_new (json_element, vt->nm_json_string ("ipv6"));
+		_json_add_object (vt, json, "runner", "tx_hash", NULL, json_element);
 	}
 
 	if (!add_implicit)
 		return;
 
 	if (nm_streq (runner, NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP))
-		_json_add_object (json, "runner", "hwaddr_policy", NULL, json_string ("same_all"));
+		_json_add_object (vt, json, "runner", "hwaddr_policy", NULL, vt->nm_json_string ("same_all"));
 	else if (NM_IN_STRSET (runner,
 	                       NM_SETTING_TEAM_RUNNER_LOADBALANCE,
 	                       NM_SETTING_TEAM_RUNNER_LACP)) {
-		_json_add_object (json, "runner", "tx_balancer", "balancing_interval",
-		                  json_integer (NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT));
+		_json_add_object (vt, json, "runner", "tx_balancer", "balancing_interval",
+		                  vt->nm_json_integer (NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT));
 		if (nm_streq (runner, NM_SETTING_TEAM_RUNNER_LACP)) {
-			_json_add_object (json, "runner", "active", NULL, json_boolean (TRUE));
-			_json_add_object (json, "runner", "sys_prio", NULL,
-			                  json_integer (NM_SETTING_TEAM_RUNNER_SYS_PRIO_DEFAULT));
-			_json_add_object (json, "runner", "min_ports", NULL, json_integer (0));
-			_json_add_object (json, "runner", "agg_select_policy", NULL,
-			                  json_string (NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_DEFAULT));
+			_json_add_object (vt, json, "runner", "active", NULL, nm_json_boolean (vt, TRUE));
+			_json_add_object (vt, json, "runner", "sys_prio", NULL,
+			                  vt->nm_json_integer (NM_SETTING_TEAM_RUNNER_SYS_PRIO_DEFAULT));
+			_json_add_object (vt, json, "runner", "min_ports", NULL, vt->nm_json_integer (0));
+			_json_add_object (vt, json, "runner", "agg_select_policy", NULL,
+			                  vt->nm_json_string (NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_DEFAULT));
 		}
 	}
 }
 
 static json_t *
-_json_find_object (json_t *json,
+_json_find_object (const NMJsonVt *vt,
+                   json_t *json,
                    const char *key1,
                    const char *key2,
                    const char *key3)
@@ -5066,20 +5070,21 @@ _json_find_object (json_t *json,
 
 	if (!key1)
 		return NULL;
-	json_element = json_object_get (json, key1);
+	json_element = vt->nm_json_object_get (json, key1);
 	if (!key2 || !json_element)
 		return json_element;
 
-	json_element = json_object_get (json_element, key2);
+	json_element = vt->nm_json_object_get (json_element, key2);
 	if (!key3 || !json_element)
 		return json_element;
 
-	json_element = json_object_get (json_element, key3);
+	json_element = vt->nm_json_object_get (json_element, key3);
 	return json_element;
 }
 
 static inline void
-_json_delete_object_on_int_match (json_t *json,
+_json_delete_object_on_int_match (const NMJsonVt *vt,
+                                  json_t *json,
                                   const char *key1,
                                   const char *key2,
                                   const char *key3,
@@ -5087,15 +5092,16 @@ _json_delete_object_on_int_match (json_t *json,
 {
 	json_t *json_element;
 
-	json_element = _json_find_object (json, key1, key2, key3);
-	if (!json_element || !json_is_integer (json_element))
+	json_element = _json_find_object (vt, json, key1, key2, key3);
+	if (!json_element || !nm_json_is_integer (json_element))
 		return;
-	if (json_integer_value (json_element) == val)
-		_json_del_object (json, key1, key2, key3);
+	if (vt->nm_json_integer_value (json_element) == val)
+		_json_del_object (vt, json, key1, key2, key3);
 }
 
 static inline void
-_json_delete_object_on_bool_match (json_t *json,
+_json_delete_object_on_bool_match (const NMJsonVt *vt,
+                                   json_t *json,
                                    const char *key1,
                                    const char *key2,
                                    const char *key3,
@@ -5103,15 +5109,16 @@ _json_delete_object_on_bool_match (json_t *json,
 {
 	json_t *json_element;
 
-	json_element = _json_find_object (json, key1, key2, key3);
-	if (!json_element || !json_is_boolean (json_element))
+	json_element = _json_find_object (vt, json, key1, key2, key3);
+	if (!json_element || !nm_json_is_boolean (json_element))
 		return;
-	if (json_boolean_value (json_element) == val)
-		_json_del_object (json, key1, key2, key3);
+	if ((!nm_json_boolean_value (json_element)) == (!val))
+		_json_del_object (vt, json, key1, key2, key3);
 }
 
 static inline void
-_json_delete_object_on_string_match (json_t *json,
+_json_delete_object_on_string_match (const NMJsonVt *vt,
+                                     json_t *json,
                                      const char *key1,
                                      const char *key2,
                                      const char *key3,
@@ -5119,15 +5126,15 @@ _json_delete_object_on_string_match (json_t *json,
 {
 	json_t *json_element;
 
-	json_element = _json_find_object (json, key1, key2, key3);
-	if (!json_element || !json_is_string (json_element))
+	json_element = _json_find_object (vt, json, key1, key2, key3);
+	if (!json_element || !nm_json_is_string (json_element))
 		return;
-	if (nm_streq0 (json_string_value (json_element), val))
-		_json_del_object (json, key1, key2, key3);
+	if (nm_streq0 (vt->nm_json_string_value (json_element), val))
+		_json_del_object (vt, json, key1, key2, key3);
 }
 
 static void
-_json_team_normalize_defaults (json_t *json, gboolean reset)
+_json_team_normalize_defaults (const NMJsonVt *vt, json_t *json, gboolean reset)
 {
 	json_t *json_element;
 	const char *runner = NM_SETTING_TEAM_RUNNER_DEFAULT;
@@ -5137,10 +5144,10 @@ _json_team_normalize_defaults (json_t *json, gboolean reset)
 	gboolean runner_active = FALSE, runner_fast_rate = FALSE;
 	int runner_sys_prio = -1, runner_min_ports = -1;
 
-	json_element = _json_find_object (json, "runner", "name", NULL);
+	json_element = _json_find_object (vt, json, "runner", "name", NULL);
 	if (json_element) {
-		runner = json_string_value (json_element);
-		_json_delete_object_on_string_match (json, "runner", "name", NULL,
+		runner = vt->nm_json_string_value (json_element);
+		_json_delete_object_on_string_match (vt, json, "runner", "name", NULL,
 		                                     NM_SETTING_TEAM_RUNNER_DEFAULT);
 	}
 
@@ -5148,52 +5155,52 @@ _json_team_normalize_defaults (json_t *json, gboolean reset)
 	 * and reloaded triggering the reset of the values through _nm_utils_team_config_get
 	 */
 	if (reset) {
-		_json_del_object (json, "notify_peers", "count", NULL);
-		_json_del_object (json, "notify_peers", "interval", NULL);
-		_json_del_object (json, "mcast_rejoin", "count", NULL);
-		_json_del_object (json, "mcast_rejoin", "interval", NULL);
-		_json_del_object (json, "runner", "hwaddr_policy", NULL);
-		_json_del_object (json, "runner", "tx_hash", NULL);
-		_json_del_object (json, "runner", "tx_balancer", "name");
-		_json_del_object (json, "runner", "tx_balancer", "balancing_interval");
-		_json_del_object (json, "runner", "active", NULL);
-		_json_del_object (json, "runner", "fast_rate", NULL);
-		_json_del_object (json, "runner", "sys_prio", NULL);
-		_json_del_object (json, "runner", "min_ports", NULL);
-		_json_del_object (json, "runner", "agg_select_policy", NULL);
+		_json_del_object (vt, json, "notify_peers", "count", NULL);
+		_json_del_object (vt, json, "notify_peers", "interval", NULL);
+		_json_del_object (vt, json, "mcast_rejoin", "count", NULL);
+		_json_del_object (vt, json, "mcast_rejoin", "interval", NULL);
+		_json_del_object (vt, json, "runner", "hwaddr_policy", NULL);
+		_json_del_object (vt, json, "runner", "tx_hash", NULL);
+		_json_del_object (vt, json, "runner", "tx_balancer", "name");
+		_json_del_object (vt, json, "runner", "tx_balancer", "balancing_interval");
+		_json_del_object (vt, json, "runner", "active", NULL);
+		_json_del_object (vt, json, "runner", "fast_rate", NULL);
+		_json_del_object (vt, json, "runner", "sys_prio", NULL);
+		_json_del_object (vt, json, "runner", "min_ports", NULL);
+		_json_del_object (vt, json, "runner", "agg_select_policy", NULL);
 		return;
 	}
 
 	if (nm_streq (runner, NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP)) {
 		notify_peers_count = 1;
 		mcast_rejoin_count = 1;
-		_json_delete_object_on_string_match (json, "runner", "hwaddr_policy", NULL,
+		_json_delete_object_on_string_match (vt, json, "runner", "hwaddr_policy", NULL,
 		                                     NM_SETTING_TEAM_RUNNER_HWADDR_POLICY_DEFAULT);
 	} else if (nm_streq (runner, NM_SETTING_TEAM_RUNNER_LACP)) {
 		runner_tx_balancer_interval = NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT;
 		runner_active = TRUE;
 		runner_sys_prio = NM_SETTING_TEAM_RUNNER_SYS_PRIO_DEFAULT;
 		runner_min_ports = 0;
-		_json_delete_object_on_string_match (json, "runner", "agg_select_policy", NULL,
+		_json_delete_object_on_string_match (vt, json, "runner", "agg_select_policy", NULL,
 		                                     NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_DEFAULT);
 	} else if (nm_streq (runner, NM_SETTING_TEAM_RUNNER_LOADBALANCE))
 		runner_tx_balancer_interval = 50;
 
-	_json_delete_object_on_int_match (json, "notify_peers", "count", NULL, notify_peers_count);
-	_json_delete_object_on_int_match (json, "notify_peers", "interval", NULL, notify_peers_interval);
-	_json_delete_object_on_int_match (json, "mcast_rejoin", "count", NULL, mcast_rejoin_count);
-	_json_delete_object_on_int_match (json, "macst_rejoin", "interval", NULL, mcast_rejoin_interval);
-	_json_delete_object_on_int_match (json, "runner", "tx_balancer", "balancing_interval",
+	_json_delete_object_on_int_match (vt, json, "notify_peers", "count", NULL, notify_peers_count);
+	_json_delete_object_on_int_match (vt, json, "notify_peers", "interval", NULL, notify_peers_interval);
+	_json_delete_object_on_int_match (vt, json, "mcast_rejoin", "count", NULL, mcast_rejoin_count);
+	_json_delete_object_on_int_match (vt, json, "macst_rejoin", "interval", NULL, mcast_rejoin_interval);
+	_json_delete_object_on_int_match (vt, json, "runner", "tx_balancer", "balancing_interval",
 	                                  runner_tx_balancer_interval);
-	_json_delete_object_on_int_match (json, "runner", "sys_prio", NULL, runner_sys_prio);
-	_json_delete_object_on_int_match (json, "runner", "min_ports", NULL, runner_min_ports);
-	_json_delete_object_on_bool_match (json, "runner", "active", NULL, runner_active);
-	_json_delete_object_on_bool_match (json, "runner", "active", NULL, runner_active);
-	_json_delete_object_on_bool_match (json, "runner", "fast_rate", NULL, runner_fast_rate);
+	_json_delete_object_on_int_match (vt, json, "runner", "sys_prio", NULL, runner_sys_prio);
+	_json_delete_object_on_int_match (vt, json, "runner", "min_ports", NULL, runner_min_ports);
+	_json_delete_object_on_bool_match (vt, json, "runner", "active", NULL, runner_active);
+	_json_delete_object_on_bool_match (vt, json, "runner", "active", NULL, runner_active);
+	_json_delete_object_on_bool_match (vt, json, "runner", "fast_rate", NULL, runner_fast_rate);
 }
 
 static NMTeamLinkWatcher *
-_nm_utils_team_link_watcher_from_json (json_t *json_element)
+_nm_utils_team_link_watcher_from_json (const NMJsonVt *vt, json_t *json_element)
 {
 	const char *j_key;
 	json_t *j_val;
@@ -5203,30 +5210,30 @@ _nm_utils_team_link_watcher_from_json (json_t *json_element)
 
 	g_return_val_if_fail (json_element, NULL);
 
-	json_object_foreach (json_element, j_key, j_val) {
+	nm_json_object_foreach (json_element, j_key, j_val) {
 		if (nm_streq (j_key, "name")) {
 			g_free (name);
-			name = strdup (json_string_value (j_val));
+			name = strdup (vt->nm_json_string_value (j_val));
 		} else if (nm_streq (j_key, "target_host")) {
 			g_free (target_host);
-			target_host = strdup (json_string_value (j_val));
+			target_host = strdup (vt->nm_json_string_value (j_val));
 		} else if (nm_streq (j_key, "source_host")) {
 			g_free (source_host);
-			source_host = strdup (json_string_value (j_val));
+			source_host = strdup (vt->nm_json_string_value (j_val));
 		} else if (NM_IN_STRSET (j_key, "delay_up", "init_wait"))
-			val1 = json_integer_value (j_val);
+			val1 = vt->nm_json_integer_value (j_val);
 		else if (NM_IN_STRSET (j_key, "delay_down", "interval"))
-			val2 = json_integer_value (j_val);
+			val2 = vt->nm_json_integer_value (j_val);
 		else if (nm_streq (j_key, "missed_max"))
-			val3 = json_integer_value (j_val);
+			val3 = vt->nm_json_integer_value (j_val);
 		else if (nm_streq (j_key, "validate_active")) {
-			if (json_is_true (j_val))
+			if (nm_json_is_true (j_val))
 				flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE;
 		} else if (nm_streq (j_key, "validate_inactive")) {
-			if (json_is_true (j_val))
+			if (nm_json_is_true (j_val))
 				flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE;
 		} else if (nm_streq (j_key, "send_always")) {
-			if (json_is_true (j_val))
+			if (nm_json_is_true (j_val))
 				flags |= NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS;
 		}
 	}
@@ -5243,7 +5250,7 @@ _nm_utils_team_link_watcher_from_json (json_t *json_element)
 }
 
 static json_t *
-_nm_utils_team_link_watcher_to_json (NMTeamLinkWatcher *watcher)
+_nm_utils_team_link_watcher_to_json (const NMJsonVt *vt, NMTeamLinkWatcher *watcher)
 {
 	const char *name;
 	int int_val;
@@ -5253,36 +5260,36 @@ _nm_utils_team_link_watcher_to_json (NMTeamLinkWatcher *watcher)
 
 	g_return_val_if_fail (watcher, NULL);
 
-	json_element = json_object ();
+	json_element = vt->nm_json_object ();
 	name = nm_team_link_watcher_get_name (watcher);
 	if (!name)
 		goto fail;
 
-	json_object_set_new (json_element, "name", json_string (name));
+	vt->nm_json_object_set_new (json_element, "name", vt->nm_json_string (name));
 
 	if (nm_streq (name, NM_TEAM_LINK_WATCHER_ETHTOOL)) {
 		int_val = nm_team_link_watcher_get_delay_up (watcher);
 		if (int_val)
-			json_object_set_new (json_element, "delay_up", json_integer (int_val));
+			vt->nm_json_object_set_new (json_element, "delay_up", vt->nm_json_integer (int_val));
 		int_val = nm_team_link_watcher_get_delay_down (watcher);
 		if (int_val)
-			json_object_set_new (json_element, "delay_down", json_integer (int_val));
+			vt->nm_json_object_set_new (json_element, "delay_down", vt->nm_json_integer (int_val));
 		return json_element;
 	}
 
 	int_val = nm_team_link_watcher_get_init_wait (watcher);
 	if (int_val)
-		json_object_set_new (json_element, "init_wait", json_integer (int_val));
+		vt->nm_json_object_set_new (json_element, "init_wait", vt->nm_json_integer (int_val));
 	int_val = nm_team_link_watcher_get_interval (watcher);
 	if (int_val)
-		json_object_set_new (json_element, "interval", json_integer (int_val));
+		vt->nm_json_object_set_new (json_element, "interval", vt->nm_json_integer (int_val));
 	int_val = nm_team_link_watcher_get_missed_max (watcher);
 	if (int_val != 3)
-		json_object_set_new (json_element, "missed_max", json_integer (int_val));
+		vt->nm_json_object_set_new (json_element, "missed_max", vt->nm_json_integer (int_val));
 	str_val = nm_team_link_watcher_get_target_host (watcher);
 	if (!str_val)
 		goto fail;
-	json_object_set_new (json_element, "target_host", json_string (str_val));
+	vt->nm_json_object_set_new (json_element, "target_host", vt->nm_json_string (str_val));
 
 	if (nm_streq (name, NM_TEAM_LINK_WATCHER_NSNA_PING))
 		return json_element;
@@ -5290,20 +5297,20 @@ _nm_utils_team_link_watcher_to_json (NMTeamLinkWatcher *watcher)
 	str_val = nm_team_link_watcher_get_source_host (watcher);
 	if (!str_val)
 		goto fail;
-	json_object_set_new (json_element, "source_host", json_string (str_val));
+	vt->nm_json_object_set_new (json_element, "source_host", vt->nm_json_string (str_val));
 
 	flags = nm_team_link_watcher_get_flags (watcher);
 	if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE)
-		json_object_set_new (json_element, "validate_active", json_string ("true"));
+		vt->nm_json_object_set_new (json_element, "validate_active", vt->nm_json_string ("true"));
 	if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE)
-		json_object_set_new (json_element, "validate_inactive", json_string ("true"));
+		vt->nm_json_object_set_new (json_element, "validate_inactive", vt->nm_json_string ("true"));
 	if (flags & NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS)
-		json_object_set_new (json_element, "send_always", json_string ("true"));
+		vt->nm_json_object_set_new (json_element, "send_always", vt->nm_json_string ("true"));
 
 	return json_element;
 
 fail:
-	json_decref (json_element);
+	nm_json_decref (vt, json_element);
 	return NULL;
 }
 
@@ -5325,6 +5332,7 @@ nm_utils_is_json_object (const char *str, GError **error)
 {
 	json_t *json;
 	json_error_t jerror;
+	const NMJsonVt *vt;
 
 	g_return_val_if_fail (!error || !*error, FALSE);
 
@@ -5336,10 +5344,10 @@ nm_utils_is_json_object (const char *str, GError **error)
 		return FALSE;
 	}
 
-	if (!nm_json_init ())
+	if (!nm_json_init (&vt))
 		return _nm_utils_is_json_object_no_validation (str, error);
 
-	json = json_loads (str, JSON_REJECT_DUPLICATES, &jerror);
+	json = vt->nm_json_loads (str, JSON_REJECT_DUPLICATES, &jerror);
 	if (!json) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
@@ -5352,7 +5360,7 @@ nm_utils_is_json_object (const char *str, GError **error)
 
 	/* valid JSON (depending on the definition) can also be a literal.
 	 * Here we only allow objects. */
-	if (!json_is_object (json)) {
+	if (!nm_json_is_object (json)) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -5360,7 +5368,7 @@ nm_utils_is_json_object (const char *str, GError **error)
 		return FALSE;
 	}
 
-	json_decref (json);
+	nm_json_decref (vt, json);
 	return TRUE;
 }
 
@@ -5377,16 +5385,18 @@ _nm_utils_team_config_equal (const char *conf1,
 	gboolean ret;
 	void *tmp;
 	int i;
+	const NMJsonVt *vt;
 
 	if (nm_streq0 (conf1, conf2))
 		return TRUE;
-	else if (!nm_json_init ())
+
+	if (!nm_json_init (&vt))
 		return FALSE;
 
 	/* A NULL configuration is equivalent to default value '{}' */
-	json1 = json_loads (conf1 ?: "{}", JSON_REJECT_DUPLICATES, &jerror);
+	json1 = vt->nm_json_loads (conf1 ?: "{}", JSON_REJECT_DUPLICATES, &jerror);
 	if (json1)
-		json2 = json_loads (conf2 ?: "{}", JSON_REJECT_DUPLICATES, &jerror);
+		json2 = vt->nm_json_loads (conf2 ?: "{}", JSON_REJECT_DUPLICATES, &jerror);
 
 	if (!json1 || !json2) {
 		ret = FALSE;
@@ -5398,27 +5408,27 @@ _nm_utils_team_config_equal (const char *conf1,
 	 * on the configuration type.
 	 */
 	for (i = 0, json = json1; i < 2; i++, json = json2)
-		_json_team_add_defaults (json, port_config, FALSE);
+		_json_team_add_defaults (vt, json, port_config, FALSE);
 
 	/* Only consider a given subset of nodes, others can change depending on
 	 * current state */
 	for (i = 0, json = json1; i < 2; i++, json = json2) {
-		json_object_foreach_safe (json, tmp, key, value) {
+		nm_json_object_foreach_safe (json, tmp, key, value) {
 			if (!NM_IN_STRSET (key, "runner", "link_watch"))
-				json_object_del (json, key);
+				vt->nm_json_object_del (json, key);
 		}
 	}
 
-	dump1 = json_dumps (json1, JSON_INDENT(0) | JSON_ENSURE_ASCII | JSON_SORT_KEYS);
-	dump2 = json_dumps (json2, JSON_INDENT(0) | JSON_ENSURE_ASCII | JSON_SORT_KEYS);
+	dump1 = vt->nm_json_dumps (json1, JSON_INDENT(0) | JSON_ENSURE_ASCII | JSON_SORT_KEYS);
+	dump2 = vt->nm_json_dumps (json2, JSON_INDENT(0) | JSON_ENSURE_ASCII | JSON_SORT_KEYS);
 
 	ret = nm_streq0 (dump1, dump2);
 out:
 
 	if (json1)
-		json_decref (json1);
+		nm_json_decref (vt, json1);
 	if (json2)
-		json_decref (json2);
+		nm_json_decref (vt, json2);
 
 	return ret;
 }
@@ -5435,14 +5445,15 @@ _nm_utils_team_config_get (const char *conf,
 	json_t *json_element;
 	GValue *value = NULL;
 	json_error_t jerror;
+	const NMJsonVt *vt;
 
 	if (!key)
 		return NULL;
 
-	if (!nm_json_init ())
+	if (!nm_json_init (&vt))
 		return NULL;
 
-	json = json_loads (conf ?: "{}", JSON_REJECT_DUPLICATES, &jerror);
+	json = vt->nm_json_loads (conf ?: "{}", JSON_REJECT_DUPLICATES, &jerror);
 
 	/* Invalid json in conf */
 	if (!json)
@@ -5458,42 +5469,42 @@ _nm_utils_team_config_get (const char *conf,
 	 * fine to show the default value only if explicitly set.
 	 */
 	if (!port_config)
-		_json_team_add_defaults (json, port_config, TRUE);
+		_json_team_add_defaults (vt, json, port_config, TRUE);
 
 	/* Now search the property to retrieve */
-	json_element = json_object_get (json, key);
+	json_element = vt->nm_json_object_get (json, key);
 	if (json_element && key2)
-		json_element = json_object_get (json_element, key2);
+		json_element = vt->nm_json_object_get (json_element, key2);
 	if (json_element && key3)
-		json_element = json_object_get (json_element, key3);
+		json_element = vt->nm_json_object_get (json_element, key3);
 
 	if (json_element) {
 		value = g_new0 (GValue, 1);
-		if (json_is_string (json_element)) {
+		if (nm_json_is_string (json_element)) {
 			g_value_init (value, G_TYPE_STRING);
-			g_value_set_string (value, json_string_value (json_element));
-		} else if (json_is_integer (json_element)) {
+			g_value_set_string (value, vt->nm_json_string_value (json_element));
+		} else if (nm_json_is_integer (json_element)) {
 			g_value_init (value, G_TYPE_INT);
-			g_value_set_int (value, json_integer_value (json_element));
-		} else if (json_is_boolean (json_element)) {
+			g_value_set_int (value, vt->nm_json_integer_value (json_element));
+		} else if (nm_json_is_boolean (json_element)) {
 			g_value_init (value, G_TYPE_BOOLEAN);
-			g_value_set_boolean (value, json_boolean_value (json_element));
+			g_value_set_boolean (value, nm_json_boolean_value (json_element));
 		} else if (nm_streq (key, "link_watch")) {
 			NMTeamLinkWatcher *watcher;
 			GPtrArray *data = g_ptr_array_new_with_free_func
 			                  ((GDestroyNotify) nm_team_link_watcher_unref);
 
-			if (json_is_array (json_element)) {
+			if (nm_json_is_array (json_element)) {
 				json_t *j_watcher;
 				int index;
 
-				json_array_foreach (json_element, index, j_watcher) {
-					watcher = _nm_utils_team_link_watcher_from_json (j_watcher);
+				nm_json_array_foreach (json_element, index, j_watcher) {
+					watcher = _nm_utils_team_link_watcher_from_json (vt, j_watcher);
 					if (watcher)
 						g_ptr_array_add (data, watcher);
 				}
 			} else {
-				watcher = _nm_utils_team_link_watcher_from_json (json_element);
+				watcher = _nm_utils_team_link_watcher_from_json (vt, json_element);
 				if (watcher)
 					g_ptr_array_add (data, watcher);
 			}
@@ -5503,14 +5514,14 @@ _nm_utils_team_config_get (const char *conf,
 			} else
 				g_ptr_array_free (data, TRUE);
 
-		} else if (json_is_array (json_element)) {
+		} else if (nm_json_is_array (json_element)) {
 			GPtrArray *data = g_ptr_array_new_with_free_func ((GDestroyNotify) g_free);
 			json_t *str_element;
 			int index;
 
-			json_array_foreach (json_element, index, str_element) {
-				if (json_is_string (str_element))
-					g_ptr_array_add (data, g_strdup (json_string_value (str_element)));
+			nm_json_array_foreach (json_element, index, str_element) {
+				if (nm_json_is_string (str_element))
+					g_ptr_array_add (data, g_strdup (vt->nm_json_string_value (str_element)));
 			}
 			if (data->len) {
 				g_value_init (value, G_TYPE_STRV);
@@ -5525,7 +5536,7 @@ _nm_utils_team_config_get (const char *conf,
 	}
 
 	if (json)
-		json_decref (json);
+		nm_json_decref (vt, json);
 
 	return value;
 }
@@ -5546,30 +5557,31 @@ _nm_utils_team_config_set (char **conf,
 	const char *iter_key = key;
 	int i;
 	NMTeamLinkWatcher *watcher;
+	const NMJsonVt *vt;
 
 	g_return_val_if_fail (key, FALSE);
 
-	if (!nm_json_init ())
+	if (!nm_json_init (&vt))
 		return FALSE;
 
-	json = json_loads (*conf?: "{}", JSON_REJECT_DUPLICATES, &jerror);
+	json = vt->nm_json_loads (*conf?: "{}", JSON_REJECT_DUPLICATES, &jerror);
 	if (!json)
 		return FALSE;
 
 	/* no new value? delete element */
 	if (!value) {
-		updated = _json_del_object (json, key, key2, key3);
+		updated = _json_del_object (vt, json, key, key2, key3);
 		goto done;
 	}
 
 	/* insert new value */
 	updated = TRUE;
 	if (G_VALUE_HOLDS_STRING (value))
-		json_value = json_string (g_value_get_string (value));
+		json_value = vt->nm_json_string (g_value_get_string (value));
 	else if (G_VALUE_HOLDS_INT (value))
-		json_value = json_integer (g_value_get_int (value));
+		json_value = vt->nm_json_integer (g_value_get_int (value));
 	else if (G_VALUE_HOLDS_BOOLEAN (value))
-		json_value = json_boolean (g_value_get_boolean (value));
+		json_value = nm_json_boolean (vt, g_value_get_boolean (value));
 	else if (G_VALUE_HOLDS_BOXED (value)) {
 		if (nm_streq (key, "link_watch")) {
 			array = g_value_get_boxed (value);
@@ -5587,19 +5599,19 @@ _nm_utils_team_config_set (char **conf,
 			json_value = NULL;
 			for (i = 0; i < array->len; i++) {
 				watcher = array->pdata[i];
-				json_element = _nm_utils_team_link_watcher_to_json (watcher);
+				json_element = _nm_utils_team_link_watcher_to_json (vt, watcher);
 				if (!json_element)
 					continue;
 				if (!json_value) {
 					json_value = json_element;
 					continue;
 				}
-				if (!json_is_array (json_value)) {
+				if (!nm_json_is_array (json_value)) {
 					json_link = json_value;
-					json_value = json_array ();
-					json_array_append_new (json_value, json_link);
+					json_value = vt->nm_json_array ();
+					vt->nm_json_array_append_new (json_value, json_link);
 				}
-				json_array_append_new (json_value, json_element);
+				vt->nm_json_array_append_new (json_value, json_element);
 			}
 		} else if (   nm_streq (key, "runner")
 		           && nm_streq0 (key2, "tx_hash")) {
@@ -5608,9 +5620,9 @@ _nm_utils_team_config_set (char **conf,
 				updated = FALSE;
 				goto done;
 			}
-			json_value = json_array ();
+			json_value = vt->nm_json_array ();
 			for (i = 0; strv[i]; i++)
-				json_array_append_new (json_value, json_string (strv[i]));
+				vt->nm_json_array_append_new (json_value, vt->nm_json_string (strv[i]));
 		} else {
 			updated = FALSE;
 			goto done;
@@ -5627,38 +5639,38 @@ _nm_utils_team_config_set (char **conf,
 
 	if (key2) {
 		json_link = json;
-		json_element = json_object_get (json, iter_key);
+		json_element = vt->nm_json_object_get (json, iter_key);
 		if (!json_element) {
-			json_element = json_object ();
-			json_object_set_new (json_link, iter_key, json_element);
+			json_element = vt->nm_json_object ();
+			vt->nm_json_object_set_new (json_link, iter_key, json_element);
 		}
 		iter_key = key2;
 	}
 	if (key3) {
 		json_link = json_element;
-		json_element = json_object_get (json_link, iter_key);
+		json_element = vt->nm_json_object_get (json_link, iter_key);
 		if (!json_element) {
-			json_element = json_object ();
-			json_object_set_new (json_link, iter_key, json_element);
+			json_element = vt->nm_json_object ();
+			vt->nm_json_object_set_new (json_link, iter_key, json_element);
 		}
 		iter_key = key3;
 	}
 
-	json_object_set_new (json_element, iter_key, json_value);
+	vt->nm_json_object_set_new (json_element, iter_key, json_value);
 
 done:
 	if (updated) {
-		_json_team_normalize_defaults (json, (   nm_streq0 (key, "runner")
-		                                      && nm_streq0 (key2, "name")));
+		_json_team_normalize_defaults (vt, json, (   nm_streq0 (key, "runner")
+		                                          && nm_streq0 (key2, "name")));
 		g_free (*conf);
-		*conf = json_dumps (json, JSON_PRESERVE_ORDER);
+		*conf = vt->nm_json_dumps (json, JSON_PRESERVE_ORDER);
 		/* Don't save an empty config */
 		if (nm_streq0 (*conf, "{}")) {
 			g_free (*conf);
 			*conf = NULL;
 		}
 	}
-	json_decref (json);
+	nm_json_decref (vt, json);
 	return updated;
 }
 
