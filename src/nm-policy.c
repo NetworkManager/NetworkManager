@@ -1065,22 +1065,19 @@ update_ip_dns (NMPolicy *self, int addr_family)
 	gpointer ip_config;
 	const char *ip_iface = NULL;
 	NMVpnConnection *vpn = NULL;
-	NMDnsIPConfigType dns_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
 
 	nm_assert_addr_family (addr_family);
 
 	ip_config = get_best_ip_config (self, addr_family, &ip_iface, NULL, NULL, &vpn);
 	if (ip_config) {
-		if (vpn)
-			dns_type = NM_DNS_IP_CONFIG_TYPE_VPN;
-
 		/* Tell the DNS manager this config is preferred by re-adding it with
 		 * a different IP config type.
 		 */
-		nm_dns_manager_add_ip_config (NM_POLICY_GET_PRIVATE (self)->dns_manager,
-		                              ip_iface,
+		nm_dns_manager_set_ip_config (NM_POLICY_GET_PRIVATE (self)->dns_manager,
 		                              ip_config,
-		                              dns_type);
+		                              vpn
+		                                ? NM_DNS_IP_CONFIG_TYPE_VPN
+		                                : NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE);
 	}
 
 	if (addr_family == AF_INET6)
@@ -1711,7 +1708,6 @@ device_state_changed (NMDevice *device,
 	NMPolicy *self = _PRIV_TO_SELF (priv);
 	NMActiveConnection *ac;
 	NMSettingsConnection *connection = nm_device_get_settings_connection (device);
-	const char *ip_iface = nm_device_get_ip_iface (device);
 	NMIP4Config *ip4_config;
 	NMIP6Config *ip6_config;
 	NMSettingConnection *s_con = NULL;
@@ -1802,10 +1798,10 @@ device_state_changed (NMDevice *device,
 
 		ip4_config = nm_device_get_ip4_config (device);
 		if (ip4_config)
-			nm_dns_manager_add_ip_config (priv->dns_manager, ip_iface, ip4_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+			nm_dns_manager_set_ip_config (priv->dns_manager, NM_IP_CONFIG_CAST (ip4_config), NM_DNS_IP_CONFIG_TYPE_DEFAULT);
 		ip6_config = nm_device_get_ip6_config (device);
 		if (ip6_config)
-			nm_dns_manager_add_ip_config (priv->dns_manager, ip_iface, ip6_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+			nm_dns_manager_set_ip_config (priv->dns_manager, NM_IP_CONFIG_CAST (ip6_config), NM_DNS_IP_CONFIG_TYPE_DEFAULT);
 
 		update_routing_and_dns (self, FALSE);
 
@@ -1898,14 +1894,24 @@ device_state_changed (NMDevice *device,
 }
 
 static void
-device_ip4_config_changed (NMDevice *device,
-                           NMIP4Config *new_config,
-                           NMIP4Config *old_config,
-                           gpointer user_data)
+device_ip_config_changed (NMDevice *device,
+                          NMIPConfig *new_config,
+                          NMIPConfig *old_config,
+                          gpointer user_data)
 {
 	NMPolicyPrivate *priv = user_data;
 	NMPolicy *self = _PRIV_TO_SELF (priv);
-	const char *ip_iface = nm_device_get_ip_iface (device);
+	int addr_family;
+
+	nm_assert (new_config || old_config);
+	nm_assert (!new_config || NM_IS_IP_CONFIG (new_config));
+	nm_assert (!old_config || NM_IS_IP_CONFIG (old_config));
+
+	if (new_config) {
+		addr_family = nm_ip_config_get_addr_family (new_config);
+		nm_assert (!old_config || addr_family == nm_ip_config_get_addr_family (old_config));
+	} else
+		addr_family = nm_ip_config_get_addr_family (old_config);
 
 	nm_dns_manager_begin_updates (priv->dns_manager, __func__);
 
@@ -1916,54 +1922,24 @@ device_ip4_config_changed (NMDevice *device,
 	 */
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
 		if (old_config != new_config) {
-			if (old_config)
-				nm_dns_manager_remove_ip_config (priv->dns_manager, old_config);
 			if (new_config)
-				nm_dns_manager_add_ip_config (priv->dns_manager, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+				nm_dns_manager_set_ip_config (priv->dns_manager, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
+			if (old_config)
+				nm_dns_manager_set_ip_config (priv->dns_manager, old_config, NM_DNS_IP_CONFIG_TYPE_REMOVED);
 		}
-		update_ip_dns (self, AF_INET);
-		update_ip4_routing (self, TRUE);
-		update_system_hostname (self, "ip4 conf");
+		update_ip_dns (self, addr_family);
+		if (addr_family == AF_INET)
+			update_ip4_routing (self, TRUE);
+		else
+			update_ip6_routing (self, TRUE);
+		update_system_hostname (self,
+		                        addr_family == AF_INET
+		                          ? "ip4 conf"
+		                          : "ip6 conf");
 	} else {
 		/* Old configs get removed immediately */
 		if (old_config)
-			nm_dns_manager_remove_ip_config (priv->dns_manager, old_config);
-	}
-
-	nm_dns_manager_end_updates (priv->dns_manager, __func__);
-}
-
-static void
-device_ip6_config_changed (NMDevice *device,
-                           NMIP6Config *new_config,
-                           NMIP6Config *old_config,
-                           gpointer user_data)
-{
-	NMPolicyPrivate *priv = user_data;
-	NMPolicy *self = _PRIV_TO_SELF (priv);
-	const char *ip_iface = nm_device_get_ip_iface (device);
-
-	nm_dns_manager_begin_updates (priv->dns_manager, __func__);
-
-	/* We catch already all the IP events registering on the device state changes but
-	 * the ones where the IP changes but the device state keep stable (i.e., activated):
-	 * ignore IP config changes but when the device is in activated state.
-	 * Prevents unecessary changes to DNS information.
-	 */
-	if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
-		if (old_config != new_config) {
-			if (old_config)
-				nm_dns_manager_remove_ip_config (priv->dns_manager, old_config);
-			if (new_config)
-				nm_dns_manager_add_ip_config (priv->dns_manager, ip_iface, new_config, NM_DNS_IP_CONFIG_TYPE_DEFAULT);
-		}
-		update_ip_dns (self, AF_INET6);
-		update_ip6_routing (self, TRUE);
-		update_system_hostname (self, "ip6 conf");
-	} else {
-		/* Old configs get removed immediately */
-		if (old_config)
-			nm_dns_manager_remove_ip_config (priv->dns_manager, old_config);
+			nm_dns_manager_set_ip_config (priv->dns_manager, old_config, NM_DNS_IP_CONFIG_TYPE_REMOVED);
 	}
 
 	nm_dns_manager_end_updates (priv->dns_manager, __func__);
@@ -2006,8 +1982,8 @@ devices_list_register (NMPolicy *self, NMDevice *device)
 
 	/* Connect state-changed with _after, so that the handler is invoked after other handlers. */
 	g_signal_connect_after (device, NM_DEVICE_STATE_CHANGED,          (GCallback) device_state_changed, priv);
-	g_signal_connect       (device, NM_DEVICE_IP4_CONFIG_CHANGED,     (GCallback) device_ip4_config_changed, priv);
-	g_signal_connect       (device, NM_DEVICE_IP6_CONFIG_CHANGED,     (GCallback) device_ip6_config_changed, priv);
+	g_signal_connect       (device, NM_DEVICE_IP4_CONFIG_CHANGED,     (GCallback) device_ip_config_changed, priv);
+	g_signal_connect       (device, NM_DEVICE_IP6_CONFIG_CHANGED,     (GCallback) device_ip_config_changed, priv);
 	g_signal_connect       (device, NM_DEVICE_IP6_PREFIX_DELEGATED,   (GCallback) device_ip6_prefix_delegated, priv);
 	g_signal_connect       (device, NM_DEVICE_IP6_SUBNET_NEEDED,      (GCallback) device_ip6_subnet_needed, priv);
 	g_signal_connect       (device, "notify::" NM_DEVICE_AUTOCONNECT, (GCallback) device_autoconnect_changed, priv);
@@ -2062,21 +2038,16 @@ vpn_connection_activated (NMPolicy *self, NMVpnConnection *vpn)
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	NMIP4Config *ip4_config;
 	NMIP6Config *ip6_config;
-	const char *ip_iface;
 
 	nm_dns_manager_begin_updates (priv->dns_manager, __func__);
 
-	ip_iface = nm_vpn_connection_get_ip_iface (vpn, TRUE);
-
-	/* Add the VPN connection's IP configs from DNS */
-
 	ip4_config = nm_vpn_connection_get_ip4_config (vpn);
 	if (ip4_config)
-		nm_dns_manager_add_ip_config (priv->dns_manager, ip_iface, ip4_config, NM_DNS_IP_CONFIG_TYPE_VPN);
+		nm_dns_manager_set_ip_config (priv->dns_manager, NM_IP_CONFIG_CAST (ip4_config), NM_DNS_IP_CONFIG_TYPE_VPN);
 
 	ip6_config = nm_vpn_connection_get_ip6_config (vpn);
 	if (ip6_config)
-		nm_dns_manager_add_ip_config (priv->dns_manager, ip_iface, ip6_config, NM_DNS_IP_CONFIG_TYPE_VPN);
+		nm_dns_manager_set_ip_config (priv->dns_manager, NM_IP_CONFIG_CAST (ip6_config), NM_DNS_IP_CONFIG_TYPE_VPN);
 
 	update_routing_and_dns (self, TRUE);
 
@@ -2093,16 +2064,12 @@ vpn_connection_deactivated (NMPolicy *self, NMVpnConnection *vpn)
 	nm_dns_manager_begin_updates (priv->dns_manager, __func__);
 
 	ip4_config = nm_vpn_connection_get_ip4_config (vpn);
-	if (ip4_config) {
-		/* Remove the VPN connection's IP4 config from DNS */
-		nm_dns_manager_remove_ip_config (priv->dns_manager, ip4_config);
-	}
+	if (ip4_config)
+		nm_dns_manager_set_ip_config (priv->dns_manager, NM_IP_CONFIG_CAST (ip4_config), NM_DNS_IP_CONFIG_TYPE_REMOVED);
 
 	ip6_config = nm_vpn_connection_get_ip6_config (vpn);
-	if (ip6_config) {
-		/* Remove the VPN connection's IP6 config from DNS */
-		nm_dns_manager_remove_ip_config (priv->dns_manager, ip6_config);
-	}
+	if (ip6_config)
+		nm_dns_manager_set_ip_config (priv->dns_manager, NM_IP_CONFIG_CAST (ip6_config), NM_DNS_IP_CONFIG_TYPE_REMOVED);
 
 	update_routing_and_dns (self, TRUE);
 

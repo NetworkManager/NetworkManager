@@ -1049,6 +1049,25 @@ nm_cmp_uint32_p_with_data (gconstpointer p_a, gconstpointer p_b, gpointer user_d
 	return 0;
 }
 
+static inline int
+nm_cmp_int2ptr_p_with_data (gconstpointer p_a, gconstpointer p_b, gpointer user_data)
+{
+	/* p_a and p_b are two pointers to a pointer, where the pointer is
+	 * interpreted as a integer using GPOINTER_TO_INT().
+	 *
+	 * That is the case of a hash-table that uses GINT_TO_POINTER() to
+	 * convert integers as pointers, and the resulting keys-as-array
+	 * array. */
+	const int a = GPOINTER_TO_INT (*((gconstpointer *) p_a));
+	const int b = GPOINTER_TO_INT (*((gconstpointer *) p_b));
+
+	if (a < b)
+		return -1;
+	if (a > b)
+		return 1;
+	return 0;
+}
+
 /*****************************************************************************/
 
 /* Taken from systemd's UNIQ_T and UNIQ macros. */

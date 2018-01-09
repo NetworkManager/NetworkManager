@@ -31,6 +31,7 @@
 #include <sys/stat.h>
 #include <linux/if.h>
 
+#include "nm-utils/nm-c-list.h"
 #include "nm-core-internal.h"
 #include "platform/nm-platform.h"
 #include "nm-utils.h"
@@ -38,6 +39,7 @@
 #include "nm-ip6-config.h"
 #include "nm-bus-manager.h"
 #include "nm-manager.h"
+#include "nm-setting-connection.h"
 #include "devices/nm-device.h"
 #include "NetworkManagerUtils.h"
 
@@ -48,8 +50,14 @@
 
 typedef struct {
 	int ifindex;
-	GList *configs;
+	CList configs_lst_head;
 } InterfaceConfig;
+
+typedef struct {
+	CList request_queue_lst;
+	const char *operation;
+	GVariant *argument;
+} RequestItem;
 
 /*****************************************************************************/
 
@@ -57,8 +65,8 @@ typedef struct {
 	GDBusProxy *resolve;
 	GCancellable *init_cancellable;
 	GCancellable *update_cancellable;
-	GQueue dns_updates;
-	GQueue domain_updates;
+	GCancellable *mdns_cancellable;
+	CList request_queue_lst_head;
 } NMDnsSystemdResolvedPrivate;
 
 struct _NMDnsSystemdResolved {
@@ -82,6 +90,36 @@ G_DEFINE_TYPE (NMDnsSystemdResolved, nm_dns_systemd_resolved, NM_TYPE_DNS_PLUGIN
 /*****************************************************************************/
 
 static void
+_request_item_free (RequestItem *request_item)
+{
+	c_list_unlink_stale (&request_item->request_queue_lst);
+	g_variant_unref (request_item->argument);
+	g_slice_free (RequestItem, request_item);
+}
+
+static void
+_request_item_append (CList *request_queue_lst_head,
+                      const char *operation,
+                      GVariant *argument)
+{
+	RequestItem *request_item;
+
+	request_item = g_slice_new (RequestItem);
+	request_item->operation = operation;
+	request_item->argument = g_variant_ref_sink (argument);
+	c_list_link_tail (request_queue_lst_head, &request_item->request_queue_lst);
+}
+
+/*****************************************************************************/
+
+static void
+_interface_config_free (InterfaceConfig *config)
+{
+	nm_c_list_elem_free_all (&config->configs_lst_head, NULL);
+	g_slice_free (InterfaceConfig, config);
+}
+
+static void
 call_done (GObject *source, GAsyncResult *r, gpointer user_data)
 {
 	GVariant *v;
@@ -95,42 +133,6 @@ call_done (GObject *source, GAsyncResult *r, gpointer user_data)
 		_LOGW ("Failed: %s\n", error->message);
 		g_error_free (error);
 	}
-}
-
-static void
-add_interface_configuration (NMDnsSystemdResolved *self,
-                             GArray *interfaces,
-                             const NMDnsIPConfigData *data,
-                             gboolean skip)
-{
-	int i;
-	InterfaceConfig *ic = NULL;
-	int ifindex;
-
-	if (NM_IS_IP4_CONFIG (data->config))
-		ifindex = nm_ip4_config_get_ifindex (data->config);
-	else if (NM_IS_IP6_CONFIG  (data->config))
-		ifindex = nm_ip6_config_get_ifindex (data->config);
-	else
-		g_return_if_reached ();
-
-	for (i = 0; i < interfaces->len; i++) {
-		InterfaceConfig *tic = &g_array_index (interfaces, InterfaceConfig, i);
-		if (ifindex == tic->ifindex) {
-			ic = tic;
-			break;
-		}
-	}
-
-	if (!ic) {
-		g_array_set_size (interfaces, interfaces->len + 1);
-		ic = &g_array_index (interfaces, InterfaceConfig,
-		                     interfaces->len - 1);
-		ic->ifindex = ifindex;
-	}
-
-	if (!skip)
-		ic->configs = g_list_append (ic->configs, data->config);
 }
 
 static void
@@ -211,13 +213,13 @@ static void
 free_pending_updates (NMDnsSystemdResolved *self)
 {
 	NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
-	GVariant *v;
+	RequestItem *request_item, *request_item_safe;
 
-	while ((v = g_queue_pop_head (&priv->dns_updates)) != NULL)
-		g_variant_unref (v);
-
-	while ((v = g_queue_pop_head (&priv->domain_updates)) != NULL)
-		g_variant_unref (v);
+	c_list_for_each_entry_safe (request_item,
+	                            request_item_safe,
+	                            &priv->request_queue_lst_head,
+	                            request_queue_lst)
+		_request_item_free (request_item);
 }
 
 static void
@@ -225,7 +227,9 @@ prepare_one_interface (NMDnsSystemdResolved *self, InterfaceConfig *ic)
 {
 	NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
 	GVariantBuilder dns, domains;
-	GList *l;
+	NMCListElem *elem;
+	NMSettingConnectionMdns mdns = NM_SETTING_CONNECTION_MDNS_DEFAULT;
+	const char *mdns_arg = NULL;
 
 	g_variant_builder_init (&dns, G_VARIANT_TYPE ("(ia(iay))"));
 	g_variant_builder_add (&dns, "i", ic->ifindex);
@@ -235,23 +239,50 @@ prepare_one_interface (NMDnsSystemdResolved *self, InterfaceConfig *ic)
 	g_variant_builder_add (&domains, "i", ic->ifindex);
 	g_variant_builder_open (&domains, G_VARIANT_TYPE ("a(sb)"));
 
-	for (l = ic->configs; l; l = l->next)
-		update_add_ip_config (self, &dns, &domains, l->data);
+	c_list_for_each_entry (elem, &ic->configs_lst_head, lst) {
+		NMIPConfig *ip_config = elem->data;
+
+		update_add_ip_config (self, &dns, &domains, ip_config);
+
+		if (NM_IS_IP4_CONFIG (ip_config))
+			mdns = NM_MAX (mdns, nm_ip4_config_mdns_get (NM_IP4_CONFIG (ip_config)));
+	}
 
 	g_variant_builder_close (&dns);
 	g_variant_builder_close (&domains);
 
-	g_queue_push_tail (&priv->dns_updates,
-	                   g_variant_ref_sink (g_variant_builder_end (&dns)));
-	g_queue_push_tail (&priv->domain_updates,
-	                   g_variant_ref_sink (g_variant_builder_end (&domains)));
+	switch (mdns) {
+	case NM_SETTING_CONNECTION_MDNS_NO:
+		mdns_arg = "no";
+		break;
+	case NM_SETTING_CONNECTION_MDNS_RESOLVE:
+		mdns_arg = "resolve";
+		break;
+	case NM_SETTING_CONNECTION_MDNS_YES:
+		mdns_arg = "yes";
+		break;
+	case NM_SETTING_CONNECTION_MDNS_DEFAULT:
+		mdns_arg = "";
+		break;
+	}
+	nm_assert (mdns_arg);
+
+	_request_item_append (&priv->request_queue_lst_head,
+	                      "SetLinkDNS",
+	                      g_variant_builder_end (&dns));
+	_request_item_append (&priv->request_queue_lst_head,
+	                      "SetLinkDomains",
+	                      g_variant_builder_end (&domains));
+	_request_item_append (&priv->request_queue_lst_head,
+	                      "SetLinkMulticastDNS",
+	                      g_variant_new ("(is)", ic->ifindex, mdns_arg ?: ""));
 }
 
 static void
 send_updates (NMDnsSystemdResolved *self)
 {
 	NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
-	GVariant *v;
+	RequestItem *request_item, *request_item_safe;
 
 	nm_clear_g_cancellable (&priv->update_cancellable);
 
@@ -260,54 +291,84 @@ send_updates (NMDnsSystemdResolved *self)
 
 	priv->update_cancellable = g_cancellable_new ();
 
-	while ((v = g_queue_pop_head (&priv->dns_updates)) != NULL) {
-		g_dbus_proxy_call (priv->resolve, "SetLinkDNS", v,
+	c_list_for_each_entry_safe (request_item,
+	                            request_item_safe,
+	                            &priv->request_queue_lst_head,
+	                            request_queue_lst) {
+		g_dbus_proxy_call (priv->resolve,
+		                   request_item->operation,
+		                   request_item->argument,
 		                   G_DBUS_CALL_FLAGS_NONE,
-		                   -1, priv->update_cancellable, call_done, self);
-		g_variant_unref (v);
-	}
-
-	while ((v = g_queue_pop_head (&priv->domain_updates)) != NULL) {
-		g_dbus_proxy_call (priv->resolve, "SetLinkDomains", v,
-		                   G_DBUS_CALL_FLAGS_NONE,
-		                   -1, priv->update_cancellable, call_done, self);
-		g_variant_unref (v);
+		                   -1,
+		                   priv->update_cancellable,
+		                   call_done,
+		                   self);
+		_request_item_free (request_item);
 	}
 }
 
 static gboolean
 update (NMDnsPlugin *plugin,
-        const GPtrArray *configs,
         const NMGlobalDnsConfig *global_config,
+        const CList *ip_config_lst_head,
         const char *hostname)
 {
 	NMDnsSystemdResolved *self = NM_DNS_SYSTEMD_RESOLVED (plugin);
-	GArray *interfaces = g_array_new (TRUE, TRUE, sizeof (InterfaceConfig));
+	gs_unref_hashtable GHashTable *interfaces = NULL;
+	gs_free gpointer *interfaces_keys = NULL;
+	guint interfaces_len;
 	guint i;
 	int prio, first_prio = 0;
+	NMDnsIPConfigData *ip_data;
+	gboolean is_first = TRUE;
 
-	for (i = 0; i < configs->len; i++) {
-		const NMDnsIPConfigData *data = configs->pdata[i];
+	interfaces = g_hash_table_new_full (nm_direct_hash, NULL,
+	                                    NULL, (GDestroyNotify) _interface_config_free);
+
+	c_list_for_each_entry (ip_data, ip_config_lst_head, ip_config_lst) {
 		gboolean skip = FALSE;
+		InterfaceConfig *ic = NULL;
+		int ifindex;
 
-		prio = nm_ip_config_get_dns_priority (data->config);
-		if (i == 0)
+		prio = nm_ip_config_get_dns_priority (ip_data->ip_config);
+		if (is_first) {
+			is_first = FALSE;
 			first_prio = prio;
-		else if (first_prio < 0 && first_prio != prio)
+		} else if (first_prio < 0 && first_prio != prio)
 			skip = TRUE;
-		add_interface_configuration (self, interfaces, data, skip);
+
+		ifindex = ip_data->data->ifindex;
+		nm_assert (ifindex == nm_ip_config_get_ifindex (ip_data->ip_config));
+
+		ic = g_hash_table_lookup (interfaces, GINT_TO_POINTER (ifindex));
+		if (!ic) {
+			ic = g_slice_new (InterfaceConfig);
+			ic->ifindex = ifindex;
+			c_list_init (&ic->configs_lst_head);
+			g_hash_table_insert (interfaces, GINT_TO_POINTER (ifindex), ic);
+		}
+
+		if (!skip) {
+			c_list_link_tail (&ic->configs_lst_head,
+			                  &nm_c_list_elem_new_stale (ip_data->ip_config)->lst);
+		}
 	}
 
 	free_pending_updates (self);
 
-	for (i = 0; i < interfaces->len; i++) {
-		InterfaceConfig *ic = &g_array_index (interfaces, InterfaceConfig, i);
+	interfaces_keys = g_hash_table_get_keys_as_array (interfaces, &interfaces_len);
+	if (interfaces_len > 1) {
+		g_qsort_with_data (interfaces_keys,
+		                   interfaces_len,
+		                   sizeof (gpointer),
+		                   nm_cmp_int2ptr_p_with_data,
+		                   NULL);
+	}
+	for (i = 0; i < interfaces_len; i++) {
+		InterfaceConfig *ic = g_hash_table_lookup (interfaces, GINT_TO_POINTER (interfaces_keys[i]));
 
 		prepare_one_interface (self, ic);
-		g_list_free (ic->configs);
 	}
-
-	g_array_free (interfaces, TRUE);
 
 	send_updates (self);
 
@@ -364,8 +425,7 @@ nm_dns_systemd_resolved_init (NMDnsSystemdResolved *self)
 	NMBusManager *dbus_mgr;
 	GDBusConnection *connection;
 
-	g_queue_init (&priv->dns_updates);
-	g_queue_init (&priv->domain_updates);
+	c_list_init (&priv->request_queue_lst_head);
 
 	dbus_mgr = nm_bus_manager_get ();
 	g_return_if_fail (dbus_mgr);
@@ -402,6 +462,7 @@ dispose (GObject *object)
 	g_clear_object (&priv->resolve);
 	nm_clear_g_cancellable (&priv->init_cancellable);
 	nm_clear_g_cancellable (&priv->update_cancellable);
+	nm_clear_g_cancellable (&priv->mdns_cancellable);
 
 	G_OBJECT_CLASS (nm_dns_systemd_resolved_parent_class)->dispose (object);
 }

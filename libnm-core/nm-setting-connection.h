@@ -64,6 +64,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_CONNECTION_METERED        "metered"
 #define NM_SETTING_CONNECTION_LLDP           "lldp"
 #define NM_SETTING_CONNECTION_AUTH_RETRIES   "auth-retries"
+#define NM_SETTING_CONNECTION_MDNS           "mdns"
 
 /* Types for property values */
 /**
@@ -96,6 +97,24 @@ typedef enum {
 	NM_SETTING_CONNECTION_LLDP_DISABLE = 0,
 	NM_SETTING_CONNECTION_LLDP_ENABLE_RX = 1,
 } NMSettingConnectionLldp;
+
+/**
+ * NMSettingConnectionMdns:
+ * @NM_SETTING_CONNECTION_MDNS_DEFAULT: default value
+ * @NM_SETTING_CONNECTION_MDNS_NO: disable mDNS
+ * @NM_SETTING_CONNECTION_MDNS_RESOLVE: support only resolving, do not register hostname
+ * @NM_SETTING_CONNECTION_MDNS_YES: enable mDNS
+ *
+ * #NMSettingConnectionMdns values indicate whether mDNS should be enabled.
+ *
+ * Since: 1.12
+ */
+typedef enum {
+	NM_SETTING_CONNECTION_MDNS_DEFAULT      = -1,
+	NM_SETTING_CONNECTION_MDNS_NO           = 0,
+	NM_SETTING_CONNECTION_MDNS_RESOLVE      = 1,
+	NM_SETTING_CONNECTION_MDNS_YES          = 2,
+} NMSettingConnectionMdns;
 
 /**
  * NMSettingConnection:
@@ -170,6 +189,8 @@ NMSettingConnectionLldp nm_setting_connection_get_lldp (NMSettingConnection *set
 NM_AVAILABLE_IN_1_10
 gint        nm_setting_connection_get_auth_retries     (NMSettingConnection *setting);
 
+NM_AVAILABLE_IN_1_12
+NMSettingConnectionMdns   nm_setting_connection_get_mdns (NMSettingConnection *setting);
 G_END_DECLS
 
 #endif /* __NM_SETTING_CONNECTION_H__ */

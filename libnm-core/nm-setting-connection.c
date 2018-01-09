@@ -81,6 +81,7 @@ typedef struct {
 	NMMetered metered;
 	NMSettingConnectionLldp lldp;
 	gint auth_retries;
+	int mdns;
 } NMSettingConnectionPrivate;
 
 enum {
@@ -103,6 +104,7 @@ enum {
 	PROP_GATEWAY_PING_TIMEOUT,
 	PROP_METERED,
 	PROP_LLDP,
+	PROP_MDNS,
 	PROP_STABLE_ID,
 	PROP_AUTH_RETRIES,
 
@@ -862,6 +864,23 @@ nm_setting_connection_get_lldp (NMSettingConnection *setting)
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->lldp;
 }
 
+/**
+ * nm_setting_connection_get_mdns:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns: the #NMSettingConnection:mdns property of the setting.
+ *
+ * Since: 1.12
+ **/
+NMSettingConnectionMdns
+nm_setting_connection_get_mdns (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting),
+	                      NM_SETTING_CONNECTION_MDNS_DEFAULT);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->mdns;
+}
+
 static void
 _set_error_missing_base_setting (GError **error, const char *type)
 {
@@ -1057,6 +1076,17 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
+	if (   priv->mdns < NM_SETTING_CONNECTION_MDNS_DEFAULT
+	    || priv->mdns > NM_SETTING_CONNECTION_MDNS_RESOLVE) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("mdns value %d is not valid"), priv->mdns);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME,
+		                NM_SETTING_CONNECTION_MDNS);
+		return FALSE;
+	}
+
 	/* *** errors above here should be always fatal, below NORMALIZABLE_ERROR *** */
 
 	if (!priv->uuid) {
@@ -1214,6 +1244,9 @@ compare_property (NMSetting *setting,
 static void
 nm_setting_connection_init (NMSettingConnection *setting)
 {
+	NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
+
+	priv->mdns = NM_SETTING_CONNECTION_MDNS_DEFAULT;
 }
 
 static void
@@ -1332,6 +1365,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_AUTH_RETRIES:
 		priv->auth_retries = g_value_get_int (value);
 		break;
+	case PROP_MDNS:
+		priv->mdns = g_value_get_int (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1419,6 +1455,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_AUTH_RETRIES:
 		g_value_set_int (value, priv->auth_retries);
+		break;
+	case PROP_MDNS:
+		g_value_set_int (value, priv->mdns);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1981,5 +2020,38 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                   G_PARAM_READWRITE |
 		                   G_PARAM_CONSTRUCT |
 		                   NM_SETTING_PARAM_FUZZY_IGNORE |
+		                   G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingConnection:mdns:
+	 *
+	 * Whether mDNS is enabled for the connection.
+	 *
+	 * The permitted values are: yes: register hostname and resolving
+	 * for the connection, no: disable mDNS for the interface, resolve:
+	 * do not register hostname but allow resolving of mDNS host names.
+	 * When updating this property on a currently activated connection,
+	 * the change takes effect immediately.
+	 *
+	 * This feature requires a plugin which supports mDNS. One such
+	 * plugin is dns-systemd-resolved.
+	 *
+	 * Since: 1.12
+	 **/
+	/* ---ifcfg-rh---
+	 * property: mdns
+	 * variable: CONNECTION_MDNS(+)
+	 * values: yes,no,resolve
+	 * default: missing variable means global default
+	 * description: Whether or not mDNS is enabled for the connection
+	 * example: CONNECTION_MDNS=yes
+	 * ---end---
+	 */
+	g_object_class_install_property
+		(object_class, PROP_MDNS,
+		 g_param_spec_int (NM_SETTING_CONNECTION_MDNS, "", "",
+		                   G_MININT32, G_MAXINT32,
+		                   NM_SETTING_CONNECTION_MDNS_DEFAULT,
+		                   G_PARAM_READWRITE |
 		                   G_PARAM_STATIC_STRINGS));
 }

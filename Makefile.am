@@ -1479,16 +1479,16 @@ src_libNetworkManager_la_SOURCES = \
 	src/dhcp/nm-dhcp-dhclient-utils.c \
 	src/dhcp/nm-dhcp-dhclient-utils.h \
 	\
+	src/dns/nm-dns-manager.c \
+	src/dns/nm-dns-manager.h \
+	src/dns/nm-dns-plugin.c \
+	src/dns/nm-dns-plugin.h \
 	src/dns/nm-dns-dnsmasq.c \
 	src/dns/nm-dns-dnsmasq.h \
 	src/dns/nm-dns-systemd-resolved.c \
 	src/dns/nm-dns-systemd-resolved.h \
 	src/dns/nm-dns-unbound.c \
 	src/dns/nm-dns-unbound.h \
-	src/dns/nm-dns-manager.c \
-	src/dns/nm-dns-manager.h \
-	src/dns/nm-dns-plugin.c \
-	src/dns/nm-dns-plugin.h \
 	\
 	src/dnsmasq/nm-dnsmasq-manager.c \
 	src/dnsmasq/nm-dnsmasq-manager.h \
@@ -4498,6 +4498,7 @@ EXTRA_DIST += \
 	shared/nm-utils/c-list-util.c \
 	shared/nm-utils/c-list-util.h \
 	shared/nm-utils/gsystem-local-alloc.h \
+	shared/nm-utils/nm-c-list.h \
 	shared/nm-utils/nm-compat.c \
 	shared/nm-utils/nm-compat.h \
 	shared/nm-utils/nm-glib.h \
