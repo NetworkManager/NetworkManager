@@ -97,4 +97,36 @@ nm_json_vt_assert (void)
 
 const NMJsonVt *nmtst_json_vt_reset (gboolean loaded);
 
+#define nm_json_boolean(vt, val) \
+	((val) ? (vt)->nm_json_true () : (vt)->nm_json_false ())
+
+static inline void
+nm_json_decref (const NMJsonVt *vt, json_t *json)
+{
+	/* Our ref-counting is not threadsafe, unlike libjansson's. But we never
+	 * share one json_t instance between threads, and if we would, we would very likely
+	 * wrap a mutex around it. */
+	if (   json
+	    && json->refcount != (size_t) -1
+	    && --json->refcount == 0)
+		vt->nm_json_delete (json);
+}
+
+/*****************************************************************************/
+
+/* the following are implemented as pure macros in jansson.h.
+ * They can be used directly, however, add a nm_json* variant,
+ * to make it explict we don't accidentally use jansson ABI. */
+
+#define nm_json_is_boolean(json)                json_is_boolean (json)
+#define nm_json_is_integer(json)                json_is_integer (json)
+#define nm_json_is_string(json)                 json_is_string (json)
+#define nm_json_is_object(json)                 json_is_object (json)
+#define nm_json_is_array(json)                  json_is_array (json)
+#define nm_json_is_true(json)                   json_is_true (json)
+#define nm_json_boolean_value(json)             json_boolean_value (json)
+#define nm_json_array_foreach(a, b, c)          json_array_foreach (a, b, c)
+#define nm_json_object_foreach(a, b, c)         json_object_foreach (a, b, c)
+#define nm_json_object_foreach_safe(a, b, c, d) json_object_foreach_safe (a, b, c, d)
+
 #endif /* __NM_JSON_H__ */
