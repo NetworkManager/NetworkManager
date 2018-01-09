@@ -195,6 +195,7 @@ _set_client_id (NMDhcpClient *self, GBytes *client_id, gboolean take)
 
 	if (   priv->client_id == client_id
 	    || (   priv->client_id
+	        && client_id
 	        && g_bytes_equal (priv->client_id, client_id))) {
 		if (take && client_id)
 			g_bytes_unref (client_id);
