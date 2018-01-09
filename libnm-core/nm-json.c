@@ -16,13 +16,12 @@
  * Copyright 2017, 2018 Red Hat, Inc.
  */
 
-#define _GNU_SOURCE
-#include <link.h>
-
 #include "nm-default.h"
 
 #define NM_JANSSON_C
 #include "nm-json.h"
+
+#include <dlfcn.h>
 
 void *_nm_jansson_json_object_iter_value;
 void *_nm_jansson_json_object_key_to_iter;
