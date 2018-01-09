@@ -5210,7 +5210,7 @@ _nm_utils_team_link_watcher_from_json (const NMJsonVt *vt, json_t *json_element)
 
 	g_return_val_if_fail (json_element, NULL);
 
-	nm_json_object_foreach (json_element, j_key, j_val) {
+	nm_json_object_foreach (vt, json_element, j_key, j_val) {
 		if (nm_streq (j_key, "name")) {
 			g_free (name);
 			name = strdup (vt->nm_json_string_value (j_val));
@@ -5413,7 +5413,7 @@ _nm_utils_team_config_equal (const char *conf1,
 	/* Only consider a given subset of nodes, others can change depending on
 	 * current state */
 	for (i = 0, json = json1; i < 2; i++, json = json2) {
-		nm_json_object_foreach_safe (json, tmp, key, value) {
+		nm_json_object_foreach_safe (vt, json, tmp, key, value) {
 			if (!NM_IN_STRSET (key, "runner", "link_watch"))
 				vt->nm_json_object_del (json, key);
 		}
@@ -5498,7 +5498,7 @@ _nm_utils_team_config_get (const char *conf,
 				json_t *j_watcher;
 				int index;
 
-				nm_json_array_foreach (json_element, index, j_watcher) {
+				nm_json_array_foreach (vt, json_element, index, j_watcher) {
 					watcher = _nm_utils_team_link_watcher_from_json (vt, j_watcher);
 					if (watcher)
 						g_ptr_array_add (data, watcher);
@@ -5519,7 +5519,7 @@ _nm_utils_team_config_get (const char *conf,
 			json_t *str_element;
 			int index;
 
-			nm_json_array_foreach (json_element, index, str_element) {
+			nm_json_array_foreach (vt, json_element, index, str_element) {
 				if (nm_json_is_string (str_element))
 					g_ptr_array_add (data, g_strdup (vt->nm_json_string_value (str_element)));
 			}
