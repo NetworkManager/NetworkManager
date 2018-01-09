@@ -15,6 +15,8 @@
  *
  * Copyright 2017, 2018 Red Hat, Inc.
  */
+#ifndef __NM_JSON_H__
+#define __NM_JSON_H__
 
 gboolean nm_jansson_load (void);
 
@@ -43,3 +45,5 @@ gboolean nm_jansson_load (void);
 #define json_integer_value      (*_nm_jansson_json_integer_value)
 #define json_string_value       (*_nm_jansson_json_string_value)
 #endif
+
+#endif /* __NM_JSON_H__ */
