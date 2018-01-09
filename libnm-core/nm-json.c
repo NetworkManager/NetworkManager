@@ -62,10 +62,13 @@ json_vt (void)
 	TRY_BIND_SYMBOL (json_object_del);
 	TRY_BIND_SYMBOL (json_object_get);
 	TRY_BIND_SYMBOL (json_object_iter);
+	TRY_BIND_SYMBOL (json_object_iter_at);
 	TRY_BIND_SYMBOL (json_object_iter_key);
 	TRY_BIND_SYMBOL (json_object_iter_next);
 	TRY_BIND_SYMBOL (json_object_iter_value);
+#if JANSSON_VERSION_HEX >= 0x020300
 	TRY_BIND_SYMBOL (json_object_key_to_iter);
+#endif
 	TRY_BIND_SYMBOL (json_object_set_new);
 	TRY_BIND_SYMBOL (json_object_size);
 	TRY_BIND_SYMBOL (json_string);

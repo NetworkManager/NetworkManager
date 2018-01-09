@@ -36,10 +36,13 @@ typedef struct {
 	int         (*nm_json_object_del)         (json_t *json, const char *key);
 	json_t     *(*nm_json_object_get)         (const json_t *json, const char *key);
 	void       *(*nm_json_object_iter)        (json_t *json);
+	void       *(*nm_json_object_iter_at)     (json_t *json, const char *key);
 	const char *(*nm_json_object_iter_key)    (void *iter);
 	void       *(*nm_json_object_iter_next)   (json_t *json, void *iter);
 	json_t     *(*nm_json_object_iter_value)  (void *);
+#if JANSSON_VERSION_HEX >= 0x020300
 	void       *(*nm_json_object_key_to_iter) (const char *key);
+#endif
 	int         (*nm_json_object_set_new)     (json_t *json, const char *key, json_t *value);
 	size_t      (*nm_json_object_size)        (const json_t *json);
 	json_t     *(*nm_json_string)             (const char *value);
@@ -81,24 +84,40 @@ nm_json_decref (const NMJsonVt *vt, json_t *json)
 #define nm_json_is_object(json)                 json_is_object (json)
 #define nm_json_is_array(json)                  json_is_array (json)
 #define nm_json_is_true(json)                   json_is_true (json)
-#define nm_json_boolean_value(json)             json_boolean_value (json)
+#define nm_json_boolean_value(json)             json_is_true (json)
 
 #define nm_json_array_foreach(vt, array, index, value) \
     for(index = 0; \
         index < vt->nm_json_array_size (array) && (value = vt->nm_json_array_get (array, index)); \
         index++)
 
+#if JANSSON_VERSION_HEX < 0x020300
+#define nm_json_object_foreach(vt, object, key, value) \
+    for(key = vt->nm_json_object_iter_key (vt->nm_json_object_iter (object)); \
+        key && (value = vt->nm_json_object_iter_value (vt->nm_json_object_iter_at (object, key) )); \
+        key = vt->nm_json_object_iter_key (vt->nm_json_object_iter_next (object, vt->nm_json_object_iter_at (object, key))))
+#else
 #define nm_json_object_foreach(vt, object, key, value) \
     for(key = vt->nm_json_object_iter_key (vt->nm_json_object_iter (object)); \
         key && (value = vt->nm_json_object_iter_value (vt->nm_json_object_key_to_iter (key))); \
         key = vt->nm_json_object_iter_key (vt->nm_json_object_iter_next (object, vt->nm_json_object_key_to_iter (key))))
+#endif
 
-#define nm_json_object_foreach_safe(vt, object, n, key, value)     \
+#if JANSSON_VERSION_HEX < 0x020300
+#define nm_json_object_foreach_safe(vt, object, n, key, value) \
+    for (key = vt->nm_json_object_iter_key (vt->nm_json_object_iter (object)), \
+         n = vt->nm_json_object_iter_next (object, vt->nm_json_object_iter_at (object, key)); \
+         key && (value = vt->nm_json_object_iter_value (vt->nm_json_object_iter_at (object, key))); \
+         key = vt->nm_json_object_iter_key (n), \
+         n = vt->nm_json_object_iter_next (object, vt->nm_json_object_iter_at (object, key)))
+#else
+#define nm_json_object_foreach_safe(vt, object, n, key, value) \
     for(key = vt->nm_json_object_iter_key (vt->nm_json_object_iter (object)), \
             n = vt->nm_json_object_iter_next (object, vt->nm_json_object_key_to_iter (key)); \
         key && (value = vt->nm_json_object_iter_value (vt->nm_json_object_key_to_iter (key))); \
         key = vt->nm_json_object_iter_key (n), \
             n = vt->nm_json_object_iter_next (object, vt->nm_json_object_key_to_iter (key)))
+#endif
 
 
 #endif /* __NM_JSON_H__ */
