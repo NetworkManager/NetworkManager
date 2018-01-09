@@ -36,7 +36,7 @@
 #include <linux/pkt_sched.h>
 
 #if WITH_JSON_VALIDATION
-#include "nm-jansson.h"
+#include "nm-json.h"
 #endif
 
 #include "nm-utils/nm-jansson.h"

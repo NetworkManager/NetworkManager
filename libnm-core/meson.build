@@ -146,7 +146,7 @@ cflags = [
 ]
 
 if enable_json_validation
-  libnm_core_sources += files('nm-jansson.c')
+  libnm_core_sources += files('nm-json.c')
   deps += jansson_dep
 endif
 
