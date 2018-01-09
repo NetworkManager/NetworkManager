@@ -44,6 +44,8 @@ gboolean nm_jansson_load (void);
 #define json_object_iter        (*_nm_jansson_json_object_iter)
 #define json_integer_value      (*_nm_jansson_json_integer_value)
 #define json_string_value       (*_nm_jansson_json_string_value)
+
+#include "nm-utils/nm-jansson.h"
 #endif
 
 #endif /* __NM_JSON_H__ */

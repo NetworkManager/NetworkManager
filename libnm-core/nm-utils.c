@@ -39,7 +39,6 @@
 #include "nm-json.h"
 #endif
 
-#include "nm-utils/nm-jansson.h"
 #include "nm-utils/nm-enum-utils.h"
 #include "nm-common-macros.h"
 #include "nm-utils-private.h"
