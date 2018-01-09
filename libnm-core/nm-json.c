@@ -41,7 +41,7 @@ _nm_json_vt_internal_load (void)
 
 #define TRY_BIND_SYMBOL(symbol) \
 	G_STMT_START { \
-		typeof (symbol) (*_sym) = dlsym (handle, #symbol); \
+		void *_sym = dlsym (handle, #symbol); \
 		\
 		if (!_sym) \
 			goto fail_symbol; \

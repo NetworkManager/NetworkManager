@@ -1119,19 +1119,19 @@ _link_watcher_to_json (const NMTeamLinkWatcher *link_watcher,
 #if WITH_JSON_VALIDATION
 static NMTeamLinkWatcher *
 _link_watcher_from_json (const NMJsonVt *vt,
-                         const json_t *root_js_obj,
+                         const nm_json_t *root_js_obj,
                          gboolean *out_unrecognized_content)
 {
 	NMValueTypUnioMaybe args[G_N_ELEMENTS (link_watcher_attr_datas)] = { };
 	const char *j_key;
-	json_t *j_val;
+	nm_json_t *j_val;
 	const char *v_name;
 	NMTeamLinkWatcher *result = NULL;
 
 	if (!nm_json_is_object (root_js_obj))
 		goto fail;
 
-	nm_json_object_foreach (vt, (json_t *) root_js_obj, j_key, j_val) {
+	nm_json_object_foreach (vt, (nm_json_t *) root_js_obj, j_key, j_val) {
 		const LinkWatcherAttrData *attr_data = NULL;
 		NMValueTypUnioMaybe *parse_result;
 
@@ -1689,17 +1689,17 @@ _attr_data_find_by_json_key (gboolean is_port,
 static void
 _js_parse_locate_keys (const NMJsonVt *vt,
                        NMTeamSetting *self,
-                       json_t *root_js_obj,
-                       json_t *found_keys[static _NM_TEAM_ATTRIBUTE_NUM],
+                       nm_json_t *root_js_obj,
+                       nm_json_t *found_keys[static _NM_TEAM_ATTRIBUTE_NUM],
                        gboolean *out_unrecognized_content)
 {
 	const char *keys[3];
 	const char *cur_key1;
 	const char *cur_key2;
 	const char *cur_key3;
-	json_t *cur_val1;
-	json_t *cur_val2;
-	json_t *cur_val3;
+	nm_json_t *cur_val1;
+	nm_json_t *cur_val2;
+	nm_json_t *cur_val3;
 
 #define _handle(_self, _cur_key, _cur_val, _keys, _level, _found_keys, _out_unrecognized_content) \
 	({ \
@@ -1741,7 +1741,7 @@ _js_parse_locate_keys (const NMJsonVt *vt,
 static void
 _js_parse_unpack (const NMJsonVt *vt,
                   gboolean is_port,
-                  json_t *found_keys[static _NM_TEAM_ATTRIBUTE_NUM],
+                  nm_json_t *found_keys[static _NM_TEAM_ATTRIBUTE_NUM],
                   bool out_has_lst[static _NM_TEAM_ATTRIBUTE_NUM],
                   NMValueTypUnion out_val_lst[static _NM_TEAM_ATTRIBUTE_NUM],
                   gboolean *out_unrecognized_content,
@@ -1753,7 +1753,7 @@ _js_parse_unpack (const NMJsonVt *vt,
 	for (attr_data = &team_attr_datas[TEAM_ATTR_IDX_CONFIG + 1]; attr_data < &team_attr_datas[G_N_ELEMENTS (team_attr_datas)]; attr_data++) {
 		NMValueTypUnion *p_out_val;
 		gboolean valid = FALSE;
-		json_t *arg_js_obj;
+		nm_json_t *arg_js_obj;
 
 		if (!_team_attr_data_is_relevant (attr_data, is_port))
 			continue;
@@ -1874,7 +1874,7 @@ nm_team_setting_config_set (NMTeamSetting *self, const char *js_str)
 
 #if WITH_JSON_VALIDATION
 	{
-		nm_auto_decref_json json_t *root_js_obj = NULL;
+		nm_auto_decref_json nm_json_t *root_js_obj = NULL;
 		const NMJsonVt *vt;
 
 		if ((vt = nm_json_vt ()))
@@ -1887,7 +1887,7 @@ nm_team_setting_config_set (NMTeamSetting *self, const char *js_str)
 			gboolean unrecognized_content = FALSE;
 			bool has_lst[_NM_TEAM_ATTRIBUTE_NUM] = { FALSE, };
 			NMValueTypUnion val_lst[_NM_TEAM_ATTRIBUTE_NUM];
-			json_t *found_keys[_NM_TEAM_ATTRIBUTE_NUM] = { NULL, };
+			nm_json_t *found_keys[_NM_TEAM_ATTRIBUTE_NUM] = { NULL, };
 			gs_unref_ptrarray GPtrArray *ptr_array_master_runner_tx_hash_free = NULL;
 			gs_unref_ptrarray GPtrArray *ptr_array_link_watchers_free = NULL;
 
