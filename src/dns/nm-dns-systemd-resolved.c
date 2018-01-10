@@ -139,40 +139,23 @@ static void
 update_add_ip_config (NMDnsSystemdResolved *self,
                       GVariantBuilder *dns,
                       GVariantBuilder *domains,
-                      gpointer config)
+                      NMIPConfig *config)
 {
 	int addr_family;
 	gsize addr_size;
 	guint i, n;
 	gboolean route_only;
 
-	if (NM_IS_IP4_CONFIG (config))
-		addr_family = AF_INET;
-	else if (NM_IS_IP6_CONFIG (config))
-		addr_family = AF_INET6;
-	else
-		g_return_if_reached ();
-
+	addr_family = nm_ip_config_get_addr_family (config);
 	addr_size = nm_utils_addr_family_to_size (addr_family);
 
-	n =   addr_family == AF_INET
-	    ? nm_ip4_config_get_num_nameservers (config)
-	    : nm_ip6_config_get_num_nameservers (config);
+	n = nm_ip_config_get_num_nameservers (config);
 	for (i = 0 ; i < n; i++) {
-		in_addr_t ns4;
-		gconstpointer ns;
-
-		if (addr_family == AF_INET) {
-			ns4 = nm_ip4_config_get_nameserver (config, i);
-			ns = &ns4;
-		} else
-			ns = nm_ip6_config_get_nameserver (config, i);
-
 		g_variant_builder_open (dns, G_VARIANT_TYPE ("(iay)"));
 		g_variant_builder_add (dns, "i", addr_family);
 		g_variant_builder_add_value (dns,
 		                             g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
-		                                                        ns,
+		                                                        nm_ip_config_get_nameserver (config, i),
 		                                                        addr_size,
 		                                                        1));
 		g_variant_builder_close (dns);
@@ -181,29 +164,21 @@ update_add_ip_config (NMDnsSystemdResolved *self,
 	/* If this link is never the default (e.g. only used for resources on this
 	 * network) add a routing domain. */
 	route_only =   addr_family == AF_INET
-	             ? !nm_ip4_config_best_default_route_get (config)
-	             : !nm_ip6_config_best_default_route_get (config);
+	             ? !nm_ip4_config_best_default_route_get (NM_IP4_CONFIG (config))
+	             : !nm_ip6_config_best_default_route_get (NM_IP6_CONFIG (config));
 
-	n =   addr_family == AF_INET
-	    ? nm_ip4_config_get_num_searches (config)
-	    : nm_ip6_config_get_num_searches (config);
+	n = nm_ip_config_get_num_searches (config);
 	if (n  > 0) {
 		for (i = 0; i < n; i++) {
 			g_variant_builder_add (domains, "(sb)",
-			                       addr_family == AF_INET
-			                         ? nm_ip4_config_get_search (config, i)
-			                         : nm_ip6_config_get_search (config, i),
+			                       nm_ip_config_get_search (config, i),
 			                       route_only);
 		}
 	} else {
-		n =   addr_family == AF_INET
-		    ? nm_ip4_config_get_num_domains (config)
-		    : nm_ip6_config_get_num_domains (config);
+		n = nm_ip_config_get_num_domains (config);
 		for (i = 0; i < n; i++) {
 			g_variant_builder_add (domains, "(sb)",
-			                       addr_family == AF_INET
-			                         ? nm_ip4_config_get_domain (config, i)
-			                         : nm_ip6_config_get_domain (config, i),
+			                       nm_ip_config_get_domain (config, i),
 			                       route_only);
 		}
 	}
