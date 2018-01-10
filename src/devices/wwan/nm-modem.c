@@ -79,7 +79,7 @@ typedef struct _NMModemPrivate {
 	char *driver;
 	char *control_port;
 	char *data_port;
-	char *ppp_iface;
+	char *ip_iface;
 	NMModemIPMethod ip4_method;
 	NMModemIPMethod ip6_method;
 	NMUtilsIPv6IfaceId iid;
@@ -1128,7 +1128,7 @@ deactivate_cleanup (NMModem *self, NMDevice *device)
 	priv->ip4_method = NM_MODEM_IP_METHOD_UNKNOWN;
 	priv->ip6_method = NM_MODEM_IP_METHOD_UNKNOWN;
 
-	nm_clear_g_free (&priv->ppp_iface);
+	nm_clear_g_free (&priv->ip_iface);
 }
 
 /*****************************************************************************/
@@ -1388,11 +1388,11 @@ nm_modem_get_data_port (NMModem *self)
 
 	priv = NM_MODEM_GET_PRIVATE (self);
 
-	/* The ppp_iface takes precedence over the data interface when PPP is used,
+	/* The ip_iface takes precedence over the data interface when PPP is used,
 	 * since data_iface is the TTY over which PPP is run, and that TTY can't
 	 * do IP.  The caller really wants the thing that's doing IP.
 	 */
-	return priv->ppp_iface ?: priv->data_port;
+	return priv->ip_iface ?: priv->data_port;
 }
 
 gboolean
@@ -1406,7 +1406,7 @@ nm_modem_owns_port (NMModem *self, const char *iface)
 		return NM_MODEM_GET_CLASS (self)->owns_port (self, iface);
 
 	return NM_IN_STRSET (iface,
-	                     priv->ppp_iface,
+	                     priv->ip_iface,
 	                     priv->data_port,
 	                     priv->control_port);
 }
@@ -1671,7 +1671,7 @@ finalize (GObject *object)
 	g_free (priv->driver);
 	g_free (priv->control_port);
 	g_free (priv->data_port);
-	g_free (priv->ppp_iface);
+	g_free (priv->ip_iface);
 	g_free (priv->device_id);
 	g_free (priv->sim_id);
 	g_free (priv->sim_operator_id);
