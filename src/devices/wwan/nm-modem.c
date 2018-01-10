@@ -1138,7 +1138,8 @@ deactivate_cleanup (NMModem *self, NMDevice *device)
 	priv->ip6_method = NM_MODEM_IP_METHOD_UNKNOWN;
 
 	_set_ip_ifindex (self, -1);
-	nm_clear_g_free (&priv->ip_iface);
+	if (nm_clear_g_free (&priv->ip_iface))
+		_notify (self, PROP_DATA_PORT);
 }
 
 /*****************************************************************************/
