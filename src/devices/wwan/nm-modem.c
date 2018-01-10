@@ -1119,8 +1119,7 @@ deactivate_cleanup (NMModem *self, NMDevice *device)
 	priv->ip4_method = NM_MODEM_IP_METHOD_UNKNOWN;
 	priv->ip6_method = NM_MODEM_IP_METHOD_UNKNOWN;
 
-	g_free (priv->ppp_iface);
-	priv->ppp_iface = NULL;
+	nm_clear_g_free (&priv->ppp_iface);
 }
 
 /*****************************************************************************/
@@ -1374,14 +1373,17 @@ nm_modem_get_control_port (NMModem *self)
 const char *
 nm_modem_get_data_port (NMModem *self)
 {
+	NMModemPrivate *priv;
+
 	g_return_val_if_fail (NM_IS_MODEM (self), NULL);
+
+	priv = NM_MODEM_GET_PRIVATE (self);
 
 	/* The ppp_iface takes precedence over the data interface when PPP is used,
 	 * since data_iface is the TTY over which PPP is run, and that TTY can't
 	 * do IP.  The caller really wants the thing that's doing IP.
 	 */
-	return NM_MODEM_GET_PRIVATE (self)->ppp_iface ?
-		NM_MODEM_GET_PRIVATE (self)->ppp_iface : NM_MODEM_GET_PRIVATE (self)->data_port;
+	return priv->ppp_iface ?: priv->data_port;
 }
 
 gboolean
@@ -1394,15 +1396,10 @@ nm_modem_owns_port (NMModem *self, const char *iface)
 	if (NM_MODEM_GET_CLASS (self)->owns_port)
 		return NM_MODEM_GET_CLASS (self)->owns_port (self, iface);
 
-	/* Fall back to data/control ports */
-	if (priv->ppp_iface && (strcmp (priv->ppp_iface, iface) == 0))
-		return TRUE;
-	if (priv->data_port && (strcmp (priv->data_port, iface) == 0))
-		return TRUE;
-	if (priv->control_port && (strcmp (priv->control_port, iface) == 0))
-		return TRUE;
-
-	return FALSE;
+	return NM_IN_STRSET (iface,
+	                     priv->ppp_iface,
+	                     priv->data_port,
+	                     priv->control_port);
 }
 
 gboolean
