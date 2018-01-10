@@ -45,6 +45,7 @@
 NM_GOBJECT_PROPERTIES_DEFINE (NMModem,
 	PROP_CONTROL_PORT,
 	PROP_DATA_PORT,
+	PROP_IP_IFINDEX,
 	PROP_PATH,
 	PROP_UID,
 	PROP_DRIVER,
@@ -80,6 +81,7 @@ typedef struct _NMModemPrivate {
 	char *control_port;
 	char *data_port;
 	char *ip_iface;
+	int ip_ifindex;
 	NMModemIPMethod ip4_method;
 	NMModemIPMethod ip6_method;
 	NMUtilsIPv6IfaceId iid;
@@ -151,6 +153,10 @@ _nmlog_prefix (char *prefix, NMModem *self)
                 _nmlog_prefix (_prefix, (self)) \
                 _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
     } G_STMT_END
+
+/*****************************************************************************/
+
+static void _set_ip_ifindex (NMModem *self, int ifindex);
 
 /*****************************************************************************/
 /* State/enabled/connected */
@@ -458,6 +464,8 @@ ppp_ifindex_set (NMPPPManager *ppp_manager,
 	NMModem *self = NM_MODEM (user_data);
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
 
+	nm_assert (ifindex >= 0);
+
 	/* Notify about the new data port to use.
 	 *
 	 * @iface might be %NULL. */
@@ -466,6 +474,7 @@ ppp_ifindex_set (NMPPPManager *ppp_manager,
 		priv->data_port = g_strdup (iface);
 		_notify (self, PROP_DATA_PORT);
 	}
+	_set_ip_ifindex (self, ifindex);
 }
 
 static void
@@ -1128,6 +1137,7 @@ deactivate_cleanup (NMModem *self, NMDevice *device)
 	priv->ip4_method = NM_MODEM_IP_METHOD_UNKNOWN;
 	priv->ip6_method = NM_MODEM_IP_METHOD_UNKNOWN;
 
+	_set_ip_ifindex (self, -1);
 	nm_clear_g_free (&priv->ip_iface);
 }
 
@@ -1395,6 +1405,34 @@ nm_modem_get_data_port (NMModem *self)
 	return priv->ip_iface ?: priv->data_port;
 }
 
+int
+nm_modem_get_ip_ifindex (NMModem *self)
+{
+	NMModemPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_MODEM (self), 0);
+
+	priv = NM_MODEM_GET_PRIVATE (self);
+
+	/* internally we track an unset ip_ifindex as -1.
+	 * For the caller of nm_modem_get_ip_ifindex(), this
+	 * shall be zero too. */
+	return priv->ip_ifindex != -1 ? priv->ip_ifindex : 0;
+}
+
+static void
+_set_ip_ifindex (NMModem *self, int ifindex)
+{
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
+
+	nm_assert (ifindex >= -1);
+
+	if (priv->ip_ifindex != ifindex) {
+		priv->ip_ifindex = ifindex;
+		_notify (self, PROP_IP_IFINDEX);
+	}
+}
+
 gboolean
 nm_modem_owns_port (NMModem *self, const char *iface)
 {
@@ -1508,7 +1546,8 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE ((NMModem *) object);
+	NMModem *self = NM_MODEM (object);
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
 
 	switch (prop_id) {
 	case PROP_PATH:
@@ -1521,7 +1560,10 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->control_port);
 		break;
 	case PROP_DATA_PORT:
-		g_value_set_string (value, nm_modem_get_data_port (NM_MODEM (object)));
+		g_value_set_string (value, nm_modem_get_data_port (self));
+		break;
+	case PROP_IP_IFINDEX:
+		g_value_set_int (value, nm_modem_get_ip_ifindex (self));
 		break;
 	case PROP_UID:
 		g_value_set_string (value, priv->uid);
@@ -1631,6 +1673,7 @@ nm_modem_init (NMModem *self)
 	self->_priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_MODEM, NMModemPrivate);
 	priv = self->_priv;
 
+	priv->ip_ifindex = -1;
 	priv->ip4_route_table = RT_TABLE_MAIN;
 	priv->ip4_route_metric = 700;
 	priv->ip6_route_table = RT_TABLE_MAIN;
@@ -1725,6 +1768,12 @@ nm_modem_class_init (NMModemClass *klass)
 	                          NULL,
 	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
 	                          G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_IP_IFINDEX] =
+	     g_param_spec_int (NM_MODEM_IP_IFINDEX, "", "",
+	                       0, G_MAXINT, 0,
+	                       G_PARAM_READABLE |
+	                       G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_IP4_METHOD] =
 	     g_param_spec_uint (NM_MODEM_IP4_METHOD, "", "",

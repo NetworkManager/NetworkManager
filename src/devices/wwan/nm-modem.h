@@ -38,6 +38,7 @@
 #define NM_MODEM_DRIVER          "driver"
 #define NM_MODEM_CONTROL_PORT    "control-port"
 #define NM_MODEM_DATA_PORT       "data-port"
+#define NM_MODEM_IP_IFINDEX      "ip-ifindex"
 #define NM_MODEM_IP4_METHOD      "ip4-method"
 #define NM_MODEM_IP6_METHOD      "ip6-method"
 #define NM_MODEM_IP_TIMEOUT      "ip-timeout"
@@ -168,6 +169,7 @@ const char *nm_modem_get_path            (NMModem *modem);
 const char *nm_modem_get_uid             (NMModem *modem);
 const char *nm_modem_get_control_port    (NMModem *modem);
 const char *nm_modem_get_data_port       (NMModem *modem);
+int         nm_modem_get_ip_ifindex      (NMModem *modem);
 const char *nm_modem_get_driver          (NMModem *modem);
 const char *nm_modem_get_device_id       (NMModem *modem);
 const char *nm_modem_get_sim_id          (NMModem *modem);
