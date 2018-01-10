@@ -1902,6 +1902,7 @@ _get_config_variant (NMDnsManager *self)
 	GVariantBuilder builder;
 	NMDnsIPConfigData *ip_data;
 	const CList *head;
+	gs_unref_ptrarray GPtrArray *array_domains = NULL;
 
 	if (priv->config_variant)
 		return priv->config_variant;
@@ -1944,18 +1945,28 @@ _get_config_variant (NMDnsManager *self)
 		                       "nameservers",
 		                       g_variant_builder_end (&strv_builder));
 
+
 		num = nm_ip_config_get_num_domains (ip_config);
+		num += nm_ip_config_get_num_searches (ip_config);
 		if (num > 0) {
-			g_variant_builder_init (&strv_builder, G_VARIANT_TYPE ("as"));
-			for (i = 0; i < num; i++) {
-				g_variant_builder_add (&strv_builder,
-				                       "s",
-				                       nm_ip_config_get_domain (ip_config, i));
+			if (!array_domains)
+				array_domains = g_ptr_array_sized_new (num);
+			else
+				g_ptr_array_set_size (array_domains, 0);
+
+			add_dns_domains (array_domains, ip_config, FALSE);
+			if (array_domains->len) {
+				g_variant_builder_init (&strv_builder, G_VARIANT_TYPE ("as"));
+				for (i = 0; i < array_domains->len; i++) {
+					g_variant_builder_add (&strv_builder,
+					                       "s",
+					                       array_domains->pdata[i]);
+				}
+				g_variant_builder_add (&entry_builder,
+				                       "{sv}",
+				                       "domains",
+				                       g_variant_builder_end (&strv_builder));
 			}
-			g_variant_builder_add (&entry_builder,
-			                       "{sv}",
-			                       "domains",
-			                       g_variant_builder_end (&strv_builder));
 		}
 
 		ifname = nm_platform_link_get_name (NM_PLATFORM_GET, ip_data->data->ifindex);
