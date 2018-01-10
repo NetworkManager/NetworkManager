@@ -14,10 +14,9 @@ cflags = clients_cflags + [
   '-DG_LOG_DOMAIN="@0@"'.format(name),
 ]
 
-ldflags = []
-if have_version_script
-  ldflags += '-Wl,--version-script,@0@'.format(linker_script_binary)
-endif
+ldflags = [
+  '-Wl,--version-script,@0@'.format(linker_script_binary),
+]
 
 executable(
   name,

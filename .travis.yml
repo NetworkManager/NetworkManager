@@ -19,6 +19,8 @@ addons:
     - libnl-3-dev
     - libnl-route-3-dev
     - libnl-genl-3-dev
+    - libmm-glib-dev
+    - ppp
     - ppp-dev
     - libpolkit-gobject-1-dev
     - libgnutls-dev
@@ -44,7 +46,9 @@ addons:
     - libnl-3-dev
     - libndp-dev
     - automake
+    - dnsmasq
     - libcurl4-gnutls-dev
+    - python3-pip
   coverity_scan:
     project:
       name: NetworkManager/NetworkManager
@@ -53,13 +57,54 @@ addons:
     branch_pattern: .*coverity.*
 
 before_install:
-  - sudo dbus-uuidgen --ensure
+    - sudo dbus-uuidgen --ensure
+    - |
+      if test "$BUILD_TYPE" == 'meson'; then
+          git clone https://github.com/ninja-build/ninja &&
+          pushd ninja &&
+              ./configure.py --bootstrap &&
+              sudo cp ninja /usr/bin/ &&
+          popd
+          sudo pip3 install meson
+      fi
+    - sudo chmod o+x /usr/sbin/pppd
 
-script: |
-    sh autogen.sh --with-systemd-logind=no --enable-more-warnings=no --enable-ifcfg-rh --enable-ifupdown --enable-tests &&
-    make -j4 &&
-    ./contrib/travis/travis-check.sh
+script:
+    - |
+      if test "$BUILD_TYPE" == 'meson'; then
+          meson build \
+              \
+              -D ld_gc=false \
+              -D session_tracking=no \
+              -D systemdsystemunitdir=no \
+              -D systemd_journal=false \
+              -D selinux=false \
+              -D libaudit=no \
+              -D libpsl=false \
+              -D vapi=false \
+              -D introspection=false \
+              -D qt=false \
+              \
+              -D docs=true \
+              \
+              -D ifcfg_rh=false \
+              -D ibft=true \
+              -D ifupdown=true \
+              &&
+          ninja -C build &&
+          ninja -C build test
+      fi
+    - |
+      if test "$BUILD_TYPE" == 'autotools'; then
+          git clean -fdx &&
+          ./autogen.sh --with-systemd-logind=no --enable-more-warnings=no --enable-ifcfg-rh --enable-config-plugin-ibft --enable-ifupdown --enable-tests &&
+          make -j4 &&
+          ./contrib/travis/travis-check.sh
+      fi
 
 env:
+  matrix:
+    - BUILD_TYPE=autotools
+    - BUILD_TYPE=meson
   global:
     secure: K36MXkcsuDZ0msuEj5zHMmHfv6O725lsXuFdP6AJ3rYWKuLYE1+iNLgIRndNWDK9ckkNQFaCxDY4Z/NCfCYQTGAS9oXR5AwNqNbhOq8XrqdaZ2GX35sob8Tp4B3IsoREkN/UbIkXQKYlA5rUhgtSifUg3EwfeOiFvnLCwHcp0rYHnvT/jaq5vodBbA1jChjezcMHsp43kvPXHpybKRkipb9EzV/V3VtDLLWh9WQBvQNawpsHnT+MXSke1yU1zfNMyD9XiD7VDzCwaTs6LzjoFBLc86QS5U/9W72s0rFe6SbecntQHftknRzSrGiJDNe64wDZN/Wxq1MHxEOFCwDi6vcSwQ+RoTdhyshhfPVY2Mm5soj2w7Dx43Cz0dDZDCMhu5xxzFAFgkieJSfwXbuxga0ds58Ph8MgtDSp3fBRewZwI+vMuzl7a1hGkcqJojrm1lfgAKbNgrNUzQRwbVYAyrpa6/vCbd6ZH4PEtITwLaRf2mz8PG71xiMQguDDDXS8WF0U7Looe+G9ybAUwDS5hqHfeP+3q6bfN5Sg5Zs5QkBIN5LZbeWbPYldOEEDTvo3VI7e84bk7U5qEoUKc0w/tqVF1B5KgNUq6nIkCkmoBx8RFnmjpOHh99IfeRG9nQTRpCaEDvAM4fcRzITzId8dIIfAW/45P3ozzfz/HYiie+o=

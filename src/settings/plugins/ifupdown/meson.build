@@ -22,10 +22,9 @@ sources = files(
   'nms-ifupdown-plugin.c'
 )
 
-ldflags = []
-if have_version_script
-  ldflags += '-Wl,--version-script,@0@'.format(linker_script_settings)
-endif
+ldflags = [
+  '-Wl,--version-script,@0@'.format(linker_script_settings),
+]
 
 libnm_settings_plugin_ifupdown = shared_module(
   'nm-settings-plugin-ifupdown',

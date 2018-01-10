@@ -16,10 +16,9 @@ endif
 
 symbol_name = join_paths(meson.current_source_dir(), 'libnm-wwan.ver')
 
-ldflags = []
-if have_version_script
-  ldflags += '-Wl,--version-script,@0@'.format(symbol_name)
-endif
+ldflags = [
+  '-Wl,--version-script,@0@'.format(symbol_name),
+]
 
 libnm_wwan = shared_module(
   'nm-wwan',
@@ -51,10 +50,9 @@ sources = files(
 
 deps += libnmdbus_dep
 
-ldflags = []
-if have_version_script
-  ldflags += '-Wl,--version-script,@0@'.format(linker_script_devices)
-endif
+ldflags = [
+  '-Wl,--version-script,@0@'.format(linker_script_devices),
+]
 
 libnm_device_plugin_wwan = shared_module(
   'nm-device-plugin-wwan',

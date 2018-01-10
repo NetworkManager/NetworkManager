@@ -102,10 +102,9 @@ deps = common_deps + [libnm_util_dep]
 
 symbol_map = join_paths(meson.current_source_dir(), 'libnm-glib-vpn.ver')
 
-ldflags = []
-if have_version_script
-  ldflags += '-Wl,--version-script,@0@'.format(symbol_map)
-endif
+ldflags = [
+  '-Wl,--version-script,@0@'.format(symbol_map),
+]
 
 libnm_glib_vpn = shared_library(
   'nm-glib-vpn',
@@ -195,10 +194,9 @@ deps = common_deps + [
 
 symbol_map = join_paths(meson.current_source_dir(), 'libnm-glib.ver')
 
-ldflags = []
-if have_version_script
-  ldflags += '-Wl,--version-script,@0@'.format(symbol_map)
-endif
+ldflags = [
+  '-Wl,--version-script,@0@'.format(symbol_map),
+]
 
 libnm_glib = shared_library(
   'nm-glib',

@@ -17,10 +17,9 @@ sources = files(
   'nms-ibft-plugin.c'
 )
 
-ldflags = []
-if have_version_script
-  ldflags += '-Wl,--version-script,@0@'.format(linker_script_settings)
-endif
+ldflags = [
+  '-Wl,--version-script,@0@'.format(linker_script_settings),
+]
 
 libnm_settings_plugin_ibft = shared_module(
   name,

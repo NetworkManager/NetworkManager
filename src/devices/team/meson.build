@@ -10,10 +10,9 @@ deps = [
   nm_dep
 ]
 
-ldflags = []
-if have_version_script
-  ldflags += '-Wl,--version-script,@0@'.format(linker_script_devices)
-endif
+ldflags = [
+  '-Wl,--version-script,@0@'.format(linker_script_devices),
+]
 
 libnm_device_plugin_team = shared_module(
   'nm-device-plugin-team',

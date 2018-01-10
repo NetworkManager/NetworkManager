@@ -31,10 +31,9 @@ cflags = clients_cflags + [
   '-DNMCLI_LOCALEDIR="@0@"'.format(nm_localedir)
 ]
 
-ldflags = []
-if have_version_script
-  ldflags += '-Wl,--version-script,@0@'.format(linker_script_binary)
-endif
+ldflags = [
+  '-Wl,--version-script,@0@'.format(linker_script_binary),
+]
 
 if enable_polkit_agent
   sources += nm_polkit_listener

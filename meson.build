@@ -165,14 +165,9 @@ endif
 add_project_arguments(common_flags, language: 'c')
 add_project_link_arguments(common_ldflags, language: 'c')
 
-ldflag = '-Wl,--version-script'
-have_version_script = host_machine.system().contains('linux') and cc.has_argument(ldflag)
-
-if have_version_script
-  linker_script_binary = join_paths(meson.source_root(), 'linker-script-binary.ver')
-  linker_script_devices = join_paths(meson.source_root(), 'linker-script-devices.ver')
-  linker_script_settings = join_paths(meson.source_root(), 'linker-script-settings.ver')
-endif
+linker_script_binary = join_paths(meson.source_root(), 'linker-script-binary.ver')
+linker_script_devices = join_paths(meson.source_root(), 'linker-script-devices.ver')
+linker_script_settings = join_paths(meson.source_root(), 'linker-script-settings.ver')
 
 uuid_dep = dependency('uuid')
 libelogind_dep = dependency('libelogind', version: '>= 219', required: false)
@@ -240,9 +235,9 @@ endif
 
 enable_ifcfg_rh = get_option('ifcfg_rh') or (distro == 'redhat')
 enable_ifupdown = get_option('ifupdown') or (distro == 'debian')
+enable_ibft = get_option('ibft') or enable_ifcfg_rh
 
-enable_config_plugin_ibft = get_option('config_plugin_ibft')
-config_h.set10('WITH_SETTINGS_PLUGIN_IBFT', enable_config_plugin_ibft)
+config_h.set10('WITH_SETTINGS_PLUGIN_IBFT', enable_ibft)
 
 config_plugins_default = get_option('config_plugins_default')
 if config_plugins_default == ''
@@ -256,7 +251,7 @@ if config_plugins_default == ''
     config_plugins += ['ifupdown']
   endif
 
-  if enable_config_plugin_ibft
+  if enable_ibft
     config_plugins += ['ibft']
   endif
 
@@ -402,6 +397,8 @@ session_tracking = get_option('session_tracking')
 session_trackers = []
 enable_session_tracking = (session_tracking != 'no')
 
+enable_consolekit = get_option('consolekit')
+
 if enable_session_tracking
   if session_tracking == 'systemd'
     logind_dep = libsystemd_dep
@@ -418,7 +415,6 @@ if enable_session_tracking
     config_h.set('SESSION_TRACKING_ELOGIND', true)
   endif
 
-  enable_consolekit = get_option('consolekit')
   if enable_consolekit
     session_trackers += 'consolekit'
     config_h.set_quoted('CKDB_PATH', '/var/run/ConsoleKit/database')
@@ -981,7 +977,7 @@ output += '  libnm-glib: ' + enable_libnm_glib.to_string() + '\n'
 output += '  nmcli: ' + enable_nmcli.to_string() + '\n'
 output += '  nmtui: ' + enable_nmtui.to_string() + '\n'
 output += '\nConfiguration_plugins (main.plugins=' + config_plugins_default + ')\n'
-output += '  ibft: ' + enable_config_plugin_ibft.to_string() + '\n'
+output += '  ibft: ' + enable_ibft.to_string() + '\n'
 output += '  ifcfg-rh: ' + enable_ifcfg_rh.to_string() + '\n'
 output += '  ifupdown: ' + enable_ifupdown.to_string() + '\n'
 output += '\nHandlers for /etc/resolv.conf:\n'

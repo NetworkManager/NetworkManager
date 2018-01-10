@@ -110,10 +110,9 @@ cflags = common_cflags + [
 
 symbol_map = join_paths(meson.current_source_dir(), 'libnm-util.ver')
 
-ldflags = []
-if have_version_script
-  ldflags += '-Wl,--version-script,@0@'.format(symbol_map)
-endif
+ldflags = [
+  '-Wl,--version-script,@0@'.format(symbol_map),
+]
 
 libnm_util = shared_library(
   'nm-util',
