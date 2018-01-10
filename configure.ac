@@ -117,6 +117,15 @@ AC_SUBST(nmrundir, '${runstatedir}'/$PACKAGE, [NetworkManager runtime state dire
 AC_GNU_SOURCE
 AC_CHECK_FUNCS([__secure_getenv secure_getenv])
 
+# Development build for running from the build directory
+AC_ARG_ENABLE(develop, AS_HELP_STRING([--enable-develop], [enable running from the build directory]))
+AS_IF([test -z "$enable_develop"], enable_develop=no)
+if test "$enable_develop" = "yes"; then
+	AC_DEFINE(DEVELOP, 1, [Whether running from build directory is enabled])
+else
+	AC_DEFINE(DEVELOP, 0, [Whether running from build directory is enabled])
+fi
+
 # Alternative configuration plugins
 AC_ARG_ENABLE(config-plugin-ibft, AS_HELP_STRING([--enable-config-plugin-ibft], [enable ibft configuration plugin]))
 AC_ARG_ENABLE(ifcfg-rh, AS_HELP_STRING([--enable-ifcfg-rh], [enable ifcfg-rh configuration plugin (Fedora/RHEL)]))
@@ -1370,6 +1379,10 @@ echo
 echo "System paths:"
 echo "  prefix: $prefix"
 echo "  exec_prefix: $exec_prefix"
+echo "  sysconfdir: $sysconfdir"
+echo "  localstatedir: $localstatedir"
+echo "  runstatedir: $runstatedir"
+echo "  datadir: $datadir"
 echo "  systemdunitdir: $with_systemdsystemunitdir"
 echo "  nmbinary: $nmbinary"
 echo "  nmconfdir: $nmconfdir"
@@ -1380,6 +1393,7 @@ echo "  nmrundir: $nmrundir"
 echo
 
 echo "Platform:"
+echo "  development build: $enable_develop"
 echo "  session tracking: $session_tracking"
 echo "  suspend/resume: $with_suspend_resume"
 if test "${enable_polkit}" = "yes"; then
