@@ -165,9 +165,6 @@ endif
 add_project_arguments(common_flags, language: 'c')
 add_project_link_arguments(common_ldflags, language: 'c')
 
-ldflag = '-Wl,--version-script'
-have_version_script = host_machine.system().contains('linux') and cc.has_argument(ldflag)
-
 linker_script_binary = join_paths(meson.source_root(), 'linker-script-binary.ver')
 linker_script_devices = join_paths(meson.source_root(), 'linker-script-devices.ver')
 linker_script_settings = join_paths(meson.source_root(), 'linker-script-settings.ver')

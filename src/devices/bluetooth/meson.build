@@ -14,10 +14,9 @@ deps = [
   nm_dep
 ]
 
-ldflags = []
-if have_version_script
-  ldflags += '-Wl,--version-script,@0@'.format(linker_script_devices)
-endif
+ldflags = [
+  '-Wl,--version-script,@0@'.format(linker_script_devices),
+]
 
 if enable_bluez5_dun
   sources += files('nm-bluez5-dun.c')

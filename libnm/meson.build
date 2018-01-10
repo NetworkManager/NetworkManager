@@ -145,10 +145,9 @@ deps = [
 
 symbol_map = join_paths(meson.current_source_dir(), 'libnm.ver')
 
-ldflags = []
-if have_version_script
-  ldflags += '-Wl,--version-script,@0@'.format(symbol_map)
-endif
+ldflags = [
+  '-Wl,--version-script,@0@'.format(symbol_map),
+]
 
 libnm = shared_library(
   'nm',

@@ -232,9 +232,7 @@ symbol_map = custom_target(
   command: [create_exports_networkmanager, '--called-from-make', '@INPUT@']
 )
 
-if have_version_script
-  ldflags += '-Wl,--version-script,@0@'.format(symbol_map)
-endif
+ldflags += '-Wl,--version-script,@0@'.format(symbol_map)
 '''
 
 network_manager = executable(
@@ -257,10 +255,9 @@ deps = [
   nm_core_dep
 ]
 
-ldflags = []
-if have_version_script
-  ldflags += '-Wl,--version-script,@0@'.format(linker_script_binary)
-endif
+ldflags = [
+  '-Wl,--version-script,@0@'.format(linker_script_binary),
+]
 
 name = 'nm-iface-helper'
 

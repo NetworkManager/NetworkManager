@@ -28,10 +28,9 @@ deps = [
 
 symbol_map = join_paths(meson.current_source_dir(), 'nm-ppp-plugin.ver')
 
-ldflags = []
-if have_version_script
-  ldflags += '-Wl,--version-script,@0@'.format(symbol_map)
-endif
+ldflags = [
+  '-Wl,--version-script,@0@'.format(symbol_map),
+]
 
 core_plugins += shared_module(
   name,
