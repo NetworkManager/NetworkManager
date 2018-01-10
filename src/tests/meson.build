@@ -15,7 +15,7 @@ foreach test_unit: test_units
   exe = executable(
     test_unit,
     test_unit + '.c',
-    dependencies: test_core_dep
+    dependencies: test_nm_dep
   )
 
   test(test_unit, exe)
@@ -30,9 +30,9 @@ cflags = [
 
 exe = executable(
   test_unit,
-  [test_unit + '.c', libnm_core_enum[1]] + shared_siphash,
-  include_directories: core_incs,
-  dependencies: glib_dep,
+  [test_unit + '.c'] + shared_siphash,
+  include_directories: src_inc,
+  dependencies: nm_core_dep,
   c_args: cflags,
   link_with: libsystemd_nm
 )

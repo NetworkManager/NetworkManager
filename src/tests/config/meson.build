@@ -15,7 +15,7 @@ cflags = [
 exe = executable(
   test_unit,
   sources,
-  dependencies: test_core_dep,
+  dependencies: test_nm_dep,
   c_args: cflags
 )
 

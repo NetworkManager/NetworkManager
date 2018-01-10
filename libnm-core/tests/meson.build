@@ -27,12 +27,6 @@ test_units = [
   'test-settings-defaults'
 ]
 
-incs = [
-  top_inc,
-  shared_inc,
-  libnm_core_inc
-]
-
 test_cert_dir = join_paths(meson.current_source_dir(), 'certs')
 
 cflags = [
@@ -45,8 +39,7 @@ foreach test_unit: test_units
   exe = executable(
     'libnm-core-' + test_unit,
     [test_unit + '.c'] + enum,
-    include_directories: incs,
-    dependencies: glib_dep,
+    dependencies: nm_core_dep,
     c_args: cflags,
     link_with: libnm_core
   )

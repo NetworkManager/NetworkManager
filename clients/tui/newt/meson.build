@@ -23,13 +23,13 @@ sources = files(
 
 libnmt_newt = static_library(
   'nmt-newt',
-  sources: sources + [libnm_core_enum[1]],
-  include_directories: incs,
+  sources: sources + [libnm_enum[1]],
+  include_directories: libnm_inc,
   dependencies: deps,
   c_args: cflags
 )
 
 libnmt_newt_dep = declare_dependency(
-  link_with: libnmt_newt,
-  include_directories: include_directories('.')
+  include_directories: include_directories('.'),
+  link_with: libnmt_newt
 )

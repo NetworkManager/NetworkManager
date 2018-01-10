@@ -1,18 +1,13 @@
-incs = [
-  top_inc,
-  shared_inc,
-  libnm_core_inc,
-  libnm_inc,
-]
+name = 'nmtui'
 
 deps = [
-  glib_dep,
-  newt_dep
+  newt_dep,
+  nm_core_dep
 ]
 
 cflags = clients_cflags + [
-  '-DG_LOG_DOMAIN="nmtui"',
-  '-DLOCALEDIR="@0@"'.format(nm_localedir),
+  '-DG_LOG_DOMAIN="@0@"'.format(name),
+  '-DLOCALEDIR="@0@"'.format(nm_localedir)
 ]
 
 subdir('newt')
@@ -72,9 +67,8 @@ if have_version_script
 endif
 
 executable(
-  'nmtui',
-  sources + [libnm_core_enum[1]],
-  include_directories: incs,
+  name,
+  sources,
   dependencies: deps,
   c_args: cflags,
   link_args: ldflags,

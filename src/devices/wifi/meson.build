@@ -17,8 +17,8 @@ if enable_iwd
 endif
 
 deps = [
-  core_dep,
-  libnmdbus_dep
+  libnmdbus_dep,
+  nm_dep
 ]
 
 ldflags = []

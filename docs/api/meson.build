@@ -1,4 +1,4 @@
-doc_module = 'NetworkManager'
+doc_module = nm_name
 
 settings = 'settings-spec'
 output = settings + '.xml'

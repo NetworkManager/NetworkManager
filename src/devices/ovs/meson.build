@@ -7,12 +7,10 @@ sources = files(
 )
 
 deps = [
-  core_dep,
   jansson_dep,
-  libnmdbus_dep
+  libnmdbus_dep,
+  nm_dep
 ]
-
-cflags = '-DRUNSTATEDIR="@0@"'.format(nm_runstatedir)
 
 ldflags = []
 if have_version_script
@@ -23,7 +21,7 @@ libnm_device_plugin_ovs = shared_module(
   'nm-device-plugin-ovs',
   sources: sources,
   dependencies: deps,
-  c_args: cflags,
+  c_args: '-DRUNSTATEDIR="@0@"'.format(nm_runstatedir),
   link_args: ldflags,
   link_depends: linker_script_devices,
   install: true,

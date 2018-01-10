@@ -2,15 +2,9 @@ common_inc = include_directories('.')
 
 nm_polkit_listener = files('nm-polkit-listener.c')
 
-incs = [
-  top_inc,
-  shared_inc,
-  libnm_core_inc
-]
-
 deps = [
-  glib_dep,
-  libnm_dep
+  libnm_dep,
+  nm_core_dep
 ]
 
 cflags = clients_cflags + [
@@ -25,15 +19,14 @@ sources = shared_utils + files(
 
 libnmc_base = static_library(
   'nmc-base',
-  sources: sources + [libnm_core_enum[1]],
-  include_directories: incs,
+  sources: sources,
   dependencies: deps,
-  c_args: cflags,
+  c_args: cflags
 )
 
 libnmc_base_dep = declare_dependency(
-  link_with: libnmc_base,
-  include_directories: common_inc
+  include_directories: common_inc,
+  link_with: libnmc_base
 )
 
 sources = shared_meta_setting + files(
@@ -71,8 +64,7 @@ sources += settings_docs_source
 
 libnmc = static_library(
   'nmc',
-  sources: sources + [libnm_core_enum[1]],
-  include_directories: incs,
+  sources: sources,
   dependencies: deps,
   c_args: cflags,
   link_with: libnmc_base,
@@ -80,8 +72,8 @@ libnmc = static_library(
 )
 
 libnmc_dep = declare_dependency(
-  link_with: libnmc,
-  include_directories: common_inc
+  include_directories: common_inc,
+  link_with: libnmc
 )
 
 if (enable_introspection or enable_nmtui) and enable_tests

@@ -1,7 +1,4 @@
-shared_inc = include_directories(
-  '.',
-  'nm-utils'
-)
+shared_inc = include_directories('.')
 
 version_conf = configuration_data()
 version_conf.set('NM_MAJOR_VERSION', nm_major_version)
@@ -36,4 +33,13 @@ shared_vpn_plugin_utils = files('nm-utils/nm-vpn-plugin-utils.c')
 shared_sources = shared_utils + shared_meta_setting + shared_udev_utils + files(
   'nm-utils/c-list-util.c',
   'nm-utils/nm-dedup-multi.c'
+)
+
+shared_dep = declare_dependency(
+  include_directories: [
+    top_inc,
+    shared_inc,
+    include_directories('nm-utils')
+  ],
+  dependencies: glib_dep
 )

@@ -5,9 +5,9 @@ sources = files(
 )
 
 deps = [
-  core_dep,
   libsystemd_dep,
-  mm_glib_dep
+  mm_glib_dep,
+  nm_dep
 ]
 
 if enable_ofono
@@ -32,8 +32,8 @@ libnm_wwan = shared_module(
 )
 
 libnm_wwan_dep = declare_dependency(
-  link_with: libnm_wwan,
-  include_directories: include_directories('.')
+  include_directories: include_directories('.'),
+  link_with: libnm_wwan
 )
 
 core_plugins += libnm_wwan

@@ -1,4 +1,4 @@
-doc_module = 'libnm-glib'
+doc_module = libnm_glib_name
 
 private_headers = [
   'common.h',

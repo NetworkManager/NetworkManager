@@ -93,6 +93,9 @@ libnmdbus = static_library(
 )
 
 libnmdbus_dep = declare_dependency(
-  link_with: libnmdbus,
-  include_directories: include_directories('.')
+  # FIXME: only headers should be added here to resolve dependencies on
+  #        libNetworkManagerBase and libNetworkManager
+  #sources: sources,
+  include_directories: include_directories('.'),
+  link_with: libnmdbus
 )

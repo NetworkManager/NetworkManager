@@ -15,7 +15,7 @@ foreach test_unit: test_units
   exe = executable(
     'platform-' + test_unit[0],
     test_unit[1],
-    dependencies: test_core_dep,
+    dependencies: test_nm_dep,
     c_args: test_cflags_platform
   )
 
@@ -27,6 +27,6 @@ test = 'monitor'
 executable(
   test,
   test + '.c',
-  dependencies: test_core_dep,
+  dependencies: test_nm_dep,
   c_args: test_cflags_platform
 )

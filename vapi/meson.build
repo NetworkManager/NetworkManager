@@ -1,5 +1,5 @@
 gnome.generate_vapi(
-  'libnm',
+  libnm_name,
   sources: libnm_gir[0],
   packages: 'gio-2.0',
   install: true
@@ -12,7 +12,7 @@ if enable_libnm_glib
   ]
 
   libnm_util_vapi = gnome.generate_vapi(
-    'libnm-util',
+    libnm_util_name,
     sources: libnm_util_gir[0],
     packages: packages,
     install: true
@@ -21,7 +21,7 @@ if enable_libnm_glib
   packages += libnm_util_vapi
 
   gnome.generate_vapi(
-    'libnm-glib',
+    libnm_glib_name,
     sources: libnm_glib_gir[0],
     packages: packages,
     install: true

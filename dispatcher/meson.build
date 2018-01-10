@@ -25,15 +25,9 @@ install_data(
 
 sources = files('nm-dispatcher-utils.c')
 
-incs = [
-  top_inc,
-  shared_inc,
-  libnm_core_inc
-]
-
 deps = [
-  glib_dep,
-  libnm_dep
+  libnm_dep,
+  nm_core_dep
 ]
 
 cflags = [
@@ -47,7 +41,6 @@ cflags = [
 libnm_dispatcher_core = static_library(
   name + '-core',
   sources: sources,
-  include_directories: incs,
   dependencies: deps,
   c_args: cflags
 )
@@ -69,7 +62,6 @@ endif
 executable(
   name,
   sources,
-  include_directories: incs,
   dependencies: deps,
   c_args: cflags,
   link_with: libnm_dispatcher_core,
