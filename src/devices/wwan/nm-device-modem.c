@@ -743,9 +743,10 @@ dispose (GObject *object)
 {
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) object);
 
-	if (priv->modem)
+	if (priv->modem) {
 		g_signal_handlers_disconnect_by_data (priv->modem, NM_DEVICE_MODEM (object));
-	g_clear_object (&priv->modem);
+		g_clear_object (&priv->modem);
+	}
 
 	G_OBJECT_CLASS (nm_device_modem_parent_class)->dispose (object);
 }
