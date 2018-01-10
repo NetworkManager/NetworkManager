@@ -377,14 +377,36 @@ add_dns_option_item (GPtrArray *array, const char *str)
 }
 
 static void
+add_dns_domains (GPtrArray *array, const NMIPConfig *ip_config)
+{
+	guint num_domains, num_searches, i;
+	const char *str;
+
+	num_domains = nm_ip_config_get_num_domains (ip_config);
+	num_searches = nm_ip_config_get_num_searches (ip_config);
+
+	for (i = 0; i < num_searches; i++) {
+		str = nm_ip_config_get_search (ip_config, i);
+		if (domain_is_valid (str, FALSE))
+			add_string_item (array, str);
+	}
+	if (num_domains > 1 || !num_searches) {
+		for (i = 0; i < num_domains; i++) {
+			str = nm_ip_config_get_domain (ip_config, i);
+			if (domain_is_valid (str, FALSE))
+				add_string_item (array, str);
+		}
+	}
+}
+
+static void
 merge_one_ip_config (NMResolvConfData *rc,
                      int ifindex,
                      const NMIPConfig *ip_config)
 {
 	int addr_family;
-	guint num, num_domains, num_searches, i;
+	guint num, i;
 	char buf[NM_UTILS_INET_ADDRSTRLEN + 50];
-	const char *str;
 
 	addr_family = nm_ip_config_get_addr_family (ip_config);
 
@@ -417,20 +439,7 @@ merge_one_ip_config (NMResolvConfData *rc,
 		add_string_item (rc->nameservers, buf);
 	}
 
-	num_domains = nm_ip_config_get_num_domains (ip_config);
-	num_searches = nm_ip_config_get_num_searches (ip_config);
-	for (i = 0; i < num_searches; i++) {
-		str = nm_ip_config_get_search (ip_config, i);
-		if (domain_is_valid (str, FALSE))
-			add_string_item (rc->searches, str);
-	}
-	if (num_domains > 1 || !num_searches) {
-		for (i = 0; i < num_domains; i++) {
-			str = nm_ip_config_get_domain (ip_config, i);
-			if (domain_is_valid (str, FALSE))
-				add_string_item (rc->searches, str);
-		}
-	}
+	add_dns_domains (rc->searches, ip_config);
 
 	num = nm_ip_config_get_num_dns_options (ip_config);
 	for (i = 0; i < num; i++) {
