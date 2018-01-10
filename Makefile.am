@@ -4636,7 +4636,7 @@ EXTRA_DIST += \
 	tools/enums-to-docbook.pl \
 	\
 	src/settings/plugins/README \
-	src/settings/plugins/meson.build
+	src/settings/plugins/meson.build \
 	\
 	$(NULL)
 
