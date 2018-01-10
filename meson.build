@@ -402,6 +402,8 @@ session_tracking = get_option('session_tracking')
 session_trackers = []
 enable_session_tracking = (session_tracking != 'no')
 
+enable_consolekit = get_option('consolekit')
+
 if enable_session_tracking
   if session_tracking == 'systemd'
     logind_dep = libsystemd_dep
@@ -418,7 +420,6 @@ if enable_session_tracking
     config_h.set('SESSION_TRACKING_ELOGIND', true)
   endif
 
-  enable_consolekit = get_option('consolekit')
   if enable_consolekit
     session_trackers += 'consolekit'
     config_h.set_quoted('CKDB_PATH', '/var/run/ConsoleKit/database')
