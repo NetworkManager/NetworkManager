@@ -1179,28 +1179,26 @@ nm_device_get_iface (NMDevice *self)
 }
 
 gboolean
-nm_device_take_over_link (NMDevice *self, const char *ifname, gboolean *renamed)
+nm_device_take_over_link (NMDevice *self, int ifindex, char **old_name)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	const NMPlatformLink *plink;
 	NMPlatform *platform;
 	gboolean up, success = TRUE;
-	int ifindex;
+	gs_free char *name = NULL;
 
 	g_return_val_if_fail (priv->ifindex <= 0, FALSE);
-	g_return_val_if_fail (ifname, FALSE);
 
-	NM_SET_OUT (renamed, FALSE);
+	NM_SET_OUT (old_name, NULL);
 
 	platform = nm_device_get_platform (self);
-	plink = nm_platform_link_get_by_ifname (platform, ifname);
+	plink = nm_platform_link_get (platform, ifindex);
 	if (!plink)
 		return FALSE;
 
-	ifindex = plink->ifindex;
-
-	if (!nm_streq (ifname, nm_device_get_iface (self))) {
+	if (!nm_streq (plink->name, nm_device_get_iface (self))) {
 		up = NM_FLAGS_HAS (plink->n_ifi_flags, IFF_UP);
+		name = g_strdup (plink->name);
 
 		/* Rename the link to the device ifname */
 		if (up)
@@ -1209,7 +1207,8 @@ nm_device_take_over_link (NMDevice *self, const char *ifname, gboolean *renamed)
 		if (up)
 			nm_platform_link_set_up (platform, ifindex, NULL);
 
-		NM_SET_OUT (renamed, success);
+		if (success)
+			NM_SET_OUT (old_name, g_steal_pointer (&name));
 	}
 
 	if (success) {
@@ -1279,6 +1278,61 @@ nm_device_get_ip_ifindex (const NMDevice *self)
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	/* If it's not set, default to ifindex */
 	return priv->ip_iface ? priv->ip_ifindex : priv->ifindex;
+}
+
+gboolean
+nm_device_set_ip_ifindex (NMDevice *self, int ifindex)
+{
+	NMDevicePrivate *priv;
+	NMPlatform *platform;
+	const char *name = NULL;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	platform = nm_device_get_platform (self);
+
+	if (ifindex > 0) {
+		const NMPlatformLink *plink;
+
+		plink = nm_platform_link_get (platform, ifindex);
+		if (!plink) {
+			nm_platform_process_events (platform);
+			plink = nm_platform_link_get (NM_PLATFORM_GET, ifindex);
+		}
+		if (!plink) {
+			_LOGW (LOGD_DEVICE, "ip-ifindex: ifindex %d not found", ifindex);
+			return FALSE;
+		}
+		name = plink->name;
+	} else
+		g_return_val_if_fail (ifindex == 0, FALSE);
+
+	if (priv->ip_ifindex == ifindex)
+		return TRUE;
+
+	_LOGD (LOGD_DEVICE, "ip-ifindex: update ifindex to %d", ifindex);
+	priv->ip_ifindex = ifindex;
+	if (!nm_streq0 (priv->ip_iface, name)) {
+		_LOGD (LOGD_DEVICE, "ip-ifindex: update ip-iface to %s%s%s",
+		       NM_PRINT_FMT_QUOTED (name, "\"", name, "\"", "NULL"));
+		priv->ip_iface = g_strdup (name);
+		_notify (self, PROP_IP_IFACE);
+	}
+
+	if (priv->ip_ifindex > 0) {
+		if (nm_platform_check_kernel_support (nm_device_get_platform (self),
+		                                      NM_PLATFORM_KERNEL_SUPPORT_USER_IPV6LL))
+			nm_platform_link_set_user_ipv6ll_enabled (nm_device_get_platform (self), priv->ip_ifindex, TRUE);
+
+		if (!nm_platform_link_is_up (nm_device_get_platform (self), priv->ip_ifindex))
+			nm_platform_link_set_up (nm_device_get_platform (self), priv->ip_ifindex, NULL);
+	}
+
+	/* We don't care about any saved values from the old iface */
+	g_hash_table_remove_all (priv->ip6_saved_properties);
+
+	return TRUE;
 }
 
 /**

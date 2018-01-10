@@ -28,6 +28,7 @@
 #include <pppd/ipcp.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <net/if.h>
 #include <arpa/inet.h>
 #include <dlfcn.h>
 
@@ -52,7 +53,9 @@ static void
 nm_phasechange (void *data, int arg)
 {
 	NMPPPStatus ppp_status = NM_PPP_STATUS_UNKNOWN;
+	char new_name[IF_NAMESIZE];
 	char *ppp_phase;
+	int index;
 
 	g_return_if_fail (G_IS_DBUS_PROXY (proxy));
 
@@ -128,6 +131,25 @@ nm_phasechange (void *data, int arg)
 		                   NULL,
 		                   NULL, NULL);
 	}
+
+	if (ppp_status == PHASE_RUNNING) {
+		index = if_nametoindex (ifname);
+		/* Make a sync call to ensure that when the call
+		 * terminates the interface already has its final
+		 * name. */
+		g_dbus_proxy_call_sync (proxy,
+		                        "SetIfindex",
+		                        g_variant_new ("(i)", index),
+		                        G_DBUS_CALL_FLAGS_NONE,
+		                        25000,
+		                        NULL, NULL);
+		/* Update the name in pppd if NM changed it */
+		if (   if_indextoname (index, new_name)
+		    && !nm_streq0 (ifname, new_name)) {
+			g_message ("nm-ppp-plugin: interface name changed from '%s' to '%s'", ifname, new_name);
+			strncpy (ifname, new_name, IF_NAMESIZE);
+		}
+	}
 }
 
 static void
@@ -150,6 +172,9 @@ nm_ip_up (void *data, int arg)
 
 	g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
 
+	/* Keep sending the interface name to be backwards compatible
+	 * with older versions of NM during a package upgrade, where
+	 * NM is not restarted and the pppd plugin was not loaded. */
 	g_variant_builder_add (&builder, "{sv}",
 	                       NM_PPP_IP4_CONFIG_INTERFACE,
 	                       g_variant_new_string (ifname));
@@ -244,6 +269,9 @@ nm_ip6_up (void *data, int arg)
 	g_message ("nm-ppp-plugin: (%s): ip6-up event", __func__);
 
 	g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
+	/* Keep sending the interface name to be backwards compatible
+	 * with older versions of NM during a package upgrade, where
+	 * NM is not restarted and the pppd plugin was not loaded. */
 	g_variant_builder_add (&builder, "{sv}",
 	                       NM_PPP_IP6_CONFIG_INTERFACE,
 	                       g_variant_new_string (ifname));
