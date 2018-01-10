@@ -557,6 +557,8 @@ port_speed_is_zero (const char *port)
 	struct termios options;
 	nm_auto_close int fd = -1;
 
+	nm_assert (port);
+
 	fd = open (port, O_RDWR | O_NONBLOCK | O_NOCTTY | O_CLOEXEC);
 	if (fd < 0)
 		return FALSE;
@@ -597,6 +599,12 @@ ppp_stage3_ip_config_start (NMModem *self,
 			return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
+	if (!priv->data_port) {
+		_LOGE ("error starting PPP (no data port)");
+		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_PPP_START_FAILED);
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
+
 	/* Check if ModemManager requested a specific IP timeout to be used. If 0 reported,
 	 * use the default one (30s) */
 	if (priv->mm_ip_timeout > 0) {
@@ -628,9 +636,7 @@ ppp_stage3_ip_config_start (NMModem *self,
 	                              ip_timeout, baud_override, &error)) {
 		_LOGE ("error starting PPP: %s", error->message);
 		g_error_free (error);
-
 		g_clear_object (&priv->ppp_manager);
-
 		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_PPP_START_FAILED);
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
