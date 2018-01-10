@@ -144,7 +144,8 @@ update_add_ip_config (NMDnsSystemdResolved *self,
 	int addr_family;
 	gsize addr_size;
 	guint i, n;
-	gboolean route_only;
+	gboolean is_routing;
+	const char *domain;
 
 	addr_family = nm_ip_config_get_addr_family (config);
 	addr_size = nm_utils_addr_family_to_size (addr_family);
@@ -161,25 +162,23 @@ update_add_ip_config (NMDnsSystemdResolved *self,
 		g_variant_builder_close (dns);
 	}
 
-	/* If this link is never the default (e.g. only used for resources on this
-	 * network) add a routing domain. */
-	route_only =   addr_family == AF_INET
-	             ? !nm_ip4_config_best_default_route_get (NM_IP4_CONFIG (config))
-	             : !nm_ip6_config_best_default_route_get (NM_IP6_CONFIG (config));
-
 	n = nm_ip_config_get_num_searches (config);
 	if (n  > 0) {
 		for (i = 0; i < n; i++) {
+			domain = nm_utils_parse_dns_domain (nm_ip_config_get_search (config, i),
+			                                    &is_routing);
 			g_variant_builder_add (domains, "(sb)",
-			                       nm_ip_config_get_search (config, i),
-			                       route_only);
+			                       domain,
+			                       is_routing);
 		}
 	} else {
 		n = nm_ip_config_get_num_domains (config);
 		for (i = 0; i < n; i++) {
+			domain = nm_utils_parse_dns_domain (nm_ip_config_get_domain (config, i),
+			                                    &is_routing);
 			g_variant_builder_add (domains, "(sb)",
-			                       nm_ip_config_get_domain (config, i),
-			                       route_only);
+			                       domain,
+			                       is_routing);
 		}
 	}
 }

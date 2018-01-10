@@ -2930,7 +2930,10 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 	/**
 	 * NMSettingIPConfig:dns-search:
 	 *
-	 * Array of DNS search domains.
+	 * Array of DNS search domains. Domains starting with a tilde ('~')
+	 * are considered 'routing' domains and are used only to decide the
+	 * interface over which a query must be forwarded; they are not used
+	 * to complete unqualified host names.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DNS_SEARCH,

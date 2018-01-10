@@ -219,7 +219,7 @@ add_ip_config (NMDnsDnsmasq *self,
 	char ip_addr_to_string_buf[IP_ADDR_TO_STRING_BUFLEN];
 	char **domains, **iter;
 	gboolean iface_resolved = FALSE;
-	const char *iface = NULL;
+	const char *iface = NULL, *domain;
 
 	addr_family = nm_ip_config_get_addr_family (ip_config);
 	g_return_if_fail (NM_IN_SET (addr_family, AF_INET, AF_INET6));
@@ -247,21 +247,23 @@ add_ip_config (NMDnsDnsmasq *self,
 				/* searches are preferred over domains */
 				n = nm_ip_config_get_num_searches (ip_config);
 				for (i = 0; i < n; i++) {
+					domain = nm_utils_parse_dns_domain (nm_ip_config_get_search (ip_config, i), NULL);
 					add_dnsmasq_nameserver (self,
 					                        servers,
 					                        ip_addr_to_string_buf,
-					                        nm_ip_config_get_search (ip_config, i));
+					                        domain);
 					added = TRUE;
 				}
 
 				if (n == 0) {
 					/* If not searches, use any domains */
 					n = nm_ip_config_get_num_domains (ip_config);
+					domain = nm_utils_parse_dns_domain (nm_ip_config_get_domain (ip_config, i), NULL);
 					for (i = 0; i < n; i++) {
 						add_dnsmasq_nameserver (self,
 						                        servers,
 						                        ip_addr_to_string_buf,
-						                        nm_ip_config_get_domain (ip_config, i));
+						                        domain);
 						added = TRUE;
 					}
 				}
