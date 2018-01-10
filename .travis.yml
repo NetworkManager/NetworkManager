@@ -19,6 +19,8 @@ addons:
     - libnl-3-dev
     - libnl-route-3-dev
     - libnl-genl-3-dev
+    - libmm-glib-dev
+    - ppp
     - ppp-dev
     - libpolkit-gobject-1-dev
     - libgnutls-dev
@@ -44,7 +46,9 @@ addons:
     - libnl-3-dev
     - libndp-dev
     - automake
+    - dnsmasq
     - libcurl4-gnutls-dev
+    - python3-pip
   coverity_scan:
     project:
       name: NetworkManager/NetworkManager
@@ -54,11 +58,43 @@ addons:
 
 before_install:
   - sudo dbus-uuidgen --ensure
+  - |
+    git clone https://github.com/ninja-build/ninja &&
+    pushd ninja &&
+      ./configure.py --bootstrap &&
+      sudo cp ninja /usr/bin/ &&
+    popd
+  - sudo pip3 install meson
+  - sudo chmod o+x /usr/sbin/pppd
 
-script: |
-    sh autogen.sh --with-systemd-logind=no --enable-more-warnings=no --enable-ifcfg-rh --enable-ifupdown --enable-tests &&
-    make -j4 &&
-    ./contrib/travis/travis-check.sh
+script:
+    - |
+      meson build \
+          \
+          -D ld_gc=false \
+          -D session_tracking=no \
+          -D systemdsystemunitdir=no \
+          -D systemd_journal=false \
+          -D selinux=false \
+          -D libaudit=no \
+          -D libpsl=false \
+          -D vapi=false \
+          -D introspection=false \
+          -D qt=false \
+          \
+          -D docs=true \
+          \
+          -D ifcfg_rh=false \
+          -D ibft=true \
+          -D ifupdown=true \
+          &&
+      ninja -C build &&
+      ninja -C build test
+    - |
+      git clean -fdx &&
+      ./autogen.sh --with-systemd-logind=no --enable-more-warnings=no --enable-ifcfg-rh --enable-config-plugin-ibft --enable-ifupdown --enable-tests &&
+      make -j4 &&
+      ./contrib/travis/travis-check.sh
 
 env:
   global:
