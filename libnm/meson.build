@@ -2,13 +2,7 @@ libnm_inc = include_directories('.')
 
 sources = files('nm-libnm-utils.c')
 
-if have_fake_typelibs
-  subdir('fake-typelib')
-endif
-
 deps = [
-  # FIXME: this makes GIR mandatory?
-  gir_dep,
   libnmdbus_dep,
   shared_dep
 ]
@@ -18,6 +12,11 @@ cflags = [
   '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM',
   '-DNMRUNDIR="@0@"'.format(nm_pkgrundir)
 ]
+
+if have_fake_typelibs
+  deps += [ gir_dep ]
+  subdir('fake-typelib')
+endif
 
 libnm_utils = static_library(
   'nm-utils',
