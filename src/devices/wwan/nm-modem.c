@@ -1665,6 +1665,7 @@ finalize (GObject *object)
 	g_free (priv->driver);
 	g_free (priv->control_port);
 	g_free (priv->data_port);
+	g_free (priv->ppp_iface);
 	g_free (priv->device_id);
 	g_free (priv->sim_id);
 	g_free (priv->sim_operator_id);
