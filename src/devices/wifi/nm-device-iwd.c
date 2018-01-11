@@ -45,8 +45,6 @@
 #include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceIwd);
 
-static NM_CACHED_QUARK_FCN ("wireless-secrets-tries", wireless_secrets_tries_quark)
-
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceIwd,
@@ -1254,21 +1252,18 @@ handle_auth_or_fail (NMDeviceIwd *self,
                      gboolean new_secrets)
 {
 	const char *setting_name;
-	guint32 tries;
 	NMConnection *applied_connection;
 	NMSecretAgentGetSecretsFlags get_secret_flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
 	g_return_val_if_fail (NM_IS_DEVICE_IWD (self), FALSE);
 
-	applied_connection = nm_act_request_get_applied_connection (req);
-
-	tries = GPOINTER_TO_UINT (g_object_get_qdata (G_OBJECT (applied_connection), wireless_secrets_tries_quark ()));
-	if (tries > 3)
+	if (!nm_device_auth_retries_try_next (NM_DEVICE (self)))
 		return FALSE;
 
 	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
 
 	nm_act_request_clear_secrets (req);
+	applied_connection = nm_act_request_get_applied_connection (req);
 	setting_name = nm_connection_need_secrets (applied_connection, NULL);
 	if (!setting_name) {
 		_LOGW (LOGD_DEVICE, "Cleared secrets, but setting didn't need any secrets.");
@@ -1278,7 +1273,6 @@ handle_auth_or_fail (NMDeviceIwd *self,
 	if (new_secrets)
 		get_secret_flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
 	wifi_secrets_get_secrets (self, setting_name, get_secret_flags);
-	g_object_set_qdata (G_OBJECT (applied_connection), wireless_secrets_tries_quark (), GUINT_TO_POINTER (++tries));
 	return TRUE;
 }
 
@@ -1459,38 +1453,6 @@ get_configured_mtu (NMDevice *device, gboolean *out_is_user_config)
 }
 
 static void
-activation_success_handler (NMDevice *device)
-{
-	NMDeviceIwd *self = NM_DEVICE_IWD (device);
-	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
-	NMActRequest *req;
-	NMConnection *applied_connection;
-
-	req = nm_device_get_act_request (device);
-	g_assert (req);
-
-	applied_connection = nm_act_request_get_applied_connection (req);
-
-	/* Clear wireless secrets tries on success */
-	g_object_set_qdata (G_OBJECT (applied_connection), wireless_secrets_tries_quark (), NULL);
-
-	/* There should always be a current AP */
-	g_warn_if_fail (priv->current_ap);
-}
-
-static void
-activation_failure_handler (NMDevice *device)
-{
-	NMConnection *applied_connection;
-
-	applied_connection = nm_device_get_applied_connection (device);
-	g_assert (applied_connection);
-
-	/* Clear wireless secrets tries on failure */
-	g_object_set_qdata (G_OBJECT (applied_connection), wireless_secrets_tries_quark (), NULL);
-}
-
-static void
 device_state_changed (NMDevice *device,
                       NMDeviceState new_state,
                       NMDeviceState old_state,
@@ -1525,10 +1487,8 @@ device_state_changed (NMDevice *device,
 	case NM_DEVICE_STATE_IP_CHECK:
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
-		activation_success_handler (device);
 		break;
 	case NM_DEVICE_STATE_FAILED:
-		activation_failure_handler (device);
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
 		break;
