@@ -14,7 +14,7 @@ cflags = [
 ]
 
 if have_fake_typelibs
-  deps += [ gir_dep ]
+  deps += gir_dep
   subdir('fake-typelib')
 endif
 
