@@ -143,11 +143,8 @@ deps = [
   uuid_dep
 ]
 
-symbol_map = join_paths(meson.current_source_dir(), 'libnm.ver')
+linker_script = join_paths(meson.current_source_dir(), 'libnm.ver')
 
-ldflags = [
-  '-Wl,--version-script,@0@'.format(symbol_map),
-]
 
 libnm = shared_library(
   'nm',
@@ -158,8 +155,10 @@ libnm = shared_library(
   c_args: cflags,
   link_with: libnm_utils,
   link_whole: libnm_core,
-  link_args: ldflags,
-  link_depends: symbol_map,
+  link_args: [
+    '-Wl,--version-script,@0@'.format(linker_script),
+  ],
+  link_depends: linker_script,
   install: true
 )
 
@@ -185,7 +184,7 @@ pkg.generate(
 
 run_target(
   'check-local-exports-' + libnm_name,
-  command: [check_exports, libnm.full_path(), symbol_map],
+  command: [check_exports, libnm.full_path(), linker_script],
   depends: libnm
 )
 

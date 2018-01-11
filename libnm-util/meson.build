@@ -108,11 +108,7 @@ cflags = common_cflags + [
   '-DG_LOG_DOMAIN="@0@"'.format(libnm_util_name)
 ]
 
-symbol_map = join_paths(meson.current_source_dir(), 'libnm-util.ver')
-
-ldflags = [
-  '-Wl,--version-script,@0@'.format(symbol_map),
-]
+linker_script = join_paths(meson.current_source_dir(), 'libnm-util.ver')
 
 libnm_util = shared_library(
   'nm-util',
@@ -120,8 +116,10 @@ libnm_util = shared_library(
   version: libnm_util_version,
   dependencies: deps,
   c_args: cflags,
-  link_args: ldflags,
-  link_depends: symbol_map,
+  link_args: [
+    '-Wl,--version-script,@0@'.format(linker_script),
+  ],
+  link_depends: linker_script,
   install: true
 )
 
@@ -170,7 +168,7 @@ endif
 
 run_target(
   'check-local-exports-' + libnm_util_name,
-  command: [check_exports, libnm_util.full_path(), symbol_map],
+  command: [check_exports, libnm_util.full_path(), linker_script],
   depends: libnm_util
 )
 

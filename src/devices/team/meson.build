@@ -10,15 +10,11 @@ deps = [
   nm_dep
 ]
 
-ldflags = [
-  '-Wl,--version-script,@0@'.format(linker_script_devices),
-]
-
 libnm_device_plugin_team = shared_module(
   'nm-device-plugin-team',
   sources: sources,
   dependencies: deps,
-  link_args: ldflags,
+  link_args: ldflags_linker_script_devices,
   link_depends: linker_script_devices,
   install: true,
   install_dir: nm_pkglibdir

@@ -14,16 +14,12 @@ cflags = clients_cflags + [
   '-DG_LOG_DOMAIN="@0@"'.format(name),
 ]
 
-ldflags = [
-  '-Wl,--version-script,@0@'.format(linker_script_binary),
-]
-
 executable(
   name,
   name + '.c',
   dependencies: deps,
   c_args: cflags,
-  link_args: ldflags,
+  link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
   install: true
 )

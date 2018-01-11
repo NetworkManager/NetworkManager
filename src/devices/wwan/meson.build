@@ -14,18 +14,16 @@ if enable_ofono
   sources += files('nm-modem-ofono.c')
 endif
 
-symbol_name = join_paths(meson.current_source_dir(), 'libnm-wwan.ver')
-
-ldflags = [
-  '-Wl,--version-script,@0@'.format(symbol_name),
-]
+linker_script = join_paths(meson.current_source_dir(), 'libnm-wwan.ver')
 
 libnm_wwan = shared_module(
   'nm-wwan',
   sources: sources,
   dependencies: deps,
-  link_args: ldflags,
-  link_depends: symbol_name,
+  link_args: [
+    '-Wl,--version-script,@0@'.format(linker_script),
+  ],
+  link_depends: linker_script,
   install: true,
   install_dir: nm_pkglibdir
 )
@@ -39,7 +37,7 @@ core_plugins += libnm_wwan
 
 run_target(
   'check-wwan',
-  command: [check_exports, libnm_wwan.full_path(), symbol_name],
+  command: [check_exports, libnm_wwan.full_path(), linker_script],
   depends: libnm_wwan
 )
 
@@ -50,16 +48,12 @@ sources = files(
 
 deps += libnmdbus_dep
 
-ldflags = [
-  '-Wl,--version-script,@0@'.format(linker_script_devices),
-]
-
 libnm_device_plugin_wwan = shared_module(
   'nm-device-plugin-wwan',
   sources: sources,
   dependencies: deps,
   link_with: libnm_wwan,
-  link_args: ldflags,
+  link_args: ldflags_linker_script_devices,
   link_depends: linker_script_devices,
   install: true,
   install_dir: nm_pkglibdir

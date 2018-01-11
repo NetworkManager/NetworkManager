@@ -26,19 +26,17 @@ deps = [
   nm_dep
 ]
 
-symbol_map = join_paths(meson.current_source_dir(), 'nm-ppp-plugin.ver')
-
-ldflags = [
-  '-Wl,--version-script,@0@'.format(symbol_map),
-]
+linker_script = join_paths(meson.current_source_dir(), 'nm-ppp-plugin.ver')
 
 core_plugins += shared_module(
   name,
   sources: 'nm-ppp-manager.c',
   dependencies: deps,
   c_args: '-DPPPD_PLUGIN_DIR="@0@"'.format(pppd_plugin_dir),
-  link_args: ldflags,
-  link_depends: symbol_map,
+  link_args: [
+    '-Wl,--version-script,@0@'.format(linker_script),
+  ],
+  link_depends: linker_script,
   install: true,
   install_dir: nm_pkglibdir
 )

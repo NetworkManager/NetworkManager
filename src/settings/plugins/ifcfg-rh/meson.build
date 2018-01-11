@@ -46,17 +46,13 @@ libnms_ifcfg_rh_core = static_library(
 
 sources = [dbus_sources] + files('nms-ifcfg-rh-connection.c')
 
-ldflags = [
-  '-Wl,--version-script,@0@'.format(linker_script_settings),
-]
-
 libnm_settings_plugin_ifcfg_rh = shared_module(
   'nm-settings-plugin-ifcfg-rh',
   sources: sources,
   dependencies: deps,
   c_args: cflags,
   link_with: [libnmdbus_ifcfg_rh, libnms_ifcfg_rh_core],
-  link_args: ldflags,
+  link_args: ldflags_linker_script_settings,
   link_depends: linker_script_settings,
   install: true,
   install_dir: nm_pkglibdir

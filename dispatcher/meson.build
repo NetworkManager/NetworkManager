@@ -54,17 +54,13 @@ sources += gnome.gdbus_codegen(
   namespace: 'NMDBus'
 )
 
-ldflags = [
-  '-Wl,--version-script,@0@'.format(linker_script_binary),
-]
-
 executable(
   name,
   sources,
   dependencies: deps,
   c_args: cflags,
   link_with: libnm_dispatcher_core,
-  link_args: ldflags,
+  link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
   install: true,
   install_dir: nm_libexecdir

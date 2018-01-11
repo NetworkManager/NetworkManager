@@ -17,17 +17,13 @@ sources = files(
   'nms-ibft-plugin.c'
 )
 
-ldflags = [
-  '-Wl,--version-script,@0@'.format(linker_script_settings),
-]
-
 libnm_settings_plugin_ibft = shared_module(
   name,
   sources: sources,
   dependencies: nm_dep,
   c_args: cflags,
   link_with: libnms_ibft_core,
-  link_args: ldflags,
+  link_args: ldflags_linker_script_settings,
   link_depends: linker_script_settings,
   install: true,
   install_dir: nm_pkglibdir

@@ -31,10 +31,6 @@ cflags = clients_cflags + [
   '-DNMCLI_LOCALEDIR="@0@"'.format(nm_localedir)
 ]
 
-ldflags = [
-  '-Wl,--version-script,@0@'.format(linker_script_binary),
-]
-
 if enable_polkit_agent
   sources += nm_polkit_listener
 
@@ -46,7 +42,7 @@ executable(
   sources,
   dependencies: deps,
   c_args: cflags,
-  link_args: ldflags,
+  link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
   install: true
 )

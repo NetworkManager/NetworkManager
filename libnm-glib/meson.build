@@ -100,11 +100,7 @@ libnm_glib_vpn_enum = gnome.mkenums(
 
 deps = common_deps + [libnm_util_dep]
 
-symbol_map = join_paths(meson.current_source_dir(), 'libnm-glib-vpn.ver')
-
-ldflags = [
-  '-Wl,--version-script,@0@'.format(symbol_map),
-]
+linker_script = join_paths(meson.current_source_dir(), 'libnm-glib-vpn.ver')
 
 libnm_glib_vpn = shared_library(
   'nm-glib-vpn',
@@ -112,8 +108,10 @@ libnm_glib_vpn = shared_library(
   version: libnm_glib_vpn_version,
   dependencies: deps,
   c_args: cflags,
-  link_args: ldflags,
-  link_depends: symbol_map,
+  link_args: [
+    '-Wl,--version-script,@0@'.format(linker_script),
+  ],
+  link_depends: linker_script,
   install: true
 )
 
@@ -192,11 +190,7 @@ deps = common_deps + [
   libudev_dep
 ]
 
-symbol_map = join_paths(meson.current_source_dir(), 'libnm-glib.ver')
-
-ldflags = [
-  '-Wl,--version-script,@0@'.format(symbol_map),
-]
+linker_script = join_paths(meson.current_source_dir(), 'libnm-glib.ver')
 
 libnm_glib = shared_library(
   'nm-glib',
@@ -207,8 +201,10 @@ libnm_glib = shared_library(
     '-DNMRUNDIR="@0@"'.format(nm_pkgrundir),
   ],
   link_with: libdeprecated_nm_glib,
-  link_args: ldflags,
-  link_depends: symbol_map,
+  link_args: [
+    '-Wl,--version-script,@0@'.format(linker_script),
+  ],
+  link_depends: linker_script,
   install: true
 )
 
@@ -273,7 +269,7 @@ executable(
 
 run_target(
   'check-local-exports-' + libnm_glib_name,
-  command: [check_exports, libnm_glib.full_path(), symbol_map],
+  command: [check_exports, libnm_glib.full_path(), linker_script],
   depends: libnm_glib
 )
 

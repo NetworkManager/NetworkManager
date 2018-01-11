@@ -223,7 +223,7 @@ create_exports_networkmanager = join_paths(meson.source_root(), 'tools', 'create
 
 symbol_map_name = 'NetworkManager.ver'
 
-symbol_map = custom_target(
+linker_script = custom_target(
   symbol_map_name,
   input: meson.source_root(),
   output: symbol_map_name,
@@ -232,7 +232,7 @@ symbol_map = custom_target(
   command: [create_exports_networkmanager, '--called-from-make', '@INPUT@']
 )
 
-ldflags += '-Wl,--version-script,@0@'.format(symbol_map)
+ldflags += '-Wl,--version-script,@0@'.format(linker_script)
 '''
 
 network_manager = executable(
@@ -242,7 +242,8 @@ network_manager = executable(
   c_args: cflags,
   link_with: libnetwork_manager,
   link_args: ldflags,
-  link_depends: symbol_map,
+  #FIXME
+  #link_depends: linker_script,
   install: true,
   install_dir: nm_sbindir
 )
@@ -255,10 +256,6 @@ deps = [
   nm_core_dep
 ]
 
-ldflags = [
-  '-Wl,--version-script,@0@'.format(linker_script_binary),
-]
-
 name = 'nm-iface-helper'
 
 executable(
@@ -267,7 +264,7 @@ executable(
   dependencies: deps,
   c_args: cflags,
   link_with: [libnetwork_manager_base, libsystemd_nm],
-  link_args: ldflags,
+  link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
   install: true,
   install_dir: nm_libexecdir
