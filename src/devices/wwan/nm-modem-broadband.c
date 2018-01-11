@@ -385,9 +385,10 @@ connect_ready (MMModemSimple *simple_iface,
 				g_dbus_error_strip_remote_error (error);
 			ctx->first_error = error;
 		} else
-			g_error_free (error);
+			g_clear_error (&error);
 
-		if (ctx->ip_type_tries == 0 && g_error_matches (error, MM_CORE_ERROR, MM_CORE_ERROR_RETRY)) {
+		if (   ctx->ip_type_tries == 0
+		    && g_error_matches (error, MM_CORE_ERROR, MM_CORE_ERROR_RETRY)) {
 			/* Try one more time */
 			ctx->ip_type_tries++;
 		} else {
