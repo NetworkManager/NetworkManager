@@ -753,13 +753,16 @@ bluez_connect_cb (GObject *object,
                   GAsyncResult *res,
                   void *user_data)
 {
-	NMDeviceBt *self = NM_DEVICE_BT (user_data);
+	gs_unref_object NMDeviceBt *self = NM_DEVICE_BT (user_data);
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
 	GError *error = NULL;
 	const char *device;
 
 	device = nm_bluez_device_connect_finish (NM_BLUEZ_DEVICE (object),
 	                                         res, &error);
+
+	if (!nm_device_is_activating (NM_DEVICE (self)))
+		return;
 
 	if (!device) {
 		_LOGW (LOGD_BT, "Error connecting with bluez: %s", error->message);
@@ -768,7 +771,6 @@ bluez_connect_cb (GObject *object,
 		nm_device_state_changed (NM_DEVICE (self),
 		                         NM_DEVICE_STATE_FAILED,
 		                         NM_DEVICE_STATE_REASON_BT_FAILED);
-		g_object_unref (self);
 		return;
 	}
 
@@ -776,7 +778,13 @@ bluez_connect_cb (GObject *object,
 		g_free (priv->rfcomm_iface);
 		priv->rfcomm_iface = g_strdup (device);
 	} else if (priv->bt_type == NM_BT_CAPABILITY_NAP) {
-		nm_device_set_ip_iface (NM_DEVICE (self), device);
+		if (!nm_device_set_ip_iface (NM_DEVICE (self), device)) {
+			_LOGW (LOGD_BT, "Error connecting with bluez: cannot find device %s", device);
+			nm_device_state_changed (NM_DEVICE (self),
+			                         NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_BT_FAILED);
+			return;
+		}
 	}
 
 	_LOGD (LOGD_BT, "connect request successful");
@@ -784,7 +792,6 @@ bluez_connect_cb (GObject *object,
 	/* Stage 3 gets scheduled when Bluez says we're connected */
 	priv->have_iface = TRUE;
 	check_connect_continue (self);
-	g_object_unref (self);
 }
 
 static void
