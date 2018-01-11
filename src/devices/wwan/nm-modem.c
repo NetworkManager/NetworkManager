@@ -1690,7 +1690,7 @@ constructed (GObject *object)
 
 	priv = NM_MODEM_GET_PRIVATE (NM_MODEM (object));
 
-	g_return_if_fail (priv->data_port || priv->control_port);
+	g_return_if_fail (priv->control_port);
 }
 
 /*****************************************************************************/
@@ -1767,7 +1767,7 @@ nm_modem_class_init (NMModemClass *klass)
 	obj_properties[PROP_DATA_PORT] =
 	     g_param_spec_string (NM_MODEM_DATA_PORT, "", "",
 	                          NULL,
-	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+	                          G_PARAM_READWRITE |
 	                          G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_IP_IFINDEX] =
