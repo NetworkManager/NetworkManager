@@ -1291,14 +1291,11 @@ _set_ip_ifindex (NMDevice *self,
 	NMPlatform *platform;
 	gboolean eq_name;
 
-	/* we can set only the ifname without ifindex (to indicate that this
-	 * is an ip-interface, but lookup for the ifindex failed.
-	 * But we cannot just set ifindex > 0 without an ifname. */
-	nm_assert (ifindex <= 0 || ifname);
-
-	/* normalize ifindex */
-	if (ifindex < 0)
+	/* normalize arguments */
+	if (ifindex <= 0) {
 		ifindex = 0;
+		ifname = NULL;
+	}
 
 	eq_name = nm_streq0 (priv->ip_iface, ifname);
 
@@ -1343,13 +1340,12 @@ nm_device_set_ip_ifindex (NMDevice *self, int ifindex)
 	const char *ifname = NULL;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+	g_return_val_if_fail (nm_device_is_activating (self), FALSE);
 
 	if (ifindex > 0) {
 		ifname = nm_platform_if_indextoname (nm_device_get_platform (self), ifindex, ifname_buf);
-		if (!ifname) {
+		if (!ifname)
 			_LOGW (LOGD_DEVICE, "ip-ifindex: ifindex %d not found", ifindex);
-			return FALSE;
-		}
 	}
 
 	_set_ip_ifindex (self, ifindex, ifname);
@@ -1372,9 +1368,13 @@ nm_device_set_ip_iface (NMDevice *self, const char *ifname)
 	int ifindex = 0;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+	g_return_val_if_fail (nm_device_is_activating (self), FALSE);
 
-	if (ifname)
+	if (ifname) {
 		ifindex = nm_platform_if_nametoindex (nm_device_get_platform (self), ifname);
+		if (ifindex <= 0)
+			_LOGW (LOGD_DEVICE, "ip-ifindex: ifname %s not found", ifname);
+	}
 
 	_set_ip_ifindex (self, ifindex, ifname);
 	return ifindex > 0;
