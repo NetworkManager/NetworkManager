@@ -187,8 +187,7 @@ config_h.set10('WITH_JANSSON', jansson_dep.found())
 
 if jansson_dep.found()
   jansson_libdir = jansson_dep.get_pkgconfig_variable('libdir')
-  readelf = find_program('readelf', 'readelf')
-  res = run_command(readelf, '-d', join_paths(jansson_libdir, 'libjansson.so'))
+  res = run_command(find_program('eu-readelf', 'readelf'), '-d', join_paths(jansson_libdir, 'libjansson.so'))
   jansson_soname = ''
   foreach line: res.stdout().split('\n')
     if line.strip().contains('SONAME')
