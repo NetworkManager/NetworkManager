@@ -94,8 +94,7 @@ modem_added_cb (NMModemManager *manager,
 	 */
 	if (driver && strstr (driver, "bluetooth")) {
 		nm_log_info (LOGD_MB, "ignoring modem '%s' (no associated Bluetooth device)",
-		             nm_modem_get_data_port (modem)
-		               ?: nm_modem_get_control_port (modem));
+		             nm_modem_get_control_port (modem));
 		return;
 	}
 

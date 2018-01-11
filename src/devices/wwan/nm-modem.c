@@ -1399,14 +1399,6 @@ nm_modem_get_control_port (NMModem *self)
 	return NM_MODEM_GET_PRIVATE (self)->control_port;
 }
 
-const char *
-nm_modem_get_data_port (NMModem *self)
-{
-	g_return_val_if_fail (NM_IS_MODEM (self), NULL);
-
-	return NM_MODEM_GET_PRIVATE (self)->data_port;
-}
-
 int
 nm_modem_get_ip_ifindex (NMModem *self)
 {

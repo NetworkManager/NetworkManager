@@ -660,9 +660,7 @@ component_added (NMDevice *device, GObject *component)
 		gs_free char *base = NULL;
 
 		base = g_path_get_basename (priv->rfcomm_iface);
-		if (!NM_IN_STRSET (base,
-		                   nm_modem_get_control_port (modem),
-		                   nm_modem_get_data_port (modem)))
+		if (!nm_streq (base, nm_modem_get_control_port (modem)))
 			return FALSE;
 	}
 
