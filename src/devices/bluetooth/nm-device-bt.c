@@ -540,11 +540,16 @@ modem_ip4_config_result (NMModem *modem,
 }
 
 static void
-data_port_changed_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
+ip_ifindex_changed_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 {
-	NMDevice *self = NM_DEVICE (user_data);
+	NMDevice *device = NM_DEVICE (user_data);
 
-	nm_device_set_ip_iface (self, nm_modem_get_data_port (modem));
+	if (!nm_device_set_ip_ifindex (device,
+	                               nm_modem_get_ip_ifindex (modem))) {
+		nm_device_state_changed (device,
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+	}
 }
 
 static gboolean
@@ -640,29 +645,26 @@ component_added (NMDevice *device, GObject *component)
 	NMDeviceBt *self = NM_DEVICE_BT (device);
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
 	NMModem *modem;
-	const gchar *modem_data_port;
-	const gchar *modem_control_port;
-	char *base;
 	NMDeviceState state;
 	NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
 
-	if (!component || !NM_IS_MODEM (component))
+	if (   !component
+	    || !NM_IS_MODEM (component))
 		return FALSE;
+
 	modem = NM_MODEM (component);
-
-	modem_data_port = nm_modem_get_data_port (modem);
-	modem_control_port = nm_modem_get_control_port (modem);
-	g_return_val_if_fail (modem_data_port != NULL || modem_control_port != NULL, FALSE);
-
 	if (!priv->rfcomm_iface)
 		return FALSE;
 
-	base = g_path_get_basename (priv->rfcomm_iface);
-	if (g_strcmp0 (base, modem_data_port) && g_strcmp0 (base, modem_control_port)) {
-		g_free (base);
-		return FALSE;
+	{
+		gs_free char *base = NULL;
+
+		base = g_path_get_basename (priv->rfcomm_iface);
+		if (!NM_IN_STRSET (base,
+		                   nm_modem_get_control_port (modem),
+		                   nm_modem_get_data_port (modem)))
+			return FALSE;
 	}
-	g_free (base);
 
 	/* Got the modem */
 	nm_clear_g_source (&priv->timeout_id);
@@ -696,7 +698,7 @@ component_added (NMDevice *device, GObject *component)
 	g_signal_connect (modem, NM_MODEM_STATE_CHANGED, G_CALLBACK (modem_state_cb), self);
 	g_signal_connect (modem, NM_MODEM_REMOVED, G_CALLBACK (modem_removed_cb), self);
 
-	g_signal_connect (modem, "notify::" NM_MODEM_DATA_PORT, G_CALLBACK (data_port_changed_cb), self);
+	g_signal_connect (modem, "notify::" NM_MODEM_IP_IFINDEX, G_CALLBACK (ip_ifindex_changed_cb), self);
 
 	/* Kick off the modem connection */
 	if (!modem_stage1 (self, modem, &failure_reason))

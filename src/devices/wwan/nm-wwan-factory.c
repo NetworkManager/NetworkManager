@@ -80,7 +80,7 @@ modem_added_cb (NMModemManager *manager,
 {
 	NMWwanFactory *self = NM_WWAN_FACTORY (user_data);
 	NMDevice *device;
-	const char *driver, *port;
+	const char *driver;
 
 	/* Do nothing if the modem was consumed by some other plugin */
 	if (nm_device_factory_emit_component_added (NM_DEVICE_FACTORY (self), G_OBJECT (modem)))
@@ -93,10 +93,9 @@ modem_added_cb (NMModemManager *manager,
 	 * by the Bluetooth code during the connection process.
 	 */
 	if (driver && strstr (driver, "bluetooth")) {
-		port = nm_modem_get_data_port (modem);
-		if (!port)
-			port = nm_modem_get_control_port (modem);
-		nm_log_info (LOGD_MB, "ignoring modem '%s' (no associated Bluetooth device)", port);
+		nm_log_info (LOGD_MB, "ignoring modem '%s' (no associated Bluetooth device)",
+		             nm_modem_get_data_port (modem)
+		               ?: nm_modem_get_control_port (modem));
 		return;
 	}
 

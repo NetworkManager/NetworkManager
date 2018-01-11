@@ -411,20 +411,19 @@ connect_ready (MMModemSimple *simple_iface,
 	if (self->_priv.ipv6_config)
 		ip6_method = get_bearer_ip_method (self->_priv.ipv6_config);
 
-	if (ip4_method == NM_MODEM_IP_METHOD_UNKNOWN &&
-	    ip6_method == NM_MODEM_IP_METHOD_UNKNOWN) {
-		_LOGW ("failed to connect modem: invalid bearer IP configuration");
+	if (!nm_modem_set_data_port (NM_MODEM (self),
+	                             NM_PLATFORM_GET,
+	                             mm_bearer_get_interface (self->_priv.bearer),
+	                             ip4_method,
+	                             ip6_method,
+	                             mm_bearer_get_ip_timeout (self->_priv.bearer),
+	                             &error)) {
+		_LOGW ("failed to connect modem: %s", error->message);
+		g_error_free (error);
 		nm_modem_emit_prepare_result (NM_MODEM (self), FALSE, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
 		connect_context_clear (self);
 		return;
 	}
-
-	g_object_set (self,
-	              NM_MODEM_DATA_PORT,  mm_bearer_get_interface (self->_priv.bearer),
-	              NM_MODEM_IP4_METHOD, ip4_method,
-	              NM_MODEM_IP6_METHOD, ip6_method,
-	              NM_MODEM_IP_TIMEOUT, mm_bearer_get_ip_timeout (self->_priv.bearer),
-	              NULL);
 
 	ctx->step++;
 	connect_context_step (self);

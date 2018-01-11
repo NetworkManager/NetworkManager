@@ -37,11 +37,7 @@
 #define NM_MODEM_PATH            "path"
 #define NM_MODEM_DRIVER          "driver"
 #define NM_MODEM_CONTROL_PORT    "control-port"
-#define NM_MODEM_DATA_PORT       "data-port"
 #define NM_MODEM_IP_IFINDEX      "ip-ifindex"
-#define NM_MODEM_IP4_METHOD      "ip4-method"
-#define NM_MODEM_IP6_METHOD      "ip6-method"
-#define NM_MODEM_IP_TIMEOUT      "ip-timeout"
 #define NM_MODEM_STATE           "state"
 #define NM_MODEM_DEVICE_ID       "device-id"
 #define NM_MODEM_SIM_ID          "sim-id"
@@ -175,6 +171,14 @@ const char *nm_modem_get_device_id       (NMModem *modem);
 const char *nm_modem_get_sim_id          (NMModem *modem);
 const char *nm_modem_get_sim_operator_id (NMModem *modem);
 gboolean    nm_modem_get_iid             (NMModem *modem, NMUtilsIPv6IfaceId *out_iid);
+
+gboolean    nm_modem_set_data_port (NMModem *self,
+                                    NMPlatform *platform,
+                                    const char *data_port,
+                                    NMModemIPMethod ip4_method,
+                                    NMModemIPMethod ip6_method,
+                                    guint timeout,
+                                    GError **error);
 
 gboolean    nm_modem_owns_port        (NMModem *modem, const char *iface);
 

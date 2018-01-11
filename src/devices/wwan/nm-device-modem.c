@@ -260,21 +260,26 @@ modem_ip6_config_result (NMModem *modem,
 }
 
 static void
-data_port_changed_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
+ip_ifindex_changed_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 {
-	NMDevice *self = NM_DEVICE (user_data);
-	gboolean has_ifindex;
+	NMDevice *device = NM_DEVICE (user_data);
 
-	/* We set the IP iface in the device as soon as we know it, so that we
-	 * properly ifup it if needed */
-	has_ifindex = nm_device_set_ip_iface (self, nm_modem_get_data_port (modem));
+	if (!nm_device_is_activating (device))
+		return;
+
+	if (!nm_device_set_ip_ifindex (device,
+	                               nm_modem_get_ip_ifindex (modem))) {
+		nm_device_state_changed (device,
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+		return;
+	}
 
 	/* Disable IPv6 immediately on the interface since NM handles IPv6
 	 * internally, and leaving it enabled could allow the kernel's IPv6
 	 * RA handling code to run before NM is ready.
 	 */
-	if (has_ifindex)
-		nm_device_ipv6_sysctl_set (self, "disable_ipv6", "1");
+	nm_device_ipv6_sysctl_set (device, "disable_ipv6", "1");
 }
 
 static void
@@ -629,7 +634,7 @@ set_modem (NMDeviceModem *self, NMModem *modem)
 	g_signal_connect (modem, NM_MODEM_STATE_CHANGED, G_CALLBACK (modem_state_cb), self);
 	g_signal_connect (modem, NM_MODEM_REMOVED, G_CALLBACK (modem_removed_cb), self);
 
-	g_signal_connect (modem, "notify::" NM_MODEM_DATA_PORT, G_CALLBACK (data_port_changed_cb), self);
+	g_signal_connect (modem, "notify::" NM_MODEM_IP_IFINDEX, G_CALLBACK (ip_ifindex_changed_cb), self);
 	g_signal_connect (modem, "notify::" NM_MODEM_DEVICE_ID, G_CALLBACK (ids_changed_cb), self);
 	g_signal_connect (modem, "notify::" NM_MODEM_SIM_ID, G_CALLBACK (ids_changed_cb), self);
 	g_signal_connect (modem, "notify::" NM_MODEM_SIM_OPERATOR_ID, G_CALLBACK (ids_changed_cb), self);
