@@ -34,7 +34,7 @@ sources = shared_meta_setting + files(
   'nm-meta-setting-desc.c'
 )
 
-settings_docs = 'settings-docs.c'
+settings_docs = 'settings-docs.h'
 
 if enable_introspection
   settings_docs_source = custom_target(
