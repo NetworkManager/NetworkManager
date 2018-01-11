@@ -1106,6 +1106,10 @@ const char *nm_platform_link_get_type_name (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_refresh (NMPlatform *self, int ifindex);
 void nm_platform_process_events (NMPlatform *self);
 
+const NMPlatformLink *nm_platform_process_events_ensure_link (NMPlatform *self,
+                                                              int ifindex,
+                                                              const char *ifname);
+
 gboolean nm_platform_link_set_up (NMPlatform *self, int ifindex, gboolean *out_no_firmware);
 gboolean nm_platform_link_set_down (NMPlatform *self, int ifindex);
 gboolean nm_platform_link_set_arp (NMPlatform *self, int ifindex);

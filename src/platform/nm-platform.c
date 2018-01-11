@@ -353,6 +353,45 @@ nm_platform_process_events (NMPlatform *self)
 		klass->process_events (self);
 }
 
+const NMPlatformLink *
+nm_platform_process_events_ensure_link (NMPlatform *self,
+                                        int ifindex,
+                                        const char *ifname)
+{
+	const NMPObject *obj;
+	gboolean refreshed = FALSE;
+
+	g_return_val_if_fail (NM_IS_PLATFORM (self), NULL);
+
+	if (ifindex <= 0 && !ifname)
+		return NULL;
+
+	/* we look into the cache, whether a link for given ifindex/ifname
+	 * exits. If not, we poll the netlink socket, maybe the event
+	 * with the link is waiting.
+	 *
+	 * Then we try again to find the object.
+	 *
+	 * If the link is already cached the first time, we avoid polling
+	 * the netlink socket. */
+again:
+	obj = nmp_cache_lookup_link_full (nm_platform_get_cache (self),
+	                                  ifindex,
+	                                  ifname,
+	                                  FALSE, /* also invisible. We don't care here whether udev is ready */
+	                                  NM_LINK_TYPE_NONE,
+	                                  NULL, NULL);
+	if (obj)
+		return NMP_OBJECT_CAST_LINK (obj);
+	if (!refreshed) {
+		refreshed = TRUE;
+		nm_platform_process_events (self);
+		goto again;
+	}
+
+	return NULL;
+}
+
 /*****************************************************************************/
 
 /**
