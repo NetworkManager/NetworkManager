@@ -1116,7 +1116,7 @@ init_async_got_proxy (GObject *object, GAsyncResult *result, gpointer user_data)
 
 	if (priv->auto_register) {
 		nm_secret_agent_old_register_async (init_data->self, init_data->cancellable,
-		                                init_async_registered, init_data);
+		                                    init_async_registered, init_data);
 	} else
 		init_async_complete (init_data, NULL);
 }
@@ -1137,7 +1137,7 @@ init_async_got_bus (GObject *initable, GAsyncResult *result, gpointer user_data)
 	nmdbus_agent_manager_proxy_new (priv->bus,
 	                                  G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES
 	                                | G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
-	                                NM_DBUS_INTERFACE_AGENT_MANAGER,
+	                                NM_DBUS_SERVICE,
 	                                NM_DBUS_PATH_AGENT_MANAGER,
 	                                init_data->cancellable,
 	                                init_async_got_proxy, init_data);
