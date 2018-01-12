@@ -702,17 +702,15 @@ nm_device_modem_init (NMDeviceModem *self)
 NMDevice *
 nm_device_modem_new (NMModem *modem)
 {
-	NMDevice *self;
 	NMDeviceModemCapabilities caps = NM_DEVICE_MODEM_CAPABILITY_NONE;
 	NMDeviceModemCapabilities current_caps = NM_DEVICE_MODEM_CAPABILITY_NONE;
-	const char *data_port;
 
 	g_return_val_if_fail (NM_IS_MODEM (modem), NULL);
 
 	/* Load capabilities */
 	nm_modem_get_capabilities (modem, &caps, &current_caps);
 
-	self = g_object_new (NM_TYPE_DEVICE_MODEM,
+	return g_object_new (NM_TYPE_DEVICE_MODEM,
 	                     NM_DEVICE_UDI, nm_modem_get_path (modem),
 	                     NM_DEVICE_IFACE, nm_modem_get_uid (modem),
 	                     NM_DEVICE_DRIVER, nm_modem_get_driver (modem),
@@ -723,15 +721,6 @@ nm_device_modem_new (NMModem *modem)
 	                     NM_DEVICE_MODEM_CAPABILITIES, caps,
 	                     NM_DEVICE_MODEM_CURRENT_CAPABILITIES, current_caps,
 	                     NULL);
-
-	/* If the data port is known, set it as the IP interface immediately */
-	data_port = nm_modem_get_data_port (modem);
-	if (data_port) {
-		nm_device_set_ip_iface (self, data_port);
-		nm_device_ipv6_sysctl_set (self, "disable_ipv6", "1");
-	}
-
-	return self;
 }
 
 static void
