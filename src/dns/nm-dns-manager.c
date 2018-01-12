@@ -180,7 +180,7 @@ static void _ip_config_dns_priority_changed (gpointer config,
 /*****************************************************************************/
 
 static gboolean
-domain_is_valid (const gchar *domain, gboolean check_public_suffix)
+domain_is_valid (const char *domain, gboolean check_public_suffix)
 {
 	if (*domain == '\0')
 		return FALSE;
@@ -189,6 +189,12 @@ domain_is_valid (const gchar *domain, gboolean check_public_suffix)
 		return FALSE;
 #endif
 	return TRUE;
+}
+
+static gboolean
+domain_is_routing (const char *domain)
+{
+	return domain[0] == '~';
 }
 
 /*****************************************************************************/
@@ -350,7 +356,7 @@ _ip_config_lst_head (NMDnsManager *self)
 /*****************************************************************************/
 
 static void
-add_string_item (GPtrArray *array, const char *str)
+add_string_item (GPtrArray *array, const char *str, gboolean dup)
 {
 	int i;
 
@@ -366,7 +372,7 @@ add_string_item (GPtrArray *array, const char *str)
 	}
 
 	/* No dupes, add the new item */
-	g_ptr_array_add (array, g_strdup (str));
+	g_ptr_array_add (array, dup ? g_strdup (str): (gpointer) str);
 }
 
 static void
@@ -377,14 +383,43 @@ add_dns_option_item (GPtrArray *array, const char *str)
 }
 
 static void
+add_dns_domains (GPtrArray *array, const NMIPConfig *ip_config,
+                 gboolean include_routing, gboolean dup)
+{
+	guint num_domains, num_searches, i;
+	const char *str;
+
+	num_domains = nm_ip_config_get_num_domains (ip_config);
+	num_searches = nm_ip_config_get_num_searches (ip_config);
+
+	for (i = 0; i < num_searches; i++) {
+		str = nm_ip_config_get_search (ip_config, i);
+		if (!include_routing && domain_is_routing (str))
+			continue;
+		if (!domain_is_valid (nm_utils_parse_dns_domain (str, NULL), FALSE))
+			continue;
+		add_string_item (array, str, dup);
+	}
+	if (num_domains > 1 || !num_searches) {
+		for (i = 0; i < num_domains; i++) {
+			str = nm_ip_config_get_domain (ip_config, i);
+			if (!include_routing && domain_is_routing (str))
+				continue;
+			if (!domain_is_valid (nm_utils_parse_dns_domain (str, NULL), FALSE))
+				continue;
+			add_string_item (array, str, dup);
+		}
+	}
+}
+
+static void
 merge_one_ip_config (NMResolvConfData *rc,
                      int ifindex,
                      const NMIPConfig *ip_config)
 {
 	int addr_family;
-	guint num, num_domains, num_searches, i;
+	guint num, i;
 	char buf[NM_UTILS_INET_ADDRSTRLEN + 50];
-	const char *str;
 
 	addr_family = nm_ip_config_get_addr_family (ip_config);
 
@@ -414,23 +449,10 @@ merge_one_ip_config (NMResolvConfData *rc,
 			}
 		}
 
-		add_string_item (rc->nameservers, buf);
+		add_string_item (rc->nameservers, buf, TRUE);
 	}
 
-	num_domains = nm_ip_config_get_num_domains (ip_config);
-	num_searches = nm_ip_config_get_num_searches (ip_config);
-	for (i = 0; i < num_searches; i++) {
-		str = nm_ip_config_get_search (ip_config, i);
-		if (domain_is_valid (str, FALSE))
-			add_string_item (rc->searches, str);
-	}
-	if (num_domains > 1 || !num_searches) {
-		for (i = 0; i < num_domains; i++) {
-			str = nm_ip_config_get_domain (ip_config, i);
-			if (domain_is_valid (str, FALSE))
-				add_string_item (rc->searches, str);
-		}
-	}
+	add_dns_domains (rc->searches, ip_config, FALSE, TRUE);
 
 	num = nm_ip_config_get_num_dns_options (ip_config);
 	for (i = 0; i < num; i++) {
@@ -445,7 +467,8 @@ merge_one_ip_config (NMResolvConfData *rc,
 		num = nm_ip4_config_get_num_nis_servers (ip4_config);
 		for (i = 0; i < num; i++) {
 			add_string_item (rc->nis_servers,
-			                 nm_utils_inet4_ntop (nm_ip4_config_get_nis_server (ip4_config, i), buf));
+			                 nm_utils_inet4_ntop (nm_ip4_config_get_nis_server (ip4_config, i), buf),
+			                 TRUE);
 		}
 
 		if (nm_ip4_config_get_nis_domain (ip4_config)) {
@@ -957,18 +980,21 @@ merge_global_dns_config (NMResolvConfData *rc, NMGlobalDnsConfig *global_conf)
 	options = nm_global_dns_config_get_options (global_conf);
 
 	for (i = 0; searches && searches[i]; i++) {
-		if (domain_is_valid (searches[i], FALSE))
-			add_string_item (rc->searches, searches[i]);
+		if (domain_is_routing (searches[i]))
+			continue;
+		if (!domain_is_valid (searches[i], FALSE))
+			continue;
+		add_string_item (rc->searches, searches[i], TRUE);
 	}
 
 	for (i = 0; options && options[i]; i++)
-		add_string_item (rc->options, options[i]);
+		add_string_item (rc->options, options[i], TRUE);
 
 	default_domain = nm_global_dns_config_lookup_domain (global_conf, "*");
 	g_assert (default_domain);
 	servers = nm_global_dns_domain_get_servers (default_domain);
 	for (i = 0; servers && servers[i]; i++)
-		add_string_item (rc->nameservers, servers[i]);
+		add_string_item (rc->nameservers, servers[i], TRUE);
 
 	return TRUE;
 }
@@ -1081,9 +1107,9 @@ _collect_resolv_conf_data (NMDnsManager *self,
 		    && !nm_utils_ipaddr_valid (AF_UNSPEC, priv->hostname)) {
 			hostdomain++;
 			if (domain_is_valid (hostdomain, TRUE))
-				add_string_item (rc.searches, hostdomain);
+				add_string_item (rc.searches, hostdomain, TRUE);
 			else if (domain_is_valid (priv->hostname, TRUE))
-				add_string_item (rc.searches, priv->hostname);
+				add_string_item (rc.searches, priv->hostname, TRUE);
 		}
 	}
 
@@ -1892,6 +1918,7 @@ _get_config_variant (NMDnsManager *self)
 	GVariantBuilder builder;
 	NMDnsIPConfigData *ip_data;
 	const CList *head;
+	gs_unref_ptrarray GPtrArray *array_domains = NULL;
 
 	if (priv->config_variant)
 		return priv->config_variant;
@@ -1934,18 +1961,28 @@ _get_config_variant (NMDnsManager *self)
 		                       "nameservers",
 		                       g_variant_builder_end (&strv_builder));
 
+
 		num = nm_ip_config_get_num_domains (ip_config);
+		num += nm_ip_config_get_num_searches (ip_config);
 		if (num > 0) {
-			g_variant_builder_init (&strv_builder, G_VARIANT_TYPE ("as"));
-			for (i = 0; i < num; i++) {
-				g_variant_builder_add (&strv_builder,
-				                       "s",
-				                       nm_ip_config_get_domain (ip_config, i));
+			if (!array_domains)
+				array_domains = g_ptr_array_sized_new (num);
+			else
+				g_ptr_array_set_size (array_domains, 0);
+
+			add_dns_domains (array_domains, ip_config, TRUE, FALSE);
+			if (array_domains->len) {
+				g_variant_builder_init (&strv_builder, G_VARIANT_TYPE ("as"));
+				for (i = 0; i < array_domains->len; i++) {
+					g_variant_builder_add (&strv_builder,
+					                       "s",
+					                       array_domains->pdata[i]);
+				}
+				g_variant_builder_add (&entry_builder,
+				                       "{sv}",
+				                       "domains",
+				                       g_variant_builder_end (&strv_builder));
 			}
-			g_variant_builder_add (&entry_builder,
-			                       "{sv}",
-			                       "domains",
-			                       g_variant_builder_end (&strv_builder));
 		}
 
 		ifname = nm_platform_link_get_name (NM_PLATFORM_GET, ip_data->data->ifindex);
