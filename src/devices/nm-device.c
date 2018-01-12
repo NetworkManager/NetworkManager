@@ -1138,7 +1138,7 @@ _set_ip_state (NMDevice *self, int addr_family, IpState new_state)
 
 	p =   (addr_family == AF_INET)
 	    ? &priv->ip4_state_
-        : &priv->ip6_state_;
+	    : &priv->ip6_state_;
 
 	if (*p != new_state) {
 		_LOGT (LOGD_DEVICE, "ip%c-state: set to %d (%s)",
