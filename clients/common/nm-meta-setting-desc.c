@@ -4889,7 +4889,7 @@ static const NMMetaPropertyType _pt_gobject_devices = {
 
 /*****************************************************************************/
 
-#include "settings-docs.c"
+#include "settings-docs.h"
 
 /*****************************************************************************/
 

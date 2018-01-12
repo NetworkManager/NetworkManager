@@ -200,7 +200,7 @@ libnm_glib = shared_library(
   c_args: cflags + [
     '-DNMRUNDIR="@0@"'.format(nm_pkgrundir),
   ],
-  link_with: libdeprecated_nm_glib,
+  link_whole: libdeprecated_nm_glib,
   link_args: [
     '-Wl,--version-script,@0@'.format(linker_script),
   ],

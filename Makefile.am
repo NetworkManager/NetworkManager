@@ -3343,27 +3343,27 @@ clients_common_libnmc_base_la_LIBADD = \
 $(clients_common_libnmc_base_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(clients_common_libnmc_base_la_OBJECTS): clients/common/.dirstamp
 
-clients_common_settings_doc_c = clients/common/settings-docs.c
+clients_common_settings_doc_h = clients/common/settings-docs.h
 if HAVE_INTROSPECTION
-$(clients_common_settings_doc_c): clients/common/settings-docs.xsl libnm/nm-property-docs.xml clients/common/.dirstamp
+$(clients_common_settings_doc_h): clients/common/settings-docs.xsl libnm/nm-property-docs.xml clients/common/.dirstamp
 	$(AM_V_GEN) $(XSLTPROC) --output $@ $< $(word 2,$^)
-DISTCLEANFILES += $(clients_common_settings_doc_c)
-check-local-settings-docs: $(clients_common_settings_doc_c)
+DISTCLEANFILES += $(clients_common_settings_doc_h)
+check-local-settings-docs: $(clients_common_settings_doc_h)
 	@if test -z "$$NMTST_NO_CHECK_SETTINGS_DOCS" ; then  \
-		if ! cmp -s "$(srcdir)/$(clients_common_settings_doc_c).in" "$(builddir)/$(clients_common_settings_doc_c)" ; then \
-			echo "The generated file \"$(builddir)/$(clients_common_settings_doc_c)\" differs from the source file \"$(srcdir)/$(clients_common_settings_doc_c).in\". You probably should copy the generated file over to the source file. You can skip this test by setting \$$NMTST_NO_CHECK_SETTINGS_DOCS=yes"; \
+		if ! cmp -s "$(srcdir)/$(clients_common_settings_doc_h).in" "$(builddir)/$(clients_common_settings_doc_h)" ; then \
+			echo "The generated file \"$(builddir)/$(clients_common_settings_doc_h)\" differs from the source file \"$(srcdir)/$(clients_common_settings_doc_h).in\". You probably should copy the generated file over to the source file. You can skip this test by setting \$$NMTST_NO_CHECK_SETTINGS_DOCS=yes"; \
 			false; \
 		fi;\
 	fi
 check_local += check-local-settings-docs
 else
-$(clients_common_settings_doc_c): $(clients_common_settings_doc_c).in clients/common/.dirstamp
-	$(AM_V_GEN) cp "$(srcdir)/$(clients_common_settings_doc_c).in" "$(builddir)/$(clients_common_settings_doc_c)"
+$(clients_common_settings_doc_h): $(clients_common_settings_doc_h).in clients/common/.dirstamp
+	$(AM_V_GEN) cp "$(srcdir)/$(clients_common_settings_doc_h).in" "$(builddir)/$(clients_common_settings_doc_h)"
 check-local-settings-docs:
 endif
 EXTRA_DIST += \
-	$(clients_common_settings_doc_c) \
-	$(clients_common_settings_doc_c).in
+	$(clients_common_settings_doc_h) \
+	$(clients_common_settings_doc_h).in
 
 if HAVE_INTROSPECTION
 check_ltlibraries += clients/common/libnmc.la
@@ -3392,7 +3392,7 @@ clients_common_libnmc_la_LIBADD = \
 	$(GLIB_LIBS)
 
 $(clients_common_libnmc_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(clients_common_libnmc_la_OBJECTS): $(clients_common_settings_doc_c)
+$(clients_common_libnmc_la_OBJECTS): $(clients_common_settings_doc_h)
 $(clients_common_libnmc_la_OBJECTS): clients/common/.dirstamp
 
 if HAVE_INTROSPECTION

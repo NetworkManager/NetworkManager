@@ -16,7 +16,7 @@ clients/common/nm-meta-setting-desc.c
 clients/common/nm-polkit-listener.c
 clients/common/nm-secret-agent-simple.c
 clients/common/nm-vpn-helpers.c
-clients/common/settings-docs.c.in
+clients/common/settings-docs.h.in
 clients/nm-online.c
 clients/tui/newt/nmt-newt-utils.c
 clients/tui/nm-editor-utils.c
