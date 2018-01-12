@@ -60,7 +60,7 @@ test-*.trs
 /dispatcher/tests/test-dispatcher-envp
 
 /clients/cli/nmcli
-/clients/common/settings-docs.c
+/clients/common/settings-docs.h
 /clients/tui/newt/libnmt-newt.a
 /clients/tui/nmtui
 /clients/nm-online
@@ -308,6 +308,7 @@ test-*.trs
 /libnm/nm-setting-docs.xml
 /libnm/nm-setting-docs-overrides.xml
 /clients/cli/settings-docs.c
+/clients/common/settings-docs.c
 /libnm-core/tests/test-setting-8021x
 /libnm-core/tests/test-setting-bond
 /libnm-core/tests/test-setting-dcb
