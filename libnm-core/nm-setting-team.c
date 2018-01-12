@@ -1654,6 +1654,10 @@ nm_setting_team_class_init (NMSettingTeamClass *setting_class)
 	 * Corresponds to the teamd runner.name.
 	 * Permitted values are: "roundrobin", "broadcast", "activebackup",
 	 * "loadbalance", "lacp".
+	 * When setting the runner, all the properties specific to the runner
+	 * will be reset to the default value; all the properties specific to
+	 * other runners will be set to an empty value (or if not possible to
+	 * a default value).
 	 *
 	 * Since: 1.10.2
 	 **/
