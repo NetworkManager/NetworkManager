@@ -21,16 +21,13 @@
 
 #include "nm-default.h"
 
+#include "wifi-utils-wext.h"
+
 #include <errno.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <net/ethernet.h>
 #include <unistd.h>
-
-#include "wifi-utils-private.h"
-#include "wifi-utils-wext.h"
-#include "nm-utils.h"
-#include "platform/nm-platform-utils.h"
 
 /* Hacks necessary to #include wireless.h; yay for WEXT */
 #ifndef __user
@@ -40,6 +37,10 @@
 #include <linux/types.h>
 #include <sys/socket.h>
 #include <linux/wireless.h>
+
+#include "wifi-utils-private.h"
+#include "nm-utils.h"
+#include "platform/nm-platform-utils.h"
 
 typedef struct {
 	WifiData parent;
