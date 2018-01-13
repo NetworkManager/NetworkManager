@@ -22,6 +22,8 @@
 
 #include "nm-default.h"
 
+#include "wifi-utils-nl80211.h"
+
 #include <errno.h>
 #include <string.h>
 #include <sys/ioctl.h>
@@ -32,7 +34,6 @@
 #include <linux/nl80211.h>
 
 #include "wifi-utils-private.h"
-#include "wifi-utils-nl80211.h"
 #include "platform/nm-platform.h"
 #include "platform/nm-platform-utils.h"
 #include "nm-utils.h"
