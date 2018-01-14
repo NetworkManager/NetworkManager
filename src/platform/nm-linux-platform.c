@@ -6421,7 +6421,7 @@ ip_route_get (NMPlatform *platform,
 	int try_count = 0;
 	WaitForNlResponseResult seq_result;
 	int nle;
-	nm_auto_nlmsg NMPObject *route = NULL;
+	nm_auto_nmpobj NMPObject *route = NULL;
 
 	nm_assert (NM_IS_LINUX_PLATFORM (platform));
 	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
