@@ -29,10 +29,9 @@
 #include <sys/ioctl.h>
 #include <net/ethernet.h>
 #include <unistd.h>
-#include <netlink/netlink.h>
-#include <netlink/msg.h>
 #include <linux/nl80211.h>
 
+#include "platform/nm-netlink.h"
 #include "wifi-utils-private.h"
 #include "platform/nm-platform.h"
 #include "platform/nm-platform-utils.h"
@@ -46,24 +45,6 @@
 		        _NMLOG_PREFIX_NAME \
 		        _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
 	} G_STMT_END
-
-/*****************************************************************************/
-
-static int
-_nl_nla_parse (struct nlattr *tb[], int maxtype, struct nlattr *head, int len,
-               const struct nla_policy *policy)
-{
-	return nla_parse (tb, maxtype, head, len, (struct nla_policy *) policy);
-}
-#define nla_parse(...) _nl_nla_parse(__VA_ARGS__)
-
-static int
-_nl_nla_parse_nested (struct nlattr *tb[], int maxtype, struct nlattr *nla,
-                      const struct nla_policy *policy)
-{
-	return nla_parse_nested (tb, maxtype, nla, (struct nla_policy *) policy);
-}
-#define nla_parse_nested(...) _nl_nla_parse_nested(__VA_ARGS__)
 
 /*****************************************************************************
  * Copied from libnl3/genl:

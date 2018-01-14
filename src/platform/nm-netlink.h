@@ -21,4 +21,48 @@
 #ifndef __NM_NETLINK_H__
 #define __NM_NETLINK_H__
 
+#include <netlink/msg.h>
+#include <netlink/attr.h>
+
+/*****************************************************************************
+ * libnl3 compat code
+ *****************************************************************************/
+
+static inline int
+_nl_nla_parse (struct nlattr *tb[], int maxtype, struct nlattr *head, int len,
+               const struct nla_policy *policy)
+{
+	return nla_parse (tb, maxtype, head, len, (struct nla_policy *) policy);
+}
+#define nla_parse(...) _nl_nla_parse(__VA_ARGS__)
+
+static inline int
+_nl_nlmsg_parse (struct nlmsghdr *nlh, int hdrlen, struct nlattr *tb[],
+                 int maxtype, const struct nla_policy *policy)
+{
+	return nlmsg_parse (nlh, hdrlen, tb, maxtype, (struct nla_policy *) policy);
+}
+#define nlmsg_parse(...) _nl_nlmsg_parse(__VA_ARGS__)
+
+static inline int
+_nl_nla_parse_nested (struct nlattr *tb[], int maxtype, struct nlattr *nla,
+                      const struct nla_policy *policy)
+{
+	return nla_parse_nested (tb, maxtype, nla, (struct nla_policy *) policy);
+}
+#define nla_parse_nested(...) _nl_nla_parse_nested(__VA_ARGS__)
+
+/*****************************************************************************
+ * helpers
+ *****************************************************************************/
+
+static inline void
+_nm_auto_nl_msg_cleanup (struct nl_msg **ptr)
+{
+	nlmsg_free (*ptr);
+}
+#define nm_auto_nlmsg nm_auto(_nm_auto_nl_msg_cleanup)
+
+/*****************************************************************************/
+
 #endif /* __NM_NETLINK_H__ */
