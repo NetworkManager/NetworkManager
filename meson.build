@@ -269,23 +269,6 @@ if dist_version != ''
 endif
 
 enable_wifi = get_option('wifi')
-if enable_wifi
-  nl80211_src = '''
-    #ifndef __user
-    #define __user
-    #endif
-    #include <sys/types.h>
-    #include <linux/types.h>
-    #include <sys/socket.h>
-    #include <linux/nl80211.h>
-    int main() {
-      int a = NL80211_RATE_INFO_BITRATE;
-      a++;
-    }
-  '''
-
-  assert(cc.compiles(nl80211_src), 'Linux kernel development header linux/nl80211.h not installed or not functional')
-endif
 config_h.set10('WITH_WIFI', enable_wifi)
 
 enable_iwd = get_option('iwd')
