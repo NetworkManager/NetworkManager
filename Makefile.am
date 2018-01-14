@@ -1374,6 +1374,9 @@ src_libNetworkManagerBase_la_SOURCES = \
 	src/NetworkManagerUtils.c \
 	src/NetworkManagerUtils.h \
 	\
+	src/platform/nm-netlink.c \
+	src/platform/nm-netlink.h \
+	\
 	src/platform/nmp-netns.c \
 	src/platform/nmp-netns.h \
 	src/platform/nmp-object.c \
