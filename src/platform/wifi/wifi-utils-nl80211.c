@@ -792,7 +792,6 @@ wifi_nl80211_get_qual (WifiData *data)
 	return sta_info.signal;
 }
 
-#if HAVE_NL80211_CRITICAL_PROTOCOL_CMDS
 static gboolean
 wifi_nl80211_indicate_addressing_running (WifiData *data, gboolean running)
 {
@@ -801,16 +800,21 @@ wifi_nl80211_indicate_addressing_running (WifiData *data, gboolean running)
 	int err;
 
 	msg = nl80211_alloc_msg (nl80211,
-	                         running ? NL80211_CMD_CRIT_PROTOCOL_START :
-	                         NL80211_CMD_CRIT_PROTOCOL_STOP,
+	                         running
+	                           ? 98 /* NL80211_CMD_CRIT_PROTOCOL_START */
+	                           : 99 /* NL80211_CMD_CRIT_PROTOCOL_STOP */,
 	                         0);
 	/* Despite the DHCP name, we're using this for any type of IP addressing,
 	 * DHCPv4, DHCPv6, and IPv6 SLAAC.
 	 */
-	NLA_PUT_U16 (msg, NL80211_ATTR_CRIT_PROT_ID, NL80211_CRIT_PROTO_DHCP);
+	NLA_PUT_U16 (msg,
+	             179 /* NL80211_ATTR_CRIT_PROT_ID */,
+	             1 /* NL80211_CRIT_PROTO_DHCP */);
 	if (running) {
 		/* Give DHCP 5 seconds to complete */
-		NLA_PUT_U16 (msg, NL80211_ATTR_MAX_CRIT_PROT_DURATION, 5000);
+		NLA_PUT_U16 (msg,
+		             180 /* NL80211_ATTR_MAX_CRIT_PROT_DURATION */,
+		             5000);
 	}
 
 	err = nl80211_send_and_recv (nl80211, msg, NULL, NULL);
@@ -820,7 +824,6 @@ nla_put_failure:
 	nlmsg_free (msg);
 	return FALSE;
 }
-#endif
 
 struct nl80211_wowlan_info {
 	gboolean enabled;
@@ -1077,9 +1080,7 @@ wifi_nl80211_init (int ifindex)
 		.get_rate = wifi_nl80211_get_rate,
 		.get_qual = wifi_nl80211_get_qual,
 		.get_wowlan = wifi_nl80211_get_wowlan,
-#if HAVE_NL80211_CRITICAL_PROTOCOL_CMDS
 		.indicate_addressing_running = wifi_nl80211_indicate_addressing_running,
-#endif
 		.deinit = wifi_nl80211_deinit,
 	};
 	WifiDataNl80211 *nl80211;

@@ -242,30 +242,6 @@ if test "$ac_have_nl80211" = no; then
 	AC_MSG_ERROR(Linux kernel development header linux/nl80211.h not installed or not functional)
 fi
 
-if test "$with_wifi" = "yes"; then
-	AC_MSG_CHECKING([Linux kernel nl80211 Critical Protocol Start/Stop])
-	AC_COMPILE_IFELSE(
-	                  [AC_LANG_PROGRAM(
-	                                   [[#ifndef __user
-	                                     #define __user
-	                                     #endif
-	                                     #include <sys/types.h>
-	                                     #include <linux/types.h>
-	                                     #include <sys/socket.h>
-	                                     #include <linux/nl80211.h>]],
-	                                   [[unsigned a = NL80211_CMD_CRIT_PROTOCOL_START; a++;]])],
-	                  [ac_have_nl80211_critproto=yes],
-	                  [ac_have_nl80211_critproto=no])
-	AC_MSG_RESULT($ac_have_nl80211_critproto)
-else
-	ac_have_nl80211_critproto='no'
-fi
-if test "$ac_have_nl80211_critproto" = yes; then
-	AC_DEFINE(HAVE_NL80211_CRITICAL_PROTOCOL_CMDS, 1, [Define if nl80211 has critical protocol support])
-else
-	AC_DEFINE(HAVE_NL80211_CRITICAL_PROTOCOL_CMDS, 0, [Define if nl80211 has critical protocol support])
-fi
-
 dnl
 dnl Default to using wpa_supplicant but allow IWD as wifi backend
 dnl

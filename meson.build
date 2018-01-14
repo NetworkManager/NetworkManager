@@ -285,22 +285,6 @@ if enable_wifi
   '''
 
   assert(cc.compiles(nl80211_src), 'Linux kernel development header linux/nl80211.h not installed or not functional')
-
-  nl80211_crit_proto_src = '''
-    #ifndef __user
-    #define __user
-    #endif
-    #include <sys/types.h>
-    #include <linux/types.h>
-    #include <sys/socket.h>
-    #include <linux/nl80211.h>
-    int main() {
-      unsigned a = NL80211_CMD_CRIT_PROTOCOL_START;
-      a++;
-    }
-  '''
-
-  config_h.set10('HAVE_NL80211_CRITICAL_PROTOCOL_CMDS', cc.compiles(nl80211_crit_proto_src))
 endif
 config_h.set10('WITH_WIFI', enable_wifi)
 
