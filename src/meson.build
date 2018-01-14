@@ -54,6 +54,7 @@ sources = files(
   'dhcp/nm-dhcp-utils.c',
   'ndisc/nm-lndp-ndisc.c',
   'ndisc/nm-ndisc.c',
+  'platform/nm-netlink.c',
   'platform/wifi/wifi-utils-nl80211.c',
   'platform/wifi/wifi-utils.c',
   'platform/nm-linux-platform.c',
