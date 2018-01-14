@@ -259,11 +259,12 @@ out:
 typedef struct {
 	WifiData parent;
 	struct nl_sock *nl_sock;
-	int id;
 	struct nl_cb *nl_cb;
 	guint32 *freqs;
+	int id;
 	int num_freqs;
 	int phy;
+	bool can_wowlan:1;
 } WifiDataNl80211;
 
 static int
@@ -851,9 +852,11 @@ wifi_nl80211_get_wowlan (WifiData *data)
 	struct nl_msg *msg;
 	struct nl80211_wowlan_info info;
 
+	if (!nl80211->can_wowlan)
+		return FALSE;
+
 	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_GET_WOWLAN, 0);
 	nl80211_send_and_recv (nl80211, msg, nl80211_wowlan_handler, &info);
-
 	return info.enabled;
 }
 
@@ -1063,6 +1066,22 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 WifiData *
 wifi_nl80211_init (int ifindex)
 {
+	static const WifiDataClass klass = {
+		.struct_size = sizeof (WifiDataNl80211),
+		.get_mode = wifi_nl80211_get_mode,
+		.set_mode = wifi_nl80211_set_mode,
+		.set_powersave = wifi_nl80211_set_powersave,
+		.get_freq = wifi_nl80211_get_freq,
+		.find_freq = wifi_nl80211_find_freq,
+		.get_bssid = wifi_nl80211_get_bssid,
+		.get_rate = wifi_nl80211_get_rate,
+		.get_qual = wifi_nl80211_get_qual,
+		.get_wowlan = wifi_nl80211_get_wowlan,
+#if HAVE_NL80211_CRITICAL_PROTOCOL_CMDS
+		.indicate_addressing_running = wifi_nl80211_indicate_addressing_running,
+#endif
+		.deinit = wifi_nl80211_deinit,
+	};
 	WifiDataNl80211 *nl80211;
 	struct nl_msg *msg;
 	struct nl80211_device_info device_info = {};
@@ -1074,19 +1093,7 @@ wifi_nl80211_init (int ifindex)
 		nm_sprintf_buf (ifname, "if %d", ifindex);
 	}
 
-	nl80211 = wifi_data_new (ifindex, sizeof (*nl80211));
-	nl80211->parent.get_mode = wifi_nl80211_get_mode;
-	nl80211->parent.set_mode = wifi_nl80211_set_mode;
-	nl80211->parent.set_powersave = wifi_nl80211_set_powersave;
-	nl80211->parent.get_freq = wifi_nl80211_get_freq;
-	nl80211->parent.find_freq = wifi_nl80211_find_freq;
-	nl80211->parent.get_bssid = wifi_nl80211_get_bssid;
-	nl80211->parent.get_rate = wifi_nl80211_get_rate;
-	nl80211->parent.get_qual = wifi_nl80211_get_qual;
-#if HAVE_NL80211_CRITICAL_PROTOCOL_CMDS
-	nl80211->parent.indicate_addressing_running = wifi_nl80211_indicate_addressing_running;
-#endif
-	nl80211->parent.deinit = wifi_nl80211_deinit;
+	nl80211 = wifi_data_new (&klass, ifindex);
 
 	nl80211->nl_sock = nl_socket_alloc ();
 	if (nl80211->nl_sock == NULL)
@@ -1154,18 +1161,15 @@ wifi_nl80211_init (int ifindex)
 	nl80211->freqs = device_info.freqs;
 	nl80211->num_freqs = device_info.num_freqs;
 	nl80211->parent.caps = device_info.caps;
-
-	if (device_info.can_wowlan)
-		nl80211->parent.get_wowlan = wifi_nl80211_get_wowlan;
+	nl80211->can_wowlan = device_info.can_wowlan;
 
 	_LOGI (LOGD_PLATFORM | LOGD_WIFI,
 	       "(%s): using nl80211 for WiFi device control",
 	       ifname);
-
 	return (WifiData *) nl80211;
 
 error:
-	wifi_utils_deinit ((WifiData *) nl80211);
+	wifi_utils_unref ((WifiData *) nl80211);
 	return NULL;
 }
 
