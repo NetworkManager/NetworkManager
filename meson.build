@@ -277,25 +277,7 @@ if enable_iwd
 endif
 config_h.set10('WITH_IWD', enable_iwd)
 
-# Default to using WEXT but allow it to be disabled
 enable_wext = get_option('wext')
-if enable_wext
-  assert(enable_wifi, 'Enabling WEXT support and disabling Wi-Fi makes no sense')
-  iwevgenie_src = '''
-    #ifndef __user
-    #define __user
-    #endif
-    #include <sys/types.h>
-    #include <linux/types.h>
-    #include <sys/socket.h>
-    #include <linux/wireless.h>
-    #ifndef IWEVGENIE
-    #error "not found"
-    #endif
-  '''
-
-  assert(cc.compiles(iwevgenie_src), 'Linux kernel development header linux/wireless.h not installed or not functional')
-endif
 config_h.set10('HAVE_WEXT', enable_wext)
 
 # Checks for libdl - on certain platforms its part of libc

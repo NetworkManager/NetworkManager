@@ -199,25 +199,6 @@ if test x"$ac_with_wext" = x"yes"; then
 	if test "$enable_wifi" != "yes"; then
 		AC_MSG_ERROR(Enabling WEXT support and disabling Wi-Fi makes no sense)
 	fi
-	AC_MSG_CHECKING([Linux kernel WEXT headers])
-	AC_COMPILE_IFELSE(
-	                  [AC_LANG_PROGRAM(
-	                                   [[#ifndef __user
-	                                     #define __user
-	                                     #endif
-	                                     #include <sys/types.h>
-	                                     #include <linux/types.h>
-	                                     #include <sys/socket.h>
-	                                     #include <linux/wireless.h>]],
-	                                   [[#ifndef IWEVGENIE
-	                                     #error "not found"
-	                                     #endif]])],
-	                  [ac_have_iwevgenie=yes],
-	                  [ac_have_iwevgenie=no])
-	AC_MSG_RESULT($ac_have_iwevgenie)
-	if test "$ac_have_iwevgenie" = no; then
-		AC_MSG_ERROR(Linux kernel development header linux/wireless.h not installed or not functional)
-	fi
 	AC_DEFINE(HAVE_WEXT, 1, [Define if you have Linux Wireless Extensions support])
 else
 	AC_DEFINE(HAVE_WEXT, 0, [Define if you have Linux Wireless Extensions support])
