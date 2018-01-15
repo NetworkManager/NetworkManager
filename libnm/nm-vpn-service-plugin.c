@@ -972,11 +972,6 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 		goto out;
 
 	priv->dbus_vpn_service_plugin = nmdbus_vpn_plugin_skeleton_new ();
-	if (!g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (priv->dbus_vpn_service_plugin),
-	                                       connection,
-	                                       NM_VPN_DBUS_PLUGIN_PATH,
-	                                       error))
-		goto out;
 
 	_nm_dbus_bind_properties (plugin, priv->dbus_vpn_service_plugin);
 	_nm_dbus_bind_methods (plugin, priv->dbus_vpn_service_plugin,
@@ -990,6 +985,12 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	                       "SetIp6Config", impl_vpn_service_plugin_set_ip6_config,
 	                       "SetFailure", impl_vpn_service_plugin_set_failure,
 	                       NULL);
+
+	if (!g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (priv->dbus_vpn_service_plugin),
+	                                       connection,
+	                                       NM_VPN_DBUS_PLUGIN_PATH,
+	                                       error))
+		goto out;
 
 	nm_vpn_service_plugin_set_connection (plugin, connection);
 	nm_vpn_service_plugin_set_state (plugin, NM_VPN_SERVICE_STATE_INIT);
@@ -1083,6 +1084,11 @@ dispose (GObject *object)
 	if (err) {
 		g_warning ("Error disconnecting VPN connection: %s", err->message);
 		g_error_free (err);
+	}
+
+	if (priv->dbus_vpn_service_plugin) {
+		g_dbus_interface_skeleton_unexport (G_DBUS_INTERFACE_SKELETON (priv->dbus_vpn_service_plugin));
+		g_clear_object (&priv->dbus_vpn_service_plugin);
 	}
 
 	G_OBJECT_CLASS (nm_vpn_service_plugin_parent_class)->dispose (object);
