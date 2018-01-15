@@ -61,6 +61,11 @@
 %endif
 %bcond_without test
 %bcond_with    sanitizer
+%if 0%{?fedora} > 28 || 0%{?rhel} > 7
+%bcond_with libnm_glib
+%else
+%bcond_without libnm_glib
+%endif
 
 ###############################################################################
 
@@ -473,7 +478,12 @@ intltoolize --automake --copy --force
 	--with-config-plugins-default='ifcfg-rh,ibft' \
 	--with-config-dns-rc-manager-default=symlink \
 	--with-config-logging-backend-default=journal \
-	--enable-json-validation
+	--enable-json-validation \
+%if %{with libnm_glib}
+	--with-libnm-glib
+%else
+	--without-libnm-glib
+%endif
 
 make %{?_smp_mflags}
 
@@ -640,13 +650,16 @@ fi
 %{_libdir}/%{name}/libnm-ppp-plugin.so
 %endif
 
+%if %{with libnm_glib}
 %files glib -f %{name}.lang
 %{_libdir}/libnm-glib.so.*
 %{_libdir}/libnm-glib-vpn.so.*
 %{_libdir}/libnm-util.so.*
 %{_libdir}/girepository-1.0/NetworkManager-1.0.typelib
 %{_libdir}/girepository-1.0/NMClient-1.0.typelib
+%endif
 
+%if %{with libnm_glib}
 %files glib-devel
 %doc docs/api/html/*
 %dir %{_includedir}/libnm-glib
@@ -673,10 +686,9 @@ fi
 %{_datadir}/gtk-doc/html/libnm-glib/*
 %dir %{_datadir}/gtk-doc/html/libnm-util
 %{_datadir}/gtk-doc/html/libnm-util/*
-%dir %{_datadir}/gtk-doc/html/NetworkManager
-%{_datadir}/gtk-doc/html/NetworkManager/*
 %{_datadir}/vala/vapi/libnm-*.deps
 %{_datadir}/vala/vapi/libnm-*.vapi
+%endif
 
 %files libnm -f %{name}.lang
 %{_libdir}/libnm.so.*
@@ -691,6 +703,8 @@ fi
 %{_datadir}/gir-1.0/NM-1.0.gir
 %dir %{_datadir}/gtk-doc/html/libnm
 %{_datadir}/gtk-doc/html/libnm/*
+%dir %{_datadir}/gtk-doc/html/NetworkManager
+%{_datadir}/gtk-doc/html/NetworkManager/*
 %{_datadir}/vala/vapi/libnm.deps
 %{_datadir}/vala/vapi/libnm.vapi
 %{_datadir}/dbus-1/interfaces/*.xml
