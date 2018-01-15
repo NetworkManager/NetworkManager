@@ -307,7 +307,8 @@ test_wifi_wpa_psk (const char *detail,
                    OptType key_type,
                    const char *key_data,
                    const unsigned char *expected,
-                   size_t expected_size)
+                   size_t expected_size,
+                   NMSettingWirelessSecurityPmf pmf)
 {
 	gs_unref_object NMConnection *connection = NULL;
 	gs_unref_variant GVariant *config_dict = NULL;
@@ -327,7 +328,7 @@ test_wifi_wpa_psk (const char *detail,
 	g_object_set (s_wsec,
 	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk",
 	              NM_SETTING_WIRELESS_SECURITY_PSK, key_data,
-	              NM_SETTING_WIRELESS_SECURITY_PMF, (int) NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL,
+	              NM_SETTING_WIRELESS_SECURITY_PMF, (int) pmf,
 	              NULL);
 	nm_setting_wireless_security_add_proto (s_wsec, "wpa");
 	nm_setting_wireless_security_add_proto (s_wsec, "rsn");
@@ -349,7 +350,16 @@ test_wifi_wpa_psk (const char *detail,
 	NMTST_EXPECT_NM_INFO ("Config: added 'proto' value 'WPA RSN'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'pairwise' value 'TKIP CCMP'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'group' value 'TKIP CCMP'");
-	NMTST_EXPECT_NM_INFO ("Config: added 'ieee80211w' value '1'");
+	switch (pmf) {
+	case NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL:
+		NMTST_EXPECT_NM_INFO ("Config: added 'ieee80211w' value '1'");
+		break;
+	case NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED:
+		NMTST_EXPECT_NM_INFO ("Config: added 'ieee80211w' value '2'");
+		break;
+	default:
+		break;
+	}
 	config_dict = build_supplicant_config (connection, 1500, 0);
 
 	g_test_assert_expected_messages ();
@@ -380,8 +390,12 @@ test_wifi_wpa_psk_types (void)
 	                                        0x6c, 0x2f, 0x11, 0x60, 0x5a, 0x16, 0x08, 0x93 };
 	const char *key2 = "r34lly l33t wp4 p4ssphr4s3 for t3st1ng";
 
-	test_wifi_wpa_psk ("wifi-wpa-psk-hex", TYPE_BYTES, key1, key1_expected, sizeof (key1_expected));
-	test_wifi_wpa_psk ("wifi-wep-psk-passphrase", TYPE_STRING, key2, (gconstpointer) key2, strlen (key2));
+	test_wifi_wpa_psk ("wifi-wpa-psk-hex", TYPE_BYTES, key1, key1_expected,
+	                   sizeof (key1_expected), NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL);
+	test_wifi_wpa_psk ("wifi-wep-psk-passphrase", TYPE_STRING, key2,
+	                   (gconstpointer) key2, strlen (key2), NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED);
+	test_wifi_wpa_psk ("pmf-disabled", TYPE_STRING, key2,
+	                   (gconstpointer) key2, strlen (key2), NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE);
 }
 
 static NMConnection *
@@ -439,7 +453,7 @@ test_wifi_eap_locked_bssid (void)
 	NMTST_EXPECT_NM_INFO ("Config: added 'scan_ssid' value '1'*");
 	NMTST_EXPECT_NM_INFO ("Config: added 'bssid' value '11:22:33:44:55:66'*");
 	NMTST_EXPECT_NM_INFO ("Config: added 'freq_list' value *");
-	NMTST_EXPECT_NM_INFO ("Config: added 'key_mgmt' value 'WPA-EAP'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'key_mgmt' value 'WPA-EAP WPA-EAP-SHA256'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'proto' value 'WPA RSN'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'pairwise' value 'TKIP CCMP'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'group' value 'TKIP CCMP'");
@@ -455,7 +469,7 @@ test_wifi_eap_locked_bssid (void)
 	validate_opt ("wifi-eap", config_dict, "scan_ssid", TYPE_INT, GINT_TO_POINTER (1));
 	validate_opt ("wifi-eap", config_dict, "ssid", TYPE_BYTES, ssid);
 	validate_opt ("wifi-eap", config_dict, "bssid", TYPE_KEYWORD, bssid_str);
-	validate_opt ("wifi-eap", config_dict, "key_mgmt", TYPE_KEYWORD, "WPA-EAP");
+	validate_opt ("wifi-eap", config_dict, "key_mgmt", TYPE_KEYWORD, "WPA-EAP WPA-EAP-SHA256");
 	validate_opt ("wifi-eap", config_dict, "eap", TYPE_KEYWORD, "TLS");
 	validate_opt ("wifi-eap", config_dict, "proto", TYPE_KEYWORD, "WPA RSN");
 	validate_opt ("wifi-eap", config_dict, "pairwise", TYPE_KEYWORD, "TKIP CCMP");
@@ -479,7 +493,7 @@ test_wifi_eap_unlocked_bssid (void)
 	NMTST_EXPECT_NM_INFO ("Config: added 'ssid' value 'Test SSID'*");
 	NMTST_EXPECT_NM_INFO ("Config: added 'scan_ssid' value '1'*");
 	NMTST_EXPECT_NM_INFO ("Config: added 'freq_list' value *");
-	NMTST_EXPECT_NM_INFO ("Config: added 'key_mgmt' value 'WPA-EAP'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'key_mgmt' value 'WPA-EAP WPA-EAP-SHA256'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'proto' value 'WPA RSN'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'pairwise' value 'TKIP CCMP'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'group' value 'TKIP CCMP'");
@@ -495,7 +509,7 @@ test_wifi_eap_unlocked_bssid (void)
 
 	validate_opt ("wifi-eap", config_dict, "scan_ssid", TYPE_INT, GINT_TO_POINTER (1));
 	validate_opt ("wifi-eap", config_dict, "ssid", TYPE_BYTES, ssid);
-	validate_opt ("wifi-eap", config_dict, "key_mgmt", TYPE_KEYWORD, "WPA-EAP");
+	validate_opt ("wifi-eap", config_dict, "key_mgmt", TYPE_KEYWORD, "WPA-EAP WPA-EAP-SHA256");
 	validate_opt ("wifi-eap", config_dict, "eap", TYPE_KEYWORD, "TLS");
 	validate_opt ("wifi-eap", config_dict, "proto", TYPE_KEYWORD, "WPA RSN");
 	validate_opt ("wifi-eap", config_dict, "pairwise", TYPE_KEYWORD, "TKIP CCMP");

@@ -744,17 +744,11 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 	g_return_val_if_fail (!error || !*error, FALSE);
 
 	key_mgmt = key_mgmt_conf = nm_setting_wireless_security_get_key_mgmt (setting);
-	if (pmf == NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL) {
-		if (nm_streq (key_mgmt_conf, "wpa-psk"))
-			key_mgmt_conf = "wpa-psk wpa-psk-sha256";
-		else if (nm_streq (key_mgmt_conf, "wpa-eap"))
-			key_mgmt_conf = "wpa-eap wpa-eap-sha256";
-	} else if (pmf == NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED) {
-		if (nm_streq (key_mgmt_conf, "wpa-psk"))
-			key_mgmt_conf = "wpa-psk-sha256";
-		else if (nm_streq (key_mgmt_conf, "wpa-eap"))
-			key_mgmt_conf = "wpa-eap-sha256";
-	}
+	if (nm_streq (key_mgmt, "wpa-psk"))
+		key_mgmt_conf = "wpa-psk wpa-psk-sha256";
+	else if (nm_streq (key_mgmt, "wpa-eap"))
+		key_mgmt_conf = "wpa-eap wpa-eap-sha256";
+
 	if (!add_string_val (self, key_mgmt_conf, "key_mgmt", TRUE, NULL, error))
 		return FALSE;
 
