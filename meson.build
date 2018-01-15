@@ -853,21 +853,6 @@ if enable_docs
   subdir('docs')
 endif
 
-pkg.generate(
-  version: nm_version,
-  name: nm_name,
-  description: 'System for maintaining active network connection',
-  filebase: nm_name,
-  subdirs: nm_name,
-  requires: '',
-  variables: [
-    'exec_prefix=${prefix}',
-    'libgnome_serverdir=' + nm_libexecdir,
-    'plugindir=' + nm_pkglibdir,
-    'configdir=' + nm_pkgconfdir
-  ]
-)
-
 config = 'config.h'
 
 configure_file(

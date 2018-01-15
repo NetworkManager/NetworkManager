@@ -141,7 +141,9 @@ DISTCLEANFILES += intltool-extract intltool-merge intltool-update
 
 ###############################################################################
 
+if WITH_LEGACY_LIBRARIES
 pkgconfig_DATA += NetworkManager.pc
+endif
 
 ###############################################################################
 
