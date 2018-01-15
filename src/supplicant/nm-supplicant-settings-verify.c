@@ -73,6 +73,7 @@ const char * group_allowed[] =    { "CCMP", "TKIP", "WEP104", "WEP40", NULL };
 const char * proto_allowed[] =    { "WPA", "RSN", NULL };
 const char * key_mgmt_allowed[] = { "WPA-PSK", "WPA-PSK-SHA256",
                                     "WPA-EAP", "WPA-EAP-SHA256",
+                                    "FILS-SHA256", "FILS-SHA384",
                                     "IEEE8021X", "WPA-NONE",
                                     "NONE", NULL };
 const char * auth_alg_allowed[] = { "OPEN", "SHARED", "LEAP", NULL };

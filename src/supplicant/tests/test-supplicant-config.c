@@ -118,6 +118,7 @@ build_supplicant_config (NMConnection *connection, guint mtu, guint fixed_freq)
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	if (s_wsec) {
 		NMSettingWirelessSecurityPmf pmf = nm_setting_wireless_security_get_pmf (s_wsec);
+		NMSettingWirelessSecurityFils fils = nm_setting_wireless_security_get_fils (s_wsec);
 		s_8021x = nm_connection_get_setting_802_1x (connection);
 		success = nm_supplicant_config_add_setting_wireless_security (config,
 			                                                          s_wsec,
@@ -125,6 +126,7 @@ build_supplicant_config (NMConnection *connection, guint mtu, guint fixed_freq)
 			                                                          nm_connection_get_uuid (connection),
 			                                                          mtu,
 			                                                          pmf,
+			                                                          fils,
 			                                                          &error);
 	} else {
 		success = nm_supplicant_config_add_no_security (config, &error);

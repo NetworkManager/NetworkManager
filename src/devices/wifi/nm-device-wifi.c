@@ -2381,6 +2381,7 @@ build_supplicant_config (NMDeviceWifi *self,
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wireless_sec;
 	NMSettingWirelessSecurityPmf pmf;
+	NMSettingWirelessSecurityFils fils;
 	gs_free char *value = NULL;
 
 	g_return_val_if_fail (priv->sup_iface, NULL);
@@ -2450,6 +2451,22 @@ build_supplicant_config (NMDeviceWifi *self,
 			}
 		}
 
+		/* Configure FILS (802.11ai) */
+		fils = nm_setting_wireless_security_get_fils (s_wireless_sec);
+		if (fils == NM_SETTING_WIRELESS_SECURITY_FILS_DEFAULT) {
+			value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+			                                               "wifi-sec.fils",
+			                                               NM_DEVICE (self));
+			fils = _nm_utils_ascii_str_to_int64 (value, 10,
+			                                     NM_SETTING_WIRELESS_SECURITY_FILS_DISABLE,
+			                                     NM_SETTING_WIRELESS_SECURITY_FILS_REQUIRED,
+			                                     NM_SETTING_WIRELESS_SECURITY_FILS_OPTIONAL);
+		}
+
+		/* Don't try to enable FILS on non-EAP networks */
+		if (!NM_IN_STRSET (nm_setting_wireless_security_get_key_mgmt (s_wireless_sec),  "wpa-eap"))
+			fils = NM_SETTING_WIRELESS_SECURITY_FILS_DISABLE;
+
 		s_8021x = nm_connection_get_setting_802_1x (connection);
 		if (!nm_supplicant_config_add_setting_wireless_security (config,
 		                                                         s_wireless_sec,
@@ -2457,6 +2474,7 @@ build_supplicant_config (NMDeviceWifi *self,
 		                                                         con_uuid,
 		                                                         mtu,
 		                                                         pmf,
+		                                                         fils,
 		                                                         error)) {
 			g_prefix_error (error, "802-11-wireless-security: ");
 			goto error;

@@ -752,6 +752,11 @@ ipv6.ip6-privacy=0
           <listitem><para>If left unspecified, the default value
           "<literal>optional</literal>" will be used.</para></listitem>
         </varlistentry>
+        <varlistentry>
+          <term><varname>wifi-sec.fils</varname></term>
+          <listitem><para>If left unspecified, the default value
+          "<literal>optional</literal>" will be used.</para></listitem>
+        </varlistentry>
       </variablelist>
     </para>
     </refsect2>

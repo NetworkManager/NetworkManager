@@ -415,7 +415,9 @@ security_from_vardict (GVariant *security)
 	    && array) {
 		if (g_strv_contains (array, "wpa-psk"))
 			flags |= NM_802_11_AP_SEC_KEY_MGMT_PSK;
-		if (g_strv_contains (array, "wpa-eap"))
+		if (g_strv_contains (array, "wpa-eap") ||
+		    g_strv_contains (array, "wpa-fils-sha256") ||
+		    g_strv_contains (array, "wpa-fils-sha384"))
 			flags |= NM_802_11_AP_SEC_KEY_MGMT_802_1X;
 		g_free (array);
 	}

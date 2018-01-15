@@ -733,6 +733,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
                                                     const char *con_uuid,
                                                     guint32 mtu,
                                                     NMSettingWirelessSecurityPmf pmf,
+                                                    NMSettingWirelessSecurityFils fils,
                                                     GError **error)
 {
 	const char *key_mgmt, *key_mgmt_conf, *auth_alg;
@@ -747,7 +748,17 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 	if (nm_streq (key_mgmt, "wpa-psk"))
 		key_mgmt_conf = "wpa-psk wpa-psk-sha256";
 	else if (nm_streq (key_mgmt, "wpa-eap"))
-		key_mgmt_conf = "wpa-eap wpa-eap-sha256";
+		switch (fils) {
+		case NM_SETTING_WIRELESS_SECURITY_FILS_OPTIONAL:
+			key_mgmt_conf = "wpa-eap wpa-eap-sha256 fils-sha256 fils-sha384";
+			break;
+		case NM_SETTING_WIRELESS_SECURITY_FILS_REQUIRED:
+			key_mgmt_conf = "fils-sha256 fils-sha384";
+			break;
+		default:
+			key_mgmt_conf = "wpa-eap wpa-eap-sha256";
+			break;
+		}
 
 	if (!add_string_val (self, key_mgmt_conf, "key_mgmt", TRUE, NULL, error))
 		return FALSE;
