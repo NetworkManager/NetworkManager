@@ -37,14 +37,13 @@
 #include <linux/if_tun.h>
 #include <linux/if_tunnel.h>
 #include <linux/ip6_tunnel.h>
-#include <netlink/netlink.h>
-#include <netlink/msg.h>
 #include <libudev.h>
 
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 #include "nm-setting-vlan.h"
 
+#include "nm-netlink.h"
 #include "nm-core-utils.h"
 #include "nmp-object.h"
 #include "nmp-netns.h"
@@ -952,13 +951,6 @@ _nl_addattr_l (struct nlmsghdr *n,
 	return TRUE;
 }
 
-static void
-_nm_auto_nl_msg_cleanup (void *ptr)
-{
-	nlmsg_free (*((struct nl_msg **) ptr));
-}
-#define nm_auto_nlmsg nm_auto(_nm_auto_nl_msg_cleanup)
-
 static const char *
 _nl_nlmsghdr_to_str (const struct nlmsghdr *hdr, char *buf, gsize len)
 {
@@ -1058,30 +1050,6 @@ flags_done:
 
 	return b;
 }
-
-static int
-_nl_nla_parse (struct nlattr *tb[], int maxtype, struct nlattr *head, int len,
-               const struct nla_policy *policy)
-{
-	return nla_parse (tb, maxtype, head, len, (struct nla_policy *) policy);
-}
-#define nla_parse(...) _nl_nla_parse(__VA_ARGS__)
-
-static int
-_nl_nlmsg_parse (struct nlmsghdr *nlh, int hdrlen, struct nlattr *tb[],
-                 int maxtype, const struct nla_policy *policy)
-{
-	return nlmsg_parse (nlh, hdrlen, tb, maxtype, (struct nla_policy *) policy);
-}
-#define nlmsg_parse(...) _nl_nlmsg_parse(__VA_ARGS__)
-
-static int
-_nl_nla_parse_nested (struct nlattr *tb[], int maxtype, struct nlattr *nla,
-                      const struct nla_policy *policy)
-{
-	return nla_parse_nested (tb, maxtype, nla, (struct nla_policy *) policy);
-}
-#define nla_parse_nested(...) _nl_nla_parse_nested(__VA_ARGS__)
 
 /******************************************************************
  * NMPObject/netlink functions
@@ -6421,7 +6389,7 @@ ip_route_get (NMPlatform *platform,
 	int try_count = 0;
 	WaitForNlResponseResult seq_result;
 	int nle;
-	nm_auto_nlmsg NMPObject *route = NULL;
+	nm_auto_nmpobj NMPObject *route = NULL;
 
 	nm_assert (NM_IS_LINUX_PLATFORM (platform));
 	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
@@ -7053,7 +7021,7 @@ nm_linux_platform_init (NMLinuxPlatform *self)
 	priv->delayed_action.list_master_connected = g_ptr_array_new ();
 	priv->delayed_action.list_refresh_link = g_ptr_array_new ();
 	priv->delayed_action.list_wait_for_nl_response = g_array_new (FALSE, TRUE, sizeof (DelayedActionWaitForNlResponseData));
-	priv->wifi_data = g_hash_table_new_full (nm_direct_hash, NULL, NULL, (GDestroyNotify) wifi_utils_deinit);
+	priv->wifi_data = g_hash_table_new_full (nm_direct_hash, NULL, NULL, (GDestroyNotify) wifi_utils_unref);
 }
 
 static void

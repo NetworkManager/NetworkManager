@@ -199,72 +199,11 @@ if test x"$ac_with_wext" = x"yes"; then
 	if test "$enable_wifi" != "yes"; then
 		AC_MSG_ERROR(Enabling WEXT support and disabling Wi-Fi makes no sense)
 	fi
-	AC_MSG_CHECKING([Linux kernel WEXT headers])
-	AC_COMPILE_IFELSE(
-	                  [AC_LANG_PROGRAM(
-	                                   [[#ifndef __user
-	                                     #define __user
-	                                     #endif
-	                                     #include <sys/types.h>
-	                                     #include <linux/types.h>
-	                                     #include <sys/socket.h>
-	                                     #include <linux/wireless.h>]],
-	                                   [[#ifndef IWEVGENIE
-	                                     #error "not found"
-	                                     #endif]])],
-	                  [ac_have_iwevgenie=yes],
-	                  [ac_have_iwevgenie=no])
-	AC_MSG_RESULT($ac_have_iwevgenie)
-	if test "$ac_have_iwevgenie" = no; then
-		AC_MSG_ERROR(Linux kernel development header linux/wireless.h not installed or not functional)
-	fi
 	AC_DEFINE(HAVE_WEXT, 1, [Define if you have Linux Wireless Extensions support])
 else
 	AC_DEFINE(HAVE_WEXT, 0, [Define if you have Linux Wireless Extensions support])
 fi
 AM_CONDITIONAL(WITH_WEXT, test x"${ac_with_wext}" = x"yes")
-
-AC_MSG_CHECKING([Linux kernel nl80211 headers])
-AC_COMPILE_IFELSE(
-                  [AC_LANG_PROGRAM(
-                                   [[#ifndef __user
-                                     #define __user
-                                     #endif
-                                     #include <sys/types.h>
-                                     #include <linux/types.h>
-                                     #include <sys/socket.h>
-                                     #include <linux/nl80211.h>]],
-                                   [[int a = NL80211_RATE_INFO_BITRATE; a++;]])],
-                  [ac_have_nl80211=yes],
-                  [ac_have_nl80211=no])
-AC_MSG_RESULT($ac_have_nl80211)
-if test "$ac_have_nl80211" = no; then
-	AC_MSG_ERROR(Linux kernel development header linux/nl80211.h not installed or not functional)
-fi
-
-if test "$with_wifi" = "yes"; then
-	AC_MSG_CHECKING([Linux kernel nl80211 Critical Protocol Start/Stop])
-	AC_COMPILE_IFELSE(
-	                  [AC_LANG_PROGRAM(
-	                                   [[#ifndef __user
-	                                     #define __user
-	                                     #endif
-	                                     #include <sys/types.h>
-	                                     #include <linux/types.h>
-	                                     #include <sys/socket.h>
-	                                     #include <linux/nl80211.h>]],
-	                                   [[unsigned a = NL80211_CMD_CRIT_PROTOCOL_START; a++;]])],
-	                  [ac_have_nl80211_critproto=yes],
-	                  [ac_have_nl80211_critproto=no])
-	AC_MSG_RESULT($ac_have_nl80211_critproto)
-else
-	ac_have_nl80211_critproto='no'
-fi
-if test "$ac_have_nl80211_critproto" = yes; then
-	AC_DEFINE(HAVE_NL80211_CRITICAL_PROTOCOL_CMDS, 1, [Define if nl80211 has critical protocol support])
-else
-	AC_DEFINE(HAVE_NL80211_CRITICAL_PROTOCOL_CMDS, 0, [Define if nl80211 has critical protocol support])
-fi
 
 dnl
 dnl Default to using wpa_supplicant but allow IWD as wifi backend

@@ -22,17 +22,17 @@
 
 #include "nm-default.h"
 
+#include "wifi-utils-nl80211.h"
+
 #include <errno.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <net/ethernet.h>
 #include <unistd.h>
-#include <netlink/netlink.h>
-#include <netlink/msg.h>
 #include <linux/nl80211.h>
 
+#include "platform/nm-netlink.h"
 #include "wifi-utils-private.h"
-#include "wifi-utils-nl80211.h"
 #include "platform/nm-platform.h"
 #include "platform/nm-platform-utils.h"
 #include "nm-utils.h"
@@ -45,121 +45,6 @@
 		        _NMLOG_PREFIX_NAME \
 		        _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
 	} G_STMT_END
-
-/*****************************************************************************/
-
-static int
-_nl_nla_parse (struct nlattr *tb[], int maxtype, struct nlattr *head, int len,
-               const struct nla_policy *policy)
-{
-	return nla_parse (tb, maxtype, head, len, (struct nla_policy *) policy);
-}
-#define nla_parse(...) _nl_nla_parse(__VA_ARGS__)
-
-static int
-_nl_nla_parse_nested (struct nlattr *tb[], int maxtype, struct nlattr *nla,
-                      const struct nla_policy *policy)
-{
-	return nla_parse_nested (tb, maxtype, nla, (struct nla_policy *) policy);
-}
-#define nla_parse_nested(...) _nl_nla_parse_nested(__VA_ARGS__)
-
-/*****************************************************************************
- * Copied from libnl3/genl:
- *****************************************************************************/
-
-static void *
-genlmsg_put (struct nl_msg *msg, uint32_t port, uint32_t seq, int family,
-             int hdrlen, int flags, uint8_t cmd, uint8_t version)
-{
-	struct nlmsghdr *nlh;
-	struct genlmsghdr hdr = {
-		.cmd = cmd,
-		.version = version,
-	};
-
-	nlh = nlmsg_put (msg, port, seq, family, GENL_HDRLEN + hdrlen, flags);
-	if (nlh == NULL)
-		return NULL;
-
-	memcpy (nlmsg_data (nlh), &hdr, sizeof (hdr));
-
-	return (char *) nlmsg_data (nlh) + GENL_HDRLEN;
-}
-
-static void *
-genlmsg_data (const struct genlmsghdr *gnlh)
-{
-	return ((unsigned char *) gnlh + GENL_HDRLEN);
-}
-
-static void *
-genlmsg_user_hdr (const struct genlmsghdr *gnlh)
-{
-	return genlmsg_data (gnlh);
-}
-
-static struct genlmsghdr *
-genlmsg_hdr (struct nlmsghdr *nlh)
-{
-	return nlmsg_data (nlh);
-}
-
-static void *
-genlmsg_user_data (const struct genlmsghdr *gnlh, const int hdrlen)
-{
-	return (char *) genlmsg_user_hdr (gnlh) + NLMSG_ALIGN (hdrlen);
-}
-
-static struct nlattr *
-genlmsg_attrdata (const struct genlmsghdr *gnlh, int hdrlen)
-{
-	return genlmsg_user_data (gnlh, hdrlen);
-}
-
-static int
-genlmsg_len (const struct genlmsghdr *gnlh)
-{
-	const struct nlmsghdr *nlh;
-
-	nlh = (const struct nlmsghdr *) ((const unsigned char *) gnlh - NLMSG_HDRLEN);
-	return (nlh->nlmsg_len - GENL_HDRLEN - NLMSG_HDRLEN);
-}
-
-static int
-genlmsg_attrlen (const struct genlmsghdr *gnlh, int hdrlen)
-{
-	return genlmsg_len (gnlh) - NLMSG_ALIGN (hdrlen);
-}
-
-static int
-genlmsg_valid_hdr (struct nlmsghdr *nlh, int hdrlen)
-{
-	struct genlmsghdr *ghdr;
-
-	if (!nlmsg_valid_hdr (nlh, GENL_HDRLEN))
-		return 0;
-
-	ghdr = nlmsg_data (nlh);
-	if (genlmsg_len (ghdr) < NLMSG_ALIGN (hdrlen))
-		return 0;
-
-	return 1;
-}
-
-static int
-genlmsg_parse (struct nlmsghdr *nlh, int hdrlen, struct nlattr *tb[],
-               int maxtype, const struct nla_policy *policy)
-{
-	struct genlmsghdr *ghdr;
-
-	if (!genlmsg_valid_hdr (nlh, hdrlen))
-		return -NLE_MSG_TOOSHORT;
-
-	ghdr = nlmsg_data (nlh);
-	return nla_parse (tb, maxtype, genlmsg_attrdata (ghdr, hdrlen),
-	                  genlmsg_attrlen (ghdr, hdrlen), policy);
-}
 
 /*****************************************************************************
  * Reimplementation of libnl3/genl functions:
@@ -258,11 +143,12 @@ out:
 typedef struct {
 	WifiData parent;
 	struct nl_sock *nl_sock;
-	int id;
 	struct nl_cb *nl_cb;
 	guint32 *freqs;
+	int id;
 	int num_freqs;
 	int phy;
+	bool can_wowlan:1;
 } WifiDataNl80211;
 
 static int
@@ -790,7 +676,6 @@ wifi_nl80211_get_qual (WifiData *data)
 	return sta_info.signal;
 }
 
-#if HAVE_NL80211_CRITICAL_PROTOCOL_CMDS
 static gboolean
 wifi_nl80211_indicate_addressing_running (WifiData *data, gboolean running)
 {
@@ -799,16 +684,21 @@ wifi_nl80211_indicate_addressing_running (WifiData *data, gboolean running)
 	int err;
 
 	msg = nl80211_alloc_msg (nl80211,
-	                         running ? NL80211_CMD_CRIT_PROTOCOL_START :
-	                         NL80211_CMD_CRIT_PROTOCOL_STOP,
+	                         running
+	                           ? 98 /* NL80211_CMD_CRIT_PROTOCOL_START */
+	                           : 99 /* NL80211_CMD_CRIT_PROTOCOL_STOP */,
 	                         0);
 	/* Despite the DHCP name, we're using this for any type of IP addressing,
 	 * DHCPv4, DHCPv6, and IPv6 SLAAC.
 	 */
-	NLA_PUT_U16 (msg, NL80211_ATTR_CRIT_PROT_ID, NL80211_CRIT_PROTO_DHCP);
+	NLA_PUT_U16 (msg,
+	             179 /* NL80211_ATTR_CRIT_PROT_ID */,
+	             1 /* NL80211_CRIT_PROTO_DHCP */);
 	if (running) {
 		/* Give DHCP 5 seconds to complete */
-		NLA_PUT_U16 (msg, NL80211_ATTR_MAX_CRIT_PROT_DURATION, 5000);
+		NLA_PUT_U16 (msg,
+		             180 /* NL80211_ATTR_MAX_CRIT_PROT_DURATION */,
+		             5000);
 	}
 
 	err = nl80211_send_and_recv (nl80211, msg, NULL, NULL);
@@ -818,7 +708,6 @@ nla_put_failure:
 	nlmsg_free (msg);
 	return FALSE;
 }
-#endif
 
 struct nl80211_wowlan_info {
 	gboolean enabled;
@@ -850,9 +739,11 @@ wifi_nl80211_get_wowlan (WifiData *data)
 	struct nl_msg *msg;
 	struct nl80211_wowlan_info info;
 
+	if (!nl80211->can_wowlan)
+		return FALSE;
+
 	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_GET_WOWLAN, 0);
 	nl80211_send_and_recv (nl80211, msg, nl80211_wowlan_handler, &info);
-
 	return info.enabled;
 }
 
@@ -1062,6 +953,20 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 WifiData *
 wifi_nl80211_init (int ifindex)
 {
+	static const WifiDataClass klass = {
+		.struct_size = sizeof (WifiDataNl80211),
+		.get_mode = wifi_nl80211_get_mode,
+		.set_mode = wifi_nl80211_set_mode,
+		.set_powersave = wifi_nl80211_set_powersave,
+		.get_freq = wifi_nl80211_get_freq,
+		.find_freq = wifi_nl80211_find_freq,
+		.get_bssid = wifi_nl80211_get_bssid,
+		.get_rate = wifi_nl80211_get_rate,
+		.get_qual = wifi_nl80211_get_qual,
+		.get_wowlan = wifi_nl80211_get_wowlan,
+		.indicate_addressing_running = wifi_nl80211_indicate_addressing_running,
+		.deinit = wifi_nl80211_deinit,
+	};
 	WifiDataNl80211 *nl80211;
 	struct nl_msg *msg;
 	struct nl80211_device_info device_info = {};
@@ -1073,19 +978,7 @@ wifi_nl80211_init (int ifindex)
 		nm_sprintf_buf (ifname, "if %d", ifindex);
 	}
 
-	nl80211 = wifi_data_new (ifindex, sizeof (*nl80211));
-	nl80211->parent.get_mode = wifi_nl80211_get_mode;
-	nl80211->parent.set_mode = wifi_nl80211_set_mode;
-	nl80211->parent.set_powersave = wifi_nl80211_set_powersave;
-	nl80211->parent.get_freq = wifi_nl80211_get_freq;
-	nl80211->parent.find_freq = wifi_nl80211_find_freq;
-	nl80211->parent.get_bssid = wifi_nl80211_get_bssid;
-	nl80211->parent.get_rate = wifi_nl80211_get_rate;
-	nl80211->parent.get_qual = wifi_nl80211_get_qual;
-#if HAVE_NL80211_CRITICAL_PROTOCOL_CMDS
-	nl80211->parent.indicate_addressing_running = wifi_nl80211_indicate_addressing_running;
-#endif
-	nl80211->parent.deinit = wifi_nl80211_deinit;
+	nl80211 = wifi_data_new (&klass, ifindex);
 
 	nl80211->nl_sock = nl_socket_alloc ();
 	if (nl80211->nl_sock == NULL)
@@ -1153,18 +1046,15 @@ wifi_nl80211_init (int ifindex)
 	nl80211->freqs = device_info.freqs;
 	nl80211->num_freqs = device_info.num_freqs;
 	nl80211->parent.caps = device_info.caps;
-
-	if (device_info.can_wowlan)
-		nl80211->parent.get_wowlan = wifi_nl80211_get_wowlan;
+	nl80211->can_wowlan = device_info.can_wowlan;
 
 	_LOGI (LOGD_PLATFORM | LOGD_WIFI,
 	       "(%s): using nl80211 for WiFi device control",
 	       ifname);
-
 	return (WifiData *) nl80211;
 
 error:
-	wifi_utils_deinit ((WifiData *) nl80211);
+	wifi_utils_unref ((WifiData *) nl80211);
 	return NULL;
 }
 
