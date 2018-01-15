@@ -1,4 +1,25 @@
 ==============================================
+NetworkManager-1.8.6
+Overview of changes since NetworkManager-1.8.4
+==============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Fix a daemon crash on permission check (bgo#787897)
+* Fix a daemon crash on VPN state change (bgo#787893)
+* Fix a nmcli crash in interactive mode's describe command (bgo#788104)
+* Fix termination of the nmcli interactive mode (rh#1517401)
+* Properly handle route metric of zero in keyfiles
+* Add support for DSA switch devices (rh#1371289)
+* Fix a memory leak of connection D-Bus objects (rh#1461643)
+* A double close that could potentially race with the D-Bus thread
+  reusing the same file descriptor (rh#1451236)
+* Connectivity check fixes (bgo#785281) (bgo#784629)
+* Fix the metered properties handling in libnm
+* Avoid dropping agent secrets unnecesarily (bgo#789383)
+* Fix the asynchronous initialization of a secret agent in libnm
+
+==============================================
 NetworkManager-1.8.4
 Overview of changes since NetworkManager-1.8.2
 ==============================================
