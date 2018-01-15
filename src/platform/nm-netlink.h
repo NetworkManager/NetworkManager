@@ -53,6 +53,23 @@ _nl_nla_parse_nested (struct nlattr *tb[], int maxtype, struct nlattr *nla,
 #define nla_parse_nested(...) _nl_nla_parse_nested(__VA_ARGS__)
 
 /*****************************************************************************
+ *  Reimplementations/copied from libnl3/genl
+ *****************************************************************************/
+
+void *genlmsg_put (struct nl_msg *msg, uint32_t port, uint32_t seq, int family,
+                   int hdrlen, int flags, uint8_t cmd, uint8_t version);
+void *genlmsg_data (const struct genlmsghdr *gnlh);
+void *genlmsg_user_hdr (const struct genlmsghdr *gnlh);
+struct genlmsghdr *genlmsg_hdr (struct nlmsghdr *nlh);
+void *genlmsg_user_data (const struct genlmsghdr *gnlh, const int hdrlen);
+struct nlattr *genlmsg_attrdata (const struct genlmsghdr *gnlh, int hdrlen);
+int genlmsg_len (const struct genlmsghdr *gnlh);
+int genlmsg_attrlen (const struct genlmsghdr *gnlh, int hdrlen);
+int genlmsg_valid_hdr (struct nlmsghdr *nlh, int hdrlen);
+int genlmsg_parse (struct nlmsghdr *nlh, int hdrlen, struct nlattr *tb[],
+                   int maxtype, const struct nla_policy *policy);
+
+/*****************************************************************************
  * helpers
  *****************************************************************************/
 
