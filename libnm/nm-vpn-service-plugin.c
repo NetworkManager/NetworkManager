@@ -945,10 +945,9 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 {
 	NMVpnServicePlugin *plugin = NM_VPN_SERVICE_PLUGIN (initable);
 	NMVpnServicePluginPrivate *priv = NM_VPN_SERVICE_PLUGIN_GET_PRIVATE (plugin);
-	GDBusConnection *connection = NULL;
-	GDBusProxy *proxy;
+	gs_unref_object GDBusConnection *connection = NULL;
+	gs_unref_object GDBusProxy *proxy = NULL;
 	GVariant *ret;
-	gboolean success = FALSE;
 
 	if (!priv->dbus_service_name) {
 		g_set_error_literal (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
@@ -969,7 +968,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	                               DBUS_INTERFACE_DBUS,
 	                               cancellable, error);
 	if (!proxy)
-		goto out;
+		return FALSE;
 
 	priv->dbus_vpn_service_plugin = nmdbus_vpn_plugin_skeleton_new ();
 
@@ -990,7 +989,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	                                       connection,
 	                                       NM_VPN_DBUS_PLUGIN_PATH,
 	                                       error))
-		goto out;
+		return FALSE;
 
 	nm_vpn_service_plugin_set_connection (plugin, connection);
 	nm_vpn_service_plugin_set_state (plugin, NM_VPN_SERVICE_STATE_INIT);
@@ -1000,20 +999,14 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	                              g_variant_new ("(su)", priv->dbus_service_name, 0),
 	                              G_DBUS_CALL_FLAGS_NONE, -1,
 	                              cancellable, error);
-	g_object_unref (proxy);
 	if (!ret) {
 		if (error && *error)
 			g_dbus_error_strip_remote_error (*error);
-		goto out;
+		return FALSE;
 	}
 	g_variant_unref (ret);
 
-	success = TRUE;
-
- out:
-	g_clear_object (&connection);
-
-	return success;
+	return TRUE;
 }
 
 static void
