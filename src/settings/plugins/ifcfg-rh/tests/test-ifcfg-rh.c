@@ -6276,7 +6276,9 @@ test_write_wifi_wpa_eap_tls (void)
 	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
 
-	g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-eap", NULL);
+	g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-eap",
+	              NM_SETTING_WIRELESS_SECURITY_FILS, (int) NM_SETTING_WIRELESS_SECURITY_FILS_REQUIRED,
+	              NULL);
 	nm_setting_wireless_security_add_proto (s_wsec, "wpa");
 	nm_setting_wireless_security_add_pairwise (s_wsec, "tkip");
 	nm_setting_wireless_security_add_group (s_wsec, "tkip");
