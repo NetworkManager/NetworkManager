@@ -2467,6 +2467,20 @@ build_supplicant_config (NMDeviceWifi *self,
 		if (!NM_IN_STRSET (nm_setting_wireless_security_get_key_mgmt (s_wireless_sec),  "wpa-eap"))
 			fils = NM_SETTING_WIRELESS_SECURITY_FILS_DISABLE;
 
+		/* Check if we actually support FILS */
+		if (nm_supplicant_interface_get_fils_support (priv->sup_iface) != NM_SUPPLICANT_FEATURE_YES) {
+			if (fils == NM_SETTING_WIRELESS_SECURITY_FILS_REQUIRED) {
+				g_set_error_literal (error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG,
+				                     "Supplicant does not support FILS");
+				goto error;
+			} else if (fils == NM_SETTING_WIRELESS_SECURITY_FILS_OPTIONAL) {
+				/* To be on the safe side, assume no support if we can't determine
+				 * capabilities.
+				 */
+				fils = NM_SETTING_WIRELESS_SECURITY_FILS_DISABLE;
+			}
+		}
+
 		s_8021x = nm_connection_get_setting_802_1x (connection);
 		if (!nm_supplicant_config_add_setting_wireless_security (config,
 		                                                         s_wireless_sec,
