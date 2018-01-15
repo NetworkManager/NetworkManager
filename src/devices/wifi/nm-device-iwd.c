@@ -77,6 +77,7 @@ typedef struct {
 	NMActRequestGetSecretsCallId *wifi_secrets_id;
 	bool            enabled:1;
 	bool            can_scan:1;
+	bool            can_connect:1;
 	bool            scanning:1;
 } NMDeviceIwdPrivate;
 
@@ -765,6 +766,15 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 
 	return priv->enabled && priv->dbus_obj;
+}
+
+static gboolean
+get_autoconnect_allowed (NMDevice *device)
+{
+	NMDeviceIwdPrivate *priv;
+
+	priv = NM_DEVICE_IWD_GET_PRIVATE (NM_DEVICE_IWD (device));
+	return priv->enabled && priv->dbus_obj && priv->can_connect;
 }
 
 static gboolean
@@ -1637,6 +1647,7 @@ state_changed (NMDeviceIwd *self, const gchar *new_state)
 	NMDevice *device = NM_DEVICE (self);
 	NMDeviceState dev_state = nm_device_get_state (device);
 	gboolean iwd_connection = FALSE;
+	gboolean can_connect;
 
 	_LOGI (LOGD_DEVICE | LOGD_WIFI, "new IWD device state is %s", new_state);
 
@@ -1647,6 +1658,13 @@ state_changed (NMDeviceIwd *self, const gchar *new_state)
 
 	/* Don't allow scanning while connecting, disconnecting or roaming */
 	priv->can_scan = NM_IN_STRSET (new_state, "connected", "disconnected");
+
+	/* Don't allow new connection until iwd exits disconnecting */
+	can_connect = NM_IN_STRSET (new_state, "disconnected");
+	if (can_connect != priv->can_connect) {
+		priv->can_connect = can_connect;
+		nm_device_emit_recheck_auto_activate (device);
+	}
 
 	if (NM_IN_STRSET (new_state, "connecting", "connected", "roaming")) {
 		/* If we were connecting, do nothing, the confirmation of
@@ -1884,6 +1902,7 @@ nm_device_iwd_class_init (NMDeviceIwdClass *klass)
 
 	parent_class->can_auto_connect = can_auto_connect;
 	parent_class->is_available = is_available;
+	parent_class->get_autoconnect_allowed = get_autoconnect_allowed;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->check_connection_available = check_connection_available;
 	parent_class->complete_connection = complete_connection;
