@@ -3940,21 +3940,24 @@ get_ip_config_may_fail (NMDevice *self, int addr_family)
 /*
  * check_ip_state
  *
- * Transition the device from IP_CONFIG to the next state according to the
- * outcome of IPv4 and IPv6 configuration. @may_fail indicates that we are
- * called just after the initial configuration and thus IPv4/IPv6 are allowed to
- * fail if the ipvx.may-fail properties say so, because the IP methods couldn't
- * even be started.
+ * When @full_state_update is TRUE, transition the device from IP_CONFIG to the
+ * next state according to the outcome of IPv4 and IPv6 configuration. @may_fail
+ * indicates that we are called just after the initial configuration and thus
+ * IPv4/IPv6 are allowed to fail if the ipvx.may-fail properties say so, because
+ * the IP methods couldn't even be started.
+ * If @full_state_update is FALSE, just check if the connection should be failed
+ * due to the state of both ip families and the ipvx.may-fail settings.
  */
 static void
-check_ip_state (NMDevice *self, gboolean may_fail)
+check_ip_state (NMDevice *self, gboolean may_fail, gboolean full_state_update)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	gboolean ip4_disabled = FALSE, ip6_ignore = FALSE;
 	NMSettingIPConfig *s_ip4, *s_ip6;
 	NMDeviceState state;
 
-	if (nm_device_get_state (self) != NM_DEVICE_STATE_IP_CONFIG)
+	if (   full_state_update
+	    && nm_device_get_state (self) != NM_DEVICE_STATE_IP_CONFIG)
 		return;
 
 	/* Don't progress into IP_CHECK or SECONDARIES if we're waiting for the
@@ -4001,9 +4004,12 @@ check_ip_state (NMDevice *self, gboolean may_fail)
 			state = NM_DEVICE_STATE_FAILED;
 		}
 
-		nm_device_state_changed (self,
-		                         state,
-		                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+		if (   full_state_update
+		    || state == NM_DEVICE_STATE_FAILED) {
+			nm_device_state_changed (self,
+			                         state,
+			                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+		}
 		return;
 	}
 
@@ -4016,7 +4022,8 @@ check_ip_state (NMDevice *self, gboolean may_fail)
 	/* If at least a method has completed, proceed with activation */
 	if (   (priv->ip4_state == IP_DONE && !ip4_disabled)
 	    || (priv->ip6_state == IP_DONE && !ip6_ignore)) {
-		nm_device_state_changed (self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
+		if (full_state_update)
+			nm_device_state_changed (self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
 		return;
 	}
 }
@@ -4058,7 +4065,7 @@ nm_device_slave_notify_enslave (NMDevice *self, gboolean success)
 
 	if (activating) {
 		if (success)
-			check_ip_state (self, FALSE);
+			check_ip_state (self, FALSE, TRUE);
 		else
 			nm_device_queue_state (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_UNKNOWN);
 	} else
@@ -5434,7 +5441,7 @@ nm_device_ip_method_failed (NMDevice *self,
 	_set_ip_state (self, addr_family, IP_FAIL);
 
 	if (get_ip_config_may_fail (self, addr_family))
-		check_ip_state (self, FALSE);
+		check_ip_state (self, FALSE, (nm_device_get_state (self) == NM_DEVICE_STATE_IP_CONFIG));
 	else
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 }
@@ -8163,7 +8170,7 @@ nm_device_activate_stage3_ip4_start (NMDevice *self)
 
 	if (nm_device_sys_iface_state_is_external (self)) {
 		_set_ip_state (self, AF_INET, IP_DONE);
-		check_ip_state (self, FALSE);
+		check_ip_state (self, FALSE, TRUE);
 		return TRUE;
 	}
 
@@ -8176,7 +8183,7 @@ nm_device_activate_stage3_ip4_start (NMDevice *self)
 		g_object_unref (ip4_config);
 	} else if (ret == NM_ACT_STAGE_RETURN_IP_DONE) {
 		_set_ip_state (self, AF_INET, IP_DONE);
-		check_ip_state (self, FALSE);
+		check_ip_state (self, FALSE, TRUE);
 	} else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, failure_reason);
 		return FALSE;
@@ -8210,7 +8217,7 @@ nm_device_activate_stage3_ip6_start (NMDevice *self)
 
 	if (nm_device_sys_iface_state_is_external (self)) {
 		_set_ip_state (self, AF_INET6, IP_DONE);
-		check_ip_state (self, FALSE);
+		check_ip_state (self, FALSE, TRUE);
 		return TRUE;
 	}
 
@@ -8227,7 +8234,7 @@ nm_device_activate_stage3_ip6_start (NMDevice *self)
 		nm_device_activate_schedule_ip6_config_result (self);
 	} else if (ret == NM_ACT_STAGE_RETURN_IP_DONE) {
 		_set_ip_state (self, AF_INET6, IP_DONE);
-		check_ip_state (self, FALSE);
+		check_ip_state (self, FALSE, TRUE);
 	} else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, failure_reason);
 		return FALSE;
@@ -8277,7 +8284,7 @@ activate_stage3_ip_config_start (NMDevice *self)
 	/* Proxy */
 	nm_device_set_proxy_config (self, NULL);
 
-	check_ip_state (self, TRUE);
+	check_ip_state (self, TRUE, TRUE);
 }
 
 static void
@@ -8416,7 +8423,7 @@ activate_stage4_ip4_config_timeout (NMDevice *self)
 
 	_set_ip_state (self, AF_INET, IP_FAIL);
 
-	check_ip_state (self, FALSE);
+	check_ip_state (self, FALSE, TRUE);
 }
 
 /*
@@ -8472,7 +8479,7 @@ activate_stage4_ip6_config_timeout (NMDevice *self)
 
 	_set_ip_state (self, AF_INET6, IP_FAIL);
 
-	check_ip_state (self, FALSE);
+	check_ip_state (self, FALSE, TRUE);
 }
 
 /*
@@ -8720,7 +8727,7 @@ activate_stage5_ip4_config_result (NMDevice *self)
 
 	/* Enter the IP_CHECK state if this is the first method to complete */
 	_set_ip_state (self, AF_INET, IP_DONE);
-	check_ip_state (self, FALSE);
+	check_ip_state (self, FALSE, TRUE);
 }
 
 void
@@ -8875,7 +8882,7 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 				_LOGD (LOGD_DEVICE | LOGD_IP6, "IPv6 DAD: awaiting termination");
 			} else {
 				_set_ip_state (self, AF_INET6, IP_DONE);
-				check_ip_state (self, FALSE);
+				check_ip_state (self, FALSE, TRUE);
 			}
 		}
 	} else {
@@ -11378,7 +11385,7 @@ queued_ip6_config_change (gpointer user_data)
 			_LOGD (LOGD_DEVICE | LOGD_IP6, "IPv6 DAD terminated");
 			g_clear_object (&priv->dad6_ip6_config);
 			_set_ip_state (self, AF_INET6, IP_DONE);
-			check_ip_state (self, FALSE);
+			check_ip_state (self, FALSE, TRUE);
 			if (priv->rt6_temporary_not_available)
 				nm_device_activate_schedule_ip6_config_result (self);
 		}
