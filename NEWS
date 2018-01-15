@@ -16,7 +16,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
   reusing the same file descriptor (rh#1451236)
 * Connectivity check fixes (bgo#785281) (bgo#784629)
 * Fix the metered properties handling in libnm
-* Avoid dropping agent secrets unnecesarily (bgo#789383)
+* Avoid dropping agent secrets unnecessarily (bgo#789383)
 * Fix the asynchronous initialization of a secret agent in libnm
 
 ==============================================
