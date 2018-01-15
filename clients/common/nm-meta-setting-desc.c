@@ -6625,7 +6625,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
 		        .value_infos =          INT_VALUE_INFOS (
 				{
-					.value = 50,
+					.value = NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT,
 					.nick = "default",
 				}
 			),
@@ -6642,7 +6642,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
 		        .value_infos =          INT_VALUE_INFOS (
 				{
-					.value = 255,
+					.value = NM_SETTING_TEAM_RUNNER_SYS_PRIO_DEFAULT,
 					.nick = "default",
 				}
 			),
@@ -6698,7 +6698,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM_PORT[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
 			.value_infos =          INT_VALUE_INFOS (
 				{
-					.value = -1,
+					.value = NM_SETTING_TEAM_PORT_QUEUE_ID_DEFAULT,
 					.nick = "default",
 				}
 			),
@@ -6723,7 +6723,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM_PORT[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
 			.value_infos =          INT_VALUE_INFOS (
 				{
-					.value = 255,
+					.value = NM_SETTING_TEAM_PORT_LACP_PRIO_DEFAULT,
 					.nick = "default",
 				}
 			),
