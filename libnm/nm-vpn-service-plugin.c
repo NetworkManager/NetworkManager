@@ -151,7 +151,8 @@ nm_vpn_service_plugin_set_state (NMVpnServicePlugin *plugin,
 	if (priv->state != state) {
 		priv->state = state;
 		g_signal_emit (plugin, signals[STATE_CHANGED], 0, state);
-		nmdbus_vpn_plugin_emit_state_changed (priv->dbus_vpn_service_plugin, state);
+		if (priv->dbus_vpn_service_plugin)
+			nmdbus_vpn_plugin_emit_state_changed (priv->dbus_vpn_service_plugin, state);
 	}
 }
 
@@ -166,7 +167,8 @@ nm_vpn_service_plugin_set_login_banner (NMVpnServicePlugin *plugin,
 
 	priv = NM_VPN_SERVICE_PLUGIN_GET_PRIVATE (plugin);
 	g_signal_emit (plugin, signals[LOGIN_BANNER], 0, banner);
-	nmdbus_vpn_plugin_emit_login_banner (priv->dbus_vpn_service_plugin, banner);
+	if (priv->dbus_vpn_service_plugin)
+		nmdbus_vpn_plugin_emit_login_banner (priv->dbus_vpn_service_plugin, banner);
 }
 
 static void
@@ -176,7 +178,8 @@ _emit_failure (NMVpnServicePlugin *plugin,
 	NMVpnServicePluginPrivate *priv = NM_VPN_SERVICE_PLUGIN_GET_PRIVATE (plugin);
 
 	g_signal_emit (plugin, signals[FAILURE], 0, reason);
-	nmdbus_vpn_plugin_emit_failure (priv->dbus_vpn_service_plugin, reason);
+	if (priv->dbus_vpn_service_plugin)
+		nmdbus_vpn_plugin_emit_failure (priv->dbus_vpn_service_plugin, reason);
 }
 
 void
@@ -239,6 +242,51 @@ static void
 nm_vpn_service_plugin_emit_quit (NMVpnServicePlugin *plugin)
 {
 	g_signal_emit (plugin, signals[QUIT], 0);
+}
+
+/**
+ * nm_vpn_service_plugin_shutdown:
+ * @plugin: the #NMVpnServicePlugin instance
+ *
+ * Shutdown the @plugin and disconnect from D-Bus. After this,
+ * the plugin instance is dead and should no longer be used.
+ * It ensures to get no more requests from D-Bus. In principle,
+ * you don't need to shutdown the plugin, disposing the instance
+ * has the same effect. However, this gives a way to deactivate
+ * the plugin before giving up the last reference.
+ *
+ * Since: 1.12
+ */
+void
+nm_vpn_service_plugin_shutdown (NMVpnServicePlugin *plugin)
+{
+	NMVpnServicePluginPrivate *priv;
+	NMVpnServiceState state;
+	GError *error = NULL;
+
+	g_return_if_fail (NM_IS_VPN_SERVICE_PLUGIN (plugin));
+
+	priv = NM_VPN_SERVICE_PLUGIN_GET_PRIVATE (plugin);
+
+	nm_clear_g_source (&priv->fail_stop_id);
+	nm_clear_g_source (&priv->quit_timer);
+	nm_clear_g_source (&priv->connect_timer);
+
+	state = nm_vpn_service_plugin_get_state (plugin);
+	if (state == NM_VPN_SERVICE_STATE_STARTED ||
+	    state == NM_VPN_SERVICE_STATE_STARTING) {
+		nm_vpn_service_plugin_disconnect (plugin, &error);
+
+		if (error) {
+			g_warning ("Error disconnecting VPN connection: %s", error->message);
+			g_error_free (error);
+		}
+	}
+
+	if (priv->dbus_vpn_service_plugin) {
+		g_dbus_interface_skeleton_unexport (G_DBUS_INTERFACE_SKELETON (priv->dbus_vpn_service_plugin));
+		g_clear_object (&priv->dbus_vpn_service_plugin);
+	}
 }
 
 static gboolean
@@ -336,7 +384,8 @@ nm_vpn_service_plugin_set_config (NMVpnServicePlugin *plugin,
 	                                    G_VARIANT_TYPE ("u"));
 
 	g_signal_emit (plugin, signals[CONFIG], 0, config);
-	nmdbus_vpn_plugin_emit_config (priv->dbus_vpn_service_plugin, config);
+	if (priv->dbus_vpn_service_plugin)
+		nmdbus_vpn_plugin_emit_config (priv->dbus_vpn_service_plugin, config);
 }
 
 void
@@ -387,7 +436,8 @@ nm_vpn_service_plugin_set_ip4_config (NMVpnServicePlugin *plugin,
 	combined_config = g_variant_builder_end (&builder);
 	g_variant_ref_sink (combined_config);
 	g_signal_emit (plugin, signals[IP4_CONFIG], 0, combined_config);
-	nmdbus_vpn_plugin_emit_ip4_config (priv->dbus_vpn_service_plugin, combined_config);
+	if (priv->dbus_vpn_service_plugin)
+		nmdbus_vpn_plugin_emit_ip4_config (priv->dbus_vpn_service_plugin, combined_config);
 	g_variant_unref (combined_config);
 
 	if (   priv->has_ip4 == priv->got_ip4
@@ -408,7 +458,8 @@ nm_vpn_service_plugin_set_ip6_config (NMVpnServicePlugin *plugin,
 
 	priv->got_ip6 = TRUE;
 	g_signal_emit (plugin, signals[IP6_CONFIG], 0, ip6_config);
-	nmdbus_vpn_plugin_emit_ip6_config (priv->dbus_vpn_service_plugin, ip6_config);
+	if (priv->dbus_vpn_service_plugin)
+		nmdbus_vpn_plugin_emit_ip6_config (priv->dbus_vpn_service_plugin, ip6_config);
 
 	g_variant_unref (ip6_config);
 
@@ -698,7 +749,8 @@ nm_vpn_service_plugin_secrets_required (NMVpnServicePlugin *plugin,
 	nm_clear_g_source (&priv->connect_timer);
 
 	g_signal_emit (plugin, signals[SECRETS_REQUIRED], 0, message, hints);
-	nmdbus_vpn_plugin_emit_secrets_required (priv->dbus_vpn_service_plugin, message, hints);
+	if (priv->dbus_vpn_service_plugin)
+		nmdbus_vpn_plugin_emit_secrets_required (priv->dbus_vpn_service_plugin, message, hints);
 }
 
 /*****************************************************************************/
@@ -1026,7 +1078,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_STATE:
 		nm_vpn_service_plugin_set_state (NM_VPN_SERVICE_PLUGIN (object),
-		                             (NMVpnServiceState) g_value_get_enum (value));
+		                                 (NMVpnServiceState) g_value_get_enum (value));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1059,31 +1111,7 @@ get_property (GObject *object, guint prop_id,
 static void
 dispose (GObject *object)
 {
-	NMVpnServicePlugin *plugin = NM_VPN_SERVICE_PLUGIN (object);
-	NMVpnServicePluginPrivate *priv = NM_VPN_SERVICE_PLUGIN_GET_PRIVATE (plugin);
-	NMVpnServiceState state;
-	GError *err = NULL;
-
-	nm_clear_g_source (&priv->fail_stop_id);
-	nm_clear_g_source (&priv->quit_timer);
-	nm_clear_g_source (&priv->connect_timer);
-
-	state = nm_vpn_service_plugin_get_state (plugin);
-
-	if (state == NM_VPN_SERVICE_STATE_STARTED ||
-	    state == NM_VPN_SERVICE_STATE_STARTING)
-		nm_vpn_service_plugin_disconnect (plugin, &err);
-
-	if (err) {
-		g_warning ("Error disconnecting VPN connection: %s", err->message);
-		g_error_free (err);
-	}
-
-	if (priv->dbus_vpn_service_plugin) {
-		g_dbus_interface_skeleton_unexport (G_DBUS_INTERFACE_SKELETON (priv->dbus_vpn_service_plugin));
-		g_clear_object (&priv->dbus_vpn_service_plugin);
-	}
-
+	nm_vpn_service_plugin_shutdown (NM_VPN_SERVICE_PLUGIN (object));
 	G_OBJECT_CLASS (nm_vpn_service_plugin_parent_class)->dispose (object);
 }
 
