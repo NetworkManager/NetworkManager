@@ -1352,4 +1352,5 @@ global:
 	nm_setting_ip_tunnel_get_flags;
 	nm_setting_vpn_get_data_keys;
 	nm_setting_vpn_get_secret_keys;
+	nm_vpn_service_plugin_shutdown;
 } libnm_1_10_0;

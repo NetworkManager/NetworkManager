@@ -150,6 +150,9 @@ NM_AVAILABLE_IN_1_2
 gboolean           nm_vpn_service_plugin_disconnect     (NMVpnServicePlugin *plugin,
                                                          GError **err);
 
+NM_AVAILABLE_IN_1_12
+void               nm_vpn_service_plugin_shutdown (NMVpnServicePlugin *plugin);
+
 /* Utility functions */
 
 NM_AVAILABLE_IN_1_2
