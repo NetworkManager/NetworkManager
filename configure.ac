@@ -1,6 +1,9 @@
 AC_PREREQ([2.63])
 
 dnl The NM version number
+dnl
+dnl XXX: Remember to add corresponding NM_VERSION_x_y macros
+dnl in "shared/nm-version-macros.h.in"
 m4_define([nm_major_version], [1])
 m4_define([nm_minor_version], [11])
 m4_define([nm_micro_version], [1])
