@@ -9,8 +9,7 @@ examples_C_glib_cppflags = \
 	-I$(top_builddir)/libnm-core \
 	-I$(top_srcdir)/libnm \
 	-I$(top_builddir)/libnm \
-	$(GLIB_CFLAGS) \
-	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_CUR_STABLE
+	$(GLIB_CFLAGS)
 
 examples_C_glib_cppflags_gdbus = $(examples_C_glib_cppflags)
 examples_C_glib_cppflags_libnm = $(examples_C_glib_cppflags)
