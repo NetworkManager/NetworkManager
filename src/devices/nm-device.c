@@ -486,7 +486,7 @@ typedef struct _NMDevicePrivate {
 
 	NMLldpListener *lldp_listener;
 	NMConnectivityState connectivity_state;
-	guint concheck_periodic_id;
+	gulong concheck_periodic_id;
 	guint64 concheck_seq;
 
 	guint check_delete_unrealized_id;
@@ -2290,8 +2290,7 @@ concheck_periodic_update (NMDevice *self)
 		nm_device_check_connectivity (self, NULL, NULL);
 	} else if (!check_enable && priv->concheck_periodic_id) {
 		/* The default route has gone off, and so has connectivity. */
-		g_signal_handler_disconnect (nm_connectivity_get (), priv->concheck_periodic_id);
-		priv->concheck_periodic_id = 0;
+		nm_clear_g_signal_handler (nm_connectivity_get (), &priv->concheck_periodic_id);
 		update_connectivity_state (self, NM_CONNECTIVITY_NONE);
 	}
 #else
