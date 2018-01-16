@@ -15,6 +15,6 @@ foreach example: examples
     [example[0] + '.c'] + example[1],
     include_directories: example[2],
     dependencies: [nm_core_dep] + example[3],
-    c_args: '-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE'
+    c_args: '-DNM_VERSION_MAX_ALLOWED=NM_VERSION_CUR_STABLE'
   )
 endforeach
