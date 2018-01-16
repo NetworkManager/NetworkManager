@@ -65,6 +65,7 @@ gboolean nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig 
                                                              const char *con_uuid,
                                                              guint32 mtu,
                                                              NMSettingWirelessSecurityPmf pmf,
+                                                             NMSettingWirelessSecurityFils fils,
                                                              GError **error);
 
 gboolean nm_supplicant_config_add_no_security (NMSupplicantConfig *self,

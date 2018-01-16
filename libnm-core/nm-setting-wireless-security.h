@@ -109,6 +109,28 @@ typedef enum {
 	NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN         = 0x00000008,
 } NMSettingWirelessSecurityWpsMethod;
 
+/**
+ * NMSettingWirelessSecurityFils:
+ * @NM_SETTING_WIRELESS_SECURITY_FILS_DEFAULT: use the default value
+ * @NM_SETTING_WIRELESS_SECURITY_FILS_DISABLE: disable FILS
+ * @NM_SETTING_WIRELESS_SECURITY_FILS_OPTIONAL: enable FILS if the supplicant and the AP support it
+ * @NM_SETTING_WIRELESS_SECURITY_FILS_REQUIRED: require FILS and fail if not available
+ * @_NM_SETTING_WIRELESS_SECURITY_FILS_NUM: placeholder value for bounds-checking
+ * @NM_SETTING_WIRELESS_SECURITY_FILS_LAST: placeholder value for bounds-checking
+ *
+ * These flags indicate whether FILS must be enabled.
+ *
+ * Since: 1.12
+ **/
+typedef enum {
+	NM_SETTING_WIRELESS_SECURITY_FILS_DEFAULT       = 0,
+	NM_SETTING_WIRELESS_SECURITY_FILS_DISABLE       = 1,
+	NM_SETTING_WIRELESS_SECURITY_FILS_OPTIONAL      = 2,
+	NM_SETTING_WIRELESS_SECURITY_FILS_REQUIRED      = 3,
+	_NM_SETTING_WIRELESS_SECURITY_FILS_NUM, /*< skip >*/
+	NM_SETTING_WIRELESS_SECURITY_FILS_LAST          =  _NM_SETTING_WIRELESS_SECURITY_FILS_NUM - 1, /*< skip >*/
+} NMSettingWirelessSecurityFils;
+
 #define NM_SETTING_WIRELESS_SECURITY_KEY_MGMT "key-mgmt"
 #define NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX "wep-tx-keyidx"
 #define NM_SETTING_WIRELESS_SECURITY_AUTH_ALG "auth-alg"
@@ -128,6 +150,7 @@ typedef enum {
 #define NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD "leap-password"
 #define NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS "leap-password-flags"
 #define NM_SETTING_WIRELESS_SECURITY_WPS_METHOD "wps-method"
+#define NM_SETTING_WIRELESS_SECURITY_FILS "fils"
 
 /**
  * NMSettingWirelessSecurity:
@@ -192,6 +215,9 @@ NMWepKeyType nm_setting_wireless_security_get_wep_key_type (NMSettingWirelessSec
 
 NM_AVAILABLE_IN_1_10
 NMSettingWirelessSecurityWpsMethod nm_setting_wireless_security_get_wps_method (NMSettingWirelessSecurity *setting);
+
+NM_AVAILABLE_IN_1_12
+NMSettingWirelessSecurityFils nm_setting_wireless_security_get_fils (NMSettingWirelessSecurity *setting);
 
 G_END_DECLS
 

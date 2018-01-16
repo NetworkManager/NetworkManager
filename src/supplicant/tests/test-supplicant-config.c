@@ -118,6 +118,7 @@ build_supplicant_config (NMConnection *connection, guint mtu, guint fixed_freq)
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	if (s_wsec) {
 		NMSettingWirelessSecurityPmf pmf = nm_setting_wireless_security_get_pmf (s_wsec);
+		NMSettingWirelessSecurityFils fils = nm_setting_wireless_security_get_fils (s_wsec);
 		s_8021x = nm_connection_get_setting_802_1x (connection);
 		success = nm_supplicant_config_add_setting_wireless_security (config,
 			                                                          s_wsec,
@@ -125,6 +126,7 @@ build_supplicant_config (NMConnection *connection, guint mtu, guint fixed_freq)
 			                                                          nm_connection_get_uuid (connection),
 			                                                          mtu,
 			                                                          pmf,
+			                                                          fils,
 			                                                          &error);
 	} else {
 		success = nm_supplicant_config_add_no_security (config, &error);
@@ -307,7 +309,8 @@ test_wifi_wpa_psk (const char *detail,
                    OptType key_type,
                    const char *key_data,
                    const unsigned char *expected,
-                   size_t expected_size)
+                   size_t expected_size,
+                   NMSettingWirelessSecurityPmf pmf)
 {
 	gs_unref_object NMConnection *connection = NULL;
 	gs_unref_variant GVariant *config_dict = NULL;
@@ -327,7 +330,7 @@ test_wifi_wpa_psk (const char *detail,
 	g_object_set (s_wsec,
 	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk",
 	              NM_SETTING_WIRELESS_SECURITY_PSK, key_data,
-	              NM_SETTING_WIRELESS_SECURITY_PMF, (int) NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL,
+	              NM_SETTING_WIRELESS_SECURITY_PMF, (int) pmf,
 	              NULL);
 	nm_setting_wireless_security_add_proto (s_wsec, "wpa");
 	nm_setting_wireless_security_add_proto (s_wsec, "rsn");
@@ -349,7 +352,16 @@ test_wifi_wpa_psk (const char *detail,
 	NMTST_EXPECT_NM_INFO ("Config: added 'proto' value 'WPA RSN'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'pairwise' value 'TKIP CCMP'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'group' value 'TKIP CCMP'");
-	NMTST_EXPECT_NM_INFO ("Config: added 'ieee80211w' value '1'");
+	switch (pmf) {
+	case NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL:
+		NMTST_EXPECT_NM_INFO ("Config: added 'ieee80211w' value '1'");
+		break;
+	case NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED:
+		NMTST_EXPECT_NM_INFO ("Config: added 'ieee80211w' value '2'");
+		break;
+	default:
+		break;
+	}
 	config_dict = build_supplicant_config (connection, 1500, 0);
 
 	g_test_assert_expected_messages ();
@@ -380,12 +392,16 @@ test_wifi_wpa_psk_types (void)
 	                                        0x6c, 0x2f, 0x11, 0x60, 0x5a, 0x16, 0x08, 0x93 };
 	const char *key2 = "r34lly l33t wp4 p4ssphr4s3 for t3st1ng";
 
-	test_wifi_wpa_psk ("wifi-wpa-psk-hex", TYPE_BYTES, key1, key1_expected, sizeof (key1_expected));
-	test_wifi_wpa_psk ("wifi-wep-psk-passphrase", TYPE_STRING, key2, (gconstpointer) key2, strlen (key2));
+	test_wifi_wpa_psk ("wifi-wpa-psk-hex", TYPE_BYTES, key1, key1_expected,
+	                   sizeof (key1_expected), NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL);
+	test_wifi_wpa_psk ("wifi-wep-psk-passphrase", TYPE_STRING, key2,
+	                   (gconstpointer) key2, strlen (key2), NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED);
+	test_wifi_wpa_psk ("pmf-disabled", TYPE_STRING, key2,
+	                   (gconstpointer) key2, strlen (key2), NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE);
 }
 
 static NMConnection *
-generate_wifi_eap_connection (const char *id, GBytes *ssid, const char *bssid_str)
+generate_wifi_eap_connection (const char *id, GBytes *ssid, const char *bssid_str, NMSettingWirelessSecurityFils fils)
 {
 	NMConnection *connection = NULL;
 	NMSettingWirelessSecurity *s_wsec;
@@ -400,6 +416,7 @@ generate_wifi_eap_connection (const char *id, GBytes *ssid, const char *bssid_st
 	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
 	g_object_set (s_wsec,
 	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-eap",
+	              NM_SETTING_WIRELESS_SECURITY_FILS, (int) fils,
 	              NULL);
 	nm_setting_wireless_security_add_proto (s_wsec, "wpa");
 	nm_setting_wireless_security_add_proto (s_wsec, "rsn");
@@ -433,13 +450,13 @@ test_wifi_eap_locked_bssid (void)
 	const char *bssid_str = "11:22:33:44:55:66";
 	guint32 mtu = 1100;
 
-	connection = generate_wifi_eap_connection ("Test Wifi EAP-TLS Locked", ssid, bssid_str);
+	connection = generate_wifi_eap_connection ("Test Wifi EAP-TLS Locked", ssid, bssid_str, NM_SETTING_WIRELESS_SECURITY_FILS_OPTIONAL);
 
 	NMTST_EXPECT_NM_INFO ("Config: added 'ssid' value 'Test SSID'*");
 	NMTST_EXPECT_NM_INFO ("Config: added 'scan_ssid' value '1'*");
 	NMTST_EXPECT_NM_INFO ("Config: added 'bssid' value '11:22:33:44:55:66'*");
 	NMTST_EXPECT_NM_INFO ("Config: added 'freq_list' value *");
-	NMTST_EXPECT_NM_INFO ("Config: added 'key_mgmt' value 'WPA-EAP'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'key_mgmt' value 'WPA-EAP WPA-EAP-SHA256 FILS-SHA256 FILS-SHA384'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'proto' value 'WPA RSN'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'pairwise' value 'TKIP CCMP'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'group' value 'TKIP CCMP'");
@@ -455,7 +472,7 @@ test_wifi_eap_locked_bssid (void)
 	validate_opt ("wifi-eap", config_dict, "scan_ssid", TYPE_INT, GINT_TO_POINTER (1));
 	validate_opt ("wifi-eap", config_dict, "ssid", TYPE_BYTES, ssid);
 	validate_opt ("wifi-eap", config_dict, "bssid", TYPE_KEYWORD, bssid_str);
-	validate_opt ("wifi-eap", config_dict, "key_mgmt", TYPE_KEYWORD, "WPA-EAP");
+	validate_opt ("wifi-eap", config_dict, "key_mgmt", TYPE_KEYWORD, "WPA-EAP WPA-EAP-SHA256 FILS-SHA256 FILS-SHA384");
 	validate_opt ("wifi-eap", config_dict, "eap", TYPE_KEYWORD, "TLS");
 	validate_opt ("wifi-eap", config_dict, "proto", TYPE_KEYWORD, "WPA RSN");
 	validate_opt ("wifi-eap", config_dict, "pairwise", TYPE_KEYWORD, "TKIP CCMP");
@@ -474,12 +491,12 @@ test_wifi_eap_unlocked_bssid (void)
 	gs_unref_bytes GBytes *bgscan = g_bytes_new (bgscan_data, strlen (bgscan_data));
 	guint32 mtu = 1100;
 
-	connection = generate_wifi_eap_connection ("Test Wifi EAP-TLS Unlocked", ssid, NULL);
+	connection = generate_wifi_eap_connection ("Test Wifi EAP-TLS Unlocked", ssid, NULL, NM_SETTING_WIRELESS_SECURITY_FILS_REQUIRED);
 
 	NMTST_EXPECT_NM_INFO ("Config: added 'ssid' value 'Test SSID'*");
 	NMTST_EXPECT_NM_INFO ("Config: added 'scan_ssid' value '1'*");
 	NMTST_EXPECT_NM_INFO ("Config: added 'freq_list' value *");
-	NMTST_EXPECT_NM_INFO ("Config: added 'key_mgmt' value 'WPA-EAP'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'key_mgmt' value 'FILS-SHA256 FILS-SHA384'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'proto' value 'WPA RSN'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'pairwise' value 'TKIP CCMP'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'group' value 'TKIP CCMP'");
@@ -495,7 +512,48 @@ test_wifi_eap_unlocked_bssid (void)
 
 	validate_opt ("wifi-eap", config_dict, "scan_ssid", TYPE_INT, GINT_TO_POINTER (1));
 	validate_opt ("wifi-eap", config_dict, "ssid", TYPE_BYTES, ssid);
-	validate_opt ("wifi-eap", config_dict, "key_mgmt", TYPE_KEYWORD, "WPA-EAP");
+	validate_opt ("wifi-eap", config_dict, "key_mgmt", TYPE_KEYWORD, "FILS-SHA256 FILS-SHA384");
+	validate_opt ("wifi-eap", config_dict, "eap", TYPE_KEYWORD, "TLS");
+	validate_opt ("wifi-eap", config_dict, "proto", TYPE_KEYWORD, "WPA RSN");
+	validate_opt ("wifi-eap", config_dict, "pairwise", TYPE_KEYWORD, "TKIP CCMP");
+	validate_opt ("wifi-eap", config_dict, "group", TYPE_KEYWORD, "TKIP CCMP");
+	validate_opt ("wifi-eap", config_dict, "fragment_size", TYPE_INT, GINT_TO_POINTER(mtu-14));
+	validate_opt ("wifi-eap", config_dict, "bgscan", TYPE_BYTES, bgscan);
+}
+
+static void
+test_wifi_eap_fils_disabled (void)
+{
+	gs_unref_object NMConnection *connection = NULL;
+	gs_unref_variant GVariant *config_dict = NULL;
+	const unsigned char ssid_data[] = { 0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44 };
+	gs_unref_bytes GBytes *ssid = g_bytes_new (ssid_data, sizeof (ssid_data));
+	const char *bgscan_data = "simple:30:-65:300";
+	gs_unref_bytes GBytes *bgscan = g_bytes_new (bgscan_data, strlen (bgscan_data));
+	guint32 mtu = 1100;
+
+	connection = generate_wifi_eap_connection ("Test Wifi FILS disabled", ssid, NULL, NM_SETTING_WIRELESS_SECURITY_FILS_DISABLE);
+
+	NMTST_EXPECT_NM_INFO ("Config: added 'ssid' value 'Test SSID'*");
+	NMTST_EXPECT_NM_INFO ("Config: added 'scan_ssid' value '1'*");
+	NMTST_EXPECT_NM_INFO ("Config: added 'freq_list' value *");
+	NMTST_EXPECT_NM_INFO ("Config: added 'key_mgmt' value 'WPA-EAP WPA-EAP-SHA256'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'proto' value 'WPA RSN'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'pairwise' value 'TKIP CCMP'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'group' value 'TKIP CCMP'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'eap' value 'TLS'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'fragment_size' value '1086'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'ca_cert' value '*/test-ca-cert.pem'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'private_key' value '*/test-cert.p12'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'proactive_key_caching' value '1'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'bgscan' value 'simple:30:-65:300'");
+	config_dict = build_supplicant_config (connection, mtu, 0);
+	g_test_assert_expected_messages ();
+	g_assert (config_dict);
+
+	validate_opt ("wifi-eap", config_dict, "scan_ssid", TYPE_INT, GINT_TO_POINTER (1));
+	validate_opt ("wifi-eap", config_dict, "ssid", TYPE_BYTES, ssid);
+	validate_opt ("wifi-eap", config_dict, "key_mgmt", TYPE_KEYWORD, "WPA-EAP WPA-EAP-SHA256");
 	validate_opt ("wifi-eap", config_dict, "eap", TYPE_KEYWORD, "TLS");
 	validate_opt ("wifi-eap", config_dict, "proto", TYPE_KEYWORD, "WPA RSN");
 	validate_opt ("wifi-eap", config_dict, "pairwise", TYPE_KEYWORD, "TKIP CCMP");
@@ -515,6 +573,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/supplicant-config/wifi-wpa-psk-types", test_wifi_wpa_psk_types);
 	g_test_add_func ("/supplicant-config/wifi-eap/locked-bssid", test_wifi_eap_locked_bssid);
 	g_test_add_func ("/supplicant-config/wifi-eap/unlocked-bssid", test_wifi_eap_unlocked_bssid);
+	g_test_add_func ("/supplicant-config/wifi-eap/fils-disabled", test_wifi_eap_fils_disabled);
 
 	return g_test_run ();
 }
