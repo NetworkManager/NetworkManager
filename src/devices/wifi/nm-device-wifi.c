@@ -2389,7 +2389,9 @@ build_supplicant_config (NMDeviceWifi *self,
 	s_wireless = nm_connection_get_setting_wireless (connection);
 	g_return_val_if_fail (s_wireless != NULL, NULL);
 
-	config = nm_supplicant_config_new ();
+	config = nm_supplicant_config_new (
+		nm_supplicant_interface_get_pmf_support (priv->sup_iface) == NM_SUPPLICANT_FEATURE_YES,
+		nm_supplicant_interface_get_fils_support (priv->sup_iface) == NM_SUPPLICANT_FEATURE_YES);
 
 	/* Warn if AP mode may not be supported */
 	if (   g_strcmp0 (nm_setting_wireless_get_mode (s_wireless), NM_SETTING_WIRELESS_MODE_AP) == 0
@@ -2431,26 +2433,6 @@ build_supplicant_config (NMDeviceWifi *self,
 			                                    NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL);
 		}
 
-		/* Don't try to enable PMF on non-WPA networks */
-		if (!NM_IN_STRSET (nm_setting_wireless_security_get_key_mgmt (s_wireless_sec),
-		                   "wpa-eap",
-		                   "wpa-psk"))
-			pmf = NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE;
-
-		/* Check if we actually support PMF */
-		if (nm_supplicant_interface_get_pmf_support (priv->sup_iface) != NM_SUPPLICANT_FEATURE_YES) {
-			if (pmf == NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED) {
-				g_set_error_literal (error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG,
-				                     "Supplicant does not support PMF");
-				goto error;
-			} else if (pmf == NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL) {
-				/* To be on the safe side, assume no support if we can't determine
-				 * capabilities.
-				 */
-				pmf = NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE;
-			}
-		}
-
 		/* Configure FILS (802.11ai) */
 		fils = nm_setting_wireless_security_get_fils (s_wireless_sec);
 		if (fils == NM_SETTING_WIRELESS_SECURITY_FILS_DEFAULT) {
@@ -2461,24 +2443,6 @@ build_supplicant_config (NMDeviceWifi *self,
 			                                     NM_SETTING_WIRELESS_SECURITY_FILS_DISABLE,
 			                                     NM_SETTING_WIRELESS_SECURITY_FILS_REQUIRED,
 			                                     NM_SETTING_WIRELESS_SECURITY_FILS_OPTIONAL);
-		}
-
-		/* Don't try to enable FILS on non-EAP networks */
-		if (!NM_IN_STRSET (nm_setting_wireless_security_get_key_mgmt (s_wireless_sec),  "wpa-eap"))
-			fils = NM_SETTING_WIRELESS_SECURITY_FILS_DISABLE;
-
-		/* Check if we actually support FILS */
-		if (nm_supplicant_interface_get_fils_support (priv->sup_iface) != NM_SUPPLICANT_FEATURE_YES) {
-			if (fils == NM_SETTING_WIRELESS_SECURITY_FILS_REQUIRED) {
-				g_set_error_literal (error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG,
-				                     "Supplicant does not support FILS");
-				goto error;
-			} else if (fils == NM_SETTING_WIRELESS_SECURITY_FILS_OPTIONAL) {
-				/* To be on the safe side, assume no support if we can't determine
-				 * capabilities.
-				 */
-				fils = NM_SETTING_WIRELESS_SECURITY_FILS_DISABLE;
-			}
 		}
 
 		s_8021x = nm_connection_get_setting_802_1x (connection);

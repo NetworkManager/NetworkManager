@@ -40,7 +40,7 @@ typedef struct _NMSupplicantConfigClass NMSupplicantConfigClass;
 
 GType nm_supplicant_config_get_type (void);
 
-NMSupplicantConfig *nm_supplicant_config_new (void);
+NMSupplicantConfig *nm_supplicant_config_new (gboolean support_pmf, gboolean support_fils);
 
 guint32 nm_supplicant_config_get_ap_scan (NMSupplicantConfig *self);
 

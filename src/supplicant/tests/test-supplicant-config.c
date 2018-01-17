@@ -95,7 +95,11 @@ validate_opt (const char *detail,
 }
 
 static GVariant *
-build_supplicant_config (NMConnection *connection, guint mtu, guint fixed_freq)
+build_supplicant_config (NMConnection *connection,
+                         guint mtu,
+                         guint fixed_freq,
+                         gboolean support_pmf,
+                         gboolean support_fils)
 {
 	gs_unref_object NMSupplicantConfig *config = NULL;
 	gs_free_error GError *error = NULL;
@@ -104,7 +108,7 @@ build_supplicant_config (NMConnection *connection, guint mtu, guint fixed_freq)
 	NMSetting8021x *s_8021x;
 	gboolean success;
 
-	config = nm_supplicant_config_new ();
+	config = nm_supplicant_config_new (support_pmf, support_fils);
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
@@ -205,7 +209,7 @@ test_wifi_open (void)
 	NMTST_EXPECT_NM_INFO ("Config: added 'bssid' value '11:22:33:44:55:66'*");
 	NMTST_EXPECT_NM_INFO ("Config: added 'freq_list' value *");
 	NMTST_EXPECT_NM_INFO ("Config: added 'key_mgmt' value 'NONE'");
-	config_dict = build_supplicant_config (connection, 1500, 0);
+	config_dict = build_supplicant_config (connection, 1500, 0, TRUE, TRUE);
 	g_test_assert_expected_messages ();
 	g_assert (config_dict);
 
@@ -262,7 +266,7 @@ test_wifi_wep_key (const char *detail,
 	if (!test_bssid)
 		NMTST_EXPECT_NM_INFO ("Config: added 'bgscan' value 'simple:30:-80:86400'*");
 
-	config_dict = build_supplicant_config (connection, 1500, 0);
+	config_dict = build_supplicant_config (connection, 1500, 0, TRUE, TRUE);
 	g_test_assert_expected_messages ();
 	g_assert (config_dict);
 
@@ -362,7 +366,7 @@ test_wifi_wpa_psk (const char *detail,
 	default:
 		break;
 	}
-	config_dict = build_supplicant_config (connection, 1500, 0);
+	config_dict = build_supplicant_config (connection, 1500, 0, TRUE, TRUE);
 
 	g_test_assert_expected_messages ();
 	g_assert (config_dict);
@@ -456,7 +460,7 @@ test_wifi_eap_locked_bssid (void)
 	NMTST_EXPECT_NM_INFO ("Config: added 'scan_ssid' value '1'*");
 	NMTST_EXPECT_NM_INFO ("Config: added 'bssid' value '11:22:33:44:55:66'*");
 	NMTST_EXPECT_NM_INFO ("Config: added 'freq_list' value *");
-	NMTST_EXPECT_NM_INFO ("Config: added 'key_mgmt' value 'WPA-EAP WPA-EAP-SHA256 FILS-SHA256 FILS-SHA384'");
+	NMTST_EXPECT_NM_INFO ("Config: added 'key_mgmt' value 'WPA-EAP'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'proto' value 'WPA RSN'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'pairwise' value 'TKIP CCMP'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'group' value 'TKIP CCMP'");
@@ -465,14 +469,14 @@ test_wifi_eap_locked_bssid (void)
 	NMTST_EXPECT_NM_INFO ("Config: added 'ca_cert' value '*/test-ca-cert.pem'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'private_key' value '*/test-cert.p12'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'proactive_key_caching' value '1'");
-	config_dict = build_supplicant_config (connection, mtu, 0);
+	config_dict = build_supplicant_config (connection, mtu, 0, FALSE, FALSE);
 	g_test_assert_expected_messages ();
 	g_assert (config_dict);
 
 	validate_opt ("wifi-eap", config_dict, "scan_ssid", TYPE_INT, GINT_TO_POINTER (1));
 	validate_opt ("wifi-eap", config_dict, "ssid", TYPE_BYTES, ssid);
 	validate_opt ("wifi-eap", config_dict, "bssid", TYPE_KEYWORD, bssid_str);
-	validate_opt ("wifi-eap", config_dict, "key_mgmt", TYPE_KEYWORD, "WPA-EAP WPA-EAP-SHA256 FILS-SHA256 FILS-SHA384");
+	validate_opt ("wifi-eap", config_dict, "key_mgmt", TYPE_KEYWORD, "WPA-EAP");
 	validate_opt ("wifi-eap", config_dict, "eap", TYPE_KEYWORD, "TLS");
 	validate_opt ("wifi-eap", config_dict, "proto", TYPE_KEYWORD, "WPA RSN");
 	validate_opt ("wifi-eap", config_dict, "pairwise", TYPE_KEYWORD, "TKIP CCMP");
@@ -506,7 +510,7 @@ test_wifi_eap_unlocked_bssid (void)
 	NMTST_EXPECT_NM_INFO ("Config: added 'private_key' value '*/test-cert.p12'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'proactive_key_caching' value '1'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'bgscan' value 'simple:30:-65:300'");
-	config_dict = build_supplicant_config (connection, mtu, 0);
+	config_dict = build_supplicant_config (connection, mtu, 0, FALSE, TRUE);
 	g_test_assert_expected_messages ();
 	g_assert (config_dict);
 
@@ -547,7 +551,7 @@ test_wifi_eap_fils_disabled (void)
 	NMTST_EXPECT_NM_INFO ("Config: added 'private_key' value '*/test-cert.p12'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'proactive_key_caching' value '1'");
 	NMTST_EXPECT_NM_INFO ("Config: added 'bgscan' value 'simple:30:-65:300'");
-	config_dict = build_supplicant_config (connection, mtu, 0);
+	config_dict = build_supplicant_config (connection, mtu, 0, TRUE, TRUE);
 	g_test_assert_expected_messages ();
 	g_assert (config_dict);
 
