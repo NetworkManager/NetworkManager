@@ -1408,7 +1408,7 @@ nm_client_get_connection_by_id (NMClient *client, const char *id)
 	g_return_val_if_fail (id != NULL, NULL);
 
 	if (!nm_client_get_nm_running (client))
-		NULL;
+		return NULL;
 
 	return nm_remote_settings_get_connection_by_id (NM_CLIENT_GET_PRIVATE (client)->settings, id);
 }
@@ -1433,7 +1433,7 @@ nm_client_get_connection_by_path (NMClient *client, const char *path)
 	g_return_val_if_fail (path != NULL, NULL);
 
 	if (!nm_client_get_nm_running (client))
-		NULL;
+		return NULL;
 
 	return nm_remote_settings_get_connection_by_path (NM_CLIENT_GET_PRIVATE (client)->settings, path);
 }
@@ -1458,7 +1458,7 @@ nm_client_get_connection_by_uuid (NMClient *client, const char *uuid)
 	g_return_val_if_fail (uuid != NULL, NULL);
 
 	if (!nm_client_get_nm_running (client))
-		NULL;
+		return NULL;
 
 	return nm_remote_settings_get_connection_by_uuid (NM_CLIENT_GET_PRIVATE (client)->settings, uuid);
 }
