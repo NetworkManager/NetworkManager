@@ -959,7 +959,7 @@ _normalize_infiniband_mtu (NMConnection *self, GHashTable *parameters)
 				max_mtu = 65520;
 
 			if (max_mtu && nm_setting_infiniband_get_mtu (s_infini) > max_mtu) {
-				g_object_set (s_infini, NM_SETTING_INFINIBAND_MTU, max_mtu, NULL);
+				g_object_set (s_infini, NM_SETTING_INFINIBAND_MTU, (guint) max_mtu, NULL);
 				return TRUE;
 			}
 		}
