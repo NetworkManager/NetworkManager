@@ -8359,6 +8359,12 @@ nm_device_activate_stage3_ip4_start (NMDevice *self)
 
 	g_assert (priv->ip4_state == IP_WAIT);
 
+	if (nm_device_sys_iface_state_is_external (self)) {
+		_set_ip_state (self, AF_INET, IP_DONE);
+		check_ip_state (self, FALSE);
+		return TRUE;
+	}
+
 	_set_ip_state (self, AF_INET, IP_CONF);
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage3_ip4_config_start (self, &ip4_config, &failure_reason);
 	if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
@@ -8399,6 +8405,12 @@ nm_device_activate_stage3_ip6_start (NMDevice *self)
 	NMIP6Config *ip6_config = NULL;
 
 	g_assert (priv->ip6_state == IP_WAIT);
+
+	if (nm_device_sys_iface_state_is_external (self)) {
+		_set_ip_state (self, AF_INET6, IP_DONE);
+		check_ip_state (self, FALSE);
+		return TRUE;
+	}
 
 	_set_ip_state (self, AF_INET6, IP_CONF);
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage3_ip6_config_start (self, &ip6_config, &failure_reason);
