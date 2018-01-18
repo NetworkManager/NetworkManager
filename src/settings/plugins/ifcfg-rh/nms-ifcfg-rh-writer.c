@@ -2996,7 +2996,7 @@ do_write_to_disk (NMConnection *connection,
 {
 	/* From here on, we persist data to disk. Before, it was all in-memory
 	 * only. But we loaded the ifcfg files from disk, and managled our
-	 * new settings (in-momory). */
+	 * new settings (in-memory). */
 
 	if (!svWriteFile (ifcfg, 0644, error))
 		return FALSE;
@@ -3147,10 +3147,10 @@ nms_ifcfg_rh_writer_write_connection (NMConnection *connection,
 	 * does not yet allow to inject the configuration. */
 	if (out_reread || out_reread_same) {
 		if (!do_write_reread (connection,
-		                         svFileGetName (ifcfg),
-		                         out_reread,
-		                         out_reread_same,
-		                         &local)) {
+		                      svFileGetName (ifcfg),
+		                      out_reread,
+		                      out_reread_same,
+		                      &local)) {
 			_LOGW ("write: failure to re-read connection \"%s\": %s",
 			       svFileGetName (ifcfg), local->message);
 			g_clear_error (&local);
