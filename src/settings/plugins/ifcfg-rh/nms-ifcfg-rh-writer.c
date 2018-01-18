@@ -1757,9 +1757,7 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 
 	/* Only save the value for master connections */
 	type = nm_setting_connection_get_connection_type (s_con);
-	if (   !g_strcmp0 (type, NM_SETTING_BOND_SETTING_NAME)
-	    || !g_strcmp0 (type, NM_SETTING_TEAM_SETTING_NAME)
-	    || !g_strcmp0 (type, NM_SETTING_BRIDGE_SETTING_NAME)) {
+	if (_nm_connection_type_is_master (type)) {
 		NMSettingConnectionAutoconnectSlaves autoconnect_slaves;
 		autoconnect_slaves = nm_setting_connection_get_autoconnect_slaves (s_con);
 		svSetValueStr (ifcfg, "AUTOCONNECT_SLAVES",

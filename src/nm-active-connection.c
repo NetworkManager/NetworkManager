@@ -391,10 +391,7 @@ _set_applied_connection_take (NMActiveConnection *self,
 	if (nm_setting_connection_get_master (s_con))
 		flags_val |= NM_ACTIVATION_STATE_FLAG_IS_SLAVE;
 
-	if (NM_IN_STRSET (nm_setting_connection_get_connection_type (s_con),
-	                  NM_SETTING_BOND_SETTING_NAME,
-	                  NM_SETTING_BRIDGE_SETTING_NAME,
-	                  NM_SETTING_TEAM_SETTING_NAME))
+	if (+_nm_connection_type_is_master (nm_setting_connection_get_connection_type (s_con)))
 		flags_val |= NM_ACTIVATION_STATE_FLAG_IS_MASTER;
 
 	nm_active_connection_set_state_flags_full (self,
