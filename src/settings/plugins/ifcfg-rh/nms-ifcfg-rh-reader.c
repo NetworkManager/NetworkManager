@@ -294,6 +294,23 @@ make_connection_setting (const char *file,
 	check_if_team_slave (ifcfg, s_con);
 
 	nm_clear_g_free (&value);
+	v = svGetValueStr (ifcfg, "OVS_PORT_UUID", &value);
+	if (!v)
+		v = svGetValueStr (ifcfg, "OVS_PORT", &value);
+	if (v) {
+		const char *old_value;
+
+		if ((old_value = nm_setting_connection_get_master (s_con))) {
+			PARSE_WARNING ("Already configured as slave of %s. Ignoring OVS_PORT=\"%s\"",
+			               old_value, v);
+		} else {
+			g_object_set (s_con, NM_SETTING_CONNECTION_MASTER, v, NULL);
+			g_object_set (s_con, NM_SETTING_CONNECTION_SLAVE_TYPE,
+			              NM_SETTING_OVS_PORT_SETTING_NAME, NULL);
+		}
+	}
+
+	nm_clear_g_free (&value);
 	v = svGetValueStr (ifcfg, "GATEWAY_PING_TIMEOUT", &value);
 	if (v) {
 		gint64 tmp;

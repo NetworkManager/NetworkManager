@@ -1840,6 +1840,12 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 			                  NM_SETTING_WIRED_SETTING_NAME,
 			                  NM_SETTING_VLAN_SETTING_NAME))
 				svUnsetValue (ifcfg, "TYPE");
+		} else if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_OVS_PORT_SETTING_NAME)) {
+			svSetValueStr (ifcfg, "OVS_PORT_UUID", master);
+			svSetValueStr (ifcfg, "OVS_PORT", master_iface);
+		} else {
+			_LOGW ("don't know how to set master for a %s slave",
+			       nm_setting_connection_get_slave_type (s_con));
 		}
 	}
 
