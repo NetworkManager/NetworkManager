@@ -5197,9 +5197,9 @@ _json_team_normalize_defaults (json_t *json, gboolean reset)
 		_json_delete_object_on_string_match (json, "runner", "hwaddr_policy", NULL,
 		                                     NM_SETTING_TEAM_RUNNER_HWADDR_POLICY_DEFAULT);
 	} else if (nm_streq (runner, NM_SETTING_TEAM_RUNNER_LACP)) {
-		runner_tx_balancer_interval = 50;
+		runner_tx_balancer_interval = NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT;
 		runner_active = TRUE;
-		runner_sys_prio = 255;
+		runner_sys_prio = NM_SETTING_TEAM_RUNNER_SYS_PRIO_DEFAULT;
 		runner_min_ports = 0;
 		_json_delete_object_on_string_match (json, "runner", "agg_select_policy", NULL,
 		                                     NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_DEFAULT);
