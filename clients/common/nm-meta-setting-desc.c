@@ -4959,10 +4959,10 @@ static const NMMetaPropertyType _pt_gobject_devices = {
 	   "Properties available for the 'nsna_ping' link watcher:\n" \
 	   "  'init-wait', 'interval', 'missed-max', 'target-host'*\n\n" \
 	   "Properties available for the 'arp_ping' include all the ones for 'nsna_ping' and:\n" \
-	   "  'source-host', 'validate-active', 'validate-inactive', 'send-always'.\n\n" \
+	   "  'source-host'*, 'validate-active', 'validate-inactive', 'send-always'.\n\n" \
 	   "Properties flagged with a '*' are mandatory.\n\n" \
 	   "Example:\n" \
-	   "   name=arp_ping,source-host=172.16.1.1,target-host=172.16.1.254; name=ethtool,delay-up=3\n")
+	   "   name=arp_ping source-host=172.16.1.1 target-host=172.16.1.254, name=ethtool delay-up=3\n")
 
 
 #define DEFINE_DCB_PROPRITY_PROPERTY_TYPE \
