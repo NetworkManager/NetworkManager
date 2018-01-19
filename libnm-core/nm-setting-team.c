@@ -1485,8 +1485,10 @@ set_property (GObject *object, guint prop_id,
 		break;
 	}
 
-	if (align_config)
+	if (align_config) {
 		_nm_utils_json_append_gvalue (&priv->config, _prop_to_keys[prop_id], align_value);
+		_align_team_properties (setting);
+	}
 }
 
 static void
