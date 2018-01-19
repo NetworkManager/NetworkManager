@@ -4038,6 +4038,7 @@ _set_fcn_team_link_watchers (ARGS_SET_FCN)
 	const char *const*iter;
 	NMTeamLinkWatcher *watcher;
 
+	nm_setting_team_clear_link_watchers (NM_SETTING_TEAM (setting));
 	strv = nmc_strsplit_set (value, ",", 0);
 	for (iter = (const char *const*) strv; *iter; iter++) {
 		watcher = _parse_team_link_watcher (*iter, error);
@@ -4110,6 +4111,7 @@ _set_fcn_team_port_link_watchers (ARGS_SET_FCN)
 	const char *const*iter;
 	NMTeamLinkWatcher *watcher;
 
+	nm_setting_team_port_clear_link_watchers (NM_SETTING_TEAM_PORT (setting));
 	strv = nmc_strsplit_set (value, ",", 0);
 	for (iter = (const char *const*) strv; *iter; iter++) {
 		watcher = _parse_team_link_watcher (*iter, error);
