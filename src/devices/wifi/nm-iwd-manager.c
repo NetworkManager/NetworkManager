@@ -451,6 +451,8 @@ update_known_networks (NMIwdManager *self)
 	g_object_unref (known_networks_if);
 }
 
+static void prepare_object_manager (NMIwdManager *self);
+
 static void
 name_owner_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 {
@@ -461,20 +463,9 @@ name_owner_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 	nm_assert (object_manager == priv->object_manager);
 
 	if (_om_has_name_owner (object_manager)) {
-		GList *objects, *iter;
-
-		priv->running = true;
-
-		objects = g_dbus_object_manager_get_objects (object_manager);
-		for (iter = objects; iter; iter = iter->next)
-			object_added (self, G_DBUS_OBJECT (iter->data));
-
-		g_list_free_full (objects, g_object_unref);
-
-		if (priv->agent_id)
-			register_agent (self);
-
-		update_known_networks (self);
+		g_signal_handlers_disconnect_by_data (object_manager, self);
+		g_clear_object (&priv->object_manager);
+		prepare_object_manager (self);
 	} else {
 		const GSList *devices, *iter;
 
@@ -549,8 +540,6 @@ got_object_manager (GObject *object, GAsyncResult *result, gpointer user_data)
 	GDBusObjectManager *object_manager;
 	GDBusConnection *connection;
 
-	g_clear_object (&priv->cancellable);
-
 	object_manager = g_dbus_object_manager_client_new_for_bus_finish (result, &error);
 	if (object_manager == NULL) {
 		_LOGE ("failed to acquire IWD Object Manager: Wi-Fi will not be available (%s)",
@@ -561,10 +550,6 @@ got_object_manager (GObject *object, GAsyncResult *result, gpointer user_data)
 
 	priv->object_manager = object_manager;
 
-	g_signal_connect (priv->object_manager, "interface-added",
-	                  G_CALLBACK (interface_added), self);
-	g_signal_connect (priv->object_manager, "interface-removed",
-	                  G_CALLBACK (interface_removed), self);
 	g_signal_connect (priv->object_manager, "notify::name-owner",
 	                  G_CALLBACK (name_owner_changed), self);
 
@@ -580,7 +565,27 @@ got_object_manager (GObject *object, GAsyncResult *result, gpointer user_data)
 		g_clear_error (&error);
 	}
 
-	name_owner_changed (G_OBJECT (object_manager), NULL, self);
+	if (_om_has_name_owner (object_manager)) {
+		GList *objects, *iter;
+
+		priv->running = true;
+
+		g_signal_connect (priv->object_manager, "interface-added",
+		                  G_CALLBACK (interface_added), self);
+		g_signal_connect (priv->object_manager, "interface-removed",
+		                  G_CALLBACK (interface_removed), self);
+
+		objects = g_dbus_object_manager_get_objects (object_manager);
+		for (iter = objects; iter; iter = iter->next)
+			object_added (self, G_DBUS_OBJECT (iter->data));
+
+		g_list_free_full (objects, g_object_unref);
+
+		if (priv->agent_id)
+			register_agent (self);
+
+		update_known_networks (self);
+	}
 }
 
 static void
@@ -644,6 +649,7 @@ nm_iwd_manager_init (NMIwdManager *self)
 	                  G_CALLBACK (device_added), self);
 
 	priv->cancellable = g_cancellable_new ();
+
 	prepare_object_manager (self);
 }
 
