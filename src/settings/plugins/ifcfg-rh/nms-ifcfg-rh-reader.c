@@ -1345,29 +1345,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	} else if (!g_ascii_strcasecmp (v, "autoip")) {
 		method = NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL;
 	} else if (!g_ascii_strcasecmp (v, "shared")) {
-		int idx;
-
-		g_object_set (s_ip4,
-		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_SHARED,
-		              NM_SETTING_IP_CONFIG_NEVER_DEFAULT, never_default,
-		              NULL);
-		/* 1 IP address is allowed for shared connections. Read it. */
-		if (is_any_ip4_address_defined (ifcfg, &idx)) {
-			guint32 gw;
-			NMIPAddress *addr = NULL;
-
-			if (!read_full_ip4_address (ifcfg, idx, NULL, &addr, NULL, error))
-				return NULL;
-			if (!read_ip4_address (ifcfg, "GATEWAY", NULL, &gw, error))
-				return NULL;
-			(void) nm_setting_ip_config_add_address (s_ip4, addr);
-			nm_ip_address_unref (addr);
-			if (never_default)
-				PARSE_WARNING ("GATEWAY will be ignored when DEFROUTE is disabled");
-			gateway = g_strdup (nm_utils_inet4_ntop (gw, inet_buf));
-			g_object_set (s_ip4, NM_SETTING_IP_CONFIG_GATEWAY, gateway, NULL);
-		}
-		return g_steal_pointer (&s_ip4);
+		method = NM_SETTING_IP4_CONFIG_METHOD_SHARED;
 	} else {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Unknown BOOTPROTO '%s'", v);
@@ -1394,7 +1372,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	              NM_SETTING_IP_CONFIG_ROUTE_TABLE, (guint) route_table,
 	              NULL);
 
-	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0)
+	if (nm_streq (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
 		return g_steal_pointer (&s_ip4);
 
 	/* Handle DHCP settings */
@@ -1471,39 +1449,47 @@ make_ip4_setting (shvarFile *ifcfg,
 	if (gateway && never_default)
 		PARSE_WARNING ("GATEWAY will be ignored when DEFROUTE is disabled");
 
-	/* DNS servers
-	 * Pick up just IPv4 addresses (IPv6 addresses are taken by make_ip6_setting())
-	 */
-	for (i = 1; i <= 10; i++) {
-		char tag[256];
+	/* We used to skip saving a lot of unused properties for the ipv4 shared method.
+	 * We want now to persist them but... unfortunately loading DNS or DOMAIN options
+	 * would cause a fail in the ipv4 verify() function. As we don't want any regression
+	 * in the unlikely event that someone has a working ifcfg file for an IPv4 shared ip
+	 * connection with a crafted "DNS" entry... don't load it. So we will avoid failing
+	 * the connection) */
+	if (!nm_streq (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
+		/* DNS servers
+		 * Pick up just IPv4 addresses (IPv6 addresses are taken by make_ip6_setting())
+		 */
+		for (i = 1; i <= 10; i++) {
+			char tag[256];
 
-		numbered_tag (tag, "DNS", i);
-		nm_clear_g_free (&value);
-		v = svGetValueStr (ifcfg, tag, &value);
-		if (v) {
-			if (nm_utils_ipaddr_valid (AF_INET, v)) {
-				if (!nm_setting_ip_config_add_dns (s_ip4, v))
-					PARSE_WARNING ("duplicate DNS server %s", tag);
-			} else if (nm_utils_ipaddr_valid (AF_INET6, v)) {
-				/* Ignore IPv6 addresses */
-			} else {
-				PARSE_WARNING ("invalid DNS server address %s", v);
-				return NULL;
+			numbered_tag (tag, "DNS", i);
+			nm_clear_g_free (&value);
+			v = svGetValueStr (ifcfg, tag, &value);
+			if (v) {
+				if (nm_utils_ipaddr_valid (AF_INET, v)) {
+					if (!nm_setting_ip_config_add_dns (s_ip4, v))
+						PARSE_WARNING ("duplicate DNS server %s", tag);
+				} else if (nm_utils_ipaddr_valid (AF_INET6, v)) {
+					/* Ignore IPv6 addresses */
+				} else {
+					PARSE_WARNING ("invalid DNS server address %s", v);
+					return NULL;
+				}
 			}
 		}
-	}
 
-	/* DNS searches */
-	nm_clear_g_free (&value);
-	v = svGetValueStr (ifcfg, "DOMAIN", &value);
-	if (v) {
-		gs_free const char **searches = NULL;
+		/* DNS searches */
+		nm_clear_g_free (&value);
+		v = svGetValueStr (ifcfg, "DOMAIN", &value);
+		if (v) {
+			gs_free const char **searches = NULL;
 
-		searches = nm_utils_strsplit_set (v, " ");
-		if (searches) {
-			for (item = searches; *item; item++) {
-				if (!nm_setting_ip_config_add_dns_search (s_ip4, *item))
-					PARSE_WARNING ("duplicate DNS domain '%s'", *item);
+			searches = nm_utils_strsplit_set (v, " ");
+			if (searches) {
+				for (item = searches; *item; item++) {
+					if (!nm_setting_ip_config_add_dns_search (s_ip4, *item))
+						PARSE_WARNING ("duplicate DNS domain '%s'", *item);
+				}
 			}
 		}
 	}
@@ -1552,7 +1538,8 @@ make_ip4_setting (shvarFile *ifcfg,
 	}
 
 	/* Legacy value NM used for a while but is incorrect (rh #459370) */
-	if (!nm_setting_ip_config_get_num_dns_searches (s_ip4)) {
+	if (   !nm_streq (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)
+	    && !nm_setting_ip_config_get_num_dns_searches (s_ip4)) {
 		nm_clear_g_free (&value);
 		v = svGetValueStr (ifcfg, "SEARCH", &value);
 		if (v) {
