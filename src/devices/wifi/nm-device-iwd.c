@@ -75,10 +75,12 @@ typedef struct {
 	GCancellable *  cancellable;
 	NMDeviceWifiCapabilities capabilities;
 	NMActRequestGetSecretsCallId *wifi_secrets_id;
+	guint           periodic_scan_id;
 	bool            enabled:1;
 	bool            can_scan:1;
 	bool            can_connect:1;
 	bool            scanning:1;
+	bool            scan_requested:1;
 } NMDeviceIwdPrivate;
 
 struct _NMDeviceIwd {
@@ -100,6 +102,9 @@ G_DEFINE_TYPE (NMDeviceIwd, nm_device_iwd, NM_TYPE_DEVICE)
 #define NM_DEVICE_IWD_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDeviceIwd, NM_IS_DEVICE_IWD)
 
 /*****************************************************************************/
+
+static void schedule_periodic_scan (NMDeviceIwd *self,
+                                    NMDeviceState current_state);
 
 static void
 _ap_dump (NMDeviceIwd *self,
@@ -865,6 +870,33 @@ check_scanning_prohibited (NMDeviceIwd *self, gboolean periodic)
 }
 
 static void
+scan_cb (GObject *source, GAsyncResult *res, gpointer user_data)
+{
+	NMDeviceIwd *self = user_data;
+	NMDeviceIwdPrivate *priv;
+	gs_free_error GError *error = NULL;
+
+	if (   !_nm_dbus_proxy_call_finish (G_DBUS_PROXY (source), res,
+	                                   G_VARIANT_TYPE ("()"), &error)
+	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+		return;
+
+	priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	priv->scan_requested = FALSE;
+
+	/* On success, priv->scanning becomes true right before or right
+	 * after this callback, so the next automatic scan will be
+	 * scheduled when priv->scanning goes back to false.  On error,
+	 * schedule a retry now.
+	 */
+	if (error && !priv->scanning) {
+		NMDeviceState state = nm_device_get_state (NM_DEVICE (self));
+
+		schedule_periodic_scan (self, state);
+	}
+}
+
+static void
 dbus_request_scan_cb (NMDevice *device,
                       GDBusMethodInvocation *context,
                       NMAuthSubject *subject,
@@ -913,8 +945,14 @@ dbus_request_scan_cb (NMDevice *device,
 		}
 	}
 
-	g_dbus_proxy_call (priv->dbus_proxy, "Scan", g_variant_new ("()"),
-	                   G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL, NULL);
+	if (!priv->scanning && !priv->scan_requested) {
+		g_dbus_proxy_call (priv->dbus_proxy, "Scan",
+		                   g_variant_new ("()"),
+		                   G_DBUS_CALL_FLAGS_NONE, -1,
+		                   priv->cancellable, scan_cb, self);
+		priv->scan_requested = TRUE;
+	}
+
 	g_dbus_method_invocation_return_value (context, NULL);
 }
 
@@ -1462,6 +1500,45 @@ get_configured_mtu (NMDevice *device, gboolean *out_is_user_config)
 	return mtu;
 }
 
+static gboolean
+periodic_scan_timeout_cb (gpointer user_data)
+{
+	NMDeviceIwd *self = user_data;
+	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+
+	priv->periodic_scan_id = 0;
+
+	if (priv->scanning || priv->scan_requested)
+		return FALSE;
+
+	g_dbus_proxy_call (priv->dbus_proxy, "Scan", g_variant_new ("()"),
+	                   G_DBUS_CALL_FLAGS_NONE, -1,
+	                   priv->cancellable, scan_cb, self);
+	priv->scan_requested = TRUE;
+
+	return FALSE;
+}
+
+static void
+schedule_periodic_scan (NMDeviceIwd *self, NMDeviceState current_state)
+{
+	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	guint interval;
+
+	if (current_state <= NM_DEVICE_STATE_UNAVAILABLE)
+		return;
+
+	if (current_state == NM_DEVICE_STATE_DISCONNECTED)
+		interval = 10;
+	else
+		interval = 20;
+
+	nm_clear_g_source (&priv->periodic_scan_id);
+	priv->periodic_scan_id = g_timeout_add_seconds (interval,
+	                                                periodic_scan_timeout_cb,
+	                                                self);
+}
+
 static void
 device_state_changed (NMDevice *device,
                       NMDeviceState new_state,
@@ -1471,10 +1548,13 @@ device_state_changed (NMDevice *device,
 	NMDeviceIwd *self = NM_DEVICE_IWD (device);
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 
-	if (new_state <= NM_DEVICE_STATE_UNAVAILABLE)
+	if (new_state <= NM_DEVICE_STATE_UNAVAILABLE) {
 		remove_all_aps (self);
-	else if (old_state <= NM_DEVICE_STATE_UNAVAILABLE)
+		nm_clear_g_source (&priv->periodic_scan_id);
+	} else if (old_state <= NM_DEVICE_STATE_UNAVAILABLE) {
 		update_aps (self);
+		schedule_periodic_scan (self, new_state);
+	}
 
 	switch (new_state) {
 	case NM_DEVICE_STATE_UNMANAGED:
@@ -1711,6 +1791,7 @@ static void
 scanning_changed (NMDeviceIwd *self, gboolean new_scanning)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	NMDeviceState state = nm_device_get_state (NM_DEVICE (self));
 
 	if (new_scanning == priv->scanning)
 		return;
@@ -1719,8 +1800,12 @@ scanning_changed (NMDeviceIwd *self, gboolean new_scanning)
 
 	_notify (self, PROP_SCANNING);
 
-	if (!priv->scanning)
+	if (!priv->scanning) {
 		update_aps (self);
+
+		if (!priv->scan_requested)
+			schedule_periodic_scan (self, state);
+	}
 }
 
 static void
@@ -1780,6 +1865,7 @@ nm_device_iwd_set_dbus_object (NMDeviceIwd *self, GDBusObject *object)
 
 	value = g_dbus_proxy_get_cached_property (priv->dbus_proxy, "Scanning");
 	priv->scanning = g_variant_get_boolean (value);
+	priv->scan_requested = FALSE;
 
 	g_signal_connect (priv->dbus_proxy, "g-properties-changed",
 	                  G_CALLBACK (properties_changed), self);
@@ -1861,6 +1947,8 @@ dispose (GObject *object)
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 
 	nm_clear_g_cancellable (&priv->cancellable);
+
+	nm_clear_g_source (&priv->periodic_scan_id);
 
 	wifi_secrets_cancel (self);
 
