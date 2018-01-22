@@ -1836,7 +1836,7 @@ nm_device_iwd_set_dbus_object (NMDeviceIwd *self, GDBusObject *object)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 	GDBusInterface *interface;
-	gs_unref_variant GVariant *value = NULL;
+	GVariant *value;
 
 	if (!nm_g_object_ref_set ((GObject **) &priv->dbus_obj, (GObject *) object))
 		return;
@@ -1865,7 +1865,12 @@ nm_device_iwd_set_dbus_object (NMDeviceIwd *self, GDBusObject *object)
 
 	value = g_dbus_proxy_get_cached_property (priv->dbus_proxy, "Scanning");
 	priv->scanning = g_variant_get_boolean (value);
+	g_variant_unref (value);
 	priv->scan_requested = FALSE;
+
+	value = g_dbus_proxy_get_cached_property (priv->dbus_proxy, "State");
+	state_changed (self, g_variant_get_string (value, NULL));
+	g_variant_unref (value);
 
 	g_signal_connect (priv->dbus_proxy, "g-properties-changed",
 	                  G_CALLBACK (properties_changed), self);
