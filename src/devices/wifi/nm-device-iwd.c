@@ -45,8 +45,6 @@
 #include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceIwd);
 
-static NM_CACHED_QUARK_FCN ("wireless-secrets-tries", wireless_secrets_tries_quark)
-
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceIwd,
@@ -79,6 +77,7 @@ typedef struct {
 	NMActRequestGetSecretsCallId *wifi_secrets_id;
 	bool            enabled:1;
 	bool            can_scan:1;
+	bool            can_connect:1;
 	bool            scanning:1;
 } NMDeviceIwdPrivate;
 
@@ -397,6 +396,53 @@ static void
 deactivate (NMDevice *device)
 {
 	cleanup_association_attempt (NM_DEVICE_IWD (device), TRUE);
+}
+
+static gboolean
+deactivate_async_finish (NMDevice *device, GAsyncResult *res, GError **error)
+{
+	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (NM_DEVICE_IWD (device));
+	gs_unref_variant GVariant *variant;
+
+	variant = g_dbus_proxy_call_finish (priv->dbus_proxy, res, error);
+
+	return variant != NULL;
+}
+
+typedef struct {
+	NMDeviceIwd *self;
+	GAsyncReadyCallback callback;
+	gpointer user_data;
+} DeactivateContext;
+
+static void
+disconnect_cb (GObject *source, GAsyncResult *res, gpointer user_data)
+{
+	DeactivateContext *ctx = user_data;
+
+	ctx->callback (G_OBJECT (ctx->self), res, ctx->user_data);
+
+	g_object_unref (ctx->self);
+	g_slice_free (DeactivateContext, ctx);
+}
+
+static void
+deactivate_async (NMDevice *device,
+                  GCancellable *cancellable,
+                  GAsyncReadyCallback callback,
+                  gpointer user_data)
+{
+	NMDeviceIwd *self = NM_DEVICE_IWD (device);
+	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	DeactivateContext *ctx;
+
+	ctx = g_slice_new0 (DeactivateContext);
+	ctx->self = g_object_ref (self);
+	ctx->callback = callback;
+	ctx->user_data = user_data;
+
+	g_dbus_proxy_call (priv->dbus_proxy, "Disconnect", g_variant_new ("()"),
+	                   G_DBUS_CALL_FLAGS_NONE, -1, cancellable, disconnect_cb, ctx);
 }
 
 static NMIwdNetworkSecurity
@@ -720,6 +766,15 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 
 	return priv->enabled && priv->dbus_obj;
+}
+
+static gboolean
+get_autoconnect_allowed (NMDevice *device)
+{
+	NMDeviceIwdPrivate *priv;
+
+	priv = NM_DEVICE_IWD_GET_PRIVATE (NM_DEVICE_IWD (device));
+	return priv->enabled && priv->dbus_obj && priv->can_connect;
 }
 
 static gboolean
@@ -1207,21 +1262,18 @@ handle_auth_or_fail (NMDeviceIwd *self,
                      gboolean new_secrets)
 {
 	const char *setting_name;
-	guint32 tries;
 	NMConnection *applied_connection;
 	NMSecretAgentGetSecretsFlags get_secret_flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
 	g_return_val_if_fail (NM_IS_DEVICE_IWD (self), FALSE);
 
-	applied_connection = nm_act_request_get_applied_connection (req);
-
-	tries = GPOINTER_TO_UINT (g_object_get_qdata (G_OBJECT (applied_connection), wireless_secrets_tries_quark ()));
-	if (tries > 3)
+	if (!nm_device_auth_retries_try_next (NM_DEVICE (self)))
 		return FALSE;
 
 	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
 
 	nm_act_request_clear_secrets (req);
+	applied_connection = nm_act_request_get_applied_connection (req);
 	setting_name = nm_connection_need_secrets (applied_connection, NULL);
 	if (!setting_name) {
 		_LOGW (LOGD_DEVICE, "Cleared secrets, but setting didn't need any secrets.");
@@ -1231,7 +1283,6 @@ handle_auth_or_fail (NMDeviceIwd *self,
 	if (new_secrets)
 		get_secret_flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
 	wifi_secrets_get_secrets (self, setting_name, get_secret_flags);
-	g_object_set_qdata (G_OBJECT (applied_connection), wireless_secrets_tries_quark (), GUINT_TO_POINTER (++tries));
 	return TRUE;
 }
 
@@ -1412,38 +1463,6 @@ get_configured_mtu (NMDevice *device, gboolean *out_is_user_config)
 }
 
 static void
-activation_success_handler (NMDevice *device)
-{
-	NMDeviceIwd *self = NM_DEVICE_IWD (device);
-	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
-	NMActRequest *req;
-	NMConnection *applied_connection;
-
-	req = nm_device_get_act_request (device);
-	g_assert (req);
-
-	applied_connection = nm_act_request_get_applied_connection (req);
-
-	/* Clear wireless secrets tries on success */
-	g_object_set_qdata (G_OBJECT (applied_connection), wireless_secrets_tries_quark (), NULL);
-
-	/* There should always be a current AP */
-	g_warn_if_fail (priv->current_ap);
-}
-
-static void
-activation_failure_handler (NMDevice *device)
-{
-	NMConnection *applied_connection;
-
-	applied_connection = nm_device_get_applied_connection (device);
-	g_assert (applied_connection);
-
-	/* Clear wireless secrets tries on failure */
-	g_object_set_qdata (G_OBJECT (applied_connection), wireless_secrets_tries_quark (), NULL);
-}
-
-static void
 device_state_changed (NMDevice *device,
                       NMDeviceState new_state,
                       NMDeviceState old_state,
@@ -1478,10 +1497,8 @@ device_state_changed (NMDevice *device,
 	case NM_DEVICE_STATE_IP_CHECK:
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
-		activation_success_handler (device);
 		break;
 	case NM_DEVICE_STATE_FAILED:
-		activation_failure_handler (device);
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
 		break;
@@ -1628,21 +1645,35 @@ state_changed (NMDeviceIwd *self, const gchar *new_state)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 	NMDevice *device = NM_DEVICE (self);
+	NMDeviceState dev_state = nm_device_get_state (device);
+	gboolean iwd_connection = FALSE;
+	gboolean can_connect;
 
 	_LOGI (LOGD_DEVICE | LOGD_WIFI, "new IWD device state is %s", new_state);
+
+	if (   dev_state >= NM_DEVICE_STATE_CONFIG
+	    && dev_state <= NM_DEVICE_STATE_ACTIVATED
+	    && dev_state != NM_DEVICE_STATE_NEED_AUTH)
+		iwd_connection = TRUE;
 
 	/* Don't allow scanning while connecting, disconnecting or roaming */
 	priv->can_scan = NM_IN_STRSET (new_state, "connected", "disconnected");
 
+	/* Don't allow new connection until iwd exits disconnecting */
+	can_connect = NM_IN_STRSET (new_state, "disconnected");
+	if (can_connect != priv->can_connect) {
+		priv->can_connect = can_connect;
+		nm_device_emit_recheck_auto_activate (device);
+	}
+
 	if (NM_IN_STRSET (new_state, "connecting", "connected", "roaming")) {
-		/* If we're activating, do nothing, the confirmation of
+		/* If we were connecting, do nothing, the confirmation of
 		 * a connection success is handled in the Device.Connect
 		 * method return callback.  Otherwise IWD must have connected
 		 * without Network Manager's will so for simplicity force a
 		 * disconnect.
 		 */
-		if (   nm_device_is_activating (device)
-		    || nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED)
+		if (iwd_connection)
 			return;
 
 		_LOGW (LOGD_DEVICE | LOGD_WIFI,
@@ -1651,8 +1682,7 @@ state_changed (NMDeviceIwd *self, const gchar *new_state)
 
 		return;
 	} else if (NM_IN_STRSET (new_state, "disconnecting", "disconnected")) {
-		if (   !nm_device_is_activating (device)
-		    && nm_device_get_state (device) != NM_DEVICE_STATE_ACTIVATED)
+		if (!iwd_connection)
 			return;
 
 		/* Call Disconnect on the IWD device object to make sure it
@@ -1721,6 +1751,7 @@ nm_device_iwd_set_dbus_object (NMDeviceIwd *self, GDBusObject *object)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 	GDBusInterface *interface;
+	gs_unref_variant GVariant *value = NULL;
 
 	if (!nm_g_object_ref_set ((GObject **) &priv->dbus_obj, (GObject *) object))
 		return;
@@ -1746,6 +1777,9 @@ nm_device_iwd_set_dbus_object (NMDeviceIwd *self, GDBusObject *object)
 
 	interface = g_dbus_object_get_interface (object, NM_IWD_DEVICE_INTERFACE);
 	priv->dbus_proxy = G_DBUS_PROXY (interface);
+
+	value = g_dbus_proxy_get_cached_property (priv->dbus_proxy, "Scanning");
+	priv->scanning = g_variant_get_boolean (value);
 
 	g_signal_connect (priv->dbus_proxy, "g-properties-changed",
 	                  G_CALLBACK (properties_changed), self);
@@ -1868,6 +1902,7 @@ nm_device_iwd_class_init (NMDeviceIwdClass *klass)
 
 	parent_class->can_auto_connect = can_auto_connect;
 	parent_class->is_available = is_available;
+	parent_class->get_autoconnect_allowed = get_autoconnect_allowed;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->check_connection_available = check_connection_available;
 	parent_class->complete_connection = complete_connection;
@@ -1879,6 +1914,8 @@ nm_device_iwd_class_init (NMDeviceIwdClass *klass)
 	parent_class->act_stage2_config = act_stage2_config;
 	parent_class->get_configured_mtu = get_configured_mtu;
 	parent_class->deactivate = deactivate;
+	parent_class->deactivate_async = deactivate_async;
+	parent_class->deactivate_async_finish = deactivate_async_finish;
 	parent_class->can_reapply_change = can_reapply_change;
 
 	parent_class->state_changed = device_state_changed;
