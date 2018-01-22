@@ -469,6 +469,9 @@ name_owner_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 	} else {
 		const GSList *devices, *iter;
 
+		if (!priv->running)
+			return;
+
 		priv->running = false;
 
 		devices = nm_manager_get_devices (priv->nm_manager);
