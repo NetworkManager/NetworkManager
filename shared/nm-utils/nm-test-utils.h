@@ -540,8 +540,6 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 		g_assert (success);
 		if (__nmtst_internal.no_expect_message)
 			g_log_set_always_fatal (G_LOG_FATAL_MASK);
-		/* g_test_expect_message() is a NOP, so allow any messages */
-		g_log_set_always_fatal (G_LOG_FATAL_MASK);
 	} else if (__nmtst_internal.no_expect_message) {
 		/* We have a test that would be assert_logging, but the user specified no_expect_message.
 		 * This transforms g_test_expect_message() into a NOP, but we also have to relax
@@ -637,9 +635,7 @@ nmtst_test_quick (void)
 		if (__nmtst_internal.assert_logging && __nmtst_internal.no_expect_message) { \
 			g_debug ("nmtst: assert-logging: g_test_expect_message %s", G_STRINGIFY ((__VA_ARGS__))); \
 		} else { \
-			G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
 			g_test_expect_message (__VA_ARGS__); \
-			G_GNUC_END_IGNORE_DEPRECATIONS \
 		} \
 	} G_STMT_END
 #undef g_test_assert_expected_messages_internal
