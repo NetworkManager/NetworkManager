@@ -200,10 +200,16 @@ do_agent_all (NmCli *nmc, int argc, char **argv)
 
 	/* Run both secret and polkit agent */
 	secret_res = do_agent_secret (nmc, argc, argv);
-	if (secret_res != NMC_RESULT_SUCCESS)
+	if (secret_res != NMC_RESULT_SUCCESS) {
 		g_printerr ("%s\n", nmc->return_text->str);
+		g_string_truncate (nmc->return_text, 0);
+	}
 
 	nmc->return_value = do_agent_polkit (nmc, argc, argv);
+	if (nmc->return_value != NMC_RESULT_SUCCESS) {
+		g_printerr ("%s\n", nmc->return_text->str);
+		g_string_truncate (nmc->return_text, 0);
+	}
 
 	if (nmc->return_value == NMC_RESULT_SUCCESS && secret_res != NMC_RESULT_SUCCESS)
 		nmc->return_value = secret_res;
