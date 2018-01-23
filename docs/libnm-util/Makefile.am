@@ -50,7 +50,6 @@ extra_files =
 # if $(DOC_MODULE).types is non-empty.
 GTKDOC_CFLAGS =				\
 	-I$(top_srcdir)/libnm-util	\
-	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	-DNM_VERSION_MIN_REQUIRED=NM_VERSION_0_9_8 \
 	$(GLIB_CFLAGS)			\
 	$(DBUS_CFLAGS)
