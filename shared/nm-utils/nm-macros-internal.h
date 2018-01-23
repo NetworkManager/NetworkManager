@@ -220,6 +220,7 @@ _nm_auto_protect_errno (int *p_saved_errno)
 #elif defined (__clang__)
 #define NM_PRAGMA_WARNING_DISABLE(warning) \
         _Pragma("clang diagnostic push") \
+        _Pragma(_NM_PRAGMA_WARNING_DO("-Wunknown-warning-option")) \
         _Pragma(_NM_PRAGMA_WARNING_DO(warning))
 #else
 #define NM_PRAGMA_WARNING_DISABLE(warning)
