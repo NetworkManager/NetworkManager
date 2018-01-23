@@ -418,7 +418,7 @@ get_best_ip_device (NMPolicy *self,
 
 		r = nm_device_get_best_default_route (device, addr_family);
 		if (r) {
-			/* XXX: the best route might have rt_source NM_IP_CONFIG_SOURCE_VPN,
+			/* NOTE: the best route might have rt_source NM_IP_CONFIG_SOURCE_VPN,
 			 * which means it was injected by a VPN, not added by device.
 			 *
 			 * In this case, is it really the best device? Why do we even need the best

@@ -2,7 +2,7 @@ AC_PREREQ([2.63])
 
 dnl The NM version number
 dnl
-dnl XXX: When incrementing version also:
+dnl NOTE: When incrementing version also:
 dnl  - add corresponding NM_VERSION_x_y_z macros in
 dnl    "shared/nm-version-macros.h.in"
 dnl  - update number in meson.build

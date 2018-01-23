@@ -98,9 +98,9 @@ ip6tnl_flags_setting_to_plat (NMIPTunnelFlags flags)
 	G_STATIC_ASSERT (NM_IP_TUNNEL_FLAG_IP6_RCV_DSCP_COPY      == IP6_TNL_F_RCV_DSCP_COPY);
 	G_STATIC_ASSERT (NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FWMARK    == IP6_TNL_F_USE_ORIG_FWMARK);
 
-	/* XXX: "accidentally", the numeric values correspond.
-	 *      For flags added in the future, that might no longer
-	 *      be the case. */
+	/* NOTE: "accidentally", the numeric values correspond.
+	 *       For flags added in the future, that might no longer
+	 *       be the case. */
 	return flags & _NM_IP_TUNNEL_FLAG_ALL_IP6TNL;
 }
 

@@ -302,7 +302,7 @@ foreach_item_helper (NMSettingVpn *self,
 		const char *value;
 
 		value = g_hash_table_lookup (hash, keys[i]);
-		/* XXX: note that we call the function with a clone of @key,
+		/* NOTE: note that we call the function with a clone of @key,
 		 * not with the actual key from the dictionary.
 		 *
 		 * The @value on the other hand, is actually inside our dictionary,

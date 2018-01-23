@@ -7906,7 +7906,7 @@ addrconf6_start_with_link_ready (NMDevice *self)
 		g_clear_object (&priv->con_ip6_config);
 	}
 
-	/* XXX: These sysctls would probably be better set by the lndp ndisc itself. */
+	/* FIXME: These sysctls would probably be better set by the lndp ndisc itself. */
 	switch (nm_ndisc_get_node_type (priv->ndisc)) {
 	case NM_NDISC_NODE_TYPE_HOST:
 		/* Accepting prefixes from discovered routers. */

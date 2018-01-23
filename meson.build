@@ -1,6 +1,6 @@
 project(
   'NetworkManager', 'c',
-# XXX: When incrementing version also:
+# NOTE: When incrementing version also:
 #  - add corresponding NM_VERSION_x_y_z macros in
 #    "shared/nm-version-macros.h.in"
 #  - update number in configure.ac

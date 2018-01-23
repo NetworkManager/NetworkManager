@@ -934,7 +934,7 @@ next:
 			                                                    : ""));
 			break;
 		case PARSE_LINE_TYPE_FLAG:
-			/* XXX: the flag (for "onlink") only allows to explictly set "TRUE".
+			/* NOTE: the flag (for "onlink") only allows to explictly set "TRUE".
 			 * There is no way to express an explicit "FALSE" setting
 			 * of this attribute, hence, the file format cannot encode
 			 * that configuration. */

@@ -2685,7 +2685,7 @@ _autoconnect_retries_set (NMSettingsConnection *self,
 	if (retries)
 		priv->autoconnect_retries_blocked_until = 0;
 	else {
-		/* XXX: the blocked time must be identical for all connections, otherwise
+		/* NOTE: the blocked time must be identical for all connections, otherwise
 		 * the tracking of resetting the retry count in NMPolicy needs adjustment
 		 * in _connection_autoconnect_retries_set() (as it would need to re-evaluate
 		 * the next-timeout everytime a connection gets blocked). */

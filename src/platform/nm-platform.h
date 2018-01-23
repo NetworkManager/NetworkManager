@@ -406,7 +406,7 @@ typedef union {
 	 * do not exist from the point-of-view of platform users.
 	 * Such a route is not alive, according to nmp_object_is_alive().
 	 *
-	 * XXX: currently we ignore all flags except RTM_F_CLONED
+	 * NOTE: currently we ignore all flags except RTM_F_CLONED
 	 * and RTNH_F_ONLINK for IPv4.
 	 * We also may not properly consider the flags as part of the ID
 	 * in route-cmp. */ \

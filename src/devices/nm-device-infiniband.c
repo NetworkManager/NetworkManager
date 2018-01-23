@@ -433,7 +433,7 @@ create_device (NMDeviceFactory *factory,
 	                                  NM_DEVICE_TYPE_DESC, "InfiniBand",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_INFINIBAND,
 	                                  NM_DEVICE_LINK_TYPE, NM_LINK_TYPE_INFINIBAND,
-	                                  /* XXX: Partition should probably be a different link type! */
+	                                  /* NOTE: Partition should probably be a different link type! */
 	                                  NM_DEVICE_INFINIBAND_IS_PARTITION, is_partition,
 	                                  NULL);
 }
