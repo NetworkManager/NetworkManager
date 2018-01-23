@@ -452,15 +452,16 @@ signal_handler (gpointer user_data)
 		if (nmc_get_in_readline ()) {
 			nmcli_sigint = TRUE;
 		} else {
-			g_print (_("Error: nmcli terminated by signal %s (%d)\n"),
-			         strsignal (signo),
-			         signo);
+			nm_cli.return_value = 0x80 + signo;
+			g_string_printf (nm_cli.return_text, _("Error: nmcli terminated by signal %s (%d)"),
+			                 strsignal (signo), signo);
 			g_main_loop_quit (loop);
 		}
 		break;
 	case SIGTERM:
-		g_print (_("Error: nmcli terminated by signal %s (%d)\n"),
-		         strsignal (signo), signo);
+		nm_cli.return_value = 0x80 + signo;
+		g_string_printf (nm_cli.return_text, _("Error: nmcli terminated by signal %s (%d)"),
+		                 strsignal (signo), signo);
 		nmc_exit ();
 		break;
 	}
@@ -629,13 +630,14 @@ main (int argc, char *argv[])
 	/* Save terminal settings */
 	tcgetattr (STDIN_FILENO, &termios_orig);
 
-	g_unix_signal_add (SIGTERM, signal_handler, GINT_TO_POINTER (SIGTERM));
-	g_unix_signal_add (SIGINT, signal_handler, GINT_TO_POINTER (SIGINT));
-
 	nmc_value_transforms_register ();
 
 	nmc_init (&nm_cli);
 	loop = g_main_loop_new (NULL, FALSE);
+
+	g_unix_signal_add (SIGTERM, signal_handler, GINT_TO_POINTER (SIGTERM));
+	g_unix_signal_add (SIGINT, signal_handler, GINT_TO_POINTER (SIGINT));
+
 	if (process_command_line (&nm_cli, argc, argv))
 		g_main_loop_run (loop);
 
