@@ -402,10 +402,9 @@ static gboolean
 deactivate_async_finish (NMDevice *device, GAsyncResult *res, GError **error)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (NM_DEVICE_IWD (device));
-	gs_unref_variant GVariant *variant;
+	gs_unref_variant GVariant *variant = NULL;
 
 	variant = g_dbus_proxy_call_finish (priv->dbus_proxy, res, error);
-
 	return variant != NULL;
 }
 
