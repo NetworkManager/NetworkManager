@@ -917,7 +917,7 @@ _dbus_setup (SettingsPluginIfcfg *self)
 	gs_free char *address = NULL;
 	gs_free_error GError *error = NULL;
 
-	g_return_if_fail (!priv->dbus.connection);
+	_dbus_clear (self);
 
 	address = g_dbus_address_get_for_bus_sync (G_BUS_TYPE_SYSTEM, NULL, &error);
 	if (address == NULL) {
@@ -943,17 +943,22 @@ config_changed_cb (NMConfig *config,
                    NMConfigData *old_data,
                    SettingsPluginIfcfg *self)
 {
+	SettingsPluginIfcfgPrivate *priv;
+
 	/* If the dbus connection for some reason is borked the D-Bus service
 	 * won't be offered.
 	 *
 	 * On SIGHUP and SIGUSR1 try to re-connect to D-Bus. So in the unlikely
 	 * event that the D-Bus conneciton is broken, that allows for recovery
 	 * without need for restarting NetworkManager. */
-	if (NM_FLAGS_ANY (changes,   NM_CONFIG_CHANGE_CAUSE_SIGHUP
-	                           | NM_CONFIG_CHANGE_CAUSE_SIGUSR1)) {
-		if (!SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self)->dbus.connection)
-			_dbus_setup (self);
-	}
+	if (!NM_FLAGS_ANY (changes,   NM_CONFIG_CHANGE_CAUSE_SIGHUP
+	                            | NM_CONFIG_CHANGE_CAUSE_SIGUSR1))
+		return;
+
+	priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self);
+	if (   !priv->dbus.connection
+	    && !priv->dbus.cancellable)
+		_dbus_setup (self);
 }
 
 /*****************************************************************************/
