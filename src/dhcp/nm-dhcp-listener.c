@@ -209,37 +209,37 @@ _dbus_connection_register_object (NMDhcpListener *self,
                                   GDBusConnection *connection,
                                   GError **error)
 {
-	static GDBusArgInfo arg_info_notify_in = {
+	static const GDBusArgInfo arg_info_notify_in = {
 		.ref_count = -1,
 		.name = "data",
 		.signature = "a{sv}",
 		.annotations = NULL,
 	};
-	static GDBusArgInfo *arg_infos_notify[] = {
+	static const GDBusArgInfo *const arg_infos_notify[] = {
 		&arg_info_notify_in,
 		NULL,
 	};
-	static GDBusMethodInfo method_info_notify = {
+	static const GDBusMethodInfo method_info_notify = {
 		.ref_count = -1,
 		.name = NM_DHCP_HELPER_SERVER_METHOD_NOTIFY,
-		.in_args = arg_infos_notify,
+		.in_args = NM_UNCONST_PPTR (GDBusArgInfo, arg_infos_notify),
 		.out_args = NULL,
 		.annotations = NULL,
 	};
-	static GDBusMethodInfo *method_infos[] = {
+	static const GDBusMethodInfo *const method_infos[] = {
 		&method_info_notify,
 		NULL,
 	};
-	static GDBusInterfaceInfo interface_info = {
+	static const GDBusInterfaceInfo interface_info = {
 		.ref_count = -1,
 		.name = NM_DHCP_HELPER_SERVER_INTERFACE_NAME,
-		.methods = method_infos,
+		.methods = NM_UNCONST_PPTR (GDBusMethodInfo, method_infos),
 		.signals = NULL,
 		.properties = NULL,
 		.annotations = NULL,
 	};
 
-	static GDBusInterfaceVTable interface_vtable = {
+	static const GDBusInterfaceVTable interface_vtable = {
 		.method_call = _method_call,
 		.get_property = NULL,
 		.set_property = NULL,
@@ -247,8 +247,8 @@ _dbus_connection_register_object (NMDhcpListener *self,
 
 	return g_dbus_connection_register_object (connection,
 	                                          NM_DHCP_HELPER_SERVER_OBJECT_PATH,
-	                                          &interface_info,
-	                                          &interface_vtable,
+	                                          NM_UNCONST_PTR (GDBusInterfaceInfo, &interface_info),
+	                                          NM_UNCONST_PTR (GDBusInterfaceVTable, &interface_vtable),
 	                                          self,
 	                                          NULL,
 	                                          error);
