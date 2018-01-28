@@ -389,6 +389,28 @@ NM_G_ERROR_MSG (GError *error)
 #define NM_CONSTCAST(type, obj, ...) \
 	NM_CONSTCAST_FULL(type, (obj), (obj), ##__VA_ARGS__)
 
+#if _NM_CC_SUPPORT_GENERIC
+#define NM_UNCONST_PTR(type, arg) \
+	_Generic ((arg), \
+	          const type *: ((type *) (arg)), \
+	                type *: ((type *) (arg)))
+#else
+#define NM_UNCONST_PTR(type, arg) \
+	((type *) (arg))
+#endif
+
+#if _NM_CC_SUPPORT_GENERIC
+#define NM_UNCONST_PPTR(type, arg) \
+	_Generic ((arg), \
+	          const type *     *: ((type **) (arg)), \
+	                type *     *: ((type **) (arg)), \
+	          const type *const*: ((type **) (arg)), \
+	                type *const*: ((type **) (arg)))
+#else
+#define NM_UNCONST_PPTR(type, arg) \
+	((type **) (arg))
+#endif
+
 #define NM_GOBJECT_CAST(type, obj, is_check, ...) \
 	({ \
 		const void *_obj = (obj); \
