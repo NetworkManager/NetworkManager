@@ -204,50 +204,34 @@ _method_call (GDBusConnection *connection,
 	g_dbus_method_invocation_return_value (invocation, NULL);
 }
 
+NM_DEFINE_GDBUS_INTERFACE_INFO (
+	interface_info,
+	NM_DHCP_HELPER_SERVER_INTERFACE_NAME,
+	.methods = NM_DEFINE_GDBUS_METHOD_INFOS (
+		NM_DEFINE_GDBUS_METHOD_INFO (
+			NM_DHCP_HELPER_SERVER_METHOD_NOTIFY,
+			.in_args = NM_DEFINE_GDBUS_ARG_INFOS (
+				NM_DEFINE_GDBUS_ARG_INFO (
+					"data",
+					.signature = "a{sv}",
+				),
+			),
+		),
+	),
+);
+
 static guint
 _dbus_connection_register_object (NMDhcpListener *self,
                                   GDBusConnection *connection,
                                   GError **error)
 {
-	static const GDBusArgInfo arg_info_notify_in = {
-		.ref_count = -1,
-		.name = "data",
-		.signature = "a{sv}",
-		.annotations = NULL,
-	};
-	static const GDBusArgInfo *const arg_infos_notify[] = {
-		&arg_info_notify_in,
-		NULL,
-	};
-	static const GDBusMethodInfo method_info_notify = {
-		.ref_count = -1,
-		.name = NM_DHCP_HELPER_SERVER_METHOD_NOTIFY,
-		.in_args = NM_UNCONST_PPTR (GDBusArgInfo, arg_infos_notify),
-		.out_args = NULL,
-		.annotations = NULL,
-	};
-	static const GDBusMethodInfo *const method_infos[] = {
-		&method_info_notify,
-		NULL,
-	};
-	static const GDBusInterfaceInfo interface_info = {
-		.ref_count = -1,
-		.name = NM_DHCP_HELPER_SERVER_INTERFACE_NAME,
-		.methods = NM_UNCONST_PPTR (GDBusMethodInfo, method_infos),
-		.signals = NULL,
-		.properties = NULL,
-		.annotations = NULL,
-	};
-
 	static const GDBusInterfaceVTable interface_vtable = {
 		.method_call = _method_call,
-		.get_property = NULL,
-		.set_property = NULL,
 	};
 
 	return g_dbus_connection_register_object (connection,
 	                                          NM_DHCP_HELPER_SERVER_OBJECT_PATH,
-	                                          NM_UNCONST_PTR (GDBusInterfaceInfo, &interface_info),
+	                                          interface_info,
 	                                          NM_UNCONST_PTR (GDBusInterfaceVTable, &interface_vtable),
 	                                          self,
 	                                          NULL,
