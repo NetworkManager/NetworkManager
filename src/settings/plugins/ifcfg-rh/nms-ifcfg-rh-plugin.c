@@ -46,10 +46,10 @@
 #include "nms-ifcfg-rh-utils.h"
 #include "shvar.h"
 
-#include "settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h"
-
-#define IFCFGRH1_DBUS_SERVICE_NAME "com.redhat.ifcfgrh1"
-#define IFCFGRH1_DBUS_OBJECT_PATH "/com/redhat/ifcfgrh1"
+#define IFCFGRH1_BUS_NAME                               "com.redhat.ifcfgrh1"
+#define IFCFGRH1_OBJECT_PATH                            "/com/redhat/ifcfgrh1"
+#define IFCFGRH1_IFACE1_NAME                            "com.redhat.ifcfgrh1"
+#define IFCFGRH1_IFACE1_METHOD_GET_IFCFG_DETAILS        "GetIfcfgDetails"
 
 /*****************************************************************************/
 
@@ -58,9 +58,9 @@ typedef struct {
 
 	struct {
 		GDBusConnection *connection;
-		GDBusInterfaceSkeleton *interface;
 		GCancellable *cancellable;
 		gulong signal_id;
+		guint regist_id;
 	} dbus;
 
 	GHashTable *connections;  /* uuid::connection */
@@ -768,15 +768,15 @@ static void
 _dbus_clear (SettingsPluginIfcfg *self)
 {
 	SettingsPluginIfcfgPrivate *priv = SETTINGS_PLUGIN_IFCFG_GET_PRIVATE (self);
+	guint id;
 
 	nm_clear_g_signal_handler (priv->dbus.connection, &priv->dbus.signal_id);
 
 	nm_clear_g_cancellable (&priv->dbus.cancellable);
 
-	if (priv->dbus.interface) {
-		g_dbus_interface_skeleton_unexport (priv->dbus.interface);
-		nm_exported_object_skeleton_release (priv->dbus.interface);
-		priv->dbus.interface = NULL;
+	if ((id = nm_steal_int (&priv->dbus.regist_id))) {
+		if (!g_dbus_connection_unregister_object (priv->dbus.connection, id))
+			_LOGW ("dbus: unexpected failure to unregister object");
 	}
 
 	g_clear_object (&priv->dbus.connection);
@@ -788,11 +788,64 @@ _dbus_connection_closed (GDBusConnection *connection,
                          GError          *error,
                          gpointer         user_data)
 {
-	_LOGW ("dbus: %s bus closed", IFCFGRH1_DBUS_SERVICE_NAME);
+	_LOGW ("dbus: %s bus closed", IFCFGRH1_BUS_NAME);
 	_dbus_clear (SETTINGS_PLUGIN_IFCFG (user_data));
 
 	/* Retry or recover? */
 }
+
+static void
+_method_call (GDBusConnection *connection,
+              const char *sender,
+              const char *object_path,
+              const char *interface_name,
+              const char *method_name,
+              GVariant *parameters,
+              GDBusMethodInvocation *invocation,
+              gpointer user_data)
+{
+	SettingsPluginIfcfg *self = SETTINGS_PLUGIN_IFCFG (user_data);
+	const char *ifcfg;
+
+	if (nm_streq0 (interface_name, IFCFGRH1_IFACE1_NAME)) {
+		if (nm_streq0 (method_name, IFCFGRH1_IFACE1_METHOD_GET_IFCFG_DETAILS)) {
+			if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(s)")))
+				g_return_if_reached ();
+
+			g_variant_get (parameters, "(&s)", &ifcfg);
+			impl_ifcfgrh_get_ifcfg_details (self, invocation, ifcfg);
+			return;
+		}
+	}
+
+	g_return_if_reached ();
+}
+
+NM_DEFINE_GDBUS_INTERFACE_INFO (
+	interface_info,
+	IFCFGRH1_BUS_NAME,
+	.methods = NM_DEFINE_GDBUS_METHOD_INFOS (
+		NM_DEFINE_GDBUS_METHOD_INFO (
+			IFCFGRH1_IFACE1_METHOD_GET_IFCFG_DETAILS,
+			.in_args = NM_DEFINE_GDBUS_ARG_INFOS (
+				NM_DEFINE_GDBUS_ARG_INFO (
+					"ifcfg",
+					.signature = "s",
+				),
+			),
+			.out_args = NM_DEFINE_GDBUS_ARG_INFOS (
+				NM_DEFINE_GDBUS_ARG_INFO (
+					"uuid",
+					.signature = "s",
+				),
+				NM_DEFINE_GDBUS_ARG_INFO (
+					"path",
+					.signature = "o",
+				),
+			),
+		),
+	),
+);
 
 static void
 _dbus_request_name_done (GObject *source_object,
@@ -830,36 +883,27 @@ _dbus_request_name_done (GObject *source_object,
 	}
 
 	{
-		GType skeleton_type = NMDBUS_TYPE_IFCFGRH1_SKELETON;
-		gs_free char *method_name_get_ifcfg_details = NULL;
-		NMExportedObjectDBusMethodImpl methods[] = {
-			{
-				.method_name = (method_name_get_ifcfg_details = nm_exported_object_skeletonify_method_name ("GetIfcfgDetails")),
-				.impl = G_CALLBACK (impl_ifcfgrh_get_ifcfg_details),
-			},
+		static const GDBusInterfaceVTable interface_vtable = {
+			.method_call = _method_call,
 		};
 
-		priv->dbus.interface = nm_exported_object_skeleton_create (skeleton_type,
-		                                                           g_type_class_peek (SETTINGS_TYPE_PLUGIN_IFCFG),
-		                                                           methods,
-		                                                           G_N_ELEMENTS (methods),
-		                                                           (GObject *) self);
-
-		if (!g_dbus_interface_skeleton_export (priv->dbus.interface,
-		                                       priv->dbus.connection,
-		                                       IFCFGRH1_DBUS_OBJECT_PATH,
-		                                       &error)) {
-			nm_exported_object_skeleton_release (priv->dbus.interface);
-			priv->dbus.interface = NULL;
-			_LOGW ("dbus: failed exporting interface: %s", error->message);
+		priv->dbus.regist_id = g_dbus_connection_register_object (connection,
+		                                                          IFCFGRH1_OBJECT_PATH,
+		                                                          interface_info,
+		                                                          NM_UNCONST_PTR (GDBusInterfaceVTable, &interface_vtable),
+		                                                          self,
+		                                                          NULL,
+		                                                          &error);
+		if (!priv->dbus.regist_id) {
+			_LOGW ("dbus: couldn't register D-Bus service: %s", error->message);
 			_dbus_clear (self);
 			return;
 		}
 	}
 
 	_LOGD ("dbus: aquired D-Bus service %s and exported %s object",
-	       IFCFGRH1_DBUS_SERVICE_NAME,
-	       IFCFGRH1_DBUS_OBJECT_PATH);
+	       IFCFGRH1_BUS_NAME,
+	       IFCFGRH1_OBJECT_PATH);
 }
 
 static void
@@ -900,7 +944,7 @@ _dbus_create_done (GObject *source_object,
 	                        DBUS_INTERFACE_DBUS,
 	                        "RequestName",
 	                        g_variant_new ("(su)",
-	                                       IFCFGRH1_DBUS_SERVICE_NAME,
+	                                       IFCFGRH1_BUS_NAME,
 	                                       DBUS_NAME_FLAG_DO_NOT_QUEUE),
 	                        G_VARIANT_TYPE ("(u)"),
 	                        G_DBUS_CALL_FLAGS_NONE,
