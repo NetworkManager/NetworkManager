@@ -2510,6 +2510,8 @@ nm_settings_connection_update_timestamp (NMSettingsConnection *self,
 
 	if (flush_to_disk == FALSE)
 		return;
+	if (nm_config_get_configure_and_quit (nm_config_get ()) == NM_CONFIG_CONFIGURE_AND_QUIT_INITRD)
+		return;
 
 	/* Save timestamp to timestamps database file */
 	timestamps_file = g_key_file_new ();

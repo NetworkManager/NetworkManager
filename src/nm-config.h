@@ -101,6 +101,13 @@ typedef enum {
 	NM_CONFIG_STATE_PROPERTY_WWAN_ENABLED,
 } NMConfigRunStatePropertyType;
 
+typedef enum {
+	NM_CONFIG_CONFIGURE_AND_QUIT_INVALID = -1,
+	NM_CONFIG_CONFIGURE_AND_QUIT_DISABLED = FALSE,
+	NM_CONFIG_CONFIGURE_AND_QUIT_ENABLED = TRUE,
+	NM_CONFIG_CONFIGURE_AND_QUIT_INITRD,
+} NMConfigConfigureAndQuitType;
+
 typedef struct {
 	bool net_enabled;
 	bool wifi_enabled;
@@ -127,7 +134,7 @@ NMConfigData *nm_config_get_data_orig (NMConfig *config);
 gboolean nm_config_get_monitor_connection_files (NMConfig *config);
 const char *nm_config_get_log_level (NMConfig *config);
 const char *nm_config_get_log_domains (NMConfig *config);
-gboolean nm_config_get_configure_and_quit (NMConfig *config);
+NMConfigConfigureAndQuitType nm_config_get_configure_and_quit (NMConfig *config);
 gboolean nm_config_get_is_debug (NMConfig *config);
 
 gboolean nm_config_get_first_start (NMConfig *config);
