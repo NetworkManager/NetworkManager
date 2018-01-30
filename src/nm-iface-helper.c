@@ -623,10 +623,10 @@ nm_config_data_get_value (const NMConfigData *config_data, const char *group, co
 	return NULL;
 }
 
-gboolean
+NMConfigConfigureAndQuitType
 nm_config_get_configure_and_quit (NMConfig *config)
 {
-	return TRUE;
+	return NM_CONFIG_CONFIGURE_AND_QUIT_ENABLED;
 }
 
 NMDBusManager *

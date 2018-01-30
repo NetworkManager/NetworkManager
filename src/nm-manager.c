@@ -1586,7 +1586,7 @@ remove_device (NMManager *self,
 				nm_device_sys_iface_state_set (device, NM_DEVICE_SYS_IFACE_STATE_REMOVED);
 				nm_device_set_unmanaged_by_flags (device, NM_UNMANAGED_PLATFORM_INIT, TRUE, NM_DEVICE_STATE_REASON_REMOVED);
 			}
-		} else if (quitting && nm_config_get_configure_and_quit (priv->config)) {
+		} else if (quitting && nm_config_get_configure_and_quit (priv->config) == NM_CONFIG_CONFIGURE_AND_QUIT_ENABLED) {
 			nm_device_spawn_iface_helper (device);
 		}
 	}

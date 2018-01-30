@@ -321,6 +321,11 @@ main (int argc, char *argv[])
 		exit (1);
 	}
 
+	if (nm_config_get_configure_and_quit (config) == NM_CONFIG_CONFIGURE_AND_QUIT_INITRD && !nm_config_get_first_start (config)) {
+		/* Make sure we only run once in the initrd. */
+		exit (0);
+	}
+
 	_init_nm_debug (config);
 
 	/* Initialize logging from config file *only* if not explicitly
