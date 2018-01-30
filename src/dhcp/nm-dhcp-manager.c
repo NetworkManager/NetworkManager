@@ -413,7 +413,7 @@ nm_dhcp_manager_init (NMDhcpManager *self)
 	                                        NM_CONFIG_KEYFILE_KEY_MAIN_DHCP,
 	                                        NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY);
 	client = client_free;
-	if (nm_config_get_configure_and_quit (config)) {
+	if (nm_config_get_configure_and_quit (config) == NM_CONFIG_CONFIGURE_AND_QUIT_ENABLED) {
 		client_factory = &_nm_dhcp_client_factory_internal;
 		if (client && !nm_streq (client, client_factory->name))
 			nm_log_info (LOGD_DHCP, "dhcp-init: Using internal DHCP client since configure-and-quit is set.");

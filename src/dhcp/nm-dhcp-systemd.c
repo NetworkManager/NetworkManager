@@ -32,6 +32,7 @@
 #include "nm-utils/unaligned.h"
 
 #include "nm-utils.h"
+#include "nm-config.h"
 #include "nm-dhcp-utils.h"
 #include "NetworkManagerUtils.h"
 #include "platform/nm-platform.h"
@@ -453,10 +454,30 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 static char *
 get_leasefile_path (int addr_family, const char *iface, const char *uuid)
 {
-	return g_strdup_printf (NMSTATEDIR "/internal%s-%s-%s.lease",
-	                        addr_family == AF_INET6 ? "6" : "",
-	                        uuid,
-	                        iface);
+	char *rundir_path;
+	char *statedir_path;
+
+	rundir_path = g_strdup_printf (NMRUNDIR "/internal%s-%s-%s.lease",
+	                               addr_family == AF_INET6 ? "6" : "",
+	                               uuid,
+	                               iface);
+
+	if (g_file_test (rundir_path, G_FILE_TEST_EXISTS))
+		return rundir_path;
+
+	statedir_path = g_strdup_printf (NMSTATEDIR "/internal%s-%s-%s.lease",
+	                                 addr_family == AF_INET6 ? "6" : "",
+	                                 uuid,
+	                                 iface);
+
+	if (   g_file_test (statedir_path, G_FILE_TEST_EXISTS)
+	    || nm_config_get_configure_and_quit (nm_config_get ()) != NM_CONFIG_CONFIGURE_AND_QUIT_INITRD) {
+		g_free (rundir_path);
+		return statedir_path;
+	} else {
+		g_free (statedir_path);
+		return rundir_path;
+	}
 }
 
 /*****************************************************************************/
