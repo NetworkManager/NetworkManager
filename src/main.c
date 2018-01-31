@@ -397,8 +397,13 @@ main (int argc, char *argv[])
 	                                                         NM_CONFIG_KEYFILE_KEY_MAIN_AUTH_POLKIT,
 	                                                         NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_BOOL));
 
-	if (!nm_dbus_manager_acquire_bus (nm_dbus_manager_get ()))
-		goto done_no_manager;
+	if (!nm_config_get_configure_and_quit (config)) {
+		/* D-Bus is useless in configure and quit mode -- we're eventually dropping
+		 * off and potential clients would have no way of knowing whether we're
+		 * finished already or didn't start yet. */
+		if (!nm_dbus_manager_acquire_bus (nm_dbus_manager_get ()))
+			goto done_no_manager;
+	}
 
 	manager = nm_manager_setup ();
 	nm_dbus_manager_start (nm_dbus_manager_get(),
