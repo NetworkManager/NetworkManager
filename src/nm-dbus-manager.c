@@ -1480,7 +1480,11 @@ nm_dbus_manager_start (NMDBusManager *self,
 
 	g_return_if_fail (NM_IS_DBUS_MANAGER (self));
 	priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
-	g_return_if_fail (priv->connection);
+
+	if (!priv->connection) {
+		/* Do nothing. We're presumably in the configure-and-quit mode. */
+		return;
+	}
 
 	priv->set_property_handler = set_property_handler;
 	priv->set_property_handler_data = set_property_handler_data;
@@ -1505,29 +1509,17 @@ nm_dbus_manager_acquire_bus (NMDBusManager *self)
 
 	priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 
-	/* we will create the D-Bus connection and registering the name synchronously.
-	 * The reason why that is necessary is because:
-	 *  (1) if we are unable to create a D-Bus connection, it means D-Bus is not
-	 *    available and we run in D-Bus less mode. We do not support creating
-	 *    a D-Bus connection later on. This disconnected mode is useful for initrd
-	 *    (well, currently not yet, but will be).
-	 *  (2) if we are able to create the connection and register the name,
-	 *    all is good and we run with D-Bus. Note that D-Bus disconnects
-	 *    from D-Bus are ignored. Essentially, we do not support restarting
-	 *    D-Bus.
-	 *  (3) if we are able to create the connection but registration fails,
-	 *    it means that something is borked. Quite possibly another NetworkManager
-	 *    instance is running. We need to exit right away.
-	 * To appease (1) and (3), we cannot initalize synchronously, because we need
-	 * to know right away whether another NetworkManager instance is running (3).
-	 **/
-
+	/* Create the D-Bus connection and registering the name synchronously.
+	 * That is necessary because we need to exit right away if we can't
+	 * acquire the name despite connecting to the bus successfully.
+	 * It means that something is gravely broken -- such as another NetworkManager
+	 * instance running. */
 	connection = g_bus_get_sync (G_BUS_TYPE_SYSTEM,
 	                             NULL,
 	                             &error);
 	if (!connection) {
-		_LOGI ("cannot connect to D-Bus and proceed without (%s)", error->message);
-		return TRUE;
+		_LOGI ("cannot connect to D-Bus: %s", error->message);
+		return FALSE;
 	}
 
 	g_dbus_connection_set_exit_on_close (connection, FALSE);
