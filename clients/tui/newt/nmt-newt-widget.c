@@ -311,7 +311,7 @@ nmt_newt_widget_real_activated (NmtNewtWidget *widget)
 
 	if (priv->exit_on_activate)
 		nmt_newt_form_quit (nmt_newt_widget_get_form (widget));
-}	
+}
 
 /**
  * nmt_newt_widget_activated:

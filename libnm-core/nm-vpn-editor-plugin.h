@@ -179,4 +179,4 @@ void             nm_vpn_editor_plugin_set_plugin_info (NMVpnEditorPlugin *plugin
 
 G_END_DECLS
 
-#endif	/* __NM_VPN_EDITOR_PLUGIN_H__ */
+#endif /* __NM_VPN_EDITOR_PLUGIN_H__ */

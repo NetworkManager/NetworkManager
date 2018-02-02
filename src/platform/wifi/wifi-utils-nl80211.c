@@ -404,7 +404,7 @@ struct nl80211_bss_info {
 	gboolean valid;
 };
 
-#define WLAN_EID_SSID	0
+#define WLAN_EID_SSID 0
 
 static void
 find_ssid (guint8 *ies, guint32 ies_len,

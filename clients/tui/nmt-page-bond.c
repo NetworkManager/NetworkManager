@@ -203,21 +203,21 @@ slaves_changed (GObject    *object,
 		nmt_newt_component_set_sensitive (NMT_NEWT_COMPONENT (priv->mode), TRUE);
 }
 
-#define WIDGET_CHANGED_FUNC(widget, func, option)							\
-static void																	\
-widget ## _widget_changed (GObject    *object,								\
-                           GParamSpec *pspec,								\
-                           gpointer    user_data)							\
-{																			\
-	NmtPageBond *bond = NMT_PAGE_BOND (user_data);							\
-	NmtPageBondPrivate *priv = NMT_PAGE_BOND_GET_PRIVATE (bond);			\
-																			\
-	if (priv->updating)														\
-		return;																\
-																			\
-	priv->updating = TRUE;													\
-	nm_setting_bond_add_option (priv->s_bond, option, func (priv->widget));	\
-	priv->updating = FALSE;													\
+#define WIDGET_CHANGED_FUNC(widget, func, option) \
+static void \
+widget ## _widget_changed (GObject    *object, \
+                           GParamSpec *pspec, \
+                           gpointer    user_data) \
+{ \
+    NmtPageBond *bond = NMT_PAGE_BOND (user_data); \
+    NmtPageBondPrivate *priv = NMT_PAGE_BOND_GET_PRIVATE (bond); \
+    \
+    if (priv->updating) \
+        return; \
+    \
+    priv->updating = TRUE; \
+    nm_setting_bond_add_option (priv->s_bond, option, func (priv->widget)); \
+    priv->updating = FALSE; \
 }
 
 WIDGET_CHANGED_FUNC (primary, nmt_newt_entry_get_text, NM_SETTING_BOND_OPTION_PRIMARY)

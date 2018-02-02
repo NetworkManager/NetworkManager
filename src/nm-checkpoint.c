@@ -304,7 +304,7 @@ activate:
 				                                     &local_error)) {
 					_LOGW ("rollback: reactivation of connection %s/%s failed: %s",
 					       nm_connection_get_id ((NMConnection *) connection),
-					       nm_connection_get_uuid ((NMConnection *	) connection),
+					       nm_connection_get_uuid ((NMConnection *) connection),
 					       local_error->message);
 					g_clear_error (&local_error);
 					result = NM_ROLLBACK_RESULT_ERR_FAILED;

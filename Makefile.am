@@ -623,7 +623,7 @@ endif
 
 EXTRA_DIST += \
 	libnm-core/crypto_gnutls.c \
-	libnm-core/crypto_nss.c	\
+	libnm-core/crypto_nss.c \
 	libnm-core/nm-core-enum-types.c.template \
 	libnm-core/nm-core-enum-types.h.template \
 	libnm-core/meson.build
@@ -712,11 +712,11 @@ $(libnm_core_tests_test_settings_defaults_OBJECTS): $(libnm_core_lib_h_pub_mkenu
 # test-cert.p12 created with:
 #
 # openssl pkcs12 -export \
-#	-in test_key_and_cert.pem \
-#	-inkey test_key_and_cert.pem \
-#	-certfile test_ca_cert.pem \
-#	-name "test-pkcs12" \
-#	-out test-cert.p12
+#    -in test_key_and_cert.pem \
+#    -inkey test_key_and_cert.pem \
+#    -certfile test_ca_cert.pem \
+#    -name "test-pkcs12" \
+#    -out test-cert.p12
 
 EXTRA_DIST += \
 	libnm-core/tests/certs/ca-no-ending-newline.pem \

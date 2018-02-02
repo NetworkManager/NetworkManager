@@ -68,7 +68,7 @@ edit_clicked (NmtNewtButton *button,
 	              NM_SETTING_TEAM_PORT_CONFIG, new_config,
 	              NULL);
 	g_free (new_config);
-}	
+}
 
 static void
 nmt_page_team_port_constructed (GObject *object)

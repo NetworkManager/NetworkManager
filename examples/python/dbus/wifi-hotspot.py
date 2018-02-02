@@ -54,7 +54,7 @@ con = dbus.Dictionary({
     'ipv6': s_ip6
      })
 
-def usage():	
+def usage():
     print("Usage: %s <ifname> [up|down]" % sys.argv[0])
     sys.exit(0)
 

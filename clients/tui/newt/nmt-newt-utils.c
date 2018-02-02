@@ -376,5 +376,5 @@ nmt_newt_edit_string (const char *data)
 	g_free (filename);
 
 	return new_data;
-}	
+}
 

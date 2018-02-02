@@ -37,7 +37,7 @@ IGNORE_HFILES= \
 	nm-version.h
 
 # Images to copy into HTML directory.
-HTML_IMAGES = 
+HTML_IMAGES =
 
 # Extra XML files that are included by $(DOC_MAIN_SGML_FILE).
 content_files = version.xml
@@ -48,10 +48,10 @@ extra_files =
 
 # CFLAGS and LDFLAGS for compiling scan program. Only needed
 # if $(DOC_MODULE).types is non-empty.
-GTKDOC_CFLAGS =				\
-	-I$(top_srcdir)/libnm-util	\
+GTKDOC_CFLAGS = \
+	-I$(top_srcdir)/libnm-util \
 	-DNM_VERSION_MIN_REQUIRED=NM_VERSION_0_9_8 \
-	$(GLIB_CFLAGS)			\
+	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS)
 
 GTKDOC_LIBS = \

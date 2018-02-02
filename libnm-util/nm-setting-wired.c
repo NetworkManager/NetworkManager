@@ -947,7 +947,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 		                             G_PARAM_READWRITE |
 		                             NM_SETTING_PARAM_INFERRABLE |
 		                             G_PARAM_STATIC_STRINGS));
-    
+
 	/**
 	 * NMSettingWired:mac-address-blacklist:
 	 *

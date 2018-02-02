@@ -129,8 +129,8 @@ _recursive_ifparser (const char *eni_file, int quiet)
 
 	while (!feof(inp))
 	{
-		char *token[128];	/* 255 chars can only be split into 127 tokens */
-		char value[255];	/* large enough to join previously split tokens */
+		char *token[128]; /* 255 chars can only be split into 127 tokens */
+		char value[255];  /* large enough to join previously split tokens */
 		char *safeptr;
 		int toknum;
 		int len = 0;
@@ -169,7 +169,7 @@ _recursive_ifparser (const char *eni_file, int quiet)
 			continue;
 		}
 
-#define SPACES	" \t"
+#define SPACES " \t"
 		/* tokenize input; */
 		for (toknum = 0, token[toknum] = strtok_r(line, SPACES, &safeptr);
 		     token[toknum] != NULL;

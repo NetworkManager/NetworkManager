@@ -439,19 +439,19 @@ dhclient_start (NMDhcpClient *client,
 		while (prefixes--)
 			g_ptr_array_add (argv, (gpointer) "-P");
 	}
-	g_ptr_array_add (argv, (gpointer) "-sf");	/* Set script file */
+	g_ptr_array_add (argv, (gpointer) "-sf"); /* Set script file */
 	g_ptr_array_add (argv, (gpointer) nm_dhcp_helper_path);
 
 	if (pid_file) {
-		g_ptr_array_add (argv, (gpointer) "-pf");	/* Set pid file */
+		g_ptr_array_add (argv, (gpointer) "-pf"); /* Set pid file */
 		g_ptr_array_add (argv, (gpointer) pid_file);
 	}
 
-	g_ptr_array_add (argv, (gpointer) "-lf");	/* Set lease file */
+	g_ptr_array_add (argv, (gpointer) "-lf"); /* Set lease file */
 	g_ptr_array_add (argv, (gpointer) priv->lease_file);
 
 	if (priv->conf_file) {
-		g_ptr_array_add (argv, (gpointer) "-cf");	/* Set interface config file */
+		g_ptr_array_add (argv, (gpointer) "-cf"); /* Set interface config file */
 		g_ptr_array_add (argv, (gpointer) priv->conf_file);
 	}
 

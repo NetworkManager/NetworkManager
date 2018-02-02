@@ -6776,7 +6776,7 @@ confirm_connection_saving (NMConnection *local, NMConnection *remote)
 	return confirmed;
 }
 
-typedef	struct {
+typedef struct {
 	guint level;
 	char *main_prompt;
 	NMSetting *curr_setting;

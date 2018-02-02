@@ -664,7 +664,7 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 		                      NULL,
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
-	
+
 	/**
 	 * NMAccessPoint:mode:
 	 *

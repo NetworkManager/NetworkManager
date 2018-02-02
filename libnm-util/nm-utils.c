@@ -55,7 +55,7 @@ struct EncodingTriplet
 
 struct IsoLangToEncodings
 {
-	const char *	lang;
+	const char *lang;
 	struct EncodingTriplet encodings;
 };
 
@@ -63,13 +63,13 @@ struct IsoLangToEncodings
 static const struct IsoLangToEncodings isoLangEntries5[] =
 {
 	/* Simplified Chinese */
-	{ "zh_cn",	{"euc-cn",	"gb2312",			"gb18030"} },	/* PRC */
-	{ "zh_sg",	{"euc-cn",	"gb2312",			"gb18030"} },	/* Singapore */
+	{ "zh_cn",      {"euc-cn",      "gb2312",                       "gb18030"} },   /* PRC */
+	{ "zh_sg",      {"euc-cn",      "gb2312",                       "gb18030"} },   /* Singapore */
 
 	/* Traditional Chinese */
-	{ "zh_tw",	{"big5",		"euc-tw",			NULL} },		/* Taiwan */
-	{ "zh_hk",	{"big5",		"euc-tw",			"big5-hkcs"} },/* Hong Kong */
-	{ "zh_mo",	{"big5",		"euc-tw",			NULL} },		/* Macau */
+	{ "zh_tw",      {"big5",                "euc-tw",                       NULL} },                /* Taiwan */
+	{ "zh_hk",      {"big5",                "euc-tw",                       "big5-hkcs"} },/* Hong Kong */
+	{ "zh_mo",      {"big5",                "euc-tw",                       NULL} },                /* Macau */
 
 	/* Table end */
 	{ NULL, {NULL, NULL, NULL} }
@@ -79,49 +79,49 @@ static const struct IsoLangToEncodings isoLangEntries5[] =
 static const struct IsoLangToEncodings isoLangEntries2[] =
 {
 	/* Japanese */
-	{ "ja",		{"euc-jp",	"shift_jis",		"iso-2022-jp"} },
+	{ "ja",         {"euc-jp",      "shift_jis",            "iso-2022-jp"} },
 
 	/* Korean */
-	{ "ko",		{"euc-kr",	"iso-2022-kr",		"johab"} },
+	{ "ko",         {"euc-kr",      "iso-2022-kr",          "johab"} },
 
 	/* Thai */
-	{ "th",		{"iso-8859-11","windows-874",		NULL} },
+	{ "th",         {"iso-8859-11","windows-874",           NULL} },
 
 	/* Central European */
-	{ "hu",		{"iso-8859-2",	"windows-1250",	NULL} },	/* Hungarian */
-	{ "cs",		{"iso-8859-2",	"windows-1250",	NULL} },	/* Czech */
-	{ "hr",		{"iso-8859-2",	"windows-1250",	NULL} },	/* Croatian */
-	{ "pl",		{"iso-8859-2",	"windows-1250",	NULL} },	/* Polish */
-	{ "ro",		{"iso-8859-2",	"windows-1250",	NULL} },	/* Romanian */
-	{ "sk",		{"iso-8859-2",	"windows-1250",	NULL} },	/* Slovakian */
-	{ "sl",		{"iso-8859-2",	"windows-1250",	NULL} },	/* Slovenian */
-	{ "sh",		{"iso-8859-2",	"windows-1250",	NULL} },	/* Serbo-Croatian */
+	{ "hu",         {"iso-8859-2",  "windows-1250", NULL} },        /* Hungarian */
+	{ "cs",         {"iso-8859-2",  "windows-1250", NULL} },        /* Czech */
+	{ "hr",         {"iso-8859-2",  "windows-1250", NULL} },        /* Croatian */
+	{ "pl",         {"iso-8859-2",  "windows-1250", NULL} },        /* Polish */
+	{ "ro",         {"iso-8859-2",  "windows-1250", NULL} },        /* Romanian */
+	{ "sk",         {"iso-8859-2",  "windows-1250", NULL} },        /* Slovakian */
+	{ "sl",         {"iso-8859-2",  "windows-1250", NULL} },        /* Slovenian */
+	{ "sh",         {"iso-8859-2",  "windows-1250", NULL} },        /* Serbo-Croatian */
 
 	/* Cyrillic */
-	{ "ru",		{"koi8-r",	"windows-1251",	"iso-8859-5"} },	/* Russian */
-	{ "be",		{"koi8-r",	"windows-1251",	"iso-8859-5"} },	/* Belorussian */
-	{ "bg",		{"windows-1251","koi8-r",		"iso-8859-5"} },	/* Bulgarian */
-	{ "mk",		{"koi8-r",	"windows-1251",	"iso-8859-5"} },	/* Macedonian */
-	{ "sr",		{"koi8-r",	"windows-1251",	"iso-8859-5"} },	/* Serbian */
-	{ "uk",		{"koi8-u",	"koi8-r",			"windows-1251"} },	/* Ukranian */
+	{ "ru",         {"koi8-r",      "windows-1251", "iso-8859-5"} },        /* Russian */
+	{ "be",         {"koi8-r",      "windows-1251", "iso-8859-5"} },        /* Belorussian */
+	{ "bg",         {"windows-1251","koi8-r",               "iso-8859-5"} },        /* Bulgarian */
+	{ "mk",         {"koi8-r",      "windows-1251", "iso-8859-5"} },        /* Macedonian */
+	{ "sr",         {"koi8-r",      "windows-1251", "iso-8859-5"} },        /* Serbian */
+	{ "uk",         {"koi8-u",      "koi8-r",                       "windows-1251"} },      /* Ukranian */
 
 	/* Arabic */
-	{ "ar",		{"iso-8859-6",	"windows-1256",	NULL} },
+	{ "ar",         {"iso-8859-6",  "windows-1256", NULL} },
 
 	/* Baltic */
-	{ "et",		{"iso-8859-4",	"windows-1257",	NULL} },	/* Estonian */
-	{ "lt",		{"iso-8859-4",	"windows-1257",	NULL} },	/* Lithuanian */
-	{ "lv",		{"iso-8859-4",	"windows-1257",	NULL} },	/* Latvian */
+	{ "et",         {"iso-8859-4",  "windows-1257", NULL} },        /* Estonian */
+	{ "lt",         {"iso-8859-4",  "windows-1257", NULL} },        /* Lithuanian */
+	{ "lv",         {"iso-8859-4",  "windows-1257", NULL} },        /* Latvian */
 
 	/* Greek */
-	{ "el",		{"iso-8859-7",	"windows-1253",	NULL} },
+	{ "el",         {"iso-8859-7",  "windows-1253", NULL} },
 
 	/* Hebrew */
-	{ "he",		{"iso-8859-8",	"windows-1255",	NULL} },
-	{ "iw",		{"iso-8859-8",	"windows-1255",	NULL} },
+	{ "he",         {"iso-8859-8",  "windows-1255", NULL} },
+	{ "iw",         {"iso-8859-8",  "windows-1255", NULL} },
 
 	/* Turkish */
-	{ "tr",		{"iso-8859-9",	"windows-1254",	NULL} },
+	{ "tr",         {"iso-8859-9",  "windows-1254", NULL} },
 
 	/* Table end */
 	{ NULL, {NULL, NULL, NULL} }
@@ -166,9 +166,9 @@ get_encodings_for_lang (const char *lang,
                         char **encoding2,
                         char **encoding3)
 {
-	struct EncodingTriplet *	encodings;
-	gboolean				success = FALSE;
-	char *				tmp_lang;
+	struct EncodingTriplet *encodings;
+	gboolean success = FALSE;
+	char *tmp_lang;
 
 	g_return_val_if_fail (lang != NULL, FALSE);
 	g_return_val_if_fail (encoding1 != NULL, FALSE);

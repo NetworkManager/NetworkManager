@@ -141,4 +141,4 @@ gboolean nm_device_match_hwaddr (NMDevice *device,
                                  NMConnection *connection,
                                  gboolean fail_if_no_hwaddr);
 
-#endif	/* NM_DEVICE_PRIVATE_H */
+#endif /* NM_DEVICE_PRIVATE_H */

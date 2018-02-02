@@ -118,16 +118,16 @@ dhcpcanon_start (NMDhcpClient *client,
 	argv = g_ptr_array_new ();
 	g_ptr_array_add (argv, (gpointer) dhcpcanon_path);
 
-	g_ptr_array_add (argv, (gpointer) "-sf");	/* Set script file */
+	g_ptr_array_add (argv, (gpointer) "-sf"); /* Set script file */
 	g_ptr_array_add (argv, (gpointer) nm_dhcp_helper_path);
 
 	if (pid_file) {
-		g_ptr_array_add (argv, (gpointer) "-pf");	/* Set pid file */
+		g_ptr_array_add (argv, (gpointer) "-pf"); /* Set pid file */
 		g_ptr_array_add (argv, (gpointer) pid_file);
 	}
 
 	if (priv->conf_file) {
-		g_ptr_array_add (argv, (gpointer) "-cf");	/* Set interface config file */
+		g_ptr_array_add (argv, (gpointer) "-cf"); /* Set interface config file */
 		g_ptr_array_add (argv, (gpointer) priv->conf_file);
 	}
 

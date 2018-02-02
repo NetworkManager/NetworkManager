@@ -114,18 +114,18 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 	argv = g_ptr_array_new ();
 	g_ptr_array_add (argv, (gpointer) dhcpcd_path);
 
-	g_ptr_array_add (argv, (gpointer) "-B");	/* Don't background on lease (disable fork()) */
+	g_ptr_array_add (argv, (gpointer) "-B");    /* Don't background on lease (disable fork()) */
 
-	g_ptr_array_add (argv, (gpointer) "-K");	/* Disable built-in carrier detection */
+	g_ptr_array_add (argv, (gpointer) "-K");    /* Disable built-in carrier detection */
 
-	g_ptr_array_add (argv, (gpointer) "-L");	/* Disable built-in IPv4LL */
+	g_ptr_array_add (argv, (gpointer) "-L");    /* Disable built-in IPv4LL */
 
 	/* --noarp. Don't request or claim the address by ARP; this also disables IPv4LL. */
 	g_ptr_array_add (argv, (gpointer) "-A");
 
-	g_ptr_array_add (argv, (gpointer) "-G");	/* Let NM handle routing */
+	g_ptr_array_add (argv, (gpointer) "-G");    /* Let NM handle routing */
 
-	g_ptr_array_add (argv, (gpointer) "-c");	/* Set script file */
+	g_ptr_array_add (argv, (gpointer) "-c");    /* Set script file */
 	g_ptr_array_add (argv, (gpointer) nm_dhcp_helper_path);
 
 #ifdef DHCPCD_SUPPORTS_IPV6
