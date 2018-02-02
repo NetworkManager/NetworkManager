@@ -887,6 +887,23 @@ get_expiry_time (guint32 timestamp, guint32 lifetime)
 		                   : (_item->lifetime) / 2); \
 	})
 
+static const char *
+_get_exp (char *buf, gsize buf_size, gint64 now_ns, gint32 expiry_time)
+{
+	int l;
+
+	if (expiry_time == G_MAXINT32)
+		return "permanent";
+	l = g_snprintf (buf, buf_size,
+	                "%.4f",
+	                ((double) ((expiry_time * NM_UTILS_NS_PER_SECOND) - now_ns)) / ((double) NM_UTILS_NS_PER_SECOND));
+	nm_assert (l < buf_size);
+	return buf;
+}
+
+#define get_exp(buf, now_ns, item) \
+	_get_exp ((buf), G_N_ELEMENTS (buf), (now_ns), (get_expiry (item)))
+
 static void
 _config_changed_log (NMNDisc *ndisc, NMNDiscConfigMap changed)
 {
@@ -896,9 +913,13 @@ _config_changed_log (NMNDisc *ndisc, NMNDiscConfigMap changed)
 	char changedstr[CONFIG_MAP_MAX_STR];
 	char addrstr[INET6_ADDRSTRLEN];
 	char str_pref[35];
+	char str_exp[100];
+	gint64 now_ns;
 
 	if (!_LOGD_ENABLED ())
 		return;
+
+	now_ns = nm_utils_get_monotonic_timestamp_ns ();
 
 	priv = NM_NDISC_GET_PRIVATE (ndisc);
 	rdata = &priv->rdata;
@@ -910,35 +931,38 @@ _config_changed_log (NMNDisc *ndisc, NMNDiscConfigMap changed)
 		NMNDiscGateway *gateway = &g_array_index (rdata->gateways, NMNDiscGateway, i);
 
 		inet_ntop (AF_INET6, &gateway->address, addrstr, sizeof (addrstr));
-		_LOGD ("  gateway %s pref %s exp %d", addrstr,
+		_LOGD ("  gateway %s pref %s exp %s", addrstr,
 		       nm_icmpv6_router_pref_to_string (gateway->preference, str_pref, sizeof (str_pref)),
-		       get_expiry (gateway));
+		       get_exp (str_exp, now_ns, gateway));
 	}
 	for (i = 0; i < rdata->addresses->len; i++) {
 		NMNDiscAddress *address = &g_array_index (rdata->addresses, NMNDiscAddress, i);
 
 		inet_ntop (AF_INET6, &address->address, addrstr, sizeof (addrstr));
-		_LOGD ("  address %s exp %d", addrstr, get_expiry (address));
+		_LOGD ("  address %s exp %s", addrstr,
+		       get_exp (str_exp, now_ns, address));
 	}
 	for (i = 0; i < rdata->routes->len; i++) {
 		NMNDiscRoute *route = &g_array_index (rdata->routes, NMNDiscRoute, i);
 
 		inet_ntop (AF_INET6, &route->network, addrstr, sizeof (addrstr));
-		_LOGD ("  route %s/%u via %s pref %s exp %d", addrstr, (guint) route->plen,
+		_LOGD ("  route %s/%u via %s pref %s exp %s", addrstr, (guint) route->plen,
 		       nm_utils_inet6_ntop (&route->gateway, NULL),
 		       nm_icmpv6_router_pref_to_string (route->preference, str_pref, sizeof (str_pref)),
-		       get_expiry (route));
+		       get_exp (str_exp, now_ns, route));
 	}
 	for (i = 0; i < rdata->dns_servers->len; i++) {
 		NMNDiscDNSServer *dns_server = &g_array_index (rdata->dns_servers, NMNDiscDNSServer, i);
 
 		inet_ntop (AF_INET6, &dns_server->address, addrstr, sizeof (addrstr));
-		_LOGD ("  dns_server %s exp %d", addrstr, get_expiry (dns_server));
+		_LOGD ("  dns_server %s exp %s", addrstr,
+		       get_exp (str_exp, now_ns, dns_server));
 	}
 	for (i = 0; i < rdata->dns_domains->len; i++) {
 		NMNDiscDNSDomain *dns_domain = &g_array_index (rdata->dns_domains, NMNDiscDNSDomain, i);
 
-		_LOGD ("  dns_domain %s exp %d", dns_domain->domain, get_expiry (dns_domain));
+		_LOGD ("  dns_domain %s exp %s", dns_domain->domain,
+		       get_exp (str_exp, now_ns, dns_domain));
 	}
 }
 
