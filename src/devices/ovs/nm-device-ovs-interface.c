@@ -35,8 +35,13 @@ _LOG_DECLARE_SELF(NMDeviceOvsInterface);
 
 /*****************************************************************************/
 
+typedef struct {
+	bool waiting_for_interface:1;
+} NMDeviceOvsInterfacePrivate;
+
 struct _NMDeviceOvsInterface {
 	NMDevice parent;
+	NMDeviceOvsInterfacePrivate _priv;
 };
 
 struct _NMDeviceOvsInterfaceClass {
@@ -44,6 +49,8 @@ struct _NMDeviceOvsInterfaceClass {
 };
 
 G_DEFINE_TYPE (NMDeviceOvsInterface, nm_device_ovs_interface, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDeviceOvsInterface, NM_IS_DEVICE_OVS_INTERFACE)
 
 /*****************************************************************************/
 
@@ -109,7 +116,10 @@ static void
 link_changed (NMDevice *device,
               const NMPlatformLink *pllink)
 {
-	if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG) {
+	NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE (device);
+
+	if (priv->waiting_for_interface) {
+		priv->waiting_for_interface = FALSE;
 		nm_device_bring_up (device, TRUE, NULL);
 		nm_device_activate_schedule_stage3_ip_config_start (device);
 	}
@@ -131,11 +141,15 @@ act_stage3_ip4_config_start (NMDevice *device,
                              NMIP4Config **out_config,
                              NMDeviceStateReason *out_failure_reason)
 {
+	NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE (device);
+
 	if (!_is_internal_interface (device))
 		return NM_ACT_STAGE_RETURN_IP_FAIL;
 
-	if (!nm_device_get_ip_ifindex (device))
+	if (!nm_device_get_ip_ifindex (device)) {
+		priv->waiting_for_interface = TRUE;
 		return NM_ACT_STAGE_RETURN_POSTPONE;
+	}
 
 	return NM_DEVICE_CLASS (nm_device_ovs_interface_parent_class)->act_stage3_ip4_config_start (device, out_config, out_failure_reason);
 }
@@ -145,11 +159,15 @@ act_stage3_ip6_config_start (NMDevice *device,
                              NMIP6Config **out_config,
                              NMDeviceStateReason *out_failure_reason)
 {
+	NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE (device);
+
 	if (!_is_internal_interface (device))
 		return NM_ACT_STAGE_RETURN_IP_FAIL;
 
-	if (!nm_device_get_ip_ifindex (device))
+	if (!nm_device_get_ip_ifindex (device)) {
+		priv->waiting_for_interface = TRUE;
 		return NM_ACT_STAGE_RETURN_POSTPONE;
+	}
 
 	return NM_DEVICE_CLASS (nm_device_ovs_interface_parent_class)->act_stage3_ip6_config_start (device, out_config, out_failure_reason);
 }
