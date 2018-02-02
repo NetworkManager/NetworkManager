@@ -3556,7 +3556,7 @@ nm_platform_ip6_address_sync (NMPlatform *self,
 		const NMPlatformIP6Address *known_address = NMP_OBJECT_CAST_IP6_ADDRESS (known_addresses->pdata[i]);
 		guint32 lifetime, preferred;
 
-		if (NM_FLAGS_HAS (known_address->n_ifa_flags, IFA_F_TEMPORARY)) {
+		if (NM_FLAGS_HAS (known_address->n_ifa_flags, IFA_F_SECONDARY)) {
 			/* Kernel manages these */
 			continue;
 		}
