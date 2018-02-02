@@ -363,7 +363,7 @@ nmt_newt_widget_set_exit_on_activate (NmtNewtWidget *widget,
 		priv->exit_on_activate = exit_on_activate;
 		g_object_notify (G_OBJECT (widget), "exit-on-activate");
 	}
-} 
+}
 
 /**
  * nmt_newt_widget_get_visible:

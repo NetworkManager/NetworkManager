@@ -114,7 +114,7 @@ def activate_connection(connection_path, device_path):
     iface = dbus.Interface(proxy, dbus_interface='org.freedesktop.NetworkManager')
     iface.ActivateConnection('org.freedesktop.NetworkManager',
                              connection_path,
-                             device_path, 
+                             device_path,
                              "/",
                              reply_handler=reply_handler,
                              error_handler=error_handler)

@@ -70,7 +70,7 @@ typedef struct {
  * Creates a new #NmtEditorGrid
  *
  * Returns: a new #NmtEditorGrid
- */ 
+ */
 NmtNewtWidget *
 nmt_editor_grid_new (void)
 {

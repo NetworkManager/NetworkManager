@@ -47,7 +47,7 @@
  *
  * When the async callback is invoked, it should call
  * nmt_sync_op_complete_boolean() or nmt_sync_op_complete_pointer() to
- * return a result or an error to the caller. 
+ * return a result or an error to the caller.
  *
  * There is no free/clear function; any memory that needs to be freed
  * will have been returned to the caller from

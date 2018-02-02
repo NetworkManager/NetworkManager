@@ -524,7 +524,7 @@ nmc_count_color_escape_chars (const char *start, const char *end)
 			inside = TRUE;
 		if (inside)
 			num++;
-		if (*start == 'm') 
+		if (*start == 'm')
 			inside = FALSE;
 		start++;
 	}

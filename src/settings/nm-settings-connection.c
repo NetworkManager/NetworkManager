@@ -1505,7 +1505,7 @@ check_writable (NMConnection *self, GError **error)
 }
 
 static void
-get_settings_auth_cb (NMSettingsConnection *self, 
+get_settings_auth_cb (NMSettingsConnection *self,
                       GDBusMethodInvocation *context,
                       NMAuthSubject *subject,
                       GError *error,

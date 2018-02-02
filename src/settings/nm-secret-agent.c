@@ -300,7 +300,7 @@ nm_secret_agent_add_permission (NMSecretAgent *agent,
  * @permission: The name of the permission to check for
  *
  * Returns whether or not the agent has the given permission.
- * 
+ *
  * Returns: %TRUE if the agent has the given permission, %FALSE if it does not
  * or if the permission was not previous recorded with
  * nm_secret_agent_add_permission().

@@ -369,7 +369,7 @@ _libnm_glib_dbus_watcher (gpointer user_data)
 		/* Wait 3 seconds longer each time we fail to reconnect to dbus,
 		 * with a maximum wait of one minute.
 		 */
-		ctx->dbus_watch_interval = MIN(ctx->dbus_watch_interval + 3000, 60000); 
+		ctx->dbus_watch_interval = MIN(ctx->dbus_watch_interval + 3000, 60000);
 
 		/* Reschule ourselves if we _still_ don't have a connection to dbus */
 		_libnm_glib_schedule_dbus_watcher (ctx);

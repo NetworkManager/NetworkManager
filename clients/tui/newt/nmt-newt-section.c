@@ -304,7 +304,7 @@ adjust_border_for_allocation (NmtNewtSectionPrivate *priv,
 				label = nmt_newt_label_new (line_glyph);
 				g_ptr_array_add (priv->border_line_labels, label);
 				nmt_newt_grid_add (NMT_NEWT_GRID (priv->border_grid), label, 0, i + 1);
-			} else 
+			} else
 				nmt_newt_widget_set_visible (priv->border_line_labels->pdata[i], TRUE);
 		}
 		nmt_newt_widget_set_visible (priv->border_end_label, TRUE);
