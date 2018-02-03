@@ -1,4 +1,21 @@
 ===============================================
+NetworkManager-1.10.4
+Overview of changes since NetworkManager-1.10.2
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Load jansson at runtime. This solves a clash with json-glib that caused
+    a gnome-control-center crash, but also gets rid of a hard dependency.
+* Correct nmcli exit values after receiving a signal.
+* Fix libnm secret agent asynchronous initialization.
+* Add a default route for a modem even if it didn't sent a gateway.
+* Improve communication of DAD failures.
+* Remember device default metrics across daemon restarts.
+* Various bug fixes including possible crashes.
+* Updated translations.
+
+===============================================
 NetworkManager-1.10.2
 Overview of changes since NetworkManager-1.10.0
 ===============================================
