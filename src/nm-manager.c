@@ -3788,8 +3788,19 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	}
 
 	/* If the device is there, we can ready it for the activation. */
-	if (nm_device_is_real (device))
+	if (nm_device_is_real (device)) {
 		unmanaged_to_disconnected (device);
+
+		if (!nm_device_get_managed (device, FALSE)) {
+			/* Unexpectedly, the device is still unmanaged. That can happen for example,
+			 * if the device is forcibly unmanaged due to NM_UNMANAGED_USER_SETTINGS. */
+			g_set_error_literal (error,
+			                     NM_MANAGER_ERROR,
+			                     NM_MANAGER_ERROR_DEPENDENCY_FAILED,
+			                     "Activation failed because the device is unmanaged");
+			return FALSE;
+		}
+	}
 
 	/* Export the new ActiveConnection to clients and start it on the device */
 	active_connection_add (self, active);
