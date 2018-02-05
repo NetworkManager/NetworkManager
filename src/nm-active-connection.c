@@ -1233,6 +1233,7 @@ set_property (GObject *object, guint prop_id,
 		nm_active_connection_set_device (self, g_value_get_object (value));
 		break;
 	case PROP_INT_SUBJECT:
+		/* construct-only */
 		priv->subject = g_value_dup_object (value);
 		break;
 	case PROP_INT_MASTER:
@@ -1248,6 +1249,7 @@ set_property (GObject *object, guint prop_id,
 		_set_activation_type (self, (NMActivationType) i);
 		break;
 	case PROP_SPECIFIC_OBJECT:
+		/* construct-only */
 		tmp = g_value_get_string (value);
 		/* NM uses "/" to mean NULL */
 		if (g_strcmp0 (tmp, "/") != 0)
@@ -1260,6 +1262,7 @@ set_property (GObject *object, guint prop_id,
 		priv->is_default6 = g_value_get_boolean (value);
 		break;
 	case PROP_VPN:
+		/* construct-only */
 		priv->vpn = g_value_get_boolean (value);
 		break;
 	case PROP_MASTER:
