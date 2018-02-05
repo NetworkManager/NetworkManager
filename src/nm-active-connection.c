@@ -292,6 +292,36 @@ nm_active_connection_set_state (NMActiveConnection *self,
 	}
 }
 
+void
+nm_active_connection_set_state_fail (NMActiveConnection *self,
+                                     NMActiveConnectionStateReason reason,
+                                     const char *error_desc)
+{
+	NMActiveConnectionState s;
+
+	g_return_if_fail (NM_IS_ACTIVE_CONNECTION (self));
+
+	if (error_desc) {
+		_LOGD ("Failed to activate '%s': %s",
+		       nm_active_connection_get_settings_connection_id (self),
+		       error_desc);
+	}
+
+	s = nm_active_connection_get_state (self);
+	if (   s >= NM_ACTIVE_CONNECTION_STATE_ACTIVATING
+	    && s < NM_ACTIVE_CONNECTION_STATE_DEACTIVATING) {
+		nm_active_connection_set_state (self,
+		                                NM_ACTIVE_CONNECTION_STATE_DEACTIVATING,
+		                                reason);
+		s = nm_active_connection_get_state (self);
+	}
+	if (s < NM_ACTIVE_CONNECTION_STATE_DEACTIVATED) {
+		nm_active_connection_set_state (self,
+		                                NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,
+		                                reason);
+	}
+}
+
 NMActivationStateFlags
 nm_active_connection_get_state_flags (NMActiveConnection *self)
 {
