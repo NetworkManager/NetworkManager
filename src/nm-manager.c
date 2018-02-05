@@ -4315,6 +4315,9 @@ impl_manager_activate_connection (NMManager *self,
 	if (!active)
 		goto error;
 
+	/* FIXME: nm_active_connection_authorize() is not cancellable,
+	 * and we pass on the only reference to @active. This construct
+	 * is unsuitable for a coordinated shutdown. */
 	nm_active_connection_authorize (g_steal_pointer (&active),
 	                                NULL,
 	                                _activation_auth_done,
