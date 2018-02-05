@@ -4209,6 +4209,7 @@ _activation_auth_done (NMActiveConnection *active,
 	GError *error = NULL;
 	NMAuthSubject *subject;
 	NMSettingsConnection *connection;
+	_nm_unused gs_unref_object NMActiveConnection *active_free = active;
 
 	subject = nm_active_connection_get_subject (active);
 	connection = nm_active_connection_get_settings_connection (active);
@@ -4223,7 +4224,6 @@ _activation_auth_done (NMActiveConnection *active,
 			                                       nm_exported_object_get_path (NM_EXPORTED_OBJECT (active))));
 			nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ACTIVATE, connection, TRUE, NULL,
 			                            subject, NULL);
-			g_object_unref (active);
 			return;
 		}
 	} else {
@@ -4232,12 +4232,10 @@ _activation_auth_done (NMActiveConnection *active,
 		                             error_desc);
 	}
 
-	g_assert (error);
 	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ACTIVATE, connection, FALSE, NULL,
 	                            subject, error->message);
 	_internal_activation_failed (self, active, error->message);
 
-	g_object_unref (active);
 	g_dbus_method_invocation_take_error (context, error);
 }
 
@@ -4249,8 +4247,8 @@ impl_manager_activate_connection (NMManager *self,
                                   const char *specific_object_path)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMActiveConnection *active = NULL;
-	NMAuthSubject *subject = NULL;
+	gs_unref_object NMActiveConnection *active = NULL;
+	gs_unref_object NMAuthSubject *subject = NULL;
 	NMSettingsConnection *connection = NULL;
 	NMDevice *device = NULL;
 	gboolean is_vpn = FALSE;
@@ -4317,8 +4315,11 @@ impl_manager_activate_connection (NMManager *self,
 	if (!active)
 		goto error;
 
-	nm_active_connection_authorize (active, NULL, _activation_auth_done, self, context);
-	g_clear_object (&subject);
+	nm_active_connection_authorize (g_steal_pointer (&active),
+	                                NULL,
+	                                _activation_auth_done,
+	                                self,
+	                                context);
 	return;
 
 error:
@@ -4326,10 +4327,6 @@ error:
 		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ACTIVATE, connection, FALSE, NULL,
 		                            subject, error->message);
 	}
-	g_clear_object (&active);
-	g_clear_object (&subject);
-
-	g_assert (error);
 	g_dbus_method_invocation_take_error (context, error);
 }
 
