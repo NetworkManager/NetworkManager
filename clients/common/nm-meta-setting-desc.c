@@ -3964,6 +3964,9 @@ _set_fcn_team_runner_tx_hash (ARGS_SET_FCN)
 	                         error))
 		return FALSE;
 
+	while (nm_setting_team_get_num_runner_tx_hash (NM_SETTING_TEAM (setting)))
+		nm_setting_team_remove_runner_tx_hash (NM_SETTING_TEAM (setting), 0);
+
 	if (strv) {
 		for (i = 0; strv[i]; i++)
 			nm_setting_team_add_runner_tx_hash (NM_SETTING_TEAM (setting), strv[i]);
