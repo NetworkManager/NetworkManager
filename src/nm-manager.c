@@ -3592,9 +3592,9 @@ active_connection_parent_active (NMActiveConnection *active,
 	if (!parent_ac) {
 		_LOGW (LOGD_CORE, "The parent connection device '%s' depended on disappeared.",
 		       nm_device_get_iface (device));
-		nm_active_connection_set_state (active,
-		                                NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,
-		                                NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REMOVED);
+		nm_active_connection_set_state_fail (active,
+		                                     NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REMOVED,
+		                                     "parent device disappeared");
 		return;
 	}
 
@@ -3604,9 +3604,9 @@ active_connection_parent_active (NMActiveConnection *active,
 	if (!nm_device_create_and_realize (device, (NMConnection *) connection, parent, &error)) {
 		_LOGW (LOGD_CORE, "Could not realize device '%s': %s",
 		       nm_device_get_iface (device), error->message);
-		nm_active_connection_set_state (active,
-		                                NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,
-		                                NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REALIZE_FAILED);
+		nm_active_connection_set_state_fail (active,
+		                                     NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REALIZE_FAILED,
+		                                     "failure to realize device");
 		return;
 	}
 
