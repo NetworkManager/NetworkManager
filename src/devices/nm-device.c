@@ -9996,7 +9996,6 @@ static void
 _carrier_wait_check_queued_act_request (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMActRequest *queued_req;
 
 	if (   !priv->queued_act_request
 	    || !priv->queued_act_request_is_waiting_for_carrier)
@@ -10007,11 +10006,11 @@ _carrier_wait_check_queued_act_request (NMDevice *self)
 		_LOGD (LOGD_DEVICE, "Cancel queued activation request as we have no carrier after timeout");
 		_clear_queued_act_request (priv);
 	} else {
+		gs_unref_object NMActRequest *queued_req = NULL;
+
 		_LOGD (LOGD_DEVICE, "Activate queued activation request as we now have carrier");
-		queued_req = priv->queued_act_request;
-		priv->queued_act_request = NULL;
+		queued_req = g_steal_pointer (&priv->queued_act_request);
 		_device_activate (self, queued_req);
-		g_object_unref (queued_req);
 	}
 }
 
@@ -10071,10 +10070,11 @@ nm_device_steal_connection (NMDevice *self, NMSettingsConnection *connection)
 
 	if (   priv->act_request
 	    && connection == nm_active_connection_get_settings_connection (NM_ACTIVE_CONNECTION (priv->act_request))
-	    && priv->state < NM_DEVICE_STATE_DEACTIVATING)
+	    && priv->state < NM_DEVICE_STATE_DEACTIVATING) {
 		nm_device_state_changed (self,
 		                         NM_DEVICE_STATE_DEACTIVATING,
 		                         NM_DEVICE_STATE_REASON_NEW_ACTIVATION);
+	}
 }
 
 void
@@ -13199,12 +13199,10 @@ _set_state_full (NMDevice *self,
 	case NM_DEVICE_STATE_DISCONNECTED:
 		if (   priv->queued_act_request
 		    && !priv->queued_act_request_is_waiting_for_carrier) {
-			NMActRequest *queued_req;
+			gs_unref_object NMActRequest *queued_req = NULL;
 
-			queued_req = priv->queued_act_request;
-			priv->queued_act_request = NULL;
+			queued_req = g_steal_pointer (&priv->queued_act_request);
 			_device_activate (self, queued_req);
-			g_object_unref (queued_req);
 		}
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
