@@ -1171,6 +1171,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	if (   priv->runner
 	    && g_ascii_strcasecmp (priv->runner, NM_SETTING_TEAM_RUNNER_BROADCAST)
 	    && g_ascii_strcasecmp (priv->runner, NM_SETTING_TEAM_RUNNER_ROUNDROBIN)
+	    && g_ascii_strcasecmp (priv->runner, NM_SETTING_TEAM_RUNNER_RANDOM)
 	    && g_ascii_strcasecmp (priv->runner, NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP)
 	    && g_ascii_strcasecmp (priv->runner, NM_SETTING_TEAM_RUNNER_LOADBALANCE)
 	    && g_ascii_strcasecmp (priv->runner, NM_SETTING_TEAM_RUNNER_LACP)) {

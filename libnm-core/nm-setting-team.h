@@ -131,6 +131,7 @@ NMTeamLinkWatcherArpPingFlags nm_team_link_watcher_get_flags (NMTeamLinkWatcher 
 
 #define NM_SETTING_TEAM_RUNNER_BROADCAST    "broadcast"
 #define NM_SETTING_TEAM_RUNNER_ROUNDROBIN   "roundrobin"
+#define NM_SETTING_TEAM_RUNNER_RANDOM       "random"
 #define NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP "activebackup"
 #define NM_SETTING_TEAM_RUNNER_LOADBALANCE  "loadbalance"
 #define NM_SETTING_TEAM_RUNNER_LACP         "lacp"

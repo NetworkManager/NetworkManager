@@ -6594,6 +6594,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
 		.property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 			.values_static =            VALUES_STATIC (NM_SETTING_TEAM_RUNNER_BROADCAST,
 			                                           NM_SETTING_TEAM_RUNNER_ROUNDROBIN,
+			                                           NM_SETTING_TEAM_RUNNER_RANDOM,
 			                                           NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP,
 			                                           NM_SETTING_TEAM_RUNNER_LOADBALANCE,
 			                                           NM_SETTING_TEAM_RUNNER_LACP),

@@ -968,6 +968,18 @@ test_runner_broadcast_sync_from_config (void)
 }
 
 static void
+test_runner_random_sync_from_config (void)
+{
+	_test_team_config_sync ("{\"runner\": {\"name\": \"random\"}}",
+	                        0, 0, 0, 0,
+	                        NM_SETTING_TEAM_RUNNER_RANDOM,
+	                        NULL,
+	                        NULL, NULL, -1,
+	                        FALSE, FALSE, -1, -1, NULL,
+	                        NULL);
+}
+
+static void
 test_runner_activebackup_sync_from_config (void)
 {
 	_test_team_config_sync ("{\"runner\": {\"name\": \"activebackup\"}}",
@@ -1603,6 +1615,8 @@ main (int argc, char **argv)
 	                 test_runner_roundrobin_sync_from_config);
 	g_test_add_func ("/libnm/settings/team/sync_runner_from_config_broadcast",
 	                 test_runner_broadcast_sync_from_config);
+	g_test_add_func ("/libnm/settings/team/sync_runner_from_config_random",
+	                 test_runner_random_sync_from_config);
 	g_test_add_func ("/libnm/settings/team/sync_runner_from_config_activebackup",
 	                 test_runner_activebackup_sync_from_config);
 	g_test_add_func ("/libnm/settings/team/sync_runner_from_config_loadbalance",
