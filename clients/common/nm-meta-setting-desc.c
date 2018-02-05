@@ -3976,6 +3976,9 @@ _set_fcn_team_runner_tx_hash (ARGS_SET_FCN)
 		return FALSE;
 	}
 
+	while (nm_setting_team_get_num_runner_tx_hash (NM_SETTING_TEAM (setting)))
+		nm_setting_team_remove_runner_tx_hash (NM_SETTING_TEAM (setting), 0);
+
 	while (strv && strv[i])
 		nm_setting_team_add_runner_tx_hash (NM_SETTING_TEAM (setting), strv[i++]);
 	g_strfreev (strv);
