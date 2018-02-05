@@ -148,6 +148,10 @@ void          nm_active_connection_set_state (NMActiveConnection *self,
                                               NMActiveConnectionState state,
                                               NMActiveConnectionStateReason reason);
 
+void          nm_active_connection_set_state_fail (NMActiveConnection *active,
+                                                   NMActiveConnectionStateReason reason,
+                                                   const char *error_desc);
+
 NMActivationStateFlags  nm_active_connection_get_state_flags (NMActiveConnection *self);
 
 void          nm_active_connection_set_state_flags_full (NMActiveConnection *self,
