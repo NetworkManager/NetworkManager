@@ -3942,25 +3942,6 @@ _new_active_connection (NMManager *self,
 }
 
 static void
-_internal_activation_failed (NMManager *self,
-                             NMActiveConnection *active,
-                             const char *error_desc)
-{
-	_LOGD (LOGD_CORE, "Failed to activate '%s': %s",
-	       nm_active_connection_get_settings_connection_id (active),
-	       error_desc);
-
-	if (nm_active_connection_get_state (active) <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-		nm_active_connection_set_state (active,
-		                                NM_ACTIVE_CONNECTION_STATE_DEACTIVATING,
-		                                NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN);
-		nm_active_connection_set_state (active,
-		                                NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,
-		                                NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN);
-	}
-}
-
-static void
 _internal_activation_auth_done (NMActiveConnection *active,
                                 gboolean success,
                                 const char *error_desc,
@@ -4005,7 +3986,9 @@ _internal_activation_auth_done (NMActiveConnection *active,
 	}
 
 	nm_assert (error_desc || error);
-	_internal_activation_failed (self, active, error_desc ? error_desc : error->message);
+	nm_active_connection_set_state_fail (active,
+	                                     NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN,
+	                                     error_desc ?: error->message);
 }
 
 /**
@@ -4249,7 +4232,9 @@ _activation_auth_done (NMActiveConnection *active,
 
 	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ACTIVATE, connection, FALSE, NULL,
 	                            subject, error->message);
-	_internal_activation_failed (self, active, error->message);
+	nm_active_connection_set_state_fail (active,
+	                                     NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN,
+	                                     error->message);
 
 	g_dbus_method_invocation_take_error (context, error);
 }
@@ -4398,8 +4383,10 @@ activation_add_done (NMSettings *settings,
 		error = local;
 	}
 
-	g_assert (error);
-	_internal_activation_failed (self, active, error->message);
+	nm_assert (error);
+	nm_active_connection_set_state_fail (active,
+	                                     NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN,
+	                                     error->message);
 	if (new_connection)
 		nm_settings_connection_delete (new_connection, NULL);
 	g_dbus_method_invocation_return_gerror (context, error);
