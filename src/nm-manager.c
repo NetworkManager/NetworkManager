@@ -686,7 +686,8 @@ active_connection_default_changed (NMActiveConnection *active,
  * Begins to track and manage @active.  Increases the refcount of @active.
  */
 static void
-active_connection_add (NMManager *self, NMActiveConnection *active)
+active_connection_add (NMManager *self,
+                       NMActiveConnection *active)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
@@ -709,11 +710,12 @@ active_connection_add (NMManager *self, NMActiveConnection *active)
 	                  G_CALLBACK (active_connection_default_changed),
 	                  self);
 
+	if (!nm_exported_object_is_exported (NM_EXPORTED_OBJECT (active)))
+		nm_exported_object_export (NM_EXPORTED_OBJECT (active));
+
 	g_signal_emit (self, signals[ACTIVE_CONNECTION_ADDED], 0, active);
 
-	/* Only notify D-Bus if the active connection is actually exported */
-	if (nm_exported_object_is_exported (NM_EXPORTED_OBJECT (active)))
-		_notify (self, PROP_ACTIVE_CONNECTIONS);
+	_notify (self, PROP_ACTIVE_CONNECTIONS);
 }
 
 const CList *
@@ -2346,7 +2348,6 @@ recheck_assume_connection (NMManager *self,
 		if (find_master (self, NM_CONNECTION (connection), device, NULL, NULL, &master_ac, NULL) && master_ac)
 			nm_active_connection_set_master (active, master_ac);
 
-		nm_exported_object_export (NM_EXPORTED_OBJECT (active));
 		active_connection_add (self, active);
 		nm_device_queue_activation (device, NM_ACT_REQUEST (active));
 	}
@@ -3521,18 +3522,18 @@ autoconnect_slaves (NMManager *self,
 static gboolean
 _internal_activate_vpn (NMManager *self, NMActiveConnection *active, GError **error)
 {
-	gboolean success;
-
-	g_assert (NM_IS_VPN_CONNECTION (active));
+	nm_assert (NM_IS_VPN_CONNECTION (active));
 
 	nm_exported_object_export (NM_EXPORTED_OBJECT (active));
-	success = nm_vpn_manager_activate_connection (NM_MANAGER_GET_PRIVATE (self)->vpn_manager,
-	                                              NM_VPN_CONNECTION (active),
-	                                              error);
-	if (!success)
+	if (!nm_vpn_manager_activate_connection (NM_MANAGER_GET_PRIVATE (self)->vpn_manager,
+	                                         NM_VPN_CONNECTION (active),
+	                                         error)) {
 		nm_exported_object_unexport (NM_EXPORTED_OBJECT (active));
+		return FALSE;
+	}
 
-	return success;
+	active_connection_add (self, active);
+	return TRUE;
 }
 
 /* Traverse the device to disconnected state. This means that the device is ready
@@ -3789,7 +3790,7 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 		unmanaged_to_disconnected (device);
 
 	/* Export the new ActiveConnection to clients and start it on the device */
-	nm_exported_object_export (NM_EXPORTED_OBJECT (active));
+	active_connection_add (self, active);
 	nm_device_queue_activation (device, NM_ACT_REQUEST (active));
 	return TRUE;
 }
@@ -3824,7 +3825,6 @@ _internal_activate_generic (NMManager *self, NMActiveConnection *active, GError 
 		 * is exported, make sure the manager's activating-connection property
 		 * is up-to-date.
 		 */
-		active_connection_add (self, active);
 		policy_activating_device_changed (G_OBJECT (priv->policy), NULL, self);
 	}
 
