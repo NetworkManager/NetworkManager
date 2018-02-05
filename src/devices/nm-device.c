@@ -10071,10 +10071,12 @@ static void
 _clear_queued_act_request (NMDevicePrivate *priv)
 {
 	if (priv->queued_act_request) {
-		nm_active_connection_set_state_fail ((NMActiveConnection *) priv->queued_act_request,
+		gs_unref_object NMActRequest *ac = NULL;
+
+		ac = g_steal_pointer (&priv->queued_act_request);
+		nm_active_connection_set_state_fail ((NMActiveConnection *) ac,
 		                                     NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED,
 		                                     NULL);
-		g_clear_object (&priv->queued_act_request);
 	}
 }
 
