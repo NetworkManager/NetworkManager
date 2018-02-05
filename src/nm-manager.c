@@ -3581,32 +3581,36 @@ active_connection_parent_active (NMActiveConnection *active,
 {
 	NMDevice *device = nm_active_connection_get_device (active);
 	GError *error = NULL;
+	NMSettingsConnection *connection;
+	NMDevice *parent;
 
 	g_signal_handlers_disconnect_by_func (active,
 	                                      (GCallback) active_connection_parent_active,
 	                                      self);
 
-	if (parent_ac) {
-		NMSettingsConnection *connection = nm_active_connection_get_settings_connection (active);
-		NMDevice *parent = nm_active_connection_get_device (parent_ac);
-
-		if (nm_device_create_and_realize (device, (NMConnection *) connection, parent, &error)) {
-			/* We can now proceed to disconnected state so that activation proceeds. */
-			unmanaged_to_disconnected (device);
-		} else {
-			_LOGW (LOGD_CORE, "Could not realize device '%s': %s",
-			       nm_device_get_iface (device), error->message);
-			nm_active_connection_set_state (active,
-			                                NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,
-			                                NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REALIZE_FAILED);
-		}
-	} else {
+	if (!parent_ac) {
 		_LOGW (LOGD_CORE, "The parent connection device '%s' depended on disappeared.",
 		       nm_device_get_iface (device));
 		nm_active_connection_set_state (active,
 		                                NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,
 		                                NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REMOVED);
+		return;
 	}
+
+	connection = nm_active_connection_get_settings_connection (active);
+	parent = nm_active_connection_get_device (parent_ac);
+
+	if (!nm_device_create_and_realize (device, (NMConnection *) connection, parent, &error)) {
+		_LOGW (LOGD_CORE, "Could not realize device '%s': %s",
+		       nm_device_get_iface (device), error->message);
+		nm_active_connection_set_state (active,
+		                                NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,
+		                                NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REALIZE_FAILED);
+		return;
+	}
+
+	/* We can now proceed to disconnected state so that activation proceeds. */
+	unmanaged_to_disconnected (device);
 }
 
 static gboolean
