@@ -10153,23 +10153,23 @@ impl_device_delete (NMDevice *self, GDBusMethodInvocation *context)
 	               NULL);
 }
 
-static gboolean
+static void
 _device_activate (NMDevice *self, NMActRequest *req)
 {
 	NMConnection *connection;
 
-	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
-	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
-	g_return_val_if_fail (nm_device_get_managed (self, FALSE), FALSE);
+	g_return_if_fail (NM_IS_DEVICE (self));
+	g_return_if_fail (NM_IS_ACT_REQUEST (req));
+	g_return_if_fail (nm_device_get_managed (self, FALSE));
 
 	/* Ensure the activation request is still valid; the master may have
 	 * already failed in which case activation of this device should not proceed.
 	 */
 	if (nm_active_connection_get_state (NM_ACTIVE_CONNECTION (req)) >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING)
-		return FALSE;
+		return;
 
 	connection = nm_act_request_get_applied_connection (req);
-	g_assert (connection);
+	nm_assert (connection);
 
 	_LOGI (LOGD_DEVICE, "Activation: starting connection '%s' (%s)",
 	       nm_connection_get_id (connection),
@@ -10180,7 +10180,6 @@ _device_activate (NMDevice *self, NMActRequest *req)
 	act_request_set (self, req);
 
 	nm_device_activate_schedule_stage1_device_prepare (self);
-	return TRUE;
 }
 
 static void
@@ -10276,10 +10275,10 @@ nm_device_queue_activation (NMDevice *self, NMActRequest *req)
 
 	must_queue = _carrier_wait_check_act_request_must_queue (self, req);
 
-	if (!priv->act_request && !must_queue && nm_device_is_real (self)) {
-		/* Just activate immediately */
-		if (!_device_activate (self, req))
-			g_assert_not_reached ();
+	if (   !priv->act_request
+	    && !must_queue
+	    && nm_device_is_real (self)) {
+		_device_activate (self, req);
 		return;
 	}
 
