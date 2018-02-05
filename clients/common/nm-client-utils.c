@@ -134,7 +134,7 @@ nmc_string_is_valid (const char *input, const char **allowed, GError **error)
 {
 	const char **p;
 	size_t input_ln, p_len;
-	gboolean prev_match = FALSE;
+	gboolean prev_match = FALSE, ambiguous = FALSE;
 	const char *ret = NULL;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
@@ -148,19 +148,21 @@ nmc_string_is_valid (const char *input, const char **allowed, GError **error)
 		if (g_ascii_strncasecmp (input, *p, input_ln) == 0) {
 			if (input_ln == p_len) {
 				ret = *p;
+				ambiguous = FALSE;
 				break;
 			}
-			if (!prev_match)
+			if (!prev_match) {
 				ret = *p;
-			else {
-				g_set_error (error, 1, 1, _("'%s' is ambiguous (%s x %s)"),
-				             input, ret, *p);
-				return NULL;
-			}
-			prev_match = TRUE;
+				prev_match = TRUE;
+			} else
+				ambiguous = TRUE;
 		}
 	}
-
+	if (ambiguous) {
+		g_set_error (error, 1, 1, _("'%s' is ambiguous (%s x %s)"),
+		             input, ret, *p);
+		return NULL;
+	}
 finish:
 	if (ret == NULL) {
 		char *valid_vals = g_strjoinv (", ", (char **) allowed);
