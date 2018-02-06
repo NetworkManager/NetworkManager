@@ -9964,12 +9964,11 @@ impl_device_delete (NMDevice *self, GDBusMethodInvocation *context)
 static void
 _device_activate (NMDevice *self, NMActRequest *req)
 {
-	NMDevicePrivate *priv;
 	NMConnection *connection;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 	g_return_if_fail (NM_IS_ACT_REQUEST (req));
-	g_return_if_fail (nm_device_get_managed (self, FALSE));
+	nm_assert (nm_device_is_real (self));
 
 	/* Ensure the activation request is still valid; the master may have
 	 * already failed in which case activation of this device should not proceed.
@@ -9977,7 +9976,16 @@ _device_activate (NMDevice *self, NMActRequest *req)
 	if (nm_active_connection_get_state (NM_ACTIVE_CONNECTION (req)) >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING)
 		return;
 
-	priv = NM_DEVICE_GET_PRIVATE (self);
+	if (!nm_device_get_managed (self, FALSE)) {
+		/* It's unclear why the device would be unmanaged at this point.
+		 * Just to be sure, handle it and error out. */
+		_LOGE (LOGD_DEVICE, "Activation: failed activating connection '%s' because device is still unmanaged",
+		       nm_active_connection_get_settings_connection_id ((NMActiveConnection *) req));
+		nm_active_connection_set_state_fail ((NMActiveConnection *) req,
+		                                     NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN,
+		                                     NULL);
+		return;
+	}
 
 	connection = nm_act_request_get_applied_connection (req);
 	nm_assert (connection);
