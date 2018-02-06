@@ -207,6 +207,14 @@ act_stage3_ip4_config_start (NMDevice *device,
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
 
+static NMActStageReturn
+act_stage3_ip6_config_start (NMDevice *self,
+                             NMIP6Config **out_config,
+                             NMDeviceStateReason *out_failure_reason)
+{
+	return NM_ACT_STAGE_RETURN_IP_FAIL;
+}
+
 static gboolean
 create_and_realize (NMDevice *device,
                     NMConnection *connection,
@@ -273,6 +281,7 @@ nm_device_ppp_class_init (NMDevicePppClass *klass)
 
 	parent_class->act_stage2_config = act_stage2_config;
 	parent_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
+	parent_class->act_stage3_ip6_config_start = act_stage3_ip6_config_start;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->create_and_realize = create_and_realize;
 	parent_class->deactivate = deactivate;
