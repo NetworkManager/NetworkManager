@@ -768,6 +768,9 @@ nm_log_handler (const gchar *log_domain,
 		break;
 	}
 
+	if (global.debug_stderr)
+		g_printerr ("%s%s\n", global.prefix, message ?: "");
+
 	switch (global.log_backend) {
 #if SYSTEMD_JOURNAL
 	case LOG_BACKEND_JOURNAL:
