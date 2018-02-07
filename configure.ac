@@ -1148,6 +1148,7 @@ if test "$with_address_sanitizer" = yes -o "$with_address_sanitizer" = "exec"; t
 
 	sanitizer_exec_cflags="$sanitizer_exec_cflags -fsanitize=address"
 	sanitizer_exec_ldflags="$sanitizer_exec_ldflags -Wc,-fsanitize=address"
+	AC_DEFINE(ASAN_BUILD, 1, [Whether NM is built with address sanitizer])
 
 	if test "$with_address_sanitizer" = "yes"; then
 		sanitizer_lib_cflags="$sanitizer_lib_cflags -fsanitize=address"

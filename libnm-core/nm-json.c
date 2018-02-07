@@ -94,6 +94,7 @@ nm_jansson_load (void)
 		MISSING,
 	} state = UNKNOWN;
 	void *handle;
+	int mode;
 
 	if (G_LIKELY (state != UNKNOWN))
 		goto out;
@@ -102,7 +103,13 @@ nm_jansson_load (void)
 	if (!bind_symbols (RTLD_DEFAULT))
 		goto out;
 
-	handle = dlopen (JANSSON_SONAME, RTLD_LAZY | RTLD_LOCAL | RTLD_NODELETE | RTLD_DEEPBIND);
+	mode = RTLD_LAZY | RTLD_LOCAL | RTLD_NODELETE | RTLD_DEEPBIND;
+#if defined (ASAN_BUILD)
+	/* Address sanitizer is incompatible with RTLD_DEEPBIND. */
+	mode &= ~RTLD_DEEPBIND;
+#endif
+	handle = dlopen (JANSSON_SONAME, mode);
+
 	if (!handle)
 		goto out;
 
