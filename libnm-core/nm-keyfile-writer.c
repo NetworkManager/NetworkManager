@@ -590,7 +590,7 @@ typedef struct {
 /* A table of keys that require further parsing/conversion because they are
  * stored in a format that can't be automatically read using the key's type.
  * i.e. IPv4 addresses, which are stored in NetworkManager as guint32, but are
- * stored in keyfiles as strings, eg "10.1.1.2" or IPv6 addresses stored 
+ * stored in keyfiles as strings, eg "10.1.1.2" or IPv6 addresses stored
  * in struct in6_addr internally, but as string in keyfiles.
  */
 static KeyWriter key_writers[] = {

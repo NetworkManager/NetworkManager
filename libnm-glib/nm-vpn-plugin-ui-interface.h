@@ -272,4 +272,4 @@ gboolean nm_vpn_plugin_ui_widget_interface_save_secrets (NMVpnPluginUiWidgetInte
 
 G_END_DECLS
 
-#endif	/* NM_VPN_PLUGIN_UI_INTERFACE_H */
+#endif /* NM_VPN_PLUGIN_UI_INTERFACE_H */

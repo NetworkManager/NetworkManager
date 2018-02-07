@@ -3909,22 +3909,22 @@ nm_utils_lifetime_get (guint32 timestamp,
 		 * NM_PLATFORM_LIFETIME_PERMANENT). The real lifetime==0 addresses (E.g. DHCP6 telling us
 		 * to drop an address will have timestamp set.
 		 */
-		*out_lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
-		*out_preferred = NM_PLATFORM_LIFETIME_PERMANENT;
+		NM_SET_OUT (out_lifetime, NM_PLATFORM_LIFETIME_PERMANENT);
+		NM_SET_OUT (out_preferred, NM_PLATFORM_LIFETIME_PERMANENT);
 		g_return_val_if_fail (preferred == 0, TRUE);
 	} else {
 		if (now <= 0)
 			now = nm_utils_get_monotonic_timestamp_s ();
 		t_lifetime = nm_utils_lifetime_rebase_relative_time_on_now (timestamp, lifetime, now);
 		if (!t_lifetime) {
-			*out_lifetime = 0;
-			*out_preferred = 0;
+			NM_SET_OUT (out_lifetime, 0);
+			NM_SET_OUT (out_preferred, 0);
 			return FALSE;
 		}
 		t_preferred = nm_utils_lifetime_rebase_relative_time_on_now (timestamp, preferred, now);
 
-		*out_lifetime = t_lifetime;
-		*out_preferred = MIN (t_preferred, t_lifetime);
+		NM_SET_OUT (out_lifetime, t_lifetime);
+		NM_SET_OUT (out_preferred, MIN (t_preferred, t_lifetime));
 
 		/* Assert that non-permanent addresses have a (positive) @timestamp. nm_utils_lifetime_rebase_relative_time_on_now()
 		 * treats addresses with timestamp 0 as *now*. Addresses passed to _address_get_lifetime() always

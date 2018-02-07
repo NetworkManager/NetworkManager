@@ -23,7 +23,7 @@
 # Sets NM logging level and/or domains (see description in 'man NetworkManager.conf')
 # The level controls how verbose NM's log output will be (err,warn,info,debug).
 # Domains control what parts of networking NM emits log messages for. Leaving
-# either of the two arguments blank (i.e., an empty string) will leave that 
+# either of the two arguments blank (i.e., an empty string) will leave that
 # parameter unchanged.
 #
 # The normal logging level is 'info', for debugging use 'debug'.

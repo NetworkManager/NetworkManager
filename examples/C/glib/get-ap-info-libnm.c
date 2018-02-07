@@ -79,7 +79,7 @@ show_access_point_info (NMAccessPoint *ap)
 {
 	guint32 flags, wpa_flags, rsn_flags, freq, bitrate;
 	guint8 strength;
-	GBytes *ssid; 
+	GBytes *ssid;
 	const char *hwaddr;
 	NM80211Mode mode;
 	char *freq_str, *ssid_str, *bitrate_str, *strength_str, *wpa_flags_str, *rsn_flags_str;
@@ -158,7 +158,7 @@ show_wifi_device_info (NMDevice *device)
 	const char *iface;
 	const char *driver;
 	guint32 speed;
-	GBytes *active_ssid; 
+	GBytes *active_ssid;
 	char *active_ssid_str = NULL;
 	int i;
 

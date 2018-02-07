@@ -72,7 +72,7 @@ for d in devices:
     print("============================")
 
     print("Interface: %s" % props['Interface'])
-    try: 
+    try:
         devtype = devtypes[props['DeviceType']]
     except KeyError:
         devtype = "Unknown"

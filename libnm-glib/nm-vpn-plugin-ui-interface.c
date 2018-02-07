@@ -78,13 +78,13 @@ nm_vpn_plugin_ui_interface_get_type (void)
 	if (!vpn_plugin_ui_interface_type) {
 		const GTypeInfo vpn_plugin_ui_interface_info = {
 			sizeof (NMVpnPluginUiInterface), /* class_size */
-			interface_init,   /* base_init */
-			NULL,		/* base_finalize */
+			interface_init, /* base_init */
+			NULL, /* base_finalize */
 			NULL,
-			NULL,		/* class_finalize */
-			NULL,		/* class_data */
+			NULL, /* class_finalize */
+			NULL, /* class_data */
 			0,
-			0,              /* n_preallocs */
+			0,    /* n_preallocs */
 			NULL
 		};
 
@@ -197,13 +197,13 @@ nm_vpn_plugin_ui_widget_interface_get_type (void)
 	if (!vpn_plugin_ui_widget_interface_type) {
 		const GTypeInfo vpn_plugin_ui_widget_interface_info = {
 			sizeof (NMVpnPluginUiWidgetInterface), /* class_size */
-			widget_interface_init,   /* base_init */
-			NULL,		/* base_finalize */
+			widget_interface_init, /* base_init */
+			NULL, /* base_finalize */
 			NULL,
-			NULL,		/* class_finalize */
-			NULL,		/* class_data */
+			NULL, /* class_finalize */
+			NULL, /* class_data */
 			0,
-			0,              /* n_preallocs */
+			0,    /* n_preallocs */
 			NULL
 		};
 

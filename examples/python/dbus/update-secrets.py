@@ -22,7 +22,7 @@
 # Update() method. The method replaces all previous settings with new ones
 # including possible secrets.
 # So, we get all settings using GetSettings() and then find out what secrets
-# are associated with the connection using GetSecrets(), ask for new secret 
+# are associated with the connection using GetSecrets(), ask for new secret
 # values, and add them to the settings that we pass to Update().
 #
 
@@ -104,7 +104,7 @@ con = find_connection(sys.argv[1])
 print("Connection found: " + con_path)
 
 if con:
-    # Obtain new secrets and put then into connection dict 
+    # Obtain new secrets and put then into connection dict
     change_secrets(con_path, con)
 
     # Change the connection with Update()

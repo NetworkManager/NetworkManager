@@ -311,7 +311,7 @@ nmt_newt_widget_real_activated (NmtNewtWidget *widget)
 
 	if (priv->exit_on_activate)
 		nmt_newt_form_quit (nmt_newt_widget_get_form (widget));
-}	
+}
 
 /**
  * nmt_newt_widget_activated:
@@ -363,7 +363,7 @@ nmt_newt_widget_set_exit_on_activate (NmtNewtWidget *widget,
 		priv->exit_on_activate = exit_on_activate;
 		g_object_notify (G_OBJECT (widget), "exit-on-activate");
 	}
-} 
+}
 
 /**
  * nmt_newt_widget_get_visible:

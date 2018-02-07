@@ -604,7 +604,7 @@ find_scripts (const char *str_action)
 
 	while ((filename = g_dir_read_name (dir))) {
 		char *path;
-		struct stat	st;
+		struct stat st;
 		int err;
 		const char *err_msg = NULL;
 

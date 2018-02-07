@@ -921,7 +921,7 @@ Overview of changes since NetworkManager-0.4.1
      default action.
    * Fix icon animation smoothness
    * Display more data in the Connection Information dialog
-     (Robert Love) 
+     (Robert Love).
 
 
 ============================================

@@ -49,18 +49,18 @@ extra_files = libnm-glib.png
 
 # CFLAGS and LDFLAGS for compiling scan program. Only needed
 # if $(DOC_MODULE).types is non-empty.
-GTKDOC_CFLAGS =				\
-	-I$(top_srcdir)/shared	\
+GTKDOC_CFLAGS = \
+	-I$(top_srcdir)/shared \
 	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-util	\
-	-I$(top_builddir)/libnm-util	\
-	-I$(top_srcdir)/libnm-glib	\
-	-I$(top_builddir)/libnm-glib	\
+	-I$(top_srcdir)/libnm-util \
+	-I$(top_builddir)/libnm-util \
+	-I$(top_srcdir)/libnm-glib \
+	-I$(top_builddir)/libnm-glib \
 	-DNM_VERSION_MIN_REQUIRED=NM_VERSION_0_9_8 \
-	$(GLIB_CFLAGS)			\
+	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS)
 
-GTKDOC_LIBS =  \
+GTKDOC_LIBS = \
 	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(GLIB_LIBS)
 

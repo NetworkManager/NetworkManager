@@ -131,7 +131,7 @@ function handle_generic_unquote(t, option, value)
 end
 function handle_number(t, option, value)
   if not value[2] then io.stderr:write(string.format("Warning: ignoring invalid option '%s'\n", value[1])) return end
-  if not tonumber(value[2]) then 
+  if not tonumber(value[2]) then
     io.stderr:write(string.format("Warning: ignoring not numeric value '%s' for option '%s'\n", value[2], value[1]))
     return
   end

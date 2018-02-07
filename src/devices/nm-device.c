@@ -436,7 +436,7 @@ typedef struct _NMDevicePrivate {
 	};
 	NMIP6Config *  con_ip6_config; /* config from the setting */
 	AppliedConfig  wwan_ip6_config;
-	AppliedConfig  ac_ip6_config;	/* config from IPv6 autoconfiguration */
+	AppliedConfig  ac_ip6_config;  /* config from IPv6 autoconfiguration */
 	NMIP6Config *  ext_ip6_config; /* Stuff added outside NM */
 	NMIP6Config *  ext_ip6_config_captured; /* Configuration captured from platform. */
 	GSList *       vpn6_configs;   /* VPNs which use this device */
@@ -10899,7 +10899,7 @@ start_ping (NMDevice *self,
 	priv->gw_ping.log_domain = log_domain;
 	priv->gw_ping.address = g_strdup (address);
 	priv->gw_ping.binary = g_strdup (binary);
-	priv->gw_ping.deadline = timeout + 10;	/* the proper termination is enforced by a timer */
+	priv->gw_ping.deadline = timeout + 10; /* the proper termination is enforced by a timer */
 
 	if (spawn_ping (self)) {
 		priv->gw_ping.watch = g_child_watch_add (priv->gw_ping.pid, ip_check_ping_watch_cb, self);

@@ -754,12 +754,12 @@ test_write_existing_commented_duid (void)
 
 static const char *interface1_orig = \
 	"interface \"eth0\" {\n"
-	"	also request my-option;\n"
-	"	initial-delay 5;\n"
+	"\talso request my-option;\n"
+	"\tinitial-delay 5;\n"
 	"}\n"
 	"interface \"eth1\" {\n"
-	"	also request another-option;\n"
-	"	initial-delay 0;\n"
+	"\talso request another-option;\n"
+	"\tinitial-delay 0;\n"
 	"}\n"
 	"\n"
 	"also request yet-another-option;\n";
@@ -798,12 +798,12 @@ test_interface1 (void)
 
 static const char *interface2_orig = \
 	"interface eth0 {\n"
-	"	also request my-option;\n"
-	"	initial-delay 5;\n"
+	"\talso request my-option;\n"
+	"\tinitial-delay 5;\n"
 	" }\n"
 	"interface eth1 {\n"
-	"	initial-delay 0;\n"
-	"	request another-option;\n"
+	"\tinitial-delay 0;\n"
+	"\trequest another-option;\n"
 	" } \n"
 	"\n"
 	"also request yet-another-option;\n";
@@ -844,12 +844,12 @@ test_config_req_intf (void)
 {
 	static const char *const orig = \
 		"request subnet-mask, broadcast-address, routers,\n"
-		"	rfc3442-classless-static-routes,\n"
-		"	interface-mtu, host-name, domain-name, domain-search,\n"
-		"	domain-name-servers, nis-domain, nis-servers,\n"
-		"	nds-context, nds-servers, nds-tree-name,\n"
-		"	netbios-name-servers, netbios-dd-server,\n"
-		"	netbios-node-type, netbios-scope, ntp-servers;\n"
+		"\trfc3442-classless-static-routes,\n"
+		"\tinterface-mtu, host-name, domain-name, domain-search,\n"
+		"\tdomain-name-servers, nis-domain, nis-servers,\n"
+		"\tnds-context, nds-servers, nds-tree-name,\n"
+		"\tnetbios-name-servers, netbios-dd-server,\n"
+		"\tnetbios-node-type, netbios-scope, ntp-servers;\n"
 		"";
 	static const char *const expected = \
 		"# Created by NetworkManager\n"

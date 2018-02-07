@@ -59,7 +59,7 @@ static const char* _link_watcher_name[] = {
 struct NMTeamLinkWatcher {
 	guint refcount;
 
-	guint8 type;	/* LinkWatcherTypes */
+	guint8 type; /* LinkWatcherTypes */
 
 	/*
 	 * The union is constructed in order to allow mapping the options of all the

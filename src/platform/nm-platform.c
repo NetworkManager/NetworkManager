@@ -3124,13 +3124,15 @@ array_ip6_address_position (const GPtrArray *addresses,
 	for (i = 0, pos = 0; i < len; i++) {
 		NMPlatformIP6Address *candidate = NMP_OBJECT_CAST_IP6_ADDRESS (addresses->pdata[i]);
 
-		if (IN6_ARE_ADDR_EQUAL (&candidate->address, &address->address) && candidate->plen == address->plen) {
-			guint32 lifetime, preferred;
-
-			if (nm_utils_lifetime_get (candidate->timestamp, candidate->lifetime, candidate->preferred,
-			                           now, &lifetime, &preferred))
-				return pos;
-		}
+		if (   IN6_ARE_ADDR_EQUAL (&candidate->address, &address->address)
+		    && candidate->plen == address->plen
+		    && nm_utils_lifetime_get (candidate->timestamp,
+		                              candidate->lifetime,
+		                              candidate->preferred,
+		                              now,
+		                              NULL,
+		                              NULL))
+			return pos;
 
 		if (!ignore_ll || !IN6_IS_ADDR_LINKLOCAL (&candidate->address))
 			pos++;
@@ -3331,7 +3333,7 @@ nm_platform_ip4_address_sync (NMPlatform *self,
 			known_address = NMP_OBJECT_CAST_IP4_ADDRESS (known_addresses->pdata[i]);
 
 			if (!nm_utils_lifetime_get (known_address->timestamp, known_address->lifetime, known_address->preferred,
-			                            now, &lifetime, &preferred))
+			                            now, NULL, NULL))
 				goto delete_and_next;
 
 			if (G_UNLIKELY (!known_addresses_idx)) {
@@ -3556,7 +3558,7 @@ nm_platform_ip6_address_sync (NMPlatform *self,
 		const NMPlatformIP6Address *known_address = NMP_OBJECT_CAST_IP6_ADDRESS (known_addresses->pdata[i]);
 		guint32 lifetime, preferred;
 
-		if (NM_FLAGS_HAS (known_address->n_ifa_flags, IFA_F_TEMPORARY)) {
+		if (NM_FLAGS_HAS (known_address->n_ifa_flags, IFA_F_SECONDARY)) {
 			/* Kernel manages these */
 			continue;
 		}
@@ -5083,10 +5085,10 @@ NM_UTILS_FLAGS2STR_DEFINE (nm_platform_addr_flags2str, unsigned,
 	NM_UTILS_FLAGS2STR (IFA_F_OPTIMISTIC, "optimistic"),
 	NM_UTILS_FLAGS2STR (IFA_F_HOMEADDRESS, "homeaddress"),
 	NM_UTILS_FLAGS2STR (IFA_F_DEPRECATED, "deprecated"),
-	NM_UTILS_FLAGS2STR (IFA_F_TENTATIVE, "tentative"),
 	NM_UTILS_FLAGS2STR (IFA_F_PERMANENT, "permanent"),
 	NM_UTILS_FLAGS2STR (IFA_F_MANAGETEMPADDR, "mngtmpaddr"),
 	NM_UTILS_FLAGS2STR (IFA_F_NOPREFIXROUTE, "noprefixroute"),
+	NM_UTILS_FLAGS2STR (IFA_F_TENTATIVE, "tentative"),
 );
 
 NM_UTILS_ENUM2STR_DEFINE (nm_platform_route_scope2str, int,

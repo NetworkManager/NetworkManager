@@ -83,4 +83,4 @@ gboolean nm_vpn_editor_update_connection (NMVpnEditor *editor,
 
 G_END_DECLS
 
-#endif	/* __NM_VPN_EDITOR_H__ */
+#endif /* __NM_VPN_EDITOR_H__ */

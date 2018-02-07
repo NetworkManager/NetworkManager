@@ -32,37 +32,37 @@
 #include "NetworkManager.h"
 #include "libnm_glib.h"
 
-#define	DBUS_NO_SERVICE_ERROR			"org.freedesktop.DBus.Error.ServiceDoesNotExist"
+#define DBUS_NO_SERVICE_ERROR "org.freedesktop.DBus.Error.ServiceDoesNotExist"
 
 
 struct libnm_glib_ctx
 {
-	unsigned char		check;
+	unsigned char           check;
 
-	GMainContext *		g_main_ctx;
-	GMainLoop *		g_main_loop;
-	DBusConnection	*	dbus_con;
-	guint			dbus_watcher;
-	guint			dbus_watch_interval;
+	GMainContext *          g_main_ctx;
+	GMainLoop *             g_main_loop;
+	DBusConnection  *       dbus_con;
+	guint                   dbus_watcher;
+	guint                   dbus_watch_interval;
 
-	gboolean			thread_done;
-	gboolean			thread_inited;
-	GThread *			thread;
+	gboolean                thread_done;
+	gboolean                thread_inited;
+	GThread *               thread;
 
-	GSList *			callbacks;
-	GMutex *			callbacks_lock;
-	guint			callback_id_last;
+	GSList *                callbacks;
+	GMutex *                callbacks_lock;
+	guint                   callback_id_last;
 
-	libnm_glib_state	nm_state;
+	libnm_glib_state        nm_state;
 };
 
 typedef struct libnm_glib_callback
 {
-	guint				id;
-	GMainContext *			gmain_ctx;
-	libnm_glib_ctx *		libnm_glib_ctx;
-	libnm_glib_callback_func	func;
-	gpointer				user_data;
+	guint                       id;
+	GMainContext *              gmain_ctx;
+	libnm_glib_ctx *            libnm_glib_ctx;
+	libnm_glib_callback_func    func;
+	gpointer                    user_data;
 } libnm_glib_callback;
 
 
@@ -74,9 +74,9 @@ static void _libnm_glib_update_state (libnm_glib_ctx *ctx, NMState state);
 static void
 _libnm_glib_nm_state_cb (DBusPendingCall *pcall, void *user_data)
 {
-	DBusMessage *		reply;
-	libnm_glib_ctx *	ctx = (libnm_glib_ctx *) user_data;
-	NMState			nm_state;
+	DBusMessage *reply;
+	libnm_glib_ctx *ctx = (libnm_glib_ctx *) user_data;
+	NMState nm_state;
 
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (ctx != NULL);
@@ -108,8 +108,8 @@ out:
 static void
 _libnm_glib_get_nm_state (libnm_glib_ctx *ctx)
 {
-	DBusMessage *		message;
-	DBusPendingCall *	pcall = NULL;
+	DBusMessage *message;
+	DBusPendingCall *pcall = NULL;
 
 	g_return_if_fail (ctx != NULL);
 
@@ -125,7 +125,7 @@ _libnm_glib_get_nm_state (libnm_glib_ctx *ctx)
 static gboolean
 _libnm_glib_callback_helper (gpointer user_data)
 {
-	libnm_glib_callback	*cb_data = (libnm_glib_callback *)user_data;
+	libnm_glib_callback *cb_data = (libnm_glib_callback *)user_data;
 
 	g_return_val_if_fail (cb_data != NULL, FALSE);
 	g_return_val_if_fail (cb_data->func != NULL, FALSE);
@@ -140,7 +140,7 @@ static void
 _libnm_glib_schedule_single_callback (libnm_glib_ctx *ctx,
                                       libnm_glib_callback *callback)
 {
-	GSource				*source;
+	GSource *source;
 
 	g_return_if_fail (ctx != NULL);
 	g_return_if_fail (callback != NULL);
@@ -170,7 +170,7 @@ _libnm_glib_unschedule_single_callback (libnm_glib_ctx *ctx,
 static void
 _libnm_glib_call_callbacks (libnm_glib_ctx *ctx)
 {
-	GSList	*elem;
+	GSList *elem;
 
 	g_return_if_fail (ctx != NULL);
 
@@ -188,7 +188,7 @@ _libnm_glib_call_callbacks (libnm_glib_ctx *ctx)
 static void
 _libnm_glib_update_state (libnm_glib_ctx *ctx, NMState state)
 {
-	libnm_glib_state	old_state;
+	libnm_glib_state old_state;
 
 	g_return_if_fail (ctx != NULL);
 
@@ -221,9 +221,9 @@ _libnm_glib_dbus_filter (DBusConnection *connection,
                          DBusMessage *message,
                          void *user_data)
 {
-	libnm_glib_ctx		*ctx = (libnm_glib_ctx *)user_data;
-	gboolean		 handled = TRUE;
-	DBusError	 	 error;
+	libnm_glib_ctx *ctx = (libnm_glib_ctx *)user_data;
+	gboolean handled = TRUE;
+	DBusError error;
 
 	g_return_val_if_fail (ctx != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 	g_return_val_if_fail (connection != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
@@ -242,9 +242,9 @@ _libnm_glib_dbus_filter (DBusConnection *connection,
 	else if (dbus_message_is_signal (message, DBUS_INTERFACE_DBUS, "NameOwnerChanged"))
 	{
 		/* New signal for dbus 0.23... */
-		char 	*service;
-		char		*old_owner;
-		char		*new_owner;
+		char *service;
+		char *old_owner;
+		char *new_owner;
 
 		if (    dbus_message_get_args (message, &error,
 									DBUS_TYPE_STRING, &service,
@@ -257,9 +257,9 @@ _libnm_glib_dbus_filter (DBusConnection *connection,
 				gboolean old_owner_good = (old_owner && (strlen (old_owner) > 0));
 				gboolean new_owner_good = (new_owner && (strlen (new_owner) > 0));
 
-				if (!old_owner_good && new_owner_good)	/* Equivalent to old ServiceCreated signal */
+				if (!old_owner_good && new_owner_good) /* Equivalent to old ServiceCreated signal */
 					_libnm_glib_get_nm_state (ctx);
-				else if (old_owner_good && !new_owner_good)	/* Equivalent to old ServiceDeleted signal */
+				else if (old_owner_good && !new_owner_good) /* Equivalent to old ServiceDeleted signal */
 					ctx->nm_state = LIBNM_NO_NETWORKMANAGER;
 			}
 		}
@@ -273,7 +273,7 @@ _libnm_glib_dbus_filter (DBusConnection *connection,
 	}
 	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "StateChanged"))
 	{
-		NMState	state = NM_STATE_UNKNOWN;
+		NMState state = NM_STATE_UNKNOWN;
 
 		dbus_message_get_args (message, &error, DBUS_TYPE_UINT32, &state, DBUS_TYPE_INVALID);
 		_libnm_glib_update_state (ctx, state);
@@ -297,8 +297,8 @@ _libnm_glib_dbus_filter (DBusConnection *connection,
 static DBusConnection *
 _libnm_glib_dbus_init (gpointer *user_data, GMainContext *context)
 {
-	DBusConnection	*connection = NULL;
-	DBusError		 error;
+	DBusConnection *connection = NULL;
+	DBusError error;
 
 	dbus_error_init (&error);
 	connection = dbus_bus_get_private (DBUS_BUS_SYSTEM, &error);
@@ -349,7 +349,7 @@ _libnm_glib_dbus_init (gpointer *user_data, GMainContext *context)
 static gboolean
 _libnm_glib_dbus_watcher (gpointer user_data)
 {
-	libnm_glib_ctx	*ctx = (libnm_glib_ctx *)user_data;
+	libnm_glib_ctx *ctx = (libnm_glib_ctx *)user_data;
 
 	g_return_val_if_fail (ctx != NULL, FALSE);
 
@@ -369,7 +369,7 @@ _libnm_glib_dbus_watcher (gpointer user_data)
 		/* Wait 3 seconds longer each time we fail to reconnect to dbus,
 		 * with a maximum wait of one minute.
 		 */
-		ctx->dbus_watch_interval = MIN(ctx->dbus_watch_interval + 3000, 60000); 
+		ctx->dbus_watch_interval = MIN(ctx->dbus_watch_interval + 3000, 60000);
 
 		/* Reschule ourselves if we _still_ don't have a connection to dbus */
 		_libnm_glib_schedule_dbus_watcher (ctx);
@@ -393,7 +393,7 @@ _libnm_glib_schedule_dbus_watcher (libnm_glib_ctx *ctx)
 
 	if (ctx->dbus_watcher == 0)
 	{
-		GSource *	source = g_timeout_source_new (ctx->dbus_watch_interval);
+		GSource *source = g_timeout_source_new (ctx->dbus_watch_interval);
 		g_source_set_callback (source, _libnm_glib_dbus_watcher, (gpointer) ctx, NULL);
 		ctx->dbus_watcher = g_source_attach (source, ctx->g_main_ctx);
 		g_source_unref (source);
@@ -410,7 +410,7 @@ _libnm_glib_schedule_dbus_watcher (libnm_glib_ctx *ctx)
 static gpointer
 _libnm_glib_dbus_worker (gpointer user_data)
 {
-	libnm_glib_ctx	*ctx = (libnm_glib_ctx *)user_data;
+	libnm_glib_ctx *ctx = (libnm_glib_ctx *)user_data;
 
 	g_return_val_if_fail (ctx != NULL, NULL);
 
@@ -493,7 +493,7 @@ error:
 libnm_glib_ctx *
 libnm_glib_init (void)
 {
-	libnm_glib_ctx	*ctx = NULL;
+	libnm_glib_ctx *ctx = NULL;
 
 	if (!g_thread_supported ())
 		g_thread_init (NULL);
@@ -504,7 +504,7 @@ libnm_glib_init (void)
 
 	ctx->thread = g_thread_create (_libnm_glib_dbus_worker, ctx, TRUE, NULL);
 	if (!ctx->thread)
-		goto error;	
+		goto error;
 
 	/* Wait until initialization of the thread */
 	while (!ctx->thread_inited)
@@ -542,12 +542,12 @@ libnm_glib_get_network_state (const libnm_glib_ctx *ctx)
 
 
 guint
-libnm_glib_register_callback	(libnm_glib_ctx *ctx,
-                               libnm_glib_callback_func func,
-                               gpointer user_data,
-                               GMainContext *g_main_ctx)
+libnm_glib_register_callback (libnm_glib_ctx *ctx,
+                              libnm_glib_callback_func func,
+                              gpointer user_data,
+                              GMainContext *g_main_ctx)
 {
-	libnm_glib_callback		*callback = NULL;
+	libnm_glib_callback *callback = NULL;
 
 	g_return_val_if_fail (ctx != NULL, 0);
 	g_return_val_if_fail (func != NULL, 0);

@@ -2455,7 +2455,7 @@ nm_connection_get_setting_ovs_patch (NMConnection *connection)
 {
 	return _connection_get_setting_check (connection, NM_TYPE_SETTING_OVS_PATCH);
 }
- 
+
 /**
  * nm_connection_get_setting_ovs_port:
  * @connection: the #NMConnection

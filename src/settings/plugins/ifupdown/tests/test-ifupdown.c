@@ -168,7 +168,7 @@ dump_blocks (void)
 	for (n = ifparser_getfirst (); n != NULL; n = n->next) {
 		if_data *m;
 
-		// each block start with its type & name 
+		// each block start with its type & name
 		// (single quotes used to show typ & name baoundaries)
 		g_print("'%s' '%s'\n", n->type, n->name);
 

@@ -27,13 +27,13 @@ from gi.repository import GLib, NM
 
 #
 #  This example shows how to get NMIP4Config from NMDevice after it is activated.
-#   
+#
 #  We listen to notify::ip4-config glib signal. This signal is trigered by D-Bus
 #  PropertiesChanged for IP4Config that comes after StateChanged for NMDevice.
 #
 
 main_loop = None
-    
+
 def do_notify(self, property):
     print("notify: %s" % property)
     ip4cfg = self.get_ip4_config()

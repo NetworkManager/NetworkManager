@@ -222,10 +222,10 @@ validate_type_keyword (const struct Opt * opt,
                        const char * value,
                        const guint32 len)
 {
-	char **		allowed;
-	gchar **	candidates = NULL;
-	char **		candidate;
-	gboolean	found = FALSE;
+	char **allowed;
+	gchar **candidates = NULL;
+	char **candidate;
+	gboolean found = FALSE;
 
 	g_return_val_if_fail (opt != NULL, FALSE);
 	g_return_val_if_fail (value != NULL, FALSE);
