@@ -127,6 +127,16 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 		[union { int a[1]; int b[2]; } c = { 0 }]
 	)
 
+	dnl a new warning in gcc 8, glib 2.55 doesn't play nice yet
+	NM_COMPILER_WARNING([cast-function-type],
+		[#include <glib-object.h>]
+		[typedef struct { GObject parent; } NMObject;]
+		[typedef struct { GObjectClass parent; } NMObjectClass;]
+		[static void nm_object_init (NMObject *object) { } ]
+		[static void nm_object_class_init (NMObjectClass *object) { }]
+		[G_DEFINE_TYPE (NMObject, nm_object, G_TYPE_OBJECT)]
+	)
+
 	CFLAGS="$CFLAGS_MORE_WARNINGS $CFLAGS"
 else
 	AC_MSG_RESULT(no)
