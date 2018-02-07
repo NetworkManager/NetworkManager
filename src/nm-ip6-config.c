@@ -566,7 +566,7 @@ nm_ip6_config_commit (const NMIP6Config *self,
 	                                                    ifindex,
 	                                                    route_table_sync);
 
-	nm_platform_ip6_address_sync (platform, ifindex, addresses, TRUE);
+	nm_platform_ip6_address_sync (platform, ifindex, addresses, FALSE);
 
 	if (!nm_platform_ip_route_sync (platform,
 	                                AF_INET6,
