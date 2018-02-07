@@ -389,6 +389,7 @@ gtkdocize
 autoreconf --install --force
 intltoolize --automake --copy --force
 %configure \
+	--disable-silent-rules \
 	--disable-static \
 	--with-dhclient=yes \
 	--with-dhcpcd=no \
