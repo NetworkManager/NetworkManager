@@ -3125,6 +3125,60 @@ nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr addr
 	return NMP_OBJECT_CAST_IP6_ADDRESS (obj);
 }
 
+static gboolean
+_addr_array_clean_expired (int addr_family, int ifindex, GPtrArray *array, guint32 now, GHashTable **idx)
+{
+	guint i;
+	gboolean any_addrs = FALSE;
+
+	nm_assert_addr_family (addr_family);
+	nm_assert (ifindex > 0);
+	nm_assert (now > 0);
+
+	if (!array)
+		return FALSE;
+
+	/* remove all addresses that are already expired. */
+	for (i = 0; i < array->len; i++) {
+		const NMPlatformIPAddress *a = NMP_OBJECT_CAST_IP_ADDRESS (array->pdata[i]);
+
+#if NM_MORE_ASSERTS > 10
+		nm_assert (a);
+		nm_assert (a->ifindex == ifindex);
+		{
+			const NMPObject *o = NMP_OBJECT_UP_CAST (a);
+			guint j;
+
+			nm_assert (NMP_OBJECT_GET_CLASS (o)->addr_family == addr_family);
+			for (j = i + 1; j < array->len; j++) {
+				const NMPObject *o2 = array->pdata[j];
+
+				nm_assert (NMP_OBJECT_GET_TYPE (o) == NMP_OBJECT_GET_TYPE (o2));
+				nm_assert (!nmp_object_id_equal (o, o2));
+			}
+		}
+#endif
+
+		if (nm_utils_lifetime_get (a->timestamp, a->lifetime, a->preferred,
+		                           now, NULL)) {
+			if (idx) {
+				if (G_UNLIKELY (!*idx)) {
+					*idx = g_hash_table_new ((GHashFunc) nmp_object_id_hash,
+					                         (GEqualFunc) nmp_object_id_equal);
+				}
+				if (!g_hash_table_add (*idx, (gpointer) NMP_OBJECT_UP_CAST (a)))
+					nm_assert_not_reached ();
+			}
+			any_addrs = TRUE;
+			continue;
+		}
+
+		nmp_object_unref (g_steal_pointer (&array->pdata[i]));
+	}
+
+	return any_addrs;
+}
+
 static int
 array_ip6_address_position (const GPtrArray *addresses,
                             const NMPlatformIP6Address *address,
@@ -3336,39 +3390,8 @@ nm_platform_ip4_address_sync (NMPlatform *self,
 
 	_CHECK_SELF (self, klass, FALSE);
 
-	if (known_addresses) {
-		/* remove all addresses that are already expired. */
-		for (i = 0; i < known_addresses->len; i++) {
-			const NMPObject *o;
-
-			o = known_addresses->pdata[i];
-			nm_assert (o);
-
-			known_address = NMP_OBJECT_CAST_IP4_ADDRESS (known_addresses->pdata[i]);
-
-			if (!nm_utils_lifetime_get (known_address->timestamp, known_address->lifetime, known_address->preferred,
-			                            now, NULL))
-				goto delete_and_next;
-
-			if (G_UNLIKELY (!known_addresses_idx)) {
-				known_addresses_idx = g_hash_table_new ((GHashFunc) nmp_object_id_hash,
-				                                        (GEqualFunc) nmp_object_id_equal);
-			}
-			if (!g_hash_table_insert (known_addresses_idx, (gpointer) o, (gpointer) o)) {
-				/* duplicate? Keep only the first instance. */
-				goto delete_and_next;
-			}
-
-			continue;
-delete_and_next:
-			nmp_object_unref (o);
-			known_addresses->pdata[i] = NULL;
-		}
-
-		if (   !known_addresses_idx
-		    || g_hash_table_size (known_addresses_idx) == 0)
-			known_addresses = NULL;
-	}
+	if (!_addr_array_clean_expired (AF_INET, ifindex, known_addresses, now, &known_addresses_idx))
+		known_addresses = NULL;
 
 	plat_addresses = nm_platform_lookup_clone (self,
 	                                           nmp_lookup_init_object (&lookup,
