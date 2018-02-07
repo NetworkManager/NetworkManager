@@ -3891,12 +3891,11 @@ nm_utils_lifetime_rebase_relative_time_on_now (guint32 timestamp,
 	return t;
 }
 
-gboolean
+guint32
 nm_utils_lifetime_get (guint32 timestamp,
                        guint32 lifetime,
                        guint32 preferred,
                        gint32 now,
-                       guint32 *out_lifetime,
                        guint32 *out_preferred)
 {
 	guint32 t_lifetime, t_preferred;
@@ -3904,38 +3903,39 @@ nm_utils_lifetime_get (guint32 timestamp,
 	nm_assert (now >= 0);
 
 	if (timestamp == 0 && lifetime == 0) {
-		/* We treat lifetime==0 && timestamp == 0 addresses as permanent addresses to allow easy
+		/* We treat lifetime==0 && timestamp==0 addresses as permanent addresses to allow easy
 		 * creation of such addresses (without requiring to set the lifetime fields to
 		 * NM_PLATFORM_LIFETIME_PERMANENT). The real lifetime==0 addresses (E.g. DHCP6 telling us
 		 * to drop an address will have timestamp set.
 		 */
-		NM_SET_OUT (out_lifetime, NM_PLATFORM_LIFETIME_PERMANENT);
 		NM_SET_OUT (out_preferred, NM_PLATFORM_LIFETIME_PERMANENT);
-		g_return_val_if_fail (preferred == 0, TRUE);
-	} else {
-		if (now <= 0)
-			now = nm_utils_get_monotonic_timestamp_s ();
-		t_lifetime = nm_utils_lifetime_rebase_relative_time_on_now (timestamp, lifetime, now);
-		if (!t_lifetime) {
-			NM_SET_OUT (out_lifetime, 0);
-			NM_SET_OUT (out_preferred, 0);
-			return FALSE;
-		}
-		t_preferred = nm_utils_lifetime_rebase_relative_time_on_now (timestamp, preferred, now);
-
-		NM_SET_OUT (out_lifetime, t_lifetime);
-		NM_SET_OUT (out_preferred, MIN (t_preferred, t_lifetime));
-
-		/* Assert that non-permanent addresses have a (positive) @timestamp. nm_utils_lifetime_rebase_relative_time_on_now()
-		 * treats addresses with timestamp 0 as *now*. Addresses passed to _address_get_lifetime() always
-		 * should have a valid @timestamp, otherwise on every re-sync, their lifetime will be extended anew.
-		 */
-		g_return_val_if_fail (   timestamp != 0
-		                      || (   lifetime  == NM_PLATFORM_LIFETIME_PERMANENT
-		                          && preferred == NM_PLATFORM_LIFETIME_PERMANENT), TRUE);
-		g_return_val_if_fail (t_preferred <= t_lifetime, TRUE);
+		g_return_val_if_fail (preferred == 0, NM_PLATFORM_LIFETIME_PERMANENT);
+		return NM_PLATFORM_LIFETIME_PERMANENT;
 	}
-	return TRUE;
+
+	if (now <= 0)
+		now = nm_utils_get_monotonic_timestamp_s ();
+
+	t_lifetime = nm_utils_lifetime_rebase_relative_time_on_now (timestamp, lifetime, now);
+	if (!t_lifetime) {
+		NM_SET_OUT (out_preferred, 0);
+		return 0;
+	}
+
+	t_preferred = nm_utils_lifetime_rebase_relative_time_on_now (timestamp, preferred, now);
+
+	NM_SET_OUT (out_preferred, MIN (t_preferred, t_lifetime));
+
+	/* Assert that non-permanent addresses have a (positive) @timestamp. nm_utils_lifetime_rebase_relative_time_on_now()
+	 * treats addresses with timestamp 0 as *now*. Addresses passed to _address_get_lifetime() always
+	 * should have a valid @timestamp, otherwise on every re-sync, their lifetime will be extended anew.
+	 */
+	g_return_val_if_fail (   timestamp != 0
+	                      || (   lifetime  == NM_PLATFORM_LIFETIME_PERMANENT
+	                          && preferred == NM_PLATFORM_LIFETIME_PERMANENT), t_lifetime);
+	g_return_val_if_fail (t_preferred <= t_lifetime, t_lifetime);
+
+	return t_lifetime;
 }
 
 const char *

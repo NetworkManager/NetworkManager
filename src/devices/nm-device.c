@@ -2840,8 +2840,9 @@ ndisc_set_router_config (NMNDisc *ndisc, NMDevice *self)
 		} else
 			base = now;
 
-		if (!nm_utils_lifetime_get (addr->timestamp, addr->lifetime, addr->preferred,
-		                            base, &lifetime, &preferred))
+		lifetime = nm_utils_lifetime_get (addr->timestamp, addr->lifetime, addr->preferred,
+		                                  base, &preferred);
+		if (!lifetime)
 			continue;
 
 		g_array_set_size (addresses, addresses->len+1);
