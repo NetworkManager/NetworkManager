@@ -3145,7 +3145,6 @@ array_ip6_address_position (const GPtrArray *addresses,
 		                              candidate->lifetime,
 		                              candidate->preferred,
 		                              now,
-		                              NULL,
 		                              NULL))
 			return pos;
 
@@ -3348,7 +3347,7 @@ nm_platform_ip4_address_sync (NMPlatform *self,
 			known_address = NMP_OBJECT_CAST_IP4_ADDRESS (known_addresses->pdata[i]);
 
 			if (!nm_utils_lifetime_get (known_address->timestamp, known_address->lifetime, known_address->preferred,
-			                            now, NULL, NULL))
+			                            now, NULL))
 				goto delete_and_next;
 
 			if (G_UNLIKELY (!known_addresses_idx)) {
@@ -3466,8 +3465,9 @@ delete_and_next:
 
 		known_address = NMP_OBJECT_CAST_IP4_ADDRESS (o);
 
-		if (!nm_utils_lifetime_get (known_address->timestamp, known_address->lifetime, known_address->preferred,
-		                            now, &lifetime, &preferred))
+		lifetime = nm_utils_lifetime_get (known_address->timestamp, known_address->lifetime, known_address->preferred,
+		                                  now, &preferred);
+		if (!lifetime)
 			goto delete_and_next2;
 
 		if (!nm_platform_ip4_address_add (self, ifindex, known_address->address, known_address->plen,
@@ -3578,8 +3578,9 @@ nm_platform_ip6_address_sync (NMPlatform *self,
 			continue;
 		}
 
-		if (!nm_utils_lifetime_get (known_address->timestamp, known_address->lifetime, known_address->preferred,
-		                            now, &lifetime, &preferred))
+		lifetime = nm_utils_lifetime_get (known_address->timestamp, known_address->lifetime, known_address->preferred,
+		                                  now, &preferred);
+		if (!lifetime)
 			continue;
 
 		if (!nm_platform_ip6_address_add (self, ifindex, known_address->address,
