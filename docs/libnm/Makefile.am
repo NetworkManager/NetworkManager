@@ -72,11 +72,13 @@ GTKDOC_CFLAGS = \
 	-I$(top_srcdir)/libnm \
 	-I$(top_builddir)/libnm \
 	-DNM_VERSION_MIN_REQUIRED=NM_VERSION_0_9_8 \
-	$(GLIB_CFLAGS)
+	$(GLIB_CFLAGS) \
+	$(SANITIZER_EXEC_CFLAGS)
 
 GTKDOC_LIBS = \
 	$(top_builddir)/libnm/libnm.la \
-	$(GLIB_LIBS)
+	$(GLIB_LIBS) \
+	$(SANITIZER_EXEC_LDFLAGS)
 
 
 # include common portion ...

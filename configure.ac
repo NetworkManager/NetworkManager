@@ -1139,16 +1139,24 @@ fi
 NM_LTO
 NM_LD_GC
 
-AC_ARG_ENABLE(address-sanitizer,
-              AS_HELP_STRING([--enable-address-sanitizer], [Compile with address sanitizer (default: no)]))
-if (test "${enable_address_sanitizer}" = "yes"); then
+AC_ARG_WITH(address-sanitizer,
+            AS_HELP_STRING([--with-address-sanitizer=yes|no|exec], [Enable address sanitizer (default: no)]))
+if test "$with_address_sanitizer" = yes -o "$with_address_sanitizer" = "exec"; then
 	CC_CHECK_FLAGS_APPEND([asan_cflags], [CFLAGS], [-fsanitize=address])
 	AS_IF([test -z "$asan_cflags"],
 		[AC_MSG_ERROR([*** -fsanitize=address is not supported])])
 
-	sanitizer_cflags="$sanitizer_cflags -fsanitize=address"
-	sanitizer_ldflags="$sanitizer_ldflags -Wc,-fsanitize=address"
-	sanitizers="${sanitizers}asan "
+	sanitizer_exec_cflags="$sanitizer_exec_cflags -fsanitize=address"
+	sanitizer_exec_ldflags="$sanitizer_exec_ldflags -Wc,-fsanitize=address"
+
+	if test "$with_address_sanitizer" = "yes"; then
+		sanitizer_lib_cflags="$sanitizer_lib_cflags -fsanitize=address"
+		sanitizer_lib_ldflags="$sanitizer_lib_ldflags -Wc,-fsanitize=address"
+		sanitizers="${sanitizers}address "
+		asan_options="ASAN_OPTIONS=detect_leaks=0"
+	else
+		sanitizers="${sanitizers}address(executables-only) "
+	fi
 fi
 
 AC_ARG_ENABLE(undefined-sanitizer,
@@ -1159,19 +1167,21 @@ if (test "${enable_undefined_sanitizer}" = "yes"); then
 	AS_IF([test -z "$ubsan_cflags"],
 	      [AC_MSG_ERROR([*** -fsanitize=undefined is not supported])])
 
-	sanitizer_cflags="$sanitizer_cflags -fsanitize=undefined"
-	sanitizer_ldflags="$sanitizer_ldflags -Wc,-fsanitize=undefined"
-	sanitizers="${sanitizers}ubsan "
+	sanitizer_exec_cflags="$sanitizer_exec_cflags -fsanitize=undefined"
+	sanitizer_lib_cflags="$sanitizer_lib_cflags -fsanitize=undefined"
+	sanitizer_exec_ldflags="$sanitizer_exec_ldflags -Wc,-fsanitize=undefined"
+	sanitizer_lib_ldflags="$sanitizer_lib_ldflags -Wc,-fsanitize=undefined"
+	sanitizers="${sanitizers}undefined-behavior "
 fi
 
 if test -n "$sanitizers"; then
-	CFLAGS="$CFLAGS $sanitizer_cflags -DVALGRIND=1 -fno-omit-frame-pointer"
-	LDFLAGS="$LDFLAGS $sanitizer_ldflags"
 	sanitizers="${sanitizers% }"
-	AC_SUBST(SANITIZER_ENV, [ASAN_OPTIONS=detect_leaks=0])
+	AC_SUBST(SANITIZER_ENV, ["$asan_options"])
+	AC_SUBST(SANITIZER_EXEC_CFLAGS, ["$sanitizer_exec_cflags -DVALGRIND=1 -fno-omit-frame-pointer"])
+	AC_SUBST(SANITIZER_LIB_CFLAGS, ["$sanitizer_lib_cflags -DVALGRIND=1 -fno-omit-frame-pointer"])
+	AC_SUBST(SANITIZER_EXEC_LDFLAGS, [$sanitizer_exec_ldflags])
+	AC_SUBST(SANITIZER_LIB_LDFLAGS, [$sanitizer_lib_ldflags])
 fi
-
-AC_SUBST(SANITIZERS, [$sanitizers])
 
 AC_MSG_CHECKING([CC support C11 _Generic()])
 AC_COMPILE_IFELSE([AC_LANG_SOURCE([[int foo(void); int foo() { int a = 0; int b = _Generic (a, int: 4); return b + a; }]],
