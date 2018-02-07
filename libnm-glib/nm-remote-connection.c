@@ -218,7 +218,7 @@ proxy_destroy_cb (DBusGProxy* proxy, gpointer user_data) {
 static void
 result_cb (RemoteCall *call, DBusGProxyCall *proxy_call, GError *error)
 {
-	NMRemoteConnectionResultFunc func = (NMRemoteConnectionResultFunc) call->callback;
+	NMRemoteConnectionResultFunc func = (NMRemoteConnectionResultFunc)(void (*) (void)) call->callback;
 	GError *local_error = NULL;
 
 	if (!error) {
@@ -254,7 +254,7 @@ nm_remote_connection_commit_changes (NMRemoteConnection *self,
 
 	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
 
-	call = remote_call_new (self, result_cb, (GFunc) callback, user_data);
+	call = remote_call_new (self, result_cb, (GFunc)(void (*) (void)) callback, user_data);
 	if (!call)
 		return;
 
@@ -294,7 +294,7 @@ nm_remote_connection_commit_changes_unsaved (NMRemoteConnection *connection,
 
 	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (connection);
 
-	call = remote_call_new (connection, result_cb, (GFunc) callback, user_data);
+	call = remote_call_new (connection, result_cb, (GFunc)(void (*) (void)) callback, user_data);
 	if (!call)
 		return;
 
@@ -331,7 +331,7 @@ nm_remote_connection_save (NMRemoteConnection *connection,
 
 	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (connection);
 
-	call = remote_call_new (connection, result_cb, (GFunc) callback, user_data);
+	call = remote_call_new (connection, result_cb, (GFunc)(void (*) (void)) callback, user_data);
 	if (!call)
 		return;
 
@@ -359,7 +359,7 @@ nm_remote_connection_delete (NMRemoteConnection *self,
 
 	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
 
-	call = remote_call_new (self, result_cb, (GFunc) callback, user_data);
+	call = remote_call_new (self, result_cb, (GFunc)(void (*) (void)) callback, user_data);
 	if (!call)
 		return;
 
@@ -372,7 +372,7 @@ nm_remote_connection_delete (NMRemoteConnection *self,
 static void
 get_secrets_cb (RemoteCall *call, DBusGProxyCall *proxy_call, GError *error)
 {
-	NMRemoteConnectionGetSecretsFunc func = (NMRemoteConnectionGetSecretsFunc) call->callback;
+	NMRemoteConnectionGetSecretsFunc func = (NMRemoteConnectionGetSecretsFunc)(void (*) (void)) call->callback;
 	GHashTable *secrets = NULL;
 	GError *local_error = NULL;
 
@@ -415,7 +415,7 @@ nm_remote_connection_get_secrets (NMRemoteConnection *self,
 
 	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
 
-	call = remote_call_new (self, get_secrets_cb, (GFunc) callback, user_data);
+	call = remote_call_new (self, get_secrets_cb, (GFunc)(void (*) (void)) callback, user_data);
 	if (!call)
 		return;
 
