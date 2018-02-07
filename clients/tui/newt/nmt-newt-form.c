@@ -360,7 +360,7 @@ nmt_newt_form_real_show (NmtNewtForm *form)
 		keypress_source = g_io_create_watch (io, G_IO_IN);
 		g_source_set_can_recurse (keypress_source, TRUE);
 		g_source_set_callback (keypress_source,
-		                       (GSourceFunc) nmt_newt_form_keypress_callback,
+		                       (GSourceFunc)(void (*) (void)) nmt_newt_form_keypress_callback,
 		                       NULL, NULL);
 		g_source_attach (keypress_source, NULL);
 		g_io_channel_unref (io);
