@@ -257,7 +257,7 @@ nm_udev_client_new (const char *const*subsystems,
 				channel = g_io_channel_unix_new (udev_monitor_get_fd (self->monitor));
 				self->watch_source = g_io_create_watch (channel, G_IO_IN);
 				g_io_channel_unref (channel);
-				g_source_set_callback (self->watch_source, (GSourceFunc) monitor_event, self, NULL);
+				g_source_set_callback (self->watch_source, (GSourceFunc)(void (*) (void)) monitor_event, self, NULL);
 				g_source_attach (self->watch_source, g_main_context_get_thread_default ());
 				g_source_unref (self->watch_source);
 			}
