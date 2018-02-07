@@ -877,7 +877,7 @@ nm_dedup_multi_index_obj_intern (NMDedupMultiIndex *self,
 	return obj_new;
 }
 
-const NMDedupMultiObj *
+void
 nm_dedup_multi_obj_unref (const NMDedupMultiObj *obj)
 {
 	if (obj) {
@@ -899,8 +899,6 @@ again:
 			obj->klass->obj_destroy ((NMDedupMultiObj *) obj);
 		}
 	}
-
-	return NULL;
 }
 
 gboolean
