@@ -685,7 +685,8 @@ active_connection_default_changed (NMActiveConnection *active,
  * Begins to track and manage @active.  Increases the refcount of @active.
  */
 static void
-active_connection_add (NMManager *self, NMActiveConnection *active)
+active_connection_add (NMManager *self,
+                       NMActiveConnection *active)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
@@ -708,11 +709,12 @@ active_connection_add (NMManager *self, NMActiveConnection *active)
 	                  G_CALLBACK (active_connection_default_changed),
 	                  self);
 
+	if (!nm_exported_object_is_exported (NM_EXPORTED_OBJECT (active)))
+		nm_exported_object_export (NM_EXPORTED_OBJECT (active));
+
 	g_signal_emit (self, signals[ACTIVE_CONNECTION_ADDED], 0, active);
 
-	/* Only notify D-Bus if the active connection is actually exported */
-	if (nm_exported_object_is_exported (NM_EXPORTED_OBJECT (active)))
-		_notify (self, PROP_ACTIVE_CONNECTIONS);
+	_notify (self, PROP_ACTIVE_CONNECTIONS);
 }
 
 const CList *
@@ -2345,7 +2347,6 @@ recheck_assume_connection (NMManager *self,
 		if (find_master (self, NM_CONNECTION (connection), device, NULL, NULL, &master_ac, NULL) && master_ac)
 			nm_active_connection_set_master (active, master_ac);
 
-		nm_exported_object_export (NM_EXPORTED_OBJECT (active));
 		active_connection_add (self, active);
 		nm_device_queue_activation (device, NM_ACT_REQUEST (active));
 	}
@@ -3523,18 +3524,18 @@ autoconnect_slaves (NMManager *self,
 static gboolean
 _internal_activate_vpn (NMManager *self, NMActiveConnection *active, GError **error)
 {
-	gboolean success;
-
-	g_assert (NM_IS_VPN_CONNECTION (active));
+	nm_assert (NM_IS_VPN_CONNECTION (active));
 
 	nm_exported_object_export (NM_EXPORTED_OBJECT (active));
-	success = nm_vpn_manager_activate_connection (NM_MANAGER_GET_PRIVATE (self)->vpn_manager,
-	                                              NM_VPN_CONNECTION (active),
-	                                              error);
-	if (!success)
+	if (!nm_vpn_manager_activate_connection (NM_MANAGER_GET_PRIVATE (self)->vpn_manager,
+	                                         NM_VPN_CONNECTION (active),
+	                                         error)) {
 		nm_exported_object_unexport (NM_EXPORTED_OBJECT (active));
+		return FALSE;
+	}
 
-	return success;
+	active_connection_add (self, active);
+	return TRUE;
 }
 
 /* Traverse the device to disconnected state. This means that the device is ready
@@ -3563,8 +3564,8 @@ unmanaged_to_disconnected (NMDevice *device)
 		                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
 	}
 
-	if (   nm_device_is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_FOR_USER_REQUEST)
-	    && (nm_device_get_state (device) == NM_DEVICE_STATE_UNAVAILABLE)) {
+	if (   nm_device_get_state (device) == NM_DEVICE_STATE_UNAVAILABLE
+	    && nm_device_is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_FOR_USER_REQUEST)) {
 		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_DISCONNECTED,
 		                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
@@ -3581,32 +3582,36 @@ active_connection_parent_active (NMActiveConnection *active,
 {
 	NMDevice *device = nm_active_connection_get_device (active);
 	GError *error = NULL;
+	NMSettingsConnection *connection;
+	NMDevice *parent;
 
 	g_signal_handlers_disconnect_by_func (active,
 	                                      (GCallback) active_connection_parent_active,
 	                                      self);
 
-	if (parent_ac) {
-		NMSettingsConnection *connection = nm_active_connection_get_settings_connection (active);
-		NMDevice *parent = nm_active_connection_get_device (parent_ac);
-
-		if (nm_device_create_and_realize (device, (NMConnection *) connection, parent, &error)) {
-			/* We can now proceed to disconnected state so that activation proceeds. */
-			unmanaged_to_disconnected (device);
-		} else {
-			_LOGW (LOGD_CORE, "Could not realize device '%s': %s",
-			       nm_device_get_iface (device), error->message);
-			nm_active_connection_set_state (active,
-			                                NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,
-			                                NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REALIZE_FAILED);
-		}
-	} else {
+	if (!parent_ac) {
 		_LOGW (LOGD_CORE, "The parent connection device '%s' depended on disappeared.",
 		       nm_device_get_iface (device));
-		nm_active_connection_set_state (active,
-		                                NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,
-		                                NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REMOVED);
+		nm_active_connection_set_state_fail (active,
+		                                     NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REMOVED,
+		                                     "parent device disappeared");
+		return;
 	}
+
+	connection = nm_active_connection_get_settings_connection (active);
+	parent = nm_active_connection_get_device (parent_ac);
+
+	if (!nm_device_create_and_realize (device, (NMConnection *) connection, parent, &error)) {
+		_LOGW (LOGD_CORE, "Could not realize device '%s': %s",
+		       nm_device_get_iface (device), error->message);
+		nm_active_connection_set_state_fail (active,
+		                                     NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REALIZE_FAILED,
+		                                     "failure to realize device");
+		return;
+	}
+
+	/* We can now proceed to disconnected state so that activation proceeds. */
+	unmanaged_to_disconnected (device);
 }
 
 static gboolean
@@ -3783,11 +3788,22 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	}
 
 	/* If the device is there, we can ready it for the activation. */
-	if (nm_device_is_real (device))
+	if (nm_device_is_real (device)) {
 		unmanaged_to_disconnected (device);
 
+		if (!nm_device_get_managed (device, FALSE)) {
+			/* Unexpectedly, the device is still unmanaged. That can happen for example,
+			 * if the device is forcibly unmanaged due to NM_UNMANAGED_USER_SETTINGS. */
+			g_set_error_literal (error,
+			                     NM_MANAGER_ERROR,
+			                     NM_MANAGER_ERROR_DEPENDENCY_FAILED,
+			                     "Activation failed because the device is unmanaged");
+			return FALSE;
+		}
+	}
+
 	/* Export the new ActiveConnection to clients and start it on the device */
-	nm_exported_object_export (NM_EXPORTED_OBJECT (active));
+	active_connection_add (self, active);
 	nm_device_queue_activation (device, NM_ACT_REQUEST (active));
 	return TRUE;
 }
@@ -3822,7 +3838,6 @@ _internal_activate_generic (NMManager *self, NMActiveConnection *active, GError 
 		 * is exported, make sure the manager's activating-connection property
 		 * is up-to-date.
 		 */
-		active_connection_add (self, active);
 		policy_activating_device_changed (G_OBJECT (priv->policy), NULL, self);
 	}
 
@@ -3929,25 +3944,6 @@ _new_active_connection (NMManager *self,
 }
 
 static void
-_internal_activation_failed (NMManager *self,
-                             NMActiveConnection *active,
-                             const char *error_desc)
-{
-	_LOGD (LOGD_CORE, "Failed to activate '%s': %s",
-	       nm_active_connection_get_settings_connection_id (active),
-	       error_desc);
-
-	if (nm_active_connection_get_state (active) <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-		nm_active_connection_set_state (active,
-		                                NM_ACTIVE_CONNECTION_STATE_DEACTIVATING,
-		                                NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN);
-		nm_active_connection_set_state (active,
-		                                NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,
-		                                NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN);
-	}
-}
-
-static void
 _internal_activation_auth_done (NMActiveConnection *active,
                                 gboolean success,
                                 const char *error_desc,
@@ -3992,7 +3988,9 @@ _internal_activation_auth_done (NMActiveConnection *active,
 	}
 
 	nm_assert (error_desc || error);
-	_internal_activation_failed (self, active, error_desc ? error_desc : error->message);
+	nm_active_connection_set_state_fail (active,
+	                                     NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN,
+	                                     error_desc ?: error->message);
 }
 
 /**
@@ -4211,6 +4209,7 @@ _activation_auth_done (NMActiveConnection *active,
 	GError *error = NULL;
 	NMAuthSubject *subject;
 	NMSettingsConnection *connection;
+	_nm_unused gs_unref_object NMActiveConnection *active_free = active;
 
 	subject = nm_active_connection_get_subject (active);
 	connection = nm_active_connection_get_settings_connection (active);
@@ -4225,7 +4224,6 @@ _activation_auth_done (NMActiveConnection *active,
 			                                       nm_exported_object_get_path (NM_EXPORTED_OBJECT (active))));
 			nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ACTIVATE, connection, TRUE, NULL,
 			                            subject, NULL);
-			g_object_unref (active);
 			return;
 		}
 	} else {
@@ -4234,12 +4232,12 @@ _activation_auth_done (NMActiveConnection *active,
 		                             error_desc);
 	}
 
-	g_assert (error);
 	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ACTIVATE, connection, FALSE, NULL,
 	                            subject, error->message);
-	_internal_activation_failed (self, active, error->message);
+	nm_active_connection_set_state_fail (active,
+	                                     NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN,
+	                                     error->message);
 
-	g_object_unref (active);
 	g_dbus_method_invocation_take_error (context, error);
 }
 
@@ -4251,8 +4249,8 @@ impl_manager_activate_connection (NMManager *self,
                                   const char *specific_object_path)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMActiveConnection *active = NULL;
-	NMAuthSubject *subject = NULL;
+	gs_unref_object NMActiveConnection *active = NULL;
+	gs_unref_object NMAuthSubject *subject = NULL;
 	NMSettingsConnection *connection = NULL;
 	NMDevice *device = NULL;
 	gboolean is_vpn = FALSE;
@@ -4319,8 +4317,14 @@ impl_manager_activate_connection (NMManager *self,
 	if (!active)
 		goto error;
 
-	nm_active_connection_authorize (active, NULL, _activation_auth_done, self, context);
-	g_clear_object (&subject);
+	/* FIXME: nm_active_connection_authorize() is not cancellable,
+	 * and we pass on the only reference to @active. This construct
+	 * is unsuitable for a coordinated shutdown. */
+	nm_active_connection_authorize (g_steal_pointer (&active),
+	                                NULL,
+	                                _activation_auth_done,
+	                                self,
+	                                context);
 	return;
 
 error:
@@ -4328,10 +4332,6 @@ error:
 		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ACTIVATE, connection, FALSE, NULL,
 		                            subject, error->message);
 	}
-	g_clear_object (&active);
-	g_clear_object (&subject);
-
-	g_assert (error);
 	g_dbus_method_invocation_take_error (context, error);
 }
 
@@ -4385,8 +4385,10 @@ activation_add_done (NMSettings *settings,
 		error = local;
 	}
 
-	g_assert (error);
-	_internal_activation_failed (self, active, error->message);
+	nm_assert (error);
+	nm_active_connection_set_state_fail (active,
+	                                     NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN,
+	                                     error->message);
 	if (new_connection)
 		nm_settings_connection_delete (new_connection, NULL);
 	g_dbus_method_invocation_return_gerror (context, error);
