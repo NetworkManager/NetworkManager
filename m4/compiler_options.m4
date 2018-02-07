@@ -128,6 +128,7 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 	)
 
 	dnl a new warning in gcc 8, glib 2.55 doesn't play nice yet
+	dnl https://bugzilla.gnome.org/show_bug.cgi?id=793272
 	NM_COMPILER_WARNING([cast-function-type],
 		[#include <glib-object.h>]
 		[typedef struct { GObject parent; } NMObject;]
