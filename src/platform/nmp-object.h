@@ -457,11 +457,10 @@ nmp_object_ref (const NMPObject *obj)
 	return (const NMPObject *) nm_dedup_multi_obj_ref ((const NMDedupMultiObj *) obj);
 }
 
-static inline const NMPObject *
+static inline void
 nmp_object_unref (const NMPObject *obj)
 {
 	nm_dedup_multi_obj_unref ((const NMDedupMultiObj *) obj);
-	return NULL;
 }
 
 #define nm_clear_nmp_object(ptr) \
