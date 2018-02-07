@@ -955,9 +955,17 @@ impl_vpn_service_plugin_set_failure (NMVpnServicePlugin *plugin,
 /*****************************************************************************/
 
 static void
+_emit_quit (gpointer data, gpointer user_data)
+{
+	NMVpnServicePlugin *plugin = data;
+
+	nm_vpn_service_plugin_emit_quit (plugin);
+}
+
+static void
 sigterm_handler (int signum)
 {
-	g_slist_foreach (active_plugins, (GFunc) nm_vpn_service_plugin_emit_quit, NULL);
+	g_slist_foreach (active_plugins, _emit_quit, NULL);
 }
 
 static void
