@@ -3193,6 +3193,9 @@ array_ip6_address_position (const GPtrArray *addresses,
 	for (i = 0, pos = 0; i < len; i++) {
 		NMPlatformIP6Address *candidate = NMP_OBJECT_CAST_IP6_ADDRESS (addresses->pdata[i]);
 
+		if (!candidate)
+			continue;
+
 		if (   IN6_ARE_ADDR_EQUAL (&candidate->address, &address->address)
 		    && candidate->plen == address->plen
 		    && nm_utils_lifetime_get (candidate->timestamp,
@@ -3512,8 +3515,14 @@ delete_and_next2:
  * nm_platform_ip6_address_sync:
  * @self: platform instance
  * @ifindex: Interface index
- * @known_addresses: List of IPv6 addresses, as NMPObject. The list
- *   is not modified.
+ * @known_addresses: List of addresses. The list will be modified and only
+ *   addresses that were successfully added will be kept in the list.
+ *   That means, expired addresses and addresses that could not be added
+ *   will be dropped.
+ *   Hence, the input argument @known_addresses is also an output argument
+ *   telling which addresses were succesfully added.
+ *   Addresses are removed by unrefing the instance via nmp_object_unref()
+ *   and leaving a NULL tombstone.
  * @keep_link_local: Don't remove link-local address
  *
  * A convenience function to synchronize addresses for a specific interface
@@ -3525,7 +3534,7 @@ delete_and_next2:
 gboolean
 nm_platform_ip6_address_sync (NMPlatform *self,
                               int ifindex,
-                              const GPtrArray *known_addresses,
+                              GPtrArray *known_addresses,
                               gboolean keep_link_local)
 {
 	gs_unref_ptrarray GPtrArray *plat_addresses = NULL;
@@ -3535,6 +3544,9 @@ nm_platform_ip6_address_sync (NMPlatform *self,
 	NMPLookup lookup;
 	guint32 ifa_flags;
 	gboolean remove = FALSE;
+
+	if (!_addr_array_clean_expired (AF_INET6, ifindex, known_addresses, now, NULL))
+		known_addresses = NULL;
 
 	/* @plat_addresses and @known_addresses are in increasing priority order */
 	plat_addresses = nm_platform_lookup_clone (self,
@@ -3596,6 +3608,9 @@ nm_platform_ip6_address_sync (NMPlatform *self,
 		const NMPlatformIP6Address *known_address = NMP_OBJECT_CAST_IP6_ADDRESS (known_addresses->pdata[i]);
 		guint32 lifetime, preferred;
 
+		if (!known_address)
+			continue;
+
 		if (NM_FLAGS_HAS (known_address->n_ifa_flags, IFA_F_SECONDARY)) {
 			/* Kernel manages these */
 			continue;
@@ -3603,8 +3618,6 @@ nm_platform_ip6_address_sync (NMPlatform *self,
 
 		lifetime = nm_utils_lifetime_get (known_address->timestamp, known_address->lifetime, known_address->preferred,
 		                                  now, &preferred);
-		if (!lifetime)
-			continue;
 
 		if (!nm_platform_ip6_address_add (self, ifindex, known_address->address,
 		                                  known_address->plen, known_address->peer_address,
