@@ -97,7 +97,7 @@ nm_dedup_multi_obj_ref (const NMDedupMultiObj *obj)
 	return obj;
 }
 
-const NMDedupMultiObj *nm_dedup_multi_obj_unref       (const NMDedupMultiObj *obj);
+void                   nm_dedup_multi_obj_unref       (const NMDedupMultiObj *obj);
 const NMDedupMultiObj *nm_dedup_multi_obj_clone       (const NMDedupMultiObj *obj);
 gboolean               nm_dedup_multi_obj_needs_clone (const NMDedupMultiObj *obj);
 
