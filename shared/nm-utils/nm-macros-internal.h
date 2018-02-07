@@ -1318,6 +1318,25 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro)
 
 /*****************************************************************************/
 
+/**
+ * nm_steal_int:
+ * @p_val: pointer to an int type.
+ *
+ * Returns: *p_val and sets *p_val to zero the same time.
+ *   Accepts %NULL, in which case also numeric 0 will be returned.
+ */
+#define nm_steal_int(p_val) \
+	({ \
+		typeof (p_val) const _p_val = (p_val); \
+		typeof (*_p_val) _val = 0; \
+		\
+		if (   _p_val \
+		    && (_val = *_p_val)) { \
+			*_p_val = 0; \
+		} \
+		_val; \
+	})
+
 static inline int
 nm_steal_fd (int *p_fd)
 {
