@@ -1261,7 +1261,7 @@ gboolean nm_platform_ip6_address_add (NMPlatform *self,
 gboolean nm_platform_ip4_address_delete (NMPlatform *self, int ifindex, in_addr_t address, guint8 plen, in_addr_t peer_address);
 gboolean nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct in6_addr address, guint8 plen);
 gboolean nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, GPtrArray *known_addresses);
-gboolean nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, GPtrArray *known_addresses, gboolean keep_link_local);
+gboolean nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, GPtrArray *known_addresses, gboolean full_sync);
 gboolean nm_platform_ip_address_flush (NMPlatform *self,
                                        int addr_family,
                                        int ifindex);
