@@ -138,6 +138,7 @@ curl_check_connectivity (CURLM *mhandle, CURLMcode ret)
 	CURLMsg *msg;
 	CURLcode eret;
 	gint m_left;
+	long response_code;
 
 	if (ret != CURLM_OK)
 		_LOGW ("connectivity check failed");
@@ -157,11 +158,21 @@ curl_check_connectivity (CURLM *mhandle, CURLMcode ret)
 			/* If cb_data is still there this message hasn't been
 			 * taken care of. Do so now. */
 			if (msg->data.result == CURLE_OK) {
+				/* If we got a 204 error (No content) and we actually requested no content,
+				 * report full connectivity. */
+				if (!cb_data->response[0] &&
+				    (curl_easy_getinfo (msg->easy_handle, CURLINFO_RESPONSE_CODE, &response_code) == CURLE_OK) &&
+				    response_code == 204) {
+					_LOG2D ("response with no content received, check successful");
+					finish_cb_data (cb_data, NM_CONNECTIVITY_FULL);
+				}
 				/* If we get here, it means that easy_write_cb() didn't read enough
 				 * bytes to be able to do a match. */
-				_LOG2I ("response shorter than expected '%s'; assuming captive portal.",
-				        cb_data->response);
-				finish_cb_data (cb_data, NM_CONNECTIVITY_PORTAL);
+				else {
+					_LOG2I ("response shorter than expected '%s'; assuming captive portal.",
+					        cb_data->response);
+					finish_cb_data (cb_data, NM_CONNECTIVITY_PORTAL);
+				}
 			} else {
 				_LOG2D ("check failed (%d)", msg->data.result);
 				finish_cb_data (cb_data, NM_CONNECTIVITY_LIMITED);
