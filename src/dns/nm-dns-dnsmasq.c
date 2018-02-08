@@ -490,7 +490,7 @@ update (NMDnsPlugin *plugin,
 	NMDnsDnsmasq *self = NM_DNS_DNSMASQ (plugin);
 	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE (self);
 	GVariantBuilder servers;
-	int prio, first_prio;
+	int prio, first_prio = 0;
 	const NMDnsIPConfigData *ip_data;
 	gboolean is_first = TRUE;
 
