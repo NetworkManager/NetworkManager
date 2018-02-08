@@ -1768,6 +1768,24 @@ nmp_cache_lookup_link_full (const NMPCache *cache,
 
 /*****************************************************************************/
 
+static NMDedupMultiIdxMode
+_obj_get_add_mode (const NMPObject *obj)
+{
+	/* new objects are usually appended to the list. Except for
+	 * addresses, which are prepended during `ip address add`.
+	 *
+	 * Actually, for routes it is more complicated, because depending on
+	 * `ip route append`, `ip route replace`, `ip route prepend`, the object
+	 * will be added at the tail, at the front, or even replace an element
+	 * in the list. However, that is handled separately by nmp_cache_update_netlink_route()
+	 * and of no concern here. */
+	if (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj),
+	               NMP_OBJECT_TYPE_IP4_ADDRESS,
+	               NMP_OBJECT_TYPE_IP6_ADDRESS))
+		return NM_DEDUP_MULTI_IDX_MODE_PREPEND;
+	return NM_DEDUP_MULTI_IDX_MODE_APPEND;
+}
+
 static void
 _idxcache_update_other_cache_ids (NMPCache *cache,
                                   NMPCacheIdType cache_id_type,
@@ -1827,7 +1845,7 @@ _idxcache_update_other_cache_ids (NMPCache *cache,
 		                               obj_new,
 		                               is_dump
 		                                 ? NM_DEDUP_MULTI_IDX_MODE_APPEND_FORCE
-		                                 : NM_DEDUP_MULTI_IDX_MODE_APPEND,
+		                                 : _obj_get_add_mode (obj_new),
 		                               is_dump
 		                                 ? NULL
 		                                 : entry_order,
@@ -1905,7 +1923,7 @@ _idxcache_update (NMPCache *cache,
 		                               obj_new,
 		                               is_dump
 		                                 ? NM_DEDUP_MULTI_IDX_MODE_APPEND_FORCE
-		                                 : NM_DEDUP_MULTI_IDX_MODE_APPEND,
+		                                 : _obj_get_add_mode (obj_new),
 		                               NULL,
 		                               entry_old ?: NM_DEDUP_MULTI_ENTRY_MISSING,
 		                               NULL,
