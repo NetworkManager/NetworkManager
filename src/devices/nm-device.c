@@ -6799,13 +6799,15 @@ static void
 dhcp6_fail (NMDevice *self, gboolean timeout)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gboolean is_dhcp_managed;
 
 	_LOGD (LOGD_DHCP6, "DHCPv6 failed: timeout %d, num tries left %u",
            timeout, priv->dhcp6.num_tries_left);
 
+	is_dhcp_managed = (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_MANAGED);
 	dhcp6_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
 
-	if (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_MANAGED) {
+	if (is_dhcp_managed || priv->dhcp6.num_tries_left < DHCP_NUM_TRIES_MAX) {
 		/* Don't fail if there are static addresses configured on
 		 * the device, instead retry after some time.
 		 */
