@@ -1556,11 +1556,13 @@ nm_dns_manager_stop (NMDnsManager *self)
 	_LOGT ("stopping...");
 
 	/* If we're quitting, leave a valid resolv.conf in place, not one
-	 * pointing to 127.0.0.1 if any plugins were active.  Thus update
-	 * DNS after disposing of all plugins.  But if we haven't done any
-	 * DNS updates yet, there's no reason to touch resolv.conf on shutdown.
+	 * pointing to 127.0.0.1 if dnsmasq was active.  But if we haven't
+	 * done any DNS updates yet, there's no reason to touch resolv.conf
+	 * on shutdown.
 	 */
-	if (priv->dns_touched) {
+	if (   priv->dns_touched
+	    && priv->plugin
+	    && NM_IS_DNS_DNSMASQ (priv->plugin)) {
 		if (!update_dns (self, TRUE, &error)) {
 			_LOGW ("could not commit DNS changes on shutdown: %s", error->message);
 			g_clear_error (&error);
