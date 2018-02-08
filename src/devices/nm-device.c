@@ -11357,7 +11357,7 @@ queued_ip6_config_change (gpointer user_data)
 	    && nm_platform_link_get (nm_device_get_platform (self), priv->ifindex)) {
 		/* Handle DAD failures */
 		for (iter = priv->dad6_failed_addrs; iter; iter = g_slist_next (iter)) {
-			NMPlatformIP6Address *addr = iter->data;
+			const NMPlatformIP6Address *addr = iter->data;
 
 			if (addr->addr_source >= NM_IP_CONFIG_SOURCE_USER)
 				continue;
@@ -11410,14 +11410,14 @@ static void
 device_ipx_changed (NMPlatform *platform,
                     int obj_type_i,
                     int ifindex,
-                    gpointer platform_object,
+                    gconstpointer platform_object,
                     int change_type_i,
                     NMDevice *self)
 {
 	const NMPObjectType obj_type = obj_type_i;
 	const NMPlatformSignalChangeType change_type = change_type_i;
 	NMDevicePrivate *priv;
-	NMPlatformIP6Address *addr;
+	const NMPlatformIP6Address *addr;
 
 	if (nm_device_get_ip_ifindex (self) != ifindex)
 		return;
