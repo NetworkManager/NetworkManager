@@ -3159,20 +3159,30 @@ _addr_array_clean_expired (int addr_family, int ifindex, GPtrArray *array, guint
 		}
 #endif
 
-		if (nm_utils_lifetime_get (a->timestamp, a->lifetime, a->preferred,
-		                           now, NULL)) {
-			if (idx) {
-				if (G_UNLIKELY (!*idx)) {
-					*idx = g_hash_table_new ((GHashFunc) nmp_object_id_hash,
-					                         (GEqualFunc) nmp_object_id_equal);
-				}
-				if (!g_hash_table_add (*idx, (gpointer) NMP_OBJECT_UP_CAST (a)))
-					nm_assert_not_reached ();
-			}
-			any_addrs = TRUE;
-			continue;
+		if (NM_FLAGS_HAS (a->n_ifa_flags, IFA_F_SECONDARY)) {
+			/* temporary addresses are never added explicitly by NetworkManager but
+			 * kernel adds them via mngtempaddr flag.
+			 *
+			 * We drop them from this list. */
+			goto clear_and_next;
 		}
 
+		if (!nm_utils_lifetime_get (a->timestamp, a->lifetime, a->preferred,
+		                            now, NULL))
+			goto clear_and_next;
+
+		if (idx) {
+			if (G_UNLIKELY (!*idx)) {
+				*idx = g_hash_table_new ((GHashFunc) nmp_object_id_hash,
+				                         (GEqualFunc) nmp_object_id_equal);
+			}
+			if (!g_hash_table_add (*idx, (gpointer) NMP_OBJECT_UP_CAST (a)))
+				nm_assert_not_reached ();
+		}
+		any_addrs = TRUE;
+		continue;
+
+clear_and_next:
 		nmp_object_unref (g_steal_pointer (&array->pdata[i]));
 	}
 
@@ -3562,6 +3572,10 @@ nm_platform_ip6_address_sync (NMPlatform *self,
 			if (keep_link_local && IN6_IS_ADDR_LINKLOCAL (&address->address))
 				continue;
 
+			/* FIXME: handle temporary addresses better */
+			if (NM_FLAGS_HAS (address->n_ifa_flags, IFA_F_SECONDARY))
+				continue;
+
 			position = array_ip6_address_position (known_addresses, address, now, FALSE);
 			if (position < 0) {
 				nm_platform_ip6_address_delete (self, ifindex, address->address, address->plen);
@@ -3579,6 +3593,10 @@ nm_platform_ip6_address_sync (NMPlatform *self,
 			address = NMP_OBJECT_CAST_IP6_ADDRESS (plat_addresses->pdata[i]);
 
 			if (IN6_IS_ADDR_LINKLOCAL (&address->address))
+				continue;
+
+			/* FIXME: handle temporary addresses better */
+			if (NM_FLAGS_HAS (address->n_ifa_flags, IFA_F_SECONDARY))
 				continue;
 
 			if (   remove
@@ -3610,11 +3628,6 @@ nm_platform_ip6_address_sync (NMPlatform *self,
 
 		if (!known_address)
 			continue;
-
-		if (NM_FLAGS_HAS (known_address->n_ifa_flags, IFA_F_SECONDARY)) {
-			/* Kernel manages these */
-			continue;
-		}
 
 		lifetime = nm_utils_lifetime_get (known_address->timestamp, known_address->lifetime, known_address->preferred,
 		                                  now, &preferred);
