@@ -470,7 +470,7 @@ value_dup (gpointer key, gpointer val, gpointer user_data)
 	GValue *dup_value;
 
 	dup_value = g_slice_new0 (GValue);
-	g_value_init (dup_value, G_VALUE_TYPE (val));
+	g_value_init (dup_value, G_VALUE_TYPE (value));
 	g_value_copy (value, dup_value);
 
 	g_hash_table_insert (table, g_strdup ((char *) key), dup_value);
