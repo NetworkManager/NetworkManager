@@ -168,6 +168,12 @@ BuildRequires: dbus-python
 BuildRequires: libselinux-devel
 BuildRequires: polkit-devel
 BuildRequires: jansson-devel
+%if %{with sanitizer}
+BuildRequires: libasan
+%if 0%{?fedora}
+BuildRequires: libubsan
+%endif
+%endif
 
 
 %description
