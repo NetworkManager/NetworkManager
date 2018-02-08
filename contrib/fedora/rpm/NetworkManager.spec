@@ -409,10 +409,12 @@ intltoolize --automake --copy --force
 	--with-config-dhcp-default=dhclient \
 	--with-crypto=nss \
 %if %{with sanitizer}
-	--enable-address-sanitizer \
+	--with-address-sanitizer=exec \
+%if 0%{?fedora}
 	--enable-undefined-sanitizer \
+%endif
 %else
-	--disable-address-sanitizer \
+	--with-address-sanitizer=no \
 	--disable-undefined-sanitizer \
 %endif
 %if %{with debug}
