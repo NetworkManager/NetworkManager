@@ -792,7 +792,7 @@ nm_ndisc_start (NMNDisc *ndisc)
 }
 
 void
-nm_ndisc_dad_failed (NMNDisc *ndisc, struct in6_addr *address)
+nm_ndisc_dad_failed (NMNDisc *ndisc, const struct in6_addr *address)
 {
 	NMNDiscDataInternal *rdata;
 	guint i;

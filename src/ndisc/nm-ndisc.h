@@ -174,7 +174,7 @@ NMNDiscNodeType nm_ndisc_get_node_type (NMNDisc *self);
 
 gboolean nm_ndisc_set_iid (NMNDisc *ndisc, const NMUtilsIPv6IfaceId iid);
 void nm_ndisc_start (NMNDisc *ndisc);
-void nm_ndisc_dad_failed (NMNDisc *ndisc, struct in6_addr *address);
+void nm_ndisc_dad_failed (NMNDisc *ndisc, const struct in6_addr *address);
 void nm_ndisc_set_config (NMNDisc *ndisc,
                           const GArray *addresses,
                           const GArray *dns_servers,
