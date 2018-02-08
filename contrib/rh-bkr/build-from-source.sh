@@ -60,7 +60,12 @@ $SUDO yum install \
     jansson-devel \
     libpsl-devel \
     libcurl-devel \
+    libasan \
     -y
+
+$SUDO yum install \
+    libubsan \
+    -y || true
 
 # for the tests, let's pre-load some modules:
 $SUDO modprobe ip_gre
