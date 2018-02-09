@@ -7,6 +7,7 @@ BUILD_DIR="${BUILD_DIR:-/tmp/nm-build}"
 BUILD_ID="${BUILD_ID:-master}"
 BUILD_REPO="${BUILD_REPO-https://github.com/NetworkManager/NetworkManager.git}"
 BUILD_REPO2="${BUILD_REPO2-git://github.com/NetworkManager/NetworkManager.git}"
+BUILD_SNAPSHOT="${BUILD_SNAPSHOT:-}"
 ARCH="${ARCH:-`arch`}"
 WITH_DEBUG="$WITH_DEBUG"
 WITH_SANITIZER="$WITH_SANITIZER"
@@ -132,7 +133,8 @@ if [[ "$DO_TEST_PACKAGE" == yes || "$DO_INSTALL" == yes ]]; then
     else
         A=("${A[@]}" --without sanitizer)
     fi
-    ./contrib/fedora/rpm/build_clean.sh -c "${A[@]}"
+    NM_BUILD_SNAPSHOT="${BUILD_SNAPSHOT}" \
+        ./contrib/fedora/rpm/build_clean.sh -c "${A[@]}"
 fi
 
 if [[ "$DO_INSTALL" == yes ]]; then
