@@ -1118,6 +1118,21 @@ nm_platform_link_supports_slaves (NMPlatform *self, int ifindex)
 }
 
 /**
+ * nm_platform_refresh_all:
+ * @self: platform instance
+ * @obj_type: The object type to request.
+ *
+ * Resync and re-request all objects from kernel of a certain @obj_type.
+ */
+void
+nm_platform_refresh_all (NMPlatform *self, NMPObjectType obj_type)
+{
+	_CHECK_SELF_VOID (self, klass);
+
+	klass->refresh_all (self, obj_type);
+}
+
+/**
  * nm_platform_link_refresh:
  * @self: platform instance
  * @ifindex: Interface index
@@ -3110,35 +3125,68 @@ nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr addr
 	return NMP_OBJECT_CAST_IP6_ADDRESS (obj);
 }
 
-static int
-array_ip6_address_position (const GPtrArray *addresses,
-                            const NMPlatformIP6Address *address,
-                            gint32 now,
-                            gboolean ignore_ll)
+static gboolean
+_addr_array_clean_expired (int addr_family, int ifindex, GPtrArray *array, guint32 now, GHashTable **idx)
 {
-	guint len = addresses ? addresses->len : 0;
-	guint i, pos;
+	guint i;
+	gboolean any_addrs = FALSE;
 
-	nm_assert (!ignore_ll || !IN6_IS_ADDR_LINKLOCAL (&address->address));
+	nm_assert_addr_family (addr_family);
+	nm_assert (ifindex > 0);
+	nm_assert (now > 0);
 
-	for (i = 0, pos = 0; i < len; i++) {
-		NMPlatformIP6Address *candidate = NMP_OBJECT_CAST_IP6_ADDRESS (addresses->pdata[i]);
+	if (!array)
+		return FALSE;
 
-		if (   IN6_ARE_ADDR_EQUAL (&candidate->address, &address->address)
-		    && candidate->plen == address->plen
-		    && nm_utils_lifetime_get (candidate->timestamp,
-		                              candidate->lifetime,
-		                              candidate->preferred,
-		                              now,
-		                              NULL,
-		                              NULL))
-			return pos;
+	/* remove all addresses that are already expired. */
+	for (i = 0; i < array->len; i++) {
+		const NMPlatformIPAddress *a = NMP_OBJECT_CAST_IP_ADDRESS (array->pdata[i]);
 
-		if (!ignore_ll || !IN6_IS_ADDR_LINKLOCAL (&candidate->address))
-			pos++;
+#if NM_MORE_ASSERTS > 10
+		nm_assert (a);
+		nm_assert (a->ifindex == ifindex);
+		{
+			const NMPObject *o = NMP_OBJECT_UP_CAST (a);
+			guint j;
+
+			nm_assert (NMP_OBJECT_GET_CLASS (o)->addr_family == addr_family);
+			for (j = i + 1; j < array->len; j++) {
+				const NMPObject *o2 = array->pdata[j];
+
+				nm_assert (NMP_OBJECT_GET_TYPE (o) == NMP_OBJECT_GET_TYPE (o2));
+				nm_assert (!nmp_object_id_equal (o, o2));
+			}
+		}
+#endif
+
+		if (NM_FLAGS_HAS (a->n_ifa_flags, IFA_F_SECONDARY)) {
+			/* temporary addresses are never added explicitly by NetworkManager but
+			 * kernel adds them via mngtempaddr flag.
+			 *
+			 * We drop them from this list. */
+			goto clear_and_next;
+		}
+
+		if (!nm_utils_lifetime_get (a->timestamp, a->lifetime, a->preferred,
+		                            now, NULL))
+			goto clear_and_next;
+
+		if (idx) {
+			if (G_UNLIKELY (!*idx)) {
+				*idx = g_hash_table_new ((GHashFunc) nmp_object_id_hash,
+				                         (GEqualFunc) nmp_object_id_equal);
+			}
+			if (!g_hash_table_add (*idx, (gpointer) NMP_OBJECT_UP_CAST (a)))
+				nm_assert_not_reached ();
+		}
+		any_addrs = TRUE;
+		continue;
+
+clear_and_next:
+		nmp_object_unref (g_steal_pointer (&array->pdata[i]));
 	}
 
-	return -1;
+	return any_addrs;
 }
 
 static gboolean
@@ -3322,39 +3370,8 @@ nm_platform_ip4_address_sync (NMPlatform *self,
 
 	_CHECK_SELF (self, klass, FALSE);
 
-	if (known_addresses) {
-		/* remove all addresses that are already expired. */
-		for (i = 0; i < known_addresses->len; i++) {
-			const NMPObject *o;
-
-			o = known_addresses->pdata[i];
-			nm_assert (o);
-
-			known_address = NMP_OBJECT_CAST_IP4_ADDRESS (known_addresses->pdata[i]);
-
-			if (!nm_utils_lifetime_get (known_address->timestamp, known_address->lifetime, known_address->preferred,
-			                            now, NULL, NULL))
-				goto delete_and_next;
-
-			if (G_UNLIKELY (!known_addresses_idx)) {
-				known_addresses_idx = g_hash_table_new ((GHashFunc) nmp_object_id_hash,
-				                                        (GEqualFunc) nmp_object_id_equal);
-			}
-			if (!g_hash_table_insert (known_addresses_idx, (gpointer) o, (gpointer) o)) {
-				/* duplicate? Keep only the first instance. */
-				goto delete_and_next;
-			}
-
-			continue;
-delete_and_next:
-			nmp_object_unref (o);
-			known_addresses->pdata[i] = NULL;
-		}
-
-		if (   !known_addresses_idx
-		    || g_hash_table_size (known_addresses_idx) == 0)
-			known_addresses = NULL;
-	}
+	if (!_addr_array_clean_expired (AF_INET, ifindex, known_addresses, now, &known_addresses_idx))
+		known_addresses = NULL;
 
 	plat_addresses = nm_platform_lookup_clone (self,
 	                                           nmp_lookup_init_object (&lookup,
@@ -3451,8 +3468,9 @@ delete_and_next:
 
 		known_address = NMP_OBJECT_CAST_IP4_ADDRESS (o);
 
-		if (!nm_utils_lifetime_get (known_address->timestamp, known_address->lifetime, known_address->preferred,
-		                            now, &lifetime, &preferred))
+		lifetime = nm_utils_lifetime_get (known_address->timestamp, known_address->lifetime, known_address->preferred,
+		                                  now, &preferred);
+		if (!lifetime)
 			goto delete_and_next2;
 
 		if (!nm_platform_ip4_address_add (self, ifindex, known_address->address, known_address->plen,
@@ -3474,9 +3492,15 @@ delete_and_next2:
  * nm_platform_ip6_address_sync:
  * @self: platform instance
  * @ifindex: Interface index
- * @known_addresses: List of IPv6 addresses, as NMPObject. The list
- *   is not modified.
- * @keep_link_local: Don't remove link-local address
+ * @known_addresses: List of addresses. The list will be modified and only
+ *   addresses that were successfully added will be kept in the list.
+ *   That means, expired addresses and addresses that could not be added
+ *   will be dropped.
+ *   Hence, the input argument @known_addresses is also an output argument
+ *   telling which addresses were succesfully added.
+ *   Addresses are removed by unrefing the instance via nmp_object_unref()
+ *   and leaving a NULL tombstone.
+ * @full_sync: Also remove link-local and temporary addresses.
  *
  * A convenience function to synchronize addresses for a specific interface
  * with the least possible disturbance. It simply removes addresses that are
@@ -3487,60 +3511,114 @@ delete_and_next2:
 gboolean
 nm_platform_ip6_address_sync (NMPlatform *self,
                               int ifindex,
-                              const GPtrArray *known_addresses,
-                              gboolean keep_link_local)
+                              GPtrArray *known_addresses,
+                              gboolean full_sync)
 {
 	gs_unref_ptrarray GPtrArray *plat_addresses = NULL;
-	NMPlatformIP6Address *address;
 	gint32 now = nm_utils_get_monotonic_timestamp_s ();
-	int i, position;
+	guint i_plat, i_know;
+	gs_unref_hashtable GHashTable *known_addresses_idx = NULL;
 	NMPLookup lookup;
 	guint32 ifa_flags;
-	gboolean remove = FALSE;
 
-	/* @plat_addresses and @known_addresses are in increasing priority order */
+	if (!_addr_array_clean_expired (AF_INET6, ifindex, known_addresses, now, &known_addresses_idx))
+		known_addresses = NULL;
+
+	/* @plat_addresses is in decreasing priority order (highest priority addresses first), contrary to
+	 * @known_addresses which is in increasing priority order (lowest priority addresses first). */
 	plat_addresses = nm_platform_lookup_clone (self,
 	                                           nmp_lookup_init_object (&lookup,
 	                                                                   NMP_OBJECT_TYPE_IP6_ADDRESS,
 	                                                                   ifindex),
 	                                           NULL, NULL);
+
 	if (plat_addresses) {
-		/* First, remove unknown addresses from platform */
-		for (i = 0; i < plat_addresses->len; i++) {
-			address = NMP_OBJECT_CAST_IP6_ADDRESS (plat_addresses->pdata[i]);
+		gboolean delete_remaining;
+		guint known_addresses_len;
 
-			if (keep_link_local && IN6_IS_ADDR_LINKLOCAL (&address->address))
-				continue;
+		known_addresses_len = known_addresses ? known_addresses->len : 0;
 
-			position = array_ip6_address_position (known_addresses, address, now, FALSE);
-			if (position < 0) {
-				nm_platform_ip6_address_delete (self, ifindex, address->address, address->plen);
-				g_ptr_array_remove_index (plat_addresses, i);
-				i--;
+		/* First, compare every address whether it is still a "known address", that is, whether
+		 * to keep it or to delete it.
+		 *
+		 * If we don't find a matching valid address in @known_addresses, we will delete
+		 * plat_addr.
+		 *
+		 * Certain addresses, like link-local or temporary addresses, are ignored by this function
+		 * if not run with full_sync.
+		 *
+		 * Note that we mark handled addresses by setting it to %NULL in @plat_addresses array. */
+		for (i_plat = 0; i_plat < plat_addresses->len; i_plat++) {
+			const NMPObject *plat_obj = plat_addresses->pdata[i_plat];
+			const NMPObject *know_obj;
+			const NMPlatformIP6Address *plat_addr = NMP_OBJECT_CAST_IP6_ADDRESS (plat_obj);
+
+			if (   NM_FLAGS_HAS (plat_addr->n_ifa_flags, IFA_F_SECONDARY)
+			    || IN6_IS_ADDR_LINKLOCAL (&plat_addr->address)) {
+				if (!full_sync) {
+					/* just mark as handled, without actually deleting the address. */
+					goto clear_and_next;
+				}
+			} else if (known_addresses_idx) {
+				know_obj = g_hash_table_lookup (known_addresses_idx, plat_obj);
+				if (   know_obj
+				    && plat_addr->plen == NMP_OBJECT_CAST_IP6_ADDRESS (know_obj)->plen) {
+					/* technically, plen is not part of the ID for IPv6 addresses and thus
+					 * @plat_addr is essentially the same address as @know_addr (regrading
+					 * its identity, not its other attributes).
+					 * However, we cannot modify an existing addresses' plen without
+					 * removing and readding it. Thus, only keep plat_addr, if the plen
+					 * matches.
+					 *
+					 * keep this one, and continue */
+					continue;
+				}
 			}
+
+			nm_platform_ip6_address_delete (self, ifindex, plat_addr->address, plat_addr->plen);
+clear_and_next:
+			nmp_object_unref (g_steal_pointer (&plat_addresses->pdata[i_plat]));
 		}
 
-		/* Start from addresses with lower priority and remove them if they are
-		 * in a wrong position. Removing an address also removes all addresses
-		 * with higher priority. We ignore link-local addresses when determining
-		 * positions.
-		 */
-		for (i = 0, position = 0; i < plat_addresses->len; i++) {
-			address = NMP_OBJECT_CAST_IP6_ADDRESS (plat_addresses->pdata[i]);
+		/* Next, we must preserve the priority of the routes. That is, source address
+		 * selection will choose addresses in the order as they are reported by kernel.
+		 * Note that the order in @plat_addresses of the remaining matches is highest
+		 * priority first.
+		 * We need to compare this to the order in @known_addresses (which has lowest
+		 * priority first).
+		 *
+		 * If we find a first discrepancy, we need to delete all remaining addresses
+		 * from that point on, because below we must re-add all the addresses in the
+		 * right order to get their priority right. */
+		i_plat = plat_addresses->len;
+		i_know = 0;
+		delete_remaining = FALSE;
+		while (i_plat > 0) {
+			const NMPlatformIP6Address *plat_addr = NMP_OBJECT_CAST_IP6_ADDRESS (plat_addresses->pdata[--i_plat]);
 
-			if (IN6_IS_ADDR_LINKLOCAL (&address->address))
+			if (!plat_addr)
 				continue;
 
-			if (   remove
-			    || position != array_ip6_address_position (known_addresses,
-			                                               address,
-			                                               now,
-			                                               TRUE)) {
-				nm_platform_ip6_address_delete (self, ifindex, address->address, address->plen);
-				remove = TRUE;
+			if (!delete_remaining) {
+				for (; i_know < known_addresses_len; i_know++) {
+					const NMPlatformIP6Address *know_addr = NMP_OBJECT_CAST_IP6_ADDRESS (known_addresses->pdata[i_know]);
+
+					if (!know_addr)
+						continue;
+
+					if (IN6_ARE_ADDR_EQUAL (&plat_addr->address, &know_addr->address)) {
+						/* we have a match. Mark address as handled. */
+						i_know++;
+						goto next_plat;
+					}
+					break;
+				}
+				delete_remaining = TRUE;
 			}
 
-			position++;
+			nm_platform_ip6_address_delete (self, ifindex, plat_addr->address, plat_addr->plen);
+next_plat:
+			;
 		}
 	}
 
@@ -3554,18 +3632,15 @@ nm_platform_ip6_address_sync (NMPlatform *self,
 	/* Add missing addresses. New addresses are added by kernel with top
 	 * priority.
 	 */
-	for (i = 0; i < known_addresses->len; i++) {
-		const NMPlatformIP6Address *known_address = NMP_OBJECT_CAST_IP6_ADDRESS (known_addresses->pdata[i]);
+	for (i_know = 0; i_know < known_addresses->len; i_know++) {
+		const NMPlatformIP6Address *known_address = NMP_OBJECT_CAST_IP6_ADDRESS (known_addresses->pdata[i_know]);
 		guint32 lifetime, preferred;
 
-		if (NM_FLAGS_HAS (known_address->n_ifa_flags, IFA_F_SECONDARY)) {
-			/* Kernel manages these */
+		if (!known_address)
 			continue;
-		}
 
-		if (!nm_utils_lifetime_get (known_address->timestamp, known_address->lifetime, known_address->preferred,
-		                            now, &lifetime, &preferred))
-			continue;
+		lifetime = nm_utils_lifetime_get (known_address->timestamp, known_address->lifetime, known_address->preferred,
+		                                  now, &preferred);
 
 		if (!nm_platform_ip6_address_add (self, ifindex, known_address->address,
 		                                  known_address->plen, known_address->peer_address,
@@ -3593,7 +3668,7 @@ nm_platform_ip_address_flush (NMPlatform *self,
 	if (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET))
 		success &= nm_platform_ip4_address_sync (self, ifindex, NULL);
 	if (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET6))
-		success &= nm_platform_ip6_address_sync (self, ifindex, NULL, FALSE);
+		success &= nm_platform_ip6_address_sync (self, ifindex, NULL, TRUE);
 	return success;
 }
 

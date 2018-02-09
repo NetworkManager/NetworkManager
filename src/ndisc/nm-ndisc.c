@@ -89,7 +89,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 enum {
-	CONFIG_CHANGED,
+	CONFIG_RECEIVED,
 	RA_TIMEOUT,
 	LAST_SIGNAL
 };
@@ -235,7 +235,7 @@ static void
 _emit_config_change (NMNDisc *self, NMNDiscConfigMap changed)
 {
 	_config_changed_log (self, changed);
-	g_signal_emit (self, signals[CONFIG_CHANGED], 0,
+	g_signal_emit (self, signals[CONFIG_RECEIVED], 0,
 	               _data_complete (&NM_NDISC_GET_PRIVATE (self)->rdata),
 	               (guint) changed);
 }
@@ -348,6 +348,9 @@ nm_ndisc_add_address (NMNDisc *ndisc, const NMNDiscAddress *new)
 	NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE (ndisc);
 	NMNDiscDataInternal *rdata = &priv->rdata;
 	guint i;
+
+	nm_assert (new);
+	nm_assert (new->timestamp > 0 && new->timestamp < G_MAXINT32);
 
 	for (i = 0; i < rdata->addresses->len; i++) {
 		NMNDiscAddress *item = &g_array_index (rdata->addresses, NMNDiscAddress, i);
@@ -936,7 +939,7 @@ _config_changed_log (NMNDisc *ndisc, NMNDiscConfigMap changed)
 		       get_exp (str_exp, now_ns, gateway));
 	}
 	for (i = 0; i < rdata->addresses->len; i++) {
-		NMNDiscAddress *address = &g_array_index (rdata->addresses, NMNDiscAddress, i);
+		const NMNDiscAddress *address = &g_array_index (rdata->addresses, NMNDiscAddress, i);
 
 		inet_ntop (AF_INET6, &address->address, addrstr, sizeof (addrstr));
 		_LOGD ("  address %s exp %s", addrstr,
@@ -1003,7 +1006,7 @@ clean_addresses (NMNDisc *ndisc, gint32 now, NMNDiscConfigMap *changed, gint32 *
 	rdata = &NM_NDISC_GET_PRIVATE (ndisc)->rdata;
 
 	for (i = 0; i < rdata->addresses->len; ) {
-		NMNDiscAddress *item = &g_array_index (rdata->addresses, NMNDiscAddress, i);
+		const NMNDiscAddress *item = &g_array_index (rdata->addresses, NMNDiscAddress, i);
 
 		if (item->lifetime != NM_NDISC_INFINITY) {
 			gint32 expiry = get_expiry (item);
@@ -1378,7 +1381,7 @@ nm_ndisc_class_init (NMNDiscClass *klass)
 	                      G_PARAM_STATIC_STRINGS);
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-	signals[CONFIG_CHANGED] =
+	signals[CONFIG_RECEIVED] =
 	    g_signal_new (NM_NDISC_CONFIG_RECEIVED,
 	                  G_OBJECT_CLASS_TYPE (klass),
 	                  G_SIGNAL_RUN_FIRST,

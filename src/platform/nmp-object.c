@@ -1768,6 +1768,54 @@ nmp_cache_lookup_link_full (const NMPCache *cache,
 
 /*****************************************************************************/
 
+static NMDedupMultiIdxMode
+_obj_get_add_mode (const NMPObject *obj)
+{
+	/* new objects are usually appended to the list. Except for
+	 * addresses, which are prepended during `ip address add`.
+	 *
+	 * Actually, for routes it is more complicated, because depending on
+	 * `ip route append`, `ip route replace`, `ip route prepend`, the object
+	 * will be added at the tail, at the front, or even replace an element
+	 * in the list. However, that is handled separately by nmp_cache_update_netlink_route()
+	 * and of no concern here. */
+	if (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj),
+	               NMP_OBJECT_TYPE_IP4_ADDRESS,
+	               NMP_OBJECT_TYPE_IP6_ADDRESS))
+		return NM_DEDUP_MULTI_IDX_MODE_PREPEND;
+	return NM_DEDUP_MULTI_IDX_MODE_APPEND;
+}
+
+static void
+_idxcache_update_order_for_dump (NMPCache *cache,
+                                 const NMDedupMultiEntry *entry)
+{
+	const NMPClass *klass;
+	const guint8 *i_idx_type;
+	const NMDedupMultiEntry *entry2;
+
+	nm_dedup_multi_entry_reorder (entry, NULL, TRUE);
+
+	klass = NMP_OBJECT_GET_CLASS (entry->obj);
+	for (i_idx_type = klass->supported_cache_ids; *i_idx_type; i_idx_type++) {
+		NMPCacheIdType id_type = *i_idx_type;
+
+		if (id_type == NMP_CACHE_ID_TYPE_OBJECT_TYPE)
+			continue;
+
+		entry2 = nm_dedup_multi_index_lookup_obj (cache->multi_idx,
+		                                          _idx_type_get (cache, id_type),
+		                                          entry->obj);
+		if (!entry2)
+			continue;
+
+		nm_assert (entry2 != entry);
+		nm_assert (entry2->obj == entry->obj);
+
+		nm_dedup_multi_entry_reorder (entry2, NULL, TRUE);
+	}
+}
+
 static void
 _idxcache_update_other_cache_ids (NMPCache *cache,
                                   NMPCacheIdType cache_id_type,
@@ -1827,7 +1875,7 @@ _idxcache_update_other_cache_ids (NMPCache *cache,
 		                               obj_new,
 		                               is_dump
 		                                 ? NM_DEDUP_MULTI_IDX_MODE_APPEND_FORCE
-		                                 : NM_DEDUP_MULTI_IDX_MODE_APPEND,
+		                                 : _obj_get_add_mode (obj_new),
 		                               is_dump
 		                                 ? NULL
 		                                 : entry_order,
@@ -1905,7 +1953,7 @@ _idxcache_update (NMPCache *cache,
 		                               obj_new,
 		                               is_dump
 		                                 ? NM_DEDUP_MULTI_IDX_MODE_APPEND_FORCE
-		                                 : NM_DEDUP_MULTI_IDX_MODE_APPEND,
+		                                 : _obj_get_add_mode (obj_new),
 		                               NULL,
 		                               entry_old ?: NM_DEDUP_MULTI_ENTRY_MISSING,
 		                               NULL,
@@ -2162,6 +2210,8 @@ nmp_cache_update_netlink (NMPCache *cache,
 	}
 
 	if (nmp_object_equal (obj_old, obj_hand_over)) {
+		if (is_dump)
+			_idxcache_update_order_for_dump (cache, entry_old);
 		nm_dedup_multi_entry_set_dirty (entry_old, FALSE);
 		NM_SET_OUT (out_obj_new, nmp_object_ref (obj_old));
 		return NMP_CACHE_OPS_UNCHANGED;
@@ -2235,6 +2285,8 @@ nmp_cache_update_netlink_route (NMPCache *cache,
 	}
 
 	if (nmp_object_equal (entry_old->obj, obj_hand_over)) {
+		if (is_dump)
+			_idxcache_update_order_for_dump (cache, entry_old);
 		nm_dedup_multi_entry_set_dirty (entry_old, FALSE);
 		goto update_done;
 	}
@@ -2258,9 +2310,8 @@ update_done:
 	 * properly find @obj_replaced. */
 	resync_required = FALSE;
 	entry_replace = NULL;
-	if (is_dump) {
+	if (is_dump)
 		goto out;
-	}
 
 	if (!entry_new) {
 		if (   NM_FLAGS_HAS (nlmsgflags, NLM_F_REPLACE)
@@ -2275,6 +2326,8 @@ update_done:
 		goto out;
 	}
 
+	/* FIXME: for routes, we only maintain the order correctly for the BY_WEAK_ID
+	 * index. For all other indexes their order becomes messed up. */
 	entry_cur = _lookup_entry_with_idx_type (cache,
 	                                         NMP_CACHE_ID_TYPE_ROUTES_BY_WEAK_ID,
 	                                         entry_new->obj);

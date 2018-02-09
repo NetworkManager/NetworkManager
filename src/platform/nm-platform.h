@@ -719,6 +719,8 @@ typedef struct {
 	gboolean (*sysctl_set) (NMPlatform *, const char *pathid, int dirfd, const char *path, const char *value);
 	char * (*sysctl_get) (NMPlatform *, const char *pathid, int dirfd, const char *path);
 
+	void (*refresh_all) (NMPlatform *self, NMPObjectType obj_type);
+
 	gboolean (*link_add) (NMPlatform *,
 	                      const char *name,
 	                      NMLinkType type,
@@ -1033,6 +1035,8 @@ gboolean nm_platform_sysctl_set_ip6_hop_limit_safe (NMPlatform *self, const char
 const char *nm_platform_if_indextoname (NMPlatform *self, int ifindex, char *out_ifname/* of size IFNAMSIZ */);
 int nm_platform_if_nametoindex (NMPlatform *self, const char *ifname);
 
+void nm_platform_refresh_all (NMPlatform *self, NMPObjectType obj_type);
+
 const NMPObject *nm_platform_link_get_obj (NMPlatform *self,
                                            int ifindex,
                                            gboolean visible_only);
@@ -1256,8 +1260,8 @@ gboolean nm_platform_ip6_address_add (NMPlatform *self,
                                       guint32 flags);
 gboolean nm_platform_ip4_address_delete (NMPlatform *self, int ifindex, in_addr_t address, guint8 plen, in_addr_t peer_address);
 gboolean nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct in6_addr address, guint8 plen);
-gboolean nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, GPtrArray *known_addresse);
-gboolean nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, const GPtrArray *known_addresses, gboolean keep_link_local);
+gboolean nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, GPtrArray *known_addresses);
+gboolean nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, GPtrArray *known_addresses, gboolean full_sync);
 gboolean nm_platform_ip_address_flush (NMPlatform *self,
                                        int addr_family,
                                        int ifindex);

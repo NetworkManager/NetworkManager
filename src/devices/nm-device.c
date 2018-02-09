@@ -2816,6 +2816,8 @@ ndisc_set_router_config (NMNDisc *ndisc, NMDevice *self)
 	nm_dedup_multi_iter_for_each (&ipconf_iter, head_entry) {
 		const NMPlatformIP6Address *addr = NMP_OBJECT_CAST_IP6_ADDRESS (ipconf_iter.current->obj);
 		NMNDiscAddress *ndisc_addr;
+		guint32 lifetime, preferred;
+		gint32 base;
 
 		if (IN6_IS_ADDR_LINKLOCAL (&addr->address))
 			continue;
@@ -2827,12 +2829,28 @@ ndisc_set_router_config (NMNDisc *ndisc, NMDevice *self)
 		if (addr->plen != 64)
 			continue;
 
+		/* resolve the timestamps relative to a new base.
+		 *
+		 * Note that for convenience, platform @addr might have timestamp and/or
+		 * lifetime unset. We don't allow that flexibility for ndisc and require
+		 * well defined timestamps. */
+		if (addr->timestamp) {
+			nm_assert (addr->timestamp < G_MAXINT32);
+			base = addr->timestamp;
+		} else
+			base = now;
+
+		lifetime = nm_utils_lifetime_get (addr->timestamp, addr->lifetime, addr->preferred,
+		                                  base, &preferred);
+		if (!lifetime)
+			continue;
+
 		g_array_set_size (addresses, addresses->len+1);
 		ndisc_addr = &g_array_index (addresses, NMNDiscAddress, addresses->len-1);
 		ndisc_addr->address = addr->address;
-		ndisc_addr->timestamp = addr->timestamp;
-		ndisc_addr->lifetime = addr->lifetime;
-		ndisc_addr->preferred = addr->preferred;
+		ndisc_addr->timestamp = base;
+		ndisc_addr->lifetime = lifetime;
+		ndisc_addr->preferred = preferred;
 	}
 
 	len = nm_ip6_config_get_num_nameservers (priv->ip6_config);
@@ -11511,6 +11529,7 @@ queued_ip6_config_change (gpointer user_data)
 	NMDevicePrivate *priv;
 	GSList *iter;
 	gboolean need_ipv6ll = FALSE;
+	NMPlatform *platform;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), G_SOURCE_REMOVE);
 
@@ -11537,14 +11556,24 @@ queued_ip6_config_change (gpointer user_data)
 	} else
 		update_ip_config (self, AF_INET6, FALSE);
 
-	if (priv->state < NM_DEVICE_STATE_DEACTIVATING
-	    && nm_platform_link_get (nm_device_get_platform (self), priv->ifindex)) {
+	if (   priv->state < NM_DEVICE_STATE_DEACTIVATING
+	    && (platform = nm_device_get_platform (self))
+	    && nm_platform_link_get (platform, priv->ifindex)) {
 		/* Handle DAD failures */
-		for (iter = priv->dad6_failed_addrs; iter; iter = g_slist_next (iter)) {
-			const NMPlatformIP6Address *addr = iter->data;
+		for (iter = priv->dad6_failed_addrs; iter; iter = iter->next) {
+			const NMPObject *obj = iter->data;
+			const NMPlatformIP6Address *addr = NMP_OBJECT_CAST_IP6_ADDRESS (obj);
+			const NMPlatformIP6Address *addr2;
 
-			if (addr->addr_source >= NM_IP_CONFIG_SOURCE_USER)
+			addr2 = NMP_OBJECT_CAST_IP6_ADDRESS (nm_platform_lookup_obj (platform,
+			                                                             NMP_CACHE_ID_TYPE_OBJECT_TYPE,
+			                                                             obj));
+			if (   addr2
+			    && (   NM_FLAGS_HAS (addr2->n_ifa_flags, IFA_F_SECONDARY)
+			        || !NM_FLAGS_HAS (addr2->n_ifa_flags, IFA_F_DADFAILED))) {
+				/* the address still/again exists and is not in DADFAILED state. Skip it. */
 				continue;
+			}
 
 			_LOGI (LOGD_IP6, "ipv6: duplicate address check failed for the %s address",
 			       nm_platform_ip6_address_to_string (addr, NULL, 0));
@@ -11567,7 +11596,7 @@ queued_ip6_config_change (gpointer user_data)
 			check_and_add_ipv6ll_addr (self);
 	}
 
-	g_slist_free_full (priv->dad6_failed_addrs, g_free);
+	g_slist_free_full (priv->dad6_failed_addrs, (GDestroyNotify) nmp_object_unref);
 	priv->dad6_failed_addrs = NULL;
 
 	/* Check if DAD is still pending */
@@ -11623,12 +11652,13 @@ device_ipx_changed (NMPlatform *platform,
 	case NMP_OBJECT_TYPE_IP6_ADDRESS:
 		addr = platform_object;
 
-		if (   priv->state > NM_DEVICE_STATE_DISCONNECTED
+		if (   !NM_FLAGS_HAS (addr->n_ifa_flags, IFA_F_SECONDARY)
+		    && priv->state > NM_DEVICE_STATE_DISCONNECTED
 		    && priv->state < NM_DEVICE_STATE_DEACTIVATING
 		    && (   (change_type == NM_PLATFORM_SIGNAL_CHANGED && addr->n_ifa_flags & IFA_F_DADFAILED)
 		        || (change_type == NM_PLATFORM_SIGNAL_REMOVED && addr->n_ifa_flags & IFA_F_TENTATIVE))) {
-			priv->dad6_failed_addrs = g_slist_append (priv->dad6_failed_addrs,
-			                                          g_memdup (addr, sizeof (NMPlatformIP6Address)));
+			priv->dad6_failed_addrs = g_slist_prepend (priv->dad6_failed_addrs,
+			                                           (gpointer) nmp_object_ref (NMP_OBJECT_UP_CAST (addr)));
 		}
 		/* fall through */
 	case NMP_OBJECT_TYPE_IP6_ROUTE:
@@ -14684,7 +14714,7 @@ finalize (GObject *object)
 	g_free (priv->hw_addr_perm);
 	g_free (priv->hw_addr_initial);
 	g_slist_free (priv->pending_actions);
-	g_slist_free_full (priv->dad6_failed_addrs, g_free);
+	g_slist_free_full (priv->dad6_failed_addrs, (GDestroyNotify) nmp_object_unref);
 	g_clear_pointer (&priv->physical_port_id, g_free);
 	g_free (priv->udi);
 	g_free (priv->iface);
