@@ -155,28 +155,29 @@ curl_check_connectivity (CURLM *mhandle, CURLMcode ret)
 		}
 
 		if (cb_data) {
+			NMConnectivityState c;
+
 			/* If cb_data is still there this message hasn't been
 			 * taken care of. Do so now. */
-			if (msg->data.result == CURLE_OK) {
+			if (msg->data.result != CURLE_OK) {
+				_LOG2D ("check failed (%d)", msg->data.result);
+				c = NM_CONNECTIVITY_LIMITED;
+			} else if (   !cb_data->response[0]
+			           && (curl_easy_getinfo (msg->easy_handle, CURLINFO_RESPONSE_CODE, &response_code) == CURLE_OK)
+			           && response_code == 204) {
 				/* If we got a 204 error (No content) and we actually requested no content,
 				 * report full connectivity. */
-				if (!cb_data->response[0] &&
-				    (curl_easy_getinfo (msg->easy_handle, CURLINFO_RESPONSE_CODE, &response_code) == CURLE_OK) &&
-				    response_code == 204) {
-					_LOG2D ("response with no content received, check successful");
-					finish_cb_data (cb_data, NM_CONNECTIVITY_FULL);
-				}
+				_LOG2D ("response with no content received, check successful");
+				c = NM_CONNECTIVITY_FULL;
+			} else {
 				/* If we get here, it means that easy_write_cb() didn't read enough
 				 * bytes to be able to do a match. */
-				else {
-					_LOG2I ("response shorter than expected '%s'; assuming captive portal.",
-					        cb_data->response);
-					finish_cb_data (cb_data, NM_CONNECTIVITY_PORTAL);
-				}
-			} else {
-				_LOG2D ("check failed (%d)", msg->data.result);
-				finish_cb_data (cb_data, NM_CONNECTIVITY_LIMITED);
+				_LOG2I ("response shorter than expected '%s'; assuming captive portal.",
+				        cb_data->response);
+				c = NM_CONNECTIVITY_PORTAL;
 			}
+
+			finish_cb_data (cb_data, c);
 		}
 
 		curl_multi_remove_handle (mhandle, msg->easy_handle);
