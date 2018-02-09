@@ -89,7 +89,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 );
 
 enum {
-	CONFIG_CHANGED,
+	CONFIG_RECEIVED,
 	RA_TIMEOUT,
 	LAST_SIGNAL
 };
@@ -235,7 +235,7 @@ static void
 _emit_config_change (NMNDisc *self, NMNDiscConfigMap changed)
 {
 	_config_changed_log (self, changed);
-	g_signal_emit (self, signals[CONFIG_CHANGED], 0,
+	g_signal_emit (self, signals[CONFIG_RECEIVED], 0,
 	               _data_complete (&NM_NDISC_GET_PRIVATE (self)->rdata),
 	               (guint) changed);
 }
@@ -1381,7 +1381,7 @@ nm_ndisc_class_init (NMNDiscClass *klass)
 	                      G_PARAM_STATIC_STRINGS);
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-	signals[CONFIG_CHANGED] =
+	signals[CONFIG_RECEIVED] =
 	    g_signal_new (NM_NDISC_CONFIG_RECEIVED,
 	                  G_OBJECT_CLASS_TYPE (klass),
 	                  G_SIGNAL_RUN_FIRST,
