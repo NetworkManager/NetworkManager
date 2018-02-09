@@ -8,6 +8,7 @@
 #   BUILDTYPE=|SRPM
 #   NM_RPMBUILD_ARGS=<additional argus for rpmbuild>
 #   RELEASE_VERSION=
+#   SNAPSHOT=
 #   VERSION=
 #   COMMIT_FULL=
 #   COMMIT=
@@ -96,6 +97,7 @@ exec 2>&1
 
 UUID=`uuidgen`
 RELEASE_VERSION="${RELEASE_VERSION:-$(git rev-list HEAD | wc -l)}"
+SNAPSHOT="${SNAPSHOT:-%{nil\}}"
 VERSION="${VERSION:-$(get_version || die "Could not read $VERSION")}"
 COMMIT_FULL="${COMMIT_FULL:-$(git rev-parse --verify HEAD || die "Error reading HEAD revision")}"
 COMMIT="${COMMIT:-$(printf '%s' "$COMMIT_FULL" | sed 's/^\(.\{10\}\).*/\1/' || die "Error reading HEAD revision")}"
@@ -131,6 +133,7 @@ fi
 
 LOG "VERSION=$VERSION"
 LOG "RELEASE_VERSION=$RELEASE_VERSION"
+LOG "SNAPSHOT=$SNAPSHOT"
 LOG "COMMIT_FULL=$COMMIT_FULL"
 LOG "COMMIT=$COMMIT"
 LOG "USERNAME=$USERNAME"
@@ -164,6 +167,7 @@ write_changelog
 
 sed -e "s/__VERSION__/$VERSION/g" \
     -e "s/__RELEASE_VERSION__/$RELEASE_VERSION/g" \
+    -e "s/__SNAPSHOT__/$SNAPSHOT/g" \
     -e "s/__COMMIT__/$COMMIT/g" \
     -e "s/__COMMIT_FULL__/$COMMIT_FULL/g" \
     -e "s/__SNAPSHOT__/$SNAPSHOT/g" \

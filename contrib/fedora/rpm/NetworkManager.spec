@@ -19,7 +19,7 @@
 %global rpm_version __VERSION__
 %global real_version __VERSION__
 %global release_version __RELEASE_VERSION__
-%global snapshot %{nil}
+%global snapshot __SNAPSHOT__
 %global git_sha __COMMIT__
 
 %global obsoletes_device_plugins 1:0.9.9.95-1
