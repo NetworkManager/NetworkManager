@@ -3159,7 +3159,7 @@ _addr_array_clean_expired (int addr_family, int ifindex, GPtrArray *array, guint
 		}
 #endif
 
-		if (NM_FLAGS_HAS (a->n_ifa_flags, IFA_F_SECONDARY)) {
+		if (NM_FLAGS_HAS (a->n_ifa_flags, IFA_F_TEMPORARY)) {
 			/* temporary addresses are never added explicitly by NetworkManager but
 			 * kernel adds them via mngtempaddr flag.
 			 *
@@ -3553,7 +3553,7 @@ nm_platform_ip6_address_sync (NMPlatform *self,
 			const NMPObject *know_obj;
 			const NMPlatformIP6Address *plat_addr = NMP_OBJECT_CAST_IP6_ADDRESS (plat_obj);
 
-			if (   NM_FLAGS_HAS (plat_addr->n_ifa_flags, IFA_F_SECONDARY)
+			if (   NM_FLAGS_HAS (plat_addr->n_ifa_flags, IFA_F_TEMPORARY)
 			    || IN6_IS_ADDR_LINKLOCAL (&plat_addr->address)) {
 				if (!full_sync) {
 					/* just mark as handled, without actually deleting the address. */

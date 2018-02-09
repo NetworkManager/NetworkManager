@@ -268,19 +268,19 @@ _addresses_sort_cmp (const NMPlatformIP6Address *a1,
 	if (p1 != p2)
 		return p1 > p2 ? -1 : 1;
 
-	ipv6_privacy1 = !!(a1->n_ifa_flags & (IFA_F_MANAGETEMPADDR | IFA_F_SECONDARY));
-	ipv6_privacy2 = !!(a2->n_ifa_flags & (IFA_F_MANAGETEMPADDR | IFA_F_SECONDARY));
+	ipv6_privacy1 = !!(a1->n_ifa_flags & (IFA_F_MANAGETEMPADDR | IFA_F_TEMPORARY));
+	ipv6_privacy2 = !!(a2->n_ifa_flags & (IFA_F_MANAGETEMPADDR | IFA_F_TEMPORARY));
 	if (ipv6_privacy1 || ipv6_privacy2) {
 		gboolean public1 = TRUE, public2 = TRUE;
 
 		if (ipv6_privacy1) {
-			if (a1->n_ifa_flags & IFA_F_SECONDARY)
+			if (a1->n_ifa_flags & IFA_F_TEMPORARY)
 				public1 = prefer_temp;
 			else
 				public1 = !prefer_temp;
 		}
 		if (ipv6_privacy2) {
-			if (a2->n_ifa_flags & IFA_F_SECONDARY)
+			if (a2->n_ifa_flags & IFA_F_TEMPORARY)
 				public2 = prefer_temp;
 			else
 				public2 = !prefer_temp;

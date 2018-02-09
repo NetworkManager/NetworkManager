@@ -11569,7 +11569,7 @@ queued_ip6_config_change (gpointer user_data)
 			                                                             NMP_CACHE_ID_TYPE_OBJECT_TYPE,
 			                                                             obj));
 			if (   addr2
-			    && (   NM_FLAGS_HAS (addr2->n_ifa_flags, IFA_F_SECONDARY)
+			    && (   NM_FLAGS_HAS (addr2->n_ifa_flags, IFA_F_TEMPORARY)
 			        || !NM_FLAGS_HAS (addr2->n_ifa_flags, IFA_F_DADFAILED))) {
 				/* the address still/again exists and is not in DADFAILED state. Skip it. */
 				continue;
@@ -11652,7 +11652,7 @@ device_ipx_changed (NMPlatform *platform,
 	case NMP_OBJECT_TYPE_IP6_ADDRESS:
 		addr = platform_object;
 
-		if (   !NM_FLAGS_HAS (addr->n_ifa_flags, IFA_F_SECONDARY)
+		if (   !NM_FLAGS_HAS (addr->n_ifa_flags, IFA_F_TEMPORARY)
 		    && priv->state > NM_DEVICE_STATE_DISCONNECTED
 		    && priv->state < NM_DEVICE_STATE_DEACTIVATING
 		    && (   (change_type == NM_PLATFORM_SIGNAL_CHANGED && addr->n_ifa_flags & IFA_F_DADFAILED)
