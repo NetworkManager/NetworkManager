@@ -115,11 +115,11 @@ add_iface_cb (GError *error, gpointer user_data)
 	NMDevice *slave = user_data;
 
 	if (error) {
-	        nm_log_warn (LOGD_DEVICE, "device %s could not be added to a ovs port: %s",
+		nm_log_warn (LOGD_DEVICE, "device %s could not be added to a ovs port: %s",
 		             nm_device_get_iface (slave), error->message);
-	        nm_device_state_changed (slave,
-	                                 NM_DEVICE_STATE_FAILED,
-	                                 NM_DEVICE_STATE_REASON_OVSDB_FAILED);
+		nm_device_state_changed (slave,
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_OVSDB_FAILED);
 	}
 
 	g_object_unref (slave);
@@ -128,23 +128,22 @@ add_iface_cb (GError *error, gpointer user_data)
 static gboolean
 enslave_slave (NMDevice *device, NMDevice *slave, NMConnection *connection, gboolean configure)
 {
-        NMActiveConnection *ac_port = NULL;
-        NMActiveConnection *ac_bridge = NULL;
+	NMActiveConnection *ac_port = NULL;
+	NMActiveConnection *ac_bridge = NULL;
 
 	if (!configure)
 		return TRUE;
 
+	ac_port = NM_ACTIVE_CONNECTION (nm_device_get_act_request (device));
+	ac_bridge = nm_active_connection_get_master (ac_port);
+	if (!ac_bridge)
+		ac_bridge = ac_port;
 
-        ac_port = NM_ACTIVE_CONNECTION (nm_device_get_act_request (device));
-        ac_bridge = nm_active_connection_get_master (ac_port);
-        if (!ac_bridge)
-                ac_bridge = ac_port;
-
-        nm_ovsdb_add_interface (nm_ovsdb_get (),
-                                nm_active_connection_get_applied_connection (ac_bridge),
-                                nm_device_get_applied_connection (device),
-                                nm_device_get_applied_connection (slave),
-                                add_iface_cb, g_object_ref (slave));
+	nm_ovsdb_add_interface (nm_ovsdb_get (),
+	                        nm_active_connection_get_applied_connection (ac_bridge),
+	                        nm_device_get_applied_connection (device),
+	                        nm_device_get_applied_connection (slave),
+	                        add_iface_cb, g_object_ref (slave));
 
 	return TRUE;
 }
@@ -155,11 +154,11 @@ del_iface_cb (GError *error, gpointer user_data)
 	NMDevice *slave = user_data;
 
 	if (error) {
-	        nm_log_warn (LOGD_DEVICE, "device %s could not be removed from a ovs port: %s",
+		nm_log_warn (LOGD_DEVICE, "device %s could not be removed from a ovs port: %s",
 		             nm_device_get_iface (slave), error->message);
-	        nm_device_state_changed (slave,
-	                                 NM_DEVICE_STATE_FAILED,
-	                                 NM_DEVICE_STATE_REASON_OVSDB_FAILED);
+		nm_device_state_changed (slave,
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_OVSDB_FAILED);
 	}
 
 	g_object_unref (slave);
@@ -169,7 +168,7 @@ static void
 release_slave (NMDevice *device, NMDevice *slave, gboolean configure)
 {
 	nm_ovsdb_del_interface (nm_ovsdb_get (), nm_device_get_iface (slave),
-				del_iface_cb, g_object_ref (slave));
+	                        del_iface_cb, g_object_ref (slave));
 }
 
 /*****************************************************************************/
