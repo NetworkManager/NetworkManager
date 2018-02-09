@@ -11529,6 +11529,7 @@ queued_ip6_config_change (gpointer user_data)
 	NMDevicePrivate *priv;
 	GSList *iter;
 	gboolean need_ipv6ll = FALSE;
+	NMPlatform *platform;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), G_SOURCE_REMOVE);
 
@@ -11555,11 +11556,22 @@ queued_ip6_config_change (gpointer user_data)
 	} else
 		update_ip_config (self, AF_INET6, FALSE);
 
-	if (priv->state < NM_DEVICE_STATE_DEACTIVATING
-	    && nm_platform_link_get (nm_device_get_platform (self), priv->ifindex)) {
+	if (   priv->state < NM_DEVICE_STATE_DEACTIVATING
+	    && (platform = nm_device_get_platform (self))
+	    && nm_platform_link_get (platform, priv->ifindex)) {
 		/* Handle DAD failures */
 		for (iter = priv->dad6_failed_addrs; iter; iter = iter->next) {
-			const NMPlatformIP6Address *addr = NMP_OBJECT_CAST_IP6_ADDRESS (iter->data);
+			const NMPlatformIP6Address *addr;
+
+			addr = NMP_OBJECT_CAST_IP6_ADDRESS (nm_platform_lookup_obj (platform,
+			                                                            NMP_CACHE_ID_TYPE_OBJECT_TYPE,
+			                                                            iter->data));
+			if (   addr
+			    && (   NM_FLAGS_HAS (addr->n_ifa_flags, IFA_F_SECONDARY)
+			        || !NM_FLAGS_HAS (addr->n_ifa_flags, IFA_F_DADFAILED))) {
+				/* the address still/again exists and is not in DADFAILED state. Skip it. */
+				continue;
+			}
 
 			_LOGI (LOGD_IP6, "ipv6: duplicate address check failed for the %s address",
 			       nm_platform_ip6_address_to_string (addr, NULL, 0));

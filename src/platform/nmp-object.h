@@ -730,6 +730,16 @@ const NMDedupMultiEntry *nm_platform_lookup_entry (NMPlatform *platform,
                                                    NMPCacheIdType cache_id_type,
                                                    const NMPObject *obj);
 
+static inline const NMPObject *
+nm_platform_lookup_obj (NMPlatform *platform,
+                        NMPCacheIdType cache_id_type,
+                        const NMPObject *obj)
+{
+	return nm_dedup_multi_entry_get_obj (nm_platform_lookup_entry (platform,
+	                                                               cache_id_type,
+	                                                               obj));
+}
+
 static inline const NMDedupMultiHeadEntry *
 nm_platform_lookup_obj_type (NMPlatform *platform,
                              NMPObjectType obj_type)
