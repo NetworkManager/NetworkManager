@@ -11641,7 +11641,8 @@ device_ipx_changed (NMPlatform *platform,
 	case NMP_OBJECT_TYPE_IP6_ADDRESS:
 		addr = platform_object;
 
-		if (   priv->state > NM_DEVICE_STATE_DISCONNECTED
+		if (   !NM_FLAGS_HAS (addr->n_ifa_flags, IFA_F_SECONDARY)
+		    && priv->state > NM_DEVICE_STATE_DISCONNECTED
 		    && priv->state < NM_DEVICE_STATE_DEACTIVATING
 		    && (   (change_type == NM_PLATFORM_SIGNAL_CHANGED && addr->n_ifa_flags & IFA_F_DADFAILED)
 		        || (change_type == NM_PLATFORM_SIGNAL_REMOVED && addr->n_ifa_flags & IFA_F_TENTATIVE))) {
