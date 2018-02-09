@@ -3524,7 +3524,8 @@ nm_platform_ip6_address_sync (NMPlatform *self,
 	if (!_addr_array_clean_expired (AF_INET6, ifindex, known_addresses, now, &known_addresses_idx))
 		known_addresses = NULL;
 
-	/* @plat_addresses and @known_addresses are in increasing priority order */
+	/* @plat_addresses is in decreasing priority order (highest priority addresses first), contrary to
+	 * @known_addresses which is in increasing priority order (lowest priority addresses first). */
 	plat_addresses = nm_platform_lookup_clone (self,
 	                                           nmp_lookup_init_object (&lookup,
 	                                                                   NMP_OBJECT_TYPE_IP6_ADDRESS,
