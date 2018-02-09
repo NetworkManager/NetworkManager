@@ -11645,8 +11645,8 @@ device_ipx_changed (NMPlatform *platform,
 		    && priv->state < NM_DEVICE_STATE_DEACTIVATING
 		    && (   (change_type == NM_PLATFORM_SIGNAL_CHANGED && addr->n_ifa_flags & IFA_F_DADFAILED)
 		        || (change_type == NM_PLATFORM_SIGNAL_REMOVED && addr->n_ifa_flags & IFA_F_TENTATIVE))) {
-			priv->dad6_failed_addrs = g_slist_append (priv->dad6_failed_addrs,
-			                                          g_memdup (addr, sizeof (NMPlatformIP6Address)));
+			priv->dad6_failed_addrs = g_slist_prepend (priv->dad6_failed_addrs,
+			                                           g_memdup (addr, sizeof (NMPlatformIP6Address)));
 		}
 		/* fall through */
 	case NMP_OBJECT_TYPE_IP6_ROUTE:
