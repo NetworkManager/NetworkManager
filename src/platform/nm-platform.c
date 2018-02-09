@@ -3159,7 +3159,8 @@ _addr_array_clean_expired (int addr_family, int ifindex, GPtrArray *array, guint
 		}
 #endif
 
-		if (NM_FLAGS_HAS (a->n_ifa_flags, IFA_F_TEMPORARY)) {
+		if (   addr_family == AF_INET6
+		    && NM_FLAGS_HAS (a->n_ifa_flags, IFA_F_TEMPORARY)) {
 			/* temporary addresses are never added explicitly by NetworkManager but
 			 * kernel adds them via mngtempaddr flag.
 			 *
