@@ -687,8 +687,10 @@ dispose (GObject *object)
 	g_slist_free_full (priv->known_networks, (GDestroyNotify) known_network_free);
 	priv->known_networks = NULL;
 
-	g_signal_handlers_disconnect_by_data (priv->nm_manager, self);
-	g_clear_object (&priv->nm_manager);
+	if (priv->nm_manager) {
+		g_signal_handlers_disconnect_by_data (priv->nm_manager, self);
+		g_clear_object (&priv->nm_manager);
+	}
 
 	G_OBJECT_CLASS (nm_iwd_manager_parent_class)->dispose (object);
 }
