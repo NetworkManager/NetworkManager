@@ -349,6 +349,9 @@ nm_ndisc_add_address (NMNDisc *ndisc, const NMNDiscAddress *new)
 	NMNDiscDataInternal *rdata = &priv->rdata;
 	guint i;
 
+	nm_assert (new);
+	nm_assert (new->timestamp > 0 && new->timestamp < G_MAXINT32);
+
 	for (i = 0; i < rdata->addresses->len; i++) {
 		NMNDiscAddress *item = &g_array_index (rdata->addresses, NMNDiscAddress, i);
 
@@ -936,7 +939,7 @@ _config_changed_log (NMNDisc *ndisc, NMNDiscConfigMap changed)
 		       get_exp (str_exp, now_ns, gateway));
 	}
 	for (i = 0; i < rdata->addresses->len; i++) {
-		NMNDiscAddress *address = &g_array_index (rdata->addresses, NMNDiscAddress, i);
+		const NMNDiscAddress *address = &g_array_index (rdata->addresses, NMNDiscAddress, i);
 
 		inet_ntop (AF_INET6, &address->address, addrstr, sizeof (addrstr));
 		_LOGD ("  address %s exp %s", addrstr,
@@ -1003,7 +1006,7 @@ clean_addresses (NMNDisc *ndisc, gint32 now, NMNDiscConfigMap *changed, gint32 *
 	rdata = &NM_NDISC_GET_PRIVATE (ndisc)->rdata;
 
 	for (i = 0; i < rdata->addresses->len; ) {
-		NMNDiscAddress *item = &g_array_index (rdata->addresses, NMNDiscAddress, i);
+		const NMNDiscAddress *item = &g_array_index (rdata->addresses, NMNDiscAddress, i);
 
 		if (item->lifetime != NM_NDISC_INFINITY) {
 			gint32 expiry = get_expiry (item);

@@ -2816,6 +2816,8 @@ ndisc_set_router_config (NMNDisc *ndisc, NMDevice *self)
 	nm_dedup_multi_iter_for_each (&ipconf_iter, head_entry) {
 		const NMPlatformIP6Address *addr = NMP_OBJECT_CAST_IP6_ADDRESS (ipconf_iter.current->obj);
 		NMNDiscAddress *ndisc_addr;
+		guint32 lifetime, preferred;
+		gint32 base;
 
 		if (IN6_IS_ADDR_LINKLOCAL (&addr->address))
 			continue;
@@ -2827,12 +2829,27 @@ ndisc_set_router_config (NMNDisc *ndisc, NMDevice *self)
 		if (addr->plen != 64)
 			continue;
 
+		/* resolve the timestamps relative to a new base.
+		 *
+		 * Note that for convenience, platform @addr might have timestamp and/or
+		 * lifetime unset. We don't allow that flexibility for ndisc and require
+		 * well defined timestamps. */
+		if (addr->timestamp) {
+			nm_assert (addr->timestamp < G_MAXINT32);
+			base = addr->timestamp;
+		} else
+			base = now;
+
+		if (!nm_utils_lifetime_get (addr->timestamp, addr->lifetime, addr->preferred,
+		                            base, &lifetime, &preferred))
+			continue;
+
 		g_array_set_size (addresses, addresses->len+1);
 		ndisc_addr = &g_array_index (addresses, NMNDiscAddress, addresses->len-1);
 		ndisc_addr->address = addr->address;
-		ndisc_addr->timestamp = addr->timestamp;
-		ndisc_addr->lifetime = addr->lifetime;
-		ndisc_addr->preferred = addr->preferred;
+		ndisc_addr->timestamp = base;
+		ndisc_addr->lifetime = lifetime;
+		ndisc_addr->preferred = preferred;
 	}
 
 	len = nm_ip6_config_get_num_nameservers (priv->ip6_config);
