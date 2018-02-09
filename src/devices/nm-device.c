@@ -11561,14 +11561,16 @@ queued_ip6_config_change (gpointer user_data)
 	    && nm_platform_link_get (platform, priv->ifindex)) {
 		/* Handle DAD failures */
 		for (iter = priv->dad6_failed_addrs; iter; iter = iter->next) {
-			const NMPlatformIP6Address *addr;
+			const NMPObject *obj = iter->data;
+			const NMPlatformIP6Address *addr = NMP_OBJECT_CAST_IP6_ADDRESS (obj);
+			const NMPlatformIP6Address *addr2;
 
-			addr = NMP_OBJECT_CAST_IP6_ADDRESS (nm_platform_lookup_obj (platform,
-			                                                            NMP_CACHE_ID_TYPE_OBJECT_TYPE,
-			                                                            iter->data));
-			if (   addr
-			    && (   NM_FLAGS_HAS (addr->n_ifa_flags, IFA_F_SECONDARY)
-			        || !NM_FLAGS_HAS (addr->n_ifa_flags, IFA_F_DADFAILED))) {
+			addr2 = NMP_OBJECT_CAST_IP6_ADDRESS (nm_platform_lookup_obj (platform,
+			                                                             NMP_CACHE_ID_TYPE_OBJECT_TYPE,
+			                                                             obj));
+			if (   addr2
+			    && (   NM_FLAGS_HAS (addr2->n_ifa_flags, IFA_F_SECONDARY)
+			        || !NM_FLAGS_HAS (addr2->n_ifa_flags, IFA_F_DADFAILED))) {
 				/* the address still/again exists and is not in DADFAILED state. Skip it. */
 				continue;
 			}
