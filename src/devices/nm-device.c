@@ -11558,8 +11558,8 @@ queued_ip6_config_change (gpointer user_data)
 	if (priv->state < NM_DEVICE_STATE_DEACTIVATING
 	    && nm_platform_link_get (nm_device_get_platform (self), priv->ifindex)) {
 		/* Handle DAD failures */
-		for (iter = priv->dad6_failed_addrs; iter; iter = g_slist_next (iter)) {
-			const NMPlatformIP6Address *addr = iter->data;
+		for (iter = priv->dad6_failed_addrs; iter; iter = iter->next) {
+			const NMPlatformIP6Address *addr = NMP_OBJECT_CAST_IP6_ADDRESS (iter->data);
 
 			if (addr->addr_source >= NM_IP_CONFIG_SOURCE_USER)
 				continue;
@@ -11585,7 +11585,7 @@ queued_ip6_config_change (gpointer user_data)
 			check_and_add_ipv6ll_addr (self);
 	}
 
-	g_slist_free_full (priv->dad6_failed_addrs, g_free);
+	g_slist_free_full (priv->dad6_failed_addrs, (GDestroyNotify) nmp_object_unref);
 	priv->dad6_failed_addrs = NULL;
 
 	/* Check if DAD is still pending */
@@ -11646,7 +11646,7 @@ device_ipx_changed (NMPlatform *platform,
 		    && (   (change_type == NM_PLATFORM_SIGNAL_CHANGED && addr->n_ifa_flags & IFA_F_DADFAILED)
 		        || (change_type == NM_PLATFORM_SIGNAL_REMOVED && addr->n_ifa_flags & IFA_F_TENTATIVE))) {
 			priv->dad6_failed_addrs = g_slist_prepend (priv->dad6_failed_addrs,
-			                                           g_memdup (addr, sizeof (NMPlatformIP6Address)));
+			                                           (gpointer) nmp_object_ref (NMP_OBJECT_UP_CAST (addr)));
 		}
 		/* fall through */
 	case NMP_OBJECT_TYPE_IP6_ROUTE:
@@ -14702,7 +14702,7 @@ finalize (GObject *object)
 	g_free (priv->hw_addr_perm);
 	g_free (priv->hw_addr_initial);
 	g_slist_free (priv->pending_actions);
-	g_slist_free_full (priv->dad6_failed_addrs, g_free);
+	g_slist_free_full (priv->dad6_failed_addrs, (GDestroyNotify) nmp_object_unref);
 	g_clear_pointer (&priv->physical_port_id, g_free);
 	g_free (priv->udi);
 	g_free (priv->iface);
