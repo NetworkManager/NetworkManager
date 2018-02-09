@@ -21,15 +21,8 @@
 #define NMC_NMCLI_H
 
 #include "nm-secret-agent-old.h"
-
 #include "nm-meta-setting-desc.h"
-
-#if WITH_POLKIT_AGENT
 #include "nm-polkit-listener.h"
-#else
-/* polkit agent is not available; define fake NMPolkitListener */
-typedef gpointer NMPolkitListener;
-#endif
 
 typedef char *(*NmcCompEntryFunc) (const char *, int);
 
