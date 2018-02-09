@@ -11561,9 +11561,6 @@ queued_ip6_config_change (gpointer user_data)
 		for (iter = priv->dad6_failed_addrs; iter; iter = iter->next) {
 			const NMPlatformIP6Address *addr = NMP_OBJECT_CAST_IP6_ADDRESS (iter->data);
 
-			if (addr->addr_source >= NM_IP_CONFIG_SOURCE_USER)
-				continue;
-
 			_LOGI (LOGD_IP6, "ipv6: duplicate address check failed for the %s address",
 			       nm_platform_ip6_address_to_string (addr, NULL, 0));
 
