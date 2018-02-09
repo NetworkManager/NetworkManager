@@ -19,6 +19,12 @@
 #ifndef __NM_POLKIT_LISTENER_H__
 #define __NM_POLKIT_LISTENER_H__
 
+struct _NMPolkitListener;
+
+typedef struct _NMPolkitListener NMPolkitListener;
+
+#if WITH_POLKIT_AGENT
+
 #define POLKIT_AGENT_I_KNOW_API_IS_SUBJECT_TO_CHANGE
 #include <polkitagent/polkitagent.h>
 
@@ -72,14 +78,12 @@ typedef void (*NMPolkitListenerOnShowErrorFunc) (const char *text);
 typedef void (*NMPolkitListenerOnCompletedFunc) (gboolean gained_authorization);
 
 
-typedef struct {
+struct _NMPolkitListener {
 	PolkitAgentListener parent;
-
-} NMPolkitListener;
+};
 
 typedef struct {
 	PolkitAgentListenerClass parent;
-
 } NMPolkitListenerClass;
 
 GType nm_polkit_listener_get_type (void);
@@ -94,5 +98,7 @@ void nm_polkit_listener_set_show_error_callback (NMPolkitListener *self,
                                                  NMPolkitListenerOnShowErrorFunc show_error_callback);
 void nm_polkit_listener_set_completed_callback  (NMPolkitListener *self,
                                                  NMPolkitListenerOnCompletedFunc completed_callback);
+
+#endif
 
 #endif /* __NM_POLKIT_LISTENER_H__ */
