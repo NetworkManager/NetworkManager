@@ -23,6 +23,7 @@ usage() {
     echo "  -N|--no-dist: skip creating the source tarball if you already did \`make dist\`"
     echo "  -w|--with \$OPTION: pass --with \$OPTION to rpmbuild. For example --with debug"
     echo "  -W|--without \$OPTION: pass --without \$OPTION to rpmbuild. For example --without debug"
+    echo "  -s|--snapshot TEXT: use TEXT as the snapshot version for the new package (overwrites \$NM_BUILD_SNAPSHOT environment)"
 }
 
 
@@ -41,14 +42,11 @@ QUICK=0
 NO_DIST=0
 WITH_LIST=()
 SOURCE_FROM_GIT=0
+SNAPSHOT="$NM_BUILD_SNAPSHOT"
 
-_next_with=
-for A; do
-    if [ -n "$_next_with" ]; then
-        WITH_LIST=("${WITH_LIST[@]}" "$_next_with" "$A")
-        _next_with=
-        continue
-    fi
+while [[ $# -gt 0 ]]; do
+    A="$1"
+    shift
     case "$A" in
         -h|--help|-\?|help)
             usage
@@ -62,6 +60,11 @@ for A; do
             ;;
         -S|--srpm)
             BUILDTYPE=SRPM
+            ;;
+        -s|--snapshot)
+            [[ $# -gt 0 ]] || die "Missing argument to $A"
+            SNAPSHOT="$1"
+            shift
             ;;
         -g|--git)
             NO_DIST=1
@@ -77,10 +80,14 @@ for A; do
             SOURCE_FROM_GIT=0
             ;;
         -w|--with)
-            _next_with=--with
+            [[ $# -gt 0 ]] || die "Missing argument to $A"
+            WITH_LIST=("${WITH_LIST[@]}" "--with" "$1")
+            shift
             ;;
         -W|--without)
-            _next_with=--without
+            [[ $# -gt 0 ]] || die "Missing argument to $A"
+            WITH_LIST=("${WITH_LIST[@]}" "--without" "$1")
+            shift
             ;;
         *)
             usage
@@ -88,8 +95,6 @@ for A; do
             ;;
     esac
 done
-
-test -n "$_next_with" && die "Missing argument to $_next_with"
 
 if [[ $GIT_CLEAN == 1 ]]; then
     git clean -fdx :/
@@ -152,6 +157,7 @@ fi
 export SOURCE_FROM_GIT
 export BUILDTYPE
 export NM_RPMBUILD_ARGS="${WITH_LIST[@]}"
+export SNAPSHOT
 
 "$SCRIPTDIR"/build.sh
 
