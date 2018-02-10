@@ -39,9 +39,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-G_DEFINE_TYPE (NMPolkitListener, nm_polkit_listener, POLKIT_AGENT_TYPE_LISTENER)
+#if WITH_POLKIT_AGENT
 
-#define NM_POLKIT_LISTENER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_POLKIT_LISTENER, NMPolkitListenerPrivate))
+/*****************************************************************************/
 
 typedef struct {
 	gpointer reg_handle;  /* handle of polkit agent registration */
@@ -64,6 +64,11 @@ typedef struct {
 	gpointer request_callback_data;
 } NMPolkitListenerPrivate;
 
+G_DEFINE_TYPE (NMPolkitListener, nm_polkit_listener, POLKIT_AGENT_TYPE_LISTENER)
+
+#define NM_POLKIT_LISTENER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_POLKIT_LISTENER, NMPolkitListenerPrivate))
+
+/*****************************************************************************/
 
 static void
 on_request (PolkitAgentSession *session,
@@ -264,81 +269,7 @@ initiate_authentication_finish (PolkitAgentListener *listener,
 	return !g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result), error);
 }
 
-
-static void
-nm_polkit_listener_init (NMPolkitListener *agent)
-{
-}
-
-static void
-nm_polkit_listener_finalize (GObject *object)
-{
-	NMPolkitListenerPrivate *priv = NM_POLKIT_LISTENER_GET_PRIVATE (object);
-
-	if (priv->reg_handle)
-		polkit_agent_listener_unregister (priv->reg_handle);
-
-	g_free (priv->action_id);
-	g_free (priv->message);
-	g_free (priv->icon_name);
-	g_free (priv->identity);
-
-	G_OBJECT_CLASS (nm_polkit_listener_parent_class)->finalize (object);
-}
-
-static void
-nm_polkit_listener_class_init (NMPolkitListenerClass *klass)
-{
-	GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-	PolkitAgentListenerClass *pkal_class = POLKIT_AGENT_LISTENER_CLASS (klass);
-
-	g_type_class_add_private (klass, sizeof (NMPolkitListenerPrivate));
-
-	gobject_class->finalize = nm_polkit_listener_finalize;
-
-	pkal_class->initiate_authentication = initiate_authentication;
-	pkal_class->initiate_authentication_finish = initiate_authentication_finish;
-}
-
-/**
- * nm_polkit_listener_new:
- * @for_session: %TRUE for registering the polkit agent for the user session,
- *   %FALSE for registering it for the running process
- * @error: location to store error, or %NULL
- *
- * Creates a new #NMPolkitListener and registers it as a polkit agent.
- *
- * Returns: a new #NMPolkitListener
- */
-PolkitAgentListener *
-nm_polkit_listener_new (gboolean for_session, GError **error)
-{
-	PolkitAgentListener *listener;
-	PolkitSubject* session;
-	NMPolkitListenerPrivate *priv;
-
-	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
-
-	listener = g_object_new (NM_TYPE_POLKIT_LISTENER, NULL);
-	priv = NM_POLKIT_LISTENER_GET_PRIVATE (listener);
-
-	if (for_session) {
-		session = polkit_unix_session_new_for_process_sync (getpid (), NULL, error);
-		if (!session)
-			return NULL;
-	} else
-		session = polkit_unix_process_new_for_owner (getpid (), 0, getuid ());
-
-	priv->reg_handle = polkit_agent_listener_register (listener, POLKIT_AGENT_REGISTER_FLAGS_NONE,
-	                                                   session, NULL, NULL, error);
-	if (!priv->reg_handle) {
-		g_object_unref (listener);
-		g_object_unref (session);
-		return NULL;
-	}
-
-	return listener;
-}
+/*****************************************************************************/
 
 /**
  * nm_polkit_listener_set_request_callback:
@@ -414,3 +345,83 @@ nm_polkit_listener_set_completed_callback (NMPolkitListener *self,
 
 	NM_POLKIT_LISTENER_GET_PRIVATE (self)->on_completed_callback = completed_callback;
 }
+
+/*****************************************************************************/
+
+static void
+nm_polkit_listener_init (NMPolkitListener *agent)
+{
+}
+
+/**
+ * nm_polkit_listener_new:
+ * @for_session: %TRUE for registering the polkit agent for the user session,
+ *   %FALSE for registering it for the running process
+ * @error: location to store error, or %NULL
+ *
+ * Creates a new #NMPolkitListener and registers it as a polkit agent.
+ *
+ * Returns: a new #NMPolkitListener
+ */
+PolkitAgentListener *
+nm_polkit_listener_new (gboolean for_session, GError **error)
+{
+	PolkitAgentListener *listener;
+	PolkitSubject* session;
+	NMPolkitListenerPrivate *priv;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+	listener = g_object_new (NM_TYPE_POLKIT_LISTENER, NULL);
+	priv = NM_POLKIT_LISTENER_GET_PRIVATE (listener);
+
+	if (for_session) {
+		session = polkit_unix_session_new_for_process_sync (getpid (), NULL, error);
+		if (!session)
+			return NULL;
+	} else
+		session = polkit_unix_process_new_for_owner (getpid (), 0, getuid ());
+
+	priv->reg_handle = polkit_agent_listener_register (listener, POLKIT_AGENT_REGISTER_FLAGS_NONE,
+	                                                   session, NULL, NULL, error);
+	if (!priv->reg_handle) {
+		g_object_unref (listener);
+		g_object_unref (session);
+		return NULL;
+	}
+
+	return listener;
+}
+
+
+static void
+nm_polkit_listener_finalize (GObject *object)
+{
+	NMPolkitListenerPrivate *priv = NM_POLKIT_LISTENER_GET_PRIVATE (object);
+
+	if (priv->reg_handle)
+		polkit_agent_listener_unregister (priv->reg_handle);
+
+	g_free (priv->action_id);
+	g_free (priv->message);
+	g_free (priv->icon_name);
+	g_free (priv->identity);
+
+	G_OBJECT_CLASS (nm_polkit_listener_parent_class)->finalize (object);
+}
+
+static void
+nm_polkit_listener_class_init (NMPolkitListenerClass *klass)
+{
+	GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+	PolkitAgentListenerClass *pkal_class = POLKIT_AGENT_LISTENER_CLASS (klass);
+
+	g_type_class_add_private (klass, sizeof (NMPolkitListenerPrivate));
+
+	gobject_class->finalize = nm_polkit_listener_finalize;
+
+	pkal_class->initiate_authentication = initiate_authentication;
+	pkal_class->initiate_authentication_finish = initiate_authentication_finish;
+}
+
+#endif /* WITH_POLKIT_AGENT */
