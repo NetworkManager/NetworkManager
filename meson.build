@@ -935,7 +935,7 @@ output += '\n'
 output += '  config-dns-rc-manager-default: ' + config_dns_rc_manager_default + '\n'
 output += '\nDHCP clients (default ' + config_dhcp_default + '):\n'
 output += '  dhcpcanon: ' + enable_dhcpcanon.to_string()
-if enable_dhcpcd
+if enable_dhcpcanon
   output += ' ' + dhcpcanon.path()
 endif
 output += '\n'
