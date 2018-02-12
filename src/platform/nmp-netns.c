@@ -475,6 +475,7 @@ nmp_netns_new (void)
 	NMPNetns *self;
 	int errsv;
 	GError *error = NULL;
+	unsigned long mountflags = 0;
 
 	_stack_ensure_init ();
 
@@ -503,7 +504,10 @@ nmp_netns_new (void)
 		goto err_out;
 	}
 
-	if (mount ("sysfs", "/sys", "sysfs", 0, NULL) != 0) {
+	if (access ("/sys", W_OK) == -1)
+		mountflags = MS_RDONLY;
+
+	if (mount ("sysfs", "/sys", "sysfs", mountflags, NULL) != 0) {
 		errsv = errno;
 		_LOGE (NULL, "failed mount /sys: %s", g_strerror (errsv));
 		goto err_out;
