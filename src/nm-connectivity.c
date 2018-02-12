@@ -165,14 +165,16 @@ curl_check_connectivity (CURLM *mhandle, CURLMcode ret)
 			} else if (   !cb_data->response[0]
 			           && (curl_easy_getinfo (msg->easy_handle, CURLINFO_RESPONSE_CODE, &response_code) == CURLE_OK)
 			           && response_code == 204) {
-				/* If we got a 204 error (No content) and we actually requested no content,
-				 * report full connectivity. */
+				/* If we got a 204 response code (no content) and we actually
+				 * requested no content, report full connectivity. */
 				_LOG2D ("response with no content received, check successful");
 				c = NM_CONNECTIVITY_FULL;
 			} else {
 				/* If we get here, it means that easy_write_cb() didn't read enough
-				 * bytes to be able to do a match. */
-				_LOG2I ("response shorter than expected '%s'; assuming captive portal.",
+				 * bytes to be able to do a match, or that we were asking for no content
+				 * (204 response code) and we actually got some. Either way, that is
+				 * an indication of a captive portal */
+				_LOG2I ("response did not match expected response '%s'; assuming captive portal.",
 				        cb_data->response);
 				c = NM_CONNECTIVITY_PORTAL;
 			}
@@ -309,7 +311,9 @@ easy_write_cb (void *buffer, size_t size, size_t nmemb, void *userdata)
 	memcpy (cb_data->msg + cb_data->msg_size, buffer, len);
 	cb_data->msg_size += len;
 
-	if (cb_data->msg_size >= strlen (cb_data->response)) {
+	/* Check matching prefix if a expected response is given */
+	if (   cb_data->response[0]
+	    && cb_data->msg_size >= strlen (cb_data->response)) {
 		/* We already have enough data -- check response */
 		if (g_str_has_prefix (cb_data->msg, cb_data->response)) {
 			_LOG2D ("check successful.");
