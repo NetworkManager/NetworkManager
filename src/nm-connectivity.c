@@ -216,7 +216,7 @@ multi_timer_cb (CURLM *multi, long timeout_ms, void *userdata)
 
 	nm_clear_g_source (&priv->curl_timer);
 	if (timeout_ms != -1)
-		priv->curl_timer = g_timeout_add (timeout_ms * 1000, curl_timeout_cb, self);
+		priv->curl_timer = g_timeout_add (timeout_ms, curl_timeout_cb, self);
 
 	return 0;
 }
