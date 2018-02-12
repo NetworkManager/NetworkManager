@@ -469,4 +469,39 @@ int nm_utils_fd_read_loop_exact (int fd, void *buf, size_t nbytes, bool do_poll)
 
 /*****************************************************************************/
 
+#define NM_DEFINE_GDBUS_ARG_INFO(a_name, ...) \
+	((GDBusArgInfo *) (&((const GDBusArgInfo) { \
+		.ref_count = -1, \
+		.name = a_name, \
+		__VA_ARGS__ \
+	})))
+
+#define NM_DEFINE_GDBUS_ARG_INFOS(...) \
+	((GDBusArgInfo **) ((const GDBusArgInfo *[]) { \
+		__VA_ARGS__ \
+		NULL, \
+	}))
+
+#define NM_DEFINE_GDBUS_METHOD_INFO(m_name, ...) \
+	((GDBusMethodInfo *) (&((const GDBusMethodInfo) { \
+		.ref_count = -1, \
+		.name = m_name, \
+		__VA_ARGS__ \
+	})))
+
+#define NM_DEFINE_GDBUS_METHOD_INFOS(...) \
+	((GDBusMethodInfo **) ((const GDBusMethodInfo *[]) { \
+		__VA_ARGS__ \
+		NULL, \
+	}))
+
+#define NM_DEFINE_GDBUS_INTERFACE_INFO(variable, i_name, ...) \
+	static GDBusInterfaceInfo *const variable = ((GDBusInterfaceInfo *) (&((const GDBusInterfaceInfo) { \
+		.ref_count = -1, \
+		.name = i_name, \
+		__VA_ARGS__ \
+	})))
+
+/*****************************************************************************/
+
 #endif /* __NM_SHARED_UTILS_H__ */

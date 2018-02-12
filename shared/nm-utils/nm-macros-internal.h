@@ -389,6 +389,28 @@ NM_G_ERROR_MSG (GError *error)
 #define NM_CONSTCAST(type, obj, ...) \
 	NM_CONSTCAST_FULL(type, (obj), (obj), ##__VA_ARGS__)
 
+#if _NM_CC_SUPPORT_GENERIC
+#define NM_UNCONST_PTR(type, arg) \
+	_Generic ((arg), \
+	          const type *: ((type *) (arg)), \
+	                type *: ((type *) (arg)))
+#else
+#define NM_UNCONST_PTR(type, arg) \
+	((type *) (arg))
+#endif
+
+#if _NM_CC_SUPPORT_GENERIC
+#define NM_UNCONST_PPTR(type, arg) \
+	_Generic ((arg), \
+	          const type *     *: ((type **) (arg)), \
+	                type *     *: ((type **) (arg)), \
+	          const type *const*: ((type **) (arg)), \
+	                type *const*: ((type **) (arg)))
+#else
+#define NM_UNCONST_PPTR(type, arg) \
+	((type **) (arg))
+#endif
+
 #define NM_GOBJECT_CAST(type, obj, is_check, ...) \
 	({ \
 		const void *_obj = (obj); \
@@ -1295,6 +1317,25 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro)
 #endif
 
 /*****************************************************************************/
+
+/**
+ * nm_steal_int:
+ * @p_val: pointer to an int type.
+ *
+ * Returns: *p_val and sets *p_val to zero the same time.
+ *   Accepts %NULL, in which case also numeric 0 will be returned.
+ */
+#define nm_steal_int(p_val) \
+	({ \
+		typeof (p_val) const _p_val = (p_val); \
+		typeof (*_p_val) _val = 0; \
+		\
+		if (   _p_val \
+		    && (_val = *_p_val)) { \
+			*_p_val = 0; \
+		} \
+		_val; \
+	})
 
 static inline int
 nm_steal_fd (int *p_fd)

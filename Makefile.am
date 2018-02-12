@@ -2081,8 +2081,7 @@ src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-settings.ver"
 
 src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_LIBADD = \
-	src/settings/plugins/ifcfg-rh/libnms-ifcfg-rh-core.la \
-	src/settings/plugins/ifcfg-rh/libnmdbus-ifcfg-rh.la
+	src/settings/plugins/ifcfg-rh/libnms-ifcfg-rh-core.la
 
 $(src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_OBJECTS): src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h
 $(src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
