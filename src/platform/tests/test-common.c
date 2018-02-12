@@ -1964,7 +1964,7 @@ main (int argc, char **argv)
 		/* Create the writable /sys/devices tree. */
 		if (mount ("sys", "/sys/kernel/debug", "sysfs", 0, NULL) != 0) {
 			errsv = errno;
-			g_error ("mount(\"/sys/devices/k\") failed with %s (%d)", strerror (errsv), errsv);
+			g_error ("mount(\"/sys/kernel/debug\") failed with %s (%d)", strerror (errsv), errsv);
 		}
 
 		/* Bind mound the writable device tree to the read-only sysfs. */
