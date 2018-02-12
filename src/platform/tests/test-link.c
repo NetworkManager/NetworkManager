@@ -1978,6 +1978,17 @@ _test_netns_check_skip (void)
 	return FALSE;
 }
 
+static gboolean
+_check_sysctl_skip (void)
+{
+	if (access ("/proc/sys/net/ipv4/ip_forward", W_OK) == -1) {
+		g_test_skip ("Can not write sysctls");
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
 /*****************************************************************************/
 
 #define _sysctl_assert_eq(plat, path, value) \
@@ -2000,6 +2011,9 @@ test_netns_general (gpointer fixture, gconstpointer test_data)
 	NMPUtilsEthtoolDriverInfo driver_info;
 
 	if (_test_netns_check_skip ())
+		return;
+
+	if (_check_sysctl_skip ())
 		return;
 
 	platform_1 = nm_linux_platform_new (TRUE, TRUE);
@@ -2195,6 +2209,9 @@ test_netns_push (gpointer fixture, gconstpointer test_data)
 	int nstack;
 
 	if (_test_netns_check_skip ())
+		return;
+
+	if (_check_sysctl_skip ())
 		return;
 
 	pl[0].platform = platform_0 = nm_linux_platform_new (TRUE, TRUE);
