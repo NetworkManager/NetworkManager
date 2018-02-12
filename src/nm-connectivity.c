@@ -274,12 +274,15 @@ multi_socket_cb (CURL *e_handle, curl_socket_t s, int what, void *userdata, void
 		} else
 			nm_clear_g_source (&fdp->ev);
 
-		if (what & CURL_POLL_IN)
-			condition |= G_IO_IN;
-		if (what & CURL_POLL_OUT)
-			condition |= G_IO_OUT;
+		if (what == CURL_POLL_IN)
+			condition = G_IO_IN;
+		else if (what == CURL_POLL_OUT)
+			condition = G_IO_OUT;
+		else if (condition == CURL_POLL_INOUT)
+			condition = G_IO_IN | G_IO_OUT;
 
-		fdp->ev = g_io_add_watch (fdp->ch, condition, curl_socketevent_cb, self);
+		if (condition)
+			fdp->ev = g_io_add_watch (fdp->ch, condition, curl_socketevent_cb, self);
 		curl_multi_assign (priv->curl_mhandle, s, fdp);
 	}
 
