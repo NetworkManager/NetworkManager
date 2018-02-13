@@ -57,7 +57,6 @@ polkit_request (const char *request,
 		g_free (tmp);
 	} else
 		response = nmc_readline_echo (echo_on, "%s", request);
-	g_print ("\n");
 
 	return response;
 }
