@@ -1235,9 +1235,8 @@ nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, char
 		/* A valid command was specified. */
 		if (c->usage && argc == 2 && nmc->complete)
 			nmc_complete_help (*(argv+1));
-		if (c->usage && nmc_arg_is_help (*(argv+1))) {
-			if (!nmc->complete)
-				c->usage ();
+		if (!nmc->complete && c->usage && nmc_arg_is_help (*(argv+1))) {
+			c->usage ();
 			g_simple_async_result_complete_in_idle (simple);
 			g_object_unref (simple);
 		} else {
