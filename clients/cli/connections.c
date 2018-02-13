@@ -1653,16 +1653,17 @@ get_connection (NmCli *nmc, int *argc, char ***argv, int *pos, GError **error)
 	if (*argc == 1 && nmc->complete)
 		nmc_complete_strings (**argv, "id", "uuid", "path", NULL);
 
-	if (   strcmp (**argv, "id") == 0
-	    || strcmp (**argv, "uuid") == 0
-	    || strcmp (**argv, "path") == 0) {
-		selector = **argv;
-		(*argc)--;
-		(*argv)++;
-		if (!*argc) {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("%s argument is missing"), selector);
-			return NULL;
+	if (NM_IN_STRSET (**argv, "id", "uuid", "path")) {
+		if (*argc == 1) {
+			if (!nmc->complete) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("%s argument is missing"), selector);
+				return NULL;
+			}
+		} else {
+			selector = **argv;
+			(*argv)++;
+			(*argc)--;
 		}
 	}
 
