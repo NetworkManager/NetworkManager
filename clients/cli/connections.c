@@ -610,26 +610,54 @@ get_ac_for_connection (const GPtrArray *active_cons, NMConnection *connection)
 	return ac;
 }
 
+typedef struct {
+	GMainLoop *loop;
+	NMConnection *local;
+	const char *setting_name;
+} GetSecretsData;
+
+static void
+got_secrets (GObject *source_object, GAsyncResult *res, gpointer user_data)
+{
+	NMRemoteConnection *remote = NM_REMOTE_CONNECTION (source_object);
+	GetSecretsData *data = user_data;
+	GVariant *secrets;
+	GError *error = NULL;
+
+	secrets = nm_remote_connection_get_secrets_finish (remote, res, NULL);
+	if (secrets) {
+		if (!nm_connection_update_secrets (data->local, NULL, secrets, &error) && error) {
+			g_printerr (_("Error updating secrets for %s: %s\n"),
+			            data->setting_name, error->message);
+			g_clear_error (&error);
+		}
+		g_variant_unref (secrets);
+	}
+
+	g_main_loop_quit (data->loop);
+}
+
 /* Put secrets into local connection. */
 static void
 update_secrets_in_connection (NMRemoteConnection *remote, NMConnection *local)
 {
-	GVariant *secrets;
+	GetSecretsData data = { 0, };
 	int i;
-	GError *error = NULL;
+
+	data.local = local;
+	data.loop = g_main_loop_new (NULL, FALSE);
 
 	for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
-		secrets = nm_remote_connection_get_secrets (remote, nm_meta_setting_infos[i].setting_name, NULL, NULL);
-		if (secrets) {
-			if (!nm_connection_update_secrets (local, NULL, secrets, &error) && error) {
-				g_printerr (_("Error updating secrets for %s: %s\n"),
-				            nm_meta_setting_infos[i].setting_name,
-				            error->message);
-				g_clear_error (&error);
-			}
-			g_variant_unref (secrets);
-		}
+		data.setting_name = nm_meta_setting_infos[i].setting_name;
+		nm_remote_connection_get_secrets_async (remote,
+		                                        nm_meta_setting_infos[i].setting_name,
+		                                        NULL,
+		                                        got_secrets,
+		                                        &data);
+		g_main_loop_run (data.loop);
 	}
+
+	g_main_loop_unref (data.loop);
 }
 
 static gboolean
