@@ -1020,6 +1020,8 @@ stop (NMDhcpClient *client, gboolean release, const GByteArray *duid)
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
 	int r = 0;
 
+	NM_DHCP_CLIENT_CLASS (nm_dhcp_systemd_parent_class)->stop (client, release, duid);
+
 	_LOGT ("dhcp-client%d: stop %p",
 	       priv->client4 ? '4' : '6',
 	       priv->client4 ? (gpointer) priv->client4 : (gpointer) priv->client6);

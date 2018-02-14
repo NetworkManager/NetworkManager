@@ -194,7 +194,6 @@ stop (NMDhcpClient *client, gboolean release, const GByteArray *duid)
 	NMDhcpDhcpcd *self = NM_DHCP_DHCPCD (client);
 	NMDhcpDhcpcdPrivate *priv = NM_DHCP_DHCPCD_GET_PRIVATE (self);
 
-	/* Chain up to parent */
 	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhcpcd_parent_class)->stop (client, release, duid);
 
 	if (priv->pid_file) {

@@ -564,7 +564,6 @@ stop (NMDhcpClient *client, gboolean release, const GByteArray *duid)
 	NMDhcpDhclient *self = NM_DHCP_DHCLIENT (client);
 	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (self);
 
-	/* Chain up to parent */
 	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhclient_parent_class)->stop (client, release, duid);
 
 	if (priv->conf_file)
