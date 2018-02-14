@@ -341,6 +341,7 @@ main (int argc, char *argv[])
 	gs_unref_object NMDhcpClient *dhcp4_client = NULL;
 	gs_unref_object NMNDisc *ndisc = NULL;
 	gs_unref_bytes GBytes *hwaddr = NULL;
+	gs_unref_bytes GBytes *client_id = NULL;
 	gs_free NMUtilsIPv6IfaceId *iid = NULL;
 	guint sd_id;
 	char sysctl_path_buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
@@ -441,6 +442,16 @@ main (int argc, char *argv[])
 		iid = g_bytes_unref_to_data (bytes, &ignored);
 	}
 
+	if (global_opt.dhcp4_clientid) {
+		/* this string is just a plain hex-string. Unlike ipv4.dhcp-client-id, which
+		 * is parsed via nm_dhcp_utils_client_id_string_to_bytes(). */
+		client_id = nm_utils_hexstr2bin (global_opt.dhcp4_clientid);
+		if (!client_id || g_bytes_get_size (client_id) < 2) {
+			fprintf (stderr, _("(%s): Invalid DHCP client-id %s\n"), global_opt.ifname, global_opt.dhcp4_clientid);
+			return 1;
+		}
+	}
+
 	if (global_opt.dhcp4_address) {
 		nm_platform_sysctl_set (NM_PLATFORM_GET, NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET, sysctl_path_buf, global_opt.ifname, "promote_secondaries")), "1");
 
@@ -455,7 +466,7 @@ main (int argc, char *argv[])
 		                                          !!global_opt.dhcp4_hostname,
 		                                          global_opt.dhcp4_hostname,
 		                                          global_opt.dhcp4_fqdn,
-		                                          global_opt.dhcp4_clientid,
+		                                          client_id,
 		                                          NM_DHCP_TIMEOUT_DEFAULT,
 		                                          NULL,
 		                                          global_opt.dhcp4_address);

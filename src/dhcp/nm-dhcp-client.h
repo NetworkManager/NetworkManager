@@ -144,7 +144,7 @@ gboolean nm_dhcp_client_get_info_only (NMDhcpClient *self);
 gboolean nm_dhcp_client_get_use_fqdn (NMDhcpClient *self);
 
 gboolean nm_dhcp_client_start_ip4 (NMDhcpClient *self,
-                                   const char *dhcp_client_id,
+                                   GBytes *client_id,
                                    const char *dhcp_anycast_addr,
                                    const char *hostname,
                                    const char *last_ip4_address);
@@ -185,8 +185,6 @@ void nm_dhcp_client_set_client_id_bin (NMDhcpClient *self,
                                        guint8 type,
                                        const guint8 *client_id,
                                        gsize len);
-void nm_dhcp_client_set_client_id_str (NMDhcpClient *self,
-                                       const char *dhcp_client_id);
 
 /*****************************************************************************
  * Client data

@@ -48,6 +48,7 @@
 #include "ndisc/nm-ndisc.h"
 #include "ndisc/nm-lndp-ndisc.h"
 #include "dhcp/nm-dhcp-manager.h"
+#include "dhcp/nm-dhcp-utils.h"
 #include "nm-act-request.h"
 #include "nm-proxy-config.h"
 #include "nm-ip4-config.h"
@@ -6392,12 +6393,27 @@ get_dhcp_timeout (NMDevice *self, int addr_family)
 	return timeout ?: NM_DHCP_TIMEOUT_DEFAULT;
 }
 
+static GBytes *
+dhcp4_get_client_id (NMDevice *self, NMConnection *connection)
+{
+	NMSettingIPConfig *s_ip4;
+	const char *client_id;
+
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	client_id = nm_setting_ip4_config_get_dhcp_client_id (NM_SETTING_IP4_CONFIG (s_ip4));
+
+	return client_id
+	       ? nm_dhcp_utils_client_id_string_to_bytes (client_id)
+	       : NULL;
+}
+
 static NMActStageReturn
 dhcp4_start (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMSettingIPConfig *s_ip4;
 	gs_unref_bytes GBytes *hwaddr = NULL;
+	gs_unref_bytes GBytes *client_id = NULL;
 	NMConnection *connection;
 
 	connection = nm_device_get_applied_connection (self);
@@ -6412,7 +6428,8 @@ dhcp4_start (NMDevice *self)
 	hwaddr = nm_platform_link_get_address_as_bytes (nm_device_get_platform (self),
 	                                                nm_device_get_ip_ifindex (self));
 
-	/* Begin DHCP on the interface */
+	client_id = dhcp4_get_client_id (self, connection);
+
 	g_warn_if_fail (priv->dhcp4.client == NULL);
 	priv->dhcp4.client = nm_dhcp_manager_start_ip4 (nm_dhcp_manager_get (),
 	                                                nm_netns_get_multi_idx (nm_device_get_netns (self)),
@@ -6425,7 +6442,7 @@ dhcp4_start (NMDevice *self)
 	                                                nm_setting_ip_config_get_dhcp_send_hostname (s_ip4),
 	                                                nm_setting_ip_config_get_dhcp_hostname (s_ip4),
 	                                                nm_setting_ip4_config_get_dhcp_fqdn (NM_SETTING_IP4_CONFIG (s_ip4)),
-	                                                nm_setting_ip4_config_get_dhcp_client_id (NM_SETTING_IP4_CONFIG (s_ip4)),
+	                                                client_id,
 	                                                get_dhcp_timeout (self, AF_INET),
 	                                                priv->dhcp_anycast_address,
 	                                                NULL);

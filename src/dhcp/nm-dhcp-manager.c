@@ -163,7 +163,7 @@ client_start (NMDhcpManager *self,
               guint32 route_table,
               guint32 route_metric,
               const struct in6_addr *ipv6_ll_addr,
-              const char *dhcp_client_id,
+              GBytes *dhcp_client_id,
               guint32 timeout,
               const char *dhcp_anycast_addr,
               const char *hostname,
@@ -181,6 +181,7 @@ client_start (NMDhcpManager *self,
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
 	g_return_val_if_fail (ifindex > 0, NULL);
 	g_return_val_if_fail (uuid != NULL, NULL);
+	g_return_val_if_fail (!dhcp_client_id || g_bytes_get_size (dhcp_client_id) >= 2, NULL);
 
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 
@@ -240,7 +241,7 @@ nm_dhcp_manager_start_ip4 (NMDhcpManager *self,
                            gboolean send_hostname,
                            const char *dhcp_hostname,
                            const char *dhcp_fqdn,
-                           const char *dhcp_client_id,
+                           GBytes *dhcp_client_id,
                            guint32 timeout,
                            const char *dhcp_anycast_addr,
                            const char *last_ip_address)

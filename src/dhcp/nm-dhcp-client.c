@@ -239,20 +239,6 @@ nm_dhcp_client_set_client_id_bin (NMDhcpClient *self,
 	_set_client_id (self, b, TRUE);
 }
 
-void
-nm_dhcp_client_set_client_id_str (NMDhcpClient *self,
-                                  const char *dhcp_client_id)
-{
-	g_return_if_fail (NM_IS_DHCP_CLIENT (self));
-	g_return_if_fail (!dhcp_client_id || dhcp_client_id[0]);
-
-	_set_client_id (self,
-	                dhcp_client_id
-	                  ? nm_dhcp_utils_client_id_string_to_bytes (dhcp_client_id)
-	                  : NULL,
-	                TRUE);
-}
-
 const char *
 nm_dhcp_client_get_hostname (NMDhcpClient *self)
 {
@@ -500,7 +486,7 @@ nm_dhcp_client_watch_child (NMDhcpClient *self, pid_t pid)
 
 gboolean
 nm_dhcp_client_start_ip4 (NMDhcpClient *self,
-                          const char *dhcp_client_id,
+                          GBytes *client_id,
                           const char *dhcp_anycast_addr,
                           const char *hostname,
                           const char *last_ip4_address)
@@ -519,7 +505,7 @@ nm_dhcp_client_start_ip4 (NMDhcpClient *self,
 	else
 		_LOGI ("activation: beginning transaction (timeout in %u seconds)", (guint) priv->timeout);
 
-	nm_dhcp_client_set_client_id_str (self, dhcp_client_id);
+	nm_dhcp_client_set_client_id (self, client_id);
 
 	g_clear_pointer (&priv->hostname, g_free);
 	priv->hostname = g_strdup (hostname);
