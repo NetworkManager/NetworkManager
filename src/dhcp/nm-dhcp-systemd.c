@@ -583,14 +583,16 @@ dhcp_event_cb (sd_dhcp_client *client, int event, gpointer user_data)
 }
 
 static guint16
-get_arp_type (const GByteArray *hwaddr)
+get_arp_type (GBytes *hwaddr)
 {
-	if (hwaddr->len == ETH_ALEN)
+	switch (g_bytes_get_size (hwaddr)) {
+	case ETH_ALEN:
 		return ARPHRD_ETHER;
-	else if (hwaddr->len == INFINIBAND_ALEN)
+	case INFINIBAND_ALEN:
 		return ARPHRD_INFINIBAND;
-	else
+	default:
 		return ARPHRD_NONE;
+	}
 }
 
 static gboolean
@@ -599,7 +601,7 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 	NMDhcpSystemd *self = NM_DHCP_SYSTEMD (client);
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
 	const char *iface = nm_dhcp_client_get_iface (client);
-	const GByteArray *hwaddr;
+	GBytes *hwaddr;
 	sd_dhcp_lease *lease = NULL;
 	GBytes *override_client_id;
 	const uint8_t *client_id = NULL;
@@ -608,7 +610,6 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 	const char *hostname;
 	int r, i;
 	gboolean success = FALSE;
-	guint16 arp_type;
 
 	g_assert (priv->client4 == NULL);
 	g_assert (priv->client6 == NULL);
@@ -632,16 +633,14 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 
 	hwaddr = nm_dhcp_client_get_hw_addr (client);
 	if (hwaddr) {
-		arp_type= get_arp_type (hwaddr);
-		if (arp_type == ARPHRD_NONE) {
-			_LOGW ("failed to determine ARP type");
-			goto error;
-		}
+		const uint8_t *data;
+		gsize len;
 
+		data = g_bytes_get_data (hwaddr, &len);
 		r = sd_dhcp_client_set_mac (priv->client4,
-		                            hwaddr->data,
-		                            hwaddr->len,
-		                            arp_type);
+		                            data,
+		                            len,
+		                            get_arp_type (hwaddr));
 		if (r < 0) {
 			_LOGW ("failed to set MAC address (%d)", r);
 			goto error;
@@ -906,7 +905,7 @@ ip6_start (NMDhcpClient *client,
 	NMDhcpSystemd *self = NM_DHCP_SYSTEMD (client);
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
 	const char *iface = nm_dhcp_client_get_iface (client);
-	const GByteArray *hwaddr;
+	GBytes *hwaddr;
 	const char *hostname;
 	int r, i;
 
@@ -953,9 +952,13 @@ ip6_start (NMDhcpClient *client,
 
 	hwaddr = nm_dhcp_client_get_hw_addr (client);
 	if (hwaddr) {
+		const uint8_t *data;
+		gsize len;
+
+		data = g_bytes_get_data (hwaddr, &len);
 		r = sd_dhcp6_client_set_mac (priv->client6,
-		                             hwaddr->data,
-		                             hwaddr->len,
+		                             data,
+		                             len,
 		                             get_arp_type (hwaddr));
 		if (r < 0) {
 			_LOGW ("failed to set MAC address (%d)", r);

@@ -67,7 +67,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 typedef struct _NMDhcpClientPrivate {
 	NMDedupMultiIndex *multi_idx;
 	char *       iface;
-	GByteArray * hwaddr;
+	GBytes *     hwaddr;
 	char *       uuid;
 	GByteArray * duid;
 	GBytes *     client_id;
@@ -147,7 +147,7 @@ nm_dhcp_client_get_duid (NMDhcpClient *self)
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->duid;
 }
 
-const GByteArray *
+GBytes *
 nm_dhcp_client_get_hw_addr (NMDhcpClient *self)
 {
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
@@ -1018,11 +1018,7 @@ dispose (GObject *object)
 	g_clear_pointer (&priv->hostname, g_free);
 	g_clear_pointer (&priv->uuid, g_free);
 	g_clear_pointer (&priv->client_id, g_bytes_unref);
-
-	if (priv->hwaddr) {
-		g_byte_array_free (priv->hwaddr, TRUE);
-		priv->hwaddr = NULL;
-	}
+	g_clear_pointer (&priv->hwaddr, g_bytes_unref);
 
 	if (priv->duid) {
 		g_byte_array_free (priv->duid, TRUE);
@@ -1068,7 +1064,7 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 
 	obj_properties[PROP_HWADDR] =
 	    g_param_spec_boxed (NM_DHCP_CLIENT_HWADDR, "", "",
-	                        G_TYPE_BYTE_ARRAY,
+	                        G_TYPE_BYTES,
 	                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 	                        G_PARAM_STATIC_STRINGS);
 

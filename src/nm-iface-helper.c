@@ -340,9 +340,7 @@ main (int argc, char *argv[])
 	gs_free char *pidfile = NULL;
 	gs_unref_object NMDhcpClient *dhcp4_client = NULL;
 	gs_unref_object NMNDisc *ndisc = NULL;
-	GByteArray *hwaddr = NULL;
-	size_t hwaddr_len = 0;
-	gconstpointer tmp;
+	gs_unref_bytes GBytes *hwaddr = NULL;
 	gs_free NMUtilsIPv6IfaceId *iid = NULL;
 	guint sd_id;
 	char sysctl_path_buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
@@ -429,11 +427,7 @@ main (int argc, char *argv[])
 	/* Set up platform interaction layer */
 	nm_linux_platform_setup ();
 
-	tmp = nm_platform_link_get_address (NM_PLATFORM_GET, gl.ifindex, &hwaddr_len);
-	if (tmp) {
-		hwaddr = g_byte_array_sized_new (hwaddr_len);
-		g_byte_array_append (hwaddr, tmp, hwaddr_len);
-	}
+	hwaddr = nm_platform_link_get_address_as_bytes (NM_PLATFORM_GET, gl.ifindex);
 
 	if (global_opt.iid_str) {
 		GBytes *bytes;
@@ -520,8 +514,6 @@ main (int argc, char *argv[])
 	sd_id = nm_sd_event_attach_default ();
 
 	g_main_loop_run (gl.main_loop);
-
-	g_clear_pointer (&hwaddr, g_byte_array_unref);
 
 	if (pidfile && wrote_pidfile)
 		unlink (pidfile);

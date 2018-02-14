@@ -127,7 +127,7 @@ const char *nm_dhcp_client_get_uuid (NMDhcpClient *self);
 
 const GByteArray *nm_dhcp_client_get_duid (NMDhcpClient *self);
 
-const GByteArray *nm_dhcp_client_get_hw_addr (NMDhcpClient *self);
+GBytes *nm_dhcp_client_get_hw_addr (NMDhcpClient *self);
 
 guint32 nm_dhcp_client_get_route_table (NMDhcpClient *self);
 
