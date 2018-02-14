@@ -518,8 +518,10 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 	priv->conf_file = create_dhclient_config (self, AF_INET, iface, uuid, client_id, dhcp_anycast_addr,
 	                                          hostname, timeout, use_fqdn, &new_client_id);
 	if (priv->conf_file) {
-		if (new_client_id)
+		if (new_client_id) {
+			nm_assert (!client_id);
 			nm_dhcp_client_set_client_id (client, new_client_id);
+		}
 		success = dhclient_start (client, NULL, NULL, FALSE, NULL, 0);
 	} else
 		_LOGW ("error creating dhclient configuration file");

@@ -279,6 +279,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 
 	g_return_val_if_fail (!anycast_addr || nm_utils_hwaddr_valid (anycast_addr, ETH_ALEN), NULL);
 	g_return_val_if_fail (NM_IN_SET (addr_family, AF_INET, AF_INET6), NULL);
+	nm_assert (!out_new_client_id || !*out_new_client_id);
 
 	new_contents = g_string_new (_("# Created by NetworkManager\n"));
 	fqdn_opts = g_ptr_array_sized_new (5);
@@ -332,6 +333,8 @@ nm_dhcp_dhclient_create_config (const char *interface,
 					continue;
 
 				/* Otherwise capture and return the existing client id */
+				if (out_new_client_id)
+					g_clear_pointer (out_new_client_id, g_bytes_unref);
 				NM_SET_OUT (out_new_client_id, read_client_id (p));
 			}
 
