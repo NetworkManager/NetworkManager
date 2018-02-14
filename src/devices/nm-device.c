@@ -6398,9 +6398,17 @@ dhcp4_get_client_id (NMDevice *self, NMConnection *connection)
 {
 	NMSettingIPConfig *s_ip4;
 	const char *client_id;
+	gs_free char *client_id_default = NULL;
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	client_id = nm_setting_ip4_config_get_dhcp_client_id (NM_SETTING_IP4_CONFIG (s_ip4));
+
+	if (!client_id) {
+		client_id_default = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+		                                                           "ipv4.dhcp-client-id", self);
+		if (client_id_default && client_id_default[0])
+			client_id = client_id_default;
+	}
 
 	return client_id
 	       ? nm_dhcp_utils_client_id_string_to_bytes (client_id)
