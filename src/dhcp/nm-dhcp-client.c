@@ -52,15 +52,16 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_MULTI_IDX,
 	PROP_ADDR_FAMILY,
+	PROP_FLAGS,
+	PROP_HWADDR,
 	PROP_IFACE,
 	PROP_IFINDEX,
-	PROP_HWADDR,
-	PROP_UUID,
-	PROP_ROUTE_TABLE,
+	PROP_MULTI_IDX,
 	PROP_ROUTE_METRIC,
+	PROP_ROUTE_TABLE,
 	PROP_TIMEOUT,
+	PROP_UUID,
 );
 
 typedef struct _NMDhcpClientPrivate {
@@ -502,7 +503,6 @@ nm_dhcp_client_start_ip4 (NMDhcpClient *self,
                           const char *dhcp_client_id,
                           const char *dhcp_anycast_addr,
                           const char *hostname,
-                          gboolean use_fqdn,
                           const char *last_ip4_address)
 {
 	NMDhcpClientPrivate *priv;
@@ -523,7 +523,6 @@ nm_dhcp_client_start_ip4 (NMDhcpClient *self,
 
 	g_clear_pointer (&priv->hostname, g_free);
 	priv->hostname = g_strdup (hostname);
-	priv->use_fqdn = use_fqdn;
 
 	return NM_DHCP_CLIENT_GET_CLASS (self)->ip4_start (self, dhcp_anycast_addr, last_ip4_address);
 }
@@ -598,7 +597,6 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
                           const char *dhcp_anycast_addr,
                           const struct in6_addr *ll_addr,
                           const char *hostname,
-                          gboolean info_only,
                           NMSettingIP6ConfigPrivacy privacy,
                           guint needed_prefixes)
 {
@@ -622,8 +620,6 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 
 	g_clear_pointer (&priv->hostname, g_free);
 	priv->hostname = g_strdup (hostname);
-
-	priv->info_only = info_only;
 
 	if (priv->timeout == NM_DHCP_TIMEOUT_INFINITY)
 		_LOGI ("activation: beginning transaction (no timeout)");
@@ -929,8 +925,16 @@ set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
 	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE ((NMDhcpClient *) object);
+	guint flags;
 
 	switch (prop_id) {
+	case PROP_FLAGS:
+		/* construct-only */
+		flags = g_value_get_uint (value);
+		nm_assert ((flags & ~((guint) (NM_DHCP_CLIENT_FLAGS_INFO_ONLY | NM_DHCP_CLIENT_FLAGS_USE_FQDN))) == 0);
+		priv->info_only = NM_FLAGS_HAS (flags, NM_DHCP_CLIENT_FLAGS_INFO_ONLY);
+		priv->use_fqdn = NM_FLAGS_HAS (flags, NM_DHCP_CLIENT_FLAGS_USE_FQDN);
+		break;
 	case PROP_MULTI_IDX:
 		/* construct-only */
 		priv->multi_idx = g_value_get_pointer (value);
@@ -1096,6 +1100,12 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 	    g_param_spec_uint (NM_DHCP_CLIENT_TIMEOUT, "", "",
 	                       1, G_MAXINT32, NM_DHCP_TIMEOUT_DEFAULT,
 	                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                       G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_FLAGS] =
+	    g_param_spec_uint (NM_DHCP_CLIENT_FLAGS, "", "",
+	                       0, G_MAXUINT32, 0,
+	                       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
 	                       G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);

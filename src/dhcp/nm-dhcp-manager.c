@@ -205,15 +205,19 @@ client_start (NMDhcpManager *self,
 	                       NM_DHCP_CLIENT_ROUTE_TABLE, (guint) route_table,
 	                       NM_DHCP_CLIENT_ROUTE_METRIC, (guint) route_metric,
 	                       NM_DHCP_CLIENT_TIMEOUT, (guint) timeout,
+	                       NM_DHCP_CLIENT_FLAGS, (guint) (0
+	                           | (hostname_use_fqdn ? NM_DHCP_CLIENT_FLAGS_USE_FQDN  : 0)
+	                           | (info_only         ? NM_DHCP_CLIENT_FLAGS_INFO_ONLY : 0)
+	                       ),
 	                       NULL);
 	nm_assert (client && c_list_is_empty (&client->dhcp_client_lst));
 	c_list_link_tail (&priv->dhcp_client_lst_head, &client->dhcp_client_lst);
 	g_signal_connect (client, NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED, G_CALLBACK (client_state_changed), self);
 
 	if (addr_family == AF_INET)
-		success = nm_dhcp_client_start_ip4 (client, dhcp_client_id, dhcp_anycast_addr, hostname, hostname_use_fqdn, last_ip4_address);
+		success = nm_dhcp_client_start_ip4 (client, dhcp_client_id, dhcp_anycast_addr, hostname, last_ip4_address);
 	else
-		success = nm_dhcp_client_start_ip6 (client, dhcp_anycast_addr, ipv6_ll_addr, hostname, info_only, privacy, needed_prefixes);
+		success = nm_dhcp_client_start_ip6 (client, dhcp_anycast_addr, ipv6_ll_addr, hostname, privacy, needed_prefixes);
 
 	if (!success) {
 		remove_client_unref (self, client);
