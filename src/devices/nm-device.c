@@ -34,6 +34,7 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <linux/if_addr.h>
+#include <linux/if_arp.h>
 #include <linux/rtnetlink.h>
 #include <linux/pkt_sched.h>
 
@@ -6399,6 +6400,8 @@ dhcp4_get_client_id (NMDevice *self, NMConnection *connection)
 	NMSettingIPConfig *s_ip4;
 	const char *client_id;
 	gs_free char *client_id_default = NULL;
+	guint8 *client_id_buf;
+	gboolean is_mac;
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	client_id = nm_setting_ip4_config_get_dhcp_client_id (NM_SETTING_IP4_CONFIG (s_ip4));
@@ -6410,9 +6413,72 @@ dhcp4_get_client_id (NMDevice *self, NMConnection *connection)
 			client_id = client_id_default;
 	}
 
-	return client_id
-	       ? nm_dhcp_utils_client_id_string_to_bytes (client_id)
-	       : NULL;
+	if (!client_id)
+		return NULL;
+
+	if (   (is_mac = nm_streq (client_id, "mac"))
+	    || nm_streq (client_id, "perm-mac")) {
+		const char *hwaddr;
+		char addr_buf[NM_UTILS_HWADDR_LEN_MAX];
+		gsize addr_len;
+		guint8 addr_type;
+
+		hwaddr = is_mac
+		         ? nm_device_get_hw_address (self)
+		         : nm_device_get_permanent_hw_address (self);
+		if (!hwaddr)
+			return NULL;
+
+		if (!_nm_utils_hwaddr_aton (hwaddr, addr_buf, sizeof (addr_buf), &addr_len))
+			g_return_val_if_reached (NULL);
+
+		switch (addr_len) {
+		case ETH_ALEN:
+			addr_type = ARPHRD_ETHER;
+			break;
+		default:
+			/* unsupported type. */
+			return NULL;
+		}
+
+		client_id_buf = g_malloc (addr_len + 1);
+		client_id_buf[0] = addr_type;
+		memcpy (&client_id_buf[1], addr_buf, addr_len);
+		return g_bytes_new_take (client_id_buf, addr_len + 1);
+	}
+
+	if (nm_streq (client_id, "stable")) {
+		NMUtilsStableType stable_type;
+		const char *stable_id;
+		GChecksum *sum;
+		guint8 buf[20];
+		gsize buf_size;
+		guint32 salted_header;
+
+		stable_id = _get_stable_id (self, connection, &stable_type);
+		if (!stable_id)
+			g_return_val_if_reached (NULL);
+
+		salted_header = htonl (2011610591 + stable_type);
+
+		sum = g_checksum_new (G_CHECKSUM_SHA1);
+
+		g_checksum_update (sum, (const guchar *) &salted_header, sizeof (salted_header));
+		g_checksum_update (sum, (const guchar *) stable_id, strlen (stable_id));
+
+		buf_size = sizeof (buf);
+		g_checksum_get_digest (sum, buf, &buf_size);
+		nm_assert (buf_size == sizeof (buf));
+
+		g_checksum_free (sum);
+
+		client_id_buf = g_malloc (1 + 15);
+		client_id_buf[0] = 0;
+		memcpy (&client_id_buf[0], buf, 15);
+		return g_bytes_new_take (client_id_buf, 1 + 15);
+	}
+
+	return nm_dhcp_utils_client_id_string_to_bytes (client_id);
 }
 
 static NMActStageReturn
