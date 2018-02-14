@@ -80,7 +80,7 @@ nm_dhcp_dhcpcanon_get_path (void)
 static gboolean
 dhcpcanon_start (NMDhcpClient *client,
                 const char *mode_opt,
-                const GByteArray *duid,
+                GBytes *duid,
                 gboolean release,
                 pid_t *out_pid,
                 int prefixes)
@@ -180,7 +180,7 @@ ip6_start (NMDhcpClient *client,
            const char *dhcp_anycast_addr,
            const struct in6_addr *ll_addr,
            NMSettingIP6ConfigPrivacy privacy,
-           const GByteArray *duid,
+           GBytes *duid,
            guint needed_prefixes)
 {
 	NMDhcpDhcpcanon *self = NM_DHCP_DHCPCANON (client);
@@ -189,7 +189,7 @@ ip6_start (NMDhcpClient *client,
 	return FALSE;
 }
 static void
-stop (NMDhcpClient *client, gboolean release, const GByteArray *duid)
+stop (NMDhcpClient *client, gboolean release, GBytes *duid)
 {
 	NMDhcpDhcpcanon *self = NM_DHCP_DHCPCANON (client);
 	NMDhcpDhcpcanonPrivate *priv = NM_DHCP_DHCPCANON_GET_PRIVATE (self);

@@ -178,7 +178,7 @@ ip6_start (NMDhcpClient *client,
            const char *dhcp_anycast_addr,
            const struct in6_addr *ll_addr,
            NMSettingIP6ConfigPrivacy privacy,
-           const GByteArray *duid,
+           GBytes *duid,
            guint needed_prefixes)
 {
 	NMDhcpDhcpcd *self = NM_DHCP_DHCPCD (client);
@@ -188,7 +188,7 @@ ip6_start (NMDhcpClient *client,
 }
 
 static void
-stop (NMDhcpClient *client, gboolean release, const GByteArray *duid)
+stop (NMDhcpClient *client, gboolean release, GBytes *duid)
 {
 	NMDhcpDhcpcd *self = NM_DHCP_DHCPCD (client);
 	NMDhcpDhcpcdPrivate *priv = NM_DHCP_DHCPCD_GET_PRIVATE (self);

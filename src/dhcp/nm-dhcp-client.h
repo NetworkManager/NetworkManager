@@ -86,12 +86,12 @@ typedef struct {
 	                           const char *anycast_addr,
 	                           const struct in6_addr *ll_addr,
 	                           NMSettingIP6ConfigPrivacy privacy,
-	                           const GByteArray *duid,
+	                           GBytes *duid,
 	                           guint needed_prefixes);
 
 	void (*stop)              (NMDhcpClient *self,
 	                           gboolean release,
-	                           const GByteArray *duid);
+	                           GBytes *duid);
 
 	/**
 	 * get_duid:
@@ -102,7 +102,7 @@ typedef struct {
 	 * representation of the DUID.  If no DUID is found, %NULL should be
 	 * returned.
 	 */
-	GByteArray * (*get_duid) (NMDhcpClient *self);
+	GBytes *(*get_duid) (NMDhcpClient *self);
 
 	/* Signals */
 	void (*state_changed) (NMDhcpClient *self,
@@ -125,7 +125,7 @@ int         nm_dhcp_client_get_ifindex (NMDhcpClient *self);
 
 const char *nm_dhcp_client_get_uuid (NMDhcpClient *self);
 
-const GByteArray *nm_dhcp_client_get_duid (NMDhcpClient *self);
+GBytes *nm_dhcp_client_get_duid (NMDhcpClient *self);
 
 GBytes *nm_dhcp_client_get_hw_addr (NMDhcpClient *self);
 

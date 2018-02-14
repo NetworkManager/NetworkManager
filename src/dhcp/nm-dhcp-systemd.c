@@ -899,7 +899,7 @@ ip6_start (NMDhcpClient *client,
            const char *dhcp_anycast_addr,
            const struct in6_addr *ll_addr,
            NMSettingIP6ConfigPrivacy privacy,
-           const GByteArray *duid,
+           GBytes *duid,
            guint needed_prefixes)
 {
 	NMDhcpSystemd *self = NM_DHCP_SYSTEMD (client);
@@ -908,10 +908,17 @@ ip6_start (NMDhcpClient *client,
 	GBytes *hwaddr;
 	const char *hostname;
 	int r, i;
+	const guint16 *duid_arr;
+	gsize duid_len;
 
 	g_assert (priv->client4 == NULL);
 	g_assert (priv->client6 == NULL);
 	g_return_val_if_fail (duid != NULL, FALSE);
+
+	G_STATIC_ASSERT_EXPR (sizeof (duid_arr[0]) == 2);
+	duid_arr = g_bytes_get_data (duid, &duid_len);
+	if (!duid_arr || duid_len < 2)
+		g_return_val_if_reached (FALSE);
 
 	g_free (priv->lease_file);
 	priv->lease_file = get_leasefile_path (AF_INET6, iface, nm_dhcp_client_get_uuid (client));
@@ -936,9 +943,9 @@ ip6_start (NMDhcpClient *client,
 	 * wants the type passed separately from the following data.
 	 */
 	r = sd_dhcp6_client_set_duid (priv->client6,
-	                              ntohs (((const guint16 *) duid->data)[0]),
-	                              duid->data + 2,
-	                              duid->len - 2);
+	                              ntohs (duid_arr[0]),
+	                              &duid_arr[1],
+	                              duid_len - 2);
 	if (r < 0) {
 		_LOGW ("failed to set DUID (%d)", r);
 		return FALSE;
@@ -1014,7 +1021,7 @@ error:
 }
 
 static void
-stop (NMDhcpClient *client, gboolean release, const GByteArray *duid)
+stop (NMDhcpClient *client, gboolean release, GBytes *duid)
 {
 	NMDhcpSystemd *self = NM_DHCP_SYSTEMD (client);
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);

@@ -69,7 +69,7 @@ typedef struct _NMDhcpClientPrivate {
 	char *       iface;
 	GBytes *     hwaddr;
 	char *       uuid;
-	GByteArray * duid;
+	GBytes *     duid;
 	GBytes *     client_id;
 	char *       hostname;
 	pid_t        pid;
@@ -139,7 +139,7 @@ nm_dhcp_client_get_uuid (NMDhcpClient *self)
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->uuid;
 }
 
-const GByteArray *
+GBytes *
 nm_dhcp_client_get_duid (NMDhcpClient *self)
 {
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
@@ -354,7 +354,7 @@ nm_dhcp_client_stop_pid (pid_t pid, const char *iface)
 }
 
 static void
-stop (NMDhcpClient *self, gboolean release, const GByteArray *duid)
+stop (NMDhcpClient *self, gboolean release, GBytes *duid)
 {
 	NMDhcpClientPrivate *priv;
 
@@ -527,10 +527,11 @@ nm_dhcp_client_start_ip4 (NMDhcpClient *self,
 	return NM_DHCP_CLIENT_GET_CLASS (self)->ip4_start (self, dhcp_anycast_addr, last_ip4_address);
 }
 
-static GByteArray *
+static GBytes *
 generate_duid_from_machine_id (void)
 {
-	GByteArray *duid;
+	const int DUID_SIZE = 18;
+	guint8 *duid_buffer;
 	GChecksum *sum;
 	guint8 buffer[32]; /* SHA256 digest size */
 	gsize sumlen = sizeof (buffer);
@@ -538,6 +539,7 @@ generate_duid_from_machine_id (void)
 	uuid_t uuid;
 	gs_free char *machine_id_s = NULL;
 	gs_free char *str = NULL;
+	GBytes *duid;
 
 	machine_id_s = nm_utils_machine_id_read ();
 	if (nm_utils_machine_id_parse (machine_id_s, uuid)) {
@@ -560,36 +562,31 @@ generate_duid_from_machine_id (void)
 	 * u16: type (DUID-UUID = 4)
 	 * u8[16]: UUID bytes
 	 */
-	duid = g_byte_array_sized_new (18);
-	g_byte_array_append (duid, (guint8 *) &duid_type, sizeof (duid_type));
+	duid_buffer = g_malloc (DUID_SIZE);
+
+	G_STATIC_ASSERT_EXPR (sizeof (duid_type) == 2);
+	memcpy (&duid_buffer[0], &duid_type, 2);
 
 	/* Since SHA256 is 256 bits, but UUID is 128 bits, we just take the first
 	 * 128 bits of the SHA256 as the DUID-UUID.
 	 */
-	g_byte_array_append (duid, buffer, 16);
+	memcpy (&duid_buffer[2], buffer, 16);
 
+	duid = g_bytes_new_take (duid_buffer, DUID_SIZE);
 	nm_log_dbg (LOGD_DHCP, "dhcp: generated DUID %s",
 	            (str = nm_dhcp_utils_duid_to_string (duid)));
 	return duid;
 }
 
-static GByteArray *
+static GBytes *
 get_duid (NMDhcpClient *self)
 {
-	static GByteArray *duid = NULL;
-	GByteArray *copy = NULL;
+	static GBytes *duid = NULL;
 
-	if (G_UNLIKELY (duid == NULL)) {
+	if (G_UNLIKELY (!duid))
 		duid = generate_duid_from_machine_id ();
-		g_assert (duid);
-	}
 
-	if (G_LIKELY (duid)) {
-		copy = g_byte_array_sized_new (duid->len);
-		g_byte_array_append (copy, duid->data, duid->len);
-	}
-
-	return copy;
+	return g_bytes_ref (duid);
 }
 
 gboolean
@@ -1019,11 +1016,7 @@ dispose (GObject *object)
 	g_clear_pointer (&priv->uuid, g_free);
 	g_clear_pointer (&priv->client_id, g_bytes_unref);
 	g_clear_pointer (&priv->hwaddr, g_bytes_unref);
-
-	if (priv->duid) {
-		g_byte_array_free (priv->duid, TRUE);
-		priv->duid = NULL;
-	}
+	g_clear_pointer (&priv->duid, g_bytes_unref);
 
 	G_OBJECT_CLASS (nm_dhcp_client_parent_class)->dispose (object);
 
