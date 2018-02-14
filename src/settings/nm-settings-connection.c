@@ -608,6 +608,7 @@ nm_settings_connection_update (NMSettingsConnection *self,
 	gboolean replaced = FALSE;
 	gs_free char *logmsg_change = NULL;
 	GError *local = NULL;
+	gs_unref_variant GVariant *con_agent_secrets = NULL;
 
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
 
@@ -658,8 +659,19 @@ nm_settings_connection_update (NMSettingsConnection *self,
 	    && !nm_connection_compare (NM_CONNECTION (self),
 	                               replace_connection,
 	                               NM_SETTING_COMPARE_FLAG_EXACT)) {
+		gs_unref_object NMConnection *simple = NULL;
+
 		if (log_diff_name)
 			nm_utils_log_connection_diff (replace_connection, NM_CONNECTION (self), LOGL_DEBUG, LOGD_CORE, log_diff_name, "++ ");
+
+		/* Make a copy of agent-owned secrets because they won't be present in
+		 * the connection returned by plugins, as plugins return only what was
+		 * reread from the file. */
+		simple = nm_simple_connection_new_clone (NM_CONNECTION (self));
+		nm_connection_clear_secrets_with_flags (simple,
+		                                        secrets_filter_cb,
+		                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
+		con_agent_secrets = nm_connection_to_dbus (simple, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
 
 		nm_connection_replace_settings_from_connection (NM_CONNECTION (self), replace_connection);
 
@@ -688,6 +700,8 @@ nm_settings_connection_update (NMSettingsConnection *self,
 				g_variant_unref (dict);
 			}
 		}
+		if (con_agent_secrets)
+			(void) nm_connection_update_secrets (NM_CONNECTION (self), NULL, con_agent_secrets, NULL);
 	}
 
 	nm_settings_connection_recheck_visibility (self);
