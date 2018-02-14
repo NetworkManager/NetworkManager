@@ -719,6 +719,9 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *ip4_class)
 	 * ARP type and the rest is a MAC address).
 	 * If the property is not a hex string it is considered as a
 	 * non-hardware-address client ID and the 'type' field is set to 0.
+	 *
+	 * If unset, a globally configure default is used. If still unset, the
+	 * client-id from the last lease is reused.
 	 **/
 	/* ---ifcfg-rh---
 	 * property: dhcp-client-id
