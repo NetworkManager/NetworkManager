@@ -533,7 +533,6 @@ static gboolean
 ip6_start (NMDhcpClient *client,
            const char *dhcp_anycast_addr,
            const struct in6_addr *ll_addr,
-           gboolean info_only,
            NMSettingIP6ConfigPrivacy privacy,
            const GByteArray *duid,
            guint needed_prefixes)
@@ -555,7 +554,11 @@ ip6_start (NMDhcpClient *client,
 		return FALSE;
 	}
 
-	return dhclient_start (client, info_only ? "-S" : "-N", duid, FALSE, NULL, needed_prefixes);
+	return dhclient_start (client,
+	                       nm_dhcp_client_get_info_only (NM_DHCP_CLIENT (self))
+	                         ? "-S"
+	                         : "-N",
+	                       duid, FALSE, NULL, needed_prefixes);
 }
 
 static void

@@ -60,8 +60,7 @@ typedef struct {
 
 	guint request_count;
 
-	gboolean privacy;
-	gboolean info_only;
+	bool privacy:1;
 } NMDhcpSystemdPrivate;
 
 struct _NMDhcpSystemd {
@@ -854,7 +853,7 @@ bound6_handle (NMDhcpSystemd *self)
 	                                  lease,
 	                                  options,
 	                                  TRUE,
-	                                  priv->info_only,
+	                                  nm_dhcp_client_get_info_only (NM_DHCP_CLIENT (self)),
 	                                  &error);
 
 	if (ip6_config) {
@@ -900,7 +899,6 @@ static gboolean
 ip6_start (NMDhcpClient *client,
            const char *dhcp_anycast_addr,
            const struct in6_addr *ll_addr,
-           gboolean info_only,
            NMSettingIP6ConfigPrivacy privacy,
            const GByteArray *duid,
            guint needed_prefixes)
@@ -918,7 +916,6 @@ ip6_start (NMDhcpClient *client,
 
 	g_free (priv->lease_file);
 	priv->lease_file = get_leasefile_path (AF_INET6, iface, nm_dhcp_client_get_uuid (client));
-	priv->info_only = info_only;
 
 	r = sd_dhcp6_client_new (&priv->client6);
 	if (r < 0) {
@@ -933,7 +930,7 @@ ip6_start (NMDhcpClient *client,
 
 	_LOGT ("dhcp-client6: set %p", priv->client6);
 
-	if (info_only)
+	if (nm_dhcp_client_get_info_only (client))
 	    sd_dhcp6_client_set_information_request (priv->client6, 1);
 
 	/* NM stores the entire DUID which includes the uint16 "type", while systemd

@@ -261,6 +261,14 @@ nm_dhcp_client_get_hostname (NMDhcpClient *self)
 }
 
 gboolean
+nm_dhcp_client_get_info_only (NMDhcpClient *self)
+{
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
+
+	return NM_DHCP_CLIENT_GET_PRIVATE (self)->info_only;
+}
+
+gboolean
 nm_dhcp_client_get_use_fqdn (NMDhcpClient *self)
 {
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
@@ -359,7 +367,6 @@ stop (NMDhcpClient *self, gboolean release, const GByteArray *duid)
 		nm_dhcp_client_stop_pid (priv->pid, priv->iface);
 	}
 	priv->pid = -1;
-	priv->info_only = FALSE;
 }
 
 void
@@ -626,7 +633,6 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 	return NM_DHCP_CLIENT_GET_CLASS (self)->ip6_start (self,
 	                                                   dhcp_anycast_addr,
 	                                                   ll_addr,
-	                                                   info_only,
 	                                                   privacy,
 	                                                   priv->duid,
 	                                                   needed_prefixes);

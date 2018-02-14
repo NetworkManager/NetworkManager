@@ -79,7 +79,6 @@ typedef struct {
 	gboolean (*ip6_start)     (NMDhcpClient *self,
 	                           const char *anycast_addr,
 	                           const struct in6_addr *ll_addr,
-	                           gboolean info_only,
 	                           NMSettingIP6ConfigPrivacy privacy,
 	                           const GByteArray *duid,
 	                           guint needed_prefixes);
@@ -133,6 +132,8 @@ guint32 nm_dhcp_client_get_timeout (NMDhcpClient *self);
 GBytes *nm_dhcp_client_get_client_id (NMDhcpClient *self);
 
 const char *nm_dhcp_client_get_hostname (NMDhcpClient *self);
+
+gboolean nm_dhcp_client_get_info_only (NMDhcpClient *self);
 
 gboolean nm_dhcp_client_get_use_fqdn (NMDhcpClient *self);
 
