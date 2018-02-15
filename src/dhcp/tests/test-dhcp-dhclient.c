@@ -585,23 +585,26 @@ test_existing_multiline_alsoreq (void)
 static void
 test_one_duid (const char *escaped, const guint8 *unescaped, guint len)
 {
-	GByteArray *t;
+	GBytes *t;
 	char *w;
+	gsize t_len;
+	gconstpointer t_arr;
 
 	t = nm_dhcp_dhclient_unescape_duid (escaped);
 	g_assert (t);
-	g_assert_cmpint (t->len, ==, len);
-	g_assert_cmpint (memcmp (t->data, unescaped, len), ==, 0);
-	g_byte_array_free (t, TRUE);
+	t_arr = g_bytes_get_data (t, &t_len);
+	g_assert (t_arr);
+	g_assert_cmpint (t_len, ==, len);
+	g_assert_cmpint (memcmp (t_arr, unescaped, len), ==, 0);
+	g_bytes_unref (t);
 
-	t = g_byte_array_sized_new (len);
-	g_byte_array_append (t, unescaped, len);
+	t = g_bytes_new_static (unescaped, len);
 	w = nm_dhcp_dhclient_escape_duid (t);
 	g_assert (w);
 	g_assert_cmpint (strlen (escaped), ==, strlen (w));
 	g_assert_cmpstr (escaped, ==, w);
 
-	g_byte_array_free (t, TRUE);
+	g_bytes_unref (t);
 	g_free (w);
 }
 
@@ -640,22 +643,23 @@ test_read_duid_from_leasefile (void)
 {
 	const guint8 expected[] = { 0x00, 0x01, 0x00, 0x01, 0x18, 0x79, 0xa6,
 	                            0x13, 0x60, 0x67, 0x20, 0xec, 0x4c, 0x70 };
-	GByteArray *duid;
+	gs_unref_bytes GBytes *duid = NULL;
 	GError *error = NULL;
+	gconstpointer duid_arr;
+	gsize duid_len;
 
 	duid = nm_dhcp_dhclient_read_duid (TESTDIR "/test-dhclient-duid.leases", &error);
 	g_assert_no_error (error);
 	g_assert (duid);
-	g_assert_cmpint (duid->len, ==, sizeof (expected));
-	g_assert_cmpint (memcmp (duid->data, expected, duid->len), ==, 0);
-
-	g_byte_array_free (duid, TRUE);
+	duid_arr = g_bytes_get_data (duid, &duid_len);
+	g_assert_cmpint (duid_len, ==, sizeof (expected));
+	g_assert_cmpint (memcmp (duid_arr, expected, duid_len), ==, 0);
 }
 
 static void
 test_read_commented_duid_from_leasefile (void)
 {
-	GByteArray *duid;
+	GBytes *duid;
 	GError *error = NULL;
 
 	duid = nm_dhcp_dhclient_read_duid (TESTDIR "/test-dhclient-commented-duid.leases", &error);

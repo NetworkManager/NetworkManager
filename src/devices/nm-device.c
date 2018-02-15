@@ -34,6 +34,7 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <linux/if_addr.h>
+#include <linux/if_arp.h>
 #include <linux/rtnetlink.h>
 #include <linux/pkt_sched.h>
 
@@ -48,6 +49,7 @@
 #include "ndisc/nm-ndisc.h"
 #include "ndisc/nm-lndp-ndisc.h"
 #include "dhcp/nm-dhcp-manager.h"
+#include "dhcp/nm-dhcp-utils.h"
 #include "nm-act-request.h"
 #include "nm-proxy-config.h"
 #include "nm-ip4-config.h"
@@ -5745,8 +5747,7 @@ ipv4_dad_start (NMDevice *self, NMIP4Config **configs, ArpingCallback cb)
 	ArpingData *data;
 	guint timeout;
 	gboolean ret, addr_found;
-	const guint8 *hw_addr;
-	size_t hw_addr_len = 0;
+	const guint8 *hwaddr_arr;
 	GError *error = NULL;
 	guint i;
 
@@ -5762,13 +5763,12 @@ ipv4_dad_start (NMDevice *self, NMIP4Config **configs, ArpingCallback cb)
 	}
 
 	timeout = get_ipv4_dad_timeout (self);
-	hw_addr = nm_platform_link_get_address (nm_device_get_platform (self),
-	                                        nm_device_get_ip_ifindex (self),
-	                                        &hw_addr_len);
+	hwaddr_arr = nm_platform_link_get_address (nm_device_get_platform (self),
+	                                           nm_device_get_ip_ifindex (self),
+	                                           NULL);
 
 	if (   !timeout
-	    || !hw_addr
-	    || !hw_addr_len
+	    || !hwaddr_arr
 	    || !addr_found
 	    || nm_device_sys_iface_state_is_external_or_assume (self)) {
 
@@ -6394,14 +6394,100 @@ get_dhcp_timeout (NMDevice *self, int addr_family)
 	return timeout ?: NM_DHCP_TIMEOUT_DEFAULT;
 }
 
+static GBytes *
+dhcp4_get_client_id (NMDevice *self, NMConnection *connection)
+{
+	NMSettingIPConfig *s_ip4;
+	const char *client_id;
+	gs_free char *client_id_default = NULL;
+	guint8 *client_id_buf;
+	gboolean is_mac;
+
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	client_id = nm_setting_ip4_config_get_dhcp_client_id (NM_SETTING_IP4_CONFIG (s_ip4));
+
+	if (!client_id) {
+		client_id_default = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+		                                                           "ipv4.dhcp-client-id", self);
+		if (client_id_default && client_id_default[0])
+			client_id = client_id_default;
+	}
+
+	if (!client_id)
+		return NULL;
+
+	if (   (is_mac = nm_streq (client_id, "mac"))
+	    || nm_streq (client_id, "perm-mac")) {
+		const char *hwaddr;
+		char addr_buf[NM_UTILS_HWADDR_LEN_MAX];
+		gsize addr_len;
+		guint8 addr_type;
+
+		hwaddr = is_mac
+		         ? nm_device_get_hw_address (self)
+		         : nm_device_get_permanent_hw_address (self);
+		if (!hwaddr)
+			return NULL;
+
+		if (!_nm_utils_hwaddr_aton (hwaddr, addr_buf, sizeof (addr_buf), &addr_len))
+			g_return_val_if_reached (NULL);
+
+		switch (addr_len) {
+		case ETH_ALEN:
+			addr_type = ARPHRD_ETHER;
+			break;
+		default:
+			/* unsupported type. */
+			return NULL;
+		}
+
+		client_id_buf = g_malloc (addr_len + 1);
+		client_id_buf[0] = addr_type;
+		memcpy (&client_id_buf[1], addr_buf, addr_len);
+		return g_bytes_new_take (client_id_buf, addr_len + 1);
+	}
+
+	if (nm_streq (client_id, "stable")) {
+		NMUtilsStableType stable_type;
+		const char *stable_id;
+		GChecksum *sum;
+		guint8 buf[20];
+		gsize buf_size;
+		guint32 salted_header;
+
+		stable_id = _get_stable_id (self, connection, &stable_type);
+		if (!stable_id)
+			g_return_val_if_reached (NULL);
+
+		salted_header = htonl (2011610591 + stable_type);
+
+		sum = g_checksum_new (G_CHECKSUM_SHA1);
+
+		g_checksum_update (sum, (const guchar *) &salted_header, sizeof (salted_header));
+		g_checksum_update (sum, (const guchar *) stable_id, strlen (stable_id));
+
+		buf_size = sizeof (buf);
+		g_checksum_get_digest (sum, buf, &buf_size);
+		nm_assert (buf_size == sizeof (buf));
+
+		g_checksum_free (sum);
+
+		client_id_buf = g_malloc (1 + 15);
+		client_id_buf[0] = 0;
+		memcpy (&client_id_buf[0], buf, 15);
+		return g_bytes_new_take (client_id_buf, 1 + 15);
+	}
+
+	return nm_dhcp_utils_client_id_string_to_bytes (client_id);
+}
+
 static NMActStageReturn
 dhcp4_start (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMSettingIPConfig *s_ip4;
-	const guint8 *hw_addr;
-	size_t hw_addr_len = 0;
-	GByteArray *tmp = NULL;
+	gs_unref_bytes GBytes *hwaddr = NULL;
+	gs_unref_bytes GBytes *client_id = NULL;
 	NMConnection *connection;
 
 	connection = nm_device_get_applied_connection (self);
@@ -6413,32 +6499,27 @@ dhcp4_start (NMDevice *self)
 	nm_exported_object_clear_and_unexport (&priv->dhcp4.config);
 	priv->dhcp4.config = nm_dhcp4_config_new ();
 
-	hw_addr = nm_platform_link_get_address (nm_device_get_platform (self), nm_device_get_ip_ifindex (self), &hw_addr_len);
-	if (hw_addr_len) {
-		tmp = g_byte_array_sized_new (hw_addr_len);
-		g_byte_array_append (tmp, hw_addr, hw_addr_len);
-	}
+	hwaddr = nm_platform_link_get_address_as_bytes (nm_device_get_platform (self),
+	                                                nm_device_get_ip_ifindex (self));
 
-	/* Begin DHCP on the interface */
+	client_id = dhcp4_get_client_id (self, connection);
+
 	g_warn_if_fail (priv->dhcp4.client == NULL);
 	priv->dhcp4.client = nm_dhcp_manager_start_ip4 (nm_dhcp_manager_get (),
 	                                                nm_netns_get_multi_idx (nm_device_get_netns (self)),
 	                                                nm_device_get_ip_iface (self),
 	                                                nm_device_get_ip_ifindex (self),
-	                                                tmp,
+	                                                hwaddr,
 	                                                nm_connection_get_uuid (connection),
 	                                                nm_device_get_route_table (self, AF_INET, TRUE),
 	                                                nm_device_get_route_metric (self, AF_INET),
 	                                                nm_setting_ip_config_get_dhcp_send_hostname (s_ip4),
 	                                                nm_setting_ip_config_get_dhcp_hostname (s_ip4),
 	                                                nm_setting_ip4_config_get_dhcp_fqdn (NM_SETTING_IP4_CONFIG (s_ip4)),
-	                                                nm_setting_ip4_config_get_dhcp_client_id (NM_SETTING_IP4_CONFIG (s_ip4)),
+	                                                client_id,
 	                                                get_dhcp_timeout (self, AF_INET),
 	                                                priv->dhcp_anycast_address,
 	                                                NULL);
-
-	if (tmp)
-		g_byte_array_free (tmp, TRUE);
 
 	if (!priv->dhcp4.client)
 		return NM_ACT_STAGE_RETURN_FAILURE;
@@ -7128,9 +7209,7 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMSettingIPConfig *s_ip6;
-	GByteArray *tmp = NULL;
-	const guint8 *hw_addr;
-	size_t hw_addr_len = 0;
+	gs_unref_bytes GBytes *hwaddr = NULL;
 	const NMPlatformIP6Address *ll_addr = NULL;
 
 	g_assert (connection);
@@ -7145,17 +7224,14 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 		return FALSE;
 	}
 
-	hw_addr = nm_platform_link_get_address (nm_device_get_platform (self), nm_device_get_ip_ifindex (self), &hw_addr_len);
-	if (hw_addr_len) {
-		tmp = g_byte_array_sized_new (hw_addr_len);
-		g_byte_array_append (tmp, hw_addr, hw_addr_len);
-	}
+	hwaddr = nm_platform_link_get_address_as_bytes (nm_device_get_platform (self),
+	                                                nm_device_get_ip_ifindex (self));
 
 	priv->dhcp6.client = nm_dhcp_manager_start_ip6 (nm_dhcp_manager_get (),
 	                                                nm_device_get_multi_index (self),
 	                                                nm_device_get_ip_iface (self),
 	                                                nm_device_get_ip_ifindex (self),
-	                                                tmp,
+	                                                hwaddr,
 	                                                &ll_addr->address,
 	                                                nm_connection_get_uuid (connection),
 	                                                nm_device_get_route_table (self, AF_INET6, TRUE),
@@ -7167,8 +7243,6 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	                                                (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_OTHERCONF) ? TRUE : FALSE,
 	                                                nm_setting_ip6_config_get_ip6_privacy (NM_SETTING_IP6_CONFIG (s_ip6)),
 	                                                priv->dhcp6.needed_prefixes);
-	if (tmp)
-		g_byte_array_free (tmp, TRUE);
 
 	if (priv->dhcp6.client) {
 		priv->dhcp6.state_sigid = g_signal_connect (priv->dhcp6.client,

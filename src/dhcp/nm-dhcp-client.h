@@ -34,15 +34,16 @@
 #define NM_IS_DHCP_CLIENT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DHCP_CLIENT))
 #define NM_DHCP_CLIENT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP_CLIENT, NMDhcpClientClass))
 
-#define NM_DHCP_CLIENT_INTERFACE "iface"
-#define NM_DHCP_CLIENT_ADDR_FAMILY "addr-family"
-#define NM_DHCP_CLIENT_IFINDEX   "ifindex"
-#define NM_DHCP_CLIENT_HWADDR    "hwaddr"
-#define NM_DHCP_CLIENT_UUID      "uuid"
-#define NM_DHCP_CLIENT_ROUTE_TABLE  "route-table"
+#define NM_DHCP_CLIENT_ADDR_FAMILY  "addr-family"
+#define NM_DHCP_CLIENT_FLAGS        "flags"
+#define NM_DHCP_CLIENT_HWADDR       "hwaddr"
+#define NM_DHCP_CLIENT_IFINDEX      "ifindex"
+#define NM_DHCP_CLIENT_INTERFACE    "iface"
+#define NM_DHCP_CLIENT_MULTI_IDX    "multi-idx"
 #define NM_DHCP_CLIENT_ROUTE_METRIC "route-metric"
-#define NM_DHCP_CLIENT_TIMEOUT   "timeout"
-#define NM_DHCP_CLIENT_MULTI_IDX "multi-idx"
+#define NM_DHCP_CLIENT_ROUTE_TABLE  "route-table"
+#define NM_DHCP_CLIENT_TIMEOUT      "timeout"
+#define NM_DHCP_CLIENT_UUID         "uuid"
 
 #define NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED "state-changed"
 #define NM_DHCP_CLIENT_SIGNAL_PREFIX_DELEGATED "prefix-delegated"
@@ -67,6 +68,11 @@ typedef struct {
 	CList dhcp_client_lst;
 } NMDhcpClient;
 
+typedef enum {
+	NM_DHCP_CLIENT_FLAGS_INFO_ONLY = (1LL <<  0),
+	NM_DHCP_CLIENT_FLAGS_USE_FQDN  = (1LL <<  1),
+} NMDhcpClientFlags;
+
 typedef struct {
 	GObjectClass parent;
 
@@ -79,14 +85,13 @@ typedef struct {
 	gboolean (*ip6_start)     (NMDhcpClient *self,
 	                           const char *anycast_addr,
 	                           const struct in6_addr *ll_addr,
-	                           gboolean info_only,
 	                           NMSettingIP6ConfigPrivacy privacy,
-	                           const GByteArray *duid,
+	                           GBytes *duid,
 	                           guint needed_prefixes);
 
 	void (*stop)              (NMDhcpClient *self,
 	                           gboolean release,
-	                           const GByteArray *duid);
+	                           GBytes *duid);
 
 	/**
 	 * get_duid:
@@ -97,7 +102,7 @@ typedef struct {
 	 * representation of the DUID.  If no DUID is found, %NULL should be
 	 * returned.
 	 */
-	GByteArray * (*get_duid) (NMDhcpClient *self);
+	GBytes *(*get_duid) (NMDhcpClient *self);
 
 	/* Signals */
 	void (*state_changed) (NMDhcpClient *self,
@@ -120,9 +125,9 @@ int         nm_dhcp_client_get_ifindex (NMDhcpClient *self);
 
 const char *nm_dhcp_client_get_uuid (NMDhcpClient *self);
 
-const GByteArray *nm_dhcp_client_get_duid (NMDhcpClient *self);
+GBytes *nm_dhcp_client_get_duid (NMDhcpClient *self);
 
-const GByteArray *nm_dhcp_client_get_hw_addr (NMDhcpClient *self);
+GBytes *nm_dhcp_client_get_hw_addr (NMDhcpClient *self);
 
 guint32 nm_dhcp_client_get_route_table (NMDhcpClient *self);
 
@@ -134,20 +139,20 @@ GBytes *nm_dhcp_client_get_client_id (NMDhcpClient *self);
 
 const char *nm_dhcp_client_get_hostname (NMDhcpClient *self);
 
+gboolean nm_dhcp_client_get_info_only (NMDhcpClient *self);
+
 gboolean nm_dhcp_client_get_use_fqdn (NMDhcpClient *self);
 
 gboolean nm_dhcp_client_start_ip4 (NMDhcpClient *self,
-                                   const char *dhcp_client_id,
+                                   GBytes *client_id,
                                    const char *dhcp_anycast_addr,
                                    const char *hostname,
-                                   gboolean use_fqdn,
                                    const char *last_ip4_address);
 
 gboolean nm_dhcp_client_start_ip6 (NMDhcpClient *self,
                                    const char *dhcp_anycast_addr,
                                    const struct in6_addr *ll_addr,
                                    const char *hostname,
-                                   gboolean info_only,
                                    NMSettingIP6ConfigPrivacy privacy,
                                    guint needed_prefixes);
 
@@ -180,8 +185,6 @@ void nm_dhcp_client_set_client_id_bin (NMDhcpClient *self,
                                        guint8 type,
                                        const guint8 *client_id,
                                        gsize len);
-void nm_dhcp_client_set_client_id_str (NMDhcpClient *self,
-                                       const char *dhcp_client_id);
 
 /*****************************************************************************
  * Client data
