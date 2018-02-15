@@ -397,42 +397,6 @@ char *strv_join(char **l, const char *separator) {
         return r;
 }
 
-char *strv_join_quoted(char **l) {
-        char *buf = NULL;
-        char **s;
-        size_t allocated = 0, len = 0;
-
-        STRV_FOREACH(s, l) {
-                /* assuming here that escaped string cannot be more
-                 * than twice as long, and reserving space for the
-                 * separator and quotes.
-                 */
-                _cleanup_free_ char *esc = NULL;
-                size_t needed;
-
-                if (!GREEDY_REALLOC(buf, allocated,
-                                    len + strlen(*s) * 2 + 3))
-                        goto oom;
-
-                esc = cescape(*s);
-                if (!esc)
-                        goto oom;
-
-                needed = snprintf(buf + len, allocated - len, "%s\"%s\"",
-                                  len > 0 ? " " : "", esc);
-                assert(needed < allocated - len);
-                len += needed;
-        }
-
-        if (!buf)
-                buf = malloc0(1);
-
-        return buf;
-
- oom:
-        return mfree(buf);
-}
-
 int strv_push(char ***l, char *value) {
         char **c;
         unsigned n, m;
@@ -486,7 +450,7 @@ int strv_push_pair(char ***l, char *a, char *b) {
         return 0;
 }
 
-int strv_push_prepend(char ***l, char *value) {
+int strv_insert(char ***l, unsigned position, char *value) {
         char **c;
         unsigned n, m, i;
 
@@ -494,6 +458,7 @@ int strv_push_prepend(char ***l, char *value) {
                 return 0;
 
         n = strv_length(*l);
+        position = MIN(position, n);
 
         /* increase and check for overflow */
         m = n + 2;
@@ -504,10 +469,12 @@ int strv_push_prepend(char ***l, char *value) {
         if (!c)
                 return -ENOMEM;
 
-        for (i = 0; i < n; i++)
+        for (i = 0; i < position; i++)
+                c[i] = (*l)[i];
+        c[position] = value;
+        for (i = position; i < n; i++)
                 c[i+1] = (*l)[i];
 
-        c[0] = value;
         c[n+1] = NULL;
 
         free(*l);

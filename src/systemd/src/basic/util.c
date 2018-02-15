@@ -54,6 +54,7 @@
 #include "parse-util.h"
 #include "path-util.h"
 #include "process-util.h"
+#include "procfs-util.h"
 #include "set.h"
 #include "signal-util.h"
 #include "stat-util.h"
@@ -63,6 +64,7 @@
 #include "umask-util.h"
 #include "user-util.h"
 #include "util.h"
+#include "virt.h"
 
 #if 0 /* NM_IGNORED */
 int saved_argc = 0;
@@ -477,31 +479,22 @@ uint64_t physical_memory_scale(uint64_t v, uint64_t max) {
 
 uint64_t system_tasks_max(void) {
 
-#if SIZEOF_PID_T == 4
-#define TASKS_MAX ((uint64_t) (INT32_MAX-1))
-#elif SIZEOF_PID_T == 2
-#define TASKS_MAX ((uint64_t) (INT16_MAX-1))
-#else
-#error "Unknown pid_t size"
-#endif
-
-        _cleanup_free_ char *value = NULL, *root = NULL;
         uint64_t a = TASKS_MAX, b = TASKS_MAX;
+        _cleanup_free_ char *root = NULL;
 
         /* Determine the maximum number of tasks that may run on this system. We check three sources to determine this
          * limit:
          *
-         * a) the maximum value for the pid_t type
+         * a) the maximum tasks value the kernel allows on this architecture
          * b) the cgroups pids_max attribute for the system
-         * c) the kernel's configure maximum PID value
+         * c) the kernel's configured maximum PID value
          *
          * And then pick the smallest of the three */
 
-        if (read_one_line_file("/proc/sys/kernel/pid_max", &value) >= 0)
-                (void) safe_atou64(value, &a);
+        (void) procfs_tasks_get_limit(&a);
 
         if (cg_get_root_path(&root) >= 0) {
-                value = mfree(value);
+                _cleanup_free_ char *value = NULL;
 
                 if (cg_get_attribute("pids", root, "pids.max", &value) >= 0)
                         (void) safe_atou64(value, &b);
@@ -619,5 +612,17 @@ int str_verscmp(const char *s1, const char *s2) {
         }
 
         return strcmp(os1, os2);
+}
+
+/* Turn off core dumps but only if we're running outside of a container. */
+void disable_coredumps(void) {
+        int r;
+
+        if (detect_container() > 0)
+                return;
+
+        r = write_string_file("/proc/sys/kernel/core_pattern", "|/bin/false", 0);
+        if (r < 0)
+                log_debug_errno(r, "Failed to turn off coredumps, ignoring: %m");
 }
 #endif /* NM_IGNORED */

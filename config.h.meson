@@ -125,6 +125,9 @@
 /* The size of `time_t', as computed by sizeof. */
 #mesondefine SIZEOF_TIME_T
 
+/* The size of `pid_t', as computed by sizeof. */
+#mesondefine SIZEOF_PID_T
+
 /* Define to 1 to use ConsoleKit2 suspend api */
 #mesondefine SUSPEND_RESUME_CONSOLEKIT
 

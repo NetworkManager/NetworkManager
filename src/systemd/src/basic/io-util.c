@@ -35,6 +35,7 @@ int flush_fd(int fd) {
                 .fd = fd,
                 .events = POLLIN,
         };
+        int count = 0;
 
         /* Read from the specified file descriptor, until POLLIN is not set anymore, throwing away everything
          * read. Note that some file descriptors (notable IP sockets) will trigger POLLIN even when no data can be read
@@ -54,7 +55,7 @@ int flush_fd(int fd) {
                         return -errno;
 
                 } else if (r == 0)
-                        return 0;
+                        return count;
 
                 l = read(fd, buf, sizeof(buf));
                 if (l < 0) {
@@ -63,11 +64,13 @@ int flush_fd(int fd) {
                                 continue;
 
                         if (errno == EAGAIN)
-                                return 0;
+                                return count;
 
                         return -errno;
                 } else if (l == 0)
-                        return 0;
+                        return count;
+
+                count += (int) l;
         }
 }
 

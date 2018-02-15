@@ -124,6 +124,7 @@ struct sd_event_source {
                         uint32_t events;
                         uint32_t revents;
                         bool registered:1;
+                        bool owned:1;
                 } io;
                 struct {
                         sd_event_time_handler_t callback;
@@ -242,7 +243,13 @@ struct sd_event {
         unsigned delays[sizeof(usec_t) * 8];
 };
 
+static thread_local sd_event *default_event = NULL;
+
 static void source_disconnect(sd_event_source *s);
+
+static sd_event *event_resolve(sd_event *e) {
+        return e == SD_EVENT_DEFAULT ? default_event : e;
+}
 
 static int pending_prioq_compare(const void *a, const void *b) {
         const sd_event_source *x = a, *y = b;
@@ -451,6 +458,8 @@ _public_ int sd_event_new(sd_event** ret) {
                 r = -errno;
                 goto fail;
         }
+
+        e->epoll_fd = fd_move_above_stdio(e->epoll_fd);
 
         if (secure_getenv("SD_EVENT_PROFILE_DELAYS")) {
                 log_debug("Event loop profiling enabled. Logarithmic histogram of event loop iterations in the range 2^0 ... 2^63 us will be logged every 5s.");
@@ -690,7 +699,7 @@ static int event_make_signal_data(
                 return 0;
         }
 
-        d->fd = r;
+        d->fd = fd_move_above_stdio(r);
 
         ev.events = EPOLLIN;
         ev.data.ptr = d;
@@ -885,6 +894,10 @@ static void source_free(sd_event_source *s) {
         assert(s);
 
         source_disconnect(s);
+
+        if (s->type == SOURCE_IO && s->io.owned)
+                safe_close(s->io.fd);
+
         free(s->description);
         free(s);
 }
@@ -969,6 +982,7 @@ _public_ int sd_event_add_io(
         int r;
 
         assert_return(e, -EINVAL);
+        assert_return(e = event_resolve(e), -ENOPKG);
         assert_return(fd >= 0, -EBADF);
         assert_return(!(events & ~(EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLPRI|EPOLLERR|EPOLLHUP|EPOLLET)), -EINVAL);
         assert_return(callback, -EINVAL);
@@ -1035,6 +1049,8 @@ static int event_setup_timer_fd(
         if (fd < 0)
                 return -errno;
 
+        fd = fd_move_above_stdio(fd);
+
         ev.events = EPOLLIN;
         ev.data.ptr = d;
 
@@ -1069,6 +1085,7 @@ _public_ int sd_event_add_time(
         int r;
 
         assert_return(e, -EINVAL);
+        assert_return(e = event_resolve(e), -ENOPKG);
         assert_return(accuracy != (uint64_t) -1, -EINVAL);
         assert_return(e->state != SD_EVENT_FINISHED, -ESTALE);
         assert_return(!event_pid_changed(e), -ECHILD);
@@ -1151,6 +1168,7 @@ _public_ int sd_event_add_signal(
         int r;
 
         assert_return(e, -EINVAL);
+        assert_return(e = event_resolve(e), -ENOPKG);
         assert_return(SIGNAL_VALID(sig), -EINVAL);
         assert_return(e->state != SD_EVENT_FINISHED, -ESTALE);
         assert_return(!event_pid_changed(e), -ECHILD);
@@ -1211,6 +1229,7 @@ _public_ int sd_event_add_child(
         int r;
 
         assert_return(e, -EINVAL);
+        assert_return(e = event_resolve(e), -ENOPKG);
         assert_return(pid > 1, -EINVAL);
         assert_return(!(options & ~(WEXITED|WSTOPPED|WCONTINUED)), -EINVAL);
         assert_return(options != 0, -EINVAL);
@@ -1268,6 +1287,7 @@ _public_ int sd_event_add_defer(
         int r;
 
         assert_return(e, -EINVAL);
+        assert_return(e = event_resolve(e), -ENOPKG);
         assert_return(callback, -EINVAL);
         assert_return(e->state != SD_EVENT_FINISHED, -ESTALE);
         assert_return(!event_pid_changed(e), -ECHILD);
@@ -1302,6 +1322,7 @@ _public_ int sd_event_add_post(
         int r;
 
         assert_return(e, -EINVAL);
+        assert_return(e = event_resolve(e), -ENOPKG);
         assert_return(callback, -EINVAL);
         assert_return(e->state != SD_EVENT_FINISHED, -ESTALE);
         assert_return(!event_pid_changed(e), -ECHILD);
@@ -1340,6 +1361,7 @@ _public_ int sd_event_add_exit(
         int r;
 
         assert_return(e, -EINVAL);
+        assert_return(e = event_resolve(e), -ENOPKG);
         assert_return(callback, -EINVAL);
         assert_return(e->state != SD_EVENT_FINISHED, -ESTALE);
         assert_return(!event_pid_changed(e), -ECHILD);
@@ -1482,6 +1504,21 @@ _public_ int sd_event_source_set_io_fd(sd_event_source *s, int fd) {
                 epoll_ctl(s->event->epoll_fd, EPOLL_CTL_DEL, saved_fd, NULL);
         }
 
+        return 0;
+}
+
+_public_ int sd_event_source_get_io_fd_own(sd_event_source *s) {
+        assert_return(s, -EINVAL);
+        assert_return(s->type == SOURCE_IO, -EDOM);
+
+        return s->io.owned;
+}
+
+_public_ int sd_event_source_set_io_fd_own(sd_event_source *s, int own) {
+        assert_return(s, -EINVAL);
+        assert_return(s->type == SOURCE_IO, -EDOM);
+
+        s->io.owned = own;
         return 0;
 }
 
@@ -2453,6 +2490,7 @@ _public_ int sd_event_prepare(sd_event *e) {
         int r;
 
         assert_return(e, -EINVAL);
+        assert_return(e = event_resolve(e), -ENOPKG);
         assert_return(!event_pid_changed(e), -ECHILD);
         assert_return(e->state != SD_EVENT_FINISHED, -ESTALE);
         assert_return(e->state == SD_EVENT_INITIAL, -EBUSY);
@@ -2510,6 +2548,7 @@ _public_ int sd_event_wait(sd_event *e, uint64_t timeout) {
         int r, m, i;
 
         assert_return(e, -EINVAL);
+        assert_return(e = event_resolve(e), -ENOPKG);
         assert_return(!event_pid_changed(e), -ECHILD);
         assert_return(e->state != SD_EVENT_FINISHED, -ESTALE);
         assert_return(e->state == SD_EVENT_ARMED, -EBUSY);
@@ -2616,6 +2655,7 @@ _public_ int sd_event_dispatch(sd_event *e) {
         int r;
 
         assert_return(e, -EINVAL);
+        assert_return(e = event_resolve(e), -ENOPKG);
         assert_return(!event_pid_changed(e), -ECHILD);
         assert_return(e->state != SD_EVENT_FINISHED, -ESTALE);
         assert_return(e->state == SD_EVENT_PENDING, -EBUSY);
@@ -2657,6 +2697,7 @@ _public_ int sd_event_run(sd_event *e, uint64_t timeout) {
         int r;
 
         assert_return(e, -EINVAL);
+        assert_return(e = event_resolve(e), -ENOPKG);
         assert_return(!event_pid_changed(e), -ECHILD);
         assert_return(e->state != SD_EVENT_FINISHED, -ESTALE);
         assert_return(e->state == SD_EVENT_INITIAL, -EBUSY);
@@ -2701,6 +2742,7 @@ _public_ int sd_event_loop(sd_event *e) {
         int r;
 
         assert_return(e, -EINVAL);
+        assert_return(e = event_resolve(e), -ENOPKG);
         assert_return(!event_pid_changed(e), -ECHILD);
         assert_return(e->state == SD_EVENT_INITIAL, -EBUSY);
 
@@ -2722,6 +2764,7 @@ finish:
 _public_ int sd_event_get_fd(sd_event *e) {
 
         assert_return(e, -EINVAL);
+        assert_return(e = event_resolve(e), -ENOPKG);
         assert_return(!event_pid_changed(e), -ECHILD);
 
         return e->epoll_fd;
@@ -2729,6 +2772,7 @@ _public_ int sd_event_get_fd(sd_event *e) {
 
 _public_ int sd_event_get_state(sd_event *e) {
         assert_return(e, -EINVAL);
+        assert_return(e = event_resolve(e), -ENOPKG);
         assert_return(!event_pid_changed(e), -ECHILD);
 
         return e->state;
@@ -2736,6 +2780,7 @@ _public_ int sd_event_get_state(sd_event *e) {
 
 _public_ int sd_event_get_exit_code(sd_event *e, int *code) {
         assert_return(e, -EINVAL);
+        assert_return(e = event_resolve(e), -ENOPKG);
         assert_return(code, -EINVAL);
         assert_return(!event_pid_changed(e), -ECHILD);
 
@@ -2748,6 +2793,7 @@ _public_ int sd_event_get_exit_code(sd_event *e, int *code) {
 
 _public_ int sd_event_exit(sd_event *e, int code) {
         assert_return(e, -EINVAL);
+        assert_return(e = event_resolve(e), -ENOPKG);
         assert_return(e->state != SD_EVENT_FINISHED, -ESTALE);
         assert_return(!event_pid_changed(e), -ECHILD);
 
@@ -2759,6 +2805,7 @@ _public_ int sd_event_exit(sd_event *e, int code) {
 
 _public_ int sd_event_now(sd_event *e, clockid_t clock, uint64_t *usec) {
         assert_return(e, -EINVAL);
+        assert_return(e = event_resolve(e), -ENOPKG);
         assert_return(usec, -EINVAL);
         assert_return(!event_pid_changed(e), -ECHILD);
 
@@ -2783,8 +2830,6 @@ _public_ int sd_event_now(sd_event *e, clockid_t clock, uint64_t *usec) {
 }
 
 _public_ int sd_event_default(sd_event **ret) {
-
-        static thread_local sd_event *default_event = NULL;
         sd_event *e = NULL;
         int r;
 
@@ -2811,6 +2856,7 @@ _public_ int sd_event_default(sd_event **ret) {
 #if 0 /* NM_IGNORED */
 _public_ int sd_event_get_tid(sd_event *e, pid_t *tid) {
         assert_return(e, -EINVAL);
+        assert_return(e = event_resolve(e), -ENOPKG);
         assert_return(tid, -EINVAL);
         assert_return(!event_pid_changed(e), -ECHILD);
 
@@ -2826,6 +2872,7 @@ _public_ int sd_event_set_watchdog(sd_event *e, int b) {
         int r;
 
         assert_return(e, -EINVAL);
+        assert_return(e = event_resolve(e), -ENOPKG);
         assert_return(!event_pid_changed(e), -ECHILD);
 
         if (e->watchdog == !!b)
@@ -2876,6 +2923,7 @@ fail:
 
 _public_ int sd_event_get_watchdog(sd_event *e) {
         assert_return(e, -EINVAL);
+        assert_return(e = event_resolve(e), -ENOPKG);
         assert_return(!event_pid_changed(e), -ECHILD);
 
         return e->watchdog;
@@ -2883,6 +2931,7 @@ _public_ int sd_event_get_watchdog(sd_event *e) {
 
 _public_ int sd_event_get_iteration(sd_event *e, uint64_t *ret) {
         assert_return(e, -EINVAL);
+        assert_return(e = event_resolve(e), -ENOPKG);
         assert_return(!event_pid_changed(e), -ECHILD);
 
         *ret = e->iteration;

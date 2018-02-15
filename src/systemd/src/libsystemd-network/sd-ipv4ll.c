@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "sd-id128.h"
 #include "sd-ipv4acd.h"
 #include "sd-ipv4ll.h"
 

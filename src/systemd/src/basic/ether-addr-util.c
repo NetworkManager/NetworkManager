@@ -20,6 +20,7 @@
 
 #include "nm-sd-adapt.h"
 
+#include <errno.h>
 #include <net/ethernet.h>
 #include <stdio.h>
 #include <sys/types.h>

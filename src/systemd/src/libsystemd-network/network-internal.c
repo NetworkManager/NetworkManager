@@ -24,6 +24,7 @@
 #include <linux/if.h>
 #include <netinet/ether.h>
 
+#include "sd-id128.h"
 #include "sd-ndisc.h"
 
 #include "alloc-util.h"

@@ -67,6 +67,7 @@ dnl
 AC_TYPE_PID_T
 AC_CHECK_SIZEOF(dev_t)
 AC_CHECK_SIZEOF(time_t)
+AC_CHECK_SIZEOF(pid_t)
 
 AC_CHECK_DECLS([
 	explicit_bzero],

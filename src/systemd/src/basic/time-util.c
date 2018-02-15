@@ -40,6 +40,7 @@
 #include "macro.h"
 #include "parse-util.h"
 #include "path-util.h"
+#include "process-util.h"
 #include "string-util.h"
 #include "strv.h"
 #include "time-util.h"
@@ -891,7 +892,6 @@ typedef struct ParseTimestampResult {
 int parse_timestamp(const char *t, usec_t *usec) {
         char *last_space, *tz = NULL;
         ParseTimestampResult *shared, tmp;
-        pid_t pid;
         int r;
 
         last_space = strrchr(t, ' ');
@@ -905,7 +905,7 @@ int parse_timestamp(const char *t, usec_t *usec) {
         if (shared == MAP_FAILED)
                 return negative_errno();
 
-        r = safe_fork("(sd-timestamp)", FORK_RESET_SIGNALS|FORK_CLOSE_ALL_FDS|FORK_DEATHSIG, &pid);
+        r = safe_fork("(sd-timestamp)", FORK_RESET_SIGNALS|FORK_CLOSE_ALL_FDS|FORK_DEATHSIG|FORK_WAIT, NULL);
         if (r < 0) {
                 (void) munmap(shared, sizeof *shared);
                 return r;
@@ -931,12 +931,6 @@ int parse_timestamp(const char *t, usec_t *usec) {
                 shared->return_value = parse_timestamp_impl(t, &shared->usec, with_tz);
 
                 _exit(EXIT_SUCCESS);
-        }
-
-        r = wait_for_terminate(pid, NULL);
-        if (r < 0) {
-                (void) munmap(shared, sizeof *shared);
-                return r;
         }
 
         tmp = *shared;

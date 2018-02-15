@@ -1235,9 +1235,11 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/sd-adapt/ioprio.h \
 	src/systemd/sd-adapt/khash.h \
 	src/systemd/sd-adapt/libudev.h \
+	src/systemd/sd-adapt/locale-util.h \
 	src/systemd/sd-adapt/memfd-util.h \
 	src/systemd/sd-adapt/missing.h \
 	src/systemd/sd-adapt/mkdir.h \
+	src/systemd/sd-adapt/procfs-util.h \
 	src/systemd/sd-adapt/raw-clone.h \
 	src/systemd/sd-adapt/sd-daemon.h \
 	src/systemd/sd-adapt/stat-util.h \

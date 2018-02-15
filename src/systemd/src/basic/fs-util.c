@@ -41,6 +41,7 @@
 #include "mkdir.h"
 #include "parse-util.h"
 #include "path-util.h"
+#include "process-util.h"
 #include "stat-util.h"
 #include "stdio-util.h"
 #include "string-util.h"
@@ -229,49 +230,6 @@ int readlink_and_make_absolute(const char *p, char **r) {
         return 0;
 }
 
-int readlink_and_canonicalize(const char *p, const char *root, char **ret) {
-        char *t, *s;
-        int r;
-
-        assert(p);
-        assert(ret);
-
-        r = readlink_and_make_absolute(p, &t);
-        if (r < 0)
-                return r;
-
-        r = chase_symlinks(t, root, 0, &s);
-        if (r < 0)
-                /* If we can't follow up, then let's return the original string, slightly cleaned up. */
-                *ret = path_kill_slashes(t);
-        else {
-                *ret = s;
-                free(t);
-        }
-
-        return 0;
-}
-
-int readlink_and_make_absolute_root(const char *root, const char *path, char **ret) {
-        _cleanup_free_ char *target = NULL, *t = NULL;
-        const char *full;
-        int r;
-
-        full = prefix_roota(root, path);
-        r = readlink_malloc(full, &target);
-        if (r < 0)
-                return r;
-
-        t = file_in_same_dir(path, target);
-        if (!t)
-                return -ENOMEM;
-
-        *ret = t;
-        t = NULL;
-
-        return 0;
-}
-
 int chmod_and_chown(const char *path, mode_t mode, uid_t uid, gid_t gid) {
         assert(path);
 
@@ -322,43 +280,60 @@ int fd_warn_permissions(const char *path, int fd) {
 }
 
 int touch_file(const char *path, bool parents, usec_t stamp, uid_t uid, gid_t gid, mode_t mode) {
-        _cleanup_close_ int fd;
-        int r;
+        char fdpath[STRLEN("/proc/self/fd/") + DECIMAL_STR_MAX(int)];
+        _cleanup_close_ int fd = -1;
+        int r, ret = 0;
 
         assert(path);
 
+        /* Note that touch_file() does not follow symlinks: if invoked on an existing symlink, then it is the symlink
+         * itself which is updated, not its target
+         *
+         * Returns the first error we encounter, but tries to apply as much as possible. */
+
         if (parents)
-                mkdir_parents(path, 0755);
+                (void) mkdir_parents(path, 0755);
 
-        fd = open(path, O_WRONLY|O_CREAT|O_CLOEXEC|O_NOCTTY,
-                  IN_SET(mode, 0, MODE_INVALID) ? 0644 : mode);
-        if (fd < 0)
-                return -errno;
+        /* Initially, we try to open the node with O_PATH, so that we get a reference to the node. This is useful in
+         * case the path refers to an existing device or socket node, as we can open it successfully in all cases, and
+         * won't trigger any driver magic or so. */
+        fd = open(path, O_PATH|O_CLOEXEC|O_NOFOLLOW);
+        if (fd < 0) {
+                if (errno != ENOENT)
+                        return -errno;
 
-        if (mode != MODE_INVALID) {
-                r = fchmod(fd, mode);
-                if (r < 0)
+                /* if the node doesn't exist yet, we create it, but with O_EXCL, so that we only create a regular file
+                 * here, and nothing else */
+                fd = open(path, O_WRONLY|O_CREAT|O_EXCL|O_CLOEXEC, IN_SET(mode, 0, MODE_INVALID) ? 0644 : mode);
+                if (fd < 0)
                         return -errno;
         }
 
-        if (uid != UID_INVALID || gid != GID_INVALID) {
-                r = fchown(fd, uid, gid);
-                if (r < 0)
-                        return -errno;
-        }
+        /* Let's make a path from the fd, and operate on that. With this logic, we can adjust the access mode,
+         * ownership and time of the file node in all cases, even if the fd refers to an O_PATH object — which is
+         * something fchown(), fchmod(), futimensat() don't allow. */
+        xsprintf(fdpath, "/proc/self/fd/%i", fd);
+
+        if (mode != MODE_INVALID)
+                if (chmod(fdpath, mode) < 0)
+                        ret = -errno;
+
+        if (uid_is_valid(uid) || gid_is_valid(gid))
+                if (chown(fdpath, uid, gid) < 0 && ret >= 0)
+                        ret = -errno;
 
         if (stamp != USEC_INFINITY) {
                 struct timespec ts[2];
 
                 timespec_store(&ts[0], stamp);
                 ts[1] = ts[0];
-                r = futimens(fd, ts);
+                r = utimensat(AT_FDCWD, fdpath, ts, 0);
         } else
-                r = futimens(fd, NULL);
-        if (r < 0)
+                r = utimensat(AT_FDCWD, fdpath, NULL, 0);
+        if (r < 0 && ret >= 0)
                 return -errno;
 
-        return 0;
+        return ret;
 }
 
 int touch(const char *path) {
@@ -600,15 +575,34 @@ int inotify_add_watch_fd(int fd, int what, uint32_t mask) {
         return r;
 }
 
+static bool safe_transition(const struct stat *a, const struct stat *b) {
+        /* Returns true if the transition from a to b is safe, i.e. that we never transition from unprivileged to
+         * privileged files or directories. Why bother? So that unprivileged code can't symlink to privileged files
+         * making us believe we read something safe even though it isn't safe in the specific context we open it in. */
+
+        if (a->st_uid == 0) /* Transitioning from privileged to unprivileged is always fine */
+                return true;
+
+        return a->st_uid == b->st_uid; /* Otherwise we need to stay within the same UID */
+}
+
 int chase_symlinks(const char *path, const char *original_root, unsigned flags, char **ret) {
         _cleanup_free_ char *buffer = NULL, *done = NULL, *root = NULL;
         _cleanup_close_ int fd = -1;
         unsigned max_follow = 32; /* how many symlinks to follow before giving up and returning ELOOP */
+        struct stat previous_stat;
         bool exists = true;
         char *todo;
         int r;
 
         assert(path);
+
+        /* Either the file may be missing, or we return an fd to the final object, but both make no sense */
+        if ((flags & (CHASE_NONEXISTENT|CHASE_OPEN)) == (CHASE_NONEXISTENT|CHASE_OPEN))
+                return -EINVAL;
+
+        if (isempty(path))
+                return -EINVAL;
 
         /* This is a lot like canonicalize_file_name(), but takes an additional "root" parameter, that allows following
          * symlinks relative to a root directory, instead of the root of the host.
@@ -630,13 +624,23 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
          * function what to do when encountering a symlink with an absolute path as directory: prefix it by the
          * specified path. */
 
+        /* A root directory of "/" or "" is identical to none */
+        if (isempty(original_root) || path_equal(original_root, "/"))
+                original_root = NULL;
+
         if (original_root) {
                 r = path_make_absolute_cwd(original_root, &root);
                 if (r < 0)
                         return r;
 
-                if (flags & CHASE_PREFIX_ROOT)
+                if (flags & CHASE_PREFIX_ROOT) {
+
+                        /* We don't support relative paths in combination with a root directory */
+                        if (!path_is_absolute(path))
+                                return -EINVAL;
+
                         path = prefix_roota(root, path);
+                }
         }
 
         r = path_make_absolute_cwd(path, &buffer);
@@ -646,6 +650,11 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
         fd = open("/", O_CLOEXEC|O_NOFOLLOW|O_PATH);
         if (fd < 0)
                 return -errno;
+
+        if (flags & CHASE_SAFE) {
+                if (fstat(fd, &previous_stat) < 0)
+                        return -errno;
+        }
 
         todo = buffer;
         for (;;) {
@@ -685,7 +694,7 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
                 /* Two dots? Then chop off the last bit of what we already found out. */
                 if (path_equal(first, "/..")) {
                         _cleanup_free_ char *parent = NULL;
-                        int fd_parent = -1;
+                        _cleanup_close_ int fd_parent = -1;
 
                         /* If we already are at the top, then going up will not change anything. This is in-line with
                          * how the kernel handles this. */
@@ -708,8 +717,19 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
                         if (fd_parent < 0)
                                 return -errno;
 
+                        if (flags & CHASE_SAFE) {
+                                if (fstat(fd_parent, &st) < 0)
+                                        return -errno;
+
+                                if (!safe_transition(&previous_stat, &st))
+                                        return -EPERM;
+
+                                previous_stat = st;
+                        }
+
                         safe_close(fd);
                         fd = fd_parent;
+                        fd_parent = -1;
 
                         continue;
                 }
@@ -742,6 +762,12 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
 
                 if (fstat(child, &st) < 0)
                         return -errno;
+                if ((flags & CHASE_SAFE) &&
+                    !safe_transition(&previous_stat, &st))
+                        return -EPERM;
+
+                previous_stat = st;
+
                 if ((flags & CHASE_NO_AUTOFS) &&
                     fd_is_fs_type(child, AUTOFS_SUPER_MAGIC) > 0)
                         return -EREMOTE;
@@ -771,6 +797,16 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
                                 fd = open(root ?: "/", O_CLOEXEC|O_NOFOLLOW|O_PATH);
                                 if (fd < 0)
                                         return -errno;
+
+                                if (flags & CHASE_SAFE) {
+                                        if (fstat(fd, &st) < 0)
+                                                return -errno;
+
+                                        if (!safe_transition(&previous_stat, &st))
+                                                return -EPERM;
+
+                                        previous_stat = st;
+                                }
 
                                 free(done);
 
@@ -828,6 +864,19 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
                 done = NULL;
         }
 
+        if (flags & CHASE_OPEN) {
+                int q;
+
+                /* Return the O_PATH fd we currently are looking to the caller. It can translate it to a proper fd by
+                 * opening /proc/self/fd/xyz. */
+
+                assert(fd >= 0);
+                q = fd;
+                fd = -1;
+
+                return q;
+        }
+
         return exists;
 }
 
@@ -844,5 +893,74 @@ int access_fd(int fd, int mode) {
                 r = -errno;
 
         return r;
+}
+
+int unlinkat_deallocate(int fd, const char *name, int flags) {
+        _cleanup_close_ int truncate_fd = -1;
+        struct stat st;
+        off_t l, bs;
+
+        /* Operates like unlinkat() but also deallocates the file contents if it is a regular file and there's no other
+         * link to it. This is useful to ensure that other processes that might have the file open for reading won't be
+         * able to keep the data pinned on disk forever. This call is particular useful whenever we execute clean-up
+         * jobs ("vacuuming"), where we want to make sure the data is really gone and the disk space released and
+         * returned to the free pool.
+         *
+         * Deallocation is preferably done by FALLOC_FL_PUNCH_HOLE|FALLOC_FL_KEEP_SIZE (👊) if supported, which means
+         * the file won't change size. That's a good thing since we shouldn't needlessly trigger SIGBUS in other
+         * programs that have mmap()ed the file. (The assumption here is that changing file contents to all zeroes
+         * underneath those programs is the better choice than simply triggering SIGBUS in them which truncation does.)
+         * However if hole punching is not implemented in the kernel or file system we'll fall back to normal file
+         * truncation (🔪), as our goal of deallocating the data space trumps our goal of being nice to readers (💐).
+         *
+         * Note that we attempt deallocation, but failure to succeed with that is not considered fatal, as long as the
+         * primary job – to delete the file – is accomplished. */
+
+        if ((flags & AT_REMOVEDIR) == 0) {
+                truncate_fd = openat(fd, name, O_WRONLY|O_CLOEXEC|O_NOCTTY|O_NOFOLLOW|O_NONBLOCK);
+                if (truncate_fd < 0) {
+
+                        /* If this failed because the file doesn't exist propagate the error right-away. Also,
+                         * AT_REMOVEDIR wasn't set, and we tried to open the file for writing, which means EISDIR is
+                         * returned when this is a directory but we are not supposed to delete those, hence propagate
+                         * the error right-away too. */
+                        if (IN_SET(errno, ENOENT, EISDIR))
+                                return -errno;
+
+                        if (errno != ELOOP) /* don't complain if this is a symlink */
+                                log_debug_errno(errno, "Failed to open file '%s' for deallocation, ignoring: %m", name);
+                }
+        }
+
+        if (unlinkat(fd, name, flags) < 0)
+                return -errno;
+
+        if (truncate_fd < 0) /* Don't have a file handle, can't do more ☹️ */
+                return 0;
+
+        if (fstat(truncate_fd, &st) < 0) {
+                log_debug_errno(errno, "Failed to stat file '%s' for deallocation, ignoring.", name);
+                return 0;
+        }
+
+        if (!S_ISREG(st.st_mode) || st.st_blocks == 0 || st.st_nlink > 0)
+                return 0;
+
+        /* If this is a regular file, it actually took up space on disk and there are no other links it's time to
+         * punch-hole/truncate this to release the disk space. */
+
+        bs = MAX(st.st_blksize, 512);
+        l = DIV_ROUND_UP(st.st_size, bs) * bs; /* Round up to next block size */
+
+        if (fallocate(truncate_fd, FALLOC_FL_PUNCH_HOLE|FALLOC_FL_KEEP_SIZE, 0, l) >= 0)
+                return 0; /* Successfully punched a hole! 😊 */
+
+        /* Fall back to truncation */
+        if (ftruncate(truncate_fd, 0) < 0) {
+                log_debug_errno(errno, "Failed to truncate file to 0, ignoring: %m");
+                return 0;
+        }
+
+        return 0;
 }
 #endif /* NM_IGNORED */

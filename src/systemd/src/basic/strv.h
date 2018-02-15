@@ -54,7 +54,12 @@ int strv_extendf(char ***l, const char *format, ...) _printf_(2,0);
 int strv_extend_front(char ***l, const char *value);
 int strv_push(char ***l, char *value);
 int strv_push_pair(char ***l, char *a, char *b);
-int strv_push_prepend(char ***l, char *value);
+int strv_insert(char ***l, unsigned position, char *value);
+
+static inline int strv_push_prepend(char ***l, char *value) {
+        return strv_insert(l, 0, value);
+}
+
 int strv_consume(char ***l, char *value);
 int strv_consume_pair(char ***l, char *a, char *b);
 int strv_consume_prepend(char ***l, char *value);
@@ -86,7 +91,6 @@ char **strv_split_newlines(const char *s);
 int strv_split_extract(char ***t, const char *s, const char *separators, ExtractFlags flags);
 
 char *strv_join(char **l, const char *separator);
-char *strv_join_quoted(char **l);
 
 char **strv_parse_nulstr(const char *s, size_t l);
 char **strv_split_nulstr(const char *s);

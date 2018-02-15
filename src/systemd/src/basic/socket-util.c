@@ -43,6 +43,7 @@
 #include "missing.h"
 #include "parse-util.h"
 #include "path-util.h"
+#include "process-util.h"
 #include "socket-util.h"
 #include "string-table.h"
 #include "string-util.h"
@@ -53,7 +54,7 @@
 
 #if 0 /* NM_IGNORED */
 #if ENABLE_IDN
-#  define IDN_FLAGS (NI_IDN|NI_IDN_USE_STD3_ASCII_RULES)
+#  define IDN_FLAGS NI_IDN
 #else
 #  define IDN_FLAGS 0
 #endif
@@ -71,7 +72,6 @@ DEFINE_STRING_TABLE_LOOKUP(socket_address_type, int);
 
 int socket_address_parse(SocketAddress *a, const char *s) {
         char *e, *n;
-        unsigned u;
         int r;
 
         assert(a);
@@ -81,6 +81,8 @@ int socket_address_parse(SocketAddress *a, const char *s) {
         a->type = SOCK_STREAM;
 
         if (*s == '[') {
+                uint16_t port;
+
                 /* IPv6 in [x:.....:z]:p notation */
 
                 e = strchr(s+1, ']');
@@ -98,15 +100,12 @@ int socket_address_parse(SocketAddress *a, const char *s) {
                         return -EINVAL;
 
                 e++;
-                r = safe_atou(e, &u);
+                r = parse_ip_port(e, &port);
                 if (r < 0)
                         return r;
 
-                if (u <= 0 || u > 0xFFFF)
-                        return -EINVAL;
-
                 a->sockaddr.in6.sin6_family = AF_INET6;
-                a->sockaddr.in6.sin6_port = htobe16((uint16_t)u);
+                a->sockaddr.in6.sin6_port = htobe16(port);
                 a->size = sizeof(struct sockaddr_in6);
 
         } else if (*s == '/') {
@@ -137,12 +136,13 @@ int socket_address_parse(SocketAddress *a, const char *s) {
         } else if (startswith(s, "vsock:")) {
                 /* AF_VSOCK socket in vsock:cid:port notation */
                 const char *cid_start = s + STRLEN("vsock:");
+                unsigned port;
 
                 e = strchr(cid_start, ':');
                 if (!e)
                         return -EINVAL;
 
-                r = safe_atou(e+1, &u);
+                r = safe_atou(e+1, &port);
                 if (r < 0)
                         return r;
 
@@ -155,18 +155,17 @@ int socket_address_parse(SocketAddress *a, const char *s) {
                         a->sockaddr.vm.svm_cid = VMADDR_CID_ANY;
 
                 a->sockaddr.vm.svm_family = AF_VSOCK;
-                a->sockaddr.vm.svm_port = u;
+                a->sockaddr.vm.svm_port = port;
                 a->size = sizeof(struct sockaddr_vm);
 
         } else {
+                uint16_t port;
+
                 e = strchr(s, ':');
                 if (e) {
-                        r = safe_atou(e+1, &u);
+                        r = parse_ip_port(e + 1, &port);
                         if (r < 0)
                                 return r;
-
-                        if (u <= 0 || u > 0xFFFF)
-                                return -EINVAL;
 
                         n = strndupa(s, e-s);
 
@@ -178,7 +177,7 @@ int socket_address_parse(SocketAddress *a, const char *s) {
                         if (r > 0) {
                                 /* Gotcha, it's a traditional IPv4 address */
                                 a->sockaddr.in.sin_family = AF_INET;
-                                a->sockaddr.in.sin_port = htobe16((uint16_t)u);
+                                a->sockaddr.in.sin_port = htobe16(port);
                                 a->size = sizeof(struct sockaddr_in);
                         } else {
                                 unsigned idx;
@@ -192,7 +191,7 @@ int socket_address_parse(SocketAddress *a, const char *s) {
                                         return -EINVAL;
 
                                 a->sockaddr.in6.sin6_family = AF_INET6;
-                                a->sockaddr.in6.sin6_port = htobe16((uint16_t)u);
+                                a->sockaddr.in6.sin6_port = htobe16(port);
                                 a->sockaddr.in6.sin6_scope_id = idx;
                                 a->sockaddr.in6.sin6_addr = in6addr_any;
                                 a->size = sizeof(struct sockaddr_in6);
@@ -200,21 +199,18 @@ int socket_address_parse(SocketAddress *a, const char *s) {
                 } else {
 
                         /* Just a port */
-                        r = safe_atou(s, &u);
+                        r = parse_ip_port(s, &port);
                         if (r < 0)
                                 return r;
 
-                        if (u <= 0 || u > 0xFFFF)
-                                return -EINVAL;
-
                         if (socket_ipv6_is_supported()) {
                                 a->sockaddr.in6.sin6_family = AF_INET6;
-                                a->sockaddr.in6.sin6_port = htobe16((uint16_t)u);
+                                a->sockaddr.in6.sin6_port = htobe16(port);
                                 a->sockaddr.in6.sin6_addr = in6addr_any;
                                 a->size = sizeof(struct sockaddr_in6);
                         } else {
                                 a->sockaddr.in.sin_family = AF_INET;
-                                a->sockaddr.in.sin_port = htobe16((uint16_t)u);
+                                a->sockaddr.in.sin_port = htobe16(port);
                                 a->sockaddr.in.sin_addr.s_addr = INADDR_ANY;
                                 a->size = sizeof(struct sockaddr_in);
                         }
@@ -765,19 +761,6 @@ int socknameinfo_pretty(union sockaddr_union *sa, socklen_t salen, char **_ret) 
         return 0;
 }
 
-int getnameinfo_pretty(int fd, char **ret) {
-        union sockaddr_union sa;
-        socklen_t salen = sizeof(sa);
-
-        assert(fd >= 0);
-        assert(ret);
-
-        if (getsockname(fd, &sa.sa, &salen) < 0)
-                return -errno;
-
-        return socknameinfo_pretty(&sa, salen, ret);
-}
-
 int socket_address_unlink(SocketAddress *a) {
         assert(a);
 
@@ -823,6 +806,18 @@ static const char* const socket_address_bind_ipv6_only_table[_SOCKET_ADDRESS_BIN
 };
 
 DEFINE_STRING_TABLE_LOOKUP(socket_address_bind_ipv6_only, SocketAddressBindIPv6Only);
+
+SocketAddressBindIPv6Only parse_socket_address_bind_ipv6_only_or_bool(const char *n) {
+        int r;
+
+        r = parse_boolean(n);
+        if (r > 0)
+                return SOCKET_ADDRESS_IPV6_ONLY;
+        if (r == 0)
+                return SOCKET_ADDRESS_BOTH;
+
+        return socket_address_bind_ipv6_only_from_string(n);
+}
 
 bool sockaddr_equal(const union sockaddr_union *a, const union sockaddr_union *b) {
         assert(a);
@@ -958,56 +953,78 @@ int getpeercred(int fd, struct ucred *ucred) {
         if (n != sizeof(struct ucred))
                 return -EIO;
 
-        /* Check if the data is actually useful and not suppressed due
-         * to namespacing issues */
-        if (u.pid <= 0)
+        /* Check if the data is actually useful and not suppressed due to namespacing issues */
+        if (!pid_is_valid(u.pid))
                 return -ENODATA;
-        if (u.uid == UID_INVALID)
-                return -ENODATA;
-        if (u.gid == GID_INVALID)
-                return -ENODATA;
+
+        /* Note that we don't check UID/GID here, as namespace translation works differently there: instead of
+         * receiving in "invalid" user/group we get the overflow UID/GID. */
 
         *ucred = u;
         return 0;
 }
 
 int getpeersec(int fd, char **ret) {
+        _cleanup_free_ char *s = NULL;
         socklen_t n = 64;
-        char *s;
-        int r;
 
         assert(fd >= 0);
         assert(ret);
 
-        s = new0(char, n);
-        if (!s)
-                return -ENOMEM;
+        for (;;) {
+                s = new0(char, n+1);
+                if (!s)
+                        return -ENOMEM;
 
-        r = getsockopt(fd, SOL_SOCKET, SO_PEERSEC, s, &n);
-        if (r < 0) {
-                free(s);
+                if (getsockopt(fd, SOL_SOCKET, SO_PEERSEC, s, &n) >= 0)
+                        break;
 
                 if (errno != ERANGE)
                         return -errno;
 
-                s = new0(char, n);
-                if (!s)
-                        return -ENOMEM;
-
-                r = getsockopt(fd, SOL_SOCKET, SO_PEERSEC, s, &n);
-                if (r < 0) {
-                        free(s);
-                        return -errno;
-                }
+                s = mfree(s);
         }
 
-        if (isempty(s)) {
-                free(s);
+        if (isempty(s))
                 return -EOPNOTSUPP;
-        }
 
         *ret = s;
+        s = NULL;
+
         return 0;
+}
+
+int getpeergroups(int fd, gid_t **ret) {
+        socklen_t n = sizeof(gid_t) * 64;
+        _cleanup_free_ gid_t *d = NULL;
+
+        assert(fd >= 0);
+        assert(ret);
+
+        for (;;) {
+                d = malloc(n);
+                if (!d)
+                        return -ENOMEM;
+
+                if (getsockopt(fd, SOL_SOCKET, SO_PEERGROUPS, d, &n) >= 0)
+                        break;
+
+                if (errno != ERANGE)
+                        return -errno;
+
+                d = mfree(d);
+        }
+
+        assert_se(n % sizeof(gid_t) == 0);
+        n /= sizeof(gid_t);
+
+        if ((socklen_t) (int) n != n)
+                return -E2BIG;
+
+        *ret = d;
+        d = NULL;
+
+        return (int) n;
 }
 
 int send_one_fd_sa(

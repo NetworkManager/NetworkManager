@@ -110,6 +110,7 @@ config_h.set10('HAVE_DECL_EXPLICIT_BZERO', cc.has_function('explicit_bzero', pre
 # types
 config_h.set('SIZEOF_DEV_T', cc.sizeof('dev_t', prefix: '#include<sys/types.h>'))
 config_h.set('SIZEOF_TIME_T', cc.sizeof('time_t', prefix: '#include<sys/types.h>'))
+config_h.set('SIZEOF_PID_T', cc.sizeof('pid_t', prefix: '#include<sys/types.h>'))
 
 if not cc.has_type('pid_t', prefix: '#include<sys/types.h>')
   config_h.set('pid_t', 'int')

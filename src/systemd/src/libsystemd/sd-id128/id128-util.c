@@ -20,6 +20,7 @@
 
 #include "nm-sd-adapt.h"
 
+#include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
 

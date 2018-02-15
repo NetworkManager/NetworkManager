@@ -52,15 +52,15 @@ static inline bool streq_ptr(const char *a, const char *b) {
 }
 
 static inline const char* strempty(const char *s) {
-        return s ? s : "";
+        return s ?: "";
 }
 
 static inline const char* strnull(const char *s) {
-        return s ? s : "(null)";
+        return s ?: "(null)";
 }
 
 static inline const char *strna(const char *s) {
-        return s ? s : "n/a";
+        return s ?: "n/a";
 }
 
 static inline bool isempty(const char *p) {
@@ -177,7 +177,7 @@ char* strshorten(char *s, size_t l);
 
 char *strreplace(const char *text, const char *old_string, const char *new_string);
 
-char *strip_tab_ansi(char **p, size_t *l);
+char *strip_tab_ansi(char **ibuf, size_t *_isz, size_t highlight[2]);
 
 char *strextend_with_separator(char **x, const char *separator, ...) _sentinel_;
 
