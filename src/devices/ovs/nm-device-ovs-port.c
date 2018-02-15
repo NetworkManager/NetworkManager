@@ -114,7 +114,8 @@ add_iface_cb (GError *error, gpointer user_data)
 {
 	NMDevice *slave = user_data;
 
-	if (error) {
+	if (   error
+	    && !g_error_matches (error, NM_UTILS_ERROR, NM_UTILS_ERROR_CANCELLED_DISPOSING)) {
 		nm_log_warn (LOGD_DEVICE, "device %s could not be added to a ovs port: %s",
 		             nm_device_get_iface (slave), error->message);
 		nm_device_state_changed (slave,
@@ -153,7 +154,8 @@ del_iface_cb (GError *error, gpointer user_data)
 {
 	NMDevice *slave = user_data;
 
-	if (error) {
+	if (   error
+	    && !g_error_matches (error, NM_UTILS_ERROR, NM_UTILS_ERROR_CANCELLED_DISPOSING)) {
 		nm_log_warn (LOGD_DEVICE, "device %s could not be removed from a ovs port: %s",
 		             nm_device_get_iface (slave), error->message);
 		nm_device_state_changed (slave,
