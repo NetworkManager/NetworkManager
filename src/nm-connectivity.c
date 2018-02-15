@@ -137,6 +137,7 @@ curl_check_connectivity (CURLM *mhandle, CURLMcode ret)
 	ConCheckCbData *cb_data;
 	CURLMsg *msg;
 	CURLcode eret;
+	CURL *easy_handle;
 	gint m_left;
 	long response_code;
 
@@ -182,8 +183,10 @@ curl_check_connectivity (CURLM *mhandle, CURLMcode ret)
 			finish_cb_data (cb_data, c);
 		}
 
-		curl_multi_remove_handle (mhandle, msg->easy_handle);
-		curl_easy_cleanup (msg->easy_handle);
+		/* Do not use message data after calling curl_multi_remove_handle() */
+		easy_handle = msg->easy_handle;
+		curl_multi_remove_handle (mhandle, easy_handle);
+		curl_easy_cleanup (easy_handle);
 	}
 }
 

@@ -53,7 +53,7 @@ INTROSPECTION_SCANNER_ARGS =
 INTROSPECTION_COMPILER_ARGS =
 # Pass SANITIZER_ENV where a command that uses built libraries is
 # executed, to suppress possible errors
-INTROSPECTION_SCANNER_ENV = $(SANITIZER_ENV)
+INTROSPECTION_SCANNER_ENV = $(SANITIZER_ENV) LDFLAGS="$(SANITIZER_LIB_LDFLAGS)"
 
 libnmincludedir = $(includedir)/libnm
 libnminclude_HEADERS =
@@ -104,12 +104,13 @@ endif
 
 set_sanitizer_env = \
 	[ -n "$(SANITIZER_ENV)" ] && export $(SANITIZER_ENV) ; \
-	if [ -n "$(1)" ] && echo $(CFLAGS) | grep -e -fsanitize=address ; then \
-		export LD_PRELOAD="$${LD_PRELOAD}:$$(ldd $(1) | grep libasan\.so\.. -o | head -n 1)"; \
+	if echo $(SANITIZER_LIB_CFLAGS) $(SANITIZER_EXEC_CFLAGS) | grep -e -fsanitize=address > /dev/null; then \
+		[ -n "$(1)" ] && export LD_PRELOAD="$${LD_PRELOAD}:$$(ldd $(1) | grep libasan\.so\.. -o | head -n 1)"; \
+		[ -n "$(2)" ] && export LD_PRELOAD="$${LD_PRELOAD}:$$(ldd $(2) | grep libasan\.so\.. -o | head -n 1)"; \
 	fi
 
 check_so_symbols = \
-	$(call set_sanitizer_env,$(1)); \
+	$(call set_sanitizer_env,$(1),$(builddir)/src/NetworkManager); \
 	LD_BIND_NOW=1 LD_PRELOAD=$${LD_PRELOAD}:$(1) $(builddir)/src/NetworkManager --version >/dev/null
 
 ###############################################################################
@@ -545,7 +546,8 @@ dflt_cppflags_libnm_core = \
 	-I$(builddir)/libnm-core \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(GLIB_CFLAGS) \
-	$(LIBUDEV_CFLAGS)
+	$(LIBUDEV_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS)
 
 if WITH_GNUTLS
 dflt_cppflags_libnm_core += $(GNUTLS_CFLAGS)
@@ -609,7 +611,8 @@ libnm_core_libnm_core_la_LIBADD = \
 	$(LIBUDEV_LIBS)
 
 libnm_core_libnm_core_la_LDFLAGS = \
-	$(CODE_COVERAGE_LDFLAGS)
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(SANITIZER_LIB_LDFLAGS)
 
 if WITH_GNUTLS
 libnm_core_lib_c_real += libnm-core/crypto_gnutls.c
@@ -693,6 +696,9 @@ libnm_core_tests_ldadd = \
 	libnm-core/libnm-core.la \
 	$(GLIB_LIBS)
 
+libnm_core_tests_ldflags = \
+	$(SANITIZER_LIB_LDFLAGS)
+
 libnm_core_tests_test_compare_LDADD = $(libnm_core_tests_ldadd)
 libnm_core_tests_test_crypto_LDADD = $(libnm_core_tests_ldadd)
 libnm_core_tests_test_general_LDADD = $(libnm_core_tests_ldadd)
@@ -700,6 +706,14 @@ libnm_core_tests_test_keyfile_LDADD = $(libnm_core_tests_ldadd)
 libnm_core_tests_test_secrets_LDADD = $(libnm_core_tests_ldadd)
 libnm_core_tests_test_setting_LDADD = $(libnm_core_tests_ldadd)
 libnm_core_tests_test_settings_defaults_LDADD = $(libnm_core_tests_ldadd)
+
+libnm_core_tests_test_compare_LDFLAGS = $(libnm_core_tests_ldflags)
+libnm_core_tests_test_crypto_LDFLAGS = $(libnm_core_tests_ldflags)
+libnm_core_tests_test_general_LDFLAGS = $(libnm_core_tests_ldflags)
+libnm_core_tests_test_keyfile_LDFLAGS = $(libnm_core_tests_ldflags)
+libnm_core_tests_test_secrets_LDFLAGS = $(libnm_core_tests_ldflags)
+libnm_core_tests_test_setting_LDFLAGS = $(libnm_core_tests_ldflags)
+libnm_core_tests_test_settings_defaults_LDFLAGS = $(libnm_core_tests_ldflags)
 
 $(libnm_core_tests_test_compare_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(libnm_core_tests_test_crypto_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
@@ -901,7 +915,8 @@ $(libnm_tests_libnm_vpn_plugin_utils_test_la_OBJECTS):  $(libnm_core_lib_h_pub_m
 
 libnm_libnm_la_CPPFLAGS = \
 	$(libnm_lib_cppflags) \
-	$(LIBUDEV_CFLAGS)
+	$(LIBUDEV_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS)
 
 libnm_libnm_la_SOURCES = \
 	$(libnm_lib_h_pub_real) \
@@ -925,6 +940,7 @@ libnm_libnm_la_LIBADD = \
 libnm_libnm_la_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/libnm/libnm.ver" \
 	$(CODE_COVERAGE_LDFLAGS) \
+	$(SANITIZER_LIB_LDFLAGS) \
 	-version-info "1:0:1"
 
 check-local-exports-libnm: libnm/libnm.la
@@ -1071,6 +1087,9 @@ libnm_tests_ldadd = \
 	libnm/libnm.la \
 	$(GLIB_LIBS)
 
+libnm_tests_ldflags = \
+	$(SANITIZER_LIB_LDFLAGS)
+
 libnm_tests_test_general_CPPFLAGS = $(libnm_tests_cppflags)
 libnm_tests_test_nm_client_CPPFLAGS = $(libnm_tests_cppflags)
 libnm_tests_test_remote_settings_client_CPPFLAGS = $(libnm_tests_cppflags)
@@ -1102,6 +1121,11 @@ libnm_tests_test_nm_client_LDADD = $(libnm_tests_ldadd)
 libnm_tests_test_remote_settings_client_LDADD = $(libnm_tests_ldadd)
 libnm_tests_test_secret_agent_LDADD = $(libnm_tests_ldadd)
 
+libnm_tests_test_general_LDFLAGS = $(libnm_tests_ldflags)
+libnm_tests_test_nm_client_LDFLAGS = $(libnm_tests_ldflags)
+libnm_tests_test_remote_settings_client_LDFLAGS = $(libnm_tests_ldflags)
+libnm_tests_test_secret_agent_LDFLAGS = $(libnm_tests_ldflags)
+
 $(libnm_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(libnm_tests_test_nm_client_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(libnm_tests_test_remote_settings_client_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
@@ -1125,6 +1149,7 @@ libnm_tests_libnm_vpn_plugin_utils_test_la_CFLAGS = \
 	-I$(srcdir)/libnm \
 	-I$(builddir)/libnm \
 	$(GLIB_CFLAGS) \
+	$(SANITIZER_EXEC_CFLAGS) \
 	-DNETWORKMANAGER_COMPILATION_TEST \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT
 
@@ -1175,6 +1200,7 @@ src_cppflags = \
 	$(LIBAUDIT_CFLAGS) \
 	$(SYSTEMD_LOGIN_CFLAGS) \
 	$(SYSTEMD_JOURNAL_CFLAGS) \
+	$(SANITIZER_EXEC_CFLAGS) \
 	\
 	$(NULL)
 
@@ -1640,6 +1666,7 @@ check_ltlibraries += src/libNetworkManagerTest.la
 
 src_tests_cppflags = \
 	$(src_cppflags) \
+	$(SANITIZER_EXEC_CFLAGS) \
 	-DNETWORKMANAGER_COMPILATION_TEST
 
 if REQUIRE_ROOT_TESTS
@@ -1688,7 +1715,8 @@ src_NetworkManager_LDADD = \
 
 src_NetworkManager_LDFLAGS = \
 	-rdynamic \
-	-Wl,--version-script="src/NetworkManager.ver"
+	-Wl,--version-script="src/NetworkManager.ver" \
+	$(SANITIZER_EXEC_LDFLAGS)
 
 $(src_NetworkManager_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
@@ -1709,7 +1737,8 @@ src_nm_iface_helper_LDADD = \
 	$(DL_LIBS)
 
 src_nm_iface_helper_LDFLAGS = \
-	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
+	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
+	$(SANITIZER_EXEC_LDFLAGS)
 
 $(src_nm_iface_helper_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
@@ -1767,6 +1796,9 @@ src_dhcp_tests_test_dhcp_utils_CPPFLAGS = $(src_dhcp_tests_cppflags)
 
 src_dhcp_tests_test_dhcp_dhclient_LDADD = $(src_dhcp_tests_ldadd)
 src_dhcp_tests_test_dhcp_utils_LDADD = $(src_dhcp_tests_ldadd)
+
+src_dhcp_tests_test_dhcp_dhclient_LDFLAGS = $(src_tests_ldflags)
+src_dhcp_tests_test_dhcp_utils_LDFLAGS = $(src_tests_ldflags)
 
 $(src_dhcp_tests_test_dhcp_dhclient_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_dhcp_tests_test_dhcp_utils_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
@@ -1861,7 +1893,8 @@ src_settings_plugins_keyfile_tests_test_keyfile_CPPFLAGS = \
 
 src_settings_plugins_keyfile_tests_test_keyfile_LDFLAGS = \
 	$(GLIB_LIBS) \
-	$(CODE_COVERAGE_LDFLAGS)
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(SANITIZER_EXEC_LDFLAGS)
 
 src_settings_plugins_keyfile_tests_test_keyfile_LDADD = \
 	src/libNetworkManagerTest.la
@@ -1973,7 +2006,8 @@ src_settings_plugins_ibft_tests_test_ibft_CPPFLAGS = \
 
 src_settings_plugins_ibft_tests_test_ibft_LDFLAGS = \
 	$(GLIB_LIBS) \
-	$(CODE_COVERAGE_LDFLAGS)
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(SANITIZER_EXEC_LDFLAGS)
 
 src_settings_plugins_ibft_tests_test_ibft_LDADD = \
 	src/settings/plugins/ibft/libnms-ibft-core.la \
@@ -2024,6 +2058,7 @@ src_settings_plugins_ifcfg_rh_cppflags = \
 	-I$(builddir)/libnm-core \
 	$(GLIB_CFLAGS) \
 	$(NSS_CFLAGS) \
+	$(SANITIZER_EXEC_CFLAGS) \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DSBINDIR=\"$(sbindir)\"
@@ -2080,7 +2115,8 @@ src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_CPPFLAGS = $(src
 
 src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_LDFLAGS = \
 	-module -avoid-version \
-	-Wl,--version-script="$(srcdir)/linker-script-settings.ver"
+	-Wl,--version-script="$(srcdir)/linker-script-settings.ver" \
+	$(SANITIZER_EXEC_LDFLAGS)
 
 src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_LIBADD = \
 	src/settings/plugins/ifcfg-rh/libnms-ifcfg-rh-core.la
@@ -2109,7 +2145,8 @@ src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_CPPFLAGS = \
 
 src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_LDFLAGS = \
 	$(GLIB_LIBS) \
-	$(CODE_COVERAGE_LDFLAGS)
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(SANITIZER_EXEC_LDFLAGS)
 
 src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_LDADD = \
 	src/settings/plugins/ifcfg-rh/libnms-ifcfg-rh-core.la \
@@ -2416,7 +2453,8 @@ src_settings_plugins_ifupdown_tests_test_ifupdown_CPPFLAGS = \
 
 src_settings_plugins_ifupdown_tests_test_ifupdown_LDFLAGS = \
 	$(GLIB_LDFLAGS) \
-	$(CODE_COVERAGE_LDFLAGS)
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(SANITIZER_EXEC_LDFLAGS)
 
 src_settings_plugins_ifupdown_tests_test_ifupdown_LDADD = \
 	src/settings/plugins/ifupdown/libnms-ifupdown-core.la \
@@ -2718,6 +2756,7 @@ src_devices_wifi_tests_test_general_CPPFLAGS = \
 	$(GLIB_CFLAGS)
 
 src_devices_wifi_tests_test_general_LDADD = src/libNetworkManagerTest.la
+src_devices_wifi_tests_test_general_LDFLAGS = $(SANITIZER_EXEC_LDFLAGS)
 
 $(src_devices_wifi_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
@@ -2846,6 +2885,9 @@ src_dnsmasq_tests_test_dnsmasq_utils_CPPFLAGS = \
 src_dnsmasq_tests_test_dnsmasq_utils_LDADD = \
 	src/libNetworkManagerTest.la
 
+src_dnsmasq_tests_test_dnsmasq_utils_LDFLAGS = \
+       $(SANITIZER_EXEC_LDFLAGS)
+
 $(src_dnsmasq_tests_test_dnsmasq_utils_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
@@ -2856,7 +2898,8 @@ EXTRA_DIST += \
 ###############################################################################
 
 src_platform_tests_ldflags = \
-	$(CODE_COVERAGE_LDFLAGS)
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(SANITIZER_EXEC_LDFLAGS)
 
 src_platform_tests_libadd = \
 	src/libNetworkManagerTest.la \
@@ -2951,7 +2994,8 @@ EXTRA_DIST += \
 ###############################################################################
 
 src_devices_tests_ldflags = \
-	$(CODE_COVERAGE_LDFLAGS)
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(SANITIZER_EXEC_LDFLAGS)
 
 check_programs += \
 	src/devices/tests/test-lldp \
@@ -2978,7 +3022,8 @@ EXTRA_DIST += \
 ###############################################################################
 
 src_ndisc_tests_ldflags = \
-	$(CODE_COVERAGE_LDFLAGS)
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(SANITIZER_EXEC_LDFLAGS)
 
 src_ndisc_tests_ldadd = \
 	src/libNetworkManagerTest.la \
@@ -2988,11 +3033,11 @@ check_programs += src/ndisc/tests/test-ndisc-fake
 check_programs_norun += src/ndisc/tests/test-ndisc-linux
 
 src_ndisc_tests_test_ndisc_linux_CPPFLAGS = $(src_tests_cppflags)
-src_ndisc_tests_test_ndisc_linux_LDFLAGS = $(src_ndisc_tests_flags)
+src_ndisc_tests_test_ndisc_linux_LDFLAGS = $(src_ndisc_tests_ldflags)
 src_ndisc_tests_test_ndisc_linux_LDADD = $(src_ndisc_tests_ldadd)
 
 src_ndisc_tests_test_ndisc_fake_CPPFLAGS = $(src_tests_cppflags)
-src_ndisc_tests_test_ndisc_fake_LDFLAGS = $(src_ndisc_tests_flags)
+src_ndisc_tests_test_ndisc_fake_LDFLAGS = $(src_ndisc_tests_ldflags)
 src_ndisc_tests_test_ndisc_fake_LDADD = $(src_ndisc_tests_ldadd)
 
 $(src_ndisc_tests_test_ndisc_linux_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
@@ -3013,6 +3058,9 @@ src_supplicant_tests_test_supplicant_config_CPPFLAGS = \
 
 src_supplicant_tests_test_supplicant_config_LDADD = \
 	src/libNetworkManagerTest.la
+
+src_supplicant_tests_test_supplicant_config_LDFLAGS = \
+	$(SANITIZER_EXEC_LDFLAGS)
 
 $(src_supplicant_tests_test_supplicant_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
@@ -3040,6 +3088,9 @@ src_tests_config_test_config_CPPFLAGS = \
 src_tests_config_test_config_LDADD = \
 	src/libNetworkManagerTest.la
 
+src_tests_config_test_config_LDFLAGS = \
+	$(SANITIZER_EXEC_LDFLAGS)
+
 $(src_tests_config_test_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
@@ -3058,7 +3109,8 @@ EXTRA_DIST += \
 ###############################################################################
 
 src_tests_ldflags = \
-	$(CODE_COVERAGE_LDFLAGS)
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(SANITIZER_EXEC_LDFLAGS)
 
 src_tests_ldadd = \
 	src/libNetworkManagerTest.la
@@ -3251,7 +3303,11 @@ dispatcher_tests_test_dispatcher_envp_CPPFLAGS = \
 	-DSRCDIR=\"$(abs_srcdir)/dispatcher/tests\" \
 	-DNETWORKMANAGER_COMPILATION_TEST \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
-	$(GLIB_CFLAGS)
+	$(GLIB_CFLAGS) \
+	$(SANITIZER_EXEC_CFLAGS)
+
+dispatcher_tests_test_dispatcher_envp_LDFLAGS = \
+	$(SANITIZER_EXEC_LDFLAGS)
 
 dispatcher_tests_test_dispatcher_envp_LDADD = \
 	libnm/libnm.la \
@@ -3413,7 +3469,11 @@ clients_common_tests_test_general_CPPFLAGS = \
 	-I$(srcdir)/clients/common/tests \
 	$(clients_cppflags) \
 	-DNETWORKMANAGER_COMPILATION_TEST \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
+	$(SANITIZER_EXEC_CFLAGS)
+
+clients_common_tests_test_general_LDFLAGS = \
+	$(SANITIZER_EXEC_LDFLAGS)
 
 clients_common_tests_test_general_LDADD = \
 	libnm/libnm.la \
@@ -3455,6 +3515,7 @@ clients_cli_nmcli_SOURCES = \
 clients_cli_nmcli_CPPFLAGS = \
 	-I$(srcdir)/clients/cli \
 	$(clients_cppflags) \
+	$(SANITIZER_EXEC_CFLAGS) \
 	-DG_LOG_DOMAIN=\""nmcli"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
 	-DNMCLI_LOCALEDIR=\"$(datadir)/locale\"
@@ -3475,7 +3536,8 @@ clients_cli_nmcli_LDADD += $(POLKIT_LIBS)
 endif
 
 clients_cli_nmcli_LDFLAGS = \
-	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
+	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
+	$(SANITIZER_EXEC_LDFLAGS)
 
 $(clients_cli_nmcli_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
@@ -3563,6 +3625,7 @@ clients_tui_newt_libnmt_newt_a_CPPFLAGS = \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
 	$(GLIB_CFLAGS) \
 	$(NEWT_CFLAGS) \
+	$(SANITIZER_EXEC_CFLAGS) \
 	$(NULL)
 
 bin_PROGRAMS += clients/tui/nmtui
@@ -3661,7 +3724,8 @@ clients_tui_nmtui_CPPFLAGS = \
 	-DLOCALEDIR=\""$(localedir)"\"
 
 clients_tui_nmtui_LDFLAGS = \
-	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
+	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
+	$(SANITIZER_EXEC_LDFLAGS)
 
 clients_tui_nmtui_LDADD = \
 	libnm/libnm.la \
@@ -4005,12 +4069,16 @@ libnm_util_tests_cppflags = \
 	-DBUILD_DIR=\"$(abs_builddir)/libnm-util/tests\" \
 	-DTEST_CERT_DIR=\"$(abs_srcdir)/libnm-core/tests/certs\" \
 	-DNETWORKMANAGER_COMPILATION_TEST \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_UTIL
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_UTIL \
+	$(SANITIZER_EXEC_CFLAGS)
 
 libnm_util_tests_ldadd = \
 	libnm-util/libnm-util.la \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS)
+
+libnm_util_tests_ldflags = \
+	$(SANITIZER_EXEC_LDFLAGS)
 
 check_programs += \
 	libnm-util/tests/test-settings-defaults \
@@ -4025,29 +4093,36 @@ check_programs_norun += \
 
 libnm_util_tests_test_settings_defaults_CPPFLAGS = $(libnm_util_tests_cppflags)
 libnm_util_tests_test_settings_defaults_LDADD = $(libnm_util_tests_ldadd)
+libnm_util_tests_test_settings_defaults_LDFLAGS = $(libnm_util_tests_ldflags)
 
 libnm_util_tests_test_crypto_CPPFLAGS = $(libnm_util_tests_cppflags)
 libnm_util_tests_test_crypto_LDADD = \
 	libnm-util/libtest-crypto.la \
 	$(libnm_util_tests_ldadd)
+libnm_util_tests_test_crypto_LDFLAGS = $(libnm_util_tests_ldflags)
 
 libnm_util_tests_test_secrets_CPPFLAGS = $(libnm_util_tests_cppflags)
 libnm_util_tests_test_secrets_LDADD = $(libnm_util_tests_ldadd)
+libnm_util_tests_test_secrets_LDFLAGS = $(libnm_util_tests_ldflags)
 
 libnm_util_tests_test_general_DEPENDENCIES = libnm-util/tests/test-libnm-linking
 libnm_util_tests_test_general_CPPFLAGS = $(libnm_util_tests_cppflags)
 libnm_util_tests_test_general_LDADD = $(libnm_util_tests_ldadd)
+libnm_util_tests_test_general_LDFLAGS = $(libnm_util_tests_ldflags)
 
 libnm_util_tests_test_setting_8021x_CPPFLAGS = $(libnm_util_tests_cppflags)
 libnm_util_tests_test_setting_8021x_LDADD = $(libnm_util_tests_ldadd)
+libnm_util_tests_test_setting_8021x_LDFLAGS = $(libnm_util_tests_ldflags)
 
 libnm_util_tests_test_setting_dcb_CPPFLAGS = $(libnm_util_tests_cppflags)
 libnm_util_tests_test_setting_dcb_LDADD = $(libnm_util_tests_ldadd)
+libnm_util_tests_test_setting_dcb_LDFLAGS = $(libnm_util_tests_ldflags)
 
 libnm_util_tests_test_libnm_linking_CPPFLAGS = $(libnm_util_tests_cppflags)
 libnm_util_tests_test_libnm_linking_LDADD = \
 	libnm/libnm.la \
 	$(libnm_util_tests_ldadd)
+libnm_util_tests_test_libnm_linking_LDFLAGS = $(libnm_util_tests_ldflags)
 
 $(libnm_util_tests_test_settings_defaults_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(libnm_util_tests_test_crypto_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
