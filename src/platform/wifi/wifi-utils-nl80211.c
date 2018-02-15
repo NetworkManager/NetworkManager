@@ -108,7 +108,7 @@ genl_ctrl_resolve (struct nl_sock *sk, const char *name)
 	if (rc < 0)
 		goto out_msg_free;
 
-	rc = nl_send_auto_complete (sk, msg);
+	rc = nl_send_auto (sk, msg);
 	if (rc < 0)
 		goto out_msg_free;
 
@@ -219,7 +219,7 @@ _nl80211_send_and_recv (struct nl_sock *nl_sock,
 		goto out;
 	}
 
-	err = nl_send_auto_complete (nl_sock, msg);
+	err = nl_send_auto (nl_sock, msg);
 	if (err < 0)
 		goto out;
 

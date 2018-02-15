@@ -1185,7 +1185,6 @@ src_cppflags = \
 	-DDHCPCD_PATH=\"$(DHCPCD_PATH)\" \
 	\
 	$(LIBUDEV_CFLAGS) \
-	$(LIBNL_CFLAGS) \
 	$(LIBNDP_CFLAGS) \
 	$(LIBPSL_CFLAGS) \
 	$(LIBCURL_CFLAGS) \
@@ -1643,7 +1642,6 @@ src_libNetworkManager_la_LIBADD = \
 	src/libsystemd-nm.la \
 	$(GLIB_LIBS) \
 	$(LIBUDEV_LIBS) \
-	$(LIBNL_LIBS) \
 	$(SYSTEMD_LOGIN_LIBS) \
 	$(LIBNDP_LIBS) \
 	$(DL_LIBS) \
@@ -1684,8 +1682,7 @@ src_libNetworkManagerTest_la_LIBADD = \
 	src/libNetworkManager.la \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(GLIB_LIBS) \
-	$(LIBUDEV_LIBS) \
-	$(LIBNL_LIBS)
+	$(LIBUDEV_LIBS)
 
 $(src_libNetworkManagerTest_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
@@ -1726,7 +1723,6 @@ src_nm_iface_helper_LDADD = \
 	src/libsystemd-nm.la \
 	$(GLIB_LIBS) \
 	$(LIBUDEV_LIBS) \
-	$(LIBNL_LIBS) \
 	$(LIBNDP_LIBS) \
 	$(DL_LIBS)
 
@@ -2898,8 +2894,7 @@ src_platform_tests_ldflags = \
 src_platform_tests_libadd = \
 	src/libNetworkManagerTest.la \
 	$(GLIB_LIBS) \
-	$(LIBUDEV_LIBS) \
-	$(LIBNL_LIBS)
+	$(LIBUDEV_LIBS)
 
 check_programs_norun += \
 	src/platform/tests/monitor

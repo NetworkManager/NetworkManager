@@ -21,6 +21,7 @@
 
 #include "nm-linux-platform.h"
 
+#include <poll.h>
 #include <endian.h>
 #include <errno.h>
 #include <unistd.h>
@@ -3951,7 +3952,7 @@ _nlh_seq_next_get (NMLinuxPlatformPrivate *priv)
  * @response_type:
  * @response_out_data:
  *
- * Returns: 0 on success or a negative errno. Beware, it's an errno, not nlerror.
+ * Returns: 0 on success or a negative errno.
  */
 static int
 _nl_send_nlmsghdr (NMPlatform *platform,
@@ -6514,6 +6515,9 @@ continue_reading:
 		n = -_NLE_MSG_TRUNC;
 		break;
 	}
+	case -ENOBUFS:
+		n = -_NLE_NM_NOBUFS;
+		break;
 	case -NLE_NOMEM:
 		if (errno == ENOBUFS) {
 			/* we are very much interested in a overrun of the receive buffer.

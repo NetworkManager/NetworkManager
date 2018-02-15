@@ -72,7 +72,6 @@ sources = files(
 )
 
 deps = [
-  libnl_dep,
   libnmdbus_dep,
   libsystemd_dep,
   libudev_dep,
@@ -170,7 +169,6 @@ sources = files(
 deps = [
   dl_dep,
   libndp_dep,
-  libnl_dep,
   # FIXME: Some files use introspection/dbus* headers, so
   #        this dependency might be needed
   #libnmdbus_dep,
@@ -252,7 +250,6 @@ network_manager = executable(
 deps = [
   dl_dep,
   libndp_dep,
-  libnl_dep,
   libudev_dep,
   nm_core_dep
 ]
@@ -279,7 +276,6 @@ if enable_tests
   )
 
   deps = [
-    libnl_dep,
     libudev_dep,
     nm_core_dep
   ]

@@ -21,44 +21,370 @@
 #ifndef __NM_NETLINK_H__
 #define __NM_NETLINK_H__
 
-#include <netlink/msg.h>
-#include <netlink/attr.h>
+#include <linux/netlink.h>
+#include <linux/rtnetlink.h>
+#include <linux/genetlink.h>
 
 /*****************************************************************************/
 
+#define NLE_AGAIN               EAGAIN
+#define NLE_NOMEM               ENOMEM
+#define NLE_BAD_SOCK            EBADF
+#define NLE_INVAL               EINVAL
+#define NLE_RANGE               ERANGE
+#define NLE_OBJ_NOTFOUND        ENOENT
+#define NLE_NOADDR              EADDRNOTAVAIL
+#define NLE_MSG_OVERFLOW        EOVERFLOW
+#define NLE_AF_NOSUPPORT        EAFNOSUPPORT
+
+#define NLE_SEQ_MISMATCH        10016
+#define NLE_MSG_TRUNC           10018
+#define NLE_MSG_TOOSHORT        10021
+#define NLE_DUMP_INTR           10033
+#define NLE_ATTRSIZE            10034
+#define NLE_BUG                 19000
+
+static inline int
+nl_errno (int error)
+{
+	/* the error codes from our netlink implementation are plain errno.
+	 * However, often we encode them as negative values.
+	 *
+	 * A negative errno is the same as it's positive counterpart.
+	 *
+	 * This function normalizes the error code and always returns a
+	 * non-negative value. */
+	return error >= 0
+	       ? error
+	       : ((error == G_MININT) ? NLE_BUG : -errno);
+}
+
+static inline const char *
+nl_geterror (int error)
+{
+	return g_strerror (nl_errno (error));
+}
+
+/*****************************************************************************/
+
+/* Basic attribute data types */
+enum {
+	NLA_UNSPEC,     /* Unspecified type, binary data chunk */
+	NLA_U8,         /* 8 bit integer */
+	NLA_U16,        /* 16 bit integer */
+	NLA_U32,        /* 32 bit integer */
+	NLA_U64,        /* 64 bit integer */
+	NLA_STRING,     /* NUL terminated character string */
+	NLA_FLAG,       /* Flag */
+	NLA_MSECS,      /* Micro seconds (64bit) */
+	NLA_NESTED,     /* Nested attributes */
+	NLA_NESTED_COMPAT,
+	NLA_NUL_STRING,
+	NLA_BINARY,
+	NLA_S8,
+	NLA_S16,
+	NLA_S32,
+	NLA_S64,
+	__NLA_TYPE_MAX,
+};
+
+#define NLA_TYPE_MAX (__NLA_TYPE_MAX - 1)
+
+struct nl_msg;
+
+/*****************************************************************************/
+
+const char *nl_nlmsgtype2str (int type, char *buf, size_t size);
+
+const char *nl_nlmsg_flags2str (int flags, char *buf, size_t len);
+
 const char *nl_nlmsghdr_to_str (const struct nlmsghdr *hdr, char *buf, gsize len);
 
-/*****************************************************************************
- * libnl3 compat code
- *****************************************************************************/
+/*****************************************************************************/
+
+struct nla_policy {
+	/* Type of attribute or NLA_UNSPEC */
+	uint16_t type;
+
+	/* Minimal length of payload required */
+	uint16_t minlen;
+
+	/* Maximal length of payload allowed */
+	uint16_t maxlen;
+};
+
+/*****************************************************************************/
 
 static inline int
-_nl_nla_parse (struct nlattr *tb[], int maxtype, struct nlattr *head, int len,
-               const struct nla_policy *policy)
+nla_attr_size(int payload)
 {
-	return nla_parse (tb, maxtype, head, len, (struct nla_policy *) policy);
+	nm_assert (payload >= 0);
+
+	return NLA_HDRLEN + payload;
 }
-#define nla_parse(...) _nl_nla_parse(__VA_ARGS__)
 
 static inline int
-_nl_nlmsg_parse (struct nlmsghdr *nlh, int hdrlen, struct nlattr *tb[],
-                 int maxtype, const struct nla_policy *policy)
+nla_total_size (int payload)
 {
-	return nlmsg_parse (nlh, hdrlen, tb, maxtype, (struct nla_policy *) policy);
+	return NLA_ALIGN (nla_attr_size (payload));
 }
-#define nlmsg_parse(...) _nl_nlmsg_parse(__VA_ARGS__)
 
 static inline int
-_nl_nla_parse_nested (struct nlattr *tb[], int maxtype, struct nlattr *nla,
-                      const struct nla_policy *policy)
+nla_padlen (int payload)
 {
-	return nla_parse_nested (tb, maxtype, nla, (struct nla_policy *) policy);
+	return nla_total_size(payload) - nla_attr_size(payload);
 }
-#define nla_parse_nested(...) _nl_nla_parse_nested(__VA_ARGS__)
 
-/*****************************************************************************
- *  Reimplementations/copied from libnl3/genl
- *****************************************************************************/
+struct nlattr *nla_reserve (struct nl_msg *msg, int attrtype, int attrlen);
+
+static inline int
+nla_len (const struct nlattr *nla)
+{
+	return nla->nla_len - NLA_HDRLEN;
+}
+
+static inline int
+nla_type (const struct nlattr *nla)
+{
+	return nla->nla_type & NLA_TYPE_MASK;
+}
+
+static inline void *
+nla_data (const struct nlattr *nla)
+{
+	nm_assert (nla);
+	return (char *) nla + NLA_HDRLEN;
+}
+
+static inline uint8_t
+nla_get_u8 (const struct nlattr *nla)
+{
+	return *(const uint8_t *) nla_data (nla);
+}
+
+static inline uint16_t
+nla_get_u16 (const struct nlattr *nla)
+{
+	return *(const uint16_t *) nla_data (nla);
+}
+
+static inline uint32_t
+nla_get_u32(const struct nlattr *nla)
+{
+	return *(const uint32_t *) nla_data (nla);
+}
+
+uint64_t nla_get_u64 (const struct nlattr *nla);
+
+static inline char *
+nla_get_string (const struct nlattr *nla)
+{
+	return (char *) nla_data (nla);
+}
+
+size_t nla_strlcpy (char *dst, const struct nlattr *nla, size_t dstsize);
+
+int nla_memcpy (void *dest, const struct nlattr *src, int count);
+
+int nla_put (struct nl_msg *msg, int attrtype, int datalen, const void *data);
+
+static inline int
+nla_put_string (struct nl_msg *msg, int attrtype, const char *str)
+{
+	return nla_put(msg, attrtype, strlen(str) + 1, str);
+}
+
+#define NLA_PUT(msg, attrtype, attrlen, data) \
+	do { \
+		if (nla_put(msg, attrtype, attrlen, data) < 0) \
+			goto nla_put_failure; \
+	} while(0)
+
+#define NLA_PUT_TYPE(msg, type, attrtype, value) \
+	do { \
+		type __tmp = value; \
+		NLA_PUT(msg, attrtype, sizeof(type), &__tmp); \
+	} while(0)
+
+#define NLA_PUT_U8(msg, attrtype, value) \
+	NLA_PUT_TYPE(msg, uint8_t, attrtype, value)
+
+#define NLA_PUT_U16(msg, attrtype, value) \
+	NLA_PUT_TYPE(msg, uint16_t, attrtype, value)
+
+#define NLA_PUT_U32(msg, attrtype, value) \
+	NLA_PUT_TYPE(msg, uint32_t, attrtype, value)
+
+#define NLA_PUT_U64(msg, attrtype, value) \
+	NLA_PUT_TYPE(msg, uint64_t, attrtype, value)
+
+#define NLA_PUT_STRING(msg, attrtype, value) \
+	NLA_PUT(msg, attrtype, (int) strlen(value) + 1, value)
+
+struct nlattr *nla_find (const struct nlattr *head, int len, int attrtype);
+
+static inline int
+nla_ok (const struct nlattr *nla, int remaining)
+{
+	return remaining >= sizeof(*nla) &&
+	       nla->nla_len >= sizeof(*nla) &&
+	       nla->nla_len <= remaining;
+}
+
+static inline struct nlattr *
+nla_next(const struct nlattr *nla, int *remaining)
+{
+	int totlen = NLA_ALIGN(nla->nla_len);
+
+	*remaining -= totlen;
+	return (struct nlattr *) ((char *) nla + totlen);
+}
+
+#define nla_for_each_attr(pos, head, len, rem) \
+	for (pos = head, rem = len; \
+	     nla_ok(pos, rem); \
+	     pos = nla_next(pos, &(rem)))
+
+#define nla_for_each_nested(pos, nla, rem) \
+	for (pos = (struct nlattr *) nla_data(nla), rem = nla_len(nla); \
+	     nla_ok(pos, rem); \
+	     pos = nla_next(pos, &(rem)))
+
+void nla_nest_cancel (struct nl_msg *msg, const struct nlattr *attr);
+struct nlattr *nla_nest_start (struct nl_msg *msg, int attrtype);
+int nla_nest_end (struct nl_msg *msg, struct nlattr *start);
+
+int nla_parse (struct nlattr *tb[], int maxtype, struct nlattr *head, int len,
+               const struct nla_policy *policy);
+
+static inline int
+nla_parse_nested (struct nlattr *tb[], int maxtype, struct nlattr *nla,
+                  const struct nla_policy *policy)
+{
+	return nla_parse (tb, maxtype, nla_data(nla), nla_len(nla), policy);
+}
+
+/*****************************************************************************/
+
+struct nl_msg *nlmsg_alloc (void);
+
+struct nl_msg *nlmsg_alloc_size (size_t max);
+
+struct nl_msg *nlmsg_inherit (struct nlmsghdr *hdr);
+
+struct nl_msg *nlmsg_convert (struct nlmsghdr *hdr);
+
+struct nl_msg *nlmsg_alloc_simple (int nlmsgtype, int flags);
+
+void *nlmsg_reserve (struct nl_msg *n, size_t len, int pad);
+
+int nlmsg_append (struct nl_msg *n, void *data, size_t len, int pad);
+
+void nlmsg_free (struct nl_msg *msg);
+
+static inline int
+nlmsg_size (int payload)
+{
+	nm_assert (payload >= 0 && payload < G_MAXINT - NLMSG_HDRLEN - 4);
+	return NLMSG_HDRLEN + payload;
+}
+
+static inline int
+nlmsg_total_size (int payload)
+{
+	return NLMSG_ALIGN (nlmsg_size (payload));
+}
+
+static inline int
+nlmsg_ok (const struct nlmsghdr *nlh, int remaining)
+{
+	return (remaining >= (int)sizeof(struct nlmsghdr) &&
+	       nlh->nlmsg_len >= sizeof(struct nlmsghdr) &&
+	       nlh->nlmsg_len <= remaining);
+}
+
+static inline struct nlmsghdr *
+nlmsg_next (struct nlmsghdr *nlh, int *remaining)
+{
+	int totlen = NLMSG_ALIGN(nlh->nlmsg_len);
+
+	*remaining -= totlen;
+
+	return (struct nlmsghdr *) ((unsigned char *) nlh + totlen);
+}
+
+int nlmsg_get_proto (struct nl_msg *msg);
+void nlmsg_set_proto (struct nl_msg *msg, int protocol);
+
+void nlmsg_set_src (struct nl_msg *msg, struct sockaddr_nl *addr);
+
+struct ucred *nlmsg_get_creds (struct nl_msg *msg);
+void nlmsg_set_creds (struct nl_msg *msg, struct ucred *creds);
+
+static inline void
+_nm_auto_nl_msg_cleanup (struct nl_msg **ptr)
+{
+	nlmsg_free (*ptr);
+}
+#define nm_auto_nlmsg nm_auto(_nm_auto_nl_msg_cleanup)
+
+static inline void *
+nlmsg_data (const struct nlmsghdr *nlh)
+{
+	return (unsigned char *) nlh + NLMSG_HDRLEN;
+}
+
+static inline void *
+nlmsg_tail (const struct nlmsghdr *nlh)
+{
+	return (unsigned char *) nlh + NLMSG_ALIGN(nlh->nlmsg_len);
+}
+
+struct nlmsghdr *nlmsg_hdr (struct nl_msg *n);
+
+static inline int
+nlmsg_valid_hdr(const struct nlmsghdr *nlh, int hdrlen)
+{
+	if (nlh->nlmsg_len < nlmsg_size (hdrlen))
+		return 0;
+
+	return 1;
+}
+
+static inline int
+nlmsg_datalen (const struct nlmsghdr *nlh)
+{
+	return nlh->nlmsg_len - NLMSG_HDRLEN;
+}
+
+static inline int
+nlmsg_attrlen (const struct nlmsghdr *nlh, int hdrlen)
+{
+	return NM_MAX ((int) (nlmsg_datalen (nlh) - NLMSG_ALIGN (hdrlen)), 0);
+}
+
+static inline struct nlattr *
+nlmsg_attrdata (const struct nlmsghdr *nlh, int hdrlen)
+{
+	unsigned char *data = nlmsg_data(nlh);
+	return (struct nlattr *) (data + NLMSG_ALIGN(hdrlen));
+}
+
+static inline struct nlattr *
+nlmsg_find_attr (struct nlmsghdr *nlh, int hdrlen, int attrtype)
+{
+	return nla_find (nlmsg_attrdata (nlh, hdrlen),
+	                 nlmsg_attrlen (nlh, hdrlen),
+	                 attrtype);
+}
+
+int nlmsg_parse (struct nlmsghdr *nlh, int hdrlen, struct nlattr *tb[],
+                 int maxtype, const struct nla_policy *policy);
+
+struct nlmsghdr *nlmsg_put (struct nl_msg *n, uint32_t pid, uint32_t seq,
+                            int type, int payload, int flags);
+
+/*****************************************************************************/
 
 void *genlmsg_put (struct nl_msg *msg, uint32_t port, uint32_t seq, int family,
                    int hdrlen, int flags, uint8_t cmd, uint8_t version);
@@ -73,16 +399,132 @@ int genlmsg_valid_hdr (struct nlmsghdr *nlh, int hdrlen);
 int genlmsg_parse (struct nlmsghdr *nlh, int hdrlen, struct nlattr *tb[],
                    int maxtype, const struct nla_policy *policy);
 
-/*****************************************************************************
- * helpers
- *****************************************************************************/
+/*****************************************************************************/
 
-static inline void
-_nm_auto_nl_msg_cleanup (struct nl_msg **ptr)
-{
-	nlmsg_free (*ptr);
-}
-#define nm_auto_nlmsg nm_auto(_nm_auto_nl_msg_cleanup)
+#define NL_AUTO_PORT 0
+#define NL_AUTO_SEQ  0
+
+struct nl_sock;
+
+struct nl_sock *nl_socket_alloc (void);
+
+void nl_socket_free (struct nl_sock *sk);
+
+int nl_socket_get_fd (const struct nl_sock *sk);
+
+struct sockaddr_nl *nlmsg_get_dst (struct nl_msg *msg);
+
+size_t nl_socket_get_msg_buf_size (struct nl_sock *sk);
+int nl_socket_set_msg_buf_size (struct nl_sock *sk, size_t bufsize);
+
+int nl_socket_set_buffer_size (struct nl_sock *sk, int rxbuf, int txbuf);
+
+int nl_socket_set_passcred (struct nl_sock *sk, int state);
+
+int nl_socket_set_nonblocking (const struct nl_sock *sk);
+
+void nl_socket_disable_msg_peek (struct nl_sock *sk);
+
+uint32_t nl_socket_get_local_port (const struct nl_sock *sk);
+
+int nl_socket_add_memberships (struct nl_sock *sk, int group, ...);
+
+int nl_connect (struct nl_sock *sk, int protocol);
+
+int nl_recv (struct nl_sock *sk, struct sockaddr_nl *nla,
+             unsigned char **buf, struct ucred **creds);
+
+int nl_send (struct nl_sock *sk, struct nl_msg *msg);
+
+int nl_send_auto (struct nl_sock *sk, struct nl_msg *msg);
+
+/*****************************************************************************/
+
+struct nl_cb;
+
+enum nl_cb_action {
+	/* Proceed with wathever would come next */
+	NL_OK,
+	/* Skip this message */
+	NL_SKIP,
+	/* Stop parsing altogether and discard remaining messages */
+	NL_STOP,
+};
+
+enum nl_cb_kind {
+	/* Default handlers (quiet) */
+	NL_CB_DEFAULT,
+	/* Verbose default handlers (error messages printed) */
+	NL_CB_VERBOSE,
+	/* Debug handlers for debugging */
+	NL_CB_DEBUG,
+	/* Customized handler specified by the user */
+	NL_CB_CUSTOM,
+	__NL_CB_KIND_MAX,
+};
+
+#define NL_CB_KIND_MAX (__NL_CB_KIND_MAX - 1)
+
+enum nl_cb_type {
+	/* Message is valid */
+	NL_CB_VALID,
+	/* Last message in a series of multi part messages received */
+	NL_CB_FINISH,
+	/* Report received that data was lost */
+	NL_CB_OVERRUN,
+	/* Message wants to be skipped */
+	NL_CB_SKIPPED,
+	/* Message is an acknowledge */
+	NL_CB_ACK,
+	/* Called for every message received */
+	NL_CB_MSG_IN,
+	/* Called for every message sent out except for nl_sendto() */
+	NL_CB_MSG_OUT,
+	/* Message is malformed and invalid */
+	NL_CB_INVALID,
+	/* Called instead of internal sequence number checking */
+	NL_CB_SEQ_CHECK,
+	/* Sending of an acknowledge message has been requested */
+	NL_CB_SEND_ACK,
+	/* Flag NLM_F_DUMP_INTR is set in message */
+	NL_CB_DUMP_INTR,
+	__NL_CB_TYPE_MAX,
+};
+
+#define NL_CB_TYPE_MAX (__NL_CB_TYPE_MAX - 1)
+
+typedef int (*nl_recvmsg_msg_cb_t) (struct nl_msg *msg, void *arg);
+
+typedef int (*nl_recvmsg_err_cb_t) (struct sockaddr_nl *nla,
+                                    struct nlmsgerr *nlerr, void *arg);
+
+struct nl_cb *nl_cb_alloc (enum nl_cb_kind kind);
+
+struct nl_cb *nl_cb_clone (struct nl_cb *orig);
+
+struct nl_cb *nl_cb_get (struct nl_cb *cb);
+
+void nl_cb_put (struct nl_cb *cb);
+
+int nl_cb_set (struct nl_cb *cb, enum nl_cb_type type, enum nl_cb_kind kind,
+               nl_recvmsg_msg_cb_t func, void *arg);
+
+int nl_cb_err (struct nl_cb *cb, enum nl_cb_kind kind,
+               nl_recvmsg_err_cb_t func, void *arg);
+
+struct nl_cb *nl_socket_get_cb (const struct nl_sock *sk);
+
+int nl_sendmsg (struct nl_sock *sk, struct nl_msg *msg, struct msghdr *hdr);
+
+int nl_send_iovec (struct nl_sock *sk, struct nl_msg *msg, struct iovec *iov, unsigned iovlen);
+
+void nl_complete_msg (struct nl_sock *sk, struct nl_msg *msg);
+
+int nl_recvmsgs_report (struct nl_sock *sk, struct nl_cb *cb);
+
+int nl_recvmsgs (struct nl_sock *sk, struct nl_cb *cb);
+
+int nl_wait_for_ack (struct nl_sock *sk);
 
 /*****************************************************************************/
 

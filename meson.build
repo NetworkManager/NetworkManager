@@ -184,9 +184,6 @@ libudev_dep = dependency('libudev', version: '>= 175')
 dbus_dep = dependency('dbus-1', version: '>= 1.1')
 libndp_dep = dependency('libndp')
 
-# libnl support for the linux platform
-libnl_dep = dependency('libnl-3.0', version: '>= 3.2.8', required: false)
-
 jansson_dep = dependency('jansson', version: '>= 2.5', required: false)
 config_h.set10('WITH_JANSSON', jansson_dep.found())
 

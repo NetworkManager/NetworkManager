@@ -32,7 +32,7 @@ BUILD_PACKAGES="qemu febootstrap mock rpmdevtools"
 ARCH=i386
 ROOT="${ROOT:-"fedora-20-$ARCH"}"
 TREE="/var/lib/mock/$ROOT/root"
-PACKAGES="kernel passwd git autoconf automake libtool intltool gtk-doc libnl3-devel
+PACKAGES="kernel passwd git autoconf automake libtool intltool gtk-doc
     dbus-glib-devel libuuid-devel nss-devel ppp-devel newt-devel libndp-devel
     readline-devel
     gobject-introspection-devel
