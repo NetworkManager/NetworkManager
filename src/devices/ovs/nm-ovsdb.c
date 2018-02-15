@@ -102,7 +102,7 @@ NM_DEFINE_SINGLETON_GETTER (NMOvsdb, nm_ovsdb_get, NM_TYPE_OVSDB);
 /*****************************************************************************/
 
 static void ovsdb_try_connect (NMOvsdb *self);
-static void ovsdb_disconnect (NMOvsdb *self);
+static void ovsdb_disconnect (NMOvsdb *self, gboolean is_disposing);
 static void ovsdb_read (NMOvsdb *self);
 static void ovsdb_write (NMOvsdb *self);
 static void ovsdb_next_command (NMOvsdb *self);
@@ -1086,7 +1086,7 @@ ovsdb_got_msg (NMOvsdb *self, json_t *msg)
 	                    "result", &result,
 	                    "error", &error) == -1) {
 		_LOGW ("couldn't grok the message: %s", json_error.text);
-		ovsdb_disconnect (self);
+		ovsdb_disconnect (self, FALSE);
 		return;
 	}
 
@@ -1097,7 +1097,7 @@ ovsdb_got_msg (NMOvsdb *self, json_t *msg)
 		/* It's a method call! */
 		if (!params) {
 			_LOGW ("a method call with no params: '%s'", method);
-			ovsdb_disconnect (self);
+			ovsdb_disconnect (self, FALSE);
 			return;
 		}
 
@@ -1117,13 +1117,13 @@ ovsdb_got_msg (NMOvsdb *self, json_t *msg)
 		/* This is a response to a method call. */
 		if (!priv->calls->len) {
 			_LOGE ("there are no queued calls expecting response %" G_GUINT64_FORMAT, id);
-			ovsdb_disconnect (self);
+			ovsdb_disconnect (self, FALSE);
 			return;
 		}
 		call = &g_array_index (priv->calls, OvsdbMethodCall, 0);
 		if (call->id != id) {
 			_LOGE ("expected a response to call %" G_GUINT64_FORMAT ", not %" G_GUINT64_FORMAT, call->id, id);
-			ovsdb_disconnect (self);
+			ovsdb_disconnect (self, FALSE);
 			return;
 		}
 		/* Cool, we found a corresponsing call. Finish it. */
@@ -1202,7 +1202,7 @@ ovsdb_read_cb (GObject *source_object, GAsyncResult *res, gpointer user_data)
 	if (size == -1) {
 		_LOGW ("short read from ovsdb: %s", error->message);
 		g_clear_error (&error);
-		ovsdb_disconnect (self);
+		ovsdb_disconnect (self, FALSE);
 		return;
 	}
 
@@ -1250,7 +1250,7 @@ ovsdb_write_cb (GObject *source_object, GAsyncResult *res, gpointer user_data)
 	if (size == -1) {
 		_LOGW ("short write to ovsdb: %s", error->message);
 		g_clear_error (&error);
-		ovsdb_disconnect (self);
+		ovsdb_disconnect (self, FALSE);
 		return;
 	}
 
@@ -1293,7 +1293,7 @@ ovsdb_write (NMOvsdb *self)
  * puts us back in sync.
  */
 static void
-ovsdb_disconnect (NMOvsdb *self)
+ovsdb_disconnect (NMOvsdb *self, gboolean is_disposing)
 {
 	NMOvsdbPrivate *priv = NM_OVSDB_GET_PRIVATE (self);
 	OvsdbMethodCall *call;
@@ -1306,7 +1306,7 @@ ovsdb_disconnect (NMOvsdb *self)
 	while (priv->calls->len) {
 		error = NULL;
 		call = &g_array_index (priv->calls, OvsdbMethodCall, priv->calls->len - 1);
-		g_set_error_literal (&error, G_IO_ERROR, G_IO_ERROR_CANCELLED, "Cancelled");
+		nm_utils_error_set_cancelled (&error, is_disposing, "NMOvsdb");
 
 		callback = call->callback;
 		user_data = call->user_data;
@@ -1326,9 +1326,9 @@ static void
 _monitor_bridges_cb (NMOvsdb *self, json_t *result, GError *error, gpointer user_data)
 {
 	if (error) {
-		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+		if (!nm_utils_error_is_cancelled (error, TRUE)) {
 			_LOGI ("%s", error->message);
-			ovsdb_disconnect (self);
+			ovsdb_disconnect (self, FALSE);
 		}
 
 		g_clear_error (&error);
@@ -1354,7 +1354,7 @@ _client_connect_cb (GObject *source_object, GAsyncResult *res, gpointer user_dat
 		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 			_LOGI ("%s", error->message);
 
-		ovsdb_disconnect (self);
+		ovsdb_disconnect (self, FALSE);
 		g_clear_error (&error);
 		return;
 	}
@@ -1538,7 +1538,7 @@ dispose (GObject *object)
 	NMOvsdb *self = NM_OVSDB (object);
 	NMOvsdbPrivate *priv = NM_OVSDB_GET_PRIVATE (self);
 
-	ovsdb_disconnect (self);
+	ovsdb_disconnect (self, TRUE);
 
 	g_string_free (priv->input, TRUE);
 	priv->input = NULL;
