@@ -1541,10 +1541,12 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * The stable-id is used for generating IPv6 stable private addresses
 	 * with ipv6.addr-gen-mode=stable-privacy. It is also used to seed the
 	 * generated cloned MAC address for ethernet.cloned-mac-address=stable
-	 * and wifi.cloned-mac-address=stable. Note that also the interface name
-	 * of the activating connection and a per-host secret key is included
-	 * into the address generation so that the same stable-id on different
-	 * hosts/devices yields different addresses.
+	 * and wifi.cloned-mac-address=stable. It is also used as DHCP client
+	 * identifier with ipv4.dhcp-client-id=stable.
+	 *
+	 * Note that also the interface name of the activating connection and a
+	 * per-host secret key is included into the address generation so that the
+	 * same stable-id on different hosts/devices yields different addresses.
 	 *
 	 * If the value is unset, an ID unique for the connection is used.
 	 * Specifying a stable-id allows multiple connections to generate the

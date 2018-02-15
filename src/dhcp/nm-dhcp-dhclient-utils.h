@@ -33,11 +33,11 @@ char *nm_dhcp_dhclient_create_config (const char *interface,
                                       const char *orig_contents,
                                       GBytes **out_new_client_id);
 
-char *nm_dhcp_dhclient_escape_duid (const GByteArray *duid);
+char *nm_dhcp_dhclient_escape_duid (GBytes *duid);
 
-GByteArray *nm_dhcp_dhclient_unescape_duid (const char *duid);
+GBytes *nm_dhcp_dhclient_unescape_duid (const char *duid);
 
-GByteArray *nm_dhcp_dhclient_read_duid (const char *leasefile, GError **error);
+GBytes *nm_dhcp_dhclient_read_duid (const char *leasefile, GError **error);
 
 gboolean nm_dhcp_dhclient_save_duid (const char *leasefile,
                                      const char *escaped_duid,

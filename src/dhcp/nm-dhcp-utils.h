@@ -39,7 +39,7 @@ NMIP6Config *nm_dhcp_utils_ip6_config_from_options (struct _NMDedupMultiIndex *m
 
 NMPlatformIP6Address nm_dhcp_utils_ip6_prefix_from_options (GHashTable *options);
 
-char *       nm_dhcp_utils_duid_to_string          (const GByteArray *duid);
+char *nm_dhcp_utils_duid_to_string (GBytes *duid);
 
 GBytes *     nm_dhcp_utils_client_id_string_to_bytes (const char *client_id);
 

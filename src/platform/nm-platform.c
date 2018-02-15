@@ -1340,30 +1340,26 @@ gconstpointer
 nm_platform_link_get_address (NMPlatform *self, int ifindex, size_t *length)
 {
 	const NMPlatformLink *pllink;
-	gconstpointer a = NULL;
-	guint8 l = 0;
 
 	_CHECK_SELF (self, klass, NULL);
-
-	if (length)
-		*length = 0;
 
 	g_return_val_if_fail (ifindex > 0, NULL);
 
 	pllink = nm_platform_link_get (self, ifindex);
-	if (pllink && pllink->addr.len > 0) {
-		if (pllink->addr.len > NM_UTILS_HWADDR_LEN_MAX) {
-			if (length)
-				*length = 0;
-			g_return_val_if_reached (NULL);
-		}
-		a = pllink->addr.data;
-		l = pllink->addr.len;
+
+	if (   !pllink
+	    || pllink->addr.len <= 0) {
+		NM_SET_OUT (length, 0);
+		return NULL;
 	}
 
-	if (length)
-		*length = l;
-	return a;
+	if (pllink->addr.len > NM_UTILS_HWADDR_LEN_MAX) {
+		NM_SET_OUT (length, 0);
+		g_return_val_if_reached (NULL);
+	}
+
+	NM_SET_OUT (length, pllink->addr.len);
+	return pllink->addr.data;
 }
 
 /**

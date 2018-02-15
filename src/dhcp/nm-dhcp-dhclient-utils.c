@@ -279,6 +279,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 
 	g_return_val_if_fail (!anycast_addr || nm_utils_hwaddr_valid (anycast_addr, ETH_ALEN), NULL);
 	g_return_val_if_fail (NM_IN_SET (addr_family, AF_INET, AF_INET6), NULL);
+	nm_assert (!out_new_client_id || !*out_new_client_id);
 
 	new_contents = g_string_new (_("# Created by NetworkManager\n"));
 	fqdn_opts = g_ptr_array_sized_new (5);
@@ -332,6 +333,8 @@ nm_dhcp_dhclient_create_config (const char *interface,
 					continue;
 
 				/* Otherwise capture and return the existing client id */
+				if (out_new_client_id)
+					g_clear_pointer (out_new_client_id, g_bytes_unref);
 				NM_SET_OUT (out_new_client_id, read_client_id (p));
 			}
 
@@ -444,14 +447,20 @@ nm_dhcp_dhclient_create_config (const char *interface,
 
 /* Roughly follow what dhclient's quotify_buf() and pretty_escape() functions do */
 char *
-nm_dhcp_dhclient_escape_duid (const GByteArray *duid)
+nm_dhcp_dhclient_escape_duid (GBytes *duid)
 {
 	char *escaped;
-	const guint8 *s = duid->data;
+	const guint8 *s, *s0;
+	gsize len;
 	char *d;
 
-	d = escaped = g_malloc0 ((duid->len * 4) + 1);
-	while (s < (duid->data + duid->len)) {
+	g_return_val_if_fail (duid, NULL);
+
+	s0 = g_bytes_get_data (duid, &len);
+	s = s0;
+
+	d = escaped = g_malloc ((len * 4) + 1);
+	while (s < (s0 + len)) {
 		if (!g_ascii_isprint (*s)) {
 			*d++ = '\\';
 			*d++ = '0' + ((*s >> 6) & 0x7);
@@ -465,6 +474,7 @@ nm_dhcp_dhclient_escape_duid (const GByteArray *duid)
 		} else
 			*d++ = *s++;
 	}
+	*d++ = '\0';
 	return escaped;
 }
 
@@ -476,7 +486,7 @@ isoctal (const guint8 *p)
 	        && p[2] >= '0' && p[2] <= '7');
 }
 
-GByteArray *
+GBytes *
 nm_dhcp_dhclient_unescape_duid (const char *duid)
 {
 	GByteArray *unescaped;
@@ -507,7 +517,7 @@ nm_dhcp_dhclient_unescape_duid (const char *duid)
 			g_byte_array_append (unescaped, &p[i], 1);
 	}
 
-	return unescaped;
+	return g_byte_array_free_to_bytes (unescaped);
 
 error:
 	g_byte_array_free (unescaped, TRUE);
@@ -516,10 +526,10 @@ error:
 
 #define DUID_PREFIX "default-duid \""
 
-GByteArray *
+GBytes *
 nm_dhcp_dhclient_read_duid (const char *leasefile, GError **error)
 {
-	GByteArray *duid = NULL;
+	GBytes *duid = NULL;
 	char *contents;
 	char **line, **split, *p, *e;
 

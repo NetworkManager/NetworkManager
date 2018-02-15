@@ -158,12 +158,12 @@ client_start (NMDhcpManager *self,
               NMDedupMultiIndex *multi_idx,
               const char *iface,
               int ifindex,
-              const GByteArray *hwaddr,
+              GBytes *hwaddr,
               const char *uuid,
               guint32 route_table,
               guint32 route_metric,
               const struct in6_addr *ipv6_ll_addr,
-              const char *dhcp_client_id,
+              GBytes *dhcp_client_id,
               guint32 timeout,
               const char *dhcp_anycast_addr,
               const char *hostname,
@@ -181,6 +181,7 @@ client_start (NMDhcpManager *self,
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
 	g_return_val_if_fail (ifindex > 0, NULL);
 	g_return_val_if_fail (uuid != NULL, NULL);
+	g_return_val_if_fail (!dhcp_client_id || g_bytes_get_size (dhcp_client_id) >= 2, NULL);
 
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 
@@ -205,15 +206,19 @@ client_start (NMDhcpManager *self,
 	                       NM_DHCP_CLIENT_ROUTE_TABLE, (guint) route_table,
 	                       NM_DHCP_CLIENT_ROUTE_METRIC, (guint) route_metric,
 	                       NM_DHCP_CLIENT_TIMEOUT, (guint) timeout,
+	                       NM_DHCP_CLIENT_FLAGS, (guint) (0
+	                           | (hostname_use_fqdn ? NM_DHCP_CLIENT_FLAGS_USE_FQDN  : 0)
+	                           | (info_only         ? NM_DHCP_CLIENT_FLAGS_INFO_ONLY : 0)
+	                       ),
 	                       NULL);
 	nm_assert (client && c_list_is_empty (&client->dhcp_client_lst));
 	c_list_link_tail (&priv->dhcp_client_lst_head, &client->dhcp_client_lst);
 	g_signal_connect (client, NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED, G_CALLBACK (client_state_changed), self);
 
 	if (addr_family == AF_INET)
-		success = nm_dhcp_client_start_ip4 (client, dhcp_client_id, dhcp_anycast_addr, hostname, hostname_use_fqdn, last_ip4_address);
+		success = nm_dhcp_client_start_ip4 (client, dhcp_client_id, dhcp_anycast_addr, hostname, last_ip4_address);
 	else
-		success = nm_dhcp_client_start_ip6 (client, dhcp_anycast_addr, ipv6_ll_addr, hostname, info_only, privacy, needed_prefixes);
+		success = nm_dhcp_client_start_ip6 (client, dhcp_anycast_addr, ipv6_ll_addr, hostname, privacy, needed_prefixes);
 
 	if (!success) {
 		remove_client_unref (self, client);
@@ -229,14 +234,14 @@ nm_dhcp_manager_start_ip4 (NMDhcpManager *self,
                            NMDedupMultiIndex *multi_idx,
                            const char *iface,
                            int ifindex,
-                           const GByteArray *hwaddr,
+                           GBytes *hwaddr,
                            const char *uuid,
                            guint32 route_table,
                            guint32 route_metric,
                            gboolean send_hostname,
                            const char *dhcp_hostname,
                            const char *dhcp_fqdn,
-                           const char *dhcp_client_id,
+                           GBytes *dhcp_client_id,
                            guint32 timeout,
                            const char *dhcp_anycast_addr,
                            const char *last_ip_address)
@@ -285,7 +290,7 @@ nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
                            NMDedupMultiIndex *multi_idx,
                            const char *iface,
                            int ifindex,
-                           const GByteArray *hwaddr,
+                           GBytes *hwaddr,
                            const struct in6_addr *ll_addr,
                            const char *uuid,
                            guint32 route_table,

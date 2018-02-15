@@ -338,7 +338,7 @@ create_dhclient_config (NMDhcpDhclient *self,
 static gboolean
 dhclient_start (NMDhcpClient *client,
                 const char *mode_opt,
-                const GByteArray *duid,
+                GBytes *duid,
                 gboolean release,
                 pid_t *out_pid,
                 int prefixes)
@@ -518,8 +518,10 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 	priv->conf_file = create_dhclient_config (self, AF_INET, iface, uuid, client_id, dhcp_anycast_addr,
 	                                          hostname, timeout, use_fqdn, &new_client_id);
 	if (priv->conf_file) {
-		if (new_client_id)
+		if (new_client_id) {
+			nm_assert (!client_id);
 			nm_dhcp_client_set_client_id (client, new_client_id);
+		}
 		success = dhclient_start (client, NULL, NULL, FALSE, NULL, 0);
 	} else
 		_LOGW ("error creating dhclient configuration file");
@@ -531,9 +533,8 @@ static gboolean
 ip6_start (NMDhcpClient *client,
            const char *dhcp_anycast_addr,
            const struct in6_addr *ll_addr,
-           gboolean info_only,
            NMSettingIP6ConfigPrivacy privacy,
-           const GByteArray *duid,
+           GBytes *duid,
            guint needed_prefixes)
 {
 	NMDhcpDhclient *self = NM_DHCP_DHCLIENT (client);
@@ -553,16 +554,19 @@ ip6_start (NMDhcpClient *client,
 		return FALSE;
 	}
 
-	return dhclient_start (client, info_only ? "-S" : "-N", duid, FALSE, NULL, needed_prefixes);
+	return dhclient_start (client,
+	                       nm_dhcp_client_get_info_only (NM_DHCP_CLIENT (self))
+	                         ? "-S"
+	                         : "-N",
+	                       duid, FALSE, NULL, needed_prefixes);
 }
 
 static void
-stop (NMDhcpClient *client, gboolean release, const GByteArray *duid)
+stop (NMDhcpClient *client, gboolean release, GBytes *duid)
 {
 	NMDhcpDhclient *self = NM_DHCP_DHCLIENT (client);
 	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (self);
 
-	/* Chain up to parent */
 	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhclient_parent_class)->stop (client, release, duid);
 
 	if (priv->conf_file)
@@ -603,12 +607,12 @@ state_changed (NMDhcpClient *client,
 	nm_dhcp_client_set_client_id (client, client_id);
 }
 
-static GByteArray *
+static GBytes *
 get_duid (NMDhcpClient *client)
 {
 	NMDhcpDhclient *self = NM_DHCP_DHCLIENT (client);
 	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (self);
-	GByteArray *duid = NULL;
+	GBytes *duid = NULL;
 	char *leasefile;
 	GError *error = NULL;
 
@@ -642,7 +646,7 @@ get_duid (NMDhcpClient *client)
 	}
 
 	/* return our DUID, otherwise let the parent class make a default DUID */
-	return duid ? duid : NM_DHCP_CLIENT_CLASS (nm_dhcp_dhclient_parent_class)->get_duid (client);
+	return duid ?: NM_DHCP_CLIENT_CLASS (nm_dhcp_dhclient_parent_class)->get_duid (client);
 }
 
 /*****************************************************************************/
