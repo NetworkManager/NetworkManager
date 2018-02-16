@@ -1576,10 +1576,8 @@ nm_connection_update_secrets (NMConnection *connection,
 		}
 	}
 
-	if (updated) {
+	if (updated)
 		g_signal_emit (connection, signals[SECRETS_UPDATED], 0, setting_name);
-		g_signal_emit (connection, signals[CHANGED], 0);
-	}
 
 	return success;
 }
@@ -1657,20 +1655,17 @@ nm_connection_clear_secrets (NMConnection *connection)
 {
 	GHashTableIter iter;
 	NMSetting *setting;
-	gboolean changed = FALSE;
 
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 
 	g_hash_table_iter_init (&iter, NM_CONNECTION_GET_PRIVATE (connection)->settings);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &setting)) {
 		g_signal_handlers_block_by_func (setting, (GCallback) setting_changed_cb, connection);
-		changed |= _nm_setting_clear_secrets (setting);
+		_nm_setting_clear_secrets (setting);
 		g_signal_handlers_unblock_by_func (setting, (GCallback) setting_changed_cb, connection);
 	}
 
 	g_signal_emit (connection, signals[SECRETS_CLEARED], 0);
-	if (changed)
-		g_signal_emit (connection, signals[CHANGED], 0);
 }
 
 /**
@@ -1689,20 +1684,17 @@ nm_connection_clear_secrets_with_flags (NMConnection *connection,
 {
 	GHashTableIter iter;
 	NMSetting *setting;
-	gboolean changed = FALSE;
 
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 
 	g_hash_table_iter_init (&iter, NM_CONNECTION_GET_PRIVATE (connection)->settings);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &setting)) {
 		g_signal_handlers_block_by_func (setting, (GCallback) setting_changed_cb, connection);
-		changed |= _nm_setting_clear_secrets_with_flags (setting, func, user_data);
+		_nm_setting_clear_secrets_with_flags (setting, func, user_data);
 		g_signal_handlers_unblock_by_func (setting, (GCallback) setting_changed_cb, connection);
 	}
 
 	g_signal_emit (connection, signals[SECRETS_CLEARED], 0);
-	if (changed)
-		g_signal_emit (connection, signals[CHANGED], 0);
 }
 
 /**
