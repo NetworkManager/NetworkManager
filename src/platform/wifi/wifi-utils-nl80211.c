@@ -143,7 +143,6 @@ out:
 typedef struct {
 	WifiData parent;
 	struct nl_sock *nl_sock;
-	struct nl_cb *nl_cb;
 	guint32 *freqs;
 	int id;
 	int num_freqs;
@@ -203,7 +202,6 @@ nl80211_alloc_msg (WifiDataNl80211 *nl80211, guint32 cmd, guint32 flags)
 /* NOTE: this function consumes 'msg' */
 static int
 _nl80211_send_and_recv (struct nl_sock *nl_sock,
-                        struct nl_cb *nl_cb,
                         struct nl_msg *msg,
                         int (*valid_handler) (struct nl_msg *, void *),
                         void *valid_data)
@@ -213,7 +211,7 @@ _nl80211_send_and_recv (struct nl_sock *nl_sock,
 
 	g_return_val_if_fail (msg != NULL, -ENOMEM);
 
-	cb = nl_cb_clone (nl_cb);
+	cb = nl_cb_alloc (NL_CB_DEFAULT);
 	if (!cb) {
 		err = -ENOMEM;
 		goto out;
@@ -265,7 +263,7 @@ nl80211_send_and_recv (WifiDataNl80211 *nl80211,
                        int (*valid_handler) (struct nl_msg *, void *),
                        void *valid_data)
 {
-	return _nl80211_send_and_recv (nl80211->nl_sock, nl80211->nl_cb, msg,
+	return _nl80211_send_and_recv (nl80211->nl_sock, msg,
 	                               valid_handler, valid_data);
 }
 
@@ -276,8 +274,6 @@ wifi_nl80211_deinit (WifiData *parent)
 
 	if (nl80211->nl_sock)
 		nl_socket_free (nl80211->nl_sock);
-	if (nl80211->nl_cb)
-		nl_cb_put (nl80211->nl_cb);
 	g_free (nl80211->freqs);
 }
 
@@ -989,10 +985,6 @@ wifi_nl80211_init (int ifindex)
 
 	nl80211->id = genl_ctrl_resolve (nl80211->nl_sock, "nl80211");
 	if (nl80211->id < 0)
-		goto error;
-
-	nl80211->nl_cb = nl_cb_alloc (NL_CB_DEFAULT);
-	if (nl80211->nl_cb == NULL)
 		goto error;
 
 	nl80211->phy = -1;
