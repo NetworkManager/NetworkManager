@@ -20,40 +20,43 @@ AC_DEFUN([_NM_COMPILER_FLAG], [
 ])
 
 dnl Check whether a particular compiler flag is supported,
-dnl add it to CFLAGS if it is
+dnl append it to the specified variable if the check succeeds.
+dnl NM_COMPILER_FLAG([ENV-VAR], [FLAG], [ACTION-IF-SUPPORTED], [ACTION-IF-NOT-SUPPORTED])
 AC_DEFUN([NM_COMPILER_FLAG], [
-        _NM_COMPILER_FLAG([$1], [], [
-		CFLAGS="$CFLAGS $1"
-		$2
-	], [$3])
+        _NM_COMPILER_FLAG([$2], [], [
+		eval "AS_TR_SH([$1])='$$1 $2'"
+		$3
+	], [$4])
 ])
 
 dnl Check whether a particular warning is not emitted with code provided,
-dnl disable it in CFLAGS if the check fails.
+dnl append an option to disable the warning to a specified variable if the check fails.
+dnl NM_COMPILER_WARNING([ENV-VAR], [C-SNIPPET], [WARNING]])
 AC_DEFUN([NM_COMPILER_WARNING], [
-        _NM_COMPILER_FLAG([-W$1], [$2], [CFLAGS="$CFLAGS -W$1"], [CFLAGS="$CFLAGS -Wno-$1"])
+        _NM_COMPILER_FLAG([-W$2], [$3], [eval "AS_TR_SH([$1])='$$1 -W$2'"], [eval "AS_TR_SH([$1])='$$1 -Wno-$2'"])
 ])
 
+dnl NM_COMPILER_WARNINGS([ENV-VAR], [MORE-WARNINGS])
 AC_DEFUN([NM_COMPILER_WARNINGS],
 [AC_ARG_ENABLE(more-warnings,
 	AS_HELP_STRING([--enable-more-warnings], [Possible values: no/yes/error]),
-	set_more_warnings="$enableval",set_more_warnings=$1)
+	set_more_warnings="$enableval",set_more_warnings=$2)
 AC_MSG_CHECKING(for more warnings)
 if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 	AC_MSG_RESULT(yes)
 
 	dnl This is enabled in clang by default, makes little sense,
 	dnl and causes the build to abort with -Werror.
-	CFLAGS_SAVED="$CFLAGS"
-	CFLAGS="$CFLAGS -Qunused-arguments"
-	AC_COMPILE_IFELSE([AC_LANG_SOURCE([])], [], CFLAGS="$CFLAGS_SAVED")
+	CFLAGS_SAVED="$$1"
+	eval "AS_TR_SH([$1])='$$1 -Qunused-arguments'"
+	AC_COMPILE_IFELSE([AC_LANG_SOURCE([])], [], eval "AS_TR_SH([$1])='$CFLAGS_SAVED'")
 	unset CFLAGS_SAVED
 
 	dnl clang only warns about unknown warnings, unless
 	dnl called with "-Werror=unknown-warning-option"
 	dnl Test if the compiler supports that, and if it does
 	dnl attach it to the CFLAGS.
-	NM_COMPILER_WARNING([unknown-warning-option], [])
+	NM_COMPILER_WARNING([$1], [unknown-warning-option], [])
 
 	CFLAGS_MORE_WARNINGS="-Wall -std=gnu99"
 
@@ -97,39 +100,39 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 	dnl Disable warnings triggered by known compiler problems
 
 	dnl https://bugzilla.gnome.org/show_bug.cgi?id=745821
-	NM_COMPILER_WARNING([unknown-attributes], [#include <glib.h>])
+	NM_COMPILER_WARNING([$1], [unknown-attributes], [#include <glib.h>])
 
 	dnl https://bugzilla.gnome.org/show_bug.cgi?id=744473
-	NM_COMPILER_WARNING([typedef-redefinition], [#include <gio/gio.h>])
+	NM_COMPILER_WARNING([$1], [typedef-redefinition], [#include <gio/gio.h>])
 
 	dnl https://llvm.org/bugs/show_bug.cgi?id=21614
-	NM_COMPILER_WARNING([array-bounds],
+	NM_COMPILER_WARNING([$1], [array-bounds],
 		[#include <string.h>]
 		[void f () { strcmp ("something", "0"); }]
 	)
 
 	dnl https://llvm.org/bugs/show_bug.cgi?id=22949
-	NM_COMPILER_WARNING([parentheses-equality],
+	NM_COMPILER_WARNING([$1], [parentheses-equality],
 		[#include <sys/wait.h>]
 		[void f () { if (WIFCONTINUED(0)) return; }]
 	)
 
 	dnl systemd-dhcp's log_internal macro and our handle_warn are sometimes
 	dnl used in void context,u sometimes in int. Makes clang unhappy.
-	NM_COMPILER_WARNING([unused-value],
+	NM_COMPILER_WARNING([$1], [unused-value],
 		[#define yolo ({ (666 + 666); })]
 		[int f () { int i = yolo; yolo; return i; }]
 	)
 
 	dnl clang 3.9 would like to see "{ { 0 } }" here, but that does not
 	dnl look too wise.
-	NM_COMPILER_WARNING([missing-braces],
+	NM_COMPILER_WARNING([$1], [missing-braces],
 		[union { int a[1]; int b[2]; } c = { 0 }]
 	)
 
 	dnl a new warning in gcc 8, glib 2.55 doesn't play nice yet
 	dnl https://bugzilla.gnome.org/show_bug.cgi?id=793272
-	NM_COMPILER_WARNING([cast-function-type],
+	NM_COMPILER_WARNING([$1], [cast-function-type],
 		[#include <glib-object.h>]
 		[typedef struct { GObject parent; } NMObject;]
 		[typedef struct { GObjectClass parent; } NMObjectClass;]
@@ -138,7 +141,7 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 		[G_DEFINE_TYPE (NMObject, nm_object, G_TYPE_OBJECT)]
 	)
 
-	CFLAGS="$CFLAGS_MORE_WARNINGS $CFLAGS"
+	eval "AS_TR_SH([$1])='$CFLAGS_MORE_WARNINGS $$1'"
 else
 	AC_MSG_RESULT(no)
 fi

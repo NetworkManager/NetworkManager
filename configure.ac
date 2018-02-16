@@ -1095,7 +1095,7 @@ else
 	more_logging_default=no
 fi
 
-NM_COMPILER_WARNINGS(${more_warnings_default})
+NM_COMPILER_WARNINGS(CFLAGS, ${more_warnings_default})
 
 CC_CHECK_FLAGS_APPEND([with_cflags], [CFLAGS], [\
 	-fno-strict-aliasing \
