@@ -304,7 +304,7 @@ nlmsg_alloc_size (size_t len)
 	if (len < sizeof (struct nlmsghdr))
 		len = sizeof (struct nlmsghdr);
 
-	nm = g_new0 (struct nl_msg, 1);
+	nm = g_slice_new0 (struct nl_msg);
 
 	nm->nm_refcnt = 1;
 	nm->nm_protocol = -1;
@@ -648,8 +648,8 @@ void nlmsg_free (struct nl_msg *msg)
 	msg->nm_refcnt--;
 
 	if (msg->nm_refcnt <= 0) {
-		free(msg->nm_nlh);
-		free(msg);
+		g_free (msg->nm_nlh);
+		g_slice_free (struct nl_msg, msg);
 	}
 }
 
@@ -1054,32 +1054,26 @@ int
 nl_recvmsgs (struct nl_sock *sk, const struct nl_cb *cb)
 {
 	int n, err = 0, multipart = 0, interrupted = 0, nrecv = 0;
-	unsigned char *buf = NULL;
+	gs_free unsigned char *buf = NULL;
 	struct nlmsghdr *hdr;
-
-	/*
-	nla is passed on to not only to nl_recv() but may also be passed
-	to a function pointer provided by the caller which may or may not
-	initialize the variable. Thomas Graf.
-	*/
-	struct sockaddr_nl nla = {0};
-	struct nl_msg *msg = NULL;
-	struct ucred *creds = NULL;
+	struct sockaddr_nl nla = { 0 };
+	gs_free struct ucred *creds = NULL;
 
 continue_reading:
-	n = nl_recv(sk, &nla, &buf, &creds);
+	n = nl_recv (sk, &nla, &buf, &creds);
 	if (n <= 0)
 		return n;
 
 	hdr = (struct nlmsghdr *) buf;
-	while (nlmsg_ok(hdr, n)) {
-		nlmsg_free(msg);
-		msg = nlmsg_alloc_convert(hdr);
+	while (nlmsg_ok (hdr, n)) {
+		nm_auto_nlmsg struct nl_msg *msg = NULL;
 
-		nlmsg_set_proto(msg, sk->s_proto);
-		nlmsg_set_src(msg, &nla);
+		msg = nlmsg_alloc_convert (hdr);
+
+		nlmsg_set_proto (msg, sk->s_proto);
+		nlmsg_set_src (msg, &nla);
 		if (creds)
-			nlmsg_set_creds(msg, creds);
+			nlmsg_set_creds (msg, creds);
 
 		nrecv++;
 
@@ -1178,31 +1172,22 @@ skip:
 		hdr = nlmsg_next(hdr, &n);
 	}
 
-	nlmsg_free(msg);
-	free(buf);
-	free(creds);
-	buf = NULL;
-	msg = NULL;
-	creds = NULL;
-
 	if (multipart) {
 		/* Multipart message not yet complete, continue reading */
+		nm_clear_g_free (&creds);
+		nm_clear_g_free (&buf);
+
 		goto continue_reading;
 	}
+
 stop:
 	err = 0;
-out:
-	nlmsg_free(msg);
-	free(buf);
-	free(creds);
 
+out:
 	if (interrupted)
 		err = -NLE_DUMP_INTR;
 
-	if (!err)
-		err = nrecv;
-
-	return err;
+	return err ?: nrecv;
 }
 
 int
@@ -1313,14 +1298,16 @@ nl_recv (struct nl_sock *sk, struct sockaddr_nl *nla,
 		.msg_iov = &iov,
 		.msg_iovlen = 1,
 	};
-	struct ucred* tmpcreds = NULL;
+	gs_free struct ucred* tmpcreds = NULL;
 	int retval = 0;
 
-	if (!buf || !nla)
-		g_return_val_if_reached (-NLE_BUG);
+	nm_assert (nla);
+	nm_assert (buf && !*buf);
+	nm_assert (!creds || !*creds);
 
 	if (   (sk->s_flags & NL_MSG_PEEK)
-	    || (!(sk->s_flags & NL_MSG_PEEK_EXPLICIT) && sk->s_bufsize == 0))
+	    || (   !(sk->s_flags & NL_MSG_PEEK_EXPLICIT)
+	        && sk->s_bufsize == 0))
 		flags |= MSG_PEEK | MSG_TRUNC;
 
 	if (page_size == 0)
@@ -1330,11 +1317,11 @@ nl_recv (struct nl_sock *sk, struct sockaddr_nl *nla,
 	iov.iov_base = g_malloc (iov.iov_len);
 
 	if (creds && (sk->s_flags & NL_SOCK_PASSCRED)) {
-		msg.msg_controllen = CMSG_SPACE(sizeof(struct ucred));
+		msg.msg_controllen = CMSG_SPACE (sizeof(struct ucred));
 		msg.msg_control = g_malloc (msg.msg_controllen);
 	}
-retry:
 
+retry:
 	n = recvmsg(sk->s_fd, &msg, flags);
 	if (!n) {
 		retval = 0;
@@ -1349,22 +1336,17 @@ retry:
 	}
 
 	if (msg.msg_flags & MSG_CTRUNC) {
-		void *tmp;
-
 		if (msg.msg_controllen == 0) {
 			retval = -NLE_MSG_TRUNC;
 			goto abort;
 		}
 
 		msg.msg_controllen *= 2;
-		tmp = g_realloc (msg.msg_control, msg.msg_controllen);
-		msg.msg_control = tmp;
+		msg.msg_control = g_realloc (msg.msg_control, msg.msg_controllen);
 		goto retry;
 	}
 
 	if (iov.iov_len < n || (msg.msg_flags & MSG_TRUNC)) {
-		void *tmp;
-
 		/* respond with error to an incomplete message */
 		if (flags == 0) {
 			retval = -NLE_MSG_TRUNC;
@@ -1374,9 +1356,8 @@ retry:
 		/* Provided buffer is not long enough, enlarge it
 		 * to size of n (which should be total length of the message)
 		 * and try again. */
+		iov.iov_base = g_realloc (iov.iov_base, n);
 		iov.iov_len = n;
-		tmp = g_realloc (iov.iov_base, iov.iov_len);
-		iov.iov_base = tmp;
 		flags = 0;
 		goto retry;
 	}
@@ -1400,26 +1381,22 @@ retry:
 				continue;
 			if (cmsg->cmsg_type != SCM_CREDENTIALS)
 				continue;
-			tmpcreds = g_malloc (sizeof(*tmpcreds));
-			memcpy(tmpcreds, CMSG_DATA(cmsg), sizeof(*tmpcreds));
+			tmpcreds = g_memdup (CMSG_DATA(cmsg), sizeof(*tmpcreds));
 			break;
 		}
 	}
 
 	retval = n;
+
 abort:
-	free(msg.msg_control);
+	g_free (msg.msg_control);
 
 	if (retval <= 0) {
-		free(iov.iov_base);
-		iov.iov_base = NULL;
-		free(tmpcreds);
-		tmpcreds = NULL;
-	} else
-		*buf = iov.iov_base;
+		g_free (iov.iov_base);
+		return retval;
+	}
 
-	if (creds)
-		*creds = tmpcreds;
-
+	*buf = iov.iov_base;
+	NM_SET_OUT (creds, g_steal_pointer (&tmpcreds));
 	return retval;
 }
