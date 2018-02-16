@@ -88,8 +88,6 @@ genl_ctrl_resolve (struct nl_sock *sk, const char *name)
 	};
 
 	msg = nlmsg_alloc ();
-	if (!msg)
-		goto out;
 
 	if (!genlmsg_put (msg, NL_AUTO_PORT, NL_AUTO_SEQ, GENL_ID_CTRL,
 	                  0, 0, CTRL_CMD_GETFAMILY, 1))
@@ -165,19 +163,16 @@ error_handler (struct sockaddr_nl *nla, struct nlmsgerr *err, void *arg)
 static struct nl_msg *
 _nl80211_alloc_msg (int id, int ifindex, int phy, guint32 cmd, guint32 flags)
 {
-	struct nl_msg *msg;
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
 
 	msg = nlmsg_alloc ();
-	if (msg) {
-		genlmsg_put (msg, 0, 0, id, 0, flags, cmd, 0);
-		NLA_PUT_U32 (msg, NL80211_ATTR_IFINDEX, ifindex);
-		if (phy != -1)
-			NLA_PUT_U32 (msg, NL80211_ATTR_WIPHY, phy);
-	}
-	return msg;
+	genlmsg_put (msg, 0, 0, id, 0, flags, cmd, 0);
+	NLA_PUT_U32 (msg, NL80211_ATTR_IFINDEX, ifindex);
+	if (phy != -1)
+		NLA_PUT_U32 (msg, NL80211_ATTR_WIPHY, phy);
+	return g_steal_pointer (&msg);
 
- nla_put_failure:
-	nlmsg_free (msg);
+nla_put_failure:
 	return NULL;
 }
 

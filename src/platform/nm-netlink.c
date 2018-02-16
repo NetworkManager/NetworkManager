@@ -296,32 +296,22 @@ nla_reserve (struct nl_msg *msg, int attrtype, int attrlen)
 	return nla;
 }
 
-static struct nl_msg *
-_nlmsg_alloc(size_t len)
+struct nl_msg *
+nlmsg_alloc_size (size_t len)
 {
 	struct nl_msg *nm;
 
-	if (len < sizeof(struct nlmsghdr))
-		len = sizeof(struct nlmsghdr);
+	if (len < sizeof (struct nlmsghdr))
+		len = sizeof (struct nlmsghdr);
 
-	nm = calloc(1, sizeof(*nm));
-	if (!nm)
-		goto errout;
+	nm = g_new0 (struct nl_msg, 1);
 
 	nm->nm_refcnt = 1;
-
-	nm->nm_nlh = calloc(1, len);
-	if (!nm->nm_nlh)
-		goto errout;
-
 	nm->nm_protocol = -1;
 	nm->nm_size = len;
-	nm->nm_nlh->nlmsg_len = nlmsg_total_size(0);
-
+	nm->nm_nlh = g_malloc0 (len);
+	nm->nm_nlh->nlmsg_len = nlmsg_total_size (0);
 	return nm;
-errout:
-	free(nm);
-	return NULL;
 }
 
 /**
@@ -336,25 +326,19 @@ errout:
 struct nl_msg *
 nlmsg_alloc (void)
 {
-	return _nlmsg_alloc (get_default_page_size ());
+	return nlmsg_alloc_size (get_default_page_size ());
 }
 
 /**
  * Allocate a new netlink message with maximum payload size specified.
  */
 struct nl_msg *
-nlmsg_alloc_size (size_t max)
-{
-	return _nlmsg_alloc (max);
-}
-
-struct nl_msg *
-nlmsg_inherit (struct nlmsghdr *hdr)
+nlmsg_alloc_inherit (struct nlmsghdr *hdr)
 {
 	struct nl_msg *nm;
 
-	nm = nlmsg_alloc();
-	if (nm && hdr) {
+	nm = nlmsg_alloc ();
+	if (hdr) {
 		struct nlmsghdr *new = nm->nm_nlh;
 
 		new->nlmsg_type = hdr->nlmsg_type;
@@ -367,16 +351,12 @@ nlmsg_inherit (struct nlmsghdr *hdr)
 }
 
 struct nl_msg *
-nlmsg_convert (struct nlmsghdr *hdr)
+nlmsg_alloc_convert (struct nlmsghdr *hdr)
 {
 	struct nl_msg *nm;
 
-	nm = _nlmsg_alloc(NLMSG_ALIGN(hdr->nlmsg_len));
-	if (!nm)
-		return NULL;
-
+	nm = nlmsg_alloc_size (NLMSG_ALIGN (hdr->nlmsg_len));
 	memcpy(nm->nm_nlh, hdr, hdr->nlmsg_len);
-
 	return nm;
 }
 
@@ -388,7 +368,7 @@ nlmsg_alloc_simple (int nlmsgtype, int flags)
 		.nlmsg_flags = flags,
 	};
 
-	return nlmsg_inherit (&nlh);
+	return nlmsg_alloc_inherit (&nlh);
 }
 
 int
@@ -396,7 +376,7 @@ nlmsg_append (struct nl_msg *n, void *data, size_t len, int pad)
 {
 	void *tmp;
 
-	tmp = nlmsg_reserve(n, len, pad);
+	tmp = nlmsg_reserve (n, len, pad);
 	if (tmp == NULL)
 		return -ENOMEM;
 
@@ -1094,11 +1074,7 @@ continue_reading:
 	hdr = (struct nlmsghdr *) buf;
 	while (nlmsg_ok(hdr, n)) {
 		nlmsg_free(msg);
-		msg = nlmsg_convert(hdr);
-		if (!msg) {
-			err = -ENOMEM;
-			goto out;
-		}
+		msg = nlmsg_alloc_convert(hdr);
 
 		nlmsg_set_proto(msg, sk->s_proto);
 		nlmsg_set_src(msg, &nla);
@@ -1351,20 +1327,11 @@ nl_recv (struct nl_sock *sk, struct sockaddr_nl *nla,
 		page_size = getpagesize() * 4;
 
 	iov.iov_len = sk->s_bufsize ? : page_size;
-	iov.iov_base = malloc(iov.iov_len);
-
-	if (!iov.iov_base) {
-		retval = -ENOMEM;
-		goto abort;
-	}
+	iov.iov_base = g_malloc (iov.iov_len);
 
 	if (creds && (sk->s_flags & NL_SOCK_PASSCRED)) {
 		msg.msg_controllen = CMSG_SPACE(sizeof(struct ucred));
-		msg.msg_control = malloc(msg.msg_controllen);
-		if (!msg.msg_control) {
-			retval = -ENOMEM;
-			goto abort;
-		}
+		msg.msg_control = g_malloc (msg.msg_controllen);
 	}
 retry:
 
@@ -1390,11 +1357,7 @@ retry:
 		}
 
 		msg.msg_controllen *= 2;
-		tmp = realloc(msg.msg_control, msg.msg_controllen);
-		if (!tmp) {
-			retval = -ENOMEM;
-			goto abort;
-		}
+		tmp = g_realloc (msg.msg_control, msg.msg_controllen);
 		msg.msg_control = tmp;
 		goto retry;
 	}
@@ -1412,11 +1375,7 @@ retry:
 		 * to size of n (which should be total length of the message)
 		 * and try again. */
 		iov.iov_len = n;
-		tmp = realloc(iov.iov_base, iov.iov_len);
-		if (!tmp) {
-			retval = -ENOMEM;
-			goto abort;
-		}
+		tmp = g_realloc (iov.iov_base, iov.iov_len);
 		iov.iov_base = tmp;
 		flags = 0;
 		goto retry;
@@ -1441,11 +1400,7 @@ retry:
 				continue;
 			if (cmsg->cmsg_type != SCM_CREDENTIALS)
 				continue;
-			tmpcreds = malloc(sizeof(*tmpcreds));
-			if (!tmpcreds) {
-				retval = -ENOMEM;
-				goto abort;
-			}
+			tmpcreds = g_malloc (sizeof(*tmpcreds));
 			memcpy(tmpcreds, CMSG_DATA(cmsg), sizeof(*tmpcreds));
 			break;
 		}

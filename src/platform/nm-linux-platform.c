@@ -2534,8 +2534,7 @@ _nl_msg_new_link (int nlmsg_type,
 
 	nm_assert (NM_IN_SET (nlmsg_type, RTM_DELLINK, RTM_NEWLINK, RTM_GETLINK));
 
-	if (!(msg = nlmsg_alloc_simple (nlmsg_type, nlmsg_flags)))
-		g_return_val_if_reached (NULL);
+	msg = nlmsg_alloc_simple (nlmsg_type, nlmsg_flags);
 
 	if (nlmsg_append (msg, &ifi, sizeof (ifi), NLMSG_ALIGNTO) < 0)
 		goto nla_put_failure;
@@ -2577,8 +2576,6 @@ _nl_msg_new_address (int nlmsg_type,
 	nm_assert (NM_IN_SET (nlmsg_type, RTM_NEWADDR, RTM_DELADDR));
 
 	msg = nlmsg_alloc_simple (nlmsg_type, nlmsg_flags);
-	if (!msg)
-		g_return_val_if_reached (NULL);
 
 	if (scope == -1) {
 		/* Allow having scope unset, and detect the scope (including IPv4 compatibility hack). */
@@ -2691,8 +2688,6 @@ _nl_msg_new_route (int nlmsg_type,
 	nm_assert (NM_IN_SET (nlmsg_type, RTM_NEWROUTE, RTM_DELROUTE));
 
 	msg = nlmsg_alloc_simple (nlmsg_type, (int) nlmsgflags);
-	if (!msg)
-		g_return_val_if_reached (NULL);
 
 	if (nlmsg_append (msg, &rtmsg, sizeof (rtmsg), NLMSG_ALIGNTO) < 0)
 		goto nla_put_failure;
@@ -2790,8 +2785,6 @@ _nl_msg_new_qdisc (int nlmsg_type,
 	};
 
 	msg = nlmsg_alloc_simple (nlmsg_type, nlmsg_flags);
-	if (!msg)
-		return NULL;
 
 	if (nlmsg_append (msg, &tcm, sizeof (tcm), NLMSG_ALIGNTO) < 0)
 		goto nla_put_failure;
@@ -2866,8 +2859,6 @@ _nl_msg_new_tfilter (int nlmsg_type,
 	};
 
 	msg = nlmsg_alloc_simple (nlmsg_type, nlmsg_flags);
-	if (!msg)
-		return NULL;
 
 	if (nlmsg_append (msg, &tcm, sizeof (tcm), NLMSG_ALIGNTO) < 0)
 		goto nla_put_failure;
@@ -4132,8 +4123,6 @@ do_request_all_no_delayed_actions (NMPlatform *platform, DelayedActionType actio
 		 * because we need the sequence number.
 		 */
 		nlmsg = nlmsg_alloc_simple (klass->rtm_gettype, NLM_F_DUMP);
-		if (!nlmsg)
-			continue;
 
 		if (   klass->obj_type == NMP_OBJECT_TYPE_QDISC
 		    || klass->obj_type == NMP_OBJECT_TYPE_TFILTER) {
@@ -6520,11 +6509,7 @@ continue_reading:
 		guint32 seq_number;
 		char buf_nlmsghdr[400];
 
-		msg = nlmsg_convert (hdr);
-		if (!msg) {
-			err = -ENOMEM;
-			goto out;
-		}
+		msg = nlmsg_alloc_convert (hdr);
 
 		nlmsg_set_proto (msg, NETLINK_ROUTE);
 		nlmsg_set_src (msg, &nla);
@@ -6647,7 +6632,7 @@ stop:
 		 * Repeat reading. */
 		goto continue_reading;
 	}
-out:
+
 	if (interrupted)
 		err = -NLE_DUMP_INTR;
 	return err;
