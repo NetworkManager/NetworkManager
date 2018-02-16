@@ -811,26 +811,7 @@ struct nl_cb {
 	nl_recvmsg_err_cb_t     cb_err;
 	void *                  cb_err_arg;
 
-	/* May be used to replace nl_recvmsgs with your own implementation
-	 * in all internal calls to nl_recvmsgs. */
-	int                     (*cb_recvmsgs_ow)(struct nl_sock *,
-	                                          struct nl_cb *);
-
-	/* Overwrite internal calls to nl_recv, must return the number of
-	 * octets read and allocate a buffer for the received data. */
-	int                     (*cb_recv_ow)(struct nl_sock *,
-	                                      struct sockaddr_nl *,
-	                                      unsigned char **,
-	                                      struct ucred **);
-
-	/* Overwrites internal calls to nl_send, must send the netlink
-	 * message. */
-	int                     (*cb_send_ow)(struct nl_sock *,
-	                                      struct nl_msg *);
-
 	int                     cb_refcnt;
-	/* indicates the callback that is currently active */
-	enum nl_cb_type         cb_active;
 };
 
 /*****************************************************************************/
@@ -838,12 +819,7 @@ struct nl_cb {
 static int
 nl_cb_call (struct nl_cb *cb, enum nl_cb_type type, struct nl_msg *msg)
 {
-	int ret;
-
-	cb->cb_active = type;
-	ret = cb->cb_set[type](msg, cb->cb_args[type]);
-	cb->cb_active = __NL_CB_TYPE_MAX;
-	return ret;
+	return cb->cb_set[type](msg, cb->cb_args[type]);
 }
 
 struct nl_cb *
@@ -860,7 +836,6 @@ nl_cb_alloc (enum nl_cb_kind kind)
 		return NULL;
 
 	cb->cb_refcnt = 1;
-	cb->cb_active = NL_CB_TYPE_MAX + 1;
 
 	for (i = 0; i <= NL_CB_TYPE_MAX; i++)
 		nl_cb_set(cb, i, kind, NULL, NULL);
@@ -1233,8 +1208,8 @@ do { \
 	} \
 } while (0)
 
-static int
-recvmsgs (struct nl_sock *sk, struct nl_cb *cb)
+int
+nl_recvmsgs_report (struct nl_sock *sk, struct nl_cb *cb)
 {
 	int n, err = 0, multipart = 0, interrupted = 0, nrecv = 0;
 	unsigned char *buf = NULL;
@@ -1250,11 +1225,7 @@ recvmsgs (struct nl_sock *sk, struct nl_cb *cb)
 	struct ucred *creds = NULL;
 
 continue_reading:
-	if (cb->cb_recv_ow)
-		n = cb->cb_recv_ow(sk, &nla, &buf, &creds);
-	else
-		n = nl_recv(sk, &nla, &buf, &creds);
-
+	n = nl_recv(sk, &nla, &buf, &creds);
 	if (n <= 0)
 		return n;
 
@@ -1438,15 +1409,6 @@ out:
 }
 
 int
-nl_recvmsgs_report (struct nl_sock *sk, struct nl_cb *cb)
-{
-	if (cb->cb_recvmsgs_ow)
-		return cb->cb_recvmsgs_ow(sk, cb);
-	else
-		return recvmsgs(sk, cb);
-}
-
-int
 nl_recvmsgs (struct nl_sock *sk, struct nl_cb *cb)
 {
 	int err;
@@ -1542,18 +1504,12 @@ nl_complete_msg (struct nl_sock *sk, struct nl_msg *msg)
 int
 nl_send (struct nl_sock *sk, struct nl_msg *msg)
 {
-	struct nl_cb *cb = sk->s_cb;
+	struct iovec iov = {
+		.iov_base = (void *) nlmsg_hdr(msg),
+		.iov_len = nlmsg_hdr(msg)->nlmsg_len,
+	};
 
-	if (cb->cb_send_ow)
-		return cb->cb_send_ow(sk, msg);
-	else {
-		struct iovec iov = {
-			.iov_base = (void *) nlmsg_hdr(msg),
-			.iov_len = nlmsg_hdr(msg)->nlmsg_len,
-		};
-
-		return nl_send_iovec(sk, msg, &iov, 1);
-	}
+	return nl_send_iovec(sk, msg, &iov, 1);
 }
 
 int nl_send_auto(struct nl_sock *sk, struct nl_msg *msg)
