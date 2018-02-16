@@ -250,7 +250,7 @@ _nl80211_send_and_recv (struct nl_sock *nl_sock,
 			break;
 		}
 	}
-	if (err == 0 && done < 0)
+	if (err >= 0 && done < 0)
 		err = done;
 
  out:
@@ -326,7 +326,7 @@ wifi_nl80211_get_mode (WifiData *data)
 	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_GET_INTERFACE, 0);
 
 	if (nl80211_send_and_recv (nl80211, msg, nl80211_iface_info_handler,
-				   &iface_info) < 0)
+	                           &iface_info) < 0)
 		return NM_802_11_MODE_UNKNOWN;
 
 	return iface_info.mode;
@@ -356,7 +356,7 @@ wifi_nl80211_set_mode (WifiData *data, const NM80211Mode mode)
 	}
 
 	err = nl80211_send_and_recv (nl80211, msg, NULL, NULL);
-	return err ? FALSE : TRUE;
+	return err >= 0;
 
  nla_put_failure:
 	nlmsg_free (msg);
@@ -374,7 +374,7 @@ wifi_nl80211_set_powersave (WifiData *data, guint32 powersave)
 	NLA_PUT_U32 (msg, NL80211_ATTR_PS_STATE,
 	             powersave == 1 ? NL80211_PS_ENABLED : NL80211_PS_DISABLED);
 	err = nl80211_send_and_recv (nl80211, msg, NULL, NULL);
-	return err ? FALSE : TRUE;
+	return err >= 0;
 
 nla_put_failure:
 	nlmsg_free (msg);
@@ -702,7 +702,7 @@ wifi_nl80211_indicate_addressing_running (WifiData *data, gboolean running)
 	}
 
 	err = nl80211_send_and_recv (nl80211, msg, NULL, NULL);
-	return err ? FALSE : TRUE;
+	return err >= 0;
 
 nla_put_failure:
 	nlmsg_free (msg);

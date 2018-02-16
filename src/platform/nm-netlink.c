@@ -817,7 +817,7 @@ struct nl_cb {
 /*****************************************************************************/
 
 static int
-nl_cb_call (struct nl_cb *cb, enum nl_cb_type type, struct nl_msg *msg)
+nl_cb_call (const struct nl_cb *cb, enum nl_cb_type type, struct nl_msg *msg)
 {
 	return cb->cb_set[type](msg, cb->cb_args[type]);
 }
@@ -1209,7 +1209,7 @@ do { \
 } while (0)
 
 int
-nl_recvmsgs_report (struct nl_sock *sk, struct nl_cb *cb)
+nl_recvmsgs (struct nl_sock *sk, const struct nl_cb *cb)
 {
 	int n, err = 0, multipart = 0, interrupted = 0, nrecv = 0;
 	unsigned char *buf = NULL;
@@ -1365,17 +1365,6 @@ out:
 
 	if (!err)
 		err = nrecv;
-
-	return err;
-}
-
-int
-nl_recvmsgs (struct nl_sock *sk, struct nl_cb *cb)
-{
-	int err;
-
-	if ((err = nl_recvmsgs_report(sk, cb)) > 0)
-		err = 0;
 
 	return err;
 }

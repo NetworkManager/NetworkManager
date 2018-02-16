@@ -510,9 +510,7 @@ int nl_send_iovec (struct nl_sock *sk, struct nl_msg *msg, struct iovec *iov, un
 
 void nl_complete_msg (struct nl_sock *sk, struct nl_msg *msg);
 
-int nl_recvmsgs_report (struct nl_sock *sk, struct nl_cb *cb);
-
-int nl_recvmsgs (struct nl_sock *sk, struct nl_cb *cb);
+int nl_recvmsgs (struct nl_sock *sk, const struct nl_cb *cb);
 
 int nl_wait_for_ack (struct nl_sock *sk);
 
