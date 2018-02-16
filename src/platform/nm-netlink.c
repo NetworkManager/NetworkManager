@@ -1245,26 +1245,11 @@ continue_reading:
 
 		nrecv++;
 
-		/* Raw callback is the first, it gives the most control
-		 * to the user and he can do his very own parsing. */
-		if (cb->cb_set[NL_CB_MSG_IN])
-			NL_CB_CALL(cb, NL_CB_MSG_IN, msg);
-
-		/* Sequence number checking. The check may be done by
-		 * the user, otherwise a very simple check is applied
-		 * enforcing strict ordering */
-		if (cb->cb_set[NL_CB_SEQ_CHECK]) {
-			NL_CB_CALL(cb, NL_CB_SEQ_CHECK, msg);
-
 		/* Only do sequence checking if auto-ack mode is enabled */
-		} else if (!(sk->s_flags & NL_NO_AUTO_ACK)) {
+		if (!(sk->s_flags & NL_NO_AUTO_ACK)) {
 			if (hdr->nlmsg_seq != sk->s_seq_expect) {
-				if (cb->cb_set[NL_CB_INVALID])
-					NL_CB_CALL(cb, NL_CB_INVALID, msg);
-				else {
-					err = -NLE_SEQ_MISMATCH;
-					goto out;
-				}
+				err = -NLE_SEQ_MISMATCH;
+				goto out;
 			}
 		}
 
@@ -1281,25 +1266,12 @@ continue_reading:
 			multipart = 1;
 
 		if (hdr->nlmsg_flags & NLM_F_DUMP_INTR) {
-			if (cb->cb_set[NL_CB_DUMP_INTR])
-				NL_CB_CALL(cb, NL_CB_DUMP_INTR, msg);
-			else {
-				/*
-				 * We have to continue reading to clear
-				 * all messages until a NLMSG_DONE is
-				 * received and report the inconsistency.
-				 */
-				interrupted = 1;
-			}
-		}
-
-		/* Other side wishes to see an ack for this message */
-		if (hdr->nlmsg_flags & NLM_F_ACK) {
-			if (cb->cb_set[NL_CB_SEND_ACK])
-				NL_CB_CALL(cb, NL_CB_SEND_ACK, msg);
-			else {
-				/* FIXME: implement */
-			}
+			/*
+			 * We have to continue reading to clear
+			 * all messages until a NLMSG_DONE is
+			 * received and report the inconsistency.
+			 */
+			interrupted = 1;
 		}
 
 		/* messages terminates a multipart message, this is
@@ -1316,23 +1288,15 @@ continue_reading:
 		 * skip this message if no callback is specified. The
 		 * user may overrule this action by returning
 		 * NL_PROCEED. */
-		else if (hdr->nlmsg_type == NLMSG_NOOP) {
-			if (cb->cb_set[NL_CB_SKIPPED])
-				NL_CB_CALL(cb, NL_CB_SKIPPED, msg);
-			else
-				goto skip;
-		}
+		else if (hdr->nlmsg_type == NLMSG_NOOP)
+			goto skip;
 
 		/* Data got lost, report back to user. The default action is to
 		 * quit parsing. The user may overrule this action by retuning
 		 * NL_SKIP or NL_PROCEED (dangerous) */
 		else if (hdr->nlmsg_type == NLMSG_OVERRUN) {
-			if (cb->cb_set[NL_CB_OVERRUN])
-				NL_CB_CALL(cb, NL_CB_OVERRUN, msg);
-			else {
-				err = -NLE_MSG_OVERFLOW;
-				goto out;
-			}
+			err = -NLE_MSG_OVERFLOW;
+			goto out;
 		}
 
 		/* Message carries a nlmsgerr */
@@ -1344,13 +1308,10 @@ continue_reading:
 				 * is to stop parsing. The user may overrule
 				 * this action by returning NL_SKIP or
 				 * NL_PROCEED (dangerous) */
-				if (cb->cb_set[NL_CB_INVALID])
-					NL_CB_CALL(cb, NL_CB_INVALID, msg);
-				else {
-					err = -NLE_MSG_TRUNC;
-					goto out;
-				}
-			} else if (e->error) {
+				err = -NLE_MSG_TRUNC;
+				goto out;
+			}
+			if (e->error) {
 				/* Error message reported back from kernel. */
 				if (cb->cb_err) {
 					err = cb->cb_err(&nla, e,
@@ -1422,18 +1383,12 @@ nl_recvmsgs (struct nl_sock *sk, struct nl_cb *cb)
 int
 nl_sendmsg (struct nl_sock *sk, struct nl_msg *msg, struct msghdr *hdr)
 {
-	struct nl_cb *cb;
 	int ret;
 
 	if (sk->s_fd < 0)
 		return -NLE_BAD_SOCK;
 
 	nlmsg_set_src (msg, &sk->s_local);
-
-	cb = sk->s_cb;
-	if (cb->cb_set[NL_CB_MSG_OUT])
-		if ((ret = nl_cb_call(cb, NL_CB_MSG_OUT, msg)) != NL_OK)
-			return ret;
 
 	ret = sendmsg(sk->s_fd, hdr, 0);
 	if (ret < 0)
