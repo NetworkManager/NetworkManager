@@ -74,17 +74,6 @@ install_data(
   install_dir: dbus_ifaces_dir
 )
 
-'''
-# gdbus-codegen 2.38 will emit code that requires glib 2.38, which
-# will then cause availability warnings if we define
-# GLIB_VERSION_MAX_ALLOWED=GLIB_VERSION_2_32.
-#
-# This is fixed in GLib 2.40 (it emits code that takes
-# GLIB_VERSION_MAX_ALLOWED into account), so this workaround can go
-# away when we depend on that.
-introspection_libnmdbus_la_CPPFLAGS = $(filter-out -DGLIB_VERSION_MAX_ALLOWED%,$(GLIB_CFLAGS))
-'''
-
 libnmdbus = static_library(
   'nmdbus',
   sources: sources,

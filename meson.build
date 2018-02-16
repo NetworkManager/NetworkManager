@@ -209,23 +209,18 @@ config_h.set10('HAVE_LIBSYSTEMD', libsystemd_dep.found())
 systemd_dep = dependency('systemd', required: false)
 have_systemd_200 = systemd_dep.found() and systemd_dep.version().version_compare('>= 200')
 
-gio_unix_dep = dependency('gio-unix-2.0', version: '>= 2.32')
+gio_unix_dep = dependency('gio-unix-2.0', version: '>= 2.40')
 
 log_driver = join_paths(meson.source_root(), 'build-aux', (gio_unix_dep.version().version_compare('>= 2.37.6') ? 'tap-driver.sh' : 'test-driver'))
 
-# FIXME: same version? which version?
-# GLIB_VERSION_MIN_REQUIRED should match the version above.
-# GLIB_VERSION_MAX_ALLOWED should be set to the same version;
-# nm-glib.h will cause it to be overridden for the functions
-# we have compat versions of.
 glib_dep = declare_dependency(
   dependencies: [
     gio_unix_dep,
     dependency('gmodule-2.0')
   ],
   compile_args: [
-    '-DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_32',
-    '-DGLIB_VERSION_MAX_ALLOWED=GLIB_VERSION_2_32'
+    '-DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_40',
+    '-DGLIB_VERSION_MAX_ALLOWED=GLIB_VERSION_2_40'
   ]
 )
 
