@@ -65,6 +65,40 @@ struct nl_sock {
 
 /*****************************************************************************/
 
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_geterror, int,
+	NM_UTILS_LOOKUP_DEFAULT (NULL),
+	NM_UTILS_LOOKUP_ITEM (NLE_UNSPEC,          "NLE_UNSPEC"),
+	NM_UTILS_LOOKUP_ITEM (NLE_BUG,             "NLE_BUG"),
+	NM_UTILS_LOOKUP_ITEM (NLE_NATIVE_ERRNO,    "NLE_NATIVE_ERRNO"),
+
+	NM_UTILS_LOOKUP_ITEM (NLE_ATTRSIZE,        "NLE_ATTRSIZE"),
+	NM_UTILS_LOOKUP_ITEM (NLE_BAD_SOCK,        "NLE_BAD_SOCK"),
+	NM_UTILS_LOOKUP_ITEM (NLE_DUMP_INTR,       "NLE_DUMP_INTR"),
+	NM_UTILS_LOOKUP_ITEM (NLE_MSG_OVERFLOW,    "NLE_MSG_OVERFLOW"),
+	NM_UTILS_LOOKUP_ITEM (NLE_MSG_TOOSHORT,    "NLE_MSG_TOOSHORT"),
+	NM_UTILS_LOOKUP_ITEM (NLE_MSG_TRUNC,       "NLE_MSG_TRUNC"),
+	NM_UTILS_LOOKUP_ITEM (NLE_SEQ_MISMATCH,    "NLE_SEQ_MISMATCH"),
+	NM_UTILS_LOOKUP_ITEM (NLE_USER_NOBUFS,     "NLE_USER_NOBUFS"),
+	NM_UTILS_LOOKUP_ITEM (NLE_USER_MSG_TRUNC,  "NLE_USER_MSG_TRUNC"),
+)
+
+const char *
+nl_geterror (int err)
+{
+	const char *s;
+
+	err = nl_errno (err);
+
+	if (err >= _NLE_BASE) {
+		s = _geterror (err);
+		if (s)
+			return s;
+	}
+	return g_strerror (err);
+}
+
+/*****************************************************************************/
+
 NM_UTILS_ENUM2STR_DEFINE (nl_nlmsgtype2str, int,
 	NM_UTILS_ENUM2STR (NLMSG_NOOP,    "NOOP"),
 	NM_UTILS_ENUM2STR (NLMSG_ERROR,   "ERROR"),
@@ -365,7 +399,7 @@ nlmsg_append (struct nl_msg *n, void *data, size_t len, int pad)
 
 	tmp = nlmsg_reserve(n, len, pad);
 	if (tmp == NULL)
-		return -NLE_NOMEM;
+		return -ENOMEM;
 
 	memcpy(tmp, data, len);
 	return 0;
@@ -456,9 +490,9 @@ nla_put (struct nl_msg *msg, int attrtype, int datalen, const void *data)
 	nla = nla_reserve(msg, attrtype, datalen);
 	if (!nla) {
 		if (datalen < 0)
-			return -NLE_INVAL;
+			g_return_val_if_reached (-NLE_BUG);
 
-		return -NLE_NOMEM;
+		return -ENOMEM;
 	}
 
 	if (datalen > 0)
@@ -579,15 +613,15 @@ validate_nla (const struct nlattr *nla, int maxtype,
 		minlen = nla_attr_minlen[pt->type];
 
 	if (nla_len(nla) < minlen)
-		return -NLE_RANGE;
+		return -NLE_UNSPEC;
 
 	if (pt->maxlen && nla_len(nla) > pt->maxlen)
-		return -NLE_RANGE;
+		return -NLE_UNSPEC;
 
 	if (pt->type == NLA_STRING) {
 		const char *data = nla_data(nla);
 		if (data[nla_len(nla) - 1] != '\0')
-			return -NLE_INVAL;
+			return -NLE_UNSPEC;
 	}
 
 	return 0;
@@ -876,7 +910,7 @@ nl_cb_err (struct nl_cb *cb, enum nl_cb_kind kind,
            nl_recvmsg_err_cb_t func, void *arg)
 {
 	if ((unsigned int) kind > NL_CB_KIND_MAX)
-		return -NLE_RANGE;
+		g_return_val_if_reached (-NLE_BUG);
 
 	if (kind == NL_CB_CUSTOM) {
 		cb->cb_err = func;
@@ -894,10 +928,10 @@ nl_cb_set (struct nl_cb *cb, enum nl_cb_type type, enum nl_cb_kind kind,
            nl_recvmsg_msg_cb_t func, void *arg)
 {
 	if ((unsigned int) type > NL_CB_TYPE_MAX)
-		return -NLE_RANGE;
+		g_return_val_if_reached (-NLE_BUG);
 
 	if ((unsigned int) kind > NL_CB_KIND_MAX)
-		return -NLE_RANGE;
+		g_return_val_if_reached (-NLE_BUG);
 
 	if (kind == NL_CB_CUSTOM) {
 		cb->cb_set[type] = func;
@@ -993,10 +1027,10 @@ nl_socket_set_passcred (struct nl_sock *sk, int state)
 	if (sk->s_fd == -1)
 		return -NLE_BAD_SOCK;
 
-	err = setsockopt(sk->s_fd, SOL_SOCKET, SO_PASSCRED,
-			 &state, sizeof(state));
+	err = setsockopt (sk->s_fd, SOL_SOCKET, SO_PASSCRED,
+	                  &state, sizeof(state));
 	if (err < 0)
-		return -errno;
+		return -nl_syserr2nlerr (errno);
 
 	if (state)
 		sk->s_flags |= NL_SOCK_PASSCRED;
@@ -1027,7 +1061,7 @@ nl_socket_set_nonblocking (const struct nl_sock *sk)
 		return -NLE_BAD_SOCK;
 
 	if (fcntl(sk->s_fd, F_SETFL, O_NONBLOCK) < 0)
-		return -errno;
+		return -nl_syserr2nlerr (errno);
 
 	return 0;
 }
@@ -1049,13 +1083,13 @@ nl_socket_set_buffer_size (struct nl_sock *sk, int rxbuf, int txbuf)
 	err = setsockopt (sk->s_fd, SOL_SOCKET, SO_SNDBUF,
 	                  &txbuf, sizeof(txbuf));
 	if (err < 0) {
-		return -errno;
+		return -nl_syserr2nlerr (errno);
 	}
 
 	err = setsockopt (sk->s_fd, SOL_SOCKET, SO_RCVBUF,
 	                  &rxbuf, sizeof(rxbuf));
 	if (err < 0) {
-		return -errno;
+		return -nl_syserr2nlerr (errno);
 	}
 
 	return 0;
@@ -1075,14 +1109,14 @@ nl_socket_add_memberships (struct nl_sock *sk, int group, ...)
 	while (group != 0) {
 		if (group < 0) {
 			va_end(ap);
-			return -NLE_INVAL;
+			g_return_val_if_reached (-NLE_BUG);
 		}
 
 		err = setsockopt (sk->s_fd, SOL_NETLINK, NETLINK_ADD_MEMBERSHIP,
 		                  &group, sizeof(group));
 		if (err < 0) {
 			va_end(ap);
-			return -errno;
+			return -nl_syserr2nlerr (errno);
 		}
 
 		group = va_arg(ap, int);
@@ -1111,7 +1145,7 @@ nl_connect (struct nl_sock *sk, int protocol)
 
 	sk->s_fd = socket (AF_NETLINK, SOCK_RAW | SOCK_CLOEXEC, protocol);
 	if (sk->s_fd < 0) {
-		err = -errno;
+		err = -nl_syserr2nlerr (errno);
 		goto errout;
 	}
 
@@ -1124,7 +1158,7 @@ nl_connect (struct nl_sock *sk, int protocol)
 	err = bind (sk->s_fd, (struct sockaddr*) &sk->s_local,
 	            sizeof(sk->s_local));
 	if (err != 0) {
-		err = -errno;
+		err = -nl_syserr2nlerr (errno);
 		goto errout;
 	}
 
@@ -1132,17 +1166,17 @@ nl_connect (struct nl_sock *sk, int protocol)
 	err = getsockname (sk->s_fd, (struct sockaddr *) &local,
 	                   &addrlen);
 	if (err < 0) {
-		err = -errno;
+		err = -nl_syserr2nlerr (errno);
 		goto errout;
 	}
 
 	if (addrlen != sizeof(local)) {
-		err = -NLE_NOADDR;
+		err = -NLE_UNSPEC;
 		goto errout;
 	}
 
 	if (local.nl_family != AF_NETLINK) {
-		err = -NLE_AF_NOSUPPORT;
+		err = -NLE_UNSPEC;
 		goto errout;
 	}
 
@@ -1150,12 +1184,12 @@ nl_connect (struct nl_sock *sk, int protocol)
 	sk->s_proto = protocol;
 
 	return 0;
+
 errout:
 	if (sk->s_fd != -1) {
 		close(sk->s_fd);
 		sk->s_fd = -1;
 	}
-
 	return err;
 }
 
@@ -1174,7 +1208,7 @@ nl_wait_for_ack(struct nl_sock *sk)
 
 	cb = nl_cb_clone(sk->s_cb);
 	if (cb == NULL)
-		return -NLE_NOMEM;
+		return -ENOMEM;
 
 	nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, ack_wait_handler, NULL);
 	err = nl_recvmsgs(sk, cb);
@@ -1229,7 +1263,7 @@ continue_reading:
 		nlmsg_free(msg);
 		msg = nlmsg_convert(hdr);
 		if (!msg) {
-			err = -NLE_NOMEM;
+			err = -ENOMEM;
 			goto out;
 		}
 
@@ -1441,7 +1475,7 @@ nl_sendmsg (struct nl_sock *sk, struct nl_msg *msg, struct msghdr *hdr)
 
 	ret = sendmsg(sk->s_fd, hdr, 0);
 	if (ret < 0)
-		return -errno;
+		return -nl_syserr2nlerr (errno);
 
 	return ret;
 }
@@ -1547,7 +1581,7 @@ nl_recv (struct nl_sock *sk, struct sockaddr_nl *nla,
 	int retval = 0;
 
 	if (!buf || !nla)
-		return -NLE_INVAL;
+		g_return_val_if_reached (-NLE_BUG);
 
 	if (   (sk->s_flags & NL_MSG_PEEK)
 	    || (!(sk->s_flags & NL_MSG_PEEK_EXPLICIT) && sk->s_bufsize == 0))
@@ -1560,7 +1594,7 @@ nl_recv (struct nl_sock *sk, struct sockaddr_nl *nla,
 	iov.iov_base = malloc(iov.iov_len);
 
 	if (!iov.iov_base) {
-		retval = -NLE_NOMEM;
+		retval = -ENOMEM;
 		goto abort;
 	}
 
@@ -1568,7 +1602,7 @@ nl_recv (struct nl_sock *sk, struct sockaddr_nl *nla,
 		msg.msg_controllen = CMSG_SPACE(sizeof(struct ucred));
 		msg.msg_control = malloc(msg.msg_controllen);
 		if (!msg.msg_control) {
-			retval = -NLE_NOMEM;
+			retval = -ENOMEM;
 			goto abort;
 		}
 	}
@@ -1583,7 +1617,7 @@ retry:
 		if (errno == EINTR)
 			goto retry;
 
-		retval = -errno;
+		retval = -nl_syserr2nlerr (errno);
 		goto abort;
 	}
 
@@ -1598,7 +1632,7 @@ retry:
 		msg.msg_controllen *= 2;
 		tmp = realloc(msg.msg_control, msg.msg_controllen);
 		if (!tmp) {
-			retval = -NLE_NOMEM;
+			retval = -ENOMEM;
 			goto abort;
 		}
 		msg.msg_control = tmp;
@@ -1620,7 +1654,7 @@ retry:
 		iov.iov_len = n;
 		tmp = realloc(iov.iov_base, iov.iov_len);
 		if (!tmp) {
-			retval = -NLE_NOMEM;
+			retval = -ENOMEM;
 			goto abort;
 		}
 		iov.iov_base = tmp;
@@ -1635,7 +1669,7 @@ retry:
 	}
 
 	if (msg.msg_namelen != sizeof(struct sockaddr_nl)) {
-		retval =  -NLE_NOADDR;
+		retval =  -NLE_UNSPEC;
 		goto abort;
 	}
 
@@ -1649,7 +1683,7 @@ retry:
 				continue;
 			tmpcreds = malloc(sizeof(*tmpcreds));
 			if (!tmpcreds) {
-				retval = -NLE_NOMEM;
+				retval = -ENOMEM;
 				goto abort;
 			}
 			memcpy(tmpcreds, CMSG_DATA(cmsg), sizeof(*tmpcreds));

@@ -27,43 +27,53 @@
 
 /*****************************************************************************/
 
-#define NLE_AGAIN               EAGAIN
-#define NLE_NOMEM               ENOMEM
-#define NLE_BAD_SOCK            EBADF
-#define NLE_INVAL               EINVAL
-#define NLE_RANGE               ERANGE
-#define NLE_OBJ_NOTFOUND        ENOENT
-#define NLE_NOADDR              EADDRNOTAVAIL
-#define NLE_MSG_OVERFLOW        EOVERFLOW
-#define NLE_AF_NOSUPPORT        EAFNOSUPPORT
+#define _NLE_BASE               100000
+#define NLE_UNSPEC              (_NLE_BASE +  0)
+#define NLE_BUG                 (_NLE_BASE +  1)
+#define NLE_NATIVE_ERRNO        (_NLE_BASE +  2)
+#define NLE_SEQ_MISMATCH        (_NLE_BASE +  3)
+#define NLE_MSG_TRUNC           (_NLE_BASE +  4)
+#define NLE_MSG_TOOSHORT        (_NLE_BASE +  5)
+#define NLE_DUMP_INTR           (_NLE_BASE +  6)
+#define NLE_ATTRSIZE            (_NLE_BASE +  7)
+#define NLE_BAD_SOCK            (_NLE_BASE +  8)
+#define NLE_NOADDR              (_NLE_BASE + 12)
+#define NLE_MSG_OVERFLOW        (_NLE_BASE + 13)
 
-#define NLE_SEQ_MISMATCH        10016
-#define NLE_MSG_TRUNC           10018
-#define NLE_MSG_TOOSHORT        10021
-#define NLE_DUMP_INTR           10033
-#define NLE_ATTRSIZE            10034
-#define NLE_BUG                 19000
+/* user errors, these errors are never returned by netlink functions themself,
+ * but are reserved for other components. */
+#define NLE_USER_NOBUFS         (_NLE_BASE + 15)
+#define NLE_USER_MSG_TRUNC      (_NLE_BASE + 16)
+
+#define _NLE_BASE_END           (_NLE_BASE + 17)
 
 static inline int
-nl_errno (int error)
+nl_errno (int err)
 {
-	/* the error codes from our netlink implementation are plain errno.
-	 * However, often we encode them as negative values.
+	/* the error codes from our netlink implementation are plain errno
+	 * extended with our own error in a particular range starting from
+	 * _NLE_BASE.
 	 *
-	 * A negative errno is the same as it's positive counterpart.
-	 *
-	 * This function normalizes the error code and always returns a
-	 * non-negative value. */
-	return error >= 0
-	       ? error
-	       : ((error == G_MININT) ? NLE_BUG : -errno);
+	 * However, often we encode errors as negative values. This function
+	 * normalizes the error and returns it's positive value. */
+	return err >= 0
+	       ? err
+	       : ((err == G_MININT) ? NLE_BUG : -errno);
 }
 
-static inline const char *
-nl_geterror (int error)
+static inline int
+nl_syserr2nlerr (int err)
 {
-	return g_strerror (nl_errno (error));
+	if (err == G_MININT)
+		return NLE_NATIVE_ERRNO;
+	if (err < 0)
+		err = -err;
+	return (err >= _NLE_BASE && err < _NLE_BASE_END)
+	       ? NLE_NATIVE_ERRNO
+	       : err;
 }
+
+const char *nl_geterror (int err);
 
 /*****************************************************************************/
 

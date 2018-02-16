@@ -82,7 +82,7 @@ genl_ctrl_resolve (struct nl_sock *sk, const char *name)
 	struct nl_msg *msg;
 	struct nl_cb *cb, *orig;
 	int rc;
-	int result = -NLE_OBJ_NOTFOUND;
+	int result = -ENOENT;
 	gint32 response_data = -1;
 
 	if (!(orig = nl_socket_get_cb (sk)))
@@ -235,7 +235,7 @@ _nl80211_send_and_recv (struct nl_sock *nl_sock,
 	 */
 	while (!done) {
 		err = nl_recvmsgs (nl_sock, cb);
-		if (err && err != -NLE_AGAIN) {
+		if (err < 0 && err != -EAGAIN) {
 			/* Kernel scan list can change while we are dumping it, as new scan
 			 * results from H/W can arrive. BSS info is assured to be consistent
 			 * and we don't need consistent view of whole scan list. Hence do

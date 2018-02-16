@@ -80,10 +80,6 @@ enum {
 
 #define VLAN_FLAG_MVRP 0x8
 
-/* nm-internal error codes for libnl. Make sure they don't overlap. */
-#define _NLE_NM_NOBUFS 500
-#define _NLE_MSG_TRUNC 501
-
 /*****************************************************************************/
 
 #define IFQDISCSIZ                      32
@@ -6496,19 +6492,19 @@ continue_reading:
 			if (!handle_events)
 				goto continue_reading;
 		}
-		n = -_NLE_MSG_TRUNC;
+		n = -NLE_USER_MSG_TRUNC;
 		break;
 	}
 	case -ENOBUFS:
-		n = -_NLE_NM_NOBUFS;
+		n = -NLE_USER_NOBUFS;
 		break;
-	case -NLE_NOMEM:
+	case -ENOMEM:
 		if (errno == ENOBUFS) {
 			/* we are very much interested in a overrun of the receive buffer.
-			 * nl_recv() maps all kinds of errors to NLE_NOMEM, so check also
+			 * nl_recv() maps all kinds of errors to ENOMEM, so check also
 			 * for errno explicitly. And if so, hack our own return code to signal
 			 * the overrun. */
-			n = -_NLE_NM_NOBUFS;
+			n = -NLE_USER_NOBUFS;
 		}
 		break;
 	}
@@ -6526,7 +6522,7 @@ continue_reading:
 
 		msg = nlmsg_convert (hdr);
 		if (!msg) {
-			err = -NLE_NOMEM;
+			err = -ENOMEM;
 			goto out;
 		}
 
@@ -6686,19 +6682,19 @@ event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks)
 
 			if (nle < 0) {
 				switch (nle) {
-				case -NLE_AGAIN:
+				case -EAGAIN:
 					goto after_read;
 				case -NLE_DUMP_INTR:
 					_LOGD ("netlink: read: uncritical failure to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
 					break;
-				case -_NLE_MSG_TRUNC:
-				case -_NLE_NM_NOBUFS:
+				case -NLE_USER_MSG_TRUNC:
+				case -NLE_USER_NOBUFS:
 					_LOGI ("netlink: read: %s. Need to resynchronize platform cache",
 					       ({
 					            const char *_reason = "unknown";
 					            switch (nle) {
-					            case -_NLE_MSG_TRUNC: _reason = "message truncated";       break;
-					            case -_NLE_NM_NOBUFS: _reason = "too many netlink events"; break;
+					            case -NLE_USER_MSG_TRUNC: _reason = "message truncated";       break;
+					            case -NLE_USER_NOBUFS: _reason = "too many netlink events"; break;
 					            }
 					            _reason;
 					       }));
