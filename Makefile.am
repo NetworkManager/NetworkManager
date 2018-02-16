@@ -1225,6 +1225,7 @@ src_libsystemd_nm_la_cppflags = \
 	-I$(srcdir)/src/systemd/src/shared \
 	-I$(srcdir)/src/systemd/src/libsystemd-network \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD \
+	$(LIBSYSTEMD_NM_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(CODE_COVERAGE_CFLAGS)
 
