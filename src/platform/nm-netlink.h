@@ -450,8 +450,6 @@ int nl_send_auto (struct nl_sock *sk, struct nl_msg *msg);
 
 /*****************************************************************************/
 
-struct nl_cb;
-
 enum nl_cb_action {
 	/* Proceed with wathever would come next */
 	NL_OK,
@@ -461,48 +459,24 @@ enum nl_cb_action {
 	NL_STOP,
 };
 
-enum nl_cb_kind {
-	/* Default handlers (quiet) */
-	NL_CB_DEFAULT,
-	/* Customized handler specified by the user */
-	NL_CB_CUSTOM,
-	__NL_CB_KIND_MAX,
-};
-
-#define NL_CB_KIND_MAX (__NL_CB_KIND_MAX - 1)
-
-enum nl_cb_type {
-	/* Message is valid */
-	NL_CB_VALID,
-	/* Last message in a series of multi part messages received */
-	NL_CB_FINISH,
-	/* Message is an acknowledge */
-	NL_CB_ACK,
-	__NL_CB_TYPE_MAX,
-};
-
-#define NL_CB_TYPE_MAX (__NL_CB_TYPE_MAX - 1)
-
 typedef int (*nl_recvmsg_msg_cb_t) (struct nl_msg *msg, void *arg);
 
 typedef int (*nl_recvmsg_err_cb_t) (struct sockaddr_nl *nla,
                                     struct nlmsgerr *nlerr, void *arg);
 
-struct nl_cb *nl_cb_alloc (enum nl_cb_kind kind);
+struct nl_cb {
+	nl_recvmsg_msg_cb_t     valid_cb;
+	void *                  valid_arg;
 
-struct nl_cb *nl_cb_clone (struct nl_cb *orig);
+	nl_recvmsg_msg_cb_t     finish_cb;
+	void *                  finish_arg;
 
-struct nl_cb *nl_cb_get (struct nl_cb *cb);
+	nl_recvmsg_msg_cb_t     ack_cb;
+	void *                  ack_arg;
 
-void nl_cb_put (struct nl_cb *cb);
-
-int nl_cb_set (struct nl_cb *cb, enum nl_cb_type type, enum nl_cb_kind kind,
-               nl_recvmsg_msg_cb_t func, void *arg);
-
-int nl_cb_err (struct nl_cb *cb, enum nl_cb_kind kind,
-               nl_recvmsg_err_cb_t func, void *arg);
-
-struct nl_cb *nl_socket_get_cb (const struct nl_sock *sk);
+	nl_recvmsg_err_cb_t     err_cb;
+	void *                  err_arg;
+};
 
 int nl_sendmsg (struct nl_sock *sk, struct nl_msg *msg, struct msghdr *hdr);
 
@@ -512,7 +486,8 @@ void nl_complete_msg (struct nl_sock *sk, struct nl_msg *msg);
 
 int nl_recvmsgs (struct nl_sock *sk, const struct nl_cb *cb);
 
-int nl_wait_for_ack (struct nl_sock *sk);
+int nl_wait_for_ack (struct nl_sock *sk,
+                     const struct nl_cb *cb);
 
 /*****************************************************************************/
 

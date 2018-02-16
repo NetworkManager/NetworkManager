@@ -59,7 +59,6 @@ struct nl_sock {
 	unsigned int            s_seq_next;
 	unsigned int            s_seq_expect;
 	int                     s_flags;
-	struct nl_cb *          s_cb;
 	size_t                  s_bufsize;
 };
 
@@ -804,155 +803,17 @@ genlmsg_parse (struct nlmsghdr *nlh, int hdrlen, struct nlattr *tb[],
 
 /*****************************************************************************/
 
-struct nl_cb {
-	nl_recvmsg_msg_cb_t     cb_set[NL_CB_TYPE_MAX+1];
-	void *                  cb_args[NL_CB_TYPE_MAX+1];
-
-	nl_recvmsg_err_cb_t     cb_err;
-	void *                  cb_err_arg;
-
-	int                     cb_refcnt;
-};
-
-/*****************************************************************************/
-
-static int
-nl_cb_call (const struct nl_cb *cb, enum nl_cb_type type, struct nl_msg *msg)
-{
-	return cb->cb_set[type](msg, cb->cb_args[type]);
-}
-
-struct nl_cb *
-nl_cb_alloc (enum nl_cb_kind kind)
-{
-	int i;
-	struct nl_cb *cb;
-
-	if ((unsigned int) kind > NL_CB_KIND_MAX)
-		return NULL;
-
-	cb = calloc(1, sizeof(*cb));
-	if (!cb)
-		return NULL;
-
-	cb->cb_refcnt = 1;
-
-	for (i = 0; i <= NL_CB_TYPE_MAX; i++)
-		nl_cb_set(cb, i, kind, NULL, NULL);
-
-	nl_cb_err(cb, kind, NULL, NULL);
-
-	return cb;
-}
-
-struct nl_cb *nl_cb_clone(struct nl_cb *orig)
-{
-	struct nl_cb *cb;
-
-	cb = nl_cb_alloc(NL_CB_DEFAULT);
-	if (!cb)
-		return NULL;
-
-	memcpy(cb, orig, sizeof(*orig));
-	cb->cb_refcnt = 1;
-
-	return cb;
-}
-
-struct nl_cb *nl_cb_get(struct nl_cb *cb)
-{
-	cb->cb_refcnt++;
-
-	return cb;
-}
-
-void nl_cb_put(struct nl_cb *cb)
-{
-	if (!cb)
-		return;
-
-	if (cb->cb_refcnt <= 0)
-		g_return_if_reached ();
-
-	cb->cb_refcnt--;
-
-	if (cb->cb_refcnt <= 0)
-		free(cb);
-}
-
-int
-nl_cb_err (struct nl_cb *cb, enum nl_cb_kind kind,
-           nl_recvmsg_err_cb_t func, void *arg)
-{
-	if ((unsigned int) kind > NL_CB_KIND_MAX)
-		g_return_val_if_reached (-NLE_BUG);
-
-	if (kind == NL_CB_CUSTOM) {
-		cb->cb_err = func;
-		cb->cb_err_arg = arg;
-	} else {
-		cb->cb_err = NULL;
-		cb->cb_err_arg = arg;
-	}
-
-	return 0;
-}
-
-int
-nl_cb_set (struct nl_cb *cb, enum nl_cb_type type, enum nl_cb_kind kind,
-           nl_recvmsg_msg_cb_t func, void *arg)
-{
-	if ((unsigned int) type > NL_CB_TYPE_MAX)
-		g_return_val_if_reached (-NLE_BUG);
-
-	if ((unsigned int) kind > NL_CB_KIND_MAX)
-		g_return_val_if_reached (-NLE_BUG);
-
-	if (kind == NL_CB_CUSTOM) {
-		cb->cb_set[type] = func;
-		cb->cb_args[type] = arg;
-	} else {
-		cb->cb_set[type] = NULL;
-		cb->cb_args[type] = arg;
-	}
-
-	return 0;
-}
-
-/*****************************************************************************/
-
-static struct nl_sock *
-_alloc_socket (struct nl_cb *cb)
-{
-	struct nl_sock *sk;
-
-	sk = calloc(1, sizeof(*sk));
-	if (!sk)
-		return NULL;
-
-	sk->s_fd = -1;
-	sk->s_cb = nl_cb_get(cb);
-	sk->s_local.nl_family = AF_NETLINK;
-	sk->s_peer.nl_family = AF_NETLINK;
-	sk->s_seq_expect = sk->s_seq_next = time(NULL);
-
-	return sk;
-}
-
 struct nl_sock *
 nl_socket_alloc (void)
 {
-	struct nl_cb *cb;
 	struct nl_sock *sk;
 
-	cb = nl_cb_alloc (NL_CB_DEFAULT);
-	if (!cb)
-		return NULL;
+	sk = g_slice_new0 (struct nl_sock);
 
-	/* will increment cb reference count on success */
-	sk = _alloc_socket(cb);
-
-	nl_cb_put(cb);
+	sk->s_fd = -1;
+	sk->s_local.nl_family = AF_NETLINK;
+	sk->s_peer.nl_family = AF_NETLINK;
+	sk->s_seq_expect = sk->s_seq_next = time(NULL);
 
 	return sk;
 }
@@ -964,16 +825,8 @@ nl_socket_free (struct nl_sock *sk)
 		return;
 
 	if (sk->s_fd >= 0)
-		close(sk->s_fd);
-
-	nl_cb_put(sk->s_cb);
-	free(sk);
-}
-
-struct nl_cb *
-nl_socket_get_cb (const struct nl_sock *sk)
-{
-	return nl_cb_get(sk->s_cb);
+		nm_close (sk->s_fd);
+	g_slice_free (struct nl_sock, sk);
 }
 
 int
@@ -1170,41 +1023,50 @@ errout:
 
 /*****************************************************************************/
 
+static void
+_cb_init (struct nl_cb *dst, const struct nl_cb *src)
+{
+	nm_assert (dst);
+
+	if (src)
+		*dst = *src;
+	else
+		memset (dst, 0, sizeof (*dst));
+}
+
 static int ack_wait_handler(struct nl_msg *msg, void *arg)
 {
 	return NL_STOP;
 }
 
 int
-nl_wait_for_ack(struct nl_sock *sk)
+nl_wait_for_ack (struct nl_sock *sk,
+                 const struct nl_cb *cb)
 {
-	int err;
-	struct nl_cb *cb;
+	struct nl_cb cb2;
 
-	cb = nl_cb_clone(sk->s_cb);
-	if (cb == NULL)
-		return -ENOMEM;
-
-	nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, ack_wait_handler, NULL);
-	err = nl_recvmsgs(sk, cb);
-	nl_cb_put(cb);
-
-	return err;
+	_cb_init (&cb2, cb);
+	cb2.ack_cb = ack_wait_handler;
+	return nl_recvmsgs (sk, &cb2);
 }
 
 #define NL_CB_CALL(cb, type, msg) \
 do { \
-	err = nl_cb_call(cb, type, msg); \
-	switch (err) { \
-	case NL_OK: \
-		err = 0; \
-		break; \
-	case NL_SKIP: \
-		goto skip; \
-	case NL_STOP: \
-		goto stop; \
-	default: \
-		goto out; \
+	const struct nl_cb *_cb = (cb); \
+	\
+	if (_cb->type##_cb) { \
+		err = _cb->type##_cb ((msg), _cb->type##_arg); \
+		switch (err) { \
+		case NL_OK: \
+			err = 0; \
+			break; \
+		case NL_SKIP: \
+			goto skip; \
+		case NL_STOP: \
+			goto stop; \
+		default: \
+			goto out; \
+		} \
 	} \
 } while (0)
 
@@ -1280,8 +1142,7 @@ continue_reading:
 		 * this action by skipping this packet. */
 		if (hdr->nlmsg_type == NLMSG_DONE) {
 			multipart = 0;
-			if (cb->cb_set[NL_CB_FINISH])
-				NL_CB_CALL(cb, NL_CB_FINISH, msg);
+			NL_CB_CALL(cb, finish, msg);
 		}
 
 		/* Message to be ignored, the default action is to
@@ -1313,9 +1174,9 @@ continue_reading:
 			}
 			if (e->error) {
 				/* Error message reported back from kernel. */
-				if (cb->cb_err) {
-					err = cb->cb_err(&nla, e,
-							 cb->cb_err_arg);
+				if (cb->err_cb) {
+					err = cb->err_cb (&nla, e,
+					                  cb->err_arg);
 					if (err < 0)
 						goto out;
 					else if (err == NL_SKIP)
@@ -1328,14 +1189,13 @@ continue_reading:
 					err = -e->error;
 					goto out;
 				}
-			} else if (cb->cb_set[NL_CB_ACK])
-				NL_CB_CALL(cb, NL_CB_ACK, msg);
+			} else
+				NL_CB_CALL(cb, ack, msg);
 		} else {
 			/* Valid message (not checking for MULTIPART bit to
 			 * get along with broken kernels. NL_SKIP has no
 			 * effect on this.  */
-			if (cb->cb_set[NL_CB_VALID])
-				NL_CB_CALL(cb, NL_CB_VALID, msg);
+			NL_CB_CALL(cb, valid, msg);
 		}
 skip:
 		err = 0;

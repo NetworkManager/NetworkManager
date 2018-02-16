@@ -79,55 +79,43 @@ probe_response (struct nl_msg *msg, void *arg)
 static int
 genl_ctrl_resolve (struct nl_sock *sk, const char *name)
 {
-	struct nl_msg *msg;
-	struct nl_cb *cb, *orig;
-	int rc;
-	int result = -ENOENT;
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
+	int result = -ENOMEM;
 	gint32 response_data = -1;
-
-	if (!(orig = nl_socket_get_cb (sk)))
-		goto out;
-
-	cb = nl_cb_clone (orig);
-	nl_cb_put (orig);
-	if (!cb)
-		goto out;
+	const struct nl_cb cb = {
+		.valid_cb = probe_response,
+		.valid_arg = &response_data,
+	};
 
 	msg = nlmsg_alloc ();
 	if (!msg)
-		goto out_cb_free;
+		goto out;
 
 	if (!genlmsg_put (msg, NL_AUTO_PORT, NL_AUTO_SEQ, GENL_ID_CTRL,
 	                  0, 0, CTRL_CMD_GETFAMILY, 1))
-		goto out_msg_free;
+		goto out;
 
 	if (nla_put_string (msg, CTRL_ATTR_FAMILY_NAME, name) < 0)
-		goto out_msg_free;
+		goto out;
 
-	rc = nl_cb_set (cb, NL_CB_VALID, NL_CB_CUSTOM, probe_response, &response_data);
-	if (rc < 0)
-		goto out_msg_free;
+	result = nl_send_auto (sk, msg);
+	if (result < 0)
+		goto out;
 
-	rc = nl_send_auto (sk, msg);
-	if (rc < 0)
-		goto out_msg_free;
-
-	rc = nl_recvmsgs (sk, cb);
-	if (rc < 0)
-		goto out_msg_free;
+	result = nl_recvmsgs (sk, &cb);
+	if (result < 0)
+		goto out;
 
 	/* If search was successful, request may be ACKed after data */
-	rc = nl_wait_for_ack (sk);
-	if (rc < 0)
-		goto out_msg_free;
+	result = nl_wait_for_ack (sk, NULL);
+	if (result < 0)
+		goto out;
 
 	if (response_data > 0)
 		result = response_data;
+	else
+		result = -ENOENT;
 
-out_msg_free:
-	nlmsg_free (msg);
-out_cb_free:
-	nl_cb_put (cb);
 out:
 	if (result >= 0)
 		_LOGD (LOGD_WIFI, "genl_ctrl_resolve: resolved \"%s\" as 0x%x", name, result);
@@ -206,33 +194,31 @@ _nl80211_send_and_recv (struct nl_sock *nl_sock,
                         int (*valid_handler) (struct nl_msg *, void *),
                         void *valid_data)
 {
-	struct nl_cb *cb;
-	int err, done;
+	nm_auto_nlmsg struct nl_msg *msg_free = msg;
+	int err;
+	int done = 0;
+	const struct nl_cb cb = {
+		.err_cb     = error_handler,
+		.err_arg    = &done,
+		.finish_cb  = finish_handler,
+		.finish_arg = &done,
+		.ack_cb     = ack_handler,
+		.ack_arg    = &done,
+		.valid_cb   = valid_handler,
+		.valid_arg  = valid_data,
+	};
 
 	g_return_val_if_fail (msg != NULL, -ENOMEM);
 
-	cb = nl_cb_alloc (NL_CB_DEFAULT);
-	if (!cb) {
-		err = -ENOMEM;
-		goto out;
-	}
-
 	err = nl_send_auto (nl_sock, msg);
 	if (err < 0)
-		goto out;
-
-	done = 0;
-	nl_cb_err (cb, NL_CB_CUSTOM, error_handler, &done);
-	nl_cb_set (cb, NL_CB_FINISH, NL_CB_CUSTOM, finish_handler, &done);
-	nl_cb_set (cb, NL_CB_ACK, NL_CB_CUSTOM, ack_handler, &done);
-	if (valid_handler)
-		nl_cb_set (cb, NL_CB_VALID, NL_CB_CUSTOM, valid_handler, valid_data);
+		return err;
 
 	/* Loop until one of our NL callbacks says we're done; on success
 	 * done will be 1, on error it will be < 0.
 	 */
 	while (!done) {
-		err = nl_recvmsgs (nl_sock, cb);
+		err = nl_recvmsgs (nl_sock, &cb);
 		if (err < 0 && err != -EAGAIN) {
 			/* Kernel scan list can change while we are dumping it, as new scan
 			 * results from H/W can arrive. BSS info is assured to be consistent
@@ -248,12 +234,9 @@ _nl80211_send_and_recv (struct nl_sock *nl_sock,
 			break;
 		}
 	}
+
 	if (err >= 0 && done < 0)
 		err = done;
-
- out:
-	nl_cb_put (cb);
-	nlmsg_free (msg);
 	return err;
 }
 
