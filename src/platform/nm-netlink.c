@@ -77,8 +77,6 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_geterror, int,
 	NM_UTILS_LOOKUP_ITEM (NLE_MSG_TOOSHORT,    "NLE_MSG_TOOSHORT"),
 	NM_UTILS_LOOKUP_ITEM (NLE_MSG_TRUNC,       "NLE_MSG_TRUNC"),
 	NM_UTILS_LOOKUP_ITEM (NLE_SEQ_MISMATCH,    "NLE_SEQ_MISMATCH"),
-	NM_UTILS_LOOKUP_ITEM (NLE_USER_NOBUFS,     "NLE_USER_NOBUFS"),
-	NM_UTILS_LOOKUP_ITEM (NLE_USER_MSG_TRUNC,  "NLE_USER_MSG_TRUNC"),
 )
 
 const char *
@@ -1299,7 +1297,7 @@ nl_recv (struct nl_sock *sk, struct sockaddr_nl *nla,
 		.msg_iovlen = 1,
 	};
 	gs_free struct ucred* tmpcreds = NULL;
-	int retval = 0;
+	int retval;
 
 	nm_assert (nla);
 	nm_assert (buf && !*buf);
@@ -1328,6 +1326,7 @@ retry:
 		retval = 0;
 		goto abort;
 	}
+
 	if (n < 0) {
 		if (errno == EINTR)
 			goto retry;
@@ -1347,7 +1346,8 @@ retry:
 		goto retry;
 	}
 
-	if (iov.iov_len < n || (msg.msg_flags & MSG_TRUNC)) {
+	if (   iov.iov_len < n
+	    || (msg.msg_flags & MSG_TRUNC)) {
 		/* respond with error to an incomplete message */
 		if (flags == 0) {
 			retval = -NLE_MSG_TRUNC;

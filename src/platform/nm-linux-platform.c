@@ -6447,15 +6447,12 @@ event_handler_recvmsgs (NMPlatform *platform, gboolean handle_events)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	struct nl_sock *sk = priv->nlh;
-	int n, err = 0, multipart = 0, interrupted = 0;
+	int n;
+	int err = 0;
+	gboolean multipart = 0;
+	gboolean interrupted = FALSE;
 	struct nlmsghdr *hdr;
 	WaitForNlResponseResult seq_result;
-
-	/*
-	nla is passed on to not only to nl_recv() but may also be passed
-	to a function pointer provided by the caller which may or may not
-	initialize the variable. Thomas Graf.
-	*/
 	struct sockaddr_nl nla = {0};
 	nm_auto_free struct ucred *creds = NULL;
 	nm_auto_free unsigned char *buf = NULL;
@@ -6463,43 +6460,28 @@ event_handler_recvmsgs (NMPlatform *platform, gboolean handle_events)
 continue_reading:
 	g_clear_pointer (&buf, free);
 	g_clear_pointer (&creds, free);
-	errno = 0;
 	n = nl_recv (sk, &nla, &buf, &creds);
 
-	switch (n) {
-	case -NLE_MSG_TRUNC: {
-		int buf_size;
+	if (n <= 0) {
 
-		/* the message receive buffer was too small. We lost one message, which
-		 * is unfortunate. Try to double the buffer size for the next time. */
-		buf_size = nl_socket_get_msg_buf_size (sk);
-		if (buf_size < 512*1024) {
-			buf_size *= 2;
-			_LOGT ("netlink: recvmsg: increase message buffer size for recvmsg() to %d bytes", buf_size);
-			if (nl_socket_set_msg_buf_size (sk, buf_size) < 0)
-				nm_assert_not_reached ();
-			if (!handle_events)
-				goto continue_reading;
-		}
-		n = -NLE_USER_MSG_TRUNC;
-		break;
-	}
-	case -ENOBUFS:
-		n = -NLE_USER_NOBUFS;
-		break;
-	case -ENOMEM:
-		if (errno == ENOBUFS) {
-			/* we are very much interested in a overrun of the receive buffer.
-			 * nl_recv() maps all kinds of errors to ENOMEM, so check also
-			 * for errno explicitly. And if so, hack our own return code to signal
-			 * the overrun. */
-			n = -NLE_USER_NOBUFS;
-		}
-		break;
-	}
+		if (n == -NLE_MSG_TRUNC) {
+			int buf_size;
 
-	if (n <= 0)
+			/* the message receive buffer was too small. We lost one message, which
+			 * is unfortunate. Try to double the buffer size for the next time. */
+			buf_size = nl_socket_get_msg_buf_size (sk);
+			if (buf_size < 512*1024) {
+				buf_size *= 2;
+				_LOGT ("netlink: recvmsg: increase message buffer size for recvmsg() to %d bytes", buf_size);
+				if (nl_socket_set_msg_buf_size (sk, buf_size) < 0)
+					nm_assert_not_reached ();
+				if (!handle_events)
+					goto continue_reading;
+			}
+		}
+
 		return n;
+	}
 
 	hdr = (struct nlmsghdr *) buf;
 	while (nlmsg_ok (hdr, n)) {
@@ -6530,7 +6512,7 @@ continue_reading:
 			nlmsg_set_creds (msg, creds);
 
 		if (hdr->nlmsg_flags & NLM_F_MULTI)
-			multipart = 1;
+			multipart = TRUE;
 
 		if (hdr->nlmsg_flags & NLM_F_DUMP_INTR) {
 			/*
@@ -6538,7 +6520,7 @@ continue_reading:
 			 * all messages until a NLMSG_DONE is
 			 * received and report the inconsistency.
 			 */
-			interrupted = 1;
+			interrupted = TRUE;
 		}
 
 		/* Other side wishes to see an ack for this message */
@@ -6553,7 +6535,7 @@ continue_reading:
 			 * usually the end of a message and therefore we slip
 			 * out of the loop by default. the user may overrule
 			 * this action by skipping this packet. */
-			multipart = 0;
+			multipart = FALSE;
 			seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
 		} else if (hdr->nlmsg_type == NLMSG_NOOP) {
 			/* Message to be ignored, the default action is to
@@ -6634,7 +6616,7 @@ stop:
 	}
 
 	if (interrupted)
-		err = -NLE_DUMP_INTR;
+		return -NLE_DUMP_INTR;
 	return err;
 }
 
@@ -6672,14 +6654,14 @@ event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks)
 				case -NLE_DUMP_INTR:
 					_LOGD ("netlink: read: uncritical failure to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
 					break;
-				case -NLE_USER_MSG_TRUNC:
-				case -NLE_USER_NOBUFS:
+				case -NLE_MSG_TRUNC:
+				case -ENOBUFS:
 					_LOGI ("netlink: read: %s. Need to resynchronize platform cache",
 					       ({
 					            const char *_reason = "unknown";
 					            switch (nle) {
-					            case -NLE_USER_MSG_TRUNC: _reason = "message truncated";       break;
-					            case -NLE_USER_NOBUFS: _reason = "too many netlink events"; break;
+					            case -NLE_MSG_TRUNC: _reason = "message truncated";       break;
+					            case -ENOBUFS:       _reason = "too many netlink events"; break;
 					            }
 					            _reason;
 					       }));

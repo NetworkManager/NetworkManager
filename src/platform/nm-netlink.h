@@ -37,15 +37,10 @@
 #define NLE_DUMP_INTR           (_NLE_BASE +  6)
 #define NLE_ATTRSIZE            (_NLE_BASE +  7)
 #define NLE_BAD_SOCK            (_NLE_BASE +  8)
-#define NLE_NOADDR              (_NLE_BASE + 12)
-#define NLE_MSG_OVERFLOW        (_NLE_BASE + 13)
+#define NLE_NOADDR              (_NLE_BASE +  9)
+#define NLE_MSG_OVERFLOW        (_NLE_BASE + 10)
 
-/* user errors, these errors are never returned by netlink functions themself,
- * but are reserved for other components. */
-#define NLE_USER_NOBUFS         (_NLE_BASE + 15)
-#define NLE_USER_MSG_TRUNC      (_NLE_BASE + 16)
-
-#define _NLE_BASE_END           (_NLE_BASE + 17)
+#define _NLE_BASE_END           (_NLE_BASE + 11)
 
 static inline int
 nl_errno (int err)
