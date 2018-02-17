@@ -422,8 +422,8 @@ nla_get_u64 (const struct nlattr *nla)
 {
 	uint64_t tmp = 0;
 
-	if (nla && nla_len(nla) >= sizeof(tmp))
-		memcpy(&tmp, nla_data(nla), sizeof(tmp));
+	if (nla && nla_len(nla) >= sizeof (tmp))
+		memcpy(&tmp, nla_data(nla), sizeof (tmp));
 
 	return tmp;
 }
@@ -562,10 +562,10 @@ nla_nest_end (struct nl_msg *msg, struct nlattr *start)
 }
 
 static const uint16_t nla_attr_minlen[NLA_TYPE_MAX+1] = {
-	[NLA_U8]        = sizeof(uint8_t),
-	[NLA_U16]       = sizeof(uint16_t),
-	[NLA_U32]       = sizeof(uint32_t),
-	[NLA_U64]       = sizeof(uint64_t),
+	[NLA_U8]        = sizeof (uint8_t),
+	[NLA_U16]       = sizeof (uint16_t),
+	[NLA_U32]       = sizeof (uint32_t),
+	[NLA_U64]       = sizeof (uint64_t),
 	[NLA_STRING]    = 1,
 	[NLA_FLAG]      = 0,
 };
@@ -613,7 +613,7 @@ nla_parse (struct nlattr *tb[], int maxtype, struct nlattr *head, int len,
 	struct nlattr *nla;
 	int rem, err;
 
-	memset(tb, 0, sizeof(struct nlattr *) * (maxtype + 1));
+	memset(tb, 0, sizeof (struct nlattr *) * (maxtype + 1));
 
 	nla_for_each_attr(nla, head, len, rem) {
 		int type = nla_type(nla);
@@ -668,7 +668,7 @@ nlmsg_set_proto (struct nl_msg *msg, int protocol)
 void
 nlmsg_set_src (struct nl_msg *msg, struct sockaddr_nl *addr)
 {
-	memcpy (&msg->nm_src, addr, sizeof(*addr));
+	memcpy (&msg->nm_src, addr, sizeof (*addr));
 }
 
 struct ucred *
@@ -682,7 +682,7 @@ nlmsg_get_creds (struct nl_msg *msg)
 void
 nlmsg_set_creds (struct nl_msg *msg, struct ucred *creds)
 {
-	memcpy (&msg->nm_creds, creds, sizeof(*creds));
+	memcpy (&msg->nm_creds, creds, sizeof (*creds));
 	msg->nm_flags |= NL_MSG_CRED_PRESENT;
 }
 
@@ -836,7 +836,7 @@ nl_socket_set_passcred (struct nl_sock *sk, int state)
 		return -NLE_BAD_SOCK;
 
 	err = setsockopt (sk->s_fd, SOL_SOCKET, SO_PASSCRED,
-	                  &state, sizeof(state));
+	                  &state, sizeof (state));
 	if (err < 0)
 		return -nl_syserr2nlerr (errno);
 
@@ -889,13 +889,13 @@ nl_socket_set_buffer_size (struct nl_sock *sk, int rxbuf, int txbuf)
 		return -NLE_BAD_SOCK;
 
 	err = setsockopt (sk->s_fd, SOL_SOCKET, SO_SNDBUF,
-	                  &txbuf, sizeof(txbuf));
+	                  &txbuf, sizeof (txbuf));
 	if (err < 0) {
 		return -nl_syserr2nlerr (errno);
 	}
 
 	err = setsockopt (sk->s_fd, SOL_SOCKET, SO_RCVBUF,
-	                  &rxbuf, sizeof(rxbuf));
+	                  &rxbuf, sizeof (rxbuf));
 	if (err < 0) {
 		return -nl_syserr2nlerr (errno);
 	}
@@ -921,7 +921,7 @@ nl_socket_add_memberships (struct nl_sock *sk, int group, ...)
 		}
 
 		err = setsockopt (sk->s_fd, SOL_NETLINK, NETLINK_ADD_MEMBERSHIP,
-		                  &group, sizeof(group));
+		                  &group, sizeof (group));
 		if (err < 0) {
 			va_end(ap);
 			return -nl_syserr2nlerr (errno);
@@ -964,13 +964,13 @@ nl_connect (struct nl_sock *sk, int protocol)
 	nm_assert (sk->s_local.nl_pid == 0);
 
 	err = bind (sk->s_fd, (struct sockaddr*) &sk->s_local,
-	            sizeof(sk->s_local));
+	            sizeof (sk->s_local));
 	if (err != 0) {
 		err = -nl_syserr2nlerr (errno);
 		goto errout;
 	}
 
-	addrlen = sizeof(local);
+	addrlen = sizeof (local);
 	err = getsockname (sk->s_fd, (struct sockaddr *) &local,
 	                   &addrlen);
 	if (err < 0) {
@@ -978,7 +978,7 @@ nl_connect (struct nl_sock *sk, int protocol)
 		goto errout;
 	}
 
-	if (addrlen != sizeof(local)) {
+	if (addrlen != sizeof (local)) {
 		err = -NLE_UNSPEC;
 		goto errout;
 	}
@@ -1134,7 +1134,7 @@ continue_reading:
 		else if (hdr->nlmsg_type == NLMSG_ERROR) {
 			struct nlmsgerr *e = nlmsg_data(hdr);
 
-			if (hdr->nlmsg_len < nlmsg_size(sizeof(*e))) {
+			if (hdr->nlmsg_len < nlmsg_size(sizeof (*e))) {
 				/* Truncated error message, the default action
 				 * is to stop parsing. The user may overrule
 				 * this action by returning NL_SKIP or
@@ -1214,11 +1214,11 @@ nl_send_iovec (struct nl_sock *sk, struct nl_msg *msg, struct iovec *iov, unsign
 	struct ucred *creds;
 	struct msghdr hdr = {
 		.msg_name = (void *) &sk->s_peer,
-		.msg_namelen = sizeof(struct sockaddr_nl),
+		.msg_namelen = sizeof (struct sockaddr_nl),
 		.msg_iov = iov,
 		.msg_iovlen = iovlen,
 	};
-	char buf[CMSG_SPACE(sizeof(struct ucred))];
+	char buf[CMSG_SPACE(sizeof (struct ucred))];
 
 	/* Overwrite destination if specified in the message itself, defaults
 	 * to the peer address of the socket.
@@ -1233,13 +1233,13 @@ nl_send_iovec (struct nl_sock *sk, struct nl_msg *msg, struct iovec *iov, unsign
 		struct cmsghdr *cmsg;
 
 		hdr.msg_control = buf;
-		hdr.msg_controllen = sizeof(buf);
+		hdr.msg_controllen = sizeof (buf);
 
 		cmsg = CMSG_FIRSTHDR(&hdr);
 		cmsg->cmsg_level = SOL_SOCKET;
 		cmsg->cmsg_type = SCM_CREDENTIALS;
-		cmsg->cmsg_len = CMSG_LEN(sizeof(struct ucred));
-		memcpy(CMSG_DATA(cmsg), creds, sizeof(struct ucred));
+		cmsg->cmsg_len = CMSG_LEN(sizeof (struct ucred));
+		memcpy(CMSG_DATA(cmsg), creds, sizeof (struct ucred));
 	}
 
 	return nl_sendmsg(sk, msg, &hdr);
@@ -1294,7 +1294,7 @@ nl_recv (struct nl_sock *sk, struct sockaddr_nl *nla,
 	struct iovec iov;
 	struct msghdr msg = {
 		.msg_name = (void *) nla,
-		.msg_namelen = sizeof(struct sockaddr_nl),
+		.msg_namelen = sizeof (struct sockaddr_nl),
 		.msg_iov = &iov,
 		.msg_iovlen = 1,
 	};
@@ -1316,8 +1316,9 @@ nl_recv (struct nl_sock *sk, struct sockaddr_nl *nla,
 	iov.iov_len = sk->s_bufsize ? : page_size;
 	iov.iov_base = g_malloc (iov.iov_len);
 
-	if (creds && (sk->s_flags & NL_SOCK_PASSCRED)) {
-		msg.msg_controllen = CMSG_SPACE (sizeof(struct ucred));
+	if (   creds
+	    && (sk->s_flags & NL_SOCK_PASSCRED)) {
+		msg.msg_controllen = CMSG_SPACE (sizeof (struct ucred));
 		msg.msg_control = g_malloc (msg.msg_controllen);
 	}
 
@@ -1368,7 +1369,7 @@ retry:
 		goto retry;
 	}
 
-	if (msg.msg_namelen != sizeof(struct sockaddr_nl)) {
+	if (msg.msg_namelen != sizeof (struct sockaddr_nl)) {
 		retval =  -NLE_UNSPEC;
 		goto abort;
 	}
@@ -1381,7 +1382,7 @@ retry:
 				continue;
 			if (cmsg->cmsg_type != SCM_CREDENTIALS)
 				continue;
-			tmpcreds = g_memdup (CMSG_DATA(cmsg), sizeof(*tmpcreds));
+			tmpcreds = g_memdup (CMSG_DATA(cmsg), sizeof (*tmpcreds));
 			break;
 		}
 	}
