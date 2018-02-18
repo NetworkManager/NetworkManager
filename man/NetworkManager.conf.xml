@@ -312,6 +312,7 @@ no-auto-default=*
         <listitem><para>Set the DNS (<filename>resolv.conf</filename>) processing mode.
         If the key is unspecified, <literal>default</literal> is used,
         unless <filename>/etc/resolv.conf</filename> is a symlink to
+        <filename>/run/systemd/resolve/stub-resolv.conf</filename>,
         <filename>/run/systemd/resolve/resolv.conf</filename>,
         <filename>/lib/systemd/resolv.conf</filename> or
         <filename>/usr/lib/systemd/resolv.conf</filename>.
