@@ -25,7 +25,10 @@
 #include "nm-connectivity.h"
 
 #include <string.h>
+
+#if WITH_CONCHECK
 #include <curl/curl.h>
+#endif
 
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"
@@ -42,6 +45,8 @@ NM_UTILS_LOOKUP_STR_DEFINE (nm_connectivity_state_to_string, NMConnectivityState
 );
 
 /*****************************************************************************/
+
+#if WITH_CONCHECK
 
 typedef struct {
 	GSimpleAsyncResult *simple;
@@ -583,3 +588,5 @@ nm_connectivity_class_init (NMConnectivityClass *klass)
 
 	object_class->dispose = dispose;
 }
+
+#endif /* WITH_CONCHECK */
