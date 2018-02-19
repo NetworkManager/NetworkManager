@@ -11638,7 +11638,6 @@ queued_ip6_config_change (gpointer user_data)
 {
 	NMDevice *self = user_data;
 	NMDevicePrivate *priv;
-	GSList *iter;
 	gboolean need_ipv6ll = FALSE;
 	NMPlatform *platform;
 
@@ -11671,20 +11670,17 @@ queued_ip6_config_change (gpointer user_data)
 	    && (platform = nm_device_get_platform (self))
 	    && nm_platform_link_get (platform, priv->ifindex)) {
 		/* Handle DAD failures */
-		for (iter = priv->dad6_failed_addrs; iter; iter = iter->next) {
-			const NMPObject *obj = iter->data;
-			const NMPlatformIP6Address *addr = NMP_OBJECT_CAST_IP6_ADDRESS (obj);
-			const NMPlatformIP6Address *addr2;
+		while (priv->dad6_failed_addrs) {
+			nm_auto_nmpobj const NMPObject *obj = NULL;
+			const NMPlatformIP6Address *addr;
 
-			addr2 = NMP_OBJECT_CAST_IP6_ADDRESS (nm_platform_lookup_obj (platform,
-			                                                             NMP_CACHE_ID_TYPE_OBJECT_TYPE,
-			                                                             obj));
-			if (   addr2
-			    && (   NM_FLAGS_HAS (addr2->n_ifa_flags, IFA_F_TEMPORARY)
-			        || !NM_FLAGS_HAS (addr2->n_ifa_flags, IFA_F_DADFAILED))) {
-				/* the address still/again exists and is not in DADFAILED state. Skip it. */
+			obj = priv->dad6_failed_addrs->data;
+			priv->dad6_failed_addrs = g_slist_delete_link (priv->dad6_failed_addrs, priv->dad6_failed_addrs);
+
+			if (!nm_ndisc_dad_addr_is_fail_candidate (platform, obj))
 				continue;
-			}
+
+			addr = NMP_OBJECT_CAST_IP6_ADDRESS (obj);
 
 			_LOGI (LOGD_IP6, "ipv6: duplicate address check failed for the %s address",
 			       nm_platform_ip6_address_to_string (addr, NULL, 0));
@@ -11705,10 +11701,10 @@ queued_ip6_config_change (gpointer user_data)
 
 		if (need_ipv6ll)
 			check_and_add_ipv6ll_addr (self);
+	} else {
+		g_slist_free_full (priv->dad6_failed_addrs, (GDestroyNotify) nmp_object_unref);
+		priv->dad6_failed_addrs = NULL;
 	}
-
-	g_slist_free_full (priv->dad6_failed_addrs, (GDestroyNotify) nmp_object_unref);
-	priv->dad6_failed_addrs = NULL;
 
 	/* Check if DAD is still pending */
 	if (   priv->ip6_state == IP_CONF
@@ -11763,11 +11759,9 @@ device_ipx_changed (NMPlatform *platform,
 	case NMP_OBJECT_TYPE_IP6_ADDRESS:
 		addr = platform_object;
 
-		if (   !NM_FLAGS_HAS (addr->n_ifa_flags, IFA_F_TEMPORARY)
-		    && priv->state > NM_DEVICE_STATE_DISCONNECTED
+		if (   priv->state > NM_DEVICE_STATE_DISCONNECTED
 		    && priv->state < NM_DEVICE_STATE_DEACTIVATING
-		    && (   (change_type == NM_PLATFORM_SIGNAL_CHANGED && addr->n_ifa_flags & IFA_F_DADFAILED)
-		        || (change_type == NM_PLATFORM_SIGNAL_REMOVED && addr->n_ifa_flags & IFA_F_TENTATIVE))) {
+		    && nm_ndisc_dad_addr_is_fail_candidate_event (change_type, addr)) {
 			priv->dad6_failed_addrs = g_slist_prepend (priv->dad6_failed_addrs,
 			                                           (gpointer) nmp_object_ref (NMP_OBJECT_UP_CAST (addr)));
 		}

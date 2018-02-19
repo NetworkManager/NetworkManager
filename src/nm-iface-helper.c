@@ -33,6 +33,8 @@
 #include <signal.h>
 #include <linux/rtnetlink.h>
 
+#include "nm-utils/nm-c-list.h"
+
 #include "main-utils.h"
 #include "NetworkManagerUtils.h"
 #include "platform/nm-linux-platform.h"
@@ -55,6 +57,9 @@
 static struct {
 	GMainLoop *main_loop;
 	int ifindex;
+
+	guint dad_failed_id;
+	CList dad_failed_lst_head;
 } gl/*obal*/ = {
 	.ifindex = -1,
 };
@@ -316,19 +321,58 @@ do_early_setup (int *argc, char **argv[])
 	return TRUE;
 }
 
+typedef struct {
+	NMPlatform *platform;
+	NMNDisc *ndisc;
+} DadFailedHandleData;
+
+static gboolean
+dad_failed_handle_idle (gpointer user_data)
+{
+	DadFailedHandleData *data = user_data;
+	NMCListElem *elem;
+
+	while ((elem = c_list_first_entry (&gl.dad_failed_lst_head, NMCListElem, lst))) {
+		nm_auto_nmpobj const NMPObject *obj = elem->data;
+
+		nm_c_list_elem_free (elem);
+
+		if (nm_ndisc_dad_addr_is_fail_candidate (data->platform, obj)) {
+			nm_ndisc_dad_failed (data->ndisc,
+			                     &NMP_OBJECT_CAST_IP6_ADDRESS (obj)->address);
+		}
+	}
+
+	gl.dad_failed_id = 0;
+	return G_SOURCE_REMOVE;
+}
+
 static void
 ip6_address_changed (NMPlatform *platform,
                      int obj_type_i,
                      int iface,
-                     NMPlatformIP6Address *addr,
+                     const NMPlatformIP6Address *addr,
                      int change_type_i,
                      NMNDisc *ndisc)
 {
 	const NMPlatformSignalChangeType change_type = change_type_i;
+	DadFailedHandleData *data;
 
-	if (   (change_type == NM_PLATFORM_SIGNAL_CHANGED && addr->n_ifa_flags & IFA_F_DADFAILED)
-	    || (change_type == NM_PLATFORM_SIGNAL_REMOVED && addr->n_ifa_flags & IFA_F_TENTATIVE))
-		nm_ndisc_dad_failed (ndisc, &addr->address);
+	if (!nm_ndisc_dad_addr_is_fail_candidate_event (change_type, addr))
+		return;
+
+	c_list_link_tail (&gl.dad_failed_lst_head,
+	                  &nm_c_list_elem_new_stale ((gpointer) nmp_object_ref (NMP_OBJECT_UP_CAST (addr)))->lst);
+	if (gl.dad_failed_id)
+		return;
+
+	data = g_slice_new (DadFailedHandleData);
+	data->platform = platform;
+	data->ndisc = ndisc;
+	gl.dad_failed_id = g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
+	                                    dad_failed_handle_idle,
+	                                    data,
+	                                    nm_g_slice_free_fcn (DadFailedHandleData));
 }
 
 int
@@ -345,6 +389,8 @@ main (int argc, char *argv[])
 	gs_free NMUtilsIPv6IfaceId *iid = NULL;
 	guint sd_id;
 	char sysctl_path_buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
+
+	c_list_init (&gl.dad_failed_lst_head);
 
 	setpgid (getpid (), getpid ());
 
@@ -525,6 +571,9 @@ main (int argc, char *argv[])
 	sd_id = nm_sd_event_attach_default ();
 
 	g_main_loop_run (gl.main_loop);
+
+	nm_clear_g_source (&gl.dad_failed_id);
+	nm_c_list_elem_free_all (&gl.dad_failed_lst_head, (GDestroyNotify) nmp_object_unref);
 
 	if (pidfile && wrote_pidfile)
 		unlink (pidfile);
