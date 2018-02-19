@@ -294,6 +294,7 @@ typedef enum {
 	WAIT_FOR_NL_RESPONSE_RESULT_FAILED_POLL,
 	WAIT_FOR_NL_RESPONSE_RESULT_FAILED_TIMEOUT,
 	WAIT_FOR_NL_RESPONSE_RESULT_FAILED_DISPOSING,
+	WAIT_FOR_NL_RESPONSE_RESULT_FAILED_SETNS,
 } WaitForNlResponseResult;
 
 typedef void (*WaitForNlResponseCallback) (NMPlatform *platform,
@@ -3442,27 +3443,58 @@ delayed_action_wait_for_nl_response_complete (NMPlatform *platform,
 }
 
 static void
+delayed_action_wait_for_nl_response_complete_check (NMPlatform *platform,
+                                                    WaitForNlResponseResult force_result,
+                                                    guint32 *out_next_seq_number,
+                                                    gint64 *out_next_timeout_abs_ns,
+                                                    gint64 *p_now_ns)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	guint i;
+	guint32 next_seq_number = 0;
+	gint64 next_timeout_abs_ns = 0;
+	gint now_ns = 0;
+
+	for (i = 0; i < priv->delayed_action.list_wait_for_nl_response->len; ) {
+		const DelayedActionWaitForNlResponseData *data = &g_array_index (priv->delayed_action.list_wait_for_nl_response, DelayedActionWaitForNlResponseData, i);
+
+		if (data->seq_result)
+			delayed_action_wait_for_nl_response_complete (platform, i, data->seq_result);
+		else if (   p_now_ns
+		         && ((now_ns ?: (now_ns = nm_utils_get_monotonic_timestamp_ns ())) >= data->timeout_abs_ns)) {
+			/* the caller can optionally check for timeout by providing a p_now_ns argument. */
+			delayed_action_wait_for_nl_response_complete (platform, i, WAIT_FOR_NL_RESPONSE_RESULT_FAILED_TIMEOUT);
+		} else if (force_result != WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN)
+			delayed_action_wait_for_nl_response_complete (platform, i, force_result);
+		else {
+			if (   next_seq_number == 0
+			    || next_timeout_abs_ns > data->timeout_abs_ns) {
+				next_seq_number = data->seq_number;
+				next_timeout_abs_ns = data->timeout_abs_ns;
+			}
+			i++;
+		}
+	}
+
+	if (force_result != WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN) {
+		nm_assert (!NM_FLAGS_HAS (priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE));
+		nm_assert (priv->delayed_action.list_wait_for_nl_response->len == 0);
+	}
+
+	NM_SET_OUT (out_next_seq_number, next_seq_number);
+	NM_SET_OUT (out_next_timeout_abs_ns, next_timeout_abs_ns);
+	NM_SET_OUT (p_now_ns, now_ns);
+}
+
+static void
 delayed_action_wait_for_nl_response_complete_all (NMPlatform *platform,
                                                   WaitForNlResponseResult fallback_result)
 {
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-
-	if (NM_FLAGS_HAS (priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE)) {
-		while (priv->delayed_action.list_wait_for_nl_response->len > 0) {
-			const DelayedActionWaitForNlResponseData *data;
-			guint idx = priv->delayed_action.list_wait_for_nl_response->len - 1;
-			WaitForNlResponseResult r;
-
-			data = &g_array_index (priv->delayed_action.list_wait_for_nl_response, DelayedActionWaitForNlResponseData, idx);
-
-			/* prefer the result that we already have. */
-			r = data->seq_result ? : fallback_result;
-
-			delayed_action_wait_for_nl_response_complete (platform, idx, r);
-		}
-	}
-	nm_assert (!NM_FLAGS_HAS (priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE));
-	nm_assert (priv->delayed_action.list_wait_for_nl_response->len == 0);
+	delayed_action_wait_for_nl_response_complete_check (platform,
+	                                                    fallback_result,
+	                                                    NULL,
+	                                                    NULL,
+	                                                    NULL);
 }
 
 /*****************************************************************************/
@@ -6627,23 +6659,25 @@ event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks)
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	int r, nle;
+	int r;
 	struct pollfd pfd;
 	gboolean any = FALSE;
-	gint64 now_ns;
 	int timeout_ms;
-	guint i;
 	struct {
 		guint32 seq_number;
 		gint64 timeout_abs_ns;
-	} data_next;
+		gint64 now_ns;
+	} next;
 
-	if (!nm_platform_netns_push (platform, &netns))
+	if (!nm_platform_netns_push (platform, &netns)) {
+		delayed_action_wait_for_nl_response_complete_all (platform,
+		                                                  WAIT_FOR_NL_RESPONSE_RESULT_FAILED_SETNS);
 		return FALSE;
+	}
 
-	while (TRUE) {
-
-		while (TRUE) {
+	for (;;) {
+		for (;;) {
+			int nle;
 
 			nle = event_handler_recvmsgs (platform, TRUE);
 
@@ -6666,7 +6700,9 @@ event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks)
 					            _reason;
 					       }));
 					event_handler_recvmsgs (platform, FALSE);
-					delayed_action_wait_for_nl_response_complete_all (platform, WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC);
+					delayed_action_wait_for_nl_response_complete_all (platform,
+					                                                  WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC);
+
 					delayed_action_schedule (platform,
 					                         DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS |
 					                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES |
@@ -6690,39 +6726,23 @@ after_read:
 		if (!NM_FLAGS_HAS (priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE))
 			return any;
 
-		now_ns = 0;
-		data_next.seq_number = 0;
-		data_next.timeout_abs_ns = 0;
-
-		for (i = 0; i < priv->delayed_action.list_wait_for_nl_response->len; ) {
-			DelayedActionWaitForNlResponseData *data = &g_array_index (priv->delayed_action.list_wait_for_nl_response, DelayedActionWaitForNlResponseData, i);
-
-			if (data->seq_result)
-				delayed_action_wait_for_nl_response_complete (platform, i, data->seq_result);
-			else if ((now_ns ?: (now_ns = nm_utils_get_monotonic_timestamp_ns ())) > data->timeout_abs_ns)
-				delayed_action_wait_for_nl_response_complete (platform, i, WAIT_FOR_NL_RESPONSE_RESULT_FAILED_TIMEOUT);
-			else {
-				i++;
-
-				if (   data_next.seq_number == 0
-				    || data_next.timeout_abs_ns > data->timeout_abs_ns) {
-					data_next.seq_number = data->seq_number;
-					data_next.timeout_abs_ns = data->timeout_abs_ns;
-				}
-			}
-		}
+		delayed_action_wait_for_nl_response_complete_check (platform,
+		                                                    WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN,
+		                                                    &next.seq_number,
+		                                                    &next.timeout_abs_ns,
+		                                                    &next.now_ns);
 
 		if (   !wait_for_acks
 		    || !NM_FLAGS_HAS (priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE))
 			return any;
 
-		nm_assert (data_next.seq_number);
-		nm_assert (data_next.timeout_abs_ns > 0);
-		nm_assert (now_ns > 0);
+		nm_assert (next.seq_number);
+		nm_assert (next.now_ns > 0);
+		nm_assert (next.timeout_abs_ns > next.now_ns);
 
-		_LOGT ("netlink: read: wait for ACK for sequence number %u...", data_next.seq_number);
+		_LOGT ("netlink: read: wait for ACK for sequence number %u...", next.seq_number);
 
-		timeout_ms = (data_next.timeout_abs_ns - now_ns) / (NM_UTILS_NS_PER_SECOND / 1000);
+		timeout_ms = (next.timeout_abs_ns - next.now_ns) / (NM_UTILS_NS_PER_SECOND / 1000);
 
 		memset (&pfd, 0, sizeof (pfd));
 		pfd.fd = nl_socket_get_fd (priv->nlh);
@@ -6733,6 +6753,7 @@ after_read:
 			/* timeout and there is nothing to read. */
 			goto after_read;
 		}
+
 		if (r < 0) {
 			int errsv = errno;
 
@@ -7003,7 +7024,8 @@ dispose (GObject *object)
 
 	_LOGD ("dispose");
 
-	delayed_action_wait_for_nl_response_complete_all (platform, WAIT_FOR_NL_RESPONSE_RESULT_FAILED_DISPOSING);
+	delayed_action_wait_for_nl_response_complete_all (platform,
+	                                                  WAIT_FOR_NL_RESPONSE_RESULT_FAILED_DISPOSING);
 
 	priv->delayed_action.flags = DELAYED_ACTION_TYPE_NONE;
 	g_ptr_array_set_size (priv->delayed_action.list_master_connected, 0);
