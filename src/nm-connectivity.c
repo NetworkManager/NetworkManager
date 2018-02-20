@@ -81,7 +81,7 @@ struct _NMConnectivityCheckHandle {
 };
 
 enum {
-	PERIODIC_CHECK,
+	CONFIG_CHANGED,
 
 	LAST_SIGNAL
 };
@@ -99,7 +99,6 @@ typedef struct {
 	struct {
 		CURLM *curl_mhandle;
 		guint curl_timer;
-		guint periodic_check_id;
 	} concheck;
 #endif
 } NMConnectivityPrivate;
@@ -539,21 +538,20 @@ nm_connectivity_check_cancel (NMConnectivityCheckHandle *cb_data)
 gboolean
 nm_connectivity_check_enabled (NMConnectivity *self)
 {
-	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
+	g_return_val_if_fail (NM_IS_CONNECTIVITY (self), FALSE);
 
-	return priv->enabled;
+	return NM_CONNECTIVITY_GET_PRIVATE (self)->enabled;
 }
 
 /*****************************************************************************/
 
-#if WITH_CONCHECK
-static gboolean
-periodic_check (gpointer user_data)
+guint
+nm_connectivity_get_interval (NMConnectivity *self)
 {
-	g_signal_emit (NM_CONNECTIVITY (user_data), signals[PERIODIC_CHECK], 0);
-	return G_SOURCE_CONTINUE;
+	return nm_connectivity_check_enabled (self)
+	       ? NM_CONNECTIVITY_GET_PRIVATE (self)->interval
+	       : 0;
 }
-#endif
 
 static void
 update_config (NMConnectivity *self, NMConfigData *config_data)
@@ -592,6 +590,7 @@ update_config (NMConnectivity *self, NMConfigData *config_data)
 
 	/* Set the interval. */
 	interval = nm_config_data_get_connectivity_interval (config_data);
+	interval = MIN (interval, (7 * 24 * 3600));
 	if (priv->interval != interval) {
 		priv->interval = interval;
 		changed = TRUE;
@@ -622,13 +621,8 @@ update_config (NMConnectivity *self, NMConfigData *config_data)
 		changed = TRUE;
 	}
 
-#if WITH_CONCHECK
-	if (changed) {
-		nm_clear_g_source (&priv->concheck.periodic_check_id);
-		if (nm_connectivity_check_enabled (self))
-			priv->concheck.periodic_check_id = g_timeout_add_seconds (priv->interval, periodic_check, self);
-	}
-#endif
+	if (changed)
+		g_signal_emit (self, signals[CONFIG_CHANGED], 0);
 }
 
 static void
@@ -699,7 +693,6 @@ again:
 
 	curl_multi_cleanup (priv->concheck.curl_mhandle);
 	curl_global_cleanup ();
-	nm_clear_g_source (&priv->concheck.periodic_check_id);
 #endif
 
 	if (priv->config) {
@@ -715,8 +708,8 @@ nm_connectivity_class_init (NMConnectivityClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-	signals[PERIODIC_CHECK] =
-	    g_signal_new (NM_CONNECTIVITY_PERIODIC_CHECK,
+	signals[CONFIG_CHANGED] =
+	    g_signal_new (NM_CONNECTIVITY_CONFIG_CHANGED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0, NULL, NULL, NULL,

@@ -132,10 +132,8 @@ typedef struct {
 
 	NMState state;
 	NMConfig *config;
-	NMConnectivityState connectivity_state;
-
+	NMConnectivity *concheck_mgr;
 	NMPolicy *policy;
-
 	NMHostnameManager *hostname_manager;
 
 	struct {
@@ -169,6 +167,8 @@ typedef struct {
 	guint timestamp_update_id;
 
 	guint devices_inited_id;
+
+	NMConnectivityState connectivity_state;
 
 	bool startup:1;
 	bool devices_inited:1;
@@ -331,6 +331,34 @@ static NMActiveConnection *active_connection_find_first (NMManager *self,
 static NM_CACHED_QUARK_FCN ("active-connection-add-and-activate", active_connection_add_and_activate_quark)
 
 static NM_CACHED_QUARK_FCN ("autoconnect-root", autoconnect_root_quark)
+
+/*****************************************************************************/
+
+static void
+concheck_config_changed_cb (NMConnectivity *connectivity,
+                            NMManager *self)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMDevice *device;
+
+	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst)
+		nm_device_check_connectivity_update_interval (device);
+}
+
+static NMConnectivity *
+concheck_get_mgr (NMManager *self)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+
+	if (G_UNLIKELY (!priv->concheck_mgr)) {
+		priv->concheck_mgr = g_object_ref (nm_connectivity_get ());
+		g_signal_connect (priv->concheck_mgr,
+		                  NM_CONNECTIVITY_CONFIG_CHANGED,
+		                  G_CALLBACK (concheck_config_changed_cb),
+		                  self);
+	}
+	return priv->concheck_mgr;
+}
 
 /*****************************************************************************/
 
@@ -5527,10 +5555,10 @@ check_connectivity_auth_done_cb (NMAuthChain *chain,
 	data->remaining = 0;
 
 	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
-		data->remaining++;
-		nm_device_check_connectivity (device,
-		                              device_connectivity_done,
-		                              data);
+		if (nm_device_check_connectivity (device,
+		                                  device_connectivity_done,
+		                                  data))
+			data->remaining++;
 	}
 
 	if (data->remaining == 0) {
@@ -6647,7 +6675,7 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_CONNECTIVITY_CHECK_ENABLED:
 		g_value_set_boolean (value,
-		                     nm_connectivity_check_enabled (nm_connectivity_get ()));
+		                     nm_connectivity_check_enabled (concheck_get_mgr (self)));
 		break;
 	case PROP_PRIMARY_CONNECTION:
 		nm_dbus_utils_g_value_set_object_path (value, priv->primary_connection);
@@ -6776,6 +6804,13 @@ dispose (GObject *object)
 	nm_clear_g_source (&priv->devices_inited_id);
 
 	g_clear_pointer (&priv->checkpoint_mgr, nm_checkpoint_manager_free);
+
+	if (priv->concheck_mgr) {
+		g_signal_handlers_disconnect_by_func (priv->concheck_mgr,
+		                                      G_CALLBACK (concheck_config_changed_cb),
+		                                      self);
+		g_clear_object (&priv->concheck_mgr);
+	}
 
 	if (priv->auth_mgr) {
 		g_signal_handlers_disconnect_by_func (priv->auth_mgr,

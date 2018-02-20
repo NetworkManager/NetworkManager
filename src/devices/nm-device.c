@@ -164,6 +164,7 @@ struct _NMDeviceConnectivityHandle {
 	gpointer user_data;
 	NMConnectivityCheckHandle *c_handle;
 	guint64 seq;
+	bool is_periodic:1;
 };
 
 /*****************************************************************************/
@@ -543,7 +544,19 @@ typedef struct _NMDevicePrivate {
 
 	NMConnectivity *concheck_mgr;
 
-	gulong concheck_periodic_id;
+	/* if periodic checks are enabled, this is the source id for the next check. */
+	guint concheck_p_cur_id;
+
+	/* the currently configured max periodic interval. */
+	guint concheck_p_max_interval;
+
+	/* the current interval. If we are probing, the interval might be lower
+	 * then the configured max interval. */
+	guint concheck_p_cur_interval;
+
+	/* the timestamp, when we last scheduled the timer concheck_p_cur_id with current interval
+	 * concheck_p_cur_interval. */
+	gint64 concheck_p_cur_basetime_ns;
 
 	NMConnectivityState connectivity_state;
 
@@ -2185,17 +2198,225 @@ nm_device_get_physical_port_id (NMDevice *self)
 
 /*****************************************************************************/
 
-static void
-concheck_update_state (NMDevice *self, NMConnectivityState state)
+typedef enum {
+	CONCHECK_SCHEDULE_UPDATE_INTERVAL,
+	CONCHECK_SCHEDULE_CHECK_EXTERNAL,
+	CONCHECK_SCHEDULE_CHECK_PERIODIC,
+	CONCHECK_SCHEDULE_RETURNED_MIN,
+	CONCHECK_SCHEDULE_RETURNED_BUMP,
+	CONCHECK_SCHEDULE_RETURNED_MAX,
+} ConcheckScheduleMode;
+
+static NMDeviceConnectivityHandle *concheck_start (NMDevice *self,
+                                                   NMDeviceConnectivityCallback callback,
+                                                   gpointer user_data,
+                                                   gboolean is_periodic);
+
+static void concheck_periodic_schedule_set (NMDevice *self,
+                                            ConcheckScheduleMode mode);
+
+static gboolean
+concheck_periodic_timeout_cb (gpointer user_data)
+{
+	NMDevice *self = user_data;
+
+	concheck_periodic_schedule_set (self, CONCHECK_SCHEDULE_CHECK_PERIODIC);
+	concheck_start (self, NULL, NULL, TRUE);
+	return G_SOURCE_CONTINUE;
+}
+
+static gboolean
+concheck_is_possible (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (state == NM_CONNECTIVITY_ERROR)
+	if (   !nm_device_is_real (self)
+	    || NM_FLAGS_HAS (priv->unmanaged_flags, NM_UNMANAGED_LOOPBACK))
+		return FALSE;
+
+	/* we enable periodic checks for every device state (except UNKNOWN). Especially with
+	 * unmanaged devices, it is interesting to know whether we have connectivity on that device. */
+	if (priv->state == NM_DEVICE_STATE_UNKNOWN)
+		return FALSE;
+
+	return TRUE;
+}
+
+static gboolean
+concheck_periodic_schedule_do (NMDevice *self, gint64 interval_ns)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gboolean periodic_check_disabled = FALSE;
+
+	/* we always cancel whatever was pending. */
+	if (nm_clear_g_source (&priv->concheck_p_cur_id))
+		periodic_check_disabled = TRUE;
+
+	if (priv->concheck_p_max_interval == 0) {
+		/* periodic checks are disabled */
+		goto out;
+	}
+
+	nm_assert (interval_ns >= 0);
+
+	if (!concheck_is_possible (self))
+		goto out;
+
+	_LOGT (LOGD_CONCHECK, "connectivity: periodic-check: %sscheduled in %u milliseconds (%u seconds interval)",
+	       periodic_check_disabled ? "re-" : "",
+	       (guint) (interval_ns / NM_UTILS_NS_PER_MSEC),
+	       priv->concheck_p_cur_interval);
+
+	nm_assert (priv->concheck_p_cur_interval > 0);
+	priv->concheck_p_cur_id = g_timeout_add (interval_ns / NM_UTILS_NS_PER_MSEC,
+	                                         concheck_periodic_timeout_cb,
+	                                         self);
+	return TRUE;
+out:
+	if (periodic_check_disabled)
+		_LOGT (LOGD_CONCHECK, "connectivity: periodic-check: unscheduled");
+	return FALSE;
+}
+
+#define CONCHECK_P_PROBE_INTERVAL 1
+
+static void
+concheck_periodic_schedule_set (NMDevice *self,
+                                ConcheckScheduleMode mode)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gint64 new_expiry, cur_expiry, tdiff;
+	gint64 now_ns = 0;
+
+	if (priv->concheck_p_max_interval == 0) {
+		/* periodic check is disabled. Nothing to do. */
+		return;
+	}
+
+	if (!priv->concheck_p_cur_id) {
+		/* we currently don't have a timeout scheduled. No need to reschedule
+		 * another one... */
+		if (mode == CONCHECK_SCHEDULE_UPDATE_INTERVAL) {
+			/* ... unless, we are initalizing. In this case, setup the current current
+			 * interval and schedule a perform a check right away.  */
+			priv->concheck_p_cur_interval = NM_MIN (priv->concheck_p_max_interval, CONCHECK_P_PROBE_INTERVAL);
+			priv->concheck_p_cur_basetime_ns = nm_utils_get_monotonic_timestamp_ns_cached (&now_ns);
+			if (concheck_periodic_schedule_do (self, priv->concheck_p_cur_interval * NM_UTILS_NS_PER_SECOND))
+				concheck_start (self, NULL, NULL, TRUE);
+		}
+		return;
+	}
+
+	switch (mode) {
+	case CONCHECK_SCHEDULE_UPDATE_INTERVAL:
+		/* called with "UPDATE_INTERVAL" and already have a concheck_p_cur_id scheduled. */
+
+		if (priv->concheck_p_cur_interval <= priv->concheck_p_max_interval) {
+			/* we currently have a shorter interval set, then what we now have. Either,
+			 * because we are probing, or because the previous max interval was shorter.
+			 *
+			 * Either way, the current timer is set just fine. Nothing to do. */
+			return;
+		}
+
+		cur_expiry = priv->concheck_p_cur_basetime_ns + (priv->concheck_p_max_interval * NM_UTILS_NS_PER_SECOND);
+		priv->concheck_p_cur_interval = priv->concheck_p_max_interval;
+		priv->concheck_p_cur_basetime_ns = nm_utils_get_monotonic_timestamp_ns_cached (&now_ns);
+		if (cur_expiry <= now_ns) {
+			/* the last timer was scheduled longer ago then the new desired interval. It means,
+			 * we must schedule a timer right away */
+			if (concheck_periodic_schedule_do (self, priv->concheck_p_cur_interval * NM_UTILS_NS_PER_SECOND)) {
+				concheck_start (self, NULL, NULL, TRUE);
+			}
+		} else {
+			/* we only need to reset the timer. */
+			concheck_periodic_schedule_do (self, (cur_expiry - now_ns) / NM_UTILS_NS_PER_MSEC);
+		}
 		return;
 
-	/* If the connectivity check is disabled and we obtain a fake
-	 * result, make an optimistic guess. */
-	if (state == NM_CONNECTIVITY_FAKE) {
+	case CONCHECK_SCHEDULE_CHECK_EXTERNAL:
+		/* a external connectivity check delays our periodic check. We reset the counter. */
+		priv->concheck_p_cur_basetime_ns = nm_utils_get_monotonic_timestamp_ns_cached (&now_ns);
+		concheck_periodic_schedule_do (self, priv->concheck_p_cur_interval * NM_UTILS_NS_PER_SECOND);
+		return;
+
+	case CONCHECK_SCHEDULE_CHECK_PERIODIC:
+		/* we schedule a periodic connectivity check now. We just remember the time when
+		 * we did it. There is nothing to reschedule, it's fine already. */
+		priv->concheck_p_cur_basetime_ns = nm_utils_get_monotonic_timestamp_ns_cached (&now_ns);
+		return;
+
+	/* we just got an event that we lost connectivity (that is, concheck returned). We reset
+	 * the interval to min/max or increase the probe interval (bump). */
+	case CONCHECK_SCHEDULE_RETURNED_MIN:
+		priv->concheck_p_cur_interval = NM_MIN (priv->concheck_p_max_interval, CONCHECK_P_PROBE_INTERVAL);
+		break;
+	case CONCHECK_SCHEDULE_RETURNED_MAX:
+		priv->concheck_p_cur_interval = priv->concheck_p_max_interval;
+		break;
+	case CONCHECK_SCHEDULE_RETURNED_BUMP:
+		priv->concheck_p_cur_interval = NM_MIN (priv->concheck_p_cur_interval * 2, priv->concheck_p_max_interval);
+		break;
+	}
+
+	/* we are here, because we returned from a connectivity check and adjust the current interval.
+	 *
+	 * But note that we calculate the new timeout based on the time when we scheduled the
+	 * last check, instead of counting from now. The reaons is, that we want that the times
+	 * when we schedule checks be at precise intervals, without including the time it took for
+	 * the connectivity check. */
+	new_expiry = priv->concheck_p_cur_basetime_ns + (priv->concheck_p_cur_interval * NM_UTILS_NS_PER_SECOND);
+	tdiff = NM_MAX (new_expiry - nm_utils_get_monotonic_timestamp_ns_cached (&now_ns), 0);
+	priv->concheck_p_cur_basetime_ns = now_ns - tdiff;
+	concheck_periodic_schedule_do (self, tdiff);
+}
+
+void
+nm_device_check_connectivity_update_interval (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	guint new_interval;
+
+	new_interval = nm_connectivity_get_interval (concheck_get_mgr (self));
+
+	new_interval = NM_MIN (new_interval, 7 *24 * 3600);
+
+	if (new_interval != priv->concheck_p_max_interval) {
+		_LOGT (LOGD_CONCHECK, "connectivity: periodic-check: set interval to %u seconds", new_interval);
+		priv->concheck_p_max_interval = new_interval;
+	}
+
+	if (!new_interval) {
+		/* this will cancel any potentially pending timeout. */
+		concheck_periodic_schedule_do (self, 0);
+		return;
+	}
+
+	concheck_periodic_schedule_set (self, CONCHECK_SCHEDULE_UPDATE_INTERVAL);
+}
+
+static void
+concheck_update_state (NMDevice *self, NMConnectivityState state, gboolean is_periodic)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	/* @state is a result of the connectivity check. We only expect a precise
+	 * number of possible values. */
+	nm_assert (NM_IN_SET (state, NM_CONNECTIVITY_LIMITED,
+	                             NM_CONNECTIVITY_PORTAL,
+	                             NM_CONNECTIVITY_FULL,
+	                             NM_CONNECTIVITY_FAKE,
+	                             NM_CONNECTIVITY_ERROR));
+
+	if (state == NM_CONNECTIVITY_ERROR) {
+		/* on error, we don't change the current connectivity state,
+		 * except making UNKNOWN to NONE. */
+		state = priv->connectivity_state;
+		if (state == NM_CONNECTIVITY_UNKNOWN)
+			state = NM_CONNECTIVITY_NONE;
+	} else if (state == NM_CONNECTIVITY_FAKE) {
+		/* If the connectivity check is disabled and we obtain a fake
+		 * result, make an optimistic guess. */
 		if (priv->state == NM_DEVICE_STATE_ACTIVATED) {
 			if (nm_device_get_best_default_route (self, AF_UNSPEC))
 				state = NM_CONNECTIVITY_FULL;
@@ -2205,10 +2426,32 @@ concheck_update_state (NMDevice *self, NMConnectivityState state)
 			state = NM_CONNECTIVITY_NONE;
 	}
 
-	if (priv->connectivity_state == state)
+	if (priv->connectivity_state == state) {
+		/* we got a connectivty update, but the state didn't change. If we were probing,
+		 * we bump the probe frequency. */
+		if (   is_periodic
+		    && priv->concheck_p_cur_id)
+			concheck_periodic_schedule_set (self, CONCHECK_SCHEDULE_RETURNED_BUMP);
 		return;
+	}
+	/* we need to update the probe interval before emitting signals. Emitting
+	 * a signal might call back into NMDevice and change the probe settings.
+	 * So, do that first. */
+	if (state == NM_CONNECTIVITY_FULL) {
+		/* we reached full connectivity state. Stop probing by setting the
+		 * interval to the max. */
+		concheck_periodic_schedule_set (self, CONCHECK_SCHEDULE_RETURNED_MAX);
+	} else if (priv->connectivity_state == NM_CONNECTIVITY_FULL) {
+		/* we are about to loose connectivity. (re)start probing by setting
+		 * the timeout interval to the min. */
+		concheck_periodic_schedule_set (self, CONCHECK_SCHEDULE_RETURNED_MIN);
+	} else {
+		if (   is_periodic
+		    && priv->concheck_p_cur_id)
+			concheck_periodic_schedule_set (self, CONCHECK_SCHEDULE_RETURNED_BUMP);
+	}
 
-	_LOGD (LOGD_CONCHECK, "state changed from %s to %s",
+	_LOGD (LOGD_CONCHECK, "connectivity state changed from %s to %s",
 	       nm_connectivity_state_to_string (priv->connectivity_state),
 	       nm_connectivity_state_to_string (state));
 	priv->connectivity_state = state;
@@ -2227,34 +2470,6 @@ concheck_update_state (NMDevice *self, NMConnectivityState state)
 }
 
 static void
-concheck_periodic (NMConnectivity *connectivity, NMDevice *self)
-{
-	nm_device_check_connectivity (self, NULL, NULL);
-}
-
-static void
-concheck_periodic_update (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	if (    priv->state == NM_DEVICE_STATE_ACTIVATED
-	    && nm_device_get_best_default_route (self, AF_UNSPEC)) {
-		if (!priv->concheck_periodic_id) {
-			priv->concheck_periodic_id = g_signal_connect (concheck_get_mgr (self),
-			                                               NM_CONNECTIVITY_PERIODIC_CHECK,
-			                                               G_CALLBACK (concheck_periodic), self);
-			nm_device_check_connectivity (self, NULL, NULL);
-		}
-	} else {
-		if (priv->concheck_periodic_id) {
-			/* The default route has gone off, trigger a final connectivity check. */
-			nm_clear_g_signal_handler (priv->concheck_mgr, &priv->concheck_periodic_id);
-			nm_device_check_connectivity (self, NULL, NULL);
-		}
-	}
-}
-
-static void
 concheck_handle_complete (NMDeviceConnectivityHandle *handle,
                           GError *error)
 {
@@ -2264,7 +2479,7 @@ concheck_handle_complete (NMDeviceConnectivityHandle *handle,
 	c_list_unlink (&handle->concheck_lst);
 
 	if (handle->c_handle)
-		nm_connectivity_check_cancel (g_steal_pointer (&handle->c_handle));
+		nm_connectivity_check_cancel (handle->c_handle);
 
 	if (handle->callback) {
 		handle->callback (handle->self,
@@ -2291,6 +2506,18 @@ concheck_cb (NMConnectivity *connectivity,
 	gboolean handle_is_alive;
 	guint64 seq;
 
+	handle = user_data;
+	nm_assert (handle->c_handle == c_handle);
+	nm_assert (NM_IS_DEVICE (handle->self));
+
+	handle->c_handle = NULL;
+	self = g_object_ref (handle->self);
+
+	_LOGT (LOGD_CONCHECK, "connectivity: complete check (seq:%llu, state:%s%s%s%s)",
+	       (long long unsigned) handle->seq,
+	       nm_connectivity_state_to_string (state),
+	       NM_PRINT_FMT_QUOTED (error, ", error: ", error->message, "", ""));
+
 	if (nm_utils_error_is_cancelled (error, FALSE)) {
 		/* the only place where we nm_connectivity_check_cancel(@c_handle), is
 		 * from inside concheck_handle_event(). This is a recursive call,
@@ -2301,12 +2528,7 @@ concheck_cb (NMConnectivity *connectivity,
 	/* we keep NMConnectivity instance alive. It cannot be disposing. */
 	nm_assert (!nm_utils_error_is_cancelled (error, TRUE));
 
-	handle = user_data;
-	nm_assert (handle->c_handle == c_handle);
-	handle->c_handle = NULL;
-
 	/* keep @self alive, while we invoke callbacks. */
-	self = g_object_ref (handle->self);
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	nm_assert (!handle || c_list_contains (&priv->concheck_lst_head, &handle->concheck_lst));
@@ -2314,7 +2536,7 @@ concheck_cb (NMConnectivity *connectivity,
 	seq = handle->seq;
 
 	/* first update the new state, and emit signals. */
-	concheck_update_state (self, state);
+	concheck_update_state (self, state, handle->is_periodic);
 
 	handle_is_alive = FALSE;
 
@@ -2361,10 +2583,11 @@ check_handles:
 	concheck_handle_complete (handle, NULL);
 }
 
-NMDeviceConnectivityHandle *
-nm_device_check_connectivity (NMDevice *self,
-                              NMDeviceConnectivityCallback callback,
-                              gpointer user_data)
+static NMDeviceConnectivityHandle *
+concheck_start (NMDevice *self,
+                NMDeviceConnectivityCallback callback,
+                gpointer user_data,
+                gboolean is_periodic)
 {
 	static guint64 seq_counter = 0;
 	NMDevicePrivate *priv;
@@ -2379,12 +2602,33 @@ nm_device_check_connectivity (NMDevice *self,
 	handle->self = self;
 	handle->callback = callback;
 	handle->user_data = user_data;
+	handle->is_periodic = is_periodic;
+
 	c_list_link_tail (&priv->concheck_lst_head, &handle->concheck_lst);
+
+	_LOGT (LOGD_CONCHECK, "connectivity: start check (seq:%llu%s)",
+	       (long long unsigned) handle->seq,
+	       is_periodic ? ", periodic-check" : "");
 
 	handle->c_handle = nm_connectivity_check_start (concheck_get_mgr (self),
 	                                                nm_device_get_ip_iface (self),
 	                                                concheck_cb,
 	                                                handle);
+	return handle;
+}
+
+NMDeviceConnectivityHandle *
+nm_device_check_connectivity (NMDevice *self,
+                              NMDeviceConnectivityCallback callback,
+                              gpointer user_data)
+{
+	NMDeviceConnectivityHandle *handle;
+
+	if (!concheck_is_possible (self))
+		return NULL;
+
+	concheck_periodic_schedule_set (self, CONCHECK_SCHEDULE_CHECK_EXTERNAL);
+	handle = concheck_start (self, callback, user_data, FALSE);
 	return handle;
 }
 
@@ -10688,8 +10932,6 @@ nm_device_set_ip_config (NMDevice *self,
 	}
 
 	if (IS_IPv4) {
-		concheck_periodic_update (self);
-
 		if (!nm_device_sys_iface_state_is_external_or_assume (self))
 			ip4_rp_filter_update (self);
 	}
@@ -13544,7 +13786,7 @@ _set_state_full (NMDevice *self,
 	if (ip_config_valid (old_state) && !ip_config_valid (state))
 	    notify_ip_properties (self);
 
-	concheck_periodic_update (self);
+	nm_device_check_connectivity_update_interval (self);
 
 	/* Dispose of the cached activation request */
 	if (req)
@@ -14711,7 +14953,7 @@ dispose (GObject *object)
 		g_clear_object (&priv->lldp_listener);
 	}
 
-	nm_clear_g_signal_handler (priv->concheck_mgr, &priv->concheck_periodic_id);
+	nm_clear_g_source (&priv->concheck_p_cur_id);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
 

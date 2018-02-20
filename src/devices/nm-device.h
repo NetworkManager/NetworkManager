@@ -783,6 +783,8 @@ typedef void (*NMDeviceConnectivityCallback) (NMDevice *self,
                                               GError *error,
                                               gpointer user_data);
 
+void nm_device_check_connectivity_update_interval (NMDevice *self);
+
 NMDeviceConnectivityHandle *nm_device_check_connectivity (NMDevice *self,
                                                           NMDeviceConnectivityCallback callback,
                                                           gpointer user_data);
