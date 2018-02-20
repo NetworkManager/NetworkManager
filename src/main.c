@@ -402,8 +402,6 @@ main (int argc, char *argv[])
 	                            manager))
 		goto done;
 
-	NM_UTILS_KEEP_ALIVE (manager, nm_connectivity_get (), "NMManager-depends-on-NMConnectivity");
-
 	nm_dispatcher_init ();
 
 	g_signal_connect (manager, NM_MANAGER_CONFIGURE_QUIT, G_CALLBACK (manager_configure_quit), config);

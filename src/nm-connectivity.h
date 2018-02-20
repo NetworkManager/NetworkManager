@@ -34,7 +34,7 @@
 #define NM_IS_CONNECTIVITY_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_CONNECTIVITY))
 #define NM_CONNECTIVITY_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_CONNECTIVITY, NMConnectivityClass))
 
-#define NM_CONNECTIVITY_PERIODIC_CHECK  "nm-connectivity-periodic-check"
+#define NM_CONNECTIVITY_CONFIG_CHANGED  "config-changed"
 
 typedef struct _NMConnectivityClass NMConnectivityClass;
 
@@ -45,6 +45,8 @@ NMConnectivity *nm_connectivity_get (void);
 const char *nm_connectivity_state_to_string (NMConnectivityState state);
 
 gboolean nm_connectivity_check_enabled (NMConnectivity *self);
+
+guint nm_connectivity_get_interval (NMConnectivity *self);
 
 typedef struct _NMConnectivityCheckHandle NMConnectivityCheckHandle;
 
