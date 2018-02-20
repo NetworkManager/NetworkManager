@@ -500,7 +500,7 @@ nm_connectivity_check_start (NMConnectivity *self,
 			curl_easy_setopt (ehandle, CURLOPT_INTERFACE, cb_data->ifspec);
 			curl_multi_add_handle (priv->concheck.curl_mhandle, ehandle);
 
-			cb_data->timeout_id = g_timeout_add_seconds (30, _timeout_cb, cb_data);
+			cb_data->timeout_id = g_timeout_add_seconds (20, _timeout_cb, cb_data);
 
 			_LOG2D ("start request to '%s'", priv->uri);
 			return cb_data;
