@@ -1316,15 +1316,13 @@ ovsdb_disconnect (NMOvsdb *self, gboolean is_disposing)
 	OvsdbMethodCall *call;
 	OvsdbMethodCallback callback;
 	gpointer user_data;
-	GError *error;
+	gs_free_error GError *error = NULL;
 
 	_LOGD ("disconnecting from ovsdb");
+	nm_utils_error_set_cancelled (&error, is_disposing, "NMOvsdb");
 
 	while (priv->calls->len) {
-		error = NULL;
 		call = &g_array_index (priv->calls, OvsdbMethodCall, priv->calls->len - 1);
-		nm_utils_error_set_cancelled (&error, is_disposing, "NMOvsdb");
-
 		callback = call->callback;
 		user_data = call->user_data;
 		g_array_remove_index (priv->calls, priv->calls->len - 1);
@@ -1347,8 +1345,6 @@ _monitor_bridges_cb (NMOvsdb *self, json_t *result, GError *error, gpointer user
 			_LOGI ("%s", error->message);
 			ovsdb_disconnect (self, FALSE);
 		}
-
-		g_clear_error (&error);
 		return;
 	}
 
