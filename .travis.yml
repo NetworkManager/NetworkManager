@@ -16,9 +16,6 @@ addons:
     - libdbus-1-dev
     - libiw-dev
     - libglib2.0-dev
-    - libnl-3-dev
-    - libnl-route-3-dev
-    - libnl-genl-3-dev
     - libmm-glib-dev
     - ppp
     - ppp-dev
@@ -43,7 +40,6 @@ addons:
     - dbus-x11
     - libjansson4
     - libjansson-dev
-    - libnl-3-dev
     - libndp-dev
     - automake
     - dnsmasq

@@ -30,7 +30,6 @@ yum install \
     jansson-devel \
     libcurl-devel \
     libndp-devel \
-    libnl3-devel \
     libpsl-devel \
     libselinux-devel \
     libtool \

@@ -79,55 +79,41 @@ probe_response (struct nl_msg *msg, void *arg)
 static int
 genl_ctrl_resolve (struct nl_sock *sk, const char *name)
 {
-	struct nl_msg *msg;
-	struct nl_cb *cb, *orig;
-	int rc;
-	int result = -NLE_OBJ_NOTFOUND;
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
+	int result = -ENOMEM;
 	gint32 response_data = -1;
-
-	if (!(orig = nl_socket_get_cb (sk)))
-		goto out;
-
-	cb = nl_cb_clone (orig);
-	nl_cb_put (orig);
-	if (!cb)
-		goto out;
+	const struct nl_cb cb = {
+		.valid_cb = probe_response,
+		.valid_arg = &response_data,
+	};
 
 	msg = nlmsg_alloc ();
-	if (!msg)
-		goto out_cb_free;
 
 	if (!genlmsg_put (msg, NL_AUTO_PORT, NL_AUTO_SEQ, GENL_ID_CTRL,
 	                  0, 0, CTRL_CMD_GETFAMILY, 1))
-		goto out_msg_free;
+		goto out;
 
 	if (nla_put_string (msg, CTRL_ATTR_FAMILY_NAME, name) < 0)
-		goto out_msg_free;
+		goto out;
 
-	rc = nl_cb_set (cb, NL_CB_VALID, NL_CB_CUSTOM, probe_response, &response_data);
-	if (rc < 0)
-		goto out_msg_free;
+	result = nl_send_auto (sk, msg);
+	if (result < 0)
+		goto out;
 
-	rc = nl_send_auto_complete (sk, msg);
-	if (rc < 0)
-		goto out_msg_free;
-
-	rc = nl_recvmsgs (sk, cb);
-	if (rc < 0)
-		goto out_msg_free;
+	result = nl_recvmsgs (sk, &cb);
+	if (result < 0)
+		goto out;
 
 	/* If search was successful, request may be ACKed after data */
-	rc = nl_wait_for_ack (sk);
-	if (rc < 0)
-		goto out_msg_free;
+	result = nl_wait_for_ack (sk, NULL);
+	if (result < 0)
+		goto out;
 
 	if (response_data > 0)
 		result = response_data;
+	else
+		result = -ENOENT;
 
-out_msg_free:
-	nlmsg_free (msg);
-out_cb_free:
-	nl_cb_put (cb);
 out:
 	if (result >= 0)
 		_LOGD (LOGD_WIFI, "genl_ctrl_resolve: resolved \"%s\" as 0x%x", name, result);
@@ -143,7 +129,6 @@ out:
 typedef struct {
 	WifiData parent;
 	struct nl_sock *nl_sock;
-	struct nl_cb *nl_cb;
 	guint32 *freqs;
 	int id;
 	int num_freqs;
@@ -178,19 +163,16 @@ error_handler (struct sockaddr_nl *nla, struct nlmsgerr *err, void *arg)
 static struct nl_msg *
 _nl80211_alloc_msg (int id, int ifindex, int phy, guint32 cmd, guint32 flags)
 {
-	struct nl_msg *msg;
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
 
 	msg = nlmsg_alloc ();
-	if (msg) {
-		genlmsg_put (msg, 0, 0, id, 0, flags, cmd, 0);
-		NLA_PUT_U32 (msg, NL80211_ATTR_IFINDEX, ifindex);
-		if (phy != -1)
-			NLA_PUT_U32 (msg, NL80211_ATTR_WIPHY, phy);
-	}
-	return msg;
+	genlmsg_put (msg, 0, 0, id, 0, flags, cmd, 0);
+	NLA_PUT_U32 (msg, NL80211_ATTR_IFINDEX, ifindex);
+	if (phy != -1)
+		NLA_PUT_U32 (msg, NL80211_ATTR_WIPHY, phy);
+	return g_steal_pointer (&msg);
 
- nla_put_failure:
-	nlmsg_free (msg);
+nla_put_failure:
 	return NULL;
 }
 
@@ -203,39 +185,36 @@ nl80211_alloc_msg (WifiDataNl80211 *nl80211, guint32 cmd, guint32 flags)
 /* NOTE: this function consumes 'msg' */
 static int
 _nl80211_send_and_recv (struct nl_sock *nl_sock,
-                        struct nl_cb *nl_cb,
                         struct nl_msg *msg,
                         int (*valid_handler) (struct nl_msg *, void *),
                         void *valid_data)
 {
-	struct nl_cb *cb;
-	int err, done;
+	nm_auto_nlmsg struct nl_msg *msg_free = msg;
+	int err;
+	int done = 0;
+	const struct nl_cb cb = {
+		.err_cb     = error_handler,
+		.err_arg    = &done,
+		.finish_cb  = finish_handler,
+		.finish_arg = &done,
+		.ack_cb     = ack_handler,
+		.ack_arg    = &done,
+		.valid_cb   = valid_handler,
+		.valid_arg  = valid_data,
+	};
 
 	g_return_val_if_fail (msg != NULL, -ENOMEM);
 
-	cb = nl_cb_clone (nl_cb);
-	if (!cb) {
-		err = -ENOMEM;
-		goto out;
-	}
-
-	err = nl_send_auto_complete (nl_sock, msg);
+	err = nl_send_auto (nl_sock, msg);
 	if (err < 0)
-		goto out;
-
-	done = 0;
-	nl_cb_err (cb, NL_CB_CUSTOM, error_handler, &done);
-	nl_cb_set (cb, NL_CB_FINISH, NL_CB_CUSTOM, finish_handler, &done);
-	nl_cb_set (cb, NL_CB_ACK, NL_CB_CUSTOM, ack_handler, &done);
-	if (valid_handler)
-		nl_cb_set (cb, NL_CB_VALID, NL_CB_CUSTOM, valid_handler, valid_data);
+		return err;
 
 	/* Loop until one of our NL callbacks says we're done; on success
 	 * done will be 1, on error it will be < 0.
 	 */
 	while (!done) {
-		err = nl_recvmsgs (nl_sock, cb);
-		if (err && err != -NLE_AGAIN) {
+		err = nl_recvmsgs (nl_sock, &cb);
+		if (err < 0 && err != -EAGAIN) {
 			/* Kernel scan list can change while we are dumping it, as new scan
 			 * results from H/W can arrive. BSS info is assured to be consistent
 			 * and we don't need consistent view of whole scan list. Hence do
@@ -250,12 +229,9 @@ _nl80211_send_and_recv (struct nl_sock *nl_sock,
 			break;
 		}
 	}
-	if (err == 0 && done < 0)
-		err = done;
 
- out:
-	nl_cb_put (cb);
-	nlmsg_free (msg);
+	if (err >= 0 && done < 0)
+		err = done;
 	return err;
 }
 
@@ -265,7 +241,7 @@ nl80211_send_and_recv (WifiDataNl80211 *nl80211,
                        int (*valid_handler) (struct nl_msg *, void *),
                        void *valid_data)
 {
-	return _nl80211_send_and_recv (nl80211->nl_sock, nl80211->nl_cb, msg,
+	return _nl80211_send_and_recv (nl80211->nl_sock, msg,
 	                               valid_handler, valid_data);
 }
 
@@ -276,8 +252,6 @@ wifi_nl80211_deinit (WifiData *parent)
 
 	if (nl80211->nl_sock)
 		nl_socket_free (nl80211->nl_sock);
-	if (nl80211->nl_cb)
-		nl_cb_put (nl80211->nl_cb);
 	g_free (nl80211->freqs);
 }
 
@@ -326,7 +300,7 @@ wifi_nl80211_get_mode (WifiData *data)
 	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_GET_INTERFACE, 0);
 
 	if (nl80211_send_and_recv (nl80211, msg, nl80211_iface_info_handler,
-				   &iface_info) < 0)
+	                           &iface_info) < 0)
 		return NM_802_11_MODE_UNKNOWN;
 
 	return iface_info.mode;
@@ -356,7 +330,7 @@ wifi_nl80211_set_mode (WifiData *data, const NM80211Mode mode)
 	}
 
 	err = nl80211_send_and_recv (nl80211, msg, NULL, NULL);
-	return err ? FALSE : TRUE;
+	return err >= 0;
 
  nla_put_failure:
 	nlmsg_free (msg);
@@ -374,7 +348,7 @@ wifi_nl80211_set_powersave (WifiData *data, guint32 powersave)
 	NLA_PUT_U32 (msg, NL80211_ATTR_PS_STATE,
 	             powersave == 1 ? NL80211_PS_ENABLED : NL80211_PS_DISABLED);
 	err = nl80211_send_and_recv (nl80211, msg, NULL, NULL);
-	return err ? FALSE : TRUE;
+	return err >= 0;
 
 nla_put_failure:
 	nlmsg_free (msg);
@@ -702,7 +676,7 @@ wifi_nl80211_indicate_addressing_running (WifiData *data, gboolean running)
 	}
 
 	err = nl80211_send_and_recv (nl80211, msg, NULL, NULL);
-	return err ? FALSE : TRUE;
+	return err >= 0;
 
 nla_put_failure:
 	nlmsg_free (msg);
@@ -989,10 +963,6 @@ wifi_nl80211_init (int ifindex)
 
 	nl80211->id = genl_ctrl_resolve (nl80211->nl_sock, "nl80211");
 	if (nl80211->id < 0)
-		goto error;
-
-	nl80211->nl_cb = nl_cb_alloc (NL_CB_DEFAULT);
-	if (nl80211->nl_cb == NULL)
 		goto error;
 
 	nl80211->phy = -1;
