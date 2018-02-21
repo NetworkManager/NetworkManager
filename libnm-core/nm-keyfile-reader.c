@@ -993,79 +993,79 @@ has_cert_ext (const char *path)
 static gboolean
 handle_as_scheme (KeyfileReaderInfo *info, GBytes *bytes, NMSetting *setting, const char *key)
 {
-	const char *data;
-	gsize data_len, bin_len;
+	const char *bin;
+	gsize bin_len0, bin_decoded_len;
 
-	data = g_bytes_get_data (bytes, &data_len);
+	bin = g_bytes_get_data (bytes, &bin_len0);
 
-	g_return_val_if_fail (data && data_len > 0, FALSE);
+	g_return_val_if_fail (bin && bin_len0 > 0, FALSE);
 
-	/* to be a scheme, @data must be a zero terminated string, which is counted by @data_len */
-	if (data[data_len - 1] != '\0')
+	/* to be a scheme, @bin must be a zero terminated string, which is counted by @bin_len0 */
+	if (bin[bin_len0 - 1] != '\0')
 		return FALSE;
-	data_len--;
+	bin_len0--;
 
 	/* It's the PATH scheme, can just set plain data.
-	 * In this case, @data_len includes */
-	if (   data_len >= NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH)
-	    && g_str_has_prefix (data, NM_KEYFILE_CERT_SCHEME_PREFIX_PATH)) {
-		if (nm_setting_802_1x_check_cert_scheme (data, data_len + 1, NULL) == NM_SETTING_802_1X_CK_SCHEME_PATH) {
-			const char *path = &data[NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH)];
-			gs_free char *path_free = NULL;
+	 * In this case, @bin_len0 includes */
+	if (   bin_len0 >= NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH)
+	    && g_str_has_prefix (bin, NM_KEYFILE_CERT_SCHEME_PREFIX_PATH)) {
+		if (nm_setting_802_1x_check_cert_scheme (bin, bin_len0 + 1, NULL) == NM_SETTING_802_1X_CK_SCHEME_PATH) {
+			const char *path2 = &bin[NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH)];
+			gs_free char *path2_free = NULL;
 
-			if (path[0] != '/') {
+			if (path2[0] != '/') {
 				/* we want to read absolute paths because we use keyfile as exchange
 				 * between different processes which might not have the same cwd. */
-				path = path_free = get_cert_path (info->base_dir, (const guint8 *) path,
-				                                  data_len - NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH));
+				path2 = path2_free = get_cert_path (info->base_dir, (const guint8 *) path2,
+				                                    bin_len0 - NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH));
 			}
 
 			g_object_set (setting, key, bytes, NULL);
-			if (!g_file_test (path, G_FILE_TEST_EXISTS)) {
+			if (!g_file_test (path2, G_FILE_TEST_EXISTS)) {
 				handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_INFO_MISSING_FILE,
 				             _("certificate or key file '%s' does not exist"),
-				             path);
+				             path2);
 			}
 		} else {
 			handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
-			             _("invalid key/cert value path \"%s\""), data);
+			             _("invalid key/cert value path \"%s\""), bin);
 		}
 		return TRUE;
 	}
-	if (   data_len >= NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PKCS11)
-	    && g_str_has_prefix (data, NM_KEYFILE_CERT_SCHEME_PREFIX_PKCS11)) {
-		if (nm_setting_802_1x_check_cert_scheme (data, data_len + 1, NULL) == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
+	if (   bin_len0 >= NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PKCS11)
+	    && g_str_has_prefix (bin, NM_KEYFILE_CERT_SCHEME_PREFIX_PKCS11)) {
+		if (nm_setting_802_1x_check_cert_scheme (bin, bin_len0 + 1, NULL) == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
 			g_object_set (setting, key, bytes, NULL);
 		} else {
 			handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
-			             _("invalid PKCS#11 URI \"%s\""), data);
+			             _("invalid PKCS#11 URI \"%s\""), bin);
 		}
 		return TRUE;
 	}
-	if (   data_len > NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB)
-	    && g_str_has_prefix (data, NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB)) {
-		const char *cdata = data + NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB);
-		guchar *bin;
+	if (   bin_len0 > NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB)
+	    && g_str_has_prefix (bin, NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB)) {
+		const char *cdata = bin + NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB);
+		guchar *bin_decoded;
 		GBytes *bytes2;
 		gsize i;
 		gboolean valid_base64;
 
-		data_len -= NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB);
+		bin_len0 -= NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB);
 
 		/* Let's be strict here. We expect valid base64, no funny stuff!!
 		 * We didn't write such invalid data ourselfes and refuse to read it as blob. */
-		if ((valid_base64 = (data_len % 4 == 0))) {
-			for (i = 0; i < data_len; i++) {
+		if ((valid_base64 = (bin_len0 % 4 == 0))) {
+			for (i = 0; i < bin_len0; i++) {
 				char c = cdata[i];
 
 				if (!(   (c >= 'a' && c <= 'z')
 				      || (c >= 'A' && c <= 'Z')
 				      || (c >= '0' && c <= '9')
 				      || (c == '+' || c == '/'))) {
-					if (c != '=' || i < data_len - 2)
+					if (c != '=' || i < bin_len0 - 2)
 						valid_base64 = FALSE;
 					else {
-						for (; i < data_len; i++) {
+						for (; i < bin_len0; i++) {
 							if (cdata[i] != '=')
 								valid_base64 = FALSE;
 						}
@@ -1080,18 +1080,18 @@ handle_as_scheme (KeyfileReaderInfo *info, GBytes *bytes, NMSetting *setting, co
 			return TRUE;
 		}
 
-		bin = g_base64_decode (cdata, &bin_len);
+		bin_decoded = g_base64_decode (cdata, &bin_decoded_len);
 
-		g_return_val_if_fail (bin_len > 0, FALSE);
-		if (nm_setting_802_1x_check_cert_scheme (bin, bin_len, NULL) != NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+		g_return_val_if_fail (bin_decoded_len > 0, FALSE);
+		if (nm_setting_802_1x_check_cert_scheme (bin_decoded, bin_decoded_len, NULL) != NM_SETTING_802_1X_CK_SCHEME_BLOB) {
 			/* The blob probably starts with "file://". Setting the cert data will confuse NMSetting8021x.
 			 * In fact this is a limitation of NMSetting8021x which does not support setting blobs that start
 			 * with file://. Just warn and return TRUE to signal that we ~handled~ the setting. */
-			g_free (bin);
+			g_free (bin_decoded);
 			handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
 			             _("invalid key/cert value data:;base64,file://"));
 		} else {
-			bytes2 = g_bytes_new_take (bin, bin_len);
+			bytes2 = g_bytes_new_take (bin_decoded, bin_decoded_len);
 			g_object_set (setting, key, bytes2, NULL);
 			g_bytes_unref (bytes2);
 		}
