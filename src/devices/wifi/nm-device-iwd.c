@@ -1323,7 +1323,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	 */
 	g_dbus_proxy_call (network_proxy, "Connect",
 	                   g_variant_new ("()"),
-	                   G_DBUS_CALL_FLAGS_NONE, -1,
+	                   G_DBUS_CALL_FLAGS_NONE, G_MAXINT,
 	                   priv->cancellable, network_connect_cb, self);
 
 	g_object_unref (network_proxy);
