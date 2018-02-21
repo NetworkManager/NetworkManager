@@ -1109,7 +1109,7 @@ secrets_error:
 	cleanup_association_attempt (self, TRUE);
 }
 
-static bool
+static void
 wifi_secrets_get_secrets (NMDeviceIwd *self,
                           const char *setting_name,
                           NMSecretAgentGetSecretsFlags flags)
@@ -1120,7 +1120,7 @@ wifi_secrets_get_secrets (NMDeviceIwd *self,
 	wifi_secrets_cancel (self);
 
 	req = nm_device_get_act_request (NM_DEVICE (self));
-	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
+	g_return_if_fail (NM_IS_ACT_REQUEST (req));
 
 	priv->wifi_secrets_id = nm_act_request_get_secrets (req,
 	                                                    TRUE,
@@ -1129,7 +1129,6 @@ wifi_secrets_get_secrets (NMDeviceIwd *self,
 	                                                    NULL,
 	                                                    wifi_secrets_cb,
 	                                                    self);
-	return priv->wifi_secrets_id != NULL;
 }
 
 static void
@@ -1324,7 +1323,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	 */
 	g_dbus_proxy_call (network_proxy, "Connect",
 	                   g_variant_new ("()"),
-	                   G_DBUS_CALL_FLAGS_NONE, -1,
+	                   G_DBUS_CALL_FLAGS_NONE, G_MAXINT,
 	                   priv->cancellable, network_connect_cb, self);
 
 	g_object_unref (network_proxy);
@@ -1775,18 +1774,16 @@ nm_device_iwd_agent_psk_query (NMDeviceIwd *self,
 		       "Returning the PSK to the IWD Agent");
 
 		g_dbus_method_invocation_return_value (invocation,
-	                                               g_variant_new ("(s)", psk));
+		                                       g_variant_new ("(s)", psk));
 		return TRUE;
 	}
 
 	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH,
 	                         NM_DEVICE_STATE_REASON_NO_SECRETS);
-
-	if (!wifi_secrets_get_secrets (self,
-	                               NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	                               NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
-		                         | NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW))
-		return FALSE;
+	wifi_secrets_get_secrets (self,
+	                          NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	                          NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
+	                            | NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW);
 
 	priv->secrets_request = invocation;
 	return TRUE;
