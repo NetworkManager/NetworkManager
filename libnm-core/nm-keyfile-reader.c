@@ -994,21 +994,30 @@ static gboolean
 handle_as_scheme (KeyfileReaderInfo *info, GBytes *bytes, NMSetting *setting, const char *key)
 {
 	const char *bin;
-	gsize bin_len0, bin_decoded_len;
+	gsize bin_len;
+	gsize bin_len0;
 
-	bin = g_bytes_get_data (bytes, &bin_len0);
+	bin = g_bytes_get_data (bytes, &bin_len);
 
-	g_return_val_if_fail (bin && bin_len0 > 0, FALSE);
+	g_return_val_if_fail (bin && bin_len > 0, FALSE);
 
-	/* to be a scheme, @bin must be a zero terminated string, which is counted by @bin_len0 */
-	if (bin[bin_len0 - 1] != '\0')
-		return FALSE;
-	bin_len0--;
+#define HAS_SCHEME_PREFIX(bin, bin_len, scheme) \
+	({ \
+		const char *const _bin = (bin); \
+		const gsize _bin_len = (bin_len); \
+		\
+		nm_assert (_bin && _bin_len > 0); \
+		\
+		(   _bin_len > NM_STRLEN (scheme) + 1 \
+		 && _bin[_bin_len - 1] == '\0' \
+		 && memcmp (_bin, scheme, NM_STRLEN (scheme)) == 0); \
+	})
+
+	bin_len0 = bin_len - 1;
 
 	/* It's the PATH scheme, can just set plain data.
 	 * In this case, @bin_len0 includes */
-	if (   bin_len0 >= NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH)
-	    && g_str_has_prefix (bin, NM_KEYFILE_CERT_SCHEME_PREFIX_PATH)) {
+	if (HAS_SCHEME_PREFIX (bin, bin_len, NM_KEYFILE_CERT_SCHEME_PREFIX_PATH)) {
 		if (nm_setting_802_1x_check_cert_scheme (bin, bin_len0 + 1, NULL) == NM_SETTING_802_1X_CK_SCHEME_PATH) {
 			const char *path2 = &bin[NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH)];
 			gs_free char *path2_free = NULL;
@@ -1032,8 +1041,8 @@ handle_as_scheme (KeyfileReaderInfo *info, GBytes *bytes, NMSetting *setting, co
 		}
 		return TRUE;
 	}
-	if (   bin_len0 >= NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_PKCS11)
-	    && g_str_has_prefix (bin, NM_KEYFILE_CERT_SCHEME_PREFIX_PKCS11)) {
+
+	if (HAS_SCHEME_PREFIX (bin, bin_len, NM_KEYFILE_CERT_SCHEME_PREFIX_PKCS11)) {
 		if (nm_setting_802_1x_check_cert_scheme (bin, bin_len0 + 1, NULL) == NM_SETTING_802_1X_CK_SCHEME_PKCS11) {
 			g_object_set (setting, key, bytes, NULL);
 		} else {
@@ -1042,13 +1051,14 @@ handle_as_scheme (KeyfileReaderInfo *info, GBytes *bytes, NMSetting *setting, co
 		}
 		return TRUE;
 	}
-	if (   bin_len0 > NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB)
-	    && g_str_has_prefix (bin, NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB)) {
+
+	if (HAS_SCHEME_PREFIX (bin, bin_len, NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB)) {
 		const char *cdata = bin + NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB);
-		guchar *bin_decoded;
-		GBytes *bytes2;
+		gs_unref_bytes GBytes *bytes2 = NULL;
+		gs_free guchar *bin_decoded = NULL;
 		gsize i;
 		gboolean valid_base64;
+		gsize bin_decoded_len = 0;
 
 		bin_len0 -= NM_STRLEN (NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB);
 
@@ -1074,29 +1084,29 @@ handle_as_scheme (KeyfileReaderInfo *info, GBytes *bytes, NMSetting *setting, co
 				}
 			}
 		}
-		if (!valid_base64) {
+		if (valid_base64)
+			bin_decoded = g_base64_decode (cdata, &bin_decoded_len);
+
+		if (bin_decoded_len == 0) {
 			handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
 			             _("invalid key/cert value data:;base64, is not base64"));
 			return TRUE;
 		}
 
-		bin_decoded = g_base64_decode (cdata, &bin_decoded_len);
-
-		g_return_val_if_fail (bin_decoded_len > 0, FALSE);
 		if (nm_setting_802_1x_check_cert_scheme (bin_decoded, bin_decoded_len, NULL) != NM_SETTING_802_1X_CK_SCHEME_BLOB) {
 			/* The blob probably starts with "file://". Setting the cert data will confuse NMSetting8021x.
 			 * In fact this is a limitation of NMSetting8021x which does not support setting blobs that start
 			 * with file://. Just warn and return TRUE to signal that we ~handled~ the setting. */
-			g_free (bin_decoded);
 			handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
 			             _("invalid key/cert value data:;base64,file://"));
-		} else {
-			bytes2 = g_bytes_new_take (bin_decoded, bin_decoded_len);
-			g_object_set (setting, key, bytes2, NULL);
-			g_bytes_unref (bytes2);
+			return TRUE;
 		}
+
+		bytes2 = g_bytes_new_take (g_steal_pointer (&bin_decoded), bin_decoded_len);
+		g_object_set (setting, key, bytes2, NULL);
 		return TRUE;
 	}
+
 	return FALSE;
 }
 
@@ -1184,27 +1194,27 @@ handle_as_path (KeyfileReaderInfo *info,
 	gsize data_len;
 	char *path;
 	gboolean exists = FALSE;
-	GBytes *val;
 
 	data = g_bytes_get_data (bytes, &data_len);
 
 	path = nm_keyfile_detect_unqualified_path_scheme (info->base_dir, data, data_len, TRUE, &exists);
-	if (!path)
-		return FALSE;
+	if (path) {
+		gs_unref_bytes GBytes *val = NULL;
 
-	/* Construct the proper value as required for the PATH scheme */
-	val = g_bytes_new_take (path, strlen (path) + 1);
-	g_object_set (setting, key, val, NULL);
+		/* Construct the proper value as required for the PATH scheme */
+		val = g_bytes_new_take (path, strlen (path) + 1);
+		g_object_set (setting, key, val, NULL);
 
-	/* Warn if the certificate didn't exist */
-	if (!exists) {
-		handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_INFO_MISSING_FILE,
-		             _("certificate or key file '%s' does not exist"),
-		             path);
+		/* Warn if the certificate didn't exist */
+		if (!exists) {
+			handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_INFO_MISSING_FILE,
+			             _("certificate or key file '%s' does not exist"),
+			             path);
+		}
+		return TRUE;
 	}
-	g_bytes_unref (val);
 
-	return TRUE;
+	return FALSE;
 }
 
 static void
@@ -1212,37 +1222,43 @@ cert_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
 	const char *setting_name = nm_setting_get_name (setting);
 	gs_unref_bytes GBytes *bytes = NULL;
-	gsize bin_len;
-	const char *bin;
+	const char *bin = NULL;
+	gsize bin_len = 0;
 
 	bytes = get_bytes (info, setting_name, key, TRUE, FALSE);
-	if (bytes) {
-		/* Try as a path + scheme (ie, starts with "file://") */
-		if (handle_as_scheme (info, bytes, setting, key))
-			return;
-		if (info->error)
-			return;
-
-		/* If not, it might be a plain path */
-		if (handle_as_path (info, bytes, setting, key))
-			return;
-		if (info->error)
-			return;
-
+	if (bytes)
 		bin = g_bytes_get_data (bytes, &bin_len);
-		if (nm_setting_802_1x_check_cert_scheme (bin, bin_len, NULL) != NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-			/* The blob probably starts with "file://" but contains invalid characters for a path.
-			 * Setting the cert data will confuse NMSetting8021x.
-			 * In fact, NMSetting8021x does not support setting such binary data, so just warn and
-			 * continue. */
+	if (bin_len == 0) {
+		if (!info->error) {
 			handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
-			             _("invalid key/cert value is not a valid blob"));
-		} else
-			g_object_set (setting, key, bytes, NULL);
-	} else if (!info->error) {
-		handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
-		             _("invalid key/cert value"));
+			             _("invalid key/cert value"));
+		}
+		return;
 	}
+
+	/* Try as a path + scheme (ie, starts with "file://") */
+	if (handle_as_scheme (info, bytes, setting, key))
+		return;
+	if (info->error)
+		return;
+
+	/* If not, it might be a plain path */
+	if (handle_as_path (info, bytes, setting, key))
+		return;
+	if (info->error)
+		return;
+
+	if (nm_setting_802_1x_check_cert_scheme (bin, bin_len, NULL) != NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+		/* The blob probably starts with "file://" but contains invalid characters for a path.
+		 * Setting the cert data will confuse NMSetting8021x.
+		 * In fact, NMSetting8021x does not support setting such binary data, so just warn and
+		 * continue. */
+		handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
+		             _("invalid key/cert value is not a valid blob"));
+		return;
+	}
+
+	g_object_set (setting, key, bytes, NULL);
 }
 
 static void
