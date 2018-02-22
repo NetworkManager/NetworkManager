@@ -11,10 +11,10 @@ global:
 	nm_modem_get_capabilities;
 	nm_modem_get_configured_mtu;
 	nm_modem_get_control_port;
-	nm_modem_get_data_port;
 	nm_modem_get_driver;
 	nm_modem_get_iid;
 	nm_modem_get_path;
+	nm_modem_get_ip_ifindex;
 	nm_modem_get_secrets;
 	nm_modem_get_state;
 	nm_modem_get_type;

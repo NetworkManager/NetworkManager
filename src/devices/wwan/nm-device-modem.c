@@ -260,21 +260,26 @@ modem_ip6_config_result (NMModem *modem,
 }
 
 static void
-data_port_changed_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
+ip_ifindex_changed_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 {
-	NMDevice *self = NM_DEVICE (user_data);
-	gboolean changed;
+	NMDevice *device = NM_DEVICE (user_data);
 
-	/* We set the IP iface in the device as soon as we know it, so that we
-	 * properly ifup it if needed */
-	changed = nm_device_set_ip_iface (self, nm_modem_get_data_port (modem));
+	if (!nm_device_is_activating (device))
+		return;
+
+	if (!nm_device_set_ip_ifindex (device,
+	                               nm_modem_get_ip_ifindex (modem))) {
+		nm_device_state_changed (device,
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+		return;
+	}
 
 	/* Disable IPv6 immediately on the interface since NM handles IPv6
 	 * internally, and leaving it enabled could allow the kernel's IPv6
 	 * RA handling code to run before NM is ready.
 	 */
-	if (changed)
-		nm_device_ipv6_sysctl_set (self, "disable_ipv6", "1");
+	nm_device_ipv6_sysctl_set (device, "disable_ipv6", "1");
 }
 
 static void
@@ -629,11 +634,7 @@ set_modem (NMDeviceModem *self, NMModem *modem)
 	g_signal_connect (modem, NM_MODEM_STATE_CHANGED, G_CALLBACK (modem_state_cb), self);
 	g_signal_connect (modem, NM_MODEM_REMOVED, G_CALLBACK (modem_removed_cb), self);
 
-	/* In the old ModemManager the data port is known from the very beginning;
-	 * while in the new ModemManager the data port is set afterwards when the bearer gets
-	 * created */
-	g_signal_connect (modem, "notify::" NM_MODEM_DATA_PORT, G_CALLBACK (data_port_changed_cb), self);
-
+	g_signal_connect (modem, "notify::" NM_MODEM_IP_IFINDEX, G_CALLBACK (ip_ifindex_changed_cb), self);
 	g_signal_connect (modem, "notify::" NM_MODEM_DEVICE_ID, G_CALLBACK (ids_changed_cb), self);
 	g_signal_connect (modem, "notify::" NM_MODEM_SIM_ID, G_CALLBACK (ids_changed_cb), self);
 	g_signal_connect (modem, "notify::" NM_MODEM_SIM_OPERATOR_ID, G_CALLBACK (ids_changed_cb), self);
@@ -708,34 +709,23 @@ nm_device_modem_new (NMModem *modem)
 {
 	NMDeviceModemCapabilities caps = NM_DEVICE_MODEM_CAPABILITY_NONE;
 	NMDeviceModemCapabilities current_caps = NM_DEVICE_MODEM_CAPABILITY_NONE;
-	NMDevice *device;
-	const char *data_port;
 
 	g_return_val_if_fail (NM_IS_MODEM (modem), NULL);
 
 	/* Load capabilities */
 	nm_modem_get_capabilities (modem, &caps, &current_caps);
 
-	device = (NMDevice *) g_object_new (NM_TYPE_DEVICE_MODEM,
-	                                    NM_DEVICE_UDI, nm_modem_get_path (modem),
-	                                    NM_DEVICE_IFACE, nm_modem_get_uid (modem),
-	                                    NM_DEVICE_DRIVER, nm_modem_get_driver (modem),
-	                                    NM_DEVICE_TYPE_DESC, "Broadband",
-	                                    NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_MODEM,
-	                                    NM_DEVICE_RFKILL_TYPE, RFKILL_TYPE_WWAN,
-	                                    NM_DEVICE_MODEM_MODEM, modem,
-	                                    NM_DEVICE_MODEM_CAPABILITIES, caps,
-	                                    NM_DEVICE_MODEM_CURRENT_CAPABILITIES, current_caps,
-	                                    NULL);
-
-	/* If the data port is known, set it as the IP interface immediately */
-	data_port = nm_modem_get_data_port (modem);
-	if (data_port) {
-		nm_device_set_ip_iface (device, data_port);
-		nm_device_ipv6_sysctl_set (device, "disable_ipv6", "1");
-	}
-
-	return device;
+	return g_object_new (NM_TYPE_DEVICE_MODEM,
+	                     NM_DEVICE_UDI, nm_modem_get_path (modem),
+	                     NM_DEVICE_IFACE, nm_modem_get_uid (modem),
+	                     NM_DEVICE_DRIVER, nm_modem_get_driver (modem),
+	                     NM_DEVICE_TYPE_DESC, "Broadband",
+	                     NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_MODEM,
+	                     NM_DEVICE_RFKILL_TYPE, RFKILL_TYPE_WWAN,
+	                     NM_DEVICE_MODEM_MODEM, modem,
+	                     NM_DEVICE_MODEM_CAPABILITIES, caps,
+	                     NM_DEVICE_MODEM_CURRENT_CAPABILITIES, current_caps,
+	                     NULL);
 }
 
 static void
@@ -743,9 +733,10 @@ dispose (GObject *object)
 {
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) object);
 
-	if (priv->modem)
+	if (priv->modem) {
 		g_signal_handlers_disconnect_by_data (priv->modem, NM_DEVICE_MODEM (object));
-	g_clear_object (&priv->modem);
+		g_clear_object (&priv->modem);
+	}
 
 	G_OBJECT_CLASS (nm_device_modem_parent_class)->dispose (object);
 }

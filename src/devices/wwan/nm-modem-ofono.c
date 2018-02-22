@@ -836,6 +836,7 @@ context_property_changed (GDBusProxy *proxy,
 	guint32 address_network, gateway_network;
 	guint32 ip4_route_table, ip4_route_metric;
 	int ifindex;
+	GError *error = NULL;
 
 	_LOGD ("PropertyChanged: %s", property);
 
@@ -860,26 +861,25 @@ context_property_changed (GDBusProxy *proxy,
 		_LOGW ("Settings 'Interface' missing");
 		goto out;
 	}
-	if (!interface || !interface[0]) {
-		_LOGW ("Settings 'Interface'; empty");
-		goto out;
-	}
-
-	ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, interface);
-	if (ifindex <= 0) {
-		_LOGW ("Interface \"%s\" not found", interface);
-		goto out;
-	}
 
 	_LOGD ("Interface: %s", interface);
-	g_object_set (self,
-	              NM_MODEM_DATA_PORT, interface,
-	              NM_MODEM_IP4_METHOD, NM_MODEM_IP_METHOD_STATIC,
-	              NULL);
+	if (!nm_modem_set_data_port (NM_MODEM (self),
+	                             NM_PLATFORM_GET,
+	                             interface,
+	                             NM_MODEM_IP_METHOD_STATIC,
+	                             NM_MODEM_IP_METHOD_UNKNOWN,
+	                             0,
+	                             &error)) {
+		_LOGW ("failed to connect to modem: %s", error->message);
+		g_clear_error (&error);
+		goto out;
+	}
+
+	ifindex = nm_modem_get_ip_ifindex (NM_MODEM (self));
+	nm_assert (ifindex > 0);
 
 	/* TODO: verify handling of ip4_config; check other places it's used... */
 	g_clear_object (&priv->ip4_config);
-
 
 	priv->ip4_config = nm_ip4_config_new (nm_platform_get_multi_idx (NM_PLATFORM_GET),
 	                                      ifindex);

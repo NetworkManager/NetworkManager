@@ -385,9 +385,10 @@ connect_ready (MMModemSimple *simple_iface,
 				g_dbus_error_strip_remote_error (error);
 			ctx->first_error = error;
 		} else
-			g_error_free (error);
+			g_clear_error (&error);
 
-		if (ctx->ip_type_tries == 0 && g_error_matches (error, MM_CORE_ERROR, MM_CORE_ERROR_RETRY)) {
+		if (   ctx->ip_type_tries == 0
+		    && g_error_matches (error, MM_CORE_ERROR, MM_CORE_ERROR_RETRY)) {
 			/* Try one more time */
 			ctx->ip_type_tries++;
 		} else {
@@ -410,20 +411,19 @@ connect_ready (MMModemSimple *simple_iface,
 	if (self->_priv.ipv6_config)
 		ip6_method = get_bearer_ip_method (self->_priv.ipv6_config);
 
-	if (ip4_method == NM_MODEM_IP_METHOD_UNKNOWN &&
-	    ip6_method == NM_MODEM_IP_METHOD_UNKNOWN) {
-		_LOGW ("failed to connect modem: invalid bearer IP configuration");
+	if (!nm_modem_set_data_port (NM_MODEM (self),
+	                             NM_PLATFORM_GET,
+	                             mm_bearer_get_interface (self->_priv.bearer),
+	                             ip4_method,
+	                             ip6_method,
+	                             mm_bearer_get_ip_timeout (self->_priv.bearer),
+	                             &error)) {
+		_LOGW ("failed to connect modem: %s", error->message);
+		g_error_free (error);
 		nm_modem_emit_prepare_result (NM_MODEM (self), FALSE, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
 		connect_context_clear (self);
 		return;
 	}
-
-	g_object_set (self,
-	              NM_MODEM_DATA_PORT,  mm_bearer_get_interface (self->_priv.bearer),
-	              NM_MODEM_IP4_METHOD, ip4_method,
-	              NM_MODEM_IP6_METHOD, ip6_method,
-	              NM_MODEM_IP_TIMEOUT, mm_bearer_get_ip_timeout (self->_priv.bearer),
-	              NULL);
 
 	ctx->step++;
 	connect_context_step (self);
@@ -1409,35 +1409,34 @@ nm_modem_broadband_init (NMModemBroadband *self)
 NMModem *
 nm_modem_broadband_new (GObject *object, GError **error)
 {
-	NMModem *modem;
 	MMObject *modem_object;
 	MMModem *modem_iface;
-	gchar *drivers;
+	const char *const*drivers;
+	gs_free char *driver = NULL;
 
 	g_return_val_if_fail (MM_IS_OBJECT (object), NULL);
 	modem_object = MM_OBJECT (object);
 
 	/* Ensure we have the 'Modem' interface and the primary port at least */
 	modem_iface = mm_object_peek_modem (modem_object);
-	g_return_val_if_fail (!!modem_iface, NULL);
-	g_return_val_if_fail (!!mm_modem_get_primary_port (modem_iface), NULL);
+	g_return_val_if_fail (modem_iface, NULL);
+	g_return_val_if_fail (mm_modem_get_primary_port (modem_iface), NULL);
 
 	/* Build a single string with all drivers listed */
-	drivers = g_strjoinv (", ", (gchar **)mm_modem_get_drivers (modem_iface));
+	drivers = mm_modem_get_drivers (modem_iface);
+	if (drivers)
+		driver = g_strjoinv (", ", (char **) drivers);
 
-	modem = g_object_new (NM_TYPE_MODEM_BROADBAND,
-	                      NM_MODEM_PATH, mm_object_get_path (modem_object),
-	                      NM_MODEM_UID, mm_modem_get_primary_port (modem_iface),
-	                      NM_MODEM_CONTROL_PORT, mm_modem_get_primary_port (modem_iface),
-	                      NM_MODEM_DATA_PORT, NULL, /* We don't know it until bearer created */
-	                      NM_MODEM_IP_TYPES, mm_ip_family_to_nm (mm_modem_get_supported_ip_families (modem_iface)),
-	                      NM_MODEM_STATE, (int) mm_state_to_nm (mm_modem_get_state (modem_iface)),
-	                      NM_MODEM_DEVICE_ID, mm_modem_get_device_identifier (modem_iface),
-	                      NM_MODEM_BROADBAND_MODEM, modem_object,
-	                      NM_MODEM_DRIVER, drivers,
-	                      NULL);
-	g_free (drivers);
-	return modem;
+	return g_object_new (NM_TYPE_MODEM_BROADBAND,
+	                     NM_MODEM_PATH, mm_object_get_path (modem_object),
+	                     NM_MODEM_UID, mm_modem_get_primary_port (modem_iface),
+	                     NM_MODEM_CONTROL_PORT, mm_modem_get_primary_port (modem_iface),
+	                     NM_MODEM_IP_TYPES, mm_ip_family_to_nm (mm_modem_get_supported_ip_families (modem_iface)),
+	                     NM_MODEM_STATE, (int) mm_state_to_nm (mm_modem_get_state (modem_iface)),
+	                     NM_MODEM_DEVICE_ID, mm_modem_get_device_identifier (modem_iface),
+	                     NM_MODEM_BROADBAND_MODEM, modem_object,
+	                     NM_MODEM_DRIVER, driver,
+	                     NULL);
 }
 
 static void
