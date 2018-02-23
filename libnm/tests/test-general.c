@@ -69,6 +69,7 @@ test_fixup_vendor_string (void)
 	T (nm_utils_fixup_vendor_string, "ADMtek", "ADMtek");
 	T (nm_utils_fixup_vendor_string, "ADMtek, Inc.", "ADMtek");
 	T (nm_utils_fixup_vendor_string, "ADS Technologies, Inc.", "ADS");
+	T (nm_utils_fixup_vendor_string, "Advance Multimedia Internet Technology Inc. (AMIT)", "Advance");
 	T (nm_utils_fixup_vendor_string, "AEI", "AEI");
 	T (nm_utils_fixup_vendor_string, "Airprime, Incorporated", "Airprime");
 	T (nm_utils_fixup_vendor_string, "AirTies Wireless Networks", "AirTies");
@@ -78,6 +79,7 @@ test_fixup_vendor_string (void)
 	T (nm_utils_fixup_vendor_string, "Allied Telesis", "Allied Telesis");
 	T (nm_utils_fixup_vendor_string, "Allied Telesyn International", "Allied Telesyn");
 	T (nm_utils_fixup_vendor_string, "Alteon Networks Inc.", "Alteon");
+	T (nm_utils_fixup_vendor_string, "Altima (nee Broadcom)", "Altima");
 	T (nm_utils_fixup_vendor_string, "A-Max Technology Macao Commercial Offshore Co. Ltd.", "A-Max");
 	T (nm_utils_fixup_vendor_string, "Amigo Technology Inc.", "Amigo");
 	T (nm_utils_fixup_vendor_string, "AMIT Technology, Inc.", "AMIT");
@@ -90,6 +92,7 @@ test_fixup_vendor_string (void)
 	T (nm_utils_fixup_vendor_string, "Asix Electronics Corporation", "Asix");
 	T (nm_utils_fixup_vendor_string, "Askey Computer Corp. [hex]", "Askey");
 	T (nm_utils_fixup_vendor_string, "ASUSTek Computer, Inc.", "ASUSTek Computer");
+	T (nm_utils_fixup_vendor_string, "ASUSTek Computer, Inc. (wrong ID)", "ASUSTek Computer");
 	T (nm_utils_fixup_vendor_string, "ATEN International Co., Ltd", "ATEN");
 	T (nm_utils_fixup_vendor_string, "Atheros Communications", "Atheros");
 	T (nm_utils_fixup_vendor_string, "Atheros Communications, Inc.", "Atheros");
@@ -101,6 +104,7 @@ test_fixup_vendor_string (void)
 	T (nm_utils_fixup_vendor_string, "Broadcom Corp.", "Broadcom");
 	T (nm_utils_fixup_vendor_string, "Broadcom Limited", "Broadcom");
 	T (nm_utils_fixup_vendor_string, "Brocade Communications Systems, Inc.", "Brocade");
+	T (nm_utils_fixup_vendor_string, "BUFFALO INC. (formerly MelCo., Inc.)", "BUFFALO");
 	T (nm_utils_fixup_vendor_string, "CACE Technologies Inc.", "CACE");
 	T (nm_utils_fixup_vendor_string, "Cadence Design Systems, Inc.", "Cadence");
 	T (nm_utils_fixup_vendor_string, "Chelsio Communications Inc", "Chelsio");
@@ -117,6 +121,7 @@ test_fixup_vendor_string (void)
 	T (nm_utils_fixup_vendor_string, "Compex", "Compex");
 	T (nm_utils_fixup_vendor_string, "Computer Access Technology Corp.", "Computer Access");
 	T (nm_utils_fixup_vendor_string, "Conexant Systems, Inc.", "Conexant");
+	T (nm_utils_fixup_vendor_string, "Conexant Systems (Rockwell), Inc.", "Conexant");
 	T (nm_utils_fixup_vendor_string, "Corega K.K.", "Corega K.K.");
 	T (nm_utils_fixup_vendor_string, "Curitel Communications, Inc.", "Curitel");
 	T (nm_utils_fixup_vendor_string, "CyberTAN Technology", "CyberTAN");
@@ -186,6 +191,7 @@ test_fixup_vendor_string (void)
 	T (nm_utils_fixup_vendor_string, "LG Electronics, Inc.", "LG");
 	T (nm_utils_fixup_vendor_string, "LG Electronics USA, Inc.", "LG");
 	T (nm_utils_fixup_vendor_string, "Linksys, Inc.", "Linksys");
+	T (nm_utils_fixup_vendor_string, "Linksys (?)", "Linksys");
 	T (nm_utils_fixup_vendor_string, "Linksys", "Linksys");
 	T (nm_utils_fixup_vendor_string, "Lite-On Communications Inc", "Lite-On");
 	T (nm_utils_fixup_vendor_string, "Lite-On Technology Corp.", "Lite-On");
@@ -235,11 +241,13 @@ test_fixup_vendor_string (void)
 	T (nm_utils_fixup_vendor_string, "OQO", "OQO");
 	T (nm_utils_fixup_vendor_string, "Ovislink Corp.", "Ovislink");
 	T (nm_utils_fixup_vendor_string, "Packet Engines Inc.", "Packet Engines");
+	T (nm_utils_fixup_vendor_string, "Panasonic (Matsushita)", "Panasonic");
 	T (nm_utils_fixup_vendor_string, "PEAK System", "PEAK System");
 	T (nm_utils_fixup_vendor_string, "PEAK-System Technik GmbH", "PEAK-System");
 	T (nm_utils_fixup_vendor_string, "PEGATRON CORPORATION", "PEGATRON CORPORATION");
 	T (nm_utils_fixup_vendor_string, "Peppercon AG", "Peppercon");
 	T (nm_utils_fixup_vendor_string, "Peracom Networks, Inc.", "Peracom");
+	T (nm_utils_fixup_vendor_string, "Philips (or NXP)", "Philips");
 	T (nm_utils_fixup_vendor_string, "Planex Communications, Inc", "Planex");
 	T (nm_utils_fixup_vendor_string, "Planex Communications", "Planex");
 	T (nm_utils_fixup_vendor_string, "Planex", "Planex");
@@ -256,12 +264,14 @@ test_fixup_vendor_string (void)
 	T (nm_utils_fixup_vendor_string, "Quanta Computer, Inc.", "Quanta Computer");
 	T (nm_utils_fixup_vendor_string, "Quanta Microsystems, Inc.", "Quanta");
 	T (nm_utils_fixup_vendor_string, "Quantenna Communications, Inc.", "Quantenna");
+	T (nm_utils_fixup_vendor_string, "RadioShack Corp. (Tandy)", "RadioShack");
 	T (nm_utils_fixup_vendor_string, "Ralink corp.", "Ralink");
 	T (nm_utils_fixup_vendor_string, "Ralink Technology, Corp.", "Ralink");
 	T (nm_utils_fixup_vendor_string, "RDC Semiconductor, Inc.", "RDC");
 	T (nm_utils_fixup_vendor_string, "Realtek Semiconductor Co., Ltd.", "Realtek");
 	T (nm_utils_fixup_vendor_string, "Realtek Semiconductor Corp.", "Realtek");
 	T (nm_utils_fixup_vendor_string, "Red Hat, Inc.", "Red Hat");
+	T (nm_utils_fixup_vendor_string, "SafeNet (wrong ID)", "SafeNet");
 	T (nm_utils_fixup_vendor_string, "Sagem", "Sagem");
 	T (nm_utils_fixup_vendor_string, "Samsung Electronics Co., Ltd", "Samsung");
 	T (nm_utils_fixup_vendor_string, "Sega Enterprises Ltd", "Sega");
@@ -298,6 +308,7 @@ test_fixup_vendor_string (void)
 	T (nm_utils_fixup_vendor_string, "TRENDnet", "TRENDnet");
 	T (nm_utils_fixup_vendor_string, "Trident Microsystems", "Trident");
 	T (nm_utils_fixup_vendor_string, "Trust International B.V.", "Trust");
+	T (nm_utils_fixup_vendor_string, "TTTech Computertechnik AG (Wrong ID)", "TTTech");
 	T (nm_utils_fixup_vendor_string, "TwinMOS", "TwinMOS");
 	T (nm_utils_fixup_vendor_string, "U-Blox AG", "U-Blox");
 	T (nm_utils_fixup_vendor_string, "ULi Electronics Inc.", "ULi");

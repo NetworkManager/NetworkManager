@@ -31,6 +31,7 @@ _fixup_string (const char *desc,
                const char *const *ignored_words)
 {
 	char *desc_full;
+	gboolean in_paren = FALSE;
 	char *p, *q;
 	int i;
 
@@ -48,11 +49,16 @@ _fixup_string (const char *desc,
 		p = q + 1;
 	}
 
-	/* replace '_', ',', and ASCII controll characters with space. */
+	/* replace '_', ',', ASCII control characters and parentheses, with space. */
 	for (p = desc_full; p[0]; p++) {
+		if (*p == '(')
+			in_paren = TRUE;
 		if (   NM_IN_SET (*p, '_', ',')
-		    || *p < ' ')
+		    || *p < ' '
+		    || in_paren)
 			*p = ' ';
+		if (*p == ')')
+			in_paren = FALSE;
 	}
 
 	/* Attempt to shorten ID by ignoring certain phrases */
