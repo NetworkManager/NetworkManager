@@ -189,7 +189,6 @@ _nl80211_send_and_recv (struct nl_sock *nl_sock,
                         int (*valid_handler) (struct nl_msg *, void *),
                         void *valid_data)
 {
-	nm_auto_nlmsg struct nl_msg *msg_free = msg;
 	int err;
 	int done = 0;
 	const struct nl_cb cb = {
