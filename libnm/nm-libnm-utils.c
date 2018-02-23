@@ -233,10 +233,21 @@ nm_utils_fixup_vendor_string (const char *desc)
 		NULL,
 	};
 	char *desc_full;
+	char *p;
 
 	desc_full = _fixup_string (desc, IGNORED_PHRASES, IGNORED_WORDS, TRUE);
-	if (desc_full)
-		nm_assert (g_utf8_validate (desc_full, -1, NULL));
+	if (!desc_full)
+		return NULL;
+
+	/* Chop off everything after a slash. */
+	for (p = desc_full; *p; p++) {
+		if ((p[0] == ' ' && p[1] == '/') || p[0] == '/') {
+			p[0] = '\0';
+			break;
+		}
+	}
+
+	nm_assert (g_utf8_validate (desc_full, -1, NULL));
 
 	return desc_full;
 }

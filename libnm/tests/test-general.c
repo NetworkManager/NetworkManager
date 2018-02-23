@@ -199,6 +199,7 @@ test_fixup_vendor_string (void)
 	T (nm_utils_fixup_vendor_string, "Logitec Corp.", "Logitec");
 	T (nm_utils_fixup_vendor_string, "Logitech, Inc.", "Logitech");
 	T (nm_utils_fixup_vendor_string, "LSI Corporation", "LSI");
+	T (nm_utils_fixup_vendor_string, "LSI Logic / Symbios Logic", "LSI Logic");
 	T (nm_utils_fixup_vendor_string, "Macronix, Inc. [MXIC]", "MXIC");
 	T (nm_utils_fixup_vendor_string, "Marvell Semiconductor, Inc.", "Marvell");
 	T (nm_utils_fixup_vendor_string, "Marvell Technology Group Ltd.", "Marvell");
@@ -242,6 +243,7 @@ test_fixup_vendor_string (void)
 	T (nm_utils_fixup_vendor_string, "OpenMoko, Inc.", "OpenMoko");
 	T (nm_utils_fixup_vendor_string, "Option", "Option");
 	T (nm_utils_fixup_vendor_string, "OQO", "OQO");
+	T (nm_utils_fixup_vendor_string, "Oracle/SUN", "Oracle");
 	T (nm_utils_fixup_vendor_string, "Ovislink Corp.", "Ovislink");
 	T (nm_utils_fixup_vendor_string, "Packet Engines Inc.", "Packet Engines");
 	T (nm_utils_fixup_vendor_string, "Panasonic (Matsushita)", "Panasonic");
@@ -264,6 +266,7 @@ test_fixup_vendor_string (void)
 	T (nm_utils_fixup_vendor_string, "Qualcomm Atheros Communications", "Qualcomm Atheros");
 	T (nm_utils_fixup_vendor_string, "Qualcomm Atheros", "Qualcomm Atheros");
 	T (nm_utils_fixup_vendor_string, "Qualcomm, Inc.", "Qualcomm");
+	T (nm_utils_fixup_vendor_string, "Qualcomm / Option", "Qualcomm");
 	T (nm_utils_fixup_vendor_string, "Quanta Computer, Inc.", "Quanta Computer");
 	T (nm_utils_fixup_vendor_string, "Quanta Microsystems, Inc.", "Quanta");
 	T (nm_utils_fixup_vendor_string, "Quantenna Communications, Inc.", "Quantenna");
@@ -297,6 +300,7 @@ test_fixup_vendor_string (void)
 	T (nm_utils_fixup_vendor_string, "Standard Microsystems Corp [SMC]", "SMC");
 	T (nm_utils_fixup_vendor_string, "Standard Microsystems Corp.", "Standard");
 	T (nm_utils_fixup_vendor_string, "STMicroelectronics", "STMicroelectronics");
+	T (nm_utils_fixup_vendor_string, "Sundance Technology Inc / IC Plus Corp", "Sundance");
 	T (nm_utils_fixup_vendor_string, "Surecom Technology Corp.", "Surecom");
 	T (nm_utils_fixup_vendor_string, "Surecom Technology", "Surecom");
 	T (nm_utils_fixup_vendor_string, "Sweex", "Sweex");
