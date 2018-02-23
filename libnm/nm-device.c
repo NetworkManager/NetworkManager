@@ -1297,6 +1297,136 @@ nm_device_get_available_connections (NMDevice *device)
 	return NM_DEVICE_GET_PRIVATE (device)->available_connections;
 }
 
+static const char *
+get_type_name (NMDevice *device)
+{
+	switch (nm_device_get_device_type (device)) {
+	case NM_DEVICE_TYPE_ETHERNET:
+		return _("Ethernet");
+	case NM_DEVICE_TYPE_WIFI:
+		return _("Wi-Fi");
+	case NM_DEVICE_TYPE_BT:
+		return _("Bluetooth");
+	case NM_DEVICE_TYPE_OLPC_MESH:
+		return _("OLPC Mesh");
+	case NM_DEVICE_TYPE_OVS_INTERFACE:
+		return _("OpenVSwitch Interface");
+	case NM_DEVICE_TYPE_OVS_PORT:
+		return _("OpenVSwitch Port");
+	case NM_DEVICE_TYPE_OVS_BRIDGE:
+		return _("OpenVSwitch Bridge");
+	case NM_DEVICE_TYPE_WIMAX:
+		return _("WiMAX");
+	case NM_DEVICE_TYPE_MODEM:
+		return _("Mobile Broadband");
+	case NM_DEVICE_TYPE_INFINIBAND:
+		return _("InfiniBand");
+	case NM_DEVICE_TYPE_BOND:
+		return _("Bond");
+	case NM_DEVICE_TYPE_TEAM:
+		return _("Team");
+	case NM_DEVICE_TYPE_BRIDGE:
+		return _("Bridge");
+	case NM_DEVICE_TYPE_VLAN:
+		return _("VLAN");
+	case NM_DEVICE_TYPE_ADSL:
+		return _("ADSL");
+	case NM_DEVICE_TYPE_MACVLAN:
+		return _("MACVLAN");
+	case NM_DEVICE_TYPE_VXLAN:
+		return _("VXLAN");
+	case NM_DEVICE_TYPE_IP_TUNNEL:
+		return _("IPTunnel");
+	case NM_DEVICE_TYPE_TUN:
+		return _("Tun");
+	case NM_DEVICE_TYPE_VETH:
+		return _("Veth");
+	case NM_DEVICE_TYPE_MACSEC:
+		return _("MACsec");
+	case NM_DEVICE_TYPE_DUMMY:
+		return _("Dummy");
+	case NM_DEVICE_TYPE_PPP:
+		return _("PPP");
+	case NM_DEVICE_TYPE_GENERIC:
+	case NM_DEVICE_TYPE_UNUSED1:
+	case NM_DEVICE_TYPE_UNUSED2:
+	case NM_DEVICE_TYPE_UNKNOWN:
+		break;
+	}
+	return _("Unknown");
+}
+
+static char *
+get_device_type_name_with_iface (NMDevice *device)
+{
+	const char *type_name = get_type_name (device);
+
+	switch (nm_device_get_device_type (device)) {
+	case NM_DEVICE_TYPE_BOND:
+	case NM_DEVICE_TYPE_TEAM:
+	case NM_DEVICE_TYPE_BRIDGE:
+	case NM_DEVICE_TYPE_VLAN:
+		return g_strdup_printf ("%s (%s)", type_name, nm_device_get_iface (device));
+	default:
+		return g_strdup (type_name);
+	}
+}
+
+static char *
+get_device_generic_type_name_with_iface (NMDevice *device)
+{
+	switch (nm_device_get_device_type (device)) {
+	case NM_DEVICE_TYPE_ETHERNET:
+	case NM_DEVICE_TYPE_INFINIBAND:
+		return g_strdup (_("Wired"));
+	default:
+		return get_device_type_name_with_iface (device);
+	}
+}
+
+static const char *
+get_bus_name (NMDevice *device)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	struct udev_device *udevice;
+	const char *ifname, *bus;
+
+	if (priv->bus_name)
+		goto out;
+
+	if (!priv->udev)
+		return NULL;
+
+	ifname = nm_device_get_iface (device);
+	if (!ifname)
+		return NULL;
+
+	udevice = udev_device_new_from_subsystem_sysname (priv->udev, "net", ifname);
+	if (!udevice) {
+		udevice = udev_device_new_from_subsystem_sysname (priv->udev, "tty", ifname);
+		if (!udevice)
+			return NULL;
+	}
+	bus = udev_device_get_property_value (udevice, "ID_BUS");
+	if (!g_strcmp0 (bus, "pci"))
+		priv->bus_name = g_strdup (_("PCI"));
+	else if (!g_strcmp0 (bus, "usb"))
+		priv->bus_name = g_strdup (_("USB"));
+	else {
+		/* Use "" instead of NULL so we can tell later that we've
+		 * already tried.
+		 */
+		priv->bus_name = g_strdup ("");
+	}
+	udev_device_unref (udevice);
+
+out:
+	if (*priv->bus_name)
+		return priv->bus_name;
+	else
+		return NULL;
+}
+
 void
 _nm_device_set_udev (NMDevice *device, struct udev *udev)
 {
@@ -1510,136 +1640,6 @@ nm_device_get_description (NMDevice *device)
 		ensure_description (device);
 
 	return priv->description;
-}
-
-static const char *
-get_type_name (NMDevice *device)
-{
-	switch (nm_device_get_device_type (device)) {
-	case NM_DEVICE_TYPE_ETHERNET:
-		return _("Ethernet");
-	case NM_DEVICE_TYPE_WIFI:
-		return _("Wi-Fi");
-	case NM_DEVICE_TYPE_BT:
-		return _("Bluetooth");
-	case NM_DEVICE_TYPE_OLPC_MESH:
-		return _("OLPC Mesh");
-	case NM_DEVICE_TYPE_OVS_INTERFACE:
-		return _("OpenVSwitch Interface");
-	case NM_DEVICE_TYPE_OVS_PORT:
-		return _("OpenVSwitch Port");
-	case NM_DEVICE_TYPE_OVS_BRIDGE:
-		return _("OpenVSwitch Bridge");
-	case NM_DEVICE_TYPE_WIMAX:
-		return _("WiMAX");
-	case NM_DEVICE_TYPE_MODEM:
-		return _("Mobile Broadband");
-	case NM_DEVICE_TYPE_INFINIBAND:
-		return _("InfiniBand");
-	case NM_DEVICE_TYPE_BOND:
-		return _("Bond");
-	case NM_DEVICE_TYPE_TEAM:
-		return _("Team");
-	case NM_DEVICE_TYPE_BRIDGE:
-		return _("Bridge");
-	case NM_DEVICE_TYPE_VLAN:
-		return _("VLAN");
-	case NM_DEVICE_TYPE_ADSL:
-		return _("ADSL");
-	case NM_DEVICE_TYPE_MACVLAN:
-		return _("MACVLAN");
-	case NM_DEVICE_TYPE_VXLAN:
-		return _("VXLAN");
-	case NM_DEVICE_TYPE_IP_TUNNEL:
-		return _("IPTunnel");
-	case NM_DEVICE_TYPE_TUN:
-		return _("Tun");
-	case NM_DEVICE_TYPE_VETH:
-		return _("Veth");
-	case NM_DEVICE_TYPE_MACSEC:
-		return _("MACsec");
-	case NM_DEVICE_TYPE_DUMMY:
-		return _("Dummy");
-	case NM_DEVICE_TYPE_PPP:
-		return _("PPP");
-	case NM_DEVICE_TYPE_GENERIC:
-	case NM_DEVICE_TYPE_UNUSED1:
-	case NM_DEVICE_TYPE_UNUSED2:
-	case NM_DEVICE_TYPE_UNKNOWN:
-		break;
-	}
-	return _("Unknown");
-}
-
-static char *
-get_device_type_name_with_iface (NMDevice *device)
-{
-	const char *type_name = get_type_name (device);
-
-	switch (nm_device_get_device_type (device)) {
-	case NM_DEVICE_TYPE_BOND:
-	case NM_DEVICE_TYPE_TEAM:
-	case NM_DEVICE_TYPE_BRIDGE:
-	case NM_DEVICE_TYPE_VLAN:
-		return g_strdup_printf ("%s (%s)", type_name, nm_device_get_iface (device));
-	default:
-		return g_strdup (type_name);
-	}
-}
-
-static char *
-get_device_generic_type_name_with_iface (NMDevice *device)
-{
-	switch (nm_device_get_device_type (device)) {
-	case NM_DEVICE_TYPE_ETHERNET:
-	case NM_DEVICE_TYPE_INFINIBAND:
-		return g_strdup (_("Wired"));
-	default:
-		return get_device_type_name_with_iface (device);
-	}
-}
-
-static const char *
-get_bus_name (NMDevice *device)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
-	struct udev_device *udevice;
-	const char *ifname, *bus;
-
-	if (priv->bus_name)
-		goto out;
-
-	if (!priv->udev)
-		return NULL;
-
-	ifname = nm_device_get_iface (device);
-	if (!ifname)
-		return NULL;
-
-	udevice = udev_device_new_from_subsystem_sysname (priv->udev, "net", ifname);
-	if (!udevice) {
-		udevice = udev_device_new_from_subsystem_sysname (priv->udev, "tty", ifname);
-		if (!udevice)
-			return NULL;
-	}
-	bus = udev_device_get_property_value (udevice, "ID_BUS");
-	if (!g_strcmp0 (bus, "pci"))
-		priv->bus_name = g_strdup (_("PCI"));
-	else if (!g_strcmp0 (bus, "usb"))
-		priv->bus_name = g_strdup (_("USB"));
-	else {
-		/* Use "" instead of NULL so we can tell later that we've
-		 * already tried.
-		 */
-		priv->bus_name = g_strdup ("");
-	}
-	udev_device_unref (udevice);
-
-out:
-	if (*priv->bus_name)
-		return priv->bus_name;
-	else
-		return NULL;
 }
 
 static gboolean
