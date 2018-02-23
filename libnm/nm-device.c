@@ -1350,15 +1350,14 @@ _get_udev_property (NMDevice *device,
 	}
 	udev_device_unref (udev_device);
 
-	/* Prefer the encoded value which comes directly from the device
-	 * over the hwdata database value.
-	 */
-	if (enc_value) {
-		g_free (db_value);
-		return enc_value;
+	/* Prefer the hwdata database value over what comes directly
+	 * from the device. */
+	if (db_value) {
+		g_free (enc_value);
+		return db_value;
 	}
 
-	return db_value;
+	return enc_value;
 }
 
 static char *
