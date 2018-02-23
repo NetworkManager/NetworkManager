@@ -1443,7 +1443,7 @@ ensure_description (NMDevice *device)
 	GParamSpec *name_prop;
 	gs_free char *short_product = NULL;
 
-	priv->short_vendor = nm_str_realloc (nm_utils_fixup_desc_string (nm_device_get_vendor (device)));
+	priv->short_vendor = nm_str_realloc (nm_utils_fixup_vendor_string (nm_device_get_vendor (device)));
 
 	/* Grab device's preferred name, if any */
 	name_prop = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (device)), "name");

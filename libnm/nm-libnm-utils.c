@@ -25,51 +25,11 @@
 
 /*****************************************************************************/
 
-char *
-nm_utils_fixup_desc_string (const char *desc)
+static char *
+_fixup_string (const char *desc,
+               const char *const *ignored_phrases,
+               const char *const *ignored_words)
 {
-	static const char *const IGNORED_PHRASES[] = {
-		"Multiprotocol MAC/baseband processor",
-		"Wireless LAN Controller",
-		"Wireless LAN Adapter",
-		"Wireless Adapter",
-		"Network Connection",
-		"Wireless Cardbus Adapter",
-		"Wireless CardBus Adapter",
-		"54 Mbps Wireless PC Card",
-		"Wireless PC Card",
-		"Wireless PC",
-		"PC Card with XJACK(r) Antenna",
-		"Wireless cardbus",
-		"Wireless LAN PC Card",
-		"Technology Group Ltd.",
-		"Communication S.p.A.",
-		"Business Mobile Networks BV",
-		"Mobile Broadband Minicard Composite Device",
-		"Mobile Communications AB",
-		"(PC-Suite Mode)",
-	};
-	static const char *const IGNORED_WORDS[] = {
-		"Semiconductor",
-		"Components",
-		"Corporation",
-		"Communications",
-		"Company",
-		"Corp.",
-		"Corp",
-		"Co.",
-		"Inc.",
-		"Inc",
-		"Incorporated",
-		"Ltd.",
-		"Limited.",
-		"Intel?",
-		"chipset",
-		"adapter",
-		"[hex]",
-		"NDIS",
-		"Module",
-	};
 	char *desc_full;
 	char *p, *q;
 	int i;
@@ -96,10 +56,10 @@ nm_utils_fixup_desc_string (const char *desc)
 	}
 
 	/* Attempt to shorten ID by ignoring certain phrases */
-	for (i = 0; i < G_N_ELEMENTS (IGNORED_PHRASES); i++) {
-		p = strstr (desc_full, IGNORED_PHRASES[i]);
+	for (i = 0; ignored_phrases[i]; i++) {
+		p = strstr (desc_full, ignored_phrases[i]);
 		if (p) {
-			const char *eow = &p[strlen (IGNORED_PHRASES[i])];
+			const char *eow = &p[strlen (ignored_phrases[i])];
 
 			/* require that the phrase is delimited by space, or
 			 * at the beginning or end of the description. */
@@ -112,7 +72,7 @@ nm_utils_fixup_desc_string (const char *desc)
 	/* Attempt to shorten ID by ignoring certain individual words.
 	 * - word-split the description at spaces
 	 * - coalesce multiple spaces
-	 * - skip over IGNORED_WORDS */
+	 * - skip over ignored_words */
 	p = desc_full;
 	q = desc_full;
 	for (;;) {
@@ -131,9 +91,7 @@ nm_utils_fixup_desc_string (const char *desc)
 		if (eow)
 			*eow = '\0';
 
-		if (nm_utils_strv_find_first ((char **) IGNORED_WORDS,
-		                              G_N_ELEMENTS (IGNORED_WORDS),
-		                              p) >= 0)
+		if (nm_utils_strv_find_first ((char **) ignored_words, -1, p) >= 0)
 			goto next;
 
 		l = strlen (p);
@@ -157,7 +115,78 @@ next:
 		return NULL;
 	}
 
-	nm_assert (g_utf8_validate (desc_full, -1, NULL));
+	return desc_full;
+}
+
+char *
+nm_utils_fixup_vendor_string (const char *desc)
+{
+	static const char *const IGNORED_PHRASES[] = {
+		"Business Mobile Networks BV",
+		"Technology Group Ltd.",
+		NULL,
+	};
+	static const char *const IGNORED_WORDS[] = {
+		"Co.",
+		"Communications",
+		"Components",
+		"Corp.",
+		"Corp",
+		"Corporation",
+		"[hex]",
+		"Inc.",
+		"Inc",
+		"Incorporated",
+		"Limited.",
+		"Ltd.",
+		"Semiconductor",
+		NULL,
+	};
+	char *desc_full;
+
+	desc_full = _fixup_string (desc, IGNORED_PHRASES, IGNORED_WORDS);
+	if (desc_full)
+		nm_assert (g_utf8_validate (desc_full, -1, NULL));
+
+	return desc_full;
+}
+
+char *
+nm_utils_fixup_desc_string (const char *desc)
+{
+	static const char *const IGNORED_PHRASES[] = {
+		"54 Mbps Wireless PC Card",
+		"Communication S.p.A.",
+		"Mobile Broadband Minicard Composite Device",
+		"Mobile Communications AB",
+		"Multiprotocol MAC/baseband processor",
+		"Network Connection",
+		"PC Card with XJACK(r) Antenna",
+		"(PC-Suite Mode)",
+		"Wireless Adapter",
+		"Wireless cardbus",
+		"Wireless Cardbus Adapter",
+		"Wireless CardBus Adapter",
+		"Wireless LAN Adapter",
+		"Wireless LAN Controller",
+		"Wireless LAN PC Card",
+		"Wireless PC",
+		"Wireless PC Card",
+		NULL,
+	};
+	static const char *const IGNORED_WORDS[] = {
+		"adapter",
+		"chipset",
+		"Module",
+		"NDIS",
+		NULL,
+	};
+	char *desc_full;
+
+	desc_full = _fixup_string (desc, IGNORED_PHRASES, IGNORED_WORDS);
+	if (desc_full)
+		nm_assert (g_utf8_validate (desc_full, -1, NULL));
+
 	return desc_full;
 }
 
