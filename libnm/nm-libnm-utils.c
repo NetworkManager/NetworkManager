@@ -28,7 +28,8 @@
 static char *
 _fixup_string (const char *desc,
                const char *const *ignored_phrases,
-               const char *const *ignored_words)
+               const char *const *ignored_words,
+               gboolean square_brackets_sensible)
 {
 	char *desc_full;
 	gboolean in_paren = FALSE;
@@ -115,6 +116,31 @@ next:
 	}
 
 	*q++ = '\0';
+
+	p = strchr (desc_full, '[');
+	if (p == desc_full) {
+		/* All we're left with is in square brackets.
+		 * Always prefer that to a blank string.*/
+		square_brackets_sensible = TRUE;
+	}
+	if (square_brackets_sensible) {
+		/* If there's a [<string>] that survived the substitution, then the string
+		 * is a short form that is generally preferrable. */
+		q = strchr (desc_full, ']');
+		if (p && q > p) {
+			p++;
+			memmove (desc_full, p, q - p);
+			desc_full[q - p] = '\0';
+		}
+	} else {
+		/* [<string>] sometimes contains the preferred human-readable name, but
+		 * mostly it's utterly useless. Sigh. Drop it. */
+		if (p) {
+			if (p > desc_full && p[-1] == ' ')
+				p--;
+			*p = '\0';
+		}
+	}
 
 	if (!desc_full[0]) {
 		g_free (desc_full);
@@ -208,7 +234,7 @@ nm_utils_fixup_vendor_string (const char *desc)
 	};
 	char *desc_full;
 
-	desc_full = _fixup_string (desc, IGNORED_PHRASES, IGNORED_WORDS);
+	desc_full = _fixup_string (desc, IGNORED_PHRASES, IGNORED_WORDS, TRUE);
 	if (desc_full)
 		nm_assert (g_utf8_validate (desc_full, -1, NULL));
 
@@ -247,9 +273,11 @@ nm_utils_fixup_desc_string (const char *desc)
 	};
 	char *desc_full;
 
-	desc_full = _fixup_string (desc, IGNORED_PHRASES, IGNORED_WORDS);
-	if (desc_full)
-		nm_assert (g_utf8_validate (desc_full, -1, NULL));
+	desc_full = _fixup_string (desc, IGNORED_PHRASES, IGNORED_WORDS, FALSE);
+	if (!desc_full)
+		return NULL;
+
+	nm_assert (g_utf8_validate (desc_full, -1, NULL));
 
 	return desc_full;
 }

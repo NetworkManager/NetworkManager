@@ -69,6 +69,7 @@ test_fixup_vendor_string (void)
 	T (nm_utils_fixup_vendor_string, "ADMtek", "ADMtek");
 	T (nm_utils_fixup_vendor_string, "ADMtek, Inc.", "ADMtek");
 	T (nm_utils_fixup_vendor_string, "ADS Technologies, Inc.", "ADS");
+	T (nm_utils_fixup_vendor_string, "Advanced Micro Devices, Inc. [AMD]", "AMD");
 	T (nm_utils_fixup_vendor_string, "Advance Multimedia Internet Technology Inc. (AMIT)", "Advance");
 	T (nm_utils_fixup_vendor_string, "AEI", "AEI");
 	T (nm_utils_fixup_vendor_string, "Airprime, Incorporated", "Airprime");
@@ -198,6 +199,7 @@ test_fixup_vendor_string (void)
 	T (nm_utils_fixup_vendor_string, "Logitec Corp.", "Logitec");
 	T (nm_utils_fixup_vendor_string, "Logitech, Inc.", "Logitech");
 	T (nm_utils_fixup_vendor_string, "LSI Corporation", "LSI");
+	T (nm_utils_fixup_vendor_string, "Macronix, Inc. [MXIC]", "MXIC");
 	T (nm_utils_fixup_vendor_string, "Marvell Semiconductor, Inc.", "Marvell");
 	T (nm_utils_fixup_vendor_string, "Marvell Technology Group Ltd.", "Marvell");
 	T (nm_utils_fixup_vendor_string, "MediaTek Inc.", "MediaTek");
@@ -208,6 +210,7 @@ test_fixup_vendor_string (void)
 	T (nm_utils_fixup_vendor_string, "Microcomputer Systems (M) Son", "Microcomputer");
 	T (nm_utils_fixup_vendor_string, "Microsoft Corp.", "Microsoft");
 	T (nm_utils_fixup_vendor_string, "Microsoft Corporation", "Microsoft");
+	T (nm_utils_fixup_vendor_string, "Micro-Star International Co., Ltd. [MSI]", "MSI");
 	T (nm_utils_fixup_vendor_string, "Micro Star International", "Micro Star");
 	T (nm_utils_fixup_vendor_string, "Mobility", "Mobility");
 	T (nm_utils_fixup_vendor_string, "MosChip Semiconductor", "MosChip");
@@ -282,6 +285,7 @@ test_fixup_vendor_string (void)
 	T (nm_utils_fixup_vendor_string, "Sierra Wireless, Inc.", "Sierra Wireless");
 	T (nm_utils_fixup_vendor_string, "Silicom", "Silicom");
 	T (nm_utils_fixup_vendor_string, "Silicon Graphics Intl. Corp.", "Silicon Graphics");
+	T (nm_utils_fixup_vendor_string, "Silicon Integrated Systems [SiS]", "SiS");
 	T (nm_utils_fixup_vendor_string, "Sitecom Europe B.V.", "Sitecom");
 	T (nm_utils_fixup_vendor_string, "Sitecom", "Sitecom");
 	T (nm_utils_fixup_vendor_string, "smartBridges, Inc.", "smartBridges");
@@ -290,6 +294,7 @@ test_fixup_vendor_string (void)
 	T (nm_utils_fixup_vendor_string, "Sony Corp.", "Sony");
 	T (nm_utils_fixup_vendor_string, "SpeedStream", "SpeedStream");
 	T (nm_utils_fixup_vendor_string, "Sphairon Access Systems GmbH", "Sphairon");
+	T (nm_utils_fixup_vendor_string, "Standard Microsystems Corp [SMC]", "SMC");
 	T (nm_utils_fixup_vendor_string, "Standard Microsystems Corp.", "Standard");
 	T (nm_utils_fixup_vendor_string, "STMicroelectronics", "STMicroelectronics");
 	T (nm_utils_fixup_vendor_string, "Surecom Technology Corp.", "Surecom");
