@@ -474,9 +474,17 @@ test_fixup_product_string (void)
 	T (nm_utils_fixup_product_string, "82559 Ethernet Controller", "82559");
 	T (nm_utils_fixup_product_string, "82559 InBusiness 10/100", "82559 InBusiness");
 	T (nm_utils_fixup_product_string, "8255xER/82551IT Fast Ethernet Controller", "8255xER/82551IT");
+	T (nm_utils_fixup_product_string, "82562 EM/EX/GX - PRO/100 VM Ethernet Controller", "82562 EM/EX/GX");
+	T (nm_utils_fixup_product_string, "82562 EM/EX/GX - PRO/100 VM (LOM) Ethernet Controller", "82562 EM/EX/GX");
+	T (nm_utils_fixup_product_string, "82562EM/EX/GX - PRO/100 VM (LOM) Ethernet Controller Mobile", "82562EM/EX/GX");
+	T (nm_utils_fixup_product_string, "82562ET/EZ/GT/GZ - PRO/100 VE Ethernet Controller", "82562ET/EZ/GT/GZ");
+	T (nm_utils_fixup_product_string, "82562ET/EZ/GT/GZ - PRO/100 VE (LOM) Ethernet Controller", "82562ET/EZ/GT/GZ");
+	T (nm_utils_fixup_product_string, "82562ET/EZ/GT/GZ - PRO/100 VE (LOM) Ethernet Controller Mobile", "82562ET/EZ/GT/GZ");
 	T (nm_utils_fixup_product_string, "82562EZ 10/100 Ethernet Controller", "82562EZ");
 	T (nm_utils_fixup_product_string, "82562G 10/100 Network Connection", "82562G");
 	T (nm_utils_fixup_product_string, "82562G-2 10/100 Network Connection", "82562G-2");
+	T (nm_utils_fixup_product_string, "82562G - PRO/100 VE Ethernet Controller Mobile", "82562G");
+	T (nm_utils_fixup_product_string, "82562G - PRO/100 VE (LOM) Ethernet Controller", "82562G");
 	T (nm_utils_fixup_product_string, "82562GT 10/100 Network Connection", "82562GT");
 	T (nm_utils_fixup_product_string, "82562GT-2 10/100 Network Connection", "82562GT-2");
 	T (nm_utils_fixup_product_string, "82562V 10/100 Network Connection", "82562V");
