@@ -26,6 +26,6 @@
 #endif
 
 char *nm_utils_fixup_vendor_string (const char *desc);
-char *nm_utils_fixup_desc_string (const char *desc);
+char *nm_utils_fixup_product_string (const char *desc);
 
 #endif /* __NM_LIBNM_UTILS_H__ */

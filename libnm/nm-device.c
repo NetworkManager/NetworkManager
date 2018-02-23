@@ -1455,7 +1455,7 @@ ensure_description (NMDevice *device)
 	}
 
 	if (   !priv->short_vendor
-	    || !(short_product = nm_utils_fixup_desc_string (nm_device_get_product (device)))) {
+	    || !(short_product = nm_utils_fixup_product_string (nm_device_get_product (device)))) {
 		priv->description = g_strdup (nm_device_get_iface (device) ?: "");
 		return;
 	}
