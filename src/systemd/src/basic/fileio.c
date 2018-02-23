@@ -1183,6 +1183,7 @@ int fflush_and_check(FILE *f) {
         return 0;
 }
 
+#if 0 /* NM_IGNORED */
 int fflush_sync_and_check(FILE *f) {
         int r;
 
@@ -1195,8 +1196,13 @@ int fflush_sync_and_check(FILE *f) {
         if (fsync(fileno(f)) < 0)
                 return -errno;
 
+        r = fsync_directory_of_file(fileno(f));
+        if (r < 0)
+                return r;
+
         return 0;
 }
+#endif /* NM_IGNORED */
 
 /* This is much like mkostemp() but is subject to umask(). */
 int mkostemp_safe(char *pattern) {

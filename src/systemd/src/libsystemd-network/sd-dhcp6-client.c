@@ -775,8 +775,6 @@ static int client_parse_message(
         size_t pos = 0;
         int r;
         bool clientid = false;
-        uint8_t *id = NULL;
-        size_t id_len;
         uint32_t lt_t1 = ~0, lt_t2 = ~0;
 
         assert(client);
@@ -821,8 +819,8 @@ static int client_parse_message(
                         break;
 
                 case SD_DHCP6_OPTION_SERVERID:
-                        r = dhcp6_lease_get_serverid(lease, &id, &id_len);
-                        if (r >= 0 && id) {
+                        r = dhcp6_lease_get_serverid(lease, NULL, NULL);
+                        if (r >= 0) {
                                 log_dhcp6_client(client, "%s contains multiple serverids",
                                                  dhcp6_message_type_to_string(message->type));
                                 return -EINVAL;
@@ -960,21 +958,23 @@ static int client_parse_message(
         }
 
         if (client->state != DHCP6_STATE_INFORMATION_REQUEST) {
-                r = dhcp6_lease_get_serverid(lease, &id, &id_len);
-                if (r < 0)
+                r = dhcp6_lease_get_serverid(lease, NULL, NULL);
+                if (r < 0) {
                         log_dhcp6_client(client, "%s has no server id",
                                          dhcp6_message_type_to_string(message->type));
-                return r;
-        }
+                        return -EINVAL;
+                }
 
-        if (lease->ia.addresses) {
-                lease->ia.ia_na.lifetime_t1 = htobe32(lt_t1);
-                lease->ia.ia_na.lifetime_t2 = htobe32(lt_t2);
-        }
+        } else {
+                if (lease->ia.addresses) {
+                        lease->ia.ia_na.lifetime_t1 = htobe32(lt_t1);
+                        lease->ia.ia_na.lifetime_t2 = htobe32(lt_t2);
+                }
 
-        if (lease->pd.addresses) {
-                lease->pd.ia_pd.lifetime_t1 = htobe32(lt_t1);
-                lease->pd.ia_pd.lifetime_t2 = htobe32(lt_t2);
+                if (lease->pd.addresses) {
+                        lease->pd.ia_pd.lifetime_t1 = htobe32(lt_t1);
+                        lease->pd.ia_pd.lifetime_t2 = htobe32(lt_t2);
+                }
         }
 
         return 0;
