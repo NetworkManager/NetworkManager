@@ -1583,11 +1583,14 @@ ensure_description (NMDevice *device)
 		g_clear_pointer (&priv->description, g_free);
 	}
 
-	if (   !priv->short_vendor
-	    || !(short_product = nm_utils_fixup_product_string (nm_device_get_product (device)))) {
+	if (!priv->short_vendor) {
 		priv->description = g_strdup (nm_device_get_iface (device) ?: "");
 		return;
 	}
+
+	short_product = nm_utils_fixup_product_string (nm_device_get_product (device));
+	if (short_product == NULL)
+		short_product = g_strdup (get_type_name (device));
 
 	/* Another quick hack; if all of the fixed up vendor string
 	 * is found in product, ignore the vendor.
