@@ -1297,222 +1297,6 @@ nm_device_get_available_connections (NMDevice *device)
 	return NM_DEVICE_GET_PRIVATE (device)->available_connections;
 }
 
-void
-_nm_device_set_udev (NMDevice *device, struct udev *udev)
-{
-	NMDevicePrivate *priv;
-
-	nm_assert (NM_IS_DEVICE (device));
-	nm_assert (udev);
-
-	priv = NM_DEVICE_GET_PRIVATE (device);
-
-	nm_assert (!priv->udev);
-
-	priv->udev = udev_ref (udev);
-}
-
-static char *
-_get_udev_property (NMDevice *device,
-                    const char *enc_prop,  /* ID_XXX_ENC */
-                    const char *db_prop)   /* ID_XXX_FROM_DATABASE */
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
-	struct udev_device *udev_device, *tmpdev;
-	const char *ifname;
-	guint32 count = 0;
-	char *enc_value = NULL, *db_value = NULL;
-
-	if (!priv->udev)
-		return NULL;
-
-	ifname = nm_device_get_iface (device);
-	if (!ifname)
-		return NULL;
-
-	udev_device = udev_device_new_from_subsystem_sysname (priv->udev, "net", ifname);
-	if (!udev_device) {
-		udev_device = udev_device_new_from_subsystem_sysname (priv->udev, "tty", ifname);
-		if (!udev_device)
-			return NULL;
-	}
-	/* Walk up the chain of the device and its parents a few steps to grab
-	 * vendor and device ID information off it.
-	 */
-	tmpdev = udev_device;
-	while ((count++ < 3) && tmpdev && !enc_value) {
-		if (!enc_value)
-			enc_value = nm_udev_utils_property_decode_cp (udev_device_get_property_value (tmpdev, enc_prop));
-		if (!db_value)
-			db_value = g_strdup (udev_device_get_property_value (tmpdev, db_prop));
-
-		tmpdev = udev_device_get_parent (tmpdev);
-	}
-	udev_device_unref (udev_device);
-
-	/* Prefer the encoded value which comes directly from the device
-	 * over the hwdata database value.
-	 */
-	if (enc_value) {
-		g_free (db_value);
-		return enc_value;
-	}
-
-	return db_value;
-}
-
-static char *
-_get_udev_property_utf8safe (NMDevice *device,
-                             const char *enc_prop,  /* ID_XXX_ENC */
-                             const char *db_prop)   /* ID_XXX_FROM_DATABASE */
-{
-	return nm_utils_str_utf8safe_escape_take (_get_udev_property (device,
-	                                                              enc_prop,
-	                                                              db_prop),
-	                                          NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL);
-}
-
-/**
- * nm_device_get_product:
- * @device: a #NMDevice
- *
- * Gets the product string of the #NMDevice.
- *
- * Returns: the product name of the device. This is the internal string used by the
- * device, and must not be modified.
- *
- * The string is backslash escaped (C escaping) for invalid characters. The escaping
- * can be reverted with g_strcompress(), however the result may not be valid UTF-8.
- **/
-const char *
-nm_device_get_product (NMDevice *device)
-{
-	NMDevicePrivate *priv;
-
-	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
-
-	priv = NM_DEVICE_GET_PRIVATE (device);
-	if (!priv->product) {
-		priv->product = _get_udev_property_utf8safe (device, "ID_MODEL_ENC", "ID_MODEL_FROM_DATABASE");
-
-		/* Sometimes ID_PRODUCT_FROM_DATABASE is used? */
-		if (!priv->product)
-			priv->product = _get_udev_property_utf8safe (device, "ID_MODEL_ENC", "ID_PRODUCT_FROM_DATABASE");
-
-		if (!priv->product)
-			priv->product = g_strdup ("");
-	}
-
-	return priv->product;
-}
-
-/**
- * nm_device_get_vendor:
- * @device: a #NMDevice
- *
- * Gets the vendor string of the #NMDevice.
- *
- * Returns: the vendor name of the device. This is the internal string used by the
- * device, and must not be modified.
- *
- * The string is backslash escaped (C escaping) for invalid characters. The escaping
- * can be reverted with g_strcompress(), however the result may not be valid UTF-8.
- **/
-const char *
-nm_device_get_vendor (NMDevice *device)
-{
-	NMDevicePrivate *priv;
-
-	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
-
-	priv = NM_DEVICE_GET_PRIVATE (device);
-
-	if (!priv->vendor)
-		priv->vendor = _get_udev_property_utf8safe (device, "ID_VENDOR_ENC", "ID_VENDOR_FROM_DATABASE");
-
-	if (!priv->vendor)
-		priv->vendor = g_strdup ("");
-
-	return priv->vendor;
-}
-
-static void
-ensure_description (NMDevice *device)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
-	GParamSpec *name_prop;
-	gs_free char *short_product = NULL;
-
-	priv->short_vendor = nm_str_realloc (nm_utils_fixup_desc_string (nm_device_get_vendor (device)));
-
-	/* Grab device's preferred name, if any */
-	name_prop = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (device)), "name");
-	if (name_prop) {
-		g_object_get (device, "name", &priv->description, NULL);
-		if (priv->description && priv->description[0])
-			return;
-		g_clear_pointer (&priv->description, g_free);
-	}
-
-	if (   !priv->short_vendor
-	    || !(short_product = nm_utils_fixup_desc_string (nm_device_get_product (device)))) {
-		priv->description = g_strdup (nm_device_get_iface (device) ?: "");
-		return;
-	}
-
-	/* Another quick hack; if all of the fixed up vendor string
-	 * is found in product, ignore the vendor.
-	 */
-	{
-		gs_free char *pdown = g_ascii_strdown (short_product, -1);
-		gs_free char *vdown = g_ascii_strdown (priv->short_vendor, -1);
-
-		if (!strstr (pdown, vdown))
-			priv->description = g_strconcat (priv->short_vendor, " ", short_product, NULL);
-		else
-			priv->description = g_steal_pointer (&short_product);
-	}
-}
-
-static const char *
-get_short_vendor (NMDevice *device)
-{
-	NMDevicePrivate *priv;
-
-	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
-
-	priv = NM_DEVICE_GET_PRIVATE (device);
-
-	if (!priv->description)
-		ensure_description (device);
-
-	return priv->short_vendor;
-}
-
-/**
- * nm_device_get_description:
- * @device: an #NMDevice
- *
- * Gets a description of @device, based on its vendor and product names.
- *
- * Returns: a description of @device. If either the vendor or the
- *   product name is unknown, this returns the interface name.
- */
-const char *
-nm_device_get_description (NMDevice *device)
-{
-	NMDevicePrivate *priv;
-
-	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
-
-	priv = NM_DEVICE_GET_PRIVATE (device);
-
-	if (!priv->description)
-		ensure_description (device);
-
-	return priv->description;
-}
-
 static const char *
 get_type_name (NMDevice *device)
 {
@@ -1641,6 +1425,224 @@ out:
 		return priv->bus_name;
 	else
 		return NULL;
+}
+
+void
+_nm_device_set_udev (NMDevice *device, struct udev *udev)
+{
+	NMDevicePrivate *priv;
+
+	nm_assert (NM_IS_DEVICE (device));
+	nm_assert (udev);
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+
+	nm_assert (!priv->udev);
+
+	priv->udev = udev_ref (udev);
+}
+
+static char *
+_get_udev_property (NMDevice *device,
+                    const char *enc_prop,  /* ID_XXX_ENC */
+                    const char *db_prop)   /* ID_XXX_FROM_DATABASE */
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	struct udev_device *udev_device, *tmpdev;
+	const char *ifname;
+	guint32 count = 0;
+	char *enc_value = NULL, *db_value = NULL;
+
+	if (!priv->udev)
+		return NULL;
+
+	ifname = nm_device_get_iface (device);
+	if (!ifname)
+		return NULL;
+
+	udev_device = udev_device_new_from_subsystem_sysname (priv->udev, "net", ifname);
+	if (!udev_device) {
+		udev_device = udev_device_new_from_subsystem_sysname (priv->udev, "tty", ifname);
+		if (!udev_device)
+			return NULL;
+	}
+	/* Walk up the chain of the device and its parents a few steps to grab
+	 * vendor and device ID information off it.
+	 */
+	tmpdev = udev_device;
+	while ((count++ < 3) && tmpdev && !enc_value) {
+		if (!enc_value)
+			enc_value = nm_udev_utils_property_decode_cp (udev_device_get_property_value (tmpdev, enc_prop));
+		if (!db_value)
+			db_value = g_strdup (udev_device_get_property_value (tmpdev, db_prop));
+
+		tmpdev = udev_device_get_parent (tmpdev);
+	}
+	udev_device_unref (udev_device);
+
+	/* Prefer the hwdata database value over what comes directly
+	 * from the device. */
+	if (db_value) {
+		g_free (enc_value);
+		return db_value;
+	}
+
+	return enc_value;
+}
+
+static char *
+_get_udev_property_utf8safe (NMDevice *device,
+                             const char *enc_prop,  /* ID_XXX_ENC */
+                             const char *db_prop)   /* ID_XXX_FROM_DATABASE */
+{
+	return nm_utils_str_utf8safe_escape_take (_get_udev_property (device,
+	                                                              enc_prop,
+	                                                              db_prop),
+	                                          NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL);
+}
+
+/**
+ * nm_device_get_product:
+ * @device: a #NMDevice
+ *
+ * Gets the product string of the #NMDevice.
+ *
+ * Returns: the product name of the device. This is the internal string used by the
+ * device, and must not be modified.
+ *
+ * The string is backslash escaped (C escaping) for invalid characters. The escaping
+ * can be reverted with g_strcompress(), however the result may not be valid UTF-8.
+ **/
+const char *
+nm_device_get_product (NMDevice *device)
+{
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+	if (!priv->product) {
+		priv->product = _get_udev_property_utf8safe (device, "ID_MODEL_ENC", "ID_MODEL_FROM_DATABASE");
+
+		/* Sometimes ID_PRODUCT_FROM_DATABASE is used? */
+		if (!priv->product)
+			priv->product = _get_udev_property_utf8safe (device, "ID_MODEL_ENC", "ID_PRODUCT_FROM_DATABASE");
+
+		if (!priv->product)
+			priv->product = g_strdup ("");
+	}
+
+	return priv->product;
+}
+
+/**
+ * nm_device_get_vendor:
+ * @device: a #NMDevice
+ *
+ * Gets the vendor string of the #NMDevice.
+ *
+ * Returns: the vendor name of the device. This is the internal string used by the
+ * device, and must not be modified.
+ *
+ * The string is backslash escaped (C escaping) for invalid characters. The escaping
+ * can be reverted with g_strcompress(), however the result may not be valid UTF-8.
+ **/
+const char *
+nm_device_get_vendor (NMDevice *device)
+{
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+
+	if (!priv->vendor)
+		priv->vendor = _get_udev_property_utf8safe (device, "ID_VENDOR_ENC", "ID_VENDOR_FROM_DATABASE");
+
+	if (!priv->vendor)
+		priv->vendor = g_strdup ("");
+
+	return priv->vendor;
+}
+
+static void
+ensure_description (NMDevice *device)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	GParamSpec *name_prop;
+	gs_free char *short_product = NULL;
+
+	priv->short_vendor = nm_str_realloc (nm_utils_fixup_vendor_string (nm_device_get_vendor (device)));
+
+	/* Grab device's preferred name, if any */
+	name_prop = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (device)), "name");
+	if (name_prop) {
+		g_object_get (device, "name", &priv->description, NULL);
+		if (priv->description && priv->description[0])
+			return;
+		g_clear_pointer (&priv->description, g_free);
+	}
+
+	if (!priv->short_vendor) {
+		priv->description = g_strdup (nm_device_get_iface (device) ?: "");
+		return;
+	}
+
+	short_product = nm_utils_fixup_product_string (nm_device_get_product (device));
+	if (short_product == NULL)
+		short_product = g_strdup (get_type_name (device));
+
+	/* Another quick hack; if all of the fixed up vendor string
+	 * is found in product, ignore the vendor.
+	 */
+	{
+		gs_free char *pdown = g_ascii_strdown (short_product, -1);
+		gs_free char *vdown = g_ascii_strdown (priv->short_vendor, -1);
+
+		if (!strstr (pdown, vdown))
+			priv->description = g_strconcat (priv->short_vendor, " ", short_product, NULL);
+		else
+			priv->description = g_steal_pointer (&short_product);
+	}
+}
+
+static const char *
+get_short_vendor (NMDevice *device)
+{
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+
+	if (!priv->description)
+		ensure_description (device);
+
+	return priv->short_vendor;
+}
+
+/**
+ * nm_device_get_description:
+ * @device: an #NMDevice
+ *
+ * Gets a description of @device, based on its vendor and product names.
+ *
+ * Returns: a description of @device. If either the vendor or the
+ *   product name is unknown, this returns the interface name.
+ */
+const char *
+nm_device_get_description (NMDevice *device)
+{
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+
+	if (!priv->description)
+		ensure_description (device);
+
+	return priv->description;
 }
 
 static gboolean
