@@ -182,14 +182,12 @@ nl80211_alloc_msg (WifiDataNl80211 *nl80211, guint32 cmd, guint32 flags)
 	return _nl80211_alloc_msg (nl80211->id, nl80211->parent.ifindex, nl80211->phy, cmd, flags);
 }
 
-/* NOTE: this function consumes 'msg' */
 static int
 _nl80211_send_and_recv (struct nl_sock *nl_sock,
-                        struct nl_msg *inmsg,
+                        struct nl_msg *msg,
                         int (*valid_handler) (struct nl_msg *, void *),
                         void *valid_data)
 {
-	nm_auto_nlmsg struct nl_msg *msg = inmsg;
 	int err;
 	int done = 0;
 	const struct nl_cb cb = {
@@ -295,7 +293,7 @@ wifi_nl80211_get_mode (WifiData *data)
 	struct nl80211_iface_info iface_info = {
 		.mode = NM_802_11_MODE_UNKNOWN,
 	};
-	struct nl_msg *msg;
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
 
 	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_GET_INTERFACE, 0);
 
@@ -310,7 +308,7 @@ static gboolean
 wifi_nl80211_set_mode (WifiData *data, const NM80211Mode mode)
 {
 	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
-	struct nl_msg *msg;
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	int err;
 
 	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_SET_INTERFACE, 0);
@@ -341,7 +339,7 @@ static gboolean
 wifi_nl80211_set_powersave (WifiData *data, guint32 powersave)
 {
 	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
-	struct nl_msg *msg;
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	int err;
 
 	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_SET_POWER_SAVE, 0);
@@ -478,7 +476,7 @@ static void
 nl80211_get_bss_info (WifiDataNl80211 *nl80211,
                       struct nl80211_bss_info *bss_info)
 {
-	struct nl_msg *msg;
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
 
 	memset (bss_info, 0, sizeof (*bss_info));
 
@@ -602,7 +600,7 @@ static void
 nl80211_get_ap_info (WifiDataNl80211 *nl80211,
                      struct nl80211_station_info *sta_info)
 {
-	struct nl_msg *msg;
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	struct nl80211_bss_info bss_info;
 
 	memset (sta_info, 0, sizeof (*sta_info));
@@ -654,7 +652,7 @@ static gboolean
 wifi_nl80211_indicate_addressing_running (WifiData *data, gboolean running)
 {
 	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
-	struct nl_msg *msg;
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	int err;
 
 	msg = nl80211_alloc_msg (nl80211,
@@ -710,7 +708,7 @@ static gboolean
 wifi_nl80211_get_wowlan (WifiData *data)
 {
 	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
-	struct nl_msg *msg;
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	struct nl80211_wowlan_info info;
 
 	if (!nl80211->can_wowlan)
@@ -942,7 +940,7 @@ wifi_nl80211_init (int ifindex)
 		.deinit = wifi_nl80211_deinit,
 	};
 	WifiDataNl80211 *nl80211;
-	struct nl_msg *msg;
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	struct nl80211_device_info device_info = {};
 	char ifname[IFNAMSIZ];
 
