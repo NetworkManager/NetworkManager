@@ -185,10 +185,11 @@ nl80211_alloc_msg (WifiDataNl80211 *nl80211, guint32 cmd, guint32 flags)
 /* NOTE: this function consumes 'msg' */
 static int
 _nl80211_send_and_recv (struct nl_sock *nl_sock,
-                        struct nl_msg *msg,
+                        struct nl_msg *inmsg,
                         int (*valid_handler) (struct nl_msg *, void *),
                         void *valid_data)
 {
+	nm_auto_nlmsg struct nl_msg *msg = inmsg;
 	int err;
 	int done = 0;
 	const struct nl_cb cb = {
