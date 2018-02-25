@@ -2653,15 +2653,13 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	const char *base_hdr = _("Wi-Fi scan list");
 	NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 	gs_free char *header_name = NULL;
+	int option;
 
 	devices = nmc_get_devices_sorted (nmc->client);
 
-	next_arg (nmc, &argc, &argv, NULL);
-	while (argc > 0) {
-		if (argc == 1 && nmc->complete)
-			nmc_complete_strings (*argv, "ifname", "bssid", NULL);
-
-		if (strcmp (*argv, "ifname") == 0) {
+	while ((option = next_arg (nmc, &argc, &argv, "ifname", "hwaddr", "bssid", NULL)) > 0) {
+		switch (option) {
+		case 1: /* ifname */
 			argc--;
 			argv++;
 			if (!argc) {
@@ -2671,8 +2669,9 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 			ifname = *argv;
 			if (argc == 1 && nmc->complete)
 				complete_device (devices, ifname, TRUE);
-		} else if (strcmp (*argv, "bssid") == 0 || strcmp (*argv, "hwaddr") == 0) {
-			/* hwaddr is deprecated and will be removed later */
+			break;
+		case 2: /* hwaddr is deprecated and will be removed later */
+		case 3: /* bssid */
 			argc--;
 			argv++;
 			if (!argc) {
@@ -2682,11 +2681,11 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 			bssid_user = *argv;
 			if (argc == 1 && nmc->complete)
 				complete_aps (devices, NULL, bssid_user, NULL);
-		} else if (!nmc->complete) {
-			g_printerr (_("Unknown parameter: %s\n"), *argv);
+			break;
+		default:
+			g_assert_not_reached();
+			break;
 		}
-
-		next_arg (nmc, &argc, &argv, NULL);
 	}
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
@@ -2706,6 +2705,9 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 
 	if (nmc->complete)
 		return nmc->return_value;
+
+	if (argc)
+		g_printerr (_("Unknown parameter: %s\n"), *argv);
 
 	if (ifname) {
 
