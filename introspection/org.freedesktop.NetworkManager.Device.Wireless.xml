@@ -97,6 +97,16 @@
     <property name="WirelessCapabilities" type="u" access="read"/>
 
     <!--
+        LastScan:
+
+        The timestamp (in CLOCK_BOOTTIME seconds) for the last finished network scan.
+        A value of -1 means the device never scanned for access points.
+
+        Since: 1.12
+    -->
+    <property name="LastScan" type="i" access="read"/>
+
+    <!--
         PropertiesChanged:
         @properties: A dictionary containing the changed parameters.
 

@@ -44,6 +44,7 @@ G_BEGIN_DECLS
 #define NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT "active-access-point"
 #define NM_DEVICE_WIFI_CAPABILITIES        "wireless-capabilities"
 #define NM_DEVICE_WIFI_ACCESS_POINTS       "access-points"
+#define NM_DEVICE_WIFI_LAST_SCAN           "last-scan"
 
 /**
  * NMDeviceWifi:
@@ -76,6 +77,9 @@ NMAccessPoint *          nm_device_wifi_get_access_point_by_path (NMDeviceWifi *
                                                                   const char *path);
 
 const GPtrArray *        nm_device_wifi_get_access_points        (NMDeviceWifi *device);
+
+NM_AVAILABLE_IN_1_2
+gint                     nm_device_wifi_get_last_scan            (NMDeviceWifi *device);
 
 gboolean                 nm_device_wifi_request_scan             (NMDeviceWifi *device,
                                                                   GCancellable *cancellable,
