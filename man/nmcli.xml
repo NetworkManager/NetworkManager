@@ -1381,6 +1381,12 @@
           <command>wifi</command>
           <arg>
             <command>list</command>
+            <group>
+              <option>--rescan</option>
+              <arg choice='plain'><option>auto</option></arg>
+              <arg choice='plain'><option>no</option></arg>
+              <arg choice='plain'><option>yes</option></arg>
+            </group>
             <arg><option>ifname</option> <replaceable>ifname</replaceable></arg>
             <arg><option>bssid</option> <replaceable>BSSID</replaceable></arg>
           </arg>
@@ -1390,6 +1396,10 @@
           <para>List available Wi-Fi access points. The <option>ifname</option> and
           <option>bssid</option> options can be used to list APs for a particular
           interface or with a specific BSSID, respectively.</para>
+          <para>By default, <command>nmcli</command> ensures that the access point list
+          is no older than 30 seconds and triggers a network scan if necessary. The
+          <option>--rescan</option> can be used to either force or disable the scan
+          regardless of how fresh the access point list is.</para>
         </listitem>
       </varlistentry>
 

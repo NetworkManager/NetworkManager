@@ -1,23 +1,18 @@
 location: clients/tests/test-client.py:986:test_004()/51
 cmd: $NMCLI --pretty -f ALL device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: C
-returncode: -5
-stdout: 757 bytes
+returncode: 0
+stdout: 962 bytes
 >>>
 ===========================
-  Wi-Fi scan list (wlan1)
+  Wi-Fi scan list (wlan0)
 ===========================
-NAME  SSID  SSID-HEX  BSSID  MODE  CHAN  FREQ  RATE  SIGNAL  BARS  SECURITY  WPA-FLAGS  RSN-FLAGS  DEVICE  ACTIVE  IN-USE  DBUS-PATH 
------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-===========================
-  Wi-Fi scan list (wlan1)
-===========================
-NAME  SSID  SSID-HEX  BSSID  MODE  CHAN  FREQ  RATE  SIGNAL  BARS  SECURITY  WPA-FLAGS  RSN-FLAGS  DEVICE  ACTIVE  IN-USE  DBUS-PATH 
------------------------------------------------------------------------------------------------------------------------------------------------------------------
+NAME   SSID        SSID-HEX              BSSID              MODE   CHAN  FREQ      RATE       SIGNAL  BARS  SECURITY   WPA-FLAGS                                      RSN-FLAGS                                      DEVICE  ACTIVE  IN-USE  DBUS-PATH                                     
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+AP[1]  wlan0-ap-2  776C616E302D61702D32  C0:E2:BE:E8:EF:B6  Infra  1     2412 MHz  54 Mbit/s  92      ****  WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan0   no              /org/freedesktop/NetworkManager/AccessPoint/2 
 
 <<<
-stderr: 17 bytes
+stderr: 0 bytes
 >>>
-<UNSTABLE OUTPUT>
+
 <<<
