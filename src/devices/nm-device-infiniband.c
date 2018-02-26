@@ -32,8 +32,6 @@
 #include "nm-device-factory.h"
 #include "nm-core-internal.h"
 
-#include "introspection/org.freedesktop.NetworkManager.Device.Infiniband.h"
-
 #define NM_DEVICE_INFINIBAND_IS_PARTITION "is-partition"
 
 /*****************************************************************************/
@@ -368,16 +366,33 @@ nm_device_infiniband_init (NMDeviceInfiniband * self)
 {
 }
 
+static const NMDBusInterfaceInfoExtended interface_info_device_infiniband = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_DEVICE_INFINIBAND,
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+		),
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("HwAddress",       "s",  NM_DEVICE_HW_ADDRESS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Carrier",         "b",  NM_DEVICE_CARRIER),
+		),
+	),
+	.legacy_property_changed = TRUE,
+};
+
 static void
 nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_INFINIBAND_SETTING_NAME, NM_LINK_TYPE_INFINIBAND)
 
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
+
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_infiniband);
 
 	parent_class->create_and_realize = create_and_realize;
 	parent_class->unrealize = unrealize;
@@ -396,10 +411,6 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 	                           G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        NMDBUS_TYPE_DEVICE_INFINIBAND_SKELETON,
-	                                        NULL);
 }
 
 /*****************************************************************************/

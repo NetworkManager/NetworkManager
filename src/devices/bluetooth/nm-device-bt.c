@@ -43,8 +43,6 @@
 #include "devices/wwan/nm-modem-manager.h"
 #include "devices/wwan/nm-modem.h"
 
-#include "introspection/org.freedesktop.NetworkManager.Device.Bluetooth.h"
-
 #include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceBt);
 
@@ -1152,10 +1150,26 @@ finalize (GObject *object)
 	G_OBJECT_CLASS (nm_device_bt_parent_class)->finalize (object);
 }
 
+static const NMDBusInterfaceInfoExtended interface_info_device_bluetooth = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_DEVICE_BLUETOOTH,
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+		),
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("HwAddress",      "s",  NM_DEVICE_HW_ADDRESS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Name",           "s",  NM_DEVICE_BT_NAME),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("BtCapabilities", "u",  NM_DEVICE_BT_CAPABILITIES),
+		),
+	),
+	.legacy_property_changed = TRUE,
+};
+
 static void
 nm_device_bt_class_init (NMDeviceBtClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->constructed = constructed;
@@ -1163,6 +1177,8 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
+
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_bluetooth);
 
 	device_class->get_generic_capabilities = get_generic_capabilities;
 	device_class->can_auto_connect = can_auto_connect;
@@ -1207,8 +1223,4 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 	                  G_TYPE_NONE, 2,
 	                  G_TYPE_UINT /*guint32 in_bytes*/,
 	                  G_TYPE_UINT /*guint32 out_bytes*/);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        NMDBUS_TYPE_DEVICE_BLUETOOTH_SKELETON,
-	                                        NULL);
 }

@@ -9,7 +9,6 @@ sources = files(
 )
 
 deps = [
-  libnmdbus_dep,
   libnm_wwan_dep,
   nm_dep
 ]

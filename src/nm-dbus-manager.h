@@ -19,75 +19,89 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#ifndef __NM_BUS_MANAGER_H__
-#define __NM_BUS_MANAGER_H__
+#ifndef __NM_DBUS_MANAGER_H__
+#define __NM_DBUS_MANAGER_H__
 
-#define NM_TYPE_BUS_MANAGER (nm_bus_manager_get_type ())
-#define NM_BUS_MANAGER(o) (G_TYPE_CHECK_INSTANCE_CAST ((o), NM_TYPE_BUS_MANAGER, NMBusManager))
-#define NM_BUS_MANAGER_CLASS(k) (G_TYPE_CHECK_CLASS_CAST((k), NM_TYPE_BUS_MANAGER, NMBusManagerClass))
-#define NM_IS_BUS_MANAGER(o) (G_TYPE_CHECK_INSTANCE_TYPE ((o), NM_TYPE_BUS_MANAGER))
-#define NM_IS_BUS_MANAGER_CLASS(k) (G_TYPE_CHECK_CLASS_TYPE ((k), NM_TYPE_BUS_MANAGER))
-#define NM_BUS_MANAGER_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS ((o), NM_TYPE_BUS_MANAGER, NMBusManagerClass))
+#include "nm-dbus-utils.h"
 
-#define NM_BUS_MANAGER_DBUS_CONNECTION_CHANGED          "dbus-connection-changed"
-#define NM_BUS_MANAGER_PRIVATE_CONNECTION_NEW           "private-connection-new"
-#define NM_BUS_MANAGER_PRIVATE_CONNECTION_DISCONNECTED  "private-connection-disconnected"
+#define NM_TYPE_DBUS_MANAGER (nm_dbus_manager_get_type ())
+#define NM_DBUS_MANAGER(o) (G_TYPE_CHECK_INSTANCE_CAST ((o), NM_TYPE_DBUS_MANAGER, NMDBusManager))
+#define NM_DBUS_MANAGER_CLASS(k) (G_TYPE_CHECK_CLASS_CAST((k), NM_TYPE_DBUS_MANAGER, NMDBusManagerClass))
+#define NM_IS_DBUS_MANAGER(o) (G_TYPE_CHECK_INSTANCE_TYPE ((o), NM_TYPE_DBUS_MANAGER))
+#define NM_IS_DBUS_MANAGER_CLASS(k) (G_TYPE_CHECK_CLASS_TYPE ((k), NM_TYPE_DBUS_MANAGER))
+#define NM_DBUS_MANAGER_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS ((o), NM_TYPE_DBUS_MANAGER, NMDBusManagerClass))
 
-typedef struct _NMBusManagerClass NMBusManagerClass;
+#define NM_DBUS_MANAGER_PRIVATE_CONNECTION_NEW           "private-connection-new"
+#define NM_DBUS_MANAGER_PRIVATE_CONNECTION_DISCONNECTED  "private-connection-disconnected"
 
-GType nm_bus_manager_get_type (void);
+typedef struct _NMDBusManagerClass NMDBusManagerClass;
 
-NMBusManager * nm_bus_manager_get       (void);
-void           nm_bus_manager_setup     (NMBusManager *instance);
+GType nm_dbus_manager_get_type (void);
 
-gboolean nm_bus_manager_start_service    (NMBusManager *self);
+NMDBusManager *nm_dbus_manager_get (void);
 
-GDBusConnection * nm_bus_manager_get_connection (NMBusManager *self);
+typedef void (*NMDBusManagerSetPropertyHandler) (NMDBusObject *obj,
+                                                 const NMDBusInterfaceInfoExtended *interface_info,
+                                                 const NMDBusPropertyInfoExtended *property_info,
+                                                 GDBusConnection *connection,
+                                                 const char *sender,
+                                                 GDBusMethodInvocation *invocation,
+                                                 GVariant *value,
+                                                 gpointer user_data);
 
-gboolean nm_bus_manager_get_caller_info (NMBusManager *self,
-                                         GDBusMethodInvocation *context,
-                                         char **out_sender,
-                                         gulong *out_uid,
-                                         gulong *out_pid);
+gboolean nm_dbus_manager_start (NMDBusManager *self,
+                                NMDBusManagerSetPropertyHandler handler,
+                                gpointer handler_data);
 
-gboolean nm_bus_manager_ensure_uid (NMBusManager          *self,
-                                    GDBusMethodInvocation *context,
-                                    gulong uid,
-                                    GQuark error_domain,
-                                    int error_code);
+GDBusConnection *nm_dbus_manager_get_connection (NMDBusManager *self);
 
-const char *nm_bus_manager_connection_get_private_name (NMBusManager *self,
-                                                        GDBusConnection *connection);
+NMDBusObject *nm_dbus_manager_lookup_object (NMDBusManager *self, const char *path);
 
-gboolean nm_bus_manager_get_unix_user (NMBusManager *self,
-                                       const char *sender,
-                                       gulong *out_uid);
+void _nm_dbus_manager_obj_export (NMDBusObject *obj);
+void _nm_dbus_manager_obj_unexport (NMDBusObject *obj);
+void _nm_dbus_manager_obj_notify (NMDBusObject *obj,
+                                  guint n_pspecs,
+                                  const GParamSpec *const*pspecs);
+void _nm_dbus_manager_obj_emit_signal (NMDBusObject *obj,
+                                       const NMDBusInterfaceInfoExtended *interface_info,
+                                       const GDBusSignalInfo *signal_info,
+                                       GVariant *args);
 
-gboolean nm_bus_manager_get_caller_info_from_message (NMBusManager *self,
-                                                      GDBusConnection *connection,
-                                                      GDBusMessage *message,
-                                                      char **out_sender,
-                                                      gulong *out_uid,
-                                                      gulong *out_pid);
+gboolean nm_dbus_manager_get_caller_info (NMDBusManager *self,
+                                          GDBusMethodInvocation *context,
+                                          char **out_sender,
+                                          gulong *out_uid,
+                                          gulong *out_pid);
 
-void nm_bus_manager_register_object (NMBusManager *self,
-                                     GDBusObjectSkeleton *object);
+gboolean nm_dbus_manager_ensure_uid (NMDBusManager          *self,
+                                     GDBusMethodInvocation *context,
+                                     gulong uid,
+                                     GQuark error_domain,
+                                     int error_code);
 
-void nm_bus_manager_unregister_object (NMBusManager *self,
-                                       GDBusObjectSkeleton *object);
+const char *nm_dbus_manager_connection_get_private_name (NMDBusManager *self,
+                                                         GDBusConnection *connection);
 
-GDBusObjectSkeleton *nm_bus_manager_get_registered_object (NMBusManager *self,
-                                                           const char *path);
+gboolean nm_dbus_manager_get_unix_user (NMDBusManager *self,
+                                        const char *sender,
+                                        gulong *out_uid);
 
-void nm_bus_manager_private_server_register (NMBusManager *self,
-                                             const char *path,
-                                             const char *tag);
+gboolean nm_dbus_manager_get_caller_info_from_message (NMDBusManager *self,
+                                                       GDBusConnection *connection,
+                                                       GDBusMessage *message,
+                                                       char **out_sender,
+                                                       gulong *out_uid,
+                                                       gulong *out_pid);
 
-GDBusProxy *nm_bus_manager_new_proxy (NMBusManager *self,
-                                      GDBusConnection *connection,
-                                      GType proxy_type,
-                                      const char *name,
-                                      const char *path,
-                                      const char *iface);
+void nm_dbus_manager_private_server_register (NMDBusManager *self,
+                                              const char *path,
+                                              const char *tag);
 
-#endif /* __NM_BUS_MANAGER_H__ */
+GDBusProxy *nm_dbus_manager_new_proxy (NMDBusManager *self,
+                                       GDBusConnection *connection,
+                                       GType proxy_type,
+                                       const char *name,
+                                       const char *path,
+                                       const char *iface);
+
+#endif /* __NM_DBUS_MANAGER_H__ */

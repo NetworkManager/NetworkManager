@@ -366,8 +366,6 @@ CLEANFILES += $(DBUS_INTERFACE_DOCS)
 $(dispatcher_libnm_dispatcher_core_la_OBJECTS): $(introspection_sources)
 $(dispatcher_nm_dispatcher_OBJECTS):            $(introspection_sources)
 $(libnm_libnm_la_OBJECTS):                      $(introspection_sources)
-$(src_libNetworkManager_la_OBJECTS):            $(introspection_sources)
-$(src_libNetworkManagerBase_la_OBJECTS):        $(introspection_sources)
 
 EXTRA_DIST += \
 	$(dbusinterfaces_DATA) \
@@ -1423,8 +1421,10 @@ src_libNetworkManagerBase_la_SOURCES = \
 	src/ndisc/nm-ndisc.h \
 	src/ndisc/nm-ndisc-private.h \
 	\
-	src/nm-exported-object.c \
-	src/nm-exported-object.h \
+	src/nm-dbus-utils.c \
+	src/nm-dbus-utils.h \
+	src/nm-dbus-object.c \
+	src/nm-dbus-object.h \
 	src/nm-ip4-config.c \
 	src/nm-ip4-config.h \
 	src/nm-ip6-config.c \
@@ -1452,7 +1452,6 @@ endif
 
 src_libNetworkManagerBase_la_LIBADD = \
 	libnm-core/libnm-core.la \
-	introspection/libnmdbus.la \
 	$(GLIB_LIBS) \
 	$(SYSTEMD_JOURNAL_LIBS) \
 	$(LIBUDEV_LIBS) \
@@ -1860,7 +1859,6 @@ src_ppp_libnm_ppp_plugin_la_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/src/ppp/nm-ppp-plugin.ver"
 
 src_ppp_libnm_ppp_plugin_la_LIBADD = \
-	introspection/libnmdbus.la \
 	$(GLIB_LIBS)
 
 $(src_ppp_libnm_ppp_plugin_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
@@ -2515,7 +2513,6 @@ src_devices_adsl_libnm_device_plugin_adsl_la_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-devices.ver"
 
 src_devices_adsl_libnm_device_plugin_adsl_la_LIBADD = \
-	introspection/libnmdbus.la \
 	$(LIBUDEV_LIBS)
 
 check-local-devices-adsl: src/devices/adsl/libnm-device-plugin-adsl.la
@@ -2591,7 +2588,6 @@ src_devices_wwan_libnm_device_plugin_wwan_la_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-devices.ver"
 
 src_devices_wwan_libnm_device_plugin_wwan_la_LIBADD = \
-	introspection/libnmdbus.la \
 	src/devices/wwan/libnm-wwan.la \
 	$(GLIB_LIBS)
 
@@ -2649,7 +2645,6 @@ src_devices_bluetooth_libnm_device_plugin_bluetooth_la_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-devices.ver"
 
 src_devices_bluetooth_libnm_device_plugin_bluetooth_la_LIBADD = \
-	introspection/libnmdbus.la \
 	src/devices/wwan/libnm-wwan.la \
 	$(GLIB_LIBS)
 
@@ -2690,6 +2685,8 @@ src_devices_wifi_libnm_device_plugin_wifi_la_SOURCES = \
 	src/devices/wifi/nm-wifi-ap.h \
 	src/devices/wifi/nm-wifi-utils.c \
 	src/devices/wifi/nm-wifi-utils.h \
+	src/devices/wifi/nm-wifi-common.c \
+	src/devices/wifi/nm-wifi-common.h \
 	src/devices/wifi/nm-device-olpc-mesh.c \
 	src/devices/wifi/nm-device-olpc-mesh.h
 
@@ -2716,7 +2713,6 @@ src_devices_wifi_libnm_device_plugin_wifi_la_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-devices.ver"
 
 src_devices_wifi_libnm_device_plugin_wifi_la_LIBADD = \
-	introspection/libnmdbus.la \
 	$(GLIB_LIBS)
 
 check-local-devices-wifi: src/devices/wifi/libnm-device-plugin-wifi.la
@@ -2786,7 +2782,6 @@ src_devices_team_libnm_device_plugin_team_la_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-devices.ver"
 
 src_devices_team_libnm_device_plugin_team_la_LIBADD = \
-	introspection/libnmdbus.la \
 	$(LIBTEAMDCTL_LIBS) \
 	$(JANSSON_LIBS) \
 	$(GLIB_LIBS)
@@ -2848,7 +2843,6 @@ src_devices_ovs_libnm_device_plugin_ovs_la_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-devices.ver"
 
 src_devices_ovs_libnm_device_plugin_ovs_la_LIBADD = \
-	introspection/libnmdbus.la \
 	$(JANSSON_LIBS) \
 	$(GLIB_LIBS)
 

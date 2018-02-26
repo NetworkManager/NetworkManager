@@ -186,18 +186,18 @@ _new_unix_process (GDBusMethodInvocation *context,
 	g_return_val_if_fail (context || (connection && message), NULL);
 
 	if (context) {
-		success = nm_bus_manager_get_caller_info (nm_bus_manager_get (),
-		                                          context,
-		                                          &dbus_sender,
-		                                          &uid,
-		                                          &pid);
+		success = nm_dbus_manager_get_caller_info (nm_dbus_manager_get (),
+		                                           context,
+		                                           &dbus_sender,
+		                                           &uid,
+		                                           &pid);
 	} else if (message) {
-		success = nm_bus_manager_get_caller_info_from_message (nm_bus_manager_get (),
-		                                                       connection,
-		                                                       message,
-		                                                       &dbus_sender,
-		                                                       &uid,
-		                                                       &pid);
+		success = nm_dbus_manager_get_caller_info_from_message (nm_dbus_manager_get (),
+		                                                        connection,
+		                                                        message,
+		                                                        &dbus_sender,
+		                                                        &uid,
+		                                                        &pid);
 	} else
 		g_assert_not_reached ();
 

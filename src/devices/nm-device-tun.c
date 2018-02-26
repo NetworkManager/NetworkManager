@@ -34,8 +34,6 @@
 #include "nm-setting-tun.h"
 #include "nm-core-internal.h"
 
-#include "introspection/org.freedesktop.NetworkManager.Device.Tun.h"
-
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceTun);
 
@@ -395,16 +393,38 @@ nm_device_tun_init (NMDeviceTun *self)
 {
 }
 
+static const NMDBusInterfaceInfoExtended interface_info_device_tun = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_DEVICE_TUN,
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+		),
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Owner",      "x",  NM_DEVICE_TUN_OWNER),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Group",      "x",  NM_DEVICE_TUN_GROUP),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Mode",       "s",  NM_DEVICE_TUN_MODE),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("NoPi",       "b",  NM_DEVICE_TUN_NO_PI),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("VnetHdr",    "b",  NM_DEVICE_TUN_VNET_HDR),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("MultiQueue", "b",  NM_DEVICE_TUN_MULTI_QUEUE),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("HwAddress",  "s",  NM_DEVICE_HW_ADDRESS),
+		),
+	),
+	.legacy_property_changed = TRUE,
+};
+
 static void
 nm_device_tun_class_init (NMDeviceTunClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NULL, NM_LINK_TYPE_TUN, NM_LINK_TYPE_TAP)
 
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
+
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_tun);
 
 	device_class->connection_type = NM_SETTING_TUN_SETTING_NAME;
 	device_class->link_changed = link_changed;
@@ -449,10 +469,6 @@ nm_device_tun_class_init (NMDeviceTunClass *klass)
 	                           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        NMDBUS_TYPE_DEVICE_TUN_SKELETON,
-	                                        NULL);
 }
 
 

@@ -35,8 +35,6 @@
 #include "nm-act-request.h"
 #include "nm-ip4-config.h"
 
-#include "introspection/org.freedesktop.NetworkManager.Device.Vxlan.h"
-
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceVxlan);
 
@@ -543,15 +541,47 @@ nm_device_vxlan_init (NMDeviceVxlan *self)
 {
 }
 
+static const NMDBusInterfaceInfoExtended interface_info_device_vxlan = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_DEVICE_VXLAN,
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+		),
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Parent",     "o", NM_DEVICE_PARENT),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("HwAddress",  "s", NM_DEVICE_HW_ADDRESS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Id",         "u", NM_DEVICE_VXLAN_ID),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Group",      "s", NM_DEVICE_VXLAN_GROUP),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Local",      "s", NM_DEVICE_VXLAN_LOCAL),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Tos",        "y", NM_DEVICE_VXLAN_TOS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Ttl",        "y", NM_DEVICE_VXLAN_TTL),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Learning",   "b", NM_DEVICE_VXLAN_LEARNING),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Ageing",     "u", NM_DEVICE_VXLAN_AGEING),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Limit",      "u", NM_DEVICE_VXLAN_LIMIT),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("DstPort",    "q", NM_DEVICE_VXLAN_DST_PORT),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("SrcPortMin", "q", NM_DEVICE_VXLAN_SRC_PORT_MIN),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("SrcPortMax", "q", NM_DEVICE_VXLAN_SRC_PORT_MAX),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Proxy",      "b", NM_DEVICE_VXLAN_PROXY),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Rsc",        "b", NM_DEVICE_VXLAN_RSC),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("L2miss",     "b", NM_DEVICE_VXLAN_L2MISS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("L3miss",     "b", NM_DEVICE_VXLAN_L3MISS),
+		),
+	),
+	.legacy_property_changed = TRUE,
+};
+
 static void
 nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NULL, NM_LINK_TYPE_VXLAN)
 
 	object_class->get_property = get_property;
+
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_vxlan);
 
 	device_class->link_changed = link_changed;
 	device_class->unrealize_notify = unrealize_notify;
@@ -655,10 +685,6 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 	                           G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        NMDBUS_TYPE_DEVICE_VXLAN_SKELETON,
-	                                        NULL);
 }
 
 /*****************************************************************************/

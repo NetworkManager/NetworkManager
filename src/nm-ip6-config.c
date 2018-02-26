@@ -38,8 +38,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-ip4-config.h"
 #include "ndisc/nm-ndisc.h"
-
-#include "introspection/org.freedesktop.NetworkManager.IP6Config.h"
+#include "nm-dbus-object.h"
 
 /*****************************************************************************/
 
@@ -82,15 +81,15 @@ typedef struct {
 } NMIP6ConfigPrivate;
 
 struct _NMIP6Config {
-	NMExportedObject parent;
+	NMDBusObject parent;
 	NMIP6ConfigPrivate _priv;
 };
 
 struct _NMIP6ConfigClass {
-	NMExportedObjectClass parent;
+	NMDBusObjectClass parent;
 };
 
-G_DEFINE_TYPE (NMIP6Config, nm_ip6_config, NM_TYPE_EXPORTED_OBJECT)
+G_DEFINE_TYPE (NMIP6Config, nm_ip6_config, NM_TYPE_DBUS_OBJECT)
 
 #define NM_IP6_CONFIG_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMIP6Config, NM_IS_IP6_CONFIG)
 
@@ -1486,7 +1485,7 @@ nm_ip6_config_dump (const NMIP6Config *self, const char *detail)
 
 	g_message ("--------- NMIP6Config %p (%s)", self, detail);
 
-	str = nm_exported_object_get_path (NM_EXPORTED_OBJECT (self));
+	str = nm_dbus_object_get_path (NM_DBUS_OBJECT (self));
 	if (str)
 		g_message ("   path: %s", str);
 
@@ -2773,13 +2772,36 @@ finalize (GObject *object)
 	nm_dedup_multi_index_unref (priv->multi_idx);
 }
 
+static const NMDBusInterfaceInfoExtended interface_info_ip6_config = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_IP6_CONFIG,
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+		),
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Addresses",   "a(ayuay)",  NM_IP6_CONFIG_ADDRESSES),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("AddressData", "aa{sv}",    NM_IP6_CONFIG_ADDRESS_DATA),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Gateway",     "s",         NM_IP6_CONFIG_GATEWAY),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Routes",      "a(ayuayu)", NM_IP6_CONFIG_ROUTES),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("RouteData",   "aa{sv}",    NM_IP6_CONFIG_ROUTE_DATA),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Nameservers", "aay",       NM_IP6_CONFIG_NAMESERVERS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Domains",     "as",        NM_IP6_CONFIG_DOMAINS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Searches",    "as",        NM_IP6_CONFIG_SEARCHES),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("DnsOptions",  "as",        NM_IP6_CONFIG_DNS_OPTIONS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("DnsPriority", "i",         NM_IP6_CONFIG_DNS_PRIORITY),
+		),
+	),
+	.legacy_property_changed = TRUE,
+};
+
 static void
 nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
-	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (config_class);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (config_class);
 
-	exported_object_class->export_path = NM_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/IP6Config");
+	dbus_object_class->export_path = NM_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/IP6Config");
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_ip6_config);
 
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
@@ -2853,8 +2875,4 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	                      G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (config_class),
-	                                        NMDBUS_TYPE_IP6_CONFIG_SKELETON,
-	                                        NULL);
 }

@@ -36,11 +36,7 @@ typedef enum {
 	NM_VLAN_ERROR_CONNECTION_INCOMPATIBLE, /*< nick=ConnectionIncompatible >*/
 } NMVlanError;
 
-/* D-Bus exported properties */
 #define NM_DEVICE_VLAN_ID         "vlan-id"
-
-/* defined in the parent class, but exposed on D-Bus by the subclass. */
-#define NM_DEVICE_VLAN_PARENT     NM_DEVICE_PARENT
 
 typedef struct _NMDeviceVlan NMDeviceVlan;
 typedef struct _NMDeviceVlanClass NMDeviceVlanClass;

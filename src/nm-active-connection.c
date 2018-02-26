@@ -32,8 +32,6 @@
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
 
-#include "introspection/org.freedesktop.NetworkManager.Connection.Active.h"
-
 typedef struct _NMActiveConnectionPrivate {
 	NMSettingsConnection *settings_connection;
 	NMConnection *applied_connection;
@@ -103,11 +101,14 @@ enum {
 };
 static guint signals[LAST_SIGNAL] = { 0 };
 
-G_DEFINE_ABSTRACT_TYPE (NMActiveConnection, nm_active_connection, NM_TYPE_EXPORTED_OBJECT)
+G_DEFINE_ABSTRACT_TYPE (NMActiveConnection, nm_active_connection, NM_TYPE_DBUS_OBJECT)
 
 #define NM_ACTIVE_CONNECTION_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR(self, NMActiveConnection, NM_IS_ACTIVE_CONNECTION)
 
 /*****************************************************************************/
+
+static const NMDBusInterfaceInfoExtended interface_info_active_connection;
+static const GDBusSignalInfo signal_info_state_changed;
 
 static void check_master_ready (NMActiveConnection *self);
 static void _device_cleanup (NMActiveConnection *self);
@@ -191,8 +192,8 @@ _settings_connection_removed (NMSettingsConnection *connection,
 	 * re-link; in that case we'd just clean the references to the old connection here).
 	 * Let's remove ourselves from the bus so that we're not exposed with a dangling
 	 * reference to the setting connection once it's gone. */
-	if (nm_exported_object_is_exported (NM_EXPORTED_OBJECT (self)))
-		nm_exported_object_unexport (NM_EXPORTED_OBJECT (self));
+	if (nm_dbus_object_is_exported (NM_DBUS_OBJECT (self)))
+		nm_dbus_object_unexport (NM_DBUS_OBJECT (self));
 }
 
 static void
@@ -221,6 +222,18 @@ NMActiveConnectionState
 nm_active_connection_get_state (NMActiveConnection *self)
 {
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->state;
+}
+
+static void
+emit_state_changed (NMActiveConnection *self, guint state, guint reason)
+{
+	nm_dbus_object_emit_signal (NM_DBUS_OBJECT (self),
+	                            &interface_info_active_connection,
+	                            &signal_info_state_changed,
+	                            "(uu)",
+	                            (guint32) state,
+	                            (guint32) reason);
+	g_signal_emit (self, signals[STATE_CHANGED], 0, state, reason);
 }
 
 void
@@ -253,7 +266,7 @@ nm_active_connection_set_state (NMActiveConnection *self,
 	old_state = priv->state;
 	priv->state = new_state;
 	priv->state_set = TRUE;
-	g_signal_emit (self, signals[STATE_CHANGED], 0, (guint) new_state, (guint) reason);
+	emit_state_changed (self, new_state, reason);
 	_notify (self, PROP_STATE);
 
 	check_master_ready (self);
@@ -451,7 +464,7 @@ nm_active_connection_set_settings_connection (NMActiveConnection *self,
 	 * never changes (once it's set). That has effects for NMVpnConnection and
 	 * NMActivationRequest.
 	 * For example, we'd have to cancel all pending seret requests. */
-	g_return_if_fail (!nm_exported_object_is_exported (NM_EXPORTED_OBJECT (self)));
+	g_return_if_fail (!nm_dbus_object_is_exported (NM_DBUS_OBJECT (self)));
 
 	_set_settings_connection (self, connection);
 
@@ -810,7 +823,7 @@ nm_active_connection_set_master (NMActiveConnection *self, NMActiveConnection *m
 
 	/* Master is write-once, and must be set before exporting the object */
 	g_return_if_fail (priv->master == NULL);
-	g_return_if_fail (!nm_exported_object_is_exported (NM_EXPORTED_OBJECT (self)));
+	g_return_if_fail (!nm_dbus_object_is_exported (NM_DBUS_OBJECT (self)));
 	if (priv->device) {
 		/* Note, the master ActiveConnection may not yet have a device */
 		g_return_if_fail (priv->device != nm_active_connection_get_device (master));
@@ -1171,7 +1184,7 @@ get_property (GObject *object, guint prop_id,
 	case PROP_DEVICES:
 		devices = g_ptr_array_sized_new (2);
 		if (priv->device && priv->state < NM_ACTIVE_CONNECTION_STATE_DEACTIVATED)
-			g_ptr_array_add (devices, g_strdup (nm_exported_object_get_path (NM_EXPORTED_OBJECT (priv->device))));
+			g_ptr_array_add (devices, g_strdup (nm_dbus_object_get_path (NM_DBUS_OBJECT (priv->device))));
 		g_ptr_array_add (devices, NULL);
 		g_value_take_boxed (value, (char **) g_ptr_array_free (devices, FALSE));
 		break;
@@ -1213,7 +1226,7 @@ get_property (GObject *object, guint prop_id,
 	case PROP_MASTER:
 		if (priv->master)
 			master_device = nm_active_connection_get_device (priv->master);
-		nm_utils_g_value_set_object_path (value, master_device);
+		nm_dbus_utils_g_value_set_object_path (value, master_device);
 		break;
 	case PROP_INT_SUBJECT:
 		g_value_set_object (value, priv->subject);
@@ -1389,22 +1402,59 @@ dispose (GObject *object)
 	G_OBJECT_CLASS (nm_active_connection_parent_class)->dispose (object);
 }
 
+static const GDBusSignalInfo signal_info_state_changed = NM_DEFINE_GDBUS_SIGNAL_INFO_INIT (
+	"StateChanged",
+	.args = NM_DEFINE_GDBUS_ARG_INFOS (
+		NM_DEFINE_GDBUS_ARG_INFO ("state",  "u"),
+		NM_DEFINE_GDBUS_ARG_INFO ("reason", "u"),
+	),
+);
+
+static const NMDBusInterfaceInfoExtended interface_info_active_connection = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+			&signal_info_state_changed,
+		),
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Connection",      "o",  NM_ACTIVE_CONNECTION_CONNECTION),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("SpecificObject",  "o",  NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Id",              "s",  NM_ACTIVE_CONNECTION_ID),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Uuid",            "s",  NM_ACTIVE_CONNECTION_UUID),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Type",            "s",  NM_ACTIVE_CONNECTION_TYPE),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Devices",         "ao", NM_ACTIVE_CONNECTION_DEVICES),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("State",           "u",  NM_ACTIVE_CONNECTION_STATE),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("StateFlags",      "u",  NM_ACTIVE_CONNECTION_STATE_FLAGS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Default",         "b",  NM_ACTIVE_CONNECTION_DEFAULT),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Ip4Config",       "o",  NM_ACTIVE_CONNECTION_IP4_CONFIG),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Dhcp4Config",     "o",  NM_ACTIVE_CONNECTION_DHCP4_CONFIG),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Default6",        "b",  NM_ACTIVE_CONNECTION_DEFAULT6),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Ip6Config",       "o",  NM_ACTIVE_CONNECTION_IP6_CONFIG),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Dhcp6Config",     "o",  NM_ACTIVE_CONNECTION_DHCP6_CONFIG),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Vpn",             "b",  NM_ACTIVE_CONNECTION_VPN),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Master",          "o",  NM_ACTIVE_CONNECTION_MASTER),
+		),
+	),
+	.legacy_property_changed = TRUE,
+};
+
 static void
 nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (ac_class);
-	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (ac_class);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (ac_class);
 
 	g_type_class_add_private (ac_class, sizeof (NMActiveConnectionPrivate));
 
-	exported_object_class->export_path = NM_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/ActiveConnection");
+	dbus_object_class->export_path = NM_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/ActiveConnection");
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_active_connection);
 
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 
-	/* D-Bus exported properties */
 	obj_properties[PROP_CONNECTION] =
 	     g_param_spec_string (NM_ACTIVE_CONNECTION_CONNECTION, "", "",
 	                          NULL,
@@ -1580,9 +1630,4 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 	                  G_SIGNAL_RUN_FIRST,
 	                  0, NULL, NULL, NULL,
 	                  G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (ac_class),
-	                                        NMDBUS_TYPE_ACTIVE_CONNECTION_SKELETON,
-	                                        NULL);
 }
-

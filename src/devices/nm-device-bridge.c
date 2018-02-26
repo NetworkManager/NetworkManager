@@ -30,8 +30,6 @@
 #include "nm-device-factory.h"
 #include "nm-core-internal.h"
 
-#include "introspection/org.freedesktop.NetworkManager.Device.Bridge.h"
-
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceBridge);
 
@@ -488,12 +486,30 @@ nm_device_bridge_init (NMDeviceBridge * self)
 	nm_assert (nm_device_is_master (NM_DEVICE (self)));
 }
 
+static const NMDBusInterfaceInfoExtended interface_info_device_bridge = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_DEVICE_BRIDGE,
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+		),
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("HwAddress", "s",  NM_DEVICE_HW_ADDRESS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Carrier",   "b",  NM_DEVICE_CARRIER),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Slaves",    "ao", NM_DEVICE_SLAVES),
+		),
+	),
+	.legacy_property_changed = TRUE,
+};
+
 static void
 nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 {
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_BRIDGE_SETTING_NAME, NM_LINK_TYPE_BRIDGE)
+
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_bridge);
 
 	parent_class->is_master = TRUE;
 	parent_class->get_generic_capabilities = get_generic_capabilities;
@@ -511,10 +527,6 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 	parent_class->enslave_slave = enslave_slave;
 	parent_class->release_slave = release_slave;
 	parent_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        NMDBUS_TYPE_DEVICE_BRIDGE_SKELETON,
-	                                        NULL);
 }
 
 /*****************************************************************************/

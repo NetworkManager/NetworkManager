@@ -34,9 +34,6 @@
 #define NM_DEVICE_MACVLAN_NO_PROMISC "no-promisc"
 #define NM_DEVICE_MACVLAN_TAP        "tap"
 
-/* defined in the parent class, but exposed on D-Bus by the subclass. */
-#define NM_DEVICE_MACVLAN_PARENT     NM_DEVICE_PARENT
-
 typedef struct _NMDeviceMacvlan NMDeviceMacvlan;
 typedef struct _NMDeviceMacvlanClass NMDeviceMacvlanClass;
 

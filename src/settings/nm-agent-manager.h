@@ -23,7 +23,7 @@
 
 #include "nm-connection.h"
 
-#include "nm-exported-object.h"
+#include "nm-dbus-object.h"
 #include "nm-secret-agent.h"
 
 #define NM_TYPE_AGENT_MANAGER            (nm_agent_manager_get_type ())

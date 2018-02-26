@@ -23,7 +23,6 @@
 #define __NETWORKMANAGER_DEVICE_WIFI_H__
 
 #include "devices/nm-device.h"
-#include "nm-wifi-ap.h"
 
 #define NM_TYPE_DEVICE_WIFI             (nm_device_wifi_get_type ())
 #define NM_DEVICE_WIFI(obj)             (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE_WIFI, NMDeviceWifi))
@@ -39,11 +38,6 @@
 #define NM_DEVICE_WIFI_CAPABILITIES        "wireless-capabilities"
 #define NM_DEVICE_WIFI_SCANNING            "scanning"
 
-/* signals */
-#define NM_DEVICE_WIFI_ACCESS_POINT_ADDED  "access-point-added"
-#define NM_DEVICE_WIFI_ACCESS_POINT_REMOVED "access-point-removed"
-
-/* internal signals */
 #define NM_DEVICE_WIFI_SCANNING_PROHIBITED    "scanning-prohibited"
 
 typedef struct _NMDeviceWifi NMDeviceWifi;
@@ -52,5 +46,11 @@ typedef struct _NMDeviceWifiClass NMDeviceWifiClass;
 GType nm_device_wifi_get_type (void);
 
 NMDevice * nm_device_wifi_new (const char *iface, NMDeviceWifiCapabilities capabilities);
+
+GHashTable *_nm_device_wifi_get_aps (NMDeviceWifi *self);
+
+void _nm_device_wifi_request_scan (NMDeviceWifi *self,
+                                   GVariant *options,
+                                   GDBusMethodInvocation *invocation);
 
 #endif /* __NETWORKMANAGER_DEVICE_WIFI_H__ */

@@ -30,8 +30,6 @@
 #include "platform/nm-platform.h"
 #include "nm-device-factory.h"
 
-#include "introspection/org.freedesktop.NetworkManager.Device.Veth.h"
-
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceVeth);
 
@@ -127,7 +125,7 @@ get_property (GObject *object, guint prop_id,
 		peer = nm_device_parent_get_device (NM_DEVICE (self));
 		if (peer && !NM_IS_DEVICE_VETH (peer))
 			peer = NULL;
-		nm_utils_g_value_set_object_path (value, peer);
+		nm_dbus_utils_g_value_set_object_path (value, peer);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -135,15 +133,31 @@ get_property (GObject *object, guint prop_id,
 	}
 }
 
+static const NMDBusInterfaceInfoExtended interface_info_device_veth = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_DEVICE_VETH,
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+		),
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Peer", "o", NM_DEVICE_VETH_PEER),
+		),
+	),
+	.legacy_property_changed = TRUE,
+};
+
 static void
 nm_device_veth_class_init (NMDeviceVethClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NULL, NM_LINK_TYPE_VETH)
 
 	object_class->get_property = get_property;
+
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_veth);
 
 	device_class->can_unmanaged_external_down = can_unmanaged_external_down;
 	device_class->link_changed = link_changed;
@@ -156,10 +170,6 @@ nm_device_veth_class_init (NMDeviceVethClass *klass)
 	                         G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        NMDBUS_TYPE_DEVICE_VETH_SKELETON,
-	                                        NULL);
 }
 
 /*****************************************************************************/

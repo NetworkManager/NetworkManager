@@ -51,7 +51,7 @@ typedef struct {
 	NMSecretAgentCapabilities capabilities;
 	GSList *permissions;
 	GDBusProxy *proxy;
-	NMBusManager *bus_mgr;
+	NMDBusManager *bus_mgr;
 	GDBusConnection *connection;
 	CList requests;
 	gulong on_disconnected_id;
@@ -631,7 +631,7 @@ _on_disconnected_cleanup (NMSecretAgentPrivate *priv)
 }
 
 static void
-_on_disconnected_private_connection (NMBusManager *mgr,
+_on_disconnected_private_connection (NMDBusManager *mgr,
                                      GDBusConnection *connection,
                                      NMSecretAgent *self)
 {
@@ -715,9 +715,9 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 
 	priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 
-	priv->bus_mgr = g_object_ref (nm_bus_manager_get ());
+	priv->bus_mgr = g_object_ref (nm_dbus_manager_get ());
 	priv->connection = g_object_ref (connection);
-	priv->connection_is_private = !!nm_bus_manager_connection_get_private_name (priv->bus_mgr, connection);
+	priv->connection_is_private = !!nm_dbus_manager_connection_get_private_name (priv->bus_mgr, connection);
 
 	_LOGt ("constructed: %s, owner=%s%s%s (%s), private-connection=%d, unique-name=%s%s%s, capabilities=%s",
 	       (description = _create_description (dbus_owner, identifier, uid)),
@@ -734,18 +734,18 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 	priv->capabilities = capabilities;
 	priv->subject = g_object_ref (subject);
 
-	priv->proxy = nm_bus_manager_new_proxy (priv->bus_mgr,
-	                                        priv->connection,
-	                                        G_TYPE_DBUS_PROXY,
-	                                        priv->dbus_owner,
-	                                        NM_DBUS_PATH_SECRET_AGENT,
-	                                        NM_DBUS_INTERFACE_SECRET_AGENT);
+	priv->proxy = nm_dbus_manager_new_proxy (priv->bus_mgr,
+	                                         priv->connection,
+	                                         G_TYPE_DBUS_PROXY,
+	                                         priv->dbus_owner,
+	                                         NM_DBUS_PATH_SECRET_AGENT,
+	                                         NM_DBUS_INTERFACE_SECRET_AGENT);
 
 	/* we cannot subscribe to notify::g-name-owner because that doesn't work
 	 * for unique names and it doesn't work for private connections. */
 	if (priv->connection_is_private) {
 		priv->on_disconnected_id = g_signal_connect (priv->bus_mgr,
-		                                             NM_BUS_MANAGER_PRIVATE_CONNECTION_DISCONNECTED,
+		                                             NM_DBUS_MANAGER_PRIVATE_CONNECTION_DISCONNECTED,
 		                                             G_CALLBACK (_on_disconnected_private_connection),
 		                                             self);
 	} else {

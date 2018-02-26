@@ -629,21 +629,34 @@ nm_config_get_configure_and_quit (NMConfig *config)
 	return TRUE;
 }
 
-NMBusManager *
-nm_bus_manager_get (void)
+NMDBusManager *
+nm_dbus_manager_get (void)
 {
-	return GUINT_TO_POINTER (1);
+	return NULL;
 }
 
 void
-nm_bus_manager_register_object (NMBusManager *bus_manager,
-                                GDBusObjectSkeleton *object)
+_nm_dbus_manager_obj_export (NMDBusObject *obj)
 {
 }
 
 void
-nm_bus_manager_unregister_object (NMBusManager *bus_manager,
-                                  GDBusObjectSkeleton *object)
+_nm_dbus_manager_obj_unexport (NMDBusObject *obj)
+{
+}
+
+void
+_nm_dbus_manager_obj_notify (NMDBusObject *obj,
+                             guint n_pspecs,
+                             const GParamSpec *const*pspecs)
+{
+}
+
+void
+_nm_dbus_manager_obj_emit_signal (NMDBusObject *obj,
+                                  const NMDBusInterfaceInfoExtended *interface_info,
+                                  const GDBusSignalInfo *signal_info,
+                                  GVariant *args)
 {
 }
 
