@@ -821,27 +821,17 @@ _method_call (GDBusConnection *connection,
 	g_return_if_reached ();
 }
 
-NM_DEFINE_GDBUS_INTERFACE_INFO (
-	interface_info,
+static GDBusInterfaceInfo *const interface_info = NM_DEFINE_GDBUS_INTERFACE_INFO (
 	IFCFGRH1_BUS_NAME,
 	.methods = NM_DEFINE_GDBUS_METHOD_INFOS (
 		NM_DEFINE_GDBUS_METHOD_INFO (
 			IFCFGRH1_IFACE1_METHOD_GET_IFCFG_DETAILS,
 			.in_args = NM_DEFINE_GDBUS_ARG_INFOS (
-				NM_DEFINE_GDBUS_ARG_INFO (
-					"ifcfg",
-					.signature = "s",
-				),
+				NM_DEFINE_GDBUS_ARG_INFO ("ifcfg", "s"),
 			),
 			.out_args = NM_DEFINE_GDBUS_ARG_INFOS (
-				NM_DEFINE_GDBUS_ARG_INFO (
-					"uuid",
-					.signature = "s",
-				),
-				NM_DEFINE_GDBUS_ARG_INFO (
-					"path",
-					.signature = "o",
-				),
+				NM_DEFINE_GDBUS_ARG_INFO ("uuid", "s"),
+				NM_DEFINE_GDBUS_ARG_INFO ("path", "o"),
 			),
 		),
 	),
