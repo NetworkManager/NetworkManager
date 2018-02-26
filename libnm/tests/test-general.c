@@ -57,11 +57,11 @@ _test_fixup_string (const TestFixupData *data,
 }
 
 #define T_DATA(_desc, _expected) \
-	((TestFixupData) { \
+	{ \
 		.desc = _desc, \
 		.expected = _expected, \
 		.line = __LINE__, \
-	})
+	}
 
 static void
 test_fixup_vendor_string (void)
