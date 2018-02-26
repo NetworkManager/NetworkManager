@@ -46,9 +46,6 @@
 #define NM_DEVICE_VXLAN_L2MISS       "l2miss"
 #define NM_DEVICE_VXLAN_L3MISS       "l3miss"
 
-/* defined in the parent class, but exposed on D-Bus by the subclass. */
-#define NM_DEVICE_VXLAN_PARENT       NM_DEVICE_PARENT
-
 typedef struct _NMDeviceVxlan NMDeviceVxlan;
 typedef struct _NMDeviceVxlanClass NMDeviceVxlanClass;
 

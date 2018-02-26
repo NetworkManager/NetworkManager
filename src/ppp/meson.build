@@ -22,7 +22,6 @@ nm_pppd_plugin = shared_module(
 name = 'nm-ppp-plugin'
 
 deps = [
-  libnmdbus_dep,
   nm_dep
 ]
 

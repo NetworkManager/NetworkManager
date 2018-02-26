@@ -62,6 +62,7 @@
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 
+#include "nm-dbus-object.h"
 #include "devices/nm-device-ethernet.h"
 #include "nm-settings-connection.h"
 #include "nm-settings-plugin.h"
@@ -76,8 +77,6 @@
 #include "NetworkManagerUtils.h"
 #include "nm-dispatcher.h"
 #include "nm-hostname-manager.h"
-
-#include "introspection/org.freedesktop.NetworkManager.Settings.h"
 
 /*****************************************************************************/
 
@@ -107,7 +106,6 @@ enum {
 	CONNECTION_UPDATED,
 	CONNECTION_REMOVED,
 	CONNECTION_FLAGS_CHANGED,
-	NEW_CONNECTION, /* exported, not used internally */
 	LAST_SIGNAL
 };
 
@@ -135,15 +133,15 @@ typedef struct {
 } NMSettingsPrivate;
 
 struct _NMSettings {
-	NMExportedObject parent;
+	NMDBusObject parent;
 	NMSettingsPrivate _priv;
 };
 
 struct _NMSettingsClass {
-	NMExportedObjectClass parent;
+	NMDBusObjectClass parent;
 };
 
-G_DEFINE_TYPE (NMSettings, nm_settings, NM_TYPE_EXPORTED_OBJECT);
+G_DEFINE_TYPE (NMSettings, nm_settings, NM_TYPE_DBUS_OBJECT);
 
 #define NM_SETTINGS_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMSettings, NM_IS_SETTINGS)
 
@@ -153,6 +151,10 @@ G_DEFINE_TYPE (NMSettings, nm_settings, NM_TYPE_EXPORTED_OBJECT);
 #define _NMLOG(level, ...) __NMLOG_DEFAULT (level, _NMLOG_DOMAIN, "settings", __VA_ARGS__)
 
 /*****************************************************************************/
+
+static const NMDBusInterfaceInfoExtended interface_info_settings;
+static const GDBusSignalInfo signal_info_new_connection;
+static const GDBusSignalInfo signal_info_connection_removed;
 
 static void claim_connection (NMSettings *self,
                               NMSettingsConnection *connection);
@@ -267,11 +269,17 @@ nm_settings_for_each_connection (NMSettings *self,
 }
 
 static void
-impl_settings_list_connections (NMSettings *self,
-                                GDBusMethodInvocation *context)
+impl_settings_list_connections (NMDBusObject *obj,
+                                const NMDBusInterfaceInfoExtended *interface_info,
+                                const NMDBusMethodInfoExtended *method_info,
+                                GDBusConnection *connection,
+                                const char *sender,
+                                GDBusMethodInvocation *invocation,
+                                GVariant *parameters)
 {
+	NMSettings *self = NM_SETTINGS (obj);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	GPtrArray *connections;
+	gs_unref_ptrarray GPtrArray *connections = NULL;
 	GHashTableIter iter;
 	gpointer key;
 
@@ -281,9 +289,8 @@ impl_settings_list_connections (NMSettings *self,
 		g_ptr_array_add (connections, key);
 	g_ptr_array_add (connections, NULL);
 
-	g_dbus_method_invocation_return_value (context,
+	g_dbus_method_invocation_return_value (invocation,
 	                                       g_variant_new ("(^ao)", connections->pdata));
-	g_ptr_array_unref (connections);
 }
 
 NMSettingsConnection *
@@ -308,14 +315,22 @@ nm_settings_get_connection_by_uuid (NMSettings *self, const char *uuid)
 }
 
 static void
-impl_settings_get_connection_by_uuid (NMSettings *self,
-                                      GDBusMethodInvocation *context,
-                                      const char *uuid)
+impl_settings_get_connection_by_uuid (NMDBusObject *obj,
+                                      const NMDBusInterfaceInfoExtended *interface_info,
+                                      const NMDBusMethodInfoExtended *method_info,
+                                      GDBusConnection *dbus_connection,
+                                      const char *sender,
+                                      GDBusMethodInvocation *invocation,
+                                      GVariant *parameters)
 {
+	NMSettings *self = NM_SETTINGS (obj);
 	NMSettingsConnection *connection = NULL;
-	NMAuthSubject *subject = NULL;
+	gs_unref_object NMAuthSubject *subject = NULL;
 	GError *error = NULL;
 	char *error_desc = NULL;
+	const char *uuid;
+
+	g_variant_get (parameters, "(&s)", &uuid);
 
 	connection = nm_settings_get_connection_by_uuid (self, uuid);
 	if (!connection) {
@@ -325,7 +340,7 @@ impl_settings_get_connection_by_uuid (NMSettings *self,
 		goto error;
 	}
 
-	subject = nm_auth_subject_new_unix_process_from_context (context);
+	subject = nm_auth_subject_new_unix_process_from_context (invocation);
 	if (!subject) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
@@ -343,16 +358,13 @@ impl_settings_get_connection_by_uuid (NMSettings *self,
 		goto error;
 	}
 
-	g_clear_object (&subject);
-	g_dbus_method_invocation_return_value (
-		context,
-		g_variant_new ("(o)", nm_connection_get_path (NM_CONNECTION (connection))));
+	g_dbus_method_invocation_return_value (invocation,
+	                                       g_variant_new ("(o)",
+	                                                      nm_connection_get_path (NM_CONNECTION (connection))));
 	return;
 
 error:
-	g_assert (error);
-	g_dbus_method_invocation_take_error (context, error);
-	g_clear_object (&subject);
+	g_dbus_method_invocation_take_error (invocation, error);
 }
 
 /**
@@ -500,7 +512,7 @@ nm_settings_get_unmanaged_specs (NMSettings *self)
 }
 
 static NMSettingsPlugin *
-get_plugin (NMSettings *self, guint32 capability)
+get_plugin (NMSettings *self, NMSettingsPluginCapabilities capability)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GSList *iter;
@@ -816,6 +828,19 @@ connection_flags_changed (NMSettingsConnection *connection,
 }
 
 static void
+_emit_connection_removed (NMSettings *self,
+                          NMSettingsConnection *connection)
+{
+	nm_dbus_object_emit_signal (NM_DBUS_OBJECT (self),
+	                            &interface_info_settings,
+	                            &signal_info_connection_removed,
+	                            "(o)",
+	                            nm_connection_get_path (NM_CONNECTION (connection)));
+
+	g_signal_emit (self, signals[CONNECTION_REMOVED], 0, connection);
+}
+
+static void
 connection_removed (NMSettingsConnection *connection, gpointer user_data)
 {
 	NMSettings *self = NM_SETTINGS (user_data);
@@ -842,13 +867,12 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 	g_hash_table_remove (priv->connections, (gpointer) cpath);
 	g_clear_pointer (&priv->connections_cached_list, g_free);
 
-	/* Notify D-Bus */
-	g_signal_emit (self, signals[CONNECTION_REMOVED], 0, connection);
+	_emit_connection_removed (self, connection);
 
 	/* Re-emit for listeners like NMPolicy */
 	_notify (self, PROP_CONNECTIONS);
-	if (nm_exported_object_is_exported (NM_EXPORTED_OBJECT (connection)))
-		nm_exported_object_unexport (NM_EXPORTED_OBJECT (connection));
+	if (nm_dbus_object_is_exported (NM_DBUS_OBJECT (connection)))
+		nm_dbus_object_unexport (NM_DBUS_OBJECT (connection));
 
 	check_startup_complete (self);
 
@@ -968,7 +992,7 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 
 	/* Export the connection over D-Bus */
 	g_warn_if_fail (nm_connection_get_path (NM_CONNECTION (connection)) == NULL);
-	path = nm_exported_object_export (NM_EXPORTED_OBJECT (connection));
+	path = nm_dbus_object_export (NM_DBUS_OBJECT (connection));
 	nm_connection_set_path (NM_CONNECTION (connection), path);
 
 	g_hash_table_insert (priv->connections,
@@ -982,12 +1006,14 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 	 * have been initially loaded.
 	 */
 	if (priv->connections_loaded) {
-		/* Internal added signal */
+		nm_dbus_object_emit_signal (NM_DBUS_OBJECT (self),
+		                            &interface_info_settings,
+		                            &signal_info_new_connection,
+		                            "(o)",
+		                            nm_connection_get_path (NM_CONNECTION (connection)));
+
 		g_signal_emit (self, signals[CONNECTION_ADDED], 0, connection);
 		_notify (self, PROP_CONNECTIONS);
-
-		/* Exported D-Bus signal */
-		g_signal_emit (self, signals[NEW_CONNECTION], 0, connection);
 	}
 
 	nm_settings_connection_added (connection);
@@ -1312,12 +1338,12 @@ done:
 }
 
 static void
-impl_settings_add_connection_add_cb (NMSettings *self,
-                                     NMSettingsConnection *connection,
-                                     GError *error,
-                                     GDBusMethodInvocation *context,
-                                     NMAuthSubject *subject,
-                                     gpointer user_data)
+settings_add_connection_add_cb (NMSettings *self,
+                                NMSettingsConnection *connection,
+                                GError *error,
+                                GDBusMethodInvocation *context,
+                                NMAuthSubject *subject,
+                                gpointer user_data)
 {
 	if (error) {
 		g_dbus_method_invocation_return_gerror (context, error);
@@ -1332,10 +1358,10 @@ impl_settings_add_connection_add_cb (NMSettings *self,
 }
 
 static void
-impl_settings_add_connection_helper (NMSettings *self,
-                                     GDBusMethodInvocation *context,
-                                     GVariant *settings,
-                                     gboolean save_to_disk)
+settings_add_connection_helper (NMSettings *self,
+                                GDBusMethodInvocation *context,
+                                GVariant *settings,
+                                gboolean save_to_disk)
 {
 	gs_unref_object NMConnection *connection = NULL;
 	GError *error = NULL;
@@ -1355,77 +1381,111 @@ impl_settings_add_connection_helper (NMSettings *self,
 	                                 connection,
 	                                 save_to_disk,
 	                                 context,
-	                                 impl_settings_add_connection_add_cb,
+	                                 settings_add_connection_add_cb,
 	                                 NULL);
 }
 
 static void
-impl_settings_add_connection (NMSettings *self,
-                              GDBusMethodInvocation *context,
-                              GVariant *settings)
+impl_settings_add_connection (NMDBusObject *obj,
+                              const NMDBusInterfaceInfoExtended *interface_info,
+                              const NMDBusMethodInfoExtended *method_info,
+                              GDBusConnection *connection,
+                              const char *sender,
+                              GDBusMethodInvocation *invocation,
+                              GVariant *parameters)
 {
-	impl_settings_add_connection_helper (self, context, settings, TRUE);
+	NMSettings *self = NM_SETTINGS (obj);
+	gs_unref_variant GVariant *settings = NULL;
+
+	g_variant_get (parameters, "(@a{sa{sv}})", &settings);
+	settings_add_connection_helper (self, invocation, settings, TRUE);
 }
 
 static void
-impl_settings_add_connection_unsaved (NMSettings *self,
-                                      GDBusMethodInvocation *context,
-                                      GVariant *settings)
+impl_settings_add_connection_unsaved (NMDBusObject *obj,
+                                      const NMDBusInterfaceInfoExtended *interface_info,
+                                      const NMDBusMethodInfoExtended *method_info,
+                                      GDBusConnection *connection,
+                                      const char *sender,
+                                      GDBusMethodInvocation *invocation,
+                                      GVariant *parameters)
 {
-	impl_settings_add_connection_helper (self, context, settings, FALSE);
+	NMSettings *self = NM_SETTINGS (obj);
+	gs_unref_variant GVariant *settings = NULL;
+
+	g_variant_get (parameters, "(@a{sa{sv}})", &settings);
+	settings_add_connection_helper (self, invocation, settings, FALSE);
 }
 
 static void
-impl_settings_load_connections (NMSettings *self,
-                                GDBusMethodInvocation *context,
-                                char **filenames)
+impl_settings_load_connections (NMDBusObject *obj,
+                                const NMDBusInterfaceInfoExtended *interface_info,
+                                const NMDBusMethodInfoExtended *method_info,
+                                GDBusConnection *connection,
+                                const char *sender,
+                                GDBusMethodInvocation *invocation,
+                                GVariant *parameters)
 {
+	NMSettings *self = NM_SETTINGS (obj);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	GPtrArray *failures;
+	gs_unref_ptrarray GPtrArray *failures = NULL;
 	GSList *iter;
-	int i;
+	guint i;
+	gs_free const char **filenames = NULL;
+
+	g_variant_get (parameters, "(^a&s)", &filenames);
 
 	/* The permission is already enforced by the D-Bus daemon, but we ensure
 	 * that the caller is still alive so that clients are forced to wait and
 	 * we'll be able to switch to polkit without breaking behavior.
 	 */
-	if (!nm_bus_manager_ensure_uid (nm_bus_manager_get (),
-	                                context,
-	                                G_MAXULONG,
-	                                NM_SETTINGS_ERROR,
-	                                NM_SETTINGS_ERROR_PERMISSION_DENIED))
+	if (!nm_dbus_manager_ensure_uid (nm_dbus_object_get_manager (obj),
+	                                 invocation,
+	                                 G_MAXULONG,
+	                                 NM_SETTINGS_ERROR,
+	                                 NM_SETTINGS_ERROR_PERMISSION_DENIED))
 		return;
 
-	failures = g_ptr_array_new ();
+	if (filenames) {
+		for (i = 0; filenames[i]; i++) {
+			for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
+				NMSettingsPlugin *plugin = NM_SETTINGS_PLUGIN (iter->data);
 
-	for (i = 0; filenames[i]; i++) {
-		for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
-			NMSettingsPlugin *plugin = NM_SETTINGS_PLUGIN (iter->data);
+				if (nm_settings_plugin_load_connection (plugin, filenames[i]))
+					break;
+			}
 
-			if (nm_settings_plugin_load_connection (plugin, filenames[i]))
-				break;
-		}
-
-		if (!iter) {
-			if (!g_path_is_absolute (filenames[i]))
-				_LOGW ("connection filename '%s' is not an absolute path", filenames[i]);
-			g_ptr_array_add (failures, (char *) filenames[i]);
+			if (!iter) {
+				if (!g_path_is_absolute (filenames[i]))
+					_LOGW ("connection filename '%s' is not an absolute path", filenames[i]);
+				if (!failures)
+					failures = g_ptr_array_new ();
+				g_ptr_array_add (failures, (char *) filenames[i]);
+			}
 		}
 	}
 
-	g_ptr_array_add (failures, NULL);
-	g_dbus_method_invocation_return_value (
-		context,
-		g_variant_new ("(b^as)",
-		               failures->len == 1,
-		               failures->pdata));
-	g_ptr_array_unref (failures);
+	if (failures)
+		g_ptr_array_add (failures, NULL);
+
+	g_dbus_method_invocation_return_value (invocation,
+	                                       g_variant_new ("(b^as)",
+	                                                      (gboolean) (!!failures),
+	                                                      failures
+	                                                        ? (const char **) failures->pdata
+	                                                        : NM_PTRARRAY_EMPTY (const char *)));
 }
 
 static void
-impl_settings_reload_connections (NMSettings *self,
-                                  GDBusMethodInvocation *context)
+impl_settings_reload_connections (NMDBusObject *obj,
+                                  const NMDBusInterfaceInfoExtended *interface_info,
+                                  const NMDBusMethodInfoExtended *method_info,
+                                  GDBusConnection *connection,
+                                  const char *sender,
+                                  GDBusMethodInvocation *invocation,
+                                  GVariant *parameters)
 {
+	NMSettings *self = NM_SETTINGS (obj);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GSList *iter;
 
@@ -1433,11 +1493,11 @@ impl_settings_reload_connections (NMSettings *self,
 	 * that the caller is still alive so that clients are forced to wait and
 	 * we'll be able to switch to polkit without breaking behavior.
 	 */
-	if (!nm_bus_manager_ensure_uid (nm_bus_manager_get (),
-	                                context,
-	                                G_MAXULONG,
-	                                NM_SETTINGS_ERROR,
-	                                NM_SETTINGS_ERROR_PERMISSION_DENIED))
+	if (!nm_dbus_manager_ensure_uid (nm_dbus_object_get_manager (obj),
+	                                 invocation,
+	                                 G_MAXULONG,
+	                                 NM_SETTINGS_ERROR,
+	                                 NM_SETTINGS_ERROR_PERMISSION_DENIED))
 		return;
 
 	for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
@@ -1446,7 +1506,7 @@ impl_settings_reload_connections (NMSettings *self,
 		nm_settings_plugin_reload_connections (plugin);
 	}
 
-	g_dbus_method_invocation_return_value (context, g_variant_new ("(b)", TRUE));
+	g_dbus_method_invocation_return_value (invocation, g_variant_new ("(b)", TRUE));
 }
 
 /*****************************************************************************/
@@ -1498,37 +1558,42 @@ pk_hostname_cb (NMAuthChain *chain,
 }
 
 static void
-impl_settings_save_hostname (NMSettings *self,
-                             GDBusMethodInvocation *context,
-                             const char *hostname)
+impl_settings_save_hostname (NMDBusObject *obj,
+                             const NMDBusInterfaceInfoExtended *interface_info,
+                             const NMDBusMethodInfoExtended *method_info,
+                             GDBusConnection *connection,
+                             const char *sender,
+                             GDBusMethodInvocation *invocation,
+                             GVariant *parameters)
 {
+	NMSettings *self = NM_SETTINGS (obj);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	NMAuthChain *chain;
-	GError *error = NULL;
+	const char *hostname;
+
+	g_variant_get (parameters, "(&s)", &hostname);
 
 	/* Minimal validation of the hostname */
 	if (!nm_hostname_manager_validate_hostname (hostname)) {
-		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_INVALID_HOSTNAME,
-		                             "The hostname was too long or contained invalid characters.");
-		goto done;
+		g_dbus_method_invocation_return_error_literal (invocation,
+		                                               NM_SETTINGS_ERROR,
+		                                               NM_SETTINGS_ERROR_INVALID_HOSTNAME,
+		                                               "The hostname was too long or contained invalid characters.");
+		return;
 	}
 
-	chain = nm_auth_chain_new_context (context, pk_hostname_cb, self);
+	chain = nm_auth_chain_new_context (invocation, pk_hostname_cb, self);
 	if (!chain) {
-		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                             "Unable to authenticate the request.");
-		goto done;
+		g_dbus_method_invocation_return_error_literal (invocation,
+		                                               NM_SETTINGS_ERROR,
+		                                               NM_SETTINGS_ERROR_PERMISSION_DENIED,
+		                                               "Unable to authenticate the request.");
+		return;
 	}
 
 	priv->auths = g_slist_append (priv->auths, chain);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME, TRUE);
 	nm_auth_chain_set_data (chain, "hostname", g_strdup (hostname), g_free);
-
-done:
-	if (error)
-		g_dbus_method_invocation_take_error (context, error);
 }
 
 /*****************************************************************************/
@@ -1900,13 +1965,123 @@ finalize (GObject *object)
 	G_OBJECT_CLASS (nm_settings_parent_class)->finalize (object);
 }
 
+static const GDBusSignalInfo signal_info_new_connection = NM_DEFINE_GDBUS_SIGNAL_INFO_INIT (
+	"NewConnection",
+	.args = NM_DEFINE_GDBUS_ARG_INFOS (
+		NM_DEFINE_GDBUS_ARG_INFO ("connection", "o"),
+	),
+);
+
+static const GDBusSignalInfo signal_info_connection_removed = NM_DEFINE_GDBUS_SIGNAL_INFO_INIT (
+	"ConnectionRemoved",
+	.args = NM_DEFINE_GDBUS_ARG_INFOS (
+		NM_DEFINE_GDBUS_ARG_INFO ("connection", "o"),
+	),
+);
+
+static const NMDBusInterfaceInfoExtended interface_info_settings = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_SETTINGS,
+		.methods = NM_DEFINE_GDBUS_METHOD_INFOS (
+			NM_DEFINE_DBUS_METHOD_INFO_EXTENDED (
+				NM_DEFINE_GDBUS_METHOD_INFO_INIT (
+					"ListConnections",
+					.out_args = NM_DEFINE_GDBUS_ARG_INFOS (
+						NM_DEFINE_GDBUS_ARG_INFO ("connections", "ao"),
+					),
+				),
+				.handle = impl_settings_list_connections,
+			),
+			NM_DEFINE_DBUS_METHOD_INFO_EXTENDED (
+				NM_DEFINE_GDBUS_METHOD_INFO_INIT (
+					"GetConnectionByUuid",
+					.in_args = NM_DEFINE_GDBUS_ARG_INFOS (
+						NM_DEFINE_GDBUS_ARG_INFO ("uuid", "s"),
+					),
+					.out_args = NM_DEFINE_GDBUS_ARG_INFOS (
+						NM_DEFINE_GDBUS_ARG_INFO ("connection", "o"),
+					),
+				),
+				.handle = impl_settings_get_connection_by_uuid,
+			),
+			NM_DEFINE_DBUS_METHOD_INFO_EXTENDED (
+				NM_DEFINE_GDBUS_METHOD_INFO_INIT (
+					"AddConnection",
+					.in_args = NM_DEFINE_GDBUS_ARG_INFOS (
+						NM_DEFINE_GDBUS_ARG_INFO ("connection", "a{sa{sv}}"),
+					),
+					.out_args = NM_DEFINE_GDBUS_ARG_INFOS (
+						NM_DEFINE_GDBUS_ARG_INFO ("path", "o"),
+					),
+				),
+				.handle = impl_settings_add_connection,
+			),
+			NM_DEFINE_DBUS_METHOD_INFO_EXTENDED (
+				NM_DEFINE_GDBUS_METHOD_INFO_INIT (
+					"AddConnectionUnsaved",
+					.in_args = NM_DEFINE_GDBUS_ARG_INFOS (
+						NM_DEFINE_GDBUS_ARG_INFO ("connection", "a{sa{sv}}"),
+					),
+					.out_args = NM_DEFINE_GDBUS_ARG_INFOS (
+						NM_DEFINE_GDBUS_ARG_INFO ("path", "o"),
+					),
+				),
+				.handle = impl_settings_add_connection_unsaved,
+			),
+			NM_DEFINE_DBUS_METHOD_INFO_EXTENDED (
+				NM_DEFINE_GDBUS_METHOD_INFO_INIT (
+					"LoadConnections",
+					.in_args = NM_DEFINE_GDBUS_ARG_INFOS (
+						NM_DEFINE_GDBUS_ARG_INFO ("filenames", "as"),
+					),
+					.out_args = NM_DEFINE_GDBUS_ARG_INFOS (
+						NM_DEFINE_GDBUS_ARG_INFO ("status", "b"),
+						NM_DEFINE_GDBUS_ARG_INFO ("failures", "as"),
+					),
+				),
+				.handle = impl_settings_load_connections,
+			),
+			NM_DEFINE_DBUS_METHOD_INFO_EXTENDED (
+				NM_DEFINE_GDBUS_METHOD_INFO_INIT (
+					"ReloadConnections",
+					.out_args = NM_DEFINE_GDBUS_ARG_INFOS (
+						NM_DEFINE_GDBUS_ARG_INFO ("status", "b"),
+					),
+				),
+				.handle = impl_settings_reload_connections,
+			),
+			NM_DEFINE_DBUS_METHOD_INFO_EXTENDED (
+				NM_DEFINE_GDBUS_METHOD_INFO_INIT (
+					"SaveHostname",
+					.in_args = NM_DEFINE_GDBUS_ARG_INFOS (
+						NM_DEFINE_GDBUS_ARG_INFO ("hostname", "s"),
+					),
+				),
+				.handle = impl_settings_save_hostname,
+			),
+		),
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+			&signal_info_new_connection,
+			&signal_info_connection_removed,
+		),
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Connections", "ao", NM_SETTINGS_CONNECTIONS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Hostname",    "s",  NM_SETTINGS_HOSTNAME),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("CanModify",   "b",  NM_SETTINGS_CAN_MODIFY),
+		),
+	),
+	.legacy_property_changed = TRUE,
+};
+
 static void
 nm_settings_class_init (NMSettingsClass *class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (class);
-	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (class);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (class);
 
-	exported_object_class->export_path = NM_DBUS_PATH_SETTINGS;
+	dbus_object_class->export_path = NM_DBUS_PATH_SETTINGS;
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_settings);
 
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
@@ -1975,23 +2150,4 @@ nm_settings_class_init (NMSettingsClass *class)
 	                  0, NULL, NULL,
 	                  g_cclosure_marshal_VOID__OBJECT,
 	                  G_TYPE_NONE, 1, NM_TYPE_SETTINGS_CONNECTION);
-
-	signals[NEW_CONNECTION] =
-	    g_signal_new ("new-connection",
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_FIRST, 0, NULL, NULL,
-	                  g_cclosure_marshal_VOID__OBJECT,
-	                  G_TYPE_NONE, 1, NM_TYPE_SETTINGS_CONNECTION);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (class),
-	                                        NMDBUS_TYPE_SETTINGS_SKELETON,
-	                                        "ListConnections", impl_settings_list_connections,
-	                                        "GetConnectionByUuid", impl_settings_get_connection_by_uuid,
-	                                        "AddConnection", impl_settings_add_connection,
-	                                        "AddConnectionUnsaved", impl_settings_add_connection_unsaved,
-	                                        "LoadConnections", impl_settings_load_connections,
-	                                        "ReloadConnections", impl_settings_reload_connections,
-	                                        "SaveHostname", impl_settings_save_hostname,
-	                                        NULL);
 }
-

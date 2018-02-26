@@ -32,8 +32,6 @@
 #include "nm-core-internal.h"
 #include "nm-ip4-config.h"
 
-#include "introspection/org.freedesktop.NetworkManager.Device.Bond.h"
-
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceBond);
 
@@ -607,12 +605,30 @@ nm_device_bond_init (NMDeviceBond * self)
 	nm_assert (nm_device_is_master (NM_DEVICE (self)));
 }
 
+static const NMDBusInterfaceInfoExtended interface_info_device_bond = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_DEVICE_BOND,
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+		),
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("HwAddress", "s",  NM_DEVICE_HW_ADDRESS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Carrier",   "b",  NM_DEVICE_CARRIER),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Slaves",    "ao", NM_DEVICE_SLAVES),
+		),
+	),
+	.legacy_property_changed = TRUE,
+};
+
 static void
 nm_device_bond_class_init (NMDeviceBondClass *klass)
 {
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_BOND_SETTING_NAME, NM_LINK_TYPE_BOND)
+
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_bond);
 
 	parent_class->is_master = TRUE;
 	parent_class->get_generic_capabilities = get_generic_capabilities;
@@ -629,10 +645,6 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 	parent_class->release_slave = release_slave;
 	parent_class->can_reapply_change = can_reapply_change;
 	parent_class->reapply_connection = reapply_connection;
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        NMDBUS_TYPE_DEVICE_BOND_SKELETON,
-	                                        NULL);
 }
 
 /*****************************************************************************/

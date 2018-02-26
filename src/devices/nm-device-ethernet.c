@@ -28,7 +28,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
-
 #include <libudev.h>
 
 #include "nm-device-private.h"
@@ -51,8 +50,6 @@
 #include "nm-device-factory.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
-
-#include "introspection/org.freedesktop.NetworkManager.Device.Wired.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceEthernet);
@@ -1714,10 +1711,28 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
+static const NMDBusInterfaceInfoExtended interface_info_device_wired = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_DEVICE_WIRED,
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+		),
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("HwAddress",       "s",  NM_DEVICE_HW_ADDRESS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("PermHwAddress",   "s",  NM_DEVICE_PERM_HW_ADDRESS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Speed",           "u",  NM_DEVICE_ETHERNET_SPEED),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("S390Subchannels", "as", NM_DEVICE_ETHERNET_S390_SUBCHANNELS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Carrier",         "b",  NM_DEVICE_CARRIER),
+		),
+	),
+	.legacy_property_changed = TRUE,
+};
+
 static void
 nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceEthernetPrivate));
@@ -1728,6 +1743,8 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
+
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_wired);
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->check_connection_compatible = check_connection_compatible;
@@ -1762,10 +1779,6 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	                        G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        NMDBUS_TYPE_DEVICE_ETHERNET_SKELETON,
-	                                        NULL);
 }
 
 /*****************************************************************************/

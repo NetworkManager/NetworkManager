@@ -28,8 +28,6 @@
 #include "nm-setting-dummy.h"
 #include "nm-core-internal.h"
 
-#include "introspection/org.freedesktop.NetworkManager.Device.Dummy.h"
-
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceDummy);
 
@@ -156,12 +154,28 @@ nm_device_dummy_init (NMDeviceDummy *self)
 {
 }
 
+static const NMDBusInterfaceInfoExtended interface_info_device_dummy = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_DEVICE_DUMMY,
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+		),
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("HwAddress", "s",  NM_DEVICE_HW_ADDRESS),
+		),
+	),
+	.legacy_property_changed = TRUE,
+};
+
 static void
 nm_device_dummy_class_init (NMDeviceDummyClass *klass)
 {
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NULL, NM_LINK_TYPE_DUMMY)
+
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_dummy);
 
 	device_class->connection_type = NM_SETTING_DUMMY_SETTING_NAME;
 	device_class->complete_connection = complete_connection;
@@ -171,10 +185,6 @@ nm_device_dummy_class_init (NMDeviceDummyClass *klass)
 	device_class->update_connection = update_connection;
 	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        NMDBUS_TYPE_DEVICE_DUMMY_SKELETON,
-	                                        NULL);
 }
 
 

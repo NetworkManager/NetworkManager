@@ -21,10 +21,9 @@
 #ifndef __NETWORKMANAGER_ACTIVE_CONNECTION_H__
 #define __NETWORKMANAGER_ACTIVE_CONNECTION_H__
 
-#include "nm-exported-object.h"
-#include "nm-connection.h"
-
 #include "nm-utils/c-list.h"
+#include "nm-connection.h"
+#include "nm-dbus-object.h"
 
 #define NM_TYPE_ACTIVE_CONNECTION            (nm_active_connection_get_type ())
 #define NM_ACTIVE_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_ACTIVE_CONNECTION, NMActiveConnection))
@@ -71,7 +70,7 @@
 struct _NMActiveConnectionPrivate;
 
 struct _NMActiveConnection {
-	NMExportedObject parent;
+	NMDBusObject parent;
 	struct _NMActiveConnectionPrivate *_priv;
 
 	/* active connection can be tracked in a list by NMManager. This is
@@ -80,7 +79,7 @@ struct _NMActiveConnection {
 };
 
 typedef struct {
-	NMExportedObjectClass parent;
+	NMDBusObjectClass parent;
 
 	/* re-emits device state changes as a convenience for subclasses for
 	 * device states >= DISCONNECTED.

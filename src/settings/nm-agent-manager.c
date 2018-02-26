@@ -38,8 +38,6 @@
 #include "nm-core-internal.h"
 #include "nm-utils/c-list.h"
 
-#include "introspection/org.freedesktop.NetworkManager.AgentManager.h"
-
 /*****************************************************************************/
 
 enum {
@@ -67,15 +65,15 @@ typedef struct {
 } NMAgentManagerPrivate;
 
 struct _NMAgentManager {
-	NMExportedObject parent;
+	NMDBusObject parent;
 	NMAgentManagerPrivate _priv;
 };
 
 struct _NMAgentManagerClass {
-	NMExportedObjectClass parent;
+	NMDBusObjectClass parent;
 };
 
-G_DEFINE_TYPE (NMAgentManager, nm_agent_manager, NM_TYPE_EXPORTED_OBJECT)
+G_DEFINE_TYPE (NMAgentManager, nm_agent_manager, NM_TYPE_DBUS_OBJECT)
 
 #define NM_AGENT_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMAgentManager, NM_IS_AGENT_MANAGER)
 
@@ -392,10 +390,10 @@ agent_disconnected_cb (NMSecretAgent *agent, gpointer user_data)
 }
 
 static void
-impl_agent_manager_register_with_capabilities (NMAgentManager *self,
-                                               GDBusMethodInvocation *context,
-                                               const char *identifier,
-                                               guint32 capabilities)
+agent_manager_register_with_capabilities (NMAgentManager *self,
+                                          GDBusMethodInvocation *context,
+                                          const char *identifier,
+                                          guint32 capabilities)
 {
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
 	NMAuthSubject *subject;
@@ -460,45 +458,56 @@ done:
 }
 
 static void
-impl_agent_manager_register (NMAgentManager *self,
-                             GDBusMethodInvocation *context,
-                             const char *identifier)
+impl_agent_manager_register (NMDBusObject *obj,
+                             const NMDBusInterfaceInfoExtended *interface_info,
+                             const NMDBusMethodInfoExtended *method_info,
+                             GDBusConnection *connection,
+                             const char *sender,
+                             GDBusMethodInvocation *invocation,
+                             GVariant *parameters)
 {
-	impl_agent_manager_register_with_capabilities (self, context, identifier, 0);
+	const char *identifier;
+
+	g_variant_get (parameters, "(&s)", &identifier);
+	agent_manager_register_with_capabilities (NM_AGENT_MANAGER (obj), invocation, identifier, 0);
 }
 
 static void
-impl_agent_manager_unregister (NMAgentManager *self,
-                               GDBusMethodInvocation *context)
+impl_agent_manager_register_with_capabilities (NMDBusObject *obj,
+                                               const NMDBusInterfaceInfoExtended *interface_info,
+                                               const NMDBusMethodInfoExtended *method_info,
+                                               GDBusConnection *connection,
+                                               const char *sender,
+                                               GDBusMethodInvocation *invocation,
+                                               GVariant *parameters)
 {
-	GError *error = NULL;
-	char *sender = NULL;
+	const char *identifier;
+	guint32 capabilities;
 
-	if (!nm_bus_manager_get_caller_info (nm_bus_manager_get (),
-	                                     context,
-	                                     &sender,
-	                                     NULL,
-	                                     NULL)) {
-		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
-		                             NM_AGENT_MANAGER_ERROR_PERMISSION_DENIED,
-		                             "Unable to determine request sender.");
-		goto done;
-	}
+	g_variant_get (parameters, "(&su)", &identifier, &capabilities);
+	agent_manager_register_with_capabilities (NM_AGENT_MANAGER (obj), invocation, identifier, capabilities);
+}
 
-	/* Found the agent, unregister and remove it */
+static void
+impl_agent_manager_unregister (NMDBusObject *obj,
+                               const NMDBusInterfaceInfoExtended *interface_info,
+                               const NMDBusMethodInfoExtended *method_info,
+                               GDBusConnection *connection,
+                               const char *sender,
+                               GDBusMethodInvocation *invocation,
+                               GVariant *parameters)
+{
+	NMAgentManager *self = NM_AGENT_MANAGER (obj);
+
 	if (!remove_agent (self, sender)) {
-		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
-		                             NM_AGENT_MANAGER_ERROR_NOT_REGISTERED,
-		                             "Caller is not registered as an Agent");
-		goto done;
+		g_dbus_method_invocation_return_error_literal (invocation,
+		                                               NM_AGENT_MANAGER_ERROR,
+		                                               NM_AGENT_MANAGER_ERROR_NOT_REGISTERED,
+		                                               "Caller is not registered as an Agent");
+		return;
 	}
 
-	g_dbus_method_invocation_return_value (context, NULL);
-
-done:
-	if (error)
-		g_dbus_method_invocation_take_error (context, error);
-	g_free (sender);
+	g_dbus_method_invocation_return_value (invocation, NULL);
 }
 
 /*****************************************************************************/
@@ -1586,7 +1595,7 @@ constructed (GObject *object)
 	priv->auth_mgr = g_object_ref (nm_auth_manager_get ());
 	priv->session_monitor = g_object_ref (nm_session_monitor_get ());
 
-	nm_exported_object_export (NM_EXPORTED_OBJECT (object));
+	nm_dbus_object_export (NM_DBUS_OBJECT (object));
 
 	g_signal_connect (priv->auth_mgr,
 	                  NM_AUTH_MANAGER_SIGNAL_CHANGED,
@@ -1622,20 +1631,64 @@ cancel_more:
 		g_clear_object (&priv->auth_mgr);
 	}
 
-	nm_exported_object_unexport (NM_EXPORTED_OBJECT (object));
+	nm_dbus_object_unexport (NM_DBUS_OBJECT (object));
 
 	g_clear_object (&priv->session_monitor);
 
 	G_OBJECT_CLASS (nm_agent_manager_parent_class)->dispose (object);
 }
 
+static const NMDBusInterfaceInfoExtended interface_info_agent_manager = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_AGENT_MANAGER,
+		.methods = NM_DEFINE_GDBUS_METHOD_INFOS (
+			NM_DEFINE_DBUS_METHOD_INFO_EXTENDED (
+				NM_DEFINE_GDBUS_METHOD_INFO_INIT (
+					"Register",
+					.in_args = NM_DEFINE_GDBUS_ARG_INFOS (
+						NM_DEFINE_GDBUS_ARG_INFO ("identifier", "s"),
+					),
+				),
+				.handle = impl_agent_manager_register,
+			),
+			NM_DEFINE_DBUS_METHOD_INFO_EXTENDED (
+				NM_DEFINE_GDBUS_METHOD_INFO_INIT (
+					"RegisterWithCapabilities",
+					.in_args = NM_DEFINE_GDBUS_ARG_INFOS (
+						NM_DEFINE_GDBUS_ARG_INFO ("identifier",   "s"),
+						NM_DEFINE_GDBUS_ARG_INFO ("capabilities", "u"),
+					),
+				),
+				.handle = impl_agent_manager_register_with_capabilities,
+			),
+			NM_DEFINE_DBUS_METHOD_INFO_EXTENDED (
+				NM_DEFINE_GDBUS_METHOD_INFO_INIT (
+					"RegisterWithCapabilities",
+					.in_args = NM_DEFINE_GDBUS_ARG_INFOS (
+						NM_DEFINE_GDBUS_ARG_INFO ("identifier",   "s"),
+						NM_DEFINE_GDBUS_ARG_INFO ("capabilities", "u"),
+					),
+				),
+				.handle = impl_agent_manager_register_with_capabilities,
+			),
+			NM_DEFINE_DBUS_METHOD_INFO_EXTENDED (
+				NM_DEFINE_GDBUS_METHOD_INFO_INIT (
+					"Unregister",
+				),
+				.handle = impl_agent_manager_unregister,
+			),
+		),
+	),
+};
+
 static void
 nm_agent_manager_class_init (NMAgentManagerClass *agent_manager_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (agent_manager_class);
-	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (agent_manager_class);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (agent_manager_class);
 
-	exported_object_class->export_path = NM_DBUS_PATH_AGENT_MANAGER;
+	dbus_object_class->export_path = NM_DBUS_PATH_AGENT_MANAGER;
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_agent_manager);
 
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
@@ -1649,11 +1702,4 @@ nm_agent_manager_class_init (NMAgentManagerClass *agent_manager_class)
 	                  g_cclosure_marshal_VOID__OBJECT,
 	                  G_TYPE_NONE, 1,
 	                  G_TYPE_OBJECT);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (agent_manager_class),
-	                                        NMDBUS_TYPE_AGENT_MANAGER_SKELETON,
-	                                        "Register", impl_agent_manager_register,
-	                                        "RegisterWithCapabilities", impl_agent_manager_register_with_capabilities,
-	                                        "Unregister", impl_agent_manager_unregister,
-	                                        NULL);
 }

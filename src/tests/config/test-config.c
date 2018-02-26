@@ -1037,13 +1037,6 @@ main (int argc, char **argv)
 {
 	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
 
-	/* Initialize the DBus manager singleton explicitly, because it is accessed by
-	 * the class initializer of NMDevice (used by the NMTestDevice stub).
-	 * This way, we skip calling nm_bus_manager_init_bus() which would
-	 * either fail and/or cause unexpected actions in the test.
-	 * */
-	nm_bus_manager_setup (g_object_new (NM_TYPE_BUS_MANAGER, NULL));
-
 	nm_fake_platform_setup ();
 
 	g_test_add_func ("/config/simple", test_config_simple);

@@ -26,7 +26,6 @@
 #include "nm-connection.h"
 #include "nm-core-utils.h"
 #include "devices/nm-device.h"
-#include "nm-exported-object.h"
 #include "nm-manager.h"
 #include "nm-utils.h"
 #include "nm-utils/c-list.h"
@@ -78,7 +77,7 @@ item_destroy (gpointer data)
 	CheckpointItem *item = data;
 
 	c_list_unlink_stale (&item->list);
-	nm_exported_object_unexport (NM_EXPORTED_OBJECT (item->checkpoint));
+	nm_dbus_object_unexport (NM_DBUS_OBJECT (item->checkpoint));
 	g_object_unref (G_OBJECT (item->checkpoint));
 	g_slice_free (CheckpointItem, item);
 }
@@ -100,7 +99,7 @@ rollback_timeout_cb (NMCheckpointManager *self)
 			result = nm_checkpoint_rollback (item->checkpoint);
 			if (result)
 				g_variant_unref (result);
-			path = nm_exported_object_get_path (NM_EXPORTED_OBJECT (item->checkpoint));
+			path = nm_dbus_object_get_path (NM_DBUS_OBJECT (item->checkpoint));
 			if (!g_hash_table_remove (self->checkpoints, path))
 				nm_assert_not_reached();
 			removed = TRUE;
@@ -185,7 +184,7 @@ nm_checkpoint_manager_create (NMCheckpointManager *self,
 			device = NM_DEVICE (iter->data);
 			if (!nm_device_is_real (device))
 				continue;
-			device_path = nm_exported_object_get_path (NM_EXPORTED_OBJECT (device));
+			device_path = nm_dbus_object_get_path (NM_DBUS_OBJECT (device));
 			if (device_path)
 				g_ptr_array_add (paths, (gpointer) device_path);
 		}
@@ -217,7 +216,7 @@ nm_checkpoint_manager_create (NMCheckpointManager *self,
 				g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_INVALID_ARGUMENTS,
 				             "device '%s' is already included in checkpoint %s",
 				             nm_device_get_iface (device),
-				             nm_exported_object_get_path (NM_EXPORTED_OBJECT (checkpoint)));
+				             nm_dbus_object_get_path (NM_DBUS_OBJECT (checkpoint)));
 				return NULL;
 			}
 		}
@@ -230,8 +229,7 @@ nm_checkpoint_manager_create (NMCheckpointManager *self,
 	if (NM_FLAGS_HAS (flags, NM_CHECKPOINT_CREATE_FLAG_DESTROY_ALL))
 		g_hash_table_remove_all (self->checkpoints);
 
-	nm_exported_object_export (NM_EXPORTED_OBJECT (checkpoint));
-	checkpoint_path = nm_exported_object_get_path (NM_EXPORTED_OBJECT (checkpoint));
+	checkpoint_path = nm_dbus_object_export (NM_DBUS_OBJECT (checkpoint));
 
 	item = g_slice_new0 (CheckpointItem);
 	item->checkpoint = checkpoint;
@@ -326,7 +324,7 @@ nm_checkpoint_manager_get_checkpoint_paths (NMCheckpointManager *self)
 
 	strv = g_new (char *, num + 1);
 	c_list_for_each_entry (item, &self->list, list)
-		strv[i++] = g_strdup (nm_exported_object_get_path (NM_EXPORTED_OBJECT (item->checkpoint)));
+		strv[i++] = g_strdup (nm_dbus_object_get_path (NM_DBUS_OBJECT (item->checkpoint)));
 	nm_assert (i == num);
 	strv[i] = NULL;
 

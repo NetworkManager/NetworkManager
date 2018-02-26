@@ -28,10 +28,8 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-ovs-bridge.h"
 
-#include "introspection/org.freedesktop.NetworkManager.Device.OvsBridge.h"
-
 #include "devices/nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceOvsBridge);
+_LOG_DECLARE_SELF (NMDeviceOvsBridge);
 
 /*****************************************************************************/
 
@@ -133,10 +131,23 @@ nm_device_ovs_bridge_init (NMDeviceOvsBridge *self)
 {
 }
 
+static const NMDBusInterfaceInfoExtended interface_info_device_ovs_bridge = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_DEVICE_OVS_BRIDGE,
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+		),
+	),
+	.legacy_property_changed = TRUE,
+};
+
 static void
 nm_device_ovs_bridge_class_init (NMDeviceOvsBridgeClass *klass)
 {
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
+
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_ovs_bridge);
 
 	device_class->connection_type = NM_SETTING_OVS_BRIDGE_SETTING_NAME;
 	device_class->is_master = TRUE;
@@ -149,8 +160,4 @@ nm_device_ovs_bridge_class_init (NMDeviceOvsBridgeClass *klass)
 	device_class->act_stage3_ip6_config_start = act_stage3_ip6_config_start;
 	device_class->enslave_slave = enslave_slave;
 	device_class->release_slave = release_slave;
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        NMDBUS_TYPE_DEVICE_OVS_BRIDGE_SKELETON,
-	                                        NULL);
 }

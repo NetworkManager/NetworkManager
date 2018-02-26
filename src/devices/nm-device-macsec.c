@@ -33,8 +33,6 @@
 #include "supplicant/nm-supplicant-interface.h"
 #include "supplicant/nm-supplicant-config.h"
 
-#include "introspection/org.freedesktop.NetworkManager.Device.Macsec.h"
-
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceMacsec);
 
@@ -812,16 +810,44 @@ dispose (GObject *object)
 	G_OBJECT_CLASS (nm_device_macsec_parent_class)->dispose (object);
 }
 
+static const NMDBusInterfaceInfoExtended interface_info_device_macsec = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_DEVICE_MACSEC,
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+		),
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Parent",        "o",  NM_DEVICE_PARENT),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Sci",           "t",  NM_DEVICE_MACSEC_SCI),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("IcvLength",     "y",  NM_DEVICE_MACSEC_ICV_LENGTH),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("CipherSuite",   "t",  NM_DEVICE_MACSEC_CIPHER_SUITE),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Window",        "u",  NM_DEVICE_MACSEC_WINDOW),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("EncodingSa",    "y",  NM_DEVICE_MACSEC_ENCODING_SA),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Validation",    "s",  NM_DEVICE_MACSEC_VALIDATION),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Encrypt",       "b",  NM_DEVICE_MACSEC_ENCRYPT),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Protect",       "b",  NM_DEVICE_MACSEC_PROTECT),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("IncludeSci",    "b",  NM_DEVICE_MACSEC_INCLUDE_SCI),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Es",            "b",  NM_DEVICE_MACSEC_ES),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Scb",           "b",  NM_DEVICE_MACSEC_SCB),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("ReplayProtect", "b",  NM_DEVICE_MACSEC_REPLAY_PROTECT),
+		),
+	),
+	.legacy_property_changed = TRUE,
+};
+
 static void
 nm_device_macsec_class_init (NMDeviceMacsecClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NULL, NM_LINK_TYPE_MACSEC)
 
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
+
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_macsec);
 
 	parent_class->act_stage2_config = act_stage2_config;
 	parent_class->check_connection_compatible = check_connection_compatible;
@@ -886,10 +912,6 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *klass)
 	                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        NMDBUS_TYPE_DEVICE_MACSEC_SKELETON,
-	                                        NULL);
 }
 
 /*************************************************************/

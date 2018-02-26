@@ -42,7 +42,6 @@
 #define NM_VPN_CONNECTION_BANNER "banner"
 
 /* Signals */
-/* not exported: includes old reason code */
 #define NM_VPN_CONNECTION_INTERNAL_STATE_CHANGED       "internal-state-changed"
 #define NM_VPN_CONNECTION_INTERNAL_RETRY_AFTER_FAILURE "internal-retry-after-failure"
 

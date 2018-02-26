@@ -34,7 +34,6 @@
 #include "settings/nm-settings-connection.h"
 #include "nm-simple-connection.h"
 #include "nm-utils.h"
-#include "introspection/org.freedesktop.NetworkManager.Checkpoint.h"
 
 /*****************************************************************************/
 
@@ -68,15 +67,15 @@ typedef struct {
 } NMCheckpointPrivate;
 
 struct _NMCheckpoint {
-	NMExportedObject parent;
+	NMDBusObject parent;
 	NMCheckpointPrivate _priv;
 };
 
 struct _NMCheckpointClass {
-	NMExportedObjectClass parent;
+	NMDBusObjectClass parent;
 };
 
-G_DEFINE_TYPE (NMCheckpoint, nm_checkpoint, NM_TYPE_EXPORTED_OBJECT)
+G_DEFINE_TYPE (NMCheckpoint, nm_checkpoint, NM_TYPE_DBUS_OBJECT)
 
 #define NM_CHECKPOINT_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMCheckpoint, NM_IS_CHECKPOINT)
 
@@ -183,7 +182,7 @@ nm_checkpoint_rollback (NMCheckpoint *self)
 	GError *local_error = NULL;
 	GVariantBuilder builder;
 
-	_LOGI ("rollback of %s", nm_exported_object_get_path ((NMExportedObject *) self));
+	_LOGI ("rollback of %s", nm_dbus_object_get_path (NM_DBUS_OBJECT (self)));
 	 g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{su}"));
 
 	/* Start rolling-back each device */
@@ -382,7 +381,7 @@ device_checkpoint_create (NMDevice *device,
 	const char *path;
 	NMActRequest *act_request;
 
-	path = nm_exported_object_get_path (NM_EXPORTED_OBJECT (device));
+	path = nm_dbus_object_get_path (NM_DBUS_OBJECT (device));
 
 	dev_checkpoint = g_slice_new0 (DeviceCheckpoint);
 	dev_checkpoint->device = g_object_ref (device);
@@ -392,7 +391,7 @@ device_checkpoint_create (NMDevice *device,
 
 	if (nm_device_get_unmanaged_mask (device, NM_UNMANAGED_USER_EXPLICIT)) {
 		dev_checkpoint->unmanaged_explicit =
-			!!nm_device_get_unmanaged_flags (device, NM_UNMANAGED_USER_EXPLICIT);
+		    !!nm_device_get_unmanaged_flags (device, NM_UNMANAGED_USER_EXPLICIT);
 	} else
 		dev_checkpoint->unmanaged_explicit = NM_UNMAN_FLAG_OP_FORGET;
 
@@ -445,7 +444,7 @@ get_property (GObject *object, guint prop_id,
 		g_hash_table_iter_init (&iter, priv->devices);
 		while (g_hash_table_iter_next (&iter, (gpointer *) &device, NULL))
 			devices = g_slist_append (devices, device);
-		nm_utils_g_value_set_object_path_array (value, devices, NULL, NULL);
+		nm_dbus_utils_g_value_set_object_path_array (value, devices, NULL, NULL);
 		break;
 	case PROP_CREATED:
 		g_value_set_int64 (value, priv->created);
@@ -538,14 +537,29 @@ dispose (GObject *object)
 	G_OBJECT_CLASS (nm_checkpoint_parent_class)->dispose (object);
 }
 
+static const NMDBusInterfaceInfoExtended interface_info_checkpoint = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_CHECKPOINT,
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+		),
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Devices",         "ao", NM_CHECKPOINT_DEVICES),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Created",         "x",  NM_CHECKPOINT_CREATED),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("RollbackTimeout", "u",  NM_CHECKPOINT_ROLLBACK_TIMEOUT),
+		),
+	),
+	.legacy_property_changed = TRUE,
+};
+
 static void
 nm_checkpoint_class_init (NMCheckpointClass *checkpoint_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (checkpoint_class);
-	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (checkpoint_class);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (checkpoint_class);
 
-	exported_object_class->export_path = NM_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/Checkpoint");
-	exported_object_class->export_on_construction = FALSE;
+	dbus_object_class->export_path = NM_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/Checkpoint");
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_checkpoint);
 
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
@@ -569,8 +583,4 @@ nm_checkpoint_class_init (NMCheckpointClass *checkpoint_class)
 	                       G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (checkpoint_class),
-	                                        NMDBUS_TYPE_CHECKPOINT_SKELETON,
-	                                        NULL);
 }

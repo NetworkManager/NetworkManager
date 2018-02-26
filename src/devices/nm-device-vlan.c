@@ -37,8 +37,6 @@
 #include "nm-core-internal.h"
 #include "platform/nmp-object.h"
 
-#include "introspection/org.freedesktop.NetworkManager.Device.Vlan.h"
-
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceVlan);
 
@@ -577,15 +575,34 @@ nm_device_vlan_init (NMDeviceVlan * self)
 {
 }
 
+static const NMDBusInterfaceInfoExtended interface_info_device_vlan = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_DEVICE_VLAN,
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+		),
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("HwAddress", "s", NM_DEVICE_HW_ADDRESS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Carrier",   "b", NM_DEVICE_CARRIER),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Parent",    "o", NM_DEVICE_PARENT),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("VlanId",    "u", NM_DEVICE_VLAN_ID),
+		),
+	),
+	.legacy_property_changed = TRUE,
+};
+
 static void
 nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_VLAN_SETTING_NAME, NM_LINK_TYPE_VLAN)
 
 	object_class->get_property = get_property;
+
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_vlan);
 
 	parent_class->create_and_realize = create_and_realize;
 	parent_class->link_changed = link_changed;
@@ -608,10 +625,6 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	                        | G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        NMDBUS_TYPE_DEVICE_VLAN_SKELETON,
-	                                        NULL);
 }
 
 /*****************************************************************************/

@@ -80,9 +80,6 @@
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF (NMDevice);
 
-#include "introspection/org.freedesktop.NetworkManager.Device.h"
-#include "introspection/org.freedesktop.NetworkManager.Device.Statistics.h"
-
 /*****************************************************************************/
 
 #define DHCP_RESTART_TIMEOUT   120
@@ -506,11 +503,14 @@ typedef struct _NMDevicePrivate {
 
 } NMDevicePrivate;
 
-G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, NM_TYPE_EXPORTED_OBJECT)
+G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, NM_TYPE_DBUS_OBJECT)
 
 #define NM_DEVICE_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR(self, NMDevice, NM_IS_DEVICE)
 
 /*****************************************************************************/
+
+static const NMDBusInterfaceInfoExtended interface_info_device;
+static const GDBusSignalInfo signal_info_state_changed;
 
 static void nm_device_set_proxy_config (NMDevice *self, const char *pac_url);
 
@@ -6067,7 +6067,7 @@ dhcp4_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 	}
 
 	if (priv->dhcp4.config) {
-		nm_exported_object_clear_and_unexport (&priv->dhcp4.config);
+		nm_dbus_object_clear_and_unexport (&priv->dhcp4.config);
 		_notify (self, PROP_DHCP4_CONFIG);
 	}
 }
@@ -6493,7 +6493,7 @@ dhcp4_start (NMDevice *self)
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 
 	/* Clear old exported DHCP options */
-	nm_exported_object_clear_and_unexport (&priv->dhcp4.config);
+	nm_dbus_object_clear_and_unexport (&priv->dhcp4.config);
 	priv->dhcp4.config = nm_dhcp4_config_new ();
 
 	hwaddr = nm_platform_link_get_address_as_bytes (nm_device_get_platform (self),
@@ -6831,7 +6831,7 @@ dhcp6_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 	nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP6, FALSE);
 
 	if (priv->dhcp6.config) {
-		nm_exported_object_clear_and_unexport (&priv->dhcp6.config);
+		nm_dbus_object_clear_and_unexport (&priv->dhcp6.config);
 		_notify (self, PROP_DHCP6_CONFIG);
 	}
 }
@@ -7281,7 +7281,7 @@ dhcp6_start (NMDevice *self, gboolean wait_for_ll)
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip6;
 
-	nm_exported_object_clear_and_unexport (&priv->dhcp6.config);
+	nm_dbus_object_clear_and_unexport (&priv->dhcp6.config);
 	priv->dhcp6.config = nm_dhcp6_config_new ();
 
 	nm_assert (!applied_config_get_current (&priv->dhcp6.ip6_config));
@@ -9256,7 +9256,7 @@ act_request_set (NMDevice *self, NMActRequest *act_request)
 
 	if (act_request) {
 		priv->act_request_id = g_signal_connect (act_request,
-		                                         "notify::"NM_EXPORTED_OBJECT_PATH,
+		                                         "notify::"NM_DBUS_OBJECT_PATH,
 		                                         G_CALLBACK (act_request_set_cb),
 		                                         self);
 
@@ -9887,25 +9887,33 @@ reapply_cb (NMDevice *self,
 }
 
 static void
-impl_device_reapply (NMDevice *self,
-                     GDBusMethodInvocation *context,
-                     GVariant *settings,
-                     guint64 version_id,
-                     guint32 flags)
+impl_device_reapply (NMDBusObject *obj,
+                     const NMDBusInterfaceInfoExtended *interface_info,
+                     const NMDBusMethodInfoExtended *method_info,
+                     GDBusConnection *dbus_connection,
+                     const char *sender,
+                     GDBusMethodInvocation *invocation,
+                     GVariant *parameters)
 {
+	NMDevice *self = NM_DEVICE (obj);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMSettingsConnection *settings_connection;
 	NMConnection *connection = NULL;
 	GError *error = NULL;
 	ReapplyData *reapply_data;
+	gs_unref_variant GVariant *settings = NULL;
+	guint64 version_id;
+	guint32 flags;
+
+	g_variant_get (parameters, "(@a{sa{sv}}tu)", &settings, &version_id, &flags);
 
 	/* No flags supported as of now. */
 	if (flags != 0) {
 		error = g_error_new_literal (NM_DEVICE_ERROR,
 		                             NM_DEVICE_ERROR_FAILED,
 		                             "Invalid flags specified");
-		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, NULL, context, error->message);
-		g_dbus_method_invocation_take_error (context, error);
+		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, NULL, invocation, error->message);
+		g_dbus_method_invocation_take_error (invocation, error);
 		return;
 	}
 
@@ -9913,8 +9921,8 @@ impl_device_reapply (NMDevice *self,
 		error = g_error_new_literal (NM_DEVICE_ERROR,
 		                             NM_DEVICE_ERROR_NOT_ACTIVE,
 		                             "Device is not activated");
-		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, NULL, context, error->message);
-		g_dbus_method_invocation_take_error (context, error);
+		nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, NULL, invocation, error->message);
+		g_dbus_method_invocation_take_error (invocation, error);
 		return;
 	}
 
@@ -9929,8 +9937,8 @@ impl_device_reapply (NMDevice *self,
 		                                                  &error);
 		if (!connection) {
 			g_prefix_error (&error, "The settings specified are invalid: ");
-			nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, NULL, context, error->message);
-			g_dbus_method_invocation_take_error (context, error);
+			nm_audit_log_device_op (NM_AUDIT_OP_DEVICE_REAPPLY, self, FALSE, NULL, invocation, error->message);
+			g_dbus_method_invocation_take_error (invocation, error);
 			return;
 		}
 		nm_connection_clear_secrets (connection);
@@ -9943,9 +9951,8 @@ impl_device_reapply (NMDevice *self,
 	} else
 		reapply_data = NULL;
 
-	/* Ask the manager to authenticate this request for us */
 	g_signal_emit (self, signals[AUTH_REQUEST], 0,
-	               context,
+	               invocation,
 	               nm_device_get_applied_connection (self),
 	               NM_AUTH_PERMISSION_NETWORK_CONTROL,
 	               TRUE,
@@ -10008,36 +10015,40 @@ get_applied_connection_cb (NMDevice *self,
 }
 
 static void
-impl_device_get_applied_connection (NMDevice *self,
-                                    GDBusMethodInvocation *context,
-                                    guint32 flags)
+impl_device_get_applied_connection (NMDBusObject *obj,
+                                    const NMDBusInterfaceInfoExtended *interface_info,
+                                    const NMDBusMethodInfoExtended *method_info,
+                                    GDBusConnection *connection,
+                                    const char *sender,
+                                    GDBusMethodInvocation *invocation,
+                                    GVariant *parameters)
 {
+	NMDevice *self = NM_DEVICE (obj);
 	NMConnection *applied_connection;
-	GError *error = NULL;
+	guint32 flags;
 
-	g_return_if_fail (NM_IS_DEVICE (self));
+	g_variant_get (parameters, "(u)", &flags);
 
 	/* No flags supported as of now. */
 	if (flags != 0) {
-		error = g_error_new_literal (NM_DEVICE_ERROR,
-		                             NM_DEVICE_ERROR_FAILED,
-		                             "Invalid flags specified");
-		g_dbus_method_invocation_take_error (context, error);
+		g_dbus_method_invocation_return_error_literal (invocation,
+		                                               NM_DEVICE_ERROR,
+		                                               NM_DEVICE_ERROR_FAILED,
+		                                               "Invalid flags specified");
 		return;
 	}
 
 	applied_connection = nm_device_get_applied_connection (self);
 	if (!applied_connection) {
-		error = g_error_new_literal (NM_DEVICE_ERROR,
-		                             NM_DEVICE_ERROR_NOT_ACTIVE,
-		                             "Device is not activated");
-		g_dbus_method_invocation_take_error (context, error);
+		g_dbus_method_invocation_return_error_literal (invocation,
+		                                               NM_DEVICE_ERROR,
+		                                               NM_DEVICE_ERROR_NOT_ACTIVE,
+		                                               "Device is not activated");
 		return;
 	}
 
-	/* Ask the manager to authenticate this request for us */
 	g_signal_emit (self, signals[AUTH_REQUEST], 0,
-	               context,
+	               invocation,
 	               applied_connection,
 	               NM_AUTH_PERMISSION_NETWORK_CONTROL,
 	               TRUE,
@@ -10186,25 +10197,31 @@ _clear_queued_act_request (NMDevicePrivate *priv)
 }
 
 static void
-impl_device_disconnect (NMDevice *self, GDBusMethodInvocation *context)
+impl_device_disconnect (NMDBusObject *obj,
+                        const NMDBusInterfaceInfoExtended *interface_info,
+                        const NMDBusMethodInfoExtended *method_info,
+                        GDBusConnection *dbus_connection,
+                        const char *sender,
+                        GDBusMethodInvocation *invocation,
+                        GVariant *parameters)
 {
+	NMDevice *self = NM_DEVICE (obj);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
-	GError *error = NULL;
 
-	if (NM_DEVICE_GET_PRIVATE (self)->act_request == NULL) {
-		error = g_error_new_literal (NM_DEVICE_ERROR,
-		                             NM_DEVICE_ERROR_NOT_ACTIVE,
-		                             "This device is not active");
-		g_dbus_method_invocation_take_error (context, error);
+	if (!priv->act_request) {
+		g_dbus_method_invocation_return_error_literal (invocation,
+		                                               NM_DEVICE_ERROR,
+		                                               NM_DEVICE_ERROR_NOT_ACTIVE,
+		                                               "This device is not active");
 		return;
 	}
 
 	connection = nm_device_get_applied_connection (self);
-	g_assert (connection);
+	nm_assert (connection);
 
-	/* Ask the manager to authenticate this request for us */
 	g_signal_emit (self, signals[AUTH_REQUEST], 0,
-	               context,
+	               invocation,
 	               connection,
 	               NM_AUTH_PERMISSION_NETWORK_CONTROL,
 	               TRUE,
@@ -10236,21 +10253,27 @@ delete_cb (NMDevice *self,
 }
 
 static void
-impl_device_delete (NMDevice *self, GDBusMethodInvocation *context)
+impl_device_delete (NMDBusObject *obj,
+                    const NMDBusInterfaceInfoExtended *interface_info,
+                    const NMDBusMethodInfoExtended *method_info,
+                    GDBusConnection *connection,
+                    const char *sender,
+                    GDBusMethodInvocation *invocation,
+                    GVariant *parameters)
 {
-	GError *error = NULL;
+	NMDevice *self = NM_DEVICE (obj);
 
-	if (!nm_device_is_software (self) || !nm_device_is_real (self)) {
-		error = g_error_new_literal (NM_DEVICE_ERROR,
-		                             NM_DEVICE_ERROR_NOT_SOFTWARE,
-		                             "This device is not a software device or is not realized");
-		g_dbus_method_invocation_take_error (context, error);
+	if (   !nm_device_is_software (self)
+	    || !nm_device_is_real (self)) {
+		g_dbus_method_invocation_return_error_literal (invocation,
+		                                               NM_DEVICE_ERROR,
+		                                               NM_DEVICE_ERROR_NOT_SOFTWARE,
+		                                               "This device is not a software device or is not realized");
 		return;
 	}
 
-	/* Ask the manager to authenticate this request for us */
 	g_signal_emit (self, signals[AUTH_REQUEST], 0,
-	               context,
+	               invocation,
 	               NULL,
 	               NM_AUTH_PERMISSION_NETWORK_CONTROL,
 	               TRUE,
@@ -10544,23 +10567,23 @@ nm_device_set_ip4_config (NMDevice *self,
 			nm_ip4_config_replace (old_config, new_config, &has_changes);
 			if (has_changes) {
 				_LOGD (LOGD_IP4, "ip4-config: update IP4Config instance (%s)",
-				       nm_exported_object_get_path (NM_EXPORTED_OBJECT (old_config)));
+				       nm_dbus_object_get_path (NM_DBUS_OBJECT (old_config)));
 			}
 		} else {
 			has_changes = TRUE;
 			priv->ip4_config = g_object_ref (new_config);
 
-			if (success && !nm_exported_object_is_exported (NM_EXPORTED_OBJECT (new_config)))
-				nm_exported_object_export (NM_EXPORTED_OBJECT (new_config));
+			if (success && !nm_dbus_object_is_exported (NM_DBUS_OBJECT (new_config)))
+				nm_dbus_object_export (NM_DBUS_OBJECT (new_config));
 
 			_LOGD (LOGD_IP4, "ip4-config: set IP4Config instance (%s)",
-			       nm_exported_object_get_path (NM_EXPORTED_OBJECT (new_config)));
+			       nm_dbus_object_get_path (NM_DBUS_OBJECT (new_config)));
 		}
 	} else if (old_config) {
 		has_changes = TRUE;
 		priv->ip4_config = NULL;
 		_LOGD (LOGD_IP4, "ip4-config: clear IP4Config instance (%s)",
-		       nm_exported_object_get_path (NM_EXPORTED_OBJECT (old_config)));
+		       nm_dbus_object_get_path (NM_DBUS_OBJECT (old_config)));
 		/* Device config is invalid if combined config is invalid */
 		applied_config_clear (&priv->dev_ip4_config);
 	}
@@ -10580,7 +10603,7 @@ nm_device_set_ip4_config (NMDevice *self,
 		g_signal_emit (self, signals[IP4_CONFIG_CHANGED], 0, priv->ip4_config, old_config);
 
 		if (old_config != priv->ip4_config)
-			nm_exported_object_clear_and_unexport (&old_config);
+			nm_dbus_object_clear_and_unexport (&old_config);
 
 		if (   nm_device_sys_iface_state_is_external (self)
 		    && (settings_connection = nm_device_get_settings_connection (self))
@@ -10717,24 +10740,24 @@ nm_device_set_ip6_config (NMDevice *self,
 			nm_ip6_config_replace (old_config, new_config, &has_changes);
 			if (has_changes) {
 				_LOGD (LOGD_IP6, "ip6-config: update IP6Config instance (%s)",
-				       nm_exported_object_get_path (NM_EXPORTED_OBJECT (old_config)));
+				       nm_dbus_object_get_path (NM_DBUS_OBJECT (old_config)));
 			}
 		} else {
 			has_changes = TRUE;
 			priv->ip6_config = g_object_ref (new_config);
 
-			if (success && !nm_exported_object_is_exported (NM_EXPORTED_OBJECT (new_config)))
-				nm_exported_object_export (NM_EXPORTED_OBJECT (new_config));
+			if (success && !nm_dbus_object_is_exported (NM_DBUS_OBJECT (new_config)))
+				nm_dbus_object_export (NM_DBUS_OBJECT (new_config));
 
 			_LOGD (LOGD_IP6, "ip6-config: set IP6Config instance (%s)",
-			       nm_exported_object_get_path (NM_EXPORTED_OBJECT (new_config)));
+			       nm_dbus_object_get_path (NM_DBUS_OBJECT (new_config)));
 		}
 	} else if (old_config) {
 		has_changes = TRUE;
 		priv->ip6_config = NULL;
 		priv->needs_ip6_subnet = FALSE;
 		_LOGD (LOGD_IP6, "ip6-config: clear IP6Config instance (%s)",
-		       nm_exported_object_get_path (NM_EXPORTED_OBJECT (old_config)));
+		       nm_dbus_object_get_path (NM_DBUS_OBJECT (old_config)));
 	}
 
 	if (has_changes) {
@@ -10745,7 +10768,7 @@ nm_device_set_ip6_config (NMDevice *self,
 		g_signal_emit (self, signals[IP6_CONFIG_CHANGED], 0, priv->ip6_config, old_config);
 
 		if (old_config != priv->ip6_config)
-			nm_exported_object_clear_and_unexport (&old_config);
+			nm_dbus_object_clear_and_unexport (&old_config);
 
 		if (   nm_device_sys_iface_state_is_external (self)
 		    && (settings_connection = nm_device_get_settings_connection (self))
@@ -13484,6 +13507,13 @@ _set_state_full (NMDevice *self,
 
 	_notify (self, PROP_STATE);
 	_notify (self, PROP_STATE_REASON);
+	nm_dbus_object_emit_signal (NM_DBUS_OBJECT (self),
+	                            &interface_info_device,
+	                            &signal_info_state_changed,
+	                            "(uuu)",
+	                            (guint32) state,
+	                            (guint32) old_state,
+	                            (guint32) reason);
 	g_signal_emit (self, signals[STATE_CHANGED], 0, (guint) state, (guint) old_state, (guint) reason);
 
 	/* Post-process the event after internal notification */
@@ -14997,16 +15027,16 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->mtu);
 		break;
 	case PROP_IP4_CONFIG:
-		nm_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->ip4_config : NULL);
+		nm_dbus_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->ip4_config : NULL);
 		break;
 	case PROP_DHCP4_CONFIG:
-		nm_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->dhcp4.config : NULL);
+		nm_dbus_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->dhcp4.config : NULL);
 		break;
 	case PROP_IP6_CONFIG:
-		nm_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->ip6_config : NULL);
+		nm_dbus_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->ip6_config : NULL);
 		break;
 	case PROP_DHCP6_CONFIG:
-		nm_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->dhcp6.config : NULL);
+		nm_dbus_utils_g_value_set_object_path (value, ip_config_valid (priv->state) ? priv->dhcp6.config : NULL);
 		break;
 	case PROP_STATE:
 		g_value_set_uint (value, priv->state);
@@ -15016,7 +15046,7 @@ get_property (GObject *object, guint prop_id,
 		                      g_variant_new ("(uu)", priv->state, priv->state_reason));
 		break;
 	case PROP_ACTIVE_CONNECTION:
-		nm_utils_g_value_set_object_path (value, priv->act_request_public ? priv->act_request : NULL);
+		nm_dbus_utils_g_value_set_object_path (value, priv->act_request_public ? priv->act_request : NULL);
 		break;
 	case PROP_DEVICE_TYPE:
 		g_value_set_uint (value, priv->type);
@@ -15061,7 +15091,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_object (value, nm_device_get_master (self));
 		break;
 	case PROP_PARENT:
-		nm_utils_g_value_set_object_path (value, priv->parent_device);
+		nm_dbus_utils_g_value_set_object_path (value, priv->parent_device);
 		break;
 	case PROP_HW_ADDRESS:
 		g_value_set_string (value, priv->hw_addr);
@@ -15106,7 +15136,7 @@ get_property (GObject *object, guint prop_id,
 
 			if (!NM_DEVICE_GET_PRIVATE (info->slave)->is_enslaved)
 				continue;
-			path = nm_exported_object_get_path ((NMExportedObject *) info->slave);
+			path = nm_dbus_object_get_path (NM_DBUS_OBJECT (info->slave));
 			if (path)
 				slave_list[i++] = g_strdup (path);
 		}
@@ -15133,15 +15163,115 @@ get_property (GObject *object, guint prop_id,
 	}
 }
 
+static const GDBusSignalInfo signal_info_state_changed = NM_DEFINE_GDBUS_SIGNAL_INFO_INIT (
+	"StateChanged",
+	.args = NM_DEFINE_GDBUS_ARG_INFOS (
+		NM_DEFINE_GDBUS_ARG_INFO ("new_state", "u"),
+		NM_DEFINE_GDBUS_ARG_INFO ("old_state", "u"),
+		NM_DEFINE_GDBUS_ARG_INFO ("reason",    "u"),
+	),
+);
+
+static const NMDBusInterfaceInfoExtended interface_info_device = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_DEVICE,
+		.methods = NM_DEFINE_GDBUS_METHOD_INFOS (
+			NM_DEFINE_DBUS_METHOD_INFO_EXTENDED (
+				NM_DEFINE_GDBUS_METHOD_INFO_INIT (
+					"Reapply",
+					.in_args = NM_DEFINE_GDBUS_ARG_INFOS (
+						NM_DEFINE_GDBUS_ARG_INFO ("connection", "a{sa{sv}}"),
+						NM_DEFINE_GDBUS_ARG_INFO ("version_id", "t"),
+						NM_DEFINE_GDBUS_ARG_INFO ("flags",      "u"),
+					),
+				),
+				.handle = impl_device_reapply,
+			),
+			NM_DEFINE_DBUS_METHOD_INFO_EXTENDED (
+				NM_DEFINE_GDBUS_METHOD_INFO_INIT (
+					"GetAppliedConnection",
+					.in_args = NM_DEFINE_GDBUS_ARG_INFOS (
+						NM_DEFINE_GDBUS_ARG_INFO ("flags", "u"),
+					),
+					.out_args = NM_DEFINE_GDBUS_ARG_INFOS (
+						NM_DEFINE_GDBUS_ARG_INFO ("connection", "a{sa{sv}}"),
+						NM_DEFINE_GDBUS_ARG_INFO ("version_id", "t"),
+					),
+				),
+				.handle = impl_device_get_applied_connection,
+			),
+			NM_DEFINE_DBUS_METHOD_INFO_EXTENDED (
+				NM_DEFINE_GDBUS_METHOD_INFO_INIT (
+					"Disconnect",
+				),
+				.handle = impl_device_disconnect,
+			),
+			NM_DEFINE_DBUS_METHOD_INFO_EXTENDED (
+				NM_DEFINE_GDBUS_METHOD_INFO_INIT (
+					"Delete",
+				),
+				.handle = impl_device_delete,
+			),
+		),
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&signal_info_state_changed,
+		),
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Udi",                  "s",      NM_DEVICE_UDI),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Interface",            "s",      NM_DEVICE_IFACE),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("IpInterface",          "s",      NM_DEVICE_IP_IFACE),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Driver",               "s",      NM_DEVICE_DRIVER),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("DriverVersion",        "s",      NM_DEVICE_DRIVER_VERSION),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("FirmwareVersion",      "s",      NM_DEVICE_FIRMWARE_VERSION),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Capabilities",         "u",      NM_DEVICE_CAPABILITIES),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Ip4Address",           "u",      NM_DEVICE_IP4_ADDRESS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("State",                "u",      NM_DEVICE_STATE),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("StateReason",          "(uu)",   NM_DEVICE_STATE_REASON),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("ActiveConnection",     "o",      NM_DEVICE_ACTIVE_CONNECTION),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Ip4Config",            "o",      NM_DEVICE_IP4_CONFIG),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Dhcp4Config",          "o",      NM_DEVICE_DHCP4_CONFIG),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Ip6Config",            "o",      NM_DEVICE_IP6_CONFIG),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Dhcp6Config",          "o",      NM_DEVICE_DHCP6_CONFIG),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READWRITABLE_L ("Managed",              "b",      NM_DEVICE_MANAGED,               NM_AUTH_PERMISSION_NETWORK_CONTROL, NM_AUDIT_OP_DEVICE_MANAGED),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READWRITABLE_L ("Autoconnect",          "b",      NM_DEVICE_AUTOCONNECT,           NM_AUTH_PERMISSION_NETWORK_CONTROL, NM_AUDIT_OP_DEVICE_AUTOCONNECT),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("FirmwareMissing",      "b",      NM_DEVICE_FIRMWARE_MISSING),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("NmPluginMissing",      "b",      NM_DEVICE_NM_PLUGIN_MISSING),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("DeviceType",           "u",      NM_DEVICE_DEVICE_TYPE),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("AvailableConnections", "ao",     NM_DEVICE_AVAILABLE_CONNECTIONS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("PhysicalPortId",       "s",      NM_DEVICE_PHYSICAL_PORT_ID),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Mtu",                  "u",      NM_DEVICE_MTU),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Metered",              "u",      NM_DEVICE_METERED),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("LldpNeighbors",        "aa{sv}", NM_DEVICE_LLDP_NEIGHBORS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Real",                 "b",      NM_DEVICE_REAL),
+		),
+	),
+};
+
+const NMDBusInterfaceInfoExtended nm_interface_info_device_statistics = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_DEVICE_STATISTICS,
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+		),
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READWRITABLE ("RefreshRateMs", "u", NM_DEVICE_STATISTICS_REFRESH_RATE_MS, NM_AUTH_PERMISSION_ENABLE_DISABLE_STATISTICS, NM_AUDIT_OP_STATISTICS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE     ("TxBytes",       "t", NM_DEVICE_STATISTICS_TX_BYTES),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE     ("RxBytes",       "t", NM_DEVICE_STATISTICS_RX_BYTES),
+		),
+	),
+};
+
 static void
 nm_device_class_init (NMDeviceClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
-	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (klass);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 
 	g_type_class_add_private (object_class, sizeof (NMDevicePrivate));
 
-	exported_object_class->export_path = NM_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/Devices");
+	dbus_object_class->export_path = NM_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/Devices");
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device,
+	                                                              &nm_interface_info_device_statistics);
 
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
@@ -15373,7 +15503,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS);
 
-	/* Statistics */
 	obj_properties[PROP_REFRESH_RATE_MS] =
 	    g_param_spec_uint (NM_DEVICE_STATISTICS_REFRESH_RATE_MS, "", "",
 	                       0, UINT32_MAX, 0,
@@ -15390,7 +15519,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
 
-	/* Connectivity */
 	obj_properties[PROP_CONNECTIVITY] =
 	     g_param_spec_uint (NM_DEVICE_CONNECTIVITY, "", "",
 	                        NM_CONNECTIVITY_UNKNOWN, NM_CONNECTIVITY_FULL, NM_CONNECTIVITY_UNKNOWN,
@@ -15472,16 +15600,4 @@ nm_device_class_init (NMDeviceClass *klass)
 	                  G_SIGNAL_RUN_FIRST,
 	                  0, NULL, NULL, NULL,
 	                  G_TYPE_NONE, 0);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        NMDBUS_TYPE_DEVICE_SKELETON,
-	                                        "Reapply", impl_device_reapply,
-	                                        "GetAppliedConnection", impl_device_get_applied_connection,
-	                                        "Disconnect", impl_device_disconnect,
-	                                        "Delete", impl_device_delete,
-	                                        NULL);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        NMDBUS_TYPE_DEVICE_STATISTICS_SKELETON,
-	                                        NULL);
 }

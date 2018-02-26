@@ -37,8 +37,6 @@
 #include "nm-act-request.h"
 #include "nm-ip4-config.h"
 
-#include "introspection/org.freedesktop.NetworkManager.Device.IPTunnel.h"
-
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceIPTunnel);
 
@@ -907,16 +905,43 @@ dispose (GObject *object)
 	G_OBJECT_CLASS (nm_device_ip_tunnel_parent_class)->dispose (object);
 }
 
+static const NMDBusInterfaceInfoExtended interface_info_device_ip_tunnel = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_DEVICE_IP_TUNNEL,
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+		),
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Mode",               "u",  NM_DEVICE_IP_TUNNEL_MODE),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Parent",             "o",  NM_DEVICE_PARENT),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Local",              "s",  NM_DEVICE_IP_TUNNEL_LOCAL),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Remote",             "s",  NM_DEVICE_IP_TUNNEL_REMOTE),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Ttl",                "y",  NM_DEVICE_IP_TUNNEL_TTL),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Tos",                "y",  NM_DEVICE_IP_TUNNEL_TOS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("PathMtuDiscovery",   "b",  NM_DEVICE_IP_TUNNEL_PATH_MTU_DISCOVERY),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("InputKey",           "s",  NM_DEVICE_IP_TUNNEL_INPUT_KEY),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("OutputKey",          "s",  NM_DEVICE_IP_TUNNEL_OUTPUT_KEY),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("EncapsulationLimit", "y",  NM_DEVICE_IP_TUNNEL_ENCAPSULATION_LIMIT),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("FlowLabel",          "u",  NM_DEVICE_IP_TUNNEL_FLOW_LABEL),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Flags",              "u",  NM_DEVICE_IP_TUNNEL_FLAGS),
+		),
+	),
+	.legacy_property_changed = TRUE,
+};
+
 static void
 nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
+
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_ip_tunnel);
 
 	device_class->link_changed = link_changed;
 	device_class->can_reapply_change = can_reapply_change;
@@ -1003,10 +1028,6 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 	                        G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        NMDBUS_TYPE_DEVICE_IPTUNNEL_SKELETON,
-	                                        NULL);
 }
 
 /*****************************************************************************/

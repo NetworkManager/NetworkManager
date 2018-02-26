@@ -26,9 +26,7 @@
 
 #include "nm-dbus-interface.h"
 #include "nm-utils.h"
-#include "nm-exported-object.h"
-
-#include "introspection/org.freedesktop.NetworkManager.DHCP6Config.h"
+#include "nm-dbus-object.h"
 
 /*****************************************************************************/
 
@@ -41,15 +39,15 @@ typedef struct {
 } NMDhcp6ConfigPrivate;
 
 struct _NMDhcp6Config {
-	NMExportedObject parent;
+	NMDBusObject parent;
 	NMDhcp6ConfigPrivate _priv;
 };
 
 struct _NMDhcp6ConfigClass {
-	NMExportedObjectClass parent;
+	NMDBusObjectClass parent;
 };
 
-G_DEFINE_TYPE (NMDhcp6Config, nm_dhcp6_config, NM_TYPE_EXPORTED_OBJECT)
+G_DEFINE_TYPE (NMDhcp6Config, nm_dhcp6_config, NM_TYPE_DBUS_OBJECT)
 
 #define NM_DHCP6_CONFIG_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDhcp6Config, NM_IS_DHCP6_CONFIG)
 
@@ -145,17 +143,31 @@ finalize (GObject *object)
 	G_OBJECT_CLASS (nm_dhcp6_config_parent_class)->finalize (object);
 }
 
+static const NMDBusInterfaceInfoExtended interface_info_dhcp6_config = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_DHCP6_CONFIG,
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+		),
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Options", "a{sv}",  NM_DHCP6_CONFIG_OPTIONS),
+		),
+	),
+	.legacy_property_changed = TRUE,
+};
+
 static void
 nm_dhcp6_config_class_init (NMDhcp6ConfigClass *config_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
-	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (config_class);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (config_class);
 
 	object_class->get_property = get_property;
 	object_class->finalize = finalize;
 
-	exported_object_class->export_path = NM_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/DHCP6Config");
-	exported_object_class->export_on_construction = TRUE;
+	dbus_object_class->export_path = NM_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/DHCP6Config");
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_dhcp6_config);
+	dbus_object_class->export_on_construction = TRUE;
 
 	obj_properties[PROP_OPTIONS] =
 	     g_param_spec_variant (NM_DHCP6_CONFIG_OPTIONS, "", "",
@@ -165,8 +177,4 @@ nm_dhcp6_config_class_init (NMDhcp6ConfigClass *config_class)
 	                           G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (config_class),
-	                                        NMDBUS_TYPE_DHCP6_CONFIG_SKELETON,
-	                                        NULL);
 }

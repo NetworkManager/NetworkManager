@@ -396,15 +396,15 @@ static void
 nm_dns_systemd_resolved_init (NMDnsSystemdResolved *self)
 {
 	NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
-	NMBusManager *dbus_mgr;
+	NMDBusManager *dbus_mgr;
 	GDBusConnection *connection;
 
 	c_list_init (&priv->request_queue_lst_head);
 
-	dbus_mgr = nm_bus_manager_get ();
+	dbus_mgr = nm_dbus_manager_get ();
 	g_return_if_fail (dbus_mgr);
 
-	connection = nm_bus_manager_get_connection (dbus_mgr);
+	connection = nm_dbus_manager_get_connection (dbus_mgr);
 	g_return_if_fail (connection);
 
 	priv->init_cancellable = g_cancellable_new ();

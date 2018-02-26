@@ -46,6 +46,7 @@
 #include "nm-ip6-config.h"
 #include "NetworkManagerUtils.h"
 #include "nm-config.h"
+#include "nm-dbus-object.h"
 #include "devices/nm-device.h"
 #include "nm-manager.h"
 
@@ -53,8 +54,6 @@
 #include "nm-dns-dnsmasq.h"
 #include "nm-dns-systemd-resolved.h"
 #include "nm-dns-unbound.h"
-
-#include "introspection/org.freedesktop.NetworkManager.DnsManager.h"
 
 #define HASH_LEN 20
 
@@ -135,15 +134,15 @@ typedef struct {
 } NMDnsManagerPrivate;
 
 struct _NMDnsManager {
-	NMExportedObject parent;
+	NMDBusObject parent;
 	NMDnsManagerPrivate _priv;
 };
 
 struct _NMDnsManagerClass {
-	NMExportedObjectClass parent;
+	NMDBusObjectClass parent;
 };
 
-G_DEFINE_TYPE (NMDnsManager, nm_dns_manager, NM_TYPE_EXPORTED_OBJECT)
+G_DEFINE_TYPE (NMDnsManager, nm_dns_manager, NM_TYPE_DBUS_OBJECT)
 
 #define NM_DNS_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDnsManager, NM_IS_DNS_MANAGER)
 
@@ -2107,18 +2106,30 @@ finalize (GObject *object)
 	G_OBJECT_CLASS (nm_dns_manager_parent_class)->finalize (object);
 }
 
+static const NMDBusInterfaceInfoExtended interface_info_dns_manager = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_DNS_MANAGER,
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Mode",          "s",      NM_DNS_MANAGER_MODE),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("RcManager",     "s",      NM_DNS_MANAGER_RC_MANAGER),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Configuration", "aa{sv}", NM_DNS_MANAGER_CONFIGURATION),
+		),
+	),
+};
+
 static void
 nm_dns_manager_class_init (NMDnsManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
-	NMExportedObjectClass *exported_object_class = NM_EXPORTED_OBJECT_CLASS (klass);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
 
-	exported_object_class->export_path = NM_DBUS_PATH "/DnsManager";
-	exported_object_class->export_on_construction = TRUE;
+	dbus_object_class->export_path = NM_DBUS_PATH "/DnsManager";
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_dns_manager);
+	dbus_object_class->export_on_construction = TRUE;
 
 	obj_properties[PROP_MODE] =
 	    g_param_spec_string (NM_DNS_MANAGER_MODE, "", "",
@@ -2148,8 +2159,4 @@ nm_dns_manager_class_init (NMDnsManagerClass *klass)
 	                  0, NULL, NULL,
 	                  g_cclosure_marshal_VOID__VOID,
 	                  G_TYPE_NONE, 0);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        NMDBUS_TYPE_DNS_MANAGER_SKELETON,
-	                                        NULL);
 }
