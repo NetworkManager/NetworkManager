@@ -1004,6 +1004,7 @@ typedef struct {
 	const PrintDataCol *col;
 	const char *title;
 	bool title_to_free:1;
+	bool skip:1;
 	int width;
 } PrintDataHeaderCell;
 
@@ -1102,6 +1103,7 @@ _print_fill (const NmcConfig *nmc_config,
 
 		header_cell->col_idx = col_idx;
 		header_cell->col = col;
+		header_cell->skip = FALSE;
 
 		header_cell->title = nm_meta_abstract_info_get_name (info, TRUE);
 		if (   nmc_config->multiline_output
@@ -1136,10 +1138,11 @@ _print_fill (const NmcConfig *nmc_config,
 		for (i_col = 0; i_col < header_row->len; i_col++) {
 			char *to_free = NULL;
 			PrintDataCell *cell = &cells_line[i_col];
-			const PrintDataHeaderCell *header_cell;
+			PrintDataHeaderCell *header_cell;
 			const NMMetaAbstractInfo *info;
 			NMMetaAccessorGetOutFlags text_out_flags, color_out_flags;
 			gconstpointer value;
+			gboolean is_default;
 
 			header_cell = &g_array_index (header_row, PrintDataHeaderCell, i_col);
 			info = header_cell->col->selection_item->info;
@@ -1154,8 +1157,11 @@ _print_fill (const NmcConfig *nmc_config,
 			                                   text_get_type,
 			                                   text_get_flags,
 			                                   &text_out_flags,
-			                                   NULL,
+			                                   &is_default,
 			                                   (gpointer *) &to_free);
+
+			header_cell->skip = nmc_config->overview && is_default;
+
 			if (NM_FLAGS_HAS (text_out_flags, NM_META_ACCESSOR_GET_OUT_FLAGS_STRV)) {
 				if (value) {
 					if (nmc_config->multiline_output) {
@@ -1238,6 +1244,9 @@ _print_skip_column (const NmcConfig *nmc_config,
 
 	selection_item = header_cell->col->selection_item;
 	info = selection_item->info;
+
+	if (header_cell->skip)
+		return TRUE;
 
 	if (nmc_config->multiline_output) {
 		if (info->meta_type == &nm_meta_type_setting_info_editor) {
