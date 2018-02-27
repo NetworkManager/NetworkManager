@@ -1516,24 +1516,6 @@ vlan_priorities_to_string (NMSettingVlan *s_vlan, NMVlanPriorityMap map)
 }
 
 static char *
-ip6_privacy_to_string (NMSettingIP6ConfigPrivacy ip6_privacy, NMMetaAccessorGetType get_type)
-{
-	if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY)
-		return g_strdup_printf ("%d", ip6_privacy);
-
-	switch (ip6_privacy) {
-	case NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED:
-		return g_strdup_printf (_("%d (disabled)"), ip6_privacy);
-	case NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR:
-		return g_strdup_printf (_("%d (enabled, prefer public IP)"), ip6_privacy);
-	case NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR:
-		return g_strdup_printf (_("%d (enabled, prefer temporary IP)"), ip6_privacy);
-	default:
-		return g_strdup_printf (_("%d (unknown)"), ip6_privacy);
-	}
-}
-
-static char *
 secret_flags_to_string (guint32 flags, NMMetaAccessorGetType get_type)
 {
 	GString *flag_str;
@@ -3459,14 +3441,6 @@ DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv4_config_routes,
                                nm_setting_ip_config_remove_route,
                                _validate_and_remove_ipv4_route)
 
-static gconstpointer
-_get_fcn_ip6_config_ip6_privacy (ARGS_GET_FCN)
-{
-	NMSettingIP6Config *s_ip6 = NM_SETTING_IP6_CONFIG (setting);
-	RETURN_UNSUPPORTED_GET_TYPE ();
-	RETURN_STR_TO_FREE (ip6_privacy_to_string (nm_setting_ip6_config_get_ip6_privacy (s_ip6), get_type));
-}
-
 static const char *ipv6_valid_methods[] = {
 	NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 	NM_SETTING_IP6_CONFIG_METHOD_AUTO,
@@ -3717,29 +3691,6 @@ DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv6_config_routes,
                                nm_setting_ip_config_get_num_routes,
                                nm_setting_ip_config_remove_route,
                                _validate_and_remove_ipv6_route)
-
-static gboolean
-_set_fcn_ip6_config_ip6_privacy (ARGS_SET_FCN)
-{
-	unsigned long val_int;
-
-	nm_assert (!error || !*error);
-
-	if (!nmc_string_to_uint (value, FALSE, 0, 0, &val_int)) {
-		g_set_error (error, 1, 0, _("'%s' is not a number"), value);
-		return FALSE;
-	}
-
-	if (   val_int != NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED
-	    && val_int != NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR
-	    && val_int != NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR) {
-		g_set_error (error, 1, 0, _("'%s' is not valid; use 0, 1, or 2"), value);
-		return FALSE;
-	}
-
-	g_object_set (setting, property_info->property_name, val_int, NULL);
-	return TRUE;
-}
 
 static gconstpointer
 _get_fcn_olpc_mesh_ssid (ARGS_GET_FCN)
@@ -6085,9 +6036,18 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
 		.property_type =                &_pt_gobject_bool,
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_IP6_CONFIG_IP6_PRIVACY,
-		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_ip6_config_ip6_privacy,
-			.set_fcn =                  _set_fcn_ip6_config_ip6_privacy,
+		.property_type =                &_pt_gobject_enum,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+			.value_infos_get =          ENUM_VALUE_INFOS (
+				{
+					.value = NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR,
+					.nick = "enabled, prefer public IP",
+				},
+				{
+					.value = NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
+					.nick = "enabled, prefer temporary IP",
+				}
+			),
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
