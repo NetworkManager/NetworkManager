@@ -58,6 +58,7 @@ gconstpointer nm_meta_abstract_info_get (const NMMetaAbstractInfo *abstract_info
                                          NMMetaAccessorGetType get_type,
                                          NMMetaAccessorGetFlags get_flags,
                                          NMMetaAccessorGetOutFlags *out_flags,
+                                         gboolean *out_is_default,
                                          gpointer *out_to_free);
 
 const char *const*nm_meta_abstract_info_complete (const NMMetaAbstractInfo *abstract_info,

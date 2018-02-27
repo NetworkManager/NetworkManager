@@ -75,6 +75,7 @@ _meta_type_nmc_generic_info_get_fcn (const NMMetaAbstractInfo *abstract_info,
                                      NMMetaAccessorGetType get_type,
                                      NMMetaAccessorGetFlags get_flags,
                                      NMMetaAccessorGetOutFlags *out_flags,
+                                     gboolean *out_is_default,
                                      gpointer *out_to_free)
 {
 	const NmcMetaGenericInfo *info = (const NmcMetaGenericInfo *) abstract_info;
@@ -97,6 +98,7 @@ _meta_type_nmc_generic_info_get_fcn (const NMMetaAbstractInfo *abstract_info,
 		                      get_type,
 		                      get_flags,
 		                      out_flags,
+		                      out_is_default,
 		                      out_to_free);
 	}
 
@@ -1152,6 +1154,7 @@ _print_fill (const NmcConfig *nmc_config,
 			                                   text_get_type,
 			                                   text_get_flags,
 			                                   &text_out_flags,
+			                                   NULL,
 			                                   (gpointer *) &to_free);
 			if (NM_FLAGS_HAS (text_out_flags, NM_META_ACCESSOR_GET_OUT_FLAGS_STRV)) {
 				if (value) {
@@ -1178,6 +1181,7 @@ _print_fill (const NmcConfig *nmc_config,
 			                                                      NM_META_ACCESSOR_GET_TYPE_TERMFORMAT,
 			                                                      NM_META_ACCESSOR_GET_FLAGS_NONE,
 			                                                      &color_out_flags,
+			                                                      NULL,
 			                                                      NULL),
 			                           &cell->term_color,
 			                           &cell->term_format);

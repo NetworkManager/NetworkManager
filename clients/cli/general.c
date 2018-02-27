@@ -175,6 +175,7 @@ _metagen_general_status_get_fcn (const NMMetaEnvironment *environment,
                                  NMMetaAccessorGetType get_type,
                                  NMMetaAccessorGetFlags get_flags,
                                  NMMetaAccessorGetOutFlags *out_flags,
+                                 gboolean *out_is_default,
                                  gpointer *out_to_free)
 {
 	NmCli *nmc = target;
@@ -282,6 +283,7 @@ _metagen_general_permissions_get_fcn (const NMMetaEnvironment *environment,
                                       NMMetaAccessorGetType get_type,
                                       NMMetaAccessorGetFlags get_flags,
                                       NMMetaAccessorGetOutFlags *out_flags,
+                                      gboolean *out_is_default,
                                       gpointer *out_to_free)
 {
 	NMClientPermission perm = GPOINTER_TO_UINT (target);
@@ -330,6 +332,7 @@ _metagen_general_logging_get_fcn (const NMMetaEnvironment *environment,
                                   NMMetaAccessorGetType get_type,
                                   NMMetaAccessorGetFlags get_flags,
                                   NMMetaAccessorGetOutFlags *out_flags,
+                                  gboolean *out_is_default,
                                   gpointer *out_to_free)
 {
 	NmCli *nmc = environment_user_data;

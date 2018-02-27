@@ -107,6 +107,7 @@ _metagen_ip4_config_get_fcn (const NMMetaEnvironment *environment,
                              NMMetaAccessorGetType get_type,
                              NMMetaAccessorGetFlags get_flags,
                              NMMetaAccessorGetOutFlags *out_flags,
+                             gboolean *out_is_default,
                              gpointer *out_to_free)
 {
 	NMIPConfig *cfg4 = target;
@@ -183,6 +184,7 @@ _metagen_ip6_config_get_fcn (const NMMetaEnvironment *environment,
                              NMMetaAccessorGetType get_type,
                              NMMetaAccessorGetFlags get_flags,
                              NMMetaAccessorGetOutFlags *out_flags,
+                             gboolean *out_is_default,
                              gpointer *out_to_free)
 {
 	NMIPConfig *cfg6 = target;

@@ -150,6 +150,7 @@ struct _NmcMetaGenericInfo {
 	                          NMMetaAccessorGetType get_type,
 	                          NMMetaAccessorGetFlags get_flags,
 	                          NMMetaAccessorGetOutFlags *out_flags,
+	                          gboolean *out_is_default,
 	                          gpointer *out_to_free);
 };
 

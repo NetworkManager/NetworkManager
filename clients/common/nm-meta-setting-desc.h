@@ -199,6 +199,7 @@ struct _NMMetaPropertyType {
 	                          NMMetaAccessorGetType get_type,
 	                          NMMetaAccessorGetFlags get_flags,
 	                          NMMetaAccessorGetOutFlags *out_flags,
+	                          gboolean *out_is_default,
 	                          gpointer *out_to_free);
 	gboolean (*set_fcn) (const NMMetaPropertyInfo *property_info,
 	                     const NMMetaEnvironment *environment,
@@ -363,6 +364,7 @@ struct _NMMetaType {
 	                          NMMetaAccessorGetType get_type,
 	                          NMMetaAccessorGetFlags get_flags,
 	                          NMMetaAccessorGetOutFlags *out_flags,
+	                          gboolean *out_is_defalt,
 	                          gpointer *out_to_free);
 	const char *const*(*complete_fcn) (const NMMetaAbstractInfo *info,
 	                                   const NMMetaEnvironment *environment,
