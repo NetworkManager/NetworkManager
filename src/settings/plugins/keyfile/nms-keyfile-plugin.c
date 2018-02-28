@@ -143,7 +143,7 @@ find_by_path (NMSKeyfilePlugin *self, const char *path)
  *   an existing connection with the same UUID.
  *   If %TRUE and @connection, allow updating only if the reload would modify
  *   @connection (without changing its UUID) or if we would create a new connection.
- *   In other words, if this paramter is %TRUE, we only allow creating a
+ *   In other words, if this parameter is %TRUE, we only allow creating a
  *   new connection (with an unseen UUID) or updating the passed in @connection
  *   (whereas the UUID cannot change).
  *   Note, that this allows for @connection to be replaced by a new connection.

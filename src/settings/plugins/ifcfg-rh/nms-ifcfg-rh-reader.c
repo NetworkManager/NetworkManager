@@ -565,7 +565,7 @@ enum {
 	PARSE_LINE_ATTR_ROUTE_VIA,
 	PARSE_LINE_ATTR_ROUTE_METRIC,
 
-	/* iproute2 paramters that are well known and that we silently ignore. */
+	/* iproute2 parameters that are well known and that we silently ignore. */
 	PARSE_LINE_ATTR_ROUTE_DEV,
 };
 
