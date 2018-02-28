@@ -7543,7 +7543,7 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 		gboolean anticipated_failure = FALSE;
 
 		if (!priv->mtu_initial && !priv->ip6_mtu_initial) {
-			/* before touching any of the MTU paramters, record the
+			/* before touching any of the MTU parameters, record the
 			 * original setting to restore on deactivation. */
 			priv->mtu_initial = mtu_plat;
 			priv->ip6_mtu_initial = _IP6_MTU_SYS ();
