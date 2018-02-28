@@ -145,7 +145,7 @@ _method_call_handle (NMDhcpListener *self,
 	gs_free char *iface = NULL;
 	gs_free char *pid_str = NULL;
 	gs_free char *reason = NULL;
-	gs_unref_variant GVariant *options;
+	gs_unref_variant GVariant *options = NULL;
 	int pid;
 	gboolean handled = FALSE;
 
