@@ -789,17 +789,22 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 {
 	NMDeviceIwd *self = NM_DEVICE_IWD (device);
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	gs_unref_variant GVariant *value = NULL;
 
-	return priv->enabled && priv->dbus_obj;
+	if (!priv->enabled || !priv->dbus_obj)
+		return FALSE;
+
+	value = g_dbus_proxy_get_cached_property (priv->dbus_proxy, "Powered");
+	return g_variant_get_boolean (value);
 }
 
 static gboolean
 get_autoconnect_allowed (NMDevice *device)
 {
-	NMDeviceIwdPrivate *priv;
+	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (NM_DEVICE_IWD (device));
 
-	priv = NM_DEVICE_IWD_GET_PRIVATE (NM_DEVICE_IWD (device));
-	return priv->enabled && priv->dbus_obj && priv->can_connect;
+	return is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE)
+	       && priv->can_connect;
 }
 
 static gboolean
@@ -1211,6 +1216,20 @@ failed:
 	                       NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
 }
 
+static void
+set_powered (NMDeviceIwd *self, gboolean powered)
+{
+	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+
+	g_dbus_proxy_call (priv->dbus_proxy,
+	                   "org.freedesktop.DBus.Properties.Set",
+	                   g_variant_new ("(ssv)", NM_IWD_DEVICE_INTERFACE,
+	                                  "Powered",
+	                                  g_variant_new ("b", powered)),
+	                   G_DBUS_CALL_FLAGS_NONE, 2000,
+	                   NULL, NULL, NULL);
+}
+
 /*****************************************************************************/
 
 static NMActStageReturn
@@ -1479,6 +1498,9 @@ set_enabled (NMDevice *device, gboolean enabled)
 		return;
 	}
 
+	if (priv->dbus_proxy)
+		set_powered (self, enabled);
+
 	if (enabled) {
 		if (state != NM_DEVICE_STATE_UNAVAILABLE)
 			_LOGW (LOGD_CORE, "not in expected unavailable state!");
@@ -1678,6 +1700,14 @@ scanning_changed (NMDeviceIwd *self, gboolean new_scanning)
 }
 
 static void
+powered_changed (NMDeviceIwd *self, gboolean new_powered)
+{
+	nm_device_queue_recheck_available (NM_DEVICE (self),
+	                                   NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
+	                                   NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
+}
+
+static void
 properties_changed (GDBusProxy *proxy, GVariant *changed_properties,
                     GStrv invalidate_properties, gpointer user_data)
 {
@@ -1693,6 +1723,9 @@ properties_changed (GDBusProxy *proxy, GVariant *changed_properties,
 
 		if (!strcmp (key, "Scanning"))
 			scanning_changed (self, g_variant_get_boolean (value));
+
+		if (!strcmp (key, "Powered"))
+			powered_changed (self, g_variant_get_boolean (value));
 
 		g_variant_unref (value);
 	}
@@ -1744,11 +1777,13 @@ nm_device_iwd_set_dbus_object (NMDeviceIwd *self, GDBusObject *object)
 	g_signal_connect (priv->dbus_proxy, "g-properties-changed",
 	                  G_CALLBACK (properties_changed), self);
 
-	/* Call Disconnect to make sure IWD's autoconnect is disabled.  We've
-	 * most likely just brought the device UP so it would be in
-	 * autoconnect by default.
+	set_powered (self, priv->enabled);
+
+	/* Call Disconnect to make sure IWD's autoconnect is disabled.
+	 * Autoconnect is the default state after device is brought UP.
 	 */
-	send_disconnect (self);
+	if (priv->enabled)
+		send_disconnect (self);
 }
 
 gboolean
