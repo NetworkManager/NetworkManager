@@ -481,7 +481,7 @@ name_owner_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 }
 
 static void
-device_added (NMDevice *device, gpointer user_data)
+device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 {
 	NMIwdManager *self = user_data;
 	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
@@ -641,7 +641,7 @@ nm_iwd_manager_init (NMIwdManager *self)
 	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
 
 	priv->nm_manager = g_object_ref (nm_manager_get ());
-	g_signal_connect (priv->nm_manager, "device-added",
+	g_signal_connect (priv->nm_manager, NM_MANAGER_DEVICE_ADDED,
 	                  G_CALLBACK (device_added), self);
 
 	priv->cancellable = g_cancellable_new ();
