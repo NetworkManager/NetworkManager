@@ -25,7 +25,7 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "nm-bus-manager.h"
+#include "nm-dbus-manager.h"
 
 #include "devices/nm-device.h"
 #include "nm-active-connection.h"

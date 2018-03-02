@@ -21,7 +21,7 @@
 
 #include "nm-default.h"
 
-#include "nm-bus-manager.h"
+#include "nm-dbus-manager.h"
 
 #include <unistd.h>
 #include <sys/stat.h>

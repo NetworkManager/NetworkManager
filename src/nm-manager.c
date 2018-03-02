@@ -30,7 +30,7 @@
 #include <unistd.h>
 
 #include "nm-common-macros.h"
-#include "nm-bus-manager.h"
+#include "nm-dbus-manager.h"
 #include "vpn/nm-vpn-manager.h"
 #include "devices/nm-device.h"
 #include "devices/nm-device-generic.h"

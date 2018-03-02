@@ -37,7 +37,7 @@
 #include "nm-utils.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
-#include "nm-bus-manager.h"
+#include "nm-dbus-manager.h"
 #include "nm-manager.h"
 #include "nm-setting-connection.h"
 #include "devices/nm-device.h"

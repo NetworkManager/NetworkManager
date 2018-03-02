@@ -33,7 +33,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "nm-bus-manager.h"
+#include "nm-dbus-manager.h"
 #include "NetworkManagerUtils.h"
 
 enum {

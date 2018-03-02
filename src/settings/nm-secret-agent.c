@@ -26,8 +26,8 @@
 #include <pwd.h>
 
 #include "nm-dbus-interface.h"
+#include "nm-dbus-manager.h"
 #include "nm-core-internal.h"
-#include "nm-bus-manager.h"
 #include "nm-auth-subject.h"
 #include "nm-simple-connection.h"
 #include "NetworkManagerUtils.h"

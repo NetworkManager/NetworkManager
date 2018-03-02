@@ -597,7 +597,7 @@ const NMDhcpClientFactory *const _nm_dhcp_manager_factories[4] = {
 #include "nm-config.h"
 #include "devices/nm-device.h"
 #include "nm-active-connection.h"
-#include "nm-bus-manager.h"
+#include "nm-dbus-manager.h"
 
 void
 nm_main_config_reload (int signal)

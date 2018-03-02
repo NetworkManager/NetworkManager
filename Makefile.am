@@ -1589,8 +1589,8 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-active-connection.h \
 	src/nm-audit-manager.c \
 	src/nm-audit-manager.h \
-	src/nm-bus-manager.c \
-	src/nm-bus-manager.h \
+	src/nm-dbus-manager.c \
+	src/nm-dbus-manager.h \
 	src/nm-config.c \
 	src/nm-config.h \
 	src/nm-config-data.c \

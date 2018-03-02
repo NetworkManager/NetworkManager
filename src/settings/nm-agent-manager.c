@@ -31,7 +31,7 @@
 #include "nm-auth-utils.h"
 #include "nm-setting-vpn.h"
 #include "nm-auth-manager.h"
-#include "nm-bus-manager.h"
+#include "nm-dbus-manager.h"
 #include "nm-session-monitor.h"
 #include "nm-simple-connection.h"
 #include "NetworkManagerUtils.h"
