@@ -74,6 +74,8 @@ _nm_dbus_new_connection_async (GCancellable *cancellable,
 	GSimpleAsyncResult *simple;
 
 	simple = g_simple_async_result_new (NULL, callback, user_data, _nm_dbus_new_connection_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 
 	g_bus_get (_nm_dbus_bus_type (),
 	           cancellable,

@@ -407,6 +407,8 @@ _device_wifi_request_scan_async (NMDeviceWifi *device,
 
 	simple = g_simple_async_result_new (G_OBJECT (device), callback, user_data,
 	                                    nm_device_wifi_request_scan_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 
 	/* If a scan is in progress, just return */
 	if (priv->scan_info) {
