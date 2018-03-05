@@ -154,7 +154,7 @@ test_override_client_id (void)
 static const char *quote_client_id_expected = \
 	"# Created by NetworkManager\n"
 	"\n"
-	"send dhcp-client-identifier \"1234\"; # added by NetworkManager\n"
+	"send dhcp-client-identifier \"\\x00abcd\"; # added by NetworkManager\n"
 	"\n"
 	"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
 	"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
@@ -172,7 +172,36 @@ test_quote_client_id (void)
 {
 	test_config (NULL, quote_client_id_expected,
 	             AF_INET, NULL, 0, FALSE,
-	             "1234",
+	             "abcd",
+	             NULL,
+	             "eth0",
+	             NULL);
+}
+
+/*****************************************************************************/
+
+static const char *hex_zero_client_id_expected = \
+	"# Created by NetworkManager\n"
+	"\n"
+	"send dhcp-client-identifier 00:11:22:33; # added by NetworkManager\n"
+	"\n"
+	"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
+	"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
+	"option wpad code 252 = string;\n"
+	"\n"
+	"also request rfc3442-classless-static-routes;\n"
+	"also request ms-classless-static-routes;\n"
+	"also request static-routes;\n"
+	"also request wpad;\n"
+	"also request ntp-servers;\n"
+	"\n";
+
+static void
+test_hex_zero_client_id (void)
+{
+	test_config (NULL, hex_zero_client_id_expected,
+	             AF_INET, NULL, 0, FALSE,
+	             "00:11:22:33",
 	             NULL,
 	             "eth0",
 	             NULL);
@@ -183,7 +212,7 @@ test_quote_client_id (void)
 static const char *ascii_client_id_expected = \
 	"# Created by NetworkManager\n"
 	"\n"
-	"send dhcp-client-identifier \"qb:cd:ef:12:34:56\"; # added by NetworkManager\n"
+	"send dhcp-client-identifier \"\\x00qb:cd:ef:12:34:56\"; # added by NetworkManager\n"
 	"\n"
 	"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
 	"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
@@ -239,13 +268,13 @@ test_hex_single_client_id (void)
 /*****************************************************************************/
 
 static const char *existing_hex_client_id_orig = \
-	"send dhcp-client-identifier 00:30:04:20:7A:08;\n";
+	"send dhcp-client-identifier 10:30:04:20:7A:08;\n";
 
 static const char *existing_hex_client_id_expected = \
 	"# Created by NetworkManager\n"
 	"# Merged from /path/to/dhclient.conf\n"
 	"\n"
-	"send dhcp-client-identifier 00:30:04:20:7A:08;\n"
+	"send dhcp-client-identifier 10:30:04:20:7A:08;\n"
 	"\n"
 	"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
 	"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
@@ -262,7 +291,7 @@ static void
 test_existing_hex_client_id (void)
 {
 	gs_unref_bytes GBytes *new_client_id = NULL;
-	const guint8 bytes[] = { 0x00, 0x30, 0x04,0x20, 0x7A, 0x08 };
+	const guint8 bytes[] = { 0x10, 0x30, 0x04, 0x20, 0x7A, 0x08 };
 
 	new_client_id = g_bytes_new (bytes, sizeof (bytes));
 	test_config (existing_hex_client_id_orig, existing_hex_client_id_expected,
@@ -275,16 +304,52 @@ test_existing_hex_client_id (void)
 
 /*****************************************************************************/
 
+static const char *existing_escaped_client_id_orig = \
+	"send dhcp-client-identifier \"\\044test\\xfe\";\n";
+
+static const char *existing_escaped_client_id_expected = \
+	"# Created by NetworkManager\n"
+	"# Merged from /path/to/dhclient.conf\n"
+	"\n"
+	"send dhcp-client-identifier \"\\044test\\xfe\";\n"
+	"\n"
+	"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
+	"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
+	"option wpad code 252 = string;\n"
+	"\n"
+	"also request rfc3442-classless-static-routes;\n"
+	"also request ms-classless-static-routes;\n"
+	"also request static-routes;\n"
+	"also request wpad;\n"
+	"also request ntp-servers;\n"
+	"\n";
+
+static void
+test_existing_escaped_client_id (void)
+{
+	gs_unref_bytes GBytes *new_client_id = NULL;
+
+	new_client_id = g_bytes_new ("$test\xfe", 6);
+	test_config (existing_escaped_client_id_orig, existing_escaped_client_id_expected,
+	             AF_INET, NULL, 0, FALSE,
+	             NULL,
+	             new_client_id,
+	             "eth0",
+	             NULL);
+}
+
+/*****************************************************************************/
+
 #define EACID "qb:cd:ef:12:34:56"
 
 static const char *existing_ascii_client_id_orig = \
-	"send dhcp-client-identifier \"" EACID "\";\n";
+	"send dhcp-client-identifier \"\\x00" EACID "\";\n";
 
 static const char *existing_ascii_client_id_expected = \
 	"# Created by NetworkManager\n"
 	"# Merged from /path/to/dhclient.conf\n"
 	"\n"
-	"send dhcp-client-identifier \"" EACID "\";\n"
+	"send dhcp-client-identifier \"\\x00" EACID "\";\n"
 	"\n"
 	"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
 	"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
@@ -1036,9 +1101,11 @@ main (int argc, char **argv)
 	g_test_add_func ("/dhcp/dhclient/orig_missing", test_orig_missing);
 	g_test_add_func ("/dhcp/dhclient/override_client_id", test_override_client_id);
 	g_test_add_func ("/dhcp/dhclient/quote_client_id", test_quote_client_id);
+	g_test_add_func ("/dhcp/dhclient/hex_zero_client_id", test_hex_zero_client_id);
 	g_test_add_func ("/dhcp/dhclient/ascii_client_id", test_ascii_client_id);
 	g_test_add_func ("/dhcp/dhclient/hex_single_client_id", test_hex_single_client_id);
 	g_test_add_func ("/dhcp/dhclient/existing-hex-client-id", test_existing_hex_client_id);
+	g_test_add_func ("/dhcp/dhclient/existing-client-id", test_existing_escaped_client_id);
 	g_test_add_func ("/dhcp/dhclient/existing-ascii-client-id", test_existing_ascii_client_id);
 	g_test_add_func ("/dhcp/dhclient/fqdn", test_fqdn);
 	g_test_add_func ("/dhcp/dhclient/fqdn_options_override", test_fqdn_options_override);

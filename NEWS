@@ -1,3 +1,14 @@
+=============================================
+NetworkManager-1.?? (not released yet)
+Overview of changes since NetworkManager-1.10
+=============================================
+
+* A non-hexadecimal DHCPv4 client-id is now properly passed to
+  dhclient with the first byte (type) set to zero, as stated in the
+  documentation. This represents a change in behavior since previous
+  versions where the first character of the string was used as
+  type. The internal client is not affected by the change.
+
 ============================================
 NetworkManager-1.10
 Overview of changes since NetworkManager-1.8

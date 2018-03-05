@@ -138,8 +138,9 @@ add_ip4_config (GString *str, GBytes *client_id, const char *hostname, gboolean 
 				g_string_append_printf (str, "%02x", (guint8) p[i]);
 			}
 		} else {
-			/* Printable; just add to the line minus the 'type' */
+			/* Printable; just add to the line with type 0 */
 			g_string_append_c (str, '"');
+			g_string_append (str, "\\x00");
 			g_string_append_len (str, p + 1, l - 1);
 			g_string_append_c (str, '"');
 		}
@@ -177,31 +178,60 @@ read_client_id (const char *str)
 {
 	gs_free char *s = NULL;
 	char *p;
+	int i = 0, j = 0;
 
 	nm_assert (!strncmp (str, CLIENTID_TAG, NM_STRLEN (CLIENTID_TAG)));
-
 	str += NM_STRLEN (CLIENTID_TAG);
+
+	if (!g_ascii_isspace (*str))
+		return NULL;
 	while (g_ascii_isspace (*str))
 		str++;
 
 	if (*str == '"') {
+		/* Parse string literal with escape sequences */
 		s = g_strdup (str + 1);
 		p = strrchr (s, '"');
 		if (p)
 			*p = '\0';
 		else
 			return NULL;
-	} else
-		s = g_strdup (str);
 
+		if (!s[0])
+			return NULL;
+
+		while (s[i]) {
+			if (   s[i] == '\\'
+			    && s[i + 1] == 'x'
+			    && g_ascii_isxdigit (s[i + 2])
+			    && g_ascii_isxdigit (s[i + 3])) {
+				s[j++] =  (g_ascii_xdigit_value (s[i + 2]) << 4)
+				         + g_ascii_xdigit_value (s[i + 3]);
+				i += 4;
+				continue;
+			}
+			if (   s[i] == '\\'
+			    && s[i + 1] >= '0' && s[i + 1] <= '7'
+			    && s[1 + 2] >= '0' && s[i + 2] <= '7'
+			    && s[1 + 3] >= '0' && s[i + 3] <= '7') {
+				s[j++] =    ((s[i + 1] - '0') << 6)
+				          + ((s[i + 2] - '0') << 3)
+				          + ( s[i + 3] - '0');
+				i += 4;
+				continue;
+			}
+			s[j++] = s[i++];
+		}
+		return g_bytes_new_take (g_steal_pointer (&s), j);
+	}
+
+	/* Otherwise, try to read a hexadecimal sequence */
+	s = g_strdup (str);
 	g_strchomp (s);
 	if (s[strlen (s) - 1] == ';')
 		s[strlen (s) - 1] = '\0';
 
-	if (!s[0])
-		return NULL;
-
-	return nm_dhcp_utils_client_id_string_to_bytes (s);
+	return nm_utils_hexstr2bin (s);
 }
 
 GBytes *
