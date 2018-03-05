@@ -1612,6 +1612,8 @@ nm_client_check_connectivity_async (NMClient *client,
 
 	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
 	                                    nm_client_check_connectivity_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 	g_simple_async_result_set_op_res_gpointer (simple, ccd, (GDestroyNotify) check_connectivity_data_free);
 
 	if (cancellable) {
@@ -1738,6 +1740,8 @@ nm_client_new_async (GCancellable *cancellable,
 	}
 
 	simple = g_simple_async_result_new (NULL, callback, user_data, nm_client_new_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 	g_async_initable_init_async (G_ASYNC_INITABLE (client), G_PRIORITY_DEFAULT,
 	                             cancellable, client_inited, simple);
 }
@@ -2001,6 +2005,8 @@ init_async (GAsyncInitable *initable, int io_priority,
 	init_data->client = NM_CLIENT (initable);
 	init_data->result = g_simple_async_result_new (G_OBJECT (initable), callback,
 	                                               user_data, init_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (init_data->result, cancellable);
 	g_simple_async_result_set_op_res_gboolean (init_data->result, TRUE);
 
 	/* Check if NM is running */

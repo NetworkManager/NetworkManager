@@ -683,6 +683,8 @@ nm_secret_agent_old_register_async (NMSecretAgentOld *self,
 
 	simple = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
 	                                    nm_secret_agent_old_register_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 
 	if (!check_nm_running (self, &error)) {
 		g_simple_async_result_take_error (simple, error);
@@ -826,6 +828,8 @@ nm_secret_agent_old_unregister_async (NMSecretAgentOld *self,
 
 	simple = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
 	                                    nm_secret_agent_old_unregister_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 
 	if (!check_nm_running (self, &error)) {
 		g_simple_async_result_take_error (simple, error);
@@ -1159,6 +1163,8 @@ init_async (GAsyncInitable *initable, int io_priority,
 
 	init_data->simple = g_simple_async_result_new (G_OBJECT (initable), callback,
 	                                               user_data, init_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (init_data->simple, cancellable);
 
 	_nm_dbus_new_connection_async (cancellable, init_async_got_bus, init_data);
 }

@@ -125,6 +125,8 @@ nm_remote_connection_update2 (NMRemoteConnection *connection,
 
 	simple = g_simple_async_result_new (G_OBJECT (connection), callback, user_data,
 	                                    nm_remote_connection_update2);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 
 	if (!settings) {
 		g_variant_builder_init (&builder, NM_VARIANT_TYPE_CONNECTION);
@@ -266,6 +268,8 @@ nm_remote_connection_commit_changes_async (NMRemoteConnection *connection,
 
 	simple = g_simple_async_result_new (G_OBJECT (connection), callback, user_data,
 	                                    nm_remote_connection_commit_changes_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 
 	g_variant_builder_init (&args, G_VARIANT_TYPE ("a{sv}"));
 	nmdbus_settings_connection_call_update2 (priv->proxy,
@@ -379,6 +383,8 @@ nm_remote_connection_save_async (NMRemoteConnection *connection,
 
 	simple = g_simple_async_result_new (G_OBJECT (connection), callback, user_data,
 	                                    nm_remote_connection_save_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 	nmdbus_settings_connection_call_save (priv->proxy, cancellable, save_cb, simple);
 }
 
@@ -479,6 +485,8 @@ nm_remote_connection_delete_async (NMRemoteConnection *connection,
 
 	simple = g_simple_async_result_new (G_OBJECT (connection), callback, user_data,
 	                                    nm_remote_connection_delete_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 	nmdbus_settings_connection_call_delete (priv->proxy, cancellable, delete_cb, simple);
 }
 
@@ -591,6 +599,8 @@ nm_remote_connection_get_secrets_async (NMRemoteConnection *connection,
 
 	simple = g_simple_async_result_new (G_OBJECT (connection), callback, user_data,
 	                                    nm_remote_connection_get_secrets_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 
 	nmdbus_settings_connection_call_get_secrets (priv->proxy,
 	                                             setting_name,
@@ -832,6 +842,8 @@ init_async (GAsyncInitable *initable, int io_priority,
 	init_data->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
 	init_data->result = g_simple_async_result_new (G_OBJECT (initable), callback,
 	                                               user_data, init_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (init_data->result, cancellable);
 	init_data->initable = initable;
 	init_data->io_priority = io_priority;
 

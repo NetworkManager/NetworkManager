@@ -713,6 +713,8 @@ init_async (GAsyncInitable *initable, int io_priority,
 	init_data->connection = NM_REMOTE_CONNECTION (initable);
 	init_data->result = g_simple_async_result_new (G_OBJECT (initable), callback,
 	                                               user_data, init_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (init_data->result, cancellable);
 
 	dbus_g_proxy_begin_call (priv->proxy, "GetSettings",
 	                         init_get_settings_cb, init_data, NULL,
