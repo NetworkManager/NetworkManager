@@ -424,7 +424,7 @@ test_ip6_route (void)
 /*****************************************************************************/
 
 static void
-test_ip_route_get (void)
+test_ip4_route_get (void)
 {
 	int ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME);
 	in_addr_t a;
@@ -583,6 +583,45 @@ test_ip4_route_options (gconstpointer test_data)
 		                                            rts_add[i].metric));
 	}
 #undef RTS_MAX
+}
+
+static void
+test_ip6_route_get (void)
+{
+	int ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME);
+	const struct in6_addr *a;
+	NMPlatformError result;
+	nm_auto_nmpobj NMPObject *route = NULL;
+	const NMPlatformIP6Route *r;
+
+	nmtstp_run_command_check ("ip -6 route add fd01:abcd::/64 via fe80::99 dev %s", DEVICE_NAME);
+
+	NMTST_WAIT_ASSERT (100, {
+		nmtstp_wait_for_signal (NM_PLATFORM_GET, 10);
+		if (nmtstp_ip6_route_get (NM_PLATFORM_GET, ifindex, nmtst_inet6_from_string ("fd01:abcd::"), 64, 0, NULL, 0))
+			break;
+	});
+
+	a = nmtst_inet6_from_string ("fd01:abcd::42");
+	result = nm_platform_ip_route_get (NM_PLATFORM_GET,
+	                                   AF_INET6,
+	                                   a,
+	                                   nmtst_get_rand_int () % 2 ? 0 : ifindex,
+	                                   &route);
+
+	g_assert (result == NM_PLATFORM_ERROR_SUCCESS);
+	g_assert (NMP_OBJECT_GET_TYPE (route) == NMP_OBJECT_TYPE_IP6_ROUTE);
+	g_assert (!NMP_OBJECT_IS_STACKINIT (route));
+	g_assert (route->parent._ref_count == 1);
+	r = NMP_OBJECT_CAST_IP6_ROUTE (route);
+	g_assert (r->ifindex == ifindex);
+	nmtst_assert_ip6_address (&r->network, "fd01:abcd::42");
+	g_assert_cmpint (r->plen, ==, 128);
+	nmtst_assert_ip6_address (&r->gateway, "fe80::99");
+
+	nmtstp_run_command_check ("ip -6 route flush dev %s", DEVICE_NAME);
+
+	nmtstp_wait_for_signal (NM_PLATFORM_GET, 50);
 }
 
 static void
@@ -860,7 +899,8 @@ _nmtstp_setup_tests (void)
 
 	if (nmtstp_is_root_test ()) {
 		add_test_func_data ("/route/ip/1", test_ip, GINT_TO_POINTER (1));
-		add_test_func ("/route/ip_route_get", test_ip_route_get);
+		add_test_func ("/route/ip4_route_get", test_ip4_route_get);
+		add_test_func ("/route/ip6_route_get", test_ip6_route_get);
 		add_test_func ("/route/ip4_zero_gateway", test_ip4_zero_gateway);
 	}
 }

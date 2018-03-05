@@ -4437,10 +4437,13 @@ event_valid_msg (NMPlatform *platform, struct nl_msg *msg, gboolean handle_event
 			nm_auto_nmpobj const NMPObject *obj_replace = NULL;
 			gboolean resync_required = FALSE;
 			gboolean only_dirty = FALSE;
+			gboolean is_ipv6;
 
-			if (NM_FLAGS_HAS (obj->ip_route.r_rtm_flags, RTM_F_CLONED)) {
-				/* a cloned route might be a response for RTM_GETROUTE. Check, whether it is. */
-				nm_assert (!nmp_object_is_alive (obj));
+			/* IPv4 routes that are a response to RTM_GETROUTE must have
+			 * the cloned flag while IPv6 routes don't have to. */
+			is_ipv6 = NMP_OBJECT_GET_TYPE (obj) == NMP_OBJECT_TYPE_IP6_ROUTE;
+			if (is_ipv6 || NM_FLAGS_HAS (obj->ip_route.r_rtm_flags, RTM_F_CLONED)) {
+				nm_assert (is_ipv6 || !nmp_object_is_alive (obj));
 				priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 				if (NM_FLAGS_HAS (priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE)) {
 					guint i;
