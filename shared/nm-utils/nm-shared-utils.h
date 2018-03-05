@@ -421,6 +421,23 @@ char *nm_utils_str_utf8safe_unescape_cp (const char *str);
 
 char *nm_utils_str_utf8safe_escape_take (char *str, NMUtilsStrUtf8SafeFlags flags);
 
+static inline void
+nm_g_variant_unref_floating (GVariant *var)
+{
+	/* often a function wants to keep a reference to an input variant.
+	 * It uses g_variant_ref_sink() to either increase the ref-count,
+	 * or take ownership of a possibly floating reference.
+	 *
+	 * If the function doesn't actually want to do anything with the
+	 * input variant, it still must make sure that a passed in floating
+	 * reference is consumed. Hence, this helper which:
+	 *
+	 *   - does nothing if @var is not floating
+	 *   - unrefs (consumes) @var if it is floating. */
+	if (g_variant_is_floating (var))
+		g_variant_unref (var);
+}
+
 /*****************************************************************************/
 
 typedef struct {
