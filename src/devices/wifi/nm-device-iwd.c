@@ -75,6 +75,7 @@ typedef struct {
 	GCancellable *  cancellable;
 	NMDeviceWifiCapabilities capabilities;
 	NMActRequestGetSecretsCallId *wifi_secrets_id;
+	GDBusMethodInvocation *secrets_request;
 	guint           periodic_scan_id;
 	bool            enabled:1;
 	bool            can_scan:1;
@@ -333,7 +334,8 @@ get_ordered_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 		props = g_variant_new ("a{sv}", &builder);
 
 		ap = nm_wifi_ap_new_from_properties (path, props);
-		nm_wifi_ap_set_ssid (ap, (const guint8 *) name, strlen (name));
+		if (name[0] != '\0')
+			nm_wifi_ap_set_ssid (ap, (const guint8 *) name, strlen (name));
 		nm_wifi_ap_set_strength (ap, nm_wifi_utils_level_to_quality (signal / 100));
 		nm_wifi_ap_set_freq (ap, 2417);
 		nm_wifi_ap_set_max_bitrate (ap, 65000);
@@ -387,9 +389,29 @@ send_disconnect (NMDeviceIwd *self)
 }
 
 static void
+wifi_secrets_cancel (NMDeviceIwd *self)
+{
+	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+
+	if (priv->wifi_secrets_id)
+		nm_act_request_cancel_secrets (NULL, priv->wifi_secrets_id);
+	nm_assert (!priv->wifi_secrets_id);
+
+	if (priv->secrets_request) {
+		g_dbus_method_invocation_return_error_literal (priv->secrets_request, NM_DEVICE_ERROR,
+		                                               NM_DEVICE_ERROR_INVALID_CONNECTION,
+		                                               "NM secrets request cancelled");
+		priv->secrets_request = NULL;
+	}
+
+}
+
+static void
 cleanup_association_attempt (NMDeviceIwd *self, gboolean disconnect)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+
+	wifi_secrets_cancel (self);
 
 	set_current_ap (self, NULL, TRUE);
 
@@ -768,17 +790,22 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 {
 	NMDeviceIwd *self = NM_DEVICE_IWD (device);
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	gs_unref_variant GVariant *value = NULL;
 
-	return priv->enabled && priv->dbus_obj;
+	if (!priv->enabled || !priv->dbus_obj)
+		return FALSE;
+
+	value = g_dbus_proxy_get_cached_property (priv->dbus_proxy, "Powered");
+	return g_variant_get_boolean (value);
 }
 
 static gboolean
 get_autoconnect_allowed (NMDevice *device)
 {
-	NMDeviceIwdPrivate *priv;
+	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (NM_DEVICE_IWD (device));
 
-	priv = NM_DEVICE_IWD_GET_PRIVATE (NM_DEVICE_IWD (device));
-	return priv->enabled && priv->dbus_obj && priv->can_connect;
+	return is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE)
+	       && priv->can_connect;
 }
 
 static gboolean
@@ -1020,13 +1047,15 @@ scanning_prohibited (NMDeviceIwd *self, gboolean periodic)
 static void
 wifi_secrets_cb (NMActRequest *req,
                  NMActRequestGetSecretsCallId *call_id,
-                 NMSettingsConnection *connection,
+                 NMSettingsConnection *s_connection,
                  GError *error,
                  gpointer user_data)
 {
 	NMDevice *device = user_data;
 	NMDeviceIwd *self = user_data;
 	NMDeviceIwdPrivate *priv;
+	NMSettingWirelessSecurity *s_wireless_sec;
+	const gchar *psk;
 
 	g_return_if_fail (NM_IS_DEVICE_IWD (self));
 	g_return_if_fail (NM_IS_ACT_REQUEST (req));
@@ -1040,28 +1069,50 @@ wifi_secrets_cb (NMActRequest *req,
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
 
+	g_return_if_fail (priv->secrets_request);
 	g_return_if_fail (req == nm_device_get_act_request (device));
-	g_return_if_fail (nm_device_get_state (device) == NM_DEVICE_STATE_NEED_AUTH);
-	g_return_if_fail (nm_act_request_get_settings_connection (req) == connection);
+	g_return_if_fail (nm_act_request_get_settings_connection (req) == s_connection);
+
+	if (nm_device_get_state (device) != NM_DEVICE_STATE_NEED_AUTH)
+		goto secrets_error;
 
 	if (error) {
 		_LOGW (LOGD_WIFI, "%s", error->message);
+		goto secrets_error;
+	}
 
-		nm_device_state_changed (device,
-		                         NM_DEVICE_STATE_FAILED,
-		                         NM_DEVICE_STATE_REASON_NO_SECRETS);
-	} else
-		nm_device_activate_schedule_stage1_device_prepare (device);
-}
+	s_wireless_sec = nm_connection_get_setting_wireless_security (nm_act_request_get_applied_connection (req));
+	if (!s_wireless_sec)
+		goto secrets_error;
 
-static void
-wifi_secrets_cancel (NMDeviceIwd *self)
-{
-	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	psk = nm_setting_wireless_security_get_psk (s_wireless_sec);
+	if (!psk)
+		goto secrets_error;
 
-	if (priv->wifi_secrets_id)
-		nm_act_request_cancel_secrets (NULL, priv->wifi_secrets_id);
-	nm_assert (!priv->wifi_secrets_id);
+	_LOGD (LOGD_DEVICE | LOGD_WIFI,
+	       "Returning a new PSK to the IWD Agent");
+
+	g_dbus_method_invocation_return_value (priv->secrets_request,
+	                                       g_variant_new ("(s)", psk));
+	priv->secrets_request = NULL;
+
+	/* Change state back to what it was before NEED_AUTH */
+	nm_device_state_changed (device, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_REASON_NONE);
+	return;
+
+secrets_error:
+	if (priv->secrets_request) {
+		g_dbus_method_invocation_return_error_literal (priv->secrets_request, NM_DEVICE_ERROR,
+		                                               NM_DEVICE_ERROR_INVALID_CONNECTION,
+		                                               "NM secrets request failed");
+		priv->secrets_request = NULL;
+	}
+
+	nm_device_state_changed (device,
+	                         NM_DEVICE_STATE_FAILED,
+	                         NM_DEVICE_STATE_REASON_NO_SECRETS);
+
+	cleanup_association_attempt (self, TRUE);
 }
 
 static void
@@ -1084,130 +1135,6 @@ wifi_secrets_get_secrets (NMDeviceIwd *self,
 	                                                    NULL,
 	                                                    wifi_secrets_cb,
 	                                                    self);
-	g_return_if_fail (priv->wifi_secrets_id);
-}
-
-static gboolean
-need_new_8021x_secrets (NMDeviceIwd *self,
-                        const char **setting_name)
-{
-	NMSetting8021x *s_8021x;
-	NMSettingWirelessSecurity *s_wsec;
-	NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
-	NMConnection *connection;
-
-	g_assert (setting_name != NULL);
-
-	connection = nm_device_get_applied_connection (NM_DEVICE (self));
-	g_return_val_if_fail (connection != NULL, FALSE);
-
-	/* If it's an 802.1x or LEAP connection with "always ask"/unsaved secrets
-	 * then we need to ask again because it might be an OTP token and the PIN
-	 * may have changed.
-	 */
-
-	s_8021x = nm_connection_get_setting_802_1x (connection);
-	if (s_8021x) {
-		if (!nm_setting_get_secret_flags (NM_SETTING (s_8021x),
-		                                  NM_SETTING_802_1X_PASSWORD,
-		                                  &secret_flags,
-		                                  NULL))
-			g_assert_not_reached ();
-		if (secret_flags & NM_SETTING_SECRET_FLAG_NOT_SAVED)
-			*setting_name = NM_SETTING_802_1X_SETTING_NAME;
-		return *setting_name ? TRUE : FALSE;
-	}
-
-	s_wsec = nm_connection_get_setting_wireless_security (connection);
-	if (s_wsec) {
-		if (!nm_setting_get_secret_flags (NM_SETTING (s_wsec),
-		                                  NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD,
-		                                  &secret_flags,
-		                                  NULL))
-			g_assert_not_reached ();
-		if (secret_flags & NM_SETTING_SECRET_FLAG_NOT_SAVED)
-			*setting_name = NM_SETTING_WIRELESS_SECURITY_SETTING_NAME;
-		return *setting_name ? TRUE : FALSE;
-	}
-
-	/* Not a LEAP or 802.1x connection */
-	return FALSE;
-}
-
-static gboolean
-need_new_wpa_psk (NMDeviceIwd *self,
-                  const char **setting_name)
-{
-	NMSettingWirelessSecurity *s_wsec;
-	NMConnection *connection;
-	const char *key_mgmt = NULL;
-
-	g_assert (setting_name != NULL);
-
-	connection = nm_device_get_applied_connection (NM_DEVICE (self));
-	g_return_val_if_fail (connection != NULL, FALSE);
-
-	s_wsec = nm_connection_get_setting_wireless_security (connection);
-	if (s_wsec)
-		key_mgmt = nm_setting_wireless_security_get_key_mgmt (s_wsec);
-
-	if (g_strcmp0 (key_mgmt, "wpa-psk") == 0) {
-		/* We don't have any data from IWD about the disconnect
-		 * reason or association state when the disconnect happened
-		 * so just assume it was a bad password.
-		 */
-		*setting_name = NM_SETTING_WIRELESS_SECURITY_SETTING_NAME;
-		return TRUE;
-	}
-
-	/* Not a WPA-PSK connection */
-	return FALSE;
-}
-
-static gboolean
-handle_8021x_or_psk_auth_fail (NMDeviceIwd *self)
-{
-	NMDevice *device = NM_DEVICE (self);
-	NMActRequest *req;
-	const char *setting_name = NULL;
-	gboolean handled = FALSE;
-	NMConnection *connection;
-
-	req = nm_device_get_act_request (device);
-	g_return_val_if_fail (req != NULL, FALSE);
-
-	/* If this is an IWD Known Network, even if the failure was caused by bad secrets,
-	 * IWD won't ask our agent for new secrets until we call ForgetNetwork.  For 8021x
-	 * this is not a good idea since the IWD network config file is assumed to be
-	 * provisioned by the system admin and the admin needs to intervene anyway.  For
-	 * PSK we may want to do this here (TODO).
-	 */
-	connection = nm_act_request_get_applied_connection (req);
-	if (is_connection_known_network (connection)) {
-		_LOGI (LOGD_DEVICE | LOGD_WIFI,
-		       "Activation: (wifi) disconnected during association to an IWD Known Network, giving up");
-
-		return FALSE;
-	}
-
-	if (   need_new_8021x_secrets (self, &setting_name)
-	    || need_new_wpa_psk (self, &setting_name)) {
-		nm_act_request_clear_secrets (req);
-
-		_LOGI (LOGD_DEVICE | LOGD_WIFI,
-		       "Activation: (wifi) disconnected during association, asking for new key");
-
-		cleanup_association_attempt (self, FALSE);
-		nm_device_state_changed (device, NM_DEVICE_STATE_NEED_AUTH,
-		                         NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
-		wifi_secrets_get_secrets (self,
-		                          setting_name,
-		                          NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
-		                            | NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW);
-		handled = TRUE;
-	}
-
-	return handled;
 }
 
 static void
@@ -1235,7 +1162,7 @@ network_connect_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 		       error->message);
 
 		connection = nm_device_get_applied_connection (device);
-		if (!connection || nm_connection_get_setting_wireless_security (connection))
+		if (!connection)
 			goto failed;
 
 		if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_DBUS_ERROR))
@@ -1243,13 +1170,10 @@ network_connect_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 
 		/* If secrets were wrong, we'd be getting a net.connman.iwd.Failed */
 		if (nm_streq0 (dbus_error, "net.connman.iwd.Failed")) {
-			if (handle_8021x_or_psk_auth_fail (self)) {
-				_LOGW (LOGD_DEVICE | LOGD_WIFI, "Activation: (wifi) asking for new secrets");
-			} else {
-				cleanup_association_attempt (self, FALSE);
-				nm_device_state_changed (device, NM_DEVICE_STATE_FAILED,
-				                         NM_DEVICE_STATE_REASON_NO_SECRETS);
-			}
+			nm_connection_clear_secrets (connection);
+
+			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_NO_SECRETS);
 		} else if (   !nm_utils_error_is_cancelled (error, TRUE)
 		           && nm_device_is_activating (device))
 			goto failed;
@@ -1293,34 +1217,18 @@ failed:
 	                       NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
 }
 
-static gboolean
-handle_auth_or_fail (NMDeviceIwd *self,
-                     NMActRequest *req,
-                     gboolean new_secrets)
+static void
+set_powered (NMDeviceIwd *self, gboolean powered)
 {
-	const char *setting_name;
-	NMConnection *applied_connection;
-	NMSecretAgentGetSecretsFlags get_secret_flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
+	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 
-	g_return_val_if_fail (NM_IS_DEVICE_IWD (self), FALSE);
-
-	if (!nm_device_auth_retries_try_next (NM_DEVICE (self)))
-		return FALSE;
-
-	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
-
-	nm_act_request_clear_secrets (req);
-	applied_connection = nm_act_request_get_applied_connection (req);
-	setting_name = nm_connection_need_secrets (applied_connection, NULL);
-	if (!setting_name) {
-		_LOGW (LOGD_DEVICE, "Cleared secrets, but setting didn't need any secrets.");
-		return FALSE;
-	}
-
-	if (new_secrets)
-		get_secret_flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
-	wifi_secrets_get_secrets (self, setting_name, get_secret_flags);
-	return TRUE;
+	g_dbus_proxy_call (priv->dbus_proxy,
+	                   "org.freedesktop.DBus.Properties.Set",
+	                   g_variant_new ("(ssv)", NM_IWD_DEVICE_INTERFACE,
+	                                  "Powered",
+	                                  g_variant_new ("b", powered)),
+	                   G_DBUS_CALL_FLAGS_NONE, 2000,
+	                   NULL, NULL, NULL);
 }
 
 /*****************************************************************************/
@@ -1378,8 +1286,6 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	NMActRequest *req;
 	NMWifiAP *ap;
 	NMConnection *connection;
-	const char *setting_name;
-	NMSettingWireless *s_wireless;
 	GError *error = NULL;
 	GDBusProxy *network_proxy;
 
@@ -1395,40 +1301,19 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	connection = nm_act_request_get_applied_connection (req);
 	g_assert (connection);
 
-	s_wireless = nm_connection_get_setting_wireless (connection);
-	g_assert (s_wireless);
-
-	/* If we need secrets, get them.  If a network is an IWD Known Network the secrets
-	 * will have been stored by IWD and we don't require any secrets here.
+	/* 802.1x networks that are not IWD Known Networks will definitely
+	 * fail, for other combinations we will let the Connect call fail
+	 * or ask us for any missing secrets through the Agent.
 	 */
-	if (!is_connection_known_network (connection))
-		setting_name = nm_connection_need_secrets (connection, NULL);
-	else
-		setting_name = NULL;
-
-	if (setting_name) {
+	if (   !is_connection_known_network (connection)
+	    && nm_connection_get_setting_802_1x (connection)) {
 		_LOGI (LOGD_DEVICE | LOGD_WIFI,
-		       "Activation: (wifi) access point '%s' has security, but secrets are required.",
+		       "Activation: (wifi) access point '%s' has 802.1x security, but is not configured.",
 		       nm_connection_get_id (connection));
 
-		if (handle_auth_or_fail (self, req, FALSE))
-			ret = NM_ACT_STAGE_RETURN_POSTPONE;
-		else {
-			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_NO_SECRETS);
-			ret = NM_ACT_STAGE_RETURN_FAILURE;
-		}
+		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_NO_SECRETS);
+		ret = NM_ACT_STAGE_RETURN_FAILURE;
 		goto out;
-	}
-
-	/* Have secrets or no secrets required */
-	if (nm_connection_get_setting_wireless_security (connection)) {
-		_LOGI (LOGD_DEVICE | LOGD_WIFI,
-		       "Activation: (wifi) connection '%s' has security, and secrets exist.  No new secrets needed.",
-		       nm_connection_get_id (connection));
-	} else {
-		_LOGI (LOGD_DEVICE | LOGD_WIFI,
-		       "Activation: (wifi) connection '%s' requires no security.  No secrets needed.",
-		       nm_connection_get_id (connection));
 	}
 
 	/* Locate the IWD Network object */
@@ -1458,7 +1343,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	 */
 	g_dbus_proxy_call (network_proxy, "Connect",
 	                   g_variant_new ("()"),
-	                   G_DBUS_CALL_FLAGS_NONE, -1,
+	                   G_DBUS_CALL_FLAGS_NONE, G_MAXINT,
 	                   priv->cancellable, network_connect_cb, self);
 
 	g_object_unref (network_proxy);
@@ -1571,7 +1456,6 @@ device_state_changed (NMDevice *device,
 		}
 		break;
 	case NM_DEVICE_STATE_NEED_AUTH:
-		send_disconnect (self);
 		break;
 	case NM_DEVICE_STATE_IP_CHECK:
 		break;
@@ -1614,6 +1498,9 @@ set_enabled (NMDevice *device, gboolean enabled)
 		       enabled ? "enable" : "disable");
 		return;
 	}
+
+	if (priv->dbus_proxy)
+		set_powered (self, enabled);
 
 	if (enabled) {
 		if (state != NM_DEVICE_STATE_UNAVAILABLE)
@@ -1731,8 +1618,7 @@ state_changed (NMDeviceIwd *self, const gchar *new_state)
 	_LOGI (LOGD_DEVICE | LOGD_WIFI, "new IWD device state is %s", new_state);
 
 	if (   dev_state >= NM_DEVICE_STATE_CONFIG
-	    && dev_state <= NM_DEVICE_STATE_ACTIVATED
-	    && dev_state != NM_DEVICE_STATE_NEED_AUTH)
+	    && dev_state <= NM_DEVICE_STATE_ACTIVATED)
 		iwd_connection = TRUE;
 
 	/* Don't allow scanning while connecting, disconnecting or roaming */
@@ -1776,6 +1662,13 @@ state_changed (NMDeviceIwd *self, const gchar *new_state)
 		 */
 		send_disconnect (self);
 
+		/*
+		 * If IWD is still handling the Connect call, let our callback
+		 * for the dbus method handle the failure.
+		 */
+		if (dev_state == NM_DEVICE_STATE_CONFIG)
+			return;
+
 		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_FAILED,
 	                                 NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
@@ -1808,6 +1701,14 @@ scanning_changed (NMDeviceIwd *self, gboolean new_scanning)
 }
 
 static void
+powered_changed (NMDeviceIwd *self, gboolean new_powered)
+{
+	nm_device_queue_recheck_available (NM_DEVICE (self),
+	                                   NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
+	                                   NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
+}
+
+static void
 properties_changed (GDBusProxy *proxy, GVariant *changed_properties,
                     GStrv invalidate_properties, gpointer user_data)
 {
@@ -1823,6 +1724,9 @@ properties_changed (GDBusProxy *proxy, GVariant *changed_properties,
 
 		if (!strcmp (key, "Scanning"))
 			scanning_changed (self, g_variant_get_boolean (value));
+
+		if (!strcmp (key, "Powered"))
+			powered_changed (self, g_variant_get_boolean (value));
 
 		g_variant_unref (value);
 	}
@@ -1874,38 +1778,51 @@ nm_device_iwd_set_dbus_object (NMDeviceIwd *self, GDBusObject *object)
 	g_signal_connect (priv->dbus_proxy, "g-properties-changed",
 	                  G_CALLBACK (properties_changed), self);
 
-	/* Call Disconnect to make sure IWD's autoconnect is disabled.  We've
-	 * most likely just brought the device UP so it would be in
-	 * autoconnect by default.
+	set_powered (self, priv->enabled);
+
+	/* Call Disconnect to make sure IWD's autoconnect is disabled.
+	 * Autoconnect is the default state after device is brought UP.
 	 */
-	send_disconnect (self);
+	if (priv->enabled)
+		send_disconnect (self);
 }
 
-const gchar *
-nm_device_iwd_agent_psk_query (NMDeviceIwd *self)
+gboolean
+nm_device_iwd_agent_psk_query (NMDeviceIwd *self,
+                               GDBusMethodInvocation *invocation)
 {
+	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 	NMActRequest *req;
-	NMConnection *connection;
-	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wireless_sec;
+	const gchar *psk;
 
 	req = nm_device_get_act_request (NM_DEVICE (self));
 	if (!req)
-		return NULL;
+		return FALSE;
 
-	connection = nm_act_request_get_applied_connection (req);
-	if (!connection)
-		return NULL;
-
-	s_wireless = nm_connection_get_setting_wireless (connection);
-	if (!s_wireless)
-		return NULL;
-
-	s_wireless_sec = nm_connection_get_setting_wireless_security (connection);
+	s_wireless_sec = nm_connection_get_setting_wireless_security (nm_act_request_get_applied_connection (req));
 	if (!s_wireless_sec)
-		return NULL;
+		return FALSE;
 
-	return nm_setting_wireless_security_get_psk (s_wireless_sec);
+	psk = nm_setting_wireless_security_get_psk (s_wireless_sec);
+	if (psk) {
+		_LOGD (LOGD_DEVICE | LOGD_WIFI,
+		       "Returning the PSK to the IWD Agent");
+
+		g_dbus_method_invocation_return_value (invocation,
+		                                       g_variant_new ("(s)", psk));
+		return TRUE;
+	}
+
+	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH,
+	                         NM_DEVICE_STATE_REASON_NO_SECRETS);
+	wifi_secrets_get_secrets (self,
+	                          NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	                          NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
+	                            | NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW);
+
+	priv->secrets_request = invocation;
+	return TRUE;
 }
 
 /*****************************************************************************/
@@ -1953,8 +1870,6 @@ dispose (GObject *object)
 	nm_clear_g_cancellable (&priv->cancellable);
 
 	nm_clear_g_source (&priv->periodic_scan_id);
-
-	wifi_secrets_cancel (self);
 
 	cleanup_association_attempt (self, TRUE);
 

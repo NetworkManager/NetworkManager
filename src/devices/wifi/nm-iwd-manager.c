@@ -99,7 +99,6 @@ psk_agent_dbus_method_cb (GDBusConnection *connection,
 	gs_unref_variant GVariant *value = NULL;
 	gint ifindex;
 	NMDevice *device;
-	const gchar *psk;
 
 	/* Be paranoid and check the sender address */
 	if (!nm_streq0 (g_dbus_object_manager_client_get_name_owner (omc), sender))
@@ -120,8 +119,8 @@ psk_agent_dbus_method_cb (GDBusConnection *connection,
 	}
 
 	device_obj = g_dbus_object_manager_get_interface (priv->object_manager,
-	                                              device_path,
-	                                              NM_IWD_DEVICE_INTERFACE);
+	                                                  device_path,
+	                                                  NM_IWD_DEVICE_INTERFACE);
 	g_variant_unref (value);
 	value = g_dbus_proxy_get_cached_property (G_DBUS_PROXY (device_obj), "Name");
 	ifname = g_variant_get_string (value, NULL);
@@ -146,16 +145,10 @@ psk_agent_dbus_method_cb (GDBusConnection *connection,
 		goto return_error;
 	}
 
-	psk = nm_device_iwd_agent_psk_query (NM_DEVICE_IWD (device));
-	if (!psk) {
-		_LOGW ("Device %s had no PSK for the IWD Agent", ifname);
-		goto return_error;
-	}
+	if (nm_device_iwd_agent_psk_query (NM_DEVICE_IWD (device), invocation))
+		return;
 
-	_LOGI ("Sending the PSK to the IWD Agent for device %s", ifname);
-	g_dbus_method_invocation_return_value (invocation,
-	                                       g_variant_new ("(s)", psk));
-	return;
+	_LOGE ("Device %s did not handle the IWD Agent request", ifname);
 
 return_error:
 	/* IWD doesn't look at the specific error */
@@ -488,7 +481,7 @@ name_owner_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 }
 
 static void
-device_added (NMDevice *device, gpointer user_data)
+device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 {
 	NMIwdManager *self = user_data;
 	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
@@ -648,7 +641,7 @@ nm_iwd_manager_init (NMIwdManager *self)
 	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
 
 	priv->nm_manager = g_object_ref (nm_manager_get ());
-	g_signal_connect (priv->nm_manager, "device-added",
+	g_signal_connect (priv->nm_manager, NM_MANAGER_DEVICE_ADDED,
 	                  G_CALLBACK (device_added), self);
 
 	priv->cancellable = g_cancellable_new ();
