@@ -205,6 +205,8 @@ initiate_authentication (PolkitAgentListener  *listener,
 	                                    callback,
 	                                    user_data,
 	                                    initiate_authentication);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 	if (priv->active_session != NULL) {
 		g_simple_async_result_set_error (simple,
 		                                 POLKIT_ERROR,

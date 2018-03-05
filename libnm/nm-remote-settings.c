@@ -320,6 +320,8 @@ nm_remote_settings_add_connection_async (NMRemoteSettings *settings,
 	info->self = settings;
 	info->simple = g_simple_async_result_new (G_OBJECT (settings), callback, user_data,
 	                                          nm_remote_settings_add_connection_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (info->simple, cancellable);
 	info->saved = save_to_disk;
 
 	new_settings = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
@@ -420,6 +422,8 @@ nm_remote_settings_load_connections_async (NMRemoteSettings *settings,
 
 	simple = g_simple_async_result_new (G_OBJECT (settings), callback, user_data,
 	                                    nm_remote_settings_load_connections_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 
 	nmdbus_settings_call_load_connections (priv->proxy,
 	                                       (const char * const *) filenames,
@@ -502,6 +506,8 @@ nm_remote_settings_reload_connections_async (NMRemoteSettings *settings,
 
 	simple = g_simple_async_result_new (G_OBJECT (settings), callback, user_data,
 	                                    nm_remote_settings_reload_connections_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 
 	nmdbus_settings_call_reload_connections (priv->proxy, cancellable,
 	                                         reload_connections_cb, simple);
@@ -579,6 +585,8 @@ nm_remote_settings_save_hostname_async (NMRemoteSettings *settings,
 
 	simple = g_simple_async_result_new (G_OBJECT (settings), callback, user_data,
 	                                    nm_remote_settings_save_hostname_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 
 	nmdbus_settings_call_save_hostname (priv->proxy,
 	                                    hostname ? hostname : "",

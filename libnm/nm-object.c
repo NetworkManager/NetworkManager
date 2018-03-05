@@ -1742,6 +1742,8 @@ init_async (GAsyncInitable *initable, int io_priority,
 	init_data = g_slice_new0 (NMObjectInitData);
 	init_data->object = self;
 	init_data->simple = g_simple_async_result_new (G_OBJECT (initable), callback, user_data, init_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (init_data->simple, cancellable);
 	init_data->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
 
 	_nm_dbus_new_connection_async (cancellable, init_async_got_bus, init_data);
