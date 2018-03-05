@@ -303,6 +303,8 @@ init_async (GAsyncInitable *initable, int io_priority,
 	GSimpleAsyncResult *simple;
 
 	simple = g_simple_async_result_new (G_OBJECT (initable), callback, user_data, init_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 
 	/* Check if NM is running */
 	dbus_g_proxy_begin_call (priv->bus_proxy, "NameHasOwner",

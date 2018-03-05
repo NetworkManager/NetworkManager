@@ -720,6 +720,8 @@ nm_client_check_connectivity_async (NMClient *client,
 
 	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
 	                                    nm_client_check_connectivity_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 	nm_manager_check_connectivity_async (NM_CLIENT_GET_PRIVATE (client)->manager,
 	                                     cancellable, check_connectivity_cb, simple);
 }
@@ -829,6 +831,8 @@ nm_client_save_hostname_async (NMClient *client,
 
 	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
 	                                    nm_client_save_hostname_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 	nm_remote_settings_save_hostname_async (NM_CLIENT_GET_PRIVATE (client)->settings,
 	                                        hostname,
 	                                        cancellable, save_hostname_cb, simple);
@@ -1116,6 +1120,8 @@ nm_client_activate_connection_async (NMClient *client,
 
 	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
 	                                    nm_client_activate_connection_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 	nm_manager_activate_connection_async (NM_CLIENT_GET_PRIVATE (client)->manager,
 	                                      connection, device, specific_object,
 	                                      cancellable, activate_cb, simple);
@@ -1221,6 +1227,8 @@ nm_client_add_and_activate_connection_async (NMClient *client,
 
 	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
 	                                    nm_client_add_and_activate_connection_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 	nm_manager_add_and_activate_connection_async (NM_CLIENT_GET_PRIVATE (client)->manager,
 	                                              partial, device, specific_object,
 	                                              cancellable, add_activate_cb, simple);
@@ -1324,6 +1332,8 @@ nm_client_deactivate_connection_async (NMClient *client,
 
 	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
 	                                    nm_client_deactivate_connection_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 
 	if (!_nm_client_check_nm_running (client, NULL)) {
 		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
@@ -1530,6 +1540,8 @@ nm_client_add_connection_async (NMClient *client,
 
 	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
 	                                    nm_client_add_connection_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 	nm_remote_settings_add_connection_async (NM_CLIENT_GET_PRIVATE (client)->settings,
 	                                         connection, save_to_disk,
 	                                         cancellable, add_connection_cb, simple);
@@ -1655,6 +1667,8 @@ nm_client_load_connections_async (NMClient *client,
 
 	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
 	                                    nm_client_load_connections_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 	nm_remote_settings_load_connections_async (NM_CLIENT_GET_PRIVATE (client)->settings,
 	                                           filenames,
 	                                           cancellable, load_connections_cb, simple);
@@ -1767,6 +1781,8 @@ nm_client_reload_connections_async (NMClient *client,
 
 	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
 	                                    nm_client_reload_connections_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 	nm_remote_settings_reload_connections_async (NM_CLIENT_GET_PRIVATE (client)->settings,
 	                                             cancellable, reload_connections_cb, simple);
 }
@@ -1933,6 +1949,8 @@ nm_client_new_async (GCancellable *cancellable,
 	GSimpleAsyncResult *simple;
 
 	simple = g_simple_async_result_new (NULL, callback, user_data, nm_client_new_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 
 	g_async_initable_new_async (NM_TYPE_CLIENT, G_PRIORITY_DEFAULT,
 	                            cancellable, client_inited, simple,
@@ -2141,6 +2159,8 @@ nm_client_checkpoint_create_async (NMClient *client,
 
 	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
 	                                    nm_client_checkpoint_create_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 	nm_manager_checkpoint_create_async (NM_CLIENT_GET_PRIVATE (client)->manager,
 	                                    devices, rollback_timeout, flags,
 	                                    cancellable, checkpoint_create_cb, simple);
@@ -2224,6 +2244,8 @@ nm_client_checkpoint_destroy_async (NMClient *client,
 
 	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
 	                                    nm_client_checkpoint_destroy_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 	nm_manager_checkpoint_destroy_async (NM_CLIENT_GET_PRIVATE (client)->manager,
 	                                     checkpoint,
 	                                     cancellable, checkpoint_destroy_cb, simple);
@@ -2309,6 +2331,8 @@ nm_client_checkpoint_rollback_async (NMClient *client,
 
 	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
 	                                    nm_client_checkpoint_rollback_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 	nm_manager_checkpoint_rollback_async (NM_CLIENT_GET_PRIVATE (client)->manager,
 	                                      checkpoint,
 	                                      cancellable, checkpoint_rollback_cb, simple);
@@ -2856,6 +2880,8 @@ prepare_object_manager (NMClient *client,
 	init_data->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
 	init_data->result = g_simple_async_result_new (G_OBJECT (client), callback,
 	                                               user_data, init_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (init_data->result, cancellable);
 	g_simple_async_result_set_op_res_gboolean (init_data->result, TRUE);
 
 	g_dbus_object_manager_client_new_for_bus (_nm_dbus_bus_type (),
