@@ -101,11 +101,18 @@ nm_device_veth_init (NMDeviceVeth *self)
 }
 
 static void
-notify (GObject *object, GParamSpec *pspec)
+parent_changed_notify (NMDevice *device,
+                       int old_ifindex,
+                       NMDevice *old_parent,
+                       int new_ifindex,
+                       NMDevice *new_parent)
 {
-	if (nm_streq (pspec->name, NM_DEVICE_PARENT))
-		_notify (NM_DEVICE_VETH (object), PROP_PEER);
-	G_OBJECT_CLASS (nm_device_veth_parent_class)->notify (object, pspec);
+	NM_DEVICE_CLASS (nm_device_veth_parent_class)->parent_changed_notify (device,
+	                                                                      old_ifindex,
+	                                                                      old_parent,
+	                                                                      new_ifindex,
+	                                                                      new_parent);
+	_notify (NM_DEVICE_VETH (device), PROP_PEER);
 }
 
 static void
@@ -137,10 +144,10 @@ nm_device_veth_class_init (NMDeviceVethClass *klass)
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NULL, NM_LINK_TYPE_VETH)
 
 	object_class->get_property = get_property;
-	object_class->notify = notify;
 
 	device_class->can_unmanaged_external_down = can_unmanaged_external_down;
 	device_class->link_changed = link_changed;
+	device_class->parent_changed_notify = parent_changed_notify;
 
 	obj_properties[PROP_PEER] =
 	    g_param_spec_string (NM_DEVICE_VETH_PEER, "", "",
