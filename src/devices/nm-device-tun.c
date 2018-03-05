@@ -99,18 +99,19 @@ update_properties (NMDeviceTun *self)
 
 	g_object_freeze_notify (object);
 
-	if (priv->props.owner != props.owner)
-		_notify (self, PROP_OWNER);
-	if (priv->props.group != props.group)
-		_notify (self, PROP_GROUP);
-	if (priv->props.no_pi != props.no_pi)
-		_notify (self, PROP_NO_PI);
-	if (priv->props.vnet_hdr != props.vnet_hdr)
-		_notify (self, PROP_VNET_HDR);
-	if (priv->props.multi_queue != props.multi_queue)
-		_notify (self, PROP_MULTI_QUEUE);
+#define CHECK_PROPERTY_CHANGED(field, prop) \
+	G_STMT_START { \
+		if (priv->props.field != props.field) { \
+			priv->props.field = props.field; \
+			_notify (self, prop); \
+		} \
+	} G_STMT_END
 
-	memcpy (&priv->props, &props, sizeof (NMPlatformTunProperties));
+	CHECK_PROPERTY_CHANGED (owner, PROP_OWNER);
+	CHECK_PROPERTY_CHANGED (group, PROP_GROUP);
+	CHECK_PROPERTY_CHANGED (no_pi, PROP_NO_PI);
+	CHECK_PROPERTY_CHANGED (vnet_hdr, PROP_VNET_HDR);
+	CHECK_PROPERTY_CHANGED (multi_queue, PROP_MULTI_QUEUE);
 
 	g_object_thaw_notify (object);
 }

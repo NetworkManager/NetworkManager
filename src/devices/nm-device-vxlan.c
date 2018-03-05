@@ -97,42 +97,40 @@ update_properties (NMDevice *device)
 
 	if (priv->props.parent_ifindex != props->parent_ifindex)
 		nm_device_parent_set_ifindex (device, props->parent_ifindex);
-	if (priv->props.id != props->id)
-		_notify (self, PROP_ID);
-	if (priv->props.local != props->local)
-		_notify (self, PROP_LOCAL);
-	if (memcmp (&priv->props.local6, &props->local6, sizeof (props->local6)) != 0)
-		_notify (self, PROP_LOCAL);
-	if (priv->props.group != props->group)
-		_notify (self, PROP_GROUP);
-	if (memcmp (&priv->props.group6, &props->group6, sizeof (props->group6)) != 0)
-		_notify (self, PROP_GROUP);
-	if (priv->props.tos != props->tos)
-		_notify (self, PROP_TOS);
-	if (priv->props.ttl != props->ttl)
-		_notify (self, PROP_TTL);
-	if (priv->props.learning != props->learning)
-		_notify (self, PROP_LEARNING);
-	if (priv->props.ageing != props->ageing)
-		_notify (self, PROP_AGEING);
-	if (priv->props.limit != props->limit)
-		_notify (self, PROP_LIMIT);
-	if (priv->props.src_port_min != props->src_port_min)
-		_notify (self, PROP_SRC_PORT_MIN);
-	if (priv->props.src_port_max != props->src_port_max)
-		_notify (self, PROP_SRC_PORT_MAX);
-	if (priv->props.dst_port != props->dst_port)
-		_notify (self, PROP_DST_PORT);
-	if (priv->props.proxy != props->proxy)
-		_notify (self, PROP_PROXY);
-	if (priv->props.rsc != props->rsc)
-		_notify (self, PROP_RSC);
-	if (priv->props.l2miss != props->l2miss)
-		_notify (self, PROP_L2MISS);
-	if (priv->props.l3miss != props->l3miss)
-		_notify (self, PROP_L3MISS);
 
-	priv->props = *props;
+#define CHECK_PROPERTY_CHANGED(field, prop) \
+	G_STMT_START { \
+		if (priv->props.field != props->field) { \
+			priv->props.field = props->field; \
+			_notify (self, prop); \
+		} \
+	} G_STMT_END
+
+#define CHECK_PROPERTY_CHANGED_IN6ADDR(field, prop) \
+	G_STMT_START { \
+		if (memcmp (&priv->props.field, &props->field, sizeof (props->field)) != 0) { \
+			priv->props.field = props->field; \
+			_notify (self, prop); \
+		} \
+	} G_STMT_END
+
+	CHECK_PROPERTY_CHANGED (id, PROP_ID);
+	CHECK_PROPERTY_CHANGED (local, PROP_LOCAL);
+	CHECK_PROPERTY_CHANGED_IN6ADDR (local6, PROP_LOCAL);
+	CHECK_PROPERTY_CHANGED (group, PROP_GROUP);
+	CHECK_PROPERTY_CHANGED_IN6ADDR (group6, PROP_GROUP);
+	CHECK_PROPERTY_CHANGED (tos, PROP_TOS);
+	CHECK_PROPERTY_CHANGED (ttl, PROP_TTL);
+	CHECK_PROPERTY_CHANGED (learning, PROP_LEARNING);
+	CHECK_PROPERTY_CHANGED (ageing, PROP_AGEING);
+	CHECK_PROPERTY_CHANGED (limit, PROP_LIMIT);
+	CHECK_PROPERTY_CHANGED (src_port_min, PROP_SRC_PORT_MIN);
+	CHECK_PROPERTY_CHANGED (src_port_max, PROP_SRC_PORT_MAX);
+	CHECK_PROPERTY_CHANGED (dst_port, PROP_DST_PORT);
+	CHECK_PROPERTY_CHANGED (proxy, PROP_PROXY);
+	CHECK_PROPERTY_CHANGED (rsc, PROP_RSC);
+	CHECK_PROPERTY_CHANGED (l2miss, PROP_L2MISS);
+	CHECK_PROPERTY_CHANGED (l3miss, PROP_L3MISS);
 
 	g_object_thaw_notify (object);
 }

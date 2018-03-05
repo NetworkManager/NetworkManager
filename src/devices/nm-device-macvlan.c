@@ -197,12 +197,17 @@ update_properties (NMDevice *device)
 	g_object_freeze_notify (object);
 
 	nm_device_parent_set_ifindex (device, plink->parent);
-	if (priv->props.mode != props->mode)
-		_notify (self, PROP_MODE);
-	if (priv->props.no_promisc != props->no_promisc)
-		_notify (self, PROP_NO_PROMISC);
 
-	priv->props = *props;
+#define CHECK_PROPERTY_CHANGED(field, prop) \
+	G_STMT_START { \
+		if (priv->props.field != props->field) { \
+			priv->props.field = props->field; \
+			_notify (self, prop); \
+		} \
+	} G_STMT_END
+
+	CHECK_PROPERTY_CHANGED (mode, PROP_MODE);
+	CHECK_PROPERTY_CHANGED (no_promisc, PROP_NO_PROMISC);
 
 	g_object_thaw_notify (object);
 }

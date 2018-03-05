@@ -186,8 +186,12 @@ update_properties (NMDevice *device)
 		nm_device_parent_set_ifindex (device, props->parent_ifindex);
 
 #define CHECK_PROPERTY_CHANGED(field, prop) \
-	if (props->field != priv->props.field) \
-		_notify (self, prop)
+	G_STMT_START { \
+		if (priv->props.field != props->field) { \
+			priv->props.field = props->field; \
+			_notify (self, prop); \
+		} \
+	} G_STMT_END
 
 	CHECK_PROPERTY_CHANGED (sci, PROP_SCI);
 	CHECK_PROPERTY_CHANGED (cipher_suite, PROP_CIPHER_SUITE);
@@ -202,7 +206,6 @@ update_properties (NMDevice *device)
 	CHECK_PROPERTY_CHANGED (scb, PROP_SCB);
 	CHECK_PROPERTY_CHANGED (replay_protect, PROP_REPLAY_PROTECT);
 
-	priv->props = *props;
 	g_object_thaw_notify ((GObject *) device);
 }
 
