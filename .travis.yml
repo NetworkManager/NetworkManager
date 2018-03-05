@@ -61,7 +61,18 @@ before_install:
               ./configure.py --bootstrap &&
               sudo cp ninja /usr/bin/ &&
           popd
-          sudo pip3 install meson
+
+          # Recent meson requires python 3.5, which isn't in Ubuntu 14.04.
+          # Hence we cannot install it via `pip3 install meson`. Install the latest
+          # working release.
+          #
+          # Wouldn't it be nice to have a build system that supports everything
+          # that NetworkManager would like to support?
+          wget https://github.com/mesonbuild/meson/releases/download/0.44.1/meson-0.44.1.tar.gz -O /tmp/meson.tar.gz
+          tar -C /tmp -xvzf /tmp/meson.tar.gz
+          pushd /tmp/meson-0.44.1
+              sudo python3 setup.py install
+          popd
       fi
     - sudo chmod o+x /usr/sbin/pppd
 
