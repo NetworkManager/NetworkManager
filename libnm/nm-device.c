@@ -1993,6 +1993,8 @@ nm_device_reapply_async (NMDevice *device,
 
 	simple = g_simple_async_result_new (G_OBJECT (device), callback, user_data,
 	                                    nm_device_reapply_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 
 	nmdbus_device_call_reapply (NM_DEVICE_GET_PRIVATE (device)->proxy,
 	                            dict, version_id, flags, cancellable,
@@ -2156,6 +2158,8 @@ nm_device_get_applied_connection_async  (NMDevice *device,
 
 	simple = g_simple_async_result_new (G_OBJECT (device), callback, user_data,
 	                                    nm_device_get_applied_connection_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 
 	nmdbus_device_call_get_applied_connection (NM_DEVICE_GET_PRIVATE (device)->proxy,
 	                                           flags, cancellable,
@@ -2277,6 +2281,8 @@ nm_device_disconnect_async (NMDevice *device,
 
 	simple = g_simple_async_result_new (G_OBJECT (device), callback, user_data,
 	                                    nm_device_disconnect_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 
 	nmdbus_device_call_disconnect (NM_DEVICE_GET_PRIVATE (device)->proxy,
 	                               cancellable,
@@ -2378,6 +2384,8 @@ nm_device_delete_async (NMDevice *device,
 
 	simple = g_simple_async_result_new (G_OBJECT (device), callback, user_data,
 	                                    nm_device_delete_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 
 	nmdbus_device_call_delete (NM_DEVICE_GET_PRIVATE (device)->proxy,
 	                           cancellable,

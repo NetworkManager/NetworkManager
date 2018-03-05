@@ -635,6 +635,8 @@ nm_manager_check_connectivity_async (NMManager *manager,
 
 	simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
 	                                    nm_manager_check_connectivity_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 	nmdbus_manager_call_check_connectivity (priv->proxy,
 	                                        cancellable,
 	                                        check_connectivity_cb, simple);
@@ -919,6 +921,8 @@ nm_manager_activate_connection_async (NMManager *manager,
 	info->manager = manager;
 	info->simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
 	                                          nm_manager_activate_connection_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (info->simple, cancellable);
 	info->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
 
 	priv = NM_MANAGER_GET_PRIVATE (manager);
@@ -995,6 +999,8 @@ nm_manager_add_and_activate_connection_async (NMManager *manager,
 	info->manager = manager;
 	info->simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
 	                                          nm_manager_add_and_activate_connection_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (info->simple, cancellable);
 	info->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
 
 	priv = NM_MANAGER_GET_PRIVATE (manager);
@@ -1128,6 +1134,8 @@ nm_manager_deactivate_connection_async (NMManager *manager,
 
 	simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
 	                                    nm_manager_deactivate_connection_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
 
 	path = nm_object_get_path (NM_OBJECT (active));
 	nmdbus_manager_call_deactivate_connection (NM_MANAGER_GET_PRIVATE (manager)->proxy,
@@ -1265,6 +1273,8 @@ init_async (GAsyncInitable *initable, int io_priority,
 	init_data->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
 	init_data->result = g_simple_async_result_new (G_OBJECT (initable), callback,
 	                                               user_data, init_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (init_data->result, cancellable);
 	g_simple_async_result_set_op_res_gboolean (init_data->result, TRUE);
 
 	nm_manager_parent_async_initable_iface->init_async (initable, io_priority, cancellable,
