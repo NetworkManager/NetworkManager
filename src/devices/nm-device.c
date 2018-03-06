@@ -12363,10 +12363,27 @@ nm_device_update_metered (NMDevice *self)
 			value = NM_METERED_GUESS_YES;
 	}
 
-	/* Otherwise look at connection type */
+	/* Otherwise look at connection type. For Bluetooth, we look at the type of
+	 * Bluetooth sharing: for PANU/DUN (where we are receiving internet from
+	 * another device) we set GUESS_YES; for NAP (where we are sharing internet
+	 * to another device) we set GUESS_NO. We ignore WiMAX here as it’s no
+	 * longer supported by NetworkManager. */
+	if (value == NM_METERED_INVALID &&
+	    nm_connection_is_type (connection, NM_SETTING_BLUETOOTH_SETTING_NAME)) {
+		NMSettingBluetooth *bt = nm_connection_get_setting_bluetooth (connection);
+		const gchar *bt_type = (bt != NULL) ? nm_setting_bluetooth_get_connection_type (bt) : NULL;
+
+		if (   nm_streq0 (bt_type, NM_SETTING_BLUETOOTH_TYPE_PANU)
+		    || nm_streq0 (bt_type, NM_SETTING_BLUETOOTH_TYPE_DUN))
+			value = NM_METERED_GUESS_YES;
+		else
+			value = NM_METERED_GUESS_NO;
+	}
+
 	if (value == NM_METERED_INVALID) {
 		if (   nm_connection_is_type (connection, NM_SETTING_GSM_SETTING_NAME)
-		    || nm_connection_is_type (connection, NM_SETTING_CDMA_SETTING_NAME))
+		    || nm_connection_is_type (connection, NM_SETTING_CDMA_SETTING_NAME)
+		    || nm_connection_is_type (connection, NM_SETTING_BLUETOOTH_SETTING_NAME))
 			value = NM_METERED_GUESS_YES;
 		else
 			value = NM_METERED_GUESS_NO;
