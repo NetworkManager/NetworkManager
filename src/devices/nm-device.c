@@ -530,8 +530,8 @@ static gboolean nm_device_master_add_slave (NMDevice *self, NMDevice *slave, gbo
 static void nm_device_slave_notify_enslave (NMDevice *self, gboolean success);
 static void nm_device_slave_notify_release (NMDevice *self, NMDeviceStateReason reason);
 
-static gboolean addrconf6_start_with_link_ready (NMDevice *self);
-static NMActStageReturn linklocal6_start (NMDevice *self);
+static void addrconf6_start_with_link_ready (NMDevice *self);
+static gboolean linklocal6_start (NMDevice *self);
 
 static void _carrier_wait_check_queued_act_request (NMDevice *self);
 static gint64 _get_carrier_wait_ms (NMDevice *self);
@@ -7272,17 +7272,12 @@ dhcp6_start (NMDevice *self, gboolean wait_for_ll)
 		nm_device_add_pending_action (self, NM_PENDING_ACTION_DHCP6, TRUE);
 
 	if (wait_for_ll) {
-		NMActStageReturn ret;
-
 		/* ensure link local is ready... */
-		ret = linklocal6_start (self);
-		if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {
-			/* success; wait for the LL address to show up */
+		if (!linklocal6_start (self)) {
+			/* wait for the LL address to show up */
 			return TRUE;
 		}
-
-		/* success; already have the LL address; kick off DHCP */
-		g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
+		/* already have the LL address; kick off DHCP */
 	}
 
 	if (!dhcp6_start_with_link_ready (self, connection))
@@ -7440,12 +7435,9 @@ linklocal6_complete (NMDevice *self)
 	_LOGD (LOGD_DEVICE, "linklocal6: waiting for link-local addresses successful, continue with method %s", method);
 
 	if (   strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0
-	    || strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_SHARED) == 0) {
-		if (!addrconf6_start_with_link_ready (self)) {
-			/* Time out IPv6 instead of failing the entire activation */
-			nm_device_activate_schedule_ip6_config_timeout (self);
-		}
-	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0) {
+	    || strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_SHARED) == 0)
+		addrconf6_start_with_link_ready (self);
+	else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0) {
 		if (!dhcp6_start_with_link_ready (self, connection)) {
 			/* Time out IPv6 instead of failing the entire activation */
 			nm_device_activate_schedule_ip6_config_timeout (self);
@@ -7541,7 +7533,7 @@ check_and_add_ipv6ll_addr (NMDevice *self)
 	}
 }
 
-static NMActStageReturn
+static gboolean
 linklocal6_start (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -7552,7 +7544,7 @@ linklocal6_start (NMDevice *self)
 
 	if (   priv->ext_ip6_config_captured
 	    && nm_ip6_config_get_address_first_nontentative (priv->ext_ip6_config_captured, TRUE))
-		return NM_ACT_STAGE_RETURN_SUCCESS;
+		return TRUE;
 
 	connection = nm_device_get_applied_connection (self);
 	g_assert (connection);
@@ -7568,8 +7560,7 @@ linklocal6_start (NMDevice *self)
 	 * (rh #1101809)
 	 */
 	priv->linklocal6_timeout_id = g_timeout_add_seconds (15, linklocal6_timeout_cb, self);
-
-	return NM_ACT_STAGE_RETURN_POSTPONE;
+	return FALSE;
 }
 
 /*****************************************************************************/
@@ -7958,7 +7949,7 @@ ndisc_ra_timeout (NMNDisc *ndisc, NMDevice *self)
 	}
 }
 
-static gboolean
+static void
 addrconf6_start_with_link_ready (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -8012,7 +8003,7 @@ addrconf6_start_with_link_ready (NMDevice *self)
 
 	ndisc_set_router_config (priv->ndisc, self);
 	nm_ndisc_start (priv->ndisc);
-	return TRUE;
+	return;
 }
 
 static NMNDiscNodeType
@@ -8035,7 +8026,6 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
-	NMActStageReturn ret;
 	NMSettingIP6Config *s_ip6 = NULL;
 	GError *error = NULL;
 	NMUtilsStableType stable_type;
@@ -8082,15 +8072,14 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 		nm_device_add_pending_action (self, NM_PENDING_ACTION_AUTOCONF6, TRUE);
 
 	/* ensure link local is ready... */
-	ret = linklocal6_start (self);
-	if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {
-		/* success; wait for the LL address to show up */
+	if (!linklocal6_start (self)) {
+		/* wait for the LL address to show up */
 		return TRUE;
 	}
 
-	/* success; already have the LL address; kick off neighbor discovery */
-	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
-	return addrconf6_start_with_link_ready (self);
+	/* already have the LL address; kick off neighbor discovery */
+	addrconf6_start_with_link_ready (self);
+	return TRUE;
 }
 
 static void
@@ -8383,7 +8372,9 @@ act_stage3_ip6_config_start (NMDevice *self,
 		} else
 			ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0) {
-		ret = linklocal6_start (self);
+		ret = linklocal6_start (self)
+		      ? NM_ACT_STAGE_RETURN_SUCCESS
+		      : NM_ACT_STAGE_RETURN_POSTPONE;
 	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_DHCP) == 0) {
 		priv->dhcp6.mode = NM_NDISC_DHCP_LEVEL_MANAGED;
 		if (!dhcp6_start (self, TRUE)) {
