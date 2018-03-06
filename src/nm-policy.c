@@ -1758,10 +1758,16 @@ device_state_changed (NMDevice *device,
 				 * been consulted, and it may be able to provide the secrets.
 				 *
 				 * We detect this by using a version-id of the agent-manager, which increments
-				 * whenever new agents register. */
+				 * whenever new agents register. Note that the agent-manager's version-id is
+				 * never zero and strictly increasing.
+				 *
+				 * A connection's version-id of zero means that the connection never tried to request secrets.
+				 * That can happen when nm_settings_connection_get_secrets() fails early without actually
+				 * consulting any agents.
+				 */
 				con_v = nm_settings_connection_get_last_secret_agent_version_id (connection);
 				if (   con_v == 0
-				    || con_v != nm_agent_manager_get_agent_version_id (priv->agent_mgr))
+				    || con_v == nm_agent_manager_get_agent_version_id (priv->agent_mgr))
 					block_no_secrets = TRUE;
 			}
 
