@@ -7401,17 +7401,11 @@ nm_device_copy_ip6_dns_config (NMDevice *self, NMDevice *from_device)
 /*****************************************************************************/
 
 static void
-linklocal6_cleanup (NMDevice *self)
+linklocal6_failed (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	nm_clear_g_source (&priv->linklocal6_timeout_id);
-}
-
-static void
-linklocal6_failed (NMDevice *self)
-{
-	linklocal6_cleanup (self);
 	nm_device_activate_schedule_ip6_config_timeout (self);
 }
 
@@ -7432,11 +7426,11 @@ linklocal6_complete (NMDevice *self)
 	NMConnection *connection;
 	const char *method;
 
-	g_assert (priv->linklocal6_timeout_id);
-	g_assert (priv->ext_ip6_config_captured);
-	g_assert (nm_ip6_config_get_address_first_nontentative (priv->ext_ip6_config_captured, TRUE));
+	nm_assert (priv->linklocal6_timeout_id);
+	nm_assert (priv->ext_ip6_config_captured);
+	nm_assert (nm_ip6_config_get_address_first_nontentative (priv->ext_ip6_config_captured, TRUE));
 
-	linklocal6_cleanup (self);
+	nm_clear_g_source (&priv->linklocal6_timeout_id);
 
 	connection = nm_device_get_applied_connection (self);
 	g_assert (connection);
@@ -7554,7 +7548,7 @@ linklocal6_start (NMDevice *self)
 	NMConnection *connection;
 	const char *method;
 
-	linklocal6_cleanup (self);
+	nm_clear_g_source (&priv->linklocal6_timeout_id);
 
 	if (   priv->ext_ip6_config_captured
 	    && nm_ip6_config_get_address_first_nontentative (priv->ext_ip6_config_captured, TRUE))
@@ -9402,7 +9396,7 @@ _cleanup_ip6_pre (NMDevice *self, CleanupType cleanup_type)
 
 	g_clear_object (&priv->dad6_ip6_config);
 	dhcp6_cleanup (self, cleanup_type, FALSE);
-	linklocal6_cleanup (self);
+	nm_clear_g_source (&priv->linklocal6_timeout_id);
 	addrconf6_cleanup (self);
 }
 
