@@ -576,6 +576,8 @@ get_duid (NMDhcpClient *self)
 
 gboolean
 nm_dhcp_client_start_ip6 (NMDhcpClient *self,
+                          GBytes *client_id,
+                          NMDhcpDuidEnforce enforce_duid,
                           const char *dhcp_anycast_addr,
                           const struct in6_addr *ll_addr,
                           const char *hostname,
@@ -593,10 +595,23 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 	g_return_val_if_fail (priv->uuid != NULL, FALSE);
 
 	nm_assert (!priv->duid);
-	/* Read the default DUID for this DHCPv6 client from the
-	 * client-specific persistent configuration.
-	 */
-	priv->duid = NM_DHCP_CLIENT_GET_CLASS (self)->get_duid (self);
+
+	switch (enforce_duid) {
+	case NM_DHCP_DUID_ENFORCE_NEVER:
+	case NM_DHCP_DUID_ENFORCE_LEASE_FALLBACK:
+		priv->duid = NM_DHCP_CLIENT_GET_CLASS (self)->get_duid (self);
+		if (priv->duid)
+			break;
+		/* fall through */
+	case NM_DHCP_DUID_ENFORCE_ALWAYS:
+		if (client_id) {
+			priv->duid = g_bytes_ref (client_id);
+			break;
+		}
+		/* fall through */
+	default:
+		nm_assert_not_reached ();
+	}
 
 	_LOGD ("DUID is '%s'", (str = nm_dhcp_utils_duid_to_string (priv->duid)));
 

@@ -2896,7 +2896,7 @@ nm_utils_secret_key_get (const guint8 **out_secret_key,
 	return secret_key->is_good;
 }
 
-guint64
+gint64
 nm_utils_secret_key_get_timestamp (void)
 {
 	struct stat stat_buf;

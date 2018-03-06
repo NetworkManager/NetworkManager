@@ -45,6 +45,8 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_IP6_CONFIG_TOKEN "token"
 
+#define NM_SETTING_IP6_CONFIG_DHCP_DUID "dhcp-duid"
+
 /**
  * NM_SETTING_IP6_CONFIG_METHOD_IGNORE:
  *
@@ -162,6 +164,8 @@ NM_AVAILABLE_IN_1_2
 NMSettingIP6ConfigAddrGenMode nm_setting_ip6_config_get_addr_gen_mode (NMSettingIP6Config *setting);
 NM_AVAILABLE_IN_1_4
 const char *nm_setting_ip6_config_get_token (NMSettingIP6Config *setting);
+NM_AVAILABLE_IN_1_12
+const char *nm_setting_ip6_config_get_dhcp_duid (NMSettingIP6Config *setting);
 
 G_END_DECLS
 

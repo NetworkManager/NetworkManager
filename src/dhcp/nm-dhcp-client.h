@@ -23,6 +23,7 @@
 #include "nm-setting-ip6-config.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
+#include "nm-dhcp-utils.h"
 
 #define NM_DHCP_TIMEOUT_DEFAULT ((guint32) 45) /* default DHCP timeout, in seconds */
 #define NM_DHCP_TIMEOUT_INFINITY G_MAXINT32
@@ -149,6 +150,8 @@ gboolean nm_dhcp_client_start_ip4 (NMDhcpClient *self,
                                    const char *last_ip4_address);
 
 gboolean nm_dhcp_client_start_ip6 (NMDhcpClient *self,
+                                   GBytes *client_id,
+                                   NMDhcpDuidEnforce enforce_duid,
                                    const char *dhcp_anycast_addr,
                                    const struct in6_addr *ll_addr,
                                    const char *hostname,

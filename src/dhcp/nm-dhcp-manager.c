@@ -164,6 +164,7 @@ client_start (NMDhcpManager *self,
               guint32 route_metric,
               const struct in6_addr *ipv6_ll_addr,
               GBytes *dhcp_client_id,
+              NMDhcpDuidEnforce enforce_duid,
               guint32 timeout,
               const char *dhcp_anycast_addr,
               const char *hostname,
@@ -218,7 +219,7 @@ client_start (NMDhcpManager *self,
 	if (addr_family == AF_INET)
 		success = nm_dhcp_client_start_ip4 (client, dhcp_client_id, dhcp_anycast_addr, hostname, last_ip4_address);
 	else
-		success = nm_dhcp_client_start_ip6 (client, dhcp_anycast_addr, ipv6_ll_addr, hostname, privacy, needed_prefixes);
+		success = nm_dhcp_client_start_ip6 (client, dhcp_client_id, enforce_duid, dhcp_anycast_addr, ipv6_ll_addr, hostname, privacy, needed_prefixes);
 
 	if (!success) {
 		remove_client_unref (self, client);
@@ -280,7 +281,7 @@ nm_dhcp_manager_start_ip4 (NMDhcpManager *self,
 
 	return client_start (self, AF_INET, multi_idx, iface, ifindex, hwaddr, uuid,
 	                     route_table, route_metric, NULL,
-	                     dhcp_client_id, timeout, dhcp_anycast_addr, hostname,
+	                     dhcp_client_id, 0, timeout, dhcp_anycast_addr, hostname,
 	                     use_fqdn, FALSE, 0, last_ip_address, 0);
 }
 
@@ -297,6 +298,8 @@ nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
                            guint32 route_metric,
                            gboolean send_hostname,
                            const char *dhcp_hostname,
+                           GBytes *duid,
+                           NMDhcpDuidEnforce enforce_duid,
                            guint32 timeout,
                            const char *dhcp_anycast_addr,
                            gboolean info_only,
@@ -314,8 +317,8 @@ nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
 		hostname = dhcp_hostname ?: priv->default_hostname;
 	}
 	return client_start (self, AF_INET6, multi_idx, iface, ifindex, hwaddr, uuid,
-	                     route_table, route_metric, ll_addr,
-	                     NULL, timeout, dhcp_anycast_addr, hostname, TRUE, info_only,
+	                     route_table, route_metric, ll_addr, duid, enforce_duid,
+	                     timeout, dhcp_anycast_addr, hostname, TRUE, info_only,
 	                     privacy, NULL, needed_prefixes);
 }
 

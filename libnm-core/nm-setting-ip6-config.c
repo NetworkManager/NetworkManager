@@ -28,6 +28,7 @@
 
 #include "nm-setting-private.h"
 #include "nm-core-enum-types.h"
+#include "nm-core-internal.h"
 
 /**
  * SECTION:nm-setting-ip6-config
@@ -61,6 +62,7 @@ typedef struct {
 	NMSettingIP6ConfigPrivacy ip6_privacy;
 	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
 	char *token;
+	char *dhcp_duid;
 } NMSettingIP6ConfigPrivate;
 
 enum {
@@ -68,6 +70,7 @@ enum {
 	PROP_IP6_PRIVACY,
 	PROP_ADDR_GEN_MODE,
 	PROP_TOKEN,
+	PROP_DHCP_DUID,
 
 	LAST_PROP
 };
@@ -139,6 +142,26 @@ nm_setting_ip6_config_get_token (NMSettingIP6Config *setting)
 	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), NULL);
 
 	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->token;
+}
+
+/**
+ * nm_setting_ip6_config_get_dhcp_duid:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Returns the value contained in the #NMSettingIP6Config:dhcp-duid
+ * property.
+ *
+ * Returns: The configured DUID value to be included in the DHCPv6 requests
+ * sent to the DHCPv6 servers.
+ *
+ * Since: 1.12
+ **/
+const char *
+nm_setting_ip6_config_get_dhcp_duid (NMSettingIP6Config *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), NULL);
+
+	return NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting)->dhcp_duid;
 }
 
 static gboolean
@@ -250,6 +273,17 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 			                      _("only makes sense with EUI64 address generation mode"));
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_TOKEN);
+			return FALSE;
+		}
+	}
+
+	if (priv->dhcp_duid) {
+		if (!_nm_utils_dhcp_duid_valid (priv->dhcp_duid, NULL)) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("invalid DUID"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_DHCP_DUID);
 			return FALSE;
 		}
 	}
@@ -467,6 +501,10 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->token);
 		priv->token = g_value_dup_string (value);
 		break;
+	case PROP_DHCP_DUID:
+		g_free (priv->dhcp_duid);
+		priv->dhcp_duid = g_value_dup_string (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -489,6 +527,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_TOKEN:
 		g_value_set_string (value, priv->token);
 		break;
+	case PROP_DHCP_DUID:
+		g_value_set_string (value, priv->dhcp_duid);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -502,6 +543,7 @@ finalize (GObject *object)
 	NMSettingIP6ConfigPrivate *priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (self);
 
 	g_free (priv->token);
+	g_free (priv->dhcp_duid);
 
 	G_OBJECT_CLASS (nm_setting_ip6_config_parent_class)->finalize (object);
 }
@@ -788,6 +830,47 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 		                      NULL,
 		                      G_PARAM_READWRITE |
 		                      NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingIP6Config:dhcp-duid:
+	 *
+	 * A string containing the DHCPv6 Unique Identifier (DUID) used by the dhcp
+	 * client to identify itself to DHCPv6 servers (RFC 3315). The DUID is carried
+	 * in the Client Identifier option.
+	 * If the property is a hex string ('aa:bb:cc') it is interpreted as a binary
+	 * DUID and filled as an opaque value in the Client Identifier option.
+	 *
+	 * The special value "lease" will retrieve the DUID previously used from the
+	 * lease file belonging to the connection. If no DUID is found and "dhclient"
+	 * is the configured dhcp client, the DUID is searched in the system-wide
+	 * dhclient lease file. If still no DUID is found, or another dhcp client is
+	 * used, a global and permanent DUID-UUID (RFC 6355) will be generated based
+	 * on the machine-id.
+	 *
+	 * The special values "llt" and "ll" will generate a DUID of type LLT or LL
+	 * (see RFC 3315) based on the current MAC address of the device. In order to
+	 * try providing a stable DUID-LLT, the time field will contain a constant
+	 * timestamp that is used globally (for all profiles) and persisted to disk.
+	 *
+	 * The special values "stable-llt", "stable-ll" and "stable-uuid" will generate
+	 * a DUID of the corresponding type, derived from the connection's stable-id and
+	 * a per-host unique key.
+	 * So, the link-layer address of "stable-ll" and "stable-llt" will be a generated
+	 * address derived from the stable id. The DUID-LLT time value in the "stable-llt"
+	 * option will be picked among a static timespan of three years (the upper bound
+	 * of the interval is the same constant timestamp used in "llt").
+	 *
+	 * When the property is unset, the global value provided for "ipv6.dhcp-duid" is
+	 * used. If no global value is provided, the default "lease" value is assumed.
+	 *
+	 * Since: 1.12
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_DHCP_DUID,
+		 g_param_spec_string (NM_SETTING_IP6_CONFIG_DHCP_DUID, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/* IP6-specific property overrides */

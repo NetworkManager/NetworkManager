@@ -508,4 +508,7 @@ _nm_connection_type_is_master (const char *type)
 
 /*****************************************************************************/
 
+gboolean _nm_utils_dhcp_duid_valid (const char *duid, GBytes **out_duid_bin);
+
+/*****************************************************************************/
 #endif
