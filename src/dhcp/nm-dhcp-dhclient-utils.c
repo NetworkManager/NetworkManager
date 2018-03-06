@@ -125,7 +125,7 @@ add_ip4_config (GString *str, GBytes *client_id, const char *hostname, gboolean 
 		 * as long as all the characters are printable.
 		 */
 		for (i = 1; (p[0] == 0) && i < l; i++) {
-			if (!g_ascii_isprint (p[i]))
+			if (!g_ascii_isprint (p[i]) || p[i] == '\\' || p[i] == '"')
 				break;
 		}
 

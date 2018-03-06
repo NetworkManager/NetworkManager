@@ -180,6 +180,35 @@ test_quote_client_id (void)
 
 /*****************************************************************************/
 
+static const char *quote_client_id_expected_2 = \
+	"# Created by NetworkManager\n"
+	"\n"
+	"send dhcp-client-identifier 00:61:5c:62:63; # added by NetworkManager\n"
+	"\n"
+	"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
+	"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
+	"option wpad code 252 = string;\n"
+	"\n"
+	"also request rfc3442-classless-static-routes;\n"
+	"also request ms-classless-static-routes;\n"
+	"also request static-routes;\n"
+	"also request wpad;\n"
+	"also request ntp-servers;\n"
+	"\n";
+
+static void
+test_quote_client_id_2 (void)
+{
+	test_config (NULL, quote_client_id_expected_2,
+	             AF_INET, NULL, 0, FALSE,
+	             "a\\bc",
+	             NULL,
+	             "eth0",
+	             NULL);
+}
+
+/*****************************************************************************/
+
 static const char *hex_zero_client_id_expected = \
 	"# Created by NetworkManager\n"
 	"\n"
@@ -1100,7 +1129,8 @@ main (int argc, char **argv)
 
 	g_test_add_func ("/dhcp/dhclient/orig_missing", test_orig_missing);
 	g_test_add_func ("/dhcp/dhclient/override_client_id", test_override_client_id);
-	g_test_add_func ("/dhcp/dhclient/quote_client_id", test_quote_client_id);
+	g_test_add_func ("/dhcp/dhclient/quote_client_id/1", test_quote_client_id);
+	g_test_add_func ("/dhcp/dhclient/quote_client_id/2", test_quote_client_id_2);
 	g_test_add_func ("/dhcp/dhclient/hex_zero_client_id", test_hex_zero_client_id);
 	g_test_add_func ("/dhcp/dhclient/ascii_client_id", test_ascii_client_id);
 	g_test_add_func ("/dhcp/dhclient/hex_single_client_id", test_hex_single_client_id);
