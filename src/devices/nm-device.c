@@ -83,9 +83,8 @@ _LOG_DECLARE_SELF (NMDevice);
 
 /*****************************************************************************/
 
-#define DHCP_RESTART_TIMEOUT   120
-#define DHCP_NUM_TRIES_MAX     3
 #define DEFAULT_AUTOCONNECT    TRUE
+#define DHCP_GRACE_PERIOD_SEC  480
 
 #define CARRIER_WAIT_TIME_MS 6000
 #define CARRIER_WAIT_TIME_AFTER_MTU_MS 10000
@@ -387,10 +386,9 @@ typedef struct _NMDevicePrivate {
 		NMDhcpClient *  client;
 		gulong          state_sigid;
 		NMDhcp4Config * config;
-		guint           restart_id;
-		guint           num_tries_left;
 		char *          pac_url;
 		bool            was_active;
+		guint           grace_id;
 	} dhcp4;
 
 	struct {
@@ -461,10 +459,9 @@ typedef struct _NMDevicePrivate {
 		NMIP6Config *    ip6_config;
 		/* Event ID of the current IP6 config from DHCP */
 		char *           event_id;
-		guint            restart_id;
-		guint            num_tries_left;
 		guint            needed_prefixes;
 		bool             was_active;
+		guint            grace_id;
 	} dhcp6;
 
 	gboolean needs_ip6_subnet;
@@ -556,7 +553,6 @@ static void realize_start_setup (NMDevice *self,
                                  NMUnmanFlagOp unmanaged_user_explicit);
 static void _set_mtu (NMDevice *self, guint32 mtu);
 static void _commit_mtu (NMDevice *self, const NMIP4Config *config);
-static void dhcp_schedule_restart (NMDevice *self, int addr_family, const char *reason);
 static void _cancel_activation (NMDevice *self);
 
 /*****************************************************************************/
@@ -5897,7 +5893,7 @@ dhcp4_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	nm_clear_g_source (&priv->dhcp4.restart_id);
+	nm_clear_g_source (&priv->dhcp4.grace_id);
 	g_clear_pointer (&priv->dhcp4.pac_url, g_free);
 
 	if (priv->dhcp4.client) {
@@ -6042,20 +6038,17 @@ dhcp4_lease_change (NMDevice *self, NMIP4Config *config)
 }
 
 static gboolean
-dhcp4_restart_cb (gpointer user_data)
+dhcp4_grace_period_expired (gpointer user_data)
 {
 	NMDevice *self = user_data;
-	NMDevicePrivate *priv;
 
-	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+	_LOGI (LOGD_DHCP4, "DHCPv4: grace period expired");
 
-	priv = NM_DEVICE_GET_PRIVATE (self);
-	priv->dhcp4.restart_id = 0;
+	nm_device_ip_method_failed (self, AF_INET,
+	                            NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
+	/* If the device didn't fail, the DHCP client will continue */
 
-	if (dhcp4_start (self) == NM_ACT_STAGE_RETURN_FAILURE)
-		dhcp_schedule_restart (self, AF_INET, NULL);
-
-	return FALSE;
+	return G_SOURCE_REMOVE;
 }
 
 static void
@@ -6063,44 +6056,48 @@ dhcp4_fail (NMDevice *self, gboolean timeout)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	_LOGD (LOGD_DHCP4, "DHCPv4 failed: timeout %d, num tries left %u",
-	       timeout, priv->dhcp4.num_tries_left);
+	_LOGD (LOGD_DHCP4, "DHCPv4 failed%s", timeout ? " (timeout)" : "");
 
-	dhcp4_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
-
-	/* Don't fail if there are static addresses configured on
-	 * the device, instead retry after some time.
+	/* Keep client running if there are static addresses configured
+	 * on the interface.
 	 */
 	if (   priv->ip4_state == IP_DONE
 	    && priv->con_ip4_config
-	    && nm_ip4_config_get_num_addresses (priv->con_ip4_config) > 0) {
-		dhcp_schedule_restart (self, AF_INET, "device has IP addresses");
+	    && nm_ip4_config_get_num_addresses (priv->con_ip4_config) > 0)
+		goto clear_config;
+
+	/* Fail the method in case of timeout or failure during initial
+	 * configuration.
+	 */
+	if (   !priv->dhcp4.was_active
+	    && (timeout || priv->ip4_state == IP_CONF)) {
+		dhcp4_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
+		nm_device_activate_schedule_ip4_config_timeout (self);
 		return;
 	}
 
-	if (   priv->dhcp4.num_tries_left == DHCP_NUM_TRIES_MAX
-	    && (timeout || (priv->ip4_state == IP_CONF))
-	    && !priv->dhcp4.was_active)
-		nm_device_activate_schedule_ip4_config_timeout (self);
-	else if (   priv->dhcp4.num_tries_left < DHCP_NUM_TRIES_MAX
-	         || priv->ip4_state == IP_DONE
-	         || priv->dhcp4.was_active) {
-		/* Don't fail immediately when the lease expires but try to
-		 * restart DHCP for a predefined number of times.
-		 */
-		if (priv->dhcp4.num_tries_left) {
-			priv->dhcp4.num_tries_left--;
-			dhcp_schedule_restart (self, AF_INET, "lease expired");
-		} else {
-			nm_device_ip_method_failed (self, AF_INET, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
-			/* We failed the ipv4 method but schedule again the retries if the ipv6 method is
-			 * configured, keeping the connection up.
-			 */
-			if (nm_device_get_state (self) != NM_DEVICE_STATE_FAILED)
-				dhcp_schedule_restart (self, AF_INET, "renewal failed");
-		}
-	} else
-		g_warn_if_reached ();
+	/* In any other case (expired lease, assumed connection, etc.),
+	 * start a grace period in which we keep the client running,
+	 * hoping that it will regain a lease.
+	 */
+	if (!priv->dhcp4.grace_id) {
+		priv->dhcp4.grace_id = g_timeout_add_seconds (DHCP_GRACE_PERIOD_SEC,
+		                                              dhcp4_grace_period_expired,
+		                                              self);
+		_LOGI (LOGD_DHCP4,
+		       "DHCPv4: %u seconds grace period started",
+		       DHCP_GRACE_PERIOD_SEC);
+		goto clear_config;
+	}
+	return;
+
+clear_config:
+	/* The previous configuration is no longer valid */
+	if (priv->dhcp4.config) {
+		nm_exported_object_clear_and_unexport (&priv->dhcp4.config);
+		priv->dhcp4.config = nm_dhcp4_config_new ();
+		_notify (self, PROP_DHCP4_CONFIG);
+	}
 }
 
 static void
@@ -6140,6 +6137,8 @@ dhcp4_state_changed (NMDhcpClient *client,
 			break;
 		}
 
+		nm_clear_g_source (&priv->dhcp4.grace_id);
+
 		/* After some failures, we have been able to renew the lease:
 		 * update the ip state
 		 */
@@ -6152,7 +6151,6 @@ dhcp4_state_changed (NMDhcpClient *client,
 
 		nm_dhcp4_config_set_options (priv->dhcp4.config, options);
 		_notify (self, PROP_DHCP4_CONFIG);
-		priv->dhcp4.num_tries_left = DHCP_NUM_TRIES_MAX;
 
 		if (priv->ip4_state == IP_CONF) {
 			connection = nm_device_get_applied_connection (self);
@@ -6523,7 +6521,6 @@ act_stage3_ip4_config_start (NMDevice *self,
 	}
 
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
-	priv->dhcp4.num_tries_left = DHCP_NUM_TRIES_MAX;
 
 	/* Start IPv4 addressing based on the method requested */
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0) {
@@ -6578,7 +6575,7 @@ dhcp6_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 	priv->dhcp6.mode = NM_NDISC_DHCP_LEVEL_NONE;
 	g_clear_object (&priv->dhcp6.ip6_config);
 	g_clear_pointer (&priv->dhcp6.event_id, g_free);
-	nm_clear_g_source (&priv->dhcp6.restart_id);
+	nm_clear_g_source (&priv->dhcp6.grace_id);
 
 	if (priv->dhcp6.client) {
 		nm_clear_g_signal_handler (priv->dhcp6.client, &priv->dhcp6.state_sigid);
@@ -6762,53 +6759,17 @@ dhcp6_lease_change (NMDevice *self)
 }
 
 static gboolean
-dhcp6_restart_cb (gpointer user_data)
+dhcp6_grace_period_expired (gpointer user_data)
 {
 	NMDevice *self = user_data;
-	NMDevicePrivate *priv;
 
-	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+	_LOGI (LOGD_DHCP6, "DHCPv6: grace period expired");
 
-	priv = NM_DEVICE_GET_PRIVATE (self);
-	priv->dhcp6.restart_id = 0;
+	nm_device_ip_method_failed (self, AF_INET6,
+	                            NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
+	/* If the device didn't fail, the DHCP client will continue */
 
-	if (!dhcp6_start (self, FALSE))
-		dhcp_schedule_restart (self, AF_INET6, NULL);
-
-	return FALSE;
-}
-
-static void
-dhcp_schedule_restart (NMDevice *self,
-                       int addr_family,
-                       const char *reason)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	guint tries_left;
-	char tries_str[255];
-
-	nm_assert_addr_family (addr_family);
-
-	tries_left =   (addr_family == AF_INET)
-	             ? priv->dhcp4.num_tries_left
-	             : priv->dhcp6.num_tries_left;
-
-	_LOGI ((addr_family == AF_INET) ? LOGD_DHCP4 : LOGD_DHCP6,
-	       "scheduling DHCPv%c restart in %u seconds%s%s%s%s",
-	       nm_utils_addr_family_to_char (addr_family),
-	       DHCP_RESTART_TIMEOUT,
-	       (tries_left != DHCP_NUM_TRIES_MAX)
-	         ? nm_sprintf_buf (tries_str, ", %u tries left", tries_left + 1)
-	         : "",
-	       NM_PRINT_FMT_QUOTED (reason, " (reason: ", reason, ")", ""));
-
-	if (addr_family == AF_INET) {
-		priv->dhcp4.restart_id = g_timeout_add_seconds (DHCP_RESTART_TIMEOUT,
-		                                                dhcp4_restart_cb, self);
-	} else {
-		priv->dhcp6.restart_id = g_timeout_add_seconds (DHCP_RESTART_TIMEOUT,
-		                                                dhcp6_restart_cb, self);
-	}
+	return G_SOURCE_REMOVE;
 }
 
 static void
@@ -6817,50 +6778,56 @@ dhcp6_fail (NMDevice *self, gboolean timeout)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	gboolean is_dhcp_managed;
 
-	_LOGD (LOGD_DHCP6, "DHCPv6 failed: timeout %d, num tries left %u",
-           timeout, priv->dhcp6.num_tries_left);
+	_LOGD (LOGD_DHCP6, "DHCPv6 failed%s", timeout ? " (timeout)" : "");
 
 	is_dhcp_managed = (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_MANAGED);
-	dhcp6_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
 
-	if (is_dhcp_managed || priv->dhcp6.num_tries_left < DHCP_NUM_TRIES_MAX) {
-		/* Don't fail if there are static addresses configured on
-		 * the device, instead retry after some time.
+	if (is_dhcp_managed) {
+		/* Keep client running if there are static addresses configured
+		 * on the interface.
 		 */
 		if (   priv->ip6_state == IP_DONE
 		    && priv->con_ip6_config
-		    && nm_ip6_config_get_num_addresses (priv->con_ip6_config)) {
-			dhcp_schedule_restart (self, AF_INET6, "device has IP addresses");
+		    && nm_ip6_config_get_num_addresses (priv->con_ip6_config))
+			goto clear_config;
+
+		/* Fail the method in case of timeout or failure during initial
+		 * configuration.
+		 */
+		if (   !priv->dhcp6.was_active
+		    && (timeout || priv->ip6_state == IP_CONF)) {
+			dhcp6_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
+			nm_device_activate_schedule_ip6_config_timeout (self);
 			return;
 		}
 
-		if (   priv->dhcp6.num_tries_left == DHCP_NUM_TRIES_MAX
-		    && (timeout || (priv->ip6_state == IP_CONF))
-		    && !priv->dhcp6.was_active)
-			nm_device_activate_schedule_ip6_config_timeout (self);
-		else if (   priv->dhcp6.num_tries_left < DHCP_NUM_TRIES_MAX
-		         || priv->ip6_state == IP_DONE
-		         || priv->dhcp6.was_active) {
-			/* Don't fail immediately when the lease expires but try to
-			 * restart DHCP for a predefined number of times.
-			 */
-			if (priv->dhcp6.num_tries_left) {
-				priv->dhcp6.num_tries_left--;
-				dhcp_schedule_restart (self, AF_INET6, "lease expired");
-			} else {
-				nm_device_ip_method_failed (self, AF_INET6, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
-				/* We failed the ipv6 method but schedule again the retries if the ipv4 method is
-				 * configured, keeping the connection up.
-				 */
-				if (nm_device_get_state (self) != NM_DEVICE_STATE_FAILED)
-					dhcp_schedule_restart (self, AF_INET6, "renewal failed");
-			}
-		} else
-			g_warn_if_reached ();
+		/* In any other case (expired lease, assumed connection, etc.),
+		 * start a grace period in which we keep the client running,
+		 * hoping that it will regain a lease.
+		 */
+		if (!priv->dhcp6.grace_id) {
+			priv->dhcp6.grace_id = g_timeout_add_seconds (DHCP_GRACE_PERIOD_SEC,
+			                                              dhcp6_grace_period_expired,
+			                                              self);
+			_LOGI (LOGD_DHCP6,
+			       "DHCPv6: %u seconds grace period started",
+			       DHCP_GRACE_PERIOD_SEC);
+			goto clear_config;
+		}
 	} else {
 		/* not a hard failure; just live with the RA info */
+		dhcp6_cleanup (self, CLEANUP_TYPE_DECONFIGURE, FALSE);
 		if (priv->ip6_state == IP_CONF)
 			nm_device_activate_schedule_ip6_config_result (self);
+	}
+	return;
+
+clear_config:
+	/* The previous configuration is no longer valid */
+	if (priv->dhcp6.config) {
+		nm_exported_object_clear_and_unexport (&priv->dhcp6.config);
+		priv->dhcp6.config = nm_dhcp6_config_new ();
+		_notify (self, PROP_DHCP6_CONFIG);
 	}
 }
 
@@ -6897,6 +6864,7 @@ dhcp6_state_changed (NMDhcpClient *client,
 
 	switch (state) {
 	case NM_DHCP_STATE_BOUND:
+		nm_clear_g_source (&priv->dhcp6.grace_id);
 		/* If the server sends multiple IPv6 addresses, we receive a state
 		 * changed event for each of them. Use the event ID to merge IPv6
 		 * addresses from the same transaction into a single configuration.
@@ -6926,8 +6894,6 @@ dhcp6_state_changed (NMDhcpClient *client,
 		 */
 		if (priv->ip6_state == IP_FAIL)
 			_set_ip_state (self, AF_INET6, IP_CONF);
-
-		priv->dhcp6.num_tries_left = DHCP_NUM_TRIES_MAX;
 
 		if (priv->ip6_state == IP_CONF) {
 			if (priv->dhcp6.ip6_config == NULL) {
@@ -8106,8 +8072,6 @@ act_stage3_ip6_config_start (NMDevice *self,
 	}
 
 	priv->dhcp6.mode = NM_NDISC_DHCP_LEVEL_NONE;
-	priv->dhcp6.num_tries_left = DHCP_NUM_TRIES_MAX;
-
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
 
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0) {
