@@ -360,6 +360,11 @@ typedef struct _NMDevicePrivate {
 
 	NMDeviceAutoconnectBlockedFlags autoconnect_blocked_flags:4;
 
+	bool            is_enslaved:1;
+	bool            master_ready_handled:1;
+
+	bool            ipv6ll_handle:1; /* TRUE if NM handles the device's IPv6LL address */
+
 	/* Generic DHCP stuff */
 	char *          dhcp_anycast_address;
 
@@ -437,7 +442,6 @@ typedef struct _NMDevicePrivate {
 	NMIP6Config *  ext_ip6_config; /* Stuff added outside NM */
 	NMIP6Config *  ext_ip6_config_captured; /* Configuration captured from platform. */
 	GSList *       vpn6_configs;   /* VPNs which use this device */
-	bool           ipv6ll_handle; /* TRUE if NM handles the device's IPv6LL address */
 	NMIP6Config *  dad6_ip6_config;
 
 	GHashTable *   rt6_temporary_not_available;
@@ -471,8 +475,6 @@ typedef struct _NMDevicePrivate {
 
 	/* master interface for bridge/bond/team slave */
 	NMDevice *      master;
-	bool            is_enslaved;
-	bool            master_ready_handled;
 	gulong          master_ready_id;
 
 	/* slave management */
@@ -7458,7 +7460,7 @@ check_and_add_ipv6ll_addr (NMDevice *self)
 	NMSettingIP6Config *s_ip6 = NULL;
 	GError *error = NULL;
 
-	if (priv->ipv6ll_handle == FALSE)
+	if (!priv->ipv6ll_handle)
 		return;
 
 	if (priv->ext_ip6_config_captured) {
@@ -8146,7 +8148,8 @@ restore_ip6_properties (NMDevice *self)
 	g_hash_table_iter_init (&iter, priv->ip6_saved_properties);
 	while (g_hash_table_iter_next (&iter, &key, &value)) {
 		/* Don't touch "disable_ipv6" if we're doing userland IPv6LL */
-		if (priv->ipv6ll_handle && strcmp (key, "disable_ipv6") == 0)
+		if (   priv->ipv6ll_handle
+		    && nm_streq (key, "disable_ipv6"))
 			continue;
 		nm_device_ipv6_sysctl_set (self, key, value);
 	}
@@ -8156,7 +8159,7 @@ static inline void
 set_disable_ipv6 (NMDevice *self, const char *value)
 {
 	/* We only touch disable_ipv6 when NM is not managing the IPv6LL address */
-	if (NM_DEVICE_GET_PRIVATE (self)->ipv6ll_handle == FALSE)
+	if (!NM_DEVICE_GET_PRIVATE (self)->ipv6ll_handle)
 		nm_device_ipv6_sysctl_set (self, "disable_ipv6", value);
 }
 
@@ -8327,7 +8330,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 			 * to the interface until disable_ipv6 is bounced.
 			 */
 			set_nm_ipv6ll (self, FALSE);
-			if (ipv6ll_handle_old == TRUE)
+			if (ipv6ll_handle_old)
 				nm_device_ipv6_sysctl_set (self, "disable_ipv6", "1");
 			restore_ip6_properties (self);
 		}
