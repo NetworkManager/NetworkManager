@@ -437,7 +437,7 @@ typedef struct _NMDevicePrivate {
 	NMIP6Config *  ext_ip6_config; /* Stuff added outside NM */
 	NMIP6Config *  ext_ip6_config_captured; /* Configuration captured from platform. */
 	GSList *       vpn6_configs;   /* VPNs which use this device */
-	bool           nm_ipv6ll; /* TRUE if NM handles the device's IPv6LL address */
+	bool           ipv6ll_handle; /* TRUE if NM handles the device's IPv6LL address */
 	NMIP6Config *  dad6_ip6_config;
 
 	GHashTable *   rt6_temporary_not_available;
@@ -3525,7 +3525,7 @@ realize_start_setup (NMDevice *self,
 
 		if (nm_platform_check_kernel_support (nm_device_get_platform (self),
 		                                      NM_PLATFORM_KERNEL_SUPPORT_USER_IPV6LL))
-			priv->nm_ipv6ll = nm_platform_link_get_user_ipv6ll_enabled (nm_device_get_platform (self), priv->ifindex);
+			priv->ipv6ll_handle = nm_platform_link_get_user_ipv6ll_enabled (nm_device_get_platform (self), priv->ifindex);
 
 		if (nm_platform_link_supports_sriov (nm_device_get_platform (self), priv->ifindex))
 			capabilities |= NM_DEVICE_CAP_SRIOV;
@@ -7458,7 +7458,7 @@ check_and_add_ipv6ll_addr (NMDevice *self)
 	NMSettingIP6Config *s_ip6 = NULL;
 	GError *error = NULL;
 
-	if (priv->nm_ipv6ll == FALSE)
+	if (priv->ipv6ll_handle == FALSE)
 		return;
 
 	if (priv->ext_ip6_config_captured) {
@@ -8146,7 +8146,7 @@ restore_ip6_properties (NMDevice *self)
 	g_hash_table_iter_init (&iter, priv->ip6_saved_properties);
 	while (g_hash_table_iter_next (&iter, &key, &value)) {
 		/* Don't touch "disable_ipv6" if we're doing userland IPv6LL */
-		if (priv->nm_ipv6ll && strcmp (key, "disable_ipv6") == 0)
+		if (priv->ipv6ll_handle && strcmp (key, "disable_ipv6") == 0)
 			continue;
 		nm_device_ipv6_sysctl_set (self, key, value);
 	}
@@ -8156,7 +8156,7 @@ static inline void
 set_disable_ipv6 (NMDevice *self, const char *value)
 {
 	/* We only touch disable_ipv6 when NM is not managing the IPv6LL address */
-	if (NM_DEVICE_GET_PRIVATE (self)->nm_ipv6ll == FALSE)
+	if (NM_DEVICE_GET_PRIVATE (self)->ipv6ll_handle == FALSE)
 		nm_device_ipv6_sysctl_set (self, "disable_ipv6", value);
 }
 
@@ -8171,7 +8171,7 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 	                                       NM_PLATFORM_KERNEL_SUPPORT_USER_IPV6LL))
 		return;
 
-	priv->nm_ipv6ll = enable;
+	priv->ipv6ll_handle = enable;
 	if (ifindex > 0) {
 		NMPlatformError plerr;
 		const char *detail = enable ? "enable" : "disable";
@@ -8320,14 +8320,14 @@ act_stage3_ip6_config_start (NMDevice *self,
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0) {
 		if (   !priv->master
 		    && !nm_device_sys_iface_state_is_external (self)) {
-			gboolean old_nm_ipv6ll = priv->nm_ipv6ll;
+			gboolean ipv6ll_handle_old = priv->ipv6ll_handle;
 
 			/* When activating an IPv6 'ignore' connection we need to revert back
 			 * to kernel IPv6LL, but the kernel won't actually assign an address
 			 * to the interface until disable_ipv6 is bounced.
 			 */
 			set_nm_ipv6ll (self, FALSE);
-			if (old_nm_ipv6ll == TRUE)
+			if (ipv6ll_handle_old == TRUE)
 				nm_device_ipv6_sysctl_set (self, "disable_ipv6", "1");
 			restore_ip6_properties (self);
 		}
