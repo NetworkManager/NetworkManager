@@ -373,6 +373,7 @@ typedef struct _NMDevicePrivate {
 	bool            master_ready_handled:1;
 
 	bool            ipv6ll_handle:1; /* TRUE if NM handles the device's IPv6LL address */
+	bool            ipv6ll_has:1;
 
 	/* Generic DHCP stuff */
 	char *          dhcp_anycast_address;
@@ -485,6 +486,7 @@ typedef struct _NMDevicePrivate {
 	AppliedConfig  ac_ip6_config;  /* config from IPv6 autoconfiguration */
 	NMIP6Config *  ext_ip6_config_captured; /* Configuration captured from platform. */
 	NMIP6Config *  dad6_ip6_config;
+	struct in6_addr ipv6ll_addr;
 
 	GHashTable *   rt6_temporary_not_available;
 
@@ -6161,6 +6163,28 @@ ip_config_merge_and_apply (NMDevice *self,
 		ensure_con_ip_config (self, addr_family);
 	}
 
+	if (!IS_IPv4) {
+		if (   commit
+		    && priv->ipv6ll_has) {
+			const NMPlatformIP6Address ll_a = {
+				.address = priv->ipv6ll_addr,
+				.plen = 64,
+				.addr_source = NM_IP_CONFIG_SOURCE_IP6LL,
+			};
+			const NMPlatformIP6Route ll_r = {
+				.network.s6_addr16[0] = htons (0xfe80u),
+				.plen = 64,
+				.metric = nm_device_get_route_metric (self, addr_family),
+				.rt_source = NM_IP_CONFIG_SOURCE_IP6LL,
+			};
+
+			nm_assert (IN6_IS_ADDR_LINKLOCAL (&priv->ipv6ll_addr));
+
+			nm_ip6_config_add_address (NM_IP6_CONFIG (composite), &ll_a);
+			nm_ip6_config_add_route (NM_IP6_CONFIG (composite), &ll_r, NULL);
+		}
+	}
+
 	if (commit) {
 		gboolean v;
 
@@ -7442,11 +7466,11 @@ static void
 check_and_add_ipv6ll_addr (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	int ip_ifindex = nm_device_get_ip_ifindex (self);
 	struct in6_addr lladdr;
 	NMConnection *connection;
 	NMSettingIP6Config *s_ip6 = NULL;
 	GError *error = NULL;
+	const char *addr_type;
 
 	if (!priv->ipv6ll_handle)
 		return;
@@ -7459,6 +7483,9 @@ check_and_add_ipv6ll_addr (NMDevice *self)
 		/* Already have an LL address, nothing to do */
 		return;
 	}
+
+	priv->ipv6ll_has = FALSE;
+	memset (&priv->ipv6ll_addr, 0, sizeof (priv->ipv6ll_addr));
 
 	memset (&lladdr, 0, sizeof (lladdr));
 	lladdr.s6_addr16[0] = htons (0xfe80);
@@ -7484,7 +7511,7 @@ check_and_add_ipv6ll_addr (NMDevice *self)
 			linklocal6_failed (self);
 			return;
 		}
-		_LOGD (LOGD_IP6, "linklocal6: using IPv6 stable-privacy addressing");
+		addr_type = "stable-privacy";
 	} else {
 		NMUtilsIPv6IfaceId iid;
 
@@ -7500,23 +7527,14 @@ check_and_add_ipv6ll_addr (NMDevice *self)
 			_LOGW (LOGD_IP6, "linklocal6: failed to get interface identifier; IPv6 cannot continue");
 			return;
 		}
-		_LOGD (LOGD_IP6, "linklocal6: using EUI-64 identifier to generate IPv6LL address");
-
 		nm_utils_ipv6_addr_set_interface_identifier (&lladdr, iid);
+		addr_type = "EUI-64";
 	}
 
-	_LOGD (LOGD_IP6, "linklocal6: adding IPv6LL address %s", nm_utils_inet6_ntop (&lladdr, NULL));
-	if (!nm_platform_ip6_address_add (nm_device_get_platform (self),
-	                                  ip_ifindex,
-	                                  lladdr,
-	                                  64,
-	                                  in6addr_any,
-	                                  NM_PLATFORM_LIFETIME_PERMANENT,
-	                                  NM_PLATFORM_LIFETIME_PERMANENT,
-	                                  0)) {
-		_LOGW (LOGD_IP6, "failed to add IPv6 link-local address %s",
-		       nm_utils_inet6_ntop (&lladdr, NULL));
-	}
+	_LOGD (LOGD_IP6, "linklocal6: generated %s IPv6LL address %s", addr_type, nm_utils_inet6_ntop (&lladdr, NULL));
+	priv->ipv6ll_has = TRUE;
+	priv->ipv6ll_addr = lladdr;
+	ip_config_merge_and_apply (self, AF_INET6, TRUE);
 }
 
 static gboolean
@@ -9010,6 +9028,32 @@ nm_device_activate_ip4_state_done (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->ip4_state == IP_DONE;
 }
 
+static void
+dad6_add_pending_address (NMDevice *self,
+                          NMPlatform *platform,
+                          int ifindex,
+                          const struct in6_addr *address,
+                          NMIP6Config **dad6_config)
+{
+	const NMPlatformIP6Address *pl_addr;
+
+	pl_addr = nm_platform_ip6_address_get (platform,
+	                                       ifindex,
+	                                       *address);
+	if (   pl_addr
+	    && NM_FLAGS_HAS (pl_addr->n_ifa_flags, IFA_F_TENTATIVE)
+	    && !NM_FLAGS_HAS (pl_addr->n_ifa_flags, IFA_F_DADFAILED)
+	    && !NM_FLAGS_HAS (pl_addr->n_ifa_flags, IFA_F_OPTIMISTIC)) {
+		_LOGt (LOGD_DEVICE, "IPv6 DAD: pending address %s",
+		       nm_platform_ip6_address_to_string (pl_addr, NULL, 0));
+
+		if (!*dad6_config)
+			*dad6_config = _ip6_config_new (self);
+
+		nm_ip6_config_add_address (*dad6_config, pl_addr);
+	}
+}
+
 /*
  * Returns a NMIP6Config containing NM-configured addresses which
  * have the tentative flag, or NULL if none is present.
@@ -9022,38 +9066,39 @@ dad6_get_pending_addresses (NMDevice *self)
 	                         (NMIP6Config *) applied_config_get_current (&priv->dhcp6.ip6_config),
 	                         priv->con_ip_config_6,
 	                         (NMIP6Config *) applied_config_get_current (&priv->wwan_ip_config_6) };
-	const NMPlatformIP6Address *addr, *pl_addr;
+	const NMPlatformIP6Address *addr;
 	NMIP6Config *dad6_config = NULL;
 	NMDedupMultiIter ipconf_iter;
 	guint i;
 	int ifindex;
+	NMPlatform *platform;
 
 	ifindex = nm_device_get_ip_ifindex (self);
 	g_return_val_if_fail (ifindex > 0, NULL);
+
+	platform = nm_device_get_platform (self);
+
+	if (priv->ipv6ll_has) {
+		dad6_add_pending_address (self,
+		                          platform,
+		                          ifindex,
+		                          &priv->ipv6ll_addr,
+		                          &dad6_config);
+	}
 
 	/* We are interested only in addresses that we have explicitly configured,
 	 * not in externally added ones.
 	 */
 	for (i = 0; i < G_N_ELEMENTS (confs); i++) {
-		if (confs[i]) {
+		if (!confs[i])
+			continue;
 
-			nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, confs[i], &addr) {
-				pl_addr = nm_platform_ip6_address_get (nm_device_get_platform (self),
-				                                       ifindex,
-				                                       addr->address);
-				if (   pl_addr
-				    && NM_FLAGS_HAS (pl_addr->n_ifa_flags, IFA_F_TENTATIVE)
-				    && !NM_FLAGS_HAS (pl_addr->n_ifa_flags, IFA_F_DADFAILED)
-				    && !NM_FLAGS_HAS (pl_addr->n_ifa_flags, IFA_F_OPTIMISTIC)) {
-					_LOGt (LOGD_DEVICE, "IPv6 DAD: pending address %s",
-					       nm_platform_ip6_address_to_string (pl_addr, NULL, 0));
-
-					if (!dad6_config)
-						dad6_config = _ip6_config_new (self);
-
-					nm_ip6_config_add_address (dad6_config, pl_addr);
-				}
-			}
+		nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, confs[i], &addr) {
+			dad6_add_pending_address (self,
+			                          platform,
+			                          ifindex,
+			                          &addr->address,
+			                          &dad6_config);
 		}
 	}
 
@@ -9501,6 +9546,9 @@ nm_device_reactivate_ip6_config (NMDevice *self,
 		g_clear_object (&priv->ac_ip6_config.current);
 		g_clear_object (&priv->dhcp6.ip6_config.current);
 		g_clear_object (&priv->wwan_ip_config_6.current);
+		if (   priv->ipv6ll_handle
+		    && !IN6_IS_ADDR_UNSPECIFIED (&priv->ipv6ll_addr))
+			priv->ipv6ll_has = TRUE;
 		priv->con_ip_config_6 = _ip6_config_new (self);
 		nm_ip6_config_merge_setting (priv->con_ip_config_6,
 		                             s_ip6_new,
@@ -11280,6 +11328,10 @@ update_ext_ip_config (NMDevice *self, int addr_family, gboolean intersect_config
 
 				for (iter = priv->vpn_configs_6; iter; iter = iter->next)
 					nm_ip6_config_intersect (iter->data, priv->ext_ip_config_6, 0);
+
+				if (   priv->ipv6ll_has
+				    && !nm_ip6_config_lookup_address (priv->ext_ip_config_6, &priv->ipv6ll_addr))
+					priv->ipv6ll_has = FALSE;
 			}
 
 			/* Remove parts from ext_ip_config_6 to only contain the information that
@@ -12666,6 +12718,8 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 	applied_config_clear (&priv->wwan_ip_config_6);
 	g_clear_object (&priv->ip_config_6);
 	g_clear_object (&priv->dad6_ip6_config);
+	priv->ipv6ll_has = FALSE;
+	memset (&priv->ipv6ll_addr, 0, sizeof (priv->ipv6ll_addr));
 
 	g_clear_pointer (&priv->rt6_temporary_not_available, g_hash_table_unref);
 	nm_clear_g_source (&priv->rt6_temporary_not_available_id);
