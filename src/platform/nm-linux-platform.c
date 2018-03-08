@@ -6596,11 +6596,30 @@ continue_reading:
 				abort_parsing = TRUE;
 			} else if (e->error) {
 				int errsv = e->error > 0 ? e->error : -e->error;
+				const char *extack_msg = NULL;
+
+				if (   NM_FLAGS_HAS (hdr->nlmsg_flags, NLM_F_ACK_TLVS)
+				    && hdr->nlmsg_len >= sizeof (*e) + e->msg.nlmsg_len) {
+					static const struct nla_policy policy[NLMSGERR_ATTR_MAX + 1] = {
+						[NLMSGERR_ATTR_MSG]     = { .type = NLA_STRING },
+						[NLMSGERR_ATTR_OFFS]    = { .type = NLA_U32 },
+					};
+					struct nlattr *tb[NLMSGERR_ATTR_MAX + 1];
+					struct nlattr *tlvs;
+
+					tlvs = (struct nlattr *) ((char *) e + sizeof (*e) + e->msg.nlmsg_len - NLMSG_HDRLEN);
+					if (!nla_parse (tb, NLMSGERR_ATTR_MAX, tlvs,
+					                hdr->nlmsg_len - sizeof (*e) - e->msg.nlmsg_len, policy)) {
+						if (tb[NLMSGERR_ATTR_MSG])
+							extack_msg = nla_get_string (tb[NLMSGERR_ATTR_MSG]);
+					}
+				}
 
 				/* Error message reported back from kernel. */
-				_LOGD ("netlink: recvmsg: error message from kernel: %s (%d) for request %d",
+				_LOGD ("netlink: recvmsg: error message from kernel: %s (%d)%s%s%s for request %d",
 				       strerror (errsv),
 				       errsv,
+				       NM_PRINT_FMT_QUOTED (extack_msg, " \"", extack_msg, "\"", ""),
 				       nlmsg_hdr (msg)->nlmsg_seq);
 				seq_result = -errsv;
 			} else
@@ -6947,6 +6966,10 @@ constructed (GObject *_object)
 	/* use 8 MB for receive socket kernel queue. */
 	nle = nl_socket_set_buffer_size (priv->nlh, 8*1024*1024, 0);
 	g_assert (!nle);
+
+	nle = nl_socket_set_ext_ack (priv->nlh, TRUE);
+	if (nle)
+		_LOGD ("could not enable extended acks on netlink socket");
 
 	/* explicitly set the msg buffer size and disable MSG_PEEK.
 	 * If we later encounter NLE_MSG_TRUNC, we will adjust the buffer size. */

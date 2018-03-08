@@ -26,7 +26,6 @@
 #include <linux/genetlink.h>
 
 /*****************************************************************************/
-
 #define _NLE_BASE               100000
 #define NLE_UNSPEC              (_NLE_BASE +  0)
 #define NLE_BUG                 (_NLE_BASE +  1)
@@ -41,6 +40,16 @@
 #define NLE_MSG_OVERFLOW        (_NLE_BASE + 10)
 
 #define _NLE_BASE_END           (_NLE_BASE + 11)
+
+#define NLMSGERR_ATTR_UNUSED            0
+#define NLMSGERR_ATTR_MSG               1
+#define NLMSGERR_ATTR_OFFS              2
+#define NLMSGERR_ATTR_COOKIE            3
+#define NLMSGERR_ATTR_MAX               3
+
+#ifndef NLM_F_ACK_TLVS
+#define NLM_F_ACK_TLVS                  0x200
+#endif
 
 static inline int
 nl_errno (int err)
@@ -483,6 +492,8 @@ int nl_recvmsgs (struct nl_sock *sk, const struct nl_cb *cb);
 
 int nl_wait_for_ack (struct nl_sock *sk,
                      const struct nl_cb *cb);
+
+int nl_socket_set_ext_ack (struct nl_sock *sk, gboolean enable);
 
 /*****************************************************************************/
 
