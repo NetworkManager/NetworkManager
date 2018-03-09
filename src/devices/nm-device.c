@@ -7210,8 +7210,7 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	if (priv->ext_ip6_config_captured) {
 		ll_addr = nm_ip6_config_find_first_address (priv->ext_ip6_config_captured,
 		                                              NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL
-		                                            | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL
-		                                            | NM_PLATFORM_MATCH_WITH_ADDRSTATE_DADFAILED);
+		                                            | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL);
 	}
 
 	if (!ll_addr) {
@@ -7431,8 +7430,7 @@ linklocal6_complete (NMDevice *self)
 	nm_assert (priv->ext_ip6_config_captured);
 	nm_assert (nm_ip6_config_find_first_address (priv->ext_ip6_config_captured,
 	                                               NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL
-	                                             | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL
-	                                             | NM_PLATFORM_MATCH_WITH_ADDRSTATE_DADFAILED));
+	                                             | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL));
 
 	nm_clear_g_source (&priv->linklocal6_timeout_id);
 
@@ -7550,8 +7548,7 @@ linklocal6_start (NMDevice *self)
 	if (   priv->ext_ip6_config_captured
 	    && nm_ip6_config_find_first_address (priv->ext_ip6_config_captured,
 	                                           NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL
-	                                         | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL
-	                                         | NM_PLATFORM_MATCH_WITH_ADDRSTATE_DADFAILED))
+	                                         | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL))
 		return TRUE;
 
 	connection = nm_device_get_applied_connection (self);
@@ -7948,12 +7945,14 @@ ndisc_ra_timeout (NMNDisc *ndisc, NMDevice *self)
 		 * ever receive one, then time out IPv6.  But if there is other
 		 * IPv6 configuration, like manual IPv6 addresses or external IPv6
 		 * config, consider that sufficient for IPv6 success.
+		 *
+		 * FIXME: it doesn't seem correct to determine this based on which
+		 *        addresses we find inside priv->ip6_config.
 		 */
 		if (   priv->ip6_config
 		    && nm_ip6_config_find_first_address (priv->ip6_config,
 		                                           NM_PLATFORM_MATCH_WITH_ADDRTYPE_NORMAL
-		                                         | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL
-		                                         | NM_PLATFORM_MATCH_WITH_ADDRSTATE_DADFAILED))
+		                                         | NM_PLATFORM_MATCH_WITH_ADDRSTATE__ANY))
 			nm_device_activate_schedule_ip6_config_result (self);
 		else
 			nm_device_activate_schedule_ip6_config_timeout (self);
@@ -11549,8 +11548,7 @@ update_ip_config (NMDevice *self, int addr_family, gboolean initial)
 	    && priv->ext_ip6_config_captured
 	    && nm_ip6_config_find_first_address (priv->ext_ip6_config_captured,
 	                                           NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL
-	                                         | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL
-	                                         | NM_PLATFORM_MATCH_WITH_ADDRSTATE_DADFAILED)) {
+	                                         | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL)) {
 		/* linklocal6 is ready now, do the state transition... we are also
 		 * invoked as g_idle_add, so no problems with reentrance doing it now.
 		 */
