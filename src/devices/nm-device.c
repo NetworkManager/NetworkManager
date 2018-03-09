@@ -7470,17 +7470,13 @@ check_and_add_ipv6ll_addr (NMDevice *self)
 	if (!priv->ipv6ll_handle)
 		return;
 
-	if (priv->ext_ip6_config_captured) {
-		NMDedupMultiIter ipconf_iter;
-		const NMPlatformIP6Address *addr;
-
-		nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, priv->ext_ip6_config_captured, &addr) {
-			if (   IN6_IS_ADDR_LINKLOCAL (&addr->address)
-			    && !(addr->n_ifa_flags & IFA_F_DADFAILED)) {
-				/* Already have an LL address, nothing to do */
-				return;
-			}
-		}
+	if (   priv->ext_ip6_config_captured
+	    && nm_ip6_config_find_first_address (priv->ext_ip6_config_captured,
+	                                           NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL
+	                                         | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL
+	                                         | NM_PLATFORM_MATCH_WITH_ADDRSTATE_TENTATIVE)) {
+		/* Already have an LL address, nothing to do */
+		return;
 	}
 
 	memset (&lladdr, 0, sizeof (lladdr));
