@@ -266,7 +266,6 @@ test-*.trs
 /src/tests/test-general-with-expect
 /src/tests/test-ip4-config
 /src/tests/test-ip6-config
-/src/tests/test-resolvconf-capture
 /src/tests/test-route-manager-fake
 /src/tests/test-route-manager-linux
 /src/tests/test-systemd
@@ -313,3 +312,4 @@ test-*.trs
 /libnm-core/tests/test-setting-bond
 /libnm-core/tests/test-setting-dcb
 /src/settings/plugins/ifnet
+/src/tests/test-resolvconf-capture

@@ -3097,7 +3097,6 @@ check_programs += \
 	src/tests/test-ip6-config \
 	src/tests/test-dcb \
 	src/tests/test-systemd \
-	src/tests/test-resolvconf-capture \
 	src/tests/test-wired-defname \
 	src/tests/test-utils
 
@@ -3112,10 +3111,6 @@ src_tests_test_ip6_config_LDADD = $(src_tests_ldadd)
 src_tests_test_dcb_CPPFLAGS = $(src_tests_cppflags)
 src_tests_test_dcb_LDFLAGS = $(src_tests_ldflags)
 src_tests_test_dcb_LDADD = $(src_tests_ldadd)
-
-src_tests_test_resolvconf_capture_CPPFLAGS = $(src_tests_cppflags)
-src_tests_test_resolvconf_capture_LDFLAGS = $(src_tests_ldflags)
-src_tests_test_resolvconf_capture_LDADD = $(src_tests_ldadd)
 
 src_tests_test_general_CPPFLAGS = $(src_tests_cppflags)
 src_tests_test_general_LDFLAGS = $(src_tests_ldflags)
@@ -3136,7 +3131,6 @@ src_tests_test_utils_LDADD = $(src_tests_ldadd)
 $(src_tests_test_ip4_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_tests_test_ip6_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_tests_test_dcb_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_tests_test_resolvconf_capture_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_tests_test_general_with_expect_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_tests_test_wired_defname_OBJECTS): $(libnm_core_lib_h_pub_mkenums)

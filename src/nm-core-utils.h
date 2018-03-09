@@ -229,11 +229,6 @@ gboolean nm_utils_connection_has_default_route (NMConnection *connection,
 char *nm_utils_new_vlan_name (const char *parent_iface, guint32 vlan_id);
 const char *nm_utils_new_infiniband_name (char *name, const char *parent_name, int p_key);
 
-gboolean nm_utils_resolve_conf_parse (int addr_family,
-                                      const char *rc_contents,
-                                      GArray *nameservers,
-                                      GPtrArray *dns_options);
-
 int nm_utils_cmp_connection_by_autoconnect_priority (NMConnection *a, NMConnection *b);
 
 void nm_utils_log_connection_diff (NMConnection *connection, NMConnection *diff_base, guint32 level, guint64 domain, const char *name, const char *prefix);
