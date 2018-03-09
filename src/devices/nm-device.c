@@ -7420,17 +7420,24 @@ linklocal6_timeout_cb (gpointer user_data)
 }
 
 static void
-linklocal6_complete (NMDevice *self)
+linklocal6_check_complete (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
 	const char *method;
 
-	nm_assert (priv->linklocal6_timeout_id);
-	nm_assert (priv->ext_ip6_config_captured);
-	nm_assert (nm_ip6_config_find_first_address (priv->ext_ip6_config_captured,
-	                                               NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL
-	                                             | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL));
+	if (!priv->linklocal6_timeout_id) {
+		/* we are not waiting for linklocal to complete. Nothing to do. */
+		return;
+	}
+
+	if (   !priv->ext_ip6_config_captured
+	    || !nm_ip6_config_find_first_address (priv->ext_ip6_config_captured,
+	                                            NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL
+	                                          | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL)) {
+		/* we don't have a non-tentative link local address yet. Wait longer. */
+		return;
+	}
 
 	nm_clear_g_source (&priv->linklocal6_timeout_id);
 
@@ -11542,18 +11549,6 @@ update_ip_config (NMDevice *self, int addr_family, gboolean initial)
 				ip6_config_merge_and_apply (self, FALSE);
 		}
 	}
-
-	if (   addr_family == AF_INET6
-	    && priv->linklocal6_timeout_id
-	    && priv->ext_ip6_config_captured
-	    && nm_ip6_config_find_first_address (priv->ext_ip6_config_captured,
-	                                           NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL
-	                                         | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL)) {
-		/* linklocal6 is ready now, do the state transition... we are also
-		 * invoked as g_idle_add, so no problems with reentrance doing it now.
-		 */
-		linklocal6_complete (self);
-	}
 }
 
 void
@@ -11620,7 +11615,7 @@ queued_ip6_config_change (gpointer user_data)
 
 	/* Wait for any queued state changes */
 	if (priv->queued_state.id)
-		return TRUE;
+		return G_SOURCE_CONTINUE;
 
 	priv->queued_ip6_config_id = 0;
 
@@ -11634,8 +11629,14 @@ queued_ip6_config_change (gpointer user_data)
 		priv->queued_ip6_config_pending = FALSE;
 		priv->queued_ip6_config_id = g_idle_add (queued_ip6_config_change, self);
 		_LOGT (LOGD_DEVICE, "IP6 update was postponed");
-	} else
+	} else {
 		update_ip_config (self, AF_INET6, FALSE);
+
+		/* Check whether we need to complete waiting for link-local.
+		 * We are also called from an idle handler, so no problem doing state transitions
+		 * now. */
+		linklocal6_check_complete (self);
+	}
 
 	if (   priv->state < NM_DEVICE_STATE_DEACTIVATING
 	    && (platform = nm_device_get_platform (self))
@@ -11694,7 +11695,7 @@ queued_ip6_config_change (gpointer user_data)
 
 	set_unmanaged_external_down (self, TRUE);
 
-	return FALSE;
+	return G_SOURCE_REMOVE;
 }
 
 static void
