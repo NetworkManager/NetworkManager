@@ -1791,10 +1791,6 @@ $(src_dhcp_tests_test_dhcp_utils_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 EXTRA_DIST += \
 	src/dhcp/tests/test-dhclient-duid.leases \
 	src/dhcp/tests/test-dhclient-commented-duid.leases \
-	src/dhcp/tests/leases/basic.leases \
-	src/dhcp/tests/leases/malformed1.leases \
-	src/dhcp/tests/leases/malformed2.leases \
-	src/dhcp/tests/leases/malformed3.leases \
 	src/dhcp/tests/meson.build
 
 ###############################################################################

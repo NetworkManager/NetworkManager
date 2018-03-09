@@ -36,12 +36,6 @@
 
 #include "nm-test-utils-core.h"
 
-#define DEBUG 1
-
-static const int IFINDEX = 5;
-static const guint32 ROUTE_TABLE = RT_TABLE_MAIN;
-static const guint32 ROUTE_METRIC = 100;
-
 static void
 test_config (const char *orig,
              const char *expected,
@@ -993,133 +987,6 @@ test_config_req_intf (void)
 
 /*****************************************************************************/
 
-static void
-test_read_lease_ip4_config_basic (void)
-{
-	nm_auto_unref_dedup_multi_index NMDedupMultiIndex *multi_idx = nm_dedup_multi_index_new ();
-	GError *error = NULL;
-	char *contents = NULL;
-	gboolean success;
-	const char *path = TESTDIR "/leases/basic.leases";
-	GSList *leases;
-	GDateTime *now;
-	NMIP4Config *config;
-	const NMPlatformIP4Address *addr;
-	guint32 expected_addr;
-
-	success = g_file_get_contents (path, &contents, NULL, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-
-	/* Date from before the least expiration */
-	now = g_date_time_new_utc (2013, 11, 1, 19, 55, 32);
-	leases = nm_dhcp_dhclient_read_lease_ip_configs (multi_idx, AF_INET, "wlan0", IFINDEX, ROUTE_TABLE, ROUTE_METRIC, contents, now);
-	g_assert_cmpint (g_slist_length (leases), ==, 2);
-
-	/* IP4Config #1 */
-	config = g_slist_nth_data (leases, 0);
-	g_assert (NM_IS_IP4_CONFIG (config));
-
-	/* Address */
-	g_assert_cmpint (nm_ip4_config_get_num_addresses (config), ==, 1);
-	expected_addr = nmtst_inet4_from_string ("192.168.1.180");
-	addr = _nmtst_ip4_config_get_address (config, 0);
-	g_assert_cmpint (addr->address, ==, expected_addr);
-	g_assert_cmpint (addr->peer_address, ==, expected_addr);
-	g_assert_cmpint (addr->plen, ==, 24);
-
-	/* Gateway */
-	expected_addr = nmtst_inet4_from_string ("192.168.1.1");
-	g_assert_cmpint (nmtst_ip4_config_get_gateway (config), ==, expected_addr);
-
-	/* DNS */
-	g_assert_cmpint (nm_ip4_config_get_num_nameservers (config), ==, 1);
-	expected_addr = nmtst_inet4_from_string ("192.168.1.1");
-	g_assert_cmpint (nm_ip4_config_get_nameserver (config, 0), ==, expected_addr);
-
-	g_assert_cmpint (nm_ip4_config_get_num_domains (config), ==, 0);
-
-	/* IP4Config #2 */
-	config = g_slist_nth_data (leases, 1);
-	g_assert (NM_IS_IP4_CONFIG (config));
-
-	/* Address */
-	g_assert_cmpint (nm_ip4_config_get_num_addresses (config), ==, 1);
-	expected_addr = nmtst_inet4_from_string ("10.77.52.141");
-	addr = _nmtst_ip4_config_get_address (config, 0);
-	g_assert_cmpint (addr->address, ==, expected_addr);
-	g_assert_cmpint (addr->peer_address, ==, expected_addr);
-	g_assert_cmpint (addr->plen, ==, 8);
-
-	/* Gateway */
-	expected_addr = nmtst_inet4_from_string ("10.77.52.254");
-	g_assert_cmpint (nmtst_ip4_config_get_gateway (config), ==, expected_addr);
-
-	/* DNS */
-	g_assert_cmpint (nm_ip4_config_get_num_nameservers (config), ==, 2);
-	expected_addr = nmtst_inet4_from_string ("8.8.8.8");
-	g_assert_cmpint (nm_ip4_config_get_nameserver (config, 0), ==, expected_addr);
-	expected_addr = nmtst_inet4_from_string ("8.8.4.4");
-	g_assert_cmpint (nm_ip4_config_get_nameserver (config, 1), ==, expected_addr);
-
-	/* Domains */
-	g_assert_cmpint (nm_ip4_config_get_num_domains (config), ==, 1);
-	g_assert_cmpstr (nm_ip4_config_get_domain (config, 0), ==, "morriesguest.local");
-
-	g_slist_free_full (leases, g_object_unref);
-	g_date_time_unref (now);
-	g_free (contents);
-}
-
-static void
-test_read_lease_ip4_config_expired (void)
-{
-	nm_auto_unref_dedup_multi_index NMDedupMultiIndex *multi_idx = nm_dedup_multi_index_new ();
-	GError *error = NULL;
-	char *contents = NULL;
-	gboolean success;
-	const char *path = TESTDIR "/leases/basic.leases";
-	GSList *leases;
-	GDateTime *now;
-
-	success = g_file_get_contents (path, &contents, NULL, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-
-	/* Date from *after* the lease expiration */
-	now = g_date_time_new_utc (2013, 12, 1, 19, 55, 32);
-	leases = nm_dhcp_dhclient_read_lease_ip_configs (multi_idx, AF_INET, "wlan0", IFINDEX, ROUTE_TABLE, ROUTE_METRIC, contents, now);
-	g_assert (leases == NULL);
-
-	g_date_time_unref (now);
-	g_free (contents);
-}
-
-static void
-test_read_lease_ip4_config_expect_failure (gconstpointer user_data)
-{
-	nm_auto_unref_dedup_multi_index NMDedupMultiIndex *multi_idx = nm_dedup_multi_index_new ();
-	GError *error = NULL;
-	char *contents = NULL;
-	gboolean success;
-	GSList *leases;
-	GDateTime *now;
-
-	success = g_file_get_contents ((const char *) user_data, &contents, NULL, &error);
-	g_assert_no_error (error);
-	g_assert (success);
-
-	/* Date from before the least expiration */
-	now = g_date_time_new_utc (2013, 11, 1, 1, 1, 1);
-	leases = nm_dhcp_dhclient_read_lease_ip_configs (multi_idx, AF_INET, "wlan0", IFINDEX, ROUTE_TABLE, ROUTE_METRIC, contents, now);
-	g_assert (leases == NULL);
-
-	g_date_time_unref (now);
-	g_free (contents);
-}
-
-/*****************************************************************************/
-
 NMTST_DEFINE ();
 
 int
@@ -1156,18 +1023,6 @@ main (int argc, char **argv)
 	g_test_add_func ("/dhcp/dhclient/write_duid", test_write_duid);
 	g_test_add_func ("/dhcp/dhclient/write_existing_duid", test_write_existing_duid);
 	g_test_add_func ("/dhcp/dhclient/write_existing_commented_duid", test_write_existing_commented_duid);
-
-	g_test_add_func ("/dhcp/dhclient/leases/ip4-config/basic", test_read_lease_ip4_config_basic);
-	g_test_add_func ("/dhcp/dhclient/leases/ip4-config/expired", test_read_lease_ip4_config_expired);
-	g_test_add_data_func ("/dhcp/dhclient/leases/ip4-config/missing-address",
-	                      TESTDIR "/leases/malformed1.leases",
-	                      test_read_lease_ip4_config_expect_failure);
-	g_test_add_data_func ("/dhcp/dhclient/leases/ip4-config/missing-gateway",
-	                      TESTDIR "/leases/malformed2.leases",
-	                      test_read_lease_ip4_config_expect_failure);
-	g_test_add_data_func ("/dhcp/dhclient/leases/ip4-config/missing-expire",
-	                      TESTDIR "/leases/malformed3.leases",
-	                      test_read_lease_ip4_config_expect_failure);
 
 	return g_test_run ();
 }
