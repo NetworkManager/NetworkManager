@@ -6415,13 +6415,12 @@ nm_platform_cache_update_emit_signal (NMPlatform *self,
 	const NMPObject *o;
 	const NMPClass *klass;
 
-	nm_assert (NM_IN_SET ((NMPlatformSignalChangeType) cache_op, (NMPlatformSignalChangeType) NMP_CACHE_OPS_UNCHANGED, NM_PLATFORM_SIGNAL_ADDED, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_SIGNAL_REMOVED));
+	nm_assert (NM_IN_SET ((NMPlatformSignalChangeType) cache_op, NM_PLATFORM_SIGNAL_NONE,
+	                                                             NM_PLATFORM_SIGNAL_ADDED,
+	                                                             NM_PLATFORM_SIGNAL_CHANGED,
+	                                                             NM_PLATFORM_SIGNAL_REMOVED));
 
 	ASSERT_nmp_cache_ops (nm_platform_get_cache (self), cache_op, obj_old, obj_new);
-
-	nm_assert (NM_IN_SET (nm_platform_netns_get (self),
-	                      NULL,
-	                      nmp_netns_get_current ()));
 
 	NMTST_ASSERT_PLATFORM_NETNS_CURRENT (self);
 
