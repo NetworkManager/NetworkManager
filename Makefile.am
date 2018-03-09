@@ -430,6 +430,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-setting-wired.h \
 	libnm-core/nm-setting-wireless-security.h \
 	libnm-core/nm-setting-wireless.h \
+	libnm-core/nm-setting-wpan.h \
 	libnm-core/nm-setting.h \
 	libnm-core/nm-simple-connection.h \
 	libnm-core/nm-utils.h \
@@ -497,7 +498,8 @@ libnm_core_lib_c_settings_real = \
 	libnm-core/nm-setting-wimax.c \
 	libnm-core/nm-setting-wired.c \
 	libnm-core/nm-setting-wireless-security.c \
-	libnm-core/nm-setting-wireless.c
+	libnm-core/nm-setting-wireless.c \
+	libnm-core/nm-setting-wpan.c
 libnm_core_lib_c_real = \
 	$(libnm_core_lib_c_settings_real) \
 	shared/nm-utils/c-list-util.c \

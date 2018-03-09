@@ -45,6 +45,7 @@ libnm_core_headers = files(
   'nm-setting-wired.h',
   'nm-setting-wireless-security.h',
   'nm-setting-wireless.h',
+  'nm-setting-wpan.h',
   'nm-setting.h',
   'nm-simple-connection.h',
   'nm-utils.h',
@@ -94,7 +95,8 @@ libnm_core_settings_sources = files(
   'nm-setting-wimax.c',
   'nm-setting-wired.c',
   'nm-setting-wireless-security.c',
-  'nm-setting-wireless.c'
+  'nm-setting-wireless.c',
+  'nm-setting-wpan.c'
 )
 
 libnm_core_sources = libnm_core_settings_sources + files(

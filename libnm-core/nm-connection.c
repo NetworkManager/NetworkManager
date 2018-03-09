@@ -831,6 +831,8 @@ _supports_addr_family (NMConnection *self, int family)
 	g_return_val_if_fail (connection_type, TRUE);
 	if (strcmp (connection_type, NM_SETTING_OVS_INTERFACE_SETTING_NAME) == 0)
 		return TRUE;
+	if (strcmp (connection_type, NM_SETTING_WPAN_SETTING_NAME) == 0)
+		return FALSE;
 
 	return !nm_setting_connection_get_master (nm_connection_get_setting_connection (self));
 }
@@ -2742,6 +2744,22 @@ NMSettingVlan *
 nm_connection_get_setting_vlan (NMConnection *connection)
 {
 	return _connection_get_setting_check (connection, NM_TYPE_SETTING_VLAN);
+}
+
+/**
+ * nm_connection_get_setting_wpan:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingWpan the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingWpan if the connection contains one, otherwise %NULL
+ *
+ * Since: 1.14
+ **/
+NMSettingWpan *
+nm_connection_get_setting_wpan (NMConnection *connection)
+{
+	return _connection_get_setting_check (connection, NM_TYPE_SETTING_WPAN);
 }
 
 NMSettingBluetooth *

@@ -1365,6 +1365,7 @@ global:
 	nm_setting_wireless_security_fils_get_type;
 	nm_setting_wireless_get_wake_on_wlan;
 	nm_setting_wireless_wake_on_wlan_get_type;
+	nm_setting_wpan_get_type;
 	nm_settings_connection_flags_get_type;
 	nm_utils_get_timestamp_msec;
 	nm_vpn_service_plugin_shutdown;

@@ -15,7 +15,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2014 - 2017 Red Hat, Inc.
+ * Copyright 2014 - 2018 Red Hat, Inc.
  */
 
 #ifndef __NETWORKMANAGER_H__
@@ -98,6 +98,7 @@
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
+#include "nm-setting-wpan.h"
 #include "nm-setting.h"
 #include "nm-simple-connection.h"
 #include "nm-utils.h"
