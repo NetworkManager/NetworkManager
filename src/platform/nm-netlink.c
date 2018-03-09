@@ -38,6 +38,10 @@
 #define NL_MSG_PEEK_EXPLICIT    (1<<4)
 #define NL_NO_AUTO_ACK          (1<<5)
 
+#ifndef NETLINK_EXT_ACK
+#define NETLINK_EXT_ACK         11
+#endif
+
 #define NL_MSG_CRED_PRESENT 1
 
 struct nl_msg {
@@ -929,6 +933,22 @@ nl_socket_add_memberships (struct nl_sock *sk, int group, ...)
 	}
 
 	va_end(ap);
+
+	return 0;
+}
+
+int
+nl_socket_set_ext_ack (struct nl_sock *sk, gboolean enable)
+{
+	int err, val;
+
+	if (sk->s_fd == -1)
+		return -NLE_BAD_SOCK;
+
+	val = !!enable;
+	err = setsockopt (sk->s_fd, SOL_NETLINK, NETLINK_EXT_ACK, &val, sizeof (val));
+	if (err < 0)
+		return -nl_syserr2nlerr (errno);
 
 	return 0;
 }
