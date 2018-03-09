@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2010 - 2017 Red Hat, Inc.
+ * Copyright 2010 - 2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -775,7 +775,9 @@ _get_fcn_gobject_int (ARGS_GET_FCN)
 	GParamSpec *pspec;
 	nm_auto_unset_gvalue GValue gval = G_VALUE_INIT;
 	gint64 v;
+	guint base = 10;
 	const NMMetaUtilsIntValueInfo *value_infos;
+	char *return_str;
 
 	RETURN_UNSUPPORTED_GET_TYPE ();
 
@@ -801,19 +803,38 @@ _get_fcn_gobject_int (ARGS_GET_FCN)
 		break;
 	}
 
+	if (   property_info->property_typ_data
+	    && property_info->property_typ_data->subtype.gobject_int.base > 0) {
+		base = property_info->property_typ_data->subtype.gobject_int.base;
+	}
+
+	switch (base) {
+	case 10:
+		return_str = g_strdup_printf ("%"G_GINT64_FORMAT, v);
+		break;
+	case 16:
+		return_str = g_strdup_printf ("0x%"G_GINT64_MODIFIER"x", v);
+		break;
+	default:
+		return_str = NULL;
+		g_assert_not_reached ();
+	}
+
 	if (   get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY
 	    && property_info->property_typ_data
 	    && (value_infos = property_info->property_typ_data->subtype.gobject_int.value_infos)) {
 		for (; value_infos->nick; value_infos++) {
 			if (value_infos->value == v) {
-				RETURN_STR_TO_FREE (g_strdup_printf ("%lli (%s)",
-				                                     (long long) v,
-				                                     value_infos->nick));
+				char *old_str = return_str;
+
+				return_str = g_strdup_printf ("%s (%s)", old_str, value_infos->nick);
+				g_free (old_str);
+				break;
 			}
 		}
 	}
 
-	RETURN_STR_TO_FREE (g_strdup_printf ("%"G_GINT64_FORMAT, v));
+	RETURN_STR_TO_FREE (return_str);
 }
 
 static gconstpointer
