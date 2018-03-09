@@ -263,6 +263,9 @@ typedef struct _NMDevicePrivate {
 	bool queued_ip4_config_pending:1;
 	bool queued_ip6_config_pending:1;
 
+	bool update_ip_config_completed_v4:1;
+	bool update_ip_config_completed_v6:1;
+
 	char *        ip_iface;
 	int           ip_ifindex;
 	NMDeviceType  type;
@@ -3625,6 +3628,9 @@ nm_device_realize_finish (NMDevice *self, const NMPlatformLink *plink)
 
 	if (plink)
 		device_recheck_slave_status (self, plink);
+
+	priv->update_ip_config_completed_v4 = FALSE;
+	priv->update_ip_config_completed_v6 = FALSE;
 
 	priv->real = TRUE;
 	_notify (self, PROP_REAL);
@@ -11415,6 +11421,11 @@ update_ip_config (NMDevice *self, int addr_family)
 
 	nm_assert_addr_family (addr_family);
 
+	if (addr_family == AF_INET)
+		priv->update_ip_config_completed_v4 = TRUE;
+	else
+		priv->update_ip_config_completed_v6 = TRUE;
+
 	if (update_ext_ip_config (self, addr_family, TRUE)) {
 		if (addr_family == AF_INET) {
 			if (priv->ext_ip4_config)
@@ -11429,8 +11440,12 @@ update_ip_config (NMDevice *self, int addr_family)
 void
 nm_device_capture_initial_config (NMDevice *self)
 {
-	update_ip_config (self, AF_INET);
-	update_ip_config (self, AF_INET6);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (!priv->update_ip_config_completed_v4)
+		update_ip_config (self, AF_INET);
+	if (!priv->update_ip_config_completed_v6)
+		update_ip_config (self, AF_INET6);
 }
 
 static gboolean
