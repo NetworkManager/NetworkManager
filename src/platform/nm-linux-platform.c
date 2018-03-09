@@ -297,11 +297,6 @@ typedef enum {
 	WAIT_FOR_NL_RESPONSE_RESULT_FAILED_SETNS,
 } WaitForNlResponseResult;
 
-typedef void (*WaitForNlResponseCallback) (NMPlatform *platform,
-                                           guint32 seq_number,
-                                           WaitForNlResponseResult seq_result,
-                                           gpointer user_data);
-
 static void delayed_action_schedule (NMPlatform *platform, DelayedActionType action_type, gpointer user_data);
 static gboolean delayed_action_handle_all (NMPlatform *platform, gboolean read_netlink);
 static void do_request_link_no_delayed_actions (NMPlatform *platform, int ifindex, const char *name);
