@@ -106,7 +106,7 @@ int nm_ip6_config_get_ifindex (const NMIP6Config *self);
 struct _NMDedupMultiIndex *nm_ip6_config_get_multi_idx (const NMIP6Config *self);
 
 NMIP6Config *nm_ip6_config_capture (struct _NMDedupMultiIndex *multi_idx, NMPlatform *platform, int ifindex,
-                                    gboolean capture_resolv_conf, NMSettingIP6ConfigPrivacy use_temporary);
+                                    NMSettingIP6ConfigPrivacy use_temporary);
 
 void nm_ip6_config_add_dependent_routes (NMIP6Config *self,
                                          guint32 route_table,

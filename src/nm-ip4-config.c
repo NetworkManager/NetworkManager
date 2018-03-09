@@ -593,14 +593,13 @@ nm_ip4_config_clone (const NMIP4Config *self)
 }
 
 NMIP4Config *
-nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int ifindex, gboolean capture_resolv_conf)
+nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int ifindex)
 {
 	NMIP4Config *self;
 	NMIP4ConfigPrivate *priv;
 	const NMDedupMultiHeadEntry *head_entry;
 	NMDedupMultiIter iter;
 	const NMPObject *plobj = NULL;
-	gboolean has_addresses = FALSE;
 
 	nm_assert (ifindex > 0);
 
@@ -632,7 +631,6 @@ nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 		nm_dedup_multi_head_entry_sort (head_entry,
 		                                sort_captured_addresses,
 		                                NULL);
-		has_addresses = TRUE;
 		_notify_addresses (self);
 	}
 
@@ -643,23 +641,6 @@ nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 	/* Extract gateway from default route */
 	nmp_cache_iter_for_each (&iter, head_entry, &plobj)
 		_add_route (self, plobj, NULL, NULL);
-
-	/* If the interface has the default route, and has IPv4 addresses, capture
-	 * nameservers from /etc/resolv.conf.
-	 */
-	if (   has_addresses
-	    && priv->best_default_route
-	    && capture_resolv_conf) {
-		gs_free char *rc_contents = NULL;
-
-		if (g_file_get_contents (_PATH_RESCONF, &rc_contents, NULL, NULL)) {
-			if (nm_utils_resolve_conf_parse (AF_INET,
-			                                 rc_contents,
-			                                 priv->nameservers,
-			                                 priv->dns_options))
-				_notify (self, PROP_NAMESERVERS);
-		}
-	}
 
 	return self;
 }

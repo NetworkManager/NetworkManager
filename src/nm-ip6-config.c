@@ -376,14 +376,13 @@ nm_ip6_config_clone (const NMIP6Config *self)
 }
 
 NMIP6Config *
-nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int ifindex, gboolean capture_resolv_conf, NMSettingIP6ConfigPrivacy use_temporary)
+nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int ifindex, NMSettingIP6ConfigPrivacy use_temporary)
 {
 	NMIP6Config *self;
 	NMIP6ConfigPrivate *priv;
 	const NMDedupMultiHeadEntry *head_entry;
 	NMDedupMultiIter iter;
 	const NMPObject *plobj = NULL;
-	gboolean has_addresses = FALSE;
 
 	nm_assert (ifindex > 0);
 
@@ -409,7 +408,6 @@ nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 			                            NULL,
 			                            NULL))
 				nm_assert_not_reached ();
-			has_addresses = TRUE;
 		}
 		head_entry = nm_ip6_config_lookup_addresses (self);
 		nm_assert (head_entry);
@@ -425,23 +423,6 @@ nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 
 	nmp_cache_iter_for_each (&iter, head_entry, &plobj)
 		_add_route (self, plobj, NULL, NULL);
-
-	/* If the interface has the default route, and has IPv6 addresses, capture
-	 * nameservers from /etc/resolv.conf.
-	 */
-	if (   has_addresses
-	    && priv->best_default_route
-	    && capture_resolv_conf) {
-		gs_free char *rc_contents = NULL;
-
-		if (g_file_get_contents (_PATH_RESCONF, &rc_contents, NULL, NULL)) {
-			if (nm_utils_resolve_conf_parse (AF_INET6,
-			                                 rc_contents,
-			                                 priv->nameservers,
-			                                 priv->dns_options))
-				_notify (self, PROP_NAMESERVERS);
-		}
-	}
 
 	return self;
 }

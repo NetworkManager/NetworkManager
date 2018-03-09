@@ -125,7 +125,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 		g_assert (nm_ip4_config_get_ifindex (ip4_config) == gl.ifindex);
 
 		existing = nm_ip4_config_capture (nm_platform_get_multi_idx (NM_PLATFORM_GET),
-		                                  NM_PLATFORM_GET, gl.ifindex, FALSE);
+		                                  NM_PLATFORM_GET, gl.ifindex);
 		if (last_config)
 			nm_ip4_config_subtract (existing, last_config, 0);
 
@@ -171,7 +171,7 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 	NMIP6Config *existing;
 
 	existing = nm_ip6_config_capture (nm_platform_get_multi_idx (NM_PLATFORM_GET),
-	                                  NM_PLATFORM_GET, gl.ifindex, FALSE, global_opt.tempaddr);
+	                                  NM_PLATFORM_GET, gl.ifindex, global_opt.tempaddr);
 	if (ndisc_config)
 		nm_ip6_config_subtract (existing, ndisc_config, 0);
 	else {

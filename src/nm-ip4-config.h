@@ -160,7 +160,7 @@ int nm_ip4_config_get_ifindex (const NMIP4Config *self);
 
 NMDedupMultiIndex *nm_ip4_config_get_multi_idx (const NMIP4Config *self);
 
-NMIP4Config *nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int ifindex, gboolean capture_resolv_conf);
+NMIP4Config *nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int ifindex);
 
 void nm_ip4_config_add_dependent_routes (NMIP4Config *self,
                                          guint32 route_table,

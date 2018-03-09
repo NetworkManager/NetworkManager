@@ -513,7 +513,7 @@ static const GDBusSignalInfo signal_info_state_changed;
 
 static void nm_device_set_proxy_config (NMDevice *self, const char *pac_url);
 
-static gboolean update_ext_ip_config (NMDevice *self, int addr_family, gboolean initial, gboolean intersect_configs);
+static gboolean update_ext_ip_config (NMDevice *self, int addr_family, gboolean intersect_configs);
 
 static gboolean nm_device_set_ip4_config (NMDevice *self,
                                           NMIP4Config *config,
@@ -6118,7 +6118,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 
 	if (commit) {
 		if (priv->queued_ip4_config_id)
-			update_ext_ip_config (self, AF_INET, FALSE, FALSE);
+			update_ext_ip_config (self, AF_INET, FALSE);
 		ensure_con_ip4_config (self);
 	}
 
@@ -6892,7 +6892,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 
 	if (commit) {
 		if (priv->queued_ip6_config_id)
-			update_ext_ip_config (self, AF_INET6, FALSE, FALSE);
+			update_ext_ip_config (self, AF_INET6, FALSE);
 		ensure_con_ip6_config (self);
 	}
 
@@ -8377,7 +8377,6 @@ act_stage3_ip6_config_start (NMDevice *self,
 	priv->ext_ip6_config_captured = nm_ip6_config_capture (nm_device_get_multi_index (self),
 	                                                       nm_device_get_platform (self),
 	                                                       nm_device_get_ip_ifindex (self),
-	                                                       FALSE,
 	                                                       NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
 
 	ip6_privacy = _ip6_privacy_get (self);
@@ -11291,11 +11290,10 @@ intersect_ext_config (NMDevice *self, AppliedConfig *config)
 }
 
 static gboolean
-update_ext_ip_config (NMDevice *self, int addr_family, gboolean initial, gboolean intersect_configs)
+update_ext_ip_config (NMDevice *self, int addr_family, gboolean intersect_configs)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	int ifindex;
-	gboolean capture_resolv_conf;
 	GSList *iter;
 
 	nm_assert_addr_family (addr_family);
@@ -11304,16 +11302,12 @@ update_ext_ip_config (NMDevice *self, int addr_family, gboolean initial, gboolea
 	if (!ifindex)
 		return FALSE;
 
-	capture_resolv_conf =    initial
-	                      && nm_dns_manager_get_resolv_conf_explicit (nm_dns_manager_get ());
-
 	if (addr_family == AF_INET) {
 
 		g_clear_object (&priv->ext_ip4_config);
 		priv->ext_ip4_config = nm_ip4_config_capture (nm_device_get_multi_index (self),
 		                                              nm_device_get_platform (self),
-		                                              ifindex,
-		                                              capture_resolv_conf);
+		                                              ifindex);
 		if (priv->ext_ip4_config) {
 			if (intersect_configs) {
 				/* This function was called upon external changes. Remove the configuration
@@ -11361,7 +11355,6 @@ update_ext_ip_config (NMDevice *self, int addr_family, gboolean initial, gboolea
 		priv->ext_ip6_config_captured = nm_ip6_config_capture (nm_device_get_multi_index (self),
 		                                                       nm_device_get_platform (self),
 		                                                       ifindex,
-		                                                       capture_resolv_conf,
 		                                                       NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
 		if (priv->ext_ip6_config_captured) {
 
@@ -11416,13 +11409,13 @@ update_ext_ip_config (NMDevice *self, int addr_family, gboolean initial, gboolea
 }
 
 static void
-update_ip_config (NMDevice *self, int addr_family, gboolean initial)
+update_ip_config (NMDevice *self, int addr_family)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	nm_assert_addr_family (addr_family);
 
-	if (update_ext_ip_config (self, addr_family, initial, TRUE)) {
+	if (update_ext_ip_config (self, addr_family, TRUE)) {
 		if (addr_family == AF_INET) {
 			if (priv->ext_ip4_config)
 				ip4_config_merge_and_apply (self, FALSE);
@@ -11436,8 +11429,8 @@ update_ip_config (NMDevice *self, int addr_family, gboolean initial)
 void
 nm_device_capture_initial_config (NMDevice *self)
 {
-	update_ip_config (self, AF_INET,  TRUE);
-	update_ip_config (self, AF_INET6, TRUE);
+	update_ip_config (self, AF_INET);
+	update_ip_config (self, AF_INET6);
 }
 
 static gboolean
@@ -11469,7 +11462,7 @@ queued_ip4_config_change (gpointer user_data)
 		priv->queued_ip4_config_id = g_idle_add (queued_ip4_config_change, self);
 		_LOGT (LOGD_DEVICE, "IP4 update was postponed");
 	} else
-		update_ip_config (self, AF_INET, FALSE);
+		update_ip_config (self, AF_INET);
 
 	set_unmanaged_external_down (self, TRUE);
 
@@ -11512,7 +11505,7 @@ queued_ip6_config_change (gpointer user_data)
 		priv->queued_ip6_config_id = g_idle_add (queued_ip6_config_change, self);
 		_LOGT (LOGD_DEVICE, "IP6 update was postponed");
 	} else {
-		update_ip_config (self, AF_INET6, FALSE);
+		update_ip_config (self, AF_INET6);
 
 		/* Check whether we need to complete waiting for link-local.
 		 * We are also called from an idle handler, so no problem doing state transitions
