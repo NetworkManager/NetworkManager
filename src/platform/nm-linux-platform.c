@@ -3964,8 +3964,10 @@ cache_on_change (NMPlatform *platform,
 static guint32
 _nlh_seq_next_get (NMLinuxPlatformPrivate *priv)
 {
-	/* generate a new sequence number, but skip zero. */
-	return priv->nlh_seq_next++ ?: priv->nlh_seq_next++;
+	/* generate a new sequence number, but never return zero.
+	 * Wrapping numbers are not a problem, because we don't rely
+	 * on strictly increasing sequence numbers. */
+	return (++priv->nlh_seq_next) ?: (++priv->nlh_seq_next);
 }
 
 /**
@@ -6932,7 +6934,6 @@ nm_linux_platform_init (NMLinuxPlatform *self)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (self);
 
-	priv->nlh_seq_next = 1;
 	priv->delayed_action.list_master_connected = g_ptr_array_new ();
 	priv->delayed_action.list_refresh_link = g_ptr_array_new ();
 	priv->delayed_action.list_wait_for_nl_response = g_array_new (FALSE, TRUE, sizeof (DelayedActionWaitForNlResponseData));
