@@ -78,15 +78,6 @@ NMDhcpClient * nm_dhcp_manager_start_ip6     (NMDhcpManager *manager,
                                               NMSettingIP6ConfigPrivacy privacy,
                                               guint needed_prefixes);
 
-GSList *       nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
-                                                     struct _NMDedupMultiIndex *multi_idx,
-                                                     int addr_family,
-                                                     const char *iface,
-                                                     int ifindex,
-                                                     const char *uuid,
-                                                     guint32 route_table,
-                                                     guint32 route_metric);
-
 /* For testing only */
 extern const char* nm_dhcp_helper_path;
 

@@ -333,31 +333,6 @@ nm_dhcp_manager_set_default_hostname (NMDhcpManager *manager, const char *hostna
 	priv->default_hostname = g_strdup (hostname);
 }
 
-GSList *
-nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
-                                      NMDedupMultiIndex *multi_idx,
-                                      int addr_family,
-                                      const char *iface,
-                                      int ifindex,
-                                      const char *uuid,
-                                      guint32 route_table,
-                                      guint32 route_metric)
-{
-	NMDhcpManagerPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
-	g_return_val_if_fail (iface != NULL, NULL);
-	g_return_val_if_fail (ifindex >= -1, NULL);
-	g_return_val_if_fail (uuid != NULL, NULL);
-	g_return_val_if_fail (NM_IN_SET (addr_family, AF_INET, AF_INET6), NULL);
-
-	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
-	if (   priv->client_factory
-	    && priv->client_factory->get_lease_ip_configs)
-		return priv->client_factory->get_lease_ip_configs (multi_idx, addr_family, iface, ifindex, uuid, route_table, route_metric);
-	return NULL;
-}
-
 const char *
 nm_dhcp_manager_get_config (NMDhcpManager *self)
 {
