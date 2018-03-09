@@ -2003,6 +2003,17 @@ It's equivalent to the <literal>+bond.options 'option=value'</literal> syntax.</
     </tbody>
     </tgroup></table>
 
+    <table><title>WPAN options</title><tgroup cols="2">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry></row>
+    </thead>
+    <tbody>
+      <row><entry align="left">mac</entry><entry align="left"><link linkend="nm-settings.property.wpan.mac">wpan.mac</link></entry></row>
+      <row><entry align="left">short-addr</entry><entry align="left"><link linkend="nm-settings.property.wpan.short-addr">wpan.short-addr</link></entry></row>
+      <row><entry align="left">pan-id</entry><entry align="left"><link linkend="nm-settings.property.wpan.pan-id">wpan.pan-id</link></entry></row>
+    </tbody>
+    </tgroup></table>
+
     <table><title>IPv4 options</title><tgroup cols="3">
     <thead>
       <row><entry>Alias</entry><entry>Property</entry><entry>Note</entry></row>

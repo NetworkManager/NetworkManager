@@ -1200,6 +1200,11 @@ _set_fcn_gobject_mtu (ARGS_SET_FCN)
 	return TRUE;
 }
 
+/* Ideally we'll be able to get this from a public header. */
+#ifndef IEEE802154_ADDR_LEN
+#define IEEE802154_ADDR_LEN 8
+#endif
+
 static gboolean
 _set_fcn_gobject_mac (ARGS_SET_FCN)
 {
@@ -1211,9 +1216,11 @@ _set_fcn_gobject_mac (ARGS_SET_FCN)
 	else
 		mode = NM_META_PROPERTY_TYPE_MAC_MODE_DEFAULT;
 
-	if (mode == NM_META_PROPERTY_TYPE_MAC_MODE_INFINIBAND)
+	if (mode == NM_META_PROPERTY_TYPE_MAC_MODE_INFINIBAND) {
 		valid = nm_utils_hwaddr_valid (value, INFINIBAND_ALEN);
-	else {
+	} else if (mode == NM_META_PROPERTY_TYPE_MAC_MODE_WPAN) {
+		valid = nm_utils_hwaddr_valid (value, IEEE802154_ADDR_LEN);
+	} else {
 		valid =    nm_utils_hwaddr_valid (value, ETH_ALEN)
 		        || (   mode == NM_META_PROPERTY_TYPE_MAC_MODE_CLONED
 		            && NM_CLONED_MAC_IS_SPECIAL (value));
@@ -7435,6 +7442,52 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
 	NULL
 };
 
+#undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_WPAN
+static const NMMetaPropertyInfo *const property_infos_WPAN[] = {
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_WPAN_MAC_ADDRESS,
+		.property_type =                &_pt_gobject_mac,
+		.is_cli_option =                TRUE,
+		.property_alias =               "mac",
+		.prompt =                       N_("MAC [none]"),
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (mac,
+			.mode =                     NM_META_PROPERTY_TYPE_MAC_MODE_WPAN,
+		),
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_WPAN_SHORT_ADDRESS,
+		.is_cli_option =                TRUE,
+		.property_alias =               "short-addr",
+		.prompt =                       N_("Short address (<0x0000-0xffff>)"),
+		.property_type =                &_pt_gobject_int,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int, \
+			.base =			16,
+			.value_infos =          INT_VALUE_INFOS (
+				{
+					.value = G_MAXUINT16,
+					.nick = "unset",
+				}
+			),
+		),
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_WPAN_PAN_ID,
+		.is_cli_option =                TRUE,
+		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
+		.property_alias =               "pan-id",
+		.prompt =                       N_("PAN Identifier (<0x0000-0xffff>)"),
+		.property_type =                &_pt_gobject_int,
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int, \
+			.base =			16,
+			.value_infos =          INT_VALUE_INFOS (
+				{
+					.value = G_MAXUINT16,
+					.nick = "unset",
+				}
+			),
+		),
+	),
+	NULL
+};
+
 /*****************************************************************************/
 
 static void
@@ -7595,6 +7648,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_WIRED               N_("Wired Ethernet")
 #define SETTING_PRETTY_NAME_WIRELESS            N_("Wi-Fi connection")
 #define SETTING_PRETTY_NAME_WIRELESS_SECURITY   N_("Wi-Fi security settings")
+#define SETTING_PRETTY_NAME_WPAN                N_("WPAN settings")
 
 #define NM_META_SETTING_VALID_PARTS(...) \
 	((const NMMetaSettingValidPartItem *const[]) { __VA_ARGS__  NULL })
@@ -7835,6 +7889,12 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 	),
 	SETTING_INFO (WIRELESS_SECURITY,
 		.alias =                            "wifi-sec",
+	),
+	SETTING_INFO (WPAN,
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (WPAN,                  TRUE),
+		),
 	),
 };
 

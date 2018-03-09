@@ -16,7 +16,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2017 Red Hat, Inc.
+ * Copyright 2017 - 2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -63,6 +63,7 @@
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
+#include "nm-setting-wpan.h"
 
 /*****************************************************************************/
 
@@ -339,6 +340,11 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
 		.meta_type =                NM_META_SETTING_TYPE_WIRELESS_SECURITY,
 		.setting_name =             NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 		.get_setting_gtype =        nm_setting_wireless_security_get_type,
+	},
+	[NM_META_SETTING_TYPE_WPAN] = {
+		.meta_type =                NM_META_SETTING_TYPE_WPAN,
+		.setting_name =             NM_SETTING_WPAN_SETTING_NAME,
+		.get_setting_gtype =        nm_setting_wpan_get_type,
 	},
 
 	[NM_META_SETTING_TYPE_UNKNOWN] = {

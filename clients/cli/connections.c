@@ -660,6 +660,7 @@ const NmcMetaGenericInfo *const metagen_con_active_general[_NMC_GENERIC_INFO_TYP
                                          NM_SETTING_MACSEC_SETTING_NAME"," \
                                          NM_SETTING_MACVLAN_SETTING_NAME"," \
                                          NM_SETTING_VXLAN_SETTING_NAME"," \
+                                         NM_SETTING_WPAN_SETTING_NAME","\
                                          NM_SETTING_PROXY_SETTING_NAME"," \
                                          NM_SETTING_TC_CONFIG_SETTING_NAME
                                          // NM_SETTING_DUMMY_SETTING_NAME
@@ -890,7 +891,10 @@ usage_connection_add (void)
 	              "                  [source-port-min <0-65535>]\n"
 	              "                  [source-port-max <0-65535>]\n"
 	              "                  [destination-port <0-65535>]\n\n"
-	              "    dummy:         \n\n"
+	              "    wpan:         [short-addr <0x0000-0xffff>]\n\n"
+	              "                  [pan-id <0x0000-0xffff>]\n\n"
+	              "                  [mac <MAC address>]\n\n"
+	              "    dummy:\n\n"
 	              "  SLAVE_OPTIONS:\n"
 	              "    bridge:       [priority <0-63>]\n"
 	              "                  [path-cost <1-65535>]\n"
