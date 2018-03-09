@@ -326,7 +326,9 @@ wait_for_nl_response_to_plerr (WaitForNlResponseResult seq_result)
 }
 
 static const char *
-wait_for_nl_response_to_string (WaitForNlResponseResult seq_result, char *buf, gsize buf_size)
+wait_for_nl_response_to_string (WaitForNlResponseResult seq_result,
+                                const char *errmsg,
+                                char *buf, gsize buf_size)
 {
 	char *buf0 = buf;
 
@@ -341,8 +343,13 @@ wait_for_nl_response_to_string (WaitForNlResponseResult seq_result, char *buf, g
 		nm_utils_strbuf_append_str (&buf, &buf_size, "failure");
 		break;
 	default:
-		if (seq_result < 0)
-			nm_utils_strbuf_append (&buf, &buf_size, "failure %d (%s)", -((int) seq_result), g_strerror (-((int) seq_result)));
+		if (seq_result < 0) {
+			nm_utils_strbuf_append (&buf, &buf_size, "failure %d (%s%s%s)",
+			                        -((int) seq_result),
+			                        g_strerror (-((int) seq_result)),
+			                        errmsg ? " - " : "",
+			                        errmsg ?: "");
+		}
 		else
 			nm_utils_strbuf_append (&buf, &buf_size, "internal failure %d", (int) seq_result);
 		break;
@@ -2901,6 +2908,7 @@ typedef struct {
 	DelayedActionWaitForNlResponseType response_type;
 	gint64 timeout_abs_ns;
 	WaitForNlResponseResult *out_seq_result;
+	char **out_errmsg;
 	union {
 		gint *out_refresh_all_in_progess;
 		NMPObject **out_route_get;
@@ -3361,7 +3369,7 @@ delayed_action_to_string_full (DelayedActionType action_type, gpointer user_data
 			                        (timeout < 0 ? -timeout : timeout) % NM_UTILS_NS_PER_SECOND,
 			                        (int) data->response_type,
 			                        data->seq_result ? ", " : "",
-			                        data->seq_result ? wait_for_nl_response_to_string (data->seq_result, b, sizeof (b)) : "");
+			                        data->seq_result ? wait_for_nl_response_to_string (data->seq_result, NULL, b, sizeof (b)) : "");
 		} else
 			nm_utils_strbuf_append_str (&buf, &buf_size, " (any)");
 		break;
@@ -3677,6 +3685,7 @@ static void
 delayed_action_schedule_WAIT_FOR_NL_RESPONSE (NMPlatform *platform,
                                               guint32 seq_number,
                                               WaitForNlResponseResult *out_seq_result,
+                                              char **out_errmsg,
                                               DelayedActionWaitForNlResponseType response_type,
                                               gpointer response_out_data)
 {
@@ -3684,6 +3693,7 @@ delayed_action_schedule_WAIT_FOR_NL_RESPONSE (NMPlatform *platform,
 		.seq_number = seq_number,
 		.timeout_abs_ns = nm_utils_get_monotonic_timestamp_ns () + (200 * (NM_UTILS_NS_PER_SECOND / 1000)),
 		.out_seq_result = out_seq_result,
+		.out_errmsg = out_errmsg,
 		.response_type = response_type,
 		.response.out_data = response_out_data,
 	};
@@ -3977,6 +3987,7 @@ static int
 _nl_send_nlmsghdr (NMPlatform *platform,
                    struct nlmsghdr *nlhdr,
                    WaitForNlResponseResult *out_seq_result,
+                   char **out_errmsg,
                    DelayedActionWaitForNlResponseType response_type,
                    gpointer response_out_data)
 {
@@ -4021,7 +4032,7 @@ again:
 		}
 	}
 
-	delayed_action_schedule_WAIT_FOR_NL_RESPONSE (platform, seq, out_seq_result,
+	delayed_action_schedule_WAIT_FOR_NL_RESPONSE (platform, seq, out_seq_result, out_errmsg,
 	                                              response_type, response_out_data);
 	return 0;
 }
@@ -4040,6 +4051,7 @@ static int
 _nl_send_nlmsg (NMPlatform *platform,
                 struct nl_msg *nlmsg,
                 WaitForNlResponseResult *out_seq_result,
+                char **out_errmsg,
                 DelayedActionWaitForNlResponseType response_type,
                 gpointer response_out_data)
 {
@@ -4058,7 +4070,7 @@ _nl_send_nlmsg (NMPlatform *platform,
 		return nle;
 	}
 
-	delayed_action_schedule_WAIT_FOR_NL_RESPONSE (platform, seq, out_seq_result,
+	delayed_action_schedule_WAIT_FOR_NL_RESPONSE (platform, seq, out_seq_result, out_errmsg,
 	                                              response_type, response_out_data);
 	return 0;
 }
@@ -4096,7 +4108,7 @@ do_request_link_no_delayed_actions (NMPlatform *platform, int ifindex, const cha
 	                          0,
 	                          0);
 	if (nlmsg) {
-		nle = _nl_send_nlmsg (platform, nlmsg, NULL, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
+		nle = _nl_send_nlmsg (platform, nlmsg, NULL, NULL, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
 		if (nle < 0) {
 			_LOGE ("do-request-link: %d %s: failed sending netlink request \"%s\" (%d)",
 			       ifindex, name ?: "",
@@ -4171,7 +4183,7 @@ do_request_all_no_delayed_actions (NMPlatform *platform, DelayedActionType actio
 		if (nle < 0)
 			continue;
 
-		if (_nl_send_nlmsg (platform, nlmsg, NULL, DELAYED_ACTION_RESPONSE_TYPE_REFRESH_ALL_IN_PROGRESS, out_refresh_all_in_progess) < 0) {
+		if (_nl_send_nlmsg (platform, nlmsg, NULL, NULL, DELAYED_ACTION_RESPONSE_TYPE_REFRESH_ALL_IN_PROGRESS, out_refresh_all_in_progess) < 0) {
 			nm_assert (*out_refresh_all_in_progess > 0);
 			*out_refresh_all_in_progess -= 1;
 		}
@@ -4215,7 +4227,7 @@ event_seq_check_refresh_all (NMPlatform *platform, guint32 seq_number)
 }
 
 static void
-event_seq_check (NMPlatform *platform, guint32 seq_number, WaitForNlResponseResult seq_result)
+event_seq_check (NMPlatform *platform, guint32 seq_number, WaitForNlResponseResult seq_result, const char *msg)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	DelayedActionWaitForNlResponseData *data;
@@ -4234,11 +4246,13 @@ event_seq_check (NMPlatform *platform, guint32 seq_number, WaitForNlResponseResu
 				/* We potentially receive many parts partial responses for the same sequence number.
 				 * Thus, we only remember the result, and collect it later. */
 				if (data->seq_result < 0) {
-					/* we already saw an error for this seqence number.
+					/* we already saw an error for this sequence number.
 					 * Preserve it. */
 				} else if (   seq_result != WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_UNKNOWN
 				           || data->seq_result == WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN)
 					data->seq_result = seq_result;
+				if (data->out_errmsg && !*data->out_errmsg)
+					*data->out_errmsg = g_strdup (msg);
 				return;
 			}
 		}
@@ -4437,13 +4451,14 @@ do_add_link_with_lookup (NMPlatform *platform,
 {
 	const NMPObject *obj = NULL;
 	WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+	gs_free char *errmsg = NULL;
 	int nle;
 	char s_buf[256];
 	NMPCache *cache = nm_platform_get_cache (platform);
 
 	event_handler_read_netlink (platform, FALSE);
 
-	nle = _nl_send_nlmsg (platform, nlmsg, &seq_result, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
+	nle = _nl_send_nlmsg (platform, nlmsg, &seq_result, &errmsg, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
 	if (nle < 0) {
 		_LOGE ("do-add-link[%s/%s]: failed sending netlink request \"%s\" (%d)",
 		       name,
@@ -4463,7 +4478,7 @@ do_add_link_with_lookup (NMPlatform *platform,
 	        "do-add-link[%s/%s]: %s",
 	        name,
 	        nm_link_type_to_string (link_type),
-	        wait_for_nl_response_to_string (seq_result, s_buf, sizeof (s_buf)));
+	        wait_for_nl_response_to_string (seq_result, errmsg, s_buf, sizeof (s_buf)));
 
 	if (out_link) {
 		obj = nmp_cache_lookup_link_full (cache, 0, name, FALSE, link_type, NULL, NULL);
@@ -4480,6 +4495,7 @@ do_add_addrroute (NMPlatform *platform,
                   gboolean suppress_netlink_failure)
 {
 	WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+	gs_free char *errmsg = NULL;
 	int nle;
 	char s_buf[256];
 
@@ -4489,7 +4505,7 @@ do_add_addrroute (NMPlatform *platform,
 
 	event_handler_read_netlink (platform, FALSE);
 
-	nle = _nl_send_nlmsg (platform, nlmsg, &seq_result, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
+	nle = _nl_send_nlmsg (platform, nlmsg, &seq_result, &errmsg, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
 	if (nle < 0) {
 		_LOGE ("do-add-%s[%s]: failure sending netlink request \"%s\" (%d)",
 		       NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
@@ -4510,7 +4526,7 @@ do_add_addrroute (NMPlatform *platform,
 	        "do-add-%s[%s]: %s",
 	        NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
 	        nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0),
-	        wait_for_nl_response_to_string (seq_result, s_buf, sizeof (s_buf)));
+	        wait_for_nl_response_to_string (seq_result, errmsg, s_buf, sizeof (s_buf)));
 
 	if (NMP_OBJECT_GET_TYPE (obj_id) == NMP_OBJECT_TYPE_IP6_ADDRESS) {
 		/* In rare cases, the object is not yet ready as we received the ACK from
@@ -4531,6 +4547,7 @@ static gboolean
 do_delete_object (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *nlmsg)
 {
 	WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+	gs_free char *errmsg = NULL;
 	int nle;
 	char s_buf[256];
 	gboolean success;
@@ -4538,7 +4555,7 @@ do_delete_object (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 
 	event_handler_read_netlink (platform, FALSE);
 
-	nle = _nl_send_nlmsg (platform, nlmsg, &seq_result, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
+	nle = _nl_send_nlmsg (platform, nlmsg, &seq_result, &errmsg, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
 	if (nle < 0) {
 		_LOGE ("do-delete-%s[%s]: failure sending netlink request \"%s\" (%d)",
 		       NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
@@ -4570,7 +4587,7 @@ do_delete_object (NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *
 	        "do-delete-%s[%s]: %s%s",
 	        NMP_OBJECT_GET_CLASS (obj_id)->obj_type_name,
 	        nmp_object_to_string (obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0),
-	        wait_for_nl_response_to_string (seq_result, s_buf, sizeof (s_buf)),
+	        wait_for_nl_response_to_string (seq_result, errmsg, s_buf, sizeof (s_buf)),
 	        log_detail);
 
 	if (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj_id),
@@ -4601,6 +4618,7 @@ do_change_link (NMPlatform *platform,
 	nm_auto_pop_netns NMPNetns *netns = NULL;
 	int nle;
 	WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+	gs_free char *errmsg = NULL;
 	char s_buf[256];
 	NMPlatformError result = NM_PLATFORM_ERROR_SUCCESS;
 	NMLogLevel log_level = LOGL_DEBUG;
@@ -4616,7 +4634,7 @@ do_change_link (NMPlatform *platform,
 	}
 
 retry:
-	nle = _nl_send_nlmsg (platform, nlmsg, &seq_result, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
+	nle = _nl_send_nlmsg (platform, nlmsg, &seq_result, &errmsg, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
 	if (nle < 0) {
 		log_level = LOGL_ERR;
 		log_detail_free = g_strdup_printf (", failure sending netlink request: %s (%d)",
@@ -4673,7 +4691,7 @@ out:
 	        "do-change-link[%d]: %s changing link: %s%s",
 	        ifindex,
 	        log_result,
-	        wait_for_nl_response_to_string (seq_result, s_buf, sizeof (s_buf)),
+	        wait_for_nl_response_to_string (seq_result, errmsg, s_buf, sizeof (s_buf)),
 	        log_detail);
 	return result;
 }
@@ -6350,7 +6368,7 @@ ip_route_get (NMPlatform *platform,
 		}
 
 		seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
-		nle = _nl_send_nlmsghdr (platform, &req.n, &seq_result, DELAYED_ACTION_RESPONSE_TYPE_ROUTE_GET, &route);
+		nle = _nl_send_nlmsghdr (platform, &req.n, &seq_result, NULL, DELAYED_ACTION_RESPONSE_TYPE_ROUTE_GET, &route);
 		if (nle < 0) {
 			_LOGE ("get-route: failure sending netlink request \"%s\" (%d)",
 			       g_strerror (-nle), -nle);
@@ -6389,6 +6407,7 @@ qdisc_add (NMPlatform *platform,
            const NMPlatformQdisc *qdisc)
 {
 	WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+	gs_free char *errmsg = NULL;
 	int nle;
 	char s_buf[256];
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
@@ -6397,7 +6416,7 @@ qdisc_add (NMPlatform *platform,
 
 	event_handler_read_netlink (platform, FALSE);
 
-	nle = _nl_send_nlmsg (platform, msg, &seq_result, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
+	nle = _nl_send_nlmsg (platform, msg, &seq_result, &errmsg, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
 	if (nle < 0) {
 		_LOGE ("do-add-qdisc: failed sending netlink request \"%s\" (%d)",
 		      nl_geterror (nle), -nle);
@@ -6412,7 +6431,7 @@ qdisc_add (NMPlatform *platform,
 	            ? LOGL_DEBUG
 	            : LOGL_WARN,
 	        "do-add-qdisc: %s",
-	        wait_for_nl_response_to_string (seq_result, s_buf, sizeof (s_buf)));
+	        wait_for_nl_response_to_string (seq_result, errmsg, s_buf, sizeof (s_buf)));
 
 	if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK)
 		return NM_PLATFORM_ERROR_SUCCESS;
@@ -6428,6 +6447,7 @@ tfilter_add (NMPlatform *platform,
              const NMPlatformTfilter *tfilter)
 {
 	WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+	gs_free char *errmsg = NULL;
 	int nle;
 	char s_buf[256];
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
@@ -6436,7 +6456,7 @@ tfilter_add (NMPlatform *platform,
 
 	event_handler_read_netlink (platform, FALSE);
 
-	nle = _nl_send_nlmsg (platform, msg, &seq_result, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
+	nle = _nl_send_nlmsg (platform, msg, &seq_result, &errmsg, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
 	if (nle < 0) {
 		_LOGE ("do-add-tfilter: failed sending netlink request \"%s\" (%d)",
 		      nl_geterror (nle), -nle);
@@ -6451,7 +6471,7 @@ tfilter_add (NMPlatform *platform,
 	            ? LOGL_DEBUG
 	            : LOGL_WARN,
 	        "do-add-tfilter: %s",
-	        wait_for_nl_response_to_string (seq_result, s_buf, sizeof (s_buf)));
+	        wait_for_nl_response_to_string (seq_result, errmsg, s_buf, sizeof (s_buf)));
 
 	if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK)
 		return NM_PLATFORM_ERROR_SUCCESS;
@@ -6525,6 +6545,7 @@ continue_reading:
 		gboolean process_valid_msg = FALSE;
 		guint32 seq_number;
 		char buf_nlmsghdr[400];
+		const char *extack_msg = NULL;
 
 		msg = nlmsg_alloc_convert (hdr);
 
@@ -6596,7 +6617,6 @@ continue_reading:
 				abort_parsing = TRUE;
 			} else if (e->error) {
 				int errsv = e->error > 0 ? e->error : -e->error;
-				const char *extack_msg = NULL;
 
 				if (   NM_FLAGS_HAS (hdr->nlmsg_flags, NLM_F_ACK_TLVS)
 				    && hdr->nlmsg_len >= sizeof (*e) + e->msg.nlmsg_len) {
@@ -6648,7 +6668,7 @@ continue_reading:
 			seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
 		}
 
-		event_seq_check (platform, seq_number, seq_result);
+		event_seq_check (platform, seq_number, seq_result, extack_msg);
 
 		if (abort_parsing)
 			goto stop;
