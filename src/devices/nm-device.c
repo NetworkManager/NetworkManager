@@ -11264,116 +11264,6 @@ nm_device_get_firmware_missing (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->firmware_missing;
 }
 
-static NMIP4Config *
-find_ip4_lease_config (NMDevice *self,
-                       NMConnection *connection,
-                       NMIP4Config *ext_ip4_config)
-{
-	const char *ip_iface = nm_device_get_ip_iface (self);
-	int ip_ifindex = nm_device_get_ip_ifindex (self);
-	GSList *leases, *liter;
-	NMIP4Config *found = NULL;
-
-	g_return_val_if_fail (NM_IS_IP4_CONFIG (ext_ip4_config), NULL);
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
-
-	leases = nm_dhcp_manager_get_lease_ip_configs (nm_dhcp_manager_get (),
-	                                               nm_device_get_multi_index (self),
-	                                               AF_INET,
-	                                               ip_iface,
-	                                               ip_ifindex,
-	                                               nm_connection_get_uuid (connection),
-	                                               nm_device_get_route_table (self, AF_INET, TRUE),
-	                                               nm_device_get_route_metric (self, AF_INET));
-	for (liter = leases; liter && !found; liter = liter->next) {
-		NMIP4Config *lease_config = liter->data;
-		const NMPlatformIP4Address *address = nm_ip4_config_get_first_address (lease_config);
-		const NMPObject *gw1, *gw2;
-
-		g_assert (address);
-		if (!nm_ip4_config_address_exists (ext_ip4_config, address))
-			continue;
-		gw1 = nm_ip4_config_best_default_route_get (lease_config);
-		if (!gw1)
-			continue;
-		gw2 = nm_ip4_config_best_default_route_get (ext_ip4_config);
-		if (!gw2)
-			continue;
-		if (NMP_OBJECT_CAST_IP4_ROUTE (gw1)->gateway != NMP_OBJECT_CAST_IP4_ROUTE (gw2)->gateway)
-			continue;
-		found = g_object_ref (lease_config);
-	}
-
-	g_slist_free_full (leases, g_object_unref);
-	return found;
-}
-
-static void
-capture_lease_config (NMDevice *self,
-                      NMIP4Config *ext_ip4_config,
-                      NMIP4Config **out_ip4_config,
-                      NMIP6Config *ext_ip6_config,
-                      NMIP6Config **out_ip6_config)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMSettingsConnection *const*connections;
-	guint i;
-	gboolean dhcp_used = FALSE;
-	NMDedupMultiIter ipconf_iter;
-
-	/* Ensure at least one address on the device has a non-infinite lifetime,
-	 * otherwise DHCP cannot possibly be active on the device right now.
-	 */
-	if (ext_ip4_config && out_ip4_config) {
-		const NMPlatformIP4Address *addr;
-
-		nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, ext_ip4_config, &addr) {
-			if (addr->lifetime != NM_PLATFORM_LIFETIME_PERMANENT) {
-				dhcp_used = TRUE;
-				break;
-			}
-		}
-	} else if (ext_ip6_config && out_ip6_config) {
-		const NMPlatformIP6Address *addr;
-
-		nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, ext_ip6_config, &addr) {
-			if (addr->lifetime != NM_PLATFORM_LIFETIME_PERMANENT) {
-				dhcp_used = TRUE;
-				break;
-			}
-		}
-	} else {
-		g_return_if_fail (   (ext_ip6_config && out_ip6_config)
-		                  || (ext_ip4_config && out_ip4_config));
-	}
-
-	if (!dhcp_used)
-		return;
-
-	connections = nm_settings_get_connections (priv->settings, NULL);
-	for (i = 0; connections[i]; i++) {
-		NMConnection *candidate = (NMConnection *) connections[i];
-		const char *method;
-
-		if (!nm_device_check_connection_compatible (self, candidate))
-			continue;
-
-		/* IPv4 leases */
-		method = nm_utils_get_ip_config_method (candidate, NM_TYPE_SETTING_IP4_CONFIG);
-		if (out_ip4_config && strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0) {
-			*out_ip4_config = find_ip4_lease_config (self, candidate, ext_ip4_config);
-			if (*out_ip4_config)
-				return;
-		}
-
-		/* IPv6 leases */
-		method = nm_utils_get_ip_config_method (candidate, NM_TYPE_SETTING_IP6_CONFIG);
-		if (out_ip6_config && strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0) {
-			/* FIXME: implement find_ip6_lease_config() */
-		}
-	}
-}
-
 static void
 intersect_ext_config (NMDevice *self, AppliedConfig *config)
 {
@@ -11425,14 +11315,6 @@ update_ext_ip_config (NMDevice *self, int addr_family, gboolean initial, gboolea
 		                                              ifindex,
 		                                              capture_resolv_conf);
 		if (priv->ext_ip4_config) {
-			if (initial) {
-				applied_config_clear (&priv->dev_ip4_config);
-				capture_lease_config (self,
-				                      priv->ext_ip4_config,
-				                      (NMIP4Config **) &priv->dev_ip4_config.orig,
-				                      NULL, NULL);
-			}
-
 			if (intersect_configs) {
 				/* This function was called upon external changes. Remove the configuration
 				 * (addresses,routes) that is no longer present externally from the internal
