@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2014 Red Hat, Inc.
+ * Copyright (C) 2014 - 2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -430,6 +430,7 @@ nm_device_factory_manager_load_factories (NMDeviceFactoryManagerFactoryFunc call
 	_ADD_INTERNAL (nm_veth_device_factory_get_type);
 	_ADD_INTERNAL (nm_vlan_device_factory_get_type);
 	_ADD_INTERNAL (nm_vxlan_device_factory_get_type);
+	_ADD_INTERNAL (nm_wpan_device_factory_get_type);
 
 	load_factories_from_dir (NMPLUGINDIR, callback, user_data);
 }

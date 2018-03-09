@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2017 Red Hat, Inc.
+ * Copyright (C) 2005 - 2018 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -1914,6 +1914,8 @@ nm_device_get_route_metric_default (NMDeviceType device_type)
 	case NM_DEVICE_TYPE_OVS_INTERFACE:
 	case NM_DEVICE_TYPE_OVS_PORT:
 		return 800;
+	case NM_DEVICE_TYPE_WPAN:
+		return 850;
 	case NM_DEVICE_TYPE_GENERIC:
 		return 950;
 	case NM_DEVICE_TYPE_UNKNOWN:

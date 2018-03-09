@@ -16,7 +16,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright 2007 - 2008 Novell, Inc.
- * Copyright 2007 - 2012 Red Hat, Inc.
+ * Copyright 2007 - 2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -284,6 +284,7 @@ coerce_type (NMDeviceType type)
 	case NM_DEVICE_TYPE_UNKNOWN:
 	case NM_DEVICE_TYPE_DUMMY:
 	case NM_DEVICE_TYPE_PPP:
+	case NM_DEVICE_TYPE_WPAN:
 		return type;
 	}
 	return NM_DEVICE_TYPE_UNKNOWN;
@@ -1345,6 +1346,8 @@ get_type_name (NMDevice *device)
 		return _("Dummy");
 	case NM_DEVICE_TYPE_PPP:
 		return _("PPP");
+	case NM_DEVICE_TYPE_WPAN:
+		return _("IEEE 802.15.4");
 	case NM_DEVICE_TYPE_GENERIC:
 	case NM_DEVICE_TYPE_UNUSED1:
 	case NM_DEVICE_TYPE_UNUSED2:

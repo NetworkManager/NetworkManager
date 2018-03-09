@@ -213,6 +213,7 @@ typedef enum {
  * @NM_DEVICE_TYPE_OVS_INTERFACE: a OpenVSwitch interface
  * @NM_DEVICE_TYPE_OVS_PORT: a OpenVSwitch port
  * @NM_DEVICE_TYPE_OVS_BRIDGE: a OpenVSwitch bridge
+ * @NM_DEVICE_TYPE_WPAN: a IEEE 802.15.4 (WPAN) MAC Layer Device
  *
  * #NMDeviceType values indicate the type of hardware represented by a
  * device object.
@@ -245,6 +246,7 @@ typedef enum {
 	NM_DEVICE_TYPE_OVS_INTERFACE = 24,
 	NM_DEVICE_TYPE_OVS_PORT      = 25,
 	NM_DEVICE_TYPE_OVS_BRIDGE    = 26,
+	NM_DEVICE_TYPE_WPAN          = 27,
 } NMDeviceType;
 
 /**

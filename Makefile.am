@@ -1590,6 +1590,8 @@ src_libNetworkManager_la_SOURCES = \
 	src/devices/nm-device-vlan.h \
 	src/devices/nm-device-vxlan.c \
 	src/devices/nm-device-vxlan.h \
+	src/devices/nm-device-wpan.c \
+	src/devices/nm-device-wpan.h \
 	\
 	src/dhcp/nm-dhcp-dhcpcanon.c \
 	src/dhcp/nm-dhcp-dhclient.c \

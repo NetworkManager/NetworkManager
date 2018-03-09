@@ -110,6 +110,7 @@ sources = files(
   'devices/nm-device-veth.c',
   'devices/nm-device-vlan.c',
   'devices/nm-device-vxlan.c',
+  'devices/nm-device-wpan.c',
   'devices/nm-lldp-listener.c',
   'dhcp/nm-dhcp-dhclient.c',
   'dhcp/nm-dhcp-dhclient-utils.c',
