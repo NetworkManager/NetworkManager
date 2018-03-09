@@ -1691,19 +1691,43 @@ nm_ip6_config_lookup_address (const NMIP6Config *self,
 }
 
 const NMPlatformIP6Address *
-nm_ip6_config_get_address_first_nontentative (const NMIP6Config *self, gboolean linklocal)
+nm_ip6_config_find_first_address (const NMIP6Config *self,
+                                  NMPlatformMatchFlags match_flag)
 {
 	const NMPlatformIP6Address *addr;
 	NMDedupMultiIter iter;
 
 	g_return_val_if_fail (NM_IS_IP6_CONFIG (self), NULL);
 
-	linklocal = !!linklocal;
+	nm_assert (!NM_FLAGS_ANY (match_flag, ~(  NM_PLATFORM_MATCH_WITH_ADDRTYPE__ANY
+	                                        | NM_PLATFORM_MATCH_WITH_ADDRSTATE__ANY)));
+
+	nm_assert (NM_FLAGS_ANY (match_flag, NM_PLATFORM_MATCH_WITH_ADDRTYPE__ANY));
+	nm_assert (NM_FLAGS_ANY (match_flag, NM_PLATFORM_MATCH_WITH_ADDRSTATE__ANY));
 
 	nm_ip_config_iter_ip6_address_for_each (&iter, self, &addr) {
-		if (   ((!!IN6_IS_ADDR_LINKLOCAL (&addr->address)) == linklocal)
-		    && !(addr->n_ifa_flags & IFA_F_TENTATIVE))
-			return addr;
+
+		if (IN6_IS_ADDR_LINKLOCAL (&addr->address)) {
+			if (!NM_FLAGS_HAS (match_flag, NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL))
+				continue;
+		} else {
+			if (!NM_FLAGS_HAS (match_flag, NM_PLATFORM_MATCH_WITH_ADDRTYPE_NORMAL))
+				continue;
+		}
+
+		if (NM_FLAGS_HAS (addr->n_ifa_flags, IFA_F_DADFAILED)) {
+			if (!NM_FLAGS_HAS (match_flag, NM_PLATFORM_MATCH_WITH_ADDRSTATE_DADFAILED))
+				continue;
+		} else if (   NM_FLAGS_HAS (addr->n_ifa_flags, IFA_F_TENTATIVE)
+		           && !NM_FLAGS_HAS (addr->n_ifa_flags, IFA_F_OPTIMISTIC)) {
+			if (!NM_FLAGS_HAS (match_flag, NM_PLATFORM_MATCH_WITH_ADDRSTATE_TENTATIVE))
+				continue;
+		} else {
+			if (!NM_FLAGS_HAS (match_flag, NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL))
+				continue;
+		}
+
+		return addr;
 	}
 
 	return NULL;

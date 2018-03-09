@@ -7207,8 +7207,12 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
 
-	if (priv->ext_ip6_config_captured)
-		ll_addr = nm_ip6_config_get_address_first_nontentative (priv->ext_ip6_config_captured, TRUE);
+	if (priv->ext_ip6_config_captured) {
+		ll_addr = nm_ip6_config_find_first_address (priv->ext_ip6_config_captured,
+		                                              NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL
+		                                            | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL
+		                                            | NM_PLATFORM_MATCH_WITH_ADDRSTATE_DADFAILED);
+	}
 
 	if (!ll_addr) {
 		_LOGW (LOGD_DHCP6, "can't start DHCPv6: no link-local address");
@@ -7425,7 +7429,10 @@ linklocal6_complete (NMDevice *self)
 
 	nm_assert (priv->linklocal6_timeout_id);
 	nm_assert (priv->ext_ip6_config_captured);
-	nm_assert (nm_ip6_config_get_address_first_nontentative (priv->ext_ip6_config_captured, TRUE));
+	nm_assert (nm_ip6_config_find_first_address (priv->ext_ip6_config_captured,
+	                                               NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL
+	                                             | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL
+	                                             | NM_PLATFORM_MATCH_WITH_ADDRSTATE_DADFAILED));
 
 	nm_clear_g_source (&priv->linklocal6_timeout_id);
 
@@ -7545,7 +7552,10 @@ linklocal6_start (NMDevice *self)
 	nm_clear_g_source (&priv->linklocal6_timeout_id);
 
 	if (   priv->ext_ip6_config_captured
-	    && nm_ip6_config_get_address_first_nontentative (priv->ext_ip6_config_captured, TRUE))
+	    && nm_ip6_config_find_first_address (priv->ext_ip6_config_captured,
+	                                           NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL
+	                                         | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL
+	                                         | NM_PLATFORM_MATCH_WITH_ADDRSTATE_DADFAILED))
 		return TRUE;
 
 	connection = nm_device_get_applied_connection (self);
@@ -7944,7 +7954,10 @@ ndisc_ra_timeout (NMNDisc *ndisc, NMDevice *self)
 		 * config, consider that sufficient for IPv6 success.
 		 */
 		if (   priv->ip6_config
-		    && nm_ip6_config_get_address_first_nontentative (priv->ip6_config, FALSE))
+		    && nm_ip6_config_find_first_address (priv->ip6_config,
+		                                           NM_PLATFORM_MATCH_WITH_ADDRTYPE_NORMAL
+		                                         | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL
+		                                         | NM_PLATFORM_MATCH_WITH_ADDRSTATE_DADFAILED))
 			nm_device_activate_schedule_ip6_config_result (self);
 		else
 			nm_device_activate_schedule_ip6_config_timeout (self);
@@ -11538,7 +11551,10 @@ update_ip_config (NMDevice *self, int addr_family, gboolean initial)
 	if (   addr_family == AF_INET6
 	    && priv->linklocal6_timeout_id
 	    && priv->ext_ip6_config_captured
-	    && nm_ip6_config_get_address_first_nontentative (priv->ext_ip6_config_captured, TRUE)) {
+	    && nm_ip6_config_find_first_address (priv->ext_ip6_config_captured,
+	                                           NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL
+	                                         | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL
+	                                         | NM_PLATFORM_MATCH_WITH_ADDRSTATE_DADFAILED)) {
 		/* linklocal6 is ready now, do the state transition... we are also
 		 * invoked as g_idle_add, so no problems with reentrance doing it now.
 		 */
@@ -11671,16 +11687,15 @@ queued_ip6_config_change (gpointer user_data)
 	/* Check if DAD is still pending */
 	if (   priv->ip6_state == IP_CONF
 	    && priv->dad6_ip6_config
-	    && priv->ext_ip6_config_captured) {
-		if (!nm_ip6_config_has_any_dad_pending (priv->ext_ip6_config_captured,
-		                                        priv->dad6_ip6_config)) {
-			_LOGD (LOGD_DEVICE | LOGD_IP6, "IPv6 DAD terminated");
-			g_clear_object (&priv->dad6_ip6_config);
-			_set_ip_state (self, AF_INET6, IP_DONE);
-			check_ip_state (self, FALSE, TRUE);
-			if (priv->rt6_temporary_not_available)
-				nm_device_activate_schedule_ip6_config_result (self);
-		}
+	    && priv->ext_ip6_config_captured
+	    && !nm_ip6_config_has_any_dad_pending (priv->ext_ip6_config_captured,
+	                                           priv->dad6_ip6_config)) {
+		_LOGD (LOGD_DEVICE | LOGD_IP6, "IPv6 DAD terminated");
+		g_clear_object (&priv->dad6_ip6_config);
+		_set_ip_state (self, AF_INET6, IP_DONE);
+		check_ip_state (self, FALSE, TRUE);
+		if (priv->rt6_temporary_not_available)
+			nm_device_activate_schedule_ip6_config_result (self);
 	}
 
 	set_unmanaged_external_down (self, TRUE);

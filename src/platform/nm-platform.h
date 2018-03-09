@@ -171,6 +171,34 @@ typedef enum { /*< skip >*/
 	NM_PLATFORM_ERROR_CANT_SET_MTU,
 } NMPlatformError;
 
+typedef enum {
+
+	/* match-flags are strictly inclusive. That means,
+	 * by default nothing is matched, but if you enable a particular
+	 * flag, a candidate that matches passes the check.
+	 *
+	 * In other words: adding more flags can only extend the result
+	 * set of matching objects.
+	 *
+	 * Also, the flags form partitions. Like, an address can be either of
+	 * ADDRTYPE_NORMAL or ADDRTYPE_LINKLOCAL, but never both. Same for
+	 * the ADDRSTATE match types.
+	 */
+	NM_PLATFORM_MATCH_WITH_NONE                                 = 0,
+
+	NM_PLATFORM_MATCH_WITH_ADDRTYPE_NORMAL                      = (1LL <<  0),
+	NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL                   = (1LL <<  1),
+	NM_PLATFORM_MATCH_WITH_ADDRTYPE__ANY                        =   NM_PLATFORM_MATCH_WITH_ADDRTYPE_NORMAL
+	                                                              | NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL,
+
+	NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL                     = (1LL <<  2),
+	NM_PLATFORM_MATCH_WITH_ADDRSTATE_TENTATIVE                  = (1LL <<  3),
+	NM_PLATFORM_MATCH_WITH_ADDRSTATE_DADFAILED                  = (1LL <<  4),
+	NM_PLATFORM_MATCH_WITH_ADDRSTATE__ANY                       =   NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL
+	                                                              | NM_PLATFORM_MATCH_WITH_ADDRSTATE_TENTATIVE
+	                                                              | NM_PLATFORM_MATCH_WITH_ADDRSTATE_DADFAILED,
+} NMPlatformMatchFlags;
+
 #define NM_PLATFORM_LINK_OTHER_NETNS    (-1)
 
 #define __NMPlatformObject_COMMON \
