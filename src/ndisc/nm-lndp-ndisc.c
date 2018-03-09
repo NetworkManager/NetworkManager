@@ -195,6 +195,10 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 			continue;
 		nm_utils_ip6_address_clear_host_address (&r_network, ndp_msg_opt_prefix (msg, offset), r_plen);
 
+		if (   IN6_IS_ADDR_UNSPECIFIED (&r_network)
+		    || IN6_IS_ADDR_LINKLOCAL (&r_network))
+			continue;
+
 		if (ndp_msg_opt_prefix_flag_on_link (msg, offset)) {
 			NMNDiscRoute route = {
 			    .network = r_network,

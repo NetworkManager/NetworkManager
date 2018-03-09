@@ -11669,7 +11669,8 @@ queued_ip6_config_change (gpointer user_data)
 		 * ("Addressing Model"): "All interfaces are required to have at least
 		 * one link-local unicast address".
 		 */
-		if (priv->ip6_config && nm_ip6_config_get_num_addresses (priv->ip6_config))
+		if (   priv->ip6_config
+		    && nm_ip6_config_get_num_addresses (priv->ip6_config))
 			need_ipv6ll = TRUE;
 
 		if (need_ipv6ll)
