@@ -30,6 +30,7 @@ ifaces = [
   'org.freedesktop.NetworkManager.Device.Vlan',
   'org.freedesktop.NetworkManager.Device.Vxlan',
   'org.freedesktop.NetworkManager.Device.WiMax',
+  'org.freedesktop.NetworkManager.Device.Wpan',
   'org.freedesktop.NetworkManager.Device.Wired',
   'org.freedesktop.NetworkManager.Device.Wireless',
   'org.freedesktop.NetworkManager.Device',

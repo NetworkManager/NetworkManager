@@ -236,6 +236,8 @@ introspection_sources = \
 	introspection/org.freedesktop.NetworkManager.Device.Wireless.h \
 	introspection/org.freedesktop.NetworkManager.Device.WiMax.c \
 	introspection/org.freedesktop.NetworkManager.Device.WiMax.h \
+	introspection/org.freedesktop.NetworkManager.Device.Wpan.c \
+	introspection/org.freedesktop.NetworkManager.Device.Wpan.h \
 	introspection/org.freedesktop.NetworkManager.Device.c \
 	introspection/org.freedesktop.NetworkManager.Device.h \
 	introspection/org.freedesktop.NetworkManager.DHCP4Config.c \
@@ -289,6 +291,7 @@ DBUS_INTERFACE_DOCS = \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Adsl.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.AgentManager.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.WiMax.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Wpan.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.IPTunnel.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Tun.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Bridge.xml \
@@ -356,6 +359,7 @@ dbusinterfaces_DATA = \
 	introspection/org.freedesktop.NetworkManager.Device.Vxlan.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Wireless.xml \
 	introspection/org.freedesktop.NetworkManager.Device.WiMax.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Wpan.xml \
 	introspection/org.freedesktop.NetworkManager.Device.xml \
 	introspection/org.freedesktop.NetworkManager.DHCP4Config.xml \
 	introspection/org.freedesktop.NetworkManager.DHCP6Config.xml \
