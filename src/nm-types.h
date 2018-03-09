@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2012 - 2017 Red Hat, Inc.
+ * Copyright (C) 2012 - 2018 Red Hat, Inc.
  */
 
 #ifndef __NETWORKMANAGER_TYPES_H__
@@ -150,6 +150,7 @@ typedef enum {
 	NM_LINK_TYPE_WIFI,
 	NM_LINK_TYPE_WWAN_NET,   /* WWAN kernel netdevice */
 	NM_LINK_TYPE_WIMAX,
+	NM_LINK_TYPE_WPAN,
 
 	/* Software types */
 	NM_LINK_TYPE_BNEP = 0x10000,   /* Bluetooth Ethernet emulation */
