@@ -151,6 +151,7 @@ libnm/nm-device-vlan.c
 libnm/nm-device-vxlan.c
 libnm/nm-device-wifi.c
 libnm/nm-device-wimax.c
+libnm/nm-device-wpan.c
 libnm/nm-device.c
 libnm/nm-manager.c
 libnm/nm-object.c

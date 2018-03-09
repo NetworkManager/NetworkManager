@@ -1351,6 +1351,7 @@ global:
 	nm_connection_get_setting_tc_config;
 	nm_device_ip_tunnel_get_flags;
 	nm_device_wifi_get_last_scan;
+	nm_device_wpan_get_type;
 	nm_ip_tunnel_flags_get_type;
 	nm_remote_connection_get_filename;
 	nm_remote_connection_get_flags;

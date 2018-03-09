@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2014 Red Hat, Inc.
+ * Copyright 2014 - 2018 Red Hat, Inc.
  */
 
 #ifndef __NM_TYPES_H__
@@ -54,6 +54,7 @@ typedef struct _NMDeviceVlan         NMDeviceVlan;
 typedef struct _NMDeviceVxlan        NMDeviceVxlan;
 typedef struct _NMDeviceWifi         NMDeviceWifi;
 typedef struct _NMDeviceWimax        NMDeviceWimax;
+typedef struct _NMDeviceWpan         NMDeviceWpan;
 typedef struct _NMDhcpConfig         NMDhcpConfig;
 typedef struct _NMIPConfig           NMIPConfig;
 typedef struct _NMObject             NMObject;

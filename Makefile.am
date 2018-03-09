@@ -797,6 +797,7 @@ libnm_lib_h_pub_real = \
 	libnm/nm-device-vxlan.h \
 	libnm/nm-device-wifi.h \
 	libnm/nm-device-wimax.h \
+	libnm/nm-device-wpan.h \
 	libnm/nm-device.h \
 	libnm/nm-dhcp-config.h \
 	libnm/nm-ip-config.h \
@@ -853,6 +854,7 @@ libnm_lib_c_real = \
 	libnm/nm-device-vxlan.c \
 	libnm/nm-device-wifi.c \
 	libnm/nm-device-wimax.c \
+	libnm/nm-device-wpan.c \
 	libnm/nm-device.c \
 	libnm/nm-dhcp-config.c \
 	libnm/nm-dhcp4-config.c \
