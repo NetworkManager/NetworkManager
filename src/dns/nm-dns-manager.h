@@ -123,8 +123,6 @@ typedef enum {
 	NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG,
 } NMDnsManagerResolvConfManager;
 
-gboolean nm_dns_manager_get_resolv_conf_explicit (NMDnsManager *self);
-
 void nm_dns_manager_stop (NMDnsManager *self);
 
 #endif /* __NETWORKMANAGER_DNS_MANAGER_H__ */
