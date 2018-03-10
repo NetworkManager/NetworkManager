@@ -6760,11 +6760,6 @@ dispose (GObject *object)
 	CList *iter, *iter_safe;
 	NMActiveConnection *ac, *ac_safe;
 
-	nm_clear_g_source (&priv->delete_volatile_connection_idle_id);
-	_delete_volatile_connection_all (self, FALSE);
-	nm_assert (!priv->delete_volatile_connection_idle_id);
-	nm_assert (c_list_is_empty (&priv->delete_volatile_connection_lst_head));
-
 	g_signal_handlers_disconnect_by_func (priv->platform,
 	                                      G_CALLBACK (platform_link_cb),
 	                                      self);
@@ -6858,6 +6853,11 @@ dispose (GObject *object)
 		g_signal_handlers_disconnect_by_func (priv->rfkill_mgr, rfkill_manager_rfkill_changed_cb, self);
 		g_clear_object (&priv->rfkill_mgr);
 	}
+
+	nm_clear_g_source (&priv->delete_volatile_connection_idle_id);
+	_delete_volatile_connection_all (self, FALSE);
+	nm_assert (!priv->delete_volatile_connection_idle_id);
+	nm_assert (c_list_is_empty (&priv->delete_volatile_connection_lst_head));
 
 	nm_device_factory_manager_for_each_factory (_deinit_device_factory, self);
 
