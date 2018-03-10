@@ -2091,6 +2091,8 @@ dispose (GObject *object)
 	g_clear_object (&priv->config);
 
 	G_OBJECT_CLASS (nm_dns_manager_parent_class)->dispose (object);
+
+	g_clear_pointer (&priv->config_variant, g_variant_unref);
 }
 
 static void
