@@ -27,3 +27,8 @@ WantedBy=multi-user.target
 Alias=dbus-org.freedesktop.NetworkManager.service
 Also=NetworkManager-dispatcher.service
 
+# We want to enable NetworkManager-wait-online.service whenever this service
+# is enabled. NetworkManager-wait-online.service has
+# WantedBy=network-online.target, so enabling it only has an effect if
+# network-online.target itself is enabled or pulled in by some other unit.
+Also=NetworkManager-wait-online.service
