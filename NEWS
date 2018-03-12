@@ -1,4 +1,20 @@
 ===============================================
+NetworkManager-1.10.6
+Overview of changes since NetworkManager-1.10.4
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* ovs: fix compilation issue of OVS plugin and various fixes
+* team: add support for team runner "random"
+* core: cleanup activation of device (rh #1537160)
+* dhcp: retry indefinitely to renew the lease (rh #1503587)
+* core: fix blocking autoconnect for no-secrets (rh #794014)
+* libnm: mark async results as cancelled (bgo #794088)
+* Various bug fixes including possible crashes.
+* Updated translations.
+
+===============================================
 NetworkManager-1.10.4
 Overview of changes since NetworkManager-1.10.2
 ===============================================
