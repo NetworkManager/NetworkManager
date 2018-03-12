@@ -24,7 +24,7 @@
 
 #include <net/ethernet.h>
 
-#include "nm-exported-object.h"
+#include "nm-dbus-object.h"
 #include "nm-connection.h"
 
 #define NM_TYPE_SETTINGS_CONNECTION            (nm_settings_connection_get_type ())
@@ -34,13 +34,9 @@
 #define NM_IS_SETTINGS_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_SETTINGS_CONNECTION))
 #define NM_SETTINGS_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SETTINGS_CONNECTION, NMSettingsConnectionClass))
 
-/* Signals */
-#define NM_SETTINGS_CONNECTION_UPDATED "updated"
 #define NM_SETTINGS_CONNECTION_REMOVED "removed"
 #define NM_SETTINGS_CONNECTION_GET_SECRETS "get-secrets"
 #define NM_SETTINGS_CONNECTION_CANCEL_SECRETS "cancel-secrets"
-
-/* Internal signals */
 #define NM_SETTINGS_CONNECTION_UPDATED_INTERNAL "updated-internal"
 
 /* Properties */
@@ -106,12 +102,12 @@ typedef struct _NMSettingsConnectionClass NMSettingsConnectionClass;
 struct _NMSettingsConnectionPrivate;
 
 struct _NMSettingsConnection {
-	NMExportedObject parent;
+	NMDBusObject parent;
 	struct _NMSettingsConnectionPrivate *_priv;
 };
 
 struct _NMSettingsConnectionClass {
-	NMExportedObjectClass parent;
+	NMDBusObjectClass parent;
 
 	gboolean (*commit_changes) (NMSettingsConnection *self,
 	                            NMConnection *new_connection,

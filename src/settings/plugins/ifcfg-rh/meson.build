@@ -51,7 +51,7 @@ libnm_settings_plugin_ifcfg_rh = shared_module(
   sources: sources,
   dependencies: deps,
   c_args: cflags,
-  link_with: [libnmdbus_ifcfg_rh, libnms_ifcfg_rh_core],
+  link_with: [libnms_ifcfg_rh_core],
   link_args: ldflags_linker_script_settings,
   link_depends: linker_script_settings,
   install: true,

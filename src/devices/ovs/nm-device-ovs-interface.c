@@ -28,8 +28,6 @@
 #include "nm-setting-ovs-interface.h"
 #include "nm-setting-ovs-port.h"
 
-#include "introspection/org.freedesktop.NetworkManager.Device.OvsInterface.h"
-
 #include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceOvsInterface);
 
@@ -185,12 +183,25 @@ nm_device_ovs_interface_init (NMDeviceOvsInterface *self)
 {
 }
 
+static const NMDBusInterfaceInfoExtended interface_info_device_ovs_interface = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_DEVICE_OVS_INTERFACE,
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+		),
+	),
+	.legacy_property_changed = TRUE,
+};
+
 static void
 nm_device_ovs_interface_class_init (NMDeviceOvsInterfaceClass *klass)
 {
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NULL, NM_LINK_TYPE_OPENVSWITCH);
+
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_ovs_interface);
 
 	device_class->connection_type = NM_SETTING_OVS_INTERFACE_SETTING_NAME;
 	device_class->get_type_description = get_type_description;
@@ -202,8 +213,4 @@ nm_device_ovs_interface_class_init (NMDeviceOvsInterfaceClass *klass)
 	device_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
 	device_class->act_stage3_ip6_config_start = act_stage3_ip6_config_start;
 	device_class->can_unmanaged_external_down = can_unmanaged_external_down;
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        NMDBUS_TYPE_DEVICE_OVS_INTERFACE_SKELETON,
-	                                        NULL);
 }

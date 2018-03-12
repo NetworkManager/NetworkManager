@@ -36,8 +36,6 @@
 #include "nm-ip4-config.h"
 #include "nm-utils.h"
 
-#include "introspection/org.freedesktop.NetworkManager.Device.Macvlan.h"
-
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceMacvlan);
 
@@ -197,12 +195,17 @@ update_properties (NMDevice *device)
 	g_object_freeze_notify (object);
 
 	nm_device_parent_set_ifindex (device, plink->parent);
-	if (priv->props.mode != props->mode)
-		_notify (self, PROP_MODE);
-	if (priv->props.no_promisc != props->no_promisc)
-		_notify (self, PROP_NO_PROMISC);
 
-	priv->props = *props;
+#define CHECK_PROPERTY_CHANGED(field, prop) \
+	G_STMT_START { \
+		if (priv->props.field != props->field) { \
+			priv->props.field = props->field; \
+			_notify (self, prop); \
+		} \
+	} G_STMT_END
+
+	CHECK_PROPERTY_CHANGED (mode, PROP_MODE);
+	CHECK_PROPERTY_CHANGED (no_promisc, PROP_NO_PROMISC);
 
 	g_object_thaw_notify (object);
 }
@@ -470,16 +473,35 @@ nm_device_macvlan_init (NMDeviceMacvlan *self)
 {
 }
 
+static const NMDBusInterfaceInfoExtended interface_info_device_macvlan = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_DEVICE_MACVLAN,
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+		),
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Parent",    "o", NM_DEVICE_PARENT),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Mode",      "s", NM_DEVICE_MACVLAN_MODE),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("NoPromisc", "b", NM_DEVICE_MACVLAN_NO_PROMISC),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Tab",       "b", NM_DEVICE_MACVLAN_TAP),
+		),
+	),
+	.legacy_property_changed = TRUE,
+};
+
 static void
 nm_device_macvlan_class_init (NMDeviceMacvlanClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NULL, NM_LINK_TYPE_MACVLAN, NM_LINK_TYPE_MACVTAP)
 
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
+
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_macvlan);
 
 	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->check_connection_compatible = check_connection_compatible;
@@ -513,10 +535,6 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *klass)
 	                           G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        NMDBUS_TYPE_DEVICE_MACVLAN_SKELETON,
-	                                        NULL);
 }
 
 /*****************************************************************************/

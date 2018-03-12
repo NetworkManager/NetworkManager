@@ -176,11 +176,13 @@ _nm_dbus_signal_connect_data (GDBusProxy *proxy,
 
 
 static void
-typecheck_response (GVariant           **response,
-                    const GVariantType  *reply_type,
-                    GError             **error)
+typecheck_response (GVariant **response,
+                    const GVariantType *reply_type,
+                    GError **error)
 {
-	if (*response && reply_type && !g_variant_is_of_type (*response, reply_type)) {
+	if (   *response
+	    && reply_type
+	    && !g_variant_is_of_type (*response, reply_type)) {
 		/* This is the same error code that g_dbus_connection_call() returns if
 		 * @reply_type doesn't match.
 		 */

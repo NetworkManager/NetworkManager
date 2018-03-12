@@ -46,8 +46,6 @@ sources = files(
   'nm-wwan-factory.c'
 )
 
-deps += libnmdbus_dep
-
 libnm_device_plugin_wwan = shared_module(
   'nm-device-plugin-wwan',
   sources: sources,

@@ -65,14 +65,14 @@ sources = files(
   'main-utils.c',
   'NetworkManagerUtils.c',
   'nm-core-utils.c',
-  'nm-exported-object.c',
+  'nm-dbus-object.c',
+  'nm-dbus-utils.c',
   'nm-ip4-config.c',
   'nm-ip6-config.c',
   'nm-logging.c'
 )
 
 deps = [
-  libnmdbus_dep,
   libsystemd_dep,
   libudev_dep,
   nm_core_dep
@@ -145,7 +145,7 @@ sources = files(
   'nm-auth-manager.c',
   'nm-auth-subject.c',
   'nm-auth-utils.c',
-  'nm-bus-manager.c',
+  'nm-dbus-manager.c',
   'nm-checkpoint.c',
   'nm-checkpoint-manager.c',
   'nm-config.c',

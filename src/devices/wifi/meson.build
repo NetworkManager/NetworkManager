@@ -5,6 +5,7 @@ common_sources = files(
 
 sources = common_sources + files(
   'nm-wifi-factory.c',
+  'nm-wifi-common.c',
   'nm-device-wifi.c',
   'nm-device-olpc-mesh.c'
 )
@@ -17,7 +18,6 @@ if enable_iwd
 endif
 
 deps = [
-  libnmdbus_dep,
   nm_dep
 ]
 

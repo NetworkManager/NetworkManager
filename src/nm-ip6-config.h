@@ -23,7 +23,6 @@
 
 #include <netinet/in.h>
 
-#include "nm-exported-object.h"
 #include "nm-setting-ip6-config.h"
 
 #include "nm-utils/nm-dedup-multi.h"

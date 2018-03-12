@@ -33,7 +33,7 @@
 #include "nm-dhcp-client.h"
 #include "nm-dhcp-manager.h"
 #include "nm-core-internal.h"
-#include "nm-bus-manager.h"
+#include "nm-dbus-manager.h"
 #include "NetworkManagerUtils.h"
 
 #define PRIV_SOCK_PATH            NMRUNDIR "/private-dhcp"
@@ -60,7 +60,7 @@ const NMDhcpClientFactory *const _nm_dhcp_manager_factories[4] = {
 /*****************************************************************************/
 
 typedef struct {
-	NMBusManager *      dbus_mgr;
+	NMDBusManager *      dbus_mgr;
 	gulong              new_conn_id;
 	gulong              dis_conn_id;
 	GHashTable *        connections;
@@ -192,29 +192,27 @@ _method_call (GDBusConnection *connection,
 {
 	NMDhcpListener *self = NM_DHCP_LISTENER (user_data);
 
-	if (!nm_streq0 (interface_name, NM_DHCP_HELPER_SERVER_INTERFACE_NAME))
-		g_return_if_reached ();
-	if (!nm_streq0 (method_name, NM_DHCP_HELPER_SERVER_METHOD_NOTIFY))
-		g_return_if_reached ();
-	if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(a{sv})")))
-		g_return_if_reached ();
+	if (   !nm_streq (interface_name, NM_DHCP_HELPER_SERVER_INTERFACE_NAME)
+	    || !nm_streq (method_name, NM_DHCP_HELPER_SERVER_METHOD_NOTIFY)) {
+		g_dbus_method_invocation_return_error (invocation,
+		                                       G_DBUS_ERROR,
+		                                       G_DBUS_ERROR_UNKNOWN_METHOD,
+		                                       "Unknown method %s",
+		                                       method_name);
+		return;
+	}
 
 	_method_call_handle (self, parameters);
-
 	g_dbus_method_invocation_return_value (invocation, NULL);
 }
 
-NM_DEFINE_GDBUS_INTERFACE_INFO (
-	interface_info,
+static GDBusInterfaceInfo *const interface_info = NM_DEFINE_GDBUS_INTERFACE_INFO (
 	NM_DHCP_HELPER_SERVER_INTERFACE_NAME,
 	.methods = NM_DEFINE_GDBUS_METHOD_INFOS (
 		NM_DEFINE_GDBUS_METHOD_INFO (
 			NM_DHCP_HELPER_SERVER_METHOD_NOTIFY,
 			.in_args = NM_DEFINE_GDBUS_ARG_INFOS (
-				NM_DEFINE_GDBUS_ARG_INFO (
-					"data",
-					.signature = "a{sv}",
-				),
+				NM_DEFINE_GDBUS_ARG_INFO ("data", "a{sv}"),
 			),
 		),
 	),
@@ -239,7 +237,7 @@ _dbus_connection_register_object (NMDhcpListener *self,
 }
 
 static void
-new_connection_cb (NMBusManager *mgr,
+new_connection_cb (NMDBusManager *mgr,
                    GDBusConnection *connection,
                    GDBusObjectManager *manager,
                    NMDhcpListener *self)
@@ -262,7 +260,7 @@ new_connection_cb (NMBusManager *mgr,
 }
 
 static void
-dis_connection_cb (NMBusManager *mgr,
+dis_connection_cb (NMDBusManager *mgr,
                    GDBusConnection *connection,
                    NMDhcpListener *self)
 {
@@ -286,16 +284,16 @@ nm_dhcp_listener_init (NMDhcpListener *self)
 	/* Maps GDBusConnection :: signal-id */
 	priv->connections = g_hash_table_new (nm_direct_hash, NULL);
 
-	priv->dbus_mgr = nm_bus_manager_get ();
+	priv->dbus_mgr = nm_dbus_manager_get ();
 
 	/* Register the socket our DHCP clients will return lease info on */
-	nm_bus_manager_private_server_register (priv->dbus_mgr, PRIV_SOCK_PATH, PRIV_SOCK_TAG);
+	nm_dbus_manager_private_server_register (priv->dbus_mgr, PRIV_SOCK_PATH, PRIV_SOCK_TAG);
 	priv->new_conn_id = g_signal_connect (priv->dbus_mgr,
-	                                      NM_BUS_MANAGER_PRIVATE_CONNECTION_NEW "::" PRIV_SOCK_TAG,
+	                                      NM_DBUS_MANAGER_PRIVATE_CONNECTION_NEW "::" PRIV_SOCK_TAG,
 	                                      G_CALLBACK (new_connection_cb),
 	                                      self);
 	priv->dis_conn_id = g_signal_connect (priv->dbus_mgr,
-	                                      NM_BUS_MANAGER_PRIVATE_CONNECTION_DISCONNECTED "::" PRIV_SOCK_TAG,
+	                                      NM_DBUS_MANAGER_PRIVATE_CONNECTION_DISCONNECTED "::" PRIV_SOCK_TAG,
 	                                      G_CALLBACK (dis_connection_cb),
 	                                      self);
 }

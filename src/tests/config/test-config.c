@@ -25,7 +25,7 @@
 #include "nm-config.h"
 #include "nm-test-device.h"
 #include "platform/nm-fake-platform.h"
-#include "nm-bus-manager.h"
+#include "nm-dbus-manager.h"
 #include "nm-connectivity.h"
 
 #include "nm-test-utils-core.h"
@@ -1036,13 +1036,6 @@ int
 main (int argc, char **argv)
 {
 	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
-
-	/* Initialize the DBus manager singleton explicitly, because it is accessed by
-	 * the class initializer of NMDevice (used by the NMTestDevice stub).
-	 * This way, we skip calling nm_bus_manager_init_bus() which would
-	 * either fail and/or cause unexpected actions in the test.
-	 * */
-	nm_bus_manager_setup (g_object_new (NM_TYPE_BUS_MANAGER, NULL));
 
 	nm_fake_platform_setup ();
 

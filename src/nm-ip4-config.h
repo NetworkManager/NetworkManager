@@ -23,7 +23,6 @@
 
 #include "nm-setting-connection.h"
 
-#include "nm-exported-object.h"
 #include "nm-setting-ip4-config.h"
 
 #include "nm-utils/nm-dedup-multi.h"

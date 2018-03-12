@@ -35,7 +35,7 @@
 #include "nm-utils.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
-#include "nm-bus-manager.h"
+#include "nm-dbus-manager.h"
 #include "NetworkManagerUtils.h"
 
 #define PIDFILE NMRUNDIR "/dnsmasq.pid"
@@ -408,7 +408,7 @@ start_dnsmasq (NMDnsDnsmasq *self)
 	const char *argv[15];
 	GPid pid = 0;
 	guint idx = 0;
-	NMBusManager *dbus_mgr;
+	NMDBusManager *dbus_mgr;
 	GDBusConnection *connection;
 
 	if (priv->running) {
@@ -460,10 +460,10 @@ start_dnsmasq (NMDnsDnsmasq *self)
 		return;
 	}
 
-	dbus_mgr = nm_bus_manager_get ();
+	dbus_mgr = nm_dbus_manager_get ();
 	g_return_if_fail (dbus_mgr);
 
-	connection = nm_bus_manager_get_connection (dbus_mgr);
+	connection = nm_dbus_manager_get_connection (dbus_mgr);
 	g_return_if_fail (connection);
 
 	priv->dnsmasq_cancellable = g_cancellable_new ();

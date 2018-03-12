@@ -22,7 +22,7 @@
 #ifndef __NM_WIFI_AP_H__
 #define __NM_WIFI_AP_H__
 
-#include "nm-exported-object.h"
+#include "nm-dbus-object.h"
 #include "nm-dbus-interface.h"
 #include "nm-connection.h"
 

@@ -1358,7 +1358,7 @@ process_secondaries (NMPolicy *self,
 			if (connected) {
 				_LOGD (LOGD_DEVICE, "secondary connection '%s' succeeded; active path '%s'",
 				       nm_active_connection_get_settings_connection_id (active),
-				       nm_exported_object_get_path (NM_EXPORTED_OBJECT (active)));
+				       nm_dbus_object_get_path (NM_DBUS_OBJECT (active)));
 
 				/* Secondary connection activated */
 				secondary_data->secondaries = g_slist_remove (secondary_data->secondaries, secondary_active);
@@ -1374,7 +1374,7 @@ process_secondaries (NMPolicy *self,
 			} else {
 				_LOGD (LOGD_DEVICE, "secondary connection '%s' failed; active path '%s'",
 				       nm_active_connection_get_settings_connection_id (active),
-				       nm_exported_object_get_path (NM_EXPORTED_OBJECT (active)));
+				       nm_dbus_object_get_path (NM_DBUS_OBJECT (active)));
 
 				/* Secondary connection failed -> do not watch other connections */
 				priv->pending_secondaries = g_slist_remove (priv->pending_secondaries, secondary_data);
@@ -1670,7 +1670,7 @@ activate_secondary_connections (NMPolicy *self,
 		ac = nm_manager_activate_connection (priv->manager,
 		                                     settings_con,
 		                                     NULL,
-		                                     nm_exported_object_get_path (NM_EXPORTED_OBJECT (req)),
+		                                     nm_dbus_object_get_path (NM_DBUS_OBJECT (req)),
 		                                     device,
 		                                     nm_active_connection_get_subject (NM_ACTIVE_CONNECTION (req)),
 		                                     NM_ACTIVATION_TYPE_MANAGED,
