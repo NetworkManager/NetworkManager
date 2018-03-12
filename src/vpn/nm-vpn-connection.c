@@ -51,8 +51,6 @@
 #include "nm-vpn-manager.h"
 #include "dns/nm-dns-manager.h"
 
-#include "introspection/org.freedesktop.NetworkManager.VPN.Connection.h"
-
 typedef enum {
 	/* Only system secrets */
 	SECRETS_REQ_SYSTEM = 0,
@@ -82,7 +80,6 @@ typedef enum {
 } VpnState;
 
 enum {
-	VPN_STATE_CHANGED,
 	INTERNAL_STATE_CHANGED,
 	INTERNAL_RETRY_AFTER_FAILURE,
 
@@ -159,19 +156,6 @@ struct _NMVpnConnection {
 
 struct _NMVpnConnectionClass {
 	NMActiveConnectionClass parent;
-
-	/* Signals */
-	void (*vpn_state_changed) (NMVpnConnection *self,
-	                           NMVpnConnectionState new_state,
-	                           NMActiveConnectionStateReason reason);
-
-	/* not exported over D-Bus */
-	void (*internal_state_changed) (NMVpnConnection *self,
-	                                NMVpnConnectionState new_state,
-	                                NMVpnConnectionState old_state,
-	                                NMActiveConnectionStateReason reason);
-
-	void (*internal_failed_retry)  (NMVpnConnection *self);
 };
 
 G_DEFINE_TYPE (NMVpnConnection, nm_vpn_connection, NM_TYPE_ACTIVE_CONNECTION)
@@ -179,6 +163,9 @@ G_DEFINE_TYPE (NMVpnConnection, nm_vpn_connection, NM_TYPE_ACTIVE_CONNECTION)
 #define NM_VPN_CONNECTION_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMVpnConnection, NM_IS_VPN_CONNECTION)
 
 /*****************************************************************************/
+
+static const NMDBusInterfaceInfoExtended interface_info_vpn_connection;
+static const GDBusSignalInfo signal_info_vpn_state_changed;
 
 static NMSettingsConnection *_get_settings_connection (NMVpnConnection *self,
                                                        gboolean allow_missing);
@@ -511,7 +498,12 @@ _set_vpn_state (NMVpnConnection *self,
 	old_external_state = _state_to_nm_vpn_state (old_vpn_state);
 	new_external_state = _state_to_nm_vpn_state (priv->vpn_state);
 	if (new_external_state != old_external_state) {
-		g_signal_emit (self, signals[VPN_STATE_CHANGED], 0, new_external_state, reason);
+		nm_dbus_object_emit_signal (NM_DBUS_OBJECT (self),
+		                            &interface_info_vpn_connection,
+		                            &signal_info_vpn_state_changed,
+		                            "(uu)",
+		                            (guint32) new_external_state,
+		                            (guint32) reason);
 		g_signal_emit (self, signals[INTERNAL_STATE_CHANGED], 0,
 		               new_external_state,
 		               old_external_state,
@@ -1176,8 +1168,8 @@ _cleanup_failed_config (NMVpnConnection *self)
 {
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 
-	nm_exported_object_clear_and_unexport (&priv->ip4_config);
-	nm_exported_object_clear_and_unexport (&priv->ip6_config);
+	nm_dbus_object_clear_and_unexport (&priv->ip4_config);
+	nm_dbus_object_clear_and_unexport (&priv->ip6_config);
 
 	_LOGW ("VPN connection: did not receive valid IP config information");
 	_set_vpn_state (self, STATE_FAILED, NM_ACTIVE_CONNECTION_STATE_REASON_IP_CONFIG_INVALID, FALSE);
@@ -1394,12 +1386,12 @@ nm_vpn_connection_config_get (NMVpnConnection *self, GVariant *dict)
 	priv->has_ip4 = FALSE;
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_CONFIG_HAS_IP4, "b", &b))
 		priv->has_ip4 = b;
-	nm_exported_object_clear_and_unexport (&priv->ip4_config);
+	nm_dbus_object_clear_and_unexport (&priv->ip4_config);
 
 	priv->has_ip6 = FALSE;
 	if (g_variant_lookup (dict, NM_VPN_PLUGIN_CONFIG_HAS_IP6, "b", &b))
 		priv->has_ip6 = b;
-	nm_exported_object_clear_and_unexport (&priv->ip6_config);
+	nm_dbus_object_clear_and_unexport (&priv->ip6_config);
 
 	nm_vpn_connection_config_maybe_complete (self, TRUE);
 }
@@ -1653,7 +1645,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 		g_object_unref (config);
 	} else {
 		priv->ip4_config = config;
-		nm_exported_object_export (NM_EXPORTED_OBJECT (config));
+		nm_dbus_object_export (NM_DBUS_OBJECT (config));
 		g_object_notify ((GObject *) self, NM_ACTIVE_CONNECTION_IP4_CONFIG);
 	}
 
@@ -1842,7 +1834,7 @@ next:
 		g_object_unref (config);
 	} else {
 		priv->ip6_config = config;
-		nm_exported_object_export (NM_EXPORTED_OBJECT (config));
+		nm_dbus_object_export (NM_DBUS_OBJECT (config));
 		g_object_notify ((GObject *) self, NM_ACTIVE_CONNECTION_IP6_CONFIG);
 	}
 
@@ -2329,7 +2321,7 @@ nm_vpn_connection_activate (NMVpnConnection *self,
 	if (nm_vpn_plugin_info_supports_multiple (plugin_info)) {
 		const char *path;
 
-		path = nm_exported_object_get_path (NM_EXPORTED_OBJECT (self));
+		path = nm_dbus_object_get_path (NM_DBUS_OBJECT (self));
 		if (path)
 			path = strrchr (path, '/');
 		g_return_if_fail (path);
@@ -2779,8 +2771,8 @@ dispose (GObject *object)
 	nm_clear_g_cancellable (&priv->cancellable);
 
 	g_clear_object (&priv->proxy_config);
-	nm_exported_object_clear_and_unexport (&priv->ip4_config);
-	nm_exported_object_clear_and_unexport (&priv->ip6_config);
+	nm_dbus_object_clear_and_unexport (&priv->ip4_config);
+	nm_dbus_object_clear_and_unexport (&priv->ip6_config);
 	g_clear_object (&priv->proxy);
 	g_clear_object (&priv->plugin_info);
 
@@ -2830,14 +2822,14 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->banner ? priv->banner : "");
 		break;
 	case PROP_IP4_CONFIG:
-		nm_utils_g_value_set_object_path (value, ip_config_valid (priv->vpn_state) ? priv->ip4_config : NULL);
+		nm_dbus_utils_g_value_set_object_path (value, ip_config_valid (priv->vpn_state) ? priv->ip4_config : NULL);
 		break;
 	case PROP_IP6_CONFIG:
-		nm_utils_g_value_set_object_path (value, ip_config_valid (priv->vpn_state) ? priv->ip6_config : NULL);
+		nm_dbus_utils_g_value_set_object_path (value, ip_config_valid (priv->vpn_state) ? priv->ip6_config : NULL);
 		break;
 	case PROP_MASTER:
 		parent_dev = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (object));
-		nm_utils_g_value_set_object_path (value, parent_dev);
+		nm_dbus_utils_g_value_set_object_path (value, parent_dev);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -2845,16 +2837,42 @@ get_property (GObject *object, guint prop_id,
 	}
 }
 
+static const GDBusSignalInfo signal_info_vpn_state_changed = NM_DEFINE_GDBUS_SIGNAL_INFO_INIT (
+	"VpnStateChanged",
+	.args = NM_DEFINE_GDBUS_ARG_INFOS (
+		NM_DEFINE_GDBUS_ARG_INFO ("state",  "u"),
+		NM_DEFINE_GDBUS_ARG_INFO ("reason", "u"),
+	),
+);
+
+static const NMDBusInterfaceInfoExtended interface_info_vpn_connection = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_VPN_CONNECTION,
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+			&signal_info_vpn_state_changed,
+		),
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("VpnState", "u", NM_VPN_CONNECTION_VPN_STATE),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Banner",   "s", NM_VPN_CONNECTION_BANNER),
+		),
+	),
+	.legacy_property_changed = TRUE,
+};
+
 static void
 nm_vpn_connection_class_init (NMVpnConnectionClass *connection_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (connection_class);
 	NMActiveConnectionClass *active_class = NM_ACTIVE_CONNECTION_CLASS (connection_class);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (connection_class);
 
-	/* virtual methods */
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_vpn_connection);
+
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
+
 	active_class->device_state_changed = device_state_changed;
 	active_class->device_changed = device_changed;
 
@@ -2881,13 +2899,6 @@ nm_vpn_connection_class_init (NMVpnConnectionClass *connection_class)
 	g_object_class_override_property (object_class, PROP_IP6_CONFIG,
 	                                  NM_ACTIVE_CONNECTION_IP6_CONFIG);
 
-	signals[VPN_STATE_CHANGED] =
-	    g_signal_new ("vpn-state-changed",
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_FIRST,
-	                  0, NULL, NULL, NULL,
-	                  G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
-
 	signals[INTERNAL_STATE_CHANGED] =
 	    g_signal_new (NM_VPN_CONNECTION_INTERNAL_STATE_CHANGED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
@@ -2901,8 +2912,4 @@ nm_vpn_connection_class_init (NMVpnConnectionClass *connection_class)
 	                  G_SIGNAL_RUN_FIRST,
 	                  0, NULL, NULL, NULL,
 	                  G_TYPE_NONE, 0);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (connection_class),
-	                                        NMDBUS_TYPE_VPN_CONNECTION_SKELETON,
-	                                        NULL);
 }

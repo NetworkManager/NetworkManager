@@ -31,7 +31,6 @@
 #include "nm-core-internal.h"
 
 #include "platform/nm-platform.h"
-#include "nm-exported-object.h"
 #include "nm-auth-utils.h"
 
 /*****************************************************************************/
@@ -876,62 +875,6 @@ nm_utils_match_connection (NMConnection *const*connections,
 
 	/* Best match (if any) */
 	return best_match;
-}
-
-/*****************************************************************************/
-
-/**
- * nm_utils_g_value_set_object_path:
- * @value: a #GValue, initialized to store an object path
- * @object: (allow-none): an #NMExportedObject
- *
- * Sets @value to @object's object path. If @object is %NULL, or not
- * exported, @value is set to "/".
- */
-void
-nm_utils_g_value_set_object_path (GValue *value, gpointer object)
-{
-	g_return_if_fail (!object || NM_IS_EXPORTED_OBJECT (object));
-
-	if (object && nm_exported_object_is_exported (object))
-		g_value_set_string (value, nm_exported_object_get_path (object));
-	else
-		g_value_set_string (value, "/");
-}
-
-/**
- * nm_utils_g_value_set_object_path_array:
- * @value: a #GValue, initialized to store an object path
- * @objects: a #GSList of #NMExportedObjects
- * @filter_func: (allow-none): function to call on each object in @objects
- * @user_data: data to pass to @filter_func
- *
- * Sets @value to an array of object paths of the objects in @objects.
- */
-void
-nm_utils_g_value_set_object_path_array (GValue *value,
-                                        GSList *objects,
-                                        NMUtilsObjectFunc filter_func,
-                                        gpointer user_data)
-{
-	char **paths;
-	guint i;
-	GSList *iter;
-
-	paths = g_new (char *, g_slist_length (objects) + 1);
-	for (i = 0, iter = objects; iter; iter = iter->next) {
-		NMExportedObject *object = iter->data;
-		const char *path;
-
-		path = nm_exported_object_get_path (object);
-		if (!path)
-			continue;
-		if (filter_func && !filter_func ((GObject *) object, user_data))
-			continue;
-		paths[i++] = g_strdup (path);
-	}
-	paths[i] = NULL;
-	g_value_take_boxed (value, paths);
 }
 
 /*****************************************************************************/

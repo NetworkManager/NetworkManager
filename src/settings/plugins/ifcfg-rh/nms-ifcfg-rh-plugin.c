@@ -37,7 +37,6 @@
 #include "settings/nm-settings-plugin.h"
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"
-#include "nm-exported-object.h"
 
 #include "nms-ifcfg-rh-connection.h"
 #include "nms-ifcfg-rh-common.h"
@@ -807,41 +806,31 @@ _method_call (GDBusConnection *connection,
 	SettingsPluginIfcfg *self = SETTINGS_PLUGIN_IFCFG (user_data);
 	const char *ifcfg;
 
-	if (nm_streq0 (interface_name, IFCFGRH1_IFACE1_NAME)) {
-		if (nm_streq0 (method_name, IFCFGRH1_IFACE1_METHOD_GET_IFCFG_DETAILS)) {
-			if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(s)")))
-				g_return_if_reached ();
-
-			g_variant_get (parameters, "(&s)", &ifcfg);
-			impl_ifcfgrh_get_ifcfg_details (self, invocation, ifcfg);
-			return;
-		}
+	if (   !nm_streq (interface_name, IFCFGRH1_IFACE1_NAME)
+	    || !nm_streq (method_name, IFCFGRH1_IFACE1_METHOD_GET_IFCFG_DETAILS)) {
+		g_dbus_method_invocation_return_error (invocation,
+		                                       G_DBUS_ERROR,
+		                                       G_DBUS_ERROR_UNKNOWN_METHOD,
+		                                       "Unknown method %s",
+		                                       method_name);
+		return;
 	}
 
-	g_return_if_reached ();
+	g_variant_get (parameters, "(&s)", &ifcfg);
+	impl_ifcfgrh_get_ifcfg_details (self, invocation, ifcfg);
 }
 
-NM_DEFINE_GDBUS_INTERFACE_INFO (
-	interface_info,
+static GDBusInterfaceInfo *const interface_info = NM_DEFINE_GDBUS_INTERFACE_INFO (
 	IFCFGRH1_BUS_NAME,
 	.methods = NM_DEFINE_GDBUS_METHOD_INFOS (
 		NM_DEFINE_GDBUS_METHOD_INFO (
 			IFCFGRH1_IFACE1_METHOD_GET_IFCFG_DETAILS,
 			.in_args = NM_DEFINE_GDBUS_ARG_INFOS (
-				NM_DEFINE_GDBUS_ARG_INFO (
-					"ifcfg",
-					.signature = "s",
-				),
+				NM_DEFINE_GDBUS_ARG_INFO ("ifcfg", "s"),
 			),
 			.out_args = NM_DEFINE_GDBUS_ARG_INFOS (
-				NM_DEFINE_GDBUS_ARG_INFO (
-					"uuid",
-					.signature = "s",
-				),
-				NM_DEFINE_GDBUS_ARG_INFO (
-					"path",
-					.signature = "o",
-				),
+				NM_DEFINE_GDBUS_ARG_INFO ("uuid", "s"),
+				NM_DEFINE_GDBUS_ARG_INFO ("path", "o"),
 			),
 		),
 	),

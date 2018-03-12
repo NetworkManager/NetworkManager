@@ -39,8 +39,6 @@
 #include "nm-setting-adsl.h"
 #include "nm-utils.h"
 
-#include "introspection/org.freedesktop.NetworkManager.Device.Adsl.h"
-
 #include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF (NMDeviceAdsl);
 
@@ -655,16 +653,32 @@ dispose (GObject *object)
 	G_OBJECT_CLASS (nm_device_adsl_parent_class)->dispose (object);
 }
 
+static const NMDBusInterfaceInfoExtended interface_info_device_adsl = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_DEVICE_ADSL,
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+		),
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Carrier", "b", NM_DEVICE_CARRIER),
+		),
+	),
+	.legacy_property_changed = TRUE,
+};
+
 static void
 nm_device_adsl_class_init (NMDeviceAdslClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
 
 	object_class->constructed  = constructed;
 	object_class->dispose      = dispose;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
+
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_adsl);
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 
@@ -682,8 +696,4 @@ nm_device_adsl_class_init (NMDeviceAdslClass *klass)
 	                       G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        NMDBUS_TYPE_DEVICE_ADSL_SKELETON,
-	                                        NULL);
 }

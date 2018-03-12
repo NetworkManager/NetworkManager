@@ -35,8 +35,6 @@
 #include "nm-act-request.h"
 #include "nm-ip4-config.h"
 
-#include "introspection/org.freedesktop.NetworkManager.Device.Vxlan.h"
-
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceVxlan);
 
@@ -97,42 +95,40 @@ update_properties (NMDevice *device)
 
 	if (priv->props.parent_ifindex != props->parent_ifindex)
 		nm_device_parent_set_ifindex (device, props->parent_ifindex);
-	if (priv->props.id != props->id)
-		_notify (self, PROP_ID);
-	if (priv->props.local != props->local)
-		_notify (self, PROP_LOCAL);
-	if (memcmp (&priv->props.local6, &props->local6, sizeof (props->local6)) != 0)
-		_notify (self, PROP_LOCAL);
-	if (priv->props.group != props->group)
-		_notify (self, PROP_GROUP);
-	if (memcmp (&priv->props.group6, &props->group6, sizeof (props->group6)) != 0)
-		_notify (self, PROP_GROUP);
-	if (priv->props.tos != props->tos)
-		_notify (self, PROP_TOS);
-	if (priv->props.ttl != props->ttl)
-		_notify (self, PROP_TTL);
-	if (priv->props.learning != props->learning)
-		_notify (self, PROP_LEARNING);
-	if (priv->props.ageing != props->ageing)
-		_notify (self, PROP_AGEING);
-	if (priv->props.limit != props->limit)
-		_notify (self, PROP_LIMIT);
-	if (priv->props.src_port_min != props->src_port_min)
-		_notify (self, PROP_SRC_PORT_MIN);
-	if (priv->props.src_port_max != props->src_port_max)
-		_notify (self, PROP_SRC_PORT_MAX);
-	if (priv->props.dst_port != props->dst_port)
-		_notify (self, PROP_DST_PORT);
-	if (priv->props.proxy != props->proxy)
-		_notify (self, PROP_PROXY);
-	if (priv->props.rsc != props->rsc)
-		_notify (self, PROP_RSC);
-	if (priv->props.l2miss != props->l2miss)
-		_notify (self, PROP_L2MISS);
-	if (priv->props.l3miss != props->l3miss)
-		_notify (self, PROP_L3MISS);
 
-	priv->props = *props;
+#define CHECK_PROPERTY_CHANGED(field, prop) \
+	G_STMT_START { \
+		if (priv->props.field != props->field) { \
+			priv->props.field = props->field; \
+			_notify (self, prop); \
+		} \
+	} G_STMT_END
+
+#define CHECK_PROPERTY_CHANGED_IN6ADDR(field, prop) \
+	G_STMT_START { \
+		if (memcmp (&priv->props.field, &props->field, sizeof (props->field)) != 0) { \
+			priv->props.field = props->field; \
+			_notify (self, prop); \
+		} \
+	} G_STMT_END
+
+	CHECK_PROPERTY_CHANGED (id, PROP_ID);
+	CHECK_PROPERTY_CHANGED (local, PROP_LOCAL);
+	CHECK_PROPERTY_CHANGED_IN6ADDR (local6, PROP_LOCAL);
+	CHECK_PROPERTY_CHANGED (group, PROP_GROUP);
+	CHECK_PROPERTY_CHANGED_IN6ADDR (group6, PROP_GROUP);
+	CHECK_PROPERTY_CHANGED (tos, PROP_TOS);
+	CHECK_PROPERTY_CHANGED (ttl, PROP_TTL);
+	CHECK_PROPERTY_CHANGED (learning, PROP_LEARNING);
+	CHECK_PROPERTY_CHANGED (ageing, PROP_AGEING);
+	CHECK_PROPERTY_CHANGED (limit, PROP_LIMIT);
+	CHECK_PROPERTY_CHANGED (src_port_min, PROP_SRC_PORT_MIN);
+	CHECK_PROPERTY_CHANGED (src_port_max, PROP_SRC_PORT_MAX);
+	CHECK_PROPERTY_CHANGED (dst_port, PROP_DST_PORT);
+	CHECK_PROPERTY_CHANGED (proxy, PROP_PROXY);
+	CHECK_PROPERTY_CHANGED (rsc, PROP_RSC);
+	CHECK_PROPERTY_CHANGED (l2miss, PROP_L2MISS);
+	CHECK_PROPERTY_CHANGED (l3miss, PROP_L3MISS);
 
 	g_object_thaw_notify (object);
 }
@@ -545,15 +541,47 @@ nm_device_vxlan_init (NMDeviceVxlan *self)
 {
 }
 
+static const NMDBusInterfaceInfoExtended interface_info_device_vxlan = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_DEVICE_VXLAN,
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+		),
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Parent",     "o", NM_DEVICE_PARENT),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("HwAddress",  "s", NM_DEVICE_HW_ADDRESS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Id",         "u", NM_DEVICE_VXLAN_ID),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Group",      "s", NM_DEVICE_VXLAN_GROUP),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Local",      "s", NM_DEVICE_VXLAN_LOCAL),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Tos",        "y", NM_DEVICE_VXLAN_TOS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Ttl",        "y", NM_DEVICE_VXLAN_TTL),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Learning",   "b", NM_DEVICE_VXLAN_LEARNING),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Ageing",     "u", NM_DEVICE_VXLAN_AGEING),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Limit",      "u", NM_DEVICE_VXLAN_LIMIT),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("DstPort",    "q", NM_DEVICE_VXLAN_DST_PORT),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("SrcPortMin", "q", NM_DEVICE_VXLAN_SRC_PORT_MIN),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("SrcPortMax", "q", NM_DEVICE_VXLAN_SRC_PORT_MAX),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Proxy",      "b", NM_DEVICE_VXLAN_PROXY),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Rsc",        "b", NM_DEVICE_VXLAN_RSC),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("L2miss",     "b", NM_DEVICE_VXLAN_L2MISS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("L3miss",     "b", NM_DEVICE_VXLAN_L3MISS),
+		),
+	),
+	.legacy_property_changed = TRUE,
+};
+
 static void
 nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NULL, NM_LINK_TYPE_VXLAN)
 
 	object_class->get_property = get_property;
+
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_vxlan);
 
 	device_class->link_changed = link_changed;
 	device_class->unrealize_notify = unrealize_notify;
@@ -657,10 +685,6 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 	                           G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        NMDBUS_TYPE_DEVICE_VXLAN_SKELETON,
-	                                        NULL);
 }
 
 /*****************************************************************************/

@@ -21,7 +21,7 @@
 #ifndef __NETWORKMANAGER_CHECKPOINT_H__
 #define __NETWORKMANAGER_CHECKPOINT_H__
 
-#include "nm-exported-object.h"
+#include "nm-dbus-object.h"
 #include "nm-dbus-interface.h"
 
 #define NM_TYPE_CHECKPOINT            (nm_checkpoint_get_type ())

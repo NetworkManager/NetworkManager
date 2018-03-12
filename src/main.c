@@ -39,7 +39,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-manager.h"
 #include "platform/nm-linux-platform.h"
-#include "nm-bus-manager.h"
+#include "nm-dbus-manager.h"
 #include "devices/nm-device.h"
 #include "dhcp/nm-dhcp-manager.h"
 #include "nm-config.h"
@@ -48,7 +48,7 @@
 #include "settings/nm-settings.h"
 #include "nm-auth-manager.h"
 #include "nm-core-internal.h"
-#include "nm-exported-object.h"
+#include "nm-dbus-object.h"
 #include "nm-connectivity.h"
 #include "dns/nm-dns-manager.h"
 #include "systemd/nm-sd.h"
@@ -225,6 +225,7 @@ int
 main (int argc, char *argv[])
 {
 	gboolean success = FALSE;
+	NMManager *manager;
 	NMConfig *config;
 	GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
@@ -236,7 +237,7 @@ main (int argc, char *argv[])
 	 * https://bugzilla.gnome.org/show_bug.cgi?id=674885 */
 	g_type_ensure (G_TYPE_SOCKET);
 	g_type_ensure (G_TYPE_DBUS_CONNECTION);
-	g_type_ensure (NM_TYPE_BUS_MANAGER);
+	g_type_ensure (NM_TYPE_DBUS_MANAGER);
 
 	_nm_utils_is_manager_process = TRUE;
 
@@ -394,27 +395,22 @@ main (int argc, char *argv[])
 	                                                         NM_CONFIG_KEYFILE_KEY_MAIN_AUTH_POLKIT,
 	                                                         NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_BOOL));
 
-	nm_manager_setup ();
+	manager = nm_manager_setup ();
 
-	if (!nm_bus_manager_get_connection (nm_bus_manager_get ())) {
-		nm_log_warn (LOGD_CORE, "Failed to connect to D-Bus; only private bus is available");
-	} else {
-		/* Start our DBus service */
-		if (!nm_bus_manager_start_service (nm_bus_manager_get ())) {
-			nm_log_err (LOGD_CORE, "failed to start the dbus service.");
-			goto done;
-		}
-	}
+	if (!nm_dbus_manager_start (nm_dbus_manager_get (),
+	                            nm_manager_dbus_set_property_handle,
+	                            manager))
+		goto done;
 
 #if WITH_CONCHECK
-	NM_UTILS_KEEP_ALIVE (nm_manager_get (), nm_connectivity_get (), "NMManager-depends-on-NMConnectivity");
+	NM_UTILS_KEEP_ALIVE (manager, nm_connectivity_get (), "NMManager-depends-on-NMConnectivity");
 #endif
 
 	nm_dispatcher_init ();
 
-	g_signal_connect (nm_manager_get (), NM_MANAGER_CONFIGURE_QUIT, G_CALLBACK (manager_configure_quit), config);
+	g_signal_connect (manager, NM_MANAGER_CONFIGURE_QUIT, G_CALLBACK (manager_configure_quit), config);
 
-	if (!nm_manager_start (nm_manager_get (), &error)) {
+	if (!nm_manager_start (manager, &error)) {
 		nm_log_err (LOGD_CORE, "failed to initialize: %s", error->message);
 		goto done;
 	}
@@ -448,11 +444,14 @@ done:
 	 * state here. We don't bother updating the state as devices
 	 * change during regular operation. If NM is killed with SIGKILL,
 	 * it misses to update the state. */
-	nm_manager_write_device_state (nm_manager_get ());
+	nm_manager_write_device_state (manager);
 
-	nm_exported_object_class_set_quitting ();
+	/* FIXME: we don't properly shut down on exit. That is a bug.
+	 * NMDBusObject have an assertion that they get unexported before disposing.
+	 * We need this workaround and disable the assertion during our leaky shutdown. */
+	nm_dbus_object_set_quitting ();
 
-	nm_manager_stop (nm_manager_get ());
+	nm_manager_stop (manager);
 
 	nm_config_state_set (config, TRUE, TRUE);
 

@@ -421,6 +421,23 @@ char *nm_utils_str_utf8safe_unescape_cp (const char *str);
 
 char *nm_utils_str_utf8safe_escape_take (char *str, NMUtilsStrUtf8SafeFlags flags);
 
+static inline void
+nm_g_variant_unref_floating (GVariant *var)
+{
+	/* often a function wants to keep a reference to an input variant.
+	 * It uses g_variant_ref_sink() to either increase the ref-count,
+	 * or take ownership of a possibly floating reference.
+	 *
+	 * If the function doesn't actually want to do anything with the
+	 * input variant, it still must make sure that a passed in floating
+	 * reference is consumed. Hence, this helper which:
+	 *
+	 *   - does nothing if @var is not floating
+	 *   - unrefs (consumes) @var if it is floating. */
+	if (g_variant_is_floating (var))
+		g_variant_unref (var);
+}
+
 /*****************************************************************************/
 
 typedef struct {
@@ -469,12 +486,18 @@ int nm_utils_fd_read_loop_exact (int fd, void *buf, size_t nbytes, bool do_poll)
 
 /*****************************************************************************/
 
-#define NM_DEFINE_GDBUS_ARG_INFO(a_name, ...) \
+#define NM_DEFINE_GDBUS_ARG_INFO_FULL(name_, ...) \
 	((GDBusArgInfo *) (&((const GDBusArgInfo) { \
 		.ref_count = -1, \
-		.name = a_name, \
+		.name = name_, \
 		__VA_ARGS__ \
 	})))
+
+#define NM_DEFINE_GDBUS_ARG_INFO(name_, a_signature) \
+	NM_DEFINE_GDBUS_ARG_INFO_FULL ( \
+		name_, \
+		.signature = a_signature, \
+	)
 
 #define NM_DEFINE_GDBUS_ARG_INFOS(...) \
 	((GDBusArgInfo **) ((const GDBusArgInfo *[]) { \
@@ -482,12 +505,51 @@ int nm_utils_fd_read_loop_exact (int fd, void *buf, size_t nbytes, bool do_poll)
 		NULL, \
 	}))
 
-#define NM_DEFINE_GDBUS_METHOD_INFO(m_name, ...) \
-	((GDBusMethodInfo *) (&((const GDBusMethodInfo) { \
+#define NM_DEFINE_GDBUS_PROPERTY_INFO(name_, ...) \
+	((GDBusPropertyInfo *) (&((const GDBusPropertyInfo) { \
 		.ref_count = -1, \
-		.name = m_name, \
+		.name = name_, \
 		__VA_ARGS__ \
 	})))
+
+#define NM_DEFINE_GDBUS_PROPERTY_INFO_READABLE(name_, m_signature) \
+	NM_DEFINE_GDBUS_PROPERTY_INFO ( \
+		name_, \
+		.signature = m_signature, \
+		.flags = G_DBUS_PROPERTY_INFO_FLAGS_READABLE, \
+	)
+
+#define NM_DEFINE_GDBUS_PROPERTY_INFOS(...) \
+	((GDBusPropertyInfo **) ((const GDBusPropertyInfo *[]) { \
+		__VA_ARGS__ \
+		NULL, \
+	}))
+
+#define NM_DEFINE_GDBUS_SIGNAL_INFO_INIT(name_, ...) \
+	{ \
+		.ref_count = -1, \
+		.name = name_, \
+		__VA_ARGS__ \
+	}
+
+#define NM_DEFINE_GDBUS_SIGNAL_INFO(name_, ...) \
+	((GDBusSignalInfo *) (&((const GDBusSignalInfo) NM_DEFINE_GDBUS_SIGNAL_INFO_INIT (name_, __VA_ARGS__))))
+
+#define NM_DEFINE_GDBUS_SIGNAL_INFOS(...) \
+	((GDBusSignalInfo **) ((const GDBusSignalInfo *[]) { \
+		__VA_ARGS__ \
+		NULL, \
+	}))
+
+#define NM_DEFINE_GDBUS_METHOD_INFO_INIT(name_, ...) \
+	{ \
+		.ref_count = -1, \
+		.name = name_, \
+		__VA_ARGS__ \
+	}
+
+#define NM_DEFINE_GDBUS_METHOD_INFO(name_, ...) \
+	((GDBusMethodInfo *) (&((const GDBusMethodInfo) NM_DEFINE_GDBUS_METHOD_INFO_INIT (name_, __VA_ARGS__))))
 
 #define NM_DEFINE_GDBUS_METHOD_INFOS(...) \
 	((GDBusMethodInfo **) ((const GDBusMethodInfo *[]) { \
@@ -495,10 +557,18 @@ int nm_utils_fd_read_loop_exact (int fd, void *buf, size_t nbytes, bool do_poll)
 		NULL, \
 	}))
 
-#define NM_DEFINE_GDBUS_INTERFACE_INFO(variable, i_name, ...) \
-	static GDBusInterfaceInfo *const variable = ((GDBusInterfaceInfo *) (&((const GDBusInterfaceInfo) { \
+#define NM_DEFINE_GDBUS_INTERFACE_INFO_INIT(name_, ...) \
+	{ \
 		.ref_count = -1, \
-		.name = i_name, \
+		.name = name_, \
+		__VA_ARGS__ \
+	}
+
+#define NM_DEFINE_GDBUS_INTERFACE_INFO(name_, ...) \
+	((GDBusInterfaceInfo *) (&((const GDBusInterfaceInfo) NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (name_, __VA_ARGS__))))
+
+#define NM_DEFINE_GDBUS_INTERFACE_VTABLE(...) \
+	((GDBusInterfaceVTable *) (&((const GDBusInterfaceVTable) { \
 		__VA_ARGS__ \
 	})))
 

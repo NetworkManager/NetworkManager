@@ -48,11 +48,6 @@
 #include "nm-manager.h"
 #include "platform/nm-platform.h"
 
-/* This is a bug; but we can't really change API now... */
-#include "nm-vpn-dbus-interface.h"
-
-#include "introspection/org.freedesktop.NetworkManager.Device.OlpcMesh.h"
-
 #include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceOlpcMesh);
 
@@ -440,7 +435,7 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_COMPANION:
-		nm_utils_g_value_set_object_path (value, priv->companion);
+		nm_dbus_utils_g_value_set_object_path (value, priv->companion);
 		break;
 	case PROP_ACTIVE_CHANNEL:
 		g_value_set_uint (value, nm_platform_mesh_get_channel (nm_device_get_platform (device), nm_device_get_ifindex (device)));
@@ -500,10 +495,26 @@ dispose (GObject *object)
 	G_OBJECT_CLASS (nm_device_olpc_mesh_parent_class)->dispose (object);
 }
 
+static const NMDBusInterfaceInfoExtended interface_info_device_olpc_mesh = {
+	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
+		NM_DBUS_INTERFACE_DEVICE_OLPC_MESH,
+		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
+			&nm_signal_info_property_changed_legacy,
+		),
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("HwAddress",     "s", NM_DEVICE_HW_ADDRESS),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Companion",     "o", NM_DEVICE_OLPC_MESH_COMPANION),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("ActiveChannel", "u", NM_DEVICE_OLPC_MESH_ACTIVE_CHANNEL),
+		),
+	),
+	.legacy_property_changed = TRUE,
+};
+
 static void
 nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_OLPC_MESH_SETTING_NAME, NM_LINK_TYPE_OLPC_MESH)
@@ -511,6 +522,8 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
+
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_olpc_mesh);
 
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->get_autoconnect_allowed = get_autoconnect_allowed;
@@ -534,9 +547,5 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 	                        G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        NMDBUS_TYPE_DEVICE_OLPC_MESH_SKELETON,
-	                                        NULL);
 }
 

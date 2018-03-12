@@ -8,7 +8,6 @@ sources = files(
 
 deps = [
   jansson_dep,
-  libnmdbus_dep,
   nm_dep
 ]
 

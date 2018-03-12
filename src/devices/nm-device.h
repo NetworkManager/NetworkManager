@@ -25,7 +25,7 @@
 #include <netinet/in.h>
 
 #include "nm-setting-connection.h"
-#include "nm-exported-object.h"
+#include "nm-dbus-object.h"
 #include "nm-dbus-interface.h"
 #include "nm-connection.h"
 #include "nm-rfkill-manager.h"
@@ -114,8 +114,7 @@ nm_device_state_reason_check (NMDeviceStateReason reason)
 #define NM_DEVICE_PARENT           "parent"
 
 /* the "slaves" property is internal in the parent class, but exposed
- * by the derived classes NMDeviceBond, NMDeviceBridge and NMDeviceTeam.
- * It is thus important that the property name matches. */
+ * by the derived classes NMDeviceBond, NMDeviceBridge and NMDeviceTeam. */
 #define NM_DEVICE_SLAVES           "slaves"         /* partially internal */
 
 #define NM_DEVICE_TYPE_DESC        "type-desc"      /* Internal only */
@@ -173,9 +172,7 @@ typedef enum { /*< skip >*/
 struct _NMDevicePrivate;
 
 struct _NMDevice {
-	NMExportedObject parent;
-
-	/* private */
+	NMDBusObject parent;
 	struct _NMDevicePrivate *_priv;
 };
 
@@ -191,7 +188,7 @@ typedef enum { /*< skip >*/
 } NMDeviceCheckDevAvailableFlags;
 
 typedef struct {
-	NMExportedObjectClass parent;
+	NMDBusObjectClass parent;
 
 	const char *default_type_description;
 

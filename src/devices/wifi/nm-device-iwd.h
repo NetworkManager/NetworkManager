@@ -39,11 +39,6 @@
 #define NM_DEVICE_IWD_CAPABILITIES        NM_DEVICE_WIFI_CAPABILITIES
 #define NM_DEVICE_IWD_SCANNING            NM_DEVICE_WIFI_SCANNING
 
-/* signals */
-#define NM_DEVICE_IWD_ACCESS_POINT_ADDED   NM_DEVICE_WIFI_ACCESS_POINT_ADDED
-#define NM_DEVICE_IWD_ACCESS_POINT_REMOVED NM_DEVICE_WIFI_ACCESS_POINT_REMOVED
-
-/* internal signals */
 #define NM_DEVICE_IWD_SCANNING_PROHIBITED  NM_DEVICE_WIFI_SCANNING_PROHIBITED
 
 typedef struct _NMDeviceIwd NMDeviceIwd;
@@ -57,5 +52,11 @@ void nm_device_iwd_set_dbus_object (NMDeviceIwd *device, GDBusObject *object);
 
 gboolean nm_device_iwd_agent_psk_query (NMDeviceIwd *device,
                                         GDBusMethodInvocation *invocation);
+
+GHashTable *_nm_device_iwd_get_aps (NMDeviceIwd *self);
+
+void _nm_device_iwd_request_scan (NMDeviceIwd *self,
+                                  GVariant *options,
+                                  GDBusMethodInvocation *invocation);
 
 #endif /* __NETWORKMANAGER_DEVICE_IWD_H__ */

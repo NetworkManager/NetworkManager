@@ -284,9 +284,10 @@ fill_device_props (NMDevice *device,
 	                       g_variant_new_uint32 (nm_device_get_device_type (device)));
 	g_variant_builder_add (dev_builder, "{sv}", NMD_DEVICE_PROPS_STATE,
 	                       g_variant_new_uint32 (nm_device_get_state (device)));
-	if (nm_exported_object_is_exported (NM_EXPORTED_OBJECT (device)))
+	if (nm_dbus_object_is_exported (NM_DBUS_OBJECT (device))) {
 		g_variant_builder_add (dev_builder, "{sv}", NMD_DEVICE_PROPS_PATH,
-		                       g_variant_new_object_path (nm_exported_object_get_path (NM_EXPORTED_OBJECT (device))));
+		                       g_variant_new_object_path (nm_dbus_object_get_path (NM_DBUS_OBJECT (device))));
+	}
 
 	proxy_config = nm_device_get_proxy_config (device);
 	if (proxy_config)

@@ -5,7 +5,6 @@ sources = files(
 
 deps = [
   jansson_dep,
-  libnmdbus_dep,
   libteamdctl_dep,
   nm_dep
 ]

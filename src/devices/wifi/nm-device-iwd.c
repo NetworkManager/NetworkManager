@@ -36,11 +36,10 @@
 #include "settings/nm-settings-connection.h"
 #include "settings/nm-settings.h"
 #include "nm-wifi-utils.h"
+#include "nm-wifi-common.h"
 #include "nm-core-internal.h"
 #include "nm-config.h"
 #include "nm-iwd-manager.h"
-
-#include "introspection/org.freedesktop.NetworkManager.Device.Wireless.h"
 
 #include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceIwd);
@@ -57,8 +56,6 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceIwd,
 );
 
 enum {
-	ACCESS_POINT_ADDED,
-	ACCESS_POINT_REMOVED,
 	SCANNING_PROHIBITED,
 
 	LAST_SIGNAL
@@ -122,30 +119,42 @@ _ap_dump (NMDeviceIwd *self,
 	        nm_wifi_ap_to_string (ap, buf, sizeof (buf), now_s));
 }
 
+static void
+_emit_access_point_added_removed (NMDeviceIwd *self,
+                                  NMWifiAP *ap,
+                                  gboolean is_added /* or else is removed */)
+{
+	nm_dbus_object_emit_signal (NM_DBUS_OBJECT (self),
+	                            &nm_interface_info_device_wireless,
+	                            is_added
+	                              ? &nm_signal_info_wireless_access_point_added
+	                              : &nm_signal_info_wireless_access_point_removed,
+	                            "(o)",
+	                            nm_dbus_object_get_path (NM_DBUS_OBJECT (ap)));
+}
+
 /* Callers ensure we're not removing current_ap */
 static void
 ap_add_remove (NMDeviceIwd *self,
-               guint signum,
+               gboolean is_adding, /* or else is removing */
                NMWifiAP *ap,
                gboolean recheck_available_connections)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 
-	nm_assert (NM_IN_SET (signum, ACCESS_POINT_ADDED, ACCESS_POINT_REMOVED));
-
-	if (signum == ACCESS_POINT_ADDED) {
+	if (is_adding) {
 		g_hash_table_insert (priv->aps,
-		                     (gpointer) nm_exported_object_export ((NMExportedObject *) ap),
+		                     (gpointer) nm_dbus_object_export (NM_DBUS_OBJECT (ap)),
 		                     g_object_ref (ap));
 		_ap_dump (self, LOGL_DEBUG, ap, "added", 0);
 	} else
 		_ap_dump (self, LOGL_DEBUG, ap, "removed", 0);
 
-	g_signal_emit (self, signals[signum], 0, ap);
+	_emit_access_point_added_removed (self, ap, is_adding);
 
-	if (signum == ACCESS_POINT_REMOVED) {
-		g_hash_table_remove (priv->aps, nm_exported_object_get_path ((NMExportedObject *) ap));
-		nm_exported_object_unexport ((NMExportedObject *) ap);
+	if (!is_adding) {
+		g_hash_table_remove (priv->aps, nm_dbus_object_get_path (NM_DBUS_OBJECT (ap)));
+		nm_dbus_object_unexport (NM_DBUS_OBJECT (ap));
 		g_object_unref (ap);
 	}
 
@@ -177,7 +186,7 @@ set_current_ap (NMDeviceIwd *self, NMWifiAP *new_ap, gboolean recheck_available_
 
 	if (old_ap) {
 		if (nm_wifi_ap_get_fake (old_ap))
-			ap_add_remove (self, ACCESS_POINT_REMOVED, old_ap, recheck_available_connections);
+			ap_add_remove (self, FALSE, old_ap, recheck_available_connections);
 		g_object_unref (old_ap);
 	}
 
@@ -217,9 +226,9 @@ update_ap_func (gpointer key, gpointer value, gpointer user_data)
 
 	_ap_dump (self, LOGL_DEBUG, ap, "removed", 0);
 
-	g_signal_emit (self, signals[ACCESS_POINT_REMOVED], 0, ap);
+	_emit_access_point_added_removed (self, ap, FALSE);
 
-	nm_exported_object_unexport ((NMExportedObject *) ap);
+	nm_dbus_object_unexport (NM_DBUS_OBJECT (ap));
 	g_object_unref (ap);
 
 	return TRUE;
@@ -351,7 +360,7 @@ get_ordered_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 
 	g_hash_table_iter_init (&ap_iter, priv->new_aps);
 	while (g_hash_table_iter_next (&ap_iter, NULL, (gpointer) &ap)) {
-		ap_add_remove (self, ACCESS_POINT_ADDED, ap, FALSE);
+		ap_add_remove (self, TRUE, ap, FALSE);
 		changed = TRUE;
 	}
 
@@ -853,37 +862,17 @@ can_auto_connect (NMDevice *device,
 	ap = nm_wifi_aps_find_first_compatible (priv->aps, connection, FALSE);
 	if (ap) {
 		/* All good; connection is usable */
-		NM_SET_OUT (specific_object, g_strdup (nm_exported_object_get_path (NM_EXPORTED_OBJECT (ap))));
+		NM_SET_OUT (specific_object, g_strdup (nm_dbus_object_get_path (NM_DBUS_OBJECT (ap))));
 		return TRUE;
 	}
 
 	return FALSE;
 }
 
-static void
-impl_device_iwd_get_access_points (NMDeviceIwd *self,
-                                    GDBusMethodInvocation *context)
+GHashTable *
+_nm_device_iwd_get_aps (NMDeviceIwd *self)
 {
-	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
-	gs_free const char **list = NULL;
-	GVariant *v;
-
-	list = nm_wifi_aps_get_sorted_paths (priv->aps, FALSE);
-	v = g_variant_new_objv (list, -1);
-	g_dbus_method_invocation_return_value (context, g_variant_new_tuple (&v, 1));
-}
-
-static void
-impl_device_iwd_get_all_access_points (NMDeviceIwd *self,
-                                        GDBusMethodInvocation *context)
-{
-	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
-	gs_free const char **list = NULL;
-	GVariant *v;
-
-	list = nm_wifi_aps_get_sorted_paths (priv->aps, TRUE);
-	v = g_variant_new_objv (list, -1);
-	g_dbus_method_invocation_return_value (context, g_variant_new_tuple (&v, 1));
+	return NM_DEVICE_IWD_GET_PRIVATE (self)->aps;
 }
 
 static gboolean
@@ -982,10 +971,10 @@ dbus_request_scan_cb (NMDevice *device,
 	g_dbus_method_invocation_return_value (context, NULL);
 }
 
-static void
-impl_device_iwd_request_scan (NMDeviceIwd *self,
-                               GDBusMethodInvocation *context,
-                               GVariant *options)
+void
+_nm_device_iwd_request_scan (NMDeviceIwd *self,
+                             GVariant *options,
+                             GDBusMethodInvocation *invocation)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 	NMDevice *device = NM_DEVICE (self);
@@ -994,17 +983,16 @@ impl_device_iwd_request_scan (NMDeviceIwd *self,
 	    || !priv->dbus_obj
 	    || nm_device_get_state (device) < NM_DEVICE_STATE_DISCONNECTED
 	    || nm_device_is_activating (device)) {
-		g_dbus_method_invocation_return_error_literal (context,
+		g_dbus_method_invocation_return_error_literal (invocation,
 		                                               NM_DEVICE_ERROR,
 		                                               NM_DEVICE_ERROR_NOT_ALLOWED,
 		                                               "Scanning not allowed while unavailable");
 		return;
 	}
 
-	/* Ask the manager to authenticate this request for us */
 	g_signal_emit_by_name (device,
 	                       NM_DEVICE_AUTH_REQUEST,
-	                       context,
+	                       invocation,
 	                       NULL,
 	                       NM_AUTH_PERMISSION_NETWORK_CONTROL,
 	                       TRUE,
@@ -1270,7 +1258,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		 */
 
 		nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req),
-	                                                  nm_exported_object_get_path (NM_EXPORTED_OBJECT (ap)));
+	                                              nm_dbus_object_get_path (NM_DBUS_OBJECT (ap)));
 	}
 
 	set_current_ap (self, ap, FALSE);
@@ -1575,7 +1563,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_take_boxed (value, list);
 		break;
 	case PROP_ACTIVE_ACCESS_POINT:
-		nm_utils_g_value_set_object_path (value, priv->current_ap);
+		nm_dbus_utils_g_value_set_object_path (value, priv->current_ap);
 		break;
 	case PROP_SCANNING:
 		g_value_set_boolean (value, priv->scanning);
@@ -1898,6 +1886,7 @@ static void
 nm_device_iwd_class_init (NMDeviceIwdClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_WIRELESS_SETTING_NAME, NM_LINK_TYPE_WIFI)
@@ -1906,6 +1895,8 @@ nm_device_iwd_class_init (NMDeviceIwdClass *klass)
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
+
+	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&nm_interface_info_device_wireless);
 
 	parent_class->can_auto_connect = can_auto_connect;
 	parent_class->is_available = is_available;
@@ -1970,24 +1961,6 @@ nm_device_iwd_class_init (NMDeviceIwdClass *klass)
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-	signals[ACCESS_POINT_ADDED] =
-	    g_signal_new (NM_DEVICE_IWD_ACCESS_POINT_ADDED,
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_FIRST,
-	                  0,
-	                  NULL, NULL, NULL,
-	                  G_TYPE_NONE, 1,
-	                  NM_TYPE_WIFI_AP);
-
-	signals[ACCESS_POINT_REMOVED] =
-	    g_signal_new (NM_DEVICE_IWD_ACCESS_POINT_REMOVED,
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_FIRST,
-	                  0,
-	                  NULL, NULL, NULL,
-	                  G_TYPE_NONE, 1,
-	                  NM_TYPE_WIFI_AP);
-
 	signals[SCANNING_PROHIBITED] =
 	    g_signal_new (NM_DEVICE_IWD_SCANNING_PROHIBITED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
@@ -1995,11 +1968,4 @@ nm_device_iwd_class_init (NMDeviceIwdClass *klass)
 	                  G_STRUCT_OFFSET (NMDeviceIwdClass, scanning_prohibited),
 	                  NULL, NULL, NULL,
 	                  G_TYPE_BOOLEAN, 1, G_TYPE_BOOLEAN);
-
-	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
-	                                        NMDBUS_TYPE_DEVICE_WIFI_SKELETON,
-	                                        "GetAccessPoints", impl_device_iwd_get_access_points,
-	                                        "GetAllAccessPoints", impl_device_iwd_get_all_access_points,
-	                                        "RequestScan", impl_device_iwd_request_scan,
-	                                        NULL);
 }

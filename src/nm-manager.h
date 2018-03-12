@@ -22,9 +22,9 @@
 #ifndef __NETWORKMANAGER_MANAGER_H__
 #define __NETWORKMANAGER_MANAGER_H__
 
-#include "nm-exported-object.h"
 #include "settings/nm-settings-connection.h"
 #include "nm-utils/c-list.h"
+#include "nm-dbus-manager.h"
 
 #define NM_TYPE_MANAGER            (nm_manager_get_type ())
 #define NM_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MANAGER, NMManager))
@@ -60,14 +60,11 @@
 /* Not exported */
 #define NM_MANAGER_SLEEPING "sleeping"
 
-/* signals */
-#define NM_MANAGER_CHECK_PERMISSIONS         "check-permissions"
+/* Signals */
 #define NM_MANAGER_DEVICE_ADDED              "device-added"
 #define NM_MANAGER_DEVICE_REMOVED            "device-removed"
-#define NM_MANAGER_STATE_CHANGED             "state-changed"
 #define NM_MANAGER_USER_PERMISSIONS_CHANGED  "user-permissions-changed"
 
-/* Internal signals */
 #define NM_MANAGER_ACTIVE_CONNECTION_ADDED   "active-connection-added"
 #define NM_MANAGER_ACTIVE_CONNECTION_REMOVED "active-connection-removed"
 #define NM_MANAGER_CONFIGURE_QUIT            "configure-quit"
@@ -152,5 +149,14 @@ NMDevice *          nm_manager_get_device    (NMManager *self,
 gboolean            nm_manager_remove_device (NMManager *self,
                                               const char *ifname,
                                               NMDeviceType device_type);
+
+void nm_manager_dbus_set_property_handle (NMDBusObject *obj,
+                                          const NMDBusInterfaceInfoExtended *interface_info,
+                                          const NMDBusPropertyInfoExtended *property_info,
+                                          GDBusConnection *connection,
+                                          const char *sender,
+                                          GDBusMethodInvocation *invocation,
+                                          GVariant *value,
+                                          gpointer user_data);
 
 #endif /* __NETWORKMANAGER_MANAGER_H__ */

@@ -28,13 +28,14 @@
 #define _NM_SD_MAX_CLIENT_ID_LEN (sizeof (guint32) + 128)
 
 /* core */
+typedef struct _NMDBusObject         NMDBusObject;
 typedef struct _NMExportedObject     NMExportedObject;
 typedef struct _NMActiveConnection   NMActiveConnection;
 typedef struct _NMAuditManager       NMAuditManager;
 typedef struct _NMVpnConnection      NMVpnConnection;
 typedef struct _NMActRequest         NMActRequest;
 typedef struct _NMAuthSubject        NMAuthSubject;
-typedef struct _NMBusManager         NMBusManager;
+typedef struct _NMDBusManager         NMDBusManager;
 typedef struct _NMConfig             NMConfig;
 typedef struct _NMConfigData         NMConfigData;
 typedef struct _NMArpingManager      NMArpingManager;
