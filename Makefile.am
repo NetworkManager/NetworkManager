@@ -269,6 +269,8 @@ introspection_sources = \
 	introspection/org.freedesktop.NetworkManager.Device.Vlan.h \
 	introspection/org.freedesktop.NetworkManager.Device.Vxlan.c \
 	introspection/org.freedesktop.NetworkManager.Device.Vxlan.h \
+	introspection/org.freedesktop.NetworkManager.Device.WireGuard.c \
+	introspection/org.freedesktop.NetworkManager.Device.WireGuard.h \
 	introspection/org.freedesktop.NetworkManager.Device.Wireless.c \
 	introspection/org.freedesktop.NetworkManager.Device.Wireless.h \
 	introspection/org.freedesktop.NetworkManager.Device.WiMax.c \
@@ -345,6 +347,7 @@ DBUS_INTERFACE_DOCS = \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Veth.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Settings.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Wired.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.WireGuard.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.IP4Config.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Statistics.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.DnsManager.xml \
@@ -396,6 +399,7 @@ dbusinterfaces_DATA = \
 	introspection/org.freedesktop.NetworkManager.Device.Veth.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Vlan.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Vxlan.xml \
+	introspection/org.freedesktop.NetworkManager.Device.WireGuard.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Wireless.xml \
 	introspection/org.freedesktop.NetworkManager.Device.WiMax.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Wpan.xml \
@@ -1640,6 +1644,8 @@ src_libNetworkManager_la_SOURCES = \
 	src/devices/nm-device-vlan.h \
 	src/devices/nm-device-vxlan.c \
 	src/devices/nm-device-vxlan.h \
+	src/devices/nm-device-wireguard.c \
+	src/devices/nm-device-wireguard.h \
 	src/devices/nm-device-wpan.c \
 	src/devices/nm-device-wpan.h \
 	\

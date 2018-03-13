@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device.WireGuard:
+      @short_description: WireGuard Device
+
+  -->
+  <interface name="org.freedesktop.NetworkManager.Device.WireGuard">
+
+    <!--
+        PublicKey:
+
+        32-byte public WireGuard key.
+    -->
+    <property name="PublicKey" type="ay" access="read">
+      <!-- gdbus-codegen assumes that "ay" means "non-UTF-8 string" and
+           won't deal with '\0' bytes correctly.
+      -->
+      <annotation name="org.gtk.GDBus.C.ForceGVariant" value="1"/>
+    </property>
+
+    <!--
+        ListenPort:
+
+        Local UDP listening port.
+    -->
+    <property name="ListenPort" type="q" access="read"/>
+
+    <!--
+        FwMark:
+
+        Optional 32-bit mark used to set routing policy for outgoing encrypted packets.
+        See: ip-rule(8)
+    -->
+    <property name="FwMark" type="u" access="read"/>
+  </interface>
+</node>
