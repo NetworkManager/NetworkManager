@@ -1419,7 +1419,7 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 
-	dbus_object_class->export_path = NM_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/PPP");
+	dbus_object_class->export_path = NM_DBUS_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/PPP");
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_ppp);
 
 	obj_properties[PROP_PARENT_IFACE] =

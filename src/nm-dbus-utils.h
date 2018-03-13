@@ -23,10 +23,6 @@
 
 /*****************************************************************************/
 
-#define NM_EXPORT_PATH_NUMBERED(basepath) ""basepath"/%llu"
-
-/*****************************************************************************/
-
 struct _NMDBusInterfaceInfoExtended;
 struct _NMDBusMethodInfoExtended;
 

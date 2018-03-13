@@ -56,36 +56,32 @@ G_DEFINE_ABSTRACT_TYPE (NMDBusObject, nm_dbus_object, G_TYPE_OBJECT);
 static char *
 _create_export_path (NMDBusObjectClass *klass)
 {
-	const char *class_export_path, *p;
-	static GHashTable *prefix_counters;
-	guint64 *counter;
+	nm_assert (NM_IS_DBUS_OBJECT_CLASS (klass));
+	nm_assert (klass->export_path.path);
 
-	class_export_path = klass->export_path;
+#if NM_MORE_ASSERTS
+	{
+		const char *p;
 
-	nm_assert (class_export_path);
+		p = strchr (klass->export_path.path, '%');
+		if (klass->export_path.int_counter) {
+			nm_assert (p);
+			nm_assert (p[1] == 'l');
+			nm_assert (p[2] == 'l');
+			nm_assert (p[3] == 'u');
+			nm_assert (p[4] == '\0');
+		} else
+			nm_assert (!p);
+	}
+#endif
 
-	p = strchr (class_export_path, '%');
-	if (p) {
-		if (G_UNLIKELY (!prefix_counters))
-			prefix_counters = g_hash_table_new (nm_str_hash, g_str_equal);
-
-		nm_assert (p[1] == 'l');
-		nm_assert (p[2] == 'l');
-		nm_assert (p[3] == 'u');
-		nm_assert (p[4] == '\0');
-
-		counter = g_hash_table_lookup (prefix_counters, class_export_path);
-		if (!counter) {
-			counter = g_slice_new0 (guint64);
-			g_hash_table_insert (prefix_counters, (char *) class_export_path, counter);
-		}
-
+	if (klass->export_path.int_counter) {
 		NM_PRAGMA_WARNING_DISABLE("-Wformat-nonliteral")
-		return g_strdup_printf (class_export_path, (unsigned long long) (++(*counter)));
+		return g_strdup_printf (klass->export_path.path,
+		                        ++(*klass->export_path.int_counter));
 		NM_PRAGMA_WARNING_REENABLE
 	}
-
-	return g_strdup (class_export_path);
+	return g_strdup (klass->export_path.path);
 }
 
 /**

@@ -2800,7 +2800,7 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (config_class);
 
-	dbus_object_class->export_path = NM_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/IP6Config");
+	dbus_object_class->export_path = NM_DBUS_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/IP6Config");
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_ip6_config);
 
 	object_class->get_property = get_property;

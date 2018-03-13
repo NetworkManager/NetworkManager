@@ -3181,7 +3181,7 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingsConnectionPrivate));
 
-	dbus_object_class->export_path = NM_EXPORT_PATH_NUMBERED (NM_DBUS_PATH_SETTINGS);
+	dbus_object_class->export_path = NM_DBUS_EXPORT_PATH_NUMBERED (NM_DBUS_PATH_SETTINGS);
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_settings_connection);
 
 	object_class->constructed = constructed;

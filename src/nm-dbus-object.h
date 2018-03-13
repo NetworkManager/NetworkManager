@@ -32,6 +32,38 @@ void nm_dbus_object_set_quitting (void);
 
 /*****************************************************************************/
 
+typedef struct {
+	const char *path;
+
+	/* if path is of type NM_DBUS_EXPORT_PATH_NUMBERED(), we need a
+	 * per-class counter when generating a new numbered path.
+	 *
+	 * Each NMDBusObjectClass instance has a shallow clone of the NMDBusObjectClass parent
+	 * instance in every derived type. Hence we cannot embed the counter there directly,
+	 * because it must be shared, e.g. between NMDeviceBond and NMDeviceEthernet.
+	 * Make int_counter a pointer to the actual counter that is used by ever sibling
+	 * class. */
+	long long unsigned *int_counter;
+} NMDBusExportPath;
+
+#define NM_DBUS_EXPORT_PATH_STATIC(basepath) \
+	({ \
+		((NMDBusExportPath) { \
+			.path = ""basepath"", \
+		}); \
+	})
+
+#define NM_DBUS_EXPORT_PATH_NUMBERED(basepath) \
+	({ \
+		static long long unsigned _int_counter = 0; \
+		((NMDBusExportPath) { \
+			.path = ""basepath"/%llu", \
+			.int_counter = &_int_counter, \
+		}); \
+	})
+
+/*****************************************************************************/
+
 /* "org.freedesktop.NetworkManager.Device.Statistics" is a special interface,
  * because although it has a legacy PropertiesChanged signal, it only notifies
  * about properties that actually exist on that interface. That is, because it
@@ -82,7 +114,7 @@ struct _NMDBusObject {
 typedef struct {
 	GObjectClass parent;
 
-	const char *export_path;
+	NMDBusExportPath export_path;
 
 	const NMDBusInterfaceInfoExtended *const*interface_infos;
 

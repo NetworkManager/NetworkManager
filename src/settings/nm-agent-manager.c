@@ -1687,7 +1687,7 @@ nm_agent_manager_class_init (NMAgentManagerClass *agent_manager_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (agent_manager_class);
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (agent_manager_class);
 
-	dbus_object_class->export_path = NM_DBUS_PATH_AGENT_MANAGER;
+	dbus_object_class->export_path = NM_DBUS_EXPORT_PATH_STATIC (NM_DBUS_PATH_AGENT_MANAGER);
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_agent_manager);
 
 	object_class->constructed = constructed;

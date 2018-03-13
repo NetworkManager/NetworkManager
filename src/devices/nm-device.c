@@ -15269,7 +15269,7 @@ nm_device_class_init (NMDeviceClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMDevicePrivate));
 
-	dbus_object_class->export_path = NM_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/Devices");
+	dbus_object_class->export_path = NM_DBUS_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/Devices");
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device,
 	                                                              &nm_interface_info_device_statistics);
 

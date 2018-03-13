@@ -1447,7 +1447,7 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 
 	g_type_class_add_private (ac_class, sizeof (NMActiveConnectionPrivate));
 
-	dbus_object_class->export_path = NM_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/ActiveConnection");
+	dbus_object_class->export_path = NM_DBUS_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/ActiveConnection");
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_active_connection);
 
 	object_class->get_property = get_property;

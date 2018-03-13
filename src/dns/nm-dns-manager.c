@@ -2127,7 +2127,7 @@ nm_dns_manager_class_init (NMDnsManagerClass *klass)
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
 
-	dbus_object_class->export_path = NM_DBUS_PATH "/DnsManager";
+	dbus_object_class->export_path = NM_DBUS_EXPORT_PATH_STATIC (NM_DBUS_PATH "/DnsManager");
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_dns_manager);
 	dbus_object_class->export_on_construction = TRUE;
 

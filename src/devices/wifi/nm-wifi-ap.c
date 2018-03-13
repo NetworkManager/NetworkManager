@@ -1391,7 +1391,7 @@ nm_wifi_ap_class_init (NMWifiAPClass *ap_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (ap_class);
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (ap_class);
 
-	dbus_object_class->export_path = NM_EXPORT_PATH_NUMBERED (NM_DBUS_PATH_ACCESS_POINT);
+	dbus_object_class->export_path = NM_DBUS_EXPORT_PATH_NUMBERED (NM_DBUS_PATH_ACCESS_POINT);
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_access_point);
 
 	object_class->get_property = get_property;
