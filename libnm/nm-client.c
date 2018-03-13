@@ -75,6 +75,7 @@
 #include "nm-device-vxlan.h"
 #include "nm-device-wifi.h"
 #include "nm-device-wimax.h"
+#include "nm-device-wireguard.h"
 #include "nm-device-wpan.h"
 #include "nm-dhcp4-config.h"
 #include "nm-dhcp6-config.h"
@@ -2575,6 +2576,8 @@ obj_nm_for_gdbus_object (NMClient *self, GDBusObject *object, GDBusObjectManager
 			type = NM_TYPE_DEVICE_WIFI;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_WIMAX) == 0)
 			type = NM_TYPE_DEVICE_WIMAX;
+		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_WIREGUARD) == 0)
+			type = NM_TYPE_DEVICE_WIREGUARD;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_DHCP4_CONFIG) == 0)
 			type = NM_TYPE_DHCP4_CONFIG;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_DHCP6_CONFIG) == 0)

@@ -265,6 +265,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-device-vxlan.xml"/>
     <xi:include href="xml/nm-device-wifi.xml"/>
     <xi:include href="xml/nm-device-wimax.xml"/>
+    <xi:include href="xml/nm-device-wireguard.xml"/>
     <xi:include href="xml/nm-device-wpan.xml"/>
     <!-- end alphabetical -->
     <xi:include href="xml/nm-active-connection.xml"/>
