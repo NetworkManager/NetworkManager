@@ -4421,39 +4421,22 @@ DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_wireless_mac_address_blacklist,
                                _validate_and_remove_wifi_mac_blacklist_item)
 
 static gconstpointer
-_get_fcn_wireless_security_wep_key0 (ARGS_GET_FCN)
+_get_fcn_wireless_security_wep_key (ARGS_GET_FCN)
 {
 	NMSettingWirelessSecurity *s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (setting);
+	char *key;
+	guint index;
 
 	RETURN_UNSUPPORTED_GET_TYPE ();
-	RETURN_STR_TO_FREE (g_strdup (nm_setting_wireless_security_get_wep_key (s_wireless_sec, 0)));
-}
 
-static gconstpointer
-_get_fcn_wireless_security_wep_key1 (ARGS_GET_FCN)
-{
-	NMSettingWirelessSecurity *s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (setting);
+	nm_assert (g_str_has_prefix (property_info->property_name, "wep-key"));
+	nm_assert (NM_IN_SET (property_info->property_name[7], '0', '1', '2', '3'));
+	nm_assert (property_info->property_name[8] == '\0');
 
-	RETURN_UNSUPPORTED_GET_TYPE ();
-	RETURN_STR_TO_FREE (g_strdup (nm_setting_wireless_security_get_wep_key (s_wireless_sec, 1)));
-}
+	index = property_info->property_name[7] - '0';
 
-static gconstpointer
-_get_fcn_wireless_security_wep_key2 (ARGS_GET_FCN)
-{
-	NMSettingWirelessSecurity *s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (setting);
-
-	RETURN_UNSUPPORTED_GET_TYPE ();
-	RETURN_STR_TO_FREE (g_strdup (nm_setting_wireless_security_get_wep_key (s_wireless_sec, 2)));
-}
-
-static gconstpointer
-_get_fcn_wireless_security_wep_key3 (ARGS_GET_FCN)
-{
-	NMSettingWirelessSecurity *s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (setting);
-
-	RETURN_UNSUPPORTED_GET_TYPE ();
-	RETURN_STR_TO_FREE (g_strdup (nm_setting_wireless_security_get_wep_key (s_wireless_sec, 3)));
+	key = g_strdup (nm_setting_wireless_security_get_wep_key (s_wireless_sec, index));
+	RETURN_STR_TO_FREE (key);
 }
 
 static const char *wifi_sec_valid_protos[] = { "wpa", "rsn", NULL };
@@ -7268,28 +7251,28 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_WEP_KEY0,
 		.is_secret =                    TRUE,
 		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_wireless_security_wep_key0,
+			.get_fcn =                  _get_fcn_wireless_security_wep_key,
 			.set_fcn =                  _set_fcn_wireless_wep_key,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_WEP_KEY1,
 		.is_secret =                    TRUE,
 		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_wireless_security_wep_key1,
+			.get_fcn =                  _get_fcn_wireless_security_wep_key,
 			.set_fcn =                  _set_fcn_wireless_wep_key,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_WEP_KEY2,
 		.is_secret =                    TRUE,
 		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_wireless_security_wep_key2,
+			.get_fcn =                  _get_fcn_wireless_security_wep_key,
 			.set_fcn =                  _set_fcn_wireless_wep_key,
 		),
 	),
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_WEP_KEY3,
 		.is_secret =                    TRUE,
 		.property_type = DEFINE_PROPERTY_TYPE (
-			.get_fcn =                  _get_fcn_wireless_security_wep_key3,
+			.get_fcn =                  _get_fcn_wireless_security_wep_key,
 			.set_fcn =                  _set_fcn_wireless_wep_key,
 		),
 	),
