@@ -217,6 +217,13 @@ typedef struct {
 } NMPObjectLnkVxlan;
 
 typedef struct {
+	NMPlatformLnkWireguard _public;
+
+	gsize peers_len;
+	NMWireguardPeer *peers;
+} NMPObjectLnkWireguard;
+
+typedef struct {
 	NMPlatformIP4Address _public;
 } NMPObjectIP4Address;
 
@@ -280,6 +287,9 @@ struct _NMPObject {
 
 		NMPlatformLnkVxlan      lnk_vxlan;
 		NMPObjectLnkVxlan       _lnk_vxlan;
+
+		NMPlatformLnkWireguard  lnk_wireguard;
+		NMPObjectLnkWireguard   _lnk_wireguard;
 
 		NMPlatformIPAddress     ip_address;
 		NMPlatformIPXAddress    ipx_address;

@@ -27,6 +27,8 @@
 #include <unistd.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netdb.h>
 #include <string.h>
 #include <linux/ip.h>
 #include <linux/if_tun.h>
@@ -1911,6 +1913,12 @@ const NMPlatformLnkVxlan *
 nm_platform_link_get_lnk_vxlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
 	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_VXLAN, out_link);
+}
+
+const NMPlatformLnkWireguard *
+nm_platform_link_get_lnk_wireguard (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_WIREGUARD, out_link);
 }
 
 /*****************************************************************************/
@@ -5414,6 +5422,100 @@ nm_platform_lnk_vxlan_to_string (const NMPlatformLnkVxlan *lnk, char *buf, gsize
 	return buf;
 }
 
+const char *
+nm_platform_wireguard_peer_to_string (const NMWireguardPeer *peer, char *buf, gsize len)
+{
+	gs_free char *public_b64 = NULL;
+	char s_address[INET6_ADDRSTRLEN] = {0};
+	char s_endpoint[INET6_ADDRSTRLEN + NI_MAXSERV + sizeof("endpoint []:") + 1] = {0};
+	guint8 nonzero_key = 0;
+	gsize i;
+
+	nm_utils_to_string_buffer_init (&buf, &len);
+
+	if (peer->endpoint.addr.sa_family == AF_INET || peer->endpoint.addr.sa_family == AF_INET6) {
+		char s_service[NI_MAXSERV];
+		socklen_t addr_len = 0;
+
+		if (peer->endpoint.addr.sa_family == AF_INET)
+			addr_len = sizeof (struct sockaddr_in);
+		else if (peer->endpoint.addr.sa_family == AF_INET6)
+			addr_len = sizeof (struct sockaddr_in6);
+		if (!getnameinfo (&peer->endpoint.addr, addr_len, s_address, sizeof(s_address), s_service, sizeof(s_service), NI_DGRAM | NI_NUMERICSERV | NI_NUMERICHOST)) {
+			if (peer->endpoint.addr.sa_family == AF_INET6 && strchr (s_address, ':'))
+				g_snprintf(s_endpoint, sizeof (s_endpoint), "endpoint [%s]:%s ", s_address, s_service);
+			else
+				g_snprintf(s_endpoint, sizeof (s_endpoint), "endpoint %s:%s ", s_address, s_service);
+		}
+	}
+
+
+	for (i = 0; i < sizeof (peer->preshared_key); i++)
+		nonzero_key |= peer->preshared_key[i];
+
+	public_b64 = g_base64_encode (peer->public_key, sizeof (peer->public_key));
+
+	nm_utils_strbuf_append (&buf, &len,
+	                        "{ "
+	                        "public_key %s "
+	                        "%s" /* preshared key indicator */
+	                        "%s" /* endpoint */
+	                        "rx %"G_GUINT64_FORMAT" "
+	                        "tx %"G_GUINT64_FORMAT" "
+	                        "allowedips (%"G_GSIZE_FORMAT") {",
+	                        public_b64,
+	                        nonzero_key ? "preshared_key (hidden) " : "",
+	                        s_endpoint,
+	                        peer->rx_bytes,
+	                        peer->tx_bytes,
+				peer->allowedips_len);
+
+
+	for (i = 0; i < peer->allowedips_len; i++) {
+		NMWireguardAllowedIP *allowedip = &peer->allowedips[i];
+		const char *ret;
+
+		ret = inet_ntop (allowedip->family, &allowedip->ip, s_address, sizeof(s_address));
+
+		nm_utils_strbuf_append (&buf, &len,
+		                        " %s/%u",
+		                        ret ? s_address : "<EAFNOSUPPORT>",
+		                        allowedip->mask);
+	}
+
+	nm_utils_strbuf_append_str (&buf, &len, " } }");
+	return buf;
+}
+
+const char *
+nm_platform_lnk_wireguard_to_string (const NMPlatformLnkWireguard *lnk, char *buf, gsize len)
+{
+	gs_free char *public_b64 = NULL;
+	guint8 nonzero_key = 0;
+	gsize i;
+
+	if (!nm_utils_to_string_buffer_init_null (lnk, &buf, &len))
+		return buf;
+
+	public_b64 = g_base64_encode (lnk->public_key, sizeof (lnk->public_key));
+
+	for (i = 0; i < sizeof (lnk->private_key); i++)
+		nonzero_key |= lnk->private_key[i];
+
+	g_snprintf (buf, len,
+	            "wireguard "
+	            "public_key %s "
+	            "%s" /* private key indicator */
+	            "listen_port %u "
+	            "fwmark 0x%x",
+	            public_b64,
+	            nonzero_key ? "private_key (hidden) " : "",
+	            lnk->listen_port,
+	            lnk->fwmark);
+
+	return buf;
+}
+
 /**
  * nm_platform_ip4_address_to_string:
  * @route: pointer to NMPlatformIP4Address address structure
@@ -6236,6 +6338,27 @@ nm_platform_lnk_vxlan_cmp (const NMPlatformLnkVxlan *a, const NMPlatformLnkVxlan
 	NM_CMP_FIELD_BOOL (a, b, rsc);
 	NM_CMP_FIELD_BOOL (a, b, l2miss);
 	NM_CMP_FIELD_BOOL (a, b, l3miss);
+	return 0;
+}
+
+void
+nm_platform_lnk_wireguard_hash_update (const NMPlatformLnkWireguard *obj, NMHashState *h)
+{
+	nm_hash_update_vals (h,
+	                     obj->listen_port,
+	                     obj->fwmark);
+	nm_hash_update (h, obj->private_key, sizeof (obj->private_key));
+	nm_hash_update (h, obj->public_key, sizeof (obj->public_key));
+}
+
+int
+nm_platform_lnk_wireguard_cmp (const NMPlatformLnkWireguard *a, const NMPlatformLnkWireguard *b)
+{
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, listen_port);
+	NM_CMP_FIELD (a, b, fwmark);
+	NM_CMP_FIELD_MEMCMP (a, b, private_key);
+	NM_CMP_FIELD_MEMCMP (a, b, public_key);
 	return 0;
 }
 
