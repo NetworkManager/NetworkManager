@@ -74,6 +74,7 @@ content_files = \
 	dbus-org.freedesktop.NetworkManager.Device.Veth.xml \
 	dbus-org.freedesktop.NetworkManager.Settings.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Wired.xml \
+	dbus-org.freedesktop.NetworkManager.Device.WireGuard.xml \
 	dbus-org.freedesktop.NetworkManager.IP4Config.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Statistics.xml \
 	dbus-org.freedesktop.NetworkManager.DnsManager.xml \
