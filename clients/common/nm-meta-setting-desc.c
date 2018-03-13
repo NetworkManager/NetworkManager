@@ -1328,7 +1328,7 @@ _values_fcn_gobject_enum (ARGS_VALUES_FCN)
 	gboolean has_minmax = FALSE;
 	int min = G_MININT;
 	int max = G_MAXINT;
-	char **v, **w;
+	char **v;
 
 	if (property_info->property_typ_data) {
 		if (   property_info->property_typ_data->subtype.gobject_enum.min
@@ -1362,11 +1362,7 @@ _values_fcn_gobject_enum (ARGS_VALUES_FCN)
 	/* the gobject_enum.value_infos are currently ignored for the list of
 	 * values. They only declare additional (hidden) aliases for the setter. */
 
-	v = (char **) nm_utils_enum_get_values (gtype, min, max);
-	if (v) {
-		for (w = v; *w; w++)
-			*w = g_strdup (*w);
-	}
+	v = nm_utils_strv_make_deep_copied (nm_utils_enum_get_values (gtype, min, max));
 	return (const char *const*) (*out_to_free = v);
 }
 
