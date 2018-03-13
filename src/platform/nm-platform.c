@@ -1894,6 +1894,12 @@ nm_platform_link_get_lnk_sit (NMPlatform *self, int ifindex, const NMPlatformLin
 	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_SIT, out_link);
 }
 
+const NMPlatformLnkTun *
+nm_platform_link_get_lnk_tun (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_TUN, out_link);
+}
+
 const NMPlatformLnkVlan *
 nm_platform_link_get_lnk_vlan (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
@@ -2046,27 +2052,24 @@ nm_platform_link_vxlan_add (NMPlatform *self,
 NMPlatformError
 nm_platform_link_tun_add (NMPlatform *self,
                           const char *name,
-                          gboolean tap,
-                          gint64 owner,
-                          gint64 group,
-                          gboolean pi,
-                          gboolean vnet_hdr,
-                          gboolean multi_queue,
+                          const NMPlatformLnkTun *props,
                           const NMPlatformLink **out_link)
 {
+	char b[255];
 	NMPlatformError plerr;
 
 	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
 
 	g_return_val_if_fail (name, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (props, NM_PLATFORM_ERROR_BUG);
 
-	plerr = _link_add_check_existing (self, name, tap ? NM_LINK_TYPE_TAP : NM_LINK_TYPE_TUN, out_link);
+	plerr = _link_add_check_existing (self, name, NM_LINK_TYPE_TUN, out_link);
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("link: adding %s '%s' owner %" G_GINT64_FORMAT " group %" G_GINT64_FORMAT,
-	       tap ? "tap" : "tun", name, owner, group);
-	if (!klass->tun_add (self, name, tap, owner, group, pi, vnet_hdr, multi_queue, out_link))
+	_LOGD ("link: adding tun '%s' %s",
+	       name, nm_platform_lnk_tun_to_string (props, b, sizeof (b)));
+	if (!klass->link_tun_add (self, name, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
 	return NM_PLATFORM_ERROR_SUCCESS;
 }
@@ -2670,44 +2673,100 @@ nm_platform_link_veth_get_properties (NMPlatform *self, int ifindex, int *out_pe
 	return TRUE;
 }
 
+/**
+ * nm_platform_link_tun_get_properties:
+ * @self: the #NMPlatform instance
+ * @ifindex: the ifindex to look up
+ * @out_properties: (out): (allow-none): return the read properties
+ *
+ * Only recent versions of kernel export tun properties via netlink.
+ * So, if that's the case, then we have the NMPlatformLnkTun instance
+ * in the platform cache ready to return. Otherwise, this function
+ * falls back reading sysctl to obtain the tun properties. That
+ * is racy, because querying sysctl means that the object might
+ * be already removed from cache (while NM didn't yet process the
+ * netlink message).
+ *
+ * Hence, to lookup the tun properties, you always need to use this
+ * function, and use it with care knowing that it might obtain its
+ * data by reading sysctl. Note that we don't want to add this workaround
+ * to the platform cache itself, because the cache should (mainly)
+ * contain data from netlink. To access the sysctl side channel, the
+ * user needs to do explicitly.
+ *
+ * Returns: #TRUE, if the properties could be read. */
 gboolean
-nm_platform_link_tun_get_properties (NMPlatform *self, int ifindex, NMPlatformTunProperties *props)
+nm_platform_link_tun_get_properties (NMPlatform *self,
+                                     int ifindex,
+                                     NMPlatformLnkTun *out_properties)
 {
-	nm_auto_close int dirfd = -1;
+	const NMPObject *plobj;
+	const NMPObject *pllnk;
 	char ifname[IFNAMSIZ];
+	gint64 owner;
+	gint64 group;
 	gint64 flags;
-	gboolean success = TRUE;
+
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
-	g_return_val_if_fail (props, FALSE);
 
-	memset (props, 0, sizeof (*props));
-	props->owner = -1;
-	props->group = -1;
-
-	dirfd = nm_platform_sysctl_open_netdir (self, ifindex, ifname);
-	if (dirfd < 0)
+	/* we consider also invisible links (those that are not yet in udev). */
+	plobj = nm_platform_link_get_obj (self, ifindex, FALSE);
+	if (!plobj)
+		return FALSE;
+	if (NMP_OBJECT_CAST_LINK (plobj)->type != NM_LINK_TYPE_TUN)
 		return FALSE;
 
-	props->owner = nm_platform_sysctl_get_int_checked (self, NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname, "owner"), 10, -1, G_MAXINT64, -1);
-	if (errno)
-		success = FALSE;
+	pllnk = plobj->_link.netlink.lnk;
+	if (pllnk) {
+		nm_assert (NMP_OBJECT_GET_TYPE (pllnk) == NMP_OBJECT_TYPE_LNK_TUN);
+		nm_assert (NMP_OBJECT_GET_CLASS (pllnk)->lnk_link_type == NM_LINK_TYPE_TUN);
 
-	props->group = nm_platform_sysctl_get_int_checked (self, NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname, "group"), 10, -1, G_MAXINT64, -1);
-	if (errno)
-		success = FALSE;
+		/* recent kernels expose tun properties via netlink and thus we have them
+		 * in the platform cache. */
+		NM_SET_OUT (out_properties, pllnk->lnk_tun);
+		return TRUE;
+	}
 
-	flags = nm_platform_sysctl_get_int_checked (self, NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname, "tun_flags"), 16, 0, G_MAXINT64, -1);
-	if (flags >= 0) {
-		props->mode = ((flags & (IFF_TUN | IFF_TAP)) == IFF_TUN) ? "tun" : "tap";
-		props->no_pi = !!(flags & IFF_NO_PI);
-		props->vnet_hdr = !!(flags & IFF_VNET_HDR);
-		props->multi_queue = !!(flags & NM_IFF_MULTI_QUEUE);
-	} else
-		success = FALSE;
+	/* fallback to reading sysctl. */
+	{
+		nm_auto_close int dirfd = -1;
 
-	return success;
+		dirfd = nm_platform_sysctl_open_netdir (self, ifindex, ifname);
+		if (dirfd < 0)
+			return FALSE;
+
+		owner = nm_platform_sysctl_get_int_checked (self, NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname, "owner"), 10, -1, G_MAXUINT32, -2);
+		if (owner == -2)
+			return FALSE;
+
+		group = nm_platform_sysctl_get_int_checked (self, NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname, "group"), 10, -1, G_MAXUINT32, -2);
+		if (group == -2)
+			return FALSE;
+
+		flags = nm_platform_sysctl_get_int_checked (self, NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname, "tun_flags"), 16, 0, G_MAXINT64, -1);
+		if (flags == -1)
+			return FALSE;
+	}
+
+	if (out_properties) {
+		memset (out_properties, 0, sizeof (*out_properties));
+		if (owner != -1) {
+			out_properties->owner_valid = TRUE;
+			out_properties->owner = owner;
+		}
+		if (group != -1) {
+			out_properties->group_valid = TRUE;
+			out_properties->group = group;
+		}
+		out_properties->type = (flags & TUN_TYPE_MASK);
+		out_properties->pi = !(flags & IFF_NO_PI);
+		out_properties->vnet_hdr = !!(flags & IFF_VNET_HDR);
+		out_properties->multi_queue = !!(flags & NM_IFF_MULTI_QUEUE);
+		out_properties->persist = !!(flags & IFF_PERSIST);
+	}
+	return TRUE;
 }
 
 gboolean
@@ -4995,6 +5054,41 @@ nm_platform_lnk_sit_to_string (const NMPlatformLnkSit *lnk, char *buf, gsize len
 }
 
 const char *
+nm_platform_lnk_tun_to_string (const NMPlatformLnkTun *lnk, char *buf, gsize len)
+{
+	char str_owner[50];
+	char str_group[50];
+	char str_type[50];
+	const char *type;
+
+	if (!nm_utils_to_string_buffer_init_null (lnk, &buf, &len))
+		return buf;
+
+	if (lnk->type == IFF_TUN)
+		type = "tun";
+	else if (lnk->type == IFF_TAP)
+		type = "tap";
+	else
+		type = nm_sprintf_buf (str_type, "tun type %u", (guint) lnk->type);
+
+	g_snprintf (buf, len,
+	            "%s " /* type */
+	            " pi %s" /* pi */
+	            " vnet_hdr %s" /* vnet_hdr */
+	            "%s" /* multi_queue */
+	            "%s" /* owner */
+	            "%s" /* group */
+	            "",
+	            type,
+	            lnk->pi ? "on" : "off",
+	            lnk->vnet_hdr ? "on" : "off",
+	            lnk->multi_queue ? " multi_queue" : "",
+	            lnk->owner_valid ? nm_sprintf_buf (str_owner, " owner %u", (guint) lnk->owner) : "",
+	            lnk->group_valid ? nm_sprintf_buf (str_group, " group %u", (guint) lnk->group) : "");
+	return buf;
+}
+
+const char *
 nm_platform_lnk_vlan_to_string (const NMPlatformLnkVlan *lnk, char *buf, gsize len)
 {
 	char *b;
@@ -5821,6 +5915,38 @@ nm_platform_lnk_sit_cmp (const NMPlatformLnkSit *a, const NMPlatformLnkSit *b)
 	NM_CMP_FIELD_BOOL (a, b, path_mtu_discovery);
 	NM_CMP_FIELD (a, b, flags);
 	NM_CMP_FIELD (a, b, proto);
+	return 0;
+}
+
+void
+nm_platform_lnk_tun_hash_update (const NMPlatformLnkTun *obj, NMHashState *h)
+{
+	nm_hash_update_vals (h,
+	                     obj->type,
+	                     obj->owner,
+	                     obj->group,
+	                     NM_HASH_COMBINE_BOOLS (guint8,
+	                                            obj->owner_valid,
+	                                            obj->group_valid,
+	                                            obj->pi,
+	                                            obj->vnet_hdr,
+	                                            obj->multi_queue,
+	                                            obj->persist));
+}
+
+int
+nm_platform_lnk_tun_cmp (const NMPlatformLnkTun *a, const NMPlatformLnkTun *b)
+{
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, type);
+	NM_CMP_FIELD (a, b, owner);
+	NM_CMP_FIELD (a, b, group);
+	NM_CMP_FIELD_BOOL (a, b, owner_valid);
+	NM_CMP_FIELD_BOOL (a, b, group_valid);
+	NM_CMP_FIELD_BOOL (a, b, pi);
+	NM_CMP_FIELD_BOOL (a, b, vnet_hdr);
+	NM_CMP_FIELD_BOOL (a, b, multi_queue);
+	NM_CMP_FIELD_BOOL (a, b, persist);
 	return 0;
 }
 
