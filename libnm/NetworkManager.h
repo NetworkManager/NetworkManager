@@ -53,6 +53,7 @@
 #include "nm-device-vxlan.h"
 #include "nm-device-wifi.h"
 #include "nm-device-wimax.h"
+#include "nm-device-wireguard.h"
 #include "nm-device-wpan.h"
 #include "nm-device.h"
 #include "nm-dhcp-config.h"
