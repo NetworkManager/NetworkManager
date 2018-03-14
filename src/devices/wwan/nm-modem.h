@@ -126,7 +126,7 @@ typedef struct {
 
 	gboolean (*complete_connection)            (NMModem *modem,
 	                                            NMConnection *connection,
-	                                            const GSList *existing_connections,
+	                                            NMConnection *const*existing_connections,
 	                                            GError **error);
 
 	NMActStageReturn (*act_stage1_prepare)     (NMModem *modem,
@@ -189,7 +189,7 @@ gboolean nm_modem_check_connection_compatible (NMModem *self, NMConnection *conn
 
 gboolean nm_modem_complete_connection (NMModem *self,
                                        NMConnection *connection,
-                                       const GSList *existing_connections,
+                                       NMConnection *const*existing_connections,
                                        GError **error);
 
 void nm_modem_get_route_parameters (NMModem *self,
