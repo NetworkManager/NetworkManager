@@ -67,32 +67,35 @@ nm_utils_get_shared_wifi_permission (NMConnection *connection)
 /*****************************************************************************/
 
 static char *
-get_new_connection_name (const GSList *existing,
+get_new_connection_name (const GSList *existing_connections,
                          const char *preferred,
                          const char *fallback_prefix)
 {
 	GSList *names = NULL;
 	const GSList *iter;
 	char *cname = NULL;
-	int i = 0;
-	gboolean preferred_found = FALSE;
+	guint i;
 
 	g_assert (fallback_prefix);
 
-	for (iter = existing; iter; iter = g_slist_next (iter)) {
+	for (iter = existing_connections; iter; iter = g_slist_next (iter)) {
 		NMConnection *candidate = NM_CONNECTION (iter->data);
 		const char *id;
 
 		id = nm_connection_get_id (candidate);
-		g_assert (id);
+		nm_assert (id);
+
 		names = g_slist_append (names, (gpointer) id);
 
-		if (preferred && !preferred_found && (strcmp (preferred, id) == 0))
-			preferred_found = TRUE;
+		if (   preferred
+		    && nm_streq (preferred, id)) {
+			/* the preferred name is already taken. Forget about it. */
+			preferred = NULL;
+		}
 	}
 
 	/* Return the preferred name if it was unique */
-	if (preferred && !preferred_found) {
+	if (preferred) {
 		g_slist_free (names);
 		return g_strdup (preferred);
 	}
@@ -100,52 +103,49 @@ get_new_connection_name (const GSList *existing,
 	/* Otherwise find the next available unique connection name using the given
 	 * connection name template.
 	 */
-	while (!cname && (i++ < 10000)) {
+	for (i = 1; TRUE; i++) {
 		char *temp;
-		gboolean found = FALSE;
 
 		/* Translators: the first %s is a prefix for the connection id, such
 		 * as "Wired Connection" or "VPN Connection". The %d is a number
 		 * that is combined with the first argument to create a unique
 		 * connection id. */
-		temp = g_strdup_printf (C_("connection id fallback", "%s %d"),
+		temp = g_strdup_printf (C_("connection id fallback", "%s %u"),
 		                        fallback_prefix, i);
 		for (iter = names; iter; iter = g_slist_next (iter)) {
-			if (!strcmp (iter->data, temp)) {
-				found = TRUE;
-				break;
+			if (nm_streq (iter->data, temp)) {
+				cname = temp;
+				goto found;
 			}
 		}
-		if (!found)
-			cname = temp;
-		else
-			g_free (temp);
+		g_free (temp);
 	}
 
+found:
 	g_slist_free (names);
 	return cname;
 }
 
 static char *
 get_new_connection_ifname (NMPlatform *platform,
-                           const GSList *existing,
+                           const GSList *existing_connections,
                            const char *prefix)
 {
-	int i;
+	guint i;
 	char *name;
 	const GSList *iter;
 	gboolean found;
 
-	for (i = 0; i < 500; i++) {
+	for (i = 0; TRUE; i++) {
 		name = g_strdup_printf ("%s%d", prefix, i);
 
 		if (nm_platform_link_get_by_ifname (platform, name))
 			goto next;
 
-		for (iter = existing, found = FALSE; iter; iter = g_slist_next (iter)) {
+		for (iter = existing_connections, found = FALSE; iter; iter = g_slist_next (iter)) {
 			NMConnection *candidate = iter->data;
 
-			if (g_strcmp0 (nm_connection_get_interface_name (candidate), name) == 0) {
+			if (nm_streq0 (nm_connection_get_interface_name (candidate), name)) {
 				found = TRUE;
 				break;
 			}
@@ -250,7 +250,7 @@ void
 nm_utils_complete_generic (NMPlatform *platform,
                            NMConnection *connection,
                            const char *ctype,
-                           const GSList *existing,
+                           const GSList *existing_connections,
                            const char *preferred_id,
                            const char *fallback_id_prefix,
                            const char *ifname_prefix,
@@ -277,14 +277,14 @@ nm_utils_complete_generic (NMPlatform *platform,
 
 	/* Add a connection ID if absent */
 	if (!nm_setting_connection_get_id (s_con)) {
-		id = get_new_connection_name (existing, preferred_id, fallback_id_prefix);
+		id = get_new_connection_name (existing_connections, preferred_id, fallback_id_prefix);
 		g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_ID, id, NULL);
 		g_free (id);
 	}
 
 	/* Add an interface name, if requested */
 	if (ifname_prefix && !nm_setting_connection_get_interface_name (s_con)) {
-		ifname = get_new_connection_ifname (platform, existing, ifname_prefix);
+		ifname = get_new_connection_ifname (platform, existing_connections, ifname_prefix);
 		g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_INTERFACE_NAME, ifname, NULL);
 		g_free (ifname);
 	}
