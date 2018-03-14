@@ -67,43 +67,47 @@ nm_utils_get_shared_wifi_permission (NMConnection *connection)
 /*****************************************************************************/
 
 static char *
-get_new_connection_name (const GSList *existing_connections,
+get_new_connection_name (NMConnection *const*existing_connections,
                          const char *preferred,
                          const char *fallback_prefix)
 {
-	GSList *names = NULL;
-	const GSList *iter;
-	guint i;
+	gs_free const char **existing_names = NULL;
+	guint i, existing_len = 0;
 
 	g_assert (fallback_prefix);
 
-	for (iter = existing_connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *candidate = NM_CONNECTION (iter->data);
-		const char *id;
+	if (existing_connections) {
+		existing_len = NM_PTRARRAY_LEN (existing_connections);
+		existing_names = g_new (const char *, existing_len);
+		for (i = 0; i < existing_len; i++) {
+			NMConnection *candidate;
+			const char *id;
 
-		id = nm_connection_get_id (candidate);
-		nm_assert (id);
+			candidate = existing_connections[i];
+			nm_assert (NM_IS_CONNECTION (candidate));
 
-		names = g_slist_append (names, (gpointer) id);
+			id = nm_connection_get_id (candidate);
+			nm_assert (id);
 
-		if (   preferred
-		    && nm_streq (preferred, id)) {
-			/* the preferred name is already taken. Forget about it. */
-			preferred = NULL;
+			existing_names[i] = id;
+
+			if (   preferred
+				&& nm_streq (preferred, id)) {
+				/* the preferred name is already taken. Forget about it. */
+				preferred = NULL;
+			}
 		}
+		nm_assert (!existing_connections[i]);
 	}
 
 	/* Return the preferred name if it was unique */
-	if (preferred) {
-		g_slist_free (names);
+	if (preferred)
 		return g_strdup (preferred);
-	}
 
 	/* Otherwise find the next available unique connection name using the given
 	 * connection name template.
 	 */
 	for (i = 1; TRUE; i++) {
-		gboolean found = FALSE;
 		char *temp;
 
 		/* Translators: the first %s is a prefix for the connection id, such
@@ -112,53 +116,44 @@ get_new_connection_name (const GSList *existing_connections,
 		 * connection id. */
 		temp = g_strdup_printf (C_("connection id fallback", "%s %u"),
 		                        fallback_prefix, i);
-		for (iter = names; iter; iter = g_slist_next (iter)) {
-			if (nm_streq (iter->data, temp)) {
-				found = TRUE;
-				break;
-			}
-		}
-		if (!found) {
-			g_slist_free (names);
+
+		if (nm_utils_strv_find_first ((char **) existing_names,
+		                              existing_len,
+		                              temp) < 0)
 			return temp;
-		}
+
 		g_free (temp);
 	}
 }
 
 static char *
 get_new_connection_ifname (NMPlatform *platform,
-                           const GSList *existing_connections,
+                           NMConnection *const*existing_connections,
                            const char *prefix)
 {
-	guint i;
-	char *name;
-	const GSList *iter;
-	gboolean found;
+	guint i, j;
 
 	for (i = 0; TRUE; i++) {
+		char *name;
+
 		name = g_strdup_printf ("%s%d", prefix, i);
 
 		if (nm_platform_link_get_by_ifname (platform, name))
 			goto next;
 
-		for (iter = existing_connections, found = FALSE; iter; iter = g_slist_next (iter)) {
-			NMConnection *candidate = iter->data;
-
-			if (nm_streq0 (nm_connection_get_interface_name (candidate), name)) {
-				found = TRUE;
-				break;
+		if (existing_connections) {
+			for (j = 0; existing_connections[j]; j++) {
+				if (nm_streq0 (nm_connection_get_interface_name (existing_connections[j]),
+				               name))
+					goto next;
 			}
 		}
 
-		if (!found)
-			return name;
+		return name;
 
-	next:
+next:
 		g_free (name);
 	}
-
-	return NULL;
 }
 
 const char *
@@ -250,7 +245,7 @@ void
 nm_utils_complete_generic (NMPlatform *platform,
                            NMConnection *connection,
                            const char *ctype,
-                           const GSList *existing_connections,
+                           NMConnection *const*existing_connections,
                            const char *preferred_id,
                            const char *fallback_id_prefix,
                            const char *ifname_prefix,
