@@ -135,8 +135,6 @@ complete_connection (NMDevice *device,
 	                           _("ADSL connection"),
 	                           NULL,
 	                           FALSE); /* No IPv6 yet by default */
-
-
 	return TRUE;
 }
 
