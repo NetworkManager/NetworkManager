@@ -4767,6 +4767,16 @@ nm_device_generate_connection (NMDevice *self,
 	return g_steal_pointer (&connection);
 }
 
+/**
+ * nm_device_complete_connection:
+ *
+ * Complete the connection. This is solely used for AddAndActivate where the user
+ * may pass in an incomplete connection and a device, and the device tries to
+ * make sense of it and complete it for activation. Otherwise, this is not
+ * used.
+ *
+ * Returns: success or failure.
+ */
 gboolean
 nm_device_complete_connection (NMDevice *self,
                                NMConnection *connection,
@@ -4774,27 +4784,28 @@ nm_device_complete_connection (NMDevice *self,
                                const GSList *existing_connections,
                                GError **error)
 {
-	gboolean success = FALSE;
+	NMDeviceClass *klass;
 
-	g_return_val_if_fail (self != NULL, FALSE);
-	g_return_val_if_fail (connection != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
-	if (!NM_DEVICE_GET_CLASS (self)->complete_connection) {
+	klass = NM_DEVICE_GET_CLASS (self);
+
+	if (!klass->complete_connection) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INVALID_CONNECTION,
 		             "Device class %s had no complete_connection method",
 		             G_OBJECT_TYPE_NAME (self));
 		return FALSE;
 	}
 
-	success = NM_DEVICE_GET_CLASS (self)->complete_connection (self,
-	                                                           connection,
-	                                                           specific_object,
-	                                                           existing_connections,
-	                                                           error);
-	if (success)
-		success = nm_connection_verify (connection, error);
+	if (!klass->complete_connection (self,
+	                                 connection,
+	                                 specific_object,
+	                                 existing_connections,
+	                                 error))
+		return FALSE;
 
-	return success;
+	return nm_connection_verify (connection, error);
 }
 
 gboolean
