@@ -4555,12 +4555,10 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 		goto error;
 
 	{
-		gs_free NMSettingsConnection **connections = NULL;
+		NMSettingsConnection *const*connections;
 		guint i, len;
 
-		connections = nm_settings_get_connections_clone (priv->settings, &len,
-		                                                 NULL, NULL,
-		                                                 nm_settings_connection_cmp_autoconnect_priority_p_with_data, NULL);
+		connections = nm_settings_get_connections (priv->settings, &len);
 		all_connections = NULL;
 		for (i = len; i > 0; ) {
 			i--;
