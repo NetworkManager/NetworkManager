@@ -367,6 +367,22 @@ error:
 	g_dbus_method_invocation_take_error (invocation, error);
 }
 
+static void
+_clear_connections_cached_list (NMSettingsConnection ***p_connections_cached_list)
+{
+#if NM_MORE_ASSERTS
+	/* set the pointer to a bogus value. This makes it more apparent
+	 * if somebody has a reference to the cached list and still uses
+	 * it. That is a bug, this code just tries to make it blow up
+	 * more eagerly. */
+	if (*p_connections_cached_list) {
+		NMSettingsConnection **p = *p_connections_cached_list;
+		memset (p, 0xdeaddead, sizeof (NMSettingsConnection *) * (NM_PTRARRAY_LEN (p) + 1));
+	}
+#endif
+	g_clear_pointer (p_connections_cached_list, g_free);
+}
+
 /**
  * nm_settings_get_connections:
  * @self: the #NMSettings
@@ -865,7 +881,7 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 
 	/* Forget about the connection internally */
 	g_hash_table_remove (priv->connections, (gpointer) cpath);
-	g_clear_pointer (&priv->connections_cached_list, g_free);
+	_clear_connections_cached_list (&priv->connections_cached_list);
 
 	_emit_connection_removed (self, connection);
 
@@ -998,7 +1014,7 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 	g_hash_table_insert (priv->connections,
 	                     (gpointer) nm_connection_get_path (NM_CONNECTION (connection)),
 	                     g_object_ref (connection));
-	g_clear_pointer (&priv->connections_cached_list, g_free);
+	_clear_connections_cached_list (&priv->connections_cached_list);
 
 	nm_utils_log_connection_diff (NM_CONNECTION (connection), NULL, LOGL_DEBUG, LOGD_CORE, "new connection", "++ ");
 
@@ -1953,7 +1969,7 @@ finalize (GObject *object)
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 
 	g_hash_table_destroy (priv->connections);
-	g_clear_pointer (&priv->connections_cached_list, g_free);
+	_clear_connections_cached_list (&priv->connections_cached_list);
 
 	g_slist_free_full (priv->unmanaged_specs, g_free);
 	g_slist_free_full (priv->unrecognized_specs, g_free);
