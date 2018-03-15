@@ -10550,7 +10550,7 @@ nm_device_set_ip4_config (NMDevice *self,
 			has_changes = TRUE;
 			priv->ip4_config = g_object_ref (new_config);
 
-			if (success && !nm_dbus_object_is_exported (NM_DBUS_OBJECT (new_config)))
+			if (!nm_dbus_object_is_exported (NM_DBUS_OBJECT (new_config)))
 				nm_dbus_object_export (NM_DBUS_OBJECT (new_config));
 
 			_LOGD (LOGD_IP4, "ip4-config: set IP4Config instance (%s)",
@@ -10723,7 +10723,7 @@ nm_device_set_ip6_config (NMDevice *self,
 			has_changes = TRUE;
 			priv->ip6_config = g_object_ref (new_config);
 
-			if (success && !nm_dbus_object_is_exported (NM_DBUS_OBJECT (new_config)))
+			if (!nm_dbus_object_is_exported (NM_DBUS_OBJECT (new_config)))
 				nm_dbus_object_export (NM_DBUS_OBJECT (new_config));
 
 			_LOGD (LOGD_IP6, "ip6-config: set IP6Config instance (%s)",
