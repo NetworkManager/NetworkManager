@@ -305,6 +305,14 @@ private_server_authorize (GDBusAuthObserver *observer,
 	return g_credentials_get_unix_user (credentials, NULL) == 0;
 }
 
+static gboolean
+private_server_allow_mechanism (GDBusAuthObserver *observer,
+                                const char *mechanism,
+                                gpointer user_data)
+{
+	return NM_IN_STRSET (mechanism, "EXTERNAL");
+}
+
 static void
 private_server_free (gpointer ptr)
 {
@@ -362,6 +370,8 @@ nm_dbus_manager_private_server_register (NMDBusManager *self,
 	auth_observer = g_dbus_auth_observer_new ();
 	g_signal_connect (auth_observer, "authorize-authenticated-peer",
 	                  G_CALLBACK (private_server_authorize), NULL);
+	g_signal_connect (auth_observer, "allow-mechanism",
+	                  G_CALLBACK (private_server_allow_mechanism), NULL);
 	server = g_dbus_server_new_sync (address,
 	                                 G_DBUS_SERVER_FLAGS_NONE,
 	                                 guid,
