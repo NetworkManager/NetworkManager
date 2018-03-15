@@ -65,11 +65,21 @@ test_arping_common (test_fixture *fixture, TestInfo *info)
 	gs_unref_object NMArpingManager *manager = NULL;
 	GMainLoop *loop;
 	int i;
+	const guint WAIT_TIME_OPTIMISTIC = 50;
+	guint wait_time;
+	gulong signal_id;
 
 	if (!nm_utils_find_helper ("arping", NULL, NULL)) {
 		g_test_skip ("arping binary is missing");
 		return;
 	}
+
+	/* first, try with a short waittime. We hope that this is long enough
+	 * to successfully complete the test. Only if that's not the case, we
+	 * assume the computer is currently busy (high load) and we retry with
+	 * a longer timeout. */
+	wait_time = WAIT_TIME_OPTIMISTIC;
+again:
 
 	manager = nm_arping_manager_new (fixture->ifindex0);
 	g_assert (manager != NULL);
@@ -83,18 +93,32 @@ test_arping_common (test_fixture *fixture, TestInfo *info)
 	}
 
 	loop = g_main_loop_new (NULL, FALSE);
-	g_signal_connect (manager, NM_ARPING_MANAGER_PROBE_TERMINATED,
-	                  G_CALLBACK (arping_manager_probe_terminated), loop);
-	g_assert (nm_arping_manager_start_probe (manager, 250, NULL));
+	signal_id = g_signal_connect (manager, NM_ARPING_MANAGER_PROBE_TERMINATED,
+	                              G_CALLBACK (arping_manager_probe_terminated), loop);
+	g_assert (nm_arping_manager_start_probe (manager, wait_time, NULL));
 	g_assert (nmtst_main_loop_run (loop, 2000));
+	g_signal_handler_disconnect (manager, signal_id);
+	g_main_loop_unref (loop);
 
 	for (i = 0; info->addresses[i]; i++) {
-		g_assert_cmpint (nm_arping_manager_check_address (manager, info->addresses[i]),
-		                 ==,
-		                 info->expected_result[i]);
-	}
+		gboolean val;
 
-	g_main_loop_unref (loop);
+		val = nm_arping_manager_check_address (manager, info->addresses[i]);
+		if (val == info->expected_result[i])
+			continue;
+
+		if (wait_time == WAIT_TIME_OPTIMISTIC) {
+			/* probably we just had a glitch and the system took longer than
+			 * expected. Re-verify with a large timeout this time. */
+			wait_time = 1000;
+			g_clear_object (&manager);
+			goto again;
+		}
+
+		g_error ("expected check for address #%d (%s) to %s, but it didn't",
+		         i, nm_utils_inet4_ntop (info->addresses[i], NULL),
+		         info->expected_result[i] ? "detect no duplicated" : "detect a duplicate");
+	}
 }
 
 static void
