@@ -258,7 +258,7 @@
   <part id="vpn-plugins">
     <title>VPN Plugin D-Bus API Reference</title>
 
-    <chapter id="dbus-vpn-types">
+    <chapter id="dbus-vpn-plugin">
       <title>VPN services</title>
       <!-- TODO: Describe the VPN services here -->
       <xi:include href="dbus-org.freedesktop.NetworkManager.VPN.Plugin.xml"/>
