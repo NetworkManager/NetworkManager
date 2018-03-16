@@ -522,14 +522,13 @@ static gboolean nm_device_set_ip4_config (NMDevice *self,
                                           NMIP4Config *config,
                                           gboolean commit,
                                           GPtrArray *ip4_dev_route_blacklist);
-static gboolean ip4_config_merge_and_apply (NMDevice *self,
-                                            gboolean commit);
+static gboolean ip_config_merge_and_apply (NMDevice *self,
+                                           int addr_family,
+                                           gboolean commit);
 
 static gboolean nm_device_set_ip6_config (NMDevice *self,
                                           NMIP6Config *config,
                                           gboolean commit);
-static gboolean ip6_config_merge_and_apply (NMDevice *self,
-                                            gboolean commit);
 
 static gboolean nm_device_master_add_slave (NMDevice *self, NMDevice *slave, gboolean configure);
 static void nm_device_slave_notify_enslave (NMDevice *self, gboolean success);
@@ -2166,10 +2165,10 @@ update_connectivity_state (NMDevice *self, NMConnectivityState state)
 		if (   priv->state == NM_DEVICE_STATE_ACTIVATED
 		    && !nm_device_sys_iface_state_is_external (self)) {
 			if (   nm_device_get_best_default_route (self, AF_INET)
-			    && !ip4_config_merge_and_apply (self, TRUE))
+			    && !ip_config_merge_and_apply (self, AF_INET, TRUE))
 				_LOGW (LOGD_IP4, "Failed to update IPv4 route metric");
 			if (   nm_device_get_best_default_route (self, AF_INET6)
-			    && !ip6_config_merge_and_apply (self, TRUE))
+			    && !ip_config_merge_and_apply (self, AF_INET6, TRUE))
 				_LOGW (LOGD_IP6, "Failed to update IPv6 route metric");
 		}
 	}
@@ -2974,11 +2973,11 @@ device_link_changed (NMDevice *self)
 		/* the link was down and just came up. That happens for example, while changing MTU.
 		 * We must restore IP configuration. */
 		if (priv->ip4_state == IP_DONE) {
-			if (!ip4_config_merge_and_apply (self, TRUE))
+			if (!ip_config_merge_and_apply (self, AF_INET, TRUE))
 				_LOGW (LOGD_IP4, "failed applying IP4 config after link comes up again");
 		}
 		if (priv->ip6_state == IP_DONE) {
-			if (!ip6_config_merge_and_apply (self, TRUE))
+			if (!ip_config_merge_and_apply (self, AF_INET6, TRUE))
 				_LOGW (LOGD_IP6, "failed applying IP6 config after link comes up again");
 		}
 	}
@@ -5908,7 +5907,7 @@ nm_device_handle_ipv4ll_event (sd_ipv4ll *ll, int event, void *data)
 			nm_device_activate_schedule_ip4_config_result (self, config);
 		} else if (priv->ip4_state == IP_DONE) {
 			applied_config_init (&priv->dev_ip4_config, config);
-			if (!ip4_config_merge_and_apply (self, TRUE)) {
+			if (!ip_config_merge_and_apply (self, AF_INET, TRUE)) {
 				_LOGE (LOGD_AUTOIP4, "failed to update IP4 config for autoip change.");
 				nm_device_ip_method_failed (self, AF_INET, NM_DEVICE_STATE_REASON_AUTOIP_FAILED);
 			}
@@ -6087,102 +6086,234 @@ dhcp4_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 }
 
 static gboolean
-ip4_config_merge_and_apply (NMDevice *self,
-                            gboolean commit)
+ip_config_merge_and_apply (NMDevice *self,
+                           int addr_family,
+                           gboolean commit)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMConnection *connection;
-	gboolean success;
-	NMIP4Config *composite, *config;
-	gboolean ignore_auto_routes = FALSE;
-	gboolean ignore_auto_dns = FALSE;
-	gboolean ignore_default_routes = FALSE;
-	GSList *iter;
-	gs_unref_ptrarray GPtrArray *ip4_dev_route_blacklist = NULL;
+	if (addr_family == AF_INET) {
+		NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+		NMConnection *connection;
+		gboolean success;
+		NMIP4Config *composite, *config;
+		gboolean ignore_auto_routes = FALSE;
+		gboolean ignore_auto_dns = FALSE;
+		gboolean ignore_default_routes = FALSE;
+		GSList *iter;
+		gs_unref_ptrarray GPtrArray *ip4_dev_route_blacklist = NULL;
 
-	if (nm_device_sys_iface_state_is_external (self))
-		commit = 0;
+		if (nm_device_sys_iface_state_is_external (self))
+			commit = 0;
 
-	/* Apply ignore-auto-routes and ignore-auto-dns settings */
-	connection = nm_device_get_applied_connection (self);
-	if (connection) {
-		NMSettingIPConfig *s_ip4 = nm_connection_get_setting_ip4_config (connection);
+		/* Apply ignore-auto-routes and ignore-auto-dns settings */
+		connection = nm_device_get_applied_connection (self);
+		if (connection) {
+			NMSettingIPConfig *s_ip4 = nm_connection_get_setting_ip4_config (connection);
 
-		if (s_ip4) {
-			ignore_auto_routes = nm_setting_ip_config_get_ignore_auto_routes (s_ip4);
-			ignore_auto_dns = nm_setting_ip_config_get_ignore_auto_dns (s_ip4);
+			if (s_ip4) {
+				ignore_auto_routes = nm_setting_ip_config_get_ignore_auto_routes (s_ip4);
+				ignore_auto_dns = nm_setting_ip_config_get_ignore_auto_dns (s_ip4);
 
-			/* if the connection has an explicit gateway, we also ignore
-			 * the default routes from other sources. */
-			ignore_default_routes =    nm_setting_ip_config_get_never_default (s_ip4)
-			                        || nm_setting_ip_config_get_gateway (s_ip4);
+				/* if the connection has an explicit gateway, we also ignore
+				 * the default routes from other sources. */
+				ignore_default_routes =    nm_setting_ip_config_get_never_default (s_ip4)
+				                        || nm_setting_ip_config_get_gateway (s_ip4);
+			}
 		}
+
+		composite = _ip4_config_new (self);
+		init_ip4_config_dns_priority (self, composite);
+
+		if (commit) {
+			if (priv->queued_ip4_config_id)
+				update_ext_ip_config (self, AF_INET, FALSE);
+			ensure_con_ip4_config (self);
+		}
+
+		if (commit)
+			priv->default_route_metric_penalty_ip4_has = default_route_metric_penalty_detect (self);
+
+		config = (NMIP4Config *) applied_config_get_current (&priv->dev_ip4_config);
+		if (config) {
+			nm_ip4_config_merge (composite, config,
+			                       (ignore_auto_routes ? NM_IP_CONFIG_MERGE_NO_ROUTES : 0)
+			                     | (ignore_default_routes ? NM_IP_CONFIG_MERGE_NO_DEFAULT_ROUTES : 0)
+			                     | (ignore_auto_dns ? NM_IP_CONFIG_MERGE_NO_DNS : 0),
+			                     default_route_metric_penalty_get (self, AF_INET));
+		}
+
+		for (iter = priv->vpn4_configs; iter; iter = iter->next)
+			nm_ip4_config_merge (composite, iter->data, NM_IP_CONFIG_MERGE_DEFAULT, 0);
+
+		if (priv->ext_ip4_config)
+			nm_ip4_config_merge (composite, priv->ext_ip4_config, NM_IP_CONFIG_MERGE_DEFAULT, 0);
+
+		/* Merge WWAN config *last* to ensure modem-given settings overwrite
+		 * any external stuff set by pppd or other scripts.
+		 */
+		config = (NMIP4Config *) applied_config_get_current (&priv->wwan_ip4_config);
+		if (config) {
+			nm_ip4_config_merge (composite, config,
+			                       (ignore_auto_routes ? NM_IP_CONFIG_MERGE_NO_ROUTES : 0)
+			                     | (ignore_default_routes ? NM_IP_CONFIG_MERGE_NO_DEFAULT_ROUTES : 0)
+			                     | (ignore_auto_dns ? NM_IP_CONFIG_MERGE_NO_DNS : 0),
+			                     default_route_metric_penalty_get (self, AF_INET));
+		}
+
+		/* Merge user overrides into the composite config. For assumed connections,
+		 * con_ip4_config is empty. */
+		if (priv->con_ip4_config) {
+			nm_ip4_config_merge (composite, priv->con_ip4_config, NM_IP_CONFIG_MERGE_DEFAULT,
+			                     default_route_metric_penalty_get (self, AF_INET));
+		}
+
+		if (commit) {
+			nm_ip4_config_add_dependent_routes (composite,
+			                                    nm_device_get_route_table (self, AF_INET, TRUE),
+			                                    nm_device_get_route_metric (self, AF_INET),
+			                                    &ip4_dev_route_blacklist);
+		}
+
+		if (commit) {
+			if (NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit)
+				NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit (self, composite);
+		}
+
+		success = nm_device_set_ip4_config (self, composite, commit, ip4_dev_route_blacklist);
+		g_object_unref (composite);
+
+		if (commit)
+			priv->v4_commit_first_time = FALSE;
+		return success;
+	} else {
+		NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+		NMConnection *connection;
+		gboolean success;
+		NMIP6Config *composite, *config;
+		gboolean ignore_auto_routes = FALSE;
+		gboolean ignore_auto_dns = FALSE;
+		gboolean ignore_default_routes = FALSE;
+		const char *token = NULL;
+		GSList *iter;
+
+		if (nm_device_sys_iface_state_is_external (self))
+			commit = 0;
+
+		/* Apply ignore-auto-routes and ignore-auto-dns settings */
+		connection = nm_device_get_applied_connection (self);
+		if (connection) {
+			NMSettingIPConfig *s_ip6 = nm_connection_get_setting_ip6_config (connection);
+
+			if (s_ip6) {
+				NMSettingIP6Config *ip6 = NM_SETTING_IP6_CONFIG (s_ip6);
+
+				ignore_auto_routes = nm_setting_ip_config_get_ignore_auto_routes (s_ip6);
+				ignore_auto_dns = nm_setting_ip_config_get_ignore_auto_dns (s_ip6);
+
+				/* if the connection has an explicit gateway, we also ignore
+				 * the default routes from other sources. */
+				ignore_default_routes =    nm_setting_ip_config_get_never_default (s_ip6)
+				                        || nm_setting_ip_config_get_gateway (s_ip6);
+
+				if (nm_setting_ip6_config_get_addr_gen_mode (ip6) == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64)
+					token = nm_setting_ip6_config_get_token (ip6);
+			}
+		}
+
+		composite = _ip6_config_new (self);
+		nm_ip6_config_set_privacy (composite,
+		                           priv->ndisc ?
+		                           priv->ndisc_use_tempaddr :
+		                           NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
+		init_ip6_config_dns_priority (self, composite);
+
+		if (commit) {
+			if (priv->queued_ip6_config_id)
+				update_ext_ip_config (self, AF_INET6, FALSE);
+			ensure_con_ip6_config (self);
+		}
+
+		if (commit)
+			priv->default_route_metric_penalty_ip6_has = default_route_metric_penalty_detect (self);
+
+		/* Merge all the IP configs into the composite config */
+		config = (NMIP6Config *) applied_config_get_current (&priv->ac_ip6_config);
+		if (config) {
+			nm_ip6_config_merge (composite, config,
+			                       (ignore_auto_routes ? NM_IP_CONFIG_MERGE_NO_ROUTES : 0)
+			                     | (ignore_default_routes ? NM_IP_CONFIG_MERGE_NO_DEFAULT_ROUTES : 0)
+			                     | (ignore_auto_dns ? NM_IP_CONFIG_MERGE_NO_DNS : 0),
+			                     default_route_metric_penalty_get (self, AF_INET6));
+		}
+
+		config = (NMIP6Config *) applied_config_get_current (&priv->dhcp6.ip6_config);
+		if (config) {
+			nm_ip6_config_merge (composite, config,
+			                       (ignore_auto_routes ? NM_IP_CONFIG_MERGE_NO_ROUTES : 0)
+			                     | (ignore_default_routes ? NM_IP_CONFIG_MERGE_NO_DEFAULT_ROUTES : 0)
+			                     | (ignore_auto_dns ? NM_IP_CONFIG_MERGE_NO_DNS : 0),
+			                     default_route_metric_penalty_get (self, AF_INET6));
+		}
+
+		for (iter = priv->vpn6_configs; iter; iter = iter->next)
+			nm_ip6_config_merge (composite, iter->data, NM_IP_CONFIG_MERGE_DEFAULT, 0);
+
+		if (priv->ext_ip6_config)
+			nm_ip6_config_merge (composite, priv->ext_ip6_config, NM_IP_CONFIG_MERGE_DEFAULT, 0);
+
+		/* Merge WWAN config *last* to ensure modem-given settings overwrite
+		 * any external stuff set by pppd or other scripts.
+		 */
+		config = (NMIP6Config *) applied_config_get_current (&priv->wwan_ip6_config);
+		if (config) {
+			nm_ip6_config_merge (composite, config,
+			                       (ignore_auto_routes ? NM_IP_CONFIG_MERGE_NO_ROUTES : 0)
+			                     | (ignore_default_routes ? NM_IP_CONFIG_MERGE_NO_DEFAULT_ROUTES : 0)
+			                     | (ignore_auto_dns ? NM_IP_CONFIG_MERGE_NO_DNS : 0),
+			                     default_route_metric_penalty_get (self, AF_INET6));
+		}
+
+		if (priv->rt6_temporary_not_available) {
+			const NMPObject *o;
+			GHashTableIter hiter;
+
+			g_hash_table_iter_init (&hiter, priv->rt6_temporary_not_available);
+			while (g_hash_table_iter_next (&hiter, (gpointer *) &o, NULL)) {
+				nm_ip6_config_add_route (composite,
+				                         NMP_OBJECT_CAST_IP6_ROUTE (o),
+				                         NULL);
+			}
+		}
+
+		/* Merge user overrides into the composite config. For assumed connections,
+		 * con_ip6_config is empty. */
+		if (priv->con_ip6_config) {
+			nm_ip6_config_merge (composite, priv->con_ip6_config, NM_IP_CONFIG_MERGE_DEFAULT,
+			                     default_route_metric_penalty_get (self, AF_INET6));
+		}
+
+		if (commit) {
+			nm_ip6_config_add_dependent_routes (composite,
+			                                    nm_device_get_route_table (self, AF_INET6, TRUE),
+			                                    nm_device_get_route_metric (self, AF_INET6));
+		}
+
+		/* Allow setting MTU etc */
+		if (commit) {
+			NMUtilsIPv6IfaceId iid;
+
+			if (token && nm_utils_ipv6_interface_identifier_get_from_token (&iid, token)) {
+				nm_platform_link_set_ipv6_token (nm_device_get_platform (self),
+				                                 nm_device_get_ip_ifindex (self),
+				                                 iid);
+			}
+		}
+
+		success = nm_device_set_ip6_config (self, composite, commit);
+		g_object_unref (composite);
+		if (commit)
+			priv->v6_commit_first_time = FALSE;
+		return success;
 	}
-
-	composite = _ip4_config_new (self);
-	init_ip4_config_dns_priority (self, composite);
-
-	if (commit) {
-		if (priv->queued_ip4_config_id)
-			update_ext_ip_config (self, AF_INET, FALSE);
-		ensure_con_ip4_config (self);
-	}
-
-	if (commit)
-		priv->default_route_metric_penalty_ip4_has = default_route_metric_penalty_detect (self);
-
-	config = (NMIP4Config *) applied_config_get_current (&priv->dev_ip4_config);
-	if (config) {
-		nm_ip4_config_merge (composite, config,
-		                       (ignore_auto_routes ? NM_IP_CONFIG_MERGE_NO_ROUTES : 0)
-		                     | (ignore_default_routes ? NM_IP_CONFIG_MERGE_NO_DEFAULT_ROUTES : 0)
-		                     | (ignore_auto_dns ? NM_IP_CONFIG_MERGE_NO_DNS : 0),
-		                     default_route_metric_penalty_get (self, AF_INET));
-	}
-
-	for (iter = priv->vpn4_configs; iter; iter = iter->next)
-		nm_ip4_config_merge (composite, iter->data, NM_IP_CONFIG_MERGE_DEFAULT, 0);
-
-	if (priv->ext_ip4_config)
-		nm_ip4_config_merge (composite, priv->ext_ip4_config, NM_IP_CONFIG_MERGE_DEFAULT, 0);
-
-	/* Merge WWAN config *last* to ensure modem-given settings overwrite
-	 * any external stuff set by pppd or other scripts.
-	 */
-	config = (NMIP4Config *) applied_config_get_current (&priv->wwan_ip4_config);
-	if (config) {
-		nm_ip4_config_merge (composite, config,
-		                       (ignore_auto_routes ? NM_IP_CONFIG_MERGE_NO_ROUTES : 0)
-		                     | (ignore_default_routes ? NM_IP_CONFIG_MERGE_NO_DEFAULT_ROUTES : 0)
-		                     | (ignore_auto_dns ? NM_IP_CONFIG_MERGE_NO_DNS : 0),
-		                     default_route_metric_penalty_get (self, AF_INET));
-	}
-
-	/* Merge user overrides into the composite config. For assumed connections,
-	 * con_ip4_config is empty. */
-	if (priv->con_ip4_config) {
-		nm_ip4_config_merge (composite, priv->con_ip4_config, NM_IP_CONFIG_MERGE_DEFAULT,
-		                     default_route_metric_penalty_get (self, AF_INET));
-	}
-
-	if (commit) {
-		nm_ip4_config_add_dependent_routes (composite,
-		                                    nm_device_get_route_table (self, AF_INET, TRUE),
-		                                    nm_device_get_route_metric (self, AF_INET),
-		                                    &ip4_dev_route_blacklist);
-	}
-
-	if (commit) {
-		if (NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit)
-			NM_DEVICE_GET_CLASS (self)->ip4_config_pre_commit (self, composite);
-	}
-
-	success = nm_device_set_ip4_config (self, composite, commit, ip4_dev_route_blacklist);
-	g_object_unref (composite);
-
-	if (commit)
-		priv->v4_commit_first_time = FALSE;
-	return success;
 }
 
 static gboolean
@@ -6194,7 +6325,7 @@ dhcp4_lease_change (NMDevice *self, NMIP4Config *config)
 
 	applied_config_init (&priv->dev_ip4_config, config);
 
-	if (!ip4_config_merge_and_apply (self, TRUE)) {
+	if (!ip_config_merge_and_apply (self, AF_INET, TRUE)) {
 		_LOGW (LOGD_DHCP4, "failed to update IPv4 config for DHCP change.");
 		return FALSE;
 	}
@@ -6852,140 +6983,6 @@ dhcp6_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 }
 
 static gboolean
-ip6_config_merge_and_apply (NMDevice *self,
-                            gboolean commit)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMConnection *connection;
-	gboolean success;
-	NMIP6Config *composite, *config;
-	gboolean ignore_auto_routes = FALSE;
-	gboolean ignore_auto_dns = FALSE;
-	gboolean ignore_default_routes = FALSE;
-	const char *token = NULL;
-	GSList *iter;
-
-	if (nm_device_sys_iface_state_is_external (self))
-		commit = 0;
-
-	/* Apply ignore-auto-routes and ignore-auto-dns settings */
-	connection = nm_device_get_applied_connection (self);
-	if (connection) {
-		NMSettingIPConfig *s_ip6 = nm_connection_get_setting_ip6_config (connection);
-
-		if (s_ip6) {
-			NMSettingIP6Config *ip6 = NM_SETTING_IP6_CONFIG (s_ip6);
-
-			ignore_auto_routes = nm_setting_ip_config_get_ignore_auto_routes (s_ip6);
-			ignore_auto_dns = nm_setting_ip_config_get_ignore_auto_dns (s_ip6);
-
-			/* if the connection has an explicit gateway, we also ignore
-			 * the default routes from other sources. */
-			ignore_default_routes =    nm_setting_ip_config_get_never_default (s_ip6)
-			                        || nm_setting_ip_config_get_gateway (s_ip6);
-
-			if (nm_setting_ip6_config_get_addr_gen_mode (ip6) == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64)
-				token = nm_setting_ip6_config_get_token (ip6);
-		}
-	}
-
-	composite = _ip6_config_new (self);
-	nm_ip6_config_set_privacy (composite,
-	                           priv->ndisc ?
-	                           priv->ndisc_use_tempaddr :
-	                           NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
-	init_ip6_config_dns_priority (self, composite);
-
-	if (commit) {
-		if (priv->queued_ip6_config_id)
-			update_ext_ip_config (self, AF_INET6, FALSE);
-		ensure_con_ip6_config (self);
-	}
-
-	if (commit)
-		priv->default_route_metric_penalty_ip6_has = default_route_metric_penalty_detect (self);
-
-	/* Merge all the IP configs into the composite config */
-	config = (NMIP6Config *) applied_config_get_current (&priv->ac_ip6_config);
-	if (config) {
-		nm_ip6_config_merge (composite, config,
-		                       (ignore_auto_routes ? NM_IP_CONFIG_MERGE_NO_ROUTES : 0)
-		                     | (ignore_default_routes ? NM_IP_CONFIG_MERGE_NO_DEFAULT_ROUTES : 0)
-		                     | (ignore_auto_dns ? NM_IP_CONFIG_MERGE_NO_DNS : 0),
-		                     default_route_metric_penalty_get (self, AF_INET6));
-	}
-
-	config = (NMIP6Config *) applied_config_get_current (&priv->dhcp6.ip6_config);
-	if (config) {
-		nm_ip6_config_merge (composite, config,
-		                       (ignore_auto_routes ? NM_IP_CONFIG_MERGE_NO_ROUTES : 0)
-		                     | (ignore_default_routes ? NM_IP_CONFIG_MERGE_NO_DEFAULT_ROUTES : 0)
-		                     | (ignore_auto_dns ? NM_IP_CONFIG_MERGE_NO_DNS : 0),
-		                     default_route_metric_penalty_get (self, AF_INET6));
-	}
-
-	for (iter = priv->vpn6_configs; iter; iter = iter->next)
-		nm_ip6_config_merge (composite, iter->data, NM_IP_CONFIG_MERGE_DEFAULT, 0);
-
-	if (priv->ext_ip6_config)
-		nm_ip6_config_merge (composite, priv->ext_ip6_config, NM_IP_CONFIG_MERGE_DEFAULT, 0);
-
-	/* Merge WWAN config *last* to ensure modem-given settings overwrite
-	 * any external stuff set by pppd or other scripts.
-	 */
-	config = (NMIP6Config *) applied_config_get_current (&priv->wwan_ip6_config);
-	if (config) {
-		nm_ip6_config_merge (composite, config,
-		                       (ignore_auto_routes ? NM_IP_CONFIG_MERGE_NO_ROUTES : 0)
-		                     | (ignore_default_routes ? NM_IP_CONFIG_MERGE_NO_DEFAULT_ROUTES : 0)
-		                     | (ignore_auto_dns ? NM_IP_CONFIG_MERGE_NO_DNS : 0),
-		                     default_route_metric_penalty_get (self, AF_INET6));
-	}
-
-	if (priv->rt6_temporary_not_available) {
-		const NMPObject *o;
-		GHashTableIter hiter;
-
-		g_hash_table_iter_init (&hiter, priv->rt6_temporary_not_available);
-		while (g_hash_table_iter_next (&hiter, (gpointer *) &o, NULL)) {
-			nm_ip6_config_add_route (composite,
-			                         NMP_OBJECT_CAST_IP6_ROUTE (o),
-			                         NULL);
-		}
-	}
-
-	/* Merge user overrides into the composite config. For assumed connections,
-	 * con_ip6_config is empty. */
-	if (priv->con_ip6_config) {
-		nm_ip6_config_merge (composite, priv->con_ip6_config, NM_IP_CONFIG_MERGE_DEFAULT,
-		                     default_route_metric_penalty_get (self, AF_INET6));
-	}
-
-	if (commit) {
-		nm_ip6_config_add_dependent_routes (composite,
-		                                    nm_device_get_route_table (self, AF_INET6, TRUE),
-		                                    nm_device_get_route_metric (self, AF_INET6));
-	}
-
-	/* Allow setting MTU etc */
-	if (commit) {
-		NMUtilsIPv6IfaceId iid;
-
-		if (token && nm_utils_ipv6_interface_identifier_get_from_token (&iid, token)) {
-			nm_platform_link_set_ipv6_token (nm_device_get_platform (self),
-			                                 nm_device_get_ip_ifindex (self),
-			                                 iid);
-		}
-	}
-
-	success = nm_device_set_ip6_config (self, composite, commit);
-	g_object_unref (composite);
-	if (commit)
-		priv->v6_commit_first_time = FALSE;
-	return success;
-}
-
-static gboolean
 dhcp6_lease_change (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -7002,7 +6999,7 @@ dhcp6_lease_change (NMDevice *self)
 	g_assert (settings_connection);
 
 	/* Apply the updated config */
-	if (!ip6_config_merge_and_apply (self, TRUE)) {
+	if (!ip_config_merge_and_apply (self, AF_INET6, TRUE)) {
 		_LOGW (LOGD_DHCP6, "failed to update IPv6 config in response to DHCP event");
 		return FALSE;
 	}
@@ -7362,7 +7359,7 @@ nm_device_use_ip6_subnet (NMDevice *self, const NMPlatformIP6Address *subnet)
 	       subnet->preferred);
 
 	/* This also updates the ndisc if there are actual changes. */
-	if (!ip6_config_merge_and_apply (self, TRUE))
+	if (!ip_config_merge_and_apply (self, AF_INET6, TRUE))
 		_LOGW (LOGD_IP6, "ipv6-pd: failed applying IP6 config for connection sharing");
 }
 
@@ -7400,7 +7397,7 @@ nm_device_copy_ip6_dns_config (NMDevice *self, NMDevice *from_device)
 		                           nm_ip6_config_get_search (from_config, i));
 	}
 
-	if (!ip6_config_merge_and_apply (self, TRUE))
+	if (!ip_config_merge_and_apply (self, AF_INET6, TRUE))
 		_LOGW (LOGD_IP6, "ipv6-pd: failed applying DNS config for connection sharing");
 }
 
@@ -7990,7 +7987,7 @@ addrconf6_start_with_link_ready (NMDevice *self)
 	}
 
 	/* Apply any manual configuration before starting RA */
-	if (!ip6_config_merge_and_apply (self, TRUE)) {
+	if (!ip_config_merge_and_apply (self, AF_INET6, TRUE)) {
 		_LOGW (LOGD_IP6, "failed to apply manual IPv6 configuration");
 		g_clear_object (&priv->con_ip6_config);
 	}
@@ -8967,7 +8964,7 @@ activate_stage5_ip4_config_result (NMDevice *self)
 			_LOGW (LOGD_DEVICE, "interface %s not up for IP configuration", nm_device_get_ip_iface (self));
 	}
 
-	if (!ip4_config_merge_and_apply (self, TRUE)) {
+	if (!ip_config_merge_and_apply (self, AF_INET, TRUE)) {
 		_LOGD (LOGD_DEVICE | LOGD_IP4, "Activation: Stage 5 of 5 (IPv4 Commit) failed");
 		nm_device_ip_method_failed (self, AF_INET, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
 		return;
@@ -9115,7 +9112,7 @@ activate_stage5_ip6_config_commit (NMDevice *self)
 			_LOGW (LOGD_DEVICE, "interface %s not up for IP configuration", nm_device_get_ip_iface (self));
 	}
 
-	if (ip6_config_merge_and_apply (self, TRUE)) {
+	if (ip_config_merge_and_apply (self, AF_INET6, TRUE)) {
 		if (   priv->dhcp6.mode != NM_NDISC_DHCP_LEVEL_NONE
 		    && priv->ip6_state == IP_CONF) {
 			if (applied_config_get_current (&priv->dhcp6.ip6_config)) {
@@ -9514,7 +9511,7 @@ nm_device_reactivate_ip4_config (NMDevice *self,
 			if (!nm_device_activate_stage3_ip4_start (self))
 				_LOGW (LOGD_IP4, "Failed to apply IPv4 configuration");
 		} else {
-			if (!ip4_config_merge_and_apply (self, TRUE))
+			if (!ip_config_merge_and_apply (self, AF_INET, TRUE))
 				_LOGW (LOGD_IP4, "Failed to reapply IPv4 configuration");
 		}
 	}
@@ -9556,7 +9553,7 @@ nm_device_reactivate_ip6_config (NMDevice *self,
 			if (!nm_device_activate_stage3_ip6_start (self))
 				_LOGW (LOGD_IP6, "Failed to apply IPv6 configuration");
 		} else {
-			if (!ip6_config_merge_and_apply (self, TRUE))
+			if (!ip_config_merge_and_apply (self, AF_INET6, TRUE))
 				_LOGW (LOGD_IP4, "Failed to reapply IPv6 configuration");
 		}
 	}
@@ -10656,7 +10653,7 @@ nm_device_replace_vpn4_config (NMDevice *self, NMIP4Config *old, NMIP4Config *co
 		return;
 
 	/* NULL to use existing configs */
-	if (!ip4_config_merge_and_apply (self, TRUE))
+	if (!ip_config_merge_and_apply (self, AF_INET, TRUE))
 		_LOGW (LOGD_IP4, "failed to set VPN routes for device");
 }
 
@@ -10666,7 +10663,7 @@ nm_device_set_wwan_ip4_config (NMDevice *self, NMIP4Config *config)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	applied_config_init (&priv->wwan_ip4_config, config);
-	if (!ip4_config_merge_and_apply (self, TRUE))
+	if (!ip_config_merge_and_apply (self, AF_INET, TRUE))
 		_LOGW (LOGD_IP4, "failed to set WWAN IPv4 configuration");
 }
 
@@ -10791,7 +10788,7 @@ nm_device_replace_vpn6_config (NMDevice *self, NMIP6Config *old, NMIP6Config *co
 		return;
 
 	/* NULL to use existing configs */
-	if (!ip6_config_merge_and_apply (self, TRUE))
+	if (!ip_config_merge_and_apply (self, AF_INET6, TRUE))
 		_LOGW (LOGD_IP6, "failed to set VPN routes for device");
 }
 
@@ -10801,7 +10798,7 @@ nm_device_set_wwan_ip6_config (NMDevice *self, NMIP6Config *config)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	applied_config_init (&priv->wwan_ip6_config, config);
-	if (!ip6_config_merge_and_apply (self, TRUE))
+	if (!ip_config_merge_and_apply (self, AF_INET6, TRUE))
 		_LOGW (LOGD_IP6, "failed to set WWAN IPv6 configuration");
 }
 
@@ -11200,11 +11197,11 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 
 	/* when the link comes up, we must restore IP configuration if necessary. */
 	if (priv->ip4_state == IP_DONE) {
-		if (!ip4_config_merge_and_apply (self, TRUE))
+		if (!ip_config_merge_and_apply (self, AF_INET, TRUE))
 			_LOGW (LOGD_IP4, "failed applying IP4 config after bringing link up");
 	}
 	if (priv->ip6_state == IP_DONE) {
-		if (!ip6_config_merge_and_apply (self, TRUE))
+		if (!ip_config_merge_and_apply (self, AF_INET6, TRUE))
 			_LOGW (LOGD_IP6, "failed applying IP6 config after bringing link up");
 	}
 
@@ -11429,10 +11426,10 @@ update_ip_config (NMDevice *self, int addr_family)
 	if (update_ext_ip_config (self, addr_family, TRUE)) {
 		if (addr_family == AF_INET) {
 			if (priv->ext_ip4_config)
-				ip4_config_merge_and_apply (self, FALSE);
+				ip_config_merge_and_apply (self, AF_INET, FALSE);
 		} else {
 			if (priv->ext_ip6_config_captured)
-				ip6_config_merge_and_apply (self, FALSE);
+				ip_config_merge_and_apply (self, AF_INET6, FALSE);
 		}
 	}
 }
