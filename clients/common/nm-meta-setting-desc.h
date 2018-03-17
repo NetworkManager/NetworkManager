@@ -241,7 +241,8 @@ struct _NMMetaPropertyTypData {
 			GType (*get_gtype) (void);
 			int min;
 			int max;
-			const struct _NMUtilsEnumValueInfo *value_infos;
+			const struct _NMUtilsEnumValueInfo *value_infos_get; /* nicks for get function */
+			const struct _NMUtilsEnumValueInfo *value_infos;     /* nicks for set function */
 			void (*pre_set_notify) (const NMMetaPropertyInfo *property_info,
 			                        const NMMetaEnvironment *environment,
 			                        gpointer environment_user_data,

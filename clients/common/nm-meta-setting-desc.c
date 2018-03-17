@@ -827,6 +827,7 @@ _get_fcn_gobject_enum (ARGS_GET_FCN)
 	GType gtype_prop;
 	nm_auto_unref_gtypeclass GTypeClass *gtype_class = NULL;
 	nm_auto_unref_gtypeclass GTypeClass *gtype_prop_class = NULL;
+	const struct _NMUtilsEnumValueInfo *value_infos = NULL;
 	gboolean has_gtype = FALSE;
 	nm_auto_unset_gvalue GValue gval = G_VALUE_INIT;
 	gint64 v;
@@ -931,7 +932,9 @@ _get_fcn_gobject_enum (ARGS_GET_FCN)
 	/* the gobject_enum.value_infos are currently ignored for the getter. They
 	 * only declare additional aliases for the setter. */
 
-	s = nm_utils_enum_to_str (gtype, (int) v);
+	if (property_info->property_typ_data)
+		value_infos = property_info->property_typ_data->subtype.gobject_enum.value_infos_get;
+	s = _nm_utils_enum_to_str_full (gtype, (int) v, ", ", value_infos);
 
 	if (!format_numeric)
 		RETURN_STR_TO_FREE (g_steal_pointer (&s));
