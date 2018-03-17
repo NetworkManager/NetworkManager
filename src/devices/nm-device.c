@@ -11353,143 +11353,133 @@ nm_device_capture_initial_config (NMDevice *self)
 }
 
 static gboolean
-queued_ip4_config_change (gpointer user_data)
+queued_ip_config_change (NMDevice *self, int addr_family)
 {
-	NMDevice *self = user_data;
-	NMDevicePrivate *priv;
-
-	g_return_val_if_fail (NM_IS_DEVICE (self), G_SOURCE_REMOVE);
-
-	priv = NM_DEVICE_GET_PRIVATE (self);
-
-	nm_assert (!priv->queued_ip4_config_pending);
-
-	/* Wait for any queued state changes */
-	if (priv->queued_state.id)
-		return TRUE;
-
-	priv->queued_ip_config_id_4 = 0;
-
-	/* If a commit is scheduled, this function would potentially interfere with
-	 * it changing IP configurations before they are applied. Postpone the
-	 * update in such case.
-	 */
-	if (activation_source_is_scheduled (self,
-	                                    activate_stage5_ip4_config_result,
-	                                    AF_INET)) {
-		priv->queued_ip4_config_pending = FALSE;
-		priv->queued_ip_config_id_4 = g_idle_add (queued_ip4_config_change, self);
-		_LOGT (LOGD_DEVICE, "IP4 update was postponed");
-	} else
-		update_ip_config (self, AF_INET);
-
-	set_unmanaged_external_down (self, TRUE);
-
-	if (!nm_device_sys_iface_state_is_external_or_assume (self)) {
-		priv->v4_has_shadowed_routes = _v4_has_shadowed_routes_detect (self);;
-		ip4_rp_filter_update (self);
-	}
-
-	return FALSE;
-}
-
-static gboolean
-queued_ip6_config_change (gpointer user_data)
-{
-	NMDevice *self = user_data;
 	NMDevicePrivate *priv;
 	gboolean need_ipv6ll = FALSE;
+	const gboolean IS_IPv4 = (addr_family == AF_INET);
 	NMPlatform *platform;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), G_SOURCE_REMOVE);
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	nm_assert (!priv->queued_ip6_config_pending);
+	nm_assert (IS_IPv4 ? !priv->queued_ip4_config_pending : !priv->queued_ip6_config_pending);
 
 	/* Wait for any queued state changes */
 	if (priv->queued_state.id)
 		return G_SOURCE_CONTINUE;
 
-	priv->queued_ip_config_id_6 = 0;
+	priv->queued_ip_config_id_x[IS_IPv4] = 0;
 
 	/* If a commit is scheduled, this function would potentially interfere with
 	 * it changing IP configurations before they are applied. Postpone the
 	 * update in such case.
 	 */
 	if (activation_source_is_scheduled (self,
-	                                    activate_stage5_ip6_config_commit,
-	                                    AF_INET6)) {
-		priv->queued_ip6_config_pending = FALSE;
-		priv->queued_ip_config_id_6 = g_idle_add (queued_ip6_config_change, self);
-		_LOGT (LOGD_DEVICE, "IP6 update was postponed");
+	                                    IS_IPv4
+	                                      ? activate_stage5_ip4_config_result
+	                                      : activate_stage5_ip6_config_commit,
+	                                    addr_family)) {
+		if (IS_IPv4) {
+			priv->queued_ip4_config_pending = FALSE;
+			priv->queued_ip_config_id_4 = g_idle_add (queued_ip4_config_change, self);
+		} else {
+			priv->queued_ip6_config_pending = FALSE;
+			priv->queued_ip_config_id_6 = g_idle_add (queued_ip6_config_change, self);
+		}
+		_LOGT (LOGD_DEVICE, "IP%c update was postponed",
+		       nm_utils_addr_family_to_char (addr_family));
 	} else {
-		update_ip_config (self, AF_INET6);
+		update_ip_config (self, addr_family);
 
-		/* Check whether we need to complete waiting for link-local.
-		 * We are also called from an idle handler, so no problem doing state transitions
-		 * now. */
-		linklocal6_check_complete (self);
+		if (!IS_IPv4) {
+			/* Check whether we need to complete waiting for link-local.
+			 * We are also called from an idle handler, so no problem doing state transitions
+			 * now. */
+			linklocal6_check_complete (self);
+		}
 	}
 
-	if (   priv->state < NM_DEVICE_STATE_DEACTIVATING
-	    && (platform = nm_device_get_platform (self))
-	    && nm_platform_link_get (platform, priv->ifindex)) {
-		/* Handle DAD failures */
-		while (priv->dad6_failed_addrs) {
-			nm_auto_nmpobj const NMPObject *obj = NULL;
-			const NMPlatformIP6Address *addr;
+	if (!IS_IPv4) {
+		if (   priv->state < NM_DEVICE_STATE_DEACTIVATING
+		    && (platform = nm_device_get_platform (self))
+		    && nm_platform_link_get (platform, priv->ifindex)) {
+			/* Handle DAD failures */
+			while (priv->dad6_failed_addrs) {
+				nm_auto_nmpobj const NMPObject *obj = NULL;
+				const NMPlatformIP6Address *addr;
 
-			obj = priv->dad6_failed_addrs->data;
-			priv->dad6_failed_addrs = g_slist_delete_link (priv->dad6_failed_addrs, priv->dad6_failed_addrs);
+				obj = priv->dad6_failed_addrs->data;
+				priv->dad6_failed_addrs = g_slist_delete_link (priv->dad6_failed_addrs, priv->dad6_failed_addrs);
 
-			if (!nm_ndisc_dad_addr_is_fail_candidate (platform, obj))
-				continue;
+				if (!nm_ndisc_dad_addr_is_fail_candidate (platform, obj))
+					continue;
 
-			addr = NMP_OBJECT_CAST_IP6_ADDRESS (obj);
+				addr = NMP_OBJECT_CAST_IP6_ADDRESS (obj);
 
-			_LOGI (LOGD_IP6, "ipv6: duplicate address check failed for the %s address",
-			       nm_platform_ip6_address_to_string (addr, NULL, 0));
+				_LOGI (LOGD_IP6, "ipv6: duplicate address check failed for the %s address",
+				       nm_platform_ip6_address_to_string (addr, NULL, 0));
 
-			if (IN6_IS_ADDR_LINKLOCAL (&addr->address))
+				if (IN6_IS_ADDR_LINKLOCAL (&addr->address))
+					need_ipv6ll = TRUE;
+				else if (priv->ndisc)
+					nm_ndisc_dad_failed (priv->ndisc, &addr->address);
+			}
+
+			/* If no IPv6 link-local address exists but other addresses do then we
+			 * must add the LL address to remain conformant with RFC 3513 chapter 2.1
+			 * ("Addressing Model"): "All interfaces are required to have at least
+			 * one link-local unicast address".
+			 */
+			if (   priv->ip_config_6
+			    && nm_ip6_config_get_num_addresses (priv->ip_config_6))
 				need_ipv6ll = TRUE;
-			else if (priv->ndisc)
-				nm_ndisc_dad_failed (priv->ndisc, &addr->address);
+
+			if (need_ipv6ll)
+				check_and_add_ipv6ll_addr (self);
+		} else {
+			g_slist_free_full (priv->dad6_failed_addrs, (GDestroyNotify) nmp_object_unref);
+			priv->dad6_failed_addrs = NULL;
 		}
 
-		/* If no IPv6 link-local address exists but other addresses do then we
-		 * must add the LL address to remain conformant with RFC 3513 chapter 2.1
-		 * ("Addressing Model"): "All interfaces are required to have at least
-		 * one link-local unicast address".
-		 */
-		if (   priv->ip_config_6
-		    && nm_ip6_config_get_num_addresses (priv->ip_config_6))
-			need_ipv6ll = TRUE;
-
-		if (need_ipv6ll)
-			check_and_add_ipv6ll_addr (self);
-	} else {
-		g_slist_free_full (priv->dad6_failed_addrs, (GDestroyNotify) nmp_object_unref);
-		priv->dad6_failed_addrs = NULL;
-	}
-
-	/* Check if DAD is still pending */
-	if (   priv->ip6_state == IP_CONF
-	    && priv->dad6_ip6_config
-	    && priv->ext_ip6_config_captured
-	    && !nm_ip6_config_has_any_dad_pending (priv->ext_ip6_config_captured,
-	                                           priv->dad6_ip6_config)) {
-		_LOGD (LOGD_DEVICE | LOGD_IP6, "IPv6 DAD terminated");
-		g_clear_object (&priv->dad6_ip6_config);
-		_set_ip_state (self, AF_INET6, IP_DONE);
-		check_ip_state (self, FALSE, TRUE);
-		if (priv->rt6_temporary_not_available)
-			nm_device_activate_schedule_ip6_config_result (self);
+		/* Check if DAD is still pending */
+		if (   priv->ip6_state == IP_CONF
+		    && priv->dad6_ip6_config
+		    && priv->ext_ip6_config_captured
+		    && !nm_ip6_config_has_any_dad_pending (priv->ext_ip6_config_captured,
+		                                           priv->dad6_ip6_config)) {
+			_LOGD (LOGD_DEVICE | LOGD_IP6, "IPv6 DAD terminated");
+			g_clear_object (&priv->dad6_ip6_config);
+			_set_ip_state (self, addr_family, IP_DONE);
+			check_ip_state (self, FALSE, TRUE);
+			if (priv->rt6_temporary_not_available)
+				nm_device_activate_schedule_ip6_config_result (self);
+		}
 	}
 
 	set_unmanaged_external_down (self, TRUE);
 
+	if (IS_IPv4) {
+		if (!nm_device_sys_iface_state_is_external_or_assume (self)) {
+			priv->v4_has_shadowed_routes = _v4_has_shadowed_routes_detect (self);;
+			ip4_rp_filter_update (self);
+		}
+	}
+
 	return G_SOURCE_REMOVE;
+}
+
+static gboolean
+queued_ip4_config_change (gpointer user_data)
+{
+	return queued_ip_config_change (user_data, AF_INET);
+}
+
+static gboolean
+queued_ip6_config_change (gpointer user_data)
+{
+	return queued_ip_config_change (user_data, AF_INET6);
 }
 
 static void
