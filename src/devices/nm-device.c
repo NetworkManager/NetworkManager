@@ -9351,37 +9351,31 @@ delete_on_deactivate_check_and_schedule (NMDevice *self, int ifindex)
 }
 
 static void
-_cleanup_ip4_pre (NMDevice *self, CleanupType cleanup_type)
+_cleanup_ip_pre (NMDevice *self, int addr_family, CleanupType cleanup_type)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	const gboolean IS_IPv4 = (addr_family == AF_INET);
 
-	_set_ip_state (self, AF_INET, IP_NONE);
+	_set_ip_state (self, addr_family, IP_NONE);
 
-	if (nm_clear_g_source (&priv->queued_ip_config_id_4))
-		_LOGD (LOGD_DEVICE, "clearing queued IP4 config change");
-	priv->queued_ip4_config_pending = FALSE;
+	if (nm_clear_g_source (&priv->queued_ip_config_id_x[IS_IPv4])) {
+		_LOGD (LOGD_DEVICE, "clearing queued IP%c config change",
+		       nm_utils_addr_family_to_char (addr_family));
+	}
 
-	dhcp4_cleanup (self, cleanup_type, FALSE);
-	arp_cleanup (self);
-	dnsmasq_cleanup (self);
-	ipv4ll_cleanup (self);
-}
-
-static void
-_cleanup_ip6_pre (NMDevice *self, CleanupType cleanup_type)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	_set_ip_state (self, AF_INET6, IP_NONE);
-
-	if (nm_clear_g_source (&priv->queued_ip_config_id_6))
-		_LOGD (LOGD_DEVICE, "clearing queued IP6 config change");
-	priv->queued_ip6_config_pending = FALSE;
-
-	g_clear_object (&priv->dad6_ip6_config);
-	dhcp6_cleanup (self, cleanup_type, FALSE);
-	nm_clear_g_source (&priv->linklocal6_timeout_id);
-	addrconf6_cleanup (self);
+	if (IS_IPv4) {
+		priv->queued_ip4_config_pending = FALSE;
+		dhcp4_cleanup (self, cleanup_type, FALSE);
+		arp_cleanup (self);
+		dnsmasq_cleanup (self);
+		ipv4ll_cleanup (self);
+	} else {
+		priv->queued_ip6_config_pending = FALSE;
+		g_clear_object (&priv->dad6_ip6_config);
+		dhcp6_cleanup (self, cleanup_type, FALSE);
+		nm_clear_g_source (&priv->linklocal6_timeout_id);
+		addrconf6_cleanup (self);
+	}
 }
 
 gboolean
@@ -9479,7 +9473,7 @@ nm_device_reactivate_ip4_config (NMDevice *self,
 		             : NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
 
 		if (!nm_streq0 (method_old, method_new)) {
-			_cleanup_ip4_pre (self, CLEANUP_TYPE_DECONFIGURE);
+			_cleanup_ip_pre (self, AF_INET, CLEANUP_TYPE_DECONFIGURE);
 			_set_ip_state (self, AF_INET, IP_WAIT);
 			if (!nm_device_activate_stage3_ip4_start (self))
 				_LOGW (LOGD_IP4, "Failed to apply IPv4 configuration");
@@ -9521,7 +9515,7 @@ nm_device_reactivate_ip6_config (NMDevice *self,
 		             : NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
 
 		if (!nm_streq0 (method_old, method_new)) {
-			_cleanup_ip6_pre (self, CLEANUP_TYPE_DECONFIGURE);
+			_cleanup_ip_pre (self, AF_INET6, CLEANUP_TYPE_DECONFIGURE);
 			_set_ip_state (self, AF_INET6, IP_WAIT);
 			if (!nm_device_activate_stage3_ip6_start (self))
 				_LOGW (LOGD_IP6, "Failed to apply IPv6 configuration");
@@ -12634,8 +12628,8 @@ _cleanup_generic_pre (NMDevice *self, CleanupType cleanup_type)
 
 	queued_state_clear (self);
 
-	_cleanup_ip4_pre (self, cleanup_type);
-	_cleanup_ip6_pre (self, cleanup_type);
+	_cleanup_ip_pre (self, AF_INET, cleanup_type);
+	_cleanup_ip_pre (self, AF_INET6, cleanup_type);
 }
 
 static void
@@ -13249,8 +13243,8 @@ _set_state_full (NMDevice *self,
 			/* Clean up any half-done IP operations if the device's layer2
 			 * finds out it needs authentication during IP config.
 			 */
-			_cleanup_ip4_pre (self, CLEANUP_TYPE_DECONFIGURE);
-			_cleanup_ip6_pre (self, CLEANUP_TYPE_DECONFIGURE);
+			_cleanup_ip_pre (self, AF_INET, CLEANUP_TYPE_DECONFIGURE);
+			_cleanup_ip_pre (self, AF_INET6, CLEANUP_TYPE_DECONFIGURE);
 		}
 		break;
 	default:
