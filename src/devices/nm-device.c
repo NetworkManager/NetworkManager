@@ -11611,7 +11611,7 @@ queued_ip6_config_change (gpointer user_data)
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	nm_assert (!priv->queued_ip4_config_pending);
+	nm_assert (!priv->queued_ip6_config_pending);
 
 	/* Wait for any queued state changes */
 	if (priv->queued_state.id)
