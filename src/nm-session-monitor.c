@@ -137,7 +137,10 @@ st_sd_init (NMSessionMonitor *monitor)
 static void
 st_sd_finalize (NMSessionMonitor *monitor)
 {
-	g_clear_pointer (&monitor->sd.monitor, sd_login_monitor_unref);
+	if (monitor->sd.monitor) {
+		sd_login_monitor_unref (monitor->sd.monitor);
+		monitor->sd.monitor = NULL;
+	}
 	g_source_remove (monitor->sd.watch);
 }
 #endif /* SESSION_TRACKING_SYSTEMD */
