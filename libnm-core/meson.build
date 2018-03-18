@@ -141,7 +141,7 @@ cflags = [
   '-DLOCALEDIR="@0@"'.format(nm_localedir),
   '-DNMCONFDIR="@0@"'.format(nm_pkgconfdir),
   '-DNMLIBDIR="@0@"'.format(nm_pkglibdir),
-  '-DNMPLUGINDIR="@0@"'.format(nm_pkglibdir)
+  '-DNMPLUGINDIR="@0@"'.format(nm_plugindir)
 ]
 
 if enable_json_validation

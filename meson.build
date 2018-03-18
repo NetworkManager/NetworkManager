@@ -42,9 +42,10 @@ nm_pkgsbindir = join_paths(nm_sbindir, nm_name)
 nm_pkgconfdir = join_paths(nm_sysconfdir, nm_name)
 nm_pkgdatadir = join_paths(nm_datadir, nm_name)
 nm_pkgincludedir = join_paths(nm_includedir, nm_name)
-nm_pkglibdir = join_paths(nm_libdir, nm_name)
+nm_pkglibdir = join_paths(nm_prefix, 'lib', nm_name)
 nm_pkgrundir = join_paths(nm_runstatedir, nm_name)
 nm_pkgstatedir = join_paths(nm_localstatedir, nm_name)
+nm_plugindir = join_paths(nm_libdir, nm_name)
 
 libnm_name = 'libnm'
 
@@ -886,6 +887,7 @@ output += '  nmlibdir: ' + nm_pkglibdir + '\n'
 output += '  nmdatadir: ' + nm_pkgdatadir + '\n'
 output += '  nmstatedir: ' + nm_pkgstatedir + '\n'
 output += '  nmrundir: ' + nm_pkgrundir + '\n'
+output += '  nmplugindir: ' + nm_plugindir + '\n'
 output += '\nPlatform:\n'
 output += '  session tracking: ' + ','.join(session_trackers) + '\n'
 output += '  suspend/resume: ' + suspend_resume + '\n'
