@@ -20,7 +20,7 @@ sbin_PROGRAMS =
 bin_PROGRAMS =
 libexec_PROGRAMS =
 lib_LTLIBRARIES =
-pkglib_LTLIBRARIES =
+plugin_LTLIBRARIES =
 core_plugins =
 service_DATA =
 man_MANS =
@@ -72,6 +72,8 @@ examplesdir = $(docdir)/examples
 
 rundir=$(runstatedir)/NetworkManager
 statedir=$(localstatedir)/lib/NetworkManager
+
+plugindir=$(pkglibdir)/$(NM_DIST_VERSION)
 
 dbusactivationdir = $(datadir)/dbus-1/system-services
 
@@ -578,7 +580,8 @@ libnm_core_libnm_core_la_CPPFLAGS = \
 	-DLOCALEDIR=\"$(datadir)/locale\" \
 	-DNMCONFDIR=\"$(nmconfdir)\" \
 	-DNMLIBDIR=\"$(nmlibdir)\" \
-	-DNMPLUGINDIR=\"$(pkglibdir)\" \
+	-DNMVPNDIR=\"$(pkglibdir)\" \
+	-DNMPLUGINDIR=\"$(plugindir)\" \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
 	$(NULL)
 
@@ -1190,7 +1193,7 @@ src_cppflags = \
 	\
 	-DNMCONFDIR=\"$(nmconfdir)\" \
 	-DNMLOCALEDIR=\"$(datadir)/locale\" \
-	-DNMPLUGINDIR=\"$(pkglibdir)\" \
+	-DNMPLUGINDIR=\"$(plugindir)\" \
 	-DNMRUNDIR=\"$(nmrundir)\" \
 	-DNMSTATEDIR=\"$(nmstatedir)\" \
 	-DNMLIBDIR=\"$(nmlibdir)\" \
@@ -4745,7 +4748,7 @@ check_PROGRAMS += $(check_programs) $(check_programs_norun)
 check_LTLIBRARIES += $(check_ltlibraries)
 endif
 
-pkglib_LTLIBRARIES += $(core_plugins)
+plugin_LTLIBRARIES += $(core_plugins)
 
 TESTS += $(check_programs)
 
@@ -4845,7 +4848,7 @@ install-data-hook: $(install_data_hook)
 	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/conf.d
 	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/VPN
 	$(mkinstalldirs) -m 0700 $(DESTDIR)$(nmstatedir)
-	$(mkinstalldirs) -m 0755 $(DESTDIR)$(pkglibdir)
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(plugindir)
 
 uninstall-hook: $(uninstall_hook)
 

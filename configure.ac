@@ -183,10 +183,9 @@ dnl
 AC_ARG_WITH(dist-version,
             AS_HELP_STRING([--with-dist-version=<NM-distribution-version>],
                            [Define the NM''s distribution version string]),
-            ac_distver=$withval, ac_distver="")
-if ! test x"$ac_distver" = x""; then
-	AC_DEFINE_UNQUOTED(NM_DIST_VERSION, "$ac_distver", [Define the distribution version string])
-fi
+            ac_distver=$withval, ac_distver=$NM_VERSION)
+AC_DEFINE_UNQUOTED(NM_DIST_VERSION, "$ac_distver", [Define the distribution version string])
+AC_SUBST(NM_DIST_VERSION, "$ac_distver")
 
 AC_ARG_ENABLE(wifi, AS_HELP_STRING([--enable-wifi], [enable Wi-Fi support]))
 if test "${enable_wifi}" != "no"; then

@@ -262,7 +262,7 @@ _nm_vpn_editor_plugin_load (const char *plugin_name,
 	if (do_file_checks) {
 		if (   !strchr (plugin_name, '/')
 		    && !g_str_has_suffix (plugin_name, ".la")) {
-			plugin_filename_free = g_module_build_path (NMPLUGINDIR, plugin_name);
+			plugin_filename_free = g_module_build_path (NMVPNDIR, plugin_name);
 			plugin_filename = plugin_filename_free;
 		}
 	}
