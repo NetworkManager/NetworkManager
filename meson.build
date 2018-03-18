@@ -261,7 +261,7 @@ config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_PLUGINS', config_plugins_default)
 # Distribution version string
 dist_version = get_option('dist_version')
 if dist_version != ''
-  config_h.set('NM_DIST_VERSION', dist_version)
+  config_h.set_quoted('NM_DIST_VERSION', dist_version)
 endif
 
 enable_wifi = get_option('wifi')
