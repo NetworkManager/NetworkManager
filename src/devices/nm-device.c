@@ -400,8 +400,8 @@ typedef struct _NMDevicePrivate {
 		guint timeout;
 		guint watch;
 		GPid pid;
-		const char *binary;
-		const char *address;
+		char *binary;
+		char *address;
 		guint deadline;
 	} gw_ping;
 

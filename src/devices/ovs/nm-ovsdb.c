@@ -78,7 +78,7 @@ typedef struct {
 	GHashTable *interfaces;         /* interface uuid => OpenvswitchInterface */
 	GHashTable *ports;              /* port uuid => OpenvswitchPort */
 	GHashTable *bridges;            /* bridge uuid => OpenvswitchBridge */
-	const char *db_uuid;
+	char *db_uuid;
 } NMOvsdbPrivate;
 
 struct _NMOvsdb {
@@ -127,7 +127,7 @@ typedef struct {
 	OvsdbMethodCallback callback;
 	gpointer user_data;
 	union {
-		const char *ifname;
+		char *ifname;
 		struct {
 			NMConnection *bridge;
 			NMConnection *port;
@@ -867,7 +867,7 @@ ovsdb_got_update (NMOvsdb *self, json_t *msg)
 
 	if (ovs) {
 		iter = json_object_iter (ovs);
-		priv->db_uuid = g_strdup (iter ? json_object_iter_key (iter) : NULL);
+		priv->db_uuid = iter ? g_strdup (json_object_iter_key (iter)) : NULL;
 	}
 
 	/* Interfaces */

@@ -325,7 +325,7 @@ _vlan_xgress_qos_mappings_cmp (guint n_map,
 
 static void
 _vlan_xgress_qos_mappings_cpy (guint *dst_n_map,
-                               const NMVlanQosMapping **dst_map,
+                               NMVlanQosMapping **dst_map,
                                guint src_n_map,
                                const NMVlanQosMapping *src_map)
 {
@@ -916,11 +916,11 @@ _vt_cmd_obj_copy_lnk_vlan (NMPObject *dst, const NMPObject *src)
 {
 	dst->lnk_vlan = src->lnk_vlan;
 	_vlan_xgress_qos_mappings_cpy (&dst->_lnk_vlan.n_ingress_qos_map,
-	                               &dst->_lnk_vlan.ingress_qos_map,
+	                               NM_UNCONST_PPTR (NMVlanQosMapping, &dst->_lnk_vlan.ingress_qos_map),
 	                               src->_lnk_vlan.n_ingress_qos_map,
 	                               src->_lnk_vlan.ingress_qos_map);
 	_vlan_xgress_qos_mappings_cpy (&dst->_lnk_vlan.n_egress_qos_map,
-	                               &dst->_lnk_vlan.egress_qos_map,
+	                               NM_UNCONST_PPTR (NMVlanQosMapping, &dst->_lnk_vlan.egress_qos_map),
 	                               src->_lnk_vlan.n_egress_qos_map,
 	                               src->_lnk_vlan.egress_qos_map);
 }
