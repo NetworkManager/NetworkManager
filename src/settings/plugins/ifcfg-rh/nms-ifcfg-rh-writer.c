@@ -906,14 +906,16 @@ write_wireless_setting (NMConnection *connection,
 	}
 
 	mode = nm_setting_wireless_get_mode (s_wireless);
-	if (!mode || !strcmp (mode, "infrastructure")) {
+	if (!mode)
+		svUnsetValue(ifcfg, "MODE");
+	else if (nm_streq (mode, NM_SETTING_WIRELESS_MODE_INFRA))
 		svSetValueStr (ifcfg, "MODE", "Managed");
-	} else if (!strcmp (mode, "adhoc")) {
+	else if (nm_streq (mode, NM_SETTING_WIRELESS_MODE_ADHOC)) {
 		svSetValueStr (ifcfg, "MODE", "Ad-Hoc");
 		adhoc = TRUE;
-	} else if (!strcmp (mode, "ap")) {
+	} else if (nm_streq (mode, NM_SETTING_WIRELESS_MODE_AP))
 		svSetValueStr (ifcfg, "MODE", "Ap");
-	} else {
+	else {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "Invalid mode '%s' in '%s' setting",
 		             mode, NM_SETTING_WIRELESS_SETTING_NAME);

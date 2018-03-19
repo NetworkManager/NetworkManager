@@ -3513,7 +3513,6 @@ test_write_wifi_hidden (void)
 
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
-	              NM_SETTING_WIRELESS_MODE, "infrastructure",
 	              NM_SETTING_WIRELESS_HIDDEN, TRUE,
 	              NULL);
 
