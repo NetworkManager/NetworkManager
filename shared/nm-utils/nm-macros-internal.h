@@ -793,6 +793,32 @@ nm_g_object_unref (gpointer obj)
 		_changed; \
 	})
 
+#define nm_clear_pointer(pp, destroy) \
+	({ \
+		typeof (*(pp)) *_pp = (pp); \
+		typeof (*_pp) _p; \
+		gboolean _changed = FALSE; \
+		\
+		if (   _pp \
+		    && (_p = *_pp)) { \
+			_nm_unused gconstpointer _p_check_is_pointer = _p; \
+			\
+			*_pp = NULL; \
+			/* g_clear_pointer() assigns @destroy first to a local variable, so that
+			 * you can call "g_clear_pointer (pp, (GDestroyNotify) destroy);" without
+			 * gcc emitting a warning. We don't do that, hence, you cannot cast
+			 * "destroy" first.
+			 *
+			 * On the upside: you are not supposed to cast fcn, because the pointer
+			 * types are preserved. If you really need a cast, you should cast @pp.
+			 * But that is hardly ever necessary. */ \
+			(destroy) (_p); \
+			\
+			_changed = TRUE; \
+		} \
+		_changed; \
+	})
+
 /* basically, replaces
  *   g_clear_pointer (&location, g_free)
  * with
@@ -803,35 +829,10 @@ nm_g_object_unref (gpointer obj)
  * pointer or points to a const-pointer.
  */
 #define nm_clear_g_free(pp) \
-	({  \
-		typeof (*(pp)) *_pp = (pp); \
-		typeof (**_pp) *_p; \
-		gboolean _changed = FALSE; \
-		\
-		if (  _pp \
-		    && (_p = *_pp)) { \
-			*_pp = NULL; \
-			g_free (_p); \
-			_changed = TRUE; \
-		} \
-		_changed; \
-	})
+	nm_clear_pointer (pp, g_free)
 
 #define nm_clear_g_object(pp) \
-	({ \
-		typeof (*(pp)) *_pp = (pp); \
-		typeof (**_pp) *_p; \
-		gboolean _changed = FALSE; \
-		\
-		if (   _pp \
-		    && (_p = *_pp)) { \
-			nm_assert (G_IS_OBJECT (_p)); \
-			*_pp = NULL; \
-			g_object_unref (_p); \
-			_changed = TRUE; \
-		} \
-		_changed; \
-	})
+	nm_clear_pointer (pp, g_object_unref)
 
 static inline gboolean
 nm_clear_g_source (guint *id)
