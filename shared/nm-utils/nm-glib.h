@@ -114,4 +114,12 @@ _nm_g_strv_contains (const gchar * const *strv,
 #define g_object_ref_sink(Obj) ((typeof(Obj)) g_object_ref_sink (Obj))
 #endif
 
+#ifndef g_autofree
+/* we still don't rely on recent glib to provide g_autofree. Hence, we continue
+ * to use our gs_* free macros that we took from libgsystem.
+ *
+ * To ease migration towards g_auto*, add a compat define for g_autofree. */
+#define g_autofree gs_free
+#endif
+
 #endif  /* __NM_GLIB_H__ */
