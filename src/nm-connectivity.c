@@ -25,12 +25,47 @@
 #include "nm-connectivity.h"
 
 #include <string.h>
+
+#if WITH_CONCHECK
 #include <curl/curl.h>
+#endif
 
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"
 
 /*****************************************************************************/
+
+NM_UTILS_LOOKUP_STR_DEFINE (nm_connectivity_state_to_string, NMConnectivityState,
+	NM_UTILS_LOOKUP_DEFAULT_WARN ("???"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_UNKNOWN,  "UNKNOWN"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_NONE,     "NONE"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_LIMITED,  "LIMITED"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_PORTAL,   "PORTAL"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_FULL,     "FULL"),
+);
+
+/*****************************************************************************/
+
+#if WITH_CONCHECK
+
+typedef struct {
+	GSimpleAsyncResult *simple;
+	char *response;
+	CURL *curl_ehandle;
+	size_t msg_size;
+	char *msg;
+	struct curl_slist *request_headers;
+	guint timeout_id;
+	char *ifspec;
+} NMConnectivityCheckHandle;
+
+enum {
+	PERIODIC_CHECK,
+
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
 	char *uri;
@@ -58,14 +93,6 @@ G_DEFINE_TYPE (NMConnectivity, nm_connectivity, G_TYPE_OBJECT)
 
 NM_DEFINE_SINGLETON_GETTER (NMConnectivity, nm_connectivity_get, NM_TYPE_CONNECTIVITY);
 
-enum {
-	PERIODIC_CHECK,
-
-	LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL] = { 0 };
-
 /*****************************************************************************/
 
 #define _NMLOG_DOMAIN      LOGD_CONCHECK
@@ -88,30 +115,8 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 /*****************************************************************************/
 
-NM_UTILS_LOOKUP_STR_DEFINE (nm_connectivity_state_to_string, NMConnectivityState,
-	NM_UTILS_LOOKUP_DEFAULT_WARN ("???"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_UNKNOWN,  "UNKNOWN"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_NONE,     "NONE"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_LIMITED,  "LIMITED"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_PORTAL,   "PORTAL"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_CONNECTIVITY_FULL,     "FULL"),
-);
-
-/*****************************************************************************/
-
-typedef struct {
-	GSimpleAsyncResult *simple;
-	char *response;
-	CURL *curl_ehandle;
-	size_t msg_size;
-	char *msg;
-	struct curl_slist *request_headers;
-	guint timeout_id;
-	char *ifspec;
-} ConCheckCbData;
-
 static void
-finish_cb_data (ConCheckCbData *cb_data, NMConnectivityState new_state)
+finish_cb_data (NMConnectivityCheckHandle *cb_data, NMConnectivityState new_state)
 {
 	/* Contrary to what cURL manual claim it is *not* safe to remove
 	 * the easy handle "at any moment"; specifically not from the
@@ -128,13 +133,13 @@ finish_cb_data (ConCheckCbData *cb_data, NMConnectivityState new_state)
 	g_free (cb_data->msg);
 	g_free (cb_data->ifspec);
 	g_source_remove (cb_data->timeout_id);
-	g_slice_free (ConCheckCbData, cb_data);
+	g_slice_free (NMConnectivityCheckHandle, cb_data);
 }
 
 static void
 curl_check_connectivity (CURLM *mhandle, CURLMcode ret)
 {
-	ConCheckCbData *cb_data;
+	NMConnectivityCheckHandle *cb_data;
 	CURLMsg *msg;
 	CURLcode eret;
 	CURL *easy_handle;
@@ -216,7 +221,7 @@ multi_timer_cb (CURLM *multi, long timeout_ms, void *userdata)
 
 	nm_clear_g_source (&priv->curl_timer);
 	if (timeout_ms != -1)
-		priv->curl_timer = g_timeout_add (timeout_ms * 1000, curl_timeout_cb, self);
+		priv->curl_timer = g_timeout_add (timeout_ms, curl_timeout_cb, self);
 
 	return 0;
 }
@@ -274,12 +279,15 @@ multi_socket_cb (CURL *e_handle, curl_socket_t s, int what, void *userdata, void
 		} else
 			nm_clear_g_source (&fdp->ev);
 
-		if (what & CURL_POLL_IN)
-			condition |= G_IO_IN;
-		if (what & CURL_POLL_OUT)
-			condition |= G_IO_OUT;
+		if (what == CURL_POLL_IN)
+			condition = G_IO_IN;
+		else if (what == CURL_POLL_OUT)
+			condition = G_IO_OUT;
+		else if (condition == CURL_POLL_INOUT)
+			condition = G_IO_IN | G_IO_OUT;
 
-		fdp->ev = g_io_add_watch (fdp->ch, condition, curl_socketevent_cb, self);
+		if (condition)
+			fdp->ev = g_io_add_watch (fdp->ch, condition, curl_socketevent_cb, self);
 		curl_multi_assign (priv->curl_mhandle, s, fdp);
 	}
 
@@ -291,7 +299,7 @@ multi_socket_cb (CURL *e_handle, curl_socket_t s, int what, void *userdata, void
 static size_t
 easy_header_cb (char *buffer, size_t size, size_t nitems, void *userdata)
 {
-	ConCheckCbData *cb_data = userdata;
+	NMConnectivityCheckHandle *cb_data = userdata;
 	size_t len = size * nitems;
 
 	if (   len >= sizeof (HEADER_STATUS_ONLINE) - 1
@@ -307,7 +315,7 @@ easy_header_cb (char *buffer, size_t size, size_t nitems, void *userdata)
 static size_t
 easy_write_cb (void *buffer, size_t size, size_t nmemb, void *userdata)
 {
-	ConCheckCbData *cb_data = userdata;
+	NMConnectivityCheckHandle *cb_data = userdata;
 	size_t len = size * nmemb;
 
 	cb_data->msg = g_realloc (cb_data->msg, cb_data->msg_size + len);
@@ -335,7 +343,7 @@ easy_write_cb (void *buffer, size_t size, size_t nmemb, void *userdata)
 static gboolean
 timeout_cb (gpointer user_data)
 {
-	ConCheckCbData *cb_data = user_data;
+	NMConnectivityCheckHandle *cb_data = user_data;
 	NMConnectivity *self = NM_CONNECTIVITY (g_async_result_get_source_object (G_ASYNC_RESULT (cb_data->simple)));
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 	CURL *ehandle = cb_data->curl_ehandle;
@@ -368,7 +376,7 @@ nm_connectivity_check_async (NMConnectivity      *self,
 		ehandle = curl_easy_init ();
 
 	if (ehandle) {
-		ConCheckCbData *cb_data = g_slice_new0 (ConCheckCbData);
+		NMConnectivityCheckHandle *cb_data = g_slice_new0 (NMConnectivityCheckHandle);
 
 		cb_data->curl_ehandle = ehandle;
 		cb_data->request_headers = curl_slist_append (NULL, "Connection: close");
@@ -580,3 +588,5 @@ nm_connectivity_class_init (NMConnectivityClass *klass)
 
 	object_class->dispose = dispose;
 }
+
+#endif /* WITH_CONCHECK */

@@ -150,6 +150,7 @@ sources = files(
   'nm-checkpoint-manager.c',
   'nm-config.c',
   'nm-config-data.c',
+  'nm-connectivity.c',
   'nm-dcb.c',
   'nm-dhcp4-config.c',
   'nm-dhcp6-config.c',
@@ -177,8 +178,6 @@ deps = [
 ]
 
 if enable_concheck
-  sources += files('nm-connectivity.c')
-
   deps += libcurl_dep
 endif
 
