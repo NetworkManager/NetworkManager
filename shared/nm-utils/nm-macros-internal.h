@@ -836,9 +836,12 @@ nm_g_object_unref (gpointer obj)
 static inline gboolean
 nm_clear_g_source (guint *id)
 {
-	if (id && *id) {
-		g_source_remove (*id);
+	guint v;
+
+	if (   id
+	    && (v = *id)) {
 		*id = 0;
+		g_source_remove (v);
 		return TRUE;
 	}
 	return FALSE;
@@ -847,9 +850,12 @@ nm_clear_g_source (guint *id)
 static inline gboolean
 nm_clear_g_signal_handler (gpointer self, gulong *id)
 {
-	if (id && *id) {
-		g_signal_handler_disconnect (self, *id);
+	gulong v;
+
+	if (   id
+	    && (v = *id)) {
 		*id = 0;
+		g_signal_handler_disconnect (self, v);
 		return TRUE;
 	}
 	return FALSE;
@@ -858,9 +864,12 @@ nm_clear_g_signal_handler (gpointer self, gulong *id)
 static inline gboolean
 nm_clear_g_variant (GVariant **variant)
 {
-	if (variant && *variant) {
-		g_variant_unref (*variant);
+	GVariant *v;
+
+	if (   variant
+	    && (v = *variant)) {
 		*variant = NULL;
+		g_variant_unref (v);
 		return TRUE;
 	}
 	return FALSE;
@@ -869,10 +878,13 @@ nm_clear_g_variant (GVariant **variant)
 static inline gboolean
 nm_clear_g_cancellable (GCancellable **cancellable)
 {
-	if (cancellable && *cancellable) {
-		g_cancellable_cancel (*cancellable);
-		g_object_unref (*cancellable);
+	GCancellable *v;
+
+	if (   cancellable
+	    && (v = *cancellable)) {
 		*cancellable = NULL;
+		g_cancellable_cancel (v);
+		g_object_unref (v);
 		return TRUE;
 	}
 	return FALSE;
