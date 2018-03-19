@@ -108,6 +108,8 @@
 #include "nm-vpn-service-plugin.h"
 #include "nm-wimax-nsp.h"
 
+#include "nm-autoptr.h"
+
 #undef __NETWORKMANAGER_H_INSIDE__
 
 #endif /* __NETWORKMANAGER_H__ */

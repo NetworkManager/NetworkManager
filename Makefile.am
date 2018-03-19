@@ -752,6 +752,7 @@ libnm_lib_h_pub_real = \
 	libnm/NetworkManager.h \
 	libnm/nm-access-point.h \
 	libnm/nm-active-connection.h \
+	libnm/nm-autoptr.h \
 	libnm/nm-checkpoint.h \
 	libnm/nm-client.h \
 	libnm/nm-device-adsl.h \
