@@ -3021,7 +3021,7 @@ dispose (GObject *object)
 	g_slist_free_full (priv->pending_auths, (GDestroyNotify) nm_auth_chain_unref);
 	priv->pending_auths = NULL;
 
-	g_clear_pointer (&priv->seen_bssids, (GDestroyNotify) g_hash_table_destroy);
+	g_clear_pointer (&priv->seen_bssids, g_hash_table_destroy);
 
 	set_visible (self, FALSE);
 

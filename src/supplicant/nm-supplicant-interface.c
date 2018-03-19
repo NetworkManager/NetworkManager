@@ -1985,7 +1985,7 @@ dispose (GObject *object)
 	nm_clear_g_cancellable (&priv->other_cancellable);
 
 	g_clear_object (&priv->wpas_proxy);
-	g_clear_pointer (&priv->bss_proxies, (GDestroyNotify) g_hash_table_destroy);
+	g_clear_pointer (&priv->bss_proxies, g_hash_table_destroy);
 
 	g_clear_pointer (&priv->net_path, g_free);
 	g_clear_pointer (&priv->dev, g_free);
