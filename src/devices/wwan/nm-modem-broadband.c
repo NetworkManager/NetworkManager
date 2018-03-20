@@ -663,7 +663,7 @@ check_connection_compatible (NMModem *_self, NMConnection *connection)
 static gboolean
 complete_connection (NMModem *_self,
                      NMConnection *connection,
-                     const GSList *existing_connections,
+                     NMConnection *const*existing_connections,
                      GError **error)
 {
 	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);

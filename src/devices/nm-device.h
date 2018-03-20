@@ -312,7 +312,7 @@ typedef struct {
 	gboolean    (* complete_connection)         (NMDevice *self,
 	                                             NMConnection *connection,
 	                                             const char *specific_object,
-	                                             const GSList *existing_connections,
+	                                             NMConnection *const*existing_connections,
 	                                             GError **error);
 
 	NMActStageReturn    (* act_stage1_prepare)  (NMDevice *self,
@@ -520,7 +520,7 @@ gboolean nm_device_can_auto_connect (NMDevice *self,
 gboolean nm_device_complete_connection (NMDevice *device,
                                         NMConnection *connection,
                                         const char *specific_object,
-                                        const GSList *existing_connection,
+                                        NMConnection *const*existing_connections,
                                         GError **error);
 
 gboolean nm_device_check_connection_compatible (NMDevice *device, NMConnection *connection);
