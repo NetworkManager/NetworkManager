@@ -176,6 +176,15 @@ nla_get_u8 (const struct nlattr *nla)
 	return *(const uint8_t *) nla_data (nla);
 }
 
+static inline uint8_t
+nla_get_u8_cond (/*const*/ struct nlattr *const*tb, int attr, uint8_t default_val)
+{
+	nm_assert (tb);
+	nm_assert (attr >= 0);
+
+	return tb[attr] ? nla_get_u8 (tb[attr]) : default_val;
+}
+
 static inline uint16_t
 nla_get_u16 (const struct nlattr *nla)
 {
