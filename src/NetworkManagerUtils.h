@@ -31,7 +31,7 @@ const char *nm_utils_get_shared_wifi_permission (NMConnection *connection);
 void nm_utils_complete_generic (NMPlatform *platform,
                                 NMConnection *connection,
                                 const char *ctype,
-                                const GSList *existing,
+                                NMConnection *const*existing_connections,
                                 const char *preferred_id,
                                 const char *fallback_id_prefix,
                                 const char *ifname_prefix,

@@ -1091,12 +1091,20 @@ nm_modem_check_connection_compatible (NMModem *self, NMConnection *connection)
 gboolean
 nm_modem_complete_connection (NMModem *self,
                               NMConnection *connection,
-                              const GSList *existing_connections,
+                              NMConnection *const*existing_connections,
                               GError **error)
 {
-	if (NM_MODEM_GET_CLASS (self)->complete_connection)
-		return NM_MODEM_GET_CLASS (self)->complete_connection (self, connection, existing_connections, error);
-	return FALSE;
+	NMModemClass *klass;
+
+	klass = NM_MODEM_GET_CLASS (self);
+	if (!klass->complete_connection) {
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INVALID_CONNECTION,
+		             "Modem class %s had no complete_connection method",
+		             G_OBJECT_TYPE_NAME (self));
+		return FALSE;
+	}
+
+	return klass->complete_connection (self, connection, existing_connections, error);
 }
 
 /*****************************************************************************/

@@ -114,7 +114,7 @@ static gboolean
 complete_connection (NMDevice *device,
                      NMConnection *connection,
                      const char *specific_object,
-                     const GSList *existing_connections,
+                     NMConnection *const*existing_connections,
                      GError **error)
 {
 	NMSettingAdsl *s_adsl;
@@ -135,8 +135,6 @@ complete_connection (NMDevice *device,
 	                           _("ADSL connection"),
 	                           NULL,
 	                           FALSE); /* No IPv6 yet by default */
-
-
 	return TRUE;
 }
 

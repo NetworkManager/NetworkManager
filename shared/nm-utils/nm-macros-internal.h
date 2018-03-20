@@ -271,7 +271,8 @@ NM_G_ERROR_MSG (GError *error)
 		gsize _n = 0; \
 		\
 		if (_array) { \
-			_nm_unused typeof (*(_array[0])) *_array_check = _array[0]; \
+			_nm_unused gconstpointer _type_check_is_pointer = _array[0]; \
+			\
 			while (_array[_n]) \
 				_n++; \
 		} \
