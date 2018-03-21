@@ -43,15 +43,6 @@ gboolean nm_dhcp_dhclient_save_duid (const char *leasefile,
                                      const char *escaped_duid,
                                      GError **error);
 
-GSList *nm_dhcp_dhclient_read_lease_ip_configs (struct _NMDedupMultiIndex *multi_idx,
-                                                int addr_family,
-                                                const char *iface,
-                                                int ifindex,
-                                                guint32 route_table,
-                                                guint32 route_metric,
-                                                const char *contents,
-                                                GDateTime *now);
-
 GBytes *nm_dhcp_dhclient_get_client_id_from_config_file (const char *path);
 
 #endif /* __NETWORKMANAGER_DHCP_DHCLIENT_UTILS_H__ */

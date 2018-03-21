@@ -83,6 +83,16 @@ typedef enum  { /*< skip >*/
 	LOGD_IP         = LOGD_IP4 | LOGD_IP6,
 } NMLogDomain;
 
+static inline NMLogDomain
+LOGD_IP_from_af (int addr_family)
+{
+	switch (addr_family) {
+	case AF_INET:  return LOGD_IP4;
+	case AF_INET6: return LOGD_IP6;
+	}
+	g_return_val_if_reached (LOGD_NONE);
+}
+
 /* Log levels */
 typedef enum  { /*< skip >*/
 	LOGL_TRACE,

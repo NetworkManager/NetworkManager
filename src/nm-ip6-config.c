@@ -376,14 +376,13 @@ nm_ip6_config_clone (const NMIP6Config *self)
 }
 
 NMIP6Config *
-nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int ifindex, gboolean capture_resolv_conf, NMSettingIP6ConfigPrivacy use_temporary)
+nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int ifindex, NMSettingIP6ConfigPrivacy use_temporary)
 {
 	NMIP6Config *self;
 	NMIP6ConfigPrivate *priv;
 	const NMDedupMultiHeadEntry *head_entry;
 	NMDedupMultiIter iter;
 	const NMPObject *plobj = NULL;
-	gboolean has_addresses = FALSE;
 
 	nm_assert (ifindex > 0);
 
@@ -409,7 +408,6 @@ nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 			                            NULL,
 			                            NULL))
 				nm_assert_not_reached ();
-			has_addresses = TRUE;
 		}
 		head_entry = nm_ip6_config_lookup_addresses (self);
 		nm_assert (head_entry);
@@ -425,23 +423,6 @@ nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 
 	nmp_cache_iter_for_each (&iter, head_entry, &plobj)
 		_add_route (self, plobj, NULL, NULL);
-
-	/* If the interface has the default route, and has IPv6 addresses, capture
-	 * nameservers from /etc/resolv.conf.
-	 */
-	if (   has_addresses
-	    && priv->best_default_route
-	    && capture_resolv_conf) {
-		gs_free char *rc_contents = NULL;
-
-		if (g_file_get_contents (_PATH_RESCONF, &rc_contents, NULL, NULL)) {
-			if (nm_utils_resolve_conf_parse (AF_INET6,
-			                                 rc_contents,
-			                                 priv->nameservers,
-			                                 priv->dns_options))
-				_notify (self, PROP_NAMESERVERS);
-		}
-	}
 
 	return self;
 }
@@ -1691,19 +1672,43 @@ nm_ip6_config_lookup_address (const NMIP6Config *self,
 }
 
 const NMPlatformIP6Address *
-nm_ip6_config_get_address_first_nontentative (const NMIP6Config *self, gboolean linklocal)
+nm_ip6_config_find_first_address (const NMIP6Config *self,
+                                  NMPlatformMatchFlags match_flag)
 {
 	const NMPlatformIP6Address *addr;
 	NMDedupMultiIter iter;
 
 	g_return_val_if_fail (NM_IS_IP6_CONFIG (self), NULL);
 
-	linklocal = !!linklocal;
+	nm_assert (!NM_FLAGS_ANY (match_flag, ~(  NM_PLATFORM_MATCH_WITH_ADDRTYPE__ANY
+	                                        | NM_PLATFORM_MATCH_WITH_ADDRSTATE__ANY)));
+
+	nm_assert (NM_FLAGS_ANY (match_flag, NM_PLATFORM_MATCH_WITH_ADDRTYPE__ANY));
+	nm_assert (NM_FLAGS_ANY (match_flag, NM_PLATFORM_MATCH_WITH_ADDRSTATE__ANY));
 
 	nm_ip_config_iter_ip6_address_for_each (&iter, self, &addr) {
-		if (   ((!!IN6_IS_ADDR_LINKLOCAL (&addr->address)) == linklocal)
-		    && !(addr->n_ifa_flags & IFA_F_TENTATIVE))
-			return addr;
+
+		if (IN6_IS_ADDR_LINKLOCAL (&addr->address)) {
+			if (!NM_FLAGS_HAS (match_flag, NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL))
+				continue;
+		} else {
+			if (!NM_FLAGS_HAS (match_flag, NM_PLATFORM_MATCH_WITH_ADDRTYPE_NORMAL))
+				continue;
+		}
+
+		if (NM_FLAGS_HAS (addr->n_ifa_flags, IFA_F_DADFAILED)) {
+			if (!NM_FLAGS_HAS (match_flag, NM_PLATFORM_MATCH_WITH_ADDRSTATE_DADFAILED))
+				continue;
+		} else if (   NM_FLAGS_HAS (addr->n_ifa_flags, IFA_F_TENTATIVE)
+		           && !NM_FLAGS_HAS (addr->n_ifa_flags, IFA_F_OPTIMISTIC)) {
+			if (!NM_FLAGS_HAS (match_flag, NM_PLATFORM_MATCH_WITH_ADDRSTATE_TENTATIVE))
+				continue;
+		} else {
+			if (!NM_FLAGS_HAS (match_flag, NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL))
+				continue;
+		}
+
+		return addr;
 	}
 
 	return NULL;

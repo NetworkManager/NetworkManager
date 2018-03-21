@@ -194,13 +194,6 @@ typedef struct {
 	GType (*get_type)(void);
 	const char *name;
 	const char *(*get_path) (void);
-	GSList *(*get_lease_ip_configs) (struct _NMDedupMultiIndex *multi_idx,
-	                                 int addr_family,
-	                                 const char *iface,
-	                                 int ifindex,
-	                                 const char *uuid,
-	                                 guint32 route_table,
-	                                 guint32 route_metric);
 } NMDhcpClientFactory;
 
 extern const NMDhcpClientFactory _nm_dhcp_client_factory_dhcpcanon;

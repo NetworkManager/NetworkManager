@@ -1474,23 +1474,6 @@ nm_dns_manager_set_hostname (NMDnsManager *self,
 	}
 }
 
-gboolean
-nm_dns_manager_get_resolv_conf_explicit (NMDnsManager *self)
-{
-	NMDnsManagerPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_DNS_MANAGER (self), FALSE);
-
-	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
-
-	if (   NM_IN_SET (priv->rc_manager, NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED,
-	                                    NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE)
-	    || priv->plugin)
-		return FALSE;
-
-	return TRUE;
-}
-
 void
 nm_dns_manager_begin_updates (NMDnsManager *self, const char *func)
 {

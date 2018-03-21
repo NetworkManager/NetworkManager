@@ -450,36 +450,6 @@ get_leasefile_path (int addr_family, const char *iface, const char *uuid)
 	                        iface);
 }
 
-static GSList *
-nm_dhcp_systemd_get_lease_ip_configs (NMDedupMultiIndex *multi_idx,
-                                      int addr_family,
-                                      const char *iface,
-                                      int ifindex,
-                                      const char *uuid,
-                                      guint32 route_table,
-                                      guint32 route_metric)
-{
-	GSList *leases = NULL;
-	gs_free char *path = NULL;
-	sd_dhcp_lease *lease = NULL;
-	NMIP4Config *ip4_config;
-	int r;
-
-	if (addr_family != AF_INET)
-		return NULL;
-
-	path = get_leasefile_path (addr_family, iface, uuid);
-	r = dhcp_lease_load (&lease, path);
-	if (r == 0 && lease) {
-		ip4_config = lease_to_ip4_config (multi_idx, iface, ifindex, lease, NULL, route_table, route_metric, FALSE, NULL);
-		if (ip4_config)
-			leases = g_slist_append (leases, ip4_config);
-		sd_dhcp_lease_unref (lease);
-	}
-
-	return leases;
-}
-
 /*****************************************************************************/
 
 static void
@@ -1091,5 +1061,4 @@ const NMDhcpClientFactory _nm_dhcp_client_factory_internal = {
 	.name = "internal",
 	.get_type = nm_dhcp_systemd_get_type,
 	.get_path = NULL,
-	.get_lease_ip_configs = nm_dhcp_systemd_get_lease_ip_configs,
 };

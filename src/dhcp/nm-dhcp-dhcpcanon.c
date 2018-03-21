@@ -265,7 +265,6 @@ const NMDhcpClientFactory _nm_dhcp_client_factory_dhcpcanon = {
 	.name = "dhcpcanon",
 	.get_type = nm_dhcp_dhcpcanon_get_type,
 	.get_path = nm_dhcp_dhcpcanon_get_path,
-	.get_lease_ip_configs = NULL,
 };
 
 #endif /* WITH_DHCPCANON */

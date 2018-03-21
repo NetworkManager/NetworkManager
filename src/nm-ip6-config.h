@@ -106,7 +106,7 @@ int nm_ip6_config_get_ifindex (const NMIP6Config *self);
 struct _NMDedupMultiIndex *nm_ip6_config_get_multi_idx (const NMIP6Config *self);
 
 NMIP6Config *nm_ip6_config_capture (struct _NMDedupMultiIndex *multi_idx, NMPlatform *platform, int ifindex,
-                                    gboolean capture_resolv_conf, NMSettingIP6ConfigPrivacy use_temporary);
+                                    NMSettingIP6ConfigPrivacy use_temporary);
 
 void nm_ip6_config_add_dependent_routes (NMIP6Config *self,
                                          guint32 route_table,
@@ -149,7 +149,8 @@ void _nmtst_ip6_config_del_address (NMIP6Config *self, guint i);
 guint nm_ip6_config_get_num_addresses (const NMIP6Config *self);
 const NMPlatformIP6Address *nm_ip6_config_get_first_address (const NMIP6Config *self);
 const NMPlatformIP6Address *_nmtst_ip6_config_get_address (const NMIP6Config *self, guint i);
-const NMPlatformIP6Address *nm_ip6_config_get_address_first_nontentative (const NMIP6Config *self, gboolean linklocal);
+const NMPlatformIP6Address *nm_ip6_config_find_first_address (const NMIP6Config *self,
+                                                              NMPlatformMatchFlags match_flag);
 gboolean nm_ip6_config_address_exists (const NMIP6Config *self, const NMPlatformIP6Address *address);
 const NMPlatformIP6Address *nm_ip6_config_lookup_address (const NMIP6Config *self,
                                                           const struct in6_addr *addr);

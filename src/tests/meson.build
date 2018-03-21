@@ -6,7 +6,6 @@ test_units = [
   'test-ip4-config',
   'test-ip6-config',
   'test-dcb',
-  'test-resolvconf-capture',
   'test-wired-defname',
   'test-utils'
 ]
