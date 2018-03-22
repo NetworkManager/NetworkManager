@@ -3989,10 +3989,12 @@ nm_platform_ip_route_sync (NMPlatform *self,
 				} else {
 					const char *reason = "";
 
-					if (   -((int) plerr) == ENETUNREACH
-					    && (  vt->is_ip4
-					        ? !!NMP_OBJECT_CAST_IP4_ROUTE (conf_o)->gateway
-					        : !IN6_IS_ADDR_UNSPECIFIED (&NMP_OBJECT_CAST_IP6_ROUTE (conf_o)->gateway)))
+					if (   (   -((int) plerr) == ENETUNREACH
+					        && vt->is_ip4
+					        && !!NMP_OBJECT_CAST_IP4_ROUTE (conf_o)->gateway)
+					    || (   -((int) plerr) == EHOSTUNREACH
+					        && !vt->is_ip4
+					        && !IN6_IS_ADDR_UNSPECIFIED (&NMP_OBJECT_CAST_IP6_ROUTE (conf_o)->gateway)))
 						reason = "; is the gateway directly reachable?";
 
 					_LOGW ("route-sync: failure to add IPv%c route: %s: %s%s",
