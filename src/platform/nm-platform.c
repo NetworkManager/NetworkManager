@@ -3972,6 +3972,11 @@ nm_platform_ip_route_sync (NMPlatform *self,
 							       nmp_object_to_string (plat_entry->obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf2, sizeof (sbuf2)));
 						}
 					}
+				} else if (NMP_OBJECT_CAST_IP_ROUTE (conf_o)->rt_source < NM_IP_CONFIG_SOURCE_USER) {
+					_LOGD ("route-sync: ignore failure to add IPv%c route: %s: %s",
+					       vt->is_ip4 ? '4' : '6',
+					       nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)),
+					       nm_platform_error_to_string (plerr, sbuf_err, sizeof (sbuf_err)));
 				} else if (   -((int) plerr) == EINVAL
 				           && out_temporary_not_available
 				           && _err_inval_due_to_ipv6_tentative_pref_src (self, conf_o)) {
@@ -3981,11 +3986,6 @@ nm_platform_ip_route_sync (NMPlatform *self,
 					if (!*out_temporary_not_available)
 						*out_temporary_not_available = g_ptr_array_new_full (0, (GDestroyNotify) nmp_object_unref);
 					g_ptr_array_add (*out_temporary_not_available, (gpointer) nmp_object_ref (conf_o));
-				} else if (NMP_OBJECT_CAST_IP_ROUTE (conf_o)->rt_source < NM_IP_CONFIG_SOURCE_USER) {
-					_LOGD ("route-sync: ignore failure to add IPv%c route: %s: %s",
-					       vt->is_ip4 ? '4' : '6',
-					       nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)),
-					       nm_platform_error_to_string (plerr, sbuf_err, sizeof (sbuf_err)));
 				} else {
 					const char *reason = "";
 
