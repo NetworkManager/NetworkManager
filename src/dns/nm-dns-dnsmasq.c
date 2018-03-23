@@ -258,8 +258,8 @@ add_ip_config (NMDnsDnsmasq *self,
 				if (n == 0) {
 					/* If not searches, use any domains */
 					n = nm_ip_config_get_num_domains (ip_config);
-					domain = nm_utils_parse_dns_domain (nm_ip_config_get_domain (ip_config, i), NULL);
 					for (i = 0; i < n; i++) {
+						domain = nm_utils_parse_dns_domain (nm_ip_config_get_domain (ip_config, i), NULL);
 						add_dnsmasq_nameserver (self,
 						                        servers,
 						                        ip_addr_to_string_buf,
