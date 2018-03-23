@@ -799,18 +799,20 @@ nm_manager_get_activatable_connections (NMManager *manager, guint *out_len, gboo
 }
 
 static NMActiveConnection *
-active_connection_get_by_path (NMManager *manager, const char *path)
+active_connection_get_by_path (NMManager *self, const char *path)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMActiveConnection *ac;
 
-	nm_assert (path);
+	ac = (NMActiveConnection *) nm_dbus_manager_lookup_object (nm_dbus_object_get_manager (NM_DBUS_OBJECT (self)),
+	                                                           path);
+	if (   !ac
+	    || !NM_IS_ACTIVE_CONNECTION (ac)
+	    || c_list_is_empty (&ac->active_connections_lst))
+		return NULL;
 
-	c_list_for_each_entry (ac, &priv->active_connections_lst_head, active_connections_lst) {
-		if (nm_streq0 (path, nm_dbus_object_get_path (NM_DBUS_OBJECT (ac))))
-			return ac;
-	}
-	return NULL;
+	nm_assert (c_list_contains (&priv->active_connections_lst_head, &ac->active_connections_lst));
+	return ac;
 }
 
 /*****************************************************************************/
@@ -933,11 +935,15 @@ nm_manager_get_device_by_path (NMManager *self, const char *path)
 
 	g_return_val_if_fail (path, NULL);
 
-	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
-		if (!strcmp (nm_dbus_object_get_path (NM_DBUS_OBJECT (device)), path))
-			return device;
-	}
-	return NULL;
+	device = (NMDevice *) nm_dbus_manager_lookup_object (nm_dbus_object_get_manager (NM_DBUS_OBJECT (self)),
+	                                                     path);
+	if (   !device
+	    || !NM_IS_DEVICE (device)
+	    || c_list_is_empty (&device->devices_lst))
+		return NULL;
+
+	nm_assert (c_list_contains (&priv->devices_lst_head, &device->devices_lst));
+	return device;
 }
 
 NMDevice *
@@ -5376,7 +5382,7 @@ impl_manager_set_logging (NMDBusObject *obj,
 	 * that the caller is still alive so that clients are forced to wait and
 	 * we'll be able to switch to polkit without breaking behavior.
 	 */
-	if (!nm_dbus_manager_ensure_uid (nm_dbus_manager_get (),
+	if (!nm_dbus_manager_ensure_uid (nm_dbus_object_get_manager (NM_DBUS_OBJECT (self)),
 	                                 invocation,
 	                                 G_MAXULONG,
 	                                 NM_MANAGER_ERROR,
