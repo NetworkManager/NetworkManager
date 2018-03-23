@@ -532,7 +532,7 @@ _nmp_object_stackinit_from_type (NMPObject *obj, NMPObjectType obj_type)
 }
 
 const NMPObject *
-nmp_object_stackinit (NMPObject *obj, NMPObjectType obj_type, const NMPlatformObject *plobj)
+nmp_object_stackinit (NMPObject *obj, NMPObjectType obj_type, gconstpointer plobj)
 {
 	const NMPClass *klass = nmp_class_from_type (obj_type);
 

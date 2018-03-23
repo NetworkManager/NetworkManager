@@ -7978,10 +7978,8 @@ addrconf6_start_with_link_ready (NMDevice *self)
 	}
 
 	/* Apply any manual configuration before starting RA */
-	if (!ip_config_merge_and_apply (self, AF_INET6, TRUE)) {
+	if (!ip_config_merge_and_apply (self, AF_INET6, TRUE))
 		_LOGW (LOGD_IP6, "failed to apply manual IPv6 configuration");
-		g_clear_object (&priv->con_ip_config_6);
-	}
 
 	/* FIXME: These sysctls would probably be better set by the lndp ndisc itself. */
 	switch (nm_ndisc_get_node_type (priv->ndisc)) {
