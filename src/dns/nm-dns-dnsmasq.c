@@ -75,6 +75,7 @@ G_DEFINE_TYPE (NMDnsDnsmasq, nm_dns_dnsmasq, NM_TYPE_DNS_PLUGIN)
 
 /*****************************************************************************/
 
+/* FIXME: this is a duplicate of the function in nm-dns-manager.c */
 static char **
 get_ip_rdns_domains (NMIPConfig *ip_config)
 {
