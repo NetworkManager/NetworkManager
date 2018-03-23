@@ -152,7 +152,8 @@ extern const GDBusSignalInfo nm_signal_info_property_changed_legacy;
 /*****************************************************************************/
 
 GDBusPropertyInfo *nm_dbus_utils_interface_info_lookup_property (const GDBusInterfaceInfo *interface_info,
-                                                                 const char *property_name);
+                                                                 const char *property_name,
+                                                                 guint *property_idx);
 
 GDBusMethodInfo *nm_dbus_utils_interface_info_lookup_method (const GDBusInterfaceInfo *interface_info,
                                                              const char *method_name);
