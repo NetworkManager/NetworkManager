@@ -14377,6 +14377,8 @@ nm_device_init (NMDevice *self)
 
 	self->_priv = priv;
 
+	c_list_init (&self->devices_lst);
+
 	c_list_init (&priv->slaves);
 
 	priv->netns = g_object_ref (NM_NETNS_GET);
@@ -14494,6 +14496,8 @@ dispose (GObject *object)
 	NMPlatform *platform;
 
 	_LOGD (LOGD_DEVICE, "disposing");
+
+	nm_assert (c_list_is_empty (&self->devices_lst));
 
 	nm_clear_g_cancellable (&priv->deactivating_cancellable);
 

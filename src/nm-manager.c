@@ -128,7 +128,8 @@ typedef struct {
 	NMActiveConnection *activating_connection;
 	NMMetered metered;
 
-	GSList *devices;
+	CList devices_lst_head;
+
 	NMState state;
 	NMConfig *config;
 	NMConnectivityState connectivity_state;
@@ -925,27 +926,27 @@ impl_manager_reload (NMDBusObject *obj,
 /*****************************************************************************/
 
 NMDevice *
-nm_manager_get_device_by_path (NMManager *manager, const char *path)
+nm_manager_get_device_by_path (NMManager *self, const char *path)
 {
-	GSList *iter;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMDevice *device;
 
-	g_return_val_if_fail (path != NULL, NULL);
+	g_return_val_if_fail (path, NULL);
 
-	for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
-		if (!strcmp (nm_dbus_object_get_path (NM_DBUS_OBJECT (iter->data)), path))
-			return NM_DEVICE (iter->data);
+	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
+		if (!strcmp (nm_dbus_object_get_path (NM_DBUS_OBJECT (device)), path))
+			return device;
 	}
 	return NULL;
 }
 
 NMDevice *
-nm_manager_get_device_by_ifindex (NMManager *manager, int ifindex)
+nm_manager_get_device_by_ifindex (NMManager *self, int ifindex)
 {
-	GSList *iter;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMDevice *device;
 
-	for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
-		NMDevice *device = NM_DEVICE (iter->data);
-
+	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
 		if (nm_device_get_ifindex (device) == ifindex)
 			return device;
 	}
@@ -954,19 +955,22 @@ nm_manager_get_device_by_ifindex (NMManager *manager, int ifindex)
 }
 
 static NMDevice *
-find_device_by_permanent_hw_addr (NMManager *manager, const char *hwaddr)
+find_device_by_permanent_hw_addr (NMManager *self, const char *hwaddr)
 {
-	GSList *iter;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMDevice *device;
 	const char *device_addr;
 
 	g_return_val_if_fail (hwaddr != NULL, NULL);
 
-	if (nm_utils_hwaddr_valid (hwaddr, -1)) {
-		for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
-			device_addr = nm_device_get_permanent_hw_address (NM_DEVICE (iter->data));
-			if (device_addr && nm_utils_hwaddr_matches (hwaddr, -1, device_addr, -1))
-				return NM_DEVICE (iter->data);
-		}
+	if (!nm_utils_hwaddr_valid (hwaddr, -1))
+		return NULL;
+
+	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
+		device_addr = nm_device_get_permanent_hw_address (device);
+		if (   device_addr
+		    && nm_utils_hwaddr_matches (hwaddr, -1, device_addr, -1))
+			return device;
 	}
 	return NULL;
 }
@@ -974,16 +978,15 @@ find_device_by_permanent_hw_addr (NMManager *manager, const char *hwaddr)
 static NMDevice *
 find_device_by_ip_iface (NMManager *self, const gchar *iface)
 {
-	GSList *iter;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMDevice *device;
 
-	g_return_val_if_fail (iface != NULL, NULL);
+	g_return_val_if_fail (iface, NULL);
 
-	for (iter = NM_MANAGER_GET_PRIVATE (self)->devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *candidate = iter->data;
-
-		if (   nm_device_is_real (candidate)
-		    && g_strcmp0 (nm_device_get_ip_iface (candidate), iface) == 0)
-			return candidate;
+	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
+		if (   nm_device_is_real (device)
+		    && nm_streq0 (nm_device_get_ip_iface (device), iface))
+			return device;
 	}
 	return NULL;
 }
@@ -1011,12 +1014,11 @@ find_device_by_iface (NMManager *self,
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDevice *fallback = NULL;
-	GSList *iter;
+	NMDevice *candidate;
 
 	g_return_val_if_fail (iface != NULL, NULL);
 
-	for (iter = priv->devices; iter; iter = iter->next) {
-		NMDevice *candidate = iter->data;
+	c_list_for_each_entry (candidate, &priv->devices_lst_head, devices_lst) {
 
 		if (strcmp (nm_device_get_iface (candidate), iface))
 			continue;
@@ -1222,7 +1224,7 @@ static void
 check_if_startup_complete (NMManager *self)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *iter;
+	NMDevice *device;
 
 	if (!priv->startup)
 		return;
@@ -1235,12 +1237,10 @@ check_if_startup_complete (NMManager *self)
 		return;
 	}
 
-	for (iter = priv->devices; iter; iter = iter->next) {
-		NMDevice *dev = iter->data;
-
-		if (nm_device_has_pending_action (dev)) {
+	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
+		if (nm_device_has_pending_action (device)) {
 			_LOGD (LOGD_CORE, "check_if_startup_complete returns FALSE because of %s",
-			       nm_device_get_iface (dev));
+			       nm_device_get_iface (device));
 			return;
 		}
 	}
@@ -1252,8 +1252,8 @@ check_if_startup_complete (NMManager *self)
 	/* we no longer care about these signals. Startup-complete only
 	 * happens once. */
 	g_signal_handlers_disconnect_by_func (priv->settings, G_CALLBACK (settings_startup_complete_changed), self);
-	for (iter = priv->devices; iter; iter = iter->next) {
-		g_signal_handlers_disconnect_by_func (iter->data,
+	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
+		g_signal_handlers_disconnect_by_func (device,
 		                                      G_CALLBACK (device_has_pending_action_changed),
 		                                      self);
 	}
@@ -1285,18 +1285,18 @@ _parent_notify_changed (NMManager *self,
                         NMDevice *device,
                         gboolean device_removed)
 {
-	GSList *iter;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMDevice *candidate;
 
 	nm_assert (NM_IS_DEVICE (device));
-	nm_assert (NM_IS_MANAGER (self));
 
-	for (iter = NM_MANAGER_GET_PRIVATE (self)->devices; iter; ) {
-		if (nm_device_parent_notify_changed (iter->data, device, device_removed)) {
+again:
+	c_list_for_each_entry (candidate, &priv->devices_lst_head, devices_lst) {
+		if (nm_device_parent_notify_changed (candidate, device, device_removed)) {
 			/* in the unlikely event that this changes anything, we start iterating
 			 * again, to be sure that the device list is up-to-date. */
-			iter = NM_MANAGER_GET_PRIVATE (self)->devices;
-		} else
-			iter = iter->next;
+			goto again;
+		}
 	}
 }
 
@@ -1336,7 +1336,8 @@ remove_device (NMManager *self,
 	g_signal_handlers_disconnect_matched (device, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, self);
 
 	nm_settings_device_removed (priv->settings, device, quitting);
-	priv->devices = g_slist_remove (priv->devices, device);
+
+	c_list_unlink (&device->devices_lst);
 
 	_parent_notify_changed (self, device, TRUE);
 
@@ -1393,7 +1394,7 @@ find_parent_device_for_connection (NMManager *self, NMConnection *connection, NM
 	const char *parent_name = NULL;
 	NMSettingsConnection *parent_connection;
 	NMDevice *parent, *first_compatible = NULL;
-	GSList *iter;
+	NMDevice *candidate;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
@@ -1426,9 +1427,7 @@ find_parent_device_for_connection (NMManager *self, NMConnection *connection, NM
 	/* Check if the parent connection is currently activated or is comaptible
 	 * with some known device.
 	 */
-	for (iter = priv->devices; iter; iter = iter->next) {
-		NMDevice *candidate = iter->data;
-
+	c_list_for_each_entry (candidate, &priv->devices_lst_head, devices_lst) {
 		/* Unmanaged devices are not compatible with any connection */
 		if (!nm_device_get_managed (candidate, FALSE))
 			continue;
@@ -1544,18 +1543,15 @@ NMDevice *
 nm_manager_get_device (NMManager *self, const char *ifname, NMDeviceType device_type)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *iter;
-	NMDevice *d;
+	NMDevice *device;
 
 	g_return_val_if_fail (ifname, NULL);
 	g_return_val_if_fail (device_type != NM_DEVICE_TYPE_UNKNOWN, NULL);
 
-	for (iter = priv->devices; iter; iter = iter->next) {
-		d = iter->data;
-
-		if (   nm_device_get_device_type (d) == device_type
-		    && nm_streq0 (nm_device_get_iface (d), ifname))
-			return d;
+	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
+		if (   nm_device_get_device_type (device) == device_type
+		    && nm_streq0 (nm_device_get_iface (device), ifname))
+			return device;
 	}
 
 	return NULL;
@@ -1591,9 +1587,9 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	NMDeviceFactory *factory;
 	gs_free NMSettingsConnection **connections = NULL;
 	guint i;
-	GSList *iter;
 	gs_free char *iface = NULL;
 	NMDevice *device = NULL, *parent = NULL;
+	NMDevice *dev_candidate;
 	GError *error = NULL;
 	NMLogLevel log_level;
 
@@ -1609,17 +1605,15 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	}
 
 	/* See if there's a device that is already compatible with this connection */
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *candidate = iter->data;
-
-		if (nm_device_check_connection_compatible (candidate, connection)) {
-			if (nm_device_is_real (candidate)) {
+	c_list_for_each_entry (dev_candidate, &priv->devices_lst_head, devices_lst) {
+		if (nm_device_check_connection_compatible (dev_candidate, connection)) {
+			if (nm_device_is_real (dev_candidate)) {
 				_LOG3D (LOGD_DEVICE, connection, "already created virtual interface name %s",
 				       iface);
 				return NULL;
 			}
 
-			device = candidate;
+			device = dev_candidate;
 			break;
 		}
 	}
@@ -1840,10 +1834,10 @@ system_unmanaged_devices_changed_cb (NMSettings *settings,
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	const GSList *iter;
+	NMDevice *device;
 
-	for (iter = priv->devices; iter; iter = g_slist_next (iter))
-		nm_device_set_unmanaged_by_user_settings (NM_DEVICE (iter->data));
+	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst)
+		nm_device_set_unmanaged_by_user_settings (device);
 }
 
 static void
@@ -1889,7 +1883,7 @@ manager_update_radio_enabled (NMManager *self,
                               gboolean enabled)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *iter;
+	NMDevice *device;
 
 	/* Do nothing for radio types not yet implemented */
 	if (!rstate->prop)
@@ -1902,9 +1896,7 @@ manager_update_radio_enabled (NMManager *self,
 		return;
 
 	/* enable/disable wireless devices as required */
-	for (iter = priv->devices; iter; iter = iter->next) {
-		NMDevice *device = NM_DEVICE (iter->data);
-
+	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
 		if (nm_device_get_rfkill_type (device) == rstate->rtype) {
 			_LOG2D (LOGD_RFKILL, device, "rfkill: setting radio %s", enabled ? "enabled" : "disabled");
 			nm_device_set_enabled (device, enabled);
@@ -2389,18 +2381,17 @@ device_ip_iface_changed (NMDevice *device,
                          GParamSpec *pspec,
                          NMManager *self)
 {
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	const char *ip_iface = nm_device_get_ip_iface (device);
 	NMDeviceType device_type = nm_device_get_device_type (device);
-	GSList *iter;
+	NMDevice *candidate;
 
 	/* Remove NMDevice objects that are actually child devices of others,
 	 * when the other device finally knows its IP interface name.  For example,
 	 * remove the PPP interface that's a child of a WWAN device, since it's
 	 * not really a standalone NMDevice.
 	 */
-	for (iter = NM_MANAGER_GET_PRIVATE (self)->devices; iter; iter = iter->next) {
-		NMDevice *candidate = NM_DEVICE (iter->data);
-
+	c_list_for_each_entry (candidate, &priv->devices_lst_head, devices_lst) {
 		if (   candidate != device
 		    && g_strcmp0 (nm_device_get_iface (candidate), ip_iface) == 0
 		    && nm_device_get_device_type (candidate) == device_type
@@ -2458,10 +2449,10 @@ device_connectivity_changed (NMDevice *device,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMConnectivityState best_state = NM_CONNECTIVITY_UNKNOWN;
 	NMConnectivityState state;
-	const GSList *devices;
+	NMDevice *dev;
 
-	for (devices = priv->devices; devices; devices = devices->next) {
-		state = nm_device_get_connectivity_state (NM_DEVICE (devices->data));
+	c_list_for_each_entry (dev, &priv->devices_lst_head, devices_lst) {
+		state = nm_device_get_connectivity_state (dev);
 		if (state > best_state)
 			best_state = state;
 	}
@@ -2523,6 +2514,7 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 	GSList *iter, *remove = NULL;
 	int ifindex;
 	const char *dbus_path;
+	NMDevice *candidate;
 
 	/* No duplicates */
 	ifindex = nm_device_get_ifindex (device);
@@ -2539,18 +2531,20 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 	 * FIXME: use parent/child device relationships instead of removing
 	 * the child NMDevice entirely
 	 */
-	for (iter = priv->devices; iter; iter = iter->next) {
-		NMDevice *candidate = iter->data;
-
-		iface = nm_device_get_ip_iface (candidate);
-		if (nm_device_is_real (candidate) && nm_device_owns_iface (device, iface))
+	c_list_for_each_entry (candidate, &priv->devices_lst_head, devices_lst) {
+		if (   nm_device_is_real (candidate)
+		    && (iface = nm_device_get_ip_iface (candidate))
+		    && nm_device_owns_iface (device, iface))
 			remove = g_slist_prepend (remove, candidate);
 	}
 	for (iter = remove; iter; iter = iter->next)
 		remove_device (self, NM_DEVICE (iter->data), FALSE, FALSE);
 	g_slist_free (remove);
 
-	priv->devices = g_slist_append (priv->devices, g_object_ref (device));
+	g_object_ref (device);
+
+	nm_assert (c_list_is_empty (&device->devices_lst));
+	c_list_link_tail (&priv->devices_lst_head, &device->devices_lst);
 
 	g_signal_connect (device, NM_DEVICE_STATE_CHANGED,
 	                  G_CALLBACK (manager_device_state_changed),
@@ -2664,12 +2658,11 @@ factory_component_added_cb (NMDeviceFactory *factory,
                             gpointer user_data)
 {
 	NMManager *self = user_data;
-	GSList *iter;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMDevice *device;
 
-	g_return_val_if_fail (self, FALSE);
-
-	for (iter = NM_MANAGER_GET_PRIVATE (self)->devices; iter; iter = iter->next) {
-		if (nm_device_notify_component_added ((NMDevice *) iter->data, component))
+	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
+		if (nm_device_notify_component_added (device, component))
 			return TRUE;
 	}
 	return FALSE;
@@ -2699,9 +2692,10 @@ platform_link_added (NMManager *self,
                      gboolean guess_assume,
                      const NMConfigDeviceStateData *dev_state)
 {
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDeviceFactory *factory;
 	NMDevice *device = NULL;
-	GSList *iter;
+	NMDevice *candidate;
 
 	g_return_if_fail (ifindex > 0);
 
@@ -2709,8 +2703,7 @@ platform_link_added (NMManager *self,
 		return;
 
 	/* Let unrealized devices try to realize themselves with the link */
-	for (iter = NM_MANAGER_GET_PRIVATE (self)->devices; iter; iter = iter->next) {
-		NMDevice *candidate = iter->data;
+	c_list_for_each_entry (candidate, &priv->devices_lst_head, devices_lst) {
 		gboolean compatible = TRUE;
 		gs_free_error GError *error = NULL;
 
@@ -2937,12 +2930,12 @@ rfkill_manager_rfkill_changed_cb (NMRfkillManager *rfkill_mgr,
 	nm_manager_rfkill_update (NM_MANAGER (user_data), rtype);
 }
 
-const GSList *
+const CList *
 nm_manager_get_devices (NMManager *manager)
 {
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
 
-	return NM_MANAGER_GET_PRIVATE (manager)->devices;
+	return &NM_MANAGER_GET_PRIVATE (manager)->devices_lst_head;
 }
 
 static NMDevice *
@@ -2951,9 +2944,10 @@ nm_manager_get_best_device_for_connection (NMManager *self,
                                            gboolean for_user_request,
                                            GHashTable *unavailable_devices)
 {
-	const GSList *devices, *iter;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMActiveConnection *ac;
 	NMDevice *act_device;
+	NMDevice *device;
 	NMDeviceCheckConAvailableFlags flags;
 
 	ac = active_connection_find_first_by_connection (self, connection);
@@ -2966,9 +2960,7 @@ nm_manager_get_best_device_for_connection (NMManager *self,
 	flags = for_user_request ? NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST : NM_DEVICE_CHECK_CON_AVAILABLE_NONE;
 
 	/* Pick the first device that's compatible with the connection. */
-	devices = nm_manager_get_devices (self);
-	for (iter = devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *device = NM_DEVICE (iter->data);
+	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
 
 		if (unavailable_devices && g_hash_table_contains (unavailable_devices, device))
 			continue;
@@ -2981,30 +2973,34 @@ nm_manager_get_best_device_for_connection (NMManager *self,
 	return NULL;
 }
 
-static void
-_get_devices (NMManager *self,
-              GDBusMethodInvocation *context,
-              gboolean all_devices)
+static const char **
+_get_devices_paths (NMManager *self,
+                    gboolean all_devices)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	gs_free const char **paths = NULL;
+	const char **paths = NULL;
 	guint i;
-	GSList *iter;
+	NMDevice *device;
 
-	paths = g_new (const char *, g_slist_length (priv->devices) + 1);
+	paths = g_new (const char *, c_list_length (&priv->devices_lst_head) + 1);
 
-	for (i = 0, iter = priv->devices; iter; iter = iter->next) {
+	i = 0;
+	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
 		const char *path;
 
-		path = nm_dbus_object_get_path (NM_DBUS_OBJECT (iter->data));
-		if (   path
-		    && (all_devices || nm_device_is_real (iter->data)))
-			paths[i++] = path;
+		path = nm_dbus_object_get_path (NM_DBUS_OBJECT (device));
+		if (!path)
+			continue;
+
+		if (   !all_devices
+		    && !nm_device_is_real (device))
+			continue;
+
+		paths[i++] = path;
 	}
 	paths[i++] = NULL;
 
-	g_dbus_method_invocation_return_value (context,
-	                                       g_variant_new ("(^ao)", (char **) paths));
+	return paths;
 }
 
 static void
@@ -3017,8 +3013,11 @@ impl_manager_get_devices (NMDBusObject *obj,
                           GVariant *parameters)
 {
 	NMManager *self = NM_MANAGER (obj);
+	gs_free const char **paths = NULL;
 
-	_get_devices (self, invocation, FALSE);
+	paths = _get_devices_paths (self, FALSE);
+	g_dbus_method_invocation_return_value (invocation,
+	                                       g_variant_new ("(^ao)", (char **) paths));
 }
 
 static void
@@ -3031,8 +3030,11 @@ impl_manager_get_all_devices (NMDBusObject *obj,
                               GVariant *parameters)
 {
 	NMManager *self = NM_MANAGER (obj);
+	gs_free const char **paths = NULL;
 
-	_get_devices (self, invocation, TRUE);
+	paths = _get_devices_paths (self, TRUE);
+	g_dbus_method_invocation_return_value (invocation,
+	                                       g_variant_new ("(^ao)", (char **) paths));
 }
 
 static void
@@ -3137,7 +3139,6 @@ find_master (NMManager *self,
 	const char *master;
 	NMDevice *master_device = NULL;
 	NMSettingsConnection *master_connection = NULL;
-	GSList *iter;
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -3166,10 +3167,10 @@ find_master (NMManager *self,
 		/* Try master as a connection UUID */
 		master_connection = nm_settings_get_connection_by_uuid (priv->settings, master);
 		if (master_connection) {
-			/* Check if the master connection is activated on some device already */
-			for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-				NMDevice *candidate = NM_DEVICE (iter->data);
+			NMDevice *candidate;
 
+			/* Check if the master connection is activated on some device already */
+			c_list_for_each_entry (candidate, &priv->devices_lst_head, devices_lst) {
 				if (candidate == device)
 					continue;
 
@@ -3239,7 +3240,6 @@ ensure_master_active_connection (NMManager *self,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMActiveConnection *master_ac = NULL;
 	NMDeviceState master_state;
-	GSList *iter;
 
 	g_assert (connection);
 	g_assert (master_connection || master_device);
@@ -3315,10 +3315,10 @@ ensure_master_active_connection (NMManager *self,
 		             NM_MANAGER_ERROR_DEPENDENCY_FAILED,
 		             "Device unmanaged or not available for activation");
 	} else if (master_connection) {
-		/* Find a compatible device and activate it using this connection */
-		for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-			NMDevice *candidate = NM_DEVICE (iter->data);
+		NMDevice *candidate;
 
+		/* Find a compatible device and activate it using this connection */
+		c_list_for_each_entry (candidate, &priv->devices_lst_head, devices_lst) {
 			if (candidate == device) {
 				/* A device obviously can't be its own master */
 				continue;
@@ -4891,7 +4891,7 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	gboolean suspending, waking_from_suspend;
-	GSList *iter;
+	NMDevice *device;
 
 	suspending = sleeping_changed && priv->sleeping;
 	waking_from_suspend = sleeping_changed && !priv->sleeping;
@@ -4902,9 +4902,7 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 		/* FIXME: are there still hardware devices that need to be disabled around
 		 * suspend/resume?
 		 */
-		for (iter = priv->devices; iter; iter = iter->next) {
-			NMDevice *device = iter->data;
-
+		c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
 			/* FIXME: shouldn't we be unmanaging software devices if !suspending? */
 			if (nm_device_is_software (device))
 				continue;
@@ -4932,9 +4930,7 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 
 		if (waking_from_suspend) {
 			sleep_devices_clear (self);
-			for (iter = priv->devices; iter; iter = iter->next) {
-				NMDevice *device = iter->data;
-
+			c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
 				if (nm_device_is_software (device))
 					continue;
 
@@ -4961,8 +4957,7 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 		nm_manager_rfkill_update (self, RFKILL_TYPE_UNKNOWN);
 
 		/* Re-manage managed devices */
-		for (iter = priv->devices; iter; iter = iter->next) {
-			NMDevice *device = NM_DEVICE (iter->data);
+		c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
 			guint i;
 
 			if (nm_device_is_software (device)) {
@@ -5456,7 +5451,6 @@ check_connectivity_auth_done_cb (NMAuthChain *chain,
 	GError *error = NULL;
 	NMAuthCallResult result;
 	ConnectivityCheckData *data;
-	const GSList *devices;
 
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
 
@@ -5473,13 +5467,15 @@ check_connectivity_auth_done_cb (NMAuthChain *chain,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             "Not authorized to recheck connectivity");
 	} else {
+		NMDevice *device;
+
 		/* it's allowed */
 		data = g_slice_new0 (ConnectivityCheckData);
 		data->context = context;
 
-		for (devices = priv->devices; devices; devices = devices->next) {
+		c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
 			data->remaining++;
-			nm_device_check_connectivity (NM_DEVICE (devices->data),
+			nm_device_check_connectivity (device,
 			                              device_connectivity_done,
 			                              data);
 		}
@@ -5525,15 +5521,14 @@ start_factory (NMDeviceFactory *factory, gpointer user_data)
 void
 nm_manager_write_device_state (NMManager *self)
 {
-	const GSList *devices;
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMDevice *device;
 	gs_unref_hashtable GHashTable *seen_ifindexes = NULL;
 	gint nm_owned;
 
 	seen_ifindexes = g_hash_table_new (nm_direct_hash, NULL);
 
-	for (devices = priv->devices; devices; devices = devices->next) {
-		NMDevice *device = NM_DEVICE (devices->data);
+	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
 		int ifindex;
 		gboolean managed;
 		NMConfigDeviceStateManagedType managed_type;
@@ -5674,10 +5669,10 @@ void
 nm_manager_stop (NMManager *self)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMDevice *device;
 
-	/* Remove all devices */
-	while (priv->devices)
-		remove_device (self, NM_DEVICE (priv->devices->data), TRUE, TRUE);
+	while ((device = c_list_first_entry (&priv->devices_lst_head, NMDevice, devices_lst)))
+		remove_device (self, device, TRUE, TRUE);
 
 	_active_connection_cleanup (self);
 
@@ -5689,21 +5684,20 @@ handle_firmware_changed (gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *iter;
+	NMDevice *device;
 
 	priv->fw_changed_id = 0;
 
 	/* Try to re-enable devices with missing firmware */
-	for (iter = priv->devices; iter; iter = iter->next) {
-		NMDevice *candidate = NM_DEVICE (iter->data);
-		NMDeviceState state = nm_device_get_state (candidate);
+	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
+		NMDeviceState state = nm_device_get_state (device);
 
-		if (   nm_device_get_firmware_missing (candidate)
+		if (   nm_device_get_firmware_missing (device)
 		    && (state == NM_DEVICE_STATE_UNAVAILABLE)) {
-			_LOG2I (LOGD_CORE, candidate, "firmware may now be available");
+			_LOG2I (LOGD_CORE, device, "firmware may now be available");
 
 			/* Re-set unavailable state to try bringing the device up again */
-			nm_device_state_changed (candidate,
+			nm_device_state_changed (device,
 			                         NM_DEVICE_STATE_UNAVAILABLE,
 			                         NM_DEVICE_STATE_REASON_NONE);
 		}
@@ -6416,6 +6410,7 @@ nm_manager_init (NMManager *self)
 	GFile *file;
 
 	c_list_init (&priv->link_cb_lst);
+	c_list_init (&priv->devices_lst_head);
 	c_list_init (&priv->active_connections_lst_head);
 	c_list_init (&priv->delete_volatile_connection_lst_head);
 
@@ -6482,12 +6477,6 @@ nm_manager_init (NMManager *self)
 
 	priv->metered = NM_METERED_UNKNOWN;
 	priv->sleep_devices = g_hash_table_new (nm_direct_hash, NULL);
-}
-
-static gboolean
-device_is_real (GObject *device, gpointer user_data)
-{
-	return nm_device_is_real (NM_DEVICE (device));
 }
 
 static void
@@ -6588,7 +6577,9 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, priv->sleeping);
 		break;
 	case PROP_DEVICES:
-		nm_dbus_utils_g_value_set_object_path_array (value, priv->devices, device_is_real, NULL);
+		g_value_take_boxed (value,
+		                    nm_utils_strv_make_deep_copied (_get_devices_paths (self,
+		                                                                        FALSE)));
 		break;
 	case PROP_METERED:
 		g_value_set_uint (value, priv->metered);
@@ -6599,7 +6590,9 @@ get_property (GObject *object, guint prop_id,
 		nm_global_dns_config_to_dbus (dns_config, value);
 		break;
 	case PROP_ALL_DEVICES:
-		nm_dbus_utils_g_value_set_object_path_array (value, priv->devices, NULL, NULL);
+		g_value_take_boxed (value,
+		                    nm_utils_strv_make_deep_copied (_get_devices_paths (self,
+		                                                                        TRUE)));
 		break;
 	case PROP_CHECKPOINTS:
 		strv = NULL;
@@ -6700,7 +6693,7 @@ dispose (GObject *object)
 		g_clear_object (&priv->auth_mgr);
 	}
 
-	g_assert (priv->devices == NULL);
+	nm_assert (c_list_is_empty (&priv->devices_lst_head));
 
 	nm_clear_g_source (&priv->ac_cleanup_id);
 

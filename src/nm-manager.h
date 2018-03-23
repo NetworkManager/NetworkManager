@@ -105,7 +105,7 @@ void          nm_manager_write_device_state (NMManager *manager);
 
 /* Device handling */
 
-const GSList *      nm_manager_get_devices             (NMManager *manager);
+const CList *       nm_manager_get_devices             (NMManager *manager);
 
 NMDevice *          nm_manager_get_device_by_ifindex   (NMManager *manager,
                                                         int ifindex);
