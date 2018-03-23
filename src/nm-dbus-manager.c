@@ -110,9 +110,8 @@ NM_DEFINE_SINGLETON_GETTER (NMDBusManager, nm_dbus_manager_get, NM_TYPE_DBUS_MAN
 static const GDBusInterfaceInfo interface_info_objmgr;
 static const GDBusSignalInfo signal_info_objmgr_interfaces_added;
 static const GDBusSignalInfo signal_info_objmgr_interfaces_removed;
-
-static void _objmgr_emit_interfaces_added (NMDBusManager *self,
-                                           NMDBusObject *obj);
+static GVariantBuilder *_obj_collect_properties_all (NMDBusObject *obj,
+                                                     GVariantBuilder *builder);
 
 /*****************************************************************************/
 
@@ -927,6 +926,7 @@ _obj_register (NMDBusManager *self,
 	GType gtype;
 	NMDBusObjectClass *klasses[10];
 	const NMDBusInterfaceInfoExtended *const*prev_interface_infos = NULL;
+	GVariantBuilder builder;
 
 	nm_assert (c_list_is_empty (&obj->internal.registration_lst_head));
 	nm_assert (priv->connection);
@@ -1004,7 +1004,15 @@ _obj_register (NMDBusManager *self,
 	 *
 	 * In general, it's ok to export an object with frozen signals. But you better make sure
 	 * that all properties are in a self-consistent state when exporting the object. */
-	_objmgr_emit_interfaces_added (self, obj);
+	g_dbus_connection_emit_signal (priv->connection,
+	                               NULL,
+	                               OBJECT_MANAGER_SERVER_BASE_PATH,
+	                               interface_info_objmgr.name,
+	                               signal_info_objmgr_interfaces_added.name,
+	                               g_variant_new ("(oa{sa{sv}})",
+	                                              obj->internal.path,
+	                                              _obj_collect_properties_all (obj, &builder)),
+	                               NULL);
 }
 
 static void
@@ -1358,28 +1366,6 @@ _obj_collect_properties_all (NMDBusObject *obj,
 	}
 
 	return builder;
-}
-
-static void
-_objmgr_emit_interfaces_added (NMDBusManager *self,
-                               NMDBusObject *obj)
-{
-	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
-	GVariantBuilder builder;
-
-	nm_assert (NM_IS_DBUS_OBJECT (obj));
-	nm_assert (priv->connection);
-	nm_assert (priv->objmgr_registration_id);
-
-	g_dbus_connection_emit_signal (priv->connection,
-	                               NULL,
-	                               OBJECT_MANAGER_SERVER_BASE_PATH,
-	                               interface_info_objmgr.name,
-	                               signal_info_objmgr_interfaces_added.name,
-	                               g_variant_new ("(oa{sa{sv}})",
-	                                              obj->internal.path,
-	                                              _obj_collect_properties_all (obj, &builder)),
-	                               NULL);
 }
 
 static void
