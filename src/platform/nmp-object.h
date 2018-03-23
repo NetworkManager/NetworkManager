@@ -490,7 +490,7 @@ nmp_object_unref (const NMPObject *obj)
 NMPObject *nmp_object_new (NMPObjectType obj_type, const NMPlatformObject *plob);
 NMPObject *nmp_object_new_link (int ifindex);
 
-const NMPObject *nmp_object_stackinit (NMPObject *obj, NMPObjectType obj_type, const NMPlatformObject *plobj);
+const NMPObject *nmp_object_stackinit (NMPObject *obj, NMPObjectType obj_type, gconstpointer plobj);
 
 static inline NMPObject *
 nmp_object_stackinit_obj (NMPObject *obj, const NMPObject *src)
