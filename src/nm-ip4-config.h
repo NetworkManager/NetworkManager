@@ -437,4 +437,10 @@ nm_ip_config_get_dns_option (const NMIPConfig *self, guint i)
 	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_dns_option, nm_ip6_config_get_dns_option, i);
 }
 
+static inline const NMPObject *
+nm_ip_config_best_default_route_get (const NMIPConfig *self)
+{
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_best_default_route_get, nm_ip6_config_best_default_route_get);
+}
+
 #endif /* __NETWORKMANAGER_IP4_CONFIG_H__ */
