@@ -58,10 +58,6 @@ typedef struct {
 	PropertyCacheData property_cache[];
 } RegistrationData;
 
-/* we require that @path is the first member of NMDBusManagerData
- * because _objects_by_path_hash() requires that. */
-G_STATIC_ASSERT (G_STRUCT_OFFSET (struct _NMDBusObjectInternal, path) == 0);
-
 enum {
 	PRIVATE_CONNECTION_NEW,
 	PRIVATE_CONNECTION_DISCONNECTED,
@@ -72,7 +68,6 @@ enum {
 static guint signals[LAST_SIGNAL];
 
 typedef struct {
-	GHashTable *objects_by_path;
 	CList objects_lst_head;
 
 	CList private_servers_lst_head;
@@ -112,36 +107,6 @@ static const GDBusSignalInfo signal_info_objmgr_interfaces_added;
 static const GDBusSignalInfo signal_info_objmgr_interfaces_removed;
 static GVariantBuilder *_obj_collect_properties_all (NMDBusObject *obj,
                                                      GVariantBuilder *builder);
-
-/*****************************************************************************/
-
-static guint
-_objects_by_path_hash (gconstpointer user_data)
-{
-	const char *const*p_data = user_data;
-
-	nm_assert (p_data);
-	nm_assert (*p_data);
-	nm_assert ((*p_data)[0] == '/');
-
-	return nm_hash_str (*p_data);
-}
-
-static gboolean
-_objects_by_path_equal (gconstpointer user_data_a, gconstpointer user_data_b)
-{
-	const char *const*p_data_a = user_data_a;
-	const char *const*p_data_b = user_data_b;
-
-	nm_assert (p_data_a);
-	nm_assert (*p_data_a);
-	nm_assert ((*p_data_a)[0] == '/');
-	nm_assert (p_data_b);
-	nm_assert (*p_data_b);
-	nm_assert ((*p_data_b)[0] == '/');
-
-	return nm_streq (*p_data_a, *p_data_b);
-}
 
 /*****************************************************************************/
 
@@ -1067,27 +1032,6 @@ _obj_unregister (NMDBusManager *self,
 	                               NULL);
 }
 
-NMDBusObject *
-nm_dbus_manager_lookup_object (NMDBusManager *self, const char *path)
-{
-	NMDBusManagerPrivate *priv;
-	gpointer ptr;
-	NMDBusObject *obj;
-
-	g_return_val_if_fail (NM_IS_DBUS_MANAGER (self), NULL);
-	g_return_val_if_fail (path, NULL);
-
-	priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
-
-	ptr = g_hash_table_lookup (priv->objects_by_path, &path);
-	if (!ptr)
-		return NULL;
-
-	obj = (NMDBusObject *) (((char *) ptr) - G_STRUCT_OFFSET (NMDBusObject, internal));
-	nm_assert (NM_IS_DBUS_OBJECT (obj));
-	return obj;
-}
-
 void
 _nm_dbus_manager_obj_export (NMDBusObject *obj)
 {
@@ -1103,8 +1047,6 @@ _nm_dbus_manager_obj_export (NMDBusObject *obj)
 	self = obj->internal.bus_manager;
 	priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 
-	if (!g_hash_table_add (priv->objects_by_path, &obj->internal))
-		nm_assert_not_reached ();
 	c_list_link_tail (&priv->objects_lst_head, &obj->internal.objects_lst);
 
 	if (priv->connection)
@@ -1125,13 +1067,10 @@ _nm_dbus_manager_obj_unexport (NMDBusObject *obj)
 	self = obj->internal.bus_manager;
 	priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 
-	nm_assert (&obj->internal == g_hash_table_lookup (priv->objects_by_path, &obj->internal));
 	nm_assert (c_list_contains (&priv->objects_lst_head, &obj->internal.objects_lst));
 
 	_obj_unregister (self, obj);
 
-	if (!g_hash_table_remove (priv->objects_by_path, &obj->internal))
-		nm_assert_not_reached ();
 	c_list_unlink (&obj->internal.objects_lst);
 }
 
@@ -1572,7 +1511,6 @@ nm_dbus_manager_init (NMDBusManager *self)
 
 	c_list_init (&priv->private_servers_lst_head);
 	c_list_init (&priv->objects_lst_head);
-	priv->objects_by_path = g_hash_table_new ((GHashFunc) _objects_by_path_hash, (GEqualFunc) _objects_by_path_equal);
 }
 
 static void
@@ -1584,10 +1522,7 @@ dispose (GObject *object)
 
 	/* All exported NMDBusObject instances keep the manager alive, so we don't
 	 * expect any remaining objects. */
-	nm_assert (!priv->objects_by_path || g_hash_table_size (priv->objects_by_path) == 0);
 	nm_assert (c_list_is_empty (&priv->objects_lst_head));
-
-	g_clear_pointer (&priv->objects_by_path, g_hash_table_destroy);
 
 	c_list_for_each_entry_safe (s, s_safe, &priv->private_servers_lst_head, private_servers_lst)
 		private_server_free (s);
