@@ -960,16 +960,18 @@ find_device_by_permanent_hw_addr (NMManager *self, const char *hwaddr)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDevice *device;
 	const char *device_addr;
+	guint8 hwaddr_bin[NM_UTILS_HWADDR_LEN_MAX];
+	gsize hwaddr_len;
 
 	g_return_val_if_fail (hwaddr != NULL, NULL);
 
-	if (!nm_utils_hwaddr_valid (hwaddr, -1))
+	if (!_nm_utils_hwaddr_aton (hwaddr, hwaddr_bin, sizeof (hwaddr_bin), &hwaddr_len))
 		return NULL;
 
 	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
 		device_addr = nm_device_get_permanent_hw_address (device);
 		if (   device_addr
-		    && nm_utils_hwaddr_matches (hwaddr, -1, device_addr, -1))
+		    && nm_utils_hwaddr_matches (hwaddr_bin, hwaddr_len, device_addr, -1))
 			return device;
 	}
 	return NULL;
