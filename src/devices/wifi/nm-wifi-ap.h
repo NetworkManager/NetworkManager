@@ -44,7 +44,13 @@
 #define NM_WIFI_AP_STRENGTH             "strength"
 #define NM_WIFI_AP_LAST_SEEN            "last-seen"
 
-typedef struct _NMWifiAP NMWifiAP;
+typedef struct {
+	NMDBusObject parent;
+	NMDevice *wifi_device;
+	CList aps_lst;
+	struct _NMWifiAPPrivate *_priv;
+} NMWifiAP;
+
 typedef struct _NMWifiAPClass NMWifiAPClass;
 
 GType nm_wifi_ap_get_type (void);
@@ -66,7 +72,6 @@ gboolean          nm_wifi_ap_complete_connection      (NMWifiAP *self,
                                                        GError **error);
 
 const char *      nm_wifi_ap_get_supplicant_path      (NMWifiAP *ap);
-guint64           nm_wifi_ap_get_id                   (NMWifiAP *ap);
 const GByteArray *nm_wifi_ap_get_ssid                 (const NMWifiAP *ap);
 gboolean          nm_wifi_ap_set_ssid                 (NMWifiAP *ap,
                                                        const guint8 *ssid,
@@ -95,12 +100,14 @@ const char       *nm_wifi_ap_to_string                (const NMWifiAP *self,
                                                        gulong buf_len,
                                                        gint32 now_s);
 
-NMWifiAP        **nm_wifi_aps_get_sorted              (GHashTable *aps,
-                                                       gboolean include_without_ssid);
-const char      **nm_wifi_aps_get_sorted_paths        (GHashTable *aps,
-                                                       gboolean include_without_ssid);
-NMWifiAP         *nm_wifi_aps_find_first_compatible   (GHashTable *aps,
-                                                       NMConnection *connection,
-                                                       gboolean allow_unstable_order);
+const char      **nm_wifi_aps_get_paths        (const CList *aps_lst_head,
+                                                gboolean include_without_ssid);
+
+NMWifiAP         *nm_wifi_aps_find_first_compatible (const CList *aps_lst_head,
+                                                     NMConnection *connection);
+
+NMWifiAP         *nm_wifi_aps_find_by_supplicant_path (const CList *aps_lst_head, const char *path);
+
+NMWifiAP         *nm_wifi_ap_lookup_for_device (NMDevice *device, const char *exported_path);
 
 #endif /* __NM_WIFI_AP_H__ */

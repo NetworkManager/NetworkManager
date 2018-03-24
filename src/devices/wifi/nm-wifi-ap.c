@@ -33,6 +33,8 @@
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 #include "platform/nm-platform.h"
+#include "devices/nm-device.h"
+#include "nm-dbus-manager.h"
 
 #define PROTO_WPA "wpa"
 #define PROTO_RSN "rsn"
@@ -52,7 +54,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMWifiAP,
 	PROP_LAST_SEEN,
 );
 
-typedef struct {
+struct _NMWifiAPPrivate {
 	char *supplicant_path;   /* D-Bus object path of this AP from wpa_supplicant */
 
 	/* Scanned or cached values */
@@ -71,12 +73,9 @@ typedef struct {
 	bool                fake:1;       /* Whether or not the AP is from a scan */
 	bool                hotspot:1;    /* Whether the AP is a local device's hotspot network */
 	gint32              last_seen;    /* Timestamp when the AP was seen lastly (obtained via nm_utils_get_monotonic_timestamp_s()) */
-} NMWifiAPPrivate;
-
-struct _NMWifiAP {
-	NMDBusObject parent;
-	NMWifiAPPrivate _priv;
 };
+
+typedef struct _NMWifiAPPrivate NMWifiAPPrivate;
 
 struct _NMWifiAPClass {
 	NMDBusObjectClass parent;
@@ -84,7 +83,7 @@ struct _NMWifiAPClass {
 
 G_DEFINE_TYPE (NMWifiAP, nm_wifi_ap, NM_TYPE_DBUS_OBJECT)
 
-#define NM_WIFI_AP_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMWifiAP, NM_IS_WIFI_AP)
+#define NM_WIFI_AP_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR(self, NMWifiAP, NM_IS_WIFI_AP)
 
 /*****************************************************************************/
 
@@ -94,25 +93,6 @@ nm_wifi_ap_get_supplicant_path (NMWifiAP *ap)
 	g_return_val_if_fail (NM_IS_WIFI_AP (ap), NULL);
 
 	return NM_WIFI_AP_GET_PRIVATE (ap)->supplicant_path;
-}
-
-guint64
-nm_wifi_ap_get_id (NMWifiAP *ap)
-{
-	const char *path;
-	guint64 i;
-
-	g_return_val_if_fail (NM_IS_WIFI_AP (ap), 0);
-
-	path = nm_dbus_object_get_path (NM_DBUS_OBJECT (ap));
-	g_return_val_if_fail (path, 0);
-
-	nm_assert (g_str_has_prefix (path, NM_DBUS_PATH_ACCESS_POINT"/"));
-
-	i = _nm_utils_ascii_str_to_int64 (&path[NM_STRLEN (NM_DBUS_PATH_ACCESS_POINT"/")], 10, 1, G_MAXINT64, 0);
-
-	nm_assert (i);
-	return i;
 }
 
 const GByteArray *
@@ -1178,9 +1158,15 @@ get_property (GObject *object, guint prop_id,
 /*****************************************************************************/
 
 static void
-nm_wifi_ap_init (NMWifiAP *ap)
+nm_wifi_ap_init (NMWifiAP *self)
 {
-	NMWifiAPPrivate *priv = NM_WIFI_AP_GET_PRIVATE (ap);
+	NMWifiAPPrivate *priv;
+
+	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_WIFI_AP, NMWifiAPPrivate);
+
+	self->_priv = priv;
+
+	c_list_init (&self->aps_lst);
 
 	priv->mode = NM_802_11_MODE_INFRA;
 	priv->flags = NM_802_11_AP_FLAGS_NONE;
@@ -1340,7 +1326,11 @@ error:
 static void
 finalize (GObject *object)
 {
-	NMWifiAPPrivate *priv = NM_WIFI_AP_GET_PRIVATE ((NMWifiAP *) object);
+	NMWifiAP *self = NM_WIFI_AP (object);
+	NMWifiAPPrivate *priv = NM_WIFI_AP_GET_PRIVATE (self);
+
+	nm_assert (!self->wifi_device);
+	nm_assert (c_list_is_empty (&self->aps_lst));
 
 	g_free (priv->supplicant_path);
 	if (priv->ssid)
@@ -1390,6 +1380,8 @@ nm_wifi_ap_class_init (NMWifiAPClass *ap_class)
 
 	GObjectClass *object_class = G_OBJECT_CLASS (ap_class);
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (ap_class);
+
+	g_type_class_add_private (object_class, sizeof (NMWifiAPPrivate));
 
 	dbus_object_class->export_path = NM_DBUS_EXPORT_PATH_NUMBERED (NM_DBUS_PATH_ACCESS_POINT);
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_access_point);
@@ -1459,86 +1451,81 @@ nm_wifi_ap_class_init (NMWifiAPClass *ap_class)
 
 /*****************************************************************************/
 
-static int
-ap_id_compare (gconstpointer p_a, gconstpointer p_b, gpointer user_data)
+const char **
+nm_wifi_aps_get_paths (const CList *aps_lst_head, gboolean include_without_ssid)
 {
-	guint64 a_id = nm_wifi_ap_get_id (*((NMWifiAP **) p_a));
-	guint64 b_id = nm_wifi_ap_get_id (*((NMWifiAP **) p_b));
-
-	return a_id < b_id ? -1 : (a_id == b_id ? 0 : 1);
-}
-
-NMWifiAP **
-nm_wifi_aps_get_sorted (GHashTable *aps, gboolean include_without_ssid)
-{
-	NMWifiAP **list;
-	GHashTableIter iter;
 	NMWifiAP *ap;
 	gsize i, n;
+	const char **list;
+	const char *path;
 
-	n = g_hash_table_size (aps);
-	list = g_new (NMWifiAP *, n + 1);
+	n = c_list_length (aps_lst_head);
+	list = g_new (const char *, n + 1);
 
 	i = 0;
 	if (n > 0) {
-		g_hash_table_iter_init (&iter, aps);
-		while (g_hash_table_iter_next (&iter, NULL, (gpointer) &ap)) {
+		c_list_for_each_entry (ap, aps_lst_head, aps_lst) {
 			nm_assert (i < n);
-			if (   include_without_ssid
-			    || nm_wifi_ap_get_ssid (ap))
-				list[i++] = ap;
+			if (   !include_without_ssid
+			    && !nm_wifi_ap_get_ssid (ap))
+				continue;
+
+			path = nm_dbus_object_get_path (NM_DBUS_OBJECT (ap));
+			nm_assert (path);
+
+			list[i++] = path;
 		}
 		nm_assert (i <= n);
 		nm_assert (!include_without_ssid || i == n);
-
-		g_qsort_with_data (list,
-		                   i,
-		                   sizeof (gpointer),
-		                   ap_id_compare,
-		                   NULL);
 	}
 	list[i] = NULL;
 	return list;
 }
 
-const char **
-nm_wifi_aps_get_sorted_paths (GHashTable *aps, gboolean include_without_ssid)
+NMWifiAP *
+nm_wifi_aps_find_first_compatible (const CList *aps_lst_head,
+                                   NMConnection *connection)
 {
-	gpointer *list;
-	gsize i, j;
+	NMWifiAP *ap;
 
-	list = (gpointer *) nm_wifi_aps_get_sorted (aps, include_without_ssid);
-	for (i = 0, j = 0; list[i]; i++) {
-		NMWifiAP *ap = list[i];
-		const char *path;
+	g_return_val_if_fail (connection, NULL);
 
-		/* update @list inplace to hold instead the export-path. */
-		path = nm_dbus_object_get_path (NM_DBUS_OBJECT (ap));
-		nm_assert (path);
-		list[j++] = (gpointer) path;
+	c_list_for_each_entry (ap, aps_lst_head, aps_lst) {
+		if (nm_wifi_ap_check_compatible (ap, connection))
+			return ap;
 	}
-	return (const char **) list;
+	return NULL;
 }
 
 NMWifiAP *
-nm_wifi_aps_find_first_compatible (GHashTable *aps,
-                                   NMConnection *connection,
-                                   gboolean allow_unstable_order)
+nm_wifi_aps_find_by_supplicant_path (const CList *aps_lst_head, const char *path)
 {
-	GHashTableIter iter;
 	NMWifiAP *ap;
-	NMWifiAP *cand_ap = NULL;
 
-	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (path != NULL, NULL);
 
-	g_hash_table_iter_init (&iter, aps);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &ap)) {
-		if (!nm_wifi_ap_check_compatible (ap, connection))
-			continue;
-		if (allow_unstable_order)
+	c_list_for_each_entry (ap, aps_lst_head, aps_lst) {
+		if (nm_streq0 (path, nm_wifi_ap_get_supplicant_path (ap)))
 			return ap;
-		if (!cand_ap || (nm_wifi_ap_get_id (cand_ap) < nm_wifi_ap_get_id (ap)))
-			cand_ap = ap;
 	}
-	return cand_ap;
+	return NULL;
+}
+
+/*****************************************************************************/
+
+NMWifiAP *
+nm_wifi_ap_lookup_for_device (NMDevice *device, const char *exported_path)
+{
+	NMWifiAP *ap;
+
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+
+	ap = (NMWifiAP *) nm_dbus_manager_lookup_object (nm_dbus_object_get_manager (NM_DBUS_OBJECT (device)),
+	                                                 exported_path);
+	if (   !ap
+	    || !NM_IS_WIFI_AP (ap)
+	    || ap->wifi_device != device)
+		return NULL;
+
+	return ap;
 }
