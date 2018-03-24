@@ -650,11 +650,9 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMDeviceWimax:nsps:
+	 * NMDeviceWimax:nsps: (type GPtrArray(NMWimaxNsp))
 	 *
 	 * List of all WiMAX Network Service Providers the device can see.
-	 *
-	 * Element-type: NMWimaxNsp
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NSPS,

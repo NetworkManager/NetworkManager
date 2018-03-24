@@ -176,7 +176,7 @@ nm_checkpoint_class_init (NMCheckpointClass *checkpoint_class)
 	nm_object_class->init_dbus = init_dbus;
 
 	/**
-	 * NMCheckpoint:devices:
+	 * NMCheckpoint:devices: (type GPtrArray(NMDevice))
 	 *
 	 * The devices that are part of this checkpoint.
 	 *

@@ -274,11 +274,9 @@ nm_device_team_class_init (NMDeviceTeamClass *team_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMDeviceTeam:slaves:
+	 * NMDeviceTeam:slaves: (type GPtrArray(NMDevice))
 	 *
 	 * The devices enslaved to the team device.
-	 *
-	 * Element-type: NMDevice
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SLAVES,

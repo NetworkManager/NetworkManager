@@ -304,7 +304,7 @@ nm_ip_config_class_init (NMIPConfigClass *config_class)
 	                         G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMIPConfig:routes:
+	 * NMIPConfig:routes: (type GPtrArray(NMIPRoute))
 	 *
 	 * A #GPtrArray containing the routes (#NMIPRoute) of the configuration.
 	 **/

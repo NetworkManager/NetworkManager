@@ -3280,11 +3280,9 @@ nm_client_class_init (NMClientClass *client_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMClient:active-connections:
+	 * NMClient:active-connections: (type GPtrArray(NMActiveConnection))
 	 *
 	 * The active connections.
-	 *
-	 * Element-type: NMActiveConnection
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ACTIVE_CONNECTIONS,
@@ -3361,11 +3359,9 @@ nm_client_class_init (NMClientClass *client_class)
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMClient:devices:
+	 * NMClient:devices: (type GPtrArray(NMDevice))
 	 *
 	 * List of real network devices.  Does not include placeholder devices.
-	 *
-	 * Element-type: NMDevice
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DEVICES,
@@ -3375,11 +3371,9 @@ nm_client_class_init (NMClientClass *client_class)
 		                     G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMClient:all-devices:
+	 * NMClient:all-devices: (type GPtrArray(NMDevice))
 	 *
 	 * List of both real devices and device placeholders.
-	 *
-	 * Element-type: NMDevice
 	 * Since: 1.2
 	 **/
 	g_object_class_install_property
@@ -3390,14 +3384,12 @@ nm_client_class_init (NMClientClass *client_class)
 		                     G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMClient:connections:
+	 * NMClient:connections: (type GPtrArray(NMRemoteConnection))
 	 *
 	 * The list of configured connections that are available to the user. (Note
 	 * that this differs from the underlying D-Bus property, which may also
 	 * contain the object paths of connections that the user does not have
 	 * permission to read the details of.)
-	 *
-	 * Element-type: NMRemoteConnection
 	 */
 	g_object_class_install_property
 		(object_class, PROP_CONNECTIONS,
@@ -3474,7 +3466,7 @@ nm_client_class_init (NMClientClass *client_class)
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMClient:dns-configuration:
+	 * NMClient:dns-configuration: (type GPtrArray(GVariant))
 	 *
 	 * The current DNS configuration represented as an array of
 	 * dictionaries.  Each dictionary has the "nameservers",
@@ -3494,7 +3486,7 @@ nm_client_class_init (NMClientClass *client_class)
 		                     G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMClient::checkpoints
+	 * NMClient:checkpoints: (type GPtrArray(NMCheckpoint))
 	 *
 	 * The list of active checkpoints.
 	 *

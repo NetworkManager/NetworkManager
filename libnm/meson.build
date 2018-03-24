@@ -201,6 +201,7 @@ if enable_introspection
     export_packages: libnm_name,
     includes: 'Gio-2.0',
     extra_args: cflags,
+    header: 'NetworkManager.h',
     install: true
   )
 

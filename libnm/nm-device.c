@@ -735,11 +735,9 @@ nm_device_class_init (NMDeviceClass *device_class)
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMDevice:available-connections:
+	 * NMDevice:available-connections: (type GPtrArray(NMRemoteConnection))
 	 *
 	 * The available connections of the device
-	 *
-	 * Element-type: NMRemoteConnection
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_AVAILABLE_CONNECTIONS,

@@ -3662,7 +3662,7 @@ _nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize buffer_length, gs
 /**
  * nm_utils_hwaddr_aton:
  * @asc: the ASCII representation of a hardware address
- * @buffer: buffer to store the result into
+ * @buffer: (type guint8) (array length=length): buffer to store the result into
  * @length: the expected length in bytes of the result and
  * the size of the buffer in bytes.
  *
@@ -3894,9 +3894,9 @@ _nm_utils_hwaddr_canonical_or_invalid (const char *mac, gssize length)
 
 /**
  * nm_utils_hwaddr_matches:
- * @hwaddr1: pointer to a binary or ASCII hardware address, or %NULL
+ * @hwaddr1: (nullable): pointer to a binary or ASCII hardware address, or %NULL
  * @hwaddr1_len: size of @hwaddr1, or -1 if @hwaddr1 is ASCII
- * @hwaddr2: pointer to a binary or ASCII hardware address, or %NULL
+ * @hwaddr2: (nullable): pointer to a binary or ASCII hardware address, or %NULL
  * @hwaddr2_len: size of @hwaddr2, or -1 if @hwaddr2 is ASCII
  *
  * Generalized hardware address comparison function. Tests if @hwaddr1 and
@@ -5952,7 +5952,8 @@ attribute_unescape (const char *start, const char *end)
  *
  * Parse attributes from a string.
  *
- * Returns: (transfer full): a #GHashTable mapping attribute names to #GVariant values.
+ * Returns: (transfer full) (element-type utf8 GVariant): a #GHashTable mapping
+ * attribute names to #GVariant values.
  *
  * Since: 1.8
  */
@@ -6111,7 +6112,7 @@ next:
 
 /*
  * nm_utils_format_variant_attributes:
- * @attributes:  a #GHashTable mapping attribute names to #GVariant values
+ * @attributes: (element-type utf8 GVariant): a #GHashTable mapping attribute names to #GVariant values
  * @attr_separator: the attribute separator character
  * @key_value_separator: character separating key and values
  *

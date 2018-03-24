@@ -49,10 +49,10 @@ struct _NMVpnPluginInfo;
 /**
  * NMVpnPluginInfo:
  */
-typedef struct _NMVpnPluginInfo {
+struct _NMVpnPluginInfo {
 	NM_AVAILABLE_IN_1_2
 	GObject parent;
-} NMVpnPluginInfo;
+};
 
 typedef struct {
 	NM_AVAILABLE_IN_1_2

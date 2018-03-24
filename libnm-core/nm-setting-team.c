@@ -1799,7 +1799,7 @@ nm_setting_team_class_init (NMSettingTeamClass *setting_class)
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingTeam:link-watchers:
+	 * NMSettingTeam:link-watchers: (type GPtrArray(NMTeamLinkWatcher))
 	 *
 	 * Link watchers configuration for the connection: each link watcher is
 	 * defined by a dictionary, whose keys depend upon the selected link
@@ -1810,7 +1810,6 @@ nm_setting_team_class_init (NMSettingTeamClass *setting_class)
 	 * arp_ping: all the ones in nsna_ping and 'source-host', 'validate-active',
 	 * 'validate-incative', 'send-always'. See teamd.conf man for more details.
 	 *
-	 * Element-Type: NMTeamLinkWatcher
 	 * Since: 1.12
 	 **/
 	g_object_class_install_property

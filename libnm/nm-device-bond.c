@@ -248,11 +248,9 @@ nm_device_bond_class_init (NMDeviceBondClass *bond_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMDeviceBond:slaves:
+	 * NMDeviceBond:slaves: (type GPtrArray(NMDevice))
 	 *
 	 * The devices slaved to the bond device.
-	 *
-	 * Element-type: NMDevice
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SLAVES,

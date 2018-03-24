@@ -1099,13 +1099,11 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                     G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingDcb:priority-flow-control:
+	 * NMSettingDcb:priority-flow-control: (type GArray(gboolean))
 	 *
 	 * An array of 8 boolean values, where the array index corresponds to the User
 	 * Priority (0 - 7) and the value indicates whether or not the corresponding
 	 * priority should transmit priority pause.
-	 *
-	 * Element-type: gboolean
 	 **/
 	/* ---ifcfg-rh---
 	 * property: priority-flow-control
@@ -1149,13 +1147,11 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                     G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingDcb:priority-group-id:
+	 * NMSettingDcb:priority-group-id: (type GArray(guint))
 	 *
 	 * An array of 8 uint values, where the array index corresponds to the User
 	 * Priority (0 - 7) and the value indicates the Priority Group ID.  Allowed
 	 * Priority Group ID values are 0 - 7 or 15 for the unrestricted group.
-	 *
-	 * Element-type: guint
 	 **/
 	/* ---ifcfg-rh---
 	 * property: priority-group-id
@@ -1177,14 +1173,12 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	                                      _nm_setting_dcb_uint_array_from_dbus);
 
 	/**
-	 * NMSettingDcb:priority-group-bandwidth:
+	 * NMSettingDcb:priority-group-bandwidth: (type GArray(guint))
 	 *
 	 * An array of 8 uint values, where the array index corresponds to the
 	 * Priority Group ID (0 - 7) and the value indicates the percentage of link
 	 * bandwidth allocated to that group.  Allowed values are 0 - 100, and the
 	 * sum of all values must total 100 percents.
-	 *
-	 * Element-type: guint
 	 **/
 	/* ---ifcfg-rh---
 	 * property: priority-group-bandwidth
@@ -1205,15 +1199,13 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	                                      _nm_setting_dcb_uint_array_from_dbus);
 
 	/**
-	 * NMSettingDcb:priority-bandwidth:
+	 * NMSettingDcb:priority-bandwidth: (type GArray(guint))
 	 *
 	 * An array of 8 uint values, where the array index corresponds to the User
 	 * Priority (0 - 7) and the value indicates the percentage of bandwidth of
 	 * the priority's assigned group that the priority may use.  The sum of all
 	 * percentages for priorities which belong to the same group must total 100
 	 * percents.
-	 *
-	 * Element-type: guint
 	 **/
 	/* ---ifcfg-rh---
 	 * property: priority-bandwidth
@@ -1235,13 +1227,11 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	                                      _nm_setting_dcb_uint_array_from_dbus);
 
 	/**
-	 * NMSettingDcb:priority-strict-bandwidth:
+	 * NMSettingDcb:priority-strict-bandwidth: (type GArray(gboolean))
 	 *
 	 * An array of 8 boolean values, where the array index corresponds to the User
 	 * Priority (0 - 7) and the value indicates whether or not the priority may
 	 * use all of the bandwidth allocated to its assigned group.
-	 *
-	 * Element-type: gboolean
 	 **/
 	/* ---ifcfg-rh---
 	 * property: priority-strict-bandwidth
@@ -1263,13 +1253,11 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	                                      _nm_setting_dcb_uint_array_from_dbus);
 
 	/**
-	 * NMSettingDcb:priority-traffic-class:
+	 * NMSettingDcb:priority-traffic-class: (type GArray(guint))
 	 *
 	 * An array of 8 uint values, where the array index corresponds to the User
 	 * Priority (0 - 7) and the value indicates the traffic class (0 - 7) to
 	 * which the priority is mapped.
-	 *
-	 * Element-type: guint
 	 **/
 	/* ---ifcfg-rh---
 	 * property: priority-traffic-class

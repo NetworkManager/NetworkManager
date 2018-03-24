@@ -1507,11 +1507,9 @@ nm_setting_tc_config_class_init (NMSettingTCConfigClass *setting_class)
 	/* Properties */
 
 	/**
-	 * NMSettingTCConfig:qdiscs:
+	 * NMSettingTCConfig:qdiscs: (type GPtrArray(NMTCQdisc))
 	 *
 	 * Array of TC queuening disciplines.
-	 *
-	 * Element-Type: NMTCQdisc
 	 **/
 	/* ---ifcfg-rh---
 	 * property: qdiscs
@@ -1536,11 +1534,9 @@ nm_setting_tc_config_class_init (NMSettingTCConfigClass *setting_class)
 	                                     NULL);
 
 	/**
-	 * NMSettingTCConfig:tfilters:
+	 * NMSettingTCConfig:tfilters: (type GPtrArray(NMTCTfilter))
 	 *
 	 * Array of TC traffic filters.
-	 *
-	 * Element-Type: NMTCTfilter
 	 **/
 	/* ---ifcfg-rh---
 	 * property: qdiscs

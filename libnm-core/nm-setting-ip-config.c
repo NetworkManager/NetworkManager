@@ -2993,11 +2993,9 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 	                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingIPConfig:addresses:
+	 * NMSettingIPConfig:addresses: (type GPtrArray(NMIPAddress))
 	 *
 	 * Array of IP addresses.
-	 *
-	 * Element-Type: NMIPAddress
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ADDRESSES,
@@ -3034,11 +3032,9 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 	                                     NULL);
 
 	/**
-	 * NMSettingIPConfig:routes:
+	 * NMSettingIPConfig:routes: (type GPtrArray(NMIPRoute))
 	 *
 	 * Array of IP routes.
-	 *
-	 * Element-Type: NMIPRoute
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ROUTES,

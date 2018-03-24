@@ -587,13 +587,11 @@ nm_setting_user_class_init (NMSettingUserClass *klass)
 	setting_class->verify = verify;
 
 	/**
-	 * NMSettingUser:data:
+	 * NMSettingUser:data: (type GHashTable(utf8,utf8))
 	 *
 	 * A dictionary of key/value pairs with user data. This data is ignored by NetworkManager
 	 * and can be used at the users discretion. The keys only support a strict ascii format,
 	 * but the values can be arbitrary UTF8 strings up to a certain length.
-	 *
-	 * Type: GHashTable(utf8,utf8)
 	 *
 	 * Since: 1.8
 	 **/
