@@ -288,6 +288,8 @@ gboolean nm_ip4_config_nmpobj_remove (NMIP4Config *self,
 void nm_ip4_config_hash (const NMIP4Config *self, GChecksum *sum, gboolean dns_only);
 gboolean nm_ip4_config_equal (const NMIP4Config *a, const NMIP4Config *b);
 
+gboolean _nm_ip_config_check_and_add_domain (GPtrArray *array, const char *domain);
+
 /*****************************************************************************/
 
 #include "nm-ip6-config.h"

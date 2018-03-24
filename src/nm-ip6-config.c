@@ -2117,17 +2117,9 @@ void
 nm_ip6_config_add_domain (NMIP6Config *self, const char *domain)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
-	int i;
 
-	g_return_if_fail (domain != NULL);
-	g_return_if_fail (domain[0] != '\0');
-
-	for (i = 0; i < priv->domains->len; i++)
-		if (!g_strcmp0 (g_ptr_array_index (priv->domains, i), domain))
-			return;
-
-	g_ptr_array_add (priv->domains, g_strdup (domain));
-	_notify (self, PROP_DOMAINS);
+	if (_nm_ip_config_check_and_add_domain (priv->domains, domain))
+		_notify (self, PROP_DOMAINS);
 }
 
 void
@@ -2171,35 +2163,12 @@ nm_ip6_config_reset_searches (NMIP6Config *self)
 }
 
 void
-nm_ip6_config_add_search (NMIP6Config *self, const char *new)
+nm_ip6_config_add_search (NMIP6Config *self, const char *search)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
-	char *search;
-	size_t len;
 
-	g_return_if_fail (new != NULL);
-	g_return_if_fail (new[0] != '\0');
-
-	search = g_strdup (new);
-
-	/* Remove trailing dot as it has no effect */
-	len = strlen (search);
-	if (search[len - 1] == '.')
-		search[len - 1] = 0;
-
-	if (!search[0]) {
-		g_free (search);
-		return;
-	}
-
-	if (nm_utils_strv_find_first ((char **) priv->searches->pdata,
-	                               priv->searches->len, search) >= 0) {
-		g_free (search);
-		return;
-	}
-
-	g_ptr_array_add (priv->searches, search);
-	_notify (self, PROP_SEARCHES);
+	if (_nm_ip_config_check_and_add_domain (priv->searches, search))
+		_notify (self, PROP_SEARCHES);
 }
 
 void

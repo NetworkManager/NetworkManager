@@ -2333,6 +2333,31 @@ _nm_ip4_config_get_nameserver (const NMIP4Config *self, guint i)
 
 /*****************************************************************************/
 
+gboolean
+_nm_ip_config_check_and_add_domain (GPtrArray *array, const char *domain)
+{
+	char *copy = NULL;
+	size_t len;
+
+	g_return_val_if_fail (domain, FALSE);
+	g_return_val_if_fail (domain[0] != '\0', FALSE);
+
+	if (domain[0] == '.' || strstr (domain, ".."))
+		return FALSE;
+
+	len = strlen (domain);
+	if (domain[len - 1] == '.')
+		domain = copy = g_strndup (domain, len - 1);
+
+	if (nm_utils_strv_find_first ((char **) array->pdata, array->len, domain) >= 0) {
+		g_free (copy);
+		return FALSE;
+	}
+
+	g_ptr_array_add (array, copy ?: g_strdup (domain));
+	return TRUE;
+}
+
 void
 nm_ip4_config_reset_domains (NMIP4Config *self)
 {
@@ -2348,17 +2373,9 @@ void
 nm_ip4_config_add_domain (NMIP4Config *self, const char *domain)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
-	int i;
 
-	g_return_if_fail (domain != NULL);
-	g_return_if_fail (domain[0] != '\0');
-
-	for (i = 0; i < priv->domains->len; i++)
-		if (!g_strcmp0 (g_ptr_array_index (priv->domains, i), domain))
-			return;
-
-	g_ptr_array_add (priv->domains, g_strdup (domain));
-	_notify (self, PROP_DOMAINS);
+	if (_nm_ip_config_check_and_add_domain (priv->domains, domain))
+		_notify (self, PROP_DOMAINS);
 }
 
 void
@@ -2402,35 +2419,12 @@ nm_ip4_config_reset_searches (NMIP4Config *self)
 }
 
 void
-nm_ip4_config_add_search (NMIP4Config *self, const char *new)
+nm_ip4_config_add_search (NMIP4Config *self, const char *search)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
-	char *search;
-	size_t len;
 
-	g_return_if_fail (new != NULL);
-	g_return_if_fail (new[0] != '\0');
-
-	search = g_strdup (new);
-
-	/* Remove trailing dot as it has no effect */
-	len = strlen (search);
-	if (search[len - 1] == '.')
-		search[len - 1] = 0;
-
-	if (!search[0]) {
-		g_free (search);
-		return;
-	}
-
-	if (nm_utils_strv_find_first ((char **) priv->searches->pdata,
-	                               priv->searches->len, search) >= 0) {
-		g_free (search);
-		return;
-	}
-
-	g_ptr_array_add (priv->searches, search);
-	_notify (self, PROP_SEARCHES);
+	if (_nm_ip_config_check_and_add_domain (priv->searches, search))
+		_notify (self, PROP_SEARCHES);
 }
 
 void
