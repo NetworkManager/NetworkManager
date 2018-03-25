@@ -1149,31 +1149,34 @@ nm_utils_named_values_from_str_dict (GHashTable *hash, guint *out_len)
 	return values;
 }
 
-const char **
-nm_utils_strdict_get_keys (const GHashTable *hash,
-                           gboolean sorted,
-                           guint *out_length)
+gpointer *
+nm_utils_hash_keys_to_array (GHashTable *hash,
+                             GCompareDataFunc compare_func,
+                             gpointer user_data,
+                             guint *out_len)
 {
-	const char **names;
-	guint length;
+	guint len;
+	gpointer *keys;
 
+	/* by convention, we never return an empty array. In that
+	 * case, always %NULL. */
 	if (   !hash
-	    || !g_hash_table_size ((GHashTable *) hash)) {
-		NM_SET_OUT (out_length, 0);
+	    || g_hash_table_size (hash) == 0) {
+		NM_SET_OUT (out_len, 0);
 		return NULL;
 	}
 
-	names = (const char **) g_hash_table_get_keys_as_array ((GHashTable *) hash, &length);
-	if (   sorted
-	    && length > 1) {
-		g_qsort_with_data (names,
-		                   length,
-		                   sizeof (char *),
-		                   nm_strcmp_p_with_data,
-		                   NULL);
+	keys = g_hash_table_get_keys_as_array (hash, &len);
+	if (   len > 1
+	    && compare_func) {
+		g_qsort_with_data (keys,
+		                   len,
+		                   sizeof (gpointer),
+		                   compare_func,
+		                   user_data);
 	}
-	NM_SET_OUT (out_length, length);
-	return names;
+	NM_SET_OUT (out_len, len);
+	return keys;
 }
 
 char **
