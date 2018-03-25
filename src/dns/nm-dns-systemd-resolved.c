@@ -330,14 +330,10 @@ update (NMDnsPlugin *plugin,
 
 	free_pending_updates (self);
 
-	interfaces_keys = g_hash_table_get_keys_as_array (interfaces, &interfaces_len);
-	if (interfaces_len > 1) {
-		g_qsort_with_data (interfaces_keys,
-		                   interfaces_len,
-		                   sizeof (gpointer),
-		                   nm_cmp_int2ptr_p_with_data,
-		                   NULL);
-	}
+	interfaces_keys = nm_utils_hash_keys_to_array (interfaces,
+	                                               nm_cmp_int2ptr_p_with_data,
+	                                               NULL,
+	                                               &interfaces_len);
 	for (i = 0; i < interfaces_len; i++) {
 		InterfaceConfig *ic = g_hash_table_lookup (interfaces, GINT_TO_POINTER (interfaces_keys[i]));
 

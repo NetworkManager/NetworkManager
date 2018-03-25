@@ -226,7 +226,6 @@ nm_setting_user_get_keys (NMSettingUser *setting, guint *out_len)
 {
 	NMSettingUser *self = setting;
 	NMSettingUserPrivate *priv;
-	guint len;
 
 	g_return_val_if_fail (NM_IS_SETTING_USER (self), NULL);
 
@@ -237,19 +236,13 @@ nm_setting_user_get_keys (NMSettingUser *setting, guint *out_len)
 		return priv->keys;
 	}
 
-	if (!priv->data || !g_hash_table_size (priv->data)) {
-		NM_SET_OUT (out_len, 0);
-		return (const char **) &priv->keys;
-	}
+	priv->keys = nm_utils_strdict_get_keys (priv->data,
+	                                        TRUE,
+	                                        out_len);
 
-	priv->keys = (const char **) g_hash_table_get_keys_as_array (priv->data, &len);
-	g_qsort_with_data (priv->keys,
-	                   len,
-	                   sizeof (const char *),
-	                   nm_strcmp_p_with_data,
-	                   NULL);
-	NM_SET_OUT (out_len, len);
-	return priv->keys;
+	/* don't return %NULL, but hijack the @keys fields as a pseudo
+	 * empty strv array. */
+	return priv->keys ?: ((const char **) &priv->keys);
 }
 
 /*****************************************************************************/

@@ -148,16 +148,7 @@ write_secrets (shvarFile *ifcfg,
 	/* we purge all existing secrets. */
 	svUnsetAll (keyfile, SV_KEY_TYPE_ANY);
 
-	/* sort the keys. */
-	secrets_keys = (const char **) g_hash_table_get_keys_as_array (secrets, &secrets_keys_n);
-	if (secrets_keys_n > 1) {
-		g_qsort_with_data (secrets_keys,
-		                   secrets_keys_n,
-		                   sizeof (const char *),
-		                   nm_strcmp_p_with_data,
-		                   NULL);
-	}
-
+	secrets_keys = nm_utils_strdict_get_keys (secrets, TRUE, &secrets_keys_n);
 	for (i = 0; i < secrets_keys_n; i++) {
 		const char *k = secrets_keys[i];
 		const char *v = g_hash_table_lookup (secrets, k);

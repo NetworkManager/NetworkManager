@@ -338,13 +338,9 @@ write_hash_of_string (GKeyFile *file,
 	}
 
 	hash = g_value_get_boxed (value);
-	keys = (const char **) g_hash_table_get_keys_as_array (hash, &l);
-	if (!keys)
-		return;
 
-	g_qsort_with_data (keys, l, sizeof (const char *), nm_strcmp_p_with_data, NULL);
-
-	for (i = 0; keys[i]; i++) {
+	keys = nm_utils_strdict_get_keys (hash, TRUE, &l);
+	for (i = 0; i < l; i++) {
 		const char *property, *data;
 		gboolean write_item = TRUE;
 
