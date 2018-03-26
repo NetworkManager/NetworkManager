@@ -254,7 +254,7 @@ test_config_global_dns (void)
 	NMConfig *config;
 	const NMGlobalDnsConfig *dns;
 	NMGlobalDnsDomain *domain;
-	const char *const *strv;
+	const char *const*strv;
 
 	config = setup_config (NULL, SRCDIR "/NetworkManager.conf", "", NULL,
 	                       "/no/such/dir", "", NULL);
