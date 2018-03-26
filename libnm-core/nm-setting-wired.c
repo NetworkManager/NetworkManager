@@ -1363,7 +1363,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_wired_class)
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingWired:s390-options: (type GHashTable(utf8,utf8))
+	 * NMSettingWired:s390-options: (type GHashTable(utf8,utf8)):
 	 *
 	 * Dictionary of key/value pairs of s390-specific device options.  Both keys
 	 * and values must be strings.  Allowed keys include "portno", "layer2",

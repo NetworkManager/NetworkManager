@@ -148,11 +148,9 @@ nm_dhcp6_config_class_init (NMDHCP6ConfigClass *config_class)
 	/* properties */
 
 	/**
-	 * NMDHCP6Config:options:
+	 * NMDHCP6Config:options: (type GHashTable(utf8,GObject.Value)):
 	 *
 	 * The #GHashTable containing options of the configuration.
-	 *
-	 * Type: GLib.HashTable(utf8,GObject.Value)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_OPTIONS,
