@@ -173,10 +173,10 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	 */
 	{
 		const NMNDiscGateway gateway = {
-		    .address = gateway_addr,
-		    .timestamp = now,
-		    .lifetime = ndp_msgra_router_lifetime (msgra),
-		    .preference = _route_preference_coerce (ndp_msgra_route_preference (msgra)),
+			.address = gateway_addr,
+			.timestamp = now,
+			.lifetime = ndp_msgra_router_lifetime (msgra),
+			.preference = _route_preference_coerce (ndp_msgra_route_preference (msgra)),
 		};
 
 		if (nm_ndisc_add_gateway (ndisc, &gateway))
@@ -200,11 +200,11 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 			continue;
 
 		if (ndp_msg_opt_prefix_flag_on_link (msg, offset)) {
-			NMNDiscRoute route = {
-			    .network = r_network,
-			    .plen = r_plen,
-			    .timestamp = now,
-			    .lifetime = ndp_msg_opt_prefix_valid_time (msg, offset),
+			const NMNDiscRoute route = {
+				.network = r_network,
+				.plen = r_plen,
+				.timestamp = now,
+				.lifetime = ndp_msg_opt_prefix_valid_time (msg, offset),
 			};
 
 			if (nm_ndisc_add_route (ndisc, &route))
@@ -215,10 +215,10 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 		if (   r_plen == 64
 		    && ndp_msg_opt_prefix_flag_auto_addr_conf (msg, offset)) {
 			NMNDiscAddress address = {
-			    .address = r_network,
-			    .timestamp = now,
-			    .lifetime = ndp_msg_opt_prefix_valid_time (msg, offset),
-			    .preferred = ndp_msg_opt_prefix_preferred_time (msg, offset),
+				.address = r_network,
+				.timestamp = now,
+				.lifetime = ndp_msg_opt_prefix_valid_time (msg, offset),
+				.preferred = ndp_msg_opt_prefix_preferred_time (msg, offset),
 			};
 
 			if (address.preferred > address.lifetime)
@@ -229,11 +229,11 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	}
 	ndp_msg_opt_for_each_offset(offset, msg, NDP_MSG_OPT_ROUTE) {
 		NMNDiscRoute route = {
-		    .gateway = gateway_addr,
-		    .plen = ndp_msg_opt_route_prefix_len (msg, offset),
-		    .timestamp = now,
-		    .lifetime = ndp_msg_opt_route_lifetime (msg, offset),
-		    .preference = _route_preference_coerce (ndp_msg_opt_route_preference (msg, offset)),
+			.gateway = gateway_addr,
+			.plen = ndp_msg_opt_route_prefix_len (msg, offset),
+			.timestamp = now,
+			.lifetime = ndp_msg_opt_route_lifetime (msg, offset),
+			.preference = _route_preference_coerce (ndp_msg_opt_route_preference (msg, offset)),
 		};
 
 		if (route.plen == 0 || route.plen > 128)
@@ -252,9 +252,9 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 
 		ndp_msg_opt_rdnss_for_each_addr (addr, addr_index, msg, offset) {
 			NMNDiscDNSServer dns_server = {
-			    .address = *addr,
-			    .timestamp = now,
-			    .lifetime = ndp_msg_opt_rdnss_lifetime (msg, offset),
+				.address = *addr,
+				.timestamp = now,
+				.lifetime = ndp_msg_opt_rdnss_lifetime (msg, offset),
 			};
 
 			/* Pad the lifetime somewhat to give a bit of slack in cases
@@ -274,9 +274,9 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 
 		ndp_msg_opt_dnssl_for_each_domain (domain, domain_index, msg, offset) {
 			NMNDiscDNSDomain dns_domain = {
-			    .domain = domain,
-			    .timestamp = now,
-			    .lifetime = ndp_msg_opt_rdnss_lifetime (msg, offset),
+				.domain = domain,
+				.timestamp = now,
+				.lifetime = ndp_msg_opt_rdnss_lifetime (msg, offset),
 			};
 
 			/* Pad the lifetime somewhat to give a bit of slack in cases
