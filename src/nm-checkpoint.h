@@ -35,7 +35,14 @@
 #define NM_CHECKPOINT_CREATED "created"
 #define NM_CHECKPOINT_ROLLBACK_TIMEOUT "rollback-timeout"
 
-typedef struct _NMCheckpoint NMCheckpoint;
+typedef struct _NMCheckpointPrivate NMCheckpointPrivate;
+
+typedef struct {
+	NMDBusObject parent;
+	NMCheckpointPrivate *_priv;
+	CList checkpoints_lst;
+} NMCheckpoint;
+
 typedef struct _NMCheckpointClass NMCheckpointClass;
 
 GType nm_checkpoint_get_type (void);
