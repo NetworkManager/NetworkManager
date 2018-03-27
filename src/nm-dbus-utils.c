@@ -35,7 +35,8 @@ const GDBusSignalInfo nm_signal_info_property_changed_legacy = NM_DEFINE_GDBUS_S
 
 GDBusPropertyInfo *
 nm_dbus_utils_interface_info_lookup_property (const GDBusInterfaceInfo *interface_info,
-                                              const char *property_name)
+                                              const char *property_name,
+                                              guint *property_idx)
 {
 	guint i;
 
@@ -48,8 +49,10 @@ nm_dbus_utils_interface_info_lookup_property (const GDBusInterfaceInfo *interfac
 		for (i = 0; interface_info->properties[i]; i++) {
 			GDBusPropertyInfo *info = interface_info->properties[i];
 
-			if (nm_streq (info->name, property_name))
+			if (nm_streq (info->name, property_name)) {
+				NM_SET_OUT (property_idx, i);
 				return info;
+			}
 		}
 	}
 

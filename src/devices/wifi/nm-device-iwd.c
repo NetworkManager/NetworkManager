@@ -40,6 +40,7 @@
 #include "nm-core-internal.h"
 #include "nm-config.h"
 #include "nm-iwd-manager.h"
+#include "nm-dbus-manager.h"
 
 #include "devices/nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceIwd);
@@ -66,8 +67,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 typedef struct {
 	GDBusObject *   dbus_obj;
 	GDBusProxy *    dbus_proxy;
-	GHashTable *    aps;
-	GHashTable *    new_aps;
+	CList           aps_lst_head;
 	NMWifiAP *      current_ap;
 	GCancellable *  cancellable;
 	NMDeviceWifiCapabilities capabilities;
@@ -104,6 +104,8 @@ G_DEFINE_TYPE (NMDeviceIwd, nm_device_iwd, NM_TYPE_DEVICE)
 static void schedule_periodic_scan (NMDeviceIwd *self,
                                     NMDeviceState current_state);
 
+/*****************************************************************************/
+
 static void
 _ap_dump (NMDeviceIwd *self,
           NMLogLevel log_level,
@@ -119,20 +121,6 @@ _ap_dump (NMDeviceIwd *self,
 	        nm_wifi_ap_to_string (ap, buf, sizeof (buf), now_s));
 }
 
-static void
-_emit_access_point_added_removed (NMDeviceIwd *self,
-                                  NMWifiAP *ap,
-                                  gboolean is_added /* or else is removed */)
-{
-	nm_dbus_object_emit_signal (NM_DBUS_OBJECT (self),
-	                            &nm_interface_info_device_wireless,
-	                            is_added
-	                              ? &nm_signal_info_wireless_access_point_added
-	                              : &nm_signal_info_wireless_access_point_removed,
-	                            "(o)",
-	                            nm_dbus_object_get_path (NM_DBUS_OBJECT (ap)));
-}
-
 /* Callers ensure we're not removing current_ap */
 static void
 ap_add_remove (NMDeviceIwd *self,
@@ -143,22 +131,24 @@ ap_add_remove (NMDeviceIwd *self,
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 
 	if (is_adding) {
-		g_hash_table_insert (priv->aps,
-		                     (gpointer) nm_dbus_object_export (NM_DBUS_OBJECT (ap)),
-		                     g_object_ref (ap));
+		g_object_ref (ap);
+		ap->wifi_device = NM_DEVICE (self);
+		c_list_link_tail (&priv->aps_lst_head, &ap->aps_lst);
+		nm_dbus_object_export (NM_DBUS_OBJECT (ap));
 		_ap_dump (self, LOGL_DEBUG, ap, "added", 0);
-	} else
+		nm_device_wifi_emit_signal_access_point (NM_DEVICE (self), ap, TRUE);
+	} else {
+		ap->wifi_device = NULL;
+		c_list_unlink (&ap->aps_lst);
 		_ap_dump (self, LOGL_DEBUG, ap, "removed", 0);
-
-	_emit_access_point_added_removed (self, ap, is_adding);
-
-	if (!is_adding) {
-		g_hash_table_remove (priv->aps, nm_dbus_object_get_path (NM_DBUS_OBJECT (ap)));
-		nm_dbus_object_unexport (NM_DBUS_OBJECT (ap));
-		g_object_unref (ap);
 	}
 
 	_notify (self, PROP_ACCESS_POINTS);
+
+	if (!is_adding) {
+		nm_device_wifi_emit_signal_access_point (NM_DEVICE (self), ap, FALSE);
+		nm_dbus_object_clear_and_unexport (&ap);
+	}
 
 	nm_device_emit_recheck_auto_activate (NM_DEVICE (self));
 	if (recheck_available_connections)
@@ -194,59 +184,20 @@ set_current_ap (NMDeviceIwd *self, NMWifiAP *new_ap, gboolean recheck_available_
 	_notify (self, PROP_MODE);
 }
 
-static gboolean
-update_ap_func (gpointer key, gpointer value, gpointer user_data)
-{
-	NMWifiAP *ap = value;
-	NMDeviceIwd *self = user_data;
-	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
-	NMWifiAP *new_ap = NULL;
-
-	if (priv->new_aps)
-		new_ap = g_hash_table_lookup (priv->new_aps,
-		                              nm_wifi_ap_get_supplicant_path (ap));
-
-	if (new_ap) {
-		g_hash_table_steal (priv->new_aps,
-		                    nm_wifi_ap_get_supplicant_path (ap));
-
-		if (nm_wifi_ap_set_strength (ap, nm_wifi_ap_get_strength (new_ap)))
-			_ap_dump (self, LOGL_TRACE, ap, "updated", 0);
-
-		g_object_unref (new_ap);
-		return FALSE;
-	}
-
-	if (ap == priv->current_ap)
-		/* Normally IWD will prevent the current AP from being
-		 * removed from the list and set a low signal strength,
-		 * but just making sure.
-		 */
-		return FALSE;
-
-	_ap_dump (self, LOGL_DEBUG, ap, "removed", 0);
-
-	_emit_access_point_added_removed (self, ap, FALSE);
-
-	nm_dbus_object_unexport (NM_DBUS_OBJECT (ap));
-	g_object_unref (ap);
-
-	return TRUE;
-}
-
 static void
 remove_all_aps (NMDeviceIwd *self)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	NMWifiAP *ap, *ap_safe;
 
-	if (!g_hash_table_size (priv->aps))
+	if (c_list_is_empty (&priv->aps_lst_head))
 		return;
 
 	set_current_ap (self, NULL, FALSE);
 
-	g_hash_table_foreach_remove (priv->aps, update_ap_func, self);
+	c_list_for_each_entry_safe (ap, ap_safe, &priv->aps_lst_head, aps_lst)
+		ap_add_remove (self, FALSE, ap, FALSE);
 
-	_notify (self, PROP_ACCESS_POINTS);
 	nm_device_emit_recheck_auto_activate (NM_DEVICE (self));
 	nm_device_recheck_available_connections (NM_DEVICE (self));
 }
@@ -285,9 +236,10 @@ get_ordered_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	GVariantIter *networks;
 	const gchar *path, *name, *type;
 	int16_t signal;
-	NMWifiAP *ap;
+	NMWifiAP *ap, *ap_safe;
 	gboolean changed = FALSE;
 	GHashTableIter ap_iter;
+	gs_unref_hashtable GHashTable *new_aps = NULL;
 
 	variant = _nm_dbus_proxy_call_finish (G_DBUS_PROXY (source), res,
 	                                      G_VARIANT_TYPE ("(a(osns))"),
@@ -298,7 +250,7 @@ get_ordered_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 		return;
 	}
 
-	priv->new_aps = g_hash_table_new (nm_str_hash, g_str_equal);
+	new_aps = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, g_object_unref);
 
 	g_variant_get (variant, "(a(osns))", &networks);
 
@@ -348,27 +300,47 @@ get_ordered_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 		nm_wifi_ap_set_strength (ap, nm_wifi_utils_level_to_quality (signal / 100));
 		nm_wifi_ap_set_freq (ap, 2417);
 		nm_wifi_ap_set_max_bitrate (ap, 65000);
-		g_hash_table_insert (priv->new_aps,
+		g_hash_table_insert (new_aps,
 		                     (gpointer) nm_wifi_ap_get_supplicant_path (ap),
 		                     ap);
 	}
 
 	g_variant_iter_free (networks);
 
-	if (g_hash_table_foreach_remove (priv->aps, update_ap_func, self))
-		changed = TRUE;
+	c_list_for_each_entry_safe (ap, ap_safe, &priv->aps_lst_head, aps_lst) {
 
-	g_hash_table_iter_init (&ap_iter, priv->new_aps);
-	while (g_hash_table_iter_next (&ap_iter, NULL, (gpointer) &ap)) {
-		ap_add_remove (self, TRUE, ap, FALSE);
+		ap = g_hash_table_lookup (new_aps,
+		                          nm_wifi_ap_get_supplicant_path (ap));
+		if (ap) {
+			if (nm_wifi_ap_set_strength (ap, nm_wifi_ap_get_strength (ap))) {
+				_ap_dump (self, LOGL_TRACE, ap, "updated", 0);
+				changed = TRUE;
+			}
+			g_hash_table_remove (new_aps,
+			                     nm_wifi_ap_get_supplicant_path (ap));
+			continue;
+		}
+
+		if (ap == priv->current_ap) {
+			/* Normally IWD will prevent the current AP from being
+			 * removed from the list and set a low signal strength,
+			 * but just making sure.
+			 */
+			continue;
+		}
+
+		ap_add_remove (self, FALSE, ap, FALSE);
 		changed = TRUE;
 	}
 
-	g_hash_table_destroy (priv->new_aps);
-	priv->new_aps = NULL;
+	g_hash_table_iter_init (&ap_iter, new_aps);
+	while (g_hash_table_iter_next (&ap_iter, NULL, (gpointer) &ap)) {
+		ap_add_remove (self, TRUE, ap, FALSE);
+		g_hash_table_iter_remove (&ap_iter);
+		changed = TRUE;
+	}
 
 	if (changed) {
-		_notify (self, PROP_ACCESS_POINTS);
 		nm_device_emit_recheck_auto_activate (NM_DEVICE (self));
 		nm_device_recheck_available_connections (NM_DEVICE (self));
 	}
@@ -585,13 +557,6 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	return TRUE;
 }
 
-static NMWifiAP *
-get_ap_by_path (NMDeviceIwd *self, const char *path)
-{
-	g_return_val_if_fail (path != NULL, NULL);
-	return g_hash_table_lookup (NM_DEVICE_IWD_GET_PRIVATE (self)->aps, path);
-}
-
 static gboolean
 check_connection_available (NMDevice *device,
                             NMConnection *connection,
@@ -629,7 +594,7 @@ check_connection_available (NMDevice *device,
 	if (specific_object) {
 		NMWifiAP *ap;
 
-		ap = get_ap_by_path (self, specific_object);
+		ap = nm_wifi_ap_lookup_for_device (NM_DEVICE (self), specific_object);
 		return ap ? nm_wifi_ap_check_compatible (ap, connection) : FALSE;
 	}
 
@@ -637,7 +602,7 @@ check_connection_available (NMDevice *device,
 		return TRUE;
 
 	/* Check at least one AP is compatible with this connection */
-	return !!nm_wifi_aps_find_first_compatible (priv->aps, connection, TRUE);
+	return !!nm_wifi_aps_find_first_compatible (&priv->aps_lst_head, connection);
 }
 
 static gboolean
@@ -691,7 +656,7 @@ complete_connection (NMDevice *device,
 		}
 
 		/* Find a compatible AP in the scan list */
-		ap = nm_wifi_aps_find_first_compatible (priv->aps, connection, FALSE);
+		ap = nm_wifi_aps_find_first_compatible (&priv->aps_lst_head, connection);
 		if (!ap) {
 			g_set_error_literal (error,
 			                     NM_DEVICE_ERROR,
@@ -700,7 +665,7 @@ complete_connection (NMDevice *device,
 			return FALSE;
 		}
 	} else {
-		ap = get_ap_by_path (self, specific_object);
+		ap = nm_wifi_ap_lookup_for_device (NM_DEVICE (self), specific_object);
 		if (!ap) {
 			g_set_error (error,
 			             NM_DEVICE_ERROR,
@@ -859,7 +824,7 @@ can_auto_connect (NMDevice *device,
 			return FALSE;
 	}
 
-	ap = nm_wifi_aps_find_first_compatible (priv->aps, connection, FALSE);
+	ap = nm_wifi_aps_find_first_compatible (&priv->aps_lst_head, connection);
 	if (ap) {
 		/* All good; connection is usable */
 		NM_SET_OUT (specific_object, g_strdup (nm_dbus_object_get_path (NM_DBUS_OBJECT (ap))));
@@ -869,10 +834,10 @@ can_auto_connect (NMDevice *device,
 	return FALSE;
 }
 
-GHashTable *
+const CList *
 _nm_device_iwd_get_aps (NMDeviceIwd *self)
 {
-	return NM_DEVICE_IWD_GET_PRIVATE (self)->aps;
+	return &NM_DEVICE_IWD_GET_PRIVATE (self)->aps_lst_head;
 }
 
 static gboolean
@@ -1247,9 +1212,9 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	g_return_val_if_fail (s_wireless, NM_ACT_STAGE_RETURN_FAILURE);
 
 	ap_path = nm_active_connection_get_specific_object (NM_ACTIVE_CONNECTION (req));
-	ap = ap_path ? get_ap_by_path (self, ap_path) : NULL;
+	ap = ap_path ? nm_wifi_ap_lookup_for_device (NM_DEVICE (self), ap_path) : NULL;
 	if (!ap) {
-		ap = nm_wifi_aps_find_first_compatible (priv->aps, connection, FALSE);
+		ap = nm_wifi_aps_find_first_compatible (&priv->aps_lst_head, connection);
 
 		/* TODO: assuming hidden networks aren't supported do we need
 		 * to consider the case of APs that are not in the scan list
@@ -1540,8 +1505,7 @@ get_property (GObject *object, guint prop_id,
 {
 	NMDeviceIwd *self = NM_DEVICE_IWD (object);
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
-	gsize i;
-	char **list;
+	const char **list;
 
 	switch (prop_id) {
 	case PROP_MODE:
@@ -1557,10 +1521,8 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->capabilities);
 		break;
 	case PROP_ACCESS_POINTS:
-		list = (char **) nm_wifi_aps_get_sorted_paths (priv->aps, TRUE);
-		for (i = 0; list[i]; i++)
-			list[i] = g_strdup (list[i]);
-		g_value_take_boxed (value, list);
+		list = nm_wifi_aps_get_paths (&priv->aps_lst_head, TRUE);
+		g_value_take_boxed (value, nm_utils_strv_make_deep_copied (list));
 		break;
 	case PROP_ACTIVE_ACCESS_POINT:
 		nm_dbus_utils_g_value_set_object_path (value, priv->current_ap);
@@ -1830,7 +1792,7 @@ nm_device_iwd_init (NMDeviceIwd *self)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 
-	priv->aps = g_hash_table_new (nm_str_hash, g_str_equal);
+	c_list_init (&priv->aps_lst_head);
 
 	/* Make sure the manager is running */
 	(void) nm_iwd_manager_get ();
@@ -1867,19 +1829,8 @@ dispose (GObject *object)
 	remove_all_aps (self);
 
 	G_OBJECT_CLASS (nm_device_iwd_parent_class)->dispose (object);
-}
 
-static void
-finalize (GObject *object)
-{
-	NMDeviceIwd *self = NM_DEVICE_IWD (object);
-	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
-
-	nm_assert (g_hash_table_size (priv->aps) == 0);
-
-	g_hash_table_unref (priv->aps);
-
-	G_OBJECT_CLASS (nm_device_iwd_parent_class)->finalize (object);
+	nm_assert (c_list_is_empty (&priv->aps_lst_head));
 }
 
 static void
@@ -1894,7 +1845,6 @@ nm_device_iwd_class_init (NMDeviceIwdClass *klass)
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
-	object_class->finalize = finalize;
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&nm_interface_info_device_wireless);
 

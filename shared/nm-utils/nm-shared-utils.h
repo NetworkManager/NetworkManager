@@ -460,9 +460,21 @@ typedef struct {
 
 NMUtilsNamedValue *nm_utils_named_values_from_str_dict (GHashTable *hash, guint *out_len);
 
-const char **nm_utils_strdict_get_keys (const GHashTable *hash,
-                                        gboolean sorted,
-                                        guint *out_length);
+gpointer *nm_utils_hash_keys_to_array (GHashTable *hash,
+                                       GCompareDataFunc compare_func,
+                                       gpointer user_data,
+                                       guint *out_len);
+
+static inline const char **
+nm_utils_strdict_get_keys (const GHashTable *hash,
+                           gboolean sorted,
+                           guint *out_length)
+{
+	return (const char **) nm_utils_hash_keys_to_array ((GHashTable *) hash,
+	                                                    sorted ? nm_strcmp_p_with_data : NULL,
+	                                                    NULL,
+	                                                    out_length);
+}
 
 char **nm_utils_strv_make_deep_copied (const char **strv);
 

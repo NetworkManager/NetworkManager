@@ -348,21 +348,20 @@ next_dev:
 	}
 
 	if (NM_FLAGS_HAS (priv->flags, NM_CHECKPOINT_CREATE_FLAG_DISCONNECT_NEW_DEVICES)) {
-		const GSList *list;
+		const CList *all_devices;
 		NMDeviceState state;
-		NMDevice *dev;
 
-		for (list = nm_manager_get_devices (priv->manager); list ; list = g_slist_next (list)) {
-			dev = list->data;
-			if (!g_hash_table_contains (priv->devices, dev)) {
-				state = nm_device_get_state (dev);
-				if (   state > NM_DEVICE_STATE_DISCONNECTED
-				    && state < NM_DEVICE_STATE_DEACTIVATING) {
-					_LOGD ("rollback: disconnecting new device %s", nm_device_get_iface (dev));
-					nm_device_state_changed (dev,
-					                         NM_DEVICE_STATE_DEACTIVATING,
-					                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
-				}
+		all_devices = nm_manager_get_devices (priv->manager);
+		c_list_for_each_entry (device, all_devices, devices_lst) {
+			if (g_hash_table_contains (priv->devices, device))
+				continue;
+			state = nm_device_get_state (device);
+			if (   state > NM_DEVICE_STATE_DISCONNECTED
+			    && state < NM_DEVICE_STATE_DEACTIVATING) {
+				_LOGD ("rollback: disconnecting new device %s", nm_device_get_iface (device));
+				nm_device_state_changed (device,
+				                         NM_DEVICE_STATE_DEACTIVATING,
+				                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
 			}
 		}
 

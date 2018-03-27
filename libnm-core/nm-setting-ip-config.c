@@ -1129,7 +1129,7 @@ _nm_ip_route_get_attributes_direct (NMIPRoute *route)
  *
  * Returns: (array length=out_length) (transfer container): a %NULL-terminated array
  *   of attribute names or %NULL if there are no attributes. The order of the returned
- *   names is undefined.
+ *   names depends on @sorted.
  **/
 const char **
 _nm_ip_route_get_attribute_names (const NMIPRoute *route, gboolean sorted, guint *out_length)

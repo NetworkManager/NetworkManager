@@ -54,7 +54,7 @@ struct _NMGlobalDnsConfig {
 	char **searches;
 	char **options;
 	GHashTable *domains;
-	char **domain_list;
+	const char **domain_list;
 	gboolean internal;
 };
 
@@ -705,54 +705,53 @@ nm_config_data_log (const NMConfigData *self,
 
 /*****************************************************************************/
 
-const char *const *
-nm_global_dns_config_get_searches (const NMGlobalDnsConfig *dns)
+const char *const*
+nm_global_dns_config_get_searches (const NMGlobalDnsConfig *dns_config)
 {
-	g_return_val_if_fail (dns, NULL);
+	g_return_val_if_fail (dns_config, NULL);
 
-	return (const char *const *) dns->searches;
+	return (const char *const*) dns_config->searches;
 }
 
 const char *const *
-nm_global_dns_config_get_options (const NMGlobalDnsConfig *dns)
+nm_global_dns_config_get_options (const NMGlobalDnsConfig *dns_config)
 {
-	g_return_val_if_fail (dns, NULL);
+	g_return_val_if_fail (dns_config, NULL);
 
-	return (const char *const *) dns->options;
+	return (const char *const*) dns_config->options;
 }
 
 guint
-nm_global_dns_config_get_num_domains (const NMGlobalDnsConfig *dns)
+nm_global_dns_config_get_num_domains (const NMGlobalDnsConfig *dns_config)
 {
-	g_return_val_if_fail (dns, 0);
-	g_return_val_if_fail (dns->domains, 0);
+	g_return_val_if_fail (dns_config, 0);
 
-	return g_hash_table_size (dns->domains);
+	return dns_config->domains ? g_hash_table_size (dns_config->domains) : 0;
 }
 
 NMGlobalDnsDomain *
-nm_global_dns_config_get_domain (const NMGlobalDnsConfig *dns, guint i)
+nm_global_dns_config_get_domain (const NMGlobalDnsConfig *dns_config, guint i)
 {
 	NMGlobalDnsDomain *domain;
 
-	g_return_val_if_fail (dns, NULL);
-	g_return_val_if_fail (dns->domains, NULL);
-	g_return_val_if_fail (dns->domain_list, NULL);
-	g_return_val_if_fail (i < g_strv_length (dns->domain_list), NULL);
+	g_return_val_if_fail (dns_config, NULL);
+	g_return_val_if_fail (dns_config->domains, NULL);
+	g_return_val_if_fail (i < g_hash_table_size (dns_config->domains), NULL);
 
-	domain = g_hash_table_lookup (dns->domains, dns->domain_list[i]);
-	g_return_val_if_fail (domain, NULL);
+	nm_assert (NM_PTRARRAY_LEN (dns_config->domain_list) == g_hash_table_size (dns_config->domains));
 
+	domain = g_hash_table_lookup (dns_config->domains, dns_config->domain_list[i]);
+
+	nm_assert (domain);
 	return domain;
 }
 
-NMGlobalDnsDomain *nm_global_dns_config_lookup_domain (const NMGlobalDnsConfig *dns, const char *name)
+NMGlobalDnsDomain *nm_global_dns_config_lookup_domain (const NMGlobalDnsConfig *dns_config, const char *name)
 {
-	g_return_val_if_fail (dns, NULL);
-	g_return_val_if_fail (dns->domains, NULL);
+	g_return_val_if_fail (dns_config, NULL);
 	g_return_val_if_fail (name, NULL);
 
-	return g_hash_table_lookup (dns->domains, name);
+	return dns_config->domains ? g_hash_table_lookup (dns_config->domains, name) : NULL;
 }
 
 const char *
@@ -775,55 +774,73 @@ const char *const *
 nm_global_dns_domain_get_options (const NMGlobalDnsDomain *domain)
 {
 	g_return_val_if_fail (domain, NULL);
+
 	return (const char *const *) domain->options;
 }
 
 gboolean
-nm_global_dns_config_is_internal (const NMGlobalDnsConfig *dns)
+nm_global_dns_config_is_internal (const NMGlobalDnsConfig *dns_config)
 {
-	return dns->internal;
+	return dns_config->internal;
 }
 
 gboolean
-nm_global_dns_config_is_empty (const NMGlobalDnsConfig *dns)
+nm_global_dns_config_is_empty (const NMGlobalDnsConfig *dns_config)
 {
-	g_return_val_if_fail (dns, TRUE);
-	g_return_val_if_fail (dns->domains, TRUE);
+	g_return_val_if_fail (dns_config, TRUE);
 
-	return    (!dns->searches || g_strv_length (dns->searches) == 0)
-	       && (!dns->options || g_strv_length (dns->options) == 0)
-	       && g_hash_table_size (dns->domains) == 0;
+	return    !dns_config->searches
+	       && !dns_config->options
+	       && !dns_config->domain_list;
 }
 
 void
-nm_global_dns_config_update_checksum (const NMGlobalDnsConfig *dns, GChecksum *sum)
+nm_global_dns_config_update_checksum (const NMGlobalDnsConfig *dns_config, GChecksum *sum)
 {
 	NMGlobalDnsDomain *domain;
-	GList *keys, *key;
 	guint i;
+	guint8 v8;
 
-	g_return_if_fail (dns);
-	g_return_if_fail (dns->domains);
+	g_return_if_fail (dns_config);
 	g_return_if_fail (sum);
 
-	for (i = 0; dns->searches && dns->searches[i]; i++)
-		g_checksum_update (sum, (guchar *) dns->searches[i], strlen (dns->searches[i]));
-	for (i = 0; dns->options && dns->options[i]; i++)
-		g_checksum_update (sum, (guchar *) dns->options[i], strlen (dns->options[i]));
+	v8 = NM_HASH_COMBINE_BOOLS (guint8,
+	                            !dns_config->searches,
+	                            !dns_config->options,
+	                            !dns_config->domain_list);
+	g_checksum_update (sum, (guchar *) &v8, 1);
 
-	keys = g_list_sort (g_hash_table_get_keys (dns->domains), (GCompareFunc) strcmp);
-	for (key = keys; key; key = g_list_next (key)) {
-
-		domain = g_hash_table_lookup (dns->domains, key->data);
-		g_assert (domain != NULL);
-		g_checksum_update (sum, (guchar *) domain->name, strlen (domain->name));
-
-		for (i = 0; domain->servers && domain->servers[i]; i++)
-			g_checksum_update (sum, (guchar *) domain->servers[i], strlen (domain->servers[i]));
-		for (i = 0; domain->options && domain->options[i]; i++)
-			g_checksum_update (sum, (guchar *) domain->options[i], strlen (domain->options[i]));
+	if (dns_config->searches) {
+		for (i = 0; dns_config->searches[i]; i++)
+			g_checksum_update (sum, (guchar *) dns_config->searches[i], strlen (dns_config->searches[i]) + 1);
 	}
-	g_list_free (keys);
+	if (dns_config->options) {
+		for (i = 0; dns_config->options[i]; i++)
+			g_checksum_update (sum, (guchar *) dns_config->options[i], strlen (dns_config->options[i]) + 1);
+	}
+
+	if (dns_config->domain_list) {
+		for (i = 0; dns_config->domain_list[i]; i++) {
+			domain = g_hash_table_lookup (dns_config->domains, dns_config->domain_list[i]);
+			nm_assert (domain);
+
+			v8 = NM_HASH_COMBINE_BOOLS (guint8,
+			                            !domain->servers,
+			                            !domain->options);
+			g_checksum_update (sum, (guchar *) &v8, 1);
+
+			g_checksum_update (sum, (guchar *) domain->name, strlen (domain->name) + 1);
+
+			if (domain->servers) {
+				for (i = 0; domain->servers && domain->servers[i]; i++)
+					g_checksum_update (sum, (guchar *) domain->servers[i], strlen (domain->servers[i]) + 1);
+			}
+			if (domain->options) {
+				for (i = 0; domain->options[i]; i++)
+					g_checksum_update (sum, (guchar *) domain->options[i], strlen (domain->options[i]) + 1);
+			}
+		}
+	}
 }
 
 static void
@@ -838,14 +855,15 @@ global_dns_domain_free (NMGlobalDnsDomain  *domain)
 }
 
 void
-nm_global_dns_config_free (NMGlobalDnsConfig *conf)
+nm_global_dns_config_free (NMGlobalDnsConfig *dns_config)
 {
-	if (conf) {
-		g_strfreev (conf->searches);
-		g_strfreev (conf->options);
-		g_free (conf->domain_list);
-		g_hash_table_unref (conf->domains);
-		g_free (conf);
+	if (dns_config) {
+		g_strfreev (dns_config->searches);
+		g_strfreev (dns_config->options);
+		g_free (dns_config->domain_list);
+		if (dns_config->domains)
+			g_hash_table_unref (dns_config->domains);
+		g_free (dns_config);
 	}
 }
 
@@ -858,18 +876,22 @@ nm_config_data_get_global_dns_config (const NMConfigData *self)
 }
 
 static void
-global_dns_config_update_domain_list (NMGlobalDnsConfig *dns)
+global_dns_config_seal_domains (NMGlobalDnsConfig *dns_config)
 {
-	guint length;
+	nm_assert (dns_config);
+	nm_assert (dns_config->domains);
+	nm_assert (!dns_config->domain_list);
 
-	g_free (dns->domain_list);
-	dns->domain_list = (char **) g_hash_table_get_keys_as_array (dns->domains, &length);
+	if (g_hash_table_size (dns_config->domains) == 0)
+		nm_clear_pointer (&dns_config->domains, g_hash_table_unref);
+	else
+		dns_config->domain_list = nm_utils_strdict_get_keys (dns_config->domains, TRUE, NULL);
 }
 
 static NMGlobalDnsConfig *
 load_global_dns (GKeyFile *keyfile, gboolean internal)
 {
-	NMGlobalDnsConfig *conf;
+	NMGlobalDnsConfig *dns_config;
 	char *group, *domain_prefix;
 	gs_strfreev char **groups = NULL;
 	int g, i, j, domain_prefix_len;
@@ -887,13 +909,18 @@ load_global_dns (GKeyFile *keyfile, gboolean internal)
 	if (!nm_config_keyfile_has_global_dns_config (keyfile, internal))
 		return NULL;
 
-	conf = g_malloc0 (sizeof (NMGlobalDnsConfig));
-	conf->domains = g_hash_table_new_full (nm_str_hash, g_str_equal,
-	                                       g_free, (GDestroyNotify) global_dns_domain_free);
+	dns_config = g_malloc0 (sizeof (NMGlobalDnsConfig));
+	dns_config->domains = g_hash_table_new_full (nm_str_hash, g_str_equal,
+	                                             g_free, (GDestroyNotify) global_dns_domain_free);
 
 	strv = g_key_file_get_string_list (keyfile, group, "searches", NULL, NULL);
-	if (strv)
-		conf->searches = _nm_utils_strv_cleanup (strv, TRUE, TRUE, TRUE);
+	if (strv) {
+		_nm_utils_strv_cleanup (strv, TRUE, TRUE, TRUE);
+		if (!strv[0])
+			g_free (strv);
+		else
+			dns_config->searches = strv;
+	}
 
 	strv = g_key_file_get_string_list (keyfile, group, "options", NULL, NULL);
 	if (strv) {
@@ -904,8 +931,12 @@ load_global_dns (GKeyFile *keyfile, gboolean internal)
 			else
 				g_free (strv[i]);
 		}
-		strv[j] = NULL;
-		conf->options = strv;
+		if (j == 0)
+			g_free (strv);
+		else {
+			strv[j] = NULL;
+			dns_config->options = strv;
+		}
 	}
 
 	groups = g_key_file_get_groups (keyfile, NULL);
@@ -928,20 +959,23 @@ load_global_dns (GKeyFile *keyfile, gboolean internal)
 				else
 					g_free (strv[i]);
 			}
-			if (j) {
+			if (j == 0)
+				g_free (strv);
+			else {
 				strv[j] = NULL;
 				servers = strv;
 			}
-			else
-				g_free (strv);
 		}
 
 		if (!servers)
 			continue;
 
 		strv = g_key_file_get_string_list (keyfile, groups[g], "options", NULL, NULL);
-		if (strv)
+		if (strv) {
 			options = _nm_utils_strv_cleanup (strv, TRUE, TRUE, TRUE);
+			if (!options[0])
+				nm_clear_g_free (&options);
+		}
 
 		name = strdup (&groups[g][domain_prefix_len]);
 		domain = g_malloc0 (sizeof (NMGlobalDnsDomain));
@@ -949,7 +983,7 @@ load_global_dns (GKeyFile *keyfile, gboolean internal)
 		domain->servers = servers;
 		domain->options = options;
 
-		g_hash_table_insert (conf->domains, strdup (name), domain);
+		g_hash_table_insert (dns_config->domains, strdup (name), domain);
 
 		if (!strcmp (name, "*"))
 			default_found = TRUE;
@@ -958,59 +992,61 @@ load_global_dns (GKeyFile *keyfile, gboolean internal)
 	if (!default_found) {
 		nm_log_dbg (LOGD_CORE, "%s global DNS configuration is missing default domain, ignore it",
 		            internal ? "internal" : "user");
-		nm_global_dns_config_free (conf);
+		nm_global_dns_config_free (dns_config);
 		return NULL;
 	}
 
-	conf->internal = internal;
-	global_dns_config_update_domain_list (conf);
-	return conf;
+	dns_config->internal = internal;
+	global_dns_config_seal_domains (dns_config);
+	return dns_config;
 }
 
 
 void
-nm_global_dns_config_to_dbus (const NMGlobalDnsConfig *dns, GValue *value)
+nm_global_dns_config_to_dbus (const NMGlobalDnsConfig *dns_config, GValue *value)
 {
 	GVariantBuilder conf_builder, domains_builder, domain_builder;
-	NMGlobalDnsDomain *domain;
-	GHashTableIter iter;
+	guint i;
 
 	g_variant_builder_init (&conf_builder, G_VARIANT_TYPE ("a{sv}"));
-	if (!dns)
+	if (!dns_config)
 		goto out;
 
-	if (dns->searches) {
+	if (dns_config->searches) {
 		g_variant_builder_add (&conf_builder, "{sv}", "searches",
-		                       g_variant_new_strv ((const char *const *) dns->searches, -1));
+		                       g_variant_new_strv ((const char *const *) dns_config->searches, -1));
 	}
 
-	if (dns->options) {
+	if (dns_config->options) {
 		g_variant_builder_add (&conf_builder, "{sv}", "options",
-		                       g_variant_new_strv ((const char *const *) dns->options, -1));
+		                       g_variant_new_strv ((const char *const *) dns_config->options, -1));
 	}
 
 	g_variant_builder_init (&domains_builder, G_VARIANT_TYPE ("a{sv}"));
+	if (dns_config->domain_list) {
+		for (i = 0; dns_config->domain_list[i]; i++) {
+			NMGlobalDnsDomain *domain;
 
-	g_hash_table_iter_init (&iter, dns->domains);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &domain)) {
+			domain = g_hash_table_lookup (dns_config->domains, dns_config->domain_list[i]);
 
-		g_variant_builder_init (&domain_builder, G_VARIANT_TYPE ("a{sv}"));
+			g_variant_builder_init (&domain_builder, G_VARIANT_TYPE ("a{sv}"));
 
-		if (domain->servers) {
-			g_variant_builder_add (&domain_builder, "{sv}", "servers",
-			                       g_variant_new_strv ((const char *const *) domain->servers, -1));
+			if (domain->servers) {
+				g_variant_builder_add (&domain_builder, "{sv}", "servers",
+				                       g_variant_new_strv ((const char *const *) domain->servers, -1));
+			}
+			if (domain->options) {
+				g_variant_builder_add (&domain_builder, "{sv}", "options",
+				                       g_variant_new_strv ((const char *const *) domain->options, -1));
+			}
+
+			g_variant_builder_add (&domains_builder, "{sv}", domain->name,
+			                       g_variant_builder_end (&domain_builder));
 		}
-		if (domain->options) {
-			g_variant_builder_add (&domain_builder, "{sv}", "options",
-			                       g_variant_new_strv ((const char *const *) domain->options, -1));
-		}
-
-		g_variant_builder_add (&domains_builder, "{sv}", domain->name,
-		                       g_variant_builder_end (&domain_builder));
 	}
-
 	g_variant_builder_add (&conf_builder, "{sv}", "domains",
 	                       g_variant_builder_end (&domains_builder));
+
 out:
 	g_value_take_variant (value, g_variant_builder_end (&conf_builder));
 }
@@ -1044,15 +1080,20 @@ global_dns_domain_from_dbus (char *name, GVariant *variant)
 				else
 					g_free (strv[i]);
 			}
-			if (j) {
-				strv[j] = NULL;
-				domain->servers = strv;
-			} else
+			if (j == 0)
 				g_free (strv);
+			else {
+				strv[j] = NULL;
+				g_strfreev (domain->servers);
+				domain->servers = strv;
+			}
 		} else if (   !g_strcmp0 (key, "options")
 		           && g_variant_is_of_type (val, G_VARIANT_TYPE ("as"))) {
 			strv = g_variant_dup_strv (val, NULL);
+			g_strfreev (domain->options);
 			domain->options = _nm_utils_strv_cleanup (strv, TRUE, TRUE, TRUE);
+			if (!domain->options[0])
+				nm_clear_g_free (&domain->options);
 		}
 
 		g_variant_unref (val);
@@ -1111,11 +1152,12 @@ nm_global_dns_config_from_dbus (const GValue *value, GError **error)
 				else
 					g_free (strv[i]);
 			}
-
-			if (strv)
+			if (j == 0)
+				g_free (strv);
+			else {
 				strv[j] = NULL;
-
-			dns_config->options = strv;
+				dns_config->options = strv;
+			}
 		} else if (   !g_strcmp0 (key, "domains")
 		           && g_variant_is_of_type (val, G_VARIANT_TYPE ("a{sv}"))) {
 			NMGlobalDnsDomain *domain;
@@ -1145,7 +1187,7 @@ nm_global_dns_config_from_dbus (const GValue *value, GError **error)
 		return NULL;
 	}
 
-	global_dns_config_update_domain_list (dns_config);
+	global_dns_config_seal_domains (dns_config);
 	return dns_config;
 }
 

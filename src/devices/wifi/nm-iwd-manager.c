@@ -460,17 +460,16 @@ name_owner_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 		g_clear_object (&priv->object_manager);
 		prepare_object_manager (self);
 	} else {
-		const GSList *devices, *iter;
+		const CList *all_devices;
+		NMDevice *device;
 
 		if (!priv->running)
 			return;
 
 		priv->running = false;
 
-		devices = nm_manager_get_devices (priv->nm_manager);
-		for (iter = devices; iter; iter = iter->next) {
-			NMDevice *device = NM_DEVICE (iter->data);
-
+		all_devices = nm_manager_get_devices (priv->nm_manager);
+		c_list_for_each_entry (device, all_devices, devices_lst) {
 			if (!NM_IS_DEVICE_IWD (device))
 				continue;
 

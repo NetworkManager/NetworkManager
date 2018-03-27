@@ -970,30 +970,36 @@ merge_global_dns_config (NMResolvConfData *rc, NMGlobalDnsConfig *global_conf)
 	const char *const *searches;
 	const char *const *options;
 	const char *const *servers;
-	gint i;
+	guint i;
 
 	if (!global_conf)
 		return FALSE;
 
 	searches = nm_global_dns_config_get_searches (global_conf);
-	options = nm_global_dns_config_get_options (global_conf);
-
-	for (i = 0; searches && searches[i]; i++) {
-		if (domain_is_routing (searches[i]))
-			continue;
-		if (!domain_is_valid (searches[i], FALSE))
-			continue;
-		add_string_item (rc->searches, searches[i], TRUE);
+	if (searches) {
+		for (i = 0; searches[i]; i++) {
+			if (domain_is_routing (searches[i]))
+				continue;
+			if (!domain_is_valid (searches[i], FALSE))
+				continue;
+			add_string_item (rc->searches, searches[i], TRUE);
+		}
 	}
 
-	for (i = 0; options && options[i]; i++)
-		add_string_item (rc->options, options[i], TRUE);
+	options = nm_global_dns_config_get_options (global_conf);
+	if (options) {
+		for (i = 0; options[i]; i++)
+			add_string_item (rc->options, options[i], TRUE);
+	}
 
 	default_domain = nm_global_dns_config_lookup_domain (global_conf, "*");
-	g_assert (default_domain);
+	nm_assert (default_domain);
+
 	servers = nm_global_dns_domain_get_servers (default_domain);
-	for (i = 0; servers && servers[i]; i++)
-		add_string_item (rc->nameservers, servers[i], TRUE);
+	if (servers) {
+		for (i = 0; servers[i]; i++)
+			add_string_item (rc->nameservers, servers[i], TRUE);
+	}
 
 	return TRUE;
 }

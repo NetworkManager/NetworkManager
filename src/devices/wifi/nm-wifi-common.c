@@ -25,6 +25,7 @@
 #include "devices/nm-device.h"
 #include "nm-wifi-ap.h"
 #include "nm-device-wifi.h"
+#include "nm-dbus-manager.h"
 
 #if WITH_IWD
 #include "nm-device-iwd.h"
@@ -32,7 +33,23 @@
 
 /*****************************************************************************/
 
-static GHashTable *
+void
+nm_device_wifi_emit_signal_access_point (NMDevice *device,
+                                         NMWifiAP *ap,
+                                         gboolean is_added /* or else is_removed */)
+{
+	nm_dbus_object_emit_signal (NM_DBUS_OBJECT (device),
+	                            &nm_interface_info_device_wireless,
+	                            is_added
+	                              ? &nm_signal_info_wireless_access_point_added
+	                              : &nm_signal_info_wireless_access_point_removed,
+	                            "(o)",
+	                            nm_dbus_object_get_path (NM_DBUS_OBJECT (ap)));
+}
+
+/*****************************************************************************/
+
+static const CList *
 _dispatch_get_aps (NMDevice *device)
 {
 #if WITH_IWD
@@ -70,12 +87,12 @@ impl_device_wifi_get_access_points (NMDBusObject *obj,
 {
 	gs_free const char **list = NULL;
 	GVariant *v;
-	GHashTable *aps;
+	const CList *all_aps;
 
 	/* NOTE: this handler is called both for NMDevicwWifi and NMDeviceIwd. */
 
-	aps = _dispatch_get_aps (NM_DEVICE (obj));
-	list = nm_wifi_aps_get_sorted_paths (aps, FALSE);
+	all_aps = _dispatch_get_aps (NM_DEVICE (obj));
+	list = nm_wifi_aps_get_paths (all_aps, FALSE);
 	v = g_variant_new_objv (list, -1);
 	g_dbus_method_invocation_return_value (invocation,
 	                                       g_variant_new_tuple (&v, 1));
@@ -92,12 +109,12 @@ impl_device_wifi_get_all_access_points (NMDBusObject *obj,
 {
 	gs_free const char **list = NULL;
 	GVariant *v;
-	GHashTable *aps;
+	const CList *all_aps;
 
 	/* NOTE: this handler is called both for NMDevicwWifi and NMDeviceIwd. */
 
-	aps = _dispatch_get_aps (NM_DEVICE (obj));
-	list = nm_wifi_aps_get_sorted_paths (aps, TRUE);
+	all_aps = _dispatch_get_aps (NM_DEVICE (obj));
+	list = nm_wifi_aps_get_paths (all_aps, TRUE);
 	v = g_variant_new_objv (list, -1);
 	g_dbus_method_invocation_return_value (invocation,
 	                                       g_variant_new_tuple (&v, 1));

@@ -53,7 +53,7 @@ void nm_device_iwd_set_dbus_object (NMDeviceIwd *device, GDBusObject *object);
 gboolean nm_device_iwd_agent_psk_query (NMDeviceIwd *device,
                                         GDBusMethodInvocation *invocation);
 
-GHashTable *_nm_device_iwd_get_aps (NMDeviceIwd *self);
+const CList *_nm_device_iwd_get_aps (NMDeviceIwd *self);
 
 void _nm_device_iwd_request_scan (NMDeviceIwd *self,
                                   GVariant *options,

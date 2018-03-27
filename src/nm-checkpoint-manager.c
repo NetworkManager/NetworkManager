@@ -174,14 +174,12 @@ nm_checkpoint_manager_create (NMCheckpointManager *self,
 
 	if (!device_paths || !device_paths[0]) {
 		const char *device_path;
-		const GSList *iter;
+		const CList *all_devices;
 		GPtrArray *paths;
 
 		paths = g_ptr_array_new ();
-		for (iter = nm_manager_get_devices (manager);
-		     iter;
-		     iter = g_slist_next (iter)) {
-			device = NM_DEVICE (iter->data);
+		all_devices = nm_manager_get_devices (manager);
+		c_list_for_each_entry (device, all_devices, devices_lst) {
 			if (!nm_device_is_real (device))
 				continue;
 			device_path = nm_dbus_object_get_path (NM_DBUS_OBJECT (device));
