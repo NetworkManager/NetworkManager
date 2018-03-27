@@ -28,7 +28,8 @@
 typedef struct _NMCheckpointManager NMCheckpointManager;
 
 NMCheckpointManager *nm_checkpoint_manager_new (NMManager *manager, GParamSpec *spec);
-void nm_checkpoint_manager_unref (NMCheckpointManager *self);
+
+void nm_checkpoint_manager_free (NMCheckpointManager *self);
 
 NMCheckpoint *nm_checkpoint_manager_create (NMCheckpointManager *self,
                                             const char *const*device_names,
