@@ -82,11 +82,20 @@ destroy_checkpoint (NMCheckpointManager *self, NMCheckpoint *checkpoint)
 	g_object_unref (checkpoint);
 }
 
+static GVariant *
+rollback_checkpoint (NMCheckpointManager *self, NMCheckpoint *checkpoint)
+{
+	GVariant *result;
+
+	result = nm_checkpoint_rollback (checkpoint);
+	destroy_checkpoint (self, checkpoint);
+	return result;
+}
+
 static gboolean
 rollback_timeout_cb (NMCheckpointManager *self)
 {
 	NMCheckpoint *checkpoint, *checkpoint_safe;
-	GVariant *result;
 	gint64 ts, now;
 
 	self->rollback_timeout_id = 0;
@@ -96,10 +105,9 @@ rollback_timeout_cb (NMCheckpointManager *self)
 	c_list_for_each_entry_safe (checkpoint, checkpoint_safe, &self->checkpoints_lst_head, checkpoints_lst) {
 		ts = nm_checkpoint_get_rollback_ts (checkpoint);
 		if (ts && ts <= now) {
-			result = nm_checkpoint_rollback (checkpoint);
-			if (result)
-				g_variant_unref (result);
-			destroy_checkpoint (self, checkpoint);
+			gs_unref_variant GVariant *result = NULL;
+
+			result = rollback_checkpoint (self, checkpoint);
 		}
 	}
 
@@ -282,8 +290,7 @@ nm_checkpoint_manager_rollback (NMCheckpointManager *self,
 		return FALSE;
 	}
 
-	*results = nm_checkpoint_rollback (checkpoint);
-	destroy_checkpoint (self, checkpoint);
+	*results = rollback_checkpoint (self, checkpoint);
 	return TRUE;
 }
 
