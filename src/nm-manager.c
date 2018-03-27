@@ -6666,7 +6666,7 @@ dispose (GObject *object)
 
 	if (priv->checkpoint_mgr) {
 		nm_checkpoint_manager_destroy_all (priv->checkpoint_mgr, NULL);
-		g_clear_pointer (&priv->checkpoint_mgr, nm_checkpoint_manager_unref);
+		g_clear_pointer (&priv->checkpoint_mgr, nm_checkpoint_manager_free);
 	}
 
 	if (priv->auth_mgr) {
