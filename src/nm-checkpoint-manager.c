@@ -36,7 +36,6 @@ struct _NMCheckpointManager {
 	NMManager *_manager;
 	GParamSpec *property_spec;
 	CList checkpoints_lst_head;
-	guint rollback_timeout_id;
 };
 
 #define GET_MANAGER(self) \
@@ -57,10 +56,6 @@ struct _NMCheckpointManager {
 
 /*****************************************************************************/
 
-static void update_rollback_timeout (NMCheckpointManager *self);
-
-/*****************************************************************************/
-
 static void
 notify_checkpoints (NMCheckpointManager *self) {
 	g_object_notify_by_pspec ((GObject *) GET_MANAGER (self),
@@ -73,6 +68,8 @@ destroy_checkpoint (NMCheckpointManager *self, NMCheckpoint *checkpoint)
 	nm_assert (NM_IS_CHECKPOINT (checkpoint));
 	nm_assert (nm_dbus_object_is_exported (NM_DBUS_OBJECT (checkpoint)));
 	nm_assert (c_list_contains (&self->checkpoints_lst_head, &checkpoint->checkpoints_lst));
+
+	nm_checkpoint_set_timeout_callback (checkpoint, NULL, NULL);
 
 	c_list_unlink (&checkpoint->checkpoints_lst);
 
@@ -92,51 +89,14 @@ rollback_checkpoint (NMCheckpointManager *self, NMCheckpoint *checkpoint)
 	return result;
 }
 
-static gboolean
-rollback_timeout_cb (NMCheckpointManager *self)
-{
-	NMCheckpoint *checkpoint, *checkpoint_safe;
-	gint64 ts, now;
-
-	self->rollback_timeout_id = 0;
-
-	now = nm_utils_get_monotonic_timestamp_ms ();
-
-	c_list_for_each_entry_safe (checkpoint, checkpoint_safe, &self->checkpoints_lst_head, checkpoints_lst) {
-		ts = nm_checkpoint_get_rollback_ts (checkpoint);
-		if (ts && ts <= now) {
-			gs_unref_variant GVariant *result = NULL;
-
-			result = rollback_checkpoint (self, checkpoint);
-		}
-	}
-
-	update_rollback_timeout (self);
-
-	return G_SOURCE_REMOVE;
-}
-
 static void
-update_rollback_timeout (NMCheckpointManager *self)
+rollback_timeout_cb (NMCheckpoint *checkpoint,
+                     gpointer user_data)
 {
-	NMCheckpoint *checkpoint;
-	gint64 ts, delta, next = G_MAXINT64;
+	NMCheckpointManager *self = user_data;
+	gs_unref_variant GVariant *result = NULL;
 
-	c_list_for_each_entry (checkpoint, &self->checkpoints_lst_head, checkpoints_lst) {
-		ts = nm_checkpoint_get_rollback_ts (checkpoint);
-		if (ts && ts < next)
-			next = ts;
-	}
-
-	nm_clear_g_source (&self->rollback_timeout_id);
-
-	if (next != G_MAXINT64) {
-		delta = MAX (next - nm_utils_get_monotonic_timestamp_ms (), 0);
-		self->rollback_timeout_id = g_timeout_add (delta,
-		                                           (GSourceFunc) rollback_timeout_cb,
-		                                           self);
-		_LOGT ("update timeout: next check in %" G_GINT64_FORMAT " ms", delta);
-	}
+	result = rollback_checkpoint (self, checkpoint);
 }
 
 static NMCheckpoint *
@@ -224,9 +184,9 @@ nm_checkpoint_manager_create (NMCheckpointManager *self,
 
 	nm_dbus_object_export (NM_DBUS_OBJECT (checkpoint));
 
+	nm_checkpoint_set_timeout_callback (checkpoint, rollback_timeout_cb, self);
 	c_list_link_tail (&self->checkpoints_lst_head, &checkpoint->checkpoints_lst);
 	notify_checkpoints (self);
-	update_rollback_timeout (self);
 	return checkpoint;
 }
 
@@ -361,6 +321,5 @@ nm_checkpoint_manager_free (NMCheckpointManager *self)
 		return;
 
 	nm_checkpoint_manager_destroy_all (self);
-	nm_clear_g_source (&self->rollback_timeout_id);
 	g_slice_free (NMCheckpointManager, self);
 }

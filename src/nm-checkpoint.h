@@ -50,7 +50,13 @@ GType nm_checkpoint_get_type (void);
 NMCheckpoint *nm_checkpoint_new (NMManager *manager, GPtrArray *devices, guint32 rollback_timeout,
                                  NMCheckpointCreateFlags flags, GError **error);
 
-guint64 nm_checkpoint_get_rollback_ts (NMCheckpoint *checkpoint);
+typedef void (*NMCheckpointTimeoutCallback) (NMCheckpoint *self,
+                                             gpointer user_data);
+
+void nm_checkpoint_set_timeout_callback (NMCheckpoint *self,
+                                         NMCheckpointTimeoutCallback callback,
+                                         gpointer user_data);
+
 gboolean nm_checkpoint_includes_device (NMCheckpoint *checkpoint, NMDevice *device);
 GVariant *nm_checkpoint_rollback (NMCheckpoint *self);
 
