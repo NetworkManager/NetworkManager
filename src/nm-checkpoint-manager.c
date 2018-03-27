@@ -154,53 +154,45 @@ nm_checkpoint_manager_create (NMCheckpointManager *self,
 {
 	NMManager *manager;
 	NMCheckpoint *checkpoint;
-	const char *const *dev_paths;
 	gs_unref_ptrarray GPtrArray *devices = NULL;
 	NMDevice *device;
 	const char *path;
-	gs_free const char **device_paths_free = NULL;
 	guint i;
 
 	g_return_val_if_fail (self, FALSE);
 	g_return_val_if_fail (!error || !*error, FALSE);
 	manager = GET_MANAGER (self);
 
-	if (!device_paths || !device_paths[0]) {
-		const char *device_path;
-		const CList *tmp_lst;
-		GPtrArray *paths;
+	devices = g_ptr_array_new ();
 
-		paths = g_ptr_array_new ();
+	if (!device_paths || !device_paths[0]) {
+		const CList *tmp_lst;
+
 		nm_manager_for_each_device (manager, device, tmp_lst) {
 			if (!nm_device_is_real (device))
 				continue;
-			device_path = nm_dbus_object_get_path (NM_DBUS_OBJECT (device));
-			if (device_path)
-				g_ptr_array_add (paths, (gpointer) device_path);
+			nm_assert (nm_dbus_object_get_path (NM_DBUS_OBJECT (device)));
+			g_ptr_array_add (devices, device);
 		}
-		g_ptr_array_add (paths, NULL);
-		device_paths_free = (const char **) g_ptr_array_free (paths, FALSE);
-		device_paths = (const char *const *) device_paths_free;
 	} else if (NM_FLAGS_HAS (flags, NM_CHECKPOINT_CREATE_FLAG_DISCONNECT_NEW_DEVICES)) {
 		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_INVALID_ARGUMENTS,
 		                     "the DISCONNECT_NEW_DEVICES flag can only be used with an empty device list");
 		return NULL;
-	}
-
-	devices = g_ptr_array_new ();
-	for (dev_paths = device_paths; *dev_paths; dev_paths++) {
-		device = nm_manager_get_device_by_path (manager, *dev_paths);
-		if (!device) {
-			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-			             "device %s does not exist", *dev_paths);
-			return NULL;
+	} else {
+		for (; *device_paths; device_paths++) {
+			device = nm_manager_get_device_by_path (manager, *device_paths);
+			if (!device) {
+				g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+				             "device %s does not exist", *device_paths);
+				return NULL;
+			}
+			if (!nm_device_is_real (device)) {
+				g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+				             "device %s is not realized", *device_paths);
+				return NULL;
+			}
+			g_ptr_array_add (devices, device);
 		}
-		if (!nm_device_is_real (device)) {
-			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-			             "device %s is not realized", *dev_paths);
-			return NULL;
-		}
-		g_ptr_array_add (devices, device);
 	}
 
 	if (!NM_FLAGS_HAS (flags, NM_CHECKPOINT_CREATE_FLAG_DESTROY_ALL)) {
