@@ -195,6 +195,11 @@ nm_checkpoint_manager_create (NMCheckpointManager *self,
 			             "device %s does not exist", *dev_paths);
 			return NULL;
 		}
+		if (!nm_device_is_real (device)) {
+			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+			             "device %s is not realized", *dev_paths);
+			return NULL;
+		}
 		g_ptr_array_add (devices, device);
 	}
 
