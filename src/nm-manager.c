@@ -6471,7 +6471,6 @@ get_property (GObject *object, guint prop_id,
 	NMConfigData *config_data;
 	const NMGlobalDnsConfig *dns_config;
 	const char *type;
-	char **strv;
 	const char *path;
 	NMActiveConnection *ac;
 	GPtrArray *ptrarr;
@@ -6578,10 +6577,11 @@ get_property (GObject *object, guint prop_id,
 		                                                                        TRUE)));
 		break;
 	case PROP_CHECKPOINTS:
-		strv = NULL;
-		if (priv->checkpoint_mgr)
-			strv = nm_checkpoint_manager_get_checkpoint_paths (priv->checkpoint_mgr);
-		g_value_take_boxed (value, strv);
+		g_value_take_boxed (value,
+		                    priv->checkpoint_mgr
+		                    ? nm_utils_strv_make_deep_copied (nm_checkpoint_manager_get_checkpoint_paths (priv->checkpoint_mgr,
+		                                                                                                  NULL))
+		                    : NULL);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -6664,10 +6664,7 @@ dispose (GObject *object)
 
 	nm_clear_g_source (&priv->devices_inited_id);
 
-	if (priv->checkpoint_mgr) {
-		nm_checkpoint_manager_destroy_all (priv->checkpoint_mgr, NULL);
-		g_clear_pointer (&priv->checkpoint_mgr, nm_checkpoint_manager_free);
-	}
+	g_clear_pointer (&priv->checkpoint_mgr, nm_checkpoint_manager_free);
 
 	if (priv->auth_mgr) {
 		g_signal_handlers_disconnect_by_func (priv->auth_mgr,

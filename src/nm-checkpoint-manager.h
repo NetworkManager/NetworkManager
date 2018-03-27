@@ -31,14 +31,16 @@ NMCheckpointManager *nm_checkpoint_manager_new (NMManager *manager, GParamSpec *
 
 void nm_checkpoint_manager_free (NMCheckpointManager *self);
 
+NMCheckpoint *nm_checkpoint_manager_lookup_by_path (NMCheckpointManager *self,
+                                                    const char *path);
+
 NMCheckpoint *nm_checkpoint_manager_create (NMCheckpointManager *self,
                                             const char *const*device_names,
                                             guint32 rollback_timeout,
                                             NMCheckpointCreateFlags flags,
                                             GError **error);
 
-gboolean nm_checkpoint_manager_destroy_all (NMCheckpointManager *self,
-                                            GError **error);
+void nm_checkpoint_manager_destroy_all (NMCheckpointManager *self);
 
 gboolean nm_checkpoint_manager_destroy (NMCheckpointManager *self,
                                         const char *path,
@@ -48,6 +50,7 @@ gboolean nm_checkpoint_manager_rollback (NMCheckpointManager *self,
                                          GVariant **results,
                                          GError **error);
 
-char **nm_checkpoint_manager_get_checkpoint_paths (NMCheckpointManager *self);
+const char **nm_checkpoint_manager_get_checkpoint_paths (NMCheckpointManager *self,
+                                                         guint *out_length);
 
 #endif /* __NM_CHECKPOINT_MANAGER_H__ */
