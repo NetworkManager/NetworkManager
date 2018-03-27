@@ -41,10 +41,10 @@ gboolean nm_checkpoint_manager_destroy_all (NMCheckpointManager *self,
                                             GError **error);
 
 gboolean nm_checkpoint_manager_destroy (NMCheckpointManager *self,
-                                        const char *checkpoint_path,
+                                        const char *path,
                                         GError **error);
 gboolean nm_checkpoint_manager_rollback (NMCheckpointManager *self,
-                                         const char *checkpoint_path,
+                                         const char *path,
                                          GVariant **results,
                                          GError **error);
 
