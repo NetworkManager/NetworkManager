@@ -365,14 +365,15 @@ next_dev:
 }
 
 static DeviceCheckpoint *
-device_checkpoint_create (NMDevice *device,
-                          GError **error)
+device_checkpoint_create (NMDevice *device)
 {
 	DeviceCheckpoint *dev_checkpoint;
 	NMConnection *applied_connection;
 	NMSettingsConnection *settings_connection;
 	const char *path;
 	NMActRequest *act_request;
+
+	nm_assert (NM_IS_DEVICE (device));
 
 	path = nm_dbus_object_get_path (NM_DBUS_OBJECT (device));
 
@@ -471,8 +472,6 @@ nm_checkpoint_new (NMManager *manager, GPtrArray *devices, guint32 rollback_time
 	NMCheckpoint *self;
 	NMCheckpointPrivate *priv;
 	NMSettingsConnection *const *con;
-	DeviceCheckpoint *dev_checkpoint;
-	NMDevice *device;
 	guint i;
 
 	g_return_val_if_fail (manager, NULL);
@@ -508,13 +507,11 @@ nm_checkpoint_new (NMManager *manager, GPtrArray *devices, guint32 rollback_time
 	}
 
 	for (i = 0; i < devices->len; i++) {
-		device = (NMDevice *) devices->pdata[i];
-		dev_checkpoint = device_checkpoint_create (device, error);
-		if (!dev_checkpoint) {
-			g_object_unref (self);
-			return NULL;
-		}
-		g_hash_table_insert (priv->devices, device, dev_checkpoint);
+		NMDevice *device = devices->pdata[i];
+
+		g_hash_table_insert (priv->devices,
+		                     device,
+		                     device_checkpoint_create (device));
 	}
 
 	return self;
