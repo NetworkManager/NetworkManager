@@ -1466,10 +1466,10 @@ src_libNetworkManager_la_CPPFLAGS = $(src_cppflags)
 
 src_libNetworkManager_la_SOURCES = \
 	\
-	src/nm-checkpoint-manager.c \
-	src/nm-checkpoint-manager.h \
 	src/nm-checkpoint.c \
 	src/nm-checkpoint.h \
+	src/nm-checkpoint-manager.c \
+	src/nm-checkpoint-manager.h \
 	\
 	src/devices/nm-device.c \
 	src/devices/nm-device.h \

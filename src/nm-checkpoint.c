@@ -54,7 +54,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_ROLLBACK_TIMEOUT,
 );
 
-typedef struct {
+struct _NMCheckpointPrivate {
 	/* properties */
 	GHashTable *devices;
 	gint64 created;
@@ -64,11 +64,6 @@ typedef struct {
 	gint64 rollback_ts;
 	NMCheckpointCreateFlags flags;
 	GHashTable *connection_uuids;
-} NMCheckpointPrivate;
-
-struct _NMCheckpoint {
-	NMDBusObject parent;
-	NMCheckpointPrivate _priv;
 };
 
 struct _NMCheckpointClass {
@@ -77,7 +72,7 @@ struct _NMCheckpointClass {
 
 G_DEFINE_TYPE (NMCheckpoint, nm_checkpoint, NM_TYPE_DBUS_OBJECT)
 
-#define NM_CHECKPOINT_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMCheckpoint, NM_IS_CHECKPOINT)
+#define NM_CHECKPOINT_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR (self, NMCheckpoint, NM_IS_CHECKPOINT)
 
 /*****************************************************************************/
 
@@ -457,7 +452,13 @@ get_property (GObject *object, guint prop_id,
 static void
 nm_checkpoint_init (NMCheckpoint *self)
 {
-	NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE (self);
+	NMCheckpointPrivate *priv;
+
+	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_CHECKPOINT, NMCheckpointPrivate);
+
+	self->_priv = priv;
+
+	c_list_init (&self->checkpoints_lst);
 
 	priv->devices = g_hash_table_new_full (nm_direct_hash, NULL,
 	                                       NULL, device_checkpoint_destroy);
@@ -525,6 +526,8 @@ dispose (GObject *object)
 	NMCheckpoint *self = NM_CHECKPOINT (object);
 	NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE (self);
 
+	nm_assert (c_list_is_empty (&self->checkpoints_lst));
+
 	g_clear_pointer (&priv->devices, g_hash_table_unref);
 	g_clear_pointer (&priv->connection_uuids, g_hash_table_unref);
 
@@ -551,6 +554,8 @@ nm_checkpoint_class_init (NMCheckpointClass *checkpoint_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (checkpoint_class);
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (checkpoint_class);
+
+	g_type_class_add_private (object_class, sizeof (NMCheckpointPrivate));
 
 	dbus_object_class->export_path = NM_DBUS_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/Checkpoint");
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_checkpoint);
