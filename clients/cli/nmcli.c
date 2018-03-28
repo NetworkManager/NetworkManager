@@ -16,7 +16,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2010 - 2017 Red Hat, Inc.
+ * Copyright 2010 - 2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -51,7 +51,33 @@
 # define NMCLI_VERSION VERSION
 #endif
 
-NmCli nm_cli;
+NmCli nm_cli = {
+	.client = NULL,
+
+	.return_value = NMC_RESULT_SUCCESS,
+
+	.timeout = -1,
+
+	.secret_agent = NULL,
+	.pwds_hash = NULL,
+	.pk_listener = NULL,
+
+	.should_wait = 0,
+	.nowait_flag = TRUE,
+	.nmc_config.print_output = NMC_PRINT_NORMAL,
+	.nmc_config.multiline_output = FALSE,
+	.mode_specified = FALSE,
+	.nmc_config.escape_values = TRUE,
+	.required_fields = NULL,
+	.ask = FALSE,
+	.complete = FALSE,
+	.nmc_config.show_secrets = FALSE,
+	.nmc_config.use_colors = NMC_USE_COLOR_AUTO,
+	.nmc_config.in_editor = FALSE,
+	.editor_status_line = FALSE,
+	.editor_save_confirmation = TRUE,
+	.editor_prompt_color = NM_META_TERM_COLOR_NORMAL,
+};
 
 /*****************************************************************************/
 
@@ -382,8 +408,8 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 				complete_fields (argv[0], value);
 			nmc->required_fields = g_strdup (value);
 			nmc->nmc_config_mutable.print_output = NMC_PRINT_TERSE;
-			/* We want fixed tabular mode here, but just set the mode specified and rely on the initialization
-			 * in nmc_init: in this way we allow use of "-m multiline" to swap the output mode also if placed
+			/* We want fixed tabular mode here, but just set the mode specified and rely on defaults:
+			 * in this way we allow use of "-m multiline" to swap the output mode also if placed
 			 * before the "-g <field>" option (-g may be still more practical and easy to remember than -t -f).
 			*/
 			nmc->mode_specified = TRUE;
@@ -557,38 +583,6 @@ nmc_value_transforms_register (void)
 	                                 nmc_convert_bytes_to_string);
 }
 
-/* Initialize NmCli structure - set default values */
-static void
-nmc_init (NmCli *nmc)
-{
-	nmc->client = NULL;
-
-	nmc->return_value = NMC_RESULT_SUCCESS;
-	nmc->return_text = g_string_new (_("Success"));
-
-	nmc->timeout = -1;
-
-	nmc->secret_agent = NULL;
-	nmc->pwds_hash = NULL;
-	nmc->pk_listener = NULL;
-
-	nmc->should_wait = 0;
-	nmc->nowait_flag = TRUE;
-	nmc->nmc_config_mutable.print_output = NMC_PRINT_NORMAL;
-	nmc->nmc_config_mutable.multiline_output = FALSE;
-	nmc->mode_specified = FALSE;
-	nmc->nmc_config_mutable.escape_values = TRUE;
-	nmc->required_fields = NULL;
-	nmc->ask = FALSE;
-	nmc->complete = FALSE;
-	nmc->nmc_config_mutable.show_secrets = FALSE;
-	nmc->nmc_config_mutable.use_colors = NMC_USE_COLOR_AUTO;
-	nmc->nmc_config_mutable.in_editor = FALSE;
-	nmc->editor_status_line = FALSE;
-	nmc->editor_save_confirmation = TRUE;
-	nmc->editor_prompt_color = NM_META_TERM_COLOR_NORMAL;
-}
-
 static void
 nmc_cleanup (NmCli *nmc)
 {
@@ -638,7 +632,7 @@ main (int argc, char *argv[])
 
 	nmc_value_transforms_register ();
 
-	nmc_init (&nm_cli);
+	nm_cli.return_text = g_string_new (_("Success"));
 	loop = g_main_loop_new (NULL, FALSE);
 
 	g_unix_signal_add (SIGTERM, signal_handler, GINT_TO_POINTER (SIGTERM));
