@@ -21,11 +21,11 @@
 #ifndef __NM_AUTOPTR_H__
 #define __NM_AUTOPTR_H__
 
-/**
+/*
  * Note that you might use this header with older versions of libnm
  * that do not yet ship this header. In that case, copy the header
  * into your source tree.
- **/
+ */
 
 #include <glib.h>
 #include <NetworkManager.h>
