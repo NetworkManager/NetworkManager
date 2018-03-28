@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2010 - 2017 Red Hat, Inc.
+ * Copyright 2010 - 2018 Red Hat, Inc.
  */
 
 #ifndef NMC_UTILS_H
@@ -44,7 +44,6 @@ void nmc_terminal_spawn_pager (const NmcConfig *nmc_config);
 gboolean nmc_term_use_colors (NmcColorOption color_option);
 const char *nmc_term_color_sequence (NMMetaTermColor color);
 const char *nmc_term_format_sequence (NMMetaTermFormat format);
-NMMetaTermColor nmc_term_color_parse_string (const char *str, GError **error);
 char *nmc_colorize (NmcColorOption color_option, NMMetaTermColor color, NMMetaTermFormat format, const char * fmt, ...)  _nm_printf (4, 5);
 void nmc_filter_out_colors_inplace (char *str);
 char *nmc_filter_out_colors (const char *str);

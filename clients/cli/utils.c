@@ -15,7 +15,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright 2010 Lennart Poettering
- * Copyright 2010 - 2017 Red Hat, Inc.
+ * Copyright 2010 - 2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -427,29 +427,6 @@ nmc_term_color_sequence (NMMetaTermColor color)
 	default:
 		return "";
 		break;
-	}
-}
-
-/* Parses @str for color as string or number */
-NMMetaTermColor
-nmc_term_color_parse_string (const char *str, GError **error)
-{
-	unsigned long color_int;
-	static const char *colors[] = { "normal", "black", "red", "green", "yellow",
-	                                "blue", "magenta", "cyan", "white", NULL };
-
-	if (nmc_string_to_uint (str, TRUE, 0, 8, &color_int)) {
-		return (NMMetaTermColor) color_int;
-	} else {
-		const char *color, **p;
-		int i;
-
-		color = nmc_string_is_valid (str, colors, error);
-		for (p = colors, i = 0; *p != NULL; p++, i++) {
-			if (*p == color)
-				return (NMMetaTermColor) i;
-		}
-		return -1;
 	}
 }
 
