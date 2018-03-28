@@ -495,7 +495,7 @@ nm_checkpoint_init (NMCheckpoint *self)
 
 NMCheckpoint *
 nm_checkpoint_new (NMManager *manager, GPtrArray *devices, guint32 rollback_timeout_s,
-                   NMCheckpointCreateFlags flags, GError **error)
+                   NMCheckpointCreateFlags flags)
 {
 	NMCheckpoint *self;
 	NMCheckpointPrivate *priv;
@@ -505,15 +505,7 @@ nm_checkpoint_new (NMManager *manager, GPtrArray *devices, guint32 rollback_time
 
 	g_return_val_if_fail (manager, NULL);
 	g_return_val_if_fail (devices, NULL);
-	g_return_val_if_fail (!error || !*error, NULL);
-
-	if (!devices->len) {
-		g_set_error_literal (error,
-		                     NM_MANAGER_ERROR,
-		                     NM_MANAGER_ERROR_INVALID_ARGUMENTS,
-		                     "no device available");
-		return NULL;
-	}
+	g_return_val_if_fail (devices->len > 0, NULL);
 
 	self = g_object_new (NM_TYPE_CHECKPOINT, NULL);
 
