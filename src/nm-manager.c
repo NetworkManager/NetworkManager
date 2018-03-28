@@ -5956,13 +5956,15 @@ checkpoint_auth_done_cb (NMAuthChain *chain,
 	GVariant *variant = NULL;
 	GError *error = NULL;
 	const char *arg = NULL;
+	guint32 add_timeout;
 
 	op = nm_auth_chain_get_data (chain, "audit-op");
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
 	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_CHECKPOINT_ROLLBACK);
 
-	if (   nm_streq0 (op, NM_AUDIT_OP_CHECKPOINT_DESTROY)
-	    || nm_streq0 (op, NM_AUDIT_OP_CHECKPOINT_ROLLBACK))
+	if (NM_IN_STRSET (op, NM_AUDIT_OP_CHECKPOINT_DESTROY,
+	                      NM_AUDIT_OP_CHECKPOINT_ROLLBACK,
+	                      NM_AUDIT_OP_CHECKPOINT_ADJUST_ROLLBACK_TIMEOUT))
 		arg = checkpoint_path = nm_auth_chain_get_data (chain, "checkpoint_path");
 
 	if (auth_error) {
@@ -5995,6 +5997,10 @@ checkpoint_auth_done_cb (NMAuthChain *chain,
 		} else if (nm_streq0 (op, NM_AUDIT_OP_CHECKPOINT_ROLLBACK)) {
 			nm_checkpoint_manager_rollback (_checkpoint_mgr_get (self, TRUE),
 			                                checkpoint_path, &variant, &error);
+		} else if (nm_streq0 (op, NM_AUDIT_OP_CHECKPOINT_ADJUST_ROLLBACK_TIMEOUT)) {
+			add_timeout = GPOINTER_TO_UINT (nm_auth_chain_get_data (chain, "add_timeout"));
+			nm_checkpoint_manager_adjust_rollback_timeout (_checkpoint_mgr_get (self, TRUE),
+			                                               checkpoint_path, add_timeout, &error);
 		} else
 			g_return_if_reached ();
 	}
@@ -6006,7 +6012,6 @@ checkpoint_auth_done_cb (NMAuthChain *chain,
 		g_dbus_method_invocation_take_error (context, error);
 	else
 		g_dbus_method_invocation_return_value (context, variant);
-
 
 	nm_auth_chain_unref (chain);
 }
@@ -6107,6 +6112,39 @@ impl_manager_checkpoint_rollback (NMDBusObject *obj,
 	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
 	nm_auth_chain_set_data (chain, "audit-op", NM_AUDIT_OP_CHECKPOINT_ROLLBACK, NULL);
 	nm_auth_chain_set_data (chain, "checkpoint_path", g_strdup (checkpoint_path), g_free);
+	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_CHECKPOINT_ROLLBACK, TRUE);
+}
+
+static void
+impl_manager_checkpoint_adjust_rollback_timeout (NMDBusObject *obj,
+                                                 const NMDBusInterfaceInfoExtended *interface_info,
+                                                 const NMDBusMethodInfoExtended *method_info,
+                                                 GDBusConnection *connection,
+                                                 const char *sender,
+                                                 GDBusMethodInvocation *invocation,
+                                                 GVariant *parameters)
+{
+	NMManager *self = NM_MANAGER (obj);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMAuthChain *chain;
+	const char *checkpoint_path;
+	guint32 add_timeout;
+
+	chain = nm_auth_chain_new_context (invocation, checkpoint_auth_done_cb, self);
+	if (!chain) {
+		g_dbus_method_invocation_return_error_literal (invocation,
+		                                               NM_MANAGER_ERROR,
+		                                               NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                                               "Unable to authenticate request.");
+		return;
+	}
+
+	g_variant_get (parameters, "(&ou)", &checkpoint_path, &add_timeout);
+
+	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
+	nm_auth_chain_set_data (chain, "audit-op", NM_AUDIT_OP_CHECKPOINT_ADJUST_ROLLBACK_TIMEOUT, NULL);
+	nm_auth_chain_set_data (chain, "checkpoint_path", g_strdup (checkpoint_path), g_free);
+	nm_auth_chain_set_data (chain, "add_timeout", GUINT_TO_POINTER (add_timeout), NULL);
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_CHECKPOINT_ROLLBACK, TRUE);
 }
 
@@ -6963,6 +7001,16 @@ static const NMDBusInterfaceInfoExtended interface_info_manager = {
 					),
 				),
 				.handle = impl_manager_checkpoint_rollback,
+			),
+			NM_DEFINE_DBUS_METHOD_INFO_EXTENDED (
+				NM_DEFINE_GDBUS_METHOD_INFO_INIT (
+					"CheckpointAdjustRollbackTimeout",
+					.in_args = NM_DEFINE_GDBUS_ARG_INFOS (
+						NM_DEFINE_GDBUS_ARG_INFO ("checkpoint", "o"),
+						NM_DEFINE_GDBUS_ARG_INFO ("add_timeout", "u"),
+					),
+				),
+				.handle = impl_manager_checkpoint_adjust_rollback_timeout,
 			),
 		),
 		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (

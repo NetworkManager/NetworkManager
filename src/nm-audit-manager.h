@@ -57,6 +57,7 @@ typedef struct _NMAuditManagerClass NMAuditManagerClass;
 #define NM_AUDIT_OP_CHECKPOINT_CREATE       "checkpoint-create"
 #define NM_AUDIT_OP_CHECKPOINT_ROLLBACK     "checkpoint-rollback"
 #define NM_AUDIT_OP_CHECKPOINT_DESTROY      "checkpoint-destroy"
+#define NM_AUDIT_OP_CHECKPOINT_ADJUST_ROLLBACK_TIMEOUT "checkpoint-adjust-rollback-timeout"
 
 GType nm_audit_manager_get_type (void);
 NMAuditManager *nm_audit_manager_get (void);

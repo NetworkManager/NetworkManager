@@ -442,6 +442,19 @@ GHashTable *nm_client_checkpoint_rollback_finish (NMClient *client,
                                                   GAsyncResult *result,
                                                   GError **error);
 
+NM_AVAILABLE_IN_1_12
+void nm_client_checkpoint_adjust_rollback_timeout (NMClient *client,
+                                                   const char *checkpoint_path,
+                                                   guint32 add_timeout,
+                                                   GCancellable *cancellable,
+                                                   GAsyncReadyCallback callback,
+                                                   gpointer user_data);
+
+NM_AVAILABLE_IN_1_12
+gboolean nm_client_checkpoint_adjust_rollback_timeout_finish (NMClient *client,
+                                                              GAsyncResult *result,
+                                                              GError **error);
+
 G_END_DECLS
 
 #endif /* __NM_CLIENT_H__ */

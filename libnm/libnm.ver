@@ -1339,6 +1339,8 @@ global:
 	nm_checkpoint_get_devices;
 	nm_checkpoint_get_rollback_timeout;
 	nm_checkpoint_get_type;
+	nm_client_checkpoint_adjust_rollback_timeout;
+	nm_client_checkpoint_adjust_rollback_timeout_finish;
 	nm_client_checkpoint_create_async;
 	nm_client_checkpoint_create_finish;
 	nm_client_checkpoint_destroy_async;

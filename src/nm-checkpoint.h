@@ -61,6 +61,8 @@ void nm_checkpoint_set_timeout_callback (NMCheckpoint *self,
 
 GVariant *nm_checkpoint_rollback (NMCheckpoint *self);
 
+void nm_checkpoint_adjust_rollback_timeout (NMCheckpoint *self, guint32 add_timeout);
+
 NMDevice *nm_checkpoint_includes_devices (NMCheckpoint *self, NMDevice *const*devices, guint n_devices);
 NMDevice *nm_checkpoint_includes_devices_of (NMCheckpoint *self, NMCheckpoint *cp_for_devices);
 
