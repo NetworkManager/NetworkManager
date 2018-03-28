@@ -150,7 +150,7 @@ find_checkpoint_info (NMManager *manager, const char *path)
 
 	for (iter = priv->added_checkpoints; iter; iter = g_slist_next (iter)) {
 		info = iter->data;
-		if (nm_streq (path, info->path))
+		if (nm_streq0 (path, info->path))
 			return info;
 	}
 
@@ -802,7 +802,21 @@ nm_manager_get_device_by_path (NMManager *manager, const char *object_path)
 			return candidate;
 		}
 	}
+	return NULL;
+}
 
+static NMCheckpoint *
+get_checkpoint_by_path (NMManager *manager, const char *object_path)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	NMCheckpoint *candidate;
+	guint i;
+
+	for (i = 0; i < priv->checkpoints->len; i++) {
+		candidate = priv->checkpoints->pdata[i];
+		if (nm_streq (nm_object_get_path (NM_OBJECT (candidate)), object_path))
+			return candidate;
+	}
 	return NULL;
 }
 
@@ -1194,11 +1208,6 @@ checkpoint_added (NMManager *manager, NMCheckpoint *checkpoint)
 		checkpoint_info_complete (manager, info, checkpoint, NULL);
 }
 
-static void
-checkpoint_removed (NMManager *manager, NMCheckpoint *checkpoint)
-{
-}
-
 gboolean
 nm_manager_deactivate_connection (NMManager *manager,
                                   NMActiveConnection *active,
@@ -1329,15 +1338,27 @@ checkpoint_created_cb (GObject *object,
                        gpointer user_data)
 {
 	CheckpointInfo *info = user_data;
-	GError *error = NULL;
+	NMManager *self = info->manager;
+	gs_free_error GError *error = NULL;
+	NMCheckpoint *checkpoint;
 
 	nmdbus_manager_call_checkpoint_create_finish (NMDBUS_MANAGER (object),
 	                                              &info->path, result, &error);
 	if (error) {
 		g_dbus_error_strip_remote_error (error);
-		checkpoint_info_complete (info->manager, info, NULL, error);
-		g_clear_error (&error);
+		checkpoint_info_complete (self, info, NULL, error);
+		return;
 	}
+
+	checkpoint = get_checkpoint_by_path (self, info->path);
+	if (!checkpoint) {
+		/* this is really problematic. The async request returned, but
+		 * we don't yet have a visible (fully initialized) NMCheckpoint instance
+		 * to return. Wait longer for it to appear. However, it's ugly. */
+		return;
+	}
+
+	checkpoint_info_complete (self, info, checkpoint, NULL);
 }
 
 void
@@ -1830,7 +1851,6 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	manager_class->active_connection_added = active_connection_added;
 	manager_class->active_connection_removed = active_connection_removed;
 	manager_class->checkpoint_added = checkpoint_added;
-	manager_class->checkpoint_removed = checkpoint_removed;
 
 	/* properties */
 
