@@ -790,8 +790,7 @@ NMDevice *
 nm_manager_get_device_by_path (NMManager *manager, const char *object_path)
 {
 	const GPtrArray *devices;
-	int i;
-	NMDevice *device = NULL;
+	guint i;
 
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
 	g_return_val_if_fail (object_path, NULL);
@@ -800,12 +799,11 @@ nm_manager_get_device_by_path (NMManager *manager, const char *object_path)
 	for (i = 0; i < devices->len; i++) {
 		NMDevice *candidate = g_ptr_array_index (devices, i);
 		if (!strcmp (nm_object_get_path (NM_OBJECT (candidate)), object_path)) {
-			device = candidate;
-			break;
+			return candidate;
 		}
 	}
 
-	return device;
+	return NULL;
 }
 
 NMDevice *
