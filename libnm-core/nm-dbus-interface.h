@@ -857,9 +857,9 @@ typedef enum {
  *
  * The flags for CheckpointCreate call
  *
- * Since: 1.4
+ * Since: 1.4 (gi flags generated since 1.12)
  */
-typedef enum { /*< skip >*/
+typedef enum { /*< flags >*/
 	NM_CHECKPOINT_CREATE_FLAG_NONE                        = 0,
 	NM_CHECKPOINT_CREATE_FLAG_DESTROY_ALL                 = 0x01,
 	NM_CHECKPOINT_CREATE_FLAG_DELETE_NEW_CONNECTIONS      = 0x02,
