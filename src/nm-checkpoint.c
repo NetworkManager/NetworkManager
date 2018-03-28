@@ -101,6 +101,12 @@ G_DEFINE_TYPE (NMCheckpoint, nm_checkpoint, NM_TYPE_DBUS_OBJECT)
 /*****************************************************************************/
 
 void
+nm_checkpoint_log_destroy (NMCheckpoint *self)
+{
+	_LOGI ("destroy %s", nm_dbus_object_get_path (NM_DBUS_OBJECT (self)));
+}
+
+void
 nm_checkpoint_set_timeout_callback (NMCheckpoint *self,
                                     NMCheckpointTimeoutCallback callback,
                                     gpointer user_data)
@@ -114,12 +120,33 @@ nm_checkpoint_set_timeout_callback (NMCheckpoint *self,
 	priv->timeout_data = user_data;
 }
 
-gboolean
-nm_checkpoint_includes_device (NMCheckpoint *self, NMDevice *device)
+NMDevice *
+nm_checkpoint_includes_devices (NMCheckpoint *self, NMDevice *const*devices, guint n_devices)
 {
 	NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE (self);
+	guint i;
 
-	return g_hash_table_contains (priv->devices, device);
+	for (i = 0; i < n_devices; i++) {
+		if (g_hash_table_contains (priv->devices, devices[i]))
+			return devices[i];
+	}
+	return NULL;
+}
+
+NMDevice *
+nm_checkpoint_includes_devices_of (NMCheckpoint *self, NMCheckpoint *cp_for_devices)
+{
+	NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE (self);
+	NMCheckpointPrivate *priv2 = NM_CHECKPOINT_GET_PRIVATE (cp_for_devices);
+	GHashTableIter iter;
+	NMDevice *device;
+
+	g_hash_table_iter_init (&iter, priv2->devices);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &device, NULL)) {
+		if (g_hash_table_contains (priv->devices, device))
+			return device;
+	}
+	return NULL;
 }
 
 static NMSettingsConnection *

@@ -53,11 +53,15 @@ NMCheckpoint *nm_checkpoint_new (NMManager *manager, GPtrArray *devices, guint32
 typedef void (*NMCheckpointTimeoutCallback) (NMCheckpoint *self,
                                              gpointer user_data);
 
+void nm_checkpoint_log_destroy (NMCheckpoint *self);
+
 void nm_checkpoint_set_timeout_callback (NMCheckpoint *self,
                                          NMCheckpointTimeoutCallback callback,
                                          gpointer user_data);
 
-gboolean nm_checkpoint_includes_device (NMCheckpoint *checkpoint, NMDevice *device);
 GVariant *nm_checkpoint_rollback (NMCheckpoint *self);
+
+NMDevice *nm_checkpoint_includes_devices (NMCheckpoint *self, NMDevice *const*devices, guint n_devices);
+NMDevice *nm_checkpoint_includes_devices_of (NMCheckpoint *self, NMCheckpoint *cp_for_devices);
 
 #endif /* __NETWORKMANAGER_CHECKPOINT_H__ */
