@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2010 - 2017 Red Hat, Inc.
+ * Copyright 2010 - 2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -4945,15 +4945,7 @@ gen_nmcli_cmds_submenu (const char *text, int state)
 static char *
 gen_cmd_nmcli (const char *text, int state)
 {
-	const char *words[] = { "status-line", "save-confirmation", "show-secrets", "prompt-color", NULL };
-	return nmc_rl_gen_func_basic (text, state, words);
-}
-
-static char *
-gen_cmd_nmcli_prompt_color (const char *text, int state)
-{
-	const char *words[] = { "normal", "black", "red", "green", "yellow",
-	                        "blue", "magenta", "cyan", "white", NULL };
+	const char *words[] = { "status-line", "save-confirmation", "show-secrets", NULL };
 	return nmc_rl_gen_func_basic (text, state, words);
 }
 
@@ -5269,8 +5261,6 @@ get_gen_func_cmd_nmcli (const char *str)
 		return gen_func_bool_values;
 	if (matches (str, "show-secrets"))
 		return gen_func_bool_values;
-	if (matches (str, "prompt-color"))
-		return gen_cmd_nmcli_prompt_color;
 	return NULL;
 }
 
@@ -6480,7 +6470,7 @@ property_edit_submenu (NmCli *nmc,
 	/* Set global variable for use in TAB completion */
 	nmc_tab_completion.property = prop_name;
 
-	prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NM_META_TERM_FORMAT_NORMAL,
+	prompt = nmc_colorize (nmc->nmc_config.use_colors, NM_META_TERM_COLOR_NORMAL, NM_META_TERM_FORMAT_NORMAL,
 	                       "nmcli %s.%s> ",
 	                       nm_setting_get_name (curr_setting), prop_name);
 
@@ -6874,7 +6864,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	valid_settings_str = get_valid_options_string (valid_settings_main, valid_settings_slave);
 	g_print (_("You may edit the following settings: %s\n"), valid_settings_str);
 
-	menu_ctx.main_prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NM_META_TERM_FORMAT_NORMAL,
+	menu_ctx.main_prompt = nmc_colorize (nmc->nmc_config.use_colors, NM_META_TERM_COLOR_NORMAL, NM_META_TERM_FORMAT_NORMAL,
 	                                     BASE_PROMPT);
 
 	/* Get remote connection */
@@ -7051,7 +7041,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				nmc_tab_completion.setting = setting;
 
 				/* Switch to level 1 */
-				menu_switch_to_level1 (nmc->nmc_config.use_colors, &menu_ctx, setting, setting_name, nmc->editor_prompt_color);
+				menu_switch_to_level1 (nmc->nmc_config.use_colors, &menu_ctx, setting, setting_name, NM_META_TERM_COLOR_NORMAL);
 
 				if (!cmd_arg_s) {
 					g_print (_("You may edit the following properties: %s\n"), menu_ctx.valid_props_str);
@@ -7133,7 +7123,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					connection_remove_setting (connection, ss);
 					if (ss == menu_ctx.curr_setting) {
 						/* If we removed the setting we are in, go up */
-						menu_switch_to_level0 (nmc->nmc_config.use_colors, &menu_ctx, BASE_PROMPT, nmc->editor_prompt_color);
+						menu_switch_to_level0 (nmc->nmc_config.use_colors, &menu_ctx, BASE_PROMPT, NM_META_TERM_COLOR_NORMAL);
 						nmc_tab_completion.setting = NULL;  /* for TAB completion */
 					}
 				} else {
@@ -7161,7 +7151,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 							/* coverity[copy_paste_error] - suppress Coverity COPY_PASTE_ERROR defect */
 							if (ss == menu_ctx.curr_setting) {
 								/* If we removed the setting we are in, go up */
-								menu_switch_to_level0 (nmc->nmc_config.use_colors, &menu_ctx, BASE_PROMPT, nmc->editor_prompt_color);
+								menu_switch_to_level0 (nmc->nmc_config.use_colors, &menu_ctx, BASE_PROMPT, NM_META_TERM_COLOR_NORMAL);
 								nmc_tab_completion.setting = NULL;  /* for TAB completion */
 							}
 						} else
@@ -7517,7 +7507,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 		case NMC_EDITOR_MAIN_CMD_BACK:
 			/* Go back (up) an the menu */
 			if (menu_ctx.level == 1) {
-				menu_switch_to_level0 (nmc->nmc_config.use_colors, &menu_ctx, BASE_PROMPT, nmc->editor_prompt_color);
+				menu_switch_to_level0 (nmc->nmc_config.use_colors, &menu_ctx, BASE_PROMPT, NM_META_TERM_COLOR_NORMAL);
 				nmc_tab_completion.setting = NULL;  /* for TAB completion */
 			}
 			break;
@@ -7553,37 +7543,18 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				} else
 					nmc->nmc_config_mutable.show_secrets = bb;
 			} else if (cmd_arg_p && matches (cmd_arg_p, "prompt-color")) {
-				GError *tmp_err = NULL;
-				NMMetaTermColor color;
-				color = nmc_term_color_parse_string (cmd_arg_v ? g_strstrip (cmd_arg_v) : " ", &tmp_err);
-				if (tmp_err) {
-					g_print (_("Error: bad color: %s\n"), tmp_err->message);
-					g_clear_error (&tmp_err);
-				} else {
-					nmc->editor_prompt_color = color;
-					nm_clear_g_free (&menu_ctx.main_prompt);
-					if (menu_ctx.level == 0) {
-						menu_ctx.main_prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NM_META_TERM_FORMAT_NORMAL,
-						                                     BASE_PROMPT);
-					} else {
-						menu_ctx.main_prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NM_META_TERM_FORMAT_NORMAL,
-						                                     "nmcli %s> ",
-						                                     nm_setting_get_name (menu_ctx.curr_setting));
-					}
-				}
+				g_debug ("Ignoring erroneous --prompt-color argument.\n");
 			} else if (!cmd_arg_p) {
 				g_print (_("Current nmcli configuration:\n"));
 				g_print ("status-line: %s\n"
 				         "save-confirmation: %s\n"
-				         "show-secrets: %s\n"
-				         "prompt-color: %d\n",
+				         "show-secrets: %s\n",
 				         nmc->editor_status_line ? "yes" : "no",
 				         nmc->editor_save_confirmation ? "yes" : "no",
-				         nmc->nmc_config.show_secrets ? "yes" : "no",
-				         nmc->editor_prompt_color);
+				         nmc->nmc_config.show_secrets ? "yes" : "no");
 			} else
 				g_print (_("Invalid configuration option '%s'; allowed [%s]\n"),
-				         cmd_arg_v ?: "", "status-line, save-confirmation, show-secrets, prompt-color");
+				         cmd_arg_v ?: "", "status-line, save-confirmation, show-secrets");
 
 			break;
 

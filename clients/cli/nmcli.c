@@ -76,7 +76,6 @@ NmCli nm_cli = {
 	.nmc_config.in_editor = FALSE,
 	.editor_status_line = FALSE,
 	.editor_save_confirmation = TRUE,
-	.editor_prompt_color = NM_META_TERM_COLOR_NORMAL,
 };
 
 /*****************************************************************************/

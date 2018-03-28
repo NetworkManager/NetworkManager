@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2010 - 2017 Red Hat, Inc.
+ * Copyright 2010 - 2018 Red Hat, Inc.
  */
 
 #ifndef NMC_NMCLI_H
@@ -143,7 +143,6 @@ typedef struct _NmCli {
 	gboolean complete;                                /* Autocomplete the command line */
 	gboolean editor_status_line;                      /* Whether to display status line in connection editor */
 	gboolean editor_save_confirmation;                /* Whether to ask for confirmation on saving connections with 'autoconnect=yes' */
-	NMMetaTermColor editor_prompt_color;              /* Color of prompt in connection editor */
 } NmCli;
 
 extern NmCli nm_cli;
