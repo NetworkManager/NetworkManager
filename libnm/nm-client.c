@@ -2372,6 +2372,88 @@ nm_client_checkpoint_rollback_finish (NMClient *client,
 	}
 }
 
+static void
+checkpoint_adjust_rollback_timeout_cb (GObject *object,
+                                       GAsyncResult *result,
+                                       gpointer user_data)
+{
+	gs_unref_object GSimpleAsyncResult *simple = user_data;
+	GError *error = NULL;
+
+	if (nm_manager_checkpoint_adjust_rollback_timeout_finish (NM_MANAGER (object), result, &error))
+		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+	else
+		g_simple_async_result_take_error (simple, error);
+
+	g_simple_async_result_complete (simple);
+}
+
+/**
+ * nm_client_checkpoint_adjust_rollback_timeout:
+ * @client: the %NMClient
+ * @checkpoint_path: a D-Bus path to a checkpoint
+ * @add_timeout: the timeout in seconds counting from now.
+ *   Set to zero, to disable the timeout.
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: (scope async): callback to be called when the add operation completes
+ * @user_data: (closure): caller-specific data passed to @callback
+ *
+ * Resets the timeout for the checkpoint with path @checkpoint_path
+ * to @timeout_add.
+ *
+ * Since: 1.12
+ **/
+void
+nm_client_checkpoint_adjust_rollback_timeout (NMClient *client,
+                                              const char *checkpoint_path,
+                                              guint32 add_timeout,
+                                              GCancellable *cancellable,
+                                              GAsyncReadyCallback callback,
+                                              gpointer user_data)
+{
+	GSimpleAsyncResult *simple;
+	GError *error = NULL;
+
+	g_return_if_fail (NM_IS_CLIENT (client));
+
+	if (!_nm_client_check_nm_running (client, &error)) {
+		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
+		return;
+	}
+
+	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
+	                                    nm_client_checkpoint_rollback_async);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
+	nm_manager_checkpoint_adjust_rollback_timeout (NM_CLIENT_GET_PRIVATE (client)->manager,
+	                                               checkpoint_path, add_timeout,
+	                                               cancellable, checkpoint_adjust_rollback_timeout_cb, simple);
+}
+
+/**
+ * nm_client_checkpoint_adjust_rollback_timeout_finish:
+ * @client: an #NMClient
+ * @result: the result passed to the #GAsyncReadyCallback
+ * @error: location for a #GError, or %NULL
+ *
+ * Gets the result of a call to nm_client_checkpoint_adjust_rollback_timeout().
+ *
+ * Returns: %TRUE on success or %FALSE on failure.
+ *
+ * Since: 1.12
+ **/
+gboolean
+nm_client_checkpoint_adjust_rollback_timeout_finish (NMClient *client,
+                                                     GAsyncResult *result,
+                                                     GError **error)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
+	return !g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result),
+	                                               error);
+}
+
 /****************************************************************/
 /* Object Initialization                                        */
 /****************************************************************/

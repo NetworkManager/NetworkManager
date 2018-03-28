@@ -296,6 +296,26 @@ nm_checkpoint_manager_get_checkpoint_paths (NMCheckpointManager *self, guint *ou
 	return strv;
 }
 
+gboolean
+nm_checkpoint_manager_adjust_rollback_timeout (NMCheckpointManager *self,
+                                               const char *path,
+                                               guint32 add_timeout,
+                                               GError **error)
+{
+	NMCheckpoint *checkpoint;
+
+	g_return_val_if_fail (self, FALSE);
+	g_return_val_if_fail (path && path[0] == '/', FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
+
+	checkpoint = nm_checkpoint_manager_lookup_by_path (self, path, error);
+	if (!checkpoint)
+		return FALSE;
+
+	nm_checkpoint_adjust_rollback_timeout (checkpoint, add_timeout);
+	return TRUE;
+}
+
 /*****************************************************************************/
 
 NMCheckpointManager *

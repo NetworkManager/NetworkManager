@@ -51,6 +51,11 @@ gboolean nm_checkpoint_manager_rollback (NMCheckpointManager *self,
                                          GVariant **results,
                                          GError **error);
 
+gboolean nm_checkpoint_manager_adjust_rollback_timeout (NMCheckpointManager *self,
+                                                        const char *path,
+                                                        guint32 add_timeout,
+                                                        GError **error);
+
 const char **nm_checkpoint_manager_get_checkpoint_paths (NMCheckpointManager *self,
                                                          guint *out_length);
 

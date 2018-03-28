@@ -48,7 +48,7 @@ typedef struct {
 	NMUnmanFlagOp unmanaged_explicit;
 } DeviceCheckpoint;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+NM_GOBJECT_PROPERTIES_DEFINE (NMCheckpoint,
 	PROP_DEVICES,
 	PROP_CREATED,
 	PROP_ROLLBACK_TIMEOUT,
@@ -472,6 +472,42 @@ _timeout_cb (gpointer user_data)
 
 	/* beware, @self likely got destroyed! */
 	return G_SOURCE_REMOVE;
+}
+
+void
+nm_checkpoint_adjust_rollback_timeout (NMCheckpoint *self, guint32 add_timeout)
+{
+	guint32 rollback_timeout_s;
+	gint64 now_ms, add_timeout_ms, rollback_timeout_ms;
+
+	NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE (self);
+
+	nm_clear_g_source (&priv->timeout_id);
+
+	if (add_timeout == 0)
+		rollback_timeout_s = 0;
+	else {
+		now_ms = nm_utils_get_monotonic_timestamp_ms ();
+		add_timeout_ms = ((gint64) add_timeout) * 1000;
+		rollback_timeout_ms = (now_ms - priv->created_at_ms) + add_timeout_ms;
+
+		/* round to nearest integer second. Since NM_CHECKPOINT_ROLLBACK_TIMEOUT is
+		 * in units seconds, it will be able to exactly express the timeout. */
+		rollback_timeout_s = NM_MIN ((rollback_timeout_ms + 500) / 1000, (gint64) G_MAXUINT32);
+
+		/* we expect the timeout to be positive, because add_timeout_ms is positive.
+		 * We cannot accept a zero, because it means "infinity". */
+		nm_assert (rollback_timeout_s > 0);
+
+		priv->timeout_id = g_timeout_add (NM_MIN (add_timeout_ms, (gint64) G_MAXUINT32),
+		                                  _timeout_cb,
+		                                  self);
+	}
+
+	if (rollback_timeout_s != priv->rollback_timeout_s) {
+		priv->rollback_timeout_s = rollback_timeout_s;
+		_notify (self, PROP_ROLLBACK_TIMEOUT);
+	}
 }
 
 /*****************************************************************************/
