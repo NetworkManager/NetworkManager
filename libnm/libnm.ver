@@ -1334,6 +1334,7 @@ global:
 
 libnm_1_12_0 {
 global:
+	nm_checkpoint_create_flags_get_type;
 	nm_checkpoint_get_created;
 	nm_checkpoint_get_devices;
 	nm_checkpoint_get_rollback_timeout;

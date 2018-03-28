@@ -48,6 +48,7 @@ def do_create(client):
             sys.exit("Unknown device %s" % arg)
         devices.append(d)
 
+    # FIXME: flags are not a plain integer.
     client.checkpoint_create_async(devices, timeout, 0, None, create_cb, None)
 
 def destroy_cb(client, result, data):
