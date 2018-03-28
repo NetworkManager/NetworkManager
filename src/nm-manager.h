@@ -136,6 +136,7 @@ NMActiveConnection *nm_manager_activate_connection     (NMManager *manager,
                                                         NMDevice *device,
                                                         NMAuthSubject *subject,
                                                         NMActivationType activation_type,
+                                                        NMActivationReason activation_reason,
                                                         GError **error);
 
 gboolean            nm_manager_deactivate_connection   (NMManager *manager,

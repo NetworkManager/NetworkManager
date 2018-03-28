@@ -1255,6 +1255,7 @@ auto_activate_device (NMPolicy *self,
 	                                     device,
 	                                     subject,
 	                                     NM_ACTIVATION_TYPE_MANAGED,
+	                                     NM_ACTIVATION_REASON_AUTOCONNECT,
 	                                     &error);
 	if (!ac) {
 		_LOGI (LOGD_DEVICE, "connection '%s' auto-activation failed: %s",
@@ -1677,6 +1678,7 @@ activate_secondary_connections (NMPolicy *self,
 		                                     device,
 		                                     nm_active_connection_get_subject (NM_ACTIVE_CONNECTION (req)),
 		                                     NM_ACTIVATION_TYPE_MANAGED,
+		                                     nm_active_connection_get_activation_reason (NM_ACTIVE_CONNECTION (req)),
 		                                     &error);
 		if (ac)
 			secondary_ac_list = g_slist_append (secondary_ac_list, g_object_ref (ac));
@@ -2148,6 +2150,7 @@ vpn_connection_retry_after_failure (NMVpnConnection *vpn, NMPolicy *self)
 	                                     NULL,
 	                                     nm_active_connection_get_subject (ac),
 	                                     NM_ACTIVATION_TYPE_MANAGED,
+	                                     nm_active_connection_get_activation_reason (ac),
 	                                     &error)) {
 		_LOGW (LOGD_DEVICE, "VPN '%s' reconnect failed: %s",
 		       nm_settings_connection_get_id (connection),

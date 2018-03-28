@@ -541,7 +541,8 @@ nm_act_request_init (NMActRequest *req)
  * @specific_object: the object path of the specific object (ie, WiFi access point,
  *    etc) that will be used to activate @connection and @device
  * @subject: the #NMAuthSubject representing the requestor of the activation
- * @activation_type: the #NMActivationType.
+ * @activation_type: the #NMActivationType
+ * @activation_reason: the reason for activation
  * @device: the device/interface to configure according to @connection
  *
  * Creates a new device-based activation request. If an applied connection is
@@ -555,6 +556,7 @@ nm_act_request_new (NMSettingsConnection *settings_connection,
                     const char *specific_object,
                     NMAuthSubject *subject,
                     NMActivationType activation_type,
+                    NMActivationReason activation_reason,
                     NMDevice *device)
 {
 	g_return_val_if_fail (!settings_connection || NM_IS_SETTINGS_CONNECTION (settings_connection), NULL);
@@ -568,6 +570,7 @@ nm_act_request_new (NMSettingsConnection *settings_connection,
 	                                      NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT, specific_object,
 	                                      NM_ACTIVE_CONNECTION_INT_SUBJECT, subject,
 	                                      NM_ACTIVE_CONNECTION_INT_ACTIVATION_TYPE, (int) activation_type,
+	                                      NM_ACTIVE_CONNECTION_INT_ACTIVATION_REASON, (int) activation_reason,
 	                                      NULL);
 }
 

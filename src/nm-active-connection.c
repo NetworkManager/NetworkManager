@@ -54,6 +54,7 @@ typedef struct _NMActiveConnectionPrivate {
 	bool master_ready:1;
 
 	NMActivationType activation_type:3;
+	NMActivationReason activation_reason:3;
 
 	NMAuthSubject *subject;
 	NMActiveConnection *master;
@@ -92,6 +93,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMActiveConnection,
 	PROP_INT_MASTER,
 	PROP_INT_MASTER_READY,
 	PROP_INT_ACTIVATION_TYPE,
+	PROP_INT_ACTIVATION_REASON,
 );
 
 enum {
@@ -882,6 +884,14 @@ _set_activation_type_managed (NMActiveConnection *self)
 		nm_device_sys_iface_state_set (priv->device, NM_DEVICE_SYS_IFACE_STATE_MANAGED);
 }
 
+NMActivationReason
+nm_active_connection_get_activation_reason (NMActiveConnection *self)
+{
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), NM_ACTIVATION_REASON_UNSET);
+
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->activation_reason;
+}
+
 /*****************************************************************************/
 
 static void
@@ -1281,6 +1291,12 @@ set_property (GObject *object, guint prop_id,
 			g_return_if_reached ();
 		_set_activation_type (self, (NMActivationType) i);
 		break;
+	case PROP_INT_ACTIVATION_REASON:
+		/* construct-only */
+		i = g_value_get_int (value);
+		priv->activation_reason = i;
+		nm_assert (priv->activation_reason == ((NMActivationReason) i));
+		break;
 	case PROP_SPECIFIC_OBJECT:
 		/* construct-only */
 		tmp = g_value_get_string (value);
@@ -1547,6 +1563,15 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 	                       NM_ACTIVATION_TYPE_MANAGED,
 	                       NM_ACTIVATION_TYPE_EXTERNAL,
 	                       NM_ACTIVATION_TYPE_MANAGED,
+	                       G_PARAM_WRITABLE |
+	                       G_PARAM_CONSTRUCT_ONLY |
+	                       G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_INT_ACTIVATION_REASON] =
+	     g_param_spec_int (NM_ACTIVE_CONNECTION_INT_ACTIVATION_REASON, "", "",
+	                       NM_ACTIVATION_REASON_UNSET,
+	                       NM_ACTIVATION_REASON_USER_REQUEST,
+	                       NM_ACTIVATION_REASON_UNSET,
 	                       G_PARAM_WRITABLE |
 	                       G_PARAM_CONSTRUCT_ONLY |
 	                       G_PARAM_STATIC_STRINGS);

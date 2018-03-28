@@ -858,6 +858,7 @@ NMVpnConnection *
 nm_vpn_connection_new (NMSettingsConnection *settings_connection,
                        NMDevice *parent_device,
                        const char *specific_object,
+                       NMActivationReason activation_reason,
                        NMAuthSubject *subject)
 {
 	g_return_val_if_fail (!settings_connection || NM_IS_SETTINGS_CONNECTION (settings_connection), NULL);
@@ -868,6 +869,7 @@ nm_vpn_connection_new (NMSettingsConnection *settings_connection,
 	                                         NM_ACTIVE_CONNECTION_INT_DEVICE, parent_device,
 	                                         NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT, specific_object,
 	                                         NM_ACTIVE_CONNECTION_INT_SUBJECT, subject,
+	                                         NM_ACTIVE_CONNECTION_INT_ACTIVATION_REASON, activation_reason,
 	                                         NM_ACTIVE_CONNECTION_VPN, TRUE,
 	                                         NULL);
 }
