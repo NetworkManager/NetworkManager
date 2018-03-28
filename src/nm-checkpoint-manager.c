@@ -161,6 +161,14 @@ nm_checkpoint_manager_create (NMCheckpointManager *self,
 		}
 	}
 
+	if (!devices->len) {
+		g_set_error_literal (error,
+		                     NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_INVALID_ARGUMENTS,
+		                     "no device available");
+		return NULL;
+	}
+
 	if (!NM_FLAGS_HAS (flags, NM_CHECKPOINT_CREATE_FLAG_DESTROY_ALL)) {
 		for (i = 0; i < devices->len; i++) {
 			device = devices->pdata[i];
@@ -175,9 +183,7 @@ nm_checkpoint_manager_create (NMCheckpointManager *self,
 		}
 	}
 
-	checkpoint = nm_checkpoint_new (manager, devices, rollback_timeout, flags, error);
-	if (!checkpoint)
-		return NULL;
+	checkpoint = nm_checkpoint_new (manager, devices, rollback_timeout, flags);
 
 	if (NM_FLAGS_HAS (flags, NM_CHECKPOINT_CREATE_FLAG_DESTROY_ALL))
 		nm_checkpoint_manager_destroy_all (self);
