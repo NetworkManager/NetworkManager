@@ -32,7 +32,8 @@ NMCheckpointManager *nm_checkpoint_manager_new (NMManager *manager, GParamSpec *
 void nm_checkpoint_manager_free (NMCheckpointManager *self);
 
 NMCheckpoint *nm_checkpoint_manager_lookup_by_path (NMCheckpointManager *self,
-                                                    const char *path);
+                                                    const char *path,
+                                                    GError **error);
 
 NMCheckpoint *nm_checkpoint_manager_create (NMCheckpointManager *self,
                                             const char *const*device_names,

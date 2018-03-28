@@ -227,14 +227,9 @@ nm_checkpoint_manager_destroy (NMCheckpointManager *self,
 		return TRUE;
 	}
 
-	checkpoint = nm_checkpoint_manager_lookup_by_path (self, path);
-	if (!checkpoint) {
-		g_set_error (error,
-		             NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_INVALID_ARGUMENTS,
-		             "checkpoint %s does not exist", path);
+	checkpoint = nm_checkpoint_manager_lookup_by_path (self, path, error);
+	if (!checkpoint)
 		return FALSE;
-	}
 
 	destroy_checkpoint (self, checkpoint, TRUE);
 	return TRUE;
@@ -253,19 +248,16 @@ nm_checkpoint_manager_rollback (NMCheckpointManager *self,
 	g_return_val_if_fail (results, FALSE);
 	g_return_val_if_fail (!error || !*error, FALSE);
 
-	checkpoint = nm_checkpoint_manager_lookup_by_path (self, path);
-	if (!checkpoint) {
-		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
-		             "checkpoint %s does not exist", path);
+	checkpoint = nm_checkpoint_manager_lookup_by_path (self, path, error);
+	if (!checkpoint)
 		return FALSE;
-	}
 
 	*results = rollback_checkpoint (self, checkpoint);
 	return TRUE;
 }
 
 NMCheckpoint *
-nm_checkpoint_manager_lookup_by_path (NMCheckpointManager *self, const char *path)
+nm_checkpoint_manager_lookup_by_path (NMCheckpointManager *self, const char *path, GError **error)
 {
 	NMCheckpoint *checkpoint;
 
@@ -274,8 +266,11 @@ nm_checkpoint_manager_lookup_by_path (NMCheckpointManager *self, const char *pat
 	checkpoint = (NMCheckpoint *) nm_dbus_manager_lookup_object (nm_dbus_object_get_manager (NM_DBUS_OBJECT (GET_MANAGER (self))),
 	                                                             path);
 	if (   !checkpoint
-	    || !NM_IS_CHECKPOINT (checkpoint))
+	    || !NM_IS_CHECKPOINT (checkpoint)) {
+		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_INVALID_ARGUMENTS,
+		             "checkpoint %s does not exist", path);
 		return NULL;
+	}
 
 	nm_assert (c_list_contains (&self->checkpoints_lst_head, &checkpoint->checkpoints_lst));
 	return checkpoint;
