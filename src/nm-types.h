@@ -76,6 +76,13 @@ typedef enum {
 } NMActivationType;
 
 typedef enum {
+	NM_ACTIVATION_REASON_UNSET = 0,
+	NM_ACTIVATION_REASON_AUTOCONNECT = 1,
+	NM_ACTIVATION_REASON_AUTOCONNECT_SLAVES = 2,
+	NM_ACTIVATION_REASON_USER_REQUEST = 3,
+} NMActivationReason;
+
+typedef enum {
 	/* In priority order; higher number == higher priority */
 
 	NM_IP_CONFIG_SOURCE_UNKNOWN                 = 0,

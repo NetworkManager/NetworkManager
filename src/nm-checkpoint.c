@@ -47,6 +47,7 @@ typedef struct {
 	NMDeviceState state;
 	bool realized:1;
 	NMUnmanFlagOp unmanaged_explicit;
+	NMActivationReason activation_reason;
 } DeviceCheckpoint;
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMCheckpoint,
@@ -333,6 +334,7 @@ activate:
 				                                     device,
 				                                     subject,
 				                                     NM_ACTIVATION_TYPE_MANAGED,
+				                                     dev_checkpoint->activation_reason,
 				                                     &local_error)) {
 					_LOGW ("rollback: reactivation of connection %s/%s failed: %s",
 					       nm_connection_get_id ((NMConnection *) connection),
@@ -438,6 +440,8 @@ device_checkpoint_create (NMDevice *device)
 		    nm_simple_connection_new_clone (NM_CONNECTION (settings_connection));
 		dev_checkpoint->ac_version_id =
 		    nm_active_connection_version_id_get (NM_ACTIVE_CONNECTION (act_request));
+		dev_checkpoint->activation_reason =
+		    nm_active_connection_get_activation_reason (NM_ACTIVE_CONNECTION (act_request));
 	}
 
 	return dev_checkpoint;

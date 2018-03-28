@@ -52,6 +52,7 @@ GType nm_vpn_connection_get_type (void);
 NMVpnConnection * nm_vpn_connection_new (NMSettingsConnection *settings_connection,
                                          NMDevice *parent_device,
                                          const char *specific_object,
+                                         NMActivationReason activation_reason,
                                          NMAuthSubject *subject);
 
 void                 nm_vpn_connection_activate        (NMVpnConnection *self,
