@@ -334,9 +334,6 @@ update_connection (SettingsPluginIfcfg *self,
 					 * been removed.
 					 */
 					nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (connection_by_uuid));
-					/* Remove the path so that claim_connection() doesn't complain later when
-					 * interface gets managed and connection is re-added. */
-					nm_connection_set_path (NM_CONNECTION (connection_by_uuid), NULL);
 
 					/* signal_remove() will end up removing the connection from our hash,
 					 * so add it back now.

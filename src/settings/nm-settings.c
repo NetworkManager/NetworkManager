@@ -904,8 +904,10 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 
 	/* Re-emit for listeners like NMPolicy */
 	_notify (self, PROP_CONNECTIONS);
-	if (nm_dbus_object_is_exported (NM_DBUS_OBJECT (connection)))
+	if (nm_dbus_object_is_exported (NM_DBUS_OBJECT (connection))) {
+		nm_connection_set_path (NM_CONNECTION (connection), NULL);
 		nm_dbus_object_unexport (NM_DBUS_OBJECT (connection));
+	}
 
 	check_startup_complete (self);
 }
