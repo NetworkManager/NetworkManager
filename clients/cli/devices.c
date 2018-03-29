@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2010 - 2014 Red Hat, Inc.
+ * Copyright 2010 - 2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -2411,7 +2411,7 @@ device_state (NMDevice *device, GParamSpec *pspec, NmCli *nmc)
 	char *str;
 
 	nmc_device_state_to_color (state, &color, &color_fmt);
-	str = nmc_colorize (nmc->nmc_config.use_colors, color, color_fmt, "%s: %s\n",
+	str = nmc_colorize (&nmc->nmc_config, color, color_fmt, "%s: %s\n",
 	                    nm_device_get_iface (device),
 	                    nmc_device_state_to_string (state));
 

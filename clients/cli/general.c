@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2010 - 2017 Red Hat, Inc.
+ * Copyright 2010 - 2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -1086,7 +1086,7 @@ networkmanager_running (NMClient *client, GParamSpec *param, NmCli *nmc)
 	char *str;
 
 	running = nm_client_get_nm_running (client);
-	str = nmc_colorize (nmc->nmc_config.use_colors,
+	str = nmc_colorize (&nmc->nmc_config,
 	                    running ? NM_META_TERM_COLOR_GREEN : NM_META_TERM_COLOR_RED,
 	                    NM_META_TERM_FORMAT_NORMAL,
 	                    running ? _("NetworkManager has started") : _("NetworkManager has stopped"));
@@ -1128,7 +1128,7 @@ client_connectivity (NMClient *client, GParamSpec *param, NmCli *nmc)
 	char *str;
 
 	g_object_get (client, NM_CLIENT_CONNECTIVITY, &connectivity, NULL);
-	str = nmc_colorize (nmc->nmc_config.use_colors, connectivity_to_color (connectivity), NM_META_TERM_FORMAT_NORMAL,
+	str = nmc_colorize (&nmc->nmc_config, connectivity_to_color (connectivity), NM_META_TERM_FORMAT_NORMAL,
 	                    _("Connectivity is now '%s'\n"), nm_connectivity_to_string (connectivity));
 	g_print ("%s", str);
 	g_free (str);
@@ -1141,7 +1141,7 @@ client_state (NMClient *client, GParamSpec *param, NmCli *nmc)
 	char *str;
 
 	g_object_get (client, NM_CLIENT_STATE, &state, NULL);
-	str = nmc_colorize (nmc->nmc_config.use_colors, state_to_color (state), NM_META_TERM_FORMAT_NORMAL,
+	str = nmc_colorize (&nmc->nmc_config, state_to_color (state), NM_META_TERM_FORMAT_NORMAL,
 	                    _("Networkmanager is now in the '%s' state\n"),
 	                    nm_state_to_string (state));
 	g_print ("%s", str);
@@ -1184,12 +1184,12 @@ device_overview (NmCli *nmc, NMDevice *device)
 	if (!nm_device_get_autoconnect (device))
 		g_string_append_printf (outbuf, "%s, ", _("autoconnect"));
 	if (nm_device_get_firmware_missing (device)) {
-		tmp = nmc_colorize (nmc->nmc_config.use_colors, NM_META_TERM_COLOR_RED, NM_META_TERM_FORMAT_NORMAL, _("fw missing"));
+		tmp = nmc_colorize (&nmc->nmc_config, NM_META_TERM_COLOR_RED, NM_META_TERM_FORMAT_NORMAL, _("fw missing"));
 		g_string_append_printf (outbuf, "%s, ", tmp);
 		g_free (tmp);
 	}
 	if (nm_device_get_nm_plugin_missing (device)) {
-		tmp = nmc_colorize (nmc->nmc_config.use_colors, NM_META_TERM_COLOR_RED, NM_META_TERM_FORMAT_NORMAL, _("plugin missing"));
+		tmp = nmc_colorize (&nmc->nmc_config, NM_META_TERM_COLOR_RED, NM_META_TERM_FORMAT_NORMAL, _("plugin missing"));
 		g_string_append_printf (outbuf, "%s, ", tmp);
 		g_free (tmp);
 	}
@@ -1315,7 +1315,7 @@ do_overview (NmCli *nmc, int argc, char **argv)
 
 		state = nm_active_connection_get_state (ac);
 		nmc_active_connection_state_to_color (state, &color);
-		tmp = nmc_colorize (nmc->nmc_config.use_colors, color, NM_META_TERM_FORMAT_NORMAL, _("%s VPN connection"),
+		tmp = nmc_colorize (&nmc->nmc_config, color, NM_META_TERM_FORMAT_NORMAL, _("%s VPN connection"),
 		                    nm_active_connection_get_id (ac));
 		g_print ("%s\n", tmp);
 		g_free (tmp);
@@ -1333,7 +1333,7 @@ do_overview (NmCli *nmc, int argc, char **argv)
 
 		state = nm_device_get_state (devices[i]);
 		nmc_device_state_to_color (state, &color, &color_fmt);
-		tmp = nmc_colorize (nmc->nmc_config.use_colors, color, color_fmt, "%s: %s%s%s",
+		tmp = nmc_colorize (&nmc->nmc_config, color, color_fmt, "%s: %s%s%s",
 		                    nm_device_get_iface (devices[i]),
 		                    nmc_device_state_to_string (state),
 		                    ac ? " to " : "",
@@ -1416,7 +1416,7 @@ do_monitor (NmCli *nmc, int argc, char **argv)
 	if (!nm_client_get_nm_running (nmc->client)) {
 		char *str;
 
-		str = nmc_colorize (nmc->nmc_config.use_colors, NM_META_TERM_COLOR_RED, NM_META_TERM_FORMAT_NORMAL,
+		str = nmc_colorize (&nmc->nmc_config, NM_META_TERM_COLOR_RED, NM_META_TERM_FORMAT_NORMAL,
 		                    _("Networkmanager is not running (waiting for it)\n"));
 		g_print ("%s", str);
 		g_free (str);
