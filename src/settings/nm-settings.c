@@ -365,7 +365,7 @@ impl_settings_get_connection_by_uuid (NMDBusObject *obj,
 
 	g_dbus_method_invocation_return_value (invocation,
 	                                       g_variant_new ("(o)",
-	                                                      nm_connection_get_path (NM_CONNECTION (connection))));
+	                                                      nm_dbus_object_get_path (NM_DBUS_OBJECT (connection))));
 	return;
 
 error:
@@ -856,7 +856,7 @@ _emit_connection_removed (NMSettings *self,
 	                            &interface_info_settings,
 	                            &signal_info_connection_removed,
 	                            "(o)",
-	                            nm_connection_get_path (NM_CONNECTION (connection)));
+	                            nm_dbus_object_get_path (NM_DBUS_OBJECT (connection)));
 
 	g_signal_emit (self, signals[CONNECTION_REMOVED], 0, connection);
 }
@@ -866,7 +866,7 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 {
 	NMSettings *self = NM_SETTINGS (user_data);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	const char *cpath = nm_connection_get_path (NM_CONNECTION (connection));
+	const char *cpath = nm_dbus_object_get_path (NM_DBUS_OBJECT (connection));
 	NMDevice *device;
 	_nm_unused gs_unref_object NMSettingsConnection *connection_keep_alive = NULL;
 
@@ -963,7 +963,7 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 	NMSettingsConnection *existing;
 
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (connection));
-	g_return_if_fail (nm_connection_get_path (NM_CONNECTION (connection)) == NULL);
+	g_return_if_fail (!nm_dbus_object_is_exported (NM_DBUS_OBJECT (connection)));
 
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, &data)) {
@@ -1023,13 +1023,11 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 		                  self);
 	}
 
-	/* Export the connection over D-Bus */
-	g_warn_if_fail (nm_connection_get_path (NM_CONNECTION (connection)) == NULL);
 	path = nm_dbus_object_export (NM_DBUS_OBJECT (connection));
 	nm_connection_set_path (NM_CONNECTION (connection), path);
 
 	g_hash_table_insert (priv->connections,
-	                     (gpointer) nm_connection_get_path (NM_CONNECTION (connection)),
+	                     (gpointer) nm_dbus_object_get_path (NM_DBUS_OBJECT (connection)),
 	                     g_object_ref (connection));
 	_clear_connections_cached_list (&priv->connections_cached_list);
 
@@ -1043,7 +1041,7 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 		                            &interface_info_settings,
 		                            &signal_info_new_connection,
 		                            "(o)",
-		                            nm_connection_get_path (NM_CONNECTION (connection)));
+		                            nm_dbus_object_get_path (NM_DBUS_OBJECT (connection)));
 
 		g_signal_emit (self, signals[CONNECTION_ADDED], 0, connection);
 		_notify (self, PROP_CONNECTIONS);
@@ -1169,7 +1167,7 @@ send_agent_owned_secrets (NMSettings *self,
 	                                        secrets_filter_cb,
 	                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
 	nm_agent_manager_save_secrets (priv->agent_mgr,
-	                               nm_connection_get_path (NM_CONNECTION (connection)),
+	                               nm_dbus_object_get_path (NM_DBUS_OBJECT (connection)),
 	                               for_agent,
 	                               subject);
 	g_object_unref (for_agent);
@@ -1382,9 +1380,9 @@ settings_add_connection_add_cb (NMSettings *self,
 		g_dbus_method_invocation_return_gerror (context, error);
 		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD, NULL, FALSE, NULL, subject, error->message);
 	} else {
-		g_dbus_method_invocation_return_value (
-		    context,
-		    g_variant_new ("(o)", nm_connection_get_path (NM_CONNECTION (connection))));
+		g_dbus_method_invocation_return_value (context,
+		                                       g_variant_new ("(o)",
+		                                                      nm_dbus_object_get_path (NM_DBUS_OBJECT (connection))));
 		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD, connection, TRUE, NULL,
 		                            subject, NULL);
 	}

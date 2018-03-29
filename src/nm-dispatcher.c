@@ -579,7 +579,7 @@ _dispatcher_call (NMDispatcherAction action,
 		const char *connection_path;
 		const char *filename;
 
-		connection_path = nm_connection_get_path (NM_CONNECTION (settings_connection));
+		connection_path = nm_dbus_object_get_path (NM_DBUS_OBJECT (settings_connection));
 		if (connection_path) {
 			g_variant_builder_add (&connection_props, "{sv}",
 			                       NMD_CONNECTION_PROPS_PATH,

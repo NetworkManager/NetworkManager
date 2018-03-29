@@ -1186,7 +1186,7 @@ get_property (GObject *object, guint prop_id,
 	 * is set, to get an assertion failure if somebody tries to access the
 	 * getters at the wrong time. */
 	case PROP_CONNECTION:
-		g_value_set_string (value, nm_connection_get_path (NM_CONNECTION (priv->settings_connection)));
+		g_value_set_string (value, nm_dbus_object_get_path (NM_DBUS_OBJECT (priv->settings_connection)));
 		break;
 	case PROP_ID:
 		g_value_set_string (value, nm_connection_get_id (NM_CONNECTION (priv->settings_connection)));
