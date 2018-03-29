@@ -868,10 +868,12 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	const char *cpath = nm_connection_get_path (NM_CONNECTION (connection));
 	NMDevice *device;
+	_nm_unused gs_unref_object NMSettingsConnection *connection_keep_alive = NULL;
 
 	if (!g_hash_table_lookup (priv->connections, cpath))
 		g_return_if_reached ();
-	g_object_ref (connection);
+
+	connection_keep_alive = g_object_ref (connection);
 
 	/* When the default wired connection is removed (either deleted or saved to
 	 * a new persistent connection by a plugin), write the MAC address of the
@@ -906,8 +908,6 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 		nm_dbus_object_unexport (NM_DBUS_OBJECT (connection));
 
 	check_startup_complete (self);
-
-	g_object_unref (connection);
 }
 
 #define NM_DBUS_SERVICE_OPENCONNECT    "org.freedesktop.NetworkManager.openconnect"
