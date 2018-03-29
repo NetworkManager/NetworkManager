@@ -184,18 +184,10 @@ _settings_connection_updated (NMSettingsConnection *connection,
 }
 
 static void
-_settings_connection_removed (NMSettingsConnection *connection,
-                              gpointer user_data)
+_settings_connection_exported_changed (NMSettingsConnection *settings_connection,
+                                       NMActiveConnection *self)
 {
-	NMActiveConnection *self = user_data;
-
-	/* Our settings connection is about to drop off. The next active connection
-	 * cleanup is going to tear us down (at least until we grow the capability to
-	 * re-link; in that case we'd just clean the references to the old connection here).
-	 * Let's remove ourselves from the bus so that we're not exposed with a dangling
-	 * reference to the setting connection once it's gone. */
-	if (nm_dbus_object_is_exported (NM_DBUS_OBJECT (self)))
-		nm_dbus_object_unexport (NM_DBUS_OBJECT (self));
+	_notify (self, PROP_CONNECTION);
 }
 
 static void
@@ -207,14 +199,14 @@ _set_settings_connection (NMActiveConnection *self, NMSettingsConnection *connec
 		return;
 	if (priv->settings_connection) {
 		g_signal_handlers_disconnect_by_func (priv->settings_connection, _settings_connection_updated, self);
-		g_signal_handlers_disconnect_by_func (priv->settings_connection, _settings_connection_removed, self);
+		g_signal_handlers_disconnect_by_func (priv->settings_connection, _settings_connection_exported_changed, self);
 		g_signal_handlers_disconnect_by_func (priv->settings_connection, _settings_connection_notify_flags, self);
 		g_clear_object (&priv->settings_connection);
 	}
 	if (connection) {
 		priv->settings_connection = g_object_ref (connection);
 		g_signal_connect (connection, NM_SETTINGS_CONNECTION_UPDATED_INTERNAL, (GCallback) _settings_connection_updated, self);
-		g_signal_connect (connection, NM_SETTINGS_CONNECTION_REMOVED, (GCallback) _settings_connection_removed, self);
+		g_signal_connect (connection, NM_DBUS_OBJECT_EXPORTED_CHANGED, G_CALLBACK (_settings_connection_exported_changed), self);
 		if (nm_active_connection_get_activation_type (self) == NM_ACTIVATION_TYPE_EXTERNAL)
 			g_signal_connect (connection, "notify::"NM_SETTINGS_CONNECTION_FLAGS, (GCallback) _settings_connection_notify_flags, self);
 	}
@@ -1186,7 +1178,7 @@ get_property (GObject *object, guint prop_id,
 	 * is set, to get an assertion failure if somebody tries to access the
 	 * getters at the wrong time. */
 	case PROP_CONNECTION:
-		g_value_set_string (value, nm_dbus_object_get_path (NM_DBUS_OBJECT (priv->settings_connection)));
+		nm_dbus_utils_g_value_set_object_path_still_exported (value, priv->settings_connection);
 		break;
 	case PROP_ID:
 		g_value_set_string (value, nm_connection_get_id (NM_CONNECTION (priv->settings_connection)));
