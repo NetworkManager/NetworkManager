@@ -878,7 +878,6 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_flags_changed), self);
 	if (!priv->startup_complete)
 		g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_ready_changed), self);
-	g_object_unref (self);
 
 	_clear_connections_cached_list (&priv->connections_cached_list);
 
@@ -1000,7 +999,6 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 	/* Evil openconnect migration hack */
 	openconnect_migrate_hack (NM_CONNECTION (connection));
 
-	g_object_ref (self);
 	/* This one unexports the connection, it needs to run late to give the active
 	 * connection a chance to deal with its reference to this settings connection. */
 	g_signal_connect_after (connection, NM_SETTINGS_CONNECTION_REMOVED,
