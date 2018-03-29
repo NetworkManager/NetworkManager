@@ -783,6 +783,74 @@ genlmsg_parse (struct nlmsghdr *nlh, int hdrlen, struct nlattr *tb[],
 	                  genlmsg_attrlen (ghdr, hdrlen), policy);
 }
 
+static int
+_genl_parse_getfamily (struct nl_msg *msg, void *arg)
+{
+	static const struct nla_policy ctrl_policy[CTRL_ATTR_MAX+1] = {
+		[CTRL_ATTR_FAMILY_ID]    = { .type = NLA_U16 },
+		[CTRL_ATTR_FAMILY_NAME]  = { .type = NLA_STRING,
+		                            .maxlen = GENL_NAMSIZ },
+		[CTRL_ATTR_VERSION]      = { .type = NLA_U32 },
+		[CTRL_ATTR_HDRSIZE]      = { .type = NLA_U32 },
+		[CTRL_ATTR_MAXATTR]      = { .type = NLA_U32 },
+		[CTRL_ATTR_OPS]          = { .type = NLA_NESTED },
+		[CTRL_ATTR_MCAST_GROUPS] = { .type = NLA_NESTED },
+	};
+	struct nlattr *tb[CTRL_ATTR_MAX+1];
+	struct nlmsghdr *nlh = nlmsg_hdr (msg);
+	gint32 *response_data = arg;
+
+	if (genlmsg_parse (nlh, 0, tb, CTRL_ATTR_MAX, ctrl_policy))
+		return NL_SKIP;
+
+	if (tb[CTRL_ATTR_FAMILY_ID])
+		*response_data = nla_get_u16 (tb[CTRL_ATTR_FAMILY_ID]);
+
+	return NL_STOP;
+}
+
+int
+genl_ctrl_resolve (struct nl_sock *sk, const char *name)
+{
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
+	int result = -ENOMEM;
+	gint32 response_data = -1;
+	const struct nl_cb cb = {
+		.valid_cb = _genl_parse_getfamily,
+		.valid_arg = &response_data,
+	};
+
+	msg = nlmsg_alloc ();
+
+	if (!genlmsg_put (msg, NL_AUTO_PORT, NL_AUTO_SEQ, GENL_ID_CTRL,
+	                  0, 0, CTRL_CMD_GETFAMILY, 1))
+		goto out;
+
+	if (nla_put_string (msg, CTRL_ATTR_FAMILY_NAME, name) < 0)
+		goto out;
+
+	result = nl_send_auto (sk, msg);
+	if (result < 0)
+		goto out;
+
+	result = nl_recvmsgs (sk, &cb);
+	if (result < 0)
+		goto out;
+
+	/* If search was successful, request may be ACKed after data */
+	result = nl_wait_for_ack (sk, NULL);
+	if (result < 0)
+		goto out;
+
+	if (response_data > 0)
+		result = response_data;
+	else
+		result = -ENOENT;
+
+out:
+	return result;
+}
+
 /*****************************************************************************/
 
 struct nl_sock *
