@@ -119,27 +119,8 @@ const NMMetaType nmc_meta_type_generic_info = {
 
 /*****************************************************************************/
 
-static gboolean
-use_colors (NmcColorOption color_option)
-{
-	if (color_option == NMC_USE_COLOR_AUTO) {
-		static NmcColorOption cached = NMC_USE_COLOR_AUTO;
-
-		if (G_UNLIKELY (cached == NMC_USE_COLOR_AUTO)) {
-			if (   g_strcmp0 (g_getenv ("TERM"), "dumb") == 0
-				|| !isatty (STDOUT_FILENO))
-				cached = NMC_USE_COLOR_NO;
-			else
-				cached = NMC_USE_COLOR_YES;
-		}
-		return cached == NMC_USE_COLOR_YES;
-	}
-
-	return color_option == NMC_USE_COLOR_YES;
-}
-
 static const char *
-colorize_string (NmcColorOption color_option,
+colorize_string (const NmcConfig *nmc_config,
                  NMMetaTermColor color,
                  NMMetaTermFormat color_fmt,
                  const char *str,
@@ -147,9 +128,10 @@ colorize_string (NmcColorOption color_option,
 {
 	const char *out = str;
 
-	if (   use_colors (color_option)
+	if (   nmc_config
+	    && nmc_config->use_colors
 	    && (color != NM_META_TERM_COLOR_NORMAL || color_fmt != NM_META_TERM_FORMAT_NORMAL)) {
-		*out_to_free = nmc_colorize (color_option, color, color_fmt, "%s", str);
+		*out_to_free = nmc_colorize (nmc_config, color, color_fmt, "%s", str);
 		out = *out_to_free;
 	}
 
@@ -459,7 +441,7 @@ nmc_term_format_sequence (NMMetaTermFormat format)
 }
 
 char *
-nmc_colorize (NmcColorOption color_option, NMMetaTermColor color, NMMetaTermFormat format, const char *fmt, ...)
+nmc_colorize (const NmcConfig *nmc_config, NMMetaTermColor color, NMMetaTermFormat format, const char *fmt, ...)
 {
 	va_list args;
 	char *str, *colored;
@@ -470,7 +452,7 @@ nmc_colorize (NmcColorOption color_option, NMMetaTermColor color, NMMetaTermForm
 	str = g_strdup_vprintf (fmt, args);
 	va_end (args);
 
-	if (!use_colors (color_option))
+	if (!nmc_config->use_colors)
 		return str;
 
 	ansi_color = nmc_term_color_sequence (color);
@@ -1351,7 +1333,7 @@ _print_do (const NmcConfig *nmc_config,
 				gs_free char *text_to_free = NULL;
 				const char *text;
 
-				text = colorize_string (nmc_config->use_colors,
+				text = colorize_string (nmc_config,
 				                        cell->term_color, cell->term_format,
 				                        lines[i_lines], &text_to_free);
 				if (multiline) {
@@ -1482,7 +1464,7 @@ nmc_terminal_spawn_pager (const NmcConfig *nmc_config)
 	if (   nm_cli.nmc_config.in_editor
 	    || nm_cli.pager_pid > 0
 	    || nmc_config->print_output == NMC_PRINT_TERSE
-	    || !use_colors (nmc_config->use_colors)
+	    || !nmc_config->use_colors
 	    || g_strcmp0 (pager, "") == 0
 	    || getauxval (AT_SECURE))
 		return;
@@ -1553,7 +1535,7 @@ nmc_terminal_spawn_pager (const NmcConfig *nmc_config)
 /*****************************************************************************/
 
 static const char *
-get_value_to_print (NmcColorOption color_option,
+get_value_to_print (const NmcConfig *nmc_config,
                     const NmcOutputField *field,
                     gboolean field_name,
                     const char *not_set_str,
@@ -1579,7 +1561,7 @@ get_value_to_print (NmcColorOption color_option,
 	}
 
 	/* colorize the value */
-	out = colorize_string (color_option, field->color, field->color_fmt, value, out_to_free);
+	out = colorize_string (nmc_config, field->color, field->color_fmt, value, out_to_free);
 
 	if (out && out == free_value) {
 		nm_assert (!*out_to_free);
@@ -1673,7 +1655,7 @@ print_required_fields (const NmcConfig *nmc_config,
 					gs_free char *tmp = NULL;
 
 					val = *p ?: not_set_str;
-					print_val = colorize_string (nmc_config->use_colors, field_values[idx].color, field_values[idx].color_fmt,
+					print_val = colorize_string (nmc_config, field_values[idx].color, field_values[idx].color_fmt,
 					                             val, &val_to_free);
 					tmp = g_strdup_printf ("%s%s%s[%d]:",
 					                       section_prefix ? (const char*) field_values[0].value : "",
@@ -1694,7 +1676,7 @@ print_required_fields (const NmcConfig *nmc_config,
 				/* value is a string */
 
 				val = val && *val ? val : not_set_str;
-				print_val = colorize_string (nmc_config->use_colors, field_values[idx].color, field_values[idx].color_fmt,
+				print_val = colorize_string (nmc_config, field_values[idx].color, field_values[idx].color_fmt,
 				                             val, &val_to_free);
 				tmp = g_strdup_printf ("%s%s%s:",
 				                       section_prefix ? hdr_name : "",
@@ -1725,7 +1707,7 @@ print_required_fields (const NmcConfig *nmc_config,
 
 		idx = g_array_index (indices, int, i);
 
-		value = get_value_to_print (nmc_config->use_colors, (NmcOutputField *) field_values+idx, field_names,
+		value = get_value_to_print (nmc_config, (NmcOutputField *) field_values+idx, field_names,
 		                            not_set_str, &val_to_free);
 
 		if (terse) {
@@ -1798,7 +1780,7 @@ print_data_prepare_width (GPtrArray *output_data)
 
 			row = g_ptr_array_index (output_data, j);
 			field_names = row[0].flags & NMC_OF_FLAG_FIELD_NAMES;
-			value = get_value_to_print (NMC_USE_COLOR_NO, row+i, field_names, "--", &val_to_free);
+			value = get_value_to_print (NULL, row+i, field_names, "--", &val_to_free);
 			len = nmc_string_screen_width (value, NULL);
 			max_width = len > max_width ? len : max_width;
 		}

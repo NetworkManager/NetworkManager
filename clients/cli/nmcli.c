@@ -72,7 +72,6 @@ NmCli nm_cli = {
 	.ask = FALSE,
 	.complete = FALSE,
 	.nmc_config.show_secrets = FALSE,
-	.nmc_config.use_colors = NMC_USE_COLOR_AUTO,
 	.nmc_config.in_editor = FALSE,
 	.editor_status_line = FALSE,
 	.editor_save_confirmation = TRUE,
@@ -294,9 +293,36 @@ matches_arg (NmCli *nmc, int *argc, char ***argv, const char *pattern, char **ar
 	return TRUE;
 }
 
+typedef enum {
+        NMC_USE_COLOR_AUTO,
+        NMC_USE_COLOR_YES,
+        NMC_USE_COLOR_NO,
+} NmcColorOption;
+
+static void
+set_colors (NmCli *nmc, NmcColorOption *color_option)
+{
+	if (*color_option == NMC_USE_COLOR_AUTO) {
+		if (   g_strcmp0 (g_getenv ("TERM"), "dumb") == 0
+		    || !isatty (STDOUT_FILENO))
+			*color_option = NMC_USE_COLOR_NO;
+	}
+
+	switch (*color_option) {
+	case NMC_USE_COLOR_YES:
+	case NMC_USE_COLOR_AUTO:
+		nmc->nmc_config_mutable.use_colors = TRUE;
+		break;
+	case NMC_USE_COLOR_NO:
+		nmc->nmc_config_mutable.use_colors = FALSE;
+		break;
+	}
+}
+
 static gboolean
 process_command_line (NmCli *nmc, int argc, char **argv)
 {
+	NmcColorOption colors = NMC_USE_COLOR_AUTO;
 	char *base;
 
 	base = strrchr (argv[0], '/');
@@ -376,11 +402,11 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 			if (argc == 1 && nmc->complete)
 				complete_option_with_value (argv[0], value, "yes", "no", "auto", NULL);
 			if (matches (value, "auto"))
-				nmc->nmc_config_mutable.use_colors = NMC_USE_COLOR_AUTO;
+				colors = NMC_USE_COLOR_AUTO;
 			else if (matches (value, "yes"))
-				nmc->nmc_config_mutable.use_colors = NMC_USE_COLOR_YES;
+				colors = NMC_USE_COLOR_YES;
 			else if (matches (value, "no"))
-				nmc->nmc_config_mutable.use_colors = NMC_USE_COLOR_NO;
+				colors = NMC_USE_COLOR_NO;
 			else {
 				g_string_printf (nmc->return_text, _("Error: '%s' is not valid argument for '%s' option."), value, argv[0]);
 				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
@@ -445,6 +471,8 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 	/* Ignore --overview when fields are set explicitly */
 	if (nmc->required_fields)
 		nmc->nmc_config_mutable.overview = FALSE;
+
+	set_colors (nmc, &colors);
 
 	/* Now run the requested command */
 	nmc_do_cmd (nmc, nmcli_cmds, *argv, argc, argv);

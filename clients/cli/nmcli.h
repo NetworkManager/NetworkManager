@@ -97,15 +97,9 @@ struct _NmcOutputField {
 	NMMetaTermFormat color_fmt;        /* Use this terminal format to print value */
 };
 
-typedef enum {
-	NMC_USE_COLOR_AUTO,
-	NMC_USE_COLOR_YES,
-	NMC_USE_COLOR_NO,
-} NmcColorOption;
-
 typedef struct _NmcConfig {
 	NMCPrintOutput print_output;                      /* Output mode */
-	NmcColorOption use_colors;                        /* Whether to use colors for output: option '--color' */
+	gboolean use_colors;                              /* Whether to use colors for output: option '--color' */
 	bool multiline_output;                            /* Multiline output instead of default tabular */
 	bool escape_values;                               /* Whether to escape ':' and '\' in terse tabular mode */
 	bool in_editor;                                   /* Whether running the editor - nmcli con edit' */
