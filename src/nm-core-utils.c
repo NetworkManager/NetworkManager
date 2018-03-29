@@ -2234,7 +2234,13 @@ _log_connection_sort_names (LogConnectionSettingData *setting_data, GArray *sort
 }
 
 void
-nm_utils_log_connection_diff (NMConnection *connection, NMConnection *diff_base, guint32 level, guint64 domain, const char *name, const char *prefix)
+nm_utils_log_connection_diff (NMConnection *connection,
+                              NMConnection *diff_base,
+                              guint32 level,
+                              guint64 domain,
+                              const char *name,
+                              const char *prefix,
+                              const char *dbus_path)
 {
 	GHashTable *connection_diff = NULL;
 	GArray *sorted_hashes;
@@ -2310,7 +2316,6 @@ nm_utils_log_connection_diff (NMConnection *connection, NMConnection *diff_base,
 
 			if (print_header) {
 				GError *err_verify = NULL;
-				const char *path = nm_connection_get_path (connection);
 				const char *t1, *t2;
 
 				t1 = nm_connection_get_connection_type (connection);
@@ -2320,12 +2325,12 @@ nm_utils_log_connection_diff (NMConnection *connection, NMConnection *diff_base,
 					        prefix, name,
 					        connection, G_OBJECT_TYPE_NAME (connection), NM_PRINT_FMT_QUOTE_STRING (t1),
 					        diff_base, G_OBJECT_TYPE_NAME (diff_base), NM_PRINT_FMT_QUOTE_STRING (t2),
-					        NM_PRINT_FMT_QUOTED (path, " [", path, "]", ""));
+					        NM_PRINT_FMT_QUOTED (dbus_path, " [", dbus_path, "]", ""));
 				} else {
 					nm_log (level, domain, NULL, NULL, "%sconnection '%s' (%p/%s/%s%s%s):%s%s%s",
 					        prefix, name,
 					        connection, G_OBJECT_TYPE_NAME (connection), NM_PRINT_FMT_QUOTE_STRING (t1),
-					        NM_PRINT_FMT_QUOTED (path, " [", path, "]", ""));
+					        NM_PRINT_FMT_QUOTED (dbus_path, " [", dbus_path, "]", ""));
 				}
 				print_header = FALSE;
 
