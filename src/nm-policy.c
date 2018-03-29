@@ -2321,10 +2321,9 @@ _deactivate_if_active (NMPolicy *self, NMSettingsConnection *connection)
 	nm_assert (NM_IS_SETTINGS_CONNECTION (connection));
 
 	nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
-		NMActiveConnectionState state = nm_active_connection_get_state (ac);
 
 		if (   nm_active_connection_get_settings_connection (ac) == connection
-		    && (state <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED)) {
+		    && (nm_active_connection_get_state (ac) <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED)) {
 			if (!nm_manager_deactivate_connection (priv->manager,
 			                                       ac,
 			                                       NM_DEVICE_STATE_REASON_CONNECTION_REMOVED,
