@@ -1176,6 +1176,15 @@ get_property (GObject *object, guint prop_id,
 	NMDevice *master_device = NULL;
 
 	switch (prop_id) {
+
+	/* note that while priv->settings_connection might not be set initially,
+	 * it will be set before the object is exported on D-Bus. Hence,
+	 * nobody is calling these property getters before the object is
+	 * exported, at which point we will have a valid settings-connection.
+	 *
+	 * Therefore, intentionally not check whether priv->settings_connection
+	 * is set, to get an assertion failure if somebody tries to access the
+	 * getters at the wrong time. */
 	case PROP_CONNECTION:
 		g_value_set_string (value, nm_connection_get_path (NM_CONNECTION (priv->settings_connection)));
 		break;
@@ -1188,6 +1197,7 @@ get_property (GObject *object, guint prop_id,
 	case PROP_TYPE:
 		g_value_set_string (value, nm_connection_get_connection_type (NM_CONNECTION (priv->settings_connection)));
 		break;
+
 	case PROP_SPECIFIC_OBJECT:
 		g_value_set_string (value, priv->specific_object ? priv->specific_object : "/");
 		break;
