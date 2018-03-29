@@ -121,6 +121,20 @@ nm_dbus_utils_g_value_set_object_path (GValue *value, gpointer object)
 }
 
 void
+nm_dbus_utils_g_value_set_object_path_still_exported (GValue *value, gpointer object)
+{
+	const char *path;
+
+	g_return_if_fail (!object || NM_IS_DBUS_OBJECT (object));
+
+	if (   object
+	    && (path = nm_dbus_object_get_path_still_exported (object)))
+		g_value_set_string (value, path);
+	else
+		g_value_set_string (value, "/");
+}
+
+void
 nm_dbus_utils_g_value_set_object_path_from_hash (GValue *value,
                                                  GHashTable *hash /* has keys of NMDBusObject type. */,
                                                  gboolean expect_all_exported)

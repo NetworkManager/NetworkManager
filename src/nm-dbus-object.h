@@ -82,7 +82,7 @@ extern const NMDBusInterfaceInfoExtended nm_interface_info_device_statistics;
 #define NM_IS_DBUS_OBJECT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_DBUS_OBJECT))
 #define NM_DBUS_OBJECT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DBUS_OBJECT, NMDBusObjectClass))
 
-#define NM_DBUS_OBJECT_PATH "path"
+#define NM_DBUS_OBJECT_EXPORTED_CHANGED "exported-changed"
 
 /* NMDBusObject and NMDBusManager cooperate strongly. Hence, there is an
  * internal data structure attached to the NMDBusObject accessible to both of them. */
@@ -99,6 +99,7 @@ struct _NMDBusObjectInternal {
 	 * unexported, or even re-exported afterwards. If that happens, we want
 	 * to fail the request. For that, we keep track of a version id.  */
 	guint64 export_version_id;
+	bool is_unexporting:1;
 };
 
 struct _NMDBusObject {
@@ -167,6 +168,18 @@ static inline gboolean
 nm_dbus_object_is_exported (NMDBusObject *self)
 {
 	return !!nm_dbus_object_get_path (self);
+}
+
+static inline const char *
+nm_dbus_object_get_path_still_exported (NMDBusObject *self)
+{
+	g_return_val_if_fail (NM_IS_DBUS_OBJECT (self), NULL);
+
+	/* like nm_dbus_object_get_path(), however, while unexporting
+	 * (exported-changed signal), returns %NULL instead of the path. */
+	return self->internal.is_unexporting
+	       ? NULL
+	       : self->internal.path;
 }
 
 const char *nm_dbus_object_export      (NMDBusObject *self);
