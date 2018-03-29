@@ -113,11 +113,16 @@ NMConnection *
 nm_simple_connection_new_clone (NMConnection *connection)
 {
 	NMConnection *clone;
+	const char *path;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	clone = nm_simple_connection_new ();
-	nm_connection_set_path (clone, nm_connection_get_path (connection));
+
+	path = nm_connection_get_path (connection);
+	if (path)
+		nm_connection_set_path (clone, path);
+
 	nm_connection_replace_settings_from_connection (clone, connection);
 
 	return clone;
