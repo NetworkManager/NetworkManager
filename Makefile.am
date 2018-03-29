@@ -3514,6 +3514,7 @@ clients_cli_nmcli_CPPFLAGS = \
 	-I$(srcdir)/clients/cli \
 	$(clients_cppflags) \
 	$(SANITIZER_EXEC_CFLAGS) \
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DG_LOG_DOMAIN=\""nmcli"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
 	-DNMCLI_LOCALEDIR=\"$(datadir)/locale\"
