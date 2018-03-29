@@ -2965,6 +2965,8 @@ nm_settings_connection_init (NMSettingsConnection *self)
 	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_SETTINGS_CONNECTION, NMSettingsConnectionPrivate);
 	self->_priv = priv;
 
+	c_list_init (&self->_connections_lst);
+
 	priv->ready = TRUE;
 	c_list_init (&priv->call_ids_lst_head);
 
@@ -3001,6 +3003,8 @@ dispose (GObject *object)
 	NMSettingsConnectionCallId *call_id, *call_id_safe;
 
 	_LOGD ("disposing");
+
+	nm_assert (c_list_is_empty (&self->_connections_lst));
 
 	/* Cancel in-progress secrets requests */
 	if (priv->agent_mgr) {
