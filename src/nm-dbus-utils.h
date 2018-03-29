@@ -171,4 +171,8 @@ void nm_dbus_utils_g_value_set_object_path_array (GValue *value,
                                                   gboolean (*filter_func) (GObject *object, gpointer user_data),
                                                   gpointer user_data);
 
+void nm_dbus_utils_g_value_set_object_path_from_hash (GValue *value,
+                                                      GHashTable *hash,
+                                                      gboolean expect_all_exported);
+
 #endif /* __NM_DBUS_UTILS_H__ */

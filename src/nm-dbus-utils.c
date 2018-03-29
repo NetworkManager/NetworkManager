@@ -147,6 +147,36 @@ nm_dbus_utils_g_value_set_object_path_array (GValue *value,
 	g_value_take_boxed (value, paths);
 }
 
+void
+nm_dbus_utils_g_value_set_object_path_from_hash (GValue *value,
+                                                 GHashTable *hash /* has keys of NMDBusObject type. */,
+                                                 gboolean expect_all_exported)
+{
+	NMDBusObject *obj;
+	char **strv;
+	guint i, n;
+	GHashTableIter iter;
+
+	nm_assert (value);
+	nm_assert (hash);
+
+	n = g_hash_table_size (hash);
+	strv = g_new (char *, n + 1);
+	i = 0;
+	g_hash_table_iter_init (&iter, hash);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &obj, NULL)) {
+		const char *path;
+
+		path = nm_dbus_object_get_path (obj);
+		if (!path) {
+			nm_assert (!expect_all_exported);
+			continue;
+		}
+		strv[i++] = g_strdup (path);
+	}
+	nm_assert (i <= n);
+	strv[i] = NULL;
+	g_value_take_boxed (value, strv);
+}
+
 /*****************************************************************************/
-
-
