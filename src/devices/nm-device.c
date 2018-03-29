@@ -15124,9 +15124,6 @@ get_property (GObject *object, guint prop_id,
 {
 	NMDevice *self = NM_DEVICE (object);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	GPtrArray *array;
-	GHashTableIter iter;
-	NMConnection *connection;
 	GVariantBuilder array_builder;
 
 	switch (prop_id) {
@@ -15232,12 +15229,9 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->rfkill_type);
 		break;
 	case PROP_AVAILABLE_CONNECTIONS:
-		array = g_ptr_array_sized_new (g_hash_table_size (priv->available_connections));
-		g_hash_table_iter_init (&iter, priv->available_connections);
-		while (g_hash_table_iter_next (&iter, (gpointer) &connection, NULL))
-			g_ptr_array_add (array, g_strdup (nm_dbus_object_get_path (NM_DBUS_OBJECT (connection))));
-		g_ptr_array_add (array, NULL);
-		g_value_take_boxed (value, (char **) g_ptr_array_free (array, FALSE));
+		nm_dbus_utils_g_value_set_object_path_from_hash (value,
+		                                                 priv->available_connections,
+		                                                 TRUE);
 		break;
 	case PROP_PHYSICAL_PORT_ID:
 		g_value_set_string (value, priv->physical_port_id);
