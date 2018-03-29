@@ -348,11 +348,10 @@ next_dev:
 	}
 
 	if (NM_FLAGS_HAS (priv->flags, NM_CHECKPOINT_CREATE_FLAG_DISCONNECT_NEW_DEVICES)) {
-		const CList *all_devices;
+		const CList *tmp_lst;
 		NMDeviceState state;
 
-		all_devices = nm_manager_get_devices (priv->manager);
-		c_list_for_each_entry (device, all_devices, devices_lst) {
+		nm_manager_for_each_device (priv->manager, device, tmp_lst) {
 			if (g_hash_table_contains (priv->devices, device))
 				continue;
 			state = nm_device_get_state (device);
