@@ -434,16 +434,12 @@ get_property (GObject *object, guint prop_id,
 {
 	NMCheckpoint *self = NM_CHECKPOINT (object);
 	NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE (self);
-	gs_free_slist GSList *devices = NULL;
-	GHashTableIter iter;
-	NMDevice *device;
 
 	switch (prop_id) {
 	case PROP_DEVICES:
-		g_hash_table_iter_init (&iter, priv->devices);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &device, NULL))
-			devices = g_slist_append (devices, device);
-		nm_dbus_utils_g_value_set_object_path_array (value, devices, NULL, NULL);
+		nm_dbus_utils_g_value_set_object_path_from_hash (value,
+		                                                 priv->devices,
+		                                                 FALSE);
 		break;
 	case PROP_CREATED:
 		g_value_set_int64 (value, priv->created);
