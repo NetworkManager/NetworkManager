@@ -1172,7 +1172,7 @@ get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE ((NMActiveConnection *) object);
-	GPtrArray *devices;
+	char **strv;
 	NMDevice *master_device = NULL;
 
 	switch (prop_id) {
@@ -1202,11 +1202,10 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->specific_object ? priv->specific_object : "/");
 		break;
 	case PROP_DEVICES:
-		devices = g_ptr_array_sized_new (2);
+		strv = g_new0 (char *, 2);
 		if (priv->device && priv->state < NM_ACTIVE_CONNECTION_STATE_DEACTIVATED)
-			g_ptr_array_add (devices, g_strdup (nm_dbus_object_get_path (NM_DBUS_OBJECT (priv->device))));
-		g_ptr_array_add (devices, NULL);
-		g_value_take_boxed (value, (char **) g_ptr_array_free (devices, FALSE));
+			strv[0] = g_strdup (nm_dbus_object_get_path (NM_DBUS_OBJECT (priv->device)));
+		g_value_take_boxed (value, strv);
 		break;
 	case PROP_STATE:
 		if (priv->state_set)
