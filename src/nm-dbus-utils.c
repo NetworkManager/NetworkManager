@@ -121,33 +121,6 @@ nm_dbus_utils_g_value_set_object_path (GValue *value, gpointer object)
 }
 
 void
-nm_dbus_utils_g_value_set_object_path_array (GValue *value,
-                                             GSList *objects,
-                                             gboolean (*filter_func) (GObject *object, gpointer user_data),
-                                             gpointer user_data)
-{
-	char **paths;
-	guint i;
-	GSList *iter;
-
-	paths = g_new (char *, g_slist_length (objects) + 1);
-	for (i = 0, iter = objects; iter; iter = iter->next) {
-		NMDBusObject *object = iter->data;
-		const char *path;
-
-		path = nm_dbus_object_get_path (object);
-		if (!path)
-			continue;
-		if (   filter_func
-		    && !filter_func ((GObject *) object, user_data))
-			continue;
-		paths[i++] = g_strdup (path);
-	}
-	paths[i] = NULL;
-	g_value_take_boxed (value, paths);
-}
-
-void
 nm_dbus_utils_g_value_set_object_path_from_hash (GValue *value,
                                                  GHashTable *hash /* has keys of NMDBusObject type. */,
                                                  gboolean expect_all_exported)
