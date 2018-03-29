@@ -581,7 +581,7 @@ _update_prepare (NMSettingsConnection *self,
 	if (!nm_connection_normalize (new_connection, NULL, NULL, error))
 		return FALSE;
 
-	if (   nm_connection_get_path (NM_CONNECTION (self))
+	if (   nm_dbus_object_get_path (NM_DBUS_OBJECT (self))
 	    && g_strcmp0 (nm_settings_connection_get_uuid (self), nm_connection_get_uuid (new_connection)) != 0) {
 		/* Updating the UUID is not allowed once the path is exported. */
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
@@ -798,7 +798,7 @@ nm_settings_connection_delete (NMSettingsConnection *self,
 	for_agents = nm_simple_connection_new_clone (NM_CONNECTION (self));
 	nm_connection_clear_secrets (for_agents);
 	nm_agent_manager_delete_secrets (priv->agent_mgr,
-	                                 nm_connection_get_path (NM_CONNECTION (self)),
+	                                 nm_dbus_object_get_path (NM_DBUS_OBJECT (self)),
 	                                 for_agents);
 	g_object_unref (for_agents);
 
@@ -1295,7 +1295,7 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	priv->last_secret_agent_version_id = nm_agent_manager_get_agent_version_id (priv->agent_mgr);
 
 	call_id_a = nm_agent_manager_get_secrets (priv->agent_mgr,
-	                                          nm_connection_get_path (NM_CONNECTION (self)),
+	                                          nm_dbus_object_get_path (NM_DBUS_OBJECT (self)),
 	                                          NM_CONNECTION (self),
 	                                          subject,
 	                                          existing_secrets,
@@ -1789,7 +1789,7 @@ update_auth_cb (NMSettingsConnection *self,
 		                                        secrets_filter_cb,
 		                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
 		nm_agent_manager_save_secrets (info->agent_mgr,
-		                               nm_connection_get_path (NM_CONNECTION (self)),
+		                               nm_dbus_object_get_path (NM_DBUS_OBJECT (self)),
 		                               for_agent,
 		                               info->subject);
 	}
@@ -2210,7 +2210,7 @@ dbus_clear_secrets_auth_cb (NMSettingsConnection *self,
 
 	/* Tell agents to remove secrets for this connection */
 	nm_agent_manager_delete_secrets (priv->agent_mgr,
-	                                 nm_connection_get_path (NM_CONNECTION (self)),
+	                                 nm_dbus_object_get_path (NM_DBUS_OBJECT (self)),
 	                                 NM_CONNECTION (self));
 
 	nm_settings_connection_update (self,

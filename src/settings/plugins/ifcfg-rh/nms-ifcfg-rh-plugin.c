@@ -750,7 +750,7 @@ impl_ifcfgrh_get_ifcfg_details (SettingsPluginIfcfg *plugin,
 		return;
 	}
 
-	path = nm_connection_get_path (NM_CONNECTION (connection));
+	path = nm_dbus_object_get_path (NM_DBUS_OBJECT (connection));
 	if (!path) {
 		g_dbus_method_invocation_return_error (context,
 		                                       NM_SETTINGS_ERROR,

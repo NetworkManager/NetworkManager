@@ -15257,7 +15257,7 @@ get_property (GObject *object, guint prop_id,
 		array = g_ptr_array_sized_new (g_hash_table_size (priv->available_connections));
 		g_hash_table_iter_init (&iter, priv->available_connections);
 		while (g_hash_table_iter_next (&iter, (gpointer) &connection, NULL))
-			g_ptr_array_add (array, g_strdup (nm_connection_get_path (connection)));
+			g_ptr_array_add (array, g_strdup (nm_dbus_object_get_path (NM_DBUS_OBJECT (connection))));
 		g_ptr_array_add (array, NULL);
 		g_value_take_boxed (value, (char **) g_ptr_array_free (array, FALSE));
 		break;

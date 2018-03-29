@@ -2392,7 +2392,7 @@ recheck_assume_connection (NMManager *self,
 
 		if (!active) {
 			_LOGW (LOGD_DEVICE, "assume: assumed connection %s failed to activate: %s",
-			       nm_connection_get_path (NM_CONNECTION (connection)),
+			       nm_dbus_object_get_path (NM_DBUS_OBJECT (connection)),
 			       error->message);
 			g_error_free (error);
 
@@ -4517,7 +4517,7 @@ activation_add_done (NMSettings *settings,
 			g_dbus_method_invocation_return_value (
 			    context,
 			    g_variant_new ("(oo)",
-			                   nm_connection_get_path (NM_CONNECTION (new_connection)),
+			                   nm_dbus_object_get_path (NM_DBUS_OBJECT (new_connection)),
 			                   nm_dbus_object_get_path (NM_DBUS_OBJECT (active))));
 			nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE,
 			                            nm_active_connection_get_settings_connection (active),
