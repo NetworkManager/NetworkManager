@@ -661,8 +661,10 @@ nm_settings_connection_update (NMSettingsConnection *self,
 	                               NM_SETTING_COMPARE_FLAG_EXACT)) {
 		gs_unref_object NMConnection *simple = NULL;
 
-		if (log_diff_name)
-			nm_utils_log_connection_diff (replace_connection, NM_CONNECTION (self), LOGL_DEBUG, LOGD_CORE, log_diff_name, "++ ");
+		if (log_diff_name) {
+			nm_utils_log_connection_diff (replace_connection, NM_CONNECTION (self), LOGL_DEBUG, LOGD_CORE, log_diff_name, "++ ",
+			                              nm_dbus_object_get_path (NM_DBUS_OBJECT (self)));
+		}
 
 		/* Make a copy of agent-owned secrets because they won't be present in
 		 * the connection returned by plugins, as plugins return only what was

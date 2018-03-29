@@ -1031,7 +1031,8 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 	                     g_object_ref (connection));
 	_clear_connections_cached_list (&priv->connections_cached_list);
 
-	nm_utils_log_connection_diff (NM_CONNECTION (connection), NULL, LOGL_DEBUG, LOGD_CORE, "new connection", "++ ");
+	nm_utils_log_connection_diff (NM_CONNECTION (connection), NULL, LOGL_DEBUG, LOGD_CORE, "new connection", "++ ",
+	                              path);
 
 	/* Only emit the individual connection-added signal after connections
 	 * have been initially loaded.

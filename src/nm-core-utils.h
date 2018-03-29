@@ -231,7 +231,12 @@ const char *nm_utils_new_infiniband_name (char *name, const char *parent_name, i
 
 int nm_utils_cmp_connection_by_autoconnect_priority (NMConnection *a, NMConnection *b);
 
-void nm_utils_log_connection_diff (NMConnection *connection, NMConnection *diff_base, guint32 level, guint64 domain, const char *name, const char *prefix);
+void nm_utils_log_connection_diff (NMConnection *connection,
+                                   NMConnection *diff_base,
+                                   guint32 level, guint64 domain,
+                                   const char *name,
+                                   const char *prefix,
+                                   const char *dbus_path);
 
 gint64 nm_utils_get_monotonic_timestamp_ns (void);
 gint64 nm_utils_get_monotonic_timestamp_us (void);
