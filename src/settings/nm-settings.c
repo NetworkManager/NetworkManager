@@ -166,6 +166,11 @@ static void connection_ready_changed (NMSettingsConnection *conn,
                                       GParamSpec *pspec,
                                       gpointer user_data);
 
+static void default_wired_clear_tag (NMSettings *self,
+                                     NMDevice *device,
+                                     NMSettingsConnection *connection,
+                                     gboolean add_to_no_auto_default);
+
 /*****************************************************************************/
 
 static void
@@ -862,10 +867,20 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 	NMSettings *self = NM_SETTINGS (user_data);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	const char *cpath = nm_connection_get_path (NM_CONNECTION (connection));
+	NMDevice *device;
 
 	if (!g_hash_table_lookup (priv->connections, cpath))
 		g_return_if_reached ();
 	g_object_ref (connection);
+
+	/* When the default wired connection is removed (either deleted or saved to
+	 * a new persistent connection by a plugin), write the MAC address of the
+	 * wired device to the config file and don't create a new default wired
+	 * connection for that device again.
+	 */
+	device = g_object_get_qdata (G_OBJECT (connection), _default_wired_device_quark ());
+	if (device)
+		default_wired_clear_tag (self, device, connection, TRUE);
 
 	/* Disconnect signal handlers, as plugins might still keep references
 	 * to the connection (and thus the signal handlers would still be live)
@@ -1677,26 +1692,6 @@ have_connection_for_device (NMSettings *self, NMDevice *device)
 	return FALSE;
 }
 
-static void default_wired_clear_tag (NMSettings *self,
-                                     NMDevice *device,
-                                     NMSettingsConnection *connection,
-                                     gboolean add_to_no_auto_default);
-
-static void
-default_wired_connection_removed_cb (NMSettingsConnection *connection, NMSettings *self)
-{
-	NMDevice *device;
-
-	/* When the default wired connection is removed (either deleted or saved to
-	 * a new persistent connection by a plugin), write the MAC address of the
-	 * wired device to the config file and don't create a new default wired
-	 * connection for that device again.
-	 */
-	device = g_object_get_qdata (G_OBJECT (connection), _default_wired_device_quark ());
-	if (device)
-		default_wired_clear_tag (self, device, connection, TRUE);
-}
-
 static void
 default_wired_connection_updated_by_user_cb (NMSettingsConnection *connection, gboolean by_user, NMSettings *self)
 {
@@ -1729,7 +1724,6 @@ default_wired_clear_tag (NMSettings *self,
 	g_object_set_qdata (G_OBJECT (connection), _default_wired_device_quark (), NULL);
 	g_object_set_qdata (G_OBJECT (device), _default_wired_connection_quark (), NULL);
 
-	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (default_wired_connection_removed_cb), self);
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (default_wired_connection_updated_by_user_cb), self);
 
 	if (add_to_no_auto_default)
@@ -1781,8 +1775,6 @@ device_realized (NMDevice *device, GParamSpec *pspec, NMSettings *self)
 
 	g_signal_connect (added, NM_SETTINGS_CONNECTION_UPDATED_INTERNAL,
 	                  G_CALLBACK (default_wired_connection_updated_by_user_cb), self);
-	g_signal_connect (added, NM_SETTINGS_CONNECTION_REMOVED,
-	                  G_CALLBACK (default_wired_connection_removed_cb), self);
 
 	_LOGI ("(%s): created default wired connection '%s'",
 	       nm_device_get_iface (device),
