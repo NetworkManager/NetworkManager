@@ -1847,10 +1847,8 @@ nm_settings_start (NMSettings *self, GError **error)
 	/* Load the plugins; fail if a plugin is not found. */
 	plugins = nm_config_data_get_plugins (nm_config_get_data_orig (priv->config), TRUE);
 
-	if (!load_plugins (self, (const char **) plugins, error)) {
-		g_object_unref (self);
+	if (!load_plugins (self, (const char **) plugins, error))
 		return FALSE;
-	}
 
 	load_connections (self);
 	check_startup_complete (self);
