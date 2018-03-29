@@ -849,31 +849,15 @@ connection_flags_changed (NMSettingsConnection *connection,
 }
 
 static void
-_emit_connection_removed (NMSettings *self,
-                          NMSettingsConnection *connection)
-{
-	nm_dbus_object_emit_signal (NM_DBUS_OBJECT (self),
-	                            &interface_info_settings,
-	                            &signal_info_connection_removed,
-	                            "(o)",
-	                            nm_dbus_object_get_path (NM_DBUS_OBJECT (connection)));
-
-	g_signal_emit (self, signals[CONNECTION_REMOVED], 0, connection);
-}
-
-static void
 connection_removed (NMSettingsConnection *connection, gpointer user_data)
 {
 	NMSettings *self = NM_SETTINGS (user_data);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	const char *cpath = nm_dbus_object_get_path (NM_DBUS_OBJECT (connection));
 	NMDevice *device;
-	_nm_unused gs_unref_object NMSettingsConnection *connection_keep_alive = NULL;
 
 	if (!g_hash_table_lookup (priv->connections, cpath))
 		g_return_if_reached ();
-
-	connection_keep_alive = g_object_ref (connection);
 
 	/* When the default wired connection is removed (either deleted or saved to
 	 * a new persistent connection by a plugin), write the MAC address of the
@@ -896,16 +880,27 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 		g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_ready_changed), self);
 	g_object_unref (self);
 
-	/* Forget about the connection internally */
-	g_hash_table_remove (priv->connections, (gpointer) cpath);
 	_clear_connections_cached_list (&priv->connections_cached_list);
 
-	_emit_connection_removed (self, connection);
+	/* we unref @connection below. */
+	g_hash_table_steal (priv->connections, (gpointer) cpath);
 
-	/* Re-emit for listeners like NMPolicy */
-	_notify (self, PROP_CONNECTIONS);
-	if (nm_dbus_object_is_exported (NM_DBUS_OBJECT (connection)))
-		nm_dbus_object_unexport (NM_DBUS_OBJECT (connection));
+	if (priv->connections_loaded) {
+		_notify (self, PROP_CONNECTIONS);
+
+		nm_dbus_object_emit_signal (NM_DBUS_OBJECT (self),
+		                            &interface_info_settings,
+		                            &signal_info_connection_removed,
+		                            "(o)",
+		                            nm_dbus_object_get_path (NM_DBUS_OBJECT (connection)));
+	}
+
+	nm_dbus_object_unexport (NM_DBUS_OBJECT (connection));
+
+	if (priv->connections_loaded)
+		g_signal_emit (self, signals[CONNECTION_REMOVED], 0, connection);
+
+	g_object_ref (connection);
 
 	check_startup_complete (self);
 }
