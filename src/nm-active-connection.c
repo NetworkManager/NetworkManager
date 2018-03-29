@@ -33,7 +33,7 @@
 #include "nm-core-internal.h"
 
 typedef struct _NMActiveConnectionPrivate {
-	NMSettingsConnection *settings_connection;
+	NMDBusTrackObjPath settings_connection;
 	NMConnection *applied_connection;
 	char *specific_object;
 	NMDevice *device;
@@ -184,32 +184,24 @@ _settings_connection_updated (NMSettingsConnection *connection,
 }
 
 static void
-_settings_connection_exported_changed (NMSettingsConnection *settings_connection,
-                                       NMActiveConnection *self)
-{
-	_notify (self, PROP_CONNECTION);
-}
-
-static void
 _set_settings_connection (NMActiveConnection *self, NMSettingsConnection *connection)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 
-	if (priv->settings_connection == connection)
+	if (priv->settings_connection.obj == connection)
 		return;
-	if (priv->settings_connection) {
-		g_signal_handlers_disconnect_by_func (priv->settings_connection, _settings_connection_updated, self);
-		g_signal_handlers_disconnect_by_func (priv->settings_connection, _settings_connection_exported_changed, self);
-		g_signal_handlers_disconnect_by_func (priv->settings_connection, _settings_connection_notify_flags, self);
-		g_clear_object (&priv->settings_connection);
+
+	if (priv->settings_connection.obj) {
+		g_signal_handlers_disconnect_by_func (priv->settings_connection.obj, _settings_connection_updated, self);
+		g_signal_handlers_disconnect_by_func (priv->settings_connection.obj, _settings_connection_notify_flags, self);
 	}
 	if (connection) {
-		priv->settings_connection = g_object_ref (connection);
 		g_signal_connect (connection, NM_SETTINGS_CONNECTION_UPDATED_INTERNAL, (GCallback) _settings_connection_updated, self);
-		g_signal_connect (connection, NM_DBUS_OBJECT_EXPORTED_CHANGED, G_CALLBACK (_settings_connection_exported_changed), self);
 		if (nm_active_connection_get_activation_type (self) == NM_ACTIVATION_TYPE_EXTERNAL)
 			g_signal_connect (connection, "notify::"NM_SETTINGS_CONNECTION_FLAGS, (GCallback) _settings_connection_notify_flags, self);
 	}
+
+	nm_dbus_track_obj_path_set (&priv->settings_connection, connection, TRUE);
 }
 
 NMActiveConnectionState
@@ -267,7 +259,7 @@ nm_active_connection_set_state (NMActiveConnection *self,
 
 	if (   new_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED
 	    || old_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-		nm_settings_connection_update_timestamp (priv->settings_connection,
+		nm_settings_connection_update_timestamp (priv->settings_connection.obj,
 		                                         (guint64) time (NULL), TRUE);
 	}
 
@@ -363,7 +355,7 @@ nm_active_connection_get_settings_connection_id (NMActiveConnection *self)
 
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), NULL);
 
-	con = NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->settings_connection;
+	con = NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->settings_connection.obj;
 	return con
 	       ? nm_connection_get_id (NM_CONNECTION (con))
 	       : NULL;
@@ -374,7 +366,7 @@ _nm_active_connection_get_settings_connection (NMActiveConnection *self)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), NULL);
 
-	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->settings_connection;
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->settings_connection.obj;
 }
 
 NMSettingsConnection *
@@ -448,7 +440,7 @@ nm_active_connection_set_settings_connection (NMActiveConnection *self,
 	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (connection));
-	g_return_if_fail (!priv->settings_connection);
+	g_return_if_fail (!priv->settings_connection.obj);
 	g_return_if_fail (!priv->applied_connection);
 
 	/* Can't change connection after the ActiveConnection is exported over D-Bus.
@@ -463,7 +455,7 @@ nm_active_connection_set_settings_connection (NMActiveConnection *self,
 	_set_settings_connection (self, connection);
 
 	_set_applied_connection_take (self,
-	                              nm_simple_connection_new_clone (NM_CONNECTION (priv->settings_connection)));
+	                              nm_simple_connection_new_clone (NM_CONNECTION (priv->settings_connection.obj)));
 }
 
 gboolean
@@ -475,9 +467,9 @@ nm_active_connection_has_unmodified_applied_connection (NMActiveConnection *self
 
 	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 
-	g_return_val_if_fail (priv->settings_connection, FALSE);
+	g_return_val_if_fail (priv->settings_connection.obj, FALSE);
 
-	return nm_settings_connection_has_unmodified_applied_connection (priv->settings_connection,
+	return nm_settings_connection_has_unmodified_applied_connection (priv->settings_connection.obj,
 	                                                                 priv->applied_connection,
 	                                                                 compare_flags);
 }
@@ -493,10 +485,10 @@ nm_active_connection_clear_secrets (NMActiveConnection *self)
 
 	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 
-	if (nm_settings_connection_has_unmodified_applied_connection (priv->settings_connection,
+	if (nm_settings_connection_has_unmodified_applied_connection (priv->settings_connection.obj,
 	                                                              priv->applied_connection,
 	                                                              NM_SETTING_COMPARE_FLAG_NONE))
-		nm_connection_clear_secrets ((NMConnection *) priv->settings_connection);
+		nm_connection_clear_secrets ((NMConnection *) priv->settings_connection.obj);
 	nm_connection_clear_secrets (priv->applied_connection);
 }
 
@@ -856,11 +848,11 @@ _set_activation_type (NMActiveConnection *self,
 
 	priv->activation_type = activation_type;
 
-	if (priv->settings_connection) {
+	if (priv->settings_connection.obj) {
 		if (activation_type == NM_ACTIVATION_TYPE_EXTERNAL)
-			g_signal_connect (priv->settings_connection, "notify::"NM_SETTINGS_CONNECTION_FLAGS, (GCallback) _settings_connection_notify_flags, self);
+			g_signal_connect (priv->settings_connection.obj, "notify::"NM_SETTINGS_CONNECTION_FLAGS, (GCallback) _settings_connection_notify_flags, self);
 		else
-			g_signal_handlers_disconnect_by_func (priv->settings_connection, _settings_connection_notify_flags, self);
+			g_signal_handlers_disconnect_by_func (priv->settings_connection.obj, _settings_connection_notify_flags, self);
 	}
 }
 
@@ -906,7 +898,7 @@ _settings_connection_notify_flags (NMSettingsConnection *settings_connection,
 	nm_assert (NM_IS_ACTIVE_CONNECTION (self));
 	nm_assert (NM_IS_SETTINGS_CONNECTION (settings_connection));
 	nm_assert (nm_active_connection_get_activation_type (self) == NM_ACTIVATION_TYPE_EXTERNAL);
-	nm_assert (NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->settings_connection == settings_connection);
+	nm_assert (NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->settings_connection.obj == settings_connection);
 
 	if (NM_FLAGS_HAS (nm_settings_connection_get_flags (settings_connection),
 	                  NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED))
@@ -1077,11 +1069,11 @@ nm_active_connection_authorize (NMActiveConnection *self,
 
 	if (initial_connection) {
 		g_return_if_fail (NM_IS_CONNECTION (initial_connection));
-		g_return_if_fail (!priv->settings_connection);
+		g_return_if_fail (!priv->settings_connection.obj);
 		g_return_if_fail (!priv->applied_connection);
 		con = initial_connection;
 	} else {
-		g_return_if_fail (NM_IS_SETTINGS_CONNECTION (priv->settings_connection));
+		g_return_if_fail (NM_IS_SETTINGS_CONNECTION (priv->settings_connection.obj));
 		g_return_if_fail (NM_IS_CONNECTION (priv->applied_connection));
 		con = priv->applied_connection;
 	}
@@ -1169,25 +1161,25 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 
-	/* note that while priv->settings_connection might not be set initially,
+	/* note that while priv->settings_connection.obj might not be set initially,
 	 * it will be set before the object is exported on D-Bus. Hence,
 	 * nobody is calling these property getters before the object is
 	 * exported, at which point we will have a valid settings-connection.
 	 *
-	 * Therefore, intentionally not check whether priv->settings_connection
+	 * Therefore, intentionally not check whether priv->settings_connection.obj
 	 * is set, to get an assertion failure if somebody tries to access the
 	 * getters at the wrong time. */
 	case PROP_CONNECTION:
-		nm_dbus_utils_g_value_set_object_path_still_exported (value, priv->settings_connection);
+		g_value_set_string (value, nm_dbus_track_obj_path_get (&priv->settings_connection));
 		break;
 	case PROP_ID:
-		g_value_set_string (value, nm_connection_get_id (NM_CONNECTION (priv->settings_connection)));
+		g_value_set_string (value, nm_connection_get_id (NM_CONNECTION (priv->settings_connection.obj)));
 		break;
 	case PROP_UUID:
-		g_value_set_string (value, nm_connection_get_uuid (NM_CONNECTION (priv->settings_connection)));
+		g_value_set_string (value, nm_connection_get_uuid (NM_CONNECTION (priv->settings_connection.obj)));
 		break;
 	case PROP_TYPE:
-		g_value_set_string (value, nm_connection_get_connection_type (NM_CONNECTION (priv->settings_connection)));
+		g_value_set_string (value, nm_connection_get_connection_type (NM_CONNECTION (priv->settings_connection.obj)));
 		break;
 
 	case PROP_SPECIFIC_OBJECT:
@@ -1343,6 +1335,10 @@ nm_active_connection_init (NMActiveConnection *self)
 	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_ACTIVE_CONNECTION, NMActiveConnectionPrivate);
 	self->_priv = priv;
 
+	nm_dbus_track_obj_path_init (&priv->settings_connection,
+	                             G_OBJECT (self),
+	                             obj_properties[PROP_CONNECTION]);
+
 	c_list_init (&self->active_connections_lst);
 
 	_LOGT ("creating");
@@ -1360,8 +1356,8 @@ constructed (GObject *object)
 	G_OBJECT_CLASS (nm_active_connection_parent_class)->constructed (object);
 
 	if (   !priv->applied_connection
-	    && priv->settings_connection)
-		priv->applied_connection = nm_simple_connection_new_clone (NM_CONNECTION (priv->settings_connection));
+	    && priv->settings_connection.obj)
+		priv->applied_connection = nm_simple_connection_new_clone (NM_CONNECTION (priv->settings_connection.obj));
 
 	_LOGD ("constructed (%s, version-id %llu, type %s)",
 	       G_OBJECT_TYPE_NAME (self),
@@ -1419,6 +1415,17 @@ dispose (GObject *object)
 	G_OBJECT_CLASS (nm_active_connection_parent_class)->dispose (object);
 }
 
+static void
+finalize (GObject *object)
+{
+	NMActiveConnection *self = NM_ACTIVE_CONNECTION (object);
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+
+	nm_dbus_track_obj_path_set (&priv->settings_connection, NULL, FALSE);
+
+	G_OBJECT_CLASS (nm_active_connection_parent_class)->finalize (object);
+}
+
 static const GDBusSignalInfo signal_info_state_changed = NM_DEFINE_GDBUS_SIGNAL_INFO_INIT (
 	"StateChanged",
 	.args = NM_DEFINE_GDBUS_ARG_INFOS (
@@ -1471,6 +1478,7 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 	object_class->set_property = set_property;
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
+	object_class->finalize = finalize;
 
 	obj_properties[PROP_CONNECTION] =
 	     g_param_spec_string (NM_ACTIVE_CONNECTION_CONNECTION, "", "",
