@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2014 Red Hat, Inc.
+ * (C) Copyright 2010 - 2018 Red Hat, Inc.
  */
 
 #ifndef NMC_CONNECTIONS_H
@@ -33,7 +33,7 @@ nmc_read_connection_properties (NmCli *nmc,
                                 char ***argv,
                                 GError **error);
 
-void nmc_active_connection_state_to_color (NMActiveConnectionState state, NMMetaTermColor *color);
+NMMetaColor nmc_active_connection_state_to_color (NMActiveConnectionState state);
 
 extern const NmcMetaGenericInfo *const nmc_fields_con_show[];
 extern const NmcMetaGenericInfo *const nmc_fields_con_active_details_general[];

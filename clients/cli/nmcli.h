@@ -93,8 +93,7 @@ struct _NmcOutputField {
 	gboolean value_is_array;        /* Whether value is char** instead of char* */
 	gboolean free_value;            /* Whether to free the value */
 	NmcOfFlags flags;               /* Flags - whether and how to print values/field names/headers */
-	NMMetaTermColor color;             /* Use this color to print value */
-	NMMetaTermFormat color_fmt;        /* Use this terminal format to print value */
+	NMMetaColor color;              /* Use this color to print value */
 };
 
 typedef struct _NmcConfig {
@@ -105,6 +104,7 @@ typedef struct _NmcConfig {
 	bool in_editor;                                   /* Whether running the editor - nmcli con edit' */
 	bool show_secrets;                                /* Whether to display secrets (both input and output): option '--show-secrets' */
 	bool overview;                                    /* Overview mode (hide default values) */
+	const char *palette[_NM_META_COLOR_NUM];          /* Color palette */
 } NmcConfig;
 
 typedef struct _NmcOutputData {

@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 Red Hat, Inc.
+ * (C) Copyright 2010 - 2018 Red Hat, Inc.
  */
 
 #ifndef NMC_DEVICES_H
@@ -32,7 +32,7 @@ void monitor_devices (NmCli *nmc);
 
 NMDevice ** nmc_get_devices_sorted (NMClient *client);
 
-void nmc_device_state_to_color (NMDeviceState state, NMMetaTermColor *color, NMMetaTermFormat *color_fmt);
+NMMetaColor nmc_device_state_to_color (NMDeviceState state);
 
 extern const NmcMetaGenericInfo *const nmc_fields_dev_status[];
 extern const NmcMetaGenericInfo *const nmc_fields_dev_show_general[];
