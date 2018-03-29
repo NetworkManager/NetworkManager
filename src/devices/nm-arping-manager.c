@@ -11,7 +11,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * Copyright (C) 2015 Red Hat, Inc.
+ * Copyright (C) 2015-2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -25,6 +25,7 @@
 #include "platform/nm-platform.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
+#include "n-acd/src/n-acd.h"
 
 /*****************************************************************************/
 
@@ -37,13 +38,12 @@ typedef enum {
 
 typedef struct {
 	in_addr_t address;
-	GPid pid;
-	guint watch;
 	gboolean duplicate;
 	NMArpingManager *manager;
+	NAcd *acd;
+	GIOChannel *channel;
+	guint event_id;
 } AddressInfo;
-
-/*****************************************************************************/
 
 enum {
 	PROBE_TERMINATED,
@@ -54,11 +54,10 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
 	int            ifindex;
+	guint8         hwaddr[ETH_ALEN];
 	State          state;
 	GHashTable    *addresses;
 	guint          completed;
-	guint          timer;
-	guint          round2_id;
 } NMArpingManagerPrivate;
 
 struct _NMArpingManager {
@@ -91,6 +90,53 @@ G_DEFINE_TYPE (NMArpingManager, nm_arping_manager, G_TYPE_OBJECT)
                 self ? nm_sprintf_buf (_sbuf, "[%p,%d]", self, _ifindex) : "" \
                 _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
     } G_STMT_END
+
+/*****************************************************************************/
+
+static const char *
+_acd_event_to_string (unsigned int event)
+{
+	switch (event) {
+	case N_ACD_EVENT_READY:
+		return "ready";
+	case N_ACD_EVENT_USED:
+		return "used";
+	case N_ACD_EVENT_DEFENDED:
+		return "defended";
+	case N_ACD_EVENT_CONFLICT:
+		return "conflict";
+	case N_ACD_EVENT_DOWN:
+		return "down";
+	}
+	return NULL;
+}
+
+#define acd_event_to_string(event) NM_UTILS_LOOKUP_STR (_acd_event_to_string, event)
+
+static const char *
+_acd_error_to_string (int error)
+{
+	if (error < 0)
+		return strerror(-error);
+
+	switch (error) {
+	case _N_ACD_E_SUCCESS:
+		return "success";
+	case N_ACD_E_DONE:
+		return "no more events (engine running)";
+	case N_ACD_E_STOPPED:
+		return "no more events (engine stopped)";
+	case N_ACD_E_PREEMPTED:
+		return "preempted";
+	case N_ACD_E_INVALID_ARGUMENT:
+		return "invalid argument";
+	case N_ACD_E_BUSY:
+		return "busy";
+	}
+	return NULL;
+}
+
+#define acd_error_to_string(error) NM_UTILS_LOOKUP_STR (_acd_error_to_string, error)
 
 /*****************************************************************************/
 
@@ -127,62 +173,98 @@ nm_arping_manager_add_address (NMArpingManager *self, in_addr_t address)
 	return TRUE;
 }
 
-static void
-arping_watch_cb (GPid pid, gint status, gpointer user_data)
+static gboolean
+acd_event (GIOChannel *source, GIOCondition condition, gpointer data)
 {
-	AddressInfo *info = user_data;
+	AddressInfo *info = data;
 	NMArpingManager *self = info->manager;
 	NMArpingManagerPrivate *priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
-	const char *addr;
+	NAcdEvent *event;
+	char address_str[INET_ADDRSTRLEN];
+	int r;
 
-	info->pid = 0;
-	info->watch = 0;
-	addr = nm_utils_inet4_ntop (info->address, NULL);
+	if (   n_acd_dispatch (info->acd)
+	    || n_acd_pop_event (info->acd, &event))
+		return G_SOURCE_CONTINUE;
 
-	if (WIFEXITED (status)) {
-		if (WEXITSTATUS (status) != 0) {
-			_LOGD ("%s already used in the %s network",
-			       addr, nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex));
-			info->duplicate = TRUE;
-		} else
-			_LOGD ("DAD succeeded for %s", addr);
-	} else {
-		_LOGD ("stopped unexpectedly with status %d for %s", status, addr);
+	switch (event->event) {
+	case N_ACD_EVENT_READY:
+		info->duplicate = FALSE;
+		if (priv->state == STATE_ANNOUNCING) {
+			r = n_acd_announce (info->acd, N_ACD_DEFEND_ONCE);
+			if (r) {
+				_LOGW ("couldn't announce address %s on interface '%s': %s",
+				       nm_utils_inet4_ntop (info->address, address_str),
+				       nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex),
+				       acd_error_to_string (r));
+			} else {
+				_LOGD ("announcing address %s",
+				       nm_utils_inet4_ntop (info->address, address_str));
+			}
+		}
+		break;
+	case N_ACD_EVENT_USED:
+		info->duplicate = TRUE;
+		break;
+	default:
+		_LOGD ("event '%s' for address %s",
+		       acd_event_to_string (event->event),
+		       nm_utils_inet4_ntop (info->address, address_str));
+		return G_SOURCE_CONTINUE;
 	}
 
-	if (++priv->completed == g_hash_table_size (priv->addresses)) {
+	if (   priv->state == STATE_PROBING
+	    && ++priv->completed == g_hash_table_size (priv->addresses)) {
 		priv->state = STATE_PROBE_DONE;
-		nm_clear_g_source (&priv->timer);
 		g_signal_emit (self, signals[PROBE_TERMINATED], 0);
 	}
+
+	return G_SOURCE_CONTINUE;
 }
 
 static gboolean
-arping_timeout_cb (gpointer user_data)
+acd_probe_start (NMArpingManager *self,
+                 AddressInfo *info,
+                 guint64 timeout)
 {
-	NMArpingManager *self = user_data;
 	NMArpingManagerPrivate *priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
-	GHashTableIter iter;
-	AddressInfo *info;
+	NAcdConfig *config;
+	int r, fd;
 
-	priv->timer = 0;
-
-	g_hash_table_iter_init (&iter, priv->addresses);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &info)) {
-		nm_clear_g_source (&info->watch);
-		if (info->pid) {
-			_LOGD ("DAD timed out for %s",
-			       nm_utils_inet4_ntop (info->address, NULL));
-			nm_utils_kill_child_async (info->pid, SIGTERM, LOGD_IP4,
-			                           "arping", 1000, NULL, NULL);
-			info->pid = 0;
-		}
+	r = n_acd_new (&info->acd);
+	if (r) {
+		_LOGW ("could not create ACD for %s on interface '%s': %s",
+		       nm_utils_inet4_ntop (info->address, NULL),
+		       nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex),
+		       acd_error_to_string (r));
+		return FALSE;
 	}
 
-	priv->state = STATE_PROBE_DONE;
-	g_signal_emit (self, signals[PROBE_TERMINATED], 0);
+	n_acd_get_fd (info->acd, &fd);
+	info->channel = g_io_channel_unix_new (fd);
+	info->event_id = g_io_add_watch (info->channel, G_IO_IN, acd_event, info);
 
-	return G_SOURCE_REMOVE;
+	config = &(NAcdConfig) {
+		.ifindex = priv->ifindex,
+		.mac = priv->hwaddr,
+		.n_mac = ETH_ALEN,
+		.ip = info->address,
+		.timeout_msec = timeout,
+		.transport = N_ACD_TRANSPORT_ETHERNET,
+	};
+
+	r = n_acd_start (info->acd, config);
+	if (r) {
+		_LOGW ("could not start probe for %s on interface '%s': %s",
+		       nm_utils_inet4_ntop (info->address, NULL),
+		       nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex),
+		       acd_error_to_string (r));
+		return FALSE;
+	}
+
+	_LOGD ("start probe for %s", nm_utils_inet4_ntop (info->address, NULL));
+
+	return TRUE;
 }
 
 /**
@@ -199,7 +281,6 @@ arping_timeout_cb (gpointer user_data)
 gboolean
 nm_arping_manager_start_probe (NMArpingManager *self, guint timeout, GError **error)
 {
-	const char *argv[] = { NULL, "-D", "-q", "-I", NULL, "-c", NULL, "-w", NULL, NULL, NULL };
 	NMArpingManagerPrivate *priv;
 	GHashTableIter iter;
 	AddressInfo *info;
@@ -208,57 +289,21 @@ nm_arping_manager_start_probe (NMArpingManager *self, guint timeout, GError **er
 
 	g_return_val_if_fail (NM_IS_ARPING_MANAGER (self), FALSE);
 	g_return_val_if_fail (!error || !*error, FALSE);
-	g_return_val_if_fail (timeout, FALSE);
 
 	priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
 	g_return_val_if_fail (priv->state == STATE_INIT, FALSE);
 
-	argv[4] = nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex);
-	if (!argv[4]) {
-		/* The device was probably just removed. */
-		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
-		             "can't find a name for ifindex %d", priv->ifindex);
-		return FALSE;
-	}
-
 	priv->completed = 0;
 
-	argv[0] = nm_utils_find_helper ("arping", NULL, NULL);
-	if (!argv[0]) {
-		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
-		                     "arping could not be found");
-		return FALSE;
-	}
-
-	timeout_str = g_strdup_printf ("%u", timeout / 1000 + 2);
-	argv[6] = timeout_str;
-	argv[8] = timeout_str;
-
 	g_hash_table_iter_init (&iter, priv->addresses);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &info))
+		success |= acd_probe_start (self, info, timeout);
 
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &info)) {
-		gs_free char *tmp_str = NULL;
-
-		argv[9] = nm_utils_inet4_ntop (info->address, NULL);
-		_LOGD ("run %s", (tmp_str = g_strjoinv (" ", (char **) argv)));
-
-		if (g_spawn_async (NULL, (char **) argv, NULL,
-		                   G_SPAWN_STDOUT_TO_DEV_NULL |
-		                   G_SPAWN_STDERR_TO_DEV_NULL |
-		                   G_SPAWN_DO_NOT_REAP_CHILD,
-		                   NULL, NULL, &info->pid, NULL)) {
-			info->watch = g_child_watch_add (info->pid, arping_watch_cb, info);
-			success = TRUE;
-		}
-	}
-
-	if (success) {
-		priv->timer = g_timeout_add (timeout, arping_timeout_cb, self);
+	if (success)
 		priv->state = STATE_PROBING;
-	} else {
+	else
 		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
-		                     "could not spawn arping process");
-	}
+		                     "could not start probing");
 
 	return success;
 }
@@ -277,8 +322,6 @@ nm_arping_manager_reset (NMArpingManager *self)
 	g_return_if_fail (NM_IS_ARPING_MANAGER (self));
 	priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
 
-	nm_clear_g_source (&priv->timer);
-	nm_clear_g_source (&priv->round2_id);
 	g_hash_table_remove_all (priv->addresses);
 
 	priv->state = STATE_INIT;
@@ -326,66 +369,6 @@ nm_arping_manager_check_address (NMArpingManager *self, in_addr_t address)
 	return !info->duplicate;
 }
 
-static void
-send_announcements (NMArpingManager *self, const char *mode_arg)
-{
-	NMArpingManagerPrivate *priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
-	const char *argv[] = { NULL, mode_arg, "-q", "-I", NULL, "-c", "1", NULL, NULL };
-	int ip_arg = G_N_ELEMENTS (argv) - 2;
-	GError *error = NULL;
-	GHashTableIter iter;
-	AddressInfo *info;
-
-	argv[4] = nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex);
-	if (!argv[4]) {
-		/* The device was probably just removed. */
-		_LOGW ("can't find a name for ifindex %d", priv->ifindex);
-		return;
-	}
-
-	argv[0] = nm_utils_find_helper ("arping", NULL, NULL);
-	if (!argv[0]) {
-		_LOGW ("arping could not be found; no ARPs will be sent");
-		return;
-	}
-
-	g_hash_table_iter_init (&iter, priv->addresses);
-
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &info)) {
-		gs_free char *tmp_str = NULL;
-		gboolean success;
-
-		if (info->duplicate)
-			continue;
-
-		argv[ip_arg] = nm_utils_inet4_ntop (info->address, NULL);
-		_LOGD ("run %s", (tmp_str = g_strjoinv (" ", (char **) argv)));
-
-		success = g_spawn_async (NULL, (char **) argv, NULL,
-		                         G_SPAWN_STDOUT_TO_DEV_NULL |
-		                         G_SPAWN_STDERR_TO_DEV_NULL,
-		                         NULL, NULL, NULL, &error);
-		if (!success) {
-			_LOGW ("could not send ARP for address %s: %s", argv[ip_arg],
-			       error->message);
-			g_clear_error (&error);
-		}
-	}
-}
-
-static gboolean
-arp_announce_round2 (gpointer self)
-{
-	NMArpingManagerPrivate *priv = NM_ARPING_MANAGER_GET_PRIVATE ((NMArpingManager *) self);
-
-	priv->round2_id = 0;
-	send_announcements (self, "-U");
-	priv->state = STATE_INIT;
-	g_hash_table_remove_all (priv->addresses);
-
-	return G_SOURCE_REMOVE;
-}
-
 /**
  * nm_arping_manager_announce_addresses:
  * @self: a #NMArpingManager
@@ -396,14 +379,40 @@ void
 nm_arping_manager_announce_addresses (NMArpingManager *self)
 {
 	NMArpingManagerPrivate *priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
+	GHashTableIter iter;
+	AddressInfo *info;
+	int r;
 
-	g_return_if_fail (   priv->state == STATE_INIT
-	                  || priv->state == STATE_PROBE_DONE);
-
-	send_announcements (self, "-A");
-	nm_clear_g_source (&priv->round2_id);
-	priv->round2_id = g_timeout_add_seconds (2, arp_announce_round2, self);
-	priv->state = STATE_ANNOUNCING;
+	if (priv->state == STATE_INIT) {
+		/* n-acd can't announce without probing, therefore let's
+		 * start a fake probe with zero timeout and then perform
+		 * the announce. */
+		priv->state = STATE_ANNOUNCING;
+		g_hash_table_iter_init (&iter, priv->addresses);
+		while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &info)) {
+			if (!acd_probe_start (self, info, 0)) {
+				_LOGW ("couldn't announce address %s on interface '%s'",
+				       nm_utils_inet4_ntop (info->address, NULL),
+				       nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex));
+			}
+		}
+	} else if (priv->state == STATE_PROBE_DONE) {
+		priv->state = STATE_ANNOUNCING;
+		g_hash_table_iter_init (&iter, priv->addresses);
+		while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &info)) {
+			if (info->duplicate)
+				continue;
+			r = n_acd_announce (info->acd, N_ACD_DEFEND_ONCE);
+			if (r) {
+				_LOGW ("couldn't announce address %s on interface '%s': %s",
+				       nm_utils_inet4_ntop (info->address, NULL),
+				       nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex),
+				       acd_error_to_string (r));
+			} else
+				_LOGD ("announcing address %s", nm_utils_inet4_ntop (info->address, NULL));
+		}
+	} else
+		nm_assert_not_reached ();
 }
 
 static void
@@ -411,12 +420,9 @@ destroy_address_info (gpointer data)
 {
 	AddressInfo *info = (AddressInfo *) data;
 
-	nm_clear_g_source (&info->watch);
-
-	if (info->pid) {
-		nm_utils_kill_child_async (info->pid, SIGTERM, LOGD_IP4, "arping",
-		                           1000, NULL, NULL);
-	}
+	g_clear_pointer (&info->channel, g_io_channel_unref);
+	g_clear_pointer (&info->acd, n_acd_free);
+	nm_clear_g_source (&info->event_id);
 
 	g_slice_free (AddressInfo, info);
 }
@@ -434,14 +440,19 @@ nm_arping_manager_init (NMArpingManager *self)
 }
 
 NMArpingManager *
-nm_arping_manager_new (int ifindex)
+nm_arping_manager_new (int ifindex, const guint8 *hwaddr, size_t hwaddr_len)
 {
 	NMArpingManager *self;
 	NMArpingManagerPrivate *priv;
 
+	g_return_val_if_fail (hwaddr, NULL);
+	g_return_val_if_fail (hwaddr_len == ETH_ALEN, NULL);
+
 	self = g_object_new (NM_TYPE_ARPING_MANAGER, NULL);
 	priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
 	priv->ifindex = ifindex;
+	memcpy (priv->hwaddr, hwaddr, ETH_ALEN);
+
 	return self;
 }
 
@@ -451,8 +462,6 @@ dispose (GObject *object)
 	NMArpingManager *self = NM_ARPING_MANAGER (object);
 	NMArpingManagerPrivate *priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
 
-	nm_clear_g_source (&priv->timer);
-	nm_clear_g_source (&priv->round2_id);
 	g_clear_pointer (&priv->addresses, g_hash_table_destroy);
 
 	G_OBJECT_CLASS (nm_arping_manager_parent_class)->dispose (object);

@@ -34,6 +34,10 @@
 typedef struct {
 	int ifindex0;
 	int ifindex1;
+	const guint8 *hwaddr0;
+	const guint8 *hwaddr1;
+	size_t hwaddr0_len;
+	size_t hwaddr1_len;
 } test_fixture;
 
 static void
@@ -45,6 +49,9 @@ fixture_setup (test_fixture *fixture, gconstpointer user_data)
 
 	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, fixture->ifindex0, NULL));
 	g_assert (nm_platform_link_set_up (NM_PLATFORM_GET, fixture->ifindex1, NULL));
+
+	fixture->hwaddr0 = nm_platform_link_get_address (NM_PLATFORM_GET, fixture->ifindex0, &fixture->hwaddr0_len);
+	fixture->hwaddr1 = nm_platform_link_get_address (NM_PLATFORM_GET, fixture->ifindex1, &fixture->hwaddr1_len);
 }
 
 typedef struct {
@@ -69,11 +76,6 @@ test_arping_common (test_fixture *fixture, TestInfo *info)
 	guint wait_time;
 	gulong signal_id;
 
-	if (!nm_utils_find_helper ("arping", NULL, NULL)) {
-		g_test_skip ("arping binary is missing");
-		return;
-	}
-
 	/* first, try with a short waittime. We hope that this is long enough
 	 * to successfully complete the test. Only if that's not the case, we
 	 * assume the computer is currently busy (high load) and we retry with
@@ -81,7 +83,7 @@ test_arping_common (test_fixture *fixture, TestInfo *info)
 	wait_time = WAIT_TIME_OPTIMISTIC;
 again:
 
-	manager = nm_arping_manager_new (fixture->ifindex0);
+	manager = nm_arping_manager_new (fixture->ifindex0, fixture->hwaddr0, fixture->hwaddr0_len);
 	g_assert (manager != NULL);
 
 	for (i = 0; info->addresses[i]; i++)
@@ -122,7 +124,7 @@ again:
 }
 
 static void
-test_arping_1 (test_fixture *fixture, gconstpointer user_data)
+test_arping_probe_1 (test_fixture *fixture, gconstpointer user_data)
 {
 	TestInfo info = { .addresses       = { ADDR1, ADDR2, ADDR3 },
 	                  .peer_addresses  = { ADDR4 },
@@ -132,13 +134,31 @@ test_arping_1 (test_fixture *fixture, gconstpointer user_data)
 }
 
 static void
-test_arping_2 (test_fixture *fixture, gconstpointer user_data)
+test_arping_probe_2 (test_fixture *fixture, gconstpointer user_data)
 {
 	TestInfo info = { .addresses       = { ADDR1, ADDR2, ADDR3, ADDR4 },
 	                  .peer_addresses  = { ADDR3, ADDR2 },
 	                  .expected_result = { TRUE, FALSE, FALSE, TRUE } };
 
 	test_arping_common (fixture, &info);
+}
+
+static void
+test_arping_announce (test_fixture *fixture, gconstpointer user_data)
+{
+	gs_unref_object NMArpingManager *manager = NULL;
+	GMainLoop *loop;
+
+	manager = nm_arping_manager_new (fixture->ifindex0, fixture->hwaddr0, fixture->hwaddr0_len);
+	g_assert (manager != NULL);
+
+	g_assert (nm_arping_manager_add_address (manager, ADDR1));
+	g_assert (nm_arping_manager_add_address (manager, ADDR2));
+
+	loop = g_main_loop_new (NULL, FALSE);
+	nm_arping_manager_announce_addresses (manager);
+	g_assert (!nmtst_main_loop_run (loop, 200));
+	g_main_loop_unref (loop);
 }
 
 static void
@@ -159,6 +179,7 @@ _nmtstp_init_tests (int *argc, char ***argv)
 void
 _nmtstp_setup_tests (void)
 {
-	g_test_add ("/arping/1", test_fixture, NULL, fixture_setup, test_arping_1, fixture_teardown);
-	g_test_add ("/arping/2", test_fixture, NULL, fixture_setup, test_arping_2, fixture_teardown);
+	g_test_add ("/arping/probe/1", test_fixture, NULL, fixture_setup, test_arping_probe_1, fixture_teardown);
+	g_test_add ("/arping/probe/2", test_fixture, NULL, fixture_setup, test_arping_probe_2, fixture_teardown);
+	g_test_add ("/arping/announce", test_fixture, NULL, fixture_setup, test_arping_announce, fixture_teardown);
 }
