@@ -387,7 +387,7 @@ static void
 find_companion (NMDeviceOlpcMesh *self)
 {
 	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
-	const CList *all_devices;
+	const CList *tmp_lst;
 	NMDevice *candidate;
 
 	if (priv->companion)
@@ -396,8 +396,7 @@ find_companion (NMDeviceOlpcMesh *self)
 	nm_device_add_pending_action (NM_DEVICE (self), NM_PENDING_ACTION_WAITING_FOR_COMPANION, TRUE);
 
 	/* Try to find the companion if it's already known to the NMManager */
-	all_devices = nm_manager_get_devices (priv->manager);
-	c_list_for_each_entry (candidate, all_devices, devices_lst) {
+	nm_manager_for_each_device (priv->manager, candidate, tmp_lst) {
 		if (check_companion (self, candidate)) {
 			nm_device_queue_recheck_available (NM_DEVICE (self),
 			                                   NM_DEVICE_STATE_REASON_NONE,

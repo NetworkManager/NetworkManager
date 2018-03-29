@@ -460,7 +460,7 @@ name_owner_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 		g_clear_object (&priv->object_manager);
 		prepare_object_manager (self);
 	} else {
-		const CList *all_devices;
+		const CList *tmp_lst;
 		NMDevice *device;
 
 		if (!priv->running)
@@ -468,13 +468,11 @@ name_owner_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 
 		priv->running = false;
 
-		all_devices = nm_manager_get_devices (priv->nm_manager);
-		c_list_for_each_entry (device, all_devices, devices_lst) {
-			if (!NM_IS_DEVICE_IWD (device))
-				continue;
-
-			nm_device_iwd_set_dbus_object (NM_DEVICE_IWD (device),
-			                                NULL);
+		nm_manager_for_each_device (priv->nm_manager, device, tmp_lst) {
+			if (NM_IS_DEVICE_IWD (device)) {
+				nm_device_iwd_set_dbus_object (NM_DEVICE_IWD (device),
+				                               NULL);
+			}
 		}
 	}
 }
