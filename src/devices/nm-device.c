@@ -9555,9 +9555,8 @@ nm_device_activate_ip6_state_done (NMDevice *self)
 /*****************************************************************************/
 
 static void
-act_request_set_cb (NMActRequest *act_request,
-                    GParamSpec *pspec,
-                    NMDevice *self)
+act_request_exported_changed (NMActRequest *act_request,
+                              NMDevice *self)
 {
 	_notify (self, PROP_ACTIVE_CONNECTION);
 }
@@ -9588,8 +9587,8 @@ act_request_set (NMDevice *self, NMActRequest *act_request)
 
 	if (act_request) {
 		priv->act_request_id = g_signal_connect (act_request,
-		                                         "notify::"NM_DBUS_OBJECT_PATH,
-		                                         G_CALLBACK (act_request_set_cb),
+		                                         NM_DBUS_OBJECT_EXPORTED_CHANGED,
+		                                         G_CALLBACK (act_request_exported_changed),
 		                                         self);
 
 		switch (nm_active_connection_get_activation_type (NM_ACTIVE_CONNECTION (act_request))) {
@@ -15198,7 +15197,7 @@ get_property (GObject *object, guint prop_id,
 		                      g_variant_new ("(uu)", priv->state, priv->state_reason));
 		break;
 	case PROP_ACTIVE_CONNECTION:
-		nm_dbus_utils_g_value_set_object_path (value, priv->act_request_public ? priv->act_request : NULL);
+		nm_dbus_utils_g_value_set_object_path_still_exported (value, priv->act_request_public ? priv->act_request : NULL);
 		break;
 	case PROP_DEVICE_TYPE:
 		g_value_set_uint (value, priv->type);

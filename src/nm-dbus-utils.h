@@ -173,6 +173,8 @@ const char **nm_dbus_utils_get_paths_for_clist (const struct CList *lst_head,
 
 void nm_dbus_utils_g_value_set_object_path (GValue *value, gpointer object);
 
+void nm_dbus_utils_g_value_set_object_path_still_exported (GValue *value, gpointer object);
+
 void nm_dbus_utils_g_value_set_object_path_from_hash (GValue *value,
                                                       GHashTable *hash,
                                                       gboolean expect_all_exported);
