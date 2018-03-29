@@ -2197,7 +2197,6 @@ get_existing_connection (NMManager *self,
 
 			matched = NM_SETTINGS_CONNECTION (nm_utils_match_connection ((NMConnection *const*) connections,
 			                                                             connection,
-			                                                             FALSE,
 			                                                             nm_device_has_carrier (device),
 			                                                             nm_device_get_route_metric (device, AF_INET),
 			                                                             nm_device_get_route_metric (device, AF_INET6),
