@@ -11,20 +11,21 @@
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 # Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
 # Thomas Haller <thaller@redhat.com>, 2017. #zanata
+# Daniel Rusek <mail@asciiwolf.com>, 2018.
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-05-29 17:44+0200\n"
-"PO-Revision-Date: 2017-04-21 05:13-0400\n"
-"Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
+"PO-Revision-Date: 2018-03-29 17:52+0200\n"
+"Last-Translator: Daniel Rusek <mail@asciiwolf.com>\n"
 "Language-Team: Czech <gnome-cs-list@gnome.org>\n"
 "Language: cs\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
-"X-Generator: Zanata 3.9.6\n"
+"X-Generator: Poedit 2.0.6\n"
 
 #: ../clients/cli/agent.c:40
 #, c-format
@@ -4668,9 +4669,8 @@ msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:6709
 #: ../src/devices/adsl/nm-device-adsl.c:137
-#, fuzzy
 msgid "ADSL connection"
-msgstr "Připojení GSM %d"
+msgstr "ADSL připojení"
 
 #: ../clients/common/nm-meta-setting-desc.c:6710
 #, fuzzy
@@ -4692,9 +4692,8 @@ msgid "Bridge port"
 msgstr "Aktivní připojení"
 
 #: ../clients/common/nm-meta-setting-desc.c:6714
-#, fuzzy
 msgid "CDMA mobile broadband connection"
-msgstr "Drátové připojení %d"
+msgstr "Mobilní širokopásmové připojení CDMA"
 
 #: ../clients/common/nm-meta-setting-desc.c:6715
 msgid "General settings"
@@ -4713,9 +4712,8 @@ msgid "Generic settings"
 msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:6719
-#, fuzzy
 msgid "GSM mobile broadband connection"
-msgstr "Drátové připojení %d"
+msgstr "Mobilní širokopásmové připojení GSM"
 
 #: ../clients/common/nm-meta-setting-desc.c:6720
 #: ../src/devices/nm-device-infiniband.c:192
@@ -4784,35 +4782,29 @@ msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:6735
 #: ../src/devices/nm-device-vlan.c:433
-#, fuzzy
 msgid "VLAN connection"
-msgstr "VPN se připojuje"
+msgstr "VLAN připojení"
 
 #: ../clients/common/nm-meta-setting-desc.c:6736 ../src/nm-manager.c:4079
-#, fuzzy
 msgid "VPN connection"
-msgstr "VPN se připojuje"
+msgstr "VPN připojení"
 
 #: ../clients/common/nm-meta-setting-desc.c:6737
 #: ../src/devices/nm-device-vxlan.c:369
-#, fuzzy
 msgid "VXLAN connection"
-msgstr "VPN se připojuje"
+msgstr "VXLAN připojení"
 
 #: ../clients/common/nm-meta-setting-desc.c:6738
-#, fuzzy
 msgid "WiMAX connection"
-msgstr "Připojení CDMA %d"
+msgstr "WiMAX připojení"
 
 #: ../clients/common/nm-meta-setting-desc.c:6739
-#, fuzzy
 msgid "Wired Ethernet"
-msgstr "Drátové připojení %d"
+msgstr "Drátové připojení"
 
 #: ../clients/common/nm-meta-setting-desc.c:6740
-#, fuzzy
 msgid "Wi-Fi connection"
-msgstr "Drátové připojení %d"
+msgstr "Wi-Fi připojení"
 
 #: ../clients/common/nm-meta-setting-desc.c:6741
 msgid "Wi-Fi security settings"
@@ -4862,7 +4854,7 @@ msgstr "Služba"
 
 #: ../clients/common/nm-secret-agent-simple.c:465
 msgid "Authentication required by wireless network"
-msgstr ""
+msgstr "K bezdrátové síti je vyžadováno ověření"
 
 #: ../clients/common/nm-secret-agent-simple.c:466
 #, c-format
@@ -4870,11 +4862,12 @@ msgid ""
 "Passwords or encryption keys are required to access the wireless network "
 "'%s'."
 msgstr ""
+"Pro přístup k bezdrátové síti „%s“ jsou vyžadována hesla nebo šifrovací "
+"klíče."
 
 #: ../clients/common/nm-secret-agent-simple.c:474
-#, fuzzy
 msgid "Wired 802.1X authentication"
-msgstr "připojuje se (požadováno ověření)"
+msgstr "Ověření drátového připojení 802.1X"
 
 #: ../clients/common/nm-secret-agent-simple.c:475
 #, c-format
@@ -4882,9 +4875,8 @@ msgid "Secrets are required to access the wired network '%s'"
 msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:480
-#, fuzzy
 msgid "DSL authentication"
-msgstr "připojuje se (požadováno ověření)"
+msgstr "Ověření DSL"
 
 #: ../clients/common/nm-secret-agent-simple.c:481
 #, fuzzy, c-format
@@ -4909,7 +4901,7 @@ msgstr "VPN"
 #: ../clients/common/nm-secret-agent-simple.c:534
 #: ../clients/common/nm-secret-agent-simple.c:552
 msgid "Mobile broadband network password"
-msgstr ""
+msgstr "Heslo k mobilní širokopásmové síti"
 
 #: ../clients/common/nm-secret-agent-simple.c:501
 #: ../clients/common/nm-secret-agent-simple.c:535
@@ -7100,7 +7092,7 @@ msgid "Ethernet"
 msgstr ""
 
 #: ../clients/tui/nm-editor-utils.c:150
-#, fuzzy, c-format
+#, c-format
 msgid "Ethernet connection %d"
 msgstr "Drátové připojení %d"
 
@@ -7110,9 +7102,9 @@ msgid "Wi-Fi"
 msgstr ""
 
 #: ../clients/tui/nm-editor-utils.c:158
-#, fuzzy, c-format
+#, c-format
 msgid "Wi-Fi connection %d"
-msgstr "Drátové připojení %d"
+msgstr "Wi-Fi připojení %d"
 
 #: ../clients/tui/nm-editor-utils.c:163 ../libnm-core/nm-connection.c:1939
 #: ../libnm-glib/nm-device.c:1833 ../libnm/nm-device.c:1529
@@ -7127,12 +7119,12 @@ msgstr "Drátové připojení %d"
 #: ../clients/tui/nm-editor-utils.c:172 ../libnm-glib/nm-device.c:1831
 #: ../libnm/nm-device.c:1527
 msgid "Mobile Broadband"
-msgstr ""
+msgstr "Mobilní širokopásmová síť"
 
 #: ../clients/tui/nm-editor-utils.c:175
-#, fuzzy, c-format
+#, c-format
 msgid "Mobile broadband connection %d"
-msgstr "Drátové připojení %d"
+msgstr "Mobilní širokopásmové připojení %d"
 
 #: ../clients/tui/nm-editor-utils.c:181 ../clients/tui/nmt-page-dsl.c:62
 #, fuzzy
@@ -7140,9 +7132,9 @@ msgid "DSL"
 msgstr "DNS"
 
 #: ../clients/tui/nm-editor-utils.c:185
-#, fuzzy, c-format
+#, c-format
 msgid "DSL connection %d"
-msgstr "Připojení GSM %d"
+msgstr "DSL připojení %d"
 
 #: ../clients/tui/nm-editor-utils.c:190 ../libnm-core/nm-connection.c:1931
 #: ../libnm-glib/nm-device.c:1835 ../libnm-util/nm-connection.c:1626
@@ -7187,9 +7179,9 @@ msgid "VLAN"
 msgstr ""
 
 #: ../clients/tui/nm-editor-utils.c:221
-#, fuzzy, c-format
+#, c-format
 msgid "VLAN connection %d"
-msgstr "Připojení PAN %d"
+msgstr "VLAN připojení %d"
 
 #: ../clients/tui/nm-editor-utils.c:225 ../clients/tui/nmt-page-ip-tunnel.c:136
 #, fuzzy
@@ -7204,7 +7196,7 @@ msgstr "Aktivní připojení"
 #: ../clients/tui/nm-editor-utils.c:244
 #, c-format
 msgid "VPN connection %d"
-msgstr "Připojení VPN %d"
+msgstr "VPN připojení %d"
 
 #: ../clients/tui/nmt-device-entry.c:370
 msgid "Select..."
@@ -7264,7 +7256,7 @@ msgstr ""
 
 #: ../clients/tui/nmt-editor.c:344
 msgid "Ethernet device"
-msgstr ""
+msgstr "Zařízení Ethernet"
 
 #: ../clients/tui/nmt-editor.c:346
 msgid "Device"
@@ -9745,7 +9737,7 @@ msgstr ""
 
 #: ../libnm-glib/nm-device.c:1885 ../libnm/nm-device.c:1585
 msgid "Wired"
-msgstr ""
+msgstr "Drátové"
 
 #: ../libnm-glib/nm-device.c:1916 ../libnm/nm-device.c:1616
 msgid "PCI"
@@ -10385,9 +10377,8 @@ msgstr "Připojení GSM %d"
 
 #: ../src/devices/bluetooth/nm-device-bt.c:318
 #: ../src/devices/wwan/nm-modem-broadband.c:730
-#, fuzzy
 msgid "CDMA connection"
-msgstr "Připojení CDMA %d"
+msgstr "CDMA připojení"
 
 #: ../src/devices/bluetooth/nm-device-bt.c:326
 msgid "Unknown/unhandled Bluetooth connection type"
@@ -10417,14 +10408,12 @@ msgid "Dummy connection"
 msgstr "Připojení GSM %d"
 
 #: ../src/devices/nm-device-ethernet.c:1435
-#, fuzzy
 msgid "PPPoE connection"
-msgstr "Připojení PPPoE %d"
+msgstr "PPPoE připojení"
 
 #: ../src/devices/nm-device-ethernet.c:1435
-#, fuzzy
 msgid "Wired connection"
-msgstr "Drátové připojení %d"
+msgstr "Drátové připojení"
 
 #: ../src/devices/nm-device-ethernet-utils.c:36
 #, c-format
