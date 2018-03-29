@@ -904,10 +904,8 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 
 	/* Re-emit for listeners like NMPolicy */
 	_notify (self, PROP_CONNECTIONS);
-	if (nm_dbus_object_is_exported (NM_DBUS_OBJECT (connection))) {
-		nm_connection_set_path (NM_CONNECTION (connection), NULL);
+	if (nm_dbus_object_is_exported (NM_DBUS_OBJECT (connection)))
 		nm_dbus_object_unexport (NM_DBUS_OBJECT (connection));
-	}
 
 	check_startup_complete (self);
 }
@@ -1024,10 +1022,9 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 	}
 
 	path = nm_dbus_object_export (NM_DBUS_OBJECT (connection));
-	nm_connection_set_path (NM_CONNECTION (connection), path);
 
 	g_hash_table_insert (priv->connections,
-	                     (gpointer) nm_dbus_object_get_path (NM_DBUS_OBJECT (connection)),
+	                     (gpointer) path,
 	                     g_object_ref (connection));
 	_clear_connections_cached_list (&priv->connections_cached_list);
 
