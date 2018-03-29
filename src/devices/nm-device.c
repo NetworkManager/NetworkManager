@@ -12841,19 +12841,19 @@ cp_connection_added_or_updated (NMDevice *self, NMConnection *connection)
 }
 
 static void
-cp_connection_added (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data)
+cp_connection_added (NMSettings *settings, NMConnection *connection, gpointer user_data)
 {
 	cp_connection_added_or_updated (user_data, connection);
 }
 
 static void
-cp_connection_updated (NMConnectionProvider *cp, NMConnection *connection, gboolean by_user, gpointer user_data)
+cp_connection_updated (NMSettings *settings, NMConnection *connection, gboolean by_user, gpointer user_data)
 {
 	cp_connection_added_or_updated (user_data, connection);
 }
 
 static void
-cp_connection_removed (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data)
+cp_connection_removed (NMSettings *settings, NMConnection *connection, gpointer user_data)
 {
 	NMDevice *self = user_data;
 
