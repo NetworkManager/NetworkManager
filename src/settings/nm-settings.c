@@ -1871,9 +1871,7 @@ get_property (GObject *object, guint prop_id,
 	NMSettings *self = NM_SETTINGS (object);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	const GSList *specs, *iter;
-	GHashTableIter citer;
 	GPtrArray *array;
-	const char *path;
 
 	switch (prop_id) {
 	case PROP_UNMANAGED_SPECS:
@@ -1894,12 +1892,9 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, !!get_plugin (self, NM_SETTINGS_PLUGIN_CAP_MODIFY_CONNECTIONS));
 		break;
 	case PROP_CONNECTIONS:
-		array = g_ptr_array_sized_new (g_hash_table_size (priv->connections) + 1);
-		g_hash_table_iter_init (&citer, priv->connections);
-		while (g_hash_table_iter_next (&citer, (gpointer) &path, NULL))
-			g_ptr_array_add (array, g_strdup (path));
-		g_ptr_array_add (array, NULL);
-		g_value_take_boxed (value, (char **) g_ptr_array_free (array, FALSE));
+		nm_dbus_utils_g_value_set_object_path_from_hash (value,
+		                                                 priv->connections,
+		                                                 TRUE);
 		break;
 	case PROP_STARTUP_COMPLETE:
 		g_value_set_boolean (value, nm_settings_get_startup_complete (self));
