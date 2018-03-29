@@ -811,17 +811,17 @@ found:
 	return found;
 }
 
-void
-nmc_active_connection_state_to_color (NMActiveConnectionState state, NMMetaTermColor *color)
+NMMetaColor
+nmc_active_connection_state_to_color (NMActiveConnectionState state)
 {
-	*color = NM_META_TERM_COLOR_NORMAL;
-
 	if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING)
-		*color = NM_META_TERM_COLOR_YELLOW;
+		return NM_META_COLOR_CONNECTION_ACTIVATING;
 	else if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
-		*color = NM_META_TERM_COLOR_GREEN;
+		return NM_META_COLOR_CONNECTION_ACTIVATED;
 	else if (state > NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
-		*color = NM_META_TERM_COLOR_RED;
+		return NM_META_COLOR_CONNECTION_DISCONNECTING;
+	else
+		return NM_META_COLOR_CONNECTION_UNKNOWN;
 }
 
 /* Essentially a version of nm_setting_connection_get_connection_type() that
@@ -864,7 +864,7 @@ fill_output_connection (NMConnection *connection, NMClient *client, NMCPrintOutp
 	const char *ac_state = NULL;
 	NMActiveConnectionState ac_state_int = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
 	char *ac_dev = NULL;
-	NMMetaTermColor color;
+	NMMetaColor color;
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -893,7 +893,7 @@ fill_output_connection (NMConnection *connection, NMClient *client, NMCPrintOutp
 	arr = nmc_dup_fields_array ((const NMMetaAbstractInfo *const*) nmc_fields_con_show, 0);
 
 	/* Show active connections in color */
-	nmc_active_connection_state_to_color (ac_state_int, &color);
+	color = nmc_active_connection_state_to_color (ac_state_int);
 	set_val_color_all (arr, color);
 
 	set_val_strc (arr, 0, nm_setting_connection_get_id (s_con));
@@ -944,7 +944,7 @@ fill_output_connection_for_invisible (NMActiveConnection *ac, NMCPrintOutput pri
 	set_val_strc (arr, 12, ac_path);
 	set_val_strc (arr, 13, NULL);
 
-	set_val_color_fmt_all (arr, NM_META_TERM_FORMAT_DIM);
+	set_val_color_all (arr, NM_META_COLOR_CONNECTION_INVISIBLE);
 
 	g_ptr_array_add (output_data, arr);
 }
@@ -6470,8 +6470,7 @@ property_edit_submenu (NmCli *nmc,
 	/* Set global variable for use in TAB completion */
 	nmc_tab_completion.property = prop_name;
 
-	prompt = nmc_colorize (&nmc->nmc_config, NM_META_TERM_COLOR_NORMAL, NM_META_TERM_FORMAT_NORMAL,
-	                       "nmcli %s.%s> ",
+	prompt = nmc_colorize (&nmc->nmc_config, NM_META_COLOR_PROMPT, "nmcli %s.%s> ",
 	                       nm_setting_get_name (curr_setting), prop_name);
 
 	while (cmd_property_loop) {
@@ -6803,12 +6802,11 @@ typedef struct {
 static void
 menu_switch_to_level0 (const NmcConfig *nmc_config,
                        NmcEditorMenuContext *menu_ctx,
-                       const char *prompt,
-                       NMMetaTermColor prompt_color)
+                       const char *prompt)
 {
 	menu_ctx->level = 0;
 	g_free (menu_ctx->main_prompt);
-	menu_ctx->main_prompt = nmc_colorize (nmc_config, prompt_color, NM_META_TERM_FORMAT_NORMAL, "%s", prompt);
+	menu_ctx->main_prompt = nmc_colorize (nmc_config, NM_META_COLOR_PROMPT, "%s", prompt);
 	menu_ctx->curr_setting = NULL;
 	g_strfreev (menu_ctx->valid_props);
 	menu_ctx->valid_props = NULL;
@@ -6820,13 +6818,11 @@ static void
 menu_switch_to_level1 (const NmcConfig *nmc_config,
                        NmcEditorMenuContext *menu_ctx,
                        NMSetting *setting,
-                       const char *setting_name,
-                       NMMetaTermColor prompt_color)
+                       const char *setting_name)
 {
 	menu_ctx->level = 1;
 	g_free (menu_ctx->main_prompt);
-	menu_ctx->main_prompt = nmc_colorize (nmc_config, prompt_color, NM_META_TERM_FORMAT_NORMAL,
-	                                      "nmcli %s> ", setting_name);
+	menu_ctx->main_prompt = nmc_colorize (nmc_config, NM_META_COLOR_PROMPT, "nmcli %s> ", setting_name);
 	menu_ctx->curr_setting = setting;
 	g_strfreev (menu_ctx->valid_props);
 	menu_ctx->valid_props = nmc_setting_get_valid_properties (menu_ctx->curr_setting);
@@ -6864,8 +6860,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	valid_settings_str = get_valid_options_string (valid_settings_main, valid_settings_slave);
 	g_print (_("You may edit the following settings: %s\n"), valid_settings_str);
 
-	menu_ctx.main_prompt = nmc_colorize (&nmc->nmc_config, NM_META_TERM_COLOR_NORMAL, NM_META_TERM_FORMAT_NORMAL,
-	                                     BASE_PROMPT);
+	menu_ctx.main_prompt = nmc_colorize (&nmc->nmc_config, NM_META_COLOR_PROMPT, BASE_PROMPT);
 
 	/* Get remote connection */
 	con_tmp = nm_client_get_connection_by_uuid (nmc->client,
@@ -7041,7 +7036,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				nmc_tab_completion.setting = setting;
 
 				/* Switch to level 1 */
-				menu_switch_to_level1 (&nmc->nmc_config, &menu_ctx, setting, setting_name, NM_META_TERM_COLOR_NORMAL);
+				menu_switch_to_level1 (&nmc->nmc_config, &menu_ctx, setting, setting_name);
 
 				if (!cmd_arg_s) {
 					g_print (_("You may edit the following properties: %s\n"), menu_ctx.valid_props_str);
@@ -7123,7 +7118,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					connection_remove_setting (connection, ss);
 					if (ss == menu_ctx.curr_setting) {
 						/* If we removed the setting we are in, go up */
-						menu_switch_to_level0 (&nmc->nmc_config, &menu_ctx, BASE_PROMPT, NM_META_TERM_COLOR_NORMAL);
+						menu_switch_to_level0 (&nmc->nmc_config, &menu_ctx, BASE_PROMPT);
 						nmc_tab_completion.setting = NULL;  /* for TAB completion */
 					}
 				} else {
@@ -7151,7 +7146,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 							/* coverity[copy_paste_error] - suppress Coverity COPY_PASTE_ERROR defect */
 							if (ss == menu_ctx.curr_setting) {
 								/* If we removed the setting we are in, go up */
-								menu_switch_to_level0 (&nmc->nmc_config, &menu_ctx, BASE_PROMPT, NM_META_TERM_COLOR_NORMAL);
+								menu_switch_to_level0 (&nmc->nmc_config, &menu_ctx, BASE_PROMPT);
 								nmc_tab_completion.setting = NULL;  /* for TAB completion */
 							}
 						} else
@@ -7507,7 +7502,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 		case NMC_EDITOR_MAIN_CMD_BACK:
 			/* Go back (up) an the menu */
 			if (menu_ctx.level == 1) {
-				menu_switch_to_level0 (&nmc->nmc_config, &menu_ctx, BASE_PROMPT, NM_META_TERM_COLOR_NORMAL);
+				menu_switch_to_level0 (&nmc->nmc_config, &menu_ctx, BASE_PROMPT);
 				nmc_tab_completion.setting = NULL;  /* for TAB completion */
 			}
 			break;

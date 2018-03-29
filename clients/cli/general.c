@@ -55,23 +55,26 @@ nm_state_to_string (NMState state)
 	return _(nm_state_to_string_no_l10n (state));
 }
 
-static NMMetaTermColor
+static NMMetaColor
 state_to_color (NMState state)
 {
 	switch (state) {
 	case NM_STATE_CONNECTING:
-		return NM_META_TERM_COLOR_YELLOW;
+		return NM_META_COLOR_STATE_CONNECTING;
 	case NM_STATE_CONNECTED_LOCAL:
+		return NM_META_COLOR_STATE_CONNECTED_LOCAL;
 	case NM_STATE_CONNECTED_SITE:
+		return NM_META_COLOR_STATE_CONNECTED_SITE;
 	case NM_STATE_CONNECTED_GLOBAL:
-		return NM_META_TERM_COLOR_GREEN;
+		return NM_META_COLOR_STATE_CONNECTED_GLOBAL;
 	case NM_STATE_DISCONNECTING:
-		return NM_META_TERM_COLOR_YELLOW;
+		return NM_META_COLOR_STATE_DISCONNECTING;
 	case NM_STATE_ASLEEP:
+		return NM_META_COLOR_STATE_ASLEEP;
 	case NM_STATE_DISCONNECTED:
-		return NM_META_TERM_COLOR_RED;
+		return NM_META_COLOR_STATE_DISCONNECTED;
 	default:
-		return NM_META_TERM_COLOR_NORMAL;
+		return NM_META_COLOR_STATE_UNKNOWN;
 	}
 }
 
@@ -90,19 +93,20 @@ nm_connectivity_to_string (NMConnectivityState connectivity)
 	return _(nm_connectivity_to_string_no_l10n (connectivity));
 }
 
-static NMMetaTermColor
+static NMMetaColor
 connectivity_to_color (NMConnectivityState connectivity)
 {
 	switch (connectivity) {
 	case NM_CONNECTIVITY_NONE:
-		return NM_META_TERM_COLOR_RED;
+		return NM_META_COLOR_CONNECTIVITY_NONE;
 	case NM_CONNECTIVITY_PORTAL:
+		return NM_META_COLOR_CONNECTIVITY_PORTAL;
 	case NM_CONNECTIVITY_LIMITED:
-		return NM_META_TERM_COLOR_YELLOW;
+		return NM_META_COLOR_CONNECTIVITY_LIMITED;
 	case NM_CONNECTIVITY_FULL:
-		return NM_META_TERM_COLOR_GREEN;
+		return NM_META_COLOR_CONNECTIVITY_FULL;
 	default:
-		return NM_META_TERM_COLOR_NORMAL;
+		return NM_META_COLOR_CONNECTIVITY_UNKNOWN;
 	}
 }
 
@@ -155,11 +159,11 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (permission_result_to_string_no_l10n, NMClient
 	NM_UTILS_LOOKUP_ITEM_IGNORE (NM_CLIENT_PERMISSION_RESULT_UNKNOWN),
 );
 
-_NM_UTILS_LOOKUP_DEFINE (static, permission_result_to_color, NMClientPermissionResult, NMMetaTermColor,
-	NM_UTILS_LOOKUP_DEFAULT (NM_META_TERM_COLOR_NORMAL),
-	NM_UTILS_LOOKUP_ITEM (NM_CLIENT_PERMISSION_RESULT_YES,  NM_META_TERM_COLOR_GREEN),
-	NM_UTILS_LOOKUP_ITEM (NM_CLIENT_PERMISSION_RESULT_NO,   NM_META_TERM_COLOR_RED),
-	NM_UTILS_LOOKUP_ITEM (NM_CLIENT_PERMISSION_RESULT_AUTH, NM_META_TERM_COLOR_YELLOW),
+_NM_UTILS_LOOKUP_DEFINE (static, permission_result_to_color, NMClientPermissionResult, NMMetaColor,
+	NM_UTILS_LOOKUP_DEFAULT (NM_META_COLOR_PERMISSION_UNKNOWN),
+	NM_UTILS_LOOKUP_ITEM (NM_CLIENT_PERMISSION_RESULT_YES,  NM_META_COLOR_PERMISSION_YES),
+	NM_UTILS_LOOKUP_ITEM (NM_CLIENT_PERMISSION_RESULT_NO,   NM_META_COLOR_PERMISSION_NO),
+	NM_UTILS_LOOKUP_ITEM (NM_CLIENT_PERMISSION_RESULT_AUTH, NM_META_COLOR_PERMISSION_AUTH),
 	NM_UTILS_LOOKUP_ITEM_IGNORE (NM_CLIENT_PERMISSION_RESULT_UNKNOWN),
 );
 
@@ -186,26 +190,26 @@ _metagen_general_status_get_fcn (const NMMetaEnvironment *environment,
 
 	switch (info->info_type) {
 	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_RUNNING:
-		NMC_HANDLE_TERMFORMAT (NM_META_TERM_COLOR_NORMAL);
+		NMC_HANDLE_COLOR (NM_META_COLOR_NONE);
 		value = N_("running");
 		goto translate_and_out;
 	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_VERSION:
-		NMC_HANDLE_TERMFORMAT (NM_META_TERM_COLOR_NORMAL);
+		NMC_HANDLE_COLOR (NM_META_COLOR_NONE);
 		value = nm_client_get_version (nmc->client);
 		goto clone_and_out;
 	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_STATE:
 		state = nm_client_get_state (nmc->client);
-		NMC_HANDLE_TERMFORMAT (state_to_color (state));
+		NMC_HANDLE_COLOR (state_to_color (state));
 		value = nm_state_to_string_no_l10n (state);
 		goto translate_and_out;
 	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_STARTUP:
 		v_bool = nm_client_get_startup (nmc->client);
-		NMC_HANDLE_TERMFORMAT (v_bool ? NM_META_TERM_COLOR_YELLOW : NM_META_TERM_COLOR_GREEN);
+		NMC_HANDLE_COLOR (v_bool ? NM_META_COLOR_MANAGER_STARTING : NM_META_COLOR_MANAGER_RUNNING);
 		value = v_bool ? N_("starting") : N_("started");
 		goto translate_and_out;
 	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_CONNECTIVITY:
 		connectivity = nm_client_get_connectivity (nmc->client);
-		NMC_HANDLE_TERMFORMAT (connectivity_to_color (connectivity));
+		NMC_HANDLE_COLOR (connectivity_to_color (connectivity));
 		value = nm_connectivity_to_string_no_l10n (connectivity);
 		goto translate_and_out;
 	case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_NETWORKING:
@@ -234,7 +238,7 @@ _metagen_general_status_get_fcn (const NMMetaEnvironment *environment,
 	g_return_val_if_reached (NULL);
 
 enabled_out:
-	NMC_HANDLE_TERMFORMAT (v_bool ? NM_META_TERM_COLOR_GREEN : NM_META_TERM_COLOR_RED);
+	NMC_HANDLE_COLOR (v_bool ? NM_META_COLOR_ENABLED : NM_META_COLOR_DISABLED);
 	value = v_bool ? N_("enabled") : N_("disabled");
 	goto translate_and_out;
 
@@ -293,11 +297,11 @@ _metagen_general_permissions_get_fcn (const NMMetaEnvironment *environment,
 
 	switch (info->info_type) {
 	case NMC_GENERIC_INFO_TYPE_GENERAL_PERMISSIONS_PERMISSION:
-		NMC_HANDLE_TERMFORMAT (NM_META_TERM_COLOR_NORMAL);
+		NMC_HANDLE_COLOR (NM_META_COLOR_NONE);
 		return permission_to_string (perm);
 	case NMC_GENERIC_INFO_TYPE_GENERAL_PERMISSIONS_VALUE:
 		perm_result = nm_client_get_permission_result (nmc->client, perm);
-		NMC_HANDLE_TERMFORMAT (permission_result_to_color (perm_result));
+		NMC_HANDLE_COLOR (permission_result_to_color (perm_result));
 		s = permission_result_to_string_no_l10n (perm_result);
 		if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
 			return _(s);
@@ -340,7 +344,7 @@ _metagen_general_logging_get_fcn (const NMMetaEnvironment *environment,
 
 	nm_assert (info->info_type < _NMC_GENERIC_INFO_TYPE_GENERAL_LOGGING_NUM);
 
-	NMC_HANDLE_TERMFORMAT (NM_META_TERM_COLOR_NORMAL);
+	NMC_HANDLE_COLOR (NM_META_COLOR_NONE);
 
 	if (!d->initialized) {
 		d->initialized = TRUE;
@@ -1087,8 +1091,7 @@ networkmanager_running (NMClient *client, GParamSpec *param, NmCli *nmc)
 
 	running = nm_client_get_nm_running (client);
 	str = nmc_colorize (&nmc->nmc_config,
-	                    running ? NM_META_TERM_COLOR_GREEN : NM_META_TERM_COLOR_RED,
-	                    NM_META_TERM_FORMAT_NORMAL,
+	                    running ? NM_META_COLOR_MANAGER_RUNNING : NM_META_COLOR_MANAGER_STOPPED,
 	                    running ? _("NetworkManager has started") : _("NetworkManager has stopped"));
 	g_print ("%s\n", str);
 	g_free (str);
@@ -1128,7 +1131,7 @@ client_connectivity (NMClient *client, GParamSpec *param, NmCli *nmc)
 	char *str;
 
 	g_object_get (client, NM_CLIENT_CONNECTIVITY, &connectivity, NULL);
-	str = nmc_colorize (&nmc->nmc_config, connectivity_to_color (connectivity), NM_META_TERM_FORMAT_NORMAL,
+	str = nmc_colorize (&nmc->nmc_config, connectivity_to_color (connectivity),
 	                    _("Connectivity is now '%s'\n"), nm_connectivity_to_string (connectivity));
 	g_print ("%s", str);
 	g_free (str);
@@ -1141,7 +1144,7 @@ client_state (NMClient *client, GParamSpec *param, NmCli *nmc)
 	char *str;
 
 	g_object_get (client, NM_CLIENT_STATE, &state, NULL);
-	str = nmc_colorize (&nmc->nmc_config, state_to_color (state), NM_META_TERM_FORMAT_NORMAL,
+	str = nmc_colorize (&nmc->nmc_config, state_to_color (state),
 	                    _("Networkmanager is now in the '%s' state\n"),
 	                    nm_state_to_string (state));
 	g_print ("%s", str);
@@ -1184,12 +1187,12 @@ device_overview (NmCli *nmc, NMDevice *device)
 	if (!nm_device_get_autoconnect (device))
 		g_string_append_printf (outbuf, "%s, ", _("autoconnect"));
 	if (nm_device_get_firmware_missing (device)) {
-		tmp = nmc_colorize (&nmc->nmc_config, NM_META_TERM_COLOR_RED, NM_META_TERM_FORMAT_NORMAL, _("fw missing"));
+		tmp = nmc_colorize (&nmc->nmc_config, NM_META_COLOR_DEVICE_FIRMWARE_MISSING, _("fw missing"));
 		g_string_append_printf (outbuf, "%s, ", tmp);
 		g_free (tmp);
 	}
 	if (nm_device_get_nm_plugin_missing (device)) {
-		tmp = nmc_colorize (&nmc->nmc_config, NM_META_TERM_COLOR_RED, NM_META_TERM_FORMAT_NORMAL, _("plugin missing"));
+		tmp = nmc_colorize (&nmc->nmc_config, NM_META_COLOR_DEVICE_PLUGIN_MISSING, _("plugin missing"));
 		g_string_append_printf (outbuf, "%s, ", tmp);
 		g_free (tmp);
 	}
@@ -1290,7 +1293,7 @@ do_overview (NmCli *nmc, int argc, char **argv)
 	NMDevice **devices;
 	const GPtrArray *p;
 	NMActiveConnection *ac;
-	NMMetaTermColor color;
+	NMMetaColor color;
 	NMDnsEntry *dns;
 	char *tmp;
 	int i;
@@ -1314,8 +1317,8 @@ do_overview (NmCli *nmc, int argc, char **argv)
 			continue;
 
 		state = nm_active_connection_get_state (ac);
-		nmc_active_connection_state_to_color (state, &color);
-		tmp = nmc_colorize (&nmc->nmc_config, color, NM_META_TERM_FORMAT_NORMAL, _("%s VPN connection"),
+		color = nmc_active_connection_state_to_color (state);
+		tmp = nmc_colorize (&nmc->nmc_config, color, _("%s VPN connection"),
 		                    nm_active_connection_get_id (ac));
 		g_print ("%s\n", tmp);
 		g_free (tmp);
@@ -1326,14 +1329,13 @@ do_overview (NmCli *nmc, int argc, char **argv)
 
 	devices = nmc_get_devices_sorted (nmc->client);
 	for (i = 0; devices[i]; i++) {
-		NMMetaTermFormat color_fmt;
 		NMDeviceState state;
 
 		ac = nm_device_get_active_connection (devices[i]);
 
 		state = nm_device_get_state (devices[i]);
-		nmc_device_state_to_color (state, &color, &color_fmt);
-		tmp = nmc_colorize (&nmc->nmc_config, color, color_fmt, "%s: %s%s%s",
+		color = nmc_device_state_to_color (state);
+		tmp = nmc_colorize (&nmc->nmc_config, color, "%s: %s%s%s",
 		                    nm_device_get_iface (devices[i]),
 		                    nmc_device_state_to_string (state),
 		                    ac ? " to " : "",
@@ -1416,7 +1418,7 @@ do_monitor (NmCli *nmc, int argc, char **argv)
 	if (!nm_client_get_nm_running (nmc->client)) {
 		char *str;
 
-		str = nmc_colorize (&nmc->nmc_config, NM_META_TERM_COLOR_RED, NM_META_TERM_FORMAT_NORMAL,
+		str = nmc_colorize (&nmc->nmc_config, NM_META_COLOR_MANAGER_STOPPED,
 		                    _("Networkmanager is not running (waiting for it)\n"));
 		g_print ("%s", str);
 		g_free (str);

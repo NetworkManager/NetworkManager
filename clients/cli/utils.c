@@ -86,11 +86,11 @@ _meta_type_nmc_generic_info_get_fcn (const NMMetaAbstractInfo *abstract_info,
 	if (!NM_IN_SET (get_type,
 	                NM_META_ACCESSOR_GET_TYPE_PARSABLE,
 	                NM_META_ACCESSOR_GET_TYPE_PRETTY,
-	                NM_META_ACCESSOR_GET_TYPE_TERMFORMAT))
+	                NM_META_ACCESSOR_GET_TYPE_COLOR))
 		g_return_val_if_reached (NULL);
 
-	/* omitting the out_to_free value is only allowed for TERMFORMAT. */
-	nm_assert (out_to_free || NM_IN_SET (get_type, NM_META_ACCESSOR_GET_TYPE_TERMFORMAT));
+	/* omitting the out_to_free value is only allowed for COLOR. */
+	nm_assert (out_to_free || NM_IN_SET (get_type, NM_META_ACCESSOR_GET_TYPE_COLOR));
 
 	if (info->get_fcn) {
 		return info->get_fcn (environment, environment_user_data,
@@ -103,7 +103,7 @@ _meta_type_nmc_generic_info_get_fcn (const NMMetaAbstractInfo *abstract_info,
 	}
 
 	if (info->nested) {
-		NMC_HANDLE_TERMFORMAT (NM_META_TERM_COLOR_NORMAL);
+		NMC_HANDLE_COLOR (NM_META_COLOR_NONE);
 		return info->name;
 	}
 
@@ -121,17 +121,14 @@ const NMMetaType nmc_meta_type_generic_info = {
 
 static const char *
 colorize_string (const NmcConfig *nmc_config,
-                 NMMetaTermColor color,
-                 NMMetaTermFormat color_fmt,
+                 NMMetaColor color,
                  const char *str,
                  char **out_to_free)
 {
 	const char *out = str;
 
-	if (   nmc_config
-	    && nmc_config->use_colors
-	    && (color != NM_META_TERM_COLOR_NORMAL || color_fmt != NM_META_TERM_FORMAT_NORMAL)) {
-		*out_to_free = nmc_colorize (nmc_config, color, color_fmt, "%s", str);
+	if (nmc_config && nmc_config->use_colors) {
+		*out_to_free = nmc_colorize (nmc_config, color, "%s", str);
 		out = *out_to_free;
 	}
 
@@ -378,89 +375,24 @@ nmc_terminal_show_progress (const char *str)
 		idx = 0;
 }
 
-const char *
-nmc_term_color_sequence (NMMetaTermColor color)
-{
-	switch (color) {
-        case NM_META_TERM_COLOR_BLACK:
-		return "\33[30m";
-		break;
-        case NM_META_TERM_COLOR_RED:
-		return "\33[31m";
-		break;
-        case NM_META_TERM_COLOR_GREEN:
-		return "\33[32m";
-		break;
-        case NM_META_TERM_COLOR_YELLOW:
-		return "\33[33m";
-		break;
-        case NM_META_TERM_COLOR_BLUE:
-		return "\33[34m";
-		break;
-        case NM_META_TERM_COLOR_MAGENTA:
-		return "\33[35m";
-		break;
-        case NM_META_TERM_COLOR_CYAN:
-		return "\33[36m";
-		break;
-        case NM_META_TERM_COLOR_WHITE:
-		return "\33[37m";
-		break;
-	default:
-		return "";
-		break;
-	}
-}
-
-const char *
-nmc_term_format_sequence (NMMetaTermFormat format)
-{
-	switch (format) {
-        case NM_META_TERM_FORMAT_BOLD:
-		return "\33[1m";
-		break;
-        case NM_META_TERM_FORMAT_DIM:
-		return "\33[2m";
-		break;
-        case NM_META_TERM_FORMAT_UNDERLINE:
-		return "\33[4m";
-		break;
-        case NM_META_TERM_FORMAT_BLINK:
-		return "\33[5m";
-		break;
-        case NM_META_TERM_FORMAT_REVERSE:
-		return "\33[7m";
-		break;
-        case NM_META_TERM_FORMAT_HIDDEN:
-		return "\33[8m";
-		break;
-	default:
-		return "";
-		break;
-	}
-}
-
 char *
-nmc_colorize (const NmcConfig *nmc_config, NMMetaTermColor color, NMMetaTermFormat format, const char *fmt, ...)
+nmc_colorize (const NmcConfig *nmc_config, NMMetaColor color, const char *fmt, ...)
 {
 	va_list args;
 	char *str, *colored;
-	const char *ansi_color, *color_end, *ansi_fmt, *format_end;
-	static const char *end_seq = "\33[0m";
+	const char *ansi_seq = NULL;
 
 	va_start (args, fmt);
 	str = g_strdup_vprintf (fmt, args);
 	va_end (args);
 
-	if (!nmc_config->use_colors)
+	if (nmc_config->use_colors)
+		ansi_seq =  nmc_config->palette[color];
+
+	if (ansi_seq == NULL)
 		return str;
 
-	ansi_color = nmc_term_color_sequence (color);
-	ansi_fmt = nmc_term_format_sequence (format);
-	color_end = *ansi_color ? end_seq : "";
-	format_end = *ansi_fmt ? end_seq : "";
-
-	colored = g_strdup_printf ("%s%s%s%s%s", ansi_fmt, ansi_color, str, color_end, format_end);
+	colored = g_strdup_printf ("\33[%sm%s\33[0m", ansi_seq, str);
 	g_free (str);
 	return colored;
 }
@@ -677,22 +609,12 @@ set_val_arrc (NmcOutputField fields_array[], guint32 idx, const char **value)
 }
 
 void
-set_val_color_all (NmcOutputField fields_array[], NMMetaTermColor color)
+set_val_color_all (NmcOutputField fields_array[], NMMetaColor color)
 {
 	int i;
 
 	for (i = 0; fields_array[i].info; i++) {
 		fields_array[i].color = color;
-	}
-}
-
-void
-set_val_color_fmt_all (NmcOutputField fields_array[], NMMetaTermFormat format)
-{
-	int i;
-
-	for (i = 0; fields_array[i].info; i++) {
-		fields_array[i].color_fmt = format;
 	}
 }
 
@@ -974,8 +896,7 @@ typedef enum {
 typedef struct {
 	guint row_idx;
 	const PrintDataHeaderCell *header_cell;
-	NMMetaTermColor term_color;
-	NMMetaTermFormat term_format;
+	NMMetaColor color;
 	union {
 		const char *plain;
 		const char *const*strv;
@@ -1138,17 +1059,15 @@ _print_fill (const NmcConfig *nmc_config,
 				cell->text_to_free = !!to_free;
 			}
 
-			nm_meta_termformat_unpack (nm_meta_abstract_info_get (info,
-			                                                      nmc_meta_environment,
-			                                                      nmc_meta_environment_arg,
-			                                                      target,
-			                                                      NM_META_ACCESSOR_GET_TYPE_TERMFORMAT,
-			                                                      NM_META_ACCESSOR_GET_FLAGS_NONE,
-			                                                      &color_out_flags,
-			                                                      NULL,
-			                                                      NULL),
-			                           &cell->term_color,
-			                           &cell->term_format);
+			cell->color = GPOINTER_TO_INT (nm_meta_abstract_info_get (info,
+			                                                          nmc_meta_environment,
+			                                                          nmc_meta_environment_arg,
+			                                                          target,
+			                                                          NM_META_ACCESSOR_GET_TYPE_COLOR,
+			                                                          NM_META_ACCESSOR_GET_FLAGS_NONE,
+			                                                          &color_out_flags,
+			                                                          NULL,
+			                                                          NULL));
 
 			if (cell->text_format == PRINT_DATA_CELL_FORMAT_TYPE_PLAIN) {
 				if (pretty && (!cell->text.plain|| !cell->text.plain[0])) {
@@ -1333,9 +1252,7 @@ _print_do (const NmcConfig *nmc_config,
 				gs_free char *text_to_free = NULL;
 				const char *text;
 
-				text = colorize_string (nmc_config,
-				                        cell->term_color, cell->term_format,
-				                        lines[i_lines], &text_to_free);
+				text = colorize_string (nmc_config, cell->color, lines[i_lines], &text_to_free);
 				if (multiline) {
 					gs_free char *prefix = NULL;
 
@@ -1561,7 +1478,7 @@ get_value_to_print (const NmcConfig *nmc_config,
 	}
 
 	/* colorize the value */
-	out = colorize_string (nmc_config, field->color, field->color_fmt, value, out_to_free);
+	out = colorize_string (nmc_config, field->color, value, out_to_free);
 
 	if (out && out == free_value) {
 		nm_assert (!*out_to_free);
@@ -1655,7 +1572,7 @@ print_required_fields (const NmcConfig *nmc_config,
 					gs_free char *tmp = NULL;
 
 					val = *p ?: not_set_str;
-					print_val = colorize_string (nmc_config, field_values[idx].color, field_values[idx].color_fmt,
+					print_val = colorize_string (nmc_config, field_values[idx].color,
 					                             val, &val_to_free);
 					tmp = g_strdup_printf ("%s%s%s[%d]:",
 					                       section_prefix ? (const char*) field_values[0].value : "",
@@ -1676,7 +1593,7 @@ print_required_fields (const NmcConfig *nmc_config,
 				/* value is a string */
 
 				val = val && *val ? val : not_set_str;
-				print_val = colorize_string (nmc_config, field_values[idx].color, field_values[idx].color_fmt,
+				print_val = colorize_string (nmc_config, field_values[idx].color,
 				                             val, &val_to_free);
 				tmp = g_strdup_printf ("%s%s%s:",
 				                       section_prefix ? hdr_name : "",

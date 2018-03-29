@@ -707,22 +707,19 @@ sort_access_points (const GPtrArray *aps)
 	return sorted;
 }
 
-static void
-wifi_signal_to_color (guint8 strength, NMMetaTermColor *color, NMMetaTermFormat *color_fmt)
+static NMMetaColor
+wifi_signal_to_color (guint8 strength)
 {
-	*color = NM_META_TERM_COLOR_NORMAL;
-	*color_fmt = NM_META_TERM_FORMAT_NORMAL;
-
 	if (strength > 80)
-		*color = NM_META_TERM_COLOR_GREEN;
+		return NM_META_COLOR_WIFI_SIGNAL_EXCELLENT;
 	else if (strength > 55)
-		*color = NM_META_TERM_COLOR_YELLOW;
+		return NM_META_COLOR_WIFI_SIGNAL_GOOD;
 	else if (strength > 30)
-		*color = NM_META_TERM_COLOR_MAGENTA;
+		return NM_META_COLOR_WIFI_SIGNAL_FAIR;
 	else if (strength > 5)
-		*color = NM_META_TERM_COLOR_CYAN;
+		return NM_META_COLOR_WIFI_SIGNAL_POOR;
 	else
-		*color_fmt = NM_META_TERM_FORMAT_DIM;
+		return NM_META_COLOR_WIFI_SIGNAL_UNKNOWN;
 }
 
 static char *
@@ -795,8 +792,7 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	GString *security_str;
 	char *ap_name;
 	const char *sig_bars;
-	NMMetaTermColor color;
-	NMMetaTermFormat color_fmt;
+	NMMetaColor color;
 
 	if (info->active_bssid) {
 		const char *current_bssid = nm_access_point_get_bssid (ap);
@@ -882,11 +878,10 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	set_val_strc (arr, 16, nm_object_get_path (NM_OBJECT (ap)));
 
 	/* Set colors */
-	wifi_signal_to_color (strength, &color, &color_fmt);
+	color = wifi_signal_to_color (strength);
 	set_val_color_all (arr, color);
-	set_val_color_fmt_all (arr, color_fmt);
 	if (active)
-		arr[15].color = NM_META_TERM_COLOR_GREEN;
+		arr[15].color = NM_META_COLOR_CONNECTION_ACTIVATED;
 
 	g_ptr_array_add (info->output_data, arr);
 
@@ -1463,20 +1458,19 @@ show_device_info (NMDevice *device, NmCli *nmc)
 	return TRUE;
 }
 
-void
-nmc_device_state_to_color (NMDeviceState state, NMMetaTermColor *color, NMMetaTermFormat *color_fmt)
+NMMetaColor
+nmc_device_state_to_color (NMDeviceState state)
 {
-	*color = NM_META_TERM_COLOR_NORMAL;
-	*color_fmt = NM_META_TERM_FORMAT_NORMAL;
-
 	if (state <= NM_DEVICE_STATE_UNAVAILABLE)
-		*color_fmt= NM_META_TERM_FORMAT_DIM;
+		return NM_META_COLOR_DEVICE_UNAVAILABLE;
 	else if (state == NM_DEVICE_STATE_DISCONNECTED)
-		*color = NM_META_TERM_COLOR_RED;
+		return NM_META_COLOR_DEVICE_DISCONNECTED;
 	else if (state >= NM_DEVICE_STATE_PREPARE && state <= NM_DEVICE_STATE_SECONDARIES)
-		*color = NM_META_TERM_COLOR_YELLOW;
+		return NM_META_COLOR_DEVICE_ACTIVATING;
 	else if (state == NM_DEVICE_STATE_ACTIVATED)
-		*color = NM_META_TERM_COLOR_GREEN;
+		return NM_META_COLOR_DEVICE_ACTIVATED;
+
+	g_return_val_if_reached (NM_META_COLOR_DEVICE_UNKNOWN);
 }
 
 static void
@@ -1484,8 +1478,7 @@ fill_output_device_status (NMDevice *device, GPtrArray *output_data)
 {
 	NMActiveConnection *ac;
 	NMDeviceState state;
-	NMMetaTermColor color;
-	NMMetaTermFormat color_fmt;
+	NMMetaColor color;
 	NmcOutputField *arr = nmc_dup_fields_array ((const NMMetaAbstractInfo *const*) nmc_fields_dev_status,
 	                                            0);
 
@@ -1493,9 +1486,8 @@ fill_output_device_status (NMDevice *device, GPtrArray *output_data)
 	ac = nm_device_get_active_connection (device);
 
 	/* Show devices in color */
-	nmc_device_state_to_color (state, &color, &color_fmt);
+	color = nmc_device_state_to_color (state);
 	set_val_color_all (arr, color);
-	set_val_color_fmt_all (arr, color_fmt);
 
 	set_val_strc (arr, 0, nm_device_get_iface (device));
 	set_val_strc (arr, 1, nm_device_get_type_description (device));
@@ -2406,12 +2398,11 @@ static void
 device_state (NMDevice *device, GParamSpec *pspec, NmCli *nmc)
 {
 	NMDeviceState state = nm_device_get_state (device);
-	NMMetaTermColor color;
-	NMMetaTermFormat color_fmt;
+	NMMetaColor color;
 	char *str;
 
-	nmc_device_state_to_color (state, &color, &color_fmt);
-	str = nmc_colorize (&nmc->nmc_config, color, color_fmt, "%s: %s\n",
+	color = nmc_device_state_to_color (state);
+	str = nmc_colorize (&nmc->nmc_config, color, "%s: %s\n",
 	                    nm_device_get_iface (device),
 	                    nmc_device_state_to_string (state));
 
