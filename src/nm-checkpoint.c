@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include "nm-active-connection.h"
+#include "nm-act-request.h"
 #include "nm-auth-subject.h"
 #include "nm-core-utils.h"
 #include "nm-dbus-interface.h"
@@ -422,25 +423,21 @@ device_checkpoint_create (NMDevice *device)
 	dev_checkpoint->realized = nm_device_is_real (device);
 
 	if (nm_device_get_unmanaged_mask (device, NM_UNMANAGED_USER_EXPLICIT)) {
-		dev_checkpoint->unmanaged_explicit =
-		    !!nm_device_get_unmanaged_flags (device, NM_UNMANAGED_USER_EXPLICIT);
+		dev_checkpoint->unmanaged_explicit = !!nm_device_get_unmanaged_flags (device,
+		                                                                      NM_UNMANAGED_USER_EXPLICIT);
 	} else
 		dev_checkpoint->unmanaged_explicit = NM_UNMAN_FLAG_OP_FORGET;
 
-	applied_connection = nm_device_get_applied_connection (device);
-	if (applied_connection) {
-		dev_checkpoint->applied_connection =
-			nm_simple_connection_new_clone (applied_connection);
+	act_request = nm_device_get_act_request (device);
+	if (act_request) {
+		settings_connection = nm_act_request_get_settings_connection (act_request);
+		applied_connection = nm_act_request_get_applied_connection (act_request);
 
-		settings_connection = nm_device_get_settings_connection (device);
-		g_return_val_if_fail (settings_connection, NULL);
+		dev_checkpoint->applied_connection = nm_simple_connection_new_clone (applied_connection);
 		dev_checkpoint->settings_connection =
-			nm_simple_connection_new_clone (NM_CONNECTION (settings_connection));
-
-		act_request = nm_device_get_act_request (device);
-		g_return_val_if_fail (act_request, NULL);
+		    nm_simple_connection_new_clone (NM_CONNECTION (settings_connection));
 		dev_checkpoint->ac_version_id =
-			nm_active_connection_version_id_get (NM_ACTIVE_CONNECTION (act_request));
+		    nm_active_connection_version_id_get (NM_ACTIVE_CONNECTION (act_request));
 	}
 
 	return dev_checkpoint;
