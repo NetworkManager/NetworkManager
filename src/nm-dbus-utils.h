@@ -164,6 +164,13 @@ GVariant *nm_dbus_utils_get_property (GObject *obj,
 
 /*****************************************************************************/
 
+struct CList;
+
+const char **nm_dbus_utils_get_paths_for_clist (const struct CList *lst_head,
+                                                gssize lst_len,
+                                                guint member_offset,
+                                                gboolean expect_all_exported);
+
 void nm_dbus_utils_g_value_set_object_path (GValue *value, gpointer object);
 
 void nm_dbus_utils_g_value_set_object_path_from_hash (GValue *value,

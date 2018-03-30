@@ -152,4 +152,44 @@ nm_dbus_utils_g_value_set_object_path_from_hash (GValue *value,
 	g_value_take_boxed (value, strv);
 }
 
+const char **
+nm_dbus_utils_get_paths_for_clist (const CList *lst_head,
+                                   gssize lst_len,
+                                   guint member_offset,
+                                   gboolean expect_all_exported)
+{
+	const CList *iter;
+	const char **strv;
+	const char *path;
+	gsize i, n;
+
+	nm_assert (lst_head);
+
+	if (lst_len < 0)
+		n = c_list_length (lst_head);
+	else {
+		n = lst_len;
+		nm_assert (n == c_list_length (lst_head));
+	}
+
+	i = 0;
+	strv = g_new (const char *, n + 1);
+	c_list_for_each (iter, lst_head) {
+		NMDBusObject *obj = (NMDBusObject *) (((const char *) iter) - member_offset);
+
+		path = nm_dbus_object_get_path (obj);
+		if (!path) {
+			nm_assert (expect_all_exported);
+			continue;
+		}
+
+		nm_assert (i < n);
+		strv[i++] = path;
+	}
+	nm_assert (i <= n);
+	strv[i] = NULL;
+
+	return strv;
+}
+
 /*****************************************************************************/
