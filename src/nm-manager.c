@@ -5854,7 +5854,6 @@ _dbus_set_property_auth_cb (NMAuthChain *chain,
 	NMAuthCallResult result;
 	const char *error_name = NULL;
 	const char *error_message = NULL;
-	gs_unref_object NMExportedObject *object = NULL;
 	GValue gvalue;
 
 	g_slice_free (DBusSetPropertyHandle, handle_data);
