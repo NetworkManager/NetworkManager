@@ -26,6 +26,13 @@
 
 /*****************************************************************************/
 
+#define nm_c_list_contains_entry(list, what, member) \
+	({ \
+		typeof (what) _what = (what); \
+		\
+		_what && c_list_contains (list, &_what->member); \
+	})
+
 typedef struct {
 	CList lst;
 	void *data;
