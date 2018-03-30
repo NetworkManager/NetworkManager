@@ -29,7 +29,6 @@
 
 /* core */
 typedef struct _NMDBusObject         NMDBusObject;
-typedef struct _NMExportedObject     NMExportedObject;
 typedef struct _NMActiveConnection   NMActiveConnection;
 typedef struct _NMAuditManager       NMAuditManager;
 typedef struct _NMVpnConnection      NMVpnConnection;
