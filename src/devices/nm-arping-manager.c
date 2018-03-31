@@ -159,10 +159,8 @@ nm_arping_manager_add_address (NMArpingManager *self, in_addr_t address)
 	priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
 	g_return_val_if_fail (priv->state == STATE_INIT, FALSE);
 
-	if (g_hash_table_lookup (priv->addresses, GUINT_TO_POINTER (address))) {
-		_LOGD ("address already exists");
+	if (g_hash_table_lookup (priv->addresses, GUINT_TO_POINTER (address)))
 		return FALSE;
-	}
 
 	info = g_slice_new0 (AddressInfo);
 	info->address = address;
@@ -279,7 +277,7 @@ acd_probe_start (NMArpingManager *self,
  * Returns: %TRUE if at least one probe could be started, %FALSE otherwise
  */
 gboolean
-nm_arping_manager_start_probe (NMArpingManager *self, guint timeout, GError **error)
+nm_arping_manager_start_probe (NMArpingManager *self, guint timeout)
 {
 	NMArpingManagerPrivate *priv;
 	GHashTableIter iter;
@@ -288,8 +286,6 @@ nm_arping_manager_start_probe (NMArpingManager *self, guint timeout, GError **er
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (NM_IS_ARPING_MANAGER (self), FALSE);
-	g_return_val_if_fail (!error || !*error, FALSE);
-
 	priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
 	g_return_val_if_fail (priv->state == STATE_INIT, FALSE);
 
@@ -301,9 +297,6 @@ nm_arping_manager_start_probe (NMArpingManager *self, guint timeout, GError **er
 
 	if (success)
 		priv->state = STATE_PROBING;
-	else
-		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
-		                     "could not start probing");
 
 	return success;
 }

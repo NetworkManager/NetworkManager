@@ -35,7 +35,7 @@ GType nm_arping_manager_get_type (void);
 NMArpingManager *nm_arping_manager_new (int ifindex, const guint8 *hwaddr, size_t hwaddr_len);
 void nm_arping_manager_destroy (NMArpingManager *self);
 gboolean nm_arping_manager_add_address (NMArpingManager *self, in_addr_t address);
-gboolean nm_arping_manager_start_probe (NMArpingManager *self, guint timeout, GError **error);
+gboolean nm_arping_manager_start_probe (NMArpingManager *self, guint timeout);
 gboolean nm_arping_manager_check_address (NMArpingManager *self, in_addr_t address);
 void nm_arping_manager_announce_addresses (NMArpingManager *self);
 void nm_arping_manager_reset (NMArpingManager *self);

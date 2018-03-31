@@ -6126,7 +6126,6 @@ ipv4_dad_start (NMDevice *self, NMIP4Config **configs, ArpingCallback cb)
 	gboolean ret, addr_found;
 	const guint8 *hwaddr_arr;
 	size_t length;
-	GError *error = NULL;
 	guint i;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
@@ -6181,10 +6180,10 @@ ipv4_dad_start (NMDevice *self, NMIP4Config **configs, ArpingCallback cb)
 	                       G_CALLBACK (arping_manager_probe_terminated), data,
 	                       arping_data_destroy, 0);
 
-	ret = nm_arping_manager_start_probe (arping_manager, timeout, &error);
+	ret = nm_arping_manager_start_probe (arping_manager, timeout);
 
 	if (!ret) {
-		_LOGW (LOGD_DEVICE, "arping probe failed: %s", error->message);
+		_LOGW (LOGD_DEVICE, "arping probe failed");
 
 		/* DAD could not be started, signal success */
 		cb (self, configs, TRUE);

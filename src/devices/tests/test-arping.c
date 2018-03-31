@@ -97,7 +97,7 @@ again:
 	loop = g_main_loop_new (NULL, FALSE);
 	signal_id = g_signal_connect (manager, NM_ARPING_MANAGER_PROBE_TERMINATED,
 	                              G_CALLBACK (arping_manager_probe_terminated), loop);
-	g_assert (nm_arping_manager_start_probe (manager, wait_time, NULL));
+	g_assert (nm_arping_manager_start_probe (manager, wait_time));
 	g_assert (nmtst_main_loop_run (loop, 2000));
 	g_signal_handler_disconnect (manager, signal_id);
 	g_main_loop_unref (loop);
