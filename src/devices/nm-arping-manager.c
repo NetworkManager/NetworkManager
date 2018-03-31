@@ -179,6 +179,7 @@ acd_event (GIOChannel *source, GIOCondition condition, gpointer data)
 	NMArpingManagerPrivate *priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
 	NAcdEvent *event;
 	char address_str[INET_ADDRSTRLEN];
+	gs_free char *hwaddr_str = NULL;
 	int r;
 
 	if (   n_acd_dispatch (info->acd)
@@ -203,6 +204,19 @@ acd_event (GIOChannel *source, GIOCondition condition, gpointer data)
 		break;
 	case N_ACD_EVENT_USED:
 		info->duplicate = TRUE;
+		break;
+	case N_ACD_EVENT_DEFENDED:
+		_LOGD ("defended address %s from host %s",
+		       nm_utils_inet4_ntop (info->address, address_str),
+		       (hwaddr_str = nm_utils_hwaddr_ntoa (event->defended.sender,
+		                                           event->defended.n_sender)));
+		break;
+	case N_ACD_EVENT_CONFLICT:
+		_LOGW ("conflict for address %s detected with host %s on interface '%s'",
+		       nm_utils_inet4_ntop (info->address, address_str),
+		       (hwaddr_str = nm_utils_hwaddr_ntoa (event->defended.sender,
+		                                           event->defended.n_sender)),
+		       nm_platform_link_get_name (NM_PLATFORM_GET, priv->ifindex));
 		break;
 	default:
 		_LOGD ("event '%s' for address %s",
