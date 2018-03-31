@@ -2417,12 +2417,15 @@ write_ip4_setting (NMConnection *connection,
 	NM_SET_OUT (out_route_content, write_route_file (s_ip4));
 
 	timeout = nm_setting_ip_config_get_dad_timeout (s_ip4);
-	if (timeout < 0)
+	if (timeout < 0) {
+		svUnsetValue (ifcfg, "ACD_TIMEOUT");
 		svUnsetValue (ifcfg, "ARPING_WAIT");
-	else if (timeout == 0)
+	} else if (timeout == 0) {
+		svSetValueStr (ifcfg, "ACD_TIMEOUT", "0");
 		svSetValueStr (ifcfg, "ARPING_WAIT", "0");
-	else {
-		/* Round the value up to next integer */
+	} else {
+		svSetValueInt64 (ifcfg, "ACD_TIMEOUT", timeout);
+		/* Round the value up to next integer for initscripts */
 		svSetValueInt64 (ifcfg, "ARPING_WAIT", (timeout - 1) / 1000 + 1);
 	}
 

@@ -1473,6 +1473,7 @@ test_read_wired_ipv4_manual (gconstpointer data)
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
 	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
+	g_assert_cmpint (nm_setting_ip_config_get_dad_timeout (s_ip4), ==, 2000);
 
 	/* IP addresses */
 	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, 3);
@@ -4764,6 +4765,7 @@ test_write_wired_static_routes (void)
 	g_object_set (s_ip4,
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
 	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.1",
+	              NM_SETTING_IP_CONFIG_DAD_TIMEOUT, 400,
 	              NULL);
 
 	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, &error);

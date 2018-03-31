@@ -748,11 +748,12 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *ip4_class)
 
 	/* ---ifcfg-rh---
 	 * property: dad-timeout
-	 * variable: ARPING_WAIT
+	 * variable: ACD_TIMEOUT, ARPING_WAIT
 	 * default: missing variable means global default (config override or 3)
-	 * description: Timeout (in seconds) for performing DAD before configuring
-	 * IPv4 addresses. 0 turns off the DAD completely, -1 means default value.
-	 * example: ARPING_WAIT=2
+	 * description: Timeout (in milliseconds for ACD_TIMEOUT or in seconds
+	 *   for ARPING_WAIT) for address conflict detection before configuring
+	 *   IPv4 addresses. 0 turns off the ACD completely, -1 means default value.
+	 * example: ACD_TIMEOUT=2000 or ARPING_WAIT=2
 	 * ---end---
 	 */
 
