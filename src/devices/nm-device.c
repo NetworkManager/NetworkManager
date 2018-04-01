@@ -6591,7 +6591,7 @@ dhcp4_get_client_id (NMDevice *self, NMConnection *connection)
 
 		client_id_buf = g_malloc (1 + 15);
 		client_id_buf[0] = 0;
-		memcpy (&client_id_buf[0], buf, 15);
+		memcpy (&client_id_buf[1], buf, 15);
 		return g_bytes_new_take (client_id_buf, 1 + 15);
 	}
 
