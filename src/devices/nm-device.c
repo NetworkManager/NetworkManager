@@ -321,9 +321,7 @@ typedef struct _NMDevicePrivate {
 
 	NMActRequest *  queued_act_request;
 	bool            queued_act_request_is_waiting_for_carrier:1;
-	bool            act_request_public:1;
-	NMActRequest   *act_request;
-	gulong          act_request_id;
+	NMDBusTrackObjPath act_request;
 	ActivationHandleData act_handle4; /* for layer2 and IPv4. */
 	ActivationHandleData act_handle6;
 	guint           recheck_assume_id;
@@ -2137,7 +2135,7 @@ nm_device_get_act_request (NMDevice *self)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
 
-	return NM_DEVICE_GET_PRIVATE (self)->act_request;
+	return NM_DEVICE_GET_PRIVATE (self)->act_request.obj;
 }
 
 NMSettingsConnection *
@@ -2145,7 +2143,7 @@ nm_device_get_settings_connection (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	return priv->act_request ? nm_act_request_get_settings_connection (priv->act_request) : NULL;
+	return priv->act_request.obj ? nm_act_request_get_settings_connection (priv->act_request.obj) : NULL;
 }
 
 NMConnection *
@@ -2157,7 +2155,7 @@ nm_device_get_applied_connection (NMDevice *self)
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	return priv->act_request ? nm_act_request_get_applied_connection (priv->act_request) : NULL;
+	return priv->act_request.obj ? nm_act_request_get_applied_connection (priv->act_request.obj) : NULL;
 }
 
 gboolean
@@ -2165,10 +2163,10 @@ nm_device_has_unmodified_applied_connection (NMDevice *self, NMSettingCompareFla
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (!priv->act_request)
+	if (!priv->act_request.obj)
 		return FALSE;
 
-	return nm_active_connection_has_unmodified_applied_connection ((NMActiveConnection *) priv->act_request, compare_flags);
+	return nm_active_connection_has_unmodified_applied_connection ((NMActiveConnection *) priv->act_request.obj, compare_flags);
 }
 
 NMSetting *
@@ -4506,7 +4504,7 @@ check_ip_state (NMDevice *self, gboolean may_fail, gboolean full_state_update)
 
 	/* Don't progress into IP_CHECK or SECONDARIES if we're waiting for the
 	 * master to enslave us. */
-	if (   nm_active_connection_get_master (NM_ACTIVE_CONNECTION (priv->act_request))
+	if (   nm_active_connection_get_master (NM_ACTIVE_CONNECTION (priv->act_request.obj))
 	    && !priv->is_enslaved)
 		return;
 
@@ -5699,8 +5697,9 @@ activate_stage1_device_prepare (NMDevice *self)
 	_set_ip_state (self, AF_INET6, IP_NONE);
 
 	/* Notify the new ActiveConnection along with the state change */
-	priv->act_request_public = TRUE;
-	_notify (self, PROP_ACTIVE_CONNECTION);
+	nm_dbus_track_obj_path_set (&priv->act_request,
+	                            priv->act_request.obj,
+	                            TRUE);
 
 	nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_REASON_NONE);
 
@@ -5736,7 +5735,7 @@ nm_device_activate_schedule_stage1_device_prepare (NMDevice *self)
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
-	g_return_if_fail (priv->act_request);
+	g_return_if_fail (priv->act_request.obj);
 
 	activation_source_schedule (self, activate_stage1_device_prepare, AF_INET);
 }
@@ -5913,7 +5912,7 @@ activate_stage2_device_config (NMDevice *self)
 
 		if (slave_state == NM_DEVICE_STATE_IP_CONFIG)
 			nm_device_master_enslave_slave (self, info->slave, nm_device_get_applied_connection (info->slave));
-		else if (   priv->act_request
+		else if (   priv->act_request.obj
 		         && nm_device_sys_iface_state_is_external (self)
 		         && slave_state <= NM_DEVICE_STATE_DISCONNECTED)
 			nm_device_queue_recheck_assume (info->slave);
@@ -5938,10 +5937,10 @@ nm_device_activate_schedule_stage2_device_config (NMDevice *self)
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
-	g_return_if_fail (priv->act_request);
+	g_return_if_fail (priv->act_request.obj);
 
 	if (!priv->master_ready_handled) {
-		NMActiveConnection *active = NM_ACTIVE_CONNECTION (priv->act_request);
+		NMActiveConnection *active = NM_ACTIVE_CONNECTION (priv->act_request.obj);
 		NMActiveConnection *master;
 
 		master = nm_active_connection_get_master (active);
@@ -6229,10 +6228,10 @@ nm_device_handle_ipv4ll_event (sd_ipv4ll *ll, int event, void *data)
 	NMIP4Config *config;
 	int r;
 
-	if (priv->act_request == NULL)
+	if (priv->act_request.obj == NULL)
 		return;
 
-	connection = nm_act_request_get_applied_connection (priv->act_request);
+	connection = nm_act_request_get_applied_connection (priv->act_request.obj);
 	g_assert (connection);
 
 	/* Ignore if the connection isn't an AutoIP connection */
@@ -8152,7 +8151,7 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	guint i;
 
-	g_return_if_fail (priv->act_request);
+	g_return_if_fail (priv->act_request.obj);
 
 	if (!applied_config_get_current (&priv->ac_ip6_config))
 		applied_config_init_new (&priv->ac_ip6_config, self, AF_INET6);
@@ -8964,7 +8963,7 @@ nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
-	g_return_if_fail (priv->act_request);
+	g_return_if_fail (priv->act_request.obj);
 
 	/* Add the interface to the specified firewall zone */
 	if (priv->fw_state == FIREWALL_STATE_UNMANAGED) {
@@ -9036,7 +9035,7 @@ nm_device_activate_schedule_ip4_config_timeout (NMDevice *self)
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
-	g_return_if_fail (priv->act_request);
+	g_return_if_fail (priv->act_request.obj);
 
 	activation_source_schedule (self, activate_stage4_ip4_config_timeout, AF_INET);
 }
@@ -9092,7 +9091,7 @@ nm_device_activate_schedule_ip6_config_timeout (NMDevice *self)
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
-	g_return_if_fail (priv->act_request);
+	g_return_if_fail (priv->act_request.obj);
 
 	activation_source_schedule (self, activate_stage4_ip6_config_timeout, AF_INET6);
 }
@@ -9550,42 +9549,26 @@ nm_device_activate_ip6_state_done (NMDevice *self)
 /*****************************************************************************/
 
 static void
-act_request_exported_changed (NMActRequest *act_request,
-                              NMDevice *self)
-{
-	_notify (self, PROP_ACTIVE_CONNECTION);
-}
-
-static void
 act_request_set (NMDevice *self, NMActRequest *act_request)
 {
 	NMDevicePrivate *priv;
-	gs_unref_object NMActRequest *old_act_requst = NULL;
 
 	nm_assert (NM_IS_DEVICE (self));
 	nm_assert (!act_request || NM_IS_ACT_REQUEST (act_request));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (   !priv->act_request_public
-	    && priv->act_request == act_request)
+	if (   !priv->act_request.visible
+	    && priv->act_request.obj == act_request)
 		return;
 
 	/* always clear the public flag. The few callers that set a new @act_request
 	 * don't want that the property is public yet.  */
-	priv->act_request_public = FALSE;
-
-	nm_clear_g_signal_handler (priv->act_request, &priv->act_request_id);
-
-	old_act_requst = priv->act_request;
-	priv->act_request = nm_g_object_ref (act_request);
+	nm_dbus_track_obj_path_set (&priv->act_request,
+	                            act_request,
+	                            FALSE);
 
 	if (act_request) {
-		priv->act_request_id = g_signal_connect (act_request,
-		                                         NM_DBUS_OBJECT_EXPORTED_CHANGED,
-		                                         G_CALLBACK (act_request_exported_changed),
-		                                         self);
-
 		switch (nm_active_connection_get_activation_type (NM_ACTIVE_CONNECTION (act_request))) {
 		case NM_ACTIVATION_TYPE_EXTERNAL:
 			break;
@@ -9602,8 +9585,6 @@ act_request_set (NMDevice *self, NMActRequest *act_request)
 			break;
 		}
 	}
-
-	_notify (self, PROP_ACTIVE_CONNECTION);
 }
 
 static void
@@ -10068,7 +10049,7 @@ check_and_reapply_connection (NMDevice *self,
 	}
 
 	if (   version_id != 0
-	    && version_id != nm_active_connection_version_id_get ((NMActiveConnection *) priv->act_request)) {
+	    && version_id != nm_active_connection_version_id_get ((NMActiveConnection *) priv->act_request.obj)) {
 		g_set_error_literal (error,
 		                     NM_DEVICE_ERROR,
 		                     NM_DEVICE_ERROR_VERSION_ID_MISMATCH,
@@ -10081,10 +10062,10 @@ check_and_reapply_connection (NMDevice *self,
 	 *************************************************************************/
 
 	if (diffs)
-		nm_active_connection_version_id_bump ((NMActiveConnection *) priv->act_request);
+		nm_active_connection_version_id_bump ((NMActiveConnection *) priv->act_request.obj);
 
 	_LOGD (LOGD_DEVICE, "reapply (version-id %llu%s)",
-	       (unsigned long long) nm_active_connection_version_id_get (((NMActiveConnection *) priv->act_request)),
+	       (unsigned long long) nm_active_connection_version_id_get (((NMActiveConnection *) priv->act_request.obj)),
 	       diffs ? "" : " (unmodified)");
 
 	if (diffs) {
@@ -10334,7 +10315,7 @@ get_applied_connection_cb (NMDevice *self,
 	g_dbus_method_invocation_return_value (context,
 	                                       g_variant_new ("(@a{sa{sv}}t)",
 	                                                      settings,
-	                                                      nm_active_connection_version_id_get ((NMActiveConnection *) priv->act_request)));
+	                                                      nm_active_connection_version_id_get ((NMActiveConnection *) priv->act_request.obj)));
 }
 
 static void
@@ -10532,7 +10513,7 @@ impl_device_disconnect (NMDBusObject *obj,
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
 
-	if (!priv->act_request) {
+	if (!priv->act_request.obj) {
 		g_dbus_method_invocation_return_error_literal (invocation,
 		                                               NM_DEVICE_ERROR,
 		                                               NM_DEVICE_ERROR_NOT_ACTIVE,
@@ -10720,8 +10701,8 @@ nm_device_steal_connection (NMDevice *self, NMSettingsConnection *connection)
 	    && connection == nm_active_connection_get_settings_connection (NM_ACTIVE_CONNECTION (priv->queued_act_request)))
 		_clear_queued_act_request (priv);
 
-	if (   priv->act_request
-	    && connection == nm_active_connection_get_settings_connection (NM_ACTIVE_CONNECTION (priv->act_request))
+	if (   priv->act_request.obj
+	    && connection == nm_active_connection_get_settings_connection (NM_ACTIVE_CONNECTION (priv->act_request.obj))
 	    && priv->state < NM_DEVICE_STATE_DEACTIVATING) {
 		nm_device_state_changed (self,
 		                         NM_DEVICE_STATE_DEACTIVATING,
@@ -10737,7 +10718,7 @@ nm_device_queue_activation (NMDevice *self, NMActRequest *req)
 
 	must_queue = _carrier_wait_check_act_request_must_queue (self, req);
 
-	if (   !priv->act_request
+	if (   !priv->act_request.obj
 	    && !must_queue
 	    && nm_device_is_real (self)) {
 		_device_activate (self, req);
@@ -10752,7 +10733,7 @@ nm_device_queue_activation (NMDevice *self, NMActRequest *req)
 	_LOGD (LOGD_DEVICE, "queue activation request waiting for %s", must_queue ? "carrier" : "currently active connection to disconnect");
 
 	/* Deactivate existing activation request first */
-	if (priv->act_request) {
+	if (priv->act_request.obj) {
 		_LOGI (LOGD_DEVICE, "disconnecting for new activation request.");
 		nm_device_state_changed (self,
 		                         NM_DEVICE_STATE_DEACTIVATING,
@@ -10967,7 +10948,7 @@ nm_device_set_ip_config (NMDevice *self,
 		    && (settings_connection = nm_device_get_settings_connection (self))
 		    && NM_FLAGS_HAS (nm_settings_connection_get_flags (settings_connection),
 		                     NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED)
-		    && nm_active_connection_get_activation_type (NM_ACTIVE_CONNECTION (priv->act_request)) == NM_ACTIVATION_TYPE_EXTERNAL) {
+		    && nm_active_connection_get_activation_type (NM_ACTIVE_CONNECTION (priv->act_request.obj)) == NM_ACTIVATION_TYPE_EXTERNAL) {
 			g_object_freeze_notify (G_OBJECT (settings_connection));
 			nm_connection_add_setting (NM_CONNECTION (settings_connection),
 			                           IS_IPv4
@@ -12442,7 +12423,7 @@ nm_device_reapply_settings_immediately (NMDevice *self)
 	if (g_strcmp0 ((zone = nm_setting_connection_get_zone (s_con_settings)),
 	               nm_setting_connection_get_zone (s_con_applied)) != 0) {
 
-		version_id = nm_active_connection_version_id_bump ((NMActiveConnection *) self->_priv->act_request);
+		version_id = nm_active_connection_version_id_bump ((NMActiveConnection *) self->_priv->act_request.obj);
 		_LOGD (LOGD_DEVICE, "reapply setting: zone = %s%s%s (version-id %llu)", NM_PRINT_FMT_QUOTE_STRING (zone), (unsigned long long) version_id);
 
 		g_object_set (G_OBJECT (s_con_applied),
@@ -12454,7 +12435,7 @@ nm_device_reapply_settings_immediately (NMDevice *self)
 
 	if ((metered = nm_setting_connection_get_metered (s_con_settings)) != nm_setting_connection_get_metered (s_con_applied)) {
 
-		version_id = nm_active_connection_version_id_bump ((NMActiveConnection *) self->_priv->act_request);
+		version_id = nm_active_connection_version_id_bump ((NMActiveConnection *) self->_priv->act_request.obj);
 		_LOGD (LOGD_DEVICE, "reapply setting: metered = %d (version-id %llu)", (int) metered, (unsigned long long) version_id);
 
 		g_object_set (G_OBJECT (s_con_applied),
@@ -13060,11 +13041,11 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 	 * above disables them. */
 	nm_assert (priv->needs_ip6_subnet == FALSE);
 
-	if (priv->act_request) {
-		nm_active_connection_set_default (NM_ACTIVE_CONNECTION (priv->act_request), AF_INET, FALSE);
+	if (priv->act_request.obj) {
+		nm_active_connection_set_default (NM_ACTIVE_CONNECTION (priv->act_request.obj), AF_INET, FALSE);
 
 		priv->master_ready_handled = FALSE;
-		nm_clear_g_signal_handler (priv->act_request, &priv->master_ready_id);
+		nm_clear_g_signal_handler (priv->act_request.obj, &priv->master_ready_id);
 
 		act_request_set (self, NULL);
 	}
@@ -13516,7 +13497,7 @@ _set_state_full (NMDevice *self,
 		g_cancellable_cancel (priv->deactivating_cancellable);
 
 	/* Cache the activation request for the dispatcher */
-	req = nm_g_object_ref (priv->act_request);
+	req = nm_g_object_ref (priv->act_request.obj);
 
 	if (   state >  NM_DEVICE_STATE_UNMANAGED
 	    && state <= NM_DEVICE_STATE_ACTIVATED
@@ -14765,6 +14746,7 @@ nm_device_init (NMDevice *self)
 	priv->connectivity_state = NM_CONNECTIVITY_UNKNOWN;
 
 	nm_dbus_track_obj_path_init (&priv->parent_device, G_OBJECT (self), obj_properties[PROP_PARENT]);
+	nm_dbus_track_obj_path_init (&priv->act_request, G_OBJECT (self), obj_properties[PROP_ACTIVE_CONNECTION]);
 
 	priv->netns = g_object_ref (NM_NETNS_GET);
 
@@ -15005,6 +14987,7 @@ finalize (GObject *object)
 	g_hash_table_unref (priv->available_connections);
 
 	nm_dbus_track_obj_path_deinit (&priv->parent_device);
+	nm_dbus_track_obj_path_deinit (&priv->act_request);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->finalize (object);
 
@@ -15196,7 +15179,7 @@ get_property (GObject *object, guint prop_id,
 		                      g_variant_new ("(uu)", priv->state, priv->state_reason));
 		break;
 	case PROP_ACTIVE_CONNECTION:
-		nm_dbus_utils_g_value_set_object_path_still_exported (value, priv->act_request_public ? priv->act_request : NULL);
+		g_value_set_string (value, nm_dbus_track_obj_path_get (&priv->act_request));
 		break;
 	case PROP_DEVICE_TYPE:
 		g_value_set_uint (value, priv->type);
