@@ -256,7 +256,7 @@ typedef struct _NMDevicePrivate {
 	GSList *pending_actions;
 	GSList *dad6_failed_addrs;
 
-	NMDevice *parent_device;
+	NMDBusTrackObjPath parent_device;
 
 	char *        udi;
 	char *        iface;   /* may change, could be renamed by user */
@@ -1492,12 +1492,9 @@ nm_device_parent_get_ifindex (NMDevice *self)
 NMDevice *
 nm_device_parent_get_device (NMDevice *self)
 {
-	NMDevicePrivate *priv;
-
 	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
 
-	priv = NM_DEVICE_GET_PRIVATE (self);
-	return priv->parent_device;
+	return NM_DEVICE_GET_PRIVATE (self)->parent_device.obj;
 }
 
 static void
@@ -1519,7 +1516,7 @@ _parent_set_ifindex (NMDevice *self,
 	NMDevice *parent_device;
 	gboolean changed = FALSE;
 	int old_ifindex;
-	NMDevice *old_device;
+	gs_unref_object NMDevice *old_device = NULL;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
@@ -1529,16 +1526,15 @@ _parent_set_ifindex (NMDevice *self,
 		parent_ifindex = 0;
 
 	old_ifindex = priv->parent_ifindex;
-	old_device = priv->parent_device;
 
 	if (priv->parent_ifindex == parent_ifindex) {
 		if (parent_ifindex > 0) {
 			if (   !force_check
-			    && priv->parent_device
-			    && nm_device_get_ifindex (priv->parent_device) == parent_ifindex)
+			    && priv->parent_device.obj
+			    && nm_device_get_ifindex (priv->parent_device.obj) == parent_ifindex)
 				return FALSE;
 		} else {
-			if (!priv->parent_device)
+			if (!priv->parent_device.obj)
 				return FALSE;
 		}
 	} else {
@@ -1553,24 +1549,23 @@ _parent_set_ifindex (NMDevice *self,
 	} else
 		parent_device = NULL;
 
-	if (parent_device != priv->parent_device) {
-		priv->parent_device = parent_device;
+	if (parent_device != priv->parent_device.obj) {
+		old_device = nm_g_object_ref (priv->parent_device.obj);
+		nm_dbus_track_obj_path_set (&priv->parent_device, parent_device, TRUE);
 		changed = TRUE;
 	}
 
 	if (changed) {
 		if (priv->parent_ifindex <= 0)
 			_LOGD (LOGD_DEVICE, "parent: clear");
-		else if (!priv->parent_device)
+		else if (!priv->parent_device.obj)
 			_LOGD (LOGD_DEVICE, "parent: ifindex %d, no device", priv->parent_ifindex);
 		else {
 			_LOGD (LOGD_DEVICE, "parent: ifindex %d, device %p, %s", priv->parent_ifindex,
-			       priv->parent_device, nm_device_get_iface (priv->parent_device));
+			       priv->parent_device.obj, nm_device_get_iface (priv->parent_device.obj));
 		}
 
-		NM_DEVICE_GET_CLASS (self)->parent_changed_notify (self, old_ifindex, old_device, priv->parent_ifindex, priv->parent_device);
-
-		_notify (self, PROP_PARENT);
+		NM_DEVICE_GET_CLASS (self)->parent_changed_notify (self, old_ifindex, old_device, priv->parent_ifindex, priv->parent_device.obj);
 	}
 	return changed;
 }
@@ -1595,7 +1590,7 @@ nm_device_parent_notify_changed (NMDevice *self,
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (priv->parent_ifindex > 0) {
-		if (   priv->parent_device == change_candidate
+		if (   priv->parent_device.obj == change_candidate
 		    || priv->parent_ifindex == nm_device_get_ifindex (change_candidate))
 			return _parent_set_ifindex (self, priv->parent_ifindex, device_removed);
 	}
@@ -14769,6 +14764,8 @@ nm_device_init (NMDevice *self)
 
 	priv->connectivity_state = NM_CONNECTIVITY_UNKNOWN;
 
+	nm_dbus_track_obj_path_init (&priv->parent_device, G_OBJECT (self), obj_properties[PROP_PARENT]);
+
 	priv->netns = g_object_ref (NM_NETNS_GET);
 
 	priv->autoconnect_blocked_flags = DEFAULT_AUTOCONNECT
@@ -15007,6 +15004,8 @@ finalize (GObject *object)
 	g_hash_table_unref (priv->ip6_saved_properties);
 	g_hash_table_unref (priv->available_connections);
 
+	nm_dbus_track_obj_path_deinit (&priv->parent_device);
+
 	G_OBJECT_CLASS (nm_device_parent_class)->finalize (object);
 
 	/* for testing, NMDeviceTest does not invoke NMDevice::constructed,
@@ -15239,7 +15238,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_object (value, nm_device_get_master (self));
 		break;
 	case PROP_PARENT:
-		nm_dbus_utils_g_value_set_object_path (value, priv->parent_device);
+		g_value_set_string (value, nm_dbus_track_obj_path_get (&priv->parent_device));
 		break;
 	case PROP_HW_ADDRESS:
 		g_value_set_string (value, priv->hw_addr);
