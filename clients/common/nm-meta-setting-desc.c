@@ -1176,42 +1176,6 @@ _set_fcn_gobject_mac (ARGS_SET_FCN)
 }
 
 static gboolean
-_set_fcn_gobject_secret_flags (ARGS_SET_FCN)
-{
-	gs_free char *err_token = NULL;
-	gs_free char *str_all = NULL;
-	int flags;
-
-	nm_assert (!error || !*error);
-
-	if (!nm_utils_enum_from_str (nm_setting_secret_flags_get_type (),
-	                             value,
-	                             &flags,
-	                             &err_token)) {
-		str_all = nm_utils_enum_to_str (nm_setting_secret_flags_get_type (),
-		                                ALL_SECRET_FLAGS);
-		g_set_error (error, 1, 0,
-		             _("'%s' is not a valid flag; use <0-%d> or a combination of '%s'"),
-		             err_token,
-		             ALL_SECRET_FLAGS,
-		             str_all);
-		return FALSE;
-	}
-
-	/* Validate the flags number */
-	if (flags > ALL_SECRET_FLAGS) {
-		flags = ALL_SECRET_FLAGS;
-		_env_warn_fcn (environment, environment_user_data,
-		               NM_META_ENV_WARN_LEVEL_WARN,
-		               N_("'%s' sum is higher than all flags => all flags set"),
-		               value);
-	}
-
-	g_object_set (setting, property_info->property_name, (guint) flags, NULL);
-	return TRUE;
-}
-
-static gboolean
 _set_fcn_gobject_enum (ARGS_SET_FCN)
 {
 	GType gtype = 0;
@@ -4840,7 +4804,7 @@ static const NMMetaPropertyType _pt_gobject_mac = {
 
 static const NMMetaPropertyType _pt_gobject_secret_flags = {
 	.get_fcn =                      _get_fcn_gobject_secret_flags,
-	.set_fcn =                      _set_fcn_gobject_secret_flags,
+	.set_fcn =                      _set_fcn_gobject_enum,
 	.values_fcn =                   _values_fcn_gobject_enum,
 };
 
