@@ -2113,12 +2113,12 @@ get_existing_connection (NMManager *self,
                          gboolean *out_generated)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	gs_unref_object NMConnection *connection = NULL;
+	NMConnection *connection = NULL;
 	NMSettingsConnection *added = NULL;
 	GError *error = NULL;
 	NMDevice *master = NULL;
 	int ifindex = nm_device_get_ifindex (device);
-	NMSettingsConnection *matched;
+	NMSettingsConnection *matched = NULL;
 	NMSettingsConnection *connection_checked = NULL;
 	gboolean assume_state_guess_assume = FALSE;
 	const char *assume_state_connection_uuid = NULL;
@@ -2149,54 +2149,31 @@ get_existing_connection (NMManager *self,
 		}
 	}
 
-	/* The core of the API is nm_device_generate_connection() function and
-	 * update_connection() virtual method and the convenient connection_type
-	 * class attribute. Subclasses supporting the new API must have
-	 * update_connection() implemented, otherwise nm_device_generate_connection()
-	 * returns NULL.
-	 */
-	connection = nm_device_generate_connection (device, master, &maybe_later, &error);
-	if (!connection) {
-		if (!maybe_later)
-			nm_device_assume_state_reset (device);
-		_LOG2D (LOGD_DEVICE, device, "assume: cannot generate connection: %s",
-		        error->message);
-		g_error_free (error);
-		return NULL;
-	}
-
 	nm_device_assume_state_get (device,
 	                            &assume_state_guess_assume,
 	                            &assume_state_connection_uuid);
 
-	/* Now we need to compare the generated connection to each configured
-	 * connection. The comparison function is the heart of the connection
-	 * assumption implementation and it must compare the connections very
-	 * carefully to sort out various corner cases. Also, the comparison is
-	 * not entirely symmetric.
-	 *
-	 * When no configured connection matches the generated connection, we keep
-	 * the generated connection instead.
-	 */
 	if (   assume_state_connection_uuid
 	    && (connection_checked = nm_settings_get_connection_by_uuid (priv->settings, assume_state_connection_uuid))
-	    && !active_connection_find_first (self, connection_checked, NULL,
-	                                      NM_ACTIVE_CONNECTION_STATE_DEACTIVATING)
-	    && nm_device_check_connection_compatible (device, NM_CONNECTION (connection_checked))) {
-		NMConnection *const connections[] = {
-			NM_CONNECTION (connection_checked),
-			NULL,
-		};
+	    && nm_device_check_connection_compatible (device, NM_CONNECTION (connection_checked)))
+		matched = connection_checked;
 
-		matched = NM_SETTINGS_CONNECTION (nm_utils_match_connection (connections,
-		                                                             connection,
-		                                                             TRUE,
-		                                                             nm_device_has_carrier (device),
-		                                                             nm_device_get_route_metric (device, AF_INET),
-		                                                             nm_device_get_route_metric (device, AF_INET6),
-		                                                             NULL, NULL));
-	} else
-		matched = NULL;
+	if (!matched) {
+		/* The core of the API is nm_device_generate_connection() function and
+		 * update_connection() virtual method and the convenient connection_type
+		 * class attribute. Subclasses supporting the new API must have
+		 * update_connection() implemented, otherwise nm_device_generate_connection()
+		 * returns NULL.
+		 */
+		connection = nm_device_generate_connection (device, master, &maybe_later, &error);
+		if (!connection) {
+			if (!maybe_later)
+				nm_device_assume_state_reset (device);
+			_LOG2D (LOGD_DEVICE, device, "assume: cannot generate connection: %s", error->message);
+			g_error_free (error);
+			return NULL;
+		}
+	}
 
 	if (!matched && assume_state_guess_assume) {
 		gs_free NMSettingsConnection **connections = NULL;
@@ -2220,7 +2197,6 @@ get_existing_connection (NMManager *self,
 
 			matched = NM_SETTINGS_CONNECTION (nm_utils_match_connection ((NMConnection *const*) connections,
 			                                                             connection,
-			                                                             FALSE,
 			                                                             nm_device_has_carrier (device),
 			                                                             nm_device_get_route_metric (device, AF_INET),
 			                                                             nm_device_get_route_metric (device, AF_INET6),
