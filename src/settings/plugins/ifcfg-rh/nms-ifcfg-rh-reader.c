@@ -5344,6 +5344,7 @@ connection_from_file_full (const char *filename,
 	if (!svGetValueBoolean (parsed, "NM_CONTROLLED", TRUE)) {
 		connection = create_unhandled_connection (filename, parsed, "unmanaged", out_unhandled);
 		if (!connection) {
+			NM_SET_OUT (out_ignore_error, TRUE);
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 			             "NM_CONTROLLED was false but device was not uniquely identified; device will be managed");
 		}
