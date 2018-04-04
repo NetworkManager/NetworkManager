@@ -589,6 +589,8 @@ nmp_utils_ip_config_source_coerce_to_rtprot (NMIPConfigSource source)
 	switch (source) {
 	case NM_IP_CONFIG_SOURCE_KERNEL:
 		return RTPROT_KERNEL;
+	case NM_IP_CONFIG_SOURCE_IP6LL:
+		return RTPROT_KERNEL;
 	case NM_IP_CONFIG_SOURCE_DHCP:
 		return RTPROT_DHCP;
 	case NM_IP_CONFIG_SOURCE_NDISC:
@@ -656,6 +658,7 @@ nmp_utils_ip_config_source_to_string (NMIPConfigSource source, char *buf, gsize 
 	case NM_IP_CONFIG_SOURCE_KERNEL:          s = "kernel"; break;
 	case NM_IP_CONFIG_SOURCE_SHARED:          s = "shared"; break;
 	case NM_IP_CONFIG_SOURCE_IP4LL:           s = "ipv4ll"; break;
+	case NM_IP_CONFIG_SOURCE_IP6LL:           s = "ipv6ll"; break;
 	case NM_IP_CONFIG_SOURCE_PPP:             s = "ppp"; break;
 	case NM_IP_CONFIG_SOURCE_WWAN:            s = "wwan"; break;
 	case NM_IP_CONFIG_SOURCE_VPN:             s = "vpn"; break;

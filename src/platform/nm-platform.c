@@ -3902,7 +3902,8 @@ nm_platform_ip_route_sync (NMPlatform *self,
 
 	for (i_type = 0; routes && i_type < 2; i_type++) {
 		for (i = 0; i < routes->len; i++) {
-			NMPlatformError plerr;
+			NMPlatformError plerr, plerr2;
+			gboolean gateway_route_added = FALSE;
 
 			conf_o = routes->pdata[i];
 
@@ -3948,6 +3949,7 @@ nm_platform_ip_route_sync (NMPlatform *self,
 				}
 			}
 
+sync_route_add:
 			plerr = nm_platform_ip_route_add (self,
 			                                    NMP_NLM_FLAG_APPEND
 			                                  | NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE,
@@ -3986,22 +3988,66 @@ nm_platform_ip_route_sync (NMPlatform *self,
 					if (!*out_temporary_not_available)
 						*out_temporary_not_available = g_ptr_array_new_full (0, (GDestroyNotify) nmp_object_unref);
 					g_ptr_array_add (*out_temporary_not_available, (gpointer) nmp_object_ref (conf_o));
-				} else {
-					const char *reason = "";
+				} else if (   !gateway_route_added
+				           && (   (   -((int) plerr) == ENETUNREACH
+				                   && vt->is_ip4
+				                   && !!NMP_OBJECT_CAST_IP4_ROUTE (conf_o)->gateway)
+				               || (   -((int) plerr) == EHOSTUNREACH
+				                   && !vt->is_ip4
+				                   && !IN6_IS_ADDR_UNSPECIFIED (&NMP_OBJECT_CAST_IP6_ROUTE (conf_o)->gateway)))) {
+					NMPObject oo;
 
-					if (   (   -((int) plerr) == ENETUNREACH
-					        && vt->is_ip4
-					        && !!NMP_OBJECT_CAST_IP4_ROUTE (conf_o)->gateway)
-					    || (   -((int) plerr) == EHOSTUNREACH
-					        && !vt->is_ip4
-					        && !IN6_IS_ADDR_UNSPECIFIED (&NMP_OBJECT_CAST_IP6_ROUTE (conf_o)->gateway)))
-						reason = "; is the gateway directly reachable?";
+					if (vt->is_ip4) {
+						const NMPlatformIP4Route *r = NMP_OBJECT_CAST_IP4_ROUTE (conf_o);
 
-					_LOGW ("route-sync: failure to add IPv%c route: %s: %s%s",
+						nmp_object_stackinit (&oo,
+						                      NMP_OBJECT_TYPE_IP4_ROUTE,
+						                      &((NMPlatformIP4Route) {
+						                          .network = r->gateway,
+						                          .plen = 32,
+						                          .metric = r->metric,
+						                          .rt_source = r->rt_source,
+						                          .table_coerced = r->table_coerced,
+						                      }));
+					} else {
+						const NMPlatformIP6Route *r = NMP_OBJECT_CAST_IP6_ROUTE (conf_o);
+
+						nmp_object_stackinit (&oo,
+						                      NMP_OBJECT_TYPE_IP6_ROUTE,
+						                      &((NMPlatformIP6Route) {
+						                          .network = r->gateway,
+						                          .plen = 128,
+						                          .metric = r->metric,
+						                          .rt_source = r->rt_source,
+						                          .table_coerced = r->table_coerced,
+						                      }));
+					}
+
+					_LOGD ("route-sync: failure to add IPv%c route: %s: %s; try adding direct route to gateway %s",
 					       vt->is_ip4 ? '4' : '6',
 					       nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)),
 					       nm_platform_error_to_string (plerr, sbuf_err, sizeof (sbuf_err)),
-					       reason);
+					       nmp_object_to_string (&oo, NMP_OBJECT_TO_STRING_PUBLIC, sbuf2, sizeof (sbuf2)));
+
+					plerr2 = nm_platform_ip_route_add (self,
+					                                     NMP_NLM_FLAG_APPEND
+					                                   | NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE,
+					                                   &oo);
+
+					if (plerr2 != NM_PLATFORM_ERROR_SUCCESS) {
+						_LOGD ("route-sync: failure to add gateway IPv%c route: %s: %s",
+						       vt->is_ip4 ? '4' : '6',
+						       nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)),
+						       nm_platform_error_to_string (plerr, sbuf_err, sizeof (sbuf_err)));
+					}
+
+					gateway_route_added = TRUE;
+					goto sync_route_add;
+				} else {
+					_LOGW ("route-sync: failure to add IPv%c route: %s: %s",
+					       vt->is_ip4 ? '4' : '6',
+					       nmp_object_to_string (conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof (sbuf1)),
+					       nm_platform_error_to_string (plerr, sbuf_err, sizeof (sbuf_err)));
 					success = FALSE;
 				}
 			}
