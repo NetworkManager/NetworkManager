@@ -458,10 +458,8 @@ int get_files_in_directory(const char *path, char ***list) {
                         n++;
         }
 
-        if (list) {
-                *list = l;
-                l = NULL; /* avoid freeing */
-        }
+        if (list)
+                *list = TAKE_PTR(l);
 
         return n;
 }
@@ -579,6 +577,10 @@ int inotify_add_watch_fd(int fd, int what, uint32_t mask) {
         return r;
 }
 
+static bool noop_root(const char *root) {
+        return isempty(root) || path_equal(root, "/");
+}
+
 static bool safe_transition(const struct stat *a, const struct stat *b) {
         /* Returns true if the transition from a to b is safe, i.e. that we never transition from unprivileged to
          * privileged files or directories. Why bother? So that unprivileged code can't symlink to privileged files
@@ -629,8 +631,18 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
          * specified path. */
 
         /* A root directory of "/" or "" is identical to none */
-        if (isempty(original_root) || path_equal(original_root, "/"))
+        if (noop_root(original_root))
                 original_root = NULL;
+
+        if (!original_root && !ret && (flags & (CHASE_NONEXISTENT|CHASE_NO_AUTOFS|CHASE_SAFE|CHASE_OPEN)) == CHASE_OPEN) {
+                /* Shortcut the CHASE_OPEN case if the caller isn't interested in the actual path and has no root set
+                 * and doesn't care about any of the other special features we provide either. */
+                r = open(path, O_PATH|O_CLOEXEC);
+                if (r < 0)
+                        return -errno;
+
+                return r;
+        }
 
         if (original_root) {
                 r = path_make_absolute_cwd(original_root, &root);
@@ -685,8 +697,10 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
                 /* Just a single slash? Then we reached the end. */
                 if (path_equal(first, "/")) {
                         /* Preserve the trailing slash */
-                        if (!strextend(&done, "/", NULL))
-                                return -ENOMEM;
+
+                        if (flags & CHASE_TRAIL_SLASH)
+                                if (!strextend(&done, "/", NULL))
+                                        return -ENOMEM;
 
                         break;
                 }
@@ -732,8 +746,7 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
                         }
 
                         safe_close(fd);
-                        fd = fd_parent;
-                        fd_parent = -1;
+                        fd = TAKE_FD(fd_parent);
 
                         continue;
                 }
@@ -838,10 +851,9 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
                 }
 
                 /* If this is not a symlink, then let's just add the name we read to what we already verified. */
-                if (!done) {
-                        done = first;
-                        first = NULL;
-                } else {
+                if (!done)
+                        done = TAKE_PTR(first);
+                else {
                         /* If done is "/", as first also contains slash at the head, then remove this redundant slash. */
                         if (streq(done, "/"))
                                 *done = '\0';
@@ -852,8 +864,7 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
 
                 /* And iterate again, but go one directory further down. */
                 safe_close(fd);
-                fd = child;
-                child = -1;
+                fd = TAKE_FD(child);
         }
 
         if (!done) {
@@ -863,25 +874,98 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
                         return -ENOMEM;
         }
 
-        if (ret) {
-                *ret = done;
-                done = NULL;
-        }
+        if (ret)
+                *ret = TAKE_PTR(done);
 
         if (flags & CHASE_OPEN) {
-                int q;
-
                 /* Return the O_PATH fd we currently are looking to the caller. It can translate it to a proper fd by
                  * opening /proc/self/fd/xyz. */
 
                 assert(fd >= 0);
-                q = fd;
-                fd = -1;
-
-                return q;
+                return TAKE_FD(fd);
         }
 
         return exists;
+}
+
+int chase_symlinks_and_open(
+                const char *path,
+                const char *root,
+                unsigned chase_flags,
+                int open_flags,
+                char **ret_path) {
+
+        _cleanup_close_ int path_fd = -1;
+        _cleanup_free_ char *p = NULL;
+        int r;
+
+        if (chase_flags & CHASE_NONEXISTENT)
+                return -EINVAL;
+
+        if (noop_root(root) && !ret_path && (chase_flags & (CHASE_NO_AUTOFS|CHASE_SAFE)) == 0) {
+                /* Shortcut this call if none of the special features of this call are requested */
+                r = open(path, open_flags);
+                if (r < 0)
+                        return -errno;
+
+                return r;
+        }
+
+        path_fd = chase_symlinks(path, root, chase_flags|CHASE_OPEN, ret_path ? &p : NULL);
+        if (path_fd < 0)
+                return path_fd;
+
+        r = fd_reopen(path_fd, open_flags);
+        if (r < 0)
+                return r;
+
+        if (ret_path)
+                *ret_path = TAKE_PTR(p);
+
+        return r;
+}
+
+int chase_symlinks_and_opendir(
+                const char *path,
+                const char *root,
+                unsigned chase_flags,
+                char **ret_path,
+                DIR **ret_dir) {
+
+        char procfs_path[STRLEN("/proc/self/fd/") + DECIMAL_STR_MAX(int)];
+        _cleanup_close_ int path_fd = -1;
+        _cleanup_free_ char *p = NULL;
+        DIR *d;
+
+        if (!ret_dir)
+                return -EINVAL;
+        if (chase_flags & CHASE_NONEXISTENT)
+                return -EINVAL;
+
+        if (noop_root(root) && !ret_path && (chase_flags & (CHASE_NO_AUTOFS|CHASE_SAFE)) == 0) {
+                /* Shortcut this call if none of the special features of this call are requested */
+                d = opendir(path);
+                if (!d)
+                        return -errno;
+
+                *ret_dir = d;
+                return 0;
+        }
+
+        path_fd = chase_symlinks(path, root, chase_flags|CHASE_OPEN, ret_path ? &p : NULL);
+        if (path_fd < 0)
+                return path_fd;
+
+        xsprintf(procfs_path, "/proc/self/fd/%i", path_fd);
+        d = opendir(procfs_path);
+        if (!d)
+                return -errno;
+
+        if (ret_path)
+                *ret_path = TAKE_PTR(p);
+
+        *ret_dir = d;
+        return 0;
 }
 
 int access_fd(int fd, int mode) {
@@ -891,10 +975,9 @@ int access_fd(int fd, int mode) {
         /* Like access() but operates on an already open fd */
 
         xsprintf(p, "/proc/self/fd/%i", fd);
-
         r = access(p, mode);
         if (r < 0)
-                r = -errno;
+                return -errno;
 
         return r;
 }
@@ -978,8 +1061,19 @@ int fsync_directory_of_file(int fd) {
                 return r;
 
         r = fd_get_path(fd, &path);
-        if (r < 0)
+        if (r < 0) {
+                log_debug("Failed to query /proc/self/fd/%d%s: %m",
+                          fd,
+                          r == -EOPNOTSUPP ? ", ignoring" : "");
+
+                if (r == -EOPNOTSUPP)
+                        /* If /proc is not available, we're most likely running in some
+                         * chroot environment, and syncing the directory is not very
+                         * important in that case. Let's just silently do nothing. */
+                        return 0;
+
                 return r;
+        }
 
         if (!path_is_absolute(path))
                 return -EINVAL;

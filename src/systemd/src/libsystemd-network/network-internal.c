@@ -276,10 +276,9 @@ int config_parse_ifalias(const char *unit,
         }
 
         free(*s);
-        if (*n) {
-                *s = n;
-                n = NULL;
-        } else
+        if (*n)
+                *s = TAKE_PTR(n);
+        else
                 *s = NULL;
 
         return 0;
@@ -424,7 +423,7 @@ int deserialize_in_addrs(struct in_addr **ret, const char *string) {
                 if (r == 0)
                         break;
 
-                new_addresses = realloc(addresses, (size + 1) * sizeof(struct in_addr));
+                new_addresses = reallocarray(addresses, size + 1, sizeof(struct in_addr));
                 if (!new_addresses)
                         return -ENOMEM;
                 else
@@ -437,8 +436,7 @@ int deserialize_in_addrs(struct in_addr **ret, const char *string) {
                 size++;
         }
 
-        *ret = addresses;
-        addresses = NULL;
+        *ret = TAKE_PTR(addresses);
 
         return size;
 }
@@ -478,7 +476,7 @@ int deserialize_in6_addrs(struct in6_addr **ret, const char *string) {
                 if (r == 0)
                         break;
 
-                new_addresses = realloc(addresses, (size + 1) * sizeof(struct in6_addr));
+                new_addresses = reallocarray(addresses, size + 1, sizeof(struct in6_addr));
                 if (!new_addresses)
                         return -ENOMEM;
                 else
@@ -491,8 +489,7 @@ int deserialize_in6_addrs(struct in6_addr **ret, const char *string) {
                 size++;
         }
 
-        *ret = addresses;
-        addresses = NULL;
+        *ret = TAKE_PTR(addresses);
 
         return size;
 }
@@ -585,8 +582,7 @@ int deserialize_dhcp_routes(struct sd_dhcp_route **ret, size_t *ret_size, size_t
 
         *ret_size = size;
         *ret_allocated = allocated;
-        *ret = routes;
-        routes = NULL;
+        *ret = TAKE_PTR(routes);
 
         return 0;
 }
