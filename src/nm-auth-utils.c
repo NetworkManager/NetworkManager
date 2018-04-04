@@ -219,33 +219,6 @@ nm_auth_chain_set_data (NMAuthChain *self,
 	}
 }
 
-gulong
-nm_auth_chain_get_data_ulong (NMAuthChain *self, const char *tag)
-{
-	gulong *data;
-
-	g_return_val_if_fail (self != NULL, 0);
-	g_return_val_if_fail (tag != NULL, 0);
-
-	data = _get_data (self, tag);
-	return data ? *data : 0ul;
-}
-
-void
-nm_auth_chain_set_data_ulong (NMAuthChain *self,
-                              const char *tag,
-                              gulong data)
-{
-	gulong *ptr;
-
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (tag != NULL);
-
-	ptr = g_malloc (sizeof (*ptr));
-	*ptr = data;
-	nm_auth_chain_set_data (self, tag, ptr, g_free);
-}
-
 NMAuthSubject *
 nm_auth_chain_get_subject (NMAuthChain *self)
 {

@@ -55,12 +55,6 @@ void nm_auth_chain_set_data (NMAuthChain *chain,
                              gpointer data,
                              GDestroyNotify data_destroy);
 
-void nm_auth_chain_set_data_ulong (NMAuthChain *chain,
-                                   const char *tag,
-                                   gulong data);
-
-gulong nm_auth_chain_get_data_ulong (NMAuthChain *chain, const char *tag);
-
 NMAuthCallResult nm_auth_chain_get_result (NMAuthChain *chain,
                                            const char *permission);
 
