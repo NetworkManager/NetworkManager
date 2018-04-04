@@ -4805,7 +4805,7 @@ gssize _nm_utils_dns_option_find_idx (GPtrArray *array, const char *option)
 char *
 nm_utils_enum_to_str (GType type, int value)
 {
-	return _nm_utils_enum_to_str_full (type, value, ", ");
+	return _nm_utils_enum_to_str_full (type, value, ", ", NULL);
 }
 
 /**
