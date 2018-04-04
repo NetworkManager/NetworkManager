@@ -39,7 +39,7 @@ typedef struct {
 } KnownNetworkData;
 
 typedef struct {
-	NMManager *nm_manager;
+	NMManager *manager;
 	GCancellable *cancellable;
 	gboolean running;
 	GDBusObjectManager *object_manager;
@@ -138,7 +138,7 @@ psk_agent_dbus_method_cb (GDBusConnection *connection,
 		goto return_error;
 	}
 
-	device = nm_manager_get_device_by_ifindex (priv->nm_manager, ifindex);
+	device = nm_manager_get_device_by_ifindex (priv->manager, ifindex);
 	if (!NM_IS_DEVICE_IWD (device)) {
 		_LOGE ("IWD device named %s is not a Wifi device in IWD Agent request",
                        ifname);
@@ -291,7 +291,7 @@ set_device_dbus_object (NMIwdManager *self, GDBusInterface *interface,
 		return;
 	}
 
-	device = nm_manager_get_device_by_ifindex (priv->nm_manager, ifindex);
+	device = nm_manager_get_device_by_ifindex (priv->manager, ifindex);
 	if (!NM_IS_DEVICE_IWD (device)) {
 		_LOGE ("IWD device named %s is not a Wifi device", ifname);
 		return;
@@ -460,7 +460,7 @@ name_owner_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 		g_clear_object (&priv->object_manager);
 		prepare_object_manager (self);
 	} else {
-		const CList *all_devices;
+		const CList *tmp_lst;
 		NMDevice *device;
 
 		if (!priv->running)
@@ -468,13 +468,11 @@ name_owner_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 
 		priv->running = false;
 
-		all_devices = nm_manager_get_devices (priv->nm_manager);
-		c_list_for_each_entry (device, all_devices, devices_lst) {
-			if (!NM_IS_DEVICE_IWD (device))
-				continue;
-
-			nm_device_iwd_set_dbus_object (NM_DEVICE_IWD (device),
-			                                NULL);
+		nm_manager_for_each_device (priv->manager, device, tmp_lst) {
+			if (NM_IS_DEVICE_IWD (device)) {
+				nm_device_iwd_set_dbus_object (NM_DEVICE_IWD (device),
+				                               NULL);
+			}
 		}
 	}
 }
@@ -639,8 +637,8 @@ nm_iwd_manager_init (NMIwdManager *self)
 {
 	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
 
-	priv->nm_manager = g_object_ref (nm_manager_get ());
-	g_signal_connect (priv->nm_manager, NM_MANAGER_DEVICE_ADDED,
+	priv->manager = g_object_ref (nm_manager_get ());
+	g_signal_connect (priv->manager, NM_MANAGER_DEVICE_ADDED,
 	                  G_CALLBACK (device_added), self);
 
 	priv->cancellable = g_cancellable_new ();
@@ -679,9 +677,9 @@ dispose (GObject *object)
 	g_slist_free_full (priv->known_networks, (GDestroyNotify) known_network_free);
 	priv->known_networks = NULL;
 
-	if (priv->nm_manager) {
-		g_signal_handlers_disconnect_by_data (priv->nm_manager, self);
-		g_clear_object (&priv->nm_manager);
+	if (priv->manager) {
+		g_signal_handlers_disconnect_by_data (priv->manager, self);
+		g_clear_object (&priv->manager);
 	}
 
 	G_OBJECT_CLASS (nm_iwd_manager_parent_class)->dispose (object);

@@ -35,16 +35,35 @@
 #define NM_CHECKPOINT_CREATED "created"
 #define NM_CHECKPOINT_ROLLBACK_TIMEOUT "rollback-timeout"
 
-typedef struct _NMCheckpoint NMCheckpoint;
+typedef struct _NMCheckpointPrivate NMCheckpointPrivate;
+
+typedef struct {
+	NMDBusObject parent;
+	NMCheckpointPrivate *_priv;
+	CList checkpoints_lst;
+} NMCheckpoint;
+
 typedef struct _NMCheckpointClass NMCheckpointClass;
 
 GType nm_checkpoint_get_type (void);
 
 NMCheckpoint *nm_checkpoint_new (NMManager *manager, GPtrArray *devices, guint32 rollback_timeout,
-                                 NMCheckpointCreateFlags flags, GError **error);
+                                 NMCheckpointCreateFlags flags);
 
-guint64 nm_checkpoint_get_rollback_ts (NMCheckpoint *checkpoint);
-gboolean nm_checkpoint_includes_device (NMCheckpoint *checkpoint, NMDevice *device);
+typedef void (*NMCheckpointTimeoutCallback) (NMCheckpoint *self,
+                                             gpointer user_data);
+
+void nm_checkpoint_log_destroy (NMCheckpoint *self);
+
+void nm_checkpoint_set_timeout_callback (NMCheckpoint *self,
+                                         NMCheckpointTimeoutCallback callback,
+                                         gpointer user_data);
+
 GVariant *nm_checkpoint_rollback (NMCheckpoint *self);
+
+void nm_checkpoint_adjust_rollback_timeout (NMCheckpoint *self, guint32 add_timeout);
+
+NMDevice *nm_checkpoint_includes_devices (NMCheckpoint *self, NMDevice *const*devices, guint n_devices);
+NMDevice *nm_checkpoint_includes_devices_of (NMCheckpoint *self, NMCheckpoint *cp_for_devices);
 
 #endif /* __NETWORKMANAGER_CHECKPOINT_H__ */

@@ -385,7 +385,7 @@ get_best_ip_device (NMPolicy *self,
                     gboolean fully_activated)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	const CList *all_devices;
+	const CList *tmp_lst;
 	NMDevice *device;
 	NMDevice *best_device;
 	NMDevice *prev_device;
@@ -401,8 +401,7 @@ get_best_ip_device (NMPolicy *self,
 	              ? (fully_activated ? priv->default_device4 : priv->activating_device4)
 	              : (fully_activated ? priv->default_device6 : priv->activating_device6);
 
-	all_devices = nm_manager_get_devices (priv->manager);
-	c_list_for_each_entry (device, all_devices, devices_lst) {
+	nm_manager_for_each_device (priv->manager, device, tmp_lst) {
 		NMDeviceState state;
 		const NMPObject *r;
 		NMConnection *connection;
@@ -462,11 +461,10 @@ static gboolean
 all_devices_not_active (NMPolicy *self)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	const CList *all_devices;
+	const CList *tmp_lst;
 	NMDevice *device;
 
-	all_devices = nm_manager_get_devices (priv->manager);
-	c_list_for_each_entry (device, all_devices, devices_lst) {
+	nm_manager_for_each_device (priv->manager, device, tmp_lst) {
 		NMDeviceState state;
 
 		state = nm_device_get_state (device);
@@ -2186,13 +2184,12 @@ schedule_activate_all_cb (gpointer user_data)
 {
 	NMPolicy *self = user_data;
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	const CList *all_devices;
+	const CList *tmp_lst;
 	NMDevice *device;
 
 	priv->schedule_activate_all_id = 0;
 
-	all_devices = nm_manager_get_devices (priv->manager);
-	c_list_for_each_entry (device, all_devices, devices_lst)
+	nm_manager_for_each_device (priv->manager, device, tmp_lst)
 		schedule_activate_check (self, device);
 
 	return G_SOURCE_REMOVE;
@@ -2227,7 +2224,7 @@ firewall_state_changed (NMFirewallManager *manager,
 {
 	NMPolicy *self = (NMPolicy *) user_data;
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	const CList *all_devices;
+	const CList *tmp_lst;
 	NMDevice *device;
 
 	if (initialized_now) {
@@ -2241,8 +2238,7 @@ firewall_state_changed (NMFirewallManager *manager,
 		return;
 
 	/* add interface of each device to correct zone */
-	all_devices = nm_manager_get_devices (priv->manager);
-	c_list_for_each_entry (device, all_devices, devices_lst)
+	nm_manager_for_each_device (priv->manager, device, tmp_lst)
 		nm_device_update_firewall_zone (device);
 }
 
@@ -2288,14 +2284,13 @@ connection_updated (NMSettings *settings,
 {
 	NMPolicyPrivate *priv = user_data;
 	NMPolicy *self = _PRIV_TO_SELF (priv);
-	const CList *all_devices;
+	const CList *tmp_lst;
 	NMDevice *device = NULL;
 	NMDevice *dev;
 
 	if (by_user) {
 		/* find device with given connection */
-		all_devices = nm_manager_get_devices (priv->manager);
-		c_list_for_each_entry (dev, all_devices, devices_lst) {
+		nm_manager_for_each_device (priv->manager, dev, tmp_lst) {
 			if (nm_device_get_settings_connection (dev) == connection) {
 				device = dev;
 				break;

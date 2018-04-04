@@ -35,9 +35,7 @@
 struct _NMCheckpointManager {
 	NMManager *_manager;
 	GParamSpec *property_spec;
-	GHashTable *checkpoints;
-	CList list;
-	guint rollback_timeout_id;
+	CList checkpoints_lst_head;
 };
 
 #define GET_MANAGER(self) \
@@ -58,13 +56,6 @@ struct _NMCheckpointManager {
 
 /*****************************************************************************/
 
-typedef struct {
-	CList list;
-	NMCheckpoint *checkpoint;
-} CheckpointItem;
-
-static void update_rollback_timeout (NMCheckpointManager *self);
-
 static void
 notify_checkpoints (NMCheckpointManager *self) {
 	g_object_notify_by_pspec ((GObject *) GET_MANAGER (self),
@@ -72,83 +63,60 @@ notify_checkpoints (NMCheckpointManager *self) {
 }
 
 static void
-item_destroy (gpointer data)
+destroy_checkpoint (NMCheckpointManager *self, NMCheckpoint *checkpoint, gboolean log_destroy)
 {
-	CheckpointItem *item = data;
+	nm_assert (NM_IS_CHECKPOINT (checkpoint));
+	nm_assert (nm_dbus_object_is_exported (NM_DBUS_OBJECT (checkpoint)));
+	nm_assert (c_list_contains (&self->checkpoints_lst_head, &checkpoint->checkpoints_lst));
 
-	c_list_unlink_stale (&item->list);
-	nm_dbus_object_unexport (NM_DBUS_OBJECT (item->checkpoint));
-	g_object_unref (G_OBJECT (item->checkpoint));
-	g_slice_free (CheckpointItem, item);
+	nm_checkpoint_set_timeout_callback (checkpoint, NULL, NULL);
+
+	c_list_unlink (&checkpoint->checkpoints_lst);
+
+	if (log_destroy)
+		nm_checkpoint_log_destroy (checkpoint);
+
+	notify_checkpoints (self);
+
+	nm_dbus_object_unexport (NM_DBUS_OBJECT (checkpoint));
+	g_object_unref (checkpoint);
 }
 
-static gboolean
-rollback_timeout_cb (NMCheckpointManager *self)
+static GVariant *
+rollback_checkpoint (NMCheckpointManager *self, NMCheckpoint *checkpoint)
 {
-	CheckpointItem *item, *safe;
 	GVariant *result;
-	gint64 ts, now;
-	const char *path;
-	gboolean removed = FALSE;
+	const CList *iter;
 
-	now = nm_utils_get_monotonic_timestamp_ms ();
+	nm_assert (c_list_contains (&self->checkpoints_lst_head, &checkpoint->checkpoints_lst));
 
-	c_list_for_each_entry_safe (item, safe, &self->list, list) {
-		ts = nm_checkpoint_get_rollback_ts (item->checkpoint);
-		if (ts && ts <= now) {
-			result = nm_checkpoint_rollback (item->checkpoint);
-			if (result)
-				g_variant_unref (result);
-			path = nm_dbus_object_get_path (NM_DBUS_OBJECT (item->checkpoint));
-			if (!g_hash_table_remove (self->checkpoints, path))
-				nm_assert_not_reached();
-			removed = TRUE;
+	/* we destroy first all overlapping checkpoints that are younger/newer. */
+	for (iter = checkpoint->checkpoints_lst.next;
+	     iter != &self->checkpoints_lst_head;
+	     ) {
+		NMCheckpoint *cp = c_list_entry (iter, NMCheckpoint, checkpoints_lst);
+
+		iter = iter->next;
+		if (nm_checkpoint_includes_devices_of (cp, checkpoint)) {
+			/* the younger checkpoint has overlapping devices and gets obsoleted.
+			 * Destroy it. */
+			destroy_checkpoint (self, cp, TRUE);
 		}
 	}
 
-	self->rollback_timeout_id = 0;
-	update_rollback_timeout (self);
-
-	if (removed)
-		notify_checkpoints (self);
-
-	return G_SOURCE_REMOVE;
+	result = nm_checkpoint_rollback (checkpoint);
+	destroy_checkpoint (self, checkpoint, FALSE);
+	return result;
 }
 
 static void
-update_rollback_timeout (NMCheckpointManager *self)
+rollback_timeout_cb (NMCheckpoint *checkpoint,
+                     gpointer user_data)
 {
-	CheckpointItem *item;
-	gint64 ts, delta, next = G_MAXINT64;
+	NMCheckpointManager *self = user_data;
+	gs_unref_variant GVariant *result = NULL;
 
-	c_list_for_each_entry (item, &self->list, list) {
-		ts = nm_checkpoint_get_rollback_ts (item->checkpoint);
-		if (ts && ts < next)
-			next = ts;
-	}
-
-	nm_clear_g_source (&self->rollback_timeout_id);
-
-	if (next != G_MAXINT64) {
-		delta = MAX (next - nm_utils_get_monotonic_timestamp_ms (), 0);
-		self->rollback_timeout_id = g_timeout_add (delta,
-		                                           (GSourceFunc) rollback_timeout_cb,
-		                                           self);
-		_LOGT ("update timeout: next check in %" G_GINT64_FORMAT " ms", delta);
-	}
-}
-
-static NMCheckpoint *
-find_checkpoint_for_device (NMCheckpointManager *self, NMDevice *device)
-{
-	CheckpointItem *item;
-
-	c_list_for_each_entry (item, &self->list, list) {
-		if (nm_checkpoint_includes_device (item->checkpoint, device))
-			return item->checkpoint;
-	}
-
-	return NULL;
+	result = rollback_checkpoint (self, checkpoint);
 }
 
 NMCheckpoint *
@@ -160,57 +128,61 @@ nm_checkpoint_manager_create (NMCheckpointManager *self,
 {
 	NMManager *manager;
 	NMCheckpoint *checkpoint;
-	CheckpointItem *item;
-	const char * const *path;
 	gs_unref_ptrarray GPtrArray *devices = NULL;
 	NMDevice *device;
-	const char *checkpoint_path;
-	gs_free const char **device_paths_free = NULL;
-	guint i;
 
 	g_return_val_if_fail (self, FALSE);
 	g_return_val_if_fail (!error || !*error, FALSE);
 	manager = GET_MANAGER (self);
 
-	if (!device_paths || !device_paths[0]) {
-		const char *device_path;
-		const CList *all_devices;
-		GPtrArray *paths;
+	devices = g_ptr_array_new ();
 
-		paths = g_ptr_array_new ();
-		all_devices = nm_manager_get_devices (manager);
-		c_list_for_each_entry (device, all_devices, devices_lst) {
+	if (!device_paths || !device_paths[0]) {
+		const CList *tmp_lst;
+
+		nm_manager_for_each_device (manager, device, tmp_lst) {
+			/* FIXME: there is no strong reason to skip over unrealized devices.
+			 *        Also, NMCheckpoint anticipates to handle them (in parts). */
 			if (!nm_device_is_real (device))
 				continue;
-			device_path = nm_dbus_object_get_path (NM_DBUS_OBJECT (device));
-			if (device_path)
-				g_ptr_array_add (paths, (gpointer) device_path);
+			nm_assert (nm_dbus_object_get_path (NM_DBUS_OBJECT (device)));
+			g_ptr_array_add (devices, device);
 		}
-		g_ptr_array_add (paths, NULL);
-		device_paths_free = (const char **) g_ptr_array_free (paths, FALSE);
-		device_paths = (const char *const *) device_paths_free;
 	} else if (NM_FLAGS_HAS (flags, NM_CHECKPOINT_CREATE_FLAG_DISCONNECT_NEW_DEVICES)) {
 		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_INVALID_ARGUMENTS,
 		                     "the DISCONNECT_NEW_DEVICES flag can only be used with an empty device list");
 		return NULL;
-	}
-
-	devices = g_ptr_array_new ();
-	for (path = device_paths; *path; path++) {
-		device = nm_manager_get_device_by_path (manager, *path);
-		if (!device) {
-			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-			             "device %s does not exist", *path);
-			return NULL;
+	} else {
+		for (; *device_paths; device_paths++) {
+			device = nm_manager_get_device_by_path (manager, *device_paths);
+			if (!device) {
+				g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+				             "device %s does not exist", *device_paths);
+				return NULL;
+			}
+			if (!nm_device_is_real (device)) {
+				g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+				             "device %s is not realized", *device_paths);
+				return NULL;
+			}
+			g_ptr_array_add (devices, device);
 		}
-		g_ptr_array_add (devices, device);
 	}
 
-	if (!NM_FLAGS_HAS (flags, NM_CHECKPOINT_CREATE_FLAG_DESTROY_ALL)) {
-		for (i = 0; i < devices->len; i++) {
-			device = devices->pdata[i];
-			checkpoint = find_checkpoint_for_device (self, device);
-			if (checkpoint) {
+	if (!devices->len) {
+		g_set_error_literal (error,
+		                     NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_INVALID_ARGUMENTS,
+		                     "no device available");
+		return NULL;
+	}
+
+	if (NM_FLAGS_HAS (flags, NM_CHECKPOINT_CREATE_FLAG_DESTROY_ALL))
+		nm_checkpoint_manager_destroy_all (self);
+	else if (!NM_FLAGS_HAS (flags, NM_CHECKPOINT_CREATE_FLAG_ALLOW_OVERLAPPING)) {
+		c_list_for_each_entry (checkpoint, &self->checkpoints_lst_head, checkpoints_lst) {
+			device = nm_checkpoint_includes_devices (checkpoint, (NMDevice *const*) devices->pdata, devices->len);
+			if (device) {
 				g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_INVALID_ARGUMENTS,
 				             "device '%s' is already included in checkpoint %s",
 				             nm_device_get_iface (device),
@@ -220,113 +192,130 @@ nm_checkpoint_manager_create (NMCheckpointManager *self,
 		}
 	}
 
-	checkpoint = nm_checkpoint_new (manager, devices, rollback_timeout, flags, error);
-	if (!checkpoint)
-		return NULL;
+	checkpoint = nm_checkpoint_new (manager, devices, rollback_timeout, flags);
 
-	if (NM_FLAGS_HAS (flags, NM_CHECKPOINT_CREATE_FLAG_DESTROY_ALL))
-		g_hash_table_remove_all (self->checkpoints);
+	nm_dbus_object_export (NM_DBUS_OBJECT (checkpoint));
 
-	checkpoint_path = nm_dbus_object_export (NM_DBUS_OBJECT (checkpoint));
-
-	item = g_slice_new0 (CheckpointItem);
-	item->checkpoint = checkpoint;
-	c_list_link_tail (&self->list, &item->list);
-
-	if (!g_hash_table_insert (self->checkpoints, (gpointer) checkpoint_path, item))
-		g_return_val_if_reached (NULL);
-
+	nm_checkpoint_set_timeout_callback (checkpoint, rollback_timeout_cb, self);
+	c_list_link_tail (&self->checkpoints_lst_head, &checkpoint->checkpoints_lst);
 	notify_checkpoints (self);
-	update_rollback_timeout (self);
-
 	return checkpoint;
 }
 
-gboolean
-nm_checkpoint_manager_destroy_all (NMCheckpointManager *self,
-                                   GError **error)
+void
+nm_checkpoint_manager_destroy_all (NMCheckpointManager *self)
 {
-	g_return_val_if_fail (self, FALSE);
+	NMCheckpoint *checkpoint;
 
-	g_hash_table_remove_all (self->checkpoints);
-	notify_checkpoints (self);
+	g_return_if_fail (self);
 
-	return TRUE;
+	while ((checkpoint = c_list_first_entry (&self->checkpoints_lst_head, NMCheckpoint, checkpoints_lst)))
+		destroy_checkpoint (self, checkpoint, TRUE);
 }
 
 gboolean
 nm_checkpoint_manager_destroy (NMCheckpointManager *self,
-                               const char *checkpoint_path,
+                               const char *path,
                                GError **error)
 {
-	gboolean ret;
+	NMCheckpoint *checkpoint;
 
 	g_return_val_if_fail (self, FALSE);
-	g_return_val_if_fail (checkpoint_path && checkpoint_path[0] == '/', FALSE);
+	g_return_val_if_fail (path && path[0] == '/', FALSE);
 	g_return_val_if_fail (!error || !*error, FALSE);
 
-	if (!nm_streq (checkpoint_path, "/")) {
-		ret = g_hash_table_remove (self->checkpoints, checkpoint_path);
-		if (ret) {
-			notify_checkpoints (self);
-		} else {
-			g_set_error (error,
-			             NM_MANAGER_ERROR,
-			             NM_MANAGER_ERROR_INVALID_ARGUMENTS,
-			             "checkpoint %s does not exist", checkpoint_path);
-		}
-		return ret;
-	} else
-		return nm_checkpoint_manager_destroy_all (self, error);
+	if (!nm_streq (path, "/")) {
+		nm_checkpoint_manager_destroy_all (self);
+		return TRUE;
+	}
+
+	checkpoint = nm_checkpoint_manager_lookup_by_path (self, path, error);
+	if (!checkpoint)
+		return FALSE;
+
+	destroy_checkpoint (self, checkpoint, TRUE);
+	return TRUE;
 }
 
 gboolean
 nm_checkpoint_manager_rollback (NMCheckpointManager *self,
-                                const char *checkpoint_path,
+                                const char *path,
                                 GVariant **results,
                                 GError **error)
 {
-	CheckpointItem *item;
+	NMCheckpoint *checkpoint;
 
 	g_return_val_if_fail (self, FALSE);
-	g_return_val_if_fail (checkpoint_path && checkpoint_path[0] == '/', FALSE);
+	g_return_val_if_fail (path && path[0] == '/', FALSE);
 	g_return_val_if_fail (results, FALSE);
 	g_return_val_if_fail (!error || !*error, FALSE);
 
-	item = g_hash_table_lookup (self->checkpoints, checkpoint_path);
-	if (!item) {
-		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
-		             "checkpoint %s does not exist", checkpoint_path);
+	checkpoint = nm_checkpoint_manager_lookup_by_path (self, path, error);
+	if (!checkpoint)
 		return FALSE;
-	}
 
-	*results = nm_checkpoint_rollback (item->checkpoint);
-	g_hash_table_remove (self->checkpoints, checkpoint_path);
-	notify_checkpoints (self);
-
+	*results = rollback_checkpoint (self, checkpoint);
 	return TRUE;
 }
 
-char **
-nm_checkpoint_manager_get_checkpoint_paths (NMCheckpointManager *self)
+NMCheckpoint *
+nm_checkpoint_manager_lookup_by_path (NMCheckpointManager *self, const char *path, GError **error)
 {
-	CheckpointItem *item;
-	char **strv;
-	guint num, i = 0;
+	NMCheckpoint *checkpoint;
 
-	num = g_hash_table_size (self->checkpoints);
-	if (!num) {
-		nm_assert (c_list_is_empty (&self->list));
+	g_return_val_if_fail (self, NULL);
+
+	checkpoint = (NMCheckpoint *) nm_dbus_manager_lookup_object (nm_dbus_object_get_manager (NM_DBUS_OBJECT (GET_MANAGER (self))),
+	                                                             path);
+	if (   !checkpoint
+	    || !NM_IS_CHECKPOINT (checkpoint)) {
+		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_INVALID_ARGUMENTS,
+		             "checkpoint %s does not exist", path);
 		return NULL;
 	}
 
-	strv = g_new (char *, num + 1);
-	c_list_for_each_entry (item, &self->list, list)
-		strv[i++] = g_strdup (nm_dbus_object_get_path (NM_DBUS_OBJECT (item->checkpoint)));
+	nm_assert (c_list_contains (&self->checkpoints_lst_head, &checkpoint->checkpoints_lst));
+	return checkpoint;
+}
+
+const char **
+nm_checkpoint_manager_get_checkpoint_paths (NMCheckpointManager *self, guint *out_length)
+{
+	NMCheckpoint *checkpoint;
+	const char **strv;
+	guint num, i = 0;
+
+	num = c_list_length (&self->checkpoints_lst_head);
+	NM_SET_OUT (out_length, num);
+	if (!num)
+		return NULL;
+
+	strv = g_new (const char *, num + 1);
+	c_list_for_each_entry (checkpoint, &self->checkpoints_lst_head, checkpoints_lst)
+		strv[i++] = nm_dbus_object_get_path (NM_DBUS_OBJECT (checkpoint));
 	nm_assert (i == num);
 	strv[i] = NULL;
-
 	return strv;
+}
+
+gboolean
+nm_checkpoint_manager_adjust_rollback_timeout (NMCheckpointManager *self,
+                                               const char *path,
+                                               guint32 add_timeout,
+                                               GError **error)
+{
+	NMCheckpoint *checkpoint;
+
+	g_return_val_if_fail (self, FALSE);
+	g_return_val_if_fail (path && path[0] == '/', FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
+
+	checkpoint = nm_checkpoint_manager_lookup_by_path (self, path, error);
+	if (!checkpoint)
+		return FALSE;
+
+	nm_checkpoint_adjust_rollback_timeout (checkpoint, add_timeout);
+	return TRUE;
 }
 
 /*****************************************************************************/
@@ -347,22 +336,17 @@ nm_checkpoint_manager_new (NMManager *manager, GParamSpec *spec)
 	 * of NMManager shall surpass the lifetime of the NMCheckpointManager
 	 * instance. */
 	self->_manager = manager;
-	self->checkpoints = g_hash_table_new_full (nm_str_hash, g_str_equal,
-	                                           NULL, item_destroy);
 	self->property_spec = spec;
-	c_list_init (&self->list);
-
+	c_list_init (&self->checkpoints_lst_head);
 	return self;
 }
 
 void
-nm_checkpoint_manager_unref (NMCheckpointManager *self)
+nm_checkpoint_manager_free (NMCheckpointManager *self)
 {
 	if (!self)
 		return;
 
-	nm_clear_g_source (&self->rollback_timeout_id);
-	g_hash_table_destroy (self->checkpoints);
-
+	nm_checkpoint_manager_destroy_all (self);
 	g_slice_free (NMCheckpointManager, self);
 }

@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include "nm-active-connection.h"
+#include "nm-act-request.h"
 #include "nm-auth-subject.h"
 #include "nm-core-utils.h"
 #include "nm-dbus-interface.h"
@@ -48,27 +49,26 @@ typedef struct {
 	NMUnmanFlagOp unmanaged_explicit;
 } DeviceCheckpoint;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+NM_GOBJECT_PROPERTIES_DEFINE (NMCheckpoint,
 	PROP_DEVICES,
 	PROP_CREATED,
 	PROP_ROLLBACK_TIMEOUT,
 );
 
-typedef struct {
+struct _NMCheckpointPrivate {
 	/* properties */
 	GHashTable *devices;
-	gint64 created;
-	guint32 rollback_timeout;
+	gint64 created_at_ms;
+	guint32 rollback_timeout_s;
+	guint timeout_id;
+	/* private members */
 	/* private members */
 	NMManager *manager;
-	gint64 rollback_ts;
 	NMCheckpointCreateFlags flags;
 	GHashTable *connection_uuids;
-} NMCheckpointPrivate;
 
-struct _NMCheckpoint {
-	NMDBusObject parent;
-	NMCheckpointPrivate _priv;
+	NMCheckpointTimeoutCallback timeout_cb;
+	gpointer timeout_data;
 };
 
 struct _NMCheckpointClass {
@@ -77,7 +77,7 @@ struct _NMCheckpointClass {
 
 G_DEFINE_TYPE (NMCheckpoint, nm_checkpoint, NM_TYPE_DBUS_OBJECT)
 
-#define NM_CHECKPOINT_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMCheckpoint, NM_IS_CHECKPOINT)
+#define NM_CHECKPOINT_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR (self, NMCheckpoint, NM_IS_CHECKPOINT)
 
 /*****************************************************************************/
 
@@ -101,20 +101,53 @@ G_DEFINE_TYPE (NMCheckpoint, nm_checkpoint, NM_TYPE_DBUS_OBJECT)
 
 /*****************************************************************************/
 
-guint64
-nm_checkpoint_get_rollback_ts (NMCheckpoint *self)
+void
+nm_checkpoint_log_destroy (NMCheckpoint *self)
 {
-	g_return_val_if_fail (NM_IS_CHECKPOINT (self), 0);
-
-	return NM_CHECKPOINT_GET_PRIVATE (self)->rollback_ts;
+	_LOGI ("destroy %s", nm_dbus_object_get_path (NM_DBUS_OBJECT (self)));
 }
 
-gboolean
-nm_checkpoint_includes_device (NMCheckpoint *self, NMDevice *device)
+void
+nm_checkpoint_set_timeout_callback (NMCheckpoint *self,
+                                    NMCheckpointTimeoutCallback callback,
+                                    gpointer user_data)
 {
 	NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE (self);
 
-	return g_hash_table_contains (priv->devices, device);
+	/* in glib world, we would have a GSignal for this. But as there
+	 * is only one subscriber, it's simpler to just set and unset(!)
+	 * the callback this way. */
+	priv->timeout_cb = callback;
+	priv->timeout_data = user_data;
+}
+
+NMDevice *
+nm_checkpoint_includes_devices (NMCheckpoint *self, NMDevice *const*devices, guint n_devices)
+{
+	NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE (self);
+	guint i;
+
+	for (i = 0; i < n_devices; i++) {
+		if (g_hash_table_contains (priv->devices, devices[i]))
+			return devices[i];
+	}
+	return NULL;
+}
+
+NMDevice *
+nm_checkpoint_includes_devices_of (NMCheckpoint *self, NMCheckpoint *cp_for_devices)
+{
+	NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE (self);
+	NMCheckpointPrivate *priv2 = NM_CHECKPOINT_GET_PRIVATE (cp_for_devices);
+	GHashTableIter iter;
+	NMDevice *device;
+
+	g_hash_table_iter_init (&iter, priv2->devices);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &device, NULL)) {
+		if (g_hash_table_contains (priv->devices, device))
+			return device;
+	}
+	return NULL;
 }
 
 static NMSettingsConnection *
@@ -348,11 +381,10 @@ next_dev:
 	}
 
 	if (NM_FLAGS_HAS (priv->flags, NM_CHECKPOINT_CREATE_FLAG_DISCONNECT_NEW_DEVICES)) {
-		const CList *all_devices;
+		const CList *tmp_lst;
 		NMDeviceState state;
 
-		all_devices = nm_manager_get_devices (priv->manager);
-		c_list_for_each_entry (device, all_devices, devices_lst) {
+		nm_manager_for_each_device (priv->manager, device, tmp_lst) {
 			if (g_hash_table_contains (priv->devices, device))
 				continue;
 			state = nm_device_get_state (device);
@@ -371,14 +403,16 @@ next_dev:
 }
 
 static DeviceCheckpoint *
-device_checkpoint_create (NMDevice *device,
-                          GError **error)
+device_checkpoint_create (NMDevice *device)
 {
 	DeviceCheckpoint *dev_checkpoint;
 	NMConnection *applied_connection;
 	NMSettingsConnection *settings_connection;
 	const char *path;
 	NMActRequest *act_request;
+
+	nm_assert (NM_IS_DEVICE (device));
+	nm_assert (nm_device_is_real (device));
 
 	path = nm_dbus_object_get_path (NM_DBUS_OBJECT (device));
 
@@ -389,25 +423,21 @@ device_checkpoint_create (NMDevice *device,
 	dev_checkpoint->realized = nm_device_is_real (device);
 
 	if (nm_device_get_unmanaged_mask (device, NM_UNMANAGED_USER_EXPLICIT)) {
-		dev_checkpoint->unmanaged_explicit =
-		    !!nm_device_get_unmanaged_flags (device, NM_UNMANAGED_USER_EXPLICIT);
+		dev_checkpoint->unmanaged_explicit = !!nm_device_get_unmanaged_flags (device,
+		                                                                      NM_UNMANAGED_USER_EXPLICIT);
 	} else
 		dev_checkpoint->unmanaged_explicit = NM_UNMAN_FLAG_OP_FORGET;
 
-	applied_connection = nm_device_get_applied_connection (device);
-	if (applied_connection) {
-		dev_checkpoint->applied_connection =
-			nm_simple_connection_new_clone (applied_connection);
+	act_request = nm_device_get_act_request (device);
+	if (act_request) {
+		settings_connection = nm_act_request_get_settings_connection (act_request);
+		applied_connection = nm_act_request_get_applied_connection (act_request);
 
-		settings_connection = nm_device_get_settings_connection (device);
-		g_return_val_if_fail (settings_connection, NULL);
+		dev_checkpoint->applied_connection = nm_simple_connection_new_clone (applied_connection);
 		dev_checkpoint->settings_connection =
-			nm_simple_connection_new_clone (NM_CONNECTION (settings_connection));
-
-		act_request = nm_device_get_act_request (device);
-		g_return_val_if_fail (act_request, NULL);
+		    nm_simple_connection_new_clone (NM_CONNECTION (settings_connection));
 		dev_checkpoint->ac_version_id =
-			nm_active_connection_version_id_get (NM_ACTIVE_CONNECTION (act_request));
+		    nm_active_connection_version_id_get (NM_ACTIVE_CONNECTION (act_request));
 	}
 
 	return dev_checkpoint;
@@ -426,6 +456,57 @@ device_checkpoint_destroy (gpointer data)
 	g_slice_free (DeviceCheckpoint, dev_checkpoint);
 }
 
+static gboolean
+_timeout_cb (gpointer user_data)
+{
+	NMCheckpoint *self = user_data;
+	NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE (self);
+
+	priv->timeout_id = 0;
+
+	if (priv->timeout_cb)
+		priv->timeout_cb (self, priv->timeout_data);
+
+	/* beware, @self likely got destroyed! */
+	return G_SOURCE_REMOVE;
+}
+
+void
+nm_checkpoint_adjust_rollback_timeout (NMCheckpoint *self, guint32 add_timeout)
+{
+	guint32 rollback_timeout_s;
+	gint64 now_ms, add_timeout_ms, rollback_timeout_ms;
+
+	NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE (self);
+
+	nm_clear_g_source (&priv->timeout_id);
+
+	if (add_timeout == 0)
+		rollback_timeout_s = 0;
+	else {
+		now_ms = nm_utils_get_monotonic_timestamp_ms ();
+		add_timeout_ms = ((gint64) add_timeout) * 1000;
+		rollback_timeout_ms = (now_ms - priv->created_at_ms) + add_timeout_ms;
+
+		/* round to nearest integer second. Since NM_CHECKPOINT_ROLLBACK_TIMEOUT is
+		 * in units seconds, it will be able to exactly express the timeout. */
+		rollback_timeout_s = NM_MIN ((rollback_timeout_ms + 500) / 1000, (gint64) G_MAXUINT32);
+
+		/* we expect the timeout to be positive, because add_timeout_ms is positive.
+		 * We cannot accept a zero, because it means "infinity". */
+		nm_assert (rollback_timeout_s > 0);
+
+		priv->timeout_id = g_timeout_add (NM_MIN (add_timeout_ms, (gint64) G_MAXUINT32),
+		                                  _timeout_cb,
+		                                  self);
+	}
+
+	if (rollback_timeout_s != priv->rollback_timeout_s) {
+		priv->rollback_timeout_s = rollback_timeout_s;
+		_notify (self, PROP_ROLLBACK_TIMEOUT);
+	}
+}
+
 /*****************************************************************************/
 
 static void
@@ -434,22 +515,20 @@ get_property (GObject *object, guint prop_id,
 {
 	NMCheckpoint *self = NM_CHECKPOINT (object);
 	NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE (self);
-	gs_free_slist GSList *devices = NULL;
-	GHashTableIter iter;
-	NMDevice *device;
 
 	switch (prop_id) {
 	case PROP_DEVICES:
-		g_hash_table_iter_init (&iter, priv->devices);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &device, NULL))
-			devices = g_slist_append (devices, device);
-		nm_dbus_utils_g_value_set_object_path_array (value, devices, NULL, NULL);
+		nm_dbus_utils_g_value_set_object_path_from_hash (value,
+		                                                 priv->devices,
+		                                                 FALSE);
 		break;
 	case PROP_CREATED:
-		g_value_set_int64 (value, priv->created);
+		g_value_set_int64 (value,
+		                   nm_utils_monotonic_timestamp_as_boottime (priv->created_at_ms,
+		                                                             NM_UTILS_NS_PER_MSEC));
 		break;
 	case PROP_ROLLBACK_TIMEOUT:
-		g_value_set_uint (value, priv->rollback_timeout);
+		g_value_set_uint (value, priv->rollback_timeout_s);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -462,46 +541,46 @@ get_property (GObject *object, guint prop_id,
 static void
 nm_checkpoint_init (NMCheckpoint *self)
 {
-	NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE (self);
+	NMCheckpointPrivate *priv;
+
+	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_CHECKPOINT, NMCheckpointPrivate);
+
+	self->_priv = priv;
+
+	c_list_init (&self->checkpoints_lst);
 
 	priv->devices = g_hash_table_new_full (nm_direct_hash, NULL,
 	                                       NULL, device_checkpoint_destroy);
 }
 
 NMCheckpoint *
-nm_checkpoint_new (NMManager *manager, GPtrArray *devices, guint32 rollback_timeout,
-                   NMCheckpointCreateFlags flags, GError **error)
+nm_checkpoint_new (NMManager *manager, GPtrArray *devices, guint32 rollback_timeout_s,
+                   NMCheckpointCreateFlags flags)
 {
 	NMCheckpoint *self;
 	NMCheckpointPrivate *priv;
 	NMSettingsConnection *const *con;
-	DeviceCheckpoint *dev_checkpoint;
-	NMDevice *device;
+	gint64 rollback_timeout_ms;
 	guint i;
 
 	g_return_val_if_fail (manager, NULL);
 	g_return_val_if_fail (devices, NULL);
-	g_return_val_if_fail (!error || !*error, NULL);
-
-	if (!devices->len) {
-		g_set_error_literal (error,
-		                     NM_MANAGER_ERROR,
-		                     NM_MANAGER_ERROR_INVALID_ARGUMENTS,
-		                     "no device available");
-		return NULL;
-	}
+	g_return_val_if_fail (devices->len > 0, NULL);
 
 	self = g_object_new (NM_TYPE_CHECKPOINT, NULL);
 
 	priv = NM_CHECKPOINT_GET_PRIVATE (self);
 	priv->manager = manager;
-	priv->created = nm_utils_monotonic_timestamp_as_boottime (nm_utils_get_monotonic_timestamp_ms (),
-	                                                          NM_UTILS_NS_PER_MSEC);
-	priv->rollback_timeout = rollback_timeout;
-	priv->rollback_ts = rollback_timeout ?
-	    (nm_utils_get_monotonic_timestamp_ms () + ((gint64) rollback_timeout * 1000)) :
-	    0;
+	priv->rollback_timeout_s = rollback_timeout_s;
+	priv->created_at_ms = nm_utils_get_monotonic_timestamp_ms ();
 	priv->flags = flags;
+
+	if (rollback_timeout_s != 0) {
+		rollback_timeout_ms = ((gint64) rollback_timeout_s) * 1000;
+		priv->timeout_id = g_timeout_add (NM_MIN (rollback_timeout_ms, (gint64) G_MAXUINT32),
+		                                  _timeout_cb,
+		                                  self);
+	}
 
 	if (NM_FLAGS_HAS (flags, NM_CHECKPOINT_CREATE_FLAG_DELETE_NEW_CONNECTIONS)) {
 		priv->connection_uuids = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
@@ -512,13 +591,15 @@ nm_checkpoint_new (NMManager *manager, GPtrArray *devices, guint32 rollback_time
 	}
 
 	for (i = 0; i < devices->len; i++) {
-		device = (NMDevice *) devices->pdata[i];
-		dev_checkpoint = device_checkpoint_create (device, error);
-		if (!dev_checkpoint) {
-			g_object_unref (self);
-			return NULL;
-		}
-		g_hash_table_insert (priv->devices, device, dev_checkpoint);
+		NMDevice *device = devices->pdata[i];
+
+		/* FIXME: as long as the check point instance exists, it won't let go
+		 *        of the device. That is a bug, for example, if you have a ethernet
+		 *        device that gets removed (rmmod), the checkpoint will reference
+		 *        a non-existing D-Bus path of a device. */
+		g_hash_table_insert (priv->devices,
+		                     device,
+		                     device_checkpoint_create (device));
 	}
 
 	return self;
@@ -530,8 +611,12 @@ dispose (GObject *object)
 	NMCheckpoint *self = NM_CHECKPOINT (object);
 	NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE (self);
 
+	nm_assert (c_list_is_empty (&self->checkpoints_lst));
+
 	g_clear_pointer (&priv->devices, g_hash_table_unref);
 	g_clear_pointer (&priv->connection_uuids, g_hash_table_unref);
+
+	nm_clear_g_source (&priv->timeout_id);
 
 	G_OBJECT_CLASS (nm_checkpoint_parent_class)->dispose (object);
 }
@@ -556,6 +641,8 @@ nm_checkpoint_class_init (NMCheckpointClass *checkpoint_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (checkpoint_class);
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (checkpoint_class);
+
+	g_type_class_add_private (object_class, sizeof (NMCheckpointPrivate));
 
 	dbus_object_class->export_path = NM_DBUS_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/Checkpoint");
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_checkpoint);

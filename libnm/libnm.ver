@@ -1334,15 +1334,18 @@ global:
 
 libnm_1_12_0 {
 global:
+	nm_checkpoint_create_flags_get_type;
 	nm_checkpoint_get_created;
 	nm_checkpoint_get_devices;
 	nm_checkpoint_get_rollback_timeout;
 	nm_checkpoint_get_type;
-	nm_client_checkpoint_create_async;
+	nm_client_checkpoint_adjust_rollback_timeout;
+	nm_client_checkpoint_adjust_rollback_timeout_finish;
+	nm_client_checkpoint_create;
 	nm_client_checkpoint_create_finish;
-	nm_client_checkpoint_destroy_async;
+	nm_client_checkpoint_destroy;
 	nm_client_checkpoint_destroy_finish;
-	nm_client_checkpoint_rollback_async;
+	nm_client_checkpoint_rollback;
 	nm_client_checkpoint_rollback_finish;
 	nm_client_get_checkpoints;
 	nm_device_ip_tunnel_get_flags;

@@ -842,16 +842,29 @@ typedef enum {
  *   delete any new connection added after the checkpoint (Since: 1.6)
  * @NM_CHECKPOINT_CREATE_FLAG_DISCONNECT_NEW_DEVICES: upon rollback,
  *   disconnect any new device appeared after the checkpoint (Since: 1.6)
+ * @NM_CHECKPOINT_CREATE_FLAG_ALLOW_OVERLAPPING: by default, creating
+ *   a checkpoint fails if there are already existing checkoints that
+ *   reference the same devices. With this flag, creation of such
+ *   checkpoints is allowed, however, if an older checkpoint
+ *   that references overlapping devices gets rolled back, it will
+ *   automatically destroy this checkpoint during rollback. This
+ *   allows to create several overlapping checkpoints in parallel,
+ *   and rollback to them at will. With the special case that
+ *   rolling back to an older checkpoint will invalidate all
+ *   overlapping younger checkpoints. This opts-in that the
+ *   checkpoint can be automatically destroyed by the rollback
+ *   of an older checkpoint. (Since: 1.12)
  *
  * The flags for CheckpointCreate call
  *
- * Since: 1.4
+ * Since: 1.4 (gi flags generated since 1.12)
  */
-typedef enum { /*< skip >*/
+typedef enum { /*< flags >*/
 	NM_CHECKPOINT_CREATE_FLAG_NONE                        = 0,
 	NM_CHECKPOINT_CREATE_FLAG_DESTROY_ALL                 = 0x01,
 	NM_CHECKPOINT_CREATE_FLAG_DELETE_NEW_CONNECTIONS      = 0x02,
 	NM_CHECKPOINT_CREATE_FLAG_DISCONNECT_NEW_DEVICES      = 0x04,
+	NM_CHECKPOINT_CREATE_FLAG_ALLOW_OVERLAPPING           = 0x08,
 } NMCheckpointCreateFlags;
 
 /**

@@ -150,7 +150,7 @@ find_checkpoint_info (NMManager *manager, const char *path)
 
 	for (iter = priv->added_checkpoints; iter; iter = g_slist_next (iter)) {
 		info = iter->data;
-		if (nm_streq (path, info->path))
+		if (nm_streq0 (path, info->path))
 			return info;
 	}
 
@@ -790,8 +790,7 @@ NMDevice *
 nm_manager_get_device_by_path (NMManager *manager, const char *object_path)
 {
 	const GPtrArray *devices;
-	int i;
-	NMDevice *device = NULL;
+	guint i;
 
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
 	g_return_val_if_fail (object_path, NULL);
@@ -800,12 +799,25 @@ nm_manager_get_device_by_path (NMManager *manager, const char *object_path)
 	for (i = 0; i < devices->len; i++) {
 		NMDevice *candidate = g_ptr_array_index (devices, i);
 		if (!strcmp (nm_object_get_path (NM_OBJECT (candidate)), object_path)) {
-			device = candidate;
-			break;
+			return candidate;
 		}
 	}
+	return NULL;
+}
 
-	return device;
+static NMCheckpoint *
+get_checkpoint_by_path (NMManager *manager, const char *object_path)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	NMCheckpoint *candidate;
+	guint i;
+
+	for (i = 0; i < priv->checkpoints->len; i++) {
+		candidate = priv->checkpoints->pdata[i];
+		if (nm_streq (nm_object_get_path (NM_OBJECT (candidate)), object_path))
+			return candidate;
+	}
+	return NULL;
 }
 
 NMDevice *
@@ -1196,11 +1208,6 @@ checkpoint_added (NMManager *manager, NMCheckpoint *checkpoint)
 		checkpoint_info_complete (manager, info, checkpoint, NULL);
 }
 
-static void
-checkpoint_removed (NMManager *manager, NMCheckpoint *checkpoint)
-{
-}
-
 gboolean
 nm_manager_deactivate_connection (NMManager *manager,
                                   NMActiveConnection *active,
@@ -1331,25 +1338,37 @@ checkpoint_created_cb (GObject *object,
                        gpointer user_data)
 {
 	CheckpointInfo *info = user_data;
-	GError *error = NULL;
+	NMManager *self = info->manager;
+	gs_free_error GError *error = NULL;
+	NMCheckpoint *checkpoint;
 
 	nmdbus_manager_call_checkpoint_create_finish (NMDBUS_MANAGER (object),
 	                                              &info->path, result, &error);
 	if (error) {
 		g_dbus_error_strip_remote_error (error);
-		checkpoint_info_complete (info->manager, info, NULL, error);
-		g_clear_error (&error);
+		checkpoint_info_complete (self, info, NULL, error);
+		return;
 	}
+
+	checkpoint = get_checkpoint_by_path (self, info->path);
+	if (!checkpoint) {
+		/* this is really problematic. The async request returned, but
+		 * we don't yet have a visible (fully initialized) NMCheckpoint instance
+		 * to return. Wait longer for it to appear. However, it's ugly. */
+		return;
+	}
+
+	checkpoint_info_complete (self, info, checkpoint, NULL);
 }
 
 void
-nm_manager_checkpoint_create_async (NMManager *manager,
-                                    const GPtrArray *devices,
-                                    guint32 rollback_timeout,
-                                    NMCheckpointCreateFlags flags,
-                                    GCancellable *cancellable,
-                                    GAsyncReadyCallback callback,
-                                    gpointer user_data)
+nm_manager_checkpoint_create (NMManager *manager,
+                              const GPtrArray *devices,
+                              guint32 rollback_timeout,
+                              NMCheckpointCreateFlags flags,
+                              GCancellable *cancellable,
+                              GAsyncReadyCallback callback,
+                              gpointer user_data)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	gs_free const char **paths = NULL;
@@ -1360,7 +1379,7 @@ nm_manager_checkpoint_create_async (NMManager *manager,
 	info = g_slice_new0 (CheckpointInfo);
 	info->manager = manager;
 	info->simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
-	                                          nm_manager_checkpoint_create_async);
+	                                          nm_manager_checkpoint_create);
 	if (cancellable)
 		g_simple_async_result_set_check_cancellable (info->simple, cancellable);
 	paths = get_device_paths (devices);
@@ -1411,26 +1430,24 @@ checkpoint_destroy_cb (GObject *object,
 }
 
 void
-nm_manager_checkpoint_destroy_async (NMManager *manager,
-                                     NMCheckpoint *checkpoint,
-                                     GCancellable *cancellable,
-                                     GAsyncReadyCallback callback,
-                                     gpointer user_data)
+nm_manager_checkpoint_destroy (NMManager *manager,
+                               const char *checkpoint_path,
+                               GCancellable *cancellable,
+                               GAsyncReadyCallback callback,
+                               gpointer user_data)
 {
-	const char *path;
 	GSimpleAsyncResult *simple;
 
 	g_return_if_fail (NM_IS_MANAGER (manager));
-	g_return_if_fail (NM_IS_CHECKPOINT (checkpoint));
+	g_return_if_fail (checkpoint_path && checkpoint_path[0] == '/');
 
 	simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
-	                                    nm_manager_checkpoint_destroy_async);
+	                                    nm_manager_checkpoint_destroy);
 	if (cancellable)
 		g_simple_async_result_set_check_cancellable (simple, cancellable);
 
-	path = nm_object_get_path (NM_OBJECT (checkpoint));
 	nmdbus_manager_call_checkpoint_destroy (NM_MANAGER_GET_PRIVATE (manager)->proxy,
-	                                        path,
+	                                        checkpoint_path,
 	                                        cancellable,
 	                                        checkpoint_destroy_cb, simple);
 }
@@ -1443,7 +1460,7 @@ nm_manager_checkpoint_destroy_finish (NMManager *manager,
 	GSimpleAsyncResult *simple;
 
 	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (manager),
-	                                                      nm_manager_checkpoint_destroy_async),
+	                                                      nm_manager_checkpoint_destroy),
 	                      FALSE);
 
 	simple = G_SIMPLE_ASYNC_RESULT (result);
@@ -1484,26 +1501,24 @@ checkpoint_rollback_cb (GObject *object,
 }
 
 void
-nm_manager_checkpoint_rollback_async (NMManager *manager,
-                                      NMCheckpoint *checkpoint,
-                                      GCancellable *cancellable,
-                                      GAsyncReadyCallback callback,
-                                      gpointer user_data)
+nm_manager_checkpoint_rollback (NMManager *manager,
+                                const char *checkpoint_path,
+                                GCancellable *cancellable,
+                                GAsyncReadyCallback callback,
+                                gpointer user_data)
 {
-	const char *path;
 	GSimpleAsyncResult *simple;
 
 	g_return_if_fail (NM_IS_MANAGER (manager));
-	g_return_if_fail (NM_IS_CHECKPOINT (checkpoint));
+	g_return_if_fail (checkpoint_path && checkpoint_path[0] == '/');
 
 	simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
-	                                    nm_manager_checkpoint_rollback_async);
+	                                    nm_manager_checkpoint_rollback);
 	if (cancellable)
 		g_simple_async_result_set_check_cancellable (simple, cancellable);
 
-	path = nm_object_get_path (NM_OBJECT (checkpoint));
 	nmdbus_manager_call_checkpoint_rollback (NM_MANAGER_GET_PRIVATE (manager)->proxy,
-	                                         path,
+	                                         checkpoint_path,
 	                                         cancellable,
 	                                         checkpoint_rollback_cb, simple);
 }
@@ -1516,7 +1531,7 @@ nm_manager_checkpoint_rollback_finish (NMManager *manager,
 	GSimpleAsyncResult *simple;
 
 	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (manager),
-	                                                      nm_manager_checkpoint_rollback_async),
+	                                                      nm_manager_checkpoint_rollback),
 	                      NULL);
 
 	simple = G_SIMPLE_ASYNC_RESULT (result);
@@ -1524,6 +1539,66 @@ nm_manager_checkpoint_rollback_finish (NMManager *manager,
 		return NULL;
 	else
 		return g_simple_async_result_get_op_res_gpointer (simple);
+}
+
+static void
+checkpoint_adjust_rollback_timeout_cb (GObject *object,
+                                       GAsyncResult *result,
+                                       gpointer user_data)
+{
+	gs_unref_object GSimpleAsyncResult *simple = user_data;
+	GError *error = NULL;
+
+	if (nmdbus_manager_call_checkpoint_adjust_rollback_timeout_finish (NMDBUS_MANAGER (object),
+	                                                                   result,
+	                                                                   &error))
+		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+	else {
+		g_dbus_error_strip_remote_error (error);
+		g_simple_async_result_take_error (simple, error);
+	}
+	g_simple_async_result_complete (simple);
+}
+
+void
+nm_manager_checkpoint_adjust_rollback_timeout (NMManager *manager,
+                                               const char *checkpoint_path,
+                                               guint32 add_timeout,
+                                               GCancellable *cancellable,
+                                               GAsyncReadyCallback callback,
+                                               gpointer user_data)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_if_fail (NM_IS_MANAGER (manager));
+	g_return_if_fail (checkpoint_path && checkpoint_path[0] == '/');
+
+	simple = g_simple_async_result_new (G_OBJECT (manager), callback, user_data,
+	                                    nm_manager_checkpoint_adjust_rollback_timeout);
+	if (cancellable)
+		g_simple_async_result_set_check_cancellable (simple, cancellable);
+
+	nmdbus_manager_call_checkpoint_adjust_rollback_timeout (NM_MANAGER_GET_PRIVATE (manager)->proxy,
+	                                                        checkpoint_path,
+	                                                        add_timeout,
+	                                                        cancellable,
+	                                                        checkpoint_adjust_rollback_timeout_cb,
+	                                                        simple);
+}
+
+gboolean
+nm_manager_checkpoint_adjust_rollback_timeout_finish (NMManager *manager,
+                                                      GAsyncResult *result,
+                                                      GError **error)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (manager),
+	                                                      nm_manager_checkpoint_adjust_rollback_timeout),
+	                      FALSE);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	return !g_simple_async_result_propagate_error (simple, error);
 }
 
 /*****************************************************************************/
@@ -1832,7 +1907,6 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	manager_class->active_connection_added = active_connection_added;
 	manager_class->active_connection_removed = active_connection_removed;
 	manager_class->checkpoint_added = checkpoint_added;
-	manager_class->checkpoint_removed = checkpoint_removed;
 
 	/* properties */
 

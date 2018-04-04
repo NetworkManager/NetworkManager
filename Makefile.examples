@@ -150,6 +150,8 @@ EXTRA_DIST += \
 	examples/nm-conf.d/30-anon.conf \
 	examples/nm-conf.d/31-mac-addr-change.conf \
 	\
+	examples/python/nmex.py \
+	\
 	examples/python/dbus/nm-state.py \
 	examples/python/dbus/add-connection.py \
 	examples/python/dbus/add-connection-compat.py \

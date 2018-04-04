@@ -252,6 +252,27 @@
     </method>
 
     <!--
+        CheckpointAdjustRollbackTimeout:
+        @add_timeout: number of seconds from ~now~ in which the
+          timeout will expire. Set to 0 to disable the timeout.
+          Note that the added seconds start counting from now,
+          not "Created" timestamp or the previous expiration
+          time. Note that the "Created" property of the checkpoint
+          will stay unchanged by this call. However, the "RollbackTimeout"
+          will be recalculated to give the approximate new expiration time.
+          The new "RollbackTimeout" property will be approximate up to
+          one second precision, which is the accuracy of the property.
+
+        Reset the timeout for rollback for the checkpoint.
+
+        Since: 1.12
+    -->
+    <method name="CheckpointAdjustRollbackTimeout">
+      <arg name="checkpoint" type="o" direction="in"/>
+      <arg name="add_timeout" type="u" direction="in"/>
+    </method>
+
+    <!--
         Devices:
 
         The list of realized network devices. Realized devices are those which

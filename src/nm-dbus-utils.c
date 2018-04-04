@@ -121,32 +121,35 @@ nm_dbus_utils_g_value_set_object_path (GValue *value, gpointer object)
 }
 
 void
-nm_dbus_utils_g_value_set_object_path_array (GValue *value,
-                                             GSList *objects,
-                                             gboolean (*filter_func) (GObject *object, gpointer user_data),
-                                             gpointer user_data)
+nm_dbus_utils_g_value_set_object_path_from_hash (GValue *value,
+                                                 GHashTable *hash /* has keys of NMDBusObject type. */,
+                                                 gboolean expect_all_exported)
 {
-	char **paths;
-	guint i;
-	GSList *iter;
+	NMDBusObject *obj;
+	char **strv;
+	guint i, n;
+	GHashTableIter iter;
 
-	paths = g_new (char *, g_slist_length (objects) + 1);
-	for (i = 0, iter = objects; iter; iter = iter->next) {
-		NMDBusObject *object = iter->data;
+	nm_assert (value);
+	nm_assert (hash);
+
+	n = g_hash_table_size (hash);
+	strv = g_new (char *, n + 1);
+	i = 0;
+	g_hash_table_iter_init (&iter, hash);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &obj, NULL)) {
 		const char *path;
 
-		path = nm_dbus_object_get_path (object);
-		if (!path)
+		path = nm_dbus_object_get_path (obj);
+		if (!path) {
+			nm_assert (!expect_all_exported);
 			continue;
-		if (   filter_func
-		    && !filter_func ((GObject *) object, user_data))
-			continue;
-		paths[i++] = g_strdup (path);
+		}
+		strv[i++] = g_strdup (path);
 	}
-	paths[i] = NULL;
-	g_value_take_boxed (value, paths);
+	nm_assert (i <= n);
+	strv[i] = NULL;
+	g_value_take_boxed (value, strv);
 }
 
 /*****************************************************************************/
-
-
