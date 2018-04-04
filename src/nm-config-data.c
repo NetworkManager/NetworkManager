@@ -798,7 +798,7 @@ void
 nm_global_dns_config_update_checksum (const NMGlobalDnsConfig *dns_config, GChecksum *sum)
 {
 	NMGlobalDnsDomain *domain;
-	guint i;
+	guint i, j;
 	guint8 v8;
 
 	g_return_if_fail (dns_config);
@@ -832,12 +832,12 @@ nm_global_dns_config_update_checksum (const NMGlobalDnsConfig *dns_config, GChec
 			g_checksum_update (sum, (guchar *) domain->name, strlen (domain->name) + 1);
 
 			if (domain->servers) {
-				for (i = 0; domain->servers && domain->servers[i]; i++)
-					g_checksum_update (sum, (guchar *) domain->servers[i], strlen (domain->servers[i]) + 1);
+				for (j = 0; domain->servers[j]; j++)
+					g_checksum_update (sum, (guchar *) domain->servers[j], strlen (domain->servers[j]) + 1);
 			}
 			if (domain->options) {
-				for (i = 0; domain->options[i]; i++)
-					g_checksum_update (sum, (guchar *) domain->options[i], strlen (domain->options[i]) + 1);
+				for (j = 0; domain->options[j]; j++)
+					g_checksum_update (sum, (guchar *) domain->options[j], strlen (domain->options[j]) + 1);
 			}
 		}
 	}
