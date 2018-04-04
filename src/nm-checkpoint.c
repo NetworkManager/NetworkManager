@@ -593,6 +593,10 @@ nm_checkpoint_new (NMManager *manager, GPtrArray *devices, guint32 rollback_time
 	for (i = 0; i < devices->len; i++) {
 		NMDevice *device = devices->pdata[i];
 
+		/* FIXME: as long as the check point instance exists, it won't let go
+		 *        of the device. That is a bug, for example, if you have a ethernet
+		 *        device that gets removed (rmmod), the checkpoint will reference
+		 *        a non-existing D-Bus path of a device. */
 		g_hash_table_insert (priv->devices,
 		                     device,
 		                     device_checkpoint_create (device));

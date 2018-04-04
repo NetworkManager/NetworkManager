@@ -141,6 +141,8 @@ nm_checkpoint_manager_create (NMCheckpointManager *self,
 		const CList *tmp_lst;
 
 		nm_manager_for_each_device (manager, device, tmp_lst) {
+			/* FIXME: there is no strong reason to skip over unrealized devices.
+			 *        Also, NMCheckpoint anticipates to handle them (in parts). */
 			if (!nm_device_is_real (device))
 				continue;
 			nm_assert (nm_dbus_object_get_path (NM_DBUS_OBJECT (device)));
