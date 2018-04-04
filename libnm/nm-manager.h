@@ -184,29 +184,29 @@ gboolean nm_manager_deactivate_connection_finish (NMManager *manager,
                                                   GError **error);
 
 const GPtrArray *nm_manager_get_checkpoints (NMManager *manager);
-void nm_manager_checkpoint_create_async (NMManager *manager,
-                                         const GPtrArray *devices,
-                                         guint32 rollback_timeout,
-                                         NMCheckpointCreateFlags flags,
-                                         GCancellable *cancellable,
-                                         GAsyncReadyCallback callback,
-                                         gpointer user_data);
+void nm_manager_checkpoint_create (NMManager *manager,
+                                   const GPtrArray *devices,
+                                   guint32 rollback_timeout,
+                                   NMCheckpointCreateFlags flags,
+                                   GCancellable *cancellable,
+                                   GAsyncReadyCallback callback,
+                                   gpointer user_data);
 NMCheckpoint *nm_manager_checkpoint_create_finish (NMManager *manager,
                                                    GAsyncResult *result,
                                                    GError **error);
-void nm_manager_checkpoint_destroy_async (NMManager *manager,
-                                          NMCheckpoint *checkpoint,
-                                          GCancellable *cancellable,
-                                          GAsyncReadyCallback callback,
-                                          gpointer user_data);
+void nm_manager_checkpoint_destroy (NMManager *manager,
+                                    const char *checkpoint_path,
+                                    GCancellable *cancellable,
+                                    GAsyncReadyCallback callback,
+                                    gpointer user_data);
 gboolean nm_manager_checkpoint_destroy_finish (NMManager *manager,
                                                GAsyncResult *result,
                                                GError **error);
-void nm_manager_checkpoint_rollback_async (NMManager *manager,
-                                           NMCheckpoint *checkpoint,
-                                           GCancellable *cancellable,
-                                           GAsyncReadyCallback callback,
-                                           gpointer user_data);
+void nm_manager_checkpoint_rollback (NMManager *manager,
+                                     const char *checkpoint_path,
+                                     GCancellable *cancellable,
+                                     GAsyncReadyCallback callback,
+                                     gpointer user_data);
 GHashTable *nm_manager_checkpoint_rollback_finish (NMManager *manager,
                                                    GAsyncResult *result,
                                                    GError **error);

@@ -2121,7 +2121,7 @@ nm_client_get_checkpoints (NMClient *client)
 }
 
 /**
- * nm_client_checkpoint_create_async:
+ * nm_client_checkpoint_create:
  * @client: the %NMClient
  * @devices: (element-type NMDevice): a list of devices for which a
  *   checkpoint should be created.
@@ -2139,13 +2139,13 @@ nm_client_get_checkpoints (NMClient *client)
  * Since: 1.12
  **/
 void
-nm_client_checkpoint_create_async (NMClient *client,
-                                   const GPtrArray *devices,
-                                   guint32 rollback_timeout,
-                                   NMCheckpointCreateFlags flags,
-                                   GCancellable *cancellable,
-                                   GAsyncReadyCallback callback,
-                                   gpointer user_data)
+nm_client_checkpoint_create (NMClient *client,
+                             const GPtrArray *devices,
+                             guint32 rollback_timeout,
+                             NMCheckpointCreateFlags flags,
+                             GCancellable *cancellable,
+                             GAsyncReadyCallback callback,
+                             gpointer user_data)
 {
 	GSimpleAsyncResult *simple;
 	GError *error = NULL;
@@ -2158,12 +2158,12 @@ nm_client_checkpoint_create_async (NMClient *client,
 	}
 
 	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_checkpoint_create_async);
+	                                    nm_client_checkpoint_create);
 	if (cancellable)
 		g_simple_async_result_set_check_cancellable (simple, cancellable);
-	nm_manager_checkpoint_create_async (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                                    devices, rollback_timeout, flags,
-	                                    cancellable, checkpoint_create_cb, simple);
+	nm_manager_checkpoint_create (NM_CLIENT_GET_PRIVATE (client)->manager,
+	                              devices, rollback_timeout, flags,
+	                              cancellable, checkpoint_create_cb, simple);
 }
 
 /**
@@ -2172,7 +2172,7 @@ nm_client_checkpoint_create_async (NMClient *client,
  * @result: the result passed to the #GAsyncReadyCallback
  * @error: location for a #GError, or %NULL
  *
- * Gets the result of a call to nm_client_checkpoint_create_async().
+ * Gets the result of a call to nm_client_checkpoint_create().
  *
  * Returns: (transfer full): the new #NMCheckpoint on success, %NULL on
  *   failure, in which case @error will be set.
@@ -2214,9 +2214,9 @@ checkpoint_destroy_cb (GObject *object,
 }
 
 /**
- * nm_client_checkpoint_destroy_async:
+ * nm_client_checkpoint_destroy:
  * @client: the %NMClient
- * @checkpoint: a checkpoint
+ * @checkpoint_path: the D-Bus path for the checkpoint
  * @cancellable: a #GCancellable, or %NULL
  * @callback: (scope async): callback to be called when the add operation completes
  * @user_data: (closure): caller-specific data passed to @callback
@@ -2226,16 +2226,17 @@ checkpoint_destroy_cb (GObject *object,
  * Since: 1.12
  **/
 void
-nm_client_checkpoint_destroy_async (NMClient *client,
-                                    NMCheckpoint *checkpoint,
-                                    GCancellable *cancellable,
-                                    GAsyncReadyCallback callback,
-                                    gpointer user_data)
+nm_client_checkpoint_destroy (NMClient *client,
+                              const char *checkpoint_path,
+                              GCancellable *cancellable,
+                              GAsyncReadyCallback callback,
+                              gpointer user_data)
 {
 	GSimpleAsyncResult *simple;
 	GError *error = NULL;
 
 	g_return_if_fail (NM_IS_CLIENT (client));
+	g_return_if_fail (checkpoint_path && checkpoint_path[0] == '/');
 
 	if (!_nm_client_check_nm_running (client, &error)) {
 		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
@@ -2243,12 +2244,12 @@ nm_client_checkpoint_destroy_async (NMClient *client,
 	}
 
 	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_checkpoint_destroy_async);
+	                                    nm_client_checkpoint_destroy);
 	if (cancellable)
 		g_simple_async_result_set_check_cancellable (simple, cancellable);
-	nm_manager_checkpoint_destroy_async (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                                     checkpoint,
-	                                     cancellable, checkpoint_destroy_cb, simple);
+	nm_manager_checkpoint_destroy (NM_CLIENT_GET_PRIVATE (client)->manager,
+	                               checkpoint_path,
+	                               cancellable, checkpoint_destroy_cb, simple);
 }
 
 /**
@@ -2257,7 +2258,7 @@ nm_client_checkpoint_destroy_async (NMClient *client,
  * @result: the result passed to the #GAsyncReadyCallback
  * @error: location for a #GError, or %NULL
  *
- * Gets the result of a call to nm_client_checkpoint_destroy_async().
+ * Gets the result of a call to nm_client_checkpoint_destroy().
  *
  * Returns: %TRUE on success or %FALSE on failure, in which case
  *   @error will be set.
@@ -2301,9 +2302,9 @@ checkpoint_rollback_cb (GObject *object,
 }
 
 /**
- * nm_client_checkpoint_rollback_async:
+ * nm_client_checkpoint_rollback:
  * @client: the %NMClient
- * @checkpoint: a checkpoint
+ * @checkpoint_path: the D-Bus path to the checkpoint
  * @cancellable: a #GCancellable, or %NULL
  * @callback: (scope async): callback to be called when the add operation completes
  * @user_data: (closure): caller-specific data passed to @callback
@@ -2313,16 +2314,17 @@ checkpoint_rollback_cb (GObject *object,
  * Since: 1.12
  **/
 void
-nm_client_checkpoint_rollback_async (NMClient *client,
-                                     NMCheckpoint *checkpoint,
-                                     GCancellable *cancellable,
-                                     GAsyncReadyCallback callback,
-                                     gpointer user_data)
+nm_client_checkpoint_rollback (NMClient *client,
+                               const char *checkpoint_path,
+                               GCancellable *cancellable,
+                               GAsyncReadyCallback callback,
+                               gpointer user_data)
 {
 	GSimpleAsyncResult *simple;
 	GError *error = NULL;
 
 	g_return_if_fail (NM_IS_CLIENT (client));
+	g_return_if_fail (checkpoint_path && checkpoint_path[0] == '/');
 
 	if (!_nm_client_check_nm_running (client, &error)) {
 		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
@@ -2330,12 +2332,12 @@ nm_client_checkpoint_rollback_async (NMClient *client,
 	}
 
 	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_checkpoint_rollback_async);
+	                                    nm_client_checkpoint_rollback);
 	if (cancellable)
 		g_simple_async_result_set_check_cancellable (simple, cancellable);
-	nm_manager_checkpoint_rollback_async (NM_CLIENT_GET_PRIVATE (client)->manager,
-	                                      checkpoint,
-	                                      cancellable, checkpoint_rollback_cb, simple);
+	nm_manager_checkpoint_rollback (NM_CLIENT_GET_PRIVATE (client)->manager,
+	                                checkpoint_path,
+	                                cancellable, checkpoint_rollback_cb, simple);
 }
 
 /**
@@ -2344,7 +2346,7 @@ nm_client_checkpoint_rollback_async (NMClient *client,
  * @result: the result passed to the #GAsyncReadyCallback
  * @error: location for a #GError, or %NULL
  *
- * Gets the result of a call to nm_client_checkpoint_rollback_async().
+ * Gets the result of a call to nm_client_checkpoint_rollback().
  *
  * Returns: (transfer full) (element-type utf8 guint32): an hash table of
  *   devices and results. Devices are represented by their original
@@ -2415,6 +2417,7 @@ nm_client_checkpoint_adjust_rollback_timeout (NMClient *client,
 	GError *error = NULL;
 
 	g_return_if_fail (NM_IS_CLIENT (client));
+	g_return_if_fail (checkpoint_path && checkpoint_path[0] == '/');
 
 	if (!_nm_client_check_nm_running (client, &error)) {
 		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
@@ -2422,7 +2425,7 @@ nm_client_checkpoint_adjust_rollback_timeout (NMClient *client,
 	}
 
 	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_checkpoint_rollback_async);
+	                                    nm_client_checkpoint_rollback);
 	if (cancellable)
 		g_simple_async_result_set_check_cancellable (simple, cancellable);
 	nm_manager_checkpoint_adjust_rollback_timeout (NM_CLIENT_GET_PRIVATE (client)->manager,

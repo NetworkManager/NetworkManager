@@ -46,6 +46,29 @@ def show(c, ts = None):
         print("  timeout: %u seconds%s" % (rt, "" if ts is None else (" (circa %s sec left)" % ((cr + (rt * 1000) - ts) / 1000.0))))
     print("  devices: %s" % (' '.join(sorted(map(lambda x: x.get_iface(), c.get_devices())))))
 
+def find_checkpoint(client, path):
+    for c in client.get_checkpoints():
+        if c.get_path() == path:
+            return c
+    return None
+
+def validate_path(path, client):
+    try:
+        num = int(path)
+        path = "/org/freedesktop/NetworkManager/Checkpoint/%u" % (num)
+    except Exception as e:
+        pass
+
+    if not path or path[0] != '/':
+        sys.exit('Invalid checkpoint path \"%s\"' % (path))
+
+    if client is not None:
+        checkpoint = find_checkpoint(client, path)
+        if checkpoint is None:
+            print('WARNING: no checkpoint with path "%s" found' % (path))
+
+    return path
+
 def do_create(client):
     flags = NM.CheckpointCreateFlags.NONE
     if len(sys.argv) < 3:
@@ -76,27 +99,13 @@ def do_create(client):
             sys.stderr.write("Failed: %s\n" % e.message)
         main_loop.quit()
 
-    client.checkpoint_create_async(devices, timeout, flags, None, create_cb, None)
-
-def find_checkpoint(client, arg):
-    try:
-        num = int(arg)
-        path = "/org/freedesktop/NetworkManager/Checkpoint/%u" % num
-    except Exception as e:
-        path = arg
-
-    for c in client.get_checkpoints():
-        if c.get_path() == path:
-            return c
-    return None
+    client.checkpoint_create(devices, timeout, flags, None, create_cb, None)
 
 def do_destroy(client):
     if len(sys.argv) < 3:
         sys.exit("Missing checkpoint path")
 
-    checkpoint = find_checkpoint(client, sys.argv[2])
-    if checkpoint is None:
-        sys.exit("Unknown checkpoint %s" % sys.argv[2])
+    path = validate_path(sys.argv[2], client)
 
     def destroy_cb(client, result, data):
         try:
@@ -106,15 +115,13 @@ def do_destroy(client):
             sys.stderr.write("Failed: %s\n" % e.message)
         main_loop.quit()
 
-    client.checkpoint_destroy_async(checkpoint, None, destroy_cb, None)
+    client.checkpoint_destroy(path, None, destroy_cb, None)
 
 def do_rollback(client):
     if len(sys.argv) < 3:
         sys.exit("Missing checkpoint path")
 
-    checkpoint = find_checkpoint(client, sys.argv[2])
-    if checkpoint is None:
-        sys.exit("Unknown checkpoint %s" % sys.argv[2])
+    path = validate_path(sys.argv[2], client)
 
     def rollback_cb(client, result, data):
         try:
@@ -130,7 +137,7 @@ def do_rollback(client):
             sys.stderr.write("Failed: %s\n" % e.message)
         main_loop.quit()
 
-    client.checkpoint_rollback_async(checkpoint, None, rollback_cb, None)
+    client.checkpoint_rollback(path, None, rollback_cb, None)
 
 def do_adjust_rollback_timeout(client):
     if len(sys.argv) < 3:
@@ -142,9 +149,7 @@ def do_adjust_rollback_timeout(client):
     except:
         sys.exit("Invalid timeout")
 
-    checkpoint = find_checkpoint(client, sys.argv[2])
-    if checkpoint is None:
-        sys.exit("Unknown checkpoint %s" % sys.argv[2])
+    path = validate_path(sys.argv[2], client)
 
     def adjust_rollback_timeout_cb(client, result, data):
         try:
@@ -154,7 +159,7 @@ def do_adjust_rollback_timeout(client):
             sys.stderr.write("Failed: %s\n" % e.message)
         main_loop.quit()
 
-    client.checkpoint_adjust_rollback_timeout(checkpoint.get_path(), add_timeout, None, adjust_rollback_timeout_cb, None)
+    client.checkpoint_adjust_rollback_timeout(path, add_timeout, None, adjust_rollback_timeout_cb, None)
 
 def do_show(client):
     ts = nmex.nm_boot_time_ms()
