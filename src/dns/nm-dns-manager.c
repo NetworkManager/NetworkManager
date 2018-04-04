@@ -868,7 +868,7 @@ update_resolv_conf (NMDnsManager *self,
 
 	if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE) {
 		_LOGT ("update-resolv-conf: write internal file %s succeeded (rc-manager=%s)",
-		       rc_path, _rc_manager_to_string (rc_manager));
+		       MY_RESOLV_CONF, _rc_manager_to_string (rc_manager));
 		return write_file_result;
 	}
 
