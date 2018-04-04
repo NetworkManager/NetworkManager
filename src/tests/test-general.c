@@ -359,7 +359,7 @@ _match_connection (GSList *connections,
 	}
 	list[i] = NULL;
 
-	return nm_utils_match_connection (list, original, device_has_carrier, default_v4_metric, default_v6_metric, NULL, NULL);
+	return nm_utils_match_connection (list, original, FALSE, device_has_carrier, default_v4_metric, default_v6_metric, NULL, NULL);
 }
 
 static void
