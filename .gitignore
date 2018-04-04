@@ -13,6 +13,7 @@
 *-enum-types.[ch]
 *-glue.h
 *.loT
+*.pyc
 Makefile
 Makefile.in*
 compile
