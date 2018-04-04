@@ -5322,6 +5322,8 @@ connection_from_file_full (const char *filename,
 	g_return_val_if_fail (filename != NULL, NULL);
 	g_return_val_if_fail (out_unhandled && !*out_unhandled, NULL);
 
+	NM_SET_OUT (out_ignore_error, FALSE);
+
 	/* Non-NULL only for unit tests; normally use /etc/sysconfig/network */
 	if (!network_file)
 		network_file = SYSCONFDIR "/sysconfig/network";
@@ -5351,8 +5353,7 @@ connection_from_file_full (const char *filename,
 	/* iBFT is handled by the iBFT settings plugin */
 	bootproto = svGetValueStr_cp (parsed, "BOOTPROTO");
 	if (bootproto && !g_ascii_strcasecmp (bootproto, "ibft")) {
-		if (out_ignore_error)
-			*out_ignore_error = TRUE;
+		NM_SET_OUT (out_ignore_error, TRUE);
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Ignoring iBFT configuration");
 		g_free (bootproto);
@@ -5398,8 +5399,7 @@ connection_from_file_full (const char *filename,
 		char *device;
 
 		if ((tmp = svGetValueStr_cp (parsed, "IPV6TUNNELIPV4"))) {
-			if (out_ignore_error)
-				*out_ignore_error = TRUE;
+			NM_SET_OUT (out_ignore_error, TRUE);
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Ignoring unsupported connection due to IPV6TUNNELIPV4");
 			return NULL;
@@ -5413,8 +5413,7 @@ connection_from_file_full (const char *filename,
 		}
 
 		if (!strcmp (device, "lo")) {
-			if (out_ignore_error)
-				*out_ignore_error = TRUE;
+			NM_SET_OUT (out_ignore_error, TRUE);
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Ignoring loopback device config.");
 			g_free (device);
@@ -5461,8 +5460,7 @@ connection_from_file_full (const char *filename,
 					memcpy (p_path, IFUP_PATH_PREFIX, NM_STRLEN (IFUP_PATH_PREFIX));
 					if (access (p_path, X_OK) == 0) {
 						/* for all other types, this is not something we want to handle. */
-						if (out_ignore_error)
-							*out_ignore_error = TRUE;
+						NM_SET_OUT (out_ignore_error, TRUE);
 						g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 						             "Ignore script for unknown device type which has a matching %s script",
 						             p_path);
