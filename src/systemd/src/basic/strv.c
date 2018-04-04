@@ -216,7 +216,7 @@ int strv_extend_strv(char ***a, char **b, bool filter_duplicates) {
         p = strv_length(*a);
         q = strv_length(b);
 
-        t = realloc(*a, sizeof(char*) * (p + q + 1));
+        t = reallocarray(*a, p + q + 1, sizeof(char *));
         if (!t)
                 return -ENOMEM;
 
@@ -344,8 +344,7 @@ int strv_split_extract(char ***t, const char *s, const char *separators, Extract
                 if (!GREEDY_REALLOC(l, allocated, n + 2))
                         return -ENOMEM;
 
-                l[n++] = word;
-                word = NULL;
+                l[n++] = TAKE_PTR(word);
 
                 l[n] = NULL;
         }
@@ -356,8 +355,7 @@ int strv_split_extract(char ***t, const char *s, const char *separators, Extract
                         return -ENOMEM;
         }
 
-        *t = l;
-        l = NULL;
+        *t = TAKE_PTR(l);
 
         return (int) n;
 }
@@ -411,7 +409,7 @@ int strv_push(char ***l, char *value) {
         if (m < n)
                 return -ENOMEM;
 
-        c = realloc_multiply(*l, sizeof(char*), m);
+        c = reallocarray(*l, m, sizeof(char*));
         if (!c)
                 return -ENOMEM;
 
@@ -436,7 +434,7 @@ int strv_push_pair(char ***l, char *a, char *b) {
         if (m < n)
                 return -ENOMEM;
 
-        c = realloc_multiply(*l, sizeof(char*), m);
+        c = reallocarray(*l, m, sizeof(char*));
         if (!c)
                 return -ENOMEM;
 
@@ -550,7 +548,7 @@ int strv_extend_front(char ***l, const char *value) {
         if (!v)
                 return -ENOMEM;
 
-        c = realloc_multiply(*l, sizeof(char*), m);
+        c = reallocarray(*l, m, sizeof(char*));
         if (!c) {
                 free(v);
                 return -ENOMEM;
@@ -865,7 +863,7 @@ int strv_extend_n(char ***l, const char *value, size_t n) {
 
         k = strv_length(*l);
 
-        nl = realloc(*l, sizeof(char*) * (k + n + 1));
+        nl = reallocarray(*l, k + n + 1, sizeof(char *));
         if (!nl)
                 return -ENOMEM;
 

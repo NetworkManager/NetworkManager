@@ -586,7 +586,7 @@ static int base64_append_width(
         if (len <= 0)
                 return len;
 
-        lines = (len + width - 1) / width;
+        lines = DIV_ROUND_UP(len, width);
 
         slen = strlen_ptr(sep);
         t = realloc(*prefix, plen + 1 + slen + (indent + width + 1) * lines);

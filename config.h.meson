@@ -25,6 +25,10 @@
 /* Gettext package */
 #mesondefine GETTEXT_PACKAGE
 
+/* Define to 1 if you have the declaration of `reallocarray', and to 0 if
+   you don't. */
+#mesondefine HAVE_DECL_REALLOCARRAY
+
 /* Define to 1 if you have the declaration of `explicit_bzero', and to 0 if
    you don't. */
 #mesondefine HAVE_DECL_EXPLICIT_BZERO

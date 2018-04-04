@@ -26,10 +26,14 @@
 #include <sys/resource.h>
 #include <time.h>
 
-#define noreturn G_GNUC_NORETURN
-
 #ifndef CLOCK_BOOTTIME
 #define CLOCK_BOOTTIME 7
+#endif
+
+#if defined(HAVE_DECL_REALLOCARRAY) && HAVE_DECL_REALLOCARRAY == 1
+#define HAVE_REALLOCARRAY 1
+#else
+#define HAVE_REALLOCARRAY 0
 #endif
 
 #if defined(HAVE_DECL_EXPLICIT_BZERO) && HAVE_DECL_EXPLICIT_BZERO == 1

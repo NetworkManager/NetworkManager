@@ -75,6 +75,12 @@ AC_CHECK_DECLS([
 #include <string.h>
 ]])
 
+AC_CHECK_DECLS([
+	reallocarray],
+	[], [], [[
+#include <malloc.h>
+]])
+
 AC_CHECK_HEADERS(sys/auxv.h)
 
 AC_CHECK_DECLS([getrandom],

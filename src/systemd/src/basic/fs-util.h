@@ -20,6 +20,7 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include <dirent.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <stdbool.h>
@@ -86,9 +87,13 @@ enum {
         CHASE_NO_AUTOFS   = 1U << 2,   /* If set, return -EREMOTE if autofs mount point found */
         CHASE_SAFE        = 1U << 3,   /* If set, return EPERM if we ever traverse from unprivileged to privileged files or directories */
         CHASE_OPEN        = 1U << 4,   /* If set, return an O_PATH object to the final component */
+        CHASE_TRAIL_SLASH = 1U << 5,   /* If set, any trailing slash will be preserved */
 };
 
 int chase_symlinks(const char *path_with_prefix, const char *root, unsigned flags, char **ret);
+
+int chase_symlinks_and_open(const char *path, const char *root, unsigned chase_flags, int open_flags, char **ret_path);
+int chase_symlinks_and_opendir(const char *path, const char *root, unsigned chase_flags, char **ret_path, DIR **ret_dir);
 
 /* Useful for usage with _cleanup_(), removes a directory and frees the pointer */
 static inline void rmdir_and_free(char *p) {

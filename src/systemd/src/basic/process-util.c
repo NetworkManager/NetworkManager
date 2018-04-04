@@ -628,8 +628,7 @@ int get_process_environ(pid_t pid, char **env) {
         } else
                 outcome[sz] = '\0';
 
-        *env = outcome;
-        outcome = NULL;
+        *env = TAKE_PTR(outcome);
 
         return 0;
 }
@@ -994,7 +993,7 @@ bool is_main_thread(void) {
 }
 
 #if 0 /* NM_IGNORED */
-noreturn void freeze(void) {
+_noreturn_ void freeze(void) {
 
         log_close();
 
@@ -1174,6 +1173,7 @@ extern int __register_atfork(void (*prepare) (void), void (*parent) (void), void
 extern void* __dso_handle __attribute__ ((__weak__));
 
 pid_t getpid_cached(void) {
+        static bool installed = false;
         pid_t current_value;
 
         /* getpid_cached() is much like getpid(), but caches the value in local memory, to avoid having to invoke a
@@ -1194,10 +1194,18 @@ pid_t getpid_cached(void) {
 
                 new_pid = raw_getpid();
 
-                if (__register_atfork(NULL, NULL, reset_cached_pid, __dso_handle) != 0) {
-                        /* OOM? Let's try again later */
-                        cached_pid = CACHED_PID_UNSET;
-                        return new_pid;
+                if (!installed) {
+                        /* __register_atfork() either returns 0 or -ENOMEM, in its glibc implementation. Since it's
+                         * only half-documented (glibc doesn't document it but LSB does — though only superficially)
+                         * we'll check for errors only in the most generic fashion possible. */
+
+                        if (__register_atfork(NULL, NULL, reset_cached_pid, __dso_handle) != 0) {
+                                /* OOM? Let's try again later */
+                                cached_pid = CACHED_PID_UNSET;
+                                return new_pid;
+                        }
+
+                        installed = true;
                 }
 
                 cached_pid = new_pid;
@@ -1437,8 +1445,7 @@ int fork_agent(const char *name, const int except[], unsigned n_except, pid_t *r
                         _exit(EXIT_FAILURE);
                 }
 
-                if (fd > STDERR_FILENO)
-                        close(fd);
+                safe_close_above_stdio(fd);
         }
 
         /* Count arguments */
@@ -1467,7 +1474,7 @@ static const char *const ioprio_class_table[] = {
         [IOPRIO_CLASS_IDLE] = "idle"
 };
 
-DEFINE_STRING_TABLE_LOOKUP_WITH_FALLBACK(ioprio_class, int, INT_MAX);
+DEFINE_STRING_TABLE_LOOKUP_WITH_FALLBACK(ioprio_class, int, IOPRIO_N_CLASSES);
 
 static const char *const sigchld_code_table[] = {
         [CLD_EXITED] = "exited",

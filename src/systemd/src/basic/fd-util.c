@@ -194,12 +194,6 @@ int fd_cloexec(int fd, bool cloexec) {
 }
 
 #if 0 /* NM_IGNORED */
-void stdio_unset_cloexec(void) {
-        (void) fd_cloexec(STDIN_FILENO, false);
-        (void) fd_cloexec(STDOUT_FILENO, false);
-        (void) fd_cloexec(STDERR_FILENO, false);
-}
-
 _pure_ static bool fd_in_set(int fd, const int fdset[], unsigned n_fdset) {
         unsigned i;
 
@@ -371,14 +365,21 @@ bool fdname_is_valid(const char *s) {
 }
 
 int fd_get_path(int fd, char **ret) {
-        char procfs_path[STRLEN("/proc/self/fd/") + DECIMAL_STR_MAX(int)];
+        _cleanup_close_ int dir = -1;
+        char fdname[DECIMAL_STR_MAX(int)];
         int r;
 
-        xsprintf(procfs_path, "/proc/self/fd/%i", fd);
+        dir = open("/proc/self/fd/", O_CLOEXEC | O_DIRECTORY | O_PATH);
+        if (dir < 0)
+                /* /proc is not available or not set up properly, we're most likely
+                 * in some chroot environment. */
+                return errno == ENOENT ? -EOPNOTSUPP : -errno;
 
-        r = readlink_malloc(procfs_path, ret);
+        xsprintf(fdname, "%i", fd);
 
-        if (r == -ENOENT) /* If the file doesn't exist the fd is invalid */
+        r = readlinkat_malloc(dir, fdname, ret);
+        if (r == -ENOENT)
+                /* If the file doesn't exist the fd is invalid */
                 return -EBADF;
 
         return r;
@@ -431,7 +432,6 @@ int move_fd(int from, int to, int cloexec) {
 
 int acquire_data_fd(const void *data, size_t size, unsigned flags) {
 
-        char procfs_path[STRLEN("/proc/self/fd/") + DECIMAL_STR_MAX(int)];
         _cleanup_close_pair_ int pipefds[2] = { -1, -1 };
         char pattern[] = "/dev/shm/data-fd-XXXXXX";
         _cleanup_close_ int fd = -1;
@@ -488,10 +488,7 @@ int acquire_data_fd(const void *data, size_t size, unsigned flags) {
                 if (r < 0)
                         return r;
 
-                r = fd;
-                fd = -1;
-
-                return r;
+                return TAKE_FD(fd);
         }
 
 try_pipe:
@@ -528,10 +525,7 @@ try_pipe:
 
                 (void) fd_nonblock(pipefds[0], false);
 
-                r = pipefds[0];
-                pipefds[0] = -1;
-
-                return r;
+                return TAKE_FD(pipefds[0]);
         }
 
 try_dev_shm:
@@ -547,12 +541,7 @@ try_dev_shm:
                         return -EIO;
 
                 /* Let's reopen the thing, in order to get an O_RDONLY fd for the original O_RDWR one */
-                xsprintf(procfs_path, "/proc/self/fd/%i", fd);
-                r = open(procfs_path, O_RDONLY|O_CLOEXEC);
-                if (r < 0)
-                        return -errno;
-
-                return r;
+                return fd_reopen(fd, O_RDONLY|O_CLOEXEC);
         }
 
 try_dev_shm_without_o_tmpfile:
@@ -621,3 +610,139 @@ int fd_move_above_stdio(int fd) {
         (void) close(fd);
         return copy;
 }
+
+#if 0 /* NM_IGNORED */
+int rearrange_stdio(int original_input_fd, int original_output_fd, int original_error_fd) {
+
+        int fd[3] = { /* Put together an array of fds we work on */
+                original_input_fd,
+                original_output_fd,
+                original_error_fd
+        };
+
+        int r, i,
+                null_fd = -1,                /* if we open /dev/null, we store the fd to it here */
+                copy_fd[3] = { -1, -1, -1 }; /* This contains all fds we duplicate here temporarily, and hence need to close at the end */
+        bool null_readable, null_writable;
+
+        /* Sets up stdin, stdout, stderr with the three file descriptors passed in. If any of the descriptors is
+         * specified as -1 it will be connected with /dev/null instead. If any of the file descriptors is passed as
+         * itself (e.g. stdin as STDIN_FILENO) it is left unmodified, but the O_CLOEXEC bit is turned off should it be
+         * on.
+         *
+         * Note that if any of the passed file descriptors are > 2 they will be closed — both on success and on
+         * failure! Thus, callers should assume that when this function returns the input fds are invalidated.
+         *
+         * Note that when this function fails stdin/stdout/stderr might remain half set up!
+         *
+         * O_CLOEXEC is turned off for all three file descriptors (which is how it should be for
+         * stdin/stdout/stderr). */
+
+        null_readable = original_input_fd < 0;
+        null_writable = original_output_fd < 0 || original_error_fd < 0;
+
+        /* First step, open /dev/null once, if we need it */
+        if (null_readable || null_writable) {
+
+                /* Let's open this with O_CLOEXEC first, and convert it to non-O_CLOEXEC when we move the fd to the final position. */
+                null_fd = open("/dev/null", (null_readable && null_writable ? O_RDWR :
+                                             null_readable ? O_RDONLY : O_WRONLY) | O_CLOEXEC);
+                if (null_fd < 0) {
+                        r = -errno;
+                        goto finish;
+                }
+
+                /* If this fd is in the 0…2 range, let's move it out of it */
+                if (null_fd < 3) {
+                        int copy;
+
+                        copy = fcntl(null_fd, F_DUPFD_CLOEXEC, 3); /* Duplicate this with O_CLOEXEC set */
+                        if (copy < 0) {
+                                r = -errno;
+                                goto finish;
+                        }
+
+                        safe_close(null_fd);
+                        null_fd = copy;
+                }
+        }
+
+        /* Let's assemble fd[] with the fds to install in place of stdin/stdout/stderr */
+        for (i = 0; i < 3; i++) {
+
+                if (fd[i] < 0)
+                        fd[i] = null_fd;        /* A negative parameter means: connect this one to /dev/null */
+                else if (fd[i] != i && fd[i] < 3) {
+                        /* This fd is in the 0…2 territory, but not at its intended place, move it out of there, so that we can work there. */
+                        copy_fd[i] = fcntl(fd[i], F_DUPFD_CLOEXEC, 3); /* Duplicate this with O_CLOEXEC set */
+                        if (copy_fd[i] < 0) {
+                                r = -errno;
+                                goto finish;
+                        }
+
+                        fd[i] = copy_fd[i];
+                }
+        }
+
+        /* At this point we now have the fds to use in fd[], and they are all above the stdio range, so that we
+         * have freedom to move them around. If the fds already were at the right places then the specific fds are
+         * -1. Let's now move them to the right places. This is the point of no return. */
+        for (i = 0; i < 3; i++) {
+
+                if (fd[i] == i) {
+
+                        /* fd is already in place, but let's make sure O_CLOEXEC is off */
+                        r = fd_cloexec(i, false);
+                        if (r < 0)
+                                goto finish;
+
+                } else {
+                        assert(fd[i] > 2);
+
+                        if (dup2(fd[i], i) < 0) { /* Turns off O_CLOEXEC on the new fd. */
+                                r = -errno;
+                                goto finish;
+                        }
+                }
+        }
+
+        r = 0;
+
+finish:
+        /* Close the original fds, but only if they were outside of the stdio range. Also, properly check for the same
+         * fd passed in multiple times. */
+        safe_close_above_stdio(original_input_fd);
+        if (original_output_fd != original_input_fd)
+                safe_close_above_stdio(original_output_fd);
+        if (original_error_fd != original_input_fd && original_error_fd != original_output_fd)
+                safe_close_above_stdio(original_error_fd);
+
+        /* Close the copies we moved > 2 */
+        for (i = 0; i < 3; i++)
+                safe_close(copy_fd[i]);
+
+        /* Close our null fd, if it's > 2 */
+        safe_close_above_stdio(null_fd);
+
+        return r;
+}
+
+int fd_reopen(int fd, int flags) {
+        char procfs_path[STRLEN("/proc/self/fd/") + DECIMAL_STR_MAX(int)];
+        int new_fd;
+
+        /* Reopens the specified fd with new flags. This is useful for convert an O_PATH fd into a regular one, or to
+         * turn O_RDWR fds into O_RDONLY fds.
+         *
+         * This doesn't work on sockets (since they cannot be open()ed, ever).
+         *
+         * This implicitly resets the file read index to 0. */
+
+        xsprintf(procfs_path, "/proc/self/fd/%i", fd);
+        new_fd = open(procfs_path, flags);
+        if (new_fd < 0)
+                return -errno;
+
+        return new_fd;
+}
+#endif /* NM_IGNORED */
