@@ -1472,7 +1472,8 @@ const NMPlatformLink *
 nmtstp_link_tun_add (NMPlatform *platform,
                      gboolean external_command,
                      const char *name,
-                     const NMPlatformLnkTun *lnk)
+                     const NMPlatformLnkTun *lnk,
+                     int *out_fd)
 {
 	const NMPlatformLink *pllink = NULL;
 	NMPlatformError plerr;
@@ -1481,6 +1482,7 @@ nmtstp_link_tun_add (NMPlatform *platform,
 	g_assert (nm_utils_is_valid_iface_name (name, NULL));
 	g_assert (lnk);
 	g_assert (NM_IN_SET (lnk->type, IFF_TUN, IFF_TAP));
+	g_assert (!out_fd || *out_fd == -1);
 
 	if (!lnk->persist) {
 		/* ip tuntap does not support non-persistent devices.
@@ -1522,7 +1524,8 @@ nmtstp_link_tun_add (NMPlatform *platform,
 		else
 			g_error ("failure to add tun/tap device via ip-route");
 	} else {
-		plerr = nm_platform_link_tun_add (platform, name, lnk, &pllink);
+		g_assert (lnk->persist || out_fd);
+		plerr = nm_platform_link_tun_add (platform, name, lnk, &pllink, out_fd);
 		g_assert_cmpint (plerr, ==, NM_PLATFORM_ERROR_SUCCESS);
 	}
 
