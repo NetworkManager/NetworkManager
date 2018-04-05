@@ -122,8 +122,8 @@ _get_data (NMAuthChain *self, const char *tag)
 gpointer
 nm_auth_chain_get_data (NMAuthChain *self, const char *tag)
 {
-	g_return_val_if_fail (self != NULL, NULL);
-	g_return_val_if_fail (tag != NULL, NULL);
+	g_return_val_if_fail (self, NULL);
+	g_return_val_if_fail (tag, NULL);
 
 	return _get_data (self, tag);
 }
@@ -146,8 +146,8 @@ nm_auth_chain_steal_data (NMAuthChain *self, const char *tag)
 	gpointer value = NULL;
 	void *orig_key;
 
-	g_return_val_if_fail (self != NULL, NULL);
-	g_return_val_if_fail (tag != NULL, NULL);
+	g_return_val_if_fail (self, NULL);
+	g_return_val_if_fail (tag, NULL);
 
 	if (g_hash_table_lookup_extended (self->data, tag, &orig_key, (gpointer)&tmp)) {
 		g_hash_table_steal (self->data, tag);
@@ -166,8 +166,8 @@ nm_auth_chain_set_data (NMAuthChain *self,
                         gpointer data,
                         GDestroyNotify data_destroy)
 {
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (tag != NULL);
+	g_return_if_fail (self);
+	g_return_if_fail (tag);
 
 	if (data == NULL)
 		g_hash_table_remove (self->data, tag);
@@ -185,8 +185,8 @@ nm_auth_chain_get_result (NMAuthChain *self, const char *permission)
 {
 	gpointer data;
 
-	g_return_val_if_fail (self != NULL, NM_AUTH_CALL_RESULT_UNKNOWN);
-	g_return_val_if_fail (permission != NULL, NM_AUTH_CALL_RESULT_UNKNOWN);
+	g_return_val_if_fail (self, NM_AUTH_CALL_RESULT_UNKNOWN);
+	g_return_val_if_fail (permission, NM_AUTH_CALL_RESULT_UNKNOWN);
 
 	data = _get_data (self, permission);
 	return data ? GPOINTER_TO_UINT (data) : NM_AUTH_CALL_RESULT_UNKNOWN;
@@ -195,7 +195,7 @@ nm_auth_chain_get_result (NMAuthChain *self, const char *permission)
 NMAuthSubject *
 nm_auth_chain_get_subject (NMAuthChain *self)
 {
-	g_return_val_if_fail (self != NULL, NULL);
+	g_return_val_if_fail (self, NULL);
 
 	return self->subject;
 }
@@ -350,7 +350,7 @@ nm_auth_chain_new_context (GDBusMethodInvocation *context,
 	NMAuthSubject *subject;
 	NMAuthChain *chain;
 
-	g_return_val_if_fail (context != NULL, NULL);
+	g_return_val_if_fail (context, NULL);
 
 	subject = nm_auth_subject_new_unix_process_from_context (context);
 	if (!subject)
@@ -435,7 +435,7 @@ nm_auth_is_subject_in_acl (NMConnection *connection,
 	const char *user = NULL;
 	gulong uid;
 
-	g_return_val_if_fail (connection != NULL, FALSE);
+	g_return_val_if_fail (connection, FALSE);
 	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), FALSE);
 	g_return_val_if_fail (nm_auth_subject_is_internal (subject) || nm_auth_subject_is_unix_process (subject), FALSE);
 
