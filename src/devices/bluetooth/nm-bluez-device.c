@@ -254,7 +254,7 @@ pan_connection_check_create (NMBluezDevice *self)
 		g_assert (connection_compatible (self, added));
 		g_assert (nm_connection_compare (added, connection, NM_SETTING_COMPARE_FLAG_EXACT));
 
-		nm_settings_connection_set_flags (NM_SETTINGS_CONNECTION (added), NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED, TRUE);
+		nm_settings_connection_set_flags (NM_SETTINGS_CONNECTION (added), NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED, TRUE);
 
 		priv->connections = g_slist_prepend (priv->connections, g_object_ref (added));
 		priv->pan_connection = added;
@@ -1186,7 +1186,7 @@ dispose (GObject *object)
 		/* Check whether we want to remove the created connection. If so, we take a reference
 		 * and delete it at the end of dispose(). */
 		if (NM_FLAGS_HAS (nm_settings_connection_get_flags (NM_SETTINGS_CONNECTION (priv->pan_connection)),
-		                  NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED))
+		                  NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED))
 			to_delete = g_object_ref (priv->pan_connection);
 
 		priv->pan_connection = NULL;

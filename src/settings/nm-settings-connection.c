@@ -72,7 +72,7 @@ typedef struct _NMSettingsConnectionPrivate {
 	NMSessionMonitor *session_monitor;
 	gulong session_changed_id;
 
-	NMSettingsConnectionFlags flags:5;
+	NMSettingsConnectionIntFlags flags:5;
 
 	bool removed:1;
 	bool ready:1;
@@ -316,7 +316,7 @@ static void
 set_visible (NMSettingsConnection *self, gboolean new_visible)
 {
 	nm_settings_connection_set_flags (self,
-	                                  NM_SETTINGS_CONNECTION_FLAGS_VISIBLE,
+	                                  NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE,
 	                                  new_visible);
 }
 
@@ -386,7 +386,7 @@ nm_settings_connection_check_permission (NMSettingsConnection *self,
 	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
 	if (!NM_FLAGS_HAS (nm_settings_connection_get_flags (self),
-	                   NM_SETTINGS_CONNECTION_FLAGS_VISIBLE))
+	                   NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE))
 		return FALSE;
 
 	s_con = nm_connection_get_setting_connection (NM_CONNECTION (self));
@@ -486,30 +486,30 @@ secrets_cleared_cb (NMSettingsConnection *self)
 static void
 set_persist_mode (NMSettingsConnection *self, NMSettingsConnectionPersistMode persist_mode)
 {
-	NMSettingsConnectionFlags flags = NM_SETTINGS_CONNECTION_FLAGS_NONE;
-	const NMSettingsConnectionFlags ALL =   NM_SETTINGS_CONNECTION_FLAGS_UNSAVED
-	                                      | NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED
-	                                      | NM_SETTINGS_CONNECTION_FLAGS_VOLATILE;
+	NMSettingsConnectionIntFlags flags = NM_SETTINGS_CONNECTION_INT_FLAGS_NONE;
+	const NMSettingsConnectionIntFlags ALL =   NM_SETTINGS_CONNECTION_INT_FLAGS_UNSAVED
+	                                         | NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED
+	                                         | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE;
 
 	switch (persist_mode) {
 	case NM_SETTINGS_CONNECTION_PERSIST_MODE_DISK:
-		flags = NM_SETTINGS_CONNECTION_FLAGS_NONE;
+		flags = NM_SETTINGS_CONNECTION_INT_FLAGS_NONE;
 		break;
 	case NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY:
 	case NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED:
 	case NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY:
-		flags = NM_SETTINGS_CONNECTION_FLAGS_UNSAVED;
+		flags = NM_SETTINGS_CONNECTION_INT_FLAGS_UNSAVED;
 		break;
 	case NM_SETTINGS_CONNECTION_PERSIST_MODE_VOLATILE_DETACHED:
 	case NM_SETTINGS_CONNECTION_PERSIST_MODE_VOLATILE_ONLY:
-		flags = NM_SETTINGS_CONNECTION_FLAGS_UNSAVED |
-		        NM_SETTINGS_CONNECTION_FLAGS_VOLATILE;
+		flags = NM_SETTINGS_CONNECTION_INT_FLAGS_UNSAVED |
+		        NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE;
 		break;
 	case NM_SETTINGS_CONNECTION_PERSIST_MODE_UNSAVED:
 		/* only set the connection as unsaved, but preserve the nm-generated
 		 * and volatile flag. */
 		nm_settings_connection_set_flags (self,
-		                                  NM_SETTINGS_CONNECTION_FLAGS_UNSAVED,
+		                                  NM_SETTINGS_CONNECTION_INT_FLAGS_UNSAVED,
 		                                  TRUE);
 		return;
 	case NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP:
@@ -683,7 +683,7 @@ nm_settings_connection_update (NMSettingsConnection *self,
 	}
 
 	nm_settings_connection_set_flags (self,
-	                                  NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED | NM_SETTINGS_CONNECTION_FLAGS_VOLATILE,
+	                                  NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE,
 	                                  FALSE);
 
 	if (replaced) {
@@ -2310,45 +2310,45 @@ nm_settings_connection_signal_remove (NMSettingsConnection *self)
 gboolean
 nm_settings_connection_get_unsaved (NMSettingsConnection *self)
 {
-	return NM_FLAGS_HAS (nm_settings_connection_get_flags (self), NM_SETTINGS_CONNECTION_FLAGS_UNSAVED);
+	return NM_FLAGS_HAS (nm_settings_connection_get_flags (self), NM_SETTINGS_CONNECTION_INT_FLAGS_UNSAVED);
 }
 
 /*****************************************************************************/
 
-NM_UTILS_FLAGS2STR_DEFINE_STATIC (_settings_connection_flags_to_string, NMSettingsConnectionFlags,
-	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_FLAGS_NONE,          "none"),
-	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_FLAGS_UNSAVED,       "unsaved"),
-	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED,  "nm-generated"),
-	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_FLAGS_VOLATILE,      "volatile"),
-	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_FLAGS_VISIBLE,       "visible"),
+NM_UTILS_FLAGS2STR_DEFINE_STATIC (_settings_connection_flags_to_string, NMSettingsConnectionIntFlags,
+	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,          "none"),
+	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_INT_FLAGS_UNSAVED,       "unsaved"),
+	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED,  "nm-generated"),
+	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE,      "volatile"),
+	NM_UTILS_FLAGS2STR (NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE,       "visible"),
 );
 
-NMSettingsConnectionFlags
+NMSettingsConnectionIntFlags
 nm_settings_connection_get_flags (NMSettingsConnection *self)
 {
-	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), NM_SETTINGS_CONNECTION_FLAGS_NONE);
+	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), NM_SETTINGS_CONNECTION_INT_FLAGS_NONE);
 
 	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->flags;
 }
 
-NMSettingsConnectionFlags
-nm_settings_connection_set_flags (NMSettingsConnection *self, NMSettingsConnectionFlags flags, gboolean set)
+NMSettingsConnectionIntFlags
+nm_settings_connection_set_flags (NMSettingsConnection *self, NMSettingsConnectionIntFlags flags, gboolean set)
 {
 	return nm_settings_connection_set_flags_full (self,
 	                                              flags,
-	                                              set ? flags : NM_SETTINGS_CONNECTION_FLAGS_NONE);
+	                                              set ? flags : NM_SETTINGS_CONNECTION_INT_FLAGS_NONE);
 }
 
-NMSettingsConnectionFlags
+NMSettingsConnectionIntFlags
 nm_settings_connection_set_flags_full (NMSettingsConnection *self,
-                                       NMSettingsConnectionFlags mask,
-                                       NMSettingsConnectionFlags value)
+                                       NMSettingsConnectionIntFlags mask,
+                                       NMSettingsConnectionIntFlags value)
 {
 	NMSettingsConnectionPrivate *priv;
-	NMSettingsConnectionFlags old_flags;
+	NMSettingsConnectionIntFlags old_flags;
 
-	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), NM_SETTINGS_CONNECTION_FLAGS_NONE);
-	nm_assert (mask && !NM_FLAGS_ANY (mask, ~NM_SETTINGS_CONNECTION_FLAGS_ALL));
+	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), NM_SETTINGS_CONNECTION_INT_FLAGS_NONE);
+	nm_assert (mask && !NM_FLAGS_ANY (mask, ~NM_SETTINGS_CONNECTION_INT_FLAGS_ALL));
 	nm_assert (!NM_FLAGS_ANY (value, ~mask));
 
 	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
@@ -2365,7 +2365,7 @@ nm_settings_connection_set_flags_full (NMSettingsConnection *self,
 		priv->flags = value;
 		nm_assert (priv->flags == value);
 		_notify (self, PROP_FLAGS);
-		if (NM_FLAGS_HAS (old_flags, NM_SETTINGS_CONNECTION_FLAGS_UNSAVED) != NM_FLAGS_HAS (value, NM_SETTINGS_CONNECTION_FLAGS_UNSAVED))
+		if (NM_FLAGS_HAS (old_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_UNSAVED) != NM_FLAGS_HAS (value, NM_SETTINGS_CONNECTION_INT_FLAGS_UNSAVED))
 			_notify (self, PROP_UNSAVED);
 	}
 	return old_flags;
@@ -2882,7 +2882,7 @@ gboolean
 nm_settings_connection_autoconnect_is_blocked (NMSettingsConnection *self)
 {
 	NMSettingsConnectionPrivate *priv;
-	NMSettingsConnectionFlags flags;
+	NMSettingsConnectionIntFlags flags;
 
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), TRUE);
 
@@ -2894,9 +2894,9 @@ nm_settings_connection_autoconnect_is_blocked (NMSettingsConnection *self)
 		return TRUE;
 
 	flags = priv->flags;
-	if (NM_FLAGS_HAS (flags, NM_SETTINGS_CONNECTION_FLAGS_VOLATILE))
+	if (NM_FLAGS_HAS (flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE))
 		return TRUE;
-	if (!NM_FLAGS_HAS (flags, NM_SETTINGS_CONNECTION_FLAGS_VISIBLE))
+	if (!NM_FLAGS_HAS (flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE))
 		return TRUE;
 
 	return FALSE;
@@ -3228,9 +3228,9 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *klass)
 
 	obj_properties[PROP_FLAGS] =
 	     g_param_spec_uint (NM_SETTINGS_CONNECTION_FLAGS, "", "",
-	                        NM_SETTINGS_CONNECTION_FLAGS_NONE,
-	                        NM_SETTINGS_CONNECTION_FLAGS_ALL,
-	                        NM_SETTINGS_CONNECTION_FLAGS_NONE,
+	                        NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
+	                        NM_SETTINGS_CONNECTION_INT_FLAGS_ALL,
+	                        NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
 	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS);
 

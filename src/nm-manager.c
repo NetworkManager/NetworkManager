@@ -639,7 +639,7 @@ _delete_volatile_connection_do (NMManager *self,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
 	if (!NM_FLAGS_HAS (nm_settings_connection_get_flags (connection),
-	                   NM_SETTINGS_CONNECTION_FLAGS_VOLATILE))
+	                   NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE))
 		return;
 	if (active_connection_find_first (self,
 	                                  connection,
@@ -836,7 +836,7 @@ _get_activatable_connections_filter (NMSettings *settings,
                                      gpointer user_data)
 {
 	if (NM_FLAGS_HAS (nm_settings_connection_get_flags (connection),
-	                  NM_SETTINGS_CONNECTION_FLAGS_VOLATILE))
+	                  NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE))
 		return FALSE;
 	return !active_connection_find_first (user_data, connection, NULL, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING);
 }
@@ -1870,7 +1870,7 @@ connection_flags_changed (NMSettings *settings,
 	DeleteVolatileConnectionData *data;
 
 	if (!NM_FLAGS_HAS (nm_settings_connection_get_flags (connection),
-	                   NM_SETTINGS_CONNECTION_FLAGS_VOLATILE))
+	                   NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE))
 		return;
 
 	if (active_connection_find_first (self, connection, NULL, NM_ACTIVE_CONNECTION_STATE_DEACTIVATED)) {
@@ -2319,8 +2319,8 @@ get_existing_connection (NMManager *self,
 	}
 
 	nm_settings_connection_set_flags (NM_SETTINGS_CONNECTION (added),
-	                                  NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED |
-	                                  NM_SETTINGS_CONNECTION_FLAGS_VOLATILE,
+	                                  NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED |
+	                                  NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE,
 	                                  TRUE);
 	NM_SET_OUT (out_generated, TRUE);
 	return added;
