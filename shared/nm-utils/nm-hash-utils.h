@@ -209,4 +209,15 @@ guint nm_direct_hash (gconstpointer str);
 guint nm_hash_str (const char *str);
 guint nm_str_hash (gconstpointer str);
 
+/*****************************************************************************/
+
+/* nm_pstr_*() are for hashing keys that are pointers to strings,
+ * that is, "const char *const*" types, using strcmp(). */
+
+guint nm_pstr_hash (gconstpointer p);
+
+gboolean nm_pstr_equal (gconstpointer a, gconstpointer b);
+
+/*****************************************************************************/
+
 #endif /* __NM_HASH_UTILS_H__ */

@@ -159,3 +159,27 @@ nm_direct_hash (gconstpointer ptr)
 {
 	return nm_hash_ptr (ptr);
 }
+
+/*****************************************************************************/
+
+guint
+nm_pstr_hash (gconstpointer p)
+{
+	const char *const*s = p;
+
+	if (!s)
+		return nm_hash_static (101061439u);
+	return nm_hash_str (*s);
+}
+
+gboolean
+nm_pstr_equal (gconstpointer a, gconstpointer b)
+{
+	const char *const*s1 = a;
+	const char *const*s2 = b;
+
+	return    (s1 == s2)
+	       || (   s1
+	           && s2
+	           && nm_streq0 (*s1, *s2));
+}
