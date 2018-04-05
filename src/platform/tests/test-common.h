@@ -307,6 +307,10 @@ const NMPlatformLink *nmtstp_link_sit_add (NMPlatform *platform,
                                            gboolean external_command,
                                            const char *name,
                                            const NMPlatformLnkSit *lnk);
+const NMPlatformLink *nmtstp_link_tun_add (NMPlatform *platform,
+                                           gboolean external_command,
+                                           const char *name,
+                                           const NMPlatformLnkTun *lnk);
 const NMPlatformLink *nmtstp_link_vxlan_add (NMPlatform *platform,
                                              gboolean external_command,
                                              const char *name,

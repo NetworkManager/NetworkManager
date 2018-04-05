@@ -23,6 +23,7 @@
 #include <sched.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include <linux/if_tun.h>
 
 #include "test-common.h"
 
@@ -1465,6 +1466,70 @@ nmtstp_link_sit_add (NMPlatform *platform,
 
 	_assert_pllink (platform, success, pllink, name, NM_LINK_TYPE_SIT);
 
+	return pllink;
+}
+
+const NMPlatformLink *
+nmtstp_link_tun_add (NMPlatform *platform,
+                     gboolean external_command,
+                     const char *name,
+                     const NMPlatformLnkTun *lnk)
+{
+	const NMPlatformLink *pllink = NULL;
+	NMPlatformError plerr;
+	int err;
+
+	g_assert (nm_utils_is_valid_iface_name (name, NULL));
+	g_assert (lnk);
+	g_assert (NM_IN_SET (lnk->type, IFF_TUN, IFF_TAP));
+
+	if (!lnk->persist) {
+		/* ip tuntap does not support non-persistent devices.
+		 *
+		 * Add this device only via NMPlatform. */
+		if (external_command == -1)
+			external_command = FALSE;
+	}
+
+	external_command = nmtstp_run_command_check_external (external_command);
+
+	_init_platform (&platform, external_command);
+
+	if (external_command) {
+		gs_free char *dev = NULL;
+		gs_free char *local = NULL, *remote = NULL;
+
+		g_assert (lnk->persist);
+
+		err = nmtstp_run_command ("ip tuntap add"
+		                          " mode %s"
+		                          "%s" /* user */
+		                          "%s" /* group */
+		                          "%s" /* pi */
+		                          "%s" /* vnet_hdr */
+		                          "%s" /* multi_queue */
+		                          " name %s",
+		                          lnk->type == IFF_TUN ? "tun" : "tap",
+		                          lnk->owner_valid ? nm_sprintf_bufa (100, " user %u", (guint) lnk->owner) : "",
+		                          lnk->group_valid ? nm_sprintf_bufa (100, " group %u", (guint) lnk->group) : "",
+		                          lnk->pi ? " pi" : "",
+		                          lnk->vnet_hdr ? " vnet_hdr" : "",
+		                          lnk->multi_queue ? " multi_queue" : "",
+		                          name);
+		/* Older versions of iproute2 don't support adding  devices.
+		 * On failure, fallback to using platform code. */
+		if (err == 0)
+			pllink = nmtstp_assert_wait_for_link (platform, name, NM_LINK_TYPE_TUN, 100);
+		else
+			g_error ("failure to add tun/tap device via ip-route");
+	} else {
+		plerr = nm_platform_link_tun_add (platform, name, lnk, &pllink);
+		g_assert_cmpint (plerr, ==, NM_PLATFORM_ERROR_SUCCESS);
+	}
+
+	g_assert (pllink);
+	g_assert_cmpint (pllink->type, ==, NM_LINK_TYPE_TUN);
+	g_assert_cmpstr (pllink->name, ==, name);
 	return pllink;
 }
 
