@@ -63,6 +63,16 @@ typedef struct {
 /*****************************************************************************/
 
 static void
+_ASSERT_call (AuthCall *call)
+{
+	nm_assert (call);
+	nm_assert (call->chain);
+	nm_assert (nm_c_list_contains_entry (&call->chain->auth_call_lst_head, call, auth_call_lst));
+}
+
+/*****************************************************************************/
+
+static void
 auth_call_free (AuthCall *call)
 {
 	nm_clear_g_source (&call->call_idle_id);
@@ -207,17 +217,14 @@ auth_chain_finish (gpointer user_data)
 	return FALSE;
 }
 
-static gboolean
+static void
 auth_call_complete (AuthCall *call)
 {
 	NMAuthChain *self;
 
-	nm_assert (call);
+	_ASSERT_call (call);
 
 	self = call->chain;
-
-	nm_assert (self);
-	nm_assert (nm_c_list_contains_entry (&self->auth_call_lst_head, call, auth_call_lst));
 
 	c_list_unlink (&call->auth_call_lst);
 
@@ -227,6 +234,17 @@ auth_call_complete (AuthCall *call)
 	}
 
 	auth_call_free (call);
+}
+
+static gboolean
+auth_call_complete_idle_cb (gpointer user_data)
+{
+	AuthCall *call = user_data;
+
+	_ASSERT_call (call);
+
+	call->call_idle_id = 0;
+	auth_call_complete (call);
 	return G_SOURCE_REMOVE;
 }
 
@@ -298,7 +316,7 @@ nm_auth_chain_add_call (NMAuthChain *self,
 	    || !nm_auth_manager_get_polkit_enabled (auth_manager)) {
 		/* Root user or non-polkit always gets the permission */
 		nm_auth_chain_set_data (self, permission, GUINT_TO_POINTER (NM_AUTH_CALL_RESULT_YES), NULL);
-		call->call_idle_id = g_idle_add ((GSourceFunc) auth_call_complete, call);
+		call->call_idle_id = g_idle_add (auth_call_complete_idle_cb, call);
 	} else {
 		/* Non-root always gets authenticated when using polkit */
 #if WITH_POLKIT
@@ -316,7 +334,7 @@ nm_auth_chain_add_call (NMAuthChain *self,
 			                                          NM_MANAGER_ERROR_FAILED,
 			                                          "Polkit support is disabled at compile time");
 		}
-		call->call_idle_id = g_idle_add ((GSourceFunc) auth_call_complete, call);
+		call->call_idle_id = g_idle_add (auth_call_complete_idle_cb, call);
 #endif
 	}
 }
