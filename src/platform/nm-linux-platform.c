@@ -5597,8 +5597,9 @@ link_tun_add (NMPlatform *platform,
 	struct ifreq ifr = { };
 	nm_auto_close int fd = -1;
 
-	if (!NM_IN_SET (props->type, IFF_TAP, IFF_TUN))
-		return FALSE;
+	if (   !NM_IN_SET (props->type, IFF_TAP, IFF_TUN)
+	    || !props->persist)
+		g_return_val_if_reached (FALSE);
 
 	fd = open ("/dev/net/tun", O_RDWR | O_CLOEXEC);
 	if (fd < 0)
