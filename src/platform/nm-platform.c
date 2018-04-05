@@ -5121,16 +5121,18 @@ nm_platform_lnk_tun_to_string (const NMPlatformLnkTun *lnk, char *buf, gsize len
 
 	g_snprintf (buf, len,
 	            "%s" /* type */
-	            " pi %s" /* pi */
-	            " vnet_hdr %s" /* vnet_hdr */
+	            "%s" /* pi */
+	            "%s" /* vnet_hdr */
 	            "%s" /* multi_queue */
+	            "%s" /* persist */
 	            "%s" /* owner */
 	            "%s" /* group */
 	            "",
 	            type,
-	            lnk->pi ? "on" : "off",
-	            lnk->vnet_hdr ? "on" : "off",
+	            lnk->pi ? " pi" : "",
+	            lnk->vnet_hdr ? " vnet_hdr" : "",
 	            lnk->multi_queue ? " multi_queue" : "",
+	            lnk->persist ? " persist" : "",
 	            lnk->owner_valid ? nm_sprintf_buf (str_owner, " owner %u", (guint) lnk->owner) : "",
 	            lnk->group_valid ? nm_sprintf_buf (str_group, " group %u", (guint) lnk->group) : "");
 	return buf;
