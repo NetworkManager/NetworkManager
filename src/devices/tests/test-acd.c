@@ -20,7 +20,7 @@
 
 #include "nm-default.h"
 
-#include "devices/nm-arping-manager.h"
+#include "devices/nm-acd-manager.h"
 #include "platform/tests/test-common.h"
 
 #define IFACE_VETH0 "nm-test-veth0"
@@ -61,15 +61,15 @@ typedef struct {
 } TestInfo;
 
 static void
-arping_manager_probe_terminated (NMArpingManager *arping_manager, GMainLoop *loop)
+acd_manager_probe_terminated (NMAcdManager *acd_manager, GMainLoop *loop)
 {
 	g_main_loop_quit (loop);
 }
 
 static void
-test_arping_common (test_fixture *fixture, TestInfo *info)
+test_acd_common (test_fixture *fixture, TestInfo *info)
 {
-	gs_unref_object NMArpingManager *manager = NULL;
+	gs_unref_object NMAcdManager *manager = NULL;
 	GMainLoop *loop;
 	int i;
 	const guint WAIT_TIME_OPTIMISTIC = 50;
@@ -83,11 +83,11 @@ test_arping_common (test_fixture *fixture, TestInfo *info)
 	wait_time = WAIT_TIME_OPTIMISTIC;
 again:
 
-	manager = nm_arping_manager_new (fixture->ifindex0, fixture->hwaddr0, fixture->hwaddr0_len);
+	manager = nm_acd_manager_new (fixture->ifindex0, fixture->hwaddr0, fixture->hwaddr0_len);
 	g_assert (manager != NULL);
 
 	for (i = 0; info->addresses[i]; i++)
-		g_assert (nm_arping_manager_add_address (manager, info->addresses[i]));
+		g_assert (nm_acd_manager_add_address (manager, info->addresses[i]));
 
 	for (i = 0; info->peer_addresses[i]; i++) {
 		nmtstp_ip4_address_add (NULL, FALSE, fixture->ifindex1, info->peer_addresses[i],
@@ -95,9 +95,9 @@ again:
 	}
 
 	loop = g_main_loop_new (NULL, FALSE);
-	signal_id = g_signal_connect (manager, NM_ARPING_MANAGER_PROBE_TERMINATED,
-	                              G_CALLBACK (arping_manager_probe_terminated), loop);
-	g_assert (nm_arping_manager_start_probe (manager, wait_time));
+	signal_id = g_signal_connect (manager, NM_ACD_MANAGER_PROBE_TERMINATED,
+	                              G_CALLBACK (acd_manager_probe_terminated), loop);
+	g_assert (nm_acd_manager_start_probe (manager, wait_time));
 	g_assert (nmtst_main_loop_run (loop, 2000));
 	g_signal_handler_disconnect (manager, signal_id);
 	g_main_loop_unref (loop);
@@ -105,7 +105,7 @@ again:
 	for (i = 0; info->addresses[i]; i++) {
 		gboolean val;
 
-		val = nm_arping_manager_check_address (manager, info->addresses[i]);
+		val = nm_acd_manager_check_address (manager, info->addresses[i]);
 		if (val == info->expected_result[i])
 			continue;
 
@@ -124,39 +124,39 @@ again:
 }
 
 static void
-test_arping_probe_1 (test_fixture *fixture, gconstpointer user_data)
+test_acd_probe_1 (test_fixture *fixture, gconstpointer user_data)
 {
 	TestInfo info = { .addresses       = { ADDR1, ADDR2, ADDR3 },
 	                  .peer_addresses  = { ADDR4 },
 	                  .expected_result = { TRUE, TRUE, TRUE } };
 
-	test_arping_common (fixture, &info);
+	test_acd_common (fixture, &info);
 }
 
 static void
-test_arping_probe_2 (test_fixture *fixture, gconstpointer user_data)
+test_acd_probe_2 (test_fixture *fixture, gconstpointer user_data)
 {
 	TestInfo info = { .addresses       = { ADDR1, ADDR2, ADDR3, ADDR4 },
 	                  .peer_addresses  = { ADDR3, ADDR2 },
 	                  .expected_result = { TRUE, FALSE, FALSE, TRUE } };
 
-	test_arping_common (fixture, &info);
+	test_acd_common (fixture, &info);
 }
 
 static void
-test_arping_announce (test_fixture *fixture, gconstpointer user_data)
+test_acd_announce (test_fixture *fixture, gconstpointer user_data)
 {
-	gs_unref_object NMArpingManager *manager = NULL;
+	gs_unref_object NMAcdManager *manager = NULL;
 	GMainLoop *loop;
 
-	manager = nm_arping_manager_new (fixture->ifindex0, fixture->hwaddr0, fixture->hwaddr0_len);
+	manager = nm_acd_manager_new (fixture->ifindex0, fixture->hwaddr0, fixture->hwaddr0_len);
 	g_assert (manager != NULL);
 
-	g_assert (nm_arping_manager_add_address (manager, ADDR1));
-	g_assert (nm_arping_manager_add_address (manager, ADDR2));
+	g_assert (nm_acd_manager_add_address (manager, ADDR1));
+	g_assert (nm_acd_manager_add_address (manager, ADDR2));
 
 	loop = g_main_loop_new (NULL, FALSE);
-	nm_arping_manager_announce_addresses (manager);
+	nm_acd_manager_announce_addresses (manager);
 	g_assert (!nmtst_main_loop_run (loop, 200));
 	g_main_loop_unref (loop);
 }
@@ -179,7 +179,7 @@ _nmtstp_init_tests (int *argc, char ***argv)
 void
 _nmtstp_setup_tests (void)
 {
-	g_test_add ("/arping/probe/1", test_fixture, NULL, fixture_setup, test_arping_probe_1, fixture_teardown);
-	g_test_add ("/arping/probe/2", test_fixture, NULL, fixture_setup, test_arping_probe_2, fixture_teardown);
-	g_test_add ("/arping/announce", test_fixture, NULL, fixture_setup, test_arping_announce, fixture_teardown);
+	g_test_add ("/acd/probe/1", test_fixture, NULL, fixture_setup, test_acd_probe_1, fixture_teardown);
+	g_test_add ("/acd/probe/2", test_fixture, NULL, fixture_setup, test_acd_probe_2, fixture_teardown);
+	g_test_add ("/acd/announce", test_fixture, NULL, fixture_setup, test_acd_announce, fixture_teardown);
 }

@@ -91,7 +91,7 @@ libnetwork_manager_base = static_library(
 )
 
 sources = files(
-  'devices/nm-arping-manager.c',
+  'devices/nm-acd-manager.c',
   'devices/nm-device-bond.c',
   'devices/nm-device-bridge.c',
   'devices/nm-device.c',

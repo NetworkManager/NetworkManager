@@ -16,7 +16,7 @@
 
 #include "nm-default.h"
 
-#include "nm-arping-manager.h"
+#include "nm-acd-manager.h"
 
 #include <netinet/in.h>
 #include <sys/types.h>
@@ -39,7 +39,7 @@ typedef enum {
 typedef struct {
 	in_addr_t address;
 	gboolean duplicate;
-	NMArpingManager *manager;
+	NMAcdManager *manager;
 	NAcd *acd;
 	GIOChannel *channel;
 	guint event_id;
@@ -58,29 +58,29 @@ typedef struct {
 	State          state;
 	GHashTable    *addresses;
 	guint          completed;
-} NMArpingManagerPrivate;
+} NMAcdManagerPrivate;
 
-struct _NMArpingManager {
+struct _NMAcdManager {
 	GObject parent;
-	NMArpingManagerPrivate _priv;
+	NMAcdManagerPrivate _priv;
 };
 
-struct _NMArpingManagerClass {
+struct _NMAcdManagerClass {
 	GObjectClass parent;
 };
 
-G_DEFINE_TYPE (NMArpingManager, nm_arping_manager, G_TYPE_OBJECT)
+G_DEFINE_TYPE (NMAcdManager, nm_acd_manager, G_TYPE_OBJECT)
 
-#define NM_ARPING_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMArpingManager, NM_IS_ARPING_MANAGER)
+#define NM_ACD_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMAcdManager, NM_IS_ACD_MANAGER)
 
 /*****************************************************************************/
 
 #define _NMLOG_DOMAIN         LOGD_IP4
-#define _NMLOG_PREFIX_NAME    "arping"
+#define _NMLOG_PREFIX_NAME    "acd"
 #define _NMLOG(level, ...) \
     G_STMT_START { \
         char _sbuf[64]; \
-        int _ifindex = (self) ? NM_ARPING_MANAGER_GET_PRIVATE (self)->ifindex : 0; \
+        int _ifindex = (self) ? NM_ACD_MANAGER_GET_PRIVATE (self)->ifindex : 0; \
         \
         nm_log ((level), _NMLOG_DOMAIN, \
                 nm_platform_link_get_name (NM_PLATFORM_GET, _ifindex), \
@@ -141,8 +141,8 @@ _acd_error_to_string (int error)
 /*****************************************************************************/
 
 /**
- * nm_arping_manager_add_address:
- * @self: a #NMArpingManager
+ * nm_acd_manager_add_address:
+ * @self: a #NMAcdManager
  * @address: an IP address
  *
  * Add @address to the list of IP addresses to probe.
@@ -150,13 +150,13 @@ _acd_error_to_string (int error)
  * Returns: %TRUE on success, %FALSE if the address was already in the list
  */
 gboolean
-nm_arping_manager_add_address (NMArpingManager *self, in_addr_t address)
+nm_acd_manager_add_address (NMAcdManager *self, in_addr_t address)
 {
-	NMArpingManagerPrivate *priv;
+	NMAcdManagerPrivate *priv;
 	AddressInfo *info;
 
-	g_return_val_if_fail (NM_IS_ARPING_MANAGER (self), FALSE);
-	priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
+	g_return_val_if_fail (NM_IS_ACD_MANAGER (self), FALSE);
+	priv = NM_ACD_MANAGER_GET_PRIVATE (self);
 	g_return_val_if_fail (priv->state == STATE_INIT, FALSE);
 
 	if (g_hash_table_lookup (priv->addresses, GUINT_TO_POINTER (address)))
@@ -175,8 +175,8 @@ static gboolean
 acd_event (GIOChannel *source, GIOCondition condition, gpointer data)
 {
 	AddressInfo *info = data;
-	NMArpingManager *self = info->manager;
-	NMArpingManagerPrivate *priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
+	NMAcdManager *self = info->manager;
+	NMAcdManagerPrivate *priv = NM_ACD_MANAGER_GET_PRIVATE (self);
 	NAcdEvent *event;
 	char address_str[INET_ADDRSTRLEN];
 	gs_free char *hwaddr_str = NULL;
@@ -235,11 +235,11 @@ acd_event (GIOChannel *source, GIOCondition condition, gpointer data)
 }
 
 static gboolean
-acd_probe_start (NMArpingManager *self,
+acd_probe_start (NMAcdManager *self,
                  AddressInfo *info,
                  guint64 timeout)
 {
-	NMArpingManagerPrivate *priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
+	NMAcdManagerPrivate *priv = NM_ACD_MANAGER_GET_PRIVATE (self);
 	NAcdConfig *config;
 	int r, fd;
 
@@ -280,8 +280,8 @@ acd_probe_start (NMArpingManager *self,
 }
 
 /**
- * nm_arping_manager_start_probe:
- * @self: a #NMArpingManager
+ * nm_acd_manager_start_probe:
+ * @self: a #NMAcdManager
  * @timeout: maximum probe duration in milliseconds
  * @error: location to store error, or %NULL
  *
@@ -291,16 +291,16 @@ acd_probe_start (NMArpingManager *self,
  * Returns: %TRUE if at least one probe could be started, %FALSE otherwise
  */
 gboolean
-nm_arping_manager_start_probe (NMArpingManager *self, guint timeout)
+nm_acd_manager_start_probe (NMAcdManager *self, guint timeout)
 {
-	NMArpingManagerPrivate *priv;
+	NMAcdManagerPrivate *priv;
 	GHashTableIter iter;
 	AddressInfo *info;
 	gs_free char *timeout_str = NULL;
 	gboolean success = FALSE;
 
-	g_return_val_if_fail (NM_IS_ARPING_MANAGER (self), FALSE);
-	priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
+	g_return_val_if_fail (NM_IS_ACD_MANAGER (self), FALSE);
+	priv = NM_ACD_MANAGER_GET_PRIVATE (self);
 	g_return_val_if_fail (priv->state == STATE_INIT, FALSE);
 
 	priv->completed = 0;
@@ -316,18 +316,18 @@ nm_arping_manager_start_probe (NMArpingManager *self, guint timeout)
 }
 
 /**
- * nm_arping_manager_reset:
- * @self: a #NMArpingManager
+ * nm_acd_manager_reset:
+ * @self: a #NMAcdManager
  *
  * Stop any operation in progress and reset @self to the initial state.
  */
 void
-nm_arping_manager_reset (NMArpingManager *self)
+nm_acd_manager_reset (NMAcdManager *self)
 {
-	NMArpingManagerPrivate *priv;
+	NMAcdManagerPrivate *priv;
 
-	g_return_if_fail (NM_IS_ARPING_MANAGER (self));
-	priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
+	g_return_if_fail (NM_IS_ACD_MANAGER (self));
+	priv = NM_ACD_MANAGER_GET_PRIVATE (self);
 
 	g_hash_table_remove_all (priv->addresses);
 
@@ -335,38 +335,38 @@ nm_arping_manager_reset (NMArpingManager *self)
 }
 
 /**
- * nm_arping_manager_destroy:
- * @self: the #NMArpingManager
+ * nm_acd_manager_destroy:
+ * @self: the #NMAcdManager
  *
- * Calls nm_arping_manager_reset() and unrefs @self.
+ * Calls nm_acd_manager_reset() and unrefs @self.
  */
 void
-nm_arping_manager_destroy (NMArpingManager *self)
+nm_acd_manager_destroy (NMAcdManager *self)
 {
-	g_return_if_fail (NM_IS_ARPING_MANAGER (self));
+	g_return_if_fail (NM_IS_ACD_MANAGER (self));
 
-	nm_arping_manager_reset (self);
+	nm_acd_manager_reset (self);
 	g_object_unref (self);
 }
 
 /**
- * nm_arping_manager_check_address:
- * @self: a #NMArpingManager
+ * nm_acd_manager_check_address:
+ * @self: a #NMAcdManager
  * @address: an IP address
  *
  * Check if an IP address is duplicate. @address must have been added with
- * nm_arping_manager_add_address().
+ * nm_acd_manager_add_address().
  *
  * Returns: %TRUE if the address is not duplicate, %FALSE otherwise
  */
 gboolean
-nm_arping_manager_check_address (NMArpingManager *self, in_addr_t address)
+nm_acd_manager_check_address (NMAcdManager *self, in_addr_t address)
 {
-	NMArpingManagerPrivate *priv;
+	NMAcdManagerPrivate *priv;
 	AddressInfo *info;
 
-	g_return_val_if_fail (NM_IS_ARPING_MANAGER (self), FALSE);
-	priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
+	g_return_val_if_fail (NM_IS_ACD_MANAGER (self), FALSE);
+	priv = NM_ACD_MANAGER_GET_PRIVATE (self);
 	g_return_val_if_fail (   priv->state == STATE_INIT
 	                      || priv->state == STATE_PROBE_DONE, FALSE);
 
@@ -377,15 +377,15 @@ nm_arping_manager_check_address (NMArpingManager *self, in_addr_t address)
 }
 
 /**
- * nm_arping_manager_announce_addresses:
- * @self: a #NMArpingManager
+ * nm_acd_manager_announce_addresses:
+ * @self: a #NMAcdManager
  *
  * Start announcing addresses.
  */
 void
-nm_arping_manager_announce_addresses (NMArpingManager *self)
+nm_acd_manager_announce_addresses (NMAcdManager *self)
 {
-	NMArpingManagerPrivate *priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
+	NMAcdManagerPrivate *priv = NM_ACD_MANAGER_GET_PRIVATE (self);
 	GHashTableIter iter;
 	AddressInfo *info;
 	int r;
@@ -437,26 +437,26 @@ destroy_address_info (gpointer data)
 /*****************************************************************************/
 
 static void
-nm_arping_manager_init (NMArpingManager *self)
+nm_acd_manager_init (NMAcdManager *self)
 {
-	NMArpingManagerPrivate *priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
+	NMAcdManagerPrivate *priv = NM_ACD_MANAGER_GET_PRIVATE (self);
 
 	priv->addresses = g_hash_table_new_full (nm_direct_hash, NULL,
 	                                         NULL, destroy_address_info);
 	priv->state = STATE_INIT;
 }
 
-NMArpingManager *
-nm_arping_manager_new (int ifindex, const guint8 *hwaddr, size_t hwaddr_len)
+NMAcdManager *
+nm_acd_manager_new (int ifindex, const guint8 *hwaddr, size_t hwaddr_len)
 {
-	NMArpingManager *self;
-	NMArpingManagerPrivate *priv;
+	NMAcdManager *self;
+	NMAcdManagerPrivate *priv;
 
 	g_return_val_if_fail (hwaddr, NULL);
 	g_return_val_if_fail (hwaddr_len == ETH_ALEN, NULL);
 
-	self = g_object_new (NM_TYPE_ARPING_MANAGER, NULL);
-	priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
+	self = g_object_new (NM_TYPE_ACD_MANAGER, NULL);
+	priv = NM_ACD_MANAGER_GET_PRIVATE (self);
 	priv->ifindex = ifindex;
 	memcpy (priv->hwaddr, hwaddr, ETH_ALEN);
 
@@ -466,23 +466,23 @@ nm_arping_manager_new (int ifindex, const guint8 *hwaddr, size_t hwaddr_len)
 static void
 dispose (GObject *object)
 {
-	NMArpingManager *self = NM_ARPING_MANAGER (object);
-	NMArpingManagerPrivate *priv = NM_ARPING_MANAGER_GET_PRIVATE (self);
+	NMAcdManager *self = NM_ACD_MANAGER (object);
+	NMAcdManagerPrivate *priv = NM_ACD_MANAGER_GET_PRIVATE (self);
 
 	g_clear_pointer (&priv->addresses, g_hash_table_destroy);
 
-	G_OBJECT_CLASS (nm_arping_manager_parent_class)->dispose (object);
+	G_OBJECT_CLASS (nm_acd_manager_parent_class)->dispose (object);
 }
 
 static void
-nm_arping_manager_class_init (NMArpingManagerClass *klass)
+nm_acd_manager_class_init (NMAcdManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
 	object_class->dispose = dispose;
 
 	signals[PROBE_TERMINATED] =
-	    g_signal_new (NM_ARPING_MANAGER_PROBE_TERMINATED,
+	    g_signal_new (NM_ACD_MANAGER_PROBE_TERMINATED,
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0, NULL, NULL, NULL,
