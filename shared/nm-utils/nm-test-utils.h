@@ -162,6 +162,14 @@
 			g_assert_not_reached (); \
 	} G_STMT_END
 
+#define nmtst_assert_nonnull(command) \
+	({ \
+		typeof (*(command)) *_ptr = (command); \
+		\
+		g_assert (_ptr && (TRUE || (command))); \
+		_ptr; \
+	 })
+
 #define nmtst_assert_success(success, error) \
 	G_STMT_START { \
 		g_assert_no_error (error); \
