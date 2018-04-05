@@ -160,6 +160,17 @@
     <property name="Unsaved" type="b" access="read"/>
 
     <!--
+        Flags:
+
+        Additional flags of the connection profile.
+
+        Returns: <link linkend="NMSettingsConnectionFlags">NMSettingsConnectionFlags</link>
+
+        Since: 1.12
+    -->
+    <property name="Flags" type="u" access="read"/>
+
+    <!--
         PropertiesChanged:
         @properties: A dictionary mapping property names to variant boxed values.
 

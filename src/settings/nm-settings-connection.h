@@ -45,6 +45,7 @@
 
 /* Internal properties */
 #define NM_SETTINGS_CONNECTION_READY    "ready"
+#define NM_SETTINGS_CONNECTION_FLAGS    "flags"
 #define NM_SETTINGS_CONNECTION_FILENAME "filename"
 
 
@@ -59,6 +60,9 @@
  *  when it disconnects. That is for in-memory connections (unsaved), which are
  *  currently active but cleanup on disconnect.
  * @NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE: The connection is visible
+ * @NM_SETTINGS_CONNECTION_INT_FLAGS_EXPORTED_MASK: the entire enum is
+ *   internal, however, parts of it is public API as #NMSettingsConnectionFlags.
+ *   This mask, are the public flags.
  * @NM_SETTINGS_CONNECTION_INT_FLAGS_ALL: special mask, for all known flags
  *
  * #NMSettingsConnection flags.
@@ -73,6 +77,9 @@ typedef enum {
 	NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE                = (1LL <<  3),
 
 	__NM_SETTINGS_CONNECTION_INT_FLAGS_LAST,
+
+	NM_SETTINGS_CONNECTION_INT_FLAGS_EXPORTED_MASK          = 0,
+
 	NM_SETTINGS_CONNECTION_INT_FLAGS_ALL = ((__NM_SETTINGS_CONNECTION_INT_FLAGS_LAST - 1) << 1) - 1,
 } NMSettingsConnectionIntFlags;
 
