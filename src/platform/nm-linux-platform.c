@@ -3939,6 +3939,7 @@ cache_on_change (NMPlatform *platform,
 			                                      NM_LINK_TYPE_MACVLAN,
 			                                      NM_LINK_TYPE_MACVLAN,
 			                                      NM_LINK_TYPE_SIT,
+			                                      NM_LINK_TYPE_TUN,
 			                                      NM_LINK_TYPE_VLAN,
 			                                      NM_LINK_TYPE_VXLAN)) {
 				/* certain link-types also come with a IFLA_INFO_DATA/lnk_data. It may happen that
