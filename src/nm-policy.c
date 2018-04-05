@@ -2356,7 +2356,7 @@ connection_flags_changed (NMSettings *settings,
 	NMPolicy *self = _PRIV_TO_SELF (priv);
 
 	if (NM_FLAGS_HAS (nm_settings_connection_get_flags (connection),
-	                  NM_SETTINGS_CONNECTION_FLAGS_VISIBLE)) {
+	                  NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE)) {
 		if (!nm_settings_connection_autoconnect_is_blocked (connection))
 			schedule_activate_all (self);
 	} else

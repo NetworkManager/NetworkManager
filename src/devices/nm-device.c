@@ -10969,7 +10969,7 @@ nm_device_set_ip_config (NMDevice *self,
 		if (   nm_device_sys_iface_state_is_external (self)
 		    && (settings_connection = nm_device_get_settings_connection (self))
 		    && NM_FLAGS_HAS (nm_settings_connection_get_flags (settings_connection),
-		                     NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED)
+		                     NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED)
 		    && nm_active_connection_get_activation_type (NM_ACTIVE_CONNECTION (priv->act_request.obj)) == NM_ACTIVATION_TYPE_EXTERNAL) {
 			g_object_freeze_notify (G_OBJECT (settings_connection));
 			nm_connection_add_setting (NM_CONNECTION (settings_connection),
