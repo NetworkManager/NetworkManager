@@ -3934,40 +3934,31 @@ cache_on_change (NMPlatform *platform,
 		    && (obj_new && obj_new->_link.netlink.is_in_netlink)
 		    && (!obj_old || !obj_old->_link.netlink.is_in_netlink))
 		{
-			if (!obj_new->_link.netlink.lnk) {
+			gboolean re_request_link = FALSE;
+
+			if (   !obj_new->_link.netlink.lnk
+			    && NM_IN_SET (obj_new->link.type, NM_LINK_TYPE_GRE,
+			                                      NM_LINK_TYPE_IP6TNL,
+			                                      NM_LINK_TYPE_INFINIBAND,
+			                                      NM_LINK_TYPE_MACVLAN,
+			                                      NM_LINK_TYPE_MACVLAN,
+			                                      NM_LINK_TYPE_SIT,
+			                                      NM_LINK_TYPE_VLAN,
+			                                      NM_LINK_TYPE_VXLAN)) {
 				/* certain link-types also come with a IFLA_INFO_DATA/lnk_data. It may happen that
 				 * kernel didn't send this notification, thus when we first learn about a link
 				 * that lacks an lnk_data we re-request it again.
 				 *
 				 * For example https://bugzilla.redhat.com/show_bug.cgi?id=1284001 */
-				switch (obj_new->link.type) {
-				case NM_LINK_TYPE_GRE:
-				case NM_LINK_TYPE_IP6TNL:
-				case NM_LINK_TYPE_INFINIBAND:
-				case NM_LINK_TYPE_MACVLAN:
-				case NM_LINK_TYPE_MACVTAP:
-				case NM_LINK_TYPE_SIT:
-				case NM_LINK_TYPE_VLAN:
-				case NM_LINK_TYPE_VXLAN:
-					delayed_action_schedule (platform,
-					                         DELAYED_ACTION_TYPE_REFRESH_LINK,
-					                         GINT_TO_POINTER (obj_new->link.ifindex));
-					break;
-				default:
-					break;
-				}
-			}
-			if (   obj_new->link.type == NM_LINK_TYPE_VETH
-			    && obj_new->link.parent == 0) {
+				re_request_link = TRUE;
+			} else if (   obj_new->link.type == NM_LINK_TYPE_VETH
+			           && obj_new->link.parent == 0) {
 				/* the initial notification when adding a veth pair can lack the parent/IFLA_LINK
 				 * (https://bugzilla.redhat.com/show_bug.cgi?id=1285827).
 				 * Request it again. */
-				delayed_action_schedule (platform,
-				                         DELAYED_ACTION_TYPE_REFRESH_LINK,
-				                         GINT_TO_POINTER (obj_new->link.ifindex));
-			}
-			if (   obj_new->link.type == NM_LINK_TYPE_ETHERNET
-			    && obj_new->link.addr.len == 0) {
+				re_request_link = TRUE;
+			} else if (   obj_new->link.type == NM_LINK_TYPE_ETHERNET
+			           && obj_new->link.addr.len == 0) {
 				/* Due to a kernel bug, we sometimes receive spurious NEWLINK
 				 * messages after a wifi interface has disappeared. Since the
 				 * link is not present anymore we can't determine its type and
@@ -3975,6 +3966,9 @@ cache_on_change (NMPlatform *platform,
 				 * specified.  Request the link again to check if it really
 				 * exists.  https://bugzilla.redhat.com/show_bug.cgi?id=1302037
 				 */
+				re_request_link = TRUE;
+			}
+			if (re_request_link) {
 				delayed_action_schedule (platform,
 				                         DELAYED_ACTION_TYPE_REFRESH_LINK,
 				                         GINT_TO_POINTER (obj_new->link.ifindex));
