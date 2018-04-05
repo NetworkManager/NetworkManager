@@ -54,13 +54,13 @@ static void nm_settings_connection_connection_interface_init (NMConnectionInterf
 NM_GOBJECT_PROPERTIES_DEFINE (NMSettingsConnection,
 	PROP_UNSAVED,
 	PROP_READY,
-	PROP_FLAGS,
 	PROP_FILENAME,
 );
 
 enum {
 	REMOVED,
 	UPDATED_INTERNAL,
+	FLAGS_CHANGED,
 	LAST_SIGNAL
 };
 
@@ -2364,9 +2364,9 @@ nm_settings_connection_set_flags_full (NMSettingsConnection *self,
 		       _settings_connection_flags_to_string (priv->flags, buf2, sizeof (buf2)));
 		priv->flags = value;
 		nm_assert (priv->flags == value);
-		_notify (self, PROP_FLAGS);
 		if (NM_FLAGS_HAS (old_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_UNSAVED) != NM_FLAGS_HAS (value, NM_SETTINGS_CONNECTION_INT_FLAGS_UNSAVED))
 			_notify (self, PROP_UNSAVED);
+		g_signal_emit (self, signals[FLAGS_CHANGED], 0);
 	}
 	return old_flags;
 }
@@ -3071,9 +3071,6 @@ get_property (GObject *object, guint prop_id,
 	case PROP_READY:
 		g_value_set_boolean (value, nm_settings_connection_get_ready (self));
 		break;
-	case PROP_FLAGS:
-		g_value_set_uint (value, nm_settings_connection_get_flags (self));
-		break;
 	case PROP_FILENAME:
 		g_value_set_string (value, nm_settings_connection_get_filename (self));
 		break;
@@ -3226,14 +3223,6 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *klass)
 	                           G_PARAM_READABLE |
 	                           G_PARAM_STATIC_STRINGS);
 
-	obj_properties[PROP_FLAGS] =
-	     g_param_spec_uint (NM_SETTINGS_CONNECTION_FLAGS, "", "",
-	                        NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
-	                        NM_SETTINGS_CONNECTION_INT_FLAGS_ALL,
-	                        NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
-	                        G_PARAM_READABLE |
-	                        G_PARAM_STATIC_STRINGS);
-
 	obj_properties[PROP_FILENAME] =
 	     g_param_spec_string (NM_SETTINGS_CONNECTION_FILENAME, "", "",
 	                          NULL,
@@ -3258,6 +3247,14 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *klass)
 	                  G_SIGNAL_RUN_FIRST,
 	                  0,
 	                  NULL, NULL,
+	                  g_cclosure_marshal_VOID__VOID,
+	                  G_TYPE_NONE, 0);
+
+	signals[FLAGS_CHANGED] =
+	    g_signal_new (NM_SETTINGS_CONNECTION_FLAGS_CHANGED,
+	                  G_TYPE_FROM_CLASS (klass),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL,
 	                  g_cclosure_marshal_VOID__VOID,
 	                  G_TYPE_NONE, 0);
 }

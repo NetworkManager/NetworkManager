@@ -38,13 +38,13 @@
 #define NM_SETTINGS_CONNECTION_GET_SECRETS "get-secrets"
 #define NM_SETTINGS_CONNECTION_CANCEL_SECRETS "cancel-secrets"
 #define NM_SETTINGS_CONNECTION_UPDATED_INTERNAL "updated-internal"
+#define NM_SETTINGS_CONNECTION_FLAGS_CHANGED    "flags-changed"
 
 /* Properties */
 #define NM_SETTINGS_CONNECTION_UNSAVED  "unsaved"
 
 /* Internal properties */
 #define NM_SETTINGS_CONNECTION_READY    "ready"
-#define NM_SETTINGS_CONNECTION_FLAGS    "flags"
 #define NM_SETTINGS_CONNECTION_FILENAME "filename"
 
 
