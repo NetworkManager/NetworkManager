@@ -2117,13 +2117,14 @@ get_existing_connection (NMManager *self,
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingsConnection *added = NULL;
 	GError *error = NULL;
+	gs_free_error GError *gen_error = NULL;
 	NMDevice *master = NULL;
 	int ifindex = nm_device_get_ifindex (device);
 	NMSettingsConnection *matched;
 	NMSettingsConnection *connection_checked = NULL;
 	gboolean assume_state_guess_assume = FALSE;
 	const char *assume_state_connection_uuid = NULL;
-	gboolean maybe_later;
+	gboolean maybe_later, only_by_uuid = FALSE;
 
 	if (out_generated)
 		*out_generated = FALSE;
@@ -2156,14 +2157,18 @@ get_existing_connection (NMManager *self,
 	 * update_connection() implemented, otherwise nm_device_generate_connection()
 	 * returns NULL.
 	 */
-	connection = nm_device_generate_connection (device, master, &maybe_later, &error);
+	connection = nm_device_generate_connection (device, master, &maybe_later, &gen_error);
 	if (!connection) {
-		if (!maybe_later)
+		if (maybe_later) {
+			/* The device can generate a connection, but it failed for now.
+			 * Give it a chance to match a connection from the state file. */
+			only_by_uuid = TRUE;
+		} else {
 			nm_device_assume_state_reset (device);
-		_LOG2D (LOGD_DEVICE, device, "assume: cannot generate connection: %s",
-		        error->message);
-		g_error_free (error);
-		return NULL;
+			_LOG2D (LOGD_DEVICE, device, "assume: cannot generate connection: %s",
+			        gen_error->message);
+			return NULL;
+		}
 	}
 
 	nm_device_assume_state_get (device,
@@ -2184,20 +2189,30 @@ get_existing_connection (NMManager *self,
 	    && !active_connection_find_first (self, connection_checked, NULL,
 	                                      NM_ACTIVE_CONNECTION_STATE_DEACTIVATING)
 	    && nm_device_check_connection_compatible (device, NM_CONNECTION (connection_checked))) {
-		NMConnection *const connections[] = {
-			NM_CONNECTION (connection_checked),
-			NULL,
-		};
 
-		matched = NM_SETTINGS_CONNECTION (nm_utils_match_connection (connections,
-		                                                             connection,
-		                                                             TRUE,
-		                                                             nm_device_has_carrier (device),
-		                                                             nm_device_get_route_metric (device, AF_INET),
-		                                                             nm_device_get_route_metric (device, AF_INET6),
-		                                                             NULL, NULL));
+		if (connection) {
+			NMConnection *const connections[] = {
+				NM_CONNECTION (connection_checked),
+				NULL,
+			};
+
+			matched = NM_SETTINGS_CONNECTION (nm_utils_match_connection (connections,
+			                                                             connection,
+			                                                             TRUE,
+			                                                             nm_device_has_carrier (device),
+			                                                             nm_device_get_route_metric (device, AF_INET),
+			                                                             nm_device_get_route_metric (device, AF_INET6),
+			                                                             NULL, NULL));
+		} else
+			matched = connection_checked;
 	} else
 		matched = NULL;
+
+	if (!matched && only_by_uuid) {
+		_LOG2D (LOGD_DEVICE, device, "assume: cannot generate connection: %s",
+		        gen_error->message);
+		return NULL;
+	}
 
 	if (!matched && assume_state_guess_assume) {
 		gs_free NMSettingsConnection **connections = NULL;
