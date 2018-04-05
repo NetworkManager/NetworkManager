@@ -5596,15 +5596,15 @@ static gboolean
 link_tun_add (NMPlatform *platform,
               const char *name,
               const NMPlatformLnkTun *props,
-              const NMPlatformLink **out_link)
+              const NMPlatformLink **out_link,
+              int *out_fd)
 {
 	const NMPObject *obj;
 	struct ifreq ifr = { };
 	nm_auto_close int fd = -1;
 
-	if (   !NM_IN_SET (props->type, IFF_TAP, IFF_TUN)
-	    || !props->persist)
-		g_return_val_if_reached (FALSE);
+	nm_assert (NM_IN_SET (props->type, IFF_TAP, IFF_TUN));
+	nm_assert (props->persist || out_fd);
 
 	fd = open ("/dev/net/tun", O_RDWR | O_CLOEXEC);
 	if (fd < 0)
@@ -5629,18 +5629,23 @@ link_tun_add (NMPlatform *platform,
 			return FALSE;
 	}
 
-	if (ioctl (fd, TUNSETPERSIST, (int) !!props->persist))
-		return FALSE;
+	if (props->persist) {
+		if (ioctl (fd, TUNSETPERSIST, 1))
+			return FALSE;
+	}
 
 	do_request_link (platform, 0, name);
 	obj = nmp_cache_lookup_link_full (nm_platform_get_cache (platform),
 	                                  0, name, FALSE,
 	                                  NM_LINK_TYPE_TUN,
 	                                  NULL, NULL);
-	if (out_link)
-		*out_link = obj ? &obj->link : NULL;
 
-	return !!obj;
+	if (!obj)
+		return FALSE;
+
+	NM_SET_OUT (out_link, &obj->link);
+	NM_SET_OUT (out_fd, nm_steal_fd (&fd));
+	return TRUE;
 }
 
 static gboolean

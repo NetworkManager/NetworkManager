@@ -264,7 +264,8 @@ create_and_realize (NMDevice *device,
 	plerr = nm_platform_link_tun_add (nm_device_get_platform (device),
 	                                  iface,
 	                                  &props,
-	                                  out_plink);
+	                                  out_plink,
+	                                  NULL);
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create TUN/TAP interface '%s' for '%s': %s",

@@ -853,7 +853,8 @@ typedef struct {
 	gboolean (*link_tun_add) (NMPlatform *platform,
 	                          const char *name,
 	                          const NMPlatformLnkTun *props,
-	                          const NMPlatformLink **out_link);
+	                          const NMPlatformLink **out_link,
+	                          int *out_fd);
 
 	gboolean (*infiniband_partition_add) (NMPlatform *, int parent, int p_key, const NMPlatformLink **out_link);
 	gboolean (*infiniband_partition_delete) (NMPlatform *, int parent, int p_key);
@@ -1286,7 +1287,8 @@ NMPlatformError nm_platform_link_sit_add (NMPlatform *self,
 NMPlatformError nm_platform_link_tun_add (NMPlatform *self,
                                           const char *name,
                                           const NMPlatformLnkTun *props,
-                                          const NMPlatformLink **out_link);
+                                          const NMPlatformLink **out_link,
+                                          int *out_fd);
 
 const NMPlatformIP6Address *nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr address);
 

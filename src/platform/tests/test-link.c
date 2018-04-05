@@ -699,6 +699,7 @@ test_software_detect (gconstpointer user_data)
 	guint i_step;
 	const gboolean ext = test_data->external_command;
 	NMPlatformLnkTun lnk_tun;
+	nm_auto_close int tun_fd = -1;
 
 	nmtstp_run_command_check ("ip link add %s type dummy", PARENT_NAME);
 	ifindex_parent = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, PARENT_NAME, NM_LINK_TYPE_DUMMY, 100)->ifindex;
@@ -910,9 +911,9 @@ test_software_detect (gconstpointer user_data)
 				.vnet_hdr = nmtst_get_rand_bool (),
 				.multi_queue = nmtst_get_rand_bool (),
 
-				/* arguably, adding non-persistant devices from within NetworkManager makes
-				 * no sense. */
-				.persist = TRUE,
+				/* if we add the device via iproute2 (external), we can only
+				 * create persistent devices. */
+				.persist = (ext == 1) ? TRUE : nmtst_get_rand_bool (),
 			};
 			break;
 		default:
@@ -920,7 +921,10 @@ test_software_detect (gconstpointer user_data)
 			break;
 		}
 
-		g_assert (nmtstp_link_tun_add (NULL, ext, DEVICE_NAME, &lnk_tun));
+		g_assert (nmtstp_link_tun_add (NULL, ext, DEVICE_NAME, &lnk_tun,
+		                               (!lnk_tun.persist || nmtst_get_rand_bool ())
+		                                 ? &tun_fd
+		                                 : NULL));
 		break;
 	}
 	default:
