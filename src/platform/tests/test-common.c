@@ -628,7 +628,10 @@ nmtstp_wait_for_signal_until (NMPlatform *platform, gint64 until_ms)
 const NMPlatformLink *
 nmtstp_wait_for_link (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, gint64 timeout_ms)
 {
-	return nmtstp_wait_for_link_until (platform, ifname, expected_link_type, nm_utils_get_monotonic_timestamp_ms () + timeout_ms);
+	return nmtstp_wait_for_link_until (platform, ifname, expected_link_type,
+	                                   timeout_ms
+	                                     ? nm_utils_get_monotonic_timestamp_ms () + timeout_ms
+	                                     : 0);
 }
 
 const NMPlatformLink *
@@ -636,6 +639,7 @@ nmtstp_wait_for_link_until (NMPlatform *platform, const char *ifname, NMLinkType
 {
 	const NMPlatformLink *plink;
 	gint64 now;
+	gboolean waited_once = FALSE;
 
 	_init_platform (&platform, FALSE);
 
@@ -647,9 +651,20 @@ nmtstp_wait_for_link_until (NMPlatform *platform, const char *ifname, NMLinkType
 		    && (expected_link_type == NM_LINK_TYPE_NONE || plink->type == expected_link_type))
 			return plink;
 
-		if (until_ms < now)
+		if (until_ms == 0) {
+			/* don't wait, don't even poll the socket. */
 			return NULL;
+		}
 
+		if (   waited_once
+		    && until_ms < now) {
+			/* timeout reached (+ we already waited for a signal at least once). */
+			return NULL;
+		}
+
+		waited_once = TRUE;
+		/* regardless of whether timeout is already reached, we poll the netlink
+		 * socket a bit. */
 		nmtstp_wait_for_signal (platform, until_ms - now);
 	}
 }
