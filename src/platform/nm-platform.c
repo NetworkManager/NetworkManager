@@ -5120,7 +5120,7 @@ nm_platform_lnk_tun_to_string (const NMPlatformLnkTun *lnk, char *buf, gsize len
 		type = nm_sprintf_buf (str_type, "tun type %u", (guint) lnk->type);
 
 	g_snprintf (buf, len,
-	            "%s " /* type */
+	            "%s" /* type */
 	            " pi %s" /* pi */
 	            " vnet_hdr %s" /* vnet_hdr */
 	            "%s" /* multi_queue */
