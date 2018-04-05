@@ -121,6 +121,10 @@ else
             NMTST_USE_VALGRIND=0
             shift;
             ;;
+        "-d")
+            NMTST_SET_DEBUG=1
+            shift;
+            ;;
         "--test"|-t)
             shift
             TEST="$1"
@@ -144,6 +148,10 @@ else
         NMTST_SUPPRESSIONS="$SCRIPT_PATH/../valgrind.suppressions"
     fi
 
+fi
+
+if [ "$NMTST_SET_DEBUG" == 1 -a -z "${NMTST_DEBUG+x}" ]; then
+    export NMTST_DEBUG=d
 fi
 
 if _is_true "$NMTST_MAKE_FIRST" 0; then
