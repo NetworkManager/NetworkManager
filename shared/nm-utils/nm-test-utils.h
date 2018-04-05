@@ -808,6 +808,12 @@ nmtst_get_rand_int (void)
 	return g_rand_int (nmtst_get_rand ());
 }
 
+static inline gboolean
+nmtst_get_rand_bool (void)
+{
+	return nmtst_get_rand_int () % 2;
+}
+
 static inline gpointer
 nmtst_rand_buf (GRand *rand, gpointer buffer, gsize buffer_length)
 {
