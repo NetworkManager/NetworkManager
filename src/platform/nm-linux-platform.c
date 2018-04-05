@@ -3931,6 +3931,7 @@ cache_on_change (NMPlatform *platform,
 		    && (!obj_old || !obj_old->_link.netlink.is_in_netlink))
 		{
 			gboolean re_request_link = FALSE;
+			const NMPlatformLnkTun *lnk_tun;
 
 			if (   !obj_new->_link.netlink.lnk
 			    && NM_IN_SET (obj_new->link.type, NM_LINK_TYPE_GRE,
@@ -3947,6 +3948,19 @@ cache_on_change (NMPlatform *platform,
 				 * that lacks an lnk_data we re-request it again.
 				 *
 				 * For example https://bugzilla.redhat.com/show_bug.cgi?id=1284001 */
+				re_request_link = TRUE;
+			} else if (   obj_new->link.type == NM_LINK_TYPE_TUN
+			           && obj_new->_link.netlink.lnk
+			           && (lnk_tun = &(obj_new->_link.netlink.lnk)->lnk_tun)
+			           && !lnk_tun->persist
+			           && lnk_tun->pi
+			           && !lnk_tun->vnet_hdr
+			           && !lnk_tun->multi_queue
+			           && !lnk_tun->owner_valid
+			           && !lnk_tun->group_valid) {
+				/* kernel has/had a know issue that the first notification for TUN device would
+				 * be sent with invalid parameters. The message looks like that kind, so refetch
+				 * it. */
 				re_request_link = TRUE;
 			} else if (   obj_new->link.type == NM_LINK_TYPE_VETH
 			           && obj_new->link.parent == 0) {
