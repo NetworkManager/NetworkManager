@@ -654,22 +654,6 @@ nmtstp_wait_for_link_until (NMPlatform *platform, const char *ifname, NMLinkType
 	}
 }
 
-const NMPlatformLink *
-nmtstp_assert_wait_for_link (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, guint timeout_ms)
-{
-	return nmtstp_assert_wait_for_link_until (platform, ifname, expected_link_type, nm_utils_get_monotonic_timestamp_ms () + timeout_ms);
-}
-
-const NMPlatformLink *
-nmtstp_assert_wait_for_link_until (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, gint64 until_ms)
-{
-	const NMPlatformLink *plink;
-
-	plink = nmtstp_wait_for_link_until (platform, ifname, expected_link_type, until_ms);
-	g_assert (plink);
-	return plink;
-}
-
 /*****************************************************************************/
 
 int
