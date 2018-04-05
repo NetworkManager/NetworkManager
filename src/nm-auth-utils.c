@@ -85,18 +85,26 @@ auth_call_free (AuthCall *call)
 /*****************************************************************************/
 
 typedef struct {
+
+	/* must be the first field. */
+	const char *tag;
+
 	gpointer data;
 	GDestroyNotify destroy;
+	char tag_data[];
 } ChainData;
 
 static ChainData *
-chain_data_new (gpointer data, GDestroyNotify destroy)
+chain_data_new (const char *tag, gpointer data, GDestroyNotify destroy)
 {
 	ChainData *tmp;
+	gsize l = strlen (tag);
 
-	tmp = g_slice_new (ChainData);
+	tmp = g_malloc (sizeof (ChainData) + l + 1);
+	tmp->tag = &tmp->tag_data[0];
 	tmp->data = data;
 	tmp->destroy = destroy;
+	memcpy (&tmp->tag_data[0], tag, l + 1);
 	return tmp;
 }
 
@@ -107,7 +115,7 @@ chain_data_free (gpointer data)
 
 	if (tmp->destroy)
 		tmp->destroy (tmp->data);
-	g_slice_free (ChainData, tmp);
+	g_free (tmp);
 }
 
 static gpointer
@@ -115,7 +123,7 @@ _get_data (NMAuthChain *self, const char *tag)
 {
 	ChainData *tmp;
 
-	tmp = g_hash_table_lookup (self->data, tag);
+	tmp = g_hash_table_lookup (self->data, &tag);
 	return tmp ? tmp->data : NULL;
 }
 
@@ -144,19 +152,19 @@ nm_auth_chain_steal_data (NMAuthChain *self, const char *tag)
 {
 	ChainData *tmp;
 	gpointer value = NULL;
-	void *orig_key;
 
 	g_return_val_if_fail (self, NULL);
 	g_return_val_if_fail (tag, NULL);
 
-	if (g_hash_table_lookup_extended (self->data, tag, &orig_key, (gpointer)&tmp)) {
-		g_hash_table_steal (self->data, tag);
-		value = tmp->data;
-		/* Make sure the destroy handler isn't called when freeing */
-		tmp->destroy = NULL;
-		chain_data_free (tmp);
-		g_free (orig_key);
-	}
+	tmp = g_hash_table_lookup (self->data, &tag);
+	if (!tmp)
+		return NULL;
+
+	value = tmp->data;
+
+	/* Make sure the destroy handler isn't called when freeing */
+	tmp->destroy = NULL;
+	g_hash_table_remove (self->data, &tag);
 	return value;
 }
 
@@ -170,11 +178,10 @@ nm_auth_chain_set_data (NMAuthChain *self,
 	g_return_if_fail (tag);
 
 	if (data == NULL)
-		g_hash_table_remove (self->data, tag);
+		g_hash_table_remove (self->data, &tag);
 	else {
-		g_hash_table_insert (self->data,
-		                     g_strdup (tag),
-		                     chain_data_new (data, data_destroy));
+		g_hash_table_add (self->data,
+		                  chain_data_new (tag, data, data_destroy));
 	}
 }
 
@@ -379,7 +386,7 @@ nm_auth_chain_new_subject (NMAuthSubject *subject,
 	self = g_slice_new0 (NMAuthChain);
 	c_list_init (&self->auth_call_lst_head);
 	self->refcount = 1;
-	self->data = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, chain_data_free);
+	self->data = g_hash_table_new_full (nm_pstr_hash, nm_pstr_equal, NULL, chain_data_free);
 	self->done_func = done_func;
 	self->user_data = user_data;
 	self->context = context ? g_object_ref (context) : NULL;
