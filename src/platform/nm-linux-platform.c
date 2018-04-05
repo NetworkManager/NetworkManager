@@ -1396,10 +1396,6 @@ _parse_lnk_tun (const char *kind, struct nlattr *info_data)
 	NMPObject *obj;
 	NMPlatformLnkTun *props;
 
-	/* FIXME: the netlink API is not yet part of a released kernel version
-	 *        Disable it for now, until we are sure it is stable. */
-	return NULL;
-
 	if (!info_data || !nm_streq0 (kind, "tun"))
 		return NULL;
 
