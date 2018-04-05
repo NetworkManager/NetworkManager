@@ -68,10 +68,6 @@ gulong nm_auth_subject_get_unix_process_uid (NMAuthSubject *subject);
 
 const char *nm_auth_subject_to_string (NMAuthSubject *self, char *buf, gsize buf_len);
 
-#if WITH_POLKIT
-
 GVariant *  nm_auth_subject_unix_process_to_polkit_gvariant (NMAuthSubject *self);
-
-#endif
 
 #endif /* __NETWORKMANAGER_AUTH_SUBJECT_H__ */
