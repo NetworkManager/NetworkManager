@@ -886,6 +886,18 @@ typedef enum { /*< skip >*/
 } NMRollbackResult;
 
 /**
+ * NMSettingsConnectionFlags:
+ * @NM_SETTINGS_CONNECTION_FLAG_NONE: an alias for numeric zero, no flags set.
+ *
+ * Flags describing the current activation state.
+ *
+ * Since: 1.12
+ **/
+typedef enum { /*< flags >*/
+	NM_SETTINGS_CONNECTION_FLAG_NONE                       = 0,
+} NMSettingsConnectionFlags;
+
+/**
  * NMActivationStateFlags:
  * @NM_ACTIVATION_STATE_FLAG_NONE: an alias for numeric zero, no flags set.
  * @NM_ACTIVATION_STATE_FLAG_IS_MASTER: the device is a master.

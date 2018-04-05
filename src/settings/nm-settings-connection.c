@@ -54,6 +54,7 @@ static void nm_settings_connection_connection_interface_init (NMConnectionInterf
 NM_GOBJECT_PROPERTIES_DEFINE (NMSettingsConnection,
 	PROP_UNSAVED,
 	PROP_READY,
+	PROP_FLAGS,
 	PROP_FILENAME,
 );
 
@@ -2357,6 +2358,7 @@ nm_settings_connection_set_flags_full (NMSettingsConnection *self,
 
 	old_flags = priv->flags;
 	if (old_flags != value) {
+		gboolean notify_unsaved = FALSE;
 		char buf1[255], buf2[255];
 
 		_LOGT ("update settings-connection flags to %s (was %s)",
@@ -2364,8 +2366,16 @@ nm_settings_connection_set_flags_full (NMSettingsConnection *self,
 		       _settings_connection_flags_to_string (priv->flags, buf2, sizeof (buf2)));
 		priv->flags = value;
 		nm_assert (priv->flags == value);
-		if (NM_FLAGS_HAS (old_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_UNSAVED) != NM_FLAGS_HAS (value, NM_SETTINGS_CONNECTION_INT_FLAGS_UNSAVED))
+
+		if (NM_FLAGS_HAS (old_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_UNSAVED) != NM_FLAGS_HAS (value, NM_SETTINGS_CONNECTION_INT_FLAGS_UNSAVED)) {
+			g_object_freeze_notify (G_OBJECT (self));
 			_notify (self, PROP_UNSAVED);
+			notify_unsaved = TRUE;
+		}
+		_notify (self, PROP_FLAGS);
+		if (notify_unsaved)
+			g_object_thaw_notify (G_OBJECT (self));
+
 		g_signal_emit (self, signals[FLAGS_CHANGED], 0);
 	}
 	return old_flags;
@@ -3071,6 +3081,10 @@ get_property (GObject *object, guint prop_id,
 	case PROP_READY:
 		g_value_set_boolean (value, nm_settings_connection_get_ready (self));
 		break;
+	case PROP_FLAGS:
+		g_value_set_uint (value,
+		                  nm_settings_connection_get_flags (self) & NM_SETTINGS_CONNECTION_INT_FLAGS_EXPORTED_MASK);
+		break;
 	case PROP_FILENAME:
 		g_value_set_string (value, nm_settings_connection_get_filename (self));
 		break;
@@ -3187,7 +3201,8 @@ static const NMDBusInterfaceInfoExtended interface_info_settings_connection = {
 			&signal_info_removed,
 		),
 		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
-			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Unsaved",    "b",  NM_SETTINGS_CONNECTION_UNSAVED),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("Unsaved", "b",  NM_SETTINGS_CONNECTION_UNSAVED),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE   ("Flags",   "u",  NM_SETTINGS_CONNECTION_FLAGS),
 		),
 	),
 	.legacy_property_changed = TRUE,
@@ -3222,6 +3237,12 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *klass)
 	                           TRUE,
 	                           G_PARAM_READABLE |
 	                           G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_FLAGS] =
+	     g_param_spec_uint (NM_SETTINGS_CONNECTION_FLAGS, "", "",
+	                        0, G_MAXUINT32, 0,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_FILENAME] =
 	     g_param_spec_string (NM_SETTINGS_CONNECTION_FILENAME, "", "",
