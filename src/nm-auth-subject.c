@@ -102,8 +102,6 @@ nm_auth_subject_to_string (NMAuthSubject *self, char *buf, gsize buf_len)
 	return buf;
 }
 
-#if WITH_POLKIT
-
 /* returns a floating variant */
 GVariant *
 nm_auth_subject_unix_process_to_polkit_gvariant (NMAuthSubject *self)
@@ -124,8 +122,6 @@ nm_auth_subject_unix_process_to_polkit_gvariant (NMAuthSubject *self)
 	ret = g_variant_new ("(s@a{sv})", "unix-process", dict);
 	return ret;
 }
-
-#endif
 
 NMAuthSubjectType
 nm_auth_subject_get_subject_type (NMAuthSubject *subject)

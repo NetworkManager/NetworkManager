@@ -24,47 +24,87 @@
 
 #include <string.h>
 
+#include "nm-utils/nm-c-list.h"
+
 #include "nm-setting-connection.h"
 #include "nm-auth-subject.h"
 #include "nm-auth-manager.h"
 #include "nm-session-monitor.h"
 
+/*****************************************************************************/
+
 struct NMAuthChain {
-	guint32 refcount;
-	GSList *calls;
 	GHashTable *data;
+
+	CList auth_call_lst_head;
 
 	GDBusMethodInvocation *context;
 	NMAuthSubject *subject;
 	GError *error;
 
-	guint idle_id;
-	gboolean done;
-
 	NMAuthChainResultFunc done_func;
 	gpointer user_data;
+
+	guint idle_id;
+
+	guint32 refcount;
+
+	bool done:1;
 };
 
 typedef struct {
+	CList auth_call_lst;
 	NMAuthChain *chain;
 	GCancellable *cancellable;
 	char *permission;
 	guint call_idle_id;
 } AuthCall;
 
+/*****************************************************************************/
+
+static void
+_ASSERT_call (AuthCall *call)
+{
+	nm_assert (call);
+	nm_assert (call->chain);
+	nm_assert (nm_c_list_contains_entry (&call->chain->auth_call_lst_head, call, auth_call_lst));
+}
+
+/*****************************************************************************/
+
+static void
+auth_call_free (AuthCall *call)
+{
+	nm_clear_g_source (&call->call_idle_id);
+	nm_clear_g_cancellable (&call->cancellable);
+	c_list_unlink_stale (&call->auth_call_lst);
+	g_free (call->permission);
+	g_slice_free (AuthCall, call);
+}
+
+/*****************************************************************************/
+
 typedef struct {
+
+	/* must be the first field. */
+	const char *tag;
+
 	gpointer data;
 	GDestroyNotify destroy;
+	char tag_data[];
 } ChainData;
 
 static ChainData *
-chain_data_new (gpointer data, GDestroyNotify destroy)
+chain_data_new (const char *tag, gpointer data, GDestroyNotify destroy)
 {
 	ChainData *tmp;
+	gsize l = strlen (tag);
 
-	tmp = g_slice_new (ChainData);
+	tmp = g_malloc (sizeof (ChainData) + l + 1);
+	tmp->tag = &tmp->tag_data[0];
 	tmp->data = data;
 	tmp->destroy = destroy;
+	memcpy (&tmp->tag_data[0], tag, l + 1);
 	return tmp;
 }
 
@@ -75,69 +115,7 @@ chain_data_free (gpointer data)
 
 	if (tmp->destroy)
 		tmp->destroy (tmp->data);
-	memset (tmp, 0, sizeof (ChainData));
-	g_slice_free (ChainData, tmp);
-}
-
-static gboolean
-auth_chain_finish (gpointer user_data)
-{
-	NMAuthChain *self = user_data;
-
-	self->idle_id = 0;
-	self->done = TRUE;
-
-	/* Ensure we stay alive across the callback */
-	self->refcount++;
-	self->done_func (self, self->error, self->context, self->user_data);
-	nm_auth_chain_unref (self);
-	return FALSE;
-}
-
-/* Creates the NMAuthSubject automatically */
-NMAuthChain *
-nm_auth_chain_new_context (GDBusMethodInvocation *context,
-                           NMAuthChainResultFunc done_func,
-                           gpointer user_data)
-{
-	NMAuthSubject *subject;
-	NMAuthChain *chain;
-
-	g_return_val_if_fail (context != NULL, NULL);
-
-	subject = nm_auth_subject_new_unix_process_from_context (context);
-	if (!subject)
-		return NULL;
-
-	chain = nm_auth_chain_new_subject (subject,
-	                                   context,
-	                                   done_func,
-	                                   user_data);
-	g_object_unref (subject);
-	return chain;
-}
-
-/* Requires an NMAuthSubject */
-NMAuthChain *
-nm_auth_chain_new_subject (NMAuthSubject *subject,
-                           GDBusMethodInvocation *context,
-                           NMAuthChainResultFunc done_func,
-                           gpointer user_data)
-{
-	NMAuthChain *self;
-
-	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), NULL);
-	g_return_val_if_fail (nm_auth_subject_is_unix_process (subject) || nm_auth_subject_is_internal (subject), NULL);
-
-	self = g_slice_new0 (NMAuthChain);
-	self->refcount = 1;
-	self->data = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, chain_data_free);
-	self->done_func = done_func;
-	self->user_data = user_data;
-	self->context = context ? g_object_ref (context) : NULL;
-	self->subject = g_object_ref (subject);
-
-	return self;
+	g_free (tmp);
 }
 
 static gpointer
@@ -145,15 +123,15 @@ _get_data (NMAuthChain *self, const char *tag)
 {
 	ChainData *tmp;
 
-	tmp = g_hash_table_lookup (self->data, tag);
+	tmp = g_hash_table_lookup (self->data, &tag);
 	return tmp ? tmp->data : NULL;
 }
 
 gpointer
 nm_auth_chain_get_data (NMAuthChain *self, const char *tag)
 {
-	g_return_val_if_fail (self != NULL, NULL);
-	g_return_val_if_fail (tag != NULL, NULL);
+	g_return_val_if_fail (self, NULL);
+	g_return_val_if_fail (tag, NULL);
 
 	return _get_data (self, tag);
 }
@@ -174,19 +152,19 @@ nm_auth_chain_steal_data (NMAuthChain *self, const char *tag)
 {
 	ChainData *tmp;
 	gpointer value = NULL;
-	void *orig_key;
 
-	g_return_val_if_fail (self != NULL, NULL);
-	g_return_val_if_fail (tag != NULL, NULL);
+	g_return_val_if_fail (self, NULL);
+	g_return_val_if_fail (tag, NULL);
 
-	if (g_hash_table_lookup_extended (self->data, tag, &orig_key, (gpointer)&tmp)) {
-		g_hash_table_steal (self->data, tag);
-		value = tmp->data;
-		/* Make sure the destroy handler isn't called when freeing */
-		tmp->destroy = NULL;
-		chain_data_free (tmp);
-		g_free (orig_key);
-	}
+	tmp = g_hash_table_lookup (self->data, &tag);
+	if (!tmp)
+		return NULL;
+
+	value = tmp->data;
+
+	/* Make sure the destroy handler isn't called when freeing */
+	tmp->destroy = NULL;
+	g_hash_table_remove (self->data, tmp);
 	return value;
 }
 
@@ -196,127 +174,93 @@ nm_auth_chain_set_data (NMAuthChain *self,
                         gpointer data,
                         GDestroyNotify data_destroy)
 {
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (tag != NULL);
+	g_return_if_fail (self);
+	g_return_if_fail (tag);
 
 	if (data == NULL)
-		g_hash_table_remove (self->data, tag);
+		g_hash_table_remove (self->data, &tag);
 	else {
-		g_hash_table_insert (self->data,
-		                     g_strdup (tag),
-		                     chain_data_new (data, data_destroy));
+		g_hash_table_add (self->data,
+		                  chain_data_new (tag, data, data_destroy));
 	}
 }
 
-gulong
-nm_auth_chain_get_data_ulong (NMAuthChain *self, const char *tag)
-{
-	gulong *data;
-
-	g_return_val_if_fail (self != NULL, 0);
-	g_return_val_if_fail (tag != NULL, 0);
-
-	data = _get_data (self, tag);
-	return data ? *data : 0ul;
-}
-
-void
-nm_auth_chain_set_data_ulong (NMAuthChain *self,
-                              const char *tag,
-                              gulong data)
-{
-	gulong *ptr;
-
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (tag != NULL);
-
-	ptr = g_malloc (sizeof (*ptr));
-	*ptr = data;
-	nm_auth_chain_set_data (self, tag, ptr, g_free);
-}
-
-NMAuthSubject *
-nm_auth_chain_get_subject (NMAuthChain *self)
-{
-	g_return_val_if_fail (self != NULL, NULL);
-
-	return self->subject;
-}
+/*****************************************************************************/
 
 NMAuthCallResult
 nm_auth_chain_get_result (NMAuthChain *self, const char *permission)
 {
 	gpointer data;
 
-	g_return_val_if_fail (self != NULL, NM_AUTH_CALL_RESULT_UNKNOWN);
-	g_return_val_if_fail (permission != NULL, NM_AUTH_CALL_RESULT_UNKNOWN);
+	g_return_val_if_fail (self, NM_AUTH_CALL_RESULT_UNKNOWN);
+	g_return_val_if_fail (permission, NM_AUTH_CALL_RESULT_UNKNOWN);
 
 	data = _get_data (self, permission);
 	return data ? GPOINTER_TO_UINT (data) : NM_AUTH_CALL_RESULT_UNKNOWN;
 }
 
-static AuthCall *
-auth_call_new (NMAuthChain *chain, const char *permission)
+NMAuthSubject *
+nm_auth_chain_get_subject (NMAuthChain *self)
 {
-	AuthCall *call;
+	g_return_val_if_fail (self, NULL);
 
-	call = g_slice_new0 (AuthCall);
-	call->chain = chain;
-	call->permission = g_strdup (permission);
-	return call;
+	return self->subject;
 }
 
-static void
-auth_call_free (AuthCall *call)
-{
-	g_free (call->permission);
-	g_clear_object (&call->cancellable);
-	g_slice_free (AuthCall, call);
-}
+/*****************************************************************************/
 
 static gboolean
-auth_call_complete (AuthCall *call)
+auth_chain_finish (gpointer user_data)
 {
-	NMAuthChain *self;
+	NMAuthChain *self = user_data;
 
-	g_return_val_if_fail (call, G_SOURCE_REMOVE);
+	self->idle_id = 0;
+	self->done = TRUE;
 
-	self = call->chain;
-
-	g_return_val_if_fail (self, G_SOURCE_REMOVE);
-	g_return_val_if_fail (g_slist_find (self->calls, call), G_SOURCE_REMOVE);
-
-	self->calls = g_slist_remove (self->calls, call);
-
-	if (!self->calls) {
-		g_assert (!self->idle_id && !self->done);
-		self->idle_id = g_idle_add (auth_chain_finish, self);
-	}
-	auth_call_free (call);
+	/* Ensure we stay alive across the callback */
+	self->refcount++;
+	self->done_func (self, self->error, self->context, self->user_data);
+	nm_auth_chain_unref (self);
 	return FALSE;
 }
 
 static void
-auth_call_cancel (gpointer user_data)
+auth_call_complete (AuthCall *call)
+{
+	NMAuthChain *self;
+
+	_ASSERT_call (call);
+
+	self = call->chain;
+
+	c_list_unlink (&call->auth_call_lst);
+
+	if (c_list_is_empty (&self->auth_call_lst_head)) {
+		nm_assert (!self->idle_id && !self->done);
+		self->idle_id = g_idle_add (auth_chain_finish, self);
+	}
+
+	auth_call_free (call);
+}
+
+static gboolean
+auth_call_complete_idle_cb (gpointer user_data)
 {
 	AuthCall *call = user_data;
 
-	if (nm_clear_g_cancellable (&call->cancellable)) {
-		/* we don't free call immediately. Instead we cancel the async operation
-		 * and set cancellable to NULL. pk_call_cb() will check for this and
-		 * do the final cleanup. */
-	} else {
-		g_source_remove (call->call_idle_id);
-		auth_call_free (call);
-	}
+	_ASSERT_call (call);
+
+	call->call_idle_id = 0;
+	auth_call_complete (call);
+	return G_SOURCE_REMOVE;
 }
 
 #if WITH_POLKIT
 static void
 pk_call_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 {
-	AuthCall *call = user_data;
-	GError *error = NULL;
+	AuthCall *call;
+	gs_free_error GError *error = NULL;
 	gboolean is_authorized = FALSE, is_challenge = FALSE;
 	guint call_result = NM_AUTH_CALL_RESULT_UNKNOWN;
 
@@ -325,20 +269,19 @@ pk_call_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	                                                             &is_authorized,
 	                                                             &is_challenge,
 	                                                             &error);
-
-	/* If the call is already canceled do nothing */
-	if (!call->cancellable) {
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
 		nm_log_dbg (LOGD_CORE, "callback already cancelled");
-		g_clear_error (&error);
-		auth_call_free (call);
 		return;
 	}
+
+	call = user_data;
+
+	g_clear_object (&call->cancellable);
 
 	if (error) {
 		/* Don't ruin the chain. Just leave the result unknown. */
 		nm_log_warn (LOGD_CORE, "error requesting auth for %s: %s",
 		             call->permission, error->message);
-		g_clear_error (&error);
 	} else {
 		if (is_authorized) {
 			/* Caller has the permission */
@@ -364,21 +307,23 @@ nm_auth_chain_add_call (NMAuthChain *self,
 	AuthCall *call;
 	NMAuthManager *auth_manager = nm_auth_manager_get ();
 
-	g_return_if_fail (self != NULL);
+	g_return_if_fail (self);
 	g_return_if_fail (permission && *permission);
 	g_return_if_fail (self->subject);
 	g_return_if_fail (nm_auth_subject_is_unix_process (self->subject) || nm_auth_subject_is_internal (self->subject));
 	g_return_if_fail (!self->idle_id && !self->done);
 
-	call = auth_call_new (self, permission);
-	self->calls = g_slist_append (self->calls, call);
+	call = g_slice_new0 (AuthCall);
+	call->chain = self;
+	call->permission = g_strdup (permission);
+	c_list_link_tail (&self->auth_call_lst_head, &call->auth_call_lst);
 
 	if (   nm_auth_subject_is_internal (self->subject)
 	    || nm_auth_subject_get_unix_process_uid (self->subject) == 0
 	    || !nm_auth_manager_get_polkit_enabled (auth_manager)) {
 		/* Root user or non-polkit always gets the permission */
 		nm_auth_chain_set_data (self, permission, GUINT_TO_POINTER (NM_AUTH_CALL_RESULT_YES), NULL);
-		call->call_idle_id = g_idle_add ((GSourceFunc) auth_call_complete, call);
+		call->call_idle_id = g_idle_add (auth_call_complete_idle_cb, call);
 	} else {
 		/* Non-root always gets authenticated when using polkit */
 #if WITH_POLKIT
@@ -396,9 +341,57 @@ nm_auth_chain_add_call (NMAuthChain *self,
 			                                          NM_MANAGER_ERROR_FAILED,
 			                                          "Polkit support is disabled at compile time");
 		}
-		call->call_idle_id = g_idle_add ((GSourceFunc) auth_call_complete, call);
+		call->call_idle_id = g_idle_add (auth_call_complete_idle_cb, call);
 #endif
 	}
+}
+
+/*****************************************************************************/
+
+/* Creates the NMAuthSubject automatically */
+NMAuthChain *
+nm_auth_chain_new_context (GDBusMethodInvocation *context,
+                           NMAuthChainResultFunc done_func,
+                           gpointer user_data)
+{
+	NMAuthSubject *subject;
+	NMAuthChain *chain;
+
+	g_return_val_if_fail (context, NULL);
+
+	subject = nm_auth_subject_new_unix_process_from_context (context);
+	if (!subject)
+		return NULL;
+
+	chain = nm_auth_chain_new_subject (subject,
+	                                   context,
+	                                   done_func,
+	                                   user_data);
+	g_object_unref (subject);
+	return chain;
+}
+
+/* Requires an NMAuthSubject */
+NMAuthChain *
+nm_auth_chain_new_subject (NMAuthSubject *subject,
+                           GDBusMethodInvocation *context,
+                           NMAuthChainResultFunc done_func,
+                           gpointer user_data)
+{
+	NMAuthChain *self;
+
+	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), NULL);
+	nm_assert (nm_auth_subject_is_unix_process (subject) || nm_auth_subject_is_internal (subject));
+
+	self = g_slice_new0 (NMAuthChain);
+	c_list_init (&self->auth_call_lst_head);
+	self->refcount = 1;
+	self->data = g_hash_table_new_full (nm_pstr_hash, nm_pstr_equal, NULL, chain_data_free);
+	self->done_func = done_func;
+	self->user_data = user_data;
+	self->context = context ? g_object_ref (context) : NULL;
+	self->subject = g_object_ref (subject);
+	return self;
 }
 
 /**
@@ -414,31 +407,31 @@ nm_auth_chain_add_call (NMAuthChain *self,
 void
 nm_auth_chain_unref (NMAuthChain *self)
 {
-	g_return_if_fail (self != NULL);
+	AuthCall *call;
+
+	g_return_if_fail (self);
 	g_return_if_fail (self->refcount > 0);
 
-	self->refcount--;
-	if (self->refcount > 0)
+	if (--self->refcount > 0)
 		return;
 
-	if (self->idle_id)
-		g_source_remove (self->idle_id);
+	nm_clear_g_source (&self->idle_id);
 
-	g_object_unref (self->subject);
+	nm_clear_g_object (&self->subject);
+	nm_clear_g_object (&self->context);
 
-	if (self->context)
-		g_object_unref (self->context);
-
-	g_slist_free_full (self->calls, auth_call_cancel);
+	while ((call = c_list_first_entry (&self->auth_call_lst_head, AuthCall, auth_call_lst)))
+		auth_call_free (call);
 
 	g_clear_error (&self->error);
-	g_hash_table_destroy (self->data);
+	nm_clear_pointer (&self->data, g_hash_table_destroy);
 
-	memset (self, 0, sizeof (NMAuthChain));
 	g_slice_free (NMAuthChain, self);
 }
 
-/************ utils **************/
+/******************************************************************************
+ * utils
+ *****************************************************************************/
 
 gboolean
 nm_auth_is_subject_in_acl (NMConnection *connection,
@@ -449,7 +442,7 @@ nm_auth_is_subject_in_acl (NMConnection *connection,
 	const char *user = NULL;
 	gulong uid;
 
-	g_return_val_if_fail (connection != NULL, FALSE);
+	g_return_val_if_fail (connection, FALSE);
 	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), FALSE);
 	g_return_val_if_fail (nm_auth_subject_is_internal (subject) || nm_auth_subject_is_unix_process (subject), FALSE);
 
@@ -485,5 +478,3 @@ nm_auth_is_subject_in_acl (NMConnection *connection,
 
 	return TRUE;
 }
-
-
