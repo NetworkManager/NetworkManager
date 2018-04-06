@@ -4654,7 +4654,6 @@ EXTRA_DIST += \
 	shared/nm-dispatcher-api.h \
 	shared/nm-test-libnm-utils.h \
 	shared/nm-test-utils-impl.c \
-	shared/nm-utils/c-list.h \
 	shared/nm-utils/c-list-util.c \
 	shared/nm-utils/c-list-util.h \
 	shared/nm-utils/gsystem-local-alloc.h \

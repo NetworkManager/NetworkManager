@@ -21,7 +21,7 @@
 #ifndef __NETWORKMANAGER_ACTIVE_CONNECTION_H__
 #define __NETWORKMANAGER_ACTIVE_CONNECTION_H__
 
-#include "nm-utils/c-list.h"
+#include "c-list/src/c-list.h"
 #include "nm-connection.h"
 #include "nm-dbus-object.h"
 

@@ -22,7 +22,7 @@
 #ifndef __C_LIST_UTIL_H__
 #define __C_LIST_UTIL_H__
 
-#include "c-list.h"
+#include "c-list/src/c-list.h"
 
 /*****************************************************************************/
 

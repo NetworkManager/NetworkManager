@@ -35,7 +35,7 @@
 #include "nm-active-connection.h"
 #include "nm-vpn-connection.h"
 #include "nm-dbus-helpers.h"
-#include "nm-utils/c-list.h"
+#include "c-list/src/c-list.h"
 
 #include "introspection/org.freedesktop.NetworkManager.h"
 

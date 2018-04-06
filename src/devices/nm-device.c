@@ -66,7 +66,7 @@
 #include "nm-netns.h"
 #include "nm-dispatcher.h"
 #include "nm-config.h"
-#include "nm-utils/c-list.h"
+#include "c-list/src/c-list.h"
 #include "dns/nm-dns-manager.h"
 #include "nm-core-internal.h"
 #include "systemd/nm-sd.h"
