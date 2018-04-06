@@ -1210,6 +1210,28 @@ noinst_LTLIBRARIES += \
 
 ###############################################################################
 
+shared_libcsiphash_la_CPPFLAGS = $(src_cppflags)
+shared_libcsiphash_la_SOURCES = \
+	shared/c-siphash/src/c-siphash.c \
+	shared/c-siphash/src/c-siphash.h
+
+shared_libnacd_la_CFLAGS = -std=gnu99
+shared_libnacd_la_CPPFLAGS = \
+	$(src_cppflags) \
+	-I $(srcdir)/shared/c-list/src \
+	-I $(srcdir)/shared/c-siphash/src
+shared_libnacd_la_SOURCES = \
+	shared/n-acd/src/n-acd.c \
+	shared/n-acd/src/n-acd.h
+
+noinst_LTLIBRARIES += \
+	shared/libcsiphash.la \
+	shared/libnacd.la
+
+EXTRA_DIST += shared/c-list/src/c-list.h
+
+###############################################################################
+
 src_libsystemd_nm_la_cppflags = \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
@@ -1636,6 +1658,8 @@ src_libNetworkManager_la_SOURCES = \
 src_libNetworkManager_la_LIBADD = \
 	src/libNetworkManagerBase.la \
 	src/libsystemd-nm.la \
+	shared/libcsiphash.la \
+	shared/libnacd.la \
 	$(GLIB_LIBS) \
 	$(LIBUDEV_LIBS) \
 	$(SYSTEMD_LOGIN_LIBS) \
