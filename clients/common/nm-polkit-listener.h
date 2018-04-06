@@ -19,11 +19,63 @@
 #ifndef __NM_POLKIT_LISTENER_H__
 #define __NM_POLKIT_LISTENER_H__
 
-struct _NMPolkitListener;
+#if WITH_POLKIT_AGENT
 
 typedef struct _NMPolkitListener NMPolkitListener;
+typedef struct _NMPolkitListenerClass NMPolkitListenerClass;
 
-#if WITH_POLKIT_AGENT
+typedef struct {
+
+	/*
+	 * @request: the request asked by polkit agent
+	 * @action_id: the action_id of the polkit request
+	 * @message: the message of the polkit request
+	 * @icon_name: the icon name of the polkit request
+	 * @user: user name
+	 * @echo_on: whether the response to the request should be echoed to the screen
+	 * @user_data: user data for the callback
+	 *
+	 * Called as a result of a request by polkit. The function should obtain response
+	 * to the request from user, i.e. get the password required.
+	 */
+	char *(*on_request) (NMPolkitListener *self,
+	                     const char *request,
+	                     const char *action_id,
+	                     const char *message,
+	                     const char *icon_name,
+	                     const char *user,
+	                     gboolean echo_on,
+	                     gpointer user_data);
+
+	/*
+	 * @text: the info text from polkit
+	 *
+	 * Called as a result of show-info signal by polkit.
+	 */
+	void (*on_show_info) (NMPolkitListener *self,
+	                      const char *text,
+	                      gpointer user_data);
+
+	/*
+	 * @text: the error text from polkit
+	 *
+	 * Called as a result of show-error signal by polkit.
+	 */
+	void (*on_show_error) (NMPolkitListener *self,
+	                       const char *text,
+	                       gpointer user_data);
+
+	/*
+	 * @gained_authorization: whether the autorization was successful
+	 *
+	 * Called as a result of completed signal by polkit.
+	 */
+	void (*on_completed) (NMPolkitListener *self,
+	                      gboolean gained_authorization,
+	                      gpointer user_data);
+} NMPolkitListenVtable;
+
+/*****************************************************************************/
 
 #define POLKIT_AGENT_I_KNOW_API_IS_SUBJECT_TO_CHANGE
 #include <polkitagent/polkitagent.h>
@@ -82,22 +134,18 @@ struct _NMPolkitListener {
 	PolkitAgentListener parent;
 };
 
-typedef struct {
+struct _NMPolkitListenerClass {
 	PolkitAgentListenerClass parent;
-} NMPolkitListenerClass;
+};
 
 GType nm_polkit_listener_get_type (void);
 
-PolkitAgentListener* nm_polkit_listener_new     (gboolean for_session, GError **error);
-void nm_polkit_listener_set_request_callback    (NMPolkitListener *self,
-                                                 NMPolkitListenerOnRequestFunc request_callback,
-                                                 gpointer request_callback_data);
-void nm_polkit_listener_set_show_info_callback  (NMPolkitListener *self,
-                                                 NMPolkitListenerOnShowInfoFunc show_info_callback);
-void nm_polkit_listener_set_show_error_callback (NMPolkitListener *self,
-                                                 NMPolkitListenerOnShowErrorFunc show_error_callback);
-void nm_polkit_listener_set_completed_callback  (NMPolkitListener *self,
-                                                 NMPolkitListenerOnCompletedFunc completed_callback);
+NMPolkitListener *nm_polkit_listener_new (gboolean for_session,
+                                          GError **error);
+
+void nm_polkit_listener_set_vtable (NMPolkitListener *self,
+                                    const NMPolkitListenVtable *vtable,
+                                    gpointer user_data);
 
 #endif
 

@@ -22,7 +22,8 @@
 
 #include "nm-secret-agent-old.h"
 #include "nm-meta-setting-desc.h"
-#include "nm-polkit-listener.h"
+
+struct _NMPolkitListener;
 
 typedef char *(*NmcCompEntryFunc) (const char *, int);
 
@@ -127,7 +128,7 @@ typedef struct _NmCli {
 
 	NMSecretAgentOld *secret_agent;                   /* Secret agent */
 	GHashTable *pwds_hash;                            /* Hash table with passwords in passwd-file */
-	NMPolkitListener *pk_listener ;                   /* polkit agent listener */
+	struct _NMPolkitListener *pk_listener;            /* polkit agent listener */
 
 	int should_wait;                                  /* Semaphore indicating whether nmcli should not end or not yet */
 	gboolean nowait_flag;                             /* '--nowait' option; used for passing to callbacks */
