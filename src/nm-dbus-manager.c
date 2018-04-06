@@ -974,7 +974,7 @@ _obj_register (NMDBusManager *self,
 			                                                     &error);
 			if (!registration_id) {
 				_LOGE ("failure to register object %s: %s", obj->internal.path, error->message);
-				g_slice_free (RegistrationData, reg_data);
+				g_free (reg_data);
 				continue;
 			}
 
