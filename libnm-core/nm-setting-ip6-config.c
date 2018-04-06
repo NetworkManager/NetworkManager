@@ -866,6 +866,16 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 	 *
 	 * Since: 1.12
 	 **/
+	/* ---ifcfg-rh---
+	 * property: dhcp-duid
+	 * variable: DHCPV6_DUID(+)
+	 * description: A string sent to the DHCPv6 server to identify the local machine.
+	 *   Apart from the special values "lease", "stable-llt", "stable-ll", "stable-uuid",
+	 *   "llt" and "ll" a binary value in hex format is expected. An hex string where
+	 *   each octet is separated by a colon is also accepted.
+	 * example: DHCPV6_DUID=LL; DHCPV6_DUID=0301deadbeef0001; DHCPV6_DUID=03:01:de:ad:be:ef:00:01
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_DHCP_DUID,
 		 g_param_spec_string (NM_SETTING_IP6_CONFIG_DHCP_DUID, "", "",
