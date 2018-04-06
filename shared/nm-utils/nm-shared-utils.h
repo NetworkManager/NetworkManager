@@ -586,4 +586,8 @@ int nm_utils_fd_read_loop_exact (int fd, void *buf, size_t nbytes, bool do_poll)
 
 /*****************************************************************************/
 
+guint64 nm_utils_get_start_time_for_pid (pid_t pid, char *out_state, pid_t *out_ppid);
+
+/*****************************************************************************/
+
 #endif /* __NM_SHARED_UTILS_H__ */

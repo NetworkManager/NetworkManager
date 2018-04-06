@@ -34,7 +34,6 @@
 #include <stdlib.h>
 
 #include "nm-dbus-manager.h"
-#include "NetworkManagerUtils.h"
 
 enum {
 	PROP_0,
