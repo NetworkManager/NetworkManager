@@ -736,7 +736,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *ip4_class)
 	 * variable: DHCP_CLIENT_ID(+)
 	 * description: A string sent to the DHCP server to identify the local machine.
 	 *    A binary value can be specified using hex notation ('aa:bb:cc').
-	 * example: DHCP_CLIENT_ID=ax-srv-1; DHCP_CLIENT_ID=01:44:44:44:44:44:44"
+	 * example: DHCP_CLIENT_ID=ax-srv-1; DHCP_CLIENT_ID=01:44:44:44:44:44:44
 	 * ---end---
 	 */
 	g_object_class_install_property
