@@ -178,8 +178,6 @@ nm_utils_ip_route_metric_penalize (int addr_family, guint32 metric, guint32 pena
 
 int nm_utils_modprobe (GError **error, gboolean suppress_error_loggin, const char *arg1, ...) G_GNUC_NULL_TERMINATED;
 
-guint64 nm_utils_get_start_time_for_pid (pid_t pid, char *out_state, pid_t *out_ppid);
-
 void nm_utils_kill_process_sync (pid_t pid, guint64 start_time, int sig, guint64 log_domain,
                                  const char *log_name, guint32 wait_before_kill_msec,
                                  guint32 sleep_duration_msec, guint32 max_wait_msec);
