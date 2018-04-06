@@ -174,7 +174,8 @@ deps = [
   #        this dependency might be needed
   #libnmdbus_dep,
   libudev_dep,
-  nm_core_dep
+  nm_core_dep,
+  shared_n_acd_dep
 ]
 
 if enable_concheck
