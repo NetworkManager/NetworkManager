@@ -2276,10 +2276,18 @@ void
 nm_settings_connection_signal_remove (NMSettingsConnection *self)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+	GSList *pending_auth;
 
 	if (priv->removed)
 		return;
 	priv->removed = TRUE;
+
+	while ((pending_auth = priv->pending_auths)) {
+		NMAuthChain *chain = pending_auth->data;
+
+		priv->pending_auths = g_slist_delete_link (priv->pending_auths, pending_auth);
+		nm_auth_chain_destroy (chain);
+	}
 
 	nm_dbus_object_emit_signal (NM_DBUS_OBJECT (self),
 	                            &interface_info_settings_connection,
