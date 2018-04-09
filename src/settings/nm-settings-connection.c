@@ -1408,7 +1408,7 @@ pk_auth_cb (NMAuthChain *chain,
 	callback (self, context, subject, error, callback_data);
 
 	g_clear_error (&error);
-	nm_auth_chain_unref (chain);
+	nm_auth_chain_destroy (chain);
 }
 
 /**
@@ -3024,7 +3024,7 @@ dispose (GObject *object)
 	g_clear_object (&priv->agent_secrets);
 
 	/* Cancel PolicyKit requests */
-	g_slist_free_full (priv->pending_auths, (GDestroyNotify) nm_auth_chain_unref);
+	g_slist_free_full (priv->pending_auths, (GDestroyNotify) nm_auth_chain_destroy);
 	priv->pending_auths = NULL;
 
 	g_clear_pointer (&priv->seen_bssids, g_hash_table_destroy);

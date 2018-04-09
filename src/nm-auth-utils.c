@@ -219,7 +219,7 @@ auth_chain_finish (gpointer user_data)
 	/* Ensure we stay alive across the callback */
 	self->refcount++;
 	self->done_func (self, NULL, self->context, self->user_data);
-	nm_auth_chain_unref (self);
+	nm_auth_chain_destroy (self);
 	return FALSE;
 }
 
@@ -394,17 +394,20 @@ nm_auth_chain_new_subject (NMAuthSubject *subject,
 }
 
 /**
- * nm_auth_chain_unref:
+ * nm_auth_chain_destroy:
  * @self: the auth-chain
  *
- * Unrefs the auth-chain. By unrefing the auth-chain, you also cancel
+ * Destroys the auth-chain. By destroying the auth-chain, you also cancel
  * the receipt of the done-callback. IOW, the callback will not be invoked.
  *
- * The only exception is, if you call nm_auth_chain_unref() from inside
+ * The only exception is, if may call nm_auth_chain_destroy() from inside
  * the callback. In this case, @self stays alive until the callback returns.
+ *
+ * Note that you might only destroy an auth-chain exactly once, and never
+ * after the callback was handled.
  */
 void
-nm_auth_chain_unref (NMAuthChain *self)
+nm_auth_chain_destroy (NMAuthChain *self)
 {
 	AuthCall *call;
 

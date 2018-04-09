@@ -62,7 +62,7 @@ void nm_auth_chain_add_call (NMAuthChain *chain,
                              const char *permission,
                              gboolean allow_interaction);
 
-void nm_auth_chain_unref (NMAuthChain *chain);
+void nm_auth_chain_destroy (NMAuthChain *chain);
 
 /* Caller must free returned error description */
 gboolean nm_auth_is_subject_in_acl (NMConnection *connection,
