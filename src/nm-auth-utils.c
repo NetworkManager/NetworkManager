@@ -258,12 +258,6 @@ pk_call_cb (NMAuthManager *auth_manager,
 
 	call->call_id = NULL;
 
-	if (error) {
-		/* Don't ruin the chain. Just leave the result unknown. */
-		nm_log_warn (LOGD_CORE, "error requesting auth for %s: %s",
-		             call->permission, error->message);
-	}
-
 	call_result = nm_auth_call_result_eval (is_authorized, is_challenge, error);
 
 	nm_auth_chain_set_data (call->chain, call->permission, GUINT_TO_POINTER (call_result), NULL);
