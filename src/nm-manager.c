@@ -953,7 +953,7 @@ _reload_auth_cb (NMAuthChain *chain,
 	g_dbus_method_invocation_return_value (context, NULL);
 
 out:
-	nm_auth_chain_unref (chain);
+	nm_auth_chain_destroy (chain);
 }
 
 static void
@@ -2100,7 +2100,7 @@ device_auth_done_cb (NMAuthChain *chain,
 	          nm_auth_chain_get_data (chain, "user-data"));
 
 	g_clear_error (&error);
-	nm_auth_chain_unref (chain);
+	nm_auth_chain_destroy (chain);
 }
 
 static void
@@ -4796,7 +4796,7 @@ deactivate_net_auth_done_cb (NMAuthChain *chain,
 	else
 		g_dbus_method_invocation_return_value (context, NULL);
 
-	nm_auth_chain_unref (chain);
+	nm_auth_chain_destroy (chain);
 }
 
 static void
@@ -5138,7 +5138,7 @@ sleep_auth_done_cb (NMAuthChain *chain,
 		g_dbus_method_invocation_return_value (context, NULL);
 	}
 
-	nm_auth_chain_unref (chain);
+	nm_auth_chain_destroy (chain);
 }
 #endif
 
@@ -5276,7 +5276,7 @@ enable_net_done_cb (NMAuthChain *chain,
 		g_dbus_method_invocation_take_error (context, ret_error);
 	}
 
-	nm_auth_chain_unref (chain);
+	nm_auth_chain_destroy (chain);
 }
 
 static void
@@ -5384,7 +5384,7 @@ get_permissions_done_cb (NMAuthChain *chain,
 		                                       g_variant_new ("(a{ss})", &results));
 	}
 
-	nm_auth_chain_unref (chain);
+	nm_auth_chain_destroy (chain);
 }
 
 static void
@@ -5606,7 +5606,7 @@ check_connectivity_auth_done_cb (NMAuthChain *chain,
 	}
 
 out:
-	nm_auth_chain_unref (chain);
+	nm_auth_chain_destroy (chain);
 }
 
 static void
@@ -6017,7 +6017,7 @@ out:
 		g_dbus_method_invocation_return_dbus_error (invocation, error_name, error_message);
 	else
 		g_dbus_method_invocation_return_value (invocation, NULL);
-	nm_auth_chain_unref (chain);
+	nm_auth_chain_destroy (chain);
 }
 
 void
@@ -6152,7 +6152,7 @@ checkpoint_auth_done_cb (NMAuthChain *chain,
 	else
 		g_dbus_method_invocation_return_value (context, variant);
 
-	nm_auth_chain_unref (chain);
+	nm_auth_chain_destroy (chain);
 }
 
 static void
@@ -6830,7 +6830,7 @@ dispose (GObject *object)
 		g_slice_free (PlatformLinkCbData, data);
 	}
 
-	g_slist_free_full (priv->auth_chains, (GDestroyNotify) nm_auth_chain_unref);
+	g_slist_free_full (priv->auth_chains, (GDestroyNotify) nm_auth_chain_destroy);
 	priv->auth_chains = NULL;
 
 	nm_clear_g_source (&priv->devices_inited_id);

@@ -1030,7 +1030,7 @@ auth_done (NMAuthChain *chain,
 	priv->result_func (self, TRUE, NULL, priv->user_data1, priv->user_data2);
 
 done:
-	nm_auth_chain_unref (chain);
+	nm_auth_chain_destroy (chain);
 	priv->chain = NULL;
 	priv->result_func = NULL;
 	priv->user_data1 = NULL;
@@ -1388,7 +1388,7 @@ dispose (GObject *object)
 	_LOGD ("disposing");
 
 	if (priv->chain) {
-		nm_auth_chain_unref (priv->chain);
+		nm_auth_chain_destroy (priv->chain);
 		priv->chain = NULL;
 	}
 

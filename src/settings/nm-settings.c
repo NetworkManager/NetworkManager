@@ -1205,7 +1205,7 @@ pk_add_cb (NMAuthChain *chain,
 		send_agent_owned_secrets (self, added, subject);
 
 	g_clear_error (&error);
-	nm_auth_chain_unref (chain);
+	nm_auth_chain_destroy (chain);
 }
 
 /* FIXME: remove if/when kernel supports adhoc wpa */
@@ -1563,7 +1563,7 @@ pk_hostname_cb (NMAuthChain *chain,
 	else
 		g_dbus_method_invocation_return_value (context, NULL);
 
-	nm_auth_chain_unref (chain);
+	nm_auth_chain_destroy (chain);
 }
 
 static void
@@ -1912,7 +1912,7 @@ dispose (GObject *object)
 	NMSettings *self = NM_SETTINGS (object);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 
-	g_slist_free_full (priv->auths, (GDestroyNotify) nm_auth_chain_unref);
+	g_slist_free_full (priv->auths, (GDestroyNotify) nm_auth_chain_destroy);
 	priv->auths = NULL;
 
 	g_object_unref (priv->agent_mgr);
