@@ -72,10 +72,8 @@ _ASSERT_call (AuthCall *call)
 static void
 auth_call_free (AuthCall *call)
 {
-#if WITH_POLKIT
 	if (call->call_id)
 		nm_auth_manager_check_authorization_cancel (call->call_id);
-#endif
 
 	nm_clear_g_source (&call->call_idle_id);
 	c_list_unlink_stale (&call->auth_call_lst);
@@ -255,7 +253,6 @@ auth_call_complete_idle_cb (gpointer user_data)
 	return G_SOURCE_REMOVE;
 }
 
-#if WITH_POLKIT
 static void
 pk_call_cb (NMAuthManager *auth_manager,
             NMAuthManagerCallId *call_id,
@@ -295,7 +292,6 @@ pk_call_cb (NMAuthManager *auth_manager,
 
 	auth_call_complete (call);
 }
-#endif
 
 void
 nm_auth_chain_add_call (NMAuthChain *self,
@@ -324,21 +320,12 @@ nm_auth_chain_add_call (NMAuthChain *self,
 		call->call_idle_id = g_idle_add (auth_call_complete_idle_cb, call);
 	} else {
 		/* Non-root always gets authenticated when using polkit */
-#if WITH_POLKIT
 		call->call_id = nm_auth_manager_check_authorization (auth_manager,
 		                                                     self->subject,
 		                                                     permission,
 		                                                     allow_interaction,
 		                                                     pk_call_cb,
 		                                                     call);
-#else
-		if (!call->chain->error) {
-			call->chain->error = g_error_new_literal (NM_MANAGER_ERROR,
-			                                          NM_MANAGER_ERROR_FAILED,
-			                                          "Polkit support is disabled at compile time");
-		}
-		call->call_idle_id = g_idle_add (auth_call_complete_idle_cb, call);
-#endif
 	}
 }
 

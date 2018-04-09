@@ -214,9 +214,6 @@
 /* Define if you have oFono support (experimental) */
 #mesondefine WITH_OFONO
 
-/* whether to compile polkit support */
-#mesondefine WITH_POLKIT
-
 /* Define if you have polkit agent */
 #mesondefine WITH_POLKIT_AGENT
 

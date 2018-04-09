@@ -48,13 +48,11 @@ enum {
 static guint signals[LAST_SIGNAL] = {0};
 
 typedef struct {
-#if WITH_POLKIT
 	CList calls_lst_head;
 	GDBusProxy *proxy;
 	GCancellable *new_proxy_cancellable;
 	GCancellable *cancel_cancellable;
 	guint64 call_numid_counter;
-#endif
 	bool polkit_enabled:1;
 	bool disposing:1;
 	bool shutting_down:1;
@@ -119,8 +117,6 @@ nm_auth_manager_get_polkit_enabled (NMAuthManager *self)
 }
 
 /*****************************************************************************/
-
-#if WITH_POLKIT
 
 typedef enum {
 	POLKIT_CHECK_AUTHORIZATION_FLAGS_NONE                   = 0,
@@ -514,7 +510,6 @@ _dbus_new_proxy_cb (GObject *source_object,
 
 	_emit_changed_signal (self);
 }
-#endif
 
 /*****************************************************************************/
 
@@ -529,7 +524,6 @@ nm_auth_manager_get ()
 void
 nm_auth_manager_force_shutdown (NMAuthManager *self)
 {
-#if WITH_POLKIT
 	NMAuthManagerPrivate *priv;
 
 	g_return_if_fail (NM_IS_AUTH_MANAGER (self));
@@ -559,9 +553,6 @@ nm_auth_manager_force_shutdown (NMAuthManager *self)
 
 	priv->shutting_down = TRUE;
 	nm_clear_g_cancellable (&priv->cancel_cancellable);
-#else
-	g_return_if_fail (NM_IS_AUTH_MANAGER (self));
-#endif
 }
 
 /*****************************************************************************/
@@ -587,11 +578,9 @@ set_property (GObject *object, guint prop_id, const GValue *value, GParamSpec *p
 static void
 nm_auth_manager_init (NMAuthManager *self)
 {
-#if WITH_POLKIT
 	NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE (self);
 
 	c_list_init (&priv->calls_lst_head);
-#endif
 }
 
 static void
@@ -602,7 +591,6 @@ constructed (GObject *object)
 
 	G_OBJECT_CLASS (nm_auth_manager_parent_class)->constructed (object);
 
-#if WITH_POLKIT
 	_LOGD ("create auth-manager: polkit %s", priv->polkit_enabled ? "enabled" : "disabled");
 
 	if (priv->polkit_enabled) {
@@ -617,12 +605,6 @@ constructed (GObject *object)
 		                          _dbus_new_proxy_cb,
 		                          self);
 	}
-#else
-	if (priv->polkit_enabled)
-		_LOGW ("create auth-manager: polkit disabled at compile time. All authentication requests will fail");
-	else
-		_LOGD ("create auth-manager: polkit disabled at compile time");
-#endif
 }
 
 NMAuthManager *
@@ -649,14 +631,11 @@ static void
 dispose (GObject *object)
 {
 	NMAuthManager* self = NM_AUTH_MANAGER (object);
-#if WITH_POLKIT
 	NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE (self);
 	gs_free_error GError *error_disposing = NULL;
-#endif
 
 	_LOGD ("dispose");
 
-#if WITH_POLKIT
 	nm_assert (!c_list_is_empty (&priv->calls_lst_head));
 
 	priv->disposing = TRUE;
@@ -668,7 +647,6 @@ dispose (GObject *object)
 		g_signal_handlers_disconnect_by_data (priv->proxy, self);
 		g_clear_object (&priv->proxy);
 	}
-#endif
 
 	G_OBJECT_CLASS (nm_auth_manager_parent_class)->dispose (object);
 }
