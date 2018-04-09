@@ -52,7 +52,7 @@ struct NMAuthChain {
 typedef struct {
 	CList auth_call_lst;
 	NMAuthChain *chain;
-	GCancellable *cancellable;
+	NMAuthManagerCallId *call_id;
 	char *permission;
 	guint call_idle_id;
 } AuthCall;
@@ -72,8 +72,12 @@ _ASSERT_call (AuthCall *call)
 static void
 auth_call_free (AuthCall *call)
 {
+#if WITH_POLKIT
+	if (call->call_id)
+		nm_auth_manager_check_authorization_cancel (call->call_id);
+#endif
+
 	nm_clear_g_source (&call->call_idle_id);
-	nm_clear_g_cancellable (&call->cancellable);
 	c_list_unlink_stale (&call->auth_call_lst);
 	g_free (call->permission);
 	g_slice_free (AuthCall, call);
@@ -253,26 +257,24 @@ auth_call_complete_idle_cb (gpointer user_data)
 
 #if WITH_POLKIT
 static void
-pk_call_cb (GObject *object, GAsyncResult *result, gpointer user_data)
+pk_call_cb (NMAuthManager *auth_manager,
+            NMAuthManagerCallId *call_id,
+            gboolean is_authorized,
+            gboolean is_challenge,
+            GError *error,
+            gpointer user_data)
 {
 	AuthCall *call;
-	gs_free_error GError *error = NULL;
-	gboolean is_authorized = FALSE, is_challenge = FALSE;
-	guint call_result = NM_AUTH_CALL_RESULT_UNKNOWN;
+	NMAuthCallResult call_result = NM_AUTH_CALL_RESULT_UNKNOWN;
 
-	nm_auth_manager_polkit_authority_check_authorization_finish (NM_AUTH_MANAGER (object),
-	                                                             result,
-	                                                             &is_authorized,
-	                                                             &is_challenge,
-	                                                             &error);
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
-		nm_log_dbg (LOGD_CORE, "callback already cancelled");
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
-	}
 
 	call = user_data;
 
-	g_clear_object (&call->cancellable);
+	nm_assert (call->call_id == call_id);
+
+	call->call_id = NULL;
 
 	if (error) {
 		/* Don't ruin the chain. Just leave the result unknown. */
@@ -323,14 +325,12 @@ nm_auth_chain_add_call (NMAuthChain *self,
 	} else {
 		/* Non-root always gets authenticated when using polkit */
 #if WITH_POLKIT
-		call->cancellable = g_cancellable_new ();
-		nm_auth_manager_polkit_authority_check_authorization (auth_manager,
-		                                                      self->subject,
-		                                                      permission,
-		                                                      allow_interaction,
-		                                                      call->cancellable,
-		                                                      pk_call_cb,
-		                                                      call);
+		call->call_id = nm_auth_manager_check_authorization (auth_manager,
+		                                                     self->subject,
+		                                                     permission,
+		                                                     allow_interaction,
+		                                                     pk_call_cb,
+		                                                     call);
 #else
 		if (!call->chain->error) {
 			call->chain->error = g_error_new_literal (NM_MANAGER_ERROR,
