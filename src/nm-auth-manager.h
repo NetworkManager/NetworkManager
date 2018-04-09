@@ -42,23 +42,28 @@ GType nm_auth_manager_get_type (void);
 NMAuthManager *nm_auth_manager_setup (gboolean polkit_enabled);
 NMAuthManager *nm_auth_manager_get (void);
 
+void nm_auth_manager_force_shutdown (NMAuthManager *self);
+
 gboolean nm_auth_manager_get_polkit_enabled (NMAuthManager *self);
 
-#if WITH_POLKIT
+/*****************************************************************************/
 
-void nm_auth_manager_polkit_authority_check_authorization (NMAuthManager *self,
-                                                           NMAuthSubject *subject,
-                                                           const char *action_id,
-                                                           gboolean allow_user_interaction,
-                                                           GCancellable *cancellable,
-                                                           GAsyncReadyCallback callback,
-                                                           gpointer user_data);
-gboolean nm_auth_manager_polkit_authority_check_authorization_finish (NMAuthManager *self,
-                                                                      GAsyncResult *res,
-                                                                      gboolean *out_is_authorized,
-                                                                      gboolean *out_is_challenge,
-                                                                      GError **error);
+typedef struct _NMAuthManagerCallId NMAuthManagerCallId;
 
-#endif
+typedef void (*NMAuthManagerCheckAuthorizationCallback) (NMAuthManager *self,
+                                                         NMAuthManagerCallId *call_id,
+                                                         gboolean is_authorized,
+                                                         gboolean is_challenge,
+                                                         GError *error,
+                                                         gpointer user_data);
+
+NMAuthManagerCallId *nm_auth_manager_check_authorization (NMAuthManager *self,
+                                                          NMAuthSubject *subject,
+                                                          const char *action_id,
+                                                          gboolean allow_user_interaction,
+                                                          NMAuthManagerCheckAuthorizationCallback callback,
+                                                          gpointer user_data);
+
+void nm_auth_manager_check_authorization_cancel (NMAuthManagerCallId *call_id);
 
 #endif /* NM_AUTH_MANAGER_H */
