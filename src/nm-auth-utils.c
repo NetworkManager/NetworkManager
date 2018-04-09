@@ -247,7 +247,7 @@ pk_call_cb (NMAuthManager *auth_manager,
             gpointer user_data)
 {
 	AuthCall *call;
-	NMAuthCallResult call_result = NM_AUTH_CALL_RESULT_UNKNOWN;
+	NMAuthCallResult call_result;
 
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
 		return;
@@ -262,16 +262,9 @@ pk_call_cb (NMAuthManager *auth_manager,
 		/* Don't ruin the chain. Just leave the result unknown. */
 		nm_log_warn (LOGD_CORE, "error requesting auth for %s: %s",
 		             call->permission, error->message);
-	} else {
-		if (is_authorized) {
-			/* Caller has the permission */
-			call_result = NM_AUTH_CALL_RESULT_YES;
-		} else if (is_challenge) {
-			/* Caller could authenticate to get the permission */
-			call_result = NM_AUTH_CALL_RESULT_AUTH;
-		} else
-			call_result = NM_AUTH_CALL_RESULT_NO;
 	}
+
+	call_result = nm_auth_call_result_eval (is_authorized, is_challenge, error);
 
 	nm_auth_chain_set_data (call->chain, call->permission, GUINT_TO_POINTER (call_result), NULL);
 
