@@ -44,8 +44,6 @@ struct NMAuthChain {
 	NMAuthChainResultFunc done_func;
 	gpointer user_data;
 
-	guint idle_id;
-
 	guint32 refcount;
 
 	bool done:1;
@@ -209,16 +207,15 @@ nm_auth_chain_get_subject (NMAuthChain *self)
 /*****************************************************************************/
 
 static gboolean
-auth_chain_finish (gpointer user_data)
+auth_chain_finish (NMAuthChain *self)
 {
-	NMAuthChain *self = user_data;
-
-	self->idle_id = 0;
 	self->done = TRUE;
 
 	/* Ensure we stay alive across the callback */
+	nm_assert (self->refcount == 1);
 	self->refcount++;
 	self->done_func (self, NULL, self->context, self->user_data);
+	nm_assert (NM_IN_SET (self->refcount, 1, 2));
 	nm_auth_chain_destroy (self);
 	return FALSE;
 }
@@ -232,14 +229,14 @@ auth_call_complete (AuthCall *call)
 
 	self = call->chain;
 
-	c_list_unlink (&call->auth_call_lst);
-
-	if (c_list_is_empty (&self->auth_call_lst_head)) {
-		nm_assert (!self->idle_id && !self->done);
-		self->idle_id = g_idle_add (auth_chain_finish, self);
-	}
+	nm_assert (!self->done);
 
 	auth_call_free (call);
+
+	if (c_list_is_empty (&self->auth_call_lst_head)) {
+		/* we are on an idle-handler or a clean call-stack (non-reentrant). */
+		auth_chain_finish (self);
+	}
 }
 
 static gboolean
@@ -307,10 +304,10 @@ nm_auth_chain_add_call (NMAuthChain *self,
 	NMAuthManager *auth_manager = nm_auth_manager_get ();
 
 	g_return_if_fail (self);
-	g_return_if_fail (permission && *permission);
 	g_return_if_fail (self->subject);
+	g_return_if_fail (!self->done);
+	g_return_if_fail (permission && *permission);
 	g_return_if_fail (nm_auth_subject_is_unix_process (self->subject) || nm_auth_subject_is_internal (self->subject));
-	g_return_if_fail (!self->idle_id && !self->done);
 
 	call = g_slice_new0 (AuthCall);
 	call->chain = self;
@@ -412,12 +409,10 @@ nm_auth_chain_destroy (NMAuthChain *self)
 	AuthCall *call;
 
 	g_return_if_fail (self);
-	g_return_if_fail (self->refcount > 0);
+	g_return_if_fail (NM_IN_SET (self->refcount, 1, 2));
 
 	if (--self->refcount > 0)
 		return;
-
-	nm_clear_g_source (&self->idle_id);
 
 	nm_clear_g_object (&self->subject);
 	nm_clear_g_object (&self->context);

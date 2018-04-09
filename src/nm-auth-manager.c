@@ -240,6 +240,9 @@ _call_check_authorization (CheckAuthData *data)
 	data->dbus_parameters = NULL;
 }
 
+/*
+ * @callback must never be invoked synchronously.
+ */
 void
 nm_auth_manager_polkit_authority_check_authorization (NMAuthManager *self,
                                                       NMAuthSubject *subject,
