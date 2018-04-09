@@ -123,6 +123,11 @@ typedef enum {
 	POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION = (1<<0),
 } PolkitCheckAuthorizationFlags;
 
+typedef enum {
+	IDLE_REASON_AUTHORIZED,
+	IDLE_REASON_NO_DBUS,
+} IdleReason;
+
 struct _NMAuthManagerCallId {
 	CList calls_lst;
 	NMAuthManager *self;
@@ -132,6 +137,7 @@ struct _NMAuthManagerCallId {
 	gpointer user_data;
 	guint64 call_numid;
 	guint idle_id;
+	IdleReason idle_reason:8;
 };
 
 #define cancellation_id_to_str_a(call_numid) \
@@ -289,16 +295,28 @@ _call_check_authorize (NMAuthManagerCallId *call_id)
 }
 
 static gboolean
-_call_fail_on_idle (gpointer user_data)
+_call_on_idle (gpointer user_data)
 {
 	NMAuthManagerCallId *call_id = user_data;
 	gs_free_error GError *error = NULL;
+	gboolean is_authorized = FALSE;
+	gboolean is_challenge = FALSE;
+	const char *error_msg = NULL;
 
 	call_id->idle_id = 0;
-	g_set_error_literal (&error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
-	                     "failure creating GDBusProxy for authorization request");
-	_LOG2T (call_id, "completed: failed due to no D-Bus proxy");
-	_call_id_invoke_callback (call_id, FALSE, FALSE, error);
+	if (call_id->idle_reason == IDLE_REASON_AUTHORIZED) {
+		is_authorized = TRUE;
+		_LOG2T (call_id, "completed: authorized=%d, challenge=%d (simulated)",
+		        is_authorized, is_challenge);
+	} else {
+		nm_assert (call_id->idle_reason == IDLE_REASON_NO_DBUS);
+		error_msg = "failure creating GDBusProxy for authorization request";
+		_LOG2T (call_id, "completed: failed due to no D-Bus proxy");
+	}
+
+	if (error_msg)
+		g_set_error_literal (&error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN, error_msg);
+	_call_id_invoke_callback (call_id, is_authorized, is_challenge, error);
 	return G_SOURCE_REMOVE;
 }
 
@@ -332,13 +350,14 @@ nm_auth_manager_check_authorization (NMAuthManager *self,
 	NMAuthManagerCallId *call_id;
 
 	g_return_val_if_fail (NM_IS_AUTH_MANAGER (self), NULL);
-	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), NULL);
-	g_return_val_if_fail (nm_auth_subject_is_unix_process (subject), NULL);
+	g_return_val_if_fail (NM_IN_SET (nm_auth_subject_get_subject_type (subject),
+	                                 NM_AUTH_SUBJECT_TYPE_INTERNAL,
+	                                 NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS),
+	                      NULL);
 	g_return_val_if_fail (action_id, NULL);
 
 	priv = NM_AUTH_MANAGER_GET_PRIVATE (self);
 
-	g_return_val_if_fail (priv->polkit_enabled, NULL);
 	g_return_val_if_fail (!priv->disposing, NULL);
 	g_return_val_if_fail (!priv->shutting_down, NULL);
 
@@ -353,10 +372,23 @@ nm_auth_manager_check_authorization (NMAuthManager *self,
 	call_id->call_numid = ++priv->call_numid_counter;
 	c_list_link_tail (&priv->calls_lst_head, &call_id->calls_lst);
 
-	if (   !priv->proxy
-	    && !priv->new_proxy_cancellable) {
+	if (!priv->polkit_enabled) {
+		_LOG2T (call_id, "CheckAuthorization(%s), subject=%s (succeeding due to polkit authorization disabled)", action_id, nm_auth_subject_to_string (subject, subject_buf, sizeof (subject_buf)));
+		call_id->idle_reason = IDLE_REASON_AUTHORIZED;
+		call_id->idle_id = g_idle_add (_call_on_idle, call_id);
+	} else if (nm_auth_subject_is_internal (subject)) {
+		_LOG2T (call_id, "CheckAuthorization(%s), subject=%s (succeeding for internal request)", action_id, nm_auth_subject_to_string (subject, subject_buf, sizeof (subject_buf)));
+		call_id->idle_reason = IDLE_REASON_AUTHORIZED;
+		call_id->idle_id = g_idle_add (_call_on_idle, call_id);
+	} else if (nm_auth_subject_get_unix_process_uid (subject) == 0) {
+		_LOG2T (call_id, "CheckAuthorization(%s), subject=%s (succeeding for root)", action_id, nm_auth_subject_to_string (subject, subject_buf, sizeof (subject_buf)));
+		call_id->idle_reason = IDLE_REASON_AUTHORIZED;
+		call_id->idle_id = g_idle_add (_call_on_idle, call_id);
+	} else if (   !priv->proxy
+	           && !priv->new_proxy_cancellable) {
 		_LOG2T (call_id, "CheckAuthorization(%s), subject=%s (failing due to invalid DBUS proxy)", action_id, nm_auth_subject_to_string (subject, subject_buf, sizeof (subject_buf)));
-		call_id->idle_id = g_idle_add (_call_fail_on_idle, call_id);
+		call_id->idle_reason = IDLE_REASON_NO_DBUS;
+		call_id->idle_id = g_idle_add (_call_on_idle, call_id);
 	} else {
 		subject_value = nm_auth_subject_unix_process_to_polkit_gvariant (subject);
 		nm_assert (g_variant_is_floating (subject_value));
