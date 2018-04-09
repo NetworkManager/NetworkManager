@@ -23,14 +23,9 @@
 
 #include "nm-connection.h"
 
-typedef struct NMAuthChain NMAuthChain;
+#include "nm-auth-manager.h"
 
-typedef enum {
-	NM_AUTH_CALL_RESULT_UNKNOWN,
-	NM_AUTH_CALL_RESULT_YES,
-	NM_AUTH_CALL_RESULT_AUTH,
-	NM_AUTH_CALL_RESULT_NO,
-} NMAuthCallResult;
+typedef struct NMAuthChain NMAuthChain;
 
 typedef void (*NMAuthChainResultFunc) (NMAuthChain *chain,
                                        GError *error,
