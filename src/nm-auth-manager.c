@@ -353,7 +353,7 @@ static void
 _emit_changed_signal (NMAuthManager *self)
 {
 	_LOGD ("emit changed signal");
-	g_signal_emit_by_name (self, NM_AUTH_MANAGER_SIGNAL_CHANGED);
+	g_signal_emit (self, signals[CHANGED_SIGNAL], 0);
 }
 
 static void
