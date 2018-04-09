@@ -1396,10 +1396,6 @@ _parse_lnk_tun (const char *kind, struct nlattr *info_data)
 	NMPObject *obj;
 	NMPlatformLnkTun *props;
 
-	/* FIXME: the netlink API is not yet part of a released kernel version
-	 *        Disable it for now, until we are sure it is stable. */
-	return NULL;
-
 	if (!info_data || !nm_streq0 (kind, "tun"))
 		return NULL;
 
@@ -3934,40 +3930,46 @@ cache_on_change (NMPlatform *platform,
 		    && (obj_new && obj_new->_link.netlink.is_in_netlink)
 		    && (!obj_old || !obj_old->_link.netlink.is_in_netlink))
 		{
-			if (!obj_new->_link.netlink.lnk) {
+			gboolean re_request_link = FALSE;
+			const NMPlatformLnkTun *lnk_tun;
+
+			if (   !obj_new->_link.netlink.lnk
+			    && NM_IN_SET (obj_new->link.type, NM_LINK_TYPE_GRE,
+			                                      NM_LINK_TYPE_IP6TNL,
+			                                      NM_LINK_TYPE_INFINIBAND,
+			                                      NM_LINK_TYPE_MACVLAN,
+			                                      NM_LINK_TYPE_MACVLAN,
+			                                      NM_LINK_TYPE_SIT,
+			                                      NM_LINK_TYPE_TUN,
+			                                      NM_LINK_TYPE_VLAN,
+			                                      NM_LINK_TYPE_VXLAN)) {
 				/* certain link-types also come with a IFLA_INFO_DATA/lnk_data. It may happen that
 				 * kernel didn't send this notification, thus when we first learn about a link
 				 * that lacks an lnk_data we re-request it again.
 				 *
 				 * For example https://bugzilla.redhat.com/show_bug.cgi?id=1284001 */
-				switch (obj_new->link.type) {
-				case NM_LINK_TYPE_GRE:
-				case NM_LINK_TYPE_IP6TNL:
-				case NM_LINK_TYPE_INFINIBAND:
-				case NM_LINK_TYPE_MACVLAN:
-				case NM_LINK_TYPE_MACVTAP:
-				case NM_LINK_TYPE_SIT:
-				case NM_LINK_TYPE_VLAN:
-				case NM_LINK_TYPE_VXLAN:
-					delayed_action_schedule (platform,
-					                         DELAYED_ACTION_TYPE_REFRESH_LINK,
-					                         GINT_TO_POINTER (obj_new->link.ifindex));
-					break;
-				default:
-					break;
-				}
-			}
-			if (   obj_new->link.type == NM_LINK_TYPE_VETH
-			    && obj_new->link.parent == 0) {
+				re_request_link = TRUE;
+			} else if (   obj_new->link.type == NM_LINK_TYPE_TUN
+			           && obj_new->_link.netlink.lnk
+			           && (lnk_tun = &(obj_new->_link.netlink.lnk)->lnk_tun)
+			           && !lnk_tun->persist
+			           && lnk_tun->pi
+			           && !lnk_tun->vnet_hdr
+			           && !lnk_tun->multi_queue
+			           && !lnk_tun->owner_valid
+			           && !lnk_tun->group_valid) {
+				/* kernel has/had a know issue that the first notification for TUN device would
+				 * be sent with invalid parameters. The message looks like that kind, so refetch
+				 * it. */
+				re_request_link = TRUE;
+			} else if (   obj_new->link.type == NM_LINK_TYPE_VETH
+			           && obj_new->link.parent == 0) {
 				/* the initial notification when adding a veth pair can lack the parent/IFLA_LINK
 				 * (https://bugzilla.redhat.com/show_bug.cgi?id=1285827).
 				 * Request it again. */
-				delayed_action_schedule (platform,
-				                         DELAYED_ACTION_TYPE_REFRESH_LINK,
-				                         GINT_TO_POINTER (obj_new->link.ifindex));
-			}
-			if (   obj_new->link.type == NM_LINK_TYPE_ETHERNET
-			    && obj_new->link.addr.len == 0) {
+				re_request_link = TRUE;
+			} else if (   obj_new->link.type == NM_LINK_TYPE_ETHERNET
+			           && obj_new->link.addr.len == 0) {
 				/* Due to a kernel bug, we sometimes receive spurious NEWLINK
 				 * messages after a wifi interface has disappeared. Since the
 				 * link is not present anymore we can't determine its type and
@@ -3975,6 +3977,9 @@ cache_on_change (NMPlatform *platform,
 				 * specified.  Request the link again to check if it really
 				 * exists.  https://bugzilla.redhat.com/show_bug.cgi?id=1302037
 				 */
+				re_request_link = TRUE;
+			}
+			if (re_request_link) {
 				delayed_action_schedule (platform,
 				                         DELAYED_ACTION_TYPE_REFRESH_LINK,
 				                         GINT_TO_POINTER (obj_new->link.ifindex));
@@ -5591,14 +5596,15 @@ static gboolean
 link_tun_add (NMPlatform *platform,
               const char *name,
               const NMPlatformLnkTun *props,
-              const NMPlatformLink **out_link)
+              const NMPlatformLink **out_link,
+              int *out_fd)
 {
 	const NMPObject *obj;
 	struct ifreq ifr = { };
 	nm_auto_close int fd = -1;
 
-	if (!NM_IN_SET (props->type, IFF_TAP, IFF_TUN))
-		return FALSE;
+	nm_assert (NM_IN_SET (props->type, IFF_TAP, IFF_TUN));
+	nm_assert (props->persist || out_fd);
 
 	fd = open ("/dev/net/tun", O_RDWR | O_CLOEXEC);
 	if (fd < 0)
@@ -5623,18 +5629,23 @@ link_tun_add (NMPlatform *platform,
 			return FALSE;
 	}
 
-	if (ioctl (fd, TUNSETPERSIST, (int) !!props->persist))
-		return FALSE;
+	if (props->persist) {
+		if (ioctl (fd, TUNSETPERSIST, 1))
+			return FALSE;
+	}
 
 	do_request_link (platform, 0, name);
 	obj = nmp_cache_lookup_link_full (nm_platform_get_cache (platform),
 	                                  0, name, FALSE,
 	                                  NM_LINK_TYPE_TUN,
 	                                  NULL, NULL);
-	if (out_link)
-		*out_link = obj ? &obj->link : NULL;
 
-	return !!obj;
+	if (!obj)
+		return FALSE;
+
+	NM_SET_OUT (out_link, &obj->link);
+	NM_SET_OUT (out_fd, nm_steal_fd (&fd));
+	return TRUE;
 }
 
 static gboolean

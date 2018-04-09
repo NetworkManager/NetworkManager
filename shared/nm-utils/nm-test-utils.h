@@ -162,6 +162,14 @@
 			g_assert_not_reached (); \
 	} G_STMT_END
 
+#define nmtst_assert_nonnull(command) \
+	({ \
+		typeof (*(command)) *_ptr = (command); \
+		\
+		g_assert (_ptr && (TRUE || (command))); \
+		_ptr; \
+	 })
+
 #define nmtst_assert_success(success, error) \
 	G_STMT_START { \
 		g_assert_no_error (error); \
@@ -806,6 +814,12 @@ static inline guint32
 nmtst_get_rand_int (void)
 {
 	return g_rand_int (nmtst_get_rand ());
+}
+
+static inline gboolean
+nmtst_get_rand_bool (void)
+{
+	return nmtst_get_rand_int () % 2;
 }
 
 static inline gpointer

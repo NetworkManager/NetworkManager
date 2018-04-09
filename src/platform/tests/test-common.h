@@ -129,8 +129,11 @@ const NMPlatformLink *nmtstp_wait_for_link_until (NMPlatform *platform, const ch
 			g_assert_not_reached (); \
 	} G_STMT_END
 
-const NMPlatformLink *nmtstp_assert_wait_for_link (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, guint timeout_ms);
-const NMPlatformLink *nmtstp_assert_wait_for_link_until (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, gint64 until_ms);
+#define nmtstp_assert_wait_for_link(platform, ifname, expected_link_type, timeout_ms) \
+	nmtst_assert_nonnull (nmtstp_wait_for_link (platform, ifname, expected_link_type, timeout_ms))
+
+#define nmtstp_assert_wait_for_link_until(platform, ifname, expected_link_type, until_ms) \
+	nmtst_assert_nonnull (nmtstp_wait_for_link_until (platform, ifname, expected_link_type, until_ms))
 
 /*****************************************************************************/
 
@@ -307,6 +310,11 @@ const NMPlatformLink *nmtstp_link_sit_add (NMPlatform *platform,
                                            gboolean external_command,
                                            const char *name,
                                            const NMPlatformLnkSit *lnk);
+const NMPlatformLink *nmtstp_link_tun_add (NMPlatform *platform,
+                                           gboolean external_command,
+                                           const char *name,
+                                           const NMPlatformLnkTun *lnk,
+                                           int *out_fd);
 const NMPlatformLink *nmtstp_link_vxlan_add (NMPlatform *platform,
                                              gboolean external_command,
                                              const char *name,

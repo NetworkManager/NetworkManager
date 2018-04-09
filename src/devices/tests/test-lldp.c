@@ -347,8 +347,7 @@ static void
 _test_recv_fixture_setup (TestRecvFixture *fixture, gconstpointer user_data)
 {
 	const NMPlatformLink *link;
-	struct ifreq ifr = { };
-	int fd, s;
+	nm_auto_close int fd = -1;
 
 	fd = open ("/dev/net/tun", O_RDWR | O_CLOEXEC);
 	if (fd == -1) {
@@ -357,20 +356,45 @@ _test_recv_fixture_setup (TestRecvFixture *fixture, gconstpointer user_data)
 		return;
 	}
 
-	ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
-	nm_utils_ifname_cpy (ifr.ifr_name, TEST_IFNAME);
-	g_assert (ioctl (fd, TUNSETIFF, &ifr) >= 0);
+	if (nmtst_get_rand_bool ()) {
+		const NMPlatformLnkTun lnk = {
+			.type = IFF_TAP,
+			.pi = FALSE,
+			.vnet_hdr = FALSE,
+			.multi_queue = FALSE,
+			.persist = FALSE,
+		};
 
-	/* Bring the interface up */
-	s = socket (AF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
-	g_assert (s >= 0);
-	ifr.ifr_flags |= IFF_UP;
-	g_assert (ioctl (s, SIOCSIFFLAGS, &ifr) >= 0);
-	nm_close (s);
+		nm_close (nm_steal_fd (&fd));
 
-	link = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, TEST_IFNAME, NM_LINK_TYPE_TUN, 100);
+		link = nmtstp_link_tun_add (NM_PLATFORM_GET,
+		                            FALSE,
+		                            TEST_IFNAME,
+		                            &lnk,
+		                            &fd);
+		g_assert (link);
+		nmtstp_link_set_updown (NM_PLATFORM_GET, -1, link->ifindex, TRUE);
+		link = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, TEST_IFNAME, NM_LINK_TYPE_TUN, 0);
+	} else {
+		int s;
+		struct ifreq ifr = { };
+
+		ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
+		nm_utils_ifname_cpy (ifr.ifr_name, TEST_IFNAME);
+		g_assert (ioctl (fd, TUNSETIFF, &ifr) >= 0);
+
+		/* Bring the interface up */
+		s = socket (AF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
+		g_assert (s >= 0);
+		ifr.ifr_flags |= IFF_UP;
+		g_assert (ioctl (s, SIOCSIFFLAGS, &ifr) >= 0);
+		nm_close (s);
+
+		link = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, TEST_IFNAME, NM_LINK_TYPE_TUN, 100);
+	}
+
 	fixture->ifindex = link->ifindex;
-	fixture->fd = fd;
+	fixture->fd = nm_steal_fd (&fd);
 	memcpy (fixture->mac, link->addr.data, ETH_ALEN);
 }
 

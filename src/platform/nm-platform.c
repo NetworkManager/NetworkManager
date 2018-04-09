@@ -2046,6 +2046,11 @@ nm_platform_link_vxlan_add (NMPlatform *self,
  * @vnet_hdr: whether to set the IFF_VNET_HDR flag
  * @multi_queue: whether to set the IFF_MULTI_QUEUE flag
  * @out_link: on success, the link object
+ * @out_fd: (allow-none): if give, return the file descriptor for the
+ *   created device. Note that when creating a non-persistent device,
+ *   this argument is mandatory, otherwise it makes no sense
+ *   to create such an interface.
+ *   The caller is responsible for closing this file descriptor.
  *
  * Create a TUN or TAP interface.
  */
@@ -2053,7 +2058,8 @@ NMPlatformError
 nm_platform_link_tun_add (NMPlatform *self,
                           const char *name,
                           const NMPlatformLnkTun *props,
-                          const NMPlatformLink **out_link)
+                          const NMPlatformLink **out_link,
+                          int *out_fd)
 {
 	char b[255];
 	NMPlatformError plerr;
@@ -2062,6 +2068,13 @@ nm_platform_link_tun_add (NMPlatform *self,
 
 	g_return_val_if_fail (name, NM_PLATFORM_ERROR_BUG);
 	g_return_val_if_fail (props, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (NM_IN_SET (props->type, IFF_TUN, IFF_TAP), NM_PLATFORM_ERROR_BUG);
+
+	/* creating a non-persistant device requires that the caller handles
+	 * the file descriptor. */
+	g_return_val_if_fail (props->persist || out_fd, NM_PLATFORM_ERROR_BUG);
+
+	NM_SET_OUT (out_fd, -1);
 
 	plerr = _link_add_check_existing (self, name, NM_LINK_TYPE_TUN, out_link);
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
@@ -2069,7 +2082,7 @@ nm_platform_link_tun_add (NMPlatform *self,
 
 	_LOGD ("link: adding tun '%s' %s",
 	       name, nm_platform_lnk_tun_to_string (props, b, sizeof (b)));
-	if (!klass->link_tun_add (self, name, props, out_link))
+	if (!klass->link_tun_add (self, name, props, out_link, out_fd))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
 	return NM_PLATFORM_ERROR_SUCCESS;
 }
@@ -5120,17 +5133,19 @@ nm_platform_lnk_tun_to_string (const NMPlatformLnkTun *lnk, char *buf, gsize len
 		type = nm_sprintf_buf (str_type, "tun type %u", (guint) lnk->type);
 
 	g_snprintf (buf, len,
-	            "%s " /* type */
-	            " pi %s" /* pi */
-	            " vnet_hdr %s" /* vnet_hdr */
+	            "%s" /* type */
+	            "%s" /* pi */
+	            "%s" /* vnet_hdr */
 	            "%s" /* multi_queue */
+	            "%s" /* persist */
 	            "%s" /* owner */
 	            "%s" /* group */
 	            "",
 	            type,
-	            lnk->pi ? "on" : "off",
-	            lnk->vnet_hdr ? "on" : "off",
+	            lnk->pi ? " pi" : "",
+	            lnk->vnet_hdr ? " vnet_hdr" : "",
 	            lnk->multi_queue ? " multi_queue" : "",
+	            lnk->persist ? " persist" : "",
 	            lnk->owner_valid ? nm_sprintf_buf (str_owner, " owner %u", (guint) lnk->owner) : "",
 	            lnk->group_valid ? nm_sprintf_buf (str_group, " group %u", (guint) lnk->group) : "");
 	return buf;

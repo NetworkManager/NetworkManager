@@ -23,6 +23,7 @@
 #include <sched.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include <linux/if_tun.h>
 
 #include "test-common.h"
 
@@ -627,7 +628,10 @@ nmtstp_wait_for_signal_until (NMPlatform *platform, gint64 until_ms)
 const NMPlatformLink *
 nmtstp_wait_for_link (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, gint64 timeout_ms)
 {
-	return nmtstp_wait_for_link_until (platform, ifname, expected_link_type, nm_utils_get_monotonic_timestamp_ms () + timeout_ms);
+	return nmtstp_wait_for_link_until (platform, ifname, expected_link_type,
+	                                   timeout_ms
+	                                     ? nm_utils_get_monotonic_timestamp_ms () + timeout_ms
+	                                     : 0);
 }
 
 const NMPlatformLink *
@@ -635,6 +639,7 @@ nmtstp_wait_for_link_until (NMPlatform *platform, const char *ifname, NMLinkType
 {
 	const NMPlatformLink *plink;
 	gint64 now;
+	gboolean waited_once = FALSE;
 
 	_init_platform (&platform, FALSE);
 
@@ -646,27 +651,22 @@ nmtstp_wait_for_link_until (NMPlatform *platform, const char *ifname, NMLinkType
 		    && (expected_link_type == NM_LINK_TYPE_NONE || plink->type == expected_link_type))
 			return plink;
 
-		if (until_ms < now)
+		if (until_ms == 0) {
+			/* don't wait, don't even poll the socket. */
 			return NULL;
+		}
 
+		if (   waited_once
+		    && until_ms < now) {
+			/* timeout reached (+ we already waited for a signal at least once). */
+			return NULL;
+		}
+
+		waited_once = TRUE;
+		/* regardless of whether timeout is already reached, we poll the netlink
+		 * socket a bit. */
 		nmtstp_wait_for_signal (platform, until_ms - now);
 	}
-}
-
-const NMPlatformLink *
-nmtstp_assert_wait_for_link (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, guint timeout_ms)
-{
-	return nmtstp_assert_wait_for_link_until (platform, ifname, expected_link_type, nm_utils_get_monotonic_timestamp_ms () + timeout_ms);
-}
-
-const NMPlatformLink *
-nmtstp_assert_wait_for_link_until (NMPlatform *platform, const char *ifname, NMLinkType expected_link_type, gint64 until_ms)
-{
-	const NMPlatformLink *plink;
-
-	plink = nmtstp_wait_for_link_until (platform, ifname, expected_link_type, until_ms);
-	g_assert (plink);
-	return plink;
 }
 
 /*****************************************************************************/
@@ -1465,6 +1465,73 @@ nmtstp_link_sit_add (NMPlatform *platform,
 
 	_assert_pllink (platform, success, pllink, name, NM_LINK_TYPE_SIT);
 
+	return pllink;
+}
+
+const NMPlatformLink *
+nmtstp_link_tun_add (NMPlatform *platform,
+                     gboolean external_command,
+                     const char *name,
+                     const NMPlatformLnkTun *lnk,
+                     int *out_fd)
+{
+	const NMPlatformLink *pllink = NULL;
+	NMPlatformError plerr;
+	int err;
+
+	g_assert (nm_utils_is_valid_iface_name (name, NULL));
+	g_assert (lnk);
+	g_assert (NM_IN_SET (lnk->type, IFF_TUN, IFF_TAP));
+	g_assert (!out_fd || *out_fd == -1);
+
+	if (!lnk->persist) {
+		/* ip tuntap does not support non-persistent devices.
+		 *
+		 * Add this device only via NMPlatform. */
+		if (external_command == -1)
+			external_command = FALSE;
+	}
+
+	external_command = nmtstp_run_command_check_external (external_command);
+
+	_init_platform (&platform, external_command);
+
+	if (external_command) {
+		gs_free char *dev = NULL;
+		gs_free char *local = NULL, *remote = NULL;
+
+		g_assert (lnk->persist);
+
+		err = nmtstp_run_command ("ip tuntap add"
+		                          " mode %s"
+		                          "%s" /* user */
+		                          "%s" /* group */
+		                          "%s" /* pi */
+		                          "%s" /* vnet_hdr */
+		                          "%s" /* multi_queue */
+		                          " name %s",
+		                          lnk->type == IFF_TUN ? "tun" : "tap",
+		                          lnk->owner_valid ? nm_sprintf_bufa (100, " user %u", (guint) lnk->owner) : "",
+		                          lnk->group_valid ? nm_sprintf_bufa (100, " group %u", (guint) lnk->group) : "",
+		                          lnk->pi ? " pi" : "",
+		                          lnk->vnet_hdr ? " vnet_hdr" : "",
+		                          lnk->multi_queue ? " multi_queue" : "",
+		                          name);
+		/* Older versions of iproute2 don't support adding  devices.
+		 * On failure, fallback to using platform code. */
+		if (err == 0)
+			pllink = nmtstp_assert_wait_for_link (platform, name, NM_LINK_TYPE_TUN, 100);
+		else
+			g_error ("failure to add tun/tap device via ip-route");
+	} else {
+		g_assert (lnk->persist || out_fd);
+		plerr = nm_platform_link_tun_add (platform, name, lnk, &pllink, out_fd);
+		g_assert_cmpint (plerr, ==, NM_PLATFORM_ERROR_SUCCESS);
+	}
+
+	g_assert (pllink);
+	g_assert_cmpint (pllink->type, ==, NM_LINK_TYPE_TUN);
+	g_assert_cmpstr (pllink->name, ==, name);
 	return pllink;
 }
 
