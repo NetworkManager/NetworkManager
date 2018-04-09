@@ -44,13 +44,13 @@ enum {
 static guint signals[LAST_SIGNAL] = {0};
 
 typedef struct {
-	gboolean polkit_enabled;
 #if WITH_POLKIT
 	guint call_id_counter;
 	GCancellable *new_proxy_cancellable;
 	GSList *queued_calls;
 	GDBusProxy *proxy;
 #endif
+	bool polkit_enabled:1;
 } NMAuthManagerPrivate;
 
 struct _NMAuthManager {
@@ -491,21 +491,6 @@ nm_auth_manager_get ()
 /*****************************************************************************/
 
 static void
-get_property (GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-	NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE ((NMAuthManager *) object);
-
-	switch (prop_id) {
-	case PROP_POLKIT_ENABLED:
-		g_value_set_boolean (value, priv->polkit_enabled);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
 set_property (GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
 	NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE ((NMAuthManager *) object);
@@ -614,7 +599,6 @@ nm_auth_manager_class_init (NMAuthManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
@@ -622,7 +606,7 @@ nm_auth_manager_class_init (NMAuthManagerClass *klass)
 	obj_properties[PROP_POLKIT_ENABLED] =
 	     g_param_spec_boolean (NM_AUTH_MANAGER_POLKIT_ENABLED, "", "",
 	                           FALSE,
-	                           G_PARAM_READWRITE |
+	                           G_PARAM_WRITABLE |
 	                           G_PARAM_CONSTRUCT_ONLY |
 	                           G_PARAM_STATIC_STRINGS);
 
