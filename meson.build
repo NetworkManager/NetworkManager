@@ -448,7 +448,6 @@ endif
 
 config_default_main_auth_polkit = (polkit == 'yes').to_string()
 config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT', config_default_main_auth_polkit)
-config_h.set10('WITH_POLKIT', enable_polkit)
 
 enable_modify_system = get_option('modify_system')
 
