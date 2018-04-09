@@ -54,7 +54,6 @@ typedef struct {
 	NMAuthChain *chain;
 	NMAuthManagerCallId *call_id;
 	char *permission;
-	guint call_idle_id;
 } AuthCall;
 
 /*****************************************************************************/
@@ -74,8 +73,6 @@ auth_call_free (AuthCall *call)
 {
 	if (call->call_id)
 		nm_auth_manager_check_authorization_cancel (call->call_id);
-
-	nm_clear_g_source (&call->call_idle_id);
 	c_list_unlink_stale (&call->auth_call_lst);
 	g_free (call->permission);
 	g_slice_free (AuthCall, call);
@@ -241,18 +238,6 @@ auth_call_complete (AuthCall *call)
 	}
 }
 
-static gboolean
-auth_call_complete_idle_cb (gpointer user_data)
-{
-	AuthCall *call = user_data;
-
-	_ASSERT_call (call);
-
-	call->call_idle_id = 0;
-	auth_call_complete (call);
-	return G_SOURCE_REMOVE;
-}
-
 static void
 pk_call_cb (NMAuthManager *auth_manager,
             NMAuthManagerCallId *call_id,
@@ -311,22 +296,12 @@ nm_auth_chain_add_call (NMAuthChain *self,
 	call->chain = self;
 	call->permission = g_strdup (permission);
 	c_list_link_tail (&self->auth_call_lst_head, &call->auth_call_lst);
-
-	if (   nm_auth_subject_is_internal (self->subject)
-	    || nm_auth_subject_get_unix_process_uid (self->subject) == 0
-	    || !nm_auth_manager_get_polkit_enabled (auth_manager)) {
-		/* Root user or non-polkit always gets the permission */
-		nm_auth_chain_set_data (self, permission, GUINT_TO_POINTER (NM_AUTH_CALL_RESULT_YES), NULL);
-		call->call_idle_id = g_idle_add (auth_call_complete_idle_cb, call);
-	} else {
-		/* Non-root always gets authenticated when using polkit */
-		call->call_id = nm_auth_manager_check_authorization (auth_manager,
-		                                                     self->subject,
-		                                                     permission,
-		                                                     allow_interaction,
-		                                                     pk_call_cb,
-		                                                     call);
-	}
+	call->call_id = nm_auth_manager_check_authorization (auth_manager,
+	                                                     self->subject,
+	                                                     permission,
+	                                                     allow_interaction,
+	                                                     pk_call_cb,
+	                                                     call);
 }
 
 /*****************************************************************************/
