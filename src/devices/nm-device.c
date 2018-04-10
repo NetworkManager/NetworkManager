@@ -879,19 +879,36 @@ nm_device_ipv4_sysctl_set (NMDevice *self, const char *property, const char *val
 }
 
 static guint32
-nm_device_ipv4_sysctl_get_uint32 (NMDevice *self, const char *property, guint32 fallback)
+nm_device_ipv4_sysctl_get_effective_uint32 (NMDevice *self, const char *property, guint32 fallback)
 {
 	char buf[NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE];
+	gint64 v, v_all;
 
 	if (!nm_device_get_ip_ifindex (self))
 		return fallback;
 
-	return nm_platform_sysctl_get_int_checked (nm_device_get_platform (self),
-	                                           NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET, buf, nm_device_get_ip_iface (self), property)),
-	                                           10,
-	                                           0,
-	                                           G_MAXUINT32,
-	                                           fallback);
+	v = nm_platform_sysctl_get_int_checked (nm_device_get_platform (self),
+	                                        NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET,
+	                                                                                                  buf,
+	                                                                                                  nm_device_get_ip_iface (self),
+	                                                                                                  property)),
+	                                        10,
+	                                        0,
+	                                        G_MAXUINT32,
+	                                        -1);
+
+	v_all = nm_platform_sysctl_get_int_checked (nm_device_get_platform (self),
+	                                            NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET,
+	                                                                                                      buf,
+	                                                                                                      "all",
+	                                                                                                      property)),
+	                                            10,
+	                                            0,
+	                                            G_MAXUINT32,
+	                                            -1);
+
+	v = NM_MAX (v, v_all);
+	return v > -1 ? (guint32) v : fallback;
 }
 
 gboolean
@@ -2980,7 +2997,7 @@ ip4_rp_filter_update (NMDevice *self)
 
 	if (   priv->v4_has_shadowed_routes
 	    || nm_device_get_best_default_route (self, AF_INET)) {
-		if (nm_device_ipv4_sysctl_get_uint32 (self, "rp_filter", 0) != 1) {
+		if (nm_device_ipv4_sysctl_get_effective_uint32 (self, "rp_filter", 0) != 1) {
 			/* Don't touch the rp_filter if it's not strict. */
 			return;
 		}
