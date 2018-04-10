@@ -437,6 +437,8 @@ _nm_connection_get_uuid (NMConnection *connection)
 	return connection ? nm_connection_get_uuid (connection) : NULL;
 }
 
+NMConnectionCardinality _nm_connection_get_cardinality (NMConnection *connection);
+
 /*****************************************************************************/
 
 typedef enum {

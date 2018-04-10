@@ -2081,6 +2081,32 @@ nm_connection_get_interface_name (NMConnection *connection)
 	return s_con ? nm_setting_connection_get_interface_name (s_con) : NULL;
 }
 
+NMConnectionCardinality
+_nm_connection_get_cardinality (NMConnection *connection)
+{
+	NMSettingConnection *s_con;
+	NMConnectionCardinality cardinality;
+	const NMConnectionCardinality DEFAULT = NM_CONNECTION_CARDINALITY_SINGLE;
+
+	/* connection.cardinality property cannot be specified via regular
+	 * connection defaults in NetworkManager.conf, because those are per-device,
+	 * and we need to determine the cardinality independent of a particular
+	 * device.
+	 *
+	 * There is however still a default-value, so theortically, the default
+	 * value could be specified in NetworkManager.conf. Just not as [connection*]
+	 * and indepdented of a device. */
+
+	s_con = nm_connection_get_setting_connection (connection);
+	if (!s_con)
+		return DEFAULT;
+
+	cardinality = nm_setting_connection_get_cardinality (s_con);
+	return cardinality == NM_CONNECTION_CARDINALITY_DEFAULT
+	       ? DEFAULT
+	       : cardinality;
+}
+
 gboolean
 _nm_connection_verify_required_interface_name (NMConnection *connection,
                                                GError **error)

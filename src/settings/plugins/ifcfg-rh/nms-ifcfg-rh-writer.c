@@ -1746,6 +1746,11 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	                      vint != -1,
 	                      vint);
 
+	vint = nm_setting_connection_get_cardinality (s_con);
+	svSetValueInt64_cond (ifcfg, "CARDINALITY",
+	                      vint != NM_CONNECTION_CARDINALITY_DEFAULT,
+	                      vint);
+
 	/* Only save the value for master connections */
 	type = nm_setting_connection_get_connection_type (s_con);
 	if (_nm_connection_type_is_master (type)) {
