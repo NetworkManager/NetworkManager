@@ -1385,6 +1385,7 @@ global:
 	nm_connection_get_setting_6lowpan;
 	nm_connection_get_setting_sriov;
 	nm_connection_get_setting_wpan;
+	nm_connection_multi_connect_get_type;
 	nm_device_6lowpan_get_type;
 	nm_device_wireguard_get_fwmark;
 	nm_device_wireguard_get_listen_port;
@@ -1392,6 +1393,7 @@ global:
 	nm_device_wireguard_get_type;
 	nm_device_wpan_get_type;
 	nm_setting_6lowpan_get_type;
+	nm_setting_connection_get_multi_connect;
 	nm_setting_sriov_add_vf;
 	nm_setting_sriov_clear_vfs;
 	nm_setting_sriov_get_autoprobe_drivers;

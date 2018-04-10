@@ -437,6 +437,8 @@ _nm_connection_get_uuid (NMConnection *connection)
 	return connection ? nm_connection_get_uuid (connection) : NULL;
 }
 
+NMConnectionMultiConnect _nm_connection_get_multi_connect (NMConnection *connection);
+
 /*****************************************************************************/
 
 typedef enum {

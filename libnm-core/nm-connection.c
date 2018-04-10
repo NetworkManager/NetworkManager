@@ -2081,6 +2081,32 @@ nm_connection_get_interface_name (NMConnection *connection)
 	return s_con ? nm_setting_connection_get_interface_name (s_con) : NULL;
 }
 
+NMConnectionMultiConnect
+_nm_connection_get_multi_connect (NMConnection *connection)
+{
+	NMSettingConnection *s_con;
+	NMConnectionMultiConnect multi_connect;
+	const NMConnectionMultiConnect DEFAULT = NM_CONNECTION_MULTI_CONNECT_SINGLE;
+
+	/* connection.multi_connect property cannot be specified via regular
+	 * connection defaults in NetworkManager.conf, because those are per-device,
+	 * and we need to determine the multi_connect independent of a particular
+	 * device.
+	 *
+	 * There is however still a default-value, so theoretically, the default
+	 * value could be specified in NetworkManager.conf. Just not as [connection*]
+	 * and indepdented of a device. */
+
+	s_con = nm_connection_get_setting_connection (connection);
+	if (!s_con)
+		return DEFAULT;
+
+	multi_connect = nm_setting_connection_get_multi_connect (s_con);
+	return multi_connect == NM_CONNECTION_MULTI_CONNECT_DEFAULT
+	       ? DEFAULT
+	       : multi_connect;
+}
+
 gboolean
 _nm_connection_verify_required_interface_name (NMConnection *connection,
                                                GError **error)

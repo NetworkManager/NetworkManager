@@ -52,6 +52,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_CONNECTION_AUTOCONNECT    "autoconnect"
 #define NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY "autoconnect-priority"
 #define NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES "autoconnect-retries"
+#define NM_SETTING_CONNECTION_MULTI_CONNECT  "multi-connect"
 #define NM_SETTING_CONNECTION_TIMESTAMP      "timestamp"
 #define NM_SETTING_CONNECTION_READ_ONLY      "read-only"
 #define NM_SETTING_CONNECTION_PERMISSIONS    "permissions"
@@ -145,6 +146,8 @@ gboolean    nm_setting_connection_get_autoconnect      (NMSettingConnection *set
 int         nm_setting_connection_get_autoconnect_priority (NMSettingConnection *setting);
 NM_AVAILABLE_IN_1_6
 int         nm_setting_connection_get_autoconnect_retries (NMSettingConnection *setting);
+NM_AVAILABLE_IN_1_14
+NMConnectionMultiConnect nm_setting_connection_get_multi_connect (NMSettingConnection *setting);
 guint64     nm_setting_connection_get_timestamp        (NMSettingConnection *setting);
 gboolean    nm_setting_connection_get_read_only        (NMSettingConnection *setting);
 
