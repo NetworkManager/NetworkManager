@@ -34,7 +34,7 @@
 /*****************************************************************************/
 
 struct NMAuthChain {
-	GHashTable *data;
+	GHashTable *data_hash;
 
 	CList auth_call_lst_head;
 
@@ -119,7 +119,7 @@ _get_data (NMAuthChain *self, const char *tag)
 {
 	ChainData *tmp;
 
-	tmp = g_hash_table_lookup (self->data, &tag);
+	tmp = g_hash_table_lookup (self->data_hash, &tag);
 	return tmp ? tmp->data : NULL;
 }
 
@@ -152,7 +152,7 @@ nm_auth_chain_steal_data (NMAuthChain *self, const char *tag)
 	g_return_val_if_fail (self, NULL);
 	g_return_val_if_fail (tag, NULL);
 
-	tmp = g_hash_table_lookup (self->data, &tag);
+	tmp = g_hash_table_lookup (self->data_hash, &tag);
 	if (!tmp)
 		return NULL;
 
@@ -160,7 +160,7 @@ nm_auth_chain_steal_data (NMAuthChain *self, const char *tag)
 
 	/* Make sure the destroy handler isn't called when freeing */
 	tmp->destroy = NULL;
-	g_hash_table_remove (self->data, tmp);
+	g_hash_table_remove (self->data_hash, tmp);
 	return value;
 }
 
@@ -174,9 +174,9 @@ nm_auth_chain_set_data (NMAuthChain *self,
 	g_return_if_fail (tag);
 
 	if (data == NULL)
-		g_hash_table_remove (self->data, &tag);
+		g_hash_table_remove (self->data_hash, &tag);
 	else {
-		g_hash_table_add (self->data,
+		g_hash_table_add (self->data_hash,
 		                  chain_data_new (tag, data, data_destroy));
 	}
 }
@@ -331,7 +331,7 @@ nm_auth_chain_new_subject (NMAuthSubject *subject,
 	self = g_slice_new0 (NMAuthChain);
 	c_list_init (&self->auth_call_lst_head);
 	self->refcount = 1;
-	self->data = g_hash_table_new_full (nm_pstr_hash, nm_pstr_equal, NULL, chain_data_free);
+	self->data_hash = g_hash_table_new_full (nm_pstr_hash, nm_pstr_equal, NULL, chain_data_free);
 	self->done_func = done_func;
 	self->user_data = user_data;
 	self->context = context ? g_object_ref (context) : NULL;
@@ -369,7 +369,7 @@ nm_auth_chain_destroy (NMAuthChain *self)
 	while ((call = c_list_first_entry (&self->auth_call_lst_head, AuthCall, auth_call_lst)))
 		auth_call_free (call);
 
-	nm_clear_pointer (&self->data, g_hash_table_destroy);
+	nm_clear_pointer (&self->data_hash, g_hash_table_destroy);
 
 	g_slice_free (NMAuthChain, self);
 }
