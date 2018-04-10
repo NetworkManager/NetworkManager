@@ -3641,7 +3641,6 @@ nm_platform_ip6_address_sync (NMPlatform *self,
 	                                           NULL, NULL);
 
 	if (plat_addresses) {
-		gboolean delete_remaining;
 		guint known_addresses_len;
 
 		known_addresses_len = known_addresses ? known_addresses->len : 0;
@@ -3702,28 +3701,30 @@ clear_and_next:
 		 * right order to get their priority right. */
 		i_plat = plat_addresses->len;
 		i_know = 0;
-		delete_remaining = FALSE;
 		while (i_plat > 0) {
 			const NMPlatformIP6Address *plat_addr = NMP_OBJECT_CAST_IP6_ADDRESS (plat_addresses->pdata[--i_plat]);
 
 			if (!plat_addr)
 				continue;
 
-			if (!delete_remaining) {
-				for (; i_know < known_addresses_len; i_know++) {
-					const NMPlatformIP6Address *know_addr = NMP_OBJECT_CAST_IP6_ADDRESS (known_addresses->pdata[i_know]);
+			for (; i_know < known_addresses_len; i_know++) {
+				const NMPlatformIP6Address *know_addr = NMP_OBJECT_CAST_IP6_ADDRESS (known_addresses->pdata[i_know]);
 
-					if (!know_addr)
-						continue;
+				if (!know_addr)
+					continue;
 
-					if (IN6_ARE_ADDR_EQUAL (&plat_addr->address, &know_addr->address)) {
-						/* we have a match. Mark address as handled. */
-						i_know++;
-						goto next_plat;
-					}
-					break;
+				if (IN6_ARE_ADDR_EQUAL (&plat_addr->address, &know_addr->address)) {
+					/* we have a match. Mark address as handled. */
+					i_know++;
+					goto next_plat;
 				}
-				delete_remaining = TRUE;
+
+				/* all remainging addresses need to be removed as well, so that we can
+				 * re-add them in the correct order. Signal that, by setting @i_know
+				 * so that the next @i_plat iteration, we won't enter the loop and
+				 * delete the address right away */
+				i_know = known_addresses_len;
+				break;
 			}
 
 			nm_platform_ip6_address_delete (self, ifindex, plat_addr->address, plat_addr->plen);
