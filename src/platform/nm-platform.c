@@ -3652,8 +3652,11 @@ nm_platform_ip6_address_sync (NMPlatform *self,
 		 * If we don't find a matching valid address in @known_addresses, we will delete
 		 * plat_addr.
 		 *
-		 * Certain addresses, like link-local or temporary addresses, are ignored by this function
-		 * if not run with full_sync.
+		 * Certain addresses, like temporary addresses, are ignored by this function
+		 * if not run with full_sync. These addresses are usually not managed by NetworkManager
+		 * directly, or at least, they are not managed via nm_platform_ip6_address_sync().
+		 * Only in full_sync mode, we really want to get rid of them (usually, when we take
+		 * the interface down).
 		 *
 		 * Note that we mark handled addresses by setting it to %NULL in @plat_addresses array. */
 		for (i_plat = 0; i_plat < plat_addresses->len; i_plat++) {
@@ -3661,8 +3664,7 @@ nm_platform_ip6_address_sync (NMPlatform *self,
 			const NMPObject *know_obj;
 			const NMPlatformIP6Address *plat_addr = NMP_OBJECT_CAST_IP6_ADDRESS (plat_obj);
 
-			if (   NM_FLAGS_HAS (plat_addr->n_ifa_flags, IFA_F_TEMPORARY)
-			    || IN6_IS_ADDR_LINKLOCAL (&plat_addr->address)) {
+			if (NM_FLAGS_HAS (plat_addr->n_ifa_flags, IFA_F_TEMPORARY)) {
 				if (!full_sync) {
 					/* just mark as handled, without actually deleting the address. */
 					goto clear_and_next;
