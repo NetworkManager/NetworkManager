@@ -132,10 +132,8 @@ typedef struct {
 
 	NMState state;
 	NMConfig *config;
-	NMConnectivityState connectivity_state;
-
+	NMConnectivity *concheck_mgr;
 	NMPolicy *policy;
-
 	NMHostnameManager *hostname_manager;
 
 	struct {
@@ -169,6 +167,8 @@ typedef struct {
 	guint timestamp_update_id;
 
 	guint devices_inited_id;
+
+	NMConnectivityState connectivity_state;
 
 	bool startup:1;
 	bool devices_inited:1;
@@ -331,6 +331,34 @@ static NMActiveConnection *active_connection_find_first (NMManager *self,
 static NM_CACHED_QUARK_FCN ("active-connection-add-and-activate", active_connection_add_and_activate_quark)
 
 static NM_CACHED_QUARK_FCN ("autoconnect-root", autoconnect_root_quark)
+
+/*****************************************************************************/
+
+static void
+concheck_config_changed_cb (NMConnectivity *connectivity,
+                            NMManager *self)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMDevice *device;
+
+	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst)
+		nm_device_check_connectivity_update_interval (device);
+}
+
+static NMConnectivity *
+concheck_get_mgr (NMManager *self)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+
+	if (G_UNLIKELY (!priv->concheck_mgr)) {
+		priv->concheck_mgr = g_object_ref (nm_connectivity_get ());
+		g_signal_connect (priv->concheck_mgr,
+		                  NM_CONNECTIVITY_CONFIG_CHANGED,
+		                  G_CALLBACK (concheck_config_changed_cb),
+		                  self);
+	}
+	return priv->concheck_mgr;
+}
 
 /*****************************************************************************/
 
@@ -2450,7 +2478,6 @@ device_realized (NMDevice *device,
 	_emit_device_added_removed (self, device, nm_device_is_real (device));
 }
 
-#if WITH_CONCHECK
 static void
 device_connectivity_changed (NMDevice *device,
                              GParamSpec *pspec,
@@ -2478,7 +2505,6 @@ device_connectivity_changed (NMDevice *device,
 		nm_dispatcher_call_connectivity (priv->connectivity_state, NULL, NULL, NULL);
 	}
 }
-#endif
 
 static void
 _device_realize_finish (NMManager *self,
@@ -2588,11 +2614,9 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 	                  G_CALLBACK (device_realized),
 	                  self);
 
-#if WITH_CONCHECK
 	g_signal_connect (device, "notify::" NM_DEVICE_CONNECTIVITY,
 	                  G_CALLBACK (device_connectivity_changed),
 	                  self);
-#endif
 
 	if (priv->startup) {
 		g_signal_connect (device, "notify::" NM_DEVICE_HAS_PENDING_ACTION,
@@ -5441,34 +5465,54 @@ impl_manager_get_logging (NMDBusObject *obj,
 }
 
 typedef struct {
-	guint remaining;
+	NMManager *self;
 	GDBusMethodInvocation *context;
-	NMConnectivityState state;
+	guint remaining;
 } ConnectivityCheckData;
 
 static void
-device_connectivity_done (NMDevice *device, NMConnectivityState state, gpointer user_data)
+device_connectivity_done (NMDevice *device,
+                          NMDeviceConnectivityHandle *handle,
+                          NMConnectivityState state,
+                          GError *error,
+                          gpointer user_data)
 {
 	ConnectivityCheckData *data = user_data;
+	NMManager *self;
+	NMManagerPrivate *priv;
+
+	nm_assert (data);
+	nm_assert (data->remaining > 0);
+	nm_assert (NM_IS_MANAGER (data->self));
 
 	data->remaining--;
 
-	/* We check if the state is already FULL so that we can provide the
-	 * response without waiting for slower devices that are not going to
-	 * affect the overall state anyway. */
+	self = data->self;
+	priv = NM_MANAGER_GET_PRIVATE (self);
 
-	if (data->state != NM_CONNECTIVITY_FULL) {
-		if (state > data->state)
-			data->state = state;
-
-		if (data->state == NM_CONNECTIVITY_FULL || !data->remaining) {
-			g_dbus_method_invocation_return_value (data->context,
-			                                       g_variant_new ("(u)", data->state));
-		}
+	if (   data->context
+	    && (   data->remaining == 0
+	        || (   state == NM_CONNECTIVITY_FULL
+	            && priv->connectivity_state == NM_CONNECTIVITY_FULL))) {
+		/* despite having a @handle and @state returned by the requests, we always
+		 * return the current connectivity_state. That is, because the connectivity_state
+		 * and the answer to the connectivity check shall agree.
+		 *
+		 * However, if one of the requests (early) returns full connectivity and agrees with
+		 * the accumulated connectivity state, we no longer have to wait. The result is set.
+		 *
+		 * This also works well, because NMDevice first emits change signals to it's own
+		 * connectivity state, which is then taken into account for the accumulated global
+		 * state. All this happens, before the callback is invoked. */
+		g_dbus_method_invocation_return_value (g_steal_pointer (&data->context),
+		                                       g_variant_new ("(u)",
+		                                                      (guint) priv->connectivity_state));
 	}
 
-	if (!data->remaining)
+	if (data->remaining == 0) {
+		g_object_unref (self);
 		g_slice_free (ConnectivityCheckData, data);
+	}
 }
 
 static void
@@ -5482,6 +5526,7 @@ check_connectivity_auth_done_cb (NMAuthChain *chain,
 	GError *error = NULL;
 	NMAuthCallResult result;
 	ConnectivityCheckData *data;
+	NMDevice *device;
 
 	priv->auth_chains = g_slist_remove (priv->auth_chains, chain);
 
@@ -5497,23 +5542,37 @@ check_connectivity_auth_done_cb (NMAuthChain *chain,
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             "Not authorized to recheck connectivity");
-	} else {
-		NMDevice *device;
-
-		/* it's allowed */
-		data = g_slice_new0 (ConnectivityCheckData);
-		data->context = context;
-
-		c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
-			data->remaining++;
-			nm_device_check_connectivity (device,
-			                              device_connectivity_done,
-			                              data);
-		}
 	}
 
-	if (error)
+	if (error) {
 		g_dbus_method_invocation_take_error (context, error);
+		goto out;
+	}
+
+	data = g_slice_new (ConnectivityCheckData);
+	data->self = g_object_ref (self);
+	data->context = context;
+	data->remaining = 0;
+
+	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
+		if (nm_device_check_connectivity (device,
+		                                  device_connectivity_done,
+		                                  data))
+			data->remaining++;
+	}
+
+	if (data->remaining == 0) {
+		/* call the handler at least once. */
+		data->remaining = 1;
+		device_connectivity_done (NULL,
+		                          NULL,
+		                          NM_CONNECTIVITY_UNKNOWN,
+		                          NULL,
+		                          data);
+		/* @data got destroyed. */
+	}
+
+out:
 	nm_auth_chain_unref (chain);
 }
 
@@ -6559,7 +6618,6 @@ get_property (GObject *object, guint prop_id,
 	const char *path;
 	NMActiveConnection *ac;
 	GPtrArray *ptrarr;
-	gboolean vbool;
 
 	switch (prop_id) {
 	case PROP_VERSION:
@@ -6616,12 +6674,8 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, nm_config_data_get_connectivity_uri (config_data) != NULL);
 		break;
 	case PROP_CONNECTIVITY_CHECK_ENABLED:
-#if WITH_CONCHECK
-		vbool = nm_connectivity_check_enabled (nm_connectivity_get ());
-#else
-		vbool = FALSE;
-#endif
-		g_value_set_boolean (value, vbool);
+		g_value_set_boolean (value,
+		                     nm_connectivity_check_enabled (concheck_get_mgr (self)));
 		break;
 	case PROP_PRIMARY_CONNECTION:
 		nm_dbus_utils_g_value_set_object_path (value, priv->primary_connection);
@@ -6750,6 +6804,13 @@ dispose (GObject *object)
 	nm_clear_g_source (&priv->devices_inited_id);
 
 	g_clear_pointer (&priv->checkpoint_mgr, nm_checkpoint_manager_free);
+
+	if (priv->concheck_mgr) {
+		g_signal_handlers_disconnect_by_func (priv->concheck_mgr,
+		                                      G_CALLBACK (concheck_config_changed_cb),
+		                                      self);
+		g_clear_object (&priv->concheck_mgr);
+	}
 
 	if (priv->auth_mgr) {
 		g_signal_handlers_disconnect_by_func (priv->auth_mgr,

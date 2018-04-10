@@ -239,6 +239,13 @@ gint64 nm_utils_get_monotonic_timestamp_ms (void);
 gint32 nm_utils_get_monotonic_timestamp_s (void);
 gint64 nm_utils_monotonic_timestamp_as_boottime (gint64 timestamp, gint64 timestamp_ticks_per_ns);
 
+static inline gint64
+nm_utils_get_monotonic_timestamp_ns_cached (gint64 *cache_now)
+{
+	return    (*cache_now)
+	       ?: (*cache_now = nm_utils_get_monotonic_timestamp_ns ());
+}
+
 gboolean    nm_utils_is_valid_path_component (const char *name);
 const char *NM_ASSERT_VALID_PATH_COMPONENT (const char *name);
 
