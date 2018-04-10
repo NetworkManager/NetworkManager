@@ -119,6 +119,8 @@ _get_data (NMAuthChain *self, const char *tag)
 {
 	ChainData *tmp;
 
+	if (!self->data_hash)
+		return NULL;
 	tmp = g_hash_table_lookup (self->data_hash, &tag);
 	return tmp ? tmp->data : NULL;
 }
@@ -152,6 +154,9 @@ nm_auth_chain_steal_data (NMAuthChain *self, const char *tag)
 	g_return_val_if_fail (self, NULL);
 	g_return_val_if_fail (tag, NULL);
 
+	if (!self->data_hash)
+		return NULL;
+
 	tmp = g_hash_table_lookup (self->data_hash, &tag);
 	if (!tmp)
 		return NULL;
@@ -173,9 +178,14 @@ nm_auth_chain_set_data (NMAuthChain *self,
 	g_return_if_fail (self);
 	g_return_if_fail (tag);
 
-	if (data == NULL)
-		g_hash_table_remove (self->data_hash, &tag);
-	else {
+	if (data == NULL) {
+		if (self->data_hash)
+			g_hash_table_remove (self->data_hash, &tag);
+	} else {
+		if (!self->data_hash) {
+			self->data_hash = g_hash_table_new_full (nm_pstr_hash, nm_pstr_equal,
+			                                         NULL, chain_data_free);
+		}
 		g_hash_table_add (self->data_hash,
 		                  chain_data_new (tag, data, data_destroy));
 	}
@@ -331,7 +341,6 @@ nm_auth_chain_new_subject (NMAuthSubject *subject,
 	self = g_slice_new0 (NMAuthChain);
 	c_list_init (&self->auth_call_lst_head);
 	self->refcount = 1;
-	self->data_hash = g_hash_table_new_full (nm_pstr_hash, nm_pstr_equal, NULL, chain_data_free);
 	self->done_func = done_func;
 	self->user_data = user_data;
 	self->context = context ? g_object_ref (context) : NULL;
