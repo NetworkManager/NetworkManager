@@ -592,11 +592,11 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 	g_return_val_if_fail (priv->addr_family == AF_INET6, FALSE);
 	g_return_val_if_fail (priv->uuid != NULL, FALSE);
 
-	/* If we don't have one yet, read the default DUID for this DHCPv6 client
-	 * from the client-specific persistent configuration.
+	nm_assert (!priv->duid);
+	/* Read the default DUID for this DHCPv6 client from the
+	 * client-specific persistent configuration.
 	 */
-	if (!priv->duid)
-		priv->duid = NM_DHCP_CLIENT_GET_CLASS (self)->get_duid (self);
+	priv->duid = NM_DHCP_CLIENT_GET_CLASS (self)->get_duid (self);
 
 	_LOGD ("DUID is '%s'", (str = nm_dhcp_utils_duid_to_string (priv->duid)));
 

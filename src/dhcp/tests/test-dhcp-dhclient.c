@@ -785,17 +785,18 @@ static void
 test_write_existing_duid (void)
 {
 	const char *duid = "\\000\\001\\000\\001\\023o\\023n\\000\\\"\\372\\214\\326\\302";
-	const char *expected_contents = "default-duid \"\\000\\001\\000\\001\\027X\\350X\\000#\\025\\010~\\254\";\n";
+	const char *original_contents = "default-duid \"\\000\\001\\000\\001\\027X\\350X\\000#\\025\\010~\\254\";\n";
+	const char *expected_contents = "default-duid \"\\000\\001\\000\\001\\023o\\023n\\000\\\"\\372\\214\\326\\302\";\n";
 	GError *error = NULL;
 	char *contents = NULL;
 	gboolean success;
 	const char *path = "test-dhclient-write-existing-duid.leases";
 
-	success = g_file_set_contents (path, expected_contents, -1, &error);
+	success = g_file_set_contents (path, original_contents, -1, &error);
 	g_assert_no_error (error);
 	g_assert (success);
 
-	/* Save other DUID; should be a no-op */
+	/* Save other DUID; should be overwritten */
 	success = nm_dhcp_dhclient_save_duid (path, duid, &error);
 	g_assert_no_error (error);
 	g_assert (success);
@@ -828,7 +829,7 @@ test_write_existing_commented_duid (void)
 	g_assert_no_error (error);
 	g_assert (success);
 
-	/* Save other DUID; should be a no-op */
+	/* Save other DUID; should be saved on top */
 	success = nm_dhcp_dhclient_save_duid (path, DUID, &error);
 	g_assert_no_error (error);
 	g_assert (success);

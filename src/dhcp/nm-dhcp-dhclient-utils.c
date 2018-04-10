@@ -594,7 +594,8 @@ nm_dhcp_dhclient_save_duid (const char *leasefile,
                             const char *escaped_duid,
                             GError **error)
 {
-	char **lines = NULL, **iter, *l;
+	gs_strfreev char **lines = NULL;
+	char **iter, *l;
 	GString *s;
 	gboolean success;
 	gsize len = 0;
@@ -610,19 +611,9 @@ nm_dhcp_dhclient_save_duid (const char *leasefile,
 			return FALSE;
 		}
 
-		/* If the file already contains an uncommented DUID, leave it */
 		g_assert (contents);
 		lines = g_strsplit_set (contents, "\n\r", -1);
 		g_free (contents);
-		for (iter = lines; iter && *iter; iter++) {
-			l = *iter;
-			while (g_ascii_isspace (*l))
-				l++;
-			if (g_str_has_prefix (l, DUID_PREFIX)) {
-				g_strfreev (lines);
-				return TRUE;
-			}
-		}
 	}
 
 	s = g_string_sized_new (len + 50);
@@ -631,13 +622,30 @@ nm_dhcp_dhclient_save_duid (const char *leasefile,
 	/* Preserve existing leasefile contents */
 	if (lines) {
 		for (iter = lines; iter && *iter; iter++) {
+			l = *iter;
+			while (g_ascii_isspace (*l))
+				l++;
+			/* If we find an uncommented DUID in the file, check if
+			 * equal to the one we are going to write: if so, no need
+			 * to update the lease file, otherwise skip the old DUID.
+			 */
+			if (g_str_has_prefix (l, DUID_PREFIX)) {
+				gs_strfreev char **split = NULL;
+
+				split = g_strsplit (l, "\"", -1);
+				if (nm_streq0 (split[1], escaped_duid)) {
+					g_string_free (s, TRUE);
+					return TRUE;
+				}
+				continue;
+			}
+
 			if (*iter[0])
 				g_string_append (s, *iter);
 			/* avoid to add an extra '\n' at the end of file */
 			if ((iter[1]) != NULL)
 				g_string_append_c (s, '\n');
 		}
-		g_strfreev (lines);
 	}
 
 	success = g_file_set_contents (leasefile, s->str, -1, error);
