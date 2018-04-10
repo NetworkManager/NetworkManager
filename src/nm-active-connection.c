@@ -28,9 +28,12 @@
 #include "settings/nm-settings-connection.h"
 #include "nm-simple-connection.h"
 #include "nm-auth-utils.h"
+#include "nm-auth-manager.h"
 #include "nm-auth-subject.h"
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
+
+#define AUTH_CALL_ID_SHARED_WIFI_PERMISSION_FAILED  ((NMAuthManagerCallId *) GINT_TO_POINTER (1))
 
 typedef struct _NMActiveConnectionPrivate {
 	NMDBusTrackObjPath settings_connection;
@@ -59,11 +62,15 @@ typedef struct _NMActiveConnectionPrivate {
 
 	NMActiveConnection *parent;
 
-	NMAuthChain *chain;
-	const char *wifi_shared_permission;
-	NMActiveConnectionAuthResultFunc result_func;
-	gpointer user_data1;
-	gpointer user_data2;
+	struct {
+		NMAuthManagerCallId *call_id_network_control;
+		NMAuthManagerCallId *call_id_wifi_shared_permission;
+
+		NMActiveConnectionAuthResultFunc result_func;
+		gpointer user_data1;
+		gpointer user_data2;
+	} auth;
+
 } NMActiveConnectionPrivate;
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMActiveConnection,
@@ -981,62 +988,93 @@ nm_active_connection_set_parent (NMActiveConnection *self, NMActiveConnection *p
 /*****************************************************************************/
 
 static void
-auth_done (NMAuthChain *chain,
+auth_cancel (NMActiveConnection *self)
+{
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+
+	if (priv->auth.call_id_network_control)
+		nm_auth_manager_check_authorization_cancel (priv->auth.call_id_network_control);
+	if (priv->auth.call_id_wifi_shared_permission) {
+		if (priv->auth.call_id_wifi_shared_permission == AUTH_CALL_ID_SHARED_WIFI_PERMISSION_FAILED)
+			priv->auth.call_id_wifi_shared_permission = NULL;
+		else
+			nm_auth_manager_check_authorization_cancel (priv->auth.call_id_wifi_shared_permission);
+	}
+	priv->auth.result_func = NULL;
+	priv->auth.user_data1 = NULL;
+	priv->auth.user_data2 = NULL;
+}
+
+static void
+auth_complete (NMActiveConnection *self, gboolean result, const char *message)
+{
+	_nm_unused gs_unref_object NMActiveConnection *self_keep_alive = g_object_ref (self);
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+
+	priv->auth.result_func (self,
+	                        result,
+	                        message,
+	                        priv->auth.user_data1,
+	                        priv->auth.user_data2);
+	auth_cancel (self);
+}
+
+static void
+auth_done (NMAuthManager *auth_mgr,
+           NMAuthManagerCallId *auth_call_id,
+           gboolean is_authorized,
+           gboolean is_challenge,
            GError *error,
-           GDBusMethodInvocation *unused,
            gpointer user_data)
+
 {
 	NMActiveConnection *self = NM_ACTIVE_CONNECTION (user_data);
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 	NMAuthCallResult result;
 
-	g_assert (priv->chain == chain);
-	g_assert (priv->result_func != NULL);
+	nm_assert (auth_call_id);
+	nm_assert (priv->auth.result_func);
 
-	/* Must stay alive over the callback */
-	g_object_ref (self);
-
-	if (error) {
-		priv->result_func (self, FALSE, error->message, priv->user_data1, priv->user_data2);
-		goto done;
-	}
-
-	/* Caller has had a chance to obtain authorization, so we only need to
-	 * check for 'yes' here.
-	 */
-	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL);
-	if (result != NM_AUTH_CALL_RESULT_YES) {
-		priv->result_func (self,
-		                   FALSE,
-		                   "Not authorized to control networking.",
-		                   priv->user_data1,
-		                   priv->user_data2);
-		goto done;
-	}
-
-	if (priv->wifi_shared_permission) {
-		result = nm_auth_chain_get_result (chain, priv->wifi_shared_permission);
-		if (result != NM_AUTH_CALL_RESULT_YES) {
-			priv->result_func (self,
-			                   FALSE,
-			                   "Not authorized to share connections via wifi.",
-			                   priv->user_data1,
-			                   priv->user_data2);
-			goto done;
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+		if (auth_call_id == priv->auth.call_id_network_control)
+			priv->auth.call_id_network_control = NULL;
+		else {
+			nm_assert (auth_call_id == priv->auth.call_id_wifi_shared_permission);
+			priv->auth.call_id_wifi_shared_permission = NULL;
 		}
+		return;
 	}
 
-	/* Otherwise authorized and available to activate */
-	priv->result_func (self, TRUE, NULL, priv->user_data1, priv->user_data2);
+	result = nm_auth_call_result_eval (is_authorized, is_challenge, error);
 
-done:
-	nm_auth_chain_destroy (chain);
-	priv->chain = NULL;
-	priv->result_func = NULL;
-	priv->user_data1 = NULL;
-	priv->user_data2 = NULL;
+	if (auth_call_id == priv->auth.call_id_network_control) {
+		priv->auth.call_id_network_control = NULL;
+		if (result != NM_AUTH_CALL_RESULT_YES) {
+			auth_complete (self, FALSE, "Not authorized to control networking.");
+			return;
+		}
+	} else {
+		nm_assert (auth_call_id == priv->auth.call_id_wifi_shared_permission);
+		if (result != NM_AUTH_CALL_RESULT_YES) {
+			/* we don't fail right away. Instead, we mark that wifi-shared-permissions
+			 * are missing. We prefer to report the failure about network-control.
+			 * Below, we will wait longer for call_id_network_control (if it's still
+			 * pending). */
+			priv->auth.call_id_wifi_shared_permission = AUTH_CALL_ID_SHARED_WIFI_PERMISSION_FAILED;
+		} else
+			priv->auth.call_id_wifi_shared_permission = NULL;
+	}
 
-	g_object_unref (self);
+	if (priv->auth.call_id_network_control)
+		return;
+
+	if (priv->auth.call_id_wifi_shared_permission) {
+		if (priv->auth.call_id_wifi_shared_permission == AUTH_CALL_ID_SHARED_WIFI_PERMISSION_FAILED)
+			auth_complete (self, FALSE, "Not authorized to share connections via wifi.");
+		return;
+	}
+
+	auth_complete (self, TRUE, NULL);
 }
 
 /**
@@ -1064,8 +1102,9 @@ nm_active_connection_authorize (NMActiveConnection *self,
 	const char *wifi_permission = NULL;
 	NMConnection *con;
 
-	g_return_if_fail (result_func != NULL);
-	g_return_if_fail (priv->chain == NULL);
+	g_return_if_fail (result_func);
+	g_return_if_fail (!priv->auth.call_id_network_control);
+	nm_assert (!priv->auth.call_id_wifi_shared_permission);
 
 	if (initial_connection) {
 		g_return_if_fail (NM_IS_CONNECTION (initial_connection));
@@ -1078,23 +1117,28 @@ nm_active_connection_authorize (NMActiveConnection *self,
 		con = priv->applied_connection;
 	}
 
-	priv->chain = nm_auth_chain_new_subject (priv->subject, NULL, auth_done, self);
-	g_assert (priv->chain);
-
-	/* Check that the subject is allowed to use networking at all */
-	nm_auth_chain_add_call (priv->chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
+	priv->auth.call_id_network_control = nm_auth_manager_check_authorization (nm_auth_manager_get (),
+	                                                                          priv->subject,
+	                                                                          NM_AUTH_PERMISSION_NETWORK_CONTROL,
+	                                                                          TRUE,
+	                                                                          auth_done,
+	                                                                          self);
 
 	/* Shared wifi connections require special permissions too */
 	wifi_permission = nm_utils_get_shared_wifi_permission (con);
 	if (wifi_permission) {
-		priv->wifi_shared_permission = wifi_permission;
-		nm_auth_chain_add_call (priv->chain, wifi_permission, TRUE);
+		priv->auth.call_id_wifi_shared_permission = nm_auth_manager_check_authorization (nm_auth_manager_get (),
+		                                                                                 priv->subject,
+		                                                                                 wifi_permission,
+		                                                                                 TRUE,
+		                                                                                 auth_done,
+		                                                                                 self);
 	}
 
 	/* Wait for authorization */
-	priv->result_func = result_func;
-	priv->user_data1 = user_data1;
-	priv->user_data2 = user_data2;
+	priv->auth.result_func = result_func;
+	priv->auth.user_data1 = user_data1;
+	priv->auth.user_data2 = user_data2;
 }
 
 /*****************************************************************************/
@@ -1387,10 +1431,7 @@ dispose (GObject *object)
 
 	_LOGD ("disposing");
 
-	if (priv->chain) {
-		nm_auth_chain_destroy (priv->chain);
-		priv->chain = NULL;
-	}
+	auth_cancel (self);
 
 	g_free (priv->specific_object);
 	priv->specific_object = NULL;
