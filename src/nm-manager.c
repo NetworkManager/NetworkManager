@@ -176,6 +176,8 @@ typedef struct {
 	bool sleeping:1;
 	bool net_enabled:1;
 
+	unsigned connectivity_check_enabled_last:2;
+
 	guint delete_volatile_connection_idle_id;
 	CList delete_volatile_connection_lst_head;
 } NMManagerPrivate;
@@ -326,6 +328,8 @@ static NMActiveConnection *active_connection_find_first (NMManager *self,
                                                          const char *uuid,
                                                          NMActiveConnectionState max_state);
 
+static NMConnectivity *concheck_get_mgr (NMManager *self);
+
 /*****************************************************************************/
 
 static NM_CACHED_QUARK_FCN ("active-connection-add-and-activate", active_connection_add_and_activate_quark)
@@ -334,12 +338,34 @@ static NM_CACHED_QUARK_FCN ("autoconnect-root", autoconnect_root_quark)
 
 /*****************************************************************************/
 
+static gboolean
+concheck_enabled (NMManager *self, gboolean *out_changed)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	guint check_enabled;
+
+	check_enabled = nm_connectivity_check_enabled (concheck_get_mgr (self))
+	                ? 1 : 2;
+	if (priv->connectivity_check_enabled_last == check_enabled)
+		NM_SET_OUT (out_changed, FALSE);
+	else {
+		NM_SET_OUT (out_changed, TRUE);
+		priv->connectivity_check_enabled_last = check_enabled;
+	}
+	return check_enabled == 1;
+}
+
 static void
 concheck_config_changed_cb (NMConnectivity *connectivity,
                             NMManager *self)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDevice *device;
+	gboolean changed;
+
+	concheck_enabled (self, &changed);
+	if (changed)
+		_notify (self, PROP_CONNECTIVITY_CHECK_ENABLED);
 
 	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst)
 		nm_device_check_connectivity_update_interval (device);
@@ -849,8 +875,14 @@ active_connection_get_by_path (NMManager *self, const char *path)
 static void
 _config_changed_cb (NMConfig *config, NMConfigData *config_data, NMConfigChangeFlags changes, NMConfigData *old_data, NMManager *self)
 {
+	g_object_freeze_notify (G_OBJECT (self));
+
 	if (NM_FLAGS_HAS (changes, NM_CONFIG_CHANGE_GLOBAL_DNS_CONFIG))
 		_notify (self, PROP_GLOBAL_DNS_CONFIGURATION);
+	if ((!nm_config_data_get_connectivity_uri (config_data)) != (!nm_config_data_get_connectivity_uri (old_data)))
+		_notify (self, PROP_CONNECTIVITY_CHECK_AVAILABLE);
+
+	g_object_thaw_notify (G_OBJECT (self));
 }
 
 static void
@@ -6674,8 +6706,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, nm_config_data_get_connectivity_uri (config_data) != NULL);
 		break;
 	case PROP_CONNECTIVITY_CHECK_ENABLED:
-		g_value_set_boolean (value,
-		                     nm_connectivity_check_enabled (concheck_get_mgr (self)));
+		g_value_set_boolean (value, concheck_enabled (self, NULL));
 		break;
 	case PROP_PRIMARY_CONNECTION:
 		nm_dbus_utils_g_value_set_object_path (value, priv->primary_connection);
