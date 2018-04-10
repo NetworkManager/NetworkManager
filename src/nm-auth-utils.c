@@ -40,7 +40,6 @@ struct NMAuthChain {
 
 	GDBusMethodInvocation *context;
 	NMAuthSubject *subject;
-	GError *error;
 
 	NMAuthChainResultFunc done_func;
 	gpointer user_data;
@@ -219,7 +218,7 @@ auth_chain_finish (gpointer user_data)
 
 	/* Ensure we stay alive across the callback */
 	self->refcount++;
-	self->done_func (self, self->error, self->context, self->user_data);
+	self->done_func (self, NULL, self->context, self->user_data);
 	nm_auth_chain_unref (self);
 	return FALSE;
 }
@@ -423,7 +422,6 @@ nm_auth_chain_unref (NMAuthChain *self)
 	while ((call = c_list_first_entry (&self->auth_call_lst_head, AuthCall, auth_call_lst)))
 		auth_call_free (call);
 
-	g_clear_error (&self->error);
 	nm_clear_pointer (&self->data, g_hash_table_destroy);
 
 	g_slice_free (NMAuthChain, self);
