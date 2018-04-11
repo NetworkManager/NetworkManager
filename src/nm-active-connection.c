@@ -1225,7 +1225,7 @@ get_property (GObject *object, guint prop_id,
 		break;
 
 	case PROP_SPECIFIC_OBJECT:
-		g_value_set_string (value, priv->specific_object ? priv->specific_object : "/");
+		g_value_set_string (value, priv->specific_object);
 		break;
 	case PROP_DEVICES:
 		strv = g_new0 (char *, 2);
@@ -1251,19 +1251,19 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_IP4_CONFIG:
 		/* The IP and DHCP config properties may be overridden by a subclass */
-		g_value_set_string (value, "/");
+		g_value_set_string (value, NULL);
 		break;
 	case PROP_DHCP4_CONFIG:
-		g_value_set_string (value, "/");
+		g_value_set_string (value, NULL);
 		break;
 	case PROP_DEFAULT6:
 		g_value_set_boolean (value, priv->is_default6);
 		break;
 	case PROP_IP6_CONFIG:
-		g_value_set_string (value, "/");
+		g_value_set_string (value, NULL);
 		break;
 	case PROP_DHCP6_CONFIG:
-		g_value_set_string (value, "/");
+		g_value_set_string (value, NULL);
 		break;
 	case PROP_VPN:
 		g_value_set_boolean (value, priv->vpn);

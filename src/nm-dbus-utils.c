@@ -117,7 +117,7 @@ nm_dbus_utils_g_value_set_object_path (GValue *value, gpointer object)
 	    && (path = nm_dbus_object_get_path (object)))
 		g_value_set_string (value, path);
 	else
-		g_value_set_string (value, "/");
+		g_value_set_string (value, NULL);
 }
 
 void
