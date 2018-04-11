@@ -7,9 +7,8 @@ deps = [
 ]
 
 test_units = [
-  # FIXME: these tests currently fail
-  #'test-nm-client',
-  #'test-remote-settings-client'
+  'test-nm-client',
+  'test-remote-settings-client'
 ]
 
 foreach test_unit: test_units

@@ -1,9 +1,8 @@
 test_units = [
   ['test-general', shared_utils, [libnm_utils]],
-  # FIXME: these tests fails usually
-  #['test-nm-client', shared_test_utils, []],
-  #['test-remote-settings-client',  shared_test_utils, []],
-  #['test-secret-agent', shared_test_utils, []]
+  ['test-nm-client', shared_test_utils, []],
+  ['test-remote-settings-client',  shared_test_utils, []],
+  ['test-secret-agent', shared_test_utils, []]
 ]
 
 deps = [
