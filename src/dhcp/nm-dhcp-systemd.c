@@ -29,6 +29,7 @@
 #include <net/if_arp.h>
 
 #include "nm-utils/nm-dedup-multi.h"
+#include "nm-utils/unaligned.h"
 
 #include "nm-utils.h"
 #include "nm-dhcp-utils.h"
@@ -878,14 +879,13 @@ ip6_start (NMDhcpClient *client,
 	GBytes *hwaddr;
 	const char *hostname;
 	int r, i;
-	const guint16 *duid_arr;
+	const guint8 *duid_arr;
 	gsize duid_len;
 
 	g_assert (priv->client4 == NULL);
 	g_assert (priv->client6 == NULL);
 	g_return_val_if_fail (duid != NULL, FALSE);
 
-	G_STATIC_ASSERT_EXPR (sizeof (duid_arr[0]) == 2);
 	duid_arr = g_bytes_get_data (duid, &duid_len);
 	if (!duid_arr || duid_len < 2)
 		g_return_val_if_reached (FALSE);
@@ -907,14 +907,11 @@ ip6_start (NMDhcpClient *client,
 	_LOGT ("dhcp-client6: set %p", priv->client6);
 
 	if (nm_dhcp_client_get_info_only (client))
-	    sd_dhcp6_client_set_information_request (priv->client6, 1);
+		sd_dhcp6_client_set_information_request (priv->client6, 1);
 
-	/* NM stores the entire DUID which includes the uint16 "type", while systemd
-	 * wants the type passed separately from the following data.
-	 */
 	r = sd_dhcp6_client_set_duid (priv->client6,
-	                              ntohs (duid_arr[0]),
-	                              &duid_arr[1],
+	                              unaligned_read_be16 (&duid_arr[0]),
+	                              &duid_arr[2],
 	                              duid_len - 2);
 	if (r < 0) {
 		_LOGW ("failed to set DUID (%d)", r);
