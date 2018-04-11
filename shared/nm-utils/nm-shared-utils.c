@@ -1274,3 +1274,38 @@ fail:
 	NM_SET_OUT (out_ppid, 0);
 	return 0;
 }
+
+/*****************************************************************************/
+
+/**
+ * _nm_utils_strv_sort:
+ * @strv: pointer containing strings that will be sorted
+ *   in-place, %NULL is allowed, unless @len indicates
+ *   that there are more elements.
+ * @len: the number of elements in strv. If negative,
+ *   strv must be a NULL terminated array and the length
+ *   will be calculated first. If @len is a positive
+ *   number, all first @len elements in @strv must be
+ *   non-NULL, valid strings.
+ *
+ * Ascending sort of the array @strv inplace, using plain strcmp() string
+ * comparison.
+ */
+void
+_nm_utils_strv_sort (const char **strv, gssize len)
+{
+	gsize l;
+
+	l = len < 0 ? (gsize) NM_PTRARRAY_LEN (strv) : (gsize) len;
+
+	if (l <= 1)
+		return;
+
+	nm_assert (l <= (gsize) G_MAXINT);
+
+	g_qsort_with_data (strv,
+	                   l,
+	                   sizeof (const char *),
+	                   nm_strcmp_p_with_data,
+	                   NULL);
+}
