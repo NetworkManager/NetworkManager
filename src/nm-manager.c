@@ -1142,26 +1142,6 @@ _nm_state_to_string (NMState state)
 	}
 }
 
-static void
-set_state (NMManager *self, NMState state)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-
-	if (priv->state == state)
-		return;
-
-	priv->state = state;
-
-	_LOGI (LOGD_CORE, "NetworkManager state is now %s", _nm_state_to_string (state));
-
-	_notify (self, PROP_STATE);
-	nm_dbus_object_emit_signal (NM_DBUS_OBJECT (self),
-	                            &interface_info_manager,
-	                            &signal_info_state_changed,
-	                            "(u)",
-	                            (guint32) priv->state);
-}
-
 static NMState
 find_best_device_state (NMManager *manager)
 {
@@ -1232,26 +1212,38 @@ nm_manager_update_metered (NMManager *self)
 }
 
 static void
-nm_manager_update_state (NMManager *manager)
+nm_manager_update_state (NMManager *self)
 {
 	NMManagerPrivate *priv;
 	NMState new_state = NM_STATE_DISCONNECTED;
 
-	g_return_if_fail (NM_IS_MANAGER (manager));
+	g_return_if_fail (NM_IS_MANAGER (self));
 
-	priv = NM_MANAGER_GET_PRIVATE (manager);
+	priv = NM_MANAGER_GET_PRIVATE (self);
 
-	if (manager_sleeping (manager))
+	if (manager_sleeping (self))
 		new_state = NM_STATE_ASLEEP;
 	else
-		new_state = find_best_device_state (manager);
+		new_state = find_best_device_state (self);
 
 	if (   new_state >= NM_STATE_CONNECTED_LOCAL
 	    && priv->connectivity_state == NM_CONNECTIVITY_FULL) {
 		new_state = NM_STATE_CONNECTED_GLOBAL;
 	}
 
-	set_state (manager, new_state);
+	if (priv->state == new_state)
+		return;
+
+	priv->state = new_state;
+
+	_LOGI (LOGD_CORE, "NetworkManager state is now %s", _nm_state_to_string (new_state));
+
+	_notify (self, PROP_STATE);
+	nm_dbus_object_emit_signal (NM_DBUS_OBJECT (self),
+	                            &interface_info_manager,
+	                            &signal_info_state_changed,
+	                            "(u)",
+	                            (guint32) priv->state);
 }
 
 static void
