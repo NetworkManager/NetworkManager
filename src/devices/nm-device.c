@@ -632,6 +632,8 @@ static void _set_mtu (NMDevice *self, guint32 mtu);
 static void _commit_mtu (NMDevice *self, const NMIP4Config *config);
 static void _cancel_activation (NMDevice *self);
 
+static void concheck_update_state (NMDevice *self, NMConnectivityState state, gboolean is_periodic);
+
 /*****************************************************************************/
 
 NM_UTILS_LOOKUP_STR_DEFINE_STATIC (queued_state_to_string, NMDeviceState,
@@ -2390,6 +2392,9 @@ nm_device_check_connectivity_update_interval (NMDevice *self)
 	if (!new_interval) {
 		/* this will cancel any potentially pending timeout. */
 		concheck_periodic_schedule_do (self, 0);
+
+		/* also update the fake connectivity state. */
+		concheck_update_state (self, NM_CONNECTIVITY_FAKE, TRUE);
 		return;
 	}
 
@@ -2419,6 +2424,10 @@ concheck_update_state (NMDevice *self, NMConnectivityState state, gboolean is_pe
 		/* If the connectivity check is disabled and we obtain a fake
 		 * result, make an optimistic guess. */
 		if (priv->state == NM_DEVICE_STATE_ACTIVATED) {
+			/* FIXME: the fake connectivity state depends on the availablility of
+			 * a default route. However, we have no mechanism that rechecks the
+			 * value if a device route appears/disappears after the device
+			 * was activated. */
 			if (nm_device_get_best_default_route (self, AF_UNSPEC))
 				state = NM_CONNECTIVITY_FULL;
 			else
