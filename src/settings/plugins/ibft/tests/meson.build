@@ -15,4 +15,8 @@ exe = executable(
   link_with: libnms_ibft_core
 )
 
-test(test_unit, exe)
+test(
+  test_unit,
+  test_script,
+  args: test_args + [exe.full_path()]
+)

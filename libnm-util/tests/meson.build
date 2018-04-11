@@ -39,5 +39,9 @@ foreach test_unit: test_units
     link_depends: test_unit[2]
   )
 
-  test(test_unit[0], exe)
+  test(
+    'libnm-util-' + test_unit[0],
+    test_script,
+    args: test_args + [exe.full_path()]
+  )
 endforeach

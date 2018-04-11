@@ -11,5 +11,9 @@ foreach test_unit: test_units
     c_args: '-DTESTDIR="@0@"'.format(meson.current_source_dir())
   )
 
-  test(test_unit, exe)
+  test(
+    test_unit,
+    test_script,
+    args: test_args + [exe.full_path()]
+  )
 endforeach

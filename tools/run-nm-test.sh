@@ -35,7 +35,12 @@ else
 fi
 
 if [ "$CALLED_FROM_MAKE" == 1 ]; then
-    NMTST_LIBTOOL=($1 --mode=execute); shift
+    if [ -n "$1" ]; then
+        NMTST_LIBTOOL=($1 --mode=execute);
+    else
+        NMTST_LIBTOOL=()
+    fi
+    shift
     NMTST_VALGRIND_ARG="$1"; shift
     if [[ "$NMTST_VALGRIND_ARG" == no ]]; then
         NMTST_VALGRIND_ARG=

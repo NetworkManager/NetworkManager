@@ -43,6 +43,9 @@ foreach test_unit: test_units
     c_args: cflags,
     link_with: libnm_core
   )
-
-  test(test_unit, exe)
+  test(
+    test_unit,
+    test_script,
+    args: test_args + [exe.full_path()]
+  )
 endforeach

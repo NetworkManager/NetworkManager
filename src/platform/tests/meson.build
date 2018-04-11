@@ -19,7 +19,11 @@ foreach test_unit: test_units
     c_args: test_cflags_platform
   )
 
-  test(test_unit[0], exe)
+  test(
+    'platform-' + test_unit[0],
+    test_script,
+    args: test_args + [exe.full_path()]
+  )
 endforeach
 
 test = 'monitor'

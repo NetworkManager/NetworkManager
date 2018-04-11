@@ -20,4 +20,8 @@ exe = executable(
   link_with: libnm_dispatcher_core
 )
 
-test(test_unit, exe)
+test(
+  test_unit,
+  test_script,
+  args: test_args + [exe.full_path()]
+)

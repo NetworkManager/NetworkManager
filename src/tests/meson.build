@@ -17,7 +17,11 @@ foreach test_unit: test_units
     dependencies: test_nm_dep
   )
 
-  test(test_unit, exe)
+  test(
+    test_unit,
+    test_script,
+    args: test_args + [exe.full_path()]
+  )
 endforeach
 
 test_unit = 'test-systemd'
@@ -36,4 +40,8 @@ exe = executable(
   link_with: libsystemd_nm
 )
 
-test(test_unit, exe)
+test(
+  test_unit,
+  test_script,
+  args: test_args + [exe.full_path()]
+)

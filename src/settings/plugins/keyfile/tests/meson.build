@@ -14,4 +14,8 @@ exe = executable(
   c_args: cflags
 )
 
-test(test_unit, exe)
+test(
+  test_unit,
+  test_script,
+  args: test_args + [exe.full_path()]
+)
