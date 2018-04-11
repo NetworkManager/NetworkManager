@@ -2512,7 +2512,6 @@ device_realized (NMDevice *device,
 
 static void
 device_connectivity_changed (NMDevice *device,
-                             GParamSpec *pspec,
                              NMManager *self)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
@@ -2646,7 +2645,7 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 	                  G_CALLBACK (device_realized),
 	                  self);
 
-	g_signal_connect (device, "notify::" NM_DEVICE_CONNECTIVITY,
+	g_signal_connect (device, NM_DEVICE_CONNECTIVITY_CHANGED,
 	                  G_CALLBACK (device_connectivity_changed),
 	                  self);
 

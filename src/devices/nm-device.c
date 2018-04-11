@@ -180,6 +180,7 @@ enum {
 	REMOVED,
 	RECHECK_AUTO_ACTIVATE,
 	RECHECK_ASSUME,
+	CONNECTIVITY_CHANGED,
 	LAST_SIGNAL,
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -2457,6 +2458,7 @@ concheck_update_state (NMDevice *self, NMConnectivityState state, gboolean is_pe
 	priv->connectivity_state = state;
 
 	_notify (self, PROP_CONNECTIVITY);
+	g_signal_emit (self, signals[CONNECTIVITY_CHANGED], 0);
 
 	if (   priv->state == NM_DEVICE_STATE_ACTIVATED
 	    && !nm_device_sys_iface_state_is_external (self)) {
@@ -15743,5 +15745,13 @@ nm_device_class_init (NMDeviceClass *klass)
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 0);
+
+	signals[CONNECTIVITY_CHANGED] =
+	    g_signal_new (NM_DEVICE_CONNECTIVITY_CHANGED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL,
+	                  g_cclosure_marshal_VOID__VOID,
 	                  G_TYPE_NONE, 0);
 }
