@@ -163,6 +163,10 @@ nm_dbus_utils_g_value_set_object_path_from_hash (GValue *value,
 	}
 	nm_assert (i <= n);
 	strv[i] = NULL;
+
+	/* sort the names, to give a well-defined, stable order. */
+	nm_utils_strv_sort (strv, i);
+
 	g_value_take_boxed (value, strv);
 }
 
