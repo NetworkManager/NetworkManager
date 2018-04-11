@@ -2513,17 +2513,19 @@ concheck_cb (NMConnectivity *connectivity,
 	handle->c_handle = NULL;
 	self = g_object_ref (handle->self);
 
-	_LOGT (LOGD_CONCHECK, "connectivity: complete check (seq:%llu, state:%s%s%s%s)",
-	       (long long unsigned) handle->seq,
-	       nm_connectivity_state_to_string (state),
-	       NM_PRINT_FMT_QUOTED (error, ", error: ", error->message, "", ""));
-
 	if (nm_utils_error_is_cancelled (error, FALSE)) {
 		/* the only place where we nm_connectivity_check_cancel(@c_handle), is
 		 * from inside concheck_handle_event(). This is a recursive call,
 		 * nothing to do. */
+		_LOGT (LOGD_CONCHECK, "connectivity: complete check (seq:%llu, obsoleted by later request returning)",
+		       (long long unsigned) handle->seq);
 		return;
 	}
+
+	_LOGT (LOGD_CONCHECK, "connectivity: complete check (seq:%llu, state:%s%s%s%s)",
+	       (long long unsigned) handle->seq,
+	       nm_connectivity_state_to_string (state),
+	       NM_PRINT_FMT_QUOTED (error, ", error: ", error->message, "", ""));
 
 	/* we keep NMConnectivity instance alive. It cannot be disposing. */
 	nm_assert (!nm_utils_error_is_cancelled (error, TRUE));
