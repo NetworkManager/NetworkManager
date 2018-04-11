@@ -17,7 +17,7 @@ exe = executable(
 )
 
 test(
-  test_unit,
+  'clients/' + test_unit,
   test_script,
   args: test_args + [exe.full_path()]
 )

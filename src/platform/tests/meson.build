@@ -20,7 +20,7 @@ foreach test_unit: test_units
   )
 
   test(
-    'platform-' + test_unit[0],
+    'platform/' + test_unit[0],
     test_script,
     timeout: test_unit.length() > 2 ? test_unit[2] : 30,
     args: test_args + [exe.full_path()]

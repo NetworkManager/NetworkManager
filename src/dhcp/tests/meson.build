@@ -12,7 +12,7 @@ foreach test_unit: test_units
   )
 
   test(
-    test_unit,
+    'dhcp/' + test_unit,
     test_script,
     args: test_args + [exe.full_path()]
   )

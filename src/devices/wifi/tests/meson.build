@@ -7,7 +7,7 @@ exe = executable(
 )
 
 test(
-  test_unit,
+  'devices/wifi/' + test_unit,
   test_script,
   args: test_args + [exe.full_path()]
 )

@@ -44,7 +44,7 @@ foreach test_unit: test_units
     link_with: libnm_core
   )
   test(
-    test_unit,
+    'libnm-core/' + test_unit,
     test_script,
     args: test_args + [exe.full_path()]
   )

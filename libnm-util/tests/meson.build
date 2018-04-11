@@ -40,7 +40,7 @@ foreach test_unit: test_units
   )
 
   test(
-    'libnm-util-' + test_unit[0],
+    'libnm-util/' + test_unit[0],
     test_script,
     args: test_args + [exe.full_path()]
   )

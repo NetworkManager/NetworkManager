@@ -11,7 +11,7 @@ exe = executable(
 )
 
 test(
-  test_unit,
+  'ifupdown/' + test_unit,
   test_script,
   args: test_args + [exe.full_path()]
 )

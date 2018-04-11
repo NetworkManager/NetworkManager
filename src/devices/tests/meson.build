@@ -11,7 +11,7 @@ foreach test_unit: test_units
   )
 
   test(
-    test_unit,
+    'devices/' + test_unit,
     test_script,
     args: test_args + [exe.full_path()]
   )

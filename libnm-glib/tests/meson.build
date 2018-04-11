@@ -23,7 +23,7 @@ foreach test_unit: test_units
   )
 
   test(
-    test_unit,
+    'libnm-glib/' + test_unit,
     test_script,
     args: test_args + [exe.full_path()]
   )

@@ -15,7 +15,7 @@ exe = executable(
 )
 
 test(
-  test_unit,
+  'keyfile/' + test_unit,
   test_script,
   args: test_args + [exe.full_path()]
 )

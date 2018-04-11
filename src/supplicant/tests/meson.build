@@ -8,7 +8,7 @@ exe = executable(
 )
 
 test(
-  test_unit,
+  'supplicant/' + test_unit,
   test_script,
   args: test_args + [exe.full_path()]
 )
