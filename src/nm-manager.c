@@ -2519,11 +2519,20 @@ device_connectivity_changed (NMDevice *device,
 	NMConnectivityState state;
 	NMDevice *dev;
 
-	c_list_for_each_entry (dev, &priv->devices_lst_head, devices_lst) {
-		state = nm_device_get_connectivity_state (dev);
-		if (state > best_state)
+	best_state = nm_device_get_connectivity_state (device);
+	if (best_state < NM_CONNECTIVITY_FULL) {
+		c_list_for_each_entry (dev, &priv->devices_lst_head, devices_lst) {
+			state = nm_device_get_connectivity_state (dev);
+			if (state <= best_state)
+				continue;
 			best_state = state;
+			if (best_state >= NM_CONNECTIVITY_FULL) {
+				/* it doesn't get better than this. */
+				break;
+			}
+		}
 	}
+	nm_assert (best_state <= NM_CONNECTIVITY_FULL);
 
 	if (best_state != priv->connectivity_state) {
 		priv->connectivity_state = best_state;
