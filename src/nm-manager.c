@@ -4243,9 +4243,9 @@ validate_activation_request (NMManager *self,
 	NMAuthSubject *subject = NULL;
 	char *error_desc = NULL;
 
-	g_assert (connection);
-	g_assert (out_device);
-	g_assert (out_vpn);
+	nm_assert (NM_IS_CONNECTION (connection));
+	nm_assert (out_device);
+	nm_assert (out_vpn);
 
 	/* Validate the caller */
 	subject = nm_auth_subject_new_unix_process_from_context (context);
