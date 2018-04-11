@@ -515,9 +515,9 @@ nm_active_connection_set_specific_object (NMActiveConnection *self,
 	/* Nothing that calls this function should be using paths from D-Bus,
 	 * where NM uses "/" to mean NULL.
 	 */
-	g_assert (g_strcmp0 (specific_object, "/") != 0);
+	nm_assert (!nm_streq0 (specific_object, "/"));
 
-	if (g_strcmp0 (priv->specific_object, specific_object) == 0)
+	if (nm_streq0 (priv->specific_object, specific_object))
 		return;
 
 	g_free (priv->specific_object);
@@ -1430,8 +1430,7 @@ dispose (GObject *object)
 
 	auth_cancel (self);
 
-	g_free (priv->specific_object);
-	priv->specific_object = NULL;
+	nm_clear_g_free (&priv->specific_object);
 
 	_set_settings_connection (self, NULL);
 	g_clear_object (&priv->applied_connection);
