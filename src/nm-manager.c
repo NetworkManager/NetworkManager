@@ -4041,9 +4041,7 @@ _new_active_connection (NMManager *self,
 		return NULL;
 	}
 
-	/* Normalize the specific object */
-	if (specific_object && g_strcmp0 (specific_object, "/") == 0)
-		specific_object = NULL;
+	specific_object = nm_utils_dbus_normalize_object_path (specific_object);
 
 	is_vpn = nm_connection_is_type (NM_CONNECTION (connection), NM_SETTING_VPN_SETTING_NAME);
 
@@ -4219,7 +4217,7 @@ nm_manager_activate_connection (NMManager *self,
  * @self: the #NMManager
  * @context: the D-Bus context of the requestor
  * @connection: the partial or complete #NMConnection to be activated
- * @device_path: the object path of the device to be activated, or "/"
+ * @device_path: the object path of the device to be activated, or NULL
  * @out_device: on successful reutrn, the #NMDevice to be activated with @connection
  * @out_vpn: on successful return, %TRUE if @connection is a VPN connection
  * @error: location to store an error on failure
@@ -4271,16 +4269,10 @@ validate_activation_request (NMManager *self,
 		goto error;
 	}
 
-	/* Check whether it's a VPN or not */
 	if (   nm_connection_get_setting_vpn (connection)
 	    || nm_connection_is_type (connection, NM_SETTING_VPN_SETTING_NAME))
 		vpn = TRUE;
 
-	/* Normalize device path */
-	if (device_path && g_strcmp0 (device_path, "/") == 0)
-		device_path = NULL;
-
-	/* And validate it */
 	if (device_path) {
 		device = nm_manager_get_device_by_path (self, device_path);
 		if (!device) {
@@ -4400,13 +4392,9 @@ impl_manager_activate_connection (NMDBusObject *obj,
 
 	g_variant_get (parameters, "(&o&o&o)", &connection_path, &device_path, &specific_object_path);
 
-	/* Normalize object paths */
-	if (g_strcmp0 (connection_path, "/") == 0)
-		connection_path = NULL;
-	if (g_strcmp0 (specific_object_path, "/") == 0)
-		specific_object_path = NULL;
-	if (g_strcmp0 (device_path, "/") == 0)
-		device_path = NULL;
+	connection_path = nm_utils_dbus_normalize_object_path (connection_path);
+	specific_object_path = nm_utils_dbus_normalize_object_path (specific_object_path);
+	device_path = nm_utils_dbus_normalize_object_path (device_path);
 
 	/* If the connection path is given and valid, that connection is activated.
 	 * Otherwise the "best" connection for the device is chosen and activated,
@@ -4617,11 +4605,8 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 
 	g_variant_get (parameters, "(@a{sa{sv}}&o&o)", &settings, &device_path, &specific_object_path);
 
-	/* Normalize object paths */
-	if (g_strcmp0 (specific_object_path, "/") == 0)
-		specific_object_path = NULL;
-	if (g_strcmp0 (device_path, "/") == 0)
-		device_path = NULL;
+	specific_object_path = nm_utils_dbus_normalize_object_path (specific_object_path);
+	device_path = nm_utils_dbus_normalize_object_path (device_path);
 
 	/* Try to create a new connection with the given settings.
 	 * We allow empty settings for AddAndActivateConnection(). In that case,

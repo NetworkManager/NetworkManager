@@ -1345,9 +1345,8 @@ set_property (GObject *object, guint prop_id,
 	case PROP_SPECIFIC_OBJECT:
 		/* construct-only */
 		tmp = g_value_get_string (value);
-		/* NM uses "/" to mean NULL */
-		if (g_strcmp0 (tmp, "/") != 0)
-			priv->specific_object = g_strdup (tmp);
+		tmp = nm_utils_dbus_normalize_object_path (tmp);
+		priv->specific_object = g_strdup (tmp);
 		break;
 	case PROP_DEFAULT:
 		priv->is_default = g_value_get_boolean (value);
