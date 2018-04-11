@@ -2499,7 +2499,8 @@ concheck_cb (NMConnectivity *connectivity,
              GError *error,
              gpointer user_data)
 {
-	gs_unref_object NMDevice *self = NULL;
+	_nm_unused gs_unref_object NMDevice *self_keep_alive = NULL;
+	NMDevice *self;
 	NMDevicePrivate *priv;
 	NMDeviceConnectivityHandle *handle;
 	NMDeviceConnectivityHandle *other_handle;
@@ -2511,7 +2512,7 @@ concheck_cb (NMConnectivity *connectivity,
 	nm_assert (NM_IS_DEVICE (handle->self));
 
 	handle->c_handle = NULL;
-	self = g_object_ref (handle->self);
+	self = handle->self;
 
 	if (nm_utils_error_is_cancelled (error, FALSE)) {
 		/* the only place where we nm_connectivity_check_cancel(@c_handle), is
@@ -2521,6 +2522,8 @@ concheck_cb (NMConnectivity *connectivity,
 		       (long long unsigned) handle->seq);
 		return;
 	}
+
+	self_keep_alive = g_object_ref (self);
 
 	_LOGT (LOGD_CONCHECK, "connectivity: complete check (seq:%llu, state:%s%s%s%s)",
 	       (long long unsigned) handle->seq,
