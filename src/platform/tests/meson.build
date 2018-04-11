@@ -1,6 +1,6 @@
 test_units = [
-  ['test-link-fake', 'test-link.c'],
-  ['test-link-linux', 'test-link.c'],
+  ['test-link-fake', 'test-link.c', 60],
+  ['test-link-linux', 'test-link.c', 60],
   ['test-address-fake', 'test-address.c'],
   ['test-address-linux', 'test-address.c'],
   ['test-general', 'test-general.c'],
@@ -22,6 +22,7 @@ foreach test_unit: test_units
   test(
     'platform-' + test_unit[0],
     test_script,
+    timeout: test_unit.length() > 2 ? test_unit[2] : 30,
     args: test_args + [exe.full_path()]
   )
 endforeach
