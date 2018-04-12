@@ -4208,7 +4208,7 @@ nm_manager_activate_connection (NMManager *self,
  *   The caller may pass in a device which shortcuts the lookup by path.
  *   In this case, the passed in device must have the matching @device_path
  *   already.
- * @out_vpn: on successful return, %TRUE if @connection is a VPN connection
+ * @out_is_vpn: on successful return, %TRUE if @connection is a VPN connection
  * @error: location to store an error on failure
  *
  * Performs basic validation on an activation request, including ensuring that
@@ -4224,16 +4224,16 @@ validate_activation_request (NMManager *self,
                              NMConnection *connection,
                              const char *device_path,
                              NMDevice **out_device,
-                             gboolean *out_vpn,
+                             gboolean *out_is_vpn,
                              GError **error)
 {
 	NMDevice *device = NULL;
-	gboolean vpn = FALSE;
+	gboolean is_vpn = FALSE;
 	gs_free NMAuthSubject *subject = NULL;
 
 	nm_assert (NM_IS_CONNECTION (connection));
 	nm_assert (out_device);
-	nm_assert (out_vpn);
+	nm_assert (out_is_vpn);
 
 	/* Validate the caller */
 	subject = nm_auth_subject_new_unix_process_from_context (context);
@@ -4254,7 +4254,7 @@ validate_activation_request (NMManager *self,
 
 	if (   nm_connection_get_setting_vpn (connection)
 	    || nm_connection_is_type (connection, NM_SETTING_VPN_SETTING_NAME))
-		vpn = TRUE;
+		is_vpn = TRUE;
 
 	if (*out_device) {
 		device = *out_device;
@@ -4274,7 +4274,7 @@ validate_activation_request (NMManager *self,
 	} else {
 		device = nm_manager_get_best_device_for_connection (self, connection, TRUE, NULL);
 		if (   !device
-		    && !vpn) {
+		    && !is_vpn) {
 			gs_free char *iface = NULL;
 
 			/* VPN and software-device connections don't need a device yet,
@@ -4304,7 +4304,7 @@ validate_activation_request (NMManager *self,
 	}
 
 	*out_device = device;
-	*out_vpn = vpn;
+	*out_is_vpn = is_vpn;
 	return g_steal_pointer (&subject);
 }
 
@@ -4583,7 +4583,7 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 	NMAuthSubject *subject = NULL;
 	GError *error = NULL;
 	NMDevice *device = NULL;
-	gboolean vpn = FALSE;
+	gboolean is_vpn = FALSE;
 	gs_unref_variant GVariant *settings = NULL;
 	const char *device_path;
 	const char *specific_object_path;
@@ -4609,12 +4609,12 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 	                                       connection,
 	                                       device_path,
 	                                       &device,
-	                                       &vpn,
+	                                       &is_vpn,
 	                                       &error);
 	if (!subject)
 		goto error;
 
-	if (vpn) {
+	if (is_vpn) {
 		/* Try to fill the VPN's connection setting and name at least */
 		if (!nm_connection_get_setting_vpn (connection)) {
 			error = g_error_new_literal (NM_CONNECTION_ERROR,
