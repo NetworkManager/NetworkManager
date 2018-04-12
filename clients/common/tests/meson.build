@@ -16,4 +16,8 @@ exe = executable(
   ],
 )
 
-test(test_unit, exe)
+test(
+  'clients/' + test_unit,
+  test_script,
+  args: test_args + [exe.full_path()]
+)

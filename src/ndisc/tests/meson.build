@@ -7,7 +7,11 @@ exe = executable(
   c_args: test_cflags_platform
 )
 
-test(test_unit, exe)
+test(
+  'ndisc/' + test_unit,
+  test_script,
+  args: test_args + [exe.full_path()]
+)
 
 test = 'test-ndisc-linux'
 

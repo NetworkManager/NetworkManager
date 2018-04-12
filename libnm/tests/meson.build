@@ -1,9 +1,8 @@
 test_units = [
   ['test-general', shared_utils, [libnm_utils]],
-  # FIXME: these tests fails usually
-  #['test-nm-client', shared_test_utils, []],
-  #['test-remote-settings-client',  shared_test_utils, []],
-  #['test-secret-agent', shared_test_utils, []]
+  ['test-nm-client', shared_test_utils, []],
+  ['test-remote-settings-client',  shared_test_utils, []],
+  ['test-secret-agent', shared_test_utils, []]
 ]
 
 deps = [
@@ -26,7 +25,11 @@ foreach test_unit: test_units
     link_with: test_unit[2]
   )
 
-  test(test_unit[0], exe)
+  test(
+    'libnm/' + test_unit[0],
+    test_script,
+    args: test_args + [exe.full_path()]
+  )
 endforeach
 
 # just test, that we can build "nm-vpn-plugin-utils.c"

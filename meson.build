@@ -209,8 +209,6 @@ have_systemd_200 = systemd_dep.found() and systemd_dep.version().version_compare
 
 gio_unix_dep = dependency('gio-unix-2.0', version: '>= 2.40')
 
-log_driver = join_paths(meson.source_root(), 'build-aux', (gio_unix_dep.version().version_compare('>= 2.37.6') ? 'tap-driver.sh' : 'test-driver'))
-
 glib_dep = declare_dependency(
   dependencies: [
     gio_unix_dep,
@@ -724,6 +722,7 @@ endif
 tests = get_option('tests')
 enable_tests = (tests != 'no')
 require_root_tests = (tests == 'root')
+test_script = find_program(join_paths(meson.source_root(), 'tools', 'run-nm-test.sh'))
 
 # valgrind
 locations = get_option('valgrind')
@@ -739,6 +738,14 @@ if enable_valgrind
     valgrind_suppressions_path = join_paths(meson.source_root(), 'valgrind.suppressions')
   endif
 endif
+
+test_args = [
+  '--called-from-make',
+  '',
+  enable_valgrind ? valgrind.path() : '',
+  enable_valgrind ? valgrind_suppressions_path : '',
+  '--launch-dbus=auto'
+]
 
 # FIXME
 #AC_SUBST(NM_LOG_COMPILER, 'LOG_COMPILER = "$(top_srcdir)/tools/run-nm-test.sh" --called-from-make "$(LIBTOOL)" "$(with_valgrind)" "'"$with_valgrind_suppressions"'" --launch-dbus=auto')

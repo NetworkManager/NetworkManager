@@ -7,9 +7,8 @@ deps = [
 ]
 
 test_units = [
-  # FIXME: these tests currently fail
-  #'test-nm-client',
-  #'test-remote-settings-client'
+  'test-nm-client',
+  'test-remote-settings-client'
 ]
 
 foreach test_unit: test_units
@@ -23,5 +22,9 @@ foreach test_unit: test_units
     ],
   )
 
-  test(test_unit, exe)
+  test(
+    'libnm-glib/' + test_unit,
+    test_script,
+    args: test_args + [exe.full_path()]
+  )
 endforeach
