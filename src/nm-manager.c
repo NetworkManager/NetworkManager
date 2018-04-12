@@ -281,6 +281,7 @@ static void _emit_device_added_removed (NMManager *self,
                                         gboolean is_added);
 
 static NMActiveConnection *_new_active_connection (NMManager *self,
+                                                   gboolean is_vpn,
                                                    NMConnection *connection,
                                                    NMConnection *applied,
                                                    const char *specific_object,
@@ -2398,8 +2399,13 @@ recheck_assume_connection (NMManager *self,
 		GError *error = NULL;
 
 		subject = nm_auth_subject_new_internal ();
-		active = _new_active_connection (self, NM_CONNECTION (connection), NULL, NULL,
-		                                 device, subject,
+		active = _new_active_connection (self,
+		                                 FALSE,
+		                                 NM_CONNECTION (connection),
+		                                 NULL,
+		                                 NULL,
+		                                 device,
+		                                 subject,
 		                                 generated ? NM_ACTIVATION_TYPE_EXTERNAL : NM_ACTIVATION_TYPE_ASSUME,
 		                                 NM_ACTIVATION_REASON_AUTOCONNECT,
 		                                 &error);
@@ -4026,6 +4032,7 @@ _new_vpn_active_connection (NMManager *self,
 
 static NMActiveConnection *
 _new_active_connection (NMManager *self,
+                        gboolean is_vpn,
                         NMConnection *connection,
                         NMConnection *applied,
                         const char *specific_object,
@@ -4036,29 +4043,33 @@ _new_active_connection (NMManager *self,
                         GError **error)
 {
 	NMSettingsConnection *settings_connection = NULL;
-	NMActiveConnection *existing_ac;
-	gboolean is_vpn;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), NULL);
 
-	/* Can't create new AC for already-active connection */
-	existing_ac = active_connection_find_first_by_connection (self, connection);
-	if (NM_IS_VPN_CONNECTION (existing_ac)) {
-		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_ALREADY_ACTIVE,
-		             "Connection '%s' is already active",
-		             nm_connection_get_id (connection));
-		return NULL;
+	nm_assert (is_vpn == _connection_is_vpn (connection));
+
+	if (is_vpn) {
+		/* FIXME: for VPN connections, we don't allow re-activating an
+		 * already active connection. It's a bug, and should be fixed together
+		 * when reworking VPN handling. */
+		if (active_connection_find_first_by_connection (self, connection)) {
+			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_ALREADY_ACTIVE,
+			             "Connection '%s' is already active",
+			             nm_connection_get_id (connection));
+			return NULL;
+		}
 	}
 
 	specific_object = nm_utils_dbus_normalize_object_path (specific_object);
-
-	is_vpn = _connection_is_vpn (NM_CONNECTION (connection));
 
 	if (NM_IS_SETTINGS_CONNECTION (connection))
 		settings_connection = (NMSettingsConnection *) connection;
 
 	if (is_vpn) {
+		/* FIXME: apparently, activation here only works if @connection is
+		 * a settings-connection. Which is not the case during AddAndActivatate.
+		 * Probably, AddAndActivate is broken for VPN. */
 		if (activation_type != NM_ACTIVATION_TYPE_MANAGED)
 			g_return_val_if_reached (NULL);
 		return _new_vpn_active_connection (self,
@@ -4200,6 +4211,7 @@ nm_manager_activate_connection (NMManager *self,
 	}
 
 	active = _new_active_connection (self,
+	                                 FALSE,
 	                                 NM_CONNECTION (connection),
 	                                 applied,
 	                                 specific_object,
@@ -4439,6 +4451,7 @@ impl_manager_activate_connection (NMDBusObject *obj,
 		goto error;
 
 	active = _new_active_connection (self,
+	                                 is_vpn,
 	                                 NM_CONNECTION (connection),
 	                                 NULL,
 	                                 specific_object_path,
@@ -4658,6 +4671,7 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 	}
 
 	active = _new_active_connection (self,
+	                                 is_vpn,
 	                                 connection,
 	                                 NULL,
 	                                 specific_object_path,
