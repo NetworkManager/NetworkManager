@@ -4499,7 +4499,7 @@ activation_add_done (NMSettings *settings,
 	AddAndActivateInfo *info = user_data;
 	NMManager *self;
 	gs_unref_object NMActiveConnection *active = NULL;
-	GError *local = NULL;
+	gs_free_error GError *local = NULL;
 
 	self = info->manager;
 	active = info->active;
@@ -4532,6 +4532,7 @@ activation_add_done (NMSettings *settings,
 	}
 
 	nm_assert (error);
+
 	nm_active_connection_set_state_fail (active,
 	                                     NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN,
 	                                     error->message);
@@ -4544,7 +4545,6 @@ activation_add_done (NMSettings *settings,
 	                            NULL,
 	                            nm_active_connection_get_subject (active),
 	                            error->message);
-	g_clear_error (&local);
 }
 
 static void
@@ -4559,27 +4559,12 @@ _add_and_activate_auth_done (NMActiveConnection *active,
 	GDBusMethodInvocation *context = user_data2;
 	AddAndActivateInfo *info;
 	GError *error = NULL;
+	gs_unref_object NMConnection *connection = NULL;
 
-	if (success) {
-		NMConnection *connection;
+	connection = g_object_steal_qdata (G_OBJECT (active),
+	                                   active_connection_add_and_activate_quark ());
 
-		connection = g_object_steal_qdata (G_OBJECT (active),
-		                                   active_connection_add_and_activate_quark ());
-
-		info = g_slice_new (AddAndActivateInfo);
-		info->manager = self;
-		info->active = g_object_ref (active);
-
-		/* Basic sender auth checks performed; try to add the connection */
-		nm_settings_add_connection_dbus (priv->settings,
-		                                 connection,
-		                                 FALSE,
-		                                 context,
-		                                 activation_add_done,
-		                                 info);
-		g_object_unref (connection);
-	} else {
-		g_assert (error_desc);
+	if (!success) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             error_desc);
@@ -4590,9 +4575,23 @@ _add_and_activate_auth_done (NMActiveConnection *active,
 		                            nm_active_connection_get_subject (active),
 		                            error->message);
 		g_dbus_method_invocation_take_error (context, error);
+		g_object_unref (active);
+		return;
 	}
 
-	g_object_unref (active);
+	info = g_slice_new (AddAndActivateInfo);
+	info->manager = self;
+
+	/* we pass on the reference to @active. */
+	info->active = active;
+
+	/* Basic sender auth checks performed; try to add the connection */
+	nm_settings_add_connection_dbus (priv->settings,
+	                                 connection,
+	                                 FALSE,
+	                                 context,
+	                                 activation_add_done,
+	                                 info);
 }
 
 static void
@@ -4606,9 +4605,9 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 {
 	NMManager *self = NM_MANAGER (obj);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMConnection *connection = NULL;
+	gs_unref_object NMConnection *connection = NULL;
 	NMActiveConnection *active = NULL;
-	NMAuthSubject *subject = NULL;
+	gs_unref_object NMAuthSubject *subject = NULL;
 	GError *error = NULL;
 	NMDevice *device = NULL;
 	gboolean is_vpn = FALSE;
@@ -4683,22 +4682,25 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 	if (!active)
 		goto error;
 
+	/* FIXME: nm_active_connection_authorize() already has two user-data pointers
+	 *        to piggyback additional data. Instead of attaching the third argument to
+	 *        @active's user-data, add a third paramter.
+	 *        Or alternatively, allocate a data structure to pass on additional data.
+	 *        Then we don't need two user-data pointers. */
 	g_object_set_qdata_full (G_OBJECT (active),
 	                         active_connection_add_and_activate_quark (),
 	                         connection,
 	                         g_object_unref);
 
 	nm_active_connection_authorize (active, connection, _add_and_activate_auth_done, self, invocation);
-	g_object_unref (subject);
+
+	/* we passed the pointers on to the callback of authorize. */
+	g_steal_pointer (&connection);
+	g_steal_pointer (&active);
 	return;
 
 error:
 	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD_ACTIVATE, NULL, FALSE, NULL, subject, error->message);
-	g_clear_object (&connection);
-	g_clear_object (&subject);
-	g_clear_object (&active);
-
-	g_assert (error);
 	g_dbus_method_invocation_take_error (invocation, error);
 }
 
