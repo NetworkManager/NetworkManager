@@ -855,6 +855,7 @@ nm_vpn_connection_new (NMSettingsConnection *settings_connection,
 {
 	g_return_val_if_fail (!settings_connection || NM_IS_SETTINGS_CONNECTION (settings_connection), NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (parent_device), NULL);
+	g_return_val_if_fail (specific_object, NULL);
 
 	return (NMVpnConnection *) g_object_new (NM_TYPE_VPN_CONNECTION,
 	                                         NM_ACTIVE_CONNECTION_INT_SETTINGS_CONNECTION, settings_connection,

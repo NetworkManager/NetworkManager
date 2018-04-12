@@ -4008,7 +4008,14 @@ _new_active_connection (NMManager *self,
 	nm_assert (   ( is_vpn && !device)
 	           || (!is_vpn && NM_IS_DEVICE (device)));
 
+	nm_assert (!nm_streq0 (specific_object, "/"));
+
+	if (NM_IS_SETTINGS_CONNECTION (connection))
+		settings_connection = (NMSettingsConnection *) connection;
+
 	if (is_vpn) {
+		NMActiveConnection *parent;
+
 		/* FIXME: for VPN connections, we don't allow re-activating an
 		 * already active connection. It's a bug, and should be fixed together
 		 * when reworking VPN handling. */
@@ -4018,15 +4025,6 @@ _new_active_connection (NMManager *self,
 			             nm_connection_get_id (connection));
 			return NULL;
 		}
-	}
-
-	specific_object = nm_utils_dbus_normalize_object_path (specific_object);
-
-	if (NM_IS_SETTINGS_CONNECTION (connection))
-		settings_connection = (NMSettingsConnection *) connection;
-
-	if (is_vpn) {
-		NMActiveConnection *parent = NULL;
 
 		/* FIXME: apparently, activation here only works if @connection is
 		 * a settings-connection. Which is not the case during AddAndActivatate.
@@ -4173,6 +4171,7 @@ nm_manager_activate_connection (NMManager *self,
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 	g_return_val_if_fail (!error || !*error, NULL);
+	nm_assert (!nm_streq0 (specific_object, "/"));
 
 	priv = NM_MANAGER_GET_PRIVATE (self);
 
@@ -4192,7 +4191,7 @@ nm_manager_activate_connection (NMManager *self,
 		active = iter->data;
 
 		if (   connection == nm_active_connection_get_settings_connection (active)
-		    && g_strcmp0 (nm_active_connection_get_specific_object (active), specific_object) == 0
+		    && nm_streq0 (nm_active_connection_get_specific_object (active), specific_object)
 		    && nm_active_connection_get_device (active) == device
 		    && nm_auth_subject_is_internal (nm_active_connection_get_subject (active))
 		    && nm_auth_subject_is_internal (subject)
