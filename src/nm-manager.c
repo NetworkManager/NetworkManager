@@ -4205,6 +4205,9 @@ nm_manager_activate_connection (NMManager *self,
  * @connection: the partial or complete #NMConnection to be activated
  * @device_path: the object path of the device to be activated, or NULL
  * @out_device: on successful reutrn, the #NMDevice to be activated with @connection
+ *   The caller may pass in a device which shortcuts the lookup by path.
+ *   In this case, the passed in device must have the matching @device_path
+ *   already.
  * @out_vpn: on successful return, %TRUE if @connection is a VPN connection
  * @error: location to store an error on failure
  *
@@ -4226,7 +4229,7 @@ validate_activation_request (NMManager *self,
 {
 	NMDevice *device = NULL;
 	gboolean vpn = FALSE;
-	NMAuthSubject *subject = NULL;
+	gs_free NMAuthSubject *subject = NULL;
 
 	nm_assert (NM_IS_CONNECTION (connection));
 	nm_assert (out_device);
@@ -4247,60 +4250,62 @@ validate_activation_request (NMManager *self,
 	                                          NM_MANAGER_ERROR,
 	                                          NM_MANAGER_ERROR_PERMISSION_DENIED,
 	                                          error))
-		goto error;
+		return NULL;
 
 	if (   nm_connection_get_setting_vpn (connection)
 	    || nm_connection_is_type (connection, NM_SETTING_VPN_SETTING_NAME))
 		vpn = TRUE;
 
-	if (device_path) {
+	if (*out_device) {
+		device = *out_device;
+		nm_assert (NM_IS_DEVICE (device));
+		nm_assert (device_path);
+		nm_assert (nm_streq0 (device_path, nm_dbus_object_get_path (NM_DBUS_OBJECT (device))));
+		nm_assert (device == nm_manager_get_device_by_path (self, device_path));
+	} else if (device_path) {
 		device = nm_manager_get_device_by_path (self, device_path);
 		if (!device) {
 			g_set_error_literal (error,
 			                     NM_MANAGER_ERROR,
 			                     NM_MANAGER_ERROR_UNKNOWN_DEVICE,
 			                     "Device not found");
-			goto error;
+			return NULL;
 		}
-	} else
+	} else {
 		device = nm_manager_get_best_device_for_connection (self, connection, TRUE, NULL);
+		if (   !device
+		    && !vpn) {
+			gs_free char *iface = NULL;
 
-	if (!device && !vpn) {
-		gs_free char *iface = NULL;
+			/* VPN and software-device connections don't need a device yet,
+			 * but non-virtual connections do ... */
+			if (!nm_connection_is_virtual (connection)) {
+				g_set_error_literal (error,
+				                     NM_MANAGER_ERROR,
+				                     NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+				                     "No suitable device found for this connection.");
+				return NULL;
+			}
 
-		/* VPN and software-device connections don't need a device yet,
-		 * but non-virtual connections do ... */
-		if (!nm_connection_is_virtual (connection)) {
-			g_set_error_literal (error,
-			                     NM_MANAGER_ERROR,
-			                     NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-			                     "No suitable device found for this connection.");
-			goto error;
+			/* Look for an existing device with the connection's interface name */
+			iface = nm_manager_get_connection_iface (self, connection, NULL, error);
+			if (!iface)
+				return NULL;
+
+			device = find_device_by_iface (self, iface, connection, NULL);
+			if (!device) {
+				g_set_error_literal (error,
+				                     NM_MANAGER_ERROR,
+				                     NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+				                     "Failed to find a compatible device for this connection");
+				return NULL;
+			}
 		}
-
-		/* Look for an existing device with the connection's interface name */
-		iface = nm_manager_get_connection_iface (self, connection, NULL, error);
-		if (!iface)
-			goto error;
-
-		device = find_device_by_iface (self, iface, connection, NULL);
-	}
-
-	if ((!vpn || device_path) && !device) {
-		g_set_error_literal (error,
-		                     NM_MANAGER_ERROR,
-		                     NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-		                     "Failed to find a compatible device for this connection");
-		goto error;
 	}
 
 	*out_device = device;
 	*out_vpn = vpn;
-	return subject;
-
-error:
-	g_object_unref (subject);
-	return NULL;
+	return g_steal_pointer (&subject);
 }
 
 /*****************************************************************************/
