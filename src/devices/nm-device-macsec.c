@@ -490,13 +490,14 @@ handle_auth_or_fail (NMDeviceMacsec *self,
 
 	applied_connection = nm_act_request_get_applied_connection (req);
 	setting_name = nm_connection_need_secrets (applied_connection, NULL);
-	if (setting_name) {
-		macsec_secrets_get_secrets (self, setting_name,
-		                            NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
-		                             | (new_secrets ? NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW : 0));
-	} else
+	if (!setting_name) {
 		_LOGI (LOGD_DEVICE, "Cleared secrets, but setting didn't need any secrets.");
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
 
+	macsec_secrets_get_secrets (self, setting_name,
+	                              NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
+	                            | (new_secrets ? NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW : 0));
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
 
