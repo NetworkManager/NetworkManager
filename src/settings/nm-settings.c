@@ -309,7 +309,6 @@ impl_settings_get_connection_by_uuid (NMDBusObject *obj,
 	NMSettingsConnection *connection = NULL;
 	gs_unref_object NMAuthSubject *subject = NULL;
 	GError *error = NULL;
-	char *error_desc = NULL;
 	const char *uuid;
 
 	g_variant_get (parameters, "(&s)", &uuid);
@@ -330,15 +329,12 @@ impl_settings_get_connection_by_uuid (NMDBusObject *obj,
 		goto error;
 	}
 
-	if (!nm_auth_is_subject_in_acl (NM_CONNECTION (connection),
-	                                subject,
-	                                &error_desc)) {
-		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                             error_desc);
-		g_free (error_desc);
+	if (!nm_auth_is_subject_in_acl_set_error (NM_CONNECTION (connection),
+	                                          subject,
+	                                          NM_SETTINGS_ERROR,
+	                                          NM_SETTINGS_ERROR_PERMISSION_DENIED,
+	                                          &error))
 		goto error;
-	}
 
 	g_dbus_method_invocation_return_value (invocation,
 	                                       g_variant_new ("(o)",
@@ -1252,7 +1248,6 @@ nm_settings_add_connection_dbus (NMSettings *self,
 	NMAuthSubject *subject = NULL;
 	NMAuthChain *chain;
 	GError *error = NULL, *tmp_error = NULL;
-	char *error_desc = NULL;
 	const char *perm;
 
 	g_return_if_fail (connection != NULL);
@@ -1295,18 +1290,12 @@ nm_settings_add_connection_dbus (NMSettings *self,
 		goto done;
 	}
 
-	/* Ensure the caller's username exists in the connection's permissions,
-	 * or that the permissions is empty (ie, visible by everyone).
-	 */
-	if (!nm_auth_is_subject_in_acl (connection,
-	                                subject,
-	                                &error_desc)) {
-		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                             error_desc);
-		g_free (error_desc);
+	if (!nm_auth_is_subject_in_acl_set_error (connection,
+	                                          subject,
+	                                          NM_SETTINGS_ERROR,
+	                                          NM_SETTINGS_ERROR_PERMISSION_DENIED,
+	                                          &error))
 		goto done;
-	}
 
 	/* If the caller is the only user in the connection's permissions, then
 	 * we use the 'modify.own' permission instead of 'modify.system'.  If the

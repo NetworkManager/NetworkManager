@@ -2116,7 +2116,6 @@ device_auth_request_cb (NMDevice *device,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GError *error = NULL;
 	NMAuthSubject *subject = NULL;
-	char *error_desc = NULL;
 	NMAuthChain *chain;
 
 	/* Validate the caller */
@@ -2129,15 +2128,13 @@ device_auth_request_cb (NMDevice *device,
 	}
 
 	/* Ensure the subject has permissions for this connection */
-	if (connection && !nm_auth_is_subject_in_acl (connection,
-	                                              subject,
-	                                              &error_desc)) {
-		error = g_error_new_literal (NM_MANAGER_ERROR,
-		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             error_desc);
-		g_free (error_desc);
+	if (   connection
+	    && !nm_auth_is_subject_in_acl_set_error (connection,
+	                                             subject,
+	                                             NM_MANAGER_ERROR,
+	                                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+	                                             &error))
 		goto done;
-	}
 
 	/* Validate the request */
 	chain = nm_auth_chain_new_subject (subject, context, device_auth_done_cb, self);
@@ -3746,7 +3743,6 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	NMConnection *existing_connection = NULL;
 	NMActiveConnection *master_ac = NULL;
 	NMAuthSubject *subject;
-	char *error_desc = NULL;
 
 	g_return_val_if_fail (NM_IS_MANAGER (self), FALSE);
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (active), FALSE);
@@ -3754,13 +3750,13 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 
 	g_assert (NM_IS_VPN_CONNECTION (active) == FALSE);
 
-	connection = nm_active_connection_get_settings_connection (active);
-	g_assert (connection);
-
-	applied = nm_active_connection_get_applied_connection (active);
-
 	device = nm_active_connection_get_device (active);
 	g_return_val_if_fail (device != NULL, FALSE);
+
+	connection = nm_active_connection_get_settings_connection (active);
+	nm_assert (connection);
+
+	applied = nm_active_connection_get_applied_connection (active);
 
 	/* If the device is active and its connection is not visible to the
 	 * user that's requesting this new activation, fail, since other users
@@ -3769,16 +3765,13 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	 */
 	existing_connection = nm_device_get_applied_connection (device);
 	subject = nm_active_connection_get_subject (active);
-	if (existing_connection &&
-	    !nm_auth_is_subject_in_acl (existing_connection,
-	                                subject,
-	                                &error_desc)) {
-		g_set_error (error,
-		             NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		             "Private connection already active on the device: %s",
-		             error_desc);
-		g_free (error_desc);
+	if (   existing_connection
+	    && !nm_auth_is_subject_in_acl_set_error (existing_connection,
+	                                             subject,
+	                                             NM_MANAGER_ERROR,
+	                                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+	                                             error)) {
+		g_prefix_error (error, "Private connection already active on the device: ");
 		return FALSE;
 	}
 
@@ -4159,25 +4152,18 @@ nm_manager_activate_connection (NMManager *self,
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMActiveConnection *active;
-	char *error_desc = NULL;
 	GSList *iter;
 
-	g_return_val_if_fail (self != NULL, NULL);
-	g_return_val_if_fail (connection != NULL, NULL);
-	g_return_val_if_fail (error != NULL, NULL);
-	g_return_val_if_fail (*error == NULL, NULL);
+	g_return_val_if_fail (self, NULL);
+	g_return_val_if_fail (connection, NULL);
+	g_return_val_if_fail (!error || !*error, NULL);
 
-	/* Ensure the subject has permissions for this connection */
-	if (!nm_auth_is_subject_in_acl (NM_CONNECTION (connection),
-	                                subject,
-	                                &error_desc)) {
-		g_set_error_literal (error,
-		                     NM_MANAGER_ERROR,
-		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                     error_desc);
-		g_free (error_desc);
+	if (!nm_auth_is_subject_in_acl_set_error (NM_CONNECTION (connection),
+	                                          subject,
+	                                          NM_MANAGER_ERROR,
+	                                          NM_MANAGER_ERROR_PERMISSION_DENIED,
+	                                          error))
 		return NULL;
-	}
 
 	/* Look for a active connection that's equivalent and is already pending authorization
 	 * and eventual activation. This is used to de-duplicate concurrent activations which would
@@ -4241,7 +4227,6 @@ validate_activation_request (NMManager *self,
 	NMDevice *device = NULL;
 	gboolean vpn = FALSE;
 	NMAuthSubject *subject = NULL;
-	char *error_desc = NULL;
 
 	nm_assert (NM_IS_CONNECTION (connection));
 	nm_assert (out_device);
@@ -4257,17 +4242,12 @@ validate_activation_request (NMManager *self,
 		return NULL;
 	}
 
-	/* Ensure the subject has permissions for this connection */
-	if (!nm_auth_is_subject_in_acl (connection,
-	                                subject,
-	                                &error_desc)) {
-		g_set_error_literal (error,
-		                     NM_MANAGER_ERROR,
-		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                     error_desc);
-		g_free (error_desc);
+	if (!nm_auth_is_subject_in_acl_set_error (connection,
+	                                          subject,
+	                                          NM_MANAGER_ERROR,
+	                                          NM_MANAGER_ERROR_PERMISSION_DENIED,
+	                                          error))
 		goto error;
-	}
 
 	if (   nm_connection_get_setting_vpn (connection)
 	    || nm_connection_is_type (connection, NM_SETTING_VPN_SETTING_NAME))
@@ -4800,7 +4780,6 @@ impl_manager_deactivate_connection (NMDBusObject *obj,
 	GError *error = NULL;
 	NMAuthSubject *subject = NULL;
 	NMAuthChain *chain;
-	char *error_desc = NULL;
 	const char *active_path;
 
 	g_variant_get (parameters, "(&o)", &active_path);
@@ -4826,16 +4805,12 @@ impl_manager_deactivate_connection (NMDBusObject *obj,
 		goto done;
 	}
 
-	/* Ensure the subject has permissions for this connection */
-	if (!nm_auth_is_subject_in_acl (NM_CONNECTION (connection),
-	                                subject,
-	                                &error_desc)) {
-		error = g_error_new_literal (NM_MANAGER_ERROR,
-		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             error_desc);
-		g_free (error_desc);
+	if (!nm_auth_is_subject_in_acl_set_error (NM_CONNECTION (connection),
+	                                          subject,
+	                                          NM_MANAGER_ERROR,
+	                                          NM_MANAGER_ERROR_PERMISSION_DENIED,
+	                                          &error))
 		goto done;
-	}
 
 	/* Validate the user request */
 	chain = nm_auth_chain_new_subject (subject, invocation, deactivate_net_auth_done_cb, self);
@@ -5140,10 +5115,6 @@ impl_manager_sleep (NMDBusObject *obj,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GError *error = NULL;
 	gs_unref_object NMAuthSubject *subject = NULL;
-#if 0
-	NMAuthChain *chain;
-	const char *error_desc = NULL;
-#endif
 	gboolean do_sleep;
 
 	g_variant_get (parameters, "(b)", &do_sleep);
@@ -5172,20 +5143,6 @@ impl_manager_sleep (NMDBusObject *obj,
 	nm_audit_log_control_op (NM_AUDIT_OP_SLEEP_CONTROL, do_sleep ? "on" : "off", TRUE, subject, NULL);
 	g_dbus_method_invocation_return_value (invocation, NULL);
 	return;
-
-#if 0
-	chain = nm_auth_chain_new (invocation, sleep_auth_done_cb, self, &error_desc);
-	if (chain) {
-		priv->auth_chains = g_slist_append (priv->auth_chains, chain);
-		nm_auth_chain_set_data (chain, "sleep", GUINT_TO_POINTER (do_sleep), NULL);
-		nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_SLEEP_WAKE, TRUE);
-	} else {
-		error = g_error_new_literal (NM_MANAGER_ERROR,
-		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
-		                             error_desc);
-		g_dbus_method_invocation_take_error (invocation, error);
-	}
-#endif
 }
 
 static void
