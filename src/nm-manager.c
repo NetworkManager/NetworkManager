@@ -4193,7 +4193,8 @@ nm_manager_activate_connection (NMManager *self,
 		    && g_strcmp0 (nm_active_connection_get_specific_object (active), specific_object) == 0
 		    && nm_active_connection_get_device (active) == device
 		    && nm_auth_subject_is_internal (nm_active_connection_get_subject (active))
-		    && nm_auth_subject_is_internal (subject))
+		    && nm_auth_subject_is_internal (subject)
+		    && nm_active_connection_get_activation_reason (active) == activation_reason)
 			return active;
 	}
 
