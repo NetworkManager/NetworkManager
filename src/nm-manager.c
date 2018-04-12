@@ -3986,51 +3986,6 @@ _internal_activate_generic (NMManager *self, NMActiveConnection *active, GError 
 }
 
 static NMActiveConnection *
-_new_vpn_active_connection (NMManager *self,
-                            NMSettingsConnection *settings_connection,
-                            const char *specific_object,
-                            NMAuthSubject *subject,
-                            NMActivationReason activation_reason,
-                            GError **error)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMActiveConnection *parent = NULL;
-	NMDevice *device = NULL;
-
-	g_return_val_if_fail (!settings_connection || NM_IS_SETTINGS_CONNECTION (settings_connection), NULL);
-
-	if (specific_object) {
-		/* Find the specific connection the client requested we use */
-		parent = active_connection_get_by_path (self, specific_object);
-		if (!parent) {
-			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
-			                     "Base connection for VPN connection not active.");
-			return NULL;
-		}
-	} else
-		parent = priv->primary_connection;
-
-	if (!parent) {
-		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
-		                     "Could not find source connection.");
-		return NULL;
-	}
-
-	device = nm_active_connection_get_device (parent);
-	if (!device) {
-		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-		                     "Source connection had no active device.");
-		return NULL;
-	}
-
-	return (NMActiveConnection *) nm_vpn_connection_new (settings_connection,
-	                                                     device,
-	                                                     nm_dbus_object_get_path (NM_DBUS_OBJECT (parent)),
-	                                                     activation_reason,
-	                                                     subject);
-}
-
-static NMActiveConnection *
 _new_active_connection (NMManager *self,
                         gboolean is_vpn,
                         NMConnection *connection,
@@ -4042,12 +3997,16 @@ _new_active_connection (NMManager *self,
                         NMActivationReason activation_reason,
                         GError **error)
 {
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMSettingsConnection *settings_connection = NULL;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), NULL);
 
 	nm_assert (is_vpn == _connection_is_vpn (connection));
+
+	nm_assert (   ( is_vpn && !device)
+	           || (!is_vpn && NM_IS_DEVICE (device)));
 
 	if (is_vpn) {
 		/* FIXME: for VPN connections, we don't allow re-activating an
@@ -4067,20 +4026,48 @@ _new_active_connection (NMManager *self,
 		settings_connection = (NMSettingsConnection *) connection;
 
 	if (is_vpn) {
+		NMActiveConnection *parent = NULL;
+
 		/* FIXME: apparently, activation here only works if @connection is
 		 * a settings-connection. Which is not the case during AddAndActivatate.
 		 * Probably, AddAndActivate is broken for VPN. */
 		if (activation_type != NM_ACTIVATION_TYPE_MANAGED)
 			g_return_val_if_reached (NULL);
-		return _new_vpn_active_connection (self,
-		                                   settings_connection,
-		                                   specific_object,
-		                                   subject,
-		                                   activation_reason,
-		                                   error);
+
+		g_return_val_if_fail (!settings_connection || NM_IS_SETTINGS_CONNECTION (settings_connection), NULL);
+
+		if (specific_object) {
+			/* Find the specific connection the client requested we use */
+			parent = active_connection_get_by_path (self, specific_object);
+			if (!parent) {
+				g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
+				                     "Base connection for VPN connection not active.");
+				return NULL;
+			}
+		} else
+			parent = priv->primary_connection;
+
+		if (!parent) {
+			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
+			                     "Could not find source connection.");
+			return NULL;
+		}
+
+		device = nm_active_connection_get_device (parent);
+		if (!device) {
+			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+			                     "Source connection had no active device");
+			return NULL;
+		}
+
+		return (NMActiveConnection *) nm_vpn_connection_new (settings_connection,
+		                                                     device,
+		                                                     nm_dbus_object_get_path (NM_DBUS_OBJECT (parent)),
+		                                                     activation_reason,
+		                                                     subject);
 	}
 
-	if (device && (activation_type == NM_ACTIVATION_TYPE_MANAGED))
+	if (activation_type == NM_ACTIVATION_TYPE_MANAGED)
 		nm_device_sys_iface_state_set (device, NM_DEVICE_SYS_IFACE_STATE_MANAGED);
 
 	return (NMActiveConnection *) nm_act_request_new (settings_connection,
@@ -4178,13 +4165,16 @@ nm_manager_activate_connection (NMManager *self,
                                 NMActivationReason activation_reason,
                                 GError **error)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMManagerPrivate *priv;
 	NMActiveConnection *active;
 	GSList *iter;
 
-	g_return_val_if_fail (self, NULL);
-	g_return_val_if_fail (connection, NULL);
+	g_return_val_if_fail (NM_IS_MANAGER (self), NULL);
+	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (connection), NULL);
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 	g_return_val_if_fail (!error || !*error, NULL);
+
+	priv = NM_MANAGER_GET_PRIVATE (self);
 
 	if (!nm_auth_is_subject_in_acl_set_error (NM_CONNECTION (connection),
 	                                          subject,
@@ -4298,10 +4288,9 @@ validate_activation_request (NMManager *self,
 			                     "Device not found");
 			return NULL;
 		}
-	} else {
+	} else if (!is_vpn) {
 		device = nm_manager_get_best_device_for_connection (self, connection, TRUE, NULL);
-		if (   !device
-		    && !is_vpn) {
+		if (!device) {
 			gs_free char *iface = NULL;
 
 			/* VPN and software-device connections don't need a device yet,
@@ -4329,6 +4318,22 @@ validate_activation_request (NMManager *self,
 			}
 		}
 	}
+
+	if (is_vpn && device) {
+		/* VPN's are treated specially. Maybe the should accept a device as well,
+		 * however, later on during activation, we don't handle the device.
+		 *
+		 * Maybe we should, and maybe it makes sense to specify a device
+		 * when activating a VPN. But for now, just error out.  */
+		g_set_error_literal (error,
+		                     NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+		                     "Cannot specify device when activating VPN");
+		return NULL;
+	}
+
+	nm_assert (   ( is_vpn && !device)
+	           || (!is_vpn && NM_IS_DEVICE (device)));
 
 	*out_device = device;
 	*out_is_vpn = is_vpn;
