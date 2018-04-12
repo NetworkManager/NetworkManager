@@ -59,12 +59,18 @@ void nm_auth_chain_add_call (NMAuthChain *chain,
 
 void nm_auth_chain_destroy (NMAuthChain *chain);
 
+NMAuthSubject *nm_auth_chain_get_subject (NMAuthChain *self);
+
 /* Caller must free returned error description */
 gboolean nm_auth_is_subject_in_acl (NMConnection *connection,
                                     NMAuthSubject *subect,
                                     char **out_error_desc);
 
-NMAuthSubject *nm_auth_chain_get_subject (NMAuthChain *self);
+gboolean nm_auth_is_subject_in_acl_set_error (NMConnection *connection,
+                                              NMAuthSubject *subject,
+                                              GQuark err_domain,
+                                              int err_code,
+                                              GError **error);
 
 #endif /* __NETWORKMANAGER_MANAGER_AUTH_H__ */
 
