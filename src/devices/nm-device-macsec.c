@@ -494,8 +494,10 @@ handle_auth_or_fail (NMDeviceMacsec *self,
 		macsec_secrets_get_secrets (self, setting_name,
 		                            NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
 		                             | (new_secrets ? NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW : 0));
-	} else
+	} else {
 		_LOGI (LOGD_DEVICE, "Cleared secrets, but setting didn't need any secrets.");
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
 
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
