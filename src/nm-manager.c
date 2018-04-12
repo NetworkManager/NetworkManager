@@ -339,6 +339,23 @@ static NM_CACHED_QUARK_FCN ("autoconnect-root", autoconnect_root_quark)
 /*****************************************************************************/
 
 static gboolean
+_connection_is_vpn (NMConnection *connection)
+{
+	const char *type;
+
+	type = nm_connection_get_connection_type (connection);
+	if (type)
+		return nm_streq (type, NM_SETTING_VPN_SETTING_NAME);
+
+	/* we have an incomplete (invalid) connection at hand. That can only
+	 * happen during AddAndActivate. Determine whether it's VPN type based
+	 * on the existance of a [vpn] section. */
+	return !!nm_connection_get_setting_vpn (connection);
+}
+
+/*****************************************************************************/
+
+static gboolean
 concheck_enabled (NMManager *self, gboolean *out_changed)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
@@ -4036,7 +4053,7 @@ _new_active_connection (NMManager *self,
 
 	specific_object = nm_utils_dbus_normalize_object_path (specific_object);
 
-	is_vpn = nm_connection_is_type (NM_CONNECTION (connection), NM_SETTING_VPN_SETTING_NAME);
+	is_vpn = _connection_is_vpn (NM_CONNECTION (connection));
 
 	if (NM_IS_SETTINGS_CONNECTION (connection))
 		settings_connection = (NMSettingsConnection *) connection;
@@ -4252,9 +4269,7 @@ validate_activation_request (NMManager *self,
 	                                          error))
 		return NULL;
 
-	if (   nm_connection_get_setting_vpn (connection)
-	    || nm_connection_is_type (connection, NM_SETTING_VPN_SETTING_NAME))
-		is_vpn = TRUE;
+	is_vpn = _connection_is_vpn (connection);
 
 	if (*out_device) {
 		device = *out_device;
