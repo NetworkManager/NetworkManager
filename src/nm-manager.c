@@ -4092,14 +4092,16 @@ _internal_activation_auth_done (NMActiveConnection *active,
 
 	priv->authorizing_connections = g_slist_remove (priv->authorizing_connections, active);
 
+	if (!success)
+		goto fail;
+
 	/* Don't continue with an internal activation if an equivalent active
 	 * connection already exists. Note that slave autoconnections always force a
 	 * reconnection.  We also check this earlier, but there we may fail to
 	 * detect a duplicate if the existing active connection is undergoing
 	 * authorization in impl_manager_activate_connection().
 	 */
-	if (   success
-	    && nm_auth_subject_is_internal (nm_active_connection_get_subject (active))
+	if (   nm_auth_subject_is_internal (nm_active_connection_get_subject (active))
 	    && nm_active_connection_get_activation_reason (active) != NM_ACTIVATION_REASON_AUTOCONNECT_SLAVES) {
 		c_list_for_each_entry (ac, &priv->active_connections_lst_head, active_connections_lst) {
 			if (   nm_active_connection_get_device (ac) == nm_active_connection_get_device (active)
@@ -4112,17 +4114,15 @@ _internal_activation_auth_done (NMActiveConnection *active,
 				             NM_MANAGER_ERROR_CONNECTION_ALREADY_ACTIVE,
 				             "Connection '%s' is already active",
 				             nm_active_connection_get_settings_connection_id (active));
-				success = FALSE;
-				break;
+				goto fail;
 			}
 		}
 	}
 
-	if (success) {
-		if (_internal_activate_generic (self, active, &error))
-			return;
-	}
+	if (_internal_activate_generic (self, active, &error))
+		return;
 
+fail:
 	nm_assert (error_desc || error);
 	nm_active_connection_set_state_fail (active,
 	                                     NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN,
@@ -4209,10 +4209,11 @@ nm_manager_activate_connection (NMManager *self,
 	                                 activation_type,
 	                                 activation_reason,
 	                                 error);
-	if (active) {
-		priv->authorizing_connections = g_slist_prepend (priv->authorizing_connections, active);
-		nm_active_connection_authorize (active, NULL, _internal_activation_auth_done, self, NULL);
-	}
+	if (!active)
+		return NULL;
+
+	priv->authorizing_connections = g_slist_prepend (priv->authorizing_connections, active);
+	nm_active_connection_authorize (active, NULL, _internal_activation_auth_done, self, NULL);
 	return active;
 }
 
@@ -4358,24 +4359,27 @@ _activation_auth_done (NMActiveConnection *active,
 	subject = nm_active_connection_get_subject (active);
 	connection = nm_active_connection_get_settings_connection (active);
 
-	if (success) {
-		if (_internal_activate_generic (self, active, &error)) {
-			nm_settings_connection_autoconnect_blocked_reason_set (connection,
-			                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST,
-			                                                       FALSE);
-			g_dbus_method_invocation_return_value (context,
-			                                       g_variant_new ("(o)",
-			                                       nm_dbus_object_get_path (NM_DBUS_OBJECT (active))));
-			nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ACTIVATE, connection, TRUE, NULL,
-			                            subject, NULL);
-			return;
-		}
-	} else {
+	if (!success) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             error_desc);
+		goto fail;
 	}
 
+	if (!_internal_activate_generic (self, active, &error))
+		goto fail;
+
+	nm_settings_connection_autoconnect_blocked_reason_set (connection,
+	                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST,
+	                                                       FALSE);
+	g_dbus_method_invocation_return_value (context,
+	                                       g_variant_new ("(o)",
+	                                       nm_dbus_object_get_path (NM_DBUS_OBJECT (active))));
+	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ACTIVATE, connection, TRUE, NULL,
+	                            subject, NULL);
+	return;
+
+fail:
 	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ACTIVATE, connection, FALSE, NULL,
 	                            subject, error->message);
 	nm_active_connection_set_state_fail (active,
