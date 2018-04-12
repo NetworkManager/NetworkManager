@@ -1060,6 +1060,11 @@ nm_device_ipv4_sysctl_get_effective_uint32 (NMDevice *self, const char *property
 	if (!nm_device_get_ip_ifindex (self))
 		return fallback;
 
+	/* for this kind of sysctl (e.g. "rp_filter"), kernel effectively uses the
+	 * MAX of the per-device value and the "all" value.
+	 *
+	 * Also do that, by reading both sysctls and return the maximum. */
+
 	v = nm_platform_sysctl_get_int_checked (nm_device_get_platform (self),
 	                                        NMP_SYSCTL_PATHID_ABSOLUTE (nm_utils_sysctl_ip_conf_path (AF_INET,
 	                                                                                                  buf,
