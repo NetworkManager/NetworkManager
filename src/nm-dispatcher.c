@@ -631,9 +631,7 @@ _dispatcher_call (NMDispatcherAction action,
 	if (!device_dhcp6_props)
 		device_dhcp6_props = g_variant_ref_sink (g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0));
 
-#if WITH_CONCHECK
 	connectivity_state_string = nm_connectivity_state_to_string (connectivity_state);
-#endif
 
 	/* Send the action to the dispatcher */
 	if (blocking) {

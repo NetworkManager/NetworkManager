@@ -180,6 +180,7 @@ enum {
 	REMOVED,
 	RECHECK_AUTO_ACTIVATE,
 	RECHECK_ASSUME,
+	CONNECTIVITY_CHANGED,
 	LAST_SIGNAL,
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -630,6 +631,8 @@ static void realize_start_setup (NMDevice *self,
 static void _set_mtu (NMDevice *self, guint32 mtu);
 static void _commit_mtu (NMDevice *self, const NMIP4Config *config);
 static void _cancel_activation (NMDevice *self);
+
+static void concheck_update_state (NMDevice *self, NMConnectivityState state, gboolean is_periodic);
 
 /*****************************************************************************/
 
@@ -2389,6 +2392,9 @@ nm_device_check_connectivity_update_interval (NMDevice *self)
 	if (!new_interval) {
 		/* this will cancel any potentially pending timeout. */
 		concheck_periodic_schedule_do (self, 0);
+
+		/* also update the fake connectivity state. */
+		concheck_update_state (self, NM_CONNECTIVITY_FAKE, TRUE);
 		return;
 	}
 
@@ -2418,6 +2424,10 @@ concheck_update_state (NMDevice *self, NMConnectivityState state, gboolean is_pe
 		/* If the connectivity check is disabled and we obtain a fake
 		 * result, make an optimistic guess. */
 		if (priv->state == NM_DEVICE_STATE_ACTIVATED) {
+			/* FIXME: the fake connectivity state depends on the availablility of
+			 * a default route. However, we have no mechanism that rechecks the
+			 * value if a device route appears/disappears after the device
+			 * was activated. */
 			if (nm_device_get_best_default_route (self, AF_UNSPEC))
 				state = NM_CONNECTIVITY_FULL;
 			else
@@ -2457,6 +2467,7 @@ concheck_update_state (NMDevice *self, NMConnectivityState state, gboolean is_pe
 	priv->connectivity_state = state;
 
 	_notify (self, PROP_CONNECTIVITY);
+	g_signal_emit (self, signals[CONNECTIVITY_CHANGED], 0);
 
 	if (   priv->state == NM_DEVICE_STATE_ACTIVATED
 	    && !nm_device_sys_iface_state_is_external (self)) {
@@ -2499,7 +2510,8 @@ concheck_cb (NMConnectivity *connectivity,
              GError *error,
              gpointer user_data)
 {
-	gs_unref_object NMDevice *self = NULL;
+	_nm_unused gs_unref_object NMDevice *self_keep_alive = NULL;
+	NMDevice *self;
 	NMDevicePrivate *priv;
 	NMDeviceConnectivityHandle *handle;
 	NMDeviceConnectivityHandle *other_handle;
@@ -2511,19 +2523,23 @@ concheck_cb (NMConnectivity *connectivity,
 	nm_assert (NM_IS_DEVICE (handle->self));
 
 	handle->c_handle = NULL;
-	self = g_object_ref (handle->self);
-
-	_LOGT (LOGD_CONCHECK, "connectivity: complete check (seq:%llu, state:%s%s%s%s)",
-	       (long long unsigned) handle->seq,
-	       nm_connectivity_state_to_string (state),
-	       NM_PRINT_FMT_QUOTED (error, ", error: ", error->message, "", ""));
+	self = handle->self;
 
 	if (nm_utils_error_is_cancelled (error, FALSE)) {
 		/* the only place where we nm_connectivity_check_cancel(@c_handle), is
 		 * from inside concheck_handle_event(). This is a recursive call,
 		 * nothing to do. */
+		_LOGT (LOGD_CONCHECK, "connectivity: complete check (seq:%llu, obsoleted by later request returning)",
+		       (long long unsigned) handle->seq);
 		return;
 	}
+
+	self_keep_alive = g_object_ref (self);
+
+	_LOGT (LOGD_CONCHECK, "connectivity: complete check (seq:%llu, state:%s%s%s%s)",
+	       (long long unsigned) handle->seq,
+	       nm_connectivity_state_to_string (state),
+	       NM_PRINT_FMT_QUOTED (error, ", error: ", error->message, "", ""));
 
 	/* we keep NMConnectivity instance alive. It cannot be disposing. */
 	nm_assert (!nm_utils_error_is_cancelled (error, TRUE));
@@ -15738,5 +15754,13 @@ nm_device_class_init (NMDeviceClass *klass)
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE, 0);
+
+	signals[CONNECTIVITY_CHANGED] =
+	    g_signal_new (NM_DEVICE_CONNECTIVITY_CHANGED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL,
+	                  g_cclosure_marshal_VOID__VOID,
 	                  G_TYPE_NONE, 0);
 }

@@ -135,6 +135,7 @@ nm_device_state_reason_check (NMDeviceStateReason reason)
 #define NM_DEVICE_STATE_CHANGED         "state-changed"
 #define NM_DEVICE_LINK_INITIALIZED      "link-initialized"
 #define NM_DEVICE_AUTOCONNECT_ALLOWED   "autoconnect-allowed"
+#define NM_DEVICE_CONNECTIVITY_CHANGED  "connectivity-changed"
 
 #define NM_DEVICE_STATISTICS_REFRESH_RATE_MS "refresh-rate-ms"
 #define NM_DEVICE_STATISTICS_TX_BYTES        "tx-bytes"

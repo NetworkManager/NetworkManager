@@ -1142,26 +1142,6 @@ _nm_state_to_string (NMState state)
 	}
 }
 
-static void
-set_state (NMManager *self, NMState state)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-
-	if (priv->state == state)
-		return;
-
-	priv->state = state;
-
-	_LOGI (LOGD_CORE, "NetworkManager state is now %s", _nm_state_to_string (state));
-
-	_notify (self, PROP_STATE);
-	nm_dbus_object_emit_signal (NM_DBUS_OBJECT (self),
-	                            &interface_info_manager,
-	                            &signal_info_state_changed,
-	                            "(u)",
-	                            (guint32) priv->state);
-}
-
 static NMState
 find_best_device_state (NMManager *manager)
 {
@@ -1232,26 +1212,38 @@ nm_manager_update_metered (NMManager *self)
 }
 
 static void
-nm_manager_update_state (NMManager *manager)
+nm_manager_update_state (NMManager *self)
 {
 	NMManagerPrivate *priv;
 	NMState new_state = NM_STATE_DISCONNECTED;
 
-	g_return_if_fail (NM_IS_MANAGER (manager));
+	g_return_if_fail (NM_IS_MANAGER (self));
 
-	priv = NM_MANAGER_GET_PRIVATE (manager);
+	priv = NM_MANAGER_GET_PRIVATE (self);
 
-	if (manager_sleeping (manager))
+	if (manager_sleeping (self))
 		new_state = NM_STATE_ASLEEP;
 	else
-		new_state = find_best_device_state (manager);
+		new_state = find_best_device_state (self);
 
 	if (   new_state >= NM_STATE_CONNECTED_LOCAL
 	    && priv->connectivity_state == NM_CONNECTIVITY_FULL) {
 		new_state = NM_STATE_CONNECTED_GLOBAL;
 	}
 
-	set_state (manager, new_state);
+	if (priv->state == new_state)
+		return;
+
+	priv->state = new_state;
+
+	_LOGI (LOGD_CORE, "NetworkManager state is now %s", _nm_state_to_string (new_state));
+
+	_notify (self, PROP_STATE);
+	nm_dbus_object_emit_signal (NM_DBUS_OBJECT (self),
+	                            &interface_info_manager,
+	                            &signal_info_state_changed,
+	                            "(u)",
+	                            (guint32) priv->state);
 }
 
 static void
@@ -2512,7 +2504,6 @@ device_realized (NMDevice *device,
 
 static void
 device_connectivity_changed (NMDevice *device,
-                             GParamSpec *pspec,
                              NMManager *self)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
@@ -2520,11 +2511,20 @@ device_connectivity_changed (NMDevice *device,
 	NMConnectivityState state;
 	NMDevice *dev;
 
-	c_list_for_each_entry (dev, &priv->devices_lst_head, devices_lst) {
-		state = nm_device_get_connectivity_state (dev);
-		if (state > best_state)
+	best_state = nm_device_get_connectivity_state (device);
+	if (best_state < NM_CONNECTIVITY_FULL) {
+		c_list_for_each_entry (dev, &priv->devices_lst_head, devices_lst) {
+			state = nm_device_get_connectivity_state (dev);
+			if (state <= best_state)
+				continue;
 			best_state = state;
+			if (best_state >= NM_CONNECTIVITY_FULL) {
+				/* it doesn't get better than this. */
+				break;
+			}
+		}
 	}
+	nm_assert (best_state <= NM_CONNECTIVITY_FULL);
 
 	if (best_state != priv->connectivity_state) {
 		priv->connectivity_state = best_state;
@@ -2646,7 +2646,7 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 	                  G_CALLBACK (device_realized),
 	                  self);
 
-	g_signal_connect (device, "notify::" NM_DEVICE_CONNECTIVITY,
+	g_signal_connect (device, NM_DEVICE_CONNECTIVITY_CHANGED,
 	                  G_CALLBACK (device_connectivity_changed),
 	                  self);
 
