@@ -630,12 +630,6 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 		goto error;
 	}
 
-	r = sd_dhcp_client_set_request_broadcast (priv->client4, true);
-	if (r < 0) {
-		_LOGW ("failed to enable broadcast mode (%d)", r);
-		goto error;
-	}
-
 	dhcp_lease_load (&lease, priv->lease_file);
 
 	if (last_ip4_address)
