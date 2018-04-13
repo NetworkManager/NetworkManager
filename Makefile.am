@@ -502,7 +502,7 @@ libnm_core_lib_c_real = \
 	libnm-core/nm-connection.c \
 	libnm-core/nm-dbus-utils.c \
 	libnm-core/nm-errors.c \
-	libnm-core/nm-keyfile-reader.c \
+	libnm-core/nm-keyfile.c \
 	libnm-core/nm-keyfile-utils.c \
 	libnm-core/nm-keyfile-writer.c \
 	libnm-core/nm-property-compare.c \
