@@ -657,46 +657,10 @@ ip_address_or_route_parser (KeyfileReaderInfo *info, NMSetting *setting, const c
 }
 
 static void
-ip4_dns_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
+ip_dns_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
 	const char *setting_name = nm_setting_get_name (setting);
-	GPtrArray *array;
-	gsize length;
-	gs_strfreev char **list = NULL;
-	char **iter;
-	int ret;
-
-	list = nm_keyfile_plugin_kf_get_string_list (info->keyfile, setting_name, key, &length, NULL);
-	if (!list || !g_strv_length (list))
-		return;
-
-	array = g_ptr_array_sized_new (length + 1);
-	for (iter = list; *iter; iter++) {
-		guint32 addr;
-
-		ret = inet_pton (AF_INET, *iter, &addr);
-		if (ret <= 0) {
-			if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
-			                  _("ignoring invalid DNS server IPv4 address '%s'"),
-			                  *iter)) {
-				g_ptr_array_unref (array);
-				return;
-			}
-			continue;
-		}
-
-		g_ptr_array_add (array, *iter);
-	}
-	g_ptr_array_add (array, NULL);
-
-	g_object_set (setting, key, array->pdata, NULL);
-	g_ptr_array_unref (array);
-}
-
-static void
-ip6_dns_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
-{
-	const char *setting_name = nm_setting_get_name (setting);
+	int addr_family  = nm_streq (setting_name, NM_SETTING_IP6_CONFIG_SETTING_NAME) ? AF_INET6 : AF_INET;
 	GPtrArray *array = NULL;
 	gsize length;
 	gs_strfreev char **list = NULL;
@@ -710,12 +674,13 @@ ip6_dns_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 	array = g_ptr_array_sized_new (length + 1);
 
 	for (iter = list; *iter; iter++) {
-		struct in6_addr addr;
+		NMIPAddr addr;
 
-		ret = inet_pton (AF_INET6, *iter, &addr);
+		ret = inet_pton (addr_family, *iter, &addr);
 		if (ret <= 0) {
 			if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
-			                  _("ignoring invalid DNS server IPv6 address '%s'"),
+			                  _("ignoring invalid DNS server IPv%c address '%s'"),
+			                  nm_utils_addr_family_to_char (addr_family),
 			                  *iter)) {
 				g_ptr_array_unref (array);
 				return;
@@ -1550,11 +1515,11 @@ static KeyParser key_parsers[] = {
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP_CONFIG_DNS,
 	  FALSE,
-	  ip4_dns_parser },
+	  ip_dns_parser },
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP_CONFIG_DNS,
 	  FALSE,
-	  ip6_dns_parser },
+	  ip_dns_parser },
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
 	  FALSE,
