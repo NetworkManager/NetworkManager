@@ -1606,14 +1606,14 @@ static KeyParser key_parsers[] = {
 	  NM_SETTING_TEAM_CONFIG,
 	  TRUE,
 	  team_config_parser },
-        { NM_SETTING_TC_CONFIG_SETTING_NAME,
-          NM_SETTING_TC_CONFIG_QDISCS,
+	{ NM_SETTING_TC_CONFIG_SETTING_NAME,
+	  NM_SETTING_TC_CONFIG_QDISCS,
 	  FALSE,
-          qdisc_parser },
-        { NM_SETTING_TC_CONFIG_SETTING_NAME,
-          NM_SETTING_TC_CONFIG_TFILTERS,
+	  qdisc_parser },
+	{ NM_SETTING_TC_CONFIG_SETTING_NAME,
+	  NM_SETTING_TC_CONFIG_TFILTERS,
 	  FALSE,
-          tfilter_parser },
+	  tfilter_parser },
 	{ NULL, NULL, FALSE }
 };
 
