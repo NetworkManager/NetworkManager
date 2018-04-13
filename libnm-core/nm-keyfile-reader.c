@@ -432,8 +432,8 @@ read_one_ip_address_or_route (KeyfileReaderInfo *info,
 		                        address_str, plen, property_name);
 		if (!result)
 			return NULL;
-		if (out_gateway && gateway_str)
-			*out_gateway = g_strdup (gateway_str);
+		if (gateway_str)
+			NM_SET_OUT (out_gateway, g_strdup (gateway_str));
 	}
 
 #undef VALUE_ORIG
@@ -475,16 +475,13 @@ ip_address_or_route_parser (KeyfileReaderInfo *info, NMSetting *setting, const c
 	static const char *key_names_routes[] = { "route", "routes", NULL };
 	static const char *key_names_addresses[] = { "address", "addresses", NULL };
 	const char **key_names = routes ? key_names_routes : key_names_addresses;
-	char *gateway = NULL;
-	GPtrArray *list;
-	GDestroyNotify free_func;
+	gs_free char *gateway = NULL;
+	gs_unref_ptrarray GPtrArray *list = NULL;
 	int i;
 
-	if (routes)
-		free_func = (GDestroyNotify) nm_ip_route_unref;
-	else
-		free_func = (GDestroyNotify) nm_ip_address_unref;
-	list = g_ptr_array_new_with_free_func (free_func);
+	list = g_ptr_array_new_with_free_func (routes
+	                                       ? (GDestroyNotify) nm_ip_route_unref
+	                                       : (GDestroyNotify) nm_ip_address_unref);
 
 	for (i = -1; i < 1000; i++) {
 		const char **key_basename;
@@ -509,26 +506,19 @@ ip_address_or_route_parser (KeyfileReaderInfo *info, NMSetting *setting, const c
 				fill_route_attributes (info->keyfile, item, setting_name, options_key, ipv6 ? AF_INET6 : AF_INET);
 			}
 
-			if (info->error) {
-				g_ptr_array_unref (list);
-				g_free (gateway);
+			if (info->error)
 				return;
-			}
+
 			if (item)
 				g_ptr_array_add (list, item);
-
 		}
 	}
 
 	if (list->len >= 1)
 		g_object_set (setting, key, list, NULL);
 
-	if (gateway) {
+	if (gateway)
 		g_object_set (setting, "gateway", gateway, NULL);
-		g_free (gateway);
-	}
-
-	g_ptr_array_unref (list);
 }
 
 static void
