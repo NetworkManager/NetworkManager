@@ -474,6 +474,7 @@ get_property_val (NMSetting *setting, const char *prop, NMMetaAccessorGetType ge
 			                                               get_type,
 			                                               show_secrets ? NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS : 0,
 			                                               &out_flags,
+			                                               NULL,
 			                                               (gpointer *) &to_free);
 			nm_assert (!out_flags);
 			return to_free ?: g_strdup (value);

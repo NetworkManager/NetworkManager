@@ -107,6 +107,7 @@ _metagen_ip4_config_get_fcn (const NMMetaEnvironment *environment,
                              NMMetaAccessorGetType get_type,
                              NMMetaAccessorGetFlags get_flags,
                              NMMetaAccessorGetOutFlags *out_flags,
+                             gboolean *out_is_default,
                              gpointer *out_to_free)
 {
 	NMIPConfig *cfg4 = target;
@@ -114,10 +115,12 @@ _metagen_ip4_config_get_fcn (const NMMetaEnvironment *environment,
 	char **arr;
 	const char *const*arrc;
 	guint i = 0;
+	const char *str;
 
 	nm_assert (info->info_type < _NMC_GENERIC_INFO_TYPE_IP4_CONFIG_NUM);
 
 	NMC_HANDLE_TERMFORMAT (NM_META_TERM_COLOR_NORMAL);
+	NM_SET_OUT (out_is_default, TRUE);
 
 	switch (info->info_type) {
 	case NMC_GENERIC_INFO_TYPE_IP4_CONFIG_ADDRESS:
@@ -138,7 +141,9 @@ _metagen_ip4_config_get_fcn (const NMMetaEnvironment *environment,
 			arr = NULL;
 		goto arr_out;
 	case NMC_GENERIC_INFO_TYPE_IP4_CONFIG_GATEWAY:
-		return nm_ip_config_get_gateway (cfg4);
+		str = nm_ip_config_get_gateway (cfg4);
+		NM_SET_OUT (out_is_default, !str);
+		return str;
 	case NMC_GENERIC_INFO_TYPE_IP4_CONFIG_ROUTE:
 		if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
 			return NULL;
@@ -166,10 +171,12 @@ _metagen_ip4_config_get_fcn (const NMMetaEnvironment *environment,
 	g_return_val_if_reached (NULL);
 
 arrc_out:
+	NM_SET_OUT (out_is_default, !arrc || !arrc[0]);
 	*out_flags |= NM_META_ACCESSOR_GET_OUT_FLAGS_STRV;
 	return arrc;
 
 arr_out:
+	NM_SET_OUT (out_is_default, !arr || !arr[0]);
 	*out_flags |= NM_META_ACCESSOR_GET_OUT_FLAGS_STRV;
 	*out_to_free = arr;
 	return arr;
@@ -183,6 +190,7 @@ _metagen_ip6_config_get_fcn (const NMMetaEnvironment *environment,
                              NMMetaAccessorGetType get_type,
                              NMMetaAccessorGetFlags get_flags,
                              NMMetaAccessorGetOutFlags *out_flags,
+                             gboolean *out_is_default,
                              gpointer *out_to_free)
 {
 	NMIPConfig *cfg6 = target;
@@ -190,10 +198,12 @@ _metagen_ip6_config_get_fcn (const NMMetaEnvironment *environment,
 	char **arr;
 	const char *const*arrc;
 	guint i = 0;
+	const char *str;
 
 	nm_assert (info->info_type < _NMC_GENERIC_INFO_TYPE_IP6_CONFIG_NUM);
 
 	NMC_HANDLE_TERMFORMAT (NM_META_TERM_COLOR_NORMAL);
+	NM_SET_OUT (out_is_default, TRUE);
 
 	switch (info->info_type) {
 	case NMC_GENERIC_INFO_TYPE_IP6_CONFIG_ADDRESS:
@@ -214,7 +224,9 @@ _metagen_ip6_config_get_fcn (const NMMetaEnvironment *environment,
 			arr = NULL;
 		goto arr_out;
 	case NMC_GENERIC_INFO_TYPE_IP6_CONFIG_GATEWAY:
-		return nm_ip_config_get_gateway (cfg6);
+		str = nm_ip_config_get_gateway (cfg6);
+		NM_SET_OUT (out_is_default, !str);
+		return str;
 	case NMC_GENERIC_INFO_TYPE_IP6_CONFIG_ROUTE:
 		if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
 			return NULL;
@@ -237,10 +249,12 @@ _metagen_ip6_config_get_fcn (const NMMetaEnvironment *environment,
 	g_return_val_if_reached (NULL);
 
 arrc_out:
+	NM_SET_OUT (out_is_default, !arrc || !arrc[0]);
 	*out_flags |= NM_META_ACCESSOR_GET_OUT_FLAGS_STRV;
 	return arrc;
 
 arr_out:
+	NM_SET_OUT (out_is_default, !arr || !arr[0]);
 	*out_flags |= NM_META_ACCESSOR_GET_OUT_FLAGS_STRV;
 	*out_to_free = arr;
 	return arr;

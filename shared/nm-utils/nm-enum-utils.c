@@ -64,10 +64,10 @@ _enum_is_valid_flags_nick (const char *str)
 char *
 _nm_utils_enum_to_str_full (GType type,
                             int value,
-                            const char *flags_separator)
+                            const char *flags_separator,
+                            const NMUtilsEnumValueInfo *value_infos)
 {
-	GTypeClass *class;
-	char *ret;
+	nm_auto_unref_gtypeclass GTypeClass *class = NULL;
 
 	if (   flags_separator
 	    && (   !flags_separator[0]
@@ -79,18 +79,45 @@ _nm_utils_enum_to_str_full (GType type,
 	if (G_IS_ENUM_CLASS (class)) {
 		GEnumValue *enum_value;
 
+		for ( ; value_infos && value_infos->nick; value_infos++) {
+			if (value_infos->value == value)
+				return g_strdup (value_infos->nick);
+		}
+
 		enum_value = g_enum_get_value (G_ENUM_CLASS (class), value);
 		if (   !enum_value
 		    || !_enum_is_valid_enum_nick (enum_value->value_nick))
-			ret = g_strdup_printf ("%d", value);
+			return g_strdup_printf ("%d", value);
 		else
-			ret = strdup (enum_value->value_nick);
+			return g_strdup (enum_value->value_nick);
 	} else if (G_IS_FLAGS_CLASS (class)) {
 		GFlagsValue *flags_value;
 		GString *str = g_string_new ("");
 		unsigned uvalue = (unsigned) value;
 
 		flags_separator = flags_separator ?: " ";
+
+		for ( ; value_infos && value_infos->nick; value_infos++) {
+
+			nm_assert (_enum_is_valid_flags_nick (value_infos->nick));
+
+			if (uvalue == 0) {
+				if (value_infos->value != 0)
+					continue;
+			} else {
+				if (!NM_FLAGS_ALL (uvalue, (unsigned) value_infos->value))
+					continue;
+			}
+
+			if (str->len)
+				g_string_append (str, flags_separator);
+			g_string_append (str, value_infos->nick);
+			uvalue &= ~((unsigned) value_infos->value);
+			if (uvalue == 0) {
+				/* we printed all flags. Done. */
+				goto flags_done;
+			}
+		}
 
 		do {
 			flags_value = g_flags_get_first_value (G_FLAGS_CLASS (class), uvalue);
@@ -105,12 +132,12 @@ _nm_utils_enum_to_str_full (GType type,
 			g_string_append (str, flags_value->value_nick);
 			uvalue &= ~flags_value->value;
 		} while (uvalue);
-		ret = g_string_free (str, FALSE);
-	} else
-		g_return_val_if_reached (NULL);
 
-	g_type_class_unref (class);
-	return ret;
+flags_done:
+		return g_string_free (str, FALSE);
+	}
+
+	g_return_val_if_reached (NULL);
 }
 
 static const NMUtilsEnumValueInfo *

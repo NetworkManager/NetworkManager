@@ -1278,7 +1278,7 @@ svSetValueEnum (shvarFile *s, const char *key, GType gtype, int value)
 {
 	gs_free char *v = NULL;
 
-	v = _nm_utils_enum_to_str_full (gtype, value, " ");
+	v = _nm_utils_enum_to_str_full (gtype, value, " ", NULL);
 	return svSetValueStr (s, key, v);
 }
 

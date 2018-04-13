@@ -116,6 +116,7 @@ typedef struct _NmcConfig {
 	bool escape_values;                               /* Whether to escape ':' and '\' in terse tabular mode */
 	bool in_editor;                                   /* Whether running the editor - nmcli con edit' */
 	bool show_secrets;                                /* Whether to display secrets (both input and output): option '--show-secrets' */
+	bool overview;                                    /* Overview mode (hide default values) */
 } NmcConfig;
 
 typedef struct _NmcOutputData {
