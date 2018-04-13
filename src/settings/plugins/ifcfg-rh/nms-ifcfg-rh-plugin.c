@@ -340,7 +340,7 @@ update_connection (SettingsPluginIfcfg *self,
 					 */
 					g_hash_table_insert (priv->connections,
 					                     g_strdup (nm_connection_get_uuid (NM_CONNECTION (connection_by_uuid))),
-					                     connection_by_uuid/*<< took reference above*/);
+					                     connection_by_uuid /* we took reference above and pass it on */);
 				}
 			} else {
 				if (old_unmanaged /* && !new_unmanaged */) {
