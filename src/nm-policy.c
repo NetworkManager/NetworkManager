@@ -1192,7 +1192,7 @@ auto_activate_device (NMPolicy *self,
 	gs_free NMSettingsConnection **connections = NULL;
 	guint i, len;
 	gs_free_error GError *error = NULL;
-	NMAuthSubject *subject;
+	gs_unref_object NMAuthSubject *subject = NULL;
 	NMActiveConnection *ac;
 
 	nm_assert (NM_IS_POLICY (self));
@@ -1274,8 +1274,6 @@ auto_activate_device (NMPolicy *self,
 		                  G_CALLBACK (pending_ac_state_changed), g_object_ref (self));
 		g_object_weak_ref (G_OBJECT (ac), (GWeakNotify) pending_ac_gone, self);
 	}
-
-	g_object_unref (subject);
 }
 
 static gboolean
