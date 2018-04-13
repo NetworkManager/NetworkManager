@@ -1872,11 +1872,14 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, !!get_plugin (self, NM_SETTINGS_PLUGIN_CAP_MODIFY_CONNECTIONS));
 		break;
 	case PROP_CONNECTIONS:
-		strv = nm_dbus_utils_get_paths_for_clist (&priv->connections_lst_head,
-		                                          priv->connections_len,
-		                                          G_STRUCT_OFFSET (NMSettingsConnection, _connections_lst),
-		                                          TRUE);
-		g_value_take_boxed (value, nm_utils_strv_make_deep_copied (strv));
+		if (priv->connections_loaded) {
+			strv = nm_dbus_utils_get_paths_for_clist (&priv->connections_lst_head,
+			                                          priv->connections_len,
+			                                          G_STRUCT_OFFSET (NMSettingsConnection, _connections_lst),
+			                                          TRUE);
+			g_value_take_boxed (value, nm_utils_strv_make_deep_copied (strv));
+		} else
+			g_value_set_boxed (value, NULL);
 		break;
 	case PROP_STARTUP_COMPLETE:
 		g_value_set_boolean (value, nm_settings_get_startup_complete (self));
