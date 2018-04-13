@@ -1915,8 +1915,6 @@ dispose (GObject *object)
 	g_slist_free_full (priv->auths, (GDestroyNotify) nm_auth_chain_destroy);
 	priv->auths = NULL;
 
-	g_object_unref (priv->agent_mgr);
-
 	if (priv->hostname_manager) {
 		g_signal_handlers_disconnect_by_func (priv->hostname_manager,
 		                                      G_CALLBACK (_hostname_changed_cb),
@@ -1941,6 +1939,8 @@ finalize (GObject *object)
 	g_slist_free_full (priv->unrecognized_specs, g_free);
 
 	g_slist_free_full (priv->plugins, g_object_unref);
+
+	g_clear_object (&priv->agent_mgr);
 
 	g_clear_object (&priv->config);
 
