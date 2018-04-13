@@ -662,7 +662,8 @@ ip4_dns_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 	const char *setting_name = nm_setting_get_name (setting);
 	GPtrArray *array;
 	gsize length;
-	char **list, **iter;
+	gs_strfreev char **list = NULL;
+	char **iter;
 	int ret;
 
 	list = nm_keyfile_plugin_kf_get_string_list (info->keyfile, setting_name, key, &length, NULL);
@@ -679,7 +680,6 @@ ip4_dns_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 			                  _("ignoring invalid DNS server IPv4 address '%s'"),
 			                  *iter)) {
 				g_ptr_array_unref (array);
-				g_strfreev (list);
 				return;
 			}
 			continue;
@@ -691,7 +691,6 @@ ip4_dns_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 
 	g_object_set (setting, key, array->pdata, NULL);
 	g_ptr_array_unref (array);
-	g_strfreev (list);
 }
 
 static void
@@ -700,7 +699,8 @@ ip6_dns_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 	const char *setting_name = nm_setting_get_name (setting);
 	GPtrArray *array = NULL;
 	gsize length;
-	char **list, **iter;
+	gs_strfreev char **list = NULL;
+	char **iter;
 	int ret;
 
 	list = nm_keyfile_plugin_kf_get_string_list (info->keyfile, setting_name, key, &length, NULL);
@@ -718,7 +718,6 @@ ip6_dns_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 			                  _("ignoring invalid DNS server IPv6 address '%s'"),
 			                  *iter)) {
 				g_ptr_array_unref (array);
-				g_strfreev (list);
 				return;
 			}
 			continue;
@@ -730,7 +729,6 @@ ip6_dns_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 
 	g_object_set (setting, key, array->pdata, NULL);
 	g_ptr_array_unref (array);
-	g_strfreev (list);
 }
 
 static void
