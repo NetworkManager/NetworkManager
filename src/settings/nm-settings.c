@@ -1135,7 +1135,7 @@ send_agent_owned_secrets (NMSettings *self,
                           NMAuthSubject *subject)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	NMConnection *for_agent;
+	gs_unref_object NMConnection *for_agent = NULL;
 
 	/* Dupe the connection so we can clear out non-agent-owned secrets,
 	 * as agent-owned secrets are the only ones we send back to be saved.
@@ -1149,7 +1149,6 @@ send_agent_owned_secrets (NMSettings *self,
 	                               nm_dbus_object_get_path (NM_DBUS_OBJECT (connection)),
 	                               for_agent,
 	                               subject);
-	g_object_unref (for_agent);
 }
 
 static void
