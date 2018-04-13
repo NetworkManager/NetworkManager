@@ -326,21 +326,21 @@ update_connection (SettingsPluginIfcfg *self,
 
 			if (new_unmanaged || new_unrecognized) {
 				if (!old_unmanaged && !old_unrecognized) {
+					/* ref connection first, because we put it into priv->connections below.
+					 * Emitting signal-removed might otherwise delete it. */
 					g_object_ref (connection_by_uuid);
+
 					/* Unexport the connection by telling the settings service it's
 					 * been removed.
 					 */
 					nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (connection_by_uuid));
-					/* Remove the path so that claim_connection() doesn't complain later when
-					 * interface gets managed and connection is re-added. */
-					nm_connection_set_path (NM_CONNECTION (connection_by_uuid), NULL);
 
 					/* signal_remove() will end up removing the connection from our hash,
 					 * so add it back now.
 					 */
 					g_hash_table_insert (priv->connections,
 					                     g_strdup (nm_connection_get_uuid (NM_CONNECTION (connection_by_uuid))),
-					                     connection_by_uuid);
+					                     connection_by_uuid/*<< took reference above*/);
 				}
 			} else {
 				if (old_unmanaged /* && !new_unmanaged */) {
@@ -372,7 +372,9 @@ update_connection (SettingsPluginIfcfg *self,
 			_LOGI ("add connection "NM_IFCFG_CONNECTION_LOG_FMT, NM_IFCFG_CONNECTION_LOG_ARG (connection_new));
 		else
 			_LOGI ("new connection "NM_IFCFG_CONNECTION_LOG_FMT, NM_IFCFG_CONNECTION_LOG_ARG (connection_new));
-		g_hash_table_insert (priv->connections, g_strdup (uuid), connection_new);
+		g_hash_table_insert (priv->connections,
+		                     g_strdup (uuid),
+		                     connection_new /* take reference */);
 
 		g_signal_connect (connection_new, NM_SETTINGS_CONNECTION_REMOVED,
 		                  G_CALLBACK (connection_removed_cb),
@@ -748,7 +750,7 @@ impl_ifcfgrh_get_ifcfg_details (SettingsPluginIfcfg *plugin,
 		return;
 	}
 
-	path = nm_connection_get_path (NM_CONNECTION (connection));
+	path = nm_dbus_object_get_path (NM_DBUS_OBJECT (connection));
 	if (!path) {
 		g_dbus_method_invocation_return_error (context,
 		                                       NM_SETTINGS_ERROR,

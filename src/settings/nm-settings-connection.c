@@ -32,6 +32,7 @@
 #include "nm-config-data.h"
 #include "nm-dbus-interface.h"
 #include "nm-session-monitor.h"
+#include "nm-auth-manager.h"
 #include "nm-auth-utils.h"
 #include "nm-auth-subject.h"
 #include "nm-agent-manager.h"
@@ -80,7 +81,8 @@ typedef struct _NMSettingsConnectionPrivate {
 
 	NMSettingsAutoconnectBlockedReason autoconnect_blocked_reason:4;
 
-	GSList *pending_auths; /* List of pending authentication requests */
+	/* List of pending authentication requests */
+	CList auth_lst_head;
 
 	CList call_ids_lst_head; /* in-progress secrets requests */
 
@@ -581,7 +583,7 @@ _update_prepare (NMSettingsConnection *self,
 	if (!nm_connection_normalize (new_connection, NULL, NULL, error))
 		return FALSE;
 
-	if (   nm_connection_get_path (NM_CONNECTION (self))
+	if (   nm_dbus_object_get_path (NM_DBUS_OBJECT (self))
 	    && g_strcmp0 (nm_settings_connection_get_uuid (self), nm_connection_get_uuid (new_connection)) != 0) {
 		/* Updating the UUID is not allowed once the path is exported. */
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
@@ -661,8 +663,10 @@ nm_settings_connection_update (NMSettingsConnection *self,
 	                               NM_SETTING_COMPARE_FLAG_EXACT)) {
 		gs_unref_object NMConnection *simple = NULL;
 
-		if (log_diff_name)
-			nm_utils_log_connection_diff (replace_connection, NM_CONNECTION (self), LOGL_DEBUG, LOGD_CORE, log_diff_name, "++ ");
+		if (log_diff_name) {
+			nm_utils_log_connection_diff (replace_connection, NM_CONNECTION (self), LOGL_DEBUG, LOGD_CORE, log_diff_name, "++ ",
+			                              nm_dbus_object_get_path (NM_DBUS_OBJECT (self)));
+		}
 
 		/* Make a copy of agent-owned secrets because they won't be present in
 		 * the connection returned by plugins, as plugins return only what was
@@ -798,7 +802,7 @@ nm_settings_connection_delete (NMSettingsConnection *self,
 	for_agents = nm_simple_connection_new_clone (NM_CONNECTION (self));
 	nm_connection_clear_secrets (for_agents);
 	nm_agent_manager_delete_secrets (priv->agent_mgr,
-	                                 nm_connection_get_path (NM_CONNECTION (self)),
+	                                 nm_dbus_object_get_path (NM_DBUS_OBJECT (self)),
 	                                 for_agents);
 	g_object_unref (for_agents);
 
@@ -1295,7 +1299,7 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	priv->last_secret_agent_version_id = nm_agent_manager_get_agent_version_id (priv->agent_mgr);
 
 	call_id_a = nm_agent_manager_get_secrets (priv->agent_mgr,
-	                                          nm_connection_get_path (NM_CONNECTION (self)),
+	                                          nm_dbus_object_get_path (NM_DBUS_OBJECT (self)),
 	                                          NM_CONNECTION (self),
 	                                          subject,
 	                                          existing_secrets,
@@ -1359,7 +1363,7 @@ nm_settings_connection_cancel_secrets (NMSettingsConnection *self,
 	_get_secrets_cancel (self, call_id, FALSE);
 }
 
-/**** User authorization **************************************/
+/*****************************************************************************/
 
 typedef void (*AuthCallback) (NMSettingsConnection *self,
                               GDBusMethodInvocation *context,
@@ -1367,46 +1371,61 @@ typedef void (*AuthCallback) (NMSettingsConnection *self,
                               GError *error,
                               gpointer data);
 
-static void
-pk_auth_cb (NMAuthChain *chain,
-            GError *chain_error,
-            GDBusMethodInvocation *context,
-            gpointer user_data)
-{
-	NMSettingsConnection *self = NM_SETTINGS_CONNECTION (user_data);
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-	GError *error = NULL;
-	NMAuthCallResult result;
-	const char *perm;
+typedef struct {
+	CList auth_lst;
+	NMAuthManagerCallId *call_id;
+	NMSettingsConnection *self;
 	AuthCallback callback;
 	gpointer callback_data;
+	GDBusMethodInvocation *invocation;
 	NMAuthSubject *subject;
+} AuthData;
 
-	priv->pending_auths = g_slist_remove (priv->pending_auths, chain);
+static void
+pk_auth_cb (NMAuthManager *auth_manager,
+            NMAuthManagerCallId *auth_call_id,
+            gboolean is_authorized,
+            gboolean is_challenge,
+            GError *auth_error,
+            gpointer user_data)
+{
+	AuthData *auth_data = user_data;
+	NMSettingsConnection *self;
+	gs_free_error GError *error = NULL;
 
-	perm = nm_auth_chain_get_data (chain, "perm");
-	g_assert (perm);
-	result = nm_auth_chain_get_result (chain, perm);
+	nm_assert (auth_data);
+	nm_assert (NM_IS_SETTINGS_CONNECTION (auth_data->self));
 
-	/* If our NMSettingsConnection is already gone, do nothing */
-	if (chain_error) {
+	self = auth_data->self;
+
+	auth_data->call_id = NULL;
+
+	c_list_unlink (&auth_data->auth_lst);
+
+	if (g_error_matches (auth_error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+		error = g_error_new (NM_SETTINGS_ERROR,
+		                     NM_SETTINGS_ERROR_FAILED,
+		                     "Error checking authorization: connection was deleted");
+	} else if (auth_error) {
 		error = g_error_new (NM_SETTINGS_ERROR,
 		                     NM_SETTINGS_ERROR_FAILED,
 		                     "Error checking authorization: %s",
-		                     chain_error->message ? chain_error->message : "(unknown)");
-	} else if (result != NM_AUTH_CALL_RESULT_YES) {
+		                     auth_error->message);
+	} else if (nm_auth_call_result_eval (is_authorized, is_challenge, auth_error) != NM_AUTH_CALL_RESULT_YES) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                             "Insufficient privileges.");
+		                             "Insufficient privileges");
 	}
 
-	callback = nm_auth_chain_get_data (chain, "callback");
-	callback_data = nm_auth_chain_get_data (chain, "callback-data");
-	subject = nm_auth_chain_get_data (chain, "subject");
-	callback (self, context, subject, error, callback_data);
+	auth_data->callback (self,
+	                     auth_data->invocation,
+	                     auth_data->subject,
+	                     error,
+	                     auth_data->callback_data);
 
-	g_clear_error (&error);
-	nm_auth_chain_unref (chain);
+	g_object_unref (auth_data->invocation);
+	g_object_unref (auth_data->subject);
+	g_slice_free (AuthData, auth_data);
 }
 
 /**
@@ -1434,59 +1453,57 @@ _new_auth_subject (GDBusMethodInvocation *context, GError **error)
 	return subject;
 }
 
+/* may either invoke callback synchronously or asynchronously. */
 static void
 auth_start (NMSettingsConnection *self,
-            GDBusMethodInvocation *context,
+            GDBusMethodInvocation *invocation,
             NMAuthSubject *subject,
             const char *check_permission,
             AuthCallback callback,
             gpointer callback_data)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-	NMAuthChain *chain;
-	GError *error = NULL;
+	AuthData *auth_data;
 	char *error_desc = NULL;
 
-	g_return_if_fail (context != NULL);
-	g_return_if_fail (NM_IS_AUTH_SUBJECT (subject));
+	nm_assert (nm_dbus_object_is_exported (NM_DBUS_OBJECT (self)));
+	nm_assert (G_IS_DBUS_METHOD_INVOCATION (invocation));
+	nm_assert (NM_IS_AUTH_SUBJECT (subject));
 
 	/* Ensure the caller can view this connection */
 	if (!nm_auth_is_subject_in_acl (NM_CONNECTION (self),
 	                                subject,
 	                                &error_desc)) {
+		gs_free_error GError *error = NULL;
+
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                             error_desc);
 		g_free (error_desc);
 
-		callback (self, context, subject, error, callback_data);
-		g_clear_error (&error);
+		callback (self, invocation, subject, error, callback_data);
 		return;
 	}
 
 	if (!check_permission) {
 		/* Don't need polkit auth, automatic success */
-		callback (self, context, subject, NULL, callback_data);
+		callback (self, invocation, subject, NULL, callback_data);
 		return;
 	}
 
-	chain = nm_auth_chain_new_subject (subject, context, pk_auth_cb, self);
-	if (!chain) {
-		g_set_error_literal (&error,
-		                     NM_SETTINGS_ERROR,
-		                     NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                     "Unable to authenticate the request.");
-		callback (self, context, subject, error, callback_data);
-		g_clear_error (&error);
-		return;
-	}
-
-	priv->pending_auths = g_slist_append (priv->pending_auths, chain);
-	nm_auth_chain_set_data (chain, "perm", (gpointer) check_permission, NULL);
-	nm_auth_chain_set_data (chain, "callback", callback, NULL);
-	nm_auth_chain_set_data (chain, "callback-data", callback_data, NULL);
-	nm_auth_chain_set_data (chain, "subject", g_object_ref (subject), g_object_unref);
-	nm_auth_chain_add_call (chain, check_permission, TRUE);
+	auth_data = g_slice_new (AuthData);
+	auth_data->self = self;
+	auth_data->callback = callback;
+	auth_data->callback_data = callback_data;
+	auth_data->invocation = g_object_ref (invocation);
+	auth_data->subject = g_object_ref (subject);
+	c_list_link_tail (&priv->auth_lst_head, &auth_data->auth_lst);
+	auth_data->call_id = nm_auth_manager_check_authorization (nm_auth_manager_get (),
+	                                                          subject,
+	                                                          check_permission,
+	                                                          TRUE,
+	                                                          pk_auth_cb,
+	                                                          auth_data);
 }
 
 /**** DBus method handlers ************************************/
@@ -1789,7 +1806,7 @@ update_auth_cb (NMSettingsConnection *self,
 		                                        secrets_filter_cb,
 		                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
 		nm_agent_manager_save_secrets (info->agent_mgr,
-		                               nm_connection_get_path (NM_CONNECTION (self)),
+		                               nm_dbus_object_get_path (NM_DBUS_OBJECT (self)),
 		                               for_agent,
 		                               info->subject);
 	}
@@ -2065,7 +2082,7 @@ get_modify_permission_basic (NMSettingsConnection *self)
 	 * request affects more than just the caller, require 'modify.system'.
 	 */
 	s_con = nm_connection_get_setting_connection (NM_CONNECTION (self));
-	g_assert (s_con);
+	nm_assert (s_con);
 	if (nm_setting_connection_get_num_permissions (s_con) == 1)
 		return NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN;
 
@@ -2210,7 +2227,7 @@ dbus_clear_secrets_auth_cb (NMSettingsConnection *self,
 
 	/* Tell agents to remove secrets for this connection */
 	nm_agent_manager_delete_secrets (priv->agent_mgr,
-	                                 nm_connection_get_path (NM_CONNECTION (self)),
+	                                 nm_dbus_object_get_path (NM_DBUS_OBJECT (self)),
 	                                 NM_CONNECTION (self));
 
 	nm_settings_connection_update (self,
@@ -2274,10 +2291,14 @@ void
 nm_settings_connection_signal_remove (NMSettingsConnection *self)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+	AuthData *auth_data;
 
 	if (priv->removed)
 		return;
 	priv->removed = TRUE;
+
+	while ((auth_data = c_list_first_entry (&priv->auth_lst_head, AuthData, auth_lst)))
+		nm_auth_manager_check_authorization_cancel (auth_data->call_id);
 
 	nm_dbus_object_emit_signal (NM_DBUS_OBJECT (self),
 	                            &interface_info_settings_connection,
@@ -2963,8 +2984,11 @@ nm_settings_connection_init (NMSettingsConnection *self)
 	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_SETTINGS_CONNECTION, NMSettingsConnectionPrivate);
 	self->_priv = priv;
 
+	c_list_init (&self->_connections_lst);
+
 	priv->ready = TRUE;
 	c_list_init (&priv->call_ids_lst_head);
+	c_list_init (&priv->auth_lst_head);
 
 	priv->session_monitor = g_object_ref (nm_session_monitor_get ());
 	priv->session_changed_id = g_signal_connect (priv->session_monitor,
@@ -3000,6 +3024,9 @@ dispose (GObject *object)
 
 	_LOGD ("disposing");
 
+	nm_assert (c_list_is_empty (&self->_connections_lst));
+	nm_assert (c_list_is_empty (&priv->auth_lst_head));
+
 	/* Cancel in-progress secrets requests */
 	if (priv->agent_mgr) {
 		c_list_for_each_entry_safe (call_id, call_id_safe, &priv->call_ids_lst_head, call_ids_lst)
@@ -3016,10 +3043,6 @@ dispose (GObject *object)
 	nm_connection_clear_secrets (NM_CONNECTION (self));
 	g_clear_object (&priv->system_secrets);
 	g_clear_object (&priv->agent_secrets);
-
-	/* Cancel PolicyKit requests */
-	g_slist_free_full (priv->pending_auths, (GDestroyNotify) nm_auth_chain_unref);
-	priv->pending_auths = NULL;
 
 	g_clear_pointer (&priv->seen_bssids, g_hash_table_destroy);
 

@@ -104,6 +104,7 @@ struct _NMSettingsConnectionPrivate;
 struct _NMSettingsConnection {
 	NMDBusObject parent;
 	struct _NMSettingsConnectionPrivate *_priv;
+	CList _connections_lst;
 };
 
 struct _NMSettingsConnectionClass {

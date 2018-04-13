@@ -28,12 +28,15 @@
 #include "settings/nm-settings-connection.h"
 #include "nm-simple-connection.h"
 #include "nm-auth-utils.h"
+#include "nm-auth-manager.h"
 #include "nm-auth-subject.h"
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
 
+#define AUTH_CALL_ID_SHARED_WIFI_PERMISSION_FAILED  ((NMAuthManagerCallId *) GINT_TO_POINTER (1))
+
 typedef struct _NMActiveConnectionPrivate {
-	NMSettingsConnection *settings_connection;
+	NMDBusTrackObjPath settings_connection;
 	NMConnection *applied_connection;
 	char *specific_object;
 	NMDevice *device;
@@ -59,11 +62,15 @@ typedef struct _NMActiveConnectionPrivate {
 
 	NMActiveConnection *parent;
 
-	NMAuthChain *chain;
-	const char *wifi_shared_permission;
-	NMActiveConnectionAuthResultFunc result_func;
-	gpointer user_data1;
-	gpointer user_data2;
+	struct {
+		NMAuthManagerCallId *call_id_network_control;
+		NMAuthManagerCallId *call_id_wifi_shared_permission;
+
+		NMActiveConnectionAuthResultFunc result_func;
+		gpointer user_data1;
+		gpointer user_data2;
+	} auth;
+
 } NMActiveConnectionPrivate;
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMActiveConnection,
@@ -184,40 +191,24 @@ _settings_connection_updated (NMSettingsConnection *connection,
 }
 
 static void
-_settings_connection_removed (NMSettingsConnection *connection,
-                              gpointer user_data)
-{
-	NMActiveConnection *self = user_data;
-
-	/* Our settings connection is about to drop off. The next active connection
-	 * cleanup is going to tear us down (at least until we grow the capability to
-	 * re-link; in that case we'd just clean the references to the old connection here).
-	 * Let's remove ourselves from the bus so that we're not exposed with a dangling
-	 * reference to the setting connection once it's gone. */
-	if (nm_dbus_object_is_exported (NM_DBUS_OBJECT (self)))
-		nm_dbus_object_unexport (NM_DBUS_OBJECT (self));
-}
-
-static void
 _set_settings_connection (NMActiveConnection *self, NMSettingsConnection *connection)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 
-	if (priv->settings_connection == connection)
+	if (priv->settings_connection.obj == connection)
 		return;
-	if (priv->settings_connection) {
-		g_signal_handlers_disconnect_by_func (priv->settings_connection, _settings_connection_updated, self);
-		g_signal_handlers_disconnect_by_func (priv->settings_connection, _settings_connection_removed, self);
-		g_signal_handlers_disconnect_by_func (priv->settings_connection, _settings_connection_notify_flags, self);
-		g_clear_object (&priv->settings_connection);
+
+	if (priv->settings_connection.obj) {
+		g_signal_handlers_disconnect_by_func (priv->settings_connection.obj, _settings_connection_updated, self);
+		g_signal_handlers_disconnect_by_func (priv->settings_connection.obj, _settings_connection_notify_flags, self);
 	}
 	if (connection) {
-		priv->settings_connection = g_object_ref (connection);
 		g_signal_connect (connection, NM_SETTINGS_CONNECTION_UPDATED_INTERNAL, (GCallback) _settings_connection_updated, self);
-		g_signal_connect (connection, NM_SETTINGS_CONNECTION_REMOVED, (GCallback) _settings_connection_removed, self);
 		if (nm_active_connection_get_activation_type (self) == NM_ACTIVATION_TYPE_EXTERNAL)
 			g_signal_connect (connection, "notify::"NM_SETTINGS_CONNECTION_FLAGS, (GCallback) _settings_connection_notify_flags, self);
 	}
+
+	nm_dbus_track_obj_path_set (&priv->settings_connection, connection, TRUE);
 }
 
 NMActiveConnectionState
@@ -275,7 +266,7 @@ nm_active_connection_set_state (NMActiveConnection *self,
 
 	if (   new_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED
 	    || old_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-		nm_settings_connection_update_timestamp (priv->settings_connection,
+		nm_settings_connection_update_timestamp (priv->settings_connection.obj,
 		                                         (guint64) time (NULL), TRUE);
 	}
 
@@ -371,7 +362,7 @@ nm_active_connection_get_settings_connection_id (NMActiveConnection *self)
 
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), NULL);
 
-	con = NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->settings_connection;
+	con = NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->settings_connection.obj;
 	return con
 	       ? nm_connection_get_id (NM_CONNECTION (con))
 	       : NULL;
@@ -382,7 +373,7 @@ _nm_active_connection_get_settings_connection (NMActiveConnection *self)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), NULL);
 
-	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->settings_connection;
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->settings_connection.obj;
 }
 
 NMSettingsConnection *
@@ -456,7 +447,7 @@ nm_active_connection_set_settings_connection (NMActiveConnection *self,
 	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (connection));
-	g_return_if_fail (!priv->settings_connection);
+	g_return_if_fail (!priv->settings_connection.obj);
 	g_return_if_fail (!priv->applied_connection);
 
 	/* Can't change connection after the ActiveConnection is exported over D-Bus.
@@ -471,7 +462,7 @@ nm_active_connection_set_settings_connection (NMActiveConnection *self,
 	_set_settings_connection (self, connection);
 
 	_set_applied_connection_take (self,
-	                              nm_simple_connection_new_clone (NM_CONNECTION (priv->settings_connection)));
+	                              nm_simple_connection_new_clone (NM_CONNECTION (priv->settings_connection.obj)));
 }
 
 gboolean
@@ -483,9 +474,9 @@ nm_active_connection_has_unmodified_applied_connection (NMActiveConnection *self
 
 	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 
-	g_return_val_if_fail (priv->settings_connection, FALSE);
+	g_return_val_if_fail (priv->settings_connection.obj, FALSE);
 
-	return nm_settings_connection_has_unmodified_applied_connection (priv->settings_connection,
+	return nm_settings_connection_has_unmodified_applied_connection (priv->settings_connection.obj,
 	                                                                 priv->applied_connection,
 	                                                                 compare_flags);
 }
@@ -501,10 +492,10 @@ nm_active_connection_clear_secrets (NMActiveConnection *self)
 
 	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 
-	if (nm_settings_connection_has_unmodified_applied_connection (priv->settings_connection,
+	if (nm_settings_connection_has_unmodified_applied_connection (priv->settings_connection.obj,
 	                                                              priv->applied_connection,
 	                                                              NM_SETTING_COMPARE_FLAG_NONE))
-		nm_connection_clear_secrets ((NMConnection *) priv->settings_connection);
+		nm_connection_clear_secrets ((NMConnection *) priv->settings_connection.obj);
 	nm_connection_clear_secrets (priv->applied_connection);
 }
 
@@ -864,11 +855,11 @@ _set_activation_type (NMActiveConnection *self,
 
 	priv->activation_type = activation_type;
 
-	if (priv->settings_connection) {
+	if (priv->settings_connection.obj) {
 		if (activation_type == NM_ACTIVATION_TYPE_EXTERNAL)
-			g_signal_connect (priv->settings_connection, "notify::"NM_SETTINGS_CONNECTION_FLAGS, (GCallback) _settings_connection_notify_flags, self);
+			g_signal_connect (priv->settings_connection.obj, "notify::"NM_SETTINGS_CONNECTION_FLAGS, (GCallback) _settings_connection_notify_flags, self);
 		else
-			g_signal_handlers_disconnect_by_func (priv->settings_connection, _settings_connection_notify_flags, self);
+			g_signal_handlers_disconnect_by_func (priv->settings_connection.obj, _settings_connection_notify_flags, self);
 	}
 }
 
@@ -914,7 +905,7 @@ _settings_connection_notify_flags (NMSettingsConnection *settings_connection,
 	nm_assert (NM_IS_ACTIVE_CONNECTION (self));
 	nm_assert (NM_IS_SETTINGS_CONNECTION (settings_connection));
 	nm_assert (nm_active_connection_get_activation_type (self) == NM_ACTIVATION_TYPE_EXTERNAL);
-	nm_assert (NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->settings_connection == settings_connection);
+	nm_assert (NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->settings_connection.obj == settings_connection);
 
 	if (NM_FLAGS_HAS (nm_settings_connection_get_flags (settings_connection),
 	                  NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED))
@@ -997,62 +988,93 @@ nm_active_connection_set_parent (NMActiveConnection *self, NMActiveConnection *p
 /*****************************************************************************/
 
 static void
-auth_done (NMAuthChain *chain,
+auth_cancel (NMActiveConnection *self)
+{
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+
+	if (priv->auth.call_id_network_control)
+		nm_auth_manager_check_authorization_cancel (priv->auth.call_id_network_control);
+	if (priv->auth.call_id_wifi_shared_permission) {
+		if (priv->auth.call_id_wifi_shared_permission == AUTH_CALL_ID_SHARED_WIFI_PERMISSION_FAILED)
+			priv->auth.call_id_wifi_shared_permission = NULL;
+		else
+			nm_auth_manager_check_authorization_cancel (priv->auth.call_id_wifi_shared_permission);
+	}
+	priv->auth.result_func = NULL;
+	priv->auth.user_data1 = NULL;
+	priv->auth.user_data2 = NULL;
+}
+
+static void
+auth_complete (NMActiveConnection *self, gboolean result, const char *message)
+{
+	_nm_unused gs_unref_object NMActiveConnection *self_keep_alive = g_object_ref (self);
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+
+	priv->auth.result_func (self,
+	                        result,
+	                        message,
+	                        priv->auth.user_data1,
+	                        priv->auth.user_data2);
+	auth_cancel (self);
+}
+
+static void
+auth_done (NMAuthManager *auth_mgr,
+           NMAuthManagerCallId *auth_call_id,
+           gboolean is_authorized,
+           gboolean is_challenge,
            GError *error,
-           GDBusMethodInvocation *unused,
            gpointer user_data)
+
 {
 	NMActiveConnection *self = NM_ACTIVE_CONNECTION (user_data);
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 	NMAuthCallResult result;
 
-	g_assert (priv->chain == chain);
-	g_assert (priv->result_func != NULL);
+	nm_assert (auth_call_id);
+	nm_assert (priv->auth.result_func);
 
-	/* Must stay alive over the callback */
-	g_object_ref (self);
-
-	if (error) {
-		priv->result_func (self, FALSE, error->message, priv->user_data1, priv->user_data2);
-		goto done;
-	}
-
-	/* Caller has had a chance to obtain authorization, so we only need to
-	 * check for 'yes' here.
-	 */
-	result = nm_auth_chain_get_result (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL);
-	if (result != NM_AUTH_CALL_RESULT_YES) {
-		priv->result_func (self,
-		                   FALSE,
-		                   "Not authorized to control networking.",
-		                   priv->user_data1,
-		                   priv->user_data2);
-		goto done;
-	}
-
-	if (priv->wifi_shared_permission) {
-		result = nm_auth_chain_get_result (chain, priv->wifi_shared_permission);
-		if (result != NM_AUTH_CALL_RESULT_YES) {
-			priv->result_func (self,
-			                   FALSE,
-			                   "Not authorized to share connections via wifi.",
-			                   priv->user_data1,
-			                   priv->user_data2);
-			goto done;
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+		if (auth_call_id == priv->auth.call_id_network_control)
+			priv->auth.call_id_network_control = NULL;
+		else {
+			nm_assert (auth_call_id == priv->auth.call_id_wifi_shared_permission);
+			priv->auth.call_id_wifi_shared_permission = NULL;
 		}
+		return;
 	}
 
-	/* Otherwise authorized and available to activate */
-	priv->result_func (self, TRUE, NULL, priv->user_data1, priv->user_data2);
+	result = nm_auth_call_result_eval (is_authorized, is_challenge, error);
 
-done:
-	nm_auth_chain_unref (chain);
-	priv->chain = NULL;
-	priv->result_func = NULL;
-	priv->user_data1 = NULL;
-	priv->user_data2 = NULL;
+	if (auth_call_id == priv->auth.call_id_network_control) {
+		priv->auth.call_id_network_control = NULL;
+		if (result != NM_AUTH_CALL_RESULT_YES) {
+			auth_complete (self, FALSE, "Not authorized to control networking.");
+			return;
+		}
+	} else {
+		nm_assert (auth_call_id == priv->auth.call_id_wifi_shared_permission);
+		if (result != NM_AUTH_CALL_RESULT_YES) {
+			/* we don't fail right away. Instead, we mark that wifi-shared-permissions
+			 * are missing. We prefer to report the failure about network-control.
+			 * Below, we will wait longer for call_id_network_control (if it's still
+			 * pending). */
+			priv->auth.call_id_wifi_shared_permission = AUTH_CALL_ID_SHARED_WIFI_PERMISSION_FAILED;
+		} else
+			priv->auth.call_id_wifi_shared_permission = NULL;
+	}
 
-	g_object_unref (self);
+	if (priv->auth.call_id_network_control)
+		return;
+
+	if (priv->auth.call_id_wifi_shared_permission) {
+		if (priv->auth.call_id_wifi_shared_permission == AUTH_CALL_ID_SHARED_WIFI_PERMISSION_FAILED)
+			auth_complete (self, FALSE, "Not authorized to share connections via wifi.");
+		return;
+	}
+
+	auth_complete (self, TRUE, NULL);
 }
 
 /**
@@ -1080,37 +1102,43 @@ nm_active_connection_authorize (NMActiveConnection *self,
 	const char *wifi_permission = NULL;
 	NMConnection *con;
 
-	g_return_if_fail (result_func != NULL);
-	g_return_if_fail (priv->chain == NULL);
+	g_return_if_fail (result_func);
+	g_return_if_fail (!priv->auth.call_id_network_control);
+	nm_assert (!priv->auth.call_id_wifi_shared_permission);
 
 	if (initial_connection) {
 		g_return_if_fail (NM_IS_CONNECTION (initial_connection));
-		g_return_if_fail (!priv->settings_connection);
+		g_return_if_fail (!priv->settings_connection.obj);
 		g_return_if_fail (!priv->applied_connection);
 		con = initial_connection;
 	} else {
-		g_return_if_fail (NM_IS_SETTINGS_CONNECTION (priv->settings_connection));
+		g_return_if_fail (NM_IS_SETTINGS_CONNECTION (priv->settings_connection.obj));
 		g_return_if_fail (NM_IS_CONNECTION (priv->applied_connection));
 		con = priv->applied_connection;
 	}
 
-	priv->chain = nm_auth_chain_new_subject (priv->subject, NULL, auth_done, self);
-	g_assert (priv->chain);
-
-	/* Check that the subject is allowed to use networking at all */
-	nm_auth_chain_add_call (priv->chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
+	priv->auth.call_id_network_control = nm_auth_manager_check_authorization (nm_auth_manager_get (),
+	                                                                          priv->subject,
+	                                                                          NM_AUTH_PERMISSION_NETWORK_CONTROL,
+	                                                                          TRUE,
+	                                                                          auth_done,
+	                                                                          self);
 
 	/* Shared wifi connections require special permissions too */
 	wifi_permission = nm_utils_get_shared_wifi_permission (con);
 	if (wifi_permission) {
-		priv->wifi_shared_permission = wifi_permission;
-		nm_auth_chain_add_call (priv->chain, wifi_permission, TRUE);
+		priv->auth.call_id_wifi_shared_permission = nm_auth_manager_check_authorization (nm_auth_manager_get (),
+		                                                                                 priv->subject,
+		                                                                                 wifi_permission,
+		                                                                                 TRUE,
+		                                                                                 auth_done,
+		                                                                                 self);
 	}
 
 	/* Wait for authorization */
-	priv->result_func = result_func;
-	priv->user_data1 = user_data1;
-	priv->user_data2 = user_data2;
+	priv->auth.result_func = result_func;
+	priv->auth.user_data1 = user_data1;
+	priv->auth.user_data2 = user_data2;
 }
 
 /*****************************************************************************/
@@ -1172,31 +1200,40 @@ get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE ((NMActiveConnection *) object);
-	GPtrArray *devices;
+	char **strv;
 	NMDevice *master_device = NULL;
 
 	switch (prop_id) {
+
+	/* note that while priv->settings_connection.obj might not be set initially,
+	 * it will be set before the object is exported on D-Bus. Hence,
+	 * nobody is calling these property getters before the object is
+	 * exported, at which point we will have a valid settings-connection.
+	 *
+	 * Therefore, intentionally not check whether priv->settings_connection.obj
+	 * is set, to get an assertion failure if somebody tries to access the
+	 * getters at the wrong time. */
 	case PROP_CONNECTION:
-		g_value_set_string (value, nm_connection_get_path (NM_CONNECTION (priv->settings_connection)));
+		g_value_set_string (value, nm_dbus_track_obj_path_get (&priv->settings_connection));
 		break;
 	case PROP_ID:
-		g_value_set_string (value, nm_connection_get_id (NM_CONNECTION (priv->settings_connection)));
+		g_value_set_string (value, nm_connection_get_id (NM_CONNECTION (priv->settings_connection.obj)));
 		break;
 	case PROP_UUID:
-		g_value_set_string (value, nm_connection_get_uuid (NM_CONNECTION (priv->settings_connection)));
+		g_value_set_string (value, nm_connection_get_uuid (NM_CONNECTION (priv->settings_connection.obj)));
 		break;
 	case PROP_TYPE:
-		g_value_set_string (value, nm_connection_get_connection_type (NM_CONNECTION (priv->settings_connection)));
+		g_value_set_string (value, nm_connection_get_connection_type (NM_CONNECTION (priv->settings_connection.obj)));
 		break;
+
 	case PROP_SPECIFIC_OBJECT:
 		g_value_set_string (value, priv->specific_object ? priv->specific_object : "/");
 		break;
 	case PROP_DEVICES:
-		devices = g_ptr_array_sized_new (2);
+		strv = g_new0 (char *, 2);
 		if (priv->device && priv->state < NM_ACTIVE_CONNECTION_STATE_DEACTIVATED)
-			g_ptr_array_add (devices, g_strdup (nm_dbus_object_get_path (NM_DBUS_OBJECT (priv->device))));
-		g_ptr_array_add (devices, NULL);
-		g_value_take_boxed (value, (char **) g_ptr_array_free (devices, FALSE));
+			strv[0] = g_strdup (nm_dbus_object_get_path (NM_DBUS_OBJECT (priv->device)));
+		g_value_take_boxed (value, strv);
 		break;
 	case PROP_STATE:
 		if (priv->state_set)
@@ -1342,6 +1379,10 @@ nm_active_connection_init (NMActiveConnection *self)
 	priv = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_ACTIVE_CONNECTION, NMActiveConnectionPrivate);
 	self->_priv = priv;
 
+	nm_dbus_track_obj_path_init (&priv->settings_connection,
+	                             G_OBJECT (self),
+	                             obj_properties[PROP_CONNECTION]);
+
 	c_list_init (&self->active_connections_lst);
 
 	_LOGT ("creating");
@@ -1359,8 +1400,8 @@ constructed (GObject *object)
 	G_OBJECT_CLASS (nm_active_connection_parent_class)->constructed (object);
 
 	if (   !priv->applied_connection
-	    && priv->settings_connection)
-		priv->applied_connection = nm_simple_connection_new_clone (NM_CONNECTION (priv->settings_connection));
+	    && priv->settings_connection.obj)
+		priv->applied_connection = nm_simple_connection_new_clone (NM_CONNECTION (priv->settings_connection.obj));
 
 	_LOGD ("constructed (%s, version-id %llu, type %s)",
 	       G_OBJECT_TYPE_NAME (self),
@@ -1390,10 +1431,7 @@ dispose (GObject *object)
 
 	_LOGD ("disposing");
 
-	if (priv->chain) {
-		nm_auth_chain_unref (priv->chain);
-		priv->chain = NULL;
-	}
+	auth_cancel (self);
 
 	g_free (priv->specific_object);
 	priv->specific_object = NULL;
@@ -1416,6 +1454,17 @@ dispose (GObject *object)
 	g_clear_object (&priv->subject);
 
 	G_OBJECT_CLASS (nm_active_connection_parent_class)->dispose (object);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMActiveConnection *self = NM_ACTIVE_CONNECTION (object);
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+
+	nm_dbus_track_obj_path_set (&priv->settings_connection, NULL, FALSE);
+
+	G_OBJECT_CLASS (nm_active_connection_parent_class)->finalize (object);
 }
 
 static const GDBusSignalInfo signal_info_state_changed = NM_DEFINE_GDBUS_SIGNAL_INFO_INIT (
@@ -1470,6 +1519,7 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 	object_class->set_property = set_property;
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
+	object_class->finalize = finalize;
 
 	obj_properties[PROP_CONNECTION] =
 	     g_param_spec_string (NM_ACTIVE_CONNECTION_CONNECTION, "", "",

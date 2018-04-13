@@ -360,7 +360,7 @@ agent_register_permissions_done (NMAuthChain *chain,
 			request_add_agent (c_list_entry (iter, Request, lst_request), agent);
 	}
 
-	nm_auth_chain_unref (chain);
+	nm_auth_chain_destroy (chain);
 }
 
 static NMSecretAgent *
@@ -539,7 +539,7 @@ request_free (Request *req)
 		g_object_unref (req->con.connection);
 		g_free (req->con.path);
 		if (req->con.chain)
-			nm_auth_chain_unref (req->con.chain);
+			nm_auth_chain_destroy (req->con.chain);
 		if (req->request_type == REQUEST_TYPE_CON_GET) {
 			g_free (req->con.get.setting_name);
 			g_strfreev (req->con.get.hints);
@@ -810,7 +810,7 @@ request_remove_agent (Request *req, NMSecretAgent *agent)
 		case REQUEST_TYPE_CON_DEL:
 			if (req->con.chain) {
 				/* This cancels the pending authorization requests. */
-				nm_auth_chain_unref (req->con.chain);
+				nm_auth_chain_destroy (req->con.chain);
 				req->con.chain = NULL;
 			}
 			break;
@@ -1047,7 +1047,7 @@ _con_get_request_start_validated (NMAuthChain *chain,
 		_con_get_request_start_proceed (req, req->con.current_has_modify);
 	}
 
-	nm_auth_chain_unref (chain);
+	nm_auth_chain_destroy (chain);
 }
 
 static void
@@ -1541,7 +1541,7 @@ agent_permissions_changed_done (NMAuthChain *chain,
 	nm_secret_agent_add_permission (agent, NM_AUTH_PERMISSION_WIFI_SHARE_PROTECTED, share_protected);
 	nm_secret_agent_add_permission (agent, NM_AUTH_PERMISSION_WIFI_SHARE_OPEN, share_open);
 
-	nm_auth_chain_unref (chain);
+	nm_auth_chain_destroy (chain);
 }
 
 static void
@@ -1616,7 +1616,7 @@ cancel_more:
 		goto cancel_more;
 	}
 
-	g_slist_free_full (priv->chains, (GDestroyNotify) nm_auth_chain_unref);
+	g_slist_free_full (priv->chains, (GDestroyNotify) nm_auth_chain_destroy);
 	priv->chains = NULL;
 
 	if (priv->agents) {

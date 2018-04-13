@@ -164,10 +164,49 @@ GVariant *nm_dbus_utils_get_property (GObject *obj,
 
 /*****************************************************************************/
 
+struct CList;
+
+const char **nm_dbus_utils_get_paths_for_clist (const struct CList *lst_head,
+                                                gssize lst_len,
+                                                guint member_offset,
+                                                gboolean expect_all_exported);
+
 void nm_dbus_utils_g_value_set_object_path (GValue *value, gpointer object);
+
+void nm_dbus_utils_g_value_set_object_path_still_exported (GValue *value, gpointer object);
 
 void nm_dbus_utils_g_value_set_object_path_from_hash (GValue *value,
                                                       GHashTable *hash,
                                                       gboolean expect_all_exported);
+
+/*****************************************************************************/
+
+typedef struct {
+	union {
+		gpointer const obj;
+		gpointer _obj;
+	};
+	GObject *_notify_target;
+	const GParamSpec *_notify_pspec;
+	gulong _notify_signal_id;
+	union {
+		const bool visible;
+		bool _visible;
+	};
+} NMDBusTrackObjPath;
+
+void nm_dbus_track_obj_path_init (NMDBusTrackObjPath *track,
+                                  GObject *target,
+                                  const GParamSpec *pspec);
+
+void nm_dbus_track_obj_path_deinit (NMDBusTrackObjPath *track);
+
+void nm_dbus_track_obj_path_notify (const NMDBusTrackObjPath *track);
+
+const char *nm_dbus_track_obj_path_get (const NMDBusTrackObjPath *track);
+
+void nm_dbus_track_obj_path_set (NMDBusTrackObjPath *track,
+                                 gpointer obj,
+                                 gboolean visible);
 
 #endif /* __NM_DBUS_UTILS_H__ */

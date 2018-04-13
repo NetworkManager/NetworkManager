@@ -62,6 +62,7 @@
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 
+#include "nm-utils/nm-c-list.h"
 #include "nm-dbus-object.h"
 #include "devices/nm-device-ethernet.h"
 #include "nm-settings-connection.h"
@@ -119,16 +120,20 @@ typedef struct {
 	GSList *auths;
 
 	GSList *plugins;
-	gboolean connections_loaded;
-	GHashTable *connections;
+
+	CList connections_lst_head;
+
 	NMSettingsConnection **connections_cached_list;
 	GSList *unmanaged_specs;
 	GSList *unrecognized_specs;
 
-	gboolean started;
-	gboolean startup_complete;
-
 	NMHostnameManager *hostname_manager;
+
+	guint connections_len;
+
+	bool started:1;
+	bool startup_complete:1;
+	bool connections_loaded:1;
 
 } NMSettingsPrivate;
 
@@ -166,27 +171,29 @@ static void connection_ready_changed (NMSettingsConnection *conn,
                                       GParamSpec *pspec,
                                       gpointer user_data);
 
+static void default_wired_clear_tag (NMSettings *self,
+                                     NMDevice *device,
+                                     NMSettingsConnection *connection,
+                                     gboolean add_to_no_auto_default);
+
 /*****************************************************************************/
 
 static void
 check_startup_complete (NMSettings *self)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	GHashTableIter iter;
 	NMSettingsConnection *conn;
 
 	if (priv->startup_complete)
 		return;
 
-	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &conn)) {
+	c_list_for_each_entry (conn, &priv->connections_lst_head, _connections_lst) {
 		if (!nm_settings_connection_get_ready (conn))
 			return;
 	}
 
 	/* the connection_ready_changed signal handler is no longer needed. */
-	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &conn))
+	c_list_for_each_entry (conn, &priv->connections_lst_head, _connections_lst)
 		g_signal_handlers_disconnect_by_func (conn, G_CALLBACK (connection_ready_changed), self);
 
 	priv->startup_complete = TRUE;
@@ -249,48 +256,25 @@ load_connections (NMSettings *self)
 	unrecognized_specs_changed (NULL, self);
 }
 
-void
-nm_settings_for_each_connection (NMSettings *self,
-                                 NMSettingsForEachFunc for_each_func,
-                                 gpointer user_data)
-{
-	NMSettingsPrivate *priv;
-	GHashTableIter iter;
-	gpointer data;
-
-	g_return_if_fail (NM_IS_SETTINGS (self));
-	g_return_if_fail (for_each_func != NULL);
-
-	priv = NM_SETTINGS_GET_PRIVATE (self);
-
-	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, NULL, &data))
-		for_each_func (self, NM_SETTINGS_CONNECTION (data), user_data);
-}
-
 static void
 impl_settings_list_connections (NMDBusObject *obj,
                                 const NMDBusInterfaceInfoExtended *interface_info,
                                 const NMDBusMethodInfoExtended *method_info,
-                                GDBusConnection *connection,
+                                GDBusConnection *dbus_connection,
                                 const char *sender,
                                 GDBusMethodInvocation *invocation,
                                 GVariant *parameters)
 {
 	NMSettings *self = NM_SETTINGS (obj);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	gs_unref_ptrarray GPtrArray *connections = NULL;
-	GHashTableIter iter;
-	gpointer key;
+	gs_free const char **strv = NULL;
 
-	connections = g_ptr_array_sized_new (g_hash_table_size (priv->connections) + 1);
-	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, &key, NULL))
-		g_ptr_array_add (connections, key);
-	g_ptr_array_add (connections, NULL);
-
+	strv = nm_dbus_utils_get_paths_for_clist (&priv->connections_lst_head,
+	                                          priv->connections_len,
+	                                          G_STRUCT_OFFSET (NMSettingsConnection, _connections_lst),
+	                                          TRUE);
 	g_dbus_method_invocation_return_value (invocation,
-	                                       g_variant_new ("(^ao)", connections->pdata));
+	                                       g_variant_new ("(^ao)", strv));
 }
 
 NMSettingsConnection *
@@ -298,16 +282,14 @@ nm_settings_get_connection_by_uuid (NMSettings *self, const char *uuid)
 {
 	NMSettingsPrivate *priv;
 	NMSettingsConnection *candidate;
-	GHashTableIter iter;
 
 	g_return_val_if_fail (NM_IS_SETTINGS (self), NULL);
 	g_return_val_if_fail (uuid != NULL, NULL);
 
 	priv = NM_SETTINGS_GET_PRIVATE (self);
 
-	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &candidate)) {
-		if (g_strcmp0 (uuid, nm_settings_connection_get_uuid (candidate)) == 0)
+	c_list_for_each_entry (candidate, &priv->connections_lst_head, _connections_lst) {
+		if (nm_streq (uuid, nm_settings_connection_get_uuid (candidate)))
 			return candidate;
 	}
 
@@ -360,7 +342,7 @@ impl_settings_get_connection_by_uuid (NMDBusObject *obj,
 
 	g_dbus_method_invocation_return_value (invocation,
 	                                       g_variant_new ("(o)",
-	                                                      nm_connection_get_path (NM_CONNECTION (connection))));
+	                                                      nm_dbus_object_get_path (NM_DBUS_OBJECT (connection))));
 	return;
 
 error:
@@ -368,19 +350,23 @@ error:
 }
 
 static void
-_clear_connections_cached_list (NMSettingsConnection ***p_connections_cached_list)
+_clear_connections_cached_list (NMSettingsPrivate *priv)
 {
+	if (!priv->connections_cached_list)
+		return;
+
+	nm_assert (priv->connections_len == NM_PTRARRAY_LEN (priv->connections_cached_list));
+
 #if NM_MORE_ASSERTS
 	/* set the pointer to a bogus value. This makes it more apparent
 	 * if somebody has a reference to the cached list and still uses
 	 * it. That is a bug, this code just tries to make it blow up
 	 * more eagerly. */
-	if (*p_connections_cached_list) {
-		NMSettingsConnection **p = *p_connections_cached_list;
-		memset (p, 0xdeaddead, sizeof (NMSettingsConnection *) * (NM_PTRARRAY_LEN (p) + 1));
-	}
+	memset (priv->connections_cached_list,
+	        0xdeaddead,
+	        sizeof (NMSettingsConnection *) * (priv->connections_len + 1));
 #endif
-	g_clear_pointer (p_connections_cached_list, g_free);
+	nm_clear_g_free (&priv->connections_cached_list);
 }
 
 /**
@@ -398,37 +384,33 @@ _clear_connections_cached_list (NMSettingsConnection ***p_connections_cached_lis
 NMSettingsConnection *const*
 nm_settings_get_connections (NMSettings *self, guint *out_len)
 {
-	GHashTableIter iter;
 	NMSettingsPrivate *priv;
-	guint l, i;
 	NMSettingsConnection **v;
 	NMSettingsConnection *con;
+	guint i;
 
 	g_return_val_if_fail (NM_IS_SETTINGS (self), NULL);
 
 	priv = NM_SETTINGS_GET_PRIVATE (self);
 
-	if (G_LIKELY (priv->connections_cached_list)) {
-		NM_SET_OUT (out_len, g_hash_table_size (priv->connections));
-		return priv->connections_cached_list;
+	nm_assert (priv->connections_len == c_list_length (&priv->connections_lst_head));
+
+	if (G_UNLIKELY (!priv->connections_cached_list)) {
+		v = g_new (NMSettingsConnection *, priv->connections_len + 1);
+
+		i = 0;
+		c_list_for_each_entry (con, &priv->connections_lst_head, _connections_lst) {
+			nm_assert (i < priv->connections_len);
+			v[i++] = con;
+		}
+		nm_assert (i == priv->connections_len);
+		v[i] = NULL;
+
+		priv->connections_cached_list = v;
 	}
 
-	l = g_hash_table_size (priv->connections);
-
-	v = g_new (NMSettingsConnection *, (gsize) l + 1);
-
-	i = 0;
-	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &con)) {
-		nm_assert (i < l);
-		v[i++] = con;
-	}
-	nm_assert (i == l);
-	v[i] = NULL;
-
-	NM_SET_OUT (out_len, l);
-	priv->connections_cached_list = v;
-	return v;
+	NM_SET_OUT (out_len, priv->connections_len);
+	return priv->connections_cached_list;
 }
 
 /**
@@ -495,28 +477,41 @@ NMSettingsConnection *
 nm_settings_get_connection_by_path (NMSettings *self, const char *path)
 {
 	NMSettingsPrivate *priv;
+	NMSettingsConnection *connection;
 
 	g_return_val_if_fail (NM_IS_SETTINGS (self), NULL);
-	g_return_val_if_fail (path != NULL, NULL);
+	g_return_val_if_fail (path, NULL);
 
 	priv = NM_SETTINGS_GET_PRIVATE (self);
 
-	return (NMSettingsConnection *) g_hash_table_lookup (priv->connections, path);
+	connection = (NMSettingsConnection *) nm_dbus_manager_lookup_object (nm_dbus_object_get_manager (NM_DBUS_OBJECT (self)),
+	                                                                     path);
+	if (   !connection
+	    || !NM_IS_SETTINGS_CONNECTION (connection))
+		return NULL;
+
+	nm_assert (c_list_contains (&priv->connections_lst_head, &connection->_connections_lst));
+	return connection;
 }
 
 gboolean
 nm_settings_has_connection (NMSettings *self, NMSettingsConnection *connection)
 {
-	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	GHashTableIter iter;
-	gpointer data;
+	NMSettingsConnection *candidate = NULL;
+	const char *path;
 
-	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, NULL, &data))
-		if (data == connection)
-			return TRUE;
+	g_return_val_if_fail (NM_IS_SETTINGS (self), FALSE);
+	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (connection), FALSE);
 
-	return FALSE;
+	path = nm_dbus_object_get_path (NM_DBUS_OBJECT (connection));
+	if (path)
+		candidate = nm_settings_get_connection_by_path (self, path);
+
+	nm_assert (!candidate || candidate == connection);
+	nm_assert (!!candidate == nm_c_list_contains_entry (&NM_SETTINGS_GET_PRIVATE (self)->connections_lst_head,
+	                                                    connection,
+	                                                    _connections_lst));
+	return !!candidate;
 }
 
 const GSList *
@@ -844,28 +839,24 @@ connection_flags_changed (NMSettingsConnection *connection,
 }
 
 static void
-_emit_connection_removed (NMSettings *self,
-                          NMSettingsConnection *connection)
-{
-	nm_dbus_object_emit_signal (NM_DBUS_OBJECT (self),
-	                            &interface_info_settings,
-	                            &signal_info_connection_removed,
-	                            "(o)",
-	                            nm_connection_get_path (NM_CONNECTION (connection)));
-
-	g_signal_emit (self, signals[CONNECTION_REMOVED], 0, connection);
-}
-
-static void
 connection_removed (NMSettingsConnection *connection, gpointer user_data)
 {
 	NMSettings *self = NM_SETTINGS (user_data);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	const char *cpath = nm_connection_get_path (NM_CONNECTION (connection));
+	NMDevice *device;
 
-	if (!g_hash_table_lookup (priv->connections, cpath))
-		g_return_if_reached ();
-	g_object_ref (connection);
+	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (connection));
+	g_return_if_fail (!c_list_is_empty (&connection->_connections_lst));
+	nm_assert (c_list_contains (&priv->connections_lst_head, &connection->_connections_lst));
+
+	/* When the default wired connection is removed (either deleted or saved to
+	 * a new persistent connection by a plugin), write the MAC address of the
+	 * wired device to the config file and don't create a new default wired
+	 * connection for that device again.
+	 */
+	device = g_object_get_qdata (G_OBJECT (connection), _default_wired_device_quark ());
+	if (device)
+		default_wired_clear_tag (self, device, connection, TRUE);
 
 	/* Disconnect signal handlers, as plugins might still keep references
 	 * to the connection (and thus the signal handlers would still be live)
@@ -877,22 +868,30 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_flags_changed), self);
 	if (!priv->startup_complete)
 		g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_ready_changed), self);
-	g_object_unref (self);
 
 	/* Forget about the connection internally */
-	g_hash_table_remove (priv->connections, (gpointer) cpath);
-	_clear_connections_cached_list (&priv->connections_cached_list);
+	_clear_connections_cached_list (priv);
+	priv->connections_len--;
+	c_list_unlink (&connection->_connections_lst);
 
-	_emit_connection_removed (self, connection);
+	if (priv->connections_loaded) {
+		_notify (self, PROP_CONNECTIONS);
 
-	/* Re-emit for listeners like NMPolicy */
-	_notify (self, PROP_CONNECTIONS);
-	if (nm_dbus_object_is_exported (NM_DBUS_OBJECT (connection)))
-		nm_dbus_object_unexport (NM_DBUS_OBJECT (connection));
+		nm_dbus_object_emit_signal (NM_DBUS_OBJECT (self),
+		                            &interface_info_settings,
+		                            &signal_info_connection_removed,
+		                            "(o)",
+		                            nm_dbus_object_get_path (NM_DBUS_OBJECT (connection)));
+	}
+
+	nm_dbus_object_unexport (NM_DBUS_OBJECT (connection));
+
+	if (priv->connections_loaded)
+		g_signal_emit (self, signals[CONNECTION_REMOVED], 0, connection);
+
+	g_object_ref (connection);
 
 	check_startup_complete (self);
-
-	g_object_unref (connection);
 }
 
 #define NM_DBUS_SERVICE_OPENCONNECT    "org.freedesktop.NetworkManager.openconnect"
@@ -940,19 +939,16 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GError *error = NULL;
-	GHashTableIter iter;
-	gpointer data;
 	const char *path;
 	NMSettingsConnection *existing;
 
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION (connection));
-	g_return_if_fail (nm_connection_get_path (NM_CONNECTION (connection)) == NULL);
+	g_return_if_fail (!nm_dbus_object_is_exported (NM_DBUS_OBJECT (connection)));
 
-	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, NULL, &data)) {
-		/* prevent duplicates */
-		if (data == connection)
-			return;
+	/* prevent duplicates */
+	if (!c_list_is_empty (&connection->_connections_lst)) {
+		nm_assert (c_list_contains (&priv->connections_lst_head, &connection->_connections_lst));
+		return;
 	}
 
 	if (!nm_connection_normalize (NM_CONNECTION (connection), NULL, NULL, &error)) {
@@ -990,7 +986,6 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 	/* Evil openconnect migration hack */
 	openconnect_migrate_hack (NM_CONNECTION (connection));
 
-	g_object_ref (self);
 	/* This one unexports the connection, it needs to run late to give the active
 	 * connection a chance to deal with its reference to this settings connection. */
 	g_signal_connect_after (connection, NM_SETTINGS_CONNECTION_REMOVED,
@@ -1006,17 +1001,15 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 		                  self);
 	}
 
-	/* Export the connection over D-Bus */
-	g_warn_if_fail (nm_connection_get_path (NM_CONNECTION (connection)) == NULL);
+	_clear_connections_cached_list (priv);
+
+	priv->connections_len++;
+	c_list_link_tail (&priv->connections_lst_head, &connection->_connections_lst);
+
 	path = nm_dbus_object_export (NM_DBUS_OBJECT (connection));
-	nm_connection_set_path (NM_CONNECTION (connection), path);
 
-	g_hash_table_insert (priv->connections,
-	                     (gpointer) nm_connection_get_path (NM_CONNECTION (connection)),
-	                     g_object_ref (connection));
-	_clear_connections_cached_list (&priv->connections_cached_list);
-
-	nm_utils_log_connection_diff (NM_CONNECTION (connection), NULL, LOGL_DEBUG, LOGD_CORE, "new connection", "++ ");
+	nm_utils_log_connection_diff (NM_CONNECTION (connection), NULL, LOGL_DEBUG, LOGD_CORE, "new connection", "++ ",
+	                              path);
 
 	/* Only emit the individual connection-added signal after connections
 	 * have been initially loaded.
@@ -1026,7 +1019,7 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 		                            &interface_info_settings,
 		                            &signal_info_new_connection,
 		                            "(o)",
-		                            nm_connection_get_path (NM_CONNECTION (connection)));
+		                            nm_dbus_object_get_path (NM_DBUS_OBJECT (connection)));
 
 		g_signal_emit (self, signals[CONNECTION_ADDED], 0, connection);
 		_notify (self, PROP_CONNECTIONS);
@@ -1077,14 +1070,14 @@ nm_settings_add_connection (NMSettings *self,
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GSList *iter;
 	NMSettingsConnection *added = NULL;
-	GHashTableIter citer;
-	NMConnection *candidate = NULL;
+	NMSettingsConnection *candidate = NULL;
+	const char *uuid;
+
+	uuid = nm_connection_get_uuid (connection);
 
 	/* Make sure a connection with this UUID doesn't already exist */
-	g_hash_table_iter_init (&citer, priv->connections);
-	while (g_hash_table_iter_next (&citer, NULL, (gpointer *) &candidate)) {
-		if (g_strcmp0 (nm_connection_get_uuid (connection),
-		               nm_connection_get_uuid (candidate)) == 0) {
+	c_list_for_each_entry (candidate, &priv->connections_lst_head, _connections_lst) {
+		if (nm_streq0 (uuid, nm_connection_get_uuid (NM_CONNECTION (candidate)))) {
 			g_set_error_literal (error,
 			                     NM_SETTINGS_ERROR,
 			                     NM_SETTINGS_ERROR_UUID_EXISTS,
@@ -1152,7 +1145,7 @@ send_agent_owned_secrets (NMSettings *self,
 	                                        secrets_filter_cb,
 	                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
 	nm_agent_manager_save_secrets (priv->agent_mgr,
-	                               nm_connection_get_path (NM_CONNECTION (connection)),
+	                               nm_dbus_object_get_path (NM_DBUS_OBJECT (connection)),
 	                               for_agent,
 	                               subject);
 	g_object_unref (for_agent);
@@ -1212,7 +1205,7 @@ pk_add_cb (NMAuthChain *chain,
 		send_agent_owned_secrets (self, added, subject);
 
 	g_clear_error (&error);
-	nm_auth_chain_unref (chain);
+	nm_auth_chain_destroy (chain);
 }
 
 /* FIXME: remove if/when kernel supports adhoc wpa */
@@ -1365,9 +1358,9 @@ settings_add_connection_add_cb (NMSettings *self,
 		g_dbus_method_invocation_return_gerror (context, error);
 		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD, NULL, FALSE, NULL, subject, error->message);
 	} else {
-		g_dbus_method_invocation_return_value (
-		    context,
-		    g_variant_new ("(o)", nm_connection_get_path (NM_CONNECTION (connection))));
+		g_dbus_method_invocation_return_value (context,
+		                                       g_variant_new ("(o)",
+		                                                      nm_dbus_object_get_path (NM_DBUS_OBJECT (connection))));
 		nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ADD, connection, TRUE, NULL,
 		                            subject, NULL);
 	}
@@ -1570,7 +1563,7 @@ pk_hostname_cb (NMAuthChain *chain,
 	else
 		g_dbus_method_invocation_return_value (context, NULL);
 
-	nm_auth_chain_unref (chain);
+	nm_auth_chain_destroy (chain);
 }
 
 static void
@@ -1618,27 +1611,24 @@ static gboolean
 have_connection_for_device (NMSettings *self, NMDevice *device)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	GHashTableIter iter;
-	gpointer data;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	const char *setting_hwaddr;
 	const char *perm_hw_addr;
+	NMSettingsConnection *connection;
 
 	g_return_val_if_fail (NM_IS_SETTINGS (self), FALSE);
 
 	perm_hw_addr = nm_device_get_permanent_hw_address (device);
 
 	/* Find a wired connection locked to the given MAC address, if any */
-	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, NULL, &data)) {
-		NMConnection *connection = NM_CONNECTION (data);
+	c_list_for_each_entry (connection, &priv->connections_lst_head, _connections_lst) {
 		const char *ctype, *iface;
 
-		if (!nm_device_check_connection_compatible (device, connection))
+		if (!nm_device_check_connection_compatible (device, NM_CONNECTION (connection)))
 			continue;
 
-		s_con = nm_connection_get_setting_connection (connection);
+		s_con = nm_connection_get_setting_connection (NM_CONNECTION (connection));
 
 		iface = nm_setting_connection_get_interface_name (s_con);
 		if (iface && strcmp (iface, nm_device_get_iface (device)) != 0)
@@ -1649,7 +1639,7 @@ have_connection_for_device (NMSettings *self, NMDevice *device)
 		    && strcmp (ctype, NM_SETTING_PPPOE_SETTING_NAME))
 			continue;
 
-		s_wired = nm_connection_get_setting_wired (connection);
+		s_wired = nm_connection_get_setting_wired (NM_CONNECTION (connection));
 
 		if (!s_wired && !strcmp (ctype, NM_SETTING_PPPOE_SETTING_NAME)) {
 			/* No wired setting; therefore the PPPoE connection applies to any device */
@@ -1675,26 +1665,6 @@ have_connection_for_device (NMSettings *self, NMDevice *device)
 		return TRUE;
 
 	return FALSE;
-}
-
-static void default_wired_clear_tag (NMSettings *self,
-                                     NMDevice *device,
-                                     NMSettingsConnection *connection,
-                                     gboolean add_to_no_auto_default);
-
-static void
-default_wired_connection_removed_cb (NMSettingsConnection *connection, NMSettings *self)
-{
-	NMDevice *device;
-
-	/* When the default wired connection is removed (either deleted or saved to
-	 * a new persistent connection by a plugin), write the MAC address of the
-	 * wired device to the config file and don't create a new default wired
-	 * connection for that device again.
-	 */
-	device = g_object_get_qdata (G_OBJECT (connection), _default_wired_device_quark ());
-	if (device)
-		default_wired_clear_tag (self, device, connection, TRUE);
 }
 
 static void
@@ -1729,7 +1699,6 @@ default_wired_clear_tag (NMSettings *self,
 	g_object_set_qdata (G_OBJECT (connection), _default_wired_device_quark (), NULL);
 	g_object_set_qdata (G_OBJECT (device), _default_wired_connection_quark (), NULL);
 
-	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (default_wired_connection_removed_cb), self);
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (default_wired_connection_updated_by_user_cb), self);
 
 	if (add_to_no_auto_default)
@@ -1781,8 +1750,6 @@ device_realized (NMDevice *device, GParamSpec *pspec, NMSettings *self)
 
 	g_signal_connect (added, NM_SETTINGS_CONNECTION_UPDATED_INTERNAL,
 	                  G_CALLBACK (default_wired_connection_updated_by_user_cb), self);
-	g_signal_connect (added, NM_SETTINGS_CONNECTION_REMOVED,
-	                  G_CALLBACK (default_wired_connection_removed_cb), self);
 
 	_LOGI ("(%s): created default wired connection '%s'",
 	       nm_device_get_iface (device),
@@ -1855,10 +1822,8 @@ nm_settings_start (NMSettings *self, GError **error)
 	/* Load the plugins; fail if a plugin is not found. */
 	plugins = nm_config_data_get_plugins (nm_config_get_data_orig (priv->config), TRUE);
 
-	if (!load_plugins (self, (const char **) plugins, error)) {
-		g_object_unref (self);
+	if (!load_plugins (self, (const char **) plugins, error))
 		return FALSE;
-	}
 
 	load_connections (self);
 	check_startup_complete (self);
@@ -1883,18 +1848,19 @@ get_property (GObject *object, guint prop_id,
 	NMSettings *self = NM_SETTINGS (object);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	const GSList *specs, *iter;
-	GHashTableIter citer;
-	GPtrArray *array;
-	const char *path;
+	guint i;
+	char **strvs;
+	const char **strv;
 
 	switch (prop_id) {
 	case PROP_UNMANAGED_SPECS:
-		array = g_ptr_array_new ();
 		specs = nm_settings_get_unmanaged_specs (self);
-		for (iter = specs; iter; iter = g_slist_next (iter))
-			g_ptr_array_add (array, g_strdup (iter->data));
-		g_ptr_array_add (array, NULL);
-		g_value_take_boxed (value, (char **) g_ptr_array_free (array, FALSE));
+		strvs = g_new (char *, g_slist_length ((GSList *) specs) + 1);
+		i = 0;
+		for (iter = specs; iter; iter = iter->next)
+			strvs[i++] = g_strdup (iter->data);
+		strvs[i] = NULL;
+		g_value_take_boxed (value, strvs);
 		break;
 	case PROP_HOSTNAME:
 		g_value_set_string (value,
@@ -1906,12 +1872,11 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, !!get_plugin (self, NM_SETTINGS_PLUGIN_CAP_MODIFY_CONNECTIONS));
 		break;
 	case PROP_CONNECTIONS:
-		array = g_ptr_array_sized_new (g_hash_table_size (priv->connections) + 1);
-		g_hash_table_iter_init (&citer, priv->connections);
-		while (g_hash_table_iter_next (&citer, (gpointer) &path, NULL))
-			g_ptr_array_add (array, g_strdup (path));
-		g_ptr_array_add (array, NULL);
-		g_value_take_boxed (value, (char **) g_ptr_array_free (array, FALSE));
+		strv = nm_dbus_utils_get_paths_for_clist (&priv->connections_lst_head,
+		                                          priv->connections_len,
+		                                          G_STRUCT_OFFSET (NMSettingsConnection, _connections_lst),
+		                                          TRUE);
+		g_value_take_boxed (value, nm_utils_strv_make_deep_copied (strv));
 		break;
 	case PROP_STARTUP_COMPLETE:
 		g_value_set_boolean (value, nm_settings_get_startup_complete (self));
@@ -1929,7 +1894,7 @@ nm_settings_init (NMSettings *self)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 
-	priv->connections = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, g_object_unref);
+	c_list_init (&priv->connections_lst_head);
 
 	priv->agent_mgr = g_object_ref (nm_agent_manager_get ());
 	priv->config = g_object_ref (nm_config_get ());
@@ -1947,7 +1912,7 @@ dispose (GObject *object)
 	NMSettings *self = NM_SETTINGS (object);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 
-	g_slist_free_full (priv->auths, (GDestroyNotify) nm_auth_chain_unref);
+	g_slist_free_full (priv->auths, (GDestroyNotify) nm_auth_chain_destroy);
 	priv->auths = NULL;
 
 	g_object_unref (priv->agent_mgr);
@@ -1968,8 +1933,9 @@ finalize (GObject *object)
 	NMSettings *self = NM_SETTINGS (object);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 
-	g_hash_table_destroy (priv->connections);
-	_clear_connections_cached_list (&priv->connections_cached_list);
+	_clear_connections_cached_list (priv);
+
+	nm_assert (c_list_is_empty (&priv->connections_lst_head));
 
 	g_slist_free_full (priv->unmanaged_specs, g_free);
 	g_slist_free_full (priv->unrecognized_specs, g_free);

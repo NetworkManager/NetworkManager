@@ -37,9 +37,13 @@ nm_dbus_object_set_quitting (void)
 
 /*****************************************************************************/
 
-NM_GOBJECT_PROPERTIES_DEFINE (NMDBusObject,
-	PROP_PATH,
-);
+enum {
+	EXPORTED_CHANGED,
+
+	LAST_SIGNAL,
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
 
 G_DEFINE_ABSTRACT_TYPE (NMDBusObject, nm_dbus_object, G_TYPE_OBJECT);
 
@@ -52,6 +56,12 @@ G_DEFINE_ABSTRACT_TYPE (NMDBusObject, nm_dbus_object, G_TYPE_OBJECT);
 #define _NMLOG2(level, ...) __NMLOG_DEFAULT_WITH_ADDR (level, _NMLOG2_DOMAIN, "properties-changed", __VA_ARGS__)
 
 /*****************************************************************************/
+
+static void
+_emit_exported_changed (NMDBusObject *self)
+{
+	g_signal_emit (self, signals[EXPORTED_CHANGED], 0);
+}
 
 static char *
 _create_export_path (NMDBusObjectClass *klass)
@@ -107,6 +117,8 @@ nm_dbus_object_export (NMDBusObject *self)
 
 	g_return_val_if_fail (!self->internal.path, self->internal.path);
 
+	nm_assert (!self->internal.is_unexporting);
+
 	self->internal.path = _create_export_path (NM_DBUS_OBJECT_GET_CLASS (self));
 
 	self->internal.export_version_id = ++id_counter;
@@ -115,7 +127,7 @@ nm_dbus_object_export (NMDBusObject *self)
 
 	_nm_dbus_manager_obj_export (self);
 
-	_notify (self, PROP_PATH);
+	_emit_exported_changed (self);
 	return self->internal.path;
 }
 
@@ -135,12 +147,27 @@ nm_dbus_object_unexport (NMDBusObject *self)
 
 	_LOGT ("unexport: \"%s\"", self->internal.path);
 
+	/* note that we emit the signal *before* actually unexporting the object.
+	 * The reason is, that listeners want to use this signal to know that
+	 * the object goes away, and clear their D-Bus path to this object.
+	 *
+	 * But this must happen before we actually unregister the object, so
+	 * that we first emit a D-Bus signal that other objects no longer
+	 * reference this object, before finally unregistering the object itself.
+	 *
+	 * The inconvenient part is, that at this point nm_dbus_object_get_path()
+	 * still returns the path. So, the callee needs to handle that. Possibly
+	 * by using "nm_dbus_object_get_path_still_exported()". */
+	self->internal.is_unexporting = TRUE;
+
+	_emit_exported_changed (self);
+
 	_nm_dbus_manager_obj_unexport (self);
 
 	g_clear_pointer (&self->internal.path, g_free);
 	self->internal.export_version_id = 0;
 
-	_notify (self, PROP_PATH);
+	self->internal.is_unexporting = FALSE;
 }
 
 /*****************************************************************************/
@@ -203,22 +230,6 @@ nm_dbus_object_emit_signal (NMDBusObject *self,
 }
 
 /*****************************************************************************/
-
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMDBusObject *self = NM_DBUS_OBJECT (object);
-
-	switch (prop_id) {
-	case PROP_PATH:
-		g_value_set_string (value, self->internal.path);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
 
 static void
 dispatch_properties_changed (GObject *object,
@@ -284,10 +295,11 @@ dispose (GObject *object)
 			g_warn_if_reached ();
 			nm_dbus_object_unexport (self);
 		}
-	} else if (nm_clear_g_free (&self->internal.path)) {
+	} else if (self->internal.path) {
 		/* FIXME: do a proper, coordinate shutdown, so that no objects stay
 		 * alive nor exported. */
-		_notify (self, PROP_PATH);
+		_emit_exported_changed (self);
+		nm_clear_g_free (&self->internal.path);
 	}
 
 	G_OBJECT_CLASS (nm_dbus_object_parent_class)->dispose (object);
@@ -302,14 +314,13 @@ nm_dbus_object_class_init (NMDBusObjectClass *klass)
 
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
-	object_class->get_property = get_property;
 	object_class->dispatch_properties_changed = dispatch_properties_changed;
 
-	obj_properties[PROP_PATH] =
-	    g_param_spec_string (NM_DBUS_OBJECT_PATH, "", "",
-	                         NULL,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS);
-
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+	signals[EXPORTED_CHANGED] =
+	    g_signal_new (NM_DBUS_OBJECT_EXPORTED_CHANGED,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                  G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL,
+	                  g_cclosure_marshal_VOID__VOID,
+	                  G_TYPE_NONE, 0);
 }
