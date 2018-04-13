@@ -235,6 +235,7 @@ test_read_valid_wired_connection (void)
 	NMTST_EXPECT_NM_INFO ("*ipv4.addresses:*semicolon at the end*addresses2*");
 	NMTST_EXPECT_NM_WARN ("*missing prefix length*address4*");
 	NMTST_EXPECT_NM_WARN ("*missing prefix length*address5*");
+	NMTST_EXPECT_NM_WARN ("*ipv4.dns: ignoring invalid DNS server IPv4 address 'bogus'*");
 	NMTST_EXPECT_NM_INFO ("*ipv4.routes*semicolon at the end*routes2*");
 	NMTST_EXPECT_NM_INFO ("*ipv4.routes*semicolon at the end*routes3*");
 	NMTST_EXPECT_NM_INFO ("*ipv4.routes*semicolon at the end*routes5*");

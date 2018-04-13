@@ -659,41 +659,47 @@ ip_address_or_route_parser (KeyfileReaderInfo *info, NMSetting *setting, const c
 static void
 ip_dns_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
-	const char *setting_name = nm_setting_get_name (setting);
-	int addr_family  = nm_streq (setting_name, NM_SETTING_IP6_CONFIG_SETTING_NAME) ? AF_INET6 : AF_INET;
-	GPtrArray *array = NULL;
-	gsize length;
+	int addr_family;
 	gs_strfreev char **list = NULL;
-	char **iter;
-	int ret;
+	gsize i, n, length;
 
-	list = nm_keyfile_plugin_kf_get_string_list (info->keyfile, setting_name, key, &length, NULL);
-	if (!list || !g_strv_length (list))
+	nm_assert (NM_IS_SETTING_IP4_CONFIG (setting) || NM_IS_SETTING_IP6_CONFIG (setting));
+
+	list = nm_keyfile_plugin_kf_get_string_list (info->keyfile,
+	                                             nm_setting_get_name (setting),
+	                                             key,
+	                                             &length,
+	                                             NULL);
+	nm_assert (length == NM_PTRARRAY_LEN (list));
+	if (length == 0)
 		return;
 
-	array = g_ptr_array_sized_new (length + 1);
+	addr_family = NM_IS_SETTING_IP4_CONFIG (setting) ? AF_INET : AF_INET6;
 
-	for (iter = list; *iter; iter++) {
+	n = 0;
+	for (i = 0; i < length; i++) {
 		NMIPAddr addr;
 
-		ret = inet_pton (addr_family, *iter, &addr);
-		if (ret <= 0) {
+		if (inet_pton (addr_family, list[i], &addr) <= 0) {
 			if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
 			                  _("ignoring invalid DNS server IPv%c address '%s'"),
 			                  nm_utils_addr_family_to_char (addr_family),
-			                  *iter)) {
-				g_ptr_array_unref (array);
+			                  list[i])) {
+				do {
+					nm_clear_g_free (&list[i]);
+				} while (++i < length);
 				return;
 			}
+			nm_clear_g_free (&list[i]);
 			continue;
 		}
 
-		g_ptr_array_add (array, *iter);
+		if (n != i)
+			list[n] = g_steal_pointer (&list[i]);
+		n++;
 	}
-	g_ptr_array_add (array, NULL);
 
-	g_object_set (setting, key, array->pdata, NULL);
-	g_ptr_array_unref (array);
+	g_object_set (setting, key, list, NULL);
 }
 
 static void
