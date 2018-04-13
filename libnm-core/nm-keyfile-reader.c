@@ -466,56 +466,191 @@ fill_route_attributes (GKeyFile *kf, NMIPRoute *route, const char *setting, cons
 	}
 }
 
+typedef struct {
+	const char *s_key;
+	gint32 key_idx;
+	gint8 key_type;
+} IPAddrRouteBuildListData;
+
+static int
+_ip_addrroute_build_lst_data_cmp (gconstpointer p_a, gconstpointer p_b, gpointer user_data)
+{
+	const IPAddrRouteBuildListData *a = p_a;
+	const IPAddrRouteBuildListData *b = p_b;
+
+	NM_CMP_FIELD (a, b, key_idx);
+	NM_CMP_FIELD (a, b, key_type);
+	NM_CMP_FIELD_STR (a, b, s_key);
+	return 0;
+}
+
+static gboolean
+ip_addrroute_match_key_w_name_ (const char *key,
+                                const char *base_name,
+                                gsize base_name_l,
+                                gint32 *out_key_idx)
+{
+	gint64 v;
+
+	/* some very strict parsing. */
+
+	/* the key must start with base_name. */
+	if (strncmp (key, base_name, base_name_l) != 0)
+		return FALSE;
+
+	key += base_name_l;
+	if (key[0] == '\0') {
+		/* if key is identical to base_name, that's good. */
+		NM_SET_OUT (out_key_idx, -1);
+		return TRUE;
+	}
+
+	/* if base_name is followed by a zero, then it must be
+	 * only a zero, nothing else. */
+	if (key[0] == '0') {
+		if (key[1] != '\0')
+			return FALSE;
+		NM_SET_OUT (out_key_idx, 0);
+		return TRUE;
+	}
+
+	/* otherwise, it can only be followed by a non-zero decimal. */
+	if (!(key[0] >= '1' && key[0] <= '9'))
+		return FALSE;
+	/* and all remaining chars must be decimals too. */
+	if (!NM_STRCHAR_ALL (&key[1], ch, g_ascii_isdigit (ch)))
+		return FALSE;
+
+	/* and it must be convertible to a (positive) int. */
+	v = _nm_utils_ascii_str_to_int64 (key, 10, 0, G_MAXINT32, -1);
+	if (v < 0)
+		return FALSE;
+
+	/* good */
+	NM_SET_OUT (out_key_idx, v);
+	return TRUE;
+}
+
+static gboolean
+ip_addrroute_match_key (const char *key,
+                        gboolean is_routes,
+                        gint32 *out_key_idx,
+                        gint8 *out_key_type)
+{
+#define ip_addrroute_match_key_w_name(key, base_name, out_key_idx) \
+	ip_addrroute_match_key_w_name_ (key, base_name, NM_STRLEN (base_name), out_key_idx)
+
+	if (is_routes) {
+		if (ip_addrroute_match_key_w_name (key, "route", out_key_idx))
+			NM_SET_OUT (out_key_type, 0);
+		else if (ip_addrroute_match_key_w_name (key, "routes", out_key_idx))
+			NM_SET_OUT (out_key_type, 1);
+		else
+			return FALSE;
+	} else {
+		if (ip_addrroute_match_key_w_name (key, "address", out_key_idx))
+			NM_SET_OUT (out_key_type, 0);
+		else if (ip_addrroute_match_key_w_name (key, "addresses", out_key_idx))
+			NM_SET_OUT (out_key_type, 1);
+		else
+			return FALSE;
+	}
+	return TRUE;
+}
+
 static void
-ip_address_or_route_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
+ip_address_or_route_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *setting_key)
 {
 	const char *setting_name = nm_setting_get_name (setting);
-	gboolean ipv6 = !strcmp (setting_name, "ipv6");
-	gboolean routes = !strcmp (key, "routes");
-	static const char *key_names_routes[] = { "route", "routes", NULL };
-	static const char *key_names_addresses[] = { "address", "addresses", NULL };
-	const char **key_names = routes ? key_names_routes : key_names_addresses;
+	gboolean is_ipv6 = nm_streq (setting_name, "ipv6");
+	gboolean is_routes = nm_streq (setting_key, "routes");
 	gs_free char *gateway = NULL;
 	gs_unref_ptrarray GPtrArray *list = NULL;
-	int i;
+	gs_strfreev char **keys = NULL;
+	gsize i_keys, keys_len;
+	gs_free IPAddrRouteBuildListData *build_list = NULL;
+	gsize i_build_list, build_list_len = 0;
 
-	list = g_ptr_array_new_with_free_func (routes
+
+	keys = nm_keyfile_plugin_kf_get_keys (info->keyfile, setting_name, &keys_len, NULL);
+
+	if (keys_len == 0)
+		return;
+
+	/* first create a list of all relevant keys, and sort them. */
+	for (i_keys = 0; i_keys < keys_len; i_keys++) {
+		const char *s_key = keys[i_keys];
+		gint32 key_idx;
+		gint8 key_type;
+
+		if (!ip_addrroute_match_key (s_key, is_routes, &key_idx, &key_type))
+			continue;
+
+		if (G_UNLIKELY (!build_list))
+			build_list = g_new (IPAddrRouteBuildListData, keys_len - i_keys);
+
+		build_list[build_list_len].s_key = s_key;
+		build_list[build_list_len].key_idx = key_idx;
+		build_list[build_list_len].key_type = key_type;
+		build_list_len++;
+	}
+
+	if (build_list_len == 0)
+		return;
+
+	g_qsort_with_data (build_list,
+	                   build_list_len,
+	                   sizeof (IPAddrRouteBuildListData),
+	                   _ip_addrroute_build_lst_data_cmp,
+	                   NULL);
+
+	list = g_ptr_array_new_with_free_func (is_routes
 	                                       ? (GDestroyNotify) nm_ip_route_unref
 	                                       : (GDestroyNotify) nm_ip_address_unref);
 
-	for (i = -1; i < 1000; i++) {
-		const char **key_basename;
+	for (i_build_list = 0; i_build_list < build_list_len; i_build_list++) {
+		const IPAddrRouteBuildListData *build_data = &build_list[i_build_list];
+		gpointer item;
 
-		for (key_basename = key_names; *key_basename; key_basename++) {
-			char key_name_buf[100];
-			const char *key_name;
-			gpointer item;
+		if (   i_build_list + 1 < build_list_len
+		    && build_data->key_idx == build_data[1].key_idx
+		    && build_data->key_type == build_data[1].key_type
+		    && nm_streq (build_data->s_key, build_data[1].s_key)) {
+			/* the keyfile contains duplicate keys, which are both returned
+			 * by g_key_file_get_keys() (WHY??).
+			 *
+			 * Skip the earlier one. */
+			continue;
+		}
+
+		item = read_one_ip_address_or_route (info,
+		                                     setting_key,
+		                                     setting_name,
+		                                     build_data->s_key,
+		                                     is_ipv6,
+		                                     is_routes,
+		                                     gateway ? NULL : &gateway,
+		                                     setting);
+		if (item && is_routes) {
 			char options_key[128];
 
-			/* -1 means no suffix */
-			key_name = *key_basename;
-			if (i >= 0) {
-				nm_sprintf_buf (key_name_buf, "%s%d", key_name, i);
-				key_name = key_name_buf;
-			}
-
-			item = read_one_ip_address_or_route (info, key, setting_name, key_name, ipv6, routes,
-			                                     gateway ? NULL : &gateway, setting);
-			if (item && routes) {
-				nm_sprintf_buf (options_key, "%s_options", key_name);
-				fill_route_attributes (info->keyfile, item, setting_name, options_key, ipv6 ? AF_INET6 : AF_INET);
-			}
-
-			if (info->error)
-				return;
-
-			if (item)
-				g_ptr_array_add (list, item);
+			nm_sprintf_buf (options_key, "%s_options", build_data->s_key);
+			fill_route_attributes (info->keyfile,
+			                       item,
+			                       setting_name,
+			                       options_key,
+			                       is_ipv6 ? AF_INET6 : AF_INET);
 		}
+
+		if (info->error)
+			return;
+
+		if (item)
+			g_ptr_array_add (list, item);
 	}
 
 	if (list->len >= 1)
-		g_object_set (setting, key, list, NULL);
+		g_object_set (setting, setting_key, list, NULL);
 
 	if (gateway)
 		g_object_set (setting, "gateway", gateway, NULL);
