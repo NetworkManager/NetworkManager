@@ -889,7 +889,7 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 	if (priv->connections_loaded)
 		g_signal_emit (self, signals[CONNECTION_REMOVED], 0, connection);
 
-	g_object_ref (connection);
+	g_object_unref (connection);
 
 	check_startup_complete (self);
 }
@@ -1003,6 +1003,7 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 
 	_clear_connections_cached_list (priv);
 
+	g_object_ref (connection);
 	priv->connections_len++;
 	c_list_link_tail (&priv->connections_lst_head, &connection->_connections_lst);
 
