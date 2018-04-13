@@ -93,10 +93,10 @@ nm_auth_subject_to_string (NMAuthSubject *self, char *buf, gsize buf_len)
 		            (unsigned long long) priv->unix_process.start_time);
 		break;
 	case NM_AUTH_SUBJECT_TYPE_INTERNAL:
-		g_strlcat (buf, "internal", buf_len);
+		g_strlcpy (buf, "internal", buf_len);
 		break;
 	default:
-		g_strlcat (buf, "invalid", buf_len);
+		g_strlcpy (buf, "invalid", buf_len);
 		break;
 	}
 	return buf;
