@@ -105,7 +105,6 @@ libnm_core_sources = libnm_core_settings_sources + files(
   'nm-errors.c',
   'nm-keyfile.c',
   'nm-keyfile-utils.c',
-  'nm-keyfile-writer.c',
   'nm-property-compare.c',
   'nm-setting.c',
   'nm-simple-connection.c',
