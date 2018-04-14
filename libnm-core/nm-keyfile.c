@@ -2017,283 +2017,353 @@ null_writer (KeyfileWriterInfo *info,
 /*****************************************************************************/
 
 typedef struct {
-	const char *setting_name;
-	const char *key;
-	gboolean check_for_key;
-	void (*parser) (KeyfileReaderInfo *info, NMSetting *setting, const char *key);
-} KeyParser;
-
-typedef struct {
-	const char *setting_name;
-	const char *key;
+	const char *property_name;
+	void (*parser) (KeyfileReaderInfo *info,
+	                NMSetting *setting,
+	                const char *key);
 	void (*writer) (KeyfileWriterInfo *info,
 	                NMSetting *setting,
 	                const char *key,
 	                const GValue *value);
-} KeyWriter;
+	gboolean check_for_key;
+} ParseInfoProperty;
 
-/* A table of keys that require further parsing/conversion because they are
- * stored in a format that can't be automatically read using the key's type.
- * i.e. IPv4 addresses, which are stored in NetworkManager as guint32, but are
- * stored in keyfiles as strings, eg "10.1.1.2" or IPv6 addresses stored
- * in struct in6_addr internally, but as string in keyfiles.
- */
-static KeyParser key_parsers[] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME,
-	  NM_SETTING_CONNECTION_TYPE,
-	  TRUE,
-	  setting_alias_parser },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,
-	  NM_SETTING_BRIDGE_MAC_ADDRESS,
-	  TRUE,
-	  mac_address_parser_ETHER },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP_CONFIG_ADDRESSES,
-	  FALSE,
-	  ip_address_or_route_parser },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP_CONFIG_ADDRESSES,
-	  FALSE,
-	  ip_address_or_route_parser },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP_CONFIG_ROUTES,
-	  FALSE,
-	  ip_address_or_route_parser },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP_CONFIG_ROUTES,
-	  FALSE,
-	  ip_address_or_route_parser },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP_CONFIG_DNS,
-	  FALSE,
-	  ip_dns_parser },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP_CONFIG_DNS,
-	  FALSE,
-	  ip_dns_parser },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
-	  FALSE,
-	  ip6_addr_gen_mode_parser },
-	{ NM_SETTING_WIRED_SETTING_NAME,
-	  NM_SETTING_WIRED_MAC_ADDRESS,
-	  TRUE,
-	  mac_address_parser_ETHER },
-	{ NM_SETTING_WIRED_SETTING_NAME,
-	  NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
-	  TRUE,
-	  mac_address_parser_ETHER_cloned },
-	{ NM_SETTING_WIRELESS_SETTING_NAME,
-	  NM_SETTING_WIRELESS_MAC_ADDRESS,
-	  TRUE,
-	  mac_address_parser_ETHER },
-	{ NM_SETTING_WIRELESS_SETTING_NAME,
-	  NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS,
-	  TRUE,
-	  mac_address_parser_ETHER_cloned },
-	{ NM_SETTING_WIRELESS_SETTING_NAME,
-	  NM_SETTING_WIRELESS_BSSID,
-	  TRUE,
-	  mac_address_parser_ETHER },
-	{ NM_SETTING_BLUETOOTH_SETTING_NAME,
-	  NM_SETTING_BLUETOOTH_BDADDR,
-	  TRUE,
-	  mac_address_parser_ETHER },
-	{ NM_SETTING_INFINIBAND_SETTING_NAME,
-	  NM_SETTING_INFINIBAND_MAC_ADDRESS,
-	  TRUE,
-	  mac_address_parser_INFINIBAND },
-	{ NM_SETTING_WIMAX_SETTING_NAME,
-	  NM_SETTING_WIMAX_MAC_ADDRESS,
-	  TRUE,
-	  mac_address_parser_ETHER },
-	{ NM_SETTING_WIRELESS_SETTING_NAME,
-	  NM_SETTING_WIRELESS_SSID,
-	  TRUE,
-	  ssid_parser },
-	{ NM_SETTING_802_1X_SETTING_NAME,
-	  NM_SETTING_802_1X_PASSWORD_RAW,
-	  TRUE,
-	  password_raw_parser },
-	{ NM_SETTING_802_1X_SETTING_NAME,
-	  NM_SETTING_802_1X_CA_CERT,
-	  TRUE,
-	  cert_parser },
-	{ NM_SETTING_802_1X_SETTING_NAME,
-	  NM_SETTING_802_1X_CLIENT_CERT,
-	  TRUE,
-	  cert_parser },
-	{ NM_SETTING_802_1X_SETTING_NAME,
-	  NM_SETTING_802_1X_PRIVATE_KEY,
-	  TRUE,
-	  cert_parser },
-	{ NM_SETTING_802_1X_SETTING_NAME,
-	  NM_SETTING_802_1X_PHASE2_CA_CERT,
-	  TRUE,
-	  cert_parser },
-	{ NM_SETTING_802_1X_SETTING_NAME,
-	  NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
-	  TRUE,
-	  cert_parser },
-	{ NM_SETTING_802_1X_SETTING_NAME,
-	  NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
-	  TRUE,
-	  cert_parser },
-	{ NM_SETTING_SERIAL_SETTING_NAME,
-	  NM_SETTING_SERIAL_PARITY,
-	  TRUE,
-	  parity_parser },
-	{ NM_SETTING_TEAM_SETTING_NAME,
-	  NM_SETTING_TEAM_CONFIG,
-	  TRUE,
-	  team_config_parser },
-	{ NM_SETTING_TEAM_PORT_SETTING_NAME,
-	  NM_SETTING_TEAM_CONFIG,
-	  TRUE,
-	  team_config_parser },
-	{ NM_SETTING_TC_CONFIG_SETTING_NAME,
-	  NM_SETTING_TC_CONFIG_QDISCS,
-	  FALSE,
-	  qdisc_parser },
-	{ NM_SETTING_TC_CONFIG_SETTING_NAME,
-	  NM_SETTING_TC_CONFIG_TFILTERS,
-	  FALSE,
-	  tfilter_parser },
-	{ NULL, NULL, FALSE }
+#define PARSE_INFO_PROPERTY(_property_name, ...) \
+	(&((const ParseInfoProperty) { \
+		.property_name = _property_name, \
+		__VA_ARGS__ \
+	}))
+
+#define PARSE_INFO_PROPERTIES(...) \
+	.properties = ((const ParseInfoProperty*const[]) { \
+		__VA_ARGS__ \
+		NULL, \
+	})
+
+typedef struct {
+	const char *setting_name;
+	const ParseInfoProperty*const*properties;
+} ParseInfoSetting;
+
+#define PARSE_INFO_SETTING(_setting_name, ...) \
+	{ \
+		.setting_name = _setting_name, \
+		__VA_ARGS__ \
+	}
+
+static const ParseInfoSetting parse_infos[] = {
+	PARSE_INFO_SETTING (NM_SETTING_WIRELESS_SETTING_NAME,
+		PARSE_INFO_PROPERTIES (
+			PARSE_INFO_PROPERTY (NM_SETTING_WIRELESS_BSSID,
+				.check_for_key = TRUE,
+				.parser        = mac_address_parser_ETHER,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS,
+				.check_for_key = TRUE,
+				.parser        = mac_address_parser_ETHER_cloned,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_WIRELESS_MAC_ADDRESS,
+				.check_for_key = TRUE,
+				.parser        = mac_address_parser_ETHER,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_WIRELESS_SSID,
+				.check_for_key = TRUE,
+				.parser        = ssid_parser,
+				.writer        = ssid_writer,
+			),
+		),
+	),
+	PARSE_INFO_SETTING (NM_SETTING_802_1X_SETTING_NAME,
+		PARSE_INFO_PROPERTIES (
+			PARSE_INFO_PROPERTY (NM_SETTING_802_1X_CA_CERT,
+				.check_for_key = TRUE,
+				.parser        = cert_parser,
+				.writer        = cert_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_802_1X_CLIENT_CERT,
+				.check_for_key = TRUE,
+				.parser        = cert_parser,
+				.writer        = cert_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_802_1X_PASSWORD_RAW,
+				.check_for_key = TRUE,
+				.parser        = password_raw_parser,
+				.writer        = password_raw_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_802_1X_PHASE2_CA_CERT,
+				.check_for_key = TRUE,
+				.parser        = cert_parser,
+				.writer        = cert_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
+				.check_for_key = TRUE,
+				.parser        = cert_parser,
+				.writer        = cert_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
+				.check_for_key = TRUE,
+				.parser        = cert_parser,
+				.writer        = cert_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_802_1X_PRIVATE_KEY,
+				.check_for_key = TRUE,
+				.parser        = cert_parser,
+				.writer        = cert_writer,
+			),
+		),
+	),
+	PARSE_INFO_SETTING (NM_SETTING_WIRED_SETTING_NAME,
+		PARSE_INFO_PROPERTIES (
+			PARSE_INFO_PROPERTY (NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
+				.check_for_key = TRUE,
+				.parser        = mac_address_parser_ETHER_cloned,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_WIRED_MAC_ADDRESS,
+				.check_for_key = TRUE,
+				.parser        = mac_address_parser_ETHER,
+			),
+		),
+	),
+	PARSE_INFO_SETTING (NM_SETTING_BLUETOOTH_SETTING_NAME,
+		PARSE_INFO_PROPERTIES (
+			PARSE_INFO_PROPERTY (NM_SETTING_BLUETOOTH_BDADDR,
+				.check_for_key = TRUE,
+				.parser        = mac_address_parser_ETHER,
+			),
+		),
+	),
+	PARSE_INFO_SETTING (NM_SETTING_BRIDGE_SETTING_NAME,
+		PARSE_INFO_PROPERTIES (
+			PARSE_INFO_PROPERTY (NM_SETTING_BRIDGE_MAC_ADDRESS,
+				.check_for_key = TRUE,
+				.parser        = mac_address_parser_ETHER,
+			),
+		),
+	),
+	PARSE_INFO_SETTING (NM_SETTING_CONNECTION_SETTING_NAME,
+		PARSE_INFO_PROPERTIES (
+			PARSE_INFO_PROPERTY (NM_SETTING_CONNECTION_TYPE,
+				.check_for_key = TRUE,
+				.parser        = setting_alias_parser,
+				.writer        = setting_alias_writer,
+			),
+		),
+	),
+	PARSE_INFO_SETTING (NM_SETTING_INFINIBAND_SETTING_NAME,
+		PARSE_INFO_PROPERTIES (
+			PARSE_INFO_PROPERTY (NM_SETTING_INFINIBAND_MAC_ADDRESS,
+				.check_for_key = TRUE,
+				.parser        = mac_address_parser_INFINIBAND,
+			),
+		),
+	),
+	PARSE_INFO_SETTING (NM_SETTING_IP4_CONFIG_SETTING_NAME,
+		PARSE_INFO_PROPERTIES (
+			PARSE_INFO_PROPERTY (NM_SETTING_IP_CONFIG_ADDRESSES,
+				.parser        = ip_address_or_route_parser,
+				.writer        = addr_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_IP_CONFIG_DNS,
+				.parser        = ip_dns_parser,
+				.writer        = dns_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_IP_CONFIG_GATEWAY,
+				.writer        = gateway_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_IP_CONFIG_ROUTES,
+				.parser        = ip_address_or_route_parser,
+				.writer        = route_writer,
+			),
+		),
+	),
+	PARSE_INFO_SETTING (NM_SETTING_IP6_CONFIG_SETTING_NAME,
+		PARSE_INFO_PROPERTIES (
+			PARSE_INFO_PROPERTY (NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
+				.parser        = ip6_addr_gen_mode_parser,
+				.writer        = ip6_addr_gen_mode_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_IP_CONFIG_ADDRESSES,
+				.parser        = ip_address_or_route_parser,
+				.writer        = addr_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_IP_CONFIG_DNS,
+				.parser        = ip_dns_parser,
+				.writer        = dns_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_IP_CONFIG_GATEWAY,
+				.writer        = gateway_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_IP_CONFIG_ROUTES,
+				.parser        = ip_address_or_route_parser,
+				.writer        = route_writer,
+			),
+		),
+	),
+	PARSE_INFO_SETTING (NM_SETTING_SERIAL_SETTING_NAME,
+		PARSE_INFO_PROPERTIES (
+			PARSE_INFO_PROPERTY (NM_SETTING_SERIAL_PARITY,
+				.check_for_key = TRUE,
+				.parser        = parity_parser,
+			),
+		),
+	),
+	PARSE_INFO_SETTING (NM_SETTING_TC_CONFIG_SETTING_NAME,
+		PARSE_INFO_PROPERTIES (
+			PARSE_INFO_PROPERTY (NM_SETTING_TC_CONFIG_QDISCS,
+				.parser        = qdisc_parser,
+				.writer        = qdisc_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_TC_CONFIG_TFILTERS,
+				.parser        = tfilter_parser,
+				.writer        = tfilter_writer,
+			),
+		),
+	),
+	PARSE_INFO_SETTING (NM_SETTING_TEAM_SETTING_NAME,
+		PARSE_INFO_PROPERTIES (
+			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_CONFIG,
+				.check_for_key = TRUE,
+				.parser        = team_config_parser,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_LINK_WATCHERS,
+				.writer        = null_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_MCAST_REJOIN_COUNT,
+				.writer        = null_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_MCAST_REJOIN_INTERVAL,
+				.writer        = null_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_NOTIFY_PEERS_COUNT,
+				.writer        = null_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_NOTIFY_PEERS_INTERVAL,
+				.writer        = null_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER,
+				.writer        = null_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_ACTIVE,
+				.writer        = null_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY,
+				.writer        = null_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_FAST_RATE,
+				.writer        = null_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_HWADDR_POLICY,
+				.writer        = null_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_MIN_PORTS,
+				.writer        = null_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_SYS_PRIO,
+				.writer        = null_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_TX_BALANCER,
+				.writer        = null_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL,
+				.writer        = null_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_TX_HASH,
+				.writer        = null_writer,
+			),
+		),
+	),
+	PARSE_INFO_SETTING (NM_SETTING_TEAM_PORT_SETTING_NAME,
+		PARSE_INFO_PROPERTIES (
+			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_CONFIG,
+				.check_for_key = TRUE,
+				.parser        = team_config_parser,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_PORT_LACP_KEY,
+				.writer        = null_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_PORT_LACP_PRIO,
+				.writer        = null_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_PORT_LINK_WATCHERS,
+				.writer        = null_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_PORT_PRIO,
+				.writer        = null_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_PORT_QUEUE_ID,
+				.writer        = null_writer,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_PORT_STICKY,
+				.writer        = null_writer,
+			),
+		),
+	),
+	PARSE_INFO_SETTING (NM_SETTING_WIMAX_SETTING_NAME,
+		PARSE_INFO_PROPERTIES (
+			PARSE_INFO_PROPERTY (NM_SETTING_WIMAX_MAC_ADDRESS,
+				.check_for_key = TRUE,
+				.parser        = mac_address_parser_ETHER,
+			),
+		),
+	),
 };
 
-/* A table of keys that require further parsing/conversion because they are
- * stored in a format that can't be automatically read using the key's type.
- * i.e. IPv4 addresses, which are stored in NetworkManager as guint32, but are
- * stored in keyfiles as strings, eg "10.1.1.2" or IPv6 addresses stored
- * in struct in6_addr internally, but as string in keyfiles.
- */
-static KeyWriter key_writers[] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME,
-	  NM_SETTING_CONNECTION_TYPE,
-	  setting_alias_writer },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP_CONFIG_ADDRESSES,
-	  addr_writer },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP_CONFIG_ADDRESSES,
-	  addr_writer },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP_CONFIG_GATEWAY,
-	  gateway_writer },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP_CONFIG_GATEWAY,
-	  gateway_writer },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP_CONFIG_ROUTES,
-	  route_writer },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP_CONFIG_ROUTES,
-	  route_writer },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP_CONFIG_DNS,
-	  dns_writer },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP_CONFIG_DNS,
-	  dns_writer },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	  NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
-	  ip6_addr_gen_mode_writer },
-	{ NM_SETTING_WIRELESS_SETTING_NAME,
-	  NM_SETTING_WIRELESS_SSID,
-	  ssid_writer },
-	{ NM_SETTING_802_1X_SETTING_NAME,
-	  NM_SETTING_802_1X_PASSWORD_RAW,
-	  password_raw_writer },
-	{ NM_SETTING_802_1X_SETTING_NAME,
-	  NM_SETTING_802_1X_CA_CERT,
-	  cert_writer },
-	{ NM_SETTING_802_1X_SETTING_NAME,
-	  NM_SETTING_802_1X_CLIENT_CERT,
-	  cert_writer },
-	{ NM_SETTING_802_1X_SETTING_NAME,
-	  NM_SETTING_802_1X_PRIVATE_KEY,
-	  cert_writer },
-	{ NM_SETTING_802_1X_SETTING_NAME,
-	  NM_SETTING_802_1X_PHASE2_CA_CERT,
-	  cert_writer },
-	{ NM_SETTING_802_1X_SETTING_NAME,
-	  NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
-	  cert_writer },
-	{ NM_SETTING_802_1X_SETTING_NAME,
-	  NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
-	  cert_writer },
-	{ NM_SETTING_TC_CONFIG_SETTING_NAME,
-	  NM_SETTING_TC_CONFIG_QDISCS,
-	  qdisc_writer },
-	{ NM_SETTING_TC_CONFIG_SETTING_NAME,
-	  NM_SETTING_TC_CONFIG_TFILTERS,
-	  tfilter_writer },
-	{ NM_SETTING_TEAM_SETTING_NAME,
-	  NM_SETTING_TEAM_NOTIFY_PEERS_COUNT,
-	  null_writer},
-	{ NM_SETTING_TEAM_SETTING_NAME,
-	  NM_SETTING_TEAM_NOTIFY_PEERS_INTERVAL,
-	  null_writer},
-	{ NM_SETTING_TEAM_SETTING_NAME,
-	  NM_SETTING_TEAM_MCAST_REJOIN_COUNT,
-	  null_writer},
-	{ NM_SETTING_TEAM_SETTING_NAME,
-	  NM_SETTING_TEAM_MCAST_REJOIN_INTERVAL,
-	  null_writer},
-	{ NM_SETTING_TEAM_SETTING_NAME,
-	  NM_SETTING_TEAM_RUNNER,
-	  null_writer},
-	{ NM_SETTING_TEAM_SETTING_NAME,
-	  NM_SETTING_TEAM_RUNNER_HWADDR_POLICY,
-	  null_writer},
-	{ NM_SETTING_TEAM_SETTING_NAME,
-	  NM_SETTING_TEAM_RUNNER_TX_HASH,
-	  null_writer},
-	{ NM_SETTING_TEAM_SETTING_NAME,
-	  NM_SETTING_TEAM_RUNNER_TX_BALANCER,
-	  null_writer},
-	{ NM_SETTING_TEAM_SETTING_NAME,
-	  NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL,
-	  null_writer},
-	{ NM_SETTING_TEAM_SETTING_NAME,
-	  NM_SETTING_TEAM_RUNNER_ACTIVE,
-	  null_writer},
-	{ NM_SETTING_TEAM_SETTING_NAME,
-	  NM_SETTING_TEAM_RUNNER_FAST_RATE,
-	  null_writer},
-	{ NM_SETTING_TEAM_SETTING_NAME,
-	  NM_SETTING_TEAM_RUNNER_SYS_PRIO,
-	  null_writer},
-	{ NM_SETTING_TEAM_SETTING_NAME,
-	  NM_SETTING_TEAM_RUNNER_MIN_PORTS,
-	  null_writer},
-	{ NM_SETTING_TEAM_SETTING_NAME,
-	  NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY,
-	  null_writer},
-	{ NM_SETTING_TEAM_SETTING_NAME,
-	  NM_SETTING_TEAM_LINK_WATCHERS,
-	  null_writer},
-	{ NM_SETTING_TEAM_PORT_SETTING_NAME,
-	  NM_SETTING_TEAM_PORT_QUEUE_ID,
-	  null_writer},
-	{ NM_SETTING_TEAM_PORT_SETTING_NAME,
-	  NM_SETTING_TEAM_PORT_PRIO,
-	  null_writer},
-	{ NM_SETTING_TEAM_PORT_SETTING_NAME,
-	  NM_SETTING_TEAM_PORT_STICKY,
-	  null_writer},
-	{ NM_SETTING_TEAM_PORT_SETTING_NAME,
-	  NM_SETTING_TEAM_PORT_LACP_PRIO,
-	  null_writer},
-	{ NM_SETTING_TEAM_PORT_SETTING_NAME,
-	  NM_SETTING_TEAM_PORT_LACP_KEY,
-	  null_writer},
-	{ NM_SETTING_TEAM_PORT_SETTING_NAME,
-	  NM_SETTING_TEAM_PORT_LINK_WATCHERS,
-	  null_writer},
-	{ NULL, NULL, NULL }
-};
+static const ParseInfoProperty *
+_parse_info_find (const char *setting_name, const char *property_name)
+{
+	gssize idx;
+
+#if NM_MORE_ASSERTS > 5
+	{
+		guint i, j;
+
+		for (i = 0; i < G_N_ELEMENTS (parse_infos); i++) {
+			const ParseInfoSetting *pis = &parse_infos[i];
+
+			g_assert (pis->setting_name);
+			if (   i > 0
+				&& strcmp (pis[-1].setting_name, pis->setting_name) >= 0)
+				g_error ("Wrong order at index #%d: \"%s\" before \"%s\"", i - 1, pis[-1].setting_name, pis->setting_name);
+			g_assert (pis->properties);
+			g_assert (pis->properties[0]);
+			for (j = 0; pis->properties[j]; j++) {
+				const ParseInfoProperty *pip0;
+				const ParseInfoProperty *pip = pis->properties[j];
+
+				g_assert (pip->property_name);
+				if (   j > 0
+				    && (pip0 = pis->properties[j - 1])
+				    && strcmp (pip0->property_name, pip->property_name) >= 0)
+					g_error ("Wrong order at index #%d.%d: \"%s.%s\" before \"%s.%s\"", i, j - 1, pis->setting_name, pip0->property_name, pis->setting_name, pip->property_name);
+			}
+		}
+	}
+#endif
+
+	G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (ParseInfoSetting, setting_name) == 0);
+	idx = _nm_utils_array_find_binary_search (parse_infos,
+	                                          sizeof (ParseInfoSetting),
+	                                          G_N_ELEMENTS (parse_infos),
+	                                          &setting_name,
+	                                          nm_strcmp_p_with_data,
+	                                          NULL);
+	if (idx >= 0) {
+		const ParseInfoSetting *pis = &parse_infos[idx];
+
+		nm_assert (nm_streq (pis->setting_name, setting_name));
+		idx = _nm_utils_ptrarray_find_binary_search ((gconstpointer *) pis->properties,
+		                                             NM_PTRARRAY_LEN (pis->properties),
+		                                             &property_name,
+		                                             nm_strcmp_p_with_data,
+		                                             NULL,
+		                                             NULL,
+		                                             NULL);
+		if (idx >= 0)
+			return pis->properties[idx];
+	}
+
+	return NULL;
+}
 
 /*****************************************************************************/
 
@@ -2317,7 +2387,7 @@ read_one_setting_value (NMSetting *setting,
 	GType type;
 	gs_free_error GError *err = NULL;
 	gboolean check_for_key = TRUE;
-	KeyParser *parser = &key_parsers[0];
+	const ParseInfoProperty *pip;
 
 	if (info->error)
 		return;
@@ -2344,13 +2414,12 @@ read_one_setting_value (NMSetting *setting,
 
 	setting_name = nm_setting_get_name (setting);
 
-	/* Look through the list of handlers for non-standard format key values */
-	while (parser->setting_name) {
-		if (!strcmp (parser->setting_name, setting_name) && !strcmp (parser->key, key)) {
-			check_for_key = parser->check_for_key;
-			break;
-		}
-		parser++;
+	pip = _parse_info_find (setting_name, key);
+	if (pip) {
+		if (pip->parser)
+			check_for_key = pip->check_for_key;
+		else
+			pip = NULL;
 	}
 
 	if (NM_IS_SETTING_VPN (setting))
@@ -2379,11 +2448,8 @@ read_one_setting_value (NMSetting *setting,
 		return;
 	}
 
-	/* If there's a custom parser for this key, handle that before the generic
-	 * parsers below.
-	 */
-	if (parser->setting_name) {
-		(*parser->parser) (info, setting, key);
+	if (pip) {
+		pip->parser (info, setting, key);
 		return;
 	}
 
@@ -2744,7 +2810,7 @@ write_setting_value (NMSetting *setting,
 	KeyfileWriterInfo *info = user_data;
 	const char *setting_name;
 	GType type = G_VALUE_TYPE (value);
-	KeyWriter *writer = &key_writers[0];
+	const ParseInfoProperty *pip;
 	GParamSpec *pspec;
 
 	if (info->error)
@@ -2785,13 +2851,10 @@ write_setting_value (NMSetting *setting,
 			return;
 	}
 
-	/* Look through the list of handlers for non-standard format key values */
-	while (writer->setting_name) {
-		if (!strcmp (writer->setting_name, setting_name) && !strcmp (writer->key, key)) {
-			(*writer->writer) (info, setting, key, value);
-			return;
-		}
-		writer++;
+	pip = _parse_info_find (setting_name, key);
+	if (pip && pip->writer) {
+		pip->writer (info, setting, key, value);
+		return;
 	}
 
 	if (type == G_TYPE_STRING) {
