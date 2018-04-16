@@ -34,7 +34,6 @@
 #include <stdlib.h>
 
 #include "nm-dbus-manager.h"
-#include "NetworkManagerUtils.h"
 
 enum {
 	PROP_0,
@@ -187,15 +186,15 @@ _new_unix_process (GDBusMethodInvocation *context,
 		                                           &dbus_sender,
 		                                           &uid,
 		                                           &pid);
-	} else if (message) {
+	} else {
+		nm_assert (message);
 		success = nm_dbus_manager_get_caller_info_from_message (nm_dbus_manager_get (),
 		                                                        connection,
 		                                                        message,
 		                                                        &dbus_sender,
 		                                                        &uid,
 		                                                        &pid);
-	} else
-		g_assert_not_reached ();
+	}
 
 	if (!success)
 		return NULL;

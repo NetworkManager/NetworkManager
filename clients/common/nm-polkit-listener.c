@@ -33,15 +33,15 @@
 
 #include "nm-default.h"
 
+#include "nm-polkit-listener.h"
+
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "nm-polkit-listener.h"
+#if WITH_POLKIT_AGENT
 
-G_DEFINE_TYPE (NMPolkitListener, nm_polkit_listener, POLKIT_AGENT_TYPE_LISTENER)
-
-#define NM_POLKIT_LISTENER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_POLKIT_LISTENER, NMPolkitListenerPrivate))
+/*****************************************************************************/
 
 typedef struct {
 	gpointer reg_handle;  /* handle of polkit agent registration */
@@ -56,14 +56,28 @@ typedef struct {
 	char *icon_name;
 	char *identity;
 
-	/* callbacks */
-	NMPolkitListenerOnRequestFunc on_request_callback;
-	NMPolkitListenerOnShowInfoFunc on_show_info_callback;
-	NMPolkitListenerOnShowErrorFunc on_show_error_callback;
-	NMPolkitListenerOnCompletedFunc on_completed_callback;
-	gpointer request_callback_data;
+	const NMPolkitListenVtable *vtable;
+	gpointer vtable_user_data;
 } NMPolkitListenerPrivate;
 
+G_DEFINE_TYPE (NMPolkitListener, nm_polkit_listener, POLKIT_AGENT_TYPE_LISTENER)
+
+#define NM_POLKIT_LISTENER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_POLKIT_LISTENER, NMPolkitListenerPrivate))
+
+/*****************************************************************************/
+
+void
+nm_polkit_listener_set_vtable (NMPolkitListener *self,
+                               const NMPolkitListenVtable *vtable,
+                               gpointer user_data)
+{
+	NMPolkitListenerPrivate *priv = NM_POLKIT_LISTENER_GET_PRIVATE (self);
+
+	priv->vtable = vtable;
+	priv->vtable_user_data = user_data;
+}
+
+/*****************************************************************************/
 
 static void
 on_request (PolkitAgentSession *session,
@@ -71,20 +85,21 @@ on_request (PolkitAgentSession *session,
             gboolean echo_on,
             gpointer user_data)
 {
-	NMPolkitListenerPrivate *priv = NM_POLKIT_LISTENER_GET_PRIVATE (user_data);
-	char *response = NULL;
+	NMPolkitListener *self = NM_POLKIT_LISTENER (user_data);
+	NMPolkitListenerPrivate *priv = NM_POLKIT_LISTENER_GET_PRIVATE (self);
+	gs_free char *response = NULL;
 
-	if (priv->on_request_callback) {
-		response = priv->on_request_callback (request, priv->action_id,
-		                                      priv->message, priv->icon_name,
-		                                      priv->identity, echo_on,
-		                                      priv->request_callback_data);
+	if (priv->vtable && priv->vtable->on_request) {
+		response = priv->vtable->on_request (self,
+		                                     request, priv->action_id,
+		                                     priv->message, priv->icon_name,
+		                                     priv->identity, echo_on,
+		                                     priv->vtable_user_data);
 	}
 
-	if (response) {
+	if (response)
 		polkit_agent_session_response (session, response);
-		g_free (response);
-	} else {
+	else {
 		//FIXME: polkit_agent_session_cancel() should emit "completed", but it doesn't work for me ???
 		//polkit_agent_session_cancel (session);
 		polkit_agent_session_response (session, "");
@@ -96,10 +111,13 @@ on_show_info (PolkitAgentSession *session,
               const char *text,
               gpointer user_data)
 {
-	NMPolkitListenerPrivate *priv = NM_POLKIT_LISTENER_GET_PRIVATE (user_data);
+	NMPolkitListener *self = NM_POLKIT_LISTENER (user_data);
+	NMPolkitListenerPrivate *priv = NM_POLKIT_LISTENER_GET_PRIVATE (self);
 
-	if (priv->on_show_info_callback)
-		priv->on_show_info_callback (text);
+	if (priv->vtable && priv->vtable->on_show_info) {
+		priv->vtable->on_show_info (self, text,
+		                            priv->vtable_user_data);
+	}
 }
 
 static void
@@ -107,10 +125,13 @@ on_show_error (PolkitAgentSession *session,
                const char *text,
                gpointer user_data)
 {
-	NMPolkitListenerPrivate *priv = NM_POLKIT_LISTENER_GET_PRIVATE (user_data);
+	NMPolkitListener *self = NM_POLKIT_LISTENER (user_data);
+	NMPolkitListenerPrivate *priv = NM_POLKIT_LISTENER_GET_PRIVATE (self);
 
-	if (priv->on_show_error_callback)
-		priv->on_show_error_callback (text);
+	if (priv->vtable && priv->vtable->on_show_error) {
+		priv->vtable->on_show_error (self, text,
+		                             priv->vtable_user_data);
+	}
 }
 
 static void
@@ -118,10 +139,13 @@ on_completed (PolkitAgentSession *session,
               gboolean gained_authorization,
               gpointer user_data)
 {
-	NMPolkitListenerPrivate *priv = NM_POLKIT_LISTENER_GET_PRIVATE (user_data);
+	NMPolkitListener *self = NM_POLKIT_LISTENER (user_data);
+	NMPolkitListenerPrivate *priv = NM_POLKIT_LISTENER_GET_PRIVATE (self);
 
-	if (priv->on_completed_callback)
-		priv->on_completed_callback (gained_authorization);
+	if (priv->vtable->on_completed) {
+		priv->vtable->on_completed (self, gained_authorization,
+		                            priv->vtable_user_data);
+	}
 
 	g_simple_async_result_complete_in_idle (priv->simple);
 
@@ -145,7 +169,8 @@ on_completed (PolkitAgentSession *session,
 static void
 on_cancelled (GCancellable *cancellable, gpointer user_data)
 {
-	NMPolkitListenerPrivate *priv = NM_POLKIT_LISTENER_GET_PRIVATE (user_data);
+	NMPolkitListener *self = NM_POLKIT_LISTENER (user_data);
+	NMPolkitListenerPrivate *priv = NM_POLKIT_LISTENER_GET_PRIVATE (self);
 
 	polkit_agent_session_cancel (priv->active_session);
 }
@@ -264,10 +289,56 @@ initiate_authentication_finish (PolkitAgentListener *listener,
 	return !g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result), error);
 }
 
+/*****************************************************************************/
 
 static void
 nm_polkit_listener_init (NMPolkitListener *agent)
 {
+}
+
+/**
+ * nm_polkit_listener_new:
+ * @for_session: %TRUE for registering the polkit agent for the user session,
+ *   %FALSE for registering it for the running process
+ * @vtable: mandatory callbacks
+ * @user_data: user-data pointer for callbacks
+ * @error: location to store error, or %NULL
+ *
+ * Creates a new #NMPolkitListener and registers it as a polkit agent.
+ *
+ * Returns: a new #NMPolkitListener
+ */
+NMPolkitListener *
+nm_polkit_listener_new (gboolean for_session,
+                        GError **error)
+{
+	NMPolkitListener *listener;
+	PolkitSubject* session;
+	NMPolkitListenerPrivate *priv;
+
+	g_return_val_if_fail (!error || !*error, NULL);
+
+	listener = g_object_new (NM_TYPE_POLKIT_LISTENER, NULL);
+
+	priv = NM_POLKIT_LISTENER_GET_PRIVATE (listener);
+
+	if (for_session) {
+		session = polkit_unix_session_new_for_process_sync (getpid (), NULL, error);
+		if (!session)
+			return NULL;
+	} else
+		session = polkit_unix_process_new_for_owner (getpid (), 0, getuid ());
+
+	priv->reg_handle = polkit_agent_listener_register (POLKIT_AGENT_LISTENER (listener),
+	                                                   POLKIT_AGENT_REGISTER_FLAGS_NONE,
+	                                                   session, NULL, NULL, error);
+	if (!priv->reg_handle) {
+		g_object_unref (listener);
+		g_object_unref (session);
+		return NULL;
+	}
+
+	return listener;
 }
 
 static void
@@ -300,117 +371,4 @@ nm_polkit_listener_class_init (NMPolkitListenerClass *klass)
 	pkal_class->initiate_authentication_finish = initiate_authentication_finish;
 }
 
-/**
- * nm_polkit_listener_new:
- * @for_session: %TRUE for registering the polkit agent for the user session,
- *   %FALSE for registering it for the running process
- * @error: location to store error, or %NULL
- *
- * Creates a new #NMPolkitListener and registers it as a polkit agent.
- *
- * Returns: a new #NMPolkitListener
- */
-PolkitAgentListener *
-nm_polkit_listener_new (gboolean for_session, GError **error)
-{
-	PolkitAgentListener *listener;
-	PolkitSubject* session;
-	NMPolkitListenerPrivate *priv;
-
-	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
-
-	listener = g_object_new (NM_TYPE_POLKIT_LISTENER, NULL);
-	priv = NM_POLKIT_LISTENER_GET_PRIVATE (listener);
-
-	if (for_session) {
-		session = polkit_unix_session_new_for_process_sync (getpid (), NULL, error);
-		if (!session)
-			return NULL;
-	} else
-		session = polkit_unix_process_new_for_owner (getpid (), 0, getuid ());
-
-	priv->reg_handle = polkit_agent_listener_register (listener, POLKIT_AGENT_REGISTER_FLAGS_NONE,
-	                                                   session, NULL, NULL, error);
-	if (!priv->reg_handle) {
-		g_object_unref (listener);
-		g_object_unref (session);
-		return NULL;
-	}
-
-	return listener;
-}
-
-/**
- * nm_polkit_listener_set_request_callback:
- * @self: a #NMPolkitListener object
- * @request_callback: callback to install for polkit requests
- * @request_callback_data: usaer data passed to request_callback when it is called
- *
- * Set a callback for "request" signal. The callback will be invoked when polkit
- * requests an authorization.
- */
-void
-nm_polkit_listener_set_request_callback (NMPolkitListener *self,
-                                         NMPolkitListenerOnRequestFunc request_callback,
-                                         gpointer request_callback_data)
-{
-	NMPolkitListenerPrivate *priv;
-
-	g_return_if_fail (NM_IS_POLKIT_LISTENER (self));
-
-	priv = NM_POLKIT_LISTENER_GET_PRIVATE (self);
-
-	priv->on_request_callback = request_callback;
-	priv->request_callback_data = request_callback_data;
-}
-
-/**
- * nm_polkit_listener_set_show_info_callback:
- * @self: a #NMPolkitListener object
- * @show_info_callback: callback to install for polkit show info trigger
- *
- * Set a callback for "show-info" signal. The callback will be invoked when polkit
- * has an info text to display.
- */
-void
-nm_polkit_listener_set_show_info_callback (NMPolkitListener *self,
-                                           NMPolkitListenerOnShowInfoFunc show_info_callback)
-{
-	g_return_if_fail (NM_IS_POLKIT_LISTENER (self));
-
-	NM_POLKIT_LISTENER_GET_PRIVATE (self)->on_show_info_callback = show_info_callback;
-}
-
-/**
- * nm_polkit_listener_set_show_error_callback:
- * @self: a #NMPolkitListener object
- * @show_error_callback: callback to install for polkit show error trigger
- *
- * Set a callback for "show-error" signal. The callback will be invoked when polkit
- * has an error text to display.
- */
-void
-nm_polkit_listener_set_show_error_callback (NMPolkitListener *self,
-                                            NMPolkitListenerOnShowErrorFunc show_error_callback)
-{
-	g_return_if_fail (NM_IS_POLKIT_LISTENER (self));
-
-	NM_POLKIT_LISTENER_GET_PRIVATE (self)->on_show_error_callback = show_error_callback;
-}
-
-/**
- * nm_polkit_listener_set_completed_callback:
- * @self: a #NMPolkitListener object
- * @completed_callback: callback to install for polkit completing authorization
- *
- * Set a callback for "completed" signal. The callback will be invoked when polkit
- * completed the request.
- */
-void
-nm_polkit_listener_set_completed_callback (NMPolkitListener *self,
-                                           NMPolkitListenerOnCompletedFunc completed_callback)
-{
-	g_return_if_fail (NM_IS_POLKIT_LISTENER (self));
-
-	NM_POLKIT_LISTENER_GET_PRIVATE (self)->on_completed_callback = completed_callback;
-}
+#endif /* WITH_POLKIT_AGENT */
