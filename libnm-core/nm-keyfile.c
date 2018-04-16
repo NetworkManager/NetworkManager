@@ -2001,7 +2001,7 @@ typedef struct {
 	                NMSetting *setting,
 	                const char *key,
 	                const GValue *value);
-	bool check_for_key:1;
+	bool parser_no_check_key:1;
 	bool writer_skip:1;
 
 	/* usually, we skip to write values that have their
@@ -2037,19 +2037,15 @@ static const ParseInfoSetting parse_infos[] = {
 	PARSE_INFO_SETTING (NM_SETTING_WIRELESS_SETTING_NAME,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_WIRELESS_BSSID,
-				.check_for_key = TRUE,
 				.parser        = mac_address_parser_ETHER,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS,
-				.check_for_key = TRUE,
 				.parser        = mac_address_parser_ETHER_cloned,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_WIRELESS_MAC_ADDRESS,
-				.check_for_key = TRUE,
 				.parser        = mac_address_parser_ETHER,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_WIRELESS_SSID,
-				.check_for_key = TRUE,
 				.parser        = ssid_parser,
 				.writer        = ssid_writer,
 			),
@@ -2058,37 +2054,30 @@ static const ParseInfoSetting parse_infos[] = {
 	PARSE_INFO_SETTING (NM_SETTING_802_1X_SETTING_NAME,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_802_1X_CA_CERT,
-				.check_for_key = TRUE,
 				.parser        = cert_parser,
 				.writer        = cert_writer,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_802_1X_CLIENT_CERT,
-				.check_for_key = TRUE,
 				.parser        = cert_parser,
 				.writer        = cert_writer,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_802_1X_PASSWORD_RAW,
-				.check_for_key = TRUE,
 				.parser        = password_raw_parser,
 				.writer        = password_raw_writer,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_802_1X_PHASE2_CA_CERT,
-				.check_for_key = TRUE,
 				.parser        = cert_parser,
 				.writer        = cert_writer,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
-				.check_for_key = TRUE,
 				.parser        = cert_parser,
 				.writer        = cert_writer,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
-				.check_for_key = TRUE,
 				.parser        = cert_parser,
 				.writer        = cert_writer,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_802_1X_PRIVATE_KEY,
-				.check_for_key = TRUE,
 				.parser        = cert_parser,
 				.writer        = cert_writer,
 			),
@@ -2097,11 +2086,9 @@ static const ParseInfoSetting parse_infos[] = {
 	PARSE_INFO_SETTING (NM_SETTING_WIRED_SETTING_NAME,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
-				.check_for_key = TRUE,
 				.parser        = mac_address_parser_ETHER_cloned,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_WIRED_MAC_ADDRESS,
-				.check_for_key = TRUE,
 				.parser        = mac_address_parser_ETHER,
 			),
 		),
@@ -2109,7 +2096,6 @@ static const ParseInfoSetting parse_infos[] = {
 	PARSE_INFO_SETTING (NM_SETTING_BLUETOOTH_SETTING_NAME,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_BLUETOOTH_BDADDR,
-				.check_for_key = TRUE,
 				.parser        = mac_address_parser_ETHER,
 			),
 		),
@@ -2117,7 +2103,6 @@ static const ParseInfoSetting parse_infos[] = {
 	PARSE_INFO_SETTING (NM_SETTING_BRIDGE_SETTING_NAME,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_BRIDGE_MAC_ADDRESS,
-				.check_for_key = TRUE,
 				.parser        = mac_address_parser_ETHER,
 			),
 		),
@@ -2128,7 +2113,6 @@ static const ParseInfoSetting parse_infos[] = {
 				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_CONNECTION_TYPE,
-				.check_for_key = TRUE,
 				.parser        = setting_alias_parser,
 				.writer        = setting_alias_writer,
 			),
@@ -2137,7 +2121,6 @@ static const ParseInfoSetting parse_infos[] = {
 	PARSE_INFO_SETTING (NM_SETTING_INFINIBAND_SETTING_NAME,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_INFINIBAND_MAC_ADDRESS,
-				.check_for_key = TRUE,
 				.parser        = mac_address_parser_INFINIBAND,
 			),
 		),
@@ -2145,10 +2128,12 @@ static const ParseInfoSetting parse_infos[] = {
 	PARSE_INFO_SETTING (NM_SETTING_IP4_CONFIG_SETTING_NAME,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_IP_CONFIG_ADDRESSES,
+				.parser_no_check_key = TRUE,
 				.parser        = ip_address_or_route_parser,
 				.writer        = addr_writer,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_IP_CONFIG_DNS,
+				.parser_no_check_key = TRUE,
 				.parser        = ip_dns_parser,
 				.writer        = dns_writer,
 			),
@@ -2156,6 +2141,7 @@ static const ParseInfoSetting parse_infos[] = {
 				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_IP_CONFIG_ROUTES,
+				.parser_no_check_key = TRUE,
 				.parser        = ip_address_or_route_parser,
 				.writer        = route_writer,
 			),
@@ -2164,15 +2150,18 @@ static const ParseInfoSetting parse_infos[] = {
 	PARSE_INFO_SETTING (NM_SETTING_IP6_CONFIG_SETTING_NAME,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
+				.parser_no_check_key = TRUE,
 				.parser        = ip6_addr_gen_mode_parser,
 				.writer        = ip6_addr_gen_mode_writer,
 				.writer_persist_default = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_IP_CONFIG_ADDRESSES,
+				.parser_no_check_key = TRUE,
 				.parser        = ip_address_or_route_parser,
 				.writer        = addr_writer,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_IP_CONFIG_DNS,
+				.parser_no_check_key = TRUE,
 				.parser        = ip_dns_parser,
 				.writer        = dns_writer,
 			),
@@ -2180,6 +2169,7 @@ static const ParseInfoSetting parse_infos[] = {
 				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_IP_CONFIG_ROUTES,
+				.parser_no_check_key = TRUE,
 				.parser        = ip_address_or_route_parser,
 				.writer        = route_writer,
 			),
@@ -2188,7 +2178,6 @@ static const ParseInfoSetting parse_infos[] = {
 	PARSE_INFO_SETTING (NM_SETTING_SERIAL_SETTING_NAME,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_SERIAL_PARITY,
-				.check_for_key = TRUE,
 				.parser        = parity_parser,
 			),
 		),
@@ -2196,10 +2185,12 @@ static const ParseInfoSetting parse_infos[] = {
 	PARSE_INFO_SETTING (NM_SETTING_TC_CONFIG_SETTING_NAME,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_TC_CONFIG_QDISCS,
+				.parser_no_check_key = TRUE,
 				.parser        = qdisc_parser,
 				.writer        = qdisc_writer,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TC_CONFIG_TFILTERS,
+				.parser_no_check_key = TRUE,
 				.parser        = tfilter_parser,
 				.writer        = tfilter_writer,
 			),
@@ -2208,7 +2199,6 @@ static const ParseInfoSetting parse_infos[] = {
 	PARSE_INFO_SETTING (NM_SETTING_TEAM_SETTING_NAME,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_CONFIG,
-				.check_for_key = TRUE,
 				.parser        = team_config_parser,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_LINK_WATCHERS,
@@ -2261,7 +2251,6 @@ static const ParseInfoSetting parse_infos[] = {
 	PARSE_INFO_SETTING (NM_SETTING_TEAM_PORT_SETTING_NAME,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_CONFIG,
-				.check_for_key = TRUE,
 				.parser        = team_config_parser,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_PORT_LACP_KEY,
@@ -2294,7 +2283,6 @@ static const ParseInfoSetting parse_infos[] = {
 	PARSE_INFO_SETTING (NM_SETTING_WIMAX_SETTING_NAME,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_WIMAX_MAC_ADDRESS,
-				.check_for_key = TRUE,
 				.parser        = mac_address_parser_ETHER,
 			),
 		),
@@ -2379,7 +2367,7 @@ read_one_setting_value (NMSetting *setting,
 	int errsv;
 	GType type;
 	gs_free_error GError *err = NULL;
-	gboolean check_for_key = TRUE;
+	gboolean parser_no_check_key;
 	const ParseInfoProperty *pip;
 
 	if (info->error)
@@ -2408,26 +2396,25 @@ read_one_setting_value (NMSetting *setting,
 	setting_name = nm_setting_get_name (setting);
 
 	pip = _parse_info_find (setting_name, key);
-	if (pip) {
-		if (pip->parser)
-			check_for_key = pip->check_for_key;
-		else
-			pip = NULL;
-	}
 
 	if (NM_IS_SETTING_VPN (setting))
-		check_for_key = FALSE;
+		parser_no_check_key = TRUE;
 	else if (NM_IS_SETTING_USER (setting))
-		check_for_key = FALSE;
+		parser_no_check_key = TRUE;
 	else if (NM_IS_SETTING_BOND (setting))
-		check_for_key = FALSE;
+		parser_no_check_key = TRUE;
+	else if (pip)
+		parser_no_check_key = pip->parser_no_check_key;
+	else
+		parser_no_check_key = FALSE;
 
 	/* Check for the exact key in the GKeyFile if required.  Most setting
 	 * properties map 1:1 to a key in the GKeyFile, but for those properties
 	 * like IP addresses and routes where more than one value is actually
 	 * encoded by the setting property, this won't be true.
 	 */
-	if (check_for_key && !nm_keyfile_plugin_kf_has_key (keyfile, setting_name, key, &err)) {
+	if (   !parser_no_check_key
+	    && !nm_keyfile_plugin_kf_has_key (keyfile, setting_name, key, &err)) {
 		/* Key doesn't exist or an error ocurred, thus nothing to do. */
 		if (err) {
 			if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
@@ -2441,7 +2428,7 @@ read_one_setting_value (NMSetting *setting,
 		return;
 	}
 
-	if (pip) {
+	if (pip && pip->parser) {
 		pip->parser (info, setting, key);
 		return;
 	}
