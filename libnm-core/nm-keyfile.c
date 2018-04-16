@@ -2001,6 +2001,7 @@ typedef struct {
 	                NMSetting *setting,
 	                const char *key,
 	                const GValue *value);
+	bool parser_skip;
 	bool parser_no_check_key:1;
 	bool writer_skip:1;
 
@@ -2117,6 +2118,7 @@ static const ParseInfoSetting parse_infos[] = {
 	PARSE_INFO_SETTING (NM_SETTING_CONNECTION_SETTING_NAME,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_CONNECTION_READ_ONLY,
+				.parser_skip   = TRUE,
 				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_CONNECTION_TYPE,
@@ -2209,48 +2211,63 @@ static const ParseInfoSetting parse_infos[] = {
 				.parser        = team_config_parser,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_LINK_WATCHERS,
+				.parser_skip   = TRUE,
 				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_MCAST_REJOIN_COUNT,
+				.parser_skip   = TRUE,
 				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_MCAST_REJOIN_INTERVAL,
+				.parser_skip   = TRUE,
 				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_NOTIFY_PEERS_COUNT,
+				.parser_skip   = TRUE,
 				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_NOTIFY_PEERS_INTERVAL,
+				.parser_skip   = TRUE,
 				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER,
+				.parser_skip   = TRUE,
 				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_ACTIVE,
+				.parser_skip   = TRUE,
 				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY,
+				.parser_skip   = TRUE,
 				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_FAST_RATE,
+				.parser_skip   = TRUE,
 				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_HWADDR_POLICY,
+				.parser_skip   = TRUE,
 				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_MIN_PORTS,
+				.parser_skip   = TRUE,
 				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_SYS_PRIO,
+				.parser_skip   = TRUE,
 				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_TX_BALANCER,
+				.parser_skip   = TRUE,
 				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL,
+				.parser_skip   = TRUE,
 				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_TX_HASH,
+				.parser_skip   = TRUE,
 				.writer_skip   = TRUE,
 			),
 		),
@@ -2261,21 +2278,27 @@ static const ParseInfoSetting parse_infos[] = {
 				.parser        = team_config_parser,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_PORT_LACP_KEY,
+				.parser_skip   = TRUE,
 				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_PORT_LACP_PRIO,
+				.parser_skip   = TRUE,
 				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_PORT_LINK_WATCHERS,
+				.parser_skip   = TRUE,
 				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_PORT_PRIO,
+				.parser_skip   = TRUE,
 				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_PORT_QUEUE_ID,
+				.parser_skip   = TRUE,
 				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_PORT_STICKY,
+				.parser_skip   = TRUE,
 				.writer_skip   = TRUE,
 			),
 		),
@@ -2402,29 +2425,19 @@ read_one_setting_value (NMSetting *setting,
 	if (info->error)
 		return;
 
-	/* Property is not writable */
 	if (!(flags & G_PARAM_WRITABLE))
 		return;
-
-	/* Setting name gets picked up from the keyfile's section name instead */
-	if (!strcmp (key, NM_SETTING_NAME))
-		return;
-
-	/* Don't read the NMSettingConnection object's 'read-only' property */
-	if (   NM_IS_SETTING_CONNECTION (setting)
-	    && !strcmp (key, NM_SETTING_CONNECTION_READ_ONLY))
-		return;
-
-	if (   (   NM_IS_SETTING_TEAM (setting)
-	        || NM_IS_SETTING_TEAM_PORT (setting))
-	    && !NM_IN_STRSET (key, NM_SETTING_TEAM_CONFIG)) {
-		/* silently ignore all team properties (except "config"). */
-		return;
-	}
 
 	setting_name = nm_setting_get_name (setting);
 
 	pip = _parse_info_find (setting_name, key);
+
+	if (   !pip
+	    && nm_streq (key, NM_SETTING_NAME))
+		return;
+
+	if (pip && pip->parser_skip)
+		return;
 
 	/* Check for the exact key in the GKeyFile if required.  Most setting
 	 * properties map 1:1 to a key in the GKeyFile, but for those properties
@@ -2789,14 +2802,19 @@ write_setting_value (NMSetting *setting,
 	if (info->error)
 		return;
 
-	/* Setting name gets picked up from the keyfile's section name instead */
-	if (nm_streq (key, NM_SETTING_NAME))
-		return;
-
 	setting_name = nm_setting_get_name (setting);
 
 	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), key);
 	nm_assert (pspec);
+
+	pip = _parse_info_find (setting_name, key);
+
+	if (   !pip
+	    && nm_streq (key, NM_SETTING_NAME))
+		return;
+
+	if (pip && pip->writer_skip)
+		return;
 
 	/* Don't write secrets that are owned by user secret agents or aren't
 	 * supposed to be saved.  VPN secrets are handled specially though since
@@ -2812,10 +2830,6 @@ write_setting_value (NMSetting *setting,
 		if (secret_flags != NM_SETTING_SECRET_FLAG_NONE)
 			return;
 	}
-
-	pip = _parse_info_find (setting_name, key);
-	if (pip && pip->writer_skip)
-		return;
 
 	if (   (!pip || !pip->writer_persist_default)
 	    && g_param_value_defaults (pspec, (GValue *) value)) {
