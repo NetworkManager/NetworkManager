@@ -50,6 +50,7 @@ G_DEFINE_TYPE_WITH_CODE (NMRemoteConnection, nm_remote_connection, NM_TYPE_OBJEC
 enum {
 	PROP_0,
 	PROP_UNSAVED,
+	PROP_FLAGS,
 	PROP_VISIBLE,
 
 	LAST_PROP
@@ -59,6 +60,7 @@ typedef struct {
 	NMDBusSettingsConnection *proxy;
 
 	gboolean unsaved;
+	guint32 flags;
 
 	gboolean visible;
 } NMRemoteConnectionPrivate;
@@ -652,6 +654,22 @@ nm_remote_connection_get_unsaved (NMRemoteConnection *connection)
 }
 
 /**
+ * nm_remote_connection_get_flags:
+ * @connection: the #NMRemoteConnection
+ *
+ * Returns: the flags of the connection of type #NMSettingsConnectionFlags.
+ *
+ * Since: 1.12
+ **/
+NMSettingsConnectionFlags
+nm_remote_connection_get_flags (NMRemoteConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_REMOTE_CONNECTION (connection), FALSE);
+
+	return (NMSettingsConnectionFlags) NM_REMOTE_CONNECTION_GET_PRIVATE (connection)->flags;
+}
+
+/**
  * nm_remote_connection_get_visible:
  * @connection: the #NMRemoteConnection
  *
@@ -741,6 +759,7 @@ init_dbus (NMObject *object)
 	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (object);
 	const NMPropertiesInfo property_info[] = {
 		{ NM_REMOTE_CONNECTION_UNSAVED, &priv->unsaved },
+		{ NM_REMOTE_CONNECTION_FLAGS, &priv->flags },
 		{ NULL },
 	};
 
@@ -871,6 +890,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_UNSAVED:
 		g_value_set_boolean (value, NM_REMOTE_CONNECTION_GET_PRIVATE (object)->unsaved);
 		break;
+	case PROP_FLAGS:
+		g_value_set_boolean (value, NM_REMOTE_CONNECTION_GET_PRIVATE (object)->flags);
+		break;
 	case PROP_VISIBLE:
 		g_value_set_boolean (value, NM_REMOTE_CONNECTION_GET_PRIVATE (object)->visible);
 		break;
@@ -927,6 +949,21 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 		                       FALSE,
 		                       G_PARAM_READABLE |
 		                       G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMRemoteConnection:flags:
+	 *
+	 * The flags of the connection as unsigned integer. The values
+	 * correspond to the #NMSettingsConnectionFlags enum.
+	 *
+	 * Since: 1.12
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_FLAGS,
+		 g_param_spec_uint (NM_REMOTE_CONNECTION_FLAGS, "", "",
+		                    0, G_MAXUINT32, 0,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMRemoteConnection:visible:

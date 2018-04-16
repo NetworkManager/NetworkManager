@@ -829,7 +829,6 @@ connection_updated (NMSettingsConnection *connection, gboolean by_user, gpointer
 
 static void
 connection_flags_changed (NMSettingsConnection *connection,
-                          GParamSpec *pspec,
                           gpointer user_data)
 {
 	g_signal_emit (NM_SETTINGS (user_data),
@@ -992,7 +991,7 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 	                        G_CALLBACK (connection_removed), self);
 	g_signal_connect (connection, NM_SETTINGS_CONNECTION_UPDATED_INTERNAL,
 	                  G_CALLBACK (connection_updated), self);
-	g_signal_connect (connection, "notify::" NM_SETTINGS_CONNECTION_FLAGS,
+	g_signal_connect (connection, NM_SETTINGS_CONNECTION_FLAGS_CHANGED,
 	                  G_CALLBACK (connection_flags_changed),
 	                  self);
 	if (!priv->startup_complete) {

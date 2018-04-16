@@ -121,9 +121,8 @@ static const GDBusSignalInfo signal_info_state_changed;
 
 static void check_master_ready (NMActiveConnection *self);
 static void _device_cleanup (NMActiveConnection *self);
-static void _settings_connection_notify_flags (NMSettingsConnection *settings_connection,
-                                               GParamSpec *param,
-                                               NMActiveConnection *self);
+static void _settings_connection_flags_changed (NMSettingsConnection *settings_connection,
+                                                NMActiveConnection *self);
 static void _set_activation_type_managed (NMActiveConnection *self);
 
 /*****************************************************************************/
@@ -200,12 +199,12 @@ _set_settings_connection (NMActiveConnection *self, NMSettingsConnection *connec
 
 	if (priv->settings_connection.obj) {
 		g_signal_handlers_disconnect_by_func (priv->settings_connection.obj, _settings_connection_updated, self);
-		g_signal_handlers_disconnect_by_func (priv->settings_connection.obj, _settings_connection_notify_flags, self);
+		g_signal_handlers_disconnect_by_func (priv->settings_connection.obj, _settings_connection_flags_changed, self);
 	}
 	if (connection) {
 		g_signal_connect (connection, NM_SETTINGS_CONNECTION_UPDATED_INTERNAL, (GCallback) _settings_connection_updated, self);
 		if (nm_active_connection_get_activation_type (self) == NM_ACTIVATION_TYPE_EXTERNAL)
-			g_signal_connect (connection, "notify::"NM_SETTINGS_CONNECTION_FLAGS, (GCallback) _settings_connection_notify_flags, self);
+			g_signal_connect (connection, NM_SETTINGS_CONNECTION_FLAGS_CHANGED, (GCallback) _settings_connection_flags_changed, self);
 	}
 
 	nm_dbus_track_obj_path_set (&priv->settings_connection, connection, TRUE);
@@ -857,9 +856,9 @@ _set_activation_type (NMActiveConnection *self,
 
 	if (priv->settings_connection.obj) {
 		if (activation_type == NM_ACTIVATION_TYPE_EXTERNAL)
-			g_signal_connect (priv->settings_connection.obj, "notify::"NM_SETTINGS_CONNECTION_FLAGS, (GCallback) _settings_connection_notify_flags, self);
+			g_signal_connect (priv->settings_connection.obj, NM_SETTINGS_CONNECTION_FLAGS_CHANGED, (GCallback) _settings_connection_flags_changed, self);
 		else
-			g_signal_handlers_disconnect_by_func (priv->settings_connection.obj, _settings_connection_notify_flags, self);
+			g_signal_handlers_disconnect_by_func (priv->settings_connection.obj, _settings_connection_flags_changed, self);
 	}
 }
 
@@ -896,9 +895,8 @@ nm_active_connection_get_activation_reason (NMActiveConnection *self)
 /*****************************************************************************/
 
 static void
-_settings_connection_notify_flags (NMSettingsConnection *settings_connection,
-                                   GParamSpec *param,
-                                   NMActiveConnection *self)
+_settings_connection_flags_changed (NMSettingsConnection *settings_connection,
+                                    NMActiveConnection *self)
 {
 	GError *error = NULL;
 
@@ -908,7 +906,7 @@ _settings_connection_notify_flags (NMSettingsConnection *settings_connection,
 	nm_assert (NM_ACTIVE_CONNECTION_GET_PRIVATE (self)->settings_connection.obj == settings_connection);
 
 	if (NM_FLAGS_HAS (nm_settings_connection_get_flags (settings_connection),
-	                  NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED))
+	                  NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED))
 		return;
 
 	_set_activation_type_managed (self);
