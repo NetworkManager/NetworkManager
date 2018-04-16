@@ -1686,7 +1686,6 @@ make_ip6_setting (shvarFile *ifcfg,
 	NMSettingIPConfig *s_ip6 = NULL;
 	const char *v;
 	char *value = NULL;
-	char *str_value;
 	char *route6_path = NULL;
 	gboolean ipv6init, ipv6forwarding, dhcp6 = FALSE;
 	char *method = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
@@ -1745,56 +1744,56 @@ make_ip6_setting (shvarFile *ifcfg,
 
 	/* Find out method property */
 	/* Is IPV6 enabled? Set method to "ignored", when not enabled */
-	str_value = svGetValueStr_cp (ifcfg, "IPV6INIT");
+	value = svGetValueStr_cp (ifcfg, "IPV6INIT");
 	ipv6init = svGetValueBoolean (ifcfg, "IPV6INIT", FALSE);
-	if (!str_value) {
+	if (!value) {
 		if (network_ifcfg)
 			ipv6init = svGetValueBoolean (network_ifcfg, "IPV6INIT", FALSE);
 	}
-	g_free (str_value);
+	g_free (value);
 
 	if (!ipv6init)
 		method = NM_SETTING_IP6_CONFIG_METHOD_IGNORE;  /* IPv6 is disabled */
 	else {
 		ipv6forwarding = svGetValueBoolean (ifcfg, "IPV6FORWARDING", FALSE);
-		str_value = svGetValueStr_cp (ifcfg, "IPV6_AUTOCONF");
+		value = svGetValueStr_cp (ifcfg, "IPV6_AUTOCONF");
 		dhcp6 = svGetValueBoolean (ifcfg, "DHCPV6C", FALSE);
 
-		if (!g_strcmp0 (str_value, "shared"))
+		if (!g_strcmp0 (value, "shared"))
 			method = NM_SETTING_IP6_CONFIG_METHOD_SHARED;
-		else if (svParseBoolean (str_value, !ipv6forwarding))
+		else if (svParseBoolean (value, !ipv6forwarding))
 			method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
 		else if (dhcp6)
 			method = NM_SETTING_IP6_CONFIG_METHOD_DHCP;
 		else {
 			/* IPV6_AUTOCONF=no and no IPv6 address -> method 'link-local' */
-			g_free (str_value);
-			str_value = svGetValueStr_cp (ifcfg, "IPV6ADDR");
-			if (!str_value)
-				str_value = svGetValueStr_cp (ifcfg, "IPV6ADDR_SECONDARIES");
+			g_free (value);
+			value = svGetValueStr_cp (ifcfg, "IPV6ADDR");
+			if (!value)
+				value = svGetValueStr_cp (ifcfg, "IPV6ADDR_SECONDARIES");
 
-			if (!str_value)
+			if (!value)
 				method = NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL;
 		}
-		g_free (str_value);
+		g_free (value);
 	}
 	/* TODO - handle other methods */
 
 	/* Read IPv6 Privacy Extensions configuration */
-	str_value = svGetValueStr_cp (ifcfg, "IPV6_PRIVACY");
-	if (str_value) {
-		ip6_privacy = svParseBoolean (str_value, FALSE);
+	value = svGetValueStr_cp (ifcfg, "IPV6_PRIVACY");
+	if (value) {
+		ip6_privacy = svParseBoolean (value, FALSE);
 		if (!ip6_privacy)
-			ip6_privacy = (g_strcmp0 (str_value, "rfc4941") == 0) ||
-			              (g_strcmp0 (str_value, "rfc3041") == 0);
+			ip6_privacy = (g_strcmp0 (value, "rfc4941") == 0) ||
+			              (g_strcmp0 (value, "rfc3041") == 0);
 	}
 	ip6_privacy_prefer_public_ip = svGetValueBoolean (ifcfg, "IPV6_PRIVACY_PREFER_PUBLIC_IP", FALSE);
-	ip6_privacy_val = str_value ?
+	ip6_privacy_val = value ?
 	                      (ip6_privacy ?
 	                          (ip6_privacy_prefer_public_ip ? NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR : NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR) :
 	                          NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED) :
 	                      NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
-	g_free (str_value);
+	g_free (value);
 
 	/* the route table (policy routing) is ignored if we don't handle routes. */
 	route_table = svGetValueInt64 (ifcfg, "IPV6_ROUTE_TABLE", 10,
@@ -1900,10 +1899,10 @@ make_ip6_setting (shvarFile *ifcfg,
 	g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE, i_val, NULL);
 
 	/* IPv6 tokenized interface identifier */
-	str_value = svGetValueStr_cp (ifcfg, "IPV6_TOKEN");
-	if (str_value) {
-		g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_TOKEN, str_value, NULL);
-		g_free (str_value);
+	value = svGetValueStr_cp (ifcfg, "IPV6_TOKEN");
+	if (value) {
+		g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_TOKEN, value, NULL);
+		g_free (value);
 	}
 
 	/* DNS servers
