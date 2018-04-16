@@ -2009,6 +2009,11 @@ typedef struct {
 	                const GValue *value);
 	bool check_for_key:1;
 	bool writer_skip:1;
+
+	/* usually, we skip to write values that have their
+	 * default value. By setting this flag to TRUE, also
+	 * default values are written. */
+	bool writer_persist_default:1;
 } ParseInfoProperty;
 
 #define PARSE_INFO_PROPERTY(_property_name, ...) \
@@ -2164,6 +2169,7 @@ static const ParseInfoSetting parse_infos[] = {
 			PARSE_INFO_PROPERTY (NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
 				.parser        = ip6_addr_gen_mode_parser,
 				.writer        = ip6_addr_gen_mode_writer,
+				.writer_persist_default = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_IP_CONFIG_ADDRESSES,
 				.parser        = ip_address_or_route_parser,
@@ -2278,6 +2284,13 @@ static const ParseInfoSetting parse_infos[] = {
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_PORT_STICKY,
 				.writer_skip   = TRUE,
+			),
+		),
+	),
+	PARSE_INFO_SETTING (NM_SETTING_VLAN_SETTING_NAME,
+		PARSE_INFO_PROPERTIES (
+			PARSE_INFO_PROPERTY (NM_SETTING_VLAN_FLAGS,
+				.writer_persist_default = TRUE,
 			),
 		),
 	),
@@ -2769,20 +2782,6 @@ out_error:
 
 /*****************************************************************************/
 
-static gboolean
-can_omit_default_value (NMSetting *setting, const char *property)
-{
-	if (NM_IS_SETTING_VLAN (setting)) {
-		if (!strcmp (property, NM_SETTING_VLAN_FLAGS))
-			return FALSE;
-	} else if (NM_IS_SETTING_IP6_CONFIG (setting)) {
-		if (!strcmp (property, NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE))
-			return FALSE;
-	}
-
-	return TRUE;
-}
-
 static void
 write_setting_value (NMSetting *setting,
                      const char *key,
@@ -2810,22 +2809,16 @@ write_setting_value (NMSetting *setting,
 
 	setting_name = nm_setting_get_name (setting);
 
-	/* If the value is the default value, remove the item from the keyfile */
 	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), key);
-	if (pspec) {
-		if (   can_omit_default_value (setting, key)
-		    && g_param_value_defaults (pspec, (GValue *) value)) {
-			g_key_file_remove_key (info->keyfile, setting_name, key, NULL);
-			return;
-		}
-	}
+	nm_assert (pspec);
 
 	/* Don't write secrets that are owned by user secret agents or aren't
 	 * supposed to be saved.  VPN secrets are handled specially though since
 	 * the secret flags there are in a third-level hash in the 'secrets'
 	 * property.
 	 */
-	if (pspec && (pspec->flags & NM_SETTING_PARAM_SECRET) && !NM_IS_SETTING_VPN (setting)) {
+	if (   (pspec->flags & NM_SETTING_PARAM_SECRET)
+	    && !NM_IS_SETTING_VPN (setting)) {
 		NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 
 		if (!nm_setting_get_secret_flags (setting, key, &secret_flags, NULL))
@@ -2835,13 +2828,18 @@ write_setting_value (NMSetting *setting,
 	}
 
 	pip = _parse_info_find (setting_name, key);
-	if (pip) {
-		if (pip->writer_skip)
-			return;
-		if (pip->writer) {
-			pip->writer (info, setting, key, value);
-			return;
-		}
+	if (pip && pip->writer_skip)
+		return;
+
+	if (   (!pip || !pip->writer_persist_default)
+	    && g_param_value_defaults (pspec, (GValue *) value)) {
+		nm_assert (!g_key_file_has_key (info->keyfile, setting_name, key, NULL));
+		return;
+	}
+
+	if (pip && pip->writer) {
+		pip->writer (info, setting, key, value);
+		return;
 	}
 
 	if (type == G_TYPE_STRING) {
