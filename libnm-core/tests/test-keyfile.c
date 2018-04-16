@@ -719,6 +719,33 @@ test_user_1 (void)
 
 /*****************************************************************************/
 
+static void
+test_vpn_1 (void)
+{
+	gs_unref_keyfile GKeyFile *keyfile = NULL;
+	gs_unref_object NMConnection *con = NULL;
+	NMSettingVpn *s_vpn;
+
+	con = nmtst_create_connection_from_keyfile (
+	      "[connection]\n"
+	      "id=t\n"
+	      "type=vpn\n"
+	      "\n"
+	      "[vpn]\n"
+	      "service-type=a.b.c\n"
+	      "vpn-key-1=value1\n"
+	      "",
+	      "/test_vpn_1/invalid", NULL);
+	g_assert (con);
+	s_vpn = NM_SETTING_VPN (nm_connection_get_setting (con, NM_TYPE_SETTING_VPN));
+	g_assert (s_vpn);
+	g_assert_cmpstr (nm_setting_vpn_get_data_item (s_vpn, "vpn-key-1"), ==, "value1");
+
+	CLEAR (&con, &keyfile);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -731,6 +758,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/keyfile/test_team_conf_read/valid", test_team_conf_read_valid);
 	g_test_add_func ("/core/keyfile/test_team_conf_read/invalid", test_team_conf_read_invalid);
 	g_test_add_func ("/core/keyfile/test_user/1", test_user_1);
+	g_test_add_func ("/core/keyfile/test_vpn/1", test_vpn_1);
 
 	return g_test_run ();
 }
