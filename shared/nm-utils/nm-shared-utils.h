@@ -440,6 +440,12 @@ nm_g_variant_unref_floating (GVariant *var)
 
 /*****************************************************************************/
 
+int nm_strcmp_p_with_data (gconstpointer a, gconstpointer b, gpointer user_data);
+int nm_cmp_uint32_p_with_data (gconstpointer p_a, gconstpointer p_b, gpointer user_data);
+int nm_cmp_int2ptr_p_with_data (gconstpointer p_a, gconstpointer p_b, gpointer user_data);
+
+/*****************************************************************************/
+
 typedef struct {
 	const char *name;
 } NMUtilsNamedEntry;
