@@ -2100,6 +2100,13 @@ static const ParseInfoSetting parse_infos[] = {
 			),
 		),
 	),
+	PARSE_INFO_SETTING (NM_SETTING_BOND_SETTING_NAME,
+		PARSE_INFO_PROPERTIES (
+			PARSE_INFO_PROPERTY (NM_SETTING_BOND_OPTIONS,
+				.parser_no_check_key = TRUE,
+			),
+		),
+	),
 	PARSE_INFO_SETTING (NM_SETTING_BRIDGE_SETTING_NAME,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_BRIDGE_MAC_ADDRESS,
@@ -2273,10 +2280,39 @@ static const ParseInfoSetting parse_infos[] = {
 			),
 		),
 	),
+	PARSE_INFO_SETTING (NM_SETTING_USER_SETTING_NAME,
+		PARSE_INFO_PROPERTIES (
+			PARSE_INFO_PROPERTY (NM_SETTING_USER_DATA,
+				.parser_no_check_key = TRUE,
+			),
+		),
+	),
 	PARSE_INFO_SETTING (NM_SETTING_VLAN_SETTING_NAME,
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_VLAN_FLAGS,
 				.writer_persist_default = TRUE,
+			),
+		),
+	),
+	PARSE_INFO_SETTING (NM_SETTING_VPN_SETTING_NAME,
+		PARSE_INFO_PROPERTIES (
+			PARSE_INFO_PROPERTY (NM_SETTING_VPN_DATA,
+				.parser_no_check_key = TRUE,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_VPN_PERSISTENT,
+				.parser_no_check_key = TRUE,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_VPN_SECRETS,
+				.parser_no_check_key = TRUE,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_VPN_SERVICE_TYPE,
+				.parser_no_check_key = TRUE,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_VPN_TIMEOUT,
+				.parser_no_check_key = TRUE,
+			),
+			PARSE_INFO_PROPERTY (NM_SETTING_VPN_USER_NAME,
+				.parser_no_check_key = TRUE,
 			),
 		),
 	),
@@ -2361,7 +2397,6 @@ read_one_setting_value (NMSetting *setting,
 	int errsv;
 	GType type;
 	gs_free_error GError *err = NULL;
-	gboolean parser_no_check_key;
 	const ParseInfoProperty *pip;
 
 	if (info->error)
@@ -2391,23 +2426,12 @@ read_one_setting_value (NMSetting *setting,
 
 	pip = _parse_info_find (setting_name, key);
 
-	if (NM_IS_SETTING_VPN (setting))
-		parser_no_check_key = TRUE;
-	else if (NM_IS_SETTING_USER (setting))
-		parser_no_check_key = TRUE;
-	else if (NM_IS_SETTING_BOND (setting))
-		parser_no_check_key = TRUE;
-	else if (pip)
-		parser_no_check_key = pip->parser_no_check_key;
-	else
-		parser_no_check_key = FALSE;
-
 	/* Check for the exact key in the GKeyFile if required.  Most setting
 	 * properties map 1:1 to a key in the GKeyFile, but for those properties
 	 * like IP addresses and routes where more than one value is actually
 	 * encoded by the setting property, this won't be true.
 	 */
-	if (   !parser_no_check_key
+	if (   (!pip || !pip->parser_no_check_key)
 	    && !nm_keyfile_plugin_kf_has_key (keyfile, setting_name, key, &err)) {
 		/* Key doesn't exist or an error ocurred, thus nothing to do. */
 		if (err) {
