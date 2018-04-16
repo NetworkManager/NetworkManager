@@ -1940,6 +1940,6 @@ nm_keyfile_read (GKeyFile *keyfile,
 	return connection;
 out_error:
 	g_propagate_error (error, info.error);
-	g_free (connection);
+	g_object_unref (connection);
 	return NULL;
 }
