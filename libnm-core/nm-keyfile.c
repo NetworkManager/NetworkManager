@@ -1673,15 +1673,6 @@ addr_writer (KeyfileWriterInfo *info,
 }
 
 static void
-gateway_writer (KeyfileWriterInfo *info,
-                NMSetting *setting,
-                const char *key,
-                const GValue *value)
-{
-	/* skip */
-}
-
-static void
 route_writer (KeyfileWriterInfo *info,
               NMSetting *setting,
               const char *key,
@@ -2005,15 +1996,6 @@ cert_writer (KeyfileWriterInfo *info,
 	cert_writer_default (info->connection, info->keyfile, &type_data);
 }
 
-static void
-null_writer (KeyfileWriterInfo *info,
-             NMSetting *setting,
-             const char *key,
-             const GValue *value)
-{
-	/* skip */
-}
-
 /*****************************************************************************/
 
 typedef struct {
@@ -2025,7 +2007,8 @@ typedef struct {
 	                NMSetting *setting,
 	                const char *key,
 	                const GValue *value);
-	gboolean check_for_key;
+	bool check_for_key:1;
+	bool writer_skip:1;
 } ParseInfoProperty;
 
 #define PARSE_INFO_PROPERTY(_property_name, ...) \
@@ -2168,7 +2151,7 @@ static const ParseInfoSetting parse_infos[] = {
 				.writer        = dns_writer,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_IP_CONFIG_GATEWAY,
-				.writer        = gateway_writer,
+				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_IP_CONFIG_ROUTES,
 				.parser        = ip_address_or_route_parser,
@@ -2191,7 +2174,7 @@ static const ParseInfoSetting parse_infos[] = {
 				.writer        = dns_writer,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_IP_CONFIG_GATEWAY,
-				.writer        = gateway_writer,
+				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_IP_CONFIG_ROUTES,
 				.parser        = ip_address_or_route_parser,
@@ -2226,49 +2209,49 @@ static const ParseInfoSetting parse_infos[] = {
 				.parser        = team_config_parser,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_LINK_WATCHERS,
-				.writer        = null_writer,
+				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_MCAST_REJOIN_COUNT,
-				.writer        = null_writer,
+				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_MCAST_REJOIN_INTERVAL,
-				.writer        = null_writer,
+				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_NOTIFY_PEERS_COUNT,
-				.writer        = null_writer,
+				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_NOTIFY_PEERS_INTERVAL,
-				.writer        = null_writer,
+				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER,
-				.writer        = null_writer,
+				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_ACTIVE,
-				.writer        = null_writer,
+				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY,
-				.writer        = null_writer,
+				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_FAST_RATE,
-				.writer        = null_writer,
+				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_HWADDR_POLICY,
-				.writer        = null_writer,
+				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_MIN_PORTS,
-				.writer        = null_writer,
+				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_SYS_PRIO,
-				.writer        = null_writer,
+				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_TX_BALANCER,
-				.writer        = null_writer,
+				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL,
-				.writer        = null_writer,
+				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_RUNNER_TX_HASH,
-				.writer        = null_writer,
+				.writer_skip   = TRUE,
 			),
 		),
 	),
@@ -2279,22 +2262,22 @@ static const ParseInfoSetting parse_infos[] = {
 				.parser        = team_config_parser,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_PORT_LACP_KEY,
-				.writer        = null_writer,
+				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_PORT_LACP_PRIO,
-				.writer        = null_writer,
+				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_PORT_LINK_WATCHERS,
-				.writer        = null_writer,
+				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_PORT_PRIO,
-				.writer        = null_writer,
+				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_PORT_QUEUE_ID,
-				.writer        = null_writer,
+				.writer_skip   = TRUE,
 			),
 			PARSE_INFO_PROPERTY (NM_SETTING_TEAM_PORT_STICKY,
-				.writer        = null_writer,
+				.writer_skip   = TRUE,
 			),
 		),
 	),
@@ -2852,9 +2835,13 @@ write_setting_value (NMSetting *setting,
 	}
 
 	pip = _parse_info_find (setting_name, key);
-	if (pip && pip->writer) {
-		pip->writer (info, setting, key, value);
-		return;
+	if (pip) {
+		if (pip->writer_skip)
+			return;
+		if (pip->writer) {
+			pip->writer (info, setting, key, value);
+			return;
+		}
 	}
 
 	if (type == G_TYPE_STRING) {
