@@ -222,15 +222,6 @@ addr_writer (KeyfileWriterInfo *info,
 }
 
 static void
-ip4_addr_label_writer (KeyfileWriterInfo *info,
-                       NMSetting *setting,
-                       const char *key,
-                       const GValue *value)
-{
-	/* skip */
-}
-
-static void
 gateway_writer (KeyfileWriterInfo *info,
                 NMSetting *setting,
                 const char *key,
@@ -596,9 +587,6 @@ static KeyWriter key_writers[] = {
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP_CONFIG_ADDRESSES,
 	  addr_writer },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	  "address-labels",
-	  ip4_addr_label_writer },
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP_CONFIG_ADDRESSES,
 	  addr_writer },
