@@ -1105,9 +1105,8 @@ nm_keyfile_detect_unqualified_path_scheme (const char *base_dir,
 {
 	const char *data = pdata;
 	gboolean exists = FALSE;
-	gboolean success = FALSE;
 	gsize validate_len;
-	char *path;
+	gs_free char *path = NULL;
 	GByteArray *tmp;
 
 	g_return_val_if_fail (base_dir && base_dir[0] == '/', NULL);
@@ -1139,35 +1138,30 @@ nm_keyfile_detect_unqualified_path_scheme (const char *base_dir,
 	if (   !memchr (data, '/', data_len)
 	    && !has_cert_ext (path)) {
 		if (!consider_exists)
-			goto out;
+			return NULL;
 		exists = g_file_test (path, G_FILE_TEST_EXISTS);
 		if (!exists)
-			goto out;
+			return NULL;
 	} else if (out_exists)
 		exists = g_file_test (path, G_FILE_TEST_EXISTS);
 
-	/* Construct the proper value as required for the PATH scheme */
+	/* Construct the proper value as required for the PATH scheme.
+	 *
+	 * When returning TRUE, we must also be sure that @data_len does not look like
+	 * the deprecated format of list of integers. With this implementation that is the
+	 * case, as long as @consider_exists is FALSE. */
 	tmp = g_byte_array_sized_new (strlen (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH) + strlen (path) + 1);
 	g_byte_array_append (tmp, (const guint8 *) NM_KEYFILE_CERT_SCHEME_PREFIX_PATH, strlen (NM_KEYFILE_CERT_SCHEME_PREFIX_PATH));
 	g_byte_array_append (tmp, (const guint8 *) path, strlen (path) + 1);
-	if (nm_setting_802_1x_check_cert_scheme (tmp->data, tmp->len, NULL) == NM_SETTING_802_1X_CK_SCHEME_PATH) {
-		g_free (path);
-		path = (char *) g_byte_array_free (tmp, FALSE);
-		/* when returning TRUE, we must also be sure that @data_len does not look like
-		 * the deprecated format of list of integers. With this implementation that is the
-		 * case, as long as @consider_exists is FALSE. */
-		success = TRUE;
-	} else
+	if (nm_setting_802_1x_check_cert_scheme (tmp->data, tmp->len, NULL) != NM_SETTING_802_1X_CK_SCHEME_PATH) {
 		g_byte_array_unref (tmp);
-
-out:
-	if (!success) {
-		g_free (path);
 		return NULL;
 	}
-	if (out_exists)
-		*out_exists = exists;
-	return path;
+	g_free (path);
+	path = (char *) g_byte_array_free (tmp, FALSE);
+
+	NM_SET_OUT (out_exists, exists);
+	return g_steal_pointer (&path);
 }
 
 #define HAS_SCHEME_PREFIX(bin, bin_len, scheme) \
@@ -2439,7 +2433,7 @@ read_one_setting_value (NMSetting *setting,
 			if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
 			                  _("error loading setting value: %s"),
 			                  err->message))
-				goto out_error;
+				return;
 		}
 
 		/* Allow default values different than in property spec */
@@ -2455,11 +2449,10 @@ read_one_setting_value (NMSetting *setting,
 	type = G_VALUE_TYPE (value);
 
 	if (type == G_TYPE_STRING) {
-		char *str_val;
+		gs_free char *str_val = NULL;
 
 		str_val = nm_keyfile_plugin_kf_get_string (keyfile, setting_name, key, NULL);
 		g_object_set (setting, key, str_val, NULL);
-		g_free (str_val);
 	} else if (type == G_TYPE_UINT) {
 		int int_val;
 
@@ -2468,7 +2461,7 @@ read_one_setting_value (NMSetting *setting,
 			if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
 			                  _("invalid negative value (%i)"),
 			                  int_val))
-				goto out_error;
+				return;
 		}
 		g_object_set (setting, key, int_val, NULL);
 	} else if (type == G_TYPE_INT) {
@@ -2489,17 +2482,16 @@ read_one_setting_value (NMSetting *setting,
 			if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
 			                  _("invalid char value (%i)"),
 			                  int_val))
-				goto out_error;
+				return;
 		}
 
 		g_object_set (setting, key, int_val, NULL);
 	} else if (type == G_TYPE_UINT64) {
-		char *tmp_str;
+		gs_free char *tmp_str = NULL;
 		guint64 uint_val;
 
 		tmp_str = nm_keyfile_plugin_kf_get_value (keyfile, setting_name, key, NULL);
 		uint_val = g_ascii_strtoull (tmp_str, NULL, 10);
-		g_free (tmp_str);
 		g_object_set (setting, key, uint_val, NULL);
 	} else if (type == G_TYPE_INT64) {
 		gs_free char *tmp_str = NULL;
@@ -2512,7 +2504,7 @@ read_one_setting_value (NMSetting *setting,
 			if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
 			                  _("invalid int64 value (%s)"),
 			                  tmp_str))
-				goto out_error;
+				return;
 		} else
 			g_object_set (setting, key, int_val, NULL);
 	} else if (type == G_TYPE_BYTES) {
@@ -2537,7 +2529,7 @@ read_one_setting_value (NMSetting *setting,
 				                     val)) {
 					g_byte_array_unref (array);
 					g_free (tmp);
-					goto out_error;
+					return;
 				}
 				already_warned = TRUE;
 			} else
@@ -2571,7 +2563,7 @@ read_one_setting_value (NMSetting *setting,
 				if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
 				                  _("too large FLAGS property '%s' (%llu)"),
 				                  G_VALUE_TYPE_NAME (value), (unsigned long long) uint_val))
-					goto out_error;
+					return;
 			}
 		}
 	} else if (G_VALUE_HOLDS_ENUM (value)) {
@@ -2584,10 +2576,8 @@ read_one_setting_value (NMSetting *setting,
 		if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
 		                 _("unhandled setting property type '%s'"),
 		                 G_VALUE_TYPE_NAME (value)))
-			goto out_error;
+			return;
 	}
-out_error:
-	return;
 }
 
 static NMSetting *
@@ -2622,7 +2612,8 @@ read_setting (KeyfileReaderInfo *info)
 static void
 read_vpn_secrets (KeyfileReaderInfo *info, NMSettingVpn *s_vpn)
 {
-	char **keys, **iter;
+	gs_strfreev char **keys = NULL;
+	char **iter;
 
 	keys = nm_keyfile_plugin_kf_get_keys (info->keyfile, NM_KEYFILE_GROUP_VPN_SECRETS, NULL, NULL);
 	for (iter = keys; *iter; iter++) {
@@ -2634,7 +2625,6 @@ read_vpn_secrets (KeyfileReaderInfo *info, NMSettingVpn *s_vpn)
 			g_free (secret);
 		}
 	}
-	g_strfreev (keys);
 }
 
 /**
@@ -2668,7 +2658,7 @@ nm_keyfile_read (GKeyFile *keyfile,
                  void *user_data,
                  GError **error)
 {
-	NMConnection *connection = NULL;
+	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSetting *setting;
 	gchar **groups;
@@ -2702,8 +2692,6 @@ nm_keyfile_read (GKeyFile *keyfile,
 	info.user_data = user_data;
 
 	groups = g_key_file_get_groups (keyfile, &length);
-	if (!groups)
-		length = 0;
 	for (i = 0; i < length; i++) {
 		/* Only read out secrets when needed */
 		if (!strcmp (groups[i], NM_KEYFILE_GROUP_VPN_SECRETS)) {
@@ -2714,8 +2702,10 @@ nm_keyfile_read (GKeyFile *keyfile,
 		info.group = groups[i];
 		setting = read_setting (&info);
 		info.group = NULL;
-		if (info.error)
-			goto out_error;
+		if (info.error) {
+			g_propagate_error (error, info.error);
+			return NULL;
+		}
 		if (setting)
 			nm_connection_add_setting (connection, setting);
 	}
@@ -2730,21 +2720,19 @@ nm_keyfile_read (GKeyFile *keyfile,
 	/* Make sure that we have 'id' even if not explictly specified in the keyfile */
 	if (   keyfile_name
 	    && !nm_setting_connection_get_id (s_con)) {
-		char *base_name;
+		gs_free char *base_name = NULL;
 
 		base_name = g_path_get_basename (keyfile_name);
 		g_object_set (s_con, NM_SETTING_CONNECTION_ID, base_name, NULL);
-		g_free (base_name);
 	}
 
 	/* Make sure that we have 'uuid' even if not explictly specified in the keyfile */
 	if (   keyfile_name
 	    && !nm_setting_connection_get_uuid (s_con)) {
-		char *hashed_uuid;
+		gs_free char *hashed_uuid = NULL;
 
 		hashed_uuid = _nm_utils_uuid_generate_from_strings ("keyfile", keyfile_name, NULL);
 		g_object_set (s_con, NM_SETTING_CONNECTION_UUID, hashed_uuid, NULL);
-		g_free (hashed_uuid);
 	}
 
 	/* Make sure that we have 'interface-name' even if it was specified in the
@@ -2771,16 +2759,14 @@ nm_keyfile_read (GKeyFile *keyfile,
 		s_vpn = nm_connection_get_setting_vpn (connection);
 		if (s_vpn) {
 			read_vpn_secrets (&info, s_vpn);
-			if (info.error)
-				goto out_error;
+			if (info.error) {
+				g_propagate_error (error, info.error);
+				return NULL;
+			}
 		}
 	}
 
-	return connection;
-out_error:
-	g_propagate_error (error, info.error);
-	g_object_unref (connection);
-	return NULL;
+	return g_steal_pointer (&connection);
 }
 
 /*****************************************************************************/
@@ -2852,17 +2838,15 @@ write_setting_value (NMSetting *setting,
 	else if (type == G_TYPE_INT)
 		nm_keyfile_plugin_kf_set_integer (info->keyfile, setting_name, key, g_value_get_int (value));
 	else if (type == G_TYPE_UINT64) {
-		char *numstr;
+		char numstr[30];
 
-		numstr = g_strdup_printf ("%" G_GUINT64_FORMAT, g_value_get_uint64 (value));
+		nm_sprintf_buf (numstr, "%" G_GUINT64_FORMAT, g_value_get_uint64 (value));
 		nm_keyfile_plugin_kf_set_value (info->keyfile, setting_name, key, numstr);
-		g_free (numstr);
 	} else if (type == G_TYPE_INT64) {
-		char *numstr;
+		char numstr[30];
 
-		numstr = g_strdup_printf ("%" G_GINT64_FORMAT, g_value_get_int64 (value));
+		nm_sprintf_buf (numstr, "%" G_GINT64_FORMAT, g_value_get_int64 (value));
 		nm_keyfile_plugin_kf_set_value (info->keyfile, setting_name, key, numstr);
-		g_free (numstr);
 	} else if (type == G_TYPE_BOOLEAN) {
 		nm_keyfile_plugin_kf_set_boolean (info->keyfile, setting_name, key, g_value_get_boolean (value));
 	} else if (type == G_TYPE_CHAR) {
