@@ -630,8 +630,13 @@ nm_dhcp_dhclient_save_duid (const char *leasefile,
 
 	/* Preserve existing leasefile contents */
 	if (lines) {
-		for (iter = lines; iter && *iter; iter++)
-			g_string_append (s, *iter[0] ? *iter : "\n");
+		for (iter = lines; iter && *iter; iter++) {
+			if (*iter[0])
+				g_string_append (s, *iter);
+			/* avoid to add an extra '\n' at the end of file */
+			if ((iter[1]) != NULL)
+				g_string_append_c (s, '\n');
+		}
 		g_strfreev (lines);
 	}
 
