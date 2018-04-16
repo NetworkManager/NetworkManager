@@ -2130,6 +2130,9 @@ static const ParseInfoSetting parse_infos[] = {
 	),
 	PARSE_INFO_SETTING (NM_SETTING_CONNECTION_SETTING_NAME,
 		PARSE_INFO_PROPERTIES (
+			PARSE_INFO_PROPERTY (NM_SETTING_CONNECTION_READ_ONLY,
+				.writer_skip   = TRUE,
+			),
 			PARSE_INFO_PROPERTY (NM_SETTING_CONNECTION_TYPE,
 				.check_for_key = TRUE,
 				.parser        = setting_alias_parser,
@@ -2791,7 +2794,7 @@ write_setting_value (NMSetting *setting,
 {
 	KeyfileWriterInfo *info = user_data;
 	const char *setting_name;
-	GType type = G_VALUE_TYPE (value);
+	GType type;
 	const ParseInfoProperty *pip;
 	GParamSpec *pspec;
 
@@ -2799,12 +2802,7 @@ write_setting_value (NMSetting *setting,
 		return;
 
 	/* Setting name gets picked up from the keyfile's section name instead */
-	if (!strcmp (key, NM_SETTING_NAME))
-		return;
-
-	/* Don't write the NMSettingConnection object's 'read-only' property */
-	if (   NM_IS_SETTING_CONNECTION (setting)
-	    && !strcmp (key, NM_SETTING_CONNECTION_READ_ONLY))
+	if (nm_streq (key, NM_SETTING_NAME))
 		return;
 
 	setting_name = nm_setting_get_name (setting);
@@ -2842,6 +2840,7 @@ write_setting_value (NMSetting *setting,
 		return;
 	}
 
+	type = G_VALUE_TYPE (value);
 	if (type == G_TYPE_STRING) {
 		const char *str;
 
