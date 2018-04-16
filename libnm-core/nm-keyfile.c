@@ -2349,12 +2349,6 @@ _parse_info_find (const char *setting_name, const char *property_name)
 /*****************************************************************************/
 
 static void
-set_default_for_missing_key (NMSetting *setting, const char *property)
-{
-	/* Set a value different from the default value of the property's spec */
-}
-
-static void
 read_one_setting_value (NMSetting *setting,
                         const char *key,
                         const GValue *value,
@@ -2422,9 +2416,6 @@ read_one_setting_value (NMSetting *setting,
 			                  err->message))
 				return;
 		}
-
-		/* Allow default values different than in property spec */
-		set_default_for_missing_key (setting, key);
 		return;
 	}
 
