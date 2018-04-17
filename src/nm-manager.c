@@ -4507,11 +4507,6 @@ error:
 
 /*****************************************************************************/
 
-typedef struct {
-	NMManager *manager;
-	NMActiveConnection *active;
-} AddAndActivateInfo;
-
 static void
 activation_add_done (NMSettings *settings,
                      NMSettingsConnection *new_connection,
@@ -4520,14 +4515,11 @@ activation_add_done (NMSettings *settings,
                      NMAuthSubject *subject,
                      gpointer user_data)
 {
-	AddAndActivateInfo *info = user_data;
 	NMManager *self;
 	gs_unref_object NMActiveConnection *active = NULL;
 	gs_free_error GError *local = NULL;
 
-	self = info->manager;
-	active = info->active;
-	g_slice_free (AddAndActivateInfo, info);
+	nm_utils_user_data_unpack (user_data, &self, &active);
 
 	if (!error) {
 		nm_active_connection_set_settings_connection (active, new_connection);
@@ -4581,7 +4573,6 @@ _add_and_activate_auth_done (NMActiveConnection *active,
 	NMManagerPrivate *priv;
 	GDBusMethodInvocation *context;
 	gs_unref_object NMConnection *connection = NULL;
-	AddAndActivateInfo *info;
 	GError *error = NULL;
 
 	nm_utils_user_data_unpack (user_data, &self, &context, &connection);
@@ -4603,19 +4594,13 @@ _add_and_activate_auth_done (NMActiveConnection *active,
 
 	priv = NM_MANAGER_GET_PRIVATE (self);
 
-	info = g_slice_new (AddAndActivateInfo);
-	info->manager = self;
-
-	/* we pass on the reference to @active. */
-	info->active = active;
-
-	/* Basic sender auth checks performed; try to add the connection */
 	nm_settings_add_connection_dbus (priv->settings,
 	                                 connection,
 	                                 FALSE,
 	                                 context,
 	                                 activation_add_done,
-	                                 info);
+	                                 nm_utils_user_data_pack (self,
+	                                                          active /* pass on the reference in @active to the callback */));
 }
 
 static void
