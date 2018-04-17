@@ -67,8 +67,7 @@ typedef struct _NMActiveConnectionPrivate {
 		NMAuthManagerCallId *call_id_wifi_shared_permission;
 
 		NMActiveConnectionAuthResultFunc result_func;
-		gpointer user_data1;
-		gpointer user_data2;
+		gpointer user_data;
 	} auth;
 
 } NMActiveConnectionPrivate;
@@ -999,8 +998,7 @@ auth_cancel (NMActiveConnection *self)
 			nm_auth_manager_check_authorization_cancel (priv->auth.call_id_wifi_shared_permission);
 	}
 	priv->auth.result_func = NULL;
-	priv->auth.user_data1 = NULL;
-	priv->auth.user_data2 = NULL;
+	priv->auth.user_data = NULL;
 }
 
 static void
@@ -1012,8 +1010,7 @@ auth_complete (NMActiveConnection *self, gboolean result, const char *message)
 	priv->auth.result_func (self,
 	                        result,
 	                        message,
-	                        priv->auth.user_data1,
-	                        priv->auth.user_data2);
+	                        priv->auth.user_data);
 	auth_cancel (self);
 }
 
@@ -1082,8 +1079,7 @@ auth_done (NMAuthManager *auth_mgr,
  *   is no @settings_connection available when creating the active connection.
  *   Instead pass an alternative connection.
  * @result_func: function to be called on success or error
- * @user_data1: pointer passed to @result_func
- * @user_data2: additional pointer passed to @result_func
+ * @user_data: pointer passed to @result_func
  *
  * Checks whether the subject that initiated the active connection (read from
  * the #NMActiveConnection::subject property) is authorized to complete this
@@ -1093,8 +1089,7 @@ void
 nm_active_connection_authorize (NMActiveConnection *self,
                                 NMConnection *initial_connection,
                                 NMActiveConnectionAuthResultFunc result_func,
-                                gpointer user_data1,
-                                gpointer user_data2)
+                                gpointer user_data)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 	const char *wifi_permission = NULL;
@@ -1133,10 +1128,8 @@ nm_active_connection_authorize (NMActiveConnection *self,
 		                                                                                 self);
 	}
 
-	/* Wait for authorization */
 	priv->auth.result_func = result_func;
-	priv->auth.user_data1 = user_data1;
-	priv->auth.user_data2 = user_data2;
+	priv->auth.user_data = user_data;
 }
 
 /*****************************************************************************/
