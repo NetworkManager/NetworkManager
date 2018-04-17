@@ -3806,6 +3806,9 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 		return FALSE;
 	}
 
+	if (nm_active_connection_get_activation_type (active) == NM_ACTIVATION_TYPE_MANAGED)
+		nm_device_sys_iface_state_set (device, NM_DEVICE_SYS_IFACE_STATE_MANAGED);
+
 	/* Create any backing resources the device needs */
 	if (!nm_device_is_real (device)) {
 		NMDevice *parent;
@@ -4064,9 +4067,6 @@ _new_active_connection (NMManager *self,
 		                                                     activation_reason,
 		                                                     subject);
 	}
-
-	if (activation_type == NM_ACTIVATION_TYPE_MANAGED)
-		nm_device_sys_iface_state_set (device, NM_DEVICE_SYS_IFACE_STATE_MANAGED);
 
 	return (NMActiveConnection *) nm_act_request_new (settings_connection,
 	                                                  applied,
