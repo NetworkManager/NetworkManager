@@ -235,12 +235,12 @@ nm_active_connection_set_state (NMActiveConnection *self,
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 	NMActiveConnectionState old_state;
 
+	/* DEACTIVATED is a terminal state */
+	g_return_if_fail (   priv->state != NM_ACTIVE_CONNECTION_STATE_DEACTIVATED
+	                  || new_state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED);
+
 	if (priv->state == new_state)
 		return;
-
-	/* DEACTIVATED is a terminal state */
-	if (priv->state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED)
-		g_return_if_fail (new_state != NM_ACTIVE_CONNECTION_STATE_DEACTIVATED);
 
 	_LOGD ("set state %s (was %s)",
 	       state_to_string (new_state),
