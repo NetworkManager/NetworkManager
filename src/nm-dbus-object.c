@@ -290,16 +290,10 @@ dispose (GObject *object)
 	/* Objects should have already been unexported by their owner, unless
 	 * we are quitting, where many objects stick around until exit.
 	 */
-	if (!quitting) {
-		if (self->internal.path) {
+	if (self->internal.path) {
+		if (!quitting)
 			g_warn_if_reached ();
-			nm_dbus_object_unexport (self);
-		}
-	} else if (self->internal.path) {
-		/* FIXME: do a proper, coordinate shutdown, so that no objects stay
-		 * alive nor exported. */
-		_emit_exported_changed (self);
-		nm_clear_g_free (&self->internal.path);
+		nm_dbus_object_unexport (self);
 	}
 
 	G_OBJECT_CLASS (nm_dbus_object_parent_class)->dispose (object);
