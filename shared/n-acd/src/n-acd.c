@@ -264,6 +264,13 @@ _public_ int n_acd_new(NAcd **acdp) {
         }
 
         acd->fd_timer = timerfd_create(CLOCK_BOOTTIME, TFD_CLOEXEC | TFD_NONBLOCK);
+        if (acd->fd_timer < 0 && errno == EINVAL) {
+                /*
+		 * Fall back to CLOCK_MONOTONIC when CLOCK_BOOTTIME is
+		 * not available (kernel < 3.15).
+                 */
+                acd->fd_timer = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK);
+        }
         if (acd->fd_timer < 0) {
                 r = -n_acd_errno();
                 goto error;
