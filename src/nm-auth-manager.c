@@ -672,7 +672,7 @@ dispose (GObject *object)
 
 	_LOGD ("dispose");
 
-	nm_assert (!c_list_is_empty (&priv->calls_lst_head));
+	nm_assert (c_list_is_empty (&priv->calls_lst_head));
 
 	priv->disposing = TRUE;
 
