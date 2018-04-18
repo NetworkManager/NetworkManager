@@ -7025,7 +7025,7 @@ test_write_wired_ctc_dhcp (void)
 	                        TEST_SCRATCH_DIR "/network-scripts/",
 	                        &testfile);
 
-	/* Ensure the CTCPROT item gets written out as it's own option */
+	/* Ensure the CTCPROT item gets written out as its own option */
 	ifcfg = _svOpenFile (testfile);
 
 	_svGetValue_check (ifcfg, "CTCPROT", "0");

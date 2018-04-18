@@ -133,7 +133,7 @@ typedef enum  { /*< skip >*/
                       ""__VA_ARGS__); \
     } G_STMT_END
 
-/* nm_log() only evaluates it's argument list after checking
+/* nm_log() only evaluates its argument list after checking
  * whether logging for the given level/domain is enabled.  */
 #define nm_log(level, domain, ifname, con_uuid, ...) \
     G_STMT_START { \

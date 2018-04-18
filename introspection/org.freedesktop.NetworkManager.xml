@@ -205,7 +205,7 @@
         @state: <link linkend="NMState">NMState</link>
 
         The overall networking state as determined by the NetworkManager daemon,
-        based on the state of network devices under it's management.
+        based on the state of network devices under its management.
     -->
     <method name="state">
       <arg name="state" type="u" direction="out"/>

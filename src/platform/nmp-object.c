@@ -388,7 +388,7 @@ _nmp_object_fixup_link_udev_fields (NMPObject **obj_new, NMPObject *obj_orig, gb
 	/* The link contains internal fields that are combined by
 	 * properties from netlink and udev. Update those properties */
 
-	/* When a link is not in netlink, it's udev fields don't matter. */
+	/* When a link is not in netlink, its udev fields don't matter. */
 	if (obj->_link.netlink.is_in_netlink) {
 		driver = _link_get_driver (obj->_link.udev.device,
 		                           obj->link.kind,

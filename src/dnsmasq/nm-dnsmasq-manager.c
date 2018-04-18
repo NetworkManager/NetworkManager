@@ -181,7 +181,7 @@ create_dm_cmd_line (const char *iface,
 		nm_cmd_line_add_string (cmd, "--log-queries");
 	}
 
-	/* dnsmasq may read from it's default config file location, which if that
+	/* dnsmasq may read from its default config file location, which if that
 	 * location is a valid config file, it will combine with the options here
 	 * and cause undesirable side-effects.  Like sending bogus IP addresses
 	 * as the gateway or whatever.  So tell dnsmasq not to use any config file

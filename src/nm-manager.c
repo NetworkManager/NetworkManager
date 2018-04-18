@@ -5520,7 +5520,7 @@ device_connectivity_done (NMDevice *device,
 		 * However, if one of the requests (early) returns full connectivity and agrees with
 		 * the accumulated connectivity state, we no longer have to wait. The result is set.
 		 *
-		 * This also works well, because NMDevice first emits change signals to it's own
+		 * This also works well, because NMDevice first emits change signals to its own
 		 * connectivity state, which is then taken into account for the accumulated global
 		 * state. All this happens, before the callback is invoked. */
 		g_dbus_method_invocation_return_value (g_steal_pointer (&data->context),

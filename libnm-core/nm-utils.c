@@ -464,7 +464,7 @@ _nm_utils_string_slist_validate (GSList *list, const char **valid_values)
  * @hash: a #GHashTable
  *
  * Utility function to iterate over a hash table and return
- * it's values as a #GSList.
+ * its values as a #GSList.
  *
  * Returns: (element-type gpointer) (transfer container): a newly allocated #GSList
  * containing the values of the hash table. The caller must free the
@@ -4335,7 +4335,7 @@ nm_utils_inet_ntop (int addr_family, gconstpointer addr, char *dst)
  *  characters. If set to %NULL, it will return a pointer to an internal, static
  *  buffer (shared with nm_utils_inet6_ntop()).  Beware, that the internal
  *  buffer will be overwritten with ever new call of nm_utils_inet4_ntop() or
- *  nm_utils_inet6_ntop() that does not provied it's own @dst buffer. Also,
+ *  nm_utils_inet6_ntop() that does not provide its own @dst buffer. Also,
  *  using the internal buffer is not thread safe. When in doubt, pass your own
  *  @dst buffer to avoid these issues.
  *
@@ -4359,7 +4359,7 @@ nm_utils_inet4_ntop (in_addr_t inaddr, char *dst)
  *  characters. If set to %NULL, it will return a pointer to an internal, static
  *  buffer (shared with nm_utils_inet4_ntop()).  Beware, that the internal
  *  buffer will be overwritten with ever new call of nm_utils_inet4_ntop() or
- *  nm_utils_inet6_ntop() that does not provied it's own @dst buffer. Also,
+ *  nm_utils_inet6_ntop() that does not provide its own @dst buffer. Also,
  *  using the internal buffer is not thread safe. When in doubt, pass your own
  *  @dst buffer to avoid these issues.
  *

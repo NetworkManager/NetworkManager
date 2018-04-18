@@ -181,7 +181,7 @@ typedef struct _NMMetaPropertyTypDataNested NMMetaPropertyTypDataNested;
 
 /* this gives some context information for virtual functions.
  * This command actually violates layering, and should be considered
- * a hack. In the future, try to replace it's use. */
+ * a hack. In the future, try to replace its use. */
 struct _NMMetaOperationContext {
 	NMConnection *connection;
 };

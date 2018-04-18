@@ -1000,7 +1000,7 @@ managed=1
           <listitem><para>The URI of a web page to periodically
           request when connectivity is being checked.  This page
           should return the header "X-NetworkManager-Status" with a
-          value of "online".  Alternatively, it's body content should
+          value of "online".  Alternatively, its body content should
           be set to "NetworkManager is online".  The body content
           check can be controlled by the <literal>response</literal>
           option.  If this option is blank or missing, connectivity

@@ -737,7 +737,7 @@ supplicant_interface_init (NMDeviceEthernet *self)
 		return FALSE;
 	}
 
-	/* Listen for it's state signals */
+	/* Listen for its state signals */
 	priv->supplicant.iface_state_id = g_signal_connect (priv->supplicant.iface,
 	                                                    NM_SUPPLICANT_INTERFACE_STATE,
 	                                                    G_CALLBACK (supplicant_iface_state_cb),

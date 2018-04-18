@@ -80,12 +80,12 @@ typedef enum {
  * @NM_VLAN_FLAG_REORDER_HEADERS: indicates that this interface should reorder
  *  outgoing packet headers to look more like a non-VLAN Ethernet interface
  * @NM_VLAN_FLAG_GVRP: indicates that this interface should use GVRP to register
- *  itself with it's switch
+ *  itself with its switch
  * @NM_VLAN_FLAG_LOOSE_BINDING: indicates that this interface's operating
  *  state is tied to the underlying network interface but other details
  *  (like routing) are not.
  * @NM_VLAN_FLAG_MVRP: indicates that this interface should use MVRP to register
- *  itself with it's switch
+ *  itself with its switch
  *
  * #NMVlanFlags values control the behavior of the VLAN interface.
  **/

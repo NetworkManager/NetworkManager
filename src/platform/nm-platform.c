@@ -3054,7 +3054,7 @@ nm_platform_lookup_predicate_routes_main_skip_rtprot_kernel (const NMPObject *ob
  * @user_data: user data for @predicate
  *
  * Returns the result of lookup in a GPtrArray. The result array contains
- * references objects from the cache, it's destroy function will unref them.
+ * references objects from the cache, its destroy function will unref them.
  *
  * The user must unref the GPtrArray, which will also unref the NMPObject
  * elements.

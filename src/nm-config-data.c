@@ -238,7 +238,7 @@ nm_config_data_get_plugins (const NMConfigData *self, gboolean allow_default)
 	if (!list && allow_default) {
 		gs_unref_keyfile GKeyFile *kf = nm_config_create_keyfile ();
 
-		/* let keyfile split the default string according to it's own escaping rules. */
+		/* let keyfile split the default string according to its own escaping rules. */
 		g_key_file_set_value (kf, NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins", NM_CONFIG_DEFAULT_MAIN_PLUGINS);
 		list = g_key_file_get_string_list (kf, NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins", NULL, NULL);
 	}

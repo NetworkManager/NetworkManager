@@ -56,7 +56,7 @@ struct _NMObjBaseClass {
 	 * Note that it is also an abstract super class of GTypeInstance, that means
 	 * you may implement a NMObjBaseClass as a subtype of GTypeClass.
 	 *
-	 * For that to work, you must properly set the GTypeClass instance (and it's
+	 * For that to work, you must properly set the GTypeClass instance (and its
 	 * GType).
 	 *
 	 * Note that to implement a NMObjBaseClass that is *not* a GTypeClass, you wouldn't

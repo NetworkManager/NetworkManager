@@ -2571,7 +2571,7 @@ _get_contents_error (GError **error, int errsv, const char *format, ...)
 /**
  * nm_utils_fd_get_contents:
  * @fd: open file descriptor to read. The fd will not be closed,
- *   but don't rely on it's state afterwards.
+ *   but don't rely on its state afterwards.
  * @close_fd: if %TRUE, @fd will be closed by the function.
  *  Passing %TRUE here might safe a syscall for dup().
  * @max_length: allocate at most @max_length bytes. If the

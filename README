@@ -45,7 +45,7 @@ settings service" and the "user settings service" store connection information
 and provide these to NetworkManager, also via D-Bus.  Each settings service
 can determine how and where it persistently stores the connection information;
 for example, the GNOME applet stores its configuration in GConf, and the system
-settings service stores it's config in distro-specific formats, or in a distro-
+settings service stores its config in distro-specific formats, or in a distro-
 agnostic format, depending on user/administrator preference.
 
 A variety of other system services are used by NetworkManager to provide

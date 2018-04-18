@@ -615,7 +615,7 @@ _sort_groups_cmp (const char **pa, const char **pb, gpointer dummy)
 	if (a_is_connection) {
 		/* both are [connection.\+] entries. Reverse their order.
 		 * One of the sections might be literally [connection]. That section
-		 * is special and it's order will be fixed later. It doesn't actually
+		 * is special and its order will be fixed later. It doesn't actually
 		 * matter here how it compares with [connection.\+] sections. */
 		return pa > pb ? -1 : 1;
 	}
@@ -633,7 +633,7 @@ _sort_groups_cmp (const char **pa, const char **pb, gpointer dummy)
 	if (a_is_device) {
 		/* both are [device.\+] entries. Reverse their order.
 		 * One of the sections might be literally [device]. That section
-		 * is special and it's order will be fixed later. It doesn't actually
+		 * is special and its order will be fixed later. It doesn't actually
 		 * matter here how it compares with [device.\+] sections. */
 		return pa > pb ? -1 : 1;
 	}

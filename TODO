@@ -38,7 +38,7 @@ based on it and the device's state.
 
 To allow for "pre-down" scenarios, this state should be implemented before a
 device is taken down while it still has connectivity.  If the device is
-taken down because it's ethernet carrier was dropped, or because the WiFi
+taken down because its ethernet carrier was dropped, or because the WiFi
 connection was terminated by the supplicant, this state is pointless and should
 be skipped.  But if the user requested a manual "disconnect", or NM is dropping
 connections on exit, etc, then this state should be entered.  In the future

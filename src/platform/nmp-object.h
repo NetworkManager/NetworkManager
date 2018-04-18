@@ -88,7 +88,7 @@ typedef enum { /*< skip >*/
 	/* Consider all the destination fields of a route, that is, the ID without the ifindex
 	 * and gateway (meaning: network/plen,metric).
 	 * The reason for this is that `ip route change` can replace an existing route
-	 * and modify it's ifindex/gateway. Effectively, that means it deletes an existing
+	 * and modify its ifindex/gateway. Effectively, that means it deletes an existing
 	 * route and adds a different one (as the ID of the route changes). However, it only
 	 * sends one RTM_NEWADDR notification without notifying about the deletion. We detect
 	 * that by having this index to contain overlapping routes which require special

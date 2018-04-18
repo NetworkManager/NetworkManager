@@ -4236,7 +4236,7 @@ nm_device_notify_component_added (NMDevice *self, GObject *component)
  * because that ethernet interface is controlled by the WWAN device and cannot
  * be used independently of the WWAN device.
  *
- * Returns: %TRUE if @self or it's components owns the interface name,
+ * Returns: %TRUE if @self or its components own the interface name,
  * %FALSE if not
  */
 gboolean
@@ -7984,7 +7984,7 @@ _set_mtu (NMDevice *self, guint32 mtu)
 
 	if (priv->master) {
 		/* changing the MTU of a slave, might require the master to reset
-		 * it's MTU. Note that the master usually cannot set a MTU larger
+		 * its MTU. Note that the master usually cannot set a MTU larger
 		 * then the slave's. Hence, when the slave increases the MTU,
 		 * master might want to retry setting the MTU. */
 		nm_device_commit_mtu (priv->master);
@@ -9945,7 +9945,7 @@ can_reapply_change (NMDevice *self, const char *setting_name,
 		 * allowed to differ.
 		 *
 		 * This includes UUID, there is no principal problem with reapplying a
-		 * connection and changing it's UUID. In fact, disallowing it makes it
+		 * connection and changing its UUID. In fact, disallowing it makes it
 		 * cumbersome for the user to reapply any connection but the original
 		 * settings-connection. */
 		return nm_device_hash_check_invalid_keys (diffs,

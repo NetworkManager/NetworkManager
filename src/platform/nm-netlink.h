@@ -59,7 +59,7 @@ nl_errno (int err)
 	 * _NLE_BASE.
 	 *
 	 * However, often we encode errors as negative values. This function
-	 * normalizes the error and returns it's positive value. */
+	 * normalizes the error and returns its positive value. */
 	return err >= 0
 	       ? err
 	       : ((err == G_MININT) ? NLE_BUG : -errno);
