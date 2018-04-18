@@ -500,7 +500,7 @@ _dbus_new_proxy_cb (GObject *source_object,
 	NMAuthManagerPrivate *priv;
 	gs_free GError *error = NULL;
 	GDBusProxy *proxy;
-	NMAuthManagerCallId *call_id, *safe;
+	NMAuthManagerCallId *call_id;
 
 	proxy = g_dbus_proxy_new_for_bus_finish  (res, &error);
 
@@ -516,10 +516,12 @@ _dbus_new_proxy_cb (GObject *source_object,
 	if (!priv->proxy) {
 		_LOGE ("could not create polkit proxy: %s", error->message);
 
-		c_list_for_each_entry_safe (call_id, safe, &priv->calls_lst_head, calls_lst) {
+again:
+		c_list_for_each_entry (call_id, &priv->calls_lst_head, calls_lst) {
 			if (call_id->dbus_parameters) {
 				_LOG2T (call_id, "completed: failed due to no D-Bus proxy after startup");
 				_call_id_invoke_callback (call_id, FALSE, FALSE, error);
+				goto again;
 			}
 		}
 		return;
