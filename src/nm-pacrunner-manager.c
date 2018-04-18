@@ -27,7 +27,7 @@
 #include "nm-proxy-config.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
-#include "nm-utils/c-list.h"
+#include "c-list/src/c-list.h"
 
 #define PACRUNNER_DBUS_SERVICE "org.pacrunner"
 #define PACRUNNER_DBUS_INTERFACE "org.pacrunner.Manager"

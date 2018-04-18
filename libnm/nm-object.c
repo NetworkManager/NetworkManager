@@ -33,7 +33,7 @@
 #include "nm-dbus-helpers.h"
 #include "nm-client.h"
 #include "nm-core-internal.h"
-#include "nm-utils/c-list.h"
+#include "c-list/src/c-list.h"
 
 static gboolean debug = FALSE;
 #define dbgmsg(f,...) if (G_UNLIKELY (debug)) { g_message (f, ## __VA_ARGS__ ); }

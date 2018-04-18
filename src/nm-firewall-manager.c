@@ -25,7 +25,7 @@
 #include <string.h>
 
 #include "NetworkManagerUtils.h"
-#include "nm-utils/c-list.h"
+#include "c-list/src/c-list.h"
 
 /*****************************************************************************/
 

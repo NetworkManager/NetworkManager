@@ -1,5 +1,5 @@
 test_units = [
-  'test-arping',
+  'test-acd',
   'test-lldp'
 ]
 

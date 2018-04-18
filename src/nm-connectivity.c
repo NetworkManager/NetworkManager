@@ -30,7 +30,7 @@
 #include <curl/curl.h>
 #endif
 
-#include "nm-utils/c-list.h"
+#include "c-list/src/c-list.h"
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"
 

@@ -28,7 +28,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include "nm-utils/c-list.h"
+#include "c-list/src/c-list.h"
 
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"

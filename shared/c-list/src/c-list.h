@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- * Circular Double Linked List Implementation in Standard ISO-C11
+ * Circular Intrusive Double Linked List Collection in ISO-C11
  *
  * This implements a generic circular double linked list. List entries must
  * embed the CList object, which provides pointers to the next and previous
@@ -225,71 +225,6 @@ static inline void c_list_splice(CList *target, CList *source) {
 }
 
 /**
- * c_list_for_each() - loop over all list entries
- * @_iter:              iterator to use
- * @_list:              list to loop over
- *
- * This is a macro to use as for-loop to iterate an entire list. It is meant as
- * convenience macro. Feel free to code your own loop iterator.
- */
-#define c_list_for_each(_iter, _list)                                           \
-        for (_iter = (_list)->next;                                             \
-             (_iter) != (_list);                                                \
-             _iter = (_iter)->next)
-
-
-/**
- * c_list_for_each_safe() - loop over all list entries, safe for removal
- * @_iter:              iterator to use
- * @_safe:              used to store pointer to next element
- * @_list:              list to loop over
- *
- * This is a macro to use as for-loop to iterate an entire list, safe against
- * removal of the current element. It is meant as convenience macro. Feel free
- * to code your own loop iterator.
- *
- * Note that this fetches the next element prior to executing the loop body.
- * This makes it safe against removal of the current entry, but it will go
- * havoc if you remove other list entries. You better not modify anything but
- * the current list entry.
- */
-#define c_list_for_each_safe(_iter, _safe, _list)                               \
-        for (_iter = (_list)->next, _safe = (_iter)->next;                      \
-             (_iter) != (_list);                                                \
-             _iter = (_safe), _safe = (_safe)->next)
-
-/**
- * c_list_for_each_entry() - loop over all list entries
- * @_iter:              iterator to use
- * @_list:              list to loop over
- * @_m:                 member name of CList object in list type
- *
- * This combines c_list_for_each() with c_list_entry(), making it easy to
- * iterate over a list of a specific type.
- */
-#define c_list_for_each_entry(_iter, _list, _m)                                 \
-        for (_iter = c_list_entry((_list)->next, __typeof__(*_iter), _m);       \
-             &(_iter)->_m != (_list);                                           \
-             _iter = c_list_entry((_iter)->_m.next, __typeof__(*_iter), _m))
-
-/**
- * c_list_for_each_entry_safe() - loop over all list entries, safe for removal
- * @_iter:              iterator to use
- * @_safe:              used to store pointer to next element
- * @_list:              list to loop over
- * @_m:                 member name of CList object in list type
- *
- * This combines c_list_for_each_safe() with c_list_entry(), making it easy to
- * iterate over a list of a specific type.
- */
-#define c_list_for_each_entry_safe(_iter, _safe, _list, _m)                     \
-        for (_iter = c_list_entry((_list)->next, __typeof__(*_iter), _m),       \
-             _safe = c_list_entry((_iter)->_m.next, __typeof__(*_iter), _m);    \
-             &(_iter)->_m != (_list);                                           \
-             _iter = (_safe),                                                   \
-             _safe = c_list_entry((_safe)->_m.next, __typeof__(*_iter), _m))    \
-
-/**
  * c_list_first() - return pointer to first element, or NULL if empty
  * @list:               list to operate on, or NULL
  *
@@ -340,6 +275,96 @@ static inline CList *c_list_last(CList *list) {
  */
 #define c_list_last_entry(_list, _t, _m) \
         c_list_entry(c_list_last(_list), _t, _m)
+
+/**
+ * c_list_for_each*() - iterators
+ *
+ * The c_list_for_each*() macros provide simple for-loop wrappers to iterate
+ * a linked list. They come in a set of flavours:
+ *
+ *   - "entry": This combines c_list_entry() with the loop iterator, so the
+ *              iterator always has the type of the surrounding object, rather
+ *              than CList.
+ *
+ *   - "safe": The loop iterator always keeps track of the next element to
+ *             visit. This means, you can safely modify the current element,
+ *             while retaining loop-integrity.
+ *             You still must not touch any other entry of the list. Otherwise,
+ *             the loop-iterator will be corrupted.
+ *
+ *   - "continue": Rather than starting the iteration at the front of the list,
+ *                 use the current value of the iterator as starting position.
+ *                 Note that the first loop iteration will be the following
+ *                 element, not the given element.
+ *
+ *   - "unlink": This unlinks the current element from the list before the loop
+ *               code is run. Note that this only does a partial unlink, since
+ *               it assumes the entire list will be unlinked. You must not
+ *               break out of the loop, or the list will be in an inconsistent
+ *               state.
+ */
+
+#define c_list_for_each(_iter, _list)                                           \
+        for (_iter = (_list)->next;                                             \
+             (_iter) != (_list);                                                \
+             _iter = (_iter)->next)
+
+#define c_list_for_each_entry(_iter, _list, _m)                                 \
+        for (_iter = c_list_entry((_list)->next, __typeof__(*_iter), _m);       \
+             &(_iter)->_m != (_list);                                           \
+             _iter = c_list_entry((_iter)->_m.next, __typeof__(*_iter), _m))
+
+#define c_list_for_each_safe(_iter, _safe, _list)                               \
+        for (_iter = (_list)->next, _safe = (_iter)->next;                      \
+             (_iter) != (_list);                                                \
+             _iter = (_safe), _safe = (_safe)->next)
+
+#define c_list_for_each_entry_safe(_iter, _safe, _list, _m)                     \
+        for (_iter = c_list_entry((_list)->next, __typeof__(*_iter), _m),       \
+             _safe = c_list_entry((_iter)->_m.next, __typeof__(*_iter), _m);    \
+             &(_iter)->_m != (_list);                                           \
+             _iter = (_safe),                                                   \
+             _safe = c_list_entry((_safe)->_m.next, __typeof__(*_iter), _m))    \
+
+#define c_list_for_each_continue(_iter, _list)                                  \
+        for (_iter = (_iter) ? (_iter)->next : (_list)->next;                   \
+             (_iter) != (_list);                                                \
+             _iter = (_iter)->next)
+
+#define c_list_for_each_entry_continue(_iter, _list, _m)                        \
+        for (_iter = c_list_entry((_iter) ? (_iter)->_m.next : (_list)->next,   \
+                                  __typeof__(*_iter),                           \
+                                  _m);                                          \
+             &(_iter)->_m != (_list);                                           \
+             _iter = c_list_entry((_iter)->_m.next, __typeof__(*_iter), _m))
+
+#define c_list_for_each_safe_continue(_iter, _safe, _list)                      \
+        for (_iter = (_iter) ? (_iter)->next : (_list)->next,                   \
+             _safe = (_iter)->next;                                             \
+             (_iter) != (_list);                                                \
+             _iter = (_safe), _safe = (_safe)->next)
+
+#define c_list_for_each_entry_safe_continue(_iter, _safe, _list, _m)            \
+        for (_iter = c_list_entry((_iter) ? (_iter)->_m.next : (_list)->next,   \
+                                  __typeof__(*_iter),                           \
+                                  _m),                                          \
+             _safe = c_list_entry((_iter)->_m.next, __typeof__(*_iter), _m);    \
+             &(_iter)->_m != (_list);                                           \
+             _iter = (_safe),                                                   \
+             _safe = c_list_entry((_safe)->_m.next, __typeof__(*_iter), _m))    \
+
+#define c_list_for_each_safe_unlink(_iter, _safe, _list)                        \
+        for (_iter = (_list)->next, _safe = (_iter)->next;                      \
+             ((*_iter = (CList)C_LIST_INIT(*_iter)), (_iter) != (_list));       \
+             _iter = (_safe), _safe = (_safe)->next)
+
+#define c_list_for_each_entry_safe_unlink(_iter, _safe, _list, _m)              \
+        for (_iter = c_list_entry((_list)->next, __typeof__(*_iter), _m),       \
+             _safe = c_list_entry((_iter)->_m.next, __typeof__(*_iter), _m);    \
+             (((_iter)->_m = (CList)C_LIST_INIT((_iter)->_m)),                  \
+              &(_iter)->_m != (_list));                                         \
+             _iter = (_safe),                                                   \
+             _safe = c_list_entry((_safe)->_m.next, __typeof__(*_iter), _m))    \
 
 /**
  * c_list_length() - return number of linked entries, excluding the head

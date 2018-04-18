@@ -1,3 +1,28 @@
+shared_c_list_dep = declare_dependency(
+    include_directories: include_directories('c-list/src')
+)
+
+shared_c_siphash = static_library(
+    'c-siphash',
+    sources: ['c-siphash/src/c-siphash.c']
+)
+
+shared_c_siphash_dep = declare_dependency(
+    include_directories: include_directories('c-siphash/src'),
+    link_with: shared_c_siphash
+)
+
+shared_n_acd = static_library(
+    'n-acd',
+    sources: ['n-acd/src/n-acd.c'],
+    dependencies: [ shared_c_siphash_dep, shared_c_list_dep ]
+)
+
+shared_n_acd_dep = declare_dependency(
+    include_directories: include_directories('.'),
+    link_with: shared_n_acd,
+)
+
 shared_inc = include_directories('.')
 
 version_conf = configuration_data()

@@ -243,7 +243,7 @@ test-*.trs
 
 /src/NetworkManager
 /src/NetworkManager.ver
-/src/devices/tests/test-arping
+/src/devices/tests/test-acd
 /src/devices/tests/test-lldp
 /src/devices/wifi/tests/test-general
 /src/dhcp/nm-dhcp-helper
@@ -314,3 +314,4 @@ test-*.trs
 /libnm-core/tests/test-setting-dcb
 /src/settings/plugins/ifnet
 /src/tests/test-resolvconf-capture
+/src/devices/tests/test-arping

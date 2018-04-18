@@ -23,7 +23,7 @@
 #define __NETWORKMANAGER_MANAGER_H__
 
 #include "settings/nm-settings-connection.h"
-#include "nm-utils/c-list.h"
+#include "c-list/src/c-list.h"
 #include "nm-dbus-manager.h"
 
 #define NM_TYPE_MANAGER            (nm_manager_get_type ())

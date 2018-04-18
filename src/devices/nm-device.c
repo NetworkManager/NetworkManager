@@ -66,13 +66,13 @@
 #include "nm-netns.h"
 #include "nm-dispatcher.h"
 #include "nm-config.h"
-#include "nm-utils/c-list.h"
+#include "c-list/src/c-list.h"
 #include "dns/nm-dns-manager.h"
+#include "nm-acd-manager.h"
 #include "nm-core-internal.h"
 #include "systemd/nm-sd.h"
 #include "nm-lldp-listener.h"
 #include "nm-audit-manager.h"
-#include "nm-arping-manager.h"
 #include "nm-connectivity.h"
 #include "nm-dbus-interface.h"
 #include "nm-device-vlan.h"
@@ -129,13 +129,13 @@ typedef struct {
 	int ifindex;
 } DeleteOnDeactivateData;
 
-typedef void (*ArpingCallback) (NMDevice *, NMIP4Config **, gboolean);
+typedef void (*AcdCallback) (NMDevice *, NMIP4Config **, gboolean);
 
 typedef struct {
-	ArpingCallback callback;
+	AcdCallback callback;
 	NMDevice *device;
 	NMIP4Config **configs;
-} ArpingData;
+} AcdData;
 
 typedef enum {
 	HW_ADDR_TYPE_UNSET = 0,
@@ -485,8 +485,8 @@ typedef struct _NMDevicePrivate {
 	/* IPv4 DAD stuff */
 	struct {
 		GSList *          dad_list;
-		NMArpingManager * announcing;
-	} arping;
+		NMAcdManager * announcing;
+	} acd;
 
 	union {
 		const IpState   ip6_state;
@@ -6043,16 +6043,16 @@ get_ipv4_dad_timeout (NMDevice *self)
 }
 
 static void
-arping_data_destroy (gpointer ptr, GClosure *closure)
+acd_data_destroy (gpointer ptr, GClosure *closure)
 {
-	ArpingData *data = ptr;
+	AcdData *data = ptr;
 	int i;
 
 	if (data) {
 		for (i = 0; data->configs && data->configs[i]; i++)
 			g_object_unref (data->configs[i]);
 		g_free (data->configs);
-		g_slice_free (ArpingData, data);
+		g_slice_free (AcdData, data);
 	}
 }
 
@@ -6072,7 +6072,7 @@ ipv4_manual_method_apply (NMDevice *self, NMIP4Config **configs, gboolean succes
 }
 
 static void
-arping_manager_probe_terminated (NMArpingManager *arping_manager, ArpingData *data)
+acd_manager_probe_terminated (NMAcdManager *acd_manager, AcdData *data)
 {
 	NMDevice *self;
 	NMDevicePrivate *priv;
@@ -6087,7 +6087,7 @@ arping_manager_probe_terminated (NMArpingManager *arping_manager, ArpingData *da
 
 	for (i = 0; data->configs && data->configs[i]; i++) {
 		nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, data->configs[i], &address) {
-			result = nm_arping_manager_check_address (arping_manager, address->address);
+			result = nm_acd_manager_check_address (acd_manager, address->address);
 			success &= result;
 
 			_NMLOG (result ? LOGL_DEBUG : LOGL_WARN,
@@ -6100,8 +6100,8 @@ arping_manager_probe_terminated (NMArpingManager *arping_manager, ArpingData *da
 
 	data->callback (self, data->configs, success);
 
-	priv->arping.dad_list = g_slist_remove (priv->arping.dad_list, arping_manager);
-	nm_arping_manager_destroy (arping_manager);
+	priv->acd.dad_list = g_slist_remove (priv->acd.dad_list, acd_manager);
+	nm_acd_manager_destroy (acd_manager);
 }
 
 /**
@@ -6115,17 +6115,17 @@ arping_manager_probe_terminated (NMArpingManager *arping_manager, ArpingData *da
  * be started. @configs will be unreferenced after @cb has been called.
  */
 static void
-ipv4_dad_start (NMDevice *self, NMIP4Config **configs, ArpingCallback cb)
+ipv4_dad_start (NMDevice *self, NMIP4Config **configs, AcdCallback cb)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMArpingManager *arping_manager;
+	NMAcdManager *acd_manager;
 	const NMPlatformIP4Address *address;
 	NMDedupMultiIter ipconf_iter;
-	ArpingData *data;
+	AcdData *data;
 	guint timeout;
 	gboolean ret, addr_found;
 	const guint8 *hwaddr_arr;
-	GError *error = NULL;
+	size_t length;
 	guint i;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
@@ -6142,11 +6142,12 @@ ipv4_dad_start (NMDevice *self, NMIP4Config **configs, ArpingCallback cb)
 	timeout = get_ipv4_dad_timeout (self);
 	hwaddr_arr = nm_platform_link_get_address (nm_device_get_platform (self),
 	                                           nm_device_get_ip_ifindex (self),
-	                                           NULL);
+	                                           &length);
 
 	if (   !timeout
 	    || !hwaddr_arr
 	    || !addr_found
+	    || length != ETH_ALEN
 	    || nm_device_sys_iface_state_is_external_or_assume (self)) {
 
 		/* DAD not needed, signal success */
@@ -6159,36 +6160,36 @@ ipv4_dad_start (NMDevice *self, NMIP4Config **configs, ArpingCallback cb)
 		return;
 	}
 
-	/* don't take additional references of @arping_manager that outlive @self.
+	/* don't take additional references of @acd_manager that outlive @self.
 	 * Otherwise, the callback can be invoked on a dangling pointer as we don't
 	 * disconnect the handler. */
-	arping_manager = nm_arping_manager_new (nm_device_get_ip_ifindex (self));
-	priv->arping.dad_list = g_slist_append (priv->arping.dad_list, arping_manager);
+	acd_manager = nm_acd_manager_new (nm_device_get_ip_ifindex (self), hwaddr_arr, length);
+	priv->acd.dad_list = g_slist_append (priv->acd.dad_list, acd_manager);
 
-	data = g_slice_new0 (ArpingData);
+	data = g_slice_new0 (AcdData);
 	data->configs = configs;
 	data->callback = cb;
 	data->device = self;
 
 	for (i = 0; configs[i]; i++) {
 		nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, configs[i], &address)
-			nm_arping_manager_add_address (arping_manager, address->address);
+			nm_acd_manager_add_address (acd_manager, address->address);
 	}
 
-	g_signal_connect_data (arping_manager, NM_ARPING_MANAGER_PROBE_TERMINATED,
-	                       G_CALLBACK (arping_manager_probe_terminated), data,
-	                       arping_data_destroy, 0);
+	g_signal_connect_data (acd_manager, NM_ACD_MANAGER_PROBE_TERMINATED,
+	                       G_CALLBACK (acd_manager_probe_terminated), data,
+	                       acd_data_destroy, 0);
 
-	ret = nm_arping_manager_start_probe (arping_manager, timeout, &error);
+	ret = nm_acd_manager_start_probe (acd_manager, timeout);
 
 	if (!ret) {
-		_LOGW (LOGD_DEVICE, "arping probe failed: %s", error->message);
+		_LOGW (LOGD_DEVICE, "acd probe failed");
 
 		/* DAD could not be started, signal success */
 		cb (self, configs, TRUE);
 
-		priv->arping.dad_list = g_slist_remove (priv->arping.dad_list, arping_manager);
-		nm_arping_manager_destroy (arping_manager);
+		priv->acd.dad_list = g_slist_remove (priv->acd.dad_list, acd_manager);
+		nm_acd_manager_destroy (acd_manager);
 	}
 }
 
@@ -9231,9 +9232,9 @@ arp_cleanup (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->arping.announcing) {
-		nm_arping_manager_destroy (priv->arping.announcing);
-		priv->arping.announcing = NULL;
+	if (priv->acd.announcing) {
+		nm_acd_manager_destroy (priv->acd.announcing);
+		priv->acd.announcing = NULL;
 	}
 }
 
@@ -9253,7 +9254,7 @@ arp_announce (NMDevice *self)
 	                                        nm_device_get_ip_ifindex (self),
 	                                        &hw_addr_len);
 
-	if (!hw_addr_len || !hw_addr)
+	if (!hw_addr || hw_addr_len != ETH_ALEN)
 		return;
 
 	/* We only care about manually-configured addresses; DHCP- and autoip-configured
@@ -9269,19 +9270,19 @@ arp_announce (NMDevice *self)
 	if (num == 0)
 		return;
 
-	priv->arping.announcing = nm_arping_manager_new (nm_device_get_ip_ifindex (self));
+	priv->acd.announcing = nm_acd_manager_new (nm_device_get_ip_ifindex (self), hw_addr, hw_addr_len);
 
 	for (i = 0; i < num; i++) {
 		NMIPAddress *ip = nm_setting_ip_config_get_address (s_ip4, i);
 		in_addr_t addr;
 
 		if (inet_pton (AF_INET, nm_ip_address_get_address (ip), &addr) == 1)
-			nm_arping_manager_add_address (priv->arping.announcing, addr);
+			nm_acd_manager_add_address (priv->acd.announcing, addr);
 		else
 			g_warn_if_reached ();
 	}
 
-	nm_arping_manager_announce_addresses (priv->arping.announcing);
+	nm_acd_manager_announce_addresses (priv->acd.announcing);
 }
 
 static void
@@ -14906,8 +14907,8 @@ dispose (GObject *object)
 	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (device_ipx_changed), self);
 	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (link_changed_cb), self);
 
-	g_slist_free_full (priv->arping.dad_list, (GDestroyNotify) nm_arping_manager_destroy);
-	priv->arping.dad_list = NULL;
+	g_slist_free_full (priv->acd.dad_list, (GDestroyNotify) nm_acd_manager_destroy);
+	priv->acd.dad_list = NULL;
 
 	arp_cleanup (self);
 

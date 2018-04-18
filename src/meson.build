@@ -91,7 +91,7 @@ libnetwork_manager_base = static_library(
 )
 
 sources = files(
-  'devices/nm-arping-manager.c',
+  'devices/nm-acd-manager.c',
   'devices/nm-device-bond.c',
   'devices/nm-device-bridge.c',
   'devices/nm-device.c',
@@ -174,7 +174,8 @@ deps = [
   #        this dependency might be needed
   #libnmdbus_dep,
   libudev_dep,
-  nm_core_dep
+  nm_core_dep,
+  shared_n_acd_dep
 ]
 
 if enable_concheck

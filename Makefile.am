@@ -1210,6 +1210,28 @@ noinst_LTLIBRARIES += \
 
 ###############################################################################
 
+shared_libcsiphash_la_CPPFLAGS = $(src_cppflags)
+shared_libcsiphash_la_SOURCES = \
+	shared/c-siphash/src/c-siphash.c \
+	shared/c-siphash/src/c-siphash.h
+
+shared_libnacd_la_CFLAGS = -std=gnu99
+shared_libnacd_la_CPPFLAGS = \
+	$(src_cppflags) \
+	-I $(srcdir)/shared/c-list/src \
+	-I $(srcdir)/shared/c-siphash/src
+shared_libnacd_la_SOURCES = \
+	shared/n-acd/src/n-acd.c \
+	shared/n-acd/src/n-acd.h
+
+noinst_LTLIBRARIES += \
+	shared/libcsiphash.la \
+	shared/libnacd.la
+
+EXTRA_DIST += shared/c-list/src/c-list.h
+
+###############################################################################
+
 src_libsystemd_nm_la_cppflags = \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
@@ -1475,8 +1497,8 @@ src_libNetworkManager_la_SOURCES = \
 	src/devices/nm-device.h \
 	src/devices/nm-lldp-listener.c \
 	src/devices/nm-lldp-listener.h \
-	src/devices/nm-arping-manager.c \
-	src/devices/nm-arping-manager.h \
+	src/devices/nm-acd-manager.c \
+	src/devices/nm-acd-manager.h \
 	src/devices/nm-device-ethernet-utils.c \
 	src/devices/nm-device-ethernet-utils.h \
 	src/devices/nm-device-factory.c \
@@ -1636,6 +1658,8 @@ src_libNetworkManager_la_SOURCES = \
 src_libNetworkManager_la_LIBADD = \
 	src/libNetworkManagerBase.la \
 	src/libsystemd-nm.la \
+	shared/libcsiphash.la \
+	shared/libnacd.la \
 	$(GLIB_LIBS) \
 	$(LIBUDEV_LIBS) \
 	$(SYSTEMD_LOGIN_LIBS) \
@@ -2975,20 +2999,20 @@ src_devices_tests_ldflags = \
 
 check_programs += \
 	src/devices/tests/test-lldp \
-	src/devices/tests/test-arping
+	src/devices/tests/test-acd
 
 src_devices_tests_test_lldp_CPPFLAGS = $(src_tests_cppflags)
 src_devices_tests_test_lldp_LDFLAGS = $(src_devices_tests_ldflags)
 src_devices_tests_test_lldp_LDADD = \
 	src/libNetworkManagerTest.la
 
-src_devices_tests_test_arping_CPPFLAGS = $(src_tests_cppflags)
-src_devices_tests_test_arping_LDFLAGS = $(src_devices_tests_ldflags)
-src_devices_tests_test_arping_LDADD = \
+src_devices_tests_test_acd_CPPFLAGS = $(src_tests_cppflags)
+src_devices_tests_test_acd_LDFLAGS = $(src_devices_tests_ldflags)
+src_devices_tests_test_acd_LDADD = \
 	src/libNetworkManagerTest.la
 
 $(src_devices_tests_test_lldp_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_devices_tests_test_arping_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_devices_tests_test_acd_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
 	src/devices/tests/meson.build
@@ -4654,7 +4678,6 @@ EXTRA_DIST += \
 	shared/nm-dispatcher-api.h \
 	shared/nm-test-libnm-utils.h \
 	shared/nm-test-utils-impl.c \
-	shared/nm-utils/c-list.h \
 	shared/nm-utils/c-list-util.c \
 	shared/nm-utils/c-list-util.h \
 	shared/nm-utils/gsystem-local-alloc.h \

@@ -28,7 +28,7 @@
 #include "devices/nm-device.h"
 #include "nm-manager.h"
 #include "nm-utils.h"
-#include "nm-utils/c-list.h"
+#include "c-list/src/c-list.h"
 
 /*****************************************************************************/
 

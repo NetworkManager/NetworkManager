@@ -933,7 +933,7 @@ _nmtst_main_loop_run_timeout (gpointer user_data)
 }
 
 static inline gboolean
-nmtst_main_loop_run (GMainLoop *loop, int timeout_ms)
+nmtst_main_loop_run (GMainLoop *loop, guint timeout_ms)
 {
 	GSource *source = NULL;
 	guint id = 0;
@@ -948,6 +948,9 @@ nmtst_main_loop_run (GMainLoop *loop, int timeout_ms)
 	}
 
 	g_main_loop_run (loop);
+
+	if (source && loopx)
+		g_source_destroy (source);
 
 	/* if the timeout was reached, return FALSE. */
 	return loopx != NULL;

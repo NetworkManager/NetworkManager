@@ -29,7 +29,7 @@
 #include <errno.h>
 #include <string.h>
 
-#include "nm-utils/c-list.h"
+#include "c-list/src/c-list.h"
 #include "nm-dbus-interface.h"
 #include "nm-core-internal.h"
 #include "nm-dbus-compat.h"

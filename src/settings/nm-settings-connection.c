@@ -25,7 +25,7 @@
 
 #include <string.h>
 
-#include "nm-utils/c-list.h"
+#include "c-list/src/c-list.h"
 
 #include "nm-common-macros.h"
 #include "nm-config.h"

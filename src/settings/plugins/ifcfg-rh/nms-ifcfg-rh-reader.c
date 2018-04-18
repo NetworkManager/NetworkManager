@@ -1555,10 +1555,14 @@ make_ip4_setting (shvarFile *ifcfg,
 		}
 	}
 
-	timeout = svGetValueInt64 (ifcfg, "ARPING_WAIT", 10, -1,
-	                           NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX / 1000, -1);
-	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_DAD_TIMEOUT,
-	              (gint) (timeout <= 0 ? timeout : timeout * 1000), NULL);
+	timeout = svGetValueInt64 (ifcfg, "ACD_TIMEOUT", 10, -1, NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX, -2);
+	if (timeout == -2) {
+		timeout = svGetValueInt64 (ifcfg, "ARPING_WAIT", 10, -1,
+		                           NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX / 1000, -1);
+		if (timeout > 0)
+			timeout *= 1000;
+	}
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_DAD_TIMEOUT, (gint) timeout, NULL);
 
 	return g_steal_pointer (&s_ip4);
 }
