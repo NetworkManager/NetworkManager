@@ -29,6 +29,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "nm-utils/nm-c-list.h"
+
 #include "nm-common-macros.h"
 #include "nm-dbus-manager.h"
 #include "vpn/nm-vpn-manager.h"
@@ -72,6 +74,32 @@ typedef struct {
 	const char *prop;
 	const char *hw_prop;
 } RadioState;
+
+typedef enum {
+	ASYNC_OP_TYPE_AC_AUTH_ACTIVATE_INTERNAL,
+	ASYNC_OP_TYPE_AC_AUTH_ACTIVATE_USER,
+	ASYNC_OP_TYPE_AC_AUTH_ADD_AND_ACTIVATE,
+} AsyncOpType;
+
+typedef struct {
+	CList async_op_lst;
+	NMManager *self;
+	AsyncOpType async_op_type;
+	union {
+		struct {
+			NMActiveConnection *active;
+			union {
+				struct {
+					GDBusMethodInvocation *invocation;
+				} activate_user;
+				struct {
+					GDBusMethodInvocation *invocation;
+					NMConnection *connection;
+				} add_and_activate;
+			};
+		} ac_auth;
+	};
+} AsyncOpData;
 
 enum {
 	DEVICE_ADDED,
@@ -122,7 +150,7 @@ typedef struct {
 	GArray *capabilities;
 
 	CList active_connections_lst_head;
-	GSList *authorizing_connections;
+	CList async_op_lst_head;
 	guint ac_cleanup_id;
 	NMActiveConnection *primary_connection;
 	NMActiveConnection *activating_connection;
@@ -331,6 +359,22 @@ static NMActiveConnection *active_connection_find_first (NMManager *self,
 
 static NMConnectivity *concheck_get_mgr (NMManager *self);
 
+static void _internal_activation_auth_done (NMManager *self,
+                                            NMActiveConnection *active,
+                                            gboolean success,
+                                            const char *error_desc);
+static void _add_and_activate_auth_done (NMManager *self,
+                                         NMActiveConnection *active,
+                                         NMConnection *connection,
+                                         GDBusMethodInvocation *invocation,
+                                         gboolean success,
+                                         const char *error_desc);
+static void _activation_auth_done (NMManager *self,
+                                   NMActiveConnection *active,
+                                   GDBusMethodInvocation *invocation,
+                                   gboolean success,
+                                   const char *error_desc);
+
 /*****************************************************************************/
 
 static NM_CACHED_QUARK_FCN ("autoconnect-root", autoconnect_root_quark)
@@ -400,6 +444,104 @@ concheck_get_mgr (NMManager *self)
 		                  self);
 	}
 	return priv->concheck_mgr;
+}
+
+/*****************************************************************************/
+
+static AsyncOpData *
+_async_op_data_new_authorize_activate_internal (NMManager *self, NMActiveConnection *active_take)
+{
+	AsyncOpData *async_op_data;
+
+	async_op_data = g_slice_new0 (AsyncOpData);
+	async_op_data->async_op_type = ASYNC_OP_TYPE_AC_AUTH_ACTIVATE_INTERNAL;
+	async_op_data->self = g_object_ref (self);
+	async_op_data->ac_auth.active = active_take;
+	c_list_link_tail (&NM_MANAGER_GET_PRIVATE (self)->async_op_lst_head, &async_op_data->async_op_lst);
+	return async_op_data;
+}
+
+static AsyncOpData *
+_async_op_data_new_ac_auth_activate_user (NMManager *self,
+                                          NMActiveConnection *active_take,
+                                          GDBusMethodInvocation *invocation_take)
+{
+	AsyncOpData *async_op_data;
+
+	async_op_data = g_slice_new0 (AsyncOpData);
+	async_op_data->async_op_type = ASYNC_OP_TYPE_AC_AUTH_ACTIVATE_USER;
+	async_op_data->self = g_object_ref (self);
+	async_op_data->ac_auth.active = active_take;
+	async_op_data->ac_auth.activate_user.invocation = invocation_take;
+	c_list_link_tail (&NM_MANAGER_GET_PRIVATE (self)->async_op_lst_head, &async_op_data->async_op_lst);
+	return async_op_data;
+}
+
+static AsyncOpData *
+_async_op_data_new_ac_auth_add_and_activate (NMManager *self,
+                                             NMActiveConnection *active_take,
+                                             GDBusMethodInvocation *invocation_take,
+                                             NMConnection *connection_take)
+{
+	AsyncOpData *async_op_data;
+
+	async_op_data = g_slice_new0 (AsyncOpData);
+	async_op_data->async_op_type = ASYNC_OP_TYPE_AC_AUTH_ADD_AND_ACTIVATE;
+	async_op_data->self = g_object_ref (self);
+	async_op_data->ac_auth.active = active_take;
+	async_op_data->ac_auth.add_and_activate.invocation = invocation_take;
+	async_op_data->ac_auth.add_and_activate.connection = connection_take;
+	c_list_link_tail (&NM_MANAGER_GET_PRIVATE (self)->async_op_lst_head, &async_op_data->async_op_lst);
+	return async_op_data;
+}
+
+static void
+_async_op_complete_ac_auth_cb (NMActiveConnection *active,
+                               gboolean success,
+                               const char *error_desc,
+                               gpointer user_data)
+{
+	AsyncOpData *async_op_data = user_data;
+
+	nm_assert (async_op_data);
+	nm_assert (NM_IS_MANAGER (async_op_data->self));
+	nm_assert (nm_c_list_contains_entry (&NM_MANAGER_GET_PRIVATE (async_op_data->self)->async_op_lst_head, async_op_data, async_op_lst));
+	nm_assert (NM_IS_ACTIVE_CONNECTION (active));
+	nm_assert (active == async_op_data->ac_auth.active);
+
+	c_list_unlink (&async_op_data->async_op_lst);
+
+	switch (async_op_data->async_op_type) {
+	case ASYNC_OP_TYPE_AC_AUTH_ACTIVATE_INTERNAL:
+		_internal_activation_auth_done (async_op_data->self,
+		                                async_op_data->ac_auth.active,
+		                                success,
+		                                error_desc);
+		break;
+	case ASYNC_OP_TYPE_AC_AUTH_ACTIVATE_USER:
+		_activation_auth_done (async_op_data->self,
+		                       async_op_data->ac_auth.active,
+		                       async_op_data->ac_auth.activate_user.invocation,
+		                       success,
+		                       error_desc);
+		break;
+	case ASYNC_OP_TYPE_AC_AUTH_ADD_AND_ACTIVATE:
+		_add_and_activate_auth_done (async_op_data->self,
+		                             async_op_data->ac_auth.active,
+		                             async_op_data->ac_auth.add_and_activate.connection,
+		                             async_op_data->ac_auth.add_and_activate.invocation,
+		                             success,
+		                             error_desc);
+		g_object_unref (async_op_data->ac_auth.add_and_activate.connection);
+		break;
+	default:
+		nm_assert_not_reached ();
+		break;
+	}
+
+	g_object_unref (async_op_data->ac_auth.active);
+	g_object_unref (async_op_data->self);
+	g_slice_free (AsyncOpData, async_op_data);
 }
 
 /*****************************************************************************/
@@ -4095,18 +4237,16 @@ _new_active_connection (NMManager *self,
 }
 
 static void
-_internal_activation_auth_done (NMActiveConnection *active,
+_internal_activation_auth_done (NMManager *self,
+                                NMActiveConnection *active,
                                 gboolean success,
-                                const char *error_desc,
-                                gpointer user_data)
+                                const char *error_desc)
 {
-	_nm_unused gs_unref_object NMActiveConnection *active_to_free = active;
-	NMManager *self = user_data;
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMActiveConnection *ac;
 	gs_free_error GError *error = NULL;
 
-	priv->authorizing_connections = g_slist_remove (priv->authorizing_connections, active);
+	nm_assert (NM_IS_ACTIVE_CONNECTION (active));
 
 	if (!success)
 		goto fail;
@@ -4181,7 +4321,7 @@ nm_manager_activate_connection (NMManager *self,
 {
 	NMManagerPrivate *priv;
 	NMActiveConnection *active;
-	GSList *iter;
+	AsyncOpData *async_op_data;
 
 	g_return_val_if_fail (NM_IS_MANAGER (self), NULL);
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (connection), NULL);
@@ -4203,9 +4343,12 @@ nm_manager_activate_connection (NMManager *self,
 	 * otherwise race and cause the device to disconnect and reconnect repeatedly.
 	 * In particular, this allows the master and multiple slaves to concurrently auto-activate
 	 * while all the slaves would use the same active-connection. */
-	for (iter = priv->authorizing_connections; iter; iter = g_slist_next (iter)) {
-		active = iter->data;
+	c_list_for_each_entry (async_op_data, &priv->async_op_lst_head, async_op_lst) {
 
+		if (async_op_data->async_op_type != ASYNC_OP_TYPE_AC_AUTH_ACTIVATE_INTERNAL)
+			continue;
+
+		active = async_op_data->ac_auth.active;
 		if (   connection == nm_active_connection_get_settings_connection (active)
 		    && nm_streq0 (nm_active_connection_get_specific_object (active), specific_object)
 		    && nm_active_connection_get_device (active) == device
@@ -4228,8 +4371,11 @@ nm_manager_activate_connection (NMManager *self,
 	if (!active)
 		return NULL;
 
-	priv->authorizing_connections = g_slist_prepend (priv->authorizing_connections, active);
-	nm_active_connection_authorize (active, NULL, _internal_activation_auth_done, self);
+	nm_active_connection_authorize (active,
+	                                NULL,
+	                                _async_op_complete_ac_auth_cb,
+	                                _async_op_data_new_authorize_activate_internal (self,
+	                                                                                active));
 	return active;
 }
 
@@ -4359,19 +4505,15 @@ validate_activation_request (NMManager *self,
 /*****************************************************************************/
 
 static void
-_activation_auth_done (NMActiveConnection *active,
+_activation_auth_done (NMManager *self,
+                       NMActiveConnection *active,
+                       GDBusMethodInvocation *invocation,
                        gboolean success,
-                       const char *error_desc,
-                       gpointer user_data)
+                       const char *error_desc)
 {
-	NMManager *self;
-	GDBusMethodInvocation *context;
 	GError *error = NULL;
 	NMAuthSubject *subject;
 	NMSettingsConnection *connection;
-	_nm_unused gs_unref_object NMActiveConnection *active_free = active;
-
-	nm_utils_user_data_pack (user_data, &self, &context);
 
 	subject = nm_active_connection_get_subject (active);
 	connection = nm_active_connection_get_settings_connection (active);
@@ -4389,7 +4531,7 @@ _activation_auth_done (NMActiveConnection *active,
 	nm_settings_connection_autoconnect_blocked_reason_set (connection,
 	                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST,
 	                                                       FALSE);
-	g_dbus_method_invocation_return_value (context,
+	g_dbus_method_invocation_return_value (invocation,
 	                                       g_variant_new ("(o)",
 	                                       nm_dbus_object_get_path (NM_DBUS_OBJECT (active))));
 	nm_audit_log_connection_op (NM_AUDIT_OP_CONN_ACTIVATE, connection, TRUE, NULL,
@@ -4403,7 +4545,7 @@ fail:
 	                                     NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN,
 	                                     error->message);
 
-	g_dbus_method_invocation_take_error (context, error);
+	g_dbus_method_invocation_take_error (invocation, error);
 }
 
 static void
@@ -4493,8 +4635,10 @@ impl_manager_activate_connection (NMDBusObject *obj,
 	 * is unsuitable for a coordinated shutdown. */
 	nm_active_connection_authorize (g_steal_pointer (&active),
 	                                NULL,
-	                                _activation_auth_done,
-	                                nm_utils_user_data_pack (self, invocation));
+	                                _async_op_complete_ac_auth_cb,
+	                                _async_op_data_new_ac_auth_activate_user (self,
+	                                                                          active,
+	                                                                          invocation));
 	return;
 
 error:
@@ -4564,18 +4708,15 @@ activation_add_done (NMSettings *settings,
 }
 
 static void
-_add_and_activate_auth_done (NMActiveConnection *active,
+_add_and_activate_auth_done (NMManager *self,
+                             NMActiveConnection *active,
+                             NMConnection *connection,
+                             GDBusMethodInvocation *invocation,
                              gboolean success,
-                             const char *error_desc,
-                             gpointer user_data)
+                             const char *error_desc)
 {
-	NMManager *self;
 	NMManagerPrivate *priv;
-	GDBusMethodInvocation *context;
-	gs_unref_object NMConnection *connection = NULL;
 	GError *error = NULL;
-
-	nm_utils_user_data_unpack (user_data, &self, &context, &connection);
 
 	if (!success) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
@@ -4587,8 +4728,7 @@ _add_and_activate_auth_done (NMActiveConnection *active,
 		                            NULL,
 		                            nm_active_connection_get_subject (active),
 		                            error->message);
-		g_dbus_method_invocation_take_error (context, error);
-		g_object_unref (active);
+		g_dbus_method_invocation_take_error (invocation, error);
 		return;
 	}
 
@@ -4597,10 +4737,10 @@ _add_and_activate_auth_done (NMActiveConnection *active,
 	nm_settings_add_connection_dbus (priv->settings,
 	                                 connection,
 	                                 FALSE,
-	                                 context,
+	                                 invocation,
 	                                 activation_add_done,
 	                                 nm_utils_user_data_pack (self,
-	                                                          active /* pass on the reference in @active to the callback */));
+	                                                          g_object_ref (active)));
 }
 
 static void
@@ -4692,10 +4832,13 @@ impl_manager_add_and_activate_connection (NMDBusObject *obj,
 		goto error;
 
 	nm_active_connection_authorize (active, connection,
-	                                _add_and_activate_auth_done,
-	                                nm_utils_user_data_pack (self, invocation, connection));
+	                                _async_op_complete_ac_auth_cb,
+	                                _async_op_data_new_ac_auth_add_and_activate (self,
+	                                                                             active,
+	                                                                             invocation,
+	                                                                             connection));
 
-	/* we passed the pointers on to the callback of authorize. */
+	/* we passed the pointers on to _async_op_data_new_ac_auth_add_and_activate() */
 	g_steal_pointer (&connection);
 	g_steal_pointer (&active);
 	return;
@@ -6551,6 +6694,7 @@ nm_manager_init (NMManager *self)
 	c_list_init (&priv->link_cb_lst);
 	c_list_init (&priv->devices_lst_head);
 	c_list_init (&priv->active_connections_lst_head);
+	c_list_init (&priv->async_op_lst_head);
 	c_list_init (&priv->delete_volatile_connection_lst_head);
 
 	priv->platform = g_object_ref (NM_PLATFORM_GET);
@@ -6797,6 +6941,8 @@ dispose (GObject *object)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	CList *iter, *iter_safe;
 	NMActiveConnection *ac, *ac_safe;
+
+	nm_assert (c_list_is_empty (&priv->async_op_lst_head));
 
 	g_signal_handlers_disconnect_by_func (priv->platform,
 	                                      G_CALLBACK (platform_link_cb),
