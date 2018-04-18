@@ -1,0 +1,13 @@
+LIBNACD_1 {
+global:
+        n_acd_new;
+        n_acd_free;
+        n_acd_get_fd;
+        n_acd_dispatch;
+        n_acd_pop_event;
+        n_acd_start;
+        n_acd_stop;
+        n_acd_announce;
+local:
+       *;
+};
