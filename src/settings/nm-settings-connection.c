@@ -1465,24 +1465,19 @@ auth_start (NMSettingsConnection *self,
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	AuthData *auth_data;
-	char *error_desc = NULL;
+	GError *error = NULL;
 
 	nm_assert (nm_dbus_object_is_exported (NM_DBUS_OBJECT (self)));
 	nm_assert (G_IS_DBUS_METHOD_INVOCATION (invocation));
 	nm_assert (NM_IS_AUTH_SUBJECT (subject));
 
-	/* Ensure the caller can view this connection */
-	if (!nm_auth_is_subject_in_acl (NM_CONNECTION (self),
-	                                subject,
-	                                &error_desc)) {
-		gs_free_error GError *error = NULL;
-
-		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                             error_desc);
-		g_free (error_desc);
-
+	if (!nm_auth_is_subject_in_acl_set_error (NM_CONNECTION (self),
+	                                          subject,
+	                                          NM_SETTINGS_ERROR,
+	                                          NM_SETTINGS_ERROR_PERMISSION_DENIED,
+	                                          &error)) {
 		callback (self, invocation, subject, error, callback_data);
+		g_clear_error (&error);
 		return;
 	}
 
@@ -1855,7 +1850,6 @@ settings_connection_update (NMSettingsConnection *self,
 	GError *error = NULL;
 	UpdateInfo *info;
 	const char *permission;
-	char *error_desc = NULL;
 
 	/* If the connection is read-only, that has to be changed at the source of
 	 * the problem (ex a system settings plugin that can't write connections out)
@@ -1892,15 +1886,12 @@ settings_connection_update (NMSettingsConnection *self,
 	 * that's sending the update request.  You can't make a connection
 	 * invisible to yourself.
 	 */
-	if (!nm_auth_is_subject_in_acl (tmp ? tmp : NM_CONNECTION (self),
-	                                subject,
-	                                &error_desc)) {
-		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                             error_desc);
-		g_free (error_desc);
+	if (!nm_auth_is_subject_in_acl_set_error (tmp ? tmp : NM_CONNECTION (self),
+	                                          subject,
+	                                          NM_SETTINGS_ERROR,
+	                                          NM_SETTINGS_ERROR_PERMISSION_DENIED,
+	                                          &error))
 		goto error;
-	}
 
 	info = g_slice_new0 (UpdateInfo);
 	info->is_update2 = is_update2;

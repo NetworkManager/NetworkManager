@@ -1682,6 +1682,10 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * NetworkManager when the resources for the connection are available.
 	 * %TRUE to automatically activate the connection, %FALSE to require manual
 	 * intervention to activate the connection.
+	 *
+	 * Note that autoconnect is not implemented for VPN profiles. See
+	 * #NMSettingConnection:secondaries as an alternative to automatically
+	 * connect VPN profiles.
 	 **/
 	/* ---ifcfg-rh---
 	 * property: autoconnect
@@ -1874,7 +1878,9 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 *
 	 * Whether or not slaves of this connection should be automatically brought up
 	 * when NetworkManager activates this connection. This only has a real effect
-	 * for master connections.
+	 * for master connections. The properties #NMSettingConnection:autoconnect,
+	 * #NMSettingConnection:autoconnect-priority and #NMSettingConnection:autoconnect-retries
+	 * are unrelated to this setting.
 	 * The permitted values are: 0: leave slave connections untouched,
 	 * 1: activate all the slave connections with this connection, -1: default.
 	 * If -1 (default) is set, global connection.autoconnect-slaves is read to

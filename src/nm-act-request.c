@@ -514,7 +514,7 @@ get_property (GObject *object, guint prop_id,
 	    || !NM_IN_SET (nm_active_connection_get_state (active),
 	                   NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
 	                   NM_ACTIVE_CONNECTION_STATE_DEACTIVATING)) {
-		g_value_set_string (value, "/");
+		g_value_set_string (value, NULL);
 		return;
 	}
 

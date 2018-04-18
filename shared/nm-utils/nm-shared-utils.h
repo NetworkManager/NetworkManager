@@ -484,6 +484,9 @@ nm_utils_strv_make_deep_copied_nonnull (const char **strv)
 	return nm_utils_strv_make_deep_copied (strv) ?: g_new0 (char *, 1);
 }
 
+void _nm_utils_strv_sort (const char **strv, gssize len);
+#define nm_utils_strv_sort(strv, len) _nm_utils_strv_sort (NM_CAST_STRV_MC (strv), len)
+
 /*****************************************************************************/
 
 #define NM_UTILS_NS_PER_SECOND  ((gint64) 1000000000)
@@ -497,6 +500,18 @@ ssize_t nm_utils_fd_read_loop (int fd, void *buf, size_t nbytes, bool do_poll);
 int nm_utils_fd_read_loop_exact (int fd, void *buf, size_t nbytes, bool do_poll);
 
 /*****************************************************************************/
+
+static inline const char *
+nm_utils_dbus_normalize_object_path (const char *path)
+{
+	/* D-Bus does not allow an empty object path. Hence, whenever we mean NULL / no-object
+	 * on D-Bus, it's path is actually "/".
+	 *
+	 * Normalize that away, and return %NULL in that case. */
+	if (path && path[0] == '/' && path[1] == '\0')
+		return NULL;
+	return path;
+}
 
 #define NM_DEFINE_GDBUS_ARG_INFO_FULL(name_, ...) \
 	((GDBusArgInfo *) (&((const GDBusArgInfo) { \

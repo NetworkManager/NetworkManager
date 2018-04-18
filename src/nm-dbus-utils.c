@@ -117,7 +117,7 @@ nm_dbus_utils_g_value_set_object_path (GValue *value, gpointer object)
 	    && (path = nm_dbus_object_get_path (object)))
 		g_value_set_string (value, path);
 	else
-		g_value_set_string (value, "/");
+		g_value_set_string (value, NULL);
 }
 
 void
@@ -163,6 +163,10 @@ nm_dbus_utils_g_value_set_object_path_from_hash (GValue *value,
 	}
 	nm_assert (i <= n);
 	strv[i] = NULL;
+
+	/* sort the names, to give a well-defined, stable order. */
+	nm_utils_strv_sort (strv, i);
+
 	g_value_take_boxed (value, strv);
 }
 

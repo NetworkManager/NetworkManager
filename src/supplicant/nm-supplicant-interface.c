@@ -1074,9 +1074,8 @@ props_changed_cb (GDBusProxy *proxy,
 	}
 
 	if (g_variant_lookup (changed_properties, "CurrentBSS", "&o", &s)) {
-		if (strcmp (s, "/") == 0)
-			s = NULL;
-		if (g_strcmp0 (s, priv->current_bss) != 0) {
+		s = nm_utils_dbus_normalize_object_path (s);
+		if (!nm_streq0 (s, priv->current_bss)) {
 			g_free (priv->current_bss);
 			priv->current_bss = g_strdup (s);
 			_notify (self, PROP_CURRENT_BSS);

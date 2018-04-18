@@ -441,6 +441,41 @@ NM_G_ERROR_MSG (GError *error)
 #endif
 
 #if _NM_CC_SUPPORT_GENERIC
+/* these macros cast (value) to
+ *  - "const char **"      (for "MC", mutable-const)
+ *  - "const char *const*" (for "CC", const-const)
+ * The point is to do this cast, but only accepting pointers
+ * that are compatible already.
+ *
+ * The problem is, if you add a function like g_strdupv(), the input
+ * argument is not modified (CC), but you want to make it work also
+ * for "char **". C doesn't allow this form of casting (for good reasons),
+ * so the function makes a choice like g_strdupv(char**). That means,
+ * every time you want to call ith with a const argument, you need to
+ * explicitly cast it.
+ *
+ * These macros do the cast, but they only accept a compatible input
+ * type, otherwise they will fail compilation.
+ */
+#define NM_CAST_STRV_MC(value) \
+	(_Generic ((value), \
+	           const char *     *: (const char *     *) (value), \
+	                 char *     *: (const char *     *) (value), \
+	                       void *: (const char *     *) (value)))
+#define NM_CAST_STRV_CC(value) \
+	(_Generic ((value), \
+	           const char *const*: (const char *const*) (value), \
+	           const char *     *: (const char *const*) (value), \
+	                 char *const*: (const char *const*) (value), \
+	                 char *     *: (const char *const*) (value), \
+	                 const void *: (const char *const*) (value), \
+	                       void *: (const char *const*) (value)))
+#else
+#define NM_CAST_STRV_MC(value) ((const char *     *) (value))
+#define NM_CAST_STRV_CC(value) ((const char *const*) (value))
+#endif
+
+#if _NM_CC_SUPPORT_GENERIC
 #define NM_PROPAGATE_CONST(test_expr, ptr) \
 	(_Generic ((test_expr), \
 	           const typeof (*(test_expr)) *: ((const typeof (*(ptr)) *) (ptr)), \

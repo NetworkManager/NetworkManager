@@ -410,8 +410,8 @@ nm_auth_is_subject_in_acl (NMConnection *connection,
 		return TRUE;
 
 	if (!nm_session_monitor_uid_to_user (uid, &user)) {
-		if (out_error_desc)
-			*out_error_desc = g_strdup_printf ("Could not determine username for uid %lu", uid);
+		NM_SET_OUT (out_error_desc,
+		            g_strdup_printf ("Could not determine username for uid %lu", uid));
 		return FALSE;
 	}
 
@@ -425,10 +425,31 @@ nm_auth_is_subject_in_acl (NMConnection *connection,
 
 	/* Match the username returned by the session check to a user in the ACL */
 	if (!nm_setting_connection_permissions_user_allowed (s_con, user)) {
-		if (out_error_desc)
-			*out_error_desc = g_strdup_printf ("uid %lu has no permission to perform this operation", uid);
+		NM_SET_OUT (out_error_desc,
+		            g_strdup_printf ("uid %lu has no permission to perform this operation", uid));
 		return FALSE;
 	}
 
 	return TRUE;
+}
+
+gboolean
+nm_auth_is_subject_in_acl_set_error (NMConnection *connection,
+                                     NMAuthSubject *subject,
+                                     GQuark err_domain,
+                                     int err_code,
+                                     GError **error)
+{
+	char *error_desc = NULL;
+
+	nm_assert (!error || !*error);
+
+	if (nm_auth_is_subject_in_acl (connection,
+	                               subject,
+	                               error ? &error_desc : NULL))
+		return TRUE;
+
+	g_set_error_literal (error, err_domain, err_code, error_desc);
+	g_free (error_desc);
+	return FALSE;
 }
