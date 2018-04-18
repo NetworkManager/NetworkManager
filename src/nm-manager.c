@@ -4630,9 +4630,6 @@ impl_manager_activate_connection (NMDBusObject *obj,
 	if (!active)
 		goto error;
 
-	/* FIXME: nm_active_connection_authorize() is not cancellable,
-	 * and we pass on the only reference to @active. This construct
-	 * is unsuitable for a coordinated shutdown. */
 	nm_active_connection_authorize (g_steal_pointer (&active),
 	                                NULL,
 	                                _async_op_complete_ac_auth_cb,
@@ -4734,6 +4731,9 @@ _add_and_activate_auth_done (NMManager *self,
 
 	priv = NM_MANAGER_GET_PRIVATE (self);
 
+	/* FIXME(shutdown): nm_settings_add_connection_dbus() cannot be cancelled. It should be made
+	 * cancellable and tracked via AsyncOpData to be able to do a clean
+	 * shutdown. */
 	nm_settings_add_connection_dbus (priv->settings,
 	                                 connection,
 	                                 FALSE,
@@ -5916,6 +5916,20 @@ nm_manager_stop (NMManager *self)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDevice *device;
+
+	/* FIXME(shutdown): we don't do a proper shutdown yet:
+	 *  - need to tell NMDBusManager that all future D-Bus requests are rejected
+	 *  - need to ensure that all pending async operations are cancelled
+	 *    - e.g. operations in priv->async_op_lst_head
+	 *  - need to ensure that no more asynchronous requests are started,
+	 *    or that they complete quickly, or that they fail quickly.
+	 *  - note that cancelling some operations is not possible synchronously.
+	 *    Hence, stop() only prepares shutdown and tells everybody to not
+	 *    accept new work, and to complete in a timely manner.
+	 *    We need to still iterate the mainloop for a bit, to give everybody
+	 *    the chance to complete.
+	 *    - e.g. see comment at nm_auth_manager_force_shutdown()
+	 */
 
 	while ((device = c_list_first_entry (&priv->devices_lst_head, NMDevice, devices_lst)))
 		remove_device (self, device, TRUE, TRUE);

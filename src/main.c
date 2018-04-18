@@ -443,7 +443,7 @@ done:
 	 * it misses to update the state. */
 	nm_manager_write_device_state (manager);
 
-	/* FIXME: we don't properly shut down on exit. That is a bug.
+	/* FIXME(shutdown): we don't properly shut down on exit. That is a bug.
 	 * NMDBusObject have an assertion that they get unexported before disposing.
 	 * We need this workaround and disable the assertion during our leaky shutdown. */
 	nm_dbus_object_set_quitting ();
