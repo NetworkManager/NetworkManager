@@ -98,8 +98,9 @@ const CList * nm_manager_get_active_connections        (NMManager *manager);
 	    iter = c_list_entry (iter->active_connections_lst.next, NMActiveConnection, active_connections_lst))
 
 NMSettingsConnection **nm_manager_get_activatable_connections (NMManager *manager,
-                                                               guint *out_len,
-                                                               gboolean sort);
+                                                               gboolean for_auto_activation,
+                                                               gboolean sort,
+                                                               guint *out_len);
 
 void          nm_manager_write_device_state (NMManager *manager);
 
