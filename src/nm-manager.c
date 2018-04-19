@@ -4017,15 +4017,13 @@ _new_active_connection (NMManager *self,
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMSettingsConnection *settings_connection = NULL;
+	NMDevice *parent_device;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), NULL);
 
 	nm_assert (is_vpn == _connection_is_vpn (connection));
-
-	nm_assert (   ( is_vpn && !device)
-	           || (!is_vpn && NM_IS_DEVICE (device)));
-
+	nm_assert (is_vpn || NM_IS_DEVICE (device));
 	nm_assert (!nm_streq0 (specific_object, "/"));
 
 	if (NM_IS_SETTINGS_CONNECTION (connection))
@@ -4069,15 +4067,21 @@ _new_active_connection (NMManager *self,
 			return NULL;
 		}
 
-		device = nm_active_connection_get_device (parent);
-		if (!device) {
+		parent_device = nm_active_connection_get_device (parent);
+		if (!parent_device) {
 			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
 			                     "Source connection had no active device");
 			return NULL;
 		}
 
+		if (device && device != parent_device) {
+			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+			                     "The device doesn't match the active connection.");
+			return NULL;
+		}
+
 		return (NMActiveConnection *) nm_vpn_connection_new (settings_connection,
-		                                                     device,
+		                                                     parent_device,
 		                                                     nm_dbus_object_get_path (NM_DBUS_OBJECT (parent)),
 		                                                     activation_reason,
 		                                                     subject);
