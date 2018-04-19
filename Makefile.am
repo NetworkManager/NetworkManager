@@ -3805,7 +3805,8 @@ if WITH_UDEV_DIR
 udevrulesdir = $(UDEV_DIR)/rules.d
 udevrules_DATA = \
 	data/84-nm-drivers.rules \
-	data/85-nm-unmanaged.rules
+	data/85-nm-unmanaged.rules \
+	data/90-nm-thunderbolt.rules
 endif
 
 data/server.conf: $(srcdir)/data/server.conf.in
@@ -3820,6 +3821,7 @@ EXTRA_DIST += \
 	data/org.freedesktop.NetworkManager.service.in \
 	data/84-nm-drivers.rules \
 	data/85-nm-unmanaged.rules \
+	data/90-nm-thunderbolt.rules \
 	data/server.conf.in \
 	data/meson.build
 

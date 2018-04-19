@@ -50,7 +50,8 @@ endif
 if install_udev_dir
   data = files(
     '84-nm-drivers.rules',
-    '85-nm-unmanaged.rules'
+    '85-nm-unmanaged.rules',
+    '90-nm-thunderbolt.rules'
   )
 
   install_data(

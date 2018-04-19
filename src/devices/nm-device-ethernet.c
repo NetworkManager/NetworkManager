@@ -50,6 +50,7 @@
 #include "nm-device-factory.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
+#include "nm-utils/nm-udev-utils.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF(NMDeviceEthernet);
@@ -1436,7 +1437,9 @@ new_default_connection (NMDevice *self)
 	NMConnection *connection;
 	NMSettingsConnection *const*connections;
 	NMSetting *setting;
+	struct udev_device *dev;
 	const char *perm_hw_addr;
+	const char *uprop = "0";
 	gs_free char *defname = NULL;
 	gs_free char *uuid = NULL;
 	gs_free char *machine_id = NULL;
@@ -1480,6 +1483,26 @@ new_default_connection (NMDevice *self)
 	setting = nm_setting_wired_new ();
 	g_object_set (setting, NM_SETTING_WIRED_MAC_ADDRESS, perm_hw_addr, NULL);
 	nm_connection_add_setting (connection, setting);
+
+	/* Check if we should create a Link-Local only connection */
+	dev = nm_platform_link_get_udev_device (nm_device_get_platform (NM_DEVICE (self)), nm_device_get_ip_ifindex (self));
+	if (dev)
+		uprop = udev_device_get_property_value (dev, "NM_AUTO_DEFAULT_LINK_LOCAL_ONLY");
+
+	if (nm_udev_utils_property_as_boolean (uprop)) {
+		setting = nm_setting_ip4_config_new ();
+		g_object_set (setting,
+		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
+		              NULL);
+		nm_connection_add_setting (connection, setting);
+
+		setting = nm_setting_ip6_config_new ();
+		g_object_set (setting,
+		              NM_SETTING_IP_CONFIG_METHOD,  NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
+		              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
+		              NULL);
+		nm_connection_add_setting (connection, setting);
+	}
 
 	return connection;
 }
