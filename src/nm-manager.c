@@ -4215,7 +4215,7 @@ nm_manager_activate_connection (NMManager *self,
 	}
 
 	active = _new_active_connection (self,
-	                                 FALSE,
+	                                 _connection_is_vpn (NM_CONNECTION (connection)),
 	                                 NM_CONNECTION (connection),
 	                                 applied,
 	                                 specific_object,
