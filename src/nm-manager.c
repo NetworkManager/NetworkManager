@@ -2562,7 +2562,7 @@ recheck_assume_connection (NMManager *self,
 		                                 device,
 		                                 subject,
 		                                 generated ? NM_ACTIVATION_TYPE_EXTERNAL : NM_ACTIVATION_TYPE_ASSUME,
-		                                 NM_ACTIVATION_REASON_AUTOCONNECT,
+		                                 generated ? NM_ACTIVATION_REASON_EXTERNAL : NM_ACTIVATION_REASON_ASSUME,
 		                                 &error);
 
 		if (!active) {
