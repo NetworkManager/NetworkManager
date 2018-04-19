@@ -949,7 +949,7 @@ static NMActiveConnection *
 active_connection_find (NMManager *self,
                         NMSettingsConnection *settings_connection,
                         const char *uuid,
-                        NMActiveConnectionState max_state,
+                        NMActiveConnectionState max_state /* candidates in state @max_state will be found */,
                         GPtrArray **out_all_matching)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
@@ -1032,7 +1032,10 @@ _get_activatable_connections_filter (NMSettings *settings,
 	if (NM_FLAGS_HAS (nm_settings_connection_get_flags (connection),
 	                  NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE))
 		return FALSE;
-	return !active_connection_find (user_data, connection, NULL, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING, NULL);
+
+	/* the connection is activatable, if it has no active-connections that are in state
+	 * activated, activating, or waiting to be activated. */
+	return !active_connection_find (user_data, connection, NULL, NM_ACTIVE_CONNECTION_STATE_ACTIVATED, NULL);
 }
 
 NMSettingsConnection **
@@ -2068,7 +2071,7 @@ connection_flags_changed (NMSettings *settings,
 		return;
 
 	if (active_connection_find (self, connection, NULL, NM_ACTIVE_CONNECTION_STATE_DEACTIVATED, NULL)) {
-		/* the connection still have an active-connection. It will be purged
+		/* the connection still has an active-connection. It will be purged
 		 * when the active connection(s) get(s) removed. */
 		return;
 	}
@@ -2442,7 +2445,7 @@ get_existing_connection (NMManager *self,
 	if (   assume_state_connection_uuid
 	    && (connection_checked = nm_settings_get_connection_by_uuid (priv->settings, assume_state_connection_uuid))
 	    && !active_connection_find (self, connection_checked, NULL,
-	                                NM_ACTIVE_CONNECTION_STATE_DEACTIVATING,
+	                                NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
 	                                NULL)
 	    && nm_device_check_connection_compatible (device, NM_CONNECTION (connection_checked))) {
 
@@ -4117,7 +4120,7 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	autoconnect_slaves (self, connection, device, nm_active_connection_get_subject (active));
 
 	/* Disconnect the connection if connected or queued on another device */
-	existing_ac = active_connection_find (self, connection, NULL, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING, NULL);
+	existing_ac = active_connection_find (self, connection, NULL, NM_ACTIVE_CONNECTION_STATE_ACTIVATED, NULL);
 	if (existing_ac) {
 		existing = nm_active_connection_get_device (existing_ac);
 		if (existing)
@@ -4213,7 +4216,7 @@ _new_active_connection (NMManager *self,
 		/* FIXME: for VPN connections, we don't allow re-activating an
 		 * already active connection. It's a bug, and should be fixed together
 		 * when reworking VPN handling. */
-		if (active_connection_find_by_connection (self, connection, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING, NULL)) {
+		if (active_connection_find_by_connection (self, connection, NM_ACTIVE_CONNECTION_STATE_ACTIVATED, NULL)) {
 			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_ALREADY_ACTIVE,
 			             "Connection '%s' is already active",
 			             nm_connection_get_id (connection));
