@@ -4263,7 +4263,7 @@ validate_activation_request (NMManager *self,
 {
 	NMDevice *device = NULL;
 	gboolean is_vpn = FALSE;
-	gs_free NMAuthSubject *subject = NULL;
+	gs_unref_object NMAuthSubject *subject = NULL;
 
 	nm_assert (NM_IS_CONNECTION (connection));
 	nm_assert (out_device);
