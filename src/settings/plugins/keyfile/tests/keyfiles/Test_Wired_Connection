@@ -15,7 +15,7 @@ mtu=1400
 
 [ipv4]
 method=manual
-dns=4.2.2.1;4.2.2.2;
+dns=4.2.2.1;bogus;4.2.2.2;
 addresses1=192.168.0.5;24;192.168.0.1;
 addresses2=1.2.3.4;16;1.2.1.1;
 address=2.3.4.5/24,2.3.4.6
@@ -26,15 +26,21 @@ routes1=1.2.3.0/24,2.3.4.8,99
 route=5.6.7.8/32
 routes2=1.1.1.2/12,
 routes3=1.1.1.3/13,,
+routes7=1.1.1.7/17,0.0.0.0
 routes4=1.1.1.4/14,2.2.2.4
+address30=1.2.3.130/24
 routes5=1.1.1.5/15,2.2.2.5,
 routes6=1.1.1.6/16,2.2.2.6,0
-routes7=1.1.1.7/17,0.0.0.0
 routes8=1.1.1.8/18,0.0.0.0,
 routes9=1.1.1.9/19,0.0.0.0,0
+route10=1.1.1.10/21,,0
 routes10=1.1.1.10/20,,0
 routes11=1.1.1.11/21,,21
 routes11_options=cwnd=10,lock-cwnd=true,mtu=1430,src=7.7.7.7
+address30=1.2.3.30/24
+addresses30=1.2.3.30/25
+addresses31=1.2.3.31/25
+address31=1.2.3.31/24
 ignore-auto-routes=false
 ignore-auto-dns=false
 

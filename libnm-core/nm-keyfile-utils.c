@@ -195,7 +195,7 @@ nm_keyfile_plugin_kf_get_keys (GKeyFile *kf,
 		alias = nm_keyfile_plugin_get_alias_for_setting_name (group);
 		if (alias) {
 			g_clear_error (&local);
-			keys = g_key_file_get_keys (kf, alias, out_length, &local);
+			keys = g_key_file_get_keys (kf, alias, out_length, error ? &local : NULL);
 		}
 	}
 	if (local)

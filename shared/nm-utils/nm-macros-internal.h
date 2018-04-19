@@ -1092,54 +1092,6 @@ nm_strcmp_p (gconstpointer a, gconstpointer b)
 	return strcmp (s1, s2);
 }
 
-/* like nm_strcmp_p(), suitable for g_ptr_array_sort_with_data().
- * g_ptr_array_sort() just casts nm_strcmp_p() to a function of different
- * signature. I guess, in glib there are knowledgeable people that ensure
- * that this additional argument doesn't cause problems due to different ABI
- * for every architecture that glib supports.
- * For NetworkManager, we'd rather avoid such stunts.
- **/
-static inline int
-nm_strcmp_p_with_data (gconstpointer a, gconstpointer b, gpointer user_data)
-{
-	const char *s1 = *((const char **) a);
-	const char *s2 = *((const char **) b);
-
-	return strcmp (s1, s2);
-}
-
-static inline int
-nm_cmp_uint32_p_with_data (gconstpointer p_a, gconstpointer p_b, gpointer user_data)
-{
-	const guint32 a = *((const guint32 *) p_a);
-	const guint32 b = *((const guint32 *) p_b);
-
-	if (a < b)
-		return -1;
-	if (a > b)
-		return 1;
-	return 0;
-}
-
-static inline int
-nm_cmp_int2ptr_p_with_data (gconstpointer p_a, gconstpointer p_b, gpointer user_data)
-{
-	/* p_a and p_b are two pointers to a pointer, where the pointer is
-	 * interpreted as a integer using GPOINTER_TO_INT().
-	 *
-	 * That is the case of a hash-table that uses GINT_TO_POINTER() to
-	 * convert integers as pointers, and the resulting keys-as-array
-	 * array. */
-	const int a = GPOINTER_TO_INT (*((gconstpointer *) p_a));
-	const int b = GPOINTER_TO_INT (*((gconstpointer *) p_b));
-
-	if (a < b)
-		return -1;
-	if (a > b)
-		return 1;
-	return 0;
-}
-
 /*****************************************************************************/
 
 /* Taken from systemd's UNIQ_T and UNIQ macros. */
