@@ -4251,14 +4251,14 @@ _internal_activation_auth_done (NMManager *self,
 	if (!success)
 		goto fail;
 
-	/* Don't continue with an internal activation if an equivalent active
-	 * connection already exists. Note that slave autoconnections always force a
-	 * reconnection.  We also check this earlier, but there we may fail to
-	 * detect a duplicate if the existing active connection is undergoing
-	 * authorization in impl_manager_activate_connection().
+	/* Don't continue with an autoconnect-activation if a more important activation
+	 * already exists.
+	 * We also check this earlier, but there we may fail to detect a duplicate
+	 * if the existing active connection was undergoing authorization.
 	 */
-	if (   nm_auth_subject_is_internal (nm_active_connection_get_subject (active))
-	    && nm_active_connection_get_activation_reason (active) != NM_ACTIVATION_REASON_AUTOCONNECT_SLAVES) {
+	if (NM_IN_SET (nm_active_connection_get_activation_reason (active), NM_ACTIVATION_REASON_EXTERNAL,
+	                                                                    NM_ACTIVATION_REASON_ASSUME,
+	                                                                    NM_ACTIVATION_REASON_AUTOCONNECT)) {
 		c_list_for_each_entry (ac, &priv->active_connections_lst_head, active_connections_lst) {
 			if (   nm_active_connection_get_device (ac) == nm_active_connection_get_device (active)
 			    && nm_active_connection_get_settings_connection (ac) == nm_active_connection_get_settings_connection (active)
