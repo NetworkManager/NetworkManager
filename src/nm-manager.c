@@ -352,10 +352,11 @@ static void active_connection_parent_active (NMActiveConnection *active,
                                              NMActiveConnection *parent_ac,
                                              NMManager *self);
 
-static NMActiveConnection *active_connection_find_first (NMManager *self,
-                                                         NMSettingsConnection *settings_connection,
-                                                         const char *uuid,
-                                                         NMActiveConnectionState max_state);
+static NMActiveConnection *active_connection_find (NMManager *self,
+                                                   NMSettingsConnection *settings_connection,
+                                                   const char *uuid,
+                                                   NMActiveConnectionState max_state,
+                                                   GPtrArray **out_all_matching);
 
 static NMConnectivity *concheck_get_mgr (NMManager *self);
 
@@ -799,10 +800,11 @@ _delete_volatile_connection_do (NMManager *self,
 	if (!NM_FLAGS_HAS (nm_settings_connection_get_flags (connection),
 	                   NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE))
 		return;
-	if (active_connection_find_first (self,
-	                                  connection,
-	                                  NULL,
-	                                  NM_ACTIVE_CONNECTION_STATE_DEACTIVATED))
+	if (active_connection_find (self,
+	                            connection,
+	                            NULL,
+	                            NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,
+	                            NULL))
 		return;
 	if (!nm_settings_has_connection (priv->settings, connection))
 		return;
@@ -944,15 +946,19 @@ nm_manager_get_active_connections (NMManager *manager)
 }
 
 static NMActiveConnection *
-active_connection_find_first (NMManager *self,
-                              NMSettingsConnection *settings_connection,
-                              const char *uuid,
-                              NMActiveConnectionState max_state)
+active_connection_find (NMManager *self,
+                        NMSettingsConnection *settings_connection,
+                        const char *uuid,
+                        NMActiveConnectionState max_state,
+                        GPtrArray **out_all_matching)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMActiveConnection *ac;
+	NMActiveConnection *best_ac = NULL;
+	GPtrArray *all = NULL;
 
 	nm_assert (!settings_connection || NM_IS_SETTINGS_CONNECTION (settings_connection));
+	nm_assert (!out_all_matching || !*out_all_matching);
 
 	c_list_for_each_entry (ac, &priv->active_connections_lst_head, active_connections_lst) {
 		NMSettingsConnection *con;
@@ -964,10 +970,37 @@ active_connection_find_first (NMManager *self,
 			continue;
 		if (nm_active_connection_get_state (ac) > max_state)
 			continue;
-		return ac;
+
+		if (!out_all_matching)
+			return ac;
+
+		if (!best_ac) {
+			best_ac = ac;
+			continue;
+		}
+
+		if (!all) {
+			all = g_ptr_array_new_with_free_func (g_object_unref);
+			g_ptr_array_add (all, g_object_ref (best_ac));
+		}
+		g_ptr_array_add (all, g_object_ref (ac));
 	}
 
-	return NULL;
+	if (!best_ac)
+		return NULL;
+
+	/* as an optimization, we only allocate out_all_matching, if there are more
+	 * than one result. If there is only one result, we only return the single
+	 * element and don't bother allocating an array. That's the common case.
+	 *
+	 * Also, in case we have multiple results, we return the *first* one
+	 * as @best_ac. */
+	nm_assert (   !all
+	           || (   all->len >= 2
+	               && all->pdata[0] == best_ac));
+
+	*out_all_matching = all;
+	return best_ac;
 }
 
 static NMActiveConnection *
@@ -982,10 +1015,11 @@ active_connection_find_first_by_connection (NMManager *self,
 	is_settings_connection = NM_IS_SETTINGS_CONNECTION (connection);
 	/* Depending on whether connection is a settings connection,
 	 * either lookup by object-identity of @connection, or compare the UUID */
-	return active_connection_find_first (self,
-	                                     is_settings_connection ? NM_SETTINGS_CONNECTION (connection) : NULL,
-	                                     is_settings_connection ? NULL : nm_connection_get_uuid (connection),
-	                                     NM_ACTIVE_CONNECTION_STATE_DEACTIVATING);
+	return active_connection_find (self,
+	                               is_settings_connection ? NM_SETTINGS_CONNECTION (connection) : NULL,
+	                               is_settings_connection ? NULL : nm_connection_get_uuid (connection),
+	                               NM_ACTIVE_CONNECTION_STATE_DEACTIVATING,
+	                               NULL);
 }
 
 static gboolean
@@ -996,7 +1030,7 @@ _get_activatable_connections_filter (NMSettings *settings,
 	if (NM_FLAGS_HAS (nm_settings_connection_get_flags (connection),
 	                  NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE))
 		return FALSE;
-	return !active_connection_find_first (user_data, connection, NULL, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING);
+	return !active_connection_find (user_data, connection, NULL, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING, NULL);
 }
 
 NMSettingsConnection **
@@ -2031,7 +2065,7 @@ connection_flags_changed (NMSettings *settings,
 	                   NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE))
 		return;
 
-	if (active_connection_find_first (self, connection, NULL, NM_ACTIVE_CONNECTION_STATE_DEACTIVATED)) {
+	if (active_connection_find (self, connection, NULL, NM_ACTIVE_CONNECTION_STATE_DEACTIVATED, NULL)) {
 		/* the connection still have an active-connection. It will be purged
 		 * when the active connection(s) get(s) removed. */
 		return;
@@ -2405,8 +2439,9 @@ get_existing_connection (NMManager *self,
 	 */
 	if (   assume_state_connection_uuid
 	    && (connection_checked = nm_settings_get_connection_by_uuid (priv->settings, assume_state_connection_uuid))
-	    && !active_connection_find_first (self, connection_checked, NULL,
-	                                      NM_ACTIVE_CONNECTION_STATE_DEACTIVATING)
+	    && !active_connection_find (self, connection_checked, NULL,
+	                                NM_ACTIVE_CONNECTION_STATE_DEACTIVATING,
+	                                NULL)
 	    && nm_device_check_connection_compatible (device, NM_CONNECTION (connection_checked))) {
 
 		if (connection) {
@@ -3428,8 +3463,9 @@ find_master (NMManager *self,
 	if (out_master_device)
 		*out_master_device = master_device;
 	if (out_master_ac && master_connection) {
-		*out_master_ac = active_connection_find_first (self, master_connection, NULL,
-		                                               NM_ACTIVE_CONNECTION_STATE_DEACTIVATING);
+		*out_master_ac = active_connection_find (self, master_connection, NULL,
+		                                         NM_ACTIVE_CONNECTION_STATE_DEACTIVATING,
+		                                         NULL);
 	}
 
 	if (master_device || master_connection)
@@ -4079,7 +4115,7 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	autoconnect_slaves (self, connection, device, nm_active_connection_get_subject (active));
 
 	/* Disconnect the connection if connected or queued on another device */
-	existing_ac = active_connection_find_first (self, connection, NULL, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING);
+	existing_ac = active_connection_find (self, connection, NULL, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING, NULL);
 	if (existing_ac) {
 		existing = nm_active_connection_get_device (existing_ac);
 		if (existing)
