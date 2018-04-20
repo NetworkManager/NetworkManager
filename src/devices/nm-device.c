@@ -2329,26 +2329,37 @@ concheck_periodic_schedule_set (NMDevice *self,
 	case CONCHECK_SCHEDULE_UPDATE_INTERVAL:
 		/* called with "UPDATE_INTERVAL" and already have a concheck_p_cur_id scheduled. */
 
+		nm_assert (priv->concheck_p_max_interval > 0);
+		nm_assert (priv->concheck_p_cur_interval > 0);
+
 		if (priv->concheck_p_cur_interval <= priv->concheck_p_max_interval) {
-			/* we currently have a shorter interval set, then what we now have. Either,
+			/* we currently have a shorter interval set, than what we now have. Either,
 			 * because we are probing, or because the previous max interval was shorter.
 			 *
-			 * Either way, the current timer is set just fine. Nothing to do. */
+			 * Either way, the current timer is set just fine. Nothing to do, we will
+			 * probe our way up. */
 			return;
 		}
 
 		cur_expiry = priv->concheck_p_cur_basetime_ns + (priv->concheck_p_max_interval * NM_UTILS_NS_PER_SECOND);
+		nm_utils_get_monotonic_timestamp_ns_cached (&now_ns);
+
 		priv->concheck_p_cur_interval = priv->concheck_p_max_interval;
-		priv->concheck_p_cur_basetime_ns = nm_utils_get_monotonic_timestamp_ns_cached (&now_ns);
 		if (cur_expiry <= now_ns) {
-			/* the last timer was scheduled longer ago then the new desired interval. It means,
-			 * we must schedule a timer right away */
-			if (concheck_periodic_schedule_do (self, priv->concheck_p_cur_interval * NM_UTILS_NS_PER_SECOND)) {
+			/* Since the last time we scheduled a periodic check, already more than the
+			 * new max_interval passed. We need to start a check right away (and
+			 * schedule a timeout in cur-interval in the future). */
+			priv->concheck_p_cur_basetime_ns = now_ns;
+			if (concheck_periodic_schedule_do (self, priv->concheck_p_cur_interval * NM_UTILS_NS_PER_SECOND))
 				concheck_start (self, NULL, NULL, TRUE);
-			}
 		} else {
-			/* we only need to reset the timer. */
-			concheck_periodic_schedule_do (self, (cur_expiry - now_ns) / NM_UTILS_NS_PER_MSEC);
+			/* we are reducing the max-interval to a shorter interval that we have currently
+			 * scheduled (with cur_interval).
+			 *
+			 * However, since the last time we scheduled the check, not even the new max-interval
+			 * expired. All we need to do, is reschedule the timer to expire sooner. The cur_basetime
+			 * is unchanged. */
+			concheck_periodic_schedule_do (self, cur_expiry - now_ns);
 		}
 		return;
 
