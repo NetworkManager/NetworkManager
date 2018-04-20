@@ -2428,7 +2428,7 @@ nm_device_check_connectivity_update_interval (NMDevice *self)
 }
 
 static void
-concheck_update_state (NMDevice *self, NMConnectivityState state, gboolean is_periodic)
+concheck_update_state (NMDevice *self, NMConnectivityState state, gboolean allow_periodic_bump)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
@@ -2465,8 +2465,7 @@ concheck_update_state (NMDevice *self, NMConnectivityState state, gboolean is_pe
 	if (priv->connectivity_state == state) {
 		/* we got a connectivty update, but the state didn't change. If we were probing,
 		 * we bump the probe frequency. */
-		if (   is_periodic
-		    && priv->concheck_p_cur_id)
+		if (allow_periodic_bump)
 			concheck_periodic_schedule_set (self, CONCHECK_SCHEDULE_RETURNED_BUMP);
 		return;
 	}
@@ -2482,8 +2481,7 @@ concheck_update_state (NMDevice *self, NMConnectivityState state, gboolean is_pe
 		 * the timeout interval to the min. */
 		concheck_periodic_schedule_set (self, CONCHECK_SCHEDULE_RETURNED_MIN);
 	} else {
-		if (   is_periodic
-		    && priv->concheck_p_cur_id)
+		if (allow_periodic_bump)
 			concheck_periodic_schedule_set (self, CONCHECK_SCHEDULE_RETURNED_BUMP);
 	}
 
@@ -2542,6 +2540,9 @@ concheck_cb (NMConnectivity *connectivity,
 	NMDeviceConnectivityHandle *handle;
 	NMDeviceConnectivityHandle *other_handle;
 	gboolean handle_is_alive;
+	gboolean allow_periodic_bump;
+	gboolean any_periodic_before;
+	gboolean any_periodic_after;
 	guint64 seq;
 
 	handle = user_data;
@@ -2577,8 +2578,35 @@ concheck_cb (NMConnectivity *connectivity,
 
 	seq = handle->seq;
 
+	/* find out, if there are any periodic checks pending (either whether they
+	 * were scheduled before or after @handle. */
+	any_periodic_before = FALSE;
+	any_periodic_after = FALSE;
+	c_list_for_each_entry (other_handle, &priv->concheck_lst_head, concheck_lst) {
+		if (other_handle->is_periodic) {
+			if (other_handle->seq < seq)
+				any_periodic_before = TRUE;
+			else if (other_handle->seq > seq)
+				any_periodic_after = TRUE;
+		}
+	}
+	if (NM_IN_SET (state, NM_CONNECTIVITY_ERROR)) {
+		/* the request failed. We consider this periodic check only as completed if
+		 * this was a periodic check, and there are not checks pending (either
+		 * before or after this one).
+		 *
+		 * We allow_periodic_bump, if the request failed and there are
+		 * still other requests periodic pending. */
+		allow_periodic_bump = handle->is_periodic && !any_periodic_before && !any_periodic_after;
+	} else {
+		/* the request succeeded. This marks the completion of a periodic check,
+		 * if this handle was periodic, or any previously scheduled one (that
+		 * we are going to complete below). */
+		allow_periodic_bump = handle->is_periodic || any_periodic_before;
+	}
+
 	/* first update the new state, and emit signals. */
-	concheck_update_state (self, state, handle->is_periodic);
+	concheck_update_state (self, state, allow_periodic_bump);
 
 	handle_is_alive = FALSE;
 
@@ -2682,6 +2710,10 @@ nm_device_check_connectivity_cancel (NMDeviceConnectivityHandle *handle)
 	g_return_if_fail (handle);
 	g_return_if_fail (NM_IS_DEVICE (handle->self));
 	g_return_if_fail (!c_list_is_empty (&handle->concheck_lst));
+
+	/* nobody has access to periodic handles, and cannot cancel
+	 * them externally. */
+	nm_assert (!handle->is_periodic);
 
 	nm_utils_error_set_cancelled (&cancelled_error, FALSE, "NMDevice");
 	concheck_handle_complete (handle, cancelled_error);
