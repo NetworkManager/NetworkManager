@@ -2238,9 +2238,10 @@ concheck_periodic_timeout_cb (gpointer user_data)
 {
 	NMDevice *self = user_data;
 
+	_LOGt (LOGD_CONCHECK, "connectivity: periodic timeout");
 	concheck_periodic_schedule_set (self, CONCHECK_SCHEDULE_CHECK_PERIODIC);
 	concheck_start (self, NULL, NULL, TRUE);
-	return G_SOURCE_CONTINUE;
+	return G_SOURCE_REMOVE;
 }
 
 static gboolean
@@ -2303,7 +2304,7 @@ concheck_periodic_schedule_set (NMDevice *self,
                                 ConcheckScheduleMode mode)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	gint64 new_expiry, cur_expiry, tdiff;
+	gint64 new_expiry, exp_expiry, cur_expiry, tdiff;
 	gint64 now_ns = 0;
 
 	if (priv->concheck_p_max_interval == 0) {
@@ -2370,9 +2371,20 @@ concheck_periodic_schedule_set (NMDevice *self,
 		return;
 
 	case CONCHECK_SCHEDULE_CHECK_PERIODIC:
-		/* we schedule a periodic connectivity check now. We just remember the time when
-		 * we did it. There is nothing to reschedule, it's fine already. */
-		priv->concheck_p_cur_basetime_ns = nm_utils_get_monotonic_timestamp_ns_cached (&now_ns);
+		/* we just reached a timeout. The expected expiry (exp_expiry) should be
+		 * pretty close to now_ns.
+		 *
+		 * We want to reschedule the timeout at exp_expiry (aka now) + cur_interval. */
+		nm_utils_get_monotonic_timestamp_ns_cached (&now_ns);
+		exp_expiry = priv->concheck_p_cur_basetime_ns + (priv->concheck_p_cur_interval * NM_UTILS_NS_PER_SECOND);
+		if (exp_expiry > now_ns) {
+			/* ok, we expired earlier than expected. Truncate to now_ns. */
+			exp_expiry = now_ns;
+		}
+		new_expiry = exp_expiry + (priv->concheck_p_cur_interval * NM_UTILS_NS_PER_SECOND);
+		tdiff = NM_MAX (new_expiry - now_ns, 0);
+		priv->concheck_p_cur_basetime_ns = (now_ns + tdiff) - (priv->concheck_p_cur_interval * NM_UTILS_NS_PER_SECOND);
+		concheck_periodic_schedule_do (self, tdiff);
 		return;
 
 	/* we just got an event that we lost connectivity (that is, concheck returned). We reset
@@ -2396,7 +2408,7 @@ concheck_periodic_schedule_set (NMDevice *self,
 	 * the connectivity check. */
 	new_expiry = priv->concheck_p_cur_basetime_ns + (priv->concheck_p_cur_interval * NM_UTILS_NS_PER_SECOND);
 	tdiff = NM_MAX (new_expiry - nm_utils_get_monotonic_timestamp_ns_cached (&now_ns), 0);
-	priv->concheck_p_cur_basetime_ns = now_ns - tdiff;
+	priv->concheck_p_cur_basetime_ns = now_ns + tdiff - (priv->concheck_p_cur_interval * NM_UTILS_NS_PER_SECOND);
 	concheck_periodic_schedule_do (self, tdiff);
 }
 
