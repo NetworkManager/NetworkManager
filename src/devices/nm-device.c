@@ -165,6 +165,8 @@ struct _NMDeviceConnectivityHandle {
 	NMConnectivityCheckHandle *c_handle;
 	guint64 seq;
 	bool is_periodic:1;
+	bool is_periodic_bump:1;
+	bool is_periodic_bump_on_complete:1;
 };
 
 /*****************************************************************************/
@@ -2240,7 +2242,6 @@ concheck_periodic_timeout_cb (gpointer user_data)
 
 	_LOGt (LOGD_CONCHECK, "connectivity: periodic timeout");
 	concheck_periodic_schedule_set (self, CONCHECK_SCHEDULE_CHECK_PERIODIC);
-	concheck_start (self, NULL, NULL, TRUE);
 	return G_SOURCE_REMOVE;
 }
 
@@ -2371,21 +2372,47 @@ concheck_periodic_schedule_set (NMDevice *self,
 		return;
 
 	case CONCHECK_SCHEDULE_CHECK_PERIODIC:
+	{
+		gboolean any_periodic_pending;
+		NMDeviceConnectivityHandle *handle;
+		guint old_interval = priv->concheck_p_cur_interval;
+
+		any_periodic_pending = FALSE;
+		c_list_for_each_entry (handle, &priv->concheck_lst_head, concheck_lst) {
+			if (handle->is_periodic_bump) {
+				handle->is_periodic_bump = FALSE;
+				handle->is_periodic_bump_on_complete = FALSE;
+				any_periodic_pending = TRUE;
+			}
+		}
+		if (any_periodic_pending) {
+			/* we reached a timeout to schedule a new periodic request, however we still
+			 * have period requests pending that didn't complete yet. We need to bump the
+			 * interval already. */
+			priv->concheck_p_cur_interval = NM_MIN (old_interval * 2, priv->concheck_p_max_interval);
+		}
+
 		/* we just reached a timeout. The expected expiry (exp_expiry) should be
 		 * pretty close to now_ns.
 		 *
 		 * We want to reschedule the timeout at exp_expiry (aka now) + cur_interval. */
 		nm_utils_get_monotonic_timestamp_ns_cached (&now_ns);
-		exp_expiry = priv->concheck_p_cur_basetime_ns + (priv->concheck_p_cur_interval * NM_UTILS_NS_PER_SECOND);
-		if (exp_expiry > now_ns) {
-			/* ok, we expired earlier than expected. Truncate to now_ns. */
-			exp_expiry = now_ns;
-		}
+		exp_expiry = priv->concheck_p_cur_basetime_ns + (old_interval * NM_UTILS_NS_PER_SECOND);
 		new_expiry = exp_expiry + (priv->concheck_p_cur_interval * NM_UTILS_NS_PER_SECOND);
 		tdiff = NM_MAX (new_expiry - now_ns, 0);
 		priv->concheck_p_cur_basetime_ns = (now_ns + tdiff) - (priv->concheck_p_cur_interval * NM_UTILS_NS_PER_SECOND);
 		concheck_periodic_schedule_do (self, tdiff);
+		handle = concheck_start (self, NULL, NULL, TRUE);
+		if (old_interval != priv->concheck_p_cur_interval) {
+			/* we just bumped the interval already when scheduling this check.
+			 * When the handle returns, don't bump a second time.
+			 *
+			 * But if we reach the timeout again before the handle returns (this
+			 * code here) we will still bump the interval. */
+			handle->is_periodic_bump_on_complete = FALSE;
+		}
 		return;
+	}
 
 	/* we just got an event that we lost connectivity (that is, concheck returned). We reset
 	 * the interval to min/max or increase the probe interval (bump). */
@@ -2595,7 +2622,7 @@ concheck_cb (NMConnectivity *connectivity,
 	any_periodic_before = FALSE;
 	any_periodic_after = FALSE;
 	c_list_for_each_entry (other_handle, &priv->concheck_lst_head, concheck_lst) {
-		if (other_handle->is_periodic) {
+		if (other_handle->is_periodic_bump_on_complete) {
 			if (other_handle->seq < seq)
 				any_periodic_before = TRUE;
 			else if (other_handle->seq > seq)
@@ -2609,12 +2636,15 @@ concheck_cb (NMConnectivity *connectivity,
 		 *
 		 * We allow_periodic_bump, if the request failed and there are
 		 * still other requests periodic pending. */
-		allow_periodic_bump = handle->is_periodic && !any_periodic_before && !any_periodic_after;
+		allow_periodic_bump =    handle->is_periodic_bump_on_complete
+		                      && !any_periodic_before
+		                      && !any_periodic_after;
 	} else {
 		/* the request succeeded. This marks the completion of a periodic check,
 		 * if this handle was periodic, or any previously scheduled one (that
 		 * we are going to complete below). */
-		allow_periodic_bump = handle->is_periodic || any_periodic_before;
+		allow_periodic_bump =    handle->is_periodic_bump_on_complete
+		                      || any_periodic_before;
 	}
 
 	/* first update the new state, and emit signals. */
@@ -2685,6 +2715,8 @@ concheck_start (NMDevice *self,
 	handle->callback = callback;
 	handle->user_data = user_data;
 	handle->is_periodic = is_periodic;
+	handle->is_periodic_bump = is_periodic;
+	handle->is_periodic_bump_on_complete = is_periodic;
 
 	c_list_link_tail (&priv->concheck_lst_head, &handle->concheck_lst);
 
