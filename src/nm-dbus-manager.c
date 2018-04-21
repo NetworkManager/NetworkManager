@@ -83,6 +83,7 @@ typedef struct {
 	GDBusConnection *connection;
 	GDBusProxy *proxy;
 	guint objmgr_registration_id;
+	gboolean started;
 } NMDBusManagerPrivate;
 
 struct _NMDBusManager {
@@ -930,6 +931,7 @@ _obj_register (NMDBusManager *self,
 
 	nm_assert (c_list_is_empty (&obj->internal.registration_lst_head));
 	nm_assert (priv->connection);
+	nm_assert (priv->started);
 
 	n_klasses = 0;
 	gtype = G_OBJECT_TYPE (obj);
@@ -1107,7 +1109,7 @@ _nm_dbus_manager_obj_export (NMDBusObject *obj)
 		nm_assert_not_reached ();
 	c_list_link_tail (&priv->objects_lst_head, &obj->internal.objects_lst);
 
-	if (priv->connection)
+	if (priv->connection && priv->started)
 		_obj_register (self, obj);
 }
 
@@ -1306,7 +1308,7 @@ _nm_dbus_manager_obj_emit_signal (NMDBusObject *obj,
 	self = obj->internal.bus_manager;
 	priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 
-	if (!priv->connection) {
+	if (!priv->connection || !priv->started) {
 		nm_g_variant_unref_floating (args);
 		return;
 	}
@@ -1453,10 +1455,28 @@ static const GDBusInterfaceInfo interface_info_objmgr = NM_DEFINE_GDBUS_INTERFAC
 
 /*****************************************************************************/
 
-gboolean
+void
 nm_dbus_manager_start (NMDBusManager *self,
                        NMDBusManagerSetPropertyHandler set_property_handler,
                        gpointer set_property_handler_data)
+{
+	NMDBusManagerPrivate *priv;
+	NMDBusObject *obj;
+
+	g_return_if_fail (NM_IS_DBUS_MANAGER (self));
+	priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
+	g_return_if_fail (priv->connection);
+
+	priv->set_property_handler = set_property_handler;
+	priv->set_property_handler_data = set_property_handler_data;
+	priv->started = TRUE;
+
+	c_list_for_each_entry (obj, &priv->objects_lst_head, internal.objects_lst)
+		_obj_register (self, obj);
+}
+
+gboolean
+nm_dbus_manager_acquire_bus (NMDBusManager *self)
 {
 	NMDBusManagerPrivate *priv;
 	gs_free_error GError *error = NULL;
@@ -1465,16 +1485,10 @@ nm_dbus_manager_start (NMDBusManager *self,
 	gs_unref_object GDBusProxy *proxy = NULL;
 	guint32 result;
 	guint registration_id;
-	NMDBusObject *obj;
 
 	g_return_val_if_fail (NM_IS_DBUS_MANAGER (self), FALSE);
 
 	priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
-
-	priv->set_property_handler = set_property_handler;
-	priv->set_property_handler_data = set_property_handler_data;
-
-	g_return_val_if_fail (!priv->connection, FALSE);
 
 	/* we will create the D-Bus connection and registering the name synchronously.
 	 * The reason why that is necessary is because:
@@ -1556,9 +1570,6 @@ nm_dbus_manager_start (NMDBusManager *self,
 	priv->proxy = g_steal_pointer (&proxy);
 
 	_LOGI ("acquired D-Bus service \"%s\"", NM_DBUS_SERVICE);
-
-	c_list_for_each_entry (obj, &priv->objects_lst_head, internal.objects_lst)
-		_obj_register (self, obj);
 
 	return TRUE;
 }
