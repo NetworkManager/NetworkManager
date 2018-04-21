@@ -27,6 +27,7 @@
 #include "nm-dbus-interface.h"
 #include "nm-utils.h"
 #include "nm-dbus-object.h"
+#include "nm-core-utils.h"
 
 /*****************************************************************************/
 
@@ -58,22 +59,14 @@ nm_dhcp6_config_set_options (NMDhcp6Config *self,
                              GHashTable *options)
 {
 	NMDhcp6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (self);
-	GHashTableIter iter;
-	const char *key, *value;
-	GVariantBuilder builder;
+	GVariant *val;
 
 	g_return_if_fail (NM_IS_DHCP6_CONFIG (self));
-	g_return_if_fail (options != NULL);
+	g_return_if_fail (options);
 
+	val = nm_utils_strdict_to_variant (options);
 	g_variant_unref (priv->options);
-
-	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
-	g_hash_table_iter_init (&iter, options);
-	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &value))
-		g_variant_builder_add (&builder, "{sv}", key, g_variant_new_string (value));
-
-	priv->options = g_variant_builder_end (&builder);
-	g_variant_ref_sink (priv->options);
+	priv->options = g_variant_ref_sink (val);
 	_notify (self, PROP_OPTIONS);
 }
 
