@@ -1527,7 +1527,7 @@ nm_dbus_manager_start (NMDBusManager *self,
 	                                NULL,
 	                                &error);
 	if (!ret) {
-		_LOGE ("fatal failure to aquire D-Bus service \"%s"": %s",
+		_LOGE ("fatal failure to acquire D-Bus service \"%s"": %s",
 		       NM_DBUS_SERVICE, error->message);
 		return FALSE;
 	}
@@ -1555,7 +1555,7 @@ nm_dbus_manager_start (NMDBusManager *self,
 	priv->connection = g_steal_pointer (&connection);
 	priv->proxy = g_steal_pointer (&proxy);
 
-	_LOGI ("aquired D-Bus service \"%s\"", NM_DBUS_SERVICE);
+	_LOGI ("acquired D-Bus service \"%s\"", NM_DBUS_SERVICE);
 
 	c_list_for_each_entry (obj, &priv->objects_lst_head, internal.objects_lst)
 		_obj_register (self, obj);

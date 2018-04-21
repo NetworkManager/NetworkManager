@@ -892,7 +892,7 @@ _dbus_request_name_done (GObject *source_object,
 		}
 	}
 
-	_LOGD ("dbus: aquired D-Bus service %s and exported %s object",
+	_LOGD ("dbus: acquired D-Bus service %s and exported %s object",
 	       IFCFGRH1_BUS_NAME,
 	       IFCFGRH1_OBJECT_PATH);
 }
