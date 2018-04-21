@@ -375,11 +375,11 @@ print_dhcp_config (NMDhcpConfig *dhcp,
 
 	table = nm_dhcp_config_get_options (dhcp);
 	if (table) {
-		GHashTableIter table_iter;
-		gpointer key, value;
 		char **options_arr = NULL;
 		int i = 0;
 		NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
+		gs_free const char **keys = NULL;
+		guint k, nkeys;
 
 		tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_dhcp_config;
 		out_indices = parse_output_fields (one_field,
@@ -387,10 +387,12 @@ print_dhcp_config (NMDhcpConfig *dhcp,
 		arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_FIELD_NAMES);
 		g_ptr_array_add (out.output_data, arr);
 
-		options_arr = g_new (char *, g_hash_table_size (table) + 1);
-		g_hash_table_iter_init (&table_iter, table);
-		while (g_hash_table_iter_next (&table_iter, &key, &value))
-			options_arr[i++] = g_strdup_printf ("%s = %s", (char *) key, (char *) value);
+		keys = (const char **) g_hash_table_get_keys_as_array (table, &nkeys);
+		nm_utils_strv_sort (keys, nkeys);
+
+		options_arr = g_new (char *, nkeys + 1);
+		for (k = 0; k < nkeys; k++)
+			options_arr[i++] = g_strdup_printf ("%s = %s", keys[k], (const char *) g_hash_table_lookup (table, keys[k]));
 		options_arr[i] = NULL;
 
 		arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_SECTION_PREFIX);
