@@ -24,6 +24,7 @@
 #include <stdarg.h>
 #include <unistd.h>
 #include <string.h>
+#include <linux/pkt_sched.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -9631,6 +9632,125 @@ test_utils_ignore (void)
 	do_test_utils_ignored ("ignored-augtmp", "ifcfg-FooBar" AUGTMP_TAG, TRUE);
 }
 
+static void
+test_tc_read (void)
+{
+	NMConnection *connection;
+	NMSettingTCConfig *s_tc;
+	NMTCQdisc *qdisc;
+	NMTCTfilter *filter;
+	char *str;
+
+	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-tc",
+	                                    NULL, TYPE_ETHERNET,NULL);
+
+	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "eth0");
+
+	s_tc = nm_connection_get_setting_tc_config (connection);
+	g_assert (s_tc);
+
+	g_assert_cmpint (nm_setting_tc_config_get_num_qdiscs (s_tc), ==, 1);
+	qdisc = nm_setting_tc_config_get_qdisc (s_tc, 0);
+	g_assert (qdisc);
+	g_assert_cmpint (nm_tc_qdisc_get_parent (qdisc), ==, TC_H_ROOT);
+	g_assert_cmpint (nm_tc_qdisc_get_handle (qdisc), ==, TC_H_UNSPEC);
+	g_assert_cmpstr (nm_tc_qdisc_get_kind (qdisc), ==, "fq_codel");
+
+	g_assert_cmpint (nm_setting_tc_config_get_num_tfilters (s_tc), ==, 1);
+	filter = nm_setting_tc_config_get_tfilter (s_tc, 0);
+	g_assert (filter);
+	str = nm_utils_tc_tfilter_to_str (filter, NULL);
+	g_assert_cmpstr (str, ==, "parent 1234: matchall action simple sdata Hello");
+	g_free (str);
+
+	g_object_unref (connection);
+}
+
+static void
+test_tc_write (void)
+{
+	nmtst_auto_unlinkfile char *testfile = NULL;
+	gs_unref_object NMConnection *connection = NULL;
+	gs_unref_object NMConnection *reread = NULL;
+	NMSettingConnection *s_con;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
+	NMSettingWired *s_wired;
+	NMSettingTCConfig *s_tc;
+	NMTCQdisc *qdisc;
+	NMTCTfilter *tfilter;
+	NMIPAddress *addr;
+	GError *error = NULL;
+
+	connection = nm_simple_connection_new ();
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write TC config",
+	              NM_SETTING_CONNECTION_UUID, nm_utils_uuid_generate_a (),
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, "eth0",
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NULL);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.1",
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
+	              NULL);
+
+	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
+
+	/* IP6 setting */
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NULL);
+
+	/* TC setting */
+	s_tc = (NMSettingTCConfig *) nm_setting_tc_config_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_tc));
+
+	qdisc = nm_tc_qdisc_new ("pfifo_fast", TC_H_MAKE (0x2468 << 16, 0x2), &error);
+	g_assert_no_error (error);
+	nm_setting_tc_config_add_qdisc (s_tc, qdisc);
+	nm_tc_qdisc_unref (qdisc);
+
+	tfilter = nm_utils_tc_tfilter_from_str ("parent 1234: matchall action simple sdata Hello", &error);
+	g_assert_no_error (error);
+	nm_setting_tc_config_add_tfilter (s_tc, tfilter);
+	nm_tc_tfilter_unref (tfilter);
+
+	nm_connection_add_setting (connection, nm_setting_proxy_new ());
+
+	nmtst_assert_connection_verifies_without_normalization (connection);
+
+	_writer_new_connec_exp (connection,
+	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_IFCFG_DIR "/network-scripts/ifcfg-test-tc-write.cexpected",
+	                        &testfile);
+
+	reread = _connection_from_file (testfile, NULL, TYPE_BOND, NULL);
+
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
+}
+
 /*****************************************************************************/
 
 #define TPATH "/settings/plugins/ifcfg-rh/"
@@ -9912,6 +10032,9 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "utils/name", test_utils_name);
 	g_test_add_func (TPATH "utils/path", test_utils_path);
 	g_test_add_func (TPATH "utils/ignore", test_utils_ignore);
+
+	g_test_add_func (TPATH "tc/read", test_tc_read);
+	g_test_add_func (TPATH "tc/write", test_tc_write);
 
 	return g_test_run ();
 }

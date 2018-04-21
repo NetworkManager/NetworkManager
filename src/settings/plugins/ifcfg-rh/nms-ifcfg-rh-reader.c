@@ -1999,11 +1999,15 @@ make_tc_setting (shvarFile *ifcfg)
 			break;
 
 		qdisc = nm_utils_tc_qdisc_from_str (value, &local);
-		if (!qdisc)
-			PARSE_WARNING ("ignoring bad qdisc: '%s': %s", value, local->message);
+		if (!qdisc) {
+			PARSE_WARNING ("ignoring bad tc qdisc: '%s': %s", value, local->message);
+			continue;
+		}
 
 		if (!nm_setting_tc_config_add_qdisc (s_tc, qdisc))
-			PARSE_WARNING ("duplicate qdisc");
+			PARSE_WARNING ("duplicate tc qdisc");
+
+		nm_tc_qdisc_unref (qdisc);
 	}
 
 	for (i = 1;; i++) {
@@ -2017,11 +2021,15 @@ make_tc_setting (shvarFile *ifcfg)
 			break;
 
 		tfilter = nm_utils_tc_tfilter_from_str (value, &local);
-		if (!tfilter)
-			PARSE_WARNING ("ignoring bad tfilter: '%s': %s", value, local->message);
+		if (!tfilter) {
+			PARSE_WARNING ("ignoring bad tc filter: '%s': %s", value, local->message);
+			continue;
+		}
 
 		if (!nm_setting_tc_config_add_tfilter (s_tc, tfilter))
-			PARSE_WARNING ("duplicate filter");
+			PARSE_WARNING ("duplicate tc filter");
+
+		nm_tc_tfilter_unref (tfilter);
 	}
 
 	if (   nm_setting_tc_config_get_num_qdiscs (s_tc) > 0
