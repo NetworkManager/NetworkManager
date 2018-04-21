@@ -32,13 +32,13 @@ gboolean print_dhcp_config (NMDhcpConfig *dhcp, const NmcConfig *nmc_config, con
 NMConnection *nmc_find_connection (const GPtrArray *connections,
                                    const char *filter_type,
                                    const char *filter_val,
-                                   int *start,
+                                   GPtrArray **out_result,
                                    gboolean complete);
 
 NMActiveConnection *nmc_find_active_connection (const GPtrArray *active_cons,
                                                 const char *filter_type,
                                                 const char *filter_val,
-                                                int *idx,
+                                                GPtrArray **out_result,
                                                 gboolean complete);
 
 void nmc_secrets_requested (NMSecretAgentSimple *agent,

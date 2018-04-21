@@ -412,8 +412,11 @@ print_dhcp_config (NMDhcpConfig *dhcp,
  * @connections: array of NMConnections to search in
  * @filter_type: "id", "uuid", "path" or %NULL
  * @filter_val: connection to find (connection name, UUID or path)
- * @start: where to start in @list. The location is updated so that the function
- *   can be called multiple times (for connections with the same name).
+ * @out_result: if not NULL, attach all matching connection to this
+ *   list. If necessary, a new array will be allocated. If the array
+ *   already contains a connection, it will not be added a second time.
+ *   All object are referenced by the array. If the function allocates
+ *   a new array, it will set the free function to g_object_unref.
  * @complete: print possible completions
  *
  * Find a connection in @list according to @filter_val. @filter_type determines
@@ -428,17 +431,18 @@ NMConnection *
 nmc_find_connection (const GPtrArray *connections,
                      const char *filter_type,
                      const char *filter_val,
-                     int *start,
+                     GPtrArray **out_result,
                      gboolean complete)
 {
 	NMConnection *connection;
-	NMConnection *found = NULL;
-	guint i;
+	NMConnection *best_candidate = NULL;
+	GPtrArray *result = out_result ? *out_result : NULL;
+	guint i, j;
 
 	nm_assert (connections);
 	nm_assert (filter_val);
 
-	for (i = start ? *start : 0; i < connections->len; i++) {
+	for (i = 0; i < connections->len; i++) {
 		const char *v, *v_num;
 
 		connection = NM_CONNECTION (connections->pdata[i]);
@@ -476,35 +480,39 @@ nmc_find_connection (const GPtrArray *connections,
 
 		continue;
 found:
-		if (!start)
+		if (!out_result)
 			return connection;
-		if (found) {
-			*start = i;
-			return found;
+		if (!best_candidate)
+			best_candidate = connection;
+		if (!result)
+			result = g_ptr_array_new_with_free_func (g_object_unref);
+		for (j = 0; j < result->len; j++) {
+			if (connection == result->pdata[j])
+				break;
 		}
-		found = connection;
+		if (j == result->len)
+			g_ptr_array_add (result, g_object_ref (connection));
 	}
 
-	if (start)
-		*start = 0;
-	return found;
+	NM_SET_OUT (out_result, result);
+	return best_candidate;
 }
 
 NMActiveConnection *
 nmc_find_active_connection (const GPtrArray *active_cons,
                             const char *filter_type,
                             const char *filter_val,
-                            int *idx,
+                            GPtrArray **out_result,
                             gboolean complete)
 {
-	int i;
-	int start = (idx && *idx > 0) ? *idx : 0;
-	NMRemoteConnection *con;
-	NMActiveConnection *found = NULL;
+	guint i, j;
+	NMActiveConnection *best_candidate = NULL;
+	GPtrArray *result = out_result ? *out_result : NULL;
 
 	nm_assert (filter_val);
 
-	for (i = start; i < active_cons->len; i++) {
+	for (i = 0; i < active_cons->len; i++) {
+		NMRemoteConnection *con;
 		NMActiveConnection *candidate = g_ptr_array_index (active_cons, i);
 		const char *v, *v_num;
 
@@ -552,19 +560,24 @@ nmc_find_active_connection (const GPtrArray *active_cons,
 		}
 
 		continue;
+
 found:
-		if (!idx)
+		if (!out_result)
 			return candidate;
-		if (found) {
-			*idx = i;
-			return found;
+		if (!best_candidate)
+			best_candidate = candidate;
+		if (!result)
+			result = g_ptr_array_new_with_free_func (g_object_unref);
+		for (j = 0; j < result->len; j++) {
+			if (candidate == result->pdata[j])
+				break;
 		}
-		found = candidate;
+		if (j == result->len)
+			g_ptr_array_add (result, g_object_ref (candidate));
 	}
 
-	if (idx)
-		*idx = 0;
-	return found;
+	NM_SET_OUT (out_result, result);
+	return best_candidate;
 }
 
 static gboolean
