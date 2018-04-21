@@ -164,9 +164,9 @@ const NmcMetaGenericInfo *const nmc_fields_con_active_details_vpn[] = {
 const NmcMetaGenericInfo *const nmc_fields_con_active_details_groups[] = {
 	NMC_META_GENERIC_WITH_NESTED ("GENERAL", nmc_fields_con_active_details_general + 1), /* 0 */
 	NMC_META_GENERIC_WITH_NESTED ("IP4",     metagen_ip4_config),                        /* 1 */
-	NMC_META_GENERIC_WITH_NESTED ("DHCP4",   nmc_fields_dhcp4_config + 1),               /* 2 */
+	NMC_META_GENERIC_WITH_NESTED ("DHCP4",   nmc_fields_dhcp_config + 1),                /* 2 */
 	NMC_META_GENERIC_WITH_NESTED ("IP6",     nmc_fields_ip6_config + 1),                 /* 3 */
-	NMC_META_GENERIC_WITH_NESTED ("DHCP6",   nmc_fields_dhcp6_config + 1),               /* 4 */
+	NMC_META_GENERIC_WITH_NESTED ("DHCP6",   nmc_fields_dhcp_config + 1),                /* 4 */
 	NMC_META_GENERIC_WITH_NESTED ("VPN",     nmc_fields_con_active_details_vpn + 1),     /* 5 */
 	NULL,
 };
@@ -1203,7 +1203,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			gboolean b1 = FALSE;
 			NMDhcpConfig *dhcp4 = nm_active_connection_get_dhcp4_config (acon);
 
-			b1 = print_dhcp4_config (dhcp4, &nmc->nmc_config, "DHCP4", group_fld);
+			b1 = print_dhcp_config (dhcp4, &nmc->nmc_config, "DHCP4", group_fld);
 			was_output = was_output || b1;
 		}
 
@@ -1221,7 +1221,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			gboolean b1 = FALSE;
 			NMDhcpConfig *dhcp6 = nm_active_connection_get_dhcp6_config (acon);
 
-			b1 = print_dhcp6_config (dhcp6, &nmc->nmc_config, "DHCP6", group_fld);
+			b1 = print_dhcp_config (dhcp6, &nmc->nmc_config, "DHCP6", group_fld);
 			was_output = was_output || b1;
 		}
 
