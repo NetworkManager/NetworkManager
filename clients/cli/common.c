@@ -433,42 +433,44 @@ nmc_find_connection (const GPtrArray *connections,
 {
 	NMConnection *connection;
 	NMConnection *found = NULL;
-	int i;
-	const char *id;
-	const char *uuid;
-	const char *path, *path_num;
+	guint i;
+
+	nm_assert (connections);
+	nm_assert (filter_val);
 
 	for (i = start ? *start : 0; i < connections->len; i++) {
-		connection = NM_CONNECTION (connections->pdata[i]);
+		const char *v, *v_num;
 
-		id = nm_connection_get_id (connection);
-		uuid = nm_connection_get_uuid (connection);
-		path = nm_connection_get_path (connection);
-		path_num = path ? strrchr (path, '/') + 1 : NULL;
+		connection = NM_CONNECTION (connections->pdata[i]);
 
 		/* When filter_type is NULL, compare connection ID (filter_val)
 		 * against all types. Otherwise, only compare against the specific
 		 * type. If 'path' filter type is specified, comparison against
 		 * numeric index (in addition to the whole path) is allowed.
 		 */
-		if (!filter_type || strcmp (filter_type, "id")  == 0) {
+		if (NM_IN_STRSET (filter_type, NULL, "id")) {
+			v = nm_connection_get_id (connection);
 			if (complete)
-				nmc_complete_strings (filter_val, id, NULL);
-			if (strcmp (filter_val, id) == 0)
+				nmc_complete_strings (filter_val, v, NULL);
+			if (nm_streq0 (filter_val, v))
 				goto found;
 		}
 
-		if (!filter_type || strcmp (filter_type, "uuid") == 0) {
+		if (NM_IN_STRSET (filter_type, NULL, "uuid")) {
+			v = nm_connection_get_uuid (connection);
 			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, uuid, NULL);
-			if (strcmp (filter_val, uuid) == 0)
+				nmc_complete_strings (filter_val, v, NULL);
+			if (nm_streq0 (filter_val, v))
 				goto found;
 		}
 
-		if (!filter_type || strcmp (filter_type, "path") == 0) {
+		if (NM_IN_STRSET (filter_type, NULL, "path")) {
+			v = nm_connection_get_path (connection);
+			v_num = nm_utils_dbus_path_get_last_component (v);
 			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, path, filter_type ? path_num : NULL, NULL);
-		        if (g_strcmp0 (filter_val, path) == 0 || (filter_type && g_strcmp0 (filter_val, path_num) == 0))
+				nmc_complete_strings (filter_val, v, filter_type ? v_num : NULL, NULL);
+			if (   nm_streq0 (filter_val, v)
+			    || (filter_type && nm_streq0 (filter_val, v_num)))
 				goto found;
 		}
 
