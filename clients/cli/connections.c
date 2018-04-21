@@ -519,46 +519,26 @@ construct_header_name (const char *base, const char *spec)
 	return g_strdup_printf ("%s (%s)", base, spec);
 }
 
-static const char *
-active_connection_state_to_string (NMActiveConnectionState state)
-{
-	switch (state) {
-	case NM_ACTIVE_CONNECTION_STATE_ACTIVATING:
-		return _("activating");
-	case NM_ACTIVE_CONNECTION_STATE_ACTIVATED:
-		return _("activated");
-	case NM_ACTIVE_CONNECTION_STATE_DEACTIVATING:
-		return _("deactivating");
-	case NM_ACTIVE_CONNECTION_STATE_DEACTIVATED:
-		return _("deactivated");
-	case NM_ACTIVE_CONNECTION_STATE_UNKNOWN:
-	default:
-		return _("unknown");
-	}
-}
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (active_connection_state_to_string, NMActiveConnectionState,
+	NM_UTILS_LOOKUP_DEFAULT (N_("unknown")),
+	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_ACTIVATING,   N_("activating")),
+	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_ACTIVATED,    N_("activated")),
+	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_DEACTIVATING, N_("deactivating")),
+	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,  N_("deactivated")),
+	NM_UTILS_LOOKUP_ITEM_IGNORE (NM_ACTIVE_CONNECTION_STATE_UNKNOWN),
+)
 
-static const char *
-vpn_connection_state_to_string (NMVpnConnectionState state)
-{
-	switch (state) {
-	case NM_VPN_CONNECTION_STATE_PREPARE:
-		return _("VPN connecting (prepare)");
-	case NM_VPN_CONNECTION_STATE_NEED_AUTH:
-		return _("VPN connecting (need authentication)");
-	case NM_VPN_CONNECTION_STATE_CONNECT:
-		return _("VPN connecting");
-	case NM_VPN_CONNECTION_STATE_IP_CONFIG_GET:
-		return _("VPN connecting (getting IP configuration)");
-	case NM_VPN_CONNECTION_STATE_ACTIVATED:
-		return _("VPN connected");
-	case NM_VPN_CONNECTION_STATE_FAILED:
-		return _("VPN connection failed");
-	case NM_VPN_CONNECTION_STATE_DISCONNECTED:
-		return _("VPN disconnected");
-	default:
-		return _("unknown");
-	}
-}
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (vpn_connection_state_to_string, NMVpnConnectionState,
+	NM_UTILS_LOOKUP_DEFAULT (N_("unknown")),
+	NM_UTILS_LOOKUP_ITEM (NM_VPN_CONNECTION_STATE_PREPARE,       N_("VPN connecting (prepare)")),
+	NM_UTILS_LOOKUP_ITEM (NM_VPN_CONNECTION_STATE_NEED_AUTH,     N_("VPN connecting (need authentication)")),
+	NM_UTILS_LOOKUP_ITEM (NM_VPN_CONNECTION_STATE_CONNECT,       N_("VPN connecting")),
+	NM_UTILS_LOOKUP_ITEM (NM_VPN_CONNECTION_STATE_IP_CONFIG_GET, N_("VPN connecting (getting IP configuration)")),
+	NM_UTILS_LOOKUP_ITEM (NM_VPN_CONNECTION_STATE_ACTIVATED,     N_("VPN connected")),
+	NM_UTILS_LOOKUP_ITEM (NM_VPN_CONNECTION_STATE_FAILED,        N_("VPN connection failed")),
+	NM_UTILS_LOOKUP_ITEM (NM_VPN_CONNECTION_STATE_DISCONNECTED,  N_("VPN disconnected")),
+	NM_UTILS_LOOKUP_ITEM_IGNORE (NM_VPN_CONNECTION_STATE_UNKNOWN),
+)
 
 /* Caller has to free the returned string */
 static char *
@@ -802,7 +782,7 @@ fill_output_connection (NMConnection *connection, NMClient *client, NMCPrintOutp
 	if (ac) {
 		ac_path = nm_object_get_path (NM_OBJECT (ac));
 		ac_state_int = nm_active_connection_get_state (ac);
-		ac_state = active_connection_state_to_string (ac_state_int);
+		ac_state = gettext (active_connection_state_to_string (ac_state_int));
 		ac_dev = get_ac_device_string (ac);
 	}
 
@@ -1196,7 +1176,9 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			if (banner)
 				banner_str = g_strescape (banner, "");
 			vpn_state = nm_vpn_connection_get_vpn_state (NM_VPN_CONNECTION (acon));
-			vpn_state_str = g_strdup_printf ("%d - %s", vpn_state, vpn_connection_state_to_string (vpn_state));
+			vpn_state_str = g_strdup_printf ("%d - %s",
+			                                 vpn_state,
+			                                 gettext (vpn_connection_state_to_string (vpn_state)));
 
 			/* Add values */
 			arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_SECTION_PREFIX);
@@ -4346,8 +4328,8 @@ nmcli_con_add_tab_completion (const char *text, int start, int end)
 	NMMetaSettingType s;
 	char **match_array = NULL;
 	rl_compentry_func_t *generator_func = NULL;
-	gs_free char *no = g_strdup_printf ("[%s]: ", gettext ("no"));
-	gs_free char *yes = g_strdup_printf ("[%s]: ", gettext ("yes"));
+	gs_free char *no = g_strdup_printf ("[%s]: ", _("no"));
+	gs_free char *yes = g_strdup_printf ("[%s]: ", _("yes"));
 
 	/* Disable readline's default filename completion */
 	rl_attempted_completion_over = 1;
