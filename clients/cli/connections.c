@@ -737,84 +737,6 @@ nmc_connection_profile_details (NMConnection *connection, NmCli *nmc)
 	return TRUE;
 }
 
-static NMActiveConnection *
-find_active_connection (const GPtrArray *active_cons,
-                        const GPtrArray *cons,
-                        const char *filter_type,
-                        const char *filter_val,
-                        int *idx,
-                        gboolean complete)
-{
-	int i;
-	int start = (idx && *idx > 0) ? *idx : 0;
-	NMRemoteConnection *con;
-	NMActiveConnection *found = NULL;
-
-	nm_assert (filter_val);
-
-	for (i = start; i < active_cons->len; i++) {
-		NMActiveConnection *candidate = g_ptr_array_index (active_cons, i);
-		const char *v, *v_num;
-
-		con = nm_active_connection_get_connection (candidate);
-
-		/* When filter_type is NULL, compare connection ID (filter_val)
-		 * against all types. Otherwise, only compare against the specific
-		 * type. If 'path' or 'apath' filter types are specified, comparison
-		 * against numeric index (in addition to the whole path) is allowed.
-		 */
-		if (NM_IN_STRSET (filter_type, NULL, "id")) {
-			v = nm_active_connection_get_id (candidate);
-			if (complete)
-				nmc_complete_strings (filter_val, v, NULL);
-			if (nm_streq0 (filter_val, v))
-				goto found;
-		}
-
-		if (NM_IN_STRSET (filter_type, NULL, "uuid")) {
-			v = nm_active_connection_get_uuid (candidate);
-			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, v, NULL);
-			if (nm_streq0 (filter_val, v))
-				goto found;
-		}
-
-		if (NM_IN_STRSET (filter_type, NULL, "path")) {
-			v = con ? nm_connection_get_path (NM_CONNECTION (con)) : NULL;
-			v_num = nm_utils_dbus_path_get_last_component (v);
-			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, v, filter_type ? v_num : NULL, NULL);
-			if (   nm_streq0 (filter_val, v)
-			    || (filter_type && nm_streq0 (filter_val, v_num)))
-				goto found;
-		}
-
-		if (NM_IN_STRSET (filter_type, NULL, "apath")) {
-			v = nm_object_get_path (NM_OBJECT (candidate));
-			v_num = nm_utils_dbus_path_get_last_component (v);
-			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, v, filter_type ? v_num : NULL, NULL);
-			if (   nm_streq0 (filter_val, v)
-			    || (filter_type && nm_streq0 (filter_val, v_num)))
-				goto found;
-		}
-
-		continue;
-found:
-		if (!idx)
-			return candidate;
-		if (found) {
-			*idx = i;
-			return found;
-		}
-		found = candidate;
-	}
-
-	if (idx)
-		*idx = 0;
-	return found;
-}
-
 NMMetaColor
 nmc_active_connection_state_to_color (NMActiveConnectionState state)
 {
@@ -1824,8 +1746,8 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 			if (   !con
 			    && NM_IN_STRSET (selector, NULL, "apath")) {
 				/* Try apath too */
-				acon = find_active_connection (active_cons, connections, "apath", *argv, NULL,
-				                               argc == 1 && nmc->complete);
+				acon = nmc_find_active_connection (active_cons, "apath", *argv, NULL,
+				                                   argc == 1 && nmc->complete);
 				if (acon)
 					con = NM_CONNECTION (nm_active_connection_get_connection (acon));
 			}
@@ -2659,7 +2581,6 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 	/* Get active connections */
 	active_cons = nm_client_get_active_connections (nmc->client);
 	while (arg_num > 0) {
-		const GPtrArray *connections;
 		const char *selector = NULL;
 
 		if (arg_num == 1 && nmc->complete)
@@ -2675,9 +2596,8 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 			}
 		}
 
-		connections = nm_client_get_connections (nmc->client);
-		active = find_active_connection (active_cons, connections, selector, *arg_ptr, &idx,
-		                                 arg_num == 1 && nmc->complete);
+		active = nmc_find_active_connection (active_cons, selector, *arg_ptr, &idx,
+		                                     arg_num == 1 && nmc->complete);
 		if (active) {
 			/* Check if the connection is unique. */
 			/* Calling down for the same connection repeatedly would result in

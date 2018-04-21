@@ -35,6 +35,12 @@ NMConnection *nmc_find_connection (const GPtrArray *connections,
                                    int *start,
                                    gboolean complete);
 
+NMActiveConnection *nmc_find_active_connection (const GPtrArray *active_cons,
+                                                const char *filter_type,
+                                                const char *filter_val,
+                                                int *idx,
+                                                gboolean complete);
+
 void nmc_secrets_requested (NMSecretAgentSimple *agent,
                             const char          *request_id,
                             const char          *title,
