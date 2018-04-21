@@ -55,6 +55,10 @@ void nm_dbus_manager_start (NMDBusManager *self,
                             NMDBusManagerSetPropertyHandler set_property_handler,
                             gpointer set_property_handler_data);
 
+void nm_dbus_manager_stop (NMDBusManager *self);
+
+gboolean nm_dbus_manager_is_stopping (NMDBusManager *self);
+
 GDBusConnection *nm_dbus_manager_get_connection (NMDBusManager *self);
 
 NMDBusObject *nm_dbus_manager_lookup_object (NMDBusManager *self, const char *path);

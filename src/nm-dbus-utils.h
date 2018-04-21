@@ -122,6 +122,7 @@ typedef struct _NMDBusMethodInfoExtended {
 	                const char *sender,
 	                GDBusMethodInvocation *invocation,
 	                GVariant *parameters);
+	bool allow_during_shutdown;
 } NMDBusMethodInfoExtended;
 
 #define NM_DEFINE_DBUS_METHOD_INFO_EXTENDED(parent_, ...) \

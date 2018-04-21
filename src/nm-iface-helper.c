@@ -635,6 +635,12 @@ nm_dbus_manager_get (void)
 	return NULL;
 }
 
+gboolean
+nm_dbus_manager_is_stopping (NMDBusManager *self)
+{
+	return FALSE;
+}
+
 void
 _nm_dbus_manager_obj_export (NMDBusObject *obj)
 {

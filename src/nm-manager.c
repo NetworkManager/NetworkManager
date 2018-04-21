@@ -5918,7 +5918,6 @@ nm_manager_stop (NMManager *self)
 	NMDevice *device;
 
 	/* FIXME(shutdown): we don't do a proper shutdown yet:
-	 *  - need to tell NMDBusManager that all future D-Bus requests are rejected
 	 *  - need to ensure that all pending async operations are cancelled
 	 *    - e.g. operations in priv->async_op_lst_head
 	 *  - need to ensure that no more asynchronous requests are started,
@@ -5930,6 +5929,8 @@ nm_manager_stop (NMManager *self)
 	 *    the chance to complete.
 	 *    - e.g. see comment at nm_auth_manager_force_shutdown()
 	 */
+
+	nm_dbus_manager_stop (nm_dbus_object_get_manager (NM_DBUS_OBJECT (self)));
 
 	while ((device = c_list_first_entry (&priv->devices_lst_head, NMDevice, devices_lst)))
 		remove_device (self, device, TRUE, TRUE);
