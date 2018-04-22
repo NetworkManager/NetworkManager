@@ -3955,7 +3955,6 @@ static gboolean
 _internal_activate_device (NMManager *self, NMActiveConnection *active, GError **error)
 {
 	NMDevice *device, *master_device = NULL;
-	NMActiveConnection *existing_ac;
 	NMConnection *applied;
 	NMSettingsConnection *connection;
 	NMSettingsConnection *master_connection = NULL;
@@ -4119,10 +4118,24 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	/* Check slaves for master connection and possibly activate them */
 	autoconnect_slaves (self, connection, device, nm_active_connection_get_subject (active));
 
-	/* Disconnect the connection if connected or queued on another device */
-	existing_ac = active_connection_find (self, connection, NULL, NM_ACTIVE_CONNECTION_STATE_ACTIVATED, NULL);
-	if (existing_ac)
-		nm_device_disconnect_active_connection (existing_ac);
+	{
+		gs_unref_ptrarray GPtrArray *all_ac_arr = NULL;
+		NMActiveConnection *ac;
+		guint i, n_all;
+
+		/* Disconnect the connection if already connected or queued for activation.
+		 * The connection cannot be active multiple times (at the same time).  */
+		ac = active_connection_find (self, connection, NULL, NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
+		                             &all_ac_arr);
+		if (ac) {
+			n_all = all_ac_arr ? all_ac_arr->len : ((guint) 1);
+			for (i = 0; i < n_all; i++) {
+				nm_device_disconnect_active_connection (  all_ac_arr
+				                                        ? all_ac_arr->pdata[i]
+				                                        : ac);
+			}
+		}
+	}
 
 	/* If the device is there, we can ready it for the activation. */
 	if (nm_device_is_real (device)) {
