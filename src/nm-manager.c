@@ -1004,8 +1004,10 @@ active_connection_find (NMManager *self,
 }
 
 static NMActiveConnection *
-active_connection_find_first_by_connection (NMManager *self,
-                                            NMConnection *connection)
+active_connection_find_by_connection (NMManager *self,
+                                      NMConnection *connection,
+                                      NMActiveConnectionState max_state,
+                                      GPtrArray **out_all_matching)
 {
 	gboolean is_settings_connection;
 
@@ -1018,8 +1020,8 @@ active_connection_find_first_by_connection (NMManager *self,
 	return active_connection_find (self,
 	                               is_settings_connection ? NM_SETTINGS_CONNECTION (connection) : NULL,
 	                               is_settings_connection ? NULL : nm_connection_get_uuid (connection),
-	                               NM_ACTIVE_CONNECTION_STATE_DEACTIVATING,
-	                               NULL);
+	                               max_state,
+	                               out_all_matching);
 }
 
 static gboolean
@@ -3226,7 +3228,7 @@ nm_manager_get_best_device_for_connection (NMManager *self,
 	NMDevice *device;
 	NMDeviceCheckConAvailableFlags flags;
 
-	ac = active_connection_find_first_by_connection (self, connection);
+	ac = active_connection_find_by_connection (self, connection, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING, NULL);
 	if (ac) {
 		act_device = nm_active_connection_get_device (ac);
 		if (act_device)
@@ -4211,7 +4213,7 @@ _new_active_connection (NMManager *self,
 		/* FIXME: for VPN connections, we don't allow re-activating an
 		 * already active connection. It's a bug, and should be fixed together
 		 * when reworking VPN handling. */
-		if (active_connection_find_first_by_connection (self, connection)) {
+		if (active_connection_find_by_connection (self, connection, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING, NULL)) {
 			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_ALREADY_ACTIVE,
 			             "Connection '%s' is already active",
 			             nm_connection_get_id (connection));
