@@ -3226,19 +3226,83 @@ nm_manager_get_best_device_for_connection (NMManager *self,
                                            GHashTable *unavailable_devices)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMActiveConnectionState ac_state;
 	NMActiveConnection *ac;
-	NMDevice *act_device;
+	NMDevice *ac_device;
 	NMDevice *device;
 	NMDeviceCheckConAvailableFlags flags;
-
-	ac = active_connection_find_by_connection (self, connection, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING, NULL);
-	if (ac) {
-		act_device = nm_active_connection_get_device (ac);
-		if (act_device)
-			return act_device;
-	}
+	gs_unref_ptrarray GPtrArray *all_ac_arr = NULL;
 
 	flags = for_user_request ? NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST : NM_DEVICE_CHECK_CON_AVAILABLE_NONE;
+
+	ac = active_connection_find_by_connection (self, connection, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING, &all_ac_arr);
+	if (ac) {
+
+		ac_device = nm_active_connection_get_device (ac);
+		if (   ac_device
+		    && (   (unavailable_devices && g_hash_table_contains (unavailable_devices, ac_device))
+		        || !nm_device_check_connection_available (ac_device, connection, flags, NULL)))
+			ac_device = NULL;
+
+		if (all_ac_arr) {
+			guint i;
+
+			ac_state = nm_active_connection_get_state (ac);
+
+			/* we found several active connections. See which one is the most suitable... */
+			nm_assert (ac == all_ac_arr->pdata[0]);
+			for (i = 1; i < all_ac_arr->len; i++) {
+				NMActiveConnection *ac2 = all_ac_arr->pdata[i];
+				NMDevice *ac_device2 = nm_active_connection_get_device (ac2);
+				NMActiveConnectionState ac_state2;
+
+				if (   !ac_device2
+				    || (unavailable_devices && g_hash_table_contains (unavailable_devices, ac_device2))
+				    || !nm_device_check_connection_available (ac_device2, connection, flags, NULL))
+					continue;
+
+				ac_state2 = nm_active_connection_get_state (ac2);
+
+				if (!ac_device)
+					goto found_better;
+
+				if (ac_state == ac_state2) {
+					/* active-connections are in their list in the order in which they are connected.
+					 * If we have two with same state, the later (newer) one is preferred. */
+					goto found_better;
+				}
+
+				switch (ac_state) {
+				case NM_ACTIVE_CONNECTION_STATE_UNKNOWN:
+					if (NM_IN_SET (ac_state2, NM_ACTIVE_CONNECTION_STATE_ACTIVATING, NM_ACTIVE_CONNECTION_STATE_ACTIVATED, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING))
+						goto found_better;
+					break;
+				case NM_ACTIVE_CONNECTION_STATE_ACTIVATING:
+					if (NM_IN_SET (ac_state2, NM_ACTIVE_CONNECTION_STATE_ACTIVATED))
+						goto found_better;
+					break;
+				case NM_ACTIVE_CONNECTION_STATE_ACTIVATED:
+					break;
+				case NM_ACTIVE_CONNECTION_STATE_DEACTIVATING:
+					if (NM_IN_SET (ac_state2, NM_ACTIVE_CONNECTION_STATE_ACTIVATING, NM_ACTIVE_CONNECTION_STATE_ACTIVATED))
+						goto found_better;
+					break;
+				default:
+					nm_assert_not_reached ();
+					goto found_better;
+				}
+
+				continue;
+found_better:
+				ac = ac2;
+				ac_state = ac_state2;
+				ac_device = ac_device2;
+			}
+		}
+
+		if (ac_device)
+			return ac_device;
+	}
 
 	/* Pick the first device that's compatible with the connection. */
 	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
