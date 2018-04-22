@@ -84,9 +84,10 @@ cd "./NetworkManager/"
 
 # if we fetch from a github repository, we also care about the refs to the pull-requests
 # fetch them too.
+git config --add remote.origin.fetch '+refs/heads/*:refs/heads/*'
 git config --add remote.origin.fetch '+refs/tags/*:refs/nmbuild-origin/tags/*'
 git config --add remote.origin.fetch '+refs/pull/*:refs/nmbuild-origin/pull/*'
-git fetch origin
+git fetch origin --prune
 
 git checkout -B nmbuild "$BUILD_ID"
 echo "HEAD is $(git rev-parse HEAD)"
