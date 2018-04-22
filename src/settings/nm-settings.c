@@ -493,21 +493,28 @@ nm_settings_get_connection_by_path (NMSettings *self, const char *path)
 gboolean
 nm_settings_has_connection (NMSettings *self, NMSettingsConnection *connection)
 {
-	NMSettingsConnection *candidate = NULL;
-	const char *path;
+	gboolean has;
 
 	g_return_val_if_fail (NM_IS_SETTINGS (self), FALSE);
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (connection), FALSE);
 
-	path = nm_dbus_object_get_path (NM_DBUS_OBJECT (connection));
-	if (path)
-		candidate = nm_settings_get_connection_by_path (self, path);
+	has = !c_list_is_empty (&connection->_connections_lst);
 
-	nm_assert (!candidate || candidate == connection);
-	nm_assert (!!candidate == nm_c_list_contains_entry (&NM_SETTINGS_GET_PRIVATE (self)->connections_lst_head,
-	                                                    connection,
-	                                                    _connections_lst));
-	return !!candidate;
+	nm_assert (has == nm_c_list_contains_entry (&NM_SETTINGS_GET_PRIVATE (self)->connections_lst_head,
+                                                connection,
+                                                _connections_lst));
+	nm_assert (({
+		NMSettingsConnection *candidate = NULL;
+		const char *path;
+
+		path = nm_dbus_object_get_path (NM_DBUS_OBJECT (connection));
+		if (path)
+			candidate = nm_settings_get_connection_by_path (self, path);
+
+		(has == (connection == candidate));
+	}));
+
+	return has;
 }
 
 const GSList *
