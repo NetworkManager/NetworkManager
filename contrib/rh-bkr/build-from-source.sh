@@ -81,7 +81,14 @@ if ! timeout 10m git clone "$BUILD_REPO"; then
 fi
 
 cd "./NetworkManager/"
-git checkout "$BUILD_ID"
+
+# if we fetch from a github repository, we also care about the refs to the pull-requests
+# fetch them too.
+git config --add remote.origin.fetch '+refs/tags/*:refs/nmbuild-origin/tags/*'
+git config --add remote.origin.fetch '+refs/pull/*:refs/nmbuild-origin/pull/*'
+git fetch origin
+
+git checkout -B nmbuild "$BUILD_ID"
 echo "HEAD is $(git rev-parse HEAD)"
 
 if [[ "$DO_TEST_BUILD" == yes ]]; then
