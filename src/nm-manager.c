@@ -3954,7 +3954,7 @@ active_connection_parent_active (NMActiveConnection *active,
 static gboolean
 _internal_activate_device (NMManager *self, NMActiveConnection *active, GError **error)
 {
-	NMDevice *device, *existing, *master_device = NULL;
+	NMDevice *device, *master_device = NULL;
 	NMActiveConnection *existing_ac;
 	NMConnection *applied;
 	NMSettingsConnection *connection;
@@ -4121,11 +4121,8 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 
 	/* Disconnect the connection if connected or queued on another device */
 	existing_ac = active_connection_find (self, connection, NULL, NM_ACTIVE_CONNECTION_STATE_ACTIVATED, NULL);
-	if (existing_ac) {
-		existing = nm_active_connection_get_device (existing_ac);
-		if (existing)
-			nm_device_steal_connection (existing, connection);
-	}
+	if (existing_ac)
+		nm_device_disconnect_active_connection (existing_ac);
 
 	/* If the device is there, we can ready it for the activation. */
 	if (nm_device_is_real (device)) {

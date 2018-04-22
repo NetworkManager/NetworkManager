@@ -10836,23 +10836,37 @@ _carrier_wait_check_act_request_must_queue (NMDevice *self, NMActRequest *req)
 }
 
 void
-nm_device_steal_connection (NMDevice *self, NMSettingsConnection *connection)
+nm_device_disconnect_active_connection (NMActiveConnection *active)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevice *self;
+	NMDevicePrivate *priv;
 
-	_LOGI (LOGD_DEVICE, "disconnecting connection '%s' for new activation request",
-	       nm_settings_connection_get_id (connection));
+	g_return_if_fail (NM_IS_ACTIVE_CONNECTION (active));
 
-	if (   priv->queued_act_request
-	    && connection == nm_active_connection_get_settings_connection (NM_ACTIVE_CONNECTION (priv->queued_act_request)))
+	self = nm_active_connection_get_device (active);
+
+	if (!self) {
+		/* hm, no device? Just fail the active connection. */
+		nm_active_connection_set_state_fail (active,
+		                                     NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN,
+		                                     NULL);
+		return;
+	}
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (NM_ACTIVE_CONNECTION (priv->queued_act_request) == active) {
 		_clear_queued_act_request (priv);
-
-	if (   priv->act_request.obj
-	    && connection == nm_active_connection_get_settings_connection (NM_ACTIVE_CONNECTION (priv->act_request.obj))
-	    && priv->state < NM_DEVICE_STATE_DEACTIVATING) {
-		nm_device_state_changed (self,
-		                         NM_DEVICE_STATE_DEACTIVATING,
-		                         NM_DEVICE_STATE_REASON_NEW_ACTIVATION);
+		return;
+	}
+	if (NM_ACTIVE_CONNECTION (priv->act_request.obj) == active) {
+		if (priv->state < NM_DEVICE_STATE_DEACTIVATING) {
+			nm_device_state_changed (self,
+			                         NM_DEVICE_STATE_DEACTIVATING,
+			                         NM_DEVICE_STATE_REASON_NEW_ACTIVATION);
+		} else {
+			/* it's going down already... */
+		}
 	}
 }
 
