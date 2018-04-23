@@ -296,7 +296,6 @@ nm_acd_manager_start_probe (NMAcdManager *self, guint timeout)
 	NMAcdManagerPrivate *priv;
 	GHashTableIter iter;
 	AddressInfo *info;
-	gs_free char *timeout_str = NULL;
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (NM_IS_ACD_MANAGER (self), FALSE);
