@@ -1077,7 +1077,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	}
 
 	if (   priv->mdns < NM_SETTING_CONNECTION_MDNS_DEFAULT
-	    || priv->mdns > NM_SETTING_CONNECTION_MDNS_RESOLVE) {
+	    || priv->mdns > NM_SETTING_CONNECTION_MDNS_YES) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
