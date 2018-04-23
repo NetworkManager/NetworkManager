@@ -3,19 +3,6 @@
   This file is part of systemd.
 
   Copyright 2013 Lennart Poettering
-
-  systemd is free software; you can redistribute it and/or modify it
-  under the terms of the GNU Lesser General Public License as published by
-  the Free Software Foundation; either version 2.1 of the License, or
-  (at your option) any later version.
-
-  systemd is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-  Lesser General Public License for more details.
-
-  You should have received a copy of the GNU Lesser General Public License
-  along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
 #include "nm-sd-adapt.h"
@@ -2407,6 +2394,7 @@ static int event_prepare(sd_event *e) {
 
 static int dispatch_exit(sd_event *e) {
         sd_event_source *p;
+        _cleanup_(sd_event_unrefp) sd_event *ref = NULL;
         int r;
 
         assert(e);
@@ -2417,15 +2405,11 @@ static int dispatch_exit(sd_event *e) {
                 return 0;
         }
 
-        sd_event_ref(e);
+        ref = sd_event_ref(e);
         e->iteration++;
         e->state = SD_EVENT_EXITING;
-
         r = source_dispatch(p);
-
         e->state = SD_EVENT_INITIAL;
-        sd_event_unref(e);
-
         return r;
 }
 
@@ -2665,14 +2649,12 @@ _public_ int sd_event_dispatch(sd_event *e) {
 
         p = event_next_pending(e);
         if (p) {
-                sd_event_ref(e);
+                _cleanup_(sd_event_unrefp) sd_event *ref = NULL;
 
+                ref = sd_event_ref(e);
                 e->state = SD_EVENT_RUNNING;
                 r = source_dispatch(p);
                 e->state = SD_EVENT_INITIAL;
-
-                sd_event_unref(e);
-
                 return r;
         }
 
@@ -2739,6 +2721,7 @@ _public_ int sd_event_run(sd_event *e, uint64_t timeout) {
 }
 
 _public_ int sd_event_loop(sd_event *e) {
+        _cleanup_(sd_event_unrefp) sd_event *ref = NULL;
         int r;
 
         assert_return(e, -EINVAL);
@@ -2746,19 +2729,15 @@ _public_ int sd_event_loop(sd_event *e) {
         assert_return(!event_pid_changed(e), -ECHILD);
         assert_return(e->state == SD_EVENT_INITIAL, -EBUSY);
 
-        sd_event_ref(e);
+        ref = sd_event_ref(e);
 
         while (e->state != SD_EVENT_FINISHED) {
                 r = sd_event_run(e, (uint64_t) -1);
                 if (r < 0)
-                        goto finish;
+                        return r;
         }
 
-        r = e->exit_code;
-
-finish:
-        sd_event_unref(e);
-        return r;
+        return e->exit_code;
 }
 
 _public_ int sd_event_get_fd(sd_event *e) {
