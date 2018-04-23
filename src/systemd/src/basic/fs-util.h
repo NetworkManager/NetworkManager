@@ -5,19 +5,6 @@
   This file is part of systemd.
 
   Copyright 2010 Lennart Poettering
-
-  systemd is free software; you can redistribute it and/or modify it
-  under the terms of the GNU Lesser General Public License as published by
-  the Free Software Foundation; either version 2.1 of the License, or
-  (at your option) any later version.
-
-  systemd is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-  Lesser General Public License for more details.
-
-  You should have received a copy of the GNU Lesser General Public License
-  along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
 #include <dirent.h>
@@ -88,12 +75,17 @@ enum {
         CHASE_SAFE        = 1U << 3,   /* If set, return EPERM if we ever traverse from unprivileged to privileged files or directories */
         CHASE_OPEN        = 1U << 4,   /* If set, return an O_PATH object to the final component */
         CHASE_TRAIL_SLASH = 1U << 5,   /* If set, any trailing slash will be preserved */
+        CHASE_STEP        = 1U << 6,   /* If set, just execute a single step of the normalization */
 };
+
+/* How many iterations to execute before returning -ELOOP */
+#define CHASE_SYMLINKS_MAX 32
 
 int chase_symlinks(const char *path_with_prefix, const char *root, unsigned flags, char **ret);
 
 int chase_symlinks_and_open(const char *path, const char *root, unsigned chase_flags, int open_flags, char **ret_path);
 int chase_symlinks_and_opendir(const char *path, const char *root, unsigned chase_flags, char **ret_path, DIR **ret_dir);
+int chase_symlinks_and_stat(const char *path, const char *root, unsigned chase_flags, char **ret_path, struct stat *ret_stat);
 
 /* Useful for usage with _cleanup_(), removes a directory and frees the pointer */
 static inline void rmdir_and_free(char *p) {

@@ -5,19 +5,6 @@
   This file is part of systemd.
 
   Copyright 2010 Lennart Poettering
-
-  systemd is free software; you can redistribute it and/or modify it
-  under the terms of the GNU Lesser General Public License as published by
-  the Free Software Foundation; either version 2.1 of the License, or
-  (at your option) any later version.
-
-  systemd is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-  Lesser General Public License for more details.
-
-  You should have received a copy of the GNU Lesser General Public License
-  along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
 #include <dirent.h>
@@ -97,6 +84,10 @@ int acquire_data_fd(const void *data, size_t size, unsigned flags);
 /* Hint: ENETUNREACH happens if we try to connect to "non-existing" special IP addresses, such as ::5 */
 #define ERRNO_IS_DISCONNECT(r) \
         IN_SET(r, ENOTCONN, ECONNRESET, ECONNREFUSED, ECONNABORTED, EPIPE, ENETUNREACH)
+
+/* Resource exhaustion, could be our fault or general system trouble */
+#define ERRNO_IS_RESOURCE(r) \
+        IN_SET(r, ENOMEM, EMFILE, ENFILE)
 
 int fd_move_above_stdio(int fd);
 

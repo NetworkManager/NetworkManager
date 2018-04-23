@@ -5,19 +5,6 @@
   This file is part of systemd.
 
   Copyright 2010 Lennart Poettering
-
-  systemd is free software; you can redistribute it and/or modify it
-  under the terms of the GNU Lesser General Public License as published by
-  the Free Software Foundation; either version 2.1 of the License, or
-  (at your option) any later version.
-
-  systemd is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-  Lesser General Public License for more details.
-
-  You should have received a copy of the GNU Lesser General Public License
-  along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
 #include <alloca.h>
@@ -204,3 +191,11 @@ int fork_agent(const char *name, const int except[], unsigned n_except, pid_t *p
 #endif
 
 assert_cc(TASKS_MAX <= (unsigned long) PID_T_MAX)
+
+/* Like TAKE_PTR() but for child PIDs, resetting them to 0 */
+#define TAKE_PID(pid)                           \
+        ({                                      \
+                pid_t _pid_ = (pid);            \
+                (pid) = 0;                      \
+                _pid_;                          \
+        })

@@ -3,19 +3,6 @@
   This file is part of systemd.
 
   Copyright 2010 Lennart Poettering
-
-  systemd is free software; you can redistribute it and/or modify it
-  under the terms of the GNU Lesser General Public License as published by
-  the Free Software Foundation; either version 2.1 of the License, or
-  (at your option) any later version.
-
-  systemd is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-  Lesser General Public License for more details.
-
-  You should have received a copy of the GNU Lesser General Public License
-  along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
 #include <arpa/inet.h>
@@ -677,7 +664,6 @@ int sockaddr_pretty(const struct sockaddr *_sa, socklen_t salen, bool translate_
                 return -EOPNOTSUPP;
         }
 
-
         *ret = p;
         return 0;
 }
@@ -1017,8 +1003,7 @@ int getpeergroups(int fd, gid_t **ret) {
         if ((socklen_t) (int) n != n)
                 return -E2BIG;
 
-        *ret = d;
-        d = NULL;
+        *ret = TAKE_PTR(d);
 
         return (int) n;
 }
@@ -1140,7 +1125,6 @@ int flush_accept(int fd) {
                 .events = POLLIN,
         };
         int r;
-
 
         /* Similar to flush_fd() but flushes all incoming connection by accepting them and immediately closing them. */
 

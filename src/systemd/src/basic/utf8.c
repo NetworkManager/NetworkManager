@@ -4,19 +4,6 @@
 
   Copyright 2008-2011 Kay Sievers
   Copyright 2012 Lennart Poettering
-
-  systemd is free software; you can redistribute it and/or modify it
-  under the terms of the GNU Lesser General Public License as published by
-  the Free Software Foundation; either version 2.1 of the License, or
-  (at your option) any later version.
-
-  systemd is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-  Lesser General Public License for more details.
-
-  You should have received a copy of the GNU Lesser General Public License
-  along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
 /* Parts of this file are based on the GLIB utf8 validation functions. The
@@ -48,6 +35,7 @@
 #include <string.h>
 
 #include "alloc-util.h"
+#include "gunicode.h"
 #include "hexdecoct.h"
 #include "macro.h"
 #include "utf8.h"
@@ -423,6 +411,26 @@ size_t utf8_n_codepoints(const char *str) {
 
                 str += k;
                 n++;
+        }
+
+        return n;
+}
+
+size_t utf8_console_width(const char *str) {
+        size_t n = 0;
+
+        /* Returns the approximate width a string will take on screen when printed on a character cell
+         * terminal/console. */
+
+        while (*str != 0) {
+                char32_t c;
+
+                if (utf8_encoded_to_unichar(str, &c) < 0)
+                        return (size_t) -1;
+
+                str = utf8_next_char(str);
+
+                n += unichar_iswide(c) ? 2 : 1;
         }
 
         return n;
