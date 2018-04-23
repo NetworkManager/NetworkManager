@@ -127,9 +127,8 @@ complete_fields (const char *option, const char *prefix)
 	h = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, NULL);
 
 	complete_field (h, metagen_ip4_config);
-	complete_field (h, nmc_fields_dhcp4_config);
+	complete_field (h, nmc_fields_dhcp_config);
 	complete_field (h, nmc_fields_ip6_config);
-	complete_field (h, nmc_fields_dhcp6_config);
 	complete_field (h, nmc_fields_con_show);
 	complete_field (h, nmc_fields_con_active_details_general);
 	complete_field (h, nmc_fields_con_active_details_vpn);

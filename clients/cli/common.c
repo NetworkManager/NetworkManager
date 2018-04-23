@@ -293,7 +293,7 @@ static const NmcMetaGenericInfo *const metagen_ip6_config_group[] = {
 
 /*****************************************************************************/
 
-const NmcMetaGenericInfo *const nmc_fields_dhcp4_config[] = {
+const NmcMetaGenericInfo *const nmc_fields_dhcp_config[] = {
 	NMC_META_GENERIC ("GROUP"),    /* 0 */
 	NMC_META_GENERIC ("OPTION"),   /* 1 */
 	NULL,
@@ -306,12 +306,6 @@ const NmcMetaGenericInfo *const nmc_fields_ip6_config[] = {
 	NMC_META_GENERIC ("ROUTE"),     /* 3 */
 	NMC_META_GENERIC ("DNS"),       /* 4 */
 	NMC_META_GENERIC ("DOMAIN"),    /* 5 */
-	NULL,
-};
-
-const NmcMetaGenericInfo *const nmc_fields_dhcp6_config[] = {
-	NMC_META_GENERIC ("GROUP"),    /* 0 */
-	NMC_META_GENERIC ("OPTION"),   /* 1 */
 	NULL,
 };
 
@@ -367,82 +361,38 @@ print_ip6_config (NMIPConfig *cfg6,
 }
 
 gboolean
-print_dhcp4_config (NMDhcpConfig *dhcp4,
-                    const NmcConfig *nmc_config,
-                    const char *group_prefix,
-                    const char *one_field)
+print_dhcp_config (NMDhcpConfig *dhcp,
+                   const NmcConfig *nmc_config,
+                   const char *group_prefix,
+                   const char *one_field)
 {
 	GHashTable *table;
 	const NMMetaAbstractInfo *const*tmpl;
 	NmcOutputField *arr;
 
-	if (dhcp4 == NULL)
+	if (dhcp == NULL)
 		return FALSE;
 
-	table = nm_dhcp_config_get_options (dhcp4);
+	table = nm_dhcp_config_get_options (dhcp);
 	if (table) {
-		GHashTableIter table_iter;
-		gpointer key, value;
 		char **options_arr = NULL;
 		int i = 0;
 		NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
+		gs_free const char **keys = NULL;
+		guint k, nkeys;
 
-		tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_dhcp4_config;
+		tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_dhcp_config;
 		out_indices = parse_output_fields (one_field,
 		                                   tmpl, FALSE, NULL, NULL);
 		arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_FIELD_NAMES);
 		g_ptr_array_add (out.output_data, arr);
 
-		options_arr = g_new (char *, g_hash_table_size (table) + 1);
-		g_hash_table_iter_init (&table_iter, table);
-		while (g_hash_table_iter_next (&table_iter, &key, &value))
-			options_arr[i++] = g_strdup_printf ("%s = %s", (char *) key, (char *) value);
-		options_arr[i] = NULL;
+		keys = (const char **) g_hash_table_get_keys_as_array (table, &nkeys);
+		nm_utils_strv_sort (keys, nkeys);
 
-		arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_SECTION_PREFIX);
-		set_val_strc (arr, 0, group_prefix);
-		set_val_arr  (arr, 1, options_arr);
-		g_ptr_array_add (out.output_data, arr);
-
-		print_data_prepare_width (out.output_data);
-		print_data (nmc_config, out_indices, NULL, 0, &out);
-
-		return TRUE;
-	}
-	return FALSE;
-}
-
-gboolean
-print_dhcp6_config (NMDhcpConfig *dhcp6,
-                    const NmcConfig *nmc_config,
-                    const char *group_prefix,
-                    const char *one_field)
-{
-	GHashTable *table;
-	const NMMetaAbstractInfo *const*tmpl;
-	NmcOutputField *arr;
-
-	if (dhcp6 == NULL)
-		return FALSE;
-
-	table = nm_dhcp_config_get_options (dhcp6);
-	if (table) {
-		GHashTableIter table_iter;
-		gpointer key, value;
-		char **options_arr = NULL;
-		int i = 0;
-		NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
-
-		tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_dhcp6_config;
-		out_indices = parse_output_fields (one_field,
-		                                   tmpl, FALSE, NULL, NULL);
-		arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_FIELD_NAMES);
-		g_ptr_array_add (out.output_data, arr);
-
-		options_arr = g_new (char *, g_hash_table_size (table) + 1);
-		g_hash_table_iter_init (&table_iter, table);
-		while (g_hash_table_iter_next (&table_iter, &key, &value))
-			options_arr[i++] = g_strdup_printf ("%s = %s", (char *) key, (char *) value);
+		options_arr = g_new (char *, nkeys + 1);
+		for (k = 0; k < nkeys; k++)
+			options_arr[i++] = g_strdup_printf ("%s = %s", keys[k], (const char *) g_hash_table_lookup (table, keys[k]));
 		options_arr[i] = NULL;
 
 		arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_SECTION_PREFIX);
