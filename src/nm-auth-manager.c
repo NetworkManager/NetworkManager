@@ -670,7 +670,6 @@ dispose (GObject *object)
 {
 	NMAuthManager* self = NM_AUTH_MANAGER (object);
 	NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE (self);
-	gs_free_error GError *error_disposing = NULL;
 
 	_LOGD ("dispose");
 
