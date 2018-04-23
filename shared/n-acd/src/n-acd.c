@@ -302,11 +302,11 @@ error:
  *
  * Return: NULL.
  */
-_public_ NAcd *n_acd_free(NAcd *acd) {
+_public_ void n_acd_free(NAcd *acd) {
         NAcdEventNode *node;
 
         if (!acd)
-                return NULL;
+                return;
 
         n_acd_reset(acd);
 
@@ -330,8 +330,6 @@ _public_ NAcd *n_acd_free(NAcd *acd) {
         }
 
         free(acd);
-
-        return NULL;
 }
 
 /**

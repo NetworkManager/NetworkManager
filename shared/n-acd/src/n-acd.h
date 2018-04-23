@@ -73,7 +73,7 @@ enum {
 };
 
 int n_acd_new(NAcd **acdp);
-NAcd *n_acd_free(NAcd *acd);
+void n_acd_free(NAcd *acd);
 
 void n_acd_get_fd(NAcd *acd, int *fdp);
 
