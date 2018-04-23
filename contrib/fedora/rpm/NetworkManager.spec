@@ -66,6 +66,11 @@
 %else
 %bcond_without libnm_glib
 %endif
+%if 0%{?fedora}
+%bcond_without connectivity_fedora
+%else
+%bcond_with connectivity_fedora
+%endif
 
 ###############################################################################
 
@@ -338,6 +343,7 @@ applications using NetworkManager functionality from applications.  This
 is the new NetworkManager API. See also NetworkManager-glib-devel.
 
 
+%if %{with connectivity_fedora}
 %package config-connectivity-fedora
 Summary: NetworkManager config file for connectivity checking via Fedora servers
 Group: System Environment/Base
@@ -346,6 +352,7 @@ BuildArch: noarch
 %description config-connectivity-fedora
 This adds a NetworkManager configuration file to enable connectivity checking
 via Fedora infrastructure.
+%endif
 
 %package config-server
 Summary: NetworkManager config file for "server-like" defaults
@@ -508,7 +515,10 @@ make install DESTDIR=%{buildroot}
 cp %{SOURCE1} %{buildroot}%{_sysconfdir}/%{name}/
 
 cp %{SOURCE2} %{buildroot}%{nmlibdir}/conf.d/
+
+%if %{with connectivity_fedora}
 cp %{SOURCE3} %{buildroot}%{nmlibdir}/conf.d/
+%endif
 
 cp examples/dispatcher/10-ifcfg-rh-routes.sh %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d/
 ln -s ../no-wait.d/10-ifcfg-rh-routes.sh %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d/pre-up.d/
@@ -723,10 +733,12 @@ fi
 %{_datadir}/vala/vapi/libnm.vapi
 %{_datadir}/dbus-1/interfaces/*.xml
 
+%if %{with connectivity_fedora}
 %files config-connectivity-fedora
 %dir %{nmlibdir}
 %dir %{nmlibdir}/conf.d
 %{nmlibdir}/conf.d/20-connectivity-fedora.conf
+%endif
 
 %files config-server
 %dir %{nmlibdir}
