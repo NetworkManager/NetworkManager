@@ -87,9 +87,10 @@ cd "./NetworkManager/"
 git config --add remote.origin.fetch '+refs/heads/*:refs/heads/*'
 git config --add remote.origin.fetch '+refs/tags/*:refs/nmbuild-origin/tags/*'
 git config --add remote.origin.fetch '+refs/pull/*:refs/nmbuild-origin/pull/*'
+git checkout HEAD^{}
 git fetch origin --prune
-
 git checkout -B nmbuild "$BUILD_ID"
+
 echo "HEAD is $(git rev-parse HEAD)"
 
 if [[ "$DO_TEST_BUILD" == yes ]]; then
