@@ -1497,9 +1497,6 @@ nmtstp_link_tun_add (NMPlatform *platform,
 	_init_platform (&platform, external_command);
 
 	if (external_command) {
-		gs_free char *dev = NULL;
-		gs_free char *local = NULL, *remote = NULL;
-
 		g_assert (lnk->persist);
 
 		err = nmtstp_run_command ("ip tuntap add"
