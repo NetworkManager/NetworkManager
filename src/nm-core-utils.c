@@ -4171,6 +4171,32 @@ nm_utils_parse_dns_domain (const char *domain, gboolean *is_routing)
 	return domain;
 }
 
+
+/*****************************************************************************/
+
+GVariant *
+nm_utils_strdict_to_variant (GHashTable *options)
+{
+	GVariantBuilder builder;
+	gs_free const char **keys = NULL;
+	guint i;
+	guint nkeys = 0;
+
+	if (options) {
+		keys = (const char **) g_hash_table_get_keys_as_array (options, &nkeys);
+		nm_utils_strv_sort (keys, nkeys);
+	}
+
+	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
+	for (i = 0; i < nkeys; i++) {
+		g_variant_builder_add (&builder,
+		                       "{sv}",
+		                       keys[i],
+		                       g_variant_new_string (g_hash_table_lookup (options, keys[i])));
+	}
+	return g_variant_builder_end (&builder);
+}
+
 /*****************************************************************************/
 
 NM_UTILS_ENUM2STR_DEFINE (nm_icmpv6_router_pref_to_string, NMIcmpv6RouterPref,
