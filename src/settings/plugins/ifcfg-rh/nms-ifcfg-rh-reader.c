@@ -502,7 +502,7 @@ parse_route_line_is_comment (const char *line)
 	 *
 	 * initscripts compares: "$line" =~ '^[[:space:]]*(\#.*)?$'
 	 */
-	while (NM_IN_SET (line[0], ' ', '\t'))
+	while (nm_utils_is_separator (line[0]))
 		line++;
 	if (NM_IN_SET (line[0], '\0', '#'))
 		return TRUE;
