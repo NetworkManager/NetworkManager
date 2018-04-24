@@ -1239,19 +1239,20 @@ void
 nm_settings_add_connection_dbus (NMSettings *self,
                                  NMConnection *connection,
                                  gboolean save_to_disk,
+                                 NMAuthSubject *subject,
                                  GDBusMethodInvocation *context,
                                  NMSettingsAddCallback callback,
                                  gpointer user_data)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	NMSettingConnection *s_con;
-	NMAuthSubject *subject = NULL;
 	NMAuthChain *chain;
 	GError *error = NULL, *tmp_error = NULL;
 	const char *perm;
 
-	g_return_if_fail (connection != NULL);
-	g_return_if_fail (context != NULL);
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+	g_return_if_fail (NM_IS_AUTH_SUBJECT (subject));
+	g_return_if_fail (G_IS_DBUS_METHOD_INVOCATION (context));
 
 	/* Connection must be valid, of course */
 	if (!nm_connection_verify (connection, &tmp_error)) {
@@ -1279,14 +1280,6 @@ nm_settings_add_connection_dbus (NMSettings *self,
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_NOT_SUPPORTED,
 		                             "None of the registered plugins support add.");
-		goto done;
-	}
-
-	subject = nm_auth_subject_new_unix_process_from_context (context);
-	if (!subject) {
-		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
-		                             "Unable to determine UID of request.");
 		goto done;
 	}
 
@@ -1318,20 +1311,19 @@ nm_settings_add_connection_dbus (NMSettings *self,
 	}
 
 	priv->auths = g_slist_append (priv->auths, chain);
-	nm_auth_chain_add_call (chain, perm, TRUE);
 	nm_auth_chain_set_data (chain, "perm", (gpointer) perm, NULL);
 	nm_auth_chain_set_data (chain, "connection", g_object_ref (connection), g_object_unref);
 	nm_auth_chain_set_data (chain, "callback", callback, NULL);
 	nm_auth_chain_set_data (chain, "callback-data", user_data, NULL);
 	nm_auth_chain_set_data (chain, "subject", g_object_ref (subject), g_object_unref);
 	nm_auth_chain_set_data (chain, "save-to-disk", GUINT_TO_POINTER (save_to_disk), NULL);
+	nm_auth_chain_add_call (chain, perm, TRUE);
+	return;
 
 done:
-	if (error)
-		callback (self, NULL, error, context, subject, user_data);
-
-	g_clear_error (&error);
-	g_clear_object (&subject);
+	nm_assert (error);
+	callback (self, NULL, error, context, subject, user_data);
+	g_error_free (error);
 }
 
 static void
@@ -1362,6 +1354,7 @@ settings_add_connection_helper (NMSettings *self,
 {
 	gs_unref_object NMConnection *connection = NULL;
 	GError *error = NULL;
+	gs_unref_object NMAuthSubject *subject = NULL;
 
 	connection = _nm_simple_connection_new_from_dbus (settings,
 	                                                    NM_SETTING_PARSE_FLAGS_STRICT
@@ -1374,9 +1367,19 @@ settings_add_connection_helper (NMSettings *self,
 		return;
 	}
 
+	subject = nm_auth_subject_new_unix_process_from_context (context);
+	if (!subject) {
+		g_dbus_method_invocation_return_error_literal (context,
+		                                               NM_SETTINGS_ERROR,
+		                                               NM_SETTINGS_ERROR_PERMISSION_DENIED,
+		                                               "Unable to determine UID of request.");
+		return;
+	}
+
 	nm_settings_add_connection_dbus (self,
 	                                 connection,
 	                                 save_to_disk,
+	                                 subject,
 	                                 context,
 	                                 settings_add_connection_add_cb,
 	                                 NULL);

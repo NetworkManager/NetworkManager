@@ -611,4 +611,16 @@ guint64 nm_utils_get_start_time_for_pid (pid_t pid, char *out_state, pid_t *out_
 
 /*****************************************************************************/
 
+gpointer _nm_utils_user_data_pack (int nargs, gconstpointer *args);
+
+#define nm_utils_user_data_pack(...) \
+	_nm_utils_user_data_pack(NM_NARG (__VA_ARGS__), (gconstpointer[]) { __VA_ARGS__ })
+
+void _nm_utils_user_data_unpack (gpointer user_data, int nargs, ...);
+
+#define nm_utils_user_data_unpack(user_data, ...) \
+	_nm_utils_user_data_unpack(user_data, NM_NARG (__VA_ARGS__), __VA_ARGS__)
+
+/*****************************************************************************/
+
 #endif /* __NM_SHARED_UTILS_H__ */

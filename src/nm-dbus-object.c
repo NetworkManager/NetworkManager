@@ -26,17 +26,6 @@
 
 /*****************************************************************************/
 
-static gboolean quitting = FALSE;
-
-void
-nm_dbus_object_set_quitting (void)
-{
-	nm_assert (!quitting);
-	quitting = TRUE;
-}
-
-/*****************************************************************************/
-
 enum {
 	EXPORTED_CHANGED,
 
@@ -291,7 +280,7 @@ dispose (GObject *object)
 	 * we are quitting, where many objects stick around until exit.
 	 */
 	if (self->internal.path) {
-		if (!quitting)
+		if (!nm_dbus_manager_is_stopping (nm_dbus_object_get_manager (self)))
 			g_warn_if_reached ();
 		nm_dbus_object_unexport (self);
 	}

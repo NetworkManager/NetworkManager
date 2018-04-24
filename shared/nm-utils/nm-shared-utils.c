@@ -1359,3 +1359,44 @@ _nm_utils_strv_sort (const char **strv, gssize len)
 	                   nm_strcmp_p_with_data,
 	                   NULL);
 }
+
+/*****************************************************************************/
+
+gpointer
+_nm_utils_user_data_pack (int nargs, gconstpointer *args)
+{
+	int i;
+	gpointer *data;
+
+	nm_assert (nargs > 0);
+	nm_assert (args);
+
+	data = g_slice_alloc (((gsize) nargs) * sizeof (gconstpointer));
+	for (i = 0; i < nargs; i++)
+		data[i] = (gpointer) args[i];
+	return data;
+}
+
+void
+_nm_utils_user_data_unpack (gpointer user_data, int nargs, ...)
+{
+	gpointer *data = user_data;
+	va_list ap;
+	int i;
+
+	nm_assert (data);
+	nm_assert (nargs > 0);
+
+	va_start (ap, nargs);
+	for (i = 0; i < nargs; i++) {
+		gpointer *dst;
+
+		dst = va_arg (ap, gpointer *);
+		nm_assert (dst);
+
+		*dst = data[i];
+	}
+	va_end (ap);
+
+	g_slice_free1 (((gsize) nargs) * sizeof (gconstpointer), user_data);
+}
