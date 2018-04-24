@@ -51,7 +51,6 @@
 # define NMCLI_VERSION VERSION
 #endif
 
-/* Global NmCli object */
 NmCli nm_cli;
 
 /*****************************************************************************/
