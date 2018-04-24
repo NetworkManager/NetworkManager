@@ -2133,8 +2133,20 @@ get_type_description (NMDevice *self)
 
 	nm_assert (NM_IS_DEVICE (self));
 
+	/* the default implementation for the description just returns the (modified)
+	 * class name and depends entirely on the type of self. Note that we cache the
+	 * description in the klass itself.
+	 *
+	 * Also note, that as the GObject class gets inited, it inherrits the fields
+	 * of the parent class. That means, if NMDeviceVethClass was initialized after
+	 * NMDeviceEthernetClass already has the description cached in the class
+	 * (because we already fetched the description for an ethernet device),
+	 * then default_type_description will wrongly contain "ethernet".
+	 * To avoid that, and catch the situation, also cache the klass for
+	 * which the description was cached. If that doesn't match, it was
+	 * inherited and we need to reset it. */
 	klass = NM_DEVICE_GET_CLASS (self);
-	if (G_UNLIKELY (!klass->default_type_description)) {
+	if (G_UNLIKELY (klass->default_type_description_klass != klass)) {
 		const char *typename;
 		gs_free char *s = NULL;
 
@@ -2143,8 +2155,10 @@ get_type_description (NMDevice *self)
 			typename += 8;
 		s = g_ascii_strdown (typename, -1);
 		klass->default_type_description = g_intern_string (s);
+		klass->default_type_description_klass = klass;
 	}
 
+	nm_assert (klass->default_type_description);
 	return klass->default_type_description;
 }
 

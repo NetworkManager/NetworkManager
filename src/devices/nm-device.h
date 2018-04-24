@@ -189,9 +189,10 @@ typedef enum { /*< skip >*/
 	NM_DEVICE_CHECK_DEV_AVAILABLE_ALL                                   = (1L << 1) - 1,
 } NMDeviceCheckDevAvailableFlags;
 
-typedef struct {
+typedef struct _NMDeviceClass {
 	NMDBusObjectClass parent;
 
+	struct _NMDeviceClass *default_type_description_klass;
 	const char *default_type_description;
 
 	const char *connection_type;
