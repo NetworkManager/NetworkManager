@@ -607,7 +607,7 @@ nmc_cleanup (NmCli *nmc)
 	if (nmc->pwds_hash)
 		g_hash_table_destroy (nmc->pwds_hash);
 
-	g_free (nmc->required_fields);
+	nm_clear_g_free (&nmc->required_fields);
 
 	if (nmc->pager_pid > 0) {
 		fclose (stdout);
