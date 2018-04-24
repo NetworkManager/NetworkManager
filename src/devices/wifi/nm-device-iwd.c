@@ -236,7 +236,7 @@ get_ordered_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	GVariantIter *networks;
 	const gchar *path, *name, *type;
 	int16_t signal;
-	NMWifiAP *ap, *ap_safe;
+	NMWifiAP *ap, *ap_safe, *new_ap;
 	gboolean changed = FALSE;
 	GHashTableIter ap_iter;
 	gs_unref_hashtable GHashTable *new_aps = NULL;
@@ -309,10 +309,10 @@ get_ordered_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 
 	c_list_for_each_entry_safe (ap, ap_safe, &priv->aps_lst_head, aps_lst) {
 
-		ap = g_hash_table_lookup (new_aps,
-		                          nm_wifi_ap_get_supplicant_path (ap));
-		if (ap) {
-			if (nm_wifi_ap_set_strength (ap, nm_wifi_ap_get_strength (ap))) {
+		new_ap = g_hash_table_lookup (new_aps,
+		                              nm_wifi_ap_get_supplicant_path (ap));
+		if (new_ap) {
+			if (nm_wifi_ap_set_strength (ap, nm_wifi_ap_get_strength (new_ap))) {
 				_ap_dump (self, LOGL_TRACE, ap, "updated", 0);
 				changed = TRUE;
 			}
