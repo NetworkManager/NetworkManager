@@ -968,7 +968,7 @@ _nm_object_register_properties (NMObject *object,
 		}
 
 		pi = g_malloc0 (sizeof (PropertyInfo));
-		pi->func = tmp->func ? tmp->func : demarshal_generic;
+		pi->func = tmp->func ?: demarshal_generic;
 		pi->object_type = tmp->object_type;
 		pi->field = tmp->field;
 		pi->signal_prefix = tmp->signal_prefix;

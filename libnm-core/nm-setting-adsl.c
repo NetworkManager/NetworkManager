@@ -206,7 +206,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		             _("'%s' is not a valid value for the property"),
-		             priv->protocol ? priv->protocol : "(null)");
+		             priv->protocol ?: "(null)");
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_ADSL_SETTING_NAME, NM_SETTING_ADSL_PROTOCOL);
 		return FALSE;
 	}

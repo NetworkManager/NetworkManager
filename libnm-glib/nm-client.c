@@ -674,7 +674,7 @@ nm_client_activate_connection (NMClient *client,
 	                         activate_cb, info, NULL,
 	                         DBUS_TYPE_G_OBJECT_PATH, connection ? nm_connection_get_path (connection) : "/",
 	                         DBUS_TYPE_G_OBJECT_PATH, device ? nm_object_get_path (NM_OBJECT (device)) : "/",
-	                         DBUS_TYPE_G_OBJECT_PATH, specific_object ? specific_object : "/",
+	                         DBUS_TYPE_G_OBJECT_PATH, specific_object ?: "/",
 	                         G_TYPE_INVALID);
 }
 
@@ -762,7 +762,7 @@ nm_client_add_and_activate_connection (NMClient *client,
 		                         add_activate_cb, info, NULL,
 		                         DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, hash,
 		                         DBUS_TYPE_G_OBJECT_PATH, nm_object_get_path (NM_OBJECT (device)),
-		                         DBUS_TYPE_G_OBJECT_PATH, specific_object ? specific_object : "/",
+		                         DBUS_TYPE_G_OBJECT_PATH, specific_object ?: "/",
 		                         G_TYPE_INVALID);
 	} else
 		info->idle_id = g_idle_add (activate_nm_not_running, info);
@@ -1257,8 +1257,8 @@ nm_client_set_logging (NMClient *client, const char *level, const char *domains,
 		return TRUE;
 
 	return dbus_g_proxy_call (priv->client_proxy, "SetLogging", error,
-	                          G_TYPE_STRING, level ? level : "",
-	                          G_TYPE_STRING, domains ? domains : "",
+	                          G_TYPE_STRING, level ?: "",
+	                          G_TYPE_STRING, domains ?: "",
 	                          G_TYPE_INVALID,
 	                          G_TYPE_INVALID);
 }

@@ -314,7 +314,7 @@ apply_bonding_config (NMDevice *device)
 
 	/* Primary */
 	value = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_PRIMARY);
-	set_bond_attr (device, mode, NM_SETTING_BOND_OPTION_PRIMARY, value ? value : "");
+	set_bond_attr (device, mode, NM_SETTING_BOND_OPTION_PRIMARY, value ?: "");
 
 	/* ARP targets: clear and initialize the list */
 	contents = nm_platform_sysctl_master_get_option (nm_device_get_platform (device), ifindex,
@@ -591,7 +591,7 @@ reapply_connection (NMDevice *device, NMConnection *con_old, NMConnection *con_n
 
 	/* Primary */
 	value = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_PRIMARY);
-	set_bond_attr (device, mode, NM_SETTING_BOND_OPTION_PRIMARY, value ? value : "");
+	set_bond_attr (device, mode, NM_SETTING_BOND_OPTION_PRIMARY, value ?: "");
 
 	/* Active slave */
 	set_simple_option (device, mode, s_bond, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE);

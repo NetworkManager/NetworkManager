@@ -128,7 +128,7 @@ nms_ibft_reader_load_blocks (const char *iscsiadm_path,
 		}
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "iBFT: %s exited with error %d.  Message: '%s'",
-		             iscsiadm_path, WEXITSTATUS (status), err ? err : "(none)");
+		             iscsiadm_path, WEXITSTATUS (status), err ?: "(none)");
 		goto done;
 	}
 
@@ -392,15 +392,15 @@ connection_setting_add (const GPtrArray *block,
 
 	id = g_strdup_printf ("iBFT%s%s %s",
 	                      prefix ? " " : "",
-	                      prefix ? prefix : "",
+	                      prefix ?: "",
 	                      iface);
 
 	uuid = _nm_utils_uuid_generate_from_strings ("ibft",
 	                                             s_hwaddr,
 	                                             s_vlanid ? "V" : "v",
-	                                             s_vlanid ? s_vlanid : "",
+	                                             s_vlanid ?: "",
 	                                             s_ip4addr ? "A" : "DHCP",
-	                                             s_ip4addr ? s_ip4addr : "",
+	                                             s_ip4addr ?: "",
 	                                             NULL);
 
 	s_con = nm_setting_connection_new ();
