@@ -2157,7 +2157,7 @@ _get_fcn_802_1x_phase2_private_key (ARGS_GET_FCN)
 		password = path + strcspn (path, " \t"); \
 		if (password[0] != '\0') { \
 			password[0] = '\0'; \
-			while (NM_IN_SET (password[0], ' ', '\t')) \
+			while (nm_utils_is_separator (password[0])) \
 				password++; \
 		} else \
 			password = password_free = g_strdup (pwd_func (NM_SETTING_802_1X (setting))); \

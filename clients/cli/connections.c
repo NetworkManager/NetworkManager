@@ -5884,7 +5884,7 @@ _split_cmd (const char *cmd, char **out_arg0, const char **out_argr)
 
 	if (!cmd)
 		return;
-	while (NM_IN_SET (cmd[0], ' ', '\t'))
+	while (nm_utils_is_separator (cmd[0]))
 		cmd++;
 	if (!cmd[0])
 		return;
@@ -5893,7 +5893,7 @@ _split_cmd (const char *cmd, char **out_arg0, const char **out_argr)
 	arg0 = g_strndup (cmd, l);
 	cmd += l;
 	if (cmd[0]) {
-		while (NM_IN_SET (cmd[0], ' ', '\t'))
+		while (nm_utils_is_separator (cmd[0]))
 			cmd++;
 		if (cmd[0])
 			argr = cmd;
