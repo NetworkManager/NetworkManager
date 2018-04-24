@@ -69,6 +69,7 @@ _dispatch_request_scan (NMDevice *device,
 		_nm_device_iwd_request_scan (NM_DEVICE_IWD (device),
 		                             options,
 		                             invocation);
+		return;
 	}
 #endif
 	_nm_device_wifi_request_scan (NM_DEVICE_WIFI (device),
