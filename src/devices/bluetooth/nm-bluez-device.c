@@ -494,7 +494,7 @@ nm_bluez_device_disconnect (NMBluezDevice *self)
 	                        priv->path,
 	                        dbus_iface,
 	                        "Disconnect",
-	                        args ? args : g_variant_new ("()"),
+	                        args ?: g_variant_new("()"),
 	                        NULL,
 	                        G_DBUS_CALL_FLAGS_NONE,
 	                        10000,

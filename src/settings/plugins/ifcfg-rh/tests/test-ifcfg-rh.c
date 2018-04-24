@@ -4590,7 +4590,7 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
-	id = g_strdup_printf ("Test Write Wired Static IP6 Only With Gateway %s", gateway6 ? gateway6 : "NULL");
+	id = g_strdup_printf ("Test Write Wired Static IP6 Only With Gateway %s", gateway6 ?: "NULL");
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, id,
 	              NM_SETTING_CONNECTION_UUID, nm_utils_uuid_generate_a (),

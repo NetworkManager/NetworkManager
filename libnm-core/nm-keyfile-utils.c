@@ -106,7 +106,7 @@ nm_keyfile_plugin_kf_set_##stype##_list (GKeyFile *kf, \
 	const char *alias; \
  \
 	alias = nm_keyfile_plugin_get_alias_for_setting_name (group); \
-	g_key_file_set_##stype##_list (kf, alias ? alias : group, key, list, length); \
+	g_key_file_set_##stype##_list (kf, alias ?: group, key, list, length); \
 }
 
 DEFINE_KF_LIST_WRAPPER(integer, gint*, gint);
@@ -170,7 +170,7 @@ nm_keyfile_plugin_kf_set_##stype (GKeyFile *kf, \
 	const char *alias; \
  \
 	alias = nm_keyfile_plugin_get_alias_for_setting_name (group); \
-	g_key_file_set_##stype (kf, alias ? alias : group, key, value); \
+	g_key_file_set_##stype (kf, alias ?: group, key, value); \
 }
 
 DEFINE_KF_WRAPPER(string, gchar*, const gchar*);

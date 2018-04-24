@@ -390,7 +390,7 @@ nmc_terminal_show_progress (const char *str)
 	const char slashes[4] = {'|', '/', '-', '\\'};
 
 	nmc_terminal_erase_line ();
-	g_print ("%c %s", slashes[idx++], str ? str : "");
+	g_print ("%c %s", slashes[idx++], str ?: "");
 	fflush (stdout);
 	if (idx == 4)
 		idx = 0;

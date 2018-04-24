@@ -516,8 +516,8 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 {
 	gs_free_error GError *error = NULL;
 	const char *fields_str;
-	const char *fields_all =    print_flds ? print_flds : NMC_FIELDS_NM_STATUS_ALL;
-	const char *fields_common = print_flds ? print_flds : NMC_FIELDS_NM_STATUS_COMMON;
+	const char *fields_all =    print_flds ?: NMC_FIELDS_NM_STATUS_ALL;
+	const char *fields_common = print_flds ?: NMC_FIELDS_NM_STATUS_COMMON;
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
 		fields_str = fields_common;

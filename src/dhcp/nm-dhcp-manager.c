@@ -311,7 +311,7 @@ nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
 
 	if (send_hostname) {
 		/* Always prefer the explicit dhcp-hostname if given */
-		hostname = dhcp_hostname ? dhcp_hostname : priv->default_hostname;
+		hostname = dhcp_hostname ?: priv->default_hostname;
 	}
 	return client_start (self, AF_INET6, multi_idx, iface, ifindex, hwaddr, uuid,
 	                     route_table, route_metric, ll_addr,

@@ -579,7 +579,7 @@ ignore_config_snippet (GKeyFile *keyfile, gboolean is_base_config)
 		const char *e;
 
 		e = g_getenv ("NM_CONFIG_ENABLE_TAG");
-		_nm_config_match_env = g_strdup (e ? e : "");
+		_nm_config_match_env = g_strdup (e ?: "");
 	}
 
 	/* second, interpret the value as match-spec. */
@@ -2407,7 +2407,7 @@ _set_config_data (NMConfig *self, NMConfigData *new_data, NMConfigChangeFlags re
 	else
 		_LOGI ("signal: %s", nm_config_change_flags_to_string (changes, NULL, 0));
 	g_signal_emit (self, signals[SIGNAL_CONFIG_CHANGED], 0,
-	               new_data ? new_data : old_data,
+	               new_data ?: old_data,
 	               changes, old_data);
 	if (new_data)
 		g_object_unref (old_data);

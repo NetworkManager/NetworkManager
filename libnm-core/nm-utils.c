@@ -4318,7 +4318,7 @@ nm_utils_inet_ntop (int addr_family, gconstpointer addr, char *dst)
 
 	s = inet_ntop (addr_family,
 	               addr,
-	               dst ? dst : _nm_utils_inet_ntop_buffer,
+	               dst ?: _nm_utils_inet_ntop_buffer,
 	               addr_family == AF_INET6 ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN);
 	nm_assert (s);
 	return s;
@@ -4344,7 +4344,7 @@ nm_utils_inet_ntop (int addr_family, gconstpointer addr, char *dst)
 const char *
 nm_utils_inet4_ntop (in_addr_t inaddr, char *dst)
 {
-	return inet_ntop (AF_INET, &inaddr, dst ? dst : _nm_utils_inet_ntop_buffer,
+	return inet_ntop (AF_INET, &inaddr, dst ?: _nm_utils_inet_ntop_buffer,
 	                  INET_ADDRSTRLEN);
 }
 
@@ -4370,7 +4370,7 @@ const char *
 nm_utils_inet6_ntop (const struct in6_addr *in6addr, char *dst)
 {
 	g_return_val_if_fail (in6addr, NULL);
-	return inet_ntop (AF_INET6, in6addr, dst ? dst : _nm_utils_inet_ntop_buffer,
+	return inet_ntop (AF_INET6, in6addr, dst ?: _nm_utils_inet_ntop_buffer,
 	                  INET6_ADDRSTRLEN);
 }
 

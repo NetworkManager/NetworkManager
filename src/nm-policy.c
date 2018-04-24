@@ -2119,7 +2119,7 @@ vpn_connection_retry_after_failure (NMVpnConnection *vpn, NMPolicy *self)
 	                                     &error)) {
 		_LOGW (LOGD_DEVICE, "VPN '%s' reconnect failed: %s",
 		       nm_settings_connection_get_id (connection),
-		       error->message ? error->message : "unknown");
+		       error->message ?: "unknown");
 		g_clear_error (&error);
 	}
 }

@@ -28,7 +28,7 @@
 #include "test-common.h"
 
 #define SIGNAL_DATA_FMT "'%s-%s' ifindex %d%s%s%s (%d times received)"
-#define SIGNAL_DATA_ARG(data) (data)->name, nm_platform_signal_change_type_to_string ((data)->change_type), (data)->ifindex, (data)->ifname ? " ifname '" : "", (data)->ifname ? (data)->ifname : "", (data)->ifname ? "'" : "", (data)->received_count
+#define SIGNAL_DATA_ARG(data) (data)->name, nm_platform_signal_change_type_to_string ((data)->change_type), (data)->ifindex, (data)->ifname ? " ifname '" : "", (data)->ifname ?: "", (data)->ifname ? "'" : "", (data)->received_count
 
 int NMTSTP_ENV1_IFINDEX = -1;
 int NMTSTP_ENV1_EX = -1;
@@ -1258,7 +1258,7 @@ nmtstp_link_gre_add (NMPlatform *platform,
 
 		success = !nmtstp_run_command ("ip tunnel add %s mode gre %s local %s remote %s ttl %u tos %02x %s",
 		                                name,
-		                                dev ? dev : "",
+		                                dev ?: "",
 		                                nm_utils_inet4_ntop (lnk->local, NULL),
 		                                nm_utils_inet4_ntop (lnk->remote, buffer),
 		                                lnk->ttl,
@@ -1568,7 +1568,7 @@ nmtstp_link_vxlan_add (NMPlatform *platform,
 		err = nmtstp_run_command ("ip link add %s type vxlan id %u %s local %s group %s ttl %u tos %02x dstport %u srcport %u %u ageing %u",
 		                          name,
 		                          lnk->id,
-		                          dev ? dev : "",
+		                          dev ?: "",
 		                          local,
 		                          remote,
 		                          lnk->ttl,

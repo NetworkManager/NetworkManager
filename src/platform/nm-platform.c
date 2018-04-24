@@ -4882,11 +4882,11 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	            link->inet6_addr_gen_mode_inv ? " addrgenmode " : "",
 	            link->inet6_addr_gen_mode_inv ? nm_platform_link_inet6_addrgenmode2str (_nm_platform_uint8_inv (link->inet6_addr_gen_mode_inv), str_addrmode, sizeof (str_addrmode)) : "",
 	            str_addr ? " addr " : "",
-	            str_addr ? str_addr : "",
+	            str_addr ?: "",
 	            link->inet6_token.id ? " inet6token " : "",
 	            link->inet6_token.id ? nm_utils_inet6_interface_identifier_to_token (link->inet6_token, str_inet6_token) : "",
 	            link->driver ? " driver " : "",
-	            link->driver ? link->driver : "",
+	            link->driver ?: "",
 	            link->rx_packets, link->rx_bytes,
 	            link->tx_packets, link->tx_bytes);
 	g_string_free (str_flags, TRUE);
@@ -5298,7 +5298,7 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address, char *bu
 		str_label[0] = 0;
 
 	str_lft_p = _lifetime_to_string (address->timestamp,
-	                                 address->lifetime ? address->lifetime : NM_PLATFORM_LIFETIME_PERMANENT,
+	                                 address->lifetime ?: NM_PLATFORM_LIFETIME_PERMANENT,
 	                                 now, str_lft, sizeof (str_lft)),
 	str_pref_p = (address->lifetime == address->preferred)
 	             ? str_lft_p
@@ -5310,7 +5310,7 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address, char *bu
 	g_snprintf (buf, len,
 	            "%s/%d lft %s pref %s%s%s%s%s%s src %s",
 	            s_address, address->plen, str_lft_p, str_pref_p, str_time_p,
-	            str_peer ? str_peer : "",
+	            str_peer ?: "",
 	            str_dev,
 	            _to_string_ifa_flags (address->n_ifa_flags, s_flags, sizeof (s_flags)),
 	            str_label,
@@ -5405,7 +5405,7 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address, char *bu
 	_to_string_dev (NULL, address->ifindex, str_dev, sizeof (str_dev));
 
 	str_lft_p = _lifetime_to_string (address->timestamp,
-	                                 address->lifetime ? address->lifetime : NM_PLATFORM_LIFETIME_PERMANENT,
+	                                 address->lifetime ?: NM_PLATFORM_LIFETIME_PERMANENT,
 	                                 now, str_lft, sizeof (str_lft)),
 	str_pref_p = (address->lifetime == address->preferred)
 	             ? str_lft_p
@@ -5417,7 +5417,7 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address, char *bu
 	g_snprintf (buf, len,
 	            "%s/%d lft %s pref %s%s%s%s%s src %s",
 	            s_address, address->plen, str_lft_p, str_pref_p, str_time_p,
-	            str_peer ? str_peer : "",
+	            str_peer ?: "",
 	            str_dev,
 	            _to_string_ifa_flags (address->n_ifa_flags, s_flags, sizeof (s_flags)),
 	            nmp_utils_ip_config_source_to_string (address->addr_source, s_source, sizeof (s_source)));

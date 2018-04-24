@@ -2891,7 +2891,7 @@ dcb_parse_uint_array (const char *val,
 
 		*iter = g_strstrip (*iter);
 
-		num = _nm_utils_ascii_str_to_int64 (*iter, 10, 0, other ? other : max, -1);
+		num = _nm_utils_ascii_str_to_int64 (*iter, 10, 0, other ?: max, -1);
 
 		/* If number is greater than 'max' it must equal 'other' */
 		if (   num == -1

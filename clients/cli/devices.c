@@ -1160,7 +1160,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 			set_val_strc (arr, 6, nm_device_get_driver (device) ? nm_device_get_driver (device) : _("(unknown)"));
 			set_val_strc (arr, 7, nm_device_get_driver_version (device));
 			set_val_strc (arr, 8, nm_device_get_firmware_version (device));
-			set_val_strc (arr, 9, hwaddr ? hwaddr : _("(unknown)"));
+			set_val_strc (arr, 9, hwaddr ?: _("(unknown)"));
 			set_val_str  (arr, 10, mtu_str);
 			set_val_str  (arr, 11, state_str);
 			set_val_str  (arr, 12, reason_str);
@@ -1268,7 +1268,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 				}
 
 				tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_dev_wifi_list;
-				out_indices = parse_output_fields (section_fld ? section_fld : NMC_FIELDS_DEV_WIFI_LIST_FOR_DEV_LIST,
+				out_indices = parse_output_fields (section_fld ?: NMC_FIELDS_DEV_WIFI_LIST_FOR_DEV_LIST,
 				                                   tmpl, FALSE, NULL, NULL);
 				arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_FIELD_NAMES);
 				g_ptr_array_add (out.output_data, arr);
@@ -2906,7 +2906,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 
 		if (nmc->ask) {
 			ssid_ask = nmc_readline (_("SSID or BSSID: "));
-			param_user = ssid_ask ? ssid_ask : "";
+			param_user = ssid_ask ?: "";
 			bssid1_arr = nm_utils_hwaddr_atoba (param_user, ETH_ALEN);
 		}
 		if (!ssid_ask) {

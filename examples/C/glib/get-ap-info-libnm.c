@@ -180,7 +180,7 @@ show_wifi_device_info (NMDevice *device)
 	speed /= 1000;
 
 	printf ("Device: %s  ----  Driver: %s  ----  Speed: %d Mbit/s  ----  Active AP: %s\n",
-	         iface, driver, speed, active_ssid_str ? active_ssid_str : "none");
+	         iface, driver, speed, active_ssid_str ?: "none");
 	printf ("=================================================================================\n");
 	g_free (active_ssid_str);
 

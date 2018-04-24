@@ -334,7 +334,7 @@ nm_dhcp_client_stop_pid (pid_t pid, const char *iface)
 
 	g_return_if_fail (pid > 1);
 
-	nm_utils_kill_child_sync (pid, SIGTERM, LOGD_DHCP, name ? name : "dhcp-client", NULL,
+	nm_utils_kill_child_sync (pid, SIGTERM, LOGD_DHCP, name ?: "dhcp-client", NULL,
 	                          1000 / 2, 1000 / 20);
 	g_free (name);
 }

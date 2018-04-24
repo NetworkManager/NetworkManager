@@ -1275,7 +1275,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_SECTION_PREFIX);
 			set_val_strc (arr, 0, nmc_fields_con_active_details_groups[5]->name);
 			set_val_str  (arr, 1, type_str);
-			set_val_strc (arr, 2, username ? username : get_vpn_data_item (con, VPN_DATA_ITEM_USERNAME));
+			set_val_strc (arr, 2, username ?: get_vpn_data_item (con, VPN_DATA_ITEM_USERNAME));
 			set_val_strc (arr, 3, get_vpn_data_item (con, VPN_DATA_ITEM_GATEWAY));
 			set_val_str  (arr, 4, banner_str);
 			set_val_str  (arr, 5, vpn_state_str);
@@ -4248,7 +4248,7 @@ nmc_read_connection_properties (NmCli *nmc,
 				return FALSE;
 
 			if (!*argc && nmc->complete)
-				complete_property (setting, strv[1], value ? value : "", connection);
+				complete_property (setting, strv[1], value ?: "", connection);
 
 			if (!set_property (connection, setting_name, strv[1], value, modifier, error))
 				return FALSE;
@@ -4329,7 +4329,7 @@ nmc_read_connection_properties (NmCli *nmc,
 				return FALSE;
 
 			if (!*argc && nmc->complete)
-				complete_option (chosen, value ? value : "", connection);
+				complete_option (chosen, value ?: "", connection);
 
 			if (!set_option (nmc, connection, chosen, value, error))
 				return FALSE;
@@ -7014,7 +7014,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				/* in top level - no setting selected yet */
 				const char *setting_name;
 				NMSetting *setting;
-				const char *user_arg = cmd_arg_s ? cmd_arg_s : cmd_arg_p;
+				const char *user_arg = cmd_arg_s ?: cmd_arg_p;
 
 				setting_name = ask_check_setting (user_arg,
 				                                  valid_settings_main,
@@ -7106,7 +7106,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 				/* cmd_arg_s != NULL means argument is "setting.property" */
 				descr_all = !cmd_arg_s && !menu_ctx.curr_setting;
-				user_s = descr_all ? cmd_arg_p : cmd_arg_s ? cmd_arg_s : NULL;
+				user_s = descr_all ? cmd_arg_p : cmd_arg_s;
 				if (user_s) {
 					ss = is_setting_valid (connection,
 					                       valid_settings_main,
@@ -7199,7 +7199,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 				/* cmd_arg_s != NULL means argument is "setting.property" */
 				descr_all = !cmd_arg_s && !menu_ctx.curr_setting;
-				user_s = descr_all ? cmd_arg_p : cmd_arg_s ? cmd_arg_s : NULL;
+				user_s = descr_all ? cmd_arg_p : cmd_arg_s;
 				if (user_s) {
 					ss = is_setting_valid (connection,
 					                       valid_settings_main,
@@ -7265,7 +7265,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 					/* cmd_arg_s != NULL means argument is "setting.property" */
 					whole_setting = !cmd_arg_s && !menu_ctx.curr_setting;
-					user_s = whole_setting ? cmd_arg_p : cmd_arg_s ? cmd_arg_s : NULL;
+					user_s = whole_setting ? cmd_arg_p : cmd_arg_s;
 					if (user_s) {
 						const char *s_name;
 
@@ -7583,7 +7583,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				         nmc->editor_prompt_color);
 			} else
 				g_print (_("Invalid configuration option '%s'; allowed [%s]\n"),
-				         cmd_arg_v ? cmd_arg_v : "", "status-line, save-confirmation, show-secrets, prompt-color");
+				         cmd_arg_v ?: "", "status-line, save-confirmation, show-secrets, prompt-color");
 
 			break;
 
@@ -7654,7 +7654,7 @@ editor_init_new_connection (NmCli *nmc, NMConnection *connection, const char *sl
 
 		g_object_set (s_con,
 		              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-		              NM_SETTING_CONNECTION_MASTER, dev_ifname ? dev_ifname : "eth0",
+		              NM_SETTING_CONNECTION_MASTER, dev_ifname ?: "eth0",
 		              NM_SETTING_CONNECTION_SLAVE_TYPE, slave_type,
 		              NULL);
 	} else {
@@ -7675,7 +7675,7 @@ editor_init_new_connection (NmCli *nmc, NMConnection *connection, const char *sl
 			const char *dev_ifname = get_ethernet_device_name (nmc);
 
 			g_object_set (NM_SETTING_VLAN (base_setting),
-			              NM_SETTING_VLAN_PARENT, dev_ifname ? dev_ifname : "eth0",
+			              NM_SETTING_VLAN_PARENT, dev_ifname ?: "eth0",
 			              NULL);
 		}
 
