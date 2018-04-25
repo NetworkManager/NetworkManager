@@ -72,6 +72,14 @@ typedef enum {
 	NMC_PRINT_PRETTY = 2
 } NMCPrintOutput;
 
+static inline NMMetaAccessorGetType
+nmc_print_output_to_accessor_get_type (NMCPrintOutput print_output)
+{
+	return   (print_output != NMC_PRINT_TERSE)
+	       ? NM_META_ACCESSOR_GET_TYPE_PRETTY
+	       : NM_META_ACCESSOR_GET_TYPE_PARSABLE;
+}
+
 /* === Output fields === */
 
 typedef enum {

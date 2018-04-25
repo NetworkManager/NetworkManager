@@ -101,27 +101,57 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (vpn_connection_state_to_string, NMVpnConnecti
  * prefers an alias instead of the settings name when in pretty print mode.
  * That is so that we print "wifi" instead of "802-11-wireless" in "nmcli c". */
 static const char *
-connection_type_pretty (const char *type, NMCPrintOutput print_output)
+connection_type_to_display (const char *type, NMMetaAccessorGetType get_type)
 {
 	const NMMetaSettingInfoEditor *editor;
 	int i;
 
-	if (print_output == NMC_PRINT_TERSE)
+	nm_assert (NM_IN_SET (get_type, NM_META_ACCESSOR_GET_TYPE_PRETTY, NM_META_ACCESSOR_GET_TYPE_PARSABLE));
+
+	if (!type)
+		return NULL;
+
+	if (get_type != NM_META_ACCESSOR_GET_TYPE_PRETTY)
 		return type;
 
 	for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
 		editor = &nm_meta_setting_infos_editor[i];
-		if (strcmp (type, editor->general->setting_name) == 0) {
-			if (editor->alias)
-				return editor->alias;
-			break;
-		}
+		if (nm_streq (type, editor->general->setting_name))
+			return editor->alias ?: type;
 	}
-
 	return type;
 }
 
-/* Caller has to free the returned string */
+static int
+active_connection_get_state_ord (NMActiveConnection *active)
+{
+	/* returns an integer related to @active's state, that can be used for sorting
+	 * active connections based on their activation state. */
+	if (!active)
+		return -2;
+
+	switch (nm_active_connection_get_state (active)) {
+	case NM_ACTIVE_CONNECTION_STATE_UNKNOWN:      return 0;
+	case NM_ACTIVE_CONNECTION_STATE_DEACTIVATED:  return 1;
+	case NM_ACTIVE_CONNECTION_STATE_DEACTIVATING: return 2;
+	case NM_ACTIVE_CONNECTION_STATE_ACTIVATING:   return 3;
+	case NM_ACTIVE_CONNECTION_STATE_ACTIVATED:    return 4;
+	}
+	return -1;
+}
+
+static int
+active_connection_cmp (NMActiveConnection *ac_a, NMActiveConnection *ac_b)
+{
+	NM_CMP_SELF (ac_a, ac_b);
+	NM_CMP_DIRECT (active_connection_get_state_ord (ac_b),
+	               active_connection_get_state_ord (ac_a));
+	NM_CMP_DIRECT_STRCMP0 (nm_active_connection_get_id (ac_a), nm_active_connection_get_id (ac_b));
+	NM_CMP_DIRECT_STRCMP0 (nm_active_connection_get_connection_type (ac_a), nm_active_connection_get_connection_type (ac_b));
+	NM_CMP_DIRECT_STRCMP0 (nm_object_get_path (NM_OBJECT (ac_a)), nm_object_get_path (NM_OBJECT (ac_b)));
+	return 0;
+}
+
 static char *
 get_ac_device_string (NMActiveConnection *active)
 {
@@ -152,24 +182,264 @@ get_ac_device_string (NMActiveConnection *active)
 
 /*****************************************************************************/
 
-const NmcMetaGenericInfo *const nmc_fields_con_show[] = {
-	NMC_META_GENERIC ("NAME"),                  /* 0 */
-	NMC_META_GENERIC ("UUID"),                  /* 1 */
-	NMC_META_GENERIC ("TYPE"),                  /* 2 */
-	NMC_META_GENERIC ("TIMESTAMP"),             /* 3 */
-	NMC_META_GENERIC ("TIMESTAMP-REAL"),        /* 4 */
-	NMC_META_GENERIC ("AUTOCONNECT"),           /* 5 */
-	NMC_META_GENERIC ("AUTOCONNECT-PRIORITY"),  /* 6 */
-	NMC_META_GENERIC ("READONLY"),              /* 7 */
-	NMC_META_GENERIC ("DBUS-PATH"),             /* 8 */
-	NMC_META_GENERIC ("ACTIVE"),                /* 9 */
-	NMC_META_GENERIC ("DEVICE"),                /* 10 */
-	NMC_META_GENERIC ("STATE"),                 /* 11 */
-	NMC_META_GENERIC ("ACTIVE-PATH"),           /* 12 */
-	NMC_META_GENERIC ("SLAVE"),                 /* 13 */
-	NULL,
+typedef struct {
+	NMConnection *connection;
+	NMActiveConnection *primary_active;
+	GPtrArray *all_active;
+	bool show_active_fields;
+} MetagenConShowRowData;
+
+static MetagenConShowRowData *
+_metagen_con_show_row_data_new_for_connection (NMRemoteConnection *connection, gboolean show_active_fields)
+{
+	MetagenConShowRowData *row_data;
+
+	row_data = g_slice_new0 (MetagenConShowRowData);
+	row_data->connection = g_object_ref (NM_CONNECTION (connection));
+	row_data->show_active_fields = show_active_fields;
+	return row_data;
+}
+
+static MetagenConShowRowData *
+_metagen_con_show_row_data_new_for_active_connection (NMRemoteConnection *connection, NMActiveConnection *active, gboolean show_active_fields)
+{
+	MetagenConShowRowData *row_data;
+
+	row_data = g_slice_new0 (MetagenConShowRowData);
+	if (connection)
+		row_data->connection = g_object_ref (NM_CONNECTION (connection));
+	row_data->primary_active = g_object_ref (active);
+	row_data->show_active_fields = show_active_fields;
+	return row_data;
+}
+
+static void
+_metagen_con_show_row_data_add_active_connection (MetagenConShowRowData *row_data, NMActiveConnection *active)
+{
+	if (!row_data->primary_active) {
+		row_data->primary_active = g_object_ref (active);
+		return;
+	}
+	if (!row_data->all_active) {
+		row_data->all_active = g_ptr_array_new_with_free_func (g_object_unref);
+		g_ptr_array_add (row_data->all_active, g_object_ref (row_data->primary_active));
+	}
+	g_ptr_array_add (row_data->all_active, g_object_ref (active));
+}
+
+static void
+_metagen_con_show_row_data_init_primary_active (MetagenConShowRowData *row_data)
+{
+	NMActiveConnection *ac, *best_ac;
+	guint i;
+
+	if (!row_data->all_active)
+		return;
+
+	best_ac = row_data->all_active->pdata[0];
+	for (i = 1; i < row_data->all_active->len; i++) {
+		ac = row_data->all_active->pdata[i];
+
+		if (active_connection_get_state_ord (ac) > active_connection_get_state_ord (best_ac))
+			best_ac = ac;
+	}
+
+	if (row_data->primary_active != best_ac) {
+		g_object_unref (row_data->primary_active);
+		row_data->primary_active = g_object_ref (best_ac);
+	}
+	g_clear_pointer (&row_data->all_active, g_ptr_array_unref);
+}
+
+static void
+_metagen_con_show_row_data_destroy (gpointer data)
+{
+	MetagenConShowRowData *row_data = data;
+
+	if (!row_data)
+		return;
+
+	g_clear_object (&row_data->connection);
+	g_clear_object (&row_data->primary_active);
+	g_clear_pointer (&row_data->all_active, g_ptr_array_unref);
+	g_slice_free (MetagenConShowRowData, row_data);
+}
+
+static const char *
+_con_show_fcn_get_id (NMConnection *c, NMActiveConnection *ac)
+{
+	NMSettingConnection *s_con = NULL;
+	const char *s;
+
+	if (c)
+		s_con = nm_connection_get_setting_connection (c);
+
+	s = s_con ? nm_setting_connection_get_id (s_con) : NULL;
+	if (!s && ac) {
+		/* note that if we have no s_con, that usually means that the user has no permissions
+		 * to see the connection. We still fall to get the ID from the active-connection,
+		 * which exposes it despite the user having no permissions.
+		 *
+		 * That might be unexpected, because the user is shown an ID, which he later
+		 * is unable to resolve in other operations. */
+		s = nm_active_connection_get_id (ac);
+	}
+	return s;
+}
+
+static const char *
+_con_show_fcn_get_type (NMConnection *c, NMActiveConnection *ac, NMMetaAccessorGetType get_type)
+{
+	NMSettingConnection *s_con = NULL;
+	const char *s;
+
+	if (c)
+		s_con = nm_connection_get_setting_connection (c);
+
+	s = s_con ? nm_setting_connection_get_connection_type (s_con) : NULL;
+	if (!s && ac) {
+		/* see _con_show_fcn_get_id() for why we fallback to get the value
+		 * from @ac. */
+		s = nm_active_connection_get_connection_type (ac);
+	}
+	return connection_type_to_display (s, get_type);
+}
+
+static gconstpointer
+_metagen_con_show_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
+{
+	const MetagenConShowRowData *row_data = target;
+	NMConnection *c = row_data->connection;
+	NMActiveConnection *ac = row_data->primary_active;
+	NMSettingConnection *s_con = NULL;
+	const char *s;
+	char *s_mut;
+
+	NMC_HANDLE_COLOR (  ac
+	                  ? nm_active_connection_get_state (ac)
+	                  : NM_META_COLOR_CONNECTION_UNKNOWN);
+
+	if (c)
+		s_con = nm_connection_get_setting_connection (c);
+
+	if (!row_data->show_active_fields) {
+		/* we are not supposed to show any fields of the active connection.
+		 * We only tracked the primary_active to get the coloring right.
+		 * From now on, there is no active connection. */
+		ac = NULL;
+
+		/* in this mode, we expect that we are called only with connections that
+		 * have a [connection] setting and a UUID. Otherwise, the connection is
+		 * effectively invisible to the user, and should be hidden.
+		 *
+		 * But in that case, we expect that the caller pre-filtered this row out.
+		 * So assert(). */
+		nm_assert (s_con);
+		nm_assert (nm_setting_connection_get_uuid (s_con));
+	}
+
+	nm_assert (NM_IN_SET (get_type, NM_META_ACCESSOR_GET_TYPE_PRETTY, NM_META_ACCESSOR_GET_TYPE_PARSABLE));
+
+	switch (info->info_type) {
+	case NMC_GENERIC_INFO_TYPE_CON_SHOW_NAME:
+		return _con_show_fcn_get_id (c, ac);
+	case NMC_GENERIC_INFO_TYPE_CON_SHOW_UUID:
+		s = s_con ? nm_setting_connection_get_uuid (s_con) : NULL;
+		if (!s && ac) {
+			/* see _con_show_fcn_get_id() for why we fallback to get the value
+			 * from @ac. */
+			s = nm_active_connection_get_uuid (ac);
+		}
+		return s;
+	case NMC_GENERIC_INFO_TYPE_CON_SHOW_TYPE:
+		return _con_show_fcn_get_type (c, ac, get_type);
+	case NMC_GENERIC_INFO_TYPE_CON_SHOW_TIMESTAMP:
+	case NMC_GENERIC_INFO_TYPE_CON_SHOW_TIMESTAMP_REAL:
+		if (!s_con)
+			return NULL;
+		{
+			guint64 timestamp;
+			time_t timestamp_real;
+
+			timestamp = nm_setting_connection_get_timestamp (s_con);
+
+			if (info->info_type == NMC_GENERIC_INFO_TYPE_CON_SHOW_TIMESTAMP)
+				return (*out_to_free = g_strdup_printf ("%" G_GUINT64_FORMAT, timestamp));
+			else {
+				if (!timestamp) {
+					if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
+						return _("never");
+					return "never";
+				}
+				timestamp_real = timestamp;
+				s_mut = g_malloc0 (128);
+				strftime (s_mut, 64, "%c", localtime (&timestamp_real));
+				return (*out_to_free = s_mut);
+			}
+		}
+	case NMC_GENERIC_INFO_TYPE_CON_SHOW_AUTOCONNECT:
+		if (!s_con)
+			return NULL;
+		return nmc_meta_generic_get_bool (nm_setting_connection_get_autoconnect (s_con), get_type);
+	case NMC_GENERIC_INFO_TYPE_CON_SHOW_AUTOCONNECT_PRIORITY:
+		if (!s_con)
+			return NULL;
+		return (*out_to_free = g_strdup_printf ("%d", nm_setting_connection_get_autoconnect_priority (s_con)));
+	case NMC_GENERIC_INFO_TYPE_CON_SHOW_READONLY:
+		if (!s_con)
+			return NULL;
+		return nmc_meta_generic_get_bool (nm_setting_connection_get_read_only (s_con), get_type);
+	case NMC_GENERIC_INFO_TYPE_CON_SHOW_DBUS_PATH:
+		if (!c)
+			return NULL;
+		return nm_connection_get_path (c);
+	case NMC_GENERIC_INFO_TYPE_CON_SHOW_ACTIVE:
+		return nmc_meta_generic_get_bool (!!ac, get_type);
+	case NMC_GENERIC_INFO_TYPE_CON_SHOW_DEVICE:
+		if (ac)
+			return (*out_to_free = get_ac_device_string (ac));
+		return NULL;
+	case NMC_GENERIC_INFO_TYPE_CON_SHOW_STATE:
+		return nmc_meta_generic_get_str_i18n (ac
+		                                        ? active_connection_state_to_string (nm_active_connection_get_state (ac))
+		                                        : NULL,
+		                                      get_type);
+	case NMC_GENERIC_INFO_TYPE_CON_SHOW_ACTIVE_PATH:
+		if (ac)
+			return nm_object_get_path (NM_OBJECT (ac));
+		return NULL;
+	case NMC_GENERIC_INFO_TYPE_CON_SHOW_SLAVE:
+		if (!s_con)
+			return NULL;
+		return nm_setting_connection_get_slave_type (s_con);
+	default:
+		break;
+	}
+
+	g_return_val_if_reached (NULL);
+}
+
+const NmcMetaGenericInfo *const metagen_con_show[_NMC_GENERIC_INFO_TYPE_CON_SHOW_NUM + 1] = {
+#define _METAGEN_CON_SHOW(type, name) \
+	[type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_con_show_get_fcn)
+	_METAGEN_CON_SHOW (NMC_GENERIC_INFO_TYPE_CON_SHOW_NAME,                 "NAME"),
+	_METAGEN_CON_SHOW (NMC_GENERIC_INFO_TYPE_CON_SHOW_UUID,                 "UUID"),
+	_METAGEN_CON_SHOW (NMC_GENERIC_INFO_TYPE_CON_SHOW_TYPE,                 "TYPE"),
+	_METAGEN_CON_SHOW (NMC_GENERIC_INFO_TYPE_CON_SHOW_TIMESTAMP,            "TIMESTAMP"),
+	_METAGEN_CON_SHOW (NMC_GENERIC_INFO_TYPE_CON_SHOW_TIMESTAMP_REAL,       "TIMESTAMP-REAL"),
+	_METAGEN_CON_SHOW (NMC_GENERIC_INFO_TYPE_CON_SHOW_AUTOCONNECT,          "AUTOCONNECT"),
+	_METAGEN_CON_SHOW (NMC_GENERIC_INFO_TYPE_CON_SHOW_AUTOCONNECT_PRIORITY, "AUTOCONNECT-PRIORITY"),
+	_METAGEN_CON_SHOW (NMC_GENERIC_INFO_TYPE_CON_SHOW_READONLY,             "READONLY"),
+	_METAGEN_CON_SHOW (NMC_GENERIC_INFO_TYPE_CON_SHOW_DBUS_PATH,            "DBUS-PATH"),
+	_METAGEN_CON_SHOW (NMC_GENERIC_INFO_TYPE_CON_SHOW_ACTIVE,               "ACTIVE"),
+	_METAGEN_CON_SHOW (NMC_GENERIC_INFO_TYPE_CON_SHOW_DEVICE,               "DEVICE"),
+	_METAGEN_CON_SHOW (NMC_GENERIC_INFO_TYPE_CON_SHOW_STATE,                "STATE"),
+	_METAGEN_CON_SHOW (NMC_GENERIC_INFO_TYPE_CON_SHOW_ACTIVE_PATH,          "ACTIVE-PATH"),
+	_METAGEN_CON_SHOW (NMC_GENERIC_INFO_TYPE_CON_SHOW_SLAVE,                "SLAVE"),
 };
 #define NMC_FIELDS_CON_SHOW_COMMON  "NAME,UUID,TYPE,DEVICE"
+
+/*****************************************************************************/
 
 const NmcMetaGenericInfo *const nmc_fields_con_active_details_general[] = {
 	NMC_META_GENERIC ("GROUP"),        /* 0 */
@@ -768,107 +1038,6 @@ nmc_active_connection_state_to_color (NMActiveConnectionState state)
 }
 
 static void
-fill_output_connection (NMConnection *connection, NMClient *client, NMCPrintOutput print_output,
-                        GPtrArray *output_data, gboolean active_only)
-{
-	NMSettingConnection *s_con;
-	guint64 timestamp;
-	time_t timestamp_real;
-	char *timestamp_str;
-	char *timestamp_real_str = "";
-	char *prio_str;
-	NmcOutputField *arr;
-	NMActiveConnection *ac = NULL;
-	const char *ac_path = NULL;
-	const char *ac_state = NULL;
-	NMActiveConnectionState ac_state_int = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
-	char *ac_dev = NULL;
-	NMMetaColor color;
-
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
-
-	ac = get_ac_for_connection (nm_client_get_active_connections (client), connection, NULL);
-	if (active_only && !ac)
-		return;
-
-	if (ac) {
-		ac_path = nm_object_get_path (NM_OBJECT (ac));
-		ac_state_int = nm_active_connection_get_state (ac);
-		ac_state = gettext (active_connection_state_to_string (ac_state_int));
-		ac_dev = get_ac_device_string (ac);
-	}
-
-	/* Obtain field values */
-	timestamp = nm_setting_connection_get_timestamp (s_con);
-	timestamp_str = g_strdup_printf ("%" G_GUINT64_FORMAT, timestamp);
-	if (timestamp) {
-		timestamp_real = timestamp;
-		timestamp_real_str = g_malloc0 (64);
-		strftime (timestamp_real_str, 64, "%c", localtime (&timestamp_real));
-	}
-	prio_str = g_strdup_printf ("%u", nm_setting_connection_get_autoconnect_priority (s_con));
-
-	arr = nmc_dup_fields_array ((const NMMetaAbstractInfo *const*) nmc_fields_con_show, 0);
-
-	/* Show active connections in color */
-	color = nmc_active_connection_state_to_color (ac_state_int);
-	set_val_color_all (arr, color);
-
-	set_val_strc (arr, 0, nm_setting_connection_get_id (s_con));
-	set_val_strc (arr, 1, nm_setting_connection_get_uuid (s_con));
-	set_val_strc (arr, 2, connection_type_pretty (nm_setting_connection_get_connection_type (s_con), print_output));
-	set_val_str  (arr, 3, timestamp_str);
-	set_val_str  (arr, 4, timestamp ? timestamp_real_str : g_strdup (_("never")));
-	set_val_strc (arr, 5, nm_setting_connection_get_autoconnect (s_con) ? _("yes") : _("no"));
-	set_val_str  (arr, 6, prio_str);
-	set_val_strc (arr, 7, nm_setting_connection_get_read_only (s_con) ? _("yes") : _("no"));
-	set_val_strc (arr, 8, nm_connection_get_path (connection));
-	set_val_strc (arr, 9, ac ? _("yes") : _("no"));
-	set_val_str  (arr, 10, ac_dev);
-	set_val_strc (arr, 11, ac_state);
-	set_val_strc (arr, 12, ac_path);
-	set_val_strc (arr, 13, nm_setting_connection_get_slave_type (s_con));
-
-	g_ptr_array_add (output_data, arr);
-}
-
-static void
-fill_output_connection_for_invisible (NMActiveConnection *ac, NMCPrintOutput print_output, GPtrArray *output_data)
-{
-	NmcOutputField *arr;
-	const char *ac_path = NULL;
-	const char *ac_state = NULL;
-	char *name, *ac_dev = NULL;
-
-	name = g_strdup_printf ("<invisible> %s", nm_active_connection_get_id (ac));
-	ac_path = nm_object_get_path (NM_OBJECT (ac));
-	ac_state = active_connection_state_to_string (nm_active_connection_get_state (ac));
-	ac_dev = get_ac_device_string (ac);
-
-	arr = nmc_dup_fields_array ((const NMMetaAbstractInfo *const*) nmc_fields_con_show, 0);
-
-	set_val_str  (arr, 0, name);
-	set_val_strc (arr, 1, nm_active_connection_get_uuid (ac));
-	set_val_strc (arr, 2, connection_type_pretty (nm_active_connection_get_connection_type (ac), print_output));
-	set_val_strc (arr, 3, NULL);
-	set_val_strc (arr, 4, NULL);
-	set_val_strc (arr, 5, NULL);
-	set_val_strc (arr, 6, NULL);
-	set_val_strc (arr, 7, NULL);
-	set_val_strc (arr, 8, NULL);
-	set_val_strc (arr, 9, _("yes"));
-	set_val_str  (arr, 10, ac_dev);
-	set_val_strc (arr, 11, ac_state);
-	set_val_strc (arr, 12, ac_path);
-	set_val_strc (arr, 13, NULL);
-
-	set_val_color_all (arr, NM_META_COLOR_CONNECTION_INVISIBLE);
-
-	g_ptr_array_add (output_data, arr);
-}
-
-static void
 fill_output_active_connection (NMActiveConnection *active,
                                GPtrArray *output_data,
                                gboolean with_group,
@@ -1347,154 +1516,220 @@ typedef enum {
 typedef struct {
 	NmCli *nmc;
 	const GArray *order;
-} NmcSortInfo;
+	gboolean show_active_fields;
+} ConShowSortInfo;
 
 static int
-compare_connections (gconstpointer a, gconstpointer b, gpointer user_data)
+con_show_get_items_cmp (gconstpointer pa, gconstpointer pb, gpointer user_data)
 {
-	NMConnection *ca = *(NMConnection **) a;
-	NMConnection *cb = *(NMConnection **) b;
-	const NmcSortInfo *info = user_data;
-	NMActiveConnection *aca, *acb;
-	const NmcSortOrder *order_arr;
-	guint i, order_len;
-	const char *tmp1, *tmp2;
-	unsigned long tmp1_int, tmp2_int;
+	const ConShowSortInfo *sort_info = user_data;
+	const MetagenConShowRowData *row_data_a = *((const MetagenConShowRowData *const*) pa);
+	const MetagenConShowRowData *row_data_b = *((const MetagenConShowRowData *const*) pb);
+	NMConnection *c_a = row_data_a->connection;
+	NMConnection *c_b = row_data_b->connection;
+	NMActiveConnection *ac_a = row_data_a->primary_active;
+	NMActiveConnection *ac_b = row_data_b->primary_active;
+	NMActiveConnection *ac_a_effective = sort_info->show_active_fields ? ac_a : NULL;
+	NMActiveConnection *ac_b_effective = sort_info->show_active_fields ? ac_b : NULL;
 
-	if (info->order) {
-		order_arr = &g_array_index (info->order, NmcSortOrder, 0);
-		order_len = info->order->len;
-	} else {
-		static const NmcSortOrder def[] = { NMC_SORT_ACTIVE, NMC_SORT_NAME, NMC_SORT_PATH };
+	/* first sort active-connections which are invisible, i.e. that have no connection */
+	if (!c_a && c_b)
+		return -1;
+	if (!c_b && c_a)
+		return 1;
 
-		order_arr = def;
-		order_len = G_N_ELEMENTS (def);
-	}
+	/* we have two connections... */
+	if (c_a && c_b && c_a != c_b) {
+		const NmcSortOrder *order_arr;
+		guint i, order_len;
+		NMMetaAccessorGetType get_type = nmc_print_output_to_accessor_get_type (sort_info->nmc->nmc_config.print_output);
 
-	for (i = 0; i < order_len; i++) {
-		NmcSortOrder item = order_arr[i];
-		int cmp = 0;
+		if (sort_info->order) {
+			order_arr = &g_array_index (sort_info->order, NmcSortOrder, 0);
+			order_len = sort_info->order->len;
+		} else {
+			static const NmcSortOrder def[] = { NMC_SORT_ACTIVE, NMC_SORT_NAME, NMC_SORT_PATH };
 
-		switch (item) {
-		case NMC_SORT_ACTIVE:
-		case NMC_SORT_ACTIVE_INV:
-			aca = get_ac_for_connection (nm_client_get_active_connections (info->nmc->client), ca, NULL);
-			acb = get_ac_for_connection (nm_client_get_active_connections (info->nmc->client), cb, NULL);
-			cmp = (aca && !acb) ? -1 : (!aca && acb) ? 1 : 0;
-			if (item == NMC_SORT_ACTIVE_INV)
-				cmp = -(cmp);
-			break;
-		case NMC_SORT_TYPE:
-		case NMC_SORT_TYPE_INV:
-			cmp = g_strcmp0 (nm_connection_get_connection_type (ca),
-			                 nm_connection_get_connection_type (cb));
-			if (item == NMC_SORT_TYPE_INV)
-				cmp = -(cmp);
-			break;
-		case NMC_SORT_NAME:
-		case NMC_SORT_NAME_INV:
-			cmp = g_strcmp0 (nm_connection_get_id (ca),
-			                 nm_connection_get_id (cb));
-			if (item == NMC_SORT_NAME_INV)
-				cmp = -(cmp);
-			break;
-		case NMC_SORT_PATH:
-		case NMC_SORT_PATH_INV:
-			tmp1 = nm_connection_get_path (ca);
-			tmp2 = nm_connection_get_path (cb);
-			tmp1 = tmp1 ? strrchr (tmp1, '/') : "0";
-			tmp2 = tmp2 ? strrchr (tmp2, '/') : "0";
-			nmc_string_to_uint (tmp1 ? tmp1+1 : "0", FALSE, 0, 0, &tmp1_int);
-			nmc_string_to_uint (tmp2 ? tmp2+1 : "0", FALSE, 0, 0, &tmp2_int);
-			cmp = (int) tmp1_int - tmp2_int;
-			if (item == NMC_SORT_PATH_INV)
-				cmp = -(cmp);
-			break;
-		default:
-			cmp = 0;
-			break;
+			/* Note: the default order does not consider whether a column is shown.
+			 *       That means, the selection of the output fields, does not affect the
+			 *       order (although there could be an argument that it should). */
+			order_arr = def;
+			order_len = G_N_ELEMENTS (def);
 		}
-		if (cmp != 0)
-			return cmp;
-	}
 
-	return 0;
-}
+		for (i = 0; i < order_len; i++) {
+			NmcSortOrder item = order_arr[i];
 
-static GPtrArray *
-sort_connections (const GPtrArray *cons, NmCli *nmc, const GArray *order)
-{
-	GPtrArray *sorted;
-	int i;
-	NmcSortInfo compare_info;
+			switch (item) {
 
-	if (!cons)
-		return NULL;
+			case NMC_SORT_ACTIVE:
+				NM_CMP_DIRECT (active_connection_get_state_ord (ac_b),
+				               active_connection_get_state_ord (ac_a));
+				break;
+			case NMC_SORT_ACTIVE_INV:
+				NM_CMP_DIRECT (active_connection_get_state_ord (ac_a),
+				               active_connection_get_state_ord (ac_b));
+				break;
 
-	compare_info.nmc = nmc;
-	compare_info.order = order;
+			case NMC_SORT_TYPE:
+				NM_CMP_DIRECT_STRCMP0 (_con_show_fcn_get_type (c_a, ac_a_effective, get_type),
+				                       _con_show_fcn_get_type (c_b, ac_b_effective, get_type));
+				break;
+			case NMC_SORT_TYPE_INV:
+				NM_CMP_DIRECT_STRCMP0 (_con_show_fcn_get_type (c_b, ac_b_effective, get_type),
+				                       _con_show_fcn_get_type (c_a, ac_a_effective, get_type));
+				break;
 
-	sorted = g_ptr_array_sized_new (cons->len);
-	for (i = 0; i < cons->len; i++)
-		g_ptr_array_add (sorted, cons->pdata[i]);
-	g_ptr_array_sort_with_data (sorted, compare_connections, &compare_info);
-	return sorted;
-}
+			case NMC_SORT_NAME:
+				NM_CMP_RETURN (nm_utf8_collate0 (_con_show_fcn_get_id (c_a, ac_a_effective),
+				                                 _con_show_fcn_get_id (c_b, ac_b_effective)));
+				break;
+			case NMC_SORT_NAME_INV:
+				NM_CMP_RETURN (nm_utf8_collate0 (_con_show_fcn_get_id (c_b, ac_b_effective),
+				                                 _con_show_fcn_get_id (c_a, ac_a_effective)));
+				break;
 
-static int
-compare_ac_connections (gconstpointer a, gconstpointer b, gpointer user_data)
-{
-	NMActiveConnection *ca = *(NMActiveConnection **)a;
-	NMActiveConnection *cb = *(NMActiveConnection **)b;
-	int cmp;
+			case NMC_SORT_PATH:
+				NM_CMP_RETURN (nm_utils_dbus_path_cmp (nm_connection_get_path (c_a), nm_connection_get_path (c_b)));
+				break;
 
-	/* Sort states first */
-	cmp = nm_active_connection_get_state (cb) - nm_active_connection_get_state (ca);
-	if (cmp != 0)
-		return cmp;
+			case NMC_SORT_PATH_INV:
+				NM_CMP_RETURN (nm_utils_dbus_path_cmp (nm_connection_get_path (c_b), nm_connection_get_path (c_a)));
+				break;
 
-	cmp = g_strcmp0 (nm_active_connection_get_id (ca),
-	                 nm_active_connection_get_id (cb));
-	if (cmp != 0)
-		return cmp;
-
-	return g_strcmp0 (nm_active_connection_get_connection_type (ca),
-	                  nm_active_connection_get_connection_type (cb));
-}
-
-static GPtrArray *
-get_invisible_active_connections (NmCli *nmc)
-{
-	const GPtrArray *acons;
-	const GPtrArray *connections;
-	GPtrArray *invisibles;
-	int a, c;
-
-	g_return_val_if_fail (nmc, NULL);
-
-	invisibles = g_ptr_array_new ();
-	acons = nm_client_get_active_connections (nmc->client);
-	connections = nm_client_get_connections (nmc->client);
-	for (a = 0; a < acons->len; a++) {
-		gboolean found = FALSE;
-		NMActiveConnection *acon = g_ptr_array_index (acons, a);
-		const char *a_uuid = nm_active_connection_get_uuid (acon);
-
-		for (c = 0; c < connections->len; c++) {
-			NMConnection *con = g_ptr_array_index (connections, c);
-			const char *c_uuid = nm_connection_get_uuid (con);
-
-			if (strcmp (a_uuid, c_uuid) == 0) {
-				found = TRUE;
+			default:
+				nm_assert_not_reached ();
 				break;
 			}
 		}
-		/* Active connection is not in connections array, add it to  */
-		if (!found)
-			g_ptr_array_add (invisibles, acon);
+
+		NM_CMP_DIRECT_STRCMP0 (nm_connection_get_uuid (c_a),
+		                       nm_connection_get_uuid (c_b));
+		NM_CMP_DIRECT_STRCMP0 (nm_connection_get_path (c_a),
+		                       nm_connection_get_path (c_b));
+
+		/* This line is not expected to be reached, because there shouldn't be two
+		 * different connections with the same path. Anyway, fall-through and compare by
+		 * active connections... */
 	}
-	g_ptr_array_sort_with_data (invisibles, compare_ac_connections, NULL);
-	return invisibles;
+
+	return active_connection_cmp (ac_a, ac_b);
+}
+
+static GPtrArray *
+con_show_get_items (NmCli *nmc, gboolean active_only, gboolean show_active_fields, GArray *order)
+{
+	gs_unref_hashtable GHashTable *row_hash = NULL;
+	GHashTableIter hiter;
+	GPtrArray *result;
+	const GPtrArray *arr;
+	NMRemoteConnection *c;
+	MetagenConShowRowData *row_data;
+	guint i;
+	const ConShowSortInfo sort_info = {
+		.nmc = nmc,
+		.order = order,
+		.show_active_fields = show_active_fields,
+	};
+
+	row_hash = g_hash_table_new (nm_direct_hash, NULL);
+
+	arr = nm_client_get_connections (nmc->client);
+	for (i = 0; i < arr->len; i++) {
+		/* Note: libnm will not expose connection that are invisible
+		 * to the user but currently inactive.
+		 *
+		 * That differs from get-active-connection(). If an invisible connection
+		 * is active, we can get its NMActiveConnection. We can even obtain
+		 * the corresponding NMRemoteConnection (although, of course it has
+		 * no visible settings).
+		 *
+		 * I think this inconsistency is a bug in libnm. Anyway, the result is,
+		 * that we print invisible connections if they are active, but otherwise
+		 * we exclude them. */
+		c = arr->pdata[i];
+		g_hash_table_insert (row_hash,
+		                     c,
+		                     _metagen_con_show_row_data_new_for_connection (c,
+		                                                                    show_active_fields));
+	}
+
+	arr = nm_client_get_active_connections (nmc->client);
+	for (i = 0; i < arr->len; i++) {
+		NMActiveConnection *ac = arr->pdata[i];
+
+		c = nm_active_connection_get_connection (ac);
+		if (!show_active_fields && !c) {
+			/* the active connection has no connection, and we don't show
+			 * any active fields. Skip this row. */
+			continue;
+		}
+
+		row_data =   c
+		           ? g_hash_table_lookup (row_hash, c)
+		           : NULL;
+
+		if (show_active_fields || !c) {
+			/* the active connection either has no connection (in which we create a
+			 * connection-less row), or we are interested in showing each active
+			 * connection in its own row. Add a row. */
+			if (row_data) {
+				/* we create a rowdata for this connection earlier. We drop it, because this
+				 * connection is tracked via the rowdata of the active connection. */
+				g_hash_table_remove (row_hash, c);
+				_metagen_con_show_row_data_destroy (row_data);
+			}
+			row_data = _metagen_con_show_row_data_new_for_active_connection (c, ac, show_active_fields);
+			g_hash_table_insert (row_hash, ac, row_data);
+			continue;
+		}
+
+		/* we add the active connection to the row for the referenced
+		 * connection. We need to group them this way, to print the proper
+		 * color (activated or not) based on primary_active. */
+		if (!row_data) {
+			/* this is unexpected. The active connection references a connection that
+			 * seemingly no longer exists. It's a bug in libnm. Add a row nontheless. */
+			row_data = _metagen_con_show_row_data_new_for_connection (c, show_active_fields);
+			g_hash_table_insert (row_hash, c, row_data);
+		}
+		_metagen_con_show_row_data_add_active_connection (row_data, ac);
+	}
+
+	result = g_ptr_array_new_with_free_func (_metagen_con_show_row_data_destroy);
+
+	g_hash_table_iter_init (&hiter, row_hash);
+	while (g_hash_table_iter_next (&hiter, NULL, (gpointer *) &row_data)) {
+		if (   active_only
+		    && !row_data->primary_active) {
+			/* We only print connections that are active. Skip this row. */
+			_metagen_con_show_row_data_destroy (row_data);
+			continue;
+		}
+		if (!show_active_fields) {
+			NMSettingConnection *s_con;
+
+			nm_assert (NM_IS_REMOTE_CONNECTION (row_data->connection));
+			s_con = nm_connection_get_setting_connection (row_data->connection);
+			if (   !s_con
+			    || !nm_setting_connection_get_uuid (s_con)) {
+				/* we are in a mode, where we only print rows for connection.
+				 * For that we require that all rows are visible to the user,
+				 * meaning: the have a [connection] setting and a UUID.
+				 *
+				 * Otherwise, this connection is likely invisible to the user.
+				 * Skip it. */
+				_metagen_con_show_row_data_destroy (row_data);
+				continue;
+			}
+			_metagen_con_show_row_data_init_primary_active (row_data);
+		} else
+			nm_assert (!row_data->all_active);
+		g_ptr_array_add (result, row_data);
+	}
+
+	g_ptr_array_sort_with_data (result, con_show_get_items_cmp, (gpointer) &sort_info);
+	return result;
 }
 
 static GArray *
@@ -1616,10 +1851,9 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 	gs_free_error GError *err = NULL;
 	gs_free char *profile_flds = NULL;
 	gs_free char *active_flds = NULL;
-	GPtrArray *invisibles, *sorted_cons;
 	gboolean active_only = FALSE;
 	gs_unref_array GArray *order = NULL;
-	guint i, j;
+	guint i;
 	int option;
 
 	/* check connection show options [--active] [--order <order spec>] */
@@ -1647,50 +1881,57 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 	}
 
 	if (argc == 0) {
-		const GPtrArray *connections;
 		const char *fields_str = NULL;
-		char *fields_common = NMC_FIELDS_CON_SHOW_COMMON;
-		const NMMetaAbstractInfo *const*tmpl;
-		NmcOutputField *arr;
 		NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
+		gs_unref_ptrarray GPtrArray *items = NULL;
+		gs_free NMMetaSelectionResultList *selection = NULL;
+		gboolean show_active_fields = TRUE;
 
 		if (nmc->complete)
 			goto finish;
 
 		if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
-			fields_str = fields_common;
+			fields_str = NMC_FIELDS_CON_SHOW_COMMON;
 		else if (!nmc->required_fields || strcasecmp (nmc->required_fields, "all") == 0) {
 		} else
 			fields_str = nmc->required_fields;
 
-		tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_con_show;
-		out_indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &err);
-		if (err)
+		/* determine whether the user wants to see any fields that are related to active-connections
+		 * (e.g. the apath, the current state, or the device where the profile is active).
+		 *
+		 * If that's the case, then we will show one line for each active connection. In case
+		 * a profile has multiple active connections, it will be listed multiple times.
+		 * If that's not the case, we filter out these duplicate lines. */
+		selection = nm_meta_selection_create_parse_list ((const NMMetaAbstractInfo *const*) metagen_con_show,
+		                                                 NULL,
+		                                                 fields_str,
+		                                                 FALSE,
+		                                                 NULL);
+		if (selection && selection->num > 0) {
+			show_active_fields = FALSE;
+			for (i = 0; i < selection->num; i++) {
+				const NmcMetaGenericInfo *info = (const NmcMetaGenericInfo *) selection->items[i].info;
+
+				if (NM_IN_SET (info->info_type, NMC_GENERIC_INFO_TYPE_CON_SHOW_DEVICE,
+				                                NMC_GENERIC_INFO_TYPE_CON_SHOW_STATE,
+				                                NMC_GENERIC_INFO_TYPE_CON_SHOW_ACTIVE_PATH)) {
+					show_active_fields = TRUE;
+					break;
+				}
+			}
+		}
+
+		items = con_show_get_items (nmc, active_only, show_active_fields, order);
+		g_ptr_array_add (items, NULL);
+		if (!nmc_print (&nmc->nmc_config,
+		                items->pdata,
+		                active_only
+		                  ? _("NetworkManager active profiles")
+		                  : _("NetworkManager connection profiles"),
+		               (const NMMetaAbstractInfo *const*) metagen_con_show,
+		                fields_str,
+		                &err))
 			goto finish;
-
-		/* Add headers */
-		arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
-		g_ptr_array_add (out.output_data, arr);
-
-		/* There might be active connections not present in connection list
-		 * (e.g. private connections of a different user). Show them as well. */
-		invisibles = get_invisible_active_connections (nmc);
-		for (i = 0; i < invisibles->len; i++)
-			fill_output_connection_for_invisible (invisibles->pdata[i], nmc->nmc_config.print_output, out.output_data);
-		g_ptr_array_free (invisibles, TRUE);
-
-		/* Sort the connections and fill the output data */
-		connections = nm_client_get_connections (nmc->client);
-		sorted_cons = sort_connections (connections, nmc, order);
-		for (i = 0; i < sorted_cons->len; i++)
-			fill_output_connection (sorted_cons->pdata[i], nmc->client, nmc->nmc_config.print_output, out.output_data, active_only);
-		g_ptr_array_free (sorted_cons, TRUE);
-
-		print_data_prepare_width (out.output_data);
-		print_data (&nmc->nmc_config, out_indices,
-		            active_only ? _("NetworkManager active profiles")
-		                        : _("NetworkManager connection profiles"),
-		            0, &out);
 	} else {
 		gboolean new_line = FALSE;
 		gboolean without_fields = (nmc->required_fields == NULL);
@@ -1827,10 +2068,10 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 				if (without_fields || active_flds) {
 					guint l = explicit_acon ? 1 : (found_acons ? found_acons->len : 0);
 
-					for (j = 0; j < l; j++) {
+					for (i = 0; i < l; i++) {
 						NMActiveConnection *acon;
 
-						if (j > 0) {
+						if (i > 0) {
 							/* if there are multiple active connections, separate them with newline.
 							 * that is a bit odd, because we already separate connections with newlines,
 							 * and commonly don't separate the connection from the first active connection. */
@@ -1840,7 +2081,7 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 						if (explicit_acon)
 							acon = explicit_acon;
 						else
-							acon = found_acons->pdata[j];
+							acon = found_acons->pdata[i];
 
 						nmc->required_fields = active_flds;
 						res = nmc_active_connection_details (acon, nmc);
