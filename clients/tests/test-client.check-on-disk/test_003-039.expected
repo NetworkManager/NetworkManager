@@ -2,10 +2,11 @@ location: clients/tests/test-client.py:740:test_003()/39
 cmd: $NMCLI -f ACTIVE-PATH,DEVICE,UUID con s -act
 lang: C
 returncode: 0
-stdout: 196 bytes
+stdout: 294 bytes
 >>>
 ACTIVE-PATH                                         DEVICE  UUID                                 
 /org/freedesktop/NetworkManager/ActiveConnection/1  eth0    UUID-ethernet-REPLACED-REPLACED-REPL 
+/org/freedesktop/NetworkManager/ActiveConnection/2  eth1    UUID-ethernet-REPLACED-REPLACED-REPL 
 
 <<<
 stderr: 0 bytes

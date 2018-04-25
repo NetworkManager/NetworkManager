@@ -6,9 +6,9 @@ stdout: 0 bytes
 >>>
 
 <<<
-stderr: 102 bytes
+stderr: 103 bytes
 >>>
 **
-nmcli:ERROR:clients/cli/connections.c:893:fill_output_active_connection: assertion failed: (s_con)
+nmcli:ERROR:clients/cli/connections.c:1062:fill_output_active_connection: assertion failed: (s_con)
 
 <<<

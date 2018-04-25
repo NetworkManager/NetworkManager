@@ -35,7 +35,7 @@ nmc_read_connection_properties (NmCli *nmc,
 
 NMMetaColor nmc_active_connection_state_to_color (NMActiveConnectionState state);
 
-extern const NmcMetaGenericInfo *const nmc_fields_con_show[];
+extern const NmcMetaGenericInfo *const metagen_con_show[];
 extern const NmcMetaGenericInfo *const nmc_fields_con_active_details_general[];
 extern const NmcMetaGenericInfo *const nmc_fields_con_active_details_vpn[];
 extern const NmcMetaGenericInfo *const nmc_fields_con_active_details_groups[];
