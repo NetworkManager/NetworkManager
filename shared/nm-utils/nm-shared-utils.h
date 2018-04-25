@@ -113,6 +113,9 @@ nm_ip_addr_set (int addr_family, gpointer dst, const NMIPAddr *src)
 #define NM_CMP_DIRECT_MEMCMP(a, b, size) \
     NM_CMP_RETURN (memcmp ((a), (b), (size)))
 
+#define NM_CMP_DIRECT_STRCMP0(a, b) \
+    NM_CMP_RETURN (g_strcmp0 ((a), (b)))
+
 #define NM_CMP_DIRECT_IN6ADDR(a, b) \
     G_STMT_START { \
         const struct in6_addr *const _a = (a); \
