@@ -76,6 +76,82 @@ struct _OptionInfo {
 
 /*****************************************************************************/
 
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (active_connection_state_to_string, NMActiveConnectionState,
+	NM_UTILS_LOOKUP_DEFAULT (N_("unknown")),
+	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_ACTIVATING,   N_("activating")),
+	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_ACTIVATED,    N_("activated")),
+	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_DEACTIVATING, N_("deactivating")),
+	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,  N_("deactivated")),
+	NM_UTILS_LOOKUP_ITEM_IGNORE (NM_ACTIVE_CONNECTION_STATE_UNKNOWN),
+)
+
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (vpn_connection_state_to_string, NMVpnConnectionState,
+	NM_UTILS_LOOKUP_DEFAULT (N_("unknown")),
+	NM_UTILS_LOOKUP_ITEM (NM_VPN_CONNECTION_STATE_PREPARE,       N_("VPN connecting (prepare)")),
+	NM_UTILS_LOOKUP_ITEM (NM_VPN_CONNECTION_STATE_NEED_AUTH,     N_("VPN connecting (need authentication)")),
+	NM_UTILS_LOOKUP_ITEM (NM_VPN_CONNECTION_STATE_CONNECT,       N_("VPN connecting")),
+	NM_UTILS_LOOKUP_ITEM (NM_VPN_CONNECTION_STATE_IP_CONFIG_GET, N_("VPN connecting (getting IP configuration)")),
+	NM_UTILS_LOOKUP_ITEM (NM_VPN_CONNECTION_STATE_ACTIVATED,     N_("VPN connected")),
+	NM_UTILS_LOOKUP_ITEM (NM_VPN_CONNECTION_STATE_FAILED,        N_("VPN connection failed")),
+	NM_UTILS_LOOKUP_ITEM (NM_VPN_CONNECTION_STATE_DISCONNECTED,  N_("VPN disconnected")),
+	NM_UTILS_LOOKUP_ITEM_IGNORE (NM_VPN_CONNECTION_STATE_UNKNOWN),
+)
+
+/* Essentially a version of nm_setting_connection_get_connection_type() that
+ * prefers an alias instead of the settings name when in pretty print mode.
+ * That is so that we print "wifi" instead of "802-11-wireless" in "nmcli c". */
+static const char *
+connection_type_pretty (const char *type, NMCPrintOutput print_output)
+{
+	const NMMetaSettingInfoEditor *editor;
+	int i;
+
+	if (print_output == NMC_PRINT_TERSE)
+		return type;
+
+	for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
+		editor = &nm_meta_setting_infos_editor[i];
+		if (strcmp (type, editor->general->setting_name) == 0) {
+			if (editor->alias)
+				return editor->alias;
+			break;
+		}
+	}
+
+	return type;
+}
+
+/* Caller has to free the returned string */
+static char *
+get_ac_device_string (NMActiveConnection *active)
+{
+	GString *dev_str;
+	const GPtrArray *devices;
+	int i;
+
+	if (!active)
+		return NULL;
+
+	/* Get devices of the active connection */
+	dev_str = g_string_new (NULL);
+	devices = nm_active_connection_get_devices (active);
+	for (i = 0; i < devices->len; i++) {
+		NMDevice *device = g_ptr_array_index (devices, i);
+		const char *dev_iface = nm_device_get_iface (device);
+
+		if (dev_iface) {
+			g_string_append (dev_str, dev_iface);
+			g_string_append_c (dev_str, ',');
+		}
+	}
+	if (dev_str->len > 0)
+		g_string_truncate (dev_str, dev_str->len - 1);  /* Cut off last ',' */
+
+	return g_string_free (dev_str, FALSE);
+}
+
+/*****************************************************************************/
+
 const NmcMetaGenericInfo *const nmc_fields_con_show[] = {
 	NMC_META_GENERIC ("NAME"),                  /* 0 */
 	NMC_META_GENERIC ("UUID"),                  /* 1 */
@@ -519,56 +595,6 @@ construct_header_name (const char *base, const char *spec)
 	return g_strdup_printf ("%s (%s)", base, spec);
 }
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (active_connection_state_to_string, NMActiveConnectionState,
-	NM_UTILS_LOOKUP_DEFAULT (N_("unknown")),
-	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_ACTIVATING,   N_("activating")),
-	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_ACTIVATED,    N_("activated")),
-	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_DEACTIVATING, N_("deactivating")),
-	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,  N_("deactivated")),
-	NM_UTILS_LOOKUP_ITEM_IGNORE (NM_ACTIVE_CONNECTION_STATE_UNKNOWN),
-)
-
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (vpn_connection_state_to_string, NMVpnConnectionState,
-	NM_UTILS_LOOKUP_DEFAULT (N_("unknown")),
-	NM_UTILS_LOOKUP_ITEM (NM_VPN_CONNECTION_STATE_PREPARE,       N_("VPN connecting (prepare)")),
-	NM_UTILS_LOOKUP_ITEM (NM_VPN_CONNECTION_STATE_NEED_AUTH,     N_("VPN connecting (need authentication)")),
-	NM_UTILS_LOOKUP_ITEM (NM_VPN_CONNECTION_STATE_CONNECT,       N_("VPN connecting")),
-	NM_UTILS_LOOKUP_ITEM (NM_VPN_CONNECTION_STATE_IP_CONFIG_GET, N_("VPN connecting (getting IP configuration)")),
-	NM_UTILS_LOOKUP_ITEM (NM_VPN_CONNECTION_STATE_ACTIVATED,     N_("VPN connected")),
-	NM_UTILS_LOOKUP_ITEM (NM_VPN_CONNECTION_STATE_FAILED,        N_("VPN connection failed")),
-	NM_UTILS_LOOKUP_ITEM (NM_VPN_CONNECTION_STATE_DISCONNECTED,  N_("VPN disconnected")),
-	NM_UTILS_LOOKUP_ITEM_IGNORE (NM_VPN_CONNECTION_STATE_UNKNOWN),
-)
-
-/* Caller has to free the returned string */
-static char *
-get_ac_device_string (NMActiveConnection *active)
-{
-	GString *dev_str;
-	const GPtrArray *devices;
-	int i;
-
-	if (!active)
-		return NULL;
-
-	/* Get devices of the active connection */
-	dev_str = g_string_new (NULL);
-	devices = nm_active_connection_get_devices (active);
-	for (i = 0; i < devices->len; i++) {
-		NMDevice *device = g_ptr_array_index (devices, i);
-		const char *dev_iface = nm_device_get_iface (device);
-
-		if (dev_iface) {
-			g_string_append (dev_str, dev_iface);
-			g_string_append_c (dev_str, ',');
-		}
-	}
-	if (dev_str->len > 0)
-		g_string_truncate (dev_str, dev_str->len - 1);  /* Cut off last ',' */
-
-	return g_string_free (dev_str, FALSE);
-}
-
 static NMActiveConnection *
 get_ac_for_connection (const GPtrArray *active_cons, NMConnection *connection, GPtrArray **out_result)
 {
@@ -739,30 +765,6 @@ nmc_active_connection_state_to_color (NMActiveConnectionState state)
 		return NM_META_COLOR_CONNECTION_DISCONNECTING;
 	else
 		return NM_META_COLOR_CONNECTION_UNKNOWN;
-}
-
-/* Essentially a version of nm_setting_connection_get_connection_type() that
- * prefers an alias instead of the settings name when in pretty print mode.
- * That is so that we print "wifi" instead of "802-11-wireless" in "nmcli c". */
-static const char *
-connection_type_pretty (const char *type, NMCPrintOutput print_output)
-{
-	const NMMetaSettingInfoEditor *editor;
-	int i;
-
-	if (print_output == NMC_PRINT_TERSE)
-		return type;
-
-	for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
-		editor = &nm_meta_setting_infos_editor[i];
-		if (strcmp (type, editor->general->setting_name) == 0) {
-			if (editor->alias)
-				return editor->alias;
-			break;
-		}
-	}
-
-	return type;
 }
 
 static void
