@@ -271,11 +271,6 @@ const NmcMetaGenericInfo *const metagen_ip4_config[_NMC_GENERIC_INFO_TYPE_IP4_CO
 	_METAGEN_IP4_CONFIG (NMC_GENERIC_INFO_TYPE_IP4_CONFIG_WINS,    "WINS"),
 };
 
-static const NmcMetaGenericInfo *const metagen_ip4_config_group[] = {
-	NMC_META_GENERIC_WITH_NESTED ("IP4", metagen_ip4_config, .name_header = N_("GROUP")),
-	NULL,
-};
-
 const NmcMetaGenericInfo *const metagen_ip6_config[_NMC_GENERIC_INFO_TYPE_IP6_CONFIG_NUM + 1] = {
 #define _METAGEN_IP6_CONFIG(type, name) \
 	[type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_ip6_config_get_fcn)
@@ -284,11 +279,6 @@ const NmcMetaGenericInfo *const metagen_ip6_config[_NMC_GENERIC_INFO_TYPE_IP6_CO
 	_METAGEN_IP6_CONFIG (NMC_GENERIC_INFO_TYPE_IP6_CONFIG_ROUTE,   "ROUTE"),
 	_METAGEN_IP6_CONFIG (NMC_GENERIC_INFO_TYPE_IP6_CONFIG_DNS,     "DNS"),
 	_METAGEN_IP6_CONFIG (NMC_GENERIC_INFO_TYPE_IP6_CONFIG_DOMAIN,  "DOMAIN"),
-};
-
-static const NmcMetaGenericInfo *const metagen_ip6_config_group[] = {
-	NMC_META_GENERIC_WITH_NESTED ("IP6", metagen_ip6_config, .name_header = N_("GROUP")),
-	NULL,
 };
 
 /*****************************************************************************/
@@ -326,7 +316,7 @@ print_ip4_config (NMIPConfig *cfg4,
 	if (!nmc_print (nmc_config,
 	                (gpointer[]) { cfg4, NULL },
 	                NULL,
-	                (const NMMetaAbstractInfo *const*) metagen_ip4_config_group,
+	                NMC_META_GENERIC_GROUP ("IP4", metagen_ip4_config, N_("GROUP")),
 	                field_str,
 	                &error)) {
 		return FALSE;
@@ -352,7 +342,7 @@ print_ip6_config (NMIPConfig *cfg6,
 	if (!nmc_print (nmc_config,
 	                (gpointer[]) { cfg6, NULL },
 	                NULL,
-	                (const NMMetaAbstractInfo *const*) metagen_ip6_config_group,
+	                NMC_META_GENERIC_GROUP ("IP6", metagen_ip6_config, N_("GROUP")),
 	                field_str,
 	                &error)) {
 		return FALSE;
