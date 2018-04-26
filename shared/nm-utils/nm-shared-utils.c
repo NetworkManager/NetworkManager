@@ -560,6 +560,95 @@ nm_utils_dbus_path_get_last_component (const char *dbus_path)
 	return NULL;
 }
 
+static gint64
+_dbus_path_component_as_num (const char *p)
+{
+	gint64 n;
+
+	/* no odd stuff. No leading zeros, only a non-negative, decimal integer.
+	 *
+	 * Otherwise, there would be multiple ways to encode the same number "10"
+	 * and "010". That is just confusing. A number has no leading zeros,
+	 * if it has, it's not a number (as far as we are concerned here). */
+	if (p[0] == '0') {
+		if (p[1] != '\0')
+			return -1;
+		else
+			return 0;
+	}
+	if (!(p[0] >= '1' && p[0] <= '9'))
+		return -1;
+	if (!NM_STRCHAR_ALL (&p[1], ch, (ch >= '0' && ch <= '9')))
+		return -1;
+	n = _nm_utils_ascii_str_to_int64 (p, 10, 0, G_MAXINT64, -1);
+	nm_assert (n == -1 || nm_streq0 (p, nm_sprintf_bufa (100, "%"G_GINT64_FORMAT, n)));
+	return n;
+}
+
+int
+nm_utils_dbus_path_cmp (const char *dbus_path_a, const char *dbus_path_b)
+{
+	const char *l_a, *l_b;
+	gsize plen;
+	gint64 n_a, n_b;
+
+	/* compare function for two D-Bus paths. It behaves like
+	 * strcmp(), except, if both paths have the same prefix,
+	 * and both end in a (positive) number, then the paths
+	 * will be sorted by number. */
+
+	NM_CMP_SELF (dbus_path_a, dbus_path_b);
+
+	/* if one or both paths have no slash (and no last component)
+	 * compare the full paths directly. */
+	if (   !(l_a = nm_utils_dbus_path_get_last_component (dbus_path_a))
+	    || !(l_b = nm_utils_dbus_path_get_last_component (dbus_path_b)))
+		goto comp_full;
+
+	/* check if both paths have the same prefix (up to the last-component). */
+	plen = l_a - dbus_path_a;
+	if (plen != (l_b - dbus_path_b))
+		goto comp_full;
+	NM_CMP_RETURN (strncmp (dbus_path_a, dbus_path_b, plen));
+
+	n_a = _dbus_path_component_as_num (l_a);
+	n_b = _dbus_path_component_as_num (l_b);
+	if (n_a == -1 && n_b == -1)
+		goto comp_l;
+
+	/* both components must be convertiable to a number. If they are not,
+	 * (and only one of them is), then we must always strictly sort numeric parts
+	 * after non-numeric components. If we wouldn't, we wouldn't have
+	 * a total order.
+	 *
+	 * An example of a not total ordering would be:
+	 *   "8"   < "010"  (numeric)
+	 *   "0x"  < "8"    (lexical)
+	 *   "0x"  > "010"  (lexical)
+	 * We avoid this, by forcing that a non-numeric entry "0x" always sorts
+	 * before numeric entries.
+	 *
+	 * Additionally, _dbus_path_component_as_num() would also reject "010" as
+	 * not a valid number.
+	 */
+	if (n_a == -1)
+		return -1;
+	if (n_b == -1)
+		return 1;
+
+	NM_CMP_DIRECT (n_a, n_b);
+	nm_assert (nm_streq (dbus_path_a, dbus_path_b));
+	return 0;
+
+comp_full:
+	NM_CMP_DIRECT_STRCMP0 (dbus_path_a, dbus_path_b);
+	return 0;
+comp_l:
+	NM_CMP_DIRECT_STRCMP0 (l_a, l_b);
+	nm_assert (nm_streq (dbus_path_a, dbus_path_b));
+	return 0;
+}
+
 /*****************************************************************************/
 
 /**
