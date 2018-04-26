@@ -331,16 +331,6 @@ const NmcMetaGenericInfo *const metagen_dhcp_config[_NMC_GENERIC_INFO_TYPE_DHCP_
 
 /*****************************************************************************/
 
-const NmcMetaGenericInfo *const nmc_fields_ip6_config[] = {
-	NMC_META_GENERIC ("GROUP"),     /* 0 */
-	NMC_META_GENERIC ("ADDRESS"),   /* 1 */
-	NMC_META_GENERIC ("GATEWAY"),   /* 2 */
-	NMC_META_GENERIC ("ROUTE"),     /* 3 */
-	NMC_META_GENERIC ("DNS"),       /* 4 */
-	NMC_META_GENERIC ("DOMAIN"),    /* 5 */
-	NULL,
-};
-
 gboolean
 print_ip4_config (NMIPConfig *cfg4,
                   const NmcConfig *nmc_config,

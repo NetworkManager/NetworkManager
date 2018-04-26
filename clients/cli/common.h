@@ -83,7 +83,7 @@ void nmc_complete_bool (const char *prefix);
 const char *nmc_error_get_simple_message (GError *error);
 
 extern const NmcMetaGenericInfo *const metagen_ip4_config[];
-extern const NmcMetaGenericInfo *const nmc_fields_ip6_config[];
+extern const NmcMetaGenericInfo *const metagen_ip6_config[];
 extern const NmcMetaGenericInfo *const metagen_dhcp_config[];
 
 #endif /* NMC_COMMON_H */

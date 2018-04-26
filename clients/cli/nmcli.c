@@ -190,7 +190,7 @@ complete_fields (const char *option, const char *prefix)
 
 	complete_field (h, metagen_ip4_config);
 	complete_field (h, metagen_dhcp_config);
-	complete_field (h, nmc_fields_ip6_config);
+	complete_field (h, metagen_ip6_config);
 	complete_field (h, metagen_con_show);
 	complete_field (h, metagen_con_active_general);
 	complete_field (h, metagen_con_active_vpn);

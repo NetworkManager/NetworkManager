@@ -777,7 +777,7 @@ const NmcMetaGenericInfo *const nmc_fields_con_active_details_groups[] = {
 	NMC_META_GENERIC_WITH_NESTED ("GENERAL", metagen_con_active_general),                /* 0 */
 	NMC_META_GENERIC_WITH_NESTED ("IP4",     metagen_ip4_config),                        /* 1 */
 	NMC_META_GENERIC_WITH_NESTED ("DHCP4",   metagen_dhcp_config),                       /* 2 */
-	NMC_META_GENERIC_WITH_NESTED ("IP6",     nmc_fields_ip6_config + 1),                 /* 3 */
+	NMC_META_GENERIC_WITH_NESTED ("IP6",     metagen_ip6_config),                        /* 3 */
 	NMC_META_GENERIC_WITH_NESTED ("DHCP6",   metagen_dhcp_config),                       /* 4 */
 	NMC_META_GENERIC_WITH_NESTED ("VPN",     metagen_con_active_vpn),                    /* 5 */
 	NULL,
