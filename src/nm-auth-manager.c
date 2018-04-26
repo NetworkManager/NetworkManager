@@ -498,7 +498,7 @@ _dbus_new_proxy_cb (GObject *source_object,
 {
 	NMAuthManager *self;
 	NMAuthManagerPrivate *priv;
-	gs_free GError *error = NULL;
+	gs_free_error GError *error = NULL;
 	GDBusProxy *proxy;
 	NMAuthManagerCallId *call_id;
 
