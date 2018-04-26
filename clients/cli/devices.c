@@ -88,35 +88,113 @@ const NmcMetaGenericInfo *const metagen_device_status[_NMC_GENERIC_INFO_TYPE_DEV
 
 /*****************************************************************************/
 
-const NmcMetaGenericInfo *const nmc_fields_dev_show_general[] = {
-	NMC_META_GENERIC ("NAME"),                /* 0 */
-	NMC_META_GENERIC ("DEVICE"),              /* 1 */
-	NMC_META_GENERIC ("TYPE"),                /* 2 */
-	NMC_META_GENERIC ("NM-TYPE"),             /* 3 */
-	NMC_META_GENERIC ("VENDOR"),              /* 4 */
-	NMC_META_GENERIC ("PRODUCT"),             /* 5 */
-	NMC_META_GENERIC ("DRIVER"),              /* 6 */
-	NMC_META_GENERIC ("DRIVER-VERSION"),      /* 7 */
-	NMC_META_GENERIC ("FIRMWARE-VERSION"),    /* 8 */
-	NMC_META_GENERIC ("HWADDR"),              /* 9 */
-	NMC_META_GENERIC ("MTU"),                 /* 10 */
-	NMC_META_GENERIC ("STATE"),               /* 11 */
-	NMC_META_GENERIC ("REASON"),              /* 12 */
-	NMC_META_GENERIC ("UDI"),                 /* 13 */
-	NMC_META_GENERIC ("IP-IFACE"),            /* 14 */
-	NMC_META_GENERIC ("IS-SOFTWARE"),         /* 15 */
-	NMC_META_GENERIC ("NM-MANAGED"),          /* 16 */
-	NMC_META_GENERIC ("AUTOCONNECT"),         /* 17 */
-	NMC_META_GENERIC ("FIRMWARE-MISSING"),    /* 18 */
-	NMC_META_GENERIC ("NM-PLUGIN-MISSING"),   /* 19 */
-	NMC_META_GENERIC ("PHYS-PORT-ID"),        /* 20 */
-	NMC_META_GENERIC ("CONNECTION"),          /* 21 */
-	NMC_META_GENERIC ("CON-UUID"),            /* 22 */
-	NMC_META_GENERIC ("CON-PATH"),            /* 23 */
-	NMC_META_GENERIC ("METERED"),             /* 24 */
-	NULL,
+static gconstpointer
+_metagen_device_detail_general_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
+{
+	NMDevice *d = target;
+	NMActiveConnection *ac;
+	NMDeviceState state;
+	NMDeviceStateReason state_reason;
+	const char *s;
+
+	NMC_HANDLE_COLOR (NM_META_COLOR_NONE);
+
+	switch (info->info_type) {
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_DEVICE:
+		return nm_device_get_iface (d);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_TYPE:
+		return nm_device_get_type_description (d);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_NM_TYPE:
+		return G_OBJECT_TYPE_NAME (d);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_VENDOR:
+		return nm_device_get_vendor (d);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_PRODUCT:
+		return nm_device_get_product (d);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_DRIVER:
+		s = nm_device_get_driver (d);
+		return s ?: nmc_meta_generic_get_str_i18n (N_("(unknown)"), get_type);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_DRIVER_VERSION:
+		return nm_device_get_driver_version (d);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_FIRMWARE_VERSION:
+		return nm_device_get_firmware_version (d);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_HWADDR:
+		s = nm_device_get_hw_address (d);
+		return s ?: nmc_meta_generic_get_str_i18n (N_("(unknown)"), get_type);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_MTU:
+		return (*out_to_free = g_strdup_printf ("%u", (guint) nm_device_get_mtu (d)));
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_STATE:
+		state = nm_device_get_state (d);
+		// FIXME: wrong use of translation
+		return (*out_to_free = g_strdup_printf ("%d (%s)", (int) state, nmc_device_state_to_string (state)));
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_REASON:
+		state_reason = nm_device_get_state_reason (d);
+		// FIXME: wrong use of translation
+		return (*out_to_free = g_strdup_printf ("%d (%s)", (int) state_reason, nmc_device_reason_to_string (state_reason)));
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_UDI:
+		return nm_device_get_udi (d);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_IP_IFACE:
+		return nm_device_get_ip_iface (d);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_IS_SOFTWARE:
+		return nmc_meta_generic_get_bool (nm_device_is_software (d), get_type);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_NM_MANAGED:
+		return nmc_meta_generic_get_bool (nm_device_get_managed (d), get_type);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_AUTOCONNECT:
+		return nmc_meta_generic_get_bool (nm_device_get_autoconnect (d), get_type);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_FIRMWARE_MISSING:
+		return nmc_meta_generic_get_bool (nm_device_get_firmware_missing (d), get_type);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_NM_PLUGIN_MISSING:
+		return nmc_meta_generic_get_bool (nm_device_get_nm_plugin_missing (d), get_type);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_PHYS_PORT_ID:
+		return nm_device_get_physical_port_id (d);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_CONNECTION:
+		ac = nm_device_get_active_connection (d);
+		return ac ? nm_active_connection_get_id (ac) : NULL;
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_CON_UUID:
+		ac = nm_device_get_active_connection (d);
+		return ac ? nm_active_connection_get_uuid (ac) : NULL;
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_CON_PATH:
+		ac = nm_device_get_active_connection (d);
+		return ac ? nm_object_get_path (NM_OBJECT (ac)) : NULL;
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_METERED:
+		// FIXME: wrong use of translation
+		return nmc_device_metered_to_string (nm_device_get_metered (d));
+	default:
+		break;
+	}
+
+	g_return_val_if_reached (NULL);
+}
+
+const NmcMetaGenericInfo *const metagen_device_detail_general[_NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_NUM + 1] = {
+#define _METAGEN_DEVICE_DETAIL_GENERAL(type, name) \
+	[type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_device_detail_general_get_fcn)
+	_METAGEN_DEVICE_DETAIL_GENERAL (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_DEVICE,            "DEVICE"),
+	_METAGEN_DEVICE_DETAIL_GENERAL (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_TYPE,              "TYPE"),
+	_METAGEN_DEVICE_DETAIL_GENERAL (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_NM_TYPE,           "NM-TYPE"),
+	_METAGEN_DEVICE_DETAIL_GENERAL (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_VENDOR,            "VENDOR"),
+	_METAGEN_DEVICE_DETAIL_GENERAL (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_PRODUCT,           "PRODUCT"),
+	_METAGEN_DEVICE_DETAIL_GENERAL (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_DRIVER,            "DRIVER"),
+	_METAGEN_DEVICE_DETAIL_GENERAL (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_DRIVER_VERSION,    "DRIVER-VERSION"),
+	_METAGEN_DEVICE_DETAIL_GENERAL (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_FIRMWARE_VERSION,  "FIRMWARE-VERSION"),
+	_METAGEN_DEVICE_DETAIL_GENERAL (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_HWADDR,            "HWADDR"),
+	_METAGEN_DEVICE_DETAIL_GENERAL (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_MTU,               "MTU"),
+	_METAGEN_DEVICE_DETAIL_GENERAL (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_STATE,             "STATE"),
+	_METAGEN_DEVICE_DETAIL_GENERAL (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_REASON,            "REASON"),
+	_METAGEN_DEVICE_DETAIL_GENERAL (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_UDI,               "UDI"),
+	_METAGEN_DEVICE_DETAIL_GENERAL (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_IP_IFACE,          "IP-IFACE"),
+	_METAGEN_DEVICE_DETAIL_GENERAL (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_IS_SOFTWARE,       "IS-SOFTWARE"),
+	_METAGEN_DEVICE_DETAIL_GENERAL (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_NM_MANAGED,        "NM-MANAGED"),
+	_METAGEN_DEVICE_DETAIL_GENERAL (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_AUTOCONNECT,       "AUTOCONNECT"),
+	_METAGEN_DEVICE_DETAIL_GENERAL (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_FIRMWARE_MISSING,  "FIRMWARE-MISSING"),
+	_METAGEN_DEVICE_DETAIL_GENERAL (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_NM_PLUGIN_MISSING, "NM-PLUGIN-MISSING"),
+	_METAGEN_DEVICE_DETAIL_GENERAL (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_PHYS_PORT_ID,      "PHYS-PORT-ID"),
+	_METAGEN_DEVICE_DETAIL_GENERAL (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_CONNECTION,        "CONNECTION"),
+	_METAGEN_DEVICE_DETAIL_GENERAL (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_CON_UUID,          "CON-UUID"),
+	_METAGEN_DEVICE_DETAIL_GENERAL (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_CON_PATH,          "CON-PATH"),
+	_METAGEN_DEVICE_DETAIL_GENERAL (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_METERED,           "METERED"),
 };
-#define NMC_FIELDS_DEV_SHOW_GENERAL_COMMON  "NAME,DEVICE,TYPE,VENDOR,PRODUCT,DRIVER,HWADDR,STATE"
+
+/*****************************************************************************/
 
 const NmcMetaGenericInfo *const nmc_fields_dev_show_connections[] = {
 	NMC_META_GENERIC ("NAME"),                         /* 0 */
@@ -238,7 +316,7 @@ const NmcMetaGenericInfo *const nmc_fields_dev_show_bluetooth[] = {
 
 /* Available sections for 'device show' */
 const NmcMetaGenericInfo *const nmc_fields_dev_show_sections[] = {
-	NMC_META_GENERIC_WITH_NESTED ("GENERAL",           nmc_fields_dev_show_general + 1),      /* 0 */
+	NMC_META_GENERIC_WITH_NESTED ("GENERAL",           metagen_device_detail_general),        /* 0 */
 	NMC_META_GENERIC_WITH_NESTED ("CAPABILITIES",      nmc_fields_dev_show_cap + 1),          /* 1 */
 	NMC_META_GENERIC_WITH_NESTED ("WIFI-PROPERTIES",   nmc_fields_dev_show_wifi_prop + 1),    /* 2 */
 	NMC_META_GENERIC_WITH_NESTED ("AP",                nmc_fields_dev_wifi_list + 1),         /* 3 */
@@ -960,18 +1038,6 @@ construct_header_name (const char *base, const char *spec)
 	return g_strdup_printf ("%s (%s)", base, spec);
 }
 
-static const char *
-get_active_connection_id (NMDevice *device)
-{
-	NMActiveConnection *ac;
-
-	ac = nm_device_get_active_connection (device);
-	if (!ac)
-		return NULL;
-
-	return nm_active_connection_get_id (ac);
-}
-
 static gboolean
 print_bond_bridge_info (NMDevice *device,
                         NmCli *nmc,
@@ -1098,13 +1164,10 @@ static gboolean
 show_device_info (NMDevice *device, NmCli *nmc)
 {
 	GError *error = NULL;
-	const char *hwaddr = NULL;
 	NMDeviceState state = NM_DEVICE_STATE_UNKNOWN;
-	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 	NMDeviceCapabilities caps;
-	NMActiveConnection *acon;
 	guint32 speed;
-	char *speed_str, *state_str, *reason_str, *mtu_str;
+	char *speed_str;
 	GArray *sections_array;
 	int k;
 	const char *fields_str = NULL;
@@ -1141,12 +1204,12 @@ show_device_info (NMDevice *device, NmCli *nmc)
 
 		/* Lazy way to retrieve sorted array from 0 to the number of dev fields */
 		out_indices = parse_output_fields (NULL,
-		                                   (const NMMetaAbstractInfo *const*) nmc_fields_dev_show_general,
+		                                   (const NMMetaAbstractInfo *const*) metagen_device_detail_general,
 		                                   FALSE, NULL, NULL);
 
-		row = g_new0 (NmcOutputField, G_N_ELEMENTS (nmc_fields_dev_show_general));
-		for (i = 0; i < G_N_ELEMENTS (nmc_fields_dev_show_general); i++)
-			row[i].info = (const NMMetaAbstractInfo *) &nmc_fields_dev_show_general[i];
+		row = g_new0 (NmcOutputField, G_N_ELEMENTS (metagen_device_detail_general));
+		for (i = 0; i < G_N_ELEMENTS (metagen_device_detail_general); i++)
+			row[i].info = (const NMMetaAbstractInfo *) &metagen_device_detail_general[i];
 
 		print_required_fields (&nmc->nmc_config, NMC_OF_FLAG_MAIN_HEADER_ONLY,
 		                       out_indices, header_name,
@@ -1164,56 +1227,20 @@ show_device_info (NMDevice *device, NmCli *nmc)
 		was_output = FALSE;
 
 		state = nm_device_get_state (device);
-		reason = nm_device_get_state_reason (device);
 
-		/* section GENERAL */
-		if (!strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[0]->name)) {
-			NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
+		if (nmc_fields_dev_show_sections[section_idx]->nested == metagen_device_detail_general) {
+			gs_free char *f = section_fld ? g_strdup_printf ("GENERAL.%s", section_fld) : NULL;
 
-			tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_dev_show_general;
-			out_indices = parse_output_fields (section_fld,
-			                                   tmpl, FALSE, NULL, NULL);
-			arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_FIELD_NAMES);
-			g_ptr_array_add (out.output_data, arr);
-
-			state_str = g_strdup_printf ("%d (%s)", state, nmc_device_state_to_string (state));
-			reason_str = g_strdup_printf ("%d (%s)", reason, nmc_device_reason_to_string (reason));
-			hwaddr = nm_device_get_hw_address (device);
-			mtu_str = g_strdup_printf ("%u", nm_device_get_mtu (device));
-			acon = nm_device_get_active_connection (device);
-
-			arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_SECTION_PREFIX);
-			set_val_strc (arr, 0, nmc_fields_dev_show_sections[0]->name);  /* "GENERAL"*/
-			set_val_strc (arr, 1, nm_device_get_iface (device));
-			set_val_strc (arr, 2, nm_device_get_type_description (device));
-			set_val_strc (arr, 3, G_OBJECT_TYPE_NAME (device));
-			set_val_strc (arr, 4, nm_device_get_vendor (device));
-			set_val_strc (arr, 5, nm_device_get_product (device));
-			set_val_strc (arr, 6, nm_device_get_driver (device) ? nm_device_get_driver (device) : _("(unknown)"));
-			set_val_strc (arr, 7, nm_device_get_driver_version (device));
-			set_val_strc (arr, 8, nm_device_get_firmware_version (device));
-			set_val_strc (arr, 9, hwaddr ?: _("(unknown)"));
-			set_val_str  (arr, 10, mtu_str);
-			set_val_str  (arr, 11, state_str);
-			set_val_str  (arr, 12, reason_str);
-			set_val_strc (arr, 13, nm_device_get_udi (device));
-			set_val_strc (arr, 14, nm_device_get_ip_iface (device));
-			set_val_strc (arr, 15, nm_device_is_software (device) ? _("yes") : _("no"));
-			set_val_strc (arr, 16, nm_device_get_managed (device) ? _("yes") : _("no"));
-			set_val_strc (arr, 17, nm_device_get_autoconnect (device) ? _("yes") : _("no"));
-			set_val_strc (arr, 18, nm_device_get_firmware_missing (device) ? _("yes") : _("no"));
-			set_val_strc (arr, 19, nm_device_get_nm_plugin_missing (device) ? _("yes") : _("no"));
-			set_val_strc (arr, 20, nm_device_get_physical_port_id (device));
-			set_val_strc (arr, 21, get_active_connection_id (device));
-			set_val_strc (arr, 22, acon ? nm_active_connection_get_uuid (acon) : NULL);
-			set_val_strc (arr, 23, acon ? nm_object_get_path (NM_OBJECT (acon)) : NULL);
-			set_val_strc (arr, 24, nmc_device_metered_to_string (nm_device_get_metered (device)));
-			g_ptr_array_add (out.output_data, arr);
-
-			print_data_prepare_width (out.output_data);
-			print_data (&nmc->nmc_config, out_indices, NULL, 0, &out);
+			nmc_print (&nmc->nmc_config,
+			           (gpointer[]) { device, NULL },
+			           NULL,
+			           NMC_META_GENERIC_GROUP ("GENERAL", metagen_device_detail_general, N_("NAME")),
+			           f,
+			           NULL);
 			was_output = TRUE;
+			continue;
 		}
+
 
 		/* section CAPABILITIES */
 		if (!strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[1]->name)) {
