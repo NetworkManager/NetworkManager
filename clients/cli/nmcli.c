@@ -193,7 +193,7 @@ complete_fields (const char *option, const char *prefix)
 	complete_field (h, nmc_fields_ip6_config);
 	complete_field (h, metagen_con_show);
 	complete_field (h, metagen_con_active_general);
-	complete_field (h, nmc_fields_con_active_details_vpn);
+	complete_field (h, metagen_con_active_vpn);
 	complete_field (h, nmc_fields_con_active_details_groups);
 	complete_field (h, nmc_fields_dev_status);
 	complete_field (h, nmc_fields_dev_show_general);

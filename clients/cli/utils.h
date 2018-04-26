@@ -152,6 +152,14 @@ typedef enum {
 	NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_MASTER_PATH,
 	_NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_NUM,
 
+	NMC_GENERIC_INFO_TYPE_CON_VPN_TYPE = 0,
+	NMC_GENERIC_INFO_TYPE_CON_VPN_USERNAME,
+	NMC_GENERIC_INFO_TYPE_CON_VPN_GATEWAY,
+	NMC_GENERIC_INFO_TYPE_CON_VPN_BANNER,
+	NMC_GENERIC_INFO_TYPE_CON_VPN_VPN_STATE,
+	NMC_GENERIC_INFO_TYPE_CON_VPN_CFG,
+	_NMC_GENERIC_INFO_TYPE_CON_ACTIVE_VPN_NUM,
+
 } NmcGenericInfoType;
 
 #define NMC_HANDLE_COLOR(color) \
@@ -220,8 +228,13 @@ nmc_meta_generic_get_bool (gboolean val, NMMetaAccessorGetType get_type)
 	return nmc_meta_generic_get_str_i18n (val ? N_("yes") : N_("no"), get_type);
 }
 
+typedef enum {
+	NMC_META_GENERIC_GET_ENUM_TYPE_PARENTHESES,
+	NMC_META_GENERIC_GET_ENUM_TYPE_DASH,
+} NmcMetaGenericGetEnumType;
+
 static inline char *
-nmc_meta_generic_get_enum_with_detail (gint64 enum_val, const char *str_val, NMMetaAccessorGetType get_type)
+nmc_meta_generic_get_enum_with_detail (NmcMetaGenericGetEnumType get_enum_type, gint64 enum_val, const char *str_val, NMMetaAccessorGetType get_type)
 {
 	if (!NM_IN_SET (get_type, NM_META_ACCESSOR_GET_TYPE_PRETTY,
 	                          NM_META_ACCESSOR_GET_TYPE_PARSABLE))
@@ -232,12 +245,23 @@ nmc_meta_generic_get_enum_with_detail (gint64 enum_val, const char *str_val, NMM
 		return g_strdup_printf ("%lld", (long long) enum_val);
 	}
 
-	/* note that this function will always print "$NUM ($NICK)", also in PARSABLE
-	 * mode. That might not be desired, but it's done for certain properties to preserve
-	 * previous behavior. */
-	if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
-		return g_strdup_printf (_("%lld (%s)"), (long long) enum_val, gettext (str_val));
-	return g_strdup_printf ("%lld (%s)", (long long) enum_val, str_val);
+	switch (get_enum_type) {
+	case NMC_META_GENERIC_GET_ENUM_TYPE_PARENTHESES:
+		/* note that this function will always print "$NUM ($NICK)", also in PARSABLE
+		 * mode. That might not be desired, but it's done for certain properties to preserve
+		 * previous behavior. */
+		if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
+			return g_strdup_printf (_("%lld (%s)"), (long long) enum_val, gettext (str_val));
+		return g_strdup_printf ("%lld (%s)", (long long) enum_val, str_val);
+	case NMC_META_GENERIC_GET_ENUM_TYPE_DASH:
+		/* note that this function will always print "$NUM ($NICK)", also in PARSABLE
+		 * mode. That might not be desired, but it's done for certain properties to preserve
+		 * previous behavior. */
+		if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
+			return g_strdup_printf (_("%lld - %s"), (long long) enum_val, gettext (str_val));
+		return g_strdup_printf ("%lld - %s", (long long) enum_val, str_val);
+	}
+	g_return_val_if_reached (NULL);
 }
 
 /*****************************************************************************/
