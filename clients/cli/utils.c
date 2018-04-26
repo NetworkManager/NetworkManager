@@ -1301,8 +1301,7 @@ _print_do (const NmcConfig *nmc_config,
 		}
 
 		if (   pretty
-		    && (   i_row < row_len - 1
-		        || multiline)) {
+		    && multiline) {
 			gs_free char *line = NULL;
 
 			g_print ("%s\n", (line = g_strnfill (ML_HEADER_WIDTH, '-')));

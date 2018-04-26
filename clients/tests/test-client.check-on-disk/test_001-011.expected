@@ -2,7 +2,7 @@ location: clients/tests/test-client.py:591:test_001()/11
 cmd: $NMCLI --pretty general permissions
 lang: C
 returncode: 0
-stdout: 2672 bytes
+stdout: 1472 bytes
 >>>
 ==============================
   NetworkManager permissions
@@ -10,35 +10,20 @@ stdout: 2672 bytes
 PERMISSION                                                        VALUE   
 ---------------------------------------------------------------------------------------------------------
 org.freedesktop.NetworkManager.enable-disable-network             yes     
--------------------------------------------------------------------------------
 org.freedesktop.NetworkManager.enable-disable-wifi                yes     
--------------------------------------------------------------------------------
 org.freedesktop.NetworkManager.enable-disable-wwan                yes     
--------------------------------------------------------------------------------
 org.freedesktop.NetworkManager.enable-disable-wimax               yes     
--------------------------------------------------------------------------------
 org.freedesktop.NetworkManager.sleep-wake                         no      
--------------------------------------------------------------------------------
 org.freedesktop.NetworkManager.network-control                    yes     
--------------------------------------------------------------------------------
 org.freedesktop.NetworkManager.wifi.share.protected               yes     
--------------------------------------------------------------------------------
 org.freedesktop.NetworkManager.wifi.share.open                    yes     
--------------------------------------------------------------------------------
 org.freedesktop.NetworkManager.settings.modify.system             yes     
--------------------------------------------------------------------------------
 org.freedesktop.NetworkManager.settings.modify.own                yes     
--------------------------------------------------------------------------------
 org.freedesktop.NetworkManager.settings.modify.hostname           yes     
--------------------------------------------------------------------------------
 org.freedesktop.NetworkManager.settings.modify.global-dns         no      
--------------------------------------------------------------------------------
 org.freedesktop.NetworkManager.reload                             no      
--------------------------------------------------------------------------------
 org.freedesktop.NetworkManager.checkpoint-rollback                unknown 
--------------------------------------------------------------------------------
 org.freedesktop.NetworkManager.enable-disable-statistics          unknown 
--------------------------------------------------------------------------------
 org.freedesktop.NetworkManager.enable-disable-connectivity-check  unknown 
 
 <<<
