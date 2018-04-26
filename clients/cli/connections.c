@@ -441,22 +441,106 @@ const NmcMetaGenericInfo *const metagen_con_show[_NMC_GENERIC_INFO_TYPE_CON_SHOW
 
 /*****************************************************************************/
 
-const NmcMetaGenericInfo *const nmc_fields_con_active_details_general[] = {
-	NMC_META_GENERIC ("GROUP"),        /* 0 */
-	NMC_META_GENERIC ("NAME"),         /* 1 */
-	NMC_META_GENERIC ("UUID"),         /* 2 */
-	NMC_META_GENERIC ("DEVICES"),      /* 3 */
-	NMC_META_GENERIC ("STATE"),        /* 4 */
-	NMC_META_GENERIC ("DEFAULT"),      /* 5 */
-	NMC_META_GENERIC ("DEFAULT6"),     /* 6 */
-	NMC_META_GENERIC ("SPEC-OBJECT"),  /* 7 */
-	NMC_META_GENERIC ("VPN"),          /* 8 */
-	NMC_META_GENERIC ("DBUS-PATH"),    /* 9 */
-	NMC_META_GENERIC ("CON-PATH"),     /* 10 */
-	NMC_META_GENERIC ("ZONE"),         /* 11 */
-	NMC_META_GENERIC ("MASTER-PATH"),  /* 12 */
-	NULL,
+static gconstpointer
+_metagen_con_active_general_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
+{
+	NMActiveConnection *ac = target;
+	NMConnection *c;
+	NMSettingConnection *s_con = NULL;
+	NMDevice *dev;
+	guint i;
+	const char *s;
+
+	NMC_HANDLE_COLOR (NM_META_COLOR_NONE);
+
+	nm_assert (NM_IN_SET (get_type, NM_META_ACCESSOR_GET_TYPE_PRETTY, NM_META_ACCESSOR_GET_TYPE_PARSABLE));
+
+	c = NM_CONNECTION (nm_active_connection_get_connection (ac));
+	if (c)
+		s_con = nm_connection_get_setting_connection (c);
+
+	switch (info->info_type) {
+	case NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_NAME:
+		return nm_active_connection_get_id (ac);
+	case NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_UUID:
+		return nm_active_connection_get_uuid (ac);
+	case NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_DEVICES:
+		{
+			GString *str = NULL;
+			const GPtrArray *devices;
+
+			s = NULL;
+			devices = nm_active_connection_get_devices (ac);
+			if (devices) {
+				for (i = 0; i < devices->len; i++) {
+					NMDevice *device = devices->pdata[i];
+					const char *iface;
+
+					iface = nm_device_get_iface (device);
+					if (!iface)
+						continue;
+					if (!s) {
+						s = iface;
+						continue;
+					}
+					if (!str)
+						str = g_string_new (s);
+					g_string_append_c (str, ',');
+					g_string_append (str, iface);
+				}
+			}
+			if (str)
+				return (*out_to_free = g_string_free (str, FALSE));
+			return s;
+		}
+	case NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_STATE:
+		return nmc_meta_generic_get_str_i18n (active_connection_state_to_string (nm_active_connection_get_state (ac)),
+		                                      get_type);
+	case NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_DEFAULT:
+		return nmc_meta_generic_get_bool (nm_active_connection_get_default (ac), get_type);
+	case NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_DEFAULT6:
+		return nmc_meta_generic_get_bool (nm_active_connection_get_default6 (ac), get_type);
+	case NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_SPEC_OBJECT:
+		return nm_active_connection_get_specific_object_path (ac);
+	case NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_VPN:
+		return nmc_meta_generic_get_bool (NM_IS_VPN_CONNECTION (ac), get_type);
+	case NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_DBUS_PATH:
+		return nm_object_get_path (NM_OBJECT (ac));
+	case NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_CON_PATH:
+		return c ? nm_connection_get_path (c) : NULL;
+	case NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_ZONE:
+		/* this is really ugly, because the zone is not a property of the active-connection,
+		 * but the settings-connection profile. There is no guarantee, that they agree. */
+		return s_con ? nm_setting_connection_get_zone (s_con) : NULL;
+	case NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_MASTER_PATH:
+		dev = nm_active_connection_get_master (ac);
+		return dev ? nm_object_get_path (NM_OBJECT (dev)) : NULL;
+	default:
+		break;
+	}
+
+	g_return_val_if_reached (NULL);
+}
+
+const NmcMetaGenericInfo *const metagen_con_active_general[_NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_NUM + 1] = {
+#define _METAGEN_CON_ACTIVE_GENERAL(type, name) \
+	[type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_con_active_general_get_fcn)
+	_METAGEN_CON_ACTIVE_GENERAL (NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_NAME,        "NAME"),
+	_METAGEN_CON_ACTIVE_GENERAL (NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_UUID,        "UUID"),
+	_METAGEN_CON_ACTIVE_GENERAL (NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_DEVICES,     "DEVICES"),
+	_METAGEN_CON_ACTIVE_GENERAL (NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_STATE,       "STATE"),
+	_METAGEN_CON_ACTIVE_GENERAL (NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_DEFAULT,     "DEFAULT"),
+	_METAGEN_CON_ACTIVE_GENERAL (NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_DEFAULT6,    "DEFAULT6"),
+	_METAGEN_CON_ACTIVE_GENERAL (NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_SPEC_OBJECT, "SPEC-OBJECT"),
+	_METAGEN_CON_ACTIVE_GENERAL (NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_VPN,         "VPN"),
+	_METAGEN_CON_ACTIVE_GENERAL (NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_DBUS_PATH,   "DBUS-PATH"),
+	_METAGEN_CON_ACTIVE_GENERAL (NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_CON_PATH,    "CON-PATH"),
+	_METAGEN_CON_ACTIVE_GENERAL (NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_ZONE,        "ZONE"),
+	_METAGEN_CON_ACTIVE_GENERAL (NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_MASTER_PATH, "MASTER-PATH"),
 };
+
+/*****************************************************************************/
+
 #define NMC_FIELDS_SETTINGS_NAMES_ALL    NM_SETTING_CONNECTION_SETTING_NAME","\
                                          NM_SETTING_WIRED_SETTING_NAME","\
                                          NM_SETTING_802_1X_SETTING_NAME","\
@@ -507,7 +591,7 @@ const NmcMetaGenericInfo *const nmc_fields_con_active_details_vpn[] = {
 };
 
 const NmcMetaGenericInfo *const nmc_fields_con_active_details_groups[] = {
-	NMC_META_GENERIC_WITH_NESTED ("GENERAL", nmc_fields_con_active_details_general + 1), /* 0 */
+	NMC_META_GENERIC_WITH_NESTED ("GENERAL", metagen_con_active_general),                /* 0 */
 	NMC_META_GENERIC_WITH_NESTED ("IP4",     metagen_ip4_config),                        /* 1 */
 	NMC_META_GENERIC_WITH_NESTED ("DHCP4",   nmc_fields_dhcp_config + 1),                /* 2 */
 	NMC_META_GENERIC_WITH_NESTED ("IP6",     nmc_fields_ip6_config + 1),                 /* 3 */
@@ -1043,77 +1127,6 @@ nmc_active_connection_state_to_color (NMActiveConnectionState state)
 		return NM_META_COLOR_CONNECTION_UNKNOWN;
 }
 
-static void
-fill_output_active_connection (NMActiveConnection *active,
-                               GPtrArray *output_data,
-                               gboolean with_group,
-                               guint32 o_flags)
-{
-	NMRemoteConnection *con;
-	NMSettingConnection *s_con = NULL;
-	const GPtrArray *devices;
-	GString *dev_str;
-	NMActiveConnectionState state;
-	NMDevice *master;
-	const char *con_path = NULL, *con_zone = NULL;
-	int i;
-	const NMMetaAbstractInfo *const*tmpl;
-	NmcOutputField *arr;
-	int idx_start = with_group ? 0 : 1;
-
-	con = nm_active_connection_get_connection (active);
-	if (con) {
-		con_path = nm_connection_get_path (NM_CONNECTION (con));
-		s_con = nm_connection_get_setting_connection (NM_CONNECTION (con));
-		g_assert (s_con);
-		con_zone = nm_setting_connection_get_zone (s_con);
-	}
-
-	state = nm_active_connection_get_state (active);
-	master = nm_active_connection_get_master (active);
-
-	/* Get devices of the active connection */
-	dev_str = g_string_new (NULL);
-	devices = nm_active_connection_get_devices (active);
-	for (i = 0; i < devices->len; i++) {
-		NMDevice *device = g_ptr_array_index (devices, i);
-		const char *dev_iface = nm_device_get_iface (device);
-
-		if (dev_iface) {
-			g_string_append (dev_str, dev_iface);
-			g_string_append_c (dev_str, ',');
-		}
-	}
-	if (dev_str->len > 0)
-		g_string_truncate (dev_str, dev_str->len - 1);  /* Cut off last ',' */
-
-	tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_con_active_details_general;
-	if (!with_group)
-		tmpl++;
-
-	/* Fill field values */
-	arr = nmc_dup_fields_array (tmpl, o_flags);
-	if (with_group)
-		set_val_strc (arr, 0, nmc_fields_con_active_details_groups[0]->name);
-	set_val_strc (arr, 1-idx_start, nm_active_connection_get_id (active));
-	set_val_strc (arr, 2-idx_start, nm_active_connection_get_uuid (active));
-	set_val_str  (arr, 3-idx_start, dev_str->str);
-	set_val_strc (arr, 4-idx_start, active_connection_state_to_string (state));
-	set_val_strc (arr, 5-idx_start, nm_active_connection_get_default (active) ? _("yes") : _("no"));
-	set_val_strc (arr, 6-idx_start, nm_active_connection_get_default6 (active) ? _("yes") : _("no"));
-	set_val_strc (arr, 7-idx_start, nm_active_connection_get_specific_object_path (active));
-	set_val_strc (arr, 8-idx_start, NM_IS_VPN_CONNECTION (active) ? _("yes") : _("no"));
-	set_val_strc (arr, 9-idx_start, nm_object_get_path (NM_OBJECT (active)));
-	set_val_strc (arr, 10-idx_start, con_path);
-	set_val_strc (arr, 11-idx_start, con_zone);
-	set_val_strc (arr, 12-idx_start, master ? nm_object_get_path (NM_OBJECT (master)) : NULL);
-	set_val_strc (arr, 13-idx_start, s_con ? nm_setting_connection_get_slave_type (s_con) : NULL);
-
-	g_ptr_array_add (output_data, arr);
-
-	g_string_free (dev_str, FALSE);
-}
-
 typedef struct {
 	char **array;
 	guint32 idx;
@@ -1258,29 +1271,27 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		int group_idx = g_array_index (print_groups, int, i);
 		char *group_fld = (char *) g_ptr_array_index (group_fields, i);
 
-		if (nmc->nmc_config.print_output != NMC_PRINT_TERSE && !nmc->nmc_config.multiline_output && was_output)
-			g_print ("\n"); /* Empty line */
+		if (   nmc->nmc_config.print_output != NMC_PRINT_TERSE
+		    && !nmc->nmc_config.multiline_output
+		    && was_output)
+			g_print ("\n");
 
 		was_output = FALSE;
 
-		/* GENERAL */
-		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx]->name, nmc_fields_con_active_details_groups[0]->name) == 0) {
-			NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
+		if (nmc_fields_con_active_details_groups[group_idx]->nested == metagen_con_active_general) {
+			gs_free char *f = NULL;
 
-			/* Add field names */
-			tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_con_active_details_general;
-			out_indices = parse_output_fields (group_fld,
-			                                   tmpl, FALSE, NULL, NULL);
-			arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_FIELD_NAMES);
-			g_ptr_array_add (out.output_data, arr);
+			if (group_fld)
+				f = g_strdup_printf ("GENERAL.%s", group_fld);
 
-			/* Fill in values */
-			fill_output_active_connection (acon, out.output_data, TRUE, NMC_OF_FLAG_SECTION_PREFIX);
-
-			print_data_prepare_width (out.output_data);
-			print_data (&nmc->nmc_config, out_indices, NULL, 0, &out);
-
+			nmc_print (&nmc->nmc_config,
+			           (gpointer[]) { acon, NULL },
+			           NULL,
+			           NMC_META_GENERIC_GROUP ("GENERAL", metagen_con_active_general, N_("GROUP")),
+			           f,
+			           NULL);
 			was_output = TRUE;
+			continue;
 		}
 
 		/* IP4 */

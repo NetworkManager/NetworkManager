@@ -2,7 +2,7 @@ location: clients/tests/test-client.py:796:test_003()/70
 cmd: $NMCLI con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4872 bytes
+stdout: 4875 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -85,7 +85,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
-GENERAL.STATE:                          activated
+GENERAL.STATE:                          aktywowano
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
 GENERAL.SPEC-OBJECT:                    --
@@ -98,7 +98,7 @@ GENERAL.MASTER-PATH:                    --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
-GENERAL.STATE:                          deactivating
+GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
 GENERAL.SPEC-OBJECT:                    --
