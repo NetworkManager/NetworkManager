@@ -449,6 +449,16 @@ nm_g_variant_unref_floating (GVariant *var)
 
 /*****************************************************************************/
 
+static inline int
+nm_utf8_collate0 (const char *a, const char *b)
+{
+	if (!a)
+		return !b ? 0 : -1;
+	if (!b)
+		return 1;
+	return g_utf8_collate (a, b);
+}
+
 int nm_strcmp_p_with_data (gconstpointer a, gconstpointer b, gpointer user_data);
 int nm_cmp_uint32_p_with_data (gconstpointer p_a, gconstpointer p_b, gpointer user_data);
 int nm_cmp_int2ptr_p_with_data (gconstpointer p_a, gconstpointer p_b, gpointer user_data);
