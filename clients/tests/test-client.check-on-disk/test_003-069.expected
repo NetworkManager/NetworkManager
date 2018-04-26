@@ -84,19 +84,6 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
-GENERAL.DEVICES:                        eth0
-GENERAL.STATE:                          deactivating
-GENERAL.DEFAULT:                        no
-GENERAL.DEFAULT6:                       no
-GENERAL.SPEC-OBJECT:                    --
-GENERAL.VPN:                            no
-GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/ActiveConnection/1
-GENERAL.CON-PATH:                       /org/freedesktop/NetworkManager/Settings/Connection/3
-GENERAL.ZONE:                           --
-GENERAL.MASTER-PATH:                    --
-
-GENERAL.NAME:                           ethernet
-GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
 GENERAL.STATE:                          activated
 GENERAL.DEFAULT:                        no
@@ -104,6 +91,19 @@ GENERAL.DEFAULT6:                       no
 GENERAL.SPEC-OBJECT:                    --
 GENERAL.VPN:                            no
 GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/ActiveConnection/2
+GENERAL.CON-PATH:                       /org/freedesktop/NetworkManager/Settings/Connection/3
+GENERAL.ZONE:                           --
+GENERAL.MASTER-PATH:                    --
+
+GENERAL.NAME:                           ethernet
+GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
+GENERAL.DEVICES:                        eth0
+GENERAL.STATE:                          deactivating
+GENERAL.DEFAULT:                        no
+GENERAL.DEFAULT6:                       no
+GENERAL.SPEC-OBJECT:                    --
+GENERAL.VPN:                            no
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/ActiveConnection/1
 GENERAL.CON-PATH:                       /org/freedesktop/NetworkManager/Settings/Connection/3
 GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --

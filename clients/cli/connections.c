@@ -865,34 +865,40 @@ construct_header_name (const char *base, const char *spec)
 	return g_strdup_printf ("%s (%s)", base, spec);
 }
 
+static int
+get_ac_for_connection_cmp (gconstpointer pa, gconstpointer pb, gpointer user_data)
+{
+	NMActiveConnection *ac_a = *((NMActiveConnection *const*) pa);
+	NMActiveConnection *ac_b = *((NMActiveConnection *const*) pb);
+
+	return active_connection_cmp (ac_a, ac_b);
+}
+
 static NMActiveConnection *
 get_ac_for_connection (const GPtrArray *active_cons, NMConnection *connection, GPtrArray **out_result)
 {
-	const char *con_path, *ac_con_path;
 	guint i;
 	NMActiveConnection *best_candidate = NULL;
 	GPtrArray *result = out_result ? *out_result : NULL;
 
-	con_path = nm_connection_get_path (connection);
 	for (i = 0; i < active_cons->len; i++) {
 		NMActiveConnection *candidate = g_ptr_array_index (active_cons, i);
 		NMRemoteConnection *con;
 
 		con = nm_active_connection_get_connection (candidate);
-		if (NM_CONNECTION (con) != connection) {
-			/* also compare the D-Bus paths. Why? I don't know. */
-			ac_con_path = con ? nm_connection_get_path (NM_CONNECTION (con)) : NULL;
-			if (!nm_streq0 (ac_con_path, con_path))
-				continue;
-		}
+		if (NM_CONNECTION (con) != connection)
+			continue;
 
 		if (!out_result)
 			return candidate;
-		if (!best_candidate)
-			best_candidate = candidate;
 		if (!result)
 			result = g_ptr_array_new_with_free_func (g_object_unref);
 		g_ptr_array_add (result, g_object_ref (candidate));
+	}
+
+	if (result) {
+		g_ptr_array_sort_with_data (result, get_ac_for_connection_cmp, NULL);
+		best_candidate = result->pdata[0];
 	}
 
 	NM_SET_OUT (out_result, result);
