@@ -1392,7 +1392,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			gboolean b1 = FALSE;
 			NMIPConfig *cfg4 = nm_active_connection_get_ip4_config (acon);
 
-			b1 = print_ip4_config (cfg4, &nmc->nmc_config, group_fld);
+			b1 = print_ip_config (cfg4, AF_INET, &nmc->nmc_config, group_fld);
 			was_output = was_output || b1;
 		}
 
@@ -1401,7 +1401,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			gboolean b1 = FALSE;
 			NMDhcpConfig *dhcp4 = nm_active_connection_get_dhcp4_config (acon);
 
-			b1 = print_dhcp_config (dhcp4, &nmc->nmc_config, "DHCP4", group_fld);
+			b1 = print_dhcp_config (dhcp4, AF_INET, &nmc->nmc_config, group_fld);
 			was_output = was_output || b1;
 		}
 
@@ -1410,7 +1410,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			gboolean b1 = FALSE;
 			NMIPConfig *cfg6 = nm_active_connection_get_ip6_config (acon);
 
-			b1 = print_ip6_config (cfg6, &nmc->nmc_config, "IP6", group_fld);
+			b1 = print_ip_config (cfg6, AF_INET6, &nmc->nmc_config, group_fld);
 			was_output = was_output || b1;
 		}
 
@@ -1419,7 +1419,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			gboolean b1 = FALSE;
 			NMDhcpConfig *dhcp6 = nm_active_connection_get_dhcp6_config (acon);
 
-			b1 = print_dhcp_config (dhcp6, &nmc->nmc_config, "DHCP6", group_fld);
+			b1 = print_dhcp_config (dhcp6, AF_INET6, &nmc->nmc_config, group_fld);
 			was_output = was_output || b1;
 		}
 
