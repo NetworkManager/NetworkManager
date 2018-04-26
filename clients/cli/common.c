@@ -336,49 +336,29 @@ const NmcMetaGenericInfo *const metagen_dhcp_config[_NMC_GENERIC_INFO_TYPE_DHCP_
 /*****************************************************************************/
 
 gboolean
-print_ip4_config (NMIPConfig *cfg4,
-                  const NmcConfig *nmc_config,
-                  const char *one_field)
+print_ip_config (NMIPConfig *cfg,
+                 int addr_family,
+                 const NmcConfig *nmc_config,
+                 const char *one_field)
 {
 	gs_free_error GError *error = NULL;
 	gs_free char *field_str = NULL;
 
-	if (cfg4 == NULL)
+	if (!cfg)
 		return FALSE;
 
-	if (one_field)
-		field_str = g_strdup_printf ("IP4.%s", one_field);
-
-	if (!nmc_print (nmc_config,
-	                (gpointer[]) { cfg4, NULL },
-	                NULL,
-	                NMC_META_GENERIC_GROUP ("IP4", metagen_ip4_config, N_("GROUP")),
-	                field_str,
-	                &error)) {
-		return FALSE;
+	if (one_field) {
+		field_str = g_strdup_printf ("IP%c.%s",
+		                             nm_utils_addr_family_to_char (addr_family),
+		                             one_field);
 	}
-	return TRUE;
-}
-
-gboolean
-print_ip6_config (NMIPConfig *cfg6,
-                  const NmcConfig *nmc_config,
-                  const char *group_prefix,
-                  const char *one_field)
-{
-	gs_free_error GError *error = NULL;
-	gs_free char *field_str = NULL;
-
-	if (cfg6 == NULL)
-		return FALSE;
-
-	if (one_field)
-		field_str = g_strdup_printf ("IP6.%s", one_field);
 
 	if (!nmc_print (nmc_config,
-	                (gpointer[]) { cfg6, NULL },
+	                (gpointer[]) { cfg, NULL },
 	                NULL,
-	                NMC_META_GENERIC_GROUP ("IP6", metagen_ip6_config, N_("GROUP")),
+	                addr_family == AF_INET
+	                  ? NMC_META_GENERIC_GROUP ("IP4", metagen_ip4_config, N_("GROUP"))
+	                  : NMC_META_GENERIC_GROUP ("IP6", metagen_ip6_config, N_("GROUP")),
 	                field_str,
 	                &error)) {
 		return FALSE;
@@ -388,8 +368,8 @@ print_ip6_config (NMIPConfig *cfg6,
 
 gboolean
 print_dhcp_config (NMDhcpConfig *dhcp,
+                   int addr_family,
                    const NmcConfig *nmc_config,
-                   const char *group_prefix,
                    const char *one_field)
 {
 	gs_free_error GError *error = NULL;
@@ -398,13 +378,18 @@ print_dhcp_config (NMDhcpConfig *dhcp,
 	if (!dhcp)
 		return FALSE;
 
-	if (one_field)
-		field_str = g_strdup_printf ("%s.%s", group_prefix, one_field);
+	if (one_field) {
+		field_str = g_strdup_printf ("DHCP%c.%s",
+		                             nm_utils_addr_family_to_char (addr_family),
+		                             one_field);
+	}
 
 	if (!nmc_print (nmc_config,
 	                (gpointer[]) { dhcp, NULL },
 	                NULL,
-	                NMC_META_GENERIC_GROUP (group_prefix, metagen_dhcp_config, N_("GROUP")),
+	                addr_family == AF_INET
+	                  ? NMC_META_GENERIC_GROUP ("DHCP4", metagen_dhcp_config, N_("GROUP"))
+	                  : NMC_META_GENERIC_GROUP ("DHCP6", metagen_dhcp_config, N_("GROUP")),
 	                field_str,
 	                &error)) {
 		return FALSE;

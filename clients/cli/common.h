@@ -25,9 +25,16 @@
 #include "nmcli.h"
 #include "nm-secret-agent-simple.h"
 
-gboolean print_ip4_config (NMIPConfig *cfg4, const NmcConfig *nmc_config, const char *one_field);
-gboolean print_ip6_config (NMIPConfig *cfg6, const NmcConfig *nmc_config, const char *group_prefix, const char *one_field);
-gboolean print_dhcp_config (NMDhcpConfig *dhcp, const NmcConfig *nmc_config, const char *group_prefix, const char *one_field);
+
+gboolean print_ip_config (NMIPConfig *cfg,
+                          int addr_family,
+                          const NmcConfig *nmc_config,
+                          const char *one_field);
+
+gboolean print_dhcp_config (NMDhcpConfig *dhcp,
+                            int addr_family,
+                            const NmcConfig *nmc_config,
+                            const char *one_field);
 
 NMConnection *nmc_find_connection (const GPtrArray *connections,
                                    const char *filter_type,
