@@ -39,17 +39,54 @@
 #define PROMPT_INTERFACE  _("Interface: ")
 #define PROMPT_INTERFACES _("Interface(s): ")
 
-const NmcMetaGenericInfo *const nmc_fields_dev_status[] = {
-	NMC_META_GENERIC ("DEVICE"),       /* 0 */
-	NMC_META_GENERIC ("TYPE"),         /* 1 */
-	NMC_META_GENERIC ("STATE"),        /* 2 */
-	NMC_META_GENERIC ("DBUS-PATH"),    /* 3 */
-	NMC_META_GENERIC ("CONNECTION"),   /* 4 */
-	NMC_META_GENERIC ("CON-UUID"),     /* 5 */
-	NMC_META_GENERIC ("CON-PATH"),     /* 6 */
-	NULL,
+/*****************************************************************************/
+
+static gconstpointer
+_metagen_device_status_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
+{
+	NMDevice *d = target;
+	NMActiveConnection *ac;
+
+	NMC_HANDLE_COLOR (nmc_device_state_to_color (nm_device_get_state (d)));
+
+	switch (info->info_type) {
+	case NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_DEVICE:
+		return nm_device_get_iface (d);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_TYPE:
+		return nm_device_get_type_description (d);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_STATE:
+		return nmc_device_state_to_string (nm_device_get_state (d));
+	case NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_DBUS_PATH:
+		return nm_object_get_path (NM_OBJECT (d));
+	case NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_CONNECTION:
+		ac = nm_device_get_active_connection (d);
+		return ac ? nm_active_connection_get_id (ac) : NULL;
+	case NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_CON_UUID:
+		ac = nm_device_get_active_connection (d);
+		return ac ? nm_active_connection_get_uuid (ac) : NULL;
+	case NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_CON_PATH:
+		ac = nm_device_get_active_connection (d);
+		return ac ? nm_object_get_path (NM_OBJECT (ac)) : NULL;
+	default:
+		break;
+	}
+
+	g_return_val_if_reached (NULL);
+}
+
+const NmcMetaGenericInfo *const metagen_device_status[_NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_NUM + 1] = {
+#define _METAGEN_DEVICE_STATUS(type, name) \
+	[type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_device_status_get_fcn)
+	_METAGEN_DEVICE_STATUS (NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_DEVICE,     "DEVICE"),
+	_METAGEN_DEVICE_STATUS (NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_TYPE,       "TYPE"),
+	_METAGEN_DEVICE_STATUS (NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_STATE,      "STATE"),
+	_METAGEN_DEVICE_STATUS (NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_DBUS_PATH,  "DBUS-PATH"),
+	_METAGEN_DEVICE_STATUS (NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_CONNECTION, "CONNECTION"),
+	_METAGEN_DEVICE_STATUS (NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_CON_UUID,   "CON-UUID"),
+	_METAGEN_DEVICE_STATUS (NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_CON_PATH,   "CON-PATH"),
 };
-#define NMC_FIELDS_DEV_STATUS_COMMON  "DEVICE,TYPE,STATE,CONNECTION"
+
+/*****************************************************************************/
 
 const NmcMetaGenericInfo *const nmc_fields_dev_show_general[] = {
 	NMC_META_GENERIC ("NAME"),                /* 0 */
@@ -1473,47 +1510,15 @@ nmc_device_state_to_color (NMDeviceState state)
 	g_return_val_if_reached (NM_META_COLOR_DEVICE_UNKNOWN);
 }
 
-static void
-fill_output_device_status (NMDevice *device, GPtrArray *output_data)
-{
-	NMActiveConnection *ac;
-	NMDeviceState state;
-	NMMetaColor color;
-	NmcOutputField *arr = nmc_dup_fields_array ((const NMMetaAbstractInfo *const*) nmc_fields_dev_status,
-	                                            0);
-
-	state = nm_device_get_state (device);
-	ac = nm_device_get_active_connection (device);
-
-	/* Show devices in color */
-	color = nmc_device_state_to_color (state);
-	set_val_color_all (arr, color);
-
-	set_val_strc (arr, 0, nm_device_get_iface (device));
-	set_val_strc (arr, 1, nm_device_get_type_description (device));
-	set_val_strc (arr, 2, nmc_device_state_to_string (state));
-	set_val_strc (arr, 3, nm_object_get_path (NM_OBJECT (device)));
-	set_val_strc (arr, 4, get_active_connection_id (device));
-	set_val_strc (arr, 5, ac ? nm_active_connection_get_uuid (ac) : NULL);
-	set_val_strc (arr, 6, ac ? nm_object_get_path (NM_OBJECT (ac)) : NULL);
-
-	g_ptr_array_add (output_data, arr);
-}
-
 static NMCResultCode
 do_devices_status (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
-	NMDevice **devices;
-	int i;
+	gs_free NMDevice **devices = NULL;
 	const char *fields_str = NULL;
-	const NMMetaAbstractInfo *const*tmpl;
-	NmcOutputField *arr;
-	NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 
 	next_arg (nmc, &argc, &argv, NULL);
 
-	/* Nothing to complete */
 	if (nmc->complete)
 		return nmc->return_value;
 
@@ -1523,32 +1528,23 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 	}
 
 	if (!nmc->required_fields || strcasecmp (nmc->required_fields, "common") == 0)
-		fields_str = NMC_FIELDS_DEV_STATUS_COMMON;
+		fields_str = "DEVICE,TYPE,STATE,CONNECTION";
 	else if (!nmc->required_fields || strcasecmp (nmc->required_fields, "all") == 0) {
 	} else
 		fields_str = nmc->required_fields;
 
-	tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_dev_status;
-	out_indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, &error);
+	devices = nmc_get_devices_sorted (nmc->client);
 
-	if (error) {
+	if (!nmc_print (&nmc->nmc_config,
+	                (gpointer *) devices,
+	                N_("Status of devices"),
+	                (const NMMetaAbstractInfo *const*) metagen_device_status,
+	                fields_str,
+	                &error)) {
 		g_string_printf (nmc->return_text, _("Error: 'device status': %s"), error->message);
 		g_error_free (error);
 		return NMC_RESULT_ERROR_USER_INPUT;
 	}
-
-	/* Add headers */
-	arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
-	g_ptr_array_add (out.output_data, arr);
-
-	devices = nmc_get_devices_sorted (nmc->client);
-	for (i = 0; devices[i]; i++)
-		fill_output_device_status (devices[i], out.output_data);
-
-	print_data_prepare_width (out.output_data);
-	print_data (&nmc->nmc_config, out_indices, _("Status of devices"), 0, &out);
-
-	g_free (devices);
 
 	return NMC_RESULT_SUCCESS;
 }
