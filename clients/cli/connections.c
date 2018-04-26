@@ -182,6 +182,87 @@ get_ac_device_string (NMActiveConnection *active)
 
 /*****************************************************************************/
 
+/* FIXME: The same or similar code for VPN info appears also in nm-applet (applet-dialogs.c),
+ * and in gnome-control-center as well. It could probably be shared somehow. */
+
+static char *
+get_vpn_connection_type (NMConnection *connection)
+{
+	const char *type, *p;
+
+	/* The service type is in form of "org.freedesktop.NetworkManager.vpnc".
+	 * Extract end part after last dot, e.g. "vpnc"
+	 */
+	type = nm_setting_vpn_get_service_type (nm_connection_get_setting_vpn (connection));
+	p = strrchr (type, '.');
+	return g_strdup (p ? p + 1 : type);
+}
+
+/* VPN parameters can be found at:
+ * http://git.gnome.org/browse/network-manager-openvpn/tree/src/nm-openvpn-service.h
+ * http://git.gnome.org/browse/network-manager-vpnc/tree/src/nm-vpnc-service.h
+ * http://git.gnome.org/browse/network-manager-pptp/tree/src/nm-pptp-service.h
+ * http://git.gnome.org/browse/network-manager-openconnect/tree/src/nm-openconnect-service.h
+ * http://git.gnome.org/browse/network-manager-openswan/tree/src/nm-openswan-service.h
+ * See also 'properties' directory in these plugins.
+ */
+static const gchar *
+find_vpn_gateway_key (const char *vpn_type)
+{
+	if (g_strcmp0 (vpn_type, "openvpn") == 0)     return "remote";
+	if (g_strcmp0 (vpn_type, "vpnc") == 0)        return "IPSec gateway";
+	if (g_strcmp0 (vpn_type, "pptp") == 0)        return "gateway";
+	if (g_strcmp0 (vpn_type, "openconnect") == 0) return "gateway";
+	if (g_strcmp0 (vpn_type, "openswan") == 0)    return "right";
+	if (g_strcmp0 (vpn_type, "libreswan") == 0)   return "right";
+	if (g_strcmp0 (vpn_type, "ssh") == 0)         return "remote";
+	if (g_strcmp0 (vpn_type, "l2tp") == 0)        return "gateway";
+	return "";
+}
+
+static const gchar *
+find_vpn_username_key (const char *vpn_type)
+{
+	if (g_strcmp0 (vpn_type, "openvpn") == 0)     return "username";
+	if (g_strcmp0 (vpn_type, "vpnc") == 0)        return "Xauth username";
+	if (g_strcmp0 (vpn_type, "pptp") == 0)        return "user";
+	if (g_strcmp0 (vpn_type, "openconnect") == 0) return "username";
+	if (g_strcmp0 (vpn_type, "openswan") == 0)    return "leftxauthusername";
+	if (g_strcmp0 (vpn_type, "libreswan") == 0)   return "leftxauthusername";
+	if (g_strcmp0 (vpn_type, "l2tp") == 0)        return "user";
+	return "";
+}
+
+enum VpnDataItem {
+	VPN_DATA_ITEM_GATEWAY,
+	VPN_DATA_ITEM_USERNAME
+};
+
+static const gchar *
+get_vpn_data_item (NMConnection *connection, enum VpnDataItem vpn_data_item)
+{
+	const char *key;
+	gs_free char *type = NULL;
+
+	type = get_vpn_connection_type (connection);
+
+	switch (vpn_data_item) {
+	case VPN_DATA_ITEM_GATEWAY:
+		key = find_vpn_gateway_key (type);
+		break;
+	case VPN_DATA_ITEM_USERNAME:
+		key = find_vpn_username_key (type);
+		break;
+	default:
+		key = "";
+		break;
+	}
+
+	return nm_setting_vpn_get_data_item (nm_connection_get_setting_vpn (connection), key);
+}
+
+/*****************************************************************************/
+
 typedef struct {
 	NMConnection *connection;
 	NMActiveConnection *primary_active;
@@ -1139,85 +1220,6 @@ fill_vpn_data_item (const char *key, const char *value, gpointer user_data)
 
 	info->array[info->idx++] = g_strdup_printf ("%s = %s", key, value);
 }
-
-// FIXME: The same or similar code for VPN info appears also in nm-applet (applet-dialogs.c),
-// and in gnome-control-center as well. It could probably be shared somehow.
-static char *
-get_vpn_connection_type (NMConnection *connection)
-{
-	const char *type, *p;
-
-	/* The service type is in form of "org.freedesktop.NetworkManager.vpnc".
-	 * Extract end part after last dot, e.g. "vpnc"
-	 */
-	type = nm_setting_vpn_get_service_type (nm_connection_get_setting_vpn (connection));
-	p = strrchr (type, '.');
-	return g_strdup (p ? p + 1 : type);
-}
-
-/* VPN parameters can be found at:
- * http://git.gnome.org/browse/network-manager-openvpn/tree/src/nm-openvpn-service.h
- * http://git.gnome.org/browse/network-manager-vpnc/tree/src/nm-vpnc-service.h
- * http://git.gnome.org/browse/network-manager-pptp/tree/src/nm-pptp-service.h
- * http://git.gnome.org/browse/network-manager-openconnect/tree/src/nm-openconnect-service.h
- * http://git.gnome.org/browse/network-manager-openswan/tree/src/nm-openswan-service.h
- * See also 'properties' directory in these plugins.
- */
-static const gchar *
-find_vpn_gateway_key (const char *vpn_type)
-{
-	if (g_strcmp0 (vpn_type, "openvpn") == 0)     return "remote";
-	if (g_strcmp0 (vpn_type, "vpnc") == 0)        return "IPSec gateway";
-	if (g_strcmp0 (vpn_type, "pptp") == 0)        return "gateway";
-	if (g_strcmp0 (vpn_type, "openconnect") == 0) return "gateway";
-	if (g_strcmp0 (vpn_type, "openswan") == 0)    return "right";
-	if (g_strcmp0 (vpn_type, "libreswan") == 0)   return "right";
-	if (g_strcmp0 (vpn_type, "ssh") == 0)         return "remote";
-	if (g_strcmp0 (vpn_type, "l2tp") == 0)        return "gateway";
-	return "";
-}
-
-static const gchar *
-find_vpn_username_key (const char *vpn_type)
-{
-	if (g_strcmp0 (vpn_type, "openvpn") == 0)     return "username";
-	if (g_strcmp0 (vpn_type, "vpnc") == 0)        return "Xauth username";
-	if (g_strcmp0 (vpn_type, "pptp") == 0)        return "user";
-	if (g_strcmp0 (vpn_type, "openconnect") == 0) return "username";
-	if (g_strcmp0 (vpn_type, "openswan") == 0)    return "leftxauthusername";
-	if (g_strcmp0 (vpn_type, "libreswan") == 0)   return "leftxauthusername";
-	if (g_strcmp0 (vpn_type, "l2tp") == 0)        return "user";
-	return "";
-}
-
-enum VpnDataItem {
-	VPN_DATA_ITEM_GATEWAY,
-	VPN_DATA_ITEM_USERNAME
-};
-
-static const gchar *
-get_vpn_data_item (NMConnection *connection, enum VpnDataItem vpn_data_item)
-{
-	const char *key;
-	gs_free char *type = NULL;
-
-	type = get_vpn_connection_type (connection);
-
-	switch (vpn_data_item) {
-	case VPN_DATA_ITEM_GATEWAY:
-		key = find_vpn_gateway_key (type);
-		break;
-	case VPN_DATA_ITEM_USERNAME:
-		key = find_vpn_username_key (type);
-		break;
-	default:
-		key = "";
-		break;
-	}
-
-	return nm_setting_vpn_get_data_item (nm_connection_get_setting_vpn (connection), key);
-}
-/* FIXME end */
 
 static gboolean
 nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
