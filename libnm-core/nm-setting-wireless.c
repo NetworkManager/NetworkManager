@@ -1548,6 +1548,9 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_wireless_class)
 	 * probe-scanning the SSID for more reliable network discovery.  However,
 	 * these workarounds expose inherent insecurities with hidden SSID networks,
 	 * and thus hidden SSID networks should be used with caution.
+	 *
+	 * Note that marking the network as hidden may be a privacy issue for you, as
+	 * the explicit probe-scans may be distinctly recognizable on the air.
 	 **/
 	/* ---ifcfg-rh---
 	 * property: hidden
