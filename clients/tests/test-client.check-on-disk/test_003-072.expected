@@ -2,7 +2,7 @@ location: clients/tests/test-client.py:799:test_003()/72
 cmd: $NMCLI c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4204 bytes
+stdout: 4206 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -85,7 +85,7 @@ proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
-GENERAL.STATE:                          deactivating
+GENERAL.STATE:                          dezaktywowanie
 GENERAL.DEFAULT:                        nie
 GENERAL.DEFAULT6:                       nie
 GENERAL.SPEC-OBJECT:                    --
