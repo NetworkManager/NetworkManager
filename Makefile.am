@@ -4501,6 +4501,8 @@ man_nm_settings_xml = \
 
 if HAVE_INTROSPECTION
 
+man/nm-setting%.xml: man/common.ent
+
 man/nm-setting%.xml: man/nm-setting%.xsl libnm/nm-setting%-docs.xml
 	$(AM_V_GEN) $(XSLTPROC) --output $@ $(xsltproc_flags) $^
 
