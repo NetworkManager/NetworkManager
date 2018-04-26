@@ -196,7 +196,7 @@ complete_fields (const char *option, const char *prefix)
 	complete_field (h, metagen_con_active_vpn);
 	complete_field (h, nmc_fields_con_active_details_groups);
 	complete_field (h, metagen_device_status);
-	complete_field (h, nmc_fields_dev_show_general);
+	complete_field (h, metagen_device_detail_general);
 	complete_field (h, nmc_fields_dev_show_connections);
 	complete_field (h, nmc_fields_dev_show_cap);
 	complete_field (h, nmc_fields_dev_show_wired_prop);

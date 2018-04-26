@@ -2,7 +2,7 @@ location: clients/tests/test-client.py:887:test_003()/296
 cmd: $NMCLI --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2002 bytes
+stdout: 1999 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -18,11 +18,11 @@ GENERAL.STATE:20 (niedostępne)
 GENERAL.REASON:0 (Nie podano przyczyny)
 GENERAL.UDI:/sys/devices/virtual/eth0
 GENERAL.IP-IFACE:
-GENERAL.IS-SOFTWARE:nie
-GENERAL.NM-MANAGED:tak
-GENERAL.AUTOCONNECT:tak
-GENERAL.FIRMWARE-MISSING:nie
-GENERAL.NM-PLUGIN-MISSING:nie
+GENERAL.IS-SOFTWARE:no
+GENERAL.NM-MANAGED:yes
+GENERAL.AUTOCONNECT:yes
+GENERAL.FIRMWARE-MISSING:no
+GENERAL.NM-PLUGIN-MISSING:no
 GENERAL.PHYS-PORT-ID:
 GENERAL.CONNECTION:ethernet
 GENERAL.CON-UUID:UUID-ethernet-REPLACED-REPLACED-REPL
