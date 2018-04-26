@@ -270,11 +270,66 @@ const NmcMetaGenericInfo *const metagen_ip6_config[_NMC_GENERIC_INFO_TYPE_IP6_CO
 
 /*****************************************************************************/
 
-const NmcMetaGenericInfo *const nmc_fields_dhcp_config[] = {
-	NMC_META_GENERIC ("GROUP"),    /* 0 */
-	NMC_META_GENERIC ("OPTION"),   /* 1 */
-	NULL,
+static gconstpointer
+_metagen_dhcp_config_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
+{
+	NMDhcpConfig *dhcp = target;
+	guint i;
+	char **arr = NULL;
+
+	NMC_HANDLE_COLOR (NM_META_COLOR_NONE);
+
+	switch (info->info_type) {
+	case NMC_GENERIC_INFO_TYPE_DHCP_CONFIG_OPTION:
+		{
+			GHashTable *table;
+			gs_free char **arr2 = NULL;
+			guint n;
+
+			if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
+				return NULL;
+
+			table = nm_dhcp_config_get_options (dhcp);
+			if (!table)
+				goto arr_out;
+
+			arr2 = (char **) nm_utils_strdict_get_keys (table, TRUE, &n);
+			if (!n)
+				goto arr_out;
+
+			nm_assert (arr2 && !arr2[n] && n == NM_PTRARRAY_LEN (arr2));
+			for (i = 0; i < n; i++) {
+				const char *k = arr2[i];
+				const char *v;
+
+				nm_assert (k);
+				v = g_hash_table_lookup (table, k);
+				arr2[i] = g_strdup_printf ("%s = %s", k, v);
+			}
+
+			arr = g_steal_pointer (&arr2);
+			goto arr_out;
+		}
+	default:
+		break;
+	}
+
+	g_return_val_if_reached (NULL);
+
+arr_out:
+	NM_SET_OUT (out_is_default, !arr || !arr[0]);
+	*out_flags |= NM_META_ACCESSOR_GET_OUT_FLAGS_STRV;
+	*out_to_free = arr;
+	return arr;
+}
+
+const NmcMetaGenericInfo *const metagen_dhcp_config[_NMC_GENERIC_INFO_TYPE_DHCP_CONFIG_NUM + 1] = {
+#define _METAGEN_DHCP_CONFIG(type, name) \
+	[type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_dhcp_config_get_fcn)
+	_METAGEN_DHCP_CONFIG (NMC_GENERIC_INFO_TYPE_DHCP_CONFIG_OPTION, "OPTION"),
 };
+
+/*****************************************************************************/
 
 const NmcMetaGenericInfo *const nmc_fields_ip6_config[] = {
 	NMC_META_GENERIC ("GROUP"),     /* 0 */
@@ -343,45 +398,24 @@ print_dhcp_config (NMDhcpConfig *dhcp,
                    const char *group_prefix,
                    const char *one_field)
 {
-	GHashTable *table;
-	const NMMetaAbstractInfo *const*tmpl;
-	NmcOutputField *arr;
+	gs_free_error GError *error = NULL;
+	gs_free char *field_str = NULL;
 
-	if (dhcp == NULL)
+	if (!dhcp)
 		return FALSE;
 
-	table = nm_dhcp_config_get_options (dhcp);
-	if (table) {
-		char **options_arr = NULL;
-		NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
-		gs_free const char **keys = NULL;
-		guint i, nkeys;
+	if (one_field)
+		field_str = g_strdup_printf ("%s.%s", group_prefix, one_field);
 
-		tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_dhcp_config;
-		out_indices = parse_output_fields (one_field,
-		                                   tmpl, FALSE, NULL, NULL);
-		arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_FIELD_NAMES);
-		g_ptr_array_add (out.output_data, arr);
-
-		keys = (const char **) g_hash_table_get_keys_as_array (table, &nkeys);
-		nm_utils_strv_sort (keys, nkeys);
-
-		options_arr = g_new (char *, nkeys + 1);
-		for (i = 0; i < nkeys; i++)
-			options_arr[i] = g_strdup_printf ("%s = %s", keys[i], (const char *) g_hash_table_lookup (table, keys[i]));
-		options_arr[i] = NULL;
-
-		arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_SECTION_PREFIX);
-		set_val_strc (arr, 0, group_prefix);
-		set_val_arr  (arr, 1, options_arr);
-		g_ptr_array_add (out.output_data, arr);
-
-		print_data_prepare_width (out.output_data);
-		print_data (nmc_config, out_indices, NULL, 0, &out);
-
-		return TRUE;
+	if (!nmc_print (nmc_config,
+	                (gpointer[]) { dhcp, NULL },
+	                NULL,
+	                NMC_META_GENERIC_GROUP (group_prefix, metagen_dhcp_config, N_("GROUP")),
+	                field_str,
+	                &error)) {
+		return FALSE;
 	}
-	return FALSE;
+	return TRUE;
 }
 
 /*
