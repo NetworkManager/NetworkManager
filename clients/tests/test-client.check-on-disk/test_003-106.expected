@@ -2,7 +2,7 @@ location: clients/tests/test-client.py:887:test_003()/106
 cmd: $NMCLI --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2031 bytes
+stdout: 2024 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -14,8 +14,8 @@ GENERAL.DRIVER-VERSION:
 GENERAL.FIRMWARE-VERSION:
 GENERAL.HWADDR:C0:61:AE:26:4D:D7
 GENERAL.MTU:0
-GENERAL.STATE:20 (niedostępne)
-GENERAL.REASON:0 (Nie podano przyczyny)
+GENERAL.STATE:20 (unavailable)
+GENERAL.REASON:0 (No reason given)
 GENERAL.UDI:/sys/devices/virtual/eth0
 GENERAL.IP-IFACE:
 GENERAL.IS-SOFTWARE:no
@@ -27,7 +27,7 @@ GENERAL.PHYS-PORT-ID:
 GENERAL.CONNECTION:ethernet
 GENERAL.CON-UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.CON-PATH:/org/freedesktop/NetworkManager/ActiveConnection/1
-GENERAL.METERED:nieznane
+GENERAL.METERED:unknown
 CAPABILITIES.CARRIER-DETECT:nie
 CAPABILITIES.SPEED:100 Mb/s
 CAPABILITIES.IS-SOFTWARE:nie

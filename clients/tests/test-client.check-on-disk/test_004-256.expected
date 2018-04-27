@@ -2,13 +2,13 @@ location: clients/tests/test-client.py:986:test_004()/256
 cmd: $NMCLI --mode tabular --terse --color yes -f COMMON device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 447 bytes
+stdout: 446 bytes
 >>>
 wlan0
 wifi
 13\:E0\:74\:85\:7C\:D9
 0
-20 (niedostępne)
+20 (unavailable)
 con-vpn-1
 /org/freedesktop/NetworkManager/ActiveConnection/2
 IP4:192.168.228.18/32 | 192.168.209.179/25:192.168.41.120:::sear4.foo2.bar | sear4.fo.x.y | sear4.foo1.bar | sear4.foo4.bar | sear4.fo.o.bar:192.168.120.79
