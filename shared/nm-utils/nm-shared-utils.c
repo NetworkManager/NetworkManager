@@ -549,6 +549,19 @@ nm_cmp_int2ptr_p_with_data (gconstpointer p_a, gconstpointer p_b, gpointer user_
 
 /*****************************************************************************/
 
+const char *
+nm_utils_dbus_path_get_last_component (const char *dbus_path)
+{
+	if (dbus_path) {
+		dbus_path = strrchr (dbus_path, '/');
+		if (dbus_path)
+			return dbus_path + 1;
+	}
+	return NULL;
+}
+
+/*****************************************************************************/
+
 /**
  * nm_utils_strsplit_set:
  * @str: the string to split.
