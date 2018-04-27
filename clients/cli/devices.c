@@ -124,12 +124,16 @@ _metagen_device_detail_general_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 		return (*out_to_free = g_strdup_printf ("%u", (guint) nm_device_get_mtu (d)));
 	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_STATE:
 		state = nm_device_get_state (d);
-		// FIXME: wrong use of translation
-		return (*out_to_free = g_strdup_printf ("%d (%s)", (int) state, gettext (nmc_device_state_to_string (state))));
+		return (*out_to_free = nmc_meta_generic_get_enum_with_detail (NMC_META_GENERIC_GET_ENUM_TYPE_PARENTHESES,
+		                                                              state,
+		                                                              nmc_device_state_to_string (state),
+		                                                              get_type));
 	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_REASON:
 		state_reason = nm_device_get_state_reason (d);
-		// FIXME: wrong use of translation
-		return (*out_to_free = g_strdup_printf ("%d (%s)", (int) state_reason, gettext (nmc_device_reason_to_string (state_reason))));
+		return (*out_to_free = nmc_meta_generic_get_enum_with_detail (NMC_META_GENERIC_GET_ENUM_TYPE_PARENTHESES,
+		                                                              state_reason,
+		                                                              nmc_device_reason_to_string (state_reason),
+		                                                              get_type));
 	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_UDI:
 		return nm_device_get_udi (d);
 	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_IP_IFACE:
@@ -156,8 +160,8 @@ _metagen_device_detail_general_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 		ac = nm_device_get_active_connection (d);
 		return ac ? nm_object_get_path (NM_OBJECT (ac)) : NULL;
 	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_METERED:
-		// FIXME: wrong use of translation
-		return gettext (nmc_device_metered_to_string (nm_device_get_metered (d)));
+		return nmc_meta_generic_get_str_i18n (nmc_device_metered_to_string (nm_device_get_metered (d)),
+		                                      get_type);
 	default:
 		break;
 	}
