@@ -165,6 +165,46 @@ struct _NmcMetaGenericInfo {
 		NULL, \
 	}))
 
+static inline const char *
+nmc_meta_generic_get_str_i18n (const char *s, NMMetaAccessorGetType get_type)
+{
+	if (!NM_IN_SET (get_type, NM_META_ACCESSOR_GET_TYPE_PRETTY,
+	                          NM_META_ACCESSOR_GET_TYPE_PARSABLE))
+		g_return_val_if_reached (NULL);
+
+	if (!s)
+		return NULL;
+	if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
+		return gettext (s);
+	return s;
+}
+
+static inline const char *
+nmc_meta_generic_get_bool (gboolean val, NMMetaAccessorGetType get_type)
+{
+	return nmc_meta_generic_get_str_i18n (val ? N_("yes") : N_("no"), get_type);
+}
+
+static inline char *
+nmc_meta_generic_get_enum_with_detail (gint64 enum_val, const char *str_val, NMMetaAccessorGetType get_type)
+{
+	if (!NM_IN_SET (get_type, NM_META_ACCESSOR_GET_TYPE_PRETTY,
+	                          NM_META_ACCESSOR_GET_TYPE_PARSABLE))
+		g_return_val_if_reached (NULL);
+
+	if (!str_val) {
+		/* Pass %NULL for only printing the numeric value. */
+		return g_strdup_printf ("%lld", (long long) enum_val);
+	}
+
+	/* note that this function will always print "$NUM ($NICK)", also in PARSABLE
+	 * mode. That might not be desired, but it's done for certain properties to preserve
+	 * previous behavior. */
+	if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
+		return g_strdup_printf (_("%lld (%s)"), (long long) enum_val, gettext (str_val));
+	return g_strdup_printf ("%lld (%s)", (long long) enum_val, str_val);
+}
+
 /*****************************************************************************/
 
 gboolean nmc_print (const NmcConfig *nmc_config,
