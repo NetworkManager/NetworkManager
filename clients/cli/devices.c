@@ -55,7 +55,7 @@ _metagen_device_status_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 	case NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_TYPE:
 		return nm_device_get_type_description (d);
 	case NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_STATE:
-		return nmc_device_state_to_string (nm_device_get_state (d));
+		return gettext (nmc_device_state_to_string (nm_device_get_state (d)));
 	case NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_DBUS_PATH:
 		return nm_object_get_path (NM_OBJECT (d));
 	case NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_CONNECTION:
@@ -125,11 +125,11 @@ _metagen_device_detail_general_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_STATE:
 		state = nm_device_get_state (d);
 		// FIXME: wrong use of translation
-		return (*out_to_free = g_strdup_printf ("%d (%s)", (int) state, nmc_device_state_to_string (state)));
+		return (*out_to_free = g_strdup_printf ("%d (%s)", (int) state, gettext (nmc_device_state_to_string (state))));
 	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_REASON:
 		state_reason = nm_device_get_state_reason (d);
 		// FIXME: wrong use of translation
-		return (*out_to_free = g_strdup_printf ("%d (%s)", (int) state_reason, nmc_device_reason_to_string (state_reason)));
+		return (*out_to_free = g_strdup_printf ("%d (%s)", (int) state_reason, gettext (nmc_device_reason_to_string (state_reason))));
 	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_UDI:
 		return nm_device_get_udi (d);
 	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_IP_IFACE:
@@ -157,7 +157,7 @@ _metagen_device_detail_general_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 		return ac ? nm_object_get_path (NM_OBJECT (ac)) : NULL;
 	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_METERED:
 		// FIXME: wrong use of translation
-		return nmc_device_metered_to_string (nm_device_get_metered (d));
+		return gettext (nmc_device_metered_to_string (nm_device_get_metered (d)));
 	default:
 		break;
 	}
@@ -1642,7 +1642,7 @@ progress_cb (gpointer user_data)
 {
 	NMDevice *device = (NMDevice *) user_data;
 
-	nmc_terminal_show_progress (device ? nmc_device_state_to_string (nm_device_get_state (device)) : "");
+	nmc_terminal_show_progress (device ? gettext (nmc_device_state_to_string (nm_device_get_state (device))) : "");
 
 	return TRUE;
 }
@@ -1687,7 +1687,7 @@ connected_state_cb (NMDevice *device, NMActiveConnection *active)
 	           || state >= NM_DEVICE_STATE_DEACTIVATING) {
 		reason = nm_device_get_state_reason (device);
 		g_print (_("Error: Connection activation failed: (%d) %s.\n"),
-		         reason, nmc_device_reason_to_string (reason));
+		         reason, gettext (nmc_device_reason_to_string (reason)));
 	} else
 		return;
 
@@ -2427,7 +2427,7 @@ device_state (NMDevice *device, GParamSpec *pspec, NmCli *nmc)
 	color = nmc_device_state_to_color (state);
 	str = nmc_colorize (&nmc->nmc_config, color, "%s: %s\n",
 	                    nm_device_get_iface (device),
-	                    nmc_device_state_to_string (state));
+	                    gettext (nmc_device_state_to_string (state)));
 
 	g_print ("%s", str);
 	g_free (str);

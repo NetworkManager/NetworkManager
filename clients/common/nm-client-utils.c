@@ -256,241 +256,122 @@ nmc_bond_validate_mode (const char *mode, GError **error)
 		return nmc_string_is_valid (mode, valid_modes, error);
 }
 
-const char *
-nmc_device_state_to_string (NMDeviceState state)
-{
-	switch (state) {
-	case NM_DEVICE_STATE_UNMANAGED:
-		return _("unmanaged");
-	case NM_DEVICE_STATE_UNAVAILABLE:
-		return _("unavailable");
-	case NM_DEVICE_STATE_DISCONNECTED:
-		return _("disconnected");
-	case NM_DEVICE_STATE_PREPARE:
-		return _("connecting (prepare)");
-	case NM_DEVICE_STATE_CONFIG:
-		return _("connecting (configuring)");
-	case NM_DEVICE_STATE_NEED_AUTH:
-		return _("connecting (need authentication)");
-	case NM_DEVICE_STATE_IP_CONFIG:
-		return _("connecting (getting IP configuration)");
-	case NM_DEVICE_STATE_IP_CHECK:
-		return _("connecting (checking IP connectivity)");
-	case NM_DEVICE_STATE_SECONDARIES:
-		return _("connecting (starting secondary connections)");
-	case NM_DEVICE_STATE_ACTIVATED:
-		return _("connected");
-	case NM_DEVICE_STATE_DEACTIVATING:
-		return _("deactivating");
-	case NM_DEVICE_STATE_FAILED:
-		return _("connection failed");
-	case NM_DEVICE_STATE_UNKNOWN:
-		return _("unknown");
-	}
+NM_UTILS_LOOKUP_STR_DEFINE (nmc_device_state_to_string, NMDeviceState,
+	NM_UTILS_LOOKUP_DEFAULT (N_("unknown")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_UNMANAGED,    N_("unmanaged")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_UNAVAILABLE,  N_("unavailable")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_DISCONNECTED, N_("disconnected")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_PREPARE,      N_("connecting (prepare)")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_CONFIG,       N_("connecting (configuring)")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_NEED_AUTH,    N_("connecting (need authentication)")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_IP_CONFIG,    N_("connecting (getting IP configuration)")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_IP_CHECK,     N_("connecting (checking IP connectivity)")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_SECONDARIES,  N_("connecting (starting secondary connections)")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_ACTIVATED,    N_("connected")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_DEACTIVATING, N_("deactivating")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_FAILED,       N_("connection failed")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_UNKNOWN,      N_("unknown")),
+)
 
-	return _("unknown");
-}
+NM_UTILS_LOOKUP_STR_DEFINE (nmc_device_metered_to_string, NMMetered,
+	NM_UTILS_LOOKUP_DEFAULT (N_("unknown")),
+	NM_UTILS_LOOKUP_ITEM (NM_METERED_YES,       N_("yes")),
+	NM_UTILS_LOOKUP_ITEM (NM_METERED_NO,        N_("no")),
+	NM_UTILS_LOOKUP_ITEM (NM_METERED_GUESS_YES, N_("yes (guessed)")),
+	NM_UTILS_LOOKUP_ITEM (NM_METERED_GUESS_NO,  N_("no (guessed)")),
+	NM_UTILS_LOOKUP_ITEM (NM_METERED_UNKNOWN,   N_("unknown")),
+)
 
-const char *
-nmc_device_metered_to_string (NMMetered value)
-{
-	switch (value) {
-	case NM_METERED_YES:
-		return _("yes");
-	case NM_METERED_NO:
-		return _("no");
-	case NM_METERED_GUESS_YES:
-		return _("yes (guessed)");
-	case NM_METERED_GUESS_NO:
-		return _("no (guessed)");
-	case NM_METERED_UNKNOWN:
-		return _("unknown");
-	}
-
-	return _("unknown");
-}
-
-const char *
-nmc_device_reason_to_string (NMDeviceStateReason reason)
-{
-	switch (reason) {
-	case NM_DEVICE_STATE_REASON_NONE:
-		return _("No reason given");
-	case NM_DEVICE_STATE_REASON_UNKNOWN:
-		return _("Unknown error");
-	case NM_DEVICE_STATE_REASON_NOW_MANAGED:
-		return _("Device is now managed");
-	case NM_DEVICE_STATE_REASON_NOW_UNMANAGED:
-		return _("Device is now unmanaged");
-	case NM_DEVICE_STATE_REASON_CONFIG_FAILED:
-		return _("The device could not be readied for configuration");
-	case NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE:
-		return _("IP configuration could not be reserved (no available address, timeout, etc.)");
-	case NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED:
-		return _("The IP configuration is no longer valid");
-	case NM_DEVICE_STATE_REASON_NO_SECRETS:
-		return _("Secrets were required, but not provided");
-	case NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT:
-		return _("802.1X supplicant disconnected");
-	case NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED:
-		return _("802.1X supplicant configuration failed");
-	case NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED:
-		return _("802.1X supplicant failed");
-	case NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT:
-		return _("802.1X supplicant took too long to authenticate");
-	case NM_DEVICE_STATE_REASON_PPP_START_FAILED:
-		return _("PPP service failed to start");
-	case NM_DEVICE_STATE_REASON_PPP_DISCONNECT:
-		return _("PPP service disconnected");
-	case NM_DEVICE_STATE_REASON_PPP_FAILED:
-		return _("PPP failed");
-	case NM_DEVICE_STATE_REASON_DHCP_START_FAILED:
-		return _("DHCP client failed to start");
-	case NM_DEVICE_STATE_REASON_DHCP_ERROR:
-		return _("DHCP client error");
-	case NM_DEVICE_STATE_REASON_DHCP_FAILED:
-		return _("DHCP client failed");
-	case NM_DEVICE_STATE_REASON_SHARED_START_FAILED:
-		return _("Shared connection service failed to start");
-	case NM_DEVICE_STATE_REASON_SHARED_FAILED:
-		return _("Shared connection service failed");
-	case NM_DEVICE_STATE_REASON_AUTOIP_START_FAILED:
-		return _("AutoIP service failed to start");
-	case NM_DEVICE_STATE_REASON_AUTOIP_ERROR:
-		return _("AutoIP service error");
-	case NM_DEVICE_STATE_REASON_AUTOIP_FAILED:
-		return _("AutoIP service failed");
-	case NM_DEVICE_STATE_REASON_MODEM_BUSY:
-		return _("The line is busy");
-	case NM_DEVICE_STATE_REASON_MODEM_NO_DIAL_TONE:
-		return _("No dial tone");
-	case NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER:
-		return _("No carrier could be established");
-	case NM_DEVICE_STATE_REASON_MODEM_DIAL_TIMEOUT:
-		return _("The dialing request timed out");
-	case NM_DEVICE_STATE_REASON_MODEM_DIAL_FAILED:
-		return _("The dialing attempt failed");
-	case NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED:
-		return _("Modem initialization failed");
-	case NM_DEVICE_STATE_REASON_GSM_APN_FAILED:
-		return _("Failed to select the specified APN");
-	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_NOT_SEARCHING:
-		return _("Not searching for networks");
-	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_DENIED:
-		return _("Network registration denied");
-	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_TIMEOUT:
-		return _("Network registration timed out");
-	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_FAILED:
-		return _("Failed to register with the requested network");
-	case NM_DEVICE_STATE_REASON_GSM_PIN_CHECK_FAILED:
-		return _("PIN check failed");
-	case NM_DEVICE_STATE_REASON_FIRMWARE_MISSING:
-		return _("Necessary firmware for the device may be missing");
-	case NM_DEVICE_STATE_REASON_REMOVED:
-		return _("The device was removed");
-	case NM_DEVICE_STATE_REASON_SLEEPING:
-		return _("NetworkManager went to sleep");
-	case NM_DEVICE_STATE_REASON_CONNECTION_REMOVED:
-		return _("The device's active connection disappeared");
-	case NM_DEVICE_STATE_REASON_USER_REQUESTED:
-		return _("Device disconnected by user or client");
-	case NM_DEVICE_STATE_REASON_CARRIER:
-		return _("Carrier/link changed");
-	case NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED:
-		return _("The device's existing connection was assumed");
-	case NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE:
-		return _("The supplicant is now available");
-	case NM_DEVICE_STATE_REASON_MODEM_NOT_FOUND:
-		return _("The modem could not be found");
-	case NM_DEVICE_STATE_REASON_BT_FAILED:
-		return _("The Bluetooth connection failed or timed out");
-	case NM_DEVICE_STATE_REASON_GSM_SIM_NOT_INSERTED:
-		return _("GSM Modem's SIM card not inserted");
-	case NM_DEVICE_STATE_REASON_GSM_SIM_PIN_REQUIRED:
-		return _("GSM Modem's SIM PIN required");
-	case NM_DEVICE_STATE_REASON_GSM_SIM_PUK_REQUIRED:
-		return _("GSM Modem's SIM PUK required");
-	case NM_DEVICE_STATE_REASON_GSM_SIM_WRONG:
-		return _("GSM Modem's SIM wrong");
-	case NM_DEVICE_STATE_REASON_INFINIBAND_MODE:
-		return _("InfiniBand device does not support connected mode");
-        case NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED:
-		return _("A dependency of the connection failed");
-	case NM_DEVICE_STATE_REASON_BR2684_FAILED:
-		return _("A problem with the RFC 2684 Ethernet over ADSL bridge");
-	case NM_DEVICE_STATE_REASON_MODEM_MANAGER_UNAVAILABLE:
-		return _("ModemManager is unavailable");
-	case NM_DEVICE_STATE_REASON_SSID_NOT_FOUND:
-		return _("The Wi-Fi network could not be found");
-	case NM_DEVICE_STATE_REASON_SECONDARY_CONNECTION_FAILED:
-		return _("A secondary connection of the base connection failed");
-	case NM_DEVICE_STATE_REASON_DCB_FCOE_FAILED:
-		return _("DCB or FCoE setup failed");
-	case NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED:
-		return _("teamd control failed");
-	case NM_DEVICE_STATE_REASON_MODEM_FAILED:
-		return _("Modem failed or no longer available");
-	case NM_DEVICE_STATE_REASON_MODEM_AVAILABLE:
-		return _("Modem now ready and available");
-	case NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT:
-		return _("SIM PIN was incorrect");
-	case NM_DEVICE_STATE_REASON_NEW_ACTIVATION:
-		return _("New connection activation was enqueued");
-	case NM_DEVICE_STATE_REASON_PARENT_CHANGED:
-		return _("The device's parent changed");
-	case NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED:
-		return _("The device parent's management changed");
-	case NM_DEVICE_STATE_REASON_OVSDB_FAILED:
-		return _("OpenVSwitch database connection failed");
-	case NM_DEVICE_STATE_REASON_IP_ADDRESS_DUPLICATE:
-		return _("A duplicate IP address was detected");
-	case NM_DEVICE_STATE_REASON_IP_METHOD_UNSUPPORTED:
-		return _("The selected IP method is not supported");
-	}
-
+NM_UTILS_LOOKUP_STR_DEFINE (nmc_device_reason_to_string, NMDeviceStateReason,
 	/* TRANSLATORS: Unknown reason for a device state change (NMDeviceStateReason) */
-	return _("Unknown");
-}
+	NM_UTILS_LOOKUP_DEFAULT (N_("Unknown")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_NONE,                           N_("No reason given")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_UNKNOWN,                        N_("Unknown error")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_NOW_MANAGED,                    N_("Device is now managed")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_NOW_UNMANAGED,                  N_("Device is now unmanaged")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_CONFIG_FAILED,                  N_("The device could not be readied for configuration")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE,          N_("IP configuration could not be reserved (no available address, timeout, etc.)")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED,              N_("The IP configuration is no longer valid")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_NO_SECRETS,                     N_("Secrets were required, but not provided")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT,          N_("802.1X supplicant disconnected")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED,       N_("802.1X supplicant configuration failed")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED,              N_("802.1X supplicant failed")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT,             N_("802.1X supplicant took too long to authenticate")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_PPP_START_FAILED,               N_("PPP service failed to start")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_PPP_DISCONNECT,                 N_("PPP service disconnected")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_PPP_FAILED,                     N_("PPP failed")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_DHCP_START_FAILED,              N_("DHCP client failed to start")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_DHCP_ERROR,                     N_("DHCP client error")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_DHCP_FAILED,                    N_("DHCP client failed")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_SHARED_START_FAILED,            N_("Shared connection service failed to start")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_SHARED_FAILED,                  N_("Shared connection service failed")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_AUTOIP_START_FAILED,            N_("AutoIP service failed to start")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_AUTOIP_ERROR,                   N_("AutoIP service error")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_AUTOIP_FAILED,                  N_("AutoIP service failed")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_MODEM_BUSY,                     N_("The line is busy")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_MODEM_NO_DIAL_TONE,             N_("No dial tone")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER,               N_("No carrier could be established")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_MODEM_DIAL_TIMEOUT,             N_("The dialing request timed out")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_MODEM_DIAL_FAILED,              N_("The dialing attempt failed")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED,              N_("Modem initialization failed")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_GSM_APN_FAILED,                 N_("Failed to select the specified APN")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_GSM_REGISTRATION_NOT_SEARCHING, N_("Not searching for networks")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_GSM_REGISTRATION_DENIED,        N_("Network registration denied")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_GSM_REGISTRATION_TIMEOUT,       N_("Network registration timed out")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_GSM_REGISTRATION_FAILED,        N_("Failed to register with the requested network")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_GSM_PIN_CHECK_FAILED,           N_("PIN check failed")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_FIRMWARE_MISSING,               N_("Necessary firmware for the device may be missing")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_REMOVED,                        N_("The device was removed")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_SLEEPING,                       N_("NetworkManager went to sleep")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_CONNECTION_REMOVED,             N_("The device's active connection disappeared")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_USER_REQUESTED,                 N_("Device disconnected by user or client")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_CARRIER,                        N_("Carrier/link changed")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED,             N_("The device's existing connection was assumed")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,           N_("The supplicant is now available")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_MODEM_NOT_FOUND,                N_("The modem could not be found")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_BT_FAILED,                      N_("The Bluetooth connection failed or timed out")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_GSM_SIM_NOT_INSERTED,           N_("GSM Modem's SIM card not inserted")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_GSM_SIM_PIN_REQUIRED,           N_("GSM Modem's SIM PIN required")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_GSM_SIM_PUK_REQUIRED,           N_("GSM Modem's SIM PUK required")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_GSM_SIM_WRONG,                  N_("GSM Modem's SIM wrong")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_INFINIBAND_MODE,                N_("InfiniBand device does not support connected mode")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED,              N_("A dependency of the connection failed")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_BR2684_FAILED,                  N_("A problem with the RFC 2684 Ethernet over ADSL bridge")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_MODEM_MANAGER_UNAVAILABLE,      N_("ModemManager is unavailable")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_SSID_NOT_FOUND,                 N_("The Wi-Fi network could not be found")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_SECONDARY_CONNECTION_FAILED,    N_("A secondary connection of the base connection failed")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_DCB_FCOE_FAILED,                N_("DCB or FCoE setup failed")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED,           N_("teamd control failed")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_MODEM_FAILED,                   N_("Modem failed or no longer available")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_MODEM_AVAILABLE,                N_("Modem now ready and available")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT,              N_("SIM PIN was incorrect")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_NEW_ACTIVATION,                 N_("New connection activation was enqueued")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_PARENT_CHANGED,                 N_("The device's parent changed")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED,         N_("The device parent's management changed")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_OVSDB_FAILED,                   N_("OpenVSwitch database connection failed")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_IP_ADDRESS_DUPLICATE,           N_("A duplicate IP address was detected")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_IP_METHOD_UNSUPPORTED,          N_("The selected IP method is not supported")),
+)
 
-const char *
-nm_active_connection_state_reason_to_string (NMActiveConnectionStateReason reason)
-{
-	switch (reason) {
-	case NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN:
-		return _("Unknown reason");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_NONE:
-		return _("The connection was disconnected");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_USER_DISCONNECTED:
-		return _("Disconnected by user");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED:
-		return _("The base network connection was interrupted");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_STOPPED:
-		return _("The VPN service stopped unexpectedly");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_IP_CONFIG_INVALID:
-		return _("The VPN service returned invalid configuration");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_CONNECT_TIMEOUT:
-		return _("The connection attempt timed out");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_START_TIMEOUT:
-		return _("The VPN service did not start in time");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_START_FAILED:
-		return _("The VPN service failed to start");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_NO_SECRETS:
-		return _("No valid secrets");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_LOGIN_FAILED:
-		return _("Invalid secrets");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_CONNECTION_REMOVED:
-		return _("The connection was removed");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_DEPENDENCY_FAILED:
-		return _("Master connection failed");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REALIZE_FAILED:
-		return _("Could not create a software link");
-	case NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REMOVED:
-		return _("The device disappeared");
-	default:
-		/* TRANSLATORS: Unknown reason for a connection state change (NMActiveConnectionStateReason) */
-		return _("Unknown");
-	}
-}
+NM_UTILS_LOOKUP_STR_DEFINE (nm_active_connection_state_reason_to_string, NMActiveConnectionStateReason,
+	/* TRANSLATORS: Unknown reason for a connection state change (NMActiveConnectionStateReason) */
+	NM_UTILS_LOOKUP_DEFAULT (N_("Unknown")),
+	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN,               N_("Unknown reason")),
+	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_REASON_NONE,                  N_("The connection was disconnected")),
+	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_REASON_USER_DISCONNECTED,     N_("Disconnected by user")),
+	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED,   N_("The base network connection was interrupted")),
+	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_STOPPED,       N_("The VPN service stopped unexpectedly")),
+	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_REASON_IP_CONFIG_INVALID,     N_("The VPN service returned invalid configuration")),
+	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_REASON_CONNECT_TIMEOUT,       N_("The connection attempt timed out")),
+	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_START_TIMEOUT, N_("The VPN service did not start in time")),
+	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_START_FAILED,  N_("The VPN service failed to start")),
+	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_REASON_NO_SECRETS,            N_("No valid secrets")),
+	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_REASON_LOGIN_FAILED,          N_("Invalid secrets")),
+	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_REASON_CONNECTION_REMOVED,    N_("The connection was removed")),
+	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_REASON_DEPENDENCY_FAILED,     N_("Master connection failed")),
+	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REALIZE_FAILED, N_("Could not create a software link")),
+	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REMOVED,        N_("The device disappeared")),
+)
 
 NMActiveConnectionState
 nmc_activation_get_effective_state (NMActiveConnection *active,
@@ -524,14 +405,14 @@ nmc_activation_get_effective_state (NMActiveConnection *active,
 			 * - or, @ac_reason is specific
 			 * - or, @device no longer references the current @active
 			 * >> we complete with @ac_reason. */
-			*reason = nm_active_connection_state_reason_to_string (ac_reason);
+			*reason = gettext (nm_active_connection_state_reason_to_string (ac_reason));
 		} else if (   dev_state <= NM_DEVICE_STATE_DISCONNECTED
 		           || dev_state >= NM_DEVICE_STATE_FAILED) {
 			/* (2)
 			 * - not (1)
 			 * - and, the device is no longer in an activated state,
 			 * >> we complete with @dev_reason. */
-			*reason = nmc_device_reason_to_string (dev_reason);
+			*reason = gettext (nmc_device_reason_to_string (dev_reason));
 		} else {
 			/* (3)
 			 * we wait for the device go disconnect. We will get a better
