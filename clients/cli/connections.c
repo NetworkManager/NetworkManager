@@ -2440,7 +2440,7 @@ progress_active_connection_cb (gpointer user_data)
 	}
 
 	str =   device
-	      ? nmc_device_state_to_string (nm_device_get_state (device))
+	      ? gettext (nmc_device_state_to_string (nm_device_get_state (device)))
 	      : active_connection_state_to_string (ac_state);
 
 	nmc_terminal_show_progress (str);
@@ -6560,7 +6560,7 @@ progress_activation_editor_cb (gpointer user_data)
 	ac_state = nm_active_connection_get_state (ac);
 	dev_state = nm_device_get_state (device);
 
-	nmc_terminal_show_progress (nmc_device_state_to_string (dev_state));
+	nmc_terminal_show_progress (gettext (nmc_device_state_to_string (dev_state)));
 
 	if (   ac_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED
 	    || dev_state == NM_DEVICE_STATE_ACTIVATED) {
