@@ -93,7 +93,8 @@ _meta_type_nmc_generic_info_get_fcn (const NMMetaAbstractInfo *abstract_info,
 	nm_assert (out_to_free || NM_IN_SET (get_type, NM_META_ACCESSOR_GET_TYPE_COLOR));
 
 	if (info->get_fcn) {
-		return info->get_fcn (environment, environment_user_data,
+		return info->get_fcn (environment,
+		                      environment_user_data,
 		                      info, target,
 		                      get_type,
 		                      get_flags,

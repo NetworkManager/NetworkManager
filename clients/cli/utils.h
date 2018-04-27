@@ -138,15 +138,19 @@ struct _NmcMetaGenericInfo {
 	const char *name;
 	const char *name_header;
 	const NmcMetaGenericInfo *const*nested;
-	gconstpointer (*get_fcn) (const NMMetaEnvironment *environment,
-	                          gpointer environment_user_data,
-	                          const NmcMetaGenericInfo *info,
-	                          gpointer target,
-	                          NMMetaAccessorGetType get_type,
-	                          NMMetaAccessorGetFlags get_flags,
-	                          NMMetaAccessorGetOutFlags *out_flags,
-	                          gboolean *out_is_default,
-	                          gpointer *out_to_free);
+
+#define NMC_META_GENERIC_INFO_GET_FCN_ARGS \
+	const NMMetaEnvironment *environment, \
+	gpointer environment_user_data, \
+	const NmcMetaGenericInfo *info, \
+	gpointer target, \
+	NMMetaAccessorGetType get_type, \
+	NMMetaAccessorGetFlags get_flags, \
+	NMMetaAccessorGetOutFlags *out_flags, \
+	gboolean *out_is_default, \
+	gpointer *out_to_free
+
+	gconstpointer (*get_fcn) (NMC_META_GENERIC_INFO_GET_FCN_ARGS);
 };
 
 #define NMC_META_GENERIC(n, ...) \

@@ -100,15 +100,7 @@ _ip_config_get_routes (NMIPConfig *cfg)
 }
 
 static gconstpointer
-_metagen_ip4_config_get_fcn (const NMMetaEnvironment *environment,
-                             gpointer environment_user_data,
-                             const NmcMetaGenericInfo *info,
-                             gpointer target,
-                             NMMetaAccessorGetType get_type,
-                             NMMetaAccessorGetFlags get_flags,
-                             NMMetaAccessorGetOutFlags *out_flags,
-                             gboolean *out_is_default,
-                             gpointer *out_to_free)
+_metagen_ip4_config_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 {
 	NMIPConfig *cfg4 = target;
 	GPtrArray *ptr_array;
@@ -183,15 +175,7 @@ arr_out:
 }
 
 static gconstpointer
-_metagen_ip6_config_get_fcn (const NMMetaEnvironment *environment,
-                             gpointer environment_user_data,
-                             const NmcMetaGenericInfo *info,
-                             gpointer target,
-                             NMMetaAccessorGetType get_type,
-                             NMMetaAccessorGetFlags get_flags,
-                             NMMetaAccessorGetOutFlags *out_flags,
-                             gboolean *out_is_default,
-                             gpointer *out_to_free)
+_metagen_ip6_config_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 {
 	NMIPConfig *cfg6 = target;
 	GPtrArray *ptr_array;

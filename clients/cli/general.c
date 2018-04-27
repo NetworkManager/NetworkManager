@@ -172,15 +172,7 @@ _NM_UTILS_LOOKUP_DEFINE (static, permission_result_to_color, NMClientPermissionR
 static const NmcMetaGenericInfo *const metagen_general_status[];
 
 static gconstpointer
-_metagen_general_status_get_fcn (const NMMetaEnvironment *environment,
-                                 gpointer environment_user_data,
-                                 const NmcMetaGenericInfo *info,
-                                 gpointer target,
-                                 NMMetaAccessorGetType get_type,
-                                 NMMetaAccessorGetFlags get_flags,
-                                 NMMetaAccessorGetOutFlags *out_flags,
-                                 gboolean *out_is_default,
-                                 gpointer *out_to_free)
+_metagen_general_status_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 {
 	NmCli *nmc = target;
 	const char *value;
@@ -280,15 +272,7 @@ static const NmcMetaGenericInfo *const metagen_general_status[_NMC_GENERIC_INFO_
 /*****************************************************************************/
 
 static gconstpointer
-_metagen_general_permissions_get_fcn (const NMMetaEnvironment *environment,
-                                      gpointer environment_user_data,
-                                      const NmcMetaGenericInfo *info,
-                                      gpointer target,
-                                      NMMetaAccessorGetType get_type,
-                                      NMMetaAccessorGetFlags get_flags,
-                                      NMMetaAccessorGetOutFlags *out_flags,
-                                      gboolean *out_is_default,
-                                      gpointer *out_to_free)
+_metagen_general_permissions_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 {
 	NMClientPermission perm = GPOINTER_TO_UINT (target);
 	NmCli *nmc = environment_user_data;
@@ -329,15 +313,7 @@ typedef struct {
 } GetGeneralLoggingData;
 
 static gconstpointer
-_metagen_general_logging_get_fcn (const NMMetaEnvironment *environment,
-                                  gpointer environment_user_data,
-                                  const NmcMetaGenericInfo *info,
-                                  gpointer target,
-                                  NMMetaAccessorGetType get_type,
-                                  NMMetaAccessorGetFlags get_flags,
-                                  NMMetaAccessorGetOutFlags *out_flags,
-                                  gboolean *out_is_default,
-                                  gpointer *out_to_free)
+_metagen_general_logging_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 {
 	NmCli *nmc = environment_user_data;
 	GetGeneralLoggingData *d = target;
