@@ -2234,6 +2234,7 @@ nm_device_get_physical_port_id (NMDevice *self)
 
 typedef enum {
 	CONCHECK_SCHEDULE_UPDATE_INTERVAL,
+	CONCHECK_SCHEDULE_UPDATE_INTERVAL_RESTART,
 	CONCHECK_SCHEDULE_CHECK_EXTERNAL,
 	CONCHECK_SCHEDULE_CHECK_PERIODIC,
 	CONCHECK_SCHEDULE_RETURNED_MIN,
@@ -2277,10 +2278,11 @@ concheck_is_possible (NMDevice *self)
 }
 
 static gboolean
-concheck_periodic_schedule_do (NMDevice *self, gint64 interval_ns)
+concheck_periodic_schedule_do (NMDevice *self, gint64 now_ns)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	gboolean periodic_check_disabled = FALSE;
+	gint64 expiry, tdiff;
 
 	/* we always cancel whatever was pending. */
 	if (nm_clear_g_source (&priv->concheck_p_cur_id))
@@ -2291,18 +2293,25 @@ concheck_periodic_schedule_do (NMDevice *self, gint64 interval_ns)
 		goto out;
 	}
 
-	nm_assert (interval_ns >= 0);
-
 	if (!concheck_is_possible (self))
 		goto out;
 
-	_LOGT (LOGD_CONCHECK, "connectivity: periodic-check: %sscheduled in %u milliseconds (%u seconds interval)",
+	nm_assert (now_ns > 0);
+	nm_assert (priv->concheck_p_cur_interval > 0);
+
+	/* we schedule the timeout based on our current settings cur-interval and cur-basetime.
+	 * Before calling concheck_periodic_schedule_do(), make sure that these properties are
+	 * correct. */
+
+	expiry = priv->concheck_p_cur_basetime_ns + (priv->concheck_p_cur_interval * NM_UTILS_NS_PER_SECOND);
+	tdiff = expiry - now_ns;
+
+	_LOGT (LOGD_CONCHECK, "connectivity: periodic-check: %sscheduled in %lld milliseconds (%u seconds interval)",
 	       periodic_check_disabled ? "re-" : "",
-	       (guint) (interval_ns / NM_UTILS_NS_PER_MSEC),
+	       (long long) (tdiff / NM_UTILS_NS_PER_MSEC),
 	       priv->concheck_p_cur_interval);
 
-	nm_assert (priv->concheck_p_cur_interval > 0);
-	priv->concheck_p_cur_id = g_timeout_add (interval_ns / NM_UTILS_NS_PER_MSEC,
+	priv->concheck_p_cur_id = g_timeout_add (NM_MAX ((gint64) 0, tdiff) / NM_UTILS_NS_PER_MSEC,
 	                                         concheck_periodic_timeout_cb,
 	                                         self);
 	return TRUE;
@@ -2330,18 +2339,23 @@ concheck_periodic_schedule_set (NMDevice *self,
 	if (!priv->concheck_p_cur_id) {
 		/* we currently don't have a timeout scheduled. No need to reschedule
 		 * another one... */
-		if (mode == CONCHECK_SCHEDULE_UPDATE_INTERVAL) {
-			/* ... unless, we are initalizing. In this case, setup the current current
-			 * interval and schedule a perform a check right away.  */
-			priv->concheck_p_cur_interval = NM_MIN (priv->concheck_p_max_interval, CONCHECK_P_PROBE_INTERVAL);
-			priv->concheck_p_cur_basetime_ns = nm_utils_get_monotonic_timestamp_ns_cached (&now_ns);
-			if (concheck_periodic_schedule_do (self, priv->concheck_p_cur_interval * NM_UTILS_NS_PER_SECOND))
-				concheck_start (self, NULL, NULL, TRUE);
-		}
-		return;
+		if (NM_IN_SET (mode, CONCHECK_SCHEDULE_UPDATE_INTERVAL,
+		                     CONCHECK_SCHEDULE_UPDATE_INTERVAL_RESTART)) {
+			/* ... unless, we are about to start periodic checks after update-interval.
+			 * In this case, fall through and restart the periodic checks below. */
+			mode = CONCHECK_SCHEDULE_UPDATE_INTERVAL_RESTART;
+		} else
+			return;
 	}
 
 	switch (mode) {
+	case CONCHECK_SCHEDULE_UPDATE_INTERVAL_RESTART:
+		priv->concheck_p_cur_interval = NM_MIN (priv->concheck_p_max_interval, CONCHECK_P_PROBE_INTERVAL);
+		priv->concheck_p_cur_basetime_ns = nm_utils_get_monotonic_timestamp_ns_cached (&now_ns);
+		if (concheck_periodic_schedule_do (self, now_ns))
+			concheck_start (self, NULL, NULL, TRUE);
+		return;
+
 	case CONCHECK_SCHEDULE_UPDATE_INTERVAL:
 		/* called with "UPDATE_INTERVAL" and already have a concheck_p_cur_id scheduled. */
 
@@ -2366,7 +2380,7 @@ concheck_periodic_schedule_set (NMDevice *self,
 			 * new max_interval passed. We need to start a check right away (and
 			 * schedule a timeout in cur-interval in the future). */
 			priv->concheck_p_cur_basetime_ns = now_ns;
-			if (concheck_periodic_schedule_do (self, priv->concheck_p_cur_interval * NM_UTILS_NS_PER_SECOND))
+			if (concheck_periodic_schedule_do (self, now_ns))
 				concheck_start (self, NULL, NULL, TRUE);
 		} else {
 			/* we are reducing the max-interval to a shorter interval that we have currently
@@ -2375,14 +2389,14 @@ concheck_periodic_schedule_set (NMDevice *self,
 			 * However, since the last time we scheduled the check, not even the new max-interval
 			 * expired. All we need to do, is reschedule the timer to expire sooner. The cur_basetime
 			 * is unchanged. */
-			concheck_periodic_schedule_do (self, cur_expiry - now_ns);
+			concheck_periodic_schedule_do (self, now_ns);
 		}
 		return;
 
 	case CONCHECK_SCHEDULE_CHECK_EXTERNAL:
 		/* a external connectivity check delays our periodic check. We reset the counter. */
 		priv->concheck_p_cur_basetime_ns = nm_utils_get_monotonic_timestamp_ns_cached (&now_ns);
-		concheck_periodic_schedule_do (self, priv->concheck_p_cur_interval * NM_UTILS_NS_PER_SECOND);
+		concheck_periodic_schedule_do (self, now_ns);
 		return;
 
 	case CONCHECK_SCHEDULE_CHECK_PERIODIC:
@@ -2415,15 +2429,16 @@ concheck_periodic_schedule_set (NMDevice *self,
 		new_expiry = exp_expiry + (priv->concheck_p_cur_interval * NM_UTILS_NS_PER_SECOND);
 		tdiff = NM_MAX (new_expiry - now_ns, 0);
 		priv->concheck_p_cur_basetime_ns = (now_ns + tdiff) - (priv->concheck_p_cur_interval * NM_UTILS_NS_PER_SECOND);
-		concheck_periodic_schedule_do (self, tdiff);
-		handle = concheck_start (self, NULL, NULL, TRUE);
-		if (old_interval != priv->concheck_p_cur_interval) {
-			/* we just bumped the interval already when scheduling this check.
-			 * When the handle returns, don't bump a second time.
-			 *
-			 * But if we reach the timeout again before the handle returns (this
-			 * code here) we will still bump the interval. */
-			handle->is_periodic_bump_on_complete = FALSE;
+		if (concheck_periodic_schedule_do (self, now_ns)) {
+			handle = concheck_start (self, NULL, NULL, TRUE);
+			if (old_interval != priv->concheck_p_cur_interval) {
+				/* we just bumped the interval already when scheduling this check.
+				 * When the handle returns, don't bump a second time.
+				 *
+				 * But if we reach the timeout again before the handle returns (this
+				 * code here) we will still bump the interval. */
+				handle->is_periodic_bump_on_complete = FALSE;
+			}
 		}
 		return;
 	}
@@ -2450,11 +2465,11 @@ concheck_periodic_schedule_set (NMDevice *self,
 	new_expiry = priv->concheck_p_cur_basetime_ns + (priv->concheck_p_cur_interval * NM_UTILS_NS_PER_SECOND);
 	tdiff = NM_MAX (new_expiry - nm_utils_get_monotonic_timestamp_ns_cached (&now_ns), 0);
 	priv->concheck_p_cur_basetime_ns = now_ns + tdiff - (priv->concheck_p_cur_interval * NM_UTILS_NS_PER_SECOND);
-	concheck_periodic_schedule_do (self, tdiff);
+	concheck_periodic_schedule_do (self, now_ns);
 }
 
-void
-nm_device_check_connectivity_update_interval (NMDevice *self)
+static void
+concheck_update_interval (NMDevice *self, gboolean check_now)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	guint new_interval;
@@ -2469,7 +2484,8 @@ nm_device_check_connectivity_update_interval (NMDevice *self)
 	}
 
 	if (!new_interval) {
-		/* this will cancel any potentially pending timeout. */
+		/* this will cancel any potentially pending timeout because max-interval is zero.
+		 * But it logs a nice message... */
 		concheck_periodic_schedule_do (self, 0);
 
 		/* also update the fake connectivity state. */
@@ -2477,7 +2493,16 @@ nm_device_check_connectivity_update_interval (NMDevice *self)
 		return;
 	}
 
-	concheck_periodic_schedule_set (self, CONCHECK_SCHEDULE_UPDATE_INTERVAL);
+	concheck_periodic_schedule_set (self,
+	                                check_now
+	                                  ? CONCHECK_SCHEDULE_UPDATE_INTERVAL_RESTART
+	                                  : CONCHECK_SCHEDULE_UPDATE_INTERVAL);
+}
+
+void
+nm_device_check_connectivity_update_interval (NMDevice *self)
+{
+	concheck_update_interval (self, FALSE);
 }
 
 static void
@@ -13901,7 +13926,8 @@ _set_state_full (NMDevice *self,
 	if (ip_config_valid (old_state) && !ip_config_valid (state))
 	    notify_ip_properties (self);
 
-	nm_device_check_connectivity_update_interval (self);
+	concheck_update_interval (self,
+	                          state == NM_DEVICE_STATE_ACTIVATED);
 
 	/* Dispose of the cached activation request */
 	if (req)
