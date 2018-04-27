@@ -2,7 +2,7 @@ location: clients/tests/test-client.py:887:test_003()/325
 cmd: $NMCLI --mode tabular --pretty -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4066 bytes
+stdout: 4255 bytes
 >>>
 =========================
   Device details (eth0)
@@ -35,9 +35,9 @@ GROUP  OPTION
 --------------------------------------------------------------------------------------------------
 DHCP6  dhcp-6-opt-1 = val-1 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-6-opt-8 = val-8 
 
-NAME         AVAILABLE-CONNECTION-PATHS                        AVAILABLE-CONNECTIONS                                                                                           
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-CONNECTIONS  /org/freedesktop/NetworkManager/Settings/{2,1,3}  UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | 5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | (null) | (null) 
+NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILABLE-CONNECTIONS                                                                                                                                               
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,3}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/3 
 
 <<<
 stderr: 0 bytes
