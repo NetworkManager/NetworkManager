@@ -1906,6 +1906,24 @@ src_initrd_libnmi_core_la_SOURCES = \
 	src/initrd/nmi-ibft-reader.c \
 	$(NULL)
 
+libexec_PROGRAMS += src/initrd/nm-initrd-generator
+
+src_initrd_nm_initrd_generator_CPPFLAGS = \
+	$(src_cppflags)
+
+src_initrd_nm_initrd_generator_SOURCES = \
+	src/initrd/nm-initrd-generator.c
+
+src_initrd_nm_initrd_generator_LDADD = \
+	libnm-core/libnm-core.la \
+	src/initrd/libnmi-core.la \
+	src/libNetworkManagerBase.la \
+	$(GLIB_LIBS)
+
+src_initrd_nm_initrd_generator_LDFLAGS = \
+	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
+	$(SANITIZER_EXEC_LDFLAGS)
+
 check_programs += src/initrd/tests/test-ibft-reader
 
 src_initrd_tests_test_ibft_reader_CPPFLAGS = \
@@ -2136,6 +2154,7 @@ src_initrd_tests_test_cmdline_reader_LDADD = \
 	$(GLIB_LIBS)
 
 $(src_initrd_libnmi_core_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_initrd_nm_initrd_generator_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_initrd_tests_test_cmdline_reader_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_initrd_tests_test_ibft_reader_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
@@ -4831,6 +4850,7 @@ man_pages += \
 	man/NetworkManager.8 \
 	man/NetworkManager.conf.5 \
 	man/nm-online.1 \
+	man/nm-initrd-generator.8 \
 	man/nmcli-examples.7 \
 	man/nmcli.1 \
 	man/nmtui.1

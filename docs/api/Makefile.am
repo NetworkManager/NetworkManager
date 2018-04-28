@@ -83,6 +83,7 @@ content_files = \
 	$(top_builddir)/man/nmcli.xml \
 	$(top_builddir)/man/nmtui.xml \
 	$(top_builddir)/man/nm-online.xml \
+	$(top_builddir)/man/nm-initrd-generator.xml \
 	$(top_builddir)/man/NetworkManager.xml \
 	$(top_builddir)/man/NetworkManager.conf.xml \
 	$(top_builddir)/man/nmcli-examples.xml \
