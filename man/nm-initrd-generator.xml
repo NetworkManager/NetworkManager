@@ -1,0 +1,140 @@
+<?xml version='1.0'?>
+<?xml-stylesheet type="text/xsl" href="http://docbook.sourceforge.net/release/xsl/current/xhtml/docbook.xsl"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+<!ENTITY % entities SYSTEM "common.ent" >
+%entities;
+]>
+
+<!--
+  nm-initrd-generator(8) manual page
+
+  Copyright 2018 Red Hat, Inc.
+
+  Permission is granted to copy, distribute and/or modify this document
+  under the terms of the GNU Free Documentation License, Version 1.1
+  or any later version published by the Free Software Foundation;
+  with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
+  Texts. You may obtain a copy of the GNU Free Documentation License
+  from the Free Software Foundation by visiting their Web site or by
+  writing to:
+
+  Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+-->
+
+<refentry id='nm-initrd-generator'>
+
+  <refentryinfo>
+    <title>nm-initrd-generator</title>
+    <author>NetworkManager developers</author>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>nm-initrd-generator</refentrytitle>
+    <manvolnum>8</manvolnum>
+    <refmiscinfo class="source">NetworkManager</refmiscinfo>
+    <refmiscinfo class="manual">System Administration</refmiscinfo>
+    <refmiscinfo class="version">&NM_VERSION;</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>nm-initrd-generator</refname>
+    <refpurpose>early boot NetworkManager configuration generator</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv id='synopsis'>
+    <cmdsynopsis>
+      <command>nm-initrd-generator</command>
+      <arg choice="opt" rep="repeat"><replaceable>OPTIONS</replaceable></arg>
+      <arg choice="plain">--</arg>
+      <arg choice="opt" rep="repeat"><replaceable>CMDLINE</replaceable></arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1 id='description'><title>Description</title>
+    <para><command>nm-initrd-generator</command> scans the command line for options
+    relevant to network configuration and creates configuration files for an early
+    instance of NetworkManager run from the initial ramdisk during early boot.</para>
+  </refsect1>
+
+  <refsect1 id='options'><title>Options</title>
+    <variablelist>
+      <varlistentry>
+        <term>
+          <group choice='plain'>
+            <arg choice='plain'><option>-c</option></arg>
+            <arg choice='plain'><option>--connections-dir</option></arg>
+          </group>
+          <arg choice='plain'><replaceable>path</replaceable></arg>
+        </term>
+
+        <listitem>
+          <para>Output connection directory.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <group choice='plain'>
+            <arg choice='plain'><option>-d</option></arg>
+            <arg choice='plain'><option>--sysfs-dir</option></arg>
+          </group>
+          <arg choice='plain'><replaceable>path</replaceable></arg>
+        </term>
+
+        <listitem>
+          <para>The sysfs mount point.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <group choice='plain'>
+            <arg choice='plain'><option>-s</option></arg>
+            <arg choice='plain'><option>--stdout</option></arg>
+          </group>
+        </term>
+
+        <listitem>
+          <para>Dump connections to standard output. Useful for debugging.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><replaceable>CMDLINE</replaceable></term>
+
+        <listitem>
+          <para>The options that appear on the kernel command line. The following options are recognized:</para>
+
+          <simplelist>
+            <member><option>ip</option></member>
+            <member><option>rd.route</option></member>
+            <member><option>bridge</option></member>
+            <member><option>bond</option></member>
+            <member><option>team</option></member>
+            <member><option>vlan</option></member>
+            <member><option>bootdev</option></member>
+            <member><option>nameserver</option></member>
+            <member><option>rd.peerdns</option></member>
+            <member><option>rd.bootif</option></member>
+            <member><option>BOOTIF</option></member>
+          </simplelist>
+
+          <para>Please consult the <citerefentry><refentrytitle>dracut.cmdline</refentrytitle><manvolnum>7</manvolnum></citerefentry>
+          manual for the documentation of the precise format of the values supported.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <refsect1 id='exit_status'><title>Exit Status</title>
+    <para><command>nm-initrd-generator</command> exits with status 0. It ignores unrecognized
+    options and prints an error message if it encounters a malformed option.</para>
+  </refsect1>
+
+  <refsect1 id='see_also'><title>See Also</title>
+    <para><link linkend='dracut.cmdline'><citerefentry><refentrytitle>dracut.cmdline</refentrytitle><manvolnum>7</manvolnum></citerefentry></link>,
+    <link linkend='NetworkManager'><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>.</para>
+  </refsect1>
+</refentry>
