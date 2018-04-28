@@ -32,7 +32,7 @@
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 
-#include "../nmi-ibft-reader.h"
+#include "../nm-initrd-generator.h"
 
 #include "nm-test-utils-core.h"
 

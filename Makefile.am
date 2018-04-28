@@ -1775,6 +1775,68 @@ $(src_nm_iface_helper_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
 
+noinst_LTLIBRARIES += src/initrd/libnmi-ibft-core.la
+
+src_initrd_libnmi_ibft_core_la_CPPFLAGS = \
+	$(src_cppflags)
+
+src_initrd_libnmi_ibft_core_la_SOURCES = \
+	src/initrd/nm-initrd-generator.h \
+	src/initrd/nmi-cmdline-reader.c \
+	src/initrd/nmi-ibft-reader.c
+
+$(src_initrd_libnmi_ibft_core_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+libexec_PROGRAMS += src/initrd/nm-initrd-generator
+
+src_initrd_nm_initrd_generator_CPPFLAGS = \
+	-DTEST_IBFT_DIR=\"$(abs_srcdir)/src/initrd/tests\" \
+	$(src_cppflags)
+
+src_initrd_nm_initrd_generator_SOURCES = \
+	src/initrd/nm-initrd-generator.c
+
+src_initrd_nm_initrd_generator_LDADD = \
+	src/initrd/libnmi-ibft-core.la \
+	libnm-core/libnm-core.la \
+	src/libNetworkManagerBase.la \
+	$(GLIB_LIBS)
+
+src_initrd_nm_initrd_generator_LDFLAGS = \
+	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
+	$(SANITIZER_EXEC_LDFLAGS)
+
+check_programs += src/initrd/tests/test-ibft
+
+src_initrd_tests_test_ibft_CPPFLAGS = \
+	-DNETWORKMANAGER_COMPILATION_TEST \
+	-DTEST_IBFT_DIR=\"$(abs_srcdir)/src/initrd/tests\" \
+	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/src/initrd/tests\" \
+	$(src_cppflags)
+
+src_initrd_tests_test_ibft_LDFLAGS = \
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(SANITIZER_EXEC_LDFLAGS)
+
+src_initrd_tests_test_ibft_LDADD = \
+	src/initrd/libnmi-ibft-core.la \
+	libnm-core/libnm-core.la \
+	src/libNetworkManagerTest.la \
+	$(GLIB_LIBS)
+
+EXTRA_DIST += \
+	src/initrd/tests/iscsiadm-test-dhcp \
+	src/initrd/tests/iscsiadm-test-static \
+	src/initrd/tests/iscsiadm-test-bad-ipaddr \
+	src/initrd/tests/iscsiadm-test-bad-gateway \
+	src/initrd/tests/iscsiadm-test-bad-dns1 \
+	src/initrd/tests/iscsiadm-test-bad-dns2 \
+	src/initrd/tests/iscsiadm-test-bad-entry \
+	src/initrd/tests/iscsiadm-test-bad-record \
+	src/initrd/tests/iscsiadm-test-vlan
+
+###############################################################################
+
 EXTRA_DIST += \
 	src/org.freedesktop.NetworkManager.conf \
 	src/nm-test-utils-core.h \

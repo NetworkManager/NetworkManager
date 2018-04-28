@@ -1,5 +1,4 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-/* NetworkManager system settings service
+/* NetworkManager -- Network link manager
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,11 +14,11 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2014 Red Hat, Inc.
+ * Copyright (C) 2014, 2018 Red Hat, Inc.
  */
 
-#ifndef __NMS_IBFT_READER_H__
-#define __NMS_IBFT_READER_H__
+#ifndef __NM_INITRD_GENERATOR_H__
+#define __NM_INITRD_GENERATOR_H__
 
 #include "nm-connection.h"
 
@@ -31,4 +30,6 @@ gboolean nmi_ibft_reader_parse_block (const GPtrArray *block, GError **error, ..
 
 gboolean nmi_ibft_reader_update_connection_from_block (NMConnection *connection, const GPtrArray *block, GError **error);
 
-#endif  /* __NMS_IBFT_READER_H__ */
+GHashTable *nmi_cmdline_reader_parse (GHashTable *ibft_blocks, char **argv);
+
+#endif  /* __NM_INITRD_GENERATOR_H__ */

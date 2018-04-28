@@ -20,7 +20,7 @@
 
 #include "nm-default.h"
 
-#include "nmi-ibft-reader.h"
+#include "nm-initrd-generator.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -124,6 +124,8 @@ nmi_ibft_reader_load_blocks (const char *iscsiadm_path, GError **error)
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (iscsiadm_path != NULL, FALSE);
+
+	nm_utils_modprobe (NULL, FALSE, "ibft_iscsi", NULL);
 
 	if (!g_spawn_sync ("/", (char **) argv, (char **) envp, 0,
 	                   NULL, NULL, &out, &err, &status, error))
