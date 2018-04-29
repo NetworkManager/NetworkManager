@@ -328,15 +328,58 @@ const NmcMetaGenericInfo *const metagen_device_detail_connections[_NMC_GENERIC_I
 
 /*****************************************************************************/
 
-const NmcMetaGenericInfo *const nmc_fields_dev_show_cap[] = {
-	NMC_META_GENERIC ("NAME"),             /* 0 */
-	NMC_META_GENERIC ("CARRIER-DETECT"),   /* 1 */
-	NMC_META_GENERIC ("SPEED"),            /* 2 */
-	NMC_META_GENERIC ("IS-SOFTWARE"),      /* 3 */
-	NMC_META_GENERIC ("SRIOV"),            /* 4 */
-	NULL,
+static gconstpointer
+_metagen_device_detail_capabilities_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
+{
+	NMDevice *d = target;
+	NMDeviceCapabilities caps;
+	guint32 speed;
+
+	NMC_HANDLE_COLOR (NM_META_COLOR_NONE);
+
+	caps = nm_device_get_capabilities (d);
+
+	switch (info->info_type) {
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_CAPABILITIES_CARRIER_DETECT:
+		return nmc_meta_generic_get_bool (NM_FLAGS_HAS (caps, NM_DEVICE_CAP_CARRIER_DETECT), get_type);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_CAPABILITIES_SPEED:
+		speed = 0;
+		if (NM_IS_DEVICE_ETHERNET (d)) {
+			/* Speed in Mb/s */
+			speed = nm_device_ethernet_get_speed (NM_DEVICE_ETHERNET (d));
+		} else if (NM_IS_DEVICE_WIFI (d)) {
+			/* Speed in b/s */
+			speed = nm_device_wifi_get_bitrate (NM_DEVICE_WIFI (d));
+			speed /= 1000;
+		}
+
+		if (speed) {
+			if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
+				return (*out_to_free = g_strdup_printf (_("%u Mb/s"), (guint) speed));
+			return (*out_to_free = g_strdup_printf ("%u Mb/s", (guint) speed));
+		}
+		return nmc_meta_generic_get_str_i18n (N_("unknown"), get_type);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_CAPABILITIES_IS_SOFTWARE:
+		return nmc_meta_generic_get_bool (NM_FLAGS_HAS (caps, NM_DEVICE_CAP_IS_SOFTWARE), get_type);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_CAPABILITIES_SRIOV:
+		return nmc_meta_generic_get_bool (NM_FLAGS_HAS (caps, NM_DEVICE_CAP_SRIOV), get_type);
+	default:
+		break;
+	}
+
+	g_return_val_if_reached (NULL);
+}
+
+const NmcMetaGenericInfo *const metagen_device_detail_capabilities[_NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_CAPABILITIES_NUM + 1] = {
+#define _METAGEN_DEVICE_DETAIL_CAPABILITIES(type, name) \
+	[type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_device_detail_capabilities_get_fcn)
+	_METAGEN_DEVICE_DETAIL_CAPABILITIES (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_CAPABILITIES_CARRIER_DETECT, "CARRIER-DETECT"),
+	_METAGEN_DEVICE_DETAIL_CAPABILITIES (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_CAPABILITIES_SPEED,          "SPEED"),
+	_METAGEN_DEVICE_DETAIL_CAPABILITIES (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_CAPABILITIES_IS_SOFTWARE,    "IS-SOFTWARE"),
+	_METAGEN_DEVICE_DETAIL_CAPABILITIES (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_CAPABILITIES_SRIOV,          "SRIOV"),
 };
-#define NMC_FIELDS_DEV_SHOW_CAP_COMMON  "NAME,CARRIER-DETECT,SPEED,IS-SOFTWARE"
+
+/*****************************************************************************/
 
 const NmcMetaGenericInfo *const nmc_fields_dev_show_wired_prop[] = {
 	NMC_META_GENERIC ("NAME"),               /* 0 */
@@ -441,7 +484,7 @@ const NmcMetaGenericInfo *const nmc_fields_dev_show_bluetooth[] = {
 /* Available sections for 'device show' */
 const NmcMetaGenericInfo *const nmc_fields_dev_show_sections[] = {
 	NMC_META_GENERIC_WITH_NESTED ("GENERAL",           metagen_device_detail_general),        /* 0 */
-	NMC_META_GENERIC_WITH_NESTED ("CAPABILITIES",      nmc_fields_dev_show_cap + 1),          /* 1 */
+	NMC_META_GENERIC_WITH_NESTED ("CAPABILITIES",      metagen_device_detail_capabilities),   /* 1 */
 	NMC_META_GENERIC_WITH_NESTED ("WIFI-PROPERTIES",   nmc_fields_dev_show_wifi_prop + 1),    /* 2 */
 	NMC_META_GENERIC_WITH_NESTED ("AP",                nmc_fields_dev_wifi_list + 1),         /* 3 */
 	NMC_META_GENERIC_WITH_NESTED ("WIRED-PROPERTIES",  nmc_fields_dev_show_wired_prop + 1),   /* 4 */
@@ -1289,9 +1332,6 @@ show_device_info (NMDevice *device, NmCli *nmc)
 {
 	GError *error = NULL;
 	NMDeviceState state = NM_DEVICE_STATE_UNKNOWN;
-	NMDeviceCapabilities caps;
-	guint32 speed;
-	char *speed_str;
 	GArray *sections_array;
 	int k;
 	const char *fields_str = NULL;
@@ -1365,40 +1405,17 @@ show_device_info (NMDevice *device, NmCli *nmc)
 			continue;
 		}
 
+		if (nmc_fields_dev_show_sections[section_idx]->nested == metagen_device_detail_capabilities) {
+			gs_free char *f = section_fld ? g_strdup_printf ("CAPABILITIES.%s", section_fld) : NULL;
 
-		/* section CAPABILITIES */
-		if (!strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[1]->name)) {
-			NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
-
-			tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_dev_show_cap;
-			out_indices = parse_output_fields (section_fld,
-			                                   tmpl, FALSE, NULL, NULL);
-			arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_FIELD_NAMES);
-			g_ptr_array_add (out.output_data, arr);
-
-			caps = nm_device_get_capabilities (device);
-			speed = 0;
-			if (NM_IS_DEVICE_ETHERNET (device)) {
-				/* Speed in Mb/s */
-				speed = nm_device_ethernet_get_speed (NM_DEVICE_ETHERNET (device));
-			} else if (NM_IS_DEVICE_WIFI (device)) {
-				/* Speed in b/s */
-				speed = nm_device_wifi_get_bitrate (NM_DEVICE_WIFI (device));
-				speed /= 1000;
-			}
-			speed_str = speed ? g_strdup_printf (_("%u Mb/s"), speed) : g_strdup (_("unknown"));
-
-			arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_SECTION_PREFIX);
-			set_val_strc (arr, 0, nmc_fields_dev_show_sections[1]->name);  /* "CAPABILITIES" */
-			set_val_strc (arr, 1, (caps & NM_DEVICE_CAP_CARRIER_DETECT) ? _("yes") : _("no"));
-			set_val_str  (arr, 2, speed_str);
-			set_val_strc (arr, 3, (caps & NM_DEVICE_CAP_IS_SOFTWARE) ? _("yes") : _("no"));
-			set_val_strc (arr, 4, (caps & NM_DEVICE_CAP_SRIOV) ? _("yes") : _("no"));
-			g_ptr_array_add (out.output_data, arr);
-
-			print_data_prepare_width (out.output_data);
-			print_data (&nmc->nmc_config, out_indices, NULL, 0, &out);
+			nmc_print (&nmc->nmc_config,
+			           (gpointer[]) { device, NULL },
+			           NULL,
+			           NMC_META_GENERIC_GROUP ("CAPABILITIES", metagen_device_detail_capabilities, N_("NAME")),
+			           f,
+			           NULL);
 			was_output = TRUE;
+			continue;
 		}
 
 		/* Wireless specific information */
