@@ -2,7 +2,7 @@ location: clients/tests/test-client.py:887:test_003()/116
 cmd: $NMCLI --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2035 bytes
+stdout: 2030 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -28,10 +28,10 @@ GENERAL.CONNECTION:ethernet
 GENERAL.CON-UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.CON-PATH:/org/freedesktop/NetworkManager/ActiveConnection/1
 GENERAL.METERED:unknown
-CAPABILITIES.CARRIER-DETECT:nie
-CAPABILITIES.SPEED:100 Mb/s
-CAPABILITIES.IS-SOFTWARE:nie
-CAPABILITIES.SRIOV:nie
+CAPABILITIES.CARRIER-DETECT:no
+CAPABILITIES.SPEED:100 Mb/s
+CAPABILITIES.IS-SOFTWARE:no
+CAPABILITIES.SRIOV:no
 WIRED-PROPERTIES.CARRIER:wyłączone
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
