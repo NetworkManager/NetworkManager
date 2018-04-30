@@ -381,39 +381,116 @@ const NmcMetaGenericInfo *const metagen_device_detail_capabilities[_NMC_GENERIC_
 
 /*****************************************************************************/
 
-const NmcMetaGenericInfo *const nmc_fields_dev_show_wired_prop[] = {
-	NMC_META_GENERIC ("NAME"),               /* 0 */
-	NMC_META_GENERIC ("CARRIER"),            /* 1 */
-	NMC_META_GENERIC ("S390-SUBCHANNELS"),   /* 2 */
-	NULL,
-};
-#define NMC_FIELDS_DEV_SHOW_WIRED_PROP_COMMON  "NAME,CARRIER,S390-SUBCHANNELS"
+static gconstpointer
+_metagen_device_detail_wired_properties_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
+{
+	NMDevice *d = target;
 
-const NmcMetaGenericInfo *const nmc_fields_dev_show_wifi_prop[] = {
-	NMC_META_GENERIC ("NAME"),    /* 0 */
-	NMC_META_GENERIC ("WEP"),     /* 1 */
-	NMC_META_GENERIC ("WPA"),     /* 2 */
-	NMC_META_GENERIC ("WPA2"),    /* 3 */
-	NMC_META_GENERIC ("TKIP"),    /* 4 */
-	NMC_META_GENERIC ("CCMP"),    /* 5 */
-	NMC_META_GENERIC ("AP"),      /* 6 */
-	NMC_META_GENERIC ("ADHOC"),   /* 7 */
-	NMC_META_GENERIC ("2GHZ"),    /* 8 */
-	NMC_META_GENERIC ("5GHZ"),    /* 9 */
-	NULL,
-};
-#define NMC_FIELDS_DEV_SHOW_WIFI_PROP_COMMON  "NAME,WEP,WPA,WPA2,TKIP,CCMP,AP,ADHOC"
+	NMC_HANDLE_COLOR (NM_META_COLOR_NONE);
 
-const NmcMetaGenericInfo *const nmc_fields_dev_show_wimax_prop[] = {
-	NMC_META_GENERIC ("NAME"),       /* 0 */
-	NMC_META_GENERIC ("CTR-FREQ"),   /* 1 */
-	NMC_META_GENERIC ("RSSI"),       /* 2 */
-	NMC_META_GENERIC ("CINR"),       /* 3 */
-	NMC_META_GENERIC ("TX-POW"),     /* 4 */
-	NMC_META_GENERIC ("BSID"),       /* 5 */
-	NULL,
+	switch (info->info_type) {
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIRED_PROPERTIES_CARRIER:
+		return nmc_meta_generic_get_bool_onoff (nm_device_ethernet_get_carrier (NM_DEVICE_ETHERNET (d)),
+		                                        get_type);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIRED_PROPERTIES_S390_SUBCHANNELS:
+		if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
+			return NULL;
+		*out_flags |= NM_META_ACCESSOR_GET_OUT_FLAGS_STRV;
+		return nm_device_ethernet_get_s390_subchannels (NM_DEVICE_ETHERNET (d));
+	default:
+		break;
+	}
+
+	g_return_val_if_reached (NULL);
+}
+
+const NmcMetaGenericInfo *const metagen_device_detail_wired_properties[_NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIRED_PROPERTIES_NUM + 1] = {
+#define _METAGEN_DEVICE_DETAIL_WIRED_PROPERTIES(type, name) \
+	[type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_device_detail_wired_properties_get_fcn)
+	_METAGEN_DEVICE_DETAIL_WIRED_PROPERTIES (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIRED_PROPERTIES_CARRIER,          "CARRIER"),
+	_METAGEN_DEVICE_DETAIL_WIRED_PROPERTIES (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIRED_PROPERTIES_S390_SUBCHANNELS, "S390-SUBCHANNELS"),
 };
-#define NMC_FIELDS_DEV_SHOW_WIMAX_PROP_COMMON  "NAME,CTR-FREQ,RSSI,CINR,TX-POW,BSID"
+
+/*****************************************************************************/
+
+static gconstpointer
+_metagen_device_detail_wifi_properties_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
+{
+	NMDevice *d = target;
+	NMDeviceWifiCapabilities wcaps;
+
+	NMC_HANDLE_COLOR (NM_META_COLOR_NONE);
+
+	wcaps = nm_device_wifi_get_capabilities (NM_DEVICE_WIFI (d));
+
+	switch (info->info_type) {
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_WEP:
+		return nmc_meta_generic_get_bool (NM_FLAGS_ANY (wcaps, NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104),
+		                                  get_type);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_WPA:
+		return nmc_meta_generic_get_bool (NM_FLAGS_HAS (wcaps, NM_WIFI_DEVICE_CAP_WPA),
+		                                  get_type);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_WPA2:
+		return nmc_meta_generic_get_bool (NM_FLAGS_HAS (wcaps, NM_WIFI_DEVICE_CAP_RSN),
+		                                  get_type);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_TKIP:
+		return nmc_meta_generic_get_bool (NM_FLAGS_HAS (wcaps, NM_WIFI_DEVICE_CAP_CIPHER_TKIP),
+		                                  get_type);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_CCMP:
+		return nmc_meta_generic_get_bool (NM_FLAGS_HAS (wcaps, NM_WIFI_DEVICE_CAP_CIPHER_CCMP),
+		                                  get_type);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_AP:
+		return nmc_meta_generic_get_bool (NM_FLAGS_HAS (wcaps, NM_WIFI_DEVICE_CAP_AP),
+		                                  get_type);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_ADHOC:
+		return nmc_meta_generic_get_bool (NM_FLAGS_HAS (wcaps, NM_WIFI_DEVICE_CAP_ADHOC),
+		                                  get_type);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_2GHZ:
+		return nmc_meta_generic_get_str_i18n (  NM_FLAGS_HAS (wcaps, NM_WIFI_DEVICE_CAP_FREQ_VALID)
+		                                      ? (  NM_FLAGS_HAS (wcaps, NM_WIFI_DEVICE_CAP_FREQ_2GHZ)
+		                                         ? N_("yes")
+		                                         : N_("no"))
+		                                      : N_("unknown"),
+		                                      get_type);
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_5GHZ:
+		return nmc_meta_generic_get_str_i18n (  NM_FLAGS_HAS (wcaps, NM_WIFI_DEVICE_CAP_FREQ_VALID)
+		                                      ? (  NM_FLAGS_HAS (wcaps, NM_WIFI_DEVICE_CAP_FREQ_5GHZ)
+		                                         ? N_("yes")
+		                                         : N_("no"))
+		                                      : N_("unknown"),
+		                                      get_type);
+	default:
+		break;
+	}
+
+	g_return_val_if_reached (NULL);
+}
+
+const NmcMetaGenericInfo *const metagen_device_detail_wifi_properties[_NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_NUM + 1] = {
+#define _METAGEN_DEVICE_DETAIL_WIFI_PROPERTIES(type, name) \
+	[type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_device_detail_wifi_properties_get_fcn)
+	_METAGEN_DEVICE_DETAIL_WIFI_PROPERTIES (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_WEP,   "WEP"),
+	_METAGEN_DEVICE_DETAIL_WIFI_PROPERTIES (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_WPA,   "WPA"),
+	_METAGEN_DEVICE_DETAIL_WIFI_PROPERTIES (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_WPA2,  "WPA2"),
+	_METAGEN_DEVICE_DETAIL_WIFI_PROPERTIES (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_TKIP,  "TKIP"),
+	_METAGEN_DEVICE_DETAIL_WIFI_PROPERTIES (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_CCMP,  "CCMP"),
+	_METAGEN_DEVICE_DETAIL_WIFI_PROPERTIES (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_AP,    "AP"),
+	_METAGEN_DEVICE_DETAIL_WIFI_PROPERTIES (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_ADHOC, "ADHOC"),
+	_METAGEN_DEVICE_DETAIL_WIFI_PROPERTIES (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_2GHZ,  "2GHZ"),
+	_METAGEN_DEVICE_DETAIL_WIFI_PROPERTIES (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_5GHZ,  "5GHZ"),
+};
+
+/*****************************************************************************/
+
+const NmcMetaGenericInfo *const metagen_device_detail_wimax_properties[] = {
+	NMC_META_GENERIC ("CTR-FREQ"),
+	NMC_META_GENERIC ("RSSI"),
+	NMC_META_GENERIC ("CINR"),
+	NMC_META_GENERIC ("TX-POW"),
+	NMC_META_GENERIC ("BSID"),
+};
+
+/*****************************************************************************/
 
 const NmcMetaGenericInfo *const nmc_fields_dev_wifi_list[] = {
 	NMC_META_GENERIC ("NAME"),        /* 0 */
@@ -485,10 +562,10 @@ const NmcMetaGenericInfo *const nmc_fields_dev_show_bluetooth[] = {
 const NmcMetaGenericInfo *const nmc_fields_dev_show_sections[] = {
 	NMC_META_GENERIC_WITH_NESTED ("GENERAL",           metagen_device_detail_general),        /* 0 */
 	NMC_META_GENERIC_WITH_NESTED ("CAPABILITIES",      metagen_device_detail_capabilities),   /* 1 */
-	NMC_META_GENERIC_WITH_NESTED ("WIFI-PROPERTIES",   nmc_fields_dev_show_wifi_prop + 1),    /* 2 */
+	NMC_META_GENERIC_WITH_NESTED ("WIFI-PROPERTIES",   metagen_device_detail_wifi_properties), /* 2 */
 	NMC_META_GENERIC_WITH_NESTED ("AP",                nmc_fields_dev_wifi_list + 1),         /* 3 */
-	NMC_META_GENERIC_WITH_NESTED ("WIRED-PROPERTIES",  nmc_fields_dev_show_wired_prop + 1),   /* 4 */
-	NMC_META_GENERIC_WITH_NESTED ("WIMAX-PROPERTIES",  nmc_fields_dev_show_wimax_prop + 1),   /* 5 */
+	NMC_META_GENERIC_WITH_NESTED ("WIRED-PROPERTIES",  metagen_device_detail_wired_properties), /* 4 */
+	NMC_META_GENERIC_WITH_NESTED ("WIMAX-PROPERTIES",  metagen_device_detail_wimax_properties), /* 5 */
 	NMC_META_GENERIC_WITH_NESTED ("NSP",               nmc_fields_dev_wimax_list + 1),        /* 6 */
 	NMC_META_GENERIC_WITH_NESTED ("IP4",               metagen_ip4_config),                   /* 7 */
 	NMC_META_GENERIC_WITH_NESTED ("DHCP4",             metagen_dhcp_config),                  /* 8 */
@@ -1418,45 +1495,26 @@ show_device_info (NMDevice *device, NmCli *nmc)
 			continue;
 		}
 
+		if (nmc_fields_dev_show_sections[section_idx]->nested == metagen_device_detail_wifi_properties) {
+			if (NM_IS_DEVICE_WIFI (device)) {
+				gs_free char *f = section_fld ? g_strdup_printf ("WIFI-PROPERTIES.%s", section_fld) : NULL;
+
+				nmc_print (&nmc->nmc_config,
+				           (gpointer[]) { device, NULL },
+				           NULL,
+				           NMC_META_GENERIC_GROUP ("WIFI-PROPERTIES", metagen_device_detail_wifi_properties, N_("NAME")),
+				           f,
+				           NULL);
+				was_output = TRUE;
+			}
+			continue;
+		}
+
 		/* Wireless specific information */
 		if ((NM_IS_DEVICE_WIFI (device))) {
-			NMDeviceWifiCapabilities wcaps;
 			NMAccessPoint *active_ap = NULL;
 			const char *active_bssid = NULL;
 			GPtrArray *aps;
-
-			/* section WIFI-PROPERTIES */
-			if (!strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[2]->name)) {
-				NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
-
-				wcaps = nm_device_wifi_get_capabilities (NM_DEVICE_WIFI (device));
-
-				tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_dev_show_wifi_prop;
-				out_indices = parse_output_fields (section_fld,
-				                                   tmpl, FALSE, NULL, NULL);
-				arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_FIELD_NAMES);
-				g_ptr_array_add (out.output_data, arr);
-
-				arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_SECTION_PREFIX);
-				set_val_strc (arr, 0, nmc_fields_dev_show_sections[2]->name);  /* "WIFI-PROPERTIES" */
-				set_val_strc (arr, 1, (wcaps & (NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104)) ?
-				                        _("yes") : _("no"));
-				set_val_strc (arr, 2, (wcaps & NM_WIFI_DEVICE_CAP_WPA) ? _("yes") : _("no"));
-				set_val_strc (arr, 3, (wcaps & NM_WIFI_DEVICE_CAP_RSN) ? _("yes") : _("no"));
-				set_val_strc (arr, 4, (wcaps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP) ? _("yes") : _("no"));
-				set_val_strc (arr, 5, (wcaps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP) ? _("yes") : _("no"));
-				set_val_strc (arr, 6, (wcaps & NM_WIFI_DEVICE_CAP_AP) ? _("yes") : _("no"));
-				set_val_strc (arr, 7, (wcaps & NM_WIFI_DEVICE_CAP_ADHOC) ? _("yes") : _("no"));
-				set_val_strc (arr, 8, !(wcaps & NM_WIFI_DEVICE_CAP_FREQ_VALID) ? _("unknown") :
-				                      ((wcaps & NM_WIFI_DEVICE_CAP_FREQ_2GHZ) ? _("yes") : _("no")));
-				set_val_strc (arr, 9, !(wcaps & NM_WIFI_DEVICE_CAP_FREQ_VALID) ? _("unknown") :
-				                      ((wcaps & NM_WIFI_DEVICE_CAP_FREQ_5GHZ) ? _("yes") : _("no")));
-				g_ptr_array_add (out.output_data, arr);
-
-				print_data_prepare_width (out.output_data);
-				print_data (&nmc->nmc_config, out_indices, NULL, 0, &out);
-				was_output = TRUE;
-			}
 
 			/* section AP */
 			if (!strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[3]->name)) {
@@ -1492,28 +1550,21 @@ show_device_info (NMDevice *device, NmCli *nmc)
 				print_data (&nmc->nmc_config, out_indices, NULL, 0, &out);
 				was_output = TRUE;
 			}
-		} else if (NM_IS_DEVICE_ETHERNET (device)) {
-			/* WIRED-PROPERTIES */
-			if (!strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[4]->name)) {
-				NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
+		}
 
-				tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_dev_show_wired_prop;
-				out_indices = parse_output_fields (section_fld,
-				                                   tmpl, FALSE, NULL, NULL);
-				arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_FIELD_NAMES);
-				g_ptr_array_add (out.output_data, arr);
+		if (nmc_fields_dev_show_sections[section_idx]->nested == metagen_device_detail_wired_properties) {
+			if ((NM_IS_DEVICE_ETHERNET (device))) {
+				gs_free char *f = section_fld ? g_strdup_printf ("WIRED-PROPERTIES.%s", section_fld) : NULL;
 
-				arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_SECTION_PREFIX);
-				set_val_strc (arr, 0, nmc_fields_dev_show_sections[4]->name);  /* "WIRED-PROPERTIES" */
-				set_val_strc (arr, 1, (nm_device_ethernet_get_carrier (NM_DEVICE_ETHERNET (device))) ?
-				                        _("on") : _("off"));
-				set_val_arrc (arr, 2, ((const char **) nm_device_ethernet_get_s390_subchannels (NM_DEVICE_ETHERNET (device))));
-				g_ptr_array_add (out.output_data, arr);
-
-				print_data_prepare_width (out.output_data);
-				print_data (&nmc->nmc_config, out_indices, NULL, 0, &out);
+				nmc_print (&nmc->nmc_config,
+				           (gpointer[]) { device, NULL },
+				           NULL,
+				           NMC_META_GENERIC_GROUP ("WIRED-PROPERTIES", metagen_device_detail_wired_properties, N_("NAME")),
+				           f,
+				           NULL);
 				was_output = TRUE;
 			}
+			continue;
 		}
 
 		/* IP configuration info */

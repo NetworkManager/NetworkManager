@@ -2,7 +2,7 @@ location: clients/tests/test-client.py:887:test_003()/286
 cmd: $NMCLI --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2050 bytes
+stdout: 2042 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -32,7 +32,7 @@ CAPABILITIES.CARRIER-DETECT:no
 CAPABILITIES.SPEED:100 Mb/s
 CAPABILITIES.IS-SOFTWARE:no
 CAPABILITIES.SRIOV:no
-WIRED-PROPERTIES.CARRIER:wyłączone
+WIRED-PROPERTIES.CARRIER:off
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
 IP4.ROUTE[1]:dst = 192.168.58.133/31, nh = 192.168.50.116, mt = 3130348792
