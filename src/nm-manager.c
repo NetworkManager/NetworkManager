@@ -4291,7 +4291,7 @@ fail:
  * @connection: the #NMSettingsConnection to activate on @device
  * @applied: (allow-none): the applied connection to activate on @device
  * @specific_object: the specific object path, if any, for the activation
- * @device: the #NMDevice to activate @connection on
+ * @device: the #NMDevice to activate @connection on. Can be %NULL for VPNs.
  * @subject: the subject which requested activation
  * @activation_type: whether to assume the connection. That is, take over gracefully,
  *   non-destructible.
@@ -4322,10 +4322,12 @@ nm_manager_activate_connection (NMManager *self,
 	NMManagerPrivate *priv;
 	NMActiveConnection *active;
 	AsyncOpData *async_op_data;
+	gboolean is_vpn;
 
 	g_return_val_if_fail (NM_IS_MANAGER (self), NULL);
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (connection), NULL);
-	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+	is_vpn = _connection_is_vpn (NM_CONNECTION (connection));
+	g_return_val_if_fail (is_vpn || NM_IS_DEVICE (device), NULL);
 	g_return_val_if_fail (!error || !*error, NULL);
 	nm_assert (!nm_streq0 (specific_object, "/"));
 
@@ -4351,7 +4353,7 @@ nm_manager_activate_connection (NMManager *self,
 		active = async_op_data->ac_auth.active;
 		if (   connection == nm_active_connection_get_settings_connection (active)
 		    && nm_streq0 (nm_active_connection_get_specific_object (active), specific_object)
-		    && nm_active_connection_get_device (active) == device
+		    && (!device || nm_active_connection_get_device (active) == device)
 		    && nm_auth_subject_is_internal (nm_active_connection_get_subject (active))
 		    && nm_auth_subject_is_internal (subject)
 		    && nm_active_connection_get_activation_reason (active) == activation_reason)
@@ -4359,7 +4361,7 @@ nm_manager_activate_connection (NMManager *self,
 	}
 
 	active = _new_active_connection (self,
-	                                 _connection_is_vpn (NM_CONNECTION (connection)),
+	                                 is_vpn,
 	                                 NM_CONNECTION (connection),
 	                                 applied,
 	                                 specific_object,
