@@ -296,7 +296,6 @@ typedef enum { /*< flags >*/
 	NM_WIFI_DEVICE_CAP_FREQ_5GHZ     = 0x00000400,
 } NMDeviceWifiCapabilities;
 
-
 /**
  * NM80211ApFlags:
  * @NM_802_11_AP_FLAGS_NONE: access point has no special capabilities
@@ -831,7 +830,6 @@ typedef enum {
 	NM_IP_TUNNEL_MODE_IP6GRE      = 8,
 	NM_IP_TUNNEL_MODE_VTI6        = 9,
 } NMIPTunnelMode;
-
 
 /**
  * NMCheckpointCreateFlags:

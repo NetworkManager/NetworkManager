@@ -244,7 +244,6 @@ normalize:
 	return TRUE;
 }
 
-
 static int
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {

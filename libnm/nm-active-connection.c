@@ -580,7 +580,6 @@ init_dbus (NMObject *object)
 	                                property_info);
 }
 
-
 static void
 nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 {

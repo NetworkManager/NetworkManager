@@ -375,7 +375,6 @@ typedef union {
 
 #undef __NMPlatformIPAddress_COMMON
 
-
 /* Default value for adding an IPv4 route. This is also what iproute2 does.
  * Note that contrary to IPv6, you can add routes with metric 0 and it is even
  * the default.
@@ -470,7 +469,6 @@ typedef union {
 	guint32 table_coerced; \
 	\
 	/*end*/
-
 
 typedef struct {
 	__NMPlatformIPRoute_COMMON;
@@ -594,7 +592,6 @@ typedef struct {
 } NMPlatformTfilter;
 
 #undef __NMPlatformObject_COMMON
-
 
 typedef struct {
 	gboolean is_ip4;

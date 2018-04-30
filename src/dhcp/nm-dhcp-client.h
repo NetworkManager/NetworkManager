@@ -48,7 +48,6 @@
 #define NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED "state-changed"
 #define NM_DHCP_CLIENT_SIGNAL_PREFIX_DELEGATED "prefix-delegated"
 
-
 typedef enum {
 	NM_DHCP_STATE_UNKNOWN = 0,
 	NM_DHCP_STATE_BOUND,        /* new lease or lease changed */

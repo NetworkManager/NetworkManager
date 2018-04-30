@@ -907,4 +907,3 @@ nm_match_spec_device_by_pllink (const NMPlatformLink *pllink,
 	return no_match_value;
 }
 
-

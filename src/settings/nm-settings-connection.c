@@ -817,9 +817,7 @@ nm_settings_connection_delete (NMSettingsConnection *self,
 	return TRUE;
 }
 
-
 /*****************************************************************************/
-
 
 typedef enum {
 	CALL_ID_TYPE_REQ,
@@ -1809,7 +1807,6 @@ update_auth_cb (NMSettingsConnection *self,
 
 	update_complete (self, info, local);
 }
-
 
 static const char *
 get_update_modify_permission (NMConnection *old, NMConnection *new)

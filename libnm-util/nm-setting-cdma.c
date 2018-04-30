@@ -54,7 +54,6 @@ nm_setting_cdma_error_quark (void)
 	return quark;
 }
 
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingCdma, nm_setting_cdma, NM_TYPE_SETTING,
                          _nm_register_setting (NM_SETTING_CDMA_SETTING_NAME,
                                                g_define_type_id,

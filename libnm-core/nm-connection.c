@@ -515,7 +515,6 @@ nm_connection_compare (NMConnection *a,
 	return TRUE;
 }
 
-
 static gboolean
 diff_one_connection (NMConnection *a,
                      NMConnection *b,

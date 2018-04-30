@@ -94,7 +94,6 @@ enum {
 
 static GSList *active_plugins = NULL;
 
-
 static void
 nm_vpn_plugin_old_set_connection (NMVpnPluginOld *plugin,
                                   GDBusConnection *connection)

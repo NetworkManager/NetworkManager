@@ -61,7 +61,6 @@ nm_setting_team_error_quark (void)
 	return quark;
 }
 
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingTeam, nm_setting_team, NM_TYPE_SETTING,
                          _nm_register_setting (NM_SETTING_TEAM_SETTING_NAME,
                                                g_define_type_id,

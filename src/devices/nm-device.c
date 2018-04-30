@@ -4218,7 +4218,6 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	g_return_val_if_fail (priv->iface != NULL, FALSE);
 	g_return_val_if_fail (priv->real, FALSE);
 
-
 	ifindex = nm_device_get_ifindex (self);
 
 	_LOGD (LOGD_DEVICE, "unrealize (ifindex %d)", ifindex > 0 ? ifindex : 0);
@@ -5868,7 +5867,6 @@ activate_stage1_device_prepare (NMDevice *self)
 	nm_device_activate_schedule_stage2_device_config (self);
 }
 
-
 /*
  * nm_device_activate_schedule_stage1_device_prepare
  *
@@ -6069,7 +6067,6 @@ activate_stage2_device_config (NMDevice *self)
 	lldp_init (self, TRUE);
 	nm_device_activate_schedule_stage3_ip_config_start (self);
 }
-
 
 /*
  * nm_device_activate_schedule_stage2_device_config
@@ -10969,7 +10966,6 @@ nm_device_get_ip4_config (NMDevice *self)
 
 	return NM_DEVICE_GET_PRIVATE (self)->ip_config_4;
 }
-
 
 static gboolean
 nm_device_set_ip_config (NMDevice *self,

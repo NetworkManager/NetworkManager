@@ -126,7 +126,6 @@ _recursive_ifparser (const char *eni_file, int quiet)
 	if (!quiet)
 		nm_log_info (LOGD_SETTINGS, "      interface-parser: parsing file %s\n", eni_file);
 
-
 	while (!feof(inp))
 	{
 		char *token[128]; /* 255 chars can only be split into 127 tokens */

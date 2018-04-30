@@ -1291,7 +1291,6 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro)
 #define false   0
 #endif
 
-
 #ifdef _G_BOOLEAN_EXPR
 /* g_assert() uses G_LIKELY(), which in turn uses _G_BOOLEAN_EXPR().
  * As glib's implementation uses a local variable _g_boolean_var_,

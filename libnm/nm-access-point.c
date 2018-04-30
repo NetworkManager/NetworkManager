@@ -483,7 +483,6 @@ init_dbus (NMObject *object)
 	                                property_info);
 }
 
-
 static void
 nm_access_point_class_init (NMAccessPointClass *ap_class)
 {

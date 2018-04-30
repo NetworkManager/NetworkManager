@@ -40,7 +40,6 @@ _nm_crypto_error_quark (void)
 	return quark;
 }
 
-
 #define PEM_RSA_KEY_BEGIN "-----BEGIN RSA PRIVATE KEY-----"
 #define PEM_RSA_KEY_END   "-----END RSA PRIVATE KEY-----"
 

@@ -73,7 +73,6 @@ nm_device_state_reason_check (NMDeviceStateReason reason)
 #define NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "queued-state-change-"
 #define NM_PENDING_ACTIONPREFIX_ACTIVATION          "activation-"
 
-
 /* Properties */
 #define NM_DEVICE_UDI              "udi"
 #define NM_DEVICE_IFACE            "interface"

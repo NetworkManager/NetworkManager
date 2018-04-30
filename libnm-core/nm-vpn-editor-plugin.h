@@ -47,7 +47,6 @@ typedef NMVpnEditorPlugin * (*NMVpnEditorPluginFactory) (GError **error);
 NMVpnEditorPlugin *nm_vpn_editor_plugin_factory (GError **error);
 #endif
 
-
 /*****************************************************************************/
 /* Editor plugin interface                        */
 /*****************************************************************************/

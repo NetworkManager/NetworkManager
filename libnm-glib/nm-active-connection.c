@@ -638,7 +638,6 @@ constructed (GObject *object)
 	register_properties (NM_ACTIVE_CONNECTION (object));
 }
 
-
 static void
 nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 {

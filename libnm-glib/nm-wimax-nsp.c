@@ -278,7 +278,6 @@ constructed (GObject *object)
 	register_properties (NM_WIMAX_NSP (object));
 }
 
-
 static void
 nm_wimax_nsp_class_init (NMWimaxNspClass *nsp_class)
 {

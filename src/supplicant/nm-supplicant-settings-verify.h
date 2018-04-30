@@ -34,5 +34,4 @@ OptType nm_supplicant_settings_verify_setting (const char * key,
                                                const char * value,
                                                const guint32 len);
 
-
 #endif /* __NETWORKMANAGER_SUPPLICANT_SETTINGS_VERIFY_H__ */

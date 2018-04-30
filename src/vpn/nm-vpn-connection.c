@@ -2143,7 +2143,6 @@ _name_owner_changed (GObject *object,
 	g_free (owner);
 }
 
-
 static gboolean
 _daemon_exec_timeout (gpointer data)
 {

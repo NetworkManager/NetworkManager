@@ -96,7 +96,6 @@ typedef struct _NMIP6ConfigClass NMIP6ConfigClass;
 
 GType nm_ip6_config_get_type (void);
 
-
 NMIP6Config * nm_ip6_config_new (struct _NMDedupMultiIndex *multi_idx, int ifindex);
 NMIP6Config * nm_ip6_config_new_cloned (const NMIP6Config *src);
 
@@ -121,7 +120,6 @@ void nm_ip6_config_merge_setting (NMIP6Config *self,
                                   guint32 route_table,
                                   guint32 route_metric);
 NMSetting *nm_ip6_config_create_setting (const NMIP6Config *self);
-
 
 void nm_ip6_config_merge (NMIP6Config *dst,
                           const NMIP6Config *src,

@@ -1001,7 +1001,6 @@ load_global_dns (GKeyFile *keyfile, gboolean internal)
 	return dns_config;
 }
 
-
 void
 nm_global_dns_config_to_dbus (const NMGlobalDnsConfig *dns_config, GValue *value)
 {

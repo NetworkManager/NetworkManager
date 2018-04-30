@@ -245,7 +245,6 @@ out:
 		g_variant_unref (ret);
 }
 
-
 int
 main (int argc, char *argv[])
 {

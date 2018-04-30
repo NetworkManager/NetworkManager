@@ -1153,7 +1153,6 @@ ovsdb_got_msg (NMOvsdb *self, json_t *msg)
 		return;
 	}
 
-
 	/* This is a message we are not interested in. */
 	_LOGW ("got an unknown message, ignoring");
 }

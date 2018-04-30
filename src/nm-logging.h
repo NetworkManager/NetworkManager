@@ -142,7 +142,6 @@ typedef enum  { /*< skip >*/
         } \
     } G_STMT_END
 
-
 #define _nm_log_ptr(level, domain, ifname, con_uuid, self, prefix, ...) \
    nm_log ((level), \
            (domain), \
@@ -181,7 +180,6 @@ _nm_log_ptr_is_debug (NMLogLevel level)
                     __prefix ? " " : "" _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
         } \
     } G_STMT_END
-
 
 #define _nm_log_obj(level, domain, ifname, con_uuid, self, prefix, ...) \
     _nm_log_ptr ((level), \

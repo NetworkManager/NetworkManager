@@ -48,7 +48,6 @@
 #define NM_SETTINGS_CONNECTION_FLAGS    "flags"
 #define NM_SETTINGS_CONNECTION_FILENAME "filename"
 
-
 /**
  * NMSettingsConnectionIntFlags:
  * @NM_SETTINGS_CONNECTION_INT_FLAGS_NONE: no flag set

@@ -97,7 +97,6 @@ add_connection (NMClient *client, GMainLoop *loop, const char *con_name)
 	g_object_unref (connection);
 }
 
-
 int
 main (int argc, char *argv[])
 {

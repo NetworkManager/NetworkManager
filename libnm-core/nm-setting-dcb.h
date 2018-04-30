@@ -70,7 +70,6 @@ typedef enum { /*< flags >*/
  */
 #define NM_SETTING_DCB_FCOE_MODE_VN2VN   "vn2vn"
 
-
 /* Properties */
 #define NM_SETTING_DCB_APP_FCOE_FLAGS         "app-fcoe-flags"
 #define NM_SETTING_DCB_APP_FCOE_PRIORITY      "app-fcoe-priority"

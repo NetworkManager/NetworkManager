@@ -125,7 +125,6 @@ async_data_unpack (struct AsyncData *async_data)
 	return self;
 }
 
-
 /**
  * Cancel any current attempt to detect the version and cleanup
  * the related fields.
@@ -144,7 +143,6 @@ cleanup_checking (NMBluezManager *self, gboolean do_unwatch_name)
 		priv->watch_name_id = 0;
 	}
 }
-
 
 static void
 manager_bdaddr_added_cb (GObject *manager,
@@ -244,7 +242,6 @@ setup_bluez5 (NMBluezManager *self)
 	nm_bluez5_manager_query_devices (manager);
 }
 
-
 static void
 watch_name_on_appeared (GDBusConnection *connection,
                         const gchar *name,
@@ -253,7 +250,6 @@ watch_name_on_appeared (GDBusConnection *connection,
 {
 	check_bluez_and_try_setup (NM_BLUEZ_MANAGER (user_data));
 }
-
 
 static void
 check_bluez_and_try_setup_final_step (NMBluezManager *self, int bluez_version, const char *reason)

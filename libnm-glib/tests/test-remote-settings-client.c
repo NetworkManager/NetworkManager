@@ -229,7 +229,6 @@ test_make_visible (void)
 	dbus_g_proxy_begin_call (proxy, "SetVisible", set_visible_cb, NULL, NULL,
 	                         G_TYPE_BOOLEAN, TRUE, G_TYPE_INVALID);
 
-
 	/* Wait for the settings service to announce the connection again */
 	start = time (NULL);
 	do {

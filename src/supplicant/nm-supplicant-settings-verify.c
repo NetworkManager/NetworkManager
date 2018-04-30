@@ -36,7 +36,6 @@ struct Opt {
 	const char **    str_allowed;
 };
 
-
 static gboolean validate_type_int     (const struct Opt * opt,
                                        const char * value,
                                        const guint32 len);
@@ -66,7 +65,6 @@ static const struct validate_entry validate_table[] = {
 	{ TYPE_UTF8,    validate_type_utf8    },
 	{ TYPE_KEYWORD, validate_type_keyword },
 };
-
 
 const char * pairwise_allowed[] = { "CCMP", "TKIP", "NONE", NULL };
 const char * group_allowed[] =    { "CCMP", "TKIP", "WEP104", "WEP40", NULL };
@@ -154,7 +152,6 @@ static const struct Opt opt_table[] = {
 	{ "macsec_port",        TYPE_INT,     1, 65534, FALSE, NULL },
 	{ "ieee80211w",         TYPE_INT,     0, 2, FALSE, NULL },
 };
-
 
 static gboolean
 validate_type_int (const struct Opt * opt,

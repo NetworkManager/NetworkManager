@@ -37,7 +37,6 @@ typedef struct _NMVpnPluginUiWidgetInterface NMVpnPluginUiWidgetInterface;
 typedef NMVpnPluginUiInterface * (*NMVpnPluginUiFactory) (GError **error);
 NMVpnPluginUiInterface *nm_vpn_plugin_ui_factory (GError **error);
 
-
 /*****************************************************************************/
 /* Plugin interface                               */
 /*****************************************************************************/
@@ -92,7 +91,6 @@ typedef enum {
 	NM_VPN_PLUGIN_UI_INTERFACE_PROP_DESC,
 	NM_VPN_PLUGIN_UI_INTERFACE_PROP_SERVICE
 } NMVpnPluginUiInterfaceProp;
-
 
 struct _NMVpnPluginUiInterface {
 	GTypeInterface g_iface;
@@ -173,7 +171,6 @@ gboolean nm_vpn_plugin_ui_interface_delete_connection (NMVpnPluginUiInterface *i
                                                        NMConnection *connection,
                                                        GError **error);
 
-
 /*****************************************************************************/
 /* UI widget interface                            */
 /*****************************************************************************/
@@ -223,7 +220,6 @@ NM_DEPRECATED_IN_0_9_10
 gboolean nm_vpn_plugin_ui_widget_interface_save_secrets (NMVpnPluginUiWidgetInterface *iface,
                                                          NMConnection *connection,
                                                          GError **error);
-
 
 #ifdef NM_VPN_LIBNM_COMPAT
 #define nm_vpn_editor_plugin_factory nm_vpn_plugin_ui_factory

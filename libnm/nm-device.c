@@ -1940,7 +1940,6 @@ nm_device_reapply (NMDevice *device,
 	if (!dict)
 		dict = g_variant_new_array (G_VARIANT_TYPE ("{sa{sv}}"), NULL, 0);
 
-
 	ret = nmdbus_device_call_reapply_sync (NM_DEVICE_GET_PRIVATE (device)->proxy,
 	                                       dict, version_id, flags, cancellable, error);
 	if (error && *error)

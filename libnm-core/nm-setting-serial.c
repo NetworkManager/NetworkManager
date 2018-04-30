@@ -51,7 +51,6 @@ typedef struct {
 	guint64 send_delay;
 } NMSettingSerialPrivate;
 
-
 enum {
 	PROP_0,
 	PROP_BAUD,

@@ -6370,7 +6370,6 @@ test_nm_utils_enum_get_values_do (GType type, int from, int to, const char *exp_
 	g_free (strv);
 }
 
-
 static void test_nm_utils_enum (void)
 {
 	GType bool_enum = nm_test_general_bool_enum_get_type();
@@ -6723,7 +6722,6 @@ test_nm_in_strset (void)
 	_ASSERT (3,  NM_IN_STRSET_SE (NULL, G(NULL), G("b"),  G("b")));
 	_ASSERT (3, !NM_IN_STRSET_SE ("a",  G(NULL), G("b"),  G("b")));
 	_ASSERT (3, !NM_IN_STRSET_SE (NULL, G("a"),  G("b"),  G("b")));
-
 
 	_ASSERT (3,  NM_IN_STRSET ("a",  G(NULL), G("b"),  G("a"),  N("a")));
 	_ASSERT (4,  NM_IN_STRSET ("a",  G(NULL), G("b"),  G("c"),  G("a")));

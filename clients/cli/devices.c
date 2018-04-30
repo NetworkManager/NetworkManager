@@ -51,7 +51,6 @@ const NmcMetaGenericInfo *const nmc_fields_dev_status[] = {
 };
 #define NMC_FIELDS_DEV_STATUS_COMMON  "DEVICE,TYPE,STATE,CONNECTION"
 
-
 const NmcMetaGenericInfo *const nmc_fields_dev_show_general[] = {
 	NMC_META_GENERIC ("NAME"),                /* 0 */
 	NMC_META_GENERIC ("DEVICE"),              /* 1 */
@@ -3657,7 +3656,6 @@ do_device_wifi_rescan (NmCli *nmc, int argc, char **argv)
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		goto finish;
 	}
-
 
 	if (ssids->len) {
 		g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);

@@ -65,7 +65,6 @@ typedef enum { /*< underscore_name=nm_setting_802_1x_ck_scheme >*/
 	NM_SETTING_802_1X_CK_SCHEME_PATH
 } NMSetting8021xCKScheme;
 
-
 #define NM_TYPE_SETTING_802_1X            (nm_setting_802_1x_get_type ())
 #define NM_SETTING_802_1X(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTING_802_1X, NMSetting8021x))
 #define NM_SETTING_802_1X_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SETTING_802_1X, NMSetting8021xClass))
@@ -90,7 +89,6 @@ typedef enum { /*< underscore_name=nm_setting_802_1x_error >*/
 
 #define NM_SETTING_802_1X_ERROR nm_setting_802_1x_error_quark ()
 GQuark nm_setting_802_1x_error_quark (void);
-
 
 #define NM_SETTING_802_1X_EAP "eap"
 #define NM_SETTING_802_1X_IDENTITY "identity"
@@ -290,7 +288,6 @@ const char *           nm_setting_802_1x_get_phase2_private_key_password (NMSett
 NMSettingSecretFlags   nm_setting_802_1x_get_phase2_private_key_password_flags (NMSetting8021x *setting);
 
 NMSetting8021xCKFormat nm_setting_802_1x_get_phase2_private_key_format   (NMSetting8021x *setting);
-
 
 G_END_DECLS
 

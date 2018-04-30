@@ -61,7 +61,6 @@ nm_setting_bond_error_quark (void)
 	return quark;
 }
 
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingBond, nm_setting_bond, NM_TYPE_SETTING,
                          _nm_register_setting (NM_SETTING_BOND_SETTING_NAME,
                                                g_define_type_id,

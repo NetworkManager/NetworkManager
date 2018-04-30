@@ -526,7 +526,6 @@ test_secret_agent_good (TestSecretAgentData *sadata, gconstpointer test_data)
 	g_assert_cmpint (sadata->secrets_requested, ==, 1);
 }
 
-
 static void
 async_init_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 {
@@ -565,7 +564,6 @@ test_secret_agent_nm_not_running (void)
 	g_main_loop_run (loop);
 	g_main_loop_unref (loop);
 }
-
 
 static void
 registered_changed (GObject *object, GParamSpec *pspec, gpointer user_data)

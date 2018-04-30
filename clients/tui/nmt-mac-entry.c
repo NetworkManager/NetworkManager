@@ -34,7 +34,6 @@
 
 #include "nm-common-macros.h"
 
-
 G_DEFINE_TYPE (NmtMacEntry, nmt_mac_entry, NMT_TYPE_NEWT_ENTRY)
 
 #define NMT_MAC_ENTRY_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_MAC_ENTRY, NmtMacEntryPrivate))

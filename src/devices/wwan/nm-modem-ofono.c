@@ -278,7 +278,6 @@ deactivate_cleanup (NMModem *modem, NMDevice *device)
 	NM_MODEM_CLASS (nm_modem_ofono_parent_class)->deactivate_cleanup (modem, device);
 }
 
-
 static gboolean
 check_connection_compatible (NMModem *modem,
                              NMConnection *connection)

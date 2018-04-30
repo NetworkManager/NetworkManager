@@ -49,7 +49,6 @@ gboolean    nm_tc_qdisc_equal                (NMTCQdisc *qdisc,
 NM_AVAILABLE_IN_1_12
 NMTCQdisc  *nm_tc_qdisc_dup                  (NMTCQdisc  *qdisc);
 
-
 NM_AVAILABLE_IN_1_12
 const char *nm_tc_qdisc_get_kind             (NMTCQdisc *qdisc);
 NM_AVAILABLE_IN_1_12
@@ -79,7 +78,6 @@ gboolean    nm_tc_action_equal               (NMTCAction *action,
 
 NM_AVAILABLE_IN_1_12
 NMTCAction  *nm_tc_action_dup                (NMTCAction  *action);
-
 
 NM_AVAILABLE_IN_1_12
 const char *nm_tc_action_get_kind            (NMTCAction *action);
@@ -128,7 +126,6 @@ NM_AVAILABLE_IN_1_12
 NMTCAction *nm_tc_tfilter_get_action         (NMTCTfilter *tfilter);
 NM_AVAILABLE_IN_1_12
 void        nm_tc_tfilter_set_action         (NMTCTfilter *tfilter, NMTCAction *action);
-
 
 #define NM_TYPE_SETTING_TC_CONFIG            (nm_setting_tc_config_get_type ())
 #define NM_SETTING_TC_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTING_TC_CONFIG, NMSettingTCConfig))

@@ -33,7 +33,6 @@
 
 #include "nm-utils/nm-test-utils.h"
 
-
 #define TEST_WIRED_TLS_CA_CERT     TEST_CERT_DIR"/test-ca-cert.pem"
 #define TEST_WIRED_TLS_PRIVKEY     TEST_CERT_DIR"/test-key-and-cert.pem"
 
@@ -202,7 +201,6 @@ _nm_keyfile_read (GKeyFile *keyfile,
 	}
 	return con;
 }
-
 
 static void
 _keyfile_convert (NMConnection **con,
@@ -412,13 +410,11 @@ test_8021x_cert (void)
 	g_assert_no_error (error);
 	g_assert (success);
 
-
 	/* test reseting ca-cert to different values and see whether we can write/read. */
 
 	nm_connection_add_setting (con, NM_SETTING (s_8021x));
 	nmtst_assert_connection_verifies_and_normalizable (con);
 	nmtst_connection_normalize (con);
-
 
 	_test_8021x_cert_check (con, scheme, full_TEST_WIRED_TLS_CA_CERT, -1);
 
@@ -457,7 +453,6 @@ test_8021x_cert_read (void)
 	      "/test_8021x_cert_read/test0", NULL);
 	CLEAR (&con, &keyfile);
 
-
 	keyfile = _keyfile_load_from_data (
 	          "[connection]\n"
 	          "type=ethernet"
@@ -479,7 +474,6 @@ test_8021x_cert_read (void)
 	          );
 	_keyfile_convert (&con, &keyfile, "/test_8021x_cert_read/test2", NULL, NULL, NULL, NULL, NULL, TRUE);
 	CLEAR (&con, &keyfile);
-
 
 	keyfile = _keyfile_load_from_data (
 	          "[connection]\n"
@@ -523,7 +517,6 @@ test_8021x_cert_read (void)
 	g_assert_cmpint (strlen (nm_setting_802_1x_get_private_key_path (s_8021x)), ==, 505);
 	CLEAR (&con, &keyfile);
 
-
 	keyfile = _keyfile_load_from_data (
 	          "[connection]\n"
 	          "type=802-3-ethernet\n"
@@ -549,7 +542,6 @@ test_8021x_cert_read (void)
 	_assert_gbytes (nm_setting_802_1x_get_private_key_blob (s_8021x), "hallo", -1);
 	CLEAR (&con, &keyfile);
 
-
 	keyfile = _keyfile_load_from_data (
 	          "[connection]\n"
 	          "type=802-3-ethernet\n"
@@ -574,7 +566,6 @@ test_8021x_cert_read (void)
 	g_assert (nm_setting_802_1x_get_private_key_scheme (s_8021x) == NM_SETTING_802_1X_CK_SCHEME_BLOB);
 	_assert_gbytes (nm_setting_802_1x_get_private_key_blob (s_8021x), "abc.deR\0", 8);
 	CLEAR (&con, &keyfile);
-
 
 	keyfile = _keyfile_load_from_data (
 	          "[connection]\n"

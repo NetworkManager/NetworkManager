@@ -259,7 +259,6 @@ make_tls_phase2_connection (const char *detail, NMSetting8021xCKScheme scheme)
 	                                       &error);
 	nmtst_assert_success (success, error);
 
-
 	/* IP4 setting */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));

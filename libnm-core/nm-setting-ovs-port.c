@@ -436,7 +436,6 @@ nm_setting_ovs_port_class_init (NMSettingOvsPortClass *setting_class)
 	                              NM_SETTING_PARAM_INFERRABLE |
 	                              G_PARAM_STATIC_STRINGS));
 
-
 	/**
 	 * NMSettingOvsPort:bond-updelay:
 	 *

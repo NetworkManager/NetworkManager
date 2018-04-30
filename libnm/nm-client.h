@@ -403,7 +403,6 @@ const char *nm_client_get_dns_rc_manager      (NMClient *client);
 NM_AVAILABLE_IN_1_6
 const GPtrArray  *nm_client_get_dns_configuration (NMClient *client);
 
-
 NM_AVAILABLE_IN_1_12
 const GPtrArray *nm_client_get_checkpoints (NMClient *client);
 

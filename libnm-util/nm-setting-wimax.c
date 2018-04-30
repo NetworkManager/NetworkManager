@@ -62,7 +62,6 @@ nm_setting_wimax_error_quark (void)
 	return quark;
 }
 
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingWimax, nm_setting_wimax, NM_TYPE_SETTING,
                          _nm_register_setting (NM_SETTING_WIMAX_SETTING_NAME,
                                                g_define_type_id,

@@ -157,7 +157,6 @@ build_message (GPtrArray *fields, AuditBackend backend)
 	return g_string_free (string, FALSE);
 }
 
-
 static void
 nm_audit_log (NMAuditManager *self, GPtrArray *fields, const char *file,
               guint line, const char *func, gboolean success)

@@ -60,7 +60,6 @@
 #define NM_DBUS_VPN_BAD_ARGUMENTS             "BadArguments"
 #define NM_DBUS_VPN_INTERACTIVE_NOT_SUPPORTED "InteractiveNotSupported"
 
-
 /*
  * VPN daemon signals
  */
@@ -94,7 +93,6 @@ typedef enum {
 	NM_VPN_SERVICE_STATE_STOPPING,
 	NM_VPN_SERVICE_STATE_STOPPED
 } NMVpnServiceState;
-
 
 /**
  * NMVpnConnectionState:
@@ -216,7 +214,6 @@ typedef enum {
  */
 #define NM_VPN_PLUGIN_CAN_PERSIST        "can-persist"
 
-
 /*** Ip4Config ***/
 
 /* uint32: IP address of the internal gateway of the subnet the VPN interface is
@@ -272,7 +269,6 @@ typedef enum {
 #define NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY NM_VPN_PLUGIN_CONFIG_EXT_GATEWAY
 #define NM_VPN_PLUGIN_IP4_CONFIG_MTU         NM_VPN_PLUGIN_CONFIG_MTU
 #define NM_VPN_PLUGIN_IP4_CONFIG_TUNDEV      NM_VPN_PLUGIN_CONFIG_TUNDEV
-
 
 /*** Ip6Config ***/
 

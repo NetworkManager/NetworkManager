@@ -187,7 +187,6 @@ nm_device_dummy_class_init (NMDeviceDummyClass *klass)
 	device_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
 }
 
-
 /*****************************************************************************/
 
 #define NM_TYPE_DUMMY_DEVICE_FACTORY (nm_dummy_device_factory_get_type ())

@@ -64,7 +64,6 @@ nm_setting_bridge_error_quark (void)
 	return quark;
 }
 
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingBridge, nm_setting_bridge, NM_TYPE_SETTING,
                          _nm_register_setting (NM_SETTING_BRIDGE_SETTING_NAME,
                                                g_define_type_id,

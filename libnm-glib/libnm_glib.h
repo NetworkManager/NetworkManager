@@ -41,9 +41,7 @@ typedef enum libnm_glib_state
 
 typedef struct libnm_glib_ctx libnm_glib_ctx G_GNUC_DEPRECATED;
 
-
 typedef void (*libnm_glib_callback_func) (libnm_glib_ctx *libnm_ctx, gpointer user_data) G_GNUC_DEPRECATED;
-
 
 G_GNUC_DEPRECATED libnm_glib_ctx *  libnm_glib_init                (void);
 G_GNUC_DEPRECATED void              libnm_glib_shutdown            (libnm_glib_ctx *ctx);

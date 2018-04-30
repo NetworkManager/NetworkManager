@@ -275,7 +275,6 @@ nm_supplicant_config_finalize (GObject *object)
 	G_OBJECT_CLASS (nm_supplicant_config_parent_class)->finalize (object);
 }
 
-
 static void
 nm_supplicant_config_class_init (NMSupplicantConfigClass *klass)
 {

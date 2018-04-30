@@ -122,7 +122,6 @@ enum {
 
 static GSList *active_plugins = NULL;
 
-
 GQuark
 nm_vpn_plugin_error_quark (void)
 {
@@ -133,7 +132,6 @@ nm_vpn_plugin_error_quark (void)
 
 	return quark;
 }
-
 
 static void
 nm_vpn_plugin_set_connection (NMVPNPlugin *plugin,
