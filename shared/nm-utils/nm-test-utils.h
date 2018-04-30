@@ -211,7 +211,6 @@ _nmtst_exit (void) \
 	nmtst_free (); \
 }
 
-
 static inline gboolean
 nmtst_initialized (void)
 {
@@ -275,7 +274,6 @@ BREAK_INNER_LOOPS:
 
 	return (char **) g_array_free (result, FALSE);
 }
-
 
 /* free instances allocated by nmtst (especially nmtst_init()) on shutdown
  * to release memory. After nmtst_free(), the test is uninitialized again. */
@@ -1830,7 +1828,6 @@ nmtst_assert_hwaddr_equals (gconstpointer hwaddr1, gssize hwaddr1_len, const cha
 #define nmtst_assert_hwaddr_equals(hwaddr1, hwaddr1_len, expected) \
     nmtst_assert_hwaddr_equals (hwaddr1, hwaddr1_len, expected, __FILE__, __LINE__)
 #endif
-
 
 #if defined(__NM_SIMPLE_CONNECTION_H__) && defined(__NM_SETTING_CONNECTION_H__) && defined(__NM_KEYFILE_INTERNAL_H__)
 

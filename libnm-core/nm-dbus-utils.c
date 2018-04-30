@@ -174,7 +174,6 @@ _nm_dbus_signal_connect_data (GDBusProxy *proxy,
  * Returns: the signal handler ID, as with _nm_signal_connect_data().
  */
 
-
 static void
 typecheck_response (GVariant **response,
                     const GVariantType *reply_type,

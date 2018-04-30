@@ -149,7 +149,6 @@ const NmcMetaGenericInfo *const nmc_fields_con_active_details_general[] = {
                                          // NM_SETTING_DUMMY_SETTING_NAME
                                          // NM_SETTING_WIMAX_SETTING_NAME
 
-
 const NmcMetaGenericInfo *const nmc_fields_con_active_details_vpn[] = {
 	NMC_META_GENERIC ("GROUP"),      /* 0 */
 	NMC_META_GENERIC ("TYPE"),       /* 1 */
@@ -2347,8 +2346,6 @@ parse_passwords (const char *passwd_file, GError **error)
 	}
 	return g_steal_pointer (&pwds_hash);
 }
-
-
 
 static gboolean
 nmc_activate_connection (NmCli *nmc,
@@ -7682,7 +7679,6 @@ editor_init_new_connection (NmCli *nmc, NMConnection *connection, const char *sl
 			              NULL);
 		}
 
-
 		setting = nm_meta_setting_info_editor_new_setting (&nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_IP4_CONFIG],
 		                                                   NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI);
 		nm_connection_add_setting (connection, setting);
@@ -8445,7 +8441,6 @@ do_connection_import (NmCli *nmc, int argc, char **argv)
 		temporary = TRUE;
 		next_arg (nmc, &argc, &argv, NULL);
 	}
-
 
 	if (argc == 0) {
 		/* nmc_do_cmd() should not call this with argc=0. */

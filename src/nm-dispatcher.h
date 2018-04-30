@@ -82,7 +82,6 @@ gboolean nm_dispatcher_call_connectivity (NMConnectivityState state,
                                           gpointer user_data,
                                           guint *out_call_id);
 
-
 void nm_dispatcher_call_cancel (guint call_id);
 
 void nm_dispatcher_init (void);

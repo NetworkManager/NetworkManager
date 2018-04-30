@@ -288,7 +288,6 @@ nm_setting_connection_get_connection_type (NMSettingConnection *setting)
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->type;
 }
 
-
 /**
  * nm_setting_connection_get_num_permissions:
  * @setting: the #NMSettingConnection
@@ -1730,7 +1729,6 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	                       G_PARAM_CONSTRUCT |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
 	                       G_PARAM_STATIC_STRINGS));
-
 
 	/**
 	 * NMSettingConnection:autoconnect-retries:

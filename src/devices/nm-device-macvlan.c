@@ -389,7 +389,6 @@ update_connection (NMDevice *device, NMConnection *connection)
 	if (priv->props.no_promisc == nm_setting_macvlan_get_promiscuous (s_macvlan))
 		g_object_set (s_macvlan, NM_SETTING_MACVLAN_PROMISCUOUS, !priv->props.no_promisc, NULL);
 
-
 	if (priv->props.tap != nm_setting_macvlan_get_tap (s_macvlan))
 		g_object_set (s_macvlan, NM_SETTING_MACVLAN_TAP, !!priv->props.tap, NULL);
 

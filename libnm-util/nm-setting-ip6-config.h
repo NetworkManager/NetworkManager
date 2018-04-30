@@ -69,7 +69,6 @@ GQuark nm_setting_ip6_config_error_quark (void);
 #define NM_SETTING_IP6_CONFIG_IP6_PRIVACY        "ip6-privacy"
 #define NM_SETTING_IP6_CONFIG_DHCP_HOSTNAME      "dhcp-hostname"
 
-
 /**
  * NM_SETTING_IP6_CONFIG_METHOD_IGNORE:
  *
@@ -142,7 +141,6 @@ typedef enum {
 	NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR = 1,
 	NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR = 2
 } NMSettingIP6ConfigPrivacy;
-
 
 typedef struct NMIP6Address NMIP6Address;
 

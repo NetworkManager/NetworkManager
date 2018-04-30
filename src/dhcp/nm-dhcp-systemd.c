@@ -667,7 +667,6 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 		}
 	}
 
-
 	/* Add requested options */
 	for (i = 0; dhcp4_requests[i].name; i++) {
 		if (dhcp4_requests[i].include)

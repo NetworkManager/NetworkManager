@@ -48,7 +48,6 @@ on_name_vanished (GDBusConnection *connection,
 	g_print ("Name '%s' does not exist on the system bus => NM is not running\n", name);
 }
 
-
 int
 main (int argc, char *argv[])
 {

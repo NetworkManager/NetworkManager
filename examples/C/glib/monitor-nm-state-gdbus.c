@@ -81,7 +81,6 @@ on_signal (GDBusProxy *proxy,
 	}
 }
 
-
 int
 main (int argc, char *argv[])
 {

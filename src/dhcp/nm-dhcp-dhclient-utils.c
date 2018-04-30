@@ -95,7 +95,6 @@ grab_request_options (GPtrArray *store, const char* line)
 	return end;
 }
 
-
 static void
 add_hostname4 (GString *str, const char *hostname, gboolean use_fqdn)
 {

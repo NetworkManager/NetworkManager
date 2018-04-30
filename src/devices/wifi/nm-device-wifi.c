@@ -2833,7 +2833,6 @@ handle_ip_config_timeout (NMDeviceWifi *self,
 	return ret;
 }
 
-
 static NMActStageReturn
 act_stage4_ip4_config_timeout (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {

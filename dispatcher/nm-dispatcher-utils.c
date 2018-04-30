@@ -414,7 +414,6 @@ nm_dispatcher_utils_construct_envp (const char *action,
 	if (g_variant_lookup (connection_props, NMD_CONNECTION_PROPS_FILENAME, "&s", &filename))
 		items = g_slist_prepend (items, g_strdup_printf ("CONNECTION_FILENAME=%s", filename));
 
-
 	/* Canonicalize the VPN interface name; "" is used when passing it through
 	 * D-Bus so make sure that's fixed up here.
 	 */

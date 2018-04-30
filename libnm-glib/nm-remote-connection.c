@@ -67,7 +67,6 @@ static guint signals[LAST_SIGNAL] = { 0 };
 typedef struct RemoteCall RemoteCall;
 typedef void (*RemoteCallFetchResultCb) (RemoteCall *call, DBusGProxyCall *proxy_call, GError *error);
 
-
 struct RemoteCall {
 	NMRemoteConnection *self;
 	DBusGProxyCall *call;
@@ -390,7 +389,6 @@ get_secrets_cb (RemoteCall *call, DBusGProxyCall *proxy_call, GError *error)
 		g_hash_table_destroy (secrets);
 }
 
-
 /**
  * nm_remote_connection_get_secrets:
  * @connection: the #NMRemoteConnection
@@ -707,7 +705,6 @@ init_async (GAsyncInitable *initable, int io_priority,
 {
 	NMRemoteConnectionInitData *init_data;
 	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (initable);
-
 
 	init_data = g_slice_new0 (NMRemoteConnectionInitData);
 	init_data->connection = NM_REMOTE_CONNECTION (initable);

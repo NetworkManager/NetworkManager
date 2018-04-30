@@ -35,7 +35,6 @@
 #error Cannot use this header.
 #endif
 
-
 #include "nm-connection.h"
 #include "nm-core-enum-types.h"
 #include "nm-setting-8021x.h"
@@ -116,7 +115,6 @@
  * equals to numeric zero (NM_SETTING_COMPARE_FLAG_EXACT).
  */
 #define NM_SETTING_COMPARE_FLAG_NONE ((NMSettingCompareFlags) 0)
-
 
 #define NM_SETTING_SECRET_FLAGS_ALL \
 	(NM_SETTING_SECRET_FLAG_NONE | \

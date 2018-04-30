@@ -2344,7 +2344,6 @@ nm_utils_monotonic_timestamp_as_boottime (gint64 timestamp, gint64 timestamp_ns_
 	return timestamp - offset;
 }
 
-
 #define IPV6_PROPERTY_DIR "/proc/sys/net/ipv6/conf/"
 #define IPV4_PROPERTY_DIR "/proc/sys/net/ipv4/conf/"
 G_STATIC_ASSERT (sizeof (IPV4_PROPERTY_DIR) == sizeof (IPV6_PROPERTY_DIR));
@@ -4170,7 +4169,6 @@ nm_utils_parse_dns_domain (const char *domain, gboolean *is_routing)
 
 	return domain;
 }
-
 
 /*****************************************************************************/
 

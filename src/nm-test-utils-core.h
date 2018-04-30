@@ -308,7 +308,6 @@ nmtst_platform_ip6_routes_equal_aptr (const NMPObject *const*a, const NMPlatform
 
 #endif
 
-
 #ifdef __NETWORKMANAGER_IP4_CONFIG_H__
 
 #include "nm-utils/nm-dedup-multi.h"
@@ -322,7 +321,6 @@ nmtst_ip4_config_new (int ifindex)
 }
 
 #endif
-
 
 #ifdef __NETWORKMANAGER_IP6_CONFIG_H__
 

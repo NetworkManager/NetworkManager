@@ -153,7 +153,6 @@ page_saved (gpointer data, gpointer user_data)
 	nmt_editor_page_saved (page);
 }
 
-
 static void
 save_connection_and_exit (NmtNewtButton *button,
                           gpointer       user_data)

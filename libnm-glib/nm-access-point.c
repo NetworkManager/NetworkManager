@@ -563,7 +563,6 @@ constructed (GObject *object)
 	register_properties (NM_ACCESS_POINT (object));
 }
 
-
 static void
 nm_access_point_class_init (NMAccessPointClass *ap_class)
 {

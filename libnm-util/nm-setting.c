@@ -1329,7 +1329,6 @@ nm_setting_get_virtual_iface_name (NMSetting *setting)
 	return NULL;
 }
 
-
 NMSettingVerifyResult
 _nm_setting_verify_deprecated_virtual_iface_name (const char *interface_name,
                                                   gboolean allow_missing,

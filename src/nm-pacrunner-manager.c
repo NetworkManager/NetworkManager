@@ -421,7 +421,6 @@ nm_pacrunner_manager_send (NMPacrunnerManager *self,
 		                       g_variant_new_string ("direct"));
 	}
 
-
 	/* Extract stuff from configs */
 	add_proxy_config (&proxy_data, proxy_config);
 

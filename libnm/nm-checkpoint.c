@@ -163,7 +163,6 @@ init_dbus (NMObject *object)
 	                                property_info);
 }
 
-
 static void
 nm_checkpoint_class_init (NMCheckpointClass *checkpoint_class)
 {

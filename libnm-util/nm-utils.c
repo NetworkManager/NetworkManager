@@ -127,7 +127,6 @@ static const struct IsoLangToEncodings isoLangEntries2[] =
 	{ NULL, {NULL, NULL, NULL} }
 };
 
-
 static GHashTable * langToEncodings5 = NULL;
 static GHashTable * langToEncodings2 = NULL;
 
@@ -158,7 +157,6 @@ init_lang_to_encodings_hash (void)
 		}
 	}
 }
-
 
 static gboolean
 get_encodings_for_lang (const char *lang,
@@ -1105,7 +1103,6 @@ nm_utils_ip4_prefix_to_netmask (guint32 prefix)
 	return _nm_utils_ip4_prefix_to_netmask (prefix);
 }
 
-
 /**
  * nm_utils_ip4_get_default_prefix:
  * @ip: an IPv4 address (in network byte order)
@@ -1673,7 +1670,6 @@ nm_utils_rsa_key_encrypt (const GByteArray *data,
                           char **out_password,
                           GError **error)
 {
-
 
 	return nm_utils_rsa_key_encrypt_helper (CIPHER_DES_EDE3_CBC,
 	                                        data,
@@ -2577,7 +2573,6 @@ nm_utils_check_virtual_device_compatibility (GType virtual_type, GType other_typ
 /* Unused prototypes to make the compiler happy */
 gconstpointer nm_utils_get_private (void);
 gconstpointer nm_util_get_private (void);
-
 
 /**
  * nm_utils_get_private:

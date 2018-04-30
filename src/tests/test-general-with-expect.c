@@ -313,7 +313,6 @@ do_test_nm_utils_kill_child (void)
 	NMTST_EXPECT_NM_DEBUG ("kill child process 'test-s-4' (*): after sending SIGTERM (15) and SIGKILL, process * exited by signal 9 (* usec elapsed)");
 	test_nm_utils_kill_child_sync_do ("test-s-4", pid4s, SIGTERM, 1, TRUE, &expected_signal_KILL);
 
-
 	NMTST_EXPECT_NM_DEBUG ("kill child process 'test-a-1-1' (*): wait for process to terminate after sending SIGTERM (15) (send SIGKILL in 3000 milliseconds)...");
 	NMTST_EXPECT_NM_DEBUG ("kill child process 'test-a-1-1' (*): terminated by signal 15 (* usec elapsed)");
 	test_nm_utils_kill_child_async_do ("test-a-1-1", pid1a_1, SIGTERM, 3000, TRUE, &expected_signal_TERM);

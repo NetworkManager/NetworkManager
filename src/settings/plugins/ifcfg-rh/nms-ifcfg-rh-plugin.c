@@ -125,7 +125,6 @@ connection_ifcfg_changed (NMIfcfgConnection *connection, gpointer user_data)
 	path = nm_settings_connection_get_filename (NM_SETTINGS_CONNECTION (connection));
 	g_return_if_fail (path != NULL);
 
-
 	if (!priv->ifcfg_monitor) {
 		_LOGD ("connection_ifcfg_changed("NM_IFCFG_CONNECTION_LOG_FMTD"): %s", NM_IFCFG_CONNECTION_LOG_ARGD (connection), "ignore event");
 		return;

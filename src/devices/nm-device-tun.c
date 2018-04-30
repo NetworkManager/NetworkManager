@@ -480,7 +480,6 @@ nm_device_tun_class_init (NMDeviceTunClass *klass)
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }
 
-
 /*****************************************************************************/
 
 #define NM_TYPE_TUN_DEVICE_FACTORY (nm_tun_device_factory_get_type ())

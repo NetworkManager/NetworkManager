@@ -400,7 +400,6 @@ add_one_ip_route (NMSettingIPConfig *s_ip,
 	nm_ip_route_unref (route);
 }
 
-
 static void
 test_write_wired_connection (void)
 {
@@ -2415,7 +2414,6 @@ test_read_minimal (void)
 	                                                 &s_con);
 	nmtst_connection_normalize (con_archetype);
 
-
 	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR"/Test_minimal_1");
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, nm_connection_get_id (connection),
@@ -2423,7 +2421,6 @@ test_read_minimal (void)
 	              NULL);
 	nmtst_assert_connection_equals (con_archetype, FALSE, connection, FALSE);
 	g_clear_object (&connection);
-
 
 	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR"/Test_minimal_2");
 	g_object_set (s_con,
@@ -2451,7 +2448,6 @@ test_read_minimal_slave (void)
 	              NULL);
 	nmtst_connection_normalize (con_archetype);
 
-
 	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR"/Test_minimal_slave_1");
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, nm_connection_get_id (connection),
@@ -2459,7 +2455,6 @@ test_read_minimal_slave (void)
 	              NULL);
 	nmtst_assert_connection_equals (con_archetype, FALSE, connection, FALSE);
 	g_clear_object (&connection);
-
 
 	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR"/Test_minimal_slave_2");
 	g_object_set (s_con,

@@ -105,7 +105,6 @@ modem_added_cb (NMModemManager *manager,
 	g_object_unref (device);
 }
 
-
 static NMDevice *
 create_device (NMDeviceFactory *factory,
                const char *iface,

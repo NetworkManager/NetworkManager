@@ -136,7 +136,6 @@ static const struct IsoLangToEncodings isoLangEntries2[] =
 	LANG_ENCODINGS (NULL, NULL)
 };
 
-
 static GHashTable * langToEncodings5 = NULL;
 static GHashTable * langToEncodings2 = NULL;
 
@@ -2237,7 +2236,6 @@ nm_utils_tc_qdisc_to_str (NMTCQdisc *qdisc, GError **error)
 	return g_string_free (string, FALSE);
 }
 
-
 static gboolean
 _tc_read_common_opts (const char *str,
                       guint32 *handle,
@@ -3037,7 +3035,6 @@ _nm_utils_check_file (const char *filename,
 
 	return TRUE;
 }
-
 
 gboolean
 _nm_utils_check_module_file (const char *name,
@@ -5018,7 +5015,6 @@ _json_team_add_defaults (json_t *json,
 		json_object_set_new (json_element, "name", json_string (runner));
 	}
 
-
 	if (nm_streq (runner, NM_SETTING_TEAM_RUNNER_ACTIVEBACKUP)) {
 		_json_add_object (json, "notify_peers", "count", NULL,
 				  json_integer (NM_SETTING_TEAM_NOTIFY_PEERS_COUNT_ACTIVEBACKUP_DEFAULT));
@@ -5305,7 +5301,6 @@ fail:
 	return NULL;
 }
 
-
 /**
  * nm_utils_is_json_object:
  * @str: the JSON string to test
@@ -5420,7 +5415,6 @@ out:
 
 	return ret;
 }
-
 
 GValue *
 _nm_utils_team_config_get (const char *conf,

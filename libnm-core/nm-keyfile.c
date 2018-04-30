@@ -313,7 +313,6 @@ read_field (char **current, const char **out_err_str, const char *characters, co
 #define DIGITS "0123456789"
 #define DELIMITERS "/;,"
 
-
 /* The following IPv4 and IPv6 address formats are supported:
  *
  * address (DEPRECATED)
@@ -582,7 +581,6 @@ ip_address_or_route_parser (KeyfileReaderInfo *info, NMSetting *setting, const c
 	gsize i_keys, keys_len;
 	gs_free IPAddrRouteBuildListData *build_list = NULL;
 	gsize i_build_list, build_list_len = 0;
-
 
 	keys = nm_keyfile_plugin_kf_get_keys (info->keyfile, setting_name, &keys_len, NULL);
 

@@ -164,7 +164,6 @@ guint32      nm_ip4_route_get_metric   (NMIP4Route *route);
 void         nm_ip4_route_set_metric   (NMIP4Route *route,
                                         guint32 metric);
 
-
 typedef struct {
 	NMSetting parent;
 } NMSettingIP4Config;

@@ -179,7 +179,6 @@ DEFINE_KF_WRAPPER(uint64, guint64, guint64);
 DEFINE_KF_WRAPPER(boolean, gboolean, gboolean);
 DEFINE_KF_WRAPPER(value, gchar*, const gchar*);
 
-
 gchar **
 nm_keyfile_plugin_kf_get_keys (GKeyFile *kf,
                                const char *group,
@@ -287,7 +286,6 @@ _nm_keyfile_a_contains_all_in_b (GKeyFile *kf_a, GKeyFile *kf_b)
 	}
 	return TRUE;
 }
-
 
 static gboolean
 _nm_keyfile_equals_ordered (GKeyFile *kf_a, GKeyFile *kf_b)

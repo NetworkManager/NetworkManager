@@ -58,7 +58,6 @@ nm_setting_connection_error_quark (void)
 	return quark;
 }
 
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingConnection, nm_setting_connection, NM_TYPE_SETTING,
                          _nm_register_setting (NM_SETTING_CONNECTION_SETTING_NAME,
                                                g_define_type_id,
@@ -272,7 +271,6 @@ nm_setting_connection_get_connection_type (NMSettingConnection *setting)
 
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->type;
 }
-
 
 /**
  * nm_setting_connection_get_num_permissions:
@@ -752,7 +750,6 @@ nm_setting_connection_get_gateway_ping_timeout (NMSettingConnection *setting)
 
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->gateway_ping_timeout;
 }
-
 
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)

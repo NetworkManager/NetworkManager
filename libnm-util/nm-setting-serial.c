@@ -55,7 +55,6 @@ nm_setting_serial_error_quark (void)
 	return quark;
 }
 
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingSerial, nm_setting_serial, NM_TYPE_SETTING,
                          _nm_register_setting (NM_SETTING_SERIAL_SETTING_NAME,
                                                g_define_type_id,
@@ -72,7 +71,6 @@ typedef struct {
 	guint stopbits;
 	guint64 send_delay;
 } NMSettingSerialPrivate;
-
 
 enum {
 	PROP_0,

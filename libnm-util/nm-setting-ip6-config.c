@@ -83,7 +83,6 @@ typedef struct {
 	NMSettingIP6ConfigPrivacy ip6_privacy;
 } NMSettingIP6ConfigPrivate;
 
-
 enum {
 	PROP_0,
 	PROP_METHOD,
@@ -173,7 +172,6 @@ const struct in6_addr *
 nm_setting_ip6_config_get_dns (NMSettingIP6Config *setting, guint32 i)
 {
 	NMSettingIP6ConfigPrivate *priv;
-
 
 	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), NULL);
 
@@ -945,7 +943,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	return TRUE;
 }
-
 
 static void
 nm_setting_ip6_config_init (NMSettingIP6Config *setting)

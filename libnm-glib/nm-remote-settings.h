@@ -59,7 +59,6 @@ typedef enum {
 #define NM_REMOTE_SETTINGS_ERROR nm_remote_settings_error_quark ()
 GQuark nm_remote_settings_error_quark (void);
 
-
 #define NM_REMOTE_SETTINGS_BUS             "bus"
 #define NM_REMOTE_SETTINGS_SERVICE_RUNNING "service-running"
 #define NM_REMOTE_SETTINGS_HOSTNAME        "hostname"
@@ -70,7 +69,6 @@ GQuark nm_remote_settings_error_quark (void);
 
 typedef struct _NMRemoteSettings NMRemoteSettings;
 typedef struct _NMRemoteSettingsClass NMRemoteSettingsClass;
-
 
 typedef void (*NMRemoteSettingsAddConnectionFunc) (NMRemoteSettings *settings,
                                                    NMRemoteConnection *connection,
@@ -85,7 +83,6 @@ typedef void (*NMRemoteSettingsLoadConnectionsFunc) (NMRemoteSettings *settings,
 typedef void (*NMRemoteSettingsSaveHostnameFunc) (NMRemoteSettings *settings,
                                                   GError *error,
                                                   gpointer user_data);
-
 
 struct _NMRemoteSettings {
 	GObject parent;

@@ -169,7 +169,6 @@ _test_recv_data0_check (GMainLoop *loop, NMLldpListener *listener)
 TEST_RECV_DATA_DEFINE (_test_recv_data0,       1, _test_recv_data0_check,  &_test_recv_data0_frame0);
 TEST_RECV_DATA_DEFINE (_test_recv_data0_twice, 1, _test_recv_data0_check,  &_test_recv_data0_frame0, &_test_recv_data0_frame0);
 
-
 TEST_RECV_FRAME_DEFINE (_test_recv_data1_frame0,
 	/* lldp.detailed.pcap from
 	 * https://wiki.wireshark.org/SampleCaptures#Link_Layer_Discovery_Protocol_.28LLDP.29 */

@@ -34,7 +34,6 @@ GObject * nm_settings_plugin_factory (void);
 #define NM_IS_SETTINGS_PLUGIN(obj)            (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_SETTINGS_PLUGIN))
 #define NM_SETTINGS_PLUGIN_GET_INTERFACE(obj) (G_TYPE_INSTANCE_GET_INTERFACE ((obj), NM_TYPE_SETTINGS_PLUGIN, NMSettingsPluginInterface))
 
-
 #define NM_SETTINGS_PLUGIN_NAME "name"
 #define NM_SETTINGS_PLUGIN_INFO "info"
 #define NM_SETTINGS_PLUGIN_CAPABILITIES "capabilities"
@@ -59,7 +58,6 @@ typedef enum {
 	NM_SETTINGS_PLUGIN_PROP_INFO,
 	NM_SETTINGS_PLUGIN_PROP_CAPABILITIES,
 } NMSettingsPluginProp;
-
 
 typedef struct _NMSettingsPlugin NMSettingsPlugin;
 

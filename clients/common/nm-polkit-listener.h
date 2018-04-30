@@ -129,7 +129,6 @@ typedef void (*NMPolkitListenerOnShowErrorFunc) (const char *text);
  */
 typedef void (*NMPolkitListenerOnCompletedFunc) (gboolean gained_authorization);
 
-
 struct _NMPolkitListener {
 	PolkitAgentListener parent;
 };

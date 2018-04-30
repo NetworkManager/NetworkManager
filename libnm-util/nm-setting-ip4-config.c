@@ -990,12 +990,10 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	return TRUE;
 }
 
-
 static void
 nm_setting_ip4_config_init (NMSettingIP4Config *setting)
 {
 	NMSettingIP4ConfigPrivate *priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
-
 
 	priv->dns = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
 }
@@ -1396,7 +1394,6 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 		                       G_PARAM_STATIC_STRINGS));
 }
 
-
 struct NMIP4Address {
 	guint32 refcount;
 	guint32 address;   /* network byte order */
@@ -1606,7 +1603,6 @@ nm_ip4_address_set_gateway (NMIP4Address *address, guint32 gateway)
 
 	address->gateway = gateway;
 }
-
 
 struct NMIP4Route {
 	guint32 refcount;

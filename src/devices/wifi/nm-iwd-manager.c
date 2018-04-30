@@ -157,7 +157,6 @@ return_error:
 	                                               "No PSK available for this connection");
 }
 
-
 static guint
 psk_agent_export (GDBusConnection *connection, gpointer user_data,
                   gchar **agent_path, GError **error)

@@ -34,7 +34,6 @@
 
 #define DBUS_NO_SERVICE_ERROR "org.freedesktop.DBus.Error.ServiceDoesNotExist"
 
-
 struct libnm_glib_ctx
 {
 	unsigned char           check;
@@ -65,11 +64,9 @@ typedef struct libnm_glib_callback
 	gpointer                    user_data;
 } libnm_glib_callback;
 
-
 static void _libnm_glib_schedule_dbus_watcher (libnm_glib_ctx *ctx);
 static DBusConnection * _libnm_glib_dbus_init (gpointer *user_data, GMainContext *context);
 static void _libnm_glib_update_state (libnm_glib_ctx *ctx, NMState state);
-
 
 static void
 _libnm_glib_nm_state_cb (DBusPendingCall *pcall, void *user_data)
@@ -184,7 +181,6 @@ _libnm_glib_call_callbacks (libnm_glib_ctx *ctx)
 	g_mutex_unlock (ctx->callbacks_lock);
 }
 
-
 static void
 _libnm_glib_update_state (libnm_glib_ctx *ctx, NMState state)
 {
@@ -214,7 +210,6 @@ _libnm_glib_update_state (libnm_glib_ctx *ctx, NMState state)
 	if (old_state != ctx->nm_state)
 		_libnm_glib_call_callbacks (ctx);
 }
-
 
 static DBusHandlerResult
 _libnm_glib_dbus_filter (DBusConnection *connection,
@@ -287,7 +282,6 @@ _libnm_glib_dbus_filter (DBusConnection *connection,
 	return (handled ? DBUS_HANDLER_RESULT_HANDLED : DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 }
 
-
 /*
  * libnm_glib_dbus_init
  *
@@ -339,7 +333,6 @@ _libnm_glib_dbus_init (gpointer *user_data, GMainContext *context)
 	return (connection);
 }
 
-
 /*
  * libnm_glib_dbus_watcher
  *
@@ -378,7 +371,6 @@ _libnm_glib_dbus_watcher (gpointer user_data)
 	return FALSE;
 }
 
-
 /*
  * libnm_glib_schedule_dbus_watcher
  *
@@ -399,7 +391,6 @@ _libnm_glib_schedule_dbus_watcher (libnm_glib_ctx *ctx)
 		g_source_unref (source);
 	}
 }
-
 
 /*
  * libnm_glib_dbus_worker
@@ -430,7 +421,6 @@ _libnm_glib_dbus_worker (gpointer user_data)
 
 	return NULL;
 }
-
 
 static void
 _libnm_glib_ctx_free (libnm_glib_ctx *ctx)
@@ -468,7 +458,6 @@ _libnm_glib_ctx_free (libnm_glib_ctx *ctx)
 	g_free (ctx);
 }
 
-
 static libnm_glib_ctx *
 _libnm_glib_ctx_new (void)
 {
@@ -488,7 +477,6 @@ error:
 	_libnm_glib_ctx_free (ctx);
 	return NULL;
 }
-
 
 libnm_glib_ctx *
 libnm_glib_init (void)
@@ -517,7 +505,6 @@ error:
 	return NULL;
 }
 
-
 void
 libnm_glib_shutdown (libnm_glib_ctx *ctx)
 {
@@ -530,7 +517,6 @@ libnm_glib_shutdown (libnm_glib_ctx *ctx)
 	_libnm_glib_ctx_free (ctx);
 }
 
-
 libnm_glib_state
 libnm_glib_get_network_state (const libnm_glib_ctx *ctx)
 {
@@ -539,7 +525,6 @@ libnm_glib_get_network_state (const libnm_glib_ctx *ctx)
 
 	return ctx->nm_state;
 }
-
 
 guint
 libnm_glib_register_callback (libnm_glib_ctx *ctx,
@@ -567,7 +552,6 @@ libnm_glib_register_callback (libnm_glib_ctx *ctx,
 
 	return (callback->id);
 }
-
 
 void
 libnm_glib_unregister_callback (libnm_glib_ctx *ctx,

@@ -80,7 +80,6 @@ gboolean _nm_setting_clear_secrets_with_flags (NMSetting *setting,
                                                NMSettingClearSecretsWithFlagsFn func,
                                                gpointer user_data);
 
-
 /* NM_SETTING_COMPARE_FLAG_INFERRABLE: check whether a device-generated
  * connection can be replaced by a already-defined connection. This flag only
  * takes into account properties marked with the %NM_SETTING_PARAM_INFERRABLE

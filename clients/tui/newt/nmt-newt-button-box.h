@@ -57,5 +57,4 @@ void           nmt_newt_button_box_add_widget_start (NmtNewtButtonBox *bbox,
 void           nmt_newt_button_box_add_widget_end   (NmtNewtButtonBox *bbox,
                                                      NmtNewtWidget    *widget);
 
-
 #endif /* NMT_NEWT_BUTTON_BOX_H */

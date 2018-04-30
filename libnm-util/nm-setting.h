@@ -62,7 +62,6 @@ typedef enum
 #define NM_SETTING_ERROR nm_setting_error_quark ()
 GQuark nm_setting_error_quark (void);
 
-
 /* DEPRECATED AND UNUSED */
 #define NM_SETTING_PARAM_SERIALIZE    (1 << (0 + G_PARAM_USER_SHIFT))
 
@@ -78,7 +77,6 @@ GQuark nm_setting_error_quark (void);
 #define NM_SETTING_PARAM_FUZZY_IGNORE (1 << (3 + G_PARAM_USER_SHIFT))
 
 /* Note: all non-glib GParamFlags bits are reserved by NetworkManager */
-
 
 #define NM_SETTING_NAME "name"
 
@@ -156,7 +154,6 @@ typedef enum {
 	/* 0x80000000 is used for a private flag */
 } NMSettingCompareFlags;
 
-
 /**
  * NMSetting:
  *
@@ -166,7 +163,6 @@ typedef enum {
 typedef struct {
 	GObject parent;
 } NMSetting;
-
 
 /**
  * NMSettingClearSecretsWithFlagsFn:
@@ -240,7 +236,6 @@ typedef void (*NMSettingValueIterFn) (NMSetting *setting,
                                       const GValue *value,
                                       GParamFlags flags,
                                       gpointer user_data);
-
 
 GType nm_setting_get_type (void);
 

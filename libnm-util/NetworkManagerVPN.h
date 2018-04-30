@@ -54,7 +54,6 @@
 #define NM_DBUS_VPN_BAD_ARGUMENTS             "BadArguments"
 #define NM_DBUS_VPN_INTERACTIVE_NOT_SUPPORTED "InteractiveNotSupported"
 
-
 /*
  * VPN daemon signals
  */
@@ -88,7 +87,6 @@ typedef enum NMVPNServiceState {
 	NM_VPN_SERVICE_STATE_STOPPING,
 	NM_VPN_SERVICE_STATE_STOPPED
 } NMVPNServiceState;
-
 
 /**
  * NMVPNConnectionState:
@@ -177,7 +175,6 @@ typedef enum {
 	NM_VPN_PLUGIN_FAILURE_BAD_IP_CONFIG
 } NMVPNPluginFailure;
 
-
 /*** Generic config ***/
 
 /* string: VPN interface name (tun0, tap0, etc) */
@@ -202,7 +199,6 @@ typedef enum {
  * link changes and VPN server dropouts.
  */
 #define NM_VPN_PLUGIN_CAN_PERSIST        "can-persist"
-
 
 /*** Ip4Config ***/
 
@@ -256,7 +252,6 @@ typedef enum {
 #define NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY NM_VPN_PLUGIN_CONFIG_EXT_GATEWAY
 #define NM_VPN_PLUGIN_IP4_CONFIG_MTU         NM_VPN_PLUGIN_CONFIG_MTU
 #define NM_VPN_PLUGIN_IP4_CONFIG_TUNDEV      NM_VPN_PLUGIN_CONFIG_TUNDEV
-
 
 /*** Ip6Config ***/
 

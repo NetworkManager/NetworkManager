@@ -55,7 +55,6 @@ nm_setting_pppoe_error_quark (void)
 	return quark;
 }
 
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingPPPOE, nm_setting_pppoe, NM_TYPE_SETTING,
                          _nm_register_setting (NM_SETTING_PPPOE_SETTING_NAME,
                                                g_define_type_id,

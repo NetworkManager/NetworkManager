@@ -933,7 +933,6 @@ nm_vpn_plugin_info_supports_multiple (NMVpnPluginInfo *self)
 	return _nm_utils_ascii_str_to_bool (s, FALSE);
 }
 
-
 /**
  * nm_vpn_plugin_info_get_aliases:
  * @self: plugin info instance

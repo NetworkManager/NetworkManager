@@ -862,7 +862,6 @@ log_handler (const gchar *log_domain,
 	syslog (syslog_priority, "%s", message);
 }
 
-
 static void
 logging_setup (void)
 {
@@ -918,7 +917,6 @@ main (int argc, char **argv)
 
 	g_unix_signal_add (SIGTERM, signal_handler, GINT_TO_POINTER (SIGTERM));
 	g_unix_signal_add (SIGINT, signal_handler, GINT_TO_POINTER (SIGINT));
-
 
 	if (debug) {
 		if (!g_getenv ("G_MESSAGES_DEBUG")) {

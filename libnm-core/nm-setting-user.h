@@ -57,7 +57,6 @@ const char *nm_setting_user_get_data             (NMSettingUser *setting, const 
 NM_AVAILABLE_IN_1_8
 gboolean    nm_setting_user_set_data             (NMSettingUser *setting, const char *key, const char *val, GError **error);
 
-
 NM_AVAILABLE_IN_1_8
 gboolean    nm_setting_user_check_key (const char *key, GError **error);
 NM_AVAILABLE_IN_1_8

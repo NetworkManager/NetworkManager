@@ -181,7 +181,6 @@ G_STATIC_ASSERT (RTA_MAX == (__RTA_MAX - 1));
 #define _NMLOG2(level, ...)               _LOG     (       level, _NMLOG2_DOMAIN, NULL,     __VA_ARGS__)
 #define _NMLOG2_err(errsv, level, ...)    _LOG_err (errsv, level, _NMLOG2_DOMAIN, NULL,     __VA_ARGS__)
 
-
 #define _LOG_print(__level, __domain, __errsv, self, ...) \
     G_STMT_START { \
         char __prefix[32]; \
@@ -225,7 +224,6 @@ G_STATIC_ASSERT (RTA_MAX == (__RTA_MAX - 1));
                         g_strerror (__errsv), __errsv); \
         } \
     } G_STMT_END
-
 
 #define LOG_FMT_IP_TUNNEL "adding %s '%s' parent %u local %s remote %s"
 
@@ -1535,7 +1533,6 @@ _parse_lnk_vlan (const char *kind, struct nlattr *info_data)
 	                                 &obj->_lnk_vlan.egress_qos_map,
 	                                 &obj->_lnk_vlan.n_egress_qos_map))
 		return NULL;
-
 
 	obj_result = obj;
 	obj = NULL;

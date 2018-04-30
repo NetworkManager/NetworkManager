@@ -73,7 +73,6 @@ nm_setting_wireless_security_error_quark (void)
 	return quark;
 }
 
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingWirelessSecurity, nm_setting_wireless_security, NM_TYPE_SETTING,
                          _nm_register_setting (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
                                                g_define_type_id,

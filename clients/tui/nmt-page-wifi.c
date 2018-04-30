@@ -384,7 +384,6 @@ nmt_page_wifi_finalize (GObject *object)
 	G_OBJECT_CLASS (nmt_page_wifi_parent_class)->finalize (object);
 }
 
-
 static void
 nmt_page_wifi_class_init (NmtPageWifiClass *wifi_class)
 {

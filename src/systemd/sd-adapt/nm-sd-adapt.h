@@ -178,7 +178,6 @@ sd_notify (int unset_environment, const char *state)
 #define MAX_HANDLE_SZ 128
 #endif
 
-
 /*
  * Some toolchains (E.G. uClibc 0.9.33 and earlier) don't export
  * CLOCK_BOOTTIME even though the kernel supports it, so provide a

@@ -66,7 +66,6 @@
 #define NM_DBUS_INTERFACE_DEVICE_VXLAN      NM_DBUS_INTERFACE_DEVICE ".Vxlan"
 #define NM_DBUS_INTERFACE_DEVICE_GRE        NM_DBUS_INTERFACE_DEVICE ".Gre"
 
-
 #define NM_DBUS_IFACE_SETTINGS            "org.freedesktop.NetworkManager.Settings"
 #define NM_DBUS_PATH_SETTINGS             "/org/freedesktop/NetworkManager/Settings"
 
@@ -196,7 +195,6 @@ typedef enum { /*< flags >*/
 	NM_DEVICE_CAP_IS_SOFTWARE    = 0x00000004,
 } NMDeviceCapabilities;
 
-
 /**
  * NMDeviceWifiCapabilities:
  * @NM_WIFI_DEVICE_CAP_NONE: device has no encryption/authentication capabilities
@@ -228,7 +226,6 @@ typedef enum { /*< flags >*/
 	NM_WIFI_DEVICE_CAP_FREQ_2GHZ     = 0x00000200,
 	NM_WIFI_DEVICE_CAP_FREQ_5GHZ     = 0x00000400,
 } NMDeviceWifiCapabilities;
-
 
 /**
  * NM80211ApFlags:
@@ -343,7 +340,6 @@ typedef enum { /*< flags >*/
 	NM_DEVICE_MODEM_CAPABILITY_LTE       = 0x00000008,
 } NMDeviceModemCapabilities;
 
-
 /**
  * NMDeviceState:
  * @NM_DEVICE_STATE_UNKNOWN: the device's state is unknown
@@ -397,7 +393,6 @@ typedef enum {
 	NM_DEVICE_STATE_DEACTIVATING = 110,
 	NM_DEVICE_STATE_FAILED       = 120,
 } NMDeviceState;
-
 
 /**
  * NMDeviceStateReason:
@@ -534,7 +529,6 @@ typedef enum {
 
 	NM_DEVICE_STATE_REASON_LAST                           = 0xFFFF,
 } NMDeviceStateReason;
-
 
 /**
  * NMActiveConnectionState:
