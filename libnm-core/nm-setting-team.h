@@ -52,7 +52,6 @@ typedef enum { /*< flags >*/
 #define NM_TEAM_LINK_WATCHER_ARP_PING  "arp_ping"
 #define NM_TEAM_LINK_WATCHER_NSNA_PING "nsna_ping"
 
-
 typedef struct NMTeamLinkWatcher NMTeamLinkWatcher;
 
 GType nm_team_link_watcher_get_type              (void);
@@ -101,7 +100,6 @@ NM_AVAILABLE_IN_1_12
 const char *nm_team_link_watcher_get_source_host (NMTeamLinkWatcher *watcher);
 NM_AVAILABLE_IN_1_12
 NMTeamLinkWatcherArpPingFlags nm_team_link_watcher_get_flags (NMTeamLinkWatcher *watcher);
-
 
 #define NM_TYPE_SETTING_TEAM            (nm_setting_team_get_type ())
 #define NM_SETTING_TEAM(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTING_TEAM, NMSettingTeam))
@@ -153,7 +151,6 @@ NMTeamLinkWatcherArpPingFlags nm_team_link_watcher_get_flags (NMTeamLinkWatcher 
 #define NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL_DEFAULT 50
 #define NM_SETTING_TEAM_RUNNER_SYS_PRIO_DEFAULT             65535
 #define NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_DEFAULT    NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_LACP_PRIO
-
 
 /**
  * NMSettingTeam:

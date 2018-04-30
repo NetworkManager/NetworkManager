@@ -369,7 +369,6 @@ nmt_editor_grid_size_request (NmtNewtWidget *widget,
 		*width += 2;
 }
 
-
 static void
 nmt_editor_grid_size_allocate (NmtNewtWidget *widget,
                              int            x,

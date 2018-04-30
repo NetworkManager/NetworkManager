@@ -60,7 +60,6 @@ nm_setting_wired_error_quark (void)
 	return quark;
 }
 
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingWired, nm_setting_wired, NM_TYPE_SETTING,
                          _nm_register_setting (NM_SETTING_WIRED_SETTING_NAME,
                                                g_define_type_id,

@@ -151,7 +151,6 @@ typedef struct _NMIP4ConfigClass NMIP4ConfigClass;
 
 GType nm_ip4_config_get_type (void);
 
-
 NMIP4Config * nm_ip4_config_new (NMDedupMultiIndex *multi_idx,
                                  int ifindex);
 
@@ -177,7 +176,6 @@ void nm_ip4_config_merge_setting (NMIP4Config *self,
                                   guint32 route_table,
                                   guint32 route_metric);
 NMSetting *nm_ip4_config_create_setting (const NMIP4Config *self);
-
 
 void nm_ip4_config_merge (NMIP4Config *dst,
                           const NMIP4Config *src,

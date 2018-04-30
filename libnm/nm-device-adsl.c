@@ -30,7 +30,6 @@
 #include "nm-setting-adsl.h"
 #include "nm-setting-connection.h"
 
-
 G_DEFINE_TYPE (NMDeviceAdsl, nm_device_adsl, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_ADSL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_ADSL, NMDeviceAdslPrivate))

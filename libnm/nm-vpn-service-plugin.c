@@ -96,7 +96,6 @@ enum {
 
 static GSList *active_plugins = NULL;
 
-
 static void
 nm_vpn_service_plugin_set_connection (NMVpnServicePlugin *plugin,
                                       GDBusConnection *connection)
@@ -881,7 +880,6 @@ nm_vpn_service_plugin_get_secret_flags (GHashTable *data,
 	g_return_val_if_fail (out_flags && *out_flags == NM_SETTING_SECRET_FLAG_NONE, FALSE);
 	if (!secret_name || !*secret_name)
 		g_return_val_if_reached (FALSE);
-
 
 	s = g_hash_table_lookup (data,
 	                         nm_construct_name_a ("%s-flags", secret_name, &flag_name_free));

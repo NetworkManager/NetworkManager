@@ -280,7 +280,6 @@ gboolean               nm_setting_802_1x_set_phase2_ca_cert          (NMSetting8
                                                                       NMSetting8021xCKFormat *out_format,
                                                                       GError **error);
 
-
 NM_AVAILABLE_IN_1_8
 const char *           nm_setting_802_1x_get_phase2_ca_cert_password        (NMSetting8021x *setting);
 NM_AVAILABLE_IN_1_8

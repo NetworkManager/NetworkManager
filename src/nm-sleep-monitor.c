@@ -29,7 +29,6 @@
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 
-
 #if defined (SUSPEND_RESUME_UPOWER)
 
 #define SUSPEND_DBUS_NAME               "org.freedesktop.UPower"

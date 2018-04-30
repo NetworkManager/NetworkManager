@@ -524,7 +524,6 @@ ip4_route_data_set (NMSetting  *setting,
 	return TRUE;
 }
 
-
 static void
 nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *ip4_class)
 {

@@ -138,14 +138,12 @@ build_supplicant_config (NMConnection *connection,
 	g_assert_no_error (error);
 	g_assert (success);
 
-
 	success = nm_supplicant_config_add_bgscan (config, connection, &error);
 	g_assert_no_error (error);
 	g_assert (success);
 
 	return nm_supplicant_config_to_variant (config);
 }
-
 
 static NMConnection *
 new_basic_connection (const char *id,

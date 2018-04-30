@@ -55,7 +55,6 @@ nm_setting_gsm_error_quark (void)
 	return quark;
 }
 
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingGsm, nm_setting_gsm, NM_TYPE_SETTING,
                          _nm_register_setting (NM_SETTING_GSM_SETTING_NAME,
                                                g_define_type_id,

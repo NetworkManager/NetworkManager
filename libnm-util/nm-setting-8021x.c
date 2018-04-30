@@ -1342,7 +1342,6 @@ nm_setting_802_1x_remove_phase2_altsubject_match (NMSetting8021x *setting, guint
 	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES);
 }
 
-
 /**
  * nm_setting_802_1x_remove_phase2_altsubject_match_by_value:
  * @setting: the #NMSetting8021x
@@ -2535,7 +2534,6 @@ static void need_secrets_phase2 (NMSetting8021x *self,
                                  GPtrArray *secrets,
                                  gboolean phase2);
 
-
 typedef void (*EAPMethodNeedSecretsFunc) (NMSetting8021x *self,
                                           GPtrArray *secrets,
                                           gboolean phase2);
@@ -2600,7 +2598,6 @@ need_secrets_phase2 (NMSetting8021x *self,
 		}
 	}
 }
-
 
 static GPtrArray *
 need_secrets (NMSetting *setting)

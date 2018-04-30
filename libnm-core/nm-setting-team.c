@@ -1304,7 +1304,6 @@ finalize (GObject *object)
 	G_OBJECT_CLASS (nm_setting_team_parent_class)->finalize (object);
 }
 
-
 #define JSON_TO_VAL(typ, id)   _nm_utils_json_extract_##typ (priv->config, _prop_to_keys[id], FALSE)
 
 static void

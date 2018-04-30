@@ -100,7 +100,6 @@ typedef enum { /*< flags >*/
 	/* main-file or config-description changed */
 	NM_CONFIG_CHANGE_CONFIG_FILES              = (1L << 10),
 
-
 	/* any configuration on disk changed */
 	NM_CONFIG_CHANGE_VALUES                    = (1L << 11),
 
@@ -109,7 +108,6 @@ typedef enum { /*< flags >*/
 
 	/* any internal configuration on disk changed (NetworkManager-intern.conf) */
 	NM_CONFIG_CHANGE_VALUES_INTERN             = (1L << 13),
-
 
 	/* configuration regarding connectivity changed */
 	NM_CONFIG_CHANGE_CONNECTIVITY              = (1L << 14),

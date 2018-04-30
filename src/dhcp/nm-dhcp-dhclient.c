@@ -262,7 +262,6 @@ find_existing_config (NMDhcpDhclient *self, int addr_family, const char *iface, 
 	return NULL;
 }
 
-
 /* NM provides interface-specific options; thus the same dhclient config
  * file cannot be used since DHCP transactions can happen in parallel.
  * Since some distros don't have default per-interface dhclient config files,
@@ -307,7 +306,6 @@ create_dhclient_config (NMDhcpDhclient *self,
 	g_free (orig);
 	return new;
 }
-
 
 static gboolean
 dhclient_start (NMDhcpClient *client,
@@ -439,7 +437,6 @@ dhclient_start (NMDhcpClient *client,
 		g_ptr_array_add (argv, (gpointer) "-e");
 		g_ptr_array_add (argv, (gpointer) system_bus_address_env);
 	}
-
 
 	g_ptr_array_add (argv, (gpointer) iface);
 	g_ptr_array_add (argv, NULL);

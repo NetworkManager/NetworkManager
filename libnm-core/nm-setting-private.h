@@ -58,7 +58,6 @@ gboolean _nm_setting_clear_secrets_with_flags (NMSetting *setting,
                                                NMSettingClearSecretsWithFlagsFn func,
                                                gpointer user_data);
 
-
 /* The property of the #NMSetting should be considered during comparisons that
  * use the %NM_SETTING_COMPARE_FLAG_INFERRABLE flag. Properties that don't have
  * this flag, are ignored when doing an infrerrable comparison.  This flag should

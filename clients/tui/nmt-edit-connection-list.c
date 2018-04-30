@@ -319,7 +319,6 @@ listbox_activated (NmtNewtWidget *listbox, gpointer list)
 	edit_clicked (NMT_NEWT_BUTTON (priv->edit), list);
 }
 
-
 static void
 connection_saved (GObject      *conn,
                   GAsyncResult *result,

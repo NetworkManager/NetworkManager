@@ -20,7 +20,6 @@
 #ifndef __NM_GLIB_H__
 #define __NM_GLIB_H__
 
-
 #include <gio/gio.h>
 #include <string.h>
 
@@ -85,7 +84,6 @@ g_steal_pointer (gpointer pp)
 #define g_steal_pointer(pp) \
   (0 ? (*(pp)) : (g_steal_pointer) (pp))
 #endif
-
 
 static inline gboolean
 _nm_g_strv_contains (const gchar * const *strv,

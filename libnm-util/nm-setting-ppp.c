@@ -53,7 +53,6 @@ nm_setting_ppp_error_quark (void)
 	return quark;
 }
 
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingPPP, nm_setting_ppp, NM_TYPE_SETTING,
                          _nm_register_setting (NM_SETTING_PPP_SETTING_NAME,
                                                g_define_type_id,

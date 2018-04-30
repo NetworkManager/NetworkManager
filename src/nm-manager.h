@@ -71,7 +71,6 @@
 #define NM_MANAGER_INTERNAL_DEVICE_ADDED     "internal-device-added"
 #define NM_MANAGER_INTERNAL_DEVICE_REMOVED   "internal-device-removed"
 
-
 GType nm_manager_get_type (void);
 
 /* nm_manager_setup() should only be used by main.c */

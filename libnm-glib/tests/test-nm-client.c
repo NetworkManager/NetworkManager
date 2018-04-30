@@ -1078,7 +1078,6 @@ test_connection_invalid (void)
 	nmtst_assert_connection_unnormalizable (connections->pdata[idx[1]], 0, 0);
 	nmtst_assert_connection_verifies_without_normalization (connections->pdata[idx[2]]);
 
-
 	/**************************************************************************
 	 * Modify the invalid connection and make it valid
 	 *************************************************************************/

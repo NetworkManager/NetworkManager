@@ -609,7 +609,6 @@ _get_text_hidden (NMMetaAccessorGetType get_type)
 	return NM_META_TEXT_HIDDEN;
 }
 
-
 /*****************************************************************************/
 
 G_GNUC_PRINTF (4, 5)
@@ -1191,7 +1190,6 @@ _set_fcn_gobject_mac (ARGS_SET_FCN)
 	else
 		mode = NM_META_PROPERTY_TYPE_MAC_MODE_DEFAULT;
 
-
 	if (mode == NM_META_PROPERTY_TYPE_MAC_MODE_INFINIBAND)
 		valid = nm_utils_hwaddr_valid (value, INFINIBAND_ALEN);
 	else {
@@ -1687,7 +1685,6 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 		\
 		return TRUE; \
 	}
-
 
 static gboolean
 verify_string_list (const char *const*strv,
@@ -3091,7 +3088,6 @@ _set_fcn_infiniband_p_key (ARGS_SET_FCN)
 	return TRUE;
 }
 
-
 static gconstpointer
 _get_fcn_infiniband_p_key (ARGS_GET_FCN)
 {
@@ -4421,7 +4417,6 @@ _describe_fcn_wired_s390_options (ARGS_DESCRIBE_FCN)
 	return (*out_to_free = s);
 }
 
-
 static gconstpointer
 _get_fcn_wireless_ssid (ARGS_GET_FCN)
 {
@@ -4935,7 +4930,6 @@ static const NMMetaPropertyType _pt_gobject_devices = {
 	   "Properties flagged with a '*' are mandatory.\n\n" \
 	   "Example:\n" \
 	   "   name=arp_ping source-host=172.16.1.1 target-host=172.16.1.254, name=ethtool delay-up=3\n")
-
 
 #define DEFINE_DCB_PROPRITY_PROPERTY_TYPE \
 		.property_type =                &_pt_gobject_int, \

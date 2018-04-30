@@ -69,7 +69,6 @@ interface_init (gpointer g_iface)
 	initialized = TRUE;
 }
 
-
 GType
 nm_vpn_plugin_ui_interface_get_type (void)
 {
@@ -98,7 +97,6 @@ nm_vpn_plugin_ui_interface_get_type (void)
 
 	return vpn_plugin_ui_interface_type;
 }
-
 
 NMVpnPluginUiWidgetInterface *
 nm_vpn_plugin_ui_interface_ui_factory (NMVpnPluginUiInterface *iface,
@@ -166,7 +164,6 @@ nm_vpn_plugin_ui_interface_delete_connection (NMVpnPluginUiInterface *iface,
 	/* Deprecated and no longer used */
 	return TRUE;
 }
-
 
 static void
 widget_interface_init (gpointer g_iface)

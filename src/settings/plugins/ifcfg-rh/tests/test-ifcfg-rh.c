@@ -542,7 +542,6 @@ verify_cert_or_key (NMSetting8021x *s_compare,
 	return TRUE;
 }
 
-
 static void
 test_read_basic (void)
 {
@@ -5278,7 +5277,6 @@ test_write_gateway (void)
 
 	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 }
-
 
 static void
 test_write_wifi_open (void)

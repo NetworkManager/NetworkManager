@@ -70,7 +70,6 @@ get_generic_capabilities (NMDevice *device)
 	return NM_DEVICE_CAP_IS_SOFTWARE;
 }
 
-
 static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection)
 {

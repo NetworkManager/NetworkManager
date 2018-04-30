@@ -212,7 +212,6 @@ typedef enum {
 	NM_IP_CONFIG_MERGE_NO_DNS                   = (1LL << 2),
 } NMIPConfigMergeFlags;
 
-
 /**
  * NMIPRouteTableSyncMode:
  * @NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN: only the main table is synced. For all
@@ -227,7 +226,6 @@ typedef enum {
 	NM_IP_ROUTE_TABLE_SYNC_MODE_FULL        = 2,
 	NM_IP_ROUTE_TABLE_SYNC_MODE_ALL         = 3,
 } NMIPRouteTableSyncMode;
-
 
 /* settings */
 typedef struct _NMAgentManager       NMAgentManager;

@@ -94,7 +94,6 @@ typedef struct {
 	const char *message;
 } NMKeyfileReadTypeDataWarn;
 
-
 NMConnection *nm_keyfile_read (GKeyFile *keyfile,
                                const char *keyfile_name,
                                const char *base_dir,
@@ -149,7 +148,6 @@ typedef struct {
 	NMSetting8021x *setting;
 } NMKeyfileWriteTypeDataCert;
 
-
 GKeyFile *nm_keyfile_write (NMConnection *connection,
                             NMKeyfileWriteHandler handler,
                             void *user_data,
@@ -164,6 +162,5 @@ void _nm_keyfile_copy (GKeyFile *dst, GKeyFile *src);
 gboolean _nm_keyfile_a_contains_all_in_b (GKeyFile *kf_a, GKeyFile *kf_b);
 gboolean _nm_keyfile_equals (GKeyFile *kf_a, GKeyFile *kf_b, gboolean consider_order);
 gboolean _nm_keyfile_has_values (GKeyFile *keyfile);
-
 
 #endif /* __NM_KEYFILE_INTERNAL_H__ */

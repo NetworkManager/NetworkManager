@@ -164,11 +164,9 @@ test_config_simple (void)
 	g_assert_cmpstr (value, ==, "51");
 	g_free (value);
 
-
 	value = nm_config_data_get_connection_default (nm_config_get_data_orig (config), "ipv6.route-metric", NULL);
 	g_assert_cmpstr (value, ==, NULL);
 	g_free (value);
-
 
 	value = nm_config_data_get_connection_default (nm_config_get_data_orig (config), "ipv4.route-metric", NULL);
 	g_assert_cmpstr (value, ==, "50");
@@ -185,7 +183,6 @@ test_config_simple (void)
 	value = nm_config_data_get_connection_default (nm_config_get_data_orig (config), "ipv4.route-metric", dev52);
 	g_assert_cmpstr (value, ==, "52");
 	g_free (value);
-
 
 	value = nm_config_data_get_connection_default (nm_config_get_data_orig (config), "dummy.test1", dev51);
 	g_assert_cmpstr (value, ==, "yes");
@@ -917,7 +914,6 @@ test_config_signal (void)
 	NMTST_EXPECT_NM_INFO ("config: signal: SIGHUP (no changes from disk)*");
 	nm_config_reload (config, expected);
 
-
 	/* test with subscribing two signals...
 	 *
 	 * This test exposes glib bug https://bugzilla.redhat.com/show_bug.cgi?id=1260577
@@ -930,7 +926,6 @@ test_config_signal (void)
 	NMTST_EXPECT_NM_INFO ("config: signal: SIGUSR2");
 	nm_config_reload (config, NM_CONFIG_CHANGE_CAUSE_SIGUSR2);
 	g_signal_handlers_disconnect_by_func (config, _test_signal_config_changed_cb2, &expected);
-
 
 	g_signal_handlers_disconnect_by_func (config, _test_signal_config_changed_cb, &expected);
 

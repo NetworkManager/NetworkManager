@@ -80,7 +80,6 @@ static const _NMUtilsTeamPropertyKeys _prop_to_keys[LAST_PROP] = {
 	[PROP_LINK_WATCHERS] = { "link_watch", NULL, NULL, 0 }
 };
 
-
 /**
  * nm_setting_team_port_new:
  *

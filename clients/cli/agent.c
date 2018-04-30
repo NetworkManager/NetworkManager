@@ -136,7 +136,6 @@ secrets_requested (NMSecretAgentSimple *agent,
 		nm_secret_agent_simple_response (agent, request_id, NULL);
 }
 
-
 static NMCResultCode
 do_agent_secret (NmCli *nmc, int argc, char **argv)
 {

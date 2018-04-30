@@ -59,7 +59,6 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-
 /**
  * nm_vpn_connection_get_banner:
  * @vpn: a #NMVpnConnection

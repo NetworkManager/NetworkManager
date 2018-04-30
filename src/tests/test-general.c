@@ -709,7 +709,6 @@ test_connection_no_match_ip4_addr (void)
 	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 	              NULL);
 
-
 	s_ip4 = nm_connection_get_setting_ip4_config (orig);
 	g_assert (s_ip4);
 	g_object_set (G_OBJECT (s_ip4),
@@ -1232,7 +1231,6 @@ _do_test_match_spec_config (const char *file, gint line, const char *spec_str, g
 		GSList *specs2 = g_slist_append (NULL, sss);
 		NMMatchSpecMatchType match_result2;
 
-
 		match_result2 = nm_match_spec_config (specs2, version, NULL);
 		if (match_result == NM_MATCH_SPEC_NO_MATCH)
 			g_assert_cmpint (match_result2, ==, NM_MATCH_SPEC_NO_MATCH);
@@ -1288,7 +1286,6 @@ test_match_spec_config (void)
 	do_test_match_spec_config ("nm-version-min:1", 1, 3, 0, NM_MATCH_SPEC_MATCH);
 	do_test_match_spec_config ("nm-version-min:1", 1, 3, 30, NM_MATCH_SPEC_MATCH);
 	do_test_match_spec_config ("nm-version-min:1", 1, 4, 30, NM_MATCH_SPEC_MATCH);
-
 
 	do_test_match_spec_config ("nm-version-max:1.2.3", 0, 2, 30, NM_MATCH_SPEC_NO_MATCH);
 	do_test_match_spec_config ("nm-version-max:1.2.3", 1, 1, 1, NM_MATCH_SPEC_NO_MATCH);

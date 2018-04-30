@@ -24,7 +24,6 @@
 #include "nm-platform.h"
 #include "nm-setting-wired.h"
 
-
 const char *nmp_utils_ethtool_get_driver (int ifindex);
 gboolean nmp_utils_ethtool_supports_carrier_detect (int ifindex);
 gboolean nmp_utils_ethtool_supports_vlans (int ifindex);
@@ -60,9 +59,7 @@ gboolean  nmp_utils_ethtool_get_permanent_address (int ifindex,
                                                    guint8 *buf,
                                                    size_t *length);
 
-
 gboolean nmp_utils_mii_supports_carrier_detect (int ifindex);
-
 
 struct udev_device;
 

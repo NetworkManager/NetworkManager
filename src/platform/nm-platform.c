@@ -2396,7 +2396,6 @@ nm_platform_link_infiniband_delete (NMPlatform *self,
 	return _infiniband_add_add_or_delete (self, parent, p_key, FALSE, NULL);
 }
 
-
 gboolean
 nm_platform_link_infiniband_get_properties (NMPlatform *self,
                                             int ifindex,
@@ -4651,7 +4650,6 @@ nm_platform_qdisc_sync (NMPlatform *self,
 	                                                                ifindex),
 	                                        NULL, NULL);
 
-
 	if (plat_qdiscs) {
 		for (i = 0; i < plat_qdiscs->len; i++) {
 			const NMPObject *q = g_ptr_array_index (plat_qdiscs, i);
@@ -4716,7 +4714,6 @@ nm_platform_tfilter_sync (NMPlatform *self,
 	                                                                  NMP_OBJECT_TYPE_TFILTER,
 	                                                                  ifindex),
 	                                          NULL, NULL);
-
 
 	if (plat_tfilters) {
 		for (i = 0; i < plat_tfilters->len; i++) {
@@ -4785,7 +4782,6 @@ _lifetime_to_string (guint32 timestamp, guint32 lifetime, gint32 now, char *buf,
 	            nm_utils_lifetime_rebase_relative_time_on_now (timestamp, lifetime, now));
 	return buf;
 }
-
 
 static const char *
 _lifetime_summary_to_string (gint32 now, guint32 timestamp, guint32 preferred, guint32 lifetime, char *buf, size_t buf_size)
@@ -5491,7 +5487,6 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsi
 	inet_ntop (AF_INET, &route->gateway, s_gateway, sizeof(s_gateway));
 
 	_to_string_dev (NULL, route->ifindex, str_dev, sizeof (str_dev));
-
 
 	g_snprintf (buf, len,
 	            "%s" /* table */

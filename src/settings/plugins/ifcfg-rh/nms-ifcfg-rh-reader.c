@@ -256,7 +256,6 @@ make_connection_setting (const char *file,
 		}
 	}
 
-
 	nm_clear_g_free (&value);
 	v = svGetValueStr (ifcfg, "ZONE", &value);
 	g_object_set (s_con, NM_SETTING_CONNECTION_ZONE, v, NULL);
@@ -4419,7 +4418,6 @@ parse_infiniband_p_key (shvarFile *ifcfg,
 	}
 	return ret;
 }
-
 
 static NMSetting *
 make_infiniband_setting (shvarFile *ifcfg,

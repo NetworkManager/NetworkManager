@@ -116,7 +116,6 @@ event_attach (sd_event *event, GMainContext *context)
 	id = g_source_attach ((GSource *) source, context);
 	g_source_unref ((GSource *) source);
 
-
 	if (!event) {
 		*p_default_source_id = id;
 		sd_event_unref (e);

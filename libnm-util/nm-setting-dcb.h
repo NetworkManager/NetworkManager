@@ -88,7 +88,6 @@ typedef enum {
  */
 #define NM_SETTING_DCB_FCOE_MODE_VN2VN   "vn2vn"
 
-
 /* Properties */
 #define NM_SETTING_DCB_APP_FCOE_FLAGS         "app-fcoe-flags"
 #define NM_SETTING_DCB_APP_FCOE_PRIORITY      "app-fcoe-priority"
@@ -109,7 +108,6 @@ typedef enum {
 #define NM_SETTING_DCB_PRIORITY_BANDWIDTH        "priority-bandwidth"
 #define NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH "priority-strict-bandwidth"
 #define NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS    "priority-traffic-class"
-
 
 typedef struct {
 	NMSetting parent;

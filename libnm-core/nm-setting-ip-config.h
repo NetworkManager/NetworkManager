@@ -72,7 +72,6 @@ void         nm_ip_address_set_attribute       (NMIPAddress *address,
                                                 const char  *name,
                                                 GVariant    *value);
 
-
 typedef struct NMIPRoute NMIPRoute;
 
 GType        nm_ip_route_get_type            (void);

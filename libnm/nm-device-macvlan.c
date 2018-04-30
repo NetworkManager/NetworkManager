@@ -143,7 +143,6 @@ nm_device_macvlan_get_hw_address (NMDeviceMacvlan *device)
 	return nm_str_not_empty (NM_DEVICE_MACVLAN_GET_PRIVATE (device)->hw_address);
 }
 
-
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {

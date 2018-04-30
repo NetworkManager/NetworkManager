@@ -1423,7 +1423,6 @@ _tfilters_from_variant (GVariant *value)
 
 		action_var = g_variant_lookup_value (tfilter_var, "action", G_VARIANT_TYPE_VARDICT);
 
-
 		if (action_var) {
 			if (!g_variant_lookup (action_var, "kind", "&s", &action_kind)) {
 				//g_warning ("Ignoring tfilter with invalid action");

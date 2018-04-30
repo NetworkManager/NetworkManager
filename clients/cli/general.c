@@ -1148,7 +1148,6 @@ client_state (NMClient *client, GParamSpec *param, NmCli *nmc)
 	g_free (str);
 }
 
-
 static void
 device_overview (NmCli *nmc, NMDevice *device)
 {
@@ -1344,7 +1343,6 @@ do_overview (NmCli *nmc, int argc, char **argv)
 
 		if (nm_device_get_description (devices[i]) && strcmp (nm_device_get_description (devices[i]), ""))
 			g_print ("\t\"%s\"\n", nm_device_get_description (devices[i]));
-
 
 		device_overview (nmc, devices[i]);
 		if (ac)

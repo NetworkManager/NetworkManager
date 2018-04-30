@@ -109,7 +109,6 @@ NM_AVAILABLE_IN_1_12
 const char **     nm_setting_vpn_get_secret_keys   (NMSettingVpn *setting,
                                                     guint *out_length);
 
-
 NM_AVAILABLE_IN_1_2
 guint32           nm_setting_vpn_get_timeout       (NMSettingVpn *setting);
 

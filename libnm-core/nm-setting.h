@@ -51,7 +51,6 @@ G_BEGIN_DECLS
 
 /* Note: all non-glib GParamFlags bits are reserved by NetworkManager */
 
-
 #define NM_SETTING_NAME "name"
 
 /**
@@ -130,7 +129,6 @@ typedef enum {
 	/* Higher flags like 0x80000000 and 0x40000000 are used internally as private flags */
 } NMSettingCompareFlags;
 
-
 /**
  * NMSettingMacRandomization:
  * @NM_SETTING_MAC_RANDOMIZATION_DEFAULT: the default value, which unless
@@ -146,7 +144,6 @@ typedef enum {
 	NM_SETTING_MAC_RANDOMIZATION_ALWAYS,
 } NMSettingMacRandomization;
 
-
 /**
  * NMSetting:
  *
@@ -156,7 +153,6 @@ typedef enum {
 struct _NMSetting {
 	GObject parent;
 };
-
 
 /**
  * NMSettingClearSecretsWithFlagsFn:
@@ -232,7 +228,6 @@ typedef void (*NMSettingValueIterFn) (NMSetting *setting,
                                       const GValue *value,
                                       GParamFlags flags,
                                       gpointer user_data);
-
 
 GType nm_setting_get_type (void);
 

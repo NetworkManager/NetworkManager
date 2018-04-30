@@ -2387,7 +2387,6 @@ out:
 	return ops_type;
 }
 
-
 NMPCacheOpsType
 nmp_cache_update_link_udev (NMPCache *cache,
                             int ifindex,

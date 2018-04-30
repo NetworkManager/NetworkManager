@@ -1374,7 +1374,6 @@ _nm_object_suppress_property_updates (NMObject *object, gboolean suppress)
 	priv->suppress_property_updates = suppress;
 }
 
-
 void
 _nm_object_ensure_inited (NMObject *object)
 {

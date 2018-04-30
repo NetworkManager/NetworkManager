@@ -20,7 +20,6 @@
  * (C) Copyright 2004 Tom Parker
  */
 
-
 #ifndef _INTERFACE_PARSER_H
 #define _INTERFACE_PARSER_H
 

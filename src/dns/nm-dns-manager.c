@@ -1951,7 +1951,6 @@ _get_config_variant (NMDnsManager *self)
 		                       "nameservers",
 		                       g_variant_builder_end (&strv_builder));
 
-
 		num = nm_ip_config_get_num_domains (ip_config);
 		num += nm_ip_config_get_num_searches (ip_config);
 		if (num > 0) {

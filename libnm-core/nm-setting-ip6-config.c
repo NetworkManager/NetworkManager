@@ -63,7 +63,6 @@ typedef struct {
 	char *token;
 } NMSettingIP6ConfigPrivate;
 
-
 enum {
 	PROP_0,
 	PROP_IP6_PRIVACY,
@@ -280,7 +279,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 
 	return TRUE;
 }
-
 
 static void
 nm_setting_ip6_config_init (NMSettingIP6Config *setting)
@@ -791,7 +789,6 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
 		                      G_PARAM_READWRITE |
 		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
-
 
 	/* IP6-specific property overrides */
 

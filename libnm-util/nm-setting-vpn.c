@@ -63,7 +63,6 @@ nm_setting_vpn_error_quark (void)
 	return quark;
 }
 
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingVPN, nm_setting_vpn, NM_TYPE_SETTING,
                          _nm_register_setting (NM_SETTING_VPN_SETTING_NAME,
                                                g_define_type_id,

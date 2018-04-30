@@ -204,7 +204,6 @@ next_arg (NmCli *nmc, int *argc, char ***argv, ...)
 		if (*argc == 0)
 			return -1;
 
-
 		va_start (args, argv);
 
 		if (nmc && nmc->complete && *argc == 1) {

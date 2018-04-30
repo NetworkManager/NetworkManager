@@ -49,12 +49,9 @@ NMAuthSubject *nm_auth_subject_new_unix_process_from_context (GDBusMethodInvocat
 
 NMAuthSubject *nm_auth_subject_new_unix_process_from_message (GDBusConnection *connection, GDBusMessage *message);
 
-
 NMAuthSubjectType nm_auth_subject_get_subject_type (NMAuthSubject *subject);
 
-
 gboolean nm_auth_subject_is_internal (NMAuthSubject *subject);
-
 
 gboolean nm_auth_subject_is_unix_process (NMAuthSubject *subject);
 
@@ -62,9 +59,7 @@ gulong nm_auth_subject_get_unix_process_pid (NMAuthSubject *subject);
 
 const char *nm_auth_subject_get_unix_process_dbus_sender (NMAuthSubject *subject);
 
-
 gulong nm_auth_subject_get_unix_process_uid (NMAuthSubject *subject);
-
 
 const char *nm_auth_subject_to_string (NMAuthSubject *self, char *buf, gsize buf_len);
 

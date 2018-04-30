@@ -731,7 +731,6 @@ link_changed (NMDevice *device,
 	update_properties (device);
 }
 
-
 static void
 device_state_changed (NMDevice *device,
                       NMDeviceState new_state,

@@ -2044,7 +2044,6 @@ nm_ip6_config_get_subnet_for_host (const NMIP6Config *self, const struct in6_add
 	return subnet;
 }
 
-
 /*****************************************************************************/
 
 void

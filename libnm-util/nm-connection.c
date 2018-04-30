@@ -120,9 +120,7 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-
 static NMSettingVerifyResult _nm_connection_verify (NMConnection *connection, GError **error);
-
 
 /*****************************************************************************/
 
@@ -492,7 +490,6 @@ nm_connection_compare (NMConnection *a,
 
 	return TRUE;
 }
-
 
 static void
 diff_one_connection (NMConnection *a,

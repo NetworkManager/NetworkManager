@@ -682,7 +682,6 @@ set_property_from_dbus (const NMSettingProperty *property,
 	return TRUE;
 }
 
-
 /**
  * _nm_setting_to_dbus:
  * @setting: the #NMSetting
