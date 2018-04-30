@@ -2,11 +2,11 @@ location: clients/tests/test-client.py:887:test_003()/176
 cmd: $NMCLI --mode tabular --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1195 bytes
+stdout: 1187 bytes
 >>>
 GENERAL:eth0:ethernet:NMDeviceEthernet:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:20 (unavailable):0 (No reason given):/sys/devices/virtual/eth0::no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
-WIRED-PROPERTIES:wyłączone:
+WIRED-PROPERTIES:off:
 IP4:192.168.6.238/29::dst = 192.168.58.133/31, nh = 192.168.50.116, mt = 3130348792 | dst = 192.168.155.50/19, nh = 192.168.127.64:192.168.213.113:sear4.foo4.bar:192.168.156.115 | 192.168.8.33
 DHCP4:
 IP6:2001\:a\:\:29c0\:62b9\:2e01\:30a/69 | 2001\:a\:\:6433\:6420\:34f9\:3801/115 | 2001\:a\:\:8191\:ed6b\:8ce\:b60/103:2001\:a\:\:2b50\:64d1\:9a91\:23b4:dst = 2001\:a\:\:5ecb\:f5ee\:fb96\:856c/100, nh = \:\:, mt = 4249082794:2001\:a\:\:1323\:9a78\:2b82\:d16b | 2001\:a\:\:4e1\:24e6\:b8c1\:91bb | 2001\:a\:\:bd96\:3bed\:fbd6\:19c5:sear6.fo.x.y | sear6.foo4.bar

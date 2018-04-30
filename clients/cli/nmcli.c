@@ -199,9 +199,9 @@ complete_fields (const char *option, const char *prefix)
 	complete_field (h, metagen_device_detail_general);
 	complete_field (h, metagen_device_detail_connections);
 	complete_field (h, metagen_device_detail_capabilities);
-	complete_field (h, nmc_fields_dev_show_wired_prop);
-	complete_field (h, nmc_fields_dev_show_wifi_prop);
-	complete_field (h, nmc_fields_dev_show_wimax_prop);
+	complete_field (h, metagen_device_detail_wired_properties);
+	complete_field (h, metagen_device_detail_wifi_properties);
+	complete_field (h, metagen_device_detail_wimax_properties);
 	complete_field (h, nmc_fields_dev_wifi_list);
 	complete_field (h, nmc_fields_dev_wimax_list);
 	complete_field (h, nmc_fields_dev_show_master_prop);
