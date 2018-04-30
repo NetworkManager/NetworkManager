@@ -1380,6 +1380,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			nmc_print (&nmc->nmc_config,
 			           (gpointer[]) { acon, NULL },
 			           NULL,
+			           NULL,
 			           NMC_META_GENERIC_GROUP ("GENERAL", metagen_con_active_general, N_("GROUP")),
 			           f,
 			           NULL);
@@ -1427,6 +1428,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			if (NM_IS_VPN_CONNECTION (acon)) {
 				nmc_print (&nmc->nmc_config,
 				           (gpointer[]) { acon, NULL },
+				           NULL,
 				           NULL,
 				           NMC_META_GENERIC_GROUP ("VPN", metagen_con_active_vpn, N_("NAME")),
 				           group_fld,
@@ -1985,10 +1987,11 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 		g_ptr_array_add (items, NULL);
 		if (!nmc_print (&nmc->nmc_config,
 		                items->pdata,
+		                NULL,
 		                active_only
 		                  ? _("NetworkManager active profiles")
 		                  : _("NetworkManager connection profiles"),
-		               (const NMMetaAbstractInfo *const*) metagen_con_show,
+		                (const NMMetaAbstractInfo *const*) metagen_con_show,
 		                fields_str,
 		                &err))
 			goto finish;
