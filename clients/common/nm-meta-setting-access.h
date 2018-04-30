@@ -55,6 +55,7 @@ gconstpointer nm_meta_abstract_info_get (const NMMetaAbstractInfo *abstract_info
                                          const NMMetaEnvironment *environment,
                                          gpointer environment_user_data,
                                          gpointer target,
+                                         gpointer target_data,
                                          NMMetaAccessorGetType get_type,
                                          NMMetaAccessorGetFlags get_flags,
                                          NMMetaAccessorGetOutFlags *out_flags,

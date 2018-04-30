@@ -356,6 +356,7 @@ print_ip_config (NMIPConfig *cfg,
 	if (!nmc_print (nmc_config,
 	                (gpointer[]) { cfg, NULL },
 	                NULL,
+	                NULL,
 	                addr_family == AF_INET
 	                  ? NMC_META_GENERIC_GROUP ("IP4", metagen_ip4_config, N_("GROUP"))
 	                  : NMC_META_GENERIC_GROUP ("IP6", metagen_ip6_config, N_("GROUP")),
@@ -386,6 +387,7 @@ print_dhcp_config (NMDhcpConfig *dhcp,
 
 	if (!nmc_print (nmc_config,
 	                (gpointer[]) { dhcp, NULL },
+	                NULL,
 	                NULL,
 	                addr_family == AF_INET
 	                  ? NMC_META_GENERIC_GROUP ("DHCP4", metagen_dhcp_config, N_("GROUP"))

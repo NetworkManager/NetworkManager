@@ -359,6 +359,7 @@ struct _NMMetaType {
 	                          const NMMetaEnvironment *environment,
 	                          gpointer environment_user_data,
 	                          gpointer target,
+	                          gpointer target_data,
 	                          NMMetaAccessorGetType get_type,
 	                          NMMetaAccessorGetFlags get_flags,
 	                          NMMetaAccessorGetOutFlags *out_flags,
