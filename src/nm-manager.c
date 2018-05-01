@@ -352,10 +352,11 @@ static void active_connection_parent_active (NMActiveConnection *active,
                                              NMActiveConnection *parent_ac,
                                              NMManager *self);
 
-static NMActiveConnection *active_connection_find_first (NMManager *self,
-                                                         NMSettingsConnection *settings_connection,
-                                                         const char *uuid,
-                                                         NMActiveConnectionState max_state);
+static NMActiveConnection *active_connection_find (NMManager *self,
+                                                   NMSettingsConnection *settings_connection,
+                                                   const char *uuid,
+                                                   NMActiveConnectionState max_state,
+                                                   GPtrArray **out_all_matching);
 
 static NMConnectivity *concheck_get_mgr (NMManager *self);
 
@@ -799,10 +800,11 @@ _delete_volatile_connection_do (NMManager *self,
 	if (!NM_FLAGS_HAS (nm_settings_connection_get_flags (connection),
 	                   NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE))
 		return;
-	if (active_connection_find_first (self,
-	                                  connection,
-	                                  NULL,
-	                                  NM_ACTIVE_CONNECTION_STATE_DEACTIVATED))
+	if (active_connection_find (self,
+	                            connection,
+	                            NULL,
+	                            NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,
+	                            NULL))
 		return;
 	if (!nm_settings_has_connection (priv->settings, connection))
 		return;
@@ -944,15 +946,19 @@ nm_manager_get_active_connections (NMManager *manager)
 }
 
 static NMActiveConnection *
-active_connection_find_first (NMManager *self,
-                              NMSettingsConnection *settings_connection,
-                              const char *uuid,
-                              NMActiveConnectionState max_state)
+active_connection_find (NMManager *self,
+                        NMSettingsConnection *settings_connection,
+                        const char *uuid,
+                        NMActiveConnectionState max_state /* candidates in state @max_state will be found */,
+                        GPtrArray **out_all_matching)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMActiveConnection *ac;
+	NMActiveConnection *best_ac = NULL;
+	GPtrArray *all = NULL;
 
 	nm_assert (!settings_connection || NM_IS_SETTINGS_CONNECTION (settings_connection));
+	nm_assert (!out_all_matching || !*out_all_matching);
 
 	c_list_for_each_entry (ac, &priv->active_connections_lst_head, active_connections_lst) {
 		NMSettingsConnection *con;
@@ -964,15 +970,44 @@ active_connection_find_first (NMManager *self,
 			continue;
 		if (nm_active_connection_get_state (ac) > max_state)
 			continue;
-		return ac;
+
+		if (!out_all_matching)
+			return ac;
+
+		if (!best_ac) {
+			best_ac = ac;
+			continue;
+		}
+
+		if (!all) {
+			all = g_ptr_array_new_with_free_func (g_object_unref);
+			g_ptr_array_add (all, g_object_ref (best_ac));
+		}
+		g_ptr_array_add (all, g_object_ref (ac));
 	}
 
-	return NULL;
+	if (!best_ac)
+		return NULL;
+
+	/* as an optimization, we only allocate out_all_matching, if there are more
+	 * than one result. If there is only one result, we only return the single
+	 * element and don't bother allocating an array. That's the common case.
+	 *
+	 * Also, in case we have multiple results, we return the *first* one
+	 * as @best_ac. */
+	nm_assert (   !all
+	           || (   all->len >= 2
+	               && all->pdata[0] == best_ac));
+
+	*out_all_matching = all;
+	return best_ac;
 }
 
 static NMActiveConnection *
-active_connection_find_first_by_connection (NMManager *self,
-                                            NMConnection *connection)
+active_connection_find_by_connection (NMManager *self,
+                                      NMConnection *connection,
+                                      NMActiveConnectionState max_state,
+                                      GPtrArray **out_all_matching)
 {
 	gboolean is_settings_connection;
 
@@ -982,10 +1017,11 @@ active_connection_find_first_by_connection (NMManager *self,
 	is_settings_connection = NM_IS_SETTINGS_CONNECTION (connection);
 	/* Depending on whether connection is a settings connection,
 	 * either lookup by object-identity of @connection, or compare the UUID */
-	return active_connection_find_first (self,
-	                                     is_settings_connection ? NM_SETTINGS_CONNECTION (connection) : NULL,
-	                                     is_settings_connection ? NULL : nm_connection_get_uuid (connection),
-	                                     NM_ACTIVE_CONNECTION_STATE_DEACTIVATING);
+	return active_connection_find (self,
+	                               is_settings_connection ? NM_SETTINGS_CONNECTION (connection) : NULL,
+	                               is_settings_connection ? NULL : nm_connection_get_uuid (connection),
+	                               max_state,
+	                               out_all_matching);
 }
 
 static gboolean
@@ -996,7 +1032,10 @@ _get_activatable_connections_filter (NMSettings *settings,
 	if (NM_FLAGS_HAS (nm_settings_connection_get_flags (connection),
 	                  NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE))
 		return FALSE;
-	return !active_connection_find_first (user_data, connection, NULL, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING);
+
+	/* the connection is activatable, if it has no active-connections that are in state
+	 * activated, activating, or waiting to be activated. */
+	return !active_connection_find (user_data, connection, NULL, NM_ACTIVE_CONNECTION_STATE_ACTIVATED, NULL);
 }
 
 NMSettingsConnection **
@@ -2031,8 +2070,8 @@ connection_flags_changed (NMSettings *settings,
 	                   NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE))
 		return;
 
-	if (active_connection_find_first (self, connection, NULL, NM_ACTIVE_CONNECTION_STATE_DEACTIVATED)) {
-		/* the connection still have an active-connection. It will be purged
+	if (active_connection_find (self, connection, NULL, NM_ACTIVE_CONNECTION_STATE_DEACTIVATED, NULL)) {
+		/* the connection still has an active-connection. It will be purged
 		 * when the active connection(s) get(s) removed. */
 		return;
 	}
@@ -2405,8 +2444,9 @@ get_existing_connection (NMManager *self,
 	 */
 	if (   assume_state_connection_uuid
 	    && (connection_checked = nm_settings_get_connection_by_uuid (priv->settings, assume_state_connection_uuid))
-	    && !active_connection_find_first (self, connection_checked, NULL,
-	                                      NM_ACTIVE_CONNECTION_STATE_DEACTIVATING)
+	    && !active_connection_find (self, connection_checked, NULL,
+	                                NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
+	                                NULL)
 	    && nm_device_check_connection_compatible (device, NM_CONNECTION (connection_checked))) {
 
 		if (connection) {
@@ -2562,7 +2602,7 @@ recheck_assume_connection (NMManager *self,
 		                                 device,
 		                                 subject,
 		                                 generated ? NM_ACTIVATION_TYPE_EXTERNAL : NM_ACTIVATION_TYPE_ASSUME,
-		                                 NM_ACTIVATION_REASON_AUTOCONNECT,
+		                                 generated ? NM_ACTIVATION_REASON_EXTERNAL : NM_ACTIVATION_REASON_ASSUME,
 		                                 &error);
 
 		if (!active) {
@@ -3186,19 +3226,83 @@ nm_manager_get_best_device_for_connection (NMManager *self,
                                            GHashTable *unavailable_devices)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMActiveConnectionState ac_state;
 	NMActiveConnection *ac;
-	NMDevice *act_device;
+	NMDevice *ac_device;
 	NMDevice *device;
 	NMDeviceCheckConAvailableFlags flags;
-
-	ac = active_connection_find_first_by_connection (self, connection);
-	if (ac) {
-		act_device = nm_active_connection_get_device (ac);
-		if (act_device)
-			return act_device;
-	}
+	gs_unref_ptrarray GPtrArray *all_ac_arr = NULL;
 
 	flags = for_user_request ? NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST : NM_DEVICE_CHECK_CON_AVAILABLE_NONE;
+
+	ac = active_connection_find_by_connection (self, connection, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING, &all_ac_arr);
+	if (ac) {
+
+		ac_device = nm_active_connection_get_device (ac);
+		if (   ac_device
+		    && (   (unavailable_devices && g_hash_table_contains (unavailable_devices, ac_device))
+		        || !nm_device_check_connection_available (ac_device, connection, flags, NULL)))
+			ac_device = NULL;
+
+		if (all_ac_arr) {
+			guint i;
+
+			ac_state = nm_active_connection_get_state (ac);
+
+			/* we found several active connections. See which one is the most suitable... */
+			nm_assert (ac == all_ac_arr->pdata[0]);
+			for (i = 1; i < all_ac_arr->len; i++) {
+				NMActiveConnection *ac2 = all_ac_arr->pdata[i];
+				NMDevice *ac_device2 = nm_active_connection_get_device (ac2);
+				NMActiveConnectionState ac_state2;
+
+				if (   !ac_device2
+				    || (unavailable_devices && g_hash_table_contains (unavailable_devices, ac_device2))
+				    || !nm_device_check_connection_available (ac_device2, connection, flags, NULL))
+					continue;
+
+				ac_state2 = nm_active_connection_get_state (ac2);
+
+				if (!ac_device)
+					goto found_better;
+
+				if (ac_state == ac_state2) {
+					/* active-connections are in their list in the order in which they are connected.
+					 * If we have two with same state, the later (newer) one is preferred. */
+					goto found_better;
+				}
+
+				switch (ac_state) {
+				case NM_ACTIVE_CONNECTION_STATE_UNKNOWN:
+					if (NM_IN_SET (ac_state2, NM_ACTIVE_CONNECTION_STATE_ACTIVATING, NM_ACTIVE_CONNECTION_STATE_ACTIVATED, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING))
+						goto found_better;
+					break;
+				case NM_ACTIVE_CONNECTION_STATE_ACTIVATING:
+					if (NM_IN_SET (ac_state2, NM_ACTIVE_CONNECTION_STATE_ACTIVATED))
+						goto found_better;
+					break;
+				case NM_ACTIVE_CONNECTION_STATE_ACTIVATED:
+					break;
+				case NM_ACTIVE_CONNECTION_STATE_DEACTIVATING:
+					if (NM_IN_SET (ac_state2, NM_ACTIVE_CONNECTION_STATE_ACTIVATING, NM_ACTIVE_CONNECTION_STATE_ACTIVATED))
+						goto found_better;
+					break;
+				default:
+					nm_assert_not_reached ();
+					goto found_better;
+				}
+
+				continue;
+found_better:
+				ac = ac2;
+				ac_state = ac_state2;
+				ac_device = ac_device2;
+			}
+		}
+
+		if (ac_device)
+			return ac_device;
+	}
 
 	/* Pick the first device that's compatible with the connection. */
 	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
@@ -3428,8 +3532,9 @@ find_master (NMManager *self,
 	if (out_master_device)
 		*out_master_device = master_device;
 	if (out_master_ac && master_connection) {
-		*out_master_ac = active_connection_find_first (self, master_connection, NULL,
-		                                               NM_ACTIVE_CONNECTION_STATE_DEACTIVATING);
+		*out_master_ac = active_connection_find (self, master_connection, NULL,
+		                                         NM_ACTIVE_CONNECTION_STATE_DEACTIVATING,
+		                                         NULL);
 	}
 
 	if (master_device || master_connection)
@@ -3913,8 +4018,7 @@ active_connection_parent_active (NMActiveConnection *active,
 static gboolean
 _internal_activate_device (NMManager *self, NMActiveConnection *active, GError **error)
 {
-	NMDevice *device, *existing, *master_device = NULL;
-	NMActiveConnection *existing_ac;
+	NMDevice *device, *master_device = NULL;
 	NMConnection *applied;
 	NMSettingsConnection *connection;
 	NMSettingsConnection *master_connection = NULL;
@@ -4078,12 +4182,23 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	/* Check slaves for master connection and possibly activate them */
 	autoconnect_slaves (self, connection, device, nm_active_connection_get_subject (active));
 
-	/* Disconnect the connection if connected or queued on another device */
-	existing_ac = active_connection_find_first (self, connection, NULL, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING);
-	if (existing_ac) {
-		existing = nm_active_connection_get_device (existing_ac);
-		if (existing)
-			nm_device_steal_connection (existing, connection);
+	{
+		gs_unref_ptrarray GPtrArray *all_ac_arr = NULL;
+		NMActiveConnection *ac;
+		guint i, n_all;
+
+		/* Disconnect the connection if already connected or queued for activation.
+		 * The connection cannot be active multiple times (at the same time).  */
+		ac = active_connection_find (self, connection, NULL, NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
+		                             &all_ac_arr);
+		if (ac) {
+			n_all = all_ac_arr ? all_ac_arr->len : ((guint) 1);
+			for (i = 0; i < n_all; i++) {
+				nm_device_disconnect_active_connection (  all_ac_arr
+				                                        ? all_ac_arr->pdata[i]
+				                                        : ac);
+			}
+		}
 	}
 
 	/* If the device is there, we can ready it for the activation. */
@@ -4175,7 +4290,7 @@ _new_active_connection (NMManager *self,
 		/* FIXME: for VPN connections, we don't allow re-activating an
 		 * already active connection. It's a bug, and should be fixed together
 		 * when reworking VPN handling. */
-		if (active_connection_find_first_by_connection (self, connection)) {
+		if (active_connection_find_by_connection (self, connection, NM_ACTIVE_CONNECTION_STATE_ACTIVATED, NULL)) {
 			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_ALREADY_ACTIVE,
 			             "Connection '%s' is already active",
 			             nm_connection_get_id (connection));
@@ -4251,14 +4366,14 @@ _internal_activation_auth_done (NMManager *self,
 	if (!success)
 		goto fail;
 
-	/* Don't continue with an internal activation if an equivalent active
-	 * connection already exists. Note that slave autoconnections always force a
-	 * reconnection.  We also check this earlier, but there we may fail to
-	 * detect a duplicate if the existing active connection is undergoing
-	 * authorization in impl_manager_activate_connection().
+	/* Don't continue with an autoconnect-activation if a more important activation
+	 * already exists.
+	 * We also check this earlier, but there we may fail to detect a duplicate
+	 * if the existing active connection was undergoing authorization.
 	 */
-	if (   nm_auth_subject_is_internal (nm_active_connection_get_subject (active))
-	    && nm_active_connection_get_activation_reason (active) != NM_ACTIVATION_REASON_AUTOCONNECT_SLAVES) {
+	if (NM_IN_SET (nm_active_connection_get_activation_reason (active), NM_ACTIVATION_REASON_EXTERNAL,
+	                                                                    NM_ACTIVATION_REASON_ASSUME,
+	                                                                    NM_ACTIVATION_REASON_AUTOCONNECT)) {
 		c_list_for_each_entry (ac, &priv->active_connections_lst_head, active_connections_lst) {
 			if (   nm_active_connection_get_device (ac) == nm_active_connection_get_device (active)
 			    && nm_active_connection_get_settings_connection (ac) == nm_active_connection_get_settings_connection (active)

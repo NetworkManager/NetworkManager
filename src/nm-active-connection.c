@@ -55,7 +55,12 @@ typedef struct _NMActiveConnectionPrivate {
 	bool master_ready:1;
 
 	NMActivationType activation_type:3;
-	NMActivationReason activation_reason:3;
+
+	/* capture the original reason why the connection was activated.
+	 * For example with NM_ACTIVATION_REASON_ASSUME, the connection
+	 * will later change to become fully managed. But the original
+	 * reason never changes. */
+	NMActivationReason activation_reason:4;
 
 	NMAuthSubject *subject;
 	NMActiveConnection *master;
@@ -1422,6 +1427,7 @@ constructed (GObject *object)
 	}
 
 	g_return_if_fail (priv->subject);
+	g_return_if_fail (priv->activation_reason != NM_ACTIVATION_REASON_UNSET);
 }
 
 static void
