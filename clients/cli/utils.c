@@ -654,16 +654,24 @@ nmc_free_output_field_values (NmcOutputField fields_array[])
 
 #define PRINT_DATA_COL_PARENT_NIL (G_MAXUINT)
 
-typedef struct {
+typedef struct _PrintDataCol {
+	union {
+		const struct _PrintDataCol *parent_col;
+
+		/* while constructing the list of columns in _output_selection_append(), we keep track
+		 * of the parent by index. The reason is, that at that point our columns are still
+		 * tracked in a GArray which is growing (hence, the pointers are changing).
+		 * Later, _output_selection_complete() converts the index into the actual pointer.
+		 */
+		guint _parent_idx;
+	};
 	const NMMetaSelectionItem *selection_item;
-	guint parent_idx;
 	guint self_idx;
 	bool is_leaf;
 } PrintDataCol;
 
 static gboolean
 _output_selection_append (GArray *cols,
-                          const char *fields_prefix,
                           guint parent_idx,
                           const NMMetaSelectionItem *selection_item,
                           GPtrArray *gfree_keeper,
@@ -681,7 +689,7 @@ _output_selection_append (GArray *cols,
 	{
 		PrintDataCol col = {
 			.selection_item = selection_item,
-			.parent_idx = parent_idx,
+			._parent_idx = parent_idx,
 			.self_idx = col_idx,
 			.is_leaf = TRUE,
 		};
@@ -727,8 +735,11 @@ _output_selection_append (GArray *cols,
 
 		for (i = 0; i < selection->num; i++) {
 			si = &selection->items[i];
-			if (!_output_selection_append (cols, si->self_selection, col_idx,
-			                               si, gfree_keeper, error))
+			if (!_output_selection_append (cols,
+			                               col_idx,
+			                               si,
+			                               gfree_keeper,
+			                               error))
 				return FALSE;
 		}
 
@@ -739,6 +750,26 @@ _output_selection_append (GArray *cols,
 	}
 
 	return TRUE;
+}
+
+static void
+_output_selection_complete (GArray *cols)
+{
+	guint i;
+
+	nm_assert (cols);
+	nm_assert (g_array_get_element_size (cols) == sizeof (PrintDataCol));
+
+	for (i = 0; i < cols->len; i++) {
+		PrintDataCol *col = &g_array_index (cols, PrintDataCol, i);
+
+		if (col->_parent_idx == PRINT_DATA_COL_PARENT_NIL)
+			col->parent_col = NULL;
+		else {
+			nm_assert (col->_parent_idx < i);
+			col->parent_col = &g_array_index (cols, PrintDataCol, col->_parent_idx);
+		}
+	}
 }
 
 /*****************************************************************************/
@@ -789,10 +820,12 @@ _output_selection_parse (const NMMetaAbstractInfo *const*fields,
 	for (i = 0; i < selection->num; i++) {
 		const NMMetaSelectionItem *si = &selection->items[i];
 
-		if (!_output_selection_append (cols, NULL, PRINT_DATA_COL_PARENT_NIL,
+		if (!_output_selection_append (cols, PRINT_DATA_COL_PARENT_NIL,
 		                               si, gfree_keeper, error))
 			return FALSE;
 	}
+
+	_output_selection_complete (cols);
 
 	*out_cols = g_steal_pointer (&cols);
 	*out_gfree_keeper = g_steal_pointer (&gfree_keeper);
@@ -1006,12 +1039,12 @@ _print_fill (const NmcConfig *nmc_config,
 
 		header_cell->title = nm_meta_abstract_info_get_name (info, TRUE);
 		if (   nmc_config->multiline_output
-		    && col->parent_idx != PRINT_DATA_COL_PARENT_NIL
+		    && col->parent_col
 		    && NM_IN_SET (info->meta_type,
 		                  &nm_meta_type_property_info,
 		                  &nmc_meta_type_generic_info)) {
 			header_cell->title = g_strdup_printf ("%s.%s",
-			                                      nm_meta_abstract_info_get_name (cols[col->parent_idx].selection_item->info, FALSE),
+			                                      nm_meta_abstract_info_get_name (col->parent_col->selection_item->info, FALSE),
 			                                      header_cell->title);
 			header_cell->title_to_free = TRUE;
 		}
