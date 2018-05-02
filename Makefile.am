@@ -3623,6 +3623,8 @@ clients_tui_newt_libnmt_newt_a_CPPFLAGS = \
 	$(SANITIZER_EXEC_CFLAGS) \
 	$(NULL)
 
+$(clients_tui_newt_libnmt_newt_a_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
 bin_PROGRAMS += clients/tui/nmtui
 
 clients_tui_nmtui_SOURCES = \
