@@ -1093,7 +1093,7 @@ _print_fill (const NmcConfig *nmc_config,
 			                                                          NULL));
 
 			if (cell->text_format == PRINT_DATA_CELL_FORMAT_TYPE_PLAIN) {
-				if (   nmc_config->print_output != NMC_PRINT_TERSE
+				if (   NM_IN_SET (nmc_config->print_output, NMC_PRINT_NORMAL, NMC_PRINT_PRETTY)
 				    && (   !cell->text.plain
 				        || !cell->text.plain[0])) {
 					_print_data_cell_clear_text (cell);
@@ -1219,7 +1219,7 @@ _print_do (const NmcConfig *nmc_config,
 	      : NULL;
 
 	/* print the header for the tabular form */
-	if (   nmc_config->print_output != NMC_PRINT_TERSE
+	if (   NM_IN_SET (nmc_config->print_output, NMC_PRINT_NORMAL, NMC_PRINT_PRETTY)
 	    && !multiline) {
 		for (i_col = 0; i_col < col_len; i_col++) {
 			const PrintDataHeaderCell *header_cell = &header_row[i_col];
