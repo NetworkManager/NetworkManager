@@ -1465,7 +1465,9 @@ show_device_info (NMDevice *device, NmCli *nmc)
 		int section_idx = g_array_index (sections_array, int, k);
 		char *section_fld = (char *) g_ptr_array_index (fields_in_section, k);
 
-		if (nmc->nmc_config.print_output != NMC_PRINT_TERSE && !nmc->nmc_config.multiline_output && was_output)
+		if (   NM_IN_SET (nmc->nmc_config.print_output, NMC_PRINT_NORMAL, NMC_PRINT_PRETTY)
+		    && !nmc->nmc_config.multiline_output
+		    && was_output)
 			g_print ("\n"); /* Print empty line between groups in tabular mode */
 
 		was_output = FALSE;

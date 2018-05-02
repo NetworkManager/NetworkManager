@@ -1283,7 +1283,9 @@ nmc_connection_profile_details (NMConnection *connection, NmCli *nmc)
 		int section_idx = g_array_index (print_settings_array, int, i);
 		const char *prop_name = (const char *) g_ptr_array_index (prop_array, i);
 
-		if (nmc->nmc_config.print_output != NMC_PRINT_TERSE && !nmc->nmc_config.multiline_output && was_output)
+		if (   NM_IN_SET (nmc->nmc_config.print_output, NMC_PRINT_NORMAL, NMC_PRINT_PRETTY)
+		    && !nmc->nmc_config.multiline_output
+		    && was_output)
 			g_print ("\n"); /* Empty line */
 
 		was_output = FALSE;
@@ -1365,7 +1367,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		int group_idx = g_array_index (print_groups, int, i);
 		char *group_fld = (char *) g_ptr_array_index (group_fields, i);
 
-		if (   nmc->nmc_config.print_output != NMC_PRINT_TERSE
+		if (   NM_IN_SET (nmc->nmc_config.print_output, NMC_PRINT_NORMAL, NMC_PRINT_PRETTY)
 		    && !nmc->nmc_config.multiline_output
 		    && was_output)
 			g_print ("\n");
