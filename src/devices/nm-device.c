@@ -7751,6 +7751,37 @@ generate_duid_uuid (guint8 *data, gsize data_len)
 }
 
 static GBytes *
+generate_duid_from_machine_id (void)
+{
+	gs_free const char *machine_id_s = NULL;
+	uuid_t uuid;
+	GChecksum *sum;
+	guint8 sha256_digest[32];
+	gsize len = sizeof (sha256_digest);
+	static GBytes *global_duid = NULL;
+
+	if (global_duid)
+		return g_bytes_ref (global_duid);
+
+	machine_id_s = nm_utils_machine_id_read ();
+	if (nm_utils_machine_id_parse (machine_id_s, uuid)) {
+		/* Hash the machine ID so it's not leaked to the network */
+		sum = g_checksum_new (G_CHECKSUM_SHA256);
+		g_checksum_update (sum, (const guchar *) &uuid, sizeof (uuid));
+		g_checksum_get_digest (sum, sha256_digest, &len);
+		g_checksum_free (sum);
+	} else {
+		nm_log_warn (LOGD_IP6, "global duid: failed to read " SYSCONFDIR "/machine-id "
+		             "or " LOCALSTATEDIR "/lib/dbus/machine-id to generate "
+		             "DHCPv6 DUID; creating non-persistent random DUID.");
+		nm_utils_random_bytes (sha256_digest, len);
+	}
+
+	global_duid = generate_duid_uuid (sha256_digest, len);
+	return g_bytes_ref (global_duid);
+}
+
+static GBytes *
 dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, NMDhcpDuidEnforce *out_enforce)
 {
 	NMSettingIPConfig *s_ip6;
@@ -7760,8 +7791,8 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, NMDhcp
 	GBytes *duid_out = NULL;
 	guint8 sha256_digest[32];
 	gsize len = sizeof (sha256_digest);
+	NMDhcpDuidEnforce duid_enforce = NM_DHCP_DUID_ENFORCE_NEVER;
 
-	NM_SET_OUT (out_enforce, NM_DHCP_DUID_ENFORCE_NEVER);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	duid = nm_setting_ip6_config_get_dhcp_duid (NM_SETTING_IP6_CONFIG (s_ip6));
@@ -7772,14 +7803,18 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, NMDhcp
 		duid = duid_default;
 	}
 
-	if (!duid || nm_streq (duid, "lease"))
-		return NULL;
+	if (!duid || nm_streq (duid, "lease")) {
+		duid_out = generate_duid_from_machine_id ();
+		goto end;
+	}
 
-	if (!_nm_utils_dhcp_duid_valid (duid, &duid_out))
-		return NULL;
+	if (!_nm_utils_dhcp_duid_valid (duid, &duid_out)) {
+		duid_error = "invalid duid";
+		goto end;
+	}
 
 	if (duid_out)
-		return duid_out;
+		goto end;
 
 	if (NM_IN_STRSET (duid, "ll", "llt")) {
 		if (!hwaddr) {
@@ -7819,7 +7854,7 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, NMDhcp
 		g_checksum_free (sum);
 	}
 
-	NM_SET_OUT (out_enforce, NM_DHCP_DUID_ENFORCE_ALWAYS);
+	duid_enforce = NM_DHCP_DUID_ENFORCE_ALWAYS;
 
 #define EPOCH_DATETIME_THREE_YEARS  (356 * 24 * 3600 * 3)
 	if (nm_streq0 (duid, "ll")) {
@@ -7861,12 +7896,24 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, NMDhcp
 		duid_out = generate_duid_uuid (sha256_digest, len);
 	}
 
+	duid_error = "generation failed";
 end:
 	if (!duid_out) {
-		if (!duid_error)
-			duid_error = "generation failed";
-		_LOGD (LOGD_IP6, "duid-gen (%s): %s. Fallback to 'lease'.", duid, duid_error);
+		guint8 uuid[16];
+
+		if (duid_error)
+			_LOGW (LOGD_IP6, "duid-gen (%s): %s. Fallback to random DUID-UUID.", duid, duid_error);
+
+		nm_utils_random_bytes (uuid, sizeof (uuid));
+		duid_out = generate_duid_uuid (uuid, sizeof (uuid));
 	}
+
+	_LOGD (LOGD_IP6, "DUID gen: '%s' (%s)",
+	                 nm_dhcp_utils_duid_to_string (duid_out),
+	                 (duid_enforce == NM_DHCP_DUID_ENFORCE_ALWAYS) ? "enforcing" : "fallback");
+
+	NM_SET_OUT (out_enforce, duid_enforce);
+
 	return duid_out;
 }
 

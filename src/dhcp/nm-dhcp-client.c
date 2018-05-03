@@ -513,65 +513,9 @@ nm_dhcp_client_start_ip4 (NMDhcpClient *self,
 }
 
 static GBytes *
-generate_duid_from_machine_id (void)
-{
-	const int DUID_SIZE = 18;
-	guint8 *duid_buffer;
-	GChecksum *sum;
-	guint8 buffer[32]; /* SHA256 digest size */
-	gsize sumlen = sizeof (buffer);
-	const guint16 duid_type = g_htons (4);
-	uuid_t uuid;
-	gs_free char *machine_id_s = NULL;
-	gs_free char *str = NULL;
-	GBytes *duid;
-
-	machine_id_s = nm_utils_machine_id_read ();
-	if (nm_utils_machine_id_parse (machine_id_s, uuid)) {
-		/* Hash the machine ID so it's not leaked to the network */
-		sum = g_checksum_new (G_CHECKSUM_SHA256);
-		g_checksum_update (sum, (const guchar *) &uuid, sizeof (uuid));
-		g_checksum_get_digest (sum, buffer, &sumlen);
-		g_checksum_free (sum);
-	} else {
-		nm_log_warn (LOGD_DHCP, "dhcp: failed to read " SYSCONFDIR "/machine-id "
-		             "or " LOCALSTATEDIR "/lib/dbus/machine-id to generate "
-		             "DHCPv6 DUID; creating non-persistent random DUID.");
-
-		nm_utils_random_bytes (buffer, sizeof (buffer));
-	}
-
-	/* Generate a DHCP Unique Identifier for DHCPv6 using the
-	 * DUID-UUID method (see RFC 6355 section 4).  Format is:
-	 *
-	 * u16: type (DUID-UUID = 4)
-	 * u8[16]: UUID bytes
-	 */
-	duid_buffer = g_malloc (DUID_SIZE);
-
-	G_STATIC_ASSERT_EXPR (sizeof (duid_type) == 2);
-	memcpy (&duid_buffer[0], &duid_type, 2);
-
-	/* Since SHA256 is 256 bits, but UUID is 128 bits, we just take the first
-	 * 128 bits of the SHA256 as the DUID-UUID.
-	 */
-	memcpy (&duid_buffer[2], buffer, 16);
-
-	duid = g_bytes_new_take (duid_buffer, DUID_SIZE);
-	nm_log_dbg (LOGD_DHCP, "dhcp: generated DUID %s",
-	            (str = nm_dhcp_utils_duid_to_string (duid)));
-	return duid;
-}
-
-static GBytes *
 get_duid (NMDhcpClient *self)
 {
-	static GBytes *duid = NULL;
-
-	if (G_UNLIKELY (!duid))
-		duid = generate_duid_from_machine_id ();
-
-	return g_bytes_ref (duid);
+	return NULL;
 }
 
 gboolean
@@ -595,6 +539,7 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 	g_return_val_if_fail (priv->uuid != NULL, FALSE);
 
 	nm_assert (!priv->duid);
+	nm_assert (client_id);
 
 	switch (enforce_duid) {
 	case NM_DHCP_DUID_ENFORCE_NEVER:
@@ -604,11 +549,8 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 			break;
 		/* fall through */
 	case NM_DHCP_DUID_ENFORCE_ALWAYS:
-		if (client_id) {
-			priv->duid = g_bytes_ref (client_id);
-			break;
-		}
-		/* fall through */
+		priv->duid = g_bytes_ref (client_id);
+		break;
 	default:
 		nm_assert_not_reached ();
 	}

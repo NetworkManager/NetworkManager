@@ -619,8 +619,7 @@ get_duid (NMDhcpClient *client)
 		}
 	}
 
-	/* return our DUID, otherwise let the parent class make a default DUID */
-	return duid ?: NM_DHCP_CLIENT_CLASS (nm_dhcp_dhclient_parent_class)->get_duid (client);
+	return duid;
 }
 
 /*****************************************************************************/
