@@ -252,6 +252,7 @@ test-*.trs
 /src/dhcp/tests/test-dhcp-options
 /src/dhcp/tests/test-dhcp-utils
 /src/dnsmasq/tests/test-dnsmasq-utils
+/src/initrd/tests/test-ibft-reader
 /src/nm-iface-helper
 /src/ndisc/tests/test-ndisc-fake
 /src/ndisc/tests/test-ndisc-linux
