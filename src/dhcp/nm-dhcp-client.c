@@ -513,7 +513,7 @@ nm_dhcp_client_start_ip4 (NMDhcpClient *self,
 }
 
 static GBytes *
-get_duid (NMDhcpClient *self)
+get_duid (NMDhcpClient *self, gboolean global)
 {
 	return NULL;
 }
@@ -541,19 +541,14 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 	nm_assert (!priv->duid);
 	nm_assert (client_id);
 
-	switch (enforce_duid) {
-	case NM_DHCP_DUID_ENFORCE_NEVER:
-	case NM_DHCP_DUID_ENFORCE_LEASE_FALLBACK:
-		priv->duid = NM_DHCP_CLIENT_GET_CLASS (self)->get_duid (self);
-		if (priv->duid)
-			break;
-		/* fall through */
-	case NM_DHCP_DUID_ENFORCE_ALWAYS:
+	if (enforce_duid == NM_DHCP_DUID_ENFORCE_NEVER)
+		priv->duid = NM_DHCP_CLIENT_GET_CLASS (self)->get_duid (self, TRUE);
+	else if (enforce_duid == NM_DHCP_DUID_ENFORCE_LEASE_FALLBACK)
+		priv->duid = NM_DHCP_CLIENT_GET_CLASS (self)->get_duid (self, FALSE);
+
+	/* NM_DHCP_DUID_ENFORCE_ALWAYS and fallback */
+	if (!priv->duid)
 		priv->duid = g_bytes_ref (client_id);
-		break;
-	default:
-		nm_assert_not_reached ();
-	}
 
 	_LOGD ("DUID is '%s'", (str = nm_dhcp_utils_duid_to_string (priv->duid)));
 
