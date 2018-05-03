@@ -62,7 +62,6 @@ _meta_type_nmc_generic_info_get_nested (const NMMetaAbstractInfo *abstract_info,
 
 	info = (const NmcMetaGenericInfo *) abstract_info;
 
-	*out_to_free = NULL;
 	NM_SET_OUT (out_len, NM_PTRARRAY_LEN (info->nested));
 	return (const NMMetaAbstractInfo *const*) info->nested;
 }

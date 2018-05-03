@@ -213,7 +213,8 @@ nm_meta_abstract_info_get_nested (const NMMetaAbstractInfo *abstract_info,
 
 	if (abstract_info->meta_type->get_nested) {
 		nested = abstract_info->meta_type->get_nested (abstract_info, &l, &f);
-		nm_assert ((nested ? g_strv_length ((char **) nested) : 0) == l);
+		nm_assert (NM_PTRARRAY_LEN (nested) == l);
+		nm_assert (!f || nested == f);
 		if (nested && nested[0]) {
 			NM_SET_OUT (out_len, l);
 			*nested_to_free = g_steal_pointer (&f);
