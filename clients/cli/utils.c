@@ -1217,7 +1217,6 @@ _print_do (const NmcConfig *nmc_config,
 {
 	int width1, width2;
 	int table_width = 0;
-	gboolean multiline = nmc_config->multiline_output;
 	guint i_row, i_col;
 	nm_auto_free_gstring GString *str = NULL;
 
@@ -1232,7 +1231,7 @@ _print_do (const NmcConfig *nmc_config,
 
 		header_width = nmc_string_screen_width (header_name, NULL) + 4;
 
-		if (multiline) {
+		if (nmc_config->multiline_output) {
 			table_width = NM_MAX (header_width, ML_HEADER_WIDTH);
 			line = g_strnfill (ML_HEADER_WIDTH, '=');
 		} else { /* tabular */
@@ -1247,13 +1246,13 @@ _print_do (const NmcConfig *nmc_config,
 		g_print ("%s\n", line);
 	}
 
-	str = !multiline
+	str = !nmc_config->multiline_output
 	      ? g_string_sized_new (100)
 	      : NULL;
 
 	/* print the header for the tabular form */
 	if (   NM_IN_SET (nmc_config->print_output, NMC_PRINT_NORMAL, NMC_PRINT_PRETTY)
-	    && !multiline) {
+	    && !nmc_config->multiline_output) {
 		for (i_col = 0; i_col < col_len; i_col++) {
 			const PrintDataHeaderCell *header_cell = &header_row[i_col];
 			const char *title;
@@ -1301,7 +1300,7 @@ _print_do (const NmcConfig *nmc_config,
 				lines_len = 1;
 				break;
 			case PRINT_DATA_CELL_FORMAT_TYPE_STRV:
-				nm_assert (multiline);
+				nm_assert (nmc_config->multiline_output);
 				lines = cell->text.strv;
 				lines_len = NM_PTRARRAY_LEN (lines);
 				break;
@@ -1312,7 +1311,7 @@ _print_do (const NmcConfig *nmc_config,
 				const char *text;
 
 				text = colorize_string (nmc_config, cell->color, lines[i_lines], &text_to_free);
-				if (multiline) {
+				if (nmc_config->multiline_output) {
 					gs_free char *prefix = NULL;
 
 					if (cell->text_format == PRINT_DATA_CELL_FORMAT_TYPE_STRV)
@@ -1355,7 +1354,7 @@ _print_do (const NmcConfig *nmc_config,
 			}
 		}
 
-		if (!multiline) {
+		if (!nmc_config->multiline_output) {
 			if (str->len)
 				g_string_truncate (str, str->len-1);  /* Chop off last column separator */
 			g_print ("%s\n", str->str);
@@ -1364,7 +1363,7 @@ _print_do (const NmcConfig *nmc_config,
 		}
 
 		if (   nmc_config->print_output == NMC_PRINT_PRETTY
-		    && multiline) {
+		    && nmc_config->multiline_output) {
 			gs_free char *line = NULL;
 
 			g_print ("%s\n", (line = g_strnfill (ML_HEADER_WIDTH, '-')));
