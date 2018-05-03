@@ -32,37 +32,37 @@
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 
-#include "settings/plugins/ibft/nms-ibft-reader.h"
+#include "../nmi-ibft-reader.h"
 
 #include "nm-test-utils-core.h"
 
 static GPtrArray *
 read_block (const char *iscsiadm_path, const char *expected_mac)
 {
-	GSList *blocks = NULL, *iter;
+	GHashTable *blocks = NULL;
+	GHashTableIter iter;
 	GPtrArray *block = NULL;
 	GError *error = NULL;
-	gboolean success;
 
-	success = nms_ibft_reader_load_blocks (iscsiadm_path, &blocks, &error);
+	blocks = nmi_ibft_reader_load_blocks (iscsiadm_path, &error);
 	g_assert_no_error (error);
-	g_assert (success);
 	g_assert (blocks);
 
-	for (iter = blocks; iter; iter = iter->next) {
+	g_hash_table_iter_init (&iter, blocks);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &block)) {
 		const char *s_hwaddr = NULL;
 
-		if (!nms_ibft_reader_parse_block (iter->data, NULL, "iface.hwaddress", &s_hwaddr, NULL))
+		if (!nmi_ibft_reader_parse_block (block, NULL, "iface.hwaddress", &s_hwaddr, NULL))
 			continue;
 		g_assert (s_hwaddr);
 		if (nm_utils_hwaddr_matches (s_hwaddr, -1, expected_mac, -1)) {
-			block = g_ptr_array_ref (iter->data);
+			g_ptr_array_ref (block);
 			break;
 		}
 	}
 	g_assert (block);
 
-	g_slist_free_full (blocks, (GDestroyNotify) g_ptr_array_unref);
+	g_hash_table_destroy (blocks);
 	return block;
 }
 
@@ -80,7 +80,7 @@ test_read_ibft_dhcp (void)
 
 	block = read_block (TEST_IBFT_DIR "/iscsiadm-test-dhcp", expected_mac_address);
 
-	connection = nms_ibft_reader_get_connection_from_block (block, &error);
+	connection = nmi_ibft_reader_get_connection_from_block (block, &error);
 	g_assert_no_error (error);
 	nmtst_assert_connection_verifies_without_normalization (connection);
 
@@ -127,7 +127,7 @@ test_read_ibft_static (void)
 
 	block = read_block (TEST_IBFT_DIR "/iscsiadm-test-static", expected_mac_address);
 
-	connection = nms_ibft_reader_get_connection_from_block (block, &error);
+	connection = nmi_ibft_reader_get_connection_from_block (block, &error);
 	g_assert_no_error (error);
 	nmtst_assert_connection_verifies_without_normalization (connection);
 
@@ -175,19 +175,19 @@ static void
 test_read_ibft_malformed (gconstpointer user_data)
 {
 	const char *iscsiadm_path = user_data;
-	GSList *blocks = NULL;
+	GHashTable *blocks = NULL;
 	GError *error = NULL;
-	gboolean success;
 
 	g_assert (g_file_test (iscsiadm_path, G_FILE_TEST_EXISTS));
 
 	NMTST_EXPECT_NM_WARN ("*malformed iscsiadm record*");
 
-	success = nms_ibft_reader_load_blocks (iscsiadm_path, &blocks, &error);
+	blocks = nmi_ibft_reader_load_blocks (iscsiadm_path, &error);
 	g_assert_no_error (error);
-	g_assert (success);
-	g_assert (blocks == NULL);
+	g_assert (blocks);
+	g_assert (g_hash_table_size (blocks) == 0);
 
+	g_hash_table_destroy (blocks);
 	g_test_assert_expected_messages ();
 }
 
@@ -204,7 +204,7 @@ test_read_ibft_bad_address (gconstpointer user_data)
 
 	block = read_block (iscsiadm_path, expected_mac_address);
 
-	connection = nms_ibft_reader_get_connection_from_block (block, &error);
+	connection = nmi_ibft_reader_get_connection_from_block (block, &error);
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 	g_assert (strstr (error->message, "iBFT: malformed iscsiadm record: invalid"));
 	g_clear_error (&error);
@@ -229,7 +229,7 @@ test_read_ibft_vlan (void)
 
 	block = read_block (TEST_IBFT_DIR "/iscsiadm-test-vlan", expected_mac_address);
 
-	connection = nms_ibft_reader_get_connection_from_block (block, &error);
+	connection = nmi_ibft_reader_get_connection_from_block (block, &error);
 	g_assert_no_error (error);
 	nmtst_assert_connection_verifies_without_normalization (connection);
 

@@ -23,12 +23,12 @@
 
 #include "nm-connection.h"
 
-gboolean nms_ibft_reader_load_blocks (const char *iscsiadm_path,
-                                      GSList **out_blocks,
-                                      GError **error);
+GHashTable *nmi_ibft_reader_load_blocks (const char *iscsiadm_path, GError **error);
 
-NMConnection *nms_ibft_reader_get_connection_from_block (const GPtrArray *block, GError **error);
+NMConnection *nmi_ibft_reader_get_connection_from_block (const GPtrArray *block, GError **error);
 
-gboolean nms_ibft_reader_parse_block (const GPtrArray *block, GError **error, ...) G_GNUC_NULL_TERMINATED;
+gboolean nmi_ibft_reader_parse_block (const GPtrArray *block, GError **error, ...) G_GNUC_NULL_TERMINATED;
+
+gboolean nmi_ibft_reader_update_connection_from_block (NMConnection *connection, const GPtrArray *block, GError **error);
 
 #endif  /* __NMS_IBFT_READER_H__ */

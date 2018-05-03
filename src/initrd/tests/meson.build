@@ -12,7 +12,7 @@ exe = executable(
   test_unit + '.c',
   dependencies: test_nm_dep,
   c_args: cflags,
-  link_with: libnms_ibft_core
+  link_with: libnmi_ibft_core
 )
 
 test(

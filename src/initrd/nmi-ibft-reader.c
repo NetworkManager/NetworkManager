@@ -20,7 +20,7 @@
 
 #include "nm-default.h"
 
-#include "nms-ibft-reader.h"
+#include "nmi-ibft-reader.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -73,38 +73,57 @@ remove_most_whitespace (const char *src)
 	return s_new;
 }
 
+#define ISCSI_HWADDR_TAG     "iface.hwaddress"
+#define ISCSI_BOOTPROTO_TAG  "iface.bootproto"
+#define ISCSI_IPADDR_TAG     "iface.ipaddress"
+#define ISCSI_SUBNET_TAG     "iface.subnet_mask"
+#define ISCSI_GATEWAY_TAG    "iface.gateway"
+#define ISCSI_DNS1_TAG       "iface.primary_dns"
+#define ISCSI_DNS2_TAG       "iface.secondary_dns"
+#define ISCSI_VLAN_ID_TAG    "iface.vlan_id"
+#define ISCSI_IFACE_TAG      "iface.net_ifacename"
+
+static const char *
+match_iscsiadm_tag (const char *line, const char *tag)
+{
+	gsize taglen = strlen (tag);
+
+	if (g_ascii_strncasecmp (line, tag, taglen) != 0)
+		return NULL;
+	if (line[taglen] != '=')
+		return NULL;
+	return line + taglen + 1;
+}
+
 #define TAG_BEGIN "# BEGIN RECORD"
 #define TAG_END   "# END RECORD"
 
 /**
- * nms_ibft_reader_load_blocks:
+ * nmi_ibft_reader_load_blocks:
  * @iscsiadm_path: path to iscsiadm program
- * @out_blocks: on return if successful, a #GSList of #GPtrArray, or %NULL on
- * failure
  * @error: location for an error on failure
  *
- * Parses iscsiadm output and returns a #GSList of #GPtrArray in the @out_blocks
- * argument on success, otherwise @out_blocks is set to %NULL.  Each #GPtrArray
- * in @out_blocks contains the lines from an iscsiadm interface block.
+ * Parses iscsiadm output and returns a #GHashTable of if char *iface -> #GPtrArray
+ * in the @out_blocks * argument on success, otherwise @out_blocks is set to %NULL.
+ * Each #GPtrArray in @out_blocks contains the lines from an iscsiadm interface block.
  *
- * Returns: %TRUE on success, %FALSE on errors
+ * Returns: a #GHashTable of char *iface -> #GPtrArray if successful,
+ *   or %NULL on failure
  */
-gboolean
-nms_ibft_reader_load_blocks (const char *iscsiadm_path,
-                             GSList **out_blocks,
-                             GError **error)
+GHashTable *
+nmi_ibft_reader_load_blocks (const char *iscsiadm_path, GError **error)
 {
 	const char *argv[4] = { iscsiadm_path, "-m", "fw", NULL };
 	const char *envp[1] = { NULL };
-	GSList *blocks = NULL;
+	GHashTable *blocks = NULL;
 	char *out = NULL, *err = NULL;
 	gint status = 0;
 	char **lines = NULL, **iter;
 	GPtrArray *block_lines = NULL;
+	const char *block_iface;
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (iscsiadm_path != NULL, FALSE);
-	g_return_val_if_fail (out_blocks != NULL && *out_blocks == NULL, FALSE);
 
 	if (!g_spawn_sync ("/", (char **) argv, (char **) envp, 0,
 	                   NULL, NULL, &out, &err, &status, error))
@@ -132,6 +151,8 @@ nms_ibft_reader_load_blocks (const char *iscsiadm_path,
 		goto done;
 	}
 
+	blocks = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL,
+	                                (GDestroyNotify) g_ptr_array_unref);
 	nm_log_dbg (LOGD_SETTINGS, "iBFT records:\n%s", out);
 
 	lines = g_strsplit_set (out, "\n\r", -1);
@@ -145,11 +166,14 @@ nms_ibft_reader_load_blocks (const char *iscsiadm_path,
 				g_ptr_array_unref (block_lines);
 			}
 			/* Start new record */
+			block_iface = NULL;
 			block_lines = g_ptr_array_new_full (15, g_free);
 		} else if (!g_ascii_strncasecmp (*iter, TAG_END, NM_STRLEN (TAG_END))) {
 			if (block_lines) {
-				if (block_lines->len)
-					blocks = g_slist_prepend (blocks, block_lines);
+				if (block_iface && block_lines->len)
+					g_hash_table_insert (blocks, (gpointer)block_iface, block_lines);
+				else if (block_lines->len)
+					g_printerr ("iBFT: malformed iscsiadm record: missing " ISCSI_IFACE_TAG);
 				else
 					g_ptr_array_unref (block_lines);
 				block_lines = NULL;
@@ -157,9 +181,10 @@ nms_ibft_reader_load_blocks (const char *iscsiadm_path,
 		} else if (block_lines) {
 			char *s = remove_most_whitespace (*iter);
 
-			if (s)
+			if (s) {
 				g_ptr_array_add (block_lines, s);
-			else {
+				block_iface = block_iface ?: match_iscsiadm_tag (s, ISCSI_IFACE_TAG);
+			} else {
 				PARSE_WARNING ("malformed iscsiadm record: no = in '%s'.", *iter);
 				g_clear_pointer (&block_lines, g_ptr_array_unref);
 			}
@@ -177,37 +202,15 @@ done:
 		g_strfreev (lines);
 	g_free (out);
 	g_free (err);
-	if (success)
-		*out_blocks = blocks;
-	else
-		g_slist_free_full (blocks, (GDestroyNotify) g_ptr_array_unref);
-	return success;
-}
 
-#define ISCSI_HWADDR_TAG     "iface.hwaddress"
-#define ISCSI_BOOTPROTO_TAG  "iface.bootproto"
-#define ISCSI_IPADDR_TAG     "iface.ipaddress"
-#define ISCSI_SUBNET_TAG     "iface.subnet_mask"
-#define ISCSI_GATEWAY_TAG    "iface.gateway"
-#define ISCSI_DNS1_TAG       "iface.primary_dns"
-#define ISCSI_DNS2_TAG       "iface.secondary_dns"
-#define ISCSI_VLAN_ID_TAG    "iface.vlan_id"
-#define ISCSI_IFACE_TAG      "iface.net_ifacename"
+	if (!success)
+		g_clear_pointer (&blocks, g_hash_table_destroy);
 
-static const char *
-match_iscsiadm_tag (const char *line, const char *tag)
-{
-	gsize taglen = strlen (tag);
-
-	if (g_ascii_strncasecmp (line, tag, taglen) != 0)
-		return NULL;
-	if (line[taglen] != '=')
-		return NULL;
-	return line + taglen + 1;
+	return blocks;
 }
 
 /**
- * nms_ibft_reader_parse_block:
+ * nmi_ibft_reader_parse_block:
  * @block: an array of iscsiadm interface block lines
  * @error: return location for errors
  * @...: pairs of key (const char *) : location (const char **) indicating the
@@ -220,7 +223,7 @@ match_iscsiadm_tag (const char *line, const char *tag)
  * Returns: %TRUE if at least , %FALSE on failure
  */
 gboolean
-nms_ibft_reader_parse_block (const GPtrArray *block, GError **error, ...)
+nmi_ibft_reader_parse_block (const GPtrArray *block, GError **error, ...)
 {
 	gboolean success = FALSE;
 	const char **out_value, *p;
@@ -272,7 +275,7 @@ ip4_setting_add_from_block (const GPtrArray *block,
 
 	g_assert (block);
 
-	if (!nms_ibft_reader_parse_block (block, error,
+	if (!nmi_ibft_reader_parse_block (block, error,
 	                                  ISCSI_BOOTPROTO_TAG, &s_method,
 	                                  ISCSI_IPADDR_TAG,    &s_ipaddr,
 	                                  ISCSI_SUBNET_TAG,    &s_netmask,
@@ -280,24 +283,28 @@ ip4_setting_add_from_block (const GPtrArray *block,
 	                                  ISCSI_DNS1_TAG,      &s_dns1,
 	                                  ISCSI_DNS2_TAG,      &s_dns2,
 	                                  NULL))
-		goto error;
+		return FALSE;
 
 	if (!s_method) {
 		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		                     "iBFT: malformed iscsiadm record: missing " ISCSI_BOOTPROTO_TAG);
-		goto error;
+		return FALSE;
 	}
 
-	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	if (!s_ip4) {
+		s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
+		nm_connection_add_setting (connection, (NMSetting *) s_ip4);
+	}
 
 	if (!g_ascii_strcasecmp (s_method, "dhcp")) {
 		g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
-		goto success;
+		return TRUE;
 	} else if (g_ascii_strcasecmp (s_method, "static") != 0) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "iBFT: malformed iscsiadm record: unknown " ISCSI_BOOTPROTO_TAG " '%s'.",
 		             s_method);
-		goto error;
+		return FALSE;
 	}
 
 	/* Static configuration stuff */
@@ -308,7 +315,7 @@ ip4_setting_add_from_block (const GPtrArray *block,
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "iBFT: malformed iscsiadm record: invalid IP address '%s'.",
 		             s_ipaddr);
-		goto error;
+		return FALSE;
 	}
 
 	/* Subnet/prefix */
@@ -316,7 +323,7 @@ ip4_setting_add_from_block (const GPtrArray *block,
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "iBFT: malformed iscsiadm record: invalid subnet mask '%s'.",
 		             s_netmask);
-		goto error;
+		return FALSE;
 	}
 	prefix = nm_utils_ip4_netmask_to_prefix (netmask);
 
@@ -324,27 +331,27 @@ ip4_setting_add_from_block (const GPtrArray *block,
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "iBFT: malformed iscsiadm record: invalid IP gateway '%s'.",
 		             s_gateway);
-		goto error;
+		return FALSE;
 	}
 
 	if (s_dns1 && !nm_utils_ipaddr_valid (AF_INET, s_dns1)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "iBFT: malformed iscsiadm record: invalid DNS1 address '%s'.",
 		             s_dns1);
-		goto error;
+		return FALSE;
 	}
 
 	if (s_dns2 && !nm_utils_ipaddr_valid (AF_INET, s_dns2)) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "iBFT: malformed iscsiadm record: invalid DNS2 address '%s'.",
 		             s_dns2);
-		goto error;
+		return FALSE;
 	}
 
 	addr = nm_ip_address_new (AF_INET, s_ipaddr, prefix, error);
 	if (!addr) {
 		g_prefix_error (error, "iBFT: malformed iscsiadm record: ");
-		goto error;
+		return FALSE;
 	}
 
 	nm_setting_ip_config_add_address (s_ip4, addr);
@@ -357,13 +364,7 @@ ip4_setting_add_from_block (const GPtrArray *block,
 	if (s_dns2)
 		nm_setting_ip_config_add_dns (s_ip4, s_dns2);
 
-success:
-	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 	return TRUE;
-
-error:
-	g_clear_object (&s_ip4);
-	return FALSE;
 }
 
 static gboolean
@@ -371,19 +372,23 @@ connection_setting_add (const GPtrArray *block,
                         NMConnection *connection,
                         const char *type,
                         const char *prefix,
-                        const char *iface,
                         GError **error)
 {
 	NMSetting *s_con;
 	char *id, *uuid;
+	const char *iface = NULL;
 	const char *s_hwaddr = NULL, *s_ip4addr = NULL, *s_vlanid;
 
-	if (!nms_ibft_reader_parse_block (block, error,
+	if (!nmi_ibft_reader_parse_block (block, error,
+	                                  ISCSI_IFACE_TAG, &iface,
 	                                  ISCSI_VLAN_ID_TAG, &s_vlanid,
 	                                  ISCSI_HWADDR_TAG,  &s_hwaddr,
 	                                  ISCSI_IPADDR_TAG,  &s_ip4addr,
 	                                  NULL))
 		return FALSE;
+
+	g_return_val_if_fail (iface, FALSE);
+
 	if (!s_hwaddr) {
 		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		                     "iBFT: malformed iscsiadm record: missing " ISCSI_HWADDR_TAG);
@@ -403,7 +408,12 @@ connection_setting_add (const GPtrArray *block,
 	                                             s_ip4addr ? s_ip4addr : "",
 	                                             NULL);
 
-	s_con = nm_setting_connection_new ();
+	s_con = (NMSetting *) nm_connection_get_setting_connection (connection);
+	if (!s_con) {
+		s_con = nm_setting_connection_new ();
+		nm_connection_add_setting (connection, s_con);
+	}
+
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_TYPE, type,
 	              NM_SETTING_CONNECTION_UUID, uuid,
@@ -414,7 +424,6 @@ connection_setting_add (const GPtrArray *block,
 	g_free (uuid);
 	g_free (id);
 
-	nm_connection_add_setting (connection, NM_SETTING (s_con));
 	return TRUE;
 }
 
@@ -423,7 +432,7 @@ is_ibft_vlan_device (const GPtrArray *block)
 {
 	char *s_vlan_id = NULL;
 
-	if (nms_ibft_reader_parse_block (block, NULL, ISCSI_VLAN_ID_TAG, &s_vlan_id, NULL)) {
+	if (nmi_ibft_reader_parse_block (block, NULL, ISCSI_VLAN_ID_TAG, &s_vlan_id, NULL)) {
 		g_assert (s_vlan_id);
 
 		/* VLAN 0 is normally a valid VLAN ID, but in the iBFT case it
@@ -451,7 +460,7 @@ vlan_setting_add_from_block (const GPtrArray *block,
 	/* This won't fail since this function shouldn't be called unless the
 	 * iBFT VLAN ID exists and is > 0.
 	 */
-	success = nms_ibft_reader_parse_block (block, NULL, ISCSI_VLAN_ID_TAG, &vlan_id_str, NULL);
+	success = nmi_ibft_reader_parse_block (block, NULL, ISCSI_VLAN_ID_TAG, &vlan_id_str, NULL);
 	g_assert (success);
 	g_assert (vlan_id_str);
 
@@ -463,9 +472,13 @@ vlan_setting_add_from_block (const GPtrArray *block,
 		return FALSE;
 	}
 
-	s_vlan = nm_setting_vlan_new ();
+	s_vlan = (NMSetting *) nm_connection_get_setting_vlan (connection);
+	if (!s_vlan) {
+		s_vlan = nm_setting_vlan_new ();
+		nm_connection_add_setting (connection, s_vlan);
+	}
+
 	g_object_set (s_vlan, NM_SETTING_VLAN_ID, (guint32) vlan_id, NULL);
-	nm_connection_add_setting (connection, NM_SETTING (s_vlan));
 
 	return TRUE;
 }
@@ -481,7 +494,7 @@ wired_setting_add_from_block (const GPtrArray *block,
 	g_assert (block);
 	g_assert (connection);
 
-	if (!nms_ibft_reader_parse_block (block, NULL, ISCSI_HWADDR_TAG, &hwaddr, NULL)) {
+	if (!nmi_ibft_reader_parse_block (block, NULL, ISCSI_HWADDR_TAG, &hwaddr, NULL)) {
 		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		                     "iBFT: malformed iscsiadm record: missing " ISCSI_HWADDR_TAG);
 		return FALSE;
@@ -494,27 +507,24 @@ wired_setting_add_from_block (const GPtrArray *block,
 		return FALSE;
 	}
 
-	s_wired = nm_setting_wired_new ();
+	s_wired = (NMSetting *) nm_connection_get_setting_wired (connection);
+	if (!s_wired) {
+		s_wired = nm_setting_wired_new ();
+		nm_connection_add_setting (connection, s_wired);
+	}
+
 	g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, hwaddr, NULL);
 
-	nm_connection_add_setting (connection, s_wired);
 	return TRUE;
 }
 
 NMConnection *
-nms_ibft_reader_get_connection_from_block (const GPtrArray *block, GError **error)
+nmi_ibft_reader_get_connection_from_block (const GPtrArray *block, GError **error)
 {
 	NMConnection *connection = NULL;
 	gboolean is_vlan = FALSE;
-	const char *iface = NULL;
 
 	g_assert (block);
-
-	if (!nms_ibft_reader_parse_block (block, error, ISCSI_IFACE_TAG, &iface, NULL)) {
-		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		                     "iBFT: malformed iscsiadm record: missing " ISCSI_IFACE_TAG);
-		return NULL;
-	}
 
 	connection = nm_simple_connection_new ();
 
@@ -533,7 +543,6 @@ nms_ibft_reader_get_connection_from_block (const GPtrArray *block, GError **erro
 	                             connection,
 	                             is_vlan ? NM_SETTING_VLAN_SETTING_NAME : NM_SETTING_WIRED_SETTING_NAME,
 	                             is_vlan ? "VLAN" : NULL,
-	                             iface,
 	                             error))
 		goto error;
 
@@ -547,3 +556,30 @@ error:
 	return NULL;
 }
 
+gboolean
+nmi_ibft_reader_update_connection_from_block (NMConnection *connection, const GPtrArray *block, GError **error)
+{
+	gboolean is_vlan = FALSE;
+
+	g_assert (block);
+
+	is_vlan = is_ibft_vlan_device (block);
+	if (is_vlan && !vlan_setting_add_from_block (block, connection, error))
+		return FALSE;
+
+	/* Always have a wired setting; for VLAN it defines the parent */
+	if (!wired_setting_add_from_block (block, connection, error))
+		return FALSE;
+
+	if (!ip4_setting_add_from_block (block, connection, error))
+		return FALSE;
+
+	if (!connection_setting_add (block,
+	                             connection,
+	                             is_vlan ? NM_SETTING_VLAN_SETTING_NAME : NM_SETTING_WIRED_SETTING_NAME,
+	                             is_vlan ? "VLAN" : NULL,
+	                             error))
+		return FALSE;
+
+	return TRUE;
+}
