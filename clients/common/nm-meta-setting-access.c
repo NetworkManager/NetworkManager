@@ -354,44 +354,38 @@ char *
 nm_meta_abstract_info_get_nested_names_str (const NMMetaAbstractInfo *abstract_info, const char *name_prefix)
 {
 	gs_free gpointer nested_to_free = NULL;
-	guint i;
 	const NMMetaAbstractInfo *const*nested;
-	GString *allowed_fields;
 
 	nested = nm_meta_abstract_info_get_nested (abstract_info, NULL, &nested_to_free);
 	if (!nested)
 		return NULL;
 
-	allowed_fields = g_string_sized_new (256);
-
 	if (!name_prefix)
 		name_prefix = nm_meta_abstract_info_get_name (abstract_info, FALSE);
 
-	for (i = 0; nested[i]; i++) {
-		g_string_append_printf (allowed_fields, "%s.%s,",
-		                        name_prefix, nm_meta_abstract_info_get_name (nested[i], FALSE));
-	}
-	g_string_truncate (allowed_fields, allowed_fields->len - 1);
-	return g_string_free (allowed_fields, FALSE);
+	return nm_meta_abstract_infos_get_names_str (nested, name_prefix);
 }
 
 char *
 nm_meta_abstract_infos_get_names_str (const NMMetaAbstractInfo *const*fields_array, const char *name_prefix)
 {
-	GString *allowed_fields;
+	GString *str;
 	guint i;
 
 	if (!fields_array || !fields_array[0])
 		return NULL;
 
-	allowed_fields = g_string_sized_new (256);
+	str = g_string_sized_new (128);
 	for (i = 0; fields_array[i]; i++) {
-		if (name_prefix)
-			g_string_append_printf (allowed_fields, "%s.", name_prefix);
-		g_string_append_printf (allowed_fields, "%s,", nm_meta_abstract_info_get_name (fields_array[i], FALSE));
+		if (str->len > 0)
+			g_string_append_c (str, ',');
+		if (name_prefix) {
+			g_string_append (str, name_prefix);
+			g_string_append_c (str, '.');
+		}
+		g_string_append (str, nm_meta_abstract_info_get_name (fields_array[i], FALSE));
 	}
-	g_string_truncate (allowed_fields, allowed_fields->len - 1);
-	return g_string_free (allowed_fields, FALSE);
+	return g_string_free (str, FALSE);
 }
 
 /*****************************************************************************/
