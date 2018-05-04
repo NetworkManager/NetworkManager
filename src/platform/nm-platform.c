@@ -4018,6 +4018,7 @@ sync_route_add:
 						nmp_object_stackinit (&oo,
 						                      NMP_OBJECT_TYPE_IP4_ROUTE,
 						                      &((NMPlatformIP4Route) {
+						                          .ifindex = r->ifindex,
 						                          .network = r->gateway,
 						                          .plen = 32,
 						                          .metric = r->metric,
@@ -4030,6 +4031,7 @@ sync_route_add:
 						nmp_object_stackinit (&oo,
 						                      NMP_OBJECT_TYPE_IP6_ROUTE,
 						                      &((NMPlatformIP6Route) {
+						                          .ifindex = r->ifindex,
 						                          .network = r->gateway,
 						                          .plen = 128,
 						                          .metric = r->metric,
