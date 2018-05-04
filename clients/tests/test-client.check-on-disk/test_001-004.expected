@@ -1,0 +1,13 @@
+location: clients/tests/test-client.py:493:test_001()/4
+cmd: $NMCLI -f AP -mode multiline -p d show wlan0
+lang: de_DE.utf8
+returncode: 10
+stdout: 0 bytes
+>>>
+
+<<<
+stderr: 47 bytes
+>>>
+Fehler: Gerät »wlan0« wurde nicht gefunden.
+
+<<<

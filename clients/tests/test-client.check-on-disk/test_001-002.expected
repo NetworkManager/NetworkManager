@@ -1,0 +1,21 @@
+location: clients/tests/test-client.py:490:test_001()/2
+cmd: $NMCLI 
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 310 bytes
+>>>
+DNS configuration:
+	servers: 1.2.3.4 5.6.7.8
+
+Polecenie „nmcli device show” wyświetli pełne informacje o znanych
+urządzeniach, a „nmcli connection show” wyświetli przegląd aktywnych
+profili połączeń.
+
+Strony podręcznika nmcli(1) i nmcli-examples(5) zawierają pełne informacje
+o użyciu.
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<

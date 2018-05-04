@@ -1,0 +1,35 @@
+location: clients/tests/test-client.py:506:test_002()/3
+cmd: $NMCLI 
+lang: C
+returncode: 0
+stdout: 551 bytes
+>>>
+eth0: unavailable
+	"eth0"
+	ethernet (virtual), 72:41:AB:90:41:5D, hw
+
+wlan0: unavailable
+	"wlan0"
+	wifi (virtual), 5A:88:5E:B6:90:40, hw
+
+wlan1: unavailable
+	"wlan1"
+	wifi (virtual), 7C:D4:69:31:67:0B, hw
+
+wlan1: unavailable
+	"wlan1"
+	wifi (virtual), 41:21:6B:F3:C9:4A, hw
+
+DNS configuration:
+	servers: 1.2.3.4 5.6.7.8
+
+Use "nmcli device show" to get complete information about known devices and
+"nmcli connection show" to get an overview on active connection profiles.
+
+Consult nmcli(1) and nmcli-examples(5) manual pages for complete usage details.
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<
