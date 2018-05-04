@@ -1,0 +1,13 @@
+location: clients/tests/test-client.py:495:test_001()/5
+cmd: $NMCLI c s
+lang: C
+returncode: 0
+stdout: 26 bytes
+>>>
+NAME  UUID  TYPE  DEVICE 
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<

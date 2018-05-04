@@ -3781,6 +3781,62 @@ EXTRA_DIST += \
 	clients/tui/newt/meson.build
 
 ###############################################################################
+# clients/tests
+###############################################################################
+
+check-local-clients-tests-test-client: clients/cli/nmcli clients/tests/test-client.py
+	mkdir -p "$(builddir)/clients/tests/"
+	GI_TYPELIB_PATH="$(abs_builddir)/libnm$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}" \
+	LD_LIBRARY_PATH="$(abs_builddir)/libnm/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}" \
+	NM_TEST_CLIENT_BUILDDIR="$(abs_builddir)" \
+	NM_TEST_CLIENT_NMCLI_PATH=clients/cli/nmcli \
+	NM_TEST_CLIENT_IN_DBUS_SESSION=0 \
+	$(srcdir)/clients/tests/test-client.py -v &> "$(builddir)/clients/tests/test-client.log" && r=ok; \
+	cat "$(builddir)/clients/tests/test-client.log"; \
+	test "$$r" == ok
+
+check_local += check-local-clients-tests-test-client
+
+CLEANFILES += clients/tests/test-client.log
+
+EXTRA_DIST += \
+	clients/tests/test-client.py \
+	\
+	clients/tests/test-client.check-on-disk/test_001-001.expected \
+	clients/tests/test-client.check-on-disk/test_001-002.expected \
+	clients/tests/test-client.check-on-disk/test_001-003.expected \
+	clients/tests/test-client.check-on-disk/test_001-004.expected \
+	clients/tests/test-client.check-on-disk/test_001-005.expected \
+	clients/tests/test-client.check-on-disk/test_001-006.expected \
+	clients/tests/test-client.check-on-disk/test_002-001.expected \
+	clients/tests/test-client.check-on-disk/test_002-002.expected \
+	clients/tests/test-client.check-on-disk/test_002-003.expected \
+	clients/tests/test-client.check-on-disk/test_002-004.expected \
+	clients/tests/test-client.check-on-disk/test_002-005.expected \
+	clients/tests/test-client.check-on-disk/test_002-006.expected \
+	clients/tests/test-client.check-on-disk/test_002-007.expected \
+	clients/tests/test-client.check-on-disk/test_002-008.expected \
+	clients/tests/test-client.check-on-disk/test_002-009.expected \
+	clients/tests/test-client.check-on-disk/test_002-010.expected \
+	clients/tests/test-client.check-on-disk/test_002-011.expected \
+	clients/tests/test-client.check-on-disk/test_002-012.expected \
+	clients/tests/test-client.check-on-disk/test_002-013.expected \
+	clients/tests/test-client.check-on-disk/test_002-014.expected \
+	clients/tests/test-client.check-on-disk/test_002-015.expected \
+	clients/tests/test-client.check-on-disk/test_002-016.expected \
+	clients/tests/test-client.check-on-disk/test_002-017.expected \
+	clients/tests/test-client.check-on-disk/test_003-001.expected \
+	clients/tests/test-client.check-on-disk/test_003-002.expected \
+	clients/tests/test-client.check-on-disk/test_003-003.expected \
+	clients/tests/test-client.check-on-disk/test_003-004.expected \
+	clients/tests/test-client.check-on-disk/test_003-005.expected \
+	clients/tests/test-client.check-on-disk/test_003-006.expected \
+	clients/tests/test-client.check-on-disk/test_003-007.expected \
+	clients/tests/test-client.check-on-disk/test_003-008.expected \
+	\
+	$(NULL)
+
+###############################################################################
 # data
 ###############################################################################
 

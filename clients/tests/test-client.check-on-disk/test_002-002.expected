@@ -1,0 +1,17 @@
+location: clients/tests/test-client.py:504:test_002()/2
+cmd: $NMCLI -f all d
+lang: C
+returncode: 0
+stdout: 530 bytes
+>>>
+DEVICE  TYPE      STATE        DBUS-PATH                                  CONNECTION  CON-UUID  CON-PATH 
+eth0    ethernet  unavailable  /org/freedesktop/NetworkManager/Devices/1  --          --        --       
+wlan0   wifi      unavailable  /org/freedesktop/NetworkManager/Devices/2  --          --        --       
+wlan1   wifi      unavailable  /org/freedesktop/NetworkManager/Devices/3  --          --        --       
+wlan1   wifi      unavailable  /org/freedesktop/NetworkManager/Devices/4  --          --        --       
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<
