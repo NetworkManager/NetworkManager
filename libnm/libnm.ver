@@ -1348,6 +1348,7 @@ global:
 	nm_client_checkpoint_rollback;
 	nm_client_checkpoint_rollback_finish;
 	nm_client_get_checkpoints;
+	nm_connection_get_setting_tc_config;
 	nm_device_ip_tunnel_get_flags;
 	nm_ip_tunnel_flags_get_type;
 	nm_remote_connection_get_flags;
