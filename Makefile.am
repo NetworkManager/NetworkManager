@@ -3398,6 +3398,7 @@ clients_common_libnmc_base_la_LIBADD = \
 	$(GLIB_LIBS)
 
 $(clients_common_libnmc_base_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(clients_common_libnmc_base_la_OBJECTS): $(libnm_lib_h_pub_mkenums)
 $(clients_common_libnmc_base_la_OBJECTS): clients/common/.dirstamp
 
 clients_common_settings_doc_h = clients/common/settings-docs.h
@@ -3535,6 +3536,7 @@ clients_cli_nmcli_LDFLAGS = \
 	$(SANITIZER_EXEC_LDFLAGS)
 
 $(clients_cli_nmcli_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(clients_cli_nmcli_OBJECTS): $(libnm_lib_h_pub_mkenums)
 
 install-data-hook-nmcli:
 	$(mkinstalldirs) $(DESTDIR)$(completiondir)
