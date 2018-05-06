@@ -63,6 +63,9 @@ test_add_connection (void)
 	time_t start, now;
 	gboolean done = FALSE;
 
+	if (!nmtstc_service_available (sinfo))
+		return;
+
 	connection = nmtst_create_minimal_connection (TEST_CON_ID, NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
 
 	nm_client_add_connection_async (client,
@@ -136,6 +139,9 @@ test_make_invisible (void)
 	gboolean visible_changed = FALSE, connection_removed = FALSE;
 	gboolean has_settings = FALSE;
 	char *path;
+
+	if (!nmtstc_service_available (sinfo))
+		return;
 
 	g_assert (remote != NULL);
 
@@ -214,6 +220,9 @@ test_make_visible (void)
 	gboolean found = FALSE;
 	char *path;
 	NMRemoteConnection *new = NULL;
+
+	if (!nmtstc_service_available (sinfo))
+		return;
 
 	g_assert (remote != NULL);
 
@@ -304,6 +313,9 @@ test_remove_connection (void)
 	gboolean done = FALSE;
 	char *path;
 
+	if (!nmtstc_service_available (sinfo))
+		return;
+
 	/* Find a connection to delete */
 	conns = nm_client_get_connections (client);
 	g_assert_cmpint (conns->len, >, 0);
@@ -384,6 +396,9 @@ test_add_remove_connection (void)
 	time_t start, now;
 	gboolean done = FALSE;
 
+	if (!nmtstc_service_available (sinfo))
+		return;
+
 	/* This will cause the test server to immediately delete the connection
 	 * after creating it.
 	 */
@@ -437,6 +452,9 @@ test_add_bad_connection (void)
 	time_t start, now;
 	gboolean done = FALSE;
 
+	if (!nmtstc_service_available (sinfo))
+		return;
+
 	/* The test daemon doesn't support bond connections */
 	connection = nmtst_create_minimal_connection ("bad connection test", NULL, NM_SETTING_BOND_SETTING_NAME, NULL);
 
@@ -479,6 +497,9 @@ test_save_hostname (void)
 	time_t start, now;
 	gboolean done = FALSE;
 	GError *error = NULL;
+
+	if (!nmtstc_service_available (sinfo))
+		return;
 
 	/* test-networkmanager-service.py requires the hostname to contain a '.' */
 	nm_client_save_hostname (client, "foo", NULL, &error);

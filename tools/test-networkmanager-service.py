@@ -3,8 +3,18 @@
 
 from __future__ import print_function
 
-from gi.repository import GLib
 import sys
+
+import gi
+from gi.repository import GLib
+
+try:
+    gi.require_version('NM', '1.0')
+    from gi.repository import NM
+except Exception as e:
+    print("Cannot load gi.NM: %s" % (str(e)))
+    sys.exit(77)
+
 import dbus
 import dbus.service
 import dbus.mainloop.glib

@@ -155,6 +155,9 @@ test_device_added (void)
 	DeviceAddedInfo info = { loop, FALSE, FALSE, 0, 0 };
 
 	sinfo = nmtstc_service_init ();
+	if (!nmtstc_service_available (sinfo))
+		return;
+
 	client = nmtstc_nm_client_new ();
 
 	devices = nm_client_get_devices (client);
@@ -312,6 +315,9 @@ test_wifi_ap_added_removed (void)
 	char *expected_path = NULL;
 
 	sinfo = nmtstc_service_init ();
+	if (!nmtstc_service_available (sinfo))
+		return;
+
 	client = nmtstc_nm_client_new ();
 
 	/*************************************/
@@ -535,6 +541,9 @@ test_wimax_nsp_added_removed (void)
 	char *expected_path = NULL;
 
 	sinfo = nmtstc_service_init ();
+	if (!nmtstc_service_available (sinfo))
+		return;
+
 	client = nmtstc_nm_client_new ();
 
 	/*************************************/
@@ -720,6 +729,9 @@ test_devices_array (void)
 	GVariant *ret;
 
 	sinfo = nmtstc_service_init ();
+	if (!nmtstc_service_available (sinfo))
+		return;
+
 	client = nmtstc_nm_client_new ();
 
 	/*************************************/
@@ -820,7 +832,8 @@ manager_running_changed (GObject *client,
 static void
 test_client_manager_running (void)
 {
-	NMClient *client1, *client2;
+	gs_unref_object NMClient *client1 = NULL;
+	gs_unref_object NMClient *client2 = NULL;
 	guint quit_id;
 	int running_changed = 0;
 	GError *error = NULL;
@@ -842,6 +855,9 @@ test_client_manager_running (void)
 
 	/* Now start the test service. */
 	sinfo = nmtstc_service_init ();
+	if (!nmtstc_service_available (sinfo))
+		return;
+
 	client2 = nmtstc_nm_client_new ();
 
 	/* client2 should know that NM is running, but the previously-created
@@ -868,9 +884,6 @@ test_client_manager_running (void)
 	g_assert_cmpint (running_changed, ==, 2);
 	g_assert (!nm_client_get_manager_running (client1));
 	g_source_remove (quit_id);
-
-	g_object_unref (client1);
-	g_object_unref (client2);
 }
 
 /*****************************************************************************/
