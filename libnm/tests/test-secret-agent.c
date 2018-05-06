@@ -247,6 +247,9 @@ test_setup (TestSecretAgentData *sadata, gconstpointer test_data)
 	GError *error = NULL;
 
 	sadata->sinfo = nmtstc_service_init ();
+	if (!sadata->sinfo)
+		return;
+
 	sadata->client = nm_client_new (NULL, &error);
 	g_assert_no_error (error);
 
@@ -311,6 +314,9 @@ test_cleanup (TestSecretAgentData *sadata, gconstpointer test_data)
 	GVariant *ret;
 	GError *error = NULL;
 
+	if (!sadata->sinfo)
+		return;
+
 	if (sadata->agent) {
 		if (nm_secret_agent_old_get_registered (sadata->agent)) {
 			nm_secret_agent_old_unregister (sadata->agent, NULL, &error);
@@ -360,6 +366,9 @@ connection_activated_none_cb (GObject *c,
 static void
 test_secret_agent_none (TestSecretAgentData *sadata, gconstpointer test_data)
 {
+	if (!nmtstc_service_available (sadata->sinfo))
+		return;
+
 	nm_client_activate_connection_async (sadata->client,
 	                                     sadata->connection,
 	                                     sadata->device,
@@ -405,6 +414,9 @@ connection_activated_no_secrets_cb (GObject *c,
 static void
 test_secret_agent_no_secrets (TestSecretAgentData *sadata, gconstpointer test_data)
 {
+	if (!nmtstc_service_available (sadata->sinfo))
+		return;
+
 	g_signal_connect (sadata->agent, "secret-requested",
 	                  G_CALLBACK (secrets_requested_no_secrets_cb),
 	                  sadata);
@@ -456,6 +468,9 @@ secrets_requested_cancel_cb (TestSecretAgent *agent,
 static void
 test_secret_agent_cancel (TestSecretAgentData *sadata, gconstpointer test_data)
 {
+	if (!nmtstc_service_available (sadata->sinfo))
+		return;
+
 	g_signal_connect (sadata->agent, "secret-requested",
 	                  G_CALLBACK (secrets_requested_cancel_cb),
 	                  sadata);
@@ -510,6 +525,9 @@ secrets_requested_good_cb (TestSecretAgent *agent,
 static void
 test_secret_agent_good (TestSecretAgentData *sadata, gconstpointer test_data)
 {
+	if (!nmtstc_service_available (sadata->sinfo))
+		return;
+
 	g_signal_connect (sadata->agent, "secret-requested",
 	                  G_CALLBACK (secrets_requested_good_cb),
 	                  sadata);
@@ -582,6 +600,9 @@ test_secret_agent_auto_register (void)
 	GError *error = NULL;
 
 	sinfo = nmtstc_service_init ();
+	if (!nmtstc_service_available (sinfo))
+		return;
+
 	loop = g_main_loop_new (NULL, FALSE);
 
 	agent = test_secret_agent_new ();
@@ -609,6 +630,8 @@ test_secret_agent_auto_register (void)
 
 	/* Restart test service */
 	sinfo = nmtstc_service_init ();
+	g_assert (nmtstc_service_available (sinfo));
+
 	g_main_loop_run (loop);
 	g_assert (nm_secret_agent_old_get_registered (agent));
 

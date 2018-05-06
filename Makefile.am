@@ -948,8 +948,11 @@ EXTRA_DIST += \
 	libnm/libnm.pc.in \
 	libnm/libnm.ver
 
+libnm_NM_1_0_typelib =
 
 if HAVE_INTROSPECTION
+libnm_NM_1_0_typelib += libnm/NM-1.0.typelib
+
 libnm/NM-1.0.gir: libnm/libnm.la
 libnm_NM_1_0_gir_INCLUDES = Gio-2.0
 libnm_NM_1_0_gir_PACKAGES = gio-2.0
@@ -1059,12 +1062,20 @@ EXTRA_DIST += \
 ###############################################################################
 
 libnm_tests_programs = \
-	libnm/tests/test-general \
+	libnm/tests/test-general
+
+check_programs += $(libnm_tests_programs)
+
+libnm_tests_programs_req_introspection = \
 	libnm/tests/test-nm-client \
 	libnm/tests/test-remote-settings-client \
 	libnm/tests/test-secret-agent
 
-check_programs += $(libnm_tests_programs)
+if HAVE_INTROSPECTION
+check_programs += $(libnm_tests_programs_req_introspection)
+else
+check_programs_norun += $(libnm_tests_programs_req_introspection)
+endif
 
 libnm_tests_cppflags = \
 	$(dflt_cppflags_libnm_core) \
@@ -1121,6 +1132,12 @@ $(libnm_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(libnm_tests_test_nm_client_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(libnm_tests_test_remote_settings_client_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(libnm_tests_test_secret_agent_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+# tools/test-networkmanager-service.py uses libnm's typelib. Ensure it
+# is built first.
+$(libnm_tests_test_nm_client_OBJECTS):              $(libnm_NM_1_0_typelib)
+$(libnm_tests_test_remote_settings_client_OBJECTS): $(libnm_NM_1_0_typelib)
+$(libnm_tests_test_secret_agent_OBJECTS):           $(libnm_NM_1_0_typelib)
 
 ###############################################################################
 
@@ -4431,9 +4448,15 @@ libnm_glib_tests_cppflags = \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS)
 
-check_programs += \
+libnm_glib_tests_programs_req_introspection = \
 	libnm-glib/tests/test-nm-client \
 	libnm-glib/tests/test-remote-settings-client
+
+if HAVE_INTROSPECTION
+check_programs += $(libnm_glib_tests_programs_req_introspection)
+else
+check_programs_norun += $(libnm_glib_tests_programs_req_introspection)
+endif
 
 libnm_glib_tests_test_nm_client_CPPFLAGS = $(libnm_glib_tests_cppflags)
 
@@ -4465,6 +4488,11 @@ libnm_glib_tests_test_remote_settings_client_LDADD = \
 	$(DBUS_LIBS)
 
 $(libnm_glib_tests_test_remote_settings_client_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+# tools/test-networkmanager-service.py uses libnm's typelib. Ensure it
+# is built first.
+$(libnm_glib_tests_test_nm_client_OBJECTS):              $(libnm_NM_1_0_typelib)
+$(libnm_glib_tests_test_remote_settings_client_OBJECTS): $(libnm_NM_1_0_typelib)
 
 endif
 

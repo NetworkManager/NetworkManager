@@ -70,6 +70,9 @@ test_device_added (void)
 	GError *error = NULL;
 
 	sinfo = nmtstc_service_init ();
+	if (!nmtstc_service_available (sinfo))
+		return;
+
 	client = nm_client_new (NULL, &error);
 	g_assert_no_error (error);
 
@@ -163,6 +166,9 @@ test_device_added_signal_after_init (void)
 	GError *error = NULL;
 
 	sinfo = nmtstc_service_init ();
+	if (!nmtstc_service_available (sinfo))
+		return;
+
 	client = nm_client_new (NULL, &error);
 	g_assert_no_error (error);
 
@@ -311,6 +317,9 @@ test_wifi_ap_added_removed (void)
 	char *expected_path = NULL;
 
 	sinfo = nmtstc_service_init ();
+	if (!nmtstc_service_available (sinfo))
+		return;
+
 	client = nm_client_new (NULL, &error);
 	g_assert_no_error (error);
 
@@ -510,6 +519,9 @@ test_wimax_nsp_added_removed (void)
 	char *expected_path = NULL;
 
 	sinfo = nmtstc_service_init ();
+	if (!nmtstc_service_available (sinfo))
+		return;
+
 	client = nm_client_new (NULL, &error);
 	g_assert_no_error (error);
 
@@ -686,6 +698,8 @@ test_devices_array (void)
 	GVariant *ret;
 
 	sinfo = nmtstc_service_init ();
+	if (!nmtstc_service_available (sinfo))
+		return;
 
 	/* Make sure that we test the async codepath in at least one test... */
 	nm_client_new_async (NULL, new_client_cb, &client);
@@ -778,7 +792,8 @@ nm_running_changed (GObject *client,
 static void
 test_client_nm_running (void)
 {
-	NMClient *client1, *client2;
+	gs_unref_object NMClient *client1 = NULL;
+	gs_unref_object NMClient *client2 = NULL;
 	guint quit_id;
 	int running_changed = 0;
 	GError *error = NULL;
@@ -801,6 +816,9 @@ test_client_nm_running (void)
 
 	/* Now start the test service. */
 	sinfo = nmtstc_service_init ();
+	if (!nmtstc_service_available (sinfo))
+		return;
+
 	client2 = nm_client_new (NULL, &error);
 	g_assert_no_error (error);
 
@@ -828,9 +846,6 @@ test_client_nm_running (void)
 	g_assert_cmpint (running_changed, ==, 2);
 	g_assert (!nm_client_get_nm_running (client1));
 	g_source_remove (quit_id);
-
-	g_object_unref (client1);
-	g_object_unref (client2);
 }
 
 typedef struct {
@@ -934,6 +949,9 @@ test_active_connections (void)
 	GError *error = NULL;
 
 	sinfo = nmtstc_service_init ();
+	if (!nmtstc_service_available (sinfo))
+		return;
+
 	client = nm_client_new (NULL, &error);
 	g_assert_no_error (error);
 
@@ -1063,6 +1081,9 @@ test_activate_virtual (void)
 	GError *error = NULL;
 
 	sinfo = nmtstc_service_init ();
+	if (!nmtstc_service_available (sinfo))
+		return;
+
 	client = nm_client_new (NULL, &error);
 	g_assert_no_error (error);
 
@@ -1138,6 +1159,9 @@ test_activate_failed (void)
 	GError *error = NULL;
 
 	sinfo = nmtstc_service_init ();
+	if (!nmtstc_service_available (sinfo))
+		return;
+
 	client = nm_client_new (NULL, &error);
 	g_assert_no_error (error);
 
@@ -1172,6 +1196,9 @@ test_device_connection_compatibility (void)
 	const char *hw_addr2 = "52:54:00:ab:db:24";
 
 	sinfo = nmtstc_service_init ();
+	if (!nmtstc_service_available (sinfo))
+		return;
+
 	client = nm_client_new (NULL, &error);
 	g_assert_no_error (error);
 
@@ -1593,4 +1620,3 @@ main (int argc, char **argv)
 
 	return g_test_run ();
 }
-
