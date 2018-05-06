@@ -741,14 +741,12 @@ endif
 
 test_args = [
   '--called-from-make',
+  meson.build_root(),
   '',
   enable_valgrind ? valgrind.path() : '',
   enable_valgrind ? valgrind_suppressions_path : '',
   '--launch-dbus=auto'
 ]
-
-# FIXME
-#AC_SUBST(NM_LOG_COMPILER, 'LOG_COMPILER = "$(top_srcdir)/tools/run-nm-test.sh" --called-from-make "$(LIBTOOL)" "$(with_valgrind)" "'"$with_valgrind_suppressions"'" --launch-dbus=auto')
 
 py3 = import('python3')
 python = py3.find_python()

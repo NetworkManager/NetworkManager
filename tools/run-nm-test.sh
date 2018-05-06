@@ -34,7 +34,11 @@ else
     CALLED_FROM_MAKE=0
 fi
 
+BUILDDIR=
+
 if [ "$CALLED_FROM_MAKE" == 1 ]; then
+    BUILDDIR="$1"
+    shift
     if [ -n "$1" ]; then
         NMTST_LIBTOOL=($1 --mode=execute);
     else
@@ -144,6 +148,7 @@ else
             ;;
         esac
     done
+
     # we support calling the script directly. In this case,
     # only pass the path to the test to run.
     if test -z "${TEST+x}"; then
@@ -151,6 +156,20 @@ else
     fi
     if [[ -z "${NMTST_SUPPRESSIONS+x}" ]]; then
         NMTST_SUPPRESSIONS="$SCRIPT_PATH/../valgrind.suppressions"
+    fi
+
+    if [[ -z "$NMTST_BUILDDIR" ]]; then
+        if [[ "${NMTST_BUILDDIR-x}" == x ]]; then
+            # autodetect
+            BUILDDIR="$(readlink -f "$TEST")"
+            while [[ -n "$BUILDDIR" ]]; do
+                BUILDDIR="$(dirname "$BUILDDIR")"
+                [[ "$BUILDDIR" == / ]] && BUILDDIR=
+                [[ -z "$BUILDDIR" ]] && break
+                [[ -e "$BUILDDIR/libnm/.libs/libnm.so" ]] && break
+                [[ -e "$BUILDDIR/libnm/libnm.so" ]] && break
+            done
+        fi
     fi
 
 fi
@@ -198,6 +217,16 @@ fi
 
 [ -x "$TEST" ] || die "Cannot execute test \"$TEST\""
 
+if [[ -n "$BUILDDIR" ]]; then
+    if [[ -d "$BUILDDIR/libnm" ]]; then
+        export GI_TYPELIB_PATH="$BUILDDIR/libnm/${GI_TYPELIB_PATH:+:$GI_TYPELIB_PATH}"
+        if [[ -d "$BUILDDIR/libnm/.libs" ]]; then
+            export LD_LIBRARY_PATH="$BUILDDIR/libnm/.libs${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+        else
+            export LD_LIBRARY_PATH="$BUILDDIR/libnm${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+        fi
+    fi
+fi
 
 if ! _is_true "$NMTST_USE_VALGRIND" 0; then
     "${NMTST_DBUS_RUN_SESSION[@]}" \
