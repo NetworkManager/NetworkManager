@@ -23,6 +23,8 @@
 
 #include "NetworkManagerUtils.h"
 
+#define NM_CONFIG_KEYFILE_PATH_IN_MEMORY NMRUNDIR "/system-connections"
+
 #define NMS_KEYFILE_CONNECTION_LOG_PATH(path)  ((path) ?: "in-memory")
 #define NMS_KEYFILE_CONNECTION_LOG_FMT         "%s (%s,\"%s\")"
 #define NMS_KEYFILE_CONNECTION_LOG_ARG(con)    NMS_KEYFILE_CONNECTION_LOG_PATH (nm_settings_connection_get_filename ((NMSettingsConnection *) (con))), nm_settings_connection_get_uuid ((NMSettingsConnection *) (con)), nm_settings_connection_get_id ((NMSettingsConnection *) (con))
