@@ -175,12 +175,29 @@ update_connection (NMSKeyfilePlugin *self,
 	NMSKeyfileConnection *connection_by_uuid;
 	GError *local = NULL;
 	const char *uuid;
+	int dir_len;
 
 	g_return_val_if_fail (!source || NM_IS_CONNECTION (source), NULL);
 	g_return_val_if_fail (full_path || source, NULL);
 
 	if (full_path)
 		_LOGD ("loading from file \"%s\"...", full_path);
+
+	if (g_str_has_prefix (full_path, nms_keyfile_utils_get_path ())) {
+		dir_len = strlen (nms_keyfile_utils_get_path ());
+	} else if (g_str_has_prefix (full_path, NM_CONFIG_KEYFILE_PATH_IN_MEMORY)) {
+		dir_len = NM_STRLEN (NM_CONFIG_KEYFILE_PATH_IN_MEMORY);
+	} else {
+		/* Just make sure the file name is not going go pass the following check. */
+		dir_len = strlen (full_path);
+	}
+
+	if (   full_path[dir_len] != '/'
+	    || strchr (full_path + dir_len + 1, '/') != NULL) {
+		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+		                     "File not in recognized system-connections directory");
+		return FALSE;
+	}
 
 	connection_new = nms_keyfile_connection_new (source, full_path, &local);
 	if (!connection_new) {
@@ -412,13 +429,35 @@ _sort_paths (const char **f1, const char **f2, GHashTable *paths)
 }
 
 static void
+_read_dir (GPtrArray *filenames, const char *path)
+{
+	GDir *dir;
+	const char *item;
+	GError *error = NULL;
+
+	dir = g_dir_open (path, 0, &error);
+	if (!dir) {
+		_LOGW ("cannot read directory '%s': %s",
+		             path,
+		             error->message);
+		g_clear_error (&error);
+		return;
+	}
+
+	while ((item = g_dir_read_name (dir))) {
+		if (nms_keyfile_utils_should_ignore_file (item))
+			continue;
+		g_ptr_array_add (filenames, g_build_filename (path, item, NULL));
+	}
+	g_dir_close (dir);
+}
+
+
+static void
 read_connections (NMSettingsPlugin *config)
 {
 	NMSKeyfilePlugin *self = NMS_KEYFILE_PLUGIN (config);
 	NMSKeyfilePluginPrivate *priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE (self);
-	GDir *dir;
-	GError *error = NULL;
-	const char *item;
 	GHashTable *alive_connections;
 	GHashTableIter iter;
 	NMSKeyfileConnection *connection;
@@ -427,24 +466,12 @@ read_connections (NMSettingsPlugin *config)
 	GPtrArray *filenames;
 	GHashTable *paths;
 
-	dir = g_dir_open (nms_keyfile_utils_get_path (), 0, &error);
-	if (!dir) {
-		_LOGW ("cannot read directory '%s': %s",
-		             nms_keyfile_utils_get_path (),
-		             error->message);
-		g_clear_error (&error);
-		return;
-	}
+	filenames = g_ptr_array_new_with_free_func (g_free);
+
+	_read_dir (filenames, NM_CONFIG_KEYFILE_PATH_IN_MEMORY);
+	_read_dir (filenames, nms_keyfile_utils_get_path ());
 
 	alive_connections = g_hash_table_new (nm_direct_hash, NULL);
-
-	filenames = g_ptr_array_new_with_free_func (g_free);
-	while ((item = g_dir_read_name (dir))) {
-		if (nms_keyfile_utils_should_ignore_file (item))
-			continue;
-		g_ptr_array_add (filenames, g_build_filename (nms_keyfile_utils_get_path (), item, NULL));
-	}
-	g_dir_close (dir);
 
 	/* While reloading, we don't replace connections that we already loaded while
 	 * iterating over the files.
@@ -502,14 +529,8 @@ load_connection (NMSettingsPlugin *config,
 {
 	NMSKeyfilePlugin *self = NMS_KEYFILE_PLUGIN ((NMSKeyfilePlugin *) config);
 	NMSKeyfileConnection *connection;
-	int dir_len = strlen (nms_keyfile_utils_get_path ());
 
-	if (   strncmp (filename, nms_keyfile_utils_get_path (), dir_len) != 0
-	    || filename[dir_len] != '/'
-	    || strchr (filename + dir_len + 1, '/') != NULL)
-		return FALSE;
-
-	if (nms_keyfile_utils_should_ignore_file (filename + dir_len + 1))
+	if (nms_keyfile_utils_should_ignore_file (filename))
 		return FALSE;
 
 	connection = update_connection (self, NULL, filename, find_by_path (self, filename), TRUE, NULL, NULL);
@@ -533,16 +554,16 @@ add_connection (NMSettingsPlugin *config,
 	gs_free char *path = NULL;
 	gs_unref_object NMConnection *reread = NULL;
 
-	if (save_to_disk) {
-		if (!nms_keyfile_writer_connection (connection,
-		                                    NULL,
-		                                    FALSE,
-		                                    &path,
-		                                    &reread,
-		                                    NULL,
-		                                    error))
-			return NULL;
-	}
+	if (!nms_keyfile_writer_connection (connection,
+	                                    save_to_disk,
+	                                    NULL,
+	                                    FALSE,
+	                                    &path,
+	                                    &reread,
+	                                    NULL,
+	                                    error))
+		return NULL;
+
 	return NM_SETTINGS_CONNECTION (update_connection (self, reread ?: connection, path, NULL, FALSE, NULL, error));
 }
 

@@ -187,9 +187,13 @@ _internal_write_connection (NMConnection *connection,
 	WriteInfo info = { 0 };
 	GError *local_err = NULL;
 	int errsv;
+	gboolean rename = force_rename;
 
 	g_return_val_if_fail (!out_path || !*out_path, FALSE);
 	g_return_val_if_fail (keyfile_dir && keyfile_dir[0] == '/', FALSE);
+
+	if (existing_path && !g_str_has_prefix (existing_path, keyfile_dir))
+		rename = TRUE;
 
 	switch (_nm_connection_verify (connection, error)) {
 	case NM_SETTING_VERIFY_NORMALIZABLE:
@@ -219,7 +223,7 @@ _internal_write_connection (NMConnection *connection,
 	/* If we have existing file path, use it. Else generate one from
 	 * connection's ID.
 	 */
-	if (existing_path != NULL && !force_rename) {
+	if (existing_path != NULL && !rename) {
 		path = g_strdup (existing_path);
 	} else {
 		char *filename_escaped = nms_keyfile_utils_escape_filename (id);
@@ -338,6 +342,7 @@ _internal_write_connection (NMConnection *connection,
 
 gboolean
 nms_keyfile_writer_connection (NMConnection *connection,
+                               gboolean save_to_disk,
                                const char *existing_path,
                                gboolean force_rename,
                                char **out_path,
@@ -345,8 +350,15 @@ nms_keyfile_writer_connection (NMConnection *connection,
                                gboolean *out_reread_same,
                                GError **error)
 {
+	const char *keyfile_dir;
+
+	if (save_to_disk)
+		keyfile_dir = nms_keyfile_utils_get_path ();
+	else
+		keyfile_dir = NM_CONFIG_KEYFILE_PATH_IN_MEMORY;
+
 	return _internal_write_connection (connection,
-	                                   nms_keyfile_utils_get_path (),
+	                                   keyfile_dir,
 	                                   0, 0,
 	                                   existing_path,
 	                                   force_rename,
