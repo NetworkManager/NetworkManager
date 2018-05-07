@@ -1375,4 +1375,6 @@ nm_close (int fd)
 	return r;
 }
 
+#define NM_PID_T_INVAL ((pid_t) -1)
+
 #endif /* __NM_MACROS_INTERNAL_H__ */
