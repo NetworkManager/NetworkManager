@@ -153,6 +153,14 @@ _nm_auto_protect_errno (int *p_saved_errno)
 }
 #define NM_AUTO_PROTECT_ERRNO(errsv_saved) nm_auto(_nm_auto_protect_errno) _nm_unused const int errsv_saved = (errno)
 
+static inline void
+_nm_auto_unref_gsource (GSource **ptr)
+{
+	if (*ptr)
+		g_source_unref (g_steal_pointer (ptr));
+}
+#define nm_auto_unref_gsource nm_auto(_nm_auto_unref_gsource)
+
 /*****************************************************************************/
 
 /* http://stackoverflow.com/a/11172679 */
