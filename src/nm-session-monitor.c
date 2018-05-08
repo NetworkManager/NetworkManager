@@ -141,7 +141,7 @@ st_sd_finalize (NMSessionMonitor *monitor)
 		sd_login_monitor_unref (monitor->sd.monitor);
 		monitor->sd.monitor = NULL;
 	}
-	g_source_remove (monitor->sd.watch);
+	nm_clear_g_source (&monitor->sd.watch);
 }
 #endif /* SESSION_TRACKING_SYSTEMD */
 
