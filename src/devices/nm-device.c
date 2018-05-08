@@ -3093,12 +3093,12 @@ carrier_changed (NMDevice *self, gboolean carrier)
 			* is restored. */
 			if (priv->state == NM_DEVICE_STATE_ACTIVATED)
 				nm_device_update_dynamic_ip_setup (self);
-			else {
-				if (nm_device_activate_ip4_state_in_wait (self))
-					nm_device_activate_stage3_ip4_start (self);
-				if (nm_device_activate_ip6_state_in_wait (self))
-					nm_device_activate_stage3_ip6_start (self);
-			}
+			/* If needed, also resume IP configuration that is
+			 * waiting for carrier. */
+			if (nm_device_activate_ip4_state_in_wait (self))
+				nm_device_activate_stage3_ip4_start (self);
+			if (nm_device_activate_ip6_state_in_wait (self))
+				nm_device_activate_stage3_ip6_start (self);
 			return;
 		}
 		/* fall-through and change state of device */
