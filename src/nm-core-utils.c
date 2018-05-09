@@ -4086,7 +4086,7 @@ nm_utils_read_plugin_paths (const char *dirname, const char *prefix)
 
 		if (!g_str_has_prefix (item, prefix))
 			continue;
-		if (g_str_has_suffix (item, ".la"))
+		if (!g_str_has_suffix (item, ".so"))
 			continue;
 
 		data.path = g_build_filename (dirname, item, NULL);
