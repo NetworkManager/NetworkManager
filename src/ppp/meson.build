@@ -37,5 +37,5 @@ core_plugins += shared_module(
   ],
   link_depends: linker_script,
   install: true,
-  install_dir: nm_pkglibdir
+  install_dir: nm_plugindir
 )

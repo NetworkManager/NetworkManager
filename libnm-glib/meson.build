@@ -287,7 +287,7 @@ pkg.generate(
   variables: [
     'exec_prefix=${prefix}',
     'libgnome_serverdir=' + nm_libexecdir,
-    'plugindir=' + nm_pkglibdir,
+    'plugindir=' + nm_plugindir,
     'configdir=' + nm_pkgconfdir
   ]
 )
