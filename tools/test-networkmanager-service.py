@@ -23,6 +23,8 @@ import collections
 import uuid
 import hashlib
 
+_DEFAULT_ARG = object()
+
 #########################################################
 
 class TestError(AssertionError):
@@ -786,11 +788,8 @@ class NetworkManager(ExportedObj):
 
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature='s', out_signature='o')
     def GetDeviceByIpIface(self, ip_iface):
-        for d in self.devices:
-            # ignore iface/ip_iface distinction for now
-            if d.iface == ip_iface:
-                return to_path(d)
-        raise UnknownDeviceException("No device found for the requested iface.")
+        d = self.find_device_first(ip_iface = ip_iface, require = UnknownDeviceException)
+        return to_path(d)
 
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature='ooo', out_signature='o')
     def ActivateConnection(self, conpath, devpath, specific_object):
@@ -802,11 +801,7 @@ class NetworkManager(ExportedObj):
         hash = connection.GetSettings()
         s_con = hash['connection']
 
-        device = None
-        for d in self.devices:
-            if d.path == devpath:
-                device = d
-                break
+        device = self.find_device_first(path = devpath)
         if not device and s_con['type'] == 'vlan':
             ifname = s_con['interface-name']
             device = VlanDevice(self._bus, ifname)
@@ -842,14 +837,7 @@ class NetworkManager(ExportedObj):
 
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature='a{sa{sv}}oo', out_signature='oo')
     def AddAndActivateConnection(self, connection, devpath, specific_object):
-        device = None
-        for d in self.devices:
-            if d.path == devpath:
-                device = d
-                break
-        if not device:
-            raise UnknownDeviceException("No device found for the requested iface.")
-
+        device = self.find_device_first(path = devpath, require = UnknownDeviceException)
         conpath = settings.AddConnection(connection)
         return (conpath, self.ActivateConnection(conpath, devpath, specific_object))
 
@@ -902,15 +890,38 @@ class NetworkManager(ExportedObj):
     def DeviceAdded(self, devpath):
         pass
 
-    def find_device(self, ident):
+    def find_devices(self, ident = _DEFAULT_ARG, path = _DEFAULT_ARG, iface = _DEFAULT_ARG, ip_iface = _DEFAULT_ARG):
+        r = None
         for d in self.devices:
-            if d.ident == ident:
-                return d
+            if ident is not _DEFAULT_ARG:
+                if d.ident != ident:
+                    continue
+            if path is not _DEFAULT_ARG:
+                if d.path != path:
+                    continue
+            if iface is not _DEFAULT_ARG:
+                if d.iface != iface:
+                    continue
+            if ip_iface is not _DEFAULT_ARG:
+                # ignore iface/ip_iface distinction for now
+                if d.iface != ip_iface:
+                    continue
+            yield d
+
+    def find_device_first(self, ident = _DEFAULT_ARG, path = _DEFAULT_ARG, iface = _DEFAULT_ARG, ip_iface = _DEFAULT_ARG, require = None):
+        r = None
+        for d in self.find_devices(ident = ident, path = path, iface = iface, ip_iface = ip_iface):
+            r = d
+            break
+        if r is None and require:
+            if require is TestError:
+                raise TestError('Device not found')
+            raise UnknownDeviceException('Device not found')
+        return r
 
     def add_device(self, device):
-        d = self.find_device(device.ident)
-        if d:
-            raise TestError("Device with ident=%s already added (%s)" % (device.ident, d.path))
+        if self.find_device_first(ident = device.ident, path = device.path) is not None:
+            raise TestError("Duplicate device ident=%s / path=%s" % (device.ident, device.path))
         self.devices.append(device)
         self.__notify(PM_DEVICES)
         self.__notify(PM_ALL_DEVICES)
@@ -973,9 +984,7 @@ class NetworkManager(ExportedObj):
         elif class_name in ['WifiAp']:
             if 'device' not in args:
                 raise TestError('missing "device" paramter')
-            d = self.find_device(args['device'])
-            if not d:
-                raise TestError('no device "%s" found' % args['device'])
+            d = self.find_device_first(ident = args['device'], require = TestError)
             del args['device']
             if 'ssid' not in args:
                 args['ssid'] = d.ident + '-ap-' + str(WifiAp.counter + 1)
@@ -1000,42 +1009,29 @@ class NetworkManager(ExportedObj):
 
     @dbus.service.method(IFACE_TEST, in_signature='o', out_signature='')
     def RemoveDevice(self, path):
-        for d in self.devices:
-            if d.path == path:
-                self.remove_device(d)
-                return
-        raise UnknownDeviceException("Device not found")
+        d = self.find_device_first(path = path, require = TestError)
+        self.remove_device(d)
 
     @dbus.service.method(IFACE_TEST, in_signature='sss', out_signature='o')
-    def AddWifiAp(self, ifname, ssid, bssid):
-        d = self.find_device(ifname)
-        if d:
-            ap = WifiAp(self._bus, ssid, bssid)
-            return to_path(d.add_ap(ap))
-        raise UnknownDeviceException("Device not found")
+    def AddWifiAp(self, ident, ssid, bssid):
+        d = self.find_device_first(ident = ident, require = TestError)
+        ap = WifiAp(self._bus, ssid, bssid)
+        return to_path(d.add_ap(ap))
 
     @dbus.service.method(IFACE_TEST, in_signature='so', out_signature='')
-    def RemoveWifiAp(self, ifname, ap_path):
-        for d in self.devices:
-            if d.iface == ifname:
-                d.remove_ap_by_path(ap_path)
-                return
-        raise UnknownDeviceException("Device not found")
+    def RemoveWifiAp(self, ident, ap_path):
+        d = self.find_device_first(ident = ident, require = TestError)
+        d.remove_ap_by_path(ap_path)
 
     @dbus.service.method(IFACE_TEST, in_signature='ss', out_signature='o')
-    def AddWimaxNsp(self, ifname, name):
-        for d in self.devices:
-            if d.iface == ifname:
-                return to_path(d.add_test_nsp(name))
-        raise UnknownDeviceException("Device not found")
+    def AddWimaxNsp(self, ident, name):
+        d = self.find_device_first(ident = ident, require = TestError)
+        return to_path(d.add_test_nsp(name))
 
     @dbus.service.method(IFACE_TEST, in_signature='so', out_signature='')
-    def RemoveWimaxNsp(self, ifname, nsp_path):
-        for d in self.devices:
-            if d.iface == ifname:
-                d.remove_nsp_by_path(nsp_path)
-                return
-        raise UnknownDeviceException("Device not found")
+    def RemoveWimaxNsp(self, ident, nsp_path):
+        d = self.find_device_first(ident = ident, require = TestError)
+        d.remove_nsp_by_path(nsp_path)
 
     @dbus.service.method(IFACE_TEST, in_signature='', out_signature='')
     def AutoRemoveNextConnection(self):
