@@ -55,7 +55,7 @@ libnm_settings_plugin_ifcfg_rh = shared_module(
   link_args: ldflags_linker_script_settings,
   link_depends: linker_script_settings,
   install: true,
-  install_dir: nm_pkglibdir
+  install_dir: nm_plugindir
 )
 
 core_plugins += libnm_settings_plugin_ifcfg_rh
