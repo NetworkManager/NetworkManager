@@ -30,6 +30,7 @@ libnm_headers = files(
   'NetworkManager.h',
   'nm-access-point.h',
   'nm-active-connection.h',
+  'nm-autoptr.h',
   'nm-checkpoint.h',
   'nm-client.h',
   'nm-device-adsl.h',
