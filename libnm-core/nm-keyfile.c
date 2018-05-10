@@ -112,7 +112,7 @@ setting_alias_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *k
 	if (s) {
 		key_setting_name = nm_keyfile_plugin_get_setting_name_for_alias (s);
 		g_object_set (G_OBJECT (setting),
-		              key, key_setting_name ? key_setting_name : s,
+		              key, key_setting_name ?: s,
 		              NULL);
 		g_free (s);
 	}
@@ -358,7 +358,7 @@ read_one_ip_address_or_route (KeyfileReaderInfo *info,
 	gs_free char *value = NULL;
 	gs_free char *value_orig = NULL;
 
-#define VALUE_ORIG()   (value_orig ? value_orig : (value_orig = nm_keyfile_plugin_kf_get_string (info->keyfile, setting_name, key_name, NULL)))
+#define VALUE_ORIG()   (value_orig ?: (value_orig = nm_keyfile_plugin_kf_get_string (info->keyfile, setting_name, key_name, NULL)))
 
 	value = nm_keyfile_plugin_kf_get_string (info->keyfile, setting_name, key_name, NULL);
 	if (!value)
@@ -1363,7 +1363,7 @@ parity_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 	default:
 		handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
 		             _("invalid parity value '%s'"),
-		             str_val ? str_val : "");
+		             str_val ?: "");
 		return;
 	}
 
@@ -1506,7 +1506,7 @@ setting_alias_writer (KeyfileWriterInfo *info,
 	nm_keyfile_plugin_kf_set_string (info->keyfile,
 	                                 nm_setting_get_name (setting),
 	                                 key,
-	                                 alias ? alias : str);
+	                                 alias ?: str);
 }
 
 static void

@@ -9,7 +9,7 @@
 <!--
   nmcli(1) manual page
 
-  Copyright 2010 - 2016 Red Hat, Inc.
+  Copyright 2010 - 2018 Red Hat, Inc.
 
   Permission is granted to copy, distribute and/or modify this document
   under the terms of the GNU Free Documentation License, Version 1.1
@@ -183,6 +183,10 @@
           <literal>yes</literal> enables colors, <literal>no</literal> disables them,
           <literal>auto</literal> only produces colors when standard output is directed
           to a terminal. The default value is <literal>auto</literal>.</para>
+          <para>The actual colors used are configured as described in
+          <citerefentry><refentrytitle>terminal-colors.d</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+          Please refer to the <link linkend='colors' endterm='colors.title' /> section for a
+          list of color names supported by <command>nmcli</command>.</para>
         </listitem>
       </varlistentry>
 
@@ -2035,6 +2039,269 @@ It's equivalent to the <literal>+bond.options 'option=value'</literal> syntax.</
 
   </refsect1>
 
+  <refsect1 id='colors'><title id='colors.title'>Colors</title>
+    <para>Implicit coloring can be disabled by an empty file
+    <filename>/etc/terminal-colors.d/nmcli.disable</filename>.</para>
+
+    <para>See <citerefentry><refentrytitle>terminal-colors.d</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+    for more details about colorization configuration.
+    The logical color names supported by <command>nmcli</command> are:</para>
+
+    <variablelist>
+      <varlistentry>
+        <term><option>connection-activated</option></term>
+        <listitem>
+          <para>A connection that is active.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>connection-activating</option></term>
+        <listitem>
+          <para>Connection that is being activated.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>connection-disconnecting</option></term>
+        <listitem>
+          <para>Connection that is being disconnected.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>connection-invisible</option></term>
+        <listitem>
+          <para>Connection whose details is the user not permitted to see.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>connectivity-full</option></term>
+        <listitem>
+          <para>Conectivity state when Internet is reachable.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>connectivity-limited</option></term>
+        <listitem>
+          <para>Conectivity state when only a local network reachable.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>connectivity-none</option></term>
+        <listitem>
+          <para>Conectivity state when the network is disconnected.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>connectivity-portal</option></term>
+        <listitem>
+          <para>Conectivity state when a captive portal hijacked the connection.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>connectivity-unknown</option></term>
+        <listitem>
+          <para>Conectivity state when a connectivity check didn't run.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>device-activated</option></term>
+        <listitem>
+          <para>Device that is connected.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>device-activating</option></term>
+        <listitem>
+          <para>Device that is being configured.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>device-disconnected</option></term>
+        <listitem>
+          <para>Device that is not connected.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>device-firmware-missing</option></term>
+        <listitem>
+          <para>Warning of a missing device firmware.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>device-plugin-missing</option></term>
+        <listitem>
+          <para>Warning of a missing device plugin.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>device-unavailable</option></term>
+        <listitem>
+          <para>Device that is not available for activation.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>manager-running</option></term>
+        <listitem>
+          <para>Notice that the NetworkManager daemon is available.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>manager-starting</option></term>
+        <listitem>
+          <para>Notice that the NetworkManager daemon is being initially connected.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>manager-stopped</option></term>
+        <listitem>
+          <para>Notice that the NetworkManager daemon is not available.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>permission-auth</option></term>
+        <listitem>
+          <para>An action that requires user authentication to get permission.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>permission-no</option></term>
+        <listitem>
+          <para>An action that is not permitted.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>permission-yes</option></term>
+        <listitem>
+          <para>An action that is permitted.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>prompt</option></term>
+        <listitem>
+          <para>Prompt in interactive mode.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>state-asleep</option></term>
+        <listitem>
+          <para>Indication that NetworkManager in suspended state.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>state-connected-global</option></term>
+        <listitem>
+          <para>Indication that NetworkManager in connected to Internet.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>state-connected-local</option></term>
+        <listitem>
+          <para>Indication that NetworkManager in local network.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>state-connected-site</option></term>
+        <listitem>
+          <para>Indication that NetworkManager in connected to networks other than Internet.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>state-connecting</option></term>
+        <listitem>
+          <para>Indication that NetworkManager is establishing a network connection.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>state-disconnected</option></term>
+        <listitem>
+          <para>Indication that NetworkManager is disconnected from a network.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>state-disconnecting</option></term>
+        <listitem>
+          <para>Indication that NetworkManager is being disconnected from a network.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>wifi-signal-excellent</option></term>
+        <listitem>
+          <para>Wi-Fi network with an excellent signal level.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>wifi-signal-fair</option></term>
+        <listitem>
+          <para>Wi-Fi network with a fair signal level.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>wifi-signal-good</option></term>
+        <listitem>
+          <para>Wi-Fi network with a good signal level.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>wifi-signal-poor</option></term>
+        <listitem>
+          <para>Wi-Fi network with a poor signal level.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>wifi-signal-unknown</option></term>
+        <listitem>
+          <para>Wi-Fi network that hasn't been actually seen (a hidden AP).</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>disabled</option></term>
+        <listitem>
+          <para>A property that is turned off.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>enabled</option></term>
+        <listitem>
+          <para>A property that is turned on.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
   <refsect1 id='environment_variables'><title>Environment Variables</title>
 
     <para><command>nmcli</command>'s behavior is affected by the following
@@ -2465,7 +2732,8 @@ It's equivalent to the <literal>+bond.options 'option=value'</literal> syntax.</
     <link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
     <link linkend='nm-settings'><citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
     <citerefentry><refentrytitle>nm-applet</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
-    <citerefentry><refentrytitle>nm-connection-editor</refentrytitle><manvolnum>1</manvolnum></citerefentry>.</para>
+    <citerefentry><refentrytitle>nm-connection-editor</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+    <citerefentry><refentrytitle>terminal-colors.d</refentrytitle><manvolnum>5</manvolnum></citerefentry>.</para>
   </refsect1>
 
 </refentry>

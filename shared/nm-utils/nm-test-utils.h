@@ -1138,7 +1138,7 @@ _nmtst_assert_ip4_address (const char *file, int line, in_addr_t addr, const cha
 		char buf[100];
 
 		g_error ("%s:%d: Unexpected IPv4 address: expected %s, got %s",
-		         file, line, str_expected ? str_expected : "0.0.0.0",
+		         file, line, str_expected ?: "0.0.0.0",
 		         inet_ntop (AF_INET, &addr, buf, sizeof (buf)));
 	}
 }
@@ -1156,7 +1156,7 @@ _nmtst_assert_ip6_address (const char *file, int line, const struct in6_addr *ad
 		char buf[100];
 
 		g_error ("%s:%d: Unexpected IPv6 address: expected %s, got %s",
-		         file, line, str_expected ? str_expected : "::",
+		         file, line, str_expected ?: "::",
 		         inet_ntop (AF_INET6, addr, buf, sizeof (buf)));
 	}
 }

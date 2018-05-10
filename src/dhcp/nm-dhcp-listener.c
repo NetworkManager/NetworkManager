@@ -160,7 +160,7 @@ _method_call_handle (NMDhcpListener *self,
 	pid_str = get_option (options, "pid");
 	pid = _nm_utils_ascii_str_to_int64 (pid_str, 10, 0, G_MAXINT32, -1);
 	if (pid == -1) {
-		_LOGW ("dhcp-event: couldn't convert PID '%s' to an integer", pid_str ? pid_str : "(null)");
+		_LOGW ("dhcp-event: couldn't convert PID '%s' to an integer", pid_str ?: "(null)");
 		return;
 	}
 

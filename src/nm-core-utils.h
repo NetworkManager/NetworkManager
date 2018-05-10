@@ -158,7 +158,7 @@ double nm_utils_exp10 (gint16 e);
 static inline guint32
 nm_utils_ip6_route_metric_normalize (guint32 metric)
 {
-	return metric ? metric : 1024 /*NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6*/;
+	return metric ?: 1024 /*NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6*/;
 }
 
 static inline guint32

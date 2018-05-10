@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2010 - 2017 Red Hat, Inc.
+ * Copyright 2010 - 2018 Red Hat, Inc.
  */
 
 #ifndef NMC_NMCLI_H
@@ -93,24 +93,18 @@ struct _NmcOutputField {
 	gboolean value_is_array;        /* Whether value is char** instead of char* */
 	gboolean free_value;            /* Whether to free the value */
 	NmcOfFlags flags;               /* Flags - whether and how to print values/field names/headers */
-	NMMetaTermColor color;             /* Use this color to print value */
-	NMMetaTermFormat color_fmt;        /* Use this terminal format to print value */
+	NMMetaColor color;              /* Use this color to print value */
 };
-
-typedef enum {
-	NMC_USE_COLOR_AUTO,
-	NMC_USE_COLOR_YES,
-	NMC_USE_COLOR_NO,
-} NmcColorOption;
 
 typedef struct _NmcConfig {
 	NMCPrintOutput print_output;                      /* Output mode */
-	NmcColorOption use_colors;                        /* Whether to use colors for output: option '--color' */
+	gboolean use_colors;                              /* Whether to use colors for output: option '--color' */
 	bool multiline_output;                            /* Multiline output instead of default tabular */
 	bool escape_values;                               /* Whether to escape ':' and '\' in terse tabular mode */
 	bool in_editor;                                   /* Whether running the editor - nmcli con edit' */
 	bool show_secrets;                                /* Whether to display secrets (both input and output): option '--show-secrets' */
 	bool overview;                                    /* Overview mode (hide default values) */
+	const char *palette[_NM_META_COLOR_NUM];          /* Color palette */
 } NmcConfig;
 
 typedef struct _NmcOutputData {
@@ -143,7 +137,8 @@ typedef struct _NmCli {
 	gboolean complete;                                /* Autocomplete the command line */
 	gboolean editor_status_line;                      /* Whether to display status line in connection editor */
 	gboolean editor_save_confirmation;                /* Whether to ask for confirmation on saving connections with 'autoconnect=yes' */
-	NMMetaTermColor editor_prompt_color;              /* Color of prompt in connection editor */
+
+	char *palette_buffer;                             /* Buffer with sequences for terminal-colors.d(5)-based coloring. */
 } NmCli;
 
 extern NmCli nm_cli;

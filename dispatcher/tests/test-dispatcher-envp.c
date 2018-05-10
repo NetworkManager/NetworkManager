@@ -543,7 +543,7 @@ test_generic (const char *file, const char *override_vpn_ip_iface)
 	                                           device_dhcp4_props,
 	                                           device_dhcp6_props,
 	                                           connectivity_change,
-	                                           override_vpn_ip_iface ? override_vpn_ip_iface : vpn_ip_iface,
+	                                           override_vpn_ip_iface ?: vpn_ip_iface,
 	                                           vpn_proxy_props,
 	                                           vpn_ip4_props,
 	                                           vpn_ip6_props,

@@ -236,7 +236,7 @@ handle_uevent (NMUdevClient *client,
 	ifindex = udev_device_get_property_value (device, "IFINDEX");
 	seqnum = udev_device_get_seqnum (device);
 	nm_log_dbg (LOGD_PLATFORM, "UDEV event: action '%s' subsys '%s' device '%s' (%s); seqnum=%" G_GUINT64_FORMAT,
-	            action, subsys, udev_device_get_sysname (device), ifindex ? ifindex : "unknown", seqnum);
+	            action, subsys, udev_device_get_sysname (device), ifindex ?: "unknown", seqnum);
 
 	if (!strcmp (action, "add"))
 		adsl_add (self, device);

@@ -6977,7 +6977,7 @@ get_property (GObject *object, guint prop_id,
 			if (con)
 				type = nm_connection_get_connection_type (con);
 		}
-		g_value_set_string (value, type ? type : "");
+		g_value_set_string (value, type ?: "");
 		break;
 	case PROP_ACTIVATING_CONNECTION:
 		nm_dbus_utils_g_value_set_object_path (value, priv->activating_connection);

@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2010 - 2017 Red Hat, Inc.
+ * Copyright 2010 - 2018 Red Hat, Inc.
  */
 
 #ifndef NMC_UTILS_H
@@ -41,11 +41,7 @@ char *ssid_to_hex (const char *str, gsize len);
 void nmc_terminal_erase_line (void);
 void nmc_terminal_show_progress (const char *str);
 void nmc_terminal_spawn_pager (const NmcConfig *nmc_config);
-gboolean nmc_term_use_colors (NmcColorOption color_option);
-const char *nmc_term_color_sequence (NMMetaTermColor color);
-const char *nmc_term_format_sequence (NMMetaTermFormat format);
-NMMetaTermColor nmc_term_color_parse_string (const char *str, GError **error);
-char *nmc_colorize (NmcColorOption color_option, NMMetaTermColor color, NMMetaTermFormat format, const char * fmt, ...)  _nm_printf (4, 5);
+char *nmc_colorize (const NmcConfig *nmc_config, NMMetaColor color, const char * fmt, ...)  _nm_printf (3, 4);
 void nmc_filter_out_colors_inplace (char *str);
 char *nmc_filter_out_colors (const char *str);
 char *nmc_get_user_input (const char *ask_str);
@@ -58,8 +54,7 @@ void set_val_str  (NmcOutputField fields_array[], guint32 index, char *value);
 void set_val_strc (NmcOutputField fields_array[], guint32 index, const char *value);
 void set_val_arr  (NmcOutputField fields_array[], guint32 index, char **value);
 void set_val_arrc (NmcOutputField fields_array[], guint32 index, const char **value);
-void set_val_color_all (NmcOutputField fields_array[], NMMetaTermColor color);
-void set_val_color_fmt_all (NmcOutputField fields_array[], NMMetaTermFormat format);
+void set_val_color_all (NmcOutputField fields_array[], NMMetaColor color);
 void nmc_free_output_field_values (NmcOutputField fields_array[]);
 
 GArray *parse_output_fields (const char *fields_str,
@@ -128,10 +123,10 @@ typedef enum {
 
 } NmcGenericInfoType;
 
-#define NMC_HANDLE_TERMFORMAT(color) \
+#define NMC_HANDLE_COLOR(color) \
 	G_STMT_START { \
-		if (get_type == NM_META_ACCESSOR_GET_TYPE_TERMFORMAT) \
-			return nm_meta_termformat_pack ((color), NM_META_TERM_FORMAT_NORMAL); \
+		if (get_type == NM_META_ACCESSOR_GET_TYPE_COLOR) \
+			return GINT_TO_POINTER (color); \
 	} G_STMT_END
 
 struct _NmcMetaGenericInfo {

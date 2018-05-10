@@ -749,9 +749,9 @@ nmc_setting_get_property_desc (NMSetting *setting, const char *prop)
 
 	return g_strdup_printf ("%s\n%s\n%s%s%s%s",
 	                        setting_desc_title,
-	                        setting_desc ? setting_desc : "",
+	                        setting_desc ?: "",
 	                        nmcli_nl, nmcli_desc_title, nmcli_nl,
-	                        nmcli_desc ? nmcli_desc : "");
+	                        nmcli_desc ?: "");
 }
 
 /*

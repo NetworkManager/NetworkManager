@@ -205,7 +205,7 @@ nm_modem_set_state (NMModem *self,
 		_LOGI ("modem state changed, '%s' --> '%s' (reason: %s)",
 		       nm_modem_state_to_string (old_state),
 		       nm_modem_state_to_string (new_state),
-		       reason ? reason : "none");
+		       reason ?: "none");
 
 		priv->state = new_state;
 		_notify (self, PROP_STATE);

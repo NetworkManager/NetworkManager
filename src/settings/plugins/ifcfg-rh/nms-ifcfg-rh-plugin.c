@@ -418,7 +418,7 @@ ifcfg_dir_changed (GFileMonitor *monitor,
 	path = g_file_get_path (file);
 
 	ifcfg_path = utils_detect_ifcfg_path (path, FALSE);
-	_LOGD ("ifcfg_dir_changed(%s) = %d // %s", path, event_type, ifcfg_path ? ifcfg_path : "(none)");
+	_LOGD ("ifcfg_dir_changed(%s) = %d // %s", path, event_type, ifcfg_path ?: "(none)");
 	if (ifcfg_path) {
 		connection = find_by_path (plugin, ifcfg_path);
 		switch (event_type) {

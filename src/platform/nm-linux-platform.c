@@ -6980,7 +6980,7 @@ handle_udev_event (NMUdevClient *udev_client,
 	seqnum = udev_device_get_seqnum (udevice);
 	_LOGD ("UDEV event: action '%s' subsys '%s' device '%s' (%s); seqnum=%" G_GUINT64_FORMAT,
 	        action, subsys, udev_device_get_sysname (udevice),
-	        ifindex ? ifindex : "unknown", seqnum);
+	        ifindex ?: "unknown", seqnum);
 
 	if (NM_IN_STRSET (action, "add", "move"))
 		udev_device_added (platform, udevice);

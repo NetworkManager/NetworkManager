@@ -65,9 +65,9 @@ nmt_newt_dialog_g_log_handler (const char     *log_domain,
 	}
 
 	full_message = g_strdup_printf ("%s%s%s%s%s",
-	                                log_domain ? log_domain : "",
+	                                log_domain ?: "",
 	                                log_domain && level_name ? " " : "",
-	                                level_name ? level_name : "",
+	                                level_name ?: "",
 	                                log_domain || level_name ? ": " : "",
 	                                message);
 
@@ -87,7 +87,7 @@ nmt_newt_dialog_g_log_handler (const char     *log_domain,
 	newtGridSetField (grid, 0, 1, NEWT_GRID_COMPONENT, ok, 0, 1, 0, 0,
 	                  NEWT_ANCHOR_RIGHT, 0);
 
-	newtGridWrappedWindow (grid, (char *) (level_name ? level_name : ""));
+	newtGridWrappedWindow (grid, (char *) (level_name ?: ""));
 	newtGridFree (grid, TRUE);
 
 	form = newtForm (NULL, NULL, 0);

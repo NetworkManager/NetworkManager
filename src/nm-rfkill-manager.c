@@ -296,7 +296,7 @@ add_one_killswitch (NMRfkillManager *self, struct udev_device *device)
 	             rfkill_type_to_desc (rtype),
 	             ks->path,
 	             ks->platform ? "platform " : "",
-	             ks->driver ? ks->driver : "<unknown>");
+	             ks->driver ?: "<unknown>");
 }
 
 static void

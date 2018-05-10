@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2010 - 2017 Red Hat, Inc.
+ * Copyright 2010 - 2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -811,17 +811,17 @@ found:
 	return found;
 }
 
-void
-nmc_active_connection_state_to_color (NMActiveConnectionState state, NMMetaTermColor *color)
+NMMetaColor
+nmc_active_connection_state_to_color (NMActiveConnectionState state)
 {
-	*color = NM_META_TERM_COLOR_NORMAL;
-
 	if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING)
-		*color = NM_META_TERM_COLOR_YELLOW;
+		return NM_META_COLOR_CONNECTION_ACTIVATING;
 	else if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
-		*color = NM_META_TERM_COLOR_GREEN;
+		return NM_META_COLOR_CONNECTION_ACTIVATED;
 	else if (state > NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
-		*color = NM_META_TERM_COLOR_RED;
+		return NM_META_COLOR_CONNECTION_DISCONNECTING;
+	else
+		return NM_META_COLOR_CONNECTION_UNKNOWN;
 }
 
 /* Essentially a version of nm_setting_connection_get_connection_type() that
@@ -864,7 +864,7 @@ fill_output_connection (NMConnection *connection, NMClient *client, NMCPrintOutp
 	const char *ac_state = NULL;
 	NMActiveConnectionState ac_state_int = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
 	char *ac_dev = NULL;
-	NMMetaTermColor color;
+	NMMetaColor color;
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -893,7 +893,7 @@ fill_output_connection (NMConnection *connection, NMClient *client, NMCPrintOutp
 	arr = nmc_dup_fields_array ((const NMMetaAbstractInfo *const*) nmc_fields_con_show, 0);
 
 	/* Show active connections in color */
-	nmc_active_connection_state_to_color (ac_state_int, &color);
+	color = nmc_active_connection_state_to_color (ac_state_int);
 	set_val_color_all (arr, color);
 
 	set_val_strc (arr, 0, nm_setting_connection_get_id (s_con));
@@ -944,7 +944,7 @@ fill_output_connection_for_invisible (NMActiveConnection *ac, NMCPrintOutput pri
 	set_val_strc (arr, 12, ac_path);
 	set_val_strc (arr, 13, NULL);
 
-	set_val_color_fmt_all (arr, NM_META_TERM_FORMAT_DIM);
+	set_val_color_all (arr, NM_META_COLOR_CONNECTION_INVISIBLE);
 
 	g_ptr_array_add (output_data, arr);
 }
@@ -1275,7 +1275,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_SECTION_PREFIX);
 			set_val_strc (arr, 0, nmc_fields_con_active_details_groups[5]->name);
 			set_val_str  (arr, 1, type_str);
-			set_val_strc (arr, 2, username ? username : get_vpn_data_item (con, VPN_DATA_ITEM_USERNAME));
+			set_val_strc (arr, 2, username ?: get_vpn_data_item (con, VPN_DATA_ITEM_USERNAME));
 			set_val_strc (arr, 3, get_vpn_data_item (con, VPN_DATA_ITEM_GATEWAY));
 			set_val_str  (arr, 4, banner_str);
 			set_val_str  (arr, 5, vpn_state_str);
@@ -4248,7 +4248,7 @@ nmc_read_connection_properties (NmCli *nmc,
 				return FALSE;
 
 			if (!*argc && nmc->complete)
-				complete_property (setting, strv[1], value ? value : "", connection);
+				complete_property (setting, strv[1], value ?: "", connection);
 
 			if (!set_property (connection, setting_name, strv[1], value, modifier, error))
 				return FALSE;
@@ -4329,7 +4329,7 @@ nmc_read_connection_properties (NmCli *nmc,
 				return FALSE;
 
 			if (!*argc && nmc->complete)
-				complete_option (chosen, value ? value : "", connection);
+				complete_option (chosen, value ?: "", connection);
 
 			if (!set_option (nmc, connection, chosen, value, error))
 				return FALSE;
@@ -4945,15 +4945,7 @@ gen_nmcli_cmds_submenu (const char *text, int state)
 static char *
 gen_cmd_nmcli (const char *text, int state)
 {
-	const char *words[] = { "status-line", "save-confirmation", "show-secrets", "prompt-color", NULL };
-	return nmc_rl_gen_func_basic (text, state, words);
-}
-
-static char *
-gen_cmd_nmcli_prompt_color (const char *text, int state)
-{
-	const char *words[] = { "normal", "black", "red", "green", "yellow",
-	                        "blue", "magenta", "cyan", "white", NULL };
+	const char *words[] = { "status-line", "save-confirmation", "show-secrets", NULL };
 	return nmc_rl_gen_func_basic (text, state, words);
 }
 
@@ -5269,8 +5261,6 @@ get_gen_func_cmd_nmcli (const char *str)
 		return gen_func_bool_values;
 	if (matches (str, "show-secrets"))
 		return gen_func_bool_values;
-	if (matches (str, "prompt-color"))
-		return gen_cmd_nmcli_prompt_color;
 	return NULL;
 }
 
@@ -5884,7 +5874,7 @@ _split_cmd (const char *cmd, char **out_arg0, const char **out_argr)
 
 	if (!cmd)
 		return;
-	while (NM_IN_SET (cmd[0], ' ', '\t'))
+	while (nm_utils_is_separator (cmd[0]))
 		cmd++;
 	if (!cmd[0])
 		return;
@@ -5893,7 +5883,7 @@ _split_cmd (const char *cmd, char **out_arg0, const char **out_argr)
 	arg0 = g_strndup (cmd, l);
 	cmd += l;
 	if (cmd[0]) {
-		while (NM_IN_SET (cmd[0], ' ', '\t'))
+		while (nm_utils_is_separator (cmd[0]))
 			cmd++;
 		if (cmd[0])
 			argr = cmd;
@@ -6480,8 +6470,7 @@ property_edit_submenu (NmCli *nmc,
 	/* Set global variable for use in TAB completion */
 	nmc_tab_completion.property = prop_name;
 
-	prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NM_META_TERM_FORMAT_NORMAL,
-	                       "nmcli %s.%s> ",
+	prompt = nmc_colorize (&nmc->nmc_config, NM_META_COLOR_PROMPT, "nmcli %s.%s> ",
 	                       nm_setting_get_name (curr_setting), prop_name);
 
 	while (cmd_property_loop) {
@@ -6811,14 +6800,13 @@ typedef struct {
 } NmcEditorMenuContext;
 
 static void
-menu_switch_to_level0 (NmcColorOption color_option,
+menu_switch_to_level0 (const NmcConfig *nmc_config,
                        NmcEditorMenuContext *menu_ctx,
-                       const char *prompt,
-                       NMMetaTermColor prompt_color)
+                       const char *prompt)
 {
 	menu_ctx->level = 0;
 	g_free (menu_ctx->main_prompt);
-	menu_ctx->main_prompt = nmc_colorize (color_option, prompt_color, NM_META_TERM_FORMAT_NORMAL, "%s", prompt);
+	menu_ctx->main_prompt = nmc_colorize (nmc_config, NM_META_COLOR_PROMPT, "%s", prompt);
 	menu_ctx->curr_setting = NULL;
 	g_strfreev (menu_ctx->valid_props);
 	menu_ctx->valid_props = NULL;
@@ -6827,16 +6815,14 @@ menu_switch_to_level0 (NmcColorOption color_option,
 }
 
 static void
-menu_switch_to_level1 (NmcColorOption color_option,
+menu_switch_to_level1 (const NmcConfig *nmc_config,
                        NmcEditorMenuContext *menu_ctx,
                        NMSetting *setting,
-                       const char *setting_name,
-                       NMMetaTermColor prompt_color)
+                       const char *setting_name)
 {
 	menu_ctx->level = 1;
 	g_free (menu_ctx->main_prompt);
-	menu_ctx->main_prompt = nmc_colorize (color_option, prompt_color, NM_META_TERM_FORMAT_NORMAL,
-	                                      "nmcli %s> ", setting_name);
+	menu_ctx->main_prompt = nmc_colorize (nmc_config, NM_META_COLOR_PROMPT, "nmcli %s> ", setting_name);
 	menu_ctx->curr_setting = setting;
 	g_strfreev (menu_ctx->valid_props);
 	menu_ctx->valid_props = nmc_setting_get_valid_properties (menu_ctx->curr_setting);
@@ -6874,8 +6860,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	valid_settings_str = get_valid_options_string (valid_settings_main, valid_settings_slave);
 	g_print (_("You may edit the following settings: %s\n"), valid_settings_str);
 
-	menu_ctx.main_prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NM_META_TERM_FORMAT_NORMAL,
-	                                     BASE_PROMPT);
+	menu_ctx.main_prompt = nmc_colorize (&nmc->nmc_config, NM_META_COLOR_PROMPT, BASE_PROMPT);
 
 	/* Get remote connection */
 	con_tmp = nm_client_get_connection_by_uuid (nmc->client,
@@ -7014,7 +6999,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				/* in top level - no setting selected yet */
 				const char *setting_name;
 				NMSetting *setting;
-				const char *user_arg = cmd_arg_s ? cmd_arg_s : cmd_arg_p;
+				const char *user_arg = cmd_arg_s ?: cmd_arg_p;
 
 				setting_name = ask_check_setting (user_arg,
 				                                  valid_settings_main,
@@ -7051,7 +7036,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				nmc_tab_completion.setting = setting;
 
 				/* Switch to level 1 */
-				menu_switch_to_level1 (nmc->nmc_config.use_colors, &menu_ctx, setting, setting_name, nmc->editor_prompt_color);
+				menu_switch_to_level1 (&nmc->nmc_config, &menu_ctx, setting, setting_name);
 
 				if (!cmd_arg_s) {
 					g_print (_("You may edit the following properties: %s\n"), menu_ctx.valid_props_str);
@@ -7106,7 +7091,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 				/* cmd_arg_s != NULL means argument is "setting.property" */
 				descr_all = !cmd_arg_s && !menu_ctx.curr_setting;
-				user_s = descr_all ? cmd_arg_p : cmd_arg_s ? cmd_arg_s : NULL;
+				user_s = descr_all ? cmd_arg_p : cmd_arg_s;
 				if (user_s) {
 					ss = is_setting_valid (connection,
 					                       valid_settings_main,
@@ -7133,7 +7118,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					connection_remove_setting (connection, ss);
 					if (ss == menu_ctx.curr_setting) {
 						/* If we removed the setting we are in, go up */
-						menu_switch_to_level0 (nmc->nmc_config.use_colors, &menu_ctx, BASE_PROMPT, nmc->editor_prompt_color);
+						menu_switch_to_level0 (&nmc->nmc_config, &menu_ctx, BASE_PROMPT);
 						nmc_tab_completion.setting = NULL;  /* for TAB completion */
 					}
 				} else {
@@ -7161,7 +7146,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 							/* coverity[copy_paste_error] - suppress Coverity COPY_PASTE_ERROR defect */
 							if (ss == menu_ctx.curr_setting) {
 								/* If we removed the setting we are in, go up */
-								menu_switch_to_level0 (nmc->nmc_config.use_colors, &menu_ctx, BASE_PROMPT, nmc->editor_prompt_color);
+								menu_switch_to_level0 (&nmc->nmc_config, &menu_ctx, BASE_PROMPT);
 								nmc_tab_completion.setting = NULL;  /* for TAB completion */
 							}
 						} else
@@ -7199,7 +7184,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 				/* cmd_arg_s != NULL means argument is "setting.property" */
 				descr_all = !cmd_arg_s && !menu_ctx.curr_setting;
-				user_s = descr_all ? cmd_arg_p : cmd_arg_s ? cmd_arg_s : NULL;
+				user_s = descr_all ? cmd_arg_p : cmd_arg_s;
 				if (user_s) {
 					ss = is_setting_valid (connection,
 					                       valid_settings_main,
@@ -7265,7 +7250,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 					/* cmd_arg_s != NULL means argument is "setting.property" */
 					whole_setting = !cmd_arg_s && !menu_ctx.curr_setting;
-					user_s = whole_setting ? cmd_arg_p : cmd_arg_s ? cmd_arg_s : NULL;
+					user_s = whole_setting ? cmd_arg_p : cmd_arg_s;
 					if (user_s) {
 						const char *s_name;
 
@@ -7517,7 +7502,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 		case NMC_EDITOR_MAIN_CMD_BACK:
 			/* Go back (up) an the menu */
 			if (menu_ctx.level == 1) {
-				menu_switch_to_level0 (nmc->nmc_config.use_colors, &menu_ctx, BASE_PROMPT, nmc->editor_prompt_color);
+				menu_switch_to_level0 (&nmc->nmc_config, &menu_ctx, BASE_PROMPT);
 				nmc_tab_completion.setting = NULL;  /* for TAB completion */
 			}
 			break;
@@ -7553,37 +7538,18 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				} else
 					nmc->nmc_config_mutable.show_secrets = bb;
 			} else if (cmd_arg_p && matches (cmd_arg_p, "prompt-color")) {
-				GError *tmp_err = NULL;
-				NMMetaTermColor color;
-				color = nmc_term_color_parse_string (cmd_arg_v ? g_strstrip (cmd_arg_v) : " ", &tmp_err);
-				if (tmp_err) {
-					g_print (_("Error: bad color: %s\n"), tmp_err->message);
-					g_clear_error (&tmp_err);
-				} else {
-					nmc->editor_prompt_color = color;
-					nm_clear_g_free (&menu_ctx.main_prompt);
-					if (menu_ctx.level == 0) {
-						menu_ctx.main_prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NM_META_TERM_FORMAT_NORMAL,
-						                                     BASE_PROMPT);
-					} else {
-						menu_ctx.main_prompt = nmc_colorize (nmc->nmc_config.use_colors, nmc->editor_prompt_color, NM_META_TERM_FORMAT_NORMAL,
-						                                     "nmcli %s> ",
-						                                     nm_setting_get_name (menu_ctx.curr_setting));
-					}
-				}
+				g_debug ("Ignoring erroneous --prompt-color argument. Use terminal-colors.d(5) to set the prompt color.\n");
 			} else if (!cmd_arg_p) {
 				g_print (_("Current nmcli configuration:\n"));
 				g_print ("status-line: %s\n"
 				         "save-confirmation: %s\n"
-				         "show-secrets: %s\n"
-				         "prompt-color: %d\n",
+				         "show-secrets: %s\n",
 				         nmc->editor_status_line ? "yes" : "no",
 				         nmc->editor_save_confirmation ? "yes" : "no",
-				         nmc->nmc_config.show_secrets ? "yes" : "no",
-				         nmc->editor_prompt_color);
+				         nmc->nmc_config.show_secrets ? "yes" : "no");
 			} else
 				g_print (_("Invalid configuration option '%s'; allowed [%s]\n"),
-				         cmd_arg_v ? cmd_arg_v : "", "status-line, save-confirmation, show-secrets, prompt-color");
+				         cmd_arg_v ?: "", "status-line, save-confirmation, show-secrets");
 
 			break;
 
@@ -7654,7 +7620,7 @@ editor_init_new_connection (NmCli *nmc, NMConnection *connection, const char *sl
 
 		g_object_set (s_con,
 		              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-		              NM_SETTING_CONNECTION_MASTER, dev_ifname ? dev_ifname : "eth0",
+		              NM_SETTING_CONNECTION_MASTER, dev_ifname ?: "eth0",
 		              NM_SETTING_CONNECTION_SLAVE_TYPE, slave_type,
 		              NULL);
 	} else {
@@ -7675,7 +7641,7 @@ editor_init_new_connection (NmCli *nmc, NMConnection *connection, const char *sl
 			const char *dev_ifname = get_ethernet_device_name (nmc);
 
 			g_object_set (NM_SETTING_VLAN (base_setting),
-			              NM_SETTING_VLAN_PARENT, dev_ifname ? dev_ifname : "eth0",
+			              NM_SETTING_VLAN_PARENT, dev_ifname ?: "eth0",
 			              NULL);
 		}
 

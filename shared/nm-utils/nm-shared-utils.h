@@ -191,6 +191,12 @@ void nm_utils_strbuf_append_str (char **buf, gsize *len, const char *str);
 
 const char *nm_strquote (char *buf, gsize buf_len, const char *str);
 
+static inline gboolean
+nm_utils_is_separator (const char c)
+{
+	return NM_IN_SET (c, ' ', '\t');
+}
+
 /*****************************************************************************/
 
 const char **nm_utils_strsplit_set (const char *str, const char *delimiters);

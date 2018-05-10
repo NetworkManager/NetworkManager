@@ -16,7 +16,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2012 - 2017 Red Hat, Inc.
+ * Copyright 2012 - 2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -119,7 +119,7 @@ _metagen_ip4_config_get_fcn (const NMMetaEnvironment *environment,
 
 	nm_assert (info->info_type < _NMC_GENERIC_INFO_TYPE_IP4_CONFIG_NUM);
 
-	NMC_HANDLE_TERMFORMAT (NM_META_TERM_COLOR_NORMAL);
+	NMC_HANDLE_COLOR (NM_META_COLOR_NONE);
 	NM_SET_OUT (out_is_default, TRUE);
 
 	switch (info->info_type) {
@@ -202,7 +202,7 @@ _metagen_ip6_config_get_fcn (const NMMetaEnvironment *environment,
 
 	nm_assert (info->info_type < _NMC_GENERIC_INFO_TYPE_IP6_CONFIG_NUM);
 
-	NMC_HANDLE_TERMFORMAT (NM_META_TERM_COLOR_NORMAL);
+	NMC_HANDLE_COLOR (NM_META_COLOR_NONE);
 	NM_SET_OUT (out_is_default, TRUE);
 
 	switch (info->info_type) {

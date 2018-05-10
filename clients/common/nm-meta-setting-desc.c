@@ -2157,7 +2157,7 @@ _get_fcn_802_1x_phase2_private_key (ARGS_GET_FCN)
 		password = path + strcspn (path, " \t"); \
 		if (password[0] != '\0') { \
 			password[0] = '\0'; \
-			while (NM_IN_SET (password[0], ' ', '\t')) \
+			while (nm_utils_is_separator (password[0])) \
 				password++; \
 		} else \
 			password = password_free = g_strdup (pwd_func (NM_SETTING_802_1X (setting))); \
@@ -2891,7 +2891,7 @@ dcb_parse_uint_array (const char *val,
 
 		*iter = g_strstrip (*iter);
 
-		num = _nm_utils_ascii_str_to_int64 (*iter, 10, 0, other ? other : max, -1);
+		num = _nm_utils_ascii_str_to_int64 (*iter, 10, 0, other ?: max, -1);
 
 		/* If number is greater than 'max' it must equal 'other' */
 		if (   num == -1

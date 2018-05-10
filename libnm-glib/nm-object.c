@@ -1328,7 +1328,7 @@ _nm_object_register_properties (NMObject *object,
 		}
 
 		pi = g_malloc0 (sizeof (PropertyInfo));
-		pi->func = tmp->func ? tmp->func : demarshal_generic;
+		pi->func = tmp->func ?: demarshal_generic;
 		pi->object_type = tmp->object_type;
 		pi->field = tmp->field;
 		pi->signal_prefix = tmp->signal_prefix;
@@ -1572,5 +1572,5 @@ _nm_object_new_proxy (NMObject *self, const char *path, const char *interface)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
 
-	return _nm_dbus_new_proxy_for_connection (priv->connection, path ? path : priv->path, interface);
+	return _nm_dbus_new_proxy_for_connection (priv->connection, path ?: priv->path, interface);
 }
