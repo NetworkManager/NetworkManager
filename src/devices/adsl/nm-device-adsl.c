@@ -194,7 +194,7 @@ br2684_assign_vcc (NMDeviceAdsl *self, NMSettingAdsl *s_adsl)
 
 	_LOGD (LOGD_ADSL, "assigning address %d.%d.%d encapsulation %s",
 	       priv->atm_index, addr.sap_addr.vpi, addr.sap_addr.vci,
-	       encapsulation ? encapsulation : "(none)");
+	       encapsulation ?: "(none)");
 
 	err = connect (priv->brfd, (struct sockaddr*) &addr, sizeof (addr));
 	if (err != 0) {

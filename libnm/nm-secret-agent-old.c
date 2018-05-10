@@ -224,7 +224,7 @@ verify_sender (NMSecretAgentOld *self,
 		             NM_SECRET_AGENT_ERROR,
 		             NM_SECRET_AGENT_ERROR_PERMISSION_DENIED,
 		             "Failed to request unix user: (%s) %s.",
-		             remote_error ? remote_error : "",
+		             remote_error ?: "",
 		             local->message);
 		g_free (remote_error);
 		g_error_free (local);

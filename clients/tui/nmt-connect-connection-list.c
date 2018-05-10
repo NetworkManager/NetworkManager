@@ -307,7 +307,7 @@ add_connections_for_aps (NmtConnectDevice *nmtdev,
 		}
 
 		if (!nmtconn->name)
-			nmtconn->name = nmtconn->ssid ? nmtconn->ssid : "<unknown>";
+			nmtconn->name = nmtconn->ssid ?: "<unknown>";
 
 		nmtdev->conns = g_slist_prepend (nmtdev->conns, nmtconn);
 	}
@@ -376,7 +376,7 @@ append_nmt_devices_for_virtual_devices (GSList          *nmt_devices,
 			g_free (name);
 		else {
 			nmtdev = g_slice_new0 (NmtConnectDevice);
-			nmtdev->name = name ? name : g_strdup ("Unknown");
+			nmtdev->name = name ?: g_strdup("Unknown");
 			nmtdev->sort_order = sort_order;
 
 			g_hash_table_insert (devices_by_name, nmtdev->name, nmtdev);
@@ -533,7 +533,7 @@ nmt_connect_connection_list_rebuild (NmtConnectConnectionList *list)
 			                       nmtconn->name,
 			                       (int)(max_width - nmt_newt_text_width (nmtconn->name)), "",
 			                       strength_col ? " " : "",
-			                       strength_col ? strength_col : "");
+			                       strength_col ?: "");
 
 			nmt_newt_listbox_append (listbox, row, nmtconn);
 			g_free (row);

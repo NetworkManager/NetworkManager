@@ -1049,7 +1049,7 @@ nm_manager_activate_connection_async (NMManager *manager,
 	nmdbus_manager_call_activate_connection (priv->proxy,
 	                                         connection ? nm_connection_get_path (connection) : "/",
 	                                         device ? nm_object_get_path (NM_OBJECT (device)) : "/",
-	                                         specific_object ? specific_object : "/",
+	                                         specific_object ?: "/",
 	                                         cancellable,
 	                                         activate_cb, info);
 }
@@ -1133,7 +1133,7 @@ nm_manager_add_and_activate_connection_async (NMManager *manager,
 	nmdbus_manager_call_add_and_activate_connection (priv->proxy,
 	                                                 dict,
 	                                                 nm_object_get_path (NM_OBJECT (device)),
-	                                                 specific_object ? specific_object : "/",
+	                                                 specific_object ?: "/",
 	                                                 cancellable,
 	                                                 add_activate_cb, info);
 }

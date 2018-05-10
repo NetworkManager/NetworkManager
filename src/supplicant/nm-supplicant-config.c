@@ -144,7 +144,7 @@ nm_supplicant_config_add_option_with_type (NMSupplicantConfig *self,
 			memset (&buf[0], 0, sizeof (buf));
 			memcpy (&buf[0], value, len > 254 ? 254 : len);
 			g_set_error (error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG,
-			             "key '%s' and/or value '%s' invalid", key, hidden ? hidden : buf);
+			             "key '%s' and/or value '%s' invalid", key, hidden ?: buf);
 			return FALSE;
 		}
 	}
@@ -168,7 +168,7 @@ nm_supplicant_config_add_option_with_type (NMSupplicantConfig *self,
 		char buf[255];
 		memset (&buf[0], 0, sizeof (buf));
 		memcpy (&buf[0], opt->value, opt->len > 254 ? 254 : opt->len);
-		nm_log_info (LOGD_SUPPLICANT, "Config: added '%s' value '%s'", key, hidden ? hidden : &buf[0]);
+		nm_log_info (LOGD_SUPPLICANT, "Config: added '%s' value '%s'", key, hidden ?: &buf[0]);
 	}
 
 	g_hash_table_insert (priv->config, g_strdup (key), opt);
@@ -979,7 +979,7 @@ add_pkcs11_uri_with_pin (NMSupplicantConfig *self,
 
 	tmp = g_strdup_printf ("%s%s%s", split[0],
 	                       (pin_qattr ? "?" : ""),
-	                       (pin_qattr ? pin_qattr : ""));
+	                       (pin_qattr ?: ""));
 
 	tmp_log = g_strdup_printf ("%s%s%s", split[0],
 	                           (pin_qattr ? "?" : ""),
@@ -1171,7 +1171,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 
 	/* CA path */
 	path = nm_setting_802_1x_get_ca_path (setting);
-	path = ca_path_override ? ca_path_override : path;
+	path = ca_path_override ?: path;
 	if (path) {
 		if (!add_string_val (self, path, "ca_path", FALSE, NULL, error))
 			return FALSE;
@@ -1179,7 +1179,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 
 	/* Phase2 CA path */
 	path = nm_setting_802_1x_get_phase2_ca_path (setting);
-	path = ca_path_override ? ca_path_override : path;
+	path = ca_path_override ?: path;
 	if (path) {
 		if (!add_string_val (self, path, "ca_path2", FALSE, NULL, error))
 			return FALSE;

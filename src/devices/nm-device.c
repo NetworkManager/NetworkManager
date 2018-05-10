@@ -1357,7 +1357,7 @@ nm_device_get_ip_iface (NMDevice *self)
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	/* If it's not set, default to iface */
-	return priv->ip_iface ? priv->ip_iface : priv->iface;
+	return priv->ip_iface ?: priv->iface;
 }
 
 int

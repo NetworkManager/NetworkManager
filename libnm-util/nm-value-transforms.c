@@ -104,7 +104,7 @@ _nm_utils_convert_string_list_to_string (const GValue *src_value, GValue *dest_v
 	for (iter = strings; iter; iter = iter->next) {
 		if (iter != strings)
 			g_string_append_c (printable, ',');
-		g_string_append (printable, iter->data ? iter->data : "(null)");
+		g_string_append (printable, iter->data ?: "(null)");
 	}
 
 	g_value_take_string (dest_value, g_string_free (printable, FALSE));

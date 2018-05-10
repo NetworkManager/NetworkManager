@@ -2044,8 +2044,8 @@ _log_connection_sort_hashes_fcn (gconstpointer a, gconstpointer b)
 	NMSettingPriority p1, p2;
 	NMSetting *s1, *s2;
 
-	s1 = v1->setting ? v1->setting : v1->diff_base_setting;
-	s2 = v2->setting ? v2->setting : v2->diff_base_setting;
+	s1 = v1->setting ?: v1->diff_base_setting;
+	s2 = v2->setting ?: v2->diff_base_setting;
 
 	g_assert (s1 && s2);
 
@@ -2279,13 +2279,13 @@ nm_utils_log_connection_diff (NMConnection *connection,
 			g_string_printf (str1, "%s.%s", setting_data->name, item->item_name);
 			switch (item->diff_result & (NM_SETTING_DIFF_RESULT_IN_A | NM_SETTING_DIFF_RESULT_IN_B)) {
 				case NM_SETTING_DIFF_RESULT_IN_B:
-					nm_log (level, domain, NULL, NULL, "%s%"_NM_LOG_ALIGN"s < %s", prefix, str1->str, str_diff ? str_diff : "NULL");
+					nm_log (level, domain, NULL, NULL, "%s%"_NM_LOG_ALIGN"s < %s", prefix, str1->str, str_diff ?: "NULL");
 					break;
 				case NM_SETTING_DIFF_RESULT_IN_A:
-					nm_log (level, domain, NULL, NULL, "%s%"_NM_LOG_ALIGN"s = %s", prefix, str1->str, str_conn ? str_conn : "NULL");
+					nm_log (level, domain, NULL, NULL, "%s%"_NM_LOG_ALIGN"s = %s", prefix, str1->str, str_conn ?: "NULL");
 					break;
 				default:
-					nm_log (level, domain, NULL, NULL, "%s%"_NM_LOG_ALIGN"s = %s < %s", prefix, str1->str, str_conn ? str_conn : "NULL", str_diff ? str_diff : "NULL");
+					nm_log (level, domain, NULL, NULL, "%s%"_NM_LOG_ALIGN"s = %s < %s", prefix, str1->str, str_conn ?: "NULL", str_diff ?: "NULL");
 					break;
 #undef _NM_LOG_ALIGN
 			}

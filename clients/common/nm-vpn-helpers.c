@@ -238,7 +238,7 @@ nm_vpn_openconnect_authenticate_helper (const char *host,
 	 * HOST='1.2.3.4'
 	 * FINGERPRINT='sha1:32bac90cf09a722e10ecc1942c67fe2ac8c21e2e'
 	 */
-	strv = g_strsplit_set (output ? output : "", "\r\n", 0);
+	strv = g_strsplit_set (output ?: "", "\r\n", 0);
 	for (iter = strv; iter && *iter; iter++) {
 		_extract_variable_value (*iter, "COOKIE=", cookie);
 		_extract_variable_value (*iter, "HOST=", gateway);

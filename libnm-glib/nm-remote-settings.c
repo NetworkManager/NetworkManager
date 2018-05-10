@@ -576,7 +576,7 @@ fetch_connections_done (DBusGProxy *proxy,
 		    && priv->service_running) {
 			g_warning ("%s: error fetching connections: %s.",
 			           __func__,
-			           error->message ? error->message : "(unknown)");
+			           error->message ?: "(unknown)");
 		}
 		g_clear_error (&error);
 
@@ -964,7 +964,7 @@ nm_remote_settings_save_hostname (NMRemoteSettings *settings,
 	                         save_hostname_cb,
 	                         info,
 	                         g_free,
-	                         G_TYPE_STRING, hostname ? hostname : "",
+	                         G_TYPE_STRING, hostname ?: "",
 	                         G_TYPE_INVALID);
 	return TRUE;
 }

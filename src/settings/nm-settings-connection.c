@@ -135,7 +135,7 @@ G_DEFINE_TYPE_WITH_CODE (NMSettingsConnection, nm_settings_connection, NM_TYPE_D
             const char *__uuid = (self) ? nm_settings_connection_get_uuid (self) : NULL; \
             \
             if (self) { \
-                g_snprintf (__prefix, sizeof (__prefix), "%s[%p%s%s]", _NMLOG_PREFIX_NAME, self, __uuid ? "," : "", __uuid ? __uuid : ""); \
+                g_snprintf (__prefix, sizeof (__prefix), "%s[%p%s%s]", _NMLOG_PREFIX_NAME, self, __uuid ? "," : "", __uuid ?: ""); \
                 __p_prefix = __prefix; \
             } \
             _nm_log (__level, _NMLOG_DOMAIN, 0, NULL, __uuid, \
@@ -463,7 +463,7 @@ update_agent_secrets_cache (NMSettingsConnection *self, NMConnection *new)
 
 	if (priv->agent_secrets)
 		g_object_unref (priv->agent_secrets);
-	priv->agent_secrets = nm_simple_connection_new_clone (new ? new : NM_CONNECTION (self));
+	priv->agent_secrets = nm_simple_connection_new_clone (new ?: NM_CONNECTION(self));
 
 	/* Clear out non-system-owned secrets */
 	nm_connection_clear_secrets_with_flags (priv->agent_secrets,
@@ -1883,7 +1883,7 @@ settings_connection_update (NMSettingsConnection *self,
 	 * that's sending the update request.  You can't make a connection
 	 * invisible to yourself.
 	 */
-	if (!nm_auth_is_subject_in_acl_set_error (tmp ? tmp : NM_CONNECTION (self),
+	if (!nm_auth_is_subject_in_acl_set_error (tmp ?: NM_CONNECTION(self),
 	                                          subject,
 	                                          NM_SETTINGS_ERROR,
 	                                          NM_SETTINGS_ERROR_PERMISSION_DENIED,
@@ -1899,7 +1899,7 @@ settings_connection_update (NMSettingsConnection *self,
 	info->new_settings = tmp;
 
 	permission = get_update_modify_permission (NM_CONNECTION (self),
-	                                           tmp ? tmp : NM_CONNECTION (self));
+	                                           tmp ?: NM_CONNECTION(self));
 	auth_start (self, context, subject, permission, update_auth_cb, info);
 	return;
 
