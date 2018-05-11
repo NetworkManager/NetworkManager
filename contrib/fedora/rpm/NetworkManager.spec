@@ -26,7 +26,6 @@
 
 %global systemd_dir %{_prefix}/lib/systemd/system
 %global nmlibdir %{_prefix}/lib/%{name}
-%global nmplugindir %{_libdir}/%{name}/%{version}-%{release}
 
 %global _hardened_build 1
 
@@ -529,7 +528,7 @@ ln -s ../10-ifcfg-rh-routes.sh %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d/n
 
 rm -f %{buildroot}%{_libdir}/*.la
 rm -f %{buildroot}%{_libdir}/pppd/%{ppp_version}/*.la
-rm -f %{buildroot}%{nmplugindir}/*.la
+rm -f %{buildroot}%{_libdir}/NetworkManager/*.la
 
 # Ensure the documentation timestamps are constant to avoid multilib conflicts
 find %{buildroot}%{_datadir}/gtk-doc -exec touch --reference configure.ac '{}' \+
@@ -605,9 +604,8 @@ fi
 %{_libexecdir}/nm-dhcp-helper
 %{_libexecdir}/nm-dispatcher
 %{_libexecdir}/nm-iface-helper
-%dir %{_libdir}/%{name}
-%dir %{nmplugindir}
-%{nmplugindir}/libnm-settings-plugin*.so
+%dir %{_libdir}/NetworkManager
+%{_libdir}/NetworkManager/libnm-settings-plugin*.so
 %if %{with nmtui}
 %exclude %{_mandir}/man1/nmtui*
 %endif
@@ -637,35 +635,35 @@ fi
 
 %if %{with adsl}
 %files adsl
-%{nmplugindir}/libnm-device-plugin-adsl.so
+%{_libdir}/%{name}/libnm-device-plugin-adsl.so
 %else
-%exclude %{nmplugindir}/libnm-device-plugin-adsl.so
+%exclude %{_libdir}/%{name}/libnm-device-plugin-adsl.so
 %endif
 
 %if %{with bluetooth}
 %files bluetooth
-%{nmplugindir}/libnm-device-plugin-bluetooth.so
+%{_libdir}/%{name}/libnm-device-plugin-bluetooth.so
 %endif
 
 %if %{with team}
 %files team
-%{nmplugindir}/libnm-device-plugin-team.so
+%{_libdir}/%{name}/libnm-device-plugin-team.so
 %endif
 
 %if %{with wifi}
 %files wifi
-%{nmplugindir}/libnm-device-plugin-wifi.so
+%{_libdir}/%{name}/libnm-device-plugin-wifi.so
 %endif
 
 %if %{with wwan}
 %files wwan
-%{nmplugindir}/libnm-device-plugin-wwan.so
-%{nmplugindir}/libnm-wwan.so
+%{_libdir}/%{name}/libnm-device-plugin-wwan.so
+%{_libdir}/%{name}/libnm-wwan.so
 %endif
 
 %if %{with ovs}
 %files ovs
-%{nmplugindir}/libnm-device-plugin-ovs.so
+%{_libdir}/%{name}/libnm-device-plugin-ovs.so
 %{systemd_dir}/NetworkManager.service.d/NetworkManager-ovs.conf
 %{_mandir}/man7/nm-openvswitch.7*
 %endif
@@ -673,7 +671,7 @@ fi
 %if %{with ppp}
 %files ppp
 %{_libdir}/pppd/%{ppp_version}/nm-pppd-plugin.so
-%{nmplugindir}/libnm-ppp-plugin.so
+%{_libdir}/%{name}/libnm-ppp-plugin.so
 %endif
 
 %if %{with libnm_glib}
