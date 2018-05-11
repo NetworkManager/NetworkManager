@@ -259,7 +259,7 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	/**
 	 * NMIP4Config:routes:
 	 *
-	 * The #GPtrArray containing #NMSettingIP4Routes of the configuration.
+	 * The #GPtrArray containing #NMSettingIP4Route<!-- -->s of the configuration.
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_ROUTES,
@@ -459,7 +459,7 @@ nm_ip4_config_get_wins_servers (NMIP4Config *config)
  * Gets the routes.
  *
  * Returns: (element-type NMIP4Route): the #GSList containing
- * #NMIP4Routes. This is the internal copy used by the configuration,
+ * #NMIP4Route<!-- -->s. This is the internal copy used by the configuration,
  * and must not be modified.
  **/
 const GSList *
