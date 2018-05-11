@@ -753,9 +753,6 @@ PM_STATE = 'State'
 PM_VERSION = 'Version'
 PM_CONNECTIVITY = 'Connectivity'
 
-def set_device_ac_cb(device, ac):
-    device.set_active_connection(ac)
-
 class NetworkManager(ExportedObj):
     def __init__(self, bus, object_path):
         self._bus = bus;
@@ -831,7 +828,8 @@ class NetworkManager(ExportedObj):
             self.__notify(PM_ACTIVE_CONNECTIONS)
             ac.remove_from_connection()
         else:
-            GLib.timeout_add(50, set_device_ac_cb, device, ac)
+            GLib.timeout_add(50,
+                             lambda: device.set_active_connection(ac))
 
         return to_path(ac)
 
