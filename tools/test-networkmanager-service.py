@@ -3,14 +3,60 @@
 
 from __future__ import print_function
 
-from gi.repository import GLib
 import sys
+
+import gi
+from gi.repository import GLib
+
+try:
+    gi.require_version('NM', '1.0')
+    from gi.repository import NM
+except Exception as e:
+    print("Cannot load gi.NM: %s" % (str(e)))
+    sys.exit(77)
+
 import dbus
 import dbus.service
 import dbus.mainloop.glib
 import random
 import collections
 import uuid
+import hashlib
+
+_DEFAULT_ARG = object()
+
+#########################################################
+
+class TestError(AssertionError):
+    def __init__(self, message = 'Unspecified error', errors = None):
+        AssertionError.__init__(self, message)
+        self.errors = errors
+
+def pseudorandom_stream(seed, length = None):
+    seed = str(seed)
+    v = None
+    i = 0
+    while length is None or length > 0:
+        if not v:
+            s = seed + str(i)
+            s = s.encode('utf8')
+            v = hashlib.sha256(s).hexdigest()
+            i += 1
+        yield int(v[0:2], 16)
+        v = v[2:]
+        if length is not None:
+            length -= 1
+
+def pseudorandom_num(seed, v_end, v_start = 0):
+    n = 0
+    span = v_end - v_start
+    for r in pseudorandom_stream(seed):
+        n = n * 256 + r
+        if n > span:
+            break
+    return v_start + (n % span)
+
+#########################################################
 
 mainloop = GLib.MainLoop()
 
@@ -65,6 +111,7 @@ NM_ACTIVE_CONNECTION_STATE_DEACTIVATING = 3
 NM_ACTIVE_CONNECTION_STATE_DEACTIVATED  = 4
 
 #########################################################
+
 IFACE_DBUS = 'org.freedesktop.DBus'
 
 class UnknownInterfaceException(dbus.DBusException):
@@ -88,9 +135,21 @@ class ExportedObj(dbus.service.Object):
 
     DBusInterface = collections.namedtuple('DBusInterface', ['dbus_iface', 'get_props_func', 'prop_changed_func'])
 
-    def __init__(self, bus, object_path):
+    def __init__(self, bus, object_path, ident = None):
         dbus.service.Object.__init__(self, bus, object_path)
         self._bus = bus
+
+        # ident is an optional (unique) identifier for the instance.
+        # The test driver may set it to reference to the object by
+        # this identifier. For NetworkManager, the real ID of an
+        # object on D-Bus is the object_path. But that is generated
+        # by the stub server only after the test user created the
+        # object. The ident parameter may be specified by the user
+        # and thus can be hard-coded in the test.
+        if ident is None:
+            ident = object_path
+        self.ident = ident
+
         self.path = object_path
         self.__ensure_dbus_ifaces()
         object_manager.add_object(self)
@@ -166,7 +225,11 @@ PD_AVAILABLE_CONNECTIONS = "AvailableConnections"
 class Device(ExportedObj):
     counter = 1
 
-    def __init__(self, bus, iface, devtype):
+    def __init__(self, bus, iface, devtype, ident = None):
+
+        if ident is None:
+            ident = iface
+
         object_path = "/org/freedesktop/NetworkManager/Devices/%d" % Device.counter
         Device.counter = Device.counter + 1
 
@@ -182,7 +245,7 @@ class Device(ExportedObj):
         self.available_connections = []
 
         self.add_dbus_interface(IFACE_DEVICE, self.__get_props, Device.PropertiesChanged)
-        ExportedObj.__init__(self, bus, object_path)
+        ExportedObj.__init__(self, bus, object_path, ident)
 
     # Properties interface
     def __get_props(self):
@@ -226,11 +289,12 @@ class Device(ExportedObj):
 
 ###################################################################
 
-def random_mac():
-    return '%02X:%02X:%02X:%02X:%02X:%02X' % (
-        random.randint(0, 255), random.randint(0, 255), random.randint(0, 255),
-        random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)
-      )
+def random_mac(seed = None):
+    if seed is None:
+        r = tuple([random.randint(0, 255) for x in range(6)])
+    else:
+        r = tuple(pseudorandom_stream(seed, 6))
+    return '%02X:%02X:%02X:%02X:%02X:%02X' % r
 
 ###################################################################
 IFACE_WIRED = 'org.freedesktop.NetworkManager.Device.Wired'
@@ -242,17 +306,17 @@ PE_CARRIER = "Carrier"
 PE_S390_SUBCHANNELS = "S390Subchannels"
 
 class WiredDevice(Device):
-    def __init__(self, bus, iface, mac, subchannels):
-
+    def __init__(self, bus, iface, mac = None, subchannels = None, ident = None):
         if mac is None:
-            self.mac = random_mac()
-        else:
-            self.mac = mac
+            mac = random_mac(iface if ident is None else ident)
+        if subchannels is None:
+            subchannels = dbus.Array(signature = 's')
+        self.mac = mac
         self.carrier = False
         self.s390_subchannels = subchannels
 
         self.add_dbus_interface(IFACE_WIRED, self.__get_props, WiredDevice.PropertiesChanged)
-        Device.__init__(self, bus, iface, NM_DEVICE_TYPE_ETHERNET)
+        Device.__init__(self, bus, iface, NM_DEVICE_TYPE_ETHERNET, ident)
 
     # Properties interface
     def __get_props(self):
@@ -279,13 +343,13 @@ PV_CARRIER = "Carrier"
 PV_VLAN_ID = "VlanId"
 
 class VlanDevice(Device):
-    def __init__(self, bus, iface):
-        self.mac = random_mac()
+    def __init__(self, bus, iface, ident = None):
+        self.mac = random_mac(iface if ident is None else ident)
         self.carrier = False
         self.vlan_id = 1
 
         self.add_dbus_interface(IFACE_VLAN, self.__get_props, VlanDevice.PropertiesChanged)
-        Device.__init__(self, bus, iface, NM_DEVICE_TYPE_VLAN)
+        Device.__init__(self, bus, iface, NM_DEVICE_TYPE_VLAN, ident)
 
     # Properties interface
     def __get_props(self):
@@ -315,24 +379,35 @@ PP_STRENGTH = "Strength"
 class WifiAp(ExportedObj):
     counter = 0
 
-    def __init__(self, bus, ssid, mac, flags, wpaf, rsnf, freq):
+    def __init__(self, bus, ssid, bssid = None, flags = None, wpaf = None, rsnf = None, freq = None, strength = None, ident = None):
         path = "/org/freedesktop/NetworkManager/AccessPoint/%d" % WifiAp.counter
         WifiAp.counter = WifiAp.counter + 1
 
+        if flags is None:
+            flags = 0x1
+        if wpaf is None:
+            wpaf = 0x1cc
+        if rsnf is None:
+            rsnf = 0x1cc
+        if freq is None:
+            freq = 2412
+        if bssid is None:
+            bssid = random_mac(path)
+        if strength is None:
+            strength = pseudorandom_num(path, 100)
+
         self.ssid = ssid
-        if mac:
-            self.bssid = mac
-        else:
-            self.bssid = random_mac()
+        self.bssid = bssid
         self.flags = flags
         self.wpaf = wpaf
         self.rsnf = rsnf
         self.freq = freq
-        self.strength = random.randint(0, 100)
+        self.strength = strength
+        self.strength_counter = 0
         self.strength_id = GLib.timeout_add_seconds(10, self.strength_cb, None)
 
         self.add_dbus_interface(IFACE_WIFI_AP, self.__get_props, WifiAp.PropertiesChanged)
-        ExportedObj.__init__(self, bus, path)
+        ExportedObj.__init__(self, bus, path, ident)
 
     def __del__(self):
         if self.strength_id > 0:
@@ -340,7 +415,8 @@ class WifiAp(ExportedObj):
         self.strength_id = 0
 
     def strength_cb(self, ignored):
-        self.strength = random.randint(0, 100)
+        self.strength_counter += 1
+        self.strength = pseudorandom_num(self.path + str(self.strength_counter), 100)
         self.__notify(PP_STRENGTH)
         return True
 
@@ -380,13 +456,15 @@ PW_ACTIVE_ACCESS_POINT = "ActiveAccessPoint"
 PW_WIRELESS_CAPABILITIES = "WirelessCapabilities"
 
 class WifiDevice(Device):
-    def __init__(self, bus, iface):
-        self.mac = random_mac()
+    def __init__(self, bus, iface, mac = None, ident = None):
+        if mac is None:
+            mac = random_mac(iface if ident is None else ident)
+        self.mac = mac
         self.aps = []
         self.active_ap = None
 
         self.add_dbus_interface(IFACE_WIFI, self.__get_props, WifiDevice.PropertiesChanged)
-        Device.__init__(self, bus, iface, NM_DEVICE_TYPE_WIFI)
+        Device.__init__(self, bus, iface, NM_DEVICE_TYPE_WIFI, ident)
 
     # methods
     @dbus.service.method(dbus_interface=IFACE_WIFI, in_signature='', out_signature='ao')
@@ -411,6 +489,7 @@ class WifiDevice(Device):
         self.aps.append(ap)
         self.__notify(PW_ACCESS_POINTS)
         self.AccessPointAdded(to_path(ap))
+        return ap
 
     @dbus.service.signal(IFACE_WIFI, signature='o')
     def AccessPointRemoved(self, ap_path):
@@ -439,12 +518,6 @@ class WifiDevice(Device):
     @dbus.service.signal(IFACE_WIFI, signature='a{sv}')
     def PropertiesChanged(self, changed):
         pass
-
-    # test functions
-    def add_test_ap(self, ssid, mac):
-        ap = WifiAp(self._bus, ssid, mac, 0x1, 0x1cc, 0x1cc, 2412)
-        self.add_ap(ap)
-        return ap
 
     def remove_ap_by_path(self, path):
         for ap in self.aps:
@@ -516,14 +589,14 @@ PX_BSID = "Bsid"
 PX_ACTIVE_NSP = "ActiveNsp"
 
 class WimaxDevice(Device):
-    def __init__(self, bus, iface):
-        self.mac = random_mac()
-        self.bsid = random_mac()
+    def __init__(self, bus, iface, ident = None):
+        self.mac = random_mac(iface if ident is None else ident)
+        self.bsid = random_mac(iface if ident is None else ident)
         self.nsps = []
         self.active_nsp = None
 
         self.add_dbus_interface(IFACE_WIMAX, self.__get_props, WimaxDevice.PropertiesChanged)
-        Device.__init__(self, bus, iface, NM_DEVICE_TYPE_WIMAX)
+        Device.__init__(self, bus, iface, NM_DEVICE_TYPE_WIMAX, ident)
 
     # methods
     @dbus.service.method(dbus_interface=IFACE_WIMAX, in_signature='', out_signature='ao')
@@ -715,11 +788,8 @@ class NetworkManager(ExportedObj):
 
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature='s', out_signature='o')
     def GetDeviceByIpIface(self, ip_iface):
-        for d in self.devices:
-            # ignore iface/ip_iface distinction for now
-            if d.iface == ip_iface:
-                return to_path(d)
-        raise UnknownDeviceException("No device found for the requested iface.")
+        d = self.find_device_first(ip_iface = ip_iface, require = UnknownDeviceException)
+        return to_path(d)
 
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature='ooo', out_signature='o')
     def ActivateConnection(self, conpath, devpath, specific_object):
@@ -731,11 +801,7 @@ class NetworkManager(ExportedObj):
         hash = connection.GetSettings()
         s_con = hash['connection']
 
-        device = None
-        for d in self.devices:
-            if d.path == devpath:
-                device = d
-                break
+        device = self.find_device_first(path = devpath)
         if not device and s_con['type'] == 'vlan':
             ifname = s_con['interface-name']
             device = VlanDevice(self._bus, ifname)
@@ -771,14 +837,7 @@ class NetworkManager(ExportedObj):
 
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature='a{sa{sv}}oo', out_signature='oo')
     def AddAndActivateConnection(self, connection, devpath, specific_object):
-        device = None
-        for d in self.devices:
-            if d.path == devpath:
-                device = d
-                break
-        if not device:
-            raise UnknownDeviceException("No device found for the requested iface.")
-
+        device = self.find_device_first(path = devpath, require = UnknownDeviceException)
         conpath = settings.AddConnection(connection)
         return (conpath, self.ActivateConnection(conpath, devpath, specific_object))
 
@@ -831,11 +890,43 @@ class NetworkManager(ExportedObj):
     def DeviceAdded(self, devpath):
         pass
 
+    def find_devices(self, ident = _DEFAULT_ARG, path = _DEFAULT_ARG, iface = _DEFAULT_ARG, ip_iface = _DEFAULT_ARG):
+        r = None
+        for d in self.devices:
+            if ident is not _DEFAULT_ARG:
+                if d.ident != ident:
+                    continue
+            if path is not _DEFAULT_ARG:
+                if d.path != path:
+                    continue
+            if iface is not _DEFAULT_ARG:
+                if d.iface != iface:
+                    continue
+            if ip_iface is not _DEFAULT_ARG:
+                # ignore iface/ip_iface distinction for now
+                if d.iface != ip_iface:
+                    continue
+            yield d
+
+    def find_device_first(self, ident = _DEFAULT_ARG, path = _DEFAULT_ARG, iface = _DEFAULT_ARG, ip_iface = _DEFAULT_ARG, require = None):
+        r = None
+        for d in self.find_devices(ident = ident, path = path, iface = iface, ip_iface = ip_iface):
+            r = d
+            break
+        if r is None and require:
+            if require is TestError:
+                raise TestError('Device not found')
+            raise UnknownDeviceException('Device not found')
+        return r
+
     def add_device(self, device):
+        if self.find_device_first(ident = device.ident, path = device.path) is not None:
+            raise TestError("Duplicate device ident=%s / path=%s" % (device.ident, device.path))
         self.devices.append(device)
         self.__notify(PM_DEVICES)
         self.__notify(PM_ALL_DEVICES)
         self.DeviceAdded(to_path(device))
+        return device
 
     @dbus.service.signal(IFACE_NM, signature='o')
     def DeviceRemoved(self, devpath):
@@ -880,70 +971,67 @@ class NetworkManager(ExportedObj):
     def Quit(self):
         mainloop.quit()
 
+    @dbus.service.method(IFACE_TEST, in_signature='a{ss}', out_signature='a(sss)')
+    def FindConnections(self, args):
+        return [(c.path, c.get_uuid(), c.get_id()) for c in settings.find_connections(**args)]
+
+    @dbus.service.method(IFACE_TEST, in_signature='sa{sv}', out_signature='o')
+    def AddObj(self, class_name, args):
+        if class_name in ['WiredDevice', 'WifiDevice']:
+            py_class = globals()[class_name]
+            d = py_class(self._bus, **args)
+            return to_path(self.add_device(d))
+        elif class_name in ['WifiAp']:
+            if 'device' not in args:
+                raise TestError('missing "device" paramter')
+            d = self.find_device_first(ident = args['device'], require = TestError)
+            del args['device']
+            if 'ssid' not in args:
+                args['ssid'] = d.ident + '-ap-' + str(WifiAp.counter + 1)
+            ap = WifiAp(self._bus, **args)
+            return to_path(d.add_ap(ap))
+        raise TestError("Invalid python type \"%s\"" % (class_name))
+
     @dbus.service.method(IFACE_TEST, in_signature='ssas', out_signature='o')
     def AddWiredDevice(self, ifname, mac, subchannels):
-        for d in self.devices:
-            if d.iface == ifname:
-                raise PermissionDeniedException("Device already added")
         dev = WiredDevice(self._bus, ifname, mac, subchannels)
-        self.add_device(dev)
-        return to_path(dev)
+        return to_path(self.add_device(dev))
 
     @dbus.service.method(IFACE_TEST, in_signature='s', out_signature='o')
     def AddWifiDevice(self, ifname):
-        for d in self.devices:
-            if d.iface == ifname:
-                raise PermissionDeniedException("Device already added")
         dev = WifiDevice(self._bus, ifname)
-        self.add_device(dev)
-        return to_path(dev)
+        return to_path(self.add_device(dev))
 
     @dbus.service.method(IFACE_TEST, in_signature='s', out_signature='o')
     def AddWimaxDevice(self, ifname):
-        for d in self.devices:
-            if d.iface == ifname:
-                raise PermissionDeniedException("Device already added")
         dev = WimaxDevice(self._bus, ifname)
-        self.add_device(dev)
-        return to_path(dev)
+        return to_path(self.add_device(dev))
 
     @dbus.service.method(IFACE_TEST, in_signature='o', out_signature='')
     def RemoveDevice(self, path):
-        for d in self.devices:
-            if d.path == path:
-                self.remove_device(d)
-                return
-        raise UnknownDeviceException("Device not found")
+        d = self.find_device_first(path = path, require = TestError)
+        self.remove_device(d)
 
     @dbus.service.method(IFACE_TEST, in_signature='sss', out_signature='o')
-    def AddWifiAp(self, ifname, ssid, mac):
-        for d in self.devices:
-            if d.iface == ifname:
-                return to_path(d.add_test_ap(ssid, mac))
-        raise UnknownDeviceException("Device not found")
+    def AddWifiAp(self, ident, ssid, bssid):
+        d = self.find_device_first(ident = ident, require = TestError)
+        ap = WifiAp(self._bus, ssid, bssid)
+        return to_path(d.add_ap(ap))
 
     @dbus.service.method(IFACE_TEST, in_signature='so', out_signature='')
-    def RemoveWifiAp(self, ifname, ap_path):
-        for d in self.devices:
-            if d.iface == ifname:
-                d.remove_ap_by_path(ap_path)
-                return
-        raise UnknownDeviceException("Device not found")
+    def RemoveWifiAp(self, ident, ap_path):
+        d = self.find_device_first(ident = ident, require = TestError)
+        d.remove_ap_by_path(ap_path)
 
     @dbus.service.method(IFACE_TEST, in_signature='ss', out_signature='o')
-    def AddWimaxNsp(self, ifname, name):
-        for d in self.devices:
-            if d.iface == ifname:
-                return to_path(d.add_test_nsp(name))
-        raise UnknownDeviceException("Device not found")
+    def AddWimaxNsp(self, ident, name):
+        d = self.find_device_first(ident = ident, require = TestError)
+        return to_path(d.add_test_nsp(name))
 
     @dbus.service.method(IFACE_TEST, in_signature='so', out_signature='')
-    def RemoveWimaxNsp(self, ifname, nsp_path):
-        for d in self.devices:
-            if d.iface == ifname:
-                d.remove_nsp_by_path(nsp_path)
-                return
-        raise UnknownDeviceException("Device not found")
+    def RemoveWimaxNsp(self, ident, nsp_path):
+        d = self.find_device_first(ident = ident, require = TestError)
+        d.remove_nsp_by_path(nsp_path)
 
     @dbus.service.method(IFACE_TEST, in_signature='', out_signature='')
     def AutoRemoveNextConnection(self):
@@ -979,15 +1067,19 @@ class MissingSettingException(dbus.DBusException):
     _dbus_error_name = IFACE_CONNECTION + '.MissingSetting'
 
 class Connection(ExportedObj):
-    def __init__(self, bus, object_path, settings, remove_func, verify_connection=True):
+    def __init__(self, bus, path_counter, settings, remove_func, verify_connection=True):
 
+        path = "/org/freedesktop/NetworkManager/Settings/Connection/%s" % (path_counter)
+
+        if 'connection' not in settings:
+            settings['connection'] = { }
+        if self.get_id(settings) is None:
+            settings['connection']['id'] = 'connection-%s' % (path_counter)
         if self.get_uuid(settings) is None:
-            if 'connection' not in settings:
-                settings['connection'] = { }
-            settings['connection']['uuid'] = uuid.uuid4()
+            settings['connection']['uuid'] = str(uuid.uuid3(uuid.NAMESPACE_URL, path))
         self.verify(settings, verify_strict=verify_connection)
 
-        self.path = object_path
+        self.path = path
         self.settings = settings
         self.remove_func = remove_func
         self.visible = True
@@ -995,7 +1087,16 @@ class Connection(ExportedObj):
         self.props['Unsaved'] = False
 
         self.add_dbus_interface(IFACE_CONNECTION, self.__get_props, None)
-        ExportedObj.__init__(self, bus, object_path)
+        ExportedObj.__init__(self, bus, path)
+
+    def get_id(self, settings=None):
+        if settings is None:
+            settings = self.settings
+        if 'connection' in settings:
+            s_con = settings['connection']
+            if 'id' in s_con:
+                return s_con['id']
+        return None
 
     def get_uuid(self, settings=None):
         if settings is None:
@@ -1082,7 +1183,7 @@ class Settings(ExportedObj):
     def __init__(self, bus, object_path):
         self.connections = {}
         self.bus = bus
-        self.counter = 1
+        self.counter = 0
         self.remove_next_connection = False
         self.props = {}
         self.props['Hostname'] = "foobar.baz"
@@ -1098,6 +1199,19 @@ class Settings(ExportedObj):
     def get_connection(self, path):
         return self.connections[path]
 
+    def find_connections(self, path = None, con_id = None, con_uuid = None):
+        for c in self.connections.values():
+            if path is not None:
+                if c.path != path:
+                    continue
+            if con_id is not None:
+                if c.get_id() != con_id:
+                    continue
+            if con_uuid is not None:
+                if c.get_uuid() != con_uuid:
+                    continue
+            yield c
+
     @dbus.service.method(dbus_interface=IFACE_SETTINGS, in_signature='', out_signature='ao')
     def ListConnections(self):
         return self.connections.keys()
@@ -1107,24 +1221,23 @@ class Settings(ExportedObj):
         return self.add_connection(settings)
 
     def add_connection(self, settings, verify_connection=True):
-        path = "/org/freedesktop/NetworkManager/Settings/Connection/{0}".format(self.counter)
-        con = Connection(self.bus, path, settings, self.delete_connection, verify_connection)
+        self.counter += 1
+        con = Connection(self.bus, self.counter, settings, self.delete_connection, verify_connection)
 
         uuid = con.get_uuid()
         if uuid in [c.get_uuid() for c in self.connections.values()]:
             raise InvalidSettingException('cannot add duplicate connection with uuid %s' % (uuid))
 
-        self.counter = self.counter + 1
-        self.connections[path] = con
+        self.connections[con.path] = con
         self.props['Connections'] = dbus.Array(self.connections.keys(), 'o')
-        self.NewConnection(path)
+        self.NewConnection(con.path)
         self.__notify('Connections')
 
         if self.remove_next_connection:
             self.remove_next_connection = False
-            self.connections[path].Delete()
+            self.connections[con.path].Delete()
 
-        return path
+        return con.path
 
     def update_connection(self, connection, path=None, verify_connection=True):
         if path is None:

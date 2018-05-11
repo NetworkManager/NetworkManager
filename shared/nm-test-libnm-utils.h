@@ -42,18 +42,22 @@ typedef struct {
 
 NMTstcServiceInfo *nmtstc_service_init (void);
 void nmtstc_service_cleanup (NMTstcServiceInfo *info);
+NMTstcServiceInfo *nmtstc_service_available (NMTstcServiceInfo *info);
 
 static inline void _nmtstc_auto_service_cleanup (NMTstcServiceInfo **info)
 {
-	if (info && *info) {
-		nmtstc_service_cleanup (*info);
-		*info = NULL;
-	}
+	nmtstc_service_cleanup (g_steal_pointer (info));
 }
-
 #define NMTSTC_SERVICE_INFO_SETUP(sinfo) \
 	NM_PRAGMA_WARNING_DISABLE ("-Wunused-variable") \
-	__attribute__ ((cleanup(_nmtstc_auto_service_cleanup))) NMTstcServiceInfo *sinfo = nmtstc_service_init (); \
+	__attribute__ ((cleanup(_nmtstc_auto_service_cleanup))) NMTstcServiceInfo *sinfo = ({ \
+		NMTstcServiceInfo *_sinfo; \
+		\
+		_sinfo = nmtstc_service_init (); \
+		if (!nmtstc_service_available (_sinfo)) \
+			return; \
+		_sinfo; \
+	}); \
 	NM_PRAGMA_WARNING_REENABLE
 
 /*****************************************************************************/

@@ -70,6 +70,9 @@ test_add_connection (void)
 	time_t start, now;
 	gboolean done = FALSE;
 
+	if (!nmtstc_service_available (sinfo))
+		return;
+
 	connection = nm_connection_new ();
 
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -145,6 +148,9 @@ test_make_invisible (void)
 	gboolean done = FALSE, has_settings = FALSE;
 	char *path;
 
+	if (!nmtstc_service_available (sinfo))
+		return;
+
 	g_assert (remote != NULL);
 
 	/* Listen for the remove event when the connection becomes invisible */
@@ -211,6 +217,9 @@ test_make_visible (void)
 	gboolean found = FALSE;
 	char *path;
 	NMRemoteConnection *new = NULL;
+
+	if (!nmtstc_service_available (sinfo))
+		return;
 
 	g_assert (remote != NULL);
 
@@ -292,6 +301,9 @@ test_remove_connection (void)
 	gboolean done = FALSE;
 	char *path;
 
+	if (!nmtstc_service_available (sinfo))
+		return;
+
 	/* Find a connection to delete */
 	list = nm_remote_settings_list_connections (settings);
 	g_assert_cmpint (g_slist_length (list), >, 0);
@@ -360,10 +372,13 @@ settings_service_running_changed (GObject *client,
 static void
 test_service_running (void)
 {
-	NMRemoteSettings *settings2;
+	gs_unref_object NMRemoteSettings *settings2 = NULL;
 	guint quit_id;
 	int running_changed = 0;
 	gboolean running;
+
+	if (!nmtstc_service_available (sinfo))
+		return;
 
 	loop = g_main_loop_new (NULL, FALSE);
 
@@ -403,6 +418,7 @@ test_service_running (void)
 
 	/* Now restart it */
 	sinfo =  nmtstc_service_init ();
+	g_assert (nmtstc_service_available (sinfo));
 
 	quit_id = g_timeout_add_seconds (5, loop_quit, loop);
 	g_main_loop_run (loop);
@@ -413,8 +429,6 @@ test_service_running (void)
 	              NM_REMOTE_SETTINGS_SERVICE_RUNNING, &running,
 	              NULL);
 	g_assert (running == TRUE);
-
-	g_object_unref (settings2);
 }
 
 /*****************************************************************************/

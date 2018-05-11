@@ -948,8 +948,11 @@ EXTRA_DIST += \
 	libnm/libnm.pc.in \
 	libnm/libnm.ver
 
+libnm_NM_1_0_typelib =
 
 if HAVE_INTROSPECTION
+libnm_NM_1_0_typelib += libnm/NM-1.0.typelib
+
 libnm/NM-1.0.gir: libnm/libnm.la
 libnm_NM_1_0_gir_INCLUDES = Gio-2.0
 libnm_NM_1_0_gir_PACKAGES = gio-2.0
@@ -1059,12 +1062,20 @@ EXTRA_DIST += \
 ###############################################################################
 
 libnm_tests_programs = \
-	libnm/tests/test-general \
+	libnm/tests/test-general
+
+check_programs += $(libnm_tests_programs)
+
+libnm_tests_programs_req_introspection = \
 	libnm/tests/test-nm-client \
 	libnm/tests/test-remote-settings-client \
 	libnm/tests/test-secret-agent
 
-check_programs += $(libnm_tests_programs)
+if HAVE_INTROSPECTION
+check_programs += $(libnm_tests_programs_req_introspection)
+else
+check_programs_norun += $(libnm_tests_programs_req_introspection)
+endif
 
 libnm_tests_cppflags = \
 	$(dflt_cppflags_libnm_core) \
@@ -1121,6 +1132,12 @@ $(libnm_tests_test_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(libnm_tests_test_nm_client_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(libnm_tests_test_remote_settings_client_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(libnm_tests_test_secret_agent_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+# tools/test-networkmanager-service.py uses libnm's typelib. Ensure it
+# is built first.
+$(libnm_tests_test_nm_client_OBJECTS):              $(libnm_NM_1_0_typelib)
+$(libnm_tests_test_remote_settings_client_OBJECTS): $(libnm_NM_1_0_typelib)
+$(libnm_tests_test_secret_agent_OBJECTS):           $(libnm_NM_1_0_typelib)
 
 ###############################################################################
 
@@ -3407,10 +3424,14 @@ $(clients_common_settings_doc_h): clients/common/settings-docs.xsl libnm/nm-prop
 	$(AM_V_GEN) $(XSLTPROC) --output $@ $< $(word 2,$^)
 DISTCLEANFILES += $(clients_common_settings_doc_h)
 check-local-settings-docs: $(clients_common_settings_doc_h)
-	@if test -z "$$NMTST_NO_CHECK_SETTINGS_DOCS" ; then  \
+	@if test -z "$$NMTST_NO_CHECK_SETTINGS_DOCS" ; then \
 		if ! cmp -s "$(srcdir)/$(clients_common_settings_doc_h).in" "$(builddir)/$(clients_common_settings_doc_h)" ; then \
-			echo "The generated file \"$(builddir)/$(clients_common_settings_doc_h)\" differs from the source file \"$(srcdir)/$(clients_common_settings_doc_h).in\". You probably should copy the generated file over to the source file. You can skip this test by setting \$$NMTST_NO_CHECK_SETTINGS_DOCS=yes"; \
-			false; \
+			if test "$$NM_TEST_REGENERATE" == 1 ; then \
+				cp -f "$(builddir)/$(clients_common_settings_doc_h)" "$(srcdir)/$(clients_common_settings_doc_h).in"; \
+			else \
+				echo "The generated file \"$(builddir)/$(clients_common_settings_doc_h)\" differs from the source file \"$(srcdir)/$(clients_common_settings_doc_h).in\". You probably should copy the generated file over to the source file. You can skip this test by setting \$$NMTST_NO_CHECK_SETTINGS_DOCS=yes". You can also automatically copy the file by rerunning the test with \$$NM_TEST_REGENERATE=1 ; \
+				false; \
+			fi; \
 		fi;\
 	fi
 check_local += check-local-settings-docs
@@ -3758,6 +3779,62 @@ endif
 EXTRA_DIST += \
 	clients/tui/meson.build \
 	clients/tui/newt/meson.build
+
+###############################################################################
+# clients/tests
+###############################################################################
+
+check-local-clients-tests-test-client: clients/cli/nmcli clients/tests/test-client.py
+	mkdir -p "$(builddir)/clients/tests/"
+	GI_TYPELIB_PATH="$(abs_builddir)/libnm$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}" \
+	LD_LIBRARY_PATH="$(abs_builddir)/libnm/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}" \
+	NM_TEST_CLIENT_BUILDDIR="$(abs_builddir)" \
+	NM_TEST_CLIENT_NMCLI_PATH=clients/cli/nmcli \
+	NM_TEST_CLIENT_IN_DBUS_SESSION=0 \
+	$(srcdir)/clients/tests/test-client.py -v &> "$(builddir)/clients/tests/test-client.log" && r=ok; \
+	cat "$(builddir)/clients/tests/test-client.log"; \
+	test "$$r" == ok
+
+check_local += check-local-clients-tests-test-client
+
+CLEANFILES += clients/tests/test-client.log
+
+EXTRA_DIST += \
+	clients/tests/test-client.py \
+	\
+	clients/tests/test-client.check-on-disk/test_001-001.expected \
+	clients/tests/test-client.check-on-disk/test_001-002.expected \
+	clients/tests/test-client.check-on-disk/test_001-003.expected \
+	clients/tests/test-client.check-on-disk/test_001-004.expected \
+	clients/tests/test-client.check-on-disk/test_001-005.expected \
+	clients/tests/test-client.check-on-disk/test_001-006.expected \
+	clients/tests/test-client.check-on-disk/test_002-001.expected \
+	clients/tests/test-client.check-on-disk/test_002-002.expected \
+	clients/tests/test-client.check-on-disk/test_002-003.expected \
+	clients/tests/test-client.check-on-disk/test_002-004.expected \
+	clients/tests/test-client.check-on-disk/test_002-005.expected \
+	clients/tests/test-client.check-on-disk/test_002-006.expected \
+	clients/tests/test-client.check-on-disk/test_002-007.expected \
+	clients/tests/test-client.check-on-disk/test_002-008.expected \
+	clients/tests/test-client.check-on-disk/test_002-009.expected \
+	clients/tests/test-client.check-on-disk/test_002-010.expected \
+	clients/tests/test-client.check-on-disk/test_002-011.expected \
+	clients/tests/test-client.check-on-disk/test_002-012.expected \
+	clients/tests/test-client.check-on-disk/test_002-013.expected \
+	clients/tests/test-client.check-on-disk/test_002-014.expected \
+	clients/tests/test-client.check-on-disk/test_002-015.expected \
+	clients/tests/test-client.check-on-disk/test_002-016.expected \
+	clients/tests/test-client.check-on-disk/test_002-017.expected \
+	clients/tests/test-client.check-on-disk/test_003-001.expected \
+	clients/tests/test-client.check-on-disk/test_003-002.expected \
+	clients/tests/test-client.check-on-disk/test_003-003.expected \
+	clients/tests/test-client.check-on-disk/test_003-004.expected \
+	clients/tests/test-client.check-on-disk/test_003-005.expected \
+	clients/tests/test-client.check-on-disk/test_003-006.expected \
+	clients/tests/test-client.check-on-disk/test_003-007.expected \
+	clients/tests/test-client.check-on-disk/test_003-008.expected \
+	\
+	$(NULL)
 
 ###############################################################################
 # data
@@ -4431,9 +4508,15 @@ libnm_glib_tests_cppflags = \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS)
 
-check_programs += \
+libnm_glib_tests_programs_req_introspection = \
 	libnm-glib/tests/test-nm-client \
 	libnm-glib/tests/test-remote-settings-client
+
+if HAVE_INTROSPECTION
+check_programs += $(libnm_glib_tests_programs_req_introspection)
+else
+check_programs_norun += $(libnm_glib_tests_programs_req_introspection)
+endif
 
 libnm_glib_tests_test_nm_client_CPPFLAGS = $(libnm_glib_tests_cppflags)
 
@@ -4465,6 +4548,11 @@ libnm_glib_tests_test_remote_settings_client_LDADD = \
 	$(DBUS_LIBS)
 
 $(libnm_glib_tests_test_remote_settings_client_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+# tools/test-networkmanager-service.py uses libnm's typelib. Ensure it
+# is built first.
+$(libnm_glib_tests_test_nm_client_OBJECTS):              $(libnm_NM_1_0_typelib)
+$(libnm_glib_tests_test_remote_settings_client_OBJECTS): $(libnm_NM_1_0_typelib)
 
 endif
 
