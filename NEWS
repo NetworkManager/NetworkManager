@@ -1,4 +1,20 @@
 ===============================================
+NetworkManager-1.10.8
+Overview of changes since NetworkManager-1.10.6
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Fix connectivity timeout handling (bgo #794464)
+* Retry activating devices when the parent becomes managed (rh #1553595)
+* Correctly set the rp_filter value (rh #1565529)
+* A fix to ensure teamd is respawned after daemon restart (rh #1551958)
+* Better handle DHCP expiry (bgo #783391)
+* Fix configuration of IPv6 over master interfaces (rh #1575944)
+* Other various bug fixes including possible crashes
+* Updated translations
+
+===============================================
 NetworkManager-1.10.6
 Overview of changes since NetworkManager-1.10.4
 ===============================================
