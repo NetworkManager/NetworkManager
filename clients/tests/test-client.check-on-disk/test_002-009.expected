@@ -1,12 +1,33 @@
-location: clients/tests/test-client.py:513:test_002()/9
-cmd: $NMCLI -f AP -mode tabular -t d show wlan0
-lang: C
+location: clients/tests/test-client.py:558:test_002()/9
+cmd: $NMCLI 
+lang: de_DE.utf8
 returncode: 0
-stdout: 165 bytes
+stdout: 616 bytes
 >>>
-AP[1]: :wlan0-ap-3:Infra:1:54 Mbit/s:88:****:WPA1 WPA2
-AP[2]: :wlan0-ap-2:Infra:1:54 Mbit/s:61:*** :WPA1 WPA2
-AP[3]: :wlan0-ap-1:Infra:1:54 Mbit/s:29:*   :WPA1 WPA2
+eth0: nicht verfügbar
+	"eth0"
+	ethernet (virtual), 72:41:AB:90:41:5D, hw
+
+wlan0: nicht verfügbar
+	"wlan0"
+	wifi (virtual), 5A:88:5E:B6:90:40, hw
+
+wlan1: nicht verfügbar
+	"wlan1"
+	wifi (virtual), 7C:D4:69:31:67:0B, hw
+
+wlan1: nicht verfügbar
+	"wlan1"
+	wifi (virtual), 41:21:6B:F3:C9:4A, hw
+
+DNS configuration:
+	servers: 1.2.3.4 5.6.7.8
+
+Rufen Sie »nmcli device show« auf, um vollständige Informationen über bekannte Geräte abzurufen
+und »nmcli connection show« für eine Übersicht über aktive Verbindungsprofile.
+
+
+Die Hilfeseiten nmcli(1) und nmcli-examples(5) geben vollständige Aufrufbeschreibungen.
 
 <<<
 stderr: 0 bytes

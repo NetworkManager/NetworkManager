@@ -279,8 +279,32 @@ class TestNmcli(NmTestBase):
             text = text2
         return b''.join([(t[0] if isinstance(t, tuple) else t) for t in text])
 
+    def call_nmcli_l(self,
+                     args,
+                     check_on_disk = _DEFAULT_ARG,
+                     expected_returncode = _DEFAULT_ARG,
+                     expected_stdout = _DEFAULT_ARG,
+                     expected_stderr = _DEFAULT_ARG,
+                     replace_stdout = None,
+                     replace_stderr = None,
+                     sort_lines_stdout = False):
+        frame = sys._getframe(1)
+        for lang in [ 'C', 'pl', 'de' ]:
+            self._call_nmcli(args,
+                             lang,
+                             check_on_disk,
+                             expected_returncode,
+                             expected_stdout,
+                             expected_stderr,
+                             replace_stdout,
+                             replace_stderr,
+                             sort_lines_stdout,
+                             frame)
+
+
     def call_nmcli(self,
                    args,
+                   langs = None,
                    lang = None,
                    check_on_disk = _DEFAULT_ARG,
                    expected_returncode = _DEFAULT_ARG,
@@ -292,8 +316,38 @@ class TestNmcli(NmTestBase):
 
         frame = sys._getframe(1)
 
-        calling_fcn = frame.f_code.co_name
+        if langs is not None:
+            assert lang is None
+        else:
+            if lang is None:
+                lang = 'C'
+            langs = [lang]
 
+        for lang in langs:
+            self._call_nmcli(args,
+                             lang,
+                             check_on_disk,
+                             expected_returncode,
+                             expected_stdout,
+                             expected_stderr,
+                             replace_stdout,
+                             replace_stderr,
+                             sort_lines_stdout,
+                             frame)
+
+    def _call_nmcli(self,
+                    args,
+                    lang,
+                    check_on_disk,
+                    expected_returncode,
+                    expected_stdout,
+                    expected_stderr,
+                    replace_stdout,
+                    replace_stderr,
+                    sort_lines_stdout,
+                    frame):
+
+        calling_fcn = frame.f_code.co_name
         calling_num = self._calling_num.get(calling_fcn, 0) + 1
         self._calling_num[calling_fcn] = calling_num
 
@@ -486,44 +540,35 @@ class TestNmcli(NmTestBase):
 
     def test_001(self):
 
-        self.call_nmcli([])
-        self.call_nmcli([], lang = 'pl')
+        self.call_nmcli_l([])
 
-        self.call_nmcli(['-f', 'AP', '-mode', 'multiline', '-p', 'd', 'show', 'wlan0'])
-        self.call_nmcli(['-f', 'AP', '-mode', 'multiline', '-p', 'd', 'show', 'wlan0'], lang = 'de')
+        self.call_nmcli_l(['-f', 'AP', '-mode', 'multiline', '-p', 'd', 'show', 'wlan0'])
 
-        self.call_nmcli(['c', 's'])
+        self.call_nmcli_l(['c', 's'])
 
-        self.call_nmcli(['bogus', 's'])
+        self.call_nmcli_l(['bogus', 's'])
 
     def test_002(self):
         self.init_001()
 
-        self.call_nmcli(['d'])
+        self.call_nmcli_l(['d'])
 
-        self.call_nmcli(['-f', 'all', 'd'])
+        self.call_nmcli_l(['-f', 'all', 'd'])
 
-        self.call_nmcli([])
+        self.call_nmcli_l([])
 
-        self.call_nmcli(['-f', 'AP', '-mode', 'multiline',       'd', 'show', 'wlan0'])
-        self.call_nmcli(['-f', 'AP', '-mode', 'multiline', '-p', 'd', 'show', 'wlan0'])
-        self.call_nmcli(['-f', 'AP', '-mode', 'multiline', '-t', 'd', 'show', 'wlan0'])
-        self.call_nmcli(['-f', 'AP', '-mode', 'tabular',         'd', 'show', 'wlan0'])
-        self.call_nmcli(['-f', 'AP', '-mode', 'tabular',   '-p', 'd', 'show', 'wlan0'])
-        self.call_nmcli(['-f', 'AP', '-mode', 'tabular',   '-t', 'd', 'show', 'wlan0'])
+        self.call_nmcli_l(['-f', 'AP', '-mode', 'multiline',       'd', 'show', 'wlan0'])
+        self.call_nmcli_l(['-f', 'AP', '-mode', 'multiline', '-p', 'd', 'show', 'wlan0'])
+        self.call_nmcli_l(['-f', 'AP', '-mode', 'multiline', '-t', 'd', 'show', 'wlan0'])
+        self.call_nmcli_l(['-f', 'AP', '-mode', 'tabular',         'd', 'show', 'wlan0'])
+        self.call_nmcli_l(['-f', 'AP', '-mode', 'tabular',   '-p', 'd', 'show', 'wlan0'])
+        self.call_nmcli_l(['-f', 'AP', '-mode', 'tabular',   '-t', 'd', 'show', 'wlan0'])
 
-        self.call_nmcli(['-f', 'AP', '-mode', 'multiline',       'd', 'show', 'wlan0'], lang = 'pl')
-        self.call_nmcli(['-f', 'AP', '-mode', 'multiline', '-p', 'd', 'show', 'wlan0'], lang = 'pl')
-        self.call_nmcli(['-f', 'AP', '-mode', 'multiline', '-t', 'd', 'show', 'wlan0'], lang = 'pl')
-        self.call_nmcli(['-f', 'AP', '-mode', 'tabular',         'd', 'show', 'wlan0'], lang = 'pl')
-        self.call_nmcli(['-f', 'AP', '-mode', 'tabular',   '-p', 'd', 'show', 'wlan0'], lang = 'pl')
-        self.call_nmcli(['-f', 'AP', '-mode', 'tabular',   '-t', 'd', 'show', 'wlan0'], lang = 'pl')
+        self.call_nmcli_l(['-f', 'ALL', 'd', 'wifi'])
 
-        self.call_nmcli(['-f', 'ALL', 'd', 'wifi'])
+        self.call_nmcli_l(['c'])
 
-        self.call_nmcli(['c'])
-
-        self.call_nmcli(['c', 's', 'con-1'])
+        self.call_nmcli_l(['c', 's', 'con-1'])
 
     def test_003(self):
         self.init_001()
@@ -535,27 +580,23 @@ class TestNmcli(NmTestBase):
         self.call_nmcli(['c', 'add', 'type', 'ethernet', 'ifname', '*', 'con-name', 'con-xx1'],
                         replace_stdout = replace_stdout)
 
-        self.call_nmcli(['c', 's'],
-                        replace_stdout = replace_stdout)
+        self.call_nmcli_l(['c', 's'],
+                          replace_stdout = replace_stdout)
 
         replace_stdout.append((lambda: self.srv.findConnectionUuid('ethernet'), 'UUID-ethernet-REPLACED-REPLACED-REPL'))
 
         self.call_nmcli(['c', 'add', 'type', 'ethernet', 'ifname', '*'],
                         replace_stdout = replace_stdout)
 
-        self.call_nmcli(['c', 's'],
-                        replace_stdout = replace_stdout)
-        self.call_nmcli(['c', 's'], lang = 'pl',
-                        replace_stdout = replace_stdout)
+        self.call_nmcli_l(['c', 's'],
+                          replace_stdout = replace_stdout)
 
-        self.call_nmcli(['-f', 'ALL', 'c', 's'],
-                        replace_stdout = replace_stdout)
-        self.call_nmcli(['-f', 'ALL', 'c', 's'], lang = 'pl',
-                        replace_stdout = replace_stdout)
+        self.call_nmcli_l(['-f', 'ALL', 'c', 's'],
+                          replace_stdout = replace_stdout)
 
-        self.call_nmcli(['--complete-args', '-f', 'ALL', 'c', 's', ''], lang = 'pl',
-                        replace_stdout = replace_stdout,
-                        sort_lines_stdout = True)
+        self.call_nmcli_l(['--complete-args', '-f', 'ALL', 'c', 's', ''],
+                          replace_stdout = replace_stdout,
+                          sort_lines_stdout = True)
 
 ###############################################################################
 

@@ -1,0 +1,13 @@
+location: clients/tests/test-client.py:549:test_001()/12
+cmd: $NMCLI bogus s
+lang: de_DE.utf8
+returncode: 2
+stdout: 0 bytes
+>>>
+
+<<<
+stderr: 88 bytes
+>>>
+Fehler: Argument »bogus« wird nicht verstanden. Versuchen Sie stattdessen »--help«.
+
+<<<

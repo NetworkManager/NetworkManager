@@ -1,33 +1,14 @@
-location: clients/tests/test-client.py:508:test_002()/4
-cmd: $NMCLI -f AP -mode multiline d show wlan0
+location: clients/tests/test-client.py:556:test_002()/4
+cmd: $NMCLI -f all d
 lang: C
 returncode: 0
-stdout: 1107 bytes
+stdout: 530 bytes
 >>>
-AP[1].IN-USE:                            
-AP[1].SSID:                             wlan0-ap-3
-AP[1].MODE:                             Infra
-AP[1].CHAN:                             1
-AP[1].RATE:                             54 Mbit/s
-AP[1].SIGNAL:                           88
-AP[1].BARS:                             ****
-AP[1].SECURITY:                         WPA1 WPA2
-AP[2].IN-USE:                            
-AP[2].SSID:                             wlan0-ap-2
-AP[2].MODE:                             Infra
-AP[2].CHAN:                             1
-AP[2].RATE:                             54 Mbit/s
-AP[2].SIGNAL:                           61
-AP[2].BARS:                             *** 
-AP[2].SECURITY:                         WPA1 WPA2
-AP[3].IN-USE:                            
-AP[3].SSID:                             wlan0-ap-1
-AP[3].MODE:                             Infra
-AP[3].CHAN:                             1
-AP[3].RATE:                             54 Mbit/s
-AP[3].SIGNAL:                           29
-AP[3].BARS:                             *   
-AP[3].SECURITY:                         WPA1 WPA2
+DEVICE  TYPE      STATE        DBUS-PATH                                  CONNECTION  CON-UUID  CON-PATH 
+eth0    ethernet  unavailable  /org/freedesktop/NetworkManager/Devices/1  --          --        --       
+wlan0   wifi      unavailable  /org/freedesktop/NetworkManager/Devices/2  --          --        --       
+wlan1   wifi      unavailable  /org/freedesktop/NetworkManager/Devices/3  --          --        --       
+wlan1   wifi      unavailable  /org/freedesktop/NetworkManager/Devices/4  --          --        --       
 
 <<<
 stderr: 0 bytes
