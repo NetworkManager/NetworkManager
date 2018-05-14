@@ -598,6 +598,23 @@ class TestNmcli(NmTestBase):
                           replace_stdout = replace_stdout,
                           sort_lines_stdout = True)
 
+        self.call_nmcli(['con', 'up', 'ethernet', 'ifname', 'eth0'])
+
+        self.call_nmcli_l(['con'],
+                          replace_stdout = replace_stdout)
+
+        self.call_nmcli_l(['-f', 'ALL', 'con'],
+                          replace_stdout = replace_stdout)
+
+        self.call_nmcli_l(['-f', 'ALL', 'con', 's', 'ethernet'],
+                          replace_stdout = replace_stdout)
+
+        self.call_nmcli_l(['-f', 'ALL', 'dev', 's', 'eth0'],
+                          replace_stdout = replace_stdout)
+
+        self.call_nmcli_l(['-f', 'ALL', 'dev', 'show', 'eth0'],
+                          replace_stdout = replace_stdout)
+
 ###############################################################################
 
 def main():
