@@ -665,7 +665,38 @@ class ActiveConnection(ExportedObj):
         self.vpn = False
         self.master = None
 
+        self._activation_id = None
+
         self.dbus_interface_add(IFACE_ACTIVE_CONNECTION, self.__get_props, ActiveConnection.PropertiesChanged)
+
+    def _set_state(self, state, reason):
+        self.state = state
+        self._dbus_property_notify(IFACE_ACTIVE_CONNECTION, PAC_STATE)
+        self.StateChanged(state, reason)
+
+    def activation_cancel(self):
+        if self._activation_id is None:
+            return False
+        GLib.source_remove(self._activation_id)
+        self._activation_id = None
+        return True
+
+    def _activation_step2(self):
+        assert self._activation_id is not None
+        self._activation_id = None
+        self._set_state(NM.ActiveConnectionState.ACTIVATED, NM.ActiveConnectionStateReason.UNKNOWN)
+        return False
+
+    def _activation_step1(self):
+        assert self._activation_id is not None
+        self._activation_id = GLib.timeout_add(50, self._activation_step2)
+        self.device.set_active_connection(self)
+        self._set_state(NM.ActiveConnectionState.ACTIVATING, NM.ActiveConnectionStateReason.UNKNOWN)
+        return False
+
+    def start_activation(self):
+        assert self._activation_id is None
+        self._activation_id = GLib.timeout_add(50, self._activation_step1)
 
     def __get_props(self):
         props = {}
@@ -690,6 +721,10 @@ class ActiveConnection(ExportedObj):
 
     @dbus.service.signal(IFACE_ACTIVE_CONNECTION, signature='a{sv}')
     def PropertiesChanged(self, changed):
+        pass
+
+    @dbus.service.signal(IFACE_ACTIVE_CONNECTION, signature='uu')
+    def StateChanged(self, state, reason):
         pass
 
 ###############################################################################
@@ -797,9 +832,7 @@ class NetworkManager(ExportedObj):
             # before returning it. It's the wrong order of what NetworkManager
             # would do.
             self.active_connection_remove(ac)
-        else:
-            GLib.timeout_add(50,
-                             lambda: device.set_active_connection(ac))
+            return ExportedObj.to_path(ac)
 
         return ExportedObj.to_path(ac)
 
@@ -807,8 +840,10 @@ class NetworkManager(ExportedObj):
         ac.export()
         self.active_connections.append(ac)
         self._dbus_property_notify(IFACE_NM, PM_ACTIVE_CONNECTIONS)
+        ac.start_activation()
 
     def active_connection_remove(self, ac):
+        ac.activation_cancel()
         self.active_connections.remove(ac)
         self._dbus_property_notify(IFACE_NM, PM_ACTIVE_CONNECTIONS)
         ac.unexport()
