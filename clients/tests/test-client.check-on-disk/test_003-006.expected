@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:550:test_003()/6
+location: clients/tests/test-client.py:552:test_003()/6
 cmd: $NMCLI -f ALL c s
 lang: C
 returncode: 0

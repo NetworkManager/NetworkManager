@@ -3793,7 +3793,6 @@ check-local-clients-tests-test-client: clients/cli/nmcli clients/tests/test-clie
 	LD_LIBRARY_PATH="$(abs_builddir)/libnm/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}" \
 	NM_TEST_CLIENT_BUILDDIR="$(abs_builddir)" \
 	NM_TEST_CLIENT_NMCLI_PATH=clients/cli/nmcli \
-	NM_TEST_CLIENT_IN_DBUS_SESSION=0 \
 	$(srcdir)/clients/tests/test-client.py -v &> "$(builddir)/clients/tests/test-client.log" && r=ok; \
 	cat "$(builddir)/clients/tests/test-client.log"; \
 	test "$$r" == ok
@@ -3828,6 +3827,7 @@ EXTRA_DIST += \
 	clients/tests/test-client.check-on-disk/test_002-015.expected \
 	clients/tests/test-client.check-on-disk/test_002-016.expected \
 	clients/tests/test-client.check-on-disk/test_002-017.expected \
+	clients/tests/test-client.check-on-disk/test_002-018.expected \
 	clients/tests/test-client.check-on-disk/test_003-001.expected \
 	clients/tests/test-client.check-on-disk/test_003-002.expected \
 	clients/tests/test-client.check-on-disk/test_003-003.expected \

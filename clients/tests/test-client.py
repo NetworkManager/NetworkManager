@@ -519,6 +519,8 @@ class TestNmcli(NmTestBase):
         self.call_nmcli(['-f', 'AP', '-mode', 'tabular',   '-p', 'd', 'show', 'wlan0'], lang = 'pl')
         self.call_nmcli(['-f', 'AP', '-mode', 'tabular',   '-t', 'd', 'show', 'wlan0'], lang = 'pl')
 
+        self.call_nmcli(['-f', 'ALL', 'd', 'wifi'])
+
         self.call_nmcli(['c'])
 
         self.call_nmcli(['c', 's', 'con-1'])
