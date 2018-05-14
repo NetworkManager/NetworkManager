@@ -139,47 +139,36 @@ static void
 update_add_ip_config (NMDnsSystemdResolved *self,
                       GVariantBuilder *dns,
                       GVariantBuilder *domains,
-                      NMIPConfig *config)
+                      NMDnsIPConfigData *data)
 {
 	int addr_family;
 	gsize addr_size;
 	guint i, n;
 	gboolean is_routing;
+	const char **iter;
 	const char *domain;
 
-	addr_family = nm_ip_config_get_addr_family (config);
+	addr_family = nm_ip_config_get_addr_family (data->ip_config);
 	addr_size = nm_utils_addr_family_to_size (addr_family);
 
-	n = nm_ip_config_get_num_nameservers (config);
+	if (!data->domains.search  || !data->domains.search[0])
+		return;
+
+	n = nm_ip_config_get_num_nameservers (data->ip_config);
 	for (i = 0 ; i < n; i++) {
 		g_variant_builder_open (dns, G_VARIANT_TYPE ("(iay)"));
 		g_variant_builder_add (dns, "i", addr_family);
 		g_variant_builder_add_value (dns,
 		                             g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
-		                                                        nm_ip_config_get_nameserver (config, i),
+		                                                        nm_ip_config_get_nameserver (data->ip_config, i),
 		                                                        addr_size,
 		                                                        1));
 		g_variant_builder_close (dns);
 	}
 
-	n = nm_ip_config_get_num_searches (config);
-	if (n  > 0) {
-		for (i = 0; i < n; i++) {
-			domain = nm_utils_parse_dns_domain (nm_ip_config_get_search (config, i),
-			                                    &is_routing);
-			g_variant_builder_add (domains, "(sb)",
-			                       domain,
-			                       is_routing);
-		}
-	} else {
-		n = nm_ip_config_get_num_domains (config);
-		for (i = 0; i < n; i++) {
-			domain = nm_utils_parse_dns_domain (nm_ip_config_get_domain (config, i),
-			                                    &is_routing);
-			g_variant_builder_add (domains, "(sb)",
-			                       domain,
-			                       is_routing);
-		}
+	for (iter = data->domains.search; *iter; iter++) {
+		domain = nm_utils_parse_dns_domain (*iter, &is_routing);
+		g_variant_builder_add (domains, "(sb)", domain[0] ? domain : ".", is_routing);
 	}
 }
 
@@ -214,9 +203,10 @@ prepare_one_interface (NMDnsSystemdResolved *self, InterfaceConfig *ic)
 	g_variant_builder_open (&domains, G_VARIANT_TYPE ("a(sb)"));
 
 	c_list_for_each_entry (elem, &ic->configs_lst_head, lst) {
-		NMIPConfig *ip_config = elem->data;
+		NMDnsIPConfigData *data = elem->data;
+		NMIPConfig *ip_config = data->ip_config;
 
-		update_add_ip_config (self, &dns, &domains, ip_config);
+		update_add_ip_config (self, &dns, &domains, data);
 
 		if (NM_IS_IP4_CONFIG (ip_config))
 			mdns = NM_MAX (mdns, nm_ip4_config_mdns_get (NM_IP4_CONFIG (ip_config)));
@@ -292,24 +282,14 @@ update (NMDnsPlugin *plugin,
 	gs_free gpointer *interfaces_keys = NULL;
 	guint interfaces_len;
 	guint i;
-	int prio, first_prio = 0;
 	NMDnsIPConfigData *ip_data;
-	gboolean is_first = TRUE;
 
 	interfaces = g_hash_table_new_full (nm_direct_hash, NULL,
 	                                    NULL, (GDestroyNotify) _interface_config_free);
 
 	c_list_for_each_entry (ip_data, ip_config_lst_head, ip_config_lst) {
-		gboolean skip = FALSE;
 		InterfaceConfig *ic = NULL;
 		int ifindex;
-
-		prio = nm_ip_config_get_dns_priority (ip_data->ip_config);
-		if (is_first) {
-			is_first = FALSE;
-			first_prio = prio;
-		} else if (first_prio < 0 && first_prio != prio)
-			skip = TRUE;
 
 		ifindex = ip_data->data->ifindex;
 		nm_assert (ifindex == nm_ip_config_get_ifindex (ip_data->ip_config));
@@ -322,10 +302,8 @@ update (NMDnsPlugin *plugin,
 			g_hash_table_insert (interfaces, GINT_TO_POINTER (ifindex), ic);
 		}
 
-		if (!skip) {
-			c_list_link_tail (&ic->configs_lst_head,
-			                  &nm_c_list_elem_new_stale (ip_data->ip_config)->lst);
-		}
+		c_list_link_tail (&ic->configs_lst_head,
+		                  &nm_c_list_elem_new_stale (ip_data)->lst);
 	}
 
 	free_pending_updates (self);

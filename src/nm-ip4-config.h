@@ -288,6 +288,8 @@ gboolean nm_ip4_config_nmpobj_remove (NMIP4Config *self,
 void nm_ip4_config_hash (const NMIP4Config *self, GChecksum *sum, gboolean dns_only);
 gboolean nm_ip4_config_equal (const NMIP4Config *a, const NMIP4Config *b);
 
+gboolean _nm_ip_config_check_and_add_domain (GPtrArray *array, const char *domain);
+
 /*****************************************************************************/
 
 #include "nm-ip6-config.h"
@@ -497,6 +499,12 @@ static inline const char *
 nm_ip_config_get_dns_option (const NMIPConfig *self, guint i)
 {
 	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_dns_option, nm_ip6_config_get_dns_option, i);
+}
+
+static inline const NMPObject *
+nm_ip_config_best_default_route_get (const NMIPConfig *self)
+{
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_best_default_route_get, nm_ip6_config_best_default_route_get);
 }
 
 #define _NM_IP_CONFIG_DISPATCH_SET_OP(_return, dst, src, v4_func, v6_func, ...) \

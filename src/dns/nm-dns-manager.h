@@ -50,6 +50,10 @@ typedef struct {
 	CList data_lst;
 	CList ip_config_lst;
 	NMDnsIPConfigType ip_config_type;
+	struct {
+		const char **search;
+		char **reverse;
+	} domains;
 } NMDnsIPConfigData;
 
 typedef struct _NMDnsConfigData {
