@@ -2940,6 +2940,46 @@ nm_platform_mesh_set_ssid (NMPlatform *self, int ifindex, const guint8 *ssid, gs
 	return klass->mesh_set_ssid (self, ifindex, ssid, len);
 }
 
+guint16
+nm_platform_wpan_get_pan_id (NMPlatform *self, int ifindex)
+{
+	_CHECK_SELF (self, klass, FALSE);
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+
+	return klass->wpan_get_pan_id (self, ifindex);
+}
+
+gboolean
+nm_platform_wpan_set_pan_id (NMPlatform *self, int ifindex, guint16 pan_id)
+{
+	_CHECK_SELF (self, klass, FALSE);
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+
+	return klass->wpan_set_pan_id (self, ifindex, pan_id);
+}
+
+guint16
+nm_platform_wpan_get_short_addr (NMPlatform *self, int ifindex)
+{
+	_CHECK_SELF (self, klass, FALSE);
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+
+	return klass->wpan_get_short_addr (self, ifindex);
+}
+
+gboolean
+nm_platform_wpan_set_short_addr (NMPlatform *self, int ifindex, guint16 short_addr)
+{
+	_CHECK_SELF (self, klass, FALSE);
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+
+	return klass->wpan_set_short_addr (self, ifindex, short_addr);
+}
+
 #define TO_STRING_DEV_BUF_SIZE (5+15+1)
 static const char *
 _to_string_dev (NMPlatform *self, int ifindex, char *buf, size_t size)
