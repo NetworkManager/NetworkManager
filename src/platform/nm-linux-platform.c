@@ -7163,6 +7163,29 @@ finalize (GObject *object)
 }
 
 static void
+link_changed_cb (NMPlatform *platform,
+                 int obj_type_i,
+                 int ifindex,
+                 NMPlatformLink *info,
+                 int change_type_i,
+                 gpointer user_data)
+{
+	const NMPlatformSignalChangeType change_type = change_type_i;
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	const NMPlatformLink *pllink;
+
+	g_signal_chain_from_overridden_handler (platform, obj_type_i, ifindex,
+	                                        info, change_type_i, user_data);
+
+	if (change_type != NM_PLATFORM_SIGNAL_REMOVED)
+		return;
+
+	pllink = nm_platform_link_get (platform, ifindex);
+	if (pllink->type == NM_LINK_TYPE_WIFI || pllink->type == NM_LINK_TYPE_OLPC_MESH)
+		g_hash_table_remove (priv->wifi_data, GINT_TO_POINTER (ifindex));
+}
+
+static void
 nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -7258,5 +7281,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->check_kernel_support = check_kernel_support;
 
 	platform_class->process_events = process_events;
-}
 
+	g_signal_override_class_handler (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_TYPE_PLATFORM, G_CALLBACK (link_changed_cb));
+}
