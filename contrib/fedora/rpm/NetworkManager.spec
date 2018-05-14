@@ -11,6 +11,8 @@
 
 %global wireless_tools_version 1:28-0pre9
 
+%global wpa_supplicant_version 1:1.1
+
 %global ppp_version %(sed -n 's/^#define\\s*VERSION\\s*"\\([^\\s]*\\)"$/\\1/p' %{_includedir}/pppd/patchlevel.h 2>/dev/null | grep . || echo bad)
 %global glib2_version %(pkg-config --modversion glib-2.0 2>/dev/null || echo bad)
 
@@ -235,12 +237,16 @@ This package contains NetworkManager support for team devices.
 Summary: Wifi plugin for NetworkManager
 Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
-Requires: wpa_supplicant >= 1:1.1
-# the wifi plugin doesn't require iwd, even if it was build with
-# iwd support. Note that the plugin supports both supplicant and
-# iwd backend, that doesn't mean that the user requires to have them
-# both installed. Maybe both iwd and supplicant should Provide a "wireless-daemon"
-# meta package.
+
+%if %{with iwd} && (0%{?fedora} > 24 || 0%{?rhel} > 7)
+Requires: (wpa_supplicant >= %{wpa_supplicant_version} or iwd)
+%else
+# Just require wpa_supplicant on platforms that don't support boolean
+# dependencies even though the plugin supports both supplicant and
+# iwd backend.
+Requires: wpa_supplicant >= %{wpa_supplicant_version}
+%endif
+
 Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 
 %description wifi
