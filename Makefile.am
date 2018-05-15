@@ -3885,6 +3885,9 @@ EXTRA_DIST += \
 	clients/tests/test-client.check-on-disk/test_003-028.expected \
 	clients/tests/test-client.check-on-disk/test_003-029.expected \
 	clients/tests/test-client.check-on-disk/test_003-030.expected \
+	clients/tests/test-client.check-on-disk/test_003-031.expected \
+	clients/tests/test-client.check-on-disk/test_003-032.expected \
+	clients/tests/test-client.check-on-disk/test_003-033.expected \
 	\
 	$(NULL)
 

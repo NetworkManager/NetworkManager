@@ -1,42 +1,18 @@
 location: clients/tests/test-client.py:624:test_003()/30
-cmd: $NMCLI -f ALL dev show eth0
+cmd: $NMCLI -f ALL dev s eth0
 lang: de_DE.utf8
 returncode: 0
-stdout: 1509 bytes
+stdout: 904 bytes
 >>>
-GENERAL.DEVICE:                         eth0
-GENERAL.TYPE:                           ethernet
-GENERAL.NM-TYPE:                        NMDeviceEthernet
-GENERAL.VENDOR:                         --
-GENERAL.PRODUCT:                        --
-GENERAL.DRIVER:                         virtual
-GENERAL.DRIVER-VERSION:                 --
-GENERAL.FIRMWARE-VERSION:               --
-GENERAL.HWADDR:                         72:41:AB:90:41:5D
-GENERAL.MTU:                            0
-GENERAL.STATE:                          20 (nicht verfügbar)
-GENERAL.REASON:                         0 (Kein Grund angegeben)
-GENERAL.UDI:                            /sys/devices/virtual/eth0
-GENERAL.IP-IFACE:                       --
-GENERAL.IS-SOFTWARE:                    nein
-GENERAL.NM-MANAGED:                     ja
-GENERAL.AUTOCONNECT:                    ja
-GENERAL.FIRMWARE-MISSING:               nein
-GENERAL.NM-PLUGIN-MISSING:              nein
-GENERAL.PHYS-PORT-ID:                   --
-GENERAL.CONNECTION:                     ethernet
-GENERAL.CON-UUID:                       UUID-ethernet-REPLACED-REPLACED-REPL
-GENERAL.CON-PATH:                       /org/freedesktop/NetworkManager/ActiveConnection/1
-GENERAL.METERED:                        unbekannt
-CAPABILITIES.CARRIER-DETECT:            nein
-CAPABILITIES.SPEED:                     100 Mb/s
-CAPABILITIES.IS-SOFTWARE:               nein
-CAPABILITIES.SRIOV:                     nein
-WIRED-PROPERTIES.CARRIER:               aus
-CONNECTIONS.AVAILABLE-CONNECTION-PATHS: --
+DEVICE  TYPE      STATE            DBUS-PATH                                  CONNECTION  CON-UUID                              CON-PATH                                           
+wlan0   wifi      nicht verfügbar  /org/freedesktop/NetworkManager/Devices/2  --          --                                    --                                                 
+wlan1   wifi      nicht verfügbar  /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
+wlan1   wifi      nicht verfügbar  /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
+eth0    ethernet  nicht verfügbar  /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
 
 <<<
-stderr: 0 bytes
+stderr: 28 bytes
 >>>
+Unbekannter Parameter: eth0
 
 <<<

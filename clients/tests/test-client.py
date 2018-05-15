@@ -617,6 +617,9 @@ class TestNmcli(NmTestBase):
         self.call_nmcli_l(['-f', 'ALL', 'con', 's', 'ethernet'],
                           replace_stdout = replace_stdout)
 
+        self.call_nmcli_l(['con', 's', 'ethernet'],
+                          replace_stdout = replace_stdout)
+
         self.call_nmcli_l(['-f', 'ALL', 'dev', 's', 'eth0'],
                           replace_stdout = replace_stdout)
 
