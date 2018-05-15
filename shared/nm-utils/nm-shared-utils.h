@@ -113,6 +113,9 @@ nm_ip_addr_set (int addr_family, gpointer dst, const NMIPAddr *src)
 #define NM_CMP_DIRECT_MEMCMP(a, b, size) \
     NM_CMP_RETURN (memcmp ((a), (b), (size)))
 
+#define NM_CMP_DIRECT_STRCMP0(a, b) \
+    NM_CMP_RETURN (g_strcmp0 ((a), (b)))
+
 #define NM_CMP_DIRECT_IN6ADDR(a, b) \
     G_STMT_START { \
         const struct in6_addr *const _a = (a); \
@@ -196,6 +199,12 @@ nm_utils_is_separator (const char c)
 {
 	return NM_IN_SET (c, ' ', '\t');
 }
+
+/*****************************************************************************/
+
+const char *nm_utils_dbus_path_get_last_component (const char *dbus_path);
+
+int nm_utils_dbus_path_cmp (const char *dbus_path_a, const char *dbus_path_b);
 
 /*****************************************************************************/
 
@@ -445,6 +454,16 @@ nm_g_variant_unref_floating (GVariant *var)
 }
 
 /*****************************************************************************/
+
+static inline int
+nm_utf8_collate0 (const char *a, const char *b)
+{
+	if (!a)
+		return !b ? 0 : -1;
+	if (!b)
+		return 1;
+	return g_utf8_collate (a, b);
+}
 
 int nm_strcmp_p_with_data (gconstpointer a, gconstpointer b, gpointer user_data);
 int nm_cmp_uint32_p_with_data (gconstpointer p_a, gconstpointer p_b, gpointer user_data);

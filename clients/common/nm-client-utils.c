@@ -26,6 +26,47 @@
 #include "nm-device-bridge.h"
 #include "nm-device-team.h"
 
+/*****************************************************************************/
+
+static int
+_nmc_objects_sort_by_path_cmp (gconstpointer pa, gconstpointer pb, gpointer user_data)
+{
+	NMObject *a = *((NMObject **) pa);
+	NMObject *b = *((NMObject **) pb);
+
+	NM_CMP_SELF (a, b);
+	NM_CMP_RETURN (nm_utils_dbus_path_cmp (nm_object_get_path (a),
+	                                       nm_object_get_path (b)));
+	return 0;
+}
+
+const NMObject **
+nmc_objects_sort_by_path (const NMObject *const* objs, gssize len)
+{
+	const NMObject **arr;
+	gsize i, l;
+
+	if (len < 0)
+		l = NM_PTRARRAY_LEN (objs);
+	else
+		l = len;
+
+	arr = g_new (const NMObject *, l + 1);
+	for (i = 0; i < l; i++)
+		arr[i] = objs[i];
+	arr[l] = NULL;
+
+	if (l > 1) {
+		g_qsort_with_data (arr,
+		                   l,
+		                   sizeof (gpointer),
+		                   _nmc_objects_sort_by_path_cmp,
+		                   NULL);
+	}
+	return arr;
+}
+
+/*****************************************************************************/
 /*
  * Convert string to unsigned integer.
  * If required, the resulting number is checked to be in the <min,max> range.

@@ -100,15 +100,7 @@ _ip_config_get_routes (NMIPConfig *cfg)
 }
 
 static gconstpointer
-_metagen_ip4_config_get_fcn (const NMMetaEnvironment *environment,
-                             gpointer environment_user_data,
-                             const NmcMetaGenericInfo *info,
-                             gpointer target,
-                             NMMetaAccessorGetType get_type,
-                             NMMetaAccessorGetFlags get_flags,
-                             NMMetaAccessorGetOutFlags *out_flags,
-                             gboolean *out_is_default,
-                             gpointer *out_to_free)
+_metagen_ip4_config_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 {
 	NMIPConfig *cfg4 = target;
 	GPtrArray *ptr_array;
@@ -183,15 +175,7 @@ arr_out:
 }
 
 static gconstpointer
-_metagen_ip6_config_get_fcn (const NMMetaEnvironment *environment,
-                             gpointer environment_user_data,
-                             const NmcMetaGenericInfo *info,
-                             gpointer target,
-                             NMMetaAccessorGetType get_type,
-                             NMMetaAccessorGetFlags get_flags,
-                             NMMetaAccessorGetOutFlags *out_flags,
-                             gboolean *out_is_default,
-                             gpointer *out_to_free)
+_metagen_ip6_config_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 {
 	NMIPConfig *cfg6 = target;
 	GPtrArray *ptr_array;
@@ -271,11 +255,6 @@ const NmcMetaGenericInfo *const metagen_ip4_config[_NMC_GENERIC_INFO_TYPE_IP4_CO
 	_METAGEN_IP4_CONFIG (NMC_GENERIC_INFO_TYPE_IP4_CONFIG_WINS,    "WINS"),
 };
 
-static const NmcMetaGenericInfo *const metagen_ip4_config_group[] = {
-	NMC_META_GENERIC_WITH_NESTED ("IP4", metagen_ip4_config, .name_header = N_("GROUP")),
-	NULL,
-};
-
 const NmcMetaGenericInfo *const metagen_ip6_config[_NMC_GENERIC_INFO_TYPE_IP6_CONFIG_NUM + 1] = {
 #define _METAGEN_IP6_CONFIG(type, name) \
 	[type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_ip6_config_get_fcn)
@@ -284,11 +263,6 @@ const NmcMetaGenericInfo *const metagen_ip6_config[_NMC_GENERIC_INFO_TYPE_IP6_CO
 	_METAGEN_IP6_CONFIG (NMC_GENERIC_INFO_TYPE_IP6_CONFIG_ROUTE,   "ROUTE"),
 	_METAGEN_IP6_CONFIG (NMC_GENERIC_INFO_TYPE_IP6_CONFIG_DNS,     "DNS"),
 	_METAGEN_IP6_CONFIG (NMC_GENERIC_INFO_TYPE_IP6_CONFIG_DOMAIN,  "DOMAIN"),
-};
-
-static const NmcMetaGenericInfo *const metagen_ip6_config_group[] = {
-	NMC_META_GENERIC_WITH_NESTED ("IP6", metagen_ip6_config, .name_header = N_("GROUP")),
-	NULL,
 };
 
 /*****************************************************************************/
@@ -326,7 +300,7 @@ print_ip4_config (NMIPConfig *cfg4,
 	if (!nmc_print (nmc_config,
 	                (gpointer[]) { cfg4, NULL },
 	                NULL,
-	                (const NMMetaAbstractInfo *const*) metagen_ip4_config_group,
+	                NMC_META_GENERIC_GROUP ("IP4", metagen_ip4_config, N_("GROUP")),
 	                field_str,
 	                &error)) {
 		return FALSE;
@@ -352,7 +326,7 @@ print_ip6_config (NMIPConfig *cfg6,
 	if (!nmc_print (nmc_config,
 	                (gpointer[]) { cfg6, NULL },
 	                NULL,
-	                (const NMMetaAbstractInfo *const*) metagen_ip6_config_group,
+	                NMC_META_GENERIC_GROUP ("IP6", metagen_ip6_config, N_("GROUP")),
 	                field_str,
 	                &error)) {
 		return FALSE;
@@ -412,8 +386,11 @@ print_dhcp_config (NMDhcpConfig *dhcp,
  * @connections: array of NMConnections to search in
  * @filter_type: "id", "uuid", "path" or %NULL
  * @filter_val: connection to find (connection name, UUID or path)
- * @start: where to start in @list. The location is updated so that the function
- *   can be called multiple times (for connections with the same name).
+ * @out_result: if not NULL, attach all matching connection to this
+ *   list. If necessary, a new array will be allocated. If the array
+ *   already contains a connection, it will not be added a second time.
+ *   All object are referenced by the array. If the function allocates
+ *   a new array, it will set the free function to g_object_unref.
  * @complete: print possible completions
  *
  * Find a connection in @list according to @filter_val. @filter_type determines
@@ -428,64 +405,153 @@ NMConnection *
 nmc_find_connection (const GPtrArray *connections,
                      const char *filter_type,
                      const char *filter_val,
-                     int *start,
+                     GPtrArray **out_result,
                      gboolean complete)
 {
 	NMConnection *connection;
-	NMConnection *found = NULL;
-	int i;
-	const char *id;
-	const char *uuid;
-	const char *path, *path_num;
+	NMConnection *best_candidate = NULL;
+	GPtrArray *result = out_result ? *out_result : NULL;
+	guint i, j;
 
-	for (i = start ? *start : 0; i < connections->len; i++) {
+	nm_assert (connections);
+	nm_assert (filter_val);
+
+	for (i = 0; i < connections->len; i++) {
+		const char *v, *v_num;
+
 		connection = NM_CONNECTION (connections->pdata[i]);
-
-		id = nm_connection_get_id (connection);
-		uuid = nm_connection_get_uuid (connection);
-		path = nm_connection_get_path (connection);
-		path_num = path ? strrchr (path, '/') + 1 : NULL;
 
 		/* When filter_type is NULL, compare connection ID (filter_val)
 		 * against all types. Otherwise, only compare against the specific
 		 * type. If 'path' filter type is specified, comparison against
 		 * numeric index (in addition to the whole path) is allowed.
 		 */
-		if (!filter_type || strcmp (filter_type, "id")  == 0) {
+		if (NM_IN_STRSET (filter_type, NULL, "id")) {
+			v = nm_connection_get_id (connection);
 			if (complete)
-				nmc_complete_strings (filter_val, id, NULL);
-			if (strcmp (filter_val, id) == 0)
+				nmc_complete_strings (filter_val, v, NULL);
+			if (nm_streq0 (filter_val, v))
 				goto found;
 		}
 
-		if (!filter_type || strcmp (filter_type, "uuid") == 0) {
+		if (NM_IN_STRSET (filter_type, NULL, "uuid")) {
+			v = nm_connection_get_uuid (connection);
 			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, uuid, NULL);
-			if (strcmp (filter_val, uuid) == 0)
+				nmc_complete_strings (filter_val, v, NULL);
+			if (nm_streq0 (filter_val, v))
 				goto found;
 		}
 
-		if (!filter_type || strcmp (filter_type, "path") == 0) {
+		if (NM_IN_STRSET (filter_type, NULL, "path")) {
+			v = nm_connection_get_path (connection);
+			v_num = nm_utils_dbus_path_get_last_component (v);
 			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, path, filter_type ? path_num : NULL, NULL);
-		        if (g_strcmp0 (filter_val, path) == 0 || (filter_type && g_strcmp0 (filter_val, path_num) == 0))
+				nmc_complete_strings (filter_val, v, filter_type ? v_num : NULL, NULL);
+			if (   nm_streq0 (filter_val, v)
+			    || (filter_type && nm_streq0 (filter_val, v_num)))
 				goto found;
 		}
 
 		continue;
 found:
-		if (!start)
+		if (!out_result)
 			return connection;
-		if (found) {
-			*start = i;
-			return found;
+		if (!best_candidate)
+			best_candidate = connection;
+		if (!result)
+			result = g_ptr_array_new_with_free_func (g_object_unref);
+		for (j = 0; j < result->len; j++) {
+			if (connection == result->pdata[j])
+				break;
 		}
-		found = connection;
+		if (j == result->len)
+			g_ptr_array_add (result, g_object_ref (connection));
 	}
 
-	if (start)
-		*start = 0;
-	return found;
+	NM_SET_OUT (out_result, result);
+	return best_candidate;
+}
+
+NMActiveConnection *
+nmc_find_active_connection (const GPtrArray *active_cons,
+                            const char *filter_type,
+                            const char *filter_val,
+                            GPtrArray **out_result,
+                            gboolean complete)
+{
+	guint i, j;
+	NMActiveConnection *best_candidate = NULL;
+	GPtrArray *result = out_result ? *out_result : NULL;
+
+	nm_assert (filter_val);
+
+	for (i = 0; i < active_cons->len; i++) {
+		NMRemoteConnection *con;
+		NMActiveConnection *candidate = g_ptr_array_index (active_cons, i);
+		const char *v, *v_num;
+
+		con = nm_active_connection_get_connection (candidate);
+
+		/* When filter_type is NULL, compare connection ID (filter_val)
+		 * against all types. Otherwise, only compare against the specific
+		 * type. If 'path' or 'apath' filter types are specified, comparison
+		 * against numeric index (in addition to the whole path) is allowed.
+		 */
+		if (NM_IN_STRSET (filter_type, NULL, "id")) {
+			v = nm_active_connection_get_id (candidate);
+			if (complete)
+				nmc_complete_strings (filter_val, v, NULL);
+			if (nm_streq0 (filter_val, v))
+				goto found;
+		}
+
+		if (NM_IN_STRSET (filter_type, NULL, "uuid")) {
+			v = nm_active_connection_get_uuid (candidate);
+			if (complete && (filter_type || *filter_val))
+				nmc_complete_strings (filter_val, v, NULL);
+			if (nm_streq0 (filter_val, v))
+				goto found;
+		}
+
+		if (NM_IN_STRSET (filter_type, NULL, "path")) {
+			v = con ? nm_connection_get_path (NM_CONNECTION (con)) : NULL;
+			v_num = nm_utils_dbus_path_get_last_component (v);
+			if (complete && (filter_type || *filter_val))
+				nmc_complete_strings (filter_val, v, filter_type ? v_num : NULL, NULL);
+			if (   nm_streq0 (filter_val, v)
+			    || (filter_type && nm_streq0 (filter_val, v_num)))
+				goto found;
+		}
+
+		if (NM_IN_STRSET (filter_type, NULL, "apath")) {
+			v = nm_object_get_path (NM_OBJECT (candidate));
+			v_num = nm_utils_dbus_path_get_last_component (v);
+			if (complete && (filter_type || *filter_val))
+				nmc_complete_strings (filter_val, v, filter_type ? v_num : NULL, NULL);
+			if (   nm_streq0 (filter_val, v)
+			    || (filter_type && nm_streq0 (filter_val, v_num)))
+				goto found;
+		}
+
+		continue;
+
+found:
+		if (!out_result)
+			return candidate;
+		if (!best_candidate)
+			best_candidate = candidate;
+		if (!result)
+			result = g_ptr_array_new_with_free_func (g_object_unref);
+		for (j = 0; j < result->len; j++) {
+			if (candidate == result->pdata[j])
+				break;
+		}
+		if (j == result->len)
+			g_ptr_array_add (result, g_object_ref (candidate));
+	}
+
+	NM_SET_OUT (out_result, result);
+	return best_candidate;
 }
 
 static gboolean

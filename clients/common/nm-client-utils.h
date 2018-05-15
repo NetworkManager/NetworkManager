@@ -30,6 +30,8 @@ typedef enum {
 	NMC_TRI_STATE_UNKNOWN,
 } NMCTriStateValue;
 
+const NMObject **nmc_objects_sort_by_path (const NMObject *const*objs, gssize len);
+
 const char *nmc_string_is_valid (const char *input, const char **allowed, GError **error);
 
 gboolean nmc_string_to_uint (const char *str,

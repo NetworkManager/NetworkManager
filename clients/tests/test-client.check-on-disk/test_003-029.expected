@@ -1,0 +1,42 @@
+location: clients/tests/test-client.py:616:test_003()/29
+cmd: $NMCLI -f ALL dev show eth0
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 1510 bytes
+>>>
+GENERAL.DEVICE:                         eth0
+GENERAL.TYPE:                           ethernet
+GENERAL.NM-TYPE:                        NMDeviceEthernet
+GENERAL.VENDOR:                         --
+GENERAL.PRODUCT:                        --
+GENERAL.DRIVER:                         virtual
+GENERAL.DRIVER-VERSION:                 --
+GENERAL.FIRMWARE-VERSION:               --
+GENERAL.HWADDR:                         72:41:AB:90:41:5D
+GENERAL.MTU:                            0
+GENERAL.STATE:                          20 (niedostępne)
+GENERAL.REASON:                         0 (Nie podano przyczyny)
+GENERAL.UDI:                            /sys/devices/virtual/eth0
+GENERAL.IP-IFACE:                       --
+GENERAL.IS-SOFTWARE:                    nie
+GENERAL.NM-MANAGED:                     tak
+GENERAL.AUTOCONNECT:                    tak
+GENERAL.FIRMWARE-MISSING:               nie
+GENERAL.NM-PLUGIN-MISSING:              nie
+GENERAL.PHYS-PORT-ID:                   --
+GENERAL.CONNECTION:                     ethernet
+GENERAL.CON-UUID:                       UUID-ethernet-REPLACED-REPLACED-REPL
+GENERAL.CON-PATH:                       /org/freedesktop/NetworkManager/ActiveConnection/1
+GENERAL.METERED:                        nieznane
+CAPABILITIES.CARRIER-DETECT:            nie
+CAPABILITIES.SPEED:                     100 Mb/s
+CAPABILITIES.IS-SOFTWARE:               nie
+CAPABILITIES.SRIOV:                     nie
+WIRED-PROPERTIES.CARRIER:               wyłączone
+CONNECTIONS.AVAILABLE-CONNECTION-PATHS: --
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<

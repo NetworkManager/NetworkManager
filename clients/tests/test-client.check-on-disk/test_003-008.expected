@@ -1,20 +1,14 @@
-location: clients/tests/test-client.py:556:test_003()/8
-cmd: $NMCLI --complete-args -f ALL c s ''
-lang: pl_PL.UTF-8
+location: clients/tests/test-client.py:592:test_003()/8
+cmd: $NMCLI c s
+lang: de_DE.utf8
 returncode: 0
-stdout: 64 bytes
+stdout: 264 bytes
 >>>
+NAME      UUID                                  TYPE      DEVICE 
+con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  --     
+con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  --     
+ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --     
 
---active
---order
-apath
-con-1
-con-xx1
-ethernet
-help
-id
-path
-uuid
 <<<
 stderr: 0 bytes
 >>>

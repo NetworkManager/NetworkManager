@@ -1,13 +1,13 @@
-location: clients/tests/test-client.py:495:test_001()/5
-cmd: $NMCLI c s
-lang: C
-returncode: 0
-stdout: 26 bytes
+location: clients/tests/test-client.py:545:test_001()/5
+cmd: $NMCLI -f AP -mode multiline -p d show wlan0
+lang: pl_PL.UTF-8
+returncode: 10
+stdout: 0 bytes
 >>>
-NAME  UUID  TYPE  DEVICE 
 
 <<<
-stderr: 0 bytes
+stderr: 49 bytes
 >>>
+Błąd: Nie odnaleziono urządzenia „wlan0”.
 
 <<<

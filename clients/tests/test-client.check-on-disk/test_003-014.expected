@@ -1,0 +1,22 @@
+location: clients/tests/test-client.py:599:test_003()/14
+cmd: $NMCLI --complete-args -f ALL c s ''
+lang: de_DE.utf8
+returncode: 0
+stdout: 64 bytes
+>>>
+
+--active
+--order
+apath
+con-1
+con-xx1
+ethernet
+help
+id
+path
+uuid
+<<<
+stderr: 0 bytes
+>>>
+
+<<<

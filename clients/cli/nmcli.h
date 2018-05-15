@@ -141,6 +141,11 @@ typedef struct _NmCli {
 	char *palette_buffer;                             /* Buffer with sequences for terminal-colors.d(5)-based coloring. */
 } NmCli;
 
+#define NMC_RETURN(nmc, rvalue) \
+	G_STMT_START { \
+		return ((nmc)->return_value = (rvalue)); \
+	} G_STMT_END
+
 extern NmCli nm_cli;
 
 /* Error quark for GError domain */

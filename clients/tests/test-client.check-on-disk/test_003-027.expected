@@ -1,0 +1,18 @@
+location: clients/tests/test-client.py:613:test_003()/27
+cmd: $NMCLI -f ALL dev s eth0
+lang: de_DE.utf8
+returncode: 0
+stdout: 904 bytes
+>>>
+DEVICE  TYPE      STATE            DBUS-PATH                                  CONNECTION  CON-UUID                              CON-PATH                                           
+wlan0   wifi      nicht verfügbar  /org/freedesktop/NetworkManager/Devices/2  --          --                                    --                                                 
+wlan1   wifi      nicht verfügbar  /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
+wlan1   wifi      nicht verfügbar  /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
+eth0    ethernet  nicht verfügbar  /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
+
+<<<
+stderr: 28 bytes
+>>>
+Unbekannter Parameter: eth0
+
+<<<

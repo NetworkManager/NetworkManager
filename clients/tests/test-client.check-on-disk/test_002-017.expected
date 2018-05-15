@@ -1,30 +1,33 @@
-location: clients/tests/test-client.py:524:test_002()/17
-cmd: $NMCLI c s con-1
-lang: C
+location: clients/tests/test-client.py:562:test_002()/17
+cmd: $NMCLI -f AP -mode multiline -t d show wlan0
+lang: pl_PL.UTF-8
 returncode: 0
-stdout: 990 bytes
+stdout: 462 bytes
 >>>
-connection.id:                          con-1
-connection.uuid:                        5fcfd6d7-1e63-3332-8826-a7eda103792d
-connection.stable-id:                   --
-connection.type:                        802-3-ethernet
-connection.interface-name:              --
-connection.autoconnect:                 yes
-connection.autoconnect-priority:        0
-connection.autoconnect-retries:         -1 (default)
-connection.auth-retries:                -1
-connection.timestamp:                   0
-connection.read-only:                   no
-connection.permissions:                 --
-connection.zone:                        --
-connection.master:                      --
-connection.slave-type:                  --
-connection.autoconnect-slaves:          -1 (default)
-connection.secondaries:                 --
-connection.gateway-ping-timeout:        0
-connection.metered:                     unknown
-connection.lldp:                        default
-connection.mdns:                        -1 (default)
+AP[1].IN-USE: 
+AP[1].SSID:wlan0-ap-3
+AP[1].MODE:Infrastruktura
+AP[1].CHAN:1
+AP[1].RATE:54 Mb/s
+AP[1].SIGNAL:88
+AP[1].BARS:****
+AP[1].SECURITY:WPA1 WPA2
+AP[2].IN-USE: 
+AP[2].SSID:wlan0-ap-2
+AP[2].MODE:Infrastruktura
+AP[2].CHAN:1
+AP[2].RATE:54 Mb/s
+AP[2].SIGNAL:61
+AP[2].BARS:*** 
+AP[2].SECURITY:WPA1 WPA2
+AP[3].IN-USE: 
+AP[3].SSID:wlan0-ap-1
+AP[3].MODE:Infrastruktura
+AP[3].CHAN:1
+AP[3].RATE:54 Mb/s
+AP[3].SIGNAL:29
+AP[3].BARS:*   
+AP[3].SECURITY:WPA1 WPA2
 
 <<<
 stderr: 0 bytes

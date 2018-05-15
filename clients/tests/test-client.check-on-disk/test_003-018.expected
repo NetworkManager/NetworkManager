@@ -1,0 +1,16 @@
+location: clients/tests/test-client.py:604:test_003()/18
+cmd: $NMCLI con
+lang: de_DE.utf8
+returncode: 0
+stdout: 264 bytes
+>>>
+NAME      UUID                                  TYPE      DEVICE 
+ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  eth0   
+con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  --     
+con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  --     
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<

@@ -1,13 +1,13 @@
-location: clients/tests/test-client.py:497:test_001()/6
-cmd: $NMCLI bogus s
-lang: C
-returncode: 2
+location: clients/tests/test-client.py:545:test_001()/6
+cmd: $NMCLI -f AP -mode multiline -p d show wlan0
+lang: de_DE.utf8
+returncode: 10
 stdout: 0 bytes
 >>>
 
 <<<
-stderr: 68 bytes
+stderr: 47 bytes
 >>>
-Error: argument 'bogus' not understood. Try passing --help instead.
+Fehler: Gerät »wlan0« wurde nicht gefunden.
 
 <<<
