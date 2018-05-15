@@ -5988,9 +5988,9 @@ wifi_get_wifi_data (NMPlatform *platform, int ifindex)
 	NMWifiUtils *wifi_data;
 
 	wifi_data = g_hash_table_lookup (priv->wifi_data, GINT_TO_POINTER (ifindex));
-	pllink = nm_platform_link_get (platform, ifindex);
 
 	if (!wifi_data) {
+		pllink = nm_platform_link_get (platform, ifindex);
 		if (pllink) {
 			if (pllink->type == NM_LINK_TYPE_WIFI)
 				wifi_data = nm_wifi_utils_new (ifindex, TRUE);
