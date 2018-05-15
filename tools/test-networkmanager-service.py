@@ -32,7 +32,7 @@ _DEFAULT_ARG = object()
 class Global:
     pass
 
-gl = Global()
+gl = None
 
 ###############################################################################
 
@@ -297,7 +297,6 @@ class WiredDevice(Device):
         }
 
         self.dbus_interface_add(IFACE_WIRED, props, WiredDevice.PropertiesChanged)
-        self.export()
 
     @dbus.service.signal(IFACE_WIRED, signature='a{sv}')
     def PropertiesChanged(self, changed):
@@ -322,7 +321,6 @@ class VlanDevice(Device):
         }
 
         self.dbus_interface_add(IFACE_VLAN, props, VlanDevice.PropertiesChanged)
-        self.export()
 
     @dbus.service.signal(IFACE_VLAN, signature='a{sv}')
     def PropertiesChanged(self, changed):
@@ -381,7 +379,6 @@ class WifiAp(ExportedObj):
         }
 
         self.dbus_interface_add(IFACE_WIFI_AP, props, WifiAp.PropertiesChanged)
-        self.export()
 
     def __del__(self):
         if self.strength_id > 0:
@@ -433,7 +430,6 @@ class WifiDevice(Device):
         }
 
         self.dbus_interface_add(IFACE_WIFI, props, WifiDevice.PropertiesChanged)
-        self.export()
 
     @dbus.service.method(dbus_interface=IFACE_WIFI, in_signature='', out_signature='ao')
     def GetAccessPoints(self):
@@ -454,19 +450,21 @@ class WifiDevice(Device):
         pass
 
     def add_ap(self, ap):
+        ap.export()
         self.aps.append(ap)
         self._dbus_property_set(IFACE_WIFI, PRP_WIFI_ACCESS_POINTS, ExportedObj.to_path_array(self.aps))
         self.AccessPointAdded(ExportedObj.to_path(ap))
         return ap
 
-    @dbus.service.signal(IFACE_WIFI, signature='o')
-    def AccessPointRemoved(self, ap_path):
-        pass
-
     def remove_ap(self, ap):
         self.aps.remove(ap)
         self._dbus_property_set(IFACE_WIFI, PRP_WIFI_ACCESS_POINTS, ExportedObj.to_path_array(self.aps))
         self.AccessPointRemoved(ExportedObj.to_path(ap))
+        ap.unexport()
+
+    @dbus.service.signal(IFACE_WIFI, signature='o')
+    def AccessPointRemoved(self, ap_path):
+        pass
 
     @dbus.service.signal(IFACE_WIFI, signature='a{sv}')
     def PropertiesChanged(self, changed):
@@ -506,7 +504,6 @@ class WimaxNsp(ExportedObj):
         }
 
         self.dbus_interface_add(IFACE_WIMAX_NSP, props, WimaxNsp.PropertiesChanged)
-        self.export()
 
     def __del__(self):
         if self.strength_id > 0:
@@ -558,7 +555,6 @@ class WimaxDevice(Device):
         }
 
         self.dbus_interface_add(IFACE_WIMAX, props, WimaxDevice.PropertiesChanged)
-        self.export()
 
     @dbus.service.method(dbus_interface=IFACE_WIMAX, in_signature='', out_signature='ao')
     def GetNspList(self):
@@ -569,18 +565,20 @@ class WimaxDevice(Device):
         pass
 
     def add_nsp(self, nsp):
+        nsp.export()
         self.nsps.append(nsp)
         self._dbus_property_set(IFACE_WIMAX, PRP_WIMAX_NSPS, ExportedObj.to_path_array(self.nsps))
         self.NspAdded(ExportedObj.to_path(nsp))
-
-    @dbus.service.signal(IFACE_WIMAX, signature='o')
-    def NspRemoved(self, nsp_path):
-        pass
 
     def remove_nsp(self, nsp):
         self.nsps.remove(nsp)
         self._dbus_property_set(IFACE_WIMAX, PRP_WIMAX_NSPS, ExportedObj.to_path_array(self.nsps))
         self.NspRemoved(ExportedObj.to_path(nsp))
+        nsp.unexport()
+
+    @dbus.service.signal(IFACE_WIMAX, signature='o')
+    def NspRemoved(self, nsp_path):
+        pass
 
     @dbus.service.signal(IFACE_WIMAX, signature='a{sv}')
     def PropertiesChanged(self, changed):
@@ -914,21 +912,23 @@ class NetworkManager(ExportedObj):
     def add_device(self, device):
         if self.find_device_first(ident = device.ident, path = device.path) is not None:
             raise TestError("Duplicate device ident=%s / path=%s" % (device.ident, device.path))
+        device.export()
         self.devices.append(device)
         self._dbus_property_set(IFACE_NM, PRP_NM_DEVICES, ExportedObj.to_path_array(self.devices))
         self._dbus_property_set(IFACE_NM, PRP_NM_ALL_DEVICES, ExportedObj.to_path_array(self.devices))
         self.DeviceAdded(ExportedObj.to_path(device))
         return device
 
-    @dbus.service.signal(IFACE_NM, signature='o')
-    def DeviceRemoved(self, devpath):
-        pass
-
     def remove_device(self, device):
         self.devices.remove(device)
         self._dbus_property_set(IFACE_NM, PRP_NM_DEVICES, ExportedObj.to_path_array(self.devices))
         self._dbus_property_set(IFACE_NM, PRP_NM_ALL_DEVICES, ExportedObj.to_path_array(self.devices))
         self.DeviceRemoved(ExportedObj.to_path(device))
+        device.unexport()
+
+    @dbus.service.signal(IFACE_NM, signature='o')
+    def DeviceRemoved(self, devpath):
+        pass
 
     @dbus.service.signal(IFACE_NM, signature='a{sv}')
     def PropertiesChanged(self, changed):
@@ -1060,7 +1060,6 @@ class Connection(ExportedObj):
         }
 
         self.dbus_interface_add(IFACE_CONNECTION, props)
-        self.export()
 
     def get_id(self, settings=None):
         if settings is None:
@@ -1200,13 +1199,14 @@ class Settings(ExportedObj):
         if uuid in [c.get_uuid() for c in self.connections.values()]:
             raise InvalidSettingException('cannot add duplicate connection with uuid %s' % (uuid))
 
+        con.export()
         self.connections[con.path] = con
         self.NewConnection(con.path)
         self._dbus_property_set(IFACE_SETTINGS, PRP_SETTINGS_CONNECTIONS, dbus.Array(self.connections.keys(), 'o'))
 
         if self.remove_next_connection:
             self.remove_next_connection = False
-            self.connections[con.path].Delete()
+            self.delete_connection(con)
 
         return con.path
 
@@ -1376,6 +1376,8 @@ def main():
 
     random.seed()
 
+    global gl
+    gl = Global()
 
     gl.mainloop = GLib.MainLoop()
     gl.bus = dbus.SessionBus()
@@ -1383,8 +1385,8 @@ def main():
     gl.object_manager = ObjectManager('/org/freedesktop')
     gl.manager = NetworkManager()
     gl.settings = Settings()
-    gl.agent_manager = AgentManager()
     gl.dns_manager = DnsManager()
+    gl.agent_manager = AgentManager()
 
     if not gl.bus.request_name("org.freedesktop.NetworkManager"):
         raise AssertionError("Failure to request D-Bus name org.freedesktop.NetworkManager")
@@ -1402,6 +1404,12 @@ def main():
 
     GLib.source_remove(id1)
     GLib.source_remove(id2)
+
+    gl.agent_manager.remove_from_connection()
+    gl.dns_manager.unexport()
+    gl.settings.unexport()
+    gl.manager.unexport()
+    gl.object_manager.remove_from_connection()
 
     sys.exit(0)
 
