@@ -243,6 +243,17 @@ class NMStubServer:
             raise AssertionError("Unexpectedly not found connection %s: %s" % (con_id, str(e)))
         return u
 
+    def setProperty(self, path, propname, value, iface_name = None):
+        if iface_name is None:
+            iface_name = ''
+        self.op_SetProperties([
+            (path, [
+                (iface_name, [
+                    (propname, value),
+                ]),
+            ]),
+        ])
+
 ###############################################################################
 
 class NmTestBase(unittest.TestCase):

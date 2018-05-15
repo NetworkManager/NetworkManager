@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:622:test_003()/15
+location: clients/tests/test-client.py:633:test_003()/15
 cmd: $NMCLI con up ethernet ifname eth0
 lang: C
 returncode: 0

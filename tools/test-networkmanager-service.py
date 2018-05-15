@@ -160,11 +160,40 @@ class ExportedObj(dbus.service.Object):
         return self._dbus_interface_get_property(self._dbus_interface_get(dbus_iface),
                                                  propname)
 
-    def _dbus_property_set(self, dbus_iface, propname, value):
-        dbus_interface = self._dbus_interface_get(dbus_iface)
-        prop = self._dbus_interface_get_property(dbus_interface)
-        assert propname in prop
-        prop[propname] = value
+    def _dbus_property_set(self, dbus_iface, propname, value, allow_detect_dbus_iface = False, dry_run = False):
+        if allow_detect_dbus_iface and not dbus_iface:
+            props = None
+            for p, dbus_interface in self._dbus_ifaces.items():
+                if propname in dbus_interface.props:
+                    if props is not None:
+                        raise TestError("Cannot uniquely find the property '%s' on object '%s'" % (propname, self.path))
+                    props = dbus_interface.props
+                    dbus_iface = p
+            if props is None:
+                raise TestError("Cannot find the property '%s' on object '%s'" % (propname, self.path))
+        else:
+            try:
+                dbus_interface = self._dbus_interface_get(dbus_iface)
+                props = self._dbus_interface_get_property(dbus_interface)
+            except:
+                if dry_run:
+                    raise TestError("No interface '%s' on '%s'" % (dbus_iface, self.path))
+                raise
+
+        if dry_run:
+            if propname not in props:
+                raise TestError("No property '%s' on '%s' on '%s'" % (propname, dbus_iface, self.path))
+
+            if     isinstance(self, ActiveConnection) \
+               and dbus_iface == 'org.freedesktop.NetworkManager.Connection.Active' \
+               and propname == 'State':
+                return
+            else:
+                raise TestError("Cannot set property '%s' on '%s' on '%s' via D-Bus" % (propname, dbus_iface, self.path))
+
+        assert propname in props
+
+        props[propname] = value
         self._dbus_property_notify(dbus_iface, propname)
 
     def _dbus_property_notify(self, dbus_iface, propname):
@@ -942,6 +971,20 @@ class NetworkManager(ExportedObj):
     def FindConnections(self, args):
         return [(c.path, c.get_uuid(), c.get_id()) for c in gl.settings.find_connections(**args)]
 
+    @dbus.service.method(IFACE_TEST, in_signature='a(oa(sa(sv)))', out_signature='')
+    def SetProperties(self, all_args):
+        for i in [0, 1]:
+            for path, iface_args in all_args:
+                o = gl.object_manager.find_object(path)
+                if o is None:
+                    raise TestError("Object %s does not exist" % (path))
+                for iface_name, args in iface_args:
+                    for propname, value in args:
+                        o._dbus_property_set(iface_name, propname, value,
+                                             allow_detect_dbus_iface = True,
+                                             dry_run = (i == 0))
+
+
     @dbus.service.method(IFACE_TEST, in_signature='sa{sv}', out_signature='o')
     def AddObj(self, class_name, args):
         if class_name in ['WiredDevice', 'WifiDevice']:
@@ -1340,6 +1383,12 @@ class ObjectManager(dbus.service.Object):
     def __init__(self, object_path):
         dbus.service.Object.__init__(self, gl.bus, object_path)
         self.objs = []
+
+    def find_object(self, path):
+        for o in self.objs:
+            if path == o.path:
+                return o
+        return None
 
     def add_object(self, obj):
         self.objs.append(obj)
