@@ -1,20 +1,13 @@
-location: clients/tests/test-client.py:577:test_001()/3
-cmd: $NMCLI 
-lang: de_DE.utf8
-returncode: 0
-stdout: 322 bytes
+location: clients/tests/test-client.py:579:test_001()/3
+cmd: $NMCLI -f AP -mode multiline -p d show wlan0
+lang: C
+returncode: 10
+stdout: 0 bytes
 >>>
-DNS configuration:
-	servers: 1.2.3.4 5.6.7.8
-
-Rufen Sie »nmcli device show« auf, um vollständige Informationen über bekannte Geräte abzurufen
-und »nmcli connection show« für eine Übersicht über aktive Verbindungsprofile.
-
-
-Die Hilfeseiten nmcli(1) und nmcli-examples(5) geben vollständige Aufrufbeschreibungen.
 
 <<<
-stderr: 0 bytes
+stderr: 33 bytes
 >>>
+Error: Device 'wlan0' not found.
 
 <<<

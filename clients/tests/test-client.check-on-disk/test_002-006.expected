@@ -1,15 +1,38 @@
-location: clients/tests/test-client.py:590:test_002()/6
-cmd: $NMCLI -f all d
-lang: de_DE.utf8
+location: clients/tests/test-client.py:592:test_002()/6
+cmd: $NMCLI 
+lang: pl_PL.UTF-8
 returncode: 0
-stdout: 665 bytes
+stdout: 684 bytes
 >>>
-DEVICE  TYPE      STATE            DBUS-PATH                                  CONNECTION  CON-UUID  CON-PATH 
-eth0    ethernet  nicht verfügbar  /org/freedesktop/NetworkManager/Devices/1  --          --        --       
-eth1    ethernet  nicht verfügbar  /org/freedesktop/NetworkManager/Devices/2  --          --        --       
-wlan0   wifi      nicht verfügbar  /org/freedesktop/NetworkManager/Devices/3  --          --        --       
-wlan1   wifi      nicht verfügbar  /org/freedesktop/NetworkManager/Devices/4  --          --        --       
-wlan1   wifi      nicht verfügbar  /org/freedesktop/NetworkManager/Devices/5  --          --        --       
+eth0: niedostępne
+	"eth0"
+	ethernet (virtual), 72:41:AB:90:41:5D, sprzęt
+
+eth1: niedostępne
+	"eth1"
+	ethernet (virtual), 1F:E6:D1:E6:1D:53, sprzęt
+
+wlan0: niedostępne
+	"wlan0"
+	wifi (virtual), 5A:88:5E:B6:90:40, sprzęt
+
+wlan1: niedostępne
+	"wlan1"
+	wifi (virtual), 7C:D4:69:31:67:0B, sprzęt
+
+wlan1: niedostępne
+	"wlan1"
+	wifi (virtual), 41:21:6B:F3:C9:4A, sprzęt
+
+DNS configuration:
+	servers: 1.2.3.4 5.6.7.8
+
+Polecenie „nmcli device show” wyświetli pełne informacje o znanych
+urządzeniach, a „nmcli connection show” wyświetli przegląd aktywnych
+profili połączeń.
+
+Strony podręcznika nmcli(1) i nmcli-examples(5) zawierają pełne informacje
+o użyciu.
 
 <<<
 stderr: 0 bytes

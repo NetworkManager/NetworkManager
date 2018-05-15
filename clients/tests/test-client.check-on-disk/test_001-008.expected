@@ -1,13 +1,13 @@
-location: clients/tests/test-client.py:581:test_001()/8
-cmd: $NMCLI c s
+location: clients/tests/test-client.py:583:test_001()/8
+cmd: $NMCLI bogus s
 lang: pl_PL.UTF-8
-returncode: 0
-stdout: 26 bytes
+returncode: 2
+stdout: 0 bytes
 >>>
-NAME  UUID  TYPE  DEVICE 
 
 <<<
-stderr: 0 bytes
+stderr: 87 bytes
 >>>
+Błąd: nie zrozumiano parametru „bogus”. Można użyć „--help” zamiast tego.
 
 <<<

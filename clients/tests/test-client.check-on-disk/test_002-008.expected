@@ -1,38 +1,33 @@
-location: clients/tests/test-client.py:592:test_002()/8
-cmd: $NMCLI 
+location: clients/tests/test-client.py:594:test_002()/8
+cmd: $NMCLI -f AP -mode multiline d show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 684 bytes
+stdout: 1134 bytes
 >>>
-eth0: niedostępne
-	"eth0"
-	ethernet (virtual), 72:41:AB:90:41:5D, sprzęt
-
-eth1: niedostępne
-	"eth1"
-	ethernet (virtual), 1F:E6:D1:E6:1D:53, sprzęt
-
-wlan0: niedostępne
-	"wlan0"
-	wifi (virtual), 5A:88:5E:B6:90:40, sprzęt
-
-wlan1: niedostępne
-	"wlan1"
-	wifi (virtual), 7C:D4:69:31:67:0B, sprzęt
-
-wlan1: niedostępne
-	"wlan1"
-	wifi (virtual), 41:21:6B:F3:C9:4A, sprzęt
-
-DNS configuration:
-	servers: 1.2.3.4 5.6.7.8
-
-Polecenie „nmcli device show” wyświetli pełne informacje o znanych
-urządzeniach, a „nmcli connection show” wyświetli przegląd aktywnych
-profili połączeń.
-
-Strony podręcznika nmcli(1) i nmcli-examples(5) zawierają pełne informacje
-o użyciu.
+AP[1].IN-USE:                            
+AP[1].SSID:                             wlan0-ap-3
+AP[1].MODE:                             Infrastruktura
+AP[1].CHAN:                             1
+AP[1].RATE:                             54 Mb/s
+AP[1].SIGNAL:                           88
+AP[1].BARS:                             ****
+AP[1].SECURITY:                         WPA1 WPA2
+AP[2].IN-USE:                            
+AP[2].SSID:                             wlan0-ap-2
+AP[2].MODE:                             Infrastruktura
+AP[2].CHAN:                             1
+AP[2].RATE:                             54 Mb/s
+AP[2].SIGNAL:                           61
+AP[2].BARS:                             *** 
+AP[2].SECURITY:                         WPA1 WPA2
+AP[3].IN-USE:                            
+AP[3].SSID:                             wlan0-ap-1
+AP[3].MODE:                             Infrastruktura
+AP[3].CHAN:                             1
+AP[3].RATE:                             54 Mb/s
+AP[3].SIGNAL:                           29
+AP[3].BARS:                             *   
+AP[3].SECURITY:                         WPA1 WPA2
 
 <<<
 stderr: 0 bytes

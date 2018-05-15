@@ -1,17 +1,30 @@
-location: clients/tests/test-client.py:598:test_002()/24
-cmd: $NMCLI -f AP -mode tabular -p d show wlan0
-lang: de_DE.utf8
+location: clients/tests/test-client.py:605:test_002()/24
+cmd: $NMCLI c s con-1
+lang: pl_PL.UTF-8
 returncode: 0
-stdout: 476 bytes
+stdout: 992 bytes
 >>>
-===============================
-  Geräteinformationen (wlan0)
-===============================
-NAME   IN-USE  SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY  
-----------------------------------------------------------------------------
-AP[1]          wlan0-ap-3  Infra  1     54 Mbit/s  88      ****  WPA1 WPA2 
-AP[2]          wlan0-ap-2  Infra  1     54 Mbit/s  61      ***   WPA1 WPA2 
-AP[3]          wlan0-ap-1  Infra  1     54 Mbit/s  29      *     WPA1 WPA2 
+connection.id:                          con-1
+connection.uuid:                        5fcfd6d7-1e63-3332-8826-a7eda103792d
+connection.stable-id:                   --
+connection.type:                        802-3-ethernet
+connection.interface-name:              --
+connection.autoconnect:                 tak
+connection.autoconnect-priority:        0
+connection.autoconnect-retries:         -1 (default)
+connection.auth-retries:                -1
+connection.timestamp:                   0
+connection.read-only:                   nie
+connection.permissions:                 --
+connection.zone:                        --
+connection.master:                      --
+connection.slave-type:                  --
+connection.autoconnect-slaves:          -1 (default)
+connection.secondaries:                 --
+connection.gateway-ping-timeout:        0
+connection.metered:                     nieznane
+connection.lldp:                        default
+connection.mdns:                        -1 (default)
 
 <<<
 stderr: 0 bytes

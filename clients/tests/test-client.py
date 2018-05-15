@@ -312,7 +312,7 @@ class TestNmcli(NmTestBase):
                      sort_lines_stdout = False,
                      extra_env = None):
         frame = sys._getframe(1)
-        for lang in [ 'C', 'pl', 'de' ]:
+        for lang in [ 'C', 'pl' ]:
             self._call_nmcli(args,
                              lang,
                              check_on_disk,
