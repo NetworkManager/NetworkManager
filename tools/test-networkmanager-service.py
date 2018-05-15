@@ -1245,6 +1245,36 @@ class Settings(ExportedObj):
 
 ###############################################################################
 
+IFACE_DNS_MANAGER = 'org.freedesktop.NetworkManager.DnsManager'
+
+PRP_DNS_MANAGER_MODE          = 'Mode'
+PRP_DNS_MANAGER_RC_MANAGER    = 'RcManager'
+PRP_DNS_MANAGER_CONFIGURATION = 'Configuration'
+
+class DnsManager(ExportedObj):
+    def __init__(self):
+        ExportedObj.__init__(self, "/org/freedesktop/NetworkManager/DnsManager")
+
+        props = {
+            PRP_DNS_MANAGER_MODE:          "dnsmasq",
+            PRP_DNS_MANAGER_RC_MANAGER:    "symlink",
+            PRP_DNS_MANAGER_CONFIGURATION: dbus.Array(
+                [
+                    dbus.Dictionary(
+                        {
+                            'nameservers' : dbus.Array(['1.2.3.4', '5.6.7.8'], 's'),
+                            'priority'    : dbus.Int32(100),
+                        },
+                        'sv')
+                ],
+                'a{sv}'),
+        }
+
+        self.dbus_interface_add(IFACE_DNS_MANAGER, props)
+        self.export()
+
+###############################################################################
+
 IFACE_AGENT_MANAGER = 'org.freedesktop.NetworkManager.AgentManager'
 IFACE_AGENT = 'org.freedesktop.NetworkManager.SecretAgent'
 
@@ -1338,36 +1368,6 @@ class ObjectManager(dbus.service.Object):
             name, ifaces = obj.get_managed_ifaces()
             managed_objects[name] = ifaces
         return managed_objects
-
-###############################################################################
-
-IFACE_DNS_MANAGER = 'org.freedesktop.NetworkManager.DnsManager'
-
-PRP_DNS_MANAGER_MODE          = 'Mode'
-PRP_DNS_MANAGER_RC_MANAGER    = 'RcManager'
-PRP_DNS_MANAGER_CONFIGURATION = 'Configuration'
-
-class DnsManager(ExportedObj):
-    def __init__(self):
-        ExportedObj.__init__(self, "/org/freedesktop/NetworkManager/DnsManager")
-
-        props = {
-            PRP_DNS_MANAGER_MODE:          "dnsmasq",
-            PRP_DNS_MANAGER_RC_MANAGER:    "symlink",
-            PRP_DNS_MANAGER_CONFIGURATION: dbus.Array(
-                [
-                    dbus.Dictionary(
-                        {
-                            'nameservers' : dbus.Array(['1.2.3.4', '5.6.7.8'], 's'),
-                            'priority'    : dbus.Int32(100),
-                        },
-                        'sv')
-                ],
-                'a{sv}'),
-        }
-
-        self.dbus_interface_add(IFACE_DNS_MANAGER, props)
-        self.export()
 
 ###############################################################################
 
