@@ -287,7 +287,8 @@ class TestNmcli(NmTestBase):
                      expected_stderr = _DEFAULT_ARG,
                      replace_stdout = None,
                      replace_stderr = None,
-                     sort_lines_stdout = False):
+                     sort_lines_stdout = False,
+                     extra_env = None):
         frame = sys._getframe(1)
         for lang in [ 'C', 'pl', 'de' ]:
             self._call_nmcli(args,
@@ -299,6 +300,7 @@ class TestNmcli(NmTestBase):
                              replace_stdout,
                              replace_stderr,
                              sort_lines_stdout,
+                             extra_env,
                              frame)
 
 
@@ -312,7 +314,8 @@ class TestNmcli(NmTestBase):
                    expected_stderr = _DEFAULT_ARG,
                    replace_stdout = None,
                    replace_stderr = None,
-                   sort_lines_stdout = False):
+                   sort_lines_stdout = False,
+                   extra_env = None):
 
         frame = sys._getframe(1)
 
@@ -333,6 +336,7 @@ class TestNmcli(NmTestBase):
                              replace_stdout,
                              replace_stderr,
                              sort_lines_stdout,
+                             extra_env,
                              frame)
 
     def _call_nmcli(self,
@@ -345,6 +349,7 @@ class TestNmcli(NmTestBase):
                     replace_stdout,
                     replace_stderr,
                     sort_lines_stdout,
+                    extra_env,
                     frame):
 
         calling_fcn = frame.f_code.co_name
@@ -364,6 +369,9 @@ class TestNmcli(NmTestBase):
             self.fail('invalid language %s' % (lang))
 
         env = {}
+        if extra_env is not None:
+            for k, v in extra_env.items():
+                env[k] = v
         for k in ['LD_LIBRARY_PATH',
                   'DBUS_SESSION_BUS_ADDRESS']:
             val = os.environ.get(k, None)

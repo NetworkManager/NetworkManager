@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:613:test_003()/27
+location: clients/tests/test-client.py:621:test_003()/27
 cmd: $NMCLI -f ALL dev s eth0
 lang: de_DE.utf8
 returncode: 0

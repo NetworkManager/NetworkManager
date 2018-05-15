@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:599:test_003()/14
+location: clients/tests/test-client.py:607:test_003()/14
 cmd: $NMCLI --complete-args -f ALL c s ''
 lang: de_DE.utf8
 returncode: 0

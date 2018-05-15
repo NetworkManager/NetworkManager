@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:549:test_001()/11
+location: clients/tests/test-client.py:557:test_001()/11
 cmd: $NMCLI bogus s
 lang: pl_PL.UTF-8
 returncode: 2

@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:564:test_002()/23
+location: clients/tests/test-client.py:572:test_002()/23
 cmd: $NMCLI -f AP -mode tabular -p d show wlan0
 lang: pl_PL.UTF-8
 returncode: 0

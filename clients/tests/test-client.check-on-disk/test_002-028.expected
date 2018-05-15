@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:567:test_002()/28
+location: clients/tests/test-client.py:575:test_002()/28
 cmd: $NMCLI -f ALL d wifi
 lang: C
 returncode: 0
