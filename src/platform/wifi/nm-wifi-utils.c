@@ -52,13 +52,13 @@ nm_wifi_utils_class_init (NMWifiUtilsClass *klass)
 }
 
 NMWifiUtils *
-nm_wifi_utils_new (int ifindex, gboolean check_scan)
+nm_wifi_utils_new (int ifindex, struct nl_sock *genl, gboolean check_scan)
 {
 	NMWifiUtils *ret;
 
 	g_return_val_if_fail (ifindex > 0, NULL);
 
-	ret = nm_wifi_utils_nl80211_new (ifindex);
+	ret = nm_wifi_utils_nl80211_new (ifindex, genl);
 
 #if HAVE_WEXT
 	if (ret == NULL)

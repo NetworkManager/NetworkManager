@@ -26,6 +26,7 @@
 
 #include "nm-dbus-interface.h"
 #include "nm-setting-wireless.h"
+#include "platform/nm-netlink.h"
 
 typedef struct NMWifiUtils NMWifiUtils;
 
@@ -40,7 +41,7 @@ GType nm_wifi_utils_get_type (void);
 
 gboolean nm_wifi_utils_is_wifi (int dirfd, const char *ifname);
 
-NMWifiUtils *nm_wifi_utils_new (int ifindex, gboolean check_scan);
+NMWifiUtils *nm_wifi_utils_new (int ifindex, struct nl_sock *genl, gboolean check_scan);
 
 NMDeviceWifiCapabilities nm_wifi_utils_get_caps (NMWifiUtils *data);
 

@@ -174,10 +174,6 @@ dispose (GObject *object)
 {
 	NMWifiUtilsNl80211 *nl80211 = NM_WIFI_UTILS_NL80211 (object);
 
-	if (nl80211->nl_sock) {
-		nl_socket_free (nl80211->nl_sock);
-		nl80211->nl_sock = NULL;
-	}
 	g_clear_pointer (&nl80211->freqs, g_free);
 }
 
@@ -931,12 +927,15 @@ nm_wifi_utils_nl80211_class_init (NMWifiUtilsNl80211Class *klass)
 }
 
 NMWifiUtils *
-nm_wifi_utils_nl80211_new (int ifindex)
+nm_wifi_utils_nl80211_new (int ifindex, struct nl_sock *genl)
 {
 	NMWifiUtilsNl80211 *nl80211;
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	struct nl80211_device_info device_info = {};
 	char ifname[IFNAMSIZ];
+
+	if (!genl)
+		return NULL;
 
 	if (!nmp_utils_if_indextoname (ifindex, ifname)) {
 		_LOGW (LOGD_PLATFORM | LOGD_WIFI,
@@ -947,12 +946,7 @@ nm_wifi_utils_nl80211_new (int ifindex)
 	nl80211 = g_object_new (NM_TYPE_WIFI_UTILS_NL80211, NULL);
 
 	nl80211->parent.ifindex = ifindex;
-	nl80211->nl_sock = nl_socket_alloc ();
-	if (nl80211->nl_sock == NULL)
-		goto error;
-
-	if (nl_connect (nl80211->nl_sock, NETLINK_GENERIC))
-		goto error;
+	nl80211->nl_sock = genl;
 
 	nl80211->id = genl_ctrl_resolve (nl80211->nl_sock, "nl80211");
 	if (nl80211->id < 0) {

@@ -23,6 +23,7 @@
 #define __WIFI_UTILS_NL80211_H__
 
 #include "nm-wifi-utils.h"
+#include "platform/nm-netlink.h"
 
 #define NM_TYPE_WIFI_UTILS_NL80211            (nm_wifi_utils_nl80211_get_type ())
 #define NM_WIFI_UTILS_NL80211(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_WIFI_UTILS_NL80211, NMWifiUtilsNl80211))
@@ -33,6 +34,6 @@
 
 GType nm_wifi_utils_nl80211_get_type (void);
 
-NMWifiUtils *nm_wifi_utils_nl80211_new (int ifindex);
+NMWifiUtils *nm_wifi_utils_nl80211_new (int ifindex, struct nl_sock *genl);
 
 #endif  /* __WIFI_UTILS_NL80211_H__ */
