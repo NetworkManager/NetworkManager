@@ -663,6 +663,38 @@ class TestNmcli(NmTestBase):
             self.call_nmcli_l(['-f', 'ALL', 'dev', 'show', 'eth0'],
                               replace_stdout = replace_stdout)
 
+        self.srv.setProperty('/org/freedesktop/NetworkManager/ActiveConnection/1',
+                             'State',
+                             dbus.UInt32(NM.ActiveConnectionState.DEACTIVATING))
+
+        self.call_nmcli_l(['-f', 'ALL', 'con'],
+                          replace_stdout = replace_stdout)
+
+        self.call_nmcli_l(['-f', 'UUID,TYPE', 'con'],
+                          replace_stdout = replace_stdout)
+
+        self.call_nmcli_l(['-f', 'UUID,TYPE', '--mode', 'multiline', 'con'],
+                          replace_stdout = replace_stdout)
+
+        self.call_nmcli_l(['-f', 'UUID,TYPE', '--mode', 'multiline', '--terse', 'con'],
+                          replace_stdout = replace_stdout)
+
+        self.call_nmcli_l(['-f', 'UUID,TYPE', '--mode', 'multiline', '--pretty', 'con'],
+                          replace_stdout = replace_stdout)
+
+        self.call_nmcli_l(['-f', 'UUID,TYPE', '--mode', 'tabular', 'con'],
+                          replace_stdout = replace_stdout)
+
+        self.call_nmcli_l(['-f', 'UUID,TYPE', '--mode', 'tabular', '--terse', 'con'],
+                          replace_stdout = replace_stdout)
+
+        self.call_nmcli_l(['-f', 'UUID,TYPE', '--mode', 'tabular', '--pretty', 'con'],
+                          replace_stdout = replace_stdout)
+
+        self.call_nmcli_l(['con', 's', 'ethernet'],
+                          replace_stdout = replace_stdout)
+
+
 ###############################################################################
 
 def main():

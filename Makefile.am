@@ -3907,6 +3907,33 @@ EXTRA_DIST += \
 	clients/tests/test-client.check-on-disk/test_003-050.expected \
 	clients/tests/test-client.check-on-disk/test_003-051.expected \
 	clients/tests/test-client.check-on-disk/test_003-052.expected \
+	clients/tests/test-client.check-on-disk/test_003-053.expected \
+	clients/tests/test-client.check-on-disk/test_003-054.expected \
+	clients/tests/test-client.check-on-disk/test_003-055.expected \
+	clients/tests/test-client.check-on-disk/test_003-056.expected \
+	clients/tests/test-client.check-on-disk/test_003-057.expected \
+	clients/tests/test-client.check-on-disk/test_003-058.expected \
+	clients/tests/test-client.check-on-disk/test_003-059.expected \
+	clients/tests/test-client.check-on-disk/test_003-060.expected \
+	clients/tests/test-client.check-on-disk/test_003-061.expected \
+	clients/tests/test-client.check-on-disk/test_003-062.expected \
+	clients/tests/test-client.check-on-disk/test_003-063.expected \
+	clients/tests/test-client.check-on-disk/test_003-064.expected \
+	clients/tests/test-client.check-on-disk/test_003-065.expected \
+	clients/tests/test-client.check-on-disk/test_003-066.expected \
+	clients/tests/test-client.check-on-disk/test_003-067.expected \
+	clients/tests/test-client.check-on-disk/test_003-068.expected \
+	clients/tests/test-client.check-on-disk/test_003-069.expected \
+	clients/tests/test-client.check-on-disk/test_003-070.expected \
+	clients/tests/test-client.check-on-disk/test_003-071.expected \
+	clients/tests/test-client.check-on-disk/test_003-072.expected \
+	clients/tests/test-client.check-on-disk/test_003-073.expected \
+	clients/tests/test-client.check-on-disk/test_003-074.expected \
+	clients/tests/test-client.check-on-disk/test_003-075.expected \
+	clients/tests/test-client.check-on-disk/test_003-076.expected \
+	clients/tests/test-client.check-on-disk/test_003-077.expected \
+	clients/tests/test-client.check-on-disk/test_003-078.expected \
+	clients/tests/test-client.check-on-disk/test_003-079.expected \
 	\
 	$(NULL)
 

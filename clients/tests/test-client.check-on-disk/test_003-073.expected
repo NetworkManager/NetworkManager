@@ -1,0 +1,15 @@
+location: clients/tests/test-client.py:689:test_003()/73
+cmd: $NMCLI -f UUID,TYPE --mode tabular --terse con
+lang: de_DE.utf8
+returncode: 0
+stdout: 156 bytes
+>>>
+UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet
+5fcfd6d7-1e63-3332-8826-a7eda103792d:802-3-ethernet
+UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<
