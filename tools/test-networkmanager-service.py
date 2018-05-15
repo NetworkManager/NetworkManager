@@ -91,7 +91,7 @@ class Util:
 
 class ExportedObj(dbus.service.Object):
 
-    DBusInterface = collections.namedtuple('DBusInterface', ['dbus_iface', 'get_props_func', 'prop_changed_func'])
+    DBusInterface = collections.namedtuple('DBusInterface', ['dbus_iface', 'props', 'legacy_prop_changed_func'])
 
     @staticmethod
     def create_path(klass, path_prefix = None):
@@ -104,8 +104,9 @@ class ExportedObj(dbus.service.Object):
     @staticmethod
     def to_path_array(src):
         array = dbus.Array([], signature=dbus.Signature('o'))
-        for o in src:
-            array.append(ExportedObj.to_path(o))
+        if src is not None:
+            for o in src:
+                array.append(ExportedObj.to_path(o))
         return array
 
     @staticmethod
@@ -139,37 +140,48 @@ class ExportedObj(dbus.service.Object):
         gl.object_manager.remove_object(self)
         self.remove_from_connection()
 
-    def dbus_interface_add(self, dbus_iface, get_props_func, prop_changed_func):
-        if not hasattr(self, '_dbus_ifaces'):
-            self._dbus_ifaces = {}
-        self._dbus_ifaces[dbus_iface] = ExportedObj.DBusInterface(dbus_iface, get_props_func, prop_changed_func)
+    def dbus_interface_add(self, dbus_iface, props, legacy_prop_changed_func = None):
+        self._dbus_ifaces[dbus_iface] = ExportedObj.DBusInterface(dbus_iface, props, legacy_prop_changed_func)
 
     def _dbus_interface_get(self, dbus_iface):
         if dbus_iface not in self._dbus_ifaces:
             raise UnknownInterfaceException()
         return self._dbus_ifaces[dbus_iface]
 
-    def _dbus_property_get(self, dbus_iface, propname = None):
-        props = self._dbus_interface_get(dbus_iface).get_props_func()
+    def _dbus_interface_get_property(self, dbus_interface, propname = None):
+        props = dbus_interface.props
         if propname is None:
             return props
         if propname not in props:
             raise UnknownPropertyException()
         return props[propname]
 
+    def _dbus_property_get(self, dbus_iface, propname = None):
+        return self._dbus_interface_get_property(self._dbus_interface_get(dbus_iface),
+                                                 propname)
+
+    def _dbus_property_set(self, dbus_iface, propname, value):
+        dbus_interface = self._dbus_interface_get(dbus_iface)
+        prop = self._dbus_interface_get_property(dbus_interface)
+        assert propname in prop
+        prop[propname] = value
+        self._dbus_property_notify(dbus_iface, propname)
+
     def _dbus_property_notify(self, dbus_iface, propname):
-        prop = self._dbus_property_get(dbus_iface, propname)
+        dbus_interface = self._dbus_interface_get(dbus_iface)
+        prop = self._dbus_interface_get_property(dbus_interface, propname)
         if propname is not None:
             prop = { propname: prop }
         ExportedObj.PropertiesChanged(self, dbus_iface, prop, [])
 
-        # the prop_changed_func signal is a legacy signal that got obsoleted by the standard
+        # the legacy_prop_changed_func signal is a legacy signal that got obsoleted by the standard
         # PropertiesChanged signal. NetworkManager (and this stub) still emit it for backward
         # compatibility reasons. Note that this stub server implementation gets this wrong,
         # for example, it emits PropertiesChanged signal on org.freedesktop.NetworkManager.Device,
         # which NetworkManager never did.
         # See https://cgit.freedesktop.org/NetworkManager/NetworkManager/tree/src/nm-dbus-manager.c?id=db80d5f62a1edf39c5970887ef7b9ec62dd4163f#n1274
-        self._dbus_interface_get(dbus_iface).prop_changed_func(self, prop)
+        if dbus_interface.legacy_prop_changed_func is not None:
+            dbus_interface.legacy_prop_changed_func(self, prop)
 
     @dbus.service.signal(dbus.PROPERTIES_IFACE, signature='sa{sv}as')
     def PropertiesChanged(self, iface, changed, invalidated):
@@ -186,7 +198,7 @@ class ExportedObj(dbus.service.Object):
     def get_managed_ifaces(self):
         my_ifaces = {}
         for iface in self._dbus_ifaces:
-            my_ifaces[iface] = self._dbus_ifaces[iface].get_props_func()
+            my_ifaces[iface] = self._dbus_ifaces[iface].props
         return self.path, my_ifaces
 
 ###############################################################################
@@ -196,19 +208,19 @@ IFACE_DEVICE = 'org.freedesktop.NetworkManager.Device'
 class NotSoftwareException(dbus.DBusException):
     _dbus_error_name = IFACE_DEVICE + '.NotSoftware'
 
-PD_UDI = "Udi"
-PD_IFACE = "Interface"
-PD_DRIVER = "Driver"
-PD_STATE = "State"
-PD_ACTIVE_CONNECTION = "ActiveConnection"
-PD_IP4_CONFIG = "Ip4Config"
-PD_IP6_CONFIG = "Ip6Config"
-PD_DHCP4_CONFIG = "Dhcp4Config"
-PD_DHCP6_CONFIG = "Dhcp6Config"
-PD_MANAGED = "Managed"
-PD_AUTOCONNECT = "Autoconnect"
-PD_DEVICE_TYPE = "DeviceType"
-PD_AVAILABLE_CONNECTIONS = "AvailableConnections"
+PRP_DEVICE_UDI                   = "Udi"
+PRP_DEVICE_IFACE                 = "Interface"
+PRP_DEVICE_DRIVER                = "Driver"
+PRP_DEVICE_STATE                 = "State"
+PRP_DEVICE_ACTIVE_CONNECTION     = "ActiveConnection"
+PRP_DEVICE_IP4_CONFIG            = "Ip4Config"
+PRP_DEVICE_IP6_CONFIG            = "Ip6Config"
+PRP_DEVICE_DHCP4_CONFIG          = "Dhcp4Config"
+PRP_DEVICE_DHCP6_CONFIG          = "Dhcp6Config"
+PRP_DEVICE_MANAGED               = "Managed"
+PRP_DEVICE_AUTOCONNECT           = "Autoconnect"
+PRP_DEVICE_DEVICE_TYPE           = "DeviceType"
+PRP_DEVICE_AVAILABLE_CONNECTIONS = "AvailableConnections"
 
 class Device(ExportedObj):
 
@@ -220,39 +232,25 @@ class Device(ExportedObj):
         if ident is None:
             ident = iface
 
-        object_path = ExportedObj.create_path(Device)
+        ExportedObj.__init__(self, ExportedObj.create_path(Device), ident)
 
-        ExportedObj.__init__(self, object_path, ident)
+        props = {
+            PRP_DEVICE_UDI:                   "/sys/devices/virtual/%s" % (iface),
+            PRP_DEVICE_IFACE:                 iface,
+            PRP_DEVICE_DRIVER:                "virtual",
+            PRP_DEVICE_STATE:                 dbus.UInt32(NM.DeviceState.UNAVAILABLE),
+            PRP_DEVICE_ACTIVE_CONNECTION:     ExportedObj.to_path(None),
+            PRP_DEVICE_IP4_CONFIG:            ExportedObj.to_path(None),
+            PRP_DEVICE_IP6_CONFIG:            ExportedObj.to_path(None),
+            PRP_DEVICE_DHCP4_CONFIG:          ExportedObj.to_path(None),
+            PRP_DEVICE_DHCP6_CONFIG:          ExportedObj.to_path(None),
+            PRP_DEVICE_MANAGED:               True,
+            PRP_DEVICE_AUTOCONNECT:           True,
+            PRP_DEVICE_DEVICE_TYPE:           dbus.UInt32(devtype),
+            PRP_DEVICE_AVAILABLE_CONNECTIONS: ExportedObj.to_path_array([]),
+        }
 
-        self.iface = iface
-        self.udi = "/sys/devices/virtual/%s" % (self.iface)
-        self.devtype = devtype
-        self.active_connection = None
-        self.state = NM.DeviceState.UNAVAILABLE
-        self.ip4_config = None
-        self.ip6_config = None
-        self.dhcp4_config = None
-        self.dhcp6_config = None
-        self.available_connections = []
-
-        self.dbus_interface_add(IFACE_DEVICE, self.__get_props, Device.PropertiesChanged)
-
-    def __get_props(self):
-        props = {}
-        props[PD_UDI] = self.udi
-        props[PD_IFACE] = self.iface
-        props[PD_DRIVER] = "virtual"
-        props[PD_STATE] = dbus.UInt32(self.state)
-        props[PD_ACTIVE_CONNECTION] = ExportedObj.to_path(self.active_connection)
-        props[PD_IP4_CONFIG] = ExportedObj.to_path(self.ip4_config)
-        props[PD_IP6_CONFIG] = ExportedObj.to_path(self.ip6_config)
-        props[PD_DHCP4_CONFIG] = ExportedObj.to_path(self.dhcp4_config)
-        props[PD_DHCP6_CONFIG] = ExportedObj.to_path(self.dhcp6_config)
-        props[PD_MANAGED] = True
-        props[PD_AUTOCONNECT] = True
-        props[PD_DEVICE_TYPE] = dbus.UInt32(self.devtype)
-        props[PD_AVAILABLE_CONNECTIONS] = ExportedObj.to_path_array(self.available_connections)
-        return props
+        self.dbus_interface_add(IFACE_DEVICE, props, Device.PropertiesChanged)
 
     @dbus.service.method(dbus_interface=IFACE_DEVICE, in_signature='', out_signature='')
     def Disconnect(self):
@@ -269,41 +267,37 @@ class Device(ExportedObj):
         pass
 
     def set_active_connection(self, ac):
-        self.active_connection = ac
-        self._dbus_property_notify(IFACE_DEVICE, PD_ACTIVE_CONNECTION)
+        self._dbus_property_set(IFACE_DEVICE, PRP_DEVICE_ACTIVE_CONNECTION, ac)
 
 ###############################################################################
 
 IFACE_WIRED = 'org.freedesktop.NetworkManager.Device.Wired'
 
-PE_HW_ADDRESS = "HwAddress"
-PE_PERM_HW_ADDRESS = "PermHwAddress"
-PE_SPEED = "Speed"
-PE_CARRIER = "Carrier"
-PE_S390_SUBCHANNELS = "S390Subchannels"
+PRP_WIRED_HW_ADDRESS       = "HwAddress"
+PRP_WIRED_PERM_HW_ADDRESS  = "PermHwAddress"
+PRP_WIRED_SPEED            = "Speed"
+PRP_WIRED_CARRIER          = "Carrier"
+PRP_WIRED_S390_SUBCHANNELS = "S390Subchannels"
 
 class WiredDevice(Device):
     def __init__(self, iface, mac = None, subchannels = None, ident = None):
         Device.__init__(self, iface, NM.DeviceType.ETHERNET, ident)
+
         if mac is None:
             mac = Util.random_mac(self.ident)
         if subchannels is None:
             subchannels = dbus.Array(signature = 's')
-        self.mac = mac
-        self.carrier = False
-        self.s390_subchannels = subchannels
 
-        self.dbus_interface_add(IFACE_WIRED, self.__get_props, WiredDevice.PropertiesChanged)
+        props = {
+            PRP_WIRED_HW_ADDRESS:       mac,
+            PRP_WIRED_PERM_HW_ADDRESS:  mac,
+            PRP_WIRED_SPEED:            dbus.UInt32(100),
+            PRP_WIRED_CARRIER:          False,
+            PRP_WIRED_S390_SUBCHANNELS: subchannels,
+        }
+
+        self.dbus_interface_add(IFACE_WIRED, props, WiredDevice.PropertiesChanged)
         self.export()
-
-    def __get_props(self):
-        props = {}
-        props[PE_HW_ADDRESS] = self.mac
-        props[PE_PERM_HW_ADDRESS] = self.mac
-        props[PE_SPEED] = dbus.UInt32(100)
-        props[PE_CARRIER] = self.carrier
-        props[PE_S390_SUBCHANNELS] = self.s390_subchannels
-        return props
 
     @dbus.service.signal(IFACE_WIRED, signature='a{sv}')
     def PropertiesChanged(self, changed):
@@ -313,26 +307,22 @@ class WiredDevice(Device):
 
 IFACE_VLAN = 'org.freedesktop.NetworkManager.Device.Vlan'
 
-PV_HW_ADDRESS = "HwAddress"
-PV_CARRIER = "Carrier"
-PV_VLAN_ID = "VlanId"
+PRP_VLAN_HW_ADDRESS = "HwAddress"
+PRP_VLAN_CARRIER    = "Carrier"
+PRP_VLAN_VLAN_ID    = "VlanId"
 
 class VlanDevice(Device):
     def __init__(self, iface, ident = None):
         Device.__init__(self, iface, NM.DeviceType.VLAN, ident)
-        self.mac = Util.random_mac(iface if ident is None else ident)
-        self.carrier = False
-        self.vlan_id = 1
 
-        self.dbus_interface_add(IFACE_VLAN, self.__get_props, VlanDevice.PropertiesChanged)
+        props = {
+            PRP_VLAN_HW_ADDRESS: Util.random_mac(self.ident),
+            PRP_VLAN_CARRIER:    False,
+            PRP_VLAN_VLAN_ID:    dbus.UInt32(1),
+        }
+
+        self.dbus_interface_add(IFACE_VLAN, props, VlanDevice.PropertiesChanged)
         self.export()
-
-    def __get_props(self):
-        props = {}
-        props[PV_HW_ADDRESS] = self.mac
-        props[PV_CARRIER] = self.carrier
-        props[PV_VLAN_ID] = dbus.UInt32(self.vlan_id)
-        return props
 
     @dbus.service.signal(IFACE_VLAN, signature='a{sv}')
     def PropertiesChanged(self, changed):
@@ -342,15 +332,15 @@ class VlanDevice(Device):
 
 IFACE_WIFI_AP = 'org.freedesktop.NetworkManager.AccessPoint'
 
-PP_FLAGS = "Flags"
-PP_WPA_FLAGS = "WpaFlags"
-PP_RSN_FLAGS = "RsnFlags"
-PP_SSID = "Ssid"
-PP_FREQUENCY = "Frequency"
-PP_HW_ADDRESS = "HwAddress"
-PP_MODE = "Mode"
-PP_MAX_BITRATE = "MaxBitrate"
-PP_STRENGTH = "Strength"
+PRP_WIFI_AP_FLAGS       = "Flags"
+PRP_WIFI_AP_WPA_FLAGS   = "WpaFlags"
+PRP_WIFI_AP_RSN_FLAGS   = "RsnFlags"
+PRP_WIFI_AP_SSID        = "Ssid"
+PRP_WIFI_AP_FREQUENCY   = "Frequency"
+PRP_WIFI_AP_HW_ADDRESS  = "HwAddress"
+PRP_WIFI_AP_MODE        = "Mode"
+PRP_WIFI_AP_MAX_BITRATE = "MaxBitrate"
+PRP_WIFI_AP_STRENGTH    = "Strength"
 
 class WifiAp(ExportedObj):
 
@@ -358,9 +348,8 @@ class WifiAp(ExportedObj):
     path_prefix = "/org/freedesktop/NetworkManager/AccessPoint/"
 
     def __init__(self, ssid, bssid = None, flags = None, wpaf = None, rsnf = None, freq = None, strength = None, ident = None):
-        path = ExportedObj.create_path(WifiAp)
 
-        ExportedObj.__init__(self, path, ident)
+        ExportedObj.__init__(self, ExportedObj.create_path(WifiAp), ident)
 
         if flags is None:
             flags = 0x1
@@ -371,21 +360,27 @@ class WifiAp(ExportedObj):
         if freq is None:
             freq = 2412
         if bssid is None:
-            bssid = Util.random_mac(path)
+            bssid = Util.random_mac(self.path)
         if strength is None:
-            strength = Util.pseudorandom_num(path, 100)
+            strength = Util.pseudorandom_num(self.path, 100)
 
         self.ssid = ssid
-        self.bssid = bssid
-        self.flags = flags
-        self.wpaf = wpaf
-        self.rsnf = rsnf
-        self.freq = freq
-        self.strength = strength
         self.strength_counter = 0
         self.strength_id = GLib.timeout_add_seconds(10, self.strength_cb, None)
 
-        self.dbus_interface_add(IFACE_WIFI_AP, self.__get_props, WifiAp.PropertiesChanged)
+        props = {
+            PRP_WIFI_AP_FLAGS:       dbus.UInt32(flags),
+            PRP_WIFI_AP_WPA_FLAGS:   dbus.UInt32(wpaf),
+            PRP_WIFI_AP_RSN_FLAGS:   dbus.UInt32(rsnf),
+            PRP_WIFI_AP_SSID:        dbus.ByteArray(self.ssid.encode('utf-8')),
+            PRP_WIFI_AP_FREQUENCY:   dbus.UInt32(freq),
+            PRP_WIFI_AP_HW_ADDRESS:  bssid,
+            PRP_WIFI_AP_MODE:        dbus.UInt32(getattr(NM,'80211Mode').INFRA),
+            PRP_WIFI_AP_MAX_BITRATE: dbus.UInt32(54000),
+            PRP_WIFI_AP_STRENGTH:    dbus.Byte(strength),
+        }
+
+        self.dbus_interface_add(IFACE_WIFI_AP, props, WifiAp.PropertiesChanged)
         self.export()
 
     def __del__(self):
@@ -395,22 +390,9 @@ class WifiAp(ExportedObj):
 
     def strength_cb(self, ignored):
         self.strength_counter += 1
-        self.strength = Util.pseudorandom_num(self.path + str(self.strength_counter), 100)
-        self._dbus_property_notify(IFACE_WIFI_AP, PP_STRENGTH)
+        strength = Util.pseudorandom_num(self.path + str(self.strength_counter), 100)
+        self._dbus_property_set(IFACE_WIFI_AP, PRP_WIFI_AP_STRENGTH, strength)
         return True
-
-    def __get_props(self):
-        props = {}
-        props[PP_FLAGS] = dbus.UInt32(self.flags)
-        props[PP_WPA_FLAGS] = dbus.UInt32(self.wpaf)
-        props[PP_RSN_FLAGS] = dbus.UInt32(self.rsnf)
-        props[PP_SSID] = dbus.ByteArray(self.ssid.encode('utf-8'))
-        props[PP_FREQUENCY] = dbus.UInt32(self.freq)
-        props[PP_HW_ADDRESS] = self.bssid
-        props[PP_MODE] = dbus.UInt32(2)  # NM_802_11_MODE_INFRA
-        props[PP_MAX_BITRATE] = dbus.UInt32(54000)
-        props[PP_STRENGTH] = dbus.Byte(self.strength)
-        return props
 
     @dbus.service.signal(IFACE_WIFI_AP, signature='a{sv}')
     def PropertiesChanged(self, changed):
@@ -423,24 +405,34 @@ IFACE_WIFI = 'org.freedesktop.NetworkManager.Device.Wireless'
 class ApNotFoundException(dbus.DBusException):
     _dbus_error_name = IFACE_WIFI + '.AccessPointNotFound'
 
-PW_HW_ADDRESS = "HwAddress"
-PW_PERM_HW_ADDRESS = "PermHwAddress"
-PW_MODE = "Mode"
-PW_BITRATE = "Bitrate"
-PW_ACCESS_POINTS = "AccessPoints"
-PW_ACTIVE_ACCESS_POINT = "ActiveAccessPoint"
-PW_WIRELESS_CAPABILITIES = "WirelessCapabilities"
+PRP_WIFI_HW_ADDRESS = "HwAddress"
+PRP_WIFI_PERM_HW_ADDRESS = "PermHwAddress"
+PRP_WIFI_MODE = "Mode"
+PRP_WIFI_BITRATE = "Bitrate"
+PRP_WIFI_ACCESS_POINTS = "AccessPoints"
+PRP_WIFI_ACTIVE_ACCESS_POINT = "ActiveAccessPoint"
+PRP_WIFI_WIRELESS_CAPABILITIES = "WirelessCapabilities"
 
 class WifiDevice(Device):
     def __init__(self, iface, mac = None, ident = None):
         Device.__init__(self, iface, NM.DeviceType.WIFI, ident)
+
         if mac is None:
             mac = Util.random_mac(self.ident)
-        self.mac = mac
-        self.aps = []
-        self.active_ap = None
 
-        self.dbus_interface_add(IFACE_WIFI, self.__get_props, WifiDevice.PropertiesChanged)
+        self.aps = []
+
+        props = {
+            PRP_WIFI_HW_ADDRESS:            mac,
+            PRP_WIFI_PERM_HW_ADDRESS:       mac,
+            PRP_WIFI_MODE:                  dbus.UInt32(getattr(NM,'80211Mode').INFRA),
+            PRP_WIFI_BITRATE:               dbus.UInt32(21000),
+            PRP_WIFI_WIRELESS_CAPABILITIES: dbus.UInt32(0xFF),
+            PRP_WIFI_ACCESS_POINTS:         ExportedObj.to_path_array(self.aps),
+            PRP_WIFI_ACTIVE_ACCESS_POINT:   ExportedObj.to_path(None),
+        }
+
+        self.dbus_interface_add(IFACE_WIFI, props, WifiDevice.PropertiesChanged)
         self.export()
 
     @dbus.service.method(dbus_interface=IFACE_WIFI, in_signature='', out_signature='ao')
@@ -463,7 +455,7 @@ class WifiDevice(Device):
 
     def add_ap(self, ap):
         self.aps.append(ap)
-        self._dbus_property_notify(IFACE_WIFI, PW_ACCESS_POINTS)
+        self._dbus_property_set(IFACE_WIFI, PRP_WIFI_ACCESS_POINTS, ExportedObj.to_path_array(self.aps))
         self.AccessPointAdded(ExportedObj.to_path(ap))
         return ap
 
@@ -473,19 +465,8 @@ class WifiDevice(Device):
 
     def remove_ap(self, ap):
         self.aps.remove(ap)
-        self._dbus_property_notify(IFACE_WIFI, PW_ACCESS_POINTS)
+        self._dbus_property_set(IFACE_WIFI, PRP_WIFI_ACCESS_POINTS, ExportedObj.to_path_array(self.aps))
         self.AccessPointRemoved(ExportedObj.to_path(ap))
-
-    def __get_props(self):
-        props = {}
-        props[PW_HW_ADDRESS] = self.mac
-        props[PW_PERM_HW_ADDRESS] = self.mac
-        props[PW_MODE] = dbus.UInt32(3)  # NM_802_11_MODE_INFRA
-        props[PW_BITRATE] = dbus.UInt32(21000)
-        props[PW_WIRELESS_CAPABILITIES] = dbus.UInt32(0xFF)
-        props[PW_ACCESS_POINTS] = ExportedObj.to_path_array(self.aps)
-        props[PW_ACTIVE_ACCESS_POINT] = ExportedObj.to_path(self.active_ap)
-        return props
 
     @dbus.service.signal(IFACE_WIFI, signature='a{sv}')
     def PropertiesChanged(self, changed):
@@ -503,9 +484,9 @@ class WifiDevice(Device):
 
 IFACE_WIMAX_NSP = 'org.freedesktop.NetworkManager.WiMax.Nsp'
 
-PN_NAME = "Name"
-PN_SIGNAL_QUALITY = "SignalQuality"
-PN_NETWORK_TYPE = "NetworkType"
+PRP_WIMAX_NSP_NAME = "Name"
+PRP_WIMAX_NSP_SIGNAL_QUALITY = "SignalQuality"
+PRP_WIMAX_NSP_NETWORK_TYPE = "NetworkType"
 
 class WimaxNsp(ExportedObj):
 
@@ -513,15 +494,18 @@ class WimaxNsp(ExportedObj):
     path_prefix = "/org/freedesktop/NetworkManager/Nsp/"
 
     def __init__(self, name):
-        path = ExportedObj.create_path(WimaxNsp)
 
-        ExportedObj.__init__(self, path)
+        ExportedObj.__init__(self, ExportedObj.create_path(WimaxNsp))
 
-        self.name = name
-        self.strength = random.randint(0, 100)
         self.strength_id = GLib.timeout_add_seconds(10, self.strength_cb, None)
 
-        self.dbus_interface_add(IFACE_WIMAX_NSP, self.__get_props, WimaxNsp.PropertiesChanged)
+        props = {
+            PRP_WIMAX_NSP_NAME:           name,
+            PRP_WIMAX_NSP_SIGNAL_QUALITY: dbus.UInt32(random.randint(0, 100)),
+            PRP_WIMAX_NSP_NETWORK_TYPE:   dbus.UInt32(NM.WimaxNspNetworkType.HOME),
+        }
+
+        self.dbus_interface_add(IFACE_WIMAX_NSP, props, WimaxNsp.PropertiesChanged)
         self.export()
 
     def __del__(self):
@@ -530,16 +514,8 @@ class WimaxNsp(ExportedObj):
         self.strength_id = 0
 
     def strength_cb(self, ignored):
-        self.strength = random.randint(0, 100)
-        self._dbus_property_notify(IFACE_WIMAX_NSP, PN_SIGNAL_QUALITY)
+        self._dbus_property_set(IFACE_WIMAX_NSP, PRP_WIMAX_NSP_SIGNAL_QUALITY, dbus.UInt32(random.randint(0, 100)))
         return True
-
-    def __get_props(self):
-        props = {}
-        props[PN_NAME] = self.name
-        props[PN_SIGNAL_QUALITY] = dbus.UInt32(self.strength)
-        props[PN_NETWORK_TYPE] = dbus.UInt32(0x1)  # NM_WIMAX_NSP_NETWORK_TYPE_HOME
-        return props
 
     @dbus.service.signal(IFACE_WIMAX_NSP, signature='a{sv}')
     def PropertiesChanged(self, changed):
@@ -552,24 +528,36 @@ IFACE_WIMAX = 'org.freedesktop.NetworkManager.Device.WiMax'
 class NspNotFoundException(dbus.DBusException):
     _dbus_error_name = IFACE_WIMAX + '.NspNotFound'
 
-PX_NSPS = "Nsps"
-PX_HW_ADDRESS = "HwAddress"
-PX_CENTER_FREQUENCY = "CenterFrequency"
-PX_RSSI = "Rssi"
-PX_CINR = "Cinr"
-PX_TX_POWER = "TxPower"
-PX_BSID = "Bsid"
-PX_ACTIVE_NSP = "ActiveNsp"
+PRP_WIMAX_NSPS = "Nsps"
+PRP_WIMAX_HW_ADDRESS = "HwAddress"
+PRP_WIMAX_CENTER_FREQUENCY = "CenterFrequency"
+PRP_WIMAX_RSSI = "Rssi"
+PRP_WIMAX_CINR = "Cinr"
+PRP_WIMAX_TX_POWER = "TxPower"
+PRP_WIMAX_BSID = "Bsid"
+PRP_WIMAX_ACTIVE_NSP = "ActiveNsp"
 
 class WimaxDevice(Device):
     def __init__(self, iface, ident = None):
         Device.__init__(self, iface, NM.DeviceType.WIMAX, ident)
-        self.mac = Util.random_mac(iface if ident is None else ident)
-        self.bsid = Util.random_mac(iface if ident is None else ident)
-        self.nsps = []
-        self.active_nsp = None
 
-        self.dbus_interface_add(IFACE_WIMAX, self.__get_props, WimaxDevice.PropertiesChanged)
+        mac = Util.random_mac(self.ident)
+        bsid = Util.random_mac(self.ident + '.bsid')
+
+        self.nsps = []
+
+        props = {
+            PRP_WIMAX_HW_ADDRESS:       mac,
+            PRP_WIMAX_CENTER_FREQUENCY: dbus.UInt32(2525),
+            PRP_WIMAX_RSSI:             dbus.Int32(-48),
+            PRP_WIMAX_CINR:             dbus.Int32(24),
+            PRP_WIMAX_TX_POWER:         dbus.Int32(9),
+            PRP_WIMAX_BSID:             bsid,
+            PRP_WIMAX_NSPS:             ExportedObj.to_path_array(self.nsps),
+            PRP_WIMAX_ACTIVE_NSP:       ExportedObj.to_path(None),
+        }
+
+        self.dbus_interface_add(IFACE_WIMAX, props, WimaxDevice.PropertiesChanged)
         self.export()
 
     @dbus.service.method(dbus_interface=IFACE_WIMAX, in_signature='', out_signature='ao')
@@ -582,7 +570,7 @@ class WimaxDevice(Device):
 
     def add_nsp(self, nsp):
         self.nsps.append(nsp)
-        self._dbus_property_notify(IFACE_WIMAX, PX_NSPS)
+        self._dbus_property_set(IFACE_WIMAX, PRP_WIMAX_NSPS, ExportedObj.to_path_array(self.nsps))
         self.NspAdded(ExportedObj.to_path(nsp))
 
     @dbus.service.signal(IFACE_WIMAX, signature='o')
@@ -591,20 +579,8 @@ class WimaxDevice(Device):
 
     def remove_nsp(self, nsp):
         self.nsps.remove(nsp)
-        self._dbus_property_notify(IFACE_WIMAX, PX_NSPS)
+        self._dbus_property_set(IFACE_WIMAX, PRP_WIMAX_NSPS, ExportedObj.to_path_array(self.nsps))
         self.NspRemoved(ExportedObj.to_path(nsp))
-
-    def __get_props(self):
-        props = {}
-        props[PX_HW_ADDRESS] = self.mac
-        props[PX_CENTER_FREQUENCY] = dbus.UInt32(2525)
-        props[PX_RSSI] = dbus.Int32(-48)
-        props[PX_CINR] = dbus.Int32(24)
-        props[PX_TX_POWER] = dbus.Int32(9)
-        props[PX_BSID] = self.bsid
-        props[PX_NSPS] = ExportedObj.to_path_array(self.nsps)
-        props[PX_ACTIVE_NSP] = ExportedObj.to_path(self.active_nsp)
-        return props
 
     @dbus.service.signal(IFACE_WIMAX, signature='a{sv}')
     def PropertiesChanged(self, changed):
@@ -626,21 +602,21 @@ class WimaxDevice(Device):
 
 IFACE_ACTIVE_CONNECTION = 'org.freedesktop.NetworkManager.Connection.Active'
 
-PAC_CONNECTION = "Connection"
-PAC_SPECIFIC_OBJECT = "SpecificObject"
-PAC_ID = "Id"
-PAC_UUID = "Uuid"
-PAC_TYPE = "Type"
-PAC_DEVICES = "Devices"
-PAC_STATE = "State"
-PAC_DEFAULT = "Default"
-PAC_IP4CONFIG = "Ip4Config"
-PAC_DHCP4CONFIG = "Dhcp4Config"
-PAC_DEFAULT6 = "Default6"
-PAC_IP6CONFIG = "Ip6Config"
-PAC_DHCP6CONFIG = "Dhcp6Config"
-PAC_VPN = "Vpn"
-PAC_MASTER = "Master"
+PRP_ACTIVE_CONNECTION_CONNECTION = "Connection"
+PRP_ACTIVE_CONNECTION_SPECIFIC_OBJECT = "SpecificObject"
+PRP_ACTIVE_CONNECTION_ID = "Id"
+PRP_ACTIVE_CONNECTION_UUID = "Uuid"
+PRP_ACTIVE_CONNECTION_TYPE = "Type"
+PRP_ACTIVE_CONNECTION_DEVICES = "Devices"
+PRP_ACTIVE_CONNECTION_STATE = "State"
+PRP_ACTIVE_CONNECTION_DEFAULT = "Default"
+PRP_ACTIVE_CONNECTION_IP4CONFIG = "Ip4Config"
+PRP_ACTIVE_CONNECTION_DHCP4CONFIG = "Dhcp4Config"
+PRP_ACTIVE_CONNECTION_DEFAULT6 = "Default6"
+PRP_ACTIVE_CONNECTION_IP6CONFIG = "Ip6Config"
+PRP_ACTIVE_CONNECTION_DHCP6CONFIG = "Dhcp6Config"
+PRP_ACTIVE_CONNECTION_VPN = "Vpn"
+PRP_ACTIVE_CONNECTION_MASTER = "Master"
 
 class ActiveConnection(ExportedObj):
 
@@ -648,31 +624,41 @@ class ActiveConnection(ExportedObj):
     path_prefix = "/org/freedesktop/NetworkManager/ActiveConnection/"
 
     def __init__(self, device, connection, specific_object):
-        object_path = ExportedObj.create_path(ActiveConnection)
 
-        ExportedObj.__init__(self, object_path)
+        ExportedObj.__init__(self, ExportedObj.create_path(ActiveConnection))
 
         self.device = device
         self.conn = connection
-        self.specific_object = specific_object
-        self.state = NM.ActiveConnectionState.UNKNOWN
-        self.default = False
-        self.ip4config = None
-        self.dhcp4config = None
-        self.default6 = False
-        self.ip6config = None
-        self.dhcp6config = None
-        self.vpn = False
-        self.master = None
 
         self._activation_id = None
 
-        self.dbus_interface_add(IFACE_ACTIVE_CONNECTION, self.__get_props, ActiveConnection.PropertiesChanged)
+        conn_settings = self.conn.GetSettings()
+        s_con = conn_settings['connection']
+
+        props = {
+            PRP_ACTIVE_CONNECTION_CONNECTION:      ExportedObj.to_path(self.conn),
+            PRP_ACTIVE_CONNECTION_SPECIFIC_OBJECT: ExportedObj.to_path(specific_object),
+            PRP_ACTIVE_CONNECTION_ID:              s_con['id'],
+            PRP_ACTIVE_CONNECTION_UUID:            s_con['uuid'],
+            PRP_ACTIVE_CONNECTION_TYPE:            s_con['type'],
+            PRP_ACTIVE_CONNECTION_DEVICES:         ExportedObj.to_path_array([self.device]),
+            PRP_ACTIVE_CONNECTION_STATE:           dbus.UInt32(NM.ActiveConnectionState.UNKNOWN),
+            PRP_ACTIVE_CONNECTION_DEFAULT:         False,
+            PRP_ACTIVE_CONNECTION_IP4CONFIG:       ExportedObj.to_path(None),
+            PRP_ACTIVE_CONNECTION_DHCP4CONFIG:     ExportedObj.to_path(None),
+            PRP_ACTIVE_CONNECTION_DEFAULT6:        False,
+            PRP_ACTIVE_CONNECTION_IP6CONFIG:       ExportedObj.to_path(None),
+            PRP_ACTIVE_CONNECTION_DHCP6CONFIG:     ExportedObj.to_path(None),
+            PRP_ACTIVE_CONNECTION_VPN:             False,
+            PRP_ACTIVE_CONNECTION_MASTER:          ExportedObj.to_path(None),
+        }
+
+        self.dbus_interface_add(IFACE_ACTIVE_CONNECTION, props, ActiveConnection.PropertiesChanged)
 
     def _set_state(self, state, reason):
-        self.state = state
-        self._dbus_property_notify(IFACE_ACTIVE_CONNECTION, PAC_STATE)
-        self.StateChanged(state, reason)
+        state = dbus.UInt32(state)
+        self._dbus_property_set(IFACE_ACTIVE_CONNECTION, PRP_ACTIVE_CONNECTION_STATE, state)
+        self.StateChanged(state, dbus.UInt32(reason))
 
     def activation_cancel(self):
         if self._activation_id is None:
@@ -698,27 +684,6 @@ class ActiveConnection(ExportedObj):
         assert self._activation_id is None
         self._activation_id = GLib.timeout_add(50, self._activation_step1)
 
-    def __get_props(self):
-        props = {}
-        props[PAC_CONNECTION] = ExportedObj.to_path(self.conn)
-        props[PAC_SPECIFIC_OBJECT] = ExportedObj.to_path(self.specific_object)
-        conn_settings = self.conn.GetSettings()
-        s_con = conn_settings['connection']
-        props[PAC_ID] = s_con['id']
-        props[PAC_UUID] = s_con['uuid']
-        props[PAC_TYPE] = s_con['type']
-        props[PAC_DEVICES] = ExportedObj.to_path_array([self.device])
-        props[PAC_STATE] = dbus.UInt32(self.state)
-        props[PAC_DEFAULT] = self.default
-        props[PAC_IP4CONFIG] = ExportedObj.to_path(self.ip4config)
-        props[PAC_DHCP4CONFIG] = ExportedObj.to_path(self.dhcp4config)
-        props[PAC_DEFAULT6] = self.default6
-        props[PAC_IP6CONFIG] = ExportedObj.to_path(self.ip6config)
-        props[PAC_DHCP6CONFIG] = ExportedObj.to_path(self.dhcp6config)
-        props[PAC_VPN] = self.vpn
-        props[PAC_MASTER] = ExportedObj.to_path(self.master)
-        return props
-
     @dbus.service.signal(IFACE_ACTIVE_CONNECTION, signature='a{sv}')
     def PropertiesChanged(self, changed):
         pass
@@ -741,34 +706,49 @@ class UnknownDeviceException(dbus.DBusException):
 class UnknownConnectionException(dbus.DBusException):
     _dbus_error_name = IFACE_NM + '.UnknownConnection'
 
-PM_DEVICES = 'Devices'
-PM_ALL_DEVICES = 'AllDevices'
-PM_NETWORKING_ENABLED = 'NetworkingEnabled'
-PM_WWAN_ENABLED = 'WwanEnabled'
-PM_WWAN_HARDWARE_ENABLED = 'WwanHardwareEnabled'
-PM_WIRELESS_ENABLED = 'WirelessEnabled'
-PM_WIRELESS_HARDWARE_ENABLED = 'WirelessHardwareEnabled'
-PM_WIMAX_ENABLED = 'WimaxEnabled'
-PM_WIMAX_HARDWARE_ENABLED = 'WimaxHardwareEnabled'
-PM_ACTIVE_CONNECTIONS = 'ActiveConnections'
-PM_PRIMARY_CONNECTION = 'PrimaryConnection'
-PM_ACTIVATING_CONNECTION = 'ActivatingConnection'
-PM_STARTUP = 'Startup'
-PM_STATE = 'State'
-PM_VERSION = 'Version'
-PM_CONNECTIVITY = 'Connectivity'
+PRP_NM_DEVICES                   = 'Devices'
+PRP_NM_ALL_DEVICES               = 'AllDevices'
+PRP_NM_NETWORKING_ENABLED        = 'NetworkingEnabled'
+PRP_NM_WWAN_ENABLED              = 'WwanEnabled'
+PRP_NM_WWAN_HARDWARE_ENABLED     = 'WwanHardwareEnabled'
+PRP_NM_WIRELESS_ENABLED          = 'WirelessEnabled'
+PRP_NM_WIRELESS_HARDWARE_ENABLED = 'WirelessHardwareEnabled'
+PRP_NM_WIMAX_ENABLED             = 'WimaxEnabled'
+PRP_NM_WIMAX_HARDWARE_ENABLED    = 'WimaxHardwareEnabled'
+PRP_NM_ACTIVE_CONNECTIONS        = 'ActiveConnections'
+PRP_NM_PRIMARY_CONNECTION        = 'PrimaryConnection'
+PRP_NM_ACTIVATING_CONNECTION     = 'ActivatingConnection'
+PRP_NM_STARTUP                   = 'Startup'
+PRP_NM_STATE                     = 'State'
+PRP_NM_VERSION                   = 'Version'
+PRP_NM_CONNECTIVITY              = 'Connectivity'
 
 class NetworkManager(ExportedObj):
-    def __init__(self, object_path):
-        ExportedObj.__init__(self, object_path)
+    def __init__(self):
+        ExportedObj.__init__(self, "/org/freedesktop/NetworkManager")
         self.devices = []
         self.active_connections = []
-        self.primary_connection = None
-        self.activating_connection = None
-        self.state = NM.State.DISCONNECTED
-        self.connectivity = 1
 
-        self.dbus_interface_add(IFACE_NM, self.__get_props, NetworkManager.PropertiesChanged)
+        props = {
+            PRP_NM_DEVICES:                   ExportedObj.to_path_array(self.devices),
+            PRP_NM_ALL_DEVICES:               ExportedObj.to_path_array(self.devices),
+            PRP_NM_NETWORKING_ENABLED:        True,
+            PRP_NM_WWAN_ENABLED:              True,
+            PRP_NM_WWAN_HARDWARE_ENABLED:     True,
+            PRP_NM_WIRELESS_ENABLED:          True,
+            PRP_NM_WIRELESS_HARDWARE_ENABLED: True,
+            PRP_NM_WIMAX_ENABLED:             True,
+            PRP_NM_WIMAX_HARDWARE_ENABLED:    True,
+            PRP_NM_ACTIVE_CONNECTIONS:        ExportedObj.to_path_array(self.active_connections),
+            PRP_NM_PRIMARY_CONNECTION:        ExportedObj.to_path(None),
+            PRP_NM_ACTIVATING_CONNECTION:     ExportedObj.to_path(None),
+            PRP_NM_STARTUP:                   False,
+            PRP_NM_STATE:                     dbus.UInt32(NM.State.DISCONNECTED),
+            PRP_NM_VERSION:                   "0.9.9.0",
+            PRP_NM_CONNECTIVITY:              dbus.UInt32(NM.ConnectivityState.NONE),
+        }
+
+        self.dbus_interface_add(IFACE_NM, props, NetworkManager.PropertiesChanged)
         self.export()
 
     @dbus.service.signal(IFACE_NM, signature='u')
@@ -776,8 +756,7 @@ class NetworkManager(ExportedObj):
         pass
 
     def set_state(self, new_state):
-        self.state = new_state
-        self._dbus_property_notify(IFACE_NM, PM_STATE)
+        self._dbus_property_set(IFACE_NM, PRP_NM_STATE, state)
         self.StateChanged(dbus.UInt32(self.state))
 
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature='', out_signature='ao')
@@ -839,13 +818,13 @@ class NetworkManager(ExportedObj):
     def active_connection_add(self, ac):
         ac.export()
         self.active_connections.append(ac)
-        self._dbus_property_notify(IFACE_NM, PM_ACTIVE_CONNECTIONS)
+        self._dbus_property_set(IFACE_NM, PRP_NM_ACTIVE_CONNECTIONS, ExportedObj.to_path_array(self.active_connections))
         ac.start_activation()
 
     def active_connection_remove(self, ac):
         ac.activation_cancel()
         self.active_connections.remove(ac)
-        self._dbus_property_notify(IFACE_NM, PM_ACTIVE_CONNECTIONS)
+        self._dbus_property_set(IFACE_NM, PRP_NM_ACTIVE_CONNECTIONS, ExportedObj.to_path_array(self.active_connections))
         ac.unexport()
 
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature='a{sa{sv}}oo', out_signature='oo')
@@ -861,10 +840,10 @@ class NetworkManager(ExportedObj):
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature='b', out_signature='')
     def Sleep(self, do_sleep):
         if do_sleep:
-            self.state = NM.State.ASLEEP
+            state = NM.State.ASLEEP
         else:
-            self.state = NM.State.DISCONNECTED
-        self._dbus_property_notify(IFACE_NM, PM_STATE)
+            state = NM.State.DISCONNECTED
+        self.set_state(state)
 
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature='b', out_signature='')
     def Enable(self, do_enable):
@@ -936,8 +915,8 @@ class NetworkManager(ExportedObj):
         if self.find_device_first(ident = device.ident, path = device.path) is not None:
             raise TestError("Duplicate device ident=%s / path=%s" % (device.ident, device.path))
         self.devices.append(device)
-        self._dbus_property_notify(IFACE_NM, PM_DEVICES)
-        self._dbus_property_notify(IFACE_NM, PM_ALL_DEVICES)
+        self._dbus_property_set(IFACE_NM, PRP_NM_DEVICES, ExportedObj.to_path_array(self.devices))
+        self._dbus_property_set(IFACE_NM, PRP_NM_ALL_DEVICES, ExportedObj.to_path_array(self.devices))
         self.DeviceAdded(ExportedObj.to_path(device))
         return device
 
@@ -947,29 +926,9 @@ class NetworkManager(ExportedObj):
 
     def remove_device(self, device):
         self.devices.remove(device)
-        self._dbus_property_notify(IFACE_NM, PM_DEVICES)
-        self._dbus_property_notify(IFACE_NM, PM_ALL_DEVICES)
+        self._dbus_property_set(IFACE_NM, PRP_NM_DEVICES, ExportedObj.to_path_array(self.devices))
+        self._dbus_property_set(IFACE_NM, PRP_NM_ALL_DEVICES, ExportedObj.to_path_array(self.devices))
         self.DeviceRemoved(ExportedObj.to_path(device))
-
-    def __get_props(self):
-        props = {}
-        props[PM_DEVICES] = ExportedObj.to_path_array(self.devices)
-        props[PM_ALL_DEVICES] = ExportedObj.to_path_array(self.devices)
-        props[PM_NETWORKING_ENABLED] = True
-        props[PM_WWAN_ENABLED] = True
-        props[PM_WWAN_HARDWARE_ENABLED] = True
-        props[PM_WIRELESS_ENABLED] = True
-        props[PM_WIRELESS_HARDWARE_ENABLED] = True
-        props[PM_WIMAX_ENABLED] = True
-        props[PM_WIMAX_HARDWARE_ENABLED] = True
-        props[PM_ACTIVE_CONNECTIONS] = ExportedObj.to_path_array(self.active_connections)
-        props[PM_PRIMARY_CONNECTION] = ExportedObj.to_path(self.primary_connection)
-        props[PM_ACTIVATING_CONNECTION] = ExportedObj.to_path(self.activating_connection)
-        props[PM_STARTUP] = False
-        props[PM_STATE] = dbus.UInt32(self.state)
-        props[PM_VERSION] = "0.9.9.0"
-        props[PM_CONNECTIVITY] = dbus.UInt32(self.connectivity)
-        return props
 
     @dbus.service.signal(IFACE_NM, signature='a{sv}')
     def PropertiesChanged(self, changed):
@@ -1075,6 +1034,8 @@ class InvalidSettingException(dbus.DBusException):
 class MissingSettingException(dbus.DBusException):
     _dbus_error_name = IFACE_CONNECTION + '.MissingSetting'
 
+PRP_CONNECTION_UNSAVED = 'Unsaved'
+
 class Connection(ExportedObj):
     def __init__(self, path_counter, settings, verify_connection=True):
 
@@ -1093,10 +1054,12 @@ class Connection(ExportedObj):
         self.path = path
         self.settings = settings
         self.visible = True
-        self.props = {}
-        self.props['Unsaved'] = False
 
-        self.dbus_interface_add(IFACE_CONNECTION, self.__get_props, None)
+        props = {
+            PRP_CONNECTION_UNSAVED: False,
+        }
+
+        self.dbus_interface_add(IFACE_CONNECTION, props)
         self.export()
 
     def get_id(self, settings=None):
@@ -1147,9 +1110,6 @@ class Connection(ExportedObj):
         self.settings = settings;
         self.Updated()
 
-    def __get_props(self):
-        return self.props
-
     @dbus.service.method(dbus_interface=IFACE_CONNECTION, in_signature='', out_signature='a{sa{sv}}')
     def GetSettings(self):
         if not self.visible:
@@ -1184,18 +1144,25 @@ IFACE_SETTINGS = 'org.freedesktop.NetworkManager.Settings'
 class InvalidHostnameException(dbus.DBusException):
     _dbus_error_name = IFACE_SETTINGS + '.InvalidHostname'
 
+PRP_SETTINGS_HOSTNAME = 'Hostname'
+PRP_SETTINGS_CAN_MODIFY = 'CanModify'
+PRP_SETTINGS_CONNECTIONS = 'Connections'
+
 class Settings(ExportedObj):
-    def __init__(self, object_path):
-        ExportedObj.__init__(self, object_path)
+    def __init__(self):
+        ExportedObj.__init__(self, "/org/freedesktop/NetworkManager/Settings")
+
         self.connections = {}
         self.c_counter = 0
         self.remove_next_connection = False
-        self.props = {}
-        self.props['Hostname'] = "foobar.baz"
-        self.props['CanModify'] = True
-        self.props['Connections'] = dbus.Array([], 'o')
 
-        self.dbus_interface_add(IFACE_SETTINGS, self.__get_props, Settings.PropertiesChanged)
+        props = {
+            PRP_SETTINGS_HOSTNAME:    "foobar.baz",
+            PRP_SETTINGS_CAN_MODIFY:  True,
+            PRP_SETTINGS_CONNECTIONS: dbus.Array([], 'o'),
+        }
+
+        self.dbus_interface_add(IFACE_SETTINGS, props, Settings.PropertiesChanged)
         self.export()
 
     def auto_remove_next_connection(self):
@@ -1234,9 +1201,8 @@ class Settings(ExportedObj):
             raise InvalidSettingException('cannot add duplicate connection with uuid %s' % (uuid))
 
         self.connections[con.path] = con
-        self.props['Connections'] = dbus.Array(self.connections.keys(), 'o')
         self.NewConnection(con.path)
-        self._dbus_property_notify(IFACE_SETTINGS, 'Connections')
+        self._dbus_property_set(IFACE_SETTINGS, PRP_SETTINGS_CONNECTIONS, dbus.Array(self.connections.keys(), 'o'))
 
         if self.remove_next_connection:
             self.remove_next_connection = False
@@ -1254,8 +1220,7 @@ class Settings(ExportedObj):
 
     def delete_connection(self, connection):
         del self.connections[connection.path]
-        self.props['Connections'] = dbus.Array(self.connections.keys(), 'o')
-        self._dbus_property_notify(IFACE_SETTINGS, 'Connections')
+        self._dbus_property_set(IFACE_SETTINGS, PRP_SETTINGS_CONNECTIONS, dbus.Array(self.connections.keys(), 'o'))
         connection.Removed()
         connection.unexport()
 
@@ -1264,11 +1229,7 @@ class Settings(ExportedObj):
         # Arbitrary requirement to test error handling
         if hostname.find('.') == -1:
             raise InvalidHostnameException()
-        self.props['Hostname'] = hostname
-        self._dbus_property_notify(IFACE_SETTINGS, 'Hostname')
-
-    def __get_props(self):
-        return self.props
+        self._dbus_property_set(IFACE_SETTINGS, PRP_SETTINGS_HOSTNAME, hostname)
 
     @dbus.service.signal(IFACE_SETTINGS, signature='o')
     def NewConnection(self, path):
@@ -1300,8 +1261,8 @@ class UserCanceledException(dbus.DBusException):
     _dbus_error_name = IFACE_AGENT_MANAGER + '.UserCanceled'
 
 class AgentManager(dbus.service.Object):
-    def __init__(self, object_path):
-        dbus.service.Object.__init__(self, gl.bus, object_path)
+    def __init__(self):
+        dbus.service.Object.__init__(self, gl.bus, "/org/freedesktop/NetworkManager/AgentManager")
         self.agents = {}
 
     @dbus.service.method(dbus_interface=IFACE_AGENT_MANAGER,
@@ -1345,8 +1306,6 @@ class AgentManager(dbus.service.Object):
 
 IFACE_OBJECT_MANAGER = 'org.freedesktop.DBus.ObjectManager'
 
-PATH_OBJECT_MANAGER = '/org/freedesktop'
-
 class ObjectManager(dbus.service.Object):
     def __init__(self, object_path):
         dbus.service.Object.__init__(self, gl.bus, object_path)
@@ -1384,38 +1343,31 @@ class ObjectManager(dbus.service.Object):
 
 IFACE_DNS_MANAGER = 'org.freedesktop.NetworkManager.DnsManager'
 
+PRP_DNS_MANAGER_MODE          = 'Mode'
+PRP_DNS_MANAGER_RC_MANAGER    = 'RcManager'
+PRP_DNS_MANAGER_CONFIGURATION = 'Configuration'
+
 class DnsManager(ExportedObj):
-    def __init__(self, object_path):
-        ExportedObj.__init__(self, object_path)
-        self.props = {}
-        self.props['Mode'] = "dnsmasq"
-        self.props['RcManager'] = "symlink"
-        self.props['Configuration'] = dbus.Array([
-            dbus.Dictionary(
-                { 'nameservers' : dbus.Array(['1.2.3.4', '5.6.7.8'], 's'),
-                  'priority'    : dbus.Int32(100) },
-                'sv') ],
-            'a{sv}')
+    def __init__(self):
+        ExportedObj.__init__(self, "/org/freedesktop/NetworkManager/DnsManager")
 
-        self.dbus_interface_add(IFACE_DNS_MANAGER, self.__get_props, None)
+        props = {
+            PRP_DNS_MANAGER_MODE:          "dnsmasq",
+            PRP_DNS_MANAGER_RC_MANAGER:    "symlink",
+            PRP_DNS_MANAGER_CONFIGURATION: dbus.Array(
+                [
+                    dbus.Dictionary(
+                        {
+                            'nameservers' : dbus.Array(['1.2.3.4', '5.6.7.8'], 's'),
+                            'priority'    : dbus.Int32(100),
+                        },
+                        'sv')
+                ],
+                'a{sv}'),
+        }
+
+        self.dbus_interface_add(IFACE_DNS_MANAGER, props)
         self.export()
-
-    @dbus.service.method(dbus_interface=dbus.PROPERTIES_IFACE, in_signature='s', out_signature='a{sv}')
-    def GetAll(self, iface):
-        if iface != IFACE_DNS_MANAGER:
-            raise UnknownInterfaceException()
-        return self.props
-
-    @dbus.service.method(dbus_interface=dbus.PROPERTIES_IFACE, in_signature='ss', out_signature='v')
-    def Get(self, iface, name):
-        if iface != IFACE_DNS_MANAGER:
-            raise UnknownInterfaceException()
-        if not name in self.props.keys():
-            raise UnknownPropertyException()
-        return self.props[name]
-
-    def __get_props(self):
-        return self.props
 
 ###############################################################################
 
@@ -1428,25 +1380,28 @@ def main():
     gl.mainloop = GLib.MainLoop()
     gl.bus = dbus.SessionBus()
 
-    gl.object_manager = ObjectManager(PATH_OBJECT_MANAGER)
-    gl.manager = NetworkManager("/org/freedesktop/NetworkManager")
-    gl.settings = Settings("/org/freedesktop/NetworkManager/Settings")
-    gl.agent_manager = AgentManager("/org/freedesktop/NetworkManager/AgentManager")
-    gl.dns_manager = DnsManager("/org/freedesktop/NetworkManager/DnsManager")
+    gl.object_manager = ObjectManager('/org/freedesktop')
+    gl.manager = NetworkManager()
+    gl.settings = Settings()
+    gl.agent_manager = AgentManager()
+    gl.dns_manager = DnsManager()
 
     if not gl.bus.request_name("org.freedesktop.NetworkManager"):
         raise AssertionError("Failure to request D-Bus name org.freedesktop.NetworkManager")
 
     # Watch stdin; if it closes, assume our parent has crashed, and exit
     io = GLib.IOChannel(0)
-    io.add_watch(GLib.IOCondition.HUP,
-                 lambda io, condition: gl.mainloop.quit())
+    id1 = io.add_watch(GLib.IOCondition.HUP,
+                       lambda io, condition: gl.mainloop.quit())
 
     # also quit after inactivity to ensure we don't stick around if the above fails somehow
-    GLib.timeout_add_seconds(20,
-                             lambda: gl.mainloop.quit())
+    id2 = GLib.timeout_add_seconds(20,
+                                   lambda: gl.mainloop.quit())
 
     gl.mainloop.run()
+
+    GLib.source_remove(id1)
+    GLib.source_remove(id2)
 
     sys.exit(0)
 
