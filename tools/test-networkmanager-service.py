@@ -199,7 +199,7 @@ class ExportedObj(dbus.service.Object):
         my_ifaces = {}
         for iface in self._dbus_ifaces:
             my_ifaces[iface] = self._dbus_ifaces[iface].props
-        return self.path, my_ifaces
+        return my_ifaces
 
 ###############################################################################
 
@@ -1342,14 +1342,12 @@ class ObjectManager(dbus.service.Object):
         self.objs = []
 
     def add_object(self, obj):
-        name, ifaces = obj.get_managed_ifaces()
         self.objs.append(obj)
-        self.InterfacesAdded(name, ifaces)
+        self.InterfacesAdded(obj.path, obj.get_managed_ifaces())
 
     def remove_object(self, obj):
-        name, ifaces = obj.get_managed_ifaces()
         self.objs.remove(obj)
-        self.InterfacesRemoved(name, ifaces.keys())
+        self.InterfacesRemoved(obj.path, obj.get_managed_ifaces().keys())
 
     @dbus.service.signal(IFACE_OBJECT_MANAGER, signature='oa{sa{sv}}')
     def InterfacesAdded(self, name, ifaces):
@@ -1365,8 +1363,7 @@ class ObjectManager(dbus.service.Object):
     def GetManagedObjects(self, sender=None):
         managed_objects = {}
         for obj in self.objs:
-            name, ifaces = obj.get_managed_ifaces()
-            managed_objects[name] = ifaces
+            managed_objects[obj.path] = obj.get_managed_ifaces()
         return managed_objects
 
 ###############################################################################
