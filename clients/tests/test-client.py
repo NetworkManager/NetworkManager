@@ -3,6 +3,17 @@
 from __future__ import print_function
 
 import sys
+
+try:
+    import gi
+    from gi.repository import GLib
+
+    gi.require_version('NM', '1.0')
+    from gi.repository import NM
+except Exception as e:
+    GLib = None
+    NM = None
+
 import os
 import errno
 import unittest
@@ -507,6 +518,8 @@ class TestNmcli(NmTestBase):
     def setUp(self):
         if not dbus_session_inited:
             self.skipTest("Own D-Bus session for testing is not initialized. Do you have dbus-run-session available?")
+        if NM is None:
+            self.skipTest("gi.NM is not available. Did you build with introspection?")
         self.srv = NMStubServer()
         self._calling_num = {}
         self._skip_test_for_l10n_diff = []

@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:582:test_002()/13
+location: clients/tests/test-client.py:595:test_002()/13
 cmd: $NMCLI -f AP -mode multiline -p d show wlan0
 lang: C
 returncode: 0

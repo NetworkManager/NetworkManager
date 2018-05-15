@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:642:test_003()/43
+location: clients/tests/test-client.py:655:test_003()/43
 cmd: $NMCLI -f ALL con s ethernet
 lang: de_DE.utf8
 returncode: 0
