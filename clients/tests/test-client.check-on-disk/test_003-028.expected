@@ -1,13 +1,14 @@
-location: clients/tests/test-client.py:624:test_003()/28
+location: clients/tests/test-client.py:637:test_003()/28
 cmd: $NMCLI -f ALL dev s eth0
 lang: C
 returncode: 0
-stdout: 880 bytes
+stdout: 1056 bytes
 >>>
 DEVICE  TYPE      STATE        DBUS-PATH                                  CONNECTION  CON-UUID                              CON-PATH                                           
-wlan0   wifi      unavailable  /org/freedesktop/NetworkManager/Devices/2  --          --                                    --                                                 
-wlan1   wifi      unavailable  /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
+eth1    ethernet  unavailable  /org/freedesktop/NetworkManager/Devices/2  --          --                                    --                                                 
+wlan0   wifi      unavailable  /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
 wlan1   wifi      unavailable  /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
+wlan1   wifi      unavailable  /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
 eth0    ethernet  unavailable  /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
 
 <<<

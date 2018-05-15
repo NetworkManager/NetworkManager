@@ -1,12 +1,16 @@
-location: clients/tests/test-client.py:566:test_002()/9
+location: clients/tests/test-client.py:568:test_002()/9
 cmd: $NMCLI 
 lang: de_DE.utf8
 returncode: 0
-stdout: 616 bytes
+stdout: 691 bytes
 >>>
 eth0: nicht verfügbar
 	"eth0"
 	ethernet (virtual), 72:41:AB:90:41:5D, hw
+
+eth1: nicht verfügbar
+	"eth1"
+	ethernet (virtual), 1F:E6:D1:E6:1D:53, hw
 
 wlan0: nicht verfügbar
 	"wlan0"

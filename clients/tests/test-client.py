@@ -518,6 +518,8 @@ class TestNmcli(NmTestBase):
     def init_001(self):
         self.srv.op_AddObj('WiredDevice',
                            iface = 'eth0')
+        self.srv.op_AddObj('WiredDevice',
+                           iface = 'eth1')
         self.srv.op_AddObj('WifiDevice',
                            iface = 'wlan0')
         self.srv.op_AddObj('WifiDevice',
@@ -606,25 +608,36 @@ class TestNmcli(NmTestBase):
                           replace_stdout = replace_stdout,
                           sort_lines_stdout = True)
 
-        self.call_nmcli(['con', 'up', 'ethernet', 'ifname', 'eth0'])
+        # activate the same profile on multiple devices. Our stub-implmentation
+        # is fine with that... although NetworkManager service would reject
+        # such a configuration by deactivating the profile first. But note that
+        # that is only an internal behavior of NetworkManager service. The D-Bus
+        # API perfectly allows for one profile to be active multiple times. Also
+        # note, that there is always a short time where one profile goes down,
+        # while another is activating. Hence, while real NetworkManager commonly
+        # does not allow that multiple profiles *stay* connected at the same
+        # time, there is always the possibility that a profile is activating/active
+        # on a device, while also activating/deactivating in parallel.
+        for dev in ['eth0', 'eth1']:
+            self.call_nmcli(['con', 'up', 'ethernet', 'ifname', dev])
 
-        self.call_nmcli_l(['con'],
-                          replace_stdout = replace_stdout)
+            self.call_nmcli_l(['con'],
+                              replace_stdout = replace_stdout)
 
-        self.call_nmcli_l(['-f', 'ALL', 'con'],
-                          replace_stdout = replace_stdout)
+            self.call_nmcli_l(['-f', 'ALL', 'con'],
+                              replace_stdout = replace_stdout)
 
-        self.call_nmcli_l(['-f', 'ALL', 'con', 's', 'ethernet'],
-                          replace_stdout = replace_stdout)
+            self.call_nmcli_l(['-f', 'ALL', 'con', 's', 'ethernet'],
+                              replace_stdout = replace_stdout)
 
-        self.call_nmcli_l(['con', 's', 'ethernet'],
-                          replace_stdout = replace_stdout)
+            self.call_nmcli_l(['con', 's', 'ethernet'],
+                              replace_stdout = replace_stdout)
 
-        self.call_nmcli_l(['-f', 'ALL', 'dev', 's', 'eth0'],
-                          replace_stdout = replace_stdout)
+            self.call_nmcli_l(['-f', 'ALL', 'dev', 's', 'eth0'],
+                              replace_stdout = replace_stdout)
 
-        self.call_nmcli_l(['-f', 'ALL', 'dev', 'show', 'eth0'],
-                          replace_stdout = replace_stdout)
+            self.call_nmcli_l(['-f', 'ALL', 'dev', 'show', 'eth0'],
+                              replace_stdout = replace_stdout)
 
 ###############################################################################
 

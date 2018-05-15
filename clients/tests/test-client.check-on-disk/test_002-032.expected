@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:577:test_002()/32
+location: clients/tests/test-client.py:579:test_002()/32
 cmd: $NMCLI c
 lang: pl_PL.UTF-8
 returncode: 0
