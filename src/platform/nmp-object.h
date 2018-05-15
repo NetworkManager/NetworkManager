@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2015 - 2017 Red Hat, Inc.
+ * Copyright (C) 2015 - 2018 Red Hat, Inc.
  */
 
 #ifndef __NMP_OBJECT_H__
@@ -164,6 +164,8 @@ typedef struct {
 		 */
 		struct udev_device *device;
 	} udev;
+
+	struct NMWifiUtils *wifi_data;
 } NMPObjectLink;
 
 typedef struct {

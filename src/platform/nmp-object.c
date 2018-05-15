@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2015 - 2017 Red Hat, Inc.
+ * Copyright (C) 2015 - 2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -30,6 +30,8 @@
 
 #include "nm-core-utils.h"
 #include "nm-platform-utils.h"
+
+#include "wifi/nm-wifi-utils.h"
 
 /*****************************************************************************/
 
@@ -456,6 +458,8 @@ _vt_cmd_obj_dispose_link (NMPObject *obj)
 		udev_device_unref (obj->_link.udev.device);
 		obj->_link.udev.device = NULL;
 	}
+	if (obj->_link.wifi_data)
+		g_clear_object (&obj->_link.wifi_data);
 	nmp_object_unref (obj->_link.netlink.lnk);
 }
 
@@ -907,6 +911,12 @@ _vt_cmd_obj_copy_link (NMPObject *dst, const NMPObject *src)
 		if (dst->_link.netlink.lnk)
 			nmp_object_unref (dst->_link.netlink.lnk);
 		dst->_link.netlink.lnk = src->_link.netlink.lnk;
+	}
+	if (dst->_link.wifi_data != src->_link.wifi_data) {
+		if (dst->_link.wifi_data)
+			g_clear_object (&dst->_link.wifi_data);
+		if (src->_link.wifi_data)
+			dst->_link.wifi_data = g_object_ref (src->_link.wifi_data);
 	}
 	dst->_link = src->_link;
 }

@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2015 Red Hat, Inc.
+ * Copyright (C) 2015 - 2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -57,7 +57,7 @@ NMTST_DEFINE ();
 int
 main (int argc, char **argv)
 {
-	nmtst_init_assert_logging (&argc, &argv, "INFO", "DEFAULT");
+	nmtst_init_assert_logging (&argc, &argv, "WARN", "DEFAULT");
 
 	g_test_add_func ("/general/init_linux_platform", test_init_linux_platform);
 	g_test_add_func ("/general/link_get_all", test_link_get_all);

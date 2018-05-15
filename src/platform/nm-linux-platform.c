@@ -1714,6 +1714,7 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	NMPObject *lnk_data = NULL;
 	gboolean address_complete_from_cache = TRUE;
 	gboolean lnk_data_complete_from_cache = TRUE;
+	gboolean need_wifi_data = FALSE;
 	gboolean af_inet6_token_valid = FALSE;
 	gboolean af_inet6_addr_gen_mode_valid = FALSE;
 
@@ -1868,6 +1869,11 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	case NM_LINK_TYPE_VXLAN:
 		lnk_data = _parse_lnk_vxlan (nl_info_kind, nl_info_data);
 		break;
+	case NM_LINK_TYPE_WIFI:
+	case NM_LINK_TYPE_OLPC_MESH:
+		need_wifi_data = TRUE;
+		lnk_data_complete_from_cache = FALSE;
+		break;
 	default:
 		lnk_data_complete_from_cache = FALSE;
 		break;
@@ -1895,6 +1901,14 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 				nmp_object_unref (lnk_data);
 				lnk_data = (NMPObject *) nmp_object_ref (link_cached->_link.netlink.lnk);
 			}
+
+			if (   need_wifi_data
+			    && link_cached->link.type == obj->link.type
+			    && link_cached->_link.wifi_data) {
+				/* Prefer reuse of existing wifi_data object */
+				obj->_link.wifi_data = g_object_ref (link_cached->_link.wifi_data);
+			}
+
 			if (address_complete_from_cache)
 				obj->link.addr = link_cached->link.addr;
 			if (!af_inet6_token_valid)
@@ -1911,6 +1925,20 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	}
 
 	obj->_link.netlink.lnk = lnk_data;
+
+	if (need_wifi_data && obj->_link.wifi_data == NULL) {
+		if (obj->link.type == NM_LINK_TYPE_OLPC_MESH) {
+#if HAVE_WEXT
+			/* The kernel driver now uses nl80211, but we force use of WEXT because
+			 * the cfg80211 interactions are not quite ready to support access to
+			 * mesh control through nl80211 just yet.
+			 */
+			obj->_link.wifi_data = nm_wifi_utils_wext_new (ifi->ifi_index, FALSE);
+#endif
+		} else {
+			obj->_link.wifi_data = nm_wifi_utils_new (ifi->ifi_index, TRUE);
+		}
+	}
 
 	obj->_link.netlink.is_in_netlink = TRUE;
 id_only_handled:
@@ -2997,8 +3025,6 @@ typedef struct {
 
 		gint is_handling;
 	} delayed_action;
-
-	GHashTable *wifi_data;
 } NMLinuxPlatformPrivate;
 
 struct _NMLinuxPlatform {
@@ -5983,34 +6009,15 @@ infiniband_partition_delete (NMPlatform *platform, int parent, int p_key)
 static NMWifiUtils *
 wifi_get_wifi_data (NMPlatform *platform, int ifindex)
 {
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	const NMPlatformLink *pllink;
-	NMWifiUtils *wifi_data;
+	const NMPObject *obj;
 
-	wifi_data = g_hash_table_lookup (priv->wifi_data, GINT_TO_POINTER (ifindex));
+	obj = nmp_cache_lookup_link (nm_platform_get_cache (platform), ifindex);
+	if (!obj)
+		return NULL;
 
-	if (!wifi_data) {
-		pllink = nm_platform_link_get (platform, ifindex);
-		if (pllink) {
-			if (pllink->type == NM_LINK_TYPE_WIFI)
-				wifi_data = nm_wifi_utils_new (ifindex, TRUE);
-			else if (pllink->type == NM_LINK_TYPE_OLPC_MESH) {
-				/* The kernel driver now uses nl80211, but we force use of WEXT because
-				 * the cfg80211 interactions are not quite ready to support access to
-				 * mesh control through nl80211 just yet.
-				 */
-#if HAVE_WEXT
-				wifi_data = nm_wifi_utils_wext_new (ifindex, FALSE);
-#endif
-			}
-
-			if (wifi_data)
-				g_hash_table_insert (priv->wifi_data, GINT_TO_POINTER (ifindex), wifi_data);
-		}
-	}
-
-	return wifi_data;
+	return obj->_link.wifi_data;
 }
+
 #define WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, retval) \
 	nm_auto_pop_netns NMPNetns *netns = NULL; \
 	NMWifiUtils *wifi_data; \
@@ -7013,7 +7020,6 @@ nm_linux_platform_init (NMLinuxPlatform *self)
 	priv->delayed_action.list_master_connected = g_ptr_array_new ();
 	priv->delayed_action.list_refresh_link = g_ptr_array_new ();
 	priv->delayed_action.list_wait_for_nl_response = g_array_new (FALSE, TRUE, sizeof (DelayedActionWaitForNlResponseData));
-	priv->wifi_data = g_hash_table_new_full (nm_direct_hash, NULL, NULL, g_object_unref);
 }
 
 static void
@@ -7164,8 +7170,6 @@ finalize (GObject *object)
 	g_source_remove (priv->event_id);
 	g_io_channel_unref (priv->event_channel);
 	nl_socket_free (priv->nlh);
-
-	g_hash_table_unref (priv->wifi_data);
 
 	if (priv->sysctl_get_prev_values) {
 		sysctl_clear_cache_list = g_slist_remove (sysctl_clear_cache_list, object);
