@@ -33,10 +33,62 @@
 
 #include "nm-dispatcher-utils.h"
 
-static char *
-_validate_var_name (const char *key)
+/*****************************************************************************/
+
+static gboolean
+_is_valid_key (const char *line, gssize len)
 {
-	char *sanitized = NULL;
+	gsize i, l;
+	char ch;
+
+	if (!line)
+		return FALSE;
+
+	if (len < 0)
+		len = strlen (line);
+
+	if (len == 0)
+		return FALSE;
+
+	ch = line[0];
+	if (   !(ch >= 'A' && ch <= 'Z')
+	    && !NM_IN_SET (ch, '_'))
+		return FALSE;
+
+	l = (gsize) len;
+
+	for (i = 1; i < l; i++) {
+		ch = line[i];
+
+		if (   !(ch >= 'A' && ch <= 'Z')
+		    && !(ch >= '0' && ch <= '9')
+		    && !NM_IN_SET (ch, '_'))
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
+_is_valid_line (const char *line)
+{
+	const char *d;
+
+	if (!line)
+		return FALSE;
+
+	d = strchr (line, '=');
+	if (!d || d == line)
+		return FALSE;
+
+	return _is_valid_key (line, d - line);
+}
+
+static char *
+_sanitize_var_name (const char *key)
+{
+	char *sanitized;
+
 	nm_assert (key);
 
 	if (!key[0])
@@ -50,337 +102,316 @@ _validate_var_name (const char *key)
 		return NULL;
 	}
 
+	nm_assert (_is_valid_key (sanitized, -1));
 	return sanitized;
 }
 
-static GSList *
-construct_basic_items (GSList *list,
-                       const char *uuid,
-                       const char *id,
-                       const char *iface,
-                       const char *ip_iface)
+static void
+_items_add_str_take (GPtrArray *items, char *line)
 {
-	if (uuid)
-		list = g_slist_prepend (list, g_strdup_printf ("CONNECTION_UUID=%s", uuid));
-	if (id)
-		list = g_slist_prepend (list, g_strdup_printf ("CONNECTION_ID=%s", id));
-	if (iface)
-		list = g_slist_prepend (list, g_strdup_printf ("DEVICE_IFACE=%s", iface));
-	if (ip_iface)
-		list = g_slist_prepend (list, g_strdup_printf ("DEVICE_IP_IFACE=%s", ip_iface));
-	return list;
+	nm_assert (items);
+	nm_assert (_is_valid_line (line));
+
+	g_ptr_array_add (items, line);
 }
 
-static GSList *_list_append_val_strv (GSList *items, char **values, const char *format, ...) G_GNUC_PRINTF(3, 4);
-
-static GSList *
-_list_append_val_strv (GSList *items, char **values, const char *format, ...)
+static void
+_items_add_str (GPtrArray *items, const char *line)
 {
-	if (!values)
-		g_return_val_if_reached (items);
+	_items_add_str_take (items, g_strdup (line));
+}
 
-	/*  Only add an item if the list of @values is not empty */
-	if (values[0]) {
-		va_list args;
-		guint i;
-		GString *str = g_string_new (NULL);
+static void
+_items_add_key (GPtrArray *items, const char *prefix, const char *key, const char *value)
+{
+	nm_assert (items);
+	nm_assert (_is_valid_key (key, -1));
+	nm_assert (value);
 
-		va_start (args, format);
-		g_string_append_vprintf (str, format, args);
-		va_end (args);
+	_items_add_str_take (items, g_strconcat (prefix ?: "", key, "=", value, NULL));
+}
 
-		g_string_append (str, values[0]);
-		for (i = 1; values[i]; i++) {
+static void
+_items_add_key0 (GPtrArray *items, const char *prefix, const char *key, const char *value)
+{
+	nm_assert (items);
+	nm_assert (_is_valid_key (key, -1));
+
+	if (!value) {
+		/* for convenience, allow NULL values to indicate to skip the line. */
+		return;
+	}
+
+	_items_add_str_take (items, g_strconcat (prefix ?: "", key, "=", value, NULL));
+}
+
+G_GNUC_PRINTF (2, 3)
+static void
+_items_add_printf (GPtrArray *items, const char *fmt, ...)
+{
+	va_list ap;
+	char *line;
+
+	nm_assert (items);
+	nm_assert (fmt);
+
+	va_start (ap, fmt);
+	line = g_strdup_vprintf (fmt, ap);
+	va_end (ap);
+	_items_add_str_take (items, line);
+}
+
+static void
+_items_add_strv (GPtrArray *items, const char *prefix, const char *key, const char *const*values)
+{
+	gboolean has;
+	guint i;
+	GString *str;
+
+	nm_assert (items);
+	nm_assert (_is_valid_key (key, -1));
+
+	if (!values || !values[0]) {
+		/* Only add an item if the list of @values is not empty */
+		return;
+	}
+
+	str = g_string_new (NULL);
+
+	if (prefix)
+		g_string_append (str, prefix);
+	g_string_append (str, key);
+	g_string_append_c (str, '=');
+
+	has = FALSE;
+	for (i = 0; values[i]; i++) {
+		if (!values[i][0])
+			continue;
+		if (has)
 			g_string_append_c (str, ' ');
-			g_string_append (str, values[i]);
-		}
-		items = g_slist_prepend (items, g_string_free (str, FALSE));
+		else
+			has = TRUE;
+		g_string_append (str, values[i]);
 	}
 
-	/* we take ownership of the values array and free it. */
-	g_strfreev (values);
-	return items;
+	_items_add_str_take (items, g_string_free (str, FALSE));
 }
 
-static GSList *
-add_domains (GSList *items,
-             GVariant *dict,
-             const char *prefix,
-             const char four_or_six)
-{
-	GVariant *val;
+/*****************************************************************************/
 
-	/* Search domains */
-	val = g_variant_lookup_value (dict, "domains", G_VARIANT_TYPE_STRING_ARRAY);
-	if (val) {
-		items = _list_append_val_strv (items, g_variant_dup_strv (val, NULL),
-		                               "%sIP%c_DOMAINS=", prefix, four_or_six);
-		g_variant_unref (val);
+static void
+construct_proxy_items (GPtrArray *items, GVariant *proxy_config, const char *prefix)
+{
+	GVariant *variant;
+
+	nm_assert (items);
+
+	if (!proxy_config)
+		return;
+
+	variant = g_variant_lookup_value (proxy_config, "pac-url", G_VARIANT_TYPE_STRING);
+	if (variant) {
+		_items_add_key (items, prefix, "PROXY_PAC_URL",
+		                g_variant_get_string (variant, NULL));
+		g_variant_unref (variant);
 	}
-	return items;
+
+	variant = g_variant_lookup_value (proxy_config, "pac-script", G_VARIANT_TYPE_STRING);
+	if (variant) {
+		_items_add_key (items, prefix, "PROXY_PAC_SCRIPT",
+		                g_variant_get_string (variant, NULL));
+		g_variant_unref (variant);
+	}
 }
 
-static GSList *
-construct_proxy_items (GSList *items, GVariant *proxy_config, const char *prefix)
+static void
+construct_ip_items (GPtrArray *items, int addr_family, GVariant *ip_config, const char *prefix)
 {
 	GVariant *val;
+	guint i;
+	guint nroutes = 0;
+	char four_or_six;
 
-	if (proxy_config == NULL)
-		return items;
+	if (!ip_config)
+		return;
 
-	if (prefix == NULL)
+	if (!prefix)
 		prefix = "";
 
-	/* PAC Url */
-	val = g_variant_lookup_value (proxy_config, "pac-url", G_VARIANT_TYPE_STRING);
+	four_or_six = nm_utils_addr_family_to_char (addr_family);
+
+	val = g_variant_lookup_value (ip_config,
+	                              "addresses",
+	                                addr_family == AF_INET
+	                              ? G_VARIANT_TYPE ("aau")
+	                              : G_VARIANT_TYPE ("a(ayuay)"));
 	if (val) {
-		char *str;
+		gs_unref_ptrarray GPtrArray *addresses = NULL;
+		gs_free char *gateway_free = NULL;
+		const char *gateway;
 
-		str = g_strdup_printf ("%sPROXY_PAC_URL=%s",
-		                       prefix,
-		                       g_variant_get_string (val, NULL));
+		if (addr_family == AF_INET)
+			addresses = nm_utils_ip4_addresses_from_variant (val, &gateway_free);
+		else
+			addresses = nm_utils_ip6_addresses_from_variant (val, &gateway_free);
 
-		items = g_slist_prepend (items, str);
+		gateway = gateway_free ?: "0.0.0.0";
+
+		if (addresses && addresses->len) {
+			for (i = 0; i < addresses->len; i++) {
+				NMIPAddress *addr = addresses->pdata[i];
+
+				_items_add_printf (items,
+				                   "%sIP%c_ADDRESS_%d=%s/%d %s",
+				                   prefix,
+				                   four_or_six,
+				                   i,
+				                   nm_ip_address_get_address (addr),
+				                   nm_ip_address_get_prefix (addr),
+				                   gateway);
+			}
+
+			_items_add_printf (items,
+			                   "%sIP%c_NUM_ADDRESSES=%u",
+			                   prefix,
+			                   four_or_six,
+			                   addresses->len);
+		}
+
+		_items_add_key (items,
+		                prefix,
+		                  addr_family == AF_INET
+		                ? "IP4_GATEWAY"
+		                : "IP6_GATEWAY",
+		                gateway);
+
 		g_variant_unref (val);
 	}
 
-	/* PAC Script */
-	val = g_variant_lookup_value (proxy_config, "pac-script", G_VARIANT_TYPE_STRING);
+	val = g_variant_lookup_value (ip_config,
+	                              "nameservers",
+	                                addr_family == AF_INET
+	                              ? G_VARIANT_TYPE ("au")
+	                              : G_VARIANT_TYPE ("aay"));
 	if (val) {
-		char *str;
+		gs_strfreev char **v = NULL;
 
-		str = g_strdup_printf ("%sPROXY_PAC_SCRIPT=%s",
-		                       prefix,
-		                       g_variant_get_string (val, NULL));
-
-		items = g_slist_prepend (items, str);
+		if (addr_family == AF_INET)
+			v = nm_utils_ip4_dns_from_variant (val);
+		else
+			v = nm_utils_ip6_dns_from_variant (val);
+		_items_add_strv (items,
+		                 prefix,
+		                   addr_family == AF_INET
+		                 ? "IP4_NAMESERVERS"
+		                 : "IP6_NAMESERVERS",
+		                 NM_CAST_STRV_CC (v));
 		g_variant_unref (val);
 	}
 
-	return items;
+	val = g_variant_lookup_value (ip_config, "domains", G_VARIANT_TYPE_STRING_ARRAY);
+	if (val) {
+		gs_free const char **v = NULL;
+
+		v = g_variant_get_strv (val, NULL);
+		_items_add_strv (items, prefix,
+		                   addr_family == AF_INET
+		                 ? "IP4_DOMAINS"
+		                 : "IP6_DOMAINS",
+		                 v);
+		g_variant_unref (val);
+	}
+
+
+	if (addr_family == AF_INET) {
+		val = g_variant_lookup_value (ip_config, "wins-servers", G_VARIANT_TYPE ("au"));
+		if (val) {
+			gs_strfreev char **v = NULL;
+
+			v = nm_utils_ip4_dns_from_variant (val);
+			_items_add_strv (items, prefix, "IP4_WINS_SERVERS", NM_CAST_STRV_CC (v));
+			g_variant_unref (val);
+		}
+	}
+
+	val = g_variant_lookup_value (ip_config,
+	                              "routes",
+	                                addr_family == AF_INET
+	                              ? G_VARIANT_TYPE ("aau")
+	                              : G_VARIANT_TYPE ("a(ayuayu)"));
+	if (val) {
+		gs_unref_ptrarray GPtrArray *routes = NULL;
+
+		if (addr_family == AF_INET)
+			routes = nm_utils_ip4_routes_from_variant (val);
+		else
+			routes = nm_utils_ip6_routes_from_variant (val);
+
+		if (   routes
+		    && routes->len > 0) {
+			const char *const DEFAULT_GW = addr_family == AF_INET ? "0.0.0.0" : "::";
+
+			nroutes = routes->len;
+
+			for (i = 0; i < routes->len; i++) {
+				NMIPRoute *route = routes->pdata[i];
+
+				_items_add_printf (items,
+				                   "%sIP%c_ROUTE_%u=%s/%d %s %u",
+				                   prefix,
+				                   four_or_six,
+				                   i,
+				                   nm_ip_route_get_dest (route),
+				                   nm_ip_route_get_prefix (route),
+				                   nm_ip_route_get_next_hop (route) ?: DEFAULT_GW,
+				                   (guint) NM_MAX ((gint64) 0, nm_ip_route_get_metric (route)));
+			}
+		}
+
+		g_variant_unref (val);
+	}
+	if (nroutes > 0 || addr_family == AF_INET) {
+		/* we also set IP4_NUM_ROUTES=0, but don't do so for addresses and IPv6 routes.
+		 * Historic reasons. */
+		_items_add_printf (items, "%sIP%c_NUM_ROUTES=%u", prefix, four_or_six, nroutes);
+	}
 }
 
-static GSList *
-construct_ip4_items (GSList *items, GVariant *ip4_config, const char *prefix)
-{
-	GPtrArray *addresses, *routes;
-	char *gateway;
-	GVariant *val;
-	int i;
-
-	if (ip4_config == NULL)
-		return items;
-
-	if (prefix == NULL)
-		prefix = "";
-
-	/* IP addresses */
-	val = g_variant_lookup_value (ip4_config, "addresses", G_VARIANT_TYPE ("aau"));
-	if (val) {
-		addresses = nm_utils_ip4_addresses_from_variant (val, &gateway);
-		if (!gateway)
-			gateway = g_strdup ("0.0.0.0");
-
-		for (i = 0; i < addresses->len; i++) {
-			NMIPAddress *addr = addresses->pdata[i];
-			char *addrtmp;
-
-			addrtmp = g_strdup_printf ("%sIP4_ADDRESS_%d=%s/%d %s", prefix, i,
-			                           nm_ip_address_get_address (addr),
-			                           nm_ip_address_get_prefix (addr),
-			                           gateway);
-			items = g_slist_prepend (items, addrtmp);
-		}
-		if (addresses->len)
-			items = g_slist_prepend (items, g_strdup_printf ("%sIP4_NUM_ADDRESSES=%d", prefix, addresses->len));
-
-		/* Write gateway to a separate variable, too. */
-		items = g_slist_prepend (items, g_strdup_printf ("%sIP4_GATEWAY=%s", prefix, gateway));
-
-		g_ptr_array_unref (addresses);
-		g_free (gateway);
-		g_variant_unref (val);
-	}
-
-	/* DNS servers */
-	val = g_variant_lookup_value (ip4_config, "nameservers", G_VARIANT_TYPE ("au"));
-	if (val) {
-		items = _list_append_val_strv (items, nm_utils_ip4_dns_from_variant (val),
-		                               "%sIP4_NAMESERVERS=", prefix);
-		g_variant_unref (val);
-	}
-
-	/* Search domains */
-	items = add_domains (items, ip4_config, prefix, '4');
-
-	/* WINS servers */
-	val = g_variant_lookup_value (ip4_config, "wins-servers", G_VARIANT_TYPE ("au"));
-	if (val) {
-		items = _list_append_val_strv (items, nm_utils_ip4_dns_from_variant (val),
-		                               "%sIP4_WINS_SERVERS=", prefix);
-		g_variant_unref (val);
-	}
-
-	/* Static routes */
-	val = g_variant_lookup_value (ip4_config, "routes", G_VARIANT_TYPE ("aau"));
-	if (val) {
-		routes = nm_utils_ip4_routes_from_variant (val);
-
-		for (i = 0; i < routes->len; i++) {
-			NMIPRoute *route = routes->pdata[i];
-			const char *next_hop;
-			char *routetmp;
-
-			next_hop = nm_ip_route_get_next_hop (route);
-			if (!next_hop)
-				next_hop = "0.0.0.0";
-
-			routetmp = g_strdup_printf ("%sIP4_ROUTE_%d=%s/%d %s %u", prefix, i,
-			                            nm_ip_route_get_dest (route),
-			                            nm_ip_route_get_prefix (route),
-			                            next_hop,
-			                            (guint32) MAX (0, nm_ip_route_get_metric (route)));
-			items = g_slist_prepend (items, routetmp);
-		}
-		items = g_slist_prepend (items, g_strdup_printf ("%sIP4_NUM_ROUTES=%d", prefix, routes->len));
-		g_ptr_array_unref (routes);
-		g_variant_unref (val);
-	} else
-		items = g_slist_prepend (items, g_strdup_printf ("%sIP4_NUM_ROUTES=0", prefix));
-
-	return items;
-}
-
-static GSList *
-construct_device_dhcp4_items (GSList *items, GVariant *dhcp4_config)
+static void
+construct_device_dhcp_items (GPtrArray *items, int addr_family, GVariant *dhcp_config)
 {
 	GVariantIter iter;
-	const char *key, *tmp;
+	const char *key;
 	GVariant *val;
-	char *ucased;
+	char four_or_six;
 
-	if (dhcp4_config == NULL)
-		return items;
+	if (!dhcp_config)
+		return;
 
-	g_variant_iter_init (&iter, dhcp4_config);
+	if (!g_variant_is_of_type (dhcp_config, G_VARIANT_TYPE_VARDICT))
+		return;
+
+	four_or_six = nm_utils_addr_family_to_char (addr_family);
+
+	g_variant_iter_init (&iter, dhcp_config);
 	while (g_variant_iter_next (&iter, "{&sv}", &key, &val)) {
-		ucased = _validate_var_name (key);
-		if (ucased) {
-			tmp = g_variant_get_string (val, NULL);
-			items = g_slist_prepend (items, g_strdup_printf ("DHCP4_%s=%s", ucased, tmp));
-			g_free (ucased);
+		if (g_variant_is_of_type (val, G_VARIANT_TYPE_STRING)) {
+			gs_free char *ucased = NULL;
+
+			ucased = _sanitize_var_name (key);
+			if (ucased) {
+				_items_add_printf (items,
+				                   "DHCP%c_%s=%s",
+				                   four_or_six,
+				                   ucased,
+				                   g_variant_get_string (val, NULL));
+			}
 		}
 		g_variant_unref (val);
 	}
-	return items;
 }
 
-static GSList *
-construct_ip6_items (GSList *items, GVariant *ip6_config, const char *prefix)
-{
-	GPtrArray *addresses, *routes;
-	char *gateway = NULL;
-	GVariant *val;
-	int i;
-
-	if (ip6_config == NULL)
-		return items;
-
-	if (prefix == NULL)
-		prefix = "";
-
-	/* IP addresses */
-	val = g_variant_lookup_value (ip6_config, "addresses", G_VARIANT_TYPE ("a(ayuay)"));
-	if (val) {
-		addresses = nm_utils_ip6_addresses_from_variant (val, &gateway);
-		if (!gateway)
-			gateway = g_strdup ("::");
-
-		for (i = 0; i < addresses->len; i++) {
-			NMIPAddress *addr = addresses->pdata[i];
-			char *addrtmp;
-
-			addrtmp = g_strdup_printf ("%sIP6_ADDRESS_%d=%s/%d %s", prefix, i,
-			                           nm_ip_address_get_address (addr),
-			                           nm_ip_address_get_prefix (addr),
-			                           gateway);
-			items = g_slist_prepend (items, addrtmp);
-		}
-		if (addresses->len)
-			items = g_slist_prepend (items, g_strdup_printf ("%sIP6_NUM_ADDRESSES=%d", prefix, addresses->len));
-
-		/* Write gateway to a separate variable, too. */
-		items = g_slist_prepend (items, g_strdup_printf ("%sIP6_GATEWAY=%s", prefix, gateway));
-
-		g_ptr_array_unref (addresses);
-		g_free (gateway);
-		g_variant_unref (val);
-	}
-
-	/* DNS servers */
-	val = g_variant_lookup_value (ip6_config, "nameservers", G_VARIANT_TYPE ("aay"));
-	if (val) {
-		items = _list_append_val_strv (items, nm_utils_ip6_dns_from_variant (val),
-		                               "%sIP6_NAMESERVERS=", prefix);
-		g_variant_unref (val);
-	}
-
-	/* Search domains */
-	items = add_domains (items, ip6_config, prefix, '6');
-
-	/* Static routes */
-	val = g_variant_lookup_value (ip6_config, "routes", G_VARIANT_TYPE ("a(ayuayu)"));
-	if (val) {
-		routes = nm_utils_ip6_routes_from_variant (val);
-
-		for (i = 0; i < routes->len; i++) {
-			NMIPRoute *route = routes->pdata[i];
-			const char *next_hop;
-			char *routetmp;
-
-			next_hop = nm_ip_route_get_next_hop (route);
-			if (!next_hop)
-				next_hop = "::";
-
-			routetmp = g_strdup_printf ("%sIP6_ROUTE_%d=%s/%d %s %u", prefix, i,
-			                            nm_ip_route_get_dest (route),
-			                            nm_ip_route_get_prefix (route),
-			                            next_hop,
-			                            (guint32) MAX (0, nm_ip_route_get_metric (route)));
-			items = g_slist_prepend (items, routetmp);
-		}
-		if (routes->len)
-			items = g_slist_prepend (items, g_strdup_printf ("%sIP6_NUM_ROUTES=%d", prefix, routes->len));
-		g_ptr_array_unref (routes);
-		g_variant_unref (val);
-	}
-
-	return items;
-}
-
-static GSList *
-construct_device_dhcp6_items (GSList *items, GVariant *dhcp6_config)
-{
-	GVariantIter iter;
-	const char *key, *tmp;
-	GVariant *val;
-	char *ucased;
-
-	if (dhcp6_config == NULL)
-		return items;
-
-	g_variant_iter_init (&iter, dhcp6_config);
-	while (g_variant_iter_next (&iter, "{&sv}", &key, &val)) {
-		ucased = _validate_var_name (key);
-		if (ucased) {
-			tmp = g_variant_get_string (val, NULL);
-			items = g_slist_prepend (items, g_strdup_printf ("DHCP6_%s=%s", ucased, tmp));
-			g_free (ucased);
-		}
-		g_variant_unref (val);
-	}
-	return items;
-}
+/*****************************************************************************/
 
 char **
 nm_dispatcher_utils_construct_envp (const char *action,
@@ -400,16 +431,16 @@ nm_dispatcher_utils_construct_envp (const char *action,
                                     char **out_iface,
                                     const char **out_error_message)
 {
-	const char *iface = NULL, *ip_iface = NULL;
-	const char *uuid = NULL, *id = NULL, *path = NULL;
+	const char *iface = NULL;
+	const char *ip_iface = NULL;
+	const char *uuid = NULL;
+	const char *id = NULL;
+	const char *path = NULL;
 	const char *filename = NULL;
 	gboolean external;
 	NMDeviceState dev_state = NM_DEVICE_STATE_UNKNOWN;
-	GVariant *value;
-	char **envp = NULL, *path_item;
-	GSList *items = NULL, *iter;
-	guint i;
-	GVariant *con_setting;
+	GVariant *variant;
+	gs_unref_ptrarray GPtrArray *items = NULL;
 	const char *error_message_backup;
 
 	if (!out_error_message)
@@ -419,32 +450,33 @@ nm_dispatcher_utils_construct_envp (const char *action,
 	g_return_val_if_fail (out_iface != NULL, NULL);
 	g_return_val_if_fail (*out_iface == NULL, NULL);
 
+	items = g_ptr_array_new_with_free_func (g_free);
+
 	/* Hostname and connectivity changes don't require a device nor contain a connection */
-	if (   !strcmp (action, NMD_ACTION_HOSTNAME)
-	    || !strcmp (action, NMD_ACTION_CONNECTIVITY_CHANGE)) {
+	if (NM_IN_STRSET (action, NMD_ACTION_HOSTNAME,
+	                          NMD_ACTION_CONNECTIVITY_CHANGE))
 		goto done;
-	}
 
 	/* Connection properties */
 	if (!g_variant_lookup (connection_props, NMD_CONNECTION_PROPS_PATH, "&o", &path)) {
 		*out_error_message = "Missing or invalid required value " NMD_CONNECTION_PROPS_PATH "!";
 		return NULL;
 	}
-	items = g_slist_prepend (items, g_strdup_printf ("CONNECTION_DBUS_PATH=%s", path));
+
+	_items_add_key (items, NULL, "CONNECTION_DBUS_PATH", path);
 
 	if (g_variant_lookup (connection_props, NMD_CONNECTION_PROPS_EXTERNAL, "b", &external) && external)
-		items = g_slist_prepend (items, g_strdup ("CONNECTION_EXTERNAL=1"));
+		_items_add_str (items, "CONNECTION_EXTERNAL=1");
 
 	if (g_variant_lookup (connection_props, NMD_CONNECTION_PROPS_FILENAME, "&s", &filename))
-		items = g_slist_prepend (items, g_strdup_printf ("CONNECTION_FILENAME=%s", filename));
+		_items_add_key (items, NULL, "CONNECTION_FILENAME", filename);
 
 	/* Canonicalize the VPN interface name; "" is used when passing it through
 	 * D-Bus so make sure that's fixed up here.
 	 */
-	if (vpn_ip_iface && !strlen (vpn_ip_iface))
+	if (vpn_ip_iface && !vpn_ip_iface[0])
 		vpn_ip_iface = NULL;
 
-	/* interface name */
 	if (!g_variant_lookup (device_props, NMD_DEVICE_PROPS_INTERFACE, "&s", &iface)) {
 		*out_error_message = "Missing or invalid required value " NMD_DEVICE_PROPS_INTERFACE "!";
 		return NULL;
@@ -452,74 +484,74 @@ nm_dispatcher_utils_construct_envp (const char *action,
 	if (!*iface)
 		iface = NULL;
 
-	/* IP interface name */
-	value = g_variant_lookup_value (device_props, NMD_DEVICE_PROPS_IP_INTERFACE, NULL);
-	if (value) {
-		if (!g_variant_is_of_type (value, G_VARIANT_TYPE_STRING)) {
+	variant = g_variant_lookup_value (device_props, NMD_DEVICE_PROPS_IP_INTERFACE, NULL);
+	if (variant) {
+		if (!g_variant_is_of_type (variant, G_VARIANT_TYPE_STRING)) {
 			*out_error_message = "Invalid value " NMD_DEVICE_PROPS_IP_INTERFACE "!";
 			return NULL;
 		}
-		g_variant_unref (value);
+		g_variant_unref (variant);
 		(void) g_variant_lookup (device_props, NMD_DEVICE_PROPS_IP_INTERFACE, "&s", &ip_iface);
 	}
 
-	/* Device type */
 	if (!g_variant_lookup (device_props, NMD_DEVICE_PROPS_TYPE, "u", NULL)) {
 		*out_error_message = "Missing or invalid required value " NMD_DEVICE_PROPS_TYPE "!";
 		return NULL;
 	}
 
-	/* Device state */
-	value = g_variant_lookup_value (device_props, NMD_DEVICE_PROPS_STATE, G_VARIANT_TYPE_UINT32);
-	if (!value) {
+	variant = g_variant_lookup_value (device_props, NMD_DEVICE_PROPS_STATE, G_VARIANT_TYPE_UINT32);
+	if (!variant) {
 		*out_error_message = "Missing or invalid required value " NMD_DEVICE_PROPS_STATE "!";
 		return NULL;
 	}
-	dev_state = g_variant_get_uint32 (value);
-	g_variant_unref (value);
+	dev_state = g_variant_get_uint32 (variant);
+	g_variant_unref (variant);
 
-	/* device itself */
 	if (!g_variant_lookup (device_props, NMD_DEVICE_PROPS_PATH, "o", NULL)) {
 		*out_error_message = "Missing or invalid required value " NMD_DEVICE_PROPS_PATH "!";
 		return NULL;
 	}
 
-	/* UUID and ID */
-	con_setting = g_variant_lookup_value (connection_dict, NM_SETTING_CONNECTION_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
-	if (!con_setting) {
-		*out_error_message = "Failed to read connection setting";
-		return NULL;
-	}
+	{
+		gs_unref_variant GVariant *con_setting = NULL;
 
-	if (!g_variant_lookup (con_setting, NM_SETTING_CONNECTION_UUID, "&s", &uuid)) {
-		*out_error_message = "Connection hash did not contain the UUID";
-		g_variant_unref (con_setting);
-		return NULL;
-	}
+		con_setting = g_variant_lookup_value (connection_dict, NM_SETTING_CONNECTION_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
+		if (!con_setting) {
+			*out_error_message = "Failed to read connection setting";
+			return NULL;
+		}
 
-	if (!g_variant_lookup (con_setting, NM_SETTING_CONNECTION_ID, "&s", &id)) {
-		*out_error_message = "Connection hash did not contain the ID";
-		g_variant_unref (con_setting);
-		return NULL;
-	}
+		if (!g_variant_lookup (con_setting, NM_SETTING_CONNECTION_UUID, "&s", &uuid)) {
+			*out_error_message = "Connection hash did not contain the UUID";
+			return NULL;
+		}
 
-	items = construct_basic_items (items, uuid, id, iface, ip_iface);
-	g_variant_unref (con_setting);
+		if (!g_variant_lookup (con_setting, NM_SETTING_CONNECTION_ID, "&s", &id)) {
+			*out_error_message = "Connection hash did not contain the ID";
+			return NULL;
+		}
+
+		_items_add_key0 (items, NULL, "CONNECTION_UUID", uuid);
+		_items_add_key0 (items, NULL, "CONNECTION_ID", id);
+		_items_add_key0 (items, NULL, "DEVICE_IFACE", iface);
+		_items_add_key0 (items, NULL, "DEVICE_IP_IFACE", ip_iface);
+	}
 
 	/* Device it's aren't valid if the device isn't activated */
-	if (iface && (dev_state == NM_DEVICE_STATE_ACTIVATED)) {
-		items = construct_proxy_items (items, device_proxy_props, NULL);
-		items = construct_ip4_items (items, device_ip4_props, NULL);
-		items = construct_ip6_items (items, device_ip6_props, NULL);
-		items = construct_device_dhcp4_items (items, device_dhcp4_props);
-		items = construct_device_dhcp6_items (items, device_dhcp6_props);
+	if (   iface
+	    && dev_state == NM_DEVICE_STATE_ACTIVATED) {
+		construct_proxy_items (items, device_proxy_props, NULL);
+		construct_ip_items (items, AF_INET, device_ip4_props, NULL);
+		construct_ip_items (items, AF_INET6, device_ip6_props, NULL);
+		construct_device_dhcp_items (items, AF_INET, device_dhcp4_props);
+		construct_device_dhcp_items (items, AF_INET6, device_dhcp6_props);
 	}
 
 	if (vpn_ip_iface) {
-		items = g_slist_prepend (items, g_strdup_printf ("VPN_IP_IFACE=%s", vpn_ip_iface));
-		items = construct_proxy_items (items, vpn_proxy_props, "VPN_");
-		items = construct_ip4_items (items, vpn_ip4_props, "VPN_");
-		items = construct_ip6_items (items, vpn_ip6_props, "VPN_");
+		_items_add_key (items, NULL, "VPN_IP_IFACE", vpn_ip_iface);
+		construct_proxy_items (items, vpn_proxy_props, "VPN_");
+		construct_ip_items (items, AF_INET, vpn_ip4_props, "VPN_");
+		construct_ip_items (items, AF_INET6, vpn_ip6_props, "VPN_");
 	}
 
 	/* Backwards compat: 'iface' is set in this order:
@@ -534,26 +566,16 @@ nm_dispatcher_utils_construct_envp (const char *action,
 	else
 		*out_iface = g_strdup (iface);
 
- done:
+done:
 	/* The connectivity_state value will only be meaningful for 'connectivity-change' events
 	 * (otherwise it will be "UNKNOWN"), so we only set the environment variable in those cases.
 	 */
-	if (connectivity_state && strcmp(connectivity_state, "UNKNOWN"))
-		items = g_slist_prepend (items, g_strdup_printf ("CONNECTIVITY_STATE=%s", connectivity_state));
+	if (!NM_IN_STRSET (connectivity_state, NULL, "UNKNOWN"))
+		_items_add_key (items, NULL, "CONNECTIVITY_STATE", connectivity_state);
 
-	path = g_getenv ("PATH");
-	if (path) {
-		path_item = g_strdup_printf ("PATH=%s", path);
-		items = g_slist_prepend (items, path_item);
-	}
-
-	/* Convert the list to an environment pointer */
-	envp = g_new0 (char *, g_slist_length (items) + 1);
-	for (iter = items, i = 0; iter; iter = g_slist_next (iter), i++)
-		envp[i] = (char *) iter->data;
-	g_slist_free (items);
+	_items_add_key0 (items, NULL, "PATH", g_getenv ("PATH"));
 
 	*out_error_message = NULL;
-	return envp;
+	g_ptr_array_add (items, NULL);
+	return (char **) g_ptr_array_free (g_steal_pointer (&items), FALSE);
 }
-
