@@ -265,11 +265,11 @@ construct_device_dhcp4_items (GSList *items, GVariant *dhcp4_config)
 	g_variant_iter_init (&iter, dhcp4_config);
 	while (g_variant_iter_next (&iter, "{&sv}", &key, &val)) {
 		ucased = _validate_var_name (key);
-		if (!ucased)
-			continue;
-		tmp = g_variant_get_string (val, NULL);
-		items = g_slist_prepend (items, g_strdup_printf ("DHCP4_%s=%s", ucased, tmp));
-		g_free (ucased);
+		if (ucased) {
+			tmp = g_variant_get_string (val, NULL);
+			items = g_slist_prepend (items, g_strdup_printf ("DHCP4_%s=%s", ucased, tmp));
+			g_free (ucased);
+		}
 		g_variant_unref (val);
 	}
 	return items;
@@ -372,11 +372,11 @@ construct_device_dhcp6_items (GSList *items, GVariant *dhcp6_config)
 	g_variant_iter_init (&iter, dhcp6_config);
 	while (g_variant_iter_next (&iter, "{&sv}", &key, &val)) {
 		ucased = _validate_var_name (key);
-		if (!ucased)
-			continue;
-		tmp = g_variant_get_string (val, NULL);
-		items = g_slist_prepend (items, g_strdup_printf ("DHCP6_%s=%s", ucased, tmp));
-		g_free (ucased);
+		if (ucased) {
+			tmp = g_variant_get_string (val, NULL);
+			items = g_slist_prepend (items, g_strdup_printf ("DHCP6_%s=%s", ucased, tmp));
+			g_free (ucased);
+		}
 		g_variant_unref (val);
 	}
 	return items;
