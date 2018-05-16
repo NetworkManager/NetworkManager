@@ -736,14 +736,6 @@ maybe_add_option (NMDhcpClient *self,
                   GVariant *value)
 {
 	char *str_value = NULL;
-	const char **p;
-	static const char *ignored_keys[] = {
-		"interface",
-		"pid",
-		"reason",
-		"dhcp_message_type",
-		NULL
-	};
 
 	g_return_if_fail (g_variant_is_of_type (value, G_VARIANT_TYPE_BYTESTRING));
 
@@ -751,10 +743,11 @@ maybe_add_option (NMDhcpClient *self,
 		return;
 
 	/* Filter out stuff that's not actually new DHCP options */
-	for (p = ignored_keys; *p; p++) {
-		if (!strcmp (*p, key))
-			return;
-	}
+	if (NM_IN_STRSET (key, "interface",
+	                       "pid",
+	                       "reason",
+	                       "dhcp_message_type"))
+		return;
 
 	if (g_str_has_prefix (key, NEW_TAG))
 		key += NM_STRLEN (NEW_TAG);
