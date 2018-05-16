@@ -820,18 +820,18 @@ enum {
 /**
  * NMSettingTCConfig:
  *
- * Linux Traffic Contril Settings.
+ * Linux Traffic Control Settings.
  *
  * Since: 1.12
  */
 struct _NMSettingTCConfig {
-        NMSetting parent;
+	NMSetting parent;
 	GPtrArray *qdiscs;
 	GPtrArray *tfilters;
 };
 
 struct _NMSettingTCConfigClass {
-        NMSettingClass parent;
+	NMSettingClass parent;
 };
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingTCConfig, nm_setting_tc_config, NM_TYPE_SETTING,
@@ -1606,7 +1606,7 @@ nm_setting_tc_config_class_init (NMSettingTCConfigClass *setting_class)
 	/**
 	 * NMSettingTCConfig:qdiscs: (type GPtrArray(NMTCQdisc))
 	 *
-	 * Array of TC queuening disciplines.
+	 * Array of TC queueing disciplines.
 	 **/
 	/* ---ifcfg-rh---
 	 * property: qdiscs
