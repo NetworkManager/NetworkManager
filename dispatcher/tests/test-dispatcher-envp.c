@@ -31,6 +31,23 @@
 
 /*****************************************************************************/
 
+static void
+_print_env (const char *const*denv, GHashTable *expected_env)
+{
+	const char *const*iter;
+	GHashTableIter k;
+	const char *key;
+
+	g_print ("\n******* Generated environment:\n");
+	for (iter = denv; iter && *iter; iter++)
+		g_print ("   %s\n", *iter);
+
+	g_print ("\n******* Expected environment:\n");
+	g_hash_table_iter_init (&k, expected_env);
+	while (g_hash_table_iter_next (&k, (gpointer) &key, NULL))
+		g_print ("   %s\n", key);
+}
+
 static gboolean
 parse_main (GKeyFile *kf,
             const char *filename,
@@ -553,28 +570,12 @@ test_generic (const char *file, const char *override_vpn_ip_iface)
 	g_assert ((!denv && error_message) || (denv && !error_message));
 
 	if (error_message)
-		g_warning ("%s", error_message);
+		g_error ("FAILED: %s", error_message);
 
-	/* Print out environment for now */
-#ifdef DEBUG
-	g_message ("\n******* Generated environment:");
-	for (iter = denv; iter && *iter; iter++)
-		g_message ("   %s", *iter);
-#endif
-
-#ifdef DEBUG
-	{
-		GHashTableIter k;
-		const char *key;
-
-		g_message ("\n******* Expected environment:");
-		g_hash_table_iter_init (&k, expected_env);
-		while (g_hash_table_iter_next (&k, (gpointer) &key, NULL))
-			g_message ("   %s", key);
+	if (g_strv_length (denv) != g_hash_table_size (expected_env)) {
+		_print_env (NM_CAST_STRV_CC (denv), expected_env);
+		g_assert_cmpint (g_strv_length (denv), ==, g_hash_table_size (expected_env));
 	}
-#endif
-
-	g_assert_cmpint (g_strv_length (denv), ==, g_hash_table_size (expected_env));
 
 	/* Compare dispatcher generated env and expected env */
 	for (iter = denv; iter && *iter; iter++) {
@@ -589,9 +590,10 @@ test_generic (const char *file, const char *override_vpn_ip_iface)
 		}
 
 		foo = g_hash_table_lookup (expected_env, i_value);
-		if (!foo)
-			g_warning ("Failed to find %s in environment", i_value);
-		g_assert (foo);
+		if (!foo) {
+			_print_env (NM_CAST_STRV_CC (denv), expected_env);
+			g_error ("Failed to find %s in environment", i_value);
+		}
 	}
 
 	g_assert_cmpstr (expected_iface, ==, out_iface);
