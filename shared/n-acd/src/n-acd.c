@@ -563,7 +563,14 @@ static int n_acd_handle_timeout(NAcd *acd) {
                         return r;
 
                 if (++acd->n_iteration < N_ACD_RFC_ANNOUNCE_NUM) {
-                        r = n_acd_schedule(acd, acd->timeout_multiplier * N_ACD_RFC_ANNOUNCE_INTERVAL_USEC, 0);
+                        /*
+                         * Announcements are always scheduled according to the
+                         * time-intervals specified in the spec. We always use
+                         * the RFC5227-mandated multiplier.
+                         * If you reconsider this, note that timeout_multiplier
+                         * might be 0 here.
+                         */
+                        r = n_acd_schedule(acd, N_ACD_TIMEOUT_RFC5227 * N_ACD_RFC_ANNOUNCE_INTERVAL_USEC, 0);
                         if (r < 0)
                                 return r;
                 }
