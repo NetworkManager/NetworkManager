@@ -534,7 +534,11 @@ static int n_acd_handle_timeout(NAcd *acd) {
                          */
 
                         r = n_acd_send(acd, NULL);
-                        if (r < 0)
+                        /*
+                         * During probe we must respect the total timeout and so
+                         * we ignore errors caused by a down interface.
+                         */
+                        if (r < 0 && r != -N_ACD_E_DOWN)
                                 return r;
 
                         if (++acd->n_iteration >= N_ACD_RFC_PROBE_NUM)
@@ -559,10 +563,18 @@ static int n_acd_handle_timeout(NAcd *acd) {
                  */
 
                 r = n_acd_send(acd, &acd->config.ip);
-                if (r < 0)
-                        return r;
+                if (r < 0) {
+                        if (r != -N_ACD_E_DOWN)
+                                return r;
+                        /*
+                         * We want to send all the 3 announcements even if the
+                         * interface goes temporarily down. Therefore, if send()
+                         * fails, don't increment the iteration and try again.
+                         */
+                } else
+                        acd->n_iteration++;
 
-                if (++acd->n_iteration < N_ACD_RFC_ANNOUNCE_NUM) {
+                if (acd->n_iteration < N_ACD_RFC_ANNOUNCE_NUM) {
                         /*
                          * Announcements are always scheduled according to the
                          * time-intervals specified in the spec. We always use
@@ -810,14 +822,12 @@ static int n_acd_dispatch_socket(NAcd *acd, struct epoll_event *event) {
                         return -EIO;
                 } else if (errno == ENETDOWN || errno == ENXIO) {
                         /*
-                         * We get ENETDOWN if the network-device goes down or is
-                         * removed. ENXIO might happen on async send-operations if the
-                         * network-device was unplugged and thus the kernel is no
-                         * longer aware of it.
-                         * In any case, we do not allow proceeding with this socket. We
-                         * stop the engine and notify the user gracefully.
+                         * The network device went down or was removed. Ignore
+                         * such errors and let the pending probe time out.
+                         * Subsequent reads will simply return EAGAIN until the
+                         * device is up again and has data queued.
                          */
-                        return -N_ACD_E_DOWN;
+                        return 0;
                 } else if (errno == EAGAIN) {
                         /*
                          * We cannot read data from the socket (we got EAGAIN). As a safety net
