@@ -1097,6 +1097,7 @@ deactivate_cleanup (NMModem *self, NMDevice *device)
 
 	if (priv->ppp_manager) {
 		g_signal_handlers_disconnect_by_data (priv->ppp_manager, self);
+		nm_ppp_manager_stop_sync (priv->ppp_manager);
 		g_clear_object (&priv->ppp_manager);
 	}
 
