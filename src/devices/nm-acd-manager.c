@@ -274,7 +274,11 @@ acd_probe_start (NMAcdManager *self,
 		return FALSE;
 	}
 
-	_LOGD ("start probe for %s", nm_utils_inet4_ntop (info->address, NULL));
+	if (timeout) {
+		_LOGD ("started probe for %s with timeout %llu",
+		       nm_utils_inet4_ntop (info->address, NULL),
+		       (unsigned long long) timeout);
+	}
 
 	return TRUE;
 }
