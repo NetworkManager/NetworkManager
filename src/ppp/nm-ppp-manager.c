@@ -135,7 +135,9 @@ G_DEFINE_TYPE (NMPPPManager, nm_ppp_manager, NM_TYPE_DBUS_OBJECT)
 /*****************************************************************************/
 
 static void _ppp_cleanup  (NMPPPManager *manager);
-static void _ppp_kill (NMPPPManager *manager);
+static gboolean _ppp_kill (NMPPPManager *manager,
+                           NMUtilsKillChildAsyncCb callback,
+                           void *user_data);
 
 /*****************************************************************************/
 
@@ -781,7 +783,7 @@ pppd_timed_out (gpointer data)
 
 	_LOGW ("pppd timed out or didn't initialize our dbus module");
 	_ppp_cleanup (manager);
-	_ppp_kill (manager);
+	_ppp_kill (manager, NULL, NULL);
 
 	g_signal_emit (manager, signals[STATE_CHANGED], 0, (guint) NM_PPP_STATUS_DEAD);
 
@@ -1121,19 +1123,23 @@ out:
 	return priv->pid > 0;
 }
 
-static void
-_ppp_kill (NMPPPManager *manager)
+static gboolean
+_ppp_kill (NMPPPManager *manager,
+           NMUtilsKillChildAsyncCb callback,
+           void *user_data)
 {
-	NMPPPManagerPrivate *priv;
+	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
 
-	g_return_if_fail (NM_IS_PPP_MANAGER (manager));
-
-	priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
-
-	if (priv->pid) {
-		nm_utils_kill_child_async (priv->pid, SIGTERM, LOGD_PPP, "pppd", 2000, NULL, NULL);
-		priv->pid = 0;
+	if (!priv->pid) {
+		/* not PID. Signal that there was nothing to kill, which consequently
+		 * implies that the callback will not be invoked. */
+		return FALSE;
 	}
+
+	nm_utils_kill_child_async (nm_steal_int (&priv->pid),
+	                           SIGTERM, LOGD_PPP, "pppd", 2000,
+	                           callback, user_data);
+	return TRUE;
 }
 
 static void
@@ -1204,8 +1210,10 @@ static void
 kill_child_ready  (pid_t pid,
                    gboolean success,
                    int child_status,
-                   StopContext *ctx)
+                   gpointer user_data)
 {
+	StopContext *ctx = user_data;
+
 	if (stop_context_complete_if_cancelled (ctx))
 		return;
 	stop_context_complete (ctx);
@@ -1243,15 +1251,8 @@ _ppp_manager_stop_async (NMPPPManager *manager,
 		return;
 	}
 
-	/* No cancellable operation, so just wait until it returns always */
-	nm_utils_kill_child_async (priv->pid,
-	                           SIGTERM,
-	                           LOGD_PPP,
-	                           "pppd",
-	                           2000,
-	                           (NMUtilsKillChildAsyncCb) kill_child_ready,
-	                           ctx);
-	priv->pid = 0;
+	if (!_ppp_kill (manager, kill_child_ready, ctx))
+		nm_assert_not_reached ();
 }
 
 static void
@@ -1263,7 +1264,7 @@ _ppp_manager_stop_sync (NMPPPManager *manager)
 		nm_dbus_object_unexport (dbus);
 
 	_ppp_cleanup (manager);
-	_ppp_kill (manager);
+	_ppp_kill (manager, NULL, NULL);
 }
 
 /*****************************************************************************/
@@ -1337,7 +1338,7 @@ dispose (GObject *object)
 		nm_dbus_object_unexport (dbus);
 
 	_ppp_cleanup (self);
-	_ppp_kill (self);
+	_ppp_kill (self, NULL, NULL);
 
 	g_clear_object (&priv->act_req);
 
