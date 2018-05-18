@@ -53,6 +53,18 @@ int nm_match_spec_device_by_pllink (const NMPlatformLink *pllink,
                                     const GSList *specs,
                                     int no_match_value);
 
+
+/*****************************************************************************/
+
+typedef struct _NMShutdownWaitObjHandle NMShutdownWaitObjHandle;
+
+NMShutdownWaitObjHandle *_nm_shutdown_wait_obj_register (GObject *watched_obj,
+                                                        const char *msg_reason);
+
+#define nm_shutdown_wait_obj_register(watched_obj, msg_reason) _nm_shutdown_wait_obj_register((watched_obj), (""msg_reason""))
+
+void nm_shutdown_wait_obj_unregister (NMShutdownWaitObjHandle *handle);
+
 /*****************************************************************************/
 
 #endif /* __NETWORKMANAGER_UTILS_H__ */

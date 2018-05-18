@@ -23,6 +23,8 @@
 
 #include "NetworkManagerUtils.h"
 
+#include "nm-utils/nm-c-list.h"
+
 #include "nm-common-macros.h"
 #include "nm-utils.h"
 #include "nm-setting-connection.h"
@@ -907,3 +909,90 @@ nm_match_spec_device_by_pllink (const NMPlatformLink *pllink,
 	return no_match_value;
 }
 
+/*****************************************************************************/
+
+struct _NMShutdownWaitObjHandle {
+	CList lst;
+	GObject *watched_obj;
+	const char *msg_reason;
+};
+
+static CList _shutdown_waitobj_lst_head;
+
+static void
+_shutdown_waitobj_unregister (NMShutdownWaitObjHandle *handle)
+{
+	c_list_unlink_stale (&handle->lst);
+	g_slice_free (NMShutdownWaitObjHandle, handle);
+
+	/* FIXME(shutdown): check whether the object list is empty, and
+	 * signal shutdown-complete */
+}
+
+static void
+_shutdown_waitobj_cb (gpointer user_data,
+                       GObject *where_the_object_was)
+{
+	NMShutdownWaitObjHandle *handle = user_data;
+
+	nm_assert (handle);
+	nm_assert (handle->watched_obj == where_the_object_was);
+	_shutdown_waitobj_unregister (handle);
+}
+
+/**
+ * _nm_shutdown_wait_obj_register:
+ * @watched_obj: the object to watch. Takes a weak reference on the object
+ *   to be notified when it gets destroyed.
+ * @msg_reason: a reason message, for debugging and logging purposes. It
+ *   must be a static string. Or at least, be alive at least as long as
+ *   @watched_obj. So, theoretically, if you need a dynamic @msg_reason,
+ *   you could attach it to @watched_obj's user-data.
+ *
+ * Keep track of @watched_obj until it gets destroyed. During shutdown,
+ * we wait until all watched objects are destroyed. This is useful, if
+ * this object still conducts some asynchronous action, which needs to
+ * complete before NetworkManager is allowed to terminate. We re-use
+ * the reference-counter of @watched_obj as signal, that the object
+ * is still used.
+ *
+ * FIXME(shutdown): proper shutdown is not yet implemented, and registering
+ *   an object (currently) has no effect.
+ *
+ * Returns: a handle to unregister the object. The caller may choose to ignore
+ *   the handle, in which case, the object will be automatically unregistered,
+ *   once it gets destroyed.
+ */
+NMShutdownWaitObjHandle *
+_nm_shutdown_wait_obj_register (GObject *watched_obj,
+                                const char *msg_reason)
+{
+	NMShutdownWaitObjHandle *handle;
+
+	g_return_val_if_fail (G_IS_OBJECT (watched_obj), NULL);
+
+	if (G_UNLIKELY (!_shutdown_waitobj_lst_head.next))
+		c_list_init (&_shutdown_waitobj_lst_head);
+
+	handle = g_slice_new (NMShutdownWaitObjHandle);
+	handle->watched_obj = watched_obj;
+	/* we don't clone the string. We require the caller to use pass a static message.
+	 * If he really cannot do that, he should attach the string to the watched_obj
+	 * as user-data. */
+	handle->msg_reason = msg_reason;
+	c_list_link_tail (&_shutdown_waitobj_lst_head, &handle->lst);
+	g_object_weak_ref (watched_obj, _shutdown_waitobj_cb, handle);
+	return handle;
+}
+
+void
+nm_shutdown_wait_obj_unregister (NMShutdownWaitObjHandle *handle)
+{
+	g_return_if_fail (handle);
+
+	nm_assert (G_IS_OBJECT (handle->watched_obj));
+	nm_assert (nm_c_list_contains_entry (&_shutdown_waitobj_lst_head, handle, lst));
+
+	g_object_weak_unref (handle->watched_obj, _shutdown_waitobj_cb, handle);
+	_shutdown_waitobj_unregister (handle);
+}
