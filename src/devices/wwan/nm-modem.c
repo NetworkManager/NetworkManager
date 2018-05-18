@@ -1131,7 +1131,7 @@ deactivate_cleanup (NMModem *self, NMDevice *device)
 
 	if (priv->ppp_manager) {
 		g_signal_handlers_disconnect_by_data (priv->ppp_manager, self);
-		nm_ppp_manager_stop_sync (priv->ppp_manager);
+		nm_ppp_manager_stop (priv->ppp_manager, NULL, NULL);
 		g_clear_object (&priv->ppp_manager);
 	}
 
@@ -1177,11 +1177,19 @@ typedef struct {
 	GSimpleAsyncResult *result;
 	DeactivateContextStep step;
 	NMPPPManager *ppp_manager;
+	NMPPPManagerStopHandle *ppp_stop_handle;
+	gulong ppp_stop_cancellable_id;
 } DeactivateContext;
 
 static void
 deactivate_context_complete (DeactivateContext *ctx)
 {
+	if (ctx->ppp_stop_handle)
+		nm_ppp_manager_stop_cancel (ctx->ppp_stop_handle);
+
+	nm_assert (!ctx->ppp_stop_handle);
+	nm_assert (ctx->ppp_stop_cancellable_id == 0);
+
 	if (ctx->ppp_manager)
 		g_object_unref (ctx->ppp_manager);
 	if (ctx->cancellable)
@@ -1223,23 +1231,34 @@ disconnect_ready (NMModem *self,
 
 static void
 ppp_manager_stop_ready (NMPPPManager *ppp_manager,
-                        GAsyncResult *res,
-                        DeactivateContext *ctx)
+                        NMPPPManagerStopHandle *handle,
+                        gboolean was_cancelled,
+                        gpointer user_data)
 {
-	NMModem *self = ctx->self;
-	GError *error = NULL;
+	DeactivateContext *ctx = user_data;
 
-	if (!nm_ppp_manager_stop_finish (ppp_manager, res, &error)) {
-		_LOGW ("cannot stop PPP manager: %s",
-		       error->message);
-		g_simple_async_result_take_error (ctx->result, error);
-		deactivate_context_complete (ctx);
-		return;
+	nm_assert (ctx->ppp_stop_handle == handle);
+	ctx->ppp_stop_handle = NULL;
+
+	if (ctx->ppp_stop_cancellable_id) {
+		g_cancellable_disconnect (ctx->cancellable,
+		                          nm_steal_int (&ctx->ppp_stop_cancellable_id));
 	}
 
-	/* Go on */
+	if (was_cancelled)
+		return;
+
 	ctx->step++;
 	deactivate_step (ctx);
+}
+
+static void
+ppp_manager_stop_cancelled (GCancellable *cancellable,
+                            gpointer user_data)
+{
+	DeactivateContext *ctx = user_data;
+
+	nm_ppp_manager_stop_cancel (ctx->ppp_stop_handle);
 }
 
 static void
@@ -1271,10 +1290,16 @@ deactivate_step (DeactivateContext *ctx)
 	case DEACTIVATE_CONTEXT_STEP_PPP_MANAGER_STOP:
 		/* If we have a PPP manager, stop it */
 		if (ctx->ppp_manager) {
-			nm_ppp_manager_stop_async (ctx->ppp_manager,
-			                           ctx->cancellable,
-			                           (GAsyncReadyCallback) ppp_manager_stop_ready,
-			                           ctx);
+			nm_assert (!ctx->ppp_stop_handle);
+			if (ctx->cancellable) {
+				ctx->ppp_stop_cancellable_id = g_cancellable_connect (ctx->cancellable,
+				                                                      G_CALLBACK (ppp_manager_stop_cancelled),
+				                                                      ctx,
+				                                                      NULL);
+			}
+			ctx->ppp_stop_handle = nm_ppp_manager_stop (ctx->ppp_manager,
+			                                            ppp_manager_stop_ready,
+			                                            ctx);
 			return;
 		}
 		ctx->step++;
@@ -1313,7 +1338,9 @@ nm_modem_deactivate_async (NMModem *self,
 	                                         callback,
 	                                         user_data,
 	                                         nm_modem_deactivate_async);
-	ctx->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
+	/* FIXME(shutdown): we always require a cancellable, otherwise we cannot
+	 * do a coordinated shutdown. */
+	ctx->cancellable = nm_g_object_ref (cancellable);
 
 	/* Start */
 	ctx->step = DEACTIVATE_CONTEXT_STEP_FIRST;
