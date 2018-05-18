@@ -57,6 +57,7 @@ sources = files(
   'platform/nm-netlink.c',
   'platform/wifi/nm-wifi-utils-nl80211.c',
   'platform/wifi/nm-wifi-utils.c',
+  'platform/wpan/nm-wpan-utils.c',
   'platform/nm-linux-platform.c',
   'platform/nm-platform.c',
   'platform/nm-platform-utils.c',
