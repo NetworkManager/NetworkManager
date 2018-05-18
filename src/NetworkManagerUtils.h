@@ -56,6 +56,25 @@ int nm_match_spec_device_by_pllink (const NMPlatformLink *pllink,
 
 /*****************************************************************************/
 
+/* during shutdown, there are two relevant timeouts. One is
+ * NM_SHUTDOWN_TIMEOUT_MS which is plenty of time, that we give for all
+ * actions to complete. Of course, during shutdown components should hurry
+ * to cleanup.
+ *
+ * When we initiate shutdown, we should start killing child processes
+ * with SIGTERM. If they don't complete within NM_SHUTDOWN_TIMEOUT_MS, we send
+ * SIGKILL.
+ *
+ * After NM_SHUTDOWN_TIMEOUT_MS, NetworkManager will however not yet terminate right
+ * away. It iterates the mainloop for another NM_SHUTDOWN_TIMEOUT_MS_EXTRA. This
+ * should give time to reap the child process (after SIGKILL).
+ *
+ * So, the maxiumum time we should wait before sending SIGKILL should be at most
+ * NM_SHUTDOWN_TIMEOUT_MS.
+ */
+#define NM_SHUTDOWN_TIMEOUT_MS            1500
+#define NM_SHUTDOWN_TIMEOUT_MS_WATCHDOG    500
+
 typedef struct _NMShutdownWaitObjHandle NMShutdownWaitObjHandle;
 
 NMShutdownWaitObjHandle *_nm_shutdown_wait_obj_register (GObject *watched_obj,
