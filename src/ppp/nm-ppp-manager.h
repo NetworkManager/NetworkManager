@@ -32,4 +32,11 @@
 
 typedef struct _NMPPPManager NMPPPManager;
 
+typedef struct _NMPPPManagerStopHandle NMPPPManagerStopHandle;
+
+typedef void (*NMPPPManagerStopCallback) (NMPPPManager *manager,
+                                          NMPPPManagerStopHandle *handle,
+                                          gboolean was_cancelled,
+                                          gpointer user_data);
+
 #endif /* __NM_PPP_MANAGER_H__ */

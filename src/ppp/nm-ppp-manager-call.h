@@ -38,13 +38,11 @@ gboolean            nm_ppp_manager_start       (NMPPPManager *self,
                                                 guint32 timeout_secs,
                                                 guint baud_override,
                                                 GError **error);
-void                nm_ppp_manager_stop_async  (NMPPPManager *self,
-                                                GCancellable *cancellable,
-                                                GAsyncReadyCallback callback,
-                                                gpointer user_data);
-gboolean            nm_ppp_manager_stop_finish (NMPPPManager *self,
-                                                GAsyncResult *res,
-                                                GError **error);
-void                nm_ppp_manager_stop_sync   (NMPPPManager *self);
+
+NMPPPManagerStopHandle *nm_ppp_manager_stop (NMPPPManager *self,
+                                             NMPPPManagerStopCallback callback,
+                                             gpointer user_data);
+
+void nm_ppp_manager_stop_cancel (NMPPPManagerStopHandle *handle);
 
 #endif /* __NM_PPP_MANAGER_CALL_H__ */

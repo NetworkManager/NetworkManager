@@ -135,9 +135,10 @@ G_DEFINE_TYPE (NMPPPManager, nm_ppp_manager, NM_TYPE_DBUS_OBJECT)
 /*****************************************************************************/
 
 static void _ppp_cleanup  (NMPPPManager *self);
-static gboolean _ppp_kill (NMPPPManager *self,
-                           NMUtilsKillChildAsyncCb callback,
-                           void *user_data);
+
+static NMPPPManagerStopHandle *_ppp_manager_stop (NMPPPManager *self,
+                                                  NMPPPManagerStopCallback callback,
+                                                  gpointer user_data);
 
 /*****************************************************************************/
 
@@ -782,8 +783,7 @@ pppd_timed_out (gpointer data)
 	NMPPPManager *self = NM_PPP_MANAGER (data);
 
 	_LOGW ("pppd timed out or didn't initialize our dbus module");
-	_ppp_cleanup (self);
-	_ppp_kill (self, NULL, NULL);
+	_ppp_manager_stop (self, NULL, NULL);
 
 	g_signal_emit (self, signals[STATE_CHANGED], 0, (guint) NM_PPP_STATUS_DEAD);
 
@@ -1123,25 +1123,6 @@ out:
 	return priv->pid > 0;
 }
 
-static gboolean
-_ppp_kill (NMPPPManager *self,
-           NMUtilsKillChildAsyncCb callback,
-           void *user_data)
-{
-	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (self);
-
-	if (!priv->pid) {
-		/* not PID. Signal that there was nothing to kill, which consequently
-		 * implies that the callback will not be invoked. */
-		return FALSE;
-	}
-
-	nm_utils_kill_child_async (nm_steal_int (&priv->pid),
-	                           SIGTERM, LOGD_PPP, "pppd", 2000,
-	                           callback, user_data);
-	return TRUE;
-}
-
 static void
 _ppp_cleanup (NMPPPManager *self)
 {
@@ -1168,103 +1149,132 @@ _ppp_cleanup (NMPPPManager *self)
 
 /*****************************************************************************/
 
-typedef struct {
+struct _NMPPPManagerStopHandle {
 	NMPPPManager *self;
-	GSimpleAsyncResult *result;
-	GCancellable *cancellable;
-} StopContext;
+	NMPPPManagerStopCallback callback;
+	gpointer user_data;
+
+	/* this object delays shutdown, because we still need to wait until
+	 * pppd process terminated. */
+	GObject *shutdown_waitobj;
+
+	guint idle_id;
+};
 
 static void
-stop_context_complete (StopContext *ctx)
+_stop_handle_complete (NMPPPManagerStopHandle *handle, gboolean was_cancelled)
 {
-	if (ctx->cancellable)
-		g_object_unref (ctx->cancellable);
-	g_simple_async_result_complete_in_idle (ctx->result);
-	g_object_unref (ctx->result);
-	g_object_unref (ctx->self);
-	g_slice_free (StopContext, ctx);
-}
+	gs_unref_object NMPPPManager *self = NULL;
+	NMPPPManagerStopCallback callback;
 
-static gboolean
-stop_context_complete_if_cancelled (StopContext *ctx)
-{
-	GError *error = NULL;
+	self = g_steal_pointer (&handle->self);
+	if (!self)
+		return;
 
-	if (g_cancellable_set_error_if_cancelled (ctx->cancellable, &error)) {
-		g_simple_async_result_take_error (ctx->result, error);
-		stop_context_complete (ctx);
-		return TRUE;
-	}
-	return FALSE;
-}
+	if (!handle->callback)
+		return;
 
-static gboolean
-_ppp_manager_stop_finish (NMPPPManager *self,
-                          GAsyncResult *res,
-                          GError **error)
-{
-	return !g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (res), error);
+	callback = handle->callback;
+	handle->callback = NULL;
+	callback (self, handle, was_cancelled, handle->user_data);
 }
 
 static void
-kill_child_ready  (pid_t pid,
-                   gboolean success,
-                   int child_status,
+_stop_handle_destroy (NMPPPManagerStopHandle *handle, gboolean was_cancelled)
+{
+	_stop_handle_complete (handle, was_cancelled);
+	nm_clear_g_source (&handle->idle_id);
+	g_clear_object (&handle->shutdown_waitobj);
+	g_slice_free (NMPPPManagerStopHandle, handle);
+}
+
+static void
+_stop_child_cb (pid_t pid,
+                gboolean success,
+                int child_status,
+                gpointer user_data)
+{
+	_stop_handle_destroy (user_data, FALSE);
+}
+
+static gboolean
+_stop_idle_cb (gpointer user_data)
+{
+	NMPPPManagerStopHandle *handle = user_data;
+
+	handle->idle_id = 0;
+	_stop_handle_destroy (handle, FALSE);
+	return G_SOURCE_REMOVE;
+}
+
+static NMPPPManagerStopHandle *
+_ppp_manager_stop (NMPPPManager *self,
+                   NMPPPManagerStopCallback callback,
                    gpointer user_data)
 {
-	StopContext *ctx = user_data;
-
-	if (stop_context_complete_if_cancelled (ctx))
-		return;
-	stop_context_complete (ctx);
-}
-
-static void
-_ppp_manager_stop_async (NMPPPManager *self,
-                         GCancellable *cancellable,
-                         GAsyncReadyCallback callback,
-                         gpointer user_data)
-{
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (self);
-	StopContext *ctx;
-
-	nm_dbus_object_unexport (NM_DBUS_OBJECT (self));
-
-	ctx = g_slice_new0 (StopContext);
-	ctx->self = g_object_ref (self);
-	ctx->result = g_simple_async_result_new (G_OBJECT (self),
-	                                         callback,
-	                                         user_data,
-	                                         _ppp_manager_stop_async);
-
-	/* Setup cancellable */
-	ctx->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
-	if (stop_context_complete_if_cancelled (ctx))
-		return;
-
-	/* Cleanup internals */
-	_ppp_cleanup (self);
-
-	/* If no pppd running, we're done */
-	if (!priv->pid) {
-		stop_context_complete (ctx);
-		return;
-	}
-
-	if (!_ppp_kill (self, kill_child_ready, ctx))
-		nm_assert_not_reached ();
-}
-
-static void
-_ppp_manager_stop_sync (NMPPPManager *self)
-{
 	NMDBusObject *dbus = NM_DBUS_OBJECT (self);
+	NMPPPManagerStopHandle *handle;
 
 	if (nm_dbus_object_is_exported (dbus))
 		nm_dbus_object_unexport (dbus);
 
 	_ppp_cleanup (self);
-	_ppp_kill (self, NULL, NULL);
+
+	if (   !priv->pid
+	    && !callback) {
+		/* nothing to do further...
+		 *
+		 * In this case, we return a %NULL handle. The caller cannot cancel this
+		 * event, but clearly he is not waiting for a callback anyway. */
+		return NULL;
+	}
+
+	handle = g_slice_new0 (NMPPPManagerStopHandle);
+	handle->self = g_object_ref (self);
+	handle->callback = callback;
+	handle->user_data = user_data;
+
+	if (!priv->pid) {
+		/* No PID. There is nothing to kill, however, invoke the callback in
+		 * an idle handler.
+		 *
+		 * Note that we don't register nm_shutdown_wait_obj_register().
+		 * In order for shutdown to work properly, the caller must always
+		 * explicitly cancel the action to go down. With the idle-handler,
+		 * cancelling the handle completes the request. */
+		handle->idle_id = g_idle_add (_stop_idle_cb, handle);
+		return handle;
+	}
+
+	/* we really want to kill the process and delay shutdown of NetworkManager
+	 * until the process terminated. We do that, by registering an object
+	 * that delays shutdown. */
+	handle->shutdown_waitobj = g_object_new (G_TYPE_OBJECT, NULL);
+	nm_shutdown_wait_obj_register (handle->shutdown_waitobj, "ppp-manager-wait-kill-pppd");
+	nm_utils_kill_child_async (nm_steal_int (&priv->pid),
+	                           SIGTERM, LOGD_PPP, "pppd", 2000,
+	                           _stop_child_cb, handle);
+
+	return handle;
+}
+
+static void
+_ppp_manager_stop_cancel (NMPPPManagerStopHandle *handle)
+{
+	g_return_if_fail (handle);
+	g_return_if_fail (NM_IS_PPP_MANAGER (handle->self));
+
+	if (handle->idle_id) {
+		/* we can complete this fake handle right away. */
+		_stop_handle_destroy (handle, TRUE);
+		return;
+	}
+
+	/* a real handle. Only invoke the callback (synchronously). This marks
+	 * the handle as handled, but it keeps shutdown_waitobj around, until
+	 * nm_utils_kill_child_async() returns. */
+	_stop_handle_complete (handle, TRUE);
 }
 
 /*****************************************************************************/
@@ -1331,14 +1341,13 @@ static void
 dispose (GObject *object)
 {
 	NMPPPManager *self = (NMPPPManager *) object;
-	NMDBusObject *dbus = NM_DBUS_OBJECT (self);
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (self);
 
-	if (nm_dbus_object_is_exported (dbus))
-		nm_dbus_object_unexport (dbus);
-
-	_ppp_cleanup (self);
-	_ppp_kill (self, NULL, NULL);
+	/* we expect the user to first stop the manager. As fallback,
+	 * still stop. */
+	g_warn_if_fail (!priv->pid);
+	g_warn_if_fail (!nm_dbus_object_is_exported (NM_DBUS_OBJECT (self)));
+	_ppp_manager_stop (self, NULL, NULL);
 
 	g_clear_object (&priv->act_req);
 
@@ -1484,7 +1493,6 @@ NMPPPOps ppp_ops = {
 	.create               = _ppp_manager_new,
 	.set_route_parameters = _ppp_manager_set_route_parameters,
 	.start                = _ppp_manager_start,
-	.stop_async           = _ppp_manager_stop_async,
-	.stop_finish          = _ppp_manager_stop_finish,
-	.stop_sync            = _ppp_manager_stop_sync,
+	.stop                 = _ppp_manager_stop,
+	.stop_cancel          = _ppp_manager_stop_cancel,
 };
