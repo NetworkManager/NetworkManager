@@ -173,7 +173,9 @@ static inline int safe_fork(const char *name, ForkFlags flags, pid_t *ret_pid) {
         return safe_fork_full(name, NULL, 0, flags, ret_pid);
 }
 
-int fork_agent(const char *name, const int except[], unsigned n_except, pid_t *pid, const char *path, ...);
+int fork_agent(const char *name, const int except[], size_t n_except, pid_t *pid, const char *path, ...);
+
+int set_oom_score_adjust(int value);
 
 #if SIZEOF_PID_T == 4
 /* The highest possibly (theoretic) pid_t value on this architecture. */

@@ -1355,6 +1355,8 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/src/basic/socket-util.c \
 	src/systemd/src/basic/socket-util.h \
 	src/systemd/src/basic/sparse-endian.h \
+	src/systemd/src/basic/stat-util.c \
+	src/systemd/src/basic/stat-util.h \
 	src/systemd/src/basic/stdio-util.h \
 	src/systemd/src/basic/string-table.c \
 	src/systemd/src/basic/string-table.h \

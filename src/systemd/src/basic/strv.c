@@ -109,8 +109,8 @@ char **strv_copy(char * const *l) {
         return r;
 }
 
-unsigned strv_length(char * const *l) {
-        unsigned n = 0;
+size_t strv_length(char * const *l) {
+        size_t n = 0;
 
         if (!l)
                 return 0;
@@ -123,8 +123,8 @@ unsigned strv_length(char * const *l) {
 
 char **strv_new_ap(const char *x, va_list ap) {
         const char *s;
-        char **a;
-        unsigned n = 0, i = 0;
+        _cleanup_strv_free_ char **a = NULL;
+        size_t n = 0, i = 0;
         va_list aq;
 
         /* As a special trick we ignore all listed strings that equal
@@ -154,7 +154,7 @@ char **strv_new_ap(const char *x, va_list ap) {
                 if (x != STRV_IGNORE) {
                         a[i] = strdup(x);
                         if (!a[i])
-                                goto fail;
+                                return NULL;
                         i++;
                 }
 
@@ -165,7 +165,7 @@ char **strv_new_ap(const char *x, va_list ap) {
 
                         a[i] = strdup(s);
                         if (!a[i])
-                                goto fail;
+                                return NULL;
 
                         i++;
                 }
@@ -173,11 +173,7 @@ char **strv_new_ap(const char *x, va_list ap) {
 
         a[i] = NULL;
 
-        return a;
-
-fail:
-        strv_free(a);
-        return NULL;
+        return TAKE_PTR(a);
 }
 
 char **strv_new(const char *x, ...) {
@@ -259,7 +255,7 @@ int strv_extend_strv_concat(char ***a, char **b, const char *suffix) {
 char **strv_split(const char *s, const char *separator) {
         const char *word, *state;
         size_t l;
-        unsigned n, i;
+        size_t n, i;
         char **r;
 
         assert(s);
@@ -289,7 +285,7 @@ char **strv_split(const char *s, const char *separator) {
 
 char **strv_split_newlines(const char *s) {
         char **l;
-        unsigned n;
+        size_t n;
 
         assert(s);
 
@@ -384,7 +380,7 @@ char *strv_join(char **l, const char *separator) {
 
 int strv_push(char ***l, char *value) {
         char **c;
-        unsigned n, m;
+        size_t n, m;
 
         if (!value)
                 return 0;
@@ -409,7 +405,7 @@ int strv_push(char ***l, char *value) {
 
 int strv_push_pair(char ***l, char *a, char *b) {
         char **c;
-        unsigned n, m;
+        size_t n, m;
 
         if (!a && !b)
                 return 0;
@@ -435,9 +431,9 @@ int strv_push_pair(char ***l, char *a, char *b) {
         return 0;
 }
 
-int strv_insert(char ***l, unsigned position, char *value) {
+int strv_insert(char ***l, size_t position, char *value) {
         char **c;
-        unsigned n, m, i;
+        size_t n, m, i;
 
         if (!value)
                 return 0;
@@ -605,7 +601,7 @@ char **strv_parse_nulstr(const char *s, size_t l) {
          */
 
         const char *p;
-        unsigned c = 0, i = 0;
+        size_t c = 0, i = 0;
         char **v;
 
         assert(s || l <= 0);
@@ -769,7 +765,7 @@ int strv_extendf(char ***l, const char *format, ...) {
 }
 
 char **strv_reverse(char **l) {
-        unsigned n, i;
+        size_t n, i;
 
         n = strv_length(l);
         if (n <= 1)

@@ -87,8 +87,8 @@ void safe_close_pair(int p[]) {
         p[1] = safe_close(p[1]);
 }
 
-void close_many(const int fds[], unsigned n_fd) {
-        unsigned i;
+void close_many(const int fds[], size_t n_fd) {
+        size_t i;
 
         assert(fds || n_fd <= 0);
 
@@ -181,8 +181,8 @@ int fd_cloexec(int fd, bool cloexec) {
 }
 
 #if 0 /* NM_IGNORED */
-_pure_ static bool fd_in_set(int fd, const int fdset[], unsigned n_fdset) {
-        unsigned i;
+_pure_ static bool fd_in_set(int fd, const int fdset[], size_t n_fdset) {
+        size_t i;
 
         assert(n_fdset == 0 || fdset);
 
@@ -193,7 +193,7 @@ _pure_ static bool fd_in_set(int fd, const int fdset[], unsigned n_fdset) {
         return false;
 }
 
-int close_all_fds(const int except[], unsigned n_except) {
+int close_all_fds(const int except[], size_t n_except) {
         _cleanup_closedir_ DIR *d = NULL;
         struct dirent *de;
         int r = 0;
@@ -202,15 +202,22 @@ int close_all_fds(const int except[], unsigned n_except) {
 
         d = opendir("/proc/self/fd");
         if (!d) {
-                int fd;
                 struct rlimit rl;
+                int fd, max_fd;
 
-                /* When /proc isn't available (for example in chroots)
-                 * the fallback is brute forcing through the fd
+                /* When /proc isn't available (for example in chroots) the fallback is brute forcing through the fd
                  * table */
 
                 assert_se(getrlimit(RLIMIT_NOFILE, &rl) >= 0);
-                for (fd = 3; fd < (int) rl.rlim_max; fd ++) {
+
+                if (rl.rlim_max == 0)
+                        return -EINVAL;
+
+                /* Let's take special care if the resource limit is set to unlimited, or actually larger than the range
+                 * of 'int'. Let's avoid implicit overflows. */
+                max_fd = (rl.rlim_max == RLIM_INFINITY || rl.rlim_max > INT_MAX) ? INT_MAX : (int) (rl.rlim_max - 1);
+
+                for (fd = 3; fd >= 0; fd = fd < max_fd ? fd + 1 : -1) {
                         int q;
 
                         if (fd_in_set(fd, except, n_except))

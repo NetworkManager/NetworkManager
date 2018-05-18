@@ -885,7 +885,7 @@ int getenv_for_pid(pid_t pid, const char *field, char **ret) {
 
         do {
                 char line[LINE_MAX];
-                unsigned i;
+                size_t i;
 
                 for (i = 0; i < sizeof(line)-1; i++) {
                         int c;
@@ -1384,9 +1384,9 @@ int safe_fork_full(
         return 0;
 }
 
-int fork_agent(const char *name, const int except[], unsigned n_except, pid_t *ret_pid, const char *path, ...) {
+int fork_agent(const char *name, const int except[], size_t n_except, pid_t *ret_pid, const char *path, ...) {
         bool stdout_is_tty, stderr_is_tty;
-        unsigned n, i;
+        size_t n, i;
         va_list ap;
         char **l;
         int r;
@@ -1442,7 +1442,7 @@ int fork_agent(const char *name, const int except[], unsigned n_except, pid_t *r
         va_end(ap);
 
         /* Allocate strv */
-        l = alloca(sizeof(char *) * (n + 1));
+        l = newa(char*, n + 1);
 
         /* Fill in arguments */
         va_start(ap, path);
@@ -1452,6 +1452,15 @@ int fork_agent(const char *name, const int except[], unsigned n_except, pid_t *r
 
         execv(path, l);
         _exit(EXIT_FAILURE);
+}
+
+int set_oom_score_adjust(int value) {
+        char t[DECIMAL_STR_MAX(int)];
+
+        sprintf(t, "%i", value);
+
+        return write_string_file("/proc/self/oom_score_adj", t,
+                                 WRITE_STRING_FILE_VERIFY_ON_FAILURE|WRITE_STRING_FILE_DISABLE_BUFFER);
 }
 
 static const char *const ioprio_class_table[] = {

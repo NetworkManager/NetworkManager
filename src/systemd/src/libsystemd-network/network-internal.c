@@ -86,7 +86,7 @@ static bool net_condition_test_strv(char * const *raw_patterns,
         /* If the patterns begin with "!", edit it out and negate the test. */
         if (raw_patterns[0][0] == '!') {
                 char **patterns;
-                unsigned i, length;
+                size_t i, length;
 
                 length = strv_length(raw_patterns) + 1; /* Include the NULL. */
                 patterns = newa(char*, length);
@@ -100,7 +100,7 @@ static bool net_condition_test_strv(char * const *raw_patterns,
         return string && strv_fnmatch(raw_patterns, string, 0);
 }
 
-bool net_match_config(const struct ether_addr *match_mac,
+bool net_match_config(Set *match_mac,
                       char * const *match_paths,
                       char * const *match_drivers,
                       char * const *match_types,
@@ -132,7 +132,7 @@ bool net_match_config(const struct ether_addr *match_mac,
         if (match_arch && condition_test(match_arch) <= 0)
                 return false;
 
-        if (match_mac && (!dev_mac || memcmp(match_mac, dev_mac, ETH_ALEN)))
+        if (match_mac && dev_mac && !set_contains(match_mac, dev_mac))
                 return false;
 
         if (!net_condition_test_strv(match_paths, dev_path))
@@ -284,10 +284,9 @@ int config_parse_hwaddr(const char *unit,
                         const char *rvalue,
                         void *data,
                         void *userdata) {
+
+        _cleanup_free_ struct ether_addr *n = NULL;
         struct ether_addr **hwaddr = data;
-        struct ether_addr *n;
-        const char *start;
-        size_t offset;
         int r;
 
         assert(filename);
@@ -299,17 +298,86 @@ int config_parse_hwaddr(const char *unit,
         if (!n)
                 return log_oom();
 
-        start = rvalue + strspn(rvalue, WHITESPACE);
-        r = ether_addr_from_string(start, n, &offset);
-
-        if (r || (start[offset + strspn(start + offset, WHITESPACE)] != '\0')) {
-                log_syntax(unit, LOG_ERR, filename, line, 0, "Not a valid MAC address, ignoring assignment: %s", rvalue);
-                free(n);
+        r = ether_addr_from_string(rvalue, n);
+        if (r < 0) {
+                log_syntax(unit, LOG_ERR, filename, line, r, "Not a valid MAC address, ignoring assignment: %s", rvalue);
                 return 0;
         }
 
-        free(*hwaddr);
-        *hwaddr = n;
+        *hwaddr = TAKE_PTR(n);
+
+        return 0;
+}
+
+int config_parse_hwaddrs(const char *unit,
+                         const char *filename,
+                         unsigned line,
+                         const char *section,
+                         unsigned section_line,
+                         const char *lvalue,
+                         int ltype,
+                         const char *rvalue,
+                         void *data,
+                         void *userdata) {
+
+        _cleanup_set_free_free_ Set *s = NULL;
+        const char *p = rvalue;
+        Set **hwaddrs = data;
+        int r;
+
+        assert(filename);
+        assert(lvalue);
+        assert(rvalue);
+        assert(data);
+
+        if (isempty(rvalue)) {
+                /* Empty assignment resets the list */
+                *hwaddrs = set_free_free(*hwaddrs);
+                return 0;
+        }
+
+        s = set_new(&ether_addr_hash_ops);
+        if (!s)
+                return log_oom();
+
+        for (;;) {
+                _cleanup_free_ char *word = NULL;
+                _cleanup_free_ struct ether_addr *n = NULL;
+
+                r = extract_first_word(&p, &word, NULL, 0);
+                if (r == 0)
+                        break;
+                if (r == -ENOMEM)
+                        return log_oom();
+                if (r < 0) {
+                        log_syntax(unit, LOG_WARNING, filename, line, r, "Invalid syntax, ignoring: %s", rvalue);
+                        return 0;
+                }
+
+                n = new(struct ether_addr, 1);
+                if (!n)
+                        return log_oom();
+
+                r = ether_addr_from_string(word, n);
+                if (r < 0) {
+                        log_syntax(unit, LOG_ERR, filename, line, 0, "Not a valid MAC address, ignoring: %s", word);
+                        continue;
+                }
+
+                r = set_put(s, n);
+                if (r < 0)
+                        return log_oom();
+                if (r > 0)
+                        n = NULL; /* avoid cleanup */
+        }
+
+        r = set_ensure_allocated(hwaddrs, &ether_addr_hash_ops);
+        if (r < 0)
+                return log_oom();
+
+        r = set_move(*hwaddrs, s);
+        if (r < 0)
+                return log_oom();
 
         return 0;
 }
@@ -591,15 +659,4 @@ int serialize_dhcp_option(FILE *f, const char *key, const void *data, size_t siz
         fprintf(f, "%s=%s\n", key, hex_buf);
 
         return 0;
-}
-
-int deserialize_dhcp_option(void **data, size_t *data_len, const char *string) {
-        assert(data);
-        assert(data_len);
-        assert(string);
-
-        if (strlen(string) % 2)
-                return -EINVAL;
-
-        return unhexmem(string, strlen(string), (void **)data, data_len);
 }

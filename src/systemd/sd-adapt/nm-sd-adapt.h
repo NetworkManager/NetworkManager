@@ -142,6 +142,8 @@ G_STMT_START { \
 #  endif
 #endif
 
+#define VALGRIND 0
+
 static inline pid_t
 raw_getpid (void) {
 #if defined(__alpha__)

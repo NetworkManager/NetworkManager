@@ -12,12 +12,13 @@
 #include "sd-dhcp-lease.h"
 
 #include "condition.h"
+#include "set.h"
 #include "udev.h"
 
 #define LINK_BRIDGE_PORT_PRIORITY_INVALID 128
 #define LINK_BRIDGE_PORT_PRIORITY_MAX 63
 
-bool net_match_config(const struct ether_addr *match_mac,
+bool net_match_config(Set *match_mac,
                       char * const *match_path,
                       char * const *match_driver,
                       char * const *match_type,
@@ -41,6 +42,10 @@ int config_parse_net_condition(const char *unit, const char *filename, unsigned 
 int config_parse_hwaddr(const char *unit, const char *filename, unsigned line,
                         const char *section, unsigned section_line, const char *lvalue,
                         int ltype, const char *rvalue, void *data, void *userdata);
+
+int config_parse_hwaddrs(const char *unit, const char *filename, unsigned line,
+                         const char *section, unsigned section_line, const char *lvalue,
+                         int ltype, const char *rvalue, void *data, void *userdata);
 
 int config_parse_ifnames(const char *unit, const char *filename, unsigned line,
                          const char *section, unsigned section_line, const char *lvalue,
@@ -73,5 +78,5 @@ struct sd_dhcp_route;
 void serialize_dhcp_routes(FILE *f, const char *key, sd_dhcp_route **routes, size_t size);
 int deserialize_dhcp_routes(struct sd_dhcp_route **ret, size_t *ret_size, size_t *ret_allocated, const char *string);
 
+/* It is not necessary to add deserialize_dhcp_option(). Use unhexmem() instead. */
 int serialize_dhcp_option(FILE *f, const char *key, const void *data, size_t size);
-int deserialize_dhcp_option(void **data, size_t *data_len, const char *string);
