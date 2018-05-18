@@ -1253,7 +1253,8 @@ _ppp_manager_stop (NMPPPManager *self,
 	handle->shutdown_waitobj = g_object_new (G_TYPE_OBJECT, NULL);
 	nm_shutdown_wait_obj_register (handle->shutdown_waitobj, "ppp-manager-wait-kill-pppd");
 	nm_utils_kill_child_async (nm_steal_int (&priv->pid),
-	                           SIGTERM, LOGD_PPP, "pppd", 2000,
+	                           SIGTERM, LOGD_PPP, "pppd",
+	                           NM_SHUTDOWN_TIMEOUT_MS,
 	                           _stop_child_cb, handle);
 
 	return handle;
