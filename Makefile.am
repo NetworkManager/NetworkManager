@@ -1527,6 +1527,9 @@ src_libNetworkManagerBase_la_LIBADD = \
 
 $(src_libNetworkManagerBase_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
+EXTRA_DIST += \
+	src/platform/linux/nl802154.h
+
 ###############################################################################
 
 src_libNetworkManager_la_CPPFLAGS = $(src_cppflags)
