@@ -221,7 +221,7 @@ int sd_dhcp_lease_get_routes(sd_dhcp_lease *lease, sd_dhcp_route ***routes) {
 }
 
 int sd_dhcp_lease_get_search_domains(sd_dhcp_lease *lease, char ***domains) {
-        unsigned r;
+        size_t r;
 
         assert_return(lease, -EINVAL);
         assert_return(domains, -EINVAL);
@@ -667,7 +667,7 @@ int dhcp_lease_parse_options(uint8_t code, uint8_t len, const void *option, void
                         return 0;
                 }
 
-                if (!timezone_is_valid(tz)) {
+                if (!timezone_is_valid(tz, LOG_DEBUG)) {
                         log_debug_errno(r, "Timezone is not valid, ignoring: %m");
                         return 0;
                 }
@@ -1193,13 +1193,13 @@ int dhcp_lease_load(sd_dhcp_lease **ret, const char *lease_file) {
         }
 
         if (client_id_hex) {
-                r = deserialize_dhcp_option(&lease->client_id, &lease->client_id_len, client_id_hex);
+                r = unhexmem(client_id_hex, (size_t) -1, &lease->client_id, &lease->client_id_len);
                 if (r < 0)
                         log_debug_errno(r, "Failed to parse client ID %s, ignoring: %m", client_id_hex);
         }
 
         if (vendor_specific_hex) {
-                r = deserialize_dhcp_option(&lease->vendor_specific, &lease->vendor_specific_len, vendor_specific_hex);
+                r = unhexmem(vendor_specific_hex, (size_t) -1, &lease->vendor_specific, &lease->vendor_specific_len);
                 if (r < 0)
                         log_debug_errno(r, "Failed to parse vendor specific data %s, ignoring: %m", vendor_specific_hex);
         }
@@ -1211,7 +1211,7 @@ int dhcp_lease_load(sd_dhcp_lease **ret, const char *lease_file) {
                 if (!options[i])
                         continue;
 
-                r = deserialize_dhcp_option(&data, &len, options[i]);
+                r = unhexmem(options[i], (size_t) -1, &data, &len);
                 if (r < 0) {
                         log_debug_errno(r, "Failed to parse private DHCP option %s, ignoring: %m", options[i]);
                         continue;

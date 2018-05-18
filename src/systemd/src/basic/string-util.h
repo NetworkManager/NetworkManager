@@ -58,7 +58,7 @@ static inline const char *empty_to_null(const char *p) {
         return isempty(p) ? NULL : p;
 }
 
-static inline const char *strdash_if_empty(const char *str) {
+static inline const char *empty_to_dash(const char *str) {
         return isempty(str) ? "-" : str;
 }
 
@@ -109,7 +109,7 @@ char *strjoin_real(const char *x, ...) _sentinel_;
                 const char *_appendees_[] = { a, __VA_ARGS__ };         \
                 char *_d_, *_p_;                                        \
                 size_t _len_ = 0;                                          \
-                unsigned _i_;                                           \
+                size_t _i_;                                           \
                 for (_i_ = 0; _i_ < ELEMENTSOF(_appendees_) && _appendees_[_i_]; _i_++) \
                         _len_ += strlen(_appendees_[_i_]);              \
                 _p_ = _d_ = alloca(_len_ + 1);                          \
