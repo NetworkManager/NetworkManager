@@ -20,6 +20,7 @@ sources = files(
   'src/basic/process-util.c',
   'src/basic/random-util.c',
   'src/basic/socket-util.c',
+  'src/basic/stat-util.c',
   'src/basic/string-table.c',
   'src/basic/string-util.c',
   'src/basic/strv.c',
