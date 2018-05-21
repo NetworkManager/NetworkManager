@@ -3795,6 +3795,7 @@ check-local-clients-tests-test-client: clients/cli/nmcli clients/tests/test-clie
 	LD_LIBRARY_PATH="$(abs_builddir)/libnm/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}" \
 	NM_TEST_CLIENT_BUILDDIR="$(abs_builddir)" \
 	NM_TEST_CLIENT_NMCLI_PATH=clients/cli/nmcli \
+	"$(PYTHON)" \
 	$(srcdir)/clients/tests/test-client.py -v &> "$(builddir)/clients/tests/test-client.log" && r=ok; \
 	cat "$(builddir)/clients/tests/test-client.log"; \
 	test "$$r" == ok
