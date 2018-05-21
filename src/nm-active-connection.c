@@ -1014,7 +1014,8 @@ auth_complete (NMActiveConnection *self, gboolean result, const char *message)
 	nm_assert (!priv->auth.call_id_network_control);
 	nm_assert (!priv->auth.call_id_wifi_shared_permission);
 	if (priv->auth.result_func) {
-		result_func = g_steal_pointer (&priv->auth.result_func);
+		result_func = priv->auth.result_func;
+		priv->auth.result_func = NULL;
 		user_data = g_steal_pointer (&priv->auth.user_data);
 
 		result_func (self,
