@@ -5,6 +5,7 @@ libnm_core_headers = files(
   'nm-core-types.h',
   'nm-dbus-interface.h',
   'nm-errors.h',
+  'nm-setting-6lowpan.h',
   'nm-setting-8021x.h',
   'nm-setting-adsl.h',
   'nm-setting-bluetooth.h',
@@ -56,6 +57,7 @@ libnm_core_headers = files(
 )
 
 libnm_core_settings_sources = files(
+  'nm-setting-6lowpan.c',
   'nm-setting-8021x.c',
   'nm-setting-adsl.c',
   'nm-setting-bluetooth.c',

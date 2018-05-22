@@ -37,6 +37,7 @@
 
 #include "nm-connection.h"
 #include "nm-core-enum-types.h"
+#include "nm-setting-6lowpan.h"
 #include "nm-setting-8021x.h"
 #include "nm-setting-adsl.h"
 #include "nm-setting-bluetooth.h"

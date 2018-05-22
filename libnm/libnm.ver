@@ -1355,6 +1355,7 @@ global:
 	nm_ip_tunnel_flags_get_type;
 	nm_remote_connection_get_filename;
 	nm_remote_connection_get_flags;
+	nm_setting_6lowpan_get_type;
 	nm_setting_connection_get_mdns;
 	nm_setting_connection_mdns_get_type;
 	nm_setting_ip_tunnel_get_flags;

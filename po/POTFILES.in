@@ -57,6 +57,7 @@ libnm-core/crypto_nss.c
 libnm-core/nm-connection.c
 libnm-core/nm-dbus-utils.c
 libnm-core/nm-keyfile.c
+libnm-core/nm-setting-6lowpan.c
 libnm-core/nm-setting-8021x.c
 libnm-core/nm-setting-adsl.c
 libnm-core/nm-setting-bluetooth.c

@@ -833,6 +833,8 @@ _supports_addr_family (NMConnection *self, int family)
 		return TRUE;
 	if (strcmp (connection_type, NM_SETTING_WPAN_SETTING_NAME) == 0)
 		return FALSE;
+	if (strcmp (connection_type, NM_SETTING_6LOWPAN_SETTING_NAME) == 0)
+		return family == AF_INET6 || family == AF_UNSPEC;
 
 	return !nm_setting_connection_get_master (nm_connection_get_setting_connection (self));
 }
@@ -2100,7 +2102,8 @@ nm_connection_is_virtual (NMConnection *connection)
 	if (!type)
 		return FALSE;
 
-	if (   !strcmp (type, NM_SETTING_BOND_SETTING_NAME)
+	if (   !strcmp (type, NM_SETTING_6LOWPAN_SETTING_NAME)
+	    || !strcmp (type, NM_SETTING_BOND_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_DUMMY_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_TEAM_SETTING_NAME)
 	    || !strcmp (type, NM_SETTING_BRIDGE_SETTING_NAME)
@@ -2179,6 +2182,22 @@ nm_connection_get_virtual_device_description (NMConnection *connection)
 }
 
 /*****************************************************************************/
+
+/**
+ * nm_connection_get_setting_6lowpan:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSetting6Lowpan the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSetting6Lowpan if the connection contains one, otherwise %NULL
+ *
+ * Since: 1.14
+ **/
+NMSetting6Lowpan *
+nm_connection_get_setting_6lowpan (NMConnection *connection)
+{
+	return _connection_get_setting_check (connection, NM_TYPE_SETTING_6LOWPAN);
+}
 
 /**
  * nm_connection_get_setting_802_1x:

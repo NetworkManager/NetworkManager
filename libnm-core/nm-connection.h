@@ -193,6 +193,8 @@ const char *  nm_connection_get_connection_type (NMConnection *connection);
 gboolean      nm_connection_is_virtual          (NMConnection *connection);
 char *        nm_connection_get_virtual_device_description (NMConnection *connection);
 
+NM_AVAILABLE_IN_1_14
+NMSetting6Lowpan *         nm_connection_get_setting_6lowpan           (NMConnection *connection);
 NMSetting8021x *           nm_connection_get_setting_802_1x            (NMConnection *connection);
 NMSettingBluetooth *       nm_connection_get_setting_bluetooth         (NMConnection *connection);
 NMSettingBond *            nm_connection_get_setting_bond              (NMConnection *connection);

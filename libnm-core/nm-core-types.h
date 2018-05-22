@@ -29,6 +29,7 @@
 
 typedef struct _NMConnection              NMConnection;
 typedef struct _NMSetting                 NMSetting;
+typedef struct _NMSetting6Lowpan          NMSetting6Lowpan;
 typedef struct _NMSetting8021x            NMSetting8021x;
 typedef struct _NMSettingAdsl             NMSettingAdsl;
 typedef struct _NMSettingBluetooth        NMSettingBluetooth;

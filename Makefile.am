@@ -394,6 +394,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-core-types.h \
 	libnm-core/nm-dbus-interface.h \
 	libnm-core/nm-errors.h \
+	libnm-core/nm-setting-6lowpan.h \
 	libnm-core/nm-setting-8021x.h \
 	libnm-core/nm-setting-adsl.h \
 	libnm-core/nm-setting-bluetooth.h \
@@ -463,6 +464,7 @@ libnm_core_lib_h_priv = \
 	libnm-core/nm-setting-private.h \
 	libnm-core/nm-utils-private.h
 libnm_core_lib_c_settings_real = \
+	libnm-core/nm-setting-6lowpan.c \
 	libnm-core/nm-setting-8021x.c \
 	libnm-core/nm-setting-adsl.c \
 	libnm-core/nm-setting-bluetooth.c \

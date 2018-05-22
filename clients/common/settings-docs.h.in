@@ -1,5 +1,7 @@
 /* Generated file. Do not edit. */
 
+#define DESCRIBE_DOC_NM_SETTING_6LOWPAN_NAME N_("The setting's name, which uniquely identifies the setting within the connection.  Each setting type has a name unique to that type, for example \"ppp\" or \"wireless\" or \"wired\".")
+#define DESCRIBE_DOC_NM_SETTING_6LOWPAN_PARENT N_("If given, specifies the parent interface name or parent connection UUID from which this 6LowPAN interface should be created.")
 #define DESCRIBE_DOC_NM_SETTING_OLPC_MESH_CHANNEL N_("Channel on which the mesh network to join is located.")
 #define DESCRIBE_DOC_NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS N_("Anycast DHCP MAC address used when requesting an IP address via DHCP. The specific anycast address used determines which DHCP server class answers the request.")
 #define DESCRIBE_DOC_NM_SETTING_OLPC_MESH_NAME N_("The setting's name, which uniquely identifies the setting within the connection.  Each setting type has a name unique to that type, for example \"ppp\" or \"wireless\" or \"wired\".")
