@@ -2014,6 +2014,15 @@ It's equivalent to the <literal>+bond.options 'option=value'</literal> syntax.</
     </tbody>
     </tgroup></table>
 
+    <table><title>6LoWPAN options</title><tgroup cols="2">
+    <thead>
+      <row><entry>Alias</entry><entry>Property</entry></row>
+    </thead>
+    <tbody>
+      <row><entry align="left">dev</entry><entry align="left"><link linkend="nm-settings.property.6lowpan.dev">6lowpan.parent</link></entry></row>
+    </tbody>
+    </tgroup></table>
+
     <table><title>IPv4 options</title><tgroup cols="3">
     <thead>
       <row><entry>Alias</entry><entry>Property</entry><entry>Note</entry></row>

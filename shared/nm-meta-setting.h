@@ -56,6 +56,7 @@ extern const NMSetting8021xSchemeVtable nm_setting_8021x_scheme_vtable[_NM_SETTI
 /*****************************************************************************/
 
 typedef enum {
+	NM_META_SETTING_TYPE_6LOWPAN,
 	NM_META_SETTING_TYPE_802_1X,
 	NM_META_SETTING_TYPE_ADSL,
 	NM_META_SETTING_TYPE_BLUETOOTH,

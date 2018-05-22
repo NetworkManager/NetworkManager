@@ -7488,6 +7488,19 @@ static const NMMetaPropertyInfo *const property_infos_WPAN[] = {
 	NULL
 };
 
+#undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_6LOWPAN
+static const NMMetaPropertyInfo *const property_infos_6LOWPAN[] = {
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_6LOWPAN_PARENT,
+		.is_cli_option =                TRUE,
+		.property_alias =               "dev",
+		.inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
+		.prompt =                       N_("IEEE 802.15.4 (WPAN) parent device or connection UUID"),
+		.property_type =                &_pt_gobject_string,
+	),
+	NULL
+};
+
 /*****************************************************************************/
 
 static void
@@ -7649,6 +7662,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_WIRELESS            N_("Wi-Fi connection")
 #define SETTING_PRETTY_NAME_WIRELESS_SECURITY   N_("Wi-Fi security settings")
 #define SETTING_PRETTY_NAME_WPAN                N_("WPAN settings")
+#define SETTING_PRETTY_NAME_6LOWPAN             N_("6LOWPAN settings")
 
 #define NM_META_SETTING_VALID_PARTS(...) \
 	((const NMMetaSettingValidPartItem *const[]) { __VA_ARGS__  NULL })
@@ -7676,6 +7690,12 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 		.pretty_name =                      SETTING_PRETTY_NAME_##type, \
 		__VA_ARGS__ \
 	}
+	SETTING_INFO (6LOWPAN,
+		.valid_parts = NM_META_SETTING_VALID_PARTS (
+			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (6LOWPAN,               TRUE),
+		),
+	),
 	SETTING_INFO (802_1X),
 	SETTING_INFO (ADSL,
 		.valid_parts = NM_META_SETTING_VALID_PARTS (

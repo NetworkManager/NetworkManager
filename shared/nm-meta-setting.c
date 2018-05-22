@@ -23,6 +23,7 @@
 
 #include "nm-meta-setting.h"
 
+#include "nm-setting-6lowpan.h"
 #include "nm-setting-8021x.h"
 #include "nm-setting-adsl.h"
 #include "nm-setting-bluetooth.h"
@@ -146,6 +147,11 @@ const NMSetting8021xSchemeVtable nm_setting_8021x_scheme_vtable[] = {
 /*****************************************************************************/
 
 const NMMetaSettingInfo nm_meta_setting_infos[] = {
+	[NM_META_SETTING_TYPE_6LOWPAN] = {
+		.meta_type =                NM_META_SETTING_TYPE_6LOWPAN,
+		.setting_name =             NM_SETTING_6LOWPAN_SETTING_NAME,
+		.get_setting_gtype =        nm_setting_6lowpan_get_type,
+	},
 	[NM_META_SETTING_TYPE_802_1X] = {
 		.meta_type =                NM_META_SETTING_TYPE_802_1X,
 		.setting_name =             NM_SETTING_802_1X_SETTING_NAME,
