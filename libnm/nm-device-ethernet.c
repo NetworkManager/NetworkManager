@@ -92,9 +92,9 @@ nm_device_ethernet_get_permanent_hw_address (NMDeviceEthernet *device)
  * nm_device_ethernet_get_speed:
  * @device: a #NMDeviceEthernet
  *
- * Gets the speed of the #NMDeviceEthernet.
+ * Gets the speed of the #NMDeviceEthernet in Mbit/s.
  *
- * Returns: the speed of the device
+ * Returns: the speed of the device in Mbit/s
  **/
 guint32
 nm_device_ethernet_get_speed (NMDeviceEthernet *device)
