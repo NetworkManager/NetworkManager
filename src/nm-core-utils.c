@@ -2820,7 +2820,7 @@ nm_utils_secret_key_read (gsize *out_key_len, GError **error)
 		/* RFC7217 mandates the key SHOULD be at least 128 bits.
 		 * Let's use twice as much. */
 		key_len = 32;
-		secret_key = g_malloc (key_len);
+		secret_key = g_malloc (key_len + 1);
 
 		if (!nm_utils_random_bytes (secret_key, key_len)) {
 			g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN,
@@ -2828,6 +2828,10 @@ nm_utils_secret_key_read (gsize *out_key_len, GError **error)
 			key_len = 0;
 			goto out;
 		}
+
+		/* the secret-key is binary. Still, ensure that it's NULL terminated, just like
+		 * g_file_set_contents() does. */
+		secret_key[32] = '\0';
 
 		key_mask = umask (0077);
 		if (!g_file_set_contents (NMSTATEDIR "/secret_key", (char *) secret_key, key_len, error)) {
