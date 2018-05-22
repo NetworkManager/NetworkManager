@@ -5783,6 +5783,41 @@ nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
 
+static gboolean
+link_6lowpan_add (NMPlatform *platform,
+                  const char *name,
+                  int parent,
+                  const NMPlatformLink **out_link)
+{
+	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+	struct nlattr *info;
+
+	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
+	                          NLM_F_CREATE | NLM_F_EXCL,
+	                          0,
+	                          name,
+	                          0,
+	                          0);
+	if (!nlmsg)
+		return FALSE;
+
+	NLA_PUT_U32 (nlmsg, IFLA_LINK, parent);
+
+	if (!(info = nla_nest_start (nlmsg, IFLA_LINKINFO)))
+		goto nla_put_failure;
+
+	NLA_PUT_STRING (nlmsg, IFLA_INFO_KIND, "lowpan");
+
+	nla_nest_end (nlmsg, info);
+
+	return do_add_link_with_lookup (platform,
+	                                NM_LINK_TYPE_6LOWPAN,
+	                                name, nlmsg, out_link);
+nla_put_failure:
+	g_return_val_if_reached (FALSE);
+}
+
+
 static void
 _vlan_change_vlan_qos_mapping_create (gboolean is_ingress_map,
                                       gboolean reset_all,
@@ -7358,6 +7393,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_ipip_add = link_ipip_add;
 	platform_class->link_sit_add = link_sit_add;
 	platform_class->link_tun_add = link_tun_add;
+	platform_class->link_6lowpan_add = link_6lowpan_add;
 
 	platform_class->object_delete = object_delete;
 	platform_class->ip4_address_add = ip4_address_add;
