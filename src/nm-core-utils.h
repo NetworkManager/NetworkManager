@@ -283,7 +283,8 @@ gboolean nm_utils_file_set_contents (const gchar *filename,
 char *nm_utils_machine_id_read (void);
 gboolean nm_utils_machine_id_parse (const char *id_str, /*uuid_t*/ guchar *out_uuid);
 
-guint8 *nm_utils_secret_key_read (gsize *out_key_len, GError **error);
+gboolean nm_utils_secret_key_get (const guint8 **out_secret_key,
+                                  gsize *out_key_len);
 
 const char *nm_utils_get_boot_id (void);
 
