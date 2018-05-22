@@ -1177,8 +1177,9 @@ _get_stable_id (NMDevice *self,
 		uuid = nm_connection_get_uuid (connection);
 
 		stable_type = nm_utils_stable_id_parse (stable_id,
-		                                        uuid,
+		                                        nm_device_get_ip_iface (self),
 		                                        NULL,
+		                                        uuid,
 		                                        &generated);
 
 		/* current_stable_id_type is a bitfield! */
