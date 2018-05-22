@@ -51,6 +51,7 @@
 #include "nm-access-point.h"
 #include "nm-active-connection.h"
 #include "nm-checkpoint.h"
+#include "nm-device-6lowpan.h"
 #include "nm-device-adsl.h"
 #include "nm-device-bond.h"
 #include "nm-device-bridge.h"
@@ -2524,6 +2525,8 @@ obj_nm_for_gdbus_object (NMClient *self, GDBusObject *object, GDBusObjectManager
 			type = NM_TYPE_ACCESS_POINT;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_ACTIVE_CONNECTION) == 0 && type != NM_TYPE_VPN_CONNECTION)
 			type = NM_TYPE_ACTIVE_CONNECTION;
+		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_6LOWPAN) == 0)
+			type = NM_TYPE_DEVICE_6LOWPAN;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_ADSL) == 0)
 			type = NM_TYPE_DEVICE_ADSL;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_BOND) == 0)

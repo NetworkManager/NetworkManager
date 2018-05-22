@@ -31,6 +31,7 @@ typedef struct _NMActiveConnection   NMActiveConnection;
 typedef struct _NMCheckpoint         NMCheckpoint;
 typedef struct _NMClient             NMClient;
 typedef struct _NMDevice             NMDevice;
+typedef struct _NMDevice6Lowpan      NMDevice6Lowpan;
 typedef struct _NMDeviceAdsl         NMDeviceAdsl;
 typedef struct _NMDeviceBond         NMDeviceBond;
 typedef struct _NMDeviceBridge       NMDeviceBridge;

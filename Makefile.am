@@ -780,6 +780,7 @@ libnm_lib_h_pub_real = \
 	libnm/nm-autoptr.h \
 	libnm/nm-checkpoint.h \
 	libnm/nm-client.h \
+	libnm/nm-device-6lowpan.h \
 	libnm/nm-device-adsl.h \
 	libnm/nm-device-bond.h \
 	libnm/nm-device-bridge.h \
@@ -837,6 +838,7 @@ libnm_lib_c_real = \
 	libnm/nm-checkpoint.c \
 	libnm/nm-client.c \
 	libnm/nm-dbus-helpers.c \
+	libnm/nm-device-6lowpan.c \
 	libnm/nm-device-adsl.c \
 	libnm/nm-device-bond.c \
 	libnm/nm-device-bridge.c \

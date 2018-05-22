@@ -29,6 +29,7 @@
 #include "nm-connection.h"
 #include "nm-core-enum-types.h"
 #include "nm-dbus-interface.h"
+#include "nm-device-6lowpan.h"
 #include "nm-device-adsl.h"
 #include "nm-device-bond.h"
 #include "nm-device-bridge.h"

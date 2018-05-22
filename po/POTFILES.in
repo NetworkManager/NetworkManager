@@ -131,6 +131,7 @@ libnm-util/nm-setting-wired.c
 libnm-util/nm-setting-wireless-security.c
 libnm-util/nm-setting-wireless.c
 libnm-util/nm-utils.c
+libnm/nm-device-6lowpan.c
 libnm/nm-device-adsl.c
 libnm/nm-device-bond.c
 libnm/nm-device-bridge.c
