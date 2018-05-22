@@ -1572,6 +1572,8 @@ src_libNetworkManager_la_SOURCES = \
 	src/devices/nm-device-logging.h \
 	src/devices/nm-device-private.h \
 	\
+	src/devices/nm-device-6lowpan.c \
+	src/devices/nm-device-6lowpan.h \
 	src/devices/nm-device-bond.c \
 	src/devices/nm-device-bond.h \
 	src/devices/nm-device-bridge.c \

@@ -1940,6 +1940,8 @@ nm_device_get_route_metric_default (NMDeviceType device_type)
 		return 700;
 	case NM_DEVICE_TYPE_BT:
 		return 750;
+	case NM_DEVICE_TYPE_6LOWPAN:
+		return 775;
 	case NM_DEVICE_TYPE_OVS_BRIDGE:
 	case NM_DEVICE_TYPE_OVS_INTERFACE:
 	case NM_DEVICE_TYPE_OVS_PORT:

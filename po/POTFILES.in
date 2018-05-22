@@ -172,6 +172,7 @@ src/dns/nm-dns-manager.c
 src/devices/adsl/nm-device-adsl.c
 src/devices/bluetooth/nm-bluez-device.c
 src/devices/bluetooth/nm-device-bt.c
+src/devices/nm-device-6lowpan.c
 src/devices/nm-device-bond.c
 src/devices/nm-device-bridge.c
 src/devices/nm-device-dummy.c

@@ -417,6 +417,7 @@ nm_device_factory_manager_load_factories (NMDeviceFactoryManagerFactoryFunc call
 		                        callback, user_data); \
 	} G_STMT_END
 
+	_ADD_INTERNAL (nm_6lowpan_device_factory_get_type);
 	_ADD_INTERNAL (nm_bond_device_factory_get_type);
 	_ADD_INTERNAL (nm_bridge_device_factory_get_type);
 	_ADD_INTERNAL (nm_dummy_device_factory_get_type);

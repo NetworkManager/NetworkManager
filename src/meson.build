@@ -93,6 +93,7 @@ libnetwork_manager_base = static_library(
 
 sources = files(
   'devices/nm-acd-manager.c',
+  'devices/nm-device-6lowpan.c',
   'devices/nm-device-bond.c',
   'devices/nm-device-bridge.c',
   'devices/nm-device.c',
