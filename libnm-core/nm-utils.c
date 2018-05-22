@@ -3827,9 +3827,11 @@ nm_utils_hwaddr_valid (const char *asc, gssize length)
 		if (!hwaddr_aton (asc, buf, length, &l))
 			return FALSE;
 		return length == l;
-	} else if (length == -1) {
+	} else if (length == -1)
 		return !!hwaddr_aton (asc, buf, sizeof (buf), &l);
-	} else
+	else if (length == 0)
+		return FALSE;
+	else
 		g_return_val_if_reached (FALSE);
 }
 
