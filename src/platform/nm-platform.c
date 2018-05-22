@@ -2088,6 +2088,70 @@ nm_platform_link_tun_add (NMPlatform *self,
 	return NM_PLATFORM_ERROR_SUCCESS;
 }
 
+/**
+ * nm_platform_6lowpan_add:
+ * @self: platform instance
+ * @parent: parent link
+ * @name: name of the new interface
+ * @out_link: on success, the link object
+ *
+ * Create a 6LoWPAN interface.
+ */
+NMPlatformError
+nm_platform_link_6lowpan_add (NMPlatform *self,
+                              const char *name,
+                              int parent,
+                              const NMPlatformLink **out_link)
+{
+	NMPlatformError plerr;
+
+	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
+
+	g_return_val_if_fail (name, NM_PLATFORM_ERROR_BUG);
+
+	plerr = _link_add_check_existing (self, name, NM_LINK_TYPE_6LOWPAN, out_link);
+	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
+		return plerr;
+
+	_LOGD ("adding 6lowpan '%s' parent %u", name, parent);
+
+	if (!klass->link_6lowpan_add (self, name, parent, out_link))
+		return NM_PLATFORM_ERROR_UNSPECIFIED;
+	return NM_PLATFORM_ERROR_SUCCESS;
+}
+
+gboolean
+nm_platform_link_6lowpan_get_properties (NMPlatform *self, int ifindex, int *out_parent)
+{
+	const NMPlatformLink *plink;
+	_CHECK_SELF (self, klass, FALSE);
+
+	plink = nm_platform_link_get (self, ifindex);
+
+	if (!plink)
+		return FALSE;
+	if (plink->type != NM_LINK_TYPE_6LOWPAN)
+		return FALSE;
+
+	if (plink->parent != 0) {
+		NM_SET_OUT (out_parent, plink->parent);
+		return TRUE;
+	}
+
+	/* As of 4.16 kernel does not expose the peer_ifindex as IFA_LINK.
+	 * Find the WPAN device with the same MAC address. */
+	if (out_parent) {
+		const NMPlatformLink *parent_plink;
+
+		parent_plink = nm_platform_link_get_by_address (self, NM_LINK_TYPE_WPAN,
+		                                                plink->addr.data,
+		                                                plink->addr.len);
+		NM_SET_OUT (out_parent, parent_plink ? parent_plink->ifindex : -1);
+	}
+
+	return TRUE;
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -2539,6 +2603,7 @@ nm_platform_link_ipip_add (NMPlatform *self,
  * nm_platform_macsec_add:
  * @self: platform instance
  * @name: name of the new interface
+ * @parent: parent link
  * @props: interface properties
  * @out_link: on success, the link object
  *
