@@ -351,6 +351,7 @@ NM_UTILS_LOOKUP_STR_DEFINE (nmc_device_reason_to_string, NMDeviceStateReason,
 	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_OVSDB_FAILED,                   N_("OpenVSwitch database connection failed")),
 	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_IP_ADDRESS_DUPLICATE,           N_("A duplicate IP address was detected")),
 	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_IP_METHOD_UNSUPPORTED,          N_("The selected IP method is not supported")),
+	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_SRIOV_CONFIGURATION_FAILED,     N_("Failed to configure SR-IOV parameters")),
 )
 
 NM_UTILS_LOOKUP_STR_DEFINE (nm_active_connection_state_reason_to_string, NMActiveConnectionStateReason,
