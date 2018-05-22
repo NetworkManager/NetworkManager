@@ -1177,7 +1177,6 @@ _get_stable_id (NMDevice *self,
 		uuid = nm_connection_get_uuid (connection);
 
 		stable_type = nm_utils_stable_id_parse (stable_id,
-		                                        NULL,
 		                                        nm_device_get_ip_iface (self),
 		                                        NULL,
 		                                        uuid,
@@ -1199,12 +1198,12 @@ _get_stable_id (NMDevice *self,
 			nm_assert (stable_type == NM_UTILS_STABLE_TYPE_RANDOM);
 			priv->current_stable_id = nm_str_realloc (nm_utils_stable_id_random ());
 		}
-
 		_LOGT (LOGD_DEVICE,
-		       "stable-id: type=%d, \"%s\"%s",
+		       "stable-id: type=%d, \"%s\""
+		       "%s%s%s",
 		       (int) priv->current_stable_id_type,
 		       priv->current_stable_id,
-		       stable_type == NM_UTILS_STABLE_TYPE_GENERATED ? " (generated)" : "");
+		       NM_PRINT_FMT_QUOTED (stable_type == NM_UTILS_STABLE_TYPE_GENERATED, " from \"", generated, "\"", ""));
 	}
 
 	*out_stable_type = priv->current_stable_id_type;
@@ -13501,8 +13500,6 @@ nm_device_spawn_iface_helper (NMDevice *self)
 		if (nm_logging_enabled (LOGL_DEBUG, LOGD_DEVICE)) {
 			char *tmp;
 
-			/* Beware, we may print here --stable-id, which may contain ${HOST} specifier,
-			 * which essentially is the SHA1 sum of secret-key. */
 			tmp = g_strjoinv (" ", (char **) argv->pdata);
 			_LOGD (LOGD_DEVICE, "running '%s'", tmp);
 			g_free (tmp);

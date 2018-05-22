@@ -1547,15 +1547,15 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * identifier with ipv4.dhcp-client-id=stable.
 	 *
 	 * Note that depending on the context where it is used, other parameters are
-	 * also seeded into the generation algorithm. For example with
-	 * ipv6.addr-gen-mode=stable-privacy, also the device's name and a per-host
-	 * key is included, so that different systems and interfaces yield different
-	 * addresses.
+	 * also seeded into the generation algorithm. For example, a per-host key
+	 * is commonly also included, so that different systems end up generating
+	 * different IDs. Or with ipv6.addr-gen-mode=stable-privacy, also the device's
+	 * name is included, so that different interfaces yield different addresses.
 	 *
 	 * The '$' character is treated special to perform dynamic substitutions
-	 * at runtime. Currently supported are "${CONNECTION}", "${HOST}", "${DEVICE}",
+	 * at runtime. Currently supported are "${CONNECTION}", "${DEVICE}",
 	 * "${BOOT}", "${RANDOM}".
-	 * These effectively create unique IDs per-connection, per-host, per-device, per-boot,
+	 * These effectively create unique IDs per-connection, per-device, per-boot,
 	 * or every time. Note that "${DEVICE}" corresponds the the interface name of the
 	 * device.
 	 * Any unrecognized patterns following '$' are treated verbatim, however
