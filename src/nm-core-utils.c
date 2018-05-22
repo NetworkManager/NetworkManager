@@ -2896,6 +2896,44 @@ nm_utils_secret_key_get (const guint8 **out_secret_key,
 	return secret_key->is_good;
 }
 
+static gboolean
+_secret_key_get_opaque (guint32 salt /* number in host-order */,
+                        char *out_hashed_key /* at least 41 bytes */)
+{
+	gboolean good_secret_key;
+	const guint8 *secret_key;
+	gsize key_len;
+	GChecksum *sum;
+	guint8 buf[20];
+	gsize buf_size;
+
+	/* returns the SHA1 sum of the secret-key in ASCII. Also, it includes
+	 * a salt, so that one cannot obtain the secret-key from the hashed value. */
+
+	nm_assert (salt != 0);
+	nm_assert (out_hashed_key);
+
+	salt = htons (salt);
+
+	good_secret_key = nm_utils_secret_key_get (&secret_key, &key_len);
+
+	sum = g_checksum_new (G_CHECKSUM_SHA1);
+	g_checksum_update (sum, (const guchar *) &salt, sizeof (salt));
+	g_checksum_update (sum, (const guchar *) secret_key, key_len);
+
+	buf_size = sizeof (buf);
+	g_checksum_get_digest (sum, buf, &buf_size);
+	nm_assert (buf_size == sizeof (buf));
+
+	g_checksum_free (sum);
+
+	/* converting a buffer of 20 bytes to ascii (without delimiter) requires
+	 * at least 41 bytes. @out_hashed_key must be this large.  */
+	_nm_utils_bin2str_full (buf, sizeof (buf), '\0', FALSE, out_hashed_key);
+
+	return good_secret_key;
+}
+
 /*****************************************************************************/
 
 const char *
@@ -3181,12 +3219,15 @@ _stable_id_append (GString *str,
 
 NMUtilsStableType
 nm_utils_stable_id_parse (const char *stable_id,
-                          const char *uuid,
+                          const char *hostid,
+                          const char *deviceid,
                           const char *bootid,
+                          const char *uuid,
                           char **out_generated)
 {
 	gsize i, idx_start;
 	GString *str = NULL;
+	char hostid_buf[41];
 
 	g_return_val_if_fail (out_generated, NM_UTILS_STABLE_TYPE_RANDOM);
 
@@ -3257,6 +3298,15 @@ nm_utils_stable_id_parse (const char *stable_id,
 			_stable_id_append (str, uuid);
 		else if (CHECK_PREFIX ("${BOOT}"))
 			_stable_id_append (str, bootid ?: nm_utils_get_boot_id ());
+		else if (CHECK_PREFIX ("${HOST}")) {
+			if (!hostid) {
+				/* use an arbitrary, but fixed salt. */
+				_secret_key_get_opaque (336556219u, hostid_buf);
+				hostid = hostid_buf;
+			}
+			_stable_id_append (str, hostid);
+		} else if (CHECK_PREFIX ("${DEVICE}"))
+			_stable_id_append (str, deviceid);
 		else if (g_str_has_prefix (&stable_id[i], "${RANDOM}")) {
 			/* RANDOM makes not so much sense for cloned-mac-address
 			 * as the result is simmilar to specyifing "cloned-mac-address=random".

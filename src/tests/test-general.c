@@ -1621,7 +1621,7 @@ do_test_stable_id_parse (const char *stable_id,
 	else
 		g_assert (stable_id);
 
-	stable_type = nm_utils_stable_id_parse (stable_id, "_CONNECTION", "_BOOT", &generated);
+	stable_type = nm_utils_stable_id_parse (stable_id, "_HOST", "_DEVICE", "_BOOT", "_CONNECTION", &generated);
 
 	g_assert_cmpint (expected_stable_type, ==, stable_type);
 
