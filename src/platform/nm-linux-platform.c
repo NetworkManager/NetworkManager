@@ -5528,15 +5528,17 @@ nla_put_failure:
 }
 
 static gboolean
-link_set_sriov_num_vfs (NMPlatform *platform, int ifindex, guint num_vfs)
+link_set_sriov_params (NMPlatform *platform,
+                       int ifindex,
+                       guint num_vfs,
+                       int autoprobe)
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
 	nm_auto_close int dirfd = -1;
-	int total, current;
+	gboolean current_autoprobe;
+	guint total, current_num;
 	char ifname[IFNAMSIZ];
 	char buf[64];
-
-	_LOGD ("link: change %d: num VFs: %u", ifindex, num_vfs);
 
 	if (!nm_platform_netns_push (platform, &netns))
 		return FALSE;
@@ -5545,46 +5547,69 @@ link_set_sriov_num_vfs (NMPlatform *platform, int ifindex, guint num_vfs)
 	if (!dirfd)
 		return FALSE;
 
-	total = nm_platform_sysctl_get_int32 (platform,
-	                                      NMP_SYSCTL_PATHID_NETDIR (dirfd,
-	                                                                ifname,
-	                                                                "device/sriov_totalvfs"),
-	                                      -1);
-	if (total < 1)
+	total = nm_platform_sysctl_get_int_checked (platform,
+	                                            NMP_SYSCTL_PATHID_NETDIR (dirfd,
+	                                                                      ifname,
+	                                                                      "device/sriov_totalvfs"),
+	                                            10, 0, G_MAXUINT, 0);
+	if (errno)
 		return FALSE;
 	if (num_vfs > total) {
 		_LOGW ("link: %d only supports %u VFs (requested %u)", ifindex, total, num_vfs);
 		num_vfs = total;
 	}
 
-	current = nm_platform_sysctl_get_int32 (platform,
-	                                        NMP_SYSCTL_PATHID_NETDIR (dirfd,
-	                                                                  ifname,
-	                                                                  "device/sriov_numvfs"),
-	                                        -1);
-	if (current == num_vfs)
+	/*
+	 * Take special care when setting new values:
+	 *  - don't touch anything if the right values are already set
+	 *  - to change the number of VFs or autoprobe we need to destroy existing VFs
+	 *  - the autoprobe setting is irrelevant when numvfs is zero
+	 */
+	current_num = nm_platform_sysctl_get_int_checked (platform,
+	                                                  NMP_SYSCTL_PATHID_NETDIR (dirfd,
+	                                                                            ifname,
+	                                                                            "device/sriov_numvfs"),
+	                                                  10, 0, G_MAXUINT, 0);
+	current_autoprobe = nm_platform_sysctl_get_int_checked (platform,
+	                                                        NMP_SYSCTL_PATHID_NETDIR (dirfd,
+	                                                                                  ifname,
+	                                                                                  "device/sriov_drivers_autoprobe"),
+	                                                        10, 0, G_MAXUINT, 0);
+	if (   current_num == num_vfs
+	    && (autoprobe == -1 || current_autoprobe == autoprobe))
 		return TRUE;
 
-	if (current != 0) {
-		/* We need to destroy all other VFs before changing the value */
+	if (current_num != 0) {
+		/* We need to destroy all other VFs before changing any value */
 		if (!nm_platform_sysctl_set (NM_PLATFORM_GET,
 		                             NMP_SYSCTL_PATHID_NETDIR (dirfd,
 		                                                       ifname,
 		                                                      "device/sriov_numvfs"),
 		                             "0")) {
-			_LOGW ("link: couldn't set SR-IOV num_vfs to %d: %s", 0, strerror (errno));
+			_LOGW ("link: couldn't reset SR-IOV num_vfs: %s", strerror (errno));
 			return FALSE;
 		}
-		if (num_vfs == 0)
-			return TRUE;
 	}
 
-	/* Finally, set the desired value */
+	if (num_vfs == 0)
+		return TRUE;
+
+	if (   autoprobe >= 0
+	    && current_autoprobe != autoprobe
+	    && !nm_platform_sysctl_set (NM_PLATFORM_GET,
+	                                NMP_SYSCTL_PATHID_NETDIR (dirfd,
+	                                                          ifname,
+	                                                          "device/sriov_drivers_autoprobe"),
+	                                nm_sprintf_buf (buf, "%d", autoprobe))) {
+		_LOGW ("link: couldn't set SR-IOV drivers-autoprobe to %d: %s", autoprobe, strerror (errno));
+		return FALSE;
+	}
+
 	if (!nm_platform_sysctl_set (NM_PLATFORM_GET,
 	                             NMP_SYSCTL_PATHID_NETDIR (dirfd,
 	                                                       ifname,
 	                                                       "device/sriov_numvfs"),
-	                             nm_sprintf_buf (buf, "%d", num_vfs))) {
+	                             nm_sprintf_buf (buf, "%u", num_vfs))) {
 		_LOGW ("link: couldn't set SR-IOV num_vfs to %d: %s", num_vfs, strerror (errno));
 		return FALSE;
 	}
@@ -7735,7 +7760,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_get_permanent_address = link_get_permanent_address;
 	platform_class->link_set_mtu = link_set_mtu;
 	platform_class->link_set_name = link_set_name;
-	platform_class->link_set_sriov_num_vfs = link_set_sriov_num_vfs;
+	platform_class->link_set_sriov_params = link_set_sriov_params;
 
 	platform_class->link_get_physical_port_id = link_get_physical_port_id;
 	platform_class->link_get_dev_id = link_get_dev_id;

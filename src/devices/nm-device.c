@@ -3951,8 +3951,8 @@ device_init_sriov_num_vfs (NMDevice *self)
 		                                          NULL);
 		num_vfs = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXINT32, -1);
 		if (num_vfs >= 0) {
-			nm_platform_link_set_sriov_num_vfs (nm_device_get_platform (self),
-			                                    priv->ifindex, num_vfs);
+			nm_platform_link_set_sriov_params (nm_device_get_platform (self),
+			                                   priv->ifindex, num_vfs, -1);
 		}
 	}
 }
