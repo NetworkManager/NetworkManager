@@ -178,8 +178,15 @@ BuildRequires: ModemManager-glib-devel >= 1.0
 BuildRequires: newt-devel
 %endif
 BuildRequires: /usr/bin/dbus-launch
+%if 0%{?fedora} > 27 || 0%{?rhel} > 7
+BuildRequires: python3
+BuildRequires: python3-gobject-base
+BuildRequires: python3-dbus
+%else
+BuildRequires: python2
 BuildRequires: pygobject3-base
 BuildRequires: dbus-python
+%endif
 BuildRequires: libselinux-devel
 BuildRequires: polkit-devel
 BuildRequires: jansson-devel
