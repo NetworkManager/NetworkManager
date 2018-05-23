@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2004 - 2014 Red Hat, Inc.
+ * Copyright 2004 - 2018 Red Hat, Inc.
  * Copyright 2005 - 2008 Novell, Inc.
  */
 
@@ -3017,6 +3017,11 @@ nm_utils_get_ipv6_interface_identifier (NMLinkType link_type,
 		out_iid->id_u8[2] = 0x5E;
 		out_iid->id_u8[3] = 0xFE;
 		memcpy (out_iid->id_u8 + 4, &addr, 4);
+		return TRUE;
+	case NM_LINK_TYPE_6LOWPAN:
+		/* The hardware address is already 64-bit. This is the case for
+		* IEEE 802.15.4 networks. */
+		memcpy (out_iid->id_u8, hwaddr, sizeof (out_iid->id_u8));
 		return TRUE;
 	default:
 		if (hwaddr_len == ETH_ALEN) {
