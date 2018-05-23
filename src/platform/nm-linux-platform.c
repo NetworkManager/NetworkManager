@@ -215,6 +215,46 @@ G_STATIC_ASSERT (RTA_MAX == (__RTA_MAX - 1));
 
 /*****************************************************************************/
 
+/* Redefine VF enums and structures that are not available on older kernels. */
+
+#define IFLA_VF_UNSPEC                 0
+#define IFLA_VF_MAC                    1
+#define IFLA_VF_VLAN                   2
+#define IFLA_VF_TX_RATE                3
+#define IFLA_VF_SPOOFCHK               4
+#define IFLA_VF_LINK_STATE             5
+#define IFLA_VF_RATE                   6
+#define IFLA_VF_RSS_QUERY_EN           7
+#define IFLA_VF_STATS                  8
+#define IFLA_VF_TRUST                  9
+#define IFLA_VF_IB_NODE_GUID           10
+#define IFLA_VF_IB_PORT_GUID           11
+#define IFLA_VF_VLAN_LIST              12
+
+#define IFLA_VF_VLAN_INFO_UNSPEC       0
+#define IFLA_VF_VLAN_INFO              1
+
+/* valid for TRUST, SPOOFCHK, LINK_STATE, RSS_QUERY_EN */
+struct _ifla_vf_setting {
+	guint32 vf;
+	guint32 setting;
+};
+
+struct _ifla_vf_rate {
+	guint32 vf;
+	guint32 min_tx_rate;
+	guint32 max_tx_rate;
+};
+
+struct _ifla_vf_vlan_info {
+	guint32 vf;
+	guint32 vlan; /* 0 - 4095, 0 disables VLAN filter */
+	guint32 qos;
+	guint16 vlan_proto; /* VLAN protocol, either 802.1Q or 802.1ad */
+};
+
+/*****************************************************************************/
+
 #define _NMLOG_PREFIX_NAME                "platform-linux"
 #define _NMLOG_DOMAIN                     LOGD_PLATFORM
 #define _NMLOG2_DOMAIN                    LOGD_PLATFORM
@@ -5617,6 +5657,101 @@ link_set_sriov_params (NMPlatform *platform,
 	return TRUE;
 }
 
+static gboolean
+link_set_sriov_vfs (NMPlatform *platform, int ifindex, const NMPlatformVF *const *vfs)
+{
+	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+	struct nlattr *list, *info, *vlan_list;
+	guint i;
+
+	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
+	                          0,
+	                          ifindex,
+	                          NULL,
+	                          0,
+	                          0);
+	if (!nlmsg)
+		g_return_val_if_reached (NM_PLATFORM_ERROR_UNSPECIFIED);
+
+	if (!(list = nla_nest_start (nlmsg, IFLA_VFINFO_LIST)))
+		goto nla_put_failure;
+
+	for (i = 0; vfs[i]; i++) {
+		const NMPlatformVF *vf = vfs[i];
+
+		if (!(info = nla_nest_start (nlmsg, IFLA_VF_INFO)))
+			goto nla_put_failure;
+
+		if (vf->spoofchk >= 0) {
+			struct _ifla_vf_setting ivs = { 0 };
+
+			ivs.vf = vf->index;
+			ivs.setting = vf->spoofchk;
+			NLA_PUT (nlmsg, IFLA_VF_SPOOFCHK, sizeof (ivs), &ivs);
+		}
+
+		if (vf->trust >= 0) {
+			struct _ifla_vf_setting ivs = { 0 };
+
+			ivs.vf = vf->index;
+			ivs.setting = vf->trust;
+			NLA_PUT (nlmsg, IFLA_VF_TRUST, sizeof (ivs), &ivs);
+		}
+
+		if (vf->mac.len) {
+			struct ifla_vf_mac ivm = { 0 };
+
+			ivm.vf = vf->index;
+			memcpy (ivm.mac, vf->mac.data, vf->mac.len);
+			NLA_PUT (nlmsg, IFLA_VF_MAC, sizeof (ivm), &ivm);
+		}
+
+		if (vf->min_tx_rate || vf->max_tx_rate) {
+			struct _ifla_vf_rate ivr = { 0 };
+
+			ivr.vf = vf->index;
+			ivr.min_tx_rate = vf->min_tx_rate;
+			ivr.max_tx_rate = vf->max_tx_rate;
+			NLA_PUT (nlmsg, IFLA_VF_RATE, sizeof (ivr), &ivr);
+		}
+
+		/* Kernel only supports one VLAN per VF now. If this
+		 * changes in the future, we need to figure out how to
+		 * clear existing VLANs and set new ones in one message
+		 * with the new API.*/
+		if (vf->num_vlans > 1) {
+			_LOGW ("multiple VLANs per VF are not supported at the moment");
+			return FALSE;
+		} else {
+			struct _ifla_vf_vlan_info ivvi = { 0 };
+
+			if (!(vlan_list = nla_nest_start (nlmsg, IFLA_VF_VLAN_LIST)))
+				goto nla_put_failure;
+
+			ivvi.vf = vf->index;
+			if (vf->num_vlans == 1) {
+				ivvi.vlan = vf->vlans[0].id;
+				ivvi.qos = vf->vlans[0].qos;
+				ivvi.vlan_proto = htons (vf->vlans[0].proto_ad ? ETH_P_8021AD : ETH_P_8021Q);
+			} else {
+				/* Clear existing VLAN */
+				ivvi.vlan = 0;
+				ivvi.qos = 0;
+				ivvi.vlan_proto = htons (ETH_P_8021Q);
+			}
+
+			NLA_PUT (nlmsg, IFLA_VF_VLAN_INFO, sizeof (ivvi), &ivvi);
+			nla_nest_end (nlmsg, vlan_list);
+		}
+		nla_nest_end (nlmsg, info);
+	}
+	nla_nest_end (nlmsg, list);
+
+	return do_change_link (platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL) == NM_PLATFORM_ERROR_SUCCESS;
+nla_put_failure:
+	g_return_val_if_reached (FALSE);
+}
+
 static char *
 link_get_physical_port_id (NMPlatform *platform, int ifindex)
 {
@@ -7761,6 +7896,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_set_mtu = link_set_mtu;
 	platform_class->link_set_name = link_set_name;
 	platform_class->link_set_sriov_params = link_set_sriov_params;
+	platform_class->link_set_sriov_vfs = link_set_sriov_vfs;
 
 	platform_class->link_get_physical_port_id = link_get_physical_port_id;
 	platform_class->link_get_dev_id = link_get_dev_id;
