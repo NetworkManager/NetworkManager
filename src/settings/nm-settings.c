@@ -526,7 +526,7 @@ nm_settings_get_unmanaged_specs (NMSettings *self)
 }
 
 static NMSettingsPlugin *
-get_plugin (NMSettings *self, NMSettingsPluginCapabilities capability)
+get_plugin (NMSettings *self, gboolean has_add_connection)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	GSList *iter;
@@ -535,11 +535,13 @@ get_plugin (NMSettings *self, NMSettingsPluginCapabilities capability)
 
 	/* Do any of the plugins support the given capability? */
 	for (iter = priv->plugins; iter; iter = iter->next) {
-		NMSettingsPluginCapabilities caps = NM_SETTINGS_PLUGIN_CAP_NONE;
+		NMSettingsPlugin *plugin = NM_SETTINGS_PLUGIN (iter->data);
 
-		g_object_get (G_OBJECT (iter->data), NM_SETTINGS_PLUGIN_CAPABILITIES, &caps, NULL);
-		if (NM_FLAGS_ALL (caps, capability))
-			return NM_SETTINGS_PLUGIN (iter->data);
+		if (!has_add_connection)
+			return plugin;
+
+		if (NM_SETTINGS_PLUGIN_GET_INTERFACE (iter->data)->add_connection != NULL)
+			return plugin;
 	}
 
 	return NULL;
@@ -1273,7 +1275,7 @@ nm_settings_add_connection_dbus (NMSettings *self,
 	}
 
 	/* Do any of the plugins support adding? */
-	if (!get_plugin (self, NM_SETTINGS_PLUGIN_CAP_MODIFY_CONNECTIONS)) {
+	if (!get_plugin (self, TRUE)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_NOT_SUPPORTED,
 		                             "None of the registered plugins support add.");
@@ -1857,7 +1859,7 @@ get_property (GObject *object, guint prop_id,
 		                      : NULL);
 		break;
 	case PROP_CAN_MODIFY:
-		g_value_set_boolean (value, !!get_plugin (self, NM_SETTINGS_PLUGIN_CAP_MODIFY_CONNECTIONS));
+		g_value_set_boolean (value, !!get_plugin (self, TRUE));
 		break;
 	case PROP_CONNECTIONS:
 		if (priv->connections_loaded) {
