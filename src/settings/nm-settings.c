@@ -609,8 +609,6 @@ static gboolean
 add_plugin (NMSettings *self, NMSettingsPlugin *plugin)
 {
 	NMSettingsPrivate *priv;
-	char *pname = NULL;
-	char *pinfo = NULL;
 	const char *path;
 
 	g_return_val_if_fail (NM_IS_SETTINGS (self), FALSE);
@@ -626,17 +624,10 @@ add_plugin (NMSettings *self, NMSettingsPlugin *plugin)
 	priv->plugins = g_slist_append (priv->plugins, g_object_ref (plugin));
 	nm_settings_plugin_init (plugin);
 
-	g_object_get (G_OBJECT (plugin),
-	              NM_SETTINGS_PLUGIN_NAME, &pname,
-	              NM_SETTINGS_PLUGIN_INFO, &pinfo,
-	              NULL);
 
 	path = g_object_get_qdata (G_OBJECT (plugin), plugin_module_path_quark ());
 
-	_LOGI ("loaded plugin %s: %s%s%s%s", pname, pinfo,
-	       NM_PRINT_FMT_QUOTED (path, " (", path, ")", ""));
-	g_free (pname);
-	g_free (pinfo);
+	_LOGI ("Loaded settings plugin: %s (%s)", G_OBJECT_TYPE_NAME (plugin), path ?: "internal");
 
 	return TRUE;
 }
