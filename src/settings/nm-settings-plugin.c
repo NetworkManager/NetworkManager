@@ -35,30 +35,6 @@ nm_settings_plugin_default_init (NMSettingsPluginInterface *g_iface)
 	if (initialized)
 		return;
 
-	/* Properties */
-	g_object_interface_install_property
-		(g_iface,
-		 g_param_spec_string (NM_SETTINGS_PLUGIN_NAME, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
-
-	g_object_interface_install_property
-		(g_iface,
-		 g_param_spec_string (NM_SETTINGS_PLUGIN_INFO, "", "",
-		                      NULL,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
-
-	g_object_interface_install_property
-		(g_iface,
-		 g_param_spec_uint (NM_SETTINGS_PLUGIN_CAPABILITIES, "", "",
-		                    NM_SETTINGS_PLUGIN_CAP_NONE,
-		                    NM_SETTINGS_PLUGIN_CAP_MODIFY_CONNECTIONS,
-		                    NM_SETTINGS_PLUGIN_CAP_NONE,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
-
 	/* Signals */
 	g_signal_new (NM_SETTINGS_PLUGIN_CONNECTION_ADDED,
 	              iface_type,

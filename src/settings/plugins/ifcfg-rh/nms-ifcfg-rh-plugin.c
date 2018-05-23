@@ -998,28 +998,6 @@ config_changed_cb (NMConfig *config,
 /*****************************************************************************/
 
 static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	switch (prop_id) {
-	case NM_SETTINGS_PLUGIN_PROP_NAME:
-		g_value_set_string (value, IFCFG_PLUGIN_NAME);
-		break;
-	case NM_SETTINGS_PLUGIN_PROP_INFO:
-		g_value_set_string (value, IFCFG_PLUGIN_INFO);
-		break;
-	case NM_SETTINGS_PLUGIN_PROP_CAPABILITIES:
-		g_value_set_uint (value, NM_SETTINGS_PLUGIN_CAP_MODIFY_CONNECTIONS);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-/*****************************************************************************/
-
-static void
 init (NMSettingsPlugin *config)
 {
 }
@@ -1087,19 +1065,6 @@ settings_plugin_ifcfg_class_init (SettingsPluginIfcfgClass *req_class)
 
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
-	object_class->get_property = get_property;
-
-	g_object_class_override_property (object_class,
-	                                  NM_SETTINGS_PLUGIN_PROP_NAME,
-	                                  NM_SETTINGS_PLUGIN_NAME);
-
-	g_object_class_override_property (object_class,
-	                                  NM_SETTINGS_PLUGIN_PROP_INFO,
-	                                  NM_SETTINGS_PLUGIN_INFO);
-
-	g_object_class_override_property (object_class,
-	                                  NM_SETTINGS_PLUGIN_PROP_CAPABILITIES,
-	                                  NM_SETTINGS_PLUGIN_CAPABILITIES);
 }
 
 static void

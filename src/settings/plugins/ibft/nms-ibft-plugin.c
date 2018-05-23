@@ -121,28 +121,6 @@ get_connections (NMSettingsPlugin *config)
 /*****************************************************************************/
 
 static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	switch (prop_id) {
-	case NM_SETTINGS_PLUGIN_PROP_NAME:
-		g_value_set_string (value, "iBFT");
-		break;
-	case NM_SETTINGS_PLUGIN_PROP_INFO:
-		g_value_set_string (value, "(c) 2014 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list.");
-		break;
-	case NM_SETTINGS_PLUGIN_PROP_CAPABILITIES:
-		g_value_set_uint (value, NM_SETTINGS_PLUGIN_CAP_NONE);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-/*****************************************************************************/
-
-static void
 init (NMSettingsPlugin *config)
 {
 }
@@ -175,19 +153,6 @@ nms_ibft_plugin_class_init (NMSIbftPluginClass *req_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
 
 	object_class->dispose = dispose;
-	object_class->get_property = get_property;
-
-	g_object_class_override_property (object_class,
-	                                  NM_SETTINGS_PLUGIN_PROP_NAME,
-	                                  NM_SETTINGS_PLUGIN_NAME);
-
-	g_object_class_override_property (object_class,
-	                                  NM_SETTINGS_PLUGIN_PROP_INFO,
-	                                  NM_SETTINGS_PLUGIN_INFO);
-
-	g_object_class_override_property (object_class,
-	                                  NM_SETTINGS_PLUGIN_PROP_CAPABILITIES,
-	                                  NM_SETTINGS_PLUGIN_CAPABILITIES);
 }
 
 static void
