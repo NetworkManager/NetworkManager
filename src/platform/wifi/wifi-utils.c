@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2011 Red Hat, Inc.
+ * Copyright (C) 2005 - 2018 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -67,14 +67,6 @@ wifi_utils_init (int ifindex, gboolean check_scan)
 #endif
 	}
 	return ret;
-}
-
-int
-wifi_utils_get_ifindex (WifiData *data)
-{
-	g_return_val_if_fail (data != NULL, -1);
-
-	return data->ifindex;
 }
 
 NMDeviceWifiCapabilities
