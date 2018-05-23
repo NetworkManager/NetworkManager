@@ -1819,7 +1819,7 @@ nm_device_get_physical_port_id (NMDevice *device)
  *
  * Gets the  MTU of the #NMDevice.
  *
- * Returns: the MTU of the device.
+ * Returns: the MTU of the device in bytes.
  **/
 guint32
 nm_device_get_mtu (NMDevice *device)
