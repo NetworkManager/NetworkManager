@@ -7072,6 +7072,8 @@ dhcp4_get_client_id (NMDevice *self, NMConnection *connection)
 		guint8 buf[20];
 		gsize buf_size;
 		guint32 salted_header;
+		const guint8 *secret_key;
+		gsize secret_key_len;
 
 		stable_id = _get_stable_id (self, connection, &stable_type);
 		if (!stable_id)
@@ -7079,10 +7081,13 @@ dhcp4_get_client_id (NMDevice *self, NMConnection *connection)
 
 		salted_header = htonl (2011610591 + stable_type);
 
+		nm_utils_secret_key_get (&secret_key, &secret_key_len);
+
 		sum = g_checksum_new (G_CHECKSUM_SHA1);
 
 		g_checksum_update (sum, (const guchar *) &salted_header, sizeof (salted_header));
-		g_checksum_update (sum, (const guchar *) stable_id, strlen (stable_id));
+		g_checksum_update (sum, (const guchar *) stable_id, strlen (stable_id) + 1);
+		g_checksum_update (sum, (const guchar *) secret_key, secret_key_len);
 
 		buf_size = sizeof (buf);
 		g_checksum_get_digest (sum, buf, &buf_size);
