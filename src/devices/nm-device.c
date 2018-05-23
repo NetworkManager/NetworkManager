@@ -1736,7 +1736,11 @@ static gboolean
 get_ip_iface_identifier (NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMPlatform *platform = nm_device_get_platform (self);
 	const NMPlatformLink *pllink;
+	const guint8 *hwaddr;
+	guint8 pseudo_hwaddr[ETH_ALEN];
+	guint hwaddr_len;
 	int ifindex;
 	gboolean success;
 
@@ -1744,7 +1748,7 @@ get_ip_iface_identifier (NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
 	ifindex = nm_device_get_ip_ifindex (self);
 	g_return_val_if_fail (ifindex > 0, FALSE);
 
-	pllink = nm_platform_link_get (nm_device_get_platform (self), ifindex);
+	pllink = nm_platform_link_get (platform, ifindex);
 	if (   !pllink
 	    || NM_IN_SET (pllink->type, NM_LINK_TYPE_NONE, NM_LINK_TYPE_UNKNOWN))
 		return FALSE;
@@ -1754,9 +1758,35 @@ get_ip_iface_identifier (NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
 	if (pllink->addr.len > NM_UTILS_HWADDR_LEN_MAX)
 		g_return_val_if_reached (FALSE);
 
+	hwaddr = pllink->addr.data;
+	hwaddr_len = pllink->addr.len;
+
+	if (pllink->type == NM_LINK_TYPE_6LOWPAN) {
+		/* If the underlying IEEE 802.15.4 device has a short address we generate
+		 * a "pseudo 48-bit address" that's to be used in the same fashion as a
+		 * wired Ethernet address. The mechanism is specified in Section 6. of
+		 * RFC 4944 */
+		guint16 pan_id;
+		guint16 short_addr;
+
+		short_addr = nm_platform_wpan_get_short_addr (platform, pllink->parent);
+		if (short_addr != G_MAXUINT16) {
+			pan_id = nm_platform_wpan_get_pan_id (platform, pllink->parent);
+			pseudo_hwaddr[0] = short_addr & 0xff;
+			pseudo_hwaddr[1] = (short_addr >> 8) & 0xff;
+			pseudo_hwaddr[2] = 0;
+			pseudo_hwaddr[3] = 0;
+			pseudo_hwaddr[4] = pan_id & 0xff;
+			pseudo_hwaddr[5] = (pan_id >> 8) & 0xff;
+
+			hwaddr = pseudo_hwaddr;
+			hwaddr_len = G_N_ELEMENTS (pseudo_hwaddr);
+		}
+	}
+
 	success = nm_utils_get_ipv6_interface_identifier (pllink->type,
-	                                                  pllink->addr.data,
-	                                                  pllink->addr.len,
+	                                                  hwaddr,
+	                                                  hwaddr_len,
 	                                                  priv->dev_id,
 	                                                  out_iid);
 	if (!success) {
