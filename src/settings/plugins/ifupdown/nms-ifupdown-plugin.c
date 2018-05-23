@@ -50,9 +50,6 @@
 
 #define ENI_INTERFACES_FILE "/etc/network/interfaces"
 
-#define IFUPDOWN_PLUGIN_NAME "ifupdown"
-#define IFUPDOWN_PLUGIN_INFO "(C) 2008 Canonical Ltd.  To report bugs please use the NetworkManager mailing list."
-
 #define IFUPDOWN_UNMANAGE_WELL_KNOWN_DEFAULT TRUE
 
 /* #define ALWAYS_UNMANAGE TRUE */
@@ -303,28 +300,6 @@ get_unmanaged_specs (NMSettingsPlugin *config)
 /*****************************************************************************/
 
 static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	switch (prop_id) {
-	case NM_SETTINGS_PLUGIN_PROP_NAME:
-		g_value_set_string (value, IFUPDOWN_PLUGIN_NAME);
-		break;
-	case NM_SETTINGS_PLUGIN_PROP_INFO:
-		g_value_set_string (value, IFUPDOWN_PLUGIN_INFO);
-		break;
-	case NM_SETTINGS_PLUGIN_PROP_CAPABILITIES:
-		g_value_set_uint (value, NM_SETTINGS_PLUGIN_CAP_NONE);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-/*****************************************************************************/
-
-static void
 _udev_device_unref (gpointer ptr)
 {
 	udev_device_unref (ptr);
@@ -513,19 +488,6 @@ settings_plugin_ifupdown_class_init (SettingsPluginIfupdownClass *req_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
 
 	object_class->dispose = dispose;
-	object_class->get_property = get_property;
-
-	g_object_class_override_property (object_class,
-	                                  NM_SETTINGS_PLUGIN_PROP_NAME,
-	                                  NM_SETTINGS_PLUGIN_NAME);
-
-	g_object_class_override_property (object_class,
-	                                  NM_SETTINGS_PLUGIN_PROP_INFO,
-	                                  NM_SETTINGS_PLUGIN_INFO);
-
-	g_object_class_override_property (object_class,
-	                                  NM_SETTINGS_PLUGIN_PROP_CAPABILITIES,
-	                                  NM_SETTINGS_PLUGIN_CAPABILITIES);
 }
 
 static void
