@@ -74,6 +74,11 @@
 %else
 %bcond_with connectivity_fedora
 %endif
+%if 0%{?fedora} > 28 || 0%{?rhel} > 7
+%bcond_without crypto_gnutls
+%else
+%bcond_with crypto_gnutls
+%endif
 
 ###############################################################################
 
@@ -141,7 +146,11 @@ BuildRequires: automake autoconf intltool libtool
 %if %{with ppp}
 BuildRequires: ppp-devel >= 2.4.5
 %endif
+%if %{with crypto_gnutls}
+BuildRequires: gnutls-devel >= 2.12
+%else
 BuildRequires: nss-devel >= 3.11.7
+%endif
 BuildRequires: dhclient
 BuildRequires: readline-devel
 BuildRequires: audit-libs-devel
@@ -419,7 +428,11 @@ intltoolize --automake --copy --force
 	--with-dhcpcd=no \
 	--with-dhcpcanon=no \
 	--with-config-dhcp-default=dhclient \
+%if %{with crypto_gnutls}
+	--with-crypto=gnutls \
+%else
 	--with-crypto=nss \
+%endif
 %if %{with sanitizer}
 	--with-address-sanitizer=exec \
 %if 0%{?fedora}

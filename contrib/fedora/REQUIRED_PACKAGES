@@ -23,6 +23,7 @@ yum install \
     dhclient \
     gettext-devel \
     git \
+    gnutls-devel \
     gobject-introspection-devel \
     gtk-doc \
     intltool \
