@@ -668,12 +668,9 @@ AC_SUBST(NM_MODIFY_SYSTEM_POLICY)
 AC_ARG_WITH(crypto,
             AS_HELP_STRING([--with-crypto=nss|gnutls],
                            [Cryptography library to use for certificate and key operations]),
-            ac_crypto=$withval,
-            ac_crypto=nss)
-
-with_nss=no
-with_gnutls=no
-if test x"$ac_crypto" = xnss; then
+            with_crypto=$withval,
+            with_crypto=nss)
+if test "$with_crypto" = 'nss'; then
 	PKG_CHECK_MODULES(NSS, [nss])
 
 	# Work around a pkg-config bug (fdo #29801) where exists != usable
@@ -681,23 +678,13 @@ if test x"$ac_crypto" = xnss; then
 	if test x"$?" != "x0"; then
 		AC_MSG_ERROR([No usable NSS found])
 	fi
-
-	AC_DEFINE(HAVE_NSS, 1, [Define if you have NSS])
-	with_nss=yes
-elif test x"$ac_crypto" = xgnutls; then
+elif test "$with_crypto" = 'gnutls'; then
 	PKG_CHECK_MODULES(GNUTLS, [gnutls >= 2.12])
-	AC_DEFINE(HAVE_GNUTLS, 1, [Define if you have libgnutls])
-	with_gnutls=yes
 else
 	AC_MSG_ERROR([Please choose either 'nss' or 'gnutls' for certificate and crypto operations])
 fi
-AM_CONDITIONAL(WITH_NSS, test x"$with_nss" != xno)
-AM_CONDITIONAL(WITH_GNUTLS, test x"$with_gnutls" != xno)
-
-# Shouldn't ever trigger this, but just in case...
-if test x"$ac_nss" = xno -a x"$ac_gnutls" = xno; then
-	AC_MSG_ERROR([Could not find required development headers and libraries for '$ac_crypto'])
-fi
+AM_CONDITIONAL(WITH_NSS, test "$with_crypto" = 'nss')
+AM_CONDITIONAL(WITH_GNUTLS, test "$with_crypto" = 'gnutls')
 
 GLIB_MAKEFILE='$(top_srcdir)/Makefile.glib'
 AC_SUBST(GLIB_MAKEFILE)
@@ -1393,6 +1380,7 @@ echo "  code coverage: $enable_code_coverage"
 echo "  LTO: $enable_lto"
 echo "  linker garbage collection: $enable_ld_gc"
 echo "  JSON validation for libnm: $enable_json_validation"
+echo "  crypto: $with_crypto"
 echo "  sanitizers: $sanitizers"
 echo "  Mozilla Public Suffix List: $with_libpsl"
 echo
