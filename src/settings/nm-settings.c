@@ -632,29 +632,22 @@ add_plugin (NMSettings *self, NMSettingsPlugin *plugin)
 	return TRUE;
 }
 
-static GObject *
-find_plugin (GSList *list, const char *pname)
+static gboolean
+plugin_loaded (GSList *list, const char *path)
 {
 	GSList *iter;
-	GObject *obj = NULL;
 
-	g_return_val_if_fail (pname != NULL, NULL);
+	g_return_val_if_fail (path != NULL, TRUE);
 
-	for (iter = list; iter && !obj; iter = g_slist_next (iter)) {
-		NMSettingsPlugin *plugin = NM_SETTINGS_PLUGIN (iter->data);
-		char *list_pname = NULL;
+	for (iter = list; iter; iter = g_slist_next (iter)) {
+		const char *list_path = g_object_get_qdata (G_OBJECT (iter->data),
+		                                            plugin_module_path_quark ());
 
-		g_object_get (G_OBJECT (plugin),
-		              NM_SETTINGS_PLUGIN_NAME,
-		              &list_pname,
-		              NULL);
-		if (list_pname && !strcmp (pname, list_pname))
-			obj = G_OBJECT (plugin);
-
-		g_free (list_pname);
+		if (g_strcmp0 (path, list_path) == 0)
+			return TRUE;
 	}
 
-	return obj;
+	return FALSE;
 }
 
 static gboolean
@@ -670,6 +663,9 @@ load_plugin (NMSettings *self, GSList *list, const char *pname, GError **error)
 
 	full_name = g_strdup_printf ("nm-settings-plugin-%s", pname);
 	path = g_module_build_path (NMPLUGINDIR, full_name);
+
+	if (plugin_loaded (list, path))
+		return TRUE;
 
 	if (stat (path, &st) != 0) {
 		errsv = errno;
@@ -790,9 +786,6 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 			 * Don't load a duplicate. */
 			continue;
 		}
-
-		if (find_plugin (list, pname))
-			return TRUE;
 
 		success = load_plugin (self, list, pname, error);
 		if (!success)
