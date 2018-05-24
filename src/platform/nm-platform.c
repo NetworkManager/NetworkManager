@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2012 - 2017 Red Hat, Inc.
+ * Copyright (C) 2012 - 2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -807,6 +807,7 @@ _nm_platform_link_get_by_address_match_link (const NMPObject *obj, struct _nm_pl
  **/
 const NMPlatformLink *
 nm_platform_link_get_by_address (NMPlatform *self,
+                                 NMLinkType link_type,
                                  gconstpointer address,
                                  size_t length)
 {
@@ -827,7 +828,7 @@ nm_platform_link_get_by_address (NMPlatform *self,
 		g_return_val_if_reached (NULL);
 
 	obj = nmp_cache_lookup_link_full (nm_platform_get_cache (self),
-	                                  0, NULL, TRUE, NM_LINK_TYPE_NONE,
+	                                  0, NULL, TRUE, link_type,
 	                                  (NMPObjectMatchFn) _nm_platform_link_get_by_address_match_link, &d);
 	return NMP_OBJECT_CAST_LINK (obj);
 }

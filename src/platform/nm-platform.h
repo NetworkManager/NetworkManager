@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 - 2017 Red Hat, Inc.
+ * Copyright (C) 2009 - 2018 Red Hat, Inc.
  */
 
 #ifndef __NETWORKMANAGER_PLATFORM_H__
@@ -1079,7 +1079,7 @@ const NMPObject *nm_platform_link_get_obj (NMPlatform *self,
                                            gboolean visible_only);
 const NMPlatformLink *nm_platform_link_get (NMPlatform *self, int ifindex);
 const NMPlatformLink *nm_platform_link_get_by_ifname (NMPlatform *self, const char *ifname);
-const NMPlatformLink *nm_platform_link_get_by_address (NMPlatform *self, gconstpointer address, size_t length);
+const NMPlatformLink *nm_platform_link_get_by_address (NMPlatform *self, NMLinkType link_type, gconstpointer address, size_t length);
 
 GPtrArray *nm_platform_link_get_all (NMPlatform *self, gboolean sort_by_name);
 NMPlatformError nm_platform_link_dummy_add (NMPlatform *self, const char *name, const NMPlatformLink **out_link);
