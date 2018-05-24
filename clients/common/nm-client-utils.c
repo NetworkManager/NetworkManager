@@ -175,7 +175,8 @@ nmc_string_is_valid (const char *input, const char **allowed, GError **error)
 {
 	const char **p;
 	size_t input_ln, p_len;
-	gboolean prev_match = FALSE, ambiguous = FALSE;
+	gboolean ambiguous = FALSE;
+	const char *prev_match = NULL;
 	const char *ret = NULL;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
@@ -193,15 +194,16 @@ nmc_string_is_valid (const char *input, const char **allowed, GError **error)
 				break;
 			}
 			if (!prev_match) {
+				prev_match = *p;
+			} else {
 				ret = *p;
-				prev_match = TRUE;
-			} else
 				ambiguous = TRUE;
+			}
 		}
 	}
 	if (ambiguous) {
 		g_set_error (error, 1, 1, _("'%s' is ambiguous (%s x %s)"),
-		             input, ret, *p);
+		             input, prev_match, ret);
 		return NULL;
 	}
 finish:
