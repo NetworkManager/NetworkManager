@@ -991,4 +991,20 @@ typedef enum { /*< flags >*/
 	NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT          = (1LL <<  5),
 } NMSettingsUpdate2Flags;
 
+/**
+ * NMTernary:
+ * @NM_TERNARY_DEFAULT: use the globally-configured default value.
+ * @NM_TERNARY_FALSE: the option is disabled.
+ * @NM_TERNARY_TRUE: the option is enabled.
+ *
+ * An boolean value that can be overridden by a default.
+ *
+ * Since: 1.14
+ **/
+typedef enum {
+	NM_TERNARY_DEFAULT = -1,
+	NM_TERNARY_FALSE = 0,
+	NM_TERNARY_TRUE = 1,
+} NMTernary;
+
 #endif /* __NM_DBUS_INTERFACE_H__ */

@@ -1386,4 +1386,5 @@ global:
 	nm_device_wpan_get_type;
 	nm_setting_6lowpan_get_type;
 	nm_setting_wpan_get_type;
+	nm_ternary_get_type;
 } libnm_1_12_0;
