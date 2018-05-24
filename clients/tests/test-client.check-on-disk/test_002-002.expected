@@ -1,11 +1,12 @@
-location: clients/tests/test-client.py:554:test_002()/2
+location: clients/tests/test-client.py:588:test_002()/2
 cmd: $NMCLI d
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 219 bytes
+stdout: 263 bytes
 >>>
 DEVICE  TYPE      STATE        CONNECTION 
 eth0    ethernet  niedostępne  --         
+eth1    ethernet  niedostępne  --         
 wlan0   wifi      niedostępne  --         
 wlan1   wifi      niedostępne  --         
 wlan1   wifi      niedostępne  --         

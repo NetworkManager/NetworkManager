@@ -3,6 +3,17 @@
 from __future__ import print_function
 
 import sys
+
+try:
+    import gi
+    from gi.repository import GLib
+
+    gi.require_version('NM', '1.0')
+    from gi.repository import NM
+except Exception as e:
+    GLib = None
+    NM = None
+
 import os
 import errno
 import unittest
@@ -243,6 +254,17 @@ class NMStubServer:
             raise AssertionError("Unexpectedly not found connection %s: %s" % (con_id, str(e)))
         return u
 
+    def setProperty(self, path, propname, value, iface_name = None):
+        if iface_name is None:
+            iface_name = ''
+        self.op_SetProperties([
+            (path, [
+                (iface_name, [
+                    (propname, value),
+                ]),
+            ]),
+        ])
+
 ###############################################################################
 
 class NmTestBase(unittest.TestCase):
@@ -287,9 +309,10 @@ class TestNmcli(NmTestBase):
                      expected_stderr = _DEFAULT_ARG,
                      replace_stdout = None,
                      replace_stderr = None,
-                     sort_lines_stdout = False):
+                     sort_lines_stdout = False,
+                     extra_env = None):
         frame = sys._getframe(1)
-        for lang in [ 'C', 'pl', 'de' ]:
+        for lang in [ 'C', 'pl' ]:
             self._call_nmcli(args,
                              lang,
                              check_on_disk,
@@ -299,6 +322,7 @@ class TestNmcli(NmTestBase):
                              replace_stdout,
                              replace_stderr,
                              sort_lines_stdout,
+                             extra_env,
                              frame)
 
 
@@ -312,7 +336,8 @@ class TestNmcli(NmTestBase):
                    expected_stderr = _DEFAULT_ARG,
                    replace_stdout = None,
                    replace_stderr = None,
-                   sort_lines_stdout = False):
+                   sort_lines_stdout = False,
+                   extra_env = None):
 
         frame = sys._getframe(1)
 
@@ -333,6 +358,7 @@ class TestNmcli(NmTestBase):
                              replace_stdout,
                              replace_stderr,
                              sort_lines_stdout,
+                             extra_env,
                              frame)
 
     def _call_nmcli(self,
@@ -345,6 +371,7 @@ class TestNmcli(NmTestBase):
                     replace_stdout,
                     replace_stderr,
                     sort_lines_stdout,
+                    extra_env,
                     frame):
 
         calling_fcn = frame.f_code.co_name
@@ -364,6 +391,9 @@ class TestNmcli(NmTestBase):
             self.fail('invalid language %s' % (lang))
 
         env = {}
+        if extra_env is not None:
+            for k, v in extra_env.items():
+                env[k] = v
         for k in ['LD_LIBRARY_PATH',
                   'DBUS_SESSION_BUS_ADDRESS']:
             val = os.environ.get(k, None)
@@ -488,6 +518,8 @@ class TestNmcli(NmTestBase):
     def setUp(self):
         if not dbus_session_inited:
             self.skipTest("Own D-Bus session for testing is not initialized. Do you have dbus-run-session available?")
+        if NM is None:
+            self.skipTest("gi.NM is not available. Did you build with introspection?")
         self.srv = NMStubServer()
         self._calling_num = {}
         self._skip_test_for_l10n_diff = []
@@ -510,6 +542,8 @@ class TestNmcli(NmTestBase):
     def init_001(self):
         self.srv.op_AddObj('WiredDevice',
                            iface = 'eth0')
+        self.srv.op_AddObj('WiredDevice',
+                           iface = 'eth1')
         self.srv.op_AddObj('WifiDevice',
                            iface = 'wlan0')
         self.srv.op_AddObj('WifiDevice',
@@ -598,22 +632,68 @@ class TestNmcli(NmTestBase):
                           replace_stdout = replace_stdout,
                           sort_lines_stdout = True)
 
-        self.call_nmcli(['con', 'up', 'ethernet', 'ifname', 'eth0'])
+        # activate the same profile on multiple devices. Our stub-implmentation
+        # is fine with that... although NetworkManager service would reject
+        # such a configuration by deactivating the profile first. But note that
+        # that is only an internal behavior of NetworkManager service. The D-Bus
+        # API perfectly allows for one profile to be active multiple times. Also
+        # note, that there is always a short time where one profile goes down,
+        # while another is activating. Hence, while real NetworkManager commonly
+        # does not allow that multiple profiles *stay* connected at the same
+        # time, there is always the possibility that a profile is activating/active
+        # on a device, while also activating/deactivating in parallel.
+        for dev in ['eth0', 'eth1']:
+            self.call_nmcli(['con', 'up', 'ethernet', 'ifname', dev])
 
-        self.call_nmcli_l(['con'],
-                          replace_stdout = replace_stdout)
+            self.call_nmcli_l(['con'],
+                              replace_stdout = replace_stdout)
+
+            self.call_nmcli_l(['-f', 'ALL', 'con'],
+                              replace_stdout = replace_stdout)
+
+            self.call_nmcli_l(['-f', 'ALL', 'con', 's', 'ethernet'],
+                              replace_stdout = replace_stdout)
+
+            self.call_nmcli_l(['con', 's', 'ethernet'],
+                              replace_stdout = replace_stdout)
+
+            self.call_nmcli_l(['-f', 'ALL', 'dev', 's', 'eth0'],
+                              replace_stdout = replace_stdout)
+
+            self.call_nmcli_l(['-f', 'ALL', 'dev', 'show', 'eth0'],
+                              replace_stdout = replace_stdout)
+
+        self.srv.setProperty('/org/freedesktop/NetworkManager/ActiveConnection/1',
+                             'State',
+                             dbus.UInt32(NM.ActiveConnectionState.DEACTIVATING))
 
         self.call_nmcli_l(['-f', 'ALL', 'con'],
                           replace_stdout = replace_stdout)
 
-        self.call_nmcli_l(['-f', 'ALL', 'con', 's', 'ethernet'],
+        self.call_nmcli_l(['-f', 'UUID,TYPE', 'con'],
                           replace_stdout = replace_stdout)
 
-        self.call_nmcli_l(['-f', 'ALL', 'dev', 's', 'eth0'],
+        self.call_nmcli_l(['-f', 'UUID,TYPE', '--mode', 'multiline', 'con'],
                           replace_stdout = replace_stdout)
 
-        self.call_nmcli_l(['-f', 'ALL', 'dev', 'show', 'eth0'],
+        self.call_nmcli_l(['-f', 'UUID,TYPE', '--mode', 'multiline', '--terse', 'con'],
                           replace_stdout = replace_stdout)
+
+        self.call_nmcli_l(['-f', 'UUID,TYPE', '--mode', 'multiline', '--pretty', 'con'],
+                          replace_stdout = replace_stdout)
+
+        self.call_nmcli_l(['-f', 'UUID,TYPE', '--mode', 'tabular', 'con'],
+                          replace_stdout = replace_stdout)
+
+        self.call_nmcli_l(['-f', 'UUID,TYPE', '--mode', 'tabular', '--terse', 'con'],
+                          replace_stdout = replace_stdout)
+
+        self.call_nmcli_l(['-f', 'UUID,TYPE', '--mode', 'tabular', '--pretty', 'con'],
+                          replace_stdout = replace_stdout)
+
+        self.call_nmcli_l(['con', 's', 'ethernet'],
+                          replace_stdout = replace_stdout)
+
 
 ###############################################################################
 

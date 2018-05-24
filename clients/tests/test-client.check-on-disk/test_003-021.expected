@@ -1,16 +1,19 @@
-location: clients/tests/test-client.py:607:test_003()/21
-cmd: $NMCLI -f ALL con
-lang: de_DE.utf8
+location: clients/tests/test-client.py:661:test_003()/21
+cmd: $NMCLI -f ALL dev s eth0
+lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1084 bytes
+stdout: 1061 bytes
 >>>
-NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE      ACTIVE-PATH                                         SLAVE 
-ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          nie             ja           0                     nein      /org/freedesktop/NetworkManager/Settings/Connection/3  ja      eth0    aktiviert  /org/freedesktop/NetworkManager/ActiveConnection/1  --    
-con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          nie             ja           0                     nein      /org/freedesktop/NetworkManager/Settings/Connection/1  nein    --      --         --                                                  --    
-con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          nie             ja           0                     nein      /org/freedesktop/NetworkManager/Settings/Connection/2  nein    --      --         --                                                  --    
+DEVICE  TYPE      STATE        DBUS-PATH                                  CONNECTION  CON-UUID                              CON-PATH                                           
+eth1    ethernet  niedostępne  /org/freedesktop/NetworkManager/Devices/2  --          --                                    --                                                 
+wlan0   wifi      niedostępne  /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
+wlan1   wifi      niedostępne  /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
+wlan1   wifi      niedostępne  /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
+eth0    ethernet  niedostępne  /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
 
 <<<
-stderr: 0 bytes
+stderr: 24 bytes
 >>>
+Nieznany parametr: eth0
 
 <<<

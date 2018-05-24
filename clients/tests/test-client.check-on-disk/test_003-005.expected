@@ -1,10 +1,13 @@
-location: clients/tests/test-client.py:589:test_003()/5
-cmd: $NMCLI c add type ethernet ifname '*'
+location: clients/tests/test-client.py:626:test_003()/5
+cmd: $NMCLI c s
 lang: C
 returncode: 0
-stdout: 81 bytes
+stdout: 264 bytes
 >>>
-Connection 'ethernet' (UUID-ethernet-REPLACED-REPLACED-REPL) successfully added.
+NAME      UUID                                  TYPE      DEVICE 
+con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  --     
+con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  --     
+ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  --     
 
 <<<
 stderr: 0 bytes
