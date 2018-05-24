@@ -39,6 +39,7 @@ typedef enum {
 	SV_KEY_TYPE_IP4_ADDRESS             = (1LL << 2),
 	SV_KEY_TYPE_TC                      = (1LL << 3),
 	SV_KEY_TYPE_USER                    = (1LL << 4),
+	SV_KEY_TYPE_SRIOV_VF                = (1LL << 5),
 } SvKeyType;
 
 const char *svFileGetName (const shvarFile *s);

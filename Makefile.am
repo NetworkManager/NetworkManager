@@ -2303,6 +2303,8 @@ EXTRA_DIST += \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-permissions \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-read-proxy-basic \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-sit-ignore \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-sriov \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-sriov-write.cexpected \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-static-routes-legacy \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-static-routes-legacy.cexpected \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-tc \

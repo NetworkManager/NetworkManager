@@ -915,6 +915,10 @@ _svKeyMatchesType (const char *key, SvKeyType match_key_type)
 		    || IS_NUMBERED_TAG (key, "FILTER"))
 			return TRUE;
 	}
+	if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_SRIOV_VF)) {
+		if (IS_NUMBERED_TAG (key, "SRIOV_VF"))
+			return TRUE;
+	}
 
 	return FALSE;
 }
