@@ -287,6 +287,11 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
 		.setting_name =             NM_SETTING_SERIAL_SETTING_NAME,
 		.get_setting_gtype =        nm_setting_serial_get_type,
 	},
+	[NM_META_SETTING_TYPE_SRIOV] = {
+		.meta_type =                NM_META_SETTING_TYPE_SRIOV,
+		.setting_name =             NM_SETTING_SRIOV_SETTING_NAME,
+		.get_setting_gtype =        nm_setting_sriov_get_type,
+	},
 	[NM_META_SETTING_TYPE_TC_CONFIG] = {
 		.meta_type =                NM_META_SETTING_TYPE_TC_CONFIG,
 		.setting_name =             NM_SETTING_TC_CONFIG_SETTING_NAME,

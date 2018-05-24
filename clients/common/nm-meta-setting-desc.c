@@ -3775,6 +3775,37 @@ _validate_fcn_proxy_pac_script (const char *value, char **out_to_free, GError **
 }
 
 static gconstpointer
+_get_fcn_sriov_vfs (ARGS_GET_FCN)
+{
+	NMSettingSriov *s_sriov = NM_SETTING_SRIOV (setting);
+	GString *printable;
+	guint num_vfs, i;
+	NMSriovVF *vf;
+	char *str;
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
+
+	printable = g_string_new (NULL);
+
+	num_vfs = nm_setting_sriov_get_num_vfs (s_sriov);
+	for (i = 0; i < num_vfs; i++) {
+		vf = nm_setting_sriov_get_vf (s_sriov, i);
+
+		if (printable->len > 0)
+			g_string_append (printable, ", ");
+
+		str = nm_utils_sriov_vf_to_str (vf, FALSE, NULL);
+		if (str) {
+			g_string_append (printable, str);
+			g_free (str);
+		}
+	}
+
+	NM_SET_OUT (out_is_default, num_vfs == 0);
+	RETURN_STR_TO_FREE (g_string_free (printable, FALSE));
+}
+
+static gconstpointer
 _get_fcn_tc_config_qdiscs (ARGS_GET_FCN)
 {
 	NMSettingTCConfig *s_tc = NM_SETTING_TC_CONFIG (setting);
@@ -3806,6 +3837,28 @@ _get_fcn_tc_config_qdiscs (ARGS_GET_FCN)
 }
 
 static gboolean
+_set_fcn_sriov_vfs (ARGS_SET_FCN)
+{
+	gs_free const char **strv = NULL;
+	const char *const*iter;
+	NMSriovVF *vf;
+	GError *local = NULL;
+
+	strv = nm_utils_strsplit_set (value, ",");
+	for (iter = strv; strv && *iter; iter++) {
+		vf = nm_utils_sriov_vf_from_str (*iter, &local);
+		if (!vf) {
+			g_set_error (error, 1, 0, "%s. %s", local->message,
+			             _("The valid syntax is: vf [attribute=value]... [,vf [attribute=value]...]"));
+			return FALSE;
+		}
+		nm_setting_sriov_add_vf (NM_SETTING_SRIOV (setting), vf);
+		nm_sriov_vf_unref (vf);
+	}
+	return TRUE;
+}
+
+static gboolean
 _set_fcn_tc_config_qdiscs (ARGS_SET_FCN)
 {
 	gs_free const char **strv = NULL;
@@ -3826,6 +3879,34 @@ _set_fcn_tc_config_qdiscs (ARGS_SET_FCN)
 	}
 	return TRUE;
 }
+
+static gboolean
+_validate_and_remove_sriov_vf (NMSettingSriov *setting,
+                               const char *value,
+                               GError **error)
+{
+	NMSriovVF *vf;
+	gboolean ret;
+
+	vf = nm_utils_sriov_vf_from_str (value, error);
+	if (!vf)
+		return FALSE;
+
+	ret = nm_setting_sriov_remove_vf_by_index (setting, nm_sriov_vf_get_index (vf));
+	if (!ret) {
+		g_set_error (error, 1, 0,
+		             _("the property doesn't contain vf with index %u"),
+		             nm_sriov_vf_get_index (vf));
+	}
+	nm_sriov_vf_unref (vf);
+	return ret;
+}
+DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_sriov_vfs,
+                               NM_SETTING_SRIOV,
+                               nm_setting_sriov_get_num_vfs,
+                               nm_setting_sriov_remove_vf,
+                               _validate_and_remove_sriov_vf)
+
 
 static gboolean
 _validate_and_remove_tc_qdisc (NMSettingTCConfig *setting,
@@ -6832,6 +6913,25 @@ static const NMMetaPropertyInfo *const property_infos_SERIAL[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_SRIOV
+static const NMMetaPropertyInfo *const property_infos_SRIOV[] = {
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_SRIOV_TOTAL_VFS,
+		.property_type =                &_pt_gobject_int,
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_SRIOV_VFS,
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_sriov_vfs,
+			.set_fcn =                  _set_fcn_sriov_vfs,
+			.remove_fcn =               _remove_fcn_sriov_vfs,
+		),
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_SRIOV_AUTOPROBE_DRIVERS,
+		.property_type =                &_pt_gobject_enum,
+	),
+	NULL
+};
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_TUN
 static const NMMetaPropertyInfo *const property_infos_TUN[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_TUN_MODE,
@@ -7649,6 +7749,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_PPPOE               N_("PPPoE")
 #define SETTING_PRETTY_NAME_PROXY               N_("Proxy")
 #define SETTING_PRETTY_NAME_SERIAL              N_("Serial settings")
+#define SETTING_PRETTY_NAME_SRIOV               N_("SR-IOV settings")
 #define SETTING_PRETTY_NAME_TC_CONFIG           N_("Traffic controls")
 #define SETTING_PRETTY_NAME_TEAM                N_("Team device")
 #define SETTING_PRETTY_NAME_TEAM_PORT           N_("Team port")
@@ -7765,6 +7866,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 		.valid_parts = NM_META_SETTING_VALID_PARTS (
 			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (INFINIBAND,            TRUE),
+			NM_META_SETTING_VALID_PART_ITEM (SRIOV,                 FALSE),
 		),
 		.setting_init_fcn =             _setting_init_fcn_infiniband,
 	),
@@ -7844,6 +7946,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 		.setting_init_fcn =             _setting_init_fcn_proxy,
 	),
 	SETTING_INFO (SERIAL),
+	SETTING_INFO (SRIOV),
 	SETTING_INFO (TC_CONFIG),
 	SETTING_INFO (TEAM,
 		.valid_parts = NM_META_SETTING_VALID_PARTS (
@@ -7896,6 +7999,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (802_1X,                FALSE),
 			NM_META_SETTING_VALID_PART_ITEM (DCB,                   FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (SRIOV,                 FALSE),
 		),
 	),
 	SETTING_INFO (WIRELESS,
