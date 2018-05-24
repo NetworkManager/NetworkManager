@@ -52,7 +52,7 @@
  * value.
  *
  * Note that if calling getrandom() fails because there is not enough
- * entroy (at early boot), the function will read /dev/urandom.
+ * entropy (at early boot), the function will read /dev/urandom.
  * Which of course, still has low entropy, and cause kernel to log
  * a warning.
  */
