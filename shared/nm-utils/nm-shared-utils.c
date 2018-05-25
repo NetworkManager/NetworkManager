@@ -1371,8 +1371,7 @@ nm_utils_get_start_time_for_pid (pid_t pid, char *out_state, pid_t *out_ppid)
 	char filename[256];
 	gs_free gchar *contents = NULL;
 	size_t length;
-	gs_strfreev gchar **tokens = NULL;
-	guint num_tokens;
+	gs_free const char **tokens = NULL;
 	gchar *p;
 	char state = ' ';
 	gint64 ppid = 0;
@@ -1392,7 +1391,7 @@ nm_utils_get_start_time_for_pid (pid_t pid, char *out_state, pid_t *out_ppid)
 	 * processes trying to fool us
 	 */
 	p = strrchr (contents, ')');
-	if (p == NULL)
+	if (!p)
 		goto fail;
 	p += 2; /* skip ') ' */
 	if (p - contents >= (int) length)
@@ -1400,11 +1399,9 @@ nm_utils_get_start_time_for_pid (pid_t pid, char *out_state, pid_t *out_ppid)
 
 	state = p[0];
 
-	tokens = g_strsplit (p, " ", 0);
+	tokens = nm_utils_strsplit_set (p, " ");
 
-	num_tokens = g_strv_length (tokens);
-
-	if (num_tokens < 20)
+	if (NM_PTRARRAY_LEN (tokens) < 20)
 		goto fail;
 
 	if (out_ppid) {
