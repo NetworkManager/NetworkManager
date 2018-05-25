@@ -82,9 +82,8 @@ nm_ppp_manager_create (const char *iface, GError **error)
 		nm_assert (ops);
 		nm_assert (ops->create);
 		nm_assert (ops->start);
-		nm_assert (ops->stop_async);
-		nm_assert (ops->stop_finish);
-		nm_assert (ops->stop_sync);
+		nm_assert (ops->stop);
+		nm_assert (ops->stop_cancel);
 
 		ppp_ops = ops;
 
@@ -125,32 +124,21 @@ nm_ppp_manager_start (NMPPPManager *self,
 	return ppp_ops->start (self, req, ppp_name, timeout_secs, baud_override, err);
 }
 
-void
-nm_ppp_manager_stop_async (NMPPPManager *self,
-                           GCancellable *cancellable,
-                           GAsyncReadyCallback callback,
-                           gpointer user_data)
+NMPPPManagerStopHandle *
+nm_ppp_manager_stop (NMPPPManager *self,
+                     NMPPPManagerStopCallback callback,
+                     gpointer user_data)
 {
-	g_return_if_fail (ppp_ops);
+	g_return_val_if_fail (ppp_ops, NULL);
 
-	ppp_ops->stop_async (self, cancellable, callback, user_data);
-}
-
-gboolean
-nm_ppp_manager_stop_finish (NMPPPManager *self,
-                            GAsyncResult *res,
-                            GError **error)
-{
-	g_return_val_if_fail (ppp_ops, FALSE);
-
-	return ppp_ops->stop_finish (self, res, error);
+	return ppp_ops->stop (self, callback, user_data);
 }
 
 void
-nm_ppp_manager_stop_sync (NMPPPManager *self)
+nm_ppp_manager_stop_cancel (NMPPPManagerStopHandle *handle)
 {
 	g_return_if_fail (ppp_ops);
+	g_return_if_fail (handle);
 
-	ppp_ops->stop_sync (self);
+	ppp_ops->stop_cancel (handle);
 }
-

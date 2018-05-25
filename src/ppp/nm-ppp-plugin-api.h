@@ -21,6 +21,8 @@
 #ifndef __NM_PPP_PLUGIN_API_H__
 #define __NM_PPP_PLUGIN_API_H__
 
+#include "nm-ppp-manager.h"
+
 typedef const struct {
 	NMPPPManager *(*create) (const char *iface);
 
@@ -37,16 +39,12 @@ typedef const struct {
 	                        guint baud_override,
 	                        GError **err);
 
-	void          (*stop_async) (NMPPPManager *manager,
-	                             GCancellable *cancellable,
-	                             GAsyncReadyCallback callback,
-	                             gpointer user_data);
+	NMPPPManagerStopHandle *(*stop) (NMPPPManager *manager,
+	                                 NMPPPManagerStopCallback callback,
+	                                 gpointer user_data);
 
-	gboolean      (*stop_finish) (NMPPPManager *manager,
-	                              GAsyncResult *res,
-	                              GError **error);
+	void (*stop_cancel) (NMPPPManagerStopHandle *handle);
 
-	void          (*stop_sync) (NMPPPManager *manager);
 } NMPPPOps;
 
 #endif /* __NM_PPP_PLUGIN_API_H__ */
