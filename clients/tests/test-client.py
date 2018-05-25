@@ -702,6 +702,21 @@ class TestNmcli(NmTestBase):
         self.call_nmcli_l(['con', 's', 'ethernet'],
                           replace_stdout = replace_stdout)
 
+    def test_004(self):
+        self.init_001()
+
+        replace_stdout = []
+
+        replace_stdout.append((lambda: self.srv.findConnectionUuid('con-xx1'), 'UUID-con-xx1-REPLACED-REPLACED-REPLA'))
+
+        self.call_nmcli(['c', 'add', 'type', 'wifi', 'ifname', '*', 'ssid', 'foobar', 'con-name', 'con-xx1'],
+                        replace_stdout = replace_stdout)
+
+        self.call_nmcli(['connection', 'mod', 'con-xx1', 'ip.gateway', ''])
+        self.call_nmcli(['connection', 'mod', 'con-xx1', 'ipv4.gateway', '172.16.0.1'])
+        self.call_nmcli(['connection', 'mod', 'con-xx1', 'ipv6.gateway', '::99'])
+        self.call_nmcli(['connection', 'mod', 'con-xx1', '802.abc', ''])
+        self.call_nmcli(['connection', 'mod', 'con-xx1', '802-11-wireless.band', 'a'])
 
 ###############################################################################
 
