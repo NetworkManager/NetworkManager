@@ -295,9 +295,15 @@ gboolean _nm_ip_config_check_and_add_domain (GPtrArray *array, const char *domai
 #include "nm-ip6-config.h"
 
 static inline gboolean
-NM_IS_IP_CONFIG (gconstpointer config)
+NM_IS_IP_CONFIG (gconstpointer config, int addr_family)
 {
-	return NM_IS_IP4_CONFIG (config) || NM_IS_IP6_CONFIG (config);
+	if (addr_family == AF_UNSPEC)
+		return NM_IS_IP4_CONFIG (config) || NM_IS_IP6_CONFIG (config);
+	if (addr_family == AF_INET)
+		return NM_IS_IP4_CONFIG (config);
+	if (addr_family == AF_INET6)
+		return NM_IS_IP6_CONFIG (config);
+	g_return_val_if_reached (FALSE);
 }
 
 #if _NM_CC_SUPPORT_GENERIC
@@ -334,7 +340,7 @@ NM_IS_IP_CONFIG (gconstpointer config)
 		                NMIP6Config *     : (NM_IS_IP6_CONFIG (_config))); \
 	})
 #else
-#define _NM_IS_IP_CONFIG(typeexpr, config) NM_IS_IP_CONFIG(config)
+#define _NM_IS_IP_CONFIG(typeexpr, config) NM_IS_IP_CONFIG(config, AF_UNSPEC)
 #endif
 
 #define NM_IP_CONFIG_CAST(config) \
