@@ -387,6 +387,7 @@ dhclient_start (NMDhcpClient *client,
 		if (!success) {
 			_LOGW ("failed to save DUID to %s: %s", priv->lease_file, error->message);
 			g_free (pid_file);
+			g_clear_error (&error);
 			return FALSE;
 		}
 	}
