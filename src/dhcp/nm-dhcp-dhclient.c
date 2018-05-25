@@ -127,11 +127,13 @@ get_dhclient_leasefile (int addr_family,
 	                        _addr_family_to_path_part (addr_family),
 	                        uuid,
 	                        iface);
-	if (out_preferred_path)
-		*out_preferred_path = g_strdup (path);
 
-	if (g_file_test (path, G_FILE_TEST_EXISTS))
+	if (g_file_test (path, G_FILE_TEST_EXISTS)) {
+		NM_SET_OUT (out_preferred_path, g_strdup (path));
 		return path;
+	}
+
+	NM_SET_OUT (out_preferred_path, g_steal_pointer (&path));
 
 	/* If the leasefile we're looking for doesn't exist yet in the new location
 	 * (eg, /var/lib/NetworkManager) then look in old locations to maintain
@@ -317,26 +319,32 @@ dhclient_start (NMDhcpClient *client,
 {
 	NMDhcpDhclient *self = NM_DHCP_DHCLIENT (client);
 	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (self);
-	GPtrArray *argv = NULL;
+	gs_unref_ptrarray GPtrArray *argv = NULL;
 	pid_t pid;
 	GError *error = NULL;
-	const char *iface, *uuid, *system_bus_address, *dhclient_path = NULL;
-	char *binary_name, *cmd_str, *pid_file = NULL, *system_bus_address_env = NULL;
-	int addr_family;
-	gboolean success;
-	char *escaped, *preferred_leasefile_path = NULL;
+	const char *iface;
+	const char *uuid;
+	const char *system_bus_address;
+	const char *dhclient_path;
+	char *binary_name;
+	gs_free char *cmd_str = NULL;
+	gs_free char *pid_file = NULL;
+	gs_free char *system_bus_address_env = NULL;
+	gs_free char *preferred_leasefile_path = NULL;
+	const int addr_family = nm_dhcp_client_get_addr_family (client);
 
-	g_return_val_if_fail (priv->pid_file == NULL, FALSE);
+	g_return_val_if_fail (!priv->pid_file, FALSE);
 
-	iface = nm_dhcp_client_get_iface (client);
-	uuid = nm_dhcp_client_get_uuid (client);
-	addr_family = nm_dhcp_client_get_addr_family (client);
+	NM_SET_OUT (out_pid, 0);
 
 	dhclient_path = nm_dhcp_dhclient_get_path ();
 	if (!dhclient_path) {
 		_LOGW ("dhclient could not be found");
 		return FALSE;
 	}
+
+	iface = nm_dhcp_client_get_iface (client);
+	uuid = nm_dhcp_client_get_uuid (client);
 
 	pid_file = g_strdup_printf (RUNSTATEDIR "/dhclient%s-%s.pid",
 	                            _addr_family_to_path_part (addr_family),
@@ -349,18 +357,18 @@ dhclient_start (NMDhcpClient *client,
 
 	if (release) {
 		/* release doesn't use the pidfile after killing an old client */
-		g_free (pid_file);
-		pid_file = NULL;
+		nm_clear_g_free (&pid_file);
 	}
 
 	g_free (priv->lease_file);
 	priv->lease_file = get_dhclient_leasefile (addr_family, iface, uuid, &preferred_leasefile_path);
+	nm_assert (preferred_leasefile_path);
 	if (!priv->lease_file) {
 		/* No existing leasefile, dhclient will create one at the preferred path */
-		priv->lease_file = g_strdup (preferred_leasefile_path);
-	} else if (g_strcmp0 (priv->lease_file, preferred_leasefile_path) != 0) {
-		GFile *src = g_file_new_for_path (priv->lease_file);
-		GFile *dst = g_file_new_for_path (preferred_leasefile_path);
+		priv->lease_file = g_steal_pointer (&preferred_leasefile_path);
+	} else if (!nm_streq0 (priv->lease_file, preferred_leasefile_path)) {
+		gs_unref_object GFile *src = g_file_new_for_path (priv->lease_file);
+		gs_unref_object GFile *dst = g_file_new_for_path (preferred_leasefile_path);
 
 		/* Try to copy the existing leasefile to the preferred location */
 		if (g_file_copy (src, dst, G_FILE_COPY_OVERWRITE, NULL, NULL, NULL, &error)) {
@@ -374,19 +382,15 @@ dhclient_start (NMDhcpClient *client,
 			       error->message);
 			g_clear_error (&error);
 		}
-		g_object_unref (src);
-		g_object_unref (dst);
 	}
-	g_free (preferred_leasefile_path);
 
 	/* Save the DUID to the leasefile dhclient will actually use */
 	if (addr_family == AF_INET6) {
+		gs_free char *escaped = NULL;
+
 		escaped = nm_dhcp_dhclient_escape_duid (duid);
-		success = nm_dhcp_dhclient_save_duid (priv->lease_file, escaped, &error);
-		g_free (escaped);
-		if (!success) {
+		if (!nm_dhcp_dhclient_save_duid (priv->lease_file, escaped, &error)) {
 			_LOGW ("failed to save DUID to %s: %s", priv->lease_file, error->message);
-			g_free (pid_file);
 			g_clear_error (&error);
 			return FALSE;
 		}
@@ -442,30 +446,26 @@ dhclient_start (NMDhcpClient *client,
 	g_ptr_array_add (argv, (gpointer) iface);
 	g_ptr_array_add (argv, NULL);
 
-	cmd_str = g_strjoinv (" ", (gchar **) argv->pdata);
-	_LOGD ("running: %s", cmd_str);
-	g_free (cmd_str);
+	_LOGD ("running: %s",
+	       (cmd_str = g_strjoinv (" ", (gchar **) argv->pdata)));
 
-	if (g_spawn_async (NULL, (char **) argv->pdata, NULL,
-	                   G_SPAWN_DO_NOT_REAP_CHILD | G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
-	                   nm_utils_setpgid, NULL, &pid, &error)) {
-		g_assert (pid > 0);
-		_LOGI ("dhclient started with pid %d", pid);
-		if (release == FALSE)
-			nm_dhcp_client_watch_child (client, pid);
-		priv->pid_file = pid_file;
-	} else {
+	if (!g_spawn_async (NULL, (char **) argv->pdata, NULL,
+	                    G_SPAWN_DO_NOT_REAP_CHILD | G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
+	                    nm_utils_setpgid, NULL, &pid, &error)) {
 		_LOGW ("dhclient failed to start: '%s'", error->message);
 		g_error_free (error);
-		g_free (pid_file);
+		return FALSE;
 	}
 
-	if (out_pid)
-		*out_pid = pid;
+	_LOGI ("dhclient started with pid %lld", (long long int) pid);
 
-	g_ptr_array_free (argv, TRUE);
-	g_free (system_bus_address_env);
-	return pid > 0 ? TRUE : FALSE;
+	if (!release)
+		nm_dhcp_client_watch_child (client, pid);
+
+	priv->pid_file = g_steal_pointer (&pid_file);
+
+	NM_SET_OUT (out_pid, pid);
+	return TRUE;
 }
 
 static gboolean
