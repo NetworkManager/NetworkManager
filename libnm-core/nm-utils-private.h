@@ -88,6 +88,7 @@ void        _nm_utils_format_variant_attributes_full (GString *str,
                                                       guint num_values,
                                                       char attr_separator,
                                                       char key_value_separator);
+gboolean    _nm_sriov_vf_parse_vlans (NMSriovVF *vf, const char *str, GError **error);
 
 /* JSON to GValue conversion macros */
 

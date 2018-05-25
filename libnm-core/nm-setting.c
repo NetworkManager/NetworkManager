@@ -132,6 +132,7 @@ _register_settings_ensure_types (void)
 	ENSURE_TYPE (nm_setting_pppoe_get_type);
 	ENSURE_TYPE (nm_setting_proxy_get_type);
 	ENSURE_TYPE (nm_setting_serial_get_type);
+	ENSURE_TYPE (nm_setting_sriov_get_type);
 	ENSURE_TYPE (nm_setting_tc_config_get_type);
 	ENSURE_TYPE (nm_setting_team_get_type);
 	ENSURE_TYPE (nm_setting_team_port_get_type);

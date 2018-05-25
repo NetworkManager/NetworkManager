@@ -220,6 +220,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-setting-ppp.xml"/>
     <xi:include href="xml/nm-setting-proxy.xml"/>
     <xi:include href="xml/nm-setting-serial.xml"/>
+    <xi:include href="xml/nm-setting-sriov.xml"/>
     <xi:include href="xml/nm-setting-tc-config.xml"/>
     <xi:include href="xml/nm-setting-team-port.xml"/>
     <xi:include href="xml/nm-setting-team.xml"/>

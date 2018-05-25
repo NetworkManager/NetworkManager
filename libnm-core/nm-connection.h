@@ -231,6 +231,8 @@ NMSettingPppoe *           nm_connection_get_setting_pppoe             (NMConnec
 NM_AVAILABLE_IN_1_6
 NMSettingProxy *           nm_connection_get_setting_proxy             (NMConnection *connection);
 NMSettingSerial *          nm_connection_get_setting_serial            (NMConnection *connection);
+NM_AVAILABLE_IN_1_14
+NMSettingSriov *           nm_connection_get_setting_sriov             (NMConnection *connection);
 NM_AVAILABLE_IN_1_12
 NMSettingTCConfig *        nm_connection_get_setting_tc_config         (NMConnection *connection);
 NMSettingTun *             nm_connection_get_setting_tun               (NMConnection *connection);

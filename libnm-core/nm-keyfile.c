@@ -119,6 +119,49 @@ setting_alias_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *k
 }
 
 static void
+sriov_vfs_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
+{
+	const char *setting_name = nm_setting_get_name (setting);
+	gs_unref_ptrarray GPtrArray *vfs = NULL;
+	gs_strfreev char **keys = NULL;
+	gsize n_keys = 0;
+	int i;
+
+	keys = nm_keyfile_plugin_kf_get_keys (info->keyfile, setting_name, &n_keys, NULL);
+	if (!keys || n_keys == 0)
+		return;
+
+	vfs = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_sriov_vf_unref);
+
+	for (i = 0; i < n_keys; i++) {
+		gs_free char *value = NULL;
+		NMSriovVF *vf;
+		const char *rest;
+
+		if (!g_str_has_prefix (keys[i], "vf."))
+			continue;
+
+		rest = &keys[i][3];
+
+		if (!NM_STRCHAR_ALL (rest, ch, g_ascii_isdigit (ch)))
+			continue;
+
+		value = nm_keyfile_plugin_kf_get_string (info->keyfile,
+		                                         setting_name,
+		                                         keys[i],
+		                                         NULL);
+
+		vf = _nm_utils_sriov_vf_from_strparts (rest, value, NULL);
+		if (vf)
+			g_ptr_array_add (vfs, vf);
+	}
+
+	g_object_set (G_OBJECT (setting),
+	              key, vfs,
+	              NULL);
+}
+
+static void
 read_array_of_uint (GKeyFile *file,
                     NMSetting *setting,
                     const char *key)
@@ -1510,6 +1553,37 @@ setting_alias_writer (KeyfileWriterInfo *info,
 }
 
 static void
+sriov_vfs_writer (KeyfileWriterInfo *info,
+                  NMSetting *setting,
+                  const char *key,
+                  const GValue *value)
+{
+	GPtrArray *vfs;
+	guint i;
+
+	vfs = g_value_get_boxed (value);
+	if (!vfs)
+		return;
+
+	for (i = 0; i < vfs->len; i++) {
+		const NMSriovVF *vf = vfs->pdata[i];
+		gs_free char *kf_value = NULL;
+		char kf_key[32];
+
+		kf_value = nm_utils_sriov_vf_to_str (vf, TRUE, NULL);
+		if (!kf_value)
+			continue;
+
+		nm_sprintf_buf (kf_key, "vf.%u", nm_sriov_vf_get_index (vf));
+
+		nm_keyfile_plugin_kf_set_string (info->keyfile,
+		                                 nm_setting_get_name (setting),
+		                                 kf_key,
+		                                 kf_value);
+	}
+}
+
+static void
 write_array_of_uint (GKeyFile *file,
                      NMSetting *setting,
                      const char *key,
@@ -2186,6 +2260,15 @@ static const ParseInfoSetting parse_infos[] = {
 		PARSE_INFO_PROPERTIES (
 			PARSE_INFO_PROPERTY (NM_SETTING_SERIAL_PARITY,
 				.parser        = parity_parser,
+			),
+		),
+	),
+	PARSE_INFO_SETTING (NM_SETTING_SRIOV_SETTING_NAME,
+		PARSE_INFO_PROPERTIES (
+			PARSE_INFO_PROPERTY (NM_SETTING_SRIOV_VFS,
+				.parser_no_check_key = TRUE,
+				.parser        = sriov_vfs_parser,
+				.writer        = sriov_vfs_writer,
 			),
 		),
 	),

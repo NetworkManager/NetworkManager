@@ -34,8 +34,9 @@
 #include <linux/if_infiniband.h>
 
 #include "nm-core-enum-types.h"
-#include "nm-setting-wireless-security.h"
+#include "nm-setting-sriov.h"
 #include "nm-setting-tc-config.h"
+#include "nm-setting-wireless-security.h"
 
 G_BEGIN_DECLS
 
@@ -250,8 +251,16 @@ char *nm_utils_tc_tfilter_to_str           (NMTCTfilter *tfilter, GError **error
 
 /*****************************************************************************/
 
+NM_AVAILABLE_IN_1_14
+char *nm_utils_sriov_vf_to_str (const NMSriovVF *vf, gboolean omit_index, GError **error);
+NM_AVAILABLE_IN_1_14
+NMSriovVF *nm_utils_sriov_vf_from_str (const char *str, GError **error);
+
+/*****************************************************************************/
+
 NM_AVAILABLE_IN_1_12
 gint64 nm_utils_get_timestamp_msec         (void);
+
 
 G_END_DECLS
 

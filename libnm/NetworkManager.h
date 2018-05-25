@@ -89,6 +89,7 @@
 #include "nm-setting-pppoe.h"
 #include "nm-setting-proxy.h"
 #include "nm-setting-serial.h"
+#include "nm-setting-sriov.h"
 #include "nm-setting-tc-config.h"
 #include "nm-setting-team.h"
 #include "nm-setting-team-port.h"
