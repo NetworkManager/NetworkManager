@@ -6873,6 +6873,22 @@ test_nm_set_out (void)
 
 /*****************************************************************************/
 
+static void
+test_get_start_time_for_pid (void)
+{
+	guint64 x_start_time;
+	char x_state;
+	pid_t x_ppid;
+
+	x_start_time = nm_utils_get_start_time_for_pid (getpid (), &x_state, &x_ppid);
+
+	g_assert (x_start_time > 0);
+	g_assert (x_ppid == getppid ());
+	g_assert (!NM_IN_SET (x_state, '\0', ' '));
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -7025,6 +7041,8 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/nm-set-out", test_nm_set_out);
 	g_test_add_func ("/core/general/route_attributes/parse", test_route_attributes_parse);
 	g_test_add_func ("/core/general/route_attributes/format", test_route_attributes_format);
+
+	g_test_add_func ("/core/general/get_start_time_for_pid", test_get_start_time_for_pid);
 
 	return g_test_run ();
 }
