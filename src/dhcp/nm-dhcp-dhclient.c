@@ -545,10 +545,12 @@ stop (NMDhcpClient *client, gboolean release, GBytes *duid)
 		if (remove (priv->conf_file) == -1)
 			_LOGD ("could not remove dhcp config file \"%s\": %d (%s)", priv->conf_file, errno, g_strerror (errno));
 	if (priv->pid_file) {
-		if (remove (priv->pid_file) == -1)
-			_LOGD ("could not remove dhcp pid file \"%s\": %d (%s)", priv->pid_file, errno, g_strerror (errno));
-		g_free (priv->pid_file);
-		priv->pid_file = NULL;
+		if (remove (priv->pid_file) == -1) {
+			int errsv = errno;
+
+			_LOGD ("could not remove dhcp pid file \"%s\": %s (%d)", priv->pid_file, g_strerror (errsv), errsv);
+		}
+		nm_clear_g_free (&priv->pid_file);
 	}
 
 	if (release) {

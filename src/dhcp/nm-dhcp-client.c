@@ -659,8 +659,10 @@ nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name)
 
 out:
 	if (remove (pid_file) == -1) {
-		nm_log_dbg (LOGD_DHCP, "dhcp: could not remove pid file \"%s\": %d (%s)",
-		            pid_file, errno, g_strerror (errno));
+		int errsv = errno;
+
+		nm_log_dbg (LOGD_DHCP, "dhcp: could not remove pid file \"%s\": %s (%d)",
+		            pid_file, g_strerror (errsv), errsv);
 	}
 }
 
