@@ -1169,7 +1169,12 @@ class Connection(ExportedObj):
 
     @dbus.service.method(dbus_interface=IFACE_CONNECTION, in_signature='a{sa{sv}}', out_signature='')
     def Update(self, settings):
-        self.update_connection(settings, TRUE)
+        self.update_connection(settings, True)
+
+    @dbus.service.method(dbus_interface=IFACE_CONNECTION, in_signature='a{sa{sv}}ua{sv}', out_signature='a{sv}')
+    def Update2(self, settings, flags, args):
+        self.update_connection(settings, True)
+        return []
 
     @dbus.service.signal(IFACE_CONNECTION, signature='')
     def Removed(self):
