@@ -582,6 +582,14 @@ class TestNmcli(NmTestBase):
 
         self.call_nmcli_l(['bogus', 's'])
 
+        for mode in [[],
+                     ['--mode', 'tabular'],
+                     ['--mode', 'multiline']]:
+            for fmt in [[],
+                        ['--pretty'],
+                        ['--terse']]:
+                self.call_nmcli_l(mode + fmt + ['general', 'permissions'])
+
     def test_002(self):
         self.init_001()
 
