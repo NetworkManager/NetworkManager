@@ -1172,9 +1172,11 @@ pending_ac_state_changed (NMActiveConnection *ac, guint state, guint reason, NMP
 		 * device, but block the current connection to avoid an activation
 		 * loop.
 		 */
-		con = nm_active_connection_get_settings_connection (ac);
-		nm_settings_connection_autoconnect_blocked_reason_set (con, NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED, TRUE);
-		schedule_activate_check (self, nm_active_connection_get_device (ac));
+		if (reason != NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED) {
+			con = nm_active_connection_get_settings_connection (ac);
+			nm_settings_connection_autoconnect_blocked_reason_set (con, NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED, TRUE);
+			schedule_activate_check (self, nm_active_connection_get_device (ac));
+		}
 
 		/* Cleanup */
 		g_signal_handlers_disconnect_by_func (ac, pending_ac_state_changed, self);
