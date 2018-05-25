@@ -1558,6 +1558,12 @@ again:
 	}
 }
 
+static gboolean
+device_is_wake_on_lan (NMPlatform *platform, NMDevice *device)
+{
+	return nm_platform_link_get_wake_on_lan (platform, nm_device_get_ip_ifindex (device));
+}
+
 static void
 remove_device (NMManager *self,
                NMDevice *device,
@@ -1567,14 +1573,19 @@ remove_device (NMManager *self,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	gboolean unmanage = FALSE;
 
-	_LOG2D (LOGD_DEVICE, device, "removing device (allow_unmanage %d, managed %d)",
-	        allow_unmanage, nm_device_get_managed (device, FALSE));
+	_LOG2D (LOGD_DEVICE, device, "removing device (allow_unmanage %d, managed %d, wol %d)",
+	        allow_unmanage, nm_device_get_managed (device, FALSE),
+	        device_is_wake_on_lan (priv->platform, device));
 
 	if (allow_unmanage && nm_device_get_managed (device, FALSE)) {
 
-		if (quitting)
-			unmanage = nm_device_unmanage_on_quit (device);
-		else {
+		if (quitting) {
+			/* Leave configured if wo(w)lan and quitting */
+			if (device_is_wake_on_lan (priv->platform, device))
+				unmanage = FALSE;
+			else
+				unmanage = nm_device_unmanage_on_quit (device);
+		} else {
 			/* the device is already gone. Unmanage it. */
 			unmanage = TRUE;
 		}
@@ -5136,12 +5147,6 @@ done:
 		g_dbus_method_invocation_take_error (invocation, error);
 	}
 	g_clear_object (&subject);
-}
-
-static gboolean
-device_is_wake_on_lan (NMPlatform *platform, NMDevice *device)
-{
-	return nm_platform_link_get_wake_on_lan (platform, nm_device_get_ip_ifindex (device));
 }
 
 static gboolean
