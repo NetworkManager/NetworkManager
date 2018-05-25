@@ -605,7 +605,7 @@ get_duid (NMDhcpClient *client)
 		g_free (leasefile);
 	}
 
-	if (!duid && priv->def_leasefile) {
+	if (!duid) {
 		/* Otherwise read the default machine-wide DUID */
 		_LOGD ("looking for default DUID in '%s'", priv->def_leasefile);
 		duid = nm_dhcp_dhclient_read_duid (priv->def_leasefile, &error);
@@ -623,30 +623,24 @@ get_duid (NMDhcpClient *client)
 
 /*****************************************************************************/
 
-static const char *def_leasefiles[] = {
-	SYSCONFDIR "/dhclient6.leases",
-	LOCALSTATEDIR "/lib/dhcp/dhclient6.leases",
-	LOCALSTATEDIR "/lib/dhclient/dhclient6.leases",
-	NULL
-};
-
 static void
 nm_dhcp_dhclient_init (NMDhcpDhclient *self)
 {
+	static const char *const FILES[] = {
+		SYSCONFDIR "/dhclient6.leases", /* default */
+		LOCALSTATEDIR "/lib/dhcp/dhclient6.leases",
+		LOCALSTATEDIR "/lib/dhclient/dhclient6.leases",
+	};
 	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (self);
-	const char **iter = &def_leasefiles[0];
+	int i;
 
-	while (iter && *iter) {
-		if (g_file_test (*iter, G_FILE_TEST_EXISTS)) {
-			priv->def_leasefile = *iter;
+	priv->def_leasefile = FILES[0];
+	for (i = 0; i < G_N_ELEMENTS (FILES); i++) {
+		if (g_file_test (FILES[i], G_FILE_TEST_EXISTS)) {
+			priv->def_leasefile = FILES[i];
 			break;
 		}
-		iter++;
 	}
-
-	/* Fallback option */
-	if (!priv->def_leasefile)
-		priv->def_leasefile = SYSCONFDIR "/dhclient6.leases";
 
 	priv->dhcp_listener = g_object_ref (nm_dhcp_listener_get ());
 	g_signal_connect (priv->dhcp_listener,
