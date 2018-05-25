@@ -112,6 +112,15 @@ wifi_utils_set_powersave (WifiData *data, guint32 powersave)
 	return data->klass->set_powersave ? data->klass->set_powersave (data, powersave) : TRUE;
 }
 
+gboolean
+wifi_utils_set_wake_on_wlan (WifiData *data, NMSettingWirelessWakeOnWLan wowl)
+{
+	g_return_val_if_fail (data != NULL, FALSE);
+
+	return data->klass->set_wake_on_wlan ?
+	       data->klass->set_wake_on_wlan (data, wowl) : FALSE;
+}
+
 guint32
 wifi_utils_get_freq (WifiData *data)
 {

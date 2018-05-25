@@ -244,6 +244,9 @@ nla_put_string (struct nl_msg *msg, int attrtype, const char *str)
 #define NLA_PUT_STRING(msg, attrtype, value) \
 	NLA_PUT(msg, attrtype, (int) strlen(value) + 1, value)
 
+#define NLA_PUT_FLAG(msg, attrtype) \
+	NLA_PUT(msg, attrtype, 0, NULL)
+
 struct nlattr *nla_find (const struct nlattr *head, int len, int attrtype);
 
 static inline int

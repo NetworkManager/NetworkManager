@@ -6092,6 +6092,14 @@ wifi_indicate_addressing_running (NMPlatform *platform, int ifindex, gboolean ru
 	wifi_utils_indicate_addressing_running (wifi_data, running);
 }
 
+static gboolean
+wifi_set_wake_on_wlan (NMPlatform *platform, int ifindex,
+                       NMSettingWirelessWakeOnWLan wowl)
+{
+	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, FALSE);
+	return wifi_utils_set_wake_on_wlan (wifi_data, wowl);
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -7230,6 +7238,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->wifi_set_powersave = wifi_set_powersave;
 	platform_class->wifi_find_frequency = wifi_find_frequency;
 	platform_class->wifi_indicate_addressing_running = wifi_indicate_addressing_running;
+	platform_class->wifi_set_wake_on_wlan = wifi_set_wake_on_wlan;
 
 	platform_class->mesh_get_channel = mesh_get_channel;
 	platform_class->mesh_set_channel = mesh_set_channel;

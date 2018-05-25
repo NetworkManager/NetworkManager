@@ -34,6 +34,9 @@ typedef struct {
 	/* Set power saving mode on an interface */
 	gboolean (*set_powersave) (WifiData *data, guint32 powersave);
 
+	/* Set WakeOnWLAN mode on an interface */
+	gboolean (*set_wake_on_wlan) (WifiData *data, NMSettingWirelessWakeOnWLan wowl);
+
 	/* Return current frequency in MHz (really associated BSS frequency) */
 	guint32 (*get_freq) (WifiData *data);
 
