@@ -168,7 +168,7 @@ void nm_dhcp_client_watch_child (NMDhcpClient *self, pid_t pid);
 
 void nm_dhcp_client_set_state (NMDhcpClient *self,
                                NMDhcpState new_state,
-                               GObject *ip_config,   /* NMIP4Config or NMIP6Config */
+                               NMIPConfig *ip_config,
                                GHashTable *options); /* str:str hash */
 
 gboolean nm_dhcp_client_handle_event (gpointer unused,

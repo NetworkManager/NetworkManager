@@ -359,25 +359,24 @@ stop (NMDhcpClient *self, gboolean release, GBytes *duid)
 void
 nm_dhcp_client_set_state (NMDhcpClient *self,
                           NMDhcpState new_state,
-                          GObject *ip_config,
+                          NMIPConfig *ip_config,
                           GHashTable *options)
 {
 	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 	gs_free char *event_id = NULL;
 
+	if (new_state == NM_DHCP_STATE_BOUND) {
+		g_return_if_fail (NM_IS_IP_CONFIG (ip_config, priv->addr_family));
+		g_return_if_fail (options);
+	} else {
+		g_return_if_fail (!ip_config);
+		g_return_if_fail (!options);
+	}
+
 	if (new_state >= NM_DHCP_STATE_BOUND)
 		timeout_cleanup (self);
 	if (new_state >= NM_DHCP_STATE_TIMEOUT)
 		watch_cleanup (self);
-
-	if (new_state == NM_DHCP_STATE_BOUND) {
-		g_assert (   (priv->addr_family == AF_INET  && NM_IS_IP4_CONFIG (ip_config))
-		          || (priv->addr_family == AF_INET6 && NM_IS_IP6_CONFIG (ip_config)));
-		g_assert (options);
-	} else {
-		g_assert (ip_config == NULL);
-		g_assert (options == NULL);
-	}
 
 	/* The client may send same-state transitions for RENEW/REBIND events and
 	 * the lease may have changed, so handle same-state transitions for the
@@ -851,7 +850,7 @@ nm_dhcp_client_handle_event (gpointer unused,
 			g_clear_pointer (&str_options, g_hash_table_unref);
 		}
 
-		nm_dhcp_client_set_state (self, new_state, G_OBJECT (ip_config), str_options);
+		nm_dhcp_client_set_state (self, new_state, ip_config, str_options);
 	}
 
 	return TRUE;
