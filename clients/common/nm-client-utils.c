@@ -175,11 +175,10 @@ nmc_string_is_valid (const char *input, const char **allowed, GError **error)
 {
 	const char **p;
 	size_t input_ln, p_len;
+	const char *partial_match = NULL;
 	gboolean ambiguous = FALSE;
-	const char *prev_match = NULL;
-	const char *ret = NULL;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+	g_return_val_if_fail (!error || !*error, NULL);
 
 	if (!input || !*input)
 		goto finish;
@@ -188,27 +187,34 @@ nmc_string_is_valid (const char *input, const char **allowed, GError **error)
 	for (p = allowed; p && *p; p++) {
 		p_len = strlen (*p);
 		if (g_ascii_strncasecmp (input, *p, input_ln) == 0) {
-			if (input_ln == p_len) {
-				ret = *p;
-				ambiguous = FALSE;
-				break;
-			}
-			if (!prev_match) {
-				prev_match = *p;
-			} else {
-				ret = *p;
+			if (input_ln == p_len)
+				return *p;
+			if (!partial_match)
+				partial_match = *p;
+			else
 				ambiguous = TRUE;
-			}
 		}
 	}
+
 	if (ambiguous) {
-		g_set_error (error, 1, 1, _("'%s' is ambiguous (%s x %s)"),
-		             input, prev_match, ret);
+		GString *candidates = g_string_new ("");
+
+		for (p = allowed; *p; p++) {
+			if (g_ascii_strncasecmp (input, *p, input_ln) == 0) {
+				if (candidates->len > 0)
+					g_string_append (candidates, ", ");
+				g_string_append (candidates, *p);
+			}
+		}
+		g_set_error (error, 1, 1, _("'%s' is ambiguous: %s"),
+		             input, candidates->str);
+		g_string_free (candidates, TRUE);
 		return NULL;
 	}
 finish:
-	if (ret == NULL) {
+	if (!partial_match) {
 		char *valid_vals = g_strjoinv (", ", (char **) allowed);
+
 		if (!input || !*input)
 			g_set_error (error, 1, 0, _("missing name, try one of [%s]"), valid_vals);
 		else
@@ -216,7 +222,8 @@ finish:
 
 		g_free (valid_vals);
 	}
-	return ret;
+
+	return partial_match;
 }
 
 gboolean
