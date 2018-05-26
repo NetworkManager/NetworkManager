@@ -359,25 +359,24 @@ stop (NMDhcpClient *self, gboolean release, GBytes *duid)
 void
 nm_dhcp_client_set_state (NMDhcpClient *self,
                           NMDhcpState new_state,
-                          GObject *ip_config,
+                          NMIPConfig *ip_config,
                           GHashTable *options)
 {
 	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 	gs_free char *event_id = NULL;
 
+	if (new_state == NM_DHCP_STATE_BOUND) {
+		g_return_if_fail (NM_IS_IP_CONFIG (ip_config, priv->addr_family));
+		g_return_if_fail (options);
+	} else {
+		g_return_if_fail (!ip_config);
+		g_return_if_fail (!options);
+	}
+
 	if (new_state >= NM_DHCP_STATE_BOUND)
 		timeout_cleanup (self);
 	if (new_state >= NM_DHCP_STATE_TIMEOUT)
 		watch_cleanup (self);
-
-	if (new_state == NM_DHCP_STATE_BOUND) {
-		g_assert (   (priv->addr_family == AF_INET  && NM_IS_IP4_CONFIG (ip_config))
-		          || (priv->addr_family == AF_INET6 && NM_IS_IP6_CONFIG (ip_config)));
-		g_assert (options);
-	} else {
-		g_assert (ip_config == NULL);
-		g_assert (options == NULL);
-	}
 
 	/* The client may send same-state transitions for RENEW/REBIND events and
 	 * the lease may have changed, so handle same-state transitions for the
@@ -660,8 +659,10 @@ nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name)
 
 out:
 	if (remove (pid_file) == -1) {
-		nm_log_dbg (LOGD_DHCP, "dhcp: could not remove pid file \"%s\": %d (%s)",
-		            pid_file, errno, g_strerror (errno));
+		int errsv = errno;
+
+		nm_log_dbg (LOGD_DHCP, "dhcp: could not remove pid file \"%s\": %s (%d)",
+		            pid_file, g_strerror (errsv), errsv);
 	}
 }
 
@@ -770,8 +771,8 @@ nm_dhcp_client_handle_event (gpointer unused,
 	NMDhcpClientPrivate *priv;
 	guint32 old_state;
 	guint32 new_state;
-	GHashTable *str_options = NULL;
-	GObject *ip_config = NULL;
+	gs_unref_hashtable GHashTable *str_options = NULL;
+	gs_unref_object NMIPConfig *ip_config = NULL;
 	NMPlatformIP6Address prefix = { 0, };
 
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
@@ -815,24 +816,24 @@ nm_dhcp_client_handle_event (gpointer unused,
 		}
 
 		/* Create the IP config */
-		g_warn_if_fail (g_hash_table_size (str_options));
-		if (g_hash_table_size (str_options)) {
+		if (g_hash_table_size (str_options) > 0) {
 			if (priv->addr_family == AF_INET) {
-				ip_config = (GObject *) nm_dhcp_utils_ip4_config_from_options (nm_dhcp_client_get_multi_idx (self),
-				                                                               priv->ifindex,
-				                                                               priv->iface,
-				                                                               str_options,
-				                                                               priv->route_table,
-				                                                               priv->route_metric);
+				ip_config = NM_IP_CONFIG_CAST (nm_dhcp_utils_ip4_config_from_options (nm_dhcp_client_get_multi_idx (self),
+				                                                                      priv->ifindex,
+				                                                                      priv->iface,
+				                                                                      str_options,
+				                                                                      priv->route_table,
+				                                                                      priv->route_metric));
 			} else {
 				prefix = nm_dhcp_utils_ip6_prefix_from_options (str_options);
-				ip_config = (GObject *) nm_dhcp_utils_ip6_config_from_options (nm_dhcp_client_get_multi_idx (self),
-				                                                               priv->ifindex,
-				                                                               priv->iface,
-				                                                               str_options,
-				                                                               priv->info_only);
+				ip_config = NM_IP_CONFIG_CAST (nm_dhcp_utils_ip6_config_from_options (nm_dhcp_client_get_multi_idx (self),
+				                                                                      priv->ifindex,
+				                                                                      priv->iface,
+				                                                                      str_options,
+				                                                                      priv->info_only));
 			}
-		}
+		} else
+			g_warn_if_reached ();
 	}
 
 	if (!IN6_IS_ADDR_UNSPECIFIED (&prefix.address)) {
@@ -844,7 +845,8 @@ nm_dhcp_client_handle_event (gpointer unused,
 		               &prefix);
 	} else {
 		/* Fail if no valid IP config was received */
-		if (new_state == NM_DHCP_STATE_BOUND && ip_config == NULL) {
+		if (   new_state == NM_DHCP_STATE_BOUND
+		    && !ip_config) {
 			_LOGW ("client bound but IP config not received");
 			new_state = NM_DHCP_STATE_FAIL;
 			g_clear_pointer (&str_options, g_hash_table_unref);
@@ -852,10 +854,6 @@ nm_dhcp_client_handle_event (gpointer unused,
 
 		nm_dhcp_client_set_state (self, new_state, ip_config, str_options);
 	}
-
-	if (str_options)
-		g_hash_table_destroy (str_options);
-	g_clear_object (&ip_config);
 
 	return TRUE;
 }
