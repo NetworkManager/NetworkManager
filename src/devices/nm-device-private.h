@@ -43,6 +43,8 @@ enum NMActStageReturn {
 
 #define NM_DEVICE_CAP_INTERNAL_MASK 0xc0000000
 
+void nm_device_arp_announce (NMDevice *self);
+
 NMSettings *nm_device_get_settings (NMDevice *self);
 
 gboolean nm_device_set_ip_ifindex (NMDevice *self, int ifindex);
