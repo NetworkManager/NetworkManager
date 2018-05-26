@@ -110,15 +110,15 @@ parent_hwaddr_maybe_changed (NMDevice *parent,
 	if (nm_device_sys_iface_state_is_external_or_assume (device))
 		return;
 
-	connection = nm_device_get_applied_connection ((NMDevice *) self);
+	connection = nm_device_get_applied_connection (device);
 	if (!connection)
 		return;
 
 	/* Update the VLAN MAC only if configuration does not specify one */
-	if (nm_device_hw_addr_is_explict ((NMDevice *) self))
+	if (nm_device_hw_addr_is_explict (device))
 		return;
 
-	old_mac = nm_device_get_hw_address ((NMDevice *) self);
+	old_mac = nm_device_get_hw_address (device);
 	new_mac = nm_device_get_hw_address (parent);
 	if (nm_streq0 (old_mac, new_mac))
 		return;
@@ -126,13 +126,13 @@ parent_hwaddr_maybe_changed (NMDevice *parent,
 	_LOGD (LOGD_VLAN, "parent hardware address changed to %s%s%s",
 	       NM_PRINT_FMT_QUOTE_STRING (new_mac));
 	if (new_mac) {
-		nm_device_hw_addr_set ((NMDevice *) self, new_mac, "vlan-parent", TRUE);
+		nm_device_hw_addr_set (device, new_mac, "vlan-parent", TRUE);
 		/* When changing the hw address the interface is taken down,
 		 * removing the IPv6 configuration; reapply it.
 		 */
 		s_ip6 = nm_connection_get_setting_ip6_config (connection);
 		if (s_ip6)
-			nm_device_reactivate_ip6_config (NM_DEVICE (self), s_ip6, s_ip6);
+			nm_device_reactivate_ip6_config (device, s_ip6, s_ip6);
 	}
 }
 
