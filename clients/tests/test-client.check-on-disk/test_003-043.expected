@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:688:test_003()/43
+location: clients/tests/test-client.py:697:test_003()/43
 cmd: $NMCLI -f UUID,TYPE --mode multiline --terse con
 lang: C
 returncode: 0

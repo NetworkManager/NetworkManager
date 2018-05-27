@@ -125,6 +125,14 @@ class Util:
             raise AssertionError("Expected at most %s elements, but %s found" % (max_num, n))
         return v
 
+    @staticmethod
+    def file_read(filename):
+        try:
+            with open(filename, 'rb') as f:
+                return f.read()
+        except:
+            return None
+
 ###############################################################################
 
 class Configuration:
@@ -266,6 +274,8 @@ class NMStubServer:
         ])
 
 ###############################################################################
+
+file_list = []
 
 class NmTestBase(unittest.TestCase):
     pass
@@ -457,18 +467,17 @@ class TestNmcli(NmTestBase):
 
 
         dirname = PathConfiguration.srcdir() + '/test-client.check-on-disk'
-        filename = os.path.abspath(dirname + '/' + test_name + '.expected')
+        basename = test_name + '.expected'
+        filename = os.path.abspath(dirname + '/' + basename)
 
         if not check_on_disk:
             if os.path.exists(filename):
                 self.fail("The file '%s' exists, although we expect it not to." % (filename))
             return
 
-        try:
-            with open(filename, 'rb') as content_file:
-                content_old = content_file.read()
-        except:
-            content_old = None
+        file_list.append(basename)
+
+        content_old = Util.file_read(filename)
 
         # we cannot use frame.f_code.co_filename directly, because it might be different depending
         # on where the file lies and which is CWD. We still want to give the location of
@@ -745,7 +754,21 @@ def main():
                 m = 'unknown error'
             assert False, ('Failure to re-exec to start script with dbus-launch: %s' % (m))
 
-    unittest.main()
+    r = unittest.main(exit = False)
+
+    if conf.get(ENV_NM_TEST_REGENERATE):
+        make_filename = PathConfiguration.srcdir() + '/test-client.check-on-disk/Makefile.am'
+        s_new = '# generated with `NM_TEST_REGENERATE=1 make check`\n' + \
+                '\n' + \
+                'clients_tests_expected_files = \\\n' + \
+                ''.join([('\tclients/tests/test-client.check-on-disk/%s \\\n' % f) for f in sorted(file_list)]) + \
+                '\t$(NULL)\n'
+        s_new = s_new.encode('utf-8')
+        if s_new != Util.file_read(make_filename):
+            with open(make_filename, 'wb') as f:
+                f.write(s_new)
+
+    sys.exit(not r.result.wasSuccessful())
 
 if __name__ == '__main__':
     main()
