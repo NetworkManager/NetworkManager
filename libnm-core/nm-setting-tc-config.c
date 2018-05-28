@@ -1610,7 +1610,7 @@ nm_setting_tc_config_class_init (NMSettingTCConfigClass *setting_class)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: qdiscs
-	 * variable: QDISC1, QDISC2, ...
+	 * variable: QDISC1(+), QDISC2(+), ...
 	 * description: Queueing disciplines
 	 * example: QDISC1=ingress, QDISC2="root handle 1234: fq_codel"
 	 * ---end---
@@ -1637,7 +1637,7 @@ nm_setting_tc_config_class_init (NMSettingTCConfigClass *setting_class)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: qdiscs
-	 * variable: FILTER1, FILTER2, ...
+	 * variable: FILTER1(+), FILTER2(+), ...
 	 * description: Traffic filters
 	 * example: FILTER1="parent ffff: matchall action simple sdata Input", ...
 	 * ---end---
