@@ -3685,8 +3685,8 @@ nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize length)
 	return buffer;
 }
 
-static void
-_bin2str (gconstpointer addr, gsize length, const char delimiter, gboolean upper_case, char *out)
+void
+_nm_utils_bin2str_full (gconstpointer addr, gsize length, const char delimiter, gboolean upper_case, char *out)
 {
 	const guint8 *in = addr;
 	const char *LOOKUP = upper_case ? "0123456789ABCDEF" : "0123456789abcdef";
@@ -3736,7 +3736,7 @@ nm_utils_bin2hexstr (gconstpointer src, gsize len, int final_len)
 	g_return_val_if_fail (final_len < 0 || (gsize) final_len < buflen, NULL);
 
 	result = g_malloc (buflen);
-	_bin2str (src, len, '\0', FALSE, result);
+	_nm_utils_bin2str_full (src, len, '\0', FALSE, result);
 
 	/* Cut converted key off at the correct length for this cipher type */
 	if (final_len >= 0 && (gsize) final_len < buflen)
@@ -3763,7 +3763,7 @@ nm_utils_hwaddr_ntoa (gconstpointer addr, gsize length)
 	g_return_val_if_fail (length > 0, g_strdup (""));
 
 	result = g_malloc (length * 3);
-	_bin2str (addr, length, ':', TRUE, result);
+	_nm_utils_bin2str_full (addr, length, ':', TRUE, result);
 	return result;
 }
 
@@ -3776,7 +3776,7 @@ nm_utils_hwaddr_ntoa_buf (gconstpointer addr, gsize addr_len, gboolean upper_cas
 	if (buf_len < addr_len * 3)
 		g_return_val_if_reached (NULL);
 
-	_bin2str (addr, addr_len, ':', upper_case, buf);
+	_nm_utils_bin2str_full (addr, addr_len, ':', upper_case, buf);
 	return buf;
 }
 
@@ -3799,7 +3799,7 @@ _nm_utils_bin2str (gconstpointer addr, gsize length, gboolean upper_case)
 	g_return_val_if_fail (length > 0, g_strdup (""));
 
 	result = g_malloc (length * 3);
-	_bin2str (addr, length, ':', upper_case, result);
+	_nm_utils_bin2str_full (addr, length, ':', upper_case, result);
 	return result;
 }
 
@@ -3827,9 +3827,11 @@ nm_utils_hwaddr_valid (const char *asc, gssize length)
 		if (!hwaddr_aton (asc, buf, length, &l))
 			return FALSE;
 		return length == l;
-	} else if (length == -1) {
+	} else if (length == -1)
 		return !!hwaddr_aton (asc, buf, sizeof (buf), &l);
-	} else
+	else if (length == 0)
+		return FALSE;
+	else
 		g_return_val_if_reached (FALSE);
 }
 

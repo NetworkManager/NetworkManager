@@ -210,6 +210,7 @@ guint8 *_nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize buffer_le
 const char *nm_utils_hwaddr_ntoa_buf (gconstpointer addr, gsize addr_len, gboolean upper_case, char *buf, gsize buf_len);
 
 char *_nm_utils_bin2str (gconstpointer addr, gsize length, gboolean upper_case);
+void _nm_utils_bin2str_full (gconstpointer addr, gsize length, const char delimiter, gboolean upper_case, char *out);
 
 GSList *    _nm_utils_hash_values_to_slist (GHashTable *hash);
 
