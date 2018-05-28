@@ -133,6 +133,35 @@ class Util:
         except:
             return None
 
+    @staticmethod
+    def replace_text(text, replace_arr):
+        if not replace_arr:
+            return text
+        text = [text]
+        for replace in replace_arr:
+            try:
+                v_search = replace[0]()
+            except TypeError:
+                v_search = replace[0]
+            assert v_search is None or Util.is_string(v_search)
+            if not v_search:
+                continue
+            v_replace = replace[1]
+            v_search = v_search.encode('utf-8')
+            v_replace = v_replace.encode('utf-8')
+            text2 = []
+            for t in text:
+                if isinstance(t, tuple):
+                    text2.append(t)
+                    continue
+                t2 = t.split(v_search)
+                text2.append(t2[0])
+                for t3 in t2[1:]:
+                    text2.append( (v_replace,) )
+                    text2.append(t3)
+            text = text2
+        return b''.join([(t[0] if isinstance(t, tuple) else t) for t in text])
+
 ###############################################################################
 
 class Configuration:
@@ -282,35 +311,6 @@ class NmTestBase(unittest.TestCase):
 
 class TestNmcli(NmTestBase):
 
-    @staticmethod
-    def _replace(text, replace_arr):
-        if not replace_arr:
-            return text
-        text = [text]
-        for replace in replace_arr:
-            try:
-                v_search = replace[0]()
-            except TypeError:
-                v_search = replace[0]
-            assert v_search is None or Util.is_string(v_search)
-            if not v_search:
-                continue
-            v_replace = replace[1]
-            v_search = v_search.encode('utf-8')
-            v_replace = v_replace.encode('utf-8')
-            text2 = []
-            for t in text:
-                if isinstance(t, tuple):
-                    text2.append(t)
-                    continue
-                t2 = t.split(v_search)
-                text2.append(t2[0])
-                for t3 in t2[1:]:
-                    text2.append( (v_replace,) )
-                    text2.append(t3)
-            text = text2
-        return b''.join([(t[0] if isinstance(t, tuple) else t) for t in text])
-
     def call_nmcli_l(self,
                      args,
                      check_on_disk = _DEFAULT_ARG,
@@ -428,8 +428,8 @@ class TestNmcli(NmTestBase):
         p.stdout.close()
         p.stderr.close()
 
-        stdout = self._replace(stdout, replace_stdout)
-        stderr = self._replace(stderr, replace_stderr)
+        stdout = Util.replace_text(stdout, replace_stdout)
+        stderr = Util.replace_text(stderr, replace_stderr)
 
         if sort_lines_stdout:
             stdout = b'\n'.join(sorted(stdout.split(b'\n')))
