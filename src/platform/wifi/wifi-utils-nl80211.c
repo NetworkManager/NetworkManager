@@ -250,8 +250,7 @@ wifi_nl80211_set_mode (WifiData *data, const NM80211Mode mode)
 	err = nl80211_send_and_recv (nl80211, msg, NULL, NULL);
 	return err >= 0;
 
- nla_put_failure:
-	nlmsg_free (msg);
+nla_put_failure:
 	return FALSE;
 }
 
@@ -269,7 +268,6 @@ wifi_nl80211_set_powersave (WifiData *data, guint32 powersave)
 	return err >= 0;
 
 nla_put_failure:
-	nlmsg_free (msg);
 	return FALSE;
 }
 
@@ -542,8 +540,7 @@ nl80211_get_ap_info (WifiDataNl80211 *nl80211,
 
 	return;
 
- nla_put_failure:
-	nlmsg_free (msg);
+nla_put_failure:
 	return;
 }
 
@@ -597,7 +594,6 @@ wifi_nl80211_indicate_addressing_running (WifiData *data, gboolean running)
 	return err >= 0;
 
 nla_put_failure:
-	nlmsg_free (msg);
 	return FALSE;
 }
 
