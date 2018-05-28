@@ -666,6 +666,75 @@ find_plugin (GSList *list, const char *pname)
 	return obj;
 }
 
+static gboolean
+load_plugin (NMSettings *self, GSList *list, const char *pname, GError **error)
+{
+	gs_free char *full_name = NULL;
+	gs_free char *path = NULL;
+	gs_unref_object GObject *obj = NULL;
+	GModule *plugin;
+	GObject * (*factory_func) (void);
+	struct stat st;
+	int errsv;
+
+	full_name = g_strdup_printf ("nm-settings-plugin-%s", pname);
+	path = g_module_build_path (NMPLUGINDIR, full_name);
+
+	if (stat (path, &st) != 0) {
+		errsv = errno;
+		_LOGW ("could not load plugin '%s' from file '%s': %s", pname, path, strerror (errsv));
+		return TRUE;
+	}
+	if (!S_ISREG (st.st_mode)) {
+		_LOGW ("could not load plugin '%s' from file '%s': not a file", pname, path);
+		return TRUE;
+	}
+	if (st.st_uid != 0) {
+		_LOGW ("could not load plugin '%s' from file '%s': file must be owned by root", pname, path);
+		return TRUE;
+	}
+	if (st.st_mode & (S_IWGRP | S_IWOTH | S_ISUID)) {
+		_LOGW ("could not load plugin '%s' from file '%s': invalid file permissions", pname, path);
+		return TRUE;
+	}
+
+	plugin = g_module_open (path, G_MODULE_BIND_LOCAL);
+	if (!plugin) {
+		_LOGW ("could not load plugin '%s' from file '%s': %s",
+		     pname, path, g_module_error ());
+		return TRUE;
+	}
+
+	/* errors after this point are fatal, because we loaded the shared library already. */
+
+	if (!g_module_symbol (plugin, "nm_settings_plugin_factory", (gpointer) (&factory_func))) {
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+		             "Could not find plugin '%s' factory function.",
+		             pname);
+		g_module_close (plugin);
+		return FALSE;
+	}
+
+	/* after accessing the plugin we cannot unload it anymore, because the glib
+	 * types cannot be properly unregistered. */
+	g_module_make_resident (plugin);
+
+	obj = (*factory_func) ();
+	if (!obj || !NM_IS_SETTINGS_PLUGIN (obj)) {
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
+		             "Plugin '%s' returned invalid system config object.",
+		             pname);
+		return FALSE;
+	}
+
+	g_object_set_qdata_full (obj, plugin_module_path_quark (), path, g_free);
+	path = NULL;
+	if (add_plugin (self, NM_SETTINGS_PLUGIN (obj)))
+		list = g_slist_append (list, g_steal_pointer (&obj));
+
+	return TRUE;
+}
+
 static void
 add_keyfile_plugin (NMSettings *self)
 {
@@ -696,7 +765,6 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 
 	for (iter = plugins; iter && *iter; iter++) {
 		const char *pname = *iter;
-		GObject *obj;
 
 		if (!*pname || strchr (pname, '/')) {
 			_LOGW ("ignore invalid plugin \"%s\"", pname);
@@ -731,83 +799,21 @@ load_plugins (NMSettings *self, const char **plugins, GError **error)
 		}
 
 		if (find_plugin (list, pname))
-			continue;
+			return TRUE;
 
-load_plugin:
-		{
-			GModule *plugin;
-			gs_free char *full_name = NULL;
-			gs_free char *path = NULL;
-			GObject * (*factory_func) (void);
-			struct stat st;
-			int errsv;
+		success = load_plugin (self, list, pname, error);
+		if (!success)
+			break;
 
-			full_name = g_strdup_printf ("nm-settings-plugin-%s", pname);
-			path = g_module_build_path (NMPLUGINDIR, full_name);
-
-			if (stat (path, &st) != 0) {
-				errsv = errno;
-				_LOGW ("could not load plugin '%s' from file '%s': %s", pname, path, strerror (errsv));
-				goto next;
-			}
-			if (!S_ISREG (st.st_mode)) {
-				_LOGW ("could not load plugin '%s' from file '%s': not a file", pname, path);
-				goto next;
-			}
-			if (st.st_uid != 0) {
-				_LOGW ("could not load plugin '%s' from file '%s': file must be owned by root", pname, path);
-				goto next;
-			}
-			if (st.st_mode & (S_IWGRP | S_IWOTH | S_ISUID)) {
-				_LOGW ("could not load plugin '%s' from file '%s': invalid file permissions", pname, path);
-				goto next;
-			}
-
-			plugin = g_module_open (path, G_MODULE_BIND_LOCAL);
-			if (!plugin) {
-				_LOGW ("could not load plugin '%s' from file '%s': %s",
-				     pname, path, g_module_error ());
-				goto next;
-			}
-
-			/* errors after this point are fatal, because we loaded the shared library already. */
-
-			if (!g_module_symbol (plugin, "nm_settings_plugin_factory", (gpointer) (&factory_func))) {
-				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-				             "Could not find plugin '%s' factory function.",
-				             pname);
-				success = FALSE;
-				g_module_close (plugin);
-				break;
-			}
-
-			/* after accessing the plugin we cannot unload it anymore, because the glib
-			 * types cannot be properly unregistered. */
-			g_module_make_resident (plugin);
-
-			obj = (*factory_func) ();
-			if (!obj || !NM_IS_SETTINGS_PLUGIN (obj)) {
-				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-				             "Plugin '%s' returned invalid system config object.",
-				             pname);
-				success = FALSE;
-				break;
-			}
-
-			g_object_set_qdata_full (obj, plugin_module_path_quark (), path, g_free);
-			path = NULL;
-			if (add_plugin (self, NM_SETTINGS_PLUGIN (obj)))
-				list = g_slist_append (list, obj);
-			else
-				g_object_unref (obj);
-		}
-next:
 		if (add_ibft && !strcmp (pname, "ifcfg-rh")) {
 			/* The plugin ibft is not explicitly mentioned but we just enabled "ifcfg-rh".
 			 * Enable "ibft" by default after "ifcfg-rh". */
 			pname = "ibft";
 			add_ibft = FALSE;
-			goto load_plugin;
+
+			success = load_plugin (self, list, "ibft", error);
+			if (!success)
+				break;
 		}
 	}
 
