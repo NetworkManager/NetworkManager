@@ -1562,6 +1562,7 @@ class NetworkManager(ExportedObj):
 ###############################################################################
 
 PRP_CONNECTION_UNSAVED = 'Unsaved'
+PRP_CONNECTION_FILENAME = 'Filename'
 
 class Connection(ExportedObj):
     def __init__(self, path_counter, con_hash, do_verify_strict=True):
@@ -1587,6 +1588,7 @@ class Connection(ExportedObj):
 
         props = {
             PRP_CONNECTION_UNSAVED: False,
+            PRP_CONNECTION_FILENAME: "/etc/NetworkManager/system-connections/" + self.get_id(),
         }
 
         self.dbus_interface_add(IFACE_CONNECTION, props)
