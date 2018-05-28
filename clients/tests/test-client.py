@@ -304,6 +304,39 @@ class NMStubServer:
 
 ###############################################################################
 
+class AsyncProcess():
+
+    def __init__(self,
+                 args,
+                 env,
+                 complete_cb):
+        self._args = args
+        self._env = env
+        self._complete_cb = complete_cb
+
+    def start(self):
+        if not hasattr(self, '_p'):
+            self._p = subprocess.Popen(self._args,
+                                       stdout = subprocess.PIPE,
+                                       stderr = subprocess.PIPE,
+                                       env = self._env)
+
+    def wait(self):
+
+        self.start()
+
+        Util.popen_wait(self._p, 2000)
+
+        (returncode, stdout, stderr) = (self._p.returncode, self._p.stdout.read(), self._p.stderr.read())
+
+        self._p.stdout.close()
+        self._p.stderr.close()
+        self._p = None
+
+        self._complete_cb(self, returncode, stdout, stderr)
+
+###############################################################################
+
 file_list = []
 
 class NmTestBase(unittest.TestCase):
@@ -320,7 +353,8 @@ class TestNmcli(NmTestBase):
                      replace_stdout = None,
                      replace_stderr = None,
                      sort_lines_stdout = False,
-                     extra_env = None):
+                     extra_env = None,
+                     sync_barrier = False):
         frame = sys._getframe(1)
         for lang in [ 'C', 'pl' ]:
             self._call_nmcli(args,
@@ -333,6 +367,7 @@ class TestNmcli(NmTestBase):
                              replace_stderr,
                              sort_lines_stdout,
                              extra_env,
+                             sync_barrier,
                              frame)
 
 
@@ -347,7 +382,8 @@ class TestNmcli(NmTestBase):
                    replace_stdout = None,
                    replace_stderr = None,
                    sort_lines_stdout = False,
-                   extra_env = None):
+                   extra_env = None,
+                   sync_barrier = None):
 
         frame = sys._getframe(1)
 
@@ -357,6 +393,9 @@ class TestNmcli(NmTestBase):
             if lang is None:
                 lang = 'C'
             langs = [lang]
+
+        if sync_barrier is None:
+            sync_barrier = (len(langs) == 1)
 
         for lang in langs:
             self._call_nmcli(args,
@@ -369,6 +408,7 @@ class TestNmcli(NmTestBase):
                              replace_stderr,
                              sort_lines_stdout,
                              extra_env,
+                             sync_barrier,
                              frame)
 
     def _call_nmcli(self,
@@ -382,11 +422,25 @@ class TestNmcli(NmTestBase):
                     replace_stderr,
                     sort_lines_stdout,
                     extra_env,
+                    sync_barrier,
                     frame):
+
+        if sync_barrier:
+            self.async_wait()
 
         calling_fcn = frame.f_code.co_name
         calling_num = self._calling_num.get(calling_fcn, 0) + 1
         self._calling_num[calling_fcn] = calling_num
+
+        test_name = '%s-%03d' % (calling_fcn, calling_num)
+
+        # we cannot use frame.f_code.co_filename directly, because it might be different depending
+        # on where the file lies and which is CWD. We still want to give the location of
+        # the file, so that the user can easier find the source (when looking at the .expected files)
+        script_filename = 'clients/tests/test-client.py'
+        self.assertTrue(os.path.abspath(frame.f_code.co_filename).endswith(script_filename))
+
+        calling_location = '%s:%d:%s()/%d' % (script_filename, frame.f_lineno, frame.f_code.co_name, calling_num)
 
         if lang is None or lang == 'C':
             lang = 'C'
@@ -417,27 +471,10 @@ class TestNmcli(NmTestBase):
 
         args = [conf.get(ENV_NM_TEST_CLIENT_NMCLI_PATH)] + list(args)
 
-        p = subprocess.Popen(args,
-                             stdout = subprocess.PIPE,
-                             stderr = subprocess.PIPE,
-                             env = env)
-        Util.popen_wait(p, 2000)
-
-        (returncode, stdout, stderr) = (p.returncode, p.stdout.read(), p.stderr.read())
-
-        p.stdout.close()
-        p.stderr.close()
-
-        stdout = Util.replace_text(stdout, replace_stdout)
-        stderr = Util.replace_text(stderr, replace_stderr)
-
-        if sort_lines_stdout:
-            stdout = b'\n'.join(sorted(stdout.split(b'\n')))
-
-        ignore_l10n_diff = (    lang != 'C'
-                            and not conf.get(ENV_NM_TEST_CLIENT_CHECK_L10N))
-
-        test_name = '%s-%03d' % (calling_fcn, calling_num)
+        if replace_stdout is not None:
+            replace_stdout = list(replace_stdout)
+        if replace_stderr is not None:
+            replace_stderr = list(replace_stderr)
 
         if check_on_disk is _DEFAULT_ARG:
             check_on_disk = (    expected_returncode is _DEFAULT_ARG
@@ -450,79 +487,105 @@ class TestNmcli(NmTestBase):
         if expected_stderr is _DEFAULT_ARG:
             expected_stderr = None
 
-        if expected_stderr is not None:
-            if expected_stderr != stderr:
-                if ignore_l10n_diff:
-                    self._skip_test_for_l10n_diff.append(test_name)
-                else:
-                    self.assertEqual(expected_stderr, stderr)
-        if expected_stdout is not None:
-            if expected_stdout != stdout:
-                if ignore_l10n_diff:
-                    self._skip_test_for_l10n_diff.append(test_name)
-                else:
-                    self.assertEqual(expected_stdout, stdout)
-        if expected_returncode is not None:
-            self.assertEqual(expected_returncode, returncode)
+        def complete_cb(async_job,
+                        returncode,
+                        stdout,
+                        stderr):
 
+            stdout = Util.replace_text(stdout, replace_stdout)
+            stderr = Util.replace_text(stderr, replace_stderr)
 
-        dirname = PathConfiguration.srcdir() + '/test-client.check-on-disk'
-        basename = test_name + '.expected'
-        filename = os.path.abspath(dirname + '/' + basename)
+            if sort_lines_stdout:
+                stdout = b'\n'.join(sorted(stdout.split(b'\n')))
 
-        if not check_on_disk:
-            if os.path.exists(filename):
-                self.fail("The file '%s' exists, although we expect it not to." % (filename))
-            return
+            ignore_l10n_diff = (    lang != 'C'
+                                and not conf.get(ENV_NM_TEST_CLIENT_CHECK_L10N))
 
-        file_list.append(basename)
+            if expected_stderr is not None:
+                if expected_stderr != stderr:
+                    if ignore_l10n_diff:
+                        self._skip_test_for_l10n_diff.append(test_name)
+                    else:
+                        self.assertEqual(expected_stderr, stderr)
+            if expected_stdout is not None:
+                if expected_stdout != stdout:
+                    if ignore_l10n_diff:
+                        self._skip_test_for_l10n_diff.append(test_name)
+                    else:
+                        self.assertEqual(expected_stdout, stdout)
+            if expected_returncode is not None:
+                self.assertEqual(expected_returncode, returncode)
 
-        content_old = Util.file_read(filename)
+            dirname = PathConfiguration.srcdir() + '/test-client.check-on-disk'
+            basename = test_name + '.expected'
+            filename = os.path.abspath(dirname + '/' + basename)
 
-        # we cannot use frame.f_code.co_filename directly, because it might be different depending
-        # on where the file lies and which is CWD. We still want to give the location of
-        # the file, so that the user can easier find the source (when looking at the .expected files)
-        script_filename = 'clients/tests/test-client.py'
-        self.assertTrue(os.path.abspath(frame.f_code.co_filename).endswith(script_filename))
-
-        calling_location = '%s:%d:%s()/%d' % (script_filename, frame.f_lineno, frame.f_code.co_name, calling_num)
-
-        content_new = ('location: %s\n' % (calling_location)).encode('utf8') + \
-                      ('cmd: $NMCLI %s\n' % (' '.join([Util.quote(a) for a in args[1:]]))).encode('utf8') + \
-                      ('lang: %s\n' % (lang)).encode('utf8') + \
-                      ('returncode: %d\n' % (returncode)).encode('utf8') + \
-                      ('stdout: %d bytes\n>>>\n' % (len(stdout))).encode('utf8') + \
-                      stdout + \
-                      ('\n<<<\nstderr: %d bytes\n>>>\n' % (len(stderr))).encode('utf8') + \
-                      stderr + \
-                      '\n<<<\n'.encode('utf8')
-
-        w = conf.get(ENV_NM_TEST_REGENERATE)
-
-        if content_old is not None:
-            if content_old == content_new:
+            if not check_on_disk:
+                if os.path.exists(filename):
+                    self.fail("The file '%s' exists, although we expect it not to." % (filename))
                 return
 
-            if not w:
-                if ignore_l10n_diff:
-                    self._skip_test_for_l10n_diff.append(test_name)
-                    return
-                print("\n\n\nThe file '%s' does not have the expected content:" % (filename))
-                print("ACTUAL OUTPUT:\n[[%s]]\n" % (content_new))
-                print("EXPECT OUTPUT:\n[[%s]]\n" % (content_old))
-                print("Let the test write the file by rerunning with NM_TEST_REGENERATE=1\n\n")
-                raise AssertionError("Unexpected output of command, expected %s. Rerun test with NM_TEST_REGENERATE=1 to regenerate files" % (filename))
-        else:
-            if not w:
-                self.fail("The file '%s' does not exist. Let the test write the file by rerunning with NM_TEST_REGENERATE=1" % (filename))
+            file_list.append(basename)
 
-        try:
-            if not os.path.exists(dirname):
-                os.makedirs(dirname)
-            with open(filename, 'wb') as content_file:
-                content_file.write(content_new)
-        except Exception as e:
-            self.fail("Failure to write '%s': %s" % (filename, e))
+            content_old = Util.file_read(filename)
+
+            content_new = ('location: %s\n' % (calling_location)).encode('utf8') + \
+                          ('cmd: $NMCLI %s\n' % (' '.join([Util.quote(a) for a in args[1:]]))).encode('utf8') + \
+                          ('lang: %s\n' % (lang)).encode('utf8') + \
+                          ('returncode: %d\n' % (returncode)).encode('utf8') + \
+                          ('stdout: %d bytes\n>>>\n' % (len(stdout))).encode('utf8') + \
+                          stdout + \
+                          ('\n<<<\nstderr: %d bytes\n>>>\n' % (len(stderr))).encode('utf8') + \
+                          stderr + \
+                          '\n<<<\n'.encode('utf8')
+
+            w = conf.get(ENV_NM_TEST_REGENERATE)
+
+            if content_old is not None:
+                if content_old == content_new:
+                    return
+
+                if not w:
+                    if ignore_l10n_diff:
+                        self._skip_test_for_l10n_diff.append(test_name)
+                        return
+                    print("\n\n\nThe file '%s' does not have the expected content:" % (filename))
+                    print("ACTUAL OUTPUT:\n[[%s]]\n" % (content_new))
+                    print("EXPECT OUTPUT:\n[[%s]]\n" % (content_old))
+                    print("Let the test write the file by rerunning with NM_TEST_REGENERATE=1\n\n")
+                    raise AssertionError("Unexpected output of command, expected %s. Rerun test with NM_TEST_REGENERATE=1 to regenerate files" % (filename))
+            else:
+                if not w:
+                    self.fail("The file '%s' does not exist. Let the test write the file by rerunning with NM_TEST_REGENERATE=1" % (filename))
+
+            try:
+                if not os.path.exists(dirname):
+                    os.makedirs(dirname)
+                with open(filename, 'wb') as content_file:
+                    content_file.write(content_new)
+            except Exception as e:
+                self.fail("Failure to write '%s': %s" % (filename, e))
+
+        async_job = AsyncProcess(args = args,
+                                 env = env,
+                                 complete_cb = complete_cb)
+
+        self._async_jobs.append(async_job)
+
+        if sync_barrier:
+            self.async_wait()
+        else:
+            self.async_start()
+
+    def async_start(self):
+        # limit number parallel running jobs
+        for async_job in self._async_jobs[0:10]:
+            async_job.start()
+
+    def async_wait(self):
+        while self._async_jobs:
+            self.async_start()
+            self._async_jobs.pop(0).wait()
 
     def setUp(self):
         if not dbus_session_inited:
@@ -532,8 +595,10 @@ class TestNmcli(NmTestBase):
         self.srv = NMStubServer()
         self._calling_num = {}
         self._skip_test_for_l10n_diff = []
+        self._async_jobs = []
 
     def tearDown(self):
+        self.async_wait()
         self.srv.shutdown()
         self.srv = None
         self._calling_num = None
@@ -679,6 +744,8 @@ class TestNmcli(NmTestBase):
 
             self.call_nmcli_l(['-f', 'ALL', 'dev', 'show', 'eth0'],
                               replace_stdout = replace_stdout)
+
+        self.async_wait()
 
         self.srv.setProperty('/org/freedesktop/NetworkManager/ActiveConnection/1',
                              'State',
