@@ -986,7 +986,7 @@ nm_platform_link_set_netns (NMPlatform *self, int ifindex, int netns_fd)
 	if (!pllink)
 		return FALSE;
 
-	_LOGD ("link: ifindex %d changing network namespace to %d", ifindex, netns_fd);
+	_LOGD ("link: move link %d to network namespace with fd %d", ifindex, netns_fd);
 	return klass->link_set_netns (self, ifindex, netns_fd);
 }
 
@@ -1355,15 +1355,18 @@ nm_platform_link_set_user_ipv6ll_enabled (NMPlatform *self, int ifindex, gboolea
 NMPlatformError
 nm_platform_link_set_address (NMPlatform *self, int ifindex, gconstpointer address, size_t length)
 {
+	gs_free char *mac = NULL;
+
 	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
 
 	g_return_val_if_fail (ifindex > 0, NM_PLATFORM_ERROR_BUG);
 	g_return_val_if_fail (address, NM_PLATFORM_ERROR_BUG);
 	g_return_val_if_fail (length > 0, NM_PLATFORM_ERROR_BUG);
 
-	_LOGD ("link: setting %s (%d) hardware address",
+	_LOGD ("link: setting %s (%d) hardware address to %s",
 	       nm_strquote_a (20, nm_platform_link_get_name (self, ifindex)),
-	       ifindex);
+	       ifindex,
+	       (mac = nm_utils_hwaddr_ntoa (address, length)));
 	return klass->link_set_address (self, ifindex, address, length);
 }
 
@@ -2437,6 +2440,9 @@ _infiniband_add_add_or_delete (NMPlatform *self,
 		if (!klass->infiniband_partition_add (self, parent, p_key, out_link))
 			return NM_PLATFORM_ERROR_UNSPECIFIED;
 	} else {
+		_LOGD ("link: deleting infiniband partition %s for parent '%s' (%d), key %d",
+		       name, parent_link->name, parent, p_key);
+
 		if (!klass->infiniband_partition_delete (self, parent, p_key))
 			return NM_PLATFORM_ERROR_UNSPECIFIED;
 	}

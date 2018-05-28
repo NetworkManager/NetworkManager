@@ -233,8 +233,6 @@ G_STATIC_ASSERT (RTA_MAX == (__RTA_MAX - 1));
         } \
     } G_STMT_END
 
-#define LOG_FMT_IP_TUNNEL "adding %s '%s' parent %u local %s remote %s"
-
 /******************************************************************
  * Forward declarations and enums
  ******************************************************************/
@@ -4906,8 +4904,6 @@ link_set_netns (NMPlatform *platform,
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 
-	_LOGD ("link: move link %d to network namespace with fd %d", ifindex, netns_fd);
-
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
 	                          ifindex,
@@ -5107,10 +5103,6 @@ link_set_address (NMPlatform *platform, int ifindex, gconstpointer address, size
 	if (!address || !length)
 		g_return_val_if_reached (NM_PLATFORM_ERROR_BUG);
 
-	_LOGD ("link: change %d: address: %s (%lu bytes)", ifindex,
-	       (mac = nm_utils_hwaddr_ntoa (address, length)),
-	       (unsigned long) length);
-
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
 	                          ifindex,
@@ -5131,8 +5123,6 @@ static NMPlatformError
 link_set_name (NMPlatform *platform, int ifindex, const char *name)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-
-	_LOGD ("link: change %d: name: %s", ifindex, name);
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
@@ -5168,8 +5158,6 @@ static NMPlatformError
 link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-
-	_LOGD ("link: change %d: mtu: %u", ifindex, (unsigned) mtu);
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
@@ -5294,10 +5282,6 @@ vlan_add (NMPlatform *platform,
 	G_STATIC_ASSERT (NM_VLAN_FLAG_MVRP == (guint32) VLAN_FLAG_MVRP);
 
 	vlan_flags &= (guint32) NM_VLAN_FLAGS_ALL;
-
-	_LOGD ("link: add vlan '%s', parent %d, vlan id %d, flags %X",
-	       name, parent, vlan_id, (unsigned) vlan_flags);
-
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
@@ -5333,14 +5317,6 @@ link_gre_add (NMPlatform *platform,
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	struct nlattr *info;
 	struct nlattr *data;
-	char buffer[INET_ADDRSTRLEN];
-
-	_LOGD (LOG_FMT_IP_TUNNEL,
-	       "gre",
-	       name,
-	       props->parent_ifindex,
-	       nm_utils_inet4_ntop (props->local, NULL),
-	       nm_utils_inet4_ntop (props->remote, buffer));
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
@@ -5388,15 +5364,7 @@ link_ip6tnl_add (NMPlatform *platform,
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	struct nlattr *info;
 	struct nlattr *data;
-	char buffer[INET_ADDRSTRLEN];
 	guint32 flowinfo;
-
-	_LOGD (LOG_FMT_IP_TUNNEL,
-	       "ip6tnl",
-	       name,
-	       props->parent_ifindex,
-	       nm_utils_inet6_ntop (&props->local, NULL),
-	       nm_utils_inet6_ntop (&props->remote, buffer));
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
@@ -5450,14 +5418,6 @@ link_ipip_add (NMPlatform *platform,
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	struct nlattr *info;
 	struct nlattr *data;
-	char buffer[INET_ADDRSTRLEN];
-
-	_LOGD (LOG_FMT_IP_TUNNEL,
-	       "ipip",
-	       name,
-	       props->parent_ifindex,
-	       nm_utils_inet4_ntop (props->local, NULL),
-	       nm_utils_inet4_ntop (props->remote, buffer));
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
@@ -5502,11 +5462,6 @@ link_macsec_add (NMPlatform *platform,
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	struct nlattr *info;
 	struct nlattr *data;
-
-	_LOGD ("adding macsec '%s' parent %u sci %llx",
-	       name,
-	       parent,
-	       (unsigned long long) props->sci);
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
@@ -5565,12 +5520,6 @@ link_macvlan_add (NMPlatform *platform,
 	struct nlattr *info;
 	struct nlattr *data;
 
-	_LOGD ("adding %s '%s' parent %u mode %u",
-	       props->tap ? "macvtap" : "macvlan",
-	       name,
-	       parent,
-	       props->mode);
-
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
@@ -5612,14 +5561,6 @@ link_sit_add (NMPlatform *platform,
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	struct nlattr *info;
 	struct nlattr *data;
-	char buffer[INET_ADDRSTRLEN];
-
-	_LOGD (LOG_FMT_IP_TUNNEL,
-	       "sit",
-	       name,
-	       props->parent_ifindex,
-	       nm_utils_inet4_ntop (props->local, NULL),
-	       nm_utils_inet4_ntop (props->remote, buffer));
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
@@ -5722,9 +5663,6 @@ link_vxlan_add (NMPlatform *platform,
 	struct nm_ifla_vxlan_port_range port_range;
 
 	g_return_val_if_fail (props, FALSE);
-
-	_LOGD ("link: add vxlan '%s', parent %d, vxlan id %d",
-	       name, props->parent_ifindex, props->id);
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
@@ -5912,9 +5850,6 @@ link_vlan_change (NMPlatform *platform,
 	guint new_n_egress_map = 0;
 	gs_free NMVlanQosMapping *new_ingress_map = NULL;
 	gs_free NMVlanQosMapping *new_egress_map = NULL;
-	char s_flags[64];
-	char s_ingress[256];
-	char s_egress[256];
 
 	obj_cache = nmp_cache_lookup_link (nm_platform_get_cache (platform), ifindex);
 	if (   !obj_cache
@@ -5945,26 +5880,6 @@ link_vlan_change (NMPlatform *platform,
 	                                      &new_egress_map,
 	                                      &new_n_egress_map);
 
-	_LOGD ("link: change %d: vlan:%s%s%s",
-	       ifindex,
-	       flags_mask
-	           ? nm_sprintf_buf (s_flags, " flags 0x%x/0x%x", (unsigned) flags_set, (unsigned) flags_mask)
-	           : "",
-	       new_n_ingress_map
-	           ? nm_platform_vlan_qos_mapping_to_string (" ingress-qos-map",
-	                                                     new_ingress_map,
-	                                                     new_n_ingress_map,
-	                                                     s_ingress,
-	                                                     sizeof (s_ingress))
-	           : "",
-	       new_n_egress_map
-	           ? nm_platform_vlan_qos_mapping_to_string (" egress-qos-map",
-	                                                     new_egress_map,
-	                                                     new_n_egress_map,
-	                                                     s_egress,
-	                                                     sizeof (s_egress))
-	           : "");
-
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
 	                          ifindex,
@@ -5990,8 +5905,6 @@ link_enslave (NMPlatform *platform, int master, int slave)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	int ifindex = slave;
-
-	_LOGD ("link: change %d: enslave: master %d", slave, master);
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
