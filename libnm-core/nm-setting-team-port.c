@@ -322,8 +322,10 @@ nm_setting_team_port_clear_link_watchers (NMSettingTeamPort *setting)
 
 	g_return_if_fail (NM_IS_SETTING_TEAM_PORT (setting));
 
-	g_ptr_array_set_size (priv->link_watchers, 0);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_TEAM_PORT_LINK_WATCHERS);
+	if (priv->link_watchers->len != 0) {
+		g_ptr_array_set_size (priv->link_watchers, 0);
+		g_object_notify (G_OBJECT (setting), NM_SETTING_TEAM_PORT_LINK_WATCHERS);
+	}
 }
 
 static GVariant *

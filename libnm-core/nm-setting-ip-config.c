@@ -1589,8 +1589,11 @@ nm_setting_ip_config_clear_dns (NMSettingIPConfig *setting)
 	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
-	g_ptr_array_set_size (priv->dns, 0);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS);
+
+	if (priv->dns->len != 0) {
+		g_ptr_array_set_size (priv->dns, 0);
+		g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS);
+	}
 }
 
 /**
@@ -1727,8 +1730,11 @@ nm_setting_ip_config_clear_dns_searches (NMSettingIPConfig *setting)
 	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
 
 	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
-	g_ptr_array_set_size (priv->dns_search, 0);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS_SEARCH);
+
+	if (priv->dns_search->len != 0) {
+		g_ptr_array_set_size (priv->dns_search, 0);
+		g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS_SEARCH);
+	}
 }
 
 /**
@@ -2107,8 +2113,10 @@ nm_setting_ip_config_clear_addresses (NMSettingIPConfig *setting)
 
 	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
 
-	g_ptr_array_set_size (priv->addresses, 0);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ADDRESSES);
+	if (priv->addresses->len != 0) {
+		g_ptr_array_set_size (priv->addresses, 0);
+		g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ADDRESSES);
+	}
 }
 
 /**
@@ -2264,8 +2272,10 @@ nm_setting_ip_config_clear_routes (NMSettingIPConfig *setting)
 
 	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
 
-	g_ptr_array_set_size (priv->routes, 0);
-	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ROUTES);
+	if (priv->routes->len != 0) {
+		g_ptr_array_set_size (priv->routes, 0);
+		g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ROUTES);
+	}
 }
 
 /**

@@ -982,8 +982,10 @@ nm_setting_tc_config_clear_qdiscs (NMSettingTCConfig *self)
 {
 	g_return_if_fail (NM_IS_SETTING_TC_CONFIG (self));
 
-	g_ptr_array_set_size (self->qdiscs, 0);
-	g_object_notify (G_OBJECT (self), NM_SETTING_TC_CONFIG_QDISCS);
+	if (self->qdiscs->len != 0) {
+		g_ptr_array_set_size (self->qdiscs, 0);
+		g_object_notify (G_OBJECT (self), NM_SETTING_TC_CONFIG_QDISCS);
+	}
 }
 
 /*****************************************************************************/
@@ -1116,8 +1118,10 @@ nm_setting_tc_config_clear_tfilters (NMSettingTCConfig *self)
 {
 	g_return_if_fail (NM_IS_SETTING_TC_CONFIG (self));
 
-	g_ptr_array_set_size (self->tfilters, 0);
-	g_object_notify (G_OBJECT (self), NM_SETTING_TC_CONFIG_TFILTERS);
+	if (self->tfilters->len != 0) {
+		g_ptr_array_set_size (self->tfilters, 0);
+		g_object_notify (G_OBJECT (self), NM_SETTING_TC_CONFIG_TFILTERS);
+	}
 }
 
 /*****************************************************************************/
