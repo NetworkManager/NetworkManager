@@ -493,6 +493,10 @@ _metagen_con_show_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 		if (!s_con)
 			return NULL;
 		return nm_setting_connection_get_slave_type (s_con);
+	case NMC_GENERIC_INFO_TYPE_CON_SHOW_FILENAME:
+		if (!NM_IS_REMOTE_CONNECTION (c))
+			return NULL;
+		return nm_remote_connection_get_filename (NM_REMOTE_CONNECTION (c));
 	default:
 		break;
 	}
@@ -517,6 +521,7 @@ const NmcMetaGenericInfo *const metagen_con_show[_NMC_GENERIC_INFO_TYPE_CON_SHOW
 	_METAGEN_CON_SHOW (NMC_GENERIC_INFO_TYPE_CON_SHOW_STATE,                "STATE"),
 	_METAGEN_CON_SHOW (NMC_GENERIC_INFO_TYPE_CON_SHOW_ACTIVE_PATH,          "ACTIVE-PATH"),
 	_METAGEN_CON_SHOW (NMC_GENERIC_INFO_TYPE_CON_SHOW_SLAVE,                "SLAVE"),
+	_METAGEN_CON_SHOW (NMC_GENERIC_INFO_TYPE_CON_SHOW_FILENAME,             "FILENAME"),
 };
 #define NMC_FIELDS_CON_SHOW_COMMON  "NAME,UUID,TYPE,DEVICE"
 
