@@ -67,16 +67,16 @@ _nm_utils_enum_to_str_full (GType type,
                             const char *flags_separator,
                             const NMUtilsEnumValueInfo *value_infos)
 {
-	nm_auto_unref_gtypeclass GTypeClass *class = NULL;
+	nm_auto_unref_gtypeclass GTypeClass *klass = NULL;
 
 	if (   flags_separator
 	    && (   !flags_separator[0]
 	        || NM_STRCHAR_ANY (flags_separator, ch, !IS_FLAGS_SEPARATOR (ch))))
 		g_return_val_if_reached (NULL);
 
-	class = g_type_class_ref (type);
+	klass = g_type_class_ref (type);
 
-	if (G_IS_ENUM_CLASS (class)) {
+	if (G_IS_ENUM_CLASS (klass)) {
 		GEnumValue *enum_value;
 
 		for ( ; value_infos && value_infos->nick; value_infos++) {
@@ -84,13 +84,13 @@ _nm_utils_enum_to_str_full (GType type,
 				return g_strdup (value_infos->nick);
 		}
 
-		enum_value = g_enum_get_value (G_ENUM_CLASS (class), value);
+		enum_value = g_enum_get_value (G_ENUM_CLASS (klass), value);
 		if (   !enum_value
 		    || !_enum_is_valid_enum_nick (enum_value->value_nick))
 			return g_strdup_printf ("%d", value);
 		else
 			return g_strdup (enum_value->value_nick);
-	} else if (G_IS_FLAGS_CLASS (class)) {
+	} else if (G_IS_FLAGS_CLASS (klass)) {
 		GFlagsValue *flags_value;
 		GString *str = g_string_new ("");
 		unsigned uvalue = (unsigned) value;
@@ -120,7 +120,7 @@ _nm_utils_enum_to_str_full (GType type,
 		}
 
 		do {
-			flags_value = g_flags_get_first_value (G_FLAGS_CLASS (class), uvalue);
+			flags_value = g_flags_get_first_value (G_FLAGS_CLASS (klass), uvalue);
 			if (str->len)
 				g_string_append (str, flags_separator);
 			if (   !flags_value
@@ -159,7 +159,7 @@ _nm_utils_enum_from_str_full (GType type,
                               char **err_token,
                               const NMUtilsEnumValueInfo *value_infos)
 {
-	GTypeClass *class;
+	GTypeClass *klass;
 	gboolean ret = FALSE;
 	int value = 0;
 	gs_free char *str_clone = NULL;
@@ -173,9 +173,9 @@ _nm_utils_enum_from_str_full (GType type,
 	s = nm_str_skip_leading_spaces (str_clone);
 	g_strchomp (s);
 
-	class = g_type_class_ref (type);
+	klass = g_type_class_ref (type);
 
-	if (G_IS_ENUM_CLASS (class)) {
+	if (G_IS_ENUM_CLASS (klass)) {
 		GEnumValue *enum_value;
 
 		if (s[0]) {
@@ -192,7 +192,7 @@ _nm_utils_enum_from_str_full (GType type,
 					ret = TRUE;
 				}
 			} else {
-				enum_value = g_enum_get_value_by_nick (G_ENUM_CLASS (class), s);
+				enum_value = g_enum_get_value_by_nick (G_ENUM_CLASS (klass), s);
 				if (enum_value) {
 					value = enum_value->value;
 					ret = TRUE;
@@ -205,7 +205,7 @@ _nm_utils_enum_from_str_full (GType type,
 				}
 			}
 		}
-	} else if (G_IS_FLAGS_CLASS (class)) {
+	} else if (G_IS_FLAGS_CLASS (klass)) {
 		GFlagsValue *flags_value;
 		unsigned uvalue = 0;
 
@@ -237,7 +237,7 @@ _nm_utils_enum_from_str_full (GType type,
 					}
 					uvalue |= (unsigned) v64;
 				} else {
-					flags_value = g_flags_get_value_by_nick (G_FLAGS_CLASS (class), s);
+					flags_value = g_flags_get_value_by_nick (G_FLAGS_CLASS (klass), s);
 					if (flags_value)
 						uvalue |= flags_value->value;
 					else {
@@ -261,23 +261,23 @@ _nm_utils_enum_from_str_full (GType type,
 
 	NM_SET_OUT (err_token, !ret && s[0] ? g_strdup (s) : NULL);
 	NM_SET_OUT (out_value, ret ? value : 0);
-	g_type_class_unref (class);
+	g_type_class_unref (klass);
 	return ret;
 }
 
 const char **
 _nm_utils_enum_get_values (GType type, gint from, gint to)
 {
-	GTypeClass *class;
+	GTypeClass *klass;
 	GPtrArray *array;
 	gint i;
 	char sbuf[64];
 
-	class = g_type_class_ref (type);
+	klass = g_type_class_ref (type);
 	array = g_ptr_array_new ();
 
-	if (G_IS_ENUM_CLASS (class)) {
-		GEnumClass *enum_class = G_ENUM_CLASS (class);
+	if (G_IS_ENUM_CLASS (klass)) {
+		GEnumClass *enum_class = G_ENUM_CLASS (klass);
 		GEnumValue *enum_value;
 
 		for (i = 0; i < enum_class->n_values; i++) {
@@ -289,8 +289,8 @@ _nm_utils_enum_get_values (GType type, gint from, gint to)
 					g_ptr_array_add (array, (gpointer) g_intern_string (nm_sprintf_buf (sbuf, "%d", enum_value->value)));
 			}
 		}
-	} else if (G_IS_FLAGS_CLASS (class)) {
-		GFlagsClass *flags_class = G_FLAGS_CLASS (class);
+	} else if (G_IS_FLAGS_CLASS (klass)) {
+		GFlagsClass *flags_class = G_FLAGS_CLASS (klass);
 		GFlagsValue *flags_value;
 
 		for (i = 0; i < flags_class->n_values; i++) {
@@ -303,12 +303,12 @@ _nm_utils_enum_get_values (GType type, gint from, gint to)
 			}
 		}
 	} else {
-		g_type_class_unref (class);
+		g_type_class_unref (klass);
 		g_ptr_array_free (array, TRUE);
 		g_return_val_if_reached (NULL);
 	}
 
-	g_type_class_unref (class);
+	g_type_class_unref (klass);
 	g_ptr_array_add (array, NULL);
 
 	return (const char **) g_ptr_array_free (array, FALSE);
