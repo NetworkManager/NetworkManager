@@ -243,7 +243,7 @@ _nm_utils_enum_from_str_full (GType type,
 					else {
 						nick = _find_value_info (value_infos, s);
 						if (nick)
-							uvalue = (unsigned) nick->value;
+							uvalue |= (unsigned) nick->value;
 						else {
 							ret = FALSE;
 							break;

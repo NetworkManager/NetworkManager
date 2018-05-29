@@ -6531,7 +6531,8 @@ test_nm_utils_enum (void)
 	_test_nm_utils_enum_from_str_do_full (color_flags,
 	                                      "nick-4d,nick-red,nick-5,green,nick-red",
 	                                      TRUE,
-	                                      NM_TEST_GENERAL_COLOR_FLAGS_RED,
+	                                        0x4D
+	                                      | NM_TEST_GENERAL_COLOR_FLAGS_GREEN,
 	                                      NULL,
 	                                      color_value_infos);
 
