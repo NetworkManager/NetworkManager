@@ -6440,6 +6440,7 @@ test_nm_utils_enum (void)
 			.nick = "nick-red",
 			.value = NM_TEST_GENERAL_COLOR_FLAGS_RED,
 		},
+		{ 0 },
 	};
 
 	_test_nm_utils_enum_to_str_do (bool_enum, NM_TEST_GENERAL_BOOL_ENUM_YES, "yes");
