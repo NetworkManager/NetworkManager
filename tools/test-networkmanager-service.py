@@ -968,8 +968,8 @@ class NetworkManager(ExportedObj):
         gl.mainloop.quit()
 
     @dbus.service.method(IFACE_TEST, in_signature='a{ss}', out_signature='a(sss)')
-    def FindConnections(self, args):
-        return [(c.path, c.get_uuid(), c.get_id()) for c in gl.settings.find_connections(**args)]
+    def FindConnections(self, selector_args):
+        return [(c.path, c.get_uuid(), c.get_id()) for c in gl.settings.find_connections(**selector_args)]
 
     @dbus.service.method(IFACE_TEST, in_signature='a(oa(sa(sv)))', out_signature='')
     def SetProperties(self, all_args):
@@ -1054,6 +1054,12 @@ class NetworkManager(ExportedObj):
     @dbus.service.method(dbus_interface=IFACE_TEST, in_signature='sa{sa{sv}}b', out_signature='')
     def UpdateConnection(self, path, connection, verify_connection):
         return gl.settings.update_connection(connection, path, verify_connection)
+
+    @dbus.service.method(dbus_interface=IFACE_TEST, in_signature='ba{ss}', out_signature='')
+    def ConnectionSetVisible(self, vis, selector_args):
+        cons = list(gl.settings.find_connections(**selector_args))
+        assert(len(cons) == 1)
+        cons[0].SetVisible(vis)
 
     @dbus.service.method(dbus_interface=IFACE_TEST, in_signature='', out_signature='')
     def Restart(self):
