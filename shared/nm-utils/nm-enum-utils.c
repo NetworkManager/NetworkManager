@@ -27,6 +27,62 @@
 
 #define IS_FLAGS_SEPARATOR(ch)  (NM_IN_SET ((ch), ' ', '\t', ',', '\n', '\r'))
 
+static void
+_ASSERT_enum_values_info (GType type,
+                          const NMUtilsEnumValueInfo *value_infos)
+{
+#if NM_MORE_ASSERTS > 5
+	nm_auto_unref_gtypeclass GTypeClass *klass = NULL;
+	gs_unref_hashtable GHashTable *ht = NULL;
+
+	klass = g_type_class_ref (type);
+
+	g_assert (G_IS_ENUM_CLASS (klass) || G_IS_FLAGS_CLASS (klass));
+
+	if (!value_infos)
+		return;
+
+	ht = g_hash_table_new (nm_str_hash, g_str_equal);
+
+	for (; value_infos->nick; value_infos++) {
+
+		g_assert (value_infos->nick[0]);
+
+		/* duplicate nicks make no sense!! */
+		g_assert (!g_hash_table_contains (ht, value_infos->nick));
+		g_hash_table_add (ht, (gpointer) value_infos->nick);
+
+		if (G_IS_ENUM_CLASS (klass)) {
+			GEnumValue *enum_value;
+
+			enum_value = g_enum_get_value_by_nick (G_ENUM_CLASS (klass), value_infos->nick);
+			if (enum_value) {
+				/* we do allow specifying the same name via @value_infos and @type.
+				 * That might make sense, if @type comes from a library where older versions
+				 * of the library don't yet support the value. In this case, the caller can
+				 * provide the nick via @value_infos, to support the older library version.
+				 * And then, when actually running against a newer library version where
+				 * @type knows the nick, we have this situation.
+				 *
+				 * However, what never is allowed, is to use a name (nick) to re-number
+				 * the value. That is, if both @value_infos and @type contain a particular
+				 * nick, their numeric values must agree as well.
+				 */
+				g_assert (enum_value->value == value_infos->value);
+			}
+		} else {
+			GFlagsValue *flags_value;
+
+			flags_value = g_flags_get_value_by_nick (G_FLAGS_CLASS (klass), value_infos->nick);
+			if (flags_value) {
+				/* see ENUM case above. */
+				g_assert (flags_value->value == (guint) value_infos->value);
+			}
+		}
+	}
+#endif
+}
+
 static gboolean
 _is_hex_string (const char *str)
 {
@@ -68,6 +124,8 @@ _nm_utils_enum_to_str_full (GType type,
                             const NMUtilsEnumValueInfo *value_infos)
 {
 	nm_auto_unref_gtypeclass GTypeClass *klass = NULL;
+
+	_ASSERT_enum_values_info (type, value_infos);
 
 	if (   flags_separator
 	    && (   !flags_separator[0]
@@ -169,6 +227,8 @@ _nm_utils_enum_from_str_full (GType type,
 
 	g_return_val_if_fail (str, FALSE);
 
+	_ASSERT_enum_values_info (type, value_infos);
+
 	str_clone = strdup (str);
 	s = nm_str_skip_leading_spaces (str_clone);
 	g_strchomp (s);
@@ -191,18 +251,12 @@ _nm_utils_enum_from_str_full (GType type,
 					value = (int) v64;
 					ret = TRUE;
 				}
-			} else {
-				enum_value = g_enum_get_value_by_nick (G_ENUM_CLASS (klass), s);
-				if (enum_value) {
-					value = enum_value->value;
-					ret = TRUE;
-				} else {
-					nick = _find_value_info (value_infos, s);
-					if (nick) {
-						value = nick->value;
-						ret = TRUE;
-					}
-				}
+			} else if ((nick = _find_value_info (value_infos, s))) {
+				value = nick->value;
+				ret = TRUE;
+			} else if ((enum_value = g_enum_get_value_by_nick (G_ENUM_CLASS (klass), s))) {
+				value = enum_value->value;
+				ret = TRUE;
 			}
 		}
 	} else if (G_IS_FLAGS_CLASS (klass)) {
@@ -236,19 +290,13 @@ _nm_utils_enum_from_str_full (GType type,
 						break;
 					}
 					uvalue |= (unsigned) v64;
-				} else {
-					flags_value = g_flags_get_value_by_nick (G_FLAGS_CLASS (klass), s);
-					if (flags_value)
-						uvalue |= flags_value->value;
-					else {
-						nick = _find_value_info (value_infos, s);
-						if (nick)
-							uvalue |= (unsigned) nick->value;
-						else {
-							ret = FALSE;
-							break;
-						}
-					}
+				} else if ((nick = _find_value_info (value_infos, s)))
+					uvalue |= (unsigned) nick->value;
+				else if ((flags_value = g_flags_get_value_by_nick (G_FLAGS_CLASS (klass), s)))
+					uvalue |= flags_value->value;
+				else {
+					ret = FALSE;
+					break;
 				}
 			}
 
