@@ -15,6 +15,8 @@ extern "C" {
 #include <netinet/in.h>
 #include <stdbool.h>
 
+#define N_ACD_TIMEOUT_RFC5227 (UINT64_C(9000))
+
 enum {
         _N_ACD_E_SUCCESS,
 

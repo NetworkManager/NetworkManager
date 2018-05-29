@@ -9367,8 +9367,8 @@ arp_cleanup (NMDevice *self)
 	}
 }
 
-static void
-arp_announce (NMDevice *self)
+void
+nm_device_arp_announce (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
@@ -9467,8 +9467,7 @@ activate_stage5_ip4_config_result (NMDevice *self)
 		                           NULL, NULL, NULL);
 	}
 
-	arp_announce (self);
-
+	nm_device_arp_announce (self);
 	nm_device_remove_pending_action (self, NM_PENDING_ACTION_DHCP4, FALSE);
 
 	/* Enter the IP_CHECK state if this is the first method to complete */
