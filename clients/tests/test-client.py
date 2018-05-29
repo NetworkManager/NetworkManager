@@ -733,6 +733,15 @@ class TestNmcli(NmTestBase):
             self.call_nmcli_l(['-f', 'ALL', 'con'],
                               replace_stdout = replace_stdout)
 
+            self.call_nmcli_l(['-f', 'ALL', 'con', 's', '-a'],
+                              replace_stdout = replace_stdout)
+
+            self.call_nmcli_l(['-f', 'ACTIVE-PATH,DEVICE,UUID', 'con', 's', '-act'],
+                              replace_stdout = replace_stdout)
+
+            self.call_nmcli_l(['-f', 'UUID,NAME', 'con', 's', '--active'],
+                              replace_stdout = replace_stdout)
+
             self.call_nmcli_l(['-f', 'ALL', 'con', 's', 'ethernet'],
                               replace_stdout = replace_stdout)
 

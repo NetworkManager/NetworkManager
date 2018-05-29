@@ -1,24 +1,19 @@
-location: clients/tests/test-client.py:767:test_003()/45
-cmd: $NMCLI -f UUID,TYPE --mode multiline --pretty con
+location: clients/tests/test-client.py:752:test_003()/45
+cmd: $NMCLI -f ALL dev s eth0
 lang: C
 returncode: 0
-stdout: 835 bytes
+stdout: 1056 bytes
 >>>
-===============================================================================
-                      NetworkManager connection profiles
-===============================================================================
-UUID:                                   UUID-ethernet-REPLACED-REPLACED-REPL
-TYPE:                                   ethernet
--------------------------------------------------------------------------------
-UUID:                                   5fcfd6d7-1e63-3332-8826-a7eda103792d
-TYPE:                                   ethernet
--------------------------------------------------------------------------------
-UUID:                                   UUID-con-xx1-REPLACED-REPLACED-REPLA
-TYPE:                                   ethernet
--------------------------------------------------------------------------------
+DEVICE  TYPE      STATE        DBUS-PATH                                  CONNECTION  CON-UUID                              CON-PATH                                           
+wlan0   wifi      unavailable  /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
+wlan1   wifi      unavailable  /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
+wlan1   wifi      unavailable  /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
+eth0    ethernet  unavailable  /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
+eth1    ethernet  unavailable  /org/freedesktop/NetworkManager/Devices/2  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/2 
 
 <<<
-stderr: 0 bytes
+stderr: 24 bytes
 >>>
+Unknown parameter: eth0
 
 <<<

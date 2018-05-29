@@ -1,39 +1,11 @@
-location: clients/tests/test-client.py:746:test_003()/35
-cmd: $NMCLI -f ALL dev show eth0
+location: clients/tests/test-client.py:737:test_003()/35
+cmd: $NMCLI -f ALL con s -a
 lang: C
 returncode: 0
-stdout: 1487 bytes
+stdout: 542 bytes
 >>>
-GENERAL.DEVICE:                         eth0
-GENERAL.TYPE:                           ethernet
-GENERAL.NM-TYPE:                        NMDeviceEthernet
-GENERAL.VENDOR:                         --
-GENERAL.PRODUCT:                        --
-GENERAL.DRIVER:                         virtual
-GENERAL.DRIVER-VERSION:                 --
-GENERAL.FIRMWARE-VERSION:               --
-GENERAL.HWADDR:                         72:41:AB:90:41:5D
-GENERAL.MTU:                            0
-GENERAL.STATE:                          20 (unavailable)
-GENERAL.REASON:                         0 (No reason given)
-GENERAL.UDI:                            /sys/devices/virtual/eth0
-GENERAL.IP-IFACE:                       --
-GENERAL.IS-SOFTWARE:                    no
-GENERAL.NM-MANAGED:                     yes
-GENERAL.AUTOCONNECT:                    yes
-GENERAL.FIRMWARE-MISSING:               no
-GENERAL.NM-PLUGIN-MISSING:              no
-GENERAL.PHYS-PORT-ID:                   --
-GENERAL.CONNECTION:                     ethernet
-GENERAL.CON-UUID:                       UUID-ethernet-REPLACED-REPLACED-REPL
-GENERAL.CON-PATH:                       /org/freedesktop/NetworkManager/ActiveConnection/1
-GENERAL.METERED:                        unknown
-CAPABILITIES.CARRIER-DETECT:            no
-CAPABILITIES.SPEED:                     100 Mb/s
-CAPABILITIES.IS-SOFTWARE:               no
-CAPABILITIES.SRIOV:                     no
-WIRED-PROPERTIES.CARRIER:               off
-CONNECTIONS.AVAILABLE-CONNECTION-PATHS: --
+NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE      ACTIVE-PATH                                         SLAVE 
+ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  yes     eth0    activated  /org/freedesktop/NetworkManager/ActiveConnection/1  --    
 
 <<<
 stderr: 0 bytes
