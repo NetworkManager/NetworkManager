@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include "nm-utils/c-list-util.h"
+#include "nm-utils/nm-enum-utils.h"
 
 #include "nm-utils.h"
 #include "nm-setting-private.h"
@@ -6328,104 +6329,217 @@ test_nm_utils_ptrarray_find_binary_search_with_duplicates (void)
 }
 
 /*****************************************************************************/
+
 static void
-test_nm_utils_enum_from_str_do (GType type, const char *str,
-                                gboolean exp_result, int exp_flags,
-                                const char *exp_err_token)
+_test_nm_utils_enum_to_str_do_full (GType type,
+                                    int flags,
+                                    const char *exp_str,
+                                    const NMUtilsEnumValueInfo *value_infos)
 {
-	int flags = 1;
-	char *err_token = NULL;
+	gs_free char *str = NULL;
+	int flags2;
+	gs_free char *err_token = NULL;
 	gboolean result;
 
-	result = nm_utils_enum_from_str (type, str, &flags, &err_token);
+	g_assert (exp_str);
+
+	str = _nm_utils_enum_to_str_full (type, flags, ", ", value_infos);
+	g_assert_cmpstr (str, ==, exp_str);
+
+	if (!value_infos) {
+		gs_free char *str2 = NULL;
+
+		str2 = nm_utils_enum_to_str (type, flags);
+		g_assert_cmpstr (str2, ==, exp_str);
+	}
+
+	result = _nm_utils_enum_from_str_full (type, str, &flags2, &err_token, value_infos);
+	g_assert (result == TRUE);
+	g_assert_cmpint (flags2, ==, flags);
+	g_assert_cmpstr (err_token, ==, NULL);
+}
+
+#define _test_nm_utils_enum_to_str_do(...) _test_nm_utils_enum_to_str_do_full (__VA_ARGS__, NULL)
+
+static void
+_test_nm_utils_enum_from_str_do_full (GType type,
+                                     const char *str,
+                                     gboolean exp_result,
+                                     int exp_flags,
+                                     const char *exp_err_token,
+                                     const NMUtilsEnumValueInfo *value_infos)
+{
+	int flags;
+	gs_free char *err_token = NULL;
+	gboolean result;
+
+	result = _nm_utils_enum_from_str_full (type, str, &flags, &err_token, value_infos);
 
 	g_assert (result == exp_result);
 	g_assert_cmpint (flags, ==, exp_flags);
 	g_assert_cmpstr (err_token, ==, exp_err_token);
 
-	g_free (err_token);
+	if (!value_infos) {
+		int flags2;
+		gs_free char *err_token2 = NULL;
+		gboolean result2;
+
+		result2 = nm_utils_enum_from_str (type, str, &flags2, &err_token2);
+		g_assert (result2 == exp_result);
+		g_assert_cmpint (flags2, ==, exp_flags);
+		g_assert_cmpstr (err_token2, ==, exp_err_token);
+	}
+
+	if (result) {
+		int flags2;
+		gs_free char *str2 = NULL;
+		gs_free char *err_token2 = NULL;
+
+		str2 = _nm_utils_enum_to_str_full (type, flags, ", ", value_infos);
+		g_assert (str2);
+
+		result = _nm_utils_enum_from_str_full (type, str2, &flags2, &err_token2, value_infos);
+		g_assert (result == TRUE);
+		g_assert_cmpint (flags2, ==, flags);
+		g_assert_cmpstr (err_token, ==, NULL);
+	}
 }
 
-static void
-test_nm_utils_enum_to_str_do (GType type, int flags, const char *exp_str)
-{
-	char *str;
-
-	str = nm_utils_enum_to_str (type, flags);
-	g_assert_cmpstr (str, ==, exp_str);
-	g_free (str);
-}
+#define _test_nm_utils_enum_from_str_do(...) _test_nm_utils_enum_from_str_do_full(__VA_ARGS__, NULL)
 
 static void
-test_nm_utils_enum_get_values_do (GType type, int from, int to, const char *exp_str)
+_test_nm_utils_enum_get_values_do (GType type, int from, int to, const char *exp_str)
 {
-	const char **strv;
-	char *str;
+	gs_free const char **strv = NULL;
+	gs_free char *str = NULL;
+
+	g_assert (exp_str);
 
 	strv = nm_utils_enum_get_values (type, from, to);
 	g_assert (strv);
 	str = g_strjoinv (",", (char **) strv);
 	g_assert_cmpstr (str, ==, exp_str);
-	g_free (str);
-	g_free (strv);
 }
 
-static void test_nm_utils_enum (void)
+static void
+test_nm_utils_enum (void)
 {
 	GType bool_enum = nm_test_general_bool_enum_get_type();
 	GType meta_flags = nm_test_general_meta_flags_get_type();
 	GType color_flags = nm_test_general_color_flags_get_type();
+	static const NMUtilsEnumValueInfo color_value_infos[] = {
+		{
+			.nick = "nick-4d",
+			.value = 0x4D,
+		},
+		{
+			.nick = "nick-5",
+			.value = 5,
+		},
+		{
+			.nick = "nick-red",
+			.value = NM_TEST_GENERAL_COLOR_FLAGS_RED,
+		},
+	};
 
-	test_nm_utils_enum_to_str_do (bool_enum, NM_TEST_GENERAL_BOOL_ENUM_YES, "yes");
-	test_nm_utils_enum_to_str_do (bool_enum, NM_TEST_GENERAL_BOOL_ENUM_UNKNOWN, "unknown");
-	test_nm_utils_enum_to_str_do (bool_enum, NM_TEST_GENERAL_BOOL_ENUM_INVALID, "4");
-	test_nm_utils_enum_to_str_do (bool_enum, NM_TEST_GENERAL_BOOL_ENUM_67, "67");
-	test_nm_utils_enum_to_str_do (bool_enum, NM_TEST_GENERAL_BOOL_ENUM_46, "64");
+	_test_nm_utils_enum_to_str_do (bool_enum, NM_TEST_GENERAL_BOOL_ENUM_YES, "yes");
+	_test_nm_utils_enum_to_str_do (bool_enum, NM_TEST_GENERAL_BOOL_ENUM_UNKNOWN, "unknown");
+	_test_nm_utils_enum_to_str_do (bool_enum, NM_TEST_GENERAL_BOOL_ENUM_INVALID, "4");
+	_test_nm_utils_enum_to_str_do (bool_enum, NM_TEST_GENERAL_BOOL_ENUM_67, "67");
+	_test_nm_utils_enum_to_str_do (bool_enum, NM_TEST_GENERAL_BOOL_ENUM_46, "64");
 
-	test_nm_utils_enum_to_str_do (meta_flags, NM_TEST_GENERAL_META_FLAGS_NONE, "none");
-	test_nm_utils_enum_to_str_do (meta_flags, NM_TEST_GENERAL_META_FLAGS_BAZ, "baz");
-	test_nm_utils_enum_to_str_do (meta_flags, NM_TEST_GENERAL_META_FLAGS_FOO |
-	                                          NM_TEST_GENERAL_META_FLAGS_BAR |
-	                                          NM_TEST_GENERAL_META_FLAGS_BAZ, "foo, bar, baz");
-	test_nm_utils_enum_to_str_do (meta_flags, 0xFF, "foo, bar, baz, 0xf8");
-	test_nm_utils_enum_to_str_do (meta_flags, NM_TEST_GENERAL_META_FLAGS_0x8, "0x8");
-	test_nm_utils_enum_to_str_do (meta_flags, NM_TEST_GENERAL_META_FLAGS_0x4, "0x10");
+	_test_nm_utils_enum_to_str_do (meta_flags, NM_TEST_GENERAL_META_FLAGS_NONE, "none");
+	_test_nm_utils_enum_to_str_do (meta_flags, NM_TEST_GENERAL_META_FLAGS_BAZ, "baz");
+	_test_nm_utils_enum_to_str_do (meta_flags, NM_TEST_GENERAL_META_FLAGS_FOO |
+	                                           NM_TEST_GENERAL_META_FLAGS_BAR |
+	                                           NM_TEST_GENERAL_META_FLAGS_BAZ, "foo, bar, baz");
+	_test_nm_utils_enum_to_str_do (meta_flags, 0xFF, "foo, bar, baz, 0xf8");
+	_test_nm_utils_enum_to_str_do (meta_flags, NM_TEST_GENERAL_META_FLAGS_0x8, "0x8");
+	_test_nm_utils_enum_to_str_do (meta_flags, NM_TEST_GENERAL_META_FLAGS_0x4, "0x10");
 
-	test_nm_utils_enum_to_str_do (color_flags, NM_TEST_GENERAL_COLOR_FLAGS_RED, "red");
-	test_nm_utils_enum_to_str_do (color_flags, NM_TEST_GENERAL_COLOR_FLAGS_WHITE, "0x1");
-	test_nm_utils_enum_to_str_do (color_flags, NM_TEST_GENERAL_COLOR_FLAGS_RED |
-	                                           NM_TEST_GENERAL_COLOR_FLAGS_GREEN, "red, green");
+	_test_nm_utils_enum_to_str_do (color_flags, NM_TEST_GENERAL_COLOR_FLAGS_RED, "red");
+	_test_nm_utils_enum_to_str_do (color_flags, NM_TEST_GENERAL_COLOR_FLAGS_WHITE, "0x1");
+	_test_nm_utils_enum_to_str_do (color_flags, NM_TEST_GENERAL_COLOR_FLAGS_RED |
+	                                            NM_TEST_GENERAL_COLOR_FLAGS_GREEN, "red, green");
 
-	test_nm_utils_enum_from_str_do (bool_enum, "", FALSE, 0, NULL);
-	test_nm_utils_enum_from_str_do (bool_enum, " ", FALSE, 0, NULL);
-	test_nm_utils_enum_from_str_do (bool_enum, "invalid", FALSE, 0, "invalid");
-	test_nm_utils_enum_from_str_do (bool_enum, "yes", TRUE, NM_TEST_GENERAL_BOOL_ENUM_YES, NULL);
-	test_nm_utils_enum_from_str_do (bool_enum, "no", TRUE, NM_TEST_GENERAL_BOOL_ENUM_NO, NULL);
-	test_nm_utils_enum_from_str_do (bool_enum, "yes,no", FALSE, 0, "yes,no");
+	_test_nm_utils_enum_to_str_do_full (color_flags,
+	                                      NM_TEST_GENERAL_COLOR_FLAGS_RED
+	                                    | NM_TEST_GENERAL_COLOR_FLAGS_GREEN,
+	                                    "nick-red, green",
+	                                    color_value_infos);
 
-	test_nm_utils_enum_from_str_do (meta_flags, "", TRUE, 0, NULL);
-	test_nm_utils_enum_from_str_do (meta_flags, " ", TRUE, 0, NULL);
-	test_nm_utils_enum_from_str_do (meta_flags, "foo", TRUE, NM_TEST_GENERAL_META_FLAGS_FOO, NULL);
-	test_nm_utils_enum_from_str_do (meta_flags, "foo,baz", TRUE, NM_TEST_GENERAL_META_FLAGS_FOO |
-	                                                             NM_TEST_GENERAL_META_FLAGS_BAZ, NULL);
-	test_nm_utils_enum_from_str_do (meta_flags, "foo, baz", TRUE, NM_TEST_GENERAL_META_FLAGS_FOO |
+	_test_nm_utils_enum_to_str_do_full (color_flags,
+	                                      0x4D
+	                                    |  NM_TEST_GENERAL_COLOR_FLAGS_RED
+	                                    | NM_TEST_GENERAL_COLOR_FLAGS_GREEN,
+	                                    "nick-4d",
+	                                    color_value_infos);
+
+	_test_nm_utils_enum_to_str_do_full (color_flags,
+	                                      5
+	                                    | NM_TEST_GENERAL_COLOR_FLAGS_GREEN,
+	                                    "nick-5, green",
+	                                    color_value_infos);
+
+	_test_nm_utils_enum_from_str_do (bool_enum, "", FALSE, 0, NULL);
+	_test_nm_utils_enum_from_str_do (bool_enum, " ", FALSE, 0, NULL);
+	_test_nm_utils_enum_from_str_do (bool_enum, "invalid", FALSE, 0, "invalid");
+	_test_nm_utils_enum_from_str_do (bool_enum, "yes", TRUE, NM_TEST_GENERAL_BOOL_ENUM_YES, NULL);
+	_test_nm_utils_enum_from_str_do (bool_enum, "no", TRUE, NM_TEST_GENERAL_BOOL_ENUM_NO, NULL);
+	_test_nm_utils_enum_from_str_do (bool_enum, "yes,no", FALSE, 0, "yes,no");
+
+	_test_nm_utils_enum_from_str_do (meta_flags, "", TRUE, 0, NULL);
+	_test_nm_utils_enum_from_str_do (meta_flags, " ", TRUE, 0, NULL);
+	_test_nm_utils_enum_from_str_do (meta_flags, "foo", TRUE, NM_TEST_GENERAL_META_FLAGS_FOO, NULL);
+	_test_nm_utils_enum_from_str_do (meta_flags, "foo,baz", TRUE, NM_TEST_GENERAL_META_FLAGS_FOO |
 	                                                              NM_TEST_GENERAL_META_FLAGS_BAZ, NULL);
-	test_nm_utils_enum_from_str_do (meta_flags, "foo,,bar", TRUE, NM_TEST_GENERAL_META_FLAGS_FOO |
-	                                                              NM_TEST_GENERAL_META_FLAGS_BAR, NULL);
-	test_nm_utils_enum_from_str_do (meta_flags, "foo,baz,quux,bar", FALSE, 0, "quux");
-	test_nm_utils_enum_from_str_do (meta_flags, "foo,0x6", TRUE, NM_TEST_GENERAL_META_FLAGS_FOO | 0x6, NULL);
-	test_nm_utils_enum_from_str_do (meta_flags, "0x30,0x08,foo", TRUE, 0x39, NULL);
+	_test_nm_utils_enum_from_str_do (meta_flags, "foo, baz", TRUE, NM_TEST_GENERAL_META_FLAGS_FOO |
+	                                                               NM_TEST_GENERAL_META_FLAGS_BAZ, NULL);
+	_test_nm_utils_enum_from_str_do (meta_flags, "foo,,bar", TRUE, NM_TEST_GENERAL_META_FLAGS_FOO |
+	                                                               NM_TEST_GENERAL_META_FLAGS_BAR, NULL);
+	_test_nm_utils_enum_from_str_do (meta_flags, "foo,baz,quux,bar", FALSE, 0, "quux");
+	_test_nm_utils_enum_from_str_do (meta_flags, "foo,0x6", TRUE, NM_TEST_GENERAL_META_FLAGS_FOO | 0x6, NULL);
+	_test_nm_utils_enum_from_str_do (meta_flags, "0x30,0x08,foo", TRUE, 0x39, NULL);
 
-	test_nm_utils_enum_from_str_do (color_flags, "green", TRUE, NM_TEST_GENERAL_COLOR_FLAGS_GREEN, NULL);
-	test_nm_utils_enum_from_str_do (color_flags, "blue,red", TRUE, NM_TEST_GENERAL_COLOR_FLAGS_BLUE |
-	                                                               NM_TEST_GENERAL_COLOR_FLAGS_RED, NULL);
-	test_nm_utils_enum_from_str_do (color_flags, "blue,white", FALSE, 0, "white");
+	_test_nm_utils_enum_from_str_do (color_flags, "green", TRUE, NM_TEST_GENERAL_COLOR_FLAGS_GREEN, NULL);
+	_test_nm_utils_enum_from_str_do (color_flags, "blue,red", TRUE, NM_TEST_GENERAL_COLOR_FLAGS_BLUE |
+	                                                                NM_TEST_GENERAL_COLOR_FLAGS_RED, NULL);
+	_test_nm_utils_enum_from_str_do (color_flags, "blue,white", FALSE, 0, "white");
 
-	test_nm_utils_enum_get_values_do (bool_enum, 0, G_MAXINT, "no,yes,maybe,unknown,67,64");
-	test_nm_utils_enum_get_values_do (bool_enum, NM_TEST_GENERAL_BOOL_ENUM_YES,
-	                                  NM_TEST_GENERAL_BOOL_ENUM_MAYBE, "yes,maybe");
-	test_nm_utils_enum_get_values_do (meta_flags, 0, G_MAXINT, "none,foo,bar,baz,0x8,0x10");
-	test_nm_utils_enum_get_values_do (color_flags, 0, G_MAXINT, "blue,red,green");
+	_test_nm_utils_enum_from_str_do_full (color_flags,
+	                                      "nick-red",
+	                                      TRUE,
+	                                      NM_TEST_GENERAL_COLOR_FLAGS_RED,
+	                                      NULL,
+	                                      color_value_infos);
+
+	_test_nm_utils_enum_from_str_do_full (color_flags,
+	                                      "0x4D",
+	                                      TRUE,
+	                                      0x4D,
+	                                      NULL,
+	                                      color_value_infos);
+
+	_test_nm_utils_enum_from_str_do_full (color_flags,
+	                                      "green,nick-4d",
+	                                      TRUE,
+	                                        0x4D
+	                                      | NM_TEST_GENERAL_COLOR_FLAGS_GREEN,
+	                                      NULL,
+	                                      color_value_infos);
+
+	_test_nm_utils_enum_from_str_do_full (color_flags,
+	                                      "nick-4d,nick-red,nick-5,green,nick-red",
+	                                      TRUE,
+	                                      NM_TEST_GENERAL_COLOR_FLAGS_RED,
+	                                      NULL,
+	                                      color_value_infos);
+
+	_test_nm_utils_enum_get_values_do (bool_enum, 0, G_MAXINT, "no,yes,maybe,unknown,67,64");
+	_test_nm_utils_enum_get_values_do (bool_enum, NM_TEST_GENERAL_BOOL_ENUM_YES,
+	                                   NM_TEST_GENERAL_BOOL_ENUM_MAYBE, "yes,maybe");
+	_test_nm_utils_enum_get_values_do (meta_flags, 0, G_MAXINT, "none,foo,bar,baz,0x8,0x10");
+	_test_nm_utils_enum_get_values_do (color_flags, 0, G_MAXINT, "blue,red,green");
 }
 
 /*****************************************************************************/
