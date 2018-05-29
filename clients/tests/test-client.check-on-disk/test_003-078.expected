@@ -1,12 +1,15 @@
-location: clients/tests/test-client.py:781:test_003()/58
+location: clients/tests/test-client.py:781:test_003()/78
 cmd: $NMCLI -f UUID,TYPE --mode multiline --pretty con
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 841 bytes
+stdout: 1047 bytes
 >>>
 ===============================================================================
                     Profile połączeń usługi NetworkManager
 ===============================================================================
+UUID:                                   UUID-ethernet-REPLACED-REPLACED-REPL
+TYPE:                                   ethernet
+-------------------------------------------------------------------------------
 UUID:                                   UUID-ethernet-REPLACED-REPLACED-REPL
 TYPE:                                   ethernet
 -------------------------------------------------------------------------------
