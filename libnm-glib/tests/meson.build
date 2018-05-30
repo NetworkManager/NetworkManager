@@ -14,7 +14,7 @@ test_units = [
 foreach test_unit: test_units
   exe = executable(
     test_unit,
-    [test_unit + '.c'] + shared_test_utils,
+    [test_unit + '.c'] + shared_nm_test_utils_impl_c,
     dependencies: deps,
     c_args:
       common_cflags + [
