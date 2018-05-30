@@ -106,6 +106,11 @@ endif
 
 ###############################################################################
 
+nm_build_cflags = \
+	-DNM_BUILD_SRCDIR=\"$(abs_srcdir)\" \
+	-DNM_BUILD_BUILDDIR=\"$(abs_builddir)\" \
+	$(NULL)
+
 set_sanitizer_env = \
 	[ -n "$(SANITIZER_ENV)" ] && export $(SANITIZER_ENV) ; \
 	if echo $(SANITIZER_LIB_CFLAGS) $(SANITIZER_EXEC_CFLAGS) | grep -e -fsanitize=address > /dev/null; then \
