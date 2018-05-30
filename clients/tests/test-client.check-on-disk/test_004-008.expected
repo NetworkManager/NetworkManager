@@ -2,7 +2,7 @@ location: clients/tests/test-client.py:823:test_004()/8
 cmd: $NMCLI con s con-xx1
 lang: C
 returncode: 0
-stdout: 3713 bytes
+stdout: 3756 bytes
 >>>
 connection.id:                          con-xx1
 connection.uuid:                        UUID-con-xx1-REPLACED-REPLACED-REPLA
@@ -77,6 +77,7 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.ip6-privacy:                       -1 (unknown)
 ipv6.addr-gen-mode:                     stable-privacy
+ipv6.dhcp-duid:                         --
 ipv6.dhcp-send-hostname:                yes
 ipv6.dhcp-hostname:                     --
 ipv6.token:                             --

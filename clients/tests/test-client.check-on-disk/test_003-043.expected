@@ -2,7 +2,7 @@ location: clients/tests/test-client.py:751:test_003()/43
 cmd: $NMCLI -f ALL con s ethernet
 lang: C
 returncode: 0
-stdout: 3516 bytes
+stdout: 3559 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -75,6 +75,7 @@ ipv6.never-default:                     no
 ipv6.may-fail:                          yes
 ipv6.ip6-privacy:                       -1 (unknown)
 ipv6.addr-gen-mode:                     stable-privacy
+ipv6.dhcp-duid:                         --
 ipv6.dhcp-send-hostname:                yes
 ipv6.dhcp-hostname:                     --
 ipv6.token:                             --

@@ -2,7 +2,7 @@ location: clients/tests/test-client.py:804:test_003()/72
 cmd: $NMCLI c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4206 bytes
+stdout: 4249 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -75,6 +75,7 @@ ipv6.never-default:                     nie
 ipv6.may-fail:                          tak
 ipv6.ip6-privacy:                       -1 (unknown)
 ipv6.addr-gen-mode:                     stable-privacy
+ipv6.dhcp-duid:                         --
 ipv6.dhcp-send-hostname:                tak
 ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
