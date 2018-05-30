@@ -101,7 +101,7 @@ deps = [
 
 common_cflags = [
   '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_UTIL',
-  '-DLOCALEDIR="@0@"'.format(nm_localedir),
+  '-DNMLOCALEDIR="@0@"'.format(nm_localedir),
 ]
 
 cflags = common_cflags + [

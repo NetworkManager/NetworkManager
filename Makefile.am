@@ -81,6 +81,8 @@ servicedir = $(datadir)/dbus-1/system-services
 
 completiondir = $(datadir)/bash-completion/completions
 
+nmlocaledir = $(datadir)/locale
+
 GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM
 GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
 
@@ -577,7 +579,7 @@ libnm_core_libnm_core_la_CPPFLAGS = \
 	$(dflt_cppflags_libnm_core) \
 	-DG_LOG_DOMAIN=\""libnm"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE \
-	-DLOCALEDIR=\"$(datadir)/locale\" \
+	-DNMLOCALEDIR=\"$(nmlocaledir)\" \
 	-DNMCONFDIR=\"$(nmconfdir)\" \
 	-DNMLIBDIR=\"$(nmlibdir)\" \
 	-DNMVPNDIR=\"$(pkglibdir)\" \
@@ -1192,7 +1194,7 @@ src_cppflags = \
 	-DRUNDIR=\"$(rundir)\" \
 	\
 	-DNMCONFDIR=\"$(nmconfdir)\" \
-	-DNMLOCALEDIR=\"$(datadir)/locale\" \
+	-DNMLOCALEDIR=\"$(nmlocaledir)\" \
 	-DNMPLUGINDIR=\"$(plugindir)\" \
 	-DNMRUNDIR=\"$(nmrundir)\" \
 	-DNMSTATEDIR=\"$(nmstatedir)\" \
@@ -3360,7 +3362,7 @@ clients_nm_online_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	-DG_LOG_DOMAIN=\""nm-online"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
-	-DNMLOCALEDIR=\"$(datadir)/locale\"
+	-DNMLOCALEDIR=\"$(nmlocaledir)\"
 
 clients_nm_online_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
@@ -3388,7 +3390,7 @@ clients_cppflags = \
 	-I$(srcdir)/clients/common \
 	-I$(builddir)/clients/common \
 	$(GLIB_CFLAGS) \
-	-DNMLOCALEDIR=\"$(datadir)/locale\" \
+	-DNMLOCALEDIR=\"$(nmlocaledir)\" \
 	$(NULL)
 
 check_ltlibraries += clients/common/libnmc-base.la
@@ -3542,7 +3544,7 @@ clients_cli_nmcli_CPPFLAGS = \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DG_LOG_DOMAIN=\""nmcli"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
-	-DNMCLI_LOCALEDIR=\"$(datadir)/locale\"
+	-DNMLOCALEDIR=\"$(nmlocaledir)\"
 
 clients_cli_nmcli_LDADD = \
 	libnm/libnm.la \
@@ -3748,7 +3750,7 @@ clients_tui_nmtui_CPPFLAGS = \
 	$(NEWT_CFLAGS) \
 	-DG_LOG_DOMAIN=\""nmtui"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
-	-DLOCALEDIR=\""$(localedir)"\"
+	-DNMLOCALEDIR=\""$(localedir)"\"
 
 clients_tui_nmtui_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
@@ -3909,7 +3911,7 @@ libnm_util_cppflags = \
 	-I$(builddir)/shared \
 	-DG_LOG_DOMAIN=\""libnm-util"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_UTIL \
-	-DLOCALEDIR=\"$(datadir)/locale\" \
+	-DNMLOCALEDIR=\"$(nmlocaledir)\" \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	$(UUID_CFLAGS)
