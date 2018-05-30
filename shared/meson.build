@@ -64,7 +64,6 @@ shared_dep = declare_dependency(
   include_directories: [
     top_inc,
     shared_inc,
-    include_directories('nm-utils')
   ],
   dependencies: glib_dep
 )

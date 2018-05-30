@@ -1258,7 +1258,6 @@ src_libsystemd_nm_la_cppflags = \
 	-I$(builddir)/libnm-core \
 	-I$(srcdir)/src \
 	-I$(srcdir)/src/systemd/sd-adapt \
-	-I$(srcdir)/shared/nm-utils \
 	-I$(srcdir)/src/systemd/src/systemd \
 	-I$(srcdir)/src/systemd/src/basic \
 	-I$(srcdir)/src/systemd/src/shared \
@@ -1301,10 +1300,12 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/sd-adapt/procfs-util.h \
 	src/systemd/sd-adapt/raw-clone.h \
 	src/systemd/sd-adapt/sd-daemon.h \
+	src/systemd/sd-adapt/siphash24.h \
 	src/systemd/sd-adapt/stat-util.h \
 	src/systemd/sd-adapt/terminal-util.h \
 	src/systemd/sd-adapt/udev-util.h \
 	src/systemd/sd-adapt/udev.h \
+	src/systemd/sd-adapt/unaligned.h \
 	src/systemd/sd-adapt/user-util.h \
 	src/systemd/sd-adapt/virt.h \
 	src/systemd/src/basic/alloc-util.c \
