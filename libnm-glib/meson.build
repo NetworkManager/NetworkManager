@@ -197,9 +197,7 @@ libnm_glib = shared_library(
   sources: sources + libnm_glib_enum + [nm_secret_agent_glue],
   version: libnm_glib_version,
   dependencies: deps,
-  c_args: cflags + [
-    '-DNMRUNDIR="@0@"'.format(nm_pkgrundir),
-  ],
+  c_args: cflags,
   link_whole: libdeprecated_nm_glib,
   link_args: [
     '-Wl,--version-script,@0@'.format(linker_script),

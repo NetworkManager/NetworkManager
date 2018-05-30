@@ -36,6 +36,8 @@
 
 #include "nm-test-utils-core.h"
 
+#define TEST_DIR             NM_BUILD_SRCDIR"/src/dhcp/tests"
+
 static void
 test_config (const char *orig,
              const char *expected,
@@ -736,7 +738,7 @@ test_read_duid_from_leasefile (void)
 	gconstpointer duid_arr;
 	gsize duid_len;
 
-	duid = nm_dhcp_dhclient_read_duid (TESTDIR "/test-dhclient-duid.leases", &error);
+	duid = nm_dhcp_dhclient_read_duid (TEST_DIR"/test-dhclient-duid.leases", &error);
 	g_assert_no_error (error);
 	g_assert (duid);
 	duid_arr = g_bytes_get_data (duid, &duid_len);
@@ -750,7 +752,7 @@ test_read_commented_duid_from_leasefile (void)
 	GBytes *duid;
 	GError *error = NULL;
 
-	duid = nm_dhcp_dhclient_read_duid (TESTDIR "/test-dhclient-commented-duid.leases", &error);
+	duid = nm_dhcp_dhclient_read_duid (TEST_DIR"/test-dhclient-commented-duid.leases", &error);
 	g_assert_no_error (error);
 	g_assert (duid == NULL);
 }

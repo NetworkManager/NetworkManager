@@ -29,6 +29,8 @@
 
 #include "nm-utils/nm-test-utils.h"
 
+#define TEST_CERT_DIR                         NM_BUILD_SRCDIR"/libnm-core/tests/certs"
+
 static void
 compare_blob_data (const char *test,
                    const char *key_path,

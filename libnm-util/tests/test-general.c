@@ -2428,7 +2428,8 @@ test_libnm_linking (void)
 	int status;
 	GError *error = NULL;
 
-	g_spawn_sync (BUILD_DIR, argv, NULL, 0 /*G_SPAWN_DEFAULT*/,
+	g_spawn_sync (NM_BUILD_BUILDDIR"/libnm-util/tests",
+	              argv, NULL, 0 /*G_SPAWN_DEFAULT*/,
 	              _test_libnm_linking_setup_child_process, NULL,
 	              &out, &err, &status, &error);
 	g_assert_no_error (error);

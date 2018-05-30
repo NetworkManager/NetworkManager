@@ -37,6 +37,10 @@
 
 #include "nm-test-utils-core.h"
 
+#define TEST_CERT_DIR                         NM_BUILD_SRCDIR"/src/supplicant/tests/certs"
+
+/*****************************************************************************/
+
 static gboolean
 validate_opt (const char *detail,
               GVariant *config,

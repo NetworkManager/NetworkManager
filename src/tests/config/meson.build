@@ -7,16 +7,11 @@ sources = files(
 
 test_config_dir = meson.current_source_dir()
 
-cflags = [
-  '-DSRCDIR="@0@"'.format(test_config_dir),
-  '-DBUILDDIR="@0@"'.format(test_config_dir)
-]
-
 exe = executable(
   test_unit,
   sources,
   dependencies: test_nm_dep,
-  c_args: cflags
+  c_args: nm_build_cflags,
 )
 
 test(

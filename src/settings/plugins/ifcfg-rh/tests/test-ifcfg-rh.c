@@ -59,7 +59,11 @@
 
 #include "nm-test-utils-core.h"
 
-#define TEST_SCRATCH_DIR_TMP TEST_SCRATCH_DIR"/network-scripts/tmp"
+#define TEST_IFCFG_DIR          NM_BUILD_SRCDIR"/src/settings/plugins/ifcfg-rh/tests/network-scripts"
+#define TEST_SCRATCH_DIR        NM_BUILD_BUILDDIR"/src/settings/plugins/ifcfg-rh/tests/network-scripts"
+#define TEST_SCRATCH_DIR_TMP    TEST_SCRATCH_DIR"/tmp"
+
+#define TEST_SCRATCH_ALIAS_BASE TEST_SCRATCH_DIR"/ifcfg-alias0"
 
 /*****************************************************************************/
 
@@ -411,7 +415,7 @@ test_read_netmask_1 (void)
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
 	NMIPAddress *ip4_addr;
-	const char *FILENAME = TEST_IFCFG_DIR "/network-scripts/ifcfg-netmask-1";
+	const char *FILENAME = TEST_IFCFG_DIR"/ifcfg-netmask-1";
 
 	connection = _connection_from_file (FILENAME, NULL, TYPE_ETHERNET, NULL);
 
@@ -431,14 +435,14 @@ test_read_netmask_1 (void)
 
 	content = nmtst_file_get_contents (FILENAME);
 
-	testfile = g_strdup (TEST_SCRATCH_DIR "/network-scripts/ifcfg-netmask-1.copy");
+	testfile = g_strdup (TEST_SCRATCH_DIR"/ifcfg-netmask-1.copy");
 
 	nmtst_file_set_contents (testfile, content);
 
 	_writer_update_connection (connection,
-	                           TEST_SCRATCH_DIR "/network-scripts/",
+	                           TEST_SCRATCH_DIR,
 	                           testfile,
-	                           TEST_IFCFG_DIR "/network-scripts/ifcfg-netmask-1.cexpected");
+	                           TEST_IFCFG_DIR"/ifcfg-netmask-1.cexpected");
 }
 
 /*****************************************************************************/
@@ -553,7 +557,7 @@ test_read_basic (void)
 	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-minimal",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-minimal",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -606,7 +610,7 @@ test_read_miscellaneous_variables (void)
 	guint64 expected_timestamp = 0;
 
 	NMTST_EXPECT_NM_WARN ("*invalid MAC in HWADDR_BLACKLIST 'XX:aa:invalid'*");
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-misc-variables",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-misc-variables",
 	                                    NULL, TYPE_ETHERNET, NULL);
 	g_test_assert_expected_messages ();
 
@@ -647,7 +651,7 @@ test_read_variables_corner_cases (void)
 	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-variables-corner-cases-1",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-variables-corner-cases-1",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -685,7 +689,7 @@ test_read_unmanaged (void)
 	char *unhandled_spec = NULL;
 	guint64 expected_timestamp = 0;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-nm-controlled",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-nm-controlled",
 	                                    NULL, TYPE_ETHERNET,
 	                                    &unhandled_spec);
 	g_assert_cmpstr (unhandled_spec, ==, "unmanaged:mac:00:11:22:33:f8:9f");
@@ -709,7 +713,7 @@ test_read_unmanaged_unrecognized (void)
 	gs_free char *unhandled_spec = NULL;
 	guint64 expected_timestamp = 0;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-nm-controlled-unrecognized",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-nm-controlled-unrecognized",
 	                                    NULL, NULL,
 	                                    &unhandled_spec);
 	g_assert_cmpstr (unhandled_spec, ==, "unmanaged:interface-name:ipoac0");
@@ -731,7 +735,7 @@ test_read_unrecognized (void)
 	gs_free char *unhandled_spec = NULL;
 	guint64 expected_timestamp = 0;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-unrecognized",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-unrecognized",
 	                                    NULL, NULL,
 	                                    &unhandled_spec);
 	g_assert_cmpstr (unhandled_spec, ==, "unrecognized:mac:00:11:22:33");
@@ -855,7 +859,7 @@ test_read_wired_static_no_prefix (gconstpointer user_data)
 	NMIPAddress *ip4_addr;
 	char *file, *expected_id;
 
-	file = g_strdup_printf (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-static-no-prefix-%u", expected_prefix);
+	file = g_strdup_printf (TEST_IFCFG_DIR"/ifcfg-test-wired-static-no-prefix-%u", expected_prefix);
 	expected_id = g_strdup_printf ("System test-wired-static-no-prefix-%u", expected_prefix);
 
 	NMTST_EXPECT_NM_WARN ("*missing PREFIX, assuming*");
@@ -896,7 +900,7 @@ test_read_wired_dhcp (void)
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0xee };
 	const char *mac;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-dhcp",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-dhcp",
 	                                    NULL, TYPE_ETHERNET,
 	                                    &unmanaged);
 	g_assert (unmanaged == NULL);
@@ -939,7 +943,7 @@ test_read_wired_dhcp_plus_ip (void)
 	NMIPAddress *ip4_addr;
 	NMIPAddress *ip6_addr;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp-plus-ip",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-dhcp-plus-ip",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	/* ===== IPv4 SETTING ===== */
@@ -1006,7 +1010,7 @@ test_read_wired_shared_plus_ip (void)
 	NMSettingIPConfig *s_ip4;
 	NMIPAddress *ip4_addr;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-shared-plus-ip",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-shared-plus-ip",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	/* ===== IPv4 SETTING ===== */
@@ -1038,8 +1042,8 @@ test_read_wired_global_gateway (void)
 	NMIPAddress *ip4_addr;
 	char *unmanaged = NULL;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-global-gateway",
-	                                    TEST_IFCFG_DIR"/network-scripts/network-test-wired-global-gateway",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-global-gateway",
+	                                    TEST_IFCFG_DIR"/network-test-wired-global-gateway",
 	                                    TYPE_ETHERNET, &unmanaged);
 	g_assert (unmanaged == NULL);
 
@@ -1080,8 +1084,8 @@ test_read_wired_global_gateway_ignore (void)
 	char *unmanaged = NULL;
 
 	NMTST_EXPECT_NM_WARN ("*ignoring GATEWAY (/etc/sysconfig/network) for * because the connection has no static addresses");
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-global-gateway-ignore",
-	                                    TEST_IFCFG_DIR"/network-scripts/network-test-wired-global-gateway-ignore",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-global-gateway-ignore",
+	                                    TEST_IFCFG_DIR"/network-test-wired-global-gateway-ignore",
 	                                    TYPE_ETHERNET, &unmanaged);
 	g_test_assert_expected_messages ();
 	g_assert (unmanaged == NULL);
@@ -1116,7 +1120,7 @@ test_read_wired_obsolete_gateway_n (void)
 	NMSettingIPConfig *s_ip4;
 	NMIPAddress *ip4_addr;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-obsolete-gateway-n",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-obsolete-gateway-n",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	/* ===== IPv4 SETTING ===== */
@@ -1184,8 +1188,8 @@ test_user_1 (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_user));
 
 	_writer_new_connec_exp (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        TEST_IFCFG_DIR "/network-scripts/ifcfg-Test_User_1.cexpected",
+	                        TEST_SCRATCH_DIR,
+	                        TEST_IFCFG_DIR"/ifcfg-Test_User_1.cexpected",
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
@@ -1200,8 +1204,8 @@ test_read_wired_never_default (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-never-default",
-	                                    TEST_IFCFG_DIR"/network-scripts/network-test-wired-never-default",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-never-default",
+	                                    TEST_IFCFG_DIR"/network-test-wired-never-default",
 	                                    TYPE_ETHERNET, NULL);
 
 	/* ===== WIRED SETTING ===== */
@@ -1232,7 +1236,7 @@ test_read_wired_defroute_no (void)
 	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-defroute-no",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-defroute-no",
 	                                    NULL, TYPE_ETHERNET, &unmanaged);
 	g_assert (unmanaged == NULL);
 
@@ -1264,8 +1268,8 @@ test_read_wired_defroute_no_gatewaydev_yes (void)
 	NMSettingIPConfig *s_ip6;
 	char *unmanaged = NULL;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-defroute-no-gatewaydev-yes",
-	                                    TEST_IFCFG_DIR"/network-scripts/network-test-wired-defroute-no-gatewaydev-yes",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-defroute-no-gatewaydev-yes",
+	                                    TEST_IFCFG_DIR"/network-test-wired-defroute-no-gatewaydev-yes",
 	                                    TYPE_ETHERNET,
 	                                    &unmanaged);
 
@@ -1297,7 +1301,7 @@ test_read_wired_static_routes (void)
 	NMSettingIPConfig *s_ip4;
 	NMIPRoute *ip4_route;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static-routes",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-static-routes",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -1370,7 +1374,7 @@ test_read_wired_static_routes_legacy (void)
 	char *unmanaged = NULL;
 	NMIPRoute *ip4_route;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static-routes-legacy",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-static-routes-legacy",
 	                                    NULL, TYPE_ETHERNET, &unmanaged);
 	g_assert (!unmanaged);
 
@@ -1512,7 +1516,7 @@ test_read_wired_ipv6_manual (void)
 	NMIPRoute *ip6_route;
 
 	NMTST_EXPECT_NM_WARN ("*ignoring manual default route*");
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-ipv6-manual",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-ipv6-manual",
 	                                    NULL, TYPE_ETHERNET, &unmanaged);
 	g_test_assert_expected_messages ();
 	g_assert (!unmanaged);
@@ -1688,7 +1692,7 @@ test_read_wired_dhcp6_only (void)
 	char *unmanaged = NULL;
 	const char *method;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp6-only", NULL, TYPE_ETHERNET, &unmanaged);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-dhcp6-only", NULL, TYPE_ETHERNET, &unmanaged);
 	g_assert (!unmanaged);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -1726,7 +1730,7 @@ test_read_wired_autoip (void)
 	NMSettingIPConfig *s_ip4;
 	char *unmanaged = NULL;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-autoip",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-autoip",
 	                                    NULL, TYPE_ETHERNET,
 	                                    &unmanaged);
 	g_assert (unmanaged == NULL);
@@ -1745,7 +1749,7 @@ test_read_onboot_no (void)
 	NMSettingConnection *s_con;
 	char *unmanaged = NULL;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-onboot-no", NULL, TYPE_ETHERNET, &unmanaged);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-onboot-no", NULL, TYPE_ETHERNET, &unmanaged);
 	g_assert (!unmanaged);
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -1763,7 +1767,7 @@ test_read_noip (void)
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-noip", NULL, TYPE_ETHERNET, NULL);
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-noip", NULL, TYPE_ETHERNET, NULL);
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
@@ -1778,7 +1782,7 @@ test_read_noip (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2_CA_CERT TEST_IFCFG_DIR "/network-scripts/test_ca_cert.pem"
+#define TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2_CA_CERT TEST_IFCFG_DIR"/test_ca_cert.pem"
 
 static void
 test_read_wired_8021x_peap_mschapv2 (void)
@@ -1794,7 +1798,7 @@ test_read_wired_8021x_peap_mschapv2 (void)
 	const char *expected_ca_cert_path;
 	const char *read_ca_cert_path;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-8021x-peap-mschapv2",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-8021x-peap-mschapv2",
 	                                    NULL, TYPE_ETHERNET, &unmanaged);
 	g_assert (!unmanaged);
 
@@ -1895,7 +1899,7 @@ test_read_write_802_1X_subj_matches (void)
 	NMSetting8021x *s_8021x;
 
 	NMTST_EXPECT_NM_WARN ("*missing IEEE_8021X_CA_CERT*peap*");
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-802-1X-subj-matches",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-802-1X-subj-matches",
 	                                    NULL, TYPE_ETHERNET, NULL);
 	g_test_assert_expected_messages ();
 
@@ -1917,8 +1921,8 @@ test_read_write_802_1X_subj_matches (void)
 
 	NMTST_EXPECT_NM_WARN ("*missing IEEE_8021X_CA_CERT for EAP method 'peap'; this is insecure!");
 	_writer_new_connec_exp (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        TEST_IFCFG_DIR "/network-scripts/ifcfg-System_test-wired-802-1X-subj-matches.cexpected",
+	                        TEST_SCRATCH_DIR,
+	                        TEST_IFCFG_DIR"/ifcfg-System_test-wired-802-1X-subj-matches.cexpected",
 	                        &testfile);
 	g_test_assert_expected_messages ();
 
@@ -1955,7 +1959,7 @@ test_read_802_1x_ttls_eapgtc (void)
 	 * NMSetting8021x::autheap property.
 	 */
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-802-1x-ttls-eapgtc",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-802-1x-ttls-eapgtc",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== 802.1x SETTING ===== */
@@ -1987,7 +1991,7 @@ test_read_write_802_1x_password_raw (void)
 
 	/* Test that the 802-1x.password-raw is correctly read and written. */
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-802-1x-password-raw",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-802-1x-password-raw",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	/* ===== 802.1x SETTING ===== */
@@ -2004,7 +2008,7 @@ test_read_write_802_1x_password_raw (void)
 	                 NM_SETTING_SECRET_FLAG_NONE);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
 	keyfile = utils_get_keys_path (testfile);
@@ -2034,7 +2038,7 @@ test_read_wired_aliases_good (gconstpointer test_data)
 	expected_label   = N == 0 ? expected_label_0   : expected_label_3;
 	expected_num_addresses = g_strv_length ((char **) expected_address);
 
-	nm_sprintf_buf (path, TEST_IFCFG_DIR "/network-scripts/ifcfg-aliasem%d", N);
+	nm_sprintf_buf (path, TEST_IFCFG_DIR"/ifcfg-aliasem%d", N);
 
 	connection = _connection_from_file (path, NULL, TYPE_ETHERNET, NULL);
 
@@ -2137,14 +2141,14 @@ static void
 test_read_wired_aliases_bad_1 (void)
 {
 	NMTST_EXPECT_NM_WARN ("*aliasem1:1*has no DEVICE*");
-	test_read_wired_aliases_bad (TEST_IFCFG_DIR "/network-scripts/ifcfg-aliasem1", "System aliasem1");
+	test_read_wired_aliases_bad (TEST_IFCFG_DIR"/ifcfg-aliasem1", "System aliasem1");
 }
 
 static void
 test_read_wired_aliases_bad_2 (void)
 {
 	NMTST_EXPECT_NM_WARN ("*aliasem2:1*has invalid DEVICE*");
-	test_read_wired_aliases_bad (TEST_IFCFG_DIR "/network-scripts/ifcfg-aliasem2", "System aliasem2");
+	test_read_wired_aliases_bad (TEST_IFCFG_DIR"/ifcfg-aliasem2", "System aliasem2");
 }
 
 static void
@@ -2158,7 +2162,7 @@ test_read_dns_options (void)
 	const char *options6[] = { "inet6" };
 	guint32 i, num;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dns-options",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-dns-options",
 	                                    NULL, TYPE_ETHERNET, &unmanaged);
 	g_assert_cmpstr (unmanaged, ==, NULL);
 
@@ -2198,7 +2202,7 @@ test_clear_master (void)
 	shvarFile *f;
 
 	/* 1. load the bridge slave connection from disk */
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-bridge-component",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-bridge-component",
 	                                    NULL, TYPE_ETHERNET, &unmanaged);
 	g_assert_cmpstr (unmanaged, ==, NULL);
 
@@ -2210,8 +2214,8 @@ test_clear_master (void)
 
 	/* 2. write the connection to a new file */
 	_writer_new_connec_exp (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        TEST_IFCFG_DIR "/network-scripts/ifcfg-System_test-bridge-component-a.cexpected",
+	                        TEST_SCRATCH_DIR,
+	                        TEST_IFCFG_DIR"/ifcfg-System_test-bridge-component-a.cexpected",
 	                        &testfile);
 
 	/* 3. clear master and slave-type */
@@ -2227,9 +2231,9 @@ test_clear_master (void)
 
 	/* 4. update the connection on disk */
 	_writer_update_connection (connection,
-	                           TEST_SCRATCH_DIR "/network-scripts/",
+	                           TEST_SCRATCH_DIR,
 	                           testfile,
-	                           TEST_IFCFG_DIR "/network-scripts/ifcfg-System_test-bridge-component-b.cexpected");
+	                           TEST_IFCFG_DIR"/ifcfg-System_test-bridge-component-b.cexpected");
 	keyfile = utils_get_keys_path (testfile);
 	g_assert (!g_file_test (keyfile, G_FILE_TEST_EXISTS));
 
@@ -2314,7 +2318,7 @@ test_write_dns_options (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
@@ -2335,7 +2339,7 @@ test_read_wifi_open (void)
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
 	const char *expected_ssid = "blahblah";
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-open",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wifi-open",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -2398,7 +2402,7 @@ test_read_wifi_open_auto (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-open-auto",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wifi-open-auto",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -2423,7 +2427,7 @@ test_read_wifi_open_ssid_hex (void)
 	GBytes *ssid;
 	const char *expected_ssid = "blahblah";
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-open-ssid-hex",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wifi-open-ssid-hex",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -2453,7 +2457,7 @@ test_read_wifi_open_ssid_hex_bad (void)
 	GBytes *ssid;
 	const char *expected_ssid = "0x626cxx";
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-bad-hex",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wifi-open-ssid-bad-hex",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -2483,7 +2487,7 @@ test_read_wifi_open_ssid_quoted (void)
 	GBytes *ssid;
 	const char *expected_ssid = "foo\"bar\\";
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-open-ssid-quoted",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wifi-open-ssid-quoted",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -2518,7 +2522,7 @@ test_read_wifi_wep (void)
 	const char *expected_ssid = "blahblah";
 	NMWepKeyType key_type;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wep",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wifi-wep",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -2592,7 +2596,7 @@ test_read_wifi_wep_adhoc (void)
 	GBytes *ssid;
 	const char *expected_ssid = "blahblah";
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wep-adhoc",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wifi-wep-adhoc",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -2659,7 +2663,7 @@ test_read_wifi_wep_passphrase (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wep-passphrase",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wifi-wep-passphrase",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -2696,7 +2700,7 @@ test_read_wifi_wep_40_ascii (void)
 	NMSettingWirelessSecurity *s_wsec;
 	NMWepKeyType key_type;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wep-40-ascii",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wifi-wep-40-ascii",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -2736,7 +2740,7 @@ test_read_wifi_wep_104_ascii (void)
 	NMSettingWirelessSecurity *s_wsec;
 	NMWepKeyType key_type;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wep-104-ascii",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wifi-wep-104-ascii",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -2775,7 +2779,7 @@ test_read_wifi_leap (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-leap",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wifi-leap",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -2837,7 +2841,7 @@ test_ifcfg_no_trailing_newline (void)
 {
 	shvarFile *sv;
 
-	sv = _svOpenFile (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wpa-psk");
+	sv = _svOpenFile (TEST_IFCFG_DIR"/ifcfg-test-wifi-wpa-psk");
 	_svGetValue_check (sv, "LAST_ENTRY", "no-newline");
 	svCloseFile (sv);
 }
@@ -2864,7 +2868,7 @@ test_read_wifi_wpa_psk (void)
 	gboolean found_proto_wpa = FALSE;
 	gboolean found_proto_rsn = FALSE;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wpa-psk",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wifi-wpa-psk",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -2973,7 +2977,7 @@ test_read_wifi_wpa_psk_2 (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wpa-psk-2",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wifi-wpa-psk-2",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -3004,7 +3008,7 @@ test_read_wifi_wpa_psk_unquoted (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wpa-psk-unquoted",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wifi-wpa-psk-unquoted",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -3032,7 +3036,7 @@ test_read_wifi_wpa_psk_unquoted2 (void)
 {
 	gs_unref_object NMConnection *connection = NULL;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wpa-psk-unquoted2",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wifi-wpa-psk-unquoted2",
 	                                    NULL, TYPE_WIRELESS, NULL);
 }
 
@@ -3045,7 +3049,7 @@ test_read_wifi_wpa_psk_adhoc (void)
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIPConfig *s_ip4;
 
-	connection = _connection_from_file(TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wpa-psk-adhoc",
+	connection = _connection_from_file(TEST_IFCFG_DIR"/ifcfg-test-wifi-wpa-psk-adhoc",
 	                                   NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -3097,7 +3101,7 @@ test_read_wifi_wpa_psk_hex (void)
 	GBytes *ssid;
 	const char *expected_ssid = "blahblah";
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wpa-psk-hex",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wifi-wpa-psk-hex",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -3132,9 +3136,9 @@ test_read_wifi_wpa_psk_hex (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT TEST_IFCFG_DIR "/network-scripts/test_ca_cert.pem"
-#define TEST_IFCFG_WIFI_WPA_EAP_TLS_CLIENT_CERT TEST_IFCFG_DIR "/network-scripts/test1_key_and_cert.pem"
-#define TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY TEST_IFCFG_DIR "/network-scripts/test1_key_and_cert.pem"
+#define TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT TEST_IFCFG_DIR"/test_ca_cert.pem"
+#define TEST_IFCFG_WIFI_WPA_EAP_TLS_CLIENT_CERT TEST_IFCFG_DIR"/test1_key_and_cert.pem"
+#define TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY TEST_IFCFG_DIR"/test1_key_and_cert.pem"
 
 static void
 test_read_wifi_wpa_eap_tls (void)
@@ -3146,7 +3150,7 @@ test_read_wifi_wpa_eap_tls (void)
 	char *unmanaged = NULL;
 	const char *expected_privkey_password = "test1";
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wpa-eap-tls",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wifi-wpa-eap-tls",
 	                                    NULL, TYPE_ETHERNET, &unmanaged);
 	g_assert (!unmanaged);
 
@@ -3204,7 +3208,7 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 	char *unmanaged = NULL;
 	const char *expected_privkey_password = "test1";
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wpa-eap-ttls-tls",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wifi-wpa-eap-ttls-tls",
 	                                    NULL, TYPE_WIRELESS, &unmanaged);
 	g_assert (!unmanaged);
 
@@ -3228,7 +3232,7 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 
 	/* CA Cert */
 	verify_cert_or_key (s_8021x,
-	                    TEST_IFCFG_DIR "/network-scripts/test_ca_cert.pem",
+	                    TEST_IFCFG_DIR"/test_ca_cert.pem",
 	                    NULL,
 	                    NM_SETTING_802_1X_CA_CERT);
 
@@ -3267,7 +3271,7 @@ test_read_wifi_dynamic_wep_leap (void)
 	NMSettingWirelessSecurity *s_wsec;
 	NMSetting8021x *s_8021x;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-dynamic-wep-leap",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wifi-dynamic-wep-leap",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== WIRELESS SETTING ===== */
@@ -3316,7 +3320,7 @@ test_read_wifi_wep_eap_ttls_chap (void)
 	NMSetting8021x *s_8021x;
 	char *unmanaged = NULL;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wep-eap-ttls-chap",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wifi-wep-eap-ttls-chap",
 	                                    NULL, TYPE_WIRELESS, &unmanaged);
 	g_assert (!unmanaged);
 
@@ -3346,7 +3350,7 @@ test_read_wifi_wep_eap_ttls_chap (void)
 
 	/* CA Cert */
 	verify_cert_or_key (s_8021x,
-	                    TEST_IFCFG_DIR "/network-scripts/test_ca_cert.pem",
+	                    TEST_IFCFG_DIR"/test_ca_cert.pem",
 	                    NULL,
 	                    NM_SETTING_802_1X_CA_CERT);
 
@@ -3364,7 +3368,7 @@ test_read_wired_wake_on_lan (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-wake-on-lan",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-wake-on-lan",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -3393,7 +3397,7 @@ test_read_wired_auto_negotiate_off (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-wake-on-lan",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-wake-on-lan",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -3415,7 +3419,7 @@ test_read_wired_auto_negotiate_on (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-auto-negotiate-on",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-auto-negotiate-on",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -3437,7 +3441,7 @@ test_read_wired_unknown_ethtool_opt (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-unknown-ethtool-opt",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-unknown-ethtool-opt",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -3468,7 +3472,7 @@ test_read_wifi_hidden (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-hidden",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wifi-hidden",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -3522,8 +3526,8 @@ test_write_wifi_hidden (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connec_exp (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        TEST_IFCFG_DIR "/network-scripts/ifcfg-Test_Write_WiFi_Hidden.cexpected",
+	                        TEST_SCRATCH_DIR,
+	                        TEST_IFCFG_DIR"/ifcfg-Test_Write_WiFi_Hidden.cexpected",
 	                        &testfile);
 
 	f = _svOpenFile (testfile);
@@ -3548,7 +3552,7 @@ test_read_wifi_mac_random (gconstpointer user_data)
 	nmtst_test_data_unpack (user_data, &name, &value_p);
 	value = GPOINTER_TO_INT (value_p);
 
-	path = g_strdup_printf (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-mac-random-%s", name);
+	path = g_strdup_printf (TEST_IFCFG_DIR"/ifcfg-test-wifi-mac-random-%s", name);
 	connection = _connection_from_file (path, NULL, TYPE_WIRELESS, NULL);
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
@@ -3607,8 +3611,8 @@ test_write_wifi_mac_random (gconstpointer user_data)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connec_exp (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        nm_sprintf_buf (cexpected, TEST_IFCFG_DIR"/network-scripts/ifcfg-Test_Write_WiFi_MAC_%s.cexpected", name),
+	                        TEST_SCRATCH_DIR,
+	                        nm_sprintf_buf (cexpected, TEST_IFCFG_DIR"/ifcfg-Test_Write_WiFi_MAC_%s.cexpected", name),
 	                        &testfile);
 
 	f = _svOpenFile (testfile);
@@ -3660,8 +3664,8 @@ test_write_wired_wake_on_lan (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connec_exp (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        TEST_IFCFG_DIR "/network-scripts/ifcfg-Test_Write_Wired_Wake-on-LAN.cexpected",
+	                        TEST_SCRATCH_DIR,
+	                        TEST_IFCFG_DIR"/ifcfg-Test_Write_Wired_Wake-on-LAN.cexpected",
 	                        &testfile);
 
 	f = _svOpenFile (testfile);
@@ -3696,8 +3700,8 @@ test_write_wired_auto_negotiate_off (void)
 	              NULL);
 
 	_writer_new_connec_exp (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        TEST_IFCFG_DIR "/network-scripts/ifcfg-Test_Write_Wired_Auto-Negotiate.cexpected",
+	                        TEST_SCRATCH_DIR,
+	                        TEST_IFCFG_DIR"/ifcfg-Test_Write_Wired_Auto-Negotiate.cexpected",
 	                        &testfile);
 
 	f = _svOpenFile (testfile);
@@ -3731,7 +3735,7 @@ test_write_wired_auto_negotiate_on (void)
 	              NULL);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	f = _svOpenFile (testfile);
@@ -3755,7 +3759,7 @@ test_read_wifi_band_a (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-band-a",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wifi-band-a",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -3810,8 +3814,8 @@ test_write_wifi_band_a (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connec_exp (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        TEST_IFCFG_DIR "/network-scripts/ifcfg-Test_Write_WiFi_Band_A.cexpected",
+	                        TEST_SCRATCH_DIR,
+	                        TEST_IFCFG_DIR"/ifcfg-Test_Write_WiFi_Band_A.cexpected",
 	                        &testfile);
 
 	f = _svOpenFile (testfile);
@@ -3828,7 +3832,7 @@ test_read_wifi_band_a_channel_mismatch (void)
 {
 	gs_free_error GError *error = NULL;
 
-	_connection_from_file_fail (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-band-a-channel-mismatch",
+	_connection_from_file_fail (TEST_IFCFG_DIR"/ifcfg-test-wifi-band-a-channel-mismatch",
 	                            NULL, TYPE_WIRELESS, &error);
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 }
@@ -3838,7 +3842,7 @@ test_read_wifi_band_bg_channel_mismatch (void)
 {
 	gs_free_error GError *error = NULL;
 
-	_connection_from_file_fail (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-band-bg-channel-mismatch",
+	_connection_from_file_fail (TEST_IFCFG_DIR"/ifcfg-test-wifi-band-bg-channel-mismatch",
 	                            NULL, TYPE_WIRELESS, &error);
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 }
@@ -3853,7 +3857,7 @@ test_read_wired_qeth_static (void)
 	char *unmanaged = NULL;
 	const char * const *subchannels;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-qeth-static",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-qeth-static",
 	                                    NULL, TYPE_ETHERNET, &unmanaged);
 	g_assert (!unmanaged);
 
@@ -3902,7 +3906,7 @@ test_read_wired_ctc_static (void)
 	char *unmanaged = NULL;
 	const char * const *subchannels;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-ctc-static",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-ctc-static",
 	                                    NULL, TYPE_ETHERNET, &unmanaged);
 	g_assert (unmanaged == NULL);
 
@@ -3940,7 +3944,7 @@ test_read_wifi_wep_no_keys (void)
 	NMSettingWirelessSecurity *s_wsec;
 	NMWepKeyType key_type;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wep-no-keys",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wifi-wep-no-keys",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -3989,7 +3993,7 @@ test_read_permissions (void)
 	guint32 num;
 	const char *tmp;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-permissions",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-permissions",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -4028,7 +4032,7 @@ test_read_wifi_wep_agent_keys (void)
 	NMWepKeyType key_type;
 	NMSettingSecretFlags flags;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-wep-agent-keys",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wifi-wep-agent-keys",
 	                                    NULL, TYPE_WIRELESS, NULL);
 
 	/* Ensure the connection is still marked for wifi security even though
@@ -4179,7 +4183,7 @@ test_write_wired_static (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 	route6file = utils_get_route6_path (testfile);
 
@@ -4319,7 +4323,7 @@ test_write_wired_static_with_generic (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection_FIXME (connection,
-	                              TEST_SCRATCH_DIR "/network-scripts/",
+	                              TEST_SCRATCH_DIR,
 	                              &testfile);
 	route6file = utils_get_route6_path (testfile);
 
@@ -4404,7 +4408,7 @@ test_write_wired_dhcp (void)
 	              NULL);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
@@ -4419,11 +4423,11 @@ test_write_wired_dhcp_plus_ip (void)
 	gs_unref_object NMConnection *connection = NULL;
 	gs_unref_object NMConnection *reread = NULL;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp-plus-ip",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-dhcp-plus-ip",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
@@ -4441,7 +4445,7 @@ test_read_write_wired_dhcp_send_hostname (void)
 	NMSettingIPConfig *s_ip6;
 	const char * dhcp_hostname = "kamil-patka";
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp-send-hostname",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-dhcp-send-hostname",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	/* Check dhcp-hostname and dhcp-send-hostname */
@@ -4459,7 +4463,7 @@ test_read_write_wired_dhcp_send_hostname (void)
 	g_object_set (s_ip6, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, dhcp_hostname, NULL);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
@@ -4482,7 +4486,7 @@ test_read_wired_dhcpv6_hostname_fallback (void)
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingIPConfig *s_ip6;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcpv6-hostname-fallback",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-wired-dhcpv6-hostname-fallback",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
@@ -4551,7 +4555,7 @@ test_write_wired_static_ip6_only (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
@@ -4634,7 +4638,7 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
@@ -4675,7 +4679,7 @@ test_read_write_static_routes_legacy (void)
 	NMSettingIPConfig *s_ip4;
 	const char *tmp;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-static-routes-legacy",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-static-routes-legacy",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -4709,7 +4713,7 @@ test_read_write_static_routes_legacy (void)
 	 */
 	_writer_new_connec_exp (connection,
 	                        TEST_SCRATCH_DIR_TMP,
-	                        TEST_IFCFG_DIR "/network-scripts/ifcfg-test-static-routes-legacy.cexpected",
+	                        TEST_IFCFG_DIR"/ifcfg-test-static-routes-legacy.cexpected",
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
@@ -4811,9 +4815,9 @@ test_write_wired_static_routes (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection_reread (connection,
-	                               TEST_SCRATCH_DIR "/network-scripts/",
+	                               TEST_SCRATCH_DIR,
 	                               &testfile,
-	                               TEST_IFCFG_DIR "/network-scripts/ifcfg-Test_Write_Wired_Static_Routes.cexpected",
+	                               TEST_IFCFG_DIR"/ifcfg-Test_Write_Wired_Static_Routes.cexpected",
 	                               &reread,
 	                               &reread_same);
 	/* ifcfg does not support setting onlink=0. It gets lost during write+re-read.
@@ -4906,7 +4910,7 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
@@ -4980,7 +4984,7 @@ test_write_wired_8021x_tls (gconstpointer test_data)
 
 	/* CA cert */
 	success = nm_setting_802_1x_set_ca_cert (s_8021x,
-	                                         TEST_IFCFG_DIR "/network-scripts/test_ca_cert.pem",
+	                                         TEST_IFCFG_DIR"/test_ca_cert.pem",
 	                                         scheme,
 	                                         &format,
 	                                         &error);
@@ -4991,7 +4995,7 @@ test_write_wired_8021x_tls (gconstpointer test_data)
 	/* Client cert */
 	format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
 	success = nm_setting_802_1x_set_client_cert (s_8021x,
-	                                             TEST_IFCFG_DIR "/network-scripts/test1_key_and_cert.pem",
+	                                             TEST_IFCFG_DIR"/test1_key_and_cert.pem",
 	                                             scheme,
 	                                             &format,
 	                                             &error);
@@ -5002,7 +5006,7 @@ test_write_wired_8021x_tls (gconstpointer test_data)
 	/* Private key */
 	format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
 	success = nm_setting_802_1x_set_private_key (s_8021x,
-	                                             TEST_IFCFG_DIR "/network-scripts/test1_key_and_cert.pem",
+	                                             TEST_IFCFG_DIR"/test1_key_and_cert.pem",
 	                                             "test1",
 	                                             scheme,
 	                                             &format,
@@ -5017,7 +5021,7 @@ test_write_wired_8021x_tls (gconstpointer test_data)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection_FIXME (connection,
-	                              TEST_SCRATCH_DIR "/network-scripts/",
+	                              TEST_SCRATCH_DIR,
 	                              &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
@@ -5078,8 +5082,6 @@ test_write_wired_8021x_tls (gconstpointer test_data)
 	nmtst_file_unlink_if_exists (tmp);
 	g_free (tmp);
 }
-
-#define TEST_SCRATCH_ALIAS_BASE TEST_SCRATCH_DIR "/network-scripts/ifcfg-alias0"
 
 static void
 test_write_wired_aliases (void)
@@ -5156,7 +5158,7 @@ test_write_wired_aliases (void)
 	g_assert (g_file_test (TEST_SCRATCH_ALIAS_BASE ":5", G_FILE_TEST_EXISTS));
 
 	_writer_new_connection_FIXME (connection,
-	                              TEST_SCRATCH_DIR "/network-scripts/",
+	                              TEST_SCRATCH_DIR,
 	                              &testfile);
 
 	/* Re-check the alias files */
@@ -5258,7 +5260,7 @@ test_write_gateway (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	f = _svOpenFile (testfile);
@@ -5341,7 +5343,7 @@ test_write_wifi_open (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
@@ -5410,7 +5412,7 @@ test_write_wifi_open_hex_ssid (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
@@ -5492,7 +5494,7 @@ test_write_wifi_wep (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
@@ -5585,7 +5587,7 @@ test_write_wifi_wep_adhoc (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
@@ -5670,7 +5672,7 @@ test_write_wifi_wep_passphrase (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
@@ -5758,7 +5760,7 @@ test_write_wifi_wep_40_ascii (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
@@ -5846,8 +5848,8 @@ test_write_wifi_wep_104_ascii (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connec_exp (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        TEST_IFCFG_DIR "/network-scripts/ifcfg-Test_Write_Wifi_WEP_104_ASCII.cexpected",
+	                        TEST_SCRATCH_DIR,
+	                        TEST_IFCFG_DIR"/ifcfg-Test_Write_Wifi_WEP_104_ASCII.cexpected",
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
@@ -5931,8 +5933,8 @@ test_write_wifi_leap (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connec_exp (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        TEST_IFCFG_DIR "/network-scripts/ifcfg-Test_Write_Wifi_LEAP.cexpected",
+	                        TEST_SCRATCH_DIR,
+	                        TEST_IFCFG_DIR"/ifcfg-Test_Write_Wifi_LEAP.cexpected",
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
@@ -6014,7 +6016,7 @@ test_write_wifi_leap_secret_flags (gconstpointer data)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection_FIXME (connection,
-	                              TEST_SCRATCH_DIR "/network-scripts/",
+	                              TEST_SCRATCH_DIR,
 	                              &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
@@ -6122,7 +6124,7 @@ test_write_wifi_wpa_psk (gconstpointer test_data)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
@@ -6218,7 +6220,7 @@ test_write_wifi_wpa_psk_adhoc (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
@@ -6336,7 +6338,7 @@ test_write_wifi_wpa_eap_tls (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
@@ -6463,7 +6465,7 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
@@ -6567,7 +6569,7 @@ test_write_wifi_wpa_eap_ttls_mschapv2 (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
@@ -6655,7 +6657,7 @@ test_write_wifi_wpa_then_open (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
@@ -6671,9 +6673,9 @@ test_write_wifi_wpa_then_open (void)
 
 	/* Write it back out */
 	_writer_update_connection (connection,
-	                           TEST_SCRATCH_DIR "/network-scripts/",
+	                           TEST_SCRATCH_DIR,
 	                           testfile,
-	                           TEST_IFCFG_DIR "/network-scripts/ifcfg-random_wifi_connection.cexpected");
+	                           TEST_IFCFG_DIR"/ifcfg-random_wifi_connection.cexpected");
 	keyfile = utils_get_keys_path (testfile);
 	g_assert (!g_file_test (keyfile, G_FILE_TEST_EXISTS));
 
@@ -6769,7 +6771,7 @@ test_write_wifi_wpa_then_wep_with_perms (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
@@ -6791,9 +6793,9 @@ test_write_wifi_wpa_then_wep_with_perms (void)
 
 	/* Write it back out */
 	_writer_update_connection (connection,
-	                           TEST_SCRATCH_DIR "/network-scripts/",
+	                           TEST_SCRATCH_DIR,
 	                           testfile,
-	                           TEST_IFCFG_DIR "/network-scripts/ifcfg-random_wifi_connection_2.cexpected");
+	                           TEST_IFCFG_DIR"/ifcfg-random_wifi_connection_2.cexpected");
 
 	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
 
@@ -6881,7 +6883,7 @@ test_write_wifi_dynamic_wep_leap (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
@@ -6961,7 +6963,7 @@ test_write_wired_qeth_dhcp (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
@@ -7023,7 +7025,7 @@ test_write_wired_ctc_dhcp (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	/* Ensure the CTCPROT item gets written out as its own option */
@@ -7093,8 +7095,8 @@ test_write_permissions (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connec_exp (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        TEST_IFCFG_DIR "/network-scripts/ifcfg-Test_Write_Permissions.cexpected",
+	                        TEST_SCRATCH_DIR,
+	                        TEST_IFCFG_DIR"/ifcfg-Test_Write_Permissions.cexpected",
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
@@ -7168,7 +7170,7 @@ test_write_wifi_wep_agent_keys (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection_FIXME (connection,
-	                              TEST_SCRATCH_DIR "/network-scripts/",
+	                              TEST_SCRATCH_DIR,
 	                              &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
@@ -7239,7 +7241,7 @@ test_write_wired_pppoe (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection_fail (connection,
-	                             TEST_SCRATCH_DIR "/network-scripts/",
+	                             TEST_SCRATCH_DIR,
 	                             NULL);
 
 	g_object_unref (connection);
@@ -7291,7 +7293,7 @@ test_write_vpn (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection_fail (connection,
-	                             TEST_SCRATCH_DIR "/network-scripts/",
+	                             TEST_SCRATCH_DIR,
 	                             NULL);
 
 	g_object_unref (connection);
@@ -7364,7 +7366,7 @@ test_write_mobile_broadband (gconstpointer data)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection_fail (connection,
-	                             TEST_SCRATCH_DIR "/network-scripts/",
+	                             TEST_SCRATCH_DIR,
 	                             NULL);
 
 	g_object_unref (connection);
@@ -7380,7 +7382,7 @@ test_read_bridge_main (void)
 	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-bridge-main",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-bridge-main",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "br0");
@@ -7478,7 +7480,7 @@ test_write_bridge_main (void)
 	nmtst_assert_connection_verifies_without_normalization (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_BRIDGE, NULL);
@@ -7493,7 +7495,7 @@ test_read_bridge_component (void)
 	NMSettingConnection *s_con;
 	NMSettingBridgePort *s_port;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-bridge-component",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-bridge-component",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -7558,8 +7560,8 @@ test_write_bridge_component (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connec_exp (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        TEST_IFCFG_DIR "/network-scripts/ifcfg-Test_Write_Bridge_Component.cexpected",
+	                        TEST_SCRATCH_DIR,
+	                        TEST_IFCFG_DIR"/ifcfg-Test_Write_Bridge_Component.cexpected",
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
@@ -7573,7 +7575,7 @@ test_read_bridge_missing_stp (void)
 	NMConnection *connection;
 	NMSettingBridge *s_bridge;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-bridge-missing-stp",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-bridge-missing-stp",
 	                                    NULL, TYPE_BRIDGE, NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "br0");
@@ -7587,7 +7589,7 @@ test_read_bridge_missing_stp (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_VLAN_INTERFACE TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-interface"
+#define TEST_IFCFG_VLAN_INTERFACE TEST_IFCFG_DIR"/ifcfg-test-vlan-interface"
 
 static void
 test_read_vlan_interface (void)
@@ -7638,7 +7640,7 @@ test_read_vlan_interface (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_VLAN_ONLY_VLANID TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-only-vlanid"
+#define TEST_IFCFG_VLAN_ONLY_VLANID TEST_IFCFG_DIR"/ifcfg-test-vlan-only-vlanid"
 
 static void
 test_read_vlan_only_vlan_id (void)
@@ -7666,7 +7668,7 @@ test_read_vlan_only_device (void)
 	NMConnection *connection;
 	NMSettingVlan *s_vlan;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-vlan-only-device",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-vlan-only-device",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "eth0.9");
@@ -7686,7 +7688,7 @@ test_read_vlan_physdev (void)
 	NMConnection *connection;
 	NMSettingVlan *s_vlan;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-physdev",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-vlan-physdev",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "vlan0.3");
@@ -7707,7 +7709,7 @@ test_read_vlan_reorder_hdr_1 (void)
 	NMSettingVlan *s_vlan;
 
 	NMTST_EXPECT_NM_WARN ("*REORDER_HDR key is deprecated, use VLAN_FLAGS*");
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-reorder-hdr-1",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-vlan-reorder-hdr-1",
 	                                        NULL, TYPE_ETHERNET, NULL);
 	g_test_assert_expected_messages ();
 
@@ -7730,7 +7732,7 @@ test_read_vlan_reorder_hdr_2 (void)
 	NMConnection *connection;
 	NMSettingVlan *s_vlan;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-reorder-hdr-2",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-vlan-reorder-hdr-2",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "vlan0.3");
@@ -7752,7 +7754,7 @@ test_read_vlan_flags_1 (void)
 	NMConnection *connection;
 	NMSettingVlan *s_vlan;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-flags-1",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-vlan-flags-1",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "super-vlan");
@@ -7775,7 +7777,7 @@ test_read_vlan_flags_2 (void)
 	NMConnection *connection;
 	NMSettingVlan *s_vlan;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-flags-2",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-vlan-flags-2",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "super-vlan");
@@ -7803,8 +7805,8 @@ test_write_vlan (void)
 	                                    NULL, TYPE_VLAN, NULL);
 
 	_writer_new_connec_exp (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        TEST_IFCFG_DIR "/network-scripts/ifcfg-Vlan_test-vlan-interface.cexpected",
+	                        TEST_SCRATCH_DIR,
+	                        TEST_IFCFG_DIR"/ifcfg-Vlan_test-vlan-interface.cexpected",
 	                        &testfile);
 }
 
@@ -7815,11 +7817,11 @@ test_write_vlan_flags (void)
 	gs_unref_object NMConnection *connection = NULL;
 	gs_unref_object NMConnection *reread = NULL;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-flags-2",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-vlan-flags-2",
 	                                    NULL, TYPE_VLAN, NULL);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
@@ -7838,7 +7840,7 @@ test_write_vlan_only_vlanid (void)
 	                                    NULL, TYPE_VLAN, NULL);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
@@ -7884,8 +7886,8 @@ test_write_vlan_reorder_hdr (void)
 	              NULL);
 
 	_writer_new_connec_exp (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        TEST_IFCFG_DIR "/network-scripts/ifcfg-Test_Write_VLAN_reorder_hdr.cexpected",
+	                        TEST_SCRATCH_DIR,
+	                        TEST_IFCFG_DIR"/ifcfg-Test_Write_VLAN_reorder_hdr.cexpected",
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
@@ -7940,7 +7942,7 @@ test_write_ethernet_missing_ipv6 (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
@@ -7953,7 +7955,7 @@ test_read_ibft_ignored (void)
 {
 	gs_free_error GError *error = NULL;
 
-	_connection_from_file_fail (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-ibft",
+	_connection_from_file_fail (TEST_IFCFG_DIR"/ifcfg-test-ibft",
 	                            NULL, TYPE_ETHERNET, &error);
 	g_assert_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION);
 }
@@ -7964,7 +7966,7 @@ test_read_bond_main (void)
 	NMConnection *connection;
 	NMSettingBond *s_bond;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-bond-main",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-bond-main",
 	                                    NULL, TYPE_ETHERNET,NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "bond0");
@@ -7985,7 +7987,7 @@ test_read_bond_eth_type (void)
 	NMConnection *connection;
 	NMSettingBond *s_bond;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-bond-eth-type",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-bond-eth-type",
 	                                    NULL, TYPE_ETHERNET,NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "bond0");
@@ -8069,8 +8071,8 @@ test_write_bond_main (void)
 	nmtst_assert_connection_verifies_without_normalization (connection);
 
 	_writer_new_connec_exp (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        TEST_IFCFG_DIR "/network-scripts/ifcfg-Test_Write_Bond_Main.cexpected",
+	                        TEST_SCRATCH_DIR,
+	                        TEST_IFCFG_DIR"/ifcfg-Test_Write_Bond_Main.cexpected",
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_BOND, NULL);
@@ -8084,7 +8086,7 @@ test_read_bond_slave (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-bond-slave",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-bond-slave",
 	                                    NULL, TYPE_ETHERNET, NULL);
 	g_test_assert_expected_messages ();
 
@@ -8136,7 +8138,7 @@ test_write_bond_slave (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
@@ -8154,7 +8156,7 @@ test_read_infiniband (void)
 	char expected_mac_address[INFINIBAND_ALEN] = { 0x80, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00, 0x11, 0x22 };
 	const char *transport_mode;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-infiniband",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-infiniband",
 	                                    NULL, TYPE_INFINIBAND, &unmanaged);
 	g_assert (!unmanaged);
 
@@ -8240,7 +8242,7 @@ test_write_infiniband (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_INFINIBAND, NULL);
@@ -8254,7 +8256,7 @@ test_read_bond_slave_ib (void)
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-bond-slave-ib",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-bond-slave-ib",
 	                                    NULL, NULL, NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -8302,7 +8304,7 @@ test_write_bond_slave_ib (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, NULL, NULL);
@@ -8317,7 +8319,7 @@ test_read_bond_opts_mode_numeric (void)
 	NMSettingConnection *s_con;
 	NMSettingBond *s_bond;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-bond-mode-numeric",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-bond-mode-numeric",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "bond0");
@@ -8350,7 +8352,7 @@ test_read_dcb_basic (void)
 	guint expected_traffic_classes[8] = { 7, 6, 5, 4, 3, 2, 1, 0 };
 	gboolean expected_pfcs[8] = { TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, TRUE, FALSE };
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-dcb",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	s_dcb = nm_connection_get_setting_dcb (connection);
@@ -8464,8 +8466,8 @@ test_write_dcb_basic (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connec_exp (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        TEST_IFCFG_DIR "/network-scripts//ifcfg-dcb-test.cexpected",
+	                        TEST_SCRATCH_DIR,
+	                        TEST_IFCFG_DIR"//ifcfg-dcb-test.cexpected",
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
@@ -8479,7 +8481,7 @@ test_read_dcb_default_app_priorities (void)
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingDcb *s_dcb;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-default-app-priorities",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-dcb-default-app-priorities",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	s_dcb = nm_connection_get_setting_dcb (connection);
@@ -8501,7 +8503,7 @@ test_read_dcb_bad_booleans (void)
 	gs_free_error GError *error = NULL;
 
 	NMTST_EXPECT_NM_WARN ("*invalid DCB_PG_STRICT value*not all 0s and 1s*");
-	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-bad-booleans",
+	_connection_from_file_fail (TEST_IFCFG_DIR"/ifcfg-test-dcb-bad-booleans",
 	                            NULL, TYPE_ETHERNET, &error);
 	g_test_assert_expected_messages ();
 
@@ -8515,7 +8517,7 @@ test_read_dcb_short_booleans (void)
 	gs_free_error GError *error = NULL;
 
 	NMTST_EXPECT_NM_WARN ("*DCB_PG_STRICT value*8 characters*");
-	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-short-booleans",
+	_connection_from_file_fail (TEST_IFCFG_DIR"/ifcfg-test-dcb-short-booleans",
 	                            NULL, TYPE_ETHERNET, &error);
 	g_test_assert_expected_messages ();
 
@@ -8529,7 +8531,7 @@ test_read_dcb_bad_uints (void)
 	gs_free_error GError *error = NULL;
 
 	NMTST_EXPECT_NM_WARN ("*invalid DCB_PG_UP2TC value*not 0 - 7*");
-	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-bad-uints",
+	_connection_from_file_fail (TEST_IFCFG_DIR"/ifcfg-test-dcb-bad-uints",
 	                            NULL, TYPE_ETHERNET, &error);
 	g_test_assert_expected_messages ();
 
@@ -8543,7 +8545,7 @@ test_read_dcb_short_uints (void)
 	gs_free_error GError *error = NULL;
 
 	NMTST_EXPECT_NM_WARN ("*DCB_PG_UP2TC value*8 characters*");
-	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-short-uints",
+	_connection_from_file_fail (TEST_IFCFG_DIR"/ifcfg-test-dcb-short-uints",
 	                            NULL, TYPE_ETHERNET, &error);
 	g_test_assert_expected_messages ();
 
@@ -8557,7 +8559,7 @@ test_read_dcb_bad_percent (void)
 	gs_free_error GError *error = NULL;
 
 	NMTST_EXPECT_NM_WARN ("*invalid DCB_PG_PCT percentage value*");
-	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-bad-percent",
+	_connection_from_file_fail (TEST_IFCFG_DIR"/ifcfg-test-dcb-bad-percent",
 	                            NULL, TYPE_ETHERNET, &error);
 	g_test_assert_expected_messages ();
 
@@ -8571,7 +8573,7 @@ test_read_dcb_short_percent (void)
 	gs_free_error GError *error = NULL;
 
 	NMTST_EXPECT_NM_WARN ("*invalid DCB_PG_PCT percentage list value*");
-	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-short-percent",
+	_connection_from_file_fail (TEST_IFCFG_DIR"/ifcfg-test-dcb-short-percent",
 	                            NULL, TYPE_ETHERNET, &error);
 	g_test_assert_expected_messages ();
 
@@ -8585,7 +8587,7 @@ test_read_dcb_pgpct_not_100 (void)
 	gs_free_error GError *error = NULL;
 
 	NMTST_EXPECT_NM_WARN ("*DCB_PG_PCT percentages do not equal 100*");
-	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-pgpct-not-100",
+	_connection_from_file_fail (TEST_IFCFG_DIR"/ifcfg-test-dcb-pgpct-not-100",
 	                            NULL, TYPE_ETHERNET, &error);
 	g_test_assert_expected_messages ();
 
@@ -8601,7 +8603,7 @@ test_read_fcoe_mode (gconstpointer user_data)
 	const char *expected_mode = user_data;
 	NMSettingDcb *s_dcb;
 
-	file = g_strdup_printf (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-fcoe-%s", expected_mode);
+	file = g_strdup_printf (TEST_IFCFG_DIR"/ifcfg-test-fcoe-%s", expected_mode);
 	connection = _connection_from_file (file, NULL, TYPE_ETHERNET, NULL);
 
 	s_dcb = nm_connection_get_setting_dcb (connection);
@@ -8661,7 +8663,7 @@ test_write_fcoe_mode (gconstpointer user_data)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	ifcfg = _svOpenFile (testfile);
@@ -8782,7 +8784,7 @@ test_write_team_master (void)
 	nmtst_assert_connection_verifies_without_normalization (connection);
 
 	_writer_new_connection (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
+	                        TEST_SCRATCH_DIR,
 	                        &testfile);
 
 	f = _svOpenFile (testfile);
@@ -8856,8 +8858,8 @@ test_write_team_port (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connec_exp (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        TEST_IFCFG_DIR "/network-scripts/ifcfg-Test_Write_Team_Port.cexpected",
+	                        TEST_SCRATCH_DIR,
+	                        TEST_IFCFG_DIR"/ifcfg-Test_Write_Team_Port.cexpected",
 	                        &testfile);
 
 	f = _svOpenFile (testfile);
@@ -8913,8 +8915,8 @@ test_write_team_infiniband_port (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connec_exp (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        TEST_IFCFG_DIR "/network-scripts/ifcfg-Test_Write_Team_Infiniband_Port.cexpected",
+	                        TEST_SCRATCH_DIR,
+	                        TEST_IFCFG_DIR"/ifcfg-Test_Write_Team_Infiniband_Port.cexpected",
 	                        &testfile);
 
 	f = _svOpenFile (testfile);
@@ -8936,7 +8938,7 @@ test_read_team_port_empty_config (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port-empty-config",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-team-port-empty-config",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	s_con = nm_connection_get_setting_connection (connection);
@@ -9001,9 +9003,9 @@ test_team_reread_slave (void)
 	nmtst_assert_connection_equals (connection_1, FALSE, connection_2, FALSE);
 
 	_writer_new_connection_reread ((nmtst_get_rand_int () % 2) ? connection_1 : connection_2,
-	                               TEST_SCRATCH_DIR "/network-scripts/",
+	                               TEST_SCRATCH_DIR,
 	                               &testfile,
-	                               TEST_IFCFG_DIR "/network-scripts/ifcfg-team-slave-enp31s0f1-142.cexpected",
+	                               TEST_IFCFG_DIR"/ifcfg-team-slave-enp31s0f1-142.cexpected",
 	                               &reread,
 	                               &reread_same);
 	_assert_reread_same ((nmtst_get_rand_int () % 2) ? connection_1 : connection_2, reread);
@@ -9024,7 +9026,7 @@ test_read_proxy_basic (void)
 
 	/* Test basic proxy configuration */
 
-	connection = _connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-read-proxy-basic",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-read-proxy-basic",
 	                                    NULL, TYPE_ETHERNET, NULL);
 
 	/* ===== Proxy setting ===== */
@@ -9076,8 +9078,8 @@ test_write_proxy_basic (void)
 	nmtst_assert_connection_verifies (connection);
 
 	_writer_new_connec_exp (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        TEST_IFCFG_DIR "/network-scripts/ifcfg-Test_Write_Proxy_Basic.cexpected",
+	                        TEST_SCRATCH_DIR,
+	                        TEST_IFCFG_DIR"/ifcfg-Test_Write_Proxy_Basic.cexpected",
 	                        &testfile);
 
 	f = _svOpenFile (testfile);
@@ -9472,7 +9474,7 @@ test_write_unknown (gconstpointer test_data)
 static void
 test_read_vlan_trailing_spaces (void)
 {
-	const char *testfile = TEST_IFCFG_DIR"/network-scripts/ifcfg-test-vlan-trailing-spaces";
+	const char *testfile = TEST_IFCFG_DIR"/ifcfg-test-vlan-trailing-spaces";
 	NMConnection *connection;
 	gboolean success;
 	GError *error = NULL;
@@ -9510,7 +9512,7 @@ test_sit_read_ignore (void)
 {
 	gs_free_error GError *error = NULL;
 
-	_connection_from_file_fail (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-sit-ignore",
+	_connection_from_file_fail (TEST_IFCFG_DIR"/ifcfg-test-sit-ignore",
 	                            NULL, TYPE_ETHERNET, &error);
 	nmtst_assert_error (error, 0, 0, "*Ignoring unsupported connection due to IPV6TUNNELIPV4*");
 }
@@ -9639,7 +9641,7 @@ test_tc_read (void)
 	NMTCTfilter *filter;
 	char *str;
 
-	connection = _connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-tc",
+	connection = _connection_from_file (TEST_IFCFG_DIR"/ifcfg-test-tc",
 	                                    NULL, TYPE_ETHERNET,NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "eth0");
@@ -9740,8 +9742,8 @@ test_tc_write (void)
 	nmtst_assert_connection_verifies_without_normalization (connection);
 
 	_writer_new_connec_exp (connection,
-	                        TEST_SCRATCH_DIR "/network-scripts/",
-	                        TEST_IFCFG_DIR "/network-scripts/ifcfg-test-tc-write.cexpected",
+	                        TEST_SCRATCH_DIR,
+	                        TEST_IFCFG_DIR"/ifcfg-test-tc-write.cexpected",
 	                        &testfile);
 
 	reread = _connection_from_file (testfile, NULL, TYPE_BOND, NULL);
@@ -9753,8 +9755,8 @@ test_tc_write (void)
 
 #define TPATH "/settings/plugins/ifcfg-rh/"
 
-#define TEST_IFCFG_WIFI_OPEN_SSID_LONG_QUOTED TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-quoted"
-#define TEST_IFCFG_WIFI_OPEN_SSID_LONG_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-hex"
+#define TEST_IFCFG_WIFI_OPEN_SSID_LONG_QUOTED TEST_IFCFG_DIR"/ifcfg-test-wifi-open-ssid-long-quoted"
+#define TEST_IFCFG_WIFI_OPEN_SSID_LONG_HEX TEST_IFCFG_DIR"/ifcfg-test-wifi-open-ssid-long-hex"
 
 #define DEFAULT_HEX_PSK "7d308b11df1b4243b0f78e5f3fc68cdbb9a264ed0edf4c188edf329ff5b467f0"
 
@@ -9769,10 +9771,10 @@ int main (int argc, char **argv)
 
 	g_test_add_func (TPATH "svUnescape", test_svUnescape);
 
-	g_test_add_data_func (TPATH "write-unknown/1", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-write-unknown-1", test_write_unknown);
-	g_test_add_data_func (TPATH "write-unknown/2", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-write-unknown-2", test_write_unknown);
-	g_test_add_data_func (TPATH "write-unknown/3", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-write-unknown-3", test_write_unknown);
-	g_test_add_data_func (TPATH "write-unknown/4", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-write-unknown-4", test_write_unknown);
+	g_test_add_data_func (TPATH "write-unknown/1", TEST_IFCFG_DIR"/ifcfg-test-write-unknown-1", test_write_unknown);
+	g_test_add_data_func (TPATH "write-unknown/2", TEST_IFCFG_DIR"/ifcfg-test-write-unknown-2", test_write_unknown);
+	g_test_add_data_func (TPATH "write-unknown/3", TEST_IFCFG_DIR"/ifcfg-test-write-unknown-3", test_write_unknown);
+	g_test_add_data_func (TPATH "write-unknown/4", TEST_IFCFG_DIR"/ifcfg-test-write-unknown-4", test_write_unknown);
 
 	g_test_add_func (TPATH "vlan-trailing-spaces", test_read_vlan_trailing_spaces);
 
@@ -9792,8 +9794,8 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "read-dns-options", test_read_dns_options);
 	g_test_add_func (TPATH "clear-master", test_clear_master);
 
-	nmtst_add_test_func (TPATH "read-static",           test_read_wired_static, TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static",           "System test-wired-static",           GINT_TO_POINTER (TRUE));
-	nmtst_add_test_func (TPATH "read-static-bootproto", test_read_wired_static, TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static-bootproto", "System test-wired-static-bootproto", GINT_TO_POINTER (FALSE));
+	nmtst_add_test_func (TPATH "read-static",           test_read_wired_static, TEST_IFCFG_DIR"/ifcfg-test-wired-static",           "System test-wired-static",           GINT_TO_POINTER (TRUE));
+	nmtst_add_test_func (TPATH "read-static-bootproto", test_read_wired_static, TEST_IFCFG_DIR"/ifcfg-test-wired-static-bootproto", "System test-wired-static-bootproto", GINT_TO_POINTER (FALSE));
 
 	g_test_add_func (TPATH "read-netmask-1", test_read_netmask_1);
 
@@ -9811,17 +9813,17 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "routes/read-static", test_read_wired_static_routes);
 	g_test_add_func (TPATH "routes/read-static-legacy", test_read_wired_static_routes_legacy);
 
-	nmtst_add_test_func (TPATH "wired/read/manual/1", test_read_wired_ipv4_manual, TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-ipv4-manual-1", "System test-wired-ipv4-manual-1");
-	nmtst_add_test_func (TPATH "wired/read/manual/2", test_read_wired_ipv4_manual, TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-ipv4-manual-2", "System test-wired-ipv4-manual-2");
-	nmtst_add_test_func (TPATH "wired/read/manual/3", test_read_wired_ipv4_manual, TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-ipv4-manual-3", "System test-wired-ipv4-manual-3");
-	nmtst_add_test_func (TPATH "wired/read/manual/4", test_read_wired_ipv4_manual, TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-ipv4-manual-4", "System test-wired-ipv4-manual-4");
+	nmtst_add_test_func (TPATH "wired/read/manual/1", test_read_wired_ipv4_manual, TEST_IFCFG_DIR"/ifcfg-test-wired-ipv4-manual-1", "System test-wired-ipv4-manual-1");
+	nmtst_add_test_func (TPATH "wired/read/manual/2", test_read_wired_ipv4_manual, TEST_IFCFG_DIR"/ifcfg-test-wired-ipv4-manual-2", "System test-wired-ipv4-manual-2");
+	nmtst_add_test_func (TPATH "wired/read/manual/3", test_read_wired_ipv4_manual, TEST_IFCFG_DIR"/ifcfg-test-wired-ipv4-manual-3", "System test-wired-ipv4-manual-3");
+	nmtst_add_test_func (TPATH "wired/read/manual/4", test_read_wired_ipv4_manual, TEST_IFCFG_DIR"/ifcfg-test-wired-ipv4-manual-4", "System test-wired-ipv4-manual-4");
 
 	g_test_add_func (TPATH "user/1", test_user_1);
 
 	g_test_add_func (TPATH "wired/ipv6-manual", test_read_wired_ipv6_manual);
 
-	nmtst_add_test_func (TPATH "wired-ipv6-only/0", test_read_wired_ipv6_only, TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-ipv6-only",   "System test-wired-ipv6-only");
-	nmtst_add_test_func (TPATH "wired-ipv6-only/1", test_read_wired_ipv6_only, TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-ipv6-only-1", "System test-wired-ipv6-only-1");
+	nmtst_add_test_func (TPATH "wired-ipv6-only/0", test_read_wired_ipv6_only, TEST_IFCFG_DIR"/ifcfg-test-wired-ipv6-only",   "System test-wired-ipv6-only");
+	nmtst_add_test_func (TPATH "wired-ipv6-only/1", test_read_wired_ipv6_only, TEST_IFCFG_DIR"/ifcfg-test-wired-ipv6-only-1", "System test-wired-ipv6-only-1");
 
 	g_test_add_func (TPATH "wired/dhcpv6-only", test_read_wired_dhcp6_only);
 	g_test_add_func (TPATH "wired/autoip", test_read_wired_autoip);
@@ -9829,8 +9831,8 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "wired/no-ip", test_read_noip);
 	g_test_add_func (TPATH "802-1x/peap/mschapv2", test_read_wired_8021x_peap_mschapv2);
 
-	nmtst_add_test_func (TPATH "test-wired-8021x-tls/agent",  test_read_wired_8021x_tls_secret_flags, TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-8021x-tls-agent", GINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
-	nmtst_add_test_func (TPATH "test-wired-8021x-tls/always", test_read_wired_8021x_tls_secret_flags, TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-8021x-tls-always", GINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED));
+	nmtst_add_test_func (TPATH "test-wired-8021x-tls/agent",  test_read_wired_8021x_tls_secret_flags, TEST_IFCFG_DIR"/ifcfg-test-wired-8021x-tls-agent", GINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
+	nmtst_add_test_func (TPATH "test-wired-8021x-tls/always", test_read_wired_8021x_tls_secret_flags, TEST_IFCFG_DIR"/ifcfg-test-wired-8021x-tls-always", GINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED));
 
 	g_test_add_func (TPATH "802-1x/subj-matches", test_read_write_802_1X_subj_matches);
 	g_test_add_func (TPATH "802-1x/ttls-eapgtc", test_read_802_1x_ttls_eapgtc);
@@ -9853,8 +9855,8 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "wifi/read/wep/104-ascii", test_read_wifi_wep_104_ascii);
 	g_test_add_func (TPATH "wifi/read/leap", test_read_wifi_leap);
 
-	nmtst_add_test_func (TPATH "wifi-leap-secret-flags/agent", test_read_wifi_leap_secret_flags, TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-leap-agent",      GINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
-	nmtst_add_test_func (TPATH "wifi-leap-secret-flags/ask",   test_read_wifi_leap_secret_flags, TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wifi-leap-always-ask", GINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED));
+	nmtst_add_test_func (TPATH "wifi-leap-secret-flags/agent", test_read_wifi_leap_secret_flags, TEST_IFCFG_DIR"/ifcfg-test-wifi-leap-agent",      GINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
+	nmtst_add_test_func (TPATH "wifi-leap-secret-flags/ask",   test_read_wifi_leap_secret_flags, TEST_IFCFG_DIR"/ifcfg-test-wifi-leap-always-ask", GINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED));
 
 	g_test_add_func (TPATH "wifi/read/wpa-psk", test_read_wifi_wpa_psk);
 	g_test_add_func (TPATH "wifi/read/wpa-psk/2", test_read_wifi_wpa_psk_2);
@@ -10003,12 +10005,12 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "bridge/write-component", test_write_bridge_component);
 	g_test_add_func (TPATH "bridge/read-missing-stp", test_read_bridge_missing_stp);
 
-	g_test_add_data_func (TPATH "team/read-master-1", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-master-1", test_read_team_master);
-	g_test_add_data_func (TPATH "team/read-master-2", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-master-2", test_read_team_master);
-	g_test_add_data_func (TPATH "team/read-master-invalid", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-master-invalid", test_read_team_master_invalid);
+	g_test_add_data_func (TPATH "team/read-master-1", TEST_IFCFG_DIR"/ifcfg-test-team-master-1", test_read_team_master);
+	g_test_add_data_func (TPATH "team/read-master-2", TEST_IFCFG_DIR"/ifcfg-test-team-master-2", test_read_team_master);
+	g_test_add_data_func (TPATH "team/read-master-invalid", TEST_IFCFG_DIR"/ifcfg-test-team-master-invalid", test_read_team_master_invalid);
 	g_test_add_func (TPATH "team/write-master", test_write_team_master);
-	g_test_add_data_func (TPATH "team/read-port-1", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port-1", test_read_team_port);
-	g_test_add_data_func (TPATH "team/read-port-2", TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port-2", test_read_team_port);
+	g_test_add_data_func (TPATH "team/read-port-1", TEST_IFCFG_DIR"/ifcfg-test-team-port-1", test_read_team_port);
+	g_test_add_data_func (TPATH "team/read-port-2", TEST_IFCFG_DIR"/ifcfg-test-team-port-2", test_read_team_port);
 	g_test_add_func (TPATH "team/write-port", test_write_team_port);
 	g_test_add_func (TPATH "team/write-infiniband-port", test_write_team_infiniband_port);
 	g_test_add_func (TPATH "team/read-port-empty-config", test_read_team_port_empty_config);

@@ -35,6 +35,8 @@
 
 #include "nm-utils/nm-test-utils.h"
 
+#define TEST_CERT_DIR              NM_BUILD_SRCDIR"/libnm-core/tests/certs"
+
 #if 0
 static const char *pem_rsa_key_begin = "-----BEGIN RSA PRIVATE KEY-----";
 static const char *pem_rsa_key_end = "-----END RSA PRIVATE KEY-----";
