@@ -42,7 +42,7 @@ _ASSERT_enum_values_info (GType type,
 	if (!value_infos)
 		return;
 
-	ht = g_hash_table_new (nm_str_hash, g_str_equal);
+	ht = g_hash_table_new (g_str_hash, g_str_equal);
 
 	for (; value_infos->nick; value_infos++) {
 
