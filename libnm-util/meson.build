@@ -55,7 +55,7 @@ libnm_utils_enum = gnome.mkenums(
   install_dir: nm_pkgincludedir
 )
 
-sources = shared_utils + files(
+sources = files(
   'crypto.c',
   'crypto_' + crypto + '.c',
   'nm-connection.c',
@@ -90,6 +90,7 @@ sources = shared_utils + files(
   'nm-utils.c',
   'nm-value-transforms.c'
 )
+sources += shared_files_libnm_util
 
 deps = [
   crypto_dep,

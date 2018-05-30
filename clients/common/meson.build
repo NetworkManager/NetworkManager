@@ -11,15 +11,13 @@ cflags = clients_cflags + [
   '-DG_LOG_DOMAIN="libnmc"',
 ]
 
-sources = shared_utils + files(
-  'nm-client-utils.c',
-  'nm-secret-agent-simple.c',
-  'nm-vpn-helpers.c'
-)
-
 libnmc_base = static_library(
   'nmc-base',
-  sources: sources,
+  sources: shared_files_clients_common + files(
+    'nm-client-utils.c',
+    'nm-secret-agent-simple.c',
+    'nm-vpn-helpers.c',
+  ),
   dependencies: deps,
   c_args: cflags
 )
@@ -27,11 +25,6 @@ libnmc_base = static_library(
 libnmc_base_dep = declare_dependency(
   include_directories: common_inc,
   link_with: libnmc_base
-)
-
-sources = shared_meta_setting + files(
-  'nm-meta-setting-access.c',
-  'nm-meta-setting-desc.c'
 )
 
 settings_docs = 'settings-docs.h'
@@ -60,11 +53,13 @@ else
     configuration: configuration_data()
   )
 endif
-sources += settings_docs_source
 
 libnmc = static_library(
   'nmc',
-  sources: sources,
+  sources: files(
+    'nm-meta-setting-access.c',
+    'nm-meta-setting-desc.c'
+  ) + shared_nm_utils_nm_meta_setting_c + [settings_docs_source],
   dependencies: deps,
   c_args: cflags,
   link_with: libnmc_base,

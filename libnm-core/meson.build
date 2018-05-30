@@ -151,9 +151,15 @@ if enable_json_validation
   deps += jansson_dep
 endif
 
+libnm_core_sources_all =  libnm_core_sources
+libnm_core_sources_all += libnm_core_enum
+libnm_core_sources_all += shared_nm_utils_nm_meta_setting_c
+libnm_core_sources_all += shared_files_libnm_core
+libnm_core_sources_all += [version_header]
+
 libnm_core = static_library(
   'nm-core',
-  sources: libnm_core_sources + libnm_core_enum + shared_sources + [version_header],
+  sources: libnm_core_sources_all,
   dependencies: deps,
   c_args: cflags
 )
