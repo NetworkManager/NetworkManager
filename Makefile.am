@@ -3750,7 +3750,7 @@ clients_tui_nmtui_CPPFLAGS = \
 	$(NEWT_CFLAGS) \
 	-DG_LOG_DOMAIN=\""nmtui"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
-	-DNMLOCALEDIR=\""$(localedir)"\"
+	-DNMLOCALEDIR=\""$(nmlocaledir)"\"
 
 clients_tui_nmtui_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
