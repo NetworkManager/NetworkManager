@@ -42,11 +42,10 @@ shared_meta_setting = files('nm-meta-setting.c')
 
 shared_test_utils = files('nm-test-utils-impl.c')
 
-shared_siphash = files('nm-utils/siphash24.c')
-
 shared_udev_utils = files('nm-utils/nm-udev-utils.c')
 
 shared_utils = files(
+  'c-siphash/src/c-siphash.c',
   'nm-utils/nm-enum-utils.c',
   'nm-utils/nm-hash-utils.c',
   'nm-utils/nm-random-utils.c',

@@ -445,7 +445,6 @@ libnm_core_lib_h_priv = \
 	shared/nm-utils/nm-shared-utils.h \
 	shared/nm-utils/nm-random-utils.h \
 	shared/nm-utils/nm-udev-utils.h \
-	shared/nm-utils/siphash24.h \
 	shared/nm-meta-setting.h \
 	libnm-core/crypto.h \
 	libnm-core/nm-connection-private.h \
@@ -606,9 +605,11 @@ nodist_libnm_core_libnm_core_la_SOURCES = \
 	$(libnm_core_lib_c_mkenums)
 
 libnm_core_libnm_core_la_LIBADD = \
+	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
 	$(UUID_LIBS) \
-	$(LIBUDEV_LIBS)
+	$(LIBUDEV_LIBS) \
+	$(NULL)
 
 libnm_core_libnm_core_la_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
@@ -1238,23 +1239,33 @@ noinst_LTLIBRARIES += \
 
 ###############################################################################
 
-shared_libcsiphash_la_CPPFLAGS = $(src_cppflags)
+noinst_LTLIBRARIES += shared/libcsiphash.la
+
+shared_libcsiphash_la_CPPFLAGS = \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS) \
+	$(NULL)
+
 shared_libcsiphash_la_SOURCES = \
 	shared/c-siphash/src/c-siphash.c \
 	shared/c-siphash/src/c-siphash.h
 
+###############################################################################
+
+noinst_LTLIBRARIES += shared/libnacd.la
+
 shared_libnacd_la_CFLAGS = -std=gnu99
+
 shared_libnacd_la_CPPFLAGS = \
-	$(src_cppflags) \
-	-I $(srcdir)/shared/c-list/src \
-	-I $(srcdir)/shared/c-siphash/src
+	$(CODE_COVERAGE_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS) \
+	-I$(srcdir)/shared/c-list/src \
+	-I$(srcdir)/shared/c-siphash/src \
+	$(NULL)
+
 shared_libnacd_la_SOURCES = \
 	shared/n-acd/src/n-acd.c \
 	shared/n-acd/src/n-acd.h
-
-noinst_LTLIBRARIES += \
-	shared/libcsiphash.la \
-	shared/libnacd.la
 
 EXTRA_DIST += shared/c-list/src/c-list.h
 
@@ -1309,7 +1320,6 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/sd-adapt/procfs-util.h \
 	src/systemd/sd-adapt/raw-clone.h \
 	src/systemd/sd-adapt/sd-daemon.h \
-	src/systemd/sd-adapt/siphash24.h \
 	src/systemd/sd-adapt/stat-util.h \
 	src/systemd/sd-adapt/terminal-util.h \
 	src/systemd/sd-adapt/udev-util.h \
@@ -1362,6 +1372,7 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/src/basic/refcnt.h \
 	src/systemd/src/basic/set.h \
 	src/systemd/src/basic/signal-util.h \
+	src/systemd/src/basic/siphash24.h \
 	src/systemd/src/basic/socket-util.c \
 	src/systemd/src/basic/socket-util.h \
 	src/systemd/src/basic/sparse-endian.h \
@@ -1689,7 +1700,6 @@ src_libNetworkManager_la_SOURCES = \
 src_libNetworkManager_la_LIBADD = \
 	src/libNetworkManagerBase.la \
 	src/libsystemd-nm.la \
-	shared/libcsiphash.la \
 	shared/libnacd.la \
 	$(GLIB_LIBS) \
 	$(LIBUDEV_LIBS) \
@@ -3201,11 +3211,12 @@ src_tests_test_systemd_CPPFLAGS = \
 	$(src_libsystemd_nm_la_cppflags) \
 	-DNETWORKMANAGER_COMPILATION_TEST
 src_tests_test_systemd_SOURCES = \
-	shared/nm-utils/siphash24.c \
 	src/tests/test-systemd.c
 src_tests_test_systemd_LDADD = \
 	src/libsystemd-nm.la \
-	$(src_libsystemd_nm_la_libadd)
+	shared/libcsiphash.la \
+	$(src_libsystemd_nm_la_libadd) \
+	$(NULL)
 
 $(src_tests_test_systemd_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
@@ -3415,7 +3426,6 @@ clients_common_libnmc_base_la_SOURCES = \
 	shared/nm-utils/nm-random-utils.h \
 	shared/nm-utils/nm-shared-utils.c \
 	shared/nm-utils/nm-shared-utils.h \
-	shared/nm-utils/siphash24.h \
 	\
 	clients/common/nm-secret-agent-simple.c \
 	clients/common/nm-secret-agent-simple.h \
@@ -3431,7 +3441,9 @@ clients_common_libnmc_base_la_CPPFLAGS = \
 
 clients_common_libnmc_base_la_LIBADD = \
 	libnm/libnm.la \
-	$(GLIB_LIBS)
+	shared/libcsiphash.la \
+	$(GLIB_LIBS) \
+	$(NULL)
 
 $(clients_common_libnmc_base_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(clients_common_libnmc_base_la_OBJECTS): $(libnm_lib_h_pub_mkenums)
@@ -4783,8 +4795,6 @@ EXTRA_DIST += \
 	shared/nm-utils/nm-vpn-plugin-macros.h \
 	shared/nm-utils/nm-vpn-plugin-utils.c \
 	shared/nm-utils/nm-vpn-plugin-utils.h \
-	shared/nm-utils/siphash24.c \
-	shared/nm-utils/siphash24.h \
 	shared/nm-utils/unaligned.h \
 	shared/nm-version-macros.h.in \
 	shared/meson.build \

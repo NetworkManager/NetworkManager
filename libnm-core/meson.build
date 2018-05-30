@@ -131,7 +131,8 @@ deps = [
   dl_dep,
   libudev_dep,
   shared_dep,
-  uuid_dep
+  uuid_dep,
+  shared_c_siphash_dep,
 ]
 
 cflags = [
@@ -160,7 +161,10 @@ libnm_core = static_library(
 nm_core_dep = declare_dependency(
   sources: libnm_core_enum[1],
   include_directories: libnm_core_inc,
-  dependencies: shared_dep
+  dependencies: [
+    shared_dep,
+    shared_c_siphash_dep,
+  ],
 )
 
 enums_to_docbook = join_paths(meson.source_root(), 'tools', 'enums-to-docbook.pl')

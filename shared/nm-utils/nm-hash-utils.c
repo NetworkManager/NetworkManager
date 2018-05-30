@@ -28,8 +28,6 @@
 #include "nm-shared-utils.h"
 #include "nm-random-utils.h"
 
-#include "siphash24.c"
-
 /*****************************************************************************/
 
 #define HASH_KEY_SIZE 16u
@@ -49,7 +47,7 @@ _get_hash_key_init (void)
 	} g_arr _nm_alignas (guint64);
 	static gsize g_lock;
 	const guint8 *g;
-	struct siphash siph_state;
+	CSipHash siph_state;
 	uint64_t h;
 	guint *p;
 
@@ -66,9 +64,9 @@ _get_hash_key_init (void)
 		/* use siphash() of the key-size, to mangle the first guint. Otherwise,
 		 * the first guint has only the entropy that nm_utils_random_bytes()
 		 * generated for the first 4 bytes and relies on a good random generator. */
-		siphash24_init (&siph_state, g_arr.v8);
-		siphash24_compress (g_arr.v8, sizeof (g_arr.v8), &siph_state);
-		h = siphash24_finalize (&siph_state);
+		c_siphash_init (&siph_state, g_arr.v8);
+		c_siphash_append (&siph_state, g_arr.v8, sizeof (g_arr.v8));
+		h = c_siphash_finalize (&siph_state);
 		p = (guint *) g_arr.v8;
 		if (sizeof (guint) < sizeof (h))
 			*p = *p ^ ((guint) (h & 0xFFFFFFFFu)) ^ ((guint) (h >> 32));
@@ -97,10 +95,10 @@ guint
 nm_hash_static (guint static_seed)
 {
 	/* note that we only xor the static_seed with the key.
-	 * We don't use siphash24(), which would mix the bits better.
+	 * We don't use siphash, which would mix the bits better.
 	 * Note that this doesn't matter, because static_seed is not
 	 * supposed to be a value that you are hashing (for that, use
-	 * full siphash24()).
+	 * full siphash).
 	 * Instead, different callers may set a different static_seed
 	 * so that nm_hash_str(NULL) != nm_hash_ptr(NULL).
 	 *
@@ -121,7 +119,7 @@ nm_hash_init (NMHashState *state, guint static_seed)
 	g = _get_hash_key ();
 	memcpy (seed, g, HASH_KEY_SIZE);
 	seed[0] ^= static_seed;
-	siphash24_init (&state->_state, (const guint8 *) seed);
+	c_siphash_init (&state->_state, (const guint8 *) seed);
 }
 
 guint
