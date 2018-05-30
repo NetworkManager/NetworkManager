@@ -672,9 +672,10 @@ libnm_core_tests_cppflags = \
 	$(dflt_cppflags_libnm_core) \
 	-I$(srcdir)/libnm-core/tests \
 	-I$(builddir)/libnm-core/tests \
+	$(nm_build_cflags) \
 	-DNETWORKMANAGER_COMPILATION_TEST \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE \
-	-DTEST_CERT_DIR=\"$(abs_srcdir)/libnm-core/tests/certs\"
+	$(NULL)
 
 libnm_core_tests_test_compare_CPPFLAGS = $(libnm_core_tests_cppflags)
 libnm_core_tests_test_crypto_CPPFLAGS = $(libnm_core_tests_cppflags)
@@ -870,7 +871,7 @@ libnm_lib_cppflags = \
 	-I$(builddir)/libnm \
 	-DG_LOG_DOMAIN=\""libnm"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM \
-	-DNMRUNDIR=\"$(nmrundir)\"
+	$(NULL)
 
 libnminclude_HEADERS += \
 	$(libnm_lib_h_pub_real)
@@ -1091,9 +1092,10 @@ libnm_tests_cppflags = \
 	$(dflt_cppflags_libnm_core) \
 	-I$(srcdir)/libnm \
 	-I$(builddir)/libnm \
+	$(nm_build_cflags) \
 	-DNETWORKMANAGER_COMPILATION_TEST \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM \
-	-DTEST_NM_SERVICE=\"$(abs_srcdir)/tools/test-networkmanager-service.py\"
+	$(NULL)
 
 libnm_tests_ldadd = \
 	libnm/libnm.la \
@@ -1821,7 +1823,8 @@ EXTRA_DIST += \
 
 src_dhcp_tests_cppflags = \
 	$(src_tests_cppflags) \
-	-DTESTDIR="\"$(abs_srcdir)/src/dhcp/tests\""
+	$(nm_build_cflags) \
+	$(NULL)
 
 src_dhcp_tests_ldadd = \
 	src/libNetworkManagerTest.la
@@ -1922,8 +1925,8 @@ check_programs += src/settings/plugins/keyfile/tests/test-keyfile
 
 src_settings_plugins_keyfile_tests_test_keyfile_CPPFLAGS = \
 	$(src_tests_cppflags) \
-	-DTEST_KEYFILES_DIR=\"$(abs_srcdir)/src/settings/plugins/keyfile/tests/keyfiles\" \
-	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/src/settings/plugins/keyfile/tests/keyfiles\"
+	$(nm_build_cflags) \
+	$(NULL)
 
 src_settings_plugins_keyfile_tests_test_keyfile_LDFLAGS = \
 	$(GLIB_LIBS) \
@@ -2033,10 +2036,10 @@ src_settings_plugins_ibft_tests_test_ibft_CPPFLAGS = \
 	-I$(srcdir)/libnm-core \
 	-I$(builddir)/libnm-core \
 	-I$(srcdir)/src \
+	$(nm_build_cflags) \
 	-DNETWORKMANAGER_COMPILATION_TEST \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON \
-	-DTEST_IBFT_DIR=\"$(abs_srcdir)/src/settings/plugins/ibft/tests\" \
-	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/src/settings/plugins/ibft/tests\"
+	$(NULL)
 
 src_settings_plugins_ibft_tests_test_ibft_LDFLAGS = \
 	$(GLIB_LIBS) \
@@ -2174,8 +2177,8 @@ src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_SOURCES = \
 
 src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_CPPFLAGS = \
 	$(src_tests_cppflags) \
-	-DTEST_IFCFG_DIR=\"$(abs_srcdir)/src/settings/plugins/ifcfg-rh/tests\" \
-	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/src/settings/plugins/ifcfg-rh/tests\"
+	$(nm_build_cflags) \
+	$(NULL)
 
 src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_LDFLAGS = \
 	$(GLIB_LIBS) \
@@ -2482,10 +2485,11 @@ src_settings_plugins_ifupdown_tests_test_ifupdown_CPPFLAGS = \
 	-I$(srcdir)/libnm-core \
 	-I$(builddir)/libnm-core \
 	-I$(srcdir)/src \
+	$(GLIB_CFLAGS) \
 	-DNETWORKMANAGER_COMPILATION_TEST \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON \
-	$(GLIB_CFLAGS) \
-	-DTEST_ENI_DIR=\"$(abs_srcdir)/src/settings/plugins/ifupdown/tests\"
+	$(nm_build_cflags) \
+	$(NULL)
 
 src_settings_plugins_ifupdown_tests_test_ifupdown_LDFLAGS = \
 	$(GLIB_LDFLAGS) \
@@ -2912,13 +2916,13 @@ check_programs += src/dnsmasq/tests/test-dnsmasq-utils
 
 src_dnsmasq_tests_test_dnsmasq_utils_CPPFLAGS = \
 	$(src_tests_cppflags) \
-	-DTESTDIR="\"$(abs_srcdir)\""
+	$(NULL)
 
 src_dnsmasq_tests_test_dnsmasq_utils_LDADD = \
 	src/libNetworkManagerTest.la
 
 src_dnsmasq_tests_test_dnsmasq_utils_LDFLAGS = \
-       $(SANITIZER_EXEC_LDFLAGS)
+	$(SANITIZER_EXEC_LDFLAGS)
 
 $(src_dnsmasq_tests_test_dnsmasq_utils_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
@@ -3085,7 +3089,8 @@ check_programs += src/supplicant/tests/test-supplicant-config
 
 src_supplicant_tests_test_supplicant_config_CPPFLAGS = \
 	$(src_tests_cppflags) \
-	-DTEST_CERT_DIR=\"$(abs_srcdir)/src/supplicant/tests/certs\"
+	$(nm_build_cflags) \
+	$(NULL)
 
 src_supplicant_tests_test_supplicant_config_LDADD = \
 	src/libNetworkManagerTest.la
@@ -3113,8 +3118,8 @@ src_tests_config_test_config_SOURCES = \
 
 src_tests_config_test_config_CPPFLAGS = \
 	$(src_tests_cppflags) \
-	-DSRCDIR=\""$(abs_srcdir)/src/tests/config"\" \
-	-DBUILDDIR=\""$(abs_builddir)/src/tests/config"\"
+	$(nm_build_cflags) \
+	$(NULL)
 
 src_tests_config_test_config_LDADD = \
 	src/libNetworkManagerTest.la
@@ -3325,11 +3330,12 @@ dispatcher_tests_test_dispatcher_envp_CPPFLAGS = \
 	-I$(builddir)/libnm \
 	-I$(srcdir)/dispatcher \
 	-I$(builddir)/dispatcher \
-	-DSRCDIR=\"$(abs_srcdir)/dispatcher/tests\" \
+	$(nm_build_cflags) \
 	-DNETWORKMANAGER_COMPILATION_TEST \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
 	$(GLIB_CFLAGS) \
-	$(SANITIZER_EXEC_CFLAGS)
+	$(SANITIZER_EXEC_CFLAGS) \
+	$(NULL)
 
 dispatcher_tests_test_dispatcher_envp_LDFLAGS = \
 	$(SANITIZER_EXEC_LDFLAGS)
@@ -4128,11 +4134,11 @@ libnm_util_tests_cppflags = \
 	-I$(builddir)/libnm-util \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
-	-DBUILD_DIR=\"$(abs_builddir)/libnm-util/tests\" \
-	-DTEST_CERT_DIR=\"$(abs_srcdir)/libnm-core/tests/certs\" \
+	$(nm_build_cflags) \
 	-DNETWORKMANAGER_COMPILATION_TEST \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_UTIL \
-	$(SANITIZER_EXEC_CFLAGS)
+	$(SANITIZER_EXEC_CFLAGS) \
+	$(NULL)
 
 libnm_util_tests_ldadd = \
 	libnm-util/libnm-util.la \
@@ -4344,7 +4350,7 @@ nodist_libnm_glib_libnm_glib_la_SOURCES = \
 libnm_glib_libnm_glib_la_CPPFLAGS = \
 	$(libnm_glib_cppflags) \
 	$(LIBUDEV_CFLAGS) \
-	-DNMRUNDIR=\"$(nmrundir)\"
+	$(NULL)
 
 libnm_glib_libnm_glib_la_LDFLAGS = \
 	-Wl,--version-script=$(srcdir)/libnm-glib/libnm-glib.ver \
@@ -4485,11 +4491,12 @@ libnm_glib_tests_cppflags = \
 	-I$(srcdir)/libnm-util \
 	-I$(builddir)/libnm-util \
 	-I$(srcdir)/libnm-glib \
+	$(nm_build_cflags) \
 	-DNETWORKMANAGER_COMPILATION_TEST \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_GLIB \
-	-DTEST_NM_SERVICE=\"$(abs_srcdir)/tools/test-networkmanager-service.py\" \
 	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS)
+	$(DBUS_CFLAGS) \
+	$(NULL)
 
 libnm_glib_tests_programs_req_introspection = \
 	libnm-glib/tests/test-nm-client \

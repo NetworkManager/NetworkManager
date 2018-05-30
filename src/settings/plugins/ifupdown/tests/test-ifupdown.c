@@ -29,6 +29,10 @@
 
 #include "nm-test-utils-core.h"
 
+#define TEST_DIR       NM_BUILD_SRCDIR"/src/settings/plugins/ifupdown/tests"
+
+/*****************************************************************************/
+
 typedef struct {
 	char *key;
 	char *data;
@@ -659,45 +663,45 @@ main (int argc, char **argv)
 	if (0)
 		dump_blocks ();
 
-	g_test_add_data_func ("/ifupdate/ignore_line_before_first_block", TEST_ENI_DIR,
+	g_test_add_data_func ("/ifupdate/ignore_line_before_first_block", TEST_DIR,
 	                      (GTestDataFunc) test1_ignore_line_before_first_block);
-	g_test_add_data_func ("/ifupdate/wrapped_line", TEST_ENI_DIR,
+	g_test_add_data_func ("/ifupdate/wrapped_line", TEST_DIR,
 	                      (GTestDataFunc) test2_wrapped_line);
-	g_test_add_data_func ("/ifupdate/wrapped_multiline_multiarg", TEST_ENI_DIR,
+	g_test_add_data_func ("/ifupdate/wrapped_multiline_multiarg", TEST_DIR,
 	                      (GTestDataFunc) test3_wrapped_multiline_multiarg);
-	g_test_add_data_func ("/ifupdate/allow_auto_is_auto", TEST_ENI_DIR,
+	g_test_add_data_func ("/ifupdate/allow_auto_is_auto", TEST_DIR,
 	                      (GTestDataFunc) test4_allow_auto_is_auto);
-	g_test_add_data_func ("/ifupdate/allow_auto_multiarg", TEST_ENI_DIR,
+	g_test_add_data_func ("/ifupdate/allow_auto_multiarg", TEST_DIR,
 	                      (GTestDataFunc) test5_allow_auto_multiarg);
-	g_test_add_data_func ("/ifupdate/mixed_whitespace", TEST_ENI_DIR,
+	g_test_add_data_func ("/ifupdate/mixed_whitespace", TEST_DIR,
 	                      (GTestDataFunc) test6_mixed_whitespace);
-	g_test_add_data_func ("/ifupdate/long_line", TEST_ENI_DIR,
+	g_test_add_data_func ("/ifupdate/long_line", TEST_DIR,
 	                      (GTestDataFunc) test7_long_line);
-	g_test_add_data_func ("/ifupdate/long_line_wrapped", TEST_ENI_DIR,
+	g_test_add_data_func ("/ifupdate/long_line_wrapped", TEST_DIR,
 	                      (GTestDataFunc) test8_long_line_wrapped);
-	g_test_add_data_func ("/ifupdate/wrapped_lines_in_block", TEST_ENI_DIR,
+	g_test_add_data_func ("/ifupdate/wrapped_lines_in_block", TEST_DIR,
 	                      (GTestDataFunc) test9_wrapped_lines_in_block);
-	g_test_add_data_func ("/ifupdate/complex_wrap", TEST_ENI_DIR,
+	g_test_add_data_func ("/ifupdate/complex_wrap", TEST_DIR,
 	                      (GTestDataFunc) test11_complex_wrap);
-	g_test_add_data_func ("/ifupdate/complex_wrap_split_word", TEST_ENI_DIR,
+	g_test_add_data_func ("/ifupdate/complex_wrap_split_word", TEST_DIR,
 	                      (GTestDataFunc) test12_complex_wrap_split_word);
-	g_test_add_data_func ("/ifupdate/more_mixed_whitespace", TEST_ENI_DIR,
+	g_test_add_data_func ("/ifupdate/more_mixed_whitespace", TEST_DIR,
 	                      (GTestDataFunc) test13_more_mixed_whitespace);
-	g_test_add_data_func ("/ifupdate/mixed_whitespace_block_start", TEST_ENI_DIR,
+	g_test_add_data_func ("/ifupdate/mixed_whitespace_block_start", TEST_DIR,
 	                      (GTestDataFunc) test14_mixed_whitespace_block_start);
-	g_test_add_data_func ("/ifupdate/trailing_space", TEST_ENI_DIR,
+	g_test_add_data_func ("/ifupdate/trailing_space", TEST_DIR,
 	                      (GTestDataFunc) test15_trailing_space);
-	g_test_add_data_func ("/ifupdate/missing_newline", TEST_ENI_DIR,
+	g_test_add_data_func ("/ifupdate/missing_newline", TEST_DIR,
 	                      (GTestDataFunc) test16_missing_newline);
-	g_test_add_data_func ("/ifupdate/read_static_ipv4", TEST_ENI_DIR,
+	g_test_add_data_func ("/ifupdate/read_static_ipv4", TEST_DIR,
 	                      (GTestDataFunc) test17_read_static_ipv4);
-	g_test_add_data_func ("/ifupdate/read_static_ipv6", TEST_ENI_DIR,
+	g_test_add_data_func ("/ifupdate/read_static_ipv6", TEST_DIR,
 	                      (GTestDataFunc) test18_read_static_ipv6);
-	g_test_add_data_func ("/ifupdate/read_static_ipv4_plen", TEST_ENI_DIR,
+	g_test_add_data_func ("/ifupdate/read_static_ipv4_plen", TEST_DIR,
 	                      (GTestDataFunc) test19_read_static_ipv4_plen);
-	g_test_add_data_func ("/ifupdate/source_stanza", TEST_ENI_DIR,
+	g_test_add_data_func ("/ifupdate/source_stanza", TEST_DIR,
 	                      (GTestDataFunc) test20_source_stanza);
-	g_test_add_data_func ("/ifupdate/source_dir_stanza", TEST_ENI_DIR,
+	g_test_add_data_func ("/ifupdate/source_dir_stanza", TEST_DIR,
 	                      (GTestDataFunc) test21_source_dir_stanza);
 
 	return g_test_run ();

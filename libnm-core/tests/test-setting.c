@@ -37,6 +37,8 @@
 
 #include "nm-utils/nm-test-utils.h"
 
+#define TEST_CERT_DIR NM_BUILD_SRCDIR"/libnm-core/tests/certs"
+
 /*****************************************************************************/
 
 static void

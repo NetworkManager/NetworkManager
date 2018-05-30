@@ -36,6 +36,8 @@
 
 #include "nm-test-utils-core.h"
 
+#define TEST_DIR       NM_BUILD_SRCDIR"/src/settings/plugins/ibft/tests"
+
 static GPtrArray *
 read_block (const char *iscsiadm_path, const char *expected_mac)
 {
@@ -78,7 +80,7 @@ test_read_ibft_dhcp (void)
 	const char *expected_mac_address = "00:33:21:98:b9:f1";
 	GPtrArray *block;
 
-	block = read_block (TEST_IBFT_DIR "/iscsiadm-test-dhcp", expected_mac_address);
+	block = read_block (TEST_DIR "/iscsiadm-test-dhcp", expected_mac_address);
 
 	connection = nms_ibft_reader_get_connection_from_block (block, &error);
 	g_assert_no_error (error);
@@ -125,7 +127,7 @@ test_read_ibft_static (void)
 	NMIPAddress *ip4_addr;
 	GPtrArray *block;
 
-	block = read_block (TEST_IBFT_DIR "/iscsiadm-test-static", expected_mac_address);
+	block = read_block (TEST_DIR "/iscsiadm-test-static", expected_mac_address);
 
 	connection = nms_ibft_reader_get_connection_from_block (block, &error);
 	g_assert_no_error (error);
@@ -227,7 +229,7 @@ test_read_ibft_vlan (void)
 	GError *error = NULL;
 	GPtrArray *block;
 
-	block = read_block (TEST_IBFT_DIR "/iscsiadm-test-vlan", expected_mac_address);
+	block = read_block (TEST_DIR "/iscsiadm-test-vlan", expected_mac_address);
 
 	connection = nms_ibft_reader_get_connection_from_block (block, &error);
 	g_assert_no_error (error);
@@ -280,12 +282,12 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "ibft/dhcp", test_read_ibft_dhcp);
 	g_test_add_func (TPATH "ibft/static", test_read_ibft_static);
 	g_test_add_func (TPATH "ibft/vlan", test_read_ibft_vlan);
-	g_test_add_data_func (TPATH "ibft/bad-record-read", TEST_IBFT_DIR "/iscsiadm-test-bad-record", test_read_ibft_malformed);
-	g_test_add_data_func (TPATH "ibft/bad-entry-read", TEST_IBFT_DIR "/iscsiadm-test-bad-entry", test_read_ibft_malformed);
-	g_test_add_data_func (TPATH "ibft/bad-ipaddr-read", TEST_IBFT_DIR "/iscsiadm-test-bad-ipaddr", test_read_ibft_bad_address);
-	g_test_add_data_func (TPATH "ibft/bad-gateway-read", TEST_IBFT_DIR "/iscsiadm-test-bad-gateway", test_read_ibft_bad_address);
-	g_test_add_data_func (TPATH "ibft/bad-dns1-read", TEST_IBFT_DIR "/iscsiadm-test-bad-dns1", test_read_ibft_bad_address);
-	g_test_add_data_func (TPATH "ibft/bad-dns2-read", TEST_IBFT_DIR "/iscsiadm-test-bad-dns2", test_read_ibft_bad_address);
+	g_test_add_data_func (TPATH "ibft/bad-record-read", TEST_DIR "/iscsiadm-test-bad-record", test_read_ibft_malformed);
+	g_test_add_data_func (TPATH "ibft/bad-entry-read", TEST_DIR "/iscsiadm-test-bad-entry", test_read_ibft_malformed);
+	g_test_add_data_func (TPATH "ibft/bad-ipaddr-read", TEST_DIR "/iscsiadm-test-bad-ipaddr", test_read_ibft_bad_address);
+	g_test_add_data_func (TPATH "ibft/bad-gateway-read", TEST_DIR "/iscsiadm-test-bad-gateway", test_read_ibft_bad_address);
+	g_test_add_data_func (TPATH "ibft/bad-dns1-read", TEST_DIR "/iscsiadm-test-bad-dns1", test_read_ibft_bad_address);
+	g_test_add_data_func (TPATH "ibft/bad-dns2-read", TEST_DIR "/iscsiadm-test-bad-dns2", test_read_ibft_bad_address);
 
 	return g_test_run ();
 }

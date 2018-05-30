@@ -13,8 +13,7 @@ deps = [
 cflags = [
   '-DNETWORKMANAGER_COMPILATION_TEST',
   '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM',
-  '-DTEST_NM_SERVICE="@0@"'.format(join_paths(meson.source_root(), 'tools', 'test-networkmanager-service.py'))
-]
+] + nm_build_cflags
 
 foreach test_unit: test_units
   exe = executable(

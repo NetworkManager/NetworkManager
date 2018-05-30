@@ -10,7 +10,6 @@ deps = [
 cflags = [
   '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
   '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM',
-  '-DNMRUNDIR="@0@"'.format(nm_pkgrundir)
 ]
 
 if have_fake_typelibs
