@@ -54,6 +54,11 @@ nm_pkgstatedir = join_paths(nm_localstatedir, nm_name)
 nm_vpndir = join_paths(nm_libdir, nm_name)
 nm_plugindir = join_paths(nm_libdir, nm_name, dist_version)
 
+nm_build_cflags = [
+  '-DNM_BUILD_SRCDIR="@0@"'.format(meson.source_root()),
+  '-DNM_BUILD_BUILDDIR="@0@"'.format(meson.build_root()),
+]
+
 libnm_name = 'libnm'
 
 current = 1
