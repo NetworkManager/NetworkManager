@@ -232,7 +232,7 @@ nm_utils_init (GError **error)
 	if (!initialized) {
 		initialized = TRUE;
 
-		bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+		bindtextdomain (GETTEXT_PACKAGE, NMLOCALEDIR);
 		bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 
 		if (!crypto_init (error))
