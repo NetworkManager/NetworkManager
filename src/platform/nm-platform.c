@@ -3595,6 +3595,25 @@ delete_and_next2:
 	return TRUE;
 }
 
+static guint
+ip6_address_scope_priority (const struct in6_addr *addr)
+{
+	if (IN6_IS_ADDR_LINKLOCAL (addr))
+		return 1;
+	if (IN6_IS_ADDR_SITELOCAL (addr))
+		return 2;
+	return 3;
+}
+
+static gint
+ip6_address_scope_cmp (gconstpointer a, gconstpointer b)
+{
+	const NMPlatformIP6Address *x = NMP_OBJECT_CAST_IP6_ADDRESS (*(const void **) a);
+	const NMPlatformIP6Address *y = NMP_OBJECT_CAST_IP6_ADDRESS (*(const void **) b);
+
+	return ip6_address_scope_priority (&x->address) - ip6_address_scope_priority (&y->address);
+}
+
 /**
  * nm_platform_ip6_address_sync:
  * @self: platform instance
@@ -3627,6 +3646,13 @@ nm_platform_ip6_address_sync (NMPlatform *self,
 	gs_unref_hashtable GHashTable *known_addresses_idx = NULL;
 	NMPLookup lookup;
 	guint32 ifa_flags;
+
+	/* The order we want to enforce is only among addresses with the same
+	 * scope, as the kernel keeps addresses sorted by scope. Therefore,
+	 * apply the same sorting to known addresses, so that we don't try to
+	 * unnecessary change the order of addresses with different scopes. */
+	if (known_addresses)
+		g_ptr_array_sort (known_addresses, ip6_address_scope_cmp);
 
 	if (!_addr_array_clean_expired (AF_INET6, ifindex, known_addresses, now, &known_addresses_idx))
 		known_addresses = NULL;
