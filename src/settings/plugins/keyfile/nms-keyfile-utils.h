@@ -23,9 +23,6 @@
 
 #include "NetworkManagerUtils.h"
 
-#define NMS_KEYFILE_PLUGIN_NAME "keyfile"
-#define NMS_KEYFILE_PLUGIN_INFO "(c) 2007 - 2016 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list."
-
 #define NMS_KEYFILE_CONNECTION_LOG_PATH(path)  ((path) ?: "in-memory")
 #define NMS_KEYFILE_CONNECTION_LOG_FMT         "%s (%s,\"%s\")"
 #define NMS_KEYFILE_CONNECTION_LOG_ARG(con)    NMS_KEYFILE_CONNECTION_LOG_PATH (nm_settings_connection_get_filename ((NMSettingsConnection *) (con))), nm_connection_get_uuid ((NMConnection *) (con)), nm_connection_get_id ((NMConnection *) (con))

@@ -38,9 +38,6 @@
 
 #define IFCFG_DIR SYSCONFDIR "/sysconfig/network-scripts"
 
-#define IFCFG_PLUGIN_NAME "ifcfg-rh"
-#define IFCFG_PLUGIN_INFO "(c) 2007 - 2015 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list."
-
 #define TYPE_ETHERNET   "Ethernet"
 #define TYPE_WIRELESS   "Wireless"
 #define TYPE_INFINIBAND "InfiniBand"
