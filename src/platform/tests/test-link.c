@@ -1070,6 +1070,14 @@ test_software_detect (gconstpointer user_data)
 			if (lnk)
 				g_assert (memcmp (plnk, &lnk_tun2, sizeof (NMPlatformLnkTun)) == 0);
 
+			if (i_step == 0) {
+				/* Before we upped the device for the first time the kernel didn't notify
+				 * us of the owner set after the link creation:
+				 * https://bugzilla.redhat.com/show_bug.cgi?id=1566062
+				 */
+				break;
+			}
+
 			g_assert (nm_platform_lnk_tun_cmp (plnk, &lnk_tun) == 0);
 			break;
 		}
