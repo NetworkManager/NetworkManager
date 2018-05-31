@@ -22,11 +22,11 @@
 #ifndef __NM_HASH_UTILS_H__
 #define __NM_HASH_UTILS_H__
 
-#include "siphash24.h"
+#include "c-siphash/src/c-siphash.h"
 #include "nm-macros-internal.h"
 
 struct _NMHashState {
-	struct siphash _state;
+	CSipHash _state;
 };
 
 typedef struct _NMHashState NMHashState;
@@ -42,7 +42,7 @@ nm_hash_complete (NMHashState *state)
 
 	nm_assert (state);
 
-	h = siphash24_finalize (&state->_state);
+	h = c_siphash_finalize (&state->_state);
 
 	/* we don't ever want to return a zero hash.
 	 *
@@ -57,7 +57,7 @@ nm_hash_update (NMHashState *state, const void *ptr, gsize n)
 	nm_assert (ptr);
 	nm_assert (n > 0);
 
-	siphash24_compress (ptr, n, &state->_state);
+	c_siphash_append (&state->_state, ptr, n);
 }
 
 #define nm_hash_update_val(state, val) \
@@ -168,7 +168,7 @@ nm_hash_update_mem (NMHashState *state, const void *ptr, gsize n)
 	 * instead. */
 	nm_hash_update (state, &n, sizeof (n));
 	if (n > 0)
-		siphash24_compress (ptr, n, &state->_state);
+		c_siphash_append (&state->_state, ptr, n);
 }
 
 static inline void

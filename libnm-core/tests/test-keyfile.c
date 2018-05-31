@@ -33,6 +33,7 @@
 
 #include "nm-utils/nm-test-utils.h"
 
+#define TEST_CERT_DIR              NM_BUILD_SRCDIR"/libnm-core/tests/certs"
 #define TEST_WIRED_TLS_CA_CERT     TEST_CERT_DIR"/test-ca-cert.pem"
 #define TEST_WIRED_TLS_PRIVKEY     TEST_CERT_DIR"/test-key-and-cert.pem"
 

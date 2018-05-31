@@ -249,7 +249,7 @@ _nm_utils_init (void)
 		g_error ("libnm-util symbols detected; Mixing libnm with libnm-util/libnm-glib is not supported");
 	g_module_close (self);
 
-	bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+	bindtextdomain (GETTEXT_PACKAGE, NMLOCALEDIR);
 	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 
 	_nm_dbus_errors_init ();

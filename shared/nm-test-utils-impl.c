@@ -28,6 +28,8 @@
 
 #include "nm-test-libnm-utils.h"
 
+#define NMTSTC_NM_SERVICE NM_BUILD_SRCDIR"/tools/test-networkmanager-service.py"
+
 /*****************************************************************************/
 
 static gboolean
@@ -116,7 +118,7 @@ nmtstc_service_available (NMTstcServiceInfo *info)
 
 	/* This happens, when test-networkmanager-service.py exits with 77 status
 	 * code. */
-	m = g_strdup_printf ("missing dependency for running NetworkManager stub service %s", TEST_NM_SERVICE);
+	m = g_strdup_printf ("missing dependency for running NetworkManager stub service %s", NMTSTC_NM_SERVICE);
 	g_test_skip (m);
 	return NULL;
 }
@@ -125,7 +127,7 @@ NMTstcServiceInfo *
 nmtstc_service_init (void)
 {
 	NMTstcServiceInfo *info;
-	const char *args[] = { TEST_NM_PYTHON, TEST_NM_SERVICE, NULL };
+	const char *args[] = { TEST_NM_PYTHON, NMTSTC_NM_SERVICE, NULL };
 	GError *error = NULL;
 
 	info = g_malloc0 (sizeof (*info));
@@ -170,7 +172,7 @@ nmtstc_service_init (void)
 		g_main_context_unref (context);
 
 		if (had_timeout)
-			g_error ("test service %s did not start in time", TEST_NM_SERVICE);
+			g_error ("test service %s did not start in time", NMTSTC_NM_SERVICE);
 		if (!data.name_found) {
 			g_assert (data.exited);
 			info->pid = NM_PID_T_INVAL;
@@ -184,7 +186,7 @@ nmtstc_service_init (void)
 				 * via pygobject. */
 				return NULL;
 			}
-			g_error ("test service %s exited with error code %d", TEST_NM_SERVICE, data.exit_code);
+			g_error ("test service %s exited with error code %d", NMTSTC_NM_SERVICE, data.exit_code);
 		}
 	}
 

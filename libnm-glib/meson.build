@@ -79,13 +79,6 @@ sources = files(
 
 glue = 'nm-vpn-plugin-glue.h'
 
-sources += custom_target(
-  glue,
-  input: ifaces_vpn_plugin_xml,
-  output: glue,
-  command: [dbus_binding_tool, '--prefix=nm_vpn_plugin', '--mode=glib-server', '--output=@OUTPUT@', '@INPUT@']
-)
-
 enum_types = 'nm-vpn-enum-types'
 
 libnm_glib_vpn_enum = gnome.mkenums(
@@ -104,7 +97,18 @@ linker_script = join_paths(meson.current_source_dir(), 'libnm-glib-vpn.ver')
 
 libnm_glib_vpn = shared_library(
   'nm-glib-vpn',
-  sources: sources + libnm_glib_vpn_enum,
+  sources: files(
+    'nm-vpn-plugin.c',
+    'nm-vpn-plugin-ui-interface.c',
+    'nm-vpn-plugin-utils.c',
+  ) + [
+    custom_target(
+      glue,
+      input: ifaces_vpn_plugin_xml,
+      output: glue,
+      command: [dbus_binding_tool, '--prefix=nm_vpn_plugin', '--mode=glib-server', '--output=@OUTPUT@', '@INPUT@'],
+    ),
+  ] + libnm_glib_vpn_enum,
   version: libnm_glib_vpn_version,
   dependencies: deps,
   c_args: cflags,
@@ -131,7 +135,7 @@ pkg.generate(
   variables: 'exec_prefix=${prefix}'
 )
 
-sources = shared_udev_utils + files(
+libnm_glib_sources = shared_files_libnm_glib + files(
   'nm-access-point.c',
   'nm-active-connection.c',
   'nm-client.c',
@@ -194,12 +198,10 @@ linker_script = join_paths(meson.current_source_dir(), 'libnm-glib.ver')
 
 libnm_glib = shared_library(
   'nm-glib',
-  sources: sources + libnm_glib_enum + [nm_secret_agent_glue],
+  sources: libnm_glib_sources + libnm_glib_enum + [nm_secret_agent_glue],
   version: libnm_glib_version,
   dependencies: deps,
-  c_args: cflags + [
-    '-DNMRUNDIR="@0@"'.format(nm_pkgrundir),
-  ],
+  c_args: cflags,
   link_whole: libdeprecated_nm_glib,
   link_args: [
     '-Wl,--version-script,@0@'.format(linker_script),
@@ -225,7 +227,7 @@ pkg.generate(
 )
 
 if enable_introspection
-  gir_sources = sources + headers + libnm_glib_enum
+  gir_sources = libnm_glib_sources + headers + libnm_glib_enum
 
   deps = [
     dbus_glib_dep,

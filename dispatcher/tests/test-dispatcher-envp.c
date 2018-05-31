@@ -29,6 +29,8 @@
 
 #include "nm-utils/nm-test-utils.h"
 
+#define TEST_DIR      NM_BUILD_SRCDIR"/dispatcher/tests"
+
 /*****************************************************************************/
 
 static void
@@ -525,8 +527,7 @@ test_generic (const char *file, const char *override_vpn_ip_iface)
 	gs_strfreev char **denv = NULL;
 	char **iter;
 
-	/* Read in the test file */
-	p = g_build_filename (SRCDIR, file, NULL);
+	p = g_build_filename (TEST_DIR, file, NULL);
 	success = get_dispatcher_file (p,
 	                               &con_dict,
 	                               &con_props,

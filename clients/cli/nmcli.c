@@ -950,7 +950,7 @@ main (int argc, char *argv[])
 
 #ifdef GETTEXT_PACKAGE
 	/* Set i18n stuff */
-	bindtextdomain (GETTEXT_PACKAGE, NMCLI_LOCALEDIR);
+	bindtextdomain (GETTEXT_PACKAGE, NMLOCALEDIR);
 	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 	textdomain (GETTEXT_PACKAGE);
 #endif

@@ -131,14 +131,15 @@ deps = [
   dl_dep,
   libudev_dep,
   shared_dep,
-  uuid_dep
+  uuid_dep,
+  shared_c_siphash_dep,
 ]
 
 cflags = [
   '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
   '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE',
   '-DLIBEXECDIR="@0@"'.format(nm_libexecdir),
-  '-DLOCALEDIR="@0@"'.format(nm_localedir),
+  '-DNMLOCALEDIR="@0@"'.format(nm_localedir),
   '-DNMCONFDIR="@0@"'.format(nm_pkgconfdir),
   '-DNMLIBDIR="@0@"'.format(nm_pkglibdir),
   '-DNMPLUGINDIR="@0@"'.format(nm_plugindir),
@@ -150,9 +151,15 @@ if enable_json_validation
   deps += jansson_dep
 endif
 
+libnm_core_sources_all =  libnm_core_sources
+libnm_core_sources_all += libnm_core_enum
+libnm_core_sources_all += shared_nm_utils_nm_meta_setting_c
+libnm_core_sources_all += shared_files_libnm_core
+libnm_core_sources_all += [version_header]
+
 libnm_core = static_library(
   'nm-core',
-  sources: libnm_core_sources + libnm_core_enum + shared_sources + [version_header],
+  sources: libnm_core_sources_all,
   dependencies: deps,
   c_args: cflags
 )
@@ -160,7 +167,10 @@ libnm_core = static_library(
 nm_core_dep = declare_dependency(
   sources: libnm_core_enum[1],
   include_directories: libnm_core_inc,
-  dependencies: shared_dep
+  dependencies: [
+    shared_dep,
+    shared_c_siphash_dep,
+  ],
 )
 
 enums_to_docbook = join_paths(meson.source_root(), 'tools', 'enums-to-docbook.pl')

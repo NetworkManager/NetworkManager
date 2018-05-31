@@ -6,10 +6,8 @@ deps = [
 ]
 
 cflags = common_cflags + [
-  '-DBUILD_DIR="@0@"'.format(meson.current_build_dir()),
-  '-DTEST_CERT_DIR="@0@"'.format(test_cert_dir),
   '-DNETWORKMANAGER_COMPILATION_TEST',
-]
+] + nm_build_cflags
 
 test = 'test-libnm-linking'
 

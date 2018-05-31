@@ -37,6 +37,9 @@
 
 #include "nm-test-utils-core.h"
 
+#define TEST_KEYFILES_DIR       NM_BUILD_SRCDIR"/src/settings/plugins/keyfile/tests/keyfiles"
+#define TEST_SCRATCH_DIR        NM_BUILD_BUILDDIR"/src/settings/plugins/keyfile/tests/keyfiles"
+
 /*****************************************************************************/
 
 static void
