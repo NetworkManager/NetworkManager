@@ -3,11 +3,64 @@ NetworkManager-1.?? (not released yet)
 Overview of changes since NetworkManager-1.10
 =============================================
 
+This is a snapshot of NetworkManager 1.10 development series.
+USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
+
+Notable changes included in this snapshot so far include:
+
+* Improved support for configuration checkpoint, including support in libnm.
+* Added capability to set IP Tunnel configuration flags.
+* The systemd-resolved DNS plugins now supports MDNS.
+* systemd-resolved and dnsmasq DNS plugins now honor the DNS priority setting.
+* Wi-Fi devices now support FILS for speedier roaming support.
+* Add support for "onlink" routes
+* More robust connectivity checking.
+* Dropped the obsolete "ifnet" settings plugin
+* Try harder to generate reasonable human-readable names for devices even if
+  the hwdb contains garbage.
+* Add an "overview" option to hide default values in nmcli, resulting in more
+  concise output.
+* Reworked the inner workings of D-Bus interface for better resource efficiency.
+* Add support for configuring nmcli coloring via terminal-colors.d(5).
+* Added experimental support for Meson build system
+* Added initial IWD Wi-Fi daemon support
 * A non-hexadecimal DHCPv4 client-id is now properly passed to
   dhclient with the first byte (type) set to zero, as stated in the
   documentation. This represents a change in behavior since previous
   versions where the first character of the string was used as
   type. The internal client is not affected by the change.
+
+The following features were backported to 1.10.x releases from 1.10.0 to
+1.10.8 are also present in NetworkManager-1.12:
+
+* Fix connectivity timeout handling (bgo #794464)
+* Retry activating devices when the parent becomes managed (rh #1553595)
+* Correctly set the rp_filter value (rh #1565529)
+* A fix to ensure teamd is respawned after daemon restart (rh #1551958)
+* Better handle DHCP expiry (bgo #783391)
+* Fix configuration of IPv6 over master interfaces (rh #1575944)
+* ovs: fix compilation issue of OVS plugin and various fixes
+* team: add support for team runner "random"
+* core: cleanup activation of device (rh #1537160)
+* dhcp: retry indefinitely to renew the lease (rh #1503587)
+* core: fix blocking autoconnect for no-secrets (rh #794014)
+* libnm: mark async results as cancelled (bgo #794088)
+* Load jansson at runtime. This solves a clash with json-glib that caused
+    a gnome-control-center crash, but also gets rid of a hard dependency.
+* Correct nmcli exit values after receiving a signal.
+* Fix libnm secret agent asynchronous initialization.
+* Add a default route for a modem even if it didn't sent a gateway.
+* Improve communication of DAD failures.
+* Remember device default metrics across daemon restarts.
+* Various bug fixes including possible crashes.
+* Added support for 'onlink' IPv4 routes attribute.
+* Wait longer for the carrier to come up after a MTU change.
+* Implemented abstraction for team connections that exposes team
+    configuration items as distinct properties.
+* Added basic support for tc queueing disciplines and filters.
+* Introduced an Update2() D-Bus method to update connection settings
+  with more flexibility.
+* Many bug fixes and improvements.
 
 ============================================
 NetworkManager-1.10
