@@ -659,11 +659,10 @@ class ActiveConnection(ExportedObj):
 
         self._activation_id = None
 
-        conn_settings = self.conn.GetSettings()
-        s_con = conn_settings['connection']
+        s_con = connection.con_hash['connection']
 
         props = {
-            PRP_ACTIVE_CONNECTION_CONNECTION:      ExportedObj.to_path(self.conn),
+            PRP_ACTIVE_CONNECTION_CONNECTION:      ExportedObj.to_path(connection),
             PRP_ACTIVE_CONNECTION_SPECIFIC_OBJECT: ExportedObj.to_path(specific_object),
             PRP_ACTIVE_CONNECTION_ID:              s_con['id'],
             PRP_ACTIVE_CONNECTION_UUID:            s_con['uuid'],
@@ -806,8 +805,8 @@ class NetworkManager(ExportedObj):
         except Exception as e:
             raise UnknownConnectionException("Connection not found")
 
-        hash = connection.GetSettings()
-        s_con = hash['connection']
+        con_hash = connection.con_hash
+        s_con = con_hash['connection']
 
         device = self.find_device_first(path = devpath)
         if not device and s_con['type'] == 'vlan':
@@ -818,10 +817,10 @@ class NetworkManager(ExportedObj):
             raise UnknownDeviceException("No device found for the requested iface.")
 
         # See if we need secrets. For the moment, we only support WPA
-        if '802-11-wireless-security' in hash:
-            s_wsec = hash['802-11-wireless-security']
+        if '802-11-wireless-security' in con_hash:
+            s_wsec = con_hash['802-11-wireless-security']
             if (s_wsec['key-mgmt'] == 'wpa-psk' and 'psk' not in s_wsec):
-                secrets = gl.agent_manager.get_secrets(hash, conpath, '802-11-wireless-security')
+                secrets = gl.agent_manager.get_secrets(con_hash, conpath, '802-11-wireless-security')
                 if secrets is None:
                     raise NoSecretsException("No secret agent available")
                 if '802-11-wireless-security' not in secrets:
@@ -1086,22 +1085,23 @@ class MissingSettingException(dbus.DBusException):
 PRP_CONNECTION_UNSAVED = 'Unsaved'
 
 class Connection(ExportedObj):
-    def __init__(self, path_counter, settings, verify_connection=True):
+    def __init__(self, path_counter, con_hash, verify_connection=True):
 
         path = "/org/freedesktop/NetworkManager/Settings/Connection/%s" % (path_counter)
 
         ExportedObj.__init__(self, path)
 
-        if 'connection' not in settings:
-            settings['connection'] = { }
-        if self.get_id(settings) is None:
-            settings['connection']['id'] = 'connection-%s' % (path_counter)
-        if self.get_uuid(settings) is None:
-            settings['connection']['uuid'] = str(uuid.uuid3(uuid.NAMESPACE_URL, path))
-        self.verify(settings, verify_strict=verify_connection)
+        if 'connection' not in con_hash:
+            con_hash['connection'] = { }
+        if self.get_id(con_hash) is None:
+            con_hash['connection']['id'] = 'connection-%s' % (path_counter)
+        if self.get_uuid(con_hash) is None:
+            con_hash['connection']['uuid'] = str(uuid.uuid3(uuid.NAMESPACE_URL, path))
+
+        self.verify(con_hash, verify_strict=verify_connection)
 
         self.path = path
-        self.settings = settings
+        self.con_hash = con_hash
         self.visible = True
 
         props = {
@@ -1110,30 +1110,30 @@ class Connection(ExportedObj):
 
         self.dbus_interface_add(IFACE_CONNECTION, props)
 
-    def get_id(self, settings=None):
-        if settings is None:
-            settings = self.settings
-        if 'connection' in settings:
-            s_con = settings['connection']
+    def get_id(self, con_hash=None):
+        if con_hash is None:
+            con_hash = self.con_hash
+        if 'connection' in con_hash:
+            s_con = con_hash['connection']
             if 'id' in s_con:
                 return s_con['id']
         return None
 
-    def get_uuid(self, settings=None):
-        if settings is None:
-            settings = self.settings
-        if 'connection' in settings:
-            s_con = settings['connection']
+    def get_uuid(self, con_hash=None):
+        if con_hash is None:
+            con_hash = self.con_hash
+        if 'connection' in con_hash:
+            s_con = con_hash['connection']
             if 'uuid' in s_con:
                 return s_con['uuid']
         return None
 
-    def verify(self, settings=None, verify_strict=True):
-        if settings is None:
-            settings = self.settings;
-        if 'connection' not in settings:
+    def verify(self, con_hash=None, verify_strict=True):
+        if con_hash is None:
+            con_hash = self.con_hash;
+        if 'connection' not in con_hash:
             raise MissingSettingException('connection: setting is required')
-        s_con = settings['connection']
+        s_con = con_hash['connection']
         if 'type' not in s_con:
             raise MissingPropertyException('connection.type: property is required')
         if 'uuid' not in s_con:
@@ -1147,22 +1147,22 @@ class Connection(ExportedObj):
         if t not in ['802-3-ethernet', '802-11-wireless', 'vlan', 'wimax']:
             raise InvalidPropertyException('connection.type: unsupported connection type "%s"' % (t))
 
-    def update_connection(self, settings, verify_connection):
-        self.verify(settings, verify_strict=verify_connection)
+    def update_connection(self, con_hash, verify_connection):
+        self.verify(con_hash, verify_strict=verify_connection)
 
         old_uuid = self.get_uuid()
-        new_uuid = self.get_uuid(settings)
+        new_uuid = self.get_uuid(con_hash)
         if old_uuid != new_uuid:
             raise InvalidPropertyException('connection.uuid: cannot change the uuid from %s to %s' % (old_uuid, new_uuid))
 
-        self.settings = settings;
+        self.con_hash = con_hash;
         self.Updated()
 
     @dbus.service.method(dbus_interface=IFACE_CONNECTION, in_signature='', out_signature='a{sa{sv}}')
     def GetSettings(self):
         if not self.visible:
             raise PermissionDeniedException()
-        return self.settings
+        return self.con_hash
 
     @dbus.service.method(dbus_interface=IFACE_CONNECTION, in_signature='b', out_signature='')
     def SetVisible(self, vis):
@@ -1174,12 +1174,12 @@ class Connection(ExportedObj):
         gl.settings.delete_connection(self)
 
     @dbus.service.method(dbus_interface=IFACE_CONNECTION, in_signature='a{sa{sv}}', out_signature='')
-    def Update(self, settings):
-        self.update_connection(settings, True)
+    def Update(self, con_hash):
+        self.update_connection(con_hash, True)
 
     @dbus.service.method(dbus_interface=IFACE_CONNECTION, in_signature='a{sa{sv}}ua{sv}', out_signature='a{sv}')
-    def Update2(self, settings, flags, args):
-        self.update_connection(settings, True)
+    def Update2(self, con_hash, flags, args):
+        self.update_connection(con_hash, True)
         return []
 
     @dbus.service.signal(IFACE_CONNECTION, signature='')
@@ -1242,12 +1242,12 @@ class Settings(ExportedObj):
         return self.connections.keys()
 
     @dbus.service.method(dbus_interface=IFACE_SETTINGS, in_signature='a{sa{sv}}', out_signature='o')
-    def AddConnection(self, settings):
-        return self.add_connection(settings)
+    def AddConnection(self, con_hash):
+        return self.add_connection(con_hash)
 
-    def add_connection(self, settings, verify_connection=True):
+    def add_connection(self, con_hash, verify_connection=True):
         self.c_counter += 1
-        con = Connection(self.c_counter, settings, verify_connection)
+        con = Connection(self.c_counter, con_hash, verify_connection)
 
         uuid = con.get_uuid()
         if uuid in [c.get_uuid() for c in self.connections.values()]:
@@ -1367,7 +1367,7 @@ class AgentManager(dbus.service.Object):
     def Unregister(self, sender=None):
         del self.agents[sender]
 
-    def get_secrets(self, connection, path, setting_name):
+    def get_secrets(self, con_hash, path, setting_name):
         if len(self.agents) == 0:
             return None
 
@@ -1375,7 +1375,7 @@ class AgentManager(dbus.service.Object):
         for sender in self.agents:
             agent = self.agents[sender]
             try:
-                secrets = agent.GetSecrets(connection, path, setting_name,
+                secrets = agent.GetSecrets(con_hash, path, setting_name,
                                            dbus.Array([], 's'),
                                            FLAG_ALLOW_INTERACTION | FLAG_USER_REQUESTED,
                                            dbus_interface=IFACE_AGENT)
