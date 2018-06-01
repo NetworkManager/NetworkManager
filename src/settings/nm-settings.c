@@ -886,6 +886,8 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 	g_object_unref (connection);
 
 	check_startup_complete (self);
+
+	g_object_unref (self);       /* Balanced by a ref in claim_connection() */
 }
 
 #define NM_DBUS_SERVICE_OPENCONNECT    "org.freedesktop.NetworkManager.openconnect"
@@ -998,6 +1000,11 @@ claim_connection (NMSettings *self, NMSettingsConnection *connection)
 	_clear_connections_cached_list (priv);
 
 	g_object_ref (connection);
+	/* FIXME(shutdown): The NMSettings instance can't be disposed
+	 * while there is any exported connection. Ideally we should
+	 * unexport all connections on NMSettings' disposal, but for now
+	 * leak @self on termination when there are connections alive. */
+	g_object_ref (self);
 	priv->connections_len++;
 	c_list_link_tail (&priv->connections_lst_head, &connection->_connections_lst);
 
