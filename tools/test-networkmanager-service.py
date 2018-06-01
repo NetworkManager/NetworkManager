@@ -650,19 +650,19 @@ class ActiveConnection(ExportedObj):
     path_counter_next = 1
     path_prefix = "/org/freedesktop/NetworkManager/ActiveConnection/"
 
-    def __init__(self, device, connection, specific_object):
+    def __init__(self, device, con_inst, specific_object):
 
         ExportedObj.__init__(self, ExportedObj.create_path(ActiveConnection))
 
         self.device = device
-        self.conn = connection
+        self.con_inst = con_inst
 
         self._activation_id = None
 
-        s_con = connection.con_hash['connection']
+        s_con = con_inst.con_hash['connection']
 
         props = {
-            PRP_ACTIVE_CONNECTION_CONNECTION:      ExportedObj.to_path(connection),
+            PRP_ACTIVE_CONNECTION_CONNECTION:      ExportedObj.to_path(con_inst),
             PRP_ACTIVE_CONNECTION_SPECIFIC_OBJECT: ExportedObj.to_path(specific_object),
             PRP_ACTIVE_CONNECTION_ID:              s_con['id'],
             PRP_ACTIVE_CONNECTION_UUID:            s_con['uuid'],
@@ -801,11 +801,11 @@ class NetworkManager(ExportedObj):
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature='ooo', out_signature='o')
     def ActivateConnection(self, conpath, devpath, specific_object):
         try:
-            connection = gl.settings.get_connection(conpath)
+            con_inst = gl.settings.get_connection(conpath)
         except Exception as e:
             raise UnknownConnectionException("Connection not found")
 
-        con_hash = connection.con_hash
+        con_hash = con_inst.con_hash
         s_con = con_hash['connection']
 
         device = self.find_device_first(path = devpath)
@@ -829,7 +829,7 @@ class NetworkManager(ExportedObj):
                 if 'psk' not in s_wsec:
                     raise NoSecretsException("No secrets provided")
 
-        ac = ActiveConnection(device, connection, None)
+        ac = ActiveConnection(device, con_inst, None)
         self.active_connection_add(ac)
 
         if s_con['id'] == 'object-creation-failed-test':
@@ -854,9 +854,9 @@ class NetworkManager(ExportedObj):
         ac.unexport()
 
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature='a{sa{sv}}oo', out_signature='oo')
-    def AddAndActivateConnection(self, connection, devpath, specific_object):
+    def AddAndActivateConnection(self, con_hash, devpath, specific_object):
         device = self.find_device_first(path = devpath, require = UnknownDeviceException)
-        conpath = gl.settings.AddConnection(connection)
+        conpath = gl.settings.AddConnection(con_hash)
         return (conpath, self.ActivateConnection(conpath, devpath, specific_object))
 
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature='o', out_signature='')
@@ -1047,12 +1047,12 @@ class NetworkManager(ExportedObj):
         gl.settings.auto_remove_next_connection()
 
     @dbus.service.method(dbus_interface=IFACE_TEST, in_signature='a{sa{sv}}b', out_signature='o')
-    def AddConnection(self, connection, verify_connection):
-        return gl.settings.add_connection(connection, verify_connection)
+    def AddConnection(self, con_hash, verify_connection):
+        return gl.settings.add_connection(con_hash, verify_connection)
 
     @dbus.service.method(dbus_interface=IFACE_TEST, in_signature='sa{sa{sv}}b', out_signature='')
-    def UpdateConnection(self, path, connection, verify_connection):
-        return gl.settings.update_connection(connection, path, verify_connection)
+    def UpdateConnection(self, path, con_hash, verify_connection):
+        return gl.settings.update_connection(con_hash, path, verify_connection)
 
     @dbus.service.method(dbus_interface=IFACE_TEST, in_signature='ba{ss}', out_signature='')
     def ConnectionSetVisible(self, vis, selector_args):
@@ -1247,36 +1247,33 @@ class Settings(ExportedObj):
 
     def add_connection(self, con_hash, verify_connection=True):
         self.c_counter += 1
-        con = Connection(self.c_counter, con_hash, verify_connection)
+        con_inst = Connection(self.c_counter, con_hash, verify_connection)
 
-        uuid = con.get_uuid()
+        uuid = con_inst.get_uuid()
         if uuid in [c.get_uuid() for c in self.connections.values()]:
             raise InvalidSettingException('cannot add duplicate connection with uuid %s' % (uuid))
 
-        con.export()
-        self.connections[con.path] = con
-        self.NewConnection(con.path)
+        con_inst.export()
+        self.connections[con_inst.path] = con_inst
+        self.NewConnection(con_inst.path)
         self._dbus_property_set(IFACE_SETTINGS, PRP_SETTINGS_CONNECTIONS, dbus.Array(self.connections.keys(), 'o'))
 
         if self.remove_next_connection:
             self.remove_next_connection = False
-            self.delete_connection(con)
+            self.delete_connection(con_inst)
 
-        return con.path
+        return con_inst.path
 
-    def update_connection(self, connection, path=None, verify_connection=True):
-        if path is None:
-            path = connection.path
+    def update_connection(self, con_hash, path=None, verify_connection=True):
         if path not in self.connections:
             raise UnknownConnectionException('Connection not found')
-        con = self.connections[path]
-        con.update_connection(connection, verify_connection)
+        self.connections[path].update_connection(con_hash, verify_connection)
 
-    def delete_connection(self, connection):
-        del self.connections[connection.path]
+    def delete_connection(self, con_inst):
+        del self.connections[con_inst.path]
         self._dbus_property_set(IFACE_SETTINGS, PRP_SETTINGS_CONNECTIONS, dbus.Array(self.connections.keys(), 'o'))
-        connection.Removed()
-        connection.unexport()
+        con_inst.Removed()
+        con_inst.unexport()
 
     @dbus.service.method(dbus_interface=IFACE_SETTINGS, in_signature='s', out_signature='')
     def SaveHostname(self, hostname):
