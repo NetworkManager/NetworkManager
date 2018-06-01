@@ -397,7 +397,7 @@ _metagen_con_show_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 	char *s_mut;
 
 	NMC_HANDLE_COLOR (  ac
-	                  ? nm_active_connection_get_state (ac)
+	                  ? nmc_active_connection_state_to_color (nm_active_connection_get_state (ac))
 	                  : NM_META_COLOR_CONNECTION_UNKNOWN);
 
 	if (c)
