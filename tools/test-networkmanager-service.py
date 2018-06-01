@@ -659,14 +659,14 @@ class ActiveConnection(ExportedObj):
 
         self._activation_id = None
 
-        s_con = con_inst.con_hash['connection']
+        s_con = con_inst.con_hash[NM.SETTING_CONNECTION_SETTING_NAME]
 
         props = {
             PRP_ACTIVE_CONNECTION_CONNECTION:      ExportedObj.to_path(con_inst),
             PRP_ACTIVE_CONNECTION_SPECIFIC_OBJECT: ExportedObj.to_path(specific_object),
-            PRP_ACTIVE_CONNECTION_ID:              s_con['id'],
-            PRP_ACTIVE_CONNECTION_UUID:            s_con['uuid'],
-            PRP_ACTIVE_CONNECTION_TYPE:            s_con['type'],
+            PRP_ACTIVE_CONNECTION_ID:              s_con[NM.SETTING_CONNECTION_ID],
+            PRP_ACTIVE_CONNECTION_UUID:            s_con[NM.SETTING_CONNECTION_UUID],
+            PRP_ACTIVE_CONNECTION_TYPE:            s_con[NM.SETTING_CONNECTION_TYPE],
             PRP_ACTIVE_CONNECTION_DEVICES:         ExportedObj.to_path_array([self.device]),
             PRP_ACTIVE_CONNECTION_STATE:           dbus.UInt32(NM.ActiveConnectionState.UNKNOWN),
             PRP_ACTIVE_CONNECTION_DEFAULT:         False,
@@ -806,10 +806,10 @@ class NetworkManager(ExportedObj):
             raise UnknownConnectionException("Connection not found")
 
         con_hash = con_inst.con_hash
-        s_con = con_hash['connection']
+        s_con = con_hash[NM.SETTING_CONNECTION_SETTING_NAME]
 
         device = self.find_device_first(path = devpath)
-        if not device and s_con['type'] == 'vlan':
+        if not device and s_con[NM.SETTING_CONNECTION_TYPE] == NM.SETTING_VLAN_SETTING_NAME:
             ifname = s_con['interface-name']
             device = VlanDevice(ifname)
             self.add_device(device)
@@ -832,7 +832,7 @@ class NetworkManager(ExportedObj):
         ac = ActiveConnection(device, con_inst, None)
         self.active_connection_add(ac)
 
-        if s_con['id'] == 'object-creation-failed-test':
+        if s_con[NM.SETTING_CONNECTION_ID] == 'object-creation-failed-test':
             # FIXME: this is not the right test, to delete the active-connection
             # before returning it. It's the wrong order of what NetworkManager
             # would do.
@@ -1091,12 +1091,14 @@ class Connection(ExportedObj):
 
         ExportedObj.__init__(self, path)
 
-        if 'connection' not in con_hash:
-            con_hash['connection'] = { }
+        s_con = con_hash.get(NM.SETTING_CONNECTION_SETTING_NAME)
+        if s_con is None:
+            s_con = {}
+            con_hash[NM.SETTING_CONNECTION_SETTING_NAME] = s_con
         if self.get_id(con_hash) is None:
-            con_hash['connection']['id'] = 'connection-%s' % (path_counter)
+            s_con[NM.SETTING_CONNECTION_ID] = 'connection-%s' % (path_counter)
         if self.get_uuid(con_hash) is None:
-            con_hash['connection']['uuid'] = str(uuid.uuid3(uuid.NAMESPACE_URL, path))
+            s_con[NM.SETTING_CONNECTION_UUID] = str(uuid.uuid3(uuid.NAMESPACE_URL, path))
 
         self.verify(con_hash, verify_strict=verify_connection)
 
@@ -1113,38 +1115,41 @@ class Connection(ExportedObj):
     def get_id(self, con_hash=None):
         if con_hash is None:
             con_hash = self.con_hash
-        if 'connection' in con_hash:
-            s_con = con_hash['connection']
-            if 'id' in s_con:
-                return s_con['id']
+        if NM.SETTING_CONNECTION_SETTING_NAME in con_hash:
+            s_con = con_hash[NM.SETTING_CONNECTION_SETTING_NAME]
+            if NM.SETTING_CONNECTION_ID in s_con:
+                return s_con[NM.SETTING_CONNECTION_ID]
         return None
 
     def get_uuid(self, con_hash=None):
         if con_hash is None:
             con_hash = self.con_hash
-        if 'connection' in con_hash:
-            s_con = con_hash['connection']
-            if 'uuid' in s_con:
-                return s_con['uuid']
+        if NM.SETTING_CONNECTION_SETTING_NAME in con_hash:
+            s_con = con_hash[NM.SETTING_CONNECTION_SETTING_NAME]
+            if NM.SETTING_CONNECTION_UUID in s_con:
+                return s_con[NM.SETTING_CONNECTION_UUID]
         return None
 
     def verify(self, con_hash=None, verify_strict=True):
         if con_hash is None:
             con_hash = self.con_hash;
-        if 'connection' not in con_hash:
+        if NM.SETTING_CONNECTION_SETTING_NAME not in con_hash:
             raise MissingSettingException('connection: setting is required')
-        s_con = con_hash['connection']
-        if 'type' not in s_con:
+        s_con = con_hash[NM.SETTING_CONNECTION_SETTING_NAME]
+        if NM.SETTING_CONNECTION_TYPE not in s_con:
             raise MissingPropertyException('connection.type: property is required')
-        if 'uuid' not in s_con:
+        if NM.SETTING_CONNECTION_UUID not in s_con:
             raise MissingPropertyException('connection.uuid: property is required')
-        if 'id' not in s_con:
+        if NM.SETTING_CONNECTION_ID not in s_con:
             raise MissingPropertyException('connection.id: property is required')
 
         if not verify_strict:
             return;
-        t = s_con['type']
-        if t not in ['802-3-ethernet', '802-11-wireless', 'vlan', 'wimax']:
+        t = s_con[NM.SETTING_CONNECTION_TYPE]
+        if t not in [ NM.SETTING_WIRED_SETTING_NAME,
+                      NM.SETTING_WIRELESS_SETTING_NAME,
+                      NM.SETTING_VLAN_SETTING_NAME,
+                      NM.SETTING_WIMAX_SETTING_NAME ]:
             raise InvalidPropertyException('connection.type: unsupported connection type "%s"' % (t))
 
     def update_connection(self, con_hash, verify_connection):
