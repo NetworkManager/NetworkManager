@@ -1,0 +1,14 @@
+location: clients/tests/test-client.py:799:test_003()/92
+cmd: $NMCLI c s /org/freedesktop/NetworkManager/ActiveConnection/1
+lang: pl_PL.UTF-8
+returncode: -6
+stdout: 0 bytes
+>>>
+
+<<<
+stderr: 102 bytes
+>>>
+**
+nmcli:ERROR:clients/cli/connections.c:893:fill_output_active_connection: assertion failed: (s_con)
+
+<<<

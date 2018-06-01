@@ -1,14 +1,21 @@
-location: clients/tests/test-client.py:796:test_003()/88
-cmd: $NMCLI c s /org/freedesktop/NetworkManager/ActiveConnection/1
+location: clients/tests/test-client.py:793:test_003()/88
+cmd: $NMCLI -f UUID,TYPE --mode tabular --pretty con
 lang: pl_PL.UTF-8
-returncode: -6
-stdout: 0 bytes
+returncode: 0
+stdout: 462 bytes
 >>>
+==========================================
+  Profile połączeń usługi NetworkManager
+==========================================
+UUID                                  TYPE     
+------------------------------------------------------------------------------------------
+UUID-ethernet-REPLACED-REPLACED-REPL  ethernet 
+UUID-ethernet-REPLACED-REPLACED-REPL  ethernet 
+5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet 
+UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-stderr: 102 bytes
+stderr: 0 bytes
 >>>
-**
-nmcli:ERROR:clients/cli/connections.c:893:fill_output_active_connection: assertion failed: (s_con)
 
 <<<
