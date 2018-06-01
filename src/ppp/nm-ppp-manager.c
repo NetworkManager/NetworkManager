@@ -181,7 +181,7 @@ monitor_cb (gpointer user_data)
 	memset (&stats, 0, sizeof (stats));
 	req.ifr_data = (caddr_t) &stats;
 
-	strncpy (req.ifr_name, priv->ip_iface, sizeof (req.ifr_name));
+	nm_utils_ifname_cpy (req.ifr_name, priv->ip_iface);
 	if (ioctl (priv->monitor_fd, SIOCGPPPSTATS, &req) < 0) {
 		if (errno != ENODEV)
 			_LOGW ("could not read ppp stats: %s", strerror (errno));
