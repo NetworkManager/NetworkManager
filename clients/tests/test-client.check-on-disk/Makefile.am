@@ -139,6 +139,10 @@ clients_tests_expected_files = \
 	clients/tests/test-client.check-on-disk/test_003-086.expected \
 	clients/tests/test-client.check-on-disk/test_003-087.expected \
 	clients/tests/test-client.check-on-disk/test_003-088.expected \
+	clients/tests/test-client.check-on-disk/test_003-089.expected \
+	clients/tests/test-client.check-on-disk/test_003-090.expected \
+	clients/tests/test-client.check-on-disk/test_003-091.expected \
+	clients/tests/test-client.check-on-disk/test_003-092.expected \
 	clients/tests/test-client.check-on-disk/test_004-001.expected \
 	clients/tests/test-client.check-on-disk/test_004-002.expected \
 	clients/tests/test-client.check-on-disk/test_004-003.expected \
