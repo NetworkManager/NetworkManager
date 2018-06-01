@@ -2435,6 +2435,8 @@ src_settings_plugins_ifnet_libnm_settings_plugin_ifnet_la_LDFLAGS = \
 src_settings_plugins_ifnet_libnm_settings_plugin_ifnet_la_LIBADD = \
 	src/settings/plugins/ifnet/libnms-ifnet-core.la
 
+$(src_settings_plugins_ifnet_libnm_settings_plugin_ifnet_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
 check-local-symbols-settings-ifnet: src/settings/plugins/ifnet/libnm-settings-plugin-ifnet.la
 	$(call check_so_symbols,$(builddir)/src/settings/plugins/ifnet/.libs/libnm-settings-plugin-ifnet.so)
 
@@ -2466,6 +2468,8 @@ src_settings_plugins_ifnet_tests_test_ifnet_LDFLAGS = \
 src_settings_plugins_ifnet_tests_test_ifnet_LDADD = \
 	src/settings/plugins/ifnet/libnms-ifnet-core.la \
 	src/libNetworkManagerTest.la
+
+$(src_settings_plugins_ifnet_tests_test_ifnet_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 endif
 
