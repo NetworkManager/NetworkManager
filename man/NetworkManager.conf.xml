@@ -367,8 +367,10 @@ no-auto-default=*
         <para><literal>file</literal>: NetworkManager will write
         <filename>/etc/resolv.conf</filename> as file. If it finds
         a symlink to an existing target, it will follow the symlink and
-        update the target instead. If the symlink's target does not exist,
-        the symlink will be replaced by a file.</para>
+        update the target instead. In no case will an existing symlink
+        be replaced by a file. Note that older versions of NetworkManager
+        behaved differently and would replace dangling symlinks with a
+        plain file.</para>
         <para><literal>resolvconf</literal>: NetworkManager will run
         resolvconf to update the DNS configuration.</para>
         <para><literal>netconfig</literal>: NetworkManager will run

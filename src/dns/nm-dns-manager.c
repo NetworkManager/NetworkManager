@@ -792,18 +792,27 @@ update_resolv_conf (NMDnsManager *self,
 	if (   rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE
 	    || (   rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK
 	        && !_read_link_cached (_PATH_RESCONF, &resconf_link_cached, &resconf_link))) {
+		gs_free char *rc_path_syml = NULL;
 		nm_auto_free char *rc_path_real = NULL;
 		const char *rc_path = _PATH_RESCONF;
 		GError *local = NULL;
 
 		if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE) {
-			/* Note that if /etc/resolv.conf is a dangling symlink, realpath()
-			 * will return %NULL, and thus below we will replace the symlink
-			 * with a file. This is the only case, in which NetworkManager
-			 * replaces an existing symlink with a file.*/
-			rc_path_real = realpath (rc_path, NULL);
+			rc_path_real = realpath (_PATH_RESCONF, NULL);
 			if (rc_path_real)
 				rc_path = rc_path_real;
+			else {
+				/* realpath did not resolve a path-name. That either means,
+				 * _PATH_RESCONF:
+				 *   - does not exist
+				 *   - is a plain file
+				 *   - is a dangling symlink
+				 *
+				 * Handle the case, where it is a dangling symlink... */
+				rc_path_syml = nm_utils_read_link_absolute (_PATH_RESCONF, NULL);
+				if (rc_path_syml)
+					rc_path = rc_path_syml;
+			}
 		}
 
 		/* we first write to /etc/resolv.conf directly. If that fails,
