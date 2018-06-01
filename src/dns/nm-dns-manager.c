@@ -768,8 +768,6 @@ update_resolv_conf (NMDnsManager *self,
 	gs_free char *content = NULL;
 	SpawnResult write_file_result = SR_SUCCESS;
 	int errsv;
-	const char *rc_path = _PATH_RESCONF;
-	nm_auto_free char *rc_path_real = NULL;
 	gboolean resconf_link_cached = FALSE;
 	gs_free char *resconf_link = NULL;
 
@@ -794,6 +792,8 @@ update_resolv_conf (NMDnsManager *self,
 	if (   rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE
 	    || (   rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK
 	        && !_read_link_cached (_PATH_RESCONF, &resconf_link_cached, &resconf_link))) {
+		nm_auto_free char *rc_path_real = NULL;
+		const char *rc_path = _PATH_RESCONF;
 		GError *local = NULL;
 
 		if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE) {
