@@ -1,10 +1,10 @@
-location: clients/tests/test-client.py:728:test_003()/24
-cmd: $NMCLI con up ethernet ifname eth1
+location: clients/tests/test-client.py:749:test_003()/24
+cmd: $NMCLI -f GENERAL.STATE con s ethernet
 lang: C
 returncode: 0
-stdout: 106 bytes
+stdout: 50 bytes
 >>>
-Connection successfully activated (D-Bus active path: /org/freedesktop/NetworkManager/ActiveConnection/2)
+GENERAL.STATE:                          activated
 
 <<<
 stderr: 0 bytes

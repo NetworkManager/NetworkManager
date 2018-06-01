@@ -1,15 +1,19 @@
-location: clients/tests/test-client.py:773:test_003()/50
-cmd: $NMCLI -f UUID,TYPE --mode tabular --terse con
+location: clients/tests/test-client.py:755:test_003()/50
+cmd: $NMCLI -f ALL dev s eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 156 bytes
+stdout: 1061 bytes
 >>>
-UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet
-5fcfd6d7-1e63-3332-8826-a7eda103792d:802-3-ethernet
-UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
+DEVICE  TYPE      STATE        DBUS-PATH                                  CONNECTION  CON-UUID                              CON-PATH                                           
+wlan0   wifi      niedostępne  /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
+wlan1   wifi      niedostępne  /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
+wlan1   wifi      niedostępne  /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
+eth0    ethernet  niedostępne  /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
+eth1    ethernet  niedostępne  /org/freedesktop/NetworkManager/Devices/2  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/2 
 
 <<<
-stderr: 0 bytes
+stderr: 24 bytes
 >>>
+Nieznany parametr: eth0
 
 <<<

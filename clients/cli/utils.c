@@ -1004,9 +1004,7 @@ _print_fill (const NmcConfig *nmc_config,
 	g_array_set_clear_func (cells, _print_data_cell_clear);
 	g_array_set_size (cells, targets_len * header_row->len);
 
-	text_get_type = pretty
-	                ? NM_META_ACCESSOR_GET_TYPE_PRETTY
-	                : NM_META_ACCESSOR_GET_TYPE_PARSABLE;
+	text_get_type = nmc_print_output_to_accessor_get_type (nmc_config->print_output);
 	text_get_flags = NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV;
 	if (nmc_config->show_secrets)
 		text_get_flags |= NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS;
@@ -1165,7 +1163,7 @@ _print_do (const NmcConfig *nmc_config,
 	guint i_row, i_col;
 	nm_auto_free_gstring GString *str = NULL;
 
-	g_assert (col_len && row_len);
+	g_assert (col_len);
 
 	/* Main header */
 	if (pretty && header_name_no_l10n) {

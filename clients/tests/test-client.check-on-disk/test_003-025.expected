@@ -1,13 +1,10 @@
-location: clients/tests/test-client.py:731:test_003()/25
-cmd: $NMCLI con
-lang: C
+location: clients/tests/test-client.py:749:test_003()/25
+cmd: $NMCLI -f GENERAL.STATE con s ethernet
+lang: pl_PL.UTF-8
 returncode: 0
-stdout: 264 bytes
+stdout: 51 bytes
 >>>
-NAME      UUID                                  TYPE      DEVICE 
-ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  eth0   
-con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  --     
-con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  --     
+GENERAL.STATE:                          aktywowano
 
 <<<
 stderr: 0 bytes
