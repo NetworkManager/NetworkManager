@@ -797,6 +797,10 @@ update_resolv_conf (NMDnsManager *self,
 		GError *local = NULL;
 
 		if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE) {
+			/* Note that if /etc/resolv.conf is a dangling symlink, realpath()
+			 * will return %NULL, and thus below we will replace the symlink
+			 * with a file. This is the only case, in which NetworkManager
+			 * replaces an existing symlink with a file.*/
 			rc_path_real = realpath (rc_path, NULL);
 			if (rc_path_real)
 				rc_path = rc_path_real;
