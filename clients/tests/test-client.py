@@ -280,8 +280,8 @@ class NMStubServer:
             raise AttributeError(member)
         return self._MethodProxy(self, member[3:])
 
-    def addConnection(self, connection, verify_connection = True):
-        return self.op_AddConnection(connection, verify_connection)
+    def addConnection(self, connection, do_verify_strict = True):
+        return self.op_AddConnection(connection, do_verify_strict)
 
     def findConnectionUuid(self, con_id):
         try:
