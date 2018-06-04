@@ -4747,12 +4747,16 @@ impl_manager_activate_connection (NMDBusObject *obj,
 	if (!active)
 		goto error;
 
-	nm_active_connection_authorize (g_steal_pointer (&active),
+	nm_active_connection_authorize (active,
 	                                NULL,
 	                                _async_op_complete_ac_auth_cb,
 	                                _async_op_data_new_ac_auth_activate_user (self,
 	                                                                          active,
 	                                                                          invocation));
+
+	/* we passed the pointer on to _async_op_data_new_ac_auth_activate_user() */
+	g_steal_pointer (&active);
+
 	return;
 
 error:
