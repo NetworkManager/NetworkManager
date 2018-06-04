@@ -870,8 +870,57 @@ svCreateFile (const char *name)
 
 /*****************************************************************************/
 
+static gboolean
+_is_all_digits (const char *str)
+{
+	return    str[0]
+	       && NM_STRCHAR_ALL (str, ch, g_ascii_isdigit (ch));
+}
+
+#define IS_NUMBERED_TAG(key, tab_name) \
+	({ \
+		const char *_key = (key); \
+		\
+		(   (strncmp (_key, tab_name, NM_STRLEN (tab_name)) == 0) \
+		 && _is_all_digits (&_key[NM_STRLEN (tab_name)])); \
+	})
+
+static gboolean
+_svKeyMatchesType (const char *key, SvKeyType match_key_type)
+{
+	if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_ANY))
+		return TRUE;
+
+	if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_ROUTE_SVFORMAT)) {
+		if (   IS_NUMBERED_TAG (key, "ADDRESS")
+		    || IS_NUMBERED_TAG (key, "NETMASK")
+		    || IS_NUMBERED_TAG (key, "GATEWAY")
+		    || IS_NUMBERED_TAG (key, "METRIC")
+		    || IS_NUMBERED_TAG (key, "OPTIONS"))
+			return TRUE;
+	}
+	if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_IP4_ADDRESS)) {
+		if (   IS_NUMBERED_TAG (key, "IPADDR")
+		    || IS_NUMBERED_TAG (key, "PREFIX")
+		    || IS_NUMBERED_TAG (key, "NETMASK")
+		    || IS_NUMBERED_TAG (key, "GATEWAY"))
+			return TRUE;
+	}
+	if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_USER)) {
+		if (g_str_has_prefix (key, "NM_USER_"))
+			return TRUE;
+	}
+	if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_TC)) {
+		if (   IS_NUMBERED_TAG (key, "QDISC")
+		    || IS_NUMBERED_TAG (key, "FILTER"))
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
 GHashTable *
-svGetKeys (shvarFile *s)
+svGetKeys (shvarFile *s, SvKeyType match_key_type)
 {
 	GHashTable *keys = NULL;
 	CList *current;
@@ -881,7 +930,9 @@ svGetKeys (shvarFile *s)
 
 	c_list_for_each (current, &s->lst_head) {
 		line = c_list_entry (current, shvarLine, lst);
-		if (line->key && line->line) {
+		if (   line->key
+		    && line->line
+		    && _svKeyMatchesType (line->key, match_key_type)) {
 			/* we don't clone the keys. The keys are only valid
 			 * until @s gets modified. */
 			if (!keys)
@@ -1120,21 +1171,6 @@ svGetValueEnum (shvarFile *s, const char *key,
 
 /*****************************************************************************/
 
-static gboolean
-_is_all_digits (const char *str)
-{
-	return    str[0]
-	       && NM_STRCHAR_ALL (str, ch, g_ascii_isdigit (ch));
-}
-
-#define IS_NUMBERED_TAG(key, tab_name) \
-	({ \
-		const char *_key = (key); \
-		\
-		(   (strncmp (_key, tab_name, NM_STRLEN (tab_name)) == 0) \
-		 && _is_all_digits (&_key[NM_STRLEN (tab_name)])); \
-	})
-
 gboolean
 svUnsetAll (shvarFile *s, SvKeyType match_key_type)
 {
@@ -1150,38 +1186,11 @@ svUnsetAll (shvarFile *s, SvKeyType match_key_type)
 		if (!line->key)
 			continue;
 
-		if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_ANY))
-			goto do_clear;
-		if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_ROUTE_SVFORMAT)) {
-			if (   IS_NUMBERED_TAG (line->key, "ADDRESS")
-			    || IS_NUMBERED_TAG (line->key, "NETMASK")
-			    || IS_NUMBERED_TAG (line->key, "GATEWAY")
-			    || IS_NUMBERED_TAG (line->key, "METRIC")
-			    || IS_NUMBERED_TAG (line->key, "OPTIONS"))
-				goto do_clear;
-		}
-		if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_IP4_ADDRESS)) {
-			if (   IS_NUMBERED_TAG (line->key, "IPADDR")
-			    || IS_NUMBERED_TAG (line->key, "PREFIX")
-			    || IS_NUMBERED_TAG (line->key, "NETMASK")
-			    || IS_NUMBERED_TAG (line->key, "GATEWAY"))
-				goto do_clear;
-		}
-		if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_USER)) {
-			if (g_str_has_prefix (line->key, "NM_USER_"))
-				goto do_clear;
-		}
-		if (NM_FLAGS_HAS (match_key_type, SV_KEY_TYPE_TC)) {
-			if (   IS_NUMBERED_TAG (line->key, "QDISC")
-			    || IS_NUMBERED_TAG (line->key, "FILTER"))
-				goto do_clear;
-		}
-
-		continue;
-do_clear:
-		if (nm_clear_g_free (&line->line)) {
-			ASSERT_shvarLine (line);
-			changed = TRUE;
+		if (_svKeyMatchesType (line->key, match_key_type)) {
+			if (nm_clear_g_free (&line->line)) {
+				ASSERT_shvarLine (line);
+				changed = TRUE;
+			}
 		}
 	}
 

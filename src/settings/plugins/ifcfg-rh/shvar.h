@@ -33,6 +33,14 @@
 
 typedef struct _shvarFile shvarFile;
 
+typedef enum {
+	SV_KEY_TYPE_ANY                     = (1LL << 0),
+	SV_KEY_TYPE_ROUTE_SVFORMAT          = (1LL << 1),
+	SV_KEY_TYPE_IP4_ADDRESS             = (1LL << 2),
+	SV_KEY_TYPE_TC                      = (1LL << 3),
+	SV_KEY_TYPE_USER                    = (1LL << 4),
+} SvKeyType;
+
 const char *svFileGetName (const shvarFile *s);
 
 void _nmtst_svFileSetName (shvarFile *s, const char *fileName);
@@ -58,7 +66,7 @@ char *svGetValueStr_cp (shvarFile *s, const char *key);
 
 int svParseBoolean (const char *value, int def);
 
-GHashTable *svGetKeys (shvarFile *s);
+GHashTable *svGetKeys (shvarFile *s, SvKeyType match_key_type);
 
 /* return TRUE if <key> resolves to any truth value (e.g. "yes", "y", "true")
  * return FALSE if <key> resolves to any non-truth value (e.g. "no", "n", "false")
@@ -85,15 +93,6 @@ gboolean svSetValueInt64_cond (shvarFile *s, const char *key, gboolean do_set, g
 gboolean svSetValueEnum (shvarFile *s, const char *key, GType gtype, int value);
 
 gboolean svUnsetValue (shvarFile *s, const char *key);
-
-typedef enum {
-	SV_KEY_TYPE_ANY                     = (1LL << 0),
-	SV_KEY_TYPE_ROUTE_SVFORMAT          = (1LL << 1),
-	SV_KEY_TYPE_IP4_ADDRESS             = (1LL << 2),
-	SV_KEY_TYPE_TC                      = (1LL << 3),
-	SV_KEY_TYPE_USER                    = (1LL << 4),
-} SvKeyType;
-
 gboolean svUnsetAll (shvarFile *s, SvKeyType match_key_type);
 
 /* Write the current contents iff modified.  Returns FALSE on error

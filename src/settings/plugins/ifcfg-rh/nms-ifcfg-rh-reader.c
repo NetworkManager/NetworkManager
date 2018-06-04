@@ -1178,7 +1178,7 @@ make_user_setting (shvarFile *ifcfg)
 	const char *key;
 	nm_auto_free_gstring GString *str = NULL;
 
-	keys = svGetKeys (ifcfg);
+	keys = svGetKeys (ifcfg, SV_KEY_TYPE_USER);
 	if (!keys)
 		return NULL;
 
@@ -1186,9 +1186,6 @@ make_user_setting (shvarFile *ifcfg)
 	while (g_hash_table_iter_next (&iter, (gpointer *) &key, NULL)) {
 		const char *value;
 		gs_free char *value_to_free = NULL;
-
-		if (!g_str_has_prefix (key, "NM_USER_"))
-			continue;
 
 		value = svGetValue (ifcfg, key, &value_to_free);
 
