@@ -43,14 +43,6 @@ class TestError(AssertionError):
 
 ###############################################################################
 
-IFACE_DBUS = 'org.freedesktop.DBus'
-
-class UnknownInterfaceException(dbus.DBusException):
-    _dbus_error_name = IFACE_DBUS + '.UnknownInterface'
-
-class UnknownPropertyException(dbus.DBusException):
-    _dbus_error_name = IFACE_DBUS + '.UnknownProperty'
-
 class Util:
 
     @staticmethod
@@ -86,6 +78,73 @@ class Util:
         else:
             r = tuple(Util.pseudorandom_stream(seed, 6))
         return '%02X:%02X:%02X:%02X:%02X:%02X' % r
+
+###############################################################################
+
+IFACE_DBUS              = 'org.freedesktop.DBus'
+IFACE_CONNECTION        = 'org.freedesktop.NetworkManager.Settings.Connection'
+IFACE_DEVICE            = 'org.freedesktop.NetworkManager.Device'
+IFACE_WIFI              = 'org.freedesktop.NetworkManager.Device.Wireless'
+IFACE_WIMAX             = 'org.freedesktop.NetworkManager.Device.WiMax'
+IFACE_TEST              = 'org.freedesktop.NetworkManager.LibnmGlibTest'
+IFACE_NM                = 'org.freedesktop.NetworkManager'
+IFACE_SETTINGS          = 'org.freedesktop.NetworkManager.Settings'
+IFACE_AGENT_MANAGER     = 'org.freedesktop.NetworkManager.AgentManager'
+IFACE_AGENT             = 'org.freedesktop.NetworkManager.SecretAgent'
+IFACE_WIRED             = 'org.freedesktop.NetworkManager.Device.Wired'
+IFACE_VLAN              = 'org.freedesktop.NetworkManager.Device.Vlan'
+IFACE_WIFI_AP           = 'org.freedesktop.NetworkManager.AccessPoint'
+IFACE_WIMAX_NSP         = 'org.freedesktop.NetworkManager.WiMax.Nsp'
+IFACE_ACTIVE_CONNECTION = 'org.freedesktop.NetworkManager.Connection.Active'
+IFACE_DNS_MANAGER       = 'org.freedesktop.NetworkManager.DnsManager'
+IFACE_OBJECT_MANAGER    = 'org.freedesktop.DBus.ObjectManager'
+
+###############################################################################
+
+class UnknownInterfaceException(dbus.DBusException):
+    _dbus_error_name = IFACE_DBUS + '.UnknownInterface'
+
+class UnknownPropertyException(dbus.DBusException):
+    _dbus_error_name = IFACE_DBUS + '.UnknownProperty'
+
+class InvalidPropertyException(dbus.DBusException):
+    _dbus_error_name = IFACE_CONNECTION + '.InvalidProperty'
+
+class MissingPropertyException(dbus.DBusException):
+    _dbus_error_name = IFACE_CONNECTION + '.MissingProperty'
+
+class InvalidSettingException(dbus.DBusException):
+    _dbus_error_name = IFACE_CONNECTION + '.InvalidSetting'
+
+class MissingSettingException(dbus.DBusException):
+    _dbus_error_name = IFACE_CONNECTION + '.MissingSetting'
+
+class NotSoftwareException(dbus.DBusException):
+    _dbus_error_name = IFACE_DEVICE + '.NotSoftware'
+
+class ApNotFoundException(dbus.DBusException):
+    _dbus_error_name = IFACE_WIFI + '.AccessPointNotFound'
+
+class NspNotFoundException(dbus.DBusException):
+    _dbus_error_name = IFACE_WIMAX + '.NspNotFound'
+
+class PermissionDeniedException(dbus.DBusException):
+    _dbus_error_name = IFACE_NM + '.PermissionDenied'
+
+class UnknownDeviceException(dbus.DBusException):
+    _dbus_error_name = IFACE_NM + '.UnknownDevice'
+
+class UnknownConnectionException(dbus.DBusException):
+    _dbus_error_name = IFACE_NM + '.UnknownConnection'
+
+class InvalidHostnameException(dbus.DBusException):
+    _dbus_error_name = IFACE_SETTINGS + '.InvalidHostname'
+
+class NoSecretsException(dbus.DBusException):
+    _dbus_error_name = IFACE_AGENT_MANAGER + '.NoSecrets'
+
+class UserCanceledException(dbus.DBusException):
+    _dbus_error_name = IFACE_AGENT_MANAGER + '.UserCanceled'
 
 ###############################################################################
 
@@ -232,11 +291,6 @@ class ExportedObj(dbus.service.Object):
 
 ###############################################################################
 
-IFACE_DEVICE = 'org.freedesktop.NetworkManager.Device'
-
-class NotSoftwareException(dbus.DBusException):
-    _dbus_error_name = IFACE_DEVICE + '.NotSoftware'
-
 PRP_DEVICE_UDI                   = "Udi"
 PRP_DEVICE_IFACE                 = "Interface"
 PRP_DEVICE_DRIVER                = "Driver"
@@ -300,8 +354,6 @@ class Device(ExportedObj):
 
 ###############################################################################
 
-IFACE_WIRED = 'org.freedesktop.NetworkManager.Device.Wired'
-
 PRP_WIRED_HW_ADDRESS       = "HwAddress"
 PRP_WIRED_PERM_HW_ADDRESS  = "PermHwAddress"
 PRP_WIRED_SPEED            = "Speed"
@@ -333,8 +385,6 @@ class WiredDevice(Device):
 
 ###############################################################################
 
-IFACE_VLAN = 'org.freedesktop.NetworkManager.Device.Vlan'
-
 PRP_VLAN_HW_ADDRESS = "HwAddress"
 PRP_VLAN_CARRIER    = "Carrier"
 PRP_VLAN_VLAN_ID    = "VlanId"
@@ -356,8 +406,6 @@ class VlanDevice(Device):
         pass
 
 ###############################################################################
-
-IFACE_WIFI_AP = 'org.freedesktop.NetworkManager.AccessPoint'
 
 PRP_WIFI_AP_FLAGS       = "Flags"
 PRP_WIFI_AP_WPA_FLAGS   = "WpaFlags"
@@ -425,11 +473,6 @@ class WifiAp(ExportedObj):
         pass
 
 ###############################################################################
-
-IFACE_WIFI = 'org.freedesktop.NetworkManager.Device.Wireless'
-
-class ApNotFoundException(dbus.DBusException):
-    _dbus_error_name = IFACE_WIFI + '.AccessPointNotFound'
 
 PRP_WIFI_HW_ADDRESS = "HwAddress"
 PRP_WIFI_PERM_HW_ADDRESS = "PermHwAddress"
@@ -509,8 +552,6 @@ class WifiDevice(Device):
 
 ###############################################################################
 
-IFACE_WIMAX_NSP = 'org.freedesktop.NetworkManager.WiMax.Nsp'
-
 PRP_WIMAX_NSP_NAME = "Name"
 PRP_WIMAX_NSP_SIGNAL_QUALITY = "SignalQuality"
 PRP_WIMAX_NSP_NETWORK_TYPE = "NetworkType"
@@ -548,11 +589,6 @@ class WimaxNsp(ExportedObj):
         pass
 
 ###############################################################################
-
-IFACE_WIMAX = 'org.freedesktop.NetworkManager.Device.WiMax'
-
-class NspNotFoundException(dbus.DBusException):
-    _dbus_error_name = IFACE_WIMAX + '.NspNotFound'
 
 PRP_WIMAX_NSPS = "Nsps"
 PRP_WIMAX_HW_ADDRESS = "HwAddress"
@@ -626,8 +662,6 @@ class WimaxDevice(Device):
         raise NspNotFoundException("NSP %s not found" % path)
 
 ###############################################################################
-
-IFACE_ACTIVE_CONNECTION = 'org.freedesktop.NetworkManager.Connection.Active'
 
 PRP_ACTIVE_CONNECTION_CONNECTION = "Connection"
 PRP_ACTIVE_CONNECTION_SPECIFIC_OBJECT = "SpecificObject"
@@ -719,18 +753,6 @@ class ActiveConnection(ExportedObj):
         pass
 
 ###############################################################################
-
-IFACE_TEST = 'org.freedesktop.NetworkManager.LibnmGlibTest'
-IFACE_NM = 'org.freedesktop.NetworkManager'
-
-class PermissionDeniedException(dbus.DBusException):
-    _dbus_error_name = IFACE_NM + '.PermissionDenied'
-
-class UnknownDeviceException(dbus.DBusException):
-    _dbus_error_name = IFACE_NM + '.UnknownDevice'
-
-class UnknownConnectionException(dbus.DBusException):
-    _dbus_error_name = IFACE_NM + '.UnknownConnection'
 
 PRP_NM_DEVICES                   = 'Devices'
 PRP_NM_ALL_DEVICES               = 'AllDevices'
@@ -1068,20 +1090,6 @@ class NetworkManager(ExportedObj):
 
 ###############################################################################
 
-IFACE_CONNECTION = 'org.freedesktop.NetworkManager.Settings.Connection'
-
-class InvalidPropertyException(dbus.DBusException):
-    _dbus_error_name = IFACE_CONNECTION + '.InvalidProperty'
-
-class MissingPropertyException(dbus.DBusException):
-    _dbus_error_name = IFACE_CONNECTION + '.MissingProperty'
-
-class InvalidSettingException(dbus.DBusException):
-    _dbus_error_name = IFACE_CONNECTION + '.InvalidSetting'
-
-class MissingSettingException(dbus.DBusException):
-    _dbus_error_name = IFACE_CONNECTION + '.MissingSetting'
-
 PRP_CONNECTION_UNSAVED = 'Unsaved'
 
 class Connection(ExportedObj):
@@ -1197,11 +1205,6 @@ class Connection(ExportedObj):
 
 ###############################################################################
 
-IFACE_SETTINGS = 'org.freedesktop.NetworkManager.Settings'
-
-class InvalidHostnameException(dbus.DBusException):
-    _dbus_error_name = IFACE_SETTINGS + '.InvalidHostname'
-
 PRP_SETTINGS_HOSTNAME = 'Hostname'
 PRP_SETTINGS_CAN_MODIFY = 'CanModify'
 PRP_SETTINGS_CONNECTIONS = 'Connections'
@@ -1301,8 +1304,6 @@ class Settings(ExportedObj):
 
 ###############################################################################
 
-IFACE_DNS_MANAGER = 'org.freedesktop.NetworkManager.DnsManager'
-
 PRP_DNS_MANAGER_MODE          = 'Mode'
 PRP_DNS_MANAGER_RC_MANAGER    = 'RcManager'
 PRP_DNS_MANAGER_CONFIGURATION = 'Configuration'
@@ -1331,20 +1332,11 @@ class DnsManager(ExportedObj):
 
 ###############################################################################
 
-IFACE_AGENT_MANAGER = 'org.freedesktop.NetworkManager.AgentManager'
-IFACE_AGENT = 'org.freedesktop.NetworkManager.SecretAgent'
-
 PATH_SECRET_AGENT = '/org/freedesktop/NetworkManager/SecretAgent'
 
 FLAG_ALLOW_INTERACTION = 0x1
 FLAG_REQUEST_NEW = 0x2
 FLAG_USER_REQUESTED = 0x4
-
-class NoSecretsException(dbus.DBusException):
-    _dbus_error_name = IFACE_AGENT_MANAGER + '.NoSecrets'
-
-class UserCanceledException(dbus.DBusException):
-    _dbus_error_name = IFACE_AGENT_MANAGER + '.UserCanceled'
 
 class AgentManager(dbus.service.Object):
     def __init__(self):
@@ -1389,8 +1381,6 @@ class AgentManager(dbus.service.Object):
         return secrets
 
 ###############################################################################
-
-IFACE_OBJECT_MANAGER = 'org.freedesktop.DBus.ObjectManager'
 
 class ObjectManager(dbus.service.Object):
     def __init__(self, object_path):
