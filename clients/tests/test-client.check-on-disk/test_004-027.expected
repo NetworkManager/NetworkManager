@@ -1,0 +1,18 @@
+location: clients/tests/test-client.py:863:test_004()/27
+cmd: $NMCLI -f VPN con s con-vpn-1
+lang: C
+returncode: 0
+stdout: 334 bytes
+>>>
+vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
+vpn.user-name:                          --
+vpn.data:                               key1 = val1, key2 = val2, key3 = val3
+vpn.secrets:                            <hidden>
+vpn.persistent:                         no
+vpn.timeout:                            0
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<

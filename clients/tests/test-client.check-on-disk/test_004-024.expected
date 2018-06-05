@@ -1,0 +1,102 @@
+location: clients/tests/test-client.py:854:test_004()/24
+cmd: $NMCLI con s con-vpn-1
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 4337 bytes
+>>>
+connection.id:                          con-vpn-1
+connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
+connection.stable-id:                   --
+connection.type:                        vpn
+connection.interface-name:              --
+connection.autoconnect:                 tak
+connection.autoconnect-priority:        0
+connection.autoconnect-retries:         -1 (default)
+connection.auth-retries:                -1
+connection.timestamp:                   0
+connection.read-only:                   nie
+connection.permissions:                 --
+connection.zone:                        --
+connection.master:                      --
+connection.slave-type:                  --
+connection.autoconnect-slaves:          -1 (default)
+connection.secondaries:                 --
+connection.gateway-ping-timeout:        0
+connection.metered:                     nieznane
+connection.lldp:                        default
+connection.mdns:                        -1 (default)
+ipv4.method:                            auto
+ipv4.dns:                               --
+ipv4.dns-search:                        --
+ipv4.dns-options:                       ""
+ipv4.dns-priority:                      0
+ipv4.addresses:                         --
+ipv4.gateway:                           --
+ipv4.routes:                            --
+ipv4.route-metric:                      -1
+ipv4.route-table:                       0 (unspec)
+ipv4.ignore-auto-routes:                nie
+ipv4.ignore-auto-dns:                   nie
+ipv4.dhcp-client-id:                    --
+ipv4.dhcp-timeout:                      0 (default)
+ipv4.dhcp-send-hostname:                tak
+ipv4.dhcp-hostname:                     --
+ipv4.dhcp-fqdn:                         --
+ipv4.never-default:                     nie
+ipv4.may-fail:                          tak
+ipv4.dad-timeout:                       -1 (default)
+ipv6.method:                            auto
+ipv6.dns:                               --
+ipv6.dns-search:                        --
+ipv6.dns-options:                       ""
+ipv6.dns-priority:                      0
+ipv6.addresses:                         --
+ipv6.gateway:                           --
+ipv6.routes:                            --
+ipv6.route-metric:                      -1
+ipv6.route-table:                       0 (unspec)
+ipv6.ignore-auto-routes:                nie
+ipv6.ignore-auto-dns:                   nie
+ipv6.never-default:                     nie
+ipv6.may-fail:                          tak
+ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.addr-gen-mode:                     stable-privacy
+ipv6.dhcp-send-hostname:                tak
+ipv6.dhcp-hostname:                     --
+ipv6.token:                             --
+vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
+vpn.user-name:                          --
+vpn.data:                               key1 = val1, key2 = val2, key3 = val3
+vpn.secrets:                            <hidden>
+vpn.persistent:                         nie
+vpn.timeout:                            0
+proxy.method:                           none
+proxy.browser-only:                     nie
+proxy.pac-url:                          --
+proxy.pac-script:                       --
+GENERAL.NAME:                           con-vpn-1
+GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
+GENERAL.DEVICES:                        wlan0
+GENERAL.STATE:                          aktywowano
+GENERAL.DEFAULT:                        nie
+GENERAL.DEFAULT6:                       nie
+GENERAL.SPEC-OBJECT:                    --
+GENERAL.VPN:                            tak
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/ActiveConnection/2
+GENERAL.CON-PATH:                       /org/freedesktop/NetworkManager/Settings/Connection/3
+GENERAL.ZONE:                           --
+GENERAL.MASTER-PATH:                    --
+VPN.TYPE:                               openvpn
+VPN.USERNAME:                           --
+VPN.GATEWAY:                            --
+VPN.BANNER:                             *** VPN connection con-vpn-1 ***
+VPN.VPN-STATE:                          5 - Połączono z VPN
+VPN.CFG[1]:                             key1 = val1
+VPN.CFG[2]:                             key2 = val2
+VPN.CFG[3]:                             key3 = val3
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<
