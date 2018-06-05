@@ -809,7 +809,7 @@ class TestNmcli(NmTestBase):
                         replace_stdout = replace_stdout)
 
         self.call_nmcli(['connection', 'mod', 'con-xx1', 'ip.gateway', ''])
-        self.call_nmcli(['connection', 'mod', 'con-xx1', 'ipv4.gateway', '172.16.0.1'])
+        self.call_nmcli(['connection', 'mod', 'con-xx1', 'ipv4.gateway', '172.16.0.1'], lang = 'pl')
         self.call_nmcli(['connection', 'mod', 'con-xx1', 'ipv6.gateway', '::99'])
         self.call_nmcli(['connection', 'mod', 'con-xx1', '802.abc', ''])
         self.call_nmcli(['connection', 'mod', 'con-xx1', '802-11-wireless.band', 'a'])

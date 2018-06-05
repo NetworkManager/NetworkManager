@@ -109,7 +109,7 @@ class Util:
                 if val.signature == 'au':
                     return GLib.Variant('aau', [Util.variant_from_dbus(x) for x in val])
                 if val.signature == 'a{sv}':
-                    return GLib.Variant('aa{sv}', [(str(k), Util.variant_from_dbus(v)) for k, v in val])
+                    return GLib.Variant('aa{sv}', [collections.OrderedDict([(str(k), Util.variant_from_dbus(v)) for k, v in addr.items()]) for addr in val])
                 if val.signature == '(ayuay)':
                     return GLib.Variant('a(ayuay)', [Util.variant_from_dbus(x) for x in val])
                 if val.signature == '(ayuayu)':
