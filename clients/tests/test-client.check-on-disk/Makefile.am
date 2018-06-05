@@ -149,4 +149,7 @@ clients_tests_expected_files = \
 	clients/tests/test-client.check-on-disk/test_004-004.expected \
 	clients/tests/test-client.check-on-disk/test_004-005.expected \
 	clients/tests/test-client.check-on-disk/test_004-006.expected \
+	clients/tests/test-client.check-on-disk/test_004-007.expected \
+	clients/tests/test-client.check-on-disk/test_004-008.expected \
+	clients/tests/test-client.check-on-disk/test_004-009.expected \
 	$(NULL)

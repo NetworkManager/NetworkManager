@@ -813,6 +813,10 @@ class TestNmcli(NmTestBase):
         self.call_nmcli(['connection', 'mod', 'con-xx1', 'ipv6.gateway', '::99'])
         self.call_nmcli(['connection', 'mod', 'con-xx1', '802.abc', ''])
         self.call_nmcli(['connection', 'mod', 'con-xx1', '802-11-wireless.band', 'a'])
+        self.call_nmcli(['connection', 'mod', 'con-xx1', 'ipv4.addresses', '192.168.77.5/24', 'ipv4.routes', '2.3.4.5/32 192.168.77.1', 'ipv6.addresses', '1:2:3:4::6/64', 'ipv6.routes', '1:2:3:4:5:6::5/128'])
+        self.call_nmcli_l(['con', 's', 'con-xx1'],
+                          replace_stdout = replace_stdout)
+
 
 ###############################################################################
 
