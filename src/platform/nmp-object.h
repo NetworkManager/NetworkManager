@@ -165,7 +165,8 @@ typedef struct {
 		struct udev_device *device;
 	} udev;
 
-	struct NMWifiUtils *wifi_data;
+	/* Auxiliary data object for Wi-Fi and WPAN */
+	GObject *ext_data;
 } NMPObjectLink;
 
 typedef struct {
