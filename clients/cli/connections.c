@@ -2839,7 +2839,7 @@ connection_cb_info_finish (ConnectionCbInfo *info, gpointer obj)
 	} else {
 		while (info->obj_list->len > 0) {
 			obj = info->obj_list->pdata[info->obj_list->len - 1];
-			g_ptr_array_remove_index (info->obj_list, info->obj_list->len);
+			g_ptr_array_remove_index (info->obj_list, info->obj_list->len - 1);
 			connection_cb_info_obj_list_destroy (info, obj);
 		}
 	}
