@@ -148,6 +148,7 @@ IFACE_VLAN              = 'org.freedesktop.NetworkManager.Device.Vlan'
 IFACE_WIFI_AP           = 'org.freedesktop.NetworkManager.AccessPoint'
 IFACE_WIMAX_NSP         = 'org.freedesktop.NetworkManager.WiMax.Nsp'
 IFACE_ACTIVE_CONNECTION = 'org.freedesktop.NetworkManager.Connection.Active'
+IFACE_VPN_CONNECTION    = 'org.freedesktop.NetworkManager.VPN.Connection'
 IFACE_DNS_MANAGER       = 'org.freedesktop.NetworkManager.DnsManager'
 IFACE_OBJECT_MANAGER    = 'org.freedesktop.DBus.ObjectManager'
 
@@ -288,7 +289,8 @@ class NmUtil:
         if t not in [ NM.SETTING_WIRED_SETTING_NAME,
                       NM.SETTING_WIRELESS_SETTING_NAME,
                       NM.SETTING_VLAN_SETTING_NAME,
-                      NM.SETTING_WIMAX_SETTING_NAME ]:
+                      NM.SETTING_WIMAX_SETTING_NAME,
+                      NM.SETTING_VPN_SETTING_NAME ]:
             raise BusErr.InvalidPropertyException('connection.type: unsupported connection type "%s"' % (t))
 
         try:
@@ -310,6 +312,14 @@ class NmUtil:
             s_con = con_hash[NM.SETTING_CONNECTION_SETTING_NAME]
             if NM.SETTING_CONNECTION_UUID in s_con:
                 return s_con[NM.SETTING_CONNECTION_UUID]
+        return None
+
+    @staticmethod
+    def con_hash_get_type(con_hash):
+        if NM.SETTING_CONNECTION_SETTING_NAME in con_hash:
+            s_con = con_hash[NM.SETTING_CONNECTION_SETTING_NAME]
+            if NM.SETTING_CONNECTION_TYPE in s_con:
+                return s_con[NM.SETTING_CONNECTION_TYPE]
         return None
 
 ###############################################################################
@@ -409,11 +419,17 @@ class ExportedObj(dbus.service.Object):
             if propname not in props:
                 raise TestError("No property '%s' on '%s' on '%s'" % (propname, dbus_iface, self.path))
 
-            if     isinstance(self, ActiveConnection) \
-               and dbus_iface == 'org.freedesktop.NetworkManager.Connection.Active' \
-               and propname == 'State':
-                return
-            else:
+            permission_granted = False
+
+            if isinstance(self, ActiveConnection):
+                if dbus_iface == IFACE_ACTIVE_CONNECTION:
+                    if propname == PRP_ACTIVE_CONNECTION_STATE:
+                        permission_granted = True
+                elif dbus_iface == IFACE_VPN_CONNECTION:
+                    if propname == PRP_VPN_CONNECTION_VPN_STATE:
+                        permission_granted = True
+
+            if not permission_granted:
                 raise TestError("Cannot set property '%s' on '%s' on '%s' via D-Bus" % (propname, dbus_iface, self.path))
 
         assert propname in props
@@ -845,6 +861,9 @@ PRP_ACTIVE_CONNECTION_DHCP6CONFIG = "Dhcp6Config"
 PRP_ACTIVE_CONNECTION_VPN = "Vpn"
 PRP_ACTIVE_CONNECTION_MASTER = "Master"
 
+PRP_VPN_CONNECTION_VPN_STATE = 'VpnState'
+PRP_VPN_CONNECTION_BANNER    = 'Banner'
+
 class ActiveConnection(ExportedObj):
 
     path_counter_next = 1
@@ -852,10 +871,13 @@ class ActiveConnection(ExportedObj):
 
     def __init__(self, device, con_inst, specific_object):
 
+        is_vpn = (NmUtil.con_hash_get_type(con_inst.con_hash) == NM.SETTING_VPN_SETTING_NAME)
+
         ExportedObj.__init__(self, ExportedObj.create_path(ActiveConnection))
 
         self.device = device
         self.con_inst = con_inst
+        self.is_vpn = is_vpn
 
         self._activation_id = None
 
@@ -875,11 +897,20 @@ class ActiveConnection(ExportedObj):
             PRP_ACTIVE_CONNECTION_DEFAULT6:        False,
             PRP_ACTIVE_CONNECTION_IP6CONFIG:       ExportedObj.to_path(None),
             PRP_ACTIVE_CONNECTION_DHCP6CONFIG:     ExportedObj.to_path(None),
-            PRP_ACTIVE_CONNECTION_VPN:             False,
+            PRP_ACTIVE_CONNECTION_VPN:             is_vpn,
             PRP_ACTIVE_CONNECTION_MASTER:          ExportedObj.to_path(None),
         }
 
         self.dbus_interface_add(IFACE_ACTIVE_CONNECTION, props, ActiveConnection.PropertiesChanged)
+
+        if is_vpn:
+            props = {
+                PRP_VPN_CONNECTION_VPN_STATE: dbus.UInt32(NM.VpnConnectionState.UNKNOWN),
+                PRP_VPN_CONNECTION_BANNER:    '*** VPN connection %s ***' % (con_inst.get_id()),
+            }
+
+            self.dbus_interface_add(IFACE_VPN_CONNECTION, props, ActiveConnection.VpnPropertiesChanged)
+
 
     def _set_state(self, state, reason):
         state = dbus.UInt32(state)
@@ -910,12 +941,21 @@ class ActiveConnection(ExportedObj):
         assert self._activation_id is None
         self._activation_id = GLib.timeout_add(50, self._activation_step1)
 
+    @dbus.service.signal(IFACE_VPN_CONNECTION, signature='a{sv}')
+    def PropertiesChanged(self, changed):
+        pass
+    VpnPropertiesChanged = PropertiesChanged
+
     @dbus.service.signal(IFACE_ACTIVE_CONNECTION, signature='a{sv}')
     def PropertiesChanged(self, changed):
         pass
 
     @dbus.service.signal(IFACE_ACTIVE_CONNECTION, signature='uu')
     def StateChanged(self, state, reason):
+        pass
+
+    @dbus.service.signal(IFACE_VPN_CONNECTION, signature='uu')
+    def VpnStateChanged(self, state, reason):
         pass
 
 ###############################################################################
@@ -994,13 +1034,26 @@ class NetworkManager(ExportedObj):
             raise BusErr.UnknownConnectionException("Connection not found")
 
         con_hash = con_inst.con_hash
-        s_con = con_hash[NM.SETTING_CONNECTION_SETTING_NAME]
+        con_type = NmUtil.con_hash_get_type(con_hash)
 
         device = self.find_device_first(path = devpath)
-        if not device and s_con[NM.SETTING_CONNECTION_TYPE] == NM.SETTING_VLAN_SETTING_NAME:
-            ifname = s_con['interface-name']
-            device = VlanDevice(ifname)
-            self.add_device(device)
+        if not device:
+            if con_type == NM.SETTING_WIRED_SETTING_NAME:
+                device = self.find_device_first(dev_type = WiredDevice)
+            elif con_type == NM.SETTING_WIRELESS_SETTING_NAME:
+                device = self.find_device_first(dev_type = WifiDevice)
+            elif con_type == NM.SETTING_VLAN_SETTING_NAME:
+                ifname = con_hash[NM.SETTING_CONNECTION_SETTING_NAME]['interface-name']
+                device = VlanDevice(ifname)
+                self.add_device(device)
+            elif con_type == NM.SETTING_VPN_SETTING_NAME:
+                for ac in self.active_connections:
+                    if ac.is_vpn:
+                        continue
+                    if ac.device:
+                        device = ac.device
+                        break
+
         if not device:
             raise BusErr.UnknownDeviceException("No device found for the requested iface.")
 
@@ -1020,7 +1073,7 @@ class NetworkManager(ExportedObj):
         ac = ActiveConnection(device, con_inst, None)
         self.active_connection_add(ac)
 
-        if s_con[NM.SETTING_CONNECTION_ID] == 'object-creation-failed-test':
+        if NmUtil.con_hash_get_id(con_hash) == 'object-creation-failed-test':
             # FIXME: this is not the right test, to delete the active-connection
             # before returning it. It's the wrong order of what NetworkManager
             # would do.
@@ -1096,7 +1149,7 @@ class NetworkManager(ExportedObj):
     def DeviceAdded(self, devpath):
         pass
 
-    def find_devices(self, ident = _DEFAULT_ARG, path = _DEFAULT_ARG, iface = _DEFAULT_ARG, ip_iface = _DEFAULT_ARG):
+    def find_devices(self, ident = _DEFAULT_ARG, path = _DEFAULT_ARG, iface = _DEFAULT_ARG, ip_iface = _DEFAULT_ARG, dev_type = _DEFAULT_ARG):
         r = None
         for d in self.devices:
             if ident is not _DEFAULT_ARG:
@@ -1112,11 +1165,14 @@ class NetworkManager(ExportedObj):
                 # ignore iface/ip_iface distinction for now
                 if d.iface != ip_iface:
                     continue
+            if dev_type is not _DEFAULT_ARG:
+                if not isinstance(d, dev_type):
+                    continue
             yield d
 
-    def find_device_first(self, ident = _DEFAULT_ARG, path = _DEFAULT_ARG, iface = _DEFAULT_ARG, ip_iface = _DEFAULT_ARG, require = None):
+    def find_device_first(self, ident = _DEFAULT_ARG, path = _DEFAULT_ARG, iface = _DEFAULT_ARG, ip_iface = _DEFAULT_ARG, dev_type = _DEFAULT_ARG, require = None):
         r = None
-        for d in self.find_devices(ident = ident, path = path, iface = iface, ip_iface = ip_iface):
+        for d in self.find_devices(ident = ident, path = path, iface = iface, ip_iface = ip_iface, dev_type = dev_type):
             r = d
             break
         if r is None and require:
