@@ -132,7 +132,7 @@ plugins-=remove-me
           <para>
             Lists system settings plugin names separated by ','. These
             plugins are used to read and write system-wide
-            connections. When multiple plugins are specified, the
+            connection profiles. When multiple plugins are specified, the
             connections are read from all listed plugins. When writing
             connections, the plugins will be asked to save the
             connection in the order listed here; if the first plugin
@@ -142,15 +142,12 @@ plugins-=remove-me
             to the user.
           </para>
           <para>
-            If NetworkManager defines a distro-specific
-            network-configuration plugin for your system, then that
-            will normally be listed here. (See below for the available
-            plugins.) Note that the <literal>keyfile</literal> plugin
-            is always appended to the end of this list (if it doesn't
-            already appear earlier in the list), so if there is no
-            distro-specific plugin for your system then you can leave
-            this key unset and NetworkManager will fall back to using
-            <literal>keyfile</literal>.
+            The default value and the number of available plugins is
+            distro-specific. See <xref linkend="settings-plugins"/>
+            below for the available plugins.
+            Note that NetworkManager's native <literal>keyfile</literal>
+            plugin is always appended to the end of this list (if it doesn't
+            already appear earlier in the list).
           </para>
         </listitem>
       </varlistentry>
@@ -1175,8 +1172,13 @@ enable=nm-version-min:1.3,nm-version-min:1.2.6,nm-version-min:1.0.16
     </para>
   </refsect1>
 
-  <refsect1>
+  <refsect1 id="settings-plugins">
     <title>Plugins</title>
+
+    <para>
+      Settings plugins for reading and writing connection profiles. The number of
+      available plugins is distribution specific.
+    </para>
 
     <variablelist>
       <varlistentry>
@@ -1188,6 +1190,8 @@ enable=nm-version-min:1.3,nm-version-min:1.2.6,nm-version-min:1.0.16
             capabilities that NetworkManager has. It writes files out
             in an .ini-style format in
             <filename>/etc/NetworkManager/system-connections</filename>.
+            See <link linkend='nm-settings-keyfile'><citerefentry><refentrytitle>nm-settings-keyfile</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>
+            for details about the file format.
           </para>
           <para>
             The stored connection file may contain passwords, secrets and
@@ -1218,6 +1222,9 @@ enable=nm-version-min:1.3,nm-version-min:1.2.6,nm-version-min:1.0.16
             Enabling <literal>ifcfg-rh</literal> implicitly enables
             <literal>ibft</literal> plugin, if it is available.
             This can be disabled by adding <literal>no-ibft</literal>.
+            See <filename>/usr/share/doc/initscripts/sysconfig.txt</filename>
+            and <link linkend='nm-settings-ifcfg-rh'><citerefentry><refentrytitle>nm-settings-ifcfg-rh</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>
+            for more information about the ifcfg file format.
           </para>
         </listitem>
       </varlistentry>
