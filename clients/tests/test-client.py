@@ -162,6 +162,11 @@ class Util:
             text = text2
         return b''.join([(t[0] if isinstance(t, tuple) else t) for t in text])
 
+    @staticmethod
+    def debug_dbus_interface():
+        # this is for printf debugging, not used in actual code.
+        os.system('busctl --user --verbose call org.freedesktop.NetworkManager /org/freedesktop org.freedesktop.DBus.ObjectManager GetManagedObjects')
+
 ###############################################################################
 
 class Configuration:
