@@ -852,6 +852,8 @@ class TestNmcli(NmTestBase):
 
         self.call_nmcli_l(['con', 's', 'con-vpn-1'],
                           replace_stdout = replace_stdout)
+        self.call_nmcli_l(['-t', 'con', 's', 'con-vpn-1'],
+                          replace_stdout = replace_stdout)
 
         self.call_nmcli_l(['-f', 'ALL', 'con', 's', 'con-vpn-1'],
                           replace_stdout = replace_stdout)

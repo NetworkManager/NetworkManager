@@ -1,21 +1,15 @@
-location: clients/tests/test-client.py:866:test_004()/29
-cmd: $NMCLI -f GENERAL con s con-vpn-1
+location: clients/tests/test-client.py:865:test_004()/29
+cmd: $NMCLI -f VPN con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 667 bytes
+stdout: 334 bytes
 >>>
-GENERAL.NAME:                           con-vpn-1
-GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
-GENERAL.DEVICES:                        wlan0
-GENERAL.STATE:                          activated
-GENERAL.DEFAULT:                        no
-GENERAL.DEFAULT6:                       no
-GENERAL.SPEC-OBJECT:                    --
-GENERAL.VPN:                            yes
-GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/ActiveConnection/2
-GENERAL.CON-PATH:                       /org/freedesktop/NetworkManager/Settings/Connection/3
-GENERAL.ZONE:                           --
-GENERAL.MASTER-PATH:                    --
+vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
+vpn.user-name:                          --
+vpn.data:                               key1 = val1, key2 = val2, key3 = val3
+vpn.secrets:                            <hidden>
+vpn.persistent:                         no
+vpn.timeout:                            0
 
 <<<
 stderr: 0 bytes

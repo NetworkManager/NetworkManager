@@ -1,71 +1,16 @@
-location: clients/tests/test-client.py:872:test_004()/34
-cmd: $NMCLI -f all dev show wlan0
+location: clients/tests/test-client.py:871:test_004()/34
+cmd: $NMCLI dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2991 bytes
+stdout: 390 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
-GENERAL.NM-TYPE:                        NMDeviceWifi
-GENERAL.VENDOR:                         --
-GENERAL.PRODUCT:                        --
-GENERAL.DRIVER:                         virtual
-GENERAL.DRIVER-VERSION:                 --
-GENERAL.FIRMWARE-VERSION:               --
 GENERAL.HWADDR:                         5A:88:5E:B6:90:40
 GENERAL.MTU:                            0
 GENERAL.STATE:                          20 (niedostępne)
-GENERAL.REASON:                         0 (Nie podano przyczyny)
-GENERAL.UDI:                            /sys/devices/virtual/wlan0
-GENERAL.IP-IFACE:                       --
-GENERAL.IS-SOFTWARE:                    nie
-GENERAL.NM-MANAGED:                     tak
-GENERAL.AUTOCONNECT:                    tak
-GENERAL.FIRMWARE-MISSING:               nie
-GENERAL.NM-PLUGIN-MISSING:              nie
-GENERAL.PHYS-PORT-ID:                   --
 GENERAL.CONNECTION:                     con-vpn-1
-GENERAL.CON-UUID:                       UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.CON-PATH:                       /org/freedesktop/NetworkManager/ActiveConnection/2
-GENERAL.METERED:                        nieznane
-CAPABILITIES.CARRIER-DETECT:            nie
-CAPABILITIES.SPEED:                     nieznane
-CAPABILITIES.IS-SOFTWARE:               nie
-CAPABILITIES.SRIOV:                     nie
-WIFI-PROPERTIES.WEP:                    tak
-WIFI-PROPERTIES.WPA:                    tak
-WIFI-PROPERTIES.WPA2:                   tak
-WIFI-PROPERTIES.TKIP:                   tak
-WIFI-PROPERTIES.CCMP:                   tak
-WIFI-PROPERTIES.AP:                     tak
-WIFI-PROPERTIES.ADHOC:                  tak
-WIFI-PROPERTIES.2GHZ:                   nieznane
-WIFI-PROPERTIES.5GHZ:                   nieznane
-AP[1].IN-USE:                            
-AP[1].SSID:                             wlan0-ap-3
-AP[1].MODE:                             Infrastruktura
-AP[1].CHAN:                             1
-AP[1].RATE:                             54 Mb/s
-AP[1].SIGNAL:                           88
-AP[1].BARS:                             ****
-AP[1].SECURITY:                         WPA1 WPA2
-AP[2].IN-USE:                            
-AP[2].SSID:                             wlan0-ap-2
-AP[2].MODE:                             Infrastruktura
-AP[2].CHAN:                             1
-AP[2].RATE:                             54 Mb/s
-AP[2].SIGNAL:                           61
-AP[2].BARS:                             *** 
-AP[2].SECURITY:                         WPA1 WPA2
-AP[3].IN-USE:                            
-AP[3].SSID:                             wlan0-ap-1
-AP[3].MODE:                             Infrastruktura
-AP[3].CHAN:                             1
-AP[3].RATE:                             54 Mb/s
-AP[3].SIGNAL:                           29
-AP[3].BARS:                             *   
-AP[3].SECURITY:                         WPA1 WPA2
-CONNECTIONS.AVAILABLE-CONNECTION-PATHS: --
 
 <<<
 stderr: 0 bytes
