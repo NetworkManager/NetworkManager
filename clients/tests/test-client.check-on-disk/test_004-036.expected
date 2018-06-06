@@ -2,7 +2,7 @@ location: clients/tests/test-client.py:879:test_004()/36
 cmd: $NMCLI -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3120 bytes
+stdout: 4643 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -65,6 +65,32 @@ AP[3].RATE:                             54 Mb/s
 AP[3].SIGNAL:                           55
 AP[3].BARS:                             **  
 AP[3].SECURITY:                         WPA1 WPA2
+IP4.ADDRESS[1]:                         192.168.228.18/32
+IP4.ADDRESS[2]:                         192.168.209.179/25
+IP4.GATEWAY:                            192.168.41.120
+IP4.DOMAIN[1]:                          sear4.foo2.bar
+IP4.DOMAIN[2]:                          sear4.fo.x.y
+IP4.DOMAIN[3]:                          sear4.foo1.bar
+IP4.DOMAIN[4]:                          sear4.foo4.bar
+IP4.DOMAIN[5]:                          sear4.fo.o.bar
+IP4.WINS[1]:                            192.168.120.79
+DHCP4.OPTION[1]:                        dhcp-4-opt-0 = val-0
+DHCP4.OPTION[2]:                        dhcp-4-opt-2 = val-2
+DHCP4.OPTION[3]:                        dhcp-4-opt-4 = val-4
+DHCP4.OPTION[4]:                        dhcp-4-opt-7 = val-7
+IP6.GATEWAY:                            --
+IP6.ROUTE[1]:                           dst = 2001:a::dd5b:aa7b:b4a2:e42/102, nh = ::, mt = 2504159086
+IP6.DOMAIN[1]:                          sear6.foo2.bar
+IP6.DOMAIN[2]:                          sear6.foo1.bar
+IP6.DOMAIN[3]:                          sear6.fo.x.y
+IP6.DOMAIN[4]:                          sear6.fo.o.bar
+IP6.DOMAIN[5]:                          sear6.foo3.bar
+IP6.DOMAIN[6]:                          sear6.foo4.bar
+DHCP6.OPTION[1]:                        dhcp-6-opt-1 = val-1
+DHCP6.OPTION[2]:                        dhcp-6-opt-2 = val-2
+DHCP6.OPTION[3]:                        dhcp-6-opt-3 = val-3
+DHCP6.OPTION[4]:                        dhcp-6-opt-4 = val-4
+DHCP6.OPTION[5]:                        dhcp-6-opt-5 = val-5
 CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings/{2}
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 

@@ -2,7 +2,7 @@ location: clients/tests/test-client.py:876:test_004()/34
 cmd: $NMCLI dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 390 bytes
+stdout: 1364 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -11,6 +11,23 @@ GENERAL.MTU:                            0
 GENERAL.STATE:                          20 (niedostępne)
 GENERAL.CONNECTION:                     con-vpn-1
 GENERAL.CON-PATH:                       /org/freedesktop/NetworkManager/ActiveConnection/2
+IP4.ADDRESS[1]:                         192.168.228.18/32
+IP4.ADDRESS[2]:                         192.168.209.179/25
+IP4.GATEWAY:                            192.168.41.120
+IP4.DOMAIN[1]:                          sear4.foo2.bar
+IP4.DOMAIN[2]:                          sear4.fo.x.y
+IP4.DOMAIN[3]:                          sear4.foo1.bar
+IP4.DOMAIN[4]:                          sear4.foo4.bar
+IP4.DOMAIN[5]:                          sear4.fo.o.bar
+IP4.WINS[1]:                            192.168.120.79
+IP6.GATEWAY:                            --
+IP6.ROUTE[1]:                           dst = 2001:a::dd5b:aa7b:b4a2:e42/102, nh = ::, mt = 2504159086
+IP6.DOMAIN[1]:                          sear6.foo2.bar
+IP6.DOMAIN[2]:                          sear6.foo1.bar
+IP6.DOMAIN[3]:                          sear6.fo.x.y
+IP6.DOMAIN[4]:                          sear6.fo.o.bar
+IP6.DOMAIN[5]:                          sear6.foo3.bar
+IP6.DOMAIN[6]:                          sear6.foo4.bar
 
 <<<
 stderr: 0 bytes
