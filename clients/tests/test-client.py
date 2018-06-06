@@ -162,6 +162,11 @@ class Util:
             text = text2
         return b''.join([(t[0] if isinstance(t, tuple) else t) for t in text])
 
+    @staticmethod
+    def debug_dbus_interface():
+        # this is for printf debugging, not used in actual code.
+        os.system('busctl --user --verbose call org.freedesktop.NetworkManager /org/freedesktop org.freedesktop.DBus.ObjectManager GetManagedObjects')
+
 ###############################################################################
 
 class Configuration:
@@ -280,8 +285,8 @@ class NMStubServer:
             raise AttributeError(member)
         return self._MethodProxy(self, member[3:])
 
-    def addConnection(self, connection, verify_connection = True):
-        return self.op_AddConnection(connection, verify_connection)
+    def addConnection(self, connection, do_verify_strict = True):
+        return self.op_AddConnection(connection, do_verify_strict)
 
     def findConnectionUuid(self, con_id):
         try:
@@ -809,10 +814,56 @@ class TestNmcli(NmTestBase):
                         replace_stdout = replace_stdout)
 
         self.call_nmcli(['connection', 'mod', 'con-xx1', 'ip.gateway', ''])
-        self.call_nmcli(['connection', 'mod', 'con-xx1', 'ipv4.gateway', '172.16.0.1'])
+        self.call_nmcli(['connection', 'mod', 'con-xx1', 'ipv4.gateway', '172.16.0.1'], lang = 'pl')
         self.call_nmcli(['connection', 'mod', 'con-xx1', 'ipv6.gateway', '::99'])
         self.call_nmcli(['connection', 'mod', 'con-xx1', '802.abc', ''])
         self.call_nmcli(['connection', 'mod', 'con-xx1', '802-11-wireless.band', 'a'])
+        self.call_nmcli(['connection', 'mod', 'con-xx1', 'ipv4.addresses', '192.168.77.5/24', 'ipv4.routes', '2.3.4.5/32 192.168.77.1', 'ipv6.addresses', '1:2:3:4::6/64', 'ipv6.routes', '1:2:3:4:5:6::5/128'])
+        self.call_nmcli_l(['con', 's', 'con-xx1'],
+                          replace_stdout = replace_stdout)
+
+        self.async_wait()
+
+        replace_stdout.append((lambda: self.srv.findConnectionUuid('con-vpn-1'), 'UUID-con-vpn-1-REPLACED-REPLACED-REP'))
+
+        self.call_nmcli(['connection', 'add', 'type', 'vpn', 'con-name', 'con-vpn-1', 'ifname', '*', 'vpn-type', 'openvpn', 'vpn.data', 'key1 = val1,   key2  = val2, key3=val3'],
+                        replace_stdout = replace_stdout)
+
+        self.call_nmcli_l(['con', 's'],
+                          replace_stdout = replace_stdout)
+        self.call_nmcli_l(['con', 's', 'con-vpn-1'],
+                          replace_stdout = replace_stdout)
+
+        self.call_nmcli(['con', 'up', 'con-xx1'])
+        self.call_nmcli_l(['con', 's'],
+                          replace_stdout = replace_stdout)
+
+        self.call_nmcli(['con', 'up', 'con-vpn-1'])
+        self.call_nmcli_l(['con', 's'],
+                          replace_stdout = replace_stdout)
+        self.call_nmcli_l(['con', 's', 'con-vpn-1'],
+                          replace_stdout = replace_stdout)
+
+        self.async_wait()
+
+        self.srv.setProperty('/org/freedesktop/NetworkManager/ActiveConnection/2',
+                             'VpnState',
+                             dbus.UInt32(NM.VpnConnectionState.ACTIVATED))
+
+        self.call_nmcli_l(['con', 's', 'con-vpn-1'],
+                          replace_stdout = replace_stdout)
+
+        self.call_nmcli_l(['-f', 'ALL', 'con', 's', 'con-vpn-1'],
+                          replace_stdout = replace_stdout)
+
+        # This only filters 'vpn' settings from the connection profile.
+        # Contrary to '-f GENERAL' below, it does not show the properties of
+        # the activated VPN connection. This is a nmcli bug.
+        self.call_nmcli_l(['-f', 'VPN', 'con', 's', 'con-vpn-1'],
+                          replace_stdout = replace_stdout)
+
+        self.call_nmcli_l(['-f', 'GENERAL', 'con', 's', 'con-vpn-1'],
+                          replace_stdout = replace_stdout)
 
 ###############################################################################
 
