@@ -432,6 +432,8 @@ class ExportedObj(dbus.service.Object):
             if not permission_granted:
                 raise TestError("Cannot set property '%s' on '%s' on '%s' via D-Bus" % (propname, dbus_iface, self.path))
 
+            return
+
         assert propname in props
 
         props[propname] = value
