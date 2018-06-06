@@ -149,4 +149,32 @@ clients_tests_expected_files = \
 	clients/tests/test-client.check-on-disk/test_004-004.expected \
 	clients/tests/test-client.check-on-disk/test_004-005.expected \
 	clients/tests/test-client.check-on-disk/test_004-006.expected \
+	clients/tests/test-client.check-on-disk/test_004-007.expected \
+	clients/tests/test-client.check-on-disk/test_004-008.expected \
+	clients/tests/test-client.check-on-disk/test_004-009.expected \
+	clients/tests/test-client.check-on-disk/test_004-010.expected \
+	clients/tests/test-client.check-on-disk/test_004-011.expected \
+	clients/tests/test-client.check-on-disk/test_004-012.expected \
+	clients/tests/test-client.check-on-disk/test_004-013.expected \
+	clients/tests/test-client.check-on-disk/test_004-014.expected \
+	clients/tests/test-client.check-on-disk/test_004-015.expected \
+	clients/tests/test-client.check-on-disk/test_004-016.expected \
+	clients/tests/test-client.check-on-disk/test_004-017.expected \
+	clients/tests/test-client.check-on-disk/test_004-018.expected \
+	clients/tests/test-client.check-on-disk/test_004-019.expected \
+	clients/tests/test-client.check-on-disk/test_004-020.expected \
+	clients/tests/test-client.check-on-disk/test_004-021.expected \
+	clients/tests/test-client.check-on-disk/test_004-022.expected \
+	clients/tests/test-client.check-on-disk/test_004-023.expected \
+	clients/tests/test-client.check-on-disk/test_004-024.expected \
+	clients/tests/test-client.check-on-disk/test_004-025.expected \
+	clients/tests/test-client.check-on-disk/test_004-026.expected \
+	clients/tests/test-client.check-on-disk/test_004-027.expected \
+	clients/tests/test-client.check-on-disk/test_004-028.expected \
+	clients/tests/test-client.check-on-disk/test_004-029.expected \
+	clients/tests/test-client.check-on-disk/test_004-030.expected \
+	clients/tests/test-client.check-on-disk/test_004-031.expected \
+	clients/tests/test-client.check-on-disk/test_004-032.expected \
+	clients/tests/test-client.check-on-disk/test_004-033.expected \
+	clients/tests/test-client.check-on-disk/test_004-034.expected \
 	$(NULL)
