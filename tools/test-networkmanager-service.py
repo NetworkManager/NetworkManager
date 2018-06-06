@@ -395,7 +395,7 @@ class ExportedObj(dbus.service.Object):
         return self._dbus_interface_get_property(self._dbus_interface_get(dbus_iface),
                                                  propname)
 
-    def _dbus_property_set(self, dbus_iface, propname, value, allow_detect_dbus_iface = False, dry_run = False):
+    def _dbus_property_set(self, dbus_iface, propname, value, allow_detect_dbus_iface = False, dry_run = False, force_update = False):
         if allow_detect_dbus_iface and not dbus_iface:
             props = None
             for p, dbus_interface in self._dbus_ifaces.items():
@@ -435,6 +435,10 @@ class ExportedObj(dbus.service.Object):
             return
 
         assert propname in props
+
+        if not force_update:
+            if props[propname] == value:
+                return
 
         props[propname] = value
         self._dbus_property_notify(dbus_iface, propname)
@@ -535,6 +539,24 @@ class Device(ExportedObj):
 
     def set_active_connection(self, ac):
         self._dbus_property_set(IFACE_DEVICE, PRP_DEVICE_ACTIVE_CONNECTION, ac)
+
+    def connection_is_available(self, con_inst):
+        if con_inst.is_vpn():
+            return False
+        if isinstance(self, WiredDevice):
+            if con_inst.get_type() == NM.SETTING_WIRED_SETTING_NAME:
+                return True
+        elif isinstance(self, WifiDevice):
+            if con_inst.get_type() == NM.SETTING_WIRELESS_SETTING_NAME:
+                return True
+        return False
+
+    def available_connections_get(self):
+        return [c for c in gl.settings.connections.values() if self.connection_is_available(c)]
+
+    def available_connections_update(self):
+        self._dbus_property_set(IFACE_DEVICE, PRP_DEVICE_AVAILABLE_CONNECTIONS,
+                                ExportedObj.to_path_array(self.available_connections_get()))
 
 ###############################################################################
 
@@ -873,13 +895,11 @@ class ActiveConnection(ExportedObj):
 
     def __init__(self, device, con_inst, specific_object):
 
-        is_vpn = (NmUtil.con_hash_get_type(con_inst.con_hash) == NM.SETTING_VPN_SETTING_NAME)
-
         ExportedObj.__init__(self, ExportedObj.create_path(ActiveConnection))
 
         self.device = device
         self.con_inst = con_inst
-        self.is_vpn = is_vpn
+        self.is_vpn = con_inst.is_vpn()
 
         self._activation_id = None
 
@@ -899,13 +919,13 @@ class ActiveConnection(ExportedObj):
             PRP_ACTIVE_CONNECTION_DEFAULT6:        False,
             PRP_ACTIVE_CONNECTION_IP6CONFIG:       ExportedObj.to_path(None),
             PRP_ACTIVE_CONNECTION_DHCP6CONFIG:     ExportedObj.to_path(None),
-            PRP_ACTIVE_CONNECTION_VPN:             is_vpn,
+            PRP_ACTIVE_CONNECTION_VPN:             self.is_vpn,
             PRP_ACTIVE_CONNECTION_MASTER:          ExportedObj.to_path(None),
         }
 
         self.dbus_interface_add(IFACE_ACTIVE_CONNECTION, props, ActiveConnection.PropertiesChanged)
 
-        if is_vpn:
+        if self.is_vpn:
             props = {
                 PRP_VPN_CONNECTION_VPN_STATE: dbus.UInt32(NM.VpnConnectionState.UNKNOWN),
                 PRP_VPN_CONNECTION_BANNER:    '*** VPN connection %s ***' % (con_inst.get_id()),
@@ -1200,6 +1220,10 @@ class NetworkManager(ExportedObj):
         self.DeviceRemoved(ExportedObj.to_path(device))
         device.unexport()
 
+    def devices_available_connections_update(self):
+        for d in self.devices:
+            d.available_connections_update()
+
     @dbus.service.signal(IFACE_NM, signature='o')
     def DeviceRemoved(self, devpath):
         pass
@@ -1350,6 +1374,12 @@ class Connection(ExportedObj):
     def get_uuid(self):
         return NmUtil.con_hash_get_uuid(self.con_hash)
 
+    def get_type(self):
+        return NmUtil.con_hash_get_type(self.con_hash)
+
+    def is_vpn(self):
+        return self.get_type() == NM.SETTING_VPN_SETTING_NAME
+
     def update_connection(self, con_hash, do_verify_strict):
 
         NmUtil.con_hash_verify(con_hash, do_verify_strict = do_verify_strict)
@@ -1461,6 +1491,8 @@ class Settings(ExportedObj):
             self.remove_next_connection = False
             self.delete_connection(con_inst)
 
+        gl.manager.devices_available_connections_update()
+
         return con_inst.path
 
     def update_connection(self, con_hash, path=None, do_verify_strict=True):
@@ -1473,6 +1505,8 @@ class Settings(ExportedObj):
         self._dbus_property_set(IFACE_SETTINGS, PRP_SETTINGS_CONNECTIONS, dbus.Array(self.connections.keys(), 'o'))
         con_inst.Removed()
         con_inst.unexport()
+
+        gl.manager.devices_available_connections_update()
 
     @dbus.service.method(dbus_interface=IFACE_SETTINGS, in_signature='s', out_signature='')
     def SaveHostname(self, hostname):
