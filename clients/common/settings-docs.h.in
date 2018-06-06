@@ -261,6 +261,7 @@
 #define DESCRIBE_DOC_NM_SETTING_MACSEC_NAME N_("The setting's name, which uniquely identifies the setting within the connection.  Each setting type has a name unique to that type, for example \"ppp\" or \"wireless\" or \"wired\".")
 #define DESCRIBE_DOC_NM_SETTING_MACSEC_PARENT N_("If given, specifies the parent interface name or parent connection UUID from which this MACSEC interface should be created.  If this property is not specified, the connection must contain an \"802-3-ethernet\" setting with a \"mac-address\" property.")
 #define DESCRIBE_DOC_NM_SETTING_MACSEC_PORT N_("The port component of the SCI (Secure Channel Identifier), between 1 and 65534.")
+#define DESCRIBE_DOC_NM_SETTING_MACSEC_SEND_SCI N_("Specifies whether the SCI (Secure Channel Identifier) is included in every packet.")
 #define DESCRIBE_DOC_NM_SETTING_MACSEC_VALIDATION N_("Specifies the validation mode for incoming frames.")
 #define DESCRIBE_DOC_NM_SETTING_MACVLAN_MODE N_("The macvlan mode, which specifies the communication mechanism between multiple macvlans on the same lower device.")
 #define DESCRIBE_DOC_NM_SETTING_MACVLAN_NAME N_("The setting's name, which uniquely identifies the setting within the connection.  Each setting type has a name unique to that type, for example \"ppp\" or \"wireless\" or \"wired\".")

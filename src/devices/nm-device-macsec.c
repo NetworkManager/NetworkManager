@@ -704,6 +704,7 @@ create_and_realize (NMDevice *device,
 	sci.s.port = htons (nm_setting_macsec_get_port (s_macsec));
 	lnk.sci = be64toh (sci.u);
 	lnk.validation = nm_setting_macsec_get_validation (s_macsec);
+	lnk.include_sci = nm_setting_macsec_get_send_sci (s_macsec);
 
 	parent_ifindex = nm_device_get_ifindex (parent);
 	g_warn_if_fail (parent_ifindex > 0);

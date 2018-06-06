@@ -47,6 +47,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_MACSEC_MKA_CKN              "mka-ckn"
 #define NM_SETTING_MACSEC_PORT                 "port"
 #define NM_SETTING_MACSEC_VALIDATION           "validation"
+#define NM_SETTING_MACSEC_SEND_SCI             "send-sci"
 
 /**
  * NMSettingMacsec:
@@ -122,6 +123,8 @@ NM_AVAILABLE_IN_1_6
 int         nm_setting_macsec_get_port           (NMSettingMacsec *setting);
 NM_AVAILABLE_IN_1_6
 NMSettingMacsecValidation nm_setting_macsec_get_validation (NMSettingMacsec *setting);
+NM_AVAILABLE_IN_1_12
+gboolean nm_setting_macsec_get_send_sci          (NMSettingMacsec *setting);
 
 G_END_DECLS
 

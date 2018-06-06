@@ -6224,6 +6224,9 @@ static const NMMetaPropertyInfo *const property_infos_MACSEC[] = {
 			                            | NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PRETTY_TEXT,
 		),
 	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_MACSEC_SEND_SCI,
+		.property_type =                &_pt_gobject_bool,
+	),
 	NULL
 };
 

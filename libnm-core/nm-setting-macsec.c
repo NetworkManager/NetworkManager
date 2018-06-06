@@ -49,7 +49,8 @@ NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_MACSEC)
 typedef struct {
 	char *parent;
 	NMSettingMacsecMode mode;
-	gboolean encrypt;
+	bool encrypt:1;
+	bool send_sci:1;
 	char *mka_cak;
 	NMSettingSecretFlags mka_cak_flags;
 	char *mka_ckn;
@@ -66,6 +67,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_MKA_CKN,
 	PROP_PORT,
 	PROP_VALIDATION,
+	PROP_SEND_SCI,
 );
 
 /**
@@ -202,6 +204,21 @@ nm_setting_macsec_get_validation (NMSettingMacsec *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_MACSEC (setting), NM_SETTING_MACSEC_VALIDATION_DISABLE);
 	return NM_SETTING_MACSEC_GET_PRIVATE (setting)->validation;
+}
+
+/**
+ * nm_setting_macsec_get_send_sci:
+ * @setting: the #NMSettingMacsec
+ *
+ * Returns: the #NMSettingMacsec:send-sci property of the setting
+ *
+ * Since: 1.12
+ **/
+gboolean
+nm_setting_macsec_get_send_sci (NMSettingMacsec *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_MACSEC (setting), TRUE);
+	return NM_SETTING_MACSEC_GET_PRIVATE (setting)->send_sci;
 }
 
 static GPtrArray *
@@ -390,6 +407,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_VALIDATION:
 		priv->validation = g_value_get_int (value);
 		break;
+	case PROP_SEND_SCI:
+		priv->send_sci = g_value_get_boolean (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -427,6 +447,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_VALIDATION:
 		g_value_set_int (value, priv->validation);
+		break;
+	case PROP_SEND_SCI:
+		g_value_set_boolean (value, priv->send_sci);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -587,6 +610,21 @@ nm_setting_macsec_class_init (NMSettingMacsecClass *setting_class)
 	                      G_PARAM_CONSTRUCT |
 	                      NM_SETTING_PARAM_INFERRABLE |
 	                      G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingMacsec:send-sci:
+	 *
+	 * Specifies whether the SCI (Secure Channel Identifier) is included
+	 * in every packet.
+	 *
+	 * Since: 1.12
+	 **/
+	obj_properties[PROP_SEND_SCI] =
+	    g_param_spec_boolean (NM_SETTING_MACSEC_SEND_SCI, "", "",
+	                          TRUE,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT |
+	                          G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }
