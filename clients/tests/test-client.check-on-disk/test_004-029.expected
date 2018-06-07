@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:865:test_004()/29
+location: clients/tests/test-client.py:867:test_004()/29
 cmd: $NMCLI -f VPN con s con-vpn-1
 lang: C
 returncode: 0

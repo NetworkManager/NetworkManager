@@ -288,11 +288,13 @@ class NMStubServer:
     def addConnection(self, connection, do_verify_strict = True):
         return self.op_AddConnection(connection, do_verify_strict)
 
-    def findConnectionUuid(self, con_id):
+    def findConnectionUuid(self, con_id, required = True):
         try:
             u = Util.iter_single(self.op_FindConnections(con_id = con_id))[1]
             assert u, ("Invalid uuid %s" % (u))
         except Exception as e:
+            if not required:
+                return None
             raise AssertionError("Unexpectedly not found connection %s: %s" % (con_id, str(e)))
         return u
 

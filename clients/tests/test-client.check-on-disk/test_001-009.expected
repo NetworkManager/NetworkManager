@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:670:test_001()/9
+location: clients/tests/test-client.py:672:test_001()/9
 cmd: $NMCLI general permissions
 lang: C
 returncode: 0

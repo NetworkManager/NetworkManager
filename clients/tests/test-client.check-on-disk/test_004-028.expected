@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:859:test_004()/28
+location: clients/tests/test-client.py:861:test_004()/28
 cmd: $NMCLI -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
