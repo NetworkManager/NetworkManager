@@ -1244,8 +1244,10 @@ auto_activate_device (NMPolicy *self,
 	if (!best_connection)
 		return;
 
-	_LOGI (LOGD_DEVICE, "auto-activating connection '%s'",
-	       nm_settings_connection_get_id (best_connection));
+	_LOGI (LOGD_DEVICE, "auto-activating connection '%s' (%s)",
+	       nm_settings_connection_get_id (best_connection),
+	       nm_settings_connection_get_uuid (best_connection));
+
 	subject = nm_auth_subject_new_internal ();
 	ac = nm_manager_activate_connection (priv->manager,
 	                                     best_connection,
