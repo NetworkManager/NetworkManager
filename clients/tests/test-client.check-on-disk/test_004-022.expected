@@ -2,7 +2,7 @@ location: clients/tests/test-client.py:945:test_004()/22
 cmd: $NMCLI con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4340 bytes
+stdout: 4370 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -90,7 +90,7 @@ GENERAL.MASTER-PATH:                    --
 VPN.TYPE:                               openvpn
 VPN.USERNAME:                           --
 VPN.GATEWAY:                            --
-VPN.BANNER:                             --
+VPN.BANNER:                             *** VPN connection con-vpn-1 ***
 VPN.VPN-STATE:                          0 - nieznane
 VPN.CFG[1]:                             key1 = val1
 VPN.CFG[2]:                             key2 = val2

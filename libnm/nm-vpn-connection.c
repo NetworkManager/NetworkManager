@@ -71,16 +71,9 @@ static guint signals[LAST_SIGNAL] = { 0 };
 const char *
 nm_vpn_connection_get_banner (NMVpnConnection *vpn)
 {
-	NMVpnConnectionPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn), NULL);
 
-	priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn);
-
-	if (priv->vpn_state != NM_VPN_CONNECTION_STATE_ACTIVATED)
-		return NULL;
-
-	return nm_str_not_empty (priv->banner);
+	return nm_str_not_empty (NM_VPN_CONNECTION_GET_PRIVATE (vpn)->banner);
 }
 
 /**
