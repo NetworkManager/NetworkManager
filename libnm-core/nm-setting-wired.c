@@ -762,32 +762,16 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	 * with legacy nm-connection-editor which used to save "full" duplex connection as default
 	 */
 
-	if (priv->auto_negotiate) {
-		if (priv->duplex) {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("when link autonegotiation is enabled no duplex value is accepted"));
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_DUPLEX);
-			return NM_SETTING_VERIFY_NORMALIZABLE;
-		}
-		if (priv->speed) {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("when link autonegotiation is enabled speed should be 0"));
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_SPEED);
-			return NM_SETTING_VERIFY_NORMALIZABLE;
-		}
-	} else {
-		if (   ((priv->speed) && (!priv->duplex))
-		    || ((!priv->speed) && (priv->duplex))) {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("both speed and duplex are required for static link configuration"));
-			return NM_SETTING_VERIFY_NORMALIZABLE;
-		}
+	if (   ((priv->speed) && (!priv->duplex))
+	    || ((!priv->speed) && (priv->duplex))) {
+
+		g_set_error_literal (error,
+				     NM_CONNECTION_ERROR,
+				     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     priv->auto_negotiate ?
+		                       _("both speed and duplex should have a valid value or both should be unset")
+		                     : _("both speed and duplex are required for static link configuration"));
+		return NM_SETTING_VERIFY_NORMALIZABLE;
 	}
 
 	return TRUE;
@@ -1033,8 +1017,16 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_wired_class)
 	/**
 	 * NMSettingWired:speed:
 	 *
-	 * Can be set to a value greater than zero only when "auto-negotiate" is "off".
-	 * In that case, statically configures the device to use that specified speed.
+	 * When a value grater than 0 is set, configures the device to use
+	 * the specified speed. If "auto-negotiate" is "yes" the specified
+	 * speed will be the only one advertised during link negotiation:
+	 * this works only for BASE-T 802.3 specifications and is useful for
+	 * enforcing gigabit speeds, as in this case link negotiation is
+	 * mandatory.
+	 * If the value is unset (0, the default), the link configuration will be
+	 * either skipped (if "auto-negotiate" is "no", the default) or will
+	 * be auto-negotiated (if "auto-negotiate" is "yes") and the local device
+	 * will advertise all the supported speeds.
 	 * In Mbit/s, ie 100 == 100Mbit/s.
 	 * Must be set together with the "duplex" property when non-zero.
 	 * Before specifying a speed value be sure your device supports it.
@@ -1057,8 +1049,16 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_wired_class)
 	/**
 	 * NMSettingWired:duplex:
 	 *
-	 * Can be specified only when "auto-negotiate" is "off". In that case, statically
-	 * configures the device to use that specified duplex mode, either "half" or "full".
+	 * When a value is set, either "half" or "full", configures the device
+	 * to use the specified duplex mode. If "auto-negotiate" is "yes" the
+	 * specified duplex mode will be the only one advertised during link
+	 * negotiation: this works only for BASE-T 802.3 specifications and is
+	 * useful for enforcing gigabits modes, as in these cases link negotiation
+	 * is mandatory.
+	 * If the value is unset (the default), the link configuration will be
+	 * either skipped (if "auto-negotiate" is "no", the default) or will
+	 * be auto-negotiated (if "auto-negotiate" is "yes") and the local device
+	 * will advertise all the supported duplex modes.
 	 * Must be set together with the "speed" property if specified.
 	 * Before specifying a duplex mode be sure your device supports it.
 	 **/
@@ -1079,9 +1079,14 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_wired_class)
 	/**
 	 * NMSettingWired:auto-negotiate:
 	 *
-	 * If %TRUE, enforce auto-negotiation of port speed and duplex mode.  If
-	 * %FALSE, "speed" and "duplex" properties should be both set or link configuration
-	 * will be skipped.
+	 * When %TRUE, enforce auto-negotiation of speed and duplex mode.
+	 * If "speed" and "duplex" properties are both specified, only that
+	 * single mode will be advertised and accepted during the link
+	 * auto-negotiation process: this works only for BASE-T 802.3 specifications
+	 * and is useful for enforcing gigabits modes, as in these cases link
+	 * negotiation is mandatory.
+	 * When %FALSE, "speed" and "duplex" properties should be both set or
+	 * link configuration will be skipped.
 	 **/
 	/* ---ifcfg-rh---
 	 * property: auto-negotiate
