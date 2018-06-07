@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:684:test_002()/9
+location: clients/tests/test-client.py:687:test_002()/9
 cmd: $NMCLI -f AP -mode multiline -p d show wlan0
 lang: C
 returncode: 0
@@ -12,26 +12,26 @@ AP[1].SSID:                             wlan0-ap-3
 AP[1].MODE:                             Infra
 AP[1].CHAN:                             1
 AP[1].RATE:                             54 Mbit/s
-AP[1].SIGNAL:                           88
-AP[1].BARS:                             ****
+AP[1].SIGNAL:                           55
+AP[1].BARS:                             **  
 AP[1].SECURITY:                         WPA1 WPA2
 -------------------------------------------------------------------------------
 AP[2].IN-USE:                            
-AP[2].SSID:                             wlan0-ap-2
+AP[2].SSID:                             wlan0-ap-1
 AP[2].MODE:                             Infra
 AP[2].CHAN:                             1
 AP[2].RATE:                             54 Mbit/s
-AP[2].SIGNAL:                           61
-AP[2].BARS:                             *** 
+AP[2].SIGNAL:                           44
+AP[2].BARS:                             **  
 AP[2].SECURITY:                         WPA1 WPA2
 -------------------------------------------------------------------------------
 AP[3].IN-USE:                            
-AP[3].SSID:                             wlan0-ap-1
+AP[3].SSID:                             wlan0-ap-2
 AP[3].MODE:                             Infra
 AP[3].CHAN:                             1
 AP[3].RATE:                             54 Mbit/s
-AP[3].SIGNAL:                           29
-AP[3].BARS:                             *   
+AP[3].SIGNAL:                           34
+AP[3].BARS:                             **  
 AP[3].SECURITY:                         WPA1 WPA2
 -------------------------------------------------------------------------------
 

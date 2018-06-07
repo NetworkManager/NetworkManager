@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:672:test_001()/14
+location: clients/tests/test-client.py:675:test_001()/14
 cmd: $NMCLI --terse general permissions
 lang: pl_PL.UTF-8
 returncode: 0

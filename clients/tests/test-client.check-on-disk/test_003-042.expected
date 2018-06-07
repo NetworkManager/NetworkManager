@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:750:test_003()/42
+location: clients/tests/test-client.py:753:test_003()/42
 cmd: $NMCLI -f UUID,NAME con s --active
 lang: pl_PL.UTF-8
 returncode: 0

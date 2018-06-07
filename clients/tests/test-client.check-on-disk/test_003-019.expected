@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:747:test_003()/19
+location: clients/tests/test-client.py:750:test_003()/19
 cmd: $NMCLI -f ACTIVE-PATH,DEVICE,UUID con s -act
 lang: pl_PL.UTF-8
 returncode: 0

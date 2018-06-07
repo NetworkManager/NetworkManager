@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:818:test_004()/2
+location: clients/tests/test-client.py:821:test_004()/2
 cmd: $NMCLI connection mod con-xx1 ip.gateway ''
 lang: C
 returncode: 2

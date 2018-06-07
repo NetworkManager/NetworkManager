@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:823:test_004()/7
+location: clients/tests/test-client.py:826:test_004()/7
 cmd: $NMCLI connection mod con-xx1 ipv4.addresses 192.168.77.5/24 ipv4.routes '2.3.4.5/32 192.168.77.1' ipv6.addresses 1:2:3:4::6/64 ipv6.routes 1:2:3:4:5:6::5/128
 lang: C
 returncode: 0

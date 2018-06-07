@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:832:test_004()/10
+location: clients/tests/test-client.py:835:test_004()/10
 cmd: $NMCLI connection add type vpn con-name con-vpn-1 ifname '*' vpn-type openvpn vpn.data 'key1 = val1,   key2  = val2, key3=val3'
 lang: C
 returncode: 0

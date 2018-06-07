@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:876:test_004()/36
+location: clients/tests/test-client.py:879:test_004()/36
 cmd: $NMCLI -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
@@ -12,7 +12,7 @@ GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
 GENERAL.DRIVER-VERSION:                 --
 GENERAL.FIRMWARE-VERSION:               --
-GENERAL.HWADDR:                         5A:88:5E:B6:90:40
+GENERAL.HWADDR:                         13:E0:74:85:7C:D9
 GENERAL.MTU:                            0
 GENERAL.STATE:                          20 (niedostępne)
 GENERAL.REASON:                         0 (Nie podano przyczyny)
@@ -42,28 +42,28 @@ WIFI-PROPERTIES.ADHOC:                  tak
 WIFI-PROPERTIES.2GHZ:                   nieznane
 WIFI-PROPERTIES.5GHZ:                   nieznane
 AP[1].IN-USE:                            
-AP[1].SSID:                             wlan0-ap-3
+AP[1].SSID:                             wlan0-ap-2
 AP[1].MODE:                             Infrastruktura
 AP[1].CHAN:                             1
 AP[1].RATE:                             54 Mb/s
-AP[1].SIGNAL:                           88
+AP[1].SIGNAL:                           92
 AP[1].BARS:                             ****
 AP[1].SECURITY:                         WPA1 WPA2
 AP[2].IN-USE:                            
-AP[2].SSID:                             wlan0-ap-2
+AP[2].SSID:                             wlan0-ap-1
 AP[2].MODE:                             Infrastruktura
 AP[2].CHAN:                             1
 AP[2].RATE:                             54 Mb/s
-AP[2].SIGNAL:                           61
-AP[2].BARS:                             *** 
+AP[2].SIGNAL:                           81
+AP[2].BARS:                             ****
 AP[2].SECURITY:                         WPA1 WPA2
 AP[3].IN-USE:                            
-AP[3].SSID:                             wlan0-ap-1
+AP[3].SSID:                             wlan0-ap-3
 AP[3].MODE:                             Infrastruktura
 AP[3].CHAN:                             1
 AP[3].RATE:                             54 Mb/s
-AP[3].SIGNAL:                           29
-AP[3].BARS:                             *   
+AP[3].SIGNAL:                           55
+AP[3].BARS:                             **  
 AP[3].SECURITY:                         WPA1 WPA2
 CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings/{2}
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1

@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:672:test_001()/18
+location: clients/tests/test-client.py:675:test_001()/18
 cmd: $NMCLI --mode tabular --pretty general permissions
 lang: pl_PL.UTF-8
 returncode: 0

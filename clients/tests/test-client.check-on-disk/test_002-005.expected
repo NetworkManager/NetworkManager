@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:681:test_002()/5
+location: clients/tests/test-client.py:684:test_002()/5
 cmd: $NMCLI 
 lang: C
 returncode: 0
@@ -6,23 +6,23 @@ stdout: 621 bytes
 >>>
 eth0: unavailable
 	"eth0"
-	ethernet (virtual), 72:41:AB:90:41:5D, hw
+	ethernet (virtual), 65:2E:D3:9E:0A:0D, hw
 
 eth1: unavailable
 	"eth1"
-	ethernet (virtual), 1F:E6:D1:E6:1D:53, hw
+	ethernet (virtual), 47:D5:6B:65:FD:6A, hw
 
 wlan0: unavailable
 	"wlan0"
-	wifi (virtual), 5A:88:5E:B6:90:40, hw
+	wifi (virtual), 3D:99:1D:8B:74:4D, hw
 
 wlan1: unavailable
 	"wlan1"
-	wifi (virtual), 7C:D4:69:31:67:0B, hw
+	wifi (virtual), 99:09:77:FD:FE:1D, hw
 
 wlan1: unavailable
 	"wlan1"
-	wifi (virtual), 41:21:6B:F3:C9:4A, hw
+	wifi (virtual), 5D:30:4A:EC:3F:61, hw
 
 DNS configuration:
 	servers: 1.2.3.4 5.6.7.8

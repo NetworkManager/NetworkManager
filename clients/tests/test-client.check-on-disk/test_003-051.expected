@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:765:test_003()/51
+location: clients/tests/test-client.py:768:test_003()/51
 cmd: $NMCLI -f ALL dev show eth0
 lang: C
 returncode: 0
@@ -12,7 +12,7 @@ GENERAL.PRODUCT:                        --
 GENERAL.DRIVER:                         virtual
 GENERAL.DRIVER-VERSION:                 --
 GENERAL.FIRMWARE-VERSION:               --
-GENERAL.HWADDR:                         72:41:AB:90:41:5D
+GENERAL.HWADDR:                         C0:61:AE:26:4D:D7
 GENERAL.MTU:                            0
 GENERAL.STATE:                          20 (unavailable)
 GENERAL.REASON:                         0 (No reason given)

@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:816:test_004()/1
+location: clients/tests/test-client.py:819:test_004()/1
 cmd: $NMCLI c add type wifi ifname '*' ssid foobar con-name con-xx1
 lang: C
 returncode: 0

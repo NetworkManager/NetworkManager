@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:681:test_002()/6
+location: clients/tests/test-client.py:684:test_002()/6
 cmd: $NMCLI 
 lang: pl_PL.UTF-8
 returncode: 0
@@ -6,23 +6,23 @@ stdout: 684 bytes
 >>>
 eth0: niedostępne
 	"eth0"
-	ethernet (virtual), 72:41:AB:90:41:5D, sprzęt
+	ethernet (virtual), 65:2E:D3:9E:0A:0D, sprzęt
 
 eth1: niedostępne
 	"eth1"
-	ethernet (virtual), 1F:E6:D1:E6:1D:53, sprzęt
+	ethernet (virtual), 47:D5:6B:65:FD:6A, sprzęt
 
 wlan0: niedostępne
 	"wlan0"
-	wifi (virtual), 5A:88:5E:B6:90:40, sprzęt
+	wifi (virtual), 3D:99:1D:8B:74:4D, sprzęt
 
 wlan1: niedostępne
 	"wlan1"
-	wifi (virtual), 7C:D4:69:31:67:0B, sprzęt
+	wifi (virtual), 99:09:77:FD:FE:1D, sprzęt
 
 wlan1: niedostępne
 	"wlan1"
-	wifi (virtual), 41:21:6B:F3:C9:4A, sprzęt
+	wifi (virtual), 5D:30:4A:EC:3F:61, sprzęt
 
 DNS configuration:
 	servers: 1.2.3.4 5.6.7.8

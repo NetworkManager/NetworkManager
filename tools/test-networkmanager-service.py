@@ -15,11 +15,11 @@ except Exception as e:
     print("Cannot load gi.NM: %s" % (str(e)))
     sys.exit(77)
 
+import os
 import dbus
 import dbus.service
 import dbus.mainloop.glib
 import random
-import collections
 import uuid
 import hashlib
 import collections
@@ -46,39 +46,111 @@ class TestError(AssertionError):
 
 class Util:
 
+    class RandomSeed():
+        def __init__(self, seed):
+            self.cnt = 0
+            self.seed = str(seed)
+        def _next(self):
+            c = self.cnt
+            self.cnt += 1
+            return self.seed + '-' + str(c)
+        @staticmethod
+        def wrap(seed):
+            if seed is None:
+                return None
+            if isinstance(seed, Util.RandomSeed):
+                return seed
+            return Util.RandomSeed(seed)
+        @staticmethod
+        def get(seed, extra_seed = None):
+            if seed is None:
+                return None
+            if isinstance(seed, Util.RandomSeed):
+                seed = seed._next()
+            else:
+                seed = str(seed)
+            if extra_seed is None:
+                try:
+                    extra_seed = Util.RandomSeed._extra_seed
+                except:
+                    extra_seed = os.environ.get('NM_TEST_NETWORKMANAGER_SERVICE_SEED', '')
+                    Util.RandomSeed._extra_seed = extra_seed
+            return extra_seed + seed
+
     @staticmethod
-    def pseudorandom_stream(seed, length = None):
-        seed = str(seed)
+    def random_stream(seed, length = None):
+        seed = Util.RandomSeed.wrap(seed)
+        # generates a stream of integers, in the range [0..255]
+        if seed is None:
+            # without a seed, we generate new random numbers.
+            while length is None or length > 0:
+                yield random.randint(0, 255)
+                if length is not None:
+                    length -= 1
+            return
         v = None
-        i = 0
         while length is None or length > 0:
             if not v:
-                s = seed + str(i)
+                s = Util.RandomSeed.get(seed)
                 s = s.encode('utf8')
                 v = hashlib.sha256(s).hexdigest()
-                i += 1
             yield int(v[0:2], 16)
             v = v[2:]
             if length is not None:
                 length -= 1
 
     @staticmethod
-    def pseudorandom_num(seed, v_end, v_start = 0):
+    def random_int(seed, v_start = _DEFAULT_ARG, v_end = _DEFAULT_ARG):
+        # - if neither start not end is give, return a number in the range
+        #   u32 range [0, 0xFFFFFFFF]
+        # - if only start is given (the first argument), interpret it as
+        #   the range of the interval. That is, return random number in
+        #   range [0, start-1]
+        # - if end and start is given, return a random number with this
+        #   range (inclusive!): [start, end]
+        if v_end is _DEFAULT_ARG:
+            # if only one edge is provided (no v_end), then the range
+            # is [0, v_start[. That is, random_int(seed, 5), returns
+            # values from 0 to 4.
+            if v_start is _DEFAULT_ARG:
+                # by default, return a 32u integer.
+                v_end = 0x100000000
+            else:
+                v_end = v_start
+            v_start = 0
+        else:
+            if v_start is _DEFAULT_ARG:
+                raise TestError("Cannot specify end without start")
+            # if a full range is provided, v_end is included.
+            # random_int(seed, 0, 4) returns values from 0 to 4.
+            v_end += 1
         n = 0
         span = v_end - v_start
-        for r in Util.pseudorandom_stream(seed):
+        assert span > 0
+        for r in Util.random_stream(seed):
             n = n * 256 + r
             if n > span:
                 break
         return v_start + (n % span)
 
     @staticmethod
-    def random_mac(seed = None):
-        if seed is None:
-            r = tuple([random.randint(0, 255) for x in range(6)])
-        else:
-            r = tuple(Util.pseudorandom_stream(seed, 6))
-        return '%02X:%02X:%02X:%02X:%02X:%02X' % r
+    def random_bool(seed):
+        return Util.random_int(seed, 0, 1) == 1
+
+    @staticmethod
+    def random_subset(seed, all_set):
+        all_set = list(all_set)
+        result = []
+        seed = Util.RandomSeed.wrap(seed)
+        for i in list(range(Util.random_int(Util.RandomSeed.get(seed), len(all_set) + 1))):
+            idx = Util.random_int(Util.RandomSeed.get(seed), len(all_set))
+            result.append(all_set[idx])
+            del all_set[idx]
+        return result
+
+    @staticmethod
+    def random_mac(seed):
+        return '%02X:%02X:%02X:%02X:%02X:%02X' % tuple(Util.random_stream(seed, 6))
 
     @staticmethod
     def eprint(*args, **kwargs):
@@ -643,7 +715,7 @@ class WifiAp(ExportedObj):
         if bssid is None:
             bssid = Util.random_mac(self.path)
         if strength is None:
-            strength = Util.pseudorandom_num(self.path, 100)
+            strength = Util.random_int(self.path, 100)
 
         self.ssid = ssid
         self.strength_counter = 0
@@ -670,7 +742,7 @@ class WifiAp(ExportedObj):
 
     def strength_cb(self, ignored):
         self.strength_counter += 1
-        strength = Util.pseudorandom_num(self.path + str(self.strength_counter), 100)
+        strength = Util.random_int(self.path + str(self.strength_counter), 100)
         self._dbus_property_set(IFACE_WIFI_AP, PRP_WIFI_AP_STRENGTH, strength)
         return True
 

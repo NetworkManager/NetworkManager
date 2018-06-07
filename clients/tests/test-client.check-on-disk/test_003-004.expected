@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:712:test_003()/4
+location: clients/tests/test-client.py:715:test_003()/4
 cmd: $NMCLI c add type ethernet ifname '*'
 lang: C
 returncode: 0

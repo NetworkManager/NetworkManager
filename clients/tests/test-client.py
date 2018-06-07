@@ -165,7 +165,7 @@ class Util:
     @staticmethod
     def debug_dbus_interface():
         # this is for printf debugging, not used in actual code.
-        os.system('busctl --user --verbose call org.freedesktop.NetworkManager /org/freedesktop org.freedesktop.DBus.ObjectManager GetManagedObjects')
+        os.system('busctl --user --verbose call org.freedesktop.NetworkManager /org/freedesktop org.freedesktop.DBus.ObjectManager GetManagedObjects | cat')
 
 ###############################################################################
 
@@ -224,11 +224,14 @@ class NMStubServer:
         except:
             return None
 
-    def __init__(self):
+    def __init__(self, seed):
         service_path = PathConfiguration.test_networkmanager_service_path()
         self._conn = dbus.SessionBus()
+        env = os.environ.copy()
+        env['NM_TEST_NETWORKMANAGER_SERVICE_SEED'] = seed
         p = subprocess.Popen([sys.executable, service_path],
-                             stdin = subprocess.PIPE)
+                             stdin = subprocess.PIPE,
+                             env = env)
 
         start = nmex.nm_boot_time_ns()
         while True:
@@ -599,7 +602,7 @@ class TestNmcli(NmTestBase):
             self.skipTest("Own D-Bus session for testing is not initialized. Do you have dbus-run-session available?")
         if NM is None:
             self.skipTest("gi.NM is not available. Did you build with introspection?")
-        self.srv = NMStubServer()
+        self.srv = NMStubServer(self._testMethodName)
         self._calling_num = {}
         self._skip_test_for_l10n_diff = []
         self._async_jobs = []
