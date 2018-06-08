@@ -2,7 +2,7 @@ location: clients/tests/test-client.py:971:test_004()/33
 cmd: $NMCLI dev show wlan0
 lang: C
 returncode: 0
-stdout: 1363 bytes
+stdout: 1406 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -14,6 +14,7 @@ GENERAL.CON-PATH:                       /org/freedesktop/NetworkManager/ActiveCo
 IP4.ADDRESS[1]:                         192.168.228.18/32
 IP4.ADDRESS[2]:                         192.168.209.179/25
 IP4.GATEWAY:                            192.168.41.120
+IP4.ROUTE:                              --
 IP4.DOMAIN[1]:                          sear4.foo2.bar
 IP4.DOMAIN[2]:                          sear4.fo.x.y
 IP4.DOMAIN[3]:                          sear4.foo1.bar

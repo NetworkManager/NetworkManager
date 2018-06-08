@@ -2,7 +2,7 @@ location: clients/tests/test-client.py:1003:test_004()/202
 cmd: $NMCLI --mode multiline --terse -f COMMON device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 740 bytes
+stdout: 751 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -14,6 +14,7 @@ GENERAL.CON-PATH:/org/freedesktop/NetworkManager/ActiveConnection/2
 IP4.ADDRESS[1]:192.168.228.18/32
 IP4.ADDRESS[2]:192.168.209.179/25
 IP4.GATEWAY:192.168.41.120
+IP4.ROUTE:
 IP4.DOMAIN[1]:sear4.foo2.bar
 IP4.DOMAIN[2]:sear4.fo.x.y
 IP4.DOMAIN[3]:sear4.foo1.bar

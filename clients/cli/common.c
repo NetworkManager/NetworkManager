@@ -49,6 +49,9 @@ _ip_config_get_routes (NMIPConfig *cfg)
 	if (!ptr_array)
 		return NULL;
 
+	if (ptr_array->len == 0)
+		return NULL;
+
 	arr = g_new (char *, ptr_array->len + 1);
 	for (i = 0; i < ptr_array->len; i++) {
 		NMIPRoute *route = g_ptr_array_index (ptr_array, i);
