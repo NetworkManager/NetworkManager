@@ -936,18 +936,20 @@ _print_data_header_cell_clear (gpointer cell_p)
 static void
 _print_data_cell_clear_text (PrintDataCell *cell)
 {
-	if (cell->text_to_free) {
-		switch (cell->text_format) {
-		case PRINT_DATA_CELL_FORMAT_TYPE_PLAIN:
+	switch (cell->text_format) {
+	case PRINT_DATA_CELL_FORMAT_TYPE_PLAIN:
+		if (cell->text_to_free)
 			g_free ((char *) cell->text.plain);
-			break;
-		case PRINT_DATA_CELL_FORMAT_TYPE_STRV:
+		cell->text.plain = NULL;
+		break;
+	case PRINT_DATA_CELL_FORMAT_TYPE_STRV:
+		if (cell->text_to_free)
 			g_strfreev ((char **) cell->text.strv);
-			break;
-		};
-		cell->text_to_free = FALSE;
-	}
-	memset (&cell->text, 0, sizeof (cell->text));
+		cell->text.strv = NULL;
+		break;
+	};
+	cell->text_format = PRINT_DATA_CELL_FORMAT_TYPE_PLAIN;
+	cell->text_to_free = FALSE;
 }
 
 static void
@@ -1098,6 +1100,7 @@ _print_fill (const NmcConfig *nmc_config,
 					cell->text.plain = "--";
 				} else if (!cell->text.plain)
 					cell->text.plain = "";
+				nm_assert (cell->text_format == PRINT_DATA_CELL_FORMAT_TYPE_PLAIN);
 			}
 		}
 	}
