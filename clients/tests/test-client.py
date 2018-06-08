@@ -878,6 +878,15 @@ class TestNmcli(NmTestBase):
         self.call_nmcli_l(['-f', 'all', 'dev', 'show', 'wlan0'],
                           replace_stdout = replace_stdout)
 
+        self.call_nmcli_l(['-f', 'GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES', 'dev', 'show', 'wlan0'],
+                          replace_stdout = replace_stdout)
+
+        self.call_nmcli_l(['-f', 'GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES', '-t', 'dev', 'show', 'wlan0'],
+                          replace_stdout = replace_stdout)
+
+        self.call_nmcli_l(['-f', 'DEVICE,TYPE,DBUS-PATH', 'dev'],
+                          replace_stdout = replace_stdout)
+
 ###############################################################################
 
 def main():

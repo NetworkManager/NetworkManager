@@ -1,0 +1,18 @@
+location: clients/tests/test-client.py:888:test_004()/41
+cmd: $NMCLI -f DEVICE,TYPE,DBUS-PATH dev
+lang: C
+returncode: 0
+stdout: 366 bytes
+>>>
+DEVICE  TYPE      DBUS-PATH                                 
+eth0    ethernet  /org/freedesktop/NetworkManager/Devices/1 
+eth1    ethernet  /org/freedesktop/NetworkManager/Devices/2 
+wlan1   wifi      /org/freedesktop/NetworkManager/Devices/4 
+wlan1   wifi      /org/freedesktop/NetworkManager/Devices/5 
+wlan0   wifi      /org/freedesktop/NetworkManager/Devices/3 
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<

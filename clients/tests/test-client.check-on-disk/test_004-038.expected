@@ -1,0 +1,46 @@
+location: clients/tests/test-client.py:882:test_004()/38
+cmd: $NMCLI -f GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES dev show wlan0
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 1691 bytes
+>>>
+GENERAL.DEVICE:                         wlan0
+GENERAL.TYPE:                           wifi
+GENERAL.NM-TYPE:                        NMDeviceWifi
+GENERAL.VENDOR:                         --
+GENERAL.PRODUCT:                        --
+GENERAL.DRIVER:                         virtual
+GENERAL.DRIVER-VERSION:                 --
+GENERAL.FIRMWARE-VERSION:               --
+GENERAL.HWADDR:                         13:E0:74:85:7C:D9
+GENERAL.MTU:                            0
+GENERAL.STATE:                          20 (niedostępne)
+GENERAL.REASON:                         0 (Nie podano przyczyny)
+GENERAL.UDI:                            /sys/devices/virtual/wlan0
+GENERAL.IP-IFACE:                       --
+GENERAL.IS-SOFTWARE:                    nie
+GENERAL.NM-MANAGED:                     tak
+GENERAL.AUTOCONNECT:                    tak
+GENERAL.FIRMWARE-MISSING:               nie
+GENERAL.NM-PLUGIN-MISSING:              nie
+GENERAL.PHYS-PORT-ID:                   --
+GENERAL.CONNECTION:                     con-vpn-1
+GENERAL.CON-UUID:                       UUID-con-vpn-1-REPLACED-REPLACED-REP
+GENERAL.CON-PATH:                       /org/freedesktop/NetworkManager/ActiveConnection/2
+GENERAL.METERED:                        nieznane
+GENERAL.HWADDR:                         13:E0:74:85:7C:D9
+WIFI-PROPERTIES.WEP:                    tak
+WIFI-PROPERTIES.WPA:                    tak
+WIFI-PROPERTIES.WPA2:                   tak
+WIFI-PROPERTIES.TKIP:                   tak
+WIFI-PROPERTIES.CCMP:                   tak
+WIFI-PROPERTIES.AP:                     tak
+WIFI-PROPERTIES.ADHOC:                  tak
+WIFI-PROPERTIES.2GHZ:                   nieznane
+WIFI-PROPERTIES.5GHZ:                   nieznane
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<

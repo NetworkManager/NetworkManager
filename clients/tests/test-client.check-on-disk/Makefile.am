@@ -179,4 +179,10 @@ clients_tests_expected_files = \
 	clients/tests/test-client.check-on-disk/test_004-034.expected \
 	clients/tests/test-client.check-on-disk/test_004-035.expected \
 	clients/tests/test-client.check-on-disk/test_004-036.expected \
+	clients/tests/test-client.check-on-disk/test_004-037.expected \
+	clients/tests/test-client.check-on-disk/test_004-038.expected \
+	clients/tests/test-client.check-on-disk/test_004-039.expected \
+	clients/tests/test-client.check-on-disk/test_004-040.expected \
+	clients/tests/test-client.check-on-disk/test_004-041.expected \
+	clients/tests/test-client.check-on-disk/test_004-042.expected \
 	$(NULL)

@@ -1,0 +1,46 @@
+location: clients/tests/test-client.py:882:test_004()/37
+cmd: $NMCLI -f GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES dev show wlan0
+lang: C
+returncode: 0
+stdout: 1679 bytes
+>>>
+GENERAL.DEVICE:                         wlan0
+GENERAL.TYPE:                           wifi
+GENERAL.NM-TYPE:                        NMDeviceWifi
+GENERAL.VENDOR:                         --
+GENERAL.PRODUCT:                        --
+GENERAL.DRIVER:                         virtual
+GENERAL.DRIVER-VERSION:                 --
+GENERAL.FIRMWARE-VERSION:               --
+GENERAL.HWADDR:                         13:E0:74:85:7C:D9
+GENERAL.MTU:                            0
+GENERAL.STATE:                          20 (unavailable)
+GENERAL.REASON:                         0 (No reason given)
+GENERAL.UDI:                            /sys/devices/virtual/wlan0
+GENERAL.IP-IFACE:                       --
+GENERAL.IS-SOFTWARE:                    no
+GENERAL.NM-MANAGED:                     yes
+GENERAL.AUTOCONNECT:                    yes
+GENERAL.FIRMWARE-MISSING:               no
+GENERAL.NM-PLUGIN-MISSING:              no
+GENERAL.PHYS-PORT-ID:                   --
+GENERAL.CONNECTION:                     con-vpn-1
+GENERAL.CON-UUID:                       UUID-con-vpn-1-REPLACED-REPLACED-REP
+GENERAL.CON-PATH:                       /org/freedesktop/NetworkManager/ActiveConnection/2
+GENERAL.METERED:                        unknown
+GENERAL.HWADDR:                         13:E0:74:85:7C:D9
+WIFI-PROPERTIES.WEP:                    yes
+WIFI-PROPERTIES.WPA:                    yes
+WIFI-PROPERTIES.WPA2:                   yes
+WIFI-PROPERTIES.TKIP:                   yes
+WIFI-PROPERTIES.CCMP:                   yes
+WIFI-PROPERTIES.AP:                     yes
+WIFI-PROPERTIES.ADHOC:                  yes
+WIFI-PROPERTIES.2GHZ:                   unknown
+WIFI-PROPERTIES.5GHZ:                   unknown
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<
