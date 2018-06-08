@@ -801,7 +801,7 @@ _output_selection_parse (const NMMetaAbstractInfo *const*fields,
 	gs_unref_array GArray *cols = NULL;
 	guint i;
 
-	selection = nm_meta_selection_create_parse_list (fields, NULL, fields_str, FALSE, error);
+	selection = nm_meta_selection_create_parse_list (fields, fields_str, FALSE, error);
 	if (!selection)
 		return FALSE;
 
@@ -868,7 +868,7 @@ parse_output_fields (const char *fields_str,
 	g_return_val_if_fail (!error || !*error, NULL);
 	g_return_val_if_fail (!out_group_fields || !*out_group_fields, NULL);
 
-	selection = nm_meta_selection_create_parse_list (fields_array, NULL, fields_str, TRUE, error);
+	selection = nm_meta_selection_create_parse_list (fields_array, fields_str, TRUE, error);
 	if (!selection)
 		return NULL;
 
