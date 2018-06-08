@@ -1965,7 +1965,6 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 		 * a profile has multiple active connections, it will be listed multiple times.
 		 * If that's not the case, we filter out these duplicate lines. */
 		selection = nm_meta_selection_create_parse_list ((const NMMetaAbstractInfo *const*) metagen_con_show,
-		                                                 NULL,
 		                                                 fields_str,
 		                                                 FALSE,
 		                                                 NULL);

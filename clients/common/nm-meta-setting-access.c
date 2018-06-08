@@ -598,7 +598,6 @@ nm_meta_selection_create_parse_one (const NMMetaAbstractInfo *const* fields_arra
 
 NMMetaSelectionResultList *
 nm_meta_selection_create_parse_list (const NMMetaAbstractInfo *const* fields_array,
-                                     const char *fields_prefix,
                                      const char *fields_str, /* a comma separated list of selectors */
                                      gboolean validate_nested,
                                      GError **error)
@@ -625,7 +624,7 @@ nm_meta_selection_create_parse_list (const NMMetaAbstractInfo *const* fields_arr
 		if (!fields_str_cur[0])
 			continue;
 		if (!_output_selection_select_one (fields_array,
-		                                   fields_prefix,
+		                                   NULL,
 		                                   fields_str_cur,
 		                                   validate_nested,
 		                                   &array,
