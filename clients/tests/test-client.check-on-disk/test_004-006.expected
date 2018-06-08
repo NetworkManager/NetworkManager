@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:825:test_004()/6
+location: clients/tests/test-client.py:831:test_004()/6
 cmd: $NMCLI connection mod con-xx1 802-11-wireless.band a
 lang: C
 returncode: 0

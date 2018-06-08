@@ -1,8 +1,8 @@
-location: clients/tests/test-client.py:768:test_003()/53
-cmd: $NMCLI -f ALL dev show eth0
-lang: C
+location: clients/tests/test-client.py:815:test_003()/100
+cmd: $NMCLI -f all dev show eth0
+lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3239 bytes
+stdout: 3230 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -14,25 +14,25 @@ GENERAL.DRIVER-VERSION:                 --
 GENERAL.FIRMWARE-VERSION:               --
 GENERAL.HWADDR:                         C0:61:AE:26:4D:D7
 GENERAL.MTU:                            0
-GENERAL.STATE:                          20 (unavailable)
-GENERAL.REASON:                         0 (No reason given)
+GENERAL.STATE:                          20 (niedostępne)
+GENERAL.REASON:                         0 (Nie podano przyczyny)
 GENERAL.UDI:                            /sys/devices/virtual/eth0
 GENERAL.IP-IFACE:                       --
-GENERAL.IS-SOFTWARE:                    no
-GENERAL.NM-MANAGED:                     yes
-GENERAL.AUTOCONNECT:                    yes
-GENERAL.FIRMWARE-MISSING:               no
-GENERAL.NM-PLUGIN-MISSING:              no
+GENERAL.IS-SOFTWARE:                    nie
+GENERAL.NM-MANAGED:                     tak
+GENERAL.AUTOCONNECT:                    tak
+GENERAL.FIRMWARE-MISSING:               nie
+GENERAL.NM-PLUGIN-MISSING:              nie
 GENERAL.PHYS-PORT-ID:                   --
 GENERAL.CONNECTION:                     ethernet
 GENERAL.CON-UUID:                       UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.CON-PATH:                       /org/freedesktop/NetworkManager/ActiveConnection/1
-GENERAL.METERED:                        unknown
-CAPABILITIES.CARRIER-DETECT:            no
-CAPABILITIES.SPEED:                     100 Mb/s
-CAPABILITIES.IS-SOFTWARE:               no
-CAPABILITIES.SRIOV:                     no
-WIRED-PROPERTIES.CARRIER:               off
+GENERAL.METERED:                        nieznane
+CAPABILITIES.CARRIER-DETECT:            nie
+CAPABILITIES.SPEED:                     100 Mb/s
+CAPABILITIES.IS-SOFTWARE:               nie
+CAPABILITIES.SRIOV:                     nie
+WIRED-PROPERTIES.CARRIER:               wyłączone
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
 IP4.ROUTE[1]:                           dst = 192.168.58.133/31, nh = 192.168.50.116, mt = 3130348792
@@ -56,7 +56,7 @@ DHCP6.OPTION[2]:                        dhcp-6-opt-5 = val-5
 DHCP6.OPTION[3]:                        dhcp-6-opt-6 = val-6
 DHCP6.OPTION[4]:                        dhcp-6-opt-8 = val-8
 CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings/{3,2,1}
-CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
+CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   (null) | (null)
 CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1
 

@@ -1,8 +1,8 @@
-location: clients/tests/test-client.py:768:test_003()/53
-cmd: $NMCLI -f ALL dev show eth0
+location: clients/tests/test-client.py:815:test_003()/99
+cmd: $NMCLI -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3239 bytes
+stdout: 3207 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -56,7 +56,7 @@ DHCP6.OPTION[2]:                        dhcp-6-opt-5 = val-5
 DHCP6.OPTION[3]:                        dhcp-6-opt-6 = val-6
 DHCP6.OPTION[4]:                        dhcp-6-opt-8 = val-8
 CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings/{3,2,1}
-CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
+CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   (null) | (null)
 CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1
 

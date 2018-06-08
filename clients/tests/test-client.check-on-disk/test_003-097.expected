@@ -1,0 +1,24 @@
+location: clients/tests/test-client.py:812:test_003()/97
+cmd: $NMCLI c s /org/freedesktop/NetworkManager/ActiveConnection/1
+lang: C
+returncode: 0
+stdout: 667 bytes
+>>>
+GENERAL.NAME:                           ethernet
+GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
+GENERAL.DEVICES:                        eth0
+GENERAL.STATE:                          deactivating
+GENERAL.DEFAULT:                        no
+GENERAL.DEFAULT6:                       no
+GENERAL.SPEC-OBJECT:                    --
+GENERAL.VPN:                            no
+GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/ActiveConnection/1
+GENERAL.CON-PATH:                       /org/freedesktop/NetworkManager/Settings/Connection/3
+GENERAL.ZONE:                           --
+GENERAL.MASTER-PATH:                    --
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<

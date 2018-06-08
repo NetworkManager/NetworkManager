@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:876:test_004()/33
+location: clients/tests/test-client.py:882:test_004()/33
 cmd: $NMCLI dev show wlan0
 lang: C
 returncode: 0

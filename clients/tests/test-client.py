@@ -767,6 +767,9 @@ class TestNmcli(NmTestBase):
             self.call_nmcli_l(['-f', 'ALL', 'dev', 'show', 'eth0'],
                               replace_stdout = replace_stdout)
 
+            self.call_nmcli_l(['-f', 'ALL', '-t', 'dev', 'show', 'eth0'],
+                              replace_stdout = replace_stdout)
+
         self.async_wait()
 
         self.srv.setProperty('/org/freedesktop/NetworkManager/ActiveConnection/1',
@@ -806,6 +809,9 @@ class TestNmcli(NmTestBase):
                               replace_stdout = replace_stdout)
 
             self.call_nmcli_l(['c', 's', '/org/freedesktop/NetworkManager/ActiveConnection/1'],
+                              replace_stdout = replace_stdout)
+
+            self.call_nmcli_l(['-f', 'all', 'dev', 'show', 'eth0'],
                               replace_stdout = replace_stdout)
 
     def test_004(self):

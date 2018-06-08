@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:882:test_004()/37
+location: clients/tests/test-client.py:888:test_004()/37
 cmd: $NMCLI -f GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES dev show wlan0
 lang: C
 returncode: 0

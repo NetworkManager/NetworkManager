@@ -1,13 +1,15 @@
-location: clients/tests/test-client.py:806:test_003()/90
-cmd: $NMCLI con s ethernet
+location: clients/tests/test-client.py:800:test_003()/90
+cmd: $NMCLI -f UUID,TYPE --mode tabular con
 lang: pl_PL.UTF-8
-returncode: 10
-stdout: 0 bytes
+returncode: 0
+stdout: 144 bytes
 >>>
+UUID                                  TYPE     
+5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet 
+UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-stderr: 58 bytes
+stderr: 0 bytes
 >>>
-Błąd: ethernet — nie ma takiego profilu połączenia.
 
 <<<

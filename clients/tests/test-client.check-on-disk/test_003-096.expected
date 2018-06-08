@@ -1,0 +1,13 @@
+location: clients/tests/test-client.py:809:test_003()/96
+cmd: $NMCLI con s ethernet
+lang: pl_PL.UTF-8
+returncode: 10
+stdout: 0 bytes
+>>>
+
+<<<
+stderr: 58 bytes
+>>>
+Błąd: ethernet — nie ma takiego profilu połączenia.
+
+<<<

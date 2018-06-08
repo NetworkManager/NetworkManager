@@ -1,12 +1,12 @@
-location: clients/tests/test-client.py:750:test_003()/39
-cmd: $NMCLI -f ACTIVE-PATH,DEVICE,UUID con s -act
+location: clients/tests/test-client.py:747:test_003()/39
+cmd: $NMCLI -f ALL con s -a
 lang: C
 returncode: 0
-stdout: 294 bytes
+stdout: 813 bytes
 >>>
-ACTIVE-PATH                                         DEVICE  UUID                                 
-/org/freedesktop/NetworkManager/ActiveConnection/1  eth0    UUID-ethernet-REPLACED-REPLACED-REPL 
-/org/freedesktop/NetworkManager/ActiveConnection/2  eth1    UUID-ethernet-REPLACED-REPLACED-REPL 
+NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE      ACTIVE-PATH                                         SLAVE 
+ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  yes     eth0    activated  /org/freedesktop/NetworkManager/ActiveConnection/1  --    
+ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  yes     eth1    activated  /org/freedesktop/NetworkManager/ActiveConnection/2  --    
 
 <<<
 stderr: 0 bytes

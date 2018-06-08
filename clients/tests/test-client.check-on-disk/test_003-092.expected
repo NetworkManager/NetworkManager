@@ -1,21 +1,11 @@
-location: clients/tests/test-client.py:809:test_003()/92
-cmd: $NMCLI c s /org/freedesktop/NetworkManager/ActiveConnection/1
+location: clients/tests/test-client.py:803:test_003()/92
+cmd: $NMCLI -f UUID,TYPE --mode tabular --terse con
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 672 bytes
+stdout: 104 bytes
 >>>
-GENERAL.NAME:                           ethernet
-GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
-GENERAL.DEVICES:                        eth0
-GENERAL.STATE:                          dezaktywowanie
-GENERAL.DEFAULT:                        nie
-GENERAL.DEFAULT6:                       nie
-GENERAL.SPEC-OBJECT:                    --
-GENERAL.VPN:                            nie
-GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/ActiveConnection/1
-GENERAL.CON-PATH:                       /org/freedesktop/NetworkManager/Settings/Connection/3
-GENERAL.ZONE:                           --
-GENERAL.MASTER-PATH:                    --
+5fcfd6d7-1e63-3332-8826-a7eda103792d:802-3-ethernet
+UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
 
 <<<
 stderr: 0 bytes

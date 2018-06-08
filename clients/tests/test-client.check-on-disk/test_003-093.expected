@@ -1,15 +1,14 @@
-location: clients/tests/test-client.py:806:test_003()/71
+location: clients/tests/test-client.py:806:test_003()/93
 cmd: $NMCLI -f UUID,TYPE --mode tabular --pretty con
 lang: C
 returncode: 0
-stdout: 394 bytes
+stdout: 346 bytes
 >>>
 ======================================
   NetworkManager connection profiles
 ======================================
 UUID                                  TYPE     
 --------------------------------------------------------------------------------------
-UUID-ethernet-REPLACED-REPLACED-REPL  ethernet 
 5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet 
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 

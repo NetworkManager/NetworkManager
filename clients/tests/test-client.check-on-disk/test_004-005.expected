@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:824:test_004()/5
+location: clients/tests/test-client.py:830:test_004()/5
 cmd: $NMCLI connection mod con-xx1 802.abc ''
 lang: C
 returncode: 2
