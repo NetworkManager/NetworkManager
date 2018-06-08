@@ -2,7 +2,7 @@ location: clients/tests/test-client.py:974:test_004()/35
 cmd: $NMCLI -f all dev show wlan0
 lang: C
 returncode: 0
-stdout: 4643 bytes
+stdout: 4600 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -68,7 +68,6 @@ AP[3].SECURITY:                         WPA1 WPA2
 IP4.ADDRESS[1]:                         192.168.228.18/32
 IP4.ADDRESS[2]:                         192.168.209.179/25
 IP4.GATEWAY:                            192.168.41.120
-IP4.ROUTE:                              --
 IP4.DOMAIN[1]:                          sear4.foo2.bar
 IP4.DOMAIN[2]:                          sear4.fo.x.y
 IP4.DOMAIN[3]:                          sear4.foo1.bar

@@ -1046,20 +1046,22 @@ _print_fill (const NmcConfig *nmc_config,
 			                                   &is_default,
 			                                   (gpointer *) &to_free);
 
+			nm_assert (!to_free || value == to_free);
+
 			header_cell->skip = nmc_config->overview && is_default;
 
 			if (NM_FLAGS_HAS (text_out_flags, NM_META_ACCESSOR_GET_OUT_FLAGS_STRV)) {
-				if (value) {
-					if (nmc_config->multiline_output) {
-						cell->text_format = PRINT_DATA_CELL_FORMAT_TYPE_STRV;
-						cell->text.strv = value;
-						cell->text_to_free = !!to_free;
-					} else {
+				if (nmc_config->multiline_output) {
+					cell->text_format = PRINT_DATA_CELL_FORMAT_TYPE_STRV;
+					cell->text.strv = value;
+					cell->text_to_free = !!to_free;
+				} else {
+					if (value && ((const char *const*) value)[0]) {
 						cell->text.plain = g_strjoinv (" | ", (char **) value);
 						cell->text_to_free = TRUE;
-						if (to_free)
-							g_strfreev ((char **) to_free);
 					}
+					if (to_free)
+						g_strfreev ((char **) to_free);
 				}
 			} else {
 				cell->text.plain = value;
