@@ -52,24 +52,24 @@ stderr: 49 bytes
 Błąd: Nie odnaleziono urządzenia „wlan0”.
 
 <<<
-size: 146
+size: 120
 location: clients/tests/test-client.py:831:test_001()/5
 cmd: $NMCLI c s
 lang: C
 returncode: 0
-stdout: 26 bytes
+stdout: 1 bytes
 >>>
-NAME  UUID  TYPE  DEVICE 
+
 
 <<<
-size: 156
+size: 130
 location: clients/tests/test-client.py:831:test_001()/6
 cmd: $NMCLI c s
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 26 bytes
+stdout: 1 bytes
 >>>
-NAME  UUID  TYPE  DEVICE 
+
 
 <<<
 size: 192
