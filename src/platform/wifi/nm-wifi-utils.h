@@ -29,11 +29,18 @@
 
 typedef struct NMWifiUtils NMWifiUtils;
 
+#define NM_TYPE_WIFI_UTILS            (nm_wifi_utils_get_type ())
+#define NM_WIFI_UTILS(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_WIFI_UTILS, NMWifiUtils))
+#define NM_WIFI_UTILS_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_WIFI_UTILS, NMWifiUtilsClass))
+#define NM_IS_WIFI_UTILS(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_WIFI_UTILS))
+#define NM_IS_WIFI_UTILS_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_WIFI_UTILS))
+#define NM_WIFI_UTILS_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_WIFI_UTILS, NMWifiUtilsClass))
+
+GType nm_wifi_utils_get_type (void);
+
 gboolean nm_wifi_utils_is_wifi (int dirfd, const char *ifname);
 
-NMWifiUtils *nm_wifi_utils_init (int ifindex, gboolean check_scan);
-
-void nm_wifi_utils_unref (NMWifiUtils *data);
+NMWifiUtils *nm_wifi_utils_new (int ifindex, gboolean check_scan);
 
 NMDeviceWifiCapabilities nm_wifi_utils_get_caps (NMWifiUtils *data);
 
@@ -62,9 +69,9 @@ gboolean nm_wifi_utils_indicate_addressing_running (NMWifiUtils *data, gboolean 
 
 gboolean nm_wifi_utils_set_powersave (NMWifiUtils *data, guint32 powersave);
 
-NMSettingWirelessWakeOnWLan wifi_utils_get_wake_on_wlan (WifiData *data);
+NMSettingWirelessWakeOnWLan nm_wifi_utils_get_wake_on_wlan (NMWifiUtils *data);
 
-gboolean wifi_utils_set_wake_on_wlan (WifiData *data, NMSettingWirelessWakeOnWLan wowl);
+gboolean nm_wifi_utils_set_wake_on_wlan (NMWifiUtils *data, NMSettingWirelessWakeOnWLan wowl);
 
 /* OLPC Mesh-only functions */
 guint32 nm_wifi_utils_get_mesh_channel (NMWifiUtils *data);

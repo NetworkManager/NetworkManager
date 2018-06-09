@@ -25,7 +25,7 @@
 #include "nm-wifi-utils.h"
 
 typedef struct {
-	gsize struct_size;
+	GObjectClass parent;
 
 	NM80211Mode (*get_mode) (NMWifiUtils *data);
 
@@ -35,10 +35,10 @@ typedef struct {
 	gboolean (*set_powersave) (NMWifiUtils *data, guint32 powersave);
 
 	/* Get WakeOnWLAN configuration on an interface */
-	NMSettingWirelessWakeOnWLan (*get_wake_on_wlan) (WifiData *data);
+	NMSettingWirelessWakeOnWLan (*get_wake_on_wlan) (NMWifiUtils *data);
 
 	/* Set WakeOnWLAN mode on an interface */
-	gboolean (*set_wake_on_wlan) (WifiData *data, NMSettingWirelessWakeOnWLan wowl);
+	gboolean (*set_wake_on_wlan) (NMWifiUtils *data, NMSettingWirelessWakeOnWLan wowl);
 
 	/* Return current frequency in MHz (really associated BSS frequency) */
 	guint32 (*get_freq) (NMWifiUtils *data);
@@ -56,8 +56,6 @@ typedef struct {
 	 */
 	int (*get_qual) (NMWifiUtils *data);
 
-	void (*deinit) (NMWifiUtils *data);
-
 	/* OLPC Mesh-only functions */
 
 	guint32 (*get_mesh_channel) (NMWifiUtils *data);
@@ -72,11 +70,10 @@ typedef struct {
 } NMWifiUtilsClass;
 
 struct NMWifiUtils {
-	const NMWifiUtilsClass *klass;
+	GObject parent;
+
 	int ifindex;
 	NMDeviceWifiCapabilities caps;
 };
-
-gpointer nm_wifi_utils_new (const NMWifiUtilsClass *klass, int ifindex);
 
 #endif  /* __WIFI_UTILS_PRIVATE_H__ */

@@ -50,6 +50,12 @@ typedef struct {
 	guint32 freqs[IW_MAX_FREQUENCIES];
 } NMWifiUtilsWext;
 
+typedef struct {
+	NMWifiUtilsClass parent;
+} NMWifiUtilsWextClass;
+
+G_DEFINE_TYPE (NMWifiUtilsWext, nm_wifi_utils_wext, NM_TYPE_WIFI_UTILS)
+
 /* Until a new wireless-tools comes out that has the defs and the structure,
  * need to copy them here.
  */
@@ -94,11 +100,11 @@ iw_freq_to_uint32 (const struct iw_freq *freq)
 }
 
 static void
-wifi_wext_deinit (NMWifiUtils *parent)
+dispose (GObject *object)
 {
-	NMWifiUtilsWext *wext = (NMWifiUtilsWext *) parent;
+	NMWifiUtilsWext *wext = NM_WIFI_UTILS_WEXT (object);
 
-	nm_close (wext->fd);
+	wext->fd = nm_close (wext->fd);
 }
 
 static gboolean
@@ -626,24 +632,37 @@ wext_get_caps (NMWifiUtilsWext *wext, const char *ifname, struct iw_range *range
 	return caps;
 }
 
-NMWifiUtils *
-nm_wifi_utils_wext_init (int ifindex, gboolean check_scan)
+/*****************************************************************************/
+
+static void
+nm_wifi_utils_wext_init (NMWifiUtilsWext *self)
 {
-	static const NMWifiUtilsClass klass = {
-		.struct_size = sizeof (NMWifiUtilsWext),
-		.get_mode = wifi_wext_get_mode,
-		.set_mode = wifi_wext_set_mode,
-		.set_powersave = wifi_wext_set_powersave,
-		.get_freq = wifi_wext_get_freq,
-		.find_freq = wifi_wext_find_freq,
-		.get_bssid = wifi_wext_get_bssid,
-		.get_rate = wifi_wext_get_rate,
-		.get_qual = wifi_wext_get_qual,
-		.deinit = wifi_wext_deinit,
-		.get_mesh_channel = wifi_wext_get_mesh_channel,
-		.set_mesh_channel = wifi_wext_set_mesh_channel,
-		.set_mesh_ssid = wifi_wext_set_mesh_ssid,
-	};
+}
+
+static void
+nm_wifi_utils_wext_class_init (NMWifiUtilsWextClass *klass)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMWifiUtilsClass *wifi_utils_class = NM_WIFI_UTILS_CLASS (klass);
+
+	object_class->dispose = dispose;
+
+	wifi_utils_class->get_mode = wifi_wext_get_mode;
+	wifi_utils_class->set_mode = wifi_wext_set_mode;
+	wifi_utils_class->set_powersave = wifi_wext_set_powersave;
+	wifi_utils_class->get_freq = wifi_wext_get_freq;
+	wifi_utils_class->find_freq = wifi_wext_find_freq;
+	wifi_utils_class->get_bssid = wifi_wext_get_bssid;
+	wifi_utils_class->get_rate = wifi_wext_get_rate;
+	wifi_utils_class->get_qual = wifi_wext_get_qual;
+	wifi_utils_class->get_mesh_channel = wifi_wext_get_mesh_channel;
+	wifi_utils_class->set_mesh_channel = wifi_wext_set_mesh_channel;
+	wifi_utils_class->set_mesh_ssid = wifi_wext_set_mesh_ssid;
+}
+
+NMWifiUtils *
+nm_wifi_utils_wext_new (int ifindex, gboolean check_scan)
+{
 	NMWifiUtilsWext *wext;
 	struct iw_range range;
 	guint32 response_len = 0;
@@ -658,8 +677,9 @@ nm_wifi_utils_wext_init (int ifindex, gboolean check_scan)
 		return NULL;
 	}
 
-	wext = nm_wifi_utils_new (&klass, ifindex);
+	wext = g_object_new (NM_TYPE_WIFI_UTILS_WEXT, NULL);
 
+	wext->parent.ifindex = ifindex;
 	wext->fd = socket (PF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
 	if (wext->fd < 0)
 		goto error;
@@ -734,7 +754,7 @@ nm_wifi_utils_wext_init (int ifindex, gboolean check_scan)
 	return (NMWifiUtils *) wext;
 
 error:
-	nm_wifi_utils_unref ((NMWifiUtils *) wext);
+	g_object_unref (wext);
 	return NULL;
 }
 
