@@ -51,6 +51,8 @@
 #include "nm-vpn-manager.h"
 #include "dns/nm-dns-manager.h"
 
+#define KEY_INTERACTIVE_USERNAME "x-vpn-interactive-username"
+
 typedef enum {
 	/* Only system secrets */
 	SECRETS_REQ_SYSTEM = 0,
@@ -102,6 +104,7 @@ typedef struct {
 
 	NMSettingsConnectionCallId *secrets_id;
 	SecretsReq secrets_idx;
+	gboolean ask_username;
 	char *username;
 
 	VpnState vpn_state;
@@ -418,6 +421,7 @@ vpn_cleanup (NMVpnConnection *self, NMDevice *parent_dev)
 	 * gets asked for them next time the connection is activated.
 	 */
 	nm_active_connection_clear_secrets (NM_ACTIVE_CONNECTION (self));
+	nm_clear_g_free (&priv->username);
 }
 
 static void
@@ -947,6 +951,7 @@ plugin_state_changed (NMVpnConnection *self, NMVpnServiceState new_service_state
 		 * connection is activated.
 		 */
 		nm_active_connection_clear_secrets (NM_ACTIVE_CONNECTION (self));
+		nm_clear_g_free (&priv->username);
 
 		if ((priv->vpn_state >= STATE_WAITING) && (priv->vpn_state <= STATE_ACTIVATED)) {
 			VpnState old_state = priv->vpn_state;
@@ -2097,6 +2102,8 @@ _name_owner_changed (GObject *object,
 {
 	NMVpnConnection *self = NM_VPN_CONNECTION (user_data);
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+	NMConnection *connection;
+	NMSettingVpn *s_vpn;
 	char *owner;
 
 	owner = g_dbus_proxy_get_name_owner (G_DBUS_PROXY (object));
@@ -2124,6 +2131,13 @@ _name_owner_changed (GObject *object,
 		                         G_CALLBACK (ip6_config_cb), self);
 
 		_set_vpn_state (self, STATE_NEED_AUTH, NM_ACTIVE_CONNECTION_STATE_REASON_NONE, FALSE);
+
+		connection = _get_applied_connection (self);
+		s_vpn = nm_connection_get_setting_vpn (connection);
+		if (s_vpn)
+			priv->ask_username = nm_setting_vpn_get_ask_user_name (s_vpn) == NM_SETTING_VPN_ASK_USER_NAME_YES;
+		else
+			priv->ask_username = FALSE;
 
 		/* Kick off the secrets requests; first we get existing system secrets
 		 * and ask the plugin if these are sufficient, next we get all existing
@@ -2504,6 +2518,8 @@ plugin_need_secrets_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 	gs_unref_variant GVariant *reply = NULL;
 	gs_free_error GError *error = NULL;
 	const char *setting_name;
+	gboolean username_missing = FALSE;
+	gs_free const char **hints = NULL;
 
 	reply = _nm_dbus_proxy_call_finish (proxy, result, G_VARIANT_TYPE ("(s)"), &error);
 	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
@@ -2521,8 +2537,29 @@ plugin_need_secrets_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 		return;
 	}
 
+	/* If the VPN setting requires asking the username
+	 * interactively, never consider existing secrets as
+	 * sufficient.
+	 */
+	if (priv->ask_username) {
+		switch (priv->secrets_idx) {
+		case SECRETS_REQ_SYSTEM:
+		case SECRETS_REQ_EXISTING:
+			_LOGD ("username must be asked to agents");
+			username_missing = TRUE;
+			hints = g_new0 (const char *, 2);
+			hints[0] = KEY_INTERACTIVE_USERNAME;
+			break;
+		case SECRETS_REQ_NEW:
+			username_missing = !priv->username;
+			break;
+		default:
+			break;
+		}
+	}
+
 	g_variant_get (reply, "(&s)", &setting_name);
-	if (!strlen (setting_name)) {
+	if (!strlen (setting_name) && !username_missing) {
 		_LOGD ("service indicated no additional secrets required");
 
 		/* No secrets required; we can start the VPN */
@@ -2536,7 +2573,7 @@ plugin_need_secrets_cb (GDBusProxy *proxy, GAsyncResult *result, gpointer user_d
 		_set_vpn_state (self, STATE_FAILED, NM_ACTIVE_CONNECTION_STATE_REASON_NO_SECRETS, FALSE);
 	} else {
 		_LOGD ("service indicated additional secrets required");
-		get_secrets (self, priv->secrets_idx + 1, NULL);
+		get_secrets (self, priv->secrets_idx + 1, (const char *const *) hints);
 	}
 }
 
@@ -2572,6 +2609,8 @@ get_secrets_cb (NMSettingsConnection *connection,
 {
 	NMVpnConnection *self = NM_VPN_CONNECTION (user_data);
 	NMVpnConnectionPrivate *priv;
+	NMConnection *applied;
+	NMSettingVpn *s_vpn;
 	GVariant *dict;
 
 	g_return_if_fail (NM_IS_VPN_CONNECTION (self));
@@ -2593,8 +2632,18 @@ get_secrets_cb (NMSettingsConnection *connection,
 		return;
 	}
 
-	/* Cache the username for later */
-	if (agent_username) {
+	if (priv->ask_username) {
+		applied = _get_applied_connection (self);
+		if (   applied
+		    && (s_vpn = nm_connection_get_setting_vpn (applied))
+		    && nm_setting_vpn_get_secret (s_vpn, KEY_INTERACTIVE_USERNAME)) {
+			g_free (priv->username);
+			priv->username = g_strdup (nm_setting_vpn_get_secret (s_vpn, KEY_INTERACTIVE_USERNAME));
+			nm_setting_vpn_remove_secret (s_vpn, KEY_INTERACTIVE_USERNAME);
+			_LOGD ("set username '%s' from interactive secret", priv->username);
+		}
+	} else if (agent_username) {
+		/* Cache the agent username for later */
 		g_free (priv->username);
 		priv->username = g_strdup (agent_username);
 	}
@@ -2680,7 +2729,7 @@ plugin_interactive_secrets_required (NMVpnConnection *self,
 {
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 	const gsize secrets_len = NM_PTRARRAY_LEN (secrets);
-	gsize i;
+	gsize i, j;
 	gs_free const char **hints = NULL;
 	gs_free char *message_hint = NULL;
 
@@ -2699,14 +2748,18 @@ plugin_interactive_secrets_required (NMVpnConnection *self,
 
 	/* Copy hints and add message to the end */
 	hints = g_new (const char *, secrets_len + 2);
-	for (i = 0; i < secrets_len; i++)
-		hints[i] = secrets[i];
+	for (i = 0, j = 0; i < secrets_len; i++) {
+		/* We can only ask username when the property allows it */
+		if (!priv->ask_username && nm_streq (secrets[i], KEY_INTERACTIVE_USERNAME))
+			continue;
+		hints[j++] = secrets[i];
+	}
 	if (message) {
 		message_hint = g_strdup_printf ("x-vpn-message:%s", message);
-		hints[i++] = message_hint;
+		hints[j++] = message_hint;
 	}
-	hints[i] = NULL;
-	nm_assert (i < secrets_len + 2);
+	hints[j] = NULL;
+	nm_assert (j < secrets_len + 2);
 
 	get_secrets (self, SECRETS_REQ_INTERACTIVE, hints);
 }
