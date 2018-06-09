@@ -55,8 +55,8 @@ sources = files(
   'ndisc/nm-lndp-ndisc.c',
   'ndisc/nm-ndisc.c',
   'platform/nm-netlink.c',
-  'platform/wifi/wifi-utils-nl80211.c',
-  'platform/wifi/wifi-utils.c',
+  'platform/wifi/nm-wifi-utils-nl80211.c',
+  'platform/wifi/nm-wifi-utils.c',
   'platform/nm-linux-platform.c',
   'platform/nm-platform.c',
   'platform/nm-platform-utils.c',
@@ -79,7 +79,7 @@ deps = [
 ]
 
 if enable_wext
-  sources += files('platform/wifi/wifi-utils-wext.c')
+  sources += files('platform/wifi/nm-wifi-utils-wext.c')
 endif
 
 libnetwork_manager_base = static_library(

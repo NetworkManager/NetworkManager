@@ -16,13 +16,14 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2011 Intel Corporation. All rights reserved.
+ * Copyright (C) 2018 Red Hat, Inc.
  */
 
 #ifndef __WIFI_UTILS_NL80211_H__
 #define __WIFI_UTILS_NL80211_H__
 
-#include "wifi-utils.h"
+#include "nm-wifi-utils.h"
 
-WifiData *wifi_nl80211_init (int ifindex);
+NMWifiUtils *nm_wifi_utils_nl80211_init (int ifindex);
 
 #endif  /* __WIFI_UTILS_NL80211_H__ */

@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2012 - 2017 Red Hat, Inc.
+ * Copyright (C) 2012 - 2018 Red Hat, Inc.
  */
 #include "nm-default.h"
 
@@ -50,8 +50,8 @@
 #include "nmp-netns.h"
 #include "nm-platform-utils.h"
 #include "nm-platform-private.h"
-#include "wifi/wifi-utils.h"
-#include "wifi/wifi-utils-wext.h"
+#include "wifi/nm-wifi-utils.h"
+#include "wifi/nm-wifi-utils-wext.h"
 #include "nm-utils/unaligned.h"
 #include "nm-utils/nm-udev-utils.h"
 
@@ -885,7 +885,7 @@ _linktype_get_type (NMPlatform *platform,
 			}
 
 			/* Fallback for drivers that don't call SET_NETDEV_DEVTYPE() */
-			if (wifi_utils_is_wifi (dirfd, ifname_verified))
+			if (nm_wifi_utils_is_wifi (dirfd, ifname_verified))
 				return NM_LINK_TYPE_WIFI;
 		}
 
@@ -5980,12 +5980,12 @@ infiniband_partition_delete (NMPlatform *platform, int parent, int p_key)
 
 /*****************************************************************************/
 
-static WifiData *
+static NMWifiUtils *
 wifi_get_wifi_data (NMPlatform *platform, int ifindex)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	const NMPlatformLink *pllink;
-	WifiData *wifi_data;
+	NMWifiUtils *wifi_data;
 
 	wifi_data = g_hash_table_lookup (priv->wifi_data, GINT_TO_POINTER (ifindex));
 	pllink = nm_platform_link_get (platform, ifindex);
@@ -5993,14 +5993,14 @@ wifi_get_wifi_data (NMPlatform *platform, int ifindex)
 	if (!wifi_data) {
 		if (pllink) {
 			if (pllink->type == NM_LINK_TYPE_WIFI)
-				wifi_data = wifi_utils_init (ifindex, TRUE);
+				wifi_data = nm_wifi_utils_init (ifindex, TRUE);
 			else if (pllink->type == NM_LINK_TYPE_OLPC_MESH) {
 				/* The kernel driver now uses nl80211, but we force use of WEXT because
 				 * the cfg80211 interactions are not quite ready to support access to
 				 * mesh control through nl80211 just yet.
 				 */
 #if HAVE_WEXT
-				wifi_data = wifi_wext_init (ifindex, FALSE);
+				wifi_data = nm_wifi_utils_wext_init (ifindex, FALSE);
 #endif
 			}
 
@@ -6013,7 +6013,7 @@ wifi_get_wifi_data (NMPlatform *platform, int ifindex)
 }
 #define WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, retval) \
 	nm_auto_pop_netns NMPNetns *netns = NULL; \
-	WifiData *wifi_data; \
+	NMWifiUtils *wifi_data; \
 	if (!nm_platform_netns_push (platform, &netns)) \
 		return retval; \
 	wifi_data = wifi_get_wifi_data (platform, ifindex); \
@@ -6025,7 +6025,7 @@ wifi_get_capabilities (NMPlatform *platform, int ifindex, NMDeviceWifiCapabiliti
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, FALSE);
 	if (caps)
-		*caps = wifi_utils_get_caps (wifi_data);
+		*caps = nm_wifi_utils_get_caps (wifi_data);
 	return TRUE;
 }
 
@@ -6033,63 +6033,63 @@ static gboolean
 wifi_get_bssid (NMPlatform *platform, int ifindex, guint8 *bssid)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, FALSE);
-	return wifi_utils_get_bssid (wifi_data, bssid);
+	return nm_wifi_utils_get_bssid (wifi_data, bssid);
 }
 
 static guint32
 wifi_get_frequency (NMPlatform *platform, int ifindex)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, 0);
-	return wifi_utils_get_freq (wifi_data);
+	return nm_wifi_utils_get_freq (wifi_data);
 }
 
 static gboolean
 wifi_get_quality (NMPlatform *platform, int ifindex)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, FALSE);
-	return wifi_utils_get_qual (wifi_data);
+	return nm_wifi_utils_get_qual (wifi_data);
 }
 
 static guint32
 wifi_get_rate (NMPlatform *platform, int ifindex)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, FALSE);
-	return wifi_utils_get_rate (wifi_data);
+	return nm_wifi_utils_get_rate (wifi_data);
 }
 
 static NM80211Mode
 wifi_get_mode (NMPlatform *platform, int ifindex)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, NM_802_11_MODE_UNKNOWN);
-	return wifi_utils_get_mode (wifi_data);
+	return nm_wifi_utils_get_mode (wifi_data);
 }
 
 static void
 wifi_set_mode (NMPlatform *platform, int ifindex, NM80211Mode mode)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, );
-	wifi_utils_set_mode (wifi_data, mode);
+	nm_wifi_utils_set_mode (wifi_data, mode);
 }
 
 static void
 wifi_set_powersave (NMPlatform *platform, int ifindex, guint32 powersave)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, );
-	wifi_utils_set_powersave (wifi_data, powersave);
+	nm_wifi_utils_set_powersave (wifi_data, powersave);
 }
 
 static guint32
 wifi_find_frequency (NMPlatform *platform, int ifindex, const guint32 *freqs)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, 0);
-	return wifi_utils_find_freq (wifi_data, freqs);
+	return nm_wifi_utils_find_freq (wifi_data, freqs);
 }
 
 static void
 wifi_indicate_addressing_running (NMPlatform *platform, int ifindex, gboolean running)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, );
-	wifi_utils_indicate_addressing_running (wifi_data, running);
+	nm_wifi_utils_indicate_addressing_running (wifi_data, running);
 }
 
 static NMSettingWirelessWakeOnWLan
@@ -6155,21 +6155,21 @@ static guint32
 mesh_get_channel (NMPlatform *platform, int ifindex)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, 0);
-	return wifi_utils_get_mesh_channel (wifi_data);
+	return nm_wifi_utils_get_mesh_channel (wifi_data);
 }
 
 static gboolean
 mesh_set_channel (NMPlatform *platform, int ifindex, guint32 channel)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, FALSE);
-	return wifi_utils_set_mesh_channel (wifi_data, channel);
+	return nm_wifi_utils_set_mesh_channel (wifi_data, channel);
 }
 
 static gboolean
 mesh_set_ssid (NMPlatform *platform, int ifindex, const guint8 *ssid, gsize len)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, FALSE);
-	return wifi_utils_set_mesh_ssid (wifi_data, ssid, len);
+	return nm_wifi_utils_set_mesh_ssid (wifi_data, ssid, len);
 }
 
 /*****************************************************************************/
@@ -6186,12 +6186,12 @@ link_get_wake_on_lan (NMPlatform *platform, int ifindex)
 	if (type == NM_LINK_TYPE_ETHERNET)
 		return nmp_utils_ethtool_get_wake_on_lan (ifindex);
 	else if (type == NM_LINK_TYPE_WIFI) {
-		WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
+		NMWifiUtils *wifi_data = wifi_get_wifi_data (platform, ifindex);
 
 		if (!wifi_data)
 			return FALSE;
 
-		return wifi_utils_get_wake_on_wlan (wifi_data) != NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE;
+		return nm_wifi_utils_get_wake_on_wlan (wifi_data) != NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE;
 	} else
 		return FALSE;
 }
@@ -7013,7 +7013,7 @@ nm_linux_platform_init (NMLinuxPlatform *self)
 	priv->delayed_action.list_master_connected = g_ptr_array_new ();
 	priv->delayed_action.list_refresh_link = g_ptr_array_new ();
 	priv->delayed_action.list_wait_for_nl_response = g_array_new (FALSE, TRUE, sizeof (DelayedActionWaitForNlResponseData));
-	priv->wifi_data = g_hash_table_new_full (nm_direct_hash, NULL, NULL, (GDestroyNotify) wifi_utils_unref);
+	priv->wifi_data = g_hash_table_new_full (nm_direct_hash, NULL, NULL, (GDestroyNotify) nm_wifi_utils_unref);
 }
 
 static void

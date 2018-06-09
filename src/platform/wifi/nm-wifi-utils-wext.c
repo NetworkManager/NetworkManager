@@ -15,13 +15,13 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2011 Red Hat, Inc.
+ * Copyright (C) 2005 - 2018 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
 #include "nm-default.h"
 
-#include "wifi-utils-wext.h"
+#include "nm-wifi-utils-wext.h"
 
 #include <errno.h>
 #include <string.h>
@@ -38,17 +38,17 @@
 #include <sys/socket.h>
 #include <linux/wireless.h>
 
-#include "wifi-utils-private.h"
+#include "nm-wifi-utils-private.h"
 #include "nm-utils.h"
 #include "platform/nm-platform-utils.h"
 
 typedef struct {
-	WifiData parent;
+	NMWifiUtils parent;
 	int fd;
 	struct iw_quality max_qual;
 	gint8 num_freqs;
 	guint32 freqs[IW_MAX_FREQUENCIES];
-} WifiDataWext;
+} NMWifiUtilsWext;
 
 /* Until a new wireless-tools comes out that has the defs and the structure,
  * need to copy them here.
@@ -94,9 +94,9 @@ iw_freq_to_uint32 (const struct iw_freq *freq)
 }
 
 static void
-wifi_wext_deinit (WifiData *parent)
+wifi_wext_deinit (NMWifiUtils *parent)
 {
-	WifiDataWext *wext = (WifiDataWext *) parent;
+	NMWifiUtilsWext *wext = (NMWifiUtilsWext *) parent;
 
 	nm_close (wext->fd);
 }
@@ -118,9 +118,9 @@ get_ifname (int ifindex, char *buffer, const char *op)
 }
 
 static NM80211Mode
-wifi_wext_get_mode_ifname (WifiData *data, const char *ifname)
+wifi_wext_get_mode_ifname (NMWifiUtils *data, const char *ifname)
 {
-	WifiDataWext *wext = (WifiDataWext *) data;
+	NMWifiUtilsWext *wext = (NMWifiUtilsWext *) data;
 	struct iwreq wrq;
 
 	memset (&wrq, 0, sizeof (struct iwreq));
@@ -150,7 +150,7 @@ wifi_wext_get_mode_ifname (WifiData *data, const char *ifname)
 }
 
 static NM80211Mode
-wifi_wext_get_mode (WifiData *data)
+wifi_wext_get_mode (NMWifiUtils *data)
 {
 	char ifname[IFNAMSIZ];
 
@@ -161,9 +161,9 @@ wifi_wext_get_mode (WifiData *data)
 }
 
 static gboolean
-wifi_wext_set_mode (WifiData *data, const NM80211Mode mode)
+wifi_wext_set_mode (NMWifiUtils *data, const NM80211Mode mode)
 {
-	WifiDataWext *wext = (WifiDataWext *) data;
+	NMWifiUtilsWext *wext = (NMWifiUtilsWext *) data;
 	struct iwreq wrq;
 	char ifname[IFNAMSIZ];
 
@@ -203,9 +203,9 @@ wifi_wext_set_mode (WifiData *data, const NM80211Mode mode)
 }
 
 static gboolean
-wifi_wext_set_powersave (WifiData *data, guint32 powersave)
+wifi_wext_set_powersave (NMWifiUtils *data, guint32 powersave)
 {
-	WifiDataWext *wext = (WifiDataWext *) data;
+	NMWifiUtilsWext *wext = (NMWifiUtilsWext *) data;
 	struct iwreq wrq;
 	char ifname[IFNAMSIZ];
 
@@ -232,9 +232,9 @@ wifi_wext_set_powersave (WifiData *data, guint32 powersave)
 }
 
 static guint32
-wifi_wext_get_freq (WifiData *data)
+wifi_wext_get_freq (NMWifiUtils *data)
 {
-	WifiDataWext *wext = (WifiDataWext *) data;
+	NMWifiUtilsWext *wext = (NMWifiUtilsWext *) data;
 	struct iwreq wrq;
 	char ifname[IFNAMSIZ];
 
@@ -254,9 +254,9 @@ wifi_wext_get_freq (WifiData *data)
 }
 
 static guint32
-wifi_wext_find_freq (WifiData *data, const guint32 *freqs)
+wifi_wext_find_freq (NMWifiUtils *data, const guint32 *freqs)
 {
-	WifiDataWext *wext = (WifiDataWext *) data;
+	NMWifiUtilsWext *wext = (NMWifiUtilsWext *) data;
 	int i;
 
 	for (i = 0; i < wext->num_freqs; i++) {
@@ -270,9 +270,9 @@ wifi_wext_find_freq (WifiData *data, const guint32 *freqs)
 }
 
 static gboolean
-wifi_wext_get_bssid (WifiData *data, guint8 *out_bssid)
+wifi_wext_get_bssid (NMWifiUtils *data, guint8 *out_bssid)
 {
-	WifiDataWext *wext = (WifiDataWext *) data;
+	NMWifiUtilsWext *wext = (NMWifiUtilsWext *) data;
 	struct iwreq wrq;
 	char ifname[IFNAMSIZ];
 
@@ -292,9 +292,9 @@ wifi_wext_get_bssid (WifiData *data, guint8 *out_bssid)
 }
 
 static guint32
-wifi_wext_get_rate (WifiData *data)
+wifi_wext_get_rate (NMWifiUtils *data)
 {
-	WifiDataWext *wext = (WifiDataWext *) data;
+	NMWifiUtilsWext *wext = (NMWifiUtilsWext *) data;
 	struct iwreq wrq;
 	int err;
 	char ifname[IFNAMSIZ];
@@ -403,9 +403,9 @@ wext_qual_to_percent (const struct iw_quality *qual,
 }
 
 static int
-wifi_wext_get_qual (WifiData *data)
+wifi_wext_get_qual (NMWifiUtils *data)
 {
-	WifiDataWext *wext = (WifiDataWext *) data;
+	NMWifiUtilsWext *wext = (NMWifiUtilsWext *) data;
 	struct iwreq wrq;
 	struct iw_statistics stats;
 	char ifname[IFNAMSIZ];
@@ -433,13 +433,13 @@ wifi_wext_get_qual (WifiData *data)
 /* OLPC Mesh-only functions */
 
 static guint32
-wifi_wext_get_mesh_channel (WifiData *data)
+wifi_wext_get_mesh_channel (NMWifiUtils *data)
 {
-	WifiDataWext *wext = (WifiDataWext *) data;
+	NMWifiUtilsWext *wext = (NMWifiUtilsWext *) data;
 	guint32 freq;
 	int i;
 
-	freq = wifi_utils_get_freq (data);
+	freq = nm_wifi_utils_get_freq (data);
 	for (i = 0; i < wext->num_freqs; i++) {
 		if (freq == wext->freqs[i])
 			return i + 1;
@@ -448,9 +448,9 @@ wifi_wext_get_mesh_channel (WifiData *data)
 }
 
 static gboolean
-wifi_wext_set_mesh_channel (WifiData *data, guint32 channel)
+wifi_wext_set_mesh_channel (NMWifiUtils *data, guint32 channel)
 {
-	WifiDataWext *wext = (WifiDataWext *) data;
+	NMWifiUtilsWext *wext = (NMWifiUtilsWext *) data;
 	struct iwreq wrq;
 	char ifname[IFNAMSIZ];
 
@@ -477,9 +477,9 @@ wifi_wext_set_mesh_channel (WifiData *data, guint32 channel)
 }
 
 static gboolean
-wifi_wext_set_mesh_ssid (WifiData *data, const guint8 *ssid, gsize len)
+wifi_wext_set_mesh_ssid (NMWifiUtils *data, const guint8 *ssid, gsize len)
 {
-	WifiDataWext *wext = (WifiDataWext *) data;
+	NMWifiUtilsWext *wext = (NMWifiUtilsWext *) data;
 	struct iwreq wrq;
 	char buf[IW_ESSID_MAX_SIZE + 1];
 	char ifname[IFNAMSIZ];
@@ -514,7 +514,7 @@ wifi_wext_set_mesh_ssid (WifiData *data, const guint8 *ssid, gsize len)
 /*****************************************************************************/
 
 static gboolean
-wext_can_scan_ifname (WifiDataWext *wext, const char *ifname)
+wext_can_scan_ifname (NMWifiUtilsWext *wext, const char *ifname)
 {
 	struct iwreq wrq;
 
@@ -528,7 +528,7 @@ wext_can_scan_ifname (WifiDataWext *wext, const char *ifname)
 }
 
 static gboolean
-wext_get_range_ifname (WifiDataWext *wext,
+wext_get_range_ifname (NMWifiUtilsWext *wext,
                        const char *ifname,
                        struct iw_range *range,
                        guint32 *response_len)
@@ -577,7 +577,7 @@ wext_get_range_ifname (WifiDataWext *wext,
                   NM_WIFI_DEVICE_CAP_RSN)
 
 static guint32
-wext_get_caps (WifiDataWext *wext, const char *ifname, struct iw_range *range)
+wext_get_caps (NMWifiUtilsWext *wext, const char *ifname, struct iw_range *range)
 {
 	guint32 caps = NM_WIFI_DEVICE_CAP_NONE;
 
@@ -626,11 +626,11 @@ wext_get_caps (WifiDataWext *wext, const char *ifname, struct iw_range *range)
 	return caps;
 }
 
-WifiData *
-wifi_wext_init (int ifindex, gboolean check_scan)
+NMWifiUtils *
+nm_wifi_utils_wext_init (int ifindex, gboolean check_scan)
 {
-	static const WifiDataClass klass = {
-		.struct_size = sizeof (WifiDataWext),
+	static const NMWifiUtilsClass klass = {
+		.struct_size = sizeof (NMWifiUtilsWext),
 		.get_mode = wifi_wext_get_mode,
 		.set_mode = wifi_wext_set_mode,
 		.set_powersave = wifi_wext_set_powersave,
@@ -644,7 +644,7 @@ wifi_wext_init (int ifindex, gboolean check_scan)
 		.set_mesh_channel = wifi_wext_set_mesh_channel,
 		.set_mesh_ssid = wifi_wext_set_mesh_ssid,
 	};
-	WifiDataWext *wext;
+	NMWifiUtilsWext *wext;
 	struct iw_range range;
 	guint32 response_len = 0;
 	struct iw_range_with_scan_capa *scan_capa_range;
@@ -658,7 +658,7 @@ wifi_wext_init (int ifindex, gboolean check_scan)
 		return NULL;
 	}
 
-	wext = wifi_data_new (&klass, ifindex);
+	wext = nm_wifi_utils_new (&klass, ifindex);
 
 	wext->fd = socket (PF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
 	if (wext->fd < 0)
@@ -731,15 +731,15 @@ wifi_wext_init (int ifindex, gboolean check_scan)
 	       "(%s): using WEXT for WiFi device control",
 	       ifname);
 
-	return (WifiData *) wext;
+	return (NMWifiUtils *) wext;
 
 error:
-	wifi_utils_unref ((WifiData *) wext);
+	nm_wifi_utils_unref ((NMWifiUtils *) wext);
 	return NULL;
 }
 
 gboolean
-wifi_wext_is_wifi (const char *iface)
+nm_wifi_utils_wext_is_wifi (const char *iface)
 {
 	int fd;
 	struct iwreq iwr;

@@ -1477,11 +1477,11 @@ src_libNetworkManagerBase_la_SOURCES = \
 	src/platform/nm-platform-private.h \
 	src/platform/nm-linux-platform.c \
 	src/platform/nm-linux-platform.h \
-	src/platform/wifi/wifi-utils-nl80211.c \
-	src/platform/wifi/wifi-utils-nl80211.h \
-	src/platform/wifi/wifi-utils-private.h \
-	src/platform/wifi/wifi-utils.c \
-	src/platform/wifi/wifi-utils.h \
+	src/platform/wifi/nm-wifi-utils-nl80211.c \
+	src/platform/wifi/nm-wifi-utils-nl80211.h \
+	src/platform/wifi/nm-wifi-utils-private.h \
+	src/platform/wifi/nm-wifi-utils.c \
+	src/platform/wifi/nm-wifi-utils.h \
 	\
 	src/ndisc/nm-lndp-ndisc.c \
 	src/ndisc/nm-lndp-ndisc.h \
@@ -1514,8 +1514,8 @@ src_libNetworkManagerBase_la_SOURCES = \
 
 if WITH_WEXT
 src_libNetworkManagerBase_la_SOURCES += \
-	src/platform/wifi/wifi-utils-wext.c \
-	src/platform/wifi/wifi-utils-wext.h
+	src/platform/wifi/nm-wifi-utils-wext.c \
+	src/platform/wifi/nm-wifi-utils-wext.h
 endif
 
 src_libNetworkManagerBase_la_LIBADD = \

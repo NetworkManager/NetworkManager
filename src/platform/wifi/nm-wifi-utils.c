@@ -21,29 +21,29 @@
 
 #include "nm-default.h"
 
-#include "wifi-utils.h"
+#include "nm-wifi-utils.h"
 
 #include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
 
-#include "wifi-utils-private.h"
-#include "wifi-utils-nl80211.h"
+#include "nm-wifi-utils-private.h"
+#include "nm-wifi-utils-nl80211.h"
 #if HAVE_WEXT
-#include "wifi-utils-wext.h"
+#include "nm-wifi-utils-wext.h"
 #endif
 #include "nm-core-utils.h"
 
 #include "platform/nm-platform-utils.h"
 
 gpointer
-wifi_data_new (const WifiDataClass *klass, int ifindex)
+nm_wifi_utils_new (const NMWifiUtilsClass *klass, int ifindex)
 {
-	WifiData *data;
+	NMWifiUtils *data;
 
 	nm_assert (klass);
-	nm_assert (klass->struct_size > sizeof (WifiData));
+	nm_assert (klass->struct_size > sizeof (NMWifiUtils));
 
 	data = g_malloc0 (klass->struct_size);
 	data->klass = klass;
@@ -53,24 +53,24 @@ wifi_data_new (const WifiDataClass *klass, int ifindex)
 
 /*****************************************************************************/
 
-WifiData *
-wifi_utils_init (int ifindex, gboolean check_scan)
+NMWifiUtils *
+nm_wifi_utils_init (int ifindex, gboolean check_scan)
 {
-	WifiData *ret;
+	NMWifiUtils *ret;
 
 	g_return_val_if_fail (ifindex > 0, NULL);
 
-	ret = wifi_nl80211_init (ifindex);
+	ret = nm_wifi_utils_nl80211_init (ifindex);
 	if (ret == NULL) {
 #if HAVE_WEXT
-		ret = wifi_wext_init (ifindex, check_scan);
+		ret = nm_wifi_utils_wext_init (ifindex, check_scan);
 #endif
 	}
 	return ret;
 }
 
 NMDeviceWifiCapabilities
-wifi_utils_get_caps (WifiData *data)
+nm_wifi_utils_get_caps (NMWifiUtils *data)
 {
 	g_return_val_if_fail (data != NULL, NM_WIFI_DEVICE_CAP_NONE);
 
@@ -78,14 +78,14 @@ wifi_utils_get_caps (WifiData *data)
 }
 
 NM80211Mode
-wifi_utils_get_mode (WifiData *data)
+nm_wifi_utils_get_mode (NMWifiUtils *data)
 {
 	g_return_val_if_fail (data != NULL, NM_802_11_MODE_UNKNOWN);
 	return data->klass->get_mode (data);
 }
 
 gboolean
-wifi_utils_set_mode (WifiData *data, const NM80211Mode mode)
+nm_wifi_utils_set_mode (NMWifiUtils *data, const NM80211Mode mode)
 {
 	g_return_val_if_fail (data != NULL, FALSE);
 	g_return_val_if_fail (   (mode == NM_802_11_MODE_INFRA)
@@ -97,7 +97,7 @@ wifi_utils_set_mode (WifiData *data, const NM80211Mode mode)
 }
 
 gboolean
-wifi_utils_set_powersave (WifiData *data, guint32 powersave)
+nm_wifi_utils_set_powersave (NMWifiUtils *data, guint32 powersave)
 {
 	g_return_val_if_fail (data != NULL, FALSE);
 
@@ -124,14 +124,14 @@ wifi_utils_set_wake_on_wlan (WifiData *data, NMSettingWirelessWakeOnWLan wowl)
 }
 
 guint32
-wifi_utils_get_freq (WifiData *data)
+nm_wifi_utils_get_freq (NMWifiUtils *data)
 {
 	g_return_val_if_fail (data != NULL, 0);
 	return data->klass->get_freq (data);
 }
 
 guint32
-wifi_utils_find_freq (WifiData *data, const guint32 *freqs)
+nm_wifi_utils_find_freq (NMWifiUtils *data, const guint32 *freqs)
 {
 	g_return_val_if_fail (data != NULL, 0);
 	g_return_val_if_fail (freqs != NULL, 0);
@@ -139,7 +139,7 @@ wifi_utils_find_freq (WifiData *data, const guint32 *freqs)
 }
 
 gboolean
-wifi_utils_get_bssid (WifiData *data, guint8 *out_bssid)
+nm_wifi_utils_get_bssid (NMWifiUtils *data, guint8 *out_bssid)
 {
 	g_return_val_if_fail (data != NULL, FALSE);
 	g_return_val_if_fail (out_bssid != NULL, FALSE);
@@ -149,21 +149,21 @@ wifi_utils_get_bssid (WifiData *data, guint8 *out_bssid)
 }
 
 guint32
-wifi_utils_get_rate (WifiData *data)
+nm_wifi_utils_get_rate (NMWifiUtils *data)
 {
 	g_return_val_if_fail (data != NULL, 0);
 	return data->klass->get_rate (data);
 }
 
 int
-wifi_utils_get_qual (WifiData *data)
+nm_wifi_utils_get_qual (NMWifiUtils *data)
 {
 	g_return_val_if_fail (data != NULL, 0);
 	return data->klass->get_qual (data);
 }
 
 void
-wifi_utils_unref (WifiData *data)
+nm_wifi_utils_unref (NMWifiUtils *data)
 {
 	g_return_if_fail (data != NULL);
 
@@ -172,14 +172,14 @@ wifi_utils_unref (WifiData *data)
 }
 
 gboolean
-wifi_utils_is_wifi (int dirfd, const char *ifname)
+nm_wifi_utils_is_wifi (int dirfd, const char *ifname)
 {
 	g_return_val_if_fail (dirfd >= 0, FALSE);
 
 	if (faccessat (dirfd, "phy80211", F_OK, 0) == 0)
 		return TRUE;
 #if HAVE_WEXT
-	if (wifi_wext_is_wifi (ifname))
+	if (nm_wifi_utils_wext_is_wifi (ifname))
 		return TRUE;
 #endif
 	return FALSE;
@@ -188,7 +188,7 @@ wifi_utils_is_wifi (int dirfd, const char *ifname)
 /* OLPC Mesh-only functions */
 
 guint32
-wifi_utils_get_mesh_channel (WifiData *data)
+nm_wifi_utils_get_mesh_channel (NMWifiUtils *data)
 {
 	g_return_val_if_fail (data != NULL, FALSE);
 	g_return_val_if_fail (data->klass->get_mesh_channel != NULL, FALSE);
@@ -196,7 +196,7 @@ wifi_utils_get_mesh_channel (WifiData *data)
 }
 
 gboolean
-wifi_utils_set_mesh_channel (WifiData *data, guint32 channel)
+nm_wifi_utils_set_mesh_channel (NMWifiUtils *data, guint32 channel)
 {
 	g_return_val_if_fail (data != NULL, FALSE);
 	g_return_val_if_fail (channel <= 13, FALSE);
@@ -205,7 +205,7 @@ wifi_utils_set_mesh_channel (WifiData *data, guint32 channel)
 }
 
 gboolean
-wifi_utils_set_mesh_ssid (WifiData *data, const guint8 *ssid, gsize len)
+nm_wifi_utils_set_mesh_ssid (NMWifiUtils *data, const guint8 *ssid, gsize len)
 {
 	g_return_val_if_fail (data != NULL, FALSE);
 	g_return_val_if_fail (data->klass->set_mesh_ssid != NULL, FALSE);
@@ -213,7 +213,7 @@ wifi_utils_set_mesh_ssid (WifiData *data, const guint8 *ssid, gsize len)
 }
 
 gboolean
-wifi_utils_indicate_addressing_running (WifiData *data, gboolean running)
+nm_wifi_utils_indicate_addressing_running (NMWifiUtils *data, gboolean running)
 {
 	g_return_val_if_fail (data != NULL, FALSE);
 	if (data->klass->indicate_addressing_running)
