@@ -280,12 +280,12 @@ con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  vpn       --
 con-xx1    UUID-con-xx1-REPLACED-REPLACED-REPLA  wifi      --     
 
 <<<
-size: 3514
+size: 3561
 location: clients/tests/test-client.py:993:test_004()/13
 cmd: $NMCLI con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3379 bytes
+stdout: 3426 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -352,6 +352,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -362,12 +363,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 3534
+size: 3581
 location: clients/tests/test-client.py:993:test_004()/14
 cmd: $NMCLI con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3389 bytes
+stdout: 3436 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -434,6 +435,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -516,12 +518,12 @@ con-xx1    UUID-con-xx1-REPLACED-REPLACED-REPLA  wifi      wlan0
 con-1      5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  --     
 
 <<<
-size: 4597
+size: 4644
 location: clients/tests/test-client.py:1003:test_004()/21
 cmd: $NMCLI con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4461 bytes
+stdout: 4508 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -588,6 +590,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -618,12 +621,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4621
+size: 4668
 location: clients/tests/test-client.py:1003:test_004()/22
 cmd: $NMCLI con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4475 bytes
+stdout: 4522 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -690,6 +693,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -720,12 +724,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4603
+size: 4650
 location: clients/tests/test-client.py:1014:test_004()/23
 cmd: $NMCLI con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4467 bytes
+stdout: 4514 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -792,6 +796,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -822,12 +827,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4631
+size: 4678
 location: clients/tests/test-client.py:1014:test_004()/24
 cmd: $NMCLI con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4485 bytes
+stdout: 4532 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -894,6 +899,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -924,12 +930,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4603
+size: 4650
 location: clients/tests/test-client.py:1016:test_004()/25
 cmd: $NMCLI con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4467 bytes
+stdout: 4514 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -996,6 +1002,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -1026,12 +1033,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4631
+size: 4678
 location: clients/tests/test-client.py:1016:test_004()/26
 cmd: $NMCLI con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4485 bytes
+stdout: 4532 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -1098,6 +1105,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -1128,12 +1136,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 3522
+size: 3569
 location: clients/tests/test-client.py:1019:test_004()/27
 cmd: $NMCLI -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3379 bytes
+stdout: 3426 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -1200,6 +1208,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -1210,12 +1219,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 3542
+size: 3589
 location: clients/tests/test-client.py:1019:test_004()/28
 cmd: $NMCLI -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3389 bytes
+stdout: 3436 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -1282,6 +1291,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -1292,30 +1302,32 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 476
+size: 523
 location: clients/tests/test-client.py:1025:test_004()/29
 cmd: $NMCLI -f VPN con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 334 bytes
+stdout: 381 bytes
 >>>
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
 vpn.timeout:                            0
 
 <<<
-size: 487
+size: 534
 location: clients/tests/test-client.py:1025:test_004()/30
 cmd: $NMCLI -f VPN con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 335 bytes
+stdout: 382 bytes
 >>>
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -3610,12 +3622,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 4615
+size: 4662
 location: clients/tests/test-client.py:1014:test_004()/69
 cmd: $NMCLI --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4467 bytes
+stdout: 4514 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -3682,6 +3694,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -3712,12 +3725,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4643
+size: 4690
 location: clients/tests/test-client.py:1014:test_004()/70
 cmd: $NMCLI --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4485 bytes
+stdout: 4532 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -3784,6 +3797,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -3814,12 +3828,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4615
+size: 4662
 location: clients/tests/test-client.py:1016:test_004()/71
 cmd: $NMCLI --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4467 bytes
+stdout: 4514 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -3886,6 +3900,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -3916,12 +3931,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4643
+size: 4690
 location: clients/tests/test-client.py:1016:test_004()/72
 cmd: $NMCLI --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4485 bytes
+stdout: 4532 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -3988,6 +4003,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -4018,12 +4034,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 3534
+size: 3581
 location: clients/tests/test-client.py:1019:test_004()/73
 cmd: $NMCLI --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3379 bytes
+stdout: 3426 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -4090,6 +4106,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -4100,12 +4117,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 3554
+size: 3601
 location: clients/tests/test-client.py:1019:test_004()/74
 cmd: $NMCLI --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3389 bytes
+stdout: 3436 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -4172,6 +4189,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -4182,30 +4200,32 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 488
+size: 535
 location: clients/tests/test-client.py:1025:test_004()/75
 cmd: $NMCLI --color yes -f VPN con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 334 bytes
+stdout: 381 bytes
 >>>
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
 vpn.timeout:                            0
 
 <<<
-size: 499
+size: 546
 location: clients/tests/test-client.py:1025:test_004()/76
 cmd: $NMCLI --color yes -f VPN con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 335 bytes
+stdout: 382 bytes
 >>>
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -6500,12 +6520,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 5625
+size: 5672
 location: clients/tests/test-client.py:1014:test_004()/115
 cmd: $NMCLI --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5479 bytes
+stdout: 5526 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -6578,6 +6598,7 @@ ipv6.token:                             --
 -------------------------------------------------------------------------------
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -6615,12 +6636,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5665
+size: 5712
 location: clients/tests/test-client.py:1014:test_004()/116
 cmd: $NMCLI --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5509 bytes
+stdout: 5556 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -6693,6 +6714,7 @@ ipv6.token:                             --
 -------------------------------------------------------------------------------
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -6730,12 +6752,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5625
+size: 5672
 location: clients/tests/test-client.py:1016:test_004()/117
 cmd: $NMCLI --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5479 bytes
+stdout: 5526 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -6808,6 +6830,7 @@ ipv6.token:                             --
 -------------------------------------------------------------------------------
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -6845,12 +6868,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5665
+size: 5712
 location: clients/tests/test-client.py:1016:test_004()/118
 cmd: $NMCLI --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5509 bytes
+stdout: 5556 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -6923,6 +6946,7 @@ ipv6.token:                             --
 -------------------------------------------------------------------------------
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -6960,12 +6984,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 4151
+size: 4198
 location: clients/tests/test-client.py:1019:test_004()/119
 cmd: $NMCLI --pretty -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3998 bytes
+stdout: 4045 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -7038,6 +7062,7 @@ ipv6.token:                             --
 -------------------------------------------------------------------------------
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -7050,12 +7075,12 @@ proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4176
+size: 4223
 location: clients/tests/test-client.py:1019:test_004()/120
 cmd: $NMCLI --pretty -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4013 bytes
+stdout: 4060 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -7128,6 +7153,7 @@ ipv6.token:                             --
 -------------------------------------------------------------------------------
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -7140,18 +7166,19 @@ proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 
 <<<
-size: 785
+size: 832
 location: clients/tests/test-client.py:1025:test_004()/121
 cmd: $NMCLI --pretty -f VPN con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 633 bytes
+stdout: 680 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
 ===============================================================================
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -7159,18 +7186,19 @@ vpn.timeout:                            0
 -------------------------------------------------------------------------------
 
 <<<
-size: 801
+size: 848
 location: clients/tests/test-client.py:1025:test_004()/122
 cmd: $NMCLI --pretty -f VPN con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 639 bytes
+stdout: 686 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
 ===============================================================================
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -9992,12 +10020,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 -------------------------------------------------------------------------------
 
 <<<
-size: 5637
+size: 5684
 location: clients/tests/test-client.py:1014:test_004()/161
 cmd: $NMCLI --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5479 bytes
+stdout: 5526 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -10070,6 +10098,7 @@ ipv6.token:                             --
 -------------------------------------------------------------------------------
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -10107,12 +10136,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5677
+size: 5724
 location: clients/tests/test-client.py:1014:test_004()/162
 cmd: $NMCLI --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5509 bytes
+stdout: 5556 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -10185,6 +10214,7 @@ ipv6.token:                             --
 -------------------------------------------------------------------------------
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -10222,12 +10252,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5637
+size: 5684
 location: clients/tests/test-client.py:1016:test_004()/163
 cmd: $NMCLI --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5479 bytes
+stdout: 5526 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -10300,6 +10330,7 @@ ipv6.token:                             --
 -------------------------------------------------------------------------------
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -10337,12 +10368,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5677
+size: 5724
 location: clients/tests/test-client.py:1016:test_004()/164
 cmd: $NMCLI --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5509 bytes
+stdout: 5556 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -10415,6 +10446,7 @@ ipv6.token:                             --
 -------------------------------------------------------------------------------
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -10452,12 +10484,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 4163
+size: 4210
 location: clients/tests/test-client.py:1019:test_004()/165
 cmd: $NMCLI --pretty --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3998 bytes
+stdout: 4045 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -10530,6 +10562,7 @@ ipv6.token:                             --
 -------------------------------------------------------------------------------
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -10542,12 +10575,12 @@ proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4188
+size: 4235
 location: clients/tests/test-client.py:1019:test_004()/166
 cmd: $NMCLI --pretty --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4013 bytes
+stdout: 4060 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -10620,6 +10653,7 @@ ipv6.token:                             --
 -------------------------------------------------------------------------------
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -10632,18 +10666,19 @@ proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 
 <<<
-size: 797
+size: 844
 location: clients/tests/test-client.py:1025:test_004()/167
 cmd: $NMCLI --pretty --color yes -f VPN con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 633 bytes
+stdout: 680 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
 ===============================================================================
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -10651,18 +10686,19 @@ vpn.timeout:                            0
 -------------------------------------------------------------------------------
 
 <<<
-size: 813
+size: 860
 location: clients/tests/test-client.py:1025:test_004()/168
 cmd: $NMCLI --pretty --color yes -f VPN con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 639 bytes
+stdout: 686 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
 ===============================================================================
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -13484,12 +13520,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 -------------------------------------------------------------------------------
 
 <<<
-size: 2323
+size: 2343
 location: clients/tests/test-client.py:1014:test_004()/207
 cmd: $NMCLI --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2178 bytes
+stdout: 2198 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -13556,6 +13592,7 @@ ipv6.dhcp-hostname:
 ipv6.token:
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -13586,12 +13623,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2333
+size: 2353
 location: clients/tests/test-client.py:1014:test_004()/208
 cmd: $NMCLI --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2178 bytes
+stdout: 2198 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -13658,6 +13695,7 @@ ipv6.dhcp-hostname:
 ipv6.token:
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -13688,12 +13726,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2323
+size: 2343
 location: clients/tests/test-client.py:1016:test_004()/209
 cmd: $NMCLI --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2178 bytes
+stdout: 2198 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -13760,6 +13798,7 @@ ipv6.dhcp-hostname:
 ipv6.token:
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -13790,12 +13829,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2333
+size: 2353
 location: clients/tests/test-client.py:1016:test_004()/210
 cmd: $NMCLI --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2178 bytes
+stdout: 2198 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -13862,6 +13901,7 @@ ipv6.dhcp-hostname:
 ipv6.token:
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -13892,12 +13932,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 1771
+size: 1791
 location: clients/tests/test-client.py:1019:test_004()/211
 cmd: $NMCLI --terse -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 1619 bytes
+stdout: 1639 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -13964,6 +14004,7 @@ ipv6.dhcp-hostname:
 ipv6.token:
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -13974,12 +14015,12 @@ proxy.pac-url:
 proxy.pac-script:
 
 <<<
-size: 1781
+size: 1801
 location: clients/tests/test-client.py:1019:test_004()/212
 cmd: $NMCLI --terse -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1619 bytes
+stdout: 1639 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -14046,6 +14087,7 @@ ipv6.dhcp-hostname:
 ipv6.token:
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -14056,30 +14098,32 @@ proxy.pac-url:
 proxy.pac-script:
 
 <<<
-size: 322
+size: 342
 location: clients/tests/test-client.py:1025:test_004()/213
 cmd: $NMCLI --terse -f VPN con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 171 bytes
+stdout: 191 bytes
 >>>
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
 vpn.timeout:0
 
 <<<
-size: 332
+size: 352
 location: clients/tests/test-client.py:1025:test_004()/214
 cmd: $NMCLI --terse -f VPN con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 171 bytes
+stdout: 191 bytes
 >>>
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -16344,12 +16388,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 2335
+size: 2355
 location: clients/tests/test-client.py:1014:test_004()/253
 cmd: $NMCLI --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2178 bytes
+stdout: 2198 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -16416,6 +16460,7 @@ ipv6.dhcp-hostname:
 ipv6.token:
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -16446,12 +16491,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2345
+size: 2365
 location: clients/tests/test-client.py:1014:test_004()/254
 cmd: $NMCLI --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2178 bytes
+stdout: 2198 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -16518,6 +16563,7 @@ ipv6.dhcp-hostname:
 ipv6.token:
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -16548,12 +16594,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2335
+size: 2355
 location: clients/tests/test-client.py:1016:test_004()/255
 cmd: $NMCLI --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2178 bytes
+stdout: 2198 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -16620,6 +16666,7 @@ ipv6.dhcp-hostname:
 ipv6.token:
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -16650,12 +16697,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2345
+size: 2365
 location: clients/tests/test-client.py:1016:test_004()/256
 cmd: $NMCLI --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2178 bytes
+stdout: 2198 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -16722,6 +16769,7 @@ ipv6.dhcp-hostname:
 ipv6.token:
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -16752,12 +16800,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 1783
+size: 1803
 location: clients/tests/test-client.py:1019:test_004()/257
 cmd: $NMCLI --terse --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 1619 bytes
+stdout: 1639 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -16824,6 +16872,7 @@ ipv6.dhcp-hostname:
 ipv6.token:
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -16834,12 +16883,12 @@ proxy.pac-url:
 proxy.pac-script:
 
 <<<
-size: 1793
+size: 1813
 location: clients/tests/test-client.py:1019:test_004()/258
 cmd: $NMCLI --terse --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1619 bytes
+stdout: 1639 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -16906,6 +16955,7 @@ ipv6.dhcp-hostname:
 ipv6.token:
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -16916,30 +16966,32 @@ proxy.pac-url:
 proxy.pac-script:
 
 <<<
-size: 334
+size: 354
 location: clients/tests/test-client.py:1025:test_004()/259
 cmd: $NMCLI --terse --color yes -f VPN con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 171 bytes
+stdout: 191 bytes
 >>>
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
 vpn.timeout:0
 
 <<<
-size: 344
+size: 364
 location: clients/tests/test-client.py:1025:test_004()/260
 cmd: $NMCLI --terse --color yes -f VPN con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 171 bytes
+stdout: 191 bytes
 >>>
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -19204,12 +19256,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 2978
+size: 3008
 location: clients/tests/test-client.py:1014:test_004()/299
 cmd: $NMCLI --mode tabular con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2826 bytes
+stdout: 2856 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default) 
@@ -19220,8 +19272,8 @@ ipv4  auto    --   --          ""           0             --         --       --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
 ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
 
 name   method  browser-only  pac-url  pac-script 
 proxy  none    no            --       --         
@@ -19233,12 +19285,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 2999
+size: 3029
 location: clients/tests/test-client.py:1014:test_004()/300
 cmd: $NMCLI --mode tabular con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2837 bytes
+stdout: 2867 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
@@ -19249,8 +19301,8 @@ ipv4  auto    --   --          ""           0             --         --       --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
 ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
 
 name   method  browser-only  pac-url  pac-script 
 proxy  none    nie           --       --         
@@ -19262,12 +19314,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 2978
+size: 3008
 location: clients/tests/test-client.py:1016:test_004()/301
 cmd: $NMCLI --mode tabular con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2826 bytes
+stdout: 2856 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default) 
@@ -19278,8 +19330,8 @@ ipv4  auto    --   --          ""           0             --         --       --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
 ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
 
 name   method  browser-only  pac-url  pac-script 
 proxy  none    no            --       --         
@@ -19291,12 +19343,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 2999
+size: 3029
 location: clients/tests/test-client.py:1016:test_004()/302
 cmd: $NMCLI --mode tabular con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2837 bytes
+stdout: 2867 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
@@ -19307,8 +19359,8 @@ ipv4  auto    --   --          ""           0             --         --       --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
 ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
 
 name   method  browser-only  pac-url  pac-script 
 proxy  none    nie           --       --         
@@ -19320,12 +19372,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 2246
+size: 2276
 location: clients/tests/test-client.py:1019:test_004()/303
 cmd: $NMCLI --mode tabular -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2087 bytes
+stdout: 2117 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default) 
@@ -19336,20 +19388,20 @@ ipv4  auto    --   --          ""           0             --         --       --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
 ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
 
 name   method  browser-only  pac-url  pac-script 
 proxy  none    no            --       --         
 
 
 <<<
-size: 2258
+size: 2288
 location: clients/tests/test-client.py:1019:test_004()/304
 cmd: $NMCLI --mode tabular -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2089 bytes
+stdout: 2119 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
@@ -19360,34 +19412,34 @@ ipv4  auto    --   --          ""           0             --         --       --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
 ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
 
 name   method  browser-only  pac-url  pac-script 
 proxy  none    nie           --       --         
 
 
 <<<
-size: 412
+size: 442
 location: clients/tests/test-client.py:1025:test_004()/305
 cmd: $NMCLI --mode tabular -f VPN con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 254 bytes
+stdout: 284 bytes
 >>>
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
 
 <<<
-size: 422
+size: 452
 location: clients/tests/test-client.py:1025:test_004()/306
 cmd: $NMCLI --mode tabular -f VPN con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 254 bytes
+stdout: 284 bytes
 >>>
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
 
 <<<
 size: 644
@@ -20680,12 +20732,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                               AVAILABLE-
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{2}  UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 
 
 <<<
-size: 2990
+size: 3020
 location: clients/tests/test-client.py:1014:test_004()/345
 cmd: $NMCLI --mode tabular --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2826 bytes
+stdout: 2856 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default) 
@@ -20696,8 +20748,8 @@ ipv4  auto    --   --          ""           0             --         --       --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
 ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
 
 name   method  browser-only  pac-url  pac-script 
 proxy  none    no            --       --         
@@ -20709,12 +20761,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3011
+size: 3041
 location: clients/tests/test-client.py:1014:test_004()/346
 cmd: $NMCLI --mode tabular --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2837 bytes
+stdout: 2867 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
@@ -20725,8 +20777,8 @@ ipv4  auto    --   --          ""           0             --         --       --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
 ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
 
 name   method  browser-only  pac-url  pac-script 
 proxy  none    nie           --       --         
@@ -20738,12 +20790,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 2990
+size: 3020
 location: clients/tests/test-client.py:1016:test_004()/347
 cmd: $NMCLI --mode tabular --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2826 bytes
+stdout: 2856 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default) 
@@ -20754,8 +20806,8 @@ ipv4  auto    --   --          ""           0             --         --       --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
 ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
 
 name   method  browser-only  pac-url  pac-script 
 proxy  none    no            --       --         
@@ -20767,12 +20819,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3011
+size: 3041
 location: clients/tests/test-client.py:1016:test_004()/348
 cmd: $NMCLI --mode tabular --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2837 bytes
+stdout: 2867 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
@@ -20783,8 +20835,8 @@ ipv4  auto    --   --          ""           0             --         --       --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
 ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
 
 name   method  browser-only  pac-url  pac-script 
 proxy  none    nie           --       --         
@@ -20796,12 +20848,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 2258
+size: 2288
 location: clients/tests/test-client.py:1019:test_004()/349
 cmd: $NMCLI --mode tabular --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2087 bytes
+stdout: 2117 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default) 
@@ -20812,20 +20864,20 @@ ipv4  auto    --   --          ""           0             --         --       --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
 ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
 
 name   method  browser-only  pac-url  pac-script 
 proxy  none    no            --       --         
 
 
 <<<
-size: 2270
+size: 2300
 location: clients/tests/test-client.py:1019:test_004()/350
 cmd: $NMCLI --mode tabular --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2089 bytes
+stdout: 2119 bytes
 >>>
 name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr        
 connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default) 
@@ -20836,34 +20888,34 @@ ipv4  auto    --   --          ""           0             --         --       --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
 ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
 
 name   method  browser-only  pac-url  pac-script 
 proxy  none    nie           --       --         
 
 
 <<<
-size: 424
+size: 454
 location: clients/tests/test-client.py:1025:test_004()/351
 cmd: $NMCLI --mode tabular --color yes -f VPN con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 254 bytes
+stdout: 284 bytes
 >>>
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
 
 <<<
-size: 434
+size: 464
 location: clients/tests/test-client.py:1025:test_004()/352
 cmd: $NMCLI --mode tabular --color yes -f VPN con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 254 bytes
+stdout: 284 bytes
 >>>
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
 
 <<<
 size: 656
@@ -22156,12 +22208,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                               AVAILABLE-
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{2}  UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 
 
 <<<
-size: 4742
+size: 4787
 location: clients/tests/test-client.py:1014:test_004()/391
 cmd: $NMCLI --mode tabular --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4581 bytes
+stdout: 4626 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -22178,9 +22230,9 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
--------------------------------------------------------------------------------------------------------------------------------
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+----------------------------------------------------------------------------------------------------------------------------------------------
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
 
 name   method  browser-only  pac-url  pac-script 
 --------------------------------------------------
@@ -22198,12 +22250,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4796
+size: 4841
 location: clients/tests/test-client.py:1014:test_004()/392
 cmd: $NMCLI --mode tabular --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4625 bytes
+stdout: 4670 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -22220,9 +22272,9 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
--------------------------------------------------------------------------------------------------------------------------------
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+----------------------------------------------------------------------------------------------------------------------------------------------
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
 
 name   method  browser-only  pac-url  pac-script 
 --------------------------------------------------
@@ -22240,12 +22292,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4742
+size: 4787
 location: clients/tests/test-client.py:1016:test_004()/393
 cmd: $NMCLI --mode tabular --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4581 bytes
+stdout: 4626 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -22262,9 +22314,9 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
--------------------------------------------------------------------------------------------------------------------------------
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+----------------------------------------------------------------------------------------------------------------------------------------------
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
 
 name   method  browser-only  pac-url  pac-script 
 --------------------------------------------------
@@ -22282,12 +22334,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4796
+size: 4841
 location: clients/tests/test-client.py:1016:test_004()/394
 cmd: $NMCLI --mode tabular --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4625 bytes
+stdout: 4670 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -22304,9 +22356,9 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
--------------------------------------------------------------------------------------------------------------------------------
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+----------------------------------------------------------------------------------------------------------------------------------------------
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
 
 name   method  browser-only  pac-url  pac-script 
 --------------------------------------------------
@@ -22324,12 +22376,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3428
+size: 3473
 location: clients/tests/test-client.py:1019:test_004()/395
 cmd: $NMCLI --mode tabular --pretty -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3260 bytes
+stdout: 3305 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -22346,9 +22398,9 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
--------------------------------------------------------------------------------------------------------------------------------
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+----------------------------------------------------------------------------------------------------------------------------------------------
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
 
 name   method  browser-only  pac-url  pac-script 
 --------------------------------------------------
@@ -22356,12 +22408,12 @@ proxy  none    no            --       --
 
 
 <<<
-size: 3451
+size: 3496
 location: clients/tests/test-client.py:1019:test_004()/396
 cmd: $NMCLI --mode tabular --pretty -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3273 bytes
+stdout: 3318 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -22378,9 +22430,9 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
--------------------------------------------------------------------------------------------------------------------------------
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+----------------------------------------------------------------------------------------------------------------------------------------------
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
 
 name   method  browser-only  pac-url  pac-script 
 --------------------------------------------------
@@ -22388,34 +22440,34 @@ proxy  none    nie           --       --
 
 
 <<<
-size: 676
+size: 721
 location: clients/tests/test-client.py:1025:test_004()/397
 cmd: $NMCLI --mode tabular --pretty -f VPN con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 509 bytes
+stdout: 554 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
 ==========================================
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
--------------------------------------------------------------------------------------------------------------------------------
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+----------------------------------------------------------------------------------------------------------------------------------------------
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
 
 <<<
-size: 696
+size: 741
 location: clients/tests/test-client.py:1025:test_004()/398
 cmd: $NMCLI --mode tabular --pretty -f VPN con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 519 bytes
+stdout: 564 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
 ============================================
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
--------------------------------------------------------------------------------------------------------------------------------
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+----------------------------------------------------------------------------------------------------------------------------------------------
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
 
 <<<
 size: 1106
@@ -24220,12 +24272,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                               AVAILABLE-
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{2}  UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 
 
 <<<
-size: 4754
+size: 4799
 location: clients/tests/test-client.py:1014:test_004()/437
 cmd: $NMCLI --mode tabular --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4581 bytes
+stdout: 4626 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -24242,9 +24294,9 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
--------------------------------------------------------------------------------------------------------------------------------
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+----------------------------------------------------------------------------------------------------------------------------------------------
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
 
 name   method  browser-only  pac-url  pac-script 
 --------------------------------------------------
@@ -24262,12 +24314,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4808
+size: 4853
 location: clients/tests/test-client.py:1014:test_004()/438
 cmd: $NMCLI --mode tabular --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4625 bytes
+stdout: 4670 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -24284,9 +24336,9 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
--------------------------------------------------------------------------------------------------------------------------------
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+----------------------------------------------------------------------------------------------------------------------------------------------
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
 
 name   method  browser-only  pac-url  pac-script 
 --------------------------------------------------
@@ -24304,12 +24356,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4754
+size: 4799
 location: clients/tests/test-client.py:1016:test_004()/439
 cmd: $NMCLI --mode tabular --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4581 bytes
+stdout: 4626 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -24326,9 +24378,9 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
--------------------------------------------------------------------------------------------------------------------------------
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+----------------------------------------------------------------------------------------------------------------------------------------------
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
 
 name   method  browser-only  pac-url  pac-script 
 --------------------------------------------------
@@ -24346,12 +24398,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4808
+size: 4853
 location: clients/tests/test-client.py:1016:test_004()/440
 cmd: $NMCLI --mode tabular --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4625 bytes
+stdout: 4670 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -24368,9 +24420,9 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
--------------------------------------------------------------------------------------------------------------------------------
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+----------------------------------------------------------------------------------------------------------------------------------------------
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
 
 name   method  browser-only  pac-url  pac-script 
 --------------------------------------------------
@@ -24388,12 +24440,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3440
+size: 3485
 location: clients/tests/test-client.py:1019:test_004()/441
 cmd: $NMCLI --mode tabular --pretty --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3260 bytes
+stdout: 3305 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -24410,9 +24462,9 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
 
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
--------------------------------------------------------------------------------------------------------------------------------
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+----------------------------------------------------------------------------------------------------------------------------------------------
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
 
 name   method  browser-only  pac-url  pac-script 
 --------------------------------------------------
@@ -24420,12 +24472,12 @@ proxy  none    no            --       --
 
 
 <<<
-size: 3463
+size: 3508
 location: clients/tests/test-client.py:1019:test_004()/442
 cmd: $NMCLI --mode tabular --pretty --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3273 bytes
+stdout: 3318 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
@@ -24442,9 +24494,9 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   nie                 nie              nie            tak       -1 (unknown)  stable-privacy  --         tak                 --             --    
 
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
--------------------------------------------------------------------------------------------------------------------------------
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+----------------------------------------------------------------------------------------------------------------------------------------------
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
 
 name   method  browser-only  pac-url  pac-script 
 --------------------------------------------------
@@ -24452,34 +24504,34 @@ proxy  none    nie           --       --
 
 
 <<<
-size: 688
+size: 733
 location: clients/tests/test-client.py:1025:test_004()/443
 cmd: $NMCLI --mode tabular --pretty --color yes -f VPN con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 509 bytes
+stdout: 554 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
 ==========================================
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
--------------------------------------------------------------------------------------------------------------------------------
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+----------------------------------------------------------------------------------------------------------------------------------------------
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  no          0       
 
 <<<
-size: 708
+size: 753
 location: clients/tests/test-client.py:1025:test_004()/444
 cmd: $NMCLI --mode tabular --pretty --color yes -f VPN con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 519 bytes
+stdout: 564 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
 ============================================
-name  service-type                            user-name  data                                   secrets   persistent  timeout 
--------------------------------------------------------------------------------------------------------------------------------
-vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
+name  service-type                            user-name  ask-user-name  data                                   secrets   persistent  timeout 
+----------------------------------------------------------------------------------------------------------------------------------------------
+vpn   org.freedesktop.NetworkManager.openvpn  --         0 (no)         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
 
 <<<
 size: 1118
@@ -26284,116 +26336,116 @@ NAME         AVAILABLE-CONNECTION-PATHS                               AVAILABLE-
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{2}  UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 
 
 <<<
-size: 791
+size: 793
 location: clients/tests/test-client.py:1014:test_004()/483
 cmd: $NMCLI --mode tabular --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 632 bytes
+stdout: 634 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
 ipv4:auto::: :0::::-1:0:no:no::0:yes:::no:yes:-1
 ipv6:auto::: :0::::-1:0:no:no:no:yes:-1:stable-privacy::yes::
-vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
+vpn:org.freedesktop.NetworkManager.openvpn::0:key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 801
+size: 803
 location: clients/tests/test-client.py:1014:test_004()/484
 cmd: $NMCLI --mode tabular --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 632 bytes
+stdout: 634 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
 ipv4:auto::: :0::::-1:0:no:no::0:yes:::no:yes:-1
 ipv6:auto::: :0::::-1:0:no:no:no:yes:-1:stable-privacy::yes::
-vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
+vpn:org.freedesktop.NetworkManager.openvpn::0:key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 791
+size: 793
 location: clients/tests/test-client.py:1016:test_004()/485
 cmd: $NMCLI --mode tabular --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 632 bytes
+stdout: 634 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
 ipv4:auto::: :0::::-1:0:no:no::0:yes:::no:yes:-1
 ipv6:auto::: :0::::-1:0:no:no:no:yes:-1:stable-privacy::yes::
-vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
+vpn:org.freedesktop.NetworkManager.openvpn::0:key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 801
+size: 803
 location: clients/tests/test-client.py:1016:test_004()/486
 cmd: $NMCLI --mode tabular --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 632 bytes
+stdout: 634 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
 ipv4:auto::: :0::::-1:0:no:no::0:yes:::no:yes:-1
 ipv6:auto::: :0::::-1:0:no:no:no:yes:-1:stable-privacy::yes::
-vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
+vpn:org.freedesktop.NetworkManager.openvpn::0:key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 504
+size: 506
 location: clients/tests/test-client.py:1019:test_004()/487
 cmd: $NMCLI --mode tabular --terse -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 338 bytes
+stdout: 340 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
 ipv4:auto::: :0::::-1:0:no:no::0:yes:::no:yes:-1
 ipv6:auto::: :0::::-1:0:no:no:no:yes:-1:stable-privacy::yes::
-vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
+vpn:org.freedesktop.NetworkManager.openvpn::0:key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 
 <<<
-size: 514
+size: 516
 location: clients/tests/test-client.py:1019:test_004()/488
 cmd: $NMCLI --mode tabular --terse -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 338 bytes
+stdout: 340 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
 ipv4:auto::: :0::::-1:0:no:no::0:yes:::no:yes:-1
 ipv6:auto::: :0::::-1:0:no:no:no:yes:-1:stable-privacy::yes::
-vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
+vpn:org.freedesktop.NetworkManager.openvpn::0:key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 
 <<<
-size: 261
+size: 263
 location: clients/tests/test-client.py:1025:test_004()/489
 cmd: $NMCLI --mode tabular --terse -f VPN con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 96 bytes
+stdout: 98 bytes
 >>>
-vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
+vpn:org.freedesktop.NetworkManager.openvpn::0:key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 
 <<<
-size: 271
+size: 273
 location: clients/tests/test-client.py:1025:test_004()/490
 cmd: $NMCLI --mode tabular --terse -f VPN con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 96 bytes
+stdout: 98 bytes
 >>>
-vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
+vpn:org.freedesktop.NetworkManager.openvpn::0:key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 
 <<<
 size: 359
@@ -27124,116 +27176,116 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-2 = val-2 | dhcp-6-opt-3 = val-3 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 803
+size: 805
 location: clients/tests/test-client.py:1014:test_004()/529
 cmd: $NMCLI --mode tabular --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 632 bytes
+stdout: 634 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
 ipv4:auto::: :0::::-1:0:no:no::0:yes:::no:yes:-1
 ipv6:auto::: :0::::-1:0:no:no:no:yes:-1:stable-privacy::yes::
-vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
+vpn:org.freedesktop.NetworkManager.openvpn::0:key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 813
+size: 815
 location: clients/tests/test-client.py:1014:test_004()/530
 cmd: $NMCLI --mode tabular --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 632 bytes
+stdout: 634 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
 ipv4:auto::: :0::::-1:0:no:no::0:yes:::no:yes:-1
 ipv6:auto::: :0::::-1:0:no:no:no:yes:-1:stable-privacy::yes::
-vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
+vpn:org.freedesktop.NetworkManager.openvpn::0:key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 803
+size: 805
 location: clients/tests/test-client.py:1016:test_004()/531
 cmd: $NMCLI --mode tabular --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 632 bytes
+stdout: 634 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
 ipv4:auto::: :0::::-1:0:no:no::0:yes:::no:yes:-1
 ipv6:auto::: :0::::-1:0:no:no:no:yes:-1:stable-privacy::yes::
-vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
+vpn:org.freedesktop.NetworkManager.openvpn::0:key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 813
+size: 815
 location: clients/tests/test-client.py:1016:test_004()/532
 cmd: $NMCLI --mode tabular --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 632 bytes
+stdout: 634 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
 ipv4:auto::: :0::::-1:0:no:no::0:yes:::no:yes:-1
 ipv6:auto::: :0::::-1:0:no:no:no:yes:-1:stable-privacy::yes::
-vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
+vpn:org.freedesktop.NetworkManager.openvpn::0:key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:activated:no:no::yes:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 516
+size: 518
 location: clients/tests/test-client.py:1019:test_004()/533
 cmd: $NMCLI --mode tabular --terse --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 338 bytes
+stdout: 340 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
 ipv4:auto::: :0::::-1:0:no:no::0:yes:::no:yes:-1
 ipv6:auto::: :0::::-1:0:no:no:no:yes:-1:stable-privacy::yes::
-vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
+vpn:org.freedesktop.NetworkManager.openvpn::0:key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 
 <<<
-size: 526
+size: 528
 location: clients/tests/test-client.py:1019:test_004()/534
 cmd: $NMCLI --mode tabular --terse --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 338 bytes
+stdout: 340 bytes
 >>>
 connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1
 ipv4:auto::: :0::::-1:0:no:no::0:yes:::no:yes:-1
 ipv6:auto::: :0::::-1:0:no:no:no:yes:-1:stable-privacy::yes::
-vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
+vpn:org.freedesktop.NetworkManager.openvpn::0:key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 
 <<<
-size: 273
+size: 275
 location: clients/tests/test-client.py:1025:test_004()/535
 cmd: $NMCLI --mode tabular --terse --color yes -f VPN con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 96 bytes
+stdout: 98 bytes
 >>>
-vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
+vpn:org.freedesktop.NetworkManager.openvpn::0:key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 
 <<<
-size: 283
+size: 285
 location: clients/tests/test-client.py:1025:test_004()/536
 cmd: $NMCLI --mode tabular --terse --color yes -f VPN con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 96 bytes
+stdout: 98 bytes
 >>>
-vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
+vpn:org.freedesktop.NetworkManager.openvpn::0:key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 
 <<<
 size: 371
@@ -27964,12 +28016,12 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-2 = val-2 | dhcp-6-opt-3 = val-3 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 4621
+size: 4668
 location: clients/tests/test-client.py:1014:test_004()/575
 cmd: $NMCLI --mode multiline con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4467 bytes
+stdout: 4514 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -28036,6 +28088,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -28066,12 +28119,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4649
+size: 4696
 location: clients/tests/test-client.py:1014:test_004()/576
 cmd: $NMCLI --mode multiline con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4485 bytes
+stdout: 4532 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -28138,6 +28191,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -28168,12 +28222,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4621
+size: 4668
 location: clients/tests/test-client.py:1016:test_004()/577
 cmd: $NMCLI --mode multiline con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4467 bytes
+stdout: 4514 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -28240,6 +28294,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -28270,12 +28325,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4649
+size: 4696
 location: clients/tests/test-client.py:1016:test_004()/578
 cmd: $NMCLI --mode multiline con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4485 bytes
+stdout: 4532 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -28342,6 +28397,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -28372,12 +28428,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 3540
+size: 3587
 location: clients/tests/test-client.py:1019:test_004()/579
 cmd: $NMCLI --mode multiline -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3379 bytes
+stdout: 3426 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -28444,6 +28500,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -28454,12 +28511,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 3560
+size: 3607
 location: clients/tests/test-client.py:1019:test_004()/580
 cmd: $NMCLI --mode multiline -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3389 bytes
+stdout: 3436 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -28526,6 +28583,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -28536,30 +28594,32 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 494
+size: 541
 location: clients/tests/test-client.py:1025:test_004()/581
 cmd: $NMCLI --mode multiline -f VPN con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 334 bytes
+stdout: 381 bytes
 >>>
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
 vpn.timeout:                            0
 
 <<<
-size: 505
+size: 552
 location: clients/tests/test-client.py:1025:test_004()/582
 cmd: $NMCLI --mode multiline -f VPN con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 335 bytes
+stdout: 382 bytes
 >>>
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -31344,12 +31404,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 4633
+size: 4680
 location: clients/tests/test-client.py:1014:test_004()/621
 cmd: $NMCLI --mode multiline --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4467 bytes
+stdout: 4514 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -31416,6 +31476,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -31446,12 +31507,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4661
+size: 4708
 location: clients/tests/test-client.py:1014:test_004()/622
 cmd: $NMCLI --mode multiline --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4485 bytes
+stdout: 4532 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -31518,6 +31579,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -31548,12 +31610,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4633
+size: 4680
 location: clients/tests/test-client.py:1016:test_004()/623
 cmd: $NMCLI --mode multiline --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4467 bytes
+stdout: 4514 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -31620,6 +31682,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -31650,12 +31713,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4661
+size: 4708
 location: clients/tests/test-client.py:1016:test_004()/624
 cmd: $NMCLI --mode multiline --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4485 bytes
+stdout: 4532 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -31722,6 +31785,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -31752,12 +31816,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 3552
+size: 3599
 location: clients/tests/test-client.py:1019:test_004()/625
 cmd: $NMCLI --mode multiline --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3379 bytes
+stdout: 3426 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -31824,6 +31888,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -31834,12 +31899,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 3572
+size: 3619
 location: clients/tests/test-client.py:1019:test_004()/626
 cmd: $NMCLI --mode multiline --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3389 bytes
+stdout: 3436 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -31906,6 +31971,7 @@ ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -31916,30 +31982,32 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 506
+size: 553
 location: clients/tests/test-client.py:1025:test_004()/627
 cmd: $NMCLI --mode multiline --color yes -f VPN con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 334 bytes
+stdout: 381 bytes
 >>>
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
 vpn.timeout:                            0
 
 <<<
-size: 517
+size: 564
 location: clients/tests/test-client.py:1025:test_004()/628
 cmd: $NMCLI --mode multiline --color yes -f VPN con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 335 bytes
+stdout: 382 bytes
 >>>
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -34724,12 +34792,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 5642
+size: 5689
 location: clients/tests/test-client.py:1014:test_004()/667
 cmd: $NMCLI --mode multiline --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5479 bytes
+stdout: 5526 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -34802,6 +34870,7 @@ ipv6.token:                             --
 -------------------------------------------------------------------------------
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -34839,12 +34908,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5682
+size: 5729
 location: clients/tests/test-client.py:1014:test_004()/668
 cmd: $NMCLI --mode multiline --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5509 bytes
+stdout: 5556 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -34917,6 +34986,7 @@ ipv6.token:                             --
 -------------------------------------------------------------------------------
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -34954,12 +35024,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5642
+size: 5689
 location: clients/tests/test-client.py:1016:test_004()/669
 cmd: $NMCLI --mode multiline --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5479 bytes
+stdout: 5526 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -35032,6 +35102,7 @@ ipv6.token:                             --
 -------------------------------------------------------------------------------
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -35069,12 +35140,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5682
+size: 5729
 location: clients/tests/test-client.py:1016:test_004()/670
 cmd: $NMCLI --mode multiline --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5509 bytes
+stdout: 5556 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -35147,6 +35218,7 @@ ipv6.token:                             --
 -------------------------------------------------------------------------------
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -35184,12 +35256,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 4168
+size: 4215
 location: clients/tests/test-client.py:1019:test_004()/671
 cmd: $NMCLI --mode multiline --pretty -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3998 bytes
+stdout: 4045 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -35262,6 +35334,7 @@ ipv6.token:                             --
 -------------------------------------------------------------------------------
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -35274,12 +35347,12 @@ proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4193
+size: 4240
 location: clients/tests/test-client.py:1019:test_004()/672
 cmd: $NMCLI --mode multiline --pretty -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4013 bytes
+stdout: 4060 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -35352,6 +35425,7 @@ ipv6.token:                             --
 -------------------------------------------------------------------------------
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -35364,18 +35438,19 @@ proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 
 <<<
-size: 802
+size: 849
 location: clients/tests/test-client.py:1025:test_004()/673
 cmd: $NMCLI --mode multiline --pretty -f VPN con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 633 bytes
+stdout: 680 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
 ===============================================================================
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -35383,18 +35458,19 @@ vpn.timeout:                            0
 -------------------------------------------------------------------------------
 
 <<<
-size: 818
+size: 865
 location: clients/tests/test-client.py:1025:test_004()/674
 cmd: $NMCLI --mode multiline --pretty -f VPN con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 639 bytes
+stdout: 686 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
 ===============================================================================
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -38736,12 +38812,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 -------------------------------------------------------------------------------
 
 <<<
-size: 5654
+size: 5701
 location: clients/tests/test-client.py:1014:test_004()/713
 cmd: $NMCLI --mode multiline --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5479 bytes
+stdout: 5526 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -38814,6 +38890,7 @@ ipv6.token:                             --
 -------------------------------------------------------------------------------
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -38851,12 +38928,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5694
+size: 5741
 location: clients/tests/test-client.py:1014:test_004()/714
 cmd: $NMCLI --mode multiline --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5509 bytes
+stdout: 5556 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -38929,6 +39006,7 @@ ipv6.token:                             --
 -------------------------------------------------------------------------------
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -38966,12 +39044,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5654
+size: 5701
 location: clients/tests/test-client.py:1016:test_004()/715
 cmd: $NMCLI --mode multiline --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5479 bytes
+stdout: 5526 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -39044,6 +39122,7 @@ ipv6.token:                             --
 -------------------------------------------------------------------------------
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -39081,12 +39160,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 5694
+size: 5741
 location: clients/tests/test-client.py:1016:test_004()/716
 cmd: $NMCLI --mode multiline --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5509 bytes
+stdout: 5556 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -39159,6 +39238,7 @@ ipv6.token:                             --
 -------------------------------------------------------------------------------
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -39196,12 +39276,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 4180
+size: 4227
 location: clients/tests/test-client.py:1019:test_004()/717
 cmd: $NMCLI --mode multiline --pretty --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3998 bytes
+stdout: 4045 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -39274,6 +39354,7 @@ ipv6.token:                             --
 -------------------------------------------------------------------------------
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -39286,12 +39367,12 @@ proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4205
+size: 4252
 location: clients/tests/test-client.py:1019:test_004()/718
 cmd: $NMCLI --mode multiline --pretty --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4013 bytes
+stdout: 4060 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -39364,6 +39445,7 @@ ipv6.token:                             --
 -------------------------------------------------------------------------------
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -39376,18 +39458,19 @@ proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 
 <<<
-size: 814
+size: 861
 location: clients/tests/test-client.py:1025:test_004()/719
 cmd: $NMCLI --mode multiline --pretty --color yes -f VPN con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 633 bytes
+stdout: 680 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
 ===============================================================================
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         no
@@ -39395,18 +39478,19 @@ vpn.timeout:                            0
 -------------------------------------------------------------------------------
 
 <<<
-size: 830
+size: 877
 location: clients/tests/test-client.py:1025:test_004()/720
 cmd: $NMCLI --mode multiline --pretty --color yes -f VPN con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 639 bytes
+stdout: 686 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
 ===============================================================================
 vpn.service-type:                       org.freedesktop.NetworkManager.openvpn
 vpn.user-name:                          --
+vpn.ask-user-name:                      0 (no)
 vpn.data:                               key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:                            <hidden>
 vpn.persistent:                         nie
@@ -42748,12 +42832,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 -------------------------------------------------------------------------------
 
 <<<
-size: 2340
+size: 2360
 location: clients/tests/test-client.py:1014:test_004()/759
 cmd: $NMCLI --mode multiline --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2178 bytes
+stdout: 2198 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -42820,6 +42904,7 @@ ipv6.dhcp-hostname:
 ipv6.token:
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -42850,12 +42935,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2350
+size: 2370
 location: clients/tests/test-client.py:1014:test_004()/760
 cmd: $NMCLI --mode multiline --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2178 bytes
+stdout: 2198 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -42922,6 +43007,7 @@ ipv6.dhcp-hostname:
 ipv6.token:
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -42952,12 +43038,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2340
+size: 2360
 location: clients/tests/test-client.py:1016:test_004()/761
 cmd: $NMCLI --mode multiline --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2178 bytes
+stdout: 2198 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -43024,6 +43110,7 @@ ipv6.dhcp-hostname:
 ipv6.token:
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -43054,12 +43141,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2350
+size: 2370
 location: clients/tests/test-client.py:1016:test_004()/762
 cmd: $NMCLI --mode multiline --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2178 bytes
+stdout: 2198 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -43126,6 +43213,7 @@ ipv6.dhcp-hostname:
 ipv6.token:
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -43156,12 +43244,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 1788
+size: 1808
 location: clients/tests/test-client.py:1019:test_004()/763
 cmd: $NMCLI --mode multiline --terse -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 1619 bytes
+stdout: 1639 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -43228,6 +43316,7 @@ ipv6.dhcp-hostname:
 ipv6.token:
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -43238,12 +43327,12 @@ proxy.pac-url:
 proxy.pac-script:
 
 <<<
-size: 1798
+size: 1818
 location: clients/tests/test-client.py:1019:test_004()/764
 cmd: $NMCLI --mode multiline --terse -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1619 bytes
+stdout: 1639 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -43310,6 +43399,7 @@ ipv6.dhcp-hostname:
 ipv6.token:
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -43320,30 +43410,32 @@ proxy.pac-url:
 proxy.pac-script:
 
 <<<
-size: 339
+size: 359
 location: clients/tests/test-client.py:1025:test_004()/765
 cmd: $NMCLI --mode multiline --terse -f VPN con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 171 bytes
+stdout: 191 bytes
 >>>
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
 vpn.timeout:0
 
 <<<
-size: 349
+size: 369
 location: clients/tests/test-client.py:1025:test_004()/766
 cmd: $NMCLI --mode multiline --terse -f VPN con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 171 bytes
+stdout: 191 bytes
 >>>
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -46128,12 +46220,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 2352
+size: 2372
 location: clients/tests/test-client.py:1014:test_004()/805
 cmd: $NMCLI --mode multiline --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2178 bytes
+stdout: 2198 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -46200,6 +46292,7 @@ ipv6.dhcp-hostname:
 ipv6.token:
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -46230,12 +46323,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2362
+size: 2382
 location: clients/tests/test-client.py:1014:test_004()/806
 cmd: $NMCLI --mode multiline --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2178 bytes
+stdout: 2198 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -46302,6 +46395,7 @@ ipv6.dhcp-hostname:
 ipv6.token:
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -46332,12 +46426,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2352
+size: 2372
 location: clients/tests/test-client.py:1016:test_004()/807
 cmd: $NMCLI --mode multiline --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2178 bytes
+stdout: 2198 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -46404,6 +46498,7 @@ ipv6.dhcp-hostname:
 ipv6.token:
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -46434,12 +46529,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2362
+size: 2382
 location: clients/tests/test-client.py:1016:test_004()/808
 cmd: $NMCLI --mode multiline --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2178 bytes
+stdout: 2198 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -46506,6 +46601,7 @@ ipv6.dhcp-hostname:
 ipv6.token:
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -46536,12 +46632,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 1800
+size: 1820
 location: clients/tests/test-client.py:1019:test_004()/809
 cmd: $NMCLI --mode multiline --terse --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 1619 bytes
+stdout: 1639 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -46608,6 +46704,7 @@ ipv6.dhcp-hostname:
 ipv6.token:
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -46618,12 +46715,12 @@ proxy.pac-url:
 proxy.pac-script:
 
 <<<
-size: 1810
+size: 1830
 location: clients/tests/test-client.py:1019:test_004()/810
 cmd: $NMCLI --mode multiline --terse --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1619 bytes
+stdout: 1639 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -46690,6 +46787,7 @@ ipv6.dhcp-hostname:
 ipv6.token:
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
@@ -46700,30 +46798,32 @@ proxy.pac-url:
 proxy.pac-script:
 
 <<<
-size: 351
+size: 371
 location: clients/tests/test-client.py:1025:test_004()/811
 cmd: $NMCLI --mode multiline --terse --color yes -f VPN con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 171 bytes
+stdout: 191 bytes
 >>>
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no
 vpn.timeout:0
 
 <<<
-size: 361
+size: 381
 location: clients/tests/test-client.py:1025:test_004()/812
 cmd: $NMCLI --mode multiline --terse --color yes -f VPN con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 171 bytes
+stdout: 191 bytes
 >>>
 vpn.service-type:org.freedesktop.NetworkManager.openvpn
 vpn.user-name:
+vpn.ask-user-name:0
 vpn.data:key1 = val1, key2 = val2, key3 = val3
 vpn.secrets:<hidden>
 vpn.persistent:no

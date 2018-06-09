@@ -1443,4 +1443,6 @@ global:
 libnm_1_16_0 {
 global:
 	nm_device_get_connectivity;
+	nm_setting_vpn_get_ask_user_name;
+	nm_setting_vpn_ask_user_name_get_type;
 } libnm_1_14_0;

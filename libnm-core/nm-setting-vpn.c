@@ -58,6 +58,11 @@ typedef struct {
 	 */
 	char *user_name;
 
+	/* Whether NM should ask the username to available secret
+	 * agents.
+	 */
+	int ask_user_name;
+
 	/* Whether the VPN stays up across link changes, until the user
 	 * explicitly disconnects it.
 	 */
@@ -89,6 +94,7 @@ enum {
 	PROP_0,
 	PROP_SERVICE_TYPE,
 	PROP_USER_NAME,
+	PROP_ASK_USER_NAME,
 	PROP_PERSISTENT,
 	PROP_DATA,
 	PROP_SECRETS,
@@ -139,6 +145,22 @@ nm_setting_vpn_get_user_name (NMSettingVpn *setting)
 	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), NULL);
 
 	return NM_SETTING_VPN_GET_PRIVATE (setting)->user_name;
+}
+
+/**
+ * nm_setting_vpn_get_ask_user_name:
+ * @setting: the #NMSettingVpn
+ *
+ * Returns: the #NMSettingVpn:ask-user-name property of the setting
+ *
+ * Since: 1.16
+ */
+NMSettingVpnAskUserName
+nm_setting_vpn_get_ask_user_name (NMSettingVpn *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), NM_SETTING_VPN_ASK_USER_NAME_NO);
+
+	return NM_SETTING_VPN_GET_PRIVATE (setting)->ask_user_name;
 }
 
 /**
@@ -836,6 +858,9 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->user_name);
 		priv->user_name = g_value_dup_string (value);
 		break;
+	case PROP_ASK_USER_NAME:
+		priv->ask_user_name = g_value_get_int (value);
+		break;
 	case PROP_PERSISTENT:
 		priv->persistent = g_value_get_boolean (value);
 		break;
@@ -869,6 +894,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_USER_NAME:
 		g_value_set_string (value, nm_setting_vpn_get_user_name (setting));
+		break;
+	case PROP_ASK_USER_NAME:
+		g_value_set_int (value, priv->ask_user_name);
 		break;
 	case PROP_PERSISTENT:
 		g_value_set_boolean (value, priv->persistent);
@@ -939,6 +967,24 @@ nm_setting_vpn_class_init (NMSettingVpnClass *klass)
 		                      NULL,
 		                      G_PARAM_READWRITE |
 		                      G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingVpn:ask-user-name:
+	 *
+	 * If this property is %TRUE, the user name will be interactively asked
+	 * to registered secret agents when the connection is activated. Otherwise,
+	 * the user name stored in the connection is used or, when missing, the
+	 * Unix username of the user who started the connection.
+	 *
+	 * Since: 1.16
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_ASK_USER_NAME,
+		 g_param_spec_int (NM_SETTING_VPN_ASK_USER_NAME, "", "",
+		                   G_MININT32, G_MAXINT32,
+		                   NM_SETTING_VPN_ASK_USER_NAME_NO,
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingVpn:persistent:
