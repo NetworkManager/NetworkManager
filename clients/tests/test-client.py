@@ -357,6 +357,7 @@ class TestNmcli(NmTestBase):
     def call_nmcli_l(self,
                      args,
                      check_on_disk = _DEFAULT_ARG,
+                     fatal_warnings = _DEFAULT_ARG,
                      expected_returncode = _DEFAULT_ARG,
                      expected_stdout = _DEFAULT_ARG,
                      expected_stderr = _DEFAULT_ARG,
@@ -370,6 +371,7 @@ class TestNmcli(NmTestBase):
             self._call_nmcli(args,
                              lang,
                              check_on_disk,
+                             fatal_warnings,
                              expected_returncode,
                              expected_stdout,
                              expected_stderr,
@@ -386,6 +388,7 @@ class TestNmcli(NmTestBase):
                    langs = None,
                    lang = None,
                    check_on_disk = _DEFAULT_ARG,
+                   fatal_warnings = _DEFAULT_ARG,
                    expected_returncode = _DEFAULT_ARG,
                    expected_stdout = _DEFAULT_ARG,
                    expected_stderr = _DEFAULT_ARG,
@@ -411,6 +414,7 @@ class TestNmcli(NmTestBase):
             self._call_nmcli(args,
                              lang,
                              check_on_disk,
+                             fatal_warnings,
                              expected_returncode,
                              expected_stdout,
                              expected_stderr,
@@ -425,6 +429,7 @@ class TestNmcli(NmTestBase):
                     args,
                     lang,
                     check_on_disk,
+                    fatal_warnings,
                     expected_returncode,
                     expected_stdout,
                     expected_stderr,
@@ -478,6 +483,8 @@ class TestNmcli(NmTestBase):
         env['LIBNM_USE_SESSION_BUS'] = '1'
         env['LIBNM_USE_NO_UDEV'] = '1'
         env['TERM'] = 'linux'
+        if fatal_warnings is _DEFAULT_ARG or fatal_warnings:
+            env['G_DEBUG'] = 'fatal-warnings'
 
         args = [conf.get(ENV_NM_TEST_CLIENT_NMCLI_PATH)] + list(args)
 
@@ -525,6 +532,13 @@ class TestNmcli(NmTestBase):
                         self.assertEqual(expected_stdout, stdout)
             if expected_returncode is not None:
                 self.assertEqual(expected_returncode, returncode)
+
+            if fatal_warnings is _DEFAULT_ARG:
+                if expected_returncode != -5:
+                    self.assertNotEqual(returncode, -5)
+            elif fatal_warnings:
+                if expected_returncode is None:
+                   self.assertEqual(returncode, -5)
 
             dirname = PathConfiguration.srcdir() + '/test-client.check-on-disk'
             basename = test_name + '.expected'
