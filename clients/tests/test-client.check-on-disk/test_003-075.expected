@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:812:test_003()/75
+location: clients/tests/test-client.py:839:test_003()/75
 cmd: $NMCLI c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0

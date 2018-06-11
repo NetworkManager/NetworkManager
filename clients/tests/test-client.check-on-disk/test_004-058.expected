@@ -1,0 +1,13 @@
+location: clients/tests/test-client.py:927:test_004()/58
+cmd: $NMCLI --terse -f ALL device wifi list bssid C0:E2:BE:E8:EF:B6
+lang: pl_PL.UTF-8
+returncode: -5
+stdout: 1 bytes
+>>>
+
+
+<<<
+stderr: 17 bytes
+>>>
+<UNSTABLE OUTPUT>
+<<<

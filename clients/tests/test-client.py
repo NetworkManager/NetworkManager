@@ -62,6 +62,7 @@ import nmex
 dbus_session_inited = False
 
 _DEFAULT_ARG = object()
+_UNSTABLE_OUTPUT = object()
 
 ###############################################################################
 
@@ -166,6 +167,16 @@ class Util:
     def debug_dbus_interface():
         # this is for printf debugging, not used in actual code.
         os.system('busctl --user --verbose call org.freedesktop.NetworkManager /org/freedesktop org.freedesktop.DBus.ObjectManager GetManagedObjects | cat')
+
+    @staticmethod
+    def iter_nmcli_output_modes():
+        for mode in [[],
+                     ['--mode', 'tabular'],
+                     ['--mode', 'multiline']]:
+            for fmt in [[],
+                        ['--pretty'],
+                        ['--terse']]:
+                yield mode + fmt
 
 ###############################################################################
 
@@ -357,6 +368,7 @@ class TestNmcli(NmTestBase):
     def call_nmcli_l(self,
                      args,
                      check_on_disk = _DEFAULT_ARG,
+                     fatal_warnings = _DEFAULT_ARG,
                      expected_returncode = _DEFAULT_ARG,
                      expected_stdout = _DEFAULT_ARG,
                      expected_stderr = _DEFAULT_ARG,
@@ -370,6 +382,7 @@ class TestNmcli(NmTestBase):
             self._call_nmcli(args,
                              lang,
                              check_on_disk,
+                             fatal_warnings,
                              expected_returncode,
                              expected_stdout,
                              expected_stderr,
@@ -386,6 +399,7 @@ class TestNmcli(NmTestBase):
                    langs = None,
                    lang = None,
                    check_on_disk = _DEFAULT_ARG,
+                   fatal_warnings = _DEFAULT_ARG,
                    expected_returncode = _DEFAULT_ARG,
                    expected_stdout = _DEFAULT_ARG,
                    expected_stderr = _DEFAULT_ARG,
@@ -411,6 +425,7 @@ class TestNmcli(NmTestBase):
             self._call_nmcli(args,
                              lang,
                              check_on_disk,
+                             fatal_warnings,
                              expected_returncode,
                              expected_stdout,
                              expected_stderr,
@@ -425,6 +440,7 @@ class TestNmcli(NmTestBase):
                     args,
                     lang,
                     check_on_disk,
+                    fatal_warnings,
                     expected_returncode,
                     expected_stdout,
                     expected_stderr,
@@ -478,6 +494,8 @@ class TestNmcli(NmTestBase):
         env['LIBNM_USE_SESSION_BUS'] = '1'
         env['LIBNM_USE_NO_UDEV'] = '1'
         env['TERM'] = 'linux'
+        if fatal_warnings is _DEFAULT_ARG or fatal_warnings:
+            env['G_DEBUG'] = 'fatal-warnings'
 
         args = [conf.get(ENV_NM_TEST_CLIENT_NMCLI_PATH)] + list(args)
 
@@ -488,8 +506,8 @@ class TestNmcli(NmTestBase):
 
         if check_on_disk is _DEFAULT_ARG:
             check_on_disk = (    expected_returncode is _DEFAULT_ARG
-                             and expected_stdout is _DEFAULT_ARG
-                             and expected_stderr is _DEFAULT_ARG)
+                             and (expected_stdout is _DEFAULT_ARG or expected_stdout is _UNSTABLE_OUTPUT)
+                             and (expected_stderr is _DEFAULT_ARG or expected_stderr is _UNSTABLE_OUTPUT))
         if expected_returncode is _DEFAULT_ARG:
             expected_returncode = None
         if expected_stdout is _DEFAULT_ARG:
@@ -502,8 +520,15 @@ class TestNmcli(NmTestBase):
                         stdout,
                         stderr):
 
-            stdout = Util.replace_text(stdout, replace_stdout)
-            stderr = Util.replace_text(stderr, replace_stderr)
+            if expected_stdout is _UNSTABLE_OUTPUT:
+                stdout = '<UNSTABLE OUTPUT>'.encode('utf-8')
+            else:
+                stdout = Util.replace_text(stdout, replace_stdout)
+
+            if expected_stderr is _UNSTABLE_OUTPUT:
+                stderr = '<UNSTABLE OUTPUT>'.encode('utf-8')
+            else:
+                stderr = Util.replace_text(stderr, replace_stderr)
 
             if sort_lines_stdout:
                 stdout = b'\n'.join(sorted(stdout.split(b'\n')))
@@ -511,13 +536,13 @@ class TestNmcli(NmTestBase):
             ignore_l10n_diff = (    lang != 'C'
                                 and not conf.get(ENV_NM_TEST_CLIENT_CHECK_L10N))
 
-            if expected_stderr is not None:
+            if expected_stderr is not None and expected_stderr is not _UNSTABLE_OUTPUT:
                 if expected_stderr != stderr:
                     if ignore_l10n_diff:
                         self._skip_test_for_l10n_diff.append(test_name)
                     else:
                         self.assertEqual(expected_stderr, stderr)
-            if expected_stdout is not None:
+            if expected_stdout is not None and expected_stdout is not _UNSTABLE_OUTPUT:
                 if expected_stdout != stdout:
                     if ignore_l10n_diff:
                         self._skip_test_for_l10n_diff.append(test_name)
@@ -525,6 +550,13 @@ class TestNmcli(NmTestBase):
                         self.assertEqual(expected_stdout, stdout)
             if expected_returncode is not None:
                 self.assertEqual(expected_returncode, returncode)
+
+            if fatal_warnings is _DEFAULT_ARG:
+                if expected_returncode != -5:
+                    self.assertNotEqual(returncode, -5)
+            elif fatal_warnings:
+                if expected_returncode is None:
+                   self.assertEqual(returncode, -5)
 
             dirname = PathConfiguration.srcdir() + '/test-client.check-on-disk'
             basename = test_name + '.expected'
@@ -666,13 +698,8 @@ class TestNmcli(NmTestBase):
 
         self.call_nmcli_l(['bogus', 's'])
 
-        for mode in [[],
-                     ['--mode', 'tabular'],
-                     ['--mode', 'multiline']]:
-            for fmt in [[],
-                        ['--pretty'],
-                        ['--terse']]:
-                self.call_nmcli_l(mode + fmt + ['general', 'permissions'])
+        for mode in Util.iter_nmcli_output_modes():
+            self.call_nmcli_l(mode + ['general', 'permissions'])
 
     def test_002(self):
         self.init_001()
@@ -892,6 +919,15 @@ class TestNmcli(NmTestBase):
 
         self.call_nmcli_l(['-f', 'DEVICE,TYPE,DBUS-PATH', 'dev'],
                           replace_stdout = replace_stdout)
+
+        for mode in Util.iter_nmcli_output_modes():
+             self.call_nmcli_l(mode + ['-f', 'ALL', 'device', 'wifi', 'list' ],
+                               replace_stdout = replace_stdout)
+             self.call_nmcli_l(mode + ['-f', 'ALL', 'device', 'wifi', 'list', 'bssid', 'C0:E2:BE:E8:EF:B6'],
+                               replace_stdout = replace_stdout, fatal_warnings = True, expected_stderr = _UNSTABLE_OUTPUT)
+             self.call_nmcli_l(mode + ['-f', 'NAME,SSID,SSID-HEX,BSSID,MODE,CHAN,FREQ,RATE,SIGNAL,BARS,SECURITY,WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,IN-USE,DBUS-PATH',
+                               'device', 'wifi', 'list', 'bssid', 'C0:E2:BE:E8:EF:B6'],
+                               replace_stdout = replace_stdout, fatal_warnings = True, expected_stderr = _UNSTABLE_OUTPUT)
 
 ###############################################################################
 
