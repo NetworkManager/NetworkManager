@@ -168,6 +168,16 @@ class Util:
         # this is for printf debugging, not used in actual code.
         os.system('busctl --user --verbose call org.freedesktop.NetworkManager /org/freedesktop org.freedesktop.DBus.ObjectManager GetManagedObjects | cat')
 
+    @staticmethod
+    def iter_nmcli_output_modes():
+        for mode in [[],
+                     ['--mode', 'tabular'],
+                     ['--mode', 'multiline']]:
+            for fmt in [[],
+                        ['--pretty'],
+                        ['--terse']]:
+                yield mode + fmt
+
 ###############################################################################
 
 class Configuration:
@@ -688,13 +698,8 @@ class TestNmcli(NmTestBase):
 
         self.call_nmcli_l(['bogus', 's'])
 
-        for mode in [[],
-                     ['--mode', 'tabular'],
-                     ['--mode', 'multiline']]:
-            for fmt in [[],
-                        ['--pretty'],
-                        ['--terse']]:
-                self.call_nmcli_l(mode + fmt + ['general', 'permissions'])
+        for mode in Util.iter_nmcli_output_modes():
+            self.call_nmcli_l(mode + ['general', 'permissions'])
 
     def test_002(self):
         self.init_001()
@@ -915,17 +920,12 @@ class TestNmcli(NmTestBase):
         self.call_nmcli_l(['-f', 'DEVICE,TYPE,DBUS-PATH', 'dev'],
                           replace_stdout = replace_stdout)
 
-        for mode in [[],
-                     ['--mode', 'tabular'],
-                     ['--mode', 'multiline']]:
-            for fmt in [[],
-                        ['--pretty'],
-                        ['--terse']]:
-             self.call_nmcli_l(mode + fmt + ['-f', 'ALL', 'device', 'wifi', 'list' ],
+        for mode in Util.iter_nmcli_output_modes():
+             self.call_nmcli_l(mode + ['-f', 'ALL', 'device', 'wifi', 'list' ],
                                replace_stdout = replace_stdout)
-             self.call_nmcli_l(mode + fmt + ['-f', 'ALL', 'device', 'wifi', 'list', 'bssid', 'C0:E2:BE:E8:EF:B6'],
+             self.call_nmcli_l(mode + ['-f', 'ALL', 'device', 'wifi', 'list', 'bssid', 'C0:E2:BE:E8:EF:B6'],
                                replace_stdout = replace_stdout, fatal_warnings = True, expected_stderr = _UNSTABLE_OUTPUT)
-             self.call_nmcli_l(mode + fmt + ['-f', 'NAME,SSID,SSID-HEX,BSSID,MODE,CHAN,FREQ,RATE,SIGNAL,BARS,SECURITY,WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,IN-USE,DBUS-PATH',
+             self.call_nmcli_l(mode + ['-f', 'NAME,SSID,SSID-HEX,BSSID,MODE,CHAN,FREQ,RATE,SIGNAL,BARS,SECURITY,WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,IN-USE,DBUS-PATH',
                                'device', 'wifi', 'list', 'bssid', 'C0:E2:BE:E8:EF:B6'],
                                replace_stdout = replace_stdout, fatal_warnings = True, expected_stderr = _UNSTABLE_OUTPUT)
 
