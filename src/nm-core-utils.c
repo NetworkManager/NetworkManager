@@ -2896,6 +2896,22 @@ nm_utils_secret_key_get (const guint8 **out_secret_key,
 	return secret_key->is_good;
 }
 
+gint64
+nm_utils_secret_key_get_timestamp (void)
+{
+	struct stat stat_buf;
+	const guint8 *key;
+	gsize key_len;
+
+	if (!nm_utils_secret_key_get (&key, &key_len))
+		return 0;
+
+	if (stat (NMSTATEDIR "/secret_key", &stat_buf) != 0)
+		return 0;
+
+	return stat_buf.st_mtim.tv_sec;
+}
+
 /*****************************************************************************/
 
 const char *

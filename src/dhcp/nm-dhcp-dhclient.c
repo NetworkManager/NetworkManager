@@ -582,7 +582,7 @@ state_changed (NMDhcpClient *client,
 }
 
 static GBytes *
-get_duid (NMDhcpClient *client)
+get_duid (NMDhcpClient *client, gboolean global)
 {
 	NMDhcpDhclient *self = NM_DHCP_DHCLIENT (client);
 	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (self);
@@ -607,7 +607,7 @@ get_duid (NMDhcpClient *client)
 		g_free (leasefile);
 	}
 
-	if (!duid) {
+	if (!duid && global) {
 		/* Otherwise read the default machine-wide DUID */
 		_LOGD ("looking for default DUID in '%s'", priv->def_leasefile);
 		duid = nm_dhcp_dhclient_read_duid (priv->def_leasefile, &error);
@@ -619,8 +619,7 @@ get_duid (NMDhcpClient *client)
 		}
 	}
 
-	/* return our DUID, otherwise let the parent class make a default DUID */
-	return duid ?: NM_DHCP_CLIENT_CLASS (nm_dhcp_dhclient_parent_class)->get_duid (client);
+	return duid;
 }
 
 /*****************************************************************************/

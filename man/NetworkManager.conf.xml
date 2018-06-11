@@ -705,6 +705,10 @@ ipv6.ip6-privacy=0
           </para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>ipv6.dhcp-duid</varname></term>
+          <listitem><para>If left unspecified, it defaults to "lease".</para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>ipv6.dhcp-timeout</varname></term>
           <listitem><para>If left unspecified, the default value for
            the interface type is used.</para></listitem>
