@@ -915,6 +915,20 @@ class TestNmcli(NmTestBase):
         self.call_nmcli_l(['-f', 'DEVICE,TYPE,DBUS-PATH', 'dev'],
                           replace_stdout = replace_stdout)
 
+        for mode in [[],
+                     ['--mode', 'tabular'],
+                     ['--mode', 'multiline']]:
+            for fmt in [[],
+                        ['--pretty'],
+                        ['--terse']]:
+             self.call_nmcli_l(mode + fmt + ['-f', 'ALL', 'device', 'wifi', 'list' ],
+                               replace_stdout = replace_stdout)
+             self.call_nmcli_l(mode + fmt + ['-f', 'ALL', 'device', 'wifi', 'list', 'bssid', 'C0:E2:BE:E8:EF:B6'],
+                               replace_stdout = replace_stdout, fatal_warnings = True, expected_stderr = _UNSTABLE_OUTPUT)
+             self.call_nmcli_l(mode + fmt + ['-f', 'NAME,SSID,SSID-HEX,BSSID,MODE,CHAN,FREQ,RATE,SIGNAL,BARS,SECURITY,WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,IN-USE,DBUS-PATH',
+                               'device', 'wifi', 'list', 'bssid', 'C0:E2:BE:E8:EF:B6'],
+                               replace_stdout = replace_stdout, fatal_warnings = True, expected_stderr = _UNSTABLE_OUTPUT)
+
 ###############################################################################
 
 def main():
