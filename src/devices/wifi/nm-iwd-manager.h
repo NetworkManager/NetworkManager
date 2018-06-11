@@ -22,6 +22,7 @@
 #define __NETWORKMANAGER_IWD_MANAGER_H__
 
 #include "devices/nm-device.h"
+#include "nm-wifi-utils.h"
 
 #define NM_IWD_BUS_TYPE                 G_BUS_TYPE_SYSTEM
 #define NM_IWD_SERVICE                  "net.connman.iwd"
@@ -35,13 +36,6 @@
 	"net.connman.iwd.WiFiSimpleConfiguration"
 #define NM_IWD_KNOWN_NETWORK_INTERFACE  "net.connman.iwd.KnownNetwork"
 #define NM_IWD_SIGNAL_AGENT_INTERFACE   "net.connman.iwd.SignalLevelAgent"
-
-typedef enum {
-	NM_IWD_NETWORK_SECURITY_NONE,
-	NM_IWD_NETWORK_SECURITY_WEP,
-	NM_IWD_NETWORK_SECURITY_PSK,
-	NM_IWD_NETWORK_SECURITY_8021X,
-} NMIwdNetworkSecurity;
 
 #define NM_TYPE_IWD_MANAGER              (nm_iwd_manager_get_type ())
 #define NM_IWD_MANAGER(obj)              (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_IWD_MANAGER, NMIwdManager))

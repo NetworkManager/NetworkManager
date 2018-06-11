@@ -815,3 +815,39 @@ nm_wifi_utils_is_manf_default_ssid (GBytes *ssid)
 	}
 	return FALSE;
 }
+
+NMIwdNetworkSecurity
+nm_wifi_connection_get_iwd_security (NMConnection *connection,
+                                     gboolean *mapped)
+{
+	NMSettingWirelessSecurity *s_wireless_sec;
+	const char *key_mgmt = NULL;
+
+	if (!nm_connection_get_setting_wireless (connection))
+		goto error;
+
+	if (mapped)
+		*mapped = TRUE;
+
+	s_wireless_sec = nm_connection_get_setting_wireless_security (connection);
+	if (!s_wireless_sec)
+		return NM_IWD_NETWORK_SECURITY_NONE;
+
+	key_mgmt = nm_setting_wireless_security_get_key_mgmt (s_wireless_sec);
+	nm_assert (key_mgmt);
+
+	if (NM_IN_STRSET (key_mgmt, "none", "ieee8021x"))
+		return NM_IWD_NETWORK_SECURITY_WEP;
+
+	if (nm_streq (key_mgmt, "wpa-psk"))
+		return NM_IWD_NETWORK_SECURITY_PSK;
+
+	if (nm_streq (key_mgmt, "wpa-eap"))
+		return NM_IWD_NETWORK_SECURITY_8021X;
+
+error:
+	if (mapped)
+		*mapped = FALSE;
+
+	return NM_IWD_NETWORK_SECURITY_NONE;
+}
