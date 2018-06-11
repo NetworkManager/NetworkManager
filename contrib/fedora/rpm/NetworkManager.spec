@@ -116,9 +116,9 @@ Source3: 20-connectivity-fedora.conf
 #Patch1: 0001-some.patch
 
 Requires(post): systemd
-Requires(post): /sbin/update-alternatives
+Requires(post): /usr/sbin/update-alternatives
 Requires(preun): systemd
-Requires(preun): /sbin/update-alternatives
+Requires(preun): /usr/sbin/update-alternatives
 Requires(postun): systemd
 
 Requires: dbus >= %{dbus_version}
