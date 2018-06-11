@@ -62,6 +62,7 @@ import nmex
 dbus_session_inited = False
 
 _DEFAULT_ARG = object()
+_UNSTABLE_OUTPUT = object()
 
 ###############################################################################
 
@@ -495,8 +496,8 @@ class TestNmcli(NmTestBase):
 
         if check_on_disk is _DEFAULT_ARG:
             check_on_disk = (    expected_returncode is _DEFAULT_ARG
-                             and expected_stdout is _DEFAULT_ARG
-                             and expected_stderr is _DEFAULT_ARG)
+                             and (expected_stdout is _DEFAULT_ARG or expected_stdout is _UNSTABLE_OUTPUT)
+                             and (expected_stderr is _DEFAULT_ARG or expected_stderr is _UNSTABLE_OUTPUT))
         if expected_returncode is _DEFAULT_ARG:
             expected_returncode = None
         if expected_stdout is _DEFAULT_ARG:
@@ -509,8 +510,15 @@ class TestNmcli(NmTestBase):
                         stdout,
                         stderr):
 
-            stdout = Util.replace_text(stdout, replace_stdout)
-            stderr = Util.replace_text(stderr, replace_stderr)
+            if expected_stdout is _UNSTABLE_OUTPUT:
+                stdout = '<UNSTABLE OUTPUT>'.encode('utf-8')
+            else:
+                stdout = Util.replace_text(stdout, replace_stdout)
+
+            if expected_stderr is _UNSTABLE_OUTPUT:
+                stderr = '<UNSTABLE OUTPUT>'.encode('utf-8')
+            else:
+                stderr = Util.replace_text(stderr, replace_stderr)
 
             if sort_lines_stdout:
                 stdout = b'\n'.join(sorted(stdout.split(b'\n')))
@@ -518,13 +526,13 @@ class TestNmcli(NmTestBase):
             ignore_l10n_diff = (    lang != 'C'
                                 and not conf.get(ENV_NM_TEST_CLIENT_CHECK_L10N))
 
-            if expected_stderr is not None:
+            if expected_stderr is not None and expected_stderr is not _UNSTABLE_OUTPUT:
                 if expected_stderr != stderr:
                     if ignore_l10n_diff:
                         self._skip_test_for_l10n_diff.append(test_name)
                     else:
                         self.assertEqual(expected_stderr, stderr)
-            if expected_stdout is not None:
+            if expected_stdout is not None and expected_stdout is not _UNSTABLE_OUTPUT:
                 if expected_stdout != stdout:
                     if ignore_l10n_diff:
                         self._skip_test_for_l10n_diff.append(test_name)

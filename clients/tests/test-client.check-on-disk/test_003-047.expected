@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:773:test_003()/47
+location: clients/tests/test-client.py:781:test_003()/47
 cmd: $NMCLI -f GENERAL.STATE con s ethernet
 lang: C
 returncode: 0
