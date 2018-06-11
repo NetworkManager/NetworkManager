@@ -7821,6 +7821,7 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, NMDhcp
 	guint8 sha256_digest[32];
 	gsize len = sizeof (sha256_digest);
 	NMDhcpDuidEnforce duid_enforce = NM_DHCP_DUID_ENFORCE_ALWAYS;
+	gs_free char *logstr1 = NULL;
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	duid = nm_setting_ip6_config_get_dhcp_duid (NM_SETTING_IP6_CONFIG (s_ip6));
@@ -7829,9 +7830,11 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, NMDhcp
 		duid_default = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
 		                                                      "ipv6.dhcp-duid", self);
 		duid = duid_default;
+		if (!duid)
+			duid = "lease";
 	}
 
-	if (!duid || nm_streq (duid, "lease")) {
+	if (nm_streq (duid, "lease")) {
 		duid_enforce = NM_DHCP_DUID_ENFORCE_NEVER;
 		duid_out = generate_duid_from_machine_id ();
 		if (!duid_out) {
@@ -7938,7 +7941,9 @@ out_fail:
 	{
 		guint8 uuid[16];
 
-		_LOGW (LOGD_IP6, "duid-gen (%s): %s. Fallback to random DUID-UUID.", duid, duid_error);
+		_LOGW (LOGD_IP6 | LOGD_DHCP6,
+		       "ipv6.dhcp-duid: failure to generate %s DUID: %s. Fallback to random DUID-UUID.",
+		       duid, duid_error);
 
 		nm_utils_random_bytes (uuid, sizeof (uuid));
 		duid_out = generate_duid_uuid (uuid, sizeof (uuid));
@@ -7946,9 +7951,11 @@ out_fail:
 
 out_good:
 	nm_assert (duid_out);
-	_LOGD (LOGD_IP6, "DUID gen: '%s' (%s)",
-	                 nm_dhcp_utils_duid_to_string (duid_out),
-	                 (duid_enforce == NM_DHCP_DUID_ENFORCE_ALWAYS) ? "enforcing" : "fallback");
+	_LOGD (LOGD_IP6 | LOGD_DHCP6,
+	       "ipv6.dhcp-duid: generate %s DUID '%s' (%s)",
+	       duid,
+	       (logstr1 = nm_dhcp_utils_duid_to_string (duid_out)),
+	       (duid_enforce == NM_DHCP_DUID_ENFORCE_ALWAYS) ? "enforcing" : "fallback");
 
 	NM_SET_OUT (out_enforce, duid_enforce);
 	return duid_out;
