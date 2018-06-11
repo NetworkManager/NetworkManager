@@ -7018,7 +7018,9 @@ get_dhcp_timeout (NMDevice *self, int addr_family)
 }
 
 static GBytes *
-dhcp4_get_client_id (NMDevice *self, NMConnection *connection)
+dhcp4_get_client_id (NMDevice *self,
+                     NMConnection *connection,
+                     GBytes *hwaddr)
 {
 	NMSettingIPConfig *s_ip4;
 	const char *client_id;
@@ -7041,33 +7043,41 @@ dhcp4_get_client_id (NMDevice *self, NMConnection *connection)
 
 	if (   (is_mac = nm_streq (client_id, "mac"))
 	    || nm_streq (client_id, "perm-mac")) {
-		const char *hwaddr;
-		char addr_buf[NM_UTILS_HWADDR_LEN_MAX];
-		gsize addr_len;
-		guint8 addr_type;
+		char hwaddr_bin_buf[NM_UTILS_HWADDR_LEN_MAX];
+		guint8 hwaddr_type;
+		const guint8 *hwaddr_bin;
+		gsize hwaddr_len;
 
-		hwaddr = is_mac
-		         ? nm_device_get_hw_address (self)
-		         : nm_device_get_permanent_hw_address (self);
-		if (!hwaddr)
-			return NULL;
+		if (is_mac) {
+			if (!hwaddr)
+				return NULL;
+			hwaddr_bin = g_bytes_get_data (hwaddr, &hwaddr_len);
+		} else {
+			const char *hwaddr_str;
 
-		if (!_nm_utils_hwaddr_aton (hwaddr, addr_buf, sizeof (addr_buf), &addr_len))
-			g_return_val_if_reached (NULL);
+			hwaddr_str = nm_device_get_permanent_hw_address (self);
+			if (!hwaddr_str)
+				return NULL;
 
-		switch (addr_len) {
+			if (!_nm_utils_hwaddr_aton (hwaddr_str, hwaddr_bin_buf, sizeof (hwaddr_bin_buf), &hwaddr_len))
+				g_return_val_if_reached (NULL);
+
+			hwaddr_bin = (const guint8 *) hwaddr_bin_buf;
+		}
+
+		switch (hwaddr_len) {
 		case ETH_ALEN:
-			addr_type = ARPHRD_ETHER;
+			hwaddr_type = ARPHRD_ETHER;
 			break;
 		default:
 			/* unsupported type. */
 			return NULL;
 		}
 
-		client_id_buf = g_malloc (addr_len + 1);
-		client_id_buf[0] = addr_type;
-		memcpy (&client_id_buf[1], addr_buf, addr_len);
-		return g_bytes_new_take (client_id_buf, addr_len + 1);
+		client_id_buf = g_malloc (hwaddr_len + 1);
+		client_id_buf[0] = hwaddr_type;
+		memcpy (&client_id_buf[1], hwaddr_bin, hwaddr_len);
+		return g_bytes_new_take (client_id_buf, hwaddr_len + 1);
 	}
 
 	if (nm_streq (client_id, "stable")) {
@@ -7130,7 +7140,7 @@ dhcp4_start (NMDevice *self)
 	hwaddr = nm_platform_link_get_address_as_bytes (nm_device_get_platform (self),
 	                                                nm_device_get_ip_ifindex (self));
 
-	client_id = dhcp4_get_client_id (self, connection);
+	client_id = dhcp4_get_client_id (self, connection, hwaddr);
 
 	g_warn_if_fail (priv->dhcp4.client == NULL);
 	priv->dhcp4.client = nm_dhcp_manager_start_ip4 (nm_dhcp_manager_get (),
