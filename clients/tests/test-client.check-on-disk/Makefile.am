@@ -143,6 +143,14 @@ clients_tests_expected_files = \
 	clients/tests/test-client.check-on-disk/test_003-090.expected \
 	clients/tests/test-client.check-on-disk/test_003-091.expected \
 	clients/tests/test-client.check-on-disk/test_003-092.expected \
+	clients/tests/test-client.check-on-disk/test_003-093.expected \
+	clients/tests/test-client.check-on-disk/test_003-094.expected \
+	clients/tests/test-client.check-on-disk/test_003-095.expected \
+	clients/tests/test-client.check-on-disk/test_003-096.expected \
+	clients/tests/test-client.check-on-disk/test_003-097.expected \
+	clients/tests/test-client.check-on-disk/test_003-098.expected \
+	clients/tests/test-client.check-on-disk/test_003-099.expected \
+	clients/tests/test-client.check-on-disk/test_003-100.expected \
 	clients/tests/test-client.check-on-disk/test_004-001.expected \
 	clients/tests/test-client.check-on-disk/test_004-002.expected \
 	clients/tests/test-client.check-on-disk/test_004-003.expected \
@@ -177,4 +185,12 @@ clients_tests_expected_files = \
 	clients/tests/test-client.check-on-disk/test_004-032.expected \
 	clients/tests/test-client.check-on-disk/test_004-033.expected \
 	clients/tests/test-client.check-on-disk/test_004-034.expected \
+	clients/tests/test-client.check-on-disk/test_004-035.expected \
+	clients/tests/test-client.check-on-disk/test_004-036.expected \
+	clients/tests/test-client.check-on-disk/test_004-037.expected \
+	clients/tests/test-client.check-on-disk/test_004-038.expected \
+	clients/tests/test-client.check-on-disk/test_004-039.expected \
+	clients/tests/test-client.check-on-disk/test_004-040.expected \
+	clients/tests/test-client.check-on-disk/test_004-041.expected \
+	clients/tests/test-client.check-on-disk/test_004-042.expected \
 	$(NULL)
