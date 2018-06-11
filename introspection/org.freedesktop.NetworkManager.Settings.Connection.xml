@@ -171,6 +171,15 @@
     <property name="Flags" type="u" access="read"/>
 
     <!--
+        Filename:
+
+        File that stores the connection in case the connection is file-backed.
+
+        Since: 1.12
+    -->
+    <property name="Filename" type="s" access="read"/>
+
+    <!--
         PropertiesChanged:
         @properties: A dictionary mapping property names to variant boxed values.
 

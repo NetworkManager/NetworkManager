@@ -2,12 +2,12 @@ location: clients/tests/test-client.py:721:test_003()/8
 cmd: $NMCLI -f ALL c s
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 912 bytes
+stdout: 1108 bytes
 >>>
-NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE  ACTIVE-PATH  SLAVE 
-con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/1  nie     --      --     --           --    
-con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/2  nie     --      --     --           --    
-ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/3  nie     --      --     --           --    
+NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE  ACTIVE-PATH  SLAVE  FILENAME                                        
+con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/1  nie     --      --     --           --     /etc/NetworkManager/system-connections/con-1    
+con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/2  nie     --      --     --           --     /etc/NetworkManager/system-connections/con-xx1  
+ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/3  nie     --      --     --           --     /etc/NetworkManager/system-connections/ethernet 
 
 <<<
 stderr: 0 bytes

@@ -51,6 +51,7 @@ enum {
 	PROP_0,
 	PROP_UNSAVED,
 	PROP_FLAGS,
+	PROP_FILENAME,
 	PROP_VISIBLE,
 
 	LAST_PROP
@@ -61,6 +62,7 @@ typedef struct {
 
 	gboolean unsaved;
 	guint32 flags;
+	const char *filename;
 
 	gboolean visible;
 } NMRemoteConnectionPrivate;
@@ -670,6 +672,22 @@ nm_remote_connection_get_flags (NMRemoteConnection *connection)
 }
 
 /**
+ * nm_remote_connection_get_filename:
+ * @connection: the #NMRemoteConnection
+ *
+ * Returns: file that stores the connection in case the connection is file-backed.
+ *
+ * Since: 1.12
+ **/
+const char *
+nm_remote_connection_get_filename (NMRemoteConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_REMOTE_CONNECTION (connection), NULL);
+
+	return NM_REMOTE_CONNECTION_GET_PRIVATE (connection)->filename;
+}
+
+/**
  * nm_remote_connection_get_visible:
  * @connection: the #NMRemoteConnection
  *
@@ -760,6 +778,7 @@ init_dbus (NMObject *object)
 	const NMPropertiesInfo property_info[] = {
 		{ NM_REMOTE_CONNECTION_UNSAVED, &priv->unsaved },
 		{ NM_REMOTE_CONNECTION_FLAGS, &priv->flags },
+		{ NM_REMOTE_CONNECTION_FILENAME, &priv->filename },
 		{ NULL },
 	};
 
@@ -893,6 +912,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_FLAGS:
 		g_value_set_boolean (value, NM_REMOTE_CONNECTION_GET_PRIVATE (object)->flags);
 		break;
+	case PROP_FILENAME:
+		g_value_set_string (value, NM_REMOTE_CONNECTION_GET_PRIVATE (object)->filename);
+		break;
 	case PROP_VISIBLE:
 		g_value_set_boolean (value, NM_REMOTE_CONNECTION_GET_PRIVATE (object)->visible);
 		break;
@@ -964,6 +986,21 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 		                    0, G_MAXUINT32, 0,
 		                    G_PARAM_READABLE |
 		                    G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMRemoteConnection:filename:
+	 *
+	 * File that stores the connection in case the connection is
+	 * file-backed.
+	 *
+	 * Since: 1.12
+	 **/
+	g_object_class_install_property
+	        (object_class, PROP_FILENAME,
+	         g_param_spec_string (NM_REMOTE_CONNECTION_FILENAME, "", "",
+	                              NULL,
+	                              G_PARAM_READABLE |
+	                              G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMRemoteConnection:visible:

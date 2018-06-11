@@ -2,7 +2,7 @@ location: clients/tests/test-client.py:725:test_003()/10
 cmd: $NMCLI --complete-args -f ALL c s ''
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 64 bytes
+stdout: 73 bytes
 >>>
 
 --active
@@ -11,6 +11,7 @@ apath
 con-1
 con-xx1
 ethernet
+filename
 help
 id
 path

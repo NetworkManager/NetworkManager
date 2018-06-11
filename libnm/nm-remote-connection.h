@@ -42,6 +42,7 @@ G_BEGIN_DECLS
 #define NM_REMOTE_CONNECTION_PATH            "path"
 #define NM_REMOTE_CONNECTION_UNSAVED         "unsaved"
 #define NM_REMOTE_CONNECTION_FLAGS           "flags"
+#define NM_REMOTE_CONNECTION_FILENAME        "filename"
 #define NM_REMOTE_CONNECTION_VISIBLE         "visible"
 
 /**
@@ -125,6 +126,9 @@ gboolean nm_remote_connection_get_unsaved (NMRemoteConnection *connection);
 
 NM_AVAILABLE_IN_1_12
 NMSettingsConnectionFlags nm_remote_connection_get_flags (NMRemoteConnection *connection);
+
+NM_AVAILABLE_IN_1_12
+const char *nm_remote_connection_get_filename (NMRemoteConnection *connection);
 
 gboolean nm_remote_connection_get_visible (NMRemoteConnection *connection);
 

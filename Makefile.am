@@ -19,6 +19,7 @@ noinst_DATA =
 sbin_PROGRAMS =
 bin_PROGRAMS =
 libexec_PROGRAMS =
+dist_libexec_SCRIPTS =
 lib_LTLIBRARIES =
 plugin_LTLIBRARIES =
 core_plugins =
@@ -2200,6 +2201,10 @@ src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_LDADD = \
 	src/libNetworkManagerTest.la
 
 $(src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+dist_libexec_SCRIPTS += \
+	src/settings/plugins/ifcfg-rh/nm-ifup \
+	src/settings/plugins/ifcfg-rh/nm-ifdown
 
 endif
 
