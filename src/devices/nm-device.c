@@ -7042,6 +7042,8 @@ dhcp4_get_client_id (NMDevice *self,
 	guint8 hwaddr_bin_buf[NM_UTILS_HWADDR_LEN_MAX];
 	const guint8 *hwaddr_bin;
 	gsize hwaddr_len;
+	GBytes *result;
+	gs_free char *logstr1 = NULL;
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	client_id = nm_setting_ip4_config_get_dhcp_client_id (NM_SETTING_IP4_CONFIG (s_ip4));
@@ -7049,12 +7051,17 @@ dhcp4_get_client_id (NMDevice *self,
 	if (!client_id) {
 		client_id_default = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
 		                                                           "ipv4.dhcp-client-id", self);
-		if (client_id_default && client_id_default[0])
+		if (client_id_default && client_id_default[0]) {
+			/* a non-empty client-id is always valid, see nm_dhcp_utils_client_id_string_to_bytes().  */
 			client_id = client_id_default;
+		}
 	}
 
-	if (!client_id)
+	if (!client_id) {
+		_LOGD (LOGD_DEVICE | LOGD_DHCP4 | LOGD_IP4,
+		       "ipv4.dhcp-client-id: no explicity client-id configured");
 		return NULL;
+	}
 
 	if (nm_streq (client_id, "mac")) {
 		if (!hwaddr) {
@@ -7068,7 +7075,8 @@ dhcp4_get_client_id (NMDevice *self,
 			goto out_fail;
 		}
 
-		return dhcp4_get_client_id_mac (hwaddr_bin);
+		result = dhcp4_get_client_id_mac (hwaddr_bin);
+		goto out_good;
 	}
 
 	if (nm_streq (client_id, "perm-mac")) {
@@ -7089,7 +7097,8 @@ dhcp4_get_client_id (NMDevice *self,
 			goto out_fail;
 		}
 
-		return dhcp4_get_client_id_mac (hwaddr_bin_buf);
+		result = dhcp4_get_client_id_mac (hwaddr_bin_buf);
+		goto out_good;
 	}
 
 	if (nm_streq (client_id, "stable")) {
@@ -7125,21 +7134,30 @@ dhcp4_get_client_id (NMDevice *self,
 		client_id_buf = g_malloc (1 + 15);
 		client_id_buf[0] = 0;
 		memcpy (&client_id_buf[1], buf, 15);
-		return g_bytes_new_take (client_id_buf, 1 + 15);
+		result = g_bytes_new_take (client_id_buf, 1 + 15);
+		goto out_good;
 	}
 
-	return nm_dhcp_utils_client_id_string_to_bytes (client_id);
+	result = nm_dhcp_utils_client_id_string_to_bytes (client_id);
+	goto out_good;
 
 out_fail:
-	{
-		_LOGW (LOGD_DEVICE | LOGD_DHCP4 | LOGD_IP4,
-		       "ipv4.dhcp-client-id: failure to generate client id (%s). Use random client id",
-		       fail_reason);
-		client_id_buf = g_malloc (1 + 15);
-		client_id_buf[0] = 0;
-		nm_utils_random_bytes (&client_id_buf[1], 15);
-		return g_bytes_new_take (client_id_buf, 1 + 15);
-	}
+	nm_assert (fail_reason);
+	_LOGW (LOGD_DEVICE | LOGD_DHCP4 | LOGD_IP4,
+	       "ipv4.dhcp-client-id: failure to generate client id (%s). Use random client id",
+	       fail_reason);
+	client_id_buf = g_malloc (1 + 15);
+	client_id_buf[0] = 0;
+	nm_utils_random_bytes (&client_id_buf[1], 15);
+	result = g_bytes_new_take (client_id_buf, 1 + 15);
+
+out_good:
+	nm_assert (result);
+	_LOGD (LOGD_DEVICE | LOGD_DHCP4 | LOGD_IP4,
+	       "ipv4.dhcp-client-id: use \"%s\" client ID: %s",
+	       client_id,
+	       (logstr1 = nm_dhcp_utils_duid_to_string (result)));
+	return result;
 }
 
 static NMActStageReturn
