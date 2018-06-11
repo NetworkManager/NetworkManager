@@ -7826,7 +7826,6 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, NMDhcp
 	gsize len = sizeof (sha256_digest);
 	NMDhcpDuidEnforce duid_enforce = NM_DHCP_DUID_ENFORCE_NEVER;
 
-
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	duid = nm_setting_ip6_config_get_dhcp_duid (NM_SETTING_IP6_CONFIG (s_ip6));
 
@@ -7840,6 +7839,8 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, NMDhcp
 		duid_out = generate_duid_from_machine_id ();
 		goto end;
 	}
+
+	duid_enforce = NM_DHCP_DUID_ENFORCE_ALWAYS;
 
 	if (!_nm_utils_dhcp_duid_valid (duid, &duid_out)) {
 		duid_error = "invalid duid";
@@ -7886,8 +7887,6 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, NMDhcp
 		g_checksum_get_digest (sum, sha256_digest, &len);
 		g_checksum_free (sum);
 	}
-
-	duid_enforce = NM_DHCP_DUID_ENFORCE_ALWAYS;
 
 #define EPOCH_DATETIME_THREE_YEARS  (356 * 24 * 3600 * 3)
 	if (nm_streq0 (duid, "ll")) {
