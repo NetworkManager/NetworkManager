@@ -493,6 +493,10 @@ _metagen_con_show_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 		if (!s_con)
 			return NULL;
 		return nm_setting_connection_get_slave_type (s_con);
+	case NMC_GENERIC_INFO_TYPE_CON_SHOW_FILENAME:
+		if (!NM_IS_REMOTE_CONNECTION (c))
+			return NULL;
+		return nm_remote_connection_get_filename (NM_REMOTE_CONNECTION (c));
 	default:
 		break;
 	}
@@ -517,6 +521,7 @@ const NmcMetaGenericInfo *const metagen_con_show[_NMC_GENERIC_INFO_TYPE_CON_SHOW
 	_METAGEN_CON_SHOW (NMC_GENERIC_INFO_TYPE_CON_SHOW_STATE,                "STATE"),
 	_METAGEN_CON_SHOW (NMC_GENERIC_INFO_TYPE_CON_SHOW_ACTIVE_PATH,          "ACTIVE-PATH"),
 	_METAGEN_CON_SHOW (NMC_GENERIC_INFO_TYPE_CON_SHOW_SLAVE,                "SLAVE"),
+	_METAGEN_CON_SHOW (NMC_GENERIC_INFO_TYPE_CON_SHOW_FILENAME,             "FILENAME"),
 };
 #define NMC_FIELDS_CON_SHOW_COMMON  "NAME,UUID,TYPE,DEVICE"
 
@@ -1833,9 +1838,9 @@ get_connection (NmCli *nmc,
 	}
 
 	if (*argc == 1 && nmc->complete)
-		nmc_complete_strings (**argv, "id", "uuid", "path", NULL);
+		nmc_complete_strings (**argv, "id", "uuid", "path", "filename", NULL);
 
-	if (NM_IN_STRSET (**argv, "id", "uuid", "path")) {
+	if (NM_IN_STRSET (**argv, "id", "uuid", "path", "filename")) {
 		if (*argc == 1) {
 			if (!nmc->complete) {
 				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
@@ -1976,7 +1981,7 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 			char **argv_cp = argv;
 
 			do {
-				if (NM_IN_STRSET (*argv_cp, "id", "uuid", "path", "apath")) {
+				if (NM_IN_STRSET (*argv_cp, "id", "uuid", "path", "filename", "apath")) {
 					argc_cp--;
 					argv_cp++;
 				}
@@ -1994,9 +1999,9 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 			guint i_found_cons;
 
 			if (argc == 1 && nmc->complete)
-				nmc_complete_strings (*argv, "id", "uuid", "path", "apath", NULL);
+				nmc_complete_strings (*argv, "id", "uuid", "path", "filename", "apath", NULL);
 
-			if (NM_IN_STRSET (*argv, "id", "uuid", "path", "apath")) {
+			if (NM_IN_STRSET (*argv, "id", "uuid", "path", "filename", "apath")) {
 				selector = *argv;
 				argc--;
 				argv++;
@@ -2943,9 +2948,9 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 		const char *selector = NULL;
 
 		if (arg_num == 1 && nmc->complete)
-			nmc_complete_strings (*arg_ptr, "id", "uuid", "path", "apath", NULL);
+			nmc_complete_strings (*arg_ptr, "id", "uuid", "path",  "filename", "apath", NULL);
 
-		if (NM_IN_STRSET (*arg_ptr, "id", "uuid", "path", "apath")) {
+		if (NM_IN_STRSET (*arg_ptr, "id", "uuid", "path",  "filename", "apath")) {
 			selector = *arg_ptr;
 			arg_num--;
 			arg_ptr++;
@@ -7944,6 +7949,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 	const char *con_id = NULL;
 	const char *con_uuid = NULL;
 	const char *con_path = NULL;
+	const char *con_filename = NULL;
 	const char *selector = NULL;
 	gs_free_error GError *error = NULL;
 	GError *err1 = NULL;
@@ -7952,11 +7958,12 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 	                         { "id",       TRUE, &con_id,   FALSE },
 	                         { "uuid",     TRUE, &con_uuid, FALSE },
 	                         { "path",     TRUE, &con_path, FALSE },
+	                         { "filename", TRUE, &con_filename, FALSE },
 	                         { NULL } };
 
 	next_arg (nmc, &argc, &argv, NULL);
 	if (argc == 1 && nmc->complete)
-		nmc_complete_strings (*argv, "type", "con-name", "id", "uuid", "path", NULL);
+		nmc_complete_strings (*argv, "type", "con-name", "id", "uuid", "path",  "filename", NULL);
 
 	nmc->return_value = NMC_RESULT_SUCCESS;
 
@@ -7978,20 +7985,23 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 	connections = nm_client_get_connections (nmc->client);
 
 	if (!con) {
-		if (con_id && !con_uuid && !con_path) {
+		if (con_id && !con_uuid && !con_path && !con_filename) {
 			con = con_id;
 			selector = "id";
-		} else if (con_uuid && !con_id && !con_path) {
+		} else if (con_uuid && !con_id && !con_path && !con_filename) {
 			con = con_uuid;
 			selector = "uuid";
-		} else if (con_path && !con_id && !con_uuid) {
+		} else if (con_path && !con_id && !con_uuid && !con_filename) {
 			con = con_path;
 			selector = "path";
-		} else if (!con_path && !con_id && !con_uuid) {
+		} else if (con_filename && !con_path && !con_id && !con_uuid) {
+			con = con_filename;
+			selector = "filename";
+		} else if (!con_path && !con_id && !con_uuid && !con_filename) {
 			/* no-op */
 		} else {
 			g_string_printf (nmc->return_text,
-			                 _("Error: only one of 'id', uuid, or 'path' can be provided."));
+			                 _("Error: only one of 'id', 'filename', uuid, or 'path' can be provided."));
 			NMC_RETURN (nmc, NMC_RESULT_ERROR_USER_INPUT);
 		}
 	}

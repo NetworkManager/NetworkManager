@@ -42,11 +42,11 @@
 
 /* Properties */
 #define NM_SETTINGS_CONNECTION_UNSAVED  "unsaved"
+#define NM_SETTINGS_CONNECTION_FLAGS    "flags"
+#define NM_SETTINGS_CONNECTION_FILENAME "filename"
 
 /* Internal properties */
 #define NM_SETTINGS_CONNECTION_READY    "ready"
-#define NM_SETTINGS_CONNECTION_FLAGS    "flags"
-#define NM_SETTINGS_CONNECTION_FILENAME "filename"
 
 /**
  * NMSettingsConnectionIntFlags:
