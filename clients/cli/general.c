@@ -560,6 +560,9 @@ print_permissions (void *user_data)
 		permissions[i++] = GINT_TO_POINTER (perm);
 	permissions[i++] = NULL;
 
+	/* Optionally start paging the output. */
+	nmc_terminal_spawn_pager (&nmc->nmc_config);
+
 	if (!nmc_print (&nmc->nmc_config,
 	                permissions,
 	                _("NetworkManager permissions"),
