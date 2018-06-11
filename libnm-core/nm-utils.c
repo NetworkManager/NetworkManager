@@ -4448,11 +4448,10 @@ _nm_utils_inet6_is_token (const struct in6_addr *in6addr)
 gboolean
 _nm_utils_dhcp_duid_valid (const char *duid, GBytes **out_duid_bin)
 {
+	guint8 duid_arr[128 + 2];
 	gsize duid_len;
-	gs_unref_bytes GBytes *duid_bin = NULL;
 
-	if (out_duid_bin)
-		*out_duid_bin = NULL;
+	NM_SET_OUT (out_duid_bin, NULL);
 
 	if (!duid)
 		return FALSE;
@@ -4466,20 +4465,16 @@ _nm_utils_dhcp_duid_valid (const char *duid, GBytes **out_duid_bin)
 		return TRUE;
 	}
 
-	duid_bin = nm_utils_hexstr2bin (duid);
-	if (!duid_bin)
-		return FALSE;
+	if (_str2bin (duid, FALSE, ":", duid_arr, sizeof (duid_arr), &duid_len)) {
+		/* MAX DUID length is 128 octects + the type code (2 octects). */
+		if (   duid_len > 2
+		    && duid_len <= (128 + 2)) {
+			NM_SET_OUT (out_duid_bin, g_bytes_new (duid_arr, duid_len));
+			return TRUE;
+		}
+	}
 
-	duid_len = g_bytes_get_size (duid_bin);
-	/* MAX DUID lenght is 128 octects + the type code (2 octects). */
-	if (   duid_len <= 2
-	    || duid_len > (128 + 2))
-		return FALSE;
-
-	if (out_duid_bin)
-		*out_duid_bin = g_steal_pointer (&duid_bin);
-
-	return TRUE;
+	return FALSE;
 }
 
 /**
