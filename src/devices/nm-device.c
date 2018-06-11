@@ -7018,6 +7018,18 @@ get_dhcp_timeout (NMDevice *self, int addr_family)
 }
 
 static GBytes *
+dhcp4_get_client_id_mac (const guint8 *hwaddr /* ETH_ALEN bytes */)
+{
+	guint8 *client_id_buf;
+	guint8 hwaddr_type = ARPHRD_ETHER;
+
+	client_id_buf = g_malloc (ETH_ALEN + 1);
+	client_id_buf[0] = hwaddr_type;
+	memcpy (&client_id_buf[1], hwaddr, ETH_ALEN);
+	return g_bytes_new_take (client_id_buf, ETH_ALEN + 1);
+}
+
+static GBytes *
 dhcp4_get_client_id (NMDevice *self,
                      NMConnection *connection,
                      GBytes *hwaddr)
@@ -7026,7 +7038,10 @@ dhcp4_get_client_id (NMDevice *self,
 	const char *client_id;
 	gs_free char *client_id_default = NULL;
 	guint8 *client_id_buf;
-	gboolean is_mac;
+	const char *fail_reason;
+	guint8 hwaddr_bin_buf[NM_UTILS_HWADDR_LEN_MAX];
+	const guint8 *hwaddr_bin;
+	gsize hwaddr_len;
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	client_id = nm_setting_ip4_config_get_dhcp_client_id (NM_SETTING_IP4_CONFIG (s_ip4));
@@ -7041,43 +7056,40 @@ dhcp4_get_client_id (NMDevice *self,
 	if (!client_id)
 		return NULL;
 
-	if (   (is_mac = nm_streq (client_id, "mac"))
-	    || nm_streq (client_id, "perm-mac")) {
-		char hwaddr_bin_buf[NM_UTILS_HWADDR_LEN_MAX];
-		guint8 hwaddr_type;
-		const guint8 *hwaddr_bin;
-		gsize hwaddr_len;
-
-		if (is_mac) {
-			if (!hwaddr)
-				return NULL;
-			hwaddr_bin = g_bytes_get_data (hwaddr, &hwaddr_len);
-		} else {
-			const char *hwaddr_str;
-
-			hwaddr_str = nm_device_get_permanent_hw_address (self);
-			if (!hwaddr_str)
-				return NULL;
-
-			if (!_nm_utils_hwaddr_aton (hwaddr_str, hwaddr_bin_buf, sizeof (hwaddr_bin_buf), &hwaddr_len))
-				g_return_val_if_reached (NULL);
-
-			hwaddr_bin = (const guint8 *) hwaddr_bin_buf;
+	if (nm_streq (client_id, "mac")) {
+		if (!hwaddr) {
+			fail_reason = "failed to get current MAC address";
+			goto out_fail;
 		}
 
-		switch (hwaddr_len) {
-		case ETH_ALEN:
-			hwaddr_type = ARPHRD_ETHER;
-			break;
-		default:
+		hwaddr_bin = g_bytes_get_data (hwaddr, &hwaddr_len);
+		if (hwaddr_len != ETH_ALEN) {
+			fail_reason = "MAC address is not ethernet";
+			goto out_fail;
+		}
+
+		return dhcp4_get_client_id_mac (hwaddr_bin);
+	}
+
+	if (nm_streq (client_id, "perm-mac")) {
+		const char *hwaddr_str;
+
+		hwaddr_str = nm_device_get_permanent_hw_address (self);
+		if (!hwaddr_str) {
+			fail_reason = "failed to get permanent MAC address";
+			goto out_fail;
+		}
+
+		if (!_nm_utils_hwaddr_aton (hwaddr_str, hwaddr_bin_buf, sizeof (hwaddr_bin_buf), &hwaddr_len))
+			g_return_val_if_reached (NULL);
+
+		if (hwaddr_len != ETH_ALEN) {
 			/* unsupported type. */
-			return NULL;
+			fail_reason = "MAC address is not ethernet";
+			goto out_fail;
 		}
 
-		client_id_buf = g_malloc (hwaddr_len + 1);
-		client_id_buf[0] = hwaddr_type;
-		memcpy (&client_id_buf[1], hwaddr_bin, hwaddr_len);
-		return g_bytes_new_take (client_id_buf, hwaddr_len + 1);
+		return dhcp4_get_client_id_mac (hwaddr_bin_buf);
 	}
 
 	if (nm_streq (client_id, "stable")) {
@@ -7117,6 +7129,17 @@ dhcp4_get_client_id (NMDevice *self,
 	}
 
 	return nm_dhcp_utils_client_id_string_to_bytes (client_id);
+
+out_fail:
+	{
+		_LOGW (LOGD_DEVICE | LOGD_DHCP4 | LOGD_IP4,
+		       "ipv4.dhcp-client-id: failure to generate client id (%s). Use random client id",
+		       fail_reason);
+		client_id_buf = g_malloc (1 + 15);
+		client_id_buf[0] = 0;
+		nm_utils_random_bytes (&client_id_buf[1], 15);
+		return g_bytes_new_take (client_id_buf, 1 + 15);
+	}
 }
 
 static NMActStageReturn
