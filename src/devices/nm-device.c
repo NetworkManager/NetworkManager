@@ -7816,8 +7816,8 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, NMDhcp
 	NMSettingIPConfig *s_ip6;
 	const char *duid;
 	gs_free char *duid_default = NULL;
-	const char *duid_error = NULL;
-	GBytes *duid_out = NULL;
+	const char *duid_error;
+	GBytes *duid_out;
 	guint8 sha256_digest[32];
 	gsize len = sizeof (sha256_digest);
 	NMDhcpDuidEnforce duid_enforce = NM_DHCP_DUID_ENFORCE_ALWAYS;
@@ -7834,29 +7834,49 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, NMDhcp
 	if (!duid || nm_streq (duid, "lease")) {
 		duid_enforce = NM_DHCP_DUID_ENFORCE_NEVER;
 		duid_out = generate_duid_from_machine_id ();
-		if (!duid_out)
+		if (!duid_out) {
 			duid_error = "failure to read machine-id";
-		goto end;
+			goto out_fail;
+		}
+		goto out_good;
 	}
 
 	if (!_nm_utils_dhcp_duid_valid (duid, &duid_out)) {
 		duid_error = "invalid duid";
-		goto end;
+		goto out_fail;
 	}
 
 	if (duid_out)
-		goto end;
+		goto out_good;
 
 	if (NM_IN_STRSET (duid, "ll", "llt")) {
 		if (!hwaddr) {
 			duid_error = "missing link-layer address";
-			goto end;
+			goto out_fail;
 		}
 		if (g_bytes_get_size (hwaddr) != ETH_ALEN) {
 			duid_error = "unsupported link-layer address";
-			goto end;
+			goto out_fail;
 		}
-	} else if (NM_IN_STRSET (duid, "stable-llt", "stable-ll", "stable-uuid")) {
+
+		if (nm_streq (duid, "ll")) {
+			duid_out = generate_duid_ll (g_bytes_get_data (hwaddr, NULL));
+		} else {
+			gint64 time;
+
+			time = nm_utils_secret_key_get_timestamp ();
+			if (!time) {
+				duid_error = "cannot retrieve the secret key timestamp";
+				goto out_fail;
+			}
+
+			duid_out = generate_duid_llt (g_bytes_get_data (hwaddr, NULL), time);
+		}
+
+		goto out_good;
+	}
+
+	if (NM_IN_STRSET (duid, "stable-ll", "stable-llt", "stable-uuid")) {
 		NMUtilsStableType stable_type;
 		const char *stable_id = NULL;
 		guint32 salted_header;
@@ -7880,51 +7900,42 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, NMDhcp
 
 		g_checksum_get_digest (sum, sha256_digest, &len);
 		g_checksum_free (sum);
-	}
+
+		if (nm_streq (duid, "stable-ll")) {
+			duid_out = generate_duid_ll (sha256_digest);
+		} else if (nm_streq (duid, "stable-llt")) {
+			gint64 time;
 
 #define EPOCH_DATETIME_THREE_YEARS  (356 * 24 * 3600 * 3)
-	if (nm_streq0 (duid, "ll")) {
-		duid_out = generate_duid_ll (g_bytes_get_data (hwaddr, NULL));
 
-	} else if (nm_streq0 (duid, "llt")) {
-		gint64 time;
+			/* We want a variable time between the secret_key timestamp and three years
+			 * before. Let's compute the time (in seconds) from 0 to 3 years; then we'll
+			 * subtract it from the secret_key timestamp.
+			 */
+			time = nm_utils_secret_key_get_timestamp ();
+			if (!time) {
+				duid_error = "cannot retrieve the secret key timestamp";
+				goto out_fail;
+			}
+			/* don't use too old timestamps. They cannot be expressed in DUID-LLT and
+			 * would all be truncated to zero. */
+			time = NM_MAX (time, EPOCH_DATETIME_200001010000 + EPOCH_DATETIME_THREE_YEARS);
+			time -= (unaligned_read_be32 (&sha256_digest[ETH_ALEN]) % EPOCH_DATETIME_THREE_YEARS);
 
-		time = nm_utils_secret_key_get_timestamp ();
-		if (!time) {
-			duid_error = "cannot retrieve the secret key timestamp";
-			goto end;
+			duid_out = generate_duid_llt (sha256_digest, time);
+		} else {
+			nm_assert (nm_streq (duid, "stable-uuid"));
+			duid_out = generate_duid_uuid (sha256_digest, len);
 		}
 
-		duid_out = generate_duid_llt (g_bytes_get_data (hwaddr, NULL), time);
-	} else if (nm_streq0 (duid, "stable-ll")) {
-		duid_out = generate_duid_ll (sha256_digest);
-
-	} else if (nm_streq0 (duid, "stable-llt")) {
-		gint64 time;
-
-		/* We want a variable time between the secret_key timestamp and three years
-		 * before. Let's compute the time (in seconds) from 0 to 3 years; then we'll
-		 * subtract it from the secret_key timestamp.
-		 */
-		time = nm_utils_secret_key_get_timestamp ();
-		if (!time) {
-			duid_error = "cannot retrieve the secret key timestamp";
-			goto end;
-		}
-		/* don't use too old timestamps. They cannot be expressed in DUID-LLT and
-		 * would all be truncated to zero. */
-		time = NM_MAX (time, EPOCH_DATETIME_200001010000 + EPOCH_DATETIME_THREE_YEARS);
-		time -= (unaligned_read_be32 (&sha256_digest[ETH_ALEN]) % EPOCH_DATETIME_THREE_YEARS);
-
-		duid_out = generate_duid_llt (sha256_digest, time);
-
-	} else if (nm_streq0 (duid, "stable-uuid")) {
-		duid_out = generate_duid_uuid (sha256_digest, len);
+		goto out_good;
 	}
 
-	duid_error = "generation failed";
-end:
-	if (!duid_out) {
+	g_return_val_if_reached (NULL);
+
+out_fail:
+	nm_assert (!duid_out && duid_error);
+	{
 		guint8 uuid[16];
 
 		_LOGW (LOGD_IP6, "duid-gen (%s): %s. Fallback to random DUID-UUID.", duid, duid_error);
@@ -7933,6 +7944,8 @@ end:
 		duid_out = generate_duid_uuid (uuid, sizeof (uuid));
 	}
 
+out_good:
+	nm_assert (duid_out);
 	_LOGD (LOGD_IP6, "DUID gen: '%s' (%s)",
 	                 nm_dhcp_utils_duid_to_string (duid_out),
 	                 (duid_enforce == NM_DHCP_DUID_ENFORCE_ALWAYS) ? "enforcing" : "fallback");
