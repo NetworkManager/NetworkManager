@@ -2952,9 +2952,9 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 {
 	NMDevice *device = NULL;
 	NMAccessPoint *ap = NULL;
-	NM80211ApFlags ap_flags = NM_802_11_AP_FLAGS_NONE;
-	NM80211ApSecurityFlags ap_wpa_flags = NM_802_11_AP_SEC_NONE;
-	NM80211ApSecurityFlags ap_rsn_flags = NM_802_11_AP_SEC_NONE;
+	NM80211ApFlags ap_flags;
+	NM80211ApSecurityFlags ap_wpa_flags;
+	NM80211ApSecurityFlags ap_rsn_flags;
 	NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
@@ -3251,7 +3251,9 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	ap_rsn_flags = nm_access_point_get_rsn_flags (ap);
 
 	/* Set password for WEP or WPA-PSK. */
-	if (ap_flags & NM_802_11_AP_FLAGS_PRIVACY) {
+	if (   (ap_flags & NM_802_11_AP_FLAGS_PRIVACY)
+	    || ap_wpa_flags != NM_802_11_AP_SEC_NONE
+	    || ap_rsn_flags != NM_802_11_AP_SEC_NONE) {
 		/* Ask for missing password when one is expected and '--ask' is used */
 		if (!password && nmc->ask)
 			password = passwd_ask = nmc_readline_echo (nmc->nmc_config.show_secrets, _("Password: "));
