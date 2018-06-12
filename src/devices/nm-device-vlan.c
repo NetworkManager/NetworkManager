@@ -545,8 +545,10 @@ get_configured_mtu (NMDevice *self, NMDeviceMtuSource *out_source)
 
 	/* Inherit the MTU from parent device, if any */
 	ifindex = nm_device_parent_get_ifindex (self);
-	if (ifindex > 0)
+	if (ifindex > 0) {
 		mtu = nm_platform_link_get_mtu (nm_device_get_platform (NM_DEVICE (self)), ifindex);
+		*out_source = NM_DEVICE_MTU_SOURCE_PARENT;
+	}
 
 	return mtu;
 }
