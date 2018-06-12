@@ -2521,20 +2521,20 @@ nm_utils_machine_id_read (void)
 	 */
 	if (   !g_file_get_contents ("/etc/machine-id", &contents, NULL, NULL)
 	    && !g_file_get_contents (LOCALSTATEDIR "/lib/dbus/machine-id", &contents, NULL, NULL))
-		return FALSE;
+		return NULL;
 
 	contents = g_strstrip (contents);
 
 	for (i = 0; i < 32; i++) {
 		if (!g_ascii_isxdigit (contents[i]))
-			return FALSE;
+			return NULL;
 		if (contents[i] >= 'A' && contents[i] <= 'F') {
 			/* canonicalize to lower-case */
 			contents[i] = 'a' + (contents[i] - 'A');
 		}
 	}
 	if (contents[i] != '\0')
-		return FALSE;
+		return NULL;
 
 	return g_steal_pointer (&contents);
 }

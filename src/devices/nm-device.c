@@ -7018,13 +7018,32 @@ get_dhcp_timeout (NMDevice *self, int addr_family)
 }
 
 static GBytes *
-dhcp4_get_client_id (NMDevice *self, NMConnection *connection)
+dhcp4_get_client_id_mac (const guint8 *hwaddr /* ETH_ALEN bytes */)
+{
+	guint8 *client_id_buf;
+	guint8 hwaddr_type = ARPHRD_ETHER;
+
+	client_id_buf = g_malloc (ETH_ALEN + 1);
+	client_id_buf[0] = hwaddr_type;
+	memcpy (&client_id_buf[1], hwaddr, ETH_ALEN);
+	return g_bytes_new_take (client_id_buf, ETH_ALEN + 1);
+}
+
+static GBytes *
+dhcp4_get_client_id (NMDevice *self,
+                     NMConnection *connection,
+                     GBytes *hwaddr)
 {
 	NMSettingIPConfig *s_ip4;
 	const char *client_id;
 	gs_free char *client_id_default = NULL;
 	guint8 *client_id_buf;
-	gboolean is_mac;
+	const char *fail_reason;
+	guint8 hwaddr_bin_buf[NM_UTILS_HWADDR_LEN_MAX];
+	const guint8 *hwaddr_bin;
+	gsize hwaddr_len;
+	GBytes *result;
+	gs_free char *logstr1 = NULL;
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	client_id = nm_setting_ip4_config_get_dhcp_client_id (NM_SETTING_IP4_CONFIG (s_ip4));
@@ -7032,42 +7051,54 @@ dhcp4_get_client_id (NMDevice *self, NMConnection *connection)
 	if (!client_id) {
 		client_id_default = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
 		                                                           "ipv4.dhcp-client-id", self);
-		if (client_id_default && client_id_default[0])
+		if (client_id_default && client_id_default[0]) {
+			/* a non-empty client-id is always valid, see nm_dhcp_utils_client_id_string_to_bytes().  */
 			client_id = client_id_default;
+		}
 	}
 
-	if (!client_id)
+	if (!client_id) {
+		_LOGD (LOGD_DEVICE | LOGD_DHCP4 | LOGD_IP4,
+		       "ipv4.dhcp-client-id: no explicity client-id configured");
 		return NULL;
+	}
 
-	if (   (is_mac = nm_streq (client_id, "mac"))
-	    || nm_streq (client_id, "perm-mac")) {
-		const char *hwaddr;
-		char addr_buf[NM_UTILS_HWADDR_LEN_MAX];
-		gsize addr_len;
-		guint8 addr_type;
-
-		hwaddr = is_mac
-		         ? nm_device_get_hw_address (self)
-		         : nm_device_get_permanent_hw_address (self);
-		if (!hwaddr)
-			return NULL;
-
-		if (!_nm_utils_hwaddr_aton (hwaddr, addr_buf, sizeof (addr_buf), &addr_len))
-			g_return_val_if_reached (NULL);
-
-		switch (addr_len) {
-		case ETH_ALEN:
-			addr_type = ARPHRD_ETHER;
-			break;
-		default:
-			/* unsupported type. */
-			return NULL;
+	if (nm_streq (client_id, "mac")) {
+		if (!hwaddr) {
+			fail_reason = "failed to get current MAC address";
+			goto out_fail;
 		}
 
-		client_id_buf = g_malloc (addr_len + 1);
-		client_id_buf[0] = addr_type;
-		memcpy (&client_id_buf[1], addr_buf, addr_len);
-		return g_bytes_new_take (client_id_buf, addr_len + 1);
+		hwaddr_bin = g_bytes_get_data (hwaddr, &hwaddr_len);
+		if (hwaddr_len != ETH_ALEN) {
+			fail_reason = "MAC address is not ethernet";
+			goto out_fail;
+		}
+
+		result = dhcp4_get_client_id_mac (hwaddr_bin);
+		goto out_good;
+	}
+
+	if (nm_streq (client_id, "perm-mac")) {
+		const char *hwaddr_str;
+
+		hwaddr_str = nm_device_get_permanent_hw_address (self);
+		if (!hwaddr_str) {
+			fail_reason = "failed to get permanent MAC address";
+			goto out_fail;
+		}
+
+		if (!_nm_utils_hwaddr_aton (hwaddr_str, hwaddr_bin_buf, sizeof (hwaddr_bin_buf), &hwaddr_len))
+			g_return_val_if_reached (NULL);
+
+		if (hwaddr_len != ETH_ALEN) {
+			/* unsupported type. */
+			fail_reason = "MAC address is not ethernet";
+			goto out_fail;
+		}
+
+		result = dhcp4_get_client_id_mac (hwaddr_bin_buf);
+		goto out_good;
 	}
 
 	if (nm_streq (client_id, "stable")) {
@@ -7103,10 +7134,30 @@ dhcp4_get_client_id (NMDevice *self, NMConnection *connection)
 		client_id_buf = g_malloc (1 + 15);
 		client_id_buf[0] = 0;
 		memcpy (&client_id_buf[1], buf, 15);
-		return g_bytes_new_take (client_id_buf, 1 + 15);
+		result = g_bytes_new_take (client_id_buf, 1 + 15);
+		goto out_good;
 	}
 
-	return nm_dhcp_utils_client_id_string_to_bytes (client_id);
+	result = nm_dhcp_utils_client_id_string_to_bytes (client_id);
+	goto out_good;
+
+out_fail:
+	nm_assert (fail_reason);
+	_LOGW (LOGD_DEVICE | LOGD_DHCP4 | LOGD_IP4,
+	       "ipv4.dhcp-client-id: failure to generate client id (%s). Use random client id",
+	       fail_reason);
+	client_id_buf = g_malloc (1 + 15);
+	client_id_buf[0] = 0;
+	nm_utils_random_bytes (&client_id_buf[1], 15);
+	result = g_bytes_new_take (client_id_buf, 1 + 15);
+
+out_good:
+	nm_assert (result);
+	_LOGD (LOGD_DEVICE | LOGD_DHCP4 | LOGD_IP4,
+	       "ipv4.dhcp-client-id: use \"%s\" client ID: %s",
+	       client_id,
+	       (logstr1 = nm_dhcp_utils_duid_to_string (result)));
+	return result;
 }
 
 static NMActStageReturn
@@ -7130,7 +7181,7 @@ dhcp4_start (NMDevice *self)
 	hwaddr = nm_platform_link_get_address_as_bytes (nm_device_get_platform (self),
 	                                                nm_device_get_ip_ifindex (self));
 
-	client_id = dhcp4_get_client_id (self, connection);
+	client_id = dhcp4_get_client_id (self, connection, hwaddr);
 
 	g_warn_if_fail (priv->dhcp4.client == NULL);
 	priv->dhcp4.client = nm_dhcp_manager_start_ip4 (nm_dhcp_manager_get (),
@@ -7764,18 +7815,14 @@ generate_duid_from_machine_id (void)
 		return g_bytes_ref (global_duid);
 
 	machine_id_s = nm_utils_machine_id_read ();
-	if (nm_utils_machine_id_parse (machine_id_s, uuid)) {
-		/* Hash the machine ID so it's not leaked to the network */
-		sum = g_checksum_new (G_CHECKSUM_SHA256);
-		g_checksum_update (sum, (const guchar *) &uuid, sizeof (uuid));
-		g_checksum_get_digest (sum, sha256_digest, &len);
-		g_checksum_free (sum);
-	} else {
-		nm_log_warn (LOGD_IP6, "global duid: failed to read " SYSCONFDIR "/machine-id "
-		             "or " LOCALSTATEDIR "/lib/dbus/machine-id to generate "
-		             "DHCPv6 DUID; creating non-persistent random DUID.");
-		nm_utils_random_bytes (sha256_digest, len);
-	}
+	if (!nm_utils_machine_id_parse (machine_id_s, uuid))
+		return NULL;
+
+	/* Hash the machine ID so it's not leaked to the network */
+	sum = g_checksum_new (G_CHECKSUM_SHA256);
+	g_checksum_update (sum, (const guchar *) &uuid, sizeof (uuid));
+	g_checksum_get_digest (sum, sha256_digest, &len);
+	g_checksum_free (sum);
 
 	global_duid = generate_duid_uuid (sha256_digest, len);
 	return g_bytes_ref (global_duid);
@@ -7787,12 +7834,12 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, NMDhcp
 	NMSettingIPConfig *s_ip6;
 	const char *duid;
 	gs_free char *duid_default = NULL;
-	const char *duid_error = NULL;
-	GBytes *duid_out = NULL;
+	const char *duid_error;
+	GBytes *duid_out;
 	guint8 sha256_digest[32];
 	gsize len = sizeof (sha256_digest);
-	NMDhcpDuidEnforce duid_enforce = NM_DHCP_DUID_ENFORCE_NEVER;
-
+	NMDhcpDuidEnforce duid_enforce = NM_DHCP_DUID_ENFORCE_ALWAYS;
+	gs_free char *logstr1 = NULL;
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	duid = nm_setting_ip6_config_get_dhcp_duid (NM_SETTING_IP6_CONFIG (s_ip6));
@@ -7801,31 +7848,56 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, NMDhcp
 		duid_default = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
 		                                                      "ipv6.dhcp-duid", self);
 		duid = duid_default;
+		if (!duid)
+			duid = "lease";
 	}
 
-	if (!duid || nm_streq (duid, "lease")) {
+	if (nm_streq (duid, "lease")) {
+		duid_enforce = NM_DHCP_DUID_ENFORCE_NEVER;
 		duid_out = generate_duid_from_machine_id ();
-		goto end;
+		if (!duid_out) {
+			duid_error = "failure to read machine-id";
+			goto out_fail;
+		}
+		goto out_good;
 	}
 
 	if (!_nm_utils_dhcp_duid_valid (duid, &duid_out)) {
 		duid_error = "invalid duid";
-		goto end;
+		goto out_fail;
 	}
 
 	if (duid_out)
-		goto end;
+		goto out_good;
 
 	if (NM_IN_STRSET (duid, "ll", "llt")) {
 		if (!hwaddr) {
 			duid_error = "missing link-layer address";
-			goto end;
+			goto out_fail;
 		}
 		if (g_bytes_get_size (hwaddr) != ETH_ALEN) {
 			duid_error = "unsupported link-layer address";
-			goto end;
+			goto out_fail;
 		}
-	} else if (NM_IN_STRSET (duid, "stable-llt", "stable-ll", "stable-uuid")) {
+
+		if (nm_streq (duid, "ll")) {
+			duid_out = generate_duid_ll (g_bytes_get_data (hwaddr, NULL));
+		} else {
+			gint64 time;
+
+			time = nm_utils_secret_key_get_timestamp ();
+			if (!time) {
+				duid_error = "cannot retrieve the secret key timestamp";
+				goto out_fail;
+			}
+
+			duid_out = generate_duid_llt (g_bytes_get_data (hwaddr, NULL), time);
+		}
+
+		goto out_good;
+	}
+
+	if (NM_IN_STRSET (duid, "stable-ll", "stable-llt", "stable-uuid")) {
 		NMUtilsStableType stable_type;
 		const char *stable_id = NULL;
 		guint32 salted_header;
@@ -7834,11 +7906,8 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, NMDhcp
 		gsize secret_key_len;
 
 		stable_id = _get_stable_id (self, connection, &stable_type);
-		if (!stable_id) {
-			nm_assert_not_reached ();
-			duid_error = "cannot retrieve the stable id";
-			goto end;
-		}
+		if (!stable_id)
+			g_return_val_if_reached (NULL);
 
 		salted_header = htonl (670531087 + stable_type);
 
@@ -7852,68 +7921,61 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, NMDhcp
 
 		g_checksum_get_digest (sum, sha256_digest, &len);
 		g_checksum_free (sum);
-	}
 
-	duid_enforce = NM_DHCP_DUID_ENFORCE_ALWAYS;
+		if (nm_streq (duid, "stable-ll")) {
+			duid_out = generate_duid_ll (sha256_digest);
+		} else if (nm_streq (duid, "stable-llt")) {
+			gint64 time;
 
 #define EPOCH_DATETIME_THREE_YEARS  (356 * 24 * 3600 * 3)
-	if (nm_streq0 (duid, "ll")) {
-		duid_out = generate_duid_ll (g_bytes_get_data (hwaddr, NULL));
 
-	} else if (nm_streq0 (duid, "llt")) {
-		gint64 time;
+			/* We want a variable time between the secret_key timestamp and three years
+			 * before. Let's compute the time (in seconds) from 0 to 3 years; then we'll
+			 * subtract it from the secret_key timestamp.
+			 */
+			time = nm_utils_secret_key_get_timestamp ();
+			if (!time) {
+				duid_error = "cannot retrieve the secret key timestamp";
+				goto out_fail;
+			}
+			/* don't use too old timestamps. They cannot be expressed in DUID-LLT and
+			 * would all be truncated to zero. */
+			time = NM_MAX (time, EPOCH_DATETIME_200001010000 + EPOCH_DATETIME_THREE_YEARS);
+			time -= (unaligned_read_be32 (&sha256_digest[ETH_ALEN]) % EPOCH_DATETIME_THREE_YEARS);
 
-		time = nm_utils_secret_key_get_timestamp ();
-		if (!time) {
-			duid_error = "cannot retrieve the secret key timestamp";
-			goto end;
+			duid_out = generate_duid_llt (sha256_digest, time);
+		} else {
+			nm_assert (nm_streq (duid, "stable-uuid"));
+			duid_out = generate_duid_uuid (sha256_digest, len);
 		}
 
-		duid_out = generate_duid_llt (g_bytes_get_data (hwaddr, NULL), time);
-	} else if (nm_streq0 (duid, "stable-ll")) {
-		duid_out = generate_duid_ll (sha256_digest);
-
-	} else if (nm_streq0 (duid, "stable-llt")) {
-		gint64 time;
-
-		/* We want a variable time between the secret_key timestamp and three years
-		 * before. Let's compute the time (in seconds) from 0 to 3 years; then we'll
-		 * subtract it from the secret_key timestamp.
-		 */
-		time = nm_utils_secret_key_get_timestamp ();
-		if (!time) {
-			duid_error = "cannot retrieve the secret key timestamp";
-			goto end;
-		}
-		/* don't use too old timestamps. They cannot be expressed in DUID-LLT and
-		 * would all be truncated to zero. */
-		time = NM_MAX (time, EPOCH_DATETIME_200001010000 + EPOCH_DATETIME_THREE_YEARS);
-		time -= (unaligned_read_be32 (&sha256_digest[ETH_ALEN]) % EPOCH_DATETIME_THREE_YEARS);
-
-		duid_out = generate_duid_llt (sha256_digest, time);
-
-	} else if (nm_streq0 (duid, "stable-uuid")) {
-		duid_out = generate_duid_uuid (sha256_digest, len);
+		goto out_good;
 	}
 
-	duid_error = "generation failed";
-end:
-	if (!duid_out) {
+	g_return_val_if_reached (NULL);
+
+out_fail:
+	nm_assert (!duid_out && duid_error);
+	{
 		guint8 uuid[16];
 
-		if (duid_error)
-			_LOGW (LOGD_IP6, "duid-gen (%s): %s. Fallback to random DUID-UUID.", duid, duid_error);
+		_LOGW (LOGD_IP6 | LOGD_DHCP6,
+		       "ipv6.dhcp-duid: failure to generate %s DUID: %s. Fallback to random DUID-UUID.",
+		       duid, duid_error);
 
 		nm_utils_random_bytes (uuid, sizeof (uuid));
 		duid_out = generate_duid_uuid (uuid, sizeof (uuid));
 	}
 
-	_LOGD (LOGD_IP6, "DUID gen: '%s' (%s)",
-	                 nm_dhcp_utils_duid_to_string (duid_out),
-	                 (duid_enforce == NM_DHCP_DUID_ENFORCE_ALWAYS) ? "enforcing" : "fallback");
+out_good:
+	nm_assert (duid_out);
+	_LOGD (LOGD_IP6 | LOGD_DHCP6,
+	       "ipv6.dhcp-duid: generate %s DUID '%s' (%s)",
+	       duid,
+	       (logstr1 = nm_dhcp_utils_duid_to_string (duid_out)),
+	       (duid_enforce == NM_DHCP_DUID_ENFORCE_ALWAYS) ? "enforcing" : "fallback");
 
 	NM_SET_OUT (out_enforce, duid_enforce);
-
 	return duid_out;
 }
 
@@ -7924,7 +7986,7 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	NMSettingIPConfig *s_ip6;
 	gs_unref_bytes GBytes *hwaddr = NULL;
 	gs_unref_bytes GBytes *duid = NULL;
-	NMDhcpDuidEnforce enforce_duid;
+	NMDhcpDuidEnforce enforce_duid = NM_DHCP_DUID_ENFORCE_NEVER;
 
 	const NMPlatformIP6Address *ll_addr = NULL;
 
