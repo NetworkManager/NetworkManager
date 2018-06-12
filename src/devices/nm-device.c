@@ -8371,12 +8371,15 @@ nm_device_get_configured_mtu_from_connection_default (NMDevice *self,
 }
 
 guint32
-nm_device_get_configured_mtu_for_wired (NMDevice *self, gboolean *out_is_user_config)
+nm_device_get_configured_mtu_from_connection (NMDevice *self,
+                                              GType setting_type,
+                                              gboolean *out_is_user_config)
 {
+	const char *global_property_name;
 	NMConnection *connection;
-	NMSettingWired *setting;
+	NMSetting *setting;
 	gint64 mtu_default;
-	guint32 mtu;
+	guint32 mtu = 0;
 
 	nm_assert (NM_IS_DEVICE (self));
 	nm_assert (out_is_user_config);
@@ -8385,17 +8388,33 @@ nm_device_get_configured_mtu_for_wired (NMDevice *self, gboolean *out_is_user_co
 	if (!connection)
 		g_return_val_if_reached (0);
 
-	setting = nm_connection_get_setting_wired (connection);
+	setting = nm_connection_get_setting (connection, setting_type);
 
-	if (setting) {
-		mtu = nm_setting_wired_get_mtu (setting);
-		if (mtu) {
-			*out_is_user_config = TRUE;
-			return mtu;
-		}
+	if (setting_type == NM_TYPE_SETTING_WIRED) {
+		if (setting)
+			mtu = nm_setting_wired_get_mtu (NM_SETTING_WIRED (setting));
+		global_property_name = "ethernet.mtu";
+	} else if (setting_type == NM_TYPE_SETTING_WIRELESS) {
+		if (setting)
+			mtu = nm_setting_wireless_get_mtu (NM_SETTING_WIRELESS (setting));
+		global_property_name = "wifi.mtu";
+	} else if (setting_type == NM_TYPE_SETTING_INFINIBAND) {
+		if (setting)
+			mtu = nm_setting_infiniband_get_mtu (NM_SETTING_INFINIBAND (setting));
+		global_property_name = "infiniband.mtu";
+	} else if (setting_type == NM_TYPE_SETTING_IP_TUNNEL) {
+		if (setting)
+			mtu = nm_setting_ip_tunnel_get_mtu (NM_SETTING_IP_TUNNEL (setting));
+		global_property_name = "ip-tunnel.mtu";
+	} else
+		g_return_val_if_reached (0);
+
+	if (mtu) {
+		*out_is_user_config = TRUE;
+		return mtu;
 	}
 
-	mtu_default = nm_device_get_configured_mtu_from_connection_default (self, "ethernet.mtu");
+	mtu_default = nm_device_get_configured_mtu_from_connection_default (self, global_property_name);
 	if (mtu_default >= 0) {
 		*out_is_user_config = TRUE;
 		return (guint32) mtu_default;
@@ -8403,6 +8422,14 @@ nm_device_get_configured_mtu_for_wired (NMDevice *self, gboolean *out_is_user_co
 
 	*out_is_user_config = FALSE;
 	return 0;
+}
+
+guint32
+nm_device_get_configured_mtu_for_wired (NMDevice *self, gboolean *out_is_user_config)
+{
+	return nm_device_get_configured_mtu_from_connection (self,
+	                                                     NM_TYPE_SETTING_WIRED,
+	                                                     out_is_user_config);
 }
 
 /*****************************************************************************/
