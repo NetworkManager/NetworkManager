@@ -1725,7 +1725,7 @@ add_and_activate_cb (GObject *client,
 			if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
 				if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
 					nmc_terminal_erase_line ();
-				if (info->hotspot)
+				if (!info->hotspot)
 					g_print (_("Connection with UUID '%s' created and activated on device '%s'\n"),
 					         nm_active_connection_get_uuid (active), nm_device_get_iface (device));
 				else
