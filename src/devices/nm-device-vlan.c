@@ -534,13 +534,13 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 }
 
 static guint32
-get_configured_mtu (NMDevice *self, gboolean *out_is_user_config)
+get_configured_mtu (NMDevice *self, NMDeviceMtuSource *out_source)
 {
 	guint32 mtu = 0;
 	int ifindex;
 
-	mtu = nm_device_get_configured_mtu_for_wired (self, out_is_user_config);
-	if (*out_is_user_config)
+	mtu = nm_device_get_configured_mtu_for_wired (self, out_source);
+	if (*out_source != NM_DEVICE_MTU_SOURCE_NONE)
 		return mtu;
 
 	/* Inherit the MTU from parent device, if any */

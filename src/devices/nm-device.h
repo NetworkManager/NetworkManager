@@ -44,6 +44,11 @@ typedef enum {
 	NM_DEVICE_SYS_IFACE_STATE_REMOVED,
 } NMDeviceSysIfaceState;
 
+typedef enum {
+	NM_DEVICE_MTU_SOURCE_NONE,
+	NM_DEVICE_MTU_SOURCE_CONNECTION,
+} NMDeviceMtuSource;
+
 static inline NMDeviceStateReason
 nm_device_state_reason_check (NMDeviceStateReason reason)
 {
@@ -287,7 +292,7 @@ typedef struct _NMDeviceClass {
 	                                  NMConnection *connection,
 	                                  char **specific_object);
 
-	guint32     (*get_configured_mtu) (NMDevice *self, gboolean *out_is_user_config);
+	guint32     (*get_configured_mtu) (NMDevice *self, NMDeviceMtuSource *out_source);
 
 	/* Checks whether the connection is compatible with the device using
 	 * only the devices type and characteristics.  Does not use any live

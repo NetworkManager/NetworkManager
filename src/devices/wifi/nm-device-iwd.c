@@ -1434,11 +1434,11 @@ out:
 }
 
 static guint32
-get_configured_mtu (NMDevice *device, gboolean *out_is_user_config)
+get_configured_mtu (NMDevice *device, NMDeviceMtuSource *out_source)
 {
 	return nm_device_get_configured_mtu_from_connection (device,
 	                                                     NM_TYPE_SETTING_WIRELESS,
-	                                                     out_is_user_config);
+	                                                     out_source);
 }
 
 static gboolean

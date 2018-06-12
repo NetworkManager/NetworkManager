@@ -1317,13 +1317,13 @@ act_stage3_ip4_config_start (NMDevice *device,
 }
 
 static guint32
-get_configured_mtu (NMDevice *device, gboolean *out_is_user_config)
+get_configured_mtu (NMDevice *device, NMDeviceMtuSource *out_source)
 {
 	/* MTU only set for plain ethernet */
 	if (NM_DEVICE_ETHERNET_GET_PRIVATE ((NMDeviceEthernet *) device)->ppp_manager)
 		return 0;
 
-	return nm_device_get_configured_mtu_for_wired (device, out_is_user_config);
+	return nm_device_get_configured_mtu_for_wired (device, out_source);
 }
 
 static void
