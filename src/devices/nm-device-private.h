@@ -122,9 +122,9 @@ gint64 nm_device_get_configured_mtu_from_connection_default (NMDevice *self,
 
 guint32 nm_device_get_configured_mtu_from_connection (NMDevice *device,
                                                       GType setting_type,
-                                                      gboolean *out_is_user_config);
+                                                      NMDeviceMtuSource *out_source);
 
-guint32 nm_device_get_configured_mtu_for_wired (NMDevice *self, gboolean *out_is_user_config);
+guint32 nm_device_get_configured_mtu_for_wired (NMDevice *self, NMDeviceMtuSource *out_source);
 
 void nm_device_commit_mtu (NMDevice *self);
 
