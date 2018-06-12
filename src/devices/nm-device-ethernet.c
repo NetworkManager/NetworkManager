@@ -780,13 +780,11 @@ link_negotiation_set (NMDevice *device)
 	s_wired = (NMSettingWired *) nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRED);
 	if (s_wired) {
 		autoneg = nm_setting_wired_get_auto_negotiate (s_wired);
-		if (!autoneg) {
-			speed = nm_setting_wired_get_speed (s_wired);
-			duplex = link_duplex_to_platform (nm_setting_wired_get_duplex (s_wired));
-			if (!speed && !duplex) {
-				_LOGD (LOGD_DEVICE, "set-link: ignore link negotiation");
-				return;
-			}
+		speed = nm_setting_wired_get_speed (s_wired);
+		duplex = link_duplex_to_platform (nm_setting_wired_get_duplex (s_wired));
+		if (!autoneg && !speed && !duplex) {
+			_LOGD (LOGD_DEVICE, "set-link: ignore link negotiation");
+			return;
 		}
 	}
 
@@ -797,17 +795,18 @@ link_negotiation_set (NMDevice *device)
 	}
 
 	/* If link negotiation setting are already in place do nothing and return with success */
-	if (   (!!autoneg == !!link_autoneg)
-	    && (!speed || (speed == link_speed))
-	    && (!duplex || (duplex == link_duplex))) {
+	if (   !!autoneg == !!link_autoneg
+	    && speed == link_speed
+	    && duplex == link_duplex) {
 		_LOGD (LOGD_DEVICE, "set-link: link negotiation is already configured");
 		return;
 	}
 
-	if (autoneg)
-		_LOGD (LOGD_DEVICE, "set-link: configure autonegotiation");
+	if (autoneg && !speed && !duplex)
+		_LOGD (LOGD_DEVICE, "set-link: configure auto-negotiation");
 	else {
-		_LOGD (LOGD_DEVICE, "set-link: configure static negotiation (%u Mbit%s - %s duplex%s)",
+		_LOGD (LOGD_DEVICE, "set-link: configure %snegotiation (%u Mbit%s - %s duplex%s)",
+		       autoneg ? "auto-" : "static ",
 		       speed ?: link_speed,
 		       speed ? "" : "*",
 		       duplex
