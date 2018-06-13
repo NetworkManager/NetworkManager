@@ -1,4 +1,5 @@
 # generated with `NM_TEST_REGENERATE=1 make check`
+# See howto in "clients/tests/test-client.py"
 
 clients_tests_expected_files = \
 	clients/tests/test-client.check-on-disk/test_001-001.expected \

@@ -2,6 +2,65 @@
 
 from __future__ import print_function
 
+###############################################################################
+#
+# This test starts NetworkManager stub service in a user D-Bus session,
+# and runs nmcli against it. The output is recorded and compared to a pre-generated
+# expected output (clients/tests/test-client.check-on-disk/*.expected) which
+# is also commited to git.
+#
+###############################################################################
+#
+# HOWTO: Regenerate output
+#
+# When adjusting the tests, or when making changes to nmcli that intentionally
+# change the output, the expected output must be regenerated.
+#
+#  $ make install
+#    # (step not required every time)
+#    # The test also compare the translated output, hence, the translation
+#    # file must be installed at the configured --prefix.
+#    # You don't need to type `make install` every time, but a suitable version
+#    # of translations must be installed. In practice, the tests only care about
+#    # Polish (pl) translations.
+#  $ rm -rf  clients/tests/test-client.check-on-disk/*.expected
+#    # (step seldomly required)
+#    # Sometimes, if you want to be sure that the test would generate
+#    # exactly the same .expected files, purge the previous version first.
+#    # This is only necessary, when you remove test from this file.
+#  $ NM_TEST_REGENERATE=1 make check-local-clients-tests-test-client
+#    # Set NM_TEST_REGENERATE=1 to regenerate all files.
+#  $ git diff ... ; git add ...
+#    # (optional step)
+#    # Inspect what changed, and whether it makes sense. Then commit changes
+#    # to git.
+#
+###############################################################################
+#
+# Environment variables to configure test:
+
+# (optional) The build dir. Optional, mainly used to find the nmcli binary (in case
+# ENV_NM_TEST_CLIENT_NMCLI_PATH is not set.
+ENV_NM_TEST_CLIENT_BUILDDIR   = 'NM_TEST_CLIENT_BUILDDIR'
+
+# (optional) Path to nmcli. By default, it looks for nmcli in build dir.
+# In particular, you can test also a nmcli binary installed somewhere else.
+ENV_NM_TEST_CLIENT_NMCLI_PATH = 'NM_TEST_CLIENT_NMCLI_PATH'
+
+# (optional) The test also compares tranlsated output (l10n). This requires,
+# that you first install the translation in the right place. So, by default,
+# if a test for a translation fails, it will mark the test as skipped, and not
+# fail the tests. Under the assumption, that the test cannot succeed currently.
+# By setting NM_TEST_CLIENT_CHECK_L10N=1, you can force a failure of the test.
+ENV_NM_TEST_CLIENT_CHECK_L10N = 'NM_TEST_CLIENT_CHECK_L10N'
+
+# Regenerate the .expected files. Instead of asserting, rewrite the files
+# on disk with the expected output.
+ENV_NM_TEST_REGENERATE        = 'NM_TEST_REGENERATE'
+
+#
+###############################################################################
+
 import sys
 
 try:
@@ -27,12 +86,6 @@ import time
 import dbus.service
 import dbus.mainloop.glib
 
-# The test can be configured via the following environment variables:
-ENV_NM_TEST_CLIENT_BUILDDIR   = 'NM_TEST_CLIENT_BUILDDIR'
-ENV_NM_TEST_CLIENT_NMCLI_PATH = 'NM_TEST_CLIENT_NMCLI_PATH'
-ENV_NM_TEST_CLIENT_CHECK_L10N = 'NM_TEST_CLIENT_CHECK_L10N'
-ENV_NM_TEST_REGENERATE        = 'NM_TEST_REGENERATE'
-
 ###############################################################################
 
 class PathConfiguration:
@@ -53,6 +106,12 @@ class PathConfiguration:
         v = os.path.abspath(PathConfiguration.top_srcdir() + "/tools/test-networkmanager-service.py")
         assert os.path.exists(v), ("Cannot find test server at \"%s\"" % (v))
         return v
+
+    @staticmethod
+    def canonical_script_filename():
+        p = 'clients/tests/test-client.py'
+        assert (PathConfiguration.top_srcdir() + '/' + p) == os.path.abspath(__file__)
+        return p
 
 ###############################################################################
 
@@ -463,10 +522,9 @@ class TestNmcli(NmTestBase):
         # we cannot use frame.f_code.co_filename directly, because it might be different depending
         # on where the file lies and which is CWD. We still want to give the location of
         # the file, so that the user can easier find the source (when looking at the .expected files)
-        script_filename = 'clients/tests/test-client.py'
-        self.assertTrue(os.path.abspath(frame.f_code.co_filename).endswith(script_filename))
+        self.assertTrue(os.path.abspath(frame.f_code.co_filename).endswith('/'+PathConfiguration.canonical_script_filename()))
 
-        calling_location = '%s:%d:%s()/%d' % (script_filename, frame.f_lineno, frame.f_code.co_name, calling_num)
+        calling_location = '%s:%d:%s()/%d' % (PathConfiguration.canonical_script_filename(), frame.f_lineno, frame.f_code.co_name, calling_num)
 
         if lang is None or lang == 'C':
             lang = 'C'
@@ -594,7 +652,8 @@ class TestNmcli(NmTestBase):
                     print("\n\n\nThe file '%s' does not have the expected content:" % (filename))
                     print("ACTUAL OUTPUT:\n[[%s]]\n" % (content_new))
                     print("EXPECT OUTPUT:\n[[%s]]\n" % (content_old))
-                    print("Let the test write the file by rerunning with NM_TEST_REGENERATE=1\n\n")
+                    print("Let the test write the file by rerunning with NM_TEST_REGENERATE=1")
+                    print("See howto in %s for details.\n" % (PathConfiguration.canonical_script_filename()))
                     raise AssertionError("Unexpected output of command, expected %s. Rerun test with NM_TEST_REGENERATE=1 to regenerate files" % (filename))
             else:
                 if not w:
@@ -976,6 +1035,7 @@ def main():
     if conf.get(ENV_NM_TEST_REGENERATE):
         make_filename = PathConfiguration.srcdir() + '/test-client.check-on-disk/Makefile.am'
         s_new = '# generated with `NM_TEST_REGENERATE=1 make check`\n' + \
+                '# See howto in "' + PathConfiguration.canonical_script_filename() + '"\n' + \
                 '\n' + \
                 'clients_tests_expected_files = \\\n' + \
                 ''.join([('\tclients/tests/test-client.check-on-disk/%s \\\n' % f) for f in sorted(file_list)]) + \
