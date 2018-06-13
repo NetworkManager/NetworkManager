@@ -7761,7 +7761,6 @@ generate_duid_ll (const guint8 *hwaddr /* ETH_ALEN bytes */)
 	GByteArray *duid_arr;
 	const guint16 duid_type = htons (3);
 	const guint16 hw_type = htons (ARPHRD_ETHER);
-	gs_unref_bytes GBytes *stable_hwaddr = NULL;
 
 	duid_arr = g_byte_array_sized_new (2 + 2 + ETH_ALEN);
 
