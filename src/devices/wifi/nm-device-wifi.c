@@ -2453,7 +2453,7 @@ wake_on_wlan_enable (NMDeviceWifi *self)
 				       "'default' and 'ignore' are exclusive flags", (guint) wowl);
 				wowl = NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT;
 			}
-		} else if (!NM_FLAGS_ANY (wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_ALL)) {
+		} else if (NM_FLAGS_ANY (wowl, ~NM_SETTING_WIRELESS_WAKE_ON_WLAN_ALL)) {
 			_LOGD (LOGD_WIFI, "invalid default value %u for wake-on-wlan", (guint) wowl);
 			wowl = NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT;
 		}

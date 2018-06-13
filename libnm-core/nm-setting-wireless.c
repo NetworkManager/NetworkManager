@@ -897,7 +897,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			                NM_SETTING_WIRELESS_WAKE_ON_WLAN);
 			return FALSE;
 		}
-	} else if (!NM_FLAGS_ANY (priv->wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_ALL)) {
+	} else if (NM_FLAGS_ANY (priv->wowl, ~NM_SETTING_WIRELESS_WAKE_ON_WLAN_ALL)) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
