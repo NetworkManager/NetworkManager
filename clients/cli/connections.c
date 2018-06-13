@@ -1906,7 +1906,6 @@ do_connections_show (NmCli *nmc, int argc, char **argv)
 
 	if (argc == 0) {
 		const char *fields_str = NULL;
-		NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
 		gs_unref_ptrarray GPtrArray *items = NULL;
 		gs_free NMMetaSelectionResultList *selection = NULL;
 		gboolean show_active_fields = TRUE;
