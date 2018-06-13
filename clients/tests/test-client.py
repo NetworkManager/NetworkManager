@@ -983,10 +983,10 @@ class TestNmcli(NmTestBase):
              self.call_nmcli_l(mode + ['-f', 'ALL', 'device', 'wifi', 'list' ],
                                replace_stdout = replace_stdout)
              self.call_nmcli_l(mode + ['-f', 'ALL', 'device', 'wifi', 'list', 'bssid', 'C0:E2:BE:E8:EF:B6'],
-                               replace_stdout = replace_stdout, fatal_warnings = True, expected_stderr = _UNSTABLE_OUTPUT)
+                               replace_stdout = replace_stdout)
              self.call_nmcli_l(mode + ['-f', 'NAME,SSID,SSID-HEX,BSSID,MODE,CHAN,FREQ,RATE,SIGNAL,BARS,SECURITY,WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,IN-USE,DBUS-PATH',
                                'device', 'wifi', 'list', 'bssid', 'C0:E2:BE:E8:EF:B6'],
-                               replace_stdout = replace_stdout, fatal_warnings = True, expected_stderr = _UNSTABLE_OUTPUT)
+                               replace_stdout = replace_stdout)
 
 ###############################################################################
 

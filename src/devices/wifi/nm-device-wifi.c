@@ -74,6 +74,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDeviceWifi,
 	PROP_ACTIVE_ACCESS_POINT,
 	PROP_CAPABILITIES,
 	PROP_SCANNING,
+	PROP_LAST_SCAN,
 );
 
 enum {
@@ -1423,6 +1424,7 @@ supplicant_iface_scan_done_cb (NMSupplicantInterface *iface,
 	_LOGD (LOGD_WIFI, "wifi-scan: scan-done callback: %s", success ? "successful" : "failed");
 
 	priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
+	_notify (self, PROP_LAST_SCAN);
 	schedule_scan (self, success);
 
 	_requested_scan_set (self, FALSE);
@@ -3123,6 +3125,12 @@ get_property (GObject *object, guint prop_id,
 	case PROP_SCANNING:
 		g_value_set_boolean (value, priv->is_scanning);
 		break;
+	case PROP_LAST_SCAN:
+		g_value_set_int (value,
+		                 priv->last_scan > 0
+		                     ? (gint) nm_utils_monotonic_timestamp_as_boottime (priv->last_scan, NM_UTILS_NS_PER_SECOND)
+		                     : -1);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -3299,6 +3307,11 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	                          FALSE,
 	                          G_PARAM_READABLE |
 	                          G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_LAST_SCAN] =
+	    g_param_spec_int (NM_DEVICE_WIFI_LAST_SCAN, "", "",
+	                      -1, G_MAXINT, -1,
+	                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

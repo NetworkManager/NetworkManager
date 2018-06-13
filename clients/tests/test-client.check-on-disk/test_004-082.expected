@@ -1,13 +1,29 @@
 location: clients/tests/test-client.py:986:test_004()/82
 cmd: $NMCLI --mode multiline -f ALL device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: pl_PL.UTF-8
-returncode: -5
-stdout: 1 bytes
+returncode: 0
+stdout: 942 bytes
 >>>
-
+NAME:                                   AP[1]
+SSID:                                   wlan0-ap-2
+SSID-HEX:                               776C616E302D61702D32
+BSSID:                                  C0:E2:BE:E8:EF:B6
+MODE:                                   Infrastruktura
+CHAN:                                   1
+FREQ:                                   2412 MHz
+RATE:                                   54 Mb/s
+SIGNAL:                                 92
+BARS:                                   ****
+SECURITY:                               WPA1 WPA2
+WPA-FLAGS:                              pair_tkip pair_ccmp group_tkip group_ccmp psk
+RSN-FLAGS:                              pair_tkip pair_ccmp group_tkip group_ccmp psk
+DEVICE:                                 wlan0
+ACTIVE:                                 nie
+IN-USE:                                  
+DBUS-PATH:                              /org/freedesktop/NetworkManager/AccessPoint/2
 
 <<<
-stderr: 17 bytes
+stderr: 0 bytes
 >>>
-<UNSTABLE OUTPUT>
+
 <<<

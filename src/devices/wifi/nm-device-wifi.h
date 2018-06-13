@@ -37,6 +37,7 @@
 #define NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT "active-access-point"
 #define NM_DEVICE_WIFI_CAPABILITIES        "wireless-capabilities"
 #define NM_DEVICE_WIFI_SCANNING            "scanning"
+#define NM_DEVICE_WIFI_LAST_SCAN           "last-scan"
 
 #define NM_DEVICE_WIFI_SCANNING_PROHIBITED    "scanning-prohibited"
 
