@@ -221,7 +221,7 @@ NMActStageReturn nm_modem_stage3_ip4_config_start (NMModem *modem,
                                                    NMDeviceStateReason *out_failure_reason);
 
 NMActStageReturn nm_modem_stage3_ip6_config_start (NMModem *modem,
-                                                   NMActRequest *req,
+                                                   NMDevice *device,
                                                    NMDeviceStateReason *out_failure_reason);
 
 void nm_modem_ip4_pre_commit (NMModem *modem, NMDevice *device, NMIP4Config *config);

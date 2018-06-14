@@ -704,6 +704,8 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
 	connection = nm_act_request_get_applied_connection (req);
 	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
 
+	nm_modem_set_route_parameters_from_device (self, device);
+
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
 
 	/* Only Disabled and Auto methods make sense for WWAN */
@@ -744,8 +746,6 @@ nm_modem_ip4_pre_commit (NMModem *modem,
                          NMIP4Config *config)
 {
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (modem);
-
-	nm_modem_set_route_parameters_from_device (modem, device);
 
 	/* If the modem has an ethernet-type data interface (ie, not PPP and thus
 	 * not point-to-point) and IP config has a /32 prefix, then we assume that
@@ -804,19 +804,24 @@ stage3_ip6_config_request (NMModem *self, NMDeviceStateReason *out_failure_reaso
 
 NMActStageReturn
 nm_modem_stage3_ip6_config_start (NMModem *self,
-                                  NMActRequest *req,
+                                  NMDevice *device,
                                   NMDeviceStateReason *out_failure_reason)
 {
 	NMModemPrivate *priv;
+	NMActRequest *req;
 	NMActStageReturn ret;
 	NMConnection *connection;
 	const char *method;
 
 	g_return_val_if_fail (NM_IS_MODEM (self), NM_ACT_STAGE_RETURN_FAILURE);
-	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), NM_ACT_STAGE_RETURN_FAILURE);
+
+	req = nm_device_get_act_request (device);
+	g_return_val_if_fail (req, NM_ACT_STAGE_RETURN_FAILURE);
 
 	connection = nm_act_request_get_applied_connection (req);
 	g_return_val_if_fail (connection, NM_ACT_STAGE_RETURN_FAILURE);
+
+	nm_modem_set_route_parameters_from_device (self, device);
 
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
 
