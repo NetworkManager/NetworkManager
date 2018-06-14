@@ -10396,9 +10396,11 @@ can_reapply_change (NMDevice *self, const char *setting_name,
 		                                          NM_SETTING_CONNECTION_METERED,
 		                                          NM_SETTING_CONNECTION_LLDP);
 	} else if (NM_IN_STRSET (setting_name,
-	                         NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	                         NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	                         NM_SETTING_PROXY_SETTING_NAME)) {
+		return TRUE;
+	} else if (NM_IN_STRSET (setting_name,
+	                         NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	                         NM_SETTING_IP6_CONFIG_SETTING_NAME)) {
 		if (g_hash_table_contains (diffs, NM_SETTING_IP_CONFIG_ROUTE_TABLE)) {
 			/* changing the route-table setting is complicated, because it affects
 			 * how we sync the routes. Don't support changing it without full
