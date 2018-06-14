@@ -10194,33 +10194,33 @@ _cleanup_ip_pre (NMDevice *self, int addr_family, CleanupType cleanup_type)
 
 gboolean
 _nm_device_hash_check_invalid_keys (GHashTable *hash, const char *setting_name,
-                                    GError **error, const char **argv)
+                                    GError **error, const char **whitelist)
 {
-	guint found_keys = 0;
+	guint found_whitelisted_keys = 0;
 	guint i;
 
 	nm_assert (hash && g_hash_table_size (hash) > 0);
-	nm_assert (argv && argv[0]);
+	nm_assert (whitelist && whitelist[0]);
 
 #if NM_MORE_ASSERTS > 10
 	/* Assert that the keys are unique. */
 	{
 		gs_unref_hashtable GHashTable *check_dups = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, NULL);
 
-		for (i = 0; argv[i]; i++) {
-			if (!g_hash_table_add (check_dups, (char *) argv[i]))
+		for (i = 0; whitelist[i]; i++) {
+			if (!g_hash_table_add (check_dups, (char *) whitelist[i]))
 				nm_assert (FALSE);
 		}
 		nm_assert (g_hash_table_size (check_dups) > 0);
 	}
 #endif
 
-	for (i = 0; argv[i]; i++) {
-		if (g_hash_table_contains (hash, argv[i]))
-			found_keys++;
+	for (i = 0; whitelist[i]; i++) {
+		if (g_hash_table_contains (hash, whitelist[i]))
+			found_whitelisted_keys++;
 	}
 
-	if (found_keys != g_hash_table_size (hash)) {
+	if (found_whitelisted_keys != g_hash_table_size (hash)) {
 		GHashTableIter iter;
 		const char *k = NULL;
 		const char *first_invalid_key = NULL;
@@ -10230,7 +10230,7 @@ _nm_device_hash_check_invalid_keys (GHashTable *hash, const char *setting_name,
 
 		g_hash_table_iter_init (&iter, hash);
 		while (g_hash_table_iter_next (&iter, (gpointer *) &k, NULL)) {
-			if (nm_utils_strv_find_first ((char **) argv, -1, k) < 0) {
+			if (nm_utils_strv_find_first ((char **) whitelist, -1, k) < 0) {
 				first_invalid_key = k;
 				break;
 			}
