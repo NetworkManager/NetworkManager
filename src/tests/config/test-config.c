@@ -132,11 +132,15 @@ test_config_simple (void)
 	gs_unref_object NMConfig *config = NULL;
 	gs_strfreev char **plugins = NULL;
 	char *value;
-	gs_unref_object NMDevice *dev50 = nm_test_device_new ("00:00:00:00:00:50");
-	gs_unref_object NMDevice *dev51 = nm_test_device_new ("00:00:00:00:00:51");
-	gs_unref_object NMDevice *dev52 = nm_test_device_new ("00:00:00:00:00:52");
+	gs_unref_object NMDevice *dev50 = NULL;
+	gs_unref_object NMDevice *dev51 = NULL;
+	gs_unref_object NMDevice *dev52 = NULL;
 
 	config = setup_config (NULL, TEST_DIR "/NetworkManager.conf", "", NULL, "/no/such/dir", "", NULL);
+
+	dev50 = nm_test_device_new ("00:00:00:00:00:50");
+	dev51 = nm_test_device_new ("00:00:00:00:00:51");
+	dev52 = nm_test_device_new ("00:00:00:00:00:52");
 
 	g_assert_cmpstr (nm_config_data_get_config_main_file (nm_config_get_data_orig (config)), ==, TEST_DIR "/NetworkManager.conf");
 	g_assert_cmpstr (_config_get_dhcp_client_a (config), ==, "dhclient");

@@ -324,6 +324,11 @@ typedef struct _NMDevicePrivate {
 
 	guint32         ip4_address;
 
+	/* a snapshot of the config-data instance, when the device was activated.
+	 * It is cached for the duraction of the activation, to avoid unintentional
+	 * changes. */
+	NMConfigData   *cur_config_data;
+
 	NMActRequest *  queued_act_request;
 	bool            queued_act_request_is_waiting_for_carrier:1;
 	NMDBusTrackObjPath act_request;
@@ -14083,6 +14088,7 @@ _set_state_full (NMDevice *self,
 		}
 		break;
 	case NM_DEVICE_STATE_PREPARE:
+		nm_g_object_ref_set (&priv->cur_config_data, NM_CONFIG_GET_DATA);
 		nm_device_update_initial_hw_address (self);
 		break;
 	case NM_DEVICE_STATE_NEED_AUTH:
@@ -15234,6 +15240,8 @@ nm_device_init (NMDevice *self)
 	nm_dbus_track_obj_path_init (&priv->parent_device, G_OBJECT (self), obj_properties[PROP_PARENT]);
 	nm_dbus_track_obj_path_init (&priv->act_request, G_OBJECT (self), obj_properties[PROP_ACTIVE_CONNECTION]);
 
+	priv->cur_config_data = g_object_ref (NM_CONFIG_GET_DATA);
+
 	priv->netns = g_object_ref (NM_NETNS_GET);
 
 	priv->autoconnect_blocked_flags = DEFAULT_AUTOCONNECT
@@ -15484,6 +15492,8 @@ finalize (GObject *object)
 	nm_g_object_unref (priv->concheck_mgr);
 
 	g_object_unref (priv->netns);
+
+	g_object_unref (priv->cur_config_data);
 }
 
 static void
