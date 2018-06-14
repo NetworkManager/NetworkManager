@@ -526,11 +526,8 @@ class ExportedObj(dbus.service.Object):
 
     @staticmethod
     def to_path_array(src):
-        array = dbus.Array([], signature=dbus.Signature('o'))
-        if src is not None:
-            for o in src:
-                array.append(ExportedObj.to_path(o))
-        return array
+        return dbus.Array([ExportedObj.to_path(o) for o in src] if src else [],
+                          signature=dbus.Signature('o'))
 
     @staticmethod
     def to_path(src):
@@ -773,7 +770,7 @@ class Device(ExportedObj):
         return False
 
     def available_connections_get(self):
-        return [c for c in gl.settings.connections.values() if self.connection_is_available(c)]
+        return [c for c in gl.settings.get_connections() if self.connection_is_available(c)]
 
     def available_connections_update(self):
         self._dbus_property_set(IFACE_DEVICE, PRP_DEVICE_AVAILABLE_CONNECTIONS,
@@ -1680,8 +1677,17 @@ class Settings(ExportedObj):
     def get_connection(self, path):
         return self.connections[path]
 
+    def get_connections(self, stable_order = True):
+        cons = list(self.connections.values())
+        if stable_order:
+            cons.sort(key = lambda c: (Util.random_int(c.get_id()), Util.random_int(c.path)))
+        return cons
+
+    def get_connection_paths(self, stable_order = True):
+        return [c.path for c in self.get_connections(stable_order = stable_order)]
+
     def find_connections(self, path = None, con_id = None, con_uuid = None):
-        for c in self.connections.values():
+        for c in self.get_connections():
             if path is not None:
                 if c.path != path:
                     continue
@@ -1695,7 +1701,7 @@ class Settings(ExportedObj):
 
     @dbus.service.method(dbus_interface=IFACE_SETTINGS, in_signature='', out_signature='ao')
     def ListConnections(self):
-        return self.connections.keys()
+        return self.get_connection_paths()
 
     @dbus.service.method(dbus_interface=IFACE_SETTINGS, in_signature='a{sa{sv}}', out_signature='o')
     def AddConnection(self, con_hash):
@@ -1706,13 +1712,13 @@ class Settings(ExportedObj):
         con_inst = Connection(self.c_counter, con_hash, do_verify_strict)
 
         uuid = con_inst.get_uuid()
-        if uuid in [c.get_uuid() for c in self.connections.values()]:
+        if uuid in [c.get_uuid() for c in self.get_connections(stable_order = False)]:
             raise BusErr.InvalidSettingException('cannot add duplicate connection with uuid %s' % (uuid))
 
         con_inst.export()
         self.connections[con_inst.path] = con_inst
         self.NewConnection(con_inst.path)
-        self._dbus_property_set(IFACE_SETTINGS, PRP_SETTINGS_CONNECTIONS, dbus.Array(self.connections.keys(), 'o'))
+        self._dbus_property_set(IFACE_SETTINGS, PRP_SETTINGS_CONNECTIONS, dbus.Array(self.get_connection_paths(), 'o'))
 
         if self.remove_next_connection:
             self.remove_next_connection = False
@@ -1729,7 +1735,7 @@ class Settings(ExportedObj):
 
     def delete_connection(self, con_inst):
         del self.connections[con_inst.path]
-        self._dbus_property_set(IFACE_SETTINGS, PRP_SETTINGS_CONNECTIONS, dbus.Array(self.connections.keys(), 'o'))
+        self._dbus_property_set(IFACE_SETTINGS, PRP_SETTINGS_CONNECTIONS, dbus.Array(self.get_connection_paths(), 'o'))
         con_inst.Removed()
         con_inst.unexport()
 
