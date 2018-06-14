@@ -484,6 +484,18 @@ _support_rta_pref_get (void)
 	return _support_rta_pref >= 0;
 }
 
+/*****************************************************************************
+ * Support Generic Netlink family
+ *****************************************************************************/
+
+static int
+_support_genl_family (struct nl_sock *genlh, const char *name)
+{
+	int family_id = genl_ctrl_resolve (genlh, name);
+	_LOG2D ("kernel-support: genetlink: %s: %s", name, family_id ? "detected" : "not detected");
+	return family_id;
+}
+
 /******************************************************************
  * Various utilities
  ******************************************************************/
