@@ -116,7 +116,7 @@ link_changed (NMDevice *device,
 {
 	NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE (device);
 
-	if (priv->waiting_for_interface) {
+	if (pllink && priv->waiting_for_interface) {
 		priv->waiting_for_interface = FALSE;
 		nm_device_bring_up (device, TRUE, NULL);
 		nm_device_activate_schedule_stage3_ip_config_start (device);
