@@ -1956,6 +1956,7 @@ guint32
 nm_device_get_route_metric (NMDevice *self,
                             int addr_family)
 {
+	NMDevicePrivate *priv;
 	char *value;
 	gint64 route_metric;
 	NMSettingIPConfig *s_ip;
@@ -1981,10 +1982,12 @@ nm_device_get_route_metric (NMDevice *self,
 		}
 	}
 
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
 	/* use the current NMConfigData, which makes this configuration reloadable.
 	 * Note that that means that the route-metric might change between SIGHUP.
 	 * You must cache the returned value if that is a problem. */
-	value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+	value = nm_config_data_get_connection_default (priv->cur_config_data,
 	                                               addr_family == AF_INET ? "ipv4.route-metric" : "ipv6.route-metric", self);
 	if (value) {
 		route_metric = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT32, -1);
