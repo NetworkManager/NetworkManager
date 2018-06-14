@@ -134,7 +134,7 @@ void nm_device_commit_mtu (NMDevice *self);
 	}
 
 gboolean _nm_device_hash_check_invalid_keys (GHashTable *hash, const char *setting_name,
-                                             GError **error, const char **argv);
+                                             GError **error, const char **whitelist);
 #define nm_device_hash_check_invalid_keys(hash, setting_name, error, ...) \
 	_nm_device_hash_check_invalid_keys (hash, setting_name, error, ((const char *[]) { __VA_ARGS__, NULL }))
 
