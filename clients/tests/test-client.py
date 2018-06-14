@@ -683,7 +683,7 @@ class TestNmcli(NmTestBase):
 
     def async_start(self):
         # limit number parallel running jobs
-        for async_job in self._async_jobs[0:10]:
+        for async_job in self._async_jobs[0:15]:
             async_job.start()
 
     def async_wait(self):
@@ -985,10 +985,23 @@ class TestNmcli(NmTestBase):
         for mode in Util.iter_nmcli_output_modes():
              self.call_nmcli_l(mode + ['-f', 'ALL', 'device', 'wifi', 'list' ],
                                replace_stdout = replace_stdout)
+             self.call_nmcli_l(mode + ['-f', 'COMMON', 'device', 'wifi', 'list' ],
+                               replace_stdout = replace_stdout)
+             self.call_nmcli_l(mode + ['-f', 'NAME,SSID,SSID-HEX,BSSID,MODE,CHAN,FREQ,RATE,SIGNAL,BARS,SECURITY,WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,IN-USE,DBUS-PATH',
+                               'device', 'wifi', 'list'],
+                               replace_stdout = replace_stdout)
              self.call_nmcli_l(mode + ['-f', 'ALL', 'device', 'wifi', 'list', 'bssid', 'C0:E2:BE:E8:EF:B6'],
+                               replace_stdout = replace_stdout)
+             self.call_nmcli_l(mode + ['-f', 'COMMON', 'device', 'wifi', 'list', 'bssid', 'C0:E2:BE:E8:EF:B6'],
                                replace_stdout = replace_stdout)
              self.call_nmcli_l(mode + ['-f', 'NAME,SSID,SSID-HEX,BSSID,MODE,CHAN,FREQ,RATE,SIGNAL,BARS,SECURITY,WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,IN-USE,DBUS-PATH',
                                'device', 'wifi', 'list', 'bssid', 'C0:E2:BE:E8:EF:B6'],
+                               replace_stdout = replace_stdout)
+             self.call_nmcli_l(mode + ['-f', 'ALL', 'device', 'show', 'wlan0' ],
+                               replace_stdout = replace_stdout)
+             self.call_nmcli_l(mode + ['-f', 'COMMON', 'device', 'show', 'wlan0' ],
+                               replace_stdout = replace_stdout)
+             self.call_nmcli_l(mode + ['-f', 'GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6,BOND,TEAM,BRIDGE,VLAN,BLUETOOTH,CONNECTIONS', 'device', 'show', 'wlan0' ],
                                replace_stdout = replace_stdout)
 
 ###############################################################################

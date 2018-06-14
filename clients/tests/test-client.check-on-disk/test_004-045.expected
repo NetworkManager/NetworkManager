@@ -1,11 +1,18 @@
 location: clients/tests/test-client.py:989:test_004()/45
-cmd: $NMCLI -f ALL device wifi list bssid C0:E2:BE:E8:EF:B6
+cmd: $NMCLI -f COMMON device wifi list
 lang: C
 returncode: 0
-stdout: 568 bytes
+stdout: 472 bytes
 >>>
-NAME   SSID        SSID-HEX              BSSID              MODE   CHAN  FREQ      RATE       SIGNAL  BARS  SECURITY   WPA-FLAGS                                      RSN-FLAGS                                      DEVICE  ACTIVE  IN-USE  DBUS-PATH                                     
-AP[1]  wlan0-ap-2  776C616E302D61702D32  C0:E2:BE:E8:EF:B6  Infra  1     2412 MHz  54 Mbit/s  92      ****  WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan0   no              /org/freedesktop/NetworkManager/AccessPoint/2 
+IN-USE  SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY  
+        wlan1-ap-4  Infra  1     54 Mbit/s  48      **    WPA1 WPA2 
+
+IN-USE  SSID  MODE  CHAN  RATE  SIGNAL  BARS  SECURITY 
+
+IN-USE  SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY  
+        wlan0-ap-2  Infra  1     54 Mbit/s  92      ****  WPA1 WPA2 
+        wlan0-ap-1  Infra  1     54 Mbit/s  81      ****  WPA1 WPA2 
+        wlan0-ap-3  Infra  1     54 Mbit/s  55      **    WPA1 WPA2 
 
 <<<
 stderr: 0 bytes

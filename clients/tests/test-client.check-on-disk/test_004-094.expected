@@ -1,26 +1,33 @@
-location: clients/tests/test-client.py:989:test_004()/94
-cmd: $NMCLI --mode multiline --terse -f ALL device wifi list bssid C0:E2:BE:E8:EF:B6
+location: clients/tests/test-client.py:1003:test_004()/94
+cmd: $NMCLI --terse -f COMMON device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 379 bytes
+stdout: 740 bytes
 >>>
-NAME:AP[1]
-SSID:wlan0-ap-2
-SSID-HEX:776C616E302D61702D32
-BSSID:C0:E2:BE:E8:EF:B6
-MODE:Infrastruktura
-CHAN:1
-FREQ:2412 MHz
-RATE:54 Mb/s
-SIGNAL:92
-BARS:****
-SECURITY:WPA1 WPA2
-WPA-FLAGS:pair_tkip pair_ccmp group_tkip group_ccmp psk
-RSN-FLAGS:pair_tkip pair_ccmp group_tkip group_ccmp psk
-DEVICE:wlan0
-ACTIVE:nie
-IN-USE: 
-DBUS-PATH:/org/freedesktop/NetworkManager/AccessPoint/2
+GENERAL.DEVICE:wlan0
+GENERAL.TYPE:wifi
+GENERAL.HWADDR:13:E0:74:85:7C:D9
+GENERAL.MTU:0
+GENERAL.STATE:20 (niedostępne)
+GENERAL.CONNECTION:con-vpn-1
+GENERAL.CON-PATH:/org/freedesktop/NetworkManager/ActiveConnection/2
+IP4.ADDRESS[1]:192.168.228.18/32
+IP4.ADDRESS[2]:192.168.209.179/25
+IP4.GATEWAY:192.168.41.120
+IP4.DOMAIN[1]:sear4.foo2.bar
+IP4.DOMAIN[2]:sear4.fo.x.y
+IP4.DOMAIN[3]:sear4.foo1.bar
+IP4.DOMAIN[4]:sear4.foo4.bar
+IP4.DOMAIN[5]:sear4.fo.o.bar
+IP4.WINS[1]:192.168.120.79
+IP6.GATEWAY:
+IP6.ROUTE[1]:dst = 2001:a::dd5b:aa7b:b4a2:e42/102, nh = ::, mt = 2504159086
+IP6.DOMAIN[1]:sear6.foo2.bar
+IP6.DOMAIN[2]:sear6.foo1.bar
+IP6.DOMAIN[3]:sear6.fo.x.y
+IP6.DOMAIN[4]:sear6.fo.o.bar
+IP6.DOMAIN[5]:sear6.foo3.bar
+IP6.DOMAIN[6]:sear6.foo4.bar
 
 <<<
 stderr: 0 bytes

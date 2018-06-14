@@ -1,0 +1,24 @@
+location: clients/tests/test-client.py:996:test_004()/177
+cmd: $NMCLI --mode multiline --pretty -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
+lang: C
+returncode: 0
+stdout: 661 bytes
+>>>
+===============================================================================
+                            Wi-Fi scan list (wlan0)
+===============================================================================
+IN-USE:                                  
+SSID:                                   wlan0-ap-2
+MODE:                                   Infra
+CHAN:                                   1
+RATE:                                   54 Mbit/s
+SIGNAL:                                 92
+BARS:                                   ****
+SECURITY:                               WPA1 WPA2
+-------------------------------------------------------------------------------
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<

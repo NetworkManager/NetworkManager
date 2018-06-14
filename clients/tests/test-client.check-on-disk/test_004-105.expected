@@ -1,0 +1,14 @@
+location: clients/tests/test-client.py:996:test_004()/105
+cmd: $NMCLI --mode tabular -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
+lang: C
+returncode: 0
+stdout: 138 bytes
+>>>
+IN-USE  SSID        MODE   CHAN  RATE       SIGNAL  BARS  SECURITY  
+        wlan0-ap-2  Infra  1     54 Mbit/s  92      ****  WPA1 WPA2 
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<
