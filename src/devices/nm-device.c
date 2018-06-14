@@ -9206,7 +9206,7 @@ check_and_reapply_connection (NMDevice *self,
 
 	if (diffs) {
 		NMConnection *connection_clean = connection;
-		gs_free NMConnection *connection_clean_free = NULL;
+		gs_unref_object NMConnection *connection_clean_free = NULL;
 
 		{
 			NMSettingConnection *s_con_a, *s_con_n;
