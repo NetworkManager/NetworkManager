@@ -10203,7 +10203,7 @@ _nm_device_hash_check_invalid_keys (GHashTable *hash, const char *setting_name,
 	nm_assert (whitelist && whitelist[0]);
 
 #if NM_MORE_ASSERTS > 10
-	/* Assert that the keys are unique. */
+	/* Require whitelist to only contain unique keys. */
 	{
 		gs_unref_hashtable GHashTable *check_dups = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, NULL);
 
@@ -10220,13 +10220,15 @@ _nm_device_hash_check_invalid_keys (GHashTable *hash, const char *setting_name,
 			found_whitelisted_keys++;
 	}
 
-	if (found_whitelisted_keys != g_hash_table_size (hash)) {
+	if (found_whitelisted_keys == g_hash_table_size (hash)) {
+		/* Good, there are only whitelisted keys in the hash. */
+		return TRUE;
+	}
+
+	if (error) {
 		GHashTableIter iter;
 		const char *k = NULL;
 		const char *first_invalid_key = NULL;
-
-		if (!error)
-			return FALSE;
 
 		g_hash_table_iter_init (&iter, hash);
 		while (g_hash_table_iter_next (&iter, (gpointer *) &k, NULL)) {
@@ -10250,10 +10252,9 @@ _nm_device_hash_check_invalid_keys (GHashTable *hash, const char *setting_name,
 			             first_invalid_key);
 		}
 		g_return_val_if_fail (first_invalid_key, FALSE);
-		return FALSE;
 	}
 
-	return TRUE;
+	return FALSE;
 }
 
 void
