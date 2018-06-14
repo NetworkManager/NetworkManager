@@ -121,6 +121,7 @@ typedef struct {
 	gint32 hw_addr_scan_expire;
 
 	guint             wps_timeout_id;
+	NMSettingWirelessWakeOnWLan wowlan_restore;
 } NMDeviceWifiPrivate;
 
 struct _NMDeviceWifi
@@ -508,6 +509,19 @@ remove_all_aps (NMDeviceWifi *self)
 	nm_device_recheck_available_connections (NM_DEVICE (self));
 }
 
+static gboolean
+wake_on_wlan_restore (NMDeviceWifi *self)
+{
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+
+	if (priv->wowlan_restore == NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE)
+		return TRUE;
+
+	return nm_platform_wifi_set_wake_on_wlan (NM_PLATFORM_GET,
+	                                          nm_device_get_ifindex (NM_DEVICE (self)),
+	                                          priv->wowlan_restore);
+}
+
 static void
 deactivate (NMDevice *device)
 {
@@ -523,6 +537,9 @@ deactivate (NMDevice *device)
 	priv->rate = 0;
 
 	set_current_ap (self, NULL, TRUE);
+
+	if (!wake_on_wlan_restore (self))
+		_LOGW (LOGD_DEVICE | LOGD_WIFI, "Cannot unconfigure WoWLAN.");
 
 	/* Clear any critical protocol notification in the Wi-Fi stack */
 	nm_platform_wifi_indicate_addressing_running (nm_device_get_platform (device), ifindex, FALSE);
@@ -2426,6 +2443,7 @@ error:
 static gboolean
 wake_on_wlan_enable (NMDeviceWifi *self)
 {
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMSettingWirelessWakeOnWLan wowl;
 	NMSettingWireless *s_wireless;
 	gs_free char *value = NULL;
@@ -2462,7 +2480,19 @@ wake_on_wlan_enable (NMDeviceWifi *self)
 	}
 	wowl = NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
 found:
-	return nm_platform_wifi_set_wake_on_wlan (NM_PLATFORM_GET, nm_device_get_ifindex (NM_DEVICE (self)), wowl);
+	if (wowl == NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE) {
+		priv->wowlan_restore = wowl;
+		return TRUE;
+	}
+
+	/* Save current wowlan value to restore it when dropping the connection */
+	priv->wowlan_restore =
+		nm_platform_wifi_get_wake_on_wlan (NM_PLATFORM_GET,
+		                                   nm_device_get_ifindex (NM_DEVICE (self)));
+
+	return nm_platform_wifi_set_wake_on_wlan (NM_PLATFORM_GET,
+	                                          nm_device_get_ifindex (NM_DEVICE (self)),
+	                                          wowl);
 }
 
 static NMActStageReturn
@@ -2658,8 +2688,6 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	s_wireless = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wireless);
 
-	wake_on_wlan_enable (self);
-
 	/* If we need secrets, get them */
 	setting_name = nm_connection_need_secrets (connection, NULL);
 	if (setting_name) {
@@ -2675,6 +2703,9 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		}
 		goto out;
 	}
+
+	if (!wake_on_wlan_enable (self))
+		_LOGW (LOGD_DEVICE | LOGD_WIFI, "Cannot configure WoWLAN.");
 
 	/* have secrets, or no secrets required */
 	if (nm_connection_get_setting_wireless_security (connection)) {
@@ -2726,8 +2757,10 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	ret = NM_ACT_STAGE_RETURN_POSTPONE;
 
 out:
-	if (ret == NM_ACT_STAGE_RETURN_FAILURE)
+	if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
 		cleanup_association_attempt (self, TRUE);
+		wake_on_wlan_restore (self);
+	}
 
 	if (config) {
 		/* Supplicant interface object refs the config; we no longer care about
@@ -3133,7 +3166,8 @@ reapply_connection (NMDevice *device, NMConnection *con_old, NMConnection *con_n
 
 	_LOGD (LOGD_DEVICE, "reapplying wireless settings");
 
-	wake_on_wlan_enable (self);
+	if (!wake_on_wlan_enable (self))
+		_LOGW (LOGD_DEVICE | LOGD_WIFI, "Cannot configure WoWLAN.");
 }
 
 /*****************************************************************************/
@@ -3206,6 +3240,7 @@ nm_device_wifi_init (NMDeviceWifi *self)
 	c_list_init (&priv->aps_lst_head);
 
 	priv->mode = NM_802_11_MODE_INFRA;
+	priv->wowlan_restore = NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
 }
 
 static void
