@@ -23,6 +23,9 @@ from __future__ import print_function
 #    # You don't need to type `make install` every time, but a suitable version
 #    # of translations must be installed. In practice, the tests only care about
 #    # Polish (pl) translations.
+#    # The important part is that translations work. Test
+#    #  $ LANG=pl_PL.UTF-8 ./clients/cli/nmcli --version
+#    # also ensure that `locale -a` reports the Polish locale.
 #  $ rm -rf  clients/tests/test-client.check-on-disk/*.expected
 #    # (step seldomly required)
 #    # Sometimes, if you want to be sure that the test would generate
