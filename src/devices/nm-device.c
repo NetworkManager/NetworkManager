@@ -10423,6 +10423,16 @@ can_reapply_change (NMDevice *self, const char *setting_name,
 			             NM_SETTING_IP_CONFIG_ROUTE_TABLE);
 			return FALSE;
 		}
+		if (g_hash_table_contains (diffs, NM_SETTING_IP_CONFIG_ROUTE_METRIC)) {
+			/* changing the default route-metric is complicated. Don't supported at the moment. */
+			g_set_error (error,
+			             NM_DEVICE_ERROR,
+			             NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+			             "Can't reapply changes to '%s.%s' setting",
+			             setting_name,
+			             NM_SETTING_IP_CONFIG_ROUTE_METRIC);
+			return FALSE;
+		}
 		return TRUE;
 	} else {
 		g_set_error (error,
