@@ -338,8 +338,6 @@ apply_bonding_config (NMDevice *device)
 	set_simple_option (device, mode, s_bond, NM_SETTING_BOND_OPTION_FAIL_OVER_MAC);
 	set_simple_option (device, mode, s_bond, NM_SETTING_BOND_OPTION_LACP_RATE);
 	set_simple_option (device, mode, s_bond, NM_SETTING_BOND_OPTION_LP_INTERVAL);
-	set_simple_option (device, mode, s_bond, NM_SETTING_BOND_OPTION_NUM_GRAT_ARP);
-	set_simple_option (device, mode, s_bond, NM_SETTING_BOND_OPTION_NUM_UNSOL_NA);
 	set_simple_option (device, mode, s_bond, NM_SETTING_BOND_OPTION_MIN_LINKS);
 	set_simple_option (device, mode, s_bond, NM_SETTING_BOND_OPTION_PACKETS_PER_SLAVE);
 	set_simple_option (device, mode, s_bond, NM_SETTING_BOND_OPTION_PRIMARY_RESELECT);
@@ -347,6 +345,16 @@ apply_bonding_config (NMDevice *device)
 	set_simple_option (device, mode, s_bond, NM_SETTING_BOND_OPTION_TLB_DYNAMIC_LB);
 	set_simple_option (device, mode, s_bond, NM_SETTING_BOND_OPTION_USE_CARRIER);
 	set_simple_option (device, mode, s_bond, NM_SETTING_BOND_OPTION_XMIT_HASH_POLICY);
+
+	/* num_grat_arp and num_unsol_na are actually the same attribute
+	 * on kernel side and their value in the bond setting is guaranteed
+	 * to be equal. Write only one of the two.
+	 */
+	value = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_NUM_GRAT_ARP);
+	if (value)
+		set_bond_attr (device, mode, NM_SETTING_BOND_OPTION_NUM_GRAT_ARP, value);
+	else
+		set_simple_option (device, mode, s_bond, NM_SETTING_BOND_OPTION_NUM_UNSOL_NA);
 
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
