@@ -256,17 +256,15 @@ AC_SUBST(GLIB_LIBS)
 GOBJECT_INTROSPECTION_CHECK([0.9.6])
 
 AC_ARG_WITH(libnm-glib,
-            AS_HELP_STRING([--without-libnm-glib],
-                           [don"'"t build legacy libraries]))
+            AS_HELP_STRING([--with-libnm-glib],
+                           [build legacy libraries]))
 fake_typelibs=no
-if test "$with_libnm_glib" != "no"; then
+if test "$with_libnm_glib" == "yes"; then
 	PKG_CHECK_MODULES(DBUS, dbus-1 >= 1.1 dbus-glib-1 >= 0.94, :,
 	                  [AC_MSG_FAILURE([$DBUS_PKG_ERRORS
 
 Configure with --without-libnm-glib if you do not need the legacy libraries])
 	                  ])
-
-	with_libnm_glib=yes
 
 	if test "${found_introspection}" = "yes"; then
 		AC_PATH_PROG(GLIB_COMPILE_RESOURCES, glib-compile-resources)
@@ -274,8 +272,10 @@ Configure with --without-libnm-glib if you do not need the legacy libraries])
 			fake_typelibs=yes
 		fi
 	fi
+else
+	with_libnm_glib=no
 fi
-AM_CONDITIONAL(WITH_LEGACY_LIBRARIES, test "$with_libnm_glib" != "no")
+AM_CONDITIONAL(WITH_LEGACY_LIBRARIES, test "$with_libnm_glib" == "yes")
 if test "$fake_typelibs" = "yes"; then
 	AC_DEFINE(WITH_FAKE_TYPELIBS, 1, [Define for libnm to prevent GIR from loading libnm-glib])
 else

@@ -33,6 +33,10 @@ Notable changes included in this snapshot so far include:
   instead of replacing /etc/resolv.conf with a plain file.
 * Added wake_on_wlan connection setting to configure
   wake-on-wireless-lan (WoWLAN).
+* The libnm-glib library, deprecated in favor of libnm since NetworkManager 1.0,
+  is now not built by default. While it can still be enabled, the distributions
+  should have a good plan for removing it if they need to keep shipping it at
+  this point.
 
 The following features were backported to 1.10.x releases from 1.10.0 to
 1.10.8 are also present in NetworkManager-1.12:
