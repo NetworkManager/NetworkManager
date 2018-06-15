@@ -1219,15 +1219,13 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	ap = ap_path ? nm_wifi_ap_lookup_for_device (NM_DEVICE (self), ap_path) : NULL;
 	if (!ap) {
 		ap = nm_wifi_aps_find_first_compatible (&priv->aps_lst_head, connection);
-
-		/* TODO: assuming hidden networks aren't supported do we need
-		 * to consider the case of APs that are not in the scan list
-		 * yet, for which nm-device-wifi.c creates the temporary fake
-		 * AP object?
-		 */
+		if (!ap) {
+			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+			return NM_ACT_STAGE_RETURN_FAILURE;
+		}
 
 		nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req),
-	                                              nm_dbus_object_get_path (NM_DBUS_OBJECT (ap)));
+		                                          nm_dbus_object_get_path (NM_DBUS_OBJECT (ap)));
 	}
 
 	set_current_ap (self, ap, FALSE);
