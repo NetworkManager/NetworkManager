@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:939:test_004()/16
+location: clients/tests/test-client.py:936:test_004()/16
 cmd: $NMCLI con s
 lang: C
 returncode: 0

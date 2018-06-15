@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:764:test_001()/24
+location: clients/tests/test-client.py:761:test_001()/24
 cmd: $NMCLI --mode multiline --pretty general permissions
 lang: pl_PL.UTF-8
 returncode: 0

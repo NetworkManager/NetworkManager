@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:987:test_004()/187
+location: clients/tests/test-client.py:984:test_004()/187
 cmd: $NMCLI --mode multiline --terse -f ALL device wifi list
 lang: C
 returncode: 0

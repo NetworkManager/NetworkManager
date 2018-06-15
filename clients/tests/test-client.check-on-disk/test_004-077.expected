@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:1005:test_004()/77
+location: clients/tests/test-client.py:1002:test_004()/77
 cmd: $NMCLI --pretty -f GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6,BOND,TEAM,BRIDGE,VLAN,BLUETOOTH,CONNECTIONS device show wlan0
 lang: C
 returncode: 0
