@@ -2765,12 +2765,12 @@ wifi_list_aps (NMDeviceWifi *wifi,
                GArray *out_indices,
                const NMMetaAbstractInfo *const*tmpl,
                const char *bssid_user,
-               int rescan_cutoff)
+               gint64 rescan_cutoff)
 {
 	gboolean needs_rescan;
 	WifiListData *data;
 
-	needs_rescan = rescan_cutoff < 0 || (rescan_cutoff > 0 && nm_device_wifi_get_last_scan (wifi) < (rescan_cutoff * 1000));
+	needs_rescan = rescan_cutoff < 0 || (rescan_cutoff > 0 && nm_device_wifi_get_last_scan (wifi) < rescan_cutoff);
 
 	if (needs_rescan) {
 		data = g_slice_new0 (WifiListData);
@@ -2825,7 +2825,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 	const NMMetaAbstractInfo *const*tmpl;
 	gs_unref_array GArray *out_indices = NULL;
 	int option;
-	int rescan_cutoff;
+	guint64 rescan_cutoff;
 
 	devices = nmc_get_devices_sorted (nmc->client);
 
@@ -2895,14 +2895,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		g_printerr (_("Unknown parameter: %s\n"), *argv);
 
 	if (rescan == NULL || strcmp (rescan, "auto") == 0) {
-		struct timespec tp;
-
-		if (clock_gettime (CLOCK_BOOTTIME, &tp) == -1) {
-			g_printerr (_("Failed to get CLOCK_BOOTTIME: %s\n"), strerror (errno));
-			rescan_cutoff = 0;
-		} else {
-			rescan_cutoff = MAX (tp.tv_sec - 30, 0);
-		}
+		rescan_cutoff = MAX (nm_utils_get_timestamp_msec () - 30 * NM_UTILS_MSEC_PER_SECOND, 0);
 	} else if (strcmp (rescan, "no") == 0) {
 		rescan_cutoff = 0;
 	} else if (strcmp (rescan, "yes") == 0) {
