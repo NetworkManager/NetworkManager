@@ -217,6 +217,21 @@ add_8021x_secrets (NMSecretAgentSimpleRequest *request,
 	const char *eap_method;
 	NMSecretAgentSimpleSecret *secret;
 
+	/* If hints are given, then always ask for what the hints require */
+	if (request->hints) {
+		char **iter;
+		for (iter = request->hints; *iter; iter++) {
+			secret = nm_secret_agent_simple_secret_new (NM_SECRET_AGENT_SECRET_TYPE_SECRET,
+			                                            _(*iter),
+			                                            NM_SETTING (s_8021x),
+			                                            *iter,
+			                                            NULL);
+			g_ptr_array_add (secrets, secret);
+		}
+
+		return TRUE;
+	}
+
 	eap_method = nm_setting_802_1x_get_eap_method (s_8021x, 0);
 	if (!eap_method)
 		return FALSE;
