@@ -10194,43 +10194,45 @@ _cleanup_ip_pre (NMDevice *self, int addr_family, CleanupType cleanup_type)
 
 gboolean
 _nm_device_hash_check_invalid_keys (GHashTable *hash, const char *setting_name,
-                                    GError **error, const char **argv)
+                                    GError **error, const char **whitelist)
 {
-	guint found_keys = 0;
+	guint found_whitelisted_keys = 0;
 	guint i;
 
 	nm_assert (hash && g_hash_table_size (hash) > 0);
-	nm_assert (argv && argv[0]);
+	nm_assert (whitelist && whitelist[0]);
 
 #if NM_MORE_ASSERTS > 10
-	/* Assert that the keys are unique. */
+	/* Require whitelist to only contain unique keys. */
 	{
 		gs_unref_hashtable GHashTable *check_dups = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, NULL);
 
-		for (i = 0; argv[i]; i++) {
-			if (!g_hash_table_add (check_dups, (char *) argv[i]))
+		for (i = 0; whitelist[i]; i++) {
+			if (!g_hash_table_add (check_dups, (char *) whitelist[i]))
 				nm_assert (FALSE);
 		}
 		nm_assert (g_hash_table_size (check_dups) > 0);
 	}
 #endif
 
-	for (i = 0; argv[i]; i++) {
-		if (g_hash_table_contains (hash, argv[i]))
-			found_keys++;
+	for (i = 0; whitelist[i]; i++) {
+		if (g_hash_table_contains (hash, whitelist[i]))
+			found_whitelisted_keys++;
 	}
 
-	if (found_keys != g_hash_table_size (hash)) {
+	if (found_whitelisted_keys == g_hash_table_size (hash)) {
+		/* Good, there are only whitelisted keys in the hash. */
+		return TRUE;
+	}
+
+	if (error) {
 		GHashTableIter iter;
 		const char *k = NULL;
 		const char *first_invalid_key = NULL;
 
-		if (!error)
-			return FALSE;
-
 		g_hash_table_iter_init (&iter, hash);
 		while (g_hash_table_iter_next (&iter, (gpointer *) &k, NULL)) {
-			if (nm_utils_strv_find_first ((char **) argv, -1, k) < 0) {
+			if (nm_utils_strv_find_first ((char **) whitelist, -1, k) < 0) {
 				first_invalid_key = k;
 				break;
 			}
@@ -10250,10 +10252,9 @@ _nm_device_hash_check_invalid_keys (GHashTable *hash, const char *setting_name,
 			             first_invalid_key);
 		}
 		g_return_val_if_fail (first_invalid_key, FALSE);
-		return FALSE;
 	}
 
-	return TRUE;
+	return FALSE;
 }
 
 void
@@ -10396,9 +10397,11 @@ can_reapply_change (NMDevice *self, const char *setting_name,
 		                                          NM_SETTING_CONNECTION_METERED,
 		                                          NM_SETTING_CONNECTION_LLDP);
 	} else if (NM_IN_STRSET (setting_name,
-	                         NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	                         NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	                         NM_SETTING_PROXY_SETTING_NAME)) {
+		return TRUE;
+	} else if (NM_IN_STRSET (setting_name,
+	                         NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	                         NM_SETTING_IP6_CONFIG_SETTING_NAME)) {
 		if (g_hash_table_contains (diffs, NM_SETTING_IP_CONFIG_ROUTE_TABLE)) {
 			/* changing the route-table setting is complicated, because it affects
 			 * how we sync the routes. Don't support changing it without full
@@ -10529,7 +10532,7 @@ check_and_reapply_connection (NMDevice *self,
 
 	if (diffs) {
 		NMConnection *connection_clean = connection;
-		gs_free NMConnection *connection_clean_free = NULL;
+		gs_unref_object NMConnection *connection_clean_free = NULL;
 
 		{
 			NMSettingConnection *s_con_a, *s_con_n;

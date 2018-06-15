@@ -807,8 +807,8 @@ nm_g_object_unref (gpointer obj)
 		g_object_unref (obj);
 }
 
-/* Assigns GObject @obj to destination @pdst, and takes an additional ref.
- * The previous value of @pdst is unrefed.
+/* Assigns GObject @obj to destination @pp, and takes an additional ref.
+ * The previous value of @pp is unrefed.
  *
  * It makes sure to first increase the ref-count of @obj, and handles %NULL
  * @obj correctly.
@@ -816,22 +816,18 @@ nm_g_object_unref (gpointer obj)
 #define nm_g_object_ref_set(pp, obj) \
 	({ \
 		typeof (*(pp)) *const _pp = (pp); \
-		typeof (**_pp) *const _obj = (obj); \
-		typeof (**_pp) *_p; \
+		typeof (*_pp) const _obj = (obj); \
+		typeof (*_pp) _p; \
 		gboolean _changed = FALSE; \
+		\
+		nm_assert (!_pp || !*_pp || G_IS_OBJECT (*_pp)); \
+		nm_assert (!_obj || G_IS_OBJECT (_obj)); \
 		\
 		if (   _pp \
 		    && ((_p = *_pp) != _obj)) { \
-			if (_obj) { \
-				nm_assert (G_IS_OBJECT (_obj)); \
-				 g_object_ref (_obj); \
-			} \
-			if (_p) { \
-				nm_assert (G_IS_OBJECT (_p)); \
-				*_pp = NULL; \
-				g_object_unref (_p); \
-			} \
+			nm_g_object_ref (_obj); \
 			*_pp = _obj; \
+			nm_g_object_unref (_p); \
 			_changed = TRUE; \
 		} \
 		_changed; \
