@@ -324,6 +324,11 @@ typedef struct _NMDevicePrivate {
 
 	guint32         ip4_address;
 
+	/* a snapshot of the config-data instance, when the device was activated.
+	 * It is cached for the duraction of the activation, to avoid unintentional
+	 * changes. */
+	NMConfigData   *cur_config_data;
+
 	NMActRequest *  queued_act_request;
 	bool            queued_act_request_is_waiting_for_carrier:1;
 	NMDBusTrackObjPath act_request;
@@ -1951,6 +1956,7 @@ guint32
 nm_device_get_route_metric (NMDevice *self,
                             int addr_family)
 {
+	NMDevicePrivate *priv;
 	char *value;
 	gint64 route_metric;
 	NMSettingIPConfig *s_ip;
@@ -1976,10 +1982,12 @@ nm_device_get_route_metric (NMDevice *self,
 		}
 	}
 
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
 	/* use the current NMConfigData, which makes this configuration reloadable.
 	 * Note that that means that the route-metric might change between SIGHUP.
 	 * You must cache the returned value if that is a problem. */
-	value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+	value = nm_config_data_get_connection_default (priv->cur_config_data,
 	                                               addr_family == AF_INET ? "ipv4.route-metric" : "ipv6.route-metric", self);
 	if (value) {
 		route_metric = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXUINT32, -1);
@@ -10194,43 +10202,45 @@ _cleanup_ip_pre (NMDevice *self, int addr_family, CleanupType cleanup_type)
 
 gboolean
 _nm_device_hash_check_invalid_keys (GHashTable *hash, const char *setting_name,
-                                    GError **error, const char **argv)
+                                    GError **error, const char **whitelist)
 {
-	guint found_keys = 0;
+	guint found_whitelisted_keys = 0;
 	guint i;
 
 	nm_assert (hash && g_hash_table_size (hash) > 0);
-	nm_assert (argv && argv[0]);
+	nm_assert (whitelist && whitelist[0]);
 
 #if NM_MORE_ASSERTS > 10
-	/* Assert that the keys are unique. */
+	/* Require whitelist to only contain unique keys. */
 	{
 		gs_unref_hashtable GHashTable *check_dups = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, NULL);
 
-		for (i = 0; argv[i]; i++) {
-			if (!g_hash_table_add (check_dups, (char *) argv[i]))
+		for (i = 0; whitelist[i]; i++) {
+			if (!g_hash_table_add (check_dups, (char *) whitelist[i]))
 				nm_assert (FALSE);
 		}
 		nm_assert (g_hash_table_size (check_dups) > 0);
 	}
 #endif
 
-	for (i = 0; argv[i]; i++) {
-		if (g_hash_table_contains (hash, argv[i]))
-			found_keys++;
+	for (i = 0; whitelist[i]; i++) {
+		if (g_hash_table_contains (hash, whitelist[i]))
+			found_whitelisted_keys++;
 	}
 
-	if (found_keys != g_hash_table_size (hash)) {
+	if (found_whitelisted_keys == g_hash_table_size (hash)) {
+		/* Good, there are only whitelisted keys in the hash. */
+		return TRUE;
+	}
+
+	if (error) {
 		GHashTableIter iter;
 		const char *k = NULL;
 		const char *first_invalid_key = NULL;
 
-		if (!error)
-			return FALSE;
-
 		g_hash_table_iter_init (&iter, hash);
 		while (g_hash_table_iter_next (&iter, (gpointer *) &k, NULL)) {
-			if (nm_utils_strv_find_first ((char **) argv, -1, k) < 0) {
+			if (nm_utils_strv_find_first ((char **) whitelist, -1, k) < 0) {
 				first_invalid_key = k;
 				break;
 			}
@@ -10250,10 +10260,9 @@ _nm_device_hash_check_invalid_keys (GHashTable *hash, const char *setting_name,
 			             first_invalid_key);
 		}
 		g_return_val_if_fail (first_invalid_key, FALSE);
-		return FALSE;
 	}
 
-	return TRUE;
+	return FALSE;
 }
 
 void
@@ -10396,9 +10405,11 @@ can_reapply_change (NMDevice *self, const char *setting_name,
 		                                          NM_SETTING_CONNECTION_METERED,
 		                                          NM_SETTING_CONNECTION_LLDP);
 	} else if (NM_IN_STRSET (setting_name,
-	                         NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	                         NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	                         NM_SETTING_PROXY_SETTING_NAME)) {
+		return TRUE;
+	} else if (NM_IN_STRSET (setting_name,
+	                         NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	                         NM_SETTING_IP6_CONFIG_SETTING_NAME)) {
 		if (g_hash_table_contains (diffs, NM_SETTING_IP_CONFIG_ROUTE_TABLE)) {
 			/* changing the route-table setting is complicated, because it affects
 			 * how we sync the routes. Don't support changing it without full
@@ -10418,6 +10429,16 @@ can_reapply_change (NMDevice *self, const char *setting_name,
 			             "Can't reapply changes to '%s.%s' setting",
 			             setting_name,
 			             NM_SETTING_IP_CONFIG_ROUTE_TABLE);
+			return FALSE;
+		}
+		if (g_hash_table_contains (diffs, NM_SETTING_IP_CONFIG_ROUTE_METRIC)) {
+			/* changing the default route-metric is complicated. Don't supported at the moment. */
+			g_set_error (error,
+			             NM_DEVICE_ERROR,
+			             NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+			             "Can't reapply changes to '%s.%s' setting",
+			             setting_name,
+			             NM_SETTING_IP_CONFIG_ROUTE_METRIC);
 			return FALSE;
 		}
 		return TRUE;
@@ -10529,7 +10550,7 @@ check_and_reapply_connection (NMDevice *self,
 
 	if (diffs) {
 		NMConnection *connection_clean = connection;
-		gs_free NMConnection *connection_clean_free = NULL;
+		gs_unref_object NMConnection *connection_clean_free = NULL;
 
 		{
 			NMSettingConnection *s_con_a, *s_con_n;
@@ -14070,6 +14091,7 @@ _set_state_full (NMDevice *self,
 		}
 		break;
 	case NM_DEVICE_STATE_PREPARE:
+		nm_g_object_ref_set (&priv->cur_config_data, NM_CONFIG_GET_DATA);
 		nm_device_update_initial_hw_address (self);
 		break;
 	case NM_DEVICE_STATE_NEED_AUTH:
@@ -15221,6 +15243,8 @@ nm_device_init (NMDevice *self)
 	nm_dbus_track_obj_path_init (&priv->parent_device, G_OBJECT (self), obj_properties[PROP_PARENT]);
 	nm_dbus_track_obj_path_init (&priv->act_request, G_OBJECT (self), obj_properties[PROP_ACTIVE_CONNECTION]);
 
+	priv->cur_config_data = g_object_ref (NM_CONFIG_GET_DATA);
+
 	priv->netns = g_object_ref (NM_NETNS_GET);
 
 	priv->autoconnect_blocked_flags = DEFAULT_AUTOCONNECT
@@ -15471,6 +15495,8 @@ finalize (GObject *object)
 	nm_g_object_unref (priv->concheck_mgr);
 
 	g_object_unref (priv->netns);
+
+	g_object_unref (priv->cur_config_data);
 }
 
 static void
