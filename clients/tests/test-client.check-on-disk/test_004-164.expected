@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:1001:test_004()/164
+location: clients/tests/test-client.py:998:test_004()/164
 cmd: $NMCLI --mode multiline -f ALL device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0

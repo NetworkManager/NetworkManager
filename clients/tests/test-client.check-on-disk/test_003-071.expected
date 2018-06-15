@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:895:test_003()/71
+location: clients/tests/test-client.py:892:test_003()/71
 cmd: $NMCLI -f UUID,TYPE --mode tabular --pretty con
 lang: C
 returncode: 0

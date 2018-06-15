@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:918:test_004()/4
+location: clients/tests/test-client.py:915:test_004()/4
 cmd: $NMCLI connection mod con-xx1 ipv6.gateway ::99
 lang: C
 returncode: 1

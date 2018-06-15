@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:996:test_004()/178
+location: clients/tests/test-client.py:993:test_004()/178
 cmd: $NMCLI --mode multiline --pretty -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: pl_PL.UTF-8
 returncode: 0

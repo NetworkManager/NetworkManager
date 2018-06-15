@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:1003:test_004()/93
+location: clients/tests/test-client.py:1000:test_004()/93
 cmd: $NMCLI --terse -f COMMON device show wlan0
 lang: C
 returncode: 0
