@@ -924,7 +924,7 @@ class WifiDevice(Device):
             PRP_WIFI_WIRELESS_CAPABILITIES: dbus.UInt32(0xFF),
             PRP_WIFI_ACCESS_POINTS:         ExportedObj.to_path_array(self.aps),
             PRP_WIFI_ACTIVE_ACCESS_POINT:   ExportedObj.to_path(None),
-            PRP_WIFI_LAST_SCAN:             dbus.Int32(0x70000000),
+            PRP_WIFI_LAST_SCAN:             dbus.Int64(0x7000000000000000),
         }
 
         self.dbus_interface_add(IFACE_WIFI, props, WifiDevice.PropertiesChanged)

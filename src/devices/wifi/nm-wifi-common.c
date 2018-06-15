@@ -200,7 +200,7 @@ const NMDBusInterfaceInfoExtended nm_interface_info_device_wireless = {
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("AccessPoints",         "ao", NM_DEVICE_WIFI_ACCESS_POINTS),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("ActiveAccessPoint",    "o",  NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L ("WirelessCapabilities", "u",  NM_DEVICE_WIFI_CAPABILITIES),
-			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE   ("LastScan",             "i",  NM_DEVICE_WIFI_LAST_SCAN),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE   ("LastScan",             "x",  NM_DEVICE_WIFI_LAST_SCAN),
 		),
 	),
 	.legacy_property_changed = TRUE,

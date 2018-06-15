@@ -110,7 +110,7 @@ gboolean nm_supplicant_interface_get_scanning (NMSupplicantInterface *self);
 
 const char *nm_supplicant_interface_get_current_bss (NMSupplicantInterface *self);
 
-gint32 nm_supplicant_interface_get_last_scan_time (NMSupplicantInterface *self);
+gint64 nm_supplicant_interface_get_last_scan (NMSupplicantInterface *self);
 
 const char *nm_supplicant_interface_get_ifname (NMSupplicantInterface *self);
 

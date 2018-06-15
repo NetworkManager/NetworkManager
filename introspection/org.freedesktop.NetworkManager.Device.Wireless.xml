@@ -99,12 +99,12 @@
     <!--
         LastScan:
 
-        The timestamp (in CLOCK_BOOTTIME seconds) for the last finished network scan.
+        The timestamp (in CLOCK_BOOTTIME milliseconds) for the last finished network scan.
         A value of -1 means the device never scanned for access points.
 
         Since: 1.12
     -->
-    <property name="LastScan" type="i" access="read"/>
+    <property name="LastScan" type="x" access="read"/>
 
     <!--
         PropertiesChanged:

@@ -2770,7 +2770,7 @@ wifi_list_aps (NMDeviceWifi *wifi,
 	gboolean needs_rescan;
 	WifiListData *data;
 
-	needs_rescan = rescan_cutoff < 0 || (rescan_cutoff > 0 && nm_device_wifi_get_last_scan (wifi) < rescan_cutoff);
+	needs_rescan = rescan_cutoff < 0 || (rescan_cutoff > 0 && nm_device_wifi_get_last_scan (wifi) < (rescan_cutoff * 1000));
 
 	if (needs_rescan) {
 		data = g_slice_new0 (WifiListData);
