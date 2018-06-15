@@ -128,6 +128,7 @@ check_so_symbols = \
 DISTCHECK_CONFIGURE_FLAGS = \
 	--enable-tests=yes \
 	--with-valgrind=no \
+	--with-libnm-glib=yes \
 	--enable-gtk-doc \
 	--enable-more-warnings=error \
 	--with-udev-dir=$$dc_install_base/lib/udev \
