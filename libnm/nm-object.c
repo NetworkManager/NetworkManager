@@ -900,9 +900,9 @@ demarshal_generic (NMObject *object,
 	else if (pspec->value_type == G_TYPE_UINT)
 		HANDLE_TYPE (G_VARIANT_TYPE_UINT32, guint, g_variant_get_uint32);
 	else if (pspec->value_type == G_TYPE_INT64)
-		HANDLE_TYPE (G_VARIANT_TYPE_INT64, gint, g_variant_get_int64);
+		HANDLE_TYPE (G_VARIANT_TYPE_INT64, gint64, g_variant_get_int64);
 	else if (pspec->value_type == G_TYPE_UINT64)
-		HANDLE_TYPE (G_VARIANT_TYPE_UINT64, guint, g_variant_get_uint64);
+		HANDLE_TYPE (G_VARIANT_TYPE_UINT64, guint64, g_variant_get_uint64);
 	else if (pspec->value_type == G_TYPE_LONG)
 		HANDLE_TYPE (G_VARIANT_TYPE_INT64, glong, g_variant_get_int64);
 	else if (pspec->value_type == G_TYPE_ULONG)
