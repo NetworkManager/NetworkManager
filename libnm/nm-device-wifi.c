@@ -276,6 +276,9 @@ nm_device_wifi_get_access_point_by_path (NMDeviceWifi *device,
  * Returns the timestamp (in CLOCK_BOOTTIME milliseconds) for the last finished
  * network scan. A value of -1 means the device never scanned for access points.
  *
+ * Use nm_utils_get_timestamp_msec() to obtain current time value suitable for
+ * comparing to this value.
+ *
  * Returns: the last scan time in seconds
  *
  * Since: 1.12
