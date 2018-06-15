@@ -2,7 +2,7 @@ location: clients/tests/test-client.py:923:test_004()/8
 cmd: $NMCLI con s con-xx1
 lang: C
 returncode: 0
-stdout: 3756 bytes
+stdout: 3810 bytes
 >>>
 connection.id:                          con-xx1
 connection.uuid:                        UUID-con-xx1-REPLACED-REPLACED-REPLA
@@ -41,6 +41,7 @@ connection.mdns:                        -1 (default)
 802-11-wireless.seen-bssids:            --
 802-11-wireless.hidden:                 no
 802-11-wireless.powersave:              0 (default)
+802-11-wireless.wake-on-wlan:           0x1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --

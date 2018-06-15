@@ -2888,6 +2888,16 @@ nm_platform_wifi_indicate_addressing_running (NMPlatform *self, int ifindex, gbo
 	klass->wifi_indicate_addressing_running (self, ifindex, running);
 }
 
+gboolean
+nm_platform_wifi_set_wake_on_wlan (NMPlatform *self, int ifindex, NMSettingWirelessWakeOnWLan wowl)
+{
+	_CHECK_SELF (self, klass, FALSE);
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+
+	return klass->wifi_set_wake_on_wlan (self, ifindex, wowl);
+}
+
 guint32
 nm_platform_mesh_get_channel (NMPlatform *self, int ifindex)
 {

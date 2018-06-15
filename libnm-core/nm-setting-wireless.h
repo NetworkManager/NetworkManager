@@ -41,6 +41,48 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_WIRELESS_SETTING_NAME "802-11-wireless"
 
+/**
+ * NMSettingWirelessWakeOnWLan:
+ * @NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE: Wake-on-WLAN disabled
+ * @NM_SETTING_WIRELESS_WAKE_ON_WLAN_ANY: Wake on any activity
+ * @NM_SETTING_WIRELESS_WAKE_ON_WLAN_DISCONNECT: Wake on disconnect
+ * @NM_SETTING_WIRELESS_WAKE_ON_WLAN_MAGIC: Wake on magic packet
+ * @NM_SETTING_WIRELESS_WAKE_ON_WLAN_GTK_REKEY_FAILURE: Wake on GTK rekey failure
+ * @NM_SETTING_WIRELESS_WAKE_ON_WLAN_EAP_IDENTITY_REQUEST: Wake on EAP identity request
+ * @NM_SETTING_WIRELESS_WAKE_ON_WLAN_4WAY_HANDSHAKE: Wake on 4way hanshake
+ * @NM_SETTING_WIRELESS_WAKE_ON_WLAN_RFKILL_RELEASE: Wake on rfkill release
+ * @NM_SETTING_WIRELESS_WAKE_ON_WLAN_ALL: Wake on all events. This does not
+ *   include the exclusive flags @NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT or
+ *   @NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE.
+ * @NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT: Use the default value
+ * @NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE: Don't change configured settings
+ * @NM_SETTING_WIRELESS_WAKE_ON_WLAN_EXCLUSIVE_FLAGS: Mask of flags that are
+ *   incompatible with other flags
+ *
+ * Options for #NMSettingWireless:wake-on-wlan. Note that not all options
+ * are supported by all devices.
+ *
+ * Since: 1.12
+ */
+typedef enum { /*< flags >*/
+	NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE                 = 0, /*< skip >*/
+	NM_SETTING_WIRELESS_WAKE_ON_WLAN_ANY                  = (1 << 1),
+	NM_SETTING_WIRELESS_WAKE_ON_WLAN_DISCONNECT           = (1 << 2),
+	NM_SETTING_WIRELESS_WAKE_ON_WLAN_MAGIC                = (1 << 3),
+	NM_SETTING_WIRELESS_WAKE_ON_WLAN_GTK_REKEY_FAILURE    = (1 << 4),
+	NM_SETTING_WIRELESS_WAKE_ON_WLAN_EAP_IDENTITY_REQUEST = (1 << 5),
+	NM_SETTING_WIRELESS_WAKE_ON_WLAN_4WAY_HANDSHAKE       = (1 << 6),
+	NM_SETTING_WIRELESS_WAKE_ON_WLAN_RFKILL_RELEASE       = (1 << 7),
+	NM_SETTING_WIRELESS_WAKE_ON_WLAN_TCP                  = (1 << 8),
+	_NM_SETTING_WIRELESS_WAKE_ON_WLAN_NUM, /*< skip >*/
+	NM_SETTING_WIRELESS_WAKE_ON_WLAN_LAST                 = _NM_SETTING_WIRELESS_WAKE_ON_WLAN_NUM - 1, /*< skip >*/
+	NM_SETTING_WIRELESS_WAKE_ON_WLAN_ALL                  = ((NM_SETTING_WIRELESS_WAKE_ON_WLAN_LAST << 1) - 1) - (1 << 0 /*DEFAULT*/), /*< skip >*/
+
+	NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT              = (1 << 0),
+	NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE               = (1 << 15),
+	NM_SETTING_WIRELESS_WAKE_ON_WLAN_EXCLUSIVE_FLAGS = NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT | NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE, /*< skip >*/
+} NMSettingWirelessWakeOnWLan;
+
 #define NM_SETTING_WIRELESS_SSID        "ssid"
 #define NM_SETTING_WIRELESS_MODE        "mode"
 #define NM_SETTING_WIRELESS_BAND        "band"
@@ -57,6 +99,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_WIRELESS_HIDDEN      "hidden"
 #define NM_SETTING_WIRELESS_POWERSAVE   "powersave"
 #define NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION   "mac-address-randomization"
+#define NM_SETTING_WIRELESS_WAKE_ON_WLAN "wake-on-wlan"
 
 /**
  * NM_SETTING_WIRELESS_MODE_ADHOC:
@@ -165,6 +208,9 @@ gboolean          nm_setting_wireless_ap_security_compatible (NMSettingWireless 
                                                               NM80211ApSecurityFlags ap_wpa,
                                                               NM80211ApSecurityFlags ap_rsn,
                                                               NM80211Mode ap_mode);
+
+NM_AVAILABLE_IN_1_12
+NMSettingWirelessWakeOnWLan  nm_setting_wireless_get_wake_on_wlan (NMSettingWireless *setting);
 
 G_END_DECLS
 

@@ -271,6 +271,47 @@ nla_put_failure:
 	return FALSE;
 }
 
+static gboolean
+wifi_nl80211_set_wake_on_wlan (WifiData *data, NMSettingWirelessWakeOnWLan wowl)
+{
+	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
+	struct nlattr *triggers;
+	int err;
+
+	if (wowl == NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE)
+		return TRUE;
+
+	msg = nl80211_alloc_msg(nl80211, NL80211_CMD_SET_WOWLAN, 0);
+	if (!msg)
+		return FALSE;
+
+	triggers = nla_nest_start(msg, NL80211_ATTR_WOWLAN_TRIGGERS);
+
+	if (NM_FLAGS_HAS (wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_ANY))
+		NLA_PUT_FLAG (msg, NL80211_WOWLAN_TRIG_ANY);
+	if (NM_FLAGS_HAS (wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_DISCONNECT))
+		NLA_PUT_FLAG (msg, NL80211_WOWLAN_TRIG_DISCONNECT);
+	if (NM_FLAGS_HAS (wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_MAGIC))
+		NLA_PUT_FLAG (msg, NL80211_WOWLAN_TRIG_MAGIC_PKT);
+	if (NM_FLAGS_HAS (wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_GTK_REKEY_FAILURE))
+		NLA_PUT_FLAG (msg, NL80211_WOWLAN_TRIG_GTK_REKEY_FAILURE);
+	if (NM_FLAGS_HAS (wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_EAP_IDENTITY_REQUEST))
+		NLA_PUT_FLAG (msg, NL80211_WOWLAN_TRIG_EAP_IDENT_REQUEST);
+	if (NM_FLAGS_HAS (wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_4WAY_HANDSHAKE))
+		NLA_PUT_FLAG (msg, NL80211_WOWLAN_TRIG_4WAY_HANDSHAKE);
+	if (NM_FLAGS_HAS (wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_RFKILL_RELEASE))
+		NLA_PUT_FLAG (msg, NL80211_WOWLAN_TRIG_RFKILL_RELEASE);
+
+	nla_nest_end(msg, triggers);
+
+	err = nl80211_send_and_recv (nl80211, msg, NULL, NULL);
+	return err ? FALSE : TRUE;
+
+nla_put_failure:
+	return FALSE;
+}
+
 /* @divisor: pass what value @xbm should be divided by to get dBm */
 static guint32
 nl80211_xbm_to_percent (gint32 xbm, guint32 divisor)
@@ -846,6 +887,7 @@ wifi_nl80211_init (int ifindex)
 		.get_mode = wifi_nl80211_get_mode,
 		.set_mode = wifi_nl80211_set_mode,
 		.set_powersave = wifi_nl80211_set_powersave,
+		.set_wake_on_wlan = wifi_nl80211_set_wake_on_wlan,
 		.get_freq = wifi_nl80211_get_freq,
 		.find_freq = wifi_nl80211_find_freq,
 		.get_bssid = wifi_nl80211_get_bssid,

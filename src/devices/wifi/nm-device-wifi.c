@@ -2423,6 +2423,48 @@ error:
 
 /*****************************************************************************/
 
+static gboolean
+wake_on_wlan_enable (NMDeviceWifi *self)
+{
+	NMSettingWirelessWakeOnWLan wowl;
+	NMSettingWireless *s_wireless;
+	gs_free char *value = NULL;
+
+	s_wireless = (NMSettingWireless *) nm_device_get_applied_setting (NM_DEVICE (self), NM_TYPE_SETTING_WIRELESS);
+	if (s_wireless) {
+		wowl = nm_setting_wireless_get_wake_on_wlan (s_wireless);
+		if (wowl != NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT)
+			goto found;
+	}
+
+	value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+	                                               "wifi.wake-on-wlan",
+	                                               NM_DEVICE (self));
+
+	if (value) {
+		wowl = _nm_utils_ascii_str_to_int64 (value, 10,
+		                                     NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE,
+		                                     G_MAXINT32,
+		                                     NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT);
+
+		if (NM_FLAGS_ANY (wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_EXCLUSIVE_FLAGS)) {
+			if (!nm_utils_is_power_of_two (wowl)) {
+				_LOGD (LOGD_WIFI, "invalid default value %u for wake-on-wlan: "
+				       "'default' and 'ignore' are exclusive flags", (guint) wowl);
+				wowl = NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT;
+			}
+		} else if (NM_FLAGS_ANY (wowl, ~NM_SETTING_WIRELESS_WAKE_ON_WLAN_ALL)) {
+			_LOGD (LOGD_WIFI, "invalid default value %u for wake-on-wlan", (guint) wowl);
+			wowl = NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT;
+		}
+		if (wowl != NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT)
+			goto found;
+	}
+	wowl = NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
+found:
+	return nm_platform_wifi_set_wake_on_wlan (NM_PLATFORM_GET, nm_device_get_ifindex (NM_DEVICE (self)), wowl);
+}
+
 static NMActStageReturn
 act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
@@ -2615,6 +2657,8 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wireless);
+
+	wake_on_wlan_enable (self);
 
 	/* If we need secrets, get them */
 	setting_name = nm_connection_need_secrets (connection, NULL);
@@ -3083,7 +3127,8 @@ can_reapply_change (NMDevice *device,
 		return nm_device_hash_check_invalid_keys (diffs,
 		                                          NM_SETTING_WIRELESS_SETTING_NAME,
 		                                          error,
-		                                          NM_SETTING_WIRELESS_MTU); /* reapplied with IP config */
+		                                          NM_SETTING_WIRELESS_MTU, /* reapplied with IP config */
+		                                          NM_SETTING_WIRELESS_WAKE_ON_WLAN);
 	}
 
 	device_class = NM_DEVICE_CLASS (nm_device_wifi_parent_class);
@@ -3093,6 +3138,20 @@ can_reapply_change (NMDevice *device,
 	                                         s_new,
 	                                         diffs,
 	                                         error);
+}
+
+static void
+reapply_connection (NMDevice *device, NMConnection *con_old, NMConnection *con_new)
+{
+	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
+
+	NM_DEVICE_CLASS (nm_device_wifi_parent_class)->reapply_connection (device,
+	                                                                   con_old,
+	                                                                   con_new);
+
+	_LOGD (LOGD_DEVICE, "reapplying wireless settings");
+
+	wake_on_wlan_enable (self);
 }
 
 /*****************************************************************************/
@@ -3264,6 +3323,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->deactivate_reset_hw_addr = deactivate_reset_hw_addr;
 	parent_class->unmanaged_on_quit = unmanaged_on_quit;
 	parent_class->can_reapply_change = can_reapply_change;
+	parent_class->reapply_connection = reapply_connection;
 
 	parent_class->state_changed = device_state_changed;
 
