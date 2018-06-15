@@ -50,8 +50,18 @@ def sys_clock_gettime_ns(clock_id):
     return _sys_clock_gettime_ns(clock_id)
 
 def nm_boot_time_ns():
-    CLOCK_BOOTTIME = 7
-    return sys_clock_gettime_ns(CLOCK_BOOTTIME)
+    # NetworkManager exposes some timestamps as CLOCK_BOOTTIME.
+    # Try that first (number 7).
+    try:
+        return sys_clock_gettime_ns(7)
+    except OSError as e:
+        # On systems, where this is not available, fallback to
+        # CLOCK_MONOTONIC (numeric 1).
+        # That is what NetworkManager does as well.
+        import errno
+        if e.errno == errno.EINVAL:
+            return sys_clock_gettime_ns(1)
+        raise
 def nm_boot_time_us():
     return nm_boot_time_ns() / 1000
 def nm_boot_time_ms():
