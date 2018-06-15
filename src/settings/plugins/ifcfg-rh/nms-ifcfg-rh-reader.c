@@ -4174,8 +4174,8 @@ parse_ethtool_options (shvarFile *ifcfg, NMSettingWired *s_wired, const char *va
 	              NM_SETTING_WIRED_WAKE_ON_LAN, wol_flags,
 	              NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD, ignore_wol_password ? NULL : wol_password,
 	              NM_SETTING_WIRED_AUTO_NEGOTIATE, autoneg,
-	              NM_SETTING_WIRED_SPEED, autoneg ? 0 : speed,
-	              NM_SETTING_WIRED_DUPLEX, autoneg ? NULL : duplex,
+	              NM_SETTING_WIRED_SPEED, speed,
+	              NM_SETTING_WIRED_DUPLEX, duplex,
 	              NULL);
 }
 

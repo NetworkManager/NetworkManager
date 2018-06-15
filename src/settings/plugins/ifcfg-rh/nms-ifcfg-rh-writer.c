@@ -1135,6 +1135,9 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	/* Stuff ETHTOOL_OPT with required options */
 	str = NULL;
 	auto_negotiate = nm_setting_wired_get_auto_negotiate (s_wired);
+	speed = nm_setting_wired_get_speed (s_wired);
+	duplex = nm_setting_wired_get_duplex (s_wired);
+
 	/* autoneg off + speed 0 + duplex NULL, means we want NM
 	 * to skip link configuration which is default. So write
 	 * down link config only if we have auto-negotiate true or
@@ -1143,18 +1146,14 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	if (auto_negotiate) {
 		str = g_string_sized_new (64);
 		g_string_printf (str, "autoneg on");
-	} else {
-		speed = nm_setting_wired_get_speed (s_wired);
-		duplex = nm_setting_wired_get_duplex (s_wired);
-		if (speed || duplex) {
-			str = g_string_sized_new (64);
-			g_string_printf (str, "autoneg off");
-			if (speed)
-				g_string_append_printf (str, " speed %u", speed);
-			if (duplex)
-				g_string_append_printf (str, " duplex %s", duplex);
-		}
+	} else if (speed || duplex) {
+		str = g_string_sized_new (64);
+		g_string_printf (str, "autoneg off");
 	}
+	if (speed)
+		g_string_append_printf (str, " speed %u", speed);
+	if (duplex)
+		g_string_append_printf (str, " duplex %s", duplex);
 
 	wol = nm_setting_wired_get_wake_on_lan (s_wired);
 	wol_password = nm_setting_wired_get_wake_on_lan_password (s_wired);
