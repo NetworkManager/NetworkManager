@@ -80,7 +80,7 @@ typedef struct {
 	bool            can_connect:1;
 	bool            scanning:1;
 	bool            scan_requested:1;
-	gint32          last_scan;
+	gint64          last_scan;
 } NMDeviceIwdPrivate;
 
 struct _NMDeviceIwd {
@@ -865,7 +865,7 @@ scan_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 
 	priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 	priv->scan_requested = FALSE;
-	priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
+	priv->last_scan = nm_utils_get_monotonic_timestamp_ms ();
 	_notify (self, PROP_LAST_SCAN);
 
 	/* On success, priv->scanning becomes true right before or right
@@ -1535,10 +1535,10 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, priv->scanning);
 		break;
 	case PROP_LAST_SCAN:
-		g_value_set_int (value,
-		                 priv->last_scan > 0
-		                     ? (gint) nm_utils_monotonic_timestamp_as_boottime (priv->last_scan, NM_UTILS_NS_PER_SECOND)
-		                     : -1);
+		g_value_set_int64 (value,
+		                   priv->last_scan > 0
+		                       ? nm_utils_monotonic_timestamp_as_boottime (priv->last_scan, NM_UTILS_NS_PER_MSEC)
+		                       : -1);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1920,9 +1920,9 @@ nm_device_iwd_class_init (NMDeviceIwdClass *klass)
 	                          G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_LAST_SCAN] =
-	    g_param_spec_int (NM_DEVICE_IWD_LAST_SCAN, "", "",
-	                      -1, G_MAXINT, -1,
-	                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+	    g_param_spec_int64 (NM_DEVICE_IWD_LAST_SCAN, "", "",
+	                        -1, G_MAXINT64, -1,
+	                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

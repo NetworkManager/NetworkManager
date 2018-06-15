@@ -97,8 +97,8 @@ typedef struct {
 	bool              ssid_found:1;
 	bool              is_scanning:1;
 
-	gint32            last_scan;
-	gint32            scheduled_scan_time;
+	gint64            last_scan; /* milliseconds */
+	gint32            scheduled_scan_time; /* seconds */
 	guint8            scan_interval; /* seconds */
 	guint             pending_scan_id;
 	guint             ap_dump_id;
@@ -1127,7 +1127,7 @@ _nm_device_wifi_request_scan (NMDeviceWifi *self,
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMDevice *device = NM_DEVICE (self);
-	gint32 last_scan;
+	gint64 last_scan;
 
 	if (   !priv->enabled
 	    || !priv->sup_iface
@@ -1148,8 +1148,8 @@ _nm_device_wifi_request_scan (NMDeviceWifi *self,
 		return;
 	}
 
-	last_scan = nm_supplicant_interface_get_last_scan_time (priv->sup_iface);
-	if (last_scan && (nm_utils_get_monotonic_timestamp_s () - last_scan) < 10) {
+	last_scan = nm_supplicant_interface_get_last_scan (priv->sup_iface);
+	if (last_scan && (nm_utils_get_monotonic_timestamp_ms () - last_scan) < 10 * NM_UTILS_MSEC_PER_SECOND) {
 		g_dbus_method_invocation_return_error_literal (invocation,
 		                                               NM_DEVICE_ERROR,
 		                                               NM_DEVICE_ERROR_NOT_ALLOWED,
@@ -1423,7 +1423,7 @@ supplicant_iface_scan_done_cb (NMSupplicantInterface *iface,
 
 	_LOGD (LOGD_WIFI, "wifi-scan: scan-done callback: %s", success ? "successful" : "failed");
 
-	priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
+	priv->last_scan = nm_utils_get_monotonic_timestamp_ms ();
 	_notify (self, PROP_LAST_SCAN);
 	schedule_scan (self, success);
 
@@ -1447,9 +1447,9 @@ ap_list_dump (gpointer user_data)
 		NMWifiAP *ap;
 		gint32 now_s = nm_utils_get_monotonic_timestamp_s ();
 
-		_LOGD (LOGD_WIFI_SCAN, "APs: [now:%u last:%u next:%u]",
+		_LOGD (LOGD_WIFI_SCAN, "APs: [now:%u last:%" G_GINT64_FORMAT " next:%u]",
 		       now_s,
-		       priv->last_scan,
+		       priv->last_scan / NM_UTILS_MSEC_PER_SECOND,
 		       priv->scheduled_scan_time);
 		c_list_for_each_entry (ap, &priv->aps_lst_head, aps_lst)
 			_ap_dump (self, LOGL_DEBUG, ap, "dump", now_s);
@@ -3185,10 +3185,10 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, priv->is_scanning);
 		break;
 	case PROP_LAST_SCAN:
-		g_value_set_int (value,
-		                 priv->last_scan > 0
-		                     ? (gint) nm_utils_monotonic_timestamp_as_boottime (priv->last_scan, NM_UTILS_NS_PER_SECOND)
-		                     : -1);
+		g_value_set_int64 (value,
+		                   priv->last_scan > 0
+		                       ? nm_utils_monotonic_timestamp_as_boottime (priv->last_scan, NM_UTILS_NS_PER_MSEC)
+		                       : -1);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -3369,9 +3369,9 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	                          G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_LAST_SCAN] =
-	    g_param_spec_int (NM_DEVICE_WIFI_LAST_SCAN, "", "",
-	                      -1, G_MAXINT, -1,
-	                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+	    g_param_spec_int64 (NM_DEVICE_WIFI_LAST_SCAN, "", "",
+	                        -1, G_MAXINT64, -1,
+	                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
