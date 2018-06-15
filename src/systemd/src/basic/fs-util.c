@@ -1,9 +1,4 @@
 /* SPDX-License-Identifier: LGPL-2.1+ */
-/***
-  This file is part of systemd.
-
-  Copyright 2010 Lennart Poettering
-***/
 
 #include <errno.h>
 #include <stddef.h>
@@ -230,6 +225,22 @@ int chmod_and_chown(const char *path, mode_t mode, uid_t uid, gid_t gid) {
         return 0;
 }
 
+int fchmod_and_chown(int fd, mode_t mode, uid_t uid, gid_t gid) {
+        /* Under the assumption that we are running privileged we
+         * first change the access mode and only then hand out
+         * ownership to avoid a window where access is too open. */
+
+        if (mode != MODE_INVALID)
+                if (fchmod(fd, mode) < 0)
+                        return -errno;
+
+        if (uid != UID_INVALID || gid != GID_INVALID)
+                if (fchown(fd, uid, gid) < 0)
+                        return -errno;
+
+        return 0;
+}
+
 int fchmod_umask(int fd, mode_t m) {
         mode_t u;
         int r;
@@ -242,7 +253,7 @@ int fchmod_umask(int fd, mode_t m) {
 }
 
 int fchmod_opath(int fd, mode_t m) {
-        char procfs_path[strlen("/proc/self/fd/") + DECIMAL_STR_MAX(int)];
+        char procfs_path[STRLEN("/proc/self/fd/") + DECIMAL_STR_MAX(int)];
 
         /* This function operates also on fd that might have been opened with
          * O_PATH. Indeed fchmodat() doesn't have the AT_EMPTY_PATH flag like
@@ -602,10 +613,10 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
         assert(path);
 
         /* Either the file may be missing, or we return an fd to the final object, but both make no sense */
-        if ((flags & (CHASE_NONEXISTENT|CHASE_OPEN)) == (CHASE_NONEXISTENT|CHASE_OPEN))
+        if (FLAGS_SET(flags, CHASE_NONEXISTENT | CHASE_OPEN))
                 return -EINVAL;
 
-        if ((flags & (CHASE_STEP|CHASE_OPEN)) == (CHASE_STEP|CHASE_OPEN))
+        if (FLAGS_SET(flags, CHASE_STEP | CHASE_OPEN))
                 return -EINVAL;
 
         if (isempty(path))
@@ -1066,6 +1077,15 @@ int access_fd(int fd, int mode) {
         return r;
 }
 
+void unlink_tempfilep(char (*p)[]) {
+        /* If the file is created with mkstemp(), it will (almost always)
+         * change the suffix. Treat this as a sign that the file was
+         * successfully created. We ignore both the rare case where the
+         * original suffix is used and unlink failures. */
+        if (!endswith(*p, ".XXXXXX"))
+                (void) unlink_noerrno(*p);
+}
+
 int unlinkat_deallocate(int fd, const char *name, int flags) {
         _cleanup_close_ int truncate_fd = -1;
         struct stat st;
@@ -1146,9 +1166,9 @@ int fsync_directory_of_file(int fd) {
 
         r = fd_get_path(fd, &path);
         if (r < 0) {
-                log_debug("Failed to query /proc/self/fd/%d%s: %m",
-                          fd,
-                          r == -EOPNOTSUPP ? ", ignoring" : "");
+                log_debug_errno(r, "Failed to query /proc/self/fd/%d%s: %m",
+                                fd,
+                                r == -EOPNOTSUPP ? ", ignoring" : "");
 
                 if (r == -EOPNOTSUPP)
                         /* If /proc is not available, we're most likely running in some

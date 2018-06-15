@@ -1,9 +1,4 @@
 /* SPDX-License-Identifier: LGPL-2.1+ */
-/***
-  This file is part of systemd.
-
-  Copyright 2010 Lennart Poettering
-***/
 
 #include <errno.h>
 #include <limits.h>
@@ -282,8 +277,11 @@ static char *format_timestamp_internal(
                 return NULL; /* Timestamp is unset */
 
         /* Let's not format times with years > 9999 */
-        if (t > USEC_TIMESTAMP_FORMATTABLE_MAX)
-                return NULL;
+        if (t > USEC_TIMESTAMP_FORMATTABLE_MAX) {
+                assert(l >= strlen("--- XXXX-XX-XX XX:XX:XX") + 1);
+                strcpy(buf, "--- XXXX-XX-XX XX:XX:XX");
+                return buf;
+        }
 
         sec = (time_t) (t / USEC_PER_SEC); /* Round down */
 
@@ -481,7 +479,7 @@ char *format_timespan(char *buf, size_t l, usec_t t, usec_t accuracy) {
                 /* Let's see if we should shows this in dot notation */
                 if (t < USEC_PER_MINUTE && b > 0) {
                         usec_t cc;
-                        int j;
+                        signed char j;
 
                         j = 0;
                         for (cc = table[i].usec; cc > 1; cc /= 10)
@@ -1308,6 +1306,9 @@ bool timezone_is_valid(const char *name, int log_level) {
         if (slash)
                 return false;
 
+        if (p - name >= PATH_MAX)
+                return false;
+
         t = strjoina("/usr/share/zoneinfo/", name);
 
         fd = open(t, O_RDONLY|O_CLOEXEC);
@@ -1459,4 +1460,28 @@ bool in_utc_timezone(void) {
         tzset();
 
         return timezone == 0 && daylight == 0;
+}
+
+int time_change_fd(void) {
+
+        /* We only care for the cancellation event, hence we set the timeout to the latest possible value. */
+        static const struct itimerspec its = {
+                .it_value.tv_sec = TIME_T_MAX,
+        };
+
+        _cleanup_close_ int fd;
+
+        assert_cc(sizeof(time_t) == sizeof(TIME_T_MAX));
+
+        /* Uses TFD_TIMER_CANCEL_ON_SET to get notifications whenever CLOCK_REALTIME makes a jump relative to
+         * CLOCK_MONOTONIC. */
+
+        fd = timerfd_create(CLOCK_REALTIME, TFD_NONBLOCK|TFD_CLOEXEC);
+        if (fd < 0)
+                return -errno;
+
+        if (timerfd_settime(fd, TFD_TIMER_ABSTIME|TFD_TIMER_CANCEL_ON_SET, &its, NULL) < 0)
+                return -errno;
+
+        return TAKE_FD(fd);
 }

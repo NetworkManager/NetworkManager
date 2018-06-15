@@ -1,9 +1,7 @@
 /* SPDX-License-Identifier: LGPL-2.1+ */
 /***
-  This file is part of systemd.
-
-  Copyright (C) 2013 Intel Corporation. All rights reserved.
-  Copyright (C) 2014 Tom Gundersen
+  Copyright © 2013 Intel Corporation. All rights reserved.
+  Copyright © 2014 Tom Gundersen
 ***/
 
 #include <arpa/inet.h>
@@ -1034,7 +1032,7 @@ int dhcp_lease_load(sd_dhcp_lease **ret, const char *lease_file) {
         if (r < 0)
                 return r;
 
-        r = parse_env_file(lease_file, NEWLINE,
+        r = parse_env_file(NULL, lease_file, NEWLINE,
                            "ADDRESS", &address,
                            "ROUTER", &router,
                            "NETMASK", &netmask,

@@ -1,9 +1,4 @@
 /* SPDX-License-Identifier: LGPL-2.1+ */
-/***
-  This file is part of systemd.
-
-  Copyright 2010 Lennart Poettering
-***/
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -790,7 +785,7 @@ static const char* const socket_address_bind_ipv6_only_table[_SOCKET_ADDRESS_BIN
 
 DEFINE_STRING_TABLE_LOOKUP(socket_address_bind_ipv6_only, SocketAddressBindIPv6Only);
 
-SocketAddressBindIPv6Only parse_socket_address_bind_ipv6_only_or_bool(const char *n) {
+SocketAddressBindIPv6Only socket_address_bind_ipv6_only_or_bool_from_string(const char *n) {
         int r;
 
         r = parse_boolean(n);
