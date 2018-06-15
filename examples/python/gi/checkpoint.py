@@ -19,8 +19,6 @@ gi.require_version('NM', '1.0')
 from gi.repository import GLib, NM
 
 import os
-os.sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-import nmex
 
 ###############################################################################
 
@@ -162,7 +160,7 @@ def do_adjust_rollback_timeout(client):
     client.checkpoint_adjust_rollback_timeout(path, add_timeout, None, adjust_rollback_timeout_cb, None)
 
 def do_show(client):
-    ts = nmex.nm_boot_time_ms()
+    ts = NM.utils_get_timestamp_msec()
     for c in client.get_checkpoints():
         show(c, ts)
 
