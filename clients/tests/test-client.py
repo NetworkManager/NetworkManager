@@ -118,9 +118,6 @@ class PathConfiguration:
 
 ###############################################################################
 
-os.sys.path.append(os.path.abspath(PathConfiguration.top_srcdir() + '/examples/python'))
-import nmex
-
 dbus_session_inited = False
 
 _DEFAULT_ARG = object()
@@ -164,11 +161,11 @@ class Util:
             return p.wait(timeout)
         if timeout is None:
             return p.wait()
-        start = nmex.nm_boot_time_ns()
+        start = NM.utils_get_timestamp_msec()
         while True:
             if p.poll() is not None:
                 return p.returncode
-            if start + (timeout * 1000000000) < nmex.nm_boot_time_ns():
+            if start + (timeout * 1000) < NM.utils_get_timestamp_msec():
                 raise Exception("timeout expired")
             time.sleep(0.05)
 
@@ -306,7 +303,7 @@ class NMStubServer:
                              stdin = subprocess.PIPE,
                              env = env)
 
-        start = nmex.nm_boot_time_ns()
+        start = NM.utils_get_timestamp_msec()
         while True:
             if p.poll() is not None:
                 p.stdin.close()
@@ -316,7 +313,7 @@ class NMStubServer:
             nmobj = self._conn_get_main_object(self._conn)
             if nmobj is not None:
                 break
-            if (nmex.nm_boot_time_ns() - start) / 1000000 >= 2000:
+            if (NM.utils_get_timestamp_msec() - start) >= 2000:
                 p.stdin.close()
                 p.kill()
                 Util.popen_wait(p, 1000)

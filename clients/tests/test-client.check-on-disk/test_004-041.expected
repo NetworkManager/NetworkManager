@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:983:test_004()/41
+location: clients/tests/test-client.py:980:test_004()/41
 cmd: $NMCLI -f DEVICE,TYPE,DBUS-PATH dev
 lang: C
 returncode: 0

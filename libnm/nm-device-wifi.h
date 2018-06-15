@@ -78,8 +78,8 @@ NMAccessPoint *          nm_device_wifi_get_access_point_by_path (NMDeviceWifi *
 
 const GPtrArray *        nm_device_wifi_get_access_points        (NMDeviceWifi *device);
 
-NM_AVAILABLE_IN_1_2
-gint                     nm_device_wifi_get_last_scan            (NMDeviceWifi *device);
+NM_AVAILABLE_IN_1_12
+gint64                   nm_device_wifi_get_last_scan            (NMDeviceWifi *device);
 
 gboolean                 nm_device_wifi_request_scan             (NMDeviceWifi *device,
                                                                   GCancellable *cancellable,

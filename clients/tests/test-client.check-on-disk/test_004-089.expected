@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:999:test_004()/89
+location: clients/tests/test-client.py:996:test_004()/89
 cmd: $NMCLI --terse -f NAME,SSID,SSID-HEX,BSSID,MODE,CHAN,FREQ,RATE,SIGNAL,BARS,SECURITY,WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,IN-USE,DBUS-PATH device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: C
 returncode: 0

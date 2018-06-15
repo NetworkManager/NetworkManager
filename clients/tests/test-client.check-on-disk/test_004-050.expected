@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:994:test_004()/50
+location: clients/tests/test-client.py:991:test_004()/50
 cmd: $NMCLI -f ALL device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: pl_PL.UTF-8
 returncode: 0

@@ -1,4 +1,4 @@
-location: clients/tests/test-client.py:992:test_004()/155
+location: clients/tests/test-client.py:989:test_004()/155
 cmd: $NMCLI --mode multiline -f NAME,SSID,SSID-HEX,BSSID,MODE,CHAN,FREQ,RATE,SIGNAL,BARS,SECURITY,WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,IN-USE,DBUS-PATH device wifi list
 lang: C
 returncode: 0

@@ -520,8 +520,9 @@ void _nm_utils_strv_sort (const char **strv, gssize len);
 
 /*****************************************************************************/
 
-#define NM_UTILS_NS_PER_SECOND  ((gint64) 1000000000)
-#define NM_UTILS_NS_PER_MSEC    ((gint64) 1000000)
+#define NM_UTILS_NS_PER_SECOND   ((gint64) 1000000000)
+#define NM_UTILS_NS_PER_MSEC     ((gint64) 1000000)
+#define NM_UTILS_MSEC_PER_SECOND ((gint64) 1000)
 #define NM_UTILS_NS_TO_MSEC_CEIL(nsec)      (((nsec) + (NM_UTILS_NS_PER_MSEC - 1)) / NM_UTILS_NS_PER_MSEC)
 
 /*****************************************************************************/
