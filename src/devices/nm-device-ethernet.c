@@ -753,13 +753,6 @@ supplicant_interface_init (NMDeviceEthernet *self)
 	return TRUE;
 }
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (link_duplex_to_string, NMPlatformLinkDuplexType,
-	NM_UTILS_LOOKUP_DEFAULT_WARN (NULL),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_LINK_DUPLEX_UNKNOWN, "unknown"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_LINK_DUPLEX_FULL,     "full"),
-	NM_UTILS_LOOKUP_STR_ITEM (NM_PLATFORM_LINK_DUPLEX_HALF,     "half"),
-);
-
 static NMPlatformLinkDuplexType
 link_duplex_to_platform (const char *duplex)
 {
@@ -817,7 +810,9 @@ link_negotiation_set (NMDevice *device)
 		_LOGD (LOGD_DEVICE, "set-link: configure static negotiation (%u Mbit%s - %s duplex%s)",
 		       speed ?: link_speed,
 		       speed ? "" : "*",
-		       duplex ? link_duplex_to_string (duplex) : link_duplex_to_string (link_duplex),
+		       duplex
+		         ? nm_platform_link_duplex_type_to_string (duplex)
+		         : nm_platform_link_duplex_type_to_string (link_duplex),
 		       duplex ? "" : "*");
 	}
 
