@@ -545,7 +545,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		return FALSE;
 
 	mode = nm_setting_wireless_get_mode (s_wireless);
-	if (g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_INFRA) != 0)
+	if (mode && g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_INFRA) != 0)
 		return FALSE;
 
 	/* 8021x networks can only be used if they've been provisioned on the IWD side and
@@ -575,7 +575,7 @@ check_connection_available (NMDevice *device,
 
 	/* Only Infrastrusture mode at this time */
 	mode = nm_setting_wireless_get_mode (s_wifi);
-	if (g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_INFRA) != 0)
+	if (mode && g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_INFRA) != 0)
 		return FALSE;
 
 	/* Hidden SSIDs not supported yet */
@@ -630,7 +630,7 @@ complete_connection (NMDevice *device,
 
 	mode = s_wifi ? nm_setting_wireless_get_mode (s_wifi) : NULL;
 
-	if (s_wifi && !nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_INFRA)) {
+	if (mode && !nm_streq0 (mode, NM_SETTING_WIRELESS_MODE_INFRA)) {
 		g_set_error_literal (error,
 		                     NM_DEVICE_ERROR,
 		                     NM_DEVICE_ERROR_INVALID_CONNECTION,
@@ -806,7 +806,7 @@ can_auto_connect (NMDevice *device,
 
 	/* Only Infrastrusture mode */
 	mode = nm_setting_wireless_get_mode (s_wifi);
-	if (g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_INFRA) != 0)
+	if (mode && g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_INFRA) != 0)
 		return FALSE;
 
 	/* Don't autoconnect to networks that have been tried at least once
