@@ -992,6 +992,127 @@ scanning_prohibited (NMDeviceIwd *self, gboolean periodic)
 	return !priv->can_scan;
 }
 
+/*
+ * try_reply_agent_request
+ *
+ * Check if the connection settings already have the secrets corresponding
+ * to the IWD agent method that was invoked.  If they do, send the method reply
+ * with the appropriate secrets.  Otherwise return the missing secret's setting
+ * name and key so the caller can send a NM secrets request with this data.
+ * Return TRUE in either case, return FALSE if an error is detected.
+ */
+static gboolean
+try_reply_agent_request (NMDeviceIwd *self,
+                         NMConnection *connection,
+                         GDBusMethodInvocation *invocation,
+                         const gchar **setting_name,
+                         const gchar **setting_key,
+                         gboolean *replied)
+{
+	const gchar *method_name = g_dbus_method_invocation_get_method_name (invocation);
+	NMSettingWirelessSecurity *s_wireless_sec;
+	NMSetting8021x *s_8021x;
+
+	s_wireless_sec = nm_connection_get_setting_wireless_security (connection);
+	s_8021x = nm_connection_get_setting_802_1x (connection);
+
+	*replied = FALSE;
+
+	if (!strcmp (method_name, "RequestPassphrase")) {
+		const gchar *psk;
+
+		if (!s_wireless_sec)
+			return FALSE;
+
+		psk = nm_setting_wireless_security_get_psk (s_wireless_sec);
+		if (psk) {
+			_LOGD (LOGD_DEVICE | LOGD_WIFI,
+			       "Returning the PSK to the IWD Agent");
+
+			g_dbus_method_invocation_return_value (invocation,
+			                                       g_variant_new ("(s)", psk));
+			*replied = TRUE;
+			return TRUE;
+		}
+
+		*setting_name = NM_SETTING_WIRELESS_SECURITY_SETTING_NAME;
+		*setting_key = NM_SETTING_WIRELESS_SECURITY_PSK;
+		return TRUE;
+	} else if (!strcmp (method_name, "RequestPrivateKeyPassphrase")) {
+		const gchar *password;
+
+		if (!s_8021x)
+			return FALSE;
+
+		password = nm_setting_802_1x_get_private_key_password (s_8021x);
+		if (password) {
+			_LOGD (LOGD_DEVICE | LOGD_WIFI,
+			       "Returning the private key password to the IWD Agent");
+
+			g_dbus_method_invocation_return_value (invocation,
+			                                       g_variant_new ("(s)", password));
+			*replied = TRUE;
+			return TRUE;
+		}
+
+		*setting_name = NM_SETTING_802_1X_SETTING_NAME;
+		*setting_key = NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD;
+		return TRUE;
+	} else if (!strcmp (method_name, "RequestUserNameAndPassword")) {
+		const gchar *identity, *password;
+
+		if (!s_8021x)
+			return FALSE;
+
+		identity = nm_setting_802_1x_get_identity (s_8021x);
+		password = nm_setting_802_1x_get_password (s_8021x);
+		if (identity && password) {
+			_LOGD (LOGD_DEVICE | LOGD_WIFI,
+			       "Returning the username and password to the IWD Agent");
+
+			g_dbus_method_invocation_return_value (invocation,
+			                                       g_variant_new ("(ss)", identity, password));
+			*replied = TRUE;
+			return TRUE;
+		}
+
+		*setting_name = NM_SETTING_802_1X_SETTING_NAME;
+		if (!identity)
+			*setting_key = NM_SETTING_802_1X_IDENTITY;
+		else
+			*setting_key = NM_SETTING_802_1X_PASSWORD;
+		return TRUE;
+	} else if (!strcmp (method_name, "RequestUserPassword")) {
+		const gchar *password;
+
+		if (!s_8021x)
+			return FALSE;
+
+		password = nm_setting_802_1x_get_password (s_8021x);
+		if (password) {
+			_LOGD (LOGD_DEVICE | LOGD_WIFI,
+			       "Returning the user password to the IWD Agent");
+
+			g_dbus_method_invocation_return_value (invocation,
+			                                       g_variant_new ("(s)", password));
+			*replied = TRUE;
+			return TRUE;
+		}
+
+		*setting_name = NM_SETTING_802_1X_SETTING_NAME;
+		*setting_key = NM_SETTING_802_1X_PASSWORD;
+		return TRUE;
+	} else
+		return FALSE;
+}
+
+static void
+wifi_secrets_get_one (NMDeviceIwd *self,
+                      const char *setting_name,
+                      NMSecretAgentGetSecretsFlags flags,
+                      const char *setting_key,
+                      GDBusMethodInvocation *invocation);
+
 static void
 wifi_secrets_cb (NMActRequest *req,
                  NMActRequestGetSecretsCallId *call_id,
@@ -1002,9 +1123,10 @@ wifi_secrets_cb (NMActRequest *req,
 	NMDeviceIwd *self;
 	NMDeviceIwdPrivate *priv;
 	NMDevice *device;
-	NMSettingWirelessSecurity *s_wireless_sec;
-	const gchar *psk;
 	GDBusMethodInvocation *invocation;
+	const gchar *setting_name;
+	const gchar *setting_key;
+	gboolean replied;
 
 	nm_utils_user_data_unpack (user_data, &self, &invocation);
 
@@ -1035,22 +1157,24 @@ wifi_secrets_cb (NMActRequest *req,
 		goto secrets_error;
 	}
 
-	s_wireless_sec = nm_connection_get_setting_wireless_security (nm_act_request_get_applied_connection (req));
-	if (!s_wireless_sec)
+	if (!try_reply_agent_request (self, nm_act_request_get_applied_connection (req),
+	                              invocation, &setting_name, &setting_key,
+	                              &replied))
 		goto secrets_error;
 
-	psk = nm_setting_wireless_security_get_psk (s_wireless_sec);
-	if (!psk)
-		goto secrets_error;
+	if (replied) {
+		/* Change state back to what it was before NEED_AUTH */
+		nm_device_state_changed (device, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_REASON_NONE);
+		return;
+	}
 
-	_LOGD (LOGD_DEVICE | LOGD_WIFI,
-	       "Returning a new PSK to the IWD Agent");
-
-	g_dbus_method_invocation_return_value (invocation,
-	                                       g_variant_new ("(s)", psk));
-
-	/* Change state back to what it was before NEED_AUTH */
-	nm_device_state_changed (device, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_REASON_NONE);
+	/* Request further secrets if we still need something */
+	wifi_secrets_get_one (self,
+	                      setting_name,
+	                      NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
+	                        | NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW,
+	                      setting_key,
+	                      invocation);
 	return;
 
 secrets_error:
@@ -1066,10 +1190,11 @@ secrets_error:
 }
 
 static void
-wifi_secrets_get_secrets (NMDeviceIwd *self,
-                          const char *setting_name,
-                          NMSecretAgentGetSecretsFlags flags,
-                          GDBusMethodInvocation *invocation)
+wifi_secrets_get_one (NMDeviceIwd *self,
+                      const char *setting_name,
+                      NMSecretAgentGetSecretsFlags flags,
+                      const char *setting_key,
+                      GDBusMethodInvocation *invocation)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 	NMActRequest *req;
@@ -1083,7 +1208,7 @@ wifi_secrets_get_secrets (NMDeviceIwd *self,
 	                                                    TRUE,
 	                                                    setting_name,
 	                                                    flags,
-	                                                    NULL,
+	                                                    setting_key,
 	                                                    wifi_secrets_cb,
 	                                                    nm_utils_user_data_pack (self, invocation));
 }
@@ -1740,38 +1865,34 @@ nm_device_iwd_set_dbus_object (NMDeviceIwd *self, GDBusObject *object)
 }
 
 gboolean
-nm_device_iwd_agent_psk_query (NMDeviceIwd *self,
-                               GDBusMethodInvocation *invocation)
+nm_device_iwd_agent_query (NMDeviceIwd *self,
+                           GDBusMethodInvocation *invocation)
 {
 	NMActRequest *req;
-	NMSettingWirelessSecurity *s_wireless_sec;
-	const gchar *psk;
+	const gchar *setting_name;
+	const gchar *setting_key;
+	gboolean replied;
 
 	req = nm_device_get_act_request (NM_DEVICE (self));
 	if (!req)
 		return FALSE;
 
-	s_wireless_sec = nm_connection_get_setting_wireless_security (nm_act_request_get_applied_connection (req));
-	if (!s_wireless_sec)
+	if (!try_reply_agent_request (self, nm_act_request_get_applied_connection (req),
+	                              invocation, &setting_name, &setting_key,
+	                              &replied))
 		return FALSE;
 
-	psk = nm_setting_wireless_security_get_psk (s_wireless_sec);
-	if (psk) {
-		_LOGD (LOGD_DEVICE | LOGD_WIFI,
-		       "Returning the PSK to the IWD Agent");
-
-		g_dbus_method_invocation_return_value (invocation,
-		                                       g_variant_new ("(s)", psk));
+	if (replied)
 		return TRUE;
-	}
 
 	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH,
 	                         NM_DEVICE_STATE_REASON_NO_SECRETS);
-	wifi_secrets_get_secrets (self,
-	                          NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	                          NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
-	                            | NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW,
-	                          invocation);
+	wifi_secrets_get_one (self,
+	                      setting_name,
+	                      NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
+	                        | NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW,
+	                      setting_key,
+	                      invocation);
 
 	return TRUE;
 }
