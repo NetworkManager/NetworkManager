@@ -1,12 +1,6 @@
 /* SPDX-License-Identifier: LGPL-2.1+ */
 #pragma once
 
-/***
-  This file is part of systemd.
-
-  Copyright 2012 Lennart Poettering
-***/
-
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -24,6 +18,7 @@ bool unichar_is_valid(char32_t c);
 
 const char *utf8_is_valid(const char *s) _pure_;
 char *ascii_is_valid(const char *s) _pure_;
+char *ascii_is_valid_n(const char *str, size_t len);
 
 bool utf8_is_printable_newline(const char* str, size_t length, bool newline) _pure_;
 #define utf8_is_printable(str, length) utf8_is_printable_newline(str, length, true)

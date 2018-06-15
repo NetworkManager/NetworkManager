@@ -1,12 +1,6 @@
 /* SPDX-License-Identifier: LGPL-2.1+ */
 #pragma once
 
-/***
-  This file is part of systemd.
-
-  Copyright 2010 Lennart Poettering
-***/
-
 #include <dirent.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -31,6 +25,7 @@ int readlink_value(const char *p, char **ret);
 int readlink_and_make_absolute(const char *p, char **r);
 
 int chmod_and_chown(const char *path, mode_t mode, uid_t uid, gid_t gid);
+int fchmod_and_chown(int fd, mode_t mode, uid_t uid, gid_t gid);
 
 int fchmod_umask(int fd, mode_t mode);
 int fchmod_opath(int fd, mode_t m);
@@ -70,13 +65,13 @@ union inotify_event_buffer {
 int inotify_add_watch_fd(int fd, int what, uint32_t mask);
 
 enum {
-        CHASE_PREFIX_ROOT = 1U << 0,   /* If set, the specified path will be prefixed by the specified root before beginning the iteration */
-        CHASE_NONEXISTENT = 1U << 1,   /* If set, it's OK if the path doesn't actually exist. */
-        CHASE_NO_AUTOFS   = 1U << 2,   /* If set, return -EREMOTE if autofs mount point found */
-        CHASE_SAFE        = 1U << 3,   /* If set, return EPERM if we ever traverse from unprivileged to privileged files or directories */
-        CHASE_OPEN        = 1U << 4,   /* If set, return an O_PATH object to the final component */
-        CHASE_TRAIL_SLASH = 1U << 5,   /* If set, any trailing slash will be preserved */
-        CHASE_STEP        = 1U << 6,   /* If set, just execute a single step of the normalization */
+        CHASE_PREFIX_ROOT = 1 << 0, /* If set, the specified path will be prefixed by the specified root before beginning the iteration */
+        CHASE_NONEXISTENT = 1 << 1, /* If set, it's OK if the path doesn't actually exist. */
+        CHASE_NO_AUTOFS   = 1 << 2, /* If set, return -EREMOTE if autofs mount point found */
+        CHASE_SAFE        = 1 << 3, /* If set, return EPERM if we ever traverse from unprivileged to privileged files or directories */
+        CHASE_OPEN        = 1 << 4, /* If set, return an O_PATH object to the final component */
+        CHASE_TRAIL_SLASH = 1 << 5, /* If set, any trailing slash will be preserved */
+        CHASE_STEP        = 1 << 6, /* If set, just execute a single step of the normalization */
 };
 
 /* How many iterations to execute before returning -ELOOP */
@@ -104,6 +99,7 @@ DEFINE_TRIVIAL_CLEANUP_FUNC(char*, unlink_and_free);
 
 int access_fd(int fd, int mode);
 
+void unlink_tempfilep(char (*p)[]);
 int unlinkat_deallocate(int fd, const char *name, int flags);
 
 int fsync_directory_of_file(int fd);

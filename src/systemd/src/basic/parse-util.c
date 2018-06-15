@@ -1,9 +1,4 @@
 /* SPDX-License-Identifier: LGPL-2.1+ */
-/***
-  This file is part of systemd.
-
-  Copyright 2010 Lennart Poettering
-***/
 
 #include "nm-sd-adapt.h"
 
@@ -632,6 +627,58 @@ int parse_percent(const char *p) {
 
         v = parse_percent_unbounded(p);
         if (v > 100)
+                return -ERANGE;
+
+        return v;
+}
+
+int parse_permille_unbounded(const char *p) {
+        const char *pc, *pm, *dot, *n;
+        int r, q, v;
+
+        pm = endswith(p, "‰");
+        if (pm) {
+                n = strndupa(p, pm - p);
+                r = safe_atoi(n, &v);
+                if (r < 0)
+                        return r;
+        } else {
+                pc = endswith(p, "%");
+                if (!pc)
+                        return -EINVAL;
+
+                dot = memchr(p, '.', pc - p);
+                if (dot) {
+                        if (dot + 2 != pc)
+                                return -EINVAL;
+                        if (dot[1] < '0' || dot[1] > '9')
+                                return -EINVAL;
+                        q = dot[1] - '0';
+                        n = strndupa(p, dot - p);
+                } else {
+                        q = 0;
+                        n = strndupa(p, pc - p);
+                }
+                r = safe_atoi(n, &v);
+                if (r < 0)
+                        return r;
+                if (v > (INT_MAX - q) / 10)
+                        return -ERANGE;
+
+                v = v * 10 + q;
+        }
+
+        if (v < 0)
+                return -ERANGE;
+
+        return v;
+}
+
+int parse_permille(const char *p) {
+        int v;
+
+        v = parse_permille_unbounded(p);
+        if (v > 1000)
                 return -ERANGE;
 
         return v;

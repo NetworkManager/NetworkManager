@@ -1303,6 +1303,7 @@ src_libsystemd_nm_la_SOURCES = \
 	src/systemd/sd-adapt/cgroup-util.h \
 	src/systemd/sd-adapt/condition.h \
 	src/systemd/sd-adapt/conf-parser.h \
+	src/systemd/sd-adapt/copy.h \
 	src/systemd/sd-adapt/def.h \
 	src/systemd/sd-adapt/device-nodes.h \
 	src/systemd/sd-adapt/dirent-util.h \

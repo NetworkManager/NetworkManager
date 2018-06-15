@@ -1,9 +1,6 @@
 /* SPDX-License-Identifier: LGPL-2.1+ */
 /***
-  This file is part of systemd.
-
-  Copyright 2008-2011 Kay Sievers
-  Copyright 2012 Lennart Poettering
+  Copyright © 2008-2011 Kay Sievers
 ***/
 
 /* Parts of this file are based on the GLIB utf8 validation functions. The
@@ -249,10 +246,28 @@ char *utf8_escape_non_printable(const char *str) {
 char *ascii_is_valid(const char *str) {
         const char *p;
 
+        /* Check whether the string consists of valid ASCII bytes,
+         * i.e values between 0 and 127, inclusive. */
+
         assert(str);
 
         for (p = str; *p; p++)
                 if ((unsigned char) *p >= 128)
+                        return NULL;
+
+        return (char*) str;
+}
+
+char *ascii_is_valid_n(const char *str, size_t len) {
+        size_t i;
+
+        /* Very similar to ascii_is_valid(), but checks exactly len
+         * bytes and rejects any NULs in that range. */
+
+        assert(str);
+
+        for (i = 0; i < len; i++)
+                if ((unsigned char) str[i] >= 128 || str[i] == 0)
                         return NULL;
 
         return (char*) str;

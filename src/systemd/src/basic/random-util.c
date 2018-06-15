@@ -1,9 +1,4 @@
 /* SPDX-License-Identifier: LGPL-2.1+ */
-/***
-  This file is part of systemd.
-
-  Copyright 2010 Lennart Poettering
-***/
 
 #include "nm-sd-adapt.h"
 
@@ -48,9 +43,9 @@ int acquire_random_bytes(void *p, size_t n, bool high_quality_required) {
          * for us. */
 
         /* Use the getrandom() syscall unless we know we don't have it. */
-        if (have_syscall != 0) {
+        if (have_syscall != 0 && !HAS_FEATURE_MEMORY_SANITIZER) {
 #if !HAVE_GETRANDOM
-                /* XXX: NM: systemd calls the syscall directly in this case. Don't add that workaround.
+                /* NetworkManager Note: systemd calls the syscall directly in this case. Don't add that workaround.
                  * If you don't compile against a libc that provides getrandom(), you don't get it. */
                 r = -1;
                 errno = ENOSYS;

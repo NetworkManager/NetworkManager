@@ -1,8 +1,6 @@
 /* SPDX-License-Identifier: LGPL-2.1+ */
 /***
-  This file is part of systemd.
-
-  Copyright (C) 2014-2015 Intel Corporation. All rights reserved.
+  Copyright © 2014-2015 Intel Corporation. All rights reserved.
 ***/
 
 #include "nm-sd-adapt.h"
@@ -143,7 +141,7 @@ int dhcp6_option_append_ia(uint8_t **buf, size_t *buflen, DHCP6IA *ia) {
 }
 
 int dhcp6_option_append_fqdn(uint8_t **buf, size_t *buflen, const char *fqdn) {
-        uint8_t buffer[1 + DNS_WIRE_FOMAT_HOSTNAME_MAX];
+        uint8_t buffer[1 + DNS_WIRE_FORMAT_HOSTNAME_MAX];
         int r;
 
         assert_return(buf && *buf && buflen && fqdn, -EINVAL);

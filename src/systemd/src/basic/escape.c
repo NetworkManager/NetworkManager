@@ -1,9 +1,4 @@
 /* SPDX-License-Identifier: LGPL-2.1+ */
-/***
-  This file is part of systemd.
-
-  Copyright 2010 Lennart Poettering
-***/
 
 #include "nm-sd-adapt.h"
 
@@ -17,8 +12,10 @@
 #include "macro.h"
 #include "utf8.h"
 
-size_t cescape_char(char c, char *buf) {
-        char * buf_old = buf;
+int cescape_char(char c, char *buf) {
+        char *buf_old = buf;
+
+        /* Needs space for 4 characters in the buffer */
 
         switch (c) {
 
