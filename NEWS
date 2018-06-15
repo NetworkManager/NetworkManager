@@ -1,29 +1,30 @@
 =============================================
-NetworkManager-1.?? (not released yet)
+NetworkManager-1.11.90 (1.12-rc1)
 Overview of changes since NetworkManager-1.10
 =============================================
 
-This is a snapshot of NetworkManager 1.10 development series.
+This is a release candidate of NetworkManager 1.12.0.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
-Notable changes included in this snapshot so far include:
+Notable changes include:
 
 * Improved support for configuration checkpoint, including support in libnm.
 * Added capability to set IP Tunnel configuration flags.
 * The systemd-resolved DNS plugins now supports MDNS.
 * systemd-resolved and dnsmasq DNS plugins now honor the DNS priority setting.
 * Wi-Fi devices now support FILS for speedier roaming support.
-* Add support for "onlink" routes
+* Drop dependency on libnl3 library.
+* Add support for "onlink" routes.
 * More robust connectivity checking.
-* Dropped the obsolete "ifnet" settings plugin
+* Dropped the obsolete "ifnet" settings plugin,
 * Try harder to generate reasonable human-readable names for devices even if
   the hwdb contains garbage.
 * Add an "overview" option to hide default values in nmcli, resulting in more
   concise output.
 * Reworked the inner workings of D-Bus interface for better resource efficiency.
 * Add support for configuring nmcli coloring via terminal-colors.d(5).
-* Added experimental support for Meson build system
-* Added initial IWD Wi-Fi daemon support
+* Added experimental support for Meson build system,
+* Added initial IWD Wi-Fi daemon support.
 * A non-hexadecimal DHCPv4 client-id is now properly passed to
   dhclient with the first byte (type) set to zero, as stated in the
   documentation. This represents a change in behavior since previous
@@ -37,22 +38,27 @@ Notable changes included in this snapshot so far include:
   is now not built by default. While it can still be enabled, the distributions
   should have a good plan for removing it if they need to keep shipping it at
   this point.
+* nmcli now scans for Wi-Fi networks before displaying them, if the last scan
+  was too long ago.
+* Added the ipv6.dhcp-duid property to allow configuring the DHCPv6 DUID
+* Extended ipv6.dhcp-client-id property to support DHCP client identifers
+  depending on the MAC address and the stable ID.
 
 The following features were backported to 1.10.x releases from 1.10.0 to
 1.10.8 are also present in NetworkManager-1.12:
 
-* Fix connectivity timeout handling (bgo #794464)
-* Retry activating devices when the parent becomes managed (rh #1553595)
-* Correctly set the rp_filter value (rh #1565529)
-* A fix to ensure teamd is respawned after daemon restart (rh #1551958)
-* Better handle DHCP expiry (bgo #783391)
-* Fix configuration of IPv6 over master interfaces (rh #1575944)
-* ovs: fix compilation issue of OVS plugin and various fixes
-* team: add support for team runner "random"
-* core: cleanup activation of device (rh #1537160)
-* dhcp: retry indefinitely to renew the lease (rh #1503587)
-* core: fix blocking autoconnect for no-secrets (rh #794014)
-* libnm: mark async results as cancelled (bgo #794088)
+* Fix connectivity timeout handling (bgo #794464),
+* Retry activating devices when the parent becomes managed (rh #1553595),
+* Correctly set the rp_filter value (rh #1565529).
+* A fix to ensure teamd is respawned after daemon restart (rh #1551958).
+* Better handle DHCP expiry (bgo #783391).
+* Fix configuration of IPv6 over master interfaces (rh #1575944).
+* ovs: fix compilation issue of OVS plugin and various fixes.
+* team: add support for team runner "random".
+* core: cleanup activation of device (rh #1537160).
+* dhcp: retry indefinitely to renew the lease (rh #1503587).
+* core: fix blocking autoconnect for no-secrets (rh #794014).
+* libnm: mark async results as cancelled (bgo #794088).
 * Load jansson at runtime. This solves a clash with json-glib that caused
     a gnome-control-center crash, but also gets rid of a hard dependency.
 * Correct nmcli exit values after receiving a signal.
