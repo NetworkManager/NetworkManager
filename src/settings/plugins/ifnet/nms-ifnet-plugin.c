@@ -118,6 +118,13 @@ file_changed (GFileMonitor * monitor,
 	}
 }
 
+static void
+_weak_ref_cb (gpointer data,
+              GObject *where_the_object_was)
+{
+	g_free (data);
+}
+
 static GFileMonitor *
 monitor_file_changes (const char *filename,
                       FileChangedFn callback, gpointer user_data)
@@ -137,7 +144,7 @@ monitor_file_changes (const char *filename,
 		info = g_new0 (FileMonitorInfo, 1);
 		info->callback = callback;
 		info->user_data = user_data;
-		g_object_weak_ref (G_OBJECT (monitor), (GWeakNotify) g_free,
+		g_object_weak_ref (G_OBJECT (monitor), _weak_ref_cb,
 		                   info);
 		g_signal_connect (monitor, "changed", G_CALLBACK (file_changed),
 		                  info);
