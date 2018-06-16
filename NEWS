@@ -1,4 +1,14 @@
 ==============================================
+NetworkManager-1.8.8
+Overview of changes since NetworkManager-1.8.6
+==============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Fix crash during reapply of connection settings
+* Minor bugfixes
+
+==============================================
 NetworkManager-1.8.6
 Overview of changes since NetworkManager-1.8.4
 ==============================================
