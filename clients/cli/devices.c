@@ -2772,6 +2772,17 @@ wifi_list_aps (NMDeviceWifi *wifi,
 
 	needs_rescan = rescan_cutoff < 0 || (rescan_cutoff > 0 && nm_device_wifi_get_last_scan (wifi) < rescan_cutoff);
 
+	/* FIXME: nmcli should either
+	 *  - don't request any new scan for any device and print the full AP list right
+	 *    away.
+	 *  - or, when requesting a scan on one or more devices, don't print the result
+	 *    before all requests complete.
+	 *
+	 *  Otherwise:
+	 *    - the printed output is not self consistent. E.g. it will print the result
+	 *      on one device at a certain time, while printing the result for another
+	 *      device at a later point in time.
+	 *    - the order in which we print the AP list per-device, is unstable. */
 	if (needs_rescan) {
 		data = g_slice_new0 (WifiListData);
 		data->nmc = nmc;
