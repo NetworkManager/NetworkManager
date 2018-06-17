@@ -1357,7 +1357,7 @@ msgstr ""
 #, c-format
 msgid "There is %d optional setting for %s.\n"
 msgid_plural "There are %d optional settings for %s.\n"
-msgstr[0] "%s には、任意の設定が %d 個あります。\n"
+msgstr[0] "%2$s には、任意の設定が %1$d 個あります。\n"
 
 #: ../clients/cli/connections.c:4613
 #, c-format
@@ -11799,7 +11799,7 @@ msgstr "ファイルではありません (%s)"
 #: ../libnm-core/nm-utils.c:2966
 #, c-format
 msgid "invalid file owner %d for %s"
-msgstr "%s の無効なファイル所有者 %d"
+msgstr "%2$s の無効なファイル所有者 %1$d"
 
 #: ../libnm-core/nm-utils.c:2977
 #, c-format
@@ -11844,7 +11844,7 @@ msgstr "%lld の場所で、マスクに有効な Ethernet  MAC アドレスで�
 #: ../libnm-core/nm-utils.c:4182
 #, c-format
 msgid "not a valid ethernet MAC address #%u at position %lld"
-msgstr "%lld の場所で、有効な Ethernet MAC アドレス #%u ではありません"
+msgstr "%2$lld の場所で、有効な Ethernet MAC アドレス #%1$u ではありません"
 
 #: ../libnm-core/nm-utils.c:4218
 msgid "interface name is too short"
