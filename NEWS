@@ -45,8 +45,9 @@ Notable changes include:
   depending on the MAC address and the stable ID.
 
 The following features were backported to 1.10.x releases from 1.10.0 to
-1.10.8 are also present in NetworkManager-1.12:
+1.10.10 are also present in NetworkManager-1.12:
 
+* Fix crash during reapply of connection settings
 * Fix connectivity timeout handling (bgo #794464),
 * Retry activating devices when the parent becomes managed (rh #1553595),
 * Correctly set the rp_filter value (rh #1565529).
