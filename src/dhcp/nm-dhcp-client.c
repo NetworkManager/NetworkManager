@@ -513,7 +513,7 @@ nm_dhcp_client_start_ip4 (NMDhcpClient *self,
 }
 
 static GBytes *
-get_duid (NMDhcpClient *self, gboolean global)
+get_duid (NMDhcpClient *self)
 {
 	return NULL;
 }
@@ -542,7 +542,7 @@ nm_dhcp_client_start_ip6 (NMDhcpClient *self,
 	nm_assert (client_id);
 
 	if (!enforce_duid)
-		priv->duid = NM_DHCP_CLIENT_GET_CLASS (self)->get_duid (self, TRUE);
+		priv->duid = NM_DHCP_CLIENT_GET_CLASS (self)->get_duid (self);
 
 	if (!priv->duid)
 		priv->duid = g_bytes_ref (client_id);
