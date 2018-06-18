@@ -47,6 +47,7 @@ Notable changes include:
 The following features were backported to 1.10.x releases from 1.10.0 to
 1.10.10 are also present in NetworkManager-1.12:
 
+* Set NM_DISPATCHER_ACTION environment variable in dispatcher scripts.
 * Fix crash during reapply of connection settings
 * Fix connectivity timeout handling (bgo #794464),
 * Retry activating devices when the parent becomes managed (rh #1553595),

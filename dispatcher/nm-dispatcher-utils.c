@@ -575,6 +575,8 @@ done:
 
 	_items_add_key0 (items, NULL, "PATH", g_getenv ("PATH"));
 
+	_items_add_key (items, NULL, "NM_DISPATCHER_ACTION", action);
+
 	*out_error_message = NULL;
 	g_ptr_array_add (items, NULL);
 	return (char **) g_ptr_array_free (g_steal_pointer (&items), FALSE);
