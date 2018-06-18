@@ -7828,7 +7828,7 @@ generate_duid_from_machine_id (void)
 }
 
 static GBytes *
-dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, NMDhcpDuidEnforce *out_enforce)
+dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboolean *out_enforce)
 {
 	NMSettingIPConfig *s_ip6;
 	const char *duid;
@@ -7837,7 +7837,7 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, NMDhcp
 	GBytes *duid_out;
 	guint8 sha256_digest[32];
 	gsize len = sizeof (sha256_digest);
-	NMDhcpDuidEnforce duid_enforce = NM_DHCP_DUID_ENFORCE_ALWAYS;
+	gboolean duid_enforce = TRUE;
 	gs_free char *logstr1 = NULL;
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
@@ -7852,7 +7852,7 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, NMDhcp
 	}
 
 	if (nm_streq (duid, "lease")) {
-		duid_enforce = NM_DHCP_DUID_ENFORCE_NEVER;
+		duid_enforce = FALSE;
 		duid_out = generate_duid_from_machine_id ();
 		if (!duid_out) {
 			duid_error = "failure to read machine-id";
@@ -7972,7 +7972,7 @@ out_good:
 	       "ipv6.dhcp-duid: generate %s DUID '%s' (%s)",
 	       duid,
 	       (logstr1 = nm_dhcp_utils_duid_to_string (duid_out)),
-	       (duid_enforce == NM_DHCP_DUID_ENFORCE_ALWAYS) ? "enforcing" : "fallback");
+	       duid_enforce ? "enforcing" : "prefer lease");
 
 	NM_SET_OUT (out_enforce, duid_enforce);
 	return duid_out;
@@ -7985,7 +7985,7 @@ dhcp6_start_with_link_ready (NMDevice *self, NMConnection *connection)
 	NMSettingIPConfig *s_ip6;
 	gs_unref_bytes GBytes *hwaddr = NULL;
 	gs_unref_bytes GBytes *duid = NULL;
-	NMDhcpDuidEnforce enforce_duid = NM_DHCP_DUID_ENFORCE_NEVER;
+	gboolean enforce_duid = FALSE;
 
 	const NMPlatformIP6Address *ll_addr = NULL;
 

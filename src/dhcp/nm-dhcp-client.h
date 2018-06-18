@@ -153,7 +153,7 @@ gboolean nm_dhcp_client_start_ip4 (NMDhcpClient *self,
 
 gboolean nm_dhcp_client_start_ip6 (NMDhcpClient *self,
                                    GBytes *client_id,
-                                   NMDhcpDuidEnforce enforce_duid,
+                                   gboolean enforce_duid,
                                    const char *dhcp_anycast_addr,
                                    const struct in6_addr *ll_addr,
                                    const char *hostname,
