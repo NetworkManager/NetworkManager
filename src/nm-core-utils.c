@@ -45,15 +45,6 @@
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 
-/*
- * Some toolchains (E.G. uClibc 0.9.33 and earlier) don't export
- * CLOCK_BOOTTIME even though the kernel supports it, so provide a
- * local definition
- */
-#ifndef CLOCK_BOOTTIME
-#define CLOCK_BOOTTIME 7
-#endif
-
 G_STATIC_ASSERT (sizeof (NMUtilsTestFlags) <= sizeof (int));
 static int _nm_utils_testing = 0;
 

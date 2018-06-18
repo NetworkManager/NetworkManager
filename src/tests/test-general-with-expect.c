@@ -32,10 +32,6 @@
 
 #include "nm-test-utils-core.h"
 
-#ifndef CLOCK_BOOTTIME
-#define CLOCK_BOOTTIME 7
-#endif
-
 /*****************************************************************************/
 
 static void
