@@ -6156,44 +6156,21 @@ next:
 	return g_steal_pointer (&ht);
 }
 
-/*
- * nm_utils_format_variant_attributes:
- * @attributes: (element-type utf8 GVariant): a #GHashTable mapping attribute names to #GVariant values
- * @attr_separator: the attribute separator character
- * @key_value_separator: character separating key and values
- *
- * Format attributes to a string.
- *
- * Returns: (transfer full): the string representing attributes, or %NULL
- *    in case there are no attributes
- *
- * Since: 1.8
- */
-char *
-nm_utils_format_variant_attributes (GHashTable *attributes,
-                                    char attr_separator,
-                                    char key_value_separator)
+void
+_nm_utils_format_variant_attributes_full (GString *str,
+                                          const NMUtilsNamedValue *values,
+                                          guint num_values,
+                                          char attr_separator,
+                                          char key_value_separator)
 {
-	GString *str = NULL;
-	GVariant *variant;
-	char sep = 0;
 	const char *name, *value;
+	GVariant *variant;
 	char *escaped;
 	char buf[64];
-	gs_free NMUtilsNamedValue *values = NULL;
-	guint i, len;
+	char sep = 0;
+	guint i;
 
-	g_return_val_if_fail (attr_separator, NULL);
-	g_return_val_if_fail (key_value_separator, NULL);
-
-	if (!attributes || !g_hash_table_size (attributes))
-		return NULL;
-
-	values = nm_utils_named_values_from_str_dict (attributes, &len);
-
-	str = g_string_new ("");
-
-	for (i = 0; i < len; i++) {
+	for (i = 0; i < num_values; i++) {
 		name = values[i].name;
 		variant = (GVariant *) values[i].value_ptr;
 		value = NULL;
@@ -6226,7 +6203,44 @@ nm_utils_format_variant_attributes (GHashTable *attributes,
 
 		sep = attr_separator;
 	}
+}
 
+/*
+ * nm_utils_format_variant_attributes:
+ * @attributes: (element-type utf8 GVariant): a #GHashTable mapping attribute names to #GVariant values
+ * @attr_separator: the attribute separator character
+ * @key_value_separator: character separating key and values
+ *
+ * Format attributes to a string.
+ *
+ * Returns: (transfer full): the string representing attributes, or %NULL
+ *    in case there are no attributes
+ *
+ * Since: 1.8
+ */
+char *
+nm_utils_format_variant_attributes (GHashTable *attributes,
+                                    char attr_separator,
+                                    char key_value_separator)
+{
+	GString *str = NULL;
+	gs_free NMUtilsNamedValue *values = NULL;
+	guint len;
+
+	g_return_val_if_fail (attr_separator, NULL);
+	g_return_val_if_fail (key_value_separator, NULL);
+
+	if (!attributes || !g_hash_table_size (attributes))
+		return NULL;
+
+	values = nm_utils_named_values_from_str_dict (attributes, &len);
+
+	str = g_string_new ("");
+	_nm_utils_format_variant_attributes_full (str,
+	                                          values,
+	                                          len,
+	                                          attr_separator,
+	                                          key_value_separator);
 	return g_string_free (str, FALSE);
 }
 

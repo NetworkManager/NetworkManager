@@ -83,6 +83,12 @@ char *      _nm_utils_hwaddr_canonical_or_invalid (const char *mac, gssize lengt
 GPtrArray * _nm_utils_team_link_watchers_from_variant (GVariant *value);
 GVariant *  _nm_utils_team_link_watchers_to_variant (GPtrArray *link_watchers);
 
+void        _nm_utils_format_variant_attributes_full (GString *str,
+                                                      const NMUtilsNamedValue *values,
+                                                      guint num_values,
+                                                      char attr_separator,
+                                                      char key_value_separator);
+
 /* JSON to GValue conversion macros */
 
 typedef struct {
