@@ -182,6 +182,13 @@
       The following variables are available for the use in the dispatcher scripts:
       <variablelist class="dispatcher-environment">
         <varlistentry>
+          <term><varname>NM_DISPATCHER_ACTION</varname></term>
+          <listitem><para>
+            The dispatcher action like "up" or "dhcp4-change", identical to the first
+            command line argument. Since NetworkManager 1.12.0.
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>CONNECTION_UUID</varname></term>
           <listitem><para>
             The UUID of the connection profile.
