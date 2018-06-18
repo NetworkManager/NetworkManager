@@ -864,8 +864,6 @@ class WifiAp(ExportedObj):
             strength = Util.random_int(self.path, 100)
 
         self.ssid = ssid
-        self.strength_counter = 0
-        self.strength_id = GLib.timeout_add_seconds(10, self.strength_cb, None)
 
         props = {
             PRP_WIFI_AP_FLAGS:       dbus.UInt32(flags),
@@ -880,17 +878,6 @@ class WifiAp(ExportedObj):
         }
 
         self.dbus_interface_add(IFACE_WIFI_AP, props, WifiAp.PropertiesChanged)
-
-    def __del__(self):
-        if self.strength_id > 0:
-            GLib.source_remove(self.strength_id)
-        self.strength_id = 0
-
-    def strength_cb(self, ignored):
-        self.strength_counter += 1
-        strength = Util.random_int(self.path + str(self.strength_counter), 100)
-        self._dbus_property_set(IFACE_WIFI_AP, PRP_WIFI_AP_STRENGTH, strength)
-        return True
 
     @dbus.service.signal(IFACE_WIFI_AP, signature='a{sv}')
     def PropertiesChanged(self, changed):
@@ -991,24 +978,15 @@ class WimaxNsp(ExportedObj):
 
         ExportedObj.__init__(self, ExportedObj.create_path(WimaxNsp))
 
-        self.strength_id = GLib.timeout_add_seconds(10, self.strength_cb, None)
+        strength = Util.random_int(self.path, 100)
 
         props = {
             PRP_WIMAX_NSP_NAME:           name,
-            PRP_WIMAX_NSP_SIGNAL_QUALITY: dbus.UInt32(random.randint(0, 100)),
+            PRP_WIMAX_NSP_SIGNAL_QUALITY: dbus.UInt32(strength),
             PRP_WIMAX_NSP_NETWORK_TYPE:   dbus.UInt32(NM.WimaxNspNetworkType.HOME),
         }
 
         self.dbus_interface_add(IFACE_WIMAX_NSP, props, WimaxNsp.PropertiesChanged)
-
-    def __del__(self):
-        if self.strength_id > 0:
-            GLib.source_remove(self.strength_id)
-        self.strength_id = 0
-
-    def strength_cb(self, ignored):
-        self._dbus_property_set(IFACE_WIMAX_NSP, PRP_WIMAX_NSP_SIGNAL_QUALITY, dbus.UInt32(random.randint(0, 100)))
-        return True
 
     @dbus.service.signal(IFACE_WIMAX_NSP, signature='a{sv}')
     def PropertiesChanged(self, changed):
