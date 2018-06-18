@@ -2252,14 +2252,9 @@ def main():
     id1 = GLib.IOChannel(0).add_watch(GLib.IOCondition.HUP,
                                       lambda io, condition: gl.mainloop.quit() or True)
 
-    # also quit after inactivity to ensure we don't stick around if the above fails somehow
-    id2 = GLib.timeout_add_seconds(20,
-                                   lambda: gl.mainloop.quit() or True)
-
     gl.mainloop.run()
 
     GLib.source_remove(id1)
-    GLib.source_remove(id2)
 
     gl.agent_manager.remove_from_connection()
     gl.dns_manager.unexport()
