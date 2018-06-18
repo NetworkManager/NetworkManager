@@ -13,6 +13,7 @@ path=/org/freedesktop/NetworkManager/Devices/0
 
 [env]
 PATH=
+NM_DISPATCHER_ACTION=down
 CONNECTION_UUID=3fd2a33a-d81b-423f-ae99-e6baba742311
 CONNECTION_DBUS_PATH=/org/freedesktop/NetworkManager/Connections/5
 CONNECTION_ID=Random Connection

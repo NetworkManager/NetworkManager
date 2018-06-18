@@ -23,6 +23,7 @@ gateway=0.0.0.0
 
 [env]
 PATH=
+NM_DISPATCHER_ACTION=up
 CONNECTION_UUID=92bbc2fb-7304-46be-8ebb-6093dbe19a6a
 CONNECTION_DBUS_PATH=/org/freedesktop/NetworkManager/Connections/5
 CONNECTION_FILENAME=/dispatcher/tests/dispatcher-external
