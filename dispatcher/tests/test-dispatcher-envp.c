@@ -66,9 +66,7 @@ parse_main (GKeyFile *kf,
 	NMSettingConnection *s_con;
 	GVariantBuilder props;
 
-	*out_expected_iface = g_key_file_get_string (kf, "main", "expected-iface", error);
-	if (*out_expected_iface == NULL)
-		return FALSE;
+	*out_expected_iface = g_key_file_get_string (kf, "main", "expected-iface", NULL);
 
 	*out_connectivity_state = g_key_file_get_string (kf, "main", "connectivity-state", NULL);
 	*out_vpn_ip_iface = g_key_file_get_string (kf, "main", "vpn-ip-iface", NULL);

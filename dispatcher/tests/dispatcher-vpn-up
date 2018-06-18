@@ -36,6 +36,7 @@ domains=hsd1.mn.comcast.net.
 
 [env]
 PATH=
+NM_DISPATCHER_ACTION=vpn-up
 CONNECTION_UUID=355653c0-34d3-4777-ad25-f9a498b7ef8e
 CONNECTION_DBUS_PATH=/org/freedesktop/NetworkManager/Connections/5
 CONNECTION_ID=Random Connection
