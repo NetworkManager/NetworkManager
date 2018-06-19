@@ -271,6 +271,59 @@ nla_put_failure:
 	return FALSE;
 }
 
+static int
+nl80211_get_wake_on_wlan_handler (struct nl_msg *msg, void *arg)
+{
+	NMSettingWirelessWakeOnWLan* wowl = arg;
+	struct nlattr *attrs[NL80211_ATTR_MAX + 1];
+	struct nlattr *trig[NUM_NL80211_WOWLAN_TRIG];
+	struct genlmsghdr *gnlh = nlmsg_data (nlmsg_hdr (msg));
+
+	nla_parse (attrs, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
+	           genlmsg_attrlen(gnlh, 0), NULL);
+
+	if (!attrs[NL80211_ATTR_WOWLAN_TRIGGERS])
+		return NL_SKIP;
+
+	nla_parse (trig, MAX_NL80211_WOWLAN_TRIG,
+	           nla_data (attrs[NL80211_ATTR_WOWLAN_TRIGGERS]),
+	           nla_len (attrs[NL80211_ATTR_WOWLAN_TRIGGERS]),
+	           NULL);
+
+	if (trig[NL80211_WOWLAN_TRIG_ANY])
+		*wowl = NM_FLAGS_SET (*wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_ANY);
+	if (trig[NL80211_WOWLAN_TRIG_DISCONNECT])
+		*wowl = NM_FLAGS_SET (*wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_DISCONNECT);
+	if (trig[NL80211_WOWLAN_TRIG_MAGIC_PKT])
+		*wowl = NM_FLAGS_SET (*wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_MAGIC);
+	if (trig[NL80211_WOWLAN_TRIG_GTK_REKEY_FAILURE])
+		*wowl = NM_FLAGS_SET (*wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_GTK_REKEY_FAILURE);
+	if (trig[NL80211_WOWLAN_TRIG_EAP_IDENT_REQUEST])
+		*wowl = NM_FLAGS_SET (*wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_EAP_IDENTITY_REQUEST);
+	if (trig[NL80211_WOWLAN_TRIG_4WAY_HANDSHAKE])
+		*wowl = NM_FLAGS_SET (*wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_4WAY_HANDSHAKE);
+	if (trig[NL80211_WOWLAN_TRIG_RFKILL_RELEASE])
+		*wowl = NM_FLAGS_SET (*wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_RFKILL_RELEASE);
+	if (trig[NL80211_WOWLAN_TRIG_TCP_CONNECTION])
+		*wowl = NM_FLAGS_SET (*wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_TCP);
+
+	return NL_SKIP;
+}
+
+static NMSettingWirelessWakeOnWLan
+wifi_nl80211_get_wake_on_wlan (WifiData *data)
+{
+	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
+	NMSettingWirelessWakeOnWLan wowl = NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE;
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
+
+	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_GET_WOWLAN, 0);
+
+	nl80211_send_and_recv (nl80211, msg, nl80211_get_wake_on_wlan_handler, &wowl);
+
+	return wowl;
+}
+
 static gboolean
 wifi_nl80211_set_wake_on_wlan (WifiData *data, NMSettingWirelessWakeOnWLan wowl)
 {
@@ -282,11 +335,11 @@ wifi_nl80211_set_wake_on_wlan (WifiData *data, NMSettingWirelessWakeOnWLan wowl)
 	if (wowl == NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE)
 		return TRUE;
 
-	msg = nl80211_alloc_msg(nl80211, NL80211_CMD_SET_WOWLAN, 0);
+	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_SET_WOWLAN, 0);
 	if (!msg)
 		return FALSE;
 
-	triggers = nla_nest_start(msg, NL80211_ATTR_WOWLAN_TRIGGERS);
+	triggers = nla_nest_start (msg, NL80211_ATTR_WOWLAN_TRIGGERS);
 
 	if (NM_FLAGS_HAS (wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_ANY))
 		NLA_PUT_FLAG (msg, NL80211_WOWLAN_TRIG_ANY);
@@ -306,7 +359,8 @@ wifi_nl80211_set_wake_on_wlan (WifiData *data, NMSettingWirelessWakeOnWLan wowl)
 	nla_nest_end(msg, triggers);
 
 	err = nl80211_send_and_recv (nl80211, msg, NULL, NULL);
-	return err ? FALSE : TRUE;
+
+	return err >= 0;
 
 nla_put_failure:
 	return FALSE;
@@ -887,6 +941,7 @@ wifi_nl80211_init (int ifindex)
 		.get_mode = wifi_nl80211_get_mode,
 		.set_mode = wifi_nl80211_set_mode,
 		.set_powersave = wifi_nl80211_set_powersave,
+		.get_wake_on_wlan = wifi_nl80211_get_wake_on_wlan,
 		.set_wake_on_wlan = wifi_nl80211_set_wake_on_wlan,
 		.get_freq = wifi_nl80211_get_freq,
 		.find_freq = wifi_nl80211_find_freq,
