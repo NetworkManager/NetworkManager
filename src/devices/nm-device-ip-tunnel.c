@@ -741,33 +741,15 @@ create_and_realize (NMDevice *device,
 }
 
 static guint32
-get_configured_mtu (NMDevice *self, gboolean *out_is_user_config)
+get_configured_mtu (NMDevice *device, NMDeviceMtuSource *out_source)
 {
-	NMSettingIPTunnel *setting;
-	gint64 mtu_default;
-	guint32 mtu;
-
-	nm_assert (NM_IS_DEVICE (self));
-	nm_assert (out_is_user_config);
-
-	setting = NM_SETTING_IP_TUNNEL (nm_device_get_applied_setting (self, NM_TYPE_SETTING_IP_TUNNEL));
-	if (!setting)
-		g_return_val_if_reached (0);
-
-	mtu = nm_setting_ip_tunnel_get_mtu (setting);
-	if (mtu == 0) {
-		mtu_default = nm_device_get_configured_mtu_from_connection_default (self, "ip-tunnel.mtu");
-		if (mtu_default >= 0) {
-			*out_is_user_config = TRUE;
-			return (guint32) mtu_default;
-		}
-	}
-	*out_is_user_config = (mtu != 0);
-	return mtu;
+	return nm_device_get_configured_mtu_from_connection (device,
+	                                                     NM_TYPE_SETTING_IP_TUNNEL,
+	                                                     out_source);
 }
 
 static NMDeviceCapabilities
-get_generic_capabilities (NMDevice *dev)
+get_generic_capabilities (NMDevice *device)
 {
 	return NM_DEVICE_CAP_IS_SOFTWARE;
 }

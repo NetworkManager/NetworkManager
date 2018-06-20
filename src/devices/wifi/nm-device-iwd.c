@@ -1316,29 +1316,11 @@ out:
 }
 
 static guint32
-get_configured_mtu (NMDevice *device, gboolean *out_is_user_config)
+get_configured_mtu (NMDevice *device, NMDeviceMtuSource *out_source)
 {
-	NMSettingWireless *setting;
-	gint64 mtu_default;
-	guint32 mtu;
-
-	nm_assert (NM_IS_DEVICE (device));
-	nm_assert (out_is_user_config);
-
-	setting = NM_SETTING_WIRELESS (nm_device_get_applied_setting (device, NM_TYPE_SETTING_WIRELESS));
-	if (!setting)
-		g_return_val_if_reached (0);
-
-	mtu = nm_setting_wireless_get_mtu (setting);
-	if (mtu == 0) {
-		mtu_default = nm_device_get_configured_mtu_from_connection_default (device, "wifi.mtu");
-		if (mtu_default >= 0) {
-			*out_is_user_config = TRUE;
-			return (guint32) mtu_default;
-		}
-	}
-	*out_is_user_config = (mtu != 0);
-	return mtu;
+	return nm_device_get_configured_mtu_from_connection (device,
+	                                                     NM_TYPE_SETTING_WIRELESS,
+	                                                     out_source);
 }
 
 static gboolean
