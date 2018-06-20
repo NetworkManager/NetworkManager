@@ -231,8 +231,8 @@ _data_complete (NMNDiscDataInternal *data)
 	return &data->public;
 }
 
-static void
-_emit_config_change (NMNDisc *self, NMNDiscConfigMap changed)
+void
+nm_ndisc_emit_config_change (NMNDisc *self, NMNDiscConfigMap changed)
 {
 	_config_changed_log (self, changed);
 	g_signal_emit (self, signals[CONFIG_RECEIVED], 0,
@@ -743,7 +743,7 @@ nm_ndisc_set_iid (NMNDisc *ndisc, const NMUtilsIPv6IfaceId iid)
 		if (rdata->addresses->len) {
 			_LOGD ("IPv6 interface identifier changed, flushing addresses");
 			g_array_remove_range (rdata->addresses, 0, rdata->addresses->len);
-			_emit_config_change (ndisc, NM_NDISC_CONFIG_ADDRESSES);
+			nm_ndisc_emit_config_change (ndisc, NM_NDISC_CONFIG_ADDRESSES);
 			solicit_routers (ndisc);
 		}
 		return TRUE;
@@ -796,8 +796,8 @@ nm_ndisc_start (NMNDisc *ndisc)
 	}
 }
 
-void
-nm_ndisc_dad_failed (NMNDisc *ndisc, const struct in6_addr *address)
+NMNDiscConfigMap
+nm_ndisc_dad_failed (NMNDisc *ndisc, const struct in6_addr *address, gboolean emit_changed_signal)
 {
 	NMNDiscDataInternal *rdata;
 	guint i;
@@ -819,8 +819,10 @@ nm_ndisc_dad_failed (NMNDisc *ndisc, const struct in6_addr *address)
 		i++;
 	}
 
-	if (changed)
-		_emit_config_change (ndisc, NM_NDISC_CONFIG_ADDRESSES);
+	if (emit_changed_signal && changed)
+		nm_ndisc_emit_config_change (ndisc, NM_NDISC_CONFIG_ADDRESSES);
+
+	return changed ? NM_NDISC_CONFIG_ADDRESSES : NM_NDISC_CONFIG_NONE;
 }
 
 #define CONFIG_MAP_MAX_STR 7
@@ -1131,7 +1133,7 @@ check_timestamps (NMNDisc *ndisc, gint32 now, NMNDiscConfigMap changed)
 	clean_dns_domains (ndisc, now, &changed, &nextevent);
 
 	if (changed)
-		_emit_config_change (ndisc, changed);
+		nm_ndisc_emit_config_change (ndisc, changed);
 
 	if (nextevent != G_MAXINT32) {
 		if (nextevent <= now)
