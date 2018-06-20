@@ -141,10 +141,16 @@
 		const gint64 nmtst_wait_start_us = g_get_monotonic_time (); \
 		const gint64 nmtst_wait_duration_us = (max_wait_ms) * 1000L; \
 		const gint64 nmtst_wait_end_us = nmtst_wait_start_us + nmtst_wait_duration_us; \
+		gint64 _nmtst_wait_remaining_us = nmtst_wait_duration_us; \
+		int _nmtst_wait_iteration = 0; \
 		\
 		while (TRUE) { \
+			_nm_unused const gint64 nmtst_wait_remaining_us = _nmtst_wait_remaining_us; \
+			_nm_unused int nmtst_wait_iteration = _nmtst_wait_iteration++; \
+			\
 			{ wait }; \
-			if (g_get_monotonic_time () > nmtst_wait_end_us) { \
+			_nmtst_wait_remaining_us = (nmtst_wait_end_us - g_get_monotonic_time ()); \
+			if (_nmtst_wait_remaining_us <= 0) { \
 				_not_expired = FALSE; \
 				break; \
 			} \
