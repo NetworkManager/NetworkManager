@@ -12270,8 +12270,6 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 	if (priv->queued_state.id)
 		return G_SOURCE_CONTINUE;
 
-	priv->queued_ip_config_id_x[IS_IPv4] = 0;
-
 	/* If a commit is scheduled, this function would potentially interfere with
 	 * it changing IP configurations before they are applied. Postpone the
 	 * update in such case.
@@ -12280,22 +12278,18 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 	                                    IS_IPv4
 	                                      ? activate_stage5_ip4_config_result
 	                                      : activate_stage5_ip6_config_commit,
-	                                    addr_family)) {
-		if (IS_IPv4)
-			priv->queued_ip_config_id_4 = g_idle_add (queued_ip4_config_change, self);
-		else
-			priv->queued_ip_config_id_6 = g_idle_add (queued_ip6_config_change, self);
-		_LOGT (LOGD_DEVICE, "IP%c update was postponed",
-		       nm_utils_addr_family_to_char (addr_family));
-	} else {
-		update_ip_config (self, addr_family);
+	                                    addr_family))
+		return G_SOURCE_CONTINUE;
 
-		if (!IS_IPv4) {
-			/* Check whether we need to complete waiting for link-local.
-			 * We are also called from an idle handler, so no problem doing state transitions
-			 * now. */
-			linklocal6_check_complete (self);
-		}
+	priv->queued_ip_config_id_x[IS_IPv4] = 0;
+
+	update_ip_config (self, addr_family);
+
+	if (!IS_IPv4) {
+		/* Check whether we need to complete waiting for link-local.
+		 * We are also called from an idle handler, so no problem doing state transitions
+		 * now. */
+		linklocal6_check_complete (self);
 	}
 
 	if (!IS_IPv4) {
