@@ -301,6 +301,10 @@ _add_factory (NMDeviceFactory *factory,
 
 	nm_device_factory_get_supported_types (factory, &link_types, &setting_types);
 
+	g_return_val_if_fail (   (link_types && link_types[0] > NM_LINK_TYPE_UNKNOWN)
+	                      || (setting_types && setting_types[0]),
+	                      FALSE);
+
 	for (i = 0; link_types && link_types[i] > NM_LINK_TYPE_UNKNOWN; i++)
 		g_hash_table_insert (factories_by_link, GUINT_TO_POINTER (link_types[i]), g_object_ref (factory));
 	for (i = 0; setting_types && setting_types[i]; i++) {
