@@ -12293,17 +12293,17 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 	if (!IS_IPv4) {
 		NMPlatform *platform;
 		gboolean need_ipv6ll = FALSE;
+		GSList *dad6_failed_addrs, *iter;
+
+		dad6_failed_addrs = g_steal_pointer (&priv->dad6_failed_addrs);
 
 		if (   priv->state < NM_DEVICE_STATE_DEACTIVATING
 		    && (platform = nm_device_get_platform (self))
 		    && nm_platform_link_get (platform, priv->ifindex)) {
 			/* Handle DAD failures */
-			while (priv->dad6_failed_addrs) {
-				nm_auto_nmpobj const NMPObject *obj = NULL;
+			for (iter = dad6_failed_addrs; iter; iter = iter->next) {
+				const NMPObject *obj = iter->data;
 				const NMPlatformIP6Address *addr;
-
-				obj = priv->dad6_failed_addrs->data;
-				priv->dad6_failed_addrs = g_slist_delete_link (priv->dad6_failed_addrs, priv->dad6_failed_addrs);
 
 				if (!nm_ndisc_dad_addr_is_fail_candidate (platform, obj))
 					continue;
@@ -12330,10 +12330,9 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 
 			if (need_ipv6ll)
 				check_and_add_ipv6ll_addr (self);
-		} else {
-			g_slist_free_full (priv->dad6_failed_addrs, (GDestroyNotify) nmp_object_unref);
-			priv->dad6_failed_addrs = NULL;
 		}
+
+		g_slist_free_full (dad6_failed_addrs, (GDestroyNotify) nmp_object_unref);
 	}
 
 	if (!IS_IPv4) {
