@@ -73,7 +73,6 @@ typedef struct {
 	GCancellable *  cancellable;
 	NMDeviceWifiCapabilities capabilities;
 	NMActRequestGetSecretsCallId *wifi_secrets_id;
-	GDBusMethodInvocation *secrets_request;
 	guint           periodic_scan_id;
 	bool            enabled:1;
 	bool            can_scan:1;
@@ -379,14 +378,6 @@ wifi_secrets_cancel (NMDeviceIwd *self)
 	if (priv->wifi_secrets_id)
 		nm_act_request_cancel_secrets (NULL, priv->wifi_secrets_id);
 	nm_assert (!priv->wifi_secrets_id);
-
-	if (priv->secrets_request) {
-		g_dbus_method_invocation_return_error_literal (priv->secrets_request, NM_DEVICE_ERROR,
-		                                               NM_DEVICE_ERROR_INVALID_CONNECTION,
-		                                               "NM secrets request cancelled");
-		priv->secrets_request = NULL;
-	}
-
 }
 
 static void
@@ -1008,25 +999,31 @@ wifi_secrets_cb (NMActRequest *req,
                  GError *error,
                  gpointer user_data)
 {
-	NMDevice *device = user_data;
-	NMDeviceIwd *self = user_data;
+	NMDeviceIwd *self;
 	NMDeviceIwdPrivate *priv;
+	NMDevice *device;
 	NMSettingWirelessSecurity *s_wireless_sec;
 	const gchar *psk;
+	GDBusMethodInvocation *invocation;
+
+	nm_utils_user_data_unpack (user_data, &self, &invocation);
 
 	g_return_if_fail (NM_IS_DEVICE_IWD (self));
-	g_return_if_fail (NM_IS_ACT_REQUEST (req));
 
 	priv = NM_DEVICE_IWD_GET_PRIVATE (self);
+	device = NM_DEVICE (self);
 
 	g_return_if_fail (priv->wifi_secrets_id == call_id);
 
 	priv->wifi_secrets_id = NULL;
 
-	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+		g_dbus_method_invocation_return_error_literal (invocation, NM_DEVICE_ERROR,
+		                                               NM_DEVICE_ERROR_INVALID_CONNECTION,
+		                                               "NM secrets request cancelled");
 		return;
+	}
 
-	g_return_if_fail (priv->secrets_request);
 	g_return_if_fail (req == nm_device_get_act_request (device));
 	g_return_if_fail (nm_act_request_get_settings_connection (req) == s_connection);
 
@@ -1049,21 +1046,17 @@ wifi_secrets_cb (NMActRequest *req,
 	_LOGD (LOGD_DEVICE | LOGD_WIFI,
 	       "Returning a new PSK to the IWD Agent");
 
-	g_dbus_method_invocation_return_value (priv->secrets_request,
+	g_dbus_method_invocation_return_value (invocation,
 	                                       g_variant_new ("(s)", psk));
-	priv->secrets_request = NULL;
 
 	/* Change state back to what it was before NEED_AUTH */
 	nm_device_state_changed (device, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 	return;
 
 secrets_error:
-	if (priv->secrets_request) {
-		g_dbus_method_invocation_return_error_literal (priv->secrets_request, NM_DEVICE_ERROR,
-		                                               NM_DEVICE_ERROR_INVALID_CONNECTION,
-		                                               "NM secrets request failed");
-		priv->secrets_request = NULL;
-	}
+	g_dbus_method_invocation_return_error_literal (invocation, NM_DEVICE_ERROR,
+	                                               NM_DEVICE_ERROR_INVALID_CONNECTION,
+	                                               "NM secrets request failed");
 
 	nm_device_state_changed (device,
 	                         NM_DEVICE_STATE_FAILED,
@@ -1075,7 +1068,8 @@ secrets_error:
 static void
 wifi_secrets_get_secrets (NMDeviceIwd *self,
                           const char *setting_name,
-                          NMSecretAgentGetSecretsFlags flags)
+                          NMSecretAgentGetSecretsFlags flags,
+                          GDBusMethodInvocation *invocation)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 	NMActRequest *req;
@@ -1091,7 +1085,7 @@ wifi_secrets_get_secrets (NMDeviceIwd *self,
 	                                                    flags,
 	                                                    NULL,
 	                                                    wifi_secrets_cb,
-	                                                    self);
+	                                                    nm_utils_user_data_pack (self, invocation));
 }
 
 static void
@@ -1749,7 +1743,6 @@ gboolean
 nm_device_iwd_agent_psk_query (NMDeviceIwd *self,
                                GDBusMethodInvocation *invocation)
 {
-	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 	NMActRequest *req;
 	NMSettingWirelessSecurity *s_wireless_sec;
 	const gchar *psk;
@@ -1777,9 +1770,9 @@ nm_device_iwd_agent_psk_query (NMDeviceIwd *self,
 	wifi_secrets_get_secrets (self,
 	                          NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	                          NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
-	                            | NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW);
+	                            | NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW,
+	                          invocation);
 
-	priv->secrets_request = invocation;
 	return TRUE;
 }
 
