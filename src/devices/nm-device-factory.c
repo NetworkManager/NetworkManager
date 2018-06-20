@@ -330,7 +330,7 @@ _load_internal_factory (GType factory_gtype,
                         NMDeviceFactoryManagerFactoryFunc callback,
                         gpointer user_data)
 {
-	NMDeviceFactory *factory;
+	gs_unref_object NMDeviceFactory *factory = NULL;
 
 	factory = (NMDeviceFactory *) g_object_new (factory_gtype, NULL);
 	_add_factory (factory, NULL, callback, user_data);
