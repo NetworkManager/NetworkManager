@@ -96,15 +96,13 @@ typedef struct {
 	/**
 	 * get_duid:
 	 * @self: the #NMDhcpClient
-	 * @global: if set to #true, the duid should be searched also in the
-	 *          DHCP client's system-wide persistent configuration.
 	 *
 	 * Attempts to find an existing DHCPv6 DUID for this client in the DHCP
 	 * client's persistent configuration.  Returned DUID should be the binary
 	 * representation of the DUID.  If no DUID is found, %NULL should be
 	 * returned.
 	 */
-	GBytes *(*get_duid) (NMDhcpClient *self, gboolean global);
+	GBytes *(*get_duid) (NMDhcpClient *self);
 
 	/* Signals */
 	void (*state_changed) (NMDhcpClient *self,
@@ -153,7 +151,7 @@ gboolean nm_dhcp_client_start_ip4 (NMDhcpClient *self,
 
 gboolean nm_dhcp_client_start_ip6 (NMDhcpClient *self,
                                    GBytes *client_id,
-                                   NMDhcpDuidEnforce enforce_duid,
+                                   gboolean enforce_duid,
                                    const char *dhcp_anycast_addr,
                                    const struct in6_addr *ll_addr,
                                    const char *hostname,
