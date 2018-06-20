@@ -339,7 +339,8 @@ dad_failed_handle_idle (gpointer user_data)
 
 		if (nm_ndisc_dad_addr_is_fail_candidate (data->platform, obj)) {
 			nm_ndisc_dad_failed (data->ndisc,
-			                     &NMP_OBJECT_CAST_IP6_ADDRESS (obj)->address);
+			                     &NMP_OBJECT_CAST_IP6_ADDRESS (obj)->address,
+			                     TRUE);
 		}
 	}
 

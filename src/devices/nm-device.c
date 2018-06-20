@@ -12296,7 +12296,6 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 
 	if (!IS_IPv4) {
 		NMPlatform *platform;
-		gboolean need_ipv6ll = FALSE;
 		GSList *dad6_failed_addrs, *iter;
 
 		dad6_failed_addrs = g_steal_pointer (&priv->dad6_failed_addrs);
@@ -12304,6 +12303,9 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 		if (   priv->state < NM_DEVICE_STATE_DEACTIVATING
 		    && (platform = nm_device_get_platform (self))
 		    && nm_platform_link_get (platform, priv->ifindex)) {
+			gboolean need_ipv6ll = FALSE;
+			NMNDiscConfigMap ndisc_config_changed = NM_NDISC_CONFIG_NONE;
+
 			/* Handle DAD failures */
 			for (iter = dad6_failed_addrs; iter; iter = iter->next) {
 				const NMPObject *obj = iter->data;
@@ -12320,8 +12322,11 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 				if (IN6_IS_ADDR_LINKLOCAL (&addr->address))
 					need_ipv6ll = TRUE;
 				else if (priv->ndisc)
-					nm_ndisc_dad_failed (priv->ndisc, &addr->address);
+					ndisc_config_changed |= nm_ndisc_dad_failed (priv->ndisc, &addr->address, FALSE);
 			}
+
+			if (ndisc_config_changed != NM_NDISC_CONFIG_NONE)
+				nm_ndisc_emit_config_change (priv->ndisc, ndisc_config_changed);
 
 			/* If no IPv6 link-local address exists but other addresses do then we
 			 * must add the LL address to remain conformant with RFC 3513 chapter 2.1
@@ -12331,7 +12336,6 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 			if (   priv->ip_config_6
 			    && nm_ip6_config_get_num_addresses (priv->ip_config_6))
 				need_ipv6ll = TRUE;
-
 			if (need_ipv6ll)
 				check_and_add_ipv6ll_addr (self);
 		}
