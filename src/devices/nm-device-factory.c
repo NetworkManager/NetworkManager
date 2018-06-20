@@ -316,7 +316,12 @@ _add_factory (NMDeviceFactory *factory,
 
 	callback (factory, user_data);
 
-	nm_log_info (LOGD_PLATFORM, "Loaded device plugin: %s (%s)", G_OBJECT_TYPE_NAME (factory), path);
+	nm_log (path ? LOGL_INFO : LOGL_DEBUG,
+	        LOGD_PLATFORM,
+	        NULL, NULL,
+	        "Loaded device plugin: %s (%s)",
+	        G_OBJECT_TYPE_NAME (factory),
+	        path ?: "internal");
 	return TRUE;
 }
 
@@ -328,7 +333,7 @@ _load_internal_factory (GType factory_gtype,
 	NMDeviceFactory *factory;
 
 	factory = (NMDeviceFactory *) g_object_new (factory_gtype, NULL);
-	_add_factory (factory, "internal", callback, user_data);
+	_add_factory (factory, NULL, callback, user_data);
 }
 
 static void
