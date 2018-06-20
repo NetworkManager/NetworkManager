@@ -35,8 +35,6 @@
 
 #define PLUGIN_PREFIX "libnm-device-plugin-"
 
-static NM_CACHED_QUARK_FCN ("NMManager-plugin-path", plugin_path_quark)
-
 /*****************************************************************************/
 
 enum {
@@ -303,7 +301,6 @@ _add_factory (NMDeviceFactory *factory,
 
 	nm_device_factory_get_supported_types (factory, &link_types, &setting_types);
 
-	g_object_set_qdata_full (G_OBJECT (factory), plugin_path_quark (), g_strdup (path), g_free);
 	for (i = 0; link_types && link_types[i] > NM_LINK_TYPE_UNKNOWN; i++)
 		g_hash_table_insert (factories_by_link, GUINT_TO_POINTER (link_types[i]), g_object_ref (factory));
 	for (i = 0; setting_types && setting_types[i]; i++) {
