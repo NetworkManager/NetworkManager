@@ -12258,9 +12258,7 @@ static gboolean
 queued_ip_config_change (NMDevice *self, int addr_family)
 {
 	NMDevicePrivate *priv;
-	gboolean need_ipv6ll = FALSE;
 	const gboolean IS_IPv4 = (addr_family == AF_INET);
-	NMPlatform *platform;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), G_SOURCE_REMOVE);
 
@@ -12293,6 +12291,9 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 	}
 
 	if (!IS_IPv4) {
+		NMPlatform *platform;
+		gboolean need_ipv6ll = FALSE;
+
 		if (   priv->state < NM_DEVICE_STATE_DEACTIVATING
 		    && (platform = nm_device_get_platform (self))
 		    && nm_platform_link_get (platform, priv->ifindex)) {
@@ -12333,7 +12334,9 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 			g_slist_free_full (priv->dad6_failed_addrs, (GDestroyNotify) nmp_object_unref);
 			priv->dad6_failed_addrs = NULL;
 		}
+	}
 
+	if (!IS_IPv4) {
 		/* Check if DAD is still pending */
 		if (   priv->ip6_state == IP_CONF
 		    && priv->dad6_ip6_config
