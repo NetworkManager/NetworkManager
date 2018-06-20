@@ -482,7 +482,7 @@ link_changed (NMPlatform *platform,
 
 	if (!IN6_IS_ADDR_UNSPECIFIED (&device->ip6_lladdr)) {
 		if (device->obj->link.connected)
-			ip6_address_add (platform, device->obj->link.ifindex, in6addr_any, 64, device->ip6_lladdr, NM_PLATFORM_LIFETIME_PERMANENT, NM_PLATFORM_LIFETIME_PERMANENT, 0);
+			ip6_address_add (platform, device->obj->link.ifindex, device->ip6_lladdr, 64, in6addr_any, NM_PLATFORM_LIFETIME_PERMANENT, NM_PLATFORM_LIFETIME_PERMANENT, 0);
 		else
 			ip6_address_delete (platform, device->obj->link.ifindex, device->ip6_lladdr, 64);
 	}
