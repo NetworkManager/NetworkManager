@@ -10256,6 +10256,8 @@ _cleanup_ip_pre (NMDevice *self, int addr_family, CleanupType cleanup_type)
 		dnsmasq_cleanup (self);
 		ipv4ll_cleanup (self);
 	} else {
+		g_slist_free_full (priv->dad6_failed_addrs, (GDestroyNotify) nmp_object_unref);
+		priv->dad6_failed_addrs = NULL;
 		g_clear_object (&priv->dad6_ip6_config);
 		dhcp6_cleanup (self, cleanup_type, FALSE);
 		nm_clear_g_source (&priv->linklocal6_timeout_id);
