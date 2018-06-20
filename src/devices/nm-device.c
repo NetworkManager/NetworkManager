@@ -12296,7 +12296,9 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 
 		dad6_failed_addrs = g_steal_pointer (&priv->dad6_failed_addrs);
 
-		if (   priv->state < NM_DEVICE_STATE_DEACTIVATING
+		if (   priv->state > NM_DEVICE_STATE_DISCONNECTED
+		    && priv->state < NM_DEVICE_STATE_DEACTIVATING
+		    && !nm_device_sys_iface_state_is_external (self)
 		    && (platform = nm_device_get_platform (self))
 		    && nm_platform_link_get (platform, priv->ifindex)) {
 			gboolean need_ipv6ll = FALSE;
