@@ -100,6 +100,7 @@ typedef struct {
 } NMNDiscDNSDomain;
 
 typedef enum {
+	NM_NDISC_CONFIG_NONE                                = 0,
 	NM_NDISC_CONFIG_DHCP_LEVEL                          = 1 << 0,
 	NM_NDISC_CONFIG_GATEWAYS                            = 1 << 1,
 	NM_NDISC_CONFIG_ADDRESSES                           = 1 << 2,
@@ -171,13 +172,17 @@ typedef struct {
 
 GType nm_ndisc_get_type (void);
 
+void nm_ndisc_emit_config_change (NMNDisc *self, NMNDiscConfigMap changed);
+
 int nm_ndisc_get_ifindex (NMNDisc *self);
 const char *nm_ndisc_get_ifname (NMNDisc *self);
 NMNDiscNodeType nm_ndisc_get_node_type (NMNDisc *self);
 
 gboolean nm_ndisc_set_iid (NMNDisc *ndisc, const NMUtilsIPv6IfaceId iid);
 void nm_ndisc_start (NMNDisc *ndisc);
-void nm_ndisc_dad_failed (NMNDisc *ndisc, const struct in6_addr *address);
+NMNDiscConfigMap nm_ndisc_dad_failed (NMNDisc *ndisc,
+                                      const struct in6_addr *address,
+                                      gboolean emit_changed_signal);
 void nm_ndisc_set_config (NMNDisc *ndisc,
                           const GArray *addresses,
                           const GArray *dns_servers,
