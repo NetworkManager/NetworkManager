@@ -8106,6 +8106,8 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 	g_print ("\n\n");
 	g_print (_("Type 'help' or '?' for available commands."));
 	g_print ("\n");
+	g_print (_("Type 'print' to show all the connection properties."));
+	g_print ("\n");
 	g_print (_("Type 'describe [<setting>.<prop>]' for detailed property description."));
 	g_print ("\n\n");
 
