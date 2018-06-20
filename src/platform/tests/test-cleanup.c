@@ -59,6 +59,22 @@ test_cleanup_internal (void)
 	ifindex = nm_platform_link_get_ifindex (NM_PLATFORM_GET, DEVICE_NAME);
 	g_assert (ifindex > 0);
 
+	/* wait for kernel to add the IPv6 link local address... it takes a bit. */
+	NMTST_WAIT_ASSERT (100, {
+		gs_unref_array GArray *addrs = NULL;
+		const NMPlatformIP6Address *a;
+
+		if (nmtst_wait_iteration > 0) {
+			nmtstp_wait_for_signal (NM_PLATFORM_GET, nmtst_wait_remaining_us / 1000);
+			nm_platform_process_events (NM_PLATFORM_GET);
+		}
+		addrs = nmtstp_platform_ip6_address_get_all (NM_PLATFORM_GET, ifindex);
+		if (   addrs->len == 1
+		    && (a = &g_array_index (addrs, NMPlatformIP6Address, 0))
+		    && IN6_IS_ADDR_LINKLOCAL (&a->address))
+			break;
+	});
+
 	/* Add routes and addresses */
 	g_assert (nm_platform_ip4_address_add (NM_PLATFORM_GET, ifindex, addr4, plen4, addr4, lifetime, preferred, 0, NULL));
 	g_assert (nm_platform_ip6_address_add (NM_PLATFORM_GET, ifindex, addr6, plen6, in6addr_any, lifetime, preferred, flags));
