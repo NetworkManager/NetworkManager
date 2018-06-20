@@ -280,11 +280,6 @@ typedef struct _NMDevicePrivate {
 
 	bool          real:1;
 
-	/* there was a IP config change, but no idle action was scheduled because device
-	 * is still not platform-init */
-	bool queued_ip4_config_pending:1;
-	bool queued_ip6_config_pending:1;
-
 	bool update_ip_config_completed_v4:1;
 	bool update_ip_config_completed_v6:1;
 
@@ -4103,9 +4098,6 @@ realize_start_setup (NMDevice *self,
 		priv->udi = g_strdup_printf ("/virtual/device/placeholder/%d", id++);
 		_notify (self, PROP_UDI);
 	}
-
-	priv->queued_ip4_config_pending = TRUE;
-	priv->queued_ip6_config_pending = TRUE;
 
 	nm_device_update_hw_address (self);
 	nm_device_update_initial_hw_address (self);
@@ -10259,13 +10251,11 @@ _cleanup_ip_pre (NMDevice *self, int addr_family, CleanupType cleanup_type)
 	}
 
 	if (IS_IPv4) {
-		priv->queued_ip4_config_pending = FALSE;
 		dhcp4_cleanup (self, cleanup_type, FALSE);
 		arp_cleanup (self);
 		dnsmasq_cleanup (self);
 		ipv4ll_cleanup (self);
 	} else {
-		priv->queued_ip6_config_pending = FALSE;
 		g_clear_object (&priv->dad6_ip6_config);
 		dhcp6_cleanup (self, cleanup_type, FALSE);
 		nm_clear_g_source (&priv->linklocal6_timeout_id);
@@ -12274,8 +12264,6 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	nm_assert (IS_IPv4 ? !priv->queued_ip4_config_pending : !priv->queued_ip6_config_pending);
-
 	/* Wait for any queued state changes */
 	if (priv->queued_state.id)
 		return G_SOURCE_CONTINUE;
@@ -12291,13 +12279,10 @@ queued_ip_config_change (NMDevice *self, int addr_family)
 	                                      ? activate_stage5_ip4_config_result
 	                                      : activate_stage5_ip6_config_commit,
 	                                    addr_family)) {
-		if (IS_IPv4) {
-			priv->queued_ip4_config_pending = FALSE;
+		if (IS_IPv4)
 			priv->queued_ip_config_id_4 = g_idle_add (queued_ip4_config_change, self);
-		} else {
-			priv->queued_ip6_config_pending = FALSE;
+		else
 			priv->queued_ip_config_id_6 = g_idle_add (queued_ip6_config_change, self);
-		}
 		_LOGT (LOGD_DEVICE, "IP%c update was postponed",
 		       nm_utils_addr_family_to_char (addr_family));
 	} else {
@@ -12408,16 +12393,20 @@ device_ipx_changed (NMPlatform *platform,
 	if (nm_device_get_ip_ifindex (self) != ifindex)
 		return;
 
+	if (!nm_device_is_real (self))
+		return;
+
+	if (nm_device_get_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT)) {
+		/* ignore all platform signals until the link is initialized in platform. */
+		return;
+	}
+
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	switch (obj_type) {
 	case NMP_OBJECT_TYPE_IP4_ADDRESS:
 	case NMP_OBJECT_TYPE_IP4_ROUTE:
-		if (nm_device_get_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT)) {
-			priv->queued_ip4_config_pending = TRUE;
-			nm_assert_se (!nm_clear_g_source (&priv->queued_ip_config_id_4));
-		} else if (!priv->queued_ip_config_id_4) {
-			priv->queued_ip4_config_pending = FALSE;
+		if (!priv->queued_ip_config_id_4) {
 			priv->queued_ip_config_id_4 = g_idle_add (queued_ip4_config_change, self);
 			_LOGD (LOGD_DEVICE, "queued IP4 config change");
 		}
@@ -12431,13 +12420,10 @@ device_ipx_changed (NMPlatform *platform,
 			priv->dad6_failed_addrs = g_slist_prepend (priv->dad6_failed_addrs,
 			                                           (gpointer) nmp_object_ref (NMP_OBJECT_UP_CAST (addr)));
 		}
+
 		/* fall through */
 	case NMP_OBJECT_TYPE_IP6_ROUTE:
-		if (nm_device_get_unmanaged_flags (self, NM_UNMANAGED_PLATFORM_INIT)) {
-			priv->queued_ip6_config_pending = TRUE;
-			nm_assert_se (!nm_clear_g_source (&priv->queued_ip_config_id_6));
-		} else if (!priv->queued_ip_config_id_6) {
-			priv->queued_ip6_config_pending = FALSE;
+		if (!priv->queued_ip_config_id_6) {
 			priv->queued_ip_config_id_6 = g_idle_add (queued_ip6_config_change, self);
 			_LOGD (LOGD_DEVICE, "queued IP6 config change");
 		}
@@ -12704,17 +12690,11 @@ _set_unmanaged_flags (NMDevice *self,
 			                               !!unmanaged);
 		}
 
-		if (priv->queued_ip4_config_pending) {
-			priv->queued_ip4_config_pending = FALSE;
-			nm_assert_se (!nm_clear_g_source (&priv->queued_ip_config_id_4));
-			priv->queued_ip_config_id_4 = g_idle_add (queued_ip4_config_change, self);
-		}
-
-		if (priv->queued_ip6_config_pending) {
-			priv->queued_ip6_config_pending = FALSE;
-			nm_assert_se (!nm_clear_g_source (&priv->queued_ip_config_id_6));
-			priv->queued_ip_config_id_6 = g_idle_add (queued_ip6_config_change, self);
-		}
+		/* trigger an initial update of IP configuration. */
+		nm_assert_se (!nm_clear_g_source (&priv->queued_ip_config_id_4));
+		nm_assert_se (!nm_clear_g_source (&priv->queued_ip_config_id_6));
+		priv->queued_ip_config_id_4 = g_idle_add (queued_ip4_config_change, self);
+		priv->queued_ip_config_id_6 = g_idle_add (queued_ip6_config_change, self);
 
 		if (!priv->pending_actions) {
 			do_notify_has_pending_actions = TRUE;
