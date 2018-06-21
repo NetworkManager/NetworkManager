@@ -86,7 +86,7 @@ test_config (const char *orig,
 	if (expected_new_client_id) {
 		g_assert (new_client_id);
 		g_assert (g_bytes_equal (new_client_id, expected_new_client_id));
-	 } else
+	} else
 		g_assert (new_client_id == NULL);
 }
 
@@ -962,6 +962,99 @@ test_interface2 (void)
 }
 
 static void
+test_structured (void)
+{
+	gs_unref_bytes GBytes *new_client_id = NULL;
+	const guint8 bytes[] = "sad-and-useless";
+
+	static const char *const orig = \
+		"interface \"eth0\"   {  \n"
+		"    send host-name \"useless.example.com\";\n"
+		"    hardware ethernet de:ad:80:86:ba:be;\n"
+		"    send dhcp-client-identifier \"sad-and-useless\";\n"
+		"    script \"/bin/useless\";\n"
+		"    send dhcp-lease-time 8086;\n"
+		"    request subnet-mask, broadcast-address, time-offset, routers,\n"
+		"        domain-search, domain-name, host-name;\n"
+		"    require subnet-mask;\n"
+		"}  \n"
+		"\n"
+		"    interface \"eth1\"   {  \n"
+		"    send host-name \"sad.example.com\";\n"
+		"    hardware ethernet de:ca:f6:66:ca:fe;\n"
+		"    send dhcp-client-identifier \"useless-and-miserable\";\n"
+		"    script \"/bin/miserable\";\n"
+		"    send dhcp-lease-time 1337;\n"
+		"    request subnet-mask, broadcast-address, time-offset, routers,\n"
+		"        domain-search, domain-name, domain-name-servers, host-name;\n"
+		"    require subnet-mask, domain-name-servers;\n"
+		"    }  \n"
+		"\n"
+		"pseudo \"secondary\" \"eth0\"   {  \n"
+		"    send dhcp-client-identifier \"sad-useless-and-secondary\";\n"
+		"    script \"/bin/secondary\";\n"
+		"    send host-name \"secondary.useless.example.com\";\n"
+		"    send dhcp-lease-time 666;\n"
+		"    request routers;\n"
+		"    require routers;\n"
+		"    }  \n"
+		"\n"
+		"    pseudo \"tertiary\" \"eth0\"   {  \n"
+		"   send dhcp-client-identifier \"sad-useless-and-tertiary\";\n"
+		"  script \"/bin/tertiary\";\n"
+		" send host-name \"tertiary.useless.example.com\";\n"
+		"}  \n"
+		"\n"
+		"  alias{  \n"
+		"    interface \"eth0\";\n"
+		"    fixed-address 192.0.2.1;\n"
+		"    option subnet-mask 255.255.255.0;\n"
+		"  }  \n"
+		"  lease   {  \n"
+		"    interface \"eth0\";\n"
+		"    fixed-address 192.0.2.2;\n"
+		"    option subnet-mask 255.255.255.0;\n"
+		"  }  \n";
+
+	static const char *const expected = \
+		"# Created by NetworkManager\n"
+		"# Merged from /path/to/dhclient.conf\n"
+		"\n"
+		"send host-name \"useless.example.com\";\n"
+		"hardware ethernet de:ad:80:86:ba:be;\n"
+		"send dhcp-client-identifier \"sad-and-useless\";\n"
+		"send dhcp-lease-time 8086;\n"
+		"require subnet-mask;\n"
+		"\n"
+		"option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;\n"
+		"option ms-classless-static-routes code 249 = array of unsigned integer 8;\n"
+		"option wpad code 252 = string;\n"
+		"\n"
+		"request; # override dhclient defaults\n"
+		"also request subnet-mask;\n"
+		"also request broadcast-address;\n"
+		"also request time-offset;\n"
+		"also request routers;\n"
+		"also request domain-search;\n"
+		"also request domain-name;\n"
+		"also request host-name;\n"
+		"also request rfc3442-classless-static-routes;\n"
+		"also request ms-classless-static-routes;\n"
+		"also request static-routes;\n"
+		"also request wpad;\n"
+		"also request ntp-servers;\n"
+		"\n";
+
+	new_client_id = g_bytes_new (bytes, sizeof (bytes) - 1);
+	test_config (orig, expected,
+	             AF_INET, NULL, 0, FALSE,
+	             NULL,
+	             new_client_id,
+	             "eth0",
+	             NULL);
+}
+
+static void
 test_config_req_intf (void)
 {
 	static const char *const orig = \
@@ -1046,6 +1139,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/dhcp/dhclient/interface/1", test_interface1);
 	g_test_add_func ("/dhcp/dhclient/interface/2", test_interface2);
 	g_test_add_func ("/dhcp/dhclient/config/req_intf", test_config_req_intf);
+	g_test_add_func ("/dhcp/dhclient/structured", test_structured);
 
 	g_test_add_func ("/dhcp/dhclient/read_duid_from_leasefile", test_read_duid_from_leasefile);
 	g_test_add_func ("/dhcp/dhclient/read_commented_duid_from_leasefile", test_read_commented_duid_from_leasefile);

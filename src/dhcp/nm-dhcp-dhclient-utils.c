@@ -316,6 +316,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 
 	if (orig_contents) {
 		char **lines, **line;
+		int nest = 0;
 		gboolean in_alsoreq = FALSE;
 		gboolean in_req = FALSE;
 		char intf[IFNAMSIZ];
@@ -330,17 +331,23 @@ nm_dhcp_dhclient_create_config (const char *interface,
 			if (!strlen (g_strstrip (p)))
 				continue;
 
-			if (   !intf[0]
-			    && g_str_has_prefix (p, "interface")
-			    && !in_req) {
-				if (read_interface (p, intf, sizeof (intf)))
-					continue;
-			}
-
-			if (intf[0] && strchr (p, '}')) {
+			if (in_req) {
+				/* pass */
+			} else if (strchr (p, '{')) {
+				nest++;
+				if (   !intf[0]
+				    && g_str_has_prefix (p, "interface"))
+					if (read_interface (p, intf, sizeof (intf)))
+						continue;
+			} else if (strchr (p, '}')) {
+				if (nest)
+					nest--;
 				intf[0] = '\0';
 				continue;
 			}
+
+			if (nest && !intf[0])
+				continue;
 
 			if (intf[0] && !nm_streq (intf, interface))
 				continue;
