@@ -867,38 +867,21 @@ class TestNmcli(NmTestBase):
                 self.async_wait()
                 self.srv.op_ConnectionSetVisible(False, con_id = 'ethernet')
 
-            self.call_nmcli_l(['-f', 'ALL', 'con'],
-                              replace_stdout = replace_stdout)
+            for mode in Util.iter_nmcli_output_modes():
+                self.call_nmcli_l(mode + ['-f', 'ALL', 'con'],
+                                  replace_stdout = replace_stdout)
 
-            self.call_nmcli_l(['-f', 'UUID,TYPE', 'con'],
-                              replace_stdout = replace_stdout)
+                self.call_nmcli_l(mode + ['-f', 'UUID,TYPE', 'con'],
+                                  replace_stdout = replace_stdout)
 
-            self.call_nmcli_l(['-f', 'UUID,TYPE', '--mode', 'multiline', 'con'],
-                              replace_stdout = replace_stdout)
+                self.call_nmcli_l(mode + ['con', 's', 'ethernet'],
+                                  replace_stdout = replace_stdout)
 
-            self.call_nmcli_l(['-f', 'UUID,TYPE', '--mode', 'multiline', '--terse', 'con'],
-                              replace_stdout = replace_stdout)
+                self.call_nmcli_l(mode + ['c', 's', '/org/freedesktop/NetworkManager/ActiveConnection/1'],
+                                  replace_stdout = replace_stdout)
 
-            self.call_nmcli_l(['-f', 'UUID,TYPE', '--mode', 'multiline', '--pretty', 'con'],
-                              replace_stdout = replace_stdout)
-
-            self.call_nmcli_l(['-f', 'UUID,TYPE', '--mode', 'tabular', 'con'],
-                              replace_stdout = replace_stdout)
-
-            self.call_nmcli_l(['-f', 'UUID,TYPE', '--mode', 'tabular', '--terse', 'con'],
-                              replace_stdout = replace_stdout)
-
-            self.call_nmcli_l(['-f', 'UUID,TYPE', '--mode', 'tabular', '--pretty', 'con'],
-                              replace_stdout = replace_stdout)
-
-            self.call_nmcli_l(['con', 's', 'ethernet'],
-                              replace_stdout = replace_stdout)
-
-            self.call_nmcli_l(['c', 's', '/org/freedesktop/NetworkManager/ActiveConnection/1'],
-                              replace_stdout = replace_stdout)
-
-            self.call_nmcli_l(['-f', 'all', 'dev', 'show', 'eth0'],
-                              replace_stdout = replace_stdout)
+                self.call_nmcli_l(mode + ['-f', 'all', 'dev', 'show', 'eth0'],
+                                  replace_stdout = replace_stdout)
 
     def test_004(self):
         self.init_001()

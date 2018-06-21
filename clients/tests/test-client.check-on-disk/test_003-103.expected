@@ -1,0 +1,42 @@
+location: clients/tests/test-client.py:881:test_003()/103
+cmd: $NMCLI --mode tabular --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
+lang: C
+returncode: 0
+stdout: 4427 bytes
+>>>
+=========================================
+  Connection profile details (ethernet)
+=========================================
+name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns         
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default) 
+
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                   
+
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  never-default  may-fail  dad-timeout  
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv4  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               --              0 (default)   yes                 --             --         no             yes       -1 (default) 
+
+name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  ip6-privacy   addr-gen-mode   dhcp-duid  dhcp-send-hostname  dhcp-hostname  token 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ipv6  auto    --   --          ""           0             --         --       --      -1            0 (unspec)   no                  no               no             yes       -1 (unknown)  stable-privacy  --         yes                 --             --    
+
+name   method  browser-only  pac-url  pac-script 
+--------------------------------------------------
+proxy  none    no            --       --         
+
+======================================================================
+  Activate connection details (UUID-ethernet-REPLACED-REPLACED-REPL)
+======================================================================
+GROUP    NAME      UUID                                  DEVICES  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<

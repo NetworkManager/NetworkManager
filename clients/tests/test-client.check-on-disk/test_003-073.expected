@@ -1,9 +1,12 @@
-location: clients/tests/test-client.py:895:test_003()/73
-cmd: $NMCLI con s ethernet
+location: clients/tests/test-client.py:881:test_003()/73
+cmd: $NMCLI --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 4891 bytes
+stdout: 5158 bytes
 >>>
+===============================================================================
+                     Connection profile details (ethernet)
+===============================================================================
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
 connection.stable-id:                   --
@@ -25,6 +28,7 @@ connection.gateway-ping-timeout:        0
 connection.metered:                     unknown
 connection.lldp:                        default
 connection.mdns:                        -1 (default)
+-------------------------------------------------------------------------------
 802-3-ethernet.port:                    --
 802-3-ethernet.speed:                   0
 802-3-ethernet.duplex:                  --
@@ -39,6 +43,7 @@ connection.mdns:                        -1 (default)
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+-------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -59,6 +64,7 @@ ipv4.dhcp-fqdn:                         --
 ipv4.never-default:                     no
 ipv4.may-fail:                          yes
 ipv4.dad-timeout:                       -1 (default)
+-------------------------------------------------------------------------------
 ipv6.method:                            auto
 ipv6.dns:                               --
 ipv6.dns-search:                        --
@@ -79,23 +85,15 @@ ipv6.dhcp-duid:                         --
 ipv6.dhcp-send-hostname:                yes
 ipv6.dhcp-hostname:                     --
 ipv6.token:                             --
+-------------------------------------------------------------------------------
 proxy.method:                           none
 proxy.browser-only:                     no
 proxy.pac-url:                          --
 proxy.pac-script:                       --
-GENERAL.NAME:                           ethernet
-GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
-GENERAL.DEVICES:                        eth1
-GENERAL.STATE:                          activated
-GENERAL.DEFAULT:                        no
-GENERAL.DEFAULT6:                       no
-GENERAL.SPEC-OBJECT:                    --
-GENERAL.VPN:                            no
-GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/ActiveConnection/2
-GENERAL.CON-PATH:                       /org/freedesktop/NetworkManager/Settings/Connection/3
-GENERAL.ZONE:                           --
-GENERAL.MASTER-PATH:                    --
-
+-------------------------------------------------------------------------------
+===============================================================================
+      Activate connection details (UUID-ethernet-REPLACED-REPLACED-REPL)
+===============================================================================
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
@@ -108,6 +106,7 @@ GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/ActiveCo
 GENERAL.CON-PATH:                       /org/freedesktop/NetworkManager/Settings/Connection/3
 GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
+-------------------------------------------------------------------------------
 
 <<<
 stderr: 0 bytes
