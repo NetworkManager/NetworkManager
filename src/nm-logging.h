@@ -28,6 +28,10 @@
 #error nm-test-utils.h must be included as last header
 #endif
 
+#define NM_LOG_CONFIG_BACKEND_DEBUG   "debug"
+#define NM_LOG_CONFIG_BACKEND_SYSLOG  "syslog"
+#define NM_LOG_CONFIG_BACKEND_JOURNAL "journal"
+
 /* Log domains */
 typedef enum  { /*< skip >*/
 	LOGD_NONE       = 0LL,
