@@ -305,11 +305,6 @@ main (int argc, char *argv[])
 		         _("%s.  Please use --help to see a list of valid options.\n"),
 		         error->message);
 		exit (1);
-	} else if (bad_domains) {
-		fprintf (stderr,
-		         _("Ignoring unrecognized log domain(s) '%s' passed on command line.\n"),
-		         bad_domains);
-		g_clear_pointer (&bad_domains, g_free);
 	}
 
 	/* Read the config file and CLI overrides */
@@ -332,12 +327,8 @@ main (int argc, char *argv[])
 		                       nm_config_get_log_domains (config),
 		                       &bad_domains,
 		                       &error_invalid_logging_config)) {
-			/* ignore error, and print the failure reason below. */
-		} else if (bad_domains) {
-			fprintf (stderr,
-			         _("Ignoring unrecognized log domain(s) '%s' from config files.\n"),
-			         bad_domains);
-			g_clear_pointer (&bad_domains, g_free);
+			/* ignore error, and print the failure reason below.
+			 * Likewise, print about bad_domains below. */
 		}
 	}
 
@@ -376,6 +367,14 @@ main (int argc, char *argv[])
 	if (error_invalid_logging_config) {
 		nm_log_warn (LOGD_CORE, "config: invalid logging configuration: %s", error_invalid_logging_config->message);
 		g_clear_error (&error_invalid_logging_config);
+	}
+	if (bad_domains) {
+		nm_log_warn (LOGD_CORE, "config: invalid logging domains '%s' from %s",
+		             bad_domains,
+		             (global_opt.opt_log_level == NULL && global_opt.opt_log_domains == NULL)
+		               ? "config file"
+		               : "command line");
+		nm_clear_g_free (&bad_domains);
 	}
 
 	/* the first access to State causes the file to be read (and possibly print a warning) */
