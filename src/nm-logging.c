@@ -832,6 +832,8 @@ nm_logging_set_prefix (const char *format, ...)
 void
 nm_logging_syslog_openlog (const char *logging_backend, gboolean debug)
 {
+	gboolean fetch_monotonic_timestamp = FALSE;
+
 	if (global.log_backend != LOG_BACKEND_GLIB)
 		g_return_if_reached ();
 
@@ -843,10 +845,7 @@ nm_logging_syslog_openlog (const char *logging_backend, gboolean debug)
 		global.log_backend = LOG_BACKEND_JOURNAL;
 		global.uses_syslog = TRUE;
 		global.debug_stderr = debug;
-
-		/* ensure we read a monotonic timestamp. Reading the timestamp the first
-		 * time causes a logging message. We don't want to do that during _nm_log_impl. */
-		nm_utils_get_monotonic_timestamp_ns ();
+		fetch_monotonic_timestamp = TRUE;
 	} else
 #endif
 	{
@@ -860,5 +859,10 @@ nm_logging_syslog_openlog (const char *logging_backend, gboolean debug)
 	                   G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
 	                   nm_log_handler,
 	                   NULL);
-}
 
+	if (fetch_monotonic_timestamp) {
+		/* ensure we read a monotonic timestamp. Reading the timestamp the first
+		 * time causes a logging message. We don't want to do that during _nm_log_impl. */
+		nm_utils_get_monotonic_timestamp_ns ();
+	}
+}
