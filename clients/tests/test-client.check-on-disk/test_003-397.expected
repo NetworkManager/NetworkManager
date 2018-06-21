@@ -1,0 +1,72 @@
+location: clients/tests/test-client.py:875:test_003()/397
+cmd: $NMCLI --mode multiline --terse -f ALL con
+lang: C
+returncode: 0
+stdout: 1403 bytes
+>>>
+NAME:ethernet
+UUID:UUID-ethernet-REPLACED-REPLACED-REPL
+TYPE:802-3-ethernet
+TIMESTAMP:
+TIMESTAMP-REAL:
+AUTOCONNECT:
+AUTOCONNECT-PRIORITY:
+READONLY:
+DBUS-PATH:/org/freedesktop/NetworkManager/Settings/Connection/3
+ACTIVE:yes
+DEVICE:eth1
+STATE:activated
+ACTIVE-PATH:/org/freedesktop/NetworkManager/ActiveConnection/2
+SLAVE:
+FILENAME:/etc/NetworkManager/system-connections/ethernet
+NAME:ethernet
+UUID:UUID-ethernet-REPLACED-REPLACED-REPL
+TYPE:802-3-ethernet
+TIMESTAMP:
+TIMESTAMP-REAL:
+AUTOCONNECT:
+AUTOCONNECT-PRIORITY:
+READONLY:
+DBUS-PATH:/org/freedesktop/NetworkManager/Settings/Connection/3
+ACTIVE:yes
+DEVICE:eth0
+STATE:deactivating
+ACTIVE-PATH:/org/freedesktop/NetworkManager/ActiveConnection/1
+SLAVE:
+FILENAME:/etc/NetworkManager/system-connections/ethernet
+NAME:con-1
+UUID:5fcfd6d7-1e63-3332-8826-a7eda103792d
+TYPE:802-3-ethernet
+TIMESTAMP:0
+TIMESTAMP-REAL:never
+AUTOCONNECT:yes
+AUTOCONNECT-PRIORITY:0
+READONLY:no
+DBUS-PATH:/org/freedesktop/NetworkManager/Settings/Connection/1
+ACTIVE:no
+DEVICE:
+STATE:
+ACTIVE-PATH:
+SLAVE:
+FILENAME:/etc/NetworkManager/system-connections/con-1
+NAME:con-xx1
+UUID:UUID-con-xx1-REPLACED-REPLACED-REPLA
+TYPE:802-3-ethernet
+TIMESTAMP:0
+TIMESTAMP-REAL:never
+AUTOCONNECT:yes
+AUTOCONNECT-PRIORITY:0
+READONLY:no
+DBUS-PATH:/org/freedesktop/NetworkManager/Settings/Connection/2
+ACTIVE:no
+DEVICE:
+STATE:
+ACTIVE-PATH:
+SLAVE:
+FILENAME:/etc/NetworkManager/system-connections/con-xx1
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<

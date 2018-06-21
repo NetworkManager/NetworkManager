@@ -1,0 +1,33 @@
+location: clients/tests/test-client.py:764:test_001()/28
+cmd: $NMCLI --mode tabular --pretty --color yes general permissions
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 1636 bytes
+>>>
+=====================================
+  Uprawnienia usługi NetworkManager
+=====================================
+PERMISSION                                                        VALUE    
+-----------------------------------------------------------------------------------------------------------------
+org.freedesktop.NetworkManager.enable-disable-network             [32mtak[0m      
+org.freedesktop.NetworkManager.enable-disable-wifi                [32mtak[0m      
+org.freedesktop.NetworkManager.enable-disable-wwan                [32mtak[0m      
+org.freedesktop.NetworkManager.enable-disable-wimax               [32mtak[0m      
+org.freedesktop.NetworkManager.sleep-wake                         [31mnie[0m      
+org.freedesktop.NetworkManager.network-control                    [32mtak[0m      
+org.freedesktop.NetworkManager.wifi.share.protected               [32mtak[0m      
+org.freedesktop.NetworkManager.wifi.share.open                    [32mtak[0m      
+org.freedesktop.NetworkManager.settings.modify.system             [32mtak[0m      
+org.freedesktop.NetworkManager.settings.modify.own                [32mtak[0m      
+org.freedesktop.NetworkManager.settings.modify.hostname           [32mtak[0m      
+org.freedesktop.NetworkManager.settings.modify.global-dns         [31mnie[0m      
+org.freedesktop.NetworkManager.reload                             [31mnie[0m      
+org.freedesktop.NetworkManager.checkpoint-rollback                nieznane 
+org.freedesktop.NetworkManager.enable-disable-statistics          nieznane 
+org.freedesktop.NetworkManager.enable-disable-connectivity-check  nieznane 
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<

@@ -1,25 +1,30 @@
-location: clients/tests/test-client.py:761:test_001()/13
-cmd: $NMCLI --terse general permissions
+location: clients/tests/test-client.py:764:test_001()/13
+cmd: $NMCLI --pretty general permissions
 lang: C
 returncode: 0
-stdout: 899 bytes
+stdout: 1472 bytes
 >>>
-org.freedesktop.NetworkManager.enable-disable-network:yes
-org.freedesktop.NetworkManager.enable-disable-wifi:yes
-org.freedesktop.NetworkManager.enable-disable-wwan:yes
-org.freedesktop.NetworkManager.enable-disable-wimax:yes
-org.freedesktop.NetworkManager.sleep-wake:no
-org.freedesktop.NetworkManager.network-control:yes
-org.freedesktop.NetworkManager.wifi.share.protected:yes
-org.freedesktop.NetworkManager.wifi.share.open:yes
-org.freedesktop.NetworkManager.settings.modify.system:yes
-org.freedesktop.NetworkManager.settings.modify.own:yes
-org.freedesktop.NetworkManager.settings.modify.hostname:yes
-org.freedesktop.NetworkManager.settings.modify.global-dns:no
-org.freedesktop.NetworkManager.reload:no
-org.freedesktop.NetworkManager.checkpoint-rollback:unknown
-org.freedesktop.NetworkManager.enable-disable-statistics:unknown
-org.freedesktop.NetworkManager.enable-disable-connectivity-check:unknown
+==============================
+  NetworkManager permissions
+==============================
+PERMISSION                                                        VALUE   
+---------------------------------------------------------------------------------------------------------
+org.freedesktop.NetworkManager.enable-disable-network             yes     
+org.freedesktop.NetworkManager.enable-disable-wifi                yes     
+org.freedesktop.NetworkManager.enable-disable-wwan                yes     
+org.freedesktop.NetworkManager.enable-disable-wimax               yes     
+org.freedesktop.NetworkManager.sleep-wake                         no      
+org.freedesktop.NetworkManager.network-control                    yes     
+org.freedesktop.NetworkManager.wifi.share.protected               yes     
+org.freedesktop.NetworkManager.wifi.share.open                    yes     
+org.freedesktop.NetworkManager.settings.modify.system             yes     
+org.freedesktop.NetworkManager.settings.modify.own                yes     
+org.freedesktop.NetworkManager.settings.modify.hostname           yes     
+org.freedesktop.NetworkManager.settings.modify.global-dns         no      
+org.freedesktop.NetworkManager.reload                             no      
+org.freedesktop.NetworkManager.checkpoint-rollback                unknown 
+org.freedesktop.NetworkManager.enable-disable-statistics          unknown 
+org.freedesktop.NetworkManager.enable-disable-connectivity-check  unknown 
 
 <<<
 stderr: 0 bytes

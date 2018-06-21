@@ -235,7 +235,9 @@ class Util:
             for fmt in [[],
                         ['--pretty'],
                         ['--terse']]:
-                yield mode + fmt
+                for color in [[],
+                              ['--color', 'yes']]:
+                    yield mode + fmt + color
 
 ###############################################################################
 
@@ -552,6 +554,7 @@ class TestNmcli(NmTestBase):
         env['LIBNM_USE_SESSION_BUS'] = '1'
         env['LIBNM_USE_NO_UDEV'] = '1'
         env['TERM'] = 'linux'
+        env['XDG_CONFIG_HOME'] = PathConfiguration.srcdir()
         if fatal_warnings is _DEFAULT_ARG or fatal_warnings:
             env['G_DEBUG'] = 'fatal-warnings'
 

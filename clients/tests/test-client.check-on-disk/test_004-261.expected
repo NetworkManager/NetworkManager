@@ -1,0 +1,46 @@
+location: clients/tests/test-client.py:972:test_004()/261
+cmd: $NMCLI --mode multiline -f COMMON device wifi list
+lang: C
+returncode: 0
+stdout: 1478 bytes
+>>>
+IN-USE:                                  
+SSID:                                   wlan1-ap-4
+MODE:                                   Infra
+CHAN:                                   1
+RATE:                                   54 Mbit/s
+SIGNAL:                                 48
+BARS:                                   **  
+SECURITY:                               WPA1 WPA2
+
+
+IN-USE:                                  
+SSID:                                   wlan0-ap-2
+MODE:                                   Infra
+CHAN:                                   1
+RATE:                                   54 Mbit/s
+SIGNAL:                                 92
+BARS:                                   ****
+SECURITY:                               WPA1 WPA2
+IN-USE:                                  
+SSID:                                   wlan0-ap-1
+MODE:                                   Infra
+CHAN:                                   1
+RATE:                                   54 Mbit/s
+SIGNAL:                                 81
+BARS:                                   ****
+SECURITY:                               WPA1 WPA2
+IN-USE:                                  
+SSID:                                   wlan0-ap-3
+MODE:                                   Infra
+CHAN:                                   1
+RATE:                                   54 Mbit/s
+SIGNAL:                                 55
+BARS:                                   **  
+SECURITY:                               WPA1 WPA2
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<

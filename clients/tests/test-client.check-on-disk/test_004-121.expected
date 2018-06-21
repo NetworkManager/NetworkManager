@@ -1,15 +1,10 @@
-location: clients/tests/test-client.py:974:test_004()/121
-cmd: $NMCLI --mode tabular --pretty -f ALL device wifi list bssid C0:E2:BE:E8:EF:B6
+location: clients/tests/test-client.py:977:test_004()/121
+cmd: $NMCLI --terse -f ALL device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: C
 returncode: 0
-stdout: 962 bytes
+stdout: 255 bytes
 >>>
-===========================
-  Wi-Fi scan list (wlan0)
-===========================
-NAME   SSID        SSID-HEX              BSSID              MODE   CHAN  FREQ      RATE       SIGNAL  BARS  SECURITY   WPA-FLAGS                                      RSN-FLAGS                                      DEVICE  ACTIVE  IN-USE  DBUS-PATH                                     
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-AP[1]  wlan0-ap-2  776C616E302D61702D32  C0:E2:BE:E8:EF:B6  Infra  1     2412 MHz  54 Mbit/s  92      ****  WPA1 WPA2  pair_tkip pair_ccmp group_tkip group_ccmp psk  pair_tkip pair_ccmp group_tkip group_ccmp psk  wlan0   no              /org/freedesktop/NetworkManager/AccessPoint/2 
+AP[1]:wlan0-ap-2:776C616E302D61702D32:C0\:E2\:BE\:E8\:EF\:B6:Infra:1:2412 MHz:54 Mbit/s:92:****:WPA1 WPA2:pair_tkip pair_ccmp group_tkip group_ccmp psk:pair_tkip pair_ccmp group_tkip group_ccmp psk:wlan0:no: :/org/freedesktop/NetworkManager/AccessPoint/2
 
 <<<
 stderr: 0 bytes

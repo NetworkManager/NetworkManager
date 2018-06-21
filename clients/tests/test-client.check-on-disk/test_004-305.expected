@@ -1,0 +1,33 @@
+location: clients/tests/test-client.py:982:test_004()/305
+cmd: $NMCLI --mode multiline --pretty -f NAME,SSID,SSID-HEX,BSSID,MODE,CHAN,FREQ,RATE,SIGNAL,BARS,SECURITY,WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,IN-USE,DBUS-PATH device wifi list bssid C0:E2:BE:E8:EF:B6
+lang: C
+returncode: 0
+stdout: 1222 bytes
+>>>
+===============================================================================
+                            Wi-Fi scan list (wlan0)
+===============================================================================
+NAME:                                   AP[1]
+SSID:                                   wlan0-ap-2
+SSID-HEX:                               776C616E302D61702D32
+BSSID:                                  C0:E2:BE:E8:EF:B6
+MODE:                                   Infra
+CHAN:                                   1
+FREQ:                                   2412 MHz
+RATE:                                   54 Mbit/s
+SIGNAL:                                 92
+BARS:                                   ****
+SECURITY:                               WPA1 WPA2
+WPA-FLAGS:                              pair_tkip pair_ccmp group_tkip group_ccmp psk
+RSN-FLAGS:                              pair_tkip pair_ccmp group_tkip group_ccmp psk
+DEVICE:                                 wlan0
+ACTIVE:                                 no
+IN-USE:                                  
+DBUS-PATH:                              /org/freedesktop/NetworkManager/AccessPoint/2
+-------------------------------------------------------------------------------
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<

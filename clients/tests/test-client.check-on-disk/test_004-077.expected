@@ -1,12 +1,9 @@
-location: clients/tests/test-client.py:985:test_004()/77
-cmd: $NMCLI --pretty -f GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6,BOND,TEAM,BRIDGE,VLAN,BLUETOOTH,CONNECTIONS device show wlan0
+location: clients/tests/test-client.py:988:test_004()/77
+cmd: $NMCLI --color yes -f GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6,BOND,TEAM,BRIDGE,VLAN,BLUETOOTH,CONNECTIONS device show wlan0
 lang: C
 returncode: 0
-stdout: 5691 bytes
+stdout: 4816 bytes
 >>>
-===============================================================================
-                            Device details (wlan0)
-===============================================================================
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
 GENERAL.NM-TYPE:                        NMDeviceWifi
@@ -31,12 +28,10 @@ GENERAL.CONNECTION:                     con-vpn-1
 GENERAL.CON-UUID:                       UUID-con-vpn-1-REPLACED-REPLACED-REP
 GENERAL.CON-PATH:                       /org/freedesktop/NetworkManager/ActiveConnection/2
 GENERAL.METERED:                        unknown
--------------------------------------------------------------------------------
 CAPABILITIES.CARRIER-DETECT:            no
 CAPABILITIES.SPEED:                     unknown
 CAPABILITIES.IS-SOFTWARE:               no
 CAPABILITIES.SRIOV:                     no
--------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
 WIFI-PROPERTIES.WPA2:                   yes
@@ -46,34 +41,30 @@ WIFI-PROPERTIES.AP:                     yes
 WIFI-PROPERTIES.ADHOC:                  yes
 WIFI-PROPERTIES.2GHZ:                   unknown
 WIFI-PROPERTIES.5GHZ:                   unknown
--------------------------------------------------------------------------------
-AP[1].IN-USE:                            
-AP[1].SSID:                             wlan0-ap-2
-AP[1].MODE:                             Infra
-AP[1].CHAN:                             1
-AP[1].RATE:                             54 Mbit/s
-AP[1].SIGNAL:                           92
-AP[1].BARS:                             ****
-AP[1].SECURITY:                         WPA1 WPA2
--------------------------------------------------------------------------------
-AP[2].IN-USE:                            
-AP[2].SSID:                             wlan0-ap-1
-AP[2].MODE:                             Infra
-AP[2].CHAN:                             1
-AP[2].RATE:                             54 Mbit/s
-AP[2].SIGNAL:                           81
-AP[2].BARS:                             ****
-AP[2].SECURITY:                         WPA1 WPA2
--------------------------------------------------------------------------------
-AP[3].IN-USE:                            
-AP[3].SSID:                             wlan0-ap-3
-AP[3].MODE:                             Infra
-AP[3].CHAN:                             1
-AP[3].RATE:                             54 Mbit/s
-AP[3].SIGNAL:                           55
-AP[3].BARS:                             **  
-AP[3].SECURITY:                         WPA1 WPA2
--------------------------------------------------------------------------------
+AP[1].IN-USE:                           [32m [0m
+AP[1].SSID:                             [32mwlan0-ap-2[0m
+AP[1].MODE:                             [32mInfra[0m
+AP[1].CHAN:                             [32m1[0m
+AP[1].RATE:                             [32m54 Mbit/s[0m
+AP[1].SIGNAL:                           [32m92[0m
+AP[1].BARS:                             [32m****[0m
+AP[1].SECURITY:                         [32mWPA1 WPA2[0m
+AP[2].IN-USE:                           [32m [0m
+AP[2].SSID:                             [32mwlan0-ap-1[0m
+AP[2].MODE:                             [32mInfra[0m
+AP[2].CHAN:                             [32m1[0m
+AP[2].RATE:                             [32m54 Mbit/s[0m
+AP[2].SIGNAL:                           [32m81[0m
+AP[2].BARS:                             [32m****[0m
+AP[2].SECURITY:                         [32mWPA1 WPA2[0m
+AP[3].IN-USE:                           [35m [0m
+AP[3].SSID:                             [35mwlan0-ap-3[0m
+AP[3].MODE:                             [35mInfra[0m
+AP[3].CHAN:                             [35m1[0m
+AP[3].RATE:                             [35m54 Mbit/s[0m
+AP[3].SIGNAL:                           [35m55[0m
+AP[3].BARS:                             [35m**  [0m
+AP[3].SECURITY:                         [35mWPA1 WPA2[0m
 IP4.ADDRESS[1]:                         192.168.228.18/32
 IP4.ADDRESS[2]:                         192.168.209.179/25
 IP4.GATEWAY:                            192.168.41.120
@@ -83,12 +74,10 @@ IP4.DOMAIN[3]:                          sear4.foo1.bar
 IP4.DOMAIN[4]:                          sear4.foo4.bar
 IP4.DOMAIN[5]:                          sear4.fo.o.bar
 IP4.WINS[1]:                            192.168.120.79
--------------------------------------------------------------------------------
 DHCP4.OPTION[1]:                        dhcp-4-opt-0 = val-0
 DHCP4.OPTION[2]:                        dhcp-4-opt-2 = val-2
 DHCP4.OPTION[3]:                        dhcp-4-opt-4 = val-4
 DHCP4.OPTION[4]:                        dhcp-4-opt-7 = val-7
--------------------------------------------------------------------------------
 IP6.GATEWAY:                            --
 IP6.ROUTE[1]:                           dst = 2001:a::dd5b:aa7b:b4a2:e42/102, nh = ::, mt = 2504159086
 IP6.DOMAIN[1]:                          sear6.foo2.bar
@@ -97,16 +86,13 @@ IP6.DOMAIN[3]:                          sear6.fo.x.y
 IP6.DOMAIN[4]:                          sear6.fo.o.bar
 IP6.DOMAIN[5]:                          sear6.foo3.bar
 IP6.DOMAIN[6]:                          sear6.foo4.bar
--------------------------------------------------------------------------------
 DHCP6.OPTION[1]:                        dhcp-6-opt-1 = val-1
 DHCP6.OPTION[2]:                        dhcp-6-opt-2 = val-2
 DHCP6.OPTION[3]:                        dhcp-6-opt-3 = val-3
 DHCP6.OPTION[4]:                        dhcp-6-opt-4 = val-4
 DHCP6.OPTION[5]:                        dhcp-6-opt-5 = val-5
--------------------------------------------------------------------------------
 CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings/{2}
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
--------------------------------------------------------------------------------
 
 <<<
 stderr: 0 bytes

@@ -1,0 +1,33 @@
+location: clients/tests/test-client.py:975:test_004()/209
+cmd: $NMCLI --mode tabular --pretty --color yes -f NAME,SSID,SSID-HEX,BSSID,MODE,CHAN,FREQ,RATE,SIGNAL,BARS,SECURITY,WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,IN-USE,DBUS-PATH device wifi list
+lang: C
+returncode: 0
+stdout: 3484 bytes
+>>>
+===========================
+  Wi-Fi scan list (wlan1)
+===========================
+NAME   SSID        SSID-HEX              BSSID              MODE   CHAN  FREQ      RATE       SIGNAL  BARS  SECURITY   WPA-FLAGS                                      RSN-FLAGS                                      DEVICE  ACTIVE  IN-USE  DBUS-PATH                                     
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[35mAP[1][0m  [35mwlan1-ap-4[0m  [35m776C616E312D61702D34[0m  [35m94:2B:E8:F6:D2:86[0m  [35mInfra[0m  [35m1[0m     [35m2412 MHz[0m  [35m54 Mbit/s[0m  [35m48[0m      [35m**  [0m  [35mWPA1 WPA2[0m  [35mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m  [35mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m  [35mwlan1[0m   [35mno[0m      [35m [0m       [35m/org/freedesktop/NetworkManager/AccessPoint/4[0m 
+
+===========================
+  Wi-Fi scan list (wlan1)
+===========================
+NAME  SSID  SSID-HEX  BSSID  MODE  CHAN  FREQ  RATE  SIGNAL  BARS  SECURITY  WPA-FLAGS  RSN-FLAGS  DEVICE  ACTIVE  IN-USE  DBUS-PATH 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+===========================
+  Wi-Fi scan list (wlan0)
+===========================
+NAME   SSID        SSID-HEX              BSSID              MODE   CHAN  FREQ      RATE       SIGNAL  BARS  SECURITY   WPA-FLAGS                                      RSN-FLAGS                                      DEVICE  ACTIVE  IN-USE  DBUS-PATH                                     
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[32mAP[1][0m  [32mwlan0-ap-2[0m  [32m776C616E302D61702D32[0m  [32mC0:E2:BE:E8:EF:B6[0m  [32mInfra[0m  [32m1[0m     [32m2412 MHz[0m  [32m54 Mbit/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m  [32mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m  [32mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m  [32mwlan0[0m   [32mno[0m      [32m [0m       [32m/org/freedesktop/NetworkManager/AccessPoint/2[0m 
+[32mAP[2][0m  [32mwlan0-ap-1[0m  [32m776C616E302D61702D31[0m  [32m61:95:77:AC:1E:4C[0m  [32mInfra[0m  [32m1[0m     [32m2412 MHz[0m  [32m54 Mbit/s[0m  [32m81[0m      [32m****[0m  [32mWPA1 WPA2[0m  [32mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m  [32mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m  [32mwlan0[0m   [32mno[0m      [32m [0m       [32m/org/freedesktop/NetworkManager/AccessPoint/1[0m 
+[35mAP[3][0m  [35mwlan0-ap-3[0m  [35m776C616E302D61702D33[0m  [35m9B:F6:B7:EC:97:76[0m  [35mInfra[0m  [35m1[0m     [35m2412 MHz[0m  [35m54 Mbit/s[0m  [35m55[0m      [35m**  [0m  [35mWPA1 WPA2[0m  [35mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m  [35mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m  [35mwlan0[0m   [35mno[0m      [35m [0m       [35m/org/freedesktop/NetworkManager/AccessPoint/3[0m 
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<

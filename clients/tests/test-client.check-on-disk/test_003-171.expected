@@ -1,13 +1,20 @@
-location: clients/tests/test-client.py:878:test_003()/171
-cmd: $NMCLI --terse con s ethernet
+location: clients/tests/test-client.py:881:test_003()/171
+cmd: $NMCLI --mode tabular --terse --color yes con s ethernet
 lang: C
-returncode: 10
-stdout: 0 bytes
+returncode: 0
+stdout: 666 bytes
 >>>
+connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:-1:0:no:::::-1::0:unknown:default:-1
+802-3-ethernet::0::no:::::auto::::default:
+ipv4:auto::: :0::::-1:0:no:no::0:yes:::no:yes:-1
+ipv6:auto::: :0::::-1:0:no:no:no:yes:-1:stable-privacy::yes::
+proxy:none:no::
+GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1:activated:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/3::
+
+GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/3::
 
 <<<
-stderr: 46 bytes
+stderr: 0 bytes
 >>>
-Error: ethernet - no such connection profile.
 
 <<<
