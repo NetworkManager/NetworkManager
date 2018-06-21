@@ -340,12 +340,13 @@ typedef enum {
 /* Checks whether a particular terminal-colors.d(5) file (.enabled, .disabled or .schem)
  * exists. If contents is non-NULL, it returns the content. */
 static gboolean
-check_colors_file (NmcColorOption *color_option,
-                   const char *base_dir, const char *name, const char *term, const char *type,
+check_colors_file (const char *base_dir,
+                   const char *name,
+                   const char *term,
+                   const char *type,
                    char **contents)
 {
-	char *filename;
-	gboolean exists;
+	gs_free char *filename = NULL;
 
 	filename = g_strdup_printf ("%s/terminal-colors.d/%s%s%s%s%s",
 	                            base_dir,
@@ -354,12 +355,9 @@ check_colors_file (NmcColorOption *color_option,
 	                            (name || term) ? "." : "",
 	                            type);
 	if (contents)
-		exists = g_file_get_contents (filename, contents, NULL, NULL);
+		return g_file_get_contents (filename, contents, NULL, NULL);
 	else
-		exists = g_file_test (filename, G_FILE_TEST_EXISTS);
-	g_free (filename);
-
-	return exists;
+		return g_file_test (filename, G_FILE_TEST_EXISTS);
 }
 
 static void
@@ -367,12 +365,12 @@ check_colors_files_for_term (char **p_palette_buffer, NmcColorOption *color_opti
                              const char *base_dir, const char *name, const char *term)
 {
 	if (   *color_option == NMC_USE_COLOR_AUTO
-	    && check_colors_file (color_option, base_dir, name, term, "enable", NULL)) {
+	    && check_colors_file (base_dir, name, term, "enable", NULL)) {
 		*color_option = NMC_USE_COLOR_YES;
 	}
 
 	if (   *color_option == NMC_USE_COLOR_AUTO
-	    && check_colors_file (color_option, base_dir, name, term, "disable", NULL)) {
+	    && check_colors_file (base_dir, name, term, "disable", NULL)) {
 		*color_option = NMC_USE_COLOR_NO;
 	}
 
@@ -382,14 +380,14 @@ check_colors_files_for_term (char **p_palette_buffer, NmcColorOption *color_opti
 	}
 
 	if (*p_palette_buffer == NULL)
-		check_colors_file (color_option, base_dir, name, term, "schem", p_palette_buffer);
+		check_colors_file (base_dir, name, term, "schem", p_palette_buffer);
 }
 
 static void
 check_colors_files_for_name (char **p_palette_buffer, NmcColorOption *color_option,
                              const char *base_dir, const char *name)
 {
-	const gchar *term;
+	const char *term;
 
 	/* Take a shortcut if the directory is not there. */
 	if (!g_file_test (base_dir, G_FILE_TEST_EXISTS))
