@@ -13756,12 +13756,10 @@ nm_device_spawn_iface_helper (NMDevice *self)
 		g_ptr_array_add (argv, g_strdup_printf ("%d %s", (int) stable_type, stable_id));
 	}
 
-	logging_backend = nm_config_get_is_debug (nm_config_get ())
-	                  ? g_strdup ("debug")
-	                  : nm_config_data_get_value (NM_CONFIG_GET_DATA_ORIG,
-	                                              NM_CONFIG_KEYFILE_GROUP_LOGGING,
-	                                              NM_CONFIG_KEYFILE_KEY_LOGGING_BACKEND,
-	                                              NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY);
+	logging_backend = nm_config_data_get_value (NM_CONFIG_GET_DATA_ORIG,
+	                                            NM_CONFIG_KEYFILE_GROUP_LOGGING,
+	                                            NM_CONFIG_KEYFILE_KEY_LOGGING_BACKEND,
+	                                            NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY);
 	if (logging_backend) {
 		g_ptr_array_add (argv, g_strdup ("--logging-backend"));
 		g_ptr_array_add (argv, logging_backend);

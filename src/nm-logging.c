@@ -839,6 +839,11 @@ void
 nm_logging_syslog_openlog (const char *logging_backend, gboolean debug)
 {
 	gboolean fetch_monotonic_timestamp = FALSE;
+	gboolean obsolete_debug_backend = FALSE;
+
+	nm_assert (NM_IN_STRSET (""NM_CONFIG_DEFAULT_LOGGING_BACKEND,
+	                         NM_LOG_CONFIG_BACKEND_JOURNAL,
+	                         NM_LOG_CONFIG_BACKEND_SYSLOG));
 
 	if (global.log_backend != LOG_BACKEND_GLIB)
 		g_return_if_reached ();
@@ -846,8 +851,19 @@ nm_logging_syslog_openlog (const char *logging_backend, gboolean debug)
 	if (!logging_backend)
 		logging_backend = ""NM_CONFIG_DEFAULT_LOGGING_BACKEND;
 
+	if (nm_streq (logging_backend, NM_LOG_CONFIG_BACKEND_DEBUG)) {
+		/* "debug" was wrongly documented as a valid logging backend. It makes no sense however,
+		 * because printing to stderr only makes sense when not demonizing. Whether to daemonize
+		 * is only controlled via command line arguments (--no-daemon, --debug) and not via the
+		 * logging backend from configuration.
+		 *
+		 * Fall back to the default. */
+		logging_backend = ""NM_CONFIG_DEFAULT_LOGGING_BACKEND;
+		obsolete_debug_backend = TRUE;
+	}
+
 #if SYSTEMD_JOURNAL
-	if (strcmp (logging_backend, "syslog") != 0) {
+	if (!nm_streq (logging_backend, NM_LOG_CONFIG_BACKEND_SYSLOG)) {
 		global.log_backend = LOG_BACKEND_JOURNAL;
 		global.uses_syslog = TRUE;
 		global.debug_stderr = debug;
@@ -870,5 +886,25 @@ nm_logging_syslog_openlog (const char *logging_backend, gboolean debug)
 		/* ensure we read a monotonic timestamp. Reading the timestamp the first
 		 * time causes a logging message. We don't want to do that during _nm_log_impl. */
 		nm_utils_get_monotonic_timestamp_ns ();
+	}
+
+	if (obsolete_debug_backend)
+		nm_log_dbg (LOGD_CORE, "config: ignore deprecated logging backend 'debug', fallback to '%s'", logging_backend);
+
+	if (nm_streq (logging_backend, NM_LOG_CONFIG_BACKEND_SYSLOG)) {
+		/* good */
+	} else if (nm_streq (logging_backend, NM_LOG_CONFIG_BACKEND_JOURNAL)) {
+#if !SYSTEMD_JOURNAL
+		nm_log_warn (LOGD_CORE, "config: logging backend 'journal' is not available, fallback to 'syslog'");
+#endif
+	} else {
+		nm_log_warn (LOGD_CORE, "config: invalid logging backend '%s', fallback to '%s'",
+		             logging_backend,
+#if SYSTEMD_JOURNAL
+		             NM_LOG_CONFIG_BACKEND_JOURNAL
+#else
+		             NM_LOG_CONFIG_BACKEND_SYSLOG
+#endif
+		             );
 	}
 }
