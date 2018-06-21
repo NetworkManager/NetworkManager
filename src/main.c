@@ -227,7 +227,7 @@ main (int argc, char *argv[])
 	gboolean success = FALSE;
 	NMManager *manager = NULL;
 	NMConfig *config;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
 	char *bad_domains = NULL;
 	NMConfigCmdLineOptions *config_cli;
