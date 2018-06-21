@@ -98,6 +98,12 @@ static struct Global {
 	const char *prefix;
 	const char *syslog_identifier;
 	enum {
+		/* before we setup syslog (during start), the backend defaults to GLIB, meaning:
+		 * we use g_log() for all logging. At that point, the application is not yet supposed
+		 * to do any logging and doing so indicates a bug.
+		 *
+		 * Afterwards, the backend is either SYSLOG or JOURNAL. From that point, also
+		 * g_log() is redirected to this backend via a logging handler. */
 		LOG_BACKEND_GLIB,
 		LOG_BACKEND_SYSLOG,
 		LOG_BACKEND_JOURNAL,
