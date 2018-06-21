@@ -340,7 +340,7 @@ typedef enum {
 /* Checks whether a particular terminal-colors.d(5) file (.enabled, .disabled or .schem)
  * exists. If contents is non-NULL, it returns the content. */
 static gboolean
-check_colors_file (NmCli *nmc, NmcColorOption *color_option,
+check_colors_file (NmcColorOption *color_option,
                    const char *base_dir, const char *name, const char *term, const char *type,
                    char **contents)
 {
@@ -363,16 +363,16 @@ check_colors_file (NmCli *nmc, NmcColorOption *color_option,
 }
 
 static void
-check_colors_files_for_term (NmCli *nmc, NmcColorOption *color_option,
+check_colors_files_for_term (char **p_palette_buffer, NmcColorOption *color_option,
                              const char *base_dir, const char *name, const char *term)
 {
 	if (   *color_option == NMC_USE_COLOR_AUTO
-	    && check_colors_file (nmc, color_option, base_dir, name, term, "enable", NULL)) {
+	    && check_colors_file (color_option, base_dir, name, term, "enable", NULL)) {
 		*color_option = NMC_USE_COLOR_YES;
 	}
 
 	if (   *color_option == NMC_USE_COLOR_AUTO
-	    && check_colors_file (nmc, color_option, base_dir, name, term, "disable", NULL)) {
+	    && check_colors_file (color_option, base_dir, name, term, "disable", NULL)) {
 		*color_option = NMC_USE_COLOR_NO;
 	}
 
@@ -381,12 +381,12 @@ check_colors_files_for_term (NmCli *nmc, NmcColorOption *color_option,
 		return;
 	}
 
-	if (nmc->palette_buffer == NULL)
-		check_colors_file (nmc, color_option, base_dir, name, term, "schem", &nmc->palette_buffer);
+	if (*p_palette_buffer == NULL)
+		check_colors_file (color_option, base_dir, name, term, "schem", p_palette_buffer);
 }
 
 static void
-check_colors_files_for_name (NmCli *nmc, NmcColorOption *color_option,
+check_colors_files_for_name (char **p_palette_buffer, NmcColorOption *color_option,
                              const char *base_dir, const char *name)
 {
 	const gchar *term;
@@ -397,16 +397,16 @@ check_colors_files_for_name (NmCli *nmc, NmcColorOption *color_option,
 
 	term = g_getenv ("TERM");
 	if (term)
-		check_colors_files_for_term (nmc, color_option, base_dir, name, term);
-	check_colors_files_for_term (nmc, color_option, base_dir, name, NULL);
+		check_colors_files_for_term (p_palette_buffer, color_option, base_dir, name, term);
+	check_colors_files_for_term (p_palette_buffer, color_option, base_dir, name, NULL);
 }
 
 static void
-check_colors_files_for_base_dir (NmCli *nmc, NmcColorOption *color_option,
+check_colors_files_for_base_dir (char **p_palette_buffer, NmcColorOption *color_option,
                                  const char *base_dir)
 {
-	check_colors_files_for_name (nmc, color_option, base_dir, "nmcli");
-	check_colors_files_for_name (nmc, color_option, base_dir, NULL);
+	check_colors_files_for_name (p_palette_buffer, color_option, base_dir, "nmcli");
+	check_colors_files_for_name (p_palette_buffer, color_option, base_dir, NULL);
 }
 
 static const char *
@@ -455,9 +455,11 @@ resolve_color_alias (const char *color)
 }
 
 static gboolean
-parse_color_scheme (NmCli *nmc, GError **error)
+parse_color_scheme (char *palette_buffer,
+                    const char **palette /* _NM_META_COLOR_NUM elements */,
+                    GError **error)
 {
-	char *p = nmc->palette_buffer;
+	char *p = palette_buffer;
 	const char *name;
 	const char *color;
 	const char *map[_NM_META_COLOR_NUM] = {
@@ -573,7 +575,7 @@ parse_color_scheme (NmCli *nmc, GError **error)
 		/* All good, set the palette entry. */
 		for (i = NM_META_COLOR_NONE + 1; i < _NM_META_COLOR_NUM; i++) {
 			if (strcmp (map[i], name) == 0) {
-				nmc->nmc_config_mutable.palette[i] = resolve_color_alias (color);
+				palette[i] = resolve_color_alias (color);
 				break;
 			}
 		}
@@ -585,8 +587,12 @@ parse_color_scheme (NmCli *nmc, GError **error)
 }
 
 static void
-set_colors (NmCli *nmc, NmcColorOption color_option)
+set_colors (NmcColorOption color_option,
+            bool *out_use_colors,
+            char **p_palette_buffer,
+            const char **palette /* _NM_META_COLOR_NUM elements */)
 {
+	gboolean use_colors;
 	GError *error = NULL;
 
 	if (color_option == NMC_USE_COLOR_AUTO) {
@@ -595,21 +601,15 @@ set_colors (NmCli *nmc, NmcColorOption color_option)
 			color_option = NMC_USE_COLOR_NO;
 	}
 
-	check_colors_files_for_base_dir (nmc, &color_option, g_get_user_config_dir ());
-	check_colors_files_for_base_dir (nmc, &color_option, SYSCONFDIR);
+	check_colors_files_for_base_dir (p_palette_buffer, &color_option, g_get_user_config_dir ());
+	check_colors_files_for_base_dir (p_palette_buffer, &color_option, SYSCONFDIR);
 
-	switch (color_option) {
-	case NMC_USE_COLOR_YES:
-	case NMC_USE_COLOR_AUTO:
-		nmc->nmc_config_mutable.use_colors = TRUE;
-		break;
-	case NMC_USE_COLOR_NO:
-		nmc->nmc_config_mutable.use_colors = FALSE;
-		break;
-	}
+	use_colors = NM_IN_SET (color_option, NMC_USE_COLOR_YES,
+	                                      NMC_USE_COLOR_AUTO);
 
-	if (nmc->nmc_config_mutable.use_colors && nmc->palette_buffer) {
-		if (!parse_color_scheme (nmc, &error)) {
+	*out_use_colors = use_colors;
+	if (use_colors && *p_palette_buffer) {
+		if (!parse_color_scheme (*p_palette_buffer, palette, &error)) {
 			g_debug ("Error parsing color scheme: %s", error->message);
 			g_error_free (error);
 		}
@@ -771,7 +771,10 @@ process_command_line (NmCli *nmc, int argc, char **argv)
 	if (nmc->required_fields)
 		nmc->nmc_config_mutable.overview = FALSE;
 
-	set_colors (nmc, colors);
+	set_colors (colors,
+	            &nmc->nmc_config_mutable.use_colors,
+	            &nmc->palette_buffer,
+	            nmc->nmc_config_mutable.palette);
 
 	/* Now run the requested command */
 	nmc_do_cmd (nmc, nmcli_cmds, *argv, argc, argv);
