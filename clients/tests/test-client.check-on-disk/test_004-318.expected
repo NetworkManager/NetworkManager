@@ -1,0 +1,95 @@
+location: clients/tests/test-client.py:975:test_004()/318
+cmd: $NMCLI --mode multiline --pretty --color yes -f NAME,SSID,SSID-HEX,BSSID,MODE,CHAN,FREQ,RATE,SIGNAL,BARS,SECURITY,WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,IN-USE,DBUS-PATH device wifi list
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 5356 bytes
+>>>
+===============================================================================
+                     Lista skanowania sieci Wi-Fi (wlan1)
+===============================================================================
+NAME:                                   [35mAP[1][0m
+SSID:                                   [35mwlan1-ap-4[0m
+SSID-HEX:                               [35m776C616E312D61702D34[0m
+BSSID:                                  [35m94:2B:E8:F6:D2:86[0m
+MODE:                                   [35mInfrastruktura[0m
+CHAN:                                   [35m1[0m
+FREQ:                                   [35m2412 MHz[0m
+RATE:                                   [35m54 Mb/s[0m
+SIGNAL:                                 [35m48[0m
+BARS:                                   [35m**  [0m
+SECURITY:                               [35mWPA1 WPA2[0m
+WPA-FLAGS:                              [35mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m
+RSN-FLAGS:                              [35mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m
+DEVICE:                                 [35mwlan1[0m
+ACTIVE:                                 [35mnie[0m
+IN-USE:                                 [35m [0m
+DBUS-PATH:                              [35m/org/freedesktop/NetworkManager/AccessPoint/4[0m
+-------------------------------------------------------------------------------
+
+===============================================================================
+                     Lista skanowania sieci Wi-Fi (wlan1)
+===============================================================================
+
+===============================================================================
+                     Lista skanowania sieci Wi-Fi (wlan0)
+===============================================================================
+NAME:                                   [32mAP[1][0m
+SSID:                                   [32mwlan0-ap-2[0m
+SSID-HEX:                               [32m776C616E302D61702D32[0m
+BSSID:                                  [32mC0:E2:BE:E8:EF:B6[0m
+MODE:                                   [32mInfrastruktura[0m
+CHAN:                                   [32m1[0m
+FREQ:                                   [32m2412 MHz[0m
+RATE:                                   [32m54 Mb/s[0m
+SIGNAL:                                 [32m92[0m
+BARS:                                   [32m****[0m
+SECURITY:                               [32mWPA1 WPA2[0m
+WPA-FLAGS:                              [32mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m
+RSN-FLAGS:                              [32mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m
+DEVICE:                                 [32mwlan0[0m
+ACTIVE:                                 [32mnie[0m
+IN-USE:                                 [32m [0m
+DBUS-PATH:                              [32m/org/freedesktop/NetworkManager/AccessPoint/2[0m
+-------------------------------------------------------------------------------
+NAME:                                   [32mAP[2][0m
+SSID:                                   [32mwlan0-ap-1[0m
+SSID-HEX:                               [32m776C616E302D61702D31[0m
+BSSID:                                  [32m61:95:77:AC:1E:4C[0m
+MODE:                                   [32mInfrastruktura[0m
+CHAN:                                   [32m1[0m
+FREQ:                                   [32m2412 MHz[0m
+RATE:                                   [32m54 Mb/s[0m
+SIGNAL:                                 [32m81[0m
+BARS:                                   [32m****[0m
+SECURITY:                               [32mWPA1 WPA2[0m
+WPA-FLAGS:                              [32mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m
+RSN-FLAGS:                              [32mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m
+DEVICE:                                 [32mwlan0[0m
+ACTIVE:                                 [32mnie[0m
+IN-USE:                                 [32m [0m
+DBUS-PATH:                              [32m/org/freedesktop/NetworkManager/AccessPoint/1[0m
+-------------------------------------------------------------------------------
+NAME:                                   [35mAP[3][0m
+SSID:                                   [35mwlan0-ap-3[0m
+SSID-HEX:                               [35m776C616E302D61702D33[0m
+BSSID:                                  [35m9B:F6:B7:EC:97:76[0m
+MODE:                                   [35mInfrastruktura[0m
+CHAN:                                   [35m1[0m
+FREQ:                                   [35m2412 MHz[0m
+RATE:                                   [35m54 Mb/s[0m
+SIGNAL:                                 [35m55[0m
+BARS:                                   [35m**  [0m
+SECURITY:                               [35mWPA1 WPA2[0m
+WPA-FLAGS:                              [35mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m
+RSN-FLAGS:                              [35mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m
+DEVICE:                                 [35mwlan0[0m
+ACTIVE:                                 [35mnie[0m
+IN-USE:                                 [35m [0m
+DBUS-PATH:                              [35m/org/freedesktop/NetworkManager/AccessPoint/3[0m
+-------------------------------------------------------------------------------
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<

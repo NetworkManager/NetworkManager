@@ -1,10 +1,10 @@
-location: clients/tests/test-client.py:976:test_004()/141
-cmd: $NMCLI --mode tabular --terse -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
+location: clients/tests/test-client.py:979:test_004()/141
+cmd: $NMCLI --terse --color yes -f COMMON device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: C
 returncode: 0
-stdout: 49 bytes
+stdout: 121 bytes
 >>>
- :wlan0-ap-2:Infra:1:54 Mbit/s:92:****:WPA1 WPA2
+[32m [0m:[32mwlan0-ap-2[0m:[32mInfra[0m:[32m1[0m:[32m54 Mbit/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m
 
 <<<
 stderr: 0 bytes

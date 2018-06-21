@@ -1,13 +1,76 @@
-location: clients/tests/test-client.py:872:test_003()/198
-cmd: $NMCLI --mode tabular --terse -f ALL con
+location: clients/tests/test-client.py:875:test_003()/198
+cmd: $NMCLI --mode multiline --pretty -f ALL con
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 847 bytes
+stdout: 3819 bytes
 >>>
-ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet::::::/org/freedesktop/NetworkManager/Settings/Connection/3:yes:eth1:activated:/org/freedesktop/NetworkManager/ActiveConnection/2::/etc/NetworkManager/system-connections/ethernet
-ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet::::::/org/freedesktop/NetworkManager/Settings/Connection/3:yes:eth0:deactivating:/org/freedesktop/NetworkManager/ActiveConnection/1::/etc/NetworkManager/system-connections/ethernet
-con-1:5fcfd6d7-1e63-3332-8826-a7eda103792d:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/1:no:::::/etc/NetworkManager/system-connections/con-1
-con-xx1:UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/2:no:::::/etc/NetworkManager/system-connections/con-xx1
+===============================================================================
+                    Profile połączeń usługi NetworkManager
+===============================================================================
+NAME:                                   ethernet
+UUID:                                   UUID-ethernet-REPLACED-REPLACED-REPL
+TYPE:                                   ethernet
+TIMESTAMP:                              0
+TIMESTAMP-REAL:                         nigdy
+AUTOCONNECT:                            tak
+AUTOCONNECT-PRIORITY:                   0
+READONLY:                               nie
+DBUS-PATH:                              /org/freedesktop/NetworkManager/Settings/Connection/3
+ACTIVE:                                 tak
+DEVICE:                                 eth1
+STATE:                                  aktywowano
+ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/2
+SLAVE:                                  --
+FILENAME:                               /etc/NetworkManager/system-connections/ethernet
+-------------------------------------------------------------------------------
+NAME:                                   ethernet
+UUID:                                   UUID-ethernet-REPLACED-REPLACED-REPL
+TYPE:                                   ethernet
+TIMESTAMP:                              0
+TIMESTAMP-REAL:                         nigdy
+AUTOCONNECT:                            tak
+AUTOCONNECT-PRIORITY:                   0
+READONLY:                               nie
+DBUS-PATH:                              /org/freedesktop/NetworkManager/Settings/Connection/3
+ACTIVE:                                 tak
+DEVICE:                                 eth0
+STATE:                                  dezaktywowanie
+ACTIVE-PATH:                            /org/freedesktop/NetworkManager/ActiveConnection/1
+SLAVE:                                  --
+FILENAME:                               /etc/NetworkManager/system-connections/ethernet
+-------------------------------------------------------------------------------
+NAME:                                   con-1
+UUID:                                   5fcfd6d7-1e63-3332-8826-a7eda103792d
+TYPE:                                   ethernet
+TIMESTAMP:                              0
+TIMESTAMP-REAL:                         nigdy
+AUTOCONNECT:                            tak
+AUTOCONNECT-PRIORITY:                   0
+READONLY:                               nie
+DBUS-PATH:                              /org/freedesktop/NetworkManager/Settings/Connection/1
+ACTIVE:                                 nie
+DEVICE:                                 --
+STATE:                                  --
+ACTIVE-PATH:                            --
+SLAVE:                                  --
+FILENAME:                               /etc/NetworkManager/system-connections/con-1
+-------------------------------------------------------------------------------
+NAME:                                   con-xx1
+UUID:                                   UUID-con-xx1-REPLACED-REPLACED-REPLA
+TYPE:                                   ethernet
+TIMESTAMP:                              0
+TIMESTAMP-REAL:                         nigdy
+AUTOCONNECT:                            tak
+AUTOCONNECT-PRIORITY:                   0
+READONLY:                               nie
+DBUS-PATH:                              /org/freedesktop/NetworkManager/Settings/Connection/2
+ACTIVE:                                 nie
+DEVICE:                                 --
+STATE:                                  --
+ACTIVE-PATH:                            --
+SLAVE:                                  --
+FILENAME:                               /etc/NetworkManager/system-connections/con-xx1
+-------------------------------------------------------------------------------
 
 <<<
 stderr: 0 bytes

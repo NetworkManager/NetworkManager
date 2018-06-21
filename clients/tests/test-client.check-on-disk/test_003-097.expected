@@ -1,18 +1,13 @@
-location: clients/tests/test-client.py:872:test_003()/97
-cmd: $NMCLI --mode tabular --pretty -f ALL con
+location: clients/tests/test-client.py:875:test_003()/97
+cmd: $NMCLI --terse -f ALL con
 lang: C
 returncode: 0
-stdout: 2092 bytes
+stdout: 871 bytes
 >>>
-======================================
-  NetworkManager connection profiles
-======================================
-NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE         ACTIVE-PATH                                         SLAVE  FILENAME                                        
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  yes     eth1    activated     /org/freedesktop/NetworkManager/ActiveConnection/2  --     /etc/NetworkManager/system-connections/ethernet 
-ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/3  yes     eth0    deactivating  /org/freedesktop/NetworkManager/ActiveConnection/1  --     /etc/NetworkManager/system-connections/ethernet 
-con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/1  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-1    
-con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          never           yes          0                     no        /org/freedesktop/NetworkManager/Settings/Connection/2  no      --      --            --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
+ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/3:yes:eth1:activated:/org/freedesktop/NetworkManager/ActiveConnection/2::/etc/NetworkManager/system-connections/ethernet
+ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/3:yes:eth0:deactivating:/org/freedesktop/NetworkManager/ActiveConnection/1::/etc/NetworkManager/system-connections/ethernet
+con-1:5fcfd6d7-1e63-3332-8826-a7eda103792d:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/1:no:::::/etc/NetworkManager/system-connections/con-1
+con-xx1:UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/2:no:::::/etc/NetworkManager/system-connections/con-xx1
 
 <<<
 stderr: 0 bytes

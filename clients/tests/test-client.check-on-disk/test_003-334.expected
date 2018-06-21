@@ -1,0 +1,22 @@
+location: clients/tests/test-client.py:884:test_003()/334
+cmd: $NMCLI --mode tabular --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 1068 bytes
+>>>
+================================
+  Szczegóły profilu połączenia
+================================
+===========================================================================
+  Szczegóły aktywowania połączenia (UUID-ethernet-REPLACED-REPLACED-REPL)
+===========================================================================
+GROUP    NAME      UUID                                  DEVICES  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<
