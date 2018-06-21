@@ -1127,6 +1127,7 @@ wifi_secrets_cb (NMActRequest *req,
 	const gchar *setting_name;
 	const gchar *setting_key;
 	gboolean replied;
+	NMSecretAgentGetSecretsFlags get_secret_flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
 	nm_utils_user_data_unpack (user_data, &self, &invocation);
 
@@ -1168,13 +1169,13 @@ wifi_secrets_cb (NMActRequest *req,
 		return;
 	}
 
+	if (nm_settings_connection_get_timestamp (nm_act_request_get_settings_connection (req),
+	                                          NULL))
+		get_secret_flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
+
 	/* Request further secrets if we still need something */
-	wifi_secrets_get_one (self,
-	                      setting_name,
-	                      NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
-	                        | NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW,
-	                      setting_key,
-	                      invocation);
+	wifi_secrets_get_one (self, setting_name, get_secret_flags,
+	                      setting_key, invocation);
 	return;
 
 secrets_error:
@@ -1872,6 +1873,7 @@ nm_device_iwd_agent_query (NMDeviceIwd *self,
 	const gchar *setting_name;
 	const gchar *setting_key;
 	gboolean replied;
+	NMSecretAgentGetSecretsFlags get_secret_flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
 	req = nm_device_get_act_request (NM_DEVICE (self));
 	if (!req)
@@ -1885,14 +1887,22 @@ nm_device_iwd_agent_query (NMDeviceIwd *self,
 	if (replied)
 		return TRUE;
 
+	/* Normally require new secrets every time IWD asks for them.
+	 * IWD only queries us if it has not saved the secrets (e.g. by policy)
+	 * or a previous attempt has failed with current secrets so it wants
+	 * a fresh set.  However if this is a new connection it may include
+	 * all of the needed settings already so allow using these, too.
+	 * Connection timestamp is set after activation or after first
+	 * activation failure (to 0).
+	 */
+	if (nm_settings_connection_get_timestamp (nm_act_request_get_settings_connection (req),
+	                                          NULL))
+		get_secret_flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
+
 	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH,
 	                         NM_DEVICE_STATE_REASON_NO_SECRETS);
-	wifi_secrets_get_one (self,
-	                      setting_name,
-	                      NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
-	                        | NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW,
-	                      setting_key,
-	                      invocation);
+	wifi_secrets_get_one (self, setting_name, get_secret_flags,
+	                      setting_key, invocation);
 
 	return TRUE;
 }
