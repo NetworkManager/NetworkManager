@@ -232,6 +232,7 @@ main (int argc, char *argv[])
 	char *bad_domains = NULL;
 	NMConfigCmdLineOptions *config_cli;
 	guint sd_id = 0;
+	GError *error_invalid_logging_config = NULL;
 
 	/* Known to cause a possible deadlock upon GDBus initialization:
 	 * https://bugzilla.gnome.org/show_bug.cgi?id=674885 */
@@ -330,10 +331,8 @@ main (int argc, char *argv[])
 		if (!nm_logging_setup (nm_config_get_log_level (config),
 		                       nm_config_get_log_domains (config),
 		                       &bad_domains,
-		                       &error)) {
-			fprintf (stderr, _("Error in configuration file: %s.\n"),
-			         error->message);
-			exit (1);
+		                       &error_invalid_logging_config)) {
+			/* ignore error, and print the failure reason below. */
 		} else if (bad_domains) {
 			fprintf (stderr,
 			         _("Ignoring unrecognized log domain(s) '%s' from config files.\n"),
@@ -373,6 +372,11 @@ main (int argc, char *argv[])
 
 	nm_log_info (LOGD_CORE, "Read config: %s", nm_config_data_get_config_description (nm_config_get_data (config)));
 	nm_config_data_log (nm_config_get_data (config), "CONFIG: ", "  ", NULL);
+
+	if (error_invalid_logging_config) {
+		nm_log_warn (LOGD_CORE, "config: invalid logging configuration: %s", error_invalid_logging_config->message);
+		g_clear_error (&error_invalid_logging_config);
+	}
 
 	/* the first access to State causes the file to be read (and possibly print a warning) */
 	nm_config_state_get (config);
