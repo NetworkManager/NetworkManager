@@ -211,24 +211,17 @@ iwd_agent_export (GDBusConnection *connection, gpointer user_data,
 	static const GDBusInterfaceVTable vtable = {
 		.method_call = agent_dbus_method_cb,
 	};
-
 	gchar path[50];
 	unsigned int rnd;
 	guint id;
 
-	if  (!nm_utils_random_bytes (&rnd, sizeof (rnd))) {
-		g_set_error_literal (error,
-		                     NM_DEVICE_ERROR,
-		                     NM_DEVICE_ERROR_FAILED,
-		                     "Can't read urandom.");
-		return 0;
-	}
+	nm_utils_random_bytes (&rnd, sizeof (rnd));
 
 	nm_sprintf_buf (path, "/agent/%u", rnd);
 
 	id = g_dbus_connection_register_object (connection, path,
 	                                        NM_UNCONST_PTR (GDBusInterfaceInfo, &iwd_agent_iface_info),
-						&vtable, user_data, NULL, error);
+	                                        &vtable, user_data, NULL, error);
 
 	if (id)
 		*agent_path = g_strdup (path);
