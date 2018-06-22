@@ -34,6 +34,9 @@ typedef struct {
 	/* Set power saving mode on an interface */
 	gboolean (*set_powersave) (WifiData *data, guint32 powersave);
 
+	/* Get WakeOnWLAN configuration on an interface */
+	NMSettingWirelessWakeOnWLan (*get_wake_on_wlan) (WifiData *data);
+
 	/* Set WakeOnWLAN mode on an interface */
 	gboolean (*set_wake_on_wlan) (WifiData *data, NMSettingWirelessWakeOnWLan wowl);
 
