@@ -1210,9 +1210,11 @@ nm_manager_get_device_by_ifindex (NMManager *self, int ifindex)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDevice *device;
 
-	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
-		if (nm_device_get_ifindex (device) == ifindex)
-			return device;
+	if (ifindex > 0) {
+		c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
+			if (nm_device_get_ifindex (device) == ifindex)
+				return device;
+		}
 	}
 
 	return NULL;
@@ -7440,7 +7442,7 @@ static const NMDBusInterfaceInfoExtended interface_info_manager = {
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("WimaxHardwareEnabled",       "b",     NM_MANAGER_WIMAX_HARDWARE_ENABLED),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("ActiveConnections",          "ao",    NM_MANAGER_ACTIVE_CONNECTIONS),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("PrimaryConnection",          "o",     NM_MANAGER_PRIMARY_CONNECTION),
-			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("PrimartConnectionType",      "s",     NM_MANAGER_PRIMARY_CONNECTION_TYPE),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("PrimaryConnectionType",      "s",     NM_MANAGER_PRIMARY_CONNECTION_TYPE),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Metered",                    "u",     NM_MANAGER_METERED),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("ActivatingConnection",       "o",     NM_MANAGER_ACTIVATING_CONNECTION),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Startup",                    "b",     NM_MANAGER_STARTUP),
