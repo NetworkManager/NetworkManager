@@ -51,6 +51,42 @@
 # define NMCLI_VERSION VERSION
 #endif
 
+#define DEFAULT_PALETTE_INIT \
+	[NM_META_COLOR_CONNECTION_ACTIVATED]     = "32", \
+	[NM_META_COLOR_CONNECTION_ACTIVATING]    = "33", \
+	[NM_META_COLOR_CONNECTION_DISCONNECTING] = "31", \
+	[NM_META_COLOR_CONNECTION_INVISIBLE]     =  "2", \
+	[NM_META_COLOR_CONNECTIVITY_FULL]        = "32", \
+	[NM_META_COLOR_CONNECTIVITY_LIMITED]     = "33", \
+	[NM_META_COLOR_CONNECTIVITY_NONE]        = "31", \
+	[NM_META_COLOR_CONNECTIVITY_PORTAL]      = "33", \
+	[NM_META_COLOR_DEVICE_ACTIVATED]         = "32", \
+	[NM_META_COLOR_DEVICE_ACTIVATING]        = "33", \
+	[NM_META_COLOR_DEVICE_DISCONNECTED]      = "31", \
+	[NM_META_COLOR_DEVICE_FIRMWARE_MISSING]  = "31", \
+	[NM_META_COLOR_DEVICE_PLUGIN_MISSING]    = "31", \
+	[NM_META_COLOR_DEVICE_UNAVAILABLE]       =  "2", \
+	[NM_META_COLOR_MANAGER_RUNNING]          = "32", \
+	[NM_META_COLOR_MANAGER_STARTING]         = "33", \
+	[NM_META_COLOR_MANAGER_STOPPED]          = "31", \
+	[NM_META_COLOR_PERMISSION_AUTH]          = "33", \
+	[NM_META_COLOR_PERMISSION_NO]            = "31", \
+	[NM_META_COLOR_PERMISSION_YES]           = "32", \
+	[NM_META_COLOR_STATE_ASLEEP]             = "31", \
+	[NM_META_COLOR_STATE_CONNECTED_GLOBAL]   = "32", \
+	[NM_META_COLOR_STATE_CONNECTED_LOCAL]    = "32", \
+	[NM_META_COLOR_STATE_CONNECTED_SITE]     = "32", \
+	[NM_META_COLOR_STATE_CONNECTING]         = "33", \
+	[NM_META_COLOR_STATE_DISCONNECTED]       = "31", \
+	[NM_META_COLOR_STATE_DISCONNECTING]      = "33", \
+	[NM_META_COLOR_WIFI_SIGNAL_EXCELLENT]    = "32", \
+	[NM_META_COLOR_WIFI_SIGNAL_FAIR]         = "35", \
+	[NM_META_COLOR_WIFI_SIGNAL_GOOD]         = "33", \
+	[NM_META_COLOR_WIFI_SIGNAL_POOR]         = "36", \
+	[NM_META_COLOR_WIFI_SIGNAL_UNKNOWN]      =  "2", \
+	[NM_META_COLOR_ENABLED]                  = "32", \
+	[NM_META_COLOR_DISABLED]                 = "31", \
+
 NmCli nm_cli = {
 	.client = NULL,
 
@@ -74,40 +110,7 @@ NmCli nm_cli = {
 	.nmc_config.show_secrets = FALSE,
 	.nmc_config.in_editor = FALSE,
 	.nmc_config.palette = {
-		[NM_META_COLOR_CONNECTION_ACTIVATED]	 = "32",
-		[NM_META_COLOR_CONNECTION_ACTIVATING]	 = "33",
-		[NM_META_COLOR_CONNECTION_DISCONNECTING] = "31",
-		[NM_META_COLOR_CONNECTION_INVISIBLE]	 = "2",
-		[NM_META_COLOR_CONNECTIVITY_FULL]	 = "32",
-		[NM_META_COLOR_CONNECTIVITY_LIMITED]	 = "33",
-		[NM_META_COLOR_CONNECTIVITY_NONE]	 = "31",
-		[NM_META_COLOR_CONNECTIVITY_PORTAL]	 = "33",
-		[NM_META_COLOR_DEVICE_ACTIVATED]	 = "32",
-		[NM_META_COLOR_DEVICE_ACTIVATING]	 = "33",
-		[NM_META_COLOR_DEVICE_DISCONNECTED]	 = "31",
-		[NM_META_COLOR_DEVICE_FIRMWARE_MISSING]	 = "31",
-		[NM_META_COLOR_DEVICE_PLUGIN_MISSING]	 = "31",
-		[NM_META_COLOR_DEVICE_UNAVAILABLE]	 = "2",
-		[NM_META_COLOR_MANAGER_RUNNING]		 = "32",
-		[NM_META_COLOR_MANAGER_STARTING]	 = "33",
-		[NM_META_COLOR_MANAGER_STOPPED]		 = "31",
-		[NM_META_COLOR_PERMISSION_AUTH]		 = "33",
-		[NM_META_COLOR_PERMISSION_NO]		 = "31",
-		[NM_META_COLOR_PERMISSION_YES]		 = "32",
-		[NM_META_COLOR_STATE_ASLEEP]		 = "31",
-		[NM_META_COLOR_STATE_CONNECTED_GLOBAL]	 = "32",
-		[NM_META_COLOR_STATE_CONNECTED_LOCAL]	 = "32",
-		[NM_META_COLOR_STATE_CONNECTED_SITE]	 = "32",
-		[NM_META_COLOR_STATE_CONNECTING]	 = "33",
-		[NM_META_COLOR_STATE_DISCONNECTED]	 = "31",
-		[NM_META_COLOR_STATE_DISCONNECTING]	 = "33",
-		[NM_META_COLOR_WIFI_SIGNAL_EXCELLENT]	 = "32",
-		[NM_META_COLOR_WIFI_SIGNAL_FAIR]	 = "35",
-		[NM_META_COLOR_WIFI_SIGNAL_GOOD]	 = "33",
-		[NM_META_COLOR_WIFI_SIGNAL_POOR]	 = "36",
-		[NM_META_COLOR_WIFI_SIGNAL_UNKNOWN]	 = "2",
-		[NM_META_COLOR_ENABLED]			 = "32",
-		[NM_META_COLOR_DISABLED]		 = "31",
+		DEFAULT_PALETTE_INIT
 	},
 	.editor_status_line = FALSE,
 	.editor_save_confirmation = TRUE,
@@ -413,7 +416,7 @@ resolve_color_alias (const char *color)
 	static const struct {
 		const char *name;
 		const char *alias;
-	} aliases[] = {
+	} const aliases[] = {
 		{ "reset",        "0" },
 		{ "bold",         "1" },
 		{ "white",        "1;37" },
@@ -460,7 +463,10 @@ parse_color_scheme (char *palette_buffer,
 	char *p = palette_buffer;
 	const char *name;
 	const char *color;
-	const char *map[_NM_META_COLOR_NUM] = {
+	const char *tmp_palette[_NM_META_COLOR_NUM] = {
+		DEFAULT_PALETTE_INIT
+	};
+	static const char *const map[_NM_META_COLOR_NUM] = {
 		[NM_META_COLOR_NONE]                     = NULL,
 		[NM_META_COLOR_CONNECTION_ACTIVATED]     = "connection-activated",
 		[NM_META_COLOR_CONNECTION_ACTIVATING]    = "connection-activating",
@@ -573,7 +579,7 @@ parse_color_scheme (char *palette_buffer,
 		/* All good, set the palette entry. */
 		for (i = NM_META_COLOR_NONE + 1; i < _NM_META_COLOR_NUM; i++) {
 			if (strcmp (map[i], name) == 0) {
-				palette[i] = resolve_color_alias (color);
+				tmp_palette[i] = resolve_color_alias (color);
 				break;
 			}
 		}
@@ -581,6 +587,7 @@ parse_color_scheme (char *palette_buffer,
 			g_debug ("Ignoring an unrecognized color: '%s'\n", name);
 	}
 
+	memcpy (palette, tmp_palette, sizeof (tmp_palette));
 	return TRUE;
 }
 
