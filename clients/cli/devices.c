@@ -2678,7 +2678,7 @@ find_wifi_device_by_iface (NMDevice **devices, const char *iface, int *idx)
 }
 
 /*
- * Find AP on 'device' according to 'bssid' or 'ssid' parameter.
+ * Find AP on 'device' according to 'bssid' and 'ssid' parameters.
  * Returns: found AP or NULL
  */
 static NMAccessPoint *
@@ -2695,17 +2695,17 @@ find_ap_on_device (NMDevice *device, const char *bssid, const char *ssid, gboole
 		NMAccessPoint *candidate_ap = g_ptr_array_index (aps, i);
 
 		if (bssid) {
-			/* Parameter is BSSID */
 			const char *candidate_bssid = nm_access_point_get_bssid (candidate_ap);
+
+			if (!candidate_bssid)
+				continue;
 
 			/* Compare BSSIDs */
 			if (complete) {
 				if (g_str_has_prefix (candidate_bssid, bssid))
 					g_print ("%s\n", candidate_bssid);
-			} else if (strcmp (bssid, candidate_bssid) == 0) {
-				ap = candidate_ap;
-				break;
-			}
+			} else if (strcmp (bssid, candidate_bssid) != 0)
+				continue;
 		}
 
 		if (ssid) {
@@ -2724,13 +2724,18 @@ find_ap_on_device (NMDevice *device, const char *bssid, const char *ssid, gboole
 			if (complete) {
 				if (g_str_has_prefix (ssid_tmp, ssid))
 					g_print ("%s\n", ssid_tmp);
-			} else if (strcmp (ssid, ssid_tmp) == 0) {
-				ap = candidate_ap;
+			} else if (strcmp (ssid, ssid_tmp) != 0) {
 				g_free (ssid_tmp);
-				break;
+				continue;
 			}
 			g_free (ssid_tmp);
 		}
+
+		if (complete)
+			continue;
+
+		ap = candidate_ap;
+		break;
 	}
 
 	return ap;
@@ -3354,14 +3359,14 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	}
 
 	/* Find an AP to connect to */
-	ap = find_ap_on_device (device, bssid1_arr ? param_user : NULL,
+	ap = find_ap_on_device (device, bssid1_arr ? param_user : bssid,
 	                                bssid1_arr ? NULL : param_user, FALSE);
 	if (!ap && !ifname) {
 		NMDevice *dev;
 
 		/* AP not found, ifname was not specified, so try finding the AP on another device. */
 		while ((dev = find_wifi_device_by_iface (devices, NULL, &devices_idx)) != NULL) {
-			ap = find_ap_on_device (dev, bssid1_arr ? param_user : NULL,
+			ap = find_ap_on_device (dev, bssid1_arr ? param_user : bssid,
 			                             bssid1_arr ? NULL : param_user, FALSE);
 			if (ap) {
 				device = dev;
