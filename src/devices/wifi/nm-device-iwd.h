@@ -51,8 +51,8 @@ NMDevice *nm_device_iwd_new (const char *iface, NMDeviceWifiCapabilities capabil
 
 void nm_device_iwd_set_dbus_object (NMDeviceIwd *device, GDBusObject *object);
 
-gboolean nm_device_iwd_agent_psk_query (NMDeviceIwd *device,
-                                        GDBusMethodInvocation *invocation);
+gboolean nm_device_iwd_agent_query (NMDeviceIwd *device,
+                                    GDBusMethodInvocation *invocation);
 
 const CList *_nm_device_iwd_get_aps (NMDeviceIwd *self);
 

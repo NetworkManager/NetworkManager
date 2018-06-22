@@ -1033,7 +1033,7 @@ get_secrets_done_cb (NMAgentManager *manager,
 	NMSettingsConnectionPrivate *priv;
 	NMConnection *applied_connection;
 	gs_free_error GError *local = NULL;
-	GVariant *dict;
+	GVariant *dict = NULL;
 	gboolean agent_had_system = FALSE;
 	ForEachSecretFlags cmp_flags = { NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_SECRET_FLAG_NONE };
 
@@ -1096,7 +1096,8 @@ get_secrets_done_cb (NMAgentManager *manager,
 	       setting_name,
 	       call_id);
 
-	dict = nm_connection_to_dbus (priv->system_secrets, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
+	if (priv->system_secrets)
+		dict = nm_connection_to_dbus (priv->system_secrets, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
 
 	/* Update the connection with our existing secrets from backing storage */
 	nm_connection_clear_secrets (NM_CONNECTION (self));
@@ -1240,7 +1241,7 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
                                     gpointer callback_data)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-	GVariant *existing_secrets;
+	GVariant *existing_secrets = NULL;
 	NMAgentManagerCallId call_id_a;
 	gs_free char *joined_hints = NULL;
 	NMSettingsConnectionCallId *call_id;
@@ -1262,15 +1263,6 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	call_id->callback_data = callback_data;
 	c_list_link_tail (&priv->call_ids_lst_head, &call_id->call_ids_lst);
 
-	/* Use priv->secrets to work around the fact that nm_connection_clear_secrets()
-	 * will clear secrets on this object's settings.
-	 */
-	if (!priv->system_secrets) {
-		g_set_error_literal (&local, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
-		                     "secrets cache invalid");
-		goto schedule_dummy;
-	}
-
 	/* Make sure the request actually requests something we can return */
 	if (!nm_connection_get_setting_by_name (NM_CONNECTION (self), setting_name)) {
 		g_set_error (&local, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_SETTING_NOT_FOUND,
@@ -1286,7 +1278,11 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 		goto schedule_dummy;
 	}
 
-	existing_secrets = nm_connection_to_dbus (priv->system_secrets, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
+	/* Use priv->system_secrets to work around the fact that nm_connection_clear_secrets()
+	 * will clear secrets on this object's settings.
+	 */
+	if (priv->system_secrets)
+		existing_secrets = nm_connection_to_dbus (priv->system_secrets, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
 	if (existing_secrets)
 		g_variant_ref_sink (existing_secrets);
 
