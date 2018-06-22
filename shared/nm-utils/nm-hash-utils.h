@@ -168,7 +168,7 @@ nm_hash_update_mem (NMHashState *state, const void *ptr, gsize n)
 	 * instead. */
 	nm_hash_update (state, &n, sizeof (n));
 	if (n > 0)
-		c_siphash_append (&state->_state, ptr, n);
+		nm_hash_update (state, ptr, n);
 }
 
 static inline void
