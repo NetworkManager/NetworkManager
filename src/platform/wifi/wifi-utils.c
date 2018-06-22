@@ -117,8 +117,9 @@ wifi_utils_get_wake_on_wlan (WifiData *data)
 {
 	g_return_val_if_fail (data != NULL, FALSE);
 
-	return data->klass->get_wake_on_wlan ?
-	       data->klass->get_wake_on_wlan (data) : NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE;
+	return   data->klass->get_wake_on_wlan
+	       ? data->klass->get_wake_on_wlan (data)
+	       : NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
 }
 
 gboolean

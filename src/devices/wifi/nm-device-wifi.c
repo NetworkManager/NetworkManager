@@ -121,6 +121,7 @@ typedef struct {
 	gint32 hw_addr_scan_expire;
 
 	guint             wps_timeout_id;
+
 	NMSettingWirelessWakeOnWLan wowlan_restore;
 } NMDeviceWifiPrivate;
 
@@ -513,13 +514,16 @@ static gboolean
 wake_on_wlan_restore (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	NMSettingWirelessWakeOnWLan w;
 
-	if (priv->wowlan_restore == NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE)
+	w = priv->wowlan_restore;
+	if (w == NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE)
 		return TRUE;
 
+	priv->wowlan_restore = NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
 	return nm_platform_wifi_set_wake_on_wlan (NM_PLATFORM_GET,
 	                                          nm_device_get_ifindex (NM_DEVICE (self)),
-	                                          priv->wowlan_restore);
+	                                          w);
 }
 
 static void
@@ -2479,16 +2483,15 @@ wake_on_wlan_enable (NMDeviceWifi *self)
 			goto found;
 	}
 	wowl = NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
+
 found:
 	if (wowl == NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE) {
 		priv->wowlan_restore = wowl;
 		return TRUE;
 	}
 
-	/* Save current wowlan value to restore it when dropping the connection */
-	priv->wowlan_restore =
-		nm_platform_wifi_get_wake_on_wlan (NM_PLATFORM_GET,
-		                                   nm_device_get_ifindex (NM_DEVICE (self)));
+	priv->wowlan_restore = nm_platform_wifi_get_wake_on_wlan (NM_PLATFORM_GET,
+	                                                          nm_device_get_ifindex (NM_DEVICE (self)));
 
 	return nm_platform_wifi_set_wake_on_wlan (NM_PLATFORM_GET,
 	                                          nm_device_get_ifindex (NM_DEVICE (self)),

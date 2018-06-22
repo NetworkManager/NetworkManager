@@ -274,7 +274,7 @@ nla_put_failure:
 static int
 nl80211_get_wake_on_wlan_handler (struct nl_msg *msg, void *arg)
 {
-	NMSettingWirelessWakeOnWLan* wowl = arg;
+	NMSettingWirelessWakeOnWLan *wowl = arg;
 	struct nlattr *attrs[NL80211_ATTR_MAX + 1];
 	struct nlattr *trig[NUM_NL80211_WOWLAN_TRIG];
 	struct genlmsghdr *gnlh = nlmsg_data (nlmsg_hdr (msg));
@@ -290,22 +290,23 @@ nl80211_get_wake_on_wlan_handler (struct nl_msg *msg, void *arg)
 	           nla_len (attrs[NL80211_ATTR_WOWLAN_TRIGGERS]),
 	           NULL);
 
+	*wowl = NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE;
 	if (trig[NL80211_WOWLAN_TRIG_ANY])
-		*wowl = NM_FLAGS_SET (*wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_ANY);
+		*wowl |= NM_SETTING_WIRELESS_WAKE_ON_WLAN_ANY;
 	if (trig[NL80211_WOWLAN_TRIG_DISCONNECT])
-		*wowl = NM_FLAGS_SET (*wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_DISCONNECT);
+		*wowl |= NM_SETTING_WIRELESS_WAKE_ON_WLAN_DISCONNECT;
 	if (trig[NL80211_WOWLAN_TRIG_MAGIC_PKT])
-		*wowl = NM_FLAGS_SET (*wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_MAGIC);
+		*wowl |= NM_SETTING_WIRELESS_WAKE_ON_WLAN_MAGIC;
 	if (trig[NL80211_WOWLAN_TRIG_GTK_REKEY_FAILURE])
-		*wowl = NM_FLAGS_SET (*wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_GTK_REKEY_FAILURE);
+		*wowl |= NM_SETTING_WIRELESS_WAKE_ON_WLAN_GTK_REKEY_FAILURE;
 	if (trig[NL80211_WOWLAN_TRIG_EAP_IDENT_REQUEST])
-		*wowl = NM_FLAGS_SET (*wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_EAP_IDENTITY_REQUEST);
+		*wowl |= NM_SETTING_WIRELESS_WAKE_ON_WLAN_EAP_IDENTITY_REQUEST;
 	if (trig[NL80211_WOWLAN_TRIG_4WAY_HANDSHAKE])
-		*wowl = NM_FLAGS_SET (*wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_4WAY_HANDSHAKE);
+		*wowl |= NM_SETTING_WIRELESS_WAKE_ON_WLAN_4WAY_HANDSHAKE;
 	if (trig[NL80211_WOWLAN_TRIG_RFKILL_RELEASE])
-		*wowl = NM_FLAGS_SET (*wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_RFKILL_RELEASE);
+		*wowl |= NM_SETTING_WIRELESS_WAKE_ON_WLAN_RFKILL_RELEASE;
 	if (trig[NL80211_WOWLAN_TRIG_TCP_CONNECTION])
-		*wowl = NM_FLAGS_SET (*wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_TCP);
+		*wowl |= NM_SETTING_WIRELESS_WAKE_ON_WLAN_TCP;
 
 	return NL_SKIP;
 }
@@ -314,7 +315,7 @@ static NMSettingWirelessWakeOnWLan
 wifi_nl80211_get_wake_on_wlan (WifiData *data)
 {
 	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
-	NMSettingWirelessWakeOnWLan wowl = NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE;
+	NMSettingWirelessWakeOnWLan wowl = NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
 
 	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_GET_WOWLAN, 0);
