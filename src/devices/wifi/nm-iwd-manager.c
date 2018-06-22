@@ -93,15 +93,16 @@ agent_dbus_method_cb (GDBusConnection *connection,
 {
 	NMIwdManager *self = user_data;
 	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
-	GDBusObjectManagerClient *omc = G_DBUS_OBJECT_MANAGER_CLIENT (priv->object_manager);
 	const gchar *network_path, *device_path, *ifname;
 	gs_unref_object GDBusInterface *network = NULL, *device_obj = NULL;
 	gs_unref_variant GVariant *value = NULL;
 	gint ifindex;
 	NMDevice *device;
+	gs_free char *name_owner = NULL;
 
 	/* Be paranoid and check the sender address */
-	if (!nm_streq0 (g_dbus_object_manager_client_get_name_owner (omc), sender))
+	name_owner = g_dbus_object_manager_client_get_name_owner (G_DBUS_OBJECT_MANAGER_CLIENT (priv->object_manager));
+	if (!nm_streq0 (name_owner, sender))
 		goto return_error;
 
 	if (!strcmp (method_name, "RequestUserPassword"))
