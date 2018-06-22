@@ -117,7 +117,7 @@ agent_dbus_method_cb (GDBusConnection *connection,
 	device_path = g_variant_get_string (value, NULL);
 
 	if (!device_path) {
-		_LOGE ("Device not cached for network %s in IWD Agent request",
+		_LOGD ("agent-request: device not cached for network %s in IWD Agent request",
 		       network_path);
 		goto return_error;
 	}
@@ -130,29 +130,29 @@ agent_dbus_method_cb (GDBusConnection *connection,
 	ifname = g_variant_get_string (value, NULL);
 
 	if (!ifname) {
-		_LOGE ("Name not cached for device %s in IWD Agent request",
+		_LOGD ("agent-request: name not cached for device %s in IWD Agent request",
 		       device_path);
 		goto return_error;
 	}
 
 	ifindex = if_nametoindex (ifname);
 	if (!ifindex) {
-		_LOGE ("if_nametoindex failed for Name %s for Device at %s: %i",
+		_LOGD ("agent-request: if_nametoindex failed for Name %s for Device at %s: %i",
 		       ifname, device_path, errno);
 		goto return_error;
 	}
 
 	device = nm_manager_get_device_by_ifindex (priv->manager, ifindex);
 	if (!NM_IS_DEVICE_IWD (device)) {
-		_LOGE ("IWD device named %s is not a Wifi device in IWD Agent request",
-                       ifname);
+		_LOGD ("agent-request: IWD device named %s is not a Wifi device in IWD Agent request",
+		       ifname);
 		goto return_error;
 	}
 
 	if (nm_device_iwd_agent_query (NM_DEVICE_IWD (device), invocation))
 		return;
 
-	_LOGE ("Device %s did not handle the IWD Agent request", ifname);
+	_LOGD ("agent-request: device %s did not handle the IWD Agent request", ifname);
 
 return_error:
 	/* IWD doesn't look at the specific error */
