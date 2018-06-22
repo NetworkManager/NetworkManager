@@ -1210,9 +1210,11 @@ nm_manager_get_device_by_ifindex (NMManager *self, int ifindex)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDevice *device;
 
-	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
-		if (nm_device_get_ifindex (device) == ifindex)
-			return device;
+	if (ifindex > 0) {
+		c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
+			if (nm_device_get_ifindex (device) == ifindex)
+				return device;
+		}
 	}
 
 	return NULL;
