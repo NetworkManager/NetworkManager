@@ -859,7 +859,7 @@ nm_modem_stage3_ip6_config_start (NMModem *self,
 }
 
 guint32
-nm_modem_get_configured_mtu (NMDevice *self, gboolean *out_is_user_config)
+nm_modem_get_configured_mtu (NMDevice *self, NMDeviceMtuSource *out_source)
 {
 	NMConnection *connection;
 	NMSetting *setting;
@@ -868,7 +868,7 @@ nm_modem_get_configured_mtu (NMDevice *self, gboolean *out_is_user_config)
 	const char *property_name;
 
 	nm_assert (NM_IS_DEVICE (self));
-	nm_assert (out_is_user_config);
+	nm_assert (out_source);
 
 	connection = nm_device_get_applied_connection (self);
 	if (!connection)
@@ -881,19 +881,19 @@ nm_modem_get_configured_mtu (NMDevice *self, gboolean *out_is_user_config)
 	if (setting) {
 		g_object_get (setting, "mtu", &mtu, NULL);
 		if (mtu) {
-			*out_is_user_config = TRUE;
+			*out_source = NM_DEVICE_MTU_SOURCE_CONNECTION;
 			return mtu;
 		}
 
 		property_name = NM_IS_SETTING_GSM (setting) ? "gsm.mtu" : "cdma.mtu";
 		mtu_default = nm_device_get_configured_mtu_from_connection_default (self, property_name);
 		if (mtu_default >= 0) {
-			*out_is_user_config = TRUE;
+			*out_source = NM_DEVICE_MTU_SOURCE_CONNECTION;
 			return (guint32) mtu_default;
 		}
 	}
 
-	*out_is_user_config = FALSE;
+	*out_source = NM_DEVICE_MTU_SOURCE_NONE;
 	return 0;
 }
 
