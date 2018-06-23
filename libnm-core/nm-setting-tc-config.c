@@ -154,6 +154,19 @@ nm_tc_qdisc_equal (NMTCQdisc *qdisc, NMTCQdisc *other)
 	return TRUE;
 }
 
+static guint
+_nm_tc_qdisc_hash (NMTCQdisc *qdisc)
+{
+	NMHashState h;
+
+	nm_hash_init (&h, 43869703);
+	nm_hash_update_vals (&h,
+	                     qdisc->handle,
+	                     qdisc->parent);
+	nm_hash_update_str0 (&h, qdisc->kind);
+	return nm_hash_complete (&h);
+}
+
 /**
  * nm_tc_qdisc_dup:
  * @qdisc: the #NMTCQdisc
@@ -624,6 +637,38 @@ nm_tc_tfilter_equal (NMTCTfilter *tfilter, NMTCTfilter *other)
 		return FALSE;
 
 	return TRUE;
+}
+
+static guint
+_nm_tc_tfilter_hash (NMTCTfilter *tfilter)
+{
+	gs_free const char **names = NULL;
+	guint i, attr_hash;
+	GVariant *variant;
+	NMHashState h;
+	guint length;
+
+	nm_hash_init (&h, 63624437);
+	nm_hash_update_vals (&h,
+	                     tfilter->handle,
+	                     tfilter->parent);
+	nm_hash_update_str0 (&h, tfilter->kind);
+	if (tfilter->action) {
+		nm_hash_update_str0 (&h, tfilter->action->kind);
+		names = nm_utils_strdict_get_keys (tfilter->action->attributes, TRUE, &length);
+		for (i = 0; i < length; i++) {
+			nm_hash_update_str (&h, names[i]);
+			variant = g_hash_table_lookup (tfilter->action->attributes, names[i]);
+			if (g_variant_type_is_basic (g_variant_get_type (variant))) {
+				/* g_variant_hash() works only for basic types, thus
+				 * we ignore any non-basic attribute. Actions differing
+				 * only for non-basic attributes will collide. */
+				attr_hash = g_variant_hash (variant);
+				nm_hash_update (&h, &attr_hash, sizeof (attr_hash));
+			}
+		}
+	}
+	return nm_hash_complete (&h);
 }
 
 /**
@@ -1138,6 +1183,54 @@ finalize (GObject *object)
 }
 
 static gboolean
+verify (NMSetting *setting, NMConnection *connection, GError **error)
+{
+	NMSettingTCConfig *self = NM_SETTING_TC_CONFIG (setting);
+	gs_unref_hashtable GHashTable *ht = NULL;
+	guint i;
+
+	if (self->qdiscs->len != 0) {
+		ht = g_hash_table_new ((GHashFunc) _nm_tc_qdisc_hash,
+		                       (GEqualFunc) nm_tc_qdisc_equal);
+		for (i = 0; i < self->qdiscs->len; i++) {
+			if (!g_hash_table_add (ht, self->qdiscs->pdata[i])) {
+				g_set_error_literal (error,
+				                     NM_CONNECTION_ERROR,
+				                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				                     _("there are duplicate TC qdiscs"));
+				g_prefix_error (error,
+				                "%s.%s: ",
+				                NM_SETTING_TC_CONFIG_SETTING_NAME,
+				                NM_SETTING_TC_CONFIG_QDISCS);
+				return FALSE;
+			}
+		}
+	}
+
+	if (self->tfilters->len != 0) {
+		if (ht)
+			g_hash_table_unref (ht);
+		ht = g_hash_table_new ((GHashFunc) _nm_tc_tfilter_hash,
+		                       (GEqualFunc) nm_tc_tfilter_equal);
+		for (i = 0; i < self->tfilters->len; i++) {
+			if (!g_hash_table_add (ht, self->tfilters->pdata[i])) {
+				g_set_error_literal (error,
+				                     NM_CONNECTION_ERROR,
+				                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				                     _("there are duplicate TC filters"));
+				g_prefix_error (error,
+				                "%s.%s: ",
+				                NM_SETTING_TC_CONFIG_SETTING_NAME,
+				                NM_SETTING_TC_CONFIG_TFILTERS);
+				return FALSE;
+			}
+		}
+	}
+
+	return TRUE;
+}
+
+static gboolean
 compare_property (NMSetting *setting,
                   NMSetting *other,
                   const GParamSpec *prop_spec,
@@ -1502,6 +1595,7 @@ nm_setting_tc_config_class_init (NMSettingTCConfigClass *setting_class)
 	object_class->get_property     = get_property;
 	object_class->finalize         = finalize;
 	parent_class->compare_property = compare_property;
+	parent_class->verify           = verify;
 
 	/* Properties */
 

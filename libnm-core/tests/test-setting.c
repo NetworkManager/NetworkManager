@@ -1440,7 +1440,7 @@ test_tc_config_tfilter (void)
 }
 
 static void
-test_tc_config_setting (void)
+test_tc_config_setting_valid (void)
 {
 	gs_unref_object NMSettingTCConfig *s_tc = NULL;
 	NMTCQdisc *qdisc1, *qdisc2;
@@ -1471,6 +1471,70 @@ test_tc_config_setting (void)
 
 	nm_tc_qdisc_unref (qdisc1);
 	nm_tc_qdisc_unref (qdisc2);
+}
+
+static void
+test_tc_config_setting_duplicates (void)
+{
+	gs_unref_ptrarray GPtrArray *qdiscs = NULL;
+	gs_unref_ptrarray GPtrArray *tfilters = NULL;
+	NMSettingConnection *s_con;
+	NMConnection *con;
+	NMSetting *s_tc;
+	NMTCQdisc *qdisc;
+	NMTCTfilter *tfilter;
+	GError *error = NULL;
+
+	con = nmtst_create_minimal_connection ("dummy",
+	                                       NULL,
+	                                       NM_SETTING_DUMMY_SETTING_NAME,
+	                                       &s_con);
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, "dummy1",
+	              NULL);
+
+	s_tc = nm_setting_tc_config_new ();
+	nm_connection_add_setting (con, s_tc);
+	qdiscs = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_tc_qdisc_unref);
+	tfilters = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_tc_tfilter_unref);
+
+	/* 1. add duplicate qdiscs */
+	qdisc = nm_utils_tc_qdisc_from_str ("handle 1234 parent fff1:1 pfifo_fast", &error);
+	nmtst_assert_success (qdisc, error);
+	g_ptr_array_add (qdiscs, qdisc);
+
+	qdisc = nm_utils_tc_qdisc_from_str ("handle 1234 parent fff1:1 pfifo_fast", &error);
+	nmtst_assert_success (qdisc, error);
+	g_ptr_array_add (qdiscs, qdisc);
+
+	g_object_set (s_tc, NM_SETTING_TC_CONFIG_QDISCS, qdiscs, NULL);
+	nmtst_assert_connection_unnormalizable (con,
+	                                        NM_CONNECTION_ERROR,
+	                                        NM_CONNECTION_ERROR_INVALID_PROPERTY);
+
+	/* 2. make qdiscs unique */
+	g_ptr_array_remove_index (qdiscs, 0);
+	g_object_set (s_tc, NM_SETTING_TC_CONFIG_QDISCS, qdiscs, NULL);
+	nmtst_assert_connection_verifies_and_normalizable (con);
+
+	/* 3. add duplicate filters */
+	tfilter = nm_utils_tc_tfilter_from_str ("parent 1234: matchall action simple sdata Hello", &error);
+	nmtst_assert_success (tfilter, error);
+	g_ptr_array_add (tfilters, tfilter);
+
+	tfilter = nm_utils_tc_tfilter_from_str ("parent 1234: matchall action simple sdata Hello", &error);
+	nmtst_assert_success (tfilter, error);
+	g_ptr_array_add (tfilters, tfilter);
+
+	g_object_set (s_tc, NM_SETTING_TC_CONFIG_TFILTERS, tfilters, NULL);
+	nmtst_assert_connection_unnormalizable (con,
+	                                        NM_CONNECTION_ERROR,
+	                                        NM_CONNECTION_ERROR_INVALID_PROPERTY);
+
+	/* 4. make filters unique */
+	g_ptr_array_remove_index (tfilters, 0);
+	g_object_set (s_tc, NM_SETTING_TC_CONFIG_TFILTERS, tfilters, NULL);
+	nmtst_assert_connection_verifies_and_normalizable (con);
 }
 
 static void
@@ -1608,7 +1672,8 @@ main (int argc, char **argv)
 	g_test_add_func ("/libnm/settings/tc_config/qdisc", test_tc_config_qdisc);
 	g_test_add_func ("/libnm/settings/tc_config/action", test_tc_config_action);
 	g_test_add_func ("/libnm/settings/tc_config/tfilter", test_tc_config_tfilter);
-	g_test_add_func ("/libnm/settings/tc_config/setting", test_tc_config_setting);
+	g_test_add_func ("/libnm/settings/tc_config/setting/valid", test_tc_config_setting_valid);
+	g_test_add_func ("/libnm/settings/tc_config/setting/duplicates", test_tc_config_setting_duplicates);
 	g_test_add_func ("/libnm/settings/tc_config/dbus", test_tc_config_dbus);
 
 #if WITH_JSON_VALIDATION
