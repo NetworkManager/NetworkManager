@@ -123,12 +123,16 @@ _register_settings_init (void)
  * @priority: the sort priority of the setting, see #NMSettingPriority
  *
  * INTERNAL ONLY: registers a setting's internal properties with libnm.
+ *
+ * This should be called from within G_DEFINE_TYPE_WITH_CODE() when initializing
+ * the setting type.
  */
 void
 _nm_register_setting_impl (const char *name,
                            GType type,
                            NMSettingPriority priority)
 {
+	static GMutex mutex;
 	SettingInfo *info;
 
 	nm_assert (name && *name);
@@ -137,9 +141,6 @@ _nm_register_setting_impl (const char *name,
 
 	_register_settings_ensure_inited ();
 
-	nm_assert (!g_hash_table_lookup (registered_settings, name));
-	nm_assert (!g_hash_table_lookup (registered_settings_by_type, &type));
-
 	nm_assert (   priority != NM_SETTING_PRIORITY_CONNECTION
 	           || nm_streq (name, NM_SETTING_CONNECTION_SETTING_NAME));
 
@@ -147,8 +148,16 @@ _nm_register_setting_impl (const char *name,
 	info->type = type;
 	info->priority = priority;
 	info->name = name;
+
+	g_mutex_lock (&mutex);
+	nm_assert (registered_settings);
+	nm_assert (registered_settings_by_type);
+	nm_assert (!g_hash_table_contains (registered_settings, name));
+	nm_assert (!g_hash_table_contains (registered_settings_by_type, &type));
+
 	g_hash_table_insert (registered_settings, (void *) info->name, info);
 	g_hash_table_insert (registered_settings_by_type, &info->type, info);
+	g_mutex_unlock (&mutex);
 }
 
 static const SettingInfo *
