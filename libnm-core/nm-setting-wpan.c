@@ -67,7 +67,6 @@ struct _NMSettingWpanClass {
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingWpan, nm_setting_wpan, NM_TYPE_SETTING,
                          _nm_register_setting (WPAN, NM_SETTING_PRIORITY_HW_BASE))
-NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_WPAN)
 
 #define NM_SETTING_WPAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_WPAN, NMSettingWpanPrivate))
 

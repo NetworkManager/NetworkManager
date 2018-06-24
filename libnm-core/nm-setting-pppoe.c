@@ -40,7 +40,6 @@
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingPppoe, nm_setting_pppoe, NM_TYPE_SETTING,
                          _nm_register_setting (PPPOE, NM_SETTING_PRIORITY_AUX))
-NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_PPPOE)
 
 #define NM_SETTING_PPPOE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_PPPOE, NMSettingPppoePrivate))
 
