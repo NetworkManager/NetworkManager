@@ -218,8 +218,9 @@ add_8021x_secrets (NMSecretAgentSimpleRequest *request,
 	NMSecretAgentSimpleSecret *secret;
 
 	/* If hints are given, then always ask for what the hints require */
-	if (request->hints) {
+	if (request->hints && request->hints[0]) {
 		char **iter;
+
 		for (iter = request->hints; *iter; iter++) {
 			secret = nm_secret_agent_simple_secret_new (NM_SECRET_AGENT_SECRET_TYPE_SECRET,
 			                                            _(*iter),
