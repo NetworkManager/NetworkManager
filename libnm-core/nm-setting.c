@@ -53,9 +53,7 @@
  * of properties and allowed values.
  */
 
-G_DEFINE_ABSTRACT_TYPE (NMSetting, nm_setting, G_TYPE_OBJECT)
-
-#define NM_SETTING_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING, NMSettingPrivate))
+/*****************************************************************************/
 
 typedef struct {
 	const char *name;
@@ -63,16 +61,22 @@ typedef struct {
 	NMSettingPriority priority;
 } SettingInfo;
 
-typedef struct {
-	const SettingInfo *info;
-} NMSettingPrivate;
-
 enum {
 	PROP_0,
 	PROP_NAME,
 
 	PROP_LAST
 };
+
+typedef struct {
+	const SettingInfo *info;
+} NMSettingPrivate;
+
+static void _register_settings_init (void);
+
+G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMSetting, nm_setting, G_TYPE_OBJECT, _register_settings_init () )
+
+#define NM_SETTING_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING, NMSettingPrivate))
 
 /*****************************************************************************/
 
@@ -91,19 +95,15 @@ _nm_gtype_hash (gconstpointer v)
 }
 
 static void
-_ensure_registered (void)
+_register_settings_init (void)
 {
-	if (G_UNLIKELY (registered_settings == NULL)) {
-		registered_settings = g_hash_table_new (nm_str_hash, g_str_equal);
-		registered_settings_by_type = g_hash_table_new (_nm_gtype_hash, _nm_gtype_equal);
-	}
+	registered_settings = g_hash_table_new (nm_str_hash, g_str_equal);
+	registered_settings_by_type = g_hash_table_new (_nm_gtype_hash, _nm_gtype_equal);
 }
 
-static void __attribute__((constructor))
-_ensure_registered_constructor (void)
-{
-	_ensure_registered ();
-}
+#define _register_settings_ensure_inited() (nm_setting_get_type ())
+
+/*****************************************************************************/
 
 #define _ensure_setting_info(self, priv) \
 	G_STMT_START { \
@@ -135,7 +135,7 @@ _nm_register_setting_impl (const char *name,
 	nm_assert (!NM_IN_SET (type, G_TYPE_INVALID, G_TYPE_NONE));
 	nm_assert (priority != NM_SETTING_PRIORITY_INVALID);
 
-	_ensure_registered ();
+	_register_settings_ensure_inited ();
 
 	nm_assert (!g_hash_table_lookup (registered_settings, name));
 	nm_assert (!g_hash_table_lookup (registered_settings_by_type, &type));
@@ -154,7 +154,7 @@ _nm_register_setting_impl (const char *name,
 static const SettingInfo *
 _nm_setting_lookup_setting_by_type (GType type)
 {
-	_ensure_registered ();
+	_register_settings_ensure_inited ();
 	return g_hash_table_lookup (registered_settings_by_type, &type);
 }
 
@@ -222,7 +222,7 @@ nm_setting_lookup_type (const char *name)
 
 	g_return_val_if_fail (name, G_TYPE_INVALID);
 
-	_ensure_registered ();
+	_register_settings_ensure_inited ();
 
 	info = g_hash_table_lookup (registered_settings, name);
 	return info ? info->type : G_TYPE_INVALID;
