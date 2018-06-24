@@ -836,7 +836,6 @@ struct _NMSettingTCConfigClass {
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingTCConfig, nm_setting_tc_config, NM_TYPE_SETTING,
                          _nm_register_setting (TC_CONFIG, NM_SETTING_PRIORITY_IP))
-NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_TC_CONFIG)
 
 /**
  * nm_setting_tc_config_new:

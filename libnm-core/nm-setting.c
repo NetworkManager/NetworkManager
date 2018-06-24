@@ -72,9 +72,7 @@ typedef struct {
 	const SettingInfo *info;
 } NMSettingPrivate;
 
-static void _register_settings_init (void);
-
-G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMSetting, nm_setting, G_TYPE_OBJECT, _register_settings_init () )
+G_DEFINE_ABSTRACT_TYPE (NMSetting, nm_setting, G_TYPE_OBJECT)
 
 #define NM_SETTING_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING, NMSettingPrivate))
 
@@ -94,14 +92,77 @@ _nm_gtype_hash (gconstpointer v)
 	return *((const GType *) v);
 }
 
+/*****************************************************************************/
+
 static void
-_register_settings_init (void)
+_register_settings_ensure_types (void)
 {
-	registered_settings = g_hash_table_new (nm_str_hash, g_str_equal);
-	registered_settings_by_type = g_hash_table_new (_nm_gtype_hash, _nm_gtype_equal);
+#define ENSURE_TYPE(get_type) \
+	G_STMT_START { \
+		GType get_type (void); \
+		\
+		get_type (); \
+	} G_STMT_END
+
+	ENSURE_TYPE (nm_setting_6lowpan_get_type);
+	ENSURE_TYPE (nm_setting_802_1x_get_type);
+	ENSURE_TYPE (nm_setting_adsl_get_type);
+	ENSURE_TYPE (nm_setting_bluetooth_get_type);
+	ENSURE_TYPE (nm_setting_bond_get_type);
+	ENSURE_TYPE (nm_setting_bridge_get_type);
+	ENSURE_TYPE (nm_setting_bridge_port_get_type);
+	ENSURE_TYPE (nm_setting_cdma_get_type);
+	ENSURE_TYPE (nm_setting_connection_get_type);
+	ENSURE_TYPE (nm_setting_dcb_get_type);
+	ENSURE_TYPE (nm_setting_dummy_get_type);
+	ENSURE_TYPE (nm_setting_generic_get_type);
+	ENSURE_TYPE (nm_setting_gsm_get_type);
+	ENSURE_TYPE (nm_setting_infiniband_get_type);
+	ENSURE_TYPE (nm_setting_ip4_config_get_type);
+	ENSURE_TYPE (nm_setting_ip6_config_get_type);
+	ENSURE_TYPE (nm_setting_ip_tunnel_get_type);
+	ENSURE_TYPE (nm_setting_macsec_get_type);
+	ENSURE_TYPE (nm_setting_macvlan_get_type);
+	ENSURE_TYPE (nm_setting_olpc_mesh_get_type);
+	ENSURE_TYPE (nm_setting_ovs_bridge_get_type);
+	ENSURE_TYPE (nm_setting_ovs_interface_get_type);
+	ENSURE_TYPE (nm_setting_ovs_patch_get_type);
+	ENSURE_TYPE (nm_setting_ovs_port_get_type);
+	ENSURE_TYPE (nm_setting_ppp_get_type);
+	ENSURE_TYPE (nm_setting_pppoe_get_type);
+	ENSURE_TYPE (nm_setting_proxy_get_type);
+	ENSURE_TYPE (nm_setting_serial_get_type);
+	ENSURE_TYPE (nm_setting_tc_config_get_type);
+	ENSURE_TYPE (nm_setting_team_get_type);
+	ENSURE_TYPE (nm_setting_team_port_get_type);
+	ENSURE_TYPE (nm_setting_tun_get_type);
+	ENSURE_TYPE (nm_setting_user_get_type);
+	ENSURE_TYPE (nm_setting_vlan_get_type);
+	ENSURE_TYPE (nm_setting_vpn_get_type);
+	ENSURE_TYPE (nm_setting_vxlan_get_type);
+	ENSURE_TYPE (nm_setting_wimax_get_type);
+	ENSURE_TYPE (nm_setting_wired_get_type);
+	ENSURE_TYPE (nm_setting_wireless_get_type);
+	ENSURE_TYPE (nm_setting_wireless_security_get_type);
+	ENSURE_TYPE (nm_setting_wpan_get_type);
 }
 
-#define _register_settings_ensure_inited() (nm_setting_get_type ())
+/*****************************************************************************/
+
+static int volatile _register_settings_ensure_inited_val = 0;
+
+#define _register_settings_ensure_inited() \
+	G_STMT_START { \
+		if (G_UNLIKELY (_register_settings_ensure_inited_val == 0)) \
+			_register_settings_ensure_inited_impl (); \
+	} G_STMT_END
+
+static void
+_register_settings_ensure_inited_impl (void)
+{
+	_register_settings_ensure_types ();
+	g_atomic_int_set (&_register_settings_ensure_inited_val, 1);
+}
 
 /*****************************************************************************/
 
@@ -139,8 +200,6 @@ _nm_register_setting_impl (const char *name,
 	nm_assert (!NM_IN_SET (type, G_TYPE_INVALID, G_TYPE_NONE));
 	nm_assert (priority != NM_SETTING_PRIORITY_INVALID);
 
-	_register_settings_ensure_inited ();
-
 	nm_assert (   priority != NM_SETTING_PRIORITY_CONNECTION
 	           || nm_streq (name, NM_SETTING_CONNECTION_SETTING_NAME));
 
@@ -150,14 +209,26 @@ _nm_register_setting_impl (const char *name,
 	info->name = name;
 
 	g_mutex_lock (&mutex);
-	nm_assert (registered_settings);
-	nm_assert (registered_settings_by_type);
-	nm_assert (!g_hash_table_contains (registered_settings, name));
-	nm_assert (!g_hash_table_contains (registered_settings_by_type, &type));
+
+	if (!registered_settings) {
+		nm_assert (!registered_settings_by_type);
+		registered_settings = g_hash_table_new (nm_str_hash, g_str_equal);
+		registered_settings_by_type = g_hash_table_new (_nm_gtype_hash, _nm_gtype_equal);
+	} else {
+		nm_assert (!g_hash_table_contains (registered_settings, name));
+		nm_assert (!g_hash_table_contains (registered_settings_by_type, &type));
+	}
 
 	g_hash_table_insert (registered_settings, (void *) info->name, info);
 	g_hash_table_insert (registered_settings_by_type, &info->type, info);
+
 	g_mutex_unlock (&mutex);
+
+	/* we cannot register types, after _register_settings_ensure_inited() is done.
+	 *
+	 * This means, you need to register the type in _register_settings_ensure_types()
+	 * above. */
+	nm_assert (g_atomic_int_get (&_register_settings_ensure_inited_val) == 0);
 }
 
 static const SettingInfo *

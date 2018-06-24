@@ -39,7 +39,6 @@
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingAdsl, nm_setting_adsl, NM_TYPE_SETTING,
                          _nm_register_setting (ADSL, NM_SETTING_PRIORITY_HW_BASE))
-NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_ADSL)
 
 #define NM_SETTING_ADSL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_ADSL, NMSettingAdslPrivate))
 
