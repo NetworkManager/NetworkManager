@@ -693,44 +693,6 @@ nla_put_failure:
 	return FALSE;
 }
 
-struct nl80211_wowlan_info {
-	gboolean enabled;
-};
-
-static int
-nl80211_wowlan_handler (struct nl_msg *msg, void *arg)
-{
-	struct nlattr *tb[NL80211_ATTR_MAX + 1];
-	struct genlmsghdr *gnlh = nlmsg_data (nlmsg_hdr (msg));
-	struct nl80211_wowlan_info *info = arg;
-
-	info->enabled = FALSE;
-
-	if (nla_parse (tb, NL80211_ATTR_MAX, genlmsg_attrdata (gnlh, 0),
-	               genlmsg_attrlen (gnlh, 0), NULL) < 0)
-		return NL_SKIP;
-
-	if (tb[NL80211_ATTR_WOWLAN_TRIGGERS])
-		info->enabled = TRUE;
-
-	return NL_SKIP;
-}
-
-static gboolean
-wifi_nl80211_get_wowlan (WifiData *data)
-{
-	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
-	nm_auto_nlmsg struct nl_msg *msg = NULL;
-	struct nl80211_wowlan_info info;
-
-	if (!nl80211->can_wowlan)
-		return FALSE;
-
-	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_GET_WOWLAN, 0);
-	nl80211_send_and_recv (nl80211, msg, nl80211_wowlan_handler, &info);
-	return info.enabled;
-}
-
 struct nl80211_device_info {
 	int phy;
 	guint32 *freqs;
@@ -949,7 +911,6 @@ wifi_nl80211_init (int ifindex)
 		.get_bssid = wifi_nl80211_get_bssid,
 		.get_rate = wifi_nl80211_get_rate,
 		.get_qual = wifi_nl80211_get_qual,
-		.get_wowlan = wifi_nl80211_get_wowlan,
 		.indicate_addressing_running = wifi_nl80211_indicate_addressing_running,
 		.deinit = wifi_nl80211_deinit,
 	};

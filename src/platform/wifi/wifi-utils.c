@@ -170,16 +170,6 @@ wifi_utils_get_qual (WifiData *data)
 	return data->klass->get_qual (data);
 }
 
-gboolean
-wifi_utils_get_wowlan (WifiData *data)
-{
-	g_return_val_if_fail (data != NULL, 0);
-
-	if (!data->klass->get_wowlan)
-		return FALSE;
-	return data->klass->get_wowlan (data);
-}
-
 void
 wifi_utils_unref (WifiData *data)
 {
