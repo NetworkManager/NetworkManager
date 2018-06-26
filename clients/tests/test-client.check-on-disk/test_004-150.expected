@@ -1,20 +1,98 @@
-location: clients/tests/test-client.py:985:test_004()/150
-cmd: $NMCLI --mode tabular --terse -f GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6,BOND,TEAM,BRIDGE,VLAN,BLUETOOTH,CONNECTIONS device show wlan0
+location: clients/tests/test-client.py:988:test_004()/150
+cmd: $NMCLI --terse --color yes -f GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6,BOND,TEAM,BRIDGE,VLAN,BLUETOOTH,CONNECTIONS device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1207 bytes
+stdout: 2726 bytes
 >>>
-GENERAL:wlan0:wifi:NMDeviceWifi:::virtual:::13\:E0\:74\:85\:7C\:D9:0:20 (niedostępne):0 (Nie podano przyczyny):/sys/devices/virtual/wlan0::nie:tak:tak:nie:nie::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:nieznane
-CAPABILITIES:nie:nieznane:nie:nie
-WIFI-PROPERTIES:tak:tak:tak:tak:tak:tak:tak:nieznane:nieznane
-AP[1]: :wlan0-ap-2:Infrastruktura:1:54 Mb/s:92:****:WPA1 WPA2
-AP[2]: :wlan0-ap-1:Infrastruktura:1:54 Mb/s:81:****:WPA1 WPA2
-AP[3]: :wlan0-ap-3:Infrastruktura:1:54 Mb/s:55:**  :WPA1 WPA2
-IP4:192.168.228.18/32 | 192.168.209.179/25:192.168.41.120:::sear4.foo2.bar | sear4.fo.x.y | sear4.foo1.bar | sear4.foo4.bar | sear4.fo.o.bar:192.168.120.79
-DHCP4:dhcp-4-opt-0 = val-0 | dhcp-4-opt-2 = val-2 | dhcp-4-opt-4 = val-4 | dhcp-4-opt-7 = val-7
-IP6:::dst = 2001\:a\:\:dd5b\:aa7b\:b4a2\:e42/102, nh = \:\:, mt = 2504159086::sear6.foo2.bar | sear6.foo1.bar | sear6.fo.x.y | sear6.fo.o.bar | sear6.foo3.bar | sear6.foo4.bar
-DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-2 = val-2 | dhcp-6-opt-3 = val-3 | dhcp-6-opt-4 = val-4 | dhcp-6-opt-5 = val-5
-CONNECTIONS:/org/freedesktop/NetworkManager/Settings/{2}:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
+GENERAL.DEVICE:wlan0
+GENERAL.TYPE:wifi
+GENERAL.NM-TYPE:NMDeviceWifi
+GENERAL.VENDOR:
+GENERAL.PRODUCT:
+GENERAL.DRIVER:virtual
+GENERAL.DRIVER-VERSION:
+GENERAL.FIRMWARE-VERSION:
+GENERAL.HWADDR:13:E0:74:85:7C:D9
+GENERAL.MTU:0
+GENERAL.STATE:20 (niedostępne)
+GENERAL.REASON:0 (Nie podano przyczyny)
+GENERAL.UDI:/sys/devices/virtual/wlan0
+GENERAL.IP-IFACE:
+GENERAL.IS-SOFTWARE:nie
+GENERAL.NM-MANAGED:tak
+GENERAL.AUTOCONNECT:tak
+GENERAL.FIRMWARE-MISSING:nie
+GENERAL.NM-PLUGIN-MISSING:nie
+GENERAL.PHYS-PORT-ID:
+GENERAL.CONNECTION:con-vpn-1
+GENERAL.CON-UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
+GENERAL.CON-PATH:/org/freedesktop/NetworkManager/ActiveConnection/2
+GENERAL.METERED:nieznane
+CAPABILITIES.CARRIER-DETECT:nie
+CAPABILITIES.SPEED:nieznane
+CAPABILITIES.IS-SOFTWARE:nie
+CAPABILITIES.SRIOV:nie
+WIFI-PROPERTIES.WEP:tak
+WIFI-PROPERTIES.WPA:tak
+WIFI-PROPERTIES.WPA2:tak
+WIFI-PROPERTIES.TKIP:tak
+WIFI-PROPERTIES.CCMP:tak
+WIFI-PROPERTIES.AP:tak
+WIFI-PROPERTIES.ADHOC:tak
+WIFI-PROPERTIES.2GHZ:nieznane
+WIFI-PROPERTIES.5GHZ:nieznane
+AP[1].IN-USE:[32m [0m
+AP[1].SSID:[32mwlan0-ap-2[0m
+AP[1].MODE:[32mInfrastruktura[0m
+AP[1].CHAN:[32m1[0m
+AP[1].RATE:[32m54 Mb/s[0m
+AP[1].SIGNAL:[32m92[0m
+AP[1].BARS:[32m****[0m
+AP[1].SECURITY:[32mWPA1 WPA2[0m
+AP[2].IN-USE:[32m [0m
+AP[2].SSID:[32mwlan0-ap-1[0m
+AP[2].MODE:[32mInfrastruktura[0m
+AP[2].CHAN:[32m1[0m
+AP[2].RATE:[32m54 Mb/s[0m
+AP[2].SIGNAL:[32m81[0m
+AP[2].BARS:[32m****[0m
+AP[2].SECURITY:[32mWPA1 WPA2[0m
+AP[3].IN-USE:[35m [0m
+AP[3].SSID:[35mwlan0-ap-3[0m
+AP[3].MODE:[35mInfrastruktura[0m
+AP[3].CHAN:[35m1[0m
+AP[3].RATE:[35m54 Mb/s[0m
+AP[3].SIGNAL:[35m55[0m
+AP[3].BARS:[35m**  [0m
+AP[3].SECURITY:[35mWPA1 WPA2[0m
+IP4.ADDRESS[1]:192.168.228.18/32
+IP4.ADDRESS[2]:192.168.209.179/25
+IP4.GATEWAY:192.168.41.120
+IP4.DOMAIN[1]:sear4.foo2.bar
+IP4.DOMAIN[2]:sear4.fo.x.y
+IP4.DOMAIN[3]:sear4.foo1.bar
+IP4.DOMAIN[4]:sear4.foo4.bar
+IP4.DOMAIN[5]:sear4.fo.o.bar
+IP4.WINS[1]:192.168.120.79
+DHCP4.OPTION[1]:dhcp-4-opt-0 = val-0
+DHCP4.OPTION[2]:dhcp-4-opt-2 = val-2
+DHCP4.OPTION[3]:dhcp-4-opt-4 = val-4
+DHCP4.OPTION[4]:dhcp-4-opt-7 = val-7
+IP6.GATEWAY:
+IP6.ROUTE[1]:dst = 2001:a::dd5b:aa7b:b4a2:e42/102, nh = ::, mt = 2504159086
+IP6.DOMAIN[1]:sear6.foo2.bar
+IP6.DOMAIN[2]:sear6.foo1.bar
+IP6.DOMAIN[3]:sear6.fo.x.y
+IP6.DOMAIN[4]:sear6.fo.o.bar
+IP6.DOMAIN[5]:sear6.foo3.bar
+IP6.DOMAIN[6]:sear6.foo4.bar
+DHCP6.OPTION[1]:dhcp-6-opt-1 = val-1
+DHCP6.OPTION[2]:dhcp-6-opt-2 = val-2
+DHCP6.OPTION[3]:dhcp-6-opt-3 = val-3
+DHCP6.OPTION[4]:dhcp-6-opt-4 = val-4
+DHCP6.OPTION[5]:dhcp-6-opt-5 = val-5
+CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/{2}
+CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
 stderr: 0 bytes

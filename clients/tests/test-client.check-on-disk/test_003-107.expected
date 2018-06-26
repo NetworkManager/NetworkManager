@@ -1,11 +1,11 @@
-location: clients/tests/test-client.py:872:test_003()/107
-cmd: $NMCLI --mode tabular --terse -f ALL con
+location: clients/tests/test-client.py:875:test_003()/107
+cmd: $NMCLI --terse --color yes -f ALL con
 lang: C
 returncode: 0
-stdout: 871 bytes
+stdout: 1141 bytes
 >>>
-ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/3:yes:eth1:activated:/org/freedesktop/NetworkManager/ActiveConnection/2::/etc/NetworkManager/system-connections/ethernet
-ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/3:yes:eth0:deactivating:/org/freedesktop/NetworkManager/ActiveConnection/1::/etc/NetworkManager/system-connections/ethernet
+[32methernet[0m:[32mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[32m802-3-ethernet[0m:[32m0[0m:[32mnever[0m:[32myes[0m:[32m0[0m:[32mno[0m:[32m/org/freedesktop/NetworkManager/Settings/Connection/3[0m:[32myes[0m:[32meth1[0m:[32mactivated[0m:[32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m:[32m[0m:[32m/etc/NetworkManager/system-connections/ethernet[0m
+[31methernet[0m:[31mUUID-ethernet-REPLACED-REPLACED-REPL[0m:[31m802-3-ethernet[0m:[31m0[0m:[31mnever[0m:[31myes[0m:[31m0[0m:[31mno[0m:[31m/org/freedesktop/NetworkManager/Settings/Connection/3[0m:[31myes[0m:[31meth0[0m:[31mdeactivating[0m:[31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m:[31m[0m:[31m/etc/NetworkManager/system-connections/ethernet[0m
 con-1:5fcfd6d7-1e63-3332-8826-a7eda103792d:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/1:no:::::/etc/NetworkManager/system-connections/con-1
 con-xx1:UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/2:no:::::/etc/NetworkManager/system-connections/con-xx1
 
