@@ -16,7 +16,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2007 - 2017 Red Hat, Inc.
+ * Copyright 2007 - 2018 Red Hat, Inc.
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -193,6 +193,8 @@ const char *  nm_connection_get_connection_type (NMConnection *connection);
 gboolean      nm_connection_is_virtual          (NMConnection *connection);
 char *        nm_connection_get_virtual_device_description (NMConnection *connection);
 
+NM_AVAILABLE_IN_1_14
+NMSetting6Lowpan *         nm_connection_get_setting_6lowpan           (NMConnection *connection);
 NMSetting8021x *           nm_connection_get_setting_802_1x            (NMConnection *connection);
 NMSettingBluetooth *       nm_connection_get_setting_bluetooth         (NMConnection *connection);
 NMSettingBond *            nm_connection_get_setting_bond              (NMConnection *connection);
@@ -241,6 +243,8 @@ NMSettingWirelessSecurity *nm_connection_get_setting_wireless_security (NMConnec
 NMSettingVlan *            nm_connection_get_setting_vlan              (NMConnection *connection);
 NM_AVAILABLE_IN_1_2
 NMSettingVxlan *           nm_connection_get_setting_vxlan             (NMConnection *connection);
+NM_AVAILABLE_IN_1_14
+NMSettingWpan *            nm_connection_get_setting_wpan              (NMConnection *connection);
 
 G_END_DECLS
 

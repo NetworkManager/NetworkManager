@@ -15,14 +15,14 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2011 Red Hat, Inc.
+ * Copyright (C) 2005 - 2018 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  * Copyright (C) 2011 Intel Corporation. All rights reserved.
  */
 
 #include "nm-default.h"
 
-#include "wifi-utils-nl80211.h"
+#include "nm-wifi-utils-nl80211.h"
 
 #include <errno.h>
 #include <string.h>
@@ -32,7 +32,7 @@
 #include <linux/nl80211.h>
 
 #include "platform/nm-netlink.h"
-#include "wifi-utils-private.h"
+#include "nm-wifi-utils-private.h"
 #include "platform/nm-platform.h"
 #include "platform/nm-platform-utils.h"
 #include "nm-utils.h"
@@ -47,14 +47,20 @@
 	} G_STMT_END
 
 typedef struct {
-	WifiData parent;
+	NMWifiUtils parent;
 	struct nl_sock *nl_sock;
 	guint32 *freqs;
 	int id;
 	int num_freqs;
 	int phy;
 	bool can_wowlan:1;
-} WifiDataNl80211;
+} NMWifiUtilsNl80211;
+
+typedef struct {
+	NMWifiUtilsClass parent;
+} NMWifiUtilsNl80211Class;
+
+G_DEFINE_TYPE (NMWifiUtilsNl80211, nm_wifi_utils_nl80211, NM_TYPE_WIFI_UTILS)
 
 static int
 ack_handler (struct nl_msg *msg, void *arg)
@@ -97,7 +103,7 @@ nla_put_failure:
 }
 
 static struct nl_msg *
-nl80211_alloc_msg (WifiDataNl80211 *nl80211, guint32 cmd, guint32 flags)
+nl80211_alloc_msg (NMWifiUtilsNl80211 *nl80211, guint32 cmd, guint32 flags)
 {
 	return _nl80211_alloc_msg (nl80211->id, nl80211->parent.ifindex, nl80211->phy, cmd, flags);
 }
@@ -154,7 +160,7 @@ _nl80211_send_and_recv (struct nl_sock *nl_sock,
 }
 
 static int
-nl80211_send_and_recv (WifiDataNl80211 *nl80211,
+nl80211_send_and_recv (NMWifiUtilsNl80211 *nl80211,
                        struct nl_msg *msg,
                        int (*valid_handler) (struct nl_msg *, void *),
                        void *valid_data)
@@ -164,13 +170,11 @@ nl80211_send_and_recv (WifiDataNl80211 *nl80211,
 }
 
 static void
-wifi_nl80211_deinit (WifiData *parent)
+dispose (GObject *object)
 {
-	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) parent;
+	NMWifiUtilsNl80211 *nl80211 = NM_WIFI_UTILS_NL80211 (object);
 
-	if (nl80211->nl_sock)
-		nl_socket_free (nl80211->nl_sock);
-	g_free (nl80211->freqs);
+	g_clear_pointer (&nl80211->freqs, g_free);
 }
 
 struct nl80211_iface_info {
@@ -207,9 +211,9 @@ nl80211_iface_info_handler (struct nl_msg *msg, void *arg)
 }
 
 static NM80211Mode
-wifi_nl80211_get_mode (WifiData *data)
+wifi_nl80211_get_mode (NMWifiUtils *data)
 {
-	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
+	NMWifiUtilsNl80211 *nl80211 = (NMWifiUtilsNl80211 *) data;
 	struct nl80211_iface_info iface_info = {
 		.mode = NM_802_11_MODE_UNKNOWN,
 	};
@@ -225,9 +229,9 @@ wifi_nl80211_get_mode (WifiData *data)
 }
 
 static gboolean
-wifi_nl80211_set_mode (WifiData *data, const NM80211Mode mode)
+wifi_nl80211_set_mode (NMWifiUtils *data, const NM80211Mode mode)
 {
-	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
+	NMWifiUtilsNl80211 *nl80211 = (NMWifiUtilsNl80211 *) data;
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	int err;
 
@@ -255,9 +259,9 @@ nla_put_failure:
 }
 
 static gboolean
-wifi_nl80211_set_powersave (WifiData *data, guint32 powersave)
+wifi_nl80211_set_powersave (NMWifiUtils *data, guint32 powersave)
 {
-	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
+	NMWifiUtilsNl80211 *nl80211 = (NMWifiUtilsNl80211 *) data;
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	int err;
 
@@ -312,9 +316,9 @@ nl80211_get_wake_on_wlan_handler (struct nl_msg *msg, void *arg)
 }
 
 static NMSettingWirelessWakeOnWLan
-wifi_nl80211_get_wake_on_wlan (WifiData *data)
+wifi_nl80211_get_wake_on_wlan (NMWifiUtils *data)
 {
-	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
+	NMWifiUtilsNl80211 *nl80211 = (NMWifiUtilsNl80211 *) data;
 	NMSettingWirelessWakeOnWLan wowl = NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
 
@@ -326,9 +330,9 @@ wifi_nl80211_get_wake_on_wlan (WifiData *data)
 }
 
 static gboolean
-wifi_nl80211_set_wake_on_wlan (WifiData *data, NMSettingWirelessWakeOnWLan wowl)
+wifi_nl80211_set_wake_on_wlan (NMWifiUtils *data, NMSettingWirelessWakeOnWLan wowl)
 {
-	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
+	NMWifiUtilsNl80211 *nl80211 = (NMWifiUtilsNl80211 *) data;
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	struct nlattr *triggers;
 	int err;
@@ -487,7 +491,7 @@ nl80211_bss_dump_handler (struct nl_msg *msg, void *arg)
 }
 
 static void
-nl80211_get_bss_info (WifiDataNl80211 *nl80211,
+nl80211_get_bss_info (NMWifiUtilsNl80211 *nl80211,
                       struct nl80211_bss_info *bss_info)
 {
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
@@ -500,9 +504,9 @@ nl80211_get_bss_info (WifiDataNl80211 *nl80211,
 }
 
 static guint32
-wifi_nl80211_get_freq (WifiData *data)
+wifi_nl80211_get_freq (NMWifiUtils *data)
 {
-	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
+	NMWifiUtilsNl80211 *nl80211 = (NMWifiUtilsNl80211 *) data;
 	struct nl80211_bss_info bss_info;
 
 	nl80211_get_bss_info (nl80211, &bss_info);
@@ -511,9 +515,9 @@ wifi_nl80211_get_freq (WifiData *data)
 }
 
 static guint32
-wifi_nl80211_find_freq (WifiData *data, const guint32 *freqs)
+wifi_nl80211_find_freq (NMWifiUtils *data, const guint32 *freqs)
 {
-	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
+	NMWifiUtilsNl80211 *nl80211 = (NMWifiUtilsNl80211 *) data;
 	int i;
 
 	for (i = 0; i < nl80211->num_freqs; i++) {
@@ -527,9 +531,9 @@ wifi_nl80211_find_freq (WifiData *data, const guint32 *freqs)
 }
 
 static gboolean
-wifi_nl80211_get_bssid (WifiData *data, guint8 *out_bssid)
+wifi_nl80211_get_bssid (NMWifiUtils *data, guint8 *out_bssid)
 {
-	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
+	NMWifiUtilsNl80211 *nl80211 = (NMWifiUtilsNl80211 *) data;
 	struct nl80211_bss_info bss_info;
 
 	nl80211_get_bss_info (nl80211, &bss_info);
@@ -611,7 +615,7 @@ nl80211_station_handler (struct nl_msg *msg, void *arg)
 }
 
 static void
-nl80211_get_ap_info (WifiDataNl80211 *nl80211,
+nl80211_get_ap_info (NMWifiUtilsNl80211 *nl80211,
                      struct nl80211_station_info *sta_info)
 {
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
@@ -641,9 +645,9 @@ nla_put_failure:
 }
 
 static guint32
-wifi_nl80211_get_rate (WifiData *data)
+wifi_nl80211_get_rate (NMWifiUtils *data)
 {
-	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
+	NMWifiUtilsNl80211 *nl80211 = (NMWifiUtilsNl80211 *) data;
 	struct nl80211_station_info sta_info;
 
 	nl80211_get_ap_info (nl80211, &sta_info);
@@ -652,9 +656,9 @@ wifi_nl80211_get_rate (WifiData *data)
 }
 
 static int
-wifi_nl80211_get_qual (WifiData *data)
+wifi_nl80211_get_qual (NMWifiUtils *data)
 {
-	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
+	NMWifiUtilsNl80211 *nl80211 = (NMWifiUtilsNl80211 *) data;
 	struct nl80211_station_info sta_info;
 
 	nl80211_get_ap_info (nl80211, &sta_info);
@@ -662,9 +666,9 @@ wifi_nl80211_get_qual (WifiData *data)
 }
 
 static gboolean
-wifi_nl80211_indicate_addressing_running (WifiData *data, gboolean running)
+wifi_nl80211_indicate_addressing_running (NMWifiUtils *data, gboolean running)
 {
-	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
+	NMWifiUtilsNl80211 *nl80211 = (NMWifiUtilsNl80211 *) data;
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	int err;
 
@@ -691,44 +695,6 @@ wifi_nl80211_indicate_addressing_running (WifiData *data, gboolean running)
 
 nla_put_failure:
 	return FALSE;
-}
-
-struct nl80211_wowlan_info {
-	gboolean enabled;
-};
-
-static int
-nl80211_wowlan_handler (struct nl_msg *msg, void *arg)
-{
-	struct nlattr *tb[NL80211_ATTR_MAX + 1];
-	struct genlmsghdr *gnlh = nlmsg_data (nlmsg_hdr (msg));
-	struct nl80211_wowlan_info *info = arg;
-
-	info->enabled = FALSE;
-
-	if (nla_parse (tb, NL80211_ATTR_MAX, genlmsg_attrdata (gnlh, 0),
-	               genlmsg_attrlen (gnlh, 0), NULL) < 0)
-		return NL_SKIP;
-
-	if (tb[NL80211_ATTR_WOWLAN_TRIGGERS])
-		info->enabled = TRUE;
-
-	return NL_SKIP;
-}
-
-static gboolean
-wifi_nl80211_get_wowlan (WifiData *data)
-{
-	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
-	nm_auto_nlmsg struct nl_msg *msg = NULL;
-	struct nl80211_wowlan_info info;
-
-	if (!nl80211->can_wowlan)
-		return FALSE;
-
-	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_GET_WOWLAN, 0);
-	nl80211_send_and_recv (nl80211, msg, nl80211_wowlan_handler, &info);
-	return info.enabled;
 }
 
 struct nl80211_device_info {
@@ -934,29 +900,42 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 	return NL_SKIP;
 }
 
-WifiData *
-wifi_nl80211_init (int ifindex)
+static void
+nm_wifi_utils_nl80211_init (NMWifiUtilsNl80211 *self)
 {
-	static const WifiDataClass klass = {
-		.struct_size = sizeof (WifiDataNl80211),
-		.get_mode = wifi_nl80211_get_mode,
-		.set_mode = wifi_nl80211_set_mode,
-		.set_powersave = wifi_nl80211_set_powersave,
-		.get_wake_on_wlan = wifi_nl80211_get_wake_on_wlan,
-		.set_wake_on_wlan = wifi_nl80211_set_wake_on_wlan,
-		.get_freq = wifi_nl80211_get_freq,
-		.find_freq = wifi_nl80211_find_freq,
-		.get_bssid = wifi_nl80211_get_bssid,
-		.get_rate = wifi_nl80211_get_rate,
-		.get_qual = wifi_nl80211_get_qual,
-		.get_wowlan = wifi_nl80211_get_wowlan,
-		.indicate_addressing_running = wifi_nl80211_indicate_addressing_running,
-		.deinit = wifi_nl80211_deinit,
-	};
-	WifiDataNl80211 *nl80211;
+}
+
+static void
+nm_wifi_utils_nl80211_class_init (NMWifiUtilsNl80211Class *klass)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMWifiUtilsClass *wifi_utils_class = NM_WIFI_UTILS_CLASS (klass);
+
+	object_class->dispose = dispose;
+
+	wifi_utils_class->get_mode = wifi_nl80211_get_mode;
+	wifi_utils_class->set_mode = wifi_nl80211_set_mode;
+	wifi_utils_class->set_powersave = wifi_nl80211_set_powersave;
+	wifi_utils_class->get_wake_on_wlan = wifi_nl80211_get_wake_on_wlan,
+	wifi_utils_class->set_wake_on_wlan = wifi_nl80211_set_wake_on_wlan,
+	wifi_utils_class->get_freq = wifi_nl80211_get_freq;
+	wifi_utils_class->find_freq = wifi_nl80211_find_freq;
+	wifi_utils_class->get_bssid = wifi_nl80211_get_bssid;
+	wifi_utils_class->get_rate = wifi_nl80211_get_rate;
+	wifi_utils_class->get_qual = wifi_nl80211_get_qual;
+	wifi_utils_class->indicate_addressing_running = wifi_nl80211_indicate_addressing_running;
+}
+
+NMWifiUtils *
+nm_wifi_utils_nl80211_new (int ifindex, struct nl_sock *genl)
+{
+	NMWifiUtilsNl80211 *nl80211;
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	struct nl80211_device_info device_info = {};
 	char ifname[IFNAMSIZ];
+
+	if (!genl)
+		return NULL;
 
 	if (!nmp_utils_if_indextoname (ifindex, ifname)) {
 		_LOGW (LOGD_PLATFORM | LOGD_WIFI,
@@ -964,14 +943,10 @@ wifi_nl80211_init (int ifindex)
 		nm_sprintf_buf (ifname, "if %d", ifindex);
 	}
 
-	nl80211 = wifi_data_new (&klass, ifindex);
+	nl80211 = g_object_new (NM_TYPE_WIFI_UTILS_NL80211, NULL);
 
-	nl80211->nl_sock = nl_socket_alloc ();
-	if (nl80211->nl_sock == NULL)
-		goto error;
-
-	if (nl_connect (nl80211->nl_sock, NETLINK_GENERIC))
-		goto error;
+	nl80211->parent.ifindex = ifindex;
+	nl80211->nl_sock = genl;
 
 	nl80211->id = genl_ctrl_resolve (nl80211->nl_sock, "nl80211");
 	if (nl80211->id < 0) {
@@ -1035,10 +1010,9 @@ wifi_nl80211_init (int ifindex)
 	_LOGI (LOGD_PLATFORM | LOGD_WIFI,
 	       "(%s): using nl80211 for WiFi device control",
 	       ifname);
-	return (WifiData *) nl80211;
+	return (NMWifiUtils *) nl80211;
 
 error:
-	wifi_utils_unref ((WifiData *) nl80211);
+	g_object_unref (nl80211);
 	return NULL;
 }
-

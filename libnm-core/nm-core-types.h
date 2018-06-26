@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2014 - 2017 Red Hat, Inc.
+ * Copyright 2014 - 2018 Red Hat, Inc.
  */
 
 #ifndef __NM_CORE_TYPES_H__
@@ -29,6 +29,7 @@
 
 typedef struct _NMConnection              NMConnection;
 typedef struct _NMSetting                 NMSetting;
+typedef struct _NMSetting6Lowpan          NMSetting6Lowpan;
 typedef struct _NMSetting8021x            NMSetting8021x;
 typedef struct _NMSettingAdsl             NMSettingAdsl;
 typedef struct _NMSettingBluetooth        NMSettingBluetooth;
@@ -69,6 +70,7 @@ typedef struct _NMSettingWimax            NMSettingWimax;
 typedef struct _NMSettingWired            NMSettingWired;
 typedef struct _NMSettingWireless         NMSettingWireless;
 typedef struct _NMSettingWirelessSecurity NMSettingWirelessSecurity;
+typedef struct _NMSettingWpan             NMSettingWpan;
 typedef struct _NMSimpleConnection        NMSimpleConnection;
 
 #endif  /* __NM_CORE_TYPES_H__ */

@@ -16,7 +16,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2007 - 2011 Red Hat, Inc.
+ * Copyright 2007 - 2018 Red Hat, Inc.
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -145,12 +145,6 @@ nm_setting_serial_get_send_delay (NMSettingSerial *setting)
 	return NM_SETTING_SERIAL_GET_PRIVATE (setting)->send_delay;
 }
 
-static gboolean
-verify (NMSetting *setting, NMConnection *connection, GError **error)
-{
-	return TRUE;
-}
-
 static void
 nm_setting_serial_init (NMSettingSerial *setting)
 {
@@ -254,7 +248,6 @@ nm_setting_serial_class_init (NMSettingSerialClass *setting_class)
 	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
-	parent_class->verify       = verify;
 
 	/* Properties */
 

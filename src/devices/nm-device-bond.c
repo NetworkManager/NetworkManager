@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2011 - 2016 Red Hat, Inc.
+ * Copyright 2011 - 2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -363,7 +363,6 @@ static NMActStageReturn
 act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *out_failure_reason)
 {
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
-	gboolean no_firmware = FALSE;
 
 	ret = NM_DEVICE_CLASS (nm_device_bond_parent_class)->act_stage1_prepare (dev, out_failure_reason);
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
@@ -374,7 +373,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *out_failure_reason)
 	ret = apply_bonding_config (dev);
 	if (ret != NM_ACT_STAGE_RETURN_FAILURE)
 		ret = nm_device_hw_addr_set_cloned (dev, nm_device_get_applied_connection (dev), FALSE);
-	nm_device_bring_up (dev, TRUE, &no_firmware);
+	nm_device_bring_up (dev, TRUE, NULL);
 
 	return ret;
 }
@@ -386,7 +385,7 @@ enslave_slave (NMDevice *device,
                gboolean configure)
 {
 	NMDeviceBond *self = NM_DEVICE_BOND (device);
-	gboolean success = TRUE, no_firmware = FALSE;
+	gboolean success = TRUE;
 	const char *slave_iface = nm_device_get_ip_iface (slave);
 	NMConnection *master_con;
 
@@ -397,7 +396,7 @@ enslave_slave (NMDevice *device,
 		success = nm_platform_link_enslave (nm_device_get_platform (device),
 		                                    nm_device_get_ip_ifindex (device),
 		                                    nm_device_get_ip_ifindex (slave));
-		nm_device_bring_up (slave, TRUE, &no_firmware);
+		nm_device_bring_up (slave, TRUE, NULL);
 
 		if (!success)
 			return FALSE;
@@ -434,7 +433,7 @@ release_slave (NMDevice *device,
                gboolean configure)
 {
 	NMDeviceBond *self = NM_DEVICE_BOND (device);
-	gboolean success, no_firmware = FALSE;
+	gboolean success;
 	gs_free char *address = NULL;
 
 	if (configure) {
@@ -463,7 +462,7 @@ release_slave (NMDevice *device,
 		 * IFF_UP), so we must bring it back up here to ensure carrier changes and
 		 * other state is noticed by the now-released slave.
 		 */
-		if (!nm_device_bring_up (slave, TRUE, &no_firmware))
+		if (!nm_device_bring_up (slave, TRUE, NULL))
 			_LOGW (LOGD_BOND, "released bond slave could not be brought up.");
 	} else {
 		_LOGI (LOGD_BOND, "bond slave %s was released",

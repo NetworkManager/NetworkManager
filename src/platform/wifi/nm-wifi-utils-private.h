@@ -15,70 +15,65 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2011 Red Hat, Inc.
+ * Copyright (C) 2011 - 2018 Red Hat, Inc.
  */
 
 #ifndef __WIFI_UTILS_PRIVATE_H__
 #define __WIFI_UTILS_PRIVATE_H__
 
 #include "nm-dbus-interface.h"
-#include "wifi-utils.h"
+#include "nm-wifi-utils.h"
 
 typedef struct {
-	gsize struct_size;
+	GObjectClass parent;
 
-	NM80211Mode (*get_mode) (WifiData *data);
+	NM80211Mode (*get_mode) (NMWifiUtils *data);
 
-	gboolean (*set_mode) (WifiData *data, const NM80211Mode mode);
+	gboolean (*set_mode) (NMWifiUtils *data, const NM80211Mode mode);
 
 	/* Set power saving mode on an interface */
-	gboolean (*set_powersave) (WifiData *data, guint32 powersave);
+	gboolean (*set_powersave) (NMWifiUtils *data, guint32 powersave);
 
 	/* Get WakeOnWLAN configuration on an interface */
-	NMSettingWirelessWakeOnWLan (*get_wake_on_wlan) (WifiData *data);
+	NMSettingWirelessWakeOnWLan (*get_wake_on_wlan) (NMWifiUtils *data);
 
 	/* Set WakeOnWLAN mode on an interface */
-	gboolean (*set_wake_on_wlan) (WifiData *data, NMSettingWirelessWakeOnWLan wowl);
+	gboolean (*set_wake_on_wlan) (NMWifiUtils *data, NMSettingWirelessWakeOnWLan wowl);
 
 	/* Return current frequency in MHz (really associated BSS frequency) */
-	guint32 (*get_freq) (WifiData *data);
+	guint32 (*get_freq) (NMWifiUtils *data);
 
 	/* Return first supported frequency in the zero-terminated list */
-	guint32 (*find_freq) (WifiData *data, const guint32 *freqs);
+	guint32 (*find_freq) (NMWifiUtils *data, const guint32 *freqs);
 
 	/* Return current bitrate in Kbps */
-	guint32 (*get_rate) (WifiData *data);
+	guint32 (*get_rate) (NMWifiUtils *data);
 
-	gboolean (*get_bssid) (WifiData *data, guint8 *out_bssid);
+	gboolean (*get_bssid) (NMWifiUtils *data, guint8 *out_bssid);
 
 	/* Return a signal strength percentage 0 - 100% for the current BSSID;
 	 * return -1 on errors or if not associated.
 	 */
-	int (*get_qual) (WifiData *data);
-
-	void (*deinit) (WifiData *data);
-
-	gboolean (*get_wowlan) (WifiData *data);
+	int (*get_qual) (NMWifiUtils *data);
 
 	/* OLPC Mesh-only functions */
 
-	guint32 (*get_mesh_channel) (WifiData *data);
+	guint32 (*get_mesh_channel) (NMWifiUtils *data);
 
 	/* channel == 0 means "auto channel" */
-	gboolean (*set_mesh_channel) (WifiData *data, guint32 channel);
+	gboolean (*set_mesh_channel) (NMWifiUtils *data, guint32 channel);
 
 	/* ssid == NULL means "auto SSID" */
-	gboolean (*set_mesh_ssid) (WifiData *data, const guint8 *ssid, gsize len);
+	gboolean (*set_mesh_ssid) (NMWifiUtils *data, const guint8 *ssid, gsize len);
 
-	gboolean (*indicate_addressing_running) (WifiData *data, gboolean running);
-} WifiDataClass;
+	gboolean (*indicate_addressing_running) (NMWifiUtils *data, gboolean running);
+} NMWifiUtilsClass;
 
-struct WifiData {
-	const WifiDataClass *klass;
+struct NMWifiUtils {
+	GObject parent;
+
 	int ifindex;
 	NMDeviceWifiCapabilities caps;
 };
-
-gpointer wifi_data_new (const WifiDataClass *klass, int ifindex);
 
 #endif  /* __WIFI_UTILS_PRIVATE_H__ */

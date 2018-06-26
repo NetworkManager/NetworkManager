@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2012 - 2017 Red Hat, Inc.
+ * Copyright (C) 2012 - 2018 Red Hat, Inc.
  */
 #include "nm-default.h"
 
@@ -50,8 +50,9 @@
 #include "nmp-netns.h"
 #include "nm-platform-utils.h"
 #include "nm-platform-private.h"
-#include "wifi/wifi-utils.h"
-#include "wifi/wifi-utils-wext.h"
+#include "wifi/nm-wifi-utils.h"
+#include "wifi/nm-wifi-utils-wext.h"
+#include "wpan/nm-wpan-utils.h"
 #include "nm-utils/unaligned.h"
 #include "nm-utils/nm-udev-utils.h"
 
@@ -151,6 +152,13 @@ G_STATIC_ASSERT (RTA_MAX == (__RTA_MAX - 1));
 #define IP6_FLOWINFO_TCLASS_MASK        0x0FF00000
 #define IP6_FLOWINFO_TCLASS_SHIFT       20
 #define IP6_FLOWINFO_FLOWLABEL_MASK     0x000FFFFF
+
+/*****************************************************************************/
+
+/* Appeared in in kernel prior to 3.13 dated 19 January, 2014 */
+#ifndef ARPHRD_6LOWPAN
+#define ARPHRD_6LOWPAN 825
+#endif
 
 /*****************************************************************************/
 
@@ -317,6 +325,7 @@ static void cache_on_change (NMPlatform *platform,
                              const NMPObject *obj_new);
 static void cache_prune_all (NMPlatform *platform);
 static gboolean event_handler_read_netlink (NMPlatform *platform, gboolean wait_for_acks);
+static struct nl_sock *_genl_sock (NMLinuxPlatform *platform);
 
 /*****************************************************************************/
 
@@ -533,6 +542,8 @@ static const LinkDesc linktypes[] = {
 	{ NM_LINK_TYPE_WIFI,          "wifi",        NULL,          "wlan" },
 	{ NM_LINK_TYPE_WWAN_NET,      "wwan",        NULL,          "wwan" },
 	{ NM_LINK_TYPE_WIMAX,         "wimax",       "wimax",       "wimax" },
+	{ NM_LINK_TYPE_WPAN,          "wpan",        NULL,          NULL },
+	{ NM_LINK_TYPE_6LOWPAN,       "6lowpan",     NULL,          NULL },
 
 	{ NM_LINK_TYPE_BNEP,          "bluetooth",   NULL,          "bluetooth" },
 	{ NM_LINK_TYPE_DUMMY,         "dummy",       "dummy",       NULL },
@@ -841,6 +852,10 @@ _linktype_get_type (NMPlatform *platform,
 		return NM_LINK_TYPE_IP6TNL;
 	else if (arptype == ARPHRD_PPP)
 		return NM_LINK_TYPE_PPP;
+	else if (arptype == ARPHRD_IEEE802154)
+		return NM_LINK_TYPE_WPAN;
+	else if (arptype == ARPHRD_6LOWPAN)
+		return NM_LINK_TYPE_6LOWPAN;
 
 	{
 		NMPUtilsEthtoolDriverInfo driver_info;
@@ -885,7 +900,7 @@ _linktype_get_type (NMPlatform *platform,
 			}
 
 			/* Fallback for drivers that don't call SET_NETDEV_DEVTYPE() */
-			if (wifi_utils_is_wifi (dirfd, ifname_verified))
+			if (nm_wifi_utils_is_wifi (dirfd, ifname_verified))
 				return NM_LINK_TYPE_WIFI;
 		}
 
@@ -1714,6 +1729,7 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	NMPObject *lnk_data = NULL;
 	gboolean address_complete_from_cache = TRUE;
 	gboolean lnk_data_complete_from_cache = TRUE;
+	gboolean need_ext_data = FALSE;
 	gboolean af_inet6_token_valid = FALSE;
 	gboolean af_inet6_addr_gen_mode_valid = FALSE;
 
@@ -1868,6 +1884,12 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	case NM_LINK_TYPE_VXLAN:
 		lnk_data = _parse_lnk_vxlan (nl_info_kind, nl_info_data);
 		break;
+	case NM_LINK_TYPE_WIFI:
+	case NM_LINK_TYPE_OLPC_MESH:
+	case NM_LINK_TYPE_WPAN:
+		need_ext_data = TRUE;
+		lnk_data_complete_from_cache = FALSE;
+		break;
 	default:
 		lnk_data_complete_from_cache = FALSE;
 		break;
@@ -1895,6 +1917,14 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 				nmp_object_unref (lnk_data);
 				lnk_data = (NMPObject *) nmp_object_ref (link_cached->_link.netlink.lnk);
 			}
+
+			if (   need_ext_data
+			    && link_cached->link.type == obj->link.type
+			    && link_cached->_link.ext_data) {
+				/* Prefer reuse of existing ext_data object */
+				obj->_link.ext_data = g_object_ref (link_cached->_link.ext_data);
+			}
+
 			if (address_complete_from_cache)
 				obj->link.addr = link_cached->link.addr;
 			if (!af_inet6_token_valid)
@@ -1911,6 +1941,33 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	}
 
 	obj->_link.netlink.lnk = lnk_data;
+
+	if (need_ext_data && obj->_link.ext_data == NULL) {
+		switch (obj->link.type) {
+		case NM_LINK_TYPE_WIFI:
+			obj->_link.ext_data = (GObject *) nm_wifi_utils_new (ifi->ifi_index,
+			                                                     _genl_sock (NM_LINUX_PLATFORM (platform)),
+			                                                     TRUE);
+			break;
+		case NM_LINK_TYPE_OLPC_MESH:
+#if HAVE_WEXT
+			/* The kernel driver now uses nl80211, but we force use of WEXT because
+			 * the cfg80211 interactions are not quite ready to support access to
+			 * mesh control through nl80211 just yet.
+			 */
+			obj->_link.ext_data = (GObject *) nm_wifi_utils_wext_new (ifi->ifi_index, FALSE);
+#endif
+			break;
+		case NM_LINK_TYPE_WPAN:
+			obj->_link.ext_data = (GObject *) nm_wpan_utils_new (ifi->ifi_index,
+			                                                     _genl_sock (NM_LINUX_PLATFORM (platform)),
+			                                                     TRUE);
+			break;
+		default:
+			g_assert_not_reached ();
+		}
+	}
+
 
 	obj->_link.netlink.is_in_netlink = TRUE;
 id_only_handled:
@@ -2966,6 +3023,8 @@ typedef struct {
 } DelayedActionWaitForNlResponseData;
 
 typedef struct {
+	struct nl_sock *genl;
+
 	struct nl_sock *nlh;
 	guint32 nlh_seq_next;
 #ifdef NM_MORE_LOGGING
@@ -2997,8 +3056,6 @@ typedef struct {
 
 		gint is_handling;
 	} delayed_action;
-
-	GHashTable *wifi_data;
 } NMLinuxPlatformPrivate;
 
 struct _NMLinuxPlatform {
@@ -3037,6 +3094,14 @@ nm_linux_platform_setup (void)
 }
 
 /*****************************************************************************/
+
+static struct nl_sock *
+_genl_sock (NMLinuxPlatform *platform)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+
+	return priv->genl;
+}
 
 #define ASSERT_SYSCTL_ARGS(pathid, dirfd, path) \
 	G_STMT_START { \
@@ -5718,6 +5783,41 @@ nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
 
+static gboolean
+link_6lowpan_add (NMPlatform *platform,
+                  const char *name,
+                  int parent,
+                  const NMPlatformLink **out_link)
+{
+	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+	struct nlattr *info;
+
+	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
+	                          NLM_F_CREATE | NLM_F_EXCL,
+	                          0,
+	                          name,
+	                          0,
+	                          0);
+	if (!nlmsg)
+		return FALSE;
+
+	NLA_PUT_U32 (nlmsg, IFLA_LINK, parent);
+
+	if (!(info = nla_nest_start (nlmsg, IFLA_LINKINFO)))
+		goto nla_put_failure;
+
+	NLA_PUT_STRING (nlmsg, IFLA_INFO_KIND, "lowpan");
+
+	nla_nest_end (nlmsg, info);
+
+	return do_add_link_with_lookup (platform,
+	                                NM_LINK_TYPE_6LOWPAN,
+	                                name, nlmsg, out_link);
+nla_put_failure:
+	g_return_val_if_reached (FALSE);
+}
+
+
 static void
 _vlan_change_vlan_qos_mapping_create (gboolean is_ingress_map,
                                       gboolean reset_all,
@@ -5980,43 +6080,26 @@ infiniband_partition_delete (NMPlatform *platform, int parent, int p_key)
 
 /*****************************************************************************/
 
-static WifiData *
-wifi_get_wifi_data (NMPlatform *platform, int ifindex)
+static GObject *
+get_ext_data (NMPlatform *platform, int ifindex)
 {
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	const NMPlatformLink *pllink;
-	WifiData *wifi_data;
+	const NMPObject *obj;
 
-	wifi_data = g_hash_table_lookup (priv->wifi_data, GINT_TO_POINTER (ifindex));
-	pllink = nm_platform_link_get (platform, ifindex);
+	obj = nmp_cache_lookup_link (nm_platform_get_cache (platform), ifindex);
+	if (!obj)
+		return NULL;
 
-	if (!wifi_data) {
-		if (pllink) {
-			if (pllink->type == NM_LINK_TYPE_WIFI)
-				wifi_data = wifi_utils_init (ifindex, TRUE);
-			else if (pllink->type == NM_LINK_TYPE_OLPC_MESH) {
-				/* The kernel driver now uses nl80211, but we force use of WEXT because
-				 * the cfg80211 interactions are not quite ready to support access to
-				 * mesh control through nl80211 just yet.
-				 */
-#if HAVE_WEXT
-				wifi_data = wifi_wext_init (ifindex, FALSE);
-#endif
-			}
-
-			if (wifi_data)
-				g_hash_table_insert (priv->wifi_data, GINT_TO_POINTER (ifindex), wifi_data);
-		}
-	}
-
-	return wifi_data;
+	return obj->_link.ext_data;
 }
+
+/*****************************************************************************/
+
 #define WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, retval) \
 	nm_auto_pop_netns NMPNetns *netns = NULL; \
-	WifiData *wifi_data; \
+	NMWifiUtils *wifi_data; \
 	if (!nm_platform_netns_push (platform, &netns)) \
 		return retval; \
-	wifi_data = wifi_get_wifi_data (platform, ifindex); \
+	wifi_data = NM_WIFI_UTILS (get_ext_data (platform, ifindex)); \
 	if (!wifi_data) \
 		return retval;
 
@@ -6025,7 +6108,7 @@ wifi_get_capabilities (NMPlatform *platform, int ifindex, NMDeviceWifiCapabiliti
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, FALSE);
 	if (caps)
-		*caps = wifi_utils_get_caps (wifi_data);
+		*caps = nm_wifi_utils_get_caps (wifi_data);
 	return TRUE;
 }
 
@@ -6033,70 +6116,70 @@ static gboolean
 wifi_get_bssid (NMPlatform *platform, int ifindex, guint8 *bssid)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, FALSE);
-	return wifi_utils_get_bssid (wifi_data, bssid);
+	return nm_wifi_utils_get_bssid (wifi_data, bssid);
 }
 
 static guint32
 wifi_get_frequency (NMPlatform *platform, int ifindex)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, 0);
-	return wifi_utils_get_freq (wifi_data);
+	return nm_wifi_utils_get_freq (wifi_data);
 }
 
 static gboolean
 wifi_get_quality (NMPlatform *platform, int ifindex)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, FALSE);
-	return wifi_utils_get_qual (wifi_data);
+	return nm_wifi_utils_get_qual (wifi_data);
 }
 
 static guint32
 wifi_get_rate (NMPlatform *platform, int ifindex)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, FALSE);
-	return wifi_utils_get_rate (wifi_data);
+	return nm_wifi_utils_get_rate (wifi_data);
 }
 
 static NM80211Mode
 wifi_get_mode (NMPlatform *platform, int ifindex)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, NM_802_11_MODE_UNKNOWN);
-	return wifi_utils_get_mode (wifi_data);
+	return nm_wifi_utils_get_mode (wifi_data);
 }
 
 static void
 wifi_set_mode (NMPlatform *platform, int ifindex, NM80211Mode mode)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, );
-	wifi_utils_set_mode (wifi_data, mode);
+	nm_wifi_utils_set_mode (wifi_data, mode);
 }
 
 static void
 wifi_set_powersave (NMPlatform *platform, int ifindex, guint32 powersave)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, );
-	wifi_utils_set_powersave (wifi_data, powersave);
+	nm_wifi_utils_set_powersave (wifi_data, powersave);
 }
 
 static guint32
 wifi_find_frequency (NMPlatform *platform, int ifindex, const guint32 *freqs)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, 0);
-	return wifi_utils_find_freq (wifi_data, freqs);
+	return nm_wifi_utils_find_freq (wifi_data, freqs);
 }
 
 static void
 wifi_indicate_addressing_running (NMPlatform *platform, int ifindex, gboolean running)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, );
-	wifi_utils_indicate_addressing_running (wifi_data, running);
+	nm_wifi_utils_indicate_addressing_running (wifi_data, running);
 }
 
 static NMSettingWirelessWakeOnWLan
 wifi_get_wake_on_wlan (NMPlatform *platform, int ifindex)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, FALSE);
-	return wifi_utils_get_wake_on_wlan (wifi_data);
+	return nm_wifi_utils_get_wake_on_wlan (wifi_data);
 }
 
 static gboolean
@@ -6104,7 +6187,7 @@ wifi_set_wake_on_wlan (NMPlatform *platform, int ifindex,
                        NMSettingWirelessWakeOnWLan wowl)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, FALSE);
-	return wifi_utils_set_wake_on_wlan (wifi_data, wowl);
+	return nm_wifi_utils_set_wake_on_wlan (wifi_data, wowl);
 }
 
 /*****************************************************************************/
@@ -6155,21 +6238,56 @@ static guint32
 mesh_get_channel (NMPlatform *platform, int ifindex)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, 0);
-	return wifi_utils_get_mesh_channel (wifi_data);
+	return nm_wifi_utils_get_mesh_channel (wifi_data);
 }
 
 static gboolean
 mesh_set_channel (NMPlatform *platform, int ifindex, guint32 channel)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, FALSE);
-	return wifi_utils_set_mesh_channel (wifi_data, channel);
+	return nm_wifi_utils_set_mesh_channel (wifi_data, channel);
 }
 
 static gboolean
 mesh_set_ssid (NMPlatform *platform, int ifindex, const guint8 *ssid, gsize len)
 {
 	WIFI_GET_WIFI_DATA_NETNS (wifi_data, platform, ifindex, FALSE);
-	return wifi_utils_set_mesh_ssid (wifi_data, ssid, len);
+	return nm_wifi_utils_set_mesh_ssid (wifi_data, ssid, len);
+}
+
+/*****************************************************************************/
+
+#define WPAN_GET_WPAN_DATA(wpan_data, platform, ifindex, retval) \
+	NMWpanUtils *wpan_data = NM_WPAN_UTILS (get_ext_data (platform, ifindex)); \
+	if (!wpan_data) \
+		return retval;
+
+static guint16
+wpan_get_pan_id (NMPlatform *platform, int ifindex)
+{
+	WPAN_GET_WPAN_DATA (wpan_data, platform, ifindex, G_MAXINT16);
+	return nm_wpan_utils_get_pan_id (wpan_data);
+}
+
+static gboolean
+wpan_set_pan_id (NMPlatform *platform, int ifindex, guint16 pan_id)
+{
+	WPAN_GET_WPAN_DATA (wpan_data, platform, ifindex, FALSE);
+	return nm_wpan_utils_set_pan_id (wpan_data, pan_id);
+}
+
+static guint16
+wpan_get_short_addr (NMPlatform *platform, int ifindex)
+{
+	WPAN_GET_WPAN_DATA (wpan_data, platform, ifindex, G_MAXINT16);
+	return nm_wpan_utils_get_short_addr (wpan_data);
+}
+
+static gboolean
+wpan_set_short_addr (NMPlatform *platform, int ifindex, guint16 short_addr)
+{
+	WPAN_GET_WPAN_DATA (wpan_data, platform, ifindex, FALSE);
+	return nm_wpan_utils_set_short_addr (wpan_data, short_addr);
 }
 
 /*****************************************************************************/
@@ -6186,12 +6304,12 @@ link_get_wake_on_lan (NMPlatform *platform, int ifindex)
 	if (type == NM_LINK_TYPE_ETHERNET)
 		return nmp_utils_ethtool_get_wake_on_lan (ifindex);
 	else if (type == NM_LINK_TYPE_WIFI) {
-		WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
+		NMWifiUtils *wifi_data = NM_WIFI_UTILS (get_ext_data (platform, ifindex));
 
 		if (!wifi_data)
 			return FALSE;
 
-		return wifi_utils_get_wowlan (wifi_data);
+		return nm_wifi_utils_get_wake_on_wlan (wifi_data) != NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE;
 	} else
 		return FALSE;
 }
@@ -7013,7 +7131,6 @@ nm_linux_platform_init (NMLinuxPlatform *self)
 	priv->delayed_action.list_master_connected = g_ptr_array_new ();
 	priv->delayed_action.list_refresh_link = g_ptr_array_new ();
 	priv->delayed_action.list_wait_for_nl_response = g_array_new (FALSE, TRUE, sizeof (DelayedActionWaitForNlResponseData));
-	priv->wifi_data = g_hash_table_new_full (nm_direct_hash, NULL, NULL, (GDestroyNotify) wifi_utils_unref);
 }
 
 static void
@@ -7042,6 +7159,18 @@ constructed (GObject *_object)
 	                                   nmp_netns_get_current (),
 	                                   nmp_netns_get_current () == nmp_netns_get_initial () ? "/main" : "")),
 	       nm_platform_get_use_udev (platform) ? "use" : "no");
+
+
+	priv->genl = nl_socket_alloc ();
+	g_assert (priv->genl);
+
+	nle = nl_connect (priv->genl, NETLINK_GENERIC);
+	if (nle) {
+		_LOGE ("unable to connect the generic netlink socket \"%s\" (%d)",
+		       nl_geterror (nle), -nle);
+		nl_socket_free (priv->genl);
+		priv->genl = NULL;
+	}
 
 	priv->nlh = nl_socket_alloc ();
 	g_assert (priv->nlh);
@@ -7161,11 +7290,11 @@ finalize (GObject *object)
 	g_ptr_array_unref (priv->delayed_action.list_refresh_link);
 	g_array_unref (priv->delayed_action.list_wait_for_nl_response);
 
+	nl_socket_free (priv->genl);
+
 	g_source_remove (priv->event_id);
 	g_io_channel_unref (priv->event_channel);
 	nl_socket_free (priv->nlh);
-
-	g_hash_table_unref (priv->wifi_data);
 
 	if (priv->sysctl_get_prev_values) {
 		sysctl_clear_cache_list = g_slist_remove (sysctl_clear_cache_list, object);
@@ -7252,6 +7381,11 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->mesh_set_channel = mesh_set_channel;
 	platform_class->mesh_set_ssid = mesh_set_ssid;
 
+	platform_class->wpan_get_pan_id = wpan_get_pan_id;
+	platform_class->wpan_set_pan_id = wpan_set_pan_id;
+	platform_class->wpan_get_short_addr = wpan_get_short_addr;
+	platform_class->wpan_set_short_addr = wpan_set_short_addr;
+
 	platform_class->link_gre_add = link_gre_add;
 	platform_class->link_ip6tnl_add = link_ip6tnl_add;
 	platform_class->link_macsec_add = link_macsec_add;
@@ -7259,6 +7393,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_ipip_add = link_ipip_add;
 	platform_class->link_sit_add = link_sit_add;
 	platform_class->link_tun_add = link_tun_add;
+	platform_class->link_6lowpan_add = link_6lowpan_add;
 
 	platform_class->object_delete = object_delete;
 	platform_class->ip4_address_add = ip4_address_add;

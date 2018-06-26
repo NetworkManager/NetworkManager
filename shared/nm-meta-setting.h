@@ -16,7 +16,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2017 Red Hat, Inc.
+ * Copyright 2017 - 2018 Red Hat, Inc.
  */
 
 #ifndef __NM_META_SETTING_H__
@@ -56,6 +56,7 @@ extern const NMSetting8021xSchemeVtable nm_setting_8021x_scheme_vtable[_NM_SETTI
 /*****************************************************************************/
 
 typedef enum {
+	NM_META_SETTING_TYPE_6LOWPAN,
 	NM_META_SETTING_TYPE_802_1X,
 	NM_META_SETTING_TYPE_ADSL,
 	NM_META_SETTING_TYPE_BLUETOOTH,
@@ -95,6 +96,7 @@ typedef enum {
 	NM_META_SETTING_TYPE_WIRED,
 	NM_META_SETTING_TYPE_WIRELESS,
 	NM_META_SETTING_TYPE_WIRELESS_SECURITY,
+	NM_META_SETTING_TYPE_WPAN,
 
 	NM_META_SETTING_TYPE_UNKNOWN,
 

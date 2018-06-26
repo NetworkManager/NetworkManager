@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2004 - 2017 Red Hat, Inc.
+ * Copyright 2004 - 2018 Red Hat, Inc.
  */
 
 /* Definitions related to NetworkManager's D-Bus interfaces.
@@ -75,6 +75,8 @@
 #define NM_DBUS_INTERFACE_DEVICE_VXLAN         NM_DBUS_INTERFACE_DEVICE ".Vxlan"
 #define NM_DBUS_INTERFACE_DEVICE_GRE           NM_DBUS_INTERFACE_DEVICE ".Gre"
 #define NM_DBUS_INTERFACE_DEVICE_IP_TUNNEL     NM_DBUS_INTERFACE_DEVICE ".IPTunnel"
+#define NM_DBUS_INTERFACE_DEVICE_WPAN          NM_DBUS_INTERFACE_DEVICE ".Wpan"
+#define NM_DBUS_INTERFACE_DEVICE_6LOWPAN       NM_DBUS_INTERFACE_DEVICE ".Lowpan"
 #define NM_DBUS_INTERFACE_DEVICE_STATISTICS    NM_DBUS_INTERFACE_DEVICE ".Statistics"
 #define NM_DBUS_INTERFACE_CHECKPOINT           NM_DBUS_INTERFACE ".Checkpoint"
 
@@ -212,6 +214,8 @@ typedef enum {
  * @NM_DEVICE_TYPE_OVS_INTERFACE: a OpenVSwitch interface
  * @NM_DEVICE_TYPE_OVS_PORT: a OpenVSwitch port
  * @NM_DEVICE_TYPE_OVS_BRIDGE: a OpenVSwitch bridge
+ * @NM_DEVICE_TYPE_WPAN: a IEEE 802.15.4 (WPAN) MAC Layer Device
+ * @NM_DEVICE_TYPE_6LOWPAN: 6LoWPAN interface
  *
  * #NMDeviceType values indicate the type of hardware represented by a
  * device object.
@@ -244,6 +248,8 @@ typedef enum {
 	NM_DEVICE_TYPE_OVS_INTERFACE = 24,
 	NM_DEVICE_TYPE_OVS_PORT      = 25,
 	NM_DEVICE_TYPE_OVS_BRIDGE    = 26,
+	NM_DEVICE_TYPE_WPAN          = 27,
+	NM_DEVICE_TYPE_6LOWPAN       = 28,
 } NMDeviceType;
 
 /**

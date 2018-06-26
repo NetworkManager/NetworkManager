@@ -5,6 +5,7 @@ libnm_core_headers = files(
   'nm-core-types.h',
   'nm-dbus-interface.h',
   'nm-errors.h',
+  'nm-setting-6lowpan.h',
   'nm-setting-8021x.h',
   'nm-setting-adsl.h',
   'nm-setting-bluetooth.h',
@@ -45,6 +46,7 @@ libnm_core_headers = files(
   'nm-setting-wired.h',
   'nm-setting-wireless-security.h',
   'nm-setting-wireless.h',
+  'nm-setting-wpan.h',
   'nm-setting.h',
   'nm-simple-connection.h',
   'nm-utils.h',
@@ -55,6 +57,7 @@ libnm_core_headers = files(
 )
 
 libnm_core_settings_sources = files(
+  'nm-setting-6lowpan.c',
   'nm-setting-8021x.c',
   'nm-setting-adsl.c',
   'nm-setting-bluetooth.c',
@@ -94,7 +97,8 @@ libnm_core_settings_sources = files(
   'nm-setting-wimax.c',
   'nm-setting-wired.c',
   'nm-setting-wireless-security.c',
-  'nm-setting-wireless.c'
+  'nm-setting-wireless.c',
+  'nm-setting-wpan.c'
 )
 
 libnm_core_sources = libnm_core_settings_sources + files(
