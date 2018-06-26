@@ -809,17 +809,18 @@ typedef enum /*< flags >*/ {
 
 /**
  * NMIPTunnelMode:
- * @NM_IP_TUNNEL_MODE_UNKNOWN: Unknown/unset tunnel mode
- * @NM_IP_TUNNEL_MODE_IPIP:    IP in IP tunnel
- * @NM_IP_TUNNEL_MODE_GRE:     GRE tunnel
- * @NM_IP_TUNNEL_MODE_SIT:     SIT tunnel
- * @NM_IP_TUNNEL_MODE_ISATAP:  ISATAP tunnel
- * @NM_IP_TUNNEL_MODE_VTI:     VTI tunnel
- * @NM_IP_TUNNEL_MODE_IP6IP6:  IPv6 in IPv6 tunnel
- * @NM_IP_TUNNEL_MODE_IPIP6:   IPv4 in IPv6 tunnel
- * @NM_IP_TUNNEL_MODE_IP6GRE:  IPv6 GRE tunnel
- * @NM_IP_TUNNEL_MODE_VTI6:    IPv6 VTI tunnel
- * @NM_IP_TUNNEL_MODE_GRETAP:  GRETAP tunnel
+ * @NM_IP_TUNNEL_MODE_UNKNOWN:   Unknown/unset tunnel mode
+ * @NM_IP_TUNNEL_MODE_IPIP:      IP in IP tunnel
+ * @NM_IP_TUNNEL_MODE_GRE:       GRE tunnel
+ * @NM_IP_TUNNEL_MODE_SIT:       SIT tunnel
+ * @NM_IP_TUNNEL_MODE_ISATAP:    ISATAP tunnel
+ * @NM_IP_TUNNEL_MODE_VTI:       VTI tunnel
+ * @NM_IP_TUNNEL_MODE_IP6IP6:    IPv6 in IPv6 tunnel
+ * @NM_IP_TUNNEL_MODE_IPIP6:     IPv4 in IPv6 tunnel
+ * @NM_IP_TUNNEL_MODE_IP6GRE:    IPv6 GRE tunnel
+ * @NM_IP_TUNNEL_MODE_VTI6:      IPv6 VTI tunnel
+ * @NM_IP_TUNNEL_MODE_GRETAP:    GRETAP tunnel
+ * @NM_IP_TUNNEL_MODE_IP6GRETAP: IPv6 GRETAP tunnel
  *
  * The tunneling mode.
  *
@@ -837,6 +838,7 @@ typedef enum {
 	NM_IP_TUNNEL_MODE_IP6GRE      = 8,
 	NM_IP_TUNNEL_MODE_VTI6        = 9,
 	NM_IP_TUNNEL_MODE_GRETAP      = 10,
+	NM_IP_TUNNEL_MODE_IP6GRETAP   = 11,
 } NMIPTunnelMode;
 
 /**
