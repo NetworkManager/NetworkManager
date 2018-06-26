@@ -1072,15 +1072,23 @@ _parse_lnk_gre (const char *kind, struct nlattr *info_data)
 	int err;
 	NMPObject *obj;
 	NMPlatformLnkGre *props;
+	gboolean is_tap;
 
-	if (!info_data || g_strcmp0 (kind, "gre"))
+	if (!info_data || !kind)
+		return NULL;
+
+	if (nm_streq (kind, "gretap"))
+		is_tap = TRUE;
+	else if (nm_streq (kind, "gre"))
+		is_tap = FALSE;
+	else
 		return NULL;
 
 	err = nla_parse_nested (tb, IFLA_GRE_MAX, info_data, policy);
 	if (err < 0)
 		return NULL;
 
-	obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_GRE, NULL);
+	obj = nmp_object_new (is_tap ? NMP_OBJECT_TYPE_LNK_GRETAP : NMP_OBJECT_TYPE_LNK_GRE, NULL);
 	props = &obj->lnk_gre;
 
 	props->parent_ifindex = tb[IFLA_GRE_LINK] ? nla_get_u32 (tb[IFLA_GRE_LINK]) : 0;
@@ -1093,6 +1101,7 @@ _parse_lnk_gre (const char *kind, struct nlattr *info_data)
 	props->tos = tb[IFLA_GRE_TOS] ? nla_get_u8 (tb[IFLA_GRE_TOS]) : 0;
 	props->ttl = tb[IFLA_GRE_TTL] ? nla_get_u8 (tb[IFLA_GRE_TTL]) : 0;
 	props->path_mtu_discovery = !tb[IFLA_GRE_PMTUDISC] || !!nla_get_u8 (tb[IFLA_GRE_PMTUDISC]);
+	props->is_tap = is_tap;
 
 	return obj;
 }
@@ -1852,6 +1861,7 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 
 	switch (obj->link.type) {
 	case NM_LINK_TYPE_GRE:
+	case NM_LINK_TYPE_GRETAP:
 		lnk_data = _parse_lnk_gre (nl_info_kind, nl_info_data);
 		break;
 	case NM_LINK_TYPE_INFINIBAND:
@@ -3995,6 +4005,7 @@ cache_on_change (NMPlatform *platform,
 
 			if (   !obj_new->_link.netlink.lnk
 			    && NM_IN_SET (obj_new->link.type, NM_LINK_TYPE_GRE,
+			                                      NM_LINK_TYPE_GRETAP,
 			                                      NM_LINK_TYPE_IP6TNL,
 			                                      NM_LINK_TYPE_INFINIBAND,
 			                                      NM_LINK_TYPE_MACVLAN,
@@ -5330,7 +5341,7 @@ link_gre_add (NMPlatform *platform,
 	if (!(info = nla_nest_start (nlmsg, IFLA_LINKINFO)))
 		goto nla_put_failure;
 
-	NLA_PUT_STRING (nlmsg, IFLA_INFO_KIND, "gre");
+	NLA_PUT_STRING (nlmsg, IFLA_INFO_KIND, props->is_tap ? "gretap" : "gre");
 
 	if (!(data = nla_nest_start (nlmsg, IFLA_INFO_DATA)))
 		goto nla_put_failure;
@@ -5350,7 +5361,9 @@ link_gre_add (NMPlatform *platform,
 	nla_nest_end (nlmsg, data);
 	nla_nest_end (nlmsg, info);
 
-	return do_add_link_with_lookup (platform, NM_LINK_TYPE_GRE, name, nlmsg, out_link);
+	return do_add_link_with_lookup (platform,
+	                                props->is_tap ? NM_LINK_TYPE_GRETAP : NM_LINK_TYPE_GRE,
+	                                name, nlmsg, out_link);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }

@@ -1243,21 +1243,29 @@ nmtstp_link_gre_add (NMPlatform *platform,
 	const NMPlatformLink *pllink = NULL;
 	gboolean success;
 	char buffer[INET_ADDRSTRLEN];
+	NMLinkType link_type;
 
 	g_assert (nm_utils_is_valid_iface_name (name, NULL));
 
 	external_command = nmtstp_run_command_check_external (external_command);
+	link_type = lnk->is_tap ? NM_LINK_TYPE_GRETAP : NM_LINK_TYPE_GRE;
 
 	_init_platform (&platform, external_command);
 
 	if (external_command) {
 		gs_free char *dev = NULL;
+		char *obj, *type;
 
 		if (lnk->parent_ifindex)
 			dev = g_strdup_printf ("dev %s", nm_platform_link_get_name (platform, lnk->parent_ifindex));
 
-		success = !nmtstp_run_command ("ip tunnel add %s mode gre %s local %s remote %s ttl %u tos %02x %s",
+		obj = lnk->is_tap ? "link" : "tunnel";
+		type = lnk->is_tap ? "type gretap" : "mode gre";
+
+		success = !nmtstp_run_command ("ip %s add %s %s %s local %s remote %s ttl %u tos %02x %s",
+		                                obj,
 		                                name,
+		                                type,
 		                                dev ?: "",
 		                                nm_utils_inet4_ntop (lnk->local, NULL),
 		                                nm_utils_inet4_ntop (lnk->remote, buffer),
@@ -1265,11 +1273,11 @@ nmtstp_link_gre_add (NMPlatform *platform,
 		                                lnk->tos,
 		                                lnk->path_mtu_discovery ? "pmtudisc" : "nopmtudisc");
 		if (success)
-			pllink = nmtstp_assert_wait_for_link (platform, name, NM_LINK_TYPE_GRE, 100);
+			pllink = nmtstp_assert_wait_for_link (platform, name, link_type, 100);
 	} else
 		success = nm_platform_link_gre_add (platform, name, lnk, &pllink) == NM_PLATFORM_ERROR_SUCCESS;
 
-	_assert_pllink (platform, success, pllink, name, NM_LINK_TYPE_GRE);
+	_assert_pllink (platform, success, pllink, name, link_type);
 
 	return pllink;
 }

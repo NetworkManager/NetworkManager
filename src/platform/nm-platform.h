@@ -618,6 +618,7 @@ typedef struct {
 	guint8 ttl;
 	guint8 tos;
 	bool path_mtu_discovery:1;
+	bool is_tap:1;
 } NMPlatformLnkGre;
 
 typedef struct {
@@ -1198,6 +1199,7 @@ char *nm_platform_sysctl_slave_get_option (NMPlatform *self, int ifindex, const 
 
 const NMPObject *nm_platform_link_get_lnk (NMPlatform *self, int ifindex, NMLinkType link_type, const NMPlatformLink **out_link);
 const NMPlatformLnkGre *nm_platform_link_get_lnk_gre (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
+const NMPlatformLnkGre *nm_platform_link_get_lnk_gretap (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkIp6Tnl *nm_platform_link_get_lnk_ip6tnl (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkIpIp *nm_platform_link_get_lnk_ipip (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkInfiniband *nm_platform_link_get_lnk_infiniband (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);

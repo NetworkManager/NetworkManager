@@ -1854,6 +1854,12 @@ nm_platform_link_get_lnk_gre (NMPlatform *self, int ifindex, const NMPlatformLin
 	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_GRE, out_link);
 }
 
+const NMPlatformLnkGre *
+nm_platform_link_get_lnk_gretap (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_GRETAP, out_link);
+}
+
 const NMPlatformLnkInfiniband *
 nm_platform_link_get_lnk_infiniband (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
@@ -2385,7 +2391,7 @@ nm_platform_link_gre_add (NMPlatform *self,
 	g_return_val_if_fail (props, NM_PLATFORM_ERROR_BUG);
 	g_return_val_if_fail (name, NM_PLATFORM_ERROR_BUG);
 
-	plerr = _link_add_check_existing (self, name, NM_LINK_TYPE_GRE, out_link);
+	plerr = _link_add_check_existing (self, name, props->is_tap ? NM_LINK_TYPE_GRETAP : NM_LINK_TYPE_GRE, out_link);
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
@@ -5055,7 +5061,7 @@ nm_platform_lnk_gre_to_string (const NMPlatformLnkGre *lnk, char *buf, gsize len
 		return buf;
 
 	g_snprintf (buf, len,
-	            "gre"
+	            lnk->is_tap ? "gretap" : "gre"
 	            "%s" /* remote */
 	            "%s" /* local */
 	            "%s" /* parent_ifindex */
@@ -5942,7 +5948,8 @@ nm_platform_lnk_gre_hash_update (const NMPlatformLnkGre *obj, NMHashState *h)
 	                     obj->output_key,
 	                     obj->ttl,
 	                     obj->tos,
-	                     (bool) obj->path_mtu_discovery);
+	                     (bool) obj->path_mtu_discovery,
+	                     (bool) obj->is_tap);
 }
 
 int
@@ -5959,6 +5966,7 @@ nm_platform_lnk_gre_cmp (const NMPlatformLnkGre *a, const NMPlatformLnkGre *b)
 	NM_CMP_FIELD (a, b, ttl);
 	NM_CMP_FIELD (a, b, tos);
 	NM_CMP_FIELD_BOOL (a, b, path_mtu_discovery);
+	NM_CMP_FIELD_BOOL (a, b, is_tap);
 	return 0;
 }
 

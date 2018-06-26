@@ -2712,6 +2712,17 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_hash_update              = (void (*) (const NMPlatformObject *obj, NMHashState *h)) nm_platform_lnk_gre_hash_update,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_gre_cmp,
 	},
+	[NMP_OBJECT_TYPE_LNK_GRETAP - 1] = {
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.obj_type                           = NMP_OBJECT_TYPE_LNK_GRETAP,
+		.sizeof_data                        = sizeof (NMPObjectLnkGre),
+		.sizeof_public                      = sizeof (NMPlatformLnkGre),
+		.obj_type_name                      = "gretap",
+		.lnk_link_type                      = NM_LINK_TYPE_GRETAP,
+		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_gre_to_string,
+		.cmd_plobj_hash_update              = (void (*) (const NMPlatformObject *obj, NMHashState *h)) nm_platform_lnk_gre_hash_update,
+		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_gre_cmp,
+	},
 	[NMP_OBJECT_TYPE_LNK_INFINIBAND - 1] = {
 		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_INFINIBAND,
