@@ -10,3 +10,9 @@ if enable_libnm_glib
   subdir('libnm-util')
   subdir('libnm-glib')
 endif
+
+test(
+  'check-docs',
+  find_program(join_paths(meson.source_root(), 'tools', 'check-docs.sh')),
+  args: [meson.source_root()]
+)

@@ -390,6 +390,11 @@ EXTRA_DIST += \
 	$(dbusinterfaces_DATA) \
 	introspection/meson.build
 
+check-docs:
+	$(srcdir)/tools/check-docs.sh "$(srcdir)"
+
+check_local += check-docs
+
 ###############################################################################
 
 libnm_core_lib_h_pub_real = \
@@ -4840,6 +4845,7 @@ EXTRA_DIST += \
 	shared/nm-version-macros.h.in \
 	shared/meson.build \
 	\
+	tools/check-docs.sh \
 	tools/check-exports.sh \
 	tools/create-exports-NetworkManager.sh \
 	tools/debug-helper.py \

@@ -191,12 +191,13 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-setting.xml"/>
     <xi:include href="xml/nm-setting-connection.xml"/>
     <!-- begin alphabetical -->
+    <xi:include href="xml/nm-setting-6lowpan.xml"/>
     <xi:include href="xml/nm-setting-8021x.xml"/>
     <xi:include href="xml/nm-setting-adsl.xml"/>
     <xi:include href="xml/nm-setting-bluetooth.xml"/>
     <xi:include href="xml/nm-setting-bond.xml"/>
-    <xi:include href="xml/nm-setting-bridge.xml"/>
     <xi:include href="xml/nm-setting-bridge-port.xml"/>
+    <xi:include href="xml/nm-setting-bridge.xml"/>
     <xi:include href="xml/nm-setting-cdma.xml"/>
     <xi:include href="xml/nm-setting-dcb.xml"/>
     <xi:include href="xml/nm-setting-dummy.xml"/>
@@ -210,19 +211,27 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-setting-macsec.xml"/>
     <xi:include href="xml/nm-setting-macvlan.xml"/>
     <xi:include href="xml/nm-setting-olpc-mesh.xml"/>
-    <xi:include href="xml/nm-setting-ppp.xml"/>
+    <xi:include href="xml/nm-setting-ovs-bridge.xml"/>
+    <xi:include href="xml/nm-setting-ovs-interface.xml"/>
+    <xi:include href="xml/nm-setting-ovs-patch.xml"/>
+    <xi:include href="xml/nm-setting-ovs-port.xml"/>
     <xi:include href="xml/nm-setting-pppoe.xml"/>
+    <xi:include href="xml/nm-setting-ppp.xml"/>
+    <xi:include href="xml/nm-setting-proxy.xml"/>
     <xi:include href="xml/nm-setting-serial.xml"/>
-    <xi:include href="xml/nm-setting-team.xml"/>
+    <xi:include href="xml/nm-setting-tc-config.xml"/>
     <xi:include href="xml/nm-setting-team-port.xml"/>
+    <xi:include href="xml/nm-setting-team.xml"/>
     <xi:include href="xml/nm-setting-tun.xml"/>
+    <xi:include href="xml/nm-setting-user.xml"/>
     <xi:include href="xml/nm-setting-vlan.xml"/>
     <xi:include href="xml/nm-setting-vpn.xml"/>
     <xi:include href="xml/nm-setting-vxlan.xml"/>
     <xi:include href="xml/nm-setting-wimax.xml"/>
     <xi:include href="xml/nm-setting-wired.xml"/>
-    <xi:include href="xml/nm-setting-wireless.xml"/>
     <xi:include href="xml/nm-setting-wireless-security.xml"/>
+    <xi:include href="xml/nm-setting-wireless.xml"/>
+    <xi:include href="xml/nm-setting-wpan.xml"/>
     <!-- end alphabetical -->
   </chapter>
 
@@ -230,6 +239,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <title>Device and Runtime Configuration API Reference</title>
     <xi:include href="xml/nm-device.xml"/>
     <!-- begin alphabetical -->
+    <xi:include href="xml/nm-device-6lowpan.xml"/>
     <xi:include href="xml/nm-device-adsl.xml"/>
     <xi:include href="xml/nm-device-bond.xml"/>
     <xi:include href="xml/nm-device-bridge.xml"/>
@@ -243,12 +253,17 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-device-macvlan.xml"/>
     <xi:include href="xml/nm-device-modem.xml"/>
     <xi:include href="xml/nm-device-olpc-mesh.xml"/>
+    <xi:include href="xml/nm-device-ovs-bridge.xml"/>
+    <xi:include href="xml/nm-device-ovs-interface.xml"/>
+    <xi:include href="xml/nm-device-ovs-port.xml"/>
+    <xi:include href="xml/nm-device-ppp.xml"/>
     <xi:include href="xml/nm-device-team.xml"/>
     <xi:include href="xml/nm-device-tun.xml"/>
     <xi:include href="xml/nm-device-vlan.xml"/>
     <xi:include href="xml/nm-device-vxlan.xml"/>
     <xi:include href="xml/nm-device-wifi.xml"/>
     <xi:include href="xml/nm-device-wimax.xml"/>
+    <xi:include href="xml/nm-device-wpan.xml"/>
     <!-- end alphabetical -->
     <xi:include href="xml/nm-active-connection.xml"/>
     <xi:include href="xml/nm-vpn-connection.xml"/>
@@ -257,6 +272,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-wimax-nsp.xml"/>
     <xi:include href="xml/nm-ip-config.xml"/>
     <xi:include href="xml/nm-dhcp-config.xml"/>
+    <xi:include href="xml/nm-checkpoint.xml"/>
   </chapter>
 
   <chapter>
@@ -267,9 +283,19 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
 
   <chapter>
     <title>VPN Plugin API Reference</title>
-    <xi:include href="xml/nm-vpn-dbus-interface.xml"/>
+    <xi:include href="xml/nm-vpn-service-plugin.xml"/>
+    <xi:include href="xml/nm-vpn-plugin-info.xml"/>
+    <xi:include href="xml/nm-vpn-editor.xml"/>
     <xi:include href="xml/nm-vpn-editor-plugin.xml"/>
+    <xi:include href="xml/nm-vpn-plugin-old.xml"/>
   </chapter>
+
+  <!--
+    These don't contain any useful documentaiton. Keep them here,
+    so that tools/check-docs.sh knows that we did omit them intentionally.
+    <xi:include href="xml/nm-core-enum-types.xml"/>
+    <xi:include href="xml/nm-enum-types.xml"/>
+  -->
 
   <chapter id="object-tree">
     <title>Object Hierarchy</title>
