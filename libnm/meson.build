@@ -239,12 +239,30 @@ if enable_introspection
 
   generate_setting_docs = join_paths(meson.current_source_dir(), 'generate-setting-docs.py')
 
+  gi_typelib_path = run_command('printenv', 'GI_TYPELIB_PATH').stdout()
+  if gi_typelib_path != ''
+    gi_typelib_path = ':' + gi_typelib_path
+  endif
+  gi_typelib_path = meson.current_build_dir() + gi_typelib_path
+
+  ld_library_path = run_command('printenv', 'LD_LIBRARY_PATH').stdout()
+  if ld_library_path != ''
+    ld_library_path = ':' + ld_library_path
+  endif
+  ld_library_path = meson.current_build_dir() + ld_library_path
+
+  generate_setting_docs_env = [
+    'env', '-i',
+    'GI_TYPELIB_PATH=' + gi_typelib_path,
+    'LD_LIBRARY_PATH=' + ld_library_path
+  ]
+
   name = 'nm-property-docs.xml'
   nm_property_docs = custom_target(
     name,
     input: libnm_gir[0],
     output: name,
-    command: [generate_setting_docs, '--lib-path', meson.current_build_dir(), '--gir', '@INPUT@', '--output', '@OUTPUT@'],
+    command: [generate_setting_docs_env, generate_setting_docs, '--lib-path', meson.current_build_dir(), '--gir', '@INPUT@', '--output', '@OUTPUT@'],
     depends: libnm
   )
 
@@ -253,7 +271,7 @@ if enable_introspection
     name,
     input: libnm_gir[0],
     output: name,
-    command: [generate_setting_docs, '--lib-path', meson.current_build_dir(), '--gir', '@INPUT@', '--overrides', nm_settings_docs_overrides, '--output', '@OUTPUT@'],
+    command: [generate_setting_docs_env, generate_setting_docs, '--lib-path', meson.current_build_dir(), '--gir', '@INPUT@', '--overrides', nm_settings_docs_overrides, '--output', '@OUTPUT@'],
     depends: libnm
   )
 endif
