@@ -13,7 +13,6 @@ qt_core_dep = dependency('QtCore', version: '>= 4')
 
 deps = [
   dbus_dep,
-  dbus_glib_dep,
   qt_core_dep,
   dependency('QtDBus'),
   dependency('QtNetwork')
