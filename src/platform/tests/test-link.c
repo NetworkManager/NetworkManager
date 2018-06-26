@@ -819,6 +819,58 @@ test_software_detect (gconstpointer user_data)
 		}
 		break;
 	}
+	case NM_LINK_TYPE_IP6GRE: {
+		NMPlatformLnkIp6Tnl lnk_ip6tnl = { };
+		gboolean gracefully_skip = FALSE;
+
+		if (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, "ip6gre0")) {
+			/* Seems that the ip6_tunnel module is not loaded... try to load it. */
+			gracefully_skip = nm_utils_modprobe (NULL, TRUE, "ip6_gre", NULL) != 0;
+		}
+
+		lnk_ip6tnl.local = *nmtst_inet6_from_string ("fd01::42");
+		lnk_ip6tnl.remote = *nmtst_inet6_from_string ("fd01::aaaa");
+		lnk_ip6tnl.parent_ifindex = ifindex_parent;
+		lnk_ip6tnl.tclass = 21;
+		lnk_ip6tnl.flow_label = 1338;
+		lnk_ip6tnl.is_gre = TRUE;
+
+		if (!nmtstp_link_ip6gre_add (NULL, ext, DEVICE_NAME, &lnk_ip6tnl)) {
+			if (gracefully_skip) {
+				g_test_skip ("Cannot create ip6gre tunnel because of missing ip6_gre module (modprobe ip6_gre)");
+				goto out_delete_parent;
+			}
+			g_error ("Failed adding IP6GRE tunnel");
+		}
+		break;
+	}
+	case NM_LINK_TYPE_IP6GRETAP: {
+		NMPlatformLnkIp6Tnl lnk_ip6tnl = { };
+		gboolean gracefully_skip = FALSE;
+
+		if (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, "ip6gre0")) {
+			/* Seems that the ip6_tunnel module is not loaded... try to load it. */
+			gracefully_skip = nm_utils_modprobe (NULL, TRUE, "ip6_gre", NULL) != 0;
+		}
+
+		lnk_ip6tnl.local = *nmtst_inet6_from_string ("fe80::abcd");
+		lnk_ip6tnl.remote = *nmtst_inet6_from_string ("fc01::bbbb");
+		lnk_ip6tnl.parent_ifindex = ifindex_parent;
+		lnk_ip6tnl.ttl = 10;
+		lnk_ip6tnl.tclass = 22;
+		lnk_ip6tnl.flow_label = 1339;
+		lnk_ip6tnl.is_gre = TRUE;
+		lnk_ip6tnl.is_tap = TRUE;
+
+		if (!nmtstp_link_ip6gre_add (NULL, ext, DEVICE_NAME, &lnk_ip6tnl)) {
+			if (gracefully_skip) {
+				g_test_skip ("Cannot create ip6gretap tunnel because of missing ip6_gre module (modprobe ip6_gre)");
+				goto out_delete_parent;
+			}
+			g_error ("Failed adding IP6GRETAP tunnel");
+		}
+		break;
+	}
 	case NM_LINK_TYPE_MACVLAN: {
 		NMPlatformLnkMacvlan lnk_macvlan = { };
 		const NMPlatformLink *dummy;
@@ -1034,6 +1086,33 @@ test_software_detect (gconstpointer user_data)
 				                 IP6_TNL_F_IGN_ENCAP_LIMIT | IP6_TNL_F_USE_ORIG_TCLASS);
 				break;
 			}
+			break;
+		}
+		case NM_LINK_TYPE_IP6GRE: {
+			const NMPlatformLnkIp6Tnl *plnk = &lnk->lnk_ip6tnl;
+
+			g_assert (plnk == nm_platform_link_get_lnk_ip6gre (NM_PLATFORM_GET, ifindex, NULL));
+			g_assert_cmpint (plnk->parent_ifindex, ==, ifindex_parent);
+			nmtst_assert_ip6_address (&plnk->local, "fd01::42");
+			nmtst_assert_ip6_address (&plnk->remote, "fd01::aaaa");
+			g_assert_cmpint (plnk->tclass, ==, 21);
+			g_assert_cmpint (plnk->flow_label, ==, 1338);
+			g_assert_cmpint (plnk->is_gre, ==, TRUE);
+			g_assert_cmpint (plnk->is_tap, ==, FALSE);
+			break;
+		}
+		case NM_LINK_TYPE_IP6GRETAP: {
+			const NMPlatformLnkIp6Tnl *plnk = &lnk->lnk_ip6tnl;
+
+			g_assert (plnk == nm_platform_link_get_lnk_ip6gretap (NM_PLATFORM_GET, ifindex, NULL));
+			g_assert_cmpint (plnk->parent_ifindex, ==, ifindex_parent);
+			nmtst_assert_ip6_address (&plnk->local, "fe80::abcd");
+			nmtst_assert_ip6_address (&plnk->remote, "fc01::bbbb");
+			g_assert_cmpint (plnk->ttl, ==, 10);
+			g_assert_cmpint (plnk->tclass, ==, 22);
+			g_assert_cmpint (plnk->flow_label, ==, 1339);
+			g_assert_cmpint (plnk->is_gre, ==, TRUE);
+			g_assert_cmpint (plnk->is_tap, ==, TRUE);
 			break;
 		}
 		case NM_LINK_TYPE_IPIP: {
@@ -2668,6 +2747,8 @@ _nmtstp_setup_tests (void)
 		test_software_detect_add ("/link/software/detect/gretap", NM_LINK_TYPE_GRETAP, 0);
 		test_software_detect_add ("/link/software/detect/ip6tnl/0", NM_LINK_TYPE_IP6TNL, 0);
 		test_software_detect_add ("/link/software/detect/ip6tnl/1", NM_LINK_TYPE_IP6TNL, 1);
+		test_software_detect_add ("/link/software/detect/ip6gre", NM_LINK_TYPE_IP6GRE, 0);
+		test_software_detect_add ("/link/software/detect/ip6gretap", NM_LINK_TYPE_IP6GRETAP, 0);
 		test_software_detect_add ("/link/software/detect/ipip", NM_LINK_TYPE_IPIP, 0);
 		test_software_detect_add ("/link/software/detect/macvlan", NM_LINK_TYPE_MACVLAN, 0);
 		test_software_detect_add ("/link/software/detect/macvtap", NM_LINK_TYPE_MACVTAP, 0);

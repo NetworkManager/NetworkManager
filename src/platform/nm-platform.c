@@ -1872,6 +1872,18 @@ nm_platform_link_get_lnk_ip6tnl (NMPlatform *self, int ifindex, const NMPlatform
 	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_IP6TNL, out_link);
 }
 
+const NMPlatformLnkIp6Tnl *
+nm_platform_link_get_lnk_ip6gre (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_IP6GRE, out_link);
+}
+
+const NMPlatformLnkIp6Tnl *
+nm_platform_link_get_lnk_ip6gretap (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_IP6GRETAP, out_link);
+}
+
 const NMPlatformLnkIpIp *
 nm_platform_link_get_lnk_ipip (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
@@ -2550,6 +2562,7 @@ nm_platform_link_ip6tnl_add (NMPlatform *self,
 
 	g_return_val_if_fail (props, NM_PLATFORM_ERROR_BUG);
 	g_return_val_if_fail (name, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (!props->is_gre, NM_PLATFORM_ERROR_BUG);
 
 	plerr = _link_add_check_existing (self, name, NM_LINK_TYPE_IP6TNL, out_link);
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
@@ -2559,6 +2572,46 @@ nm_platform_link_ip6tnl_add (NMPlatform *self,
 	       name, nm_platform_lnk_ip6tnl_to_string (props, NULL, 0));
 
 	if (!klass->link_ip6tnl_add (self, name, props, out_link))
+		return NM_PLATFORM_ERROR_UNSPECIFIED;
+	return NM_PLATFORM_ERROR_SUCCESS;
+}
+
+/**
+ * nm_platform_ip6gre_add:
+ * @self: platform instance
+ * @name: name of the new interface
+ * @props: interface properties
+ * @out_link: on success, the link object
+ *
+ * Create an IPv6 GRE/GRETAP tunnel.
+ */
+NMPlatformError
+nm_platform_link_ip6gre_add (NMPlatform *self,
+                             const char *name,
+                             const NMPlatformLnkIp6Tnl *props,
+                             const NMPlatformLink **out_link)
+{
+	NMPlatformError plerr;
+
+	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
+
+	g_return_val_if_fail (props, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (name, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (props->is_gre, NM_PLATFORM_ERROR_BUG);
+
+	plerr = _link_add_check_existing (self,
+	                                  name,
+	                                  props->is_tap
+	                                      ? NM_LINK_TYPE_IP6GRETAP
+	                                      : NM_LINK_TYPE_IP6GRE,
+	                                  out_link);
+	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
+		return plerr;
+
+	_LOGD ("adding link '%s': %s",
+	       name, nm_platform_lnk_ip6tnl_to_string (props, NULL, 0));
+
+	if (!klass->link_ip6gre_add (self, name, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
 	return NM_PLATFORM_ERROR_SUCCESS;
 }
@@ -5118,12 +5171,18 @@ nm_platform_lnk_ip6tnl_to_string (const NMPlatformLnkIp6Tnl *lnk, char *buf, gsi
 	char str_encap[30];
 	char str_proto[30];
 	char str_parent_ifindex[30];
+	char *str_type;
 
 	if (!nm_utils_to_string_buffer_init_null (lnk, &buf, &len))
 		return buf;
 
+	if (lnk->is_gre)
+		str_type = lnk->is_tap ? "ip6gretap" : "ip6gre";
+	else
+		str_type = "ip6tnl";
+
 	g_snprintf (buf, len,
-	            "ip6tnl"
+	            "%s" /* type */
 	            "%s" /* remote */
 	            "%s" /* local */
 	            "%s" /* parent_ifindex */
@@ -5134,6 +5193,7 @@ nm_platform_lnk_ip6tnl_to_string (const NMPlatformLnkIp6Tnl *lnk, char *buf, gsi
 	            "%s" /* proto */
 	            " flags 0x%x"
 	            "",
+	            str_type,
 	            nm_sprintf_buf (str_remote, " remote %s", nm_utils_inet6_ntop (&lnk->remote, str_remote1)),
 	            nm_sprintf_buf (str_local, " local %s", nm_utils_inet6_ntop (&lnk->local, str_local1)),
 	            lnk->parent_ifindex ? nm_sprintf_buf (str_parent_ifindex, " dev %d", lnk->parent_ifindex) : "",
@@ -5998,7 +6058,13 @@ nm_platform_lnk_ip6tnl_hash_update (const NMPlatformLnkIp6Tnl *obj, NMHashState 
 	                     obj->encap_limit,
 	                     obj->proto,
 	                     obj->flow_label,
-	                     obj->flags);
+	                     obj->flags,
+	                     obj->input_flags,
+	                     obj->output_flags,
+	                     obj->input_key,
+	                     obj->output_key,
+	                     (bool) obj->is_gre,
+	                     (bool) obj->is_tap);
 }
 
 int
@@ -6014,6 +6080,12 @@ nm_platform_lnk_ip6tnl_cmp (const NMPlatformLnkIp6Tnl *a, const NMPlatformLnkIp6
 	NM_CMP_FIELD (a, b, flow_label);
 	NM_CMP_FIELD (a, b, proto);
 	NM_CMP_FIELD (a, b, flags);
+	NM_CMP_FIELD (a, b, input_flags);
+	NM_CMP_FIELD (a, b, output_flags);
+	NM_CMP_FIELD (a, b, input_key);
+	NM_CMP_FIELD (a, b, output_key);
+	NM_CMP_FIELD_BOOL (a, b, is_gre);
+	NM_CMP_FIELD_BOOL (a, b, is_tap);
 	return 0;
 }
 

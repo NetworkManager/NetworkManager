@@ -1297,6 +1297,7 @@ nmtstp_link_ip6tnl_add (NMPlatform *platform,
 	gboolean tclass_inherit;
 
 	g_assert (nm_utils_is_valid_iface_name (name, NULL));
+	g_assert (!lnk->is_gre);
 
 	external_command = nmtstp_run_command_check_external (external_command);
 
@@ -1339,6 +1340,56 @@ nmtstp_link_ip6tnl_add (NMPlatform *platform,
 		success = nm_platform_link_ip6tnl_add (platform, name, lnk, &pllink) == NM_PLATFORM_ERROR_SUCCESS;
 
 	_assert_pllink (platform, success, pllink, name, NM_LINK_TYPE_IP6TNL);
+
+	return pllink;
+}
+
+const NMPlatformLink *
+nmtstp_link_ip6gre_add (NMPlatform *platform,
+                        gboolean external_command,
+                        const char *name,
+                        const NMPlatformLnkIp6Tnl *lnk)
+{
+	const NMPlatformLink *pllink = NULL;
+	gboolean success;
+	char buffer[INET6_ADDRSTRLEN];
+	char tclass[20];
+	gboolean tclass_inherit;
+
+	g_assert (nm_utils_is_valid_iface_name (name, NULL));
+	g_assert (lnk->is_gre);
+
+	external_command = nmtstp_run_command_check_external (external_command);
+
+	_init_platform (&platform, external_command);
+
+	if (external_command) {
+		gs_free char *dev = NULL;
+
+		if (lnk->parent_ifindex)
+			dev = g_strdup_printf ("dev %s", nm_platform_link_get_name (platform, lnk->parent_ifindex));
+
+		tclass_inherit = NM_FLAGS_HAS (lnk->flags, IP6_TNL_F_USE_ORIG_TCLASS);
+
+		success = !nmtstp_run_command ("ip link add %s type %s %s local %s remote %s ttl %u tclass %s flowlabel %x",
+		                                name,
+		                                lnk->is_tap ? "ip6gretap" : "ip6gre",
+		                                dev,
+		                                nm_utils_inet6_ntop (&lnk->local, NULL),
+		                                nm_utils_inet6_ntop (&lnk->remote, buffer),
+		                                lnk->ttl,
+		                                tclass_inherit ? "inherit" : nm_sprintf_buf (tclass, "%02x", lnk->tclass),
+		                                lnk->flow_label);
+		if (success) {
+			pllink = nmtstp_assert_wait_for_link (platform,
+			                                      name,
+			                                      lnk->is_tap ? NM_LINK_TYPE_IP6GRETAP : NM_LINK_TYPE_IP6GRE,
+			                                      100);
+		}
+	} else
+		success = nm_platform_link_ip6gre_add (platform, name, lnk, &pllink) == NM_PLATFORM_ERROR_SUCCESS;
+
+	_assert_pllink (platform, success, pllink, name, lnk->is_tap ? NM_LINK_TYPE_IP6GRETAP : NM_LINK_TYPE_IP6GRE);
 
 	return pllink;
 }

@@ -297,6 +297,10 @@ const NMPlatformLink *nmtstp_link_ip6tnl_add (NMPlatform *platform,
                                               gboolean external_command,
                                               const char *name,
                                               const NMPlatformLnkIp6Tnl *lnk);
+const NMPlatformLink *nmtstp_link_ip6gre_add (NMPlatform *platform,
+                                              gboolean external_command,
+                                              const char *name,
+                                              const NMPlatformLnkIp6Tnl *lnk);
 const NMPlatformLink *nmtstp_link_ipip_add (NMPlatform *platform,
                                             gboolean external_command,
                                             const char *name,

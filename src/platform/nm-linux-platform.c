@@ -549,6 +549,8 @@ static const LinkDesc linktypes[] = {
 	{ NM_LINK_TYPE_GRETAP,        "gretap",      "gretap",      NULL },
 	{ NM_LINK_TYPE_IFB,           "ifb",         "ifb",         NULL },
 	{ NM_LINK_TYPE_IP6TNL,        "ip6tnl",      "ip6tnl",      NULL },
+	{ NM_LINK_TYPE_IP6GRE,        "ip6gre",      "ip6gre",      NULL },
+	{ NM_LINK_TYPE_IP6GRETAP,     "ip6gretap",   "ip6gretap",   NULL },
 	{ NM_LINK_TYPE_IPIP,          "ipip",        "ipip",        NULL },
 	{ NM_LINK_TYPE_LOOPBACK,      "loopback",    NULL,          NULL },
 	{ NM_LINK_TYPE_MACSEC,        "macsec",      "macsec",      NULL },
@@ -1222,6 +1224,79 @@ _parse_lnk_ip6tnl (const char *kind, struct nlattr *info_data)
 	return obj;
 }
 
+static NMPObject *
+_parse_lnk_ip6gre (const char *kind, struct nlattr *info_data)
+{
+	static const struct nla_policy policy[IFLA_GRE_MAX + 1] = {
+		[IFLA_GRE_LINK]        = { .type = NLA_U32 },
+		[IFLA_GRE_IFLAGS]      = { .type = NLA_U16 },
+		[IFLA_GRE_OFLAGS]      = { .type = NLA_U16 },
+		[IFLA_GRE_IKEY]        = { .type = NLA_U32 },
+		[IFLA_GRE_OKEY]        = { .type = NLA_U32 },
+		[IFLA_GRE_LOCAL]       = { .type = NLA_UNSPEC,
+		                             .minlen = sizeof (struct in6_addr)},
+		[IFLA_GRE_REMOTE]      = { .type = NLA_UNSPEC,
+		                             .minlen = sizeof (struct in6_addr)},
+		[IFLA_GRE_TTL]         = { .type = NLA_U8 },
+		[IFLA_GRE_ENCAP_LIMIT] = { .type = NLA_U8 },
+		[IFLA_GRE_FLOWINFO]    = { .type = NLA_U32 },
+		[IFLA_GRE_FLAGS]       = { .type = NLA_U32 },
+	};
+	struct nlattr *tb[IFLA_GRE_MAX + 1];
+	int err;
+	NMPObject *obj;
+	NMPlatformLnkIp6Tnl *props;
+	guint32 flowinfo;
+	gboolean is_tap;
+
+	if (!info_data || !kind)
+		return NULL;
+
+	if (nm_streq (kind, "ip6gre"))
+		is_tap = FALSE;
+	else if (nm_streq (kind, "ip6gretap"))
+		is_tap = TRUE;
+	else
+		return NULL;
+
+	err = nla_parse_nested (tb, IFLA_GRE_MAX, info_data, policy);
+	if (err < 0)
+		return NULL;
+
+	obj = nmp_object_new (is_tap ? NMP_OBJECT_TYPE_LNK_IP6GRETAP : NMP_OBJECT_TYPE_LNK_IP6GRE, NULL);
+	props = &obj->lnk_ip6tnl;
+	props->is_gre = TRUE;
+	props->is_tap = is_tap;
+
+	if (tb[IFLA_GRE_LINK])
+		props->parent_ifindex = nla_get_u32 (tb[IFLA_GRE_LINK]);
+	if (tb[IFLA_GRE_IFLAGS])
+		props->input_flags = ntohs (nla_get_u16 (tb[IFLA_GRE_IFLAGS]));
+	if (tb[IFLA_GRE_OFLAGS])
+		props->output_flags = ntohs (nla_get_u16 (tb[IFLA_GRE_OFLAGS]));
+	if (tb[IFLA_GRE_IKEY])
+		props->input_key = ntohl (nla_get_u32 (tb[IFLA_GRE_IKEY]));
+	if (tb[IFLA_GRE_OKEY])
+		props->output_key = ntohl (nla_get_u32 (tb[IFLA_GRE_OKEY]));
+	if (tb[IFLA_GRE_LOCAL])
+		memcpy (&props->local, nla_data (tb[IFLA_GRE_LOCAL]), sizeof (props->local));
+	if (tb[IFLA_GRE_REMOTE])
+		memcpy (&props->remote, nla_data (tb[IFLA_GRE_REMOTE]), sizeof (props->remote));
+	if (tb[IFLA_GRE_TTL])
+		props->ttl = nla_get_u8 (tb[IFLA_GRE_TTL]);
+	if (tb[IFLA_GRE_ENCAP_LIMIT])
+		props->encap_limit = nla_get_u8 (tb[IFLA_GRE_ENCAP_LIMIT]);
+	if (tb[IFLA_GRE_FLOWINFO]) {
+		flowinfo = ntohl (nla_get_u32 (tb[IFLA_GRE_FLOWINFO]));
+		props->flow_label = flowinfo & IP6_FLOWINFO_FLOWLABEL_MASK;
+		props->tclass = (flowinfo & IP6_FLOWINFO_TCLASS_MASK) >> IP6_FLOWINFO_TCLASS_SHIFT;
+	}
+	if (tb[IFLA_GRE_FLAGS])
+		props->flags = nla_get_u32 (tb[IFLA_GRE_FLAGS]);
+
+	return obj;
+}
+
 /*****************************************************************************/
 
 static NMPObject *
@@ -1869,6 +1944,10 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 		break;
 	case NM_LINK_TYPE_IP6TNL:
 		lnk_data = _parse_lnk_ip6tnl (nl_info_kind, nl_info_data);
+		break;
+	case NM_LINK_TYPE_IP6GRE:
+	case NM_LINK_TYPE_IP6GRETAP:
+		lnk_data = _parse_lnk_ip6gre (nl_info_kind, nl_info_data);
 		break;
 	case NM_LINK_TYPE_IPIP:
 		lnk_data = _parse_lnk_ipip (nl_info_kind, nl_info_data);
@@ -4007,6 +4086,8 @@ cache_on_change (NMPlatform *platform,
 			    && NM_IN_SET (obj_new->link.type, NM_LINK_TYPE_GRE,
 			                                      NM_LINK_TYPE_GRETAP,
 			                                      NM_LINK_TYPE_IP6TNL,
+			                                      NM_LINK_TYPE_IP6GRE,
+			                                      NM_LINK_TYPE_IP6GRETAP,
 			                                      NM_LINK_TYPE_INFINIBAND,
 			                                      NM_LINK_TYPE_MACVLAN,
 			                                      NM_LINK_TYPE_MACVLAN,
@@ -5379,6 +5460,8 @@ link_ip6tnl_add (NMPlatform *platform,
 	struct nlattr *data;
 	guint32 flowinfo;
 
+	g_return_val_if_fail (!props->is_gre, FALSE);
+
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
@@ -5418,6 +5501,68 @@ link_ip6tnl_add (NMPlatform *platform,
 	nla_nest_end (nlmsg, info);
 
 	return do_add_link_with_lookup (platform, NM_LINK_TYPE_IP6TNL, name, nlmsg, out_link);
+nla_put_failure:
+	g_return_val_if_reached (FALSE);
+}
+
+static gboolean
+link_ip6gre_add (NMPlatform *platform,
+                 const char *name,
+                 const NMPlatformLnkIp6Tnl *props,
+                 const NMPlatformLink **out_link)
+{
+	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+	struct nlattr *info;
+	struct nlattr *data;
+	guint32 flowinfo;
+
+	g_return_val_if_fail (props->is_gre, FALSE);
+
+	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
+	                          NLM_F_CREATE | NLM_F_EXCL,
+	                          0,
+	                          name,
+	                          0,
+	                          0);
+	if (!nlmsg)
+		return FALSE;
+
+	if (!(info = nla_nest_start (nlmsg, IFLA_LINKINFO)))
+		goto nla_put_failure;
+
+	NLA_PUT_STRING (nlmsg, IFLA_INFO_KIND, props->is_tap ? "ip6gretap" : "ip6gre");
+
+	if (!(data = nla_nest_start (nlmsg, IFLA_INFO_DATA)))
+		goto nla_put_failure;
+
+	if (props->parent_ifindex)
+		NLA_PUT_U32 (nlmsg, IFLA_GRE_LINK, props->parent_ifindex);
+
+	NLA_PUT_U32 (nlmsg, IFLA_GRE_IKEY, htonl (props->input_key));
+	NLA_PUT_U32 (nlmsg, IFLA_GRE_OKEY, htonl (props->output_key));
+	NLA_PUT_U16 (nlmsg, IFLA_GRE_IFLAGS, htons (props->input_flags));
+	NLA_PUT_U16 (nlmsg, IFLA_GRE_OFLAGS, htons (props->output_flags));
+
+	if (memcmp (&props->local, &in6addr_any, sizeof (in6addr_any)))
+		NLA_PUT (nlmsg, IFLA_GRE_LOCAL, sizeof (props->local), &props->local);
+	if (memcmp (&props->remote, &in6addr_any, sizeof (in6addr_any)))
+		NLA_PUT (nlmsg, IFLA_GRE_REMOTE, sizeof (props->remote), &props->remote);
+
+	NLA_PUT_U8 (nlmsg, IFLA_GRE_TTL, props->ttl);
+	NLA_PUT_U8 (nlmsg, IFLA_GRE_ENCAP_LIMIT, props->encap_limit);
+
+	flowinfo = props->flow_label & IP6_FLOWINFO_FLOWLABEL_MASK;
+	flowinfo |=   (props->tclass << IP6_FLOWINFO_TCLASS_SHIFT)
+	            & IP6_FLOWINFO_TCLASS_MASK;
+	NLA_PUT_U32 (nlmsg, IFLA_GRE_FLOWINFO, htonl (flowinfo));
+	NLA_PUT_U32 (nlmsg, IFLA_GRE_FLAGS, props->flags);
+
+	nla_nest_end (nlmsg, data);
+	nla_nest_end (nlmsg, info);
+
+	return do_add_link_with_lookup (platform,
+	                                props->is_tap ? NM_LINK_TYPE_IP6GRETAP : NM_LINK_TYPE_IP6GRE,
+	                                name, nlmsg, out_link);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
@@ -7314,6 +7459,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->link_gre_add = link_gre_add;
 	platform_class->link_ip6tnl_add = link_ip6tnl_add;
+	platform_class->link_ip6gre_add = link_ip6gre_add;
 	platform_class->link_macsec_add = link_macsec_add;
 	platform_class->link_macvlan_add = link_macvlan_add;
 	platform_class->link_ipip_add = link_ipip_add;
