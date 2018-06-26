@@ -319,6 +319,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	case NM_IP_TUNNEL_MODE_ISATAP:
 	case NM_IP_TUNNEL_MODE_GRE:
 	case NM_IP_TUNNEL_MODE_VTI:
+	case NM_IP_TUNNEL_MODE_GRETAP:
 		family = AF_INET;
 		break;
 	case NM_IP_TUNNEL_MODE_IP6IP6:
@@ -387,8 +388,10 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 
 	if (   (priv->input_key && priv->input_key[0])
 	    || (priv->output_key && priv->output_key[0])) {
-		if (   priv->mode != NM_IP_TUNNEL_MODE_GRE
-		    && priv->mode != NM_IP_TUNNEL_MODE_IP6GRE) {
+		if (!NM_IN_SET (priv->mode,
+		                NM_IP_TUNNEL_MODE_GRE,
+		                NM_IP_TUNNEL_MODE_GRETAP,
+		                NM_IP_TUNNEL_MODE_IP6GRE)) {
 			g_set_error_literal (error,
 			                     NM_CONNECTION_ERROR,
 			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,

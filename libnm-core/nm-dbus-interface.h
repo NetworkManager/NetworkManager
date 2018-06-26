@@ -819,6 +819,7 @@ typedef enum /*< flags >*/ {
  * @NM_IP_TUNNEL_MODE_IPIP6:   IPv4 in IPv6 tunnel
  * @NM_IP_TUNNEL_MODE_IP6GRE:  IPv6 GRE tunnel
  * @NM_IP_TUNNEL_MODE_VTI6:    IPv6 VTI tunnel
+ * @NM_IP_TUNNEL_MODE_GRETAP:  GRETAP tunnel
  *
  * The tunneling mode.
  *
@@ -835,6 +836,7 @@ typedef enum {
 	NM_IP_TUNNEL_MODE_IPIP6       = 7,
 	NM_IP_TUNNEL_MODE_IP6GRE      = 8,
 	NM_IP_TUNNEL_MODE_VTI6        = 9,
+	NM_IP_TUNNEL_MODE_GRETAP      = 10,
 } NMIPTunnelMode;
 
 /**

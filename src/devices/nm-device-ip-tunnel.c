@@ -179,10 +179,13 @@ clear:
 		goto out;
 	}
 
-	if (priv->mode == NM_IP_TUNNEL_MODE_GRE) {
+	if (NM_IN_SET (priv->mode, NM_IP_TUNNEL_MODE_GRE, NM_IP_TUNNEL_MODE_GRETAP)) {
 		const NMPlatformLnkGre *lnk;
 
-		lnk = nm_platform_link_get_lnk_gre (nm_device_get_platform (device), ifindex, NULL);
+		if (priv->mode == NM_IP_TUNNEL_MODE_GRE)
+			lnk = nm_platform_link_get_lnk_gre (nm_device_get_platform (device), ifindex, NULL);
+		else
+			lnk = nm_platform_link_get_lnk_gretap (nm_device_get_platform (device), ifindex, NULL);
 		if (!lnk) {
 			_LOGW (LOGD_PLATFORM, "could not read %s properties", "gre");
 			goto clear;
@@ -456,7 +459,10 @@ update_connection (NMDevice *device, NMConnection *connection)
 		                        NULL);
 	}
 
-	if (priv->mode == NM_IP_TUNNEL_MODE_GRE || priv->mode == NM_IP_TUNNEL_MODE_IP6GRE) {
+	if (NM_IN_SET (priv->mode,
+	               NM_IP_TUNNEL_MODE_GRE,
+	               NM_IP_TUNNEL_MODE_GRETAP,
+	               NM_IP_TUNNEL_MODE_IP6GRE)) {
 		if (g_strcmp0 (nm_setting_ip_tunnel_get_input_key (s_ip_tunnel), priv->input_key)) {
 			g_object_set (G_OBJECT (s_ip_tunnel),
 			              NM_SETTING_IP_TUNNEL_INPUT_KEY,
@@ -535,6 +541,8 @@ platform_link_to_tunnel_mode (const NMPlatformLink *link)
 	switch (link->type) {
 	case NM_LINK_TYPE_GRE:
 		return NM_IP_TUNNEL_MODE_GRE;
+	case NM_LINK_TYPE_GRETAP:
+		return NM_IP_TUNNEL_MODE_GRETAP;
 	case NM_LINK_TYPE_IP6TNL:
 		lnk = nm_platform_link_get_lnk_ip6tnl (NM_PLATFORM_GET, link->ifindex, NULL);
 		if (lnk) {
@@ -559,6 +567,8 @@ tunnel_mode_to_link_type (NMIPTunnelMode tunnel_mode)
 	switch (tunnel_mode) {
 	case NM_IP_TUNNEL_MODE_GRE:
 		return NM_LINK_TYPE_GRE;
+	case NM_IP_TUNNEL_MODE_GRETAP:
+		return NM_LINK_TYPE_GRETAP;
 	case NM_IP_TUNNEL_MODE_IPIP6:
 	case NM_IP_TUNNEL_MODE_IP6IP6:
 		return NM_LINK_TYPE_IP6TNL;
@@ -600,6 +610,9 @@ create_and_realize (NMDevice *device,
 	g_assert (s_ip_tunnel);
 
 	switch (nm_setting_ip_tunnel_get_mode (s_ip_tunnel)) {
+	case NM_IP_TUNNEL_MODE_GRETAP:
+		lnk_gre.is_tap = TRUE;
+		/* fall-through */
 	case NM_IP_TUNNEL_MODE_GRE:
 		if (parent)
 			lnk_gre.parent_ifindex = nm_device_get_ifindex (parent);
@@ -938,6 +951,7 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass,
 	                               NM_SETTING_IP_TUNNEL_SETTING_NAME,
 	                               NM_LINK_TYPE_GRE,
+	                               NM_LINK_TYPE_GRETAP,
 	                               NM_LINK_TYPE_IP6TNL,
 	                               NM_LINK_TYPE_IPIP,
 	                               NM_LINK_TYPE_SIT);
@@ -1084,7 +1098,7 @@ get_connection_iface (NMDeviceFactory *factory,
 }
 
 NM_DEVICE_FACTORY_DEFINE_INTERNAL (IP_TUNNEL, IPTunnel, ip_tunnel,
-	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES (NM_LINK_TYPE_GRE, NM_LINK_TYPE_SIT, NM_LINK_TYPE_IPIP)
+	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES (NM_LINK_TYPE_GRE, NM_LINK_TYPE_GRETAP, NM_LINK_TYPE_SIT, NM_LINK_TYPE_IPIP)
 	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_IP_TUNNEL_SETTING_NAME),
 	factory_class->create_device = create_device;
 	factory_class->get_connection_parent = get_connection_parent;
