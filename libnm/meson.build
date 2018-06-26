@@ -259,7 +259,7 @@ if enable_introspection
     input: libnm_gir[0],
     output: name,
     command: [generate_setting_docs_env, generate_setting_docs, '--lib-path', meson.current_build_dir(), '--gir', '@INPUT@', '--output', '@OUTPUT@'],
-    depends: libnm
+    depends: libnm_gir
   )
 
   name = 'nm-settings-docs.xml'
@@ -268,7 +268,7 @@ if enable_introspection
     input: libnm_gir[0],
     output: name,
     command: [generate_setting_docs_env, generate_setting_docs, '--lib-path', meson.current_build_dir(), '--gir', '@INPUT@', '--overrides', nm_settings_docs_overrides, '--output', '@OUTPUT@'],
-    depends: libnm
+    depends: libnm_gir
   )
 endif
 
