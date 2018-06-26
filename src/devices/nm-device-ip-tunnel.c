@@ -952,6 +952,21 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
+static NMActStageReturn
+act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
+{
+	NMActStageReturn ret;
+
+	ret = NM_DEVICE_CLASS (nm_device_ip_tunnel_parent_class)->act_stage1_prepare (device, out_failure_reason);
+	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
+		return ret;
+
+	if (!nm_device_hw_addr_set_cloned (device, nm_device_get_applied_connection (device), FALSE))
+		return NM_ACT_STAGE_RETURN_FAILURE;
+
+	return NM_ACT_STAGE_RETURN_SUCCESS;
+}
+
 /*****************************************************************************/
 
 static void
@@ -1028,6 +1043,7 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_ip_tunnel);
 
+	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->link_changed = link_changed;
 	device_class->can_reapply_change = can_reapply_change;
 	device_class->complete_connection = complete_connection;

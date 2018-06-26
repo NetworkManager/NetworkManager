@@ -458,6 +458,20 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
+	if (   nm_connection_get_setting_wired (connection)
+	    && !NM_IN_SET (priv->mode,
+	                   NM_IP_TUNNEL_MODE_GRETAP,
+	                   NM_IP_TUNNEL_MODE_IP6GRETAP)) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("wired setting not allowed for mode %s"),
+		             nm_utils_enum_to_str (nm_ip_tunnel_mode_get_type (), priv->mode));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP_TUNNEL_SETTING_NAME,
+		                NM_SETTING_IP_TUNNEL_MODE);
+		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+	}
+
 	return TRUE;
 }
 
