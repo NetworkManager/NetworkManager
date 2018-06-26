@@ -809,7 +809,7 @@ intltool_xml_cmd = [intltool_merge, '-x', '-u', '-c', intltool_cache, po_dir, '@
 perl = find_program('perl')
 xsltproc = find_program('xsltproc')
 
-check_exports = join_paths(meson.source_root(), 'tools', 'check-exports.sh')
+check_exports = find_program(join_paths(meson.source_root(), 'tools', 'check-exports.sh'))
 
 content_files = []
 

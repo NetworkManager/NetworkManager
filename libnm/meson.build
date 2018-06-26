@@ -186,10 +186,10 @@ pkg.generate(
   ]
 )
 
-run_target(
+test(
   'check-local-exports-' + libnm_name,
-  command: [check_exports, libnm.full_path(), linker_script],
-  depends: libnm
+  check_exports,
+  args: [libnm.full_path(), linker_script],
 )
 
 if enable_introspection
