@@ -28,10 +28,10 @@
 
 /**
  * SECTION:nm-setting-ovs-port
- * @short_description: Describes connection properties for OpenVSwitch ports.
+ * @short_description: Describes connection properties for Open vSwitch ports.
  *
  * The #NMSettingOvsPort object is a #NMSetting subclass that describes properties
- * necessary for OpenVSwitch ports.
+ * necessary for Open vSwitch ports.
  **/
 
 enum {

@@ -1310,11 +1310,11 @@ get_type_name (NMDevice *device)
 	case NM_DEVICE_TYPE_OLPC_MESH:
 		return _("OLPC Mesh");
 	case NM_DEVICE_TYPE_OVS_INTERFACE:
-		return _("OpenVSwitch Interface");
+		return _("Open vSwitch Interface");
 	case NM_DEVICE_TYPE_OVS_PORT:
-		return _("OpenVSwitch Port");
+		return _("Open vSwitch Port");
 	case NM_DEVICE_TYPE_OVS_BRIDGE:
-		return _("OpenVSwitch Bridge");
+		return _("Open vSwitch Bridge");
 	case NM_DEVICE_TYPE_WIMAX:
 		return _("WiMAX");
 	case NM_DEVICE_TYPE_MODEM:

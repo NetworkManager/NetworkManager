@@ -27,10 +27,10 @@
 
 /**
  * SECTION:nm-setting-ovs-interface
- * @short_description: Describes connection properties for OpenVSwitch interfaces.
+ * @short_description: Describes connection properties for Open vSwitch interfaces.
  *
  * The #NMSettingOvsInterface object is a #NMSetting subclass that describes properties
- * necessary for OpenVSwitch interfaces.
+ * necessary for Open vSwitch interfaces.
  **/
 
 enum {
@@ -42,7 +42,7 @@ enum {
 /**
  * NMSettingOvsInterface:
  *
- * OpenVSwitch Interface Settings
+ * Open vSwitch Interface Settings
  */
 struct _NMSettingOvsInterface {
 	NMSetting parent;

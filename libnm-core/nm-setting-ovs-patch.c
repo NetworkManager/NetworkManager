@@ -28,10 +28,10 @@
 
 /**
  * SECTION:nm-setting-ovs-patch
- * @short_description: Describes connection properties for OpenVSwitch patch interfaces.
+ * @short_description: Describes connection properties for Open vSwitch patch interfaces.
  *
  * The #NMSettingOvsPatch object is a #NMSetting subclass that describes properties
- * necessary for OpenVSwitch interfaces of type "patch".
+ * necessary for Open vSwitch interfaces of type "patch".
  **/
 
 enum {
@@ -195,7 +195,7 @@ nm_setting_ovs_patch_class_init (NMSettingOvsPatchClass *setting_class)
 	/**
 	 * NMSettingOvsPatch:peer:
 	 *
-	 * Specifies the unicast destination IP address of a remote OpenVSwitch
+	 * Specifies the unicast destination IP address of a remote Open vSwitch
 	 * bridge port to connect to.
 	 *
 	 * Since: 1.10
