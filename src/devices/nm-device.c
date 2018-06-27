@@ -5392,9 +5392,9 @@ nm_device_match_parent (NMDevice *self, const char *parent)
 }
 
 gboolean
-nm_device_match_hwaddr (NMDevice *device,
-                        NMConnection *connection,
-                        gboolean fail_if_no_hwaddr)
+nm_device_match_parent_hwaddr (NMDevice *device,
+                               NMConnection *connection,
+                               gboolean fail_if_no_hwaddr)
 {
 	NMSettingWired *s_wired;
 	NMDevice *parent_device;
