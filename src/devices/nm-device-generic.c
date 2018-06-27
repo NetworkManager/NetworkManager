@@ -86,19 +86,19 @@ realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device, NMConnection *connection)
+check_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	NMSettingConnection *s_con;
 
-	if (!NM_DEVICE_CLASS (nm_device_generic_parent_class)->check_connection_compatible (device, connection))
-		return FALSE;
-
-	if (!nm_connection_is_type (connection, NM_SETTING_GENERIC_SETTING_NAME))
+	if (!NM_DEVICE_CLASS (nm_device_generic_parent_class)->check_connection_compatible (device, connection, error))
 		return FALSE;
 
 	s_con = nm_connection_get_setting_connection (connection);
-	if (!nm_setting_connection_get_interface_name (s_con))
+	if (!nm_setting_connection_get_interface_name (s_con)) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "generic profiles need an interface name");
 		return FALSE;
+	}
 
 	return TRUE;
 }
@@ -230,6 +230,7 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_generic);
 
 	device_class->connection_type_supported = NM_SETTING_GENERIC_SETTING_NAME;
+	device_class->connection_type_check_compatible = NM_SETTING_GENERIC_SETTING_NAME;
 	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_ANY);
 
 	device_class->realize_start_notify = realize_start_notify;

@@ -225,6 +225,40 @@ nm_connection_get_setting_by_name (NMConnection *connection, const char *name)
 	return type ? _connection_get_setting (connection, type) : NULL;
 }
 
+/*****************************************************************************/
+
+gpointer /* (NMSetting *) */
+_nm_connection_check_main_setting (NMConnection *connection,
+                                   const char *setting_name,
+                                   GError **error)
+{
+	NMSetting *setting;
+
+	nm_assert (NM_IS_CONNECTION (connection));
+	nm_assert (setting_name);
+
+	if (!nm_connection_is_type (connection, setting_name)) {
+		nm_utils_error_set (error,
+		                    NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+		                    "connection type is not \"%s\"",
+		                    setting_name);
+		return NULL;
+	}
+
+	setting = nm_connection_get_setting_by_name (connection, setting_name);
+	if (!setting) {
+		nm_utils_error_set (error,
+		                    NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+		                    "connection misses \"%s\" settings",
+		                    setting_name);
+		return NULL;
+	}
+
+	return setting;
+}
+
+/*****************************************************************************/
+
 static gboolean
 validate_permissions_type (GVariant *variant, GError **error)
 {

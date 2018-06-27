@@ -1444,7 +1444,7 @@ reset_autoconnect_all (NMPolicy *self,
 		NMSettingsConnection *connection = connections[i];
 
 		if (   device
-		    && !nm_device_check_connection_compatible (device, NM_CONNECTION (connection)))
+		    && !nm_device_check_connection_compatible (device, NM_CONNECTION (connection), NULL))
 			continue;
 
 		if (only_no_secrets) {

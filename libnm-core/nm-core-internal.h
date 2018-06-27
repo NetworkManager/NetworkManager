@@ -140,6 +140,10 @@ gboolean _nm_connection_replace_settings (NMConnection *connection,
                                           NMSettingParseFlags parse_flags,
                                           GError **error);
 
+gpointer _nm_connection_check_main_setting (NMConnection *connection,
+                                            const char *setting_name,
+                                            GError **error);
+
 /**
  * NMSettingVerifyResult:
  * @NM_SETTING_VERIFY_SUCCESS: the setting verifies successfully

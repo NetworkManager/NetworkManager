@@ -87,25 +87,23 @@ get_generic_capabilities (NMDevice *dev)
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device, NMConnection *connection)
+check_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	NMSettingAdsl *s_adsl;
 	const char *protocol;
 
-	if (!NM_DEVICE_CLASS (nm_device_adsl_parent_class)->check_connection_compatible (device, connection))
-		return FALSE;
-
-	if (!nm_connection_is_type (connection, NM_SETTING_ADSL_SETTING_NAME))
+	if (!NM_DEVICE_CLASS (nm_device_adsl_parent_class)->check_connection_compatible (device, connection, error))
 		return FALSE;
 
 	s_adsl = nm_connection_get_setting_adsl (connection);
-	if (!s_adsl)
-		return FALSE;
 
-	/* FIXME: we don't yet support IPoATM */
 	protocol = nm_setting_adsl_get_protocol (s_adsl);
-	if (g_strcmp0 (protocol, NM_SETTING_ADSL_PROTOCOL_IPOATM) == 0)
+	if (nm_streq0 (protocol, NM_SETTING_ADSL_PROTOCOL_IPOATM)) {
+		/* FIXME: we don't yet support IPoATM */
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "IPoATM protocol is not yet supported");
 		return FALSE;
+	}
 
 	return TRUE;
 }
@@ -677,6 +675,8 @@ nm_device_adsl_class_init (NMDeviceAdslClass *klass)
 	object_class->set_property = set_property;
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_adsl);
+
+	device_class->connection_type_check_compatible = NM_SETTING_ADSL_SETTING_NAME;
 
 	device_class->get_generic_capabilities = get_generic_capabilities;
 

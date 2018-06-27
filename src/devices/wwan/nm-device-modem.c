@@ -397,12 +397,29 @@ get_type_description (NMDevice *device)
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device, NMConnection *connection)
+check_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
-	if (!NM_DEVICE_CLASS (nm_device_modem_parent_class)->check_connection_compatible (device, connection))
+	GError *local = NULL;
+
+	if (!NM_DEVICE_CLASS (nm_device_modem_parent_class)->check_connection_compatible (device, connection, error))
 		return FALSE;
 
-	return nm_modem_check_connection_compatible (NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) device)->modem, connection);
+	if (!nm_modem_check_connection_compatible (NM_DEVICE_MODEM_GET_PRIVATE ((NMDeviceModem *) device)->modem,
+	                                           connection,
+	                                           error ? &local : NULL)) {
+		if (error) {
+			g_set_error (error,
+			             NM_UTILS_ERROR,
+			             g_error_matches (local, NM_UTILS_ERROR, NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE)
+			              ? NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE
+			              : NM_UTILS_ERROR_UNKNOWN,
+			             "modem is incompatible with connection: %s",
+			             local->message);
+			g_error_free (local);
+		}
+		return FALSE;
+	}
+	return TRUE;
 }
 
 static gboolean

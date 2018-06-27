@@ -331,33 +331,39 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 /*****************************************************************************/
 
 static gboolean
-check_connection_compatible (NMDevice *device, NMConnection *connection)
+check_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE ((NMDeviceVlan *) device);
 	NMSettingVlan *s_vlan;
-	const char *parent = NULL;
+	const char *parent;
 
-	if (!NM_DEVICE_CLASS (nm_device_vlan_parent_class)->check_connection_compatible (device, connection))
+	if (!NM_DEVICE_CLASS (nm_device_vlan_parent_class)->check_connection_compatible (device, connection, error))
 		return FALSE;
 
-	s_vlan = nm_connection_get_setting_vlan (connection);
-	if (!s_vlan)
-		return FALSE;
-
-	/* Before the device is realized some properties will not be set */
 	if (nm_device_is_real (device)) {
-		if (nm_setting_vlan_get_id (s_vlan) != priv->vlan_id)
+		s_vlan = nm_connection_get_setting_vlan (connection);
+
+		if (nm_setting_vlan_get_id (s_vlan) != priv->vlan_id) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "vlan id setting mismatches");
 			return FALSE;
+		}
 
 		/* Check parent interface; could be an interface name or a UUID */
 		parent = nm_setting_vlan_get_parent (s_vlan);
 		if (parent) {
-			if (!nm_device_match_parent (device, parent))
+			if (!nm_device_match_parent (device, parent)) {
+				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+				                            "vlan parent setting differs");
 				return FALSE;
+			}
 		} else {
 			/* Parent could be a MAC address in an NMSettingWired */
-			if (!nm_device_match_parent_hwaddr (device, connection, TRUE))
+			if (!nm_device_match_parent_hwaddr (device, connection, TRUE)) {
+				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+				                            "vlan parent mac setting differs");
 				return FALSE;
+			}
 		}
 	}
 
@@ -455,7 +461,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 
 			/* Don't change a parent specified by UUID if it's still valid */
 			parent_connection = (NMConnection *) nm_settings_get_connection_by_uuid (nm_device_get_settings (device), setting_parent);
-			if (parent_connection && nm_device_check_connection_compatible (parent_device, parent_connection))
+			if (parent_connection && nm_device_check_connection_compatible (parent_device, parent_connection, NULL))
 				new_parent = NULL;
 		}
 		if (new_parent)
@@ -607,6 +613,7 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_vlan);
 
 	device_class->connection_type_supported = NM_SETTING_VLAN_SETTING_NAME;
+	device_class->connection_type_check_compatible = NM_SETTING_VLAN_SETTING_NAME;
 	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_VLAN);
 
 	device_class->create_and_realize = create_and_realize;

@@ -122,7 +122,8 @@ typedef struct {
 	                                            const char **pass);
 
 	gboolean (*check_connection_compatible_with_modem) (NMModem *modem,
-	                                                    NMConnection *connection);
+	                                                    NMConnection *connection,
+	                                                    GError **error);
 
 	gboolean (*complete_connection)            (NMModem *modem,
 	                                            NMConnection *connection,
@@ -185,7 +186,9 @@ void        nm_modem_get_capabilities (NMModem *self,
                                        NMDeviceModemCapabilities *modem_caps,
                                        NMDeviceModemCapabilities *current_caps);
 
-gboolean nm_modem_check_connection_compatible (NMModem *self, NMConnection *connection);
+gboolean nm_modem_check_connection_compatible (NMModem *self,
+                                               NMConnection *connection,
+                                               GError **error);
 
 gboolean nm_modem_complete_connection (NMModem *self,
                                        NMConnection *connection,

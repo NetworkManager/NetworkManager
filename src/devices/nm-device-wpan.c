@@ -91,23 +91,24 @@ update_connection (NMDevice *device, NMConnection *connection)
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device, NMConnection *connection)
+check_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	NMSettingWpan *s_wpan;
 	const char *mac, *hw_addr;
 
-	if (!NM_DEVICE_CLASS (nm_device_wpan_parent_class)->check_connection_compatible (device, connection))
+	if (!NM_DEVICE_CLASS (nm_device_wpan_parent_class)->check_connection_compatible (device, connection, error))
 		return FALSE;
 
 	s_wpan = nm_connection_get_setting_wpan (connection);
-	if (!s_wpan)
-		return FALSE;
 
 	mac = nm_setting_wpan_get_mac_address (s_wpan);
 	if (mac) {
 		hw_addr = nm_device_get_hw_address (device);
-		if (!nm_utils_hwaddr_matches (mac, -1, hw_addr, -1))
+		if (!nm_utils_hwaddr_matches (mac, -1, hw_addr, -1)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "MAC address mismatches");
 			return FALSE;
+		}
 	}
 
 	return TRUE;
@@ -216,6 +217,7 @@ nm_device_wpan_class_init (NMDeviceWpanClass *klass)
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_wpan);
 
 	device_class->connection_type_supported = NM_SETTING_WPAN_SETTING_NAME;
+	device_class->connection_type_check_compatible = NM_SETTING_WPAN_SETTING_NAME;
 	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_WPAN);
 
 	device_class->complete_connection = complete_connection;

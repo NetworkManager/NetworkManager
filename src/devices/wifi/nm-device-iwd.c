@@ -492,59 +492,62 @@ is_connection_known_network (NMConnection *connection)
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device, NMConnection *connection)
+check_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
-	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	const char *mac;
 	const char * const *mac_blacklist;
 	int i;
-	const char *mode;
 	const char *perm_hw_addr;
 
-	if (!NM_DEVICE_CLASS (nm_device_iwd_parent_class)->check_connection_compatible (device, connection))
-		return FALSE;
-
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
-
-	if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_WIRELESS_SETTING_NAME))
+	if (!NM_DEVICE_CLASS (nm_device_iwd_parent_class)->check_connection_compatible (device, connection, error))
 		return FALSE;
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
-	if (!s_wireless)
-		return FALSE;
 
 	perm_hw_addr = nm_device_get_permanent_hw_address (device);
 	mac = nm_setting_wireless_get_mac_address (s_wireless);
 	if (perm_hw_addr) {
-		if (mac && !nm_utils_hwaddr_matches (mac, -1, perm_hw_addr, -1))
+		if (mac && !nm_utils_hwaddr_matches (mac, -1, perm_hw_addr, -1)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "mac address mispatches");
 			return FALSE;
+		}
 
 		/* Check for MAC address blacklist */
 		mac_blacklist = nm_setting_wireless_get_mac_address_blacklist (s_wireless);
 		for (i = 0; mac_blacklist[i]; i++) {
-			if (!nm_utils_hwaddr_valid (mac_blacklist[i], ETH_ALEN)) {
-				g_warn_if_reached ();
+			nm_assert (nm_utils_hwaddr_valid (mac_blacklist[i], ETH_ALEN));
+
+			if (nm_utils_hwaddr_matches (mac_blacklist[i], -1, perm_hw_addr, -1)) {
+				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+				                            "mac address blacklisted");
 				return FALSE;
 			}
-
-			if (nm_utils_hwaddr_matches (mac_blacklist[i], -1, perm_hw_addr, -1))
-				return FALSE;
 		}
-	} else if (mac)
+	} else if (mac) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "device has no valid mac address as required by profile");
 		return FALSE;
+	}
 
-	mode = nm_setting_wireless_get_mode (s_wireless);
-	if (mode && g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_INFRA) != 0)
+	if (!NM_IN_STRSET (nm_setting_wireless_get_mode (s_wireless),
+	                   NULL,
+	                   NM_SETTING_WIRELESS_MODE_INFRA)) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "IWD only support infrastructure type profiles");
 		return FALSE;
+	}
 
 	/* 8021x networks can only be used if they've been provisioned on the IWD side and
 	 * thus are Known Networks.
 	 */
 	if (get_connection_iwd_security (connection) == NM_IWD_NETWORK_SECURITY_8021X) {
-		if (!is_connection_known_network (connection))
+		if (!is_connection_known_network (connection)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "802.1x profile is not a known network");
 			return FALSE;
+		}
 	}
 
 	return TRUE;
@@ -1986,6 +1989,7 @@ nm_device_iwd_class_init (NMDeviceIwdClass *klass)
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&nm_interface_info_device_wireless);
 
 	device_class->connection_type_supported = NM_SETTING_WIRELESS_SETTING_NAME;
+	device_class->connection_type_check_compatible = NM_SETTING_WIRELESS_SETTING_NAME;
 	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_WIFI);
 
 	device_class->can_auto_connect = can_auto_connect;
