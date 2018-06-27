@@ -192,11 +192,20 @@ _parse_ip_route (int family,
 				return NULL;
 			}
 
-			if (!attrs)
-				attrs = g_hash_table_new (nm_str_hash, g_str_equal);
+			if (!attrs) {
+				attrs = g_hash_table_new_full (nm_str_hash,
+				                               g_str_equal,
+				                               g_free,
+				                               (GDestroyNotify) g_variant_unref);
+			}
 
 			g_hash_table_iter_init (&iter, tmp_attrs);
 			while (g_hash_table_iter_next (&iter, (gpointer *) &iter_key, (gpointer *) &iter_value)) {
+
+				/* need to sink the reference, because nm_utils_parse_variant_attributes() returns
+				 * floating refs. */
+				g_variant_ref_sink (iter_value);
+
 				if (!nm_ip_route_attribute_validate (iter_key, iter_value, family, NULL, error)) {
 					g_prefix_error (error, "%s: ", iter_key);
 					g_hash_table_unref (tmp_attrs);
