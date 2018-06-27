@@ -4311,7 +4311,7 @@ _new_active_connection (NMManager *self,
 		}
 
 		/* FIXME: apparently, activation here only works if @connection is
-		 * a settings-connection. Which is not the case during AddAndActivatate.
+		 * a settings-connection. Which is not the case during AddAndActivate.
 		 * Probably, AddAndActivate is broken for VPN. */
 		if (activation_type != NM_ACTIVATION_TYPE_MANAGED)
 			g_return_val_if_reached (NULL);
