@@ -5236,7 +5236,8 @@ nm_platform_lnk_macvlan_to_string (const NMPlatformLnkMacvlan *lnk, char *buf, g
 		return buf;
 
 	g_snprintf (buf, len,
-	            "macvlan mode %u %s",
+	            "%s mode %u %s",
+	            lnk->tap ? "macvtap" : "macvlan",
 	            lnk->mode,
 	            lnk->no_promisc ? "not-promisc" : "promisc");
 	return buf;
