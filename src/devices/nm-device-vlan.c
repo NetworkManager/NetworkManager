@@ -368,12 +368,13 @@ static gboolean
 check_connection_available (NMDevice *device,
                             NMConnection *connection,
                             NMDeviceCheckConAvailableFlags flags,
-                            const char *specific_object)
+                            const char *specific_object,
+                            GError **error)
 {
 	if (!nm_device_is_real (device))
 		return TRUE;
 
-	return NM_DEVICE_CLASS (nm_device_vlan_parent_class)->check_connection_available (device, connection, flags, specific_object);
+	return NM_DEVICE_CLASS (nm_device_vlan_parent_class)->check_connection_available (device, connection, flags, specific_object, error);
 }
 
 static gboolean

@@ -195,18 +195,25 @@ static gboolean
 check_connection_available (NMDevice *device,
                             NMConnection *connection,
                             NMDeviceCheckConAvailableFlags flags,
-                            const char *specific_object)
+                            const char *specific_object,
+                            GError **error)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE ((NMDeviceBt *) device);
 	guint32 bt_type;
 
 	bt_type = get_connection_bt_type (connection);
-	if (!(bt_type & priv->capabilities))
+	if (!(bt_type & priv->capabilities)) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "device does not support bluetooth type");
 		return FALSE;
+	}
 
 	/* DUN connections aren't available without ModemManager */
-	if (bt_type == NM_BT_CAPABILITY_DUN && priv->mm_running == FALSE)
+	if (bt_type == NM_BT_CAPABILITY_DUN && priv->mm_running == FALSE) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "ModemManager missing for DUN profile");
 		return FALSE;
+	}
 
 	return TRUE;
 }

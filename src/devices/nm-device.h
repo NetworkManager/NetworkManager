@@ -317,7 +317,8 @@ typedef struct _NMDeviceClass {
 	gboolean    (* check_connection_available) (NMDevice *self,
 	                                            NMConnection *connection,
 	                                            NMDeviceCheckConAvailableFlags flags,
-	                                            const char *specific_object);
+	                                            const char *specific_object,
+	                                            GError **error);
 
 	gboolean    (* complete_connection)         (NMDevice *self,
 	                                             NMConnection *connection,
@@ -742,7 +743,8 @@ NMSettingsConnection *nm_device_get_best_connection (NMDevice *device,
 gboolean   nm_device_check_connection_available (NMDevice *device,
                                                  NMConnection *connection,
                                                  NMDeviceCheckConAvailableFlags flags,
-                                                 const char *specific_object);
+                                                 const char *specific_object,
+                                                 GError **error);
 
 gboolean nm_device_notify_component_added (NMDevice *device, GObject *component);
 

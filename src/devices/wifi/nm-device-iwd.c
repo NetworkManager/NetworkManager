@@ -554,7 +554,8 @@ static gboolean
 check_connection_available (NMDevice *device,
                             NMConnection *connection,
                             NMDeviceCheckConAvailableFlags flags,
-                            const char *specific_object)
+                            const char *specific_object,
+                            GError **error)
 {
 	NMDeviceIwd *self = NM_DEVICE_IWD (device);
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
@@ -566,19 +567,28 @@ check_connection_available (NMDevice *device,
 
 	/* Only Infrastrusture mode at this time */
 	mode = nm_setting_wireless_get_mode (s_wifi);
-	if (mode && g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_INFRA) != 0)
+	if (!NM_IN_SET (mode, NULL, NM_SETTING_WIRELESS_MODE_INFRA)) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "iwd only supports infrastructure mode connections");
 		return FALSE;
+	}
 
 	/* Hidden SSIDs not supported yet */
-	if (nm_setting_wireless_get_hidden (s_wifi))
+	if (nm_setting_wireless_get_hidden (s_wifi)) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "hidden networks not supported by iwd");
 		return FALSE;
+	}
 
 	/* 8021x networks can only be used if they've been provisioned on the IWD side and
 	 * thus are Known Networks.
 	 */
 	if (get_connection_iwd_security (connection) == NM_IWD_NETWORK_SECURITY_8021X) {
-		if (!is_connection_known_network (connection))
+		if (!is_connection_known_network (connection)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "network is not known to iwd");
 			return FALSE;
+		}
 	}
 
 	/* a connection that is available for a certain @specific_object, MUST
@@ -588,14 +598,29 @@ check_connection_available (NMDevice *device,
 		NMWifiAP *ap;
 
 		ap = nm_wifi_ap_lookup_for_device (NM_DEVICE (self), specific_object);
-		return ap ? nm_wifi_ap_check_compatible (ap, connection) : FALSE;
+		if (!ap) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "requested access point not found");
+			return FALSE;
+		}
+		if (!nm_wifi_ap_check_compatible (ap, connection)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "requested access point is not compatible with profile");
+			return FALSE;
+		}
+		return TRUE;
 	}
 
 	if (NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP))
 		return TRUE;
 
-	/* Check at least one AP is compatible with this connection */
-	return !!nm_wifi_aps_find_first_compatible (&priv->aps_lst_head, connection);
+	if (!nm_wifi_aps_find_first_compatible (&priv->aps_lst_head, connection)) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "no compatible access point found");
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 static gboolean
