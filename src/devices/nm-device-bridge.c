@@ -95,23 +95,29 @@ check_connection_available (NMDevice *device,
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device, NMConnection *connection)
+check_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	NMSettingBridge *s_bridge;
 	const char *mac_address;
 
-	if (!NM_DEVICE_CLASS (nm_device_bridge_parent_class)->check_connection_compatible (device, connection))
+	if (!NM_DEVICE_CLASS (nm_device_bridge_parent_class)->check_connection_compatible (device, connection, error))
 		return FALSE;
 
-	s_bridge = nm_connection_get_setting_bridge (connection);
-	if (!s_bridge)
-		return FALSE;
+	if (   nm_connection_is_type (connection, NM_SETTING_BLUETOOTH_SETTING_NAME)
+	    && _nm_connection_get_setting_bluetooth_for_nap (connection)) {
+		s_bridge = nm_connection_get_setting_bridge (connection);
+		if (!s_bridge) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "missing bridge setting for bluetooth NAP profile");
+			return FALSE;
+		}
 
-	if (!nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME)) {
-		if (   nm_connection_is_type (connection, NM_SETTING_BLUETOOTH_SETTING_NAME)
-		    && _nm_connection_get_setting_bluetooth_for_nap (connection)) {
-			/* a bluetooth NAP connection is handled by the bridge */
-		} else
+		/* a bluetooth NAP connection is handled by the bridge.
+		 *
+		 * Proceed... */
+	} else {
+		s_bridge = _nm_connection_check_main_setting (connection, NM_SETTING_BRIDGE_SETTING_NAME, error);
+		if (!s_bridge)
 			return FALSE;
 	}
 
@@ -120,8 +126,11 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		const char *hw_addr;
 
 		hw_addr = nm_device_get_hw_address (device);
-		if (!hw_addr || !nm_utils_hwaddr_matches (hw_addr, -1, mac_address, -1))
+		if (!hw_addr || !nm_utils_hwaddr_matches (hw_addr, -1, mac_address, -1)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "mac address mismatches");
 			return FALSE;
+		}
 	}
 
 	return TRUE;

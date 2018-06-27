@@ -157,36 +157,36 @@ can_auto_connect (NMDevice *device,
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device, NMConnection *connection)
+check_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE ((NMDeviceBt *) device);
-	NMSettingConnection *s_con;
 	NMSettingBluetooth *s_bt;
 	const char *bdaddr;
 	guint32 bt_type;
 
-	if (!NM_DEVICE_CLASS (nm_device_bt_parent_class)->check_connection_compatible (device, connection))
-		return FALSE;
-
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
-
-	if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_BLUETOOTH_SETTING_NAME))
-		return FALSE;
-
-	s_bt = nm_connection_get_setting_bluetooth (connection);
-	if (!s_bt)
+	if (!NM_DEVICE_CLASS (nm_device_bt_parent_class)->check_connection_compatible (device, connection, error))
 		return FALSE;
 
 	bt_type = get_connection_bt_type (connection);
-	if (!(bt_type & priv->capabilities))
+	if (!NM_FLAGS_ALL (priv->capabilities, bt_type)) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "device does not support bluetooth type of profile");
 		return FALSE;
+	}
+
+	s_bt = nm_connection_get_setting_bluetooth (connection);
 
 	bdaddr = nm_setting_bluetooth_get_bdaddr (s_bt);
-	if (!bdaddr)
+	if (!bdaddr) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "profile lacks bdaddr setting");
 		return FALSE;
-	if (!nm_utils_hwaddr_matches (priv->bdaddr, -1, bdaddr, -1))
+	}
+	if (!nm_utils_hwaddr_matches (priv->bdaddr, -1, bdaddr, -1)) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "devices bdaddr setting mismatches");
 		return FALSE;
+	}
 
 	return TRUE;
 }
@@ -1183,6 +1183,8 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 	object_class->finalize = finalize;
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_bluetooth);
+
+	device_class->connection_type_check_compatible = NM_SETTING_BLUETOOTH_SETTING_NAME;
 
 	device_class->get_generic_capabilities = get_generic_capabilities;
 	device_class->can_auto_connect = can_auto_connect;

@@ -617,44 +617,40 @@ act_stage1_prepare (NMModem *_self,
 /*****************************************************************************/
 
 static gboolean
-check_connection_compatible_with_modem (NMModem *_self, NMConnection *connection)
+check_connection_compatible_with_modem (NMModem *_self, NMConnection *connection, GError **error)
 {
 	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
 	MMModemCapability modem_caps;
-	NMSettingConnection *s_con;
 
 	modem_caps = mm_modem_get_current_capabilities (self->_priv.modem_iface);
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
 
 	if (MODEM_CAPS_3GPP (modem_caps)) {
-		NMSettingGsm *s_gsm;
-
-		if (!g_str_equal (nm_setting_connection_get_connection_type (s_con),
-		                  NM_SETTING_GSM_SETTING_NAME))
-			return FALSE;
-
-		s_gsm = nm_connection_get_setting_gsm (connection);
-		if (!s_gsm)
+		if (!_nm_connection_check_main_setting (connection, NM_SETTING_GSM_SETTING_NAME, error))
 			return FALSE;
 
 		return TRUE;
 	}
 
 	if (MODEM_CAPS_3GPP2 (modem_caps)) {
-		NMSettingCdma *s_cdma;
-
-		if (!g_str_equal (nm_setting_connection_get_connection_type (s_con),
-		                  NM_SETTING_CDMA_SETTING_NAME))
-			return FALSE;
-
-		s_cdma = nm_connection_get_setting_cdma (connection);
-		if (!s_cdma)
+		if (!_nm_connection_check_main_setting (connection, NM_SETTING_CDMA_SETTING_NAME, error))
 			return FALSE;
 
 		return TRUE;
 	}
 
+	if (   !_nm_connection_check_main_setting (connection, NM_SETTING_GSM_SETTING_NAME, NULL)
+	    && !_nm_connection_check_main_setting (connection, NM_SETTING_CDMA_SETTING_NAME, NULL)) {
+		nm_utils_error_set (error,
+		                    NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+		                    "connection type %s is not supported by modem",
+		                    nm_connection_get_connection_type (connection));
+		return FALSE;
+	}
+
+	nm_utils_error_set (error,
+	                    NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+	                    "modem lacks capabilities for %s profile",
+	                    nm_connection_get_connection_type (connection));
 	return FALSE;
 }
 

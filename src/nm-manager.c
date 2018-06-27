@@ -1290,7 +1290,7 @@ find_device_by_iface (NMManager *self,
 
 		if (strcmp (nm_device_get_iface (candidate), iface))
 			continue;
-		if (connection && !nm_device_check_connection_compatible (candidate, connection))
+		if (connection && !nm_device_check_connection_compatible (candidate, connection, NULL))
 			continue;
 		if (slave) {
 			if (!nm_device_is_master (candidate))
@@ -1707,7 +1707,7 @@ find_parent_device_for_connection (NMManager *self, NMConnection *connection, NM
 			return candidate;
 
 		if (   !first_compatible
-		    && nm_device_check_connection_compatible (candidate, NM_CONNECTION (parent_connection)))
+		    && nm_device_check_connection_compatible (candidate, NM_CONNECTION (parent_connection), NULL))
 			first_compatible = candidate;
 	}
 
@@ -1877,7 +1877,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 
 	/* See if there's a device that is already compatible with this connection */
 	c_list_for_each_entry (dev_candidate, &priv->devices_lst_head, devices_lst) {
-		if (nm_device_check_connection_compatible (dev_candidate, connection)) {
+		if (nm_device_check_connection_compatible (dev_candidate, connection, NULL)) {
 			if (nm_device_is_real (dev_candidate)) {
 				_LOG3D (LOGD_DEVICE, connection, "already created virtual interface name %s",
 				       iface);
@@ -1933,7 +1933,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		NMConnection *candidate = NM_CONNECTION (connections[i]);
 		NMSettingConnection *s_con;
 
-		if (!nm_device_check_connection_compatible (device, candidate))
+		if (!nm_device_check_connection_compatible (device, candidate, NULL))
 			continue;
 
 		s_con = nm_connection_get_setting_connection (candidate);
@@ -2460,7 +2460,7 @@ get_existing_connection (NMManager *self,
 	    && !active_connection_find (self, connection_checked, NULL,
 	                                NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
 	                                NULL)
-	    && nm_device_check_connection_compatible (device, NM_CONNECTION (connection_checked))) {
+	    && nm_device_check_connection_compatible (device, NM_CONNECTION (connection_checked), NULL)) {
 
 		if (connection) {
 			NMConnection *const connections[] = {
@@ -2498,7 +2498,7 @@ get_existing_connection (NMManager *self,
 				NMConnection *con = NM_CONNECTION (connections[i]);
 
 				if (   con != NM_CONNECTION (connection_checked)
-				    && nm_device_check_connection_compatible (device, con))
+				    && nm_device_check_connection_compatible (device, con, NULL))
 					connections[j++] = connections[i];
 			}
 			connections[j] = NULL;

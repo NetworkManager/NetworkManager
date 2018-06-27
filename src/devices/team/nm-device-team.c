@@ -85,23 +85,6 @@ get_generic_capabilities (NMDevice *device)
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device, NMConnection *connection)
-{
-	NMSettingTeam *s_team;
-
-	if (!NM_DEVICE_CLASS (nm_device_team_parent_class)->check_connection_compatible (device, connection))
-		return FALSE;
-
-	s_team = nm_connection_get_setting_team (connection);
-	if (!s_team || !nm_connection_is_type (connection, NM_SETTING_TEAM_SETTING_NAME))
-		return FALSE;
-
-	/* FIXME: match team properties like mode, etc? */
-
-	return TRUE;
-}
-
-static gboolean
 complete_connection (NMDevice *device,
                      NMConnection *connection,
                      const char *specific_object,
@@ -920,12 +903,12 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_team);
 
 	device_class->connection_type_supported = NM_SETTING_TEAM_SETTING_NAME;
+	device_class->connection_type_check_compatible = NM_SETTING_TEAM_SETTING_NAME;
 	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_TEAM);
 
 	device_class->is_master = TRUE;
 	device_class->create_and_realize = create_and_realize;
 	device_class->get_generic_capabilities = get_generic_capabilities;
-	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->complete_connection = complete_connection;
 	device_class->update_connection = update_connection;
 	device_class->master_update_slave_connection = master_update_slave_connection;

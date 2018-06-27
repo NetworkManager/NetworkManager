@@ -1622,7 +1622,7 @@ have_connection_for_device (NMSettings *self, NMDevice *device)
 	c_list_for_each_entry (connection, &priv->connections_lst_head, _connections_lst) {
 		const char *ctype, *iface;
 
-		if (!nm_device_check_connection_compatible (device, NM_CONNECTION (connection)))
+		if (!nm_device_check_connection_compatible (device, NM_CONNECTION (connection), NULL))
 			continue;
 
 		s_con = nm_connection_get_setting_connection (NM_CONNECTION (connection));

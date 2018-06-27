@@ -203,6 +203,11 @@ typedef struct _NMDeviceClass {
 	const char *default_type_description;
 
 	const char *connection_type_supported;
+
+	/* most device types, can only handle profiles of a particular type. This
+	 * is the connection.type setting, as checked by nm_device_check_connection_compatible() */
+	const char *connection_type_check_compatible;
+
 	const NMLinkType *link_types;
 
 	/* Whether the device type is a master-type. This depends purely on the
@@ -301,7 +306,9 @@ typedef struct _NMDeviceClass {
 	 * only the devices type and characteristics.  Does not use any live
 	 * network information like WiFi scan lists etc.
 	 */
-	gboolean    (* check_connection_compatible) (NMDevice *self, NMConnection *connection);
+	gboolean    (* check_connection_compatible) (NMDevice *self,
+	                                             NMConnection *connection,
+	                                             GError **error);
 
 	/* Checks whether the connection is likely available to be activated,
 	 * including any live network information like scan lists.  The connection
@@ -534,7 +541,10 @@ gboolean nm_device_complete_connection (NMDevice *device,
                                         NMConnection *const*existing_connections,
                                         GError **error);
 
-gboolean nm_device_check_connection_compatible (NMDevice *device, NMConnection *connection);
+gboolean nm_device_check_connection_compatible (NMDevice *device,
+                                                NMConnection *connection,
+                                                GError **error);
+
 gboolean nm_device_check_slave_connection_compatible (NMDevice *device, NMConnection *connection);
 
 gboolean nm_device_unmanage_on_quit (NMDevice *self);
