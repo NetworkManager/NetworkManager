@@ -5266,7 +5266,7 @@ link_get_dev_id (NMPlatform *platform, int ifindex)
 	                                           16, 0, G_MAXUINT16, 0);
 }
 
-static int
+static gboolean
 vlan_add (NMPlatform *platform,
           const char *name,
           int parent,
@@ -5308,7 +5308,7 @@ nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
 
-static int
+static gboolean
 link_gre_add (NMPlatform *platform,
               const char *name,
               const NMPlatformLnkGre *props,
@@ -5355,7 +5355,7 @@ nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
 
-static int
+static gboolean
 link_ip6tnl_add (NMPlatform *platform,
                  const char *name,
                  const NMPlatformLnkIp6Tnl *props,
@@ -5409,7 +5409,7 @@ nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
 
-static int
+static gboolean
 link_ipip_add (NMPlatform *platform,
                const char *name,
                const NMPlatformLnkIpIp *props,
@@ -5452,7 +5452,7 @@ nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
 
-static int
+static gboolean
 link_macsec_add (NMPlatform *platform,
                  const char *name,
                  int parent,
@@ -5509,7 +5509,7 @@ nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
 
-static int
+static gboolean
 link_macvlan_add (NMPlatform *platform,
                   const char *name,
                   int parent,
@@ -5552,7 +5552,7 @@ nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
 
-static int
+static gboolean
 link_sit_add (NMPlatform *platform,
               const char *name,
               const NMPlatformLnkSit *props,
