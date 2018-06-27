@@ -391,10 +391,8 @@ AC_ARG_WITH(config-logging-backend-default,
             nm_config_logging_backend_default="$withval",
             nm_config_logging_backend_default="")
 
-if test "$nm_config_logging_backend_default" != 'debug' \
-     -a "$nm_config_logging_backend_default" != 'syslog' \
-     -a "$nm_config_logging_backend_default" != 'journal' \
-     -a "$nm_config_logging_backend_default" != 'journal-syslog-style'; then
+if test "$nm_config_logging_backend_default" != 'syslog' \
+     -a "$nm_config_logging_backend_default" != 'journal'; then
 	# unknown backend. Reset to default. Silently accept the invalid value to
 	# be future proof.
 	nm_config_logging_backend_default=''
