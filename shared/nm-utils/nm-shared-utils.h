@@ -403,6 +403,15 @@ void nm_utils_error_set_cancelled (GError **error,
 gboolean nm_utils_error_is_cancelled (GError *error,
                                       gboolean consider_is_disposing);
 
+static inline void
+nm_utils_error_set_literal (GError **error, int error_code, const char *literal)
+{
+	g_set_error_literal (error, NM_UTILS_ERROR, error_code, literal);
+}
+
+#define nm_utils_error_set(error, error_code, ...) \
+	g_set_error ((error), NM_UTILS_ERROR, error_code, __VA_ARGS__)
+
 /*****************************************************************************/
 
 gboolean nm_g_object_set_property (GObject *object,
