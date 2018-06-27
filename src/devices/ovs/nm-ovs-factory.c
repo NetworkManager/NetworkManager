@@ -80,14 +80,14 @@ new_device_from_type (const char *name, NMDeviceType device_type)
 
 	if (device_type == NM_DEVICE_TYPE_OVS_INTERFACE) {
 		type = NM_TYPE_DEVICE_OVS_INTERFACE;
-		type_desc = "OpenVSwitch Interface";
+		type_desc = "Open vSwitch Interface";
 		link_type = NM_LINK_TYPE_OPENVSWITCH;
 	} else if (device_type == NM_DEVICE_TYPE_OVS_PORT) {
 		type = NM_TYPE_DEVICE_OVS_PORT;
-		type_desc = "OpenVSwitch Port";
+		type_desc = "Open vSwitch Port";
 	} else if (device_type == NM_DEVICE_TYPE_OVS_BRIDGE) {
 		type = NM_TYPE_DEVICE_OVS_BRIDGE;
-		type_desc = "OpenVSwitch Bridge";
+		type_desc = "Open vSwitch Bridge";
 	} else {
 		return NULL;
 	}

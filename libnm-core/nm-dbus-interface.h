@@ -209,9 +209,9 @@ typedef enum {
  * @NM_DEVICE_TYPE_MACSEC: a MACsec interface
  * @NM_DEVICE_TYPE_DUMMY: a dummy interface
  * @NM_DEVICE_TYPE_PPP: a PPP interface
- * @NM_DEVICE_TYPE_OVS_INTERFACE: a OpenVSwitch interface
- * @NM_DEVICE_TYPE_OVS_PORT: a OpenVSwitch port
- * @NM_DEVICE_TYPE_OVS_BRIDGE: a OpenVSwitch bridge
+ * @NM_DEVICE_TYPE_OVS_INTERFACE: a Open vSwitch interface
+ * @NM_DEVICE_TYPE_OVS_PORT: a Open vSwitch port
+ * @NM_DEVICE_TYPE_OVS_BRIDGE: a Open vSwitch bridge
  *
  * #NMDeviceType values indicate the type of hardware represented by a
  * device object.
@@ -550,7 +550,7 @@ typedef enum {
  * @NM_DEVICE_STATE_REASON_NEW_ACTIVATION: New connection activation was enqueued
  * @NM_DEVICE_STATE_REASON_PARENT_CHANGED: the device's parent changed
  * @NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED: the device parent's management changed
- * @NM_DEVICE_STATE_REASON_OVSDB_FAILED: problem communicating with OpenVSwitch database
+ * @NM_DEVICE_STATE_REASON_OVSDB_FAILED: problem communicating with Open vSwitch database
  * @NM_DEVICE_STATE_REASON_IP_ADDRESS_DUPLICATE: a duplicate IP address was detected
  * @NM_DEVICE_STATE_REASON_IP_METHOD_UNSUPPORTED: The selected IP method is not supported
  *

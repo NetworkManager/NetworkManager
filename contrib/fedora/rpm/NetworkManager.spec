@@ -289,13 +289,13 @@ devices.
 
 %if %{with ovs}
 %package ovs
-Summary: OpenVSwitch device plugin for NetworkManager
+Summary: Open vSwitch device plugin for NetworkManager
 Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: openvswitch
 
 %description ovs
-This package contains NetworkManager support for OpenVSwitch bridges.
+This package contains NetworkManager support for Open vSwitch bridges.
 %endif
 
 

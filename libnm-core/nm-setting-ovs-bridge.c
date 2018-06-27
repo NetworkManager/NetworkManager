@@ -28,10 +28,10 @@
 
 /**
  * SECTION:nm-setting-ovs-bridge
- * @short_description: Describes connection properties for OpenVSwitch bridges.
+ * @short_description: Describes connection properties for Open vSwitch bridges.
  *
  * The #NMSettingOvsBridge object is a #NMSetting subclass that describes properties
- * necessary for OpenVSwitch bridges.
+ * necessary for Open vSwitch bridges.
  **/
 
 enum {
