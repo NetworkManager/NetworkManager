@@ -61,18 +61,34 @@ static gboolean
 check_connection_available (NMDevice *device,
                             NMConnection *connection,
                             NMDeviceCheckConAvailableFlags flags,
-                            const char *specific_object)
+                            const char *specific_object,
+                            GError **error)
 {
 	NMSettingBluetooth *s_bt;
 
-	if (!NM_DEVICE_CLASS (nm_device_bridge_parent_class)->check_connection_available (device, connection, flags, specific_object))
+	if (!NM_DEVICE_CLASS (nm_device_bridge_parent_class)->check_connection_available (device, connection, flags, specific_object, error))
 		return FALSE;
 
 	s_bt = _nm_connection_get_setting_bluetooth_for_nap (connection);
 	if (s_bt) {
-		return    nm_bt_vtable_network_server
-		       && nm_bt_vtable_network_server->is_available (nm_bt_vtable_network_server,
-		                                                     nm_setting_bluetooth_get_bdaddr (s_bt));
+		const char *bdaddr;
+
+		if (!nm_bt_vtable_network_server) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "bluetooth plugin not available to activate NAP profile");
+			return FALSE;
+		}
+
+		bdaddr = nm_setting_bluetooth_get_bdaddr (s_bt);
+		if (!nm_bt_vtable_network_server->is_available (nm_bt_vtable_network_server, bdaddr)) {
+			if (bdaddr)
+				nm_utils_error_set (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+				                    "not suitable NAP device \"%s\" available", bdaddr);
+			else
+				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+				                            "not suitable NAP device available");
+			return FALSE;
+		}
 	}
 
 	return TRUE;

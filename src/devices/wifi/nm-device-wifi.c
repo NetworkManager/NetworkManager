@@ -678,7 +678,8 @@ static gboolean
 check_connection_available (NMDevice *device,
                             NMConnection *connection,
                             NMDeviceCheckConAvailableFlags flags,
-                            const char *specific_object)
+                            const char *specific_object,
+                            GError **error)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -695,7 +696,17 @@ check_connection_available (NMDevice *device,
 		NMWifiAP *ap;
 
 		ap = nm_wifi_ap_lookup_for_device (NM_DEVICE (self), specific_object);
-		return ap ? nm_wifi_ap_check_compatible (ap, connection) : FALSE;
+		if (!ap) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "requested access point not found");
+			return FALSE;
+		}
+		if (!nm_wifi_ap_check_compatible (ap, connection)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "requested access point is not compatible with profile");
+			return FALSE;
+		}
+		return TRUE;
 	}
 
 	/* Ad-Hoc and AP connections are always available because they may be
@@ -714,11 +725,17 @@ check_connection_available (NMDevice *device,
 	 * activating but the network isn't available let the device recheck
 	 * availability.
 	 */
-	if (nm_setting_wireless_get_hidden (s_wifi) || NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP))
+	if (   nm_setting_wireless_get_hidden (s_wifi)
+	    || NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP))
 		return TRUE;
 
-	/* check at least one AP is compatible with this connection */
-	return !!nm_wifi_aps_find_first_compatible (&priv->aps_lst_head, connection);
+	if (!nm_wifi_aps_find_first_compatible (&priv->aps_lst_head, connection)) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "no compatible access point found");
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 static gboolean
