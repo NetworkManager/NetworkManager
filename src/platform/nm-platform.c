@@ -74,8 +74,6 @@ G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OF
         } \
     } G_STMT_END
 
-#define LOG_FMT_IP_TUNNEL "adding %s '%s' parent %u local %s remote %s"
-
 /*****************************************************************************/
 
 static guint signals[_NM_PLATFORM_SIGNAL_ID_LAST] = { 0 };
@@ -902,7 +900,7 @@ nm_platform_link_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("link: adding link '%s' of type '%s' (%d)"
+	_LOGD ("link: adding link '%s': %s (%d)"
 	       "%s%s" /* address */
 	       "%s%s" /* veth peer */
 	       "",
@@ -2000,8 +1998,9 @@ nm_platform_link_vlan_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("link: adding vlan '%s' parent %d vlanid %d vlanflags %x",
+	_LOGD ("link: adding link '%s': vlan parent %d vlanid %d vlanflags %x",
 	       name, parent, vlanid, vlanflags);
+
 	if (!klass->vlan_add (self, name, parent, vlanid, vlanflags, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
 	return NM_PLATFORM_ERROR_SUCCESS;
@@ -2032,8 +2031,9 @@ nm_platform_link_vxlan_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("link: adding vxlan '%s' parent %d id %d",
-	       name, props->parent_ifindex, props->id);
+	_LOGD ("link: adding link '%s': %s",
+	       name, nm_platform_lnk_vxlan_to_string (props, NULL, 0));
+
 	if (!klass->link_vxlan_add (self, name, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
 	return NM_PLATFORM_ERROR_SUCCESS;
@@ -2084,8 +2084,9 @@ nm_platform_link_tun_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("link: adding tun '%s' %s",
+	_LOGD ("link: adding link '%s': %s",
 	       name, nm_platform_lnk_tun_to_string (props, b, sizeof (b)));
+
 	if (!klass->link_tun_add (self, name, props, out_link, out_fd))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
 	return NM_PLATFORM_ERROR_SUCCESS;
@@ -2116,7 +2117,7 @@ nm_platform_link_6lowpan_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("adding 6lowpan '%s' parent %u", name, parent);
+	_LOGD ("adding link '%s': 6lowpan parent %u", name, parent);
 
 	if (!klass->link_6lowpan_add (self, name, parent, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -2378,7 +2379,6 @@ nm_platform_link_gre_add (NMPlatform *self,
                           const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;
-	char buffer[INET_ADDRSTRLEN];
 
 	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
 
@@ -2389,12 +2389,8 @@ nm_platform_link_gre_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD (LOG_FMT_IP_TUNNEL,
-	       "gre",
-	       name,
-	       props->parent_ifindex,
-	       nm_utils_inet4_ntop (props->local, NULL),
-	       nm_utils_inet4_ntop (props->remote, buffer));
+	_LOGD ("adding link '%s': %s",
+	       name, nm_platform_lnk_gre_to_string (props, NULL, 0));
 
 	if (!klass->link_gre_add (self, name, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -2543,7 +2539,6 @@ nm_platform_link_ip6tnl_add (NMPlatform *self,
                              const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;
-	char buffer[INET6_ADDRSTRLEN];
 
 	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
 
@@ -2554,12 +2549,8 @@ nm_platform_link_ip6tnl_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD (LOG_FMT_IP_TUNNEL,
-	       "ip6tnl",
-	       name,
-	       props->parent_ifindex,
-	       nm_utils_inet6_ntop (&props->local, NULL),
-	       nm_utils_inet6_ntop (&props->remote, buffer));
+	_LOGD ("adding link '%s': %s",
+	       name, nm_platform_lnk_ip6tnl_to_string (props, NULL, 0));
 
 	if (!klass->link_ip6tnl_add (self, name, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -2582,7 +2573,6 @@ nm_platform_link_ipip_add (NMPlatform *self,
                            const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;
-	char buffer[INET_ADDRSTRLEN];
 
 	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
 
@@ -2593,12 +2583,8 @@ nm_platform_link_ipip_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD (LOG_FMT_IP_TUNNEL,
-	       "ipip",
-	       name,
-		   props->parent_ifindex,
-	       nm_utils_inet4_ntop (props->local, NULL),
-	       nm_utils_inet4_ntop (props->remote, buffer));
+	_LOGD ("adding link '%s': %s",
+	       name, nm_platform_lnk_ipip_to_string (props, NULL, 0));
 
 	if (!klass->link_ipip_add (self, name, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -2633,10 +2619,8 @@ nm_platform_link_macsec_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("adding macsec '%s' parent %u sci %llx",
-	       name,
-	       parent,
-	       (unsigned long long) props->sci);
+	_LOGD ("adding link '%s': %s",
+	       name, nm_platform_lnk_macsec_to_string (props, NULL, 0));
 
 	if (!klass->link_macsec_add (self, name, parent, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -2673,11 +2657,8 @@ nm_platform_link_macvlan_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("adding %s '%s' parent %u mode %u",
-	       props->tap ? "macvtap" : "macvlan",
-	       name,
-	       parent,
-	       props->mode);
+	_LOGD ("adding link '%s': %s",
+	       name, nm_platform_lnk_macvlan_to_string (props, NULL, 0));
 
 	if (!klass->link_macvlan_add (self, name, parent, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -2700,7 +2681,6 @@ nm_platform_link_sit_add (NMPlatform *self,
                           const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;
-	char buffer[INET_ADDRSTRLEN];
 
 	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
 
@@ -2711,12 +2691,8 @@ nm_platform_link_sit_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD (LOG_FMT_IP_TUNNEL,
-	       "sit",
-	       name,
-	       props->parent_ifindex,
-	       nm_utils_inet4_ntop (props->local, NULL),
-	       nm_utils_inet4_ntop (props->remote, buffer));
+	_LOGD ("adding link '%s': %s",
+	       name, nm_platform_lnk_sit_to_string (props, NULL, 0));
 
 	if (!klass->link_sit_add (self, name, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
