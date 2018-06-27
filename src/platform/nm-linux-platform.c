@@ -5368,8 +5368,8 @@ link_gre_add (NMPlatform *platform,
 	NLA_PUT_U8 (nlmsg, IFLA_GRE_PMTUDISC, !!props->path_mtu_discovery);
 	NLA_PUT_U32 (nlmsg, IFLA_GRE_IKEY, htonl (props->input_key));
 	NLA_PUT_U32 (nlmsg, IFLA_GRE_OKEY, htonl (props->output_key));
-	NLA_PUT_U32 (nlmsg, IFLA_GRE_IFLAGS, htons (props->input_flags));
-	NLA_PUT_U32 (nlmsg, IFLA_GRE_OFLAGS, htons (props->output_flags));
+	NLA_PUT_U16 (nlmsg, IFLA_GRE_IFLAGS, htons (props->input_flags));
+	NLA_PUT_U16 (nlmsg, IFLA_GRE_OFLAGS, htons (props->output_flags));
 
 	nla_nest_end (nlmsg, data);
 	nla_nest_end (nlmsg, info);
