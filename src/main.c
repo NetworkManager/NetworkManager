@@ -227,11 +227,12 @@ main (int argc, char *argv[])
 	gboolean success = FALSE;
 	NMManager *manager = NULL;
 	NMConfig *config;
-	GError *error = NULL;
+	gs_free_error GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
 	char *bad_domains = NULL;
 	NMConfigCmdLineOptions *config_cli;
 	guint sd_id = 0;
+	GError *error_invalid_logging_config = NULL;
 
 	/* Known to cause a possible deadlock upon GDBus initialization:
 	 * https://bugzilla.gnome.org/show_bug.cgi?id=674885 */
@@ -304,11 +305,6 @@ main (int argc, char *argv[])
 		         _("%s.  Please use --help to see a list of valid options.\n"),
 		         error->message);
 		exit (1);
-	} else if (bad_domains) {
-		fprintf (stderr,
-		         _("Ignoring unrecognized log domain(s) '%s' passed on command line.\n"),
-		         bad_domains);
-		g_clear_pointer (&bad_domains, g_free);
 	}
 
 	/* Read the config file and CLI overrides */
@@ -330,15 +326,9 @@ main (int argc, char *argv[])
 		if (!nm_logging_setup (nm_config_get_log_level (config),
 		                       nm_config_get_log_domains (config),
 		                       &bad_domains,
-		                       &error)) {
-			fprintf (stderr, _("Error in configuration file: %s.\n"),
-			         error->message);
-			exit (1);
-		} else if (bad_domains) {
-			fprintf (stderr,
-			         _("Ignoring unrecognized log domain(s) '%s' from config files.\n"),
-			         bad_domains);
-			g_clear_pointer (&bad_domains, g_free);
+		                       &error_invalid_logging_config)) {
+			/* ignore error, and print the failure reason below.
+			 * Likewise, print about bad_domains below. */
 		}
 	}
 
@@ -373,6 +363,19 @@ main (int argc, char *argv[])
 
 	nm_log_info (LOGD_CORE, "Read config: %s", nm_config_data_get_config_description (nm_config_get_data (config)));
 	nm_config_data_log (nm_config_get_data (config), "CONFIG: ", "  ", NULL);
+
+	if (error_invalid_logging_config) {
+		nm_log_warn (LOGD_CORE, "config: invalid logging configuration: %s", error_invalid_logging_config->message);
+		g_clear_error (&error_invalid_logging_config);
+	}
+	if (bad_domains) {
+		nm_log_warn (LOGD_CORE, "config: invalid logging domains '%s' from %s",
+		             bad_domains,
+		             (global_opt.opt_log_level == NULL && global_opt.opt_log_domains == NULL)
+		               ? "config file"
+		               : "command line");
+		nm_clear_g_free (&bad_domains);
+	}
 
 	/* the first access to State causes the file to be read (and possibly print a warning) */
 	nm_config_state_get (config);
