@@ -766,8 +766,8 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	    || ((!priv->speed) && (priv->duplex))) {
 
 		g_set_error_literal (error,
-				     NM_CONNECTION_ERROR,
-				     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     priv->auto_negotiate ?
 		                       _("both speed and duplex should have a valid value or both should be unset")
 		                     : _("both speed and duplex are required for static link configuration"));
