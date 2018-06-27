@@ -410,7 +410,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			             priv->input_key);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP_TUNNEL_SETTING_NAME,
 			                NM_SETTING_IP_TUNNEL_INPUT_KEY);
-		return FALSE;
+			return FALSE;
 		}
 	}
 
@@ -426,7 +426,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			             priv->output_key);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP_TUNNEL_SETTING_NAME,
 			                NM_SETTING_IP_TUNNEL_OUTPUT_KEY);
-		return FALSE;
+			return FALSE;
 		}
 	}
 
