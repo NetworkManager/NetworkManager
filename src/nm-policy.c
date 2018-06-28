@@ -853,15 +853,19 @@ get_best_ip_config (NMPolicy *self,
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	NMDevice *device;
-	gpointer conf;
+	gpointer conf, best_conf = NULL;
 	const CList *tmp_list;
 	NMActiveConnection *ac;
+	guint64 best_metric = G_MAXUINT64;
+	NMVpnConnection *best_vpn = NULL;
 
 	nm_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 
 	nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
 		NMVpnConnection *candidate;
 		NMVpnConnectionState vpn_state;
+		const NMPObject *obj;
+		guint32 metric;
 
 		if (!NM_IS_VPN_CONNECTION (ac))
 			continue;
@@ -879,21 +883,27 @@ get_best_ip_config (NMPolicy *self,
 		if (!conf)
 			continue;
 
-		if (addr_family == AF_INET) {
-			if (!nm_ip4_config_best_default_route_get (conf))
-				continue;
-		} else {
-			if (!nm_ip6_config_best_default_route_get (conf))
-				continue;
-		}
+		if (addr_family == AF_INET)
+			obj = nm_ip4_config_best_default_route_get (conf);
+		else
+			obj = nm_ip6_config_best_default_route_get (conf);
+		if (!obj)
+			continue;
 
-		/* FIXME: in case of multiple VPN candidates, choose the one with the
-		 * best metric. */
+		metric = NMP_OBJECT_CAST_IPX_ROUTE (obj)->rx.metric;
+		if (metric <= best_metric) {
+			best_metric = metric;
+			best_conf = conf;
+			best_vpn = candidate;
+		}
+	}
+
+	if (best_metric != G_MAXUINT64) {
 		NM_SET_OUT (out_device, NULL);
-		NM_SET_OUT (out_vpn, candidate);
-		NM_SET_OUT (out_ac, ac);
-		NM_SET_OUT (out_ip_iface, nm_vpn_connection_get_ip_iface (candidate, TRUE));
-		return conf;
+		NM_SET_OUT (out_vpn, best_vpn);
+		NM_SET_OUT (out_ac, NM_ACTIVE_CONNECTION (best_vpn));
+		NM_SET_OUT (out_ip_iface, nm_vpn_connection_get_ip_iface (best_vpn, TRUE));
+		return best_conf;
 	}
 
 	device = get_best_ip_device (self, addr_family, TRUE);
