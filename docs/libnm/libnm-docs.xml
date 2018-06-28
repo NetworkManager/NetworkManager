@@ -188,6 +188,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <title>Connection and Setting API Reference</title>
     <xi:include href="xml/nm-connection.xml"/>
     <xi:include href="xml/nm-simple-connection.xml"/>
+    <xi:include href="xml/nm-remote-connection.xml"/>
     <xi:include href="xml/nm-setting.xml"/>
     <xi:include href="xml/nm-setting-connection.xml"/>
     <!-- begin alphabetical -->
@@ -267,7 +268,6 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <!-- end alphabetical -->
     <xi:include href="xml/nm-active-connection.xml"/>
     <xi:include href="xml/nm-vpn-connection.xml"/>
-    <xi:include href="xml/nm-remote-connection.xml"/>
     <xi:include href="xml/nm-access-point.xml"/>
     <xi:include href="xml/nm-wimax-nsp.xml"/>
     <xi:include href="xml/nm-ip-config.xml"/>
