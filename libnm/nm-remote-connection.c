@@ -35,6 +35,14 @@
 
 #include "introspection/org.freedesktop.NetworkManager.Settings.Connection.h"
 
+/**
+ * SECTION:nm-remote-connection
+ * @short_description: A connection managed by NetworkManager server
+ *
+ * A #NMRemoteConnection represents a connection that is exported via
+ * NetworkManager D-Bus interface.
+ **/
+
 static void nm_remote_connection_connection_iface_init (NMConnectionInterface *iface);
 static void nm_remote_connection_initable_iface_init (GInitableIface *iface);
 static void nm_remote_connection_async_initable_iface_init (GAsyncInitableIface *iface);

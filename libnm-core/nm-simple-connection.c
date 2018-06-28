@@ -24,6 +24,14 @@
 #include "nm-simple-connection.h"
 #include "nm-setting-private.h"
 
+/**
+ * SECTION:nm-simple-connection
+ * @short_description: An unmanaged connection
+ *
+ * An #NMSimpleConnection does not directly represent a D-Bus-exported connection,
+ * but might be used in the process of creating a new one.
+ **/
+
 static void nm_simple_connection_interface_init (NMConnectionInterface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (NMSimpleConnection, nm_simple_connection, G_TYPE_OBJECT,
@@ -38,9 +46,7 @@ nm_simple_connection_init (NMSimpleConnection *self)
 /**
  * nm_simple_connection_new:
  *
- * Creates a new #NMSimpleConnection object with no #NMSetting objects. An
- * #NMSimpleConnection does not directly represent a D-Bus-exported connection,
- * but might be used in the process of creating a new one.
+ * Creates a new #NMSimpleConnection object with no #NMSetting objects.
  *
  * Returns: (transfer full): the new empty #NMConnection object
  **/
