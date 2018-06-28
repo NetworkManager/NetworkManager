@@ -31,10 +31,10 @@
 
 #define NM_POLICY_MANAGER               "manager"
 #define NM_POLICY_SETTINGS              "settings"
-#define NM_POLICY_DEFAULT_IP4_DEVICE    "default-ip4-device"
-#define NM_POLICY_DEFAULT_IP6_DEVICE    "default-ip6-device"
-#define NM_POLICY_ACTIVATING_IP4_DEVICE "activating-ip4-device"
-#define NM_POLICY_ACTIVATING_IP6_DEVICE "activating-ip6-device"
+#define NM_POLICY_DEFAULT_IP4_AC        "default-ip4-ac"
+#define NM_POLICY_DEFAULT_IP6_AC        "default-ip6-ac"
+#define NM_POLICY_ACTIVATING_IP4_AC     "activating-ip4-ac"
+#define NM_POLICY_ACTIVATING_IP6_AC     "activating-ip6-ac"
 
 typedef struct _NMPolicyClass NMPolicyClass;
 
@@ -42,10 +42,10 @@ GType nm_policy_get_type (void);
 
 NMPolicy *nm_policy_new (NMManager *manager, NMSettings *settings);
 
-NMDevice *nm_policy_get_default_ip4_device (NMPolicy *policy);
-NMDevice *nm_policy_get_default_ip6_device (NMPolicy *policy);
-NMDevice *nm_policy_get_activating_ip4_device (NMPolicy *policy);
-NMDevice *nm_policy_get_activating_ip6_device (NMPolicy *policy);
+NMActiveConnection *nm_policy_get_default_ip4_ac (NMPolicy *policy);
+NMActiveConnection *nm_policy_get_default_ip6_ac (NMPolicy *policy);
+NMActiveConnection *nm_policy_get_activating_ip4_ac (NMPolicy *policy);
+NMActiveConnection *nm_policy_get_activating_ip6_ac (NMPolicy *policy);
 
 /**
  * NMPolicyHostnameMode
