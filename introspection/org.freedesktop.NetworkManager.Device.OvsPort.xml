@@ -8,6 +8,16 @@
   <interface name="org.freedesktop.NetworkManager.Device.OvsPort">
 
     <!--
+        Slaves:
+
+        Array of object paths representing interfaces which are currently enslaved to
+        this port.
+
+        Since: 1.14
+    -->
+    <property name="Slaves" type="ao" access="read"/>
+
+    <!--
         PropertiesChanged:
         @properties: A dictionary mapping property names to variant boxed values
 

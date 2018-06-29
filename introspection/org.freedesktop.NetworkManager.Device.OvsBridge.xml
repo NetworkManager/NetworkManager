@@ -8,6 +8,16 @@
   <interface name="org.freedesktop.NetworkManager.Device.OvsBridge">
 
     <!--
+        Slaves:
+
+        Array of object paths representing ports which are currently enslaved to
+        this bridge.
+
+        Since: 1.14
+    -->
+    <property name="Slaves" type="ao" access="read"/>
+
+    <!--
         PropertiesChanged:
         @properties: A dictionary mapping property names to variant boxed values
 
