@@ -1,10 +1,10 @@
-location: clients/tests/test-client.py:996:test_004()/144
-cmd: $NMCLI --mode tabular --terse -f NAME,SSID,SSID-HEX,BSSID,MODE,CHAN,FREQ,RATE,SIGNAL,BARS,SECURITY,WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,IN-USE,DBUS-PATH device wifi list bssid C0:E2:BE:E8:EF:B6
+location: clients/tests/test-client.py:982:test_004()/144
+cmd: $NMCLI --terse --color yes -f NAME,SSID,SSID-HEX,BSSID,MODE,CHAN,FREQ,RATE,SIGNAL,BARS,SECURITY,WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,IN-USE,DBUS-PATH device wifi list bssid C0:E2:BE:E8:EF:B6
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 267 bytes
+stdout: 420 bytes
 >>>
-AP[1]:wlan0-ap-2:776C616E302D61702D32:C0\:E2\:BE\:E8\:EF\:B6:Infrastruktura:1:2412 MHz:54 Mb/s:92:****:WPA1 WPA2:pair_tkip pair_ccmp group_tkip group_ccmp psk:pair_tkip pair_ccmp group_tkip group_ccmp psk:wlan0:nie: :/org/freedesktop/NetworkManager/AccessPoint/2
+[32mAP[1][0m:[32mwlan0-ap-2[0m:[32m776C616E302D61702D32[0m:[32mC0\:E2\:BE\:E8\:EF\:B6[0m:[32mInfrastruktura[0m:[32m1[0m:[32m2412 MHz[0m:[32m54 Mb/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m:[32mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m:[32mpair_tkip pair_ccmp group_tkip group_ccmp psk[0m:[32mwlan0[0m:[32mnie[0m:[32m [0m:[32m/org/freedesktop/NetworkManager/AccessPoint/2[0m
 
 <<<
 stderr: 0 bytes

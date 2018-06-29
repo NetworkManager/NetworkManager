@@ -16,7 +16,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright 2007 - 2008 Novell, Inc.
- * Copyright 2007 - 2014 Red Hat, Inc.
+ * Copyright 2007 - 2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -51,6 +51,7 @@
 #include "nm-access-point.h"
 #include "nm-active-connection.h"
 #include "nm-checkpoint.h"
+#include "nm-device-6lowpan.h"
 #include "nm-device-adsl.h"
 #include "nm-device-bond.h"
 #include "nm-device-bridge.h"
@@ -74,6 +75,7 @@
 #include "nm-device-vxlan.h"
 #include "nm-device-wifi.h"
 #include "nm-device-wimax.h"
+#include "nm-device-wpan.h"
 #include "nm-dhcp4-config.h"
 #include "nm-dhcp6-config.h"
 #include "nm-dhcp-config.h"
@@ -2523,6 +2525,8 @@ obj_nm_for_gdbus_object (NMClient *self, GDBusObject *object, GDBusObjectManager
 			type = NM_TYPE_ACCESS_POINT;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_ACTIVE_CONNECTION) == 0 && type != NM_TYPE_VPN_CONNECTION)
 			type = NM_TYPE_ACTIVE_CONNECTION;
+		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_6LOWPAN) == 0)
+			type = NM_TYPE_DEVICE_6LOWPAN;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_ADSL) == 0)
 			type = NM_TYPE_DEVICE_ADSL;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_BOND) == 0)
@@ -2563,6 +2567,8 @@ obj_nm_for_gdbus_object (NMClient *self, GDBusObject *object, GDBusObjectManager
 			type = NM_TYPE_DEVICE_TUN;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_VLAN) == 0)
 			type = NM_TYPE_DEVICE_VLAN;
+		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_WPAN) == 0)
+			type = NM_TYPE_DEVICE_WPAN;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_VXLAN) == 0)
 			type = NM_TYPE_DEVICE_VXLAN;
 		else if (strcmp (ifname, NM_DBUS_INTERFACE_DEVICE_WIRELESS) == 0)

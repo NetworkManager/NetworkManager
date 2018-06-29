@@ -20,6 +20,7 @@
       <year>2015</year>
       <year>2016</year>
       <year>2017</year>
+      <year>2018</year>
       <holder>The NetworkManager Authors</holder>
     </copyright>
 
@@ -191,6 +192,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-setting.xml"/>
     <xi:include href="xml/nm-setting-connection.xml"/>
     <!-- begin alphabetical -->
+    <xi:include href="xml/nm-setting-6lowpan.xml"/>
     <xi:include href="xml/nm-setting-8021x.xml"/>
     <xi:include href="xml/nm-setting-adsl.xml"/>
     <xi:include href="xml/nm-setting-bluetooth.xml"/>
@@ -230,6 +232,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-setting-wired.xml"/>
     <xi:include href="xml/nm-setting-wireless-security.xml"/>
     <xi:include href="xml/nm-setting-wireless.xml"/>
+    <xi:include href="xml/nm-setting-wpan.xml"/>
     <!-- end alphabetical -->
   </chapter>
 
@@ -237,6 +240,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <title>Device and Runtime Configuration API Reference</title>
     <xi:include href="xml/nm-device.xml"/>
     <!-- begin alphabetical -->
+    <xi:include href="xml/nm-device-6lowpan.xml"/>
     <xi:include href="xml/nm-device-adsl.xml"/>
     <xi:include href="xml/nm-device-bond.xml"/>
     <xi:include href="xml/nm-device-bridge.xml"/>
@@ -260,6 +264,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-device-vxlan.xml"/>
     <xi:include href="xml/nm-device-wifi.xml"/>
     <xi:include href="xml/nm-device-wimax.xml"/>
+    <xi:include href="xml/nm-device-wpan.xml"/>
     <!-- end alphabetical -->
     <xi:include href="xml/nm-active-connection.xml"/>
     <xi:include href="xml/nm-vpn-connection.xml"/>

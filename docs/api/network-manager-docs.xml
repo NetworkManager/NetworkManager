@@ -19,6 +19,7 @@
       <year>2015</year>
       <year>2016</year>
       <year>2017</year>
+      <year>2018</year>
       <holder>The NetworkManager Authors</holder>
     </copyright>
 
@@ -188,6 +189,7 @@
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Generic.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Infiniband.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.IPTunnel.xml"/>
+      <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Lowpan.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Macsec.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Macvlan.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Modem.xml"/>
@@ -202,6 +204,7 @@
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Vlan.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Vxlan.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Wireless.xml"/>
+      <xi:include href="dbus-org.freedesktop.NetworkManager.Device.Wpan.xml"/>
       <xi:include href="dbus-org.freedesktop.NetworkManager.PPP.xml"/>
     </chapter>
 

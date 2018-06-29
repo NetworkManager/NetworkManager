@@ -1,8 +1,8 @@
-location: clients/tests/test-client.py:895:test_003()/74
-cmd: $NMCLI con s ethernet
+location: clients/tests/test-client.py:884:test_003()/74
+cmd: $NMCLI --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4918 bytes
+stdout: 4249 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -83,19 +83,6 @@ proxy.method:                           none
 proxy.browser-only:                     nie
 proxy.pac-url:                          --
 proxy.pac-script:                       --
-GENERAL.NAME:                           ethernet
-GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
-GENERAL.DEVICES:                        eth1
-GENERAL.STATE:                          aktywowano
-GENERAL.DEFAULT:                        nie
-GENERAL.DEFAULT6:                       nie
-GENERAL.SPEC-OBJECT:                    --
-GENERAL.VPN:                            nie
-GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/ActiveConnection/2
-GENERAL.CON-PATH:                       /org/freedesktop/NetworkManager/Settings/Connection/3
-GENERAL.ZONE:                           --
-GENERAL.MASTER-PATH:                    --
-
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0

@@ -1,0 +1,15 @@
+location: clients/tests/test-client.py:884:test_003()/303
+cmd: $NMCLI --mode tabular c s /org/freedesktop/NetworkManager/ActiveConnection/1
+lang: C
+returncode: 0
+stdout: 487 bytes
+>>>
+GROUP    NAME      UUID                                  DEVICES  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
+GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
+
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<

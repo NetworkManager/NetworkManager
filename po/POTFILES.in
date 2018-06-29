@@ -57,6 +57,7 @@ libnm-core/crypto_nss.c
 libnm-core/nm-connection.c
 libnm-core/nm-dbus-utils.c
 libnm-core/nm-keyfile.c
+libnm-core/nm-setting-6lowpan.c
 libnm-core/nm-setting-8021x.c
 libnm-core/nm-setting-adsl.c
 libnm-core/nm-setting-bluetooth.c
@@ -94,6 +95,7 @@ libnm-core/nm-setting-wimax.c
 libnm-core/nm-setting-wired.c
 libnm-core/nm-setting-wireless-security.c
 libnm-core/nm-setting-wireless.c
+libnm-core/nm-setting-wpan.c
 libnm-core/nm-setting.c
 libnm-core/nm-utils.c
 libnm-core/nm-vpn-editor-plugin.c
@@ -129,6 +131,7 @@ libnm-util/nm-setting-wired.c
 libnm-util/nm-setting-wireless-security.c
 libnm-util/nm-setting-wireless.c
 libnm-util/nm-utils.c
+libnm/nm-device-6lowpan.c
 libnm/nm-device-adsl.c
 libnm/nm-device-bond.c
 libnm/nm-device-bridge.c
@@ -150,6 +153,7 @@ libnm/nm-device-vlan.c
 libnm/nm-device-vxlan.c
 libnm/nm-device-wifi.c
 libnm/nm-device-wimax.c
+libnm/nm-device-wpan.c
 libnm/nm-device.c
 libnm/nm-manager.c
 libnm/nm-object.c
@@ -169,6 +173,7 @@ src/dns/nm-dns-manager.c
 src/devices/adsl/nm-device-adsl.c
 src/devices/bluetooth/nm-bluez-device.c
 src/devices/bluetooth/nm-device-bt.c
+src/devices/nm-device-6lowpan.c
 src/devices/nm-device-bond.c
 src/devices/nm-device-bridge.c
 src/devices/nm-device-dummy.c
@@ -180,6 +185,7 @@ src/devices/nm-device-macvlan.c
 src/devices/nm-device-tun.c
 src/devices/nm-device-vlan.c
 src/devices/nm-device-vxlan.c
+src/devices/nm-device-wpan.c
 src/devices/team/nm-device-team.c
 src/devices/wifi/nm-device-olpc-mesh.c
 src/devices/wifi/nm-device-wifi.c

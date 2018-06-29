@@ -177,6 +177,12 @@ nla_get_u8 (const struct nlattr *nla)
 }
 
 static inline uint8_t
+nla_get_s8 (const struct nlattr *nla)
+{
+	return *(const int8_t *) nla_data (nla);
+}
+
+static inline uint8_t
 nla_get_u8_cond (/*const*/ struct nlattr *const*tb, int attr, uint8_t default_val)
 {
 	nm_assert (tb);
@@ -195,6 +201,12 @@ static inline uint32_t
 nla_get_u32(const struct nlattr *nla)
 {
 	return *(const uint32_t *) nla_data (nla);
+}
+
+static inline int32_t
+nla_get_s32(const struct nlattr *nla)
+{
+	return *(const int32_t *) nla_data (nla);
 }
 
 uint64_t nla_get_u64 (const struct nlattr *nla);
@@ -225,18 +237,24 @@ nla_put_string (struct nl_msg *msg, int attrtype, const char *str)
 
 #define NLA_PUT_TYPE(msg, type, attrtype, value) \
 	do { \
-		type __tmp = value; \
-		NLA_PUT(msg, attrtype, sizeof(type), &__tmp); \
+		type __nla_tmp = value; \
+		NLA_PUT(msg, attrtype, sizeof(type), &__nla_tmp); \
 	} while(0)
 
 #define NLA_PUT_U8(msg, attrtype, value) \
 	NLA_PUT_TYPE(msg, uint8_t, attrtype, value)
+
+#define NLA_PUT_S8(msg, attrtype, value) \
+	NLA_PUT_TYPE(msg, int8_t, attrtype, value)
 
 #define NLA_PUT_U16(msg, attrtype, value) \
 	NLA_PUT_TYPE(msg, uint16_t, attrtype, value)
 
 #define NLA_PUT_U32(msg, attrtype, value) \
 	NLA_PUT_TYPE(msg, uint32_t, attrtype, value)
+
+#define NLA_PUT_S32(msg, attrtype, value) \
+	NLA_PUT_TYPE(msg, int32_t, attrtype, value)
 
 #define NLA_PUT_U64(msg, attrtype, value) \
 	NLA_PUT_TYPE(msg, uint64_t, attrtype, value)

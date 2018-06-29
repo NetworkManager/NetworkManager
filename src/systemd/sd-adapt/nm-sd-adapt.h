@@ -26,10 +26,6 @@
 #include <sys/resource.h>
 #include <time.h>
 
-#ifndef CLOCK_BOOTTIME
-#define CLOCK_BOOTTIME 7
-#endif
-
 #if defined(HAVE_DECL_REALLOCARRAY) && HAVE_DECL_REALLOCARRAY == 1
 #define HAVE_REALLOCARRAY 1
 #else
@@ -178,15 +174,6 @@ sd_notify (int unset_environment, const char *state)
 
 #ifndef MAX_HANDLE_SZ
 #define MAX_HANDLE_SZ 128
-#endif
-
-/*
- * Some toolchains (E.G. uClibc 0.9.33 and earlier) don't export
- * CLOCK_BOOTTIME even though the kernel supports it, so provide a
- * local definition
- */
-#ifndef CLOCK_BOOTTIME
-#define CLOCK_BOOTTIME 7
 #endif
 
 #include "sd-id128.h"

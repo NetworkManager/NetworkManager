@@ -269,10 +269,10 @@ executable(
   link_with: libnm_glib
 )
 
-run_target(
+test(
   'check-local-exports-' + libnm_glib_name,
-  command: [check_exports, libnm_glib.full_path(), linker_script],
-  depends: libnm_glib
+  check_exports,
+  args: [libnm_glib.full_path(), linker_script],
 )
 
 if enable_tests

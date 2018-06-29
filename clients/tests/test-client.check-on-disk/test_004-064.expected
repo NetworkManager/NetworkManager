@@ -1,30 +1,18 @@
-location: clients/tests/test-client.py:986:test_004()/64
-cmd: $NMCLI --pretty -f COMMON device wifi list
+location: clients/tests/test-client.py:972:test_004()/64
+cmd: $NMCLI --color yes -f COMMON device wifi list
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1216 bytes
+stdout: 810 bytes
 >>>
-========================================
-  Lista skanowania sieci Wi-Fi (wlan1)
-========================================
 IN-USE  SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY  
---------------------------------------------------------------------------------------------------------------------
-        wlan1-ap-4  Infrastruktura  1     54 Mb/s  48      **    WPA1 WPA2 
+[35m [0m       [35mwlan1-ap-4[0m  [35mInfrastruktura[0m  [35m1[0m     [35m54 Mb/s[0m  [35m48[0m      [35m**  [0m  [35mWPA1 WPA2[0m 
 
-========================================
-  Lista skanowania sieci Wi-Fi (wlan1)
-========================================
 IN-USE  SSID  MODE  CHAN  RATE  SIGNAL  BARS  SECURITY 
-------------------------------------------------------------------------------------------------
 
-========================================
-  Lista skanowania sieci Wi-Fi (wlan0)
-========================================
 IN-USE  SSID        MODE            CHAN  RATE     SIGNAL  BARS  SECURITY  
---------------------------------------------------------------------------------------------------------------------
-        wlan0-ap-2  Infrastruktura  1     54 Mb/s  92      ****  WPA1 WPA2 
-        wlan0-ap-1  Infrastruktura  1     54 Mb/s  81      ****  WPA1 WPA2 
-        wlan0-ap-3  Infrastruktura  1     54 Mb/s  55      **    WPA1 WPA2 
+[32m [0m       [32mwlan0-ap-2[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m92[0m      [32m****[0m  [32mWPA1 WPA2[0m 
+[32m [0m       [32mwlan0-ap-1[0m  [32mInfrastruktura[0m  [32m1[0m     [32m54 Mb/s[0m  [32m81[0m      [32m****[0m  [32mWPA1 WPA2[0m 
+[35m [0m       [35mwlan0-ap-3[0m  [35mInfrastruktura[0m  [35m1[0m     [35m54 Mb/s[0m  [35m55[0m      [35m**  [0m  [35mWPA1 WPA2[0m 
 
 <<<
 stderr: 0 bytes

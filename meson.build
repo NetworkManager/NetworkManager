@@ -4,7 +4,7 @@ project(
 #  - add corresponding NM_VERSION_x_y_z macros in
 #    "shared/nm-version-macros.h.in"
 #  - update number in configure.ac
-  version: '1.12.0',
+  version: '1.13.1',
   license: 'GPL2+',
   default_options: [
     'buildtype=debugoptimized',
@@ -809,7 +809,7 @@ intltool_xml_cmd = [intltool_merge, '-x', '-u', '-c', intltool_cache, po_dir, '@
 perl = find_program('perl')
 xsltproc = find_program('xsltproc')
 
-check_exports = join_paths(meson.source_root(), 'tools', 'check-exports.sh')
+check_exports = find_program(join_paths(meson.source_root(), 'tools', 'check-exports.sh'))
 
 content_files = []
 

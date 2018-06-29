@@ -1,21 +1,13 @@
-location: clients/tests/test-client.py:898:test_003()/98
-cmd: $NMCLI c s /org/freedesktop/NetworkManager/ActiveConnection/1
+location: clients/tests/test-client.py:875:test_003()/98
+cmd: $NMCLI --terse -f ALL con
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 672 bytes
+stdout: 871 bytes
 >>>
-GENERAL.NAME:                           ethernet
-GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
-GENERAL.DEVICES:                        eth0
-GENERAL.STATE:                          dezaktywowanie
-GENERAL.DEFAULT:                        nie
-GENERAL.DEFAULT6:                       nie
-GENERAL.SPEC-OBJECT:                    --
-GENERAL.VPN:                            nie
-GENERAL.DBUS-PATH:                      /org/freedesktop/NetworkManager/ActiveConnection/1
-GENERAL.CON-PATH:                       /org/freedesktop/NetworkManager/Settings/Connection/3
-GENERAL.ZONE:                           --
-GENERAL.MASTER-PATH:                    --
+ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/3:yes:eth1:activated:/org/freedesktop/NetworkManager/ActiveConnection/2::/etc/NetworkManager/system-connections/ethernet
+ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/3:yes:eth0:deactivating:/org/freedesktop/NetworkManager/ActiveConnection/1::/etc/NetworkManager/system-connections/ethernet
+con-1:5fcfd6d7-1e63-3332-8826-a7eda103792d:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/1:no:::::/etc/NetworkManager/system-connections/con-1
+con-xx1:UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet:0:never:yes:0:no:/org/freedesktop/NetworkManager/Settings/Connection/2:no:::::/etc/NetworkManager/system-connections/con-xx1
 
 <<<
 stderr: 0 bytes

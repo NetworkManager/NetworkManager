@@ -1,0 +1,17 @@
+location: clients/tests/test-client.py:875:test_003()/128
+cmd: $NMCLI --mode tabular --color yes -f ALL con
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 1895 bytes
+>>>
+NAME      UUID                                  TYPE      TIMESTAMP  TIMESTAMP-REAL  AUTOCONNECT  AUTOCONNECT-PRIORITY  READONLY  DBUS-PATH                                              ACTIVE  DEVICE  STATE           ACTIVE-PATH                                         SLAVE  FILENAME                                        
+[32methernet[0m  [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [32methernet[0m  [32m0[0m          [32mnigdy[0m           [32mtak[0m          [32m0[0m                     [32mnie[0m       [32m/org/freedesktop/NetworkManager/Settings/Connection/3[0m  [32mtak[0m     [32meth1[0m    [32maktywowano[0m      [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m  [32m--[0m     [32m/etc/NetworkManager/system-connections/ethernet[0m 
+[31methernet[0m  [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m  [31methernet[0m  [31m0[0m          [31mnigdy[0m           [31mtak[0m          [31m0[0m                     [31mnie[0m       [31m/org/freedesktop/NetworkManager/Settings/Connection/3[0m  [31mtak[0m     [31meth0[0m    [31mdezaktywowanie[0m  [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m  [31m--[0m     [31m/etc/NetworkManager/system-connections/ethernet[0m 
+con-1     5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/1  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-1    
+con-xx1   UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet  0          nigdy           tak          0                     nie       /org/freedesktop/NetworkManager/Settings/Connection/2  nie     --      --              --                                                  --     /etc/NetworkManager/system-connections/con-xx1  
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<

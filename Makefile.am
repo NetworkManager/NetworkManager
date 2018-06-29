@@ -204,6 +204,8 @@ introspection_sources = \
 	introspection/org.freedesktop.NetworkManager.Device.Infiniband.h \
 	introspection/org.freedesktop.NetworkManager.Device.IPTunnel.c \
 	introspection/org.freedesktop.NetworkManager.Device.IPTunnel.h \
+	introspection/org.freedesktop.NetworkManager.Device.Lowpan.c \
+	introspection/org.freedesktop.NetworkManager.Device.Lowpan.h \
 	introspection/org.freedesktop.NetworkManager.Device.Macsec.c \
 	introspection/org.freedesktop.NetworkManager.Device.Macsec.h \
 	introspection/org.freedesktop.NetworkManager.Device.Macvlan.c \
@@ -236,6 +238,8 @@ introspection_sources = \
 	introspection/org.freedesktop.NetworkManager.Device.Wireless.h \
 	introspection/org.freedesktop.NetworkManager.Device.WiMax.c \
 	introspection/org.freedesktop.NetworkManager.Device.WiMax.h \
+	introspection/org.freedesktop.NetworkManager.Device.Wpan.c \
+	introspection/org.freedesktop.NetworkManager.Device.Wpan.h \
 	introspection/org.freedesktop.NetworkManager.Device.c \
 	introspection/org.freedesktop.NetworkManager.Device.h \
 	introspection/org.freedesktop.NetworkManager.DHCP4Config.c \
@@ -289,6 +293,7 @@ DBUS_INTERFACE_DOCS = \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Adsl.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.AgentManager.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.WiMax.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Wpan.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.IPTunnel.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Tun.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Bridge.xml \
@@ -307,7 +312,8 @@ DBUS_INTERFACE_DOCS = \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Wired.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.IP4Config.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Statistics.xml \
-	docs/api/dbus-org.freedesktop.NetworkManager.DnsManager.xml
+	docs/api/dbus-org.freedesktop.NetworkManager.DnsManager.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Lowpan.xml
 
 introspection/%.c: introspection/%.xml
 	@$(MKDIR_P) introspection/
@@ -340,6 +346,7 @@ dbusinterfaces_DATA = \
 	introspection/org.freedesktop.NetworkManager.Device.Generic.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Infiniband.xml \
 	introspection/org.freedesktop.NetworkManager.Device.IPTunnel.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Lowpan.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Macsec.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Macvlan.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Modem.xml \
@@ -356,6 +363,7 @@ dbusinterfaces_DATA = \
 	introspection/org.freedesktop.NetworkManager.Device.Vxlan.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Wireless.xml \
 	introspection/org.freedesktop.NetworkManager.Device.WiMax.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Wpan.xml \
 	introspection/org.freedesktop.NetworkManager.Device.xml \
 	introspection/org.freedesktop.NetworkManager.DHCP4Config.xml \
 	introspection/org.freedesktop.NetworkManager.DHCP6Config.xml \
@@ -395,6 +403,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-core-types.h \
 	libnm-core/nm-dbus-interface.h \
 	libnm-core/nm-errors.h \
+	libnm-core/nm-setting-6lowpan.h \
 	libnm-core/nm-setting-8021x.h \
 	libnm-core/nm-setting-adsl.h \
 	libnm-core/nm-setting-bluetooth.h \
@@ -435,6 +444,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-setting-wired.h \
 	libnm-core/nm-setting-wireless-security.h \
 	libnm-core/nm-setting-wireless.h \
+	libnm-core/nm-setting-wpan.h \
 	libnm-core/nm-setting.h \
 	libnm-core/nm-simple-connection.h \
 	libnm-core/nm-utils.h \
@@ -463,6 +473,7 @@ libnm_core_lib_h_priv = \
 	libnm-core/nm-setting-private.h \
 	libnm-core/nm-utils-private.h
 libnm_core_lib_c_settings_real = \
+	libnm-core/nm-setting-6lowpan.c \
 	libnm-core/nm-setting-8021x.c \
 	libnm-core/nm-setting-adsl.c \
 	libnm-core/nm-setting-bluetooth.c \
@@ -502,7 +513,8 @@ libnm_core_lib_c_settings_real = \
 	libnm-core/nm-setting-wimax.c \
 	libnm-core/nm-setting-wired.c \
 	libnm-core/nm-setting-wireless-security.c \
-	libnm-core/nm-setting-wireless.c
+	libnm-core/nm-setting-wireless.c \
+	libnm-core/nm-setting-wpan.c
 libnm_core_lib_c_real = \
 	$(libnm_core_lib_c_settings_real) \
 	shared/nm-utils/c-list-util.c \
@@ -773,6 +785,7 @@ libnm_lib_h_pub_real = \
 	libnm/nm-autoptr.h \
 	libnm/nm-checkpoint.h \
 	libnm/nm-client.h \
+	libnm/nm-device-6lowpan.h \
 	libnm/nm-device-adsl.h \
 	libnm/nm-device-bond.h \
 	libnm/nm-device-bridge.h \
@@ -796,6 +809,7 @@ libnm_lib_h_pub_real = \
 	libnm/nm-device-vxlan.h \
 	libnm/nm-device-wifi.h \
 	libnm/nm-device-wimax.h \
+	libnm/nm-device-wpan.h \
 	libnm/nm-device.h \
 	libnm/nm-dhcp-config.h \
 	libnm/nm-ip-config.h \
@@ -829,6 +843,7 @@ libnm_lib_c_real = \
 	libnm/nm-checkpoint.c \
 	libnm/nm-client.c \
 	libnm/nm-dbus-helpers.c \
+	libnm/nm-device-6lowpan.c \
 	libnm/nm-device-adsl.c \
 	libnm/nm-device-bond.c \
 	libnm/nm-device-bridge.c \
@@ -852,6 +867,7 @@ libnm_lib_c_real = \
 	libnm/nm-device-vxlan.c \
 	libnm/nm-device-wifi.c \
 	libnm/nm-device-wimax.c \
+	libnm/nm-device-wpan.c \
 	libnm/nm-device.c \
 	libnm/nm-dhcp-config.c \
 	libnm/nm-dhcp4-config.c \
@@ -1482,11 +1498,13 @@ src_libNetworkManagerBase_la_SOURCES = \
 	src/platform/nm-platform-private.h \
 	src/platform/nm-linux-platform.c \
 	src/platform/nm-linux-platform.h \
-	src/platform/wifi/wifi-utils-nl80211.c \
-	src/platform/wifi/wifi-utils-nl80211.h \
-	src/platform/wifi/wifi-utils-private.h \
-	src/platform/wifi/wifi-utils.c \
-	src/platform/wifi/wifi-utils.h \
+	src/platform/wifi/nm-wifi-utils-nl80211.c \
+	src/platform/wifi/nm-wifi-utils-nl80211.h \
+	src/platform/wifi/nm-wifi-utils-private.h \
+	src/platform/wifi/nm-wifi-utils.c \
+	src/platform/wifi/nm-wifi-utils.h \
+	src/platform/wpan/nm-wpan-utils.c \
+	src/platform/wpan/nm-wpan-utils.h \
 	\
 	src/ndisc/nm-lndp-ndisc.c \
 	src/ndisc/nm-lndp-ndisc.h \
@@ -1519,8 +1537,8 @@ src_libNetworkManagerBase_la_SOURCES = \
 
 if WITH_WEXT
 src_libNetworkManagerBase_la_SOURCES += \
-	src/platform/wifi/wifi-utils-wext.c \
-	src/platform/wifi/wifi-utils-wext.h
+	src/platform/wifi/nm-wifi-utils-wext.c \
+	src/platform/wifi/nm-wifi-utils-wext.h
 endif
 
 src_libNetworkManagerBase_la_LIBADD = \
@@ -1531,6 +1549,9 @@ src_libNetworkManagerBase_la_LIBADD = \
 	$(NULL)
 
 $(src_libNetworkManagerBase_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+EXTRA_DIST += \
+	src/platform/linux/nl802154.h
 
 ###############################################################################
 
@@ -1558,6 +1579,8 @@ src_libNetworkManager_la_SOURCES = \
 	src/devices/nm-device-logging.h \
 	src/devices/nm-device-private.h \
 	\
+	src/devices/nm-device-6lowpan.c \
+	src/devices/nm-device-6lowpan.h \
 	src/devices/nm-device-bond.c \
 	src/devices/nm-device-bond.h \
 	src/devices/nm-device-bridge.c \
@@ -1584,6 +1607,8 @@ src_libNetworkManager_la_SOURCES = \
 	src/devices/nm-device-vlan.h \
 	src/devices/nm-device-vxlan.c \
 	src/devices/nm-device-vxlan.h \
+	src/devices/nm-device-wpan.c \
+	src/devices/nm-device-wpan.h \
 	\
 	src/dhcp/nm-dhcp-dhcpcanon.c \
 	src/dhcp/nm-dhcp-dhclient.c \

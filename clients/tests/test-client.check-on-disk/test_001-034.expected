@@ -1,0 +1,44 @@
+location: clients/tests/test-client.py:764:test_001()/34
+cmd: $NMCLI --mode multiline general permissions
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 2185 bytes
+>>>
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-network
+VALUE:                                  tak
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wifi
+VALUE:                                  tak
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wwan
+VALUE:                                  tak
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wimax
+VALUE:                                  tak
+PERMISSION:                             org.freedesktop.NetworkManager.sleep-wake
+VALUE:                                  nie
+PERMISSION:                             org.freedesktop.NetworkManager.network-control
+VALUE:                                  tak
+PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.protected
+VALUE:                                  tak
+PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.open
+VALUE:                                  tak
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.system
+VALUE:                                  tak
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.own
+VALUE:                                  tak
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.hostname
+VALUE:                                  tak
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.global-dns
+VALUE:                                  nie
+PERMISSION:                             org.freedesktop.NetworkManager.reload
+VALUE:                                  nie
+PERMISSION:                             org.freedesktop.NetworkManager.checkpoint-rollback
+VALUE:                                  nieznane
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-statistics
+VALUE:                                  nieznane
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-connectivity-check
+VALUE:                                  nieznane
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<

@@ -1,45 +1,35 @@
-location: clients/tests/test-client.py:1000:test_004()/184
-cmd: $NMCLI --mode multiline --pretty -f COMMON device show wlan0
+location: clients/tests/test-client.py:986:test_004()/184
+cmd: $NMCLI --mode tabular --color yes -f COMMON device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2302 bytes
+stdout: 981 bytes
 >>>
-===============================================================================
-                        Informacje o urządzeniu (wlan0)
-===============================================================================
-GENERAL.DEVICE:                         wlan0
--------------------------------------------------------------------------------
-GENERAL.TYPE:                           wifi
--------------------------------------------------------------------------------
-GENERAL.HWADDR:                         13:E0:74:85:7C:D9
--------------------------------------------------------------------------------
-GENERAL.MTU:                            0
--------------------------------------------------------------------------------
-GENERAL.STATE:                          20 (niedostępne)
--------------------------------------------------------------------------------
-GENERAL.CONNECTION:                     con-vpn-1
--------------------------------------------------------------------------------
-GENERAL.CON-PATH:                       /org/freedesktop/NetworkManager/ActiveConnection/2
--------------------------------------------------------------------------------
-IP4.ADDRESS[1]:                         192.168.228.18/32
-IP4.ADDRESS[2]:                         192.168.209.179/25
-IP4.GATEWAY:                            192.168.41.120
-IP4.DOMAIN[1]:                          sear4.foo2.bar
-IP4.DOMAIN[2]:                          sear4.fo.x.y
-IP4.DOMAIN[3]:                          sear4.foo1.bar
-IP4.DOMAIN[4]:                          sear4.foo4.bar
-IP4.DOMAIN[5]:                          sear4.fo.o.bar
-IP4.WINS[1]:                            192.168.120.79
--------------------------------------------------------------------------------
-IP6.GATEWAY:                            --
-IP6.ROUTE[1]:                           dst = 2001:a::dd5b:aa7b:b4a2:e42/102, nh = ::, mt = 2504159086
-IP6.DOMAIN[1]:                          sear6.foo2.bar
-IP6.DOMAIN[2]:                          sear6.foo1.bar
-IP6.DOMAIN[3]:                          sear6.fo.x.y
-IP6.DOMAIN[4]:                          sear6.fo.o.bar
-IP6.DOMAIN[5]:                          sear6.foo3.bar
-IP6.DOMAIN[6]:                          sear6.foo4.bar
--------------------------------------------------------------------------------
+DEVICE 
+wlan0  
+
+TYPE 
+wifi 
+
+HWADDR            
+13:E0:74:85:7C:D9 
+
+MTU 
+0   
+
+STATE            
+20 (niedostępne) 
+
+CONNECTION 
+con-vpn-1  
+
+CON-PATH                                           
+/org/freedesktop/NetworkManager/ActiveConnection/2 
+
+GROUP  ADDRESS                                 GATEWAY         ROUTE  DNS  DOMAIN                                                                            WINS           
+IP4    192.168.228.18/32 | 192.168.209.179/25  192.168.41.120  --     --   sear4.foo2.bar | sear4.fo.x.y | sear4.foo1.bar | sear4.foo4.bar | sear4.fo.o.bar  192.168.120.79 
+
+GROUP  ADDRESS  GATEWAY  ROUTE                                                           DNS  DOMAIN                                                                                            
+IP6    --       --       dst = 2001:a::dd5b:aa7b:b4a2:e42/102, nh = ::, mt = 2504159086  --   sear6.foo2.bar | sear6.foo1.bar | sear6.fo.x.y | sear6.fo.o.bar | sear6.foo3.bar | sear6.foo4.bar 
 
 <<<
 stderr: 0 bytes

@@ -1,0 +1,13 @@
+location: clients/tests/test-client.py:881:test_003()/311
+cmd: $NMCLI --mode tabular --color yes con s ethernet
+lang: C
+returncode: 10
+stdout: 0 bytes
+>>>
+
+<<<
+stderr: 46 bytes
+>>>
+Error: ethernet - no such connection profile.
+
+<<<

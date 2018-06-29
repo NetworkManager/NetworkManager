@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2011 Red Hat, Inc.
+ * Copyright 2011 - 2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"
@@ -80,7 +80,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	NMSettingInfiniband *s_infiniband;
 	char ifname_verified[IFNAMSIZ];
 	const char *transport_mode;
-	gboolean ok, no_firmware = FALSE;
+	gboolean ok;
 
 	ret = NM_DEVICE_CLASS (nm_device_infiniband_parent_class)->act_stage1_prepare (device, out_failure_reason);
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
@@ -104,7 +104,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	/* With some drivers the interface must be down to set transport mode */
 	nm_device_take_down (device, TRUE);
 	ok = nm_platform_sysctl_set (nm_device_get_platform (device), NMP_SYSCTL_PATHID_NETDIR (dirfd, ifname_verified, "mode"), transport_mode);
-	nm_device_bring_up (device, TRUE, &no_firmware);
+	nm_device_bring_up (device, TRUE, NULL);
 
 	if (!ok) {
 		NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);

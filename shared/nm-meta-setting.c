@@ -16,13 +16,14 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2017 Red Hat, Inc.
+ * Copyright 2017 - 2018 Red Hat, Inc.
  */
 
 #include "nm-default.h"
 
 #include "nm-meta-setting.h"
 
+#include "nm-setting-6lowpan.h"
 #include "nm-setting-8021x.h"
 #include "nm-setting-adsl.h"
 #include "nm-setting-bluetooth.h"
@@ -63,6 +64,7 @@
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
+#include "nm-setting-wpan.h"
 
 /*****************************************************************************/
 
@@ -145,6 +147,11 @@ const NMSetting8021xSchemeVtable nm_setting_8021x_scheme_vtable[] = {
 /*****************************************************************************/
 
 const NMMetaSettingInfo nm_meta_setting_infos[] = {
+	[NM_META_SETTING_TYPE_6LOWPAN] = {
+		.meta_type =                NM_META_SETTING_TYPE_6LOWPAN,
+		.setting_name =             NM_SETTING_6LOWPAN_SETTING_NAME,
+		.get_setting_gtype =        nm_setting_6lowpan_get_type,
+	},
 	[NM_META_SETTING_TYPE_802_1X] = {
 		.meta_type =                NM_META_SETTING_TYPE_802_1X,
 		.setting_name =             NM_SETTING_802_1X_SETTING_NAME,
@@ -339,6 +346,11 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
 		.meta_type =                NM_META_SETTING_TYPE_WIRELESS_SECURITY,
 		.setting_name =             NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 		.get_setting_gtype =        nm_setting_wireless_security_get_type,
+	},
+	[NM_META_SETTING_TYPE_WPAN] = {
+		.meta_type =                NM_META_SETTING_TYPE_WPAN,
+		.setting_name =             NM_SETTING_WPAN_SETTING_NAME,
+		.get_setting_gtype =        nm_setting_wpan_get_type,
 	},
 
 	[NM_META_SETTING_TYPE_UNKNOWN] = {

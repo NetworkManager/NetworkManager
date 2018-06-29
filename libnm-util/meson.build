@@ -167,10 +167,10 @@ if enable_introspection
   )
 endif
 
-run_target(
+test(
   'check-local-exports-' + libnm_util_name,
-  command: [check_exports, libnm_util.full_path(), linker_script],
-  depends: libnm_util
+  check_exports,
+  args: [libnm_util.full_path(), linker_script],
 )
 
 sources = files(

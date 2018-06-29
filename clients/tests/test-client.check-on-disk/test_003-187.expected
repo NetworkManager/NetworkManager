@@ -1,0 +1,72 @@
+location: clients/tests/test-client.py:875:test_003()/187
+cmd: $NMCLI --mode multiline --color yes -f ALL con
+lang: C
+returncode: 0
+stdout: 3537 bytes
+>>>
+NAME:                                   [32methernet[0m
+UUID:                                   [32mUUID-ethernet-REPLACED-REPLACED-REPL[0m
+TYPE:                                   [32methernet[0m
+TIMESTAMP:                              [32m0[0m
+TIMESTAMP-REAL:                         [32mnever[0m
+AUTOCONNECT:                            [32myes[0m
+AUTOCONNECT-PRIORITY:                   [32m0[0m
+READONLY:                               [32mno[0m
+DBUS-PATH:                              [32m/org/freedesktop/NetworkManager/Settings/Connection/3[0m
+ACTIVE:                                 [32myes[0m
+DEVICE:                                 [32meth1[0m
+STATE:                                  [32mactivated[0m
+ACTIVE-PATH:                            [32m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
+SLAVE:                                  [32m--[0m
+FILENAME:                               [32m/etc/NetworkManager/system-connections/ethernet[0m
+NAME:                                   [31methernet[0m
+UUID:                                   [31mUUID-ethernet-REPLACED-REPLACED-REPL[0m
+TYPE:                                   [31methernet[0m
+TIMESTAMP:                              [31m0[0m
+TIMESTAMP-REAL:                         [31mnever[0m
+AUTOCONNECT:                            [31myes[0m
+AUTOCONNECT-PRIORITY:                   [31m0[0m
+READONLY:                               [31mno[0m
+DBUS-PATH:                              [31m/org/freedesktop/NetworkManager/Settings/Connection/3[0m
+ACTIVE:                                 [31myes[0m
+DEVICE:                                 [31meth0[0m
+STATE:                                  [31mdeactivating[0m
+ACTIVE-PATH:                            [31m/org/freedesktop/NetworkManager/ActiveConnection/1[0m
+SLAVE:                                  [31m--[0m
+FILENAME:                               [31m/etc/NetworkManager/system-connections/ethernet[0m
+NAME:                                   con-1
+UUID:                                   5fcfd6d7-1e63-3332-8826-a7eda103792d
+TYPE:                                   ethernet
+TIMESTAMP:                              0
+TIMESTAMP-REAL:                         never
+AUTOCONNECT:                            yes
+AUTOCONNECT-PRIORITY:                   0
+READONLY:                               no
+DBUS-PATH:                              /org/freedesktop/NetworkManager/Settings/Connection/1
+ACTIVE:                                 no
+DEVICE:                                 --
+STATE:                                  --
+ACTIVE-PATH:                            --
+SLAVE:                                  --
+FILENAME:                               /etc/NetworkManager/system-connections/con-1
+NAME:                                   con-xx1
+UUID:                                   UUID-con-xx1-REPLACED-REPLACED-REPLA
+TYPE:                                   ethernet
+TIMESTAMP:                              0
+TIMESTAMP-REAL:                         never
+AUTOCONNECT:                            yes
+AUTOCONNECT-PRIORITY:                   0
+READONLY:                               no
+DBUS-PATH:                              /org/freedesktop/NetworkManager/Settings/Connection/2
+ACTIVE:                                 no
+DEVICE:                                 --
+STATE:                                  --
+ACTIVE-PATH:                            --
+SLAVE:                                  --
+FILENAME:                               /etc/NetworkManager/system-connections/con-xx1
+
+<<<
+stderr: 0 bytes
+>>>
+
+<<<

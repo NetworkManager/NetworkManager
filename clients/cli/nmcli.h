@@ -106,7 +106,7 @@ struct _NmcOutputField {
 
 typedef struct _NmcConfig {
 	NMCPrintOutput print_output;                      /* Output mode */
-	gboolean use_colors;                              /* Whether to use colors for output: option '--color' */
+	bool use_colors;                                  /* Whether to use colors for output: option '--color' */
 	bool multiline_output;                            /* Multiline output instead of default tabular */
 	bool escape_values;                               /* Whether to escape ':' and '\' in terse tabular mode */
 	bool in_editor;                                   /* Whether running the editor - nmcli con edit' */

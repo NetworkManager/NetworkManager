@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2008 - 2011 Red Hat, Inc.
+ * Copyright 2008 - 2018 Red Hat, Inc.
  *
  */
 
@@ -61,6 +61,7 @@
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
+#include "nm-setting-wpan.h"
 #include "nm-simple-connection.h"
 #include "nm-keyfile-internal.h"
 #include "nm-utils/nm-dedup-multi.h"

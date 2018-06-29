@@ -2360,7 +2360,7 @@ _parse_info_find (const char *setting_name, const char *property_name)
 
 			g_assert (pis->setting_name);
 			if (   i > 0
-				&& strcmp (pis[-1].setting_name, pis->setting_name) >= 0)
+			    && strcmp (pis[-1].setting_name, pis->setting_name) >= 0)
 				g_error ("Wrong order at index #%d: \"%s\" before \"%s\"", i - 1, pis[-1].setting_name, pis->setting_name);
 			g_assert (pis->properties);
 			g_assert (pis->properties[0]);
@@ -2388,6 +2388,7 @@ _parse_info_find (const char *setting_name, const char *property_name)
 	if (idx >= 0) {
 		const ParseInfoSetting *pis = &parse_infos[idx];
 
+		G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (ParseInfoProperty, property_name) == 0);
 		nm_assert (nm_streq (pis->setting_name, setting_name));
 		idx = _nm_utils_ptrarray_find_binary_search ((gconstpointer *) pis->properties,
 		                                             NM_PTRARRAY_LEN (pis->properties),
