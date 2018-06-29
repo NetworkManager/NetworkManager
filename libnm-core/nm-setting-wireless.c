@@ -752,25 +752,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	gsize length;
 	GError *local = NULL;
 
-	if (!priv->ssid) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
-		                     _("property is missing"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_SSID);
-		return FALSE;
-	}
-
-	length = g_bytes_get_size (priv->ssid);
-	if (length == 0 || length > 32) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("SSID length is out of range <1-32> bytes"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_SSID);
-		return FALSE;
-	}
-
 	if (priv->mode && !g_strv_contains (valid_modes, priv->mode)) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
@@ -779,6 +760,29 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		             priv->mode);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_MODE);
 		return FALSE;
+	}
+
+	if (!priv->mode || strcmp (priv->mode, NM_SETTING_WIRELESS_MODE_INFRA) == 0) {
+		if (!priv->ssid) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
+			                     _("property is missing"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_SSID);
+			return FALSE;
+		}
+	}
+
+	if (priv->ssid) {
+		length = g_bytes_get_size (priv->ssid);
+		if (length == 0 || length > 32) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("SSID length is out of range <1-32> bytes"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME, NM_SETTING_WIRELESS_SSID);
+			return FALSE;
+		}
 	}
 
 	if (priv->band && !g_strv_contains (valid_bands, priv->band)) {
