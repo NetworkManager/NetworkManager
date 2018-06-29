@@ -447,13 +447,13 @@ gboolean
 nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
                                            NMSettingWireless * setting,
                                            guint32 fixed_freq,
+                                           GBytes *ssid,
                                            GError **error)
 {
 	NMSupplicantConfigPrivate *priv;
 	gboolean is_adhoc, is_ap, is_mesh;
 	const char *mode, *band;
 	guint32 channel;
-	GBytes *ssid;
 	const char *bssid;
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
@@ -471,7 +471,6 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 	else
 		priv->ap_scan = 1;
 
-	ssid = nm_setting_wireless_get_ssid (setting);
 	if (!nm_supplicant_config_add_option (self, "ssid",
 	                                      (char *) g_bytes_get_data (ssid, NULL),
 	                                      g_bytes_get_size (ssid),
