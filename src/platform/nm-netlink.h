@@ -237,8 +237,8 @@ nla_put_string (struct nl_msg *msg, int attrtype, const char *str)
 
 #define NLA_PUT_TYPE(msg, type, attrtype, value) \
 	do { \
-		type __tmp = value; \
-		NLA_PUT(msg, attrtype, sizeof(type), &__tmp); \
+		type __nla_tmp = value; \
+		NLA_PUT(msg, attrtype, sizeof(type), &__nla_tmp); \
 	} while(0)
 
 #define NLA_PUT_U8(msg, attrtype, value) \
