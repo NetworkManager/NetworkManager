@@ -55,6 +55,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMHostnameManager,
 
 typedef struct {
 	char *current_hostname;
+	char *pretty_hostname;
 	GFileMonitor *monitor;
 	GFileMonitor *dhcp_monitor;
 	gulong monitor_id;
@@ -333,6 +334,17 @@ nm_hostname_manager_get_transient_hostname (NMHostnameManager *self, char **host
 	return TRUE;
 }
 
+const char *
+nm_hostname_manager_get_pretty_hostname (NMHostnameManager *self)
+{
+	NMHostnameManagerPrivate *priv = NM_HOSTNAME_MANAGER_GET_PRIVATE (self);
+
+	if (priv->pretty_hostname)
+		return priv->pretty_hostname;
+
+	return priv->current_hostname;
+}
+
 gboolean
 nm_hostname_manager_write_hostname (NMHostnameManager *self, const char *hostname)
 {
@@ -465,6 +477,14 @@ hostnamed_properties_changed (GDBusProxy *proxy,
 	                                               "StaticHostname");
 	if (v_hostname) {
 		_set_hostname (self, g_variant_get_string (v_hostname, NULL));
+		g_variant_unref (v_hostname);
+	}
+
+	nm_clear_g_free (&priv->pretty_hostname);
+	v_hostname = g_dbus_proxy_get_cached_property (priv->hostnamed_proxy,
+	                                               "PrettyHostname");
+	if (v_hostname) {
+		priv->pretty_hostname = g_variant_dup_string (v_hostname, NULL);
 		g_variant_unref (v_hostname);
 	}
 }
@@ -612,6 +632,7 @@ dispose (GObject *object)
 	}
 
 	nm_clear_g_free (&priv->current_hostname);
+	nm_clear_g_free (&priv->pretty_hostname);
 
 	G_OBJECT_CLASS (nm_hostname_manager_parent_class)->dispose (object);
 }

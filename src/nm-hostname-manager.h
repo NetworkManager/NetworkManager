@@ -42,6 +42,8 @@ void nm_hostname_manager_set_transient_hostname (NMHostnameManager *self,
 gboolean nm_hostname_manager_get_transient_hostname (NMHostnameManager *self,
                                                      char **hostname);
 
+const char *nm_hostname_manager_get_pretty_hostname (NMHostnameManager *self);
+
 gboolean nm_hostname_manager_validate_hostname (const char *hostname);
 
 #endif  /* __NM_HOSTNAME_MANAGER_H__ */
