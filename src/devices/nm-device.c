@@ -6829,7 +6829,9 @@ static gboolean
 dhcp4_grace_period_expired (gpointer user_data)
 {
 	NMDevice *self = user_data;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
+	priv->dhcp4.grace_id = 0;
 	_LOGI (LOGD_DHCP4, "DHCPv4: grace period expired");
 
 	nm_device_ip_method_failed (self, AF_INET,
@@ -7560,7 +7562,9 @@ static gboolean
 dhcp6_grace_period_expired (gpointer user_data)
 {
 	NMDevice *self = user_data;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
+	priv->dhcp6.grace_id = 0;
 	_LOGI (LOGD_DHCP6, "DHCPv6: grace period expired");
 
 	nm_device_ip_method_failed (self, AF_INET6,
