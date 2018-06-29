@@ -1228,7 +1228,7 @@ nm_wifi_ap_new_from_properties (const char *supplicant_path, GVariant *propertie
 }
 
 NMWifiAP *
-nm_wifi_ap_new_fake_from_connection (NMConnection *connection)
+nm_wifi_ap_new_fake (NMConnection *connection, GBytes *ssid)
 {
 	NMWifiAP *ap;
 	NMWifiAPPrivate *priv;
@@ -1248,28 +1248,25 @@ nm_wifi_ap_new_fake_from_connection (NMConnection *connection)
 	priv = NM_WIFI_AP_GET_PRIVATE (ap);
 	priv->fake = TRUE;
 
-	nm_wifi_ap_set_ssid (ap,
-	                     nm_setting_wireless_get_ssid (s_wireless));
-
 	// FIXME: bssid too?
 
 	mode = nm_setting_wireless_get_mode (s_wireless);
-	if (mode) {
-		if (!strcmp (mode, "infrastructure"))
-			nm_wifi_ap_set_mode (ap, NM_802_11_MODE_INFRA);
-		else if (!strcmp (mode, "adhoc")) {
-			nm_wifi_ap_set_mode (ap, NM_802_11_MODE_ADHOC);
-			adhoc = TRUE;
-		} else if (!strcmp (mode, "mesh"))
-			nm_wifi_ap_set_mode (ap, NM_802_11_MODE_MESH);
-		else if (!strcmp (mode, "ap")) {
-			nm_wifi_ap_set_mode (ap, NM_802_11_MODE_INFRA);
-			NM_WIFI_AP_GET_PRIVATE (ap)->hotspot = TRUE;
-		} else
-			goto error;
-	} else {
+	if (!mode || strcmp (mode, "infrastructure") == 0) {
 		nm_wifi_ap_set_mode (ap, NM_802_11_MODE_INFRA);
+	} else if (strcmp (mode, "adhoc") == 0) {
+		nm_wifi_ap_set_mode (ap, NM_802_11_MODE_ADHOC);
+	} else if (strcmp (mode, "mesh") == 0) {
+		nm_wifi_ap_set_mode (ap, NM_802_11_MODE_MESH);
+	} else if (strcmp (mode, "ap") == 0) {
+		nm_wifi_ap_set_mode (ap, NM_802_11_MODE_INFRA);
+		NM_WIFI_AP_GET_PRIVATE (ap)->hotspot = TRUE;
+	} else {
+		goto error;
 	}
+
+	g_return_val_if_fail (ssid != NULL, NULL);
+	g_return_val_if_fail (g_bytes_get_size (ssid) > 0, NULL);
+	nm_wifi_ap_set_ssid (ap, ssid);
 
 	band = nm_setting_wireless_get_band (s_wireless);
 	channel = nm_setting_wireless_get_channel (s_wireless);

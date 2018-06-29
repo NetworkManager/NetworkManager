@@ -2614,6 +2614,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	NMSettingWireless *s_wireless;
 	const char *mode;
 	const char *ap_path;
+	GBytes *ssid;
 
 	req = nm_device_get_act_request (NM_DEVICE (self));
 	g_return_val_if_fail (req, NM_ACT_STAGE_RETURN_FAILURE);
@@ -2667,12 +2668,11 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 		 * AP gets used until the real one is found in the scan list (Ad-Hoc or Hidden),
 		 * or until the device is deactivated (Hotspot).
 		 */
-		ap_fake = nm_wifi_ap_new_fake_from_connection (connection);
+		ssid = nm_setting_wireless_get_ssid (s_wireless);
+		ap_fake = nm_wifi_ap_new_fake (connection, ssid);
+
 		if (!ap_fake)
 			g_return_val_if_reached (NM_ACT_STAGE_RETURN_FAILURE);
-
-		if (nm_wifi_ap_is_hotspot (ap_fake))
-			nm_wifi_ap_set_address (ap_fake, nm_device_get_hw_address (device));
 
 		g_object_freeze_notify (G_OBJECT (self));
 		ap_add_remove (self, TRUE, ap_fake, TRUE);
