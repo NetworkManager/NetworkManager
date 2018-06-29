@@ -1,12 +1,9 @@
 =============================================
-NetworkManager-1.11.90 (1.12-rc1)
+NetworkManager-1.12
 Overview of changes since NetworkManager-1.10
 =============================================
 
-This is a release candidate of NetworkManager 1.12.0.
-USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
-
-Notable changes include:
+This is a new stable release of NetworkManager.  Notable changes include:
 
 * Improved support for configuration checkpoint, including support in libnm.
 * Added capability to set IP Tunnel configuration flags.
