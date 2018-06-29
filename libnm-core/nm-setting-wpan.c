@@ -53,9 +53,9 @@ struct _NMSettingWpan {
         NMSetting parent;
 };
 
-typedef struct {
+struct _NMSettingWpanClass {
         NMSettingClass parent;
-} NMSettingWpanClass;
+};
 
 /**
  * SECTION:nm-setting-wpan

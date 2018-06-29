@@ -39,9 +39,9 @@ struct _NMSetting6Lowpan {
 	NMSetting parent;
 };
 
-typedef struct {
+struct _NMSetting6LowpanClass {
 	NMSettingClass parent;
-} NMSetting6LowpanClass;
+};
 
 /**
  * SECTION:nm-setting-6lowpan

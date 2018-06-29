@@ -40,6 +40,8 @@ G_BEGIN_DECLS
 #define NM_SETTING_WPAN_PAN_ID             "pan-id"
 #define NM_SETTING_WPAN_SHORT_ADDRESS      "short-address"
 
+typedef struct _NMSettingWpanClass NMSettingWpanClass;
+
 NM_AVAILABLE_IN_1_14
 GType nm_setting_wpan_get_type (void);
 NM_AVAILABLE_IN_1_14

@@ -39,6 +39,8 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_6LOWPAN_PARENT               "parent"
 
+typedef struct _NMSetting6LowpanClass NMSetting6LowpanClass;
+
 NM_AVAILABLE_IN_1_14
 GType nm_setting_6lowpan_get_type (void);
 NM_AVAILABLE_IN_1_14
