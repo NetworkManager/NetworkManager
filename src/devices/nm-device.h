@@ -120,7 +120,8 @@ nm_device_state_reason_check (NMDeviceStateReason reason)
 #define NM_DEVICE_PARENT           "parent"
 
 /* the "slaves" property is internal in the parent class, but exposed
- * by the derived classes NMDeviceBond, NMDeviceBridge and NMDeviceTeam. */
+ * by the derived classes NMDeviceBond, NMDeviceBridge, NMDeviceTeam,
+ * NMDeviceOvsBridge and NMDeviceOvsPort. */
 #define NM_DEVICE_SLAVES           "slaves"         /* partially internal */
 
 #define NM_DEVICE_TYPE_DESC        "type-desc"      /* Internal only */
