@@ -134,6 +134,9 @@ nm_device_ovs_bridge_init (NMDeviceOvsBridge *self)
 static const NMDBusInterfaceInfoExtended interface_info_device_ovs_bridge = {
 	.parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT (
 		NM_DBUS_INTERFACE_DEVICE_OVS_BRIDGE,
+		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE ("Slaves", "ao", NM_DEVICE_SLAVES),
+		),
 		.signals = NM_DEFINE_GDBUS_SIGNAL_INFOS (
 			&nm_signal_info_property_changed_legacy,
 		),
