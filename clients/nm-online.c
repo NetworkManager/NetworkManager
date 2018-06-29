@@ -40,6 +40,7 @@
 
 #define PROGRESS_STEPS 15
 
+#define EXIT_NONE               -1
 #define EXIT_FAILURE_OFFLINE     1
 #define EXIT_FAILURE_ERROR       2
 #define EXIT_FAILURE_LIBNM_BUG   42
@@ -80,7 +81,7 @@ _return (OnlineData *data, int retval)
 }
 
 static void
-_print_progress (int progress_next_step_i, gint64 remaining_ms, int success)
+_print_progress (gboolean wait_startup, int progress_next_step_i, gint64 remaining_ms, int retval)
 {
 	int i, j;
 
@@ -90,8 +91,26 @@ _print_progress (int progress_next_step_i, gint64 remaining_ms, int success)
 	for (i = 0; i < PROGRESS_STEPS; i++)
 		putchar (i < j ? '.' : ' ');
 	g_print (" %4lds", (long) (MAX (0, remaining_ms + 999) / 1000));
-	if (success >= 0)
-		g_print (" [%sline]\n", success ? "on" : "off");
+	if (retval != EXIT_NONE) {
+		const char *result;
+
+		if (wait_startup) {
+			if (retval == EXIT_SUCCESS)
+				result = "started";
+			else if (retval == EXIT_FAILURE_OFFLINE)
+				result = "startup-pending";
+			else
+				result = "failure";
+		}
+		else {
+			if (retval == EXIT_SUCCESS)
+				result = "online";
+			else
+				result = "offline";
+		}
+
+		g_print (" [%s]\n", result);
+	}
 	fflush (stdout);
 }
 
@@ -156,7 +175,7 @@ handle_timeout (gpointer user_data)
 
 		/* calculate the next step (not the current): floor()+1 */
 		progress_next_step_i = NM_MIN ((elapsed_ms / data->progress_step_duration) + 1, PROGRESS_STEPS);
-		_print_progress (progress_next_step_i, remaining_ms, -1);
+		_print_progress (data->wait_startup, progress_next_step_i, remaining_ms, EXIT_NONE);
 
 		/* synchronize the timeout with the ticking of the seconds. */
 		rem = remaining_ms % 1000;
@@ -294,7 +313,7 @@ main (int argc, char *argv[])
 	g_clear_pointer (&data.loop, g_main_loop_unref);
 
 	if (!data.quiet)
-		_print_progress (-1, NM_MAX (0, data.end_timestamp_ms - _now_ms ()), data.retval == EXIT_SUCCESS);
+		_print_progress (data.wait_startup, -1, NM_MAX (0, data.end_timestamp_ms - _now_ms ()), data.retval);
 
 	return data.retval;
 }
