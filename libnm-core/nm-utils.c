@@ -230,19 +230,24 @@ get_system_encodings (void)
 	return cached_encodings;
 }
 
-/* init libnm */
-
-static gboolean initialized = FALSE;
+/*****************************************************************************/
 
 static void __attribute__((constructor))
 _nm_utils_init (void)
 {
+	static int initialized = 0;
 	GModule *self;
 	gpointer func;
 
-	if (initialized)
+	if (g_atomic_int_get (&initialized) != 0)
 		return;
-	initialized = TRUE;
+
+	/* we don't expect this code to run multiple times, nor on multiple threads.
+	 *
+	 * In practice, it would not be a problem if two threads concurrently try to
+	 * run the initialization code below, all code below itself is thread-safe,
+	 * Hence, a poor-man guard "initialized" above is more than sufficient,
+	 * although it does not guarantee that the code is not run concurrently. */
 
 	self = g_module_open (NULL, 0);
 	if (g_module_symbol (self, "nm_util_get_private", &func))
@@ -253,7 +258,11 @@ _nm_utils_init (void)
 	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 
 	_nm_dbus_errors_init ();
+
+	g_atomic_int_set (&initialized, 1);
 }
+
+/*****************************************************************************/
 
 gboolean _nm_utils_is_manager_process;
 
