@@ -1,9 +1,19 @@
 =============================================
-NetworkManager-1.?? (not released yet)
+NetworkManager-1.14 (not released yet)
 Overview of changes since NetworkManager-1.12
 =============================================
 
+This is a snapshot of NetworkManager 1.14 development series.
+The API is subject to change and not guaranteed to be compatible
+with the later release.
+USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
+
 * Added support for IEEE 802.15.4 and 6LowPAN devices.
+
+The following changes were backported to 1.12.x releases between 1.12.0
+and 1.12.2 are also present in NetworkManager-1.14:
+
+* fix missing symbols in libnm ABI for settings.
 
 =============================================
 NetworkManager-1.12
