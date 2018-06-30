@@ -187,7 +187,7 @@ create_dm_cmd_line (const char *iface,
 	 * as the gateway or whatever.  So tell dnsmasq not to use any config file
 	 * at all.
 	 */
-	nm_cmd_line_add_string (cmd, "--conf-file");
+	nm_cmd_line_add_string (cmd, "--conf-file=/dev/null");
 
 	nm_cmd_line_add_string (cmd, "--no-hosts");
 	nm_cmd_line_add_string (cmd, "--keep-in-foreground");
@@ -248,6 +248,11 @@ create_dm_cmd_line (const char *iface,
 	}
 
 	nm_cmd_line_add_string (cmd, "--dhcp-lease-max=50");
+
+	g_string_append (s, "--dhcp-leasefile=" NMSTATEDIR);
+	g_string_append_printf (s, "/dnsmasq-%s.leases", iface);
+	nm_cmd_line_add_string (cmd, s->str);
+	g_string_truncate (s, 0);
 
 	g_string_append (s, "--pid-file=");
 	g_string_append (s, pidfile);
