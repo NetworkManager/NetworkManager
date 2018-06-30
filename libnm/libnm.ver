@@ -1369,3 +1369,11 @@ global:
 	nm_utils_get_timestamp_msec;
 	nm_vpn_service_plugin_shutdown;
 } libnm_1_10_0;
+
+libnm_1_12_2 {
+	nm_connection_get_setting_ovs_bridge;
+	nm_connection_get_setting_ovs_interface;
+	nm_connection_get_setting_ovs_patch;
+	nm_connection_get_setting_ovs_port;
+	nm_connection_get_setting_tun;
+} libnm_1_12_0;
