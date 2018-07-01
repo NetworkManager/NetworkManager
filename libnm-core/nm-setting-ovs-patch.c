@@ -57,7 +57,6 @@ struct _NMSettingOvsPatchClass {
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingOvsPatch, nm_setting_ovs_patch, NM_TYPE_SETTING,
                          _nm_register_setting (OVS_PATCH, NM_SETTING_PRIORITY_HW_BASE))
-NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_OVS_PATCH)
 
 /*****************************************************************************/
 

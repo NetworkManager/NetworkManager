@@ -53,7 +53,6 @@ struct _NMSetting6LowpanClass {
 
 G_DEFINE_TYPE_WITH_CODE (NMSetting6Lowpan, nm_setting_6lowpan, NM_TYPE_SETTING,
                          _nm_register_setting (6LOWPAN, NM_SETTING_PRIORITY_HW_BASE))
-NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_6LOWPAN)
 
 #define NM_SETTING_6LOWPAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_6LOWPAN, NMSetting6LowpanPrivate))
 

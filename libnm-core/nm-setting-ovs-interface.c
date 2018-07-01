@@ -56,7 +56,6 @@ struct _NMSettingOvsInterfaceClass {
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingOvsInterface, nm_setting_ovs_interface, NM_TYPE_SETTING,
                          _nm_register_setting (OVS_INTERFACE, NM_SETTING_PRIORITY_HW_BASE))
-NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_OVS_INTERFACE)
 
 /*****************************************************************************/
 

@@ -85,11 +85,6 @@ gboolean _nm_setting_clear_secrets_with_flags (NMSetting *setting,
  */
 #define NM_SETTING_PARAM_REAPPLY_IMMEDIATELY (1 << (6 + G_PARAM_USER_SHIFT))
 
-/* Ensure the setting's GType is registered at library load time */
-#define NM_SETTING_REGISTER_TYPE(x) \
-static void __attribute__((constructor)) register_setting (void) \
-{ g_type_ensure (x); }
-
 GVariant *_nm_setting_get_deprecated_virtual_interface_name (NMSetting *setting,
                                                              NMConnection *connection,
                                                              const char *property);
