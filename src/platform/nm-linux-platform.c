@@ -3402,8 +3402,6 @@ typedef struct {
 
 		gint is_handling;
 	} delayed_action;
-
-	int wireguard_family_id;
 } NMLinuxPlatformPrivate;
 
 struct _NMLinuxPlatform {
@@ -6364,10 +6362,10 @@ _wireguard_get_link_properties (NMPlatform *platform, const NMPlatformLink *link
 	};
 	guint i, j;
 
-	if (!priv->wireguard_family_id)
-		priv->wireguard_family_id = _support_genl_family (priv->genl, "wireguard");
+	if (!obj->_link.wireguard_family_id)
+		obj->_link.wireguard_family_id = _support_genl_family (priv->genl, "wireguard");
 
-	if (!priv->wireguard_family_id) {
+	if (!obj->_link.wireguard_family_id) {
 		_LOGD ("wireguard: kernel support not available for wireguard link %s", link->name);
 		goto err;
 	}
@@ -6376,7 +6374,7 @@ _wireguard_get_link_properties (NMPlatform *platform, const NMPlatformLink *link
 	if (!msg)
 		goto err;
 
-	if (!genlmsg_put (msg, NL_AUTO_PORT, NL_AUTO_SEQ, priv->wireguard_family_id,
+	if (!genlmsg_put (msg, NL_AUTO_PORT, NL_AUTO_SEQ, obj->_link.wireguard_family_id,
 	                  0, NLM_F_DUMP, WG_CMD_GET_DEVICE, 1))
 		goto err;
 
