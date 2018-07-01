@@ -167,6 +167,8 @@ typedef struct {
 
 	/* Auxiliary data object for Wi-Fi and WPAN */
 	GObject *ext_data;
+
+	int wireguard_family_id;
 } NMPObjectLink;
 
 typedef struct {
