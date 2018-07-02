@@ -1158,6 +1158,26 @@ _normalize_ovs_interface_type (NMConnection *self, GHashTable *parameters)
 }
 
 static gboolean
+_normalize_ip_tunnel_wired_setting (NMConnection *self, GHashTable *parameters)
+{
+	NMSettingIPTunnel *s_ip_tunnel;
+
+	s_ip_tunnel = nm_connection_get_setting_ip_tunnel (self);
+	if (!s_ip_tunnel)
+		return FALSE;
+
+	if (   nm_connection_get_setting_wired (self)
+	    && !NM_IN_SET (nm_setting_ip_tunnel_get_mode (s_ip_tunnel),
+	                   NM_IP_TUNNEL_MODE_GRETAP,
+	                   NM_IP_TUNNEL_MODE_IP6GRETAP)) {
+		nm_connection_remove_setting (self, NM_TYPE_SETTING_WIRED);
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+static gboolean
 _normalize_required_settings (NMConnection *self, GHashTable *parameters)
 {
 	NMSettingBluetooth *s_bt = nm_connection_get_setting_bluetooth (self);
@@ -1502,6 +1522,7 @@ nm_connection_normalize (NMConnection *connection,
 	was_modified |= _normalize_team_port_config (connection, parameters);
 	was_modified |= _normalize_bluetooth_type (connection, parameters);
 	was_modified |= _normalize_ovs_interface_type (connection, parameters);
+	was_modified |= _normalize_ip_tunnel_wired_setting (connection, parameters);
 
 	/* Verify anew. */
 	success = _nm_connection_verify (connection, error);

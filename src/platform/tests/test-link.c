@@ -699,6 +699,7 @@ test_software_detect (gconstpointer user_data)
 	guint i_step;
 	const gboolean ext = test_data->external_command;
 	NMPlatformLnkTun lnk_tun;
+	NMPlatformLnkGre lnk_gre = { };
 	nm_auto_close int tun_fd = -1;
 
 	nmtstp_run_command_check ("ip link add %s type dummy", PARENT_NAME);
@@ -706,7 +707,6 @@ test_software_detect (gconstpointer user_data)
 
 	switch (test_data->link_type) {
 	case NM_LINK_TYPE_GRE: {
-		NMPlatformLnkGre lnk_gre = { };
 		gboolean gracefully_skip = FALSE;
 
 		lnk_gre.local = nmtst_inet4_from_string ("192.168.233.204");
@@ -727,6 +727,31 @@ test_software_detect (gconstpointer user_data)
 				goto out_delete_parent;
 			}
 			g_error ("Failed adding GRE tunnel");
+		}
+		break;
+	}
+	case NM_LINK_TYPE_GRETAP: {
+		gboolean gracefully_skip = FALSE;
+
+		lnk_gre.local = nmtst_inet4_from_string ("192.168.1.133");
+		lnk_gre.remote = nmtst_inet4_from_string ("172.168.101.2");
+		lnk_gre.parent_ifindex = ifindex_parent;
+		lnk_gre.ttl = 39;
+		lnk_gre.tos = 12;
+		lnk_gre.path_mtu_discovery = FALSE;
+		lnk_gre.is_tap = TRUE;
+
+		if (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, "gretap0")) {
+			/* Seems that the ip_gre module is not loaded... try to load it. */
+			gracefully_skip = nm_utils_modprobe (NULL, TRUE, "ip_gre", NULL) != 0;
+		}
+
+		if (!nmtstp_link_gre_add (NULL, ext, DEVICE_NAME, &lnk_gre)) {
+			if (gracefully_skip) {
+				g_test_skip ("Cannot create gretap tunnel because of missing ip_gre module (modprobe ip_gre)");
+				goto out_delete_parent;
+			}
+			g_error ("Failed adding GRETAP tunnel");
 		}
 		break;
 	}
@@ -791,6 +816,58 @@ test_software_detect (gconstpointer user_data)
 				goto out_delete_parent;
 			}
 			g_error ("Failed adding IP6TNL tunnel");
+		}
+		break;
+	}
+	case NM_LINK_TYPE_IP6GRE: {
+		NMPlatformLnkIp6Tnl lnk_ip6tnl = { };
+		gboolean gracefully_skip = FALSE;
+
+		if (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, "ip6gre0")) {
+			/* Seems that the ip6_tunnel module is not loaded... try to load it. */
+			gracefully_skip = nm_utils_modprobe (NULL, TRUE, "ip6_gre", NULL) != 0;
+		}
+
+		lnk_ip6tnl.local = *nmtst_inet6_from_string ("fd01::42");
+		lnk_ip6tnl.remote = *nmtst_inet6_from_string ("fd01::aaaa");
+		lnk_ip6tnl.parent_ifindex = ifindex_parent;
+		lnk_ip6tnl.tclass = 21;
+		lnk_ip6tnl.flow_label = 1338;
+		lnk_ip6tnl.is_gre = TRUE;
+
+		if (!nmtstp_link_ip6gre_add (NULL, ext, DEVICE_NAME, &lnk_ip6tnl)) {
+			if (gracefully_skip) {
+				g_test_skip ("Cannot create ip6gre tunnel because of missing ip6_gre module (modprobe ip6_gre)");
+				goto out_delete_parent;
+			}
+			g_error ("Failed adding IP6GRE tunnel");
+		}
+		break;
+	}
+	case NM_LINK_TYPE_IP6GRETAP: {
+		NMPlatformLnkIp6Tnl lnk_ip6tnl = { };
+		gboolean gracefully_skip = FALSE;
+
+		if (!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, "ip6gre0")) {
+			/* Seems that the ip6_tunnel module is not loaded... try to load it. */
+			gracefully_skip = nm_utils_modprobe (NULL, TRUE, "ip6_gre", NULL) != 0;
+		}
+
+		lnk_ip6tnl.local = *nmtst_inet6_from_string ("fe80::abcd");
+		lnk_ip6tnl.remote = *nmtst_inet6_from_string ("fc01::bbbb");
+		lnk_ip6tnl.parent_ifindex = ifindex_parent;
+		lnk_ip6tnl.ttl = 10;
+		lnk_ip6tnl.tclass = 22;
+		lnk_ip6tnl.flow_label = 1339;
+		lnk_ip6tnl.is_gre = TRUE;
+		lnk_ip6tnl.is_tap = TRUE;
+
+		if (!nmtstp_link_ip6gre_add (NULL, ext, DEVICE_NAME, &lnk_ip6tnl)) {
+			if (gracefully_skip) {
+				g_test_skip ("Cannot create ip6gretap tunnel because of missing ip6_gre module (modprobe ip6_gre)");
+				goto out_delete_parent;
+			}
+			g_error ("Failed adding IP6GRETAP tunnel");
 		}
 		break;
 	}
@@ -970,16 +1047,15 @@ test_software_detect (gconstpointer user_data)
 			const NMPlatformLnkGre *plnk = &lnk->lnk_gre;
 
 			g_assert (plnk == nm_platform_link_get_lnk_gre (NM_PLATFORM_GET, ifindex, NULL));
-			g_assert_cmpint (plnk->parent_ifindex, ==, ifindex_parent);
-			g_assert_cmpint (plnk->input_flags, ==, 0);
-			g_assert_cmpint (plnk->output_flags, ==, 0);
-			g_assert_cmpint (plnk->input_key, ==, 0);
-			g_assert_cmpint (plnk->output_key, ==, 0);
-			nmtst_assert_ip4_address (plnk->local, "192.168.233.204");
-			nmtst_assert_ip4_address (plnk->remote, "172.168.10.25");
-			g_assert_cmpint (plnk->ttl, ==, 174);
-			g_assert_cmpint (plnk->tos, ==, 37);
-			g_assert_cmpint (plnk->path_mtu_discovery, ==, TRUE);
+			g_assert (nm_platform_lnk_gre_cmp (plnk, &lnk_gre) == 0);
+
+			break;
+		}
+		case NM_LINK_TYPE_GRETAP: {
+			const NMPlatformLnkGre *plnk = &lnk->lnk_gre;
+
+			g_assert (plnk == nm_platform_link_get_lnk_gretap (NM_PLATFORM_GET, ifindex, NULL));
+			g_assert (nm_platform_lnk_gre_cmp (plnk, &lnk_gre) == 0);
 			break;
 		}
 		case NM_LINK_TYPE_IP6TNL: {
@@ -1010,6 +1086,33 @@ test_software_detect (gconstpointer user_data)
 				                 IP6_TNL_F_IGN_ENCAP_LIMIT | IP6_TNL_F_USE_ORIG_TCLASS);
 				break;
 			}
+			break;
+		}
+		case NM_LINK_TYPE_IP6GRE: {
+			const NMPlatformLnkIp6Tnl *plnk = &lnk->lnk_ip6tnl;
+
+			g_assert (plnk == nm_platform_link_get_lnk_ip6gre (NM_PLATFORM_GET, ifindex, NULL));
+			g_assert_cmpint (plnk->parent_ifindex, ==, ifindex_parent);
+			nmtst_assert_ip6_address (&plnk->local, "fd01::42");
+			nmtst_assert_ip6_address (&plnk->remote, "fd01::aaaa");
+			g_assert_cmpint (plnk->tclass, ==, 21);
+			g_assert_cmpint (plnk->flow_label, ==, 1338);
+			g_assert_cmpint (plnk->is_gre, ==, TRUE);
+			g_assert_cmpint (plnk->is_tap, ==, FALSE);
+			break;
+		}
+		case NM_LINK_TYPE_IP6GRETAP: {
+			const NMPlatformLnkIp6Tnl *plnk = &lnk->lnk_ip6tnl;
+
+			g_assert (plnk == nm_platform_link_get_lnk_ip6gretap (NM_PLATFORM_GET, ifindex, NULL));
+			g_assert_cmpint (plnk->parent_ifindex, ==, ifindex_parent);
+			nmtst_assert_ip6_address (&plnk->local, "fe80::abcd");
+			nmtst_assert_ip6_address (&plnk->remote, "fc01::bbbb");
+			g_assert_cmpint (plnk->ttl, ==, 10);
+			g_assert_cmpint (plnk->tclass, ==, 22);
+			g_assert_cmpint (plnk->flow_label, ==, 1339);
+			g_assert_cmpint (plnk->is_gre, ==, TRUE);
+			g_assert_cmpint (plnk->is_tap, ==, TRUE);
 			break;
 		}
 		case NM_LINK_TYPE_IPIP: {
@@ -2641,8 +2744,11 @@ _nmtstp_setup_tests (void)
 		g_test_add_func ("/link/external", test_external);
 
 		test_software_detect_add ("/link/software/detect/gre", NM_LINK_TYPE_GRE, 0);
+		test_software_detect_add ("/link/software/detect/gretap", NM_LINK_TYPE_GRETAP, 0);
 		test_software_detect_add ("/link/software/detect/ip6tnl/0", NM_LINK_TYPE_IP6TNL, 0);
 		test_software_detect_add ("/link/software/detect/ip6tnl/1", NM_LINK_TYPE_IP6TNL, 1);
+		test_software_detect_add ("/link/software/detect/ip6gre", NM_LINK_TYPE_IP6GRE, 0);
+		test_software_detect_add ("/link/software/detect/ip6gretap", NM_LINK_TYPE_IP6GRETAP, 0);
 		test_software_detect_add ("/link/software/detect/ipip", NM_LINK_TYPE_IPIP, 0);
 		test_software_detect_add ("/link/software/detect/macvlan", NM_LINK_TYPE_MACVLAN, 0);
 		test_software_detect_add ("/link/software/detect/macvtap", NM_LINK_TYPE_MACVTAP, 0);

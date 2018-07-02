@@ -319,12 +319,14 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	case NM_IP_TUNNEL_MODE_ISATAP:
 	case NM_IP_TUNNEL_MODE_GRE:
 	case NM_IP_TUNNEL_MODE_VTI:
+	case NM_IP_TUNNEL_MODE_GRETAP:
 		family = AF_INET;
 		break;
 	case NM_IP_TUNNEL_MODE_IP6IP6:
 	case NM_IP_TUNNEL_MODE_IPIP6:
 	case NM_IP_TUNNEL_MODE_IP6GRE:
 	case NM_IP_TUNNEL_MODE_VTI6:
+	case NM_IP_TUNNEL_MODE_IP6GRETAP:
 		family = AF_INET6;
 		break;
 	case NM_IP_TUNNEL_MODE_UNKNOWN:
@@ -387,8 +389,11 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 
 	if (   (priv->input_key && priv->input_key[0])
 	    || (priv->output_key && priv->output_key[0])) {
-		if (   priv->mode != NM_IP_TUNNEL_MODE_GRE
-		    && priv->mode != NM_IP_TUNNEL_MODE_IP6GRE) {
+		if (!NM_IN_SET (priv->mode,
+		                NM_IP_TUNNEL_MODE_GRE,
+		                NM_IP_TUNNEL_MODE_GRETAP,
+		                NM_IP_TUNNEL_MODE_IP6GRE,
+		                NM_IP_TUNNEL_MODE_IP6GRETAP)) {
 			g_set_error_literal (error,
 			                     NM_CONNECTION_ERROR,
 			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -451,6 +456,20 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP_TUNNEL_SETTING_NAME,
 		                NM_SETTING_IP_TUNNEL_FLAGS);
 		return FALSE;
+	}
+
+	if (   nm_connection_get_setting_wired (connection)
+	    && !NM_IN_SET (priv->mode,
+	                   NM_IP_TUNNEL_MODE_GRETAP,
+	                   NM_IP_TUNNEL_MODE_IP6GRETAP)) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("wired setting not allowed for mode %s"),
+		             nm_utils_enum_to_str (nm_ip_tunnel_mode_get_type (), priv->mode));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP_TUNNEL_SETTING_NAME,
+		                NM_SETTING_IP_TUNNEL_MODE);
+		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
 	}
 
 	return TRUE;

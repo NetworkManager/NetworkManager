@@ -74,8 +74,6 @@ G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OF
         } \
     } G_STMT_END
 
-#define LOG_FMT_IP_TUNNEL "adding %s '%s' parent %u local %s remote %s"
-
 /*****************************************************************************/
 
 static guint signals[_NM_PLATFORM_SIGNAL_ID_LAST] = { 0 };
@@ -902,7 +900,7 @@ nm_platform_link_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("link: adding link '%s' of type '%s' (%d)"
+	_LOGD ("link: adding link '%s': %s (%d)"
 	       "%s%s" /* address */
 	       "%s%s" /* veth peer */
 	       "",
@@ -986,7 +984,7 @@ nm_platform_link_set_netns (NMPlatform *self, int ifindex, int netns_fd)
 	if (!pllink)
 		return FALSE;
 
-	_LOGD ("link: ifindex %d changing network namespace to %d", ifindex, netns_fd);
+	_LOGD ("link: move link %d to network namespace with fd %d", ifindex, netns_fd);
 	return klass->link_set_netns (self, ifindex, netns_fd);
 }
 
@@ -1355,15 +1353,18 @@ nm_platform_link_set_user_ipv6ll_enabled (NMPlatform *self, int ifindex, gboolea
 NMPlatformError
 nm_platform_link_set_address (NMPlatform *self, int ifindex, gconstpointer address, size_t length)
 {
+	gs_free char *mac = NULL;
+
 	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
 
 	g_return_val_if_fail (ifindex > 0, NM_PLATFORM_ERROR_BUG);
 	g_return_val_if_fail (address, NM_PLATFORM_ERROR_BUG);
 	g_return_val_if_fail (length > 0, NM_PLATFORM_ERROR_BUG);
 
-	_LOGD ("link: setting %s (%d) hardware address",
+	_LOGD ("link: setting %s (%d) hardware address to %s",
 	       nm_strquote_a (20, nm_platform_link_get_name (self, ifindex)),
-	       ifindex);
+	       ifindex,
+	       (mac = nm_utils_hwaddr_ntoa (address, length)));
 	return klass->link_set_address (self, ifindex, address, length);
 }
 
@@ -1853,6 +1854,12 @@ nm_platform_link_get_lnk_gre (NMPlatform *self, int ifindex, const NMPlatformLin
 	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_GRE, out_link);
 }
 
+const NMPlatformLnkGre *
+nm_platform_link_get_lnk_gretap (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_GRETAP, out_link);
+}
+
 const NMPlatformLnkInfiniband *
 nm_platform_link_get_lnk_infiniband (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
@@ -1863,6 +1870,18 @@ const NMPlatformLnkIp6Tnl *
 nm_platform_link_get_lnk_ip6tnl (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
 	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_IP6TNL, out_link);
+}
+
+const NMPlatformLnkIp6Tnl *
+nm_platform_link_get_lnk_ip6gre (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_IP6GRE, out_link);
+}
+
+const NMPlatformLnkIp6Tnl *
+nm_platform_link_get_lnk_ip6gretap (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_IP6GRETAP, out_link);
 }
 
 const NMPlatformLnkIpIp *
@@ -1997,8 +2016,9 @@ nm_platform_link_vlan_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("link: adding vlan '%s' parent %d vlanid %d vlanflags %x",
+	_LOGD ("link: adding link '%s': vlan parent %d vlanid %d vlanflags %x",
 	       name, parent, vlanid, vlanflags);
+
 	if (!klass->vlan_add (self, name, parent, vlanid, vlanflags, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
 	return NM_PLATFORM_ERROR_SUCCESS;
@@ -2029,8 +2049,9 @@ nm_platform_link_vxlan_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("link: adding vxlan '%s' parent %d id %d",
-	       name, props->parent_ifindex, props->id);
+	_LOGD ("link: adding link '%s': %s",
+	       name, nm_platform_lnk_vxlan_to_string (props, NULL, 0));
+
 	if (!klass->link_vxlan_add (self, name, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
 	return NM_PLATFORM_ERROR_SUCCESS;
@@ -2081,8 +2102,9 @@ nm_platform_link_tun_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("link: adding tun '%s' %s",
+	_LOGD ("link: adding link '%s': %s",
 	       name, nm_platform_lnk_tun_to_string (props, b, sizeof (b)));
+
 	if (!klass->link_tun_add (self, name, props, out_link, out_fd))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
 	return NM_PLATFORM_ERROR_SUCCESS;
@@ -2113,7 +2135,7 @@ nm_platform_link_6lowpan_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("adding 6lowpan '%s' parent %u", name, parent);
+	_LOGD ("adding link '%s': 6lowpan parent %u", name, parent);
 
 	if (!klass->link_6lowpan_add (self, name, parent, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -2375,23 +2397,18 @@ nm_platform_link_gre_add (NMPlatform *self,
                           const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;
-	char buffer[INET_ADDRSTRLEN];
 
 	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
 
 	g_return_val_if_fail (props, NM_PLATFORM_ERROR_BUG);
 	g_return_val_if_fail (name, NM_PLATFORM_ERROR_BUG);
 
-	plerr = _link_add_check_existing (self, name, NM_LINK_TYPE_GRE, out_link);
+	plerr = _link_add_check_existing (self, name, props->is_tap ? NM_LINK_TYPE_GRETAP : NM_LINK_TYPE_GRE, out_link);
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD (LOG_FMT_IP_TUNNEL,
-	       "gre",
-	       name,
-	       props->parent_ifindex,
-	       nm_utils_inet4_ntop (props->local, NULL),
-	       nm_utils_inet4_ntop (props->remote, buffer));
+	_LOGD ("adding link '%s': %s",
+	       name, nm_platform_lnk_gre_to_string (props, NULL, 0));
 
 	if (!klass->link_gre_add (self, name, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -2437,6 +2454,9 @@ _infiniband_add_add_or_delete (NMPlatform *self,
 		if (!klass->infiniband_partition_add (self, parent, p_key, out_link))
 			return NM_PLATFORM_ERROR_UNSPECIFIED;
 	} else {
+		_LOGD ("link: deleting infiniband partition %s for parent '%s' (%d), key %d",
+		       name, parent_link->name, parent, p_key);
+
 		if (!klass->infiniband_partition_delete (self, parent, p_key))
 			return NM_PLATFORM_ERROR_UNSPECIFIED;
 	}
@@ -2537,25 +2557,61 @@ nm_platform_link_ip6tnl_add (NMPlatform *self,
                              const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;
-	char buffer[INET6_ADDRSTRLEN];
 
 	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
 
 	g_return_val_if_fail (props, NM_PLATFORM_ERROR_BUG);
 	g_return_val_if_fail (name, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (!props->is_gre, NM_PLATFORM_ERROR_BUG);
 
 	plerr = _link_add_check_existing (self, name, NM_LINK_TYPE_IP6TNL, out_link);
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD (LOG_FMT_IP_TUNNEL,
-	       "ip6tnl",
-	       name,
-	       props->parent_ifindex,
-	       nm_utils_inet6_ntop (&props->local, NULL),
-	       nm_utils_inet6_ntop (&props->remote, buffer));
+	_LOGD ("adding link '%s': %s",
+	       name, nm_platform_lnk_ip6tnl_to_string (props, NULL, 0));
 
 	if (!klass->link_ip6tnl_add (self, name, props, out_link))
+		return NM_PLATFORM_ERROR_UNSPECIFIED;
+	return NM_PLATFORM_ERROR_SUCCESS;
+}
+
+/**
+ * nm_platform_ip6gre_add:
+ * @self: platform instance
+ * @name: name of the new interface
+ * @props: interface properties
+ * @out_link: on success, the link object
+ *
+ * Create an IPv6 GRE/GRETAP tunnel.
+ */
+NMPlatformError
+nm_platform_link_ip6gre_add (NMPlatform *self,
+                             const char *name,
+                             const NMPlatformLnkIp6Tnl *props,
+                             const NMPlatformLink **out_link)
+{
+	NMPlatformError plerr;
+
+	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
+
+	g_return_val_if_fail (props, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (name, NM_PLATFORM_ERROR_BUG);
+	g_return_val_if_fail (props->is_gre, NM_PLATFORM_ERROR_BUG);
+
+	plerr = _link_add_check_existing (self,
+	                                  name,
+	                                  props->is_tap
+	                                      ? NM_LINK_TYPE_IP6GRETAP
+	                                      : NM_LINK_TYPE_IP6GRE,
+	                                  out_link);
+	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
+		return plerr;
+
+	_LOGD ("adding link '%s': %s",
+	       name, nm_platform_lnk_ip6tnl_to_string (props, NULL, 0));
+
+	if (!klass->link_ip6gre_add (self, name, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
 	return NM_PLATFORM_ERROR_SUCCESS;
 }
@@ -2576,7 +2632,6 @@ nm_platform_link_ipip_add (NMPlatform *self,
                            const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;
-	char buffer[INET_ADDRSTRLEN];
 
 	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
 
@@ -2587,12 +2642,8 @@ nm_platform_link_ipip_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD (LOG_FMT_IP_TUNNEL,
-	       "ipip",
-	       name,
-		   props->parent_ifindex,
-	       nm_utils_inet4_ntop (props->local, NULL),
-	       nm_utils_inet4_ntop (props->remote, buffer));
+	_LOGD ("adding link '%s': %s",
+	       name, nm_platform_lnk_ipip_to_string (props, NULL, 0));
 
 	if (!klass->link_ipip_add (self, name, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -2627,10 +2678,8 @@ nm_platform_link_macsec_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("adding macsec '%s' parent %u sci %llx",
-	       name,
-	       parent,
-	       (unsigned long long) props->sci);
+	_LOGD ("adding link '%s': %s",
+	       name, nm_platform_lnk_macsec_to_string (props, NULL, 0));
 
 	if (!klass->link_macsec_add (self, name, parent, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -2667,11 +2716,8 @@ nm_platform_link_macvlan_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD ("adding %s '%s' parent %u mode %u",
-	       props->tap ? "macvtap" : "macvlan",
-	       name,
-	       parent,
-	       props->mode);
+	_LOGD ("adding link '%s': %s",
+	       name, nm_platform_lnk_macvlan_to_string (props, NULL, 0));
 
 	if (!klass->link_macvlan_add (self, name, parent, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -2694,7 +2740,6 @@ nm_platform_link_sit_add (NMPlatform *self,
                           const NMPlatformLink **out_link)
 {
 	NMPlatformError plerr;
-	char buffer[INET_ADDRSTRLEN];
 
 	_CHECK_SELF (self, klass, NM_PLATFORM_ERROR_BUG);
 
@@ -2705,12 +2750,8 @@ nm_platform_link_sit_add (NMPlatform *self,
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS)
 		return plerr;
 
-	_LOGD (LOG_FMT_IP_TUNNEL,
-	       "sit",
-	       name,
-	       props->parent_ifindex,
-	       nm_utils_inet4_ntop (props->local, NULL),
-	       nm_utils_inet4_ntop (props->remote, buffer));
+	_LOGD ("adding link '%s': %s",
+	       name, nm_platform_lnk_sit_to_string (props, NULL, 0));
 
 	if (!klass->link_sit_add (self, name, props, out_link))
 		return NM_PLATFORM_ERROR_UNSPECIFIED;
@@ -5073,7 +5114,7 @@ nm_platform_lnk_gre_to_string (const NMPlatformLnkGre *lnk, char *buf, gsize len
 		return buf;
 
 	g_snprintf (buf, len,
-	            "gre"
+	            lnk->is_tap ? "gretap" : "gre"
 	            "%s" /* remote */
 	            "%s" /* local */
 	            "%s" /* parent_ifindex */
@@ -5130,12 +5171,18 @@ nm_platform_lnk_ip6tnl_to_string (const NMPlatformLnkIp6Tnl *lnk, char *buf, gsi
 	char str_encap[30];
 	char str_proto[30];
 	char str_parent_ifindex[30];
+	char *str_type;
 
 	if (!nm_utils_to_string_buffer_init_null (lnk, &buf, &len))
 		return buf;
 
+	if (lnk->is_gre)
+		str_type = lnk->is_tap ? "ip6gretap" : "ip6gre";
+	else
+		str_type = "ip6tnl";
+
 	g_snprintf (buf, len,
-	            "ip6tnl"
+	            "%s" /* type */
 	            "%s" /* remote */
 	            "%s" /* local */
 	            "%s" /* parent_ifindex */
@@ -5146,6 +5193,7 @@ nm_platform_lnk_ip6tnl_to_string (const NMPlatformLnkIp6Tnl *lnk, char *buf, gsi
 	            "%s" /* proto */
 	            " flags 0x%x"
 	            "",
+	            str_type,
 	            nm_sprintf_buf (str_remote, " remote %s", nm_utils_inet6_ntop (&lnk->remote, str_remote1)),
 	            nm_sprintf_buf (str_local, " local %s", nm_utils_inet6_ntop (&lnk->local, str_local1)),
 	            lnk->parent_ifindex ? nm_sprintf_buf (str_parent_ifindex, " dev %d", lnk->parent_ifindex) : "",
@@ -5230,7 +5278,8 @@ nm_platform_lnk_macvlan_to_string (const NMPlatformLnkMacvlan *lnk, char *buf, g
 		return buf;
 
 	g_snprintf (buf, len,
-	            "macvlan mode %u %s",
+	            "%s mode %u %s",
+	            lnk->tap ? "macvtap" : "macvlan",
 	            lnk->mode,
 	            lnk->no_promisc ? "not-promisc" : "promisc");
 	return buf;
@@ -5959,7 +6008,8 @@ nm_platform_lnk_gre_hash_update (const NMPlatformLnkGre *obj, NMHashState *h)
 	                     obj->output_key,
 	                     obj->ttl,
 	                     obj->tos,
-	                     (bool) obj->path_mtu_discovery);
+	                     (bool) obj->path_mtu_discovery,
+	                     (bool) obj->is_tap);
 }
 
 int
@@ -5976,6 +6026,7 @@ nm_platform_lnk_gre_cmp (const NMPlatformLnkGre *a, const NMPlatformLnkGre *b)
 	NM_CMP_FIELD (a, b, ttl);
 	NM_CMP_FIELD (a, b, tos);
 	NM_CMP_FIELD_BOOL (a, b, path_mtu_discovery);
+	NM_CMP_FIELD_BOOL (a, b, is_tap);
 	return 0;
 }
 
@@ -6007,7 +6058,13 @@ nm_platform_lnk_ip6tnl_hash_update (const NMPlatformLnkIp6Tnl *obj, NMHashState 
 	                     obj->encap_limit,
 	                     obj->proto,
 	                     obj->flow_label,
-	                     obj->flags);
+	                     obj->flags,
+	                     obj->input_flags,
+	                     obj->output_flags,
+	                     obj->input_key,
+	                     obj->output_key,
+	                     (bool) obj->is_gre,
+	                     (bool) obj->is_tap);
 }
 
 int
@@ -6023,6 +6080,12 @@ nm_platform_lnk_ip6tnl_cmp (const NMPlatformLnkIp6Tnl *a, const NMPlatformLnkIp6
 	NM_CMP_FIELD (a, b, flow_label);
 	NM_CMP_FIELD (a, b, proto);
 	NM_CMP_FIELD (a, b, flags);
+	NM_CMP_FIELD (a, b, input_flags);
+	NM_CMP_FIELD (a, b, output_flags);
+	NM_CMP_FIELD (a, b, input_key);
+	NM_CMP_FIELD (a, b, output_key);
+	NM_CMP_FIELD_BOOL (a, b, is_gre);
+	NM_CMP_FIELD_BOOL (a, b, is_tap);
 	return 0;
 }
 

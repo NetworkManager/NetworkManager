@@ -233,8 +233,6 @@ G_STATIC_ASSERT (RTA_MAX == (__RTA_MAX - 1));
         } \
     } G_STMT_END
 
-#define LOG_FMT_IP_TUNNEL "adding %s '%s' parent %u local %s remote %s"
-
 /******************************************************************
  * Forward declarations and enums
  ******************************************************************/
@@ -551,6 +549,8 @@ static const LinkDesc linktypes[] = {
 	{ NM_LINK_TYPE_GRETAP,        "gretap",      "gretap",      NULL },
 	{ NM_LINK_TYPE_IFB,           "ifb",         "ifb",         NULL },
 	{ NM_LINK_TYPE_IP6TNL,        "ip6tnl",      "ip6tnl",      NULL },
+	{ NM_LINK_TYPE_IP6GRE,        "ip6gre",      "ip6gre",      NULL },
+	{ NM_LINK_TYPE_IP6GRETAP,     "ip6gretap",   "ip6gretap",   NULL },
 	{ NM_LINK_TYPE_IPIP,          "ipip",        "ipip",        NULL },
 	{ NM_LINK_TYPE_LOOPBACK,      "loopback",    NULL,          NULL },
 	{ NM_LINK_TYPE_MACSEC,        "macsec",      "macsec",      NULL },
@@ -1074,15 +1074,23 @@ _parse_lnk_gre (const char *kind, struct nlattr *info_data)
 	int err;
 	NMPObject *obj;
 	NMPlatformLnkGre *props;
+	gboolean is_tap;
 
-	if (!info_data || g_strcmp0 (kind, "gre"))
+	if (!info_data || !kind)
+		return NULL;
+
+	if (nm_streq (kind, "gretap"))
+		is_tap = TRUE;
+	else if (nm_streq (kind, "gre"))
+		is_tap = FALSE;
+	else
 		return NULL;
 
 	err = nla_parse_nested (tb, IFLA_GRE_MAX, info_data, policy);
 	if (err < 0)
 		return NULL;
 
-	obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_GRE, NULL);
+	obj = nmp_object_new (is_tap ? NMP_OBJECT_TYPE_LNK_GRETAP : NMP_OBJECT_TYPE_LNK_GRE, NULL);
 	props = &obj->lnk_gre;
 
 	props->parent_ifindex = tb[IFLA_GRE_LINK] ? nla_get_u32 (tb[IFLA_GRE_LINK]) : 0;
@@ -1095,6 +1103,7 @@ _parse_lnk_gre (const char *kind, struct nlattr *info_data)
 	props->tos = tb[IFLA_GRE_TOS] ? nla_get_u8 (tb[IFLA_GRE_TOS]) : 0;
 	props->ttl = tb[IFLA_GRE_TTL] ? nla_get_u8 (tb[IFLA_GRE_TTL]) : 0;
 	props->path_mtu_discovery = !tb[IFLA_GRE_PMTUDISC] || !!nla_get_u8 (tb[IFLA_GRE_PMTUDISC]);
+	props->is_tap = is_tap;
 
 	return obj;
 }
@@ -1211,6 +1220,79 @@ _parse_lnk_ip6tnl (const char *kind, struct nlattr *info_data)
 		props->proto = nla_get_u8 (tb[IFLA_IPTUN_PROTO]);
 	if (tb[IFLA_IPTUN_FLAGS])
 		props->flags = nla_get_u32 (tb[IFLA_IPTUN_FLAGS]);
+
+	return obj;
+}
+
+static NMPObject *
+_parse_lnk_ip6gre (const char *kind, struct nlattr *info_data)
+{
+	static const struct nla_policy policy[IFLA_GRE_MAX + 1] = {
+		[IFLA_GRE_LINK]        = { .type = NLA_U32 },
+		[IFLA_GRE_IFLAGS]      = { .type = NLA_U16 },
+		[IFLA_GRE_OFLAGS]      = { .type = NLA_U16 },
+		[IFLA_GRE_IKEY]        = { .type = NLA_U32 },
+		[IFLA_GRE_OKEY]        = { .type = NLA_U32 },
+		[IFLA_GRE_LOCAL]       = { .type = NLA_UNSPEC,
+		                             .minlen = sizeof (struct in6_addr)},
+		[IFLA_GRE_REMOTE]      = { .type = NLA_UNSPEC,
+		                             .minlen = sizeof (struct in6_addr)},
+		[IFLA_GRE_TTL]         = { .type = NLA_U8 },
+		[IFLA_GRE_ENCAP_LIMIT] = { .type = NLA_U8 },
+		[IFLA_GRE_FLOWINFO]    = { .type = NLA_U32 },
+		[IFLA_GRE_FLAGS]       = { .type = NLA_U32 },
+	};
+	struct nlattr *tb[IFLA_GRE_MAX + 1];
+	int err;
+	NMPObject *obj;
+	NMPlatformLnkIp6Tnl *props;
+	guint32 flowinfo;
+	gboolean is_tap;
+
+	if (!info_data || !kind)
+		return NULL;
+
+	if (nm_streq (kind, "ip6gre"))
+		is_tap = FALSE;
+	else if (nm_streq (kind, "ip6gretap"))
+		is_tap = TRUE;
+	else
+		return NULL;
+
+	err = nla_parse_nested (tb, IFLA_GRE_MAX, info_data, policy);
+	if (err < 0)
+		return NULL;
+
+	obj = nmp_object_new (is_tap ? NMP_OBJECT_TYPE_LNK_IP6GRETAP : NMP_OBJECT_TYPE_LNK_IP6GRE, NULL);
+	props = &obj->lnk_ip6tnl;
+	props->is_gre = TRUE;
+	props->is_tap = is_tap;
+
+	if (tb[IFLA_GRE_LINK])
+		props->parent_ifindex = nla_get_u32 (tb[IFLA_GRE_LINK]);
+	if (tb[IFLA_GRE_IFLAGS])
+		props->input_flags = ntohs (nla_get_u16 (tb[IFLA_GRE_IFLAGS]));
+	if (tb[IFLA_GRE_OFLAGS])
+		props->output_flags = ntohs (nla_get_u16 (tb[IFLA_GRE_OFLAGS]));
+	if (tb[IFLA_GRE_IKEY])
+		props->input_key = ntohl (nla_get_u32 (tb[IFLA_GRE_IKEY]));
+	if (tb[IFLA_GRE_OKEY])
+		props->output_key = ntohl (nla_get_u32 (tb[IFLA_GRE_OKEY]));
+	if (tb[IFLA_GRE_LOCAL])
+		memcpy (&props->local, nla_data (tb[IFLA_GRE_LOCAL]), sizeof (props->local));
+	if (tb[IFLA_GRE_REMOTE])
+		memcpy (&props->remote, nla_data (tb[IFLA_GRE_REMOTE]), sizeof (props->remote));
+	if (tb[IFLA_GRE_TTL])
+		props->ttl = nla_get_u8 (tb[IFLA_GRE_TTL]);
+	if (tb[IFLA_GRE_ENCAP_LIMIT])
+		props->encap_limit = nla_get_u8 (tb[IFLA_GRE_ENCAP_LIMIT]);
+	if (tb[IFLA_GRE_FLOWINFO]) {
+		flowinfo = ntohl (nla_get_u32 (tb[IFLA_GRE_FLOWINFO]));
+		props->flow_label = flowinfo & IP6_FLOWINFO_FLOWLABEL_MASK;
+		props->tclass = (flowinfo & IP6_FLOWINFO_TCLASS_MASK) >> IP6_FLOWINFO_TCLASS_SHIFT;
+	}
+	if (tb[IFLA_GRE_FLAGS])
+		props->flags = nla_get_u32 (tb[IFLA_GRE_FLAGS]);
 
 	return obj;
 }
@@ -1854,6 +1936,7 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 
 	switch (obj->link.type) {
 	case NM_LINK_TYPE_GRE:
+	case NM_LINK_TYPE_GRETAP:
 		lnk_data = _parse_lnk_gre (nl_info_kind, nl_info_data);
 		break;
 	case NM_LINK_TYPE_INFINIBAND:
@@ -1861,6 +1944,10 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 		break;
 	case NM_LINK_TYPE_IP6TNL:
 		lnk_data = _parse_lnk_ip6tnl (nl_info_kind, nl_info_data);
+		break;
+	case NM_LINK_TYPE_IP6GRE:
+	case NM_LINK_TYPE_IP6GRETAP:
+		lnk_data = _parse_lnk_ip6gre (nl_info_kind, nl_info_data);
 		break;
 	case NM_LINK_TYPE_IPIP:
 		lnk_data = _parse_lnk_ipip (nl_info_kind, nl_info_data);
@@ -3997,7 +4084,10 @@ cache_on_change (NMPlatform *platform,
 
 			if (   !obj_new->_link.netlink.lnk
 			    && NM_IN_SET (obj_new->link.type, NM_LINK_TYPE_GRE,
+			                                      NM_LINK_TYPE_GRETAP,
 			                                      NM_LINK_TYPE_IP6TNL,
+			                                      NM_LINK_TYPE_IP6GRE,
+			                                      NM_LINK_TYPE_IP6GRETAP,
 			                                      NM_LINK_TYPE_INFINIBAND,
 			                                      NM_LINK_TYPE_MACVLAN,
 			                                      NM_LINK_TYPE_MACVLAN,
@@ -4906,8 +4996,6 @@ link_set_netns (NMPlatform *platform,
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 
-	_LOGD ("link: move link %d to network namespace with fd %d", ifindex, netns_fd);
-
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
 	                          ifindex,
@@ -5107,10 +5195,6 @@ link_set_address (NMPlatform *platform, int ifindex, gconstpointer address, size
 	if (!address || !length)
 		g_return_val_if_reached (NM_PLATFORM_ERROR_BUG);
 
-	_LOGD ("link: change %d: address: %s (%lu bytes)", ifindex,
-	       (mac = nm_utils_hwaddr_ntoa (address, length)),
-	       (unsigned long) length);
-
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
 	                          ifindex,
@@ -5131,8 +5215,6 @@ static NMPlatformError
 link_set_name (NMPlatform *platform, int ifindex, const char *name)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-
-	_LOGD ("link: change %d: name: %s", ifindex, name);
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
@@ -5168,8 +5250,6 @@ static NMPlatformError
 link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-
-	_LOGD ("link: change %d: mtu: %u", ifindex, (unsigned) mtu);
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
@@ -5278,7 +5358,7 @@ link_get_dev_id (NMPlatform *platform, int ifindex)
 	                                           16, 0, G_MAXUINT16, 0);
 }
 
-static int
+static gboolean
 vlan_add (NMPlatform *platform,
           const char *name,
           int parent,
@@ -5294,10 +5374,6 @@ vlan_add (NMPlatform *platform,
 	G_STATIC_ASSERT (NM_VLAN_FLAG_MVRP == (guint32) VLAN_FLAG_MVRP);
 
 	vlan_flags &= (guint32) NM_VLAN_FLAGS_ALL;
-
-	_LOGD ("link: add vlan '%s', parent %d, vlan id %d, flags %X",
-	       name, parent, vlan_id, (unsigned) vlan_flags);
-
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
 	                          0,
@@ -5324,7 +5400,7 @@ nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
 
-static int
+static gboolean
 link_gre_add (NMPlatform *platform,
               const char *name,
               const NMPlatformLnkGre *props,
@@ -5333,14 +5409,6 @@ link_gre_add (NMPlatform *platform,
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	struct nlattr *info;
 	struct nlattr *data;
-	char buffer[INET_ADDRSTRLEN];
-
-	_LOGD (LOG_FMT_IP_TUNNEL,
-	       "gre",
-	       name,
-	       props->parent_ifindex,
-	       nm_utils_inet4_ntop (props->local, NULL),
-	       nm_utils_inet4_ntop (props->remote, buffer));
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
@@ -5354,7 +5422,7 @@ link_gre_add (NMPlatform *platform,
 	if (!(info = nla_nest_start (nlmsg, IFLA_LINKINFO)))
 		goto nla_put_failure;
 
-	NLA_PUT_STRING (nlmsg, IFLA_INFO_KIND, "gre");
+	NLA_PUT_STRING (nlmsg, IFLA_INFO_KIND, props->is_tap ? "gretap" : "gre");
 
 	if (!(data = nla_nest_start (nlmsg, IFLA_INFO_DATA)))
 		goto nla_put_failure;
@@ -5368,18 +5436,20 @@ link_gre_add (NMPlatform *platform,
 	NLA_PUT_U8 (nlmsg, IFLA_GRE_PMTUDISC, !!props->path_mtu_discovery);
 	NLA_PUT_U32 (nlmsg, IFLA_GRE_IKEY, htonl (props->input_key));
 	NLA_PUT_U32 (nlmsg, IFLA_GRE_OKEY, htonl (props->output_key));
-	NLA_PUT_U32 (nlmsg, IFLA_GRE_IFLAGS, htons (props->input_flags));
-	NLA_PUT_U32 (nlmsg, IFLA_GRE_OFLAGS, htons (props->output_flags));
+	NLA_PUT_U16 (nlmsg, IFLA_GRE_IFLAGS, htons (props->input_flags));
+	NLA_PUT_U16 (nlmsg, IFLA_GRE_OFLAGS, htons (props->output_flags));
 
 	nla_nest_end (nlmsg, data);
 	nla_nest_end (nlmsg, info);
 
-	return do_add_link_with_lookup (platform, NM_LINK_TYPE_GRE, name, nlmsg, out_link);
+	return do_add_link_with_lookup (platform,
+	                                props->is_tap ? NM_LINK_TYPE_GRETAP : NM_LINK_TYPE_GRE,
+	                                name, nlmsg, out_link);
 nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
 
-static int
+static gboolean
 link_ip6tnl_add (NMPlatform *platform,
                  const char *name,
                  const NMPlatformLnkIp6Tnl *props,
@@ -5388,15 +5458,9 @@ link_ip6tnl_add (NMPlatform *platform,
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	struct nlattr *info;
 	struct nlattr *data;
-	char buffer[INET_ADDRSTRLEN];
 	guint32 flowinfo;
 
-	_LOGD (LOG_FMT_IP_TUNNEL,
-	       "ip6tnl",
-	       name,
-	       props->parent_ifindex,
-	       nm_utils_inet6_ntop (&props->local, NULL),
-	       nm_utils_inet6_ntop (&props->remote, buffer));
+	g_return_val_if_fail (!props->is_gre, FALSE);
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
@@ -5441,7 +5505,69 @@ nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
 
-static int
+static gboolean
+link_ip6gre_add (NMPlatform *platform,
+                 const char *name,
+                 const NMPlatformLnkIp6Tnl *props,
+                 const NMPlatformLink **out_link)
+{
+	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+	struct nlattr *info;
+	struct nlattr *data;
+	guint32 flowinfo;
+
+	g_return_val_if_fail (props->is_gre, FALSE);
+
+	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
+	                          NLM_F_CREATE | NLM_F_EXCL,
+	                          0,
+	                          name,
+	                          0,
+	                          0);
+	if (!nlmsg)
+		return FALSE;
+
+	if (!(info = nla_nest_start (nlmsg, IFLA_LINKINFO)))
+		goto nla_put_failure;
+
+	NLA_PUT_STRING (nlmsg, IFLA_INFO_KIND, props->is_tap ? "ip6gretap" : "ip6gre");
+
+	if (!(data = nla_nest_start (nlmsg, IFLA_INFO_DATA)))
+		goto nla_put_failure;
+
+	if (props->parent_ifindex)
+		NLA_PUT_U32 (nlmsg, IFLA_GRE_LINK, props->parent_ifindex);
+
+	NLA_PUT_U32 (nlmsg, IFLA_GRE_IKEY, htonl (props->input_key));
+	NLA_PUT_U32 (nlmsg, IFLA_GRE_OKEY, htonl (props->output_key));
+	NLA_PUT_U16 (nlmsg, IFLA_GRE_IFLAGS, htons (props->input_flags));
+	NLA_PUT_U16 (nlmsg, IFLA_GRE_OFLAGS, htons (props->output_flags));
+
+	if (memcmp (&props->local, &in6addr_any, sizeof (in6addr_any)))
+		NLA_PUT (nlmsg, IFLA_GRE_LOCAL, sizeof (props->local), &props->local);
+	if (memcmp (&props->remote, &in6addr_any, sizeof (in6addr_any)))
+		NLA_PUT (nlmsg, IFLA_GRE_REMOTE, sizeof (props->remote), &props->remote);
+
+	NLA_PUT_U8 (nlmsg, IFLA_GRE_TTL, props->ttl);
+	NLA_PUT_U8 (nlmsg, IFLA_GRE_ENCAP_LIMIT, props->encap_limit);
+
+	flowinfo = props->flow_label & IP6_FLOWINFO_FLOWLABEL_MASK;
+	flowinfo |=   (props->tclass << IP6_FLOWINFO_TCLASS_SHIFT)
+	            & IP6_FLOWINFO_TCLASS_MASK;
+	NLA_PUT_U32 (nlmsg, IFLA_GRE_FLOWINFO, htonl (flowinfo));
+	NLA_PUT_U32 (nlmsg, IFLA_GRE_FLAGS, props->flags);
+
+	nla_nest_end (nlmsg, data);
+	nla_nest_end (nlmsg, info);
+
+	return do_add_link_with_lookup (platform,
+	                                props->is_tap ? NM_LINK_TYPE_IP6GRETAP : NM_LINK_TYPE_IP6GRE,
+	                                name, nlmsg, out_link);
+nla_put_failure:
+	g_return_val_if_reached (FALSE);
+}
+
+static gboolean
 link_ipip_add (NMPlatform *platform,
                const char *name,
                const NMPlatformLnkIpIp *props,
@@ -5450,14 +5576,6 @@ link_ipip_add (NMPlatform *platform,
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	struct nlattr *info;
 	struct nlattr *data;
-	char buffer[INET_ADDRSTRLEN];
-
-	_LOGD (LOG_FMT_IP_TUNNEL,
-	       "ipip",
-	       name,
-	       props->parent_ifindex,
-	       nm_utils_inet4_ntop (props->local, NULL),
-	       nm_utils_inet4_ntop (props->remote, buffer));
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
@@ -5492,7 +5610,7 @@ nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
 
-static int
+static gboolean
 link_macsec_add (NMPlatform *platform,
                  const char *name,
                  int parent,
@@ -5502,11 +5620,6 @@ link_macsec_add (NMPlatform *platform,
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	struct nlattr *info;
 	struct nlattr *data;
-
-	_LOGD ("adding macsec '%s' parent %u sci %llx",
-	       name,
-	       parent,
-	       (unsigned long long) props->sci);
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
@@ -5554,7 +5667,7 @@ nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
 
-static int
+static gboolean
 link_macvlan_add (NMPlatform *platform,
                   const char *name,
                   int parent,
@@ -5564,12 +5677,6 @@ link_macvlan_add (NMPlatform *platform,
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	struct nlattr *info;
 	struct nlattr *data;
-
-	_LOGD ("adding %s '%s' parent %u mode %u",
-	       props->tap ? "macvtap" : "macvlan",
-	       name,
-	       parent,
-	       props->mode);
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
@@ -5603,7 +5710,7 @@ nla_put_failure:
 	g_return_val_if_reached (FALSE);
 }
 
-static int
+static gboolean
 link_sit_add (NMPlatform *platform,
               const char *name,
               const NMPlatformLnkSit *props,
@@ -5612,14 +5719,6 @@ link_sit_add (NMPlatform *platform,
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	struct nlattr *info;
 	struct nlattr *data;
-	char buffer[INET_ADDRSTRLEN];
-
-	_LOGD (LOG_FMT_IP_TUNNEL,
-	       "sit",
-	       name,
-	       props->parent_ifindex,
-	       nm_utils_inet4_ntop (props->local, NULL),
-	       nm_utils_inet4_ntop (props->remote, buffer));
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
@@ -5722,9 +5821,6 @@ link_vxlan_add (NMPlatform *platform,
 	struct nm_ifla_vxlan_port_range port_range;
 
 	g_return_val_if_fail (props, FALSE);
-
-	_LOGD ("link: add vxlan '%s', parent %d, vxlan id %d",
-	       name, props->parent_ifindex, props->id);
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          NLM_F_CREATE | NLM_F_EXCL,
@@ -5912,9 +6008,6 @@ link_vlan_change (NMPlatform *platform,
 	guint new_n_egress_map = 0;
 	gs_free NMVlanQosMapping *new_ingress_map = NULL;
 	gs_free NMVlanQosMapping *new_egress_map = NULL;
-	char s_flags[64];
-	char s_ingress[256];
-	char s_egress[256];
 
 	obj_cache = nmp_cache_lookup_link (nm_platform_get_cache (platform), ifindex);
 	if (   !obj_cache
@@ -5945,26 +6038,6 @@ link_vlan_change (NMPlatform *platform,
 	                                      &new_egress_map,
 	                                      &new_n_egress_map);
 
-	_LOGD ("link: change %d: vlan:%s%s%s",
-	       ifindex,
-	       flags_mask
-	           ? nm_sprintf_buf (s_flags, " flags 0x%x/0x%x", (unsigned) flags_set, (unsigned) flags_mask)
-	           : "",
-	       new_n_ingress_map
-	           ? nm_platform_vlan_qos_mapping_to_string (" ingress-qos-map",
-	                                                     new_ingress_map,
-	                                                     new_n_ingress_map,
-	                                                     s_ingress,
-	                                                     sizeof (s_ingress))
-	           : "",
-	       new_n_egress_map
-	           ? nm_platform_vlan_qos_mapping_to_string (" egress-qos-map",
-	                                                     new_egress_map,
-	                                                     new_n_egress_map,
-	                                                     s_egress,
-	                                                     sizeof (s_egress))
-	           : "");
-
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
 	                          ifindex,
@@ -5990,8 +6063,6 @@ link_enslave (NMPlatform *platform, int master, int slave)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 	int ifindex = slave;
-
-	_LOGD ("link: change %d: enslave: master %d", slave, master);
 
 	nlmsg = _nl_msg_new_link (RTM_NEWLINK,
 	                          0,
@@ -7388,6 +7459,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->link_gre_add = link_gre_add;
 	platform_class->link_ip6tnl_add = link_ip6tnl_add;
+	platform_class->link_ip6gre_add = link_ip6gre_add;
 	platform_class->link_macsec_add = link_macsec_add;
 	platform_class->link_macvlan_add = link_macvlan_add;
 	platform_class->link_ipip_add = link_ipip_add;

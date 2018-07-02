@@ -3008,7 +3008,6 @@ nm_utils_get_ipv6_interface_identifier (NMLinkType link_type,
 		out_iid->id_u8[0] |= 0x02;
 		return TRUE;
 	case NM_LINK_TYPE_GRE:
-	case NM_LINK_TYPE_GRETAP:
 		/* Hardware address is the network-endian IPv4 address */
 		g_return_val_if_fail (hwaddr_len == 4, FALSE);
 		addr = * (guint32 *) hwaddr;

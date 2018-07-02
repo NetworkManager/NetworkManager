@@ -618,6 +618,7 @@ typedef struct {
 	guint8 ttl;
 	guint8 tos;
 	bool path_mtu_discovery:1;
+	bool is_tap:1;
 } NMPlatformLnkGre;
 
 typedef struct {
@@ -635,6 +636,14 @@ typedef struct {
 	guint8 proto;
 	guint flow_label;
 	guint32 flags;
+
+	/* IP6GRE only */
+	guint32 input_key;
+	guint32 output_key;
+	guint16 input_flags;
+	guint16 output_flags;
+	bool is_tap:1;
+	bool is_gre:1;
 } NMPlatformLnkIp6Tnl;
 
 typedef struct {
@@ -826,6 +835,10 @@ typedef struct {
 	                          const NMPlatformLnkGre *props,
 	                          const NMPlatformLink **out_link);
 	gboolean (*link_ip6tnl_add) (NMPlatform *,
+	                             const char *name,
+	                             const NMPlatformLnkIp6Tnl *props,
+	                             const NMPlatformLink **out_link);
+	gboolean (*link_ip6gre_add) (NMPlatform *,
 	                             const char *name,
 	                             const NMPlatformLnkIp6Tnl *props,
 	                             const NMPlatformLink **out_link);
@@ -1198,7 +1211,10 @@ char *nm_platform_sysctl_slave_get_option (NMPlatform *self, int ifindex, const 
 
 const NMPObject *nm_platform_link_get_lnk (NMPlatform *self, int ifindex, NMLinkType link_type, const NMPlatformLink **out_link);
 const NMPlatformLnkGre *nm_platform_link_get_lnk_gre (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
+const NMPlatformLnkGre *nm_platform_link_get_lnk_gretap (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkIp6Tnl *nm_platform_link_get_lnk_ip6tnl (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
+const NMPlatformLnkIp6Tnl *nm_platform_link_get_lnk_ip6gre (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
+const NMPlatformLnkIp6Tnl *nm_platform_link_get_lnk_ip6gretap (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkIpIp *nm_platform_link_get_lnk_ipip (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkInfiniband *nm_platform_link_get_lnk_infiniband (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkIpIp *nm_platform_link_get_lnk_ipip (NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
@@ -1280,6 +1296,10 @@ NMPlatformError nm_platform_link_gre_add (NMPlatform *self,
                                           const NMPlatformLnkGre *props,
                                           const NMPlatformLink **out_link);
 NMPlatformError nm_platform_link_ip6tnl_add (NMPlatform *self,
+                                             const char *name,
+                                             const NMPlatformLnkIp6Tnl *props,
+                                             const NMPlatformLink **out_link);
+NMPlatformError nm_platform_link_ip6gre_add (NMPlatform *self,
                                              const char *name,
                                              const NMPlatformLnkIp6Tnl *props,
                                              const NMPlatformLink **out_link);
