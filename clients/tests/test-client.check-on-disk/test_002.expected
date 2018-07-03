@@ -28,34 +28,34 @@ wlan1   wifi      niedostępne  --
 wlan1   wifi      niedostępne  --         
 
 <<<
-size: 762
+size: 978
 location: clients/tests/test-client.py:844:test_002()/3
 cmd: $NMCLI -f all d
 lang: C
 returncode: 0
-stdout: 636 bytes
+stdout: 852 bytes
 >>>
-DEVICE  TYPE      STATE        DBUS-PATH                                  CONNECTION  CON-UUID  CON-PATH 
-eth0    ethernet  unavailable  /org/freedesktop/NetworkManager/Devices/1  --          --        --       
-eth1    ethernet  unavailable  /org/freedesktop/NetworkManager/Devices/2  --          --        --       
-wlan0   wifi      unavailable  /org/freedesktop/NetworkManager/Devices/3  --          --        --       
-wlan1   wifi      unavailable  /org/freedesktop/NetworkManager/Devices/4  --          --        --       
-wlan1   wifi      unavailable  /org/freedesktop/NetworkManager/Devices/5  --          --        --       
+DEVICE  TYPE      STATE        IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID  CON-PATH 
+eth0    ethernet  unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/1  --          --        --       
+eth1    ethernet  unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/2  --          --        --       
+wlan0   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/3  --          --        --       
+wlan1   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/4  --          --        --       
+wlan1   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/5  --          --        --       
 
 <<<
-size: 777
+size: 993
 location: clients/tests/test-client.py:844:test_002()/4
 cmd: $NMCLI -f all d
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 641 bytes
+stdout: 857 bytes
 >>>
-DEVICE  TYPE      STATE        DBUS-PATH                                  CONNECTION  CON-UUID  CON-PATH 
-eth0    ethernet  niedostępne  /org/freedesktop/NetworkManager/Devices/1  --          --        --       
-eth1    ethernet  niedostępne  /org/freedesktop/NetworkManager/Devices/2  --          --        --       
-wlan0   wifi      niedostępne  /org/freedesktop/NetworkManager/Devices/3  --          --        --       
-wlan1   wifi      niedostępne  /org/freedesktop/NetworkManager/Devices/4  --          --        --       
-wlan1   wifi      niedostępne  /org/freedesktop/NetworkManager/Devices/5  --          --        --       
+DEVICE  TYPE      STATE        IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID  CON-PATH 
+eth0    ethernet  niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/1  --          --        --       
+eth1    ethernet  niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/2  --          --        --       
+wlan0   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/3  --          --        --       
+wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/4  --          --        --       
+wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/5  --          --        --       
 
 <<<
 size: 739
