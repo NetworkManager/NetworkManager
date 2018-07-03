@@ -170,6 +170,7 @@ gboolean          nm_config_data_get_no_auto_default_for_device (const NMConfigD
 
 const char *nm_config_data_get_dns_mode (const NMConfigData *self);
 const char *nm_config_data_get_rc_manager (const NMConfigData *self);
+gboolean nm_config_data_get_systemd_resolved (const NMConfigData *self);
 
 gboolean nm_config_data_get_ignore_carrier (const NMConfigData *self, NMDevice *device);
 gboolean nm_config_data_get_assume_ipv6ll_only (const NMConfigData *self, NMDevice *device);

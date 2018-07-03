@@ -122,6 +122,7 @@ typedef struct {
 
 	NMDnsManagerResolvConfManager rc_manager;
 	char *mode;
+	NMDnsPlugin *sd_resolve_plugin;
 	NMDnsPlugin *plugin;
 
 	NMConfig *config;
@@ -1398,6 +1399,16 @@ update_dns (NMDnsManager *self,
 	                           &searches, &options, &nameservers,
 	                           &nis_servers, &nis_domain);
 
+	if (priv->plugin || priv->sd_resolve_plugin)
+		rebuild_domain_lists (self);
+
+	if (priv->sd_resolve_plugin) {
+		nm_dns_plugin_update (priv->sd_resolve_plugin,
+		                      global_config,
+		                      _ip_config_lst_head (self),
+		                      priv->hostname);
+	}
+
 	/* Let any plugins do their thing first */
 	if (priv->plugin) {
 		NMDnsPlugin *plugin = priv->plugin;
@@ -1413,7 +1424,6 @@ update_dns (NMDnsManager *self,
 		}
 
 		_LOGD ("update-dns: updating plugin %s", plugin_name);
-		rebuild_domain_lists (self);
 		if (!nm_dns_plugin_update (plugin,
 		                           global_config,
 		                           _ip_config_lst_head (self),
@@ -1425,14 +1435,16 @@ update_dns (NMDnsManager *self,
 			 */
 			caching = FALSE;
 		}
-		/* Clear the generated search list as it points to
-		 * strings owned by IP configurations and we can't
-		 * guarantee they stay alive. */
-		clear_domain_lists (self);
 
 	skip:
 		;
 	}
+
+	/* Clear the generated search list as it points to
+	 * strings owned by IP configurations and we can't
+	 * guarantee they stay alive. */
+	clear_domain_lists (self);
+	clear_domain_lists (self);
 
 	update_resolv_conf_no_stub (self, searches, nameservers, options);
 
@@ -1932,9 +1944,11 @@ init_resolv_conf_mode (NMDnsManager *self, gboolean force_reload_plugin)
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 	NMDnsManagerResolvConfManager rc_manager;
 	const char *mode;
+	gboolean systemd_resolved = FALSE;
 	gboolean param_changed = FALSE, plugin_changed = FALSE;
 
 	mode = nm_config_data_get_dns_mode (nm_config_get_data (priv->config));
+	systemd_resolved = nm_config_data_get_systemd_resolved (nm_config_get_data (priv->config));
 
 	if (nm_streq0 (mode, "none"))
 		rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED;
@@ -1980,6 +1994,7 @@ again:
 			plugin_changed = TRUE;
 		}
 		mode = "systemd-resolved";
+		systemd_resolved = FALSE;
 	} else if (nm_streq0 (mode, "dnsmasq")) {
 		if (force_reload_plugin || !NM_IS_DNS_DNSMASQ (priv->plugin)) {
 			_clear_plugin (self);
@@ -2000,6 +2015,20 @@ again:
 		}
 		if (_clear_plugin (self))
 			plugin_changed = TRUE;
+	}
+
+	/* The systemd-resolved plugin is special. We typically always want to keep
+	 * systemd-resolved up to date even if the configured plugin is different. */
+	if (systemd_resolved) {
+		if (!priv->sd_resolve_plugin) {
+			priv->sd_resolve_plugin = nm_dns_systemd_resolved_new ();
+			plugin_changed = TRUE;
+		}
+	} else {
+		if (priv->sd_resolve_plugin) {
+			g_clear_object (&priv->sd_resolve_plugin);
+			plugin_changed = TRUE;
+		}
 	}
 
 	if (plugin_changed && priv->plugin) {
@@ -2023,8 +2052,9 @@ again:
 	}
 
 	if (param_changed || plugin_changed) {
-		_LOGI ("init: dns=%s, rc-manager=%s%s%s%s",
-		       mode, _rc_manager_to_string (rc_manager),
+		_LOGI ("init: dns=%s%s rc-manager=%s%s%s%s",
+		       mode, (systemd_resolved ? ",systemd-resolved" : ""),
+		       _rc_manager_to_string (rc_manager),
 		       NM_PRINT_FMT_QUOTED (priv->plugin, ", plugin=",
 		                            nm_dns_plugin_get_name (priv->plugin), "", ""));
 	}
@@ -2285,6 +2315,7 @@ dispose (GObject *object)
 	if (priv->config)
 		g_signal_handlers_disconnect_by_func (priv->config, config_changed_cb, self);
 
+	g_clear_object (&priv->sd_resolve_plugin);
 	_clear_plugin (self);
 
 	priv->best_ip_config_4 = NULL;
