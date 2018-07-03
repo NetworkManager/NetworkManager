@@ -2955,7 +2955,10 @@ add_device (NMManager *self, NMDevice *device, GError **error)
 	                  G_CALLBACK (device_realized),
 	                  self);
 
-	g_signal_connect (device, NM_DEVICE_CONNECTIVITY_CHANGED,
+	g_signal_connect (device, "notify::" NM_DEVICE_IP4_CONNECTIVITY,
+	                  G_CALLBACK (device_connectivity_changed),
+	                  self);
+	g_signal_connect (device, "notify::" NM_DEVICE_IP6_CONNECTIVITY,
 	                  G_CALLBACK (device_connectivity_changed),
 	                  self);
 

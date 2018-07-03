@@ -197,7 +197,6 @@ enum {
 	REMOVED,
 	RECHECK_AUTO_ACTIVATE,
 	RECHECK_ASSUME,
-	CONNECTIVITY_CHANGED,
 	LAST_SIGNAL,
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -243,7 +242,8 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDevice,
 	PROP_REFRESH_RATE_MS,
 	PROP_TX_BYTES,
 	PROP_RX_BYTES,
-	PROP_CONNECTIVITY,
+	PROP_IP4_CONNECTIVITY,
+	PROP_IP6_CONNECTIVITY,
 );
 
 typedef struct _NMDevicePrivate {
@@ -2799,8 +2799,7 @@ concheck_update_state (NMDevice *self, int addr_family,
 	       nm_connectivity_state_to_string (state));
 	priv->concheck_x[IS_IPv4].state = state;
 
-	_notify (self, PROP_CONNECTIVITY);
-	g_signal_emit (self, signals[CONNECTIVITY_CHANGED], 0);
+	_notify (self, IS_IPv4 ? PROP_IP4_CONNECTIVITY : PROP_IP6_CONNECTIVITY);
 
 	if (   priv->state == NM_DEVICE_STATE_ACTIVATED
 	    && !nm_device_sys_iface_state_is_external (self)) {
@@ -16395,8 +16394,11 @@ get_property (GObject *object, guint prop_id,
 	case PROP_RX_BYTES:
 		g_value_set_uint64 (value, priv->stats.rx_bytes);
 		break;
-	case PROP_CONNECTIVITY:
-		g_value_set_uint (value, nm_device_get_connectivity_state (self));
+	case PROP_IP4_CONNECTIVITY:
+		g_value_set_uint (value, priv->concheck_x[1].state);
+		break;
+	case PROP_IP6_CONNECTIVITY:
+		g_value_set_uint (value, priv->concheck_x[0].state);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -16484,6 +16486,8 @@ static const NMDBusInterfaceInfoExtended interface_info_device = {
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Metered",              "u",      NM_DEVICE_METERED),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("LldpNeighbors",        "aa{sv}", NM_DEVICE_LLDP_NEIGHBORS),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Real",                 "b",      NM_DEVICE_REAL),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE       ("Ip4Connectivity",      "u",      NM_DEVICE_IP4_CONNECTIVITY),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE       ("Ip6Connectivity",      "u",      NM_DEVICE_IP6_CONNECTIVITY),
 		),
 	),
 };
@@ -16760,8 +16764,13 @@ nm_device_class_init (NMDeviceClass *klass)
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
 
-	obj_properties[PROP_CONNECTIVITY] =
-	     g_param_spec_uint (NM_DEVICE_CONNECTIVITY, "", "",
+	obj_properties[PROP_IP4_CONNECTIVITY] =
+	     g_param_spec_uint (NM_DEVICE_IP4_CONNECTIVITY, "", "",
+	                        NM_CONNECTIVITY_UNKNOWN, NM_CONNECTIVITY_FULL, NM_CONNECTIVITY_UNKNOWN,
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_IP6_CONNECTIVITY] =
+	     g_param_spec_uint (NM_DEVICE_IP6_CONNECTIVITY, "", "",
 	                        NM_CONNECTIVITY_UNKNOWN, NM_CONNECTIVITY_FULL, NM_CONNECTIVITY_UNKNOWN,
 	                        G_PARAM_READABLE |
 	                        G_PARAM_STATIC_STRINGS);
@@ -16840,13 +16849,5 @@ nm_device_class_init (NMDeviceClass *klass)
 	                  G_OBJECT_CLASS_TYPE (object_class),
 	                  G_SIGNAL_RUN_FIRST,
 	                  0, NULL, NULL, NULL,
-	                  G_TYPE_NONE, 0);
-
-	signals[CONNECTIVITY_CHANGED] =
-	    g_signal_new (NM_DEVICE_CONNECTIVITY_CHANGED,
-	                  G_OBJECT_CLASS_TYPE (object_class),
-	                  G_SIGNAL_RUN_FIRST,
-	                  0, NULL, NULL,
-	                  g_cclosure_marshal_VOID__VOID,
 	                  G_TYPE_NONE, 0);
 }
