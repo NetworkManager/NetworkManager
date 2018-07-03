@@ -68,6 +68,7 @@ struct _NMConnectivityCheckHandle {
 	gpointer user_data;
 
 	char *ifspec;
+	int addr_family;
 
 #if WITH_CONCHECK
 	struct {
@@ -145,9 +146,10 @@ NM_DEFINE_SINGLETON_GETTER (NMConnectivity, nm_connectivity_get, NM_TYPE_CONNECT
             _nm_log (__level, _NMLOG2_DOMAIN, 0, \
                      (cb_data->ifspec ? &cb_data->ifspec[3] : NULL), \
                      NULL, \
-                     "connectivity: (%s) " \
+                     "connectivity: (%s,AF_INET%s) " \
                      _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
-                     (cb_data->ifspec ? &cb_data->ifspec[3] : "") \
+                     (cb_data->ifspec ? &cb_data->ifspec[3] : ""), \
+                     (cb_data->addr_family == AF_INET6 ? "6" : "") \
                      _NM_UTILS_MACRO_REST (__VA_ARGS__)); \
         } \
     } G_STMT_END
@@ -572,11 +574,27 @@ do_curl_request (NMConnectivityCheckHandle *cb_data)
 {
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (cb_data->self);
 	CURL *ehandle;
+	long resolve;
 
 	ehandle = curl_easy_init ();
 	if (!ehandle) {
 		cb_data_free (cb_data, NM_CONNECTIVITY_ERROR, NULL, "curl error");
 		return;
+	}
+
+	switch (cb_data->addr_family) {
+	case AF_INET:
+		resolve = CURL_IPRESOLVE_V4;
+		break;
+	case AF_INET6:
+		resolve = CURL_IPRESOLVE_V6;
+		break;
+	case AF_UNSPEC:
+		resolve = CURL_IPRESOLVE_WHATEVER;
+		break;
+	default:
+		resolve = CURL_IPRESOLVE_WHATEVER;
+		g_warn_if_reached ();
 	}
 
 	cb_data->concheck.response = g_strdup (priv->response);
@@ -593,6 +611,7 @@ do_curl_request (NMConnectivityCheckHandle *cb_data)
 	curl_easy_setopt (ehandle, CURLOPT_HTTPHEADER, cb_data->concheck.request_headers);
 	curl_easy_setopt (ehandle, CURLOPT_INTERFACE, cb_data->ifspec);
 	curl_easy_setopt (ehandle, CURLOPT_RESOLVE, cb_data->concheck.hosts);
+	curl_easy_setopt (ehandle, CURLOPT_IPRESOLVE, resolve);
 
 	curl_multi_add_handle (priv->concheck.curl_mhandle, ehandle);
 }
@@ -607,7 +626,7 @@ resolve_cb (GObject *object, GAsyncResult *res, gpointer user_data)
 	GVariant *addresses;
 	gsize no_addresses;
 	int ifindex;
-	int family;
+	int addr_family;
 	GVariant *address = NULL;
 	const guchar *address_buf;
 	gsize len = 0;
@@ -635,14 +654,13 @@ resolve_cb (GObject *object, GAsyncResult *res, gpointer user_data)
 	g_variant_unref (result);
 
 	for (i = 0; i < no_addresses; i++) {
-		g_variant_get_child (addresses, i, "(ii@ay)", &ifindex, &family, &address);
+		g_variant_get_child (addresses, i, "(ii@ay)", &ifindex, &addr_family, &address);
 		address_buf = g_variant_get_fixed_array (address, &len, 1);
 
-		if (   (family == AF_INET && len == sizeof (struct in_addr))
-		    || (family == AF_INET6 && len == sizeof (struct in6_addr))) {
-			inet_ntop (family, address_buf, str, sizeof (str));
-			host = g_strdup_printf ("%s:%s:%s", priv->host,
-						priv->port ? priv->port : "80", str);
+		if (   (addr_family == AF_INET && len == sizeof (struct in_addr))
+		    || (addr_family == AF_INET6 && len == sizeof (struct in6_addr))) {
+			inet_ntop (addr_family, address_buf, str, sizeof (str));
+			host = g_strdup_printf ("%s:%s:%s", priv->host, priv->port ?: "80", str);
 			cb_data->concheck.hosts = curl_slist_append (cb_data->concheck.hosts, host);
 			_LOG2T ("adding '%s' to curl resolve list", host);
 			g_free (host);
@@ -685,7 +703,7 @@ resolved_proxy_created (GObject *object, GAsyncResult *res, gpointer user_data)
 	                   g_variant_new ("(isit)",
 	                                  cb_data->concheck.ifindex,
 	                                  priv->host,
-	                                  (gint32) AF_UNSPEC,
+	                                  (gint32) cb_data->addr_family,
 	                                  (guint64) SD_RESOLVED_DNS),
 	                   G_DBUS_CALL_FLAGS_NONE,
 	                   -1,
@@ -699,6 +717,7 @@ resolved_proxy_created (GObject *object, GAsyncResult *res, gpointer user_data)
 
 NMConnectivityCheckHandle *
 nm_connectivity_check_start (NMConnectivity *self,
+                             int addr_family,
                              int ifindex,
                              const char *iface,
                              NMConnectivityCheckCallback callback,
@@ -719,6 +738,7 @@ nm_connectivity_check_start (NMConnectivity *self,
 	cb_data->callback = callback;
 	cb_data->user_data = user_data;
 	cb_data->completed_state = NM_CONNECTIVITY_UNKNOWN;
+	cb_data->addr_family = addr_family;
 
 	if (iface)
 		cb_data->ifspec = g_strdup_printf ("if!%s", iface);

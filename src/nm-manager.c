@@ -2812,6 +2812,7 @@ device_realized (NMDevice *device,
 
 static void
 device_connectivity_changed (NMDevice *device,
+                             GParamSpec *pspec,
                              NMManager *self)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
@@ -6041,6 +6042,12 @@ check_connectivity_auth_done_cb (NMAuthChain *chain,
 
 	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
 		if (nm_device_check_connectivity (device,
+		                                  AF_INET,
+		                                  device_connectivity_done,
+		                                  data))
+			data->remaining++;
+		if (nm_device_check_connectivity (device,
+		                                  AF_INET6,
 		                                  device_connectivity_done,
 		                                  data))
 			data->remaining++;

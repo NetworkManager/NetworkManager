@@ -58,6 +58,7 @@ typedef void (*NMConnectivityCheckCallback) (NMConnectivity *self,
                                              gpointer user_data);
 
 NMConnectivityCheckHandle *nm_connectivity_check_start (NMConnectivity *self,
+                                                        int family,
                                                         int ifindex,
                                                         const char *iface,
                                                         NMConnectivityCheckCallback callback,
