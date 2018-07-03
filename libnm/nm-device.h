@@ -64,6 +64,8 @@ G_BEGIN_DECLS
 #define NM_DEVICE_MTU "mtu"
 #define NM_DEVICE_METERED "metered"
 #define NM_DEVICE_LLDP_NEIGHBORS "lldp-neighbors"
+#define NM_DEVICE_IP4_CONNECTIVITY "ip4-connectivity"
+#define NM_DEVICE_IP6_CONNECTIVITY "ip6-connectivity"
 
 /**
  * NMDevice:
@@ -121,6 +123,8 @@ NMIPConfig *         nm_device_get_ip4_config       (NMDevice *device);
 NMDhcpConfig *       nm_device_get_dhcp4_config     (NMDevice *device);
 NMIPConfig *         nm_device_get_ip6_config       (NMDevice *device);
 NMDhcpConfig *       nm_device_get_dhcp6_config     (NMDevice *device);
+NM_AVAILABLE_IN_1_16
+NMConnectivityState  nm_device_get_connectivity     (NMDevice *device, int addr_family);
 NMDeviceState        nm_device_get_state            (NMDevice *device);
 NMDeviceStateReason  nm_device_get_state_reason     (NMDevice *device);
 NMActiveConnection * nm_device_get_active_connection(NMDevice *device);
