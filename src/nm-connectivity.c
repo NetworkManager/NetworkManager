@@ -285,7 +285,7 @@ _con_curl_check_connectivity (CURLM *mhandle, int sockfd, int ev_bitmask)
 
 	ret = curl_multi_socket_action (mhandle, sockfd, ev_bitmask, &running_handles);
 	if (ret != CURLM_OK) {
-		_LOGD ("connectivity check failed: %d", ret);
+		_LOGD ("connectivity check failed: (%d) %s", ret, curl_easy_strerror (ret));
 		success = FALSE;
 	}
 
@@ -297,7 +297,8 @@ _con_curl_check_connectivity (CURLM *mhandle, int sockfd, int ev_bitmask)
 		/* Here we have completed a session. Check easy session result. */
 		eret = curl_easy_getinfo (msg->easy_handle, CURLINFO_PRIVATE, (char **) &cb_data);
 		if (eret != CURLE_OK) {
-			_LOGD ("curl cannot extract cb_data for easy handle, skipping msg");
+			_LOGD ("curl cannot extract cb_data for easy handle, skipping msg: (%d) %s",
+			       eret, curl_easy_strerror (eret));
 			success = FALSE;
 			continue;
 		}
@@ -314,7 +315,9 @@ _con_curl_check_connectivity (CURLM *mhandle, int sockfd, int ev_bitmask)
 			cb_data_queue_completed (cb_data,
 			                         NM_CONNECTIVITY_LIMITED,
 			                         NULL,
-			                         g_strdup_printf ("check failed with curl status %d", msg->data.result));
+			                         g_strdup_printf ("check failed: (%d) %s",
+			                                          msg->data.result,
+			                                          curl_easy_strerror (msg->data.result)));
 		} else if (   !((_check_handle_get_response (cb_data))[0])
 		           && (curl_easy_getinfo (msg->easy_handle, CURLINFO_RESPONSE_CODE, &response_code) == CURLE_OK)
 		           && response_code == 204) {
@@ -734,6 +737,9 @@ static void
 nm_connectivity_init (NMConnectivity *self)
 {
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
+#if WITH_CONCHECK
+	CURLcode ret;
+#endif
 
 	c_list_init (&priv->handles_lst_head);
 	c_list_init (&priv->completed_handles_lst_head);
@@ -745,12 +751,14 @@ nm_connectivity_init (NMConnectivity *self)
 	                  self);
 
 #if WITH_CONCHECK
-	if (curl_global_init (CURL_GLOBAL_ALL) == CURLE_OK)
+	ret = curl_global_init (CURL_GLOBAL_ALL);
+	if (ret == CURLE_OK)
 		priv->concheck.curl_mhandle = curl_multi_init ();
 
-	if (!priv->concheck.curl_mhandle)
-		 _LOGE ("unable to init cURL, connectivity check will not work");
-	else {
+	if (!priv->concheck.curl_mhandle) {
+		 _LOGE ("unable to init cURL, connectivity check will not work: (%d) %s",
+		        ret, curl_easy_strerror (ret));
+	} else {
 		curl_multi_setopt (priv->concheck.curl_mhandle, CURLMOPT_SOCKETFUNCTION, multi_socket_cb);
 		curl_multi_setopt (priv->concheck.curl_mhandle, CURLMOPT_SOCKETDATA, self);
 		curl_multi_setopt (priv->concheck.curl_mhandle, CURLMOPT_TIMERFUNCTION, multi_timer_cb);
