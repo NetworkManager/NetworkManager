@@ -6246,7 +6246,8 @@ nm_manager_write_device_state (NMManager *self, NMDevice *device)
 	if (managed) {
 		NMSettingsConnection *sett_conn;
 
-		sett_conn = nm_device_get_settings_connection (device);
+		if (nm_device_get_state (device) <= NM_DEVICE_STATE_ACTIVATED)
+			sett_conn = nm_device_get_settings_connection (device);
 		if (sett_conn)
 			uuid = nm_settings_connection_get_uuid (sett_conn);
 		managed_type = NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_MANAGED;
