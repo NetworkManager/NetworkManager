@@ -2040,10 +2040,11 @@ nm_device_is_software (NMDevice *device)
 /**
  * nm_device_reapply:
  * @device: a #NMDevice
- * @connection: the #NMConnection to replace the applied settings with or %NULL to reuse existing
- * @version_id: zero or the expected version id of the applied connection. If specified
- *   and the version id mismatches, the call fails without modification. This allows to
- *   catch concurrent accesses.
+ * @connection: (allow-none): the #NMConnection to replace the applied
+ *   settings with or %NULL to reuse existing
+ * @version_id: zero or the expected version id of the applied connection.
+ *   If specified and the version id mismatches, the call fails without
+ *   modification. This allows to catch concurrent accesses.
  * @flags: always set this to zero
  * @cancellable: a #GCancellable, or %NULL
  * @error: location for a #GError, or %NULL
@@ -2103,10 +2104,12 @@ device_reapply_cb (GObject *proxy,
 /**
  * nm_device_reapply_async:
  * @device: a #NMDevice
- * @connection: the #NMConnection to replace the applied settings with or %NULL to reuse existing
- * @version_id: zero or the expected version id of the applied connection. If specified
- *   and the version id mismatches, the call fails without modification. This allows to
- *   catch concurrent accesses.
+ * @connection: (allow-none): the #NMConnection to replace the applied
+ *   settings with or %NULL to reuse existing
+ * @version_id: zero or the expected version id of the applied
+ *   connection. If specified and the version id mismatches, the call
+ *   fails without modification. This allows to catch concurrent
+ *   accesses.
  * @flags: always set this to zero
  * @cancellable: a #GCancellable, or %NULL
  * @callback: callback to be called when the reapply operation completes
