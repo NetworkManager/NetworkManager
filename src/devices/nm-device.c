@@ -4599,9 +4599,23 @@ nm_device_owns_iface (NMDevice *self, const char *iface)
 NMConnection *
 nm_device_new_default_connection (NMDevice *self)
 {
-	if (NM_DEVICE_GET_CLASS (self)->new_default_connection)
-		return NM_DEVICE_GET_CLASS (self)->new_default_connection (self);
-	return NULL;
+	NMConnection *connection;
+	GError *error = NULL;
+
+	if (!NM_DEVICE_GET_CLASS (self)->new_default_connection)
+		return NULL;
+
+	connection = NM_DEVICE_GET_CLASS (self)->new_default_connection (self);
+	if (!connection)
+		return NULL;
+
+	if (!nm_connection_normalize (connection, NULL, NULL, &error)) {
+		_LOGD (LOGD_DEVICE, "device generated an invalid default connection: %s", error->message);
+		g_error_free (error);
+		g_return_val_if_reached (NULL);
+	}
+
+	return connection;
 }
 
 static void
@@ -5472,7 +5486,7 @@ nm_device_generate_connection (NMDevice *self,
 
 	klass->update_connection (self, connection);
 
-	if (!nm_connection_verify (connection, &local)) {
+	if (!nm_connection_normalize (connection, NULL, NULL, error)) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
 		             "generated connection does not verify: %s",
 		             local->message);
