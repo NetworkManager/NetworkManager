@@ -501,6 +501,8 @@ if enable_ppp
   pppd = find_program(locations, required: false)
   assert(pppd.found(), 'pppd required but not found, please provide a valid pppd path or use -Dppp=false to disable it')
 
+  config_h.set_quoted('PPPD_PATH', pppd.path())
+
   pppd_plugin_dir = get_option('pppd_plugin_dir')
   if pppd_plugin_dir == ''
     pppd_plugin_dir = join_paths(nm_libdir, 'pppd', '2.4.5')
