@@ -164,7 +164,7 @@ nmtstc_service_init (void)
 		g_source_set_callback (child_source, (GSourceFunc)(void (*) (void)) _service_init_wait_child_wait, &data, NULL);
 		g_source_attach (child_source, context);
 
-		had_timeout = !nmtst_main_loop_run (data.mainloop, 3000);
+		had_timeout = !nmtst_main_loop_run (data.mainloop, 30000);
 
 		g_source_destroy (timeout_source);
 		g_source_destroy (child_source);
