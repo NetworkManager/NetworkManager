@@ -204,9 +204,9 @@ typedef enum {
 
 NMMatchSpecMatchType nm_match_spec_device (const GSList *specs,
                                            const char *interface_name,
+                                           const char *device_type,
                                            const char *driver,
                                            const char *driver_version,
-                                           const char *device_type,
                                            const char *hwaddr,
                                            const char *s390_subchannels);
 NMMatchSpecMatchType nm_match_spec_config (const GSList *specs,
