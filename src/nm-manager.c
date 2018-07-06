@@ -1459,17 +1459,13 @@ manager_device_state_changed (NMDevice *device,
 	    && new_state > NM_DEVICE_STATE_UNMANAGED)
 		retry_connections_for_parent_device (self, device);
 
-	switch (new_state) {
-	case NM_DEVICE_STATE_UNMANAGED:
-	case NM_DEVICE_STATE_UNAVAILABLE:
-	case NM_DEVICE_STATE_DISCONNECTED:
-	case NM_DEVICE_STATE_PREPARE:
-	case NM_DEVICE_STATE_FAILED:
+	if (NM_IN_SET (new_state,
+	               NM_DEVICE_STATE_UNMANAGED,
+	               NM_DEVICE_STATE_UNAVAILABLE,
+	               NM_DEVICE_STATE_DISCONNECTED,
+	               NM_DEVICE_STATE_PREPARE,
+	               NM_DEVICE_STATE_FAILED))
 		_notify (self, PROP_ACTIVE_CONNECTIONS);
-		break;
-	default:
-		break;
-	}
 
 	if (NM_IN_SET (new_state,
 	               NM_DEVICE_STATE_UNMANAGED,
@@ -1477,8 +1473,9 @@ manager_device_state_changed (NMDevice *device,
 	               NM_DEVICE_STATE_ACTIVATED))
 		nm_manager_write_device_state (self, device);
 
-	if (   new_state == NM_DEVICE_STATE_UNAVAILABLE
-	    || new_state == NM_DEVICE_STATE_DISCONNECTED)
+	if (NM_IN_SET (new_state,
+	               NM_DEVICE_STATE_UNAVAILABLE,
+	               NM_DEVICE_STATE_DISCONNECTED))
 		nm_settings_device_added (priv->settings, device);
 }
 
