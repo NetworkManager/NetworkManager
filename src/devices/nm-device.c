@@ -10225,6 +10225,8 @@ _cleanup_ip_pre (NMDevice *self, int addr_family, CleanupType cleanup_type)
 		arp_cleanup (self);
 		dnsmasq_cleanup (self);
 		ipv4ll_cleanup (self);
+		g_slist_free_full (priv->acd.dad_list, (GDestroyNotify) nm_acd_manager_destroy);
+		priv->acd.dad_list = NULL;
 	} else {
 		g_slist_free_full (priv->dad6_failed_addrs, (GDestroyNotify) nmp_object_unref);
 		priv->dad6_failed_addrs = NULL;
@@ -15392,9 +15394,6 @@ dispose (GObject *object)
 	platform = nm_device_get_platform (self);
 	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (device_ipx_changed), self);
 	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (link_changed_cb), self);
-
-	g_slist_free_full (priv->acd.dad_list, (GDestroyNotify) nm_acd_manager_destroy);
-	priv->acd.dad_list = NULL;
 
 	arp_cleanup (self);
 
