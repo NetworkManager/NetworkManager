@@ -4611,21 +4611,7 @@ validate_activation_request (NMManager *self,
 		}
 	}
 
-	if (is_vpn && device) {
-		/* VPN's are treated specially. Maybe the should accept a device as well,
-		 * however, later on during activation, we don't handle the device.
-		 *
-		 * Maybe we should, and maybe it makes sense to specify a device
-		 * when activating a VPN. But for now, just error out.  */
-		g_set_error_literal (error,
-		                     NM_MANAGER_ERROR,
-		                     NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-		                     "Cannot specify device when activating VPN");
-		return NULL;
-	}
-
-	nm_assert (   ( is_vpn && !device)
-	           || (!is_vpn && NM_IS_DEVICE (device)));
+	nm_assert (is_vpn || NM_IS_DEVICE (device));
 
 	*out_device = device;
 	*out_is_vpn = is_vpn;
