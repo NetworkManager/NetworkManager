@@ -6380,15 +6380,30 @@ acd_data_destroy (gpointer ptr, GClosure *closure)
 static void
 ipv4_manual_method_apply (NMDevice *self, NMIP4Config **configs, gboolean success)
 {
+	NMConnection *connection;
+	const char *method;
 	NMIP4Config *empty;
 
-	if (success) {
+	connection = nm_device_get_applied_connection (self);
+	nm_assert (connection);
+	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	nm_assert (NM_IN_STRSET (method,
+	                         NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	                         NM_SETTING_IP4_CONFIG_METHOD_AUTO));
+
+	if (!success) {
+		nm_device_ip_method_failed (self, AF_INET,
+		                            NM_DEVICE_STATE_REASON_IP_ADDRESS_DUPLICATE);
+		return;
+	}
+
+	if (nm_streq (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
 		empty = _ip4_config_new (self);
 		nm_device_activate_schedule_ip4_config_result (self, empty);
 		g_object_unref (empty);
 	} else {
-		nm_device_ip_method_failed (self, AF_INET,
-		                            NM_DEVICE_STATE_REASON_IP_ADDRESS_DUPLICATE);
+		if (NM_DEVICE_GET_PRIVATE (self)->ip4_state != IP_DONE)
+			ip_config_merge_and_apply (self, AF_INET, TRUE);
 	}
 }
 
@@ -7638,30 +7653,44 @@ act_stage3_ip4_config_start (NMDevice *self,
 
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
 
-	/* Start IPv4 addressing based on the method requested */
-	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0) {
-		ret = dhcp4_start (self);
-		if (ret == NM_ACT_STAGE_RETURN_FAILURE)
-			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_DHCP_START_FAILED);
-	} else if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL) == 0) {
+	if (NM_IN_STRSET (method,
+	                  NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	                  NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
+		NMSettingIPConfig *s_ip4;
+		NMIP4Config **configs, *config;
+		guint num_addresses;
+
+		s_ip4 = nm_connection_get_setting_ip4_config (connection);
+		g_return_val_if_fail (s_ip4, NM_ACT_STAGE_RETURN_FAILURE);
+		num_addresses = nm_setting_ip_config_get_num_addresses (s_ip4);
+
+		if (nm_streq (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
+			ret = dhcp4_start (self);
+			if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
+				NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_DHCP_START_FAILED);
+				return ret;
+			}
+		} else {
+			g_return_val_if_fail (num_addresses != 0, NM_ACT_STAGE_RETURN_FAILURE);
+			ret = NM_ACT_STAGE_RETURN_POSTPONE;
+		}
+
+		if (num_addresses) {
+			config = _ip4_config_new (self);
+			nm_ip4_config_merge_setting (config,
+			                             nm_connection_get_setting_ip4_config (connection),
+			                             NM_SETTING_CONNECTION_MDNS_DEFAULT,
+			                             nm_device_get_route_table (self, AF_INET, TRUE),
+			                             nm_device_get_route_metric (self, AF_INET));
+			configs = g_new0 (NMIP4Config *, 2);
+			configs[0] = config;
+			ipv4_dad_start (self, configs, ipv4_manual_method_apply);
+		}
+	} else if (nm_streq (method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)) {
 		ret = ipv4ll_start (self);
 		if (ret == NM_ACT_STAGE_RETURN_FAILURE)
 			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_AUTOIP_START_FAILED);
-	} else if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0) {
-		NMIP4Config **configs, *config;
-
-		config = _ip4_config_new (self);
-		nm_ip4_config_merge_setting (config,
-		                             nm_connection_get_setting_ip4_config (connection),
-		                             NM_SETTING_CONNECTION_MDNS_DEFAULT,
-		                             nm_device_get_route_table (self, AF_INET, TRUE),
-		                             nm_device_get_route_metric (self, AF_INET));
-
-		configs = g_new0 (NMIP4Config *, 2);
-		configs[0] = config;
-		ipv4_dad_start (self, configs, ipv4_manual_method_apply);
-		ret = NM_ACT_STAGE_RETURN_POSTPONE;
-	} else if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) == 0) {
+	} else if (nm_streq (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
 		if (out_config) {
 			*out_config = shared4_new_config (self, connection);
 			if (*out_config) {
@@ -7673,7 +7702,7 @@ act_stage3_ip4_config_start (NMDevice *self,
 			}
 		} else
 			g_return_val_if_reached (NM_ACT_STAGE_RETURN_FAILURE);
-	} else if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0)
+	} else if (nm_streq (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	else
 		_LOGW (LOGD_IP4, "unhandled IPv4 config method '%s'; will fail", method);
