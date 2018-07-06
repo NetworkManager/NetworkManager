@@ -59,7 +59,6 @@
 #endif
 
 #define NM_DEFAULT_PID_FILE          NMRUNDIR "/NetworkManager.pid"
-#define NM_DEFAULT_SYSTEM_STATE_FILE NMSTATEDIR "/NetworkManager.state"
 
 #define CONFIG_ATOMIC_SECTION_PREFIXES ((char **) NULL)
 
