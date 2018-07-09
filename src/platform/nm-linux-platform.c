@@ -181,6 +181,40 @@ G_STATIC_ASSERT (RTA_MAX == (__RTA_MAX - 1));
 
 /*****************************************************************************/
 
+#define WG_CMD_GET_DEVICE 0
+#define WG_CMD_SET_DEVICE 1
+
+#define WGDEVICE_A_UNSPEC                      0
+#define WGDEVICE_A_IFINDEX                     1
+#define WGDEVICE_A_IFNAME                      2
+#define WGDEVICE_A_PRIVATE_KEY                 3
+#define WGDEVICE_A_PUBLIC_KEY                  4
+#define WGDEVICE_A_FLAGS                       5
+#define WGDEVICE_A_LISTEN_PORT                 6
+#define WGDEVICE_A_FWMARK                      7
+#define WGDEVICE_A_PEERS                       8
+#define WGDEVICE_A_MAX                         8
+
+#define WGPEER_A_UNSPEC                        0
+#define WGPEER_A_PUBLIC_KEY                    1
+#define WGPEER_A_PRESHARED_KEY                 2
+#define WGPEER_A_FLAGS                         3
+#define WGPEER_A_ENDPOINT                      4
+#define WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL 5
+#define WGPEER_A_LAST_HANDSHAKE_TIME           6
+#define WGPEER_A_RX_BYTES                      7
+#define WGPEER_A_TX_BYTES                      8
+#define WGPEER_A_ALLOWEDIPS                    9
+#define WGPEER_A_MAX                           9
+
+#define WGALLOWEDIP_A_UNSPEC                   0
+#define WGALLOWEDIP_A_FAMILY                   1
+#define WGALLOWEDIP_A_IPADDR                   2
+#define WGALLOWEDIP_A_CIDR_MASK                3
+#define WGALLOWEDIP_A_MAX                      3
+
+/*****************************************************************************/
+
 #define _NMLOG_PREFIX_NAME                "platform-linux"
 #define _NMLOG_DOMAIN                     LOGD_PLATFORM
 #define _NMLOG2_DOMAIN                    LOGD_PLATFORM
@@ -482,6 +516,18 @@ _support_rta_pref_get (void)
 	return _support_rta_pref >= 0;
 }
 
+/*****************************************************************************
+ * Support Generic Netlink family
+ *****************************************************************************/
+
+static int
+_support_genl_family (struct nl_sock *genl, const char *name)
+{
+	int family_id = genl_ctrl_resolve (genl, name);
+	_LOG2D ("kernel-support: genetlink: %s: %s", name, family_id ? "detected" : "not detected");
+	return family_id;
+}
+
 /******************************************************************
  * Various utilities
  ******************************************************************/
@@ -563,6 +609,7 @@ static const LinkDesc linktypes[] = {
 	{ NM_LINK_TYPE_VETH,          "veth",        "veth",        NULL },
 	{ NM_LINK_TYPE_VLAN,          "vlan",        "vlan",        "vlan" },
 	{ NM_LINK_TYPE_VXLAN,         "vxlan",       "vxlan",       "vxlan" },
+	{ NM_LINK_TYPE_WIREGUARD,     "wireguard",   "wireguard",   "wireguard" },
 
 	{ NM_LINK_TYPE_BRIDGE,        "bridge",      "bridge",      "bridge" },
 	{ NM_LINK_TYPE_BOND,          "bond",        "bond",        "bond" },
@@ -1760,6 +1807,197 @@ _parse_lnk_vxlan (const char *kind, struct nlattr *info_data)
 
 /*****************************************************************************/
 
+/* Context to build a NMPObjectLnkWireguard instance.
+ * GArray wrappers are discarded after processing all netlink messages. */
+struct _wireguard_device_buf {
+	NMPObject *obj;
+	GArray *peers;
+	GArray *allowedips;
+};
+
+static int
+_wireguard_update_from_allowedips_nla (struct _wireguard_device_buf *buf,
+                                       struct nlattr *allowedip_attr)
+{
+	static const struct nla_policy allowedip_policy[WGALLOWEDIP_A_MAX + 1] = {
+		[WGALLOWEDIP_A_FAMILY]    = { .type = NLA_U16 },
+		[WGALLOWEDIP_A_IPADDR]    = { .minlen = sizeof (struct in_addr) },
+		[WGALLOWEDIP_A_CIDR_MASK] = { .type = NLA_U8 },
+	};
+	struct nlattr *tba[WGALLOWEDIP_A_MAX + 1];
+	NMWireguardPeer *peer = &g_array_index (buf->peers, NMWireguardPeer, buf->peers->len - 1);
+	NMWireguardAllowedIP *allowedip;
+	NMWireguardAllowedIP new_allowedip = {0};
+	int addr_len;
+	int ret;
+
+	ret = nla_parse_nested (tba, WGALLOWEDIP_A_MAX, allowedip_attr, allowedip_policy);
+	if (ret)
+		goto errout;
+
+	g_array_append_val (buf->allowedips, new_allowedip);
+	allowedip = &g_array_index (buf->allowedips, NMWireguardAllowedIP, buf->allowedips->len - 1);
+	peer->allowedips_len++;
+
+	if (tba[WGALLOWEDIP_A_FAMILY])
+		allowedip->family = nla_get_u16 (tba[WGALLOWEDIP_A_FAMILY]);
+
+	if (allowedip->family == AF_INET)
+		addr_len = sizeof (in_addr_t);
+	else if (allowedip->family == AF_INET6)
+		addr_len = sizeof (struct in6_addr);
+	else {
+		ret = -EAFNOSUPPORT;
+		goto errout;
+	}
+
+	ret = -EMSGSIZE;
+	_check_addr_or_errout (tba, WGALLOWEDIP_A_IPADDR, addr_len);
+	if (tba[WGALLOWEDIP_A_IPADDR])
+		nla_memcpy (&allowedip->ip, tba[WGALLOWEDIP_A_IPADDR], addr_len);
+
+	if (tba[WGALLOWEDIP_A_CIDR_MASK])
+		allowedip->mask = nla_get_u8 (tba[WGALLOWEDIP_A_CIDR_MASK]);
+
+	ret = 0;
+errout:
+	return ret;
+}
+
+static int
+_wireguard_update_from_peers_nla (struct _wireguard_device_buf *buf,
+                                  struct nlattr *peer_attr)
+{
+	static const struct nla_policy peer_policy[WGPEER_A_MAX + 1] = {
+		[WGPEER_A_PUBLIC_KEY]                    = { .minlen = NM_WG_PUBLIC_KEY_LEN },
+		[WGPEER_A_PRESHARED_KEY]                 = { },
+		[WGPEER_A_FLAGS]                         = { .type = NLA_U32 },
+		[WGPEER_A_ENDPOINT]                      = { },
+		[WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL] = { .type = NLA_U16 },
+		[WGPEER_A_LAST_HANDSHAKE_TIME]           = { },
+		[WGPEER_A_RX_BYTES]                      = { .type = NLA_U64 },
+		[WGPEER_A_TX_BYTES]                      = { .type = NLA_U64 },
+		[WGPEER_A_ALLOWEDIPS]                    = { .type = NLA_NESTED },
+	};
+	struct nlattr *tbp[WGPEER_A_MAX + 1];
+	NMWireguardPeer * const last = buf->peers->len ? &g_array_index (buf->peers, NMWireguardPeer, buf->peers->len - 1) : NULL;
+	NMWireguardPeer *peer;
+	NMWireguardPeer new_peer = {0};
+	int ret;
+
+	if (nla_parse_nested (tbp, WGPEER_A_MAX, peer_attr, peer_policy)) {
+		ret = -EBADMSG;
+		goto errout;
+	}
+
+	if (!tbp[WGPEER_A_PUBLIC_KEY]) {
+		ret = -EBADMSG;
+		goto errout;
+	}
+
+	/* a peer with the same public key as last peer is just a continuation for extra AllowedIPs */
+	if (last && !memcmp (nla_data (tbp[WGPEER_A_PUBLIC_KEY]), last->public_key, sizeof (last->public_key))) {
+		peer = last;
+		goto add_allowedips;
+	}
+
+	/* otherwise, start a new peer */
+	g_array_append_val (buf->peers, new_peer);
+	peer = &g_array_index (buf->peers, NMWireguardPeer, buf->peers->len - 1);
+
+	nla_memcpy (&peer->public_key, tbp[WGPEER_A_PUBLIC_KEY], sizeof (peer->public_key));
+
+	if (tbp[WGPEER_A_PRESHARED_KEY])
+		nla_memcpy (&peer->preshared_key, tbp[WGPEER_A_PRESHARED_KEY], sizeof (peer->preshared_key));
+	if (tbp[WGPEER_A_ENDPOINT]) {
+		struct sockaddr *addr = nla_data (tbp[WGPEER_A_ENDPOINT]);
+		if (addr->sa_family == AF_INET)
+			nla_memcpy (&peer->endpoint.addr4, tbp[WGPEER_A_ENDPOINT], sizeof (peer->endpoint.addr4));
+		else if (addr->sa_family == AF_INET6)
+			nla_memcpy (&peer->endpoint.addr6, tbp[WGPEER_A_ENDPOINT], sizeof (peer->endpoint.addr6));
+	}
+	if (tbp[WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL])
+		peer->persistent_keepalive_interval = nla_get_u64 (tbp[WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL]);
+	if (tbp[WGPEER_A_LAST_HANDSHAKE_TIME])
+		nla_memcpy (&peer->last_handshake_time, tbp[WGPEER_A_LAST_HANDSHAKE_TIME], sizeof (peer->last_handshake_time));
+	if (tbp[WGPEER_A_RX_BYTES])
+		peer->rx_bytes = nla_get_u64 (tbp[WGPEER_A_RX_BYTES]);
+	if (tbp[WGPEER_A_TX_BYTES])
+		peer->tx_bytes = nla_get_u64 (tbp[WGPEER_A_TX_BYTES]);
+
+	peer->allowedips = NULL;
+	peer->allowedips_len = 0;
+
+add_allowedips:
+	if (tbp[WGPEER_A_ALLOWEDIPS]) {
+		struct nlattr *attr;
+		int rem;
+
+		nla_for_each_nested (attr, tbp[WGPEER_A_ALLOWEDIPS], rem) {
+			ret = _wireguard_update_from_allowedips_nla (buf, attr);
+			if (ret)
+				goto errout;
+		}
+	}
+
+	ret = 0;
+errout:
+	return ret;
+}
+
+static int
+_wireguard_get_device_cb (struct nl_msg *msg, void *arg)
+{
+	static const struct nla_policy device_policy[WGDEVICE_A_MAX + 1] = {
+		[WGDEVICE_A_IFINDEX]     = { .type = NLA_U32 },
+		[WGDEVICE_A_IFNAME]      = { .type = NLA_NUL_STRING, .maxlen = IFNAMSIZ },
+		[WGDEVICE_A_PRIVATE_KEY] = { },
+		[WGDEVICE_A_PUBLIC_KEY]  = { },
+		[WGDEVICE_A_FLAGS]       = { .type = NLA_U32 },
+		[WGDEVICE_A_LISTEN_PORT] = { .type = NLA_U16 },
+		[WGDEVICE_A_FWMARK]      = { .type = NLA_U32 },
+		[WGDEVICE_A_PEERS]       = { .type = NLA_NESTED },
+	};
+	struct _wireguard_device_buf *buf = arg;
+	struct nlattr *tbd[WGDEVICE_A_MAX + 1];
+	NMPlatformLnkWireguard *props = &buf->obj->lnk_wireguard;
+	struct nlmsghdr *nlh = nlmsg_hdr (msg);
+	int ret;
+
+	ret = genlmsg_parse (nlh, 0, tbd, WGDEVICE_A_MAX, device_policy);
+	if (ret)
+		goto errout;
+
+	if (tbd[WGDEVICE_A_PRIVATE_KEY])
+		nla_memcpy (props->private_key, tbd[WGDEVICE_A_PRIVATE_KEY], sizeof (props->private_key));
+	if (tbd[WGDEVICE_A_PUBLIC_KEY])
+		nla_memcpy (props->public_key, tbd[WGDEVICE_A_PUBLIC_KEY], sizeof (props->public_key));
+	if (tbd[WGDEVICE_A_LISTEN_PORT])
+		props->listen_port = nla_get_u16 (tbd[WGDEVICE_A_LISTEN_PORT]);
+	if (tbd[WGDEVICE_A_FWMARK])
+		props->fwmark = nla_get_u32 (tbd[WGDEVICE_A_FWMARK]);
+
+	if (tbd[WGDEVICE_A_PEERS]) {
+		struct nlattr *attr;
+		int rem;
+
+		nla_for_each_nested (attr, tbd[WGDEVICE_A_PEERS], rem) {
+			ret = _wireguard_update_from_peers_nla (buf, attr);
+			if (ret)
+				goto errout;
+		}
+	}
+
+	return NL_OK;
+errout:
+	return NL_SKIP;
+}
+
+static gboolean
+_wireguard_get_link_properties (NMPlatform *platform, const NMPlatformLink *link, NMPObject *obj);
+
+/*****************************************************************************/
+
 /* Copied and heavily modified from libnl3's link_msg_parser(). */
 static NMPObject *
 _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr *nlh, gboolean id_only)
@@ -1977,6 +2215,8 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 		need_ext_data = TRUE;
 		lnk_data_complete_from_cache = FALSE;
 		break;
+	case NM_LINK_TYPE_WIREGUARD:
+		break;
 	default:
 		lnk_data_complete_from_cache = FALSE;
 		break;
@@ -2025,6 +2265,26 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 				obj->link.tx_bytes = link_cached->link.tx_bytes;
 			}
 		}
+	}
+
+	if (obj->link.type == NM_LINK_TYPE_WIREGUARD) {
+		nm_auto_nmpobj NMPObject *lnk_data_now;
+
+		/* The WireGuard kernel module does not yet send link update
+		 * notifications, so we don't actually update the cache. For
+		 * now, always refetch link data here. */
+		lnk_data_now = nmp_object_new (NMP_OBJECT_TYPE_LNK_WIREGUARD, NULL);
+		if (!_wireguard_get_link_properties (platform, &obj->link, lnk_data_now)) {
+			_LOGE ("wireguard: %d %s: failed to get properties",
+	                       obj->link.ifindex,
+	                       obj->link.name ?: "");
+		}
+
+		if (lnk_data && nmp_object_cmp (lnk_data, lnk_data_now))
+			nmp_object_unref (g_steal_pointer (&lnk_data));
+
+		if (!lnk_data)
+			lnk_data = (NMPObject *) nmp_object_ref (lnk_data_now);
 	}
 
 	obj->_link.netlink.lnk = lnk_data;
@@ -3143,6 +3403,8 @@ typedef struct {
 
 		gint is_handling;
 	} delayed_action;
+
+	int wireguard_family_id;
 } NMLinuxPlatformPrivate;
 
 struct _NMLinuxPlatform {
@@ -6084,6 +6346,69 @@ static gboolean
 link_release (NMPlatform *platform, int master, int slave)
 {
 	return link_enslave (platform, 0, slave);
+}
+
+/*****************************************************************************/
+
+static gboolean
+_wireguard_get_link_properties (NMPlatform *platform, const NMPlatformLink *link, NMPObject *obj)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	nm_auto_nlmsg struct nl_msg *msg = NULL;
+	struct _wireguard_device_buf buf = {
+		.obj = obj,
+		.peers = g_array_new (FALSE, FALSE, sizeof (NMWireguardPeer)),
+		.allowedips = g_array_new (FALSE, FALSE, sizeof (NMWireguardAllowedIP)),
+	};
+	struct nl_cb cb = {
+		.valid_cb = _wireguard_get_device_cb,
+		.valid_arg = &buf,
+	};
+	guint i, j;
+
+	if (!priv->wireguard_family_id)
+		priv->wireguard_family_id = _support_genl_family (priv->genl, "wireguard");
+
+	if (!priv->wireguard_family_id) {
+		_LOG2W ("kernel support not available for wireguard link %s", link->name);
+		goto err;
+	}
+
+	msg = nlmsg_alloc ();
+	if (!msg)
+		goto err;
+
+	if (!genlmsg_put (msg, NL_AUTO_PORT, NL_AUTO_SEQ, priv->wireguard_family_id,
+	                  0, NLM_F_DUMP, WG_CMD_GET_DEVICE, 1))
+		goto err;
+
+	NLA_PUT_U32 (msg, WGDEVICE_A_IFINDEX, link->ifindex);
+
+	if (nl_send_auto (priv->genl, msg) < 0)
+		goto err;
+
+	if (nl_recvmsgs (priv->genl, &cb) < 0)
+		goto err;
+
+	/* have each peer point to its own chunk of the allowedips buffer */
+	for (i = 0, j = 0; i < buf.peers->len; i++) {
+		NMWireguardPeer *p = &g_array_index (buf.peers, NMWireguardPeer, i);
+		p->allowedips = &g_array_index (buf.allowedips, NMWireguardAllowedIP, j);
+		j += p->allowedips_len;
+	}
+	/* drop the wrapper (but also the buffer if no peer points to it) */
+	g_array_free (buf.allowedips, buf.peers->len ? FALSE : TRUE);
+
+	obj->_lnk_wireguard.peers_len = buf.peers->len;
+	obj->_lnk_wireguard.peers = (NMWireguardPeer *) g_array_free (buf.peers, FALSE);
+
+	return TRUE;
+
+err:
+nla_put_failure:
+	g_array_free (buf.peers, TRUE);
+	g_array_free (buf.allowedips, TRUE);
+	return FALSE;
 }
 
 /*****************************************************************************/
