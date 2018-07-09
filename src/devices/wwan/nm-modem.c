@@ -1086,8 +1086,8 @@ nm_modem_check_connection_compatible (NMModem *self, NMConnection *connection)
 		}
 	}
 
-	if (NM_MODEM_GET_CLASS (self)->check_connection_compatible)
-		return NM_MODEM_GET_CLASS (self)->check_connection_compatible (self, connection);
+	if (NM_MODEM_GET_CLASS (self)->check_connection_compatible_with_modem)
+		return NM_MODEM_GET_CLASS (self)->check_connection_compatible_with_modem (self, connection);
 	return FALSE;
 }
 

@@ -279,8 +279,8 @@ deactivate_cleanup (NMModem *modem, NMDevice *device)
 }
 
 static gboolean
-check_connection_compatible (NMModem *modem,
-                             NMConnection *connection)
+check_connection_compatible_with_modem (NMModem *modem,
+                                        NMConnection *connection)
 {
 	NMModemOfono *self = NM_MODEM_OFONO (modem);
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
@@ -1326,7 +1326,7 @@ nm_modem_ofono_class_init (NMModemOfonoClass *klass)
 	modem_class->disconnect = disconnect;
 	modem_class->disconnect_finish = disconnect_finish;
 	modem_class->deactivate_cleanup = deactivate_cleanup;
-	modem_class->check_connection_compatible = check_connection_compatible;
+	modem_class->check_connection_compatible_with_modem = check_connection_compatible_with_modem;
 
 	modem_class->act_stage1_prepare = act_stage1_prepare;
 	modem_class->static_stage3_ip4_config_start = static_stage3_ip4_config_start;

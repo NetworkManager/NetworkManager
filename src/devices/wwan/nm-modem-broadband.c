@@ -617,7 +617,7 @@ act_stage1_prepare (NMModem *_self,
 /*****************************************************************************/
 
 static gboolean
-check_connection_compatible (NMModem *_self, NMConnection *connection)
+check_connection_compatible_with_modem (NMModem *_self, NMConnection *connection)
 {
 	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
 	MMModemCapability modem_caps;
@@ -1476,7 +1476,7 @@ nm_modem_broadband_class_init (NMModemBroadbandClass *klass)
 	modem_class->deactivate_cleanup = deactivate_cleanup;
 	modem_class->set_mm_enabled = set_mm_enabled;
 	modem_class->get_user_pass = get_user_pass;
-	modem_class->check_connection_compatible = check_connection_compatible;
+	modem_class->check_connection_compatible_with_modem = check_connection_compatible_with_modem;
 	modem_class->complete_connection = complete_connection;
 	modem_class->act_stage1_prepare = act_stage1_prepare;
 	modem_class->owns_port = owns_port;
