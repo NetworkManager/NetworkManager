@@ -5446,7 +5446,6 @@ static NMPlatformError
 link_set_address (NMPlatform *platform, int ifindex, gconstpointer address, size_t length)
 {
 	nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-	gs_free char *mac = NULL;
 	const ChangeLinkData d = {
 		.set_address = {
 			.address = address,
