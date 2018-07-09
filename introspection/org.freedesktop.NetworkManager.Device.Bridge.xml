@@ -25,7 +25,7 @@
     <!--
         Slaves:
 
-        Array of object paths representing devices which are currently slaved to
+        Array of object paths representing devices which are currently enslaved to
         this device.
     -->
     <property name="Slaves" type="ao" access="read"/>
