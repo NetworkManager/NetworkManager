@@ -134,7 +134,7 @@ nm_device_bond_get_carrier (NMDeviceBond *device)
  * nm_device_bond_get_slaves:
  * @device: a #NMDeviceBond
  *
- * Gets the devices currently slaved to @device.
+ * Gets the devices currently enslaved to @device.
  *
  * Returns: (element-type NMDevice): the #GPtrArray containing
  * #NMDevices that are slaves of @device. This is the internal
@@ -333,7 +333,7 @@ nm_device_bond_class_init (NMDeviceBondClass *bond_class)
 	/**
 	 * NMDeviceBond:slaves:
 	 *
-	 * The devices (#NMDevice) slaved to the bond device.
+	 * The devices (#NMDevice) enslaved to the bond device.
 	 *
 	 * Since: 0.9.8
 	 **/
