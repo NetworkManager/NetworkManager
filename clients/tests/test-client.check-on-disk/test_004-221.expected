@@ -2,7 +2,7 @@ location: clients/tests/test-client.py:988:test_004()/221
 cmd: $NMCLI --mode tabular --pretty --color yes -f GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6,BOND,TEAM,BRIDGE,VLAN,BLUETOOTH,CONNECTIONS device show wlan0
 lang: C
 returncode: 0
-stdout: 4391 bytes
+stdout: 4424 bytes
 >>>
 ==========================
   Device details (wlan0)
@@ -41,9 +41,9 @@ GROUP  OPTION
 -------------------------------------------------------------------------------------------------------------------------
 DHCP6  dhcp-6-opt-1 = val-1 | dhcp-6-opt-2 = val-2 | dhcp-6-opt-3 = val-3 | dhcp-6-opt-4 = val-4 | dhcp-6-opt-5 = val-5 
 
-NAME         AVAILABLE-CONNECTION-PATHS                    AVAILABLE-CONNECTIONS                          
------------------------------------------------------------------------------------------------------------
-CONNECTIONS  /org/freedesktop/NetworkManager/Settings/{2}  UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 
+NAME         AVAILABLE-CONNECTION-PATHS                               AVAILABLE-CONNECTIONS                          
+----------------------------------------------------------------------------------------------------------------------
+CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{2}  UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 
 
 <<<
 stderr: 0 bytes

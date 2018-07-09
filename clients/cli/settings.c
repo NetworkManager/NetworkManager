@@ -814,6 +814,7 @@ setting_details (const NmcConfig *nmc_config, NMSetting *setting, const char *on
 	if (!nmc_print (nmc_config,
 	                (gpointer[]) { setting, NULL },
 	                NULL,
+	                NULL,
 	                (const NMMetaAbstractInfo *const[]) { (const NMMetaAbstractInfo *) setting_info, NULL },
 	                fields_str,
 	                &error))

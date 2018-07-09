@@ -508,6 +508,7 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 
 	if (!nmc_print (&nmc->nmc_config,
 	                (gpointer[]) { nmc, NULL },
+	                NULL,
 	                pretty_header_name ?: N_("NetworkManager status"),
 	                (const NMMetaAbstractInfo *const*) metagen_general_status,
 	                fields_str,
@@ -565,6 +566,7 @@ print_permissions (void *user_data)
 
 	if (!nmc_print (&nmc->nmc_config,
 	                permissions,
+	                NULL,
 	                _("NetworkManager permissions"),
 	                (const NMMetaAbstractInfo *const*) metagen_general_permissions,
 	                fields_str,
@@ -657,6 +659,7 @@ show_general_logging (NmCli *nmc)
 
 	if (!nmc_print (&nmc->nmc_config,
 	                (gpointer const []) { &d, NULL },
+	                NULL,
 	                _("NetworkManager logging"),
 	                (const NMMetaAbstractInfo *const*) metagen_general_logging,
 	                fields_str,
@@ -1316,7 +1319,7 @@ do_overview (NmCli *nmc, int argc, char **argv)
 		color = nmc_device_state_to_color (state);
 		tmp = nmc_colorize (&nmc->nmc_config, color, "%s: %s%s%s",
 		                    nm_device_get_iface (devices[i]),
-		                    nmc_device_state_to_string (state),
+		                    gettext (nmc_device_state_to_string (state)),
 		                    ac ? " to " : "",
 		                    ac ? nm_active_connection_get_id (ac) : "");
 		g_print ("%s\n", tmp);

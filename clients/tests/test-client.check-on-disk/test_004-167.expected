@@ -2,7 +2,7 @@ location: clients/tests/test-client.py:988:test_004()/167
 cmd: $NMCLI --mode tabular -f GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6,BOND,TEAM,BRIDGE,VLAN,BLUETOOTH,CONNECTIONS device show wlan0
 lang: C
 returncode: 0
-stdout: 2760 bytes
+stdout: 2782 bytes
 >>>
 NAME     DEVICE  TYPE  NM-TYPE       VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE             REASON               UDI                         IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
 GENERAL  wlan0   wifi  NMDeviceWifi  --      --       virtual  --              --                13:E0:74:85:7C:D9  0    20 (unavailable)  0 (No reason given)  /sys/devices/virtual/wlan0  --        no           yes         yes          no                no                 --            con-vpn-1   UUID-con-vpn-1-REPLACED-REPLACED-REP  /org/freedesktop/NetworkManager/ActiveConnection/2  unknown 
@@ -30,8 +30,8 @@ IP6    --       --       dst = 2001:a::dd5b:aa7b:b4a2:e42/102, nh = ::, mt = 250
 GROUP  OPTION                                                                                                           
 DHCP6  dhcp-6-opt-1 = val-1 | dhcp-6-opt-2 = val-2 | dhcp-6-opt-3 = val-3 | dhcp-6-opt-4 = val-4 | dhcp-6-opt-5 = val-5 
 
-NAME         AVAILABLE-CONNECTION-PATHS                    AVAILABLE-CONNECTIONS                          
-CONNECTIONS  /org/freedesktop/NetworkManager/Settings/{2}  UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 
+NAME         AVAILABLE-CONNECTION-PATHS                               AVAILABLE-CONNECTIONS                          
+CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{2}  UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 
 
 <<<
 stderr: 0 bytes
