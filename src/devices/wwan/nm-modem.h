@@ -121,8 +121,8 @@ typedef struct {
 	                                            const char **user,
 	                                            const char **pass);
 
-	gboolean (*check_connection_compatible)    (NMModem *modem,
-	                                            NMConnection *connection);
+	gboolean (*check_connection_compatible_with_modem) (NMModem *modem,
+	                                                    NMConnection *connection);
 
 	gboolean (*complete_connection)            (NMModem *modem,
 	                                            NMConnection *connection,
