@@ -2268,7 +2268,7 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	}
 
 	if (obj->link.type == NM_LINK_TYPE_WIREGUARD) {
-		nm_auto_nmpobj NMPObject *lnk_data_now;
+		nm_auto_nmpobj NMPObject *lnk_data_now = NULL;
 
 		/* The WireGuard kernel module does not yet send link update
 		 * notifications, so we don't actually update the cache. For
