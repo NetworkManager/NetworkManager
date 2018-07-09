@@ -20,6 +20,14 @@
 #ifndef __NM_GLIB_H__
 #define __NM_GLIB_H__
 
+/*****************************************************************************/
+
+#ifndef __NM_MACROS_INTERNAL_H__
+#error "nm-glib.h requires nm-macros-internal.h. Do not include this directly"
+#endif
+
+/*****************************************************************************/
+
 #include <gio/gio.h>
 #include <string.h>
 
