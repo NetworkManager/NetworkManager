@@ -809,6 +809,10 @@ create_pppd_cmd_line (NMPPPManager *self,
 
 	g_return_val_if_fail (setting != NULL, NULL);
 
+#ifndef PPPD_PATH
+#define PPPD_PATH NULL
+#endif
+
 	pppd_binary = nm_utils_find_helper ("pppd", PPPD_PATH, err);
 	if (!pppd_binary)
 		return NULL;
