@@ -9192,14 +9192,6 @@ restore_ip6_properties (NMDevice *self)
 }
 
 static inline void
-set_disable_ipv6 (NMDevice *self, const char *value)
-{
-	/* We only touch disable_ipv6 when NM is not managing the IPv6LL address */
-	if (!NM_DEVICE_GET_PRIVATE (self)->ipv6ll_handle)
-		nm_device_ipv6_sysctl_set (self, "disable_ipv6", value);
-}
-
-static inline void
 set_nm_ipv6ll (NMDevice *self, gboolean enable)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -9387,7 +9379,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 		set_nm_ipv6ll (self, TRUE);
 
 	/* Re-enable IPv6 on the interface */
-	set_disable_ipv6 (self, "0");
+	nm_device_ipv6_sysctl_set (self, "disable_ipv6", "0");
 
 	/* Synchronize external IPv6 configuration with kernel, since
 	 * linklocal6_start() uses the information there to determine if we can
@@ -13863,7 +13855,7 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 
 	/* Turn off kernel IPv6 */
 	if (cleanup_type == CLEANUP_TYPE_DECONFIGURE) {
-		set_disable_ipv6 (self, "1");
+		nm_device_ipv6_sysctl_set (self, "disable_ipv6", "1");
 		nm_device_ipv6_sysctl_set (self, "accept_ra", "0");
 		nm_device_ipv6_sysctl_set (self, "use_tempaddr", "0");
 	}
@@ -14140,8 +14132,21 @@ notify_ip_properties (NMDevice *self)
 static void
 ip6_managed_setup (NMDevice *self)
 {
+	const char *disable_ipv6;
+
+	/* In general, we want to keep IPv6 enabled so that the user can add
+	 * their addresses. We need to disable it when there's no support for
+	 * userspace IPv6LL because the the kernel would interfere with us. */
+	if (   NM_DEVICE_GET_PRIVATE (self)->ipv6ll_handle
+	    && nm_platform_link_is_connected (nm_device_get_platform (self),
+	                                      nm_device_get_ip_ifindex (self))) {
+		disable_ipv6 = "0";
+	} else {
+		disable_ipv6 = "1";
+	}
+
 	set_nm_ipv6ll (self, TRUE);
-	set_disable_ipv6 (self, "1");
+	nm_device_ipv6_sysctl_set (self, "disable_ipv6", disable_ipv6);
 	nm_device_ipv6_sysctl_set (self, "accept_ra_defrtr", "0");
 	nm_device_ipv6_sysctl_set (self, "accept_ra_pinfo", "0");
 	nm_device_ipv6_sysctl_set (self, "accept_ra_rtr_pref", "0");
