@@ -1993,8 +1993,7 @@ errout:
 	return NL_SKIP;
 }
 
-static gboolean
-_wireguard_get_link_properties (NMPlatform *platform, const NMPlatformLink *link, NMPObject *obj);
+static gboolean _wireguard_get_link_properties (NMPlatform *platform, const NMPlatformLink *link, NMPObject *obj);
 
 /*****************************************************************************/
 
@@ -2275,9 +2274,9 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 		 * now, always refetch link data here. */
 		lnk_data_now = nmp_object_new (NMP_OBJECT_TYPE_LNK_WIREGUARD, NULL);
 		if (!_wireguard_get_link_properties (platform, &obj->link, lnk_data_now)) {
-			_LOGE ("wireguard: %d %s: failed to get properties",
-	                       obj->link.ifindex,
-	                       obj->link.name ?: "");
+			_LOGD ("wireguard: %d %s: failed to get properties",
+			       obj->link.ifindex,
+			       obj->link.name ?: "");
 		}
 
 		if (lnk_data && nmp_object_cmp (lnk_data, lnk_data_now))
@@ -6369,7 +6368,7 @@ _wireguard_get_link_properties (NMPlatform *platform, const NMPlatformLink *link
 		priv->wireguard_family_id = _support_genl_family (priv->genl, "wireguard");
 
 	if (!priv->wireguard_family_id) {
-		_LOG2W ("kernel support not available for wireguard link %s", link->name);
+		_LOGD ("wireguard: kernel support not available for wireguard link %s", link->name);
 		goto err;
 	}
 
