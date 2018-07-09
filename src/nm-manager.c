@@ -319,7 +319,7 @@ static NMActiveConnection *_new_active_connection (NMManager *self,
                                                    NMActivationReason activation_reason,
                                                    GError **error);
 
-static void policy_activating_device_changed (GObject *object, GParamSpec *pspec, gpointer user_data);
+static void policy_activating_ac_changed (GObject *object, GParamSpec *pspec, gpointer user_data);
 
 static gboolean find_master (NMManager *self,
                              NMConnection *connection,
@@ -4265,7 +4265,7 @@ _internal_activate_generic (NMManager *self, NMActiveConnection *active, GError 
 		 * is exported, make sure the manager's activating-connection property
 		 * is up-to-date.
 		 */
-		policy_activating_device_changed (G_OBJECT (priv->policy), NULL, self);
+		policy_activating_ac_changed (G_OBJECT (priv->policy), NULL, self);
 	}
 
 	return success;
@@ -6117,25 +6117,19 @@ connection_metered_changed (GObject *object,
 }
 
 static void
-policy_default_device_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
+policy_default_ac_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMDevice *best;
 	NMActiveConnection *ac;
 
 	/* Note: this assumes that it's not possible for the IP4 default
 	 * route to be going over the default-ip6-device. If that changes,
 	 * we need something more complicated here.
 	 */
-	best = nm_policy_get_default_ip4_device (priv->policy);
-	if (!best)
-		best = nm_policy_get_default_ip6_device (priv->policy);
-
-	if (best)
-		ac = NM_ACTIVE_CONNECTION (nm_device_get_act_request (best));
-	else
-		ac = NULL;
+	ac = nm_policy_get_default_ip4_ac (priv->policy);
+	if (!ac)
+		ac = nm_policy_get_default_ip6_ac (priv->policy);
 
 	if (ac != priv->primary_connection) {
 		if (priv->primary_connection) {
@@ -6148,10 +6142,12 @@ policy_default_device_changed (GObject *object, GParamSpec *pspec, gpointer user
 		priv->primary_connection = ac ? g_object_ref (ac) : NULL;
 
 		if (priv->primary_connection) {
-			g_signal_connect (priv->primary_connection, NM_ACTIVE_CONNECTION_DEVICE_METERED_CHANGED,
+			g_signal_connect (priv->primary_connection,
+			                  NM_ACTIVE_CONNECTION_DEVICE_METERED_CHANGED,
 			                  G_CALLBACK (connection_metered_changed), self);
 		}
-		_LOGD (LOGD_CORE, "PrimaryConnection now %s", ac ? nm_active_connection_get_settings_connection_id (ac) : "(none)");
+		_LOGD (LOGD_CORE, "PrimaryConnection now %s",
+		       ac ? nm_active_connection_get_settings_connection_id (ac) : "(none)");
 		_notify (self, PROP_PRIMARY_CONNECTION);
 		_notify (self, PROP_PRIMARY_CONNECTION_TYPE);
 		nm_manager_update_metered (self);
@@ -6159,34 +6155,29 @@ policy_default_device_changed (GObject *object, GParamSpec *pspec, gpointer user
 }
 
 static void
-policy_activating_device_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
+policy_activating_ac_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMDevice *activating, *best;
-	NMActiveConnection *ac;
+	NMActiveConnection *activating, *best;
 
-	/* We only look at activating-ip6-device if activating-ip4-device
-	 * AND default-ip4-device are NULL; if default-ip4-device is
-	 * non-NULL, then activating-ip6-device is irrelevant, since while
-	 * that device might become the new default-ip6-device, it can't
-	 * become primary-connection while default-ip4-device is set to
+	/* We only look at activating-ip6-ac if activating-ip4-ac
+	 * AND default-ip4-ac are NULL; if default-ip4-ac is
+	 * non-NULL, then activating-ip6-ac is irrelevant, since while
+	 * that AC might become the new default-ip6-ac, it can't
+	 * become primary-connection while default-ip4-ac is set to
 	 * something else.
 	 */
-	activating = nm_policy_get_activating_ip4_device (priv->policy);
-	best = nm_policy_get_default_ip4_device (priv->policy);
+	activating = nm_policy_get_activating_ip4_ac (priv->policy);
+	best = nm_policy_get_default_ip4_ac (priv->policy);
 	if (!activating && !best)
-		activating = nm_policy_get_activating_ip6_device (priv->policy);
+		activating = nm_policy_get_activating_ip6_ac (priv->policy);
 
-	if (activating)
-		ac = NM_ACTIVE_CONNECTION (nm_device_get_act_request (activating));
-	else
-		ac = NULL;
-
-	if (ac != priv->activating_connection) {
-		g_clear_object (&priv->activating_connection);
-		priv->activating_connection = ac ? g_object_ref (ac) : NULL;
-		_LOGD (LOGD_CORE, "ActivatingConnection now %s", ac ? nm_active_connection_get_settings_connection_id (ac) : "(none)");
+	if (nm_g_object_ref_set (&priv->activating_connection, activating)) {
+		_LOGD (LOGD_CORE, "ActivatingConnection now %s",
+		       activating
+		           ? nm_active_connection_get_settings_connection_id (activating)
+		           : "(none)");
 		_notify (self, PROP_ACTIVATING_CONNECTION);
 	}
 }
@@ -6777,14 +6768,14 @@ constructed (GObject *object)
 	 */
 
 	priv->policy = nm_policy_new (self, priv->settings);
-	g_signal_connect (priv->policy, "notify::" NM_POLICY_DEFAULT_IP4_DEVICE,
-	                  G_CALLBACK (policy_default_device_changed), self);
-	g_signal_connect (priv->policy, "notify::" NM_POLICY_DEFAULT_IP6_DEVICE,
-	                  G_CALLBACK (policy_default_device_changed), self);
-	g_signal_connect (priv->policy, "notify::" NM_POLICY_ACTIVATING_IP4_DEVICE,
-	                  G_CALLBACK (policy_activating_device_changed), self);
-	g_signal_connect (priv->policy, "notify::" NM_POLICY_ACTIVATING_IP6_DEVICE,
-	                  G_CALLBACK (policy_activating_device_changed), self);
+	g_signal_connect (priv->policy, "notify::" NM_POLICY_DEFAULT_IP4_AC,
+	                  G_CALLBACK (policy_default_ac_changed), self);
+	g_signal_connect (priv->policy, "notify::" NM_POLICY_DEFAULT_IP6_AC,
+	                  G_CALLBACK (policy_default_ac_changed), self);
+	g_signal_connect (priv->policy, "notify::" NM_POLICY_ACTIVATING_IP4_AC,
+	                  G_CALLBACK (policy_activating_ac_changed), self);
+	g_signal_connect (priv->policy, "notify::" NM_POLICY_ACTIVATING_IP6_AC,
+	                  G_CALLBACK (policy_activating_ac_changed), self);
 
 	priv->config = g_object_ref (nm_config_get ());
 	g_signal_connect (G_OBJECT (priv->config),
@@ -7122,8 +7113,8 @@ dispose (GObject *object)
 	}
 
 	if (priv->policy) {
-		g_signal_handlers_disconnect_by_func (priv->policy, policy_default_device_changed, self);
-		g_signal_handlers_disconnect_by_func (priv->policy, policy_activating_device_changed, self);
+		g_signal_handlers_disconnect_by_func (priv->policy, policy_default_ac_changed, self);
+		g_signal_handlers_disconnect_by_func (priv->policy, policy_activating_ac_changed, self);
 		g_clear_object (&priv->policy);
 	}
 
