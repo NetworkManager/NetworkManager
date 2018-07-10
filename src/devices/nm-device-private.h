@@ -133,10 +133,16 @@ void nm_device_commit_mtu (NMDevice *self);
 #define NM_DEVICE_CLASS_DECLARE_TYPES(klass, conn_type, ...) \
 	G_STMT_START { \
 		NM_DEVICE_CLASS (klass)->connection_type_supported = conn_type; \
-		{ \
-			static const NMLinkType link_types[] = { __VA_ARGS__, NM_LINK_TYPE_NONE }; \
+		if (NM_NARG (__VA_ARGS__) > 0) { \
+			static const struct { \
+				const NMLinkType types[NM_NARG (__VA_ARGS__)]; \
+				const NMLinkType sentinel; \
+			} _link_types = { \
+				.types = { __VA_ARGS__ }, \
+				.sentinel = NM_LINK_TYPE_NONE, \
+			}; \
 			\
-			NM_DEVICE_CLASS (klass)->link_types = link_types; \
+			NM_DEVICE_CLASS (klass)->link_types = _link_types.types; \
 		} \
 	} G_STMT_END
 
