@@ -3311,7 +3311,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
-	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_WIRELESS_SETTING_NAME, NM_LINK_TYPE_WIFI)
 
@@ -3323,29 +3323,29 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&nm_interface_info_device_wireless);
 
-	parent_class->can_auto_connect = can_auto_connect;
-	parent_class->get_autoconnect_allowed = get_autoconnect_allowed;
-	parent_class->is_available = is_available;
-	parent_class->check_connection_compatible = check_connection_compatible;
-	parent_class->check_connection_available = check_connection_available;
-	parent_class->complete_connection = complete_connection;
-	parent_class->get_enabled = get_enabled;
-	parent_class->set_enabled = set_enabled;
+	device_class->can_auto_connect = can_auto_connect;
+	device_class->get_autoconnect_allowed = get_autoconnect_allowed;
+	device_class->is_available = is_available;
+	device_class->check_connection_compatible = check_connection_compatible;
+	device_class->check_connection_available = check_connection_available;
+	device_class->complete_connection = complete_connection;
+	device_class->get_enabled = get_enabled;
+	device_class->set_enabled = set_enabled;
 
-	parent_class->act_stage1_prepare = act_stage1_prepare;
-	parent_class->act_stage2_config = act_stage2_config;
-	parent_class->get_configured_mtu = get_configured_mtu;
-	parent_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
-	parent_class->act_stage3_ip6_config_start = act_stage3_ip6_config_start;
-	parent_class->act_stage4_ip4_config_timeout = act_stage4_ip4_config_timeout;
-	parent_class->act_stage4_ip6_config_timeout = act_stage4_ip6_config_timeout;
-	parent_class->deactivate = deactivate;
-	parent_class->deactivate_reset_hw_addr = deactivate_reset_hw_addr;
-	parent_class->unmanaged_on_quit = unmanaged_on_quit;
-	parent_class->can_reapply_change = can_reapply_change;
-	parent_class->reapply_connection = reapply_connection;
+	device_class->act_stage1_prepare = act_stage1_prepare;
+	device_class->act_stage2_config = act_stage2_config;
+	device_class->get_configured_mtu = get_configured_mtu;
+	device_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
+	device_class->act_stage3_ip6_config_start = act_stage3_ip6_config_start;
+	device_class->act_stage4_ip4_config_timeout = act_stage4_ip4_config_timeout;
+	device_class->act_stage4_ip6_config_timeout = act_stage4_ip6_config_timeout;
+	device_class->deactivate = deactivate;
+	device_class->deactivate_reset_hw_addr = deactivate_reset_hw_addr;
+	device_class->unmanaged_on_quit = unmanaged_on_quit;
+	device_class->can_reapply_change = can_reapply_change;
+	device_class->reapply_connection = reapply_connection;
 
-	parent_class->state_changed = device_state_changed;
+	device_class->state_changed = device_state_changed;
 
 	klass->scanning_prohibited = scanning_prohibited;
 

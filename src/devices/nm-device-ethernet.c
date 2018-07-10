@@ -1750,7 +1750,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
-	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceEthernetPrivate));
 
@@ -1763,25 +1763,25 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_wired);
 
-	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->check_connection_compatible = check_connection_compatible;
-	parent_class->complete_connection = complete_connection;
-	parent_class->new_default_connection = new_default_connection;
+	device_class->get_generic_capabilities = get_generic_capabilities;
+	device_class->check_connection_compatible = check_connection_compatible;
+	device_class->complete_connection = complete_connection;
+	device_class->new_default_connection = new_default_connection;
 
-	parent_class->act_stage1_prepare = act_stage1_prepare;
-	parent_class->act_stage2_config = act_stage2_config;
-	parent_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
-	parent_class->get_configured_mtu = get_configured_mtu;
-	parent_class->deactivate = deactivate;
-	parent_class->get_s390_subchannels = get_s390_subchannels;
-	parent_class->update_connection = update_connection;
-	parent_class->carrier_changed_notify = carrier_changed_notify;
-	parent_class->link_changed = link_changed;
-	parent_class->is_available = is_available;
-	parent_class->can_reapply_change = can_reapply_change;
-	parent_class->reapply_connection = reapply_connection;
+	device_class->act_stage1_prepare = act_stage1_prepare;
+	device_class->act_stage2_config = act_stage2_config;
+	device_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
+	device_class->get_configured_mtu = get_configured_mtu;
+	device_class->deactivate = deactivate;
+	device_class->get_s390_subchannels = get_s390_subchannels;
+	device_class->update_connection = update_connection;
+	device_class->carrier_changed_notify = carrier_changed_notify;
+	device_class->link_changed = link_changed;
+	device_class->is_available = is_available;
+	device_class->can_reapply_change = can_reapply_change;
+	device_class->reapply_connection = reapply_connection;
 
-	parent_class->state_changed = device_state_changed;
+	device_class->state_changed = device_state_changed;
 
 	obj_properties[PROP_SPEED] =
 	    g_param_spec_uint (NM_DEVICE_ETHERNET_SPEED, "", "",

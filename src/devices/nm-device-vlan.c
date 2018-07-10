@@ -599,7 +599,7 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
-	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_VLAN_SETTING_NAME, NM_LINK_TYPE_VLAN)
 
@@ -607,19 +607,19 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_vlan);
 
-	parent_class->create_and_realize = create_and_realize;
-	parent_class->link_changed = link_changed;
-	parent_class->unrealize_notify = unrealize_notify;
-	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->act_stage1_prepare = act_stage1_prepare;
-	parent_class->get_configured_mtu = get_configured_mtu;
-	parent_class->is_available = is_available;
-	parent_class->parent_changed_notify = parent_changed_notify;
+	device_class->create_and_realize = create_and_realize;
+	device_class->link_changed = link_changed;
+	device_class->unrealize_notify = unrealize_notify;
+	device_class->get_generic_capabilities = get_generic_capabilities;
+	device_class->act_stage1_prepare = act_stage1_prepare;
+	device_class->get_configured_mtu = get_configured_mtu;
+	device_class->is_available = is_available;
+	device_class->parent_changed_notify = parent_changed_notify;
 
-	parent_class->check_connection_compatible = check_connection_compatible;
-	parent_class->check_connection_available = check_connection_available;
-	parent_class->complete_connection = complete_connection;
-	parent_class->update_connection = update_connection;
+	device_class->check_connection_compatible = check_connection_compatible;
+	device_class->check_connection_available = check_connection_available;
+	device_class->complete_connection = complete_connection;
+	device_class->update_connection = update_connection;
 
 	obj_properties[PROP_VLAN_ID] =
 	     g_param_spec_uint (NM_DEVICE_VLAN_ID, "", "",
