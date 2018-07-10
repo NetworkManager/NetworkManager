@@ -7006,6 +7006,57 @@ test_get_start_time_for_pid (void)
 
 /*****************************************************************************/
 
+static void
+test_nm_va_args_macros (void)
+{
+#define GET_NARG_1(...) \
+	NM_NARG (__VA_ARGS__)
+
+	g_assert_cmpint ( 0, ==, GET_NARG_1 ());
+	g_assert_cmpint ( 1, ==, GET_NARG_1 (x));
+	g_assert_cmpint ( 2, ==, GET_NARG_1 ( ,  ));
+	g_assert_cmpint ( 2, ==, GET_NARG_1 ( , x));
+	g_assert_cmpint ( 2, ==, GET_NARG_1 (x,  ));
+	g_assert_cmpint ( 2, ==, GET_NARG_1 (x, x));
+	g_assert_cmpint ( 3, ==, GET_NARG_1 ( ,  ,  ));
+	g_assert_cmpint ( 3, ==, GET_NARG_1 ( ,  , x));
+	g_assert_cmpint ( 3, ==, GET_NARG_1 ( , x,  ));
+	g_assert_cmpint ( 3, ==, GET_NARG_1 ( , x, x));
+	g_assert_cmpint ( 3, ==, GET_NARG_1 (x,  ,  ));
+	g_assert_cmpint ( 3, ==, GET_NARG_1 (x,  , x));
+	g_assert_cmpint ( 3, ==, GET_NARG_1 (x, x,  ));
+	g_assert_cmpint ( 3, ==, GET_NARG_1 (x, x, x));
+	g_assert_cmpint ( 4, ==, GET_NARG_1 ( ,  ,  ,  ));
+	g_assert_cmpint ( 4, ==, GET_NARG_1 ( ,  ,  , x));
+	g_assert_cmpint ( 4, ==, GET_NARG_1 ( ,  , x,  ));
+	g_assert_cmpint ( 4, ==, GET_NARG_1 ( ,  , x, x));
+	g_assert_cmpint ( 4, ==, GET_NARG_1 ( , x,  ,  ));
+	g_assert_cmpint ( 4, ==, GET_NARG_1 ( , x,  , x));
+	g_assert_cmpint ( 4, ==, GET_NARG_1 ( , x, x,  ));
+	g_assert_cmpint ( 4, ==, GET_NARG_1 ( , x, x, x));
+	g_assert_cmpint ( 4, ==, GET_NARG_1 (x,  ,  ,  ));
+	g_assert_cmpint ( 4, ==, GET_NARG_1 (x,  ,  , x));
+	g_assert_cmpint ( 4, ==, GET_NARG_1 (x,  , x,  ));
+	g_assert_cmpint ( 4, ==, GET_NARG_1 (x,  , x, x));
+	g_assert_cmpint ( 4, ==, GET_NARG_1 (x, x,  ,  ));
+	g_assert_cmpint ( 4, ==, GET_NARG_1 (x, x,  , x));
+	g_assert_cmpint ( 4, ==, GET_NARG_1 (x, x, x,  ));
+	g_assert_cmpint ( 4, ==, GET_NARG_1 (x, x, x, x));
+
+	g_assert_cmpint ( 5, ==, GET_NARG_1 (x, x, x, x, x));
+	g_assert_cmpint ( 6, ==, GET_NARG_1 (x, x, x, x, x, x));
+	g_assert_cmpint ( 7, ==, GET_NARG_1 (x, x, x, x, x, x, x));
+	g_assert_cmpint ( 8, ==, GET_NARG_1 (x, x, x, x, x, x, x, x));
+	g_assert_cmpint ( 9, ==, GET_NARG_1 (x, x, x, x, x, x, x, x, x));
+	g_assert_cmpint (10, ==, GET_NARG_1 (x, x, x, x, x, x, x, x, x, x));
+
+	G_STATIC_ASSERT_EXPR (0 == GET_NARG_1 ());
+	G_STATIC_ASSERT_EXPR (1 == GET_NARG_1 (x));
+	G_STATIC_ASSERT_EXPR (2 == GET_NARG_1 (x, x));
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -7160,6 +7211,8 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/route_attributes/format", test_route_attributes_format);
 
 	g_test_add_func ("/core/general/get_start_time_for_pid", test_get_start_time_for_pid);
+
+	g_test_add_func ("/core/general/test_nm_va_args_macros", test_nm_va_args_macros);
 
 	return g_test_run ();
 }
