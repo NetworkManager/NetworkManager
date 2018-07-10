@@ -4087,6 +4087,7 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	NMConnection *existing_connection = NULL;
 	NMActiveConnection *master_ac = NULL;
 	NMAuthSubject *subject;
+	GError *local = NULL;
 
 	g_return_val_if_fail (NM_IS_MANAGER (self), FALSE);
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (active), FALSE);
@@ -4120,10 +4121,13 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	}
 
 	/* Final connection must be available on device */
-	if (!nm_device_check_connection_available (device, applied, NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST, NULL, NULL)) {
+	if (!nm_device_check_connection_available (device, applied, NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST, NULL, &local)) {
 		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
-		             "Connection '%s' is not available on the device %s at this time.",
-		             nm_settings_connection_get_id (connection), nm_device_get_iface (device));
+		             "Connection '%s' is not available on device %s because %s",
+		             nm_settings_connection_get_id (connection),
+		             nm_device_get_iface (device),
+		             local->message);
+		g_error_free (local);
 		return FALSE;
 	}
 
