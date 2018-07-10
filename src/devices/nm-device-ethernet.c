@@ -1754,7 +1754,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceEthernetPrivate));
 
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_WIRED_SETTING_NAME, NM_LINK_TYPE_ETHERNET)
+	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_WIRED_SETTING_NAME, NM_LINK_TYPE_ETHERNET);
 
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;

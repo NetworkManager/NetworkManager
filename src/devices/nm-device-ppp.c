@@ -277,7 +277,7 @@ nm_device_ppp_class_init (NMDevicePppClass *klass)
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_PPPOE_SETTING_NAME, NM_LINK_TYPE_PPP)
+	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_PPPOE_SETTING_NAME, NM_LINK_TYPE_PPP);
 
 	object_class->dispose = dispose;
 

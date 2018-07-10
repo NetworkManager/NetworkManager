@@ -131,11 +131,14 @@ void nm_device_commit_mtu (NMDevice *self);
 /*****************************************************************************/
 
 #define NM_DEVICE_CLASS_DECLARE_TYPES(klass, conn_type, ...) \
-	NM_DEVICE_CLASS (klass)->connection_type_supported = conn_type; \
-	{ \
-		static const NMLinkType link_types[] = { __VA_ARGS__, NM_LINK_TYPE_NONE }; \
-		NM_DEVICE_CLASS (klass)->link_types = link_types; \
-	}
+	G_STMT_START { \
+		NM_DEVICE_CLASS (klass)->connection_type_supported = conn_type; \
+		{ \
+			static const NMLinkType link_types[] = { __VA_ARGS__, NM_LINK_TYPE_NONE }; \
+			\
+			NM_DEVICE_CLASS (klass)->link_types = link_types; \
+		} \
+	} G_STMT_END
 
 gboolean _nm_device_hash_check_invalid_keys (GHashTable *hash, const char *setting_name,
                                              GError **error, const char **whitelist);
