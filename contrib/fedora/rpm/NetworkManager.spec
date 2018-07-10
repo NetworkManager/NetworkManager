@@ -74,6 +74,11 @@
 %else
 %bcond_with connectivity_fedora
 %endif
+%if 0%{?rhel}
+%bcond_without connectivity_redhat
+%else
+%bcond_with connectivity_redhat
+%endif
 %if 0%{?fedora} > 28 || 0%{?rhel} > 7
 %bcond_without crypto_gnutls
 %else
@@ -112,6 +117,7 @@ Source: __SOURCE1__
 Source1: NetworkManager.conf
 Source2: 00-server.conf
 Source3: 20-connectivity-fedora.conf
+Source4: 20-connectivity-redhat.conf
 
 #Patch1: 0001-some.patch
 
@@ -373,10 +379,24 @@ is the new NetworkManager API. See also NetworkManager-glib-devel.
 Summary: NetworkManager config file for connectivity checking via Fedora servers
 Group: System Environment/Base
 BuildArch: noarch
+Provides: NetworkManager-config-connectivity = %{epoch}:%{version}-%{release}
 
 %description config-connectivity-fedora
 This adds a NetworkManager configuration file to enable connectivity checking
 via Fedora infrastructure.
+%endif
+
+
+%if %{with connectivity_redhat}
+%package config-connectivity-redhat
+Summary: NetworkManager config file for connectivity checking via Red Hat servers
+Group: System Environment/Base
+BuildArch: noarch
+Provides: NetworkManager-config-connectivity = %{epoch}:%{version}-%{release}
+
+%description config-connectivity-redhat
+This adds a NetworkManager configuration file to enable connectivity checking
+via Red Hat infrastructure.
 %endif
 
 
@@ -553,6 +573,10 @@ cp %{SOURCE2} %{buildroot}%{nmlibdir}/conf.d/
 
 %if %{with connectivity_fedora}
 cp %{SOURCE3} %{buildroot}%{nmlibdir}/conf.d/
+%endif
+
+%if %{with connectivity_redhat}
+cp %{SOURCE4} %{buildroot}%{nmlibdir}/conf.d/
 %endif
 
 cp examples/dispatcher/10-ifcfg-rh-routes.sh %{buildroot}%{_sysconfdir}/%{name}/dispatcher.d/
@@ -806,6 +830,14 @@ fi
 %dir %{nmlibdir}
 %dir %{nmlibdir}/conf.d
 %{nmlibdir}/conf.d/20-connectivity-fedora.conf
+%endif
+
+
+%if %{with connectivity_redhat}
+%files config-connectivity-redhat
+%dir %{nmlibdir}
+%dir %{nmlibdir}/conf.d
+%{nmlibdir}/conf.d/20-connectivity-redhat.conf
 %endif
 
 
