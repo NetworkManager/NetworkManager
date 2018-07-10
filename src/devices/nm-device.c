@@ -5239,6 +5239,7 @@ nm_device_generate_connection (NMDevice *self,
 	              NM_SETTING_CONNECTION_INTERFACE_NAME, ifname,
 	              NM_SETTING_CONNECTION_TIMESTAMP, (guint64) time (NULL),
 	              NULL);
+
 	if (klass->connection_type_supported)
 		g_object_set (s_con, NM_SETTING_CONNECTION_TYPE, klass->connection_type_supported, NULL);
 

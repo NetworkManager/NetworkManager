@@ -199,11 +199,10 @@ nm_device_ovs_interface_class_init (NMDeviceOvsInterfaceClass *klass)
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NULL, NM_LINK_TYPE_OPENVSWITCH);
+	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_OVS_INTERFACE_SETTING_NAME, NM_LINK_TYPE_OPENVSWITCH);
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_ovs_interface);
 
-	device_class->connection_type_supported = NM_SETTING_OVS_INTERFACE_SETTING_NAME;
 	device_class->get_type_description = get_type_description;
 	device_class->create_and_realize = create_and_realize;
 	device_class->get_generic_capabilities = get_generic_capabilities;

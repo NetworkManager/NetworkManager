@@ -577,7 +577,7 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NULL, NM_LINK_TYPE_VXLAN);
+	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_VXLAN_SETTING_NAME, NM_LINK_TYPE_VXLAN);
 
 	object_class->get_property = get_property;
 
@@ -585,7 +585,6 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 
 	device_class->link_changed = link_changed;
 	device_class->unrealize_notify = unrealize_notify;
-	device_class->connection_type_supported = NM_SETTING_VXLAN_SETTING_NAME;
 	device_class->create_and_realize = create_and_realize;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->complete_connection = complete_connection;

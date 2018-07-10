@@ -213,11 +213,10 @@ nm_device_wpan_class_init (NMDeviceWpanClass *klass)
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NULL, NM_LINK_TYPE_WPAN);
+	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_WPAN_SETTING_NAME, NM_LINK_TYPE_WPAN);
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_wpan);
 
-	device_class->connection_type_supported = NM_SETTING_WPAN_SETTING_NAME;
 	device_class->complete_connection = complete_connection;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->update_connection = update_connection;
