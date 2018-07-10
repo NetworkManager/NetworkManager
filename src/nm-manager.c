@@ -3236,7 +3236,8 @@ static NMDevice *
 nm_manager_get_best_device_for_connection (NMManager *self,
                                            NMConnection *connection,
                                            gboolean for_user_request,
-                                           GHashTable *unavailable_devices)
+                                           GHashTable *unavailable_devices,
+                                           GError **error)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMActiveConnectionState ac_state;
@@ -3245,6 +3246,7 @@ nm_manager_get_best_device_for_connection (NMManager *self,
 	NMDevice *device;
 	NMDeviceCheckConAvailableFlags flags;
 	gs_unref_ptrarray GPtrArray *all_ac_arr = NULL;
+	gs_free_error GError *local_best = NULL;
 
 	flags = for_user_request ? NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST : NM_DEVICE_CHECK_CON_AVAILABLE_NONE;
 
@@ -3319,15 +3321,53 @@ found_better:
 
 	/* Pick the first device that's compatible with the connection. */
 	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
+		GError *local = NULL;
 
-		if (unavailable_devices && g_hash_table_contains (unavailable_devices, device))
+		if (   unavailable_devices
+		    && g_hash_table_contains (unavailable_devices, device))
 			continue;
 
-		if (nm_device_check_connection_available (device, connection, flags, NULL, NULL))
+		if (nm_device_check_connection_available (device,
+		                                          connection,
+		                                          flags,
+		                                          NULL,
+		                                          error ? &local : NULL))
 			return device;
+
+		if (error) {
+			gboolean reset_error;
+
+			if (!local_best)
+				reset_error = TRUE;
+			else if (local_best->domain != NM_UTILS_ERROR)
+				reset_error = (local->domain == NM_UTILS_ERROR);
+			else {
+				reset_error = (   local->domain == NM_UTILS_ERROR
+			                   && local_best->code < local->code);
+			}
+
+			if (reset_error) {
+				g_clear_error (&local_best);
+				g_set_error (&local_best,
+				             local->domain,
+				             local->code,
+				             "device %s not available because %s",
+				             nm_device_get_iface (device),
+				             local->message);
+			}
+			g_error_free (local);
+		}
 	}
 
-	/* No luck. :( */
+	if (error) {
+		if (local_best)
+			g_propagate_error (error, g_steal_pointer (&local_best));
+		else {
+			nm_utils_error_set_literal (error,
+			                            NM_UTILS_ERROR_UNKNOWN,
+			                            "no suitable device found");
+		}
+	}
 	return NULL;
 }
 
@@ -3782,7 +3822,8 @@ find_slaves (NMManager *manager,
 			slave_device = nm_manager_get_best_device_for_connection (manager,
 			                                                          candidate,
 			                                                          FALSE,
-			                                                          devices);
+			                                                          devices,
+			                                                          NULL);
 
 			if (!slaves) {
 				/* what we allocate is quite likely much too large. Don't bother, it is only
@@ -4589,7 +4630,7 @@ validate_activation_request (NMManager *self,
 			return NULL;
 		}
 	} else if (!is_vpn) {
-		device = nm_manager_get_best_device_for_connection (self, connection, TRUE, NULL);
+		device = nm_manager_get_best_device_for_connection (self, connection, TRUE, NULL, NULL);
 		if (!device) {
 			gs_free char *iface = NULL;
 
