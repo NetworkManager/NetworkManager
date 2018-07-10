@@ -436,7 +436,7 @@ nm_device_tun_class_init (NMDeviceTunClass *klass)
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_tun);
 
-	device_class->connection_type = NM_SETTING_TUN_SETTING_NAME;
+	device_class->connection_type_supported = NM_SETTING_TUN_SETTING_NAME;
 	device_class->link_changed = link_changed;
 	device_class->complete_connection = complete_connection;
 	device_class->check_connection_compatible = check_connection_compatible;

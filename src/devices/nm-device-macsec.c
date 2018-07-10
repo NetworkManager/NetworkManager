@@ -861,7 +861,7 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *klass)
 	device_class->state_changed = device_state_changed;
 	device_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
 
-	device_class->connection_type = NM_SETTING_MACSEC_SETTING_NAME;
+	device_class->connection_type_supported = NM_SETTING_MACSEC_SETTING_NAME;
 
 	obj_properties[PROP_SCI] =
 	    g_param_spec_uint64 (NM_DEVICE_MACSEC_SCI, "", "",

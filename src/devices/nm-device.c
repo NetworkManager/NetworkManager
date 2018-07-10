@@ -5239,8 +5239,9 @@ nm_device_generate_connection (NMDevice *self,
 	              NM_SETTING_CONNECTION_INTERFACE_NAME, ifname,
 	              NM_SETTING_CONNECTION_TIMESTAMP, (guint64) time (NULL),
 	              NULL);
-	if (klass->connection_type)
-		g_object_set (s_con, NM_SETTING_CONNECTION_TYPE, klass->connection_type, NULL);
+	if (klass->connection_type_supported)
+		g_object_set (s_con, NM_SETTING_CONNECTION_TYPE, klass->connection_type_supported, NULL);
+
 	nm_connection_add_setting (connection, s_con);
 
 	/* If the device is a slave, update various slave settings */
@@ -5474,7 +5475,7 @@ nm_device_check_slave_connection_compatible (NMDevice *self, NMConnection *slave
 		return FALSE;
 
 	/* All masters should have connection type set */
-	connection_type = NM_DEVICE_GET_CLASS (self)->connection_type;
+	connection_type = NM_DEVICE_GET_CLASS (self)->connection_type_supported;
 	g_return_val_if_fail (connection_type, FALSE);
 
 	s_con = nm_connection_get_setting_connection (slave);
