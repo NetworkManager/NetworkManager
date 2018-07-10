@@ -1754,14 +1754,15 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceEthernetPrivate));
 
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_WIRED_SETTING_NAME, NM_LINK_TYPE_ETHERNET);
-
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_wired);
+
+	device_class->connection_type_supported = NM_SETTING_WIRED_SETTING_NAME;
+	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_ETHERNET);
 
 	device_class->get_generic_capabilities = get_generic_capabilities;
 	device_class->check_connection_compatible = check_connection_compatible;

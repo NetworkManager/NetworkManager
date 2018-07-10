@@ -196,9 +196,10 @@ nm_device_ovs_port_class_init (NMDeviceOvsPortClass *klass)
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_OVS_PORT_SETTING_NAME);
-
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_ovs_port);
+
+	device_class->connection_type_supported = NM_SETTING_OVS_PORT_SETTING_NAME;
+	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES ();
 
 	device_class->is_master = TRUE;
 	device_class->get_type_description = get_type_description;

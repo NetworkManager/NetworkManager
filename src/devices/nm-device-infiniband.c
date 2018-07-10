@@ -369,12 +369,13 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_INFINIBAND_SETTING_NAME, NM_LINK_TYPE_INFINIBAND);
-
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_infiniband);
+
+	device_class->connection_type_supported = NM_SETTING_INFINIBAND_SETTING_NAME;
+	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_INFINIBAND);
 
 	device_class->create_and_realize = create_and_realize;
 	device_class->unrealize = unrealize;

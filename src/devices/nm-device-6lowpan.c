@@ -296,9 +296,10 @@ nm_device_6lowpan_class_init (NMDevice6LowpanClass *klass)
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_6LOWPAN_SETTING_NAME, NM_LINK_TYPE_6LOWPAN);
-
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_6lowpan);
+
+	device_class->connection_type_supported = NM_SETTING_6LOWPAN_SETTING_NAME;
+	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_6LOWPAN);
 
 	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->check_connection_compatible = check_connection_compatible;
