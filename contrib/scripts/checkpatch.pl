@@ -57,6 +57,7 @@ our $check_line;	# Complain if errors are found on this line
 our @functions_seen;
 our $type;
 our $filename;
+our $line_no;
 
 sub new_hunk
 {
@@ -74,22 +75,28 @@ sub complain
 	my $message = shift;
 
 	return unless $check_line;
-	warn "$ARGV:$.: $message:\n";
+	warn "$filename:$line_no: $message:\n";
 	warn "> $line\n\n";
 	$seen_error = 1;
 }
 
 if ($is_patch) {
 	# This is a line of an unified diff
-	/^@@/ and new_hunk;
-	if (/^\+\+\+ (.*)/) {
-		new_file ($1);
+	if (/^@@.*\+(\d+)/) {
+		$line_no = $1 - 1;
+		new_hunk;
+		next;
+	}
+	if (/^\+\+\+ (b\/)?(.*)/) {
+		new_file ($2);
 		next;
 	}
 	/^([ \+])(.*)/ or next;
+	$line_no++;
 	$check_line = $1 eq '+';
 	$line = $2;
 } elsif ($is_file) {
+	$line_no = $.;
 	# This is a line from full C file
 	$check_line = 1;
 	$line = $_;
@@ -129,11 +136,10 @@ if (/^typedef*/) {
 } elsif (/^[A-Za-z_][A-Za-z0-9_ ]*\*?$/ and /[a-z]/) {
 	# A function type
 	$type = $_;
-	#print "TYPE: >>> $line <<<\n";
 	next;
 } elsif ($type and /^([A-Za-z_][A-Za-z0-9_]*)(\s*)\(/) {
-	my @order = qw/^get_property$ ^set_property$ (?<!_iface|_class)_init$ ^constructor$ ^constructed
-		_new$ ^dispose$ ^finalize$ _class_init/;
+	my @order = qw/^get_property$ ^set_property$ (?<!_iface|_class)_init$ ^constructor$
+		^constructed$ _new$ ^dispose$ ^finalize$ _class_init$/;
 	my @following = ();
 	my @tmp = ();
 
@@ -145,7 +151,6 @@ if (/^typedef*/) {
 	foreach my $func (reverse @order) {
 		if ($name =~ /$func/) {
 			@following = @tmp;
-			#warn "$name ($func): ".join (' ', @following);
 			last;
 		}
 		push @tmp, $func;
@@ -193,10 +198,11 @@ Check a single file.
 
 Check the currently staged changes.
 
-=item B<git format-patch --stdout -1 |contrib/scripts/checkpatch.pl || :>
+=item B<git format-patch -U65535 --stdout -1 |contrib/scripts/checkpatch.pl || :>
 
 A F<.git/hooks/post-commit> oneliner that, wisely, tolerates failures while
-still providing advice.
+still providing advice. The large line context allows helps checkpatch.pl
+get a better idea about the changes in context of code that does not change.
 
 =back
 
