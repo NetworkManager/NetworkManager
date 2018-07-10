@@ -1051,15 +1051,17 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
-	if (   nm_streq0 (type, NM_SETTING_OVS_PORT_SETTING_NAME)
-	    && !nm_streq0 (slave_type, NM_SETTING_OVS_BRIDGE_SETTING_NAME)) {
+	if (   strcmp (type, NM_SETTING_OVS_PORT_SETTING_NAME) == 0
+	    && slave_type
+	    && strcmp (slave_type, NM_SETTING_OVS_BRIDGE_SETTING_NAME) != 0) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
 		             NM_CONNECTION_ERROR_MISSING_PROPERTY,
-		             _("Only '%s' connections can be enslaved to '%s'"),
+		             _("'%s' connections must be enslaved to '%s', not '%s'"),
 		             NM_SETTING_OVS_PORT_SETTING_NAME,
-		             NM_SETTING_OVS_BRIDGE_SETTING_NAME);
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE);
+		             NM_SETTING_OVS_BRIDGE_SETTING_NAME,
+		             slave_type);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
 		return FALSE;
 	}
 
