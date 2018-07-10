@@ -4634,17 +4634,20 @@ validate_activation_request (NMManager *self,
 			return NULL;
 		}
 	} else if (!is_vpn) {
-		device = nm_manager_get_best_device_for_connection (self, connection, TRUE, NULL, NULL);
+		gs_free_error GError *local = NULL;
+
+		device = nm_manager_get_best_device_for_connection (self, connection, TRUE, NULL, &local);
 		if (!device) {
 			gs_free char *iface = NULL;
 
 			/* VPN and software-device connections don't need a device yet,
 			 * but non-virtual connections do ... */
 			if (!nm_connection_is_virtual (connection)) {
-				g_set_error_literal (error,
-				                     NM_MANAGER_ERROR,
-				                     NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-				                     "No suitable device found for this connection.");
+				g_set_error (error,
+				             NM_MANAGER_ERROR,
+				             NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+				             "No suitable device found for this connection (%s).",
+				             local->message);
 				return NULL;
 			}
 
