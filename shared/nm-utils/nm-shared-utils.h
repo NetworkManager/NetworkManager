@@ -386,12 +386,40 @@ _nm_g_slice_free_fcn_define (16)
  *   error reason. Depending on the usage, this might indicate a bug because
  *   usually the target object should stay alive as long as there are pending
  *   operations.
+ *
+ * @NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE: used for a very particular
+ *   purpose during nm_device_check_connection_compatible() to indicate that
+ *   the profile does not match the device already because their type differs.
+ *   That is, there is a fundamental reason of trying to check a profile that
+ *   cannot possibly match on this device.
+ * @NM_UTILS_ERROR_CONNECTION_AVAILABLE_UNMANAGED_DEVICE: used for a very particular
+ *   purpose during nm_device_check_connection_available(), to indicate that the
+ *   device is not available because it is unmanaged.
+ * @NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY: the profile is currently not
+ *   available/compatible with the device, but this may be only temporary.
+ *
  * @NM_UTILS_ERROR_INVALID_ARGUMENT: invalid argument.
  */
 typedef enum {
 	NM_UTILS_ERROR_UNKNOWN = 0,                 /*< nick=Unknown >*/
 	NM_UTILS_ERROR_CANCELLED_DISPOSING,         /*< nick=CancelledDisposing >*/
 	NM_UTILS_ERROR_INVALID_ARGUMENT,            /*< nick=InvalidArgument >*/
+
+	/* the following codes have a special meaning and are exactly used for
+	 * nm_device_check_connection_compatible() and nm_device_check_connection_available().
+	 *
+	 * Actually, their meaning is not very important (so, don't think too
+	 * hard about the name of these error codes). What is important, is their
+	 * relative order (i.e. the integer value of the codes). When manager
+	 * searches for a suitable device, it will check all devices whether
+	 * a profile can be activated. If they all fail, it will pick the error
+	 * message from the device that returned the *highest* error code,
+	 * in the hope that this message makes the most sense for the caller.
+	 * */
+	NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+	NM_UTILS_ERROR_CONNECTION_AVAILABLE_UNMANAGED_DEVICE,
+	NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+
 } NMUtilsError;
 
 #define NM_UTILS_ERROR (nm_utils_error_quark ())
