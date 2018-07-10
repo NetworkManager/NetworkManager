@@ -669,7 +669,7 @@ nm_device_adsl_class_init (NMDeviceAdslClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
-	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->constructed  = constructed;
 	object_class->dispose      = dispose;
@@ -678,14 +678,14 @@ nm_device_adsl_class_init (NMDeviceAdslClass *klass)
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_adsl);
 
-	parent_class->get_generic_capabilities = get_generic_capabilities;
+	device_class->get_generic_capabilities = get_generic_capabilities;
 
-	parent_class->check_connection_compatible = check_connection_compatible;
-	parent_class->complete_connection = complete_connection;
+	device_class->check_connection_compatible = check_connection_compatible;
+	device_class->complete_connection = complete_connection;
 
-	parent_class->act_stage2_config = act_stage2_config;
-	parent_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
-	parent_class->deactivate = deactivate;
+	device_class->act_stage2_config = act_stage2_config;
+	device_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
+	device_class->deactivate = deactivate;
 
 	obj_properties[PROP_ATM_INDEX] =
 	     g_param_spec_int (NM_DEVICE_ADSL_ATM_INDEX, "", "",

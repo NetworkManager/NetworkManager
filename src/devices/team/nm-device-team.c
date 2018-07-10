@@ -911,7 +911,7 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
-	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_TEAM_SETTING_NAME, NM_LINK_TYPE_TEAM)
 
@@ -921,19 +921,19 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_team);
 
-	parent_class->is_master = TRUE;
-	parent_class->create_and_realize = create_and_realize;
-	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->check_connection_compatible = check_connection_compatible;
-	parent_class->complete_connection = complete_connection;
-	parent_class->update_connection = update_connection;
-	parent_class->master_update_slave_connection = master_update_slave_connection;
+	device_class->is_master = TRUE;
+	device_class->create_and_realize = create_and_realize;
+	device_class->get_generic_capabilities = get_generic_capabilities;
+	device_class->check_connection_compatible = check_connection_compatible;
+	device_class->complete_connection = complete_connection;
+	device_class->update_connection = update_connection;
+	device_class->master_update_slave_connection = master_update_slave_connection;
 
-	parent_class->act_stage1_prepare = act_stage1_prepare;
-	parent_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
-	parent_class->deactivate = deactivate;
-	parent_class->enslave_slave = enslave_slave;
-	parent_class->release_slave = release_slave;
+	device_class->act_stage1_prepare = act_stage1_prepare;
+	device_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
+	device_class->deactivate = deactivate;
+	device_class->enslave_slave = enslave_slave;
+	device_class->release_slave = release_slave;
 
 	obj_properties[PROP_CONFIG] =
 	    g_param_spec_string (NM_DEVICE_TEAM_CONFIG, "", "",

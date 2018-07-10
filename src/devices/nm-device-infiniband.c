@@ -367,7 +367,7 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
-	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_INFINIBAND_SETTING_NAME, NM_LINK_TYPE_INFINIBAND)
 
@@ -376,15 +376,15 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_infiniband);
 
-	parent_class->create_and_realize = create_and_realize;
-	parent_class->unrealize = unrealize;
-	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->check_connection_compatible = check_connection_compatible;
-	parent_class->complete_connection = complete_connection;
-	parent_class->update_connection = update_connection;
+	device_class->create_and_realize = create_and_realize;
+	device_class->unrealize = unrealize;
+	device_class->get_generic_capabilities = get_generic_capabilities;
+	device_class->check_connection_compatible = check_connection_compatible;
+	device_class->complete_connection = complete_connection;
+	device_class->update_connection = update_connection;
 
-	parent_class->act_stage1_prepare = act_stage1_prepare;
-	parent_class->get_configured_mtu = get_configured_mtu;
+	device_class->act_stage1_prepare = act_stage1_prepare;
+	device_class->get_configured_mtu = get_configured_mtu;
 
 	obj_properties[PROP_IS_PARTITION] =
 	     g_param_spec_boolean (NM_DEVICE_INFINIBAND_IS_PARTITION, "", "",

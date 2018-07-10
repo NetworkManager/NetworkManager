@@ -515,7 +515,7 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
-	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_OLPC_MESH_SETTING_NAME, NM_LINK_TYPE_OLPC_MESH)
 
@@ -525,14 +525,14 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_olpc_mesh);
 
-	parent_class->check_connection_compatible = check_connection_compatible;
-	parent_class->get_autoconnect_allowed = get_autoconnect_allowed;
-	parent_class->complete_connection = complete_connection;
-	parent_class->is_available = is_available;
-	parent_class->act_stage1_prepare = act_stage1_prepare;
-	parent_class->act_stage2_config = act_stage2_config;
-	parent_class->state_changed = state_changed;
-	parent_class->get_dhcp_timeout = get_dhcp_timeout;
+	device_class->check_connection_compatible = check_connection_compatible;
+	device_class->get_autoconnect_allowed = get_autoconnect_allowed;
+	device_class->complete_connection = complete_connection;
+	device_class->is_available = is_available;
+	device_class->act_stage1_prepare = act_stage1_prepare;
+	device_class->act_stage2_config = act_stage2_config;
+	device_class->state_changed = state_changed;
+	device_class->get_dhcp_timeout = get_dhcp_timeout;
 
 	obj_properties[PROP_COMPANION] =
 	     g_param_spec_string (NM_DEVICE_OLPC_MESH_COMPANION, "", "",
