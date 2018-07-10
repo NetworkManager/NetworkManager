@@ -1043,6 +1043,15 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_ip_tunnel);
 
+	device_class->connection_type_supported = NM_SETTING_IP_TUNNEL_SETTING_NAME;
+	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_GRE,
+	                                                        NM_LINK_TYPE_GRETAP,
+	                                                        NM_LINK_TYPE_IP6TNL,
+	                                                        NM_LINK_TYPE_IP6GRE,
+	                                                        NM_LINK_TYPE_IP6GRETAP,
+	                                                        NM_LINK_TYPE_IPIP,
+	                                                        NM_LINK_TYPE_SIT);
+
 	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->link_changed = link_changed;
 	device_class->can_reapply_change = can_reapply_change;
@@ -1053,16 +1062,6 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 	device_class->get_generic_capabilities = get_generic_capabilities;
 	device_class->get_configured_mtu = get_configured_mtu;
 	device_class->unrealize_notify = unrealize_notify;
-
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass,
-	                               NM_SETTING_IP_TUNNEL_SETTING_NAME,
-	                               NM_LINK_TYPE_GRE,
-	                               NM_LINK_TYPE_GRETAP,
-	                               NM_LINK_TYPE_IP6TNL,
-	                               NM_LINK_TYPE_IP6GRE,
-	                               NM_LINK_TYPE_IP6GRETAP,
-	                               NM_LINK_TYPE_IPIP,
-	                               NM_LINK_TYPE_SIT);
 
 	obj_properties[PROP_MODE] =
 	     g_param_spec_uint (NM_DEVICE_IP_TUNNEL_MODE, "", "",

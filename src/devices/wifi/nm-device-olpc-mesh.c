@@ -517,13 +517,14 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_OLPC_MESH_SETTING_NAME, NM_LINK_TYPE_OLPC_MESH);
-
 	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_olpc_mesh);
+
+	device_class->connection_type_supported = NM_SETTING_OLPC_MESH_SETTING_NAME;
+	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_OLPC_MESH);
 
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->get_autoconnect_allowed = get_autoconnect_allowed;

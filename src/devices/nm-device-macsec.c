@@ -843,12 +843,13 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *klass)
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_MACSEC_SETTING_NAME, NM_LINK_TYPE_MACSEC);
-
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_macsec);
+
+	device_class->connection_type_supported = NM_SETTING_MACSEC_SETTING_NAME;
+	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_MACSEC);
 
 	device_class->act_stage2_config = act_stage2_config;
 	device_class->check_connection_compatible = check_connection_compatible;

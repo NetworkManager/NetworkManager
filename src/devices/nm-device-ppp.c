@@ -277,11 +277,12 @@ nm_device_ppp_class_init (NMDevicePppClass *klass)
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_PPPOE_SETTING_NAME, NM_LINK_TYPE_PPP);
-
 	object_class->dispose = dispose;
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_ppp);
+
+	device_class->connection_type_supported = NM_SETTING_PPPOE_SETTING_NAME;
+	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_PPP);
 
 	device_class->act_stage2_config = act_stage2_config;
 	device_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;

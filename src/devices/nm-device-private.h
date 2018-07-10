@@ -130,21 +130,21 @@ void nm_device_commit_mtu (NMDevice *self);
 
 /*****************************************************************************/
 
-#define NM_DEVICE_CLASS_DECLARE_TYPES(klass, conn_type, ...) \
-	G_STMT_START { \
-		NM_DEVICE_CLASS (klass)->connection_type_supported = conn_type; \
-		if (NM_NARG (__VA_ARGS__) > 0) { \
-			static const struct { \
-				const NMLinkType types[NM_NARG (__VA_ARGS__)]; \
-				const NMLinkType sentinel; \
-			} _link_types = { \
-				.types = { __VA_ARGS__ }, \
-				.sentinel = NM_LINK_TYPE_NONE, \
-			}; \
-			\
-			NM_DEVICE_CLASS (klass)->link_types = _link_types.types; \
-		} \
-	} G_STMT_END
+#define NM_DEVICE_DEFINE_LINK_TYPES(...) \
+	((NM_NARG (__VA_ARGS__) == 0) \
+	  ? NULL \
+	  : ({ \
+	      static const struct { \
+	          const NMLinkType types[NM_NARG (__VA_ARGS__)]; \
+	          const NMLinkType sentinel; \
+	      } _link_types = { \
+	          .types = { __VA_ARGS__ }, \
+	          .sentinel = NM_LINK_TYPE_NONE, \
+	      }; \
+	      \
+	      _link_types.types; \
+	    })\
+	)
 
 gboolean _nm_device_hash_check_invalid_keys (GHashTable *hash, const char *setting_name,
                                              GError **error, const char **whitelist);

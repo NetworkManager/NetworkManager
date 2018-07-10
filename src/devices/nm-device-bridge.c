@@ -507,9 +507,10 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_BRIDGE_SETTING_NAME, NM_LINK_TYPE_BRIDGE);
-
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_bridge);
+
+	device_class->connection_type_supported = NM_SETTING_BRIDGE_SETTING_NAME;
+	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_BRIDGE);
 
 	device_class->is_master = TRUE;
 	device_class->get_generic_capabilities = get_generic_capabilities;
