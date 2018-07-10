@@ -202,7 +202,7 @@ typedef struct _NMDeviceClass {
 	struct _NMDeviceClass *default_type_description_klass;
 	const char *default_type_description;
 
-	const char *connection_type;
+	const char *connection_type_supported;
 	const NMLinkType *link_types;
 
 	/* Whether the device type is a master-type. This depends purely on the

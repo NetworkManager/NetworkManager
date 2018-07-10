@@ -177,7 +177,7 @@ nm_device_dummy_class_init (NMDeviceDummyClass *klass)
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_dummy);
 
-	device_class->connection_type = NM_SETTING_DUMMY_SETTING_NAME;
+	device_class->connection_type_supported = NM_SETTING_DUMMY_SETTING_NAME;
 	device_class->complete_connection = complete_connection;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->create_and_realize = create_and_realize;

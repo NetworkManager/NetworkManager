@@ -585,7 +585,7 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 
 	device_class->link_changed = link_changed;
 	device_class->unrealize_notify = unrealize_notify;
-	device_class->connection_type = NM_SETTING_VXLAN_SETTING_NAME;
+	device_class->connection_type_supported = NM_SETTING_VXLAN_SETTING_NAME;
 	device_class->create_and_realize = create_and_realize;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->complete_connection = complete_connection;

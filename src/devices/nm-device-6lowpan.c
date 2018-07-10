@@ -303,7 +303,7 @@ nm_device_6lowpan_class_init (NMDevice6LowpanClass *klass)
 	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->complete_connection = complete_connection;
-	device_class->connection_type = NM_SETTING_6LOWPAN_SETTING_NAME;
+	device_class->connection_type_supported = NM_SETTING_6LOWPAN_SETTING_NAME;
 	device_class->create_and_realize = create_and_realize;
 	device_class->get_generic_capabilities = get_generic_capabilities;
 	device_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
