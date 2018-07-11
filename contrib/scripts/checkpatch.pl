@@ -20,7 +20,7 @@
 
 =head1 NAME
 
-checkpatch.pl - emulate a serial modem
+checkpatch.pl - check for common mistakes
 
 =head1 SYNOPSIS
 
