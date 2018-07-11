@@ -117,7 +117,7 @@ if ($is_file and $filename ne $ARGV) {
 
 next unless $filename =~ /\.[ch]$/;
 
-complain ('Tab following a space') if $line =~ / \t/;
+complain ('Tabs are only allowed at the beginning of a line') if $line =~ /[^\t]\t/;
 complain ('Trailing whitespace') if $line =~ /[ \t]$/;
 complain ('Don\'t use glib typedefs for char/short/int/long/float/double') if $line =~ /\bg(char|short|int|long|float|double)\b/;
 
