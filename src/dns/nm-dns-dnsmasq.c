@@ -407,7 +407,7 @@ update (NMDnsPlugin *plugin,
 /*****************************************************************************/
 
 static void
-child_quit (NMDnsPlugin *plugin, gint status)
+child_quit (NMDnsPlugin *plugin, int status)
 {
 	NMDnsDnsmasq *self = NM_DNS_DNSMASQ (plugin);
 	NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE (self);

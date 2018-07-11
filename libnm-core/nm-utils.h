@@ -213,7 +213,7 @@ NM_AVAILABLE_IN_1_2
 gboolean nm_utils_enum_from_str (GType type, const char *str, int *out_value, char **err_token);
 
 NM_AVAILABLE_IN_1_2
-const char **nm_utils_enum_get_values (GType type, gint from, gint to);
+const char **nm_utils_enum_get_values (GType type, int from, int to);
 
 NM_AVAILABLE_IN_1_6
 guint nm_utils_version (void);

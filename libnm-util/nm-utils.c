@@ -295,8 +295,8 @@ nm_utils_ssid_to_utf8 (const GByteArray *ssid)
 
 	g_return_val_if_fail (ssid != NULL, NULL);
 
-	if (g_utf8_validate ((const gchar *) ssid->data, ssid->len, NULL))
-		return g_strndup ((const gchar *) ssid->data, ssid->len);
+	if (g_utf8_validate ((const char *) ssid->data, ssid->len, NULL))
+		return g_strndup ((const char *) ssid->data, ssid->len);
 
 	/* LANG may be a good encoding hint */
 	g_get_charset ((const char **)(&e1));
@@ -311,15 +311,15 @@ nm_utils_ssid_to_utf8 (const GByteArray *ssid)
 		g_free (lang);
 	}
 
-	converted = g_convert ((const gchar *) ssid->data, ssid->len, "UTF-8", e1, NULL, NULL, NULL);
+	converted = g_convert ((const char *) ssid->data, ssid->len, "UTF-8", e1, NULL, NULL, NULL);
 	if (!converted && e2)
-		converted = g_convert ((const gchar *) ssid->data, ssid->len, "UTF-8", e2, NULL, NULL, NULL);
+		converted = g_convert ((const char *) ssid->data, ssid->len, "UTF-8", e2, NULL, NULL, NULL);
 
 	if (!converted && e3)
-		converted = g_convert ((const gchar *) ssid->data, ssid->len, "UTF-8", e3, NULL, NULL, NULL);
+		converted = g_convert ((const char *) ssid->data, ssid->len, "UTF-8", e3, NULL, NULL, NULL);
 
 	if (!converted) {
-		converted = g_convert_with_fallback ((const gchar *) ssid->data, ssid->len,
+		converted = g_convert_with_fallback ((const char *) ssid->data, ssid->len,
 		                                     "UTF-8", e1, "?", NULL, NULL, NULL);
 	}
 
@@ -330,11 +330,11 @@ nm_utils_ssid_to_utf8 (const GByteArray *ssid)
 		 */
 
 		/* Use the printable range of 0x20-0x7E */
-		gchar *valid_chars = " !\"#$%&'()*+,-./0123456789:;<=>?@"
+		char *valid_chars = " !\"#$%&'()*+,-./0123456789:;<=>?@"
 		                     "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
 		                     "abcdefghijklmnopqrstuvwxyz{|}~";
 
-		converted = g_strndup ((const gchar *)ssid->data, ssid->len);
+		converted = g_strndup ((const char *)ssid->data, ssid->len);
 		g_strcanon (converted, valid_chars, '?');
 	}
 

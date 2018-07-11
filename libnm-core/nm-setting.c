@@ -308,7 +308,7 @@ nm_setting_lookup_type (const char *name)
 	return info ? info->type : G_TYPE_INVALID;
 }
 
-gint
+int
 _nm_setting_compare_priority (gconstpointer a, gconstpointer b)
 {
 	NMSettingPriority prio_a, prio_b;
@@ -1273,7 +1273,7 @@ nm_setting_compare (NMSetting *a,
 {
 	GParamSpec **property_specs;
 	guint n_property_specs;
-	gint same = TRUE;
+	int same = TRUE;
 	guint i;
 
 	g_return_val_if_fail (NM_IS_SETTING (a), FALSE);

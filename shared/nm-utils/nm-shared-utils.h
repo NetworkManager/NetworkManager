@@ -247,8 +247,8 @@ gboolean nm_utils_parse_inaddr_prefix (int addr_family,
 
 gint64 _nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max, gint64 fallback);
 
-gint _nm_utils_ascii_str_to_bool (const char *str,
-                                  gint default_value);
+int _nm_utils_ascii_str_to_bool (const char *str,
+                                  int default_value);
 
 /*****************************************************************************/
 
@@ -406,17 +406,17 @@ gboolean nm_utils_error_is_cancelled (GError *error,
 /*****************************************************************************/
 
 gboolean nm_g_object_set_property (GObject *object,
-                                   const gchar  *property_name,
+                                   const char   *property_name,
                                    const GValue *value,
                                    GError **error);
 
 gboolean nm_g_object_set_property_boolean (GObject *object,
-                                           const gchar  *property_name,
+                                           const char   *property_name,
                                            gboolean value,
                                            GError **error);
 
 gboolean nm_g_object_set_property_uint (GObject *object,
-                                        const gchar  *property_name,
+                                        const char   *property_name,
                                         guint value,
                                         GError **error);
 

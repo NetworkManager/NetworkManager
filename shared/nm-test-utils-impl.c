@@ -98,7 +98,7 @@ _service_init_wait_probe_name (gpointer user_data)
 
 static void
 _service_init_wait_child_wait (GPid pid,
-                               gint status,
+                               int status,
                                gpointer user_data)
 {
 	ServiceInitWaitData *data = user_data;

@@ -447,7 +447,7 @@ dhclient_start (NMDhcpClient *client,
 	g_ptr_array_add (argv, NULL);
 
 	_LOGD ("running: %s",
-	       (cmd_str = g_strjoinv (" ", (gchar **) argv->pdata)));
+	       (cmd_str = g_strjoinv (" ", (char **) argv->pdata)));
 
 	if (!g_spawn_async (NULL, (char **) argv->pdata, NULL,
 	                    G_SPAWN_DO_NOT_REAP_CHILD | G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,

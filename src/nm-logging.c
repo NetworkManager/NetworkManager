@@ -54,9 +54,9 @@
 void (*_nm_logging_clear_platform_logging_cache) (void);
 
 static void
-nm_log_handler (const gchar *log_domain,
+nm_log_handler (const char *log_domain,
                 GLogLevelFlags level,
-                const gchar *message,
+                const char *message,
                 gpointer ignored);
 
 typedef struct {
@@ -745,9 +745,9 @@ _nm_log_impl (const char *file,
 /*****************************************************************************/
 
 static void
-nm_log_handler (const gchar *log_domain,
+nm_log_handler (const char *log_domain,
                 GLogLevelFlags level,
-                const gchar *message,
+                const char *message,
                 gpointer ignored)
 {
 	int syslog_priority;

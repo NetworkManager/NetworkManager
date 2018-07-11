@@ -291,7 +291,7 @@ nm_modem_get_supported_ip_types (NMModem *self)
 	return NM_MODEM_GET_PRIVATE (self)->ip_types;
 }
 
-const gchar *
+const char *
 nm_modem_ip_type_to_string (NMModemIPType ip_type)
 {
 	switch (ip_type) {

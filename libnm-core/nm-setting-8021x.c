@@ -114,7 +114,7 @@ typedef struct {
 	char *phase2_private_key_password;
 	NMSettingSecretFlags phase2_private_key_password_flags;
 	gboolean system_ca_certs;
-	gint auth_timeout;
+	int auth_timeout;
 } NMSetting8021xPrivate;
 
 enum {
@@ -2724,7 +2724,7 @@ nm_setting_802_1x_get_phase2_private_key_format (NMSetting8021x *setting)
  *
  * Since: 1.8
  **/
-gint
+int
 nm_setting_802_1x_get_auth_timeout (NMSetting8021x *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), 0);

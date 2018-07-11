@@ -115,7 +115,7 @@ _nm_dbus_proxy_replace_match (GDBusProxy *proxy)
 {
 	GDBusConnection *connection = g_dbus_proxy_get_connection (proxy);
 	static unsigned match_counter = 1024;
-	gchar *match;
+	char *match;
 
 	if (match_counter == 1) {
 		/* If we hit the low matches watermark, install a

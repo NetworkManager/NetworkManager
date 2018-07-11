@@ -111,8 +111,8 @@ done:
 
 static void
 test_secret_agent_cancel_get_secrets (NMSecretAgentOld *agent,
-                                      const gchar      *connection_path,
-                                      const gchar      *setting_name)
+                                      const char       *connection_path,
+                                      const char       *setting_name)
 {
 	g_assert_not_reached ();
 }
@@ -120,7 +120,7 @@ test_secret_agent_cancel_get_secrets (NMSecretAgentOld *agent,
 static void
 test_secret_agent_save_secrets (NMSecretAgentOld                *agent,
                                 NMConnection                    *connection,
-                                const gchar                     *connection_path,
+                                const char                      *connection_path,
                                 NMSecretAgentOldSaveSecretsFunc  callback,
                                 gpointer                         callback_data)
 {
@@ -130,7 +130,7 @@ test_secret_agent_save_secrets (NMSecretAgentOld                *agent,
 static void
 test_secret_agent_delete_secrets (NMSecretAgentOld                  *agent,
                                   NMConnection                      *connection,
-                                  const gchar                       *connection_path,
+                                  const char                        *connection_path,
                                   NMSecretAgentOldDeleteSecretsFunc  callback,
                                   gpointer                           callback_data)
 {

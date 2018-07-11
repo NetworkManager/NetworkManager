@@ -98,7 +98,7 @@ nms_ibft_reader_load_blocks (const char *iscsiadm_path,
 	const char *envp[1] = { NULL };
 	GSList *blocks = NULL;
 	char *out = NULL, *err = NULL;
-	gint status = 0;
+	int status = 0;
 	char **lines = NULL, **iter;
 	GPtrArray *block_lines = NULL;
 	gboolean success = FALSE;

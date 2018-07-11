@@ -244,8 +244,8 @@ setup_bluez5 (NMBluezManager *self)
 
 static void
 watch_name_on_appeared (GDBusConnection *connection,
-                        const gchar *name,
-                        const gchar *name_owner,
+                        const char *name,
+                        const char *name_owner,
                         gpointer user_data)
 {
 	check_bluez_and_try_setup (NM_BLUEZ_MANAGER (user_data));

@@ -167,18 +167,18 @@ static void _set_config_data (NMConfig *self, NMConfigData *new_data, NMConfigCh
 
 /*****************************************************************************/
 
-gint
+int
 nm_config_parse_boolean (const char *str,
-                         gint default_value)
+                         int default_value)
 {
 	return _nm_utils_ascii_str_to_bool (str, default_value);
 }
 
-gint
+int
 nm_config_keyfile_get_boolean (const GKeyFile *keyfile,
                                const char *section,
                                const char *key,
-                               gint default_value)
+                               int default_value)
 {
 	gs_free char *str = NULL;
 
@@ -1690,7 +1690,7 @@ nm_config_set_values (NMConfig *self,
 	GError *local = NULL;
 	NMConfigData *new_data = NULL;
 	gs_strfreev char **groups = NULL;
-	gint g;
+	int g;
 
 	g_return_if_fail (NM_IS_CONFIG (self));
 
@@ -1948,7 +1948,7 @@ _config_device_state_data_new (int ifindex, GKeyFile *kf)
 	gs_free char *perm_hw_addr_fake = NULL;
 	gsize connection_uuid_len;
 	gsize perm_hw_addr_fake_len;
-	gint nm_owned = -1;
+	int nm_owned = -1;
 	char *p;
 	guint32 route_metric_default_effective;
 	guint32 route_metric_default_aspired;
@@ -2126,7 +2126,7 @@ nm_config_device_state_write (int ifindex,
                               NMConfigDeviceStateManagedType managed,
                               const char *perm_hw_addr_fake,
                               const char *connection_uuid,
-                              gint nm_owned,
+                              int nm_owned,
                               guint32 route_metric_default_aspired,
                               guint32 route_metric_default_effective)
 {

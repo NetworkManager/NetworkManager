@@ -3362,7 +3362,7 @@ typedef struct {
 	WaitForNlResponseResult *out_seq_result;
 	char **out_errmsg;
 	union {
-		gint *out_refresh_all_in_progess;
+		int *out_refresh_all_in_progess;
 		NMPObject **out_route_get;
 		gpointer out_data;
 	} response;
@@ -3394,13 +3394,13 @@ typedef struct {
 
 		/* counter that a refresh all action is in progress, separated
 		 * by type. */
-		gint refresh_all_in_progess[_DELAYED_ACTION_IDX_REFRESH_ALL_NUM];
+		int refresh_all_in_progess[_DELAYED_ACTION_IDX_REFRESH_ALL_NUM];
 
 		GPtrArray *list_master_connected;
 		GPtrArray *list_refresh_link;
 		GArray *list_wait_for_nl_response;
 
-		gint is_handling;
+		int is_handling;
 	} delayed_action;
 
 	int wireguard_family_id;
@@ -3923,7 +3923,7 @@ delayed_action_wait_for_nl_response_complete_check (NMPlatform *platform,
 	guint i;
 	guint32 next_seq_number = 0;
 	gint64 next_timeout_abs_ns = 0;
-	gint now_ns = 0;
+	int now_ns = 0;
 
 	for (i = 0; i < priv->delayed_action.list_wait_for_nl_response->len; ) {
 		const DelayedActionWaitForNlResponseData *data = &g_array_index (priv->delayed_action.list_wait_for_nl_response, DelayedActionWaitForNlResponseData, i);
@@ -4621,7 +4621,7 @@ do_request_all_no_delayed_actions (NMPlatform *platform, DelayedActionType actio
 		const NMPClass *klass = nmp_class_from_type (obj_type);
 		nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 		int nle;
-		gint *out_refresh_all_in_progess;
+		int *out_refresh_all_in_progess;
 
 		out_refresh_all_in_progess = &priv->delayed_action.refresh_all_in_progess[delayed_action_refresh_all_to_idx (iflags)];
 		nm_assert (*out_refresh_all_in_progess >= 0);

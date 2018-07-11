@@ -194,8 +194,8 @@ void nm_ip6_config_del_dns_option (NMIP6Config *self, guint i);
 guint nm_ip6_config_get_num_dns_options (const NMIP6Config *self);
 const char * nm_ip6_config_get_dns_option (const NMIP6Config *self, guint i);
 
-void nm_ip6_config_set_dns_priority (NMIP6Config *self, gint priority);
-gint nm_ip6_config_get_dns_priority (const NMIP6Config *self);
+void nm_ip6_config_set_dns_priority (NMIP6Config *self, int priority);
+int nm_ip6_config_get_dns_priority (const NMIP6Config *self);
 
 const NMPObject *nm_ip6_config_nmpobj_lookup (const NMIP6Config *self,
                                               const NMPObject *needle);

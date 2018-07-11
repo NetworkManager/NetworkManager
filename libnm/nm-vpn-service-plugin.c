@@ -478,10 +478,10 @@ connect_timer_start (NMVpnServicePlugin *plugin)
 
 static void
 peer_vanished (GDBusConnection *connection,
-               const gchar *sender_name,
-               const gchar *object_path,
-               const gchar *interface_name,
-               const gchar *signal_name,
+               const char *sender_name,
+               const char *object_path,
+               const char *interface_name,
+               const char *signal_name,
                GVariant *parameters,
                gpointer user_data)
 {
@@ -493,7 +493,7 @@ watch_peer (NMVpnServicePlugin *plugin,
             GDBusMethodInvocation *context)
 {
 	GDBusConnection *connection = g_dbus_method_invocation_get_connection (context);
-	const gchar *peer = g_dbus_message_get_sender (g_dbus_method_invocation_get_message (context));
+	const char *peer = g_dbus_message_get_sender (g_dbus_method_invocation_get_message (context));
 
 	return g_dbus_connection_signal_subscribe (connection,
 	                                           "org.freedesktop.DBus",
@@ -784,7 +784,7 @@ nm_vpn_service_plugin_read_vpn_details (int fd,
 	gboolean success = FALSE;
 	char *key = NULL, *val = NULL;
 	nm_auto_free_gstring GString *line = NULL;
-	gchar c;
+	char c;
 
 	if (out_data)
 		g_return_val_if_fail (*out_data == NULL, FALSE);

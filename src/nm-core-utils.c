@@ -523,7 +523,7 @@ _kc_waited_to_string (char *buf, gint64 wait_start_us)
 }
 
 static void
-_kc_cb_watch_child (GPid pid, gint status, gpointer user_data)
+_kc_cb_watch_child (GPid pid, int status, gpointer user_data)
 {
 	KillChildAsyncData *data = user_data;
 	char buf_exit[KC_EXIT_TO_STRING_BUF_SIZE], buf_wait[KC_WAITED_TO_STRING];
@@ -1446,7 +1446,7 @@ match_config_eval (const char *str, const char *tag, guint cur_nm_version)
 {
 	gs_free char *s_ver = NULL;
 	gs_strfreev char **s_ver_tokens = NULL;
-	gint v_maj = -1, v_min = -1, v_mic = -1;
+	int v_maj = -1, v_min = -1, v_mic = -1;
 	guint c_maj = -1, c_min = -1, c_mic = -1;
 	guint n_tokens;
 
@@ -1578,9 +1578,9 @@ nm_match_spec_split (const char *value)
 	/* Copied from glibs g_key_file_parse_value_as_string() function
 	 * and adjusted. */
 
-	string_value = g_new (gchar, strlen (value) + 1);
+	string_value = g_new (char, strlen (value) + 1);
 
-	p = (gchar *) value;
+	p = (char *) value;
 
 	/* skip over leading whitespace */
 	while (g_ascii_isspace (*p))
@@ -2027,7 +2027,7 @@ typedef struct
 	NMSettingDiffResult diff_result;
 } LogConnectionSettingItem;
 
-static gint
+static int
 _log_connection_sort_hashes_fcn (gconstpointer a, gconstpointer b)
 {
 	const LogConnectionSettingData *v1 = a;
@@ -2070,7 +2070,7 @@ _log_connection_sort_hashes (NMConnection *connection, NMConnection *diff_base, 
 	return sorted_hashes;
 }
 
-static gint
+static int
 _log_connection_sort_names_fcn (gconstpointer a, gconstpointer b)
 {
 	const LogConnectionSettingItem *v1 = a;
@@ -2699,7 +2699,7 @@ nm_utils_fd_get_contents (int fd,
 		}
 
 		if (n_alloc == 0)
-			str = g_new0 (gchar, 1);
+			str = g_new0 (char, 1);
 		else {
 			str[n_have] = '\0';
 			if (n_have + 1 < n_alloc) {
@@ -3656,8 +3656,8 @@ nm_utils_g_value_set_strv (GValue *value, GPtrArray *strings)
 /*****************************************************************************/
 
 static gboolean
-debug_key_matches (const gchar *key,
-                   const gchar *token,
+debug_key_matches (const char *key,
+                   const char *token,
                    guint        length)
 {
 	/* may not call GLib functions: see note in g_parse_debug_string() */
@@ -3964,8 +3964,8 @@ nm_utils_get_reverse_dns_domains_ip6 (const struct in6_addr *ip, guint8 plen, GP
  * specifying a mode for the new file.
  */
 gboolean
-nm_utils_file_set_contents (const gchar *filename,
-                            const gchar *contents,
+nm_utils_file_set_contents (const char *filename,
+                            const char *contents,
                             gssize length,
                             mode_t mode,
                             GError **error)
@@ -4068,7 +4068,7 @@ struct plugin_info {
 	struct stat st;
 };
 
-static gint
+static int
 read_device_factory_paths_sort_fcn (gconstpointer a, gconstpointer b)
 {
 	const struct plugin_info *da = a;

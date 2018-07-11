@@ -142,9 +142,9 @@ const char *nm_setting_connection_get_stable_id        (NMSettingConnection *set
 const char *nm_setting_connection_get_interface_name   (NMSettingConnection *setting);
 const char *nm_setting_connection_get_connection_type  (NMSettingConnection *setting);
 gboolean    nm_setting_connection_get_autoconnect      (NMSettingConnection *setting);
-gint        nm_setting_connection_get_autoconnect_priority (NMSettingConnection *setting);
+int         nm_setting_connection_get_autoconnect_priority (NMSettingConnection *setting);
 NM_AVAILABLE_IN_1_6
-gint        nm_setting_connection_get_autoconnect_retries (NMSettingConnection *setting);
+int         nm_setting_connection_get_autoconnect_retries (NMSettingConnection *setting);
 guint64     nm_setting_connection_get_timestamp        (NMSettingConnection *setting);
 gboolean    nm_setting_connection_get_read_only        (NMSettingConnection *setting);
 
@@ -187,7 +187,7 @@ NM_AVAILABLE_IN_1_2
 NMSettingConnectionLldp nm_setting_connection_get_lldp (NMSettingConnection *setting);
 
 NM_AVAILABLE_IN_1_10
-gint        nm_setting_connection_get_auth_retries     (NMSettingConnection *setting);
+int         nm_setting_connection_get_auth_retries     (NMSettingConnection *setting);
 
 NM_AVAILABLE_IN_1_12
 NMSettingConnectionMdns   nm_setting_connection_get_mdns (NMSettingConnection *setting);

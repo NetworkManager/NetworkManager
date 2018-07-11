@@ -35,7 +35,7 @@ typedef struct SDEventSource {
 } SDEventSource;
 
 static gboolean
-event_prepare (GSource *source, gint *timeout_)
+event_prepare (GSource *source, int *timeout_)
 {
 	return sd_event_prepare (((SDEventSource *) source)->event) > 0;
 }

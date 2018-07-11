@@ -1244,7 +1244,7 @@ find_device_by_permanent_hw_addr (NMManager *self, const char *hwaddr)
 }
 
 static NMDevice *
-find_device_by_ip_iface (NMManager *self, const gchar *iface)
+find_device_by_ip_iface (NMManager *self, const char *iface)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDevice *device;
@@ -3827,7 +3827,7 @@ out:
 	return FALSE;
 }
 
-static gint
+static int
 compare_slaves (gconstpointer a, gconstpointer b, gpointer sort_by_name)
 {
 	const SlaveConnectionInfo *a_info = a;
@@ -5884,7 +5884,7 @@ nm_manager_write_device_state (NMManager *self)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDevice *device;
 	gs_unref_hashtable GHashTable *seen_ifindexes = NULL;
-	gint nm_owned;
+	int nm_owned;
 
 	seen_ifindexes = g_hash_table_new (nm_direct_hash, NULL);
 

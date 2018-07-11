@@ -247,7 +247,7 @@ guint         nm_setting_ip_config_get_num_dns_options        (NMSettingIPConfig
 gboolean      nm_setting_ip_config_has_dns_options            (NMSettingIPConfig *setting);
 const char   *nm_setting_ip_config_get_dns_option             (NMSettingIPConfig *setting,
                                                                guint              idx);
-gint          nm_setting_ip_config_next_valid_dns_option      (NMSettingIPConfig *setting,
+int           nm_setting_ip_config_next_valid_dns_option      (NMSettingIPConfig *setting,
                                                                guint              idx);
 gboolean      nm_setting_ip_config_add_dns_option             (NMSettingIPConfig *setting,
                                                                const char        *dns_option);
@@ -258,7 +258,7 @@ gboolean      nm_setting_ip_config_remove_dns_option_by_value (NMSettingIPConfig
 void          nm_setting_ip_config_clear_dns_options          (NMSettingIPConfig *setting, gboolean is_set);
 
 NM_AVAILABLE_IN_1_4
-gint          nm_setting_ip_config_get_dns_priority (NMSettingIPConfig *setting);
+int           nm_setting_ip_config_get_dns_priority (NMSettingIPConfig *setting);
 
 guint         nm_setting_ip_config_get_num_addresses          (NMSettingIPConfig *setting);
 NMIPAddress  *nm_setting_ip_config_get_address                (NMSettingIPConfig *setting,
@@ -298,9 +298,9 @@ gboolean      nm_setting_ip_config_get_dhcp_send_hostname     (NMSettingIPConfig
 gboolean      nm_setting_ip_config_get_never_default          (NMSettingIPConfig *setting);
 gboolean      nm_setting_ip_config_get_may_fail               (NMSettingIPConfig *setting);
 NM_AVAILABLE_IN_1_2
-gint          nm_setting_ip_config_get_dad_timeout            (NMSettingIPConfig *setting);
+int           nm_setting_ip_config_get_dad_timeout            (NMSettingIPConfig *setting);
 NM_AVAILABLE_IN_1_2
-gint          nm_setting_ip_config_get_dhcp_timeout           (NMSettingIPConfig *setting);
+int           nm_setting_ip_config_get_dhcp_timeout           (NMSettingIPConfig *setting);
 
 G_END_DECLS
 

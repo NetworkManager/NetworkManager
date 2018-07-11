@@ -323,11 +323,11 @@ _nm_utils_enum_from_str_full (GType type,
 }
 
 const char **
-_nm_utils_enum_get_values (GType type, gint from, gint to)
+_nm_utils_enum_get_values (GType type, int from, int to)
 {
 	GTypeClass *klass;
 	GPtrArray *array;
-	gint i;
+	int i;
 	char sbuf[64];
 
 	klass = g_type_class_ref (type);

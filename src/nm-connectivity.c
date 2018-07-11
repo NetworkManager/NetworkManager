@@ -240,7 +240,7 @@ curl_check_connectivity (CURLM *mhandle, int sockfd, int ev_bitmask)
 	NMConnectivityCheckHandle *cb_data;
 	CURLMsg *msg;
 	CURLcode eret;
-	gint m_left;
+	int m_left;
 	long response_code;
 	CURLMcode ret;
 	int running_handles;

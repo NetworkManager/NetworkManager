@@ -299,9 +299,9 @@ nmtst_free (void)
 }
 
 static inline void
-_nmtst_log_handler (const gchar   *log_domain,
+_nmtst_log_handler (const char    *log_domain,
                     GLogLevelFlags log_level,
-                    const gchar   *message,
+                    const char    *message,
                     gpointer       user_data)
 {
 	g_print ("%s\n", message);
@@ -811,7 +811,7 @@ nmtst_get_rand (void)
 		const char *str;
 
 		if ((str = g_getenv ("NMTST_SEED_RAND"))) {
-			gchar *s;
+			char *s;
 			gint64 i;
 
 			i = g_ascii_strtoll (str, &s, 0);
@@ -1181,12 +1181,12 @@ _nmtst_assert_ip6_address (const char *file, int line, const struct in6_addr *ad
 
 #define nmtst_spawn_sync(working_directory, standard_out, standard_err, assert_exit_status, ...) \
 	__nmtst_spawn_sync (working_directory, standard_out, standard_err, assert_exit_status, ##__VA_ARGS__, NULL)
-static inline gint
+static inline int
 __nmtst_spawn_sync (const char *working_directory, char **standard_out, char **standard_err, int assert_exit_status, ...) G_GNUC_NULL_TERMINATED;
-static inline gint
+static inline int
 __nmtst_spawn_sync (const char *working_directory, char **standard_out, char **standard_err, int assert_exit_status, ...)
 {
-	gint exit_status = 0;
+	int exit_status = 0;
 	GError *error = NULL;
 	char *arg;
 	va_list va_args;
@@ -1669,7 +1669,7 @@ nmtst_assert_connection_verifies_and_normalizable (NMConnection *con)
 static inline void
 nmtst_assert_connection_verifies_after_normalization (NMConnection *con,
                                                       GQuark expect_error_domain,
-                                                      gint expect_error_code)
+                                                      int expect_error_code)
 {
 	/* assert that the connection does not verify, but normalization does fix it */
 	GError *error = NULL;
@@ -1696,7 +1696,7 @@ nmtst_assert_connection_verifies_after_normalization (NMConnection *con,
 static inline void
 nmtst_assert_connection_unnormalizable (NMConnection *con,
                                         GQuark expect_error_domain,
-                                        gint expect_error_code)
+                                        int expect_error_code)
 {
 	/* assert that the connection does not verify, and it cannot be fixed by normalization */
 
@@ -1794,7 +1794,7 @@ _nmtst_assert_connection_has_settings (NMConnection *connection, gboolean has_at
 static inline void
 nmtst_assert_setting_verify_fails (NMSetting *setting,
                                    GQuark expect_error_domain,
-                                   gint expect_error_code)
+                                   int expect_error_code)
 {
 	/* assert that the setting verification fails */
 

@@ -59,15 +59,15 @@ nm_state_to_string (NMState state)
 
 static void
 on_signal (GDBusProxy *proxy,
-           gchar      *sender_name,
-           gchar      *signal_name,
+           char       *sender_name,
+           char       *signal_name,
            GVariant   *parameters,
            gpointer    user_data)
 {
 	guint32 new_state;
 
 	/* Print all signals */
-	//gchar *parameters_str;
+	//char *parameters_str;
 	//parameters_str = g_variant_print (parameters, TRUE);
 	//g_print (" *** Received Signal: %s: %s\n", signal_name, parameters_str);
 	//g_free (parameters_str);

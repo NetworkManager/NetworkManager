@@ -154,7 +154,7 @@ const char *nm_config_data_get_config_description (const NMConfigData *config_da
 gboolean nm_config_data_has_group (const NMConfigData *self, const char *group);
 gboolean nm_config_data_has_value (const NMConfigData *self, const char *group, const char *key, NMConfigGetValueFlags flags);
 char *nm_config_data_get_value (const NMConfigData *config_data, const char *group, const char *key, NMConfigGetValueFlags flags);
-gint nm_config_data_get_value_boolean (const NMConfigData *self, const char *group, const char *key, gint default_value);
+int nm_config_data_get_value_boolean (const NMConfigData *self, const char *group, const char *key, int default_value);
 gint64 nm_config_data_get_value_int64 (const NMConfigData *self, const char *group, const char *key, guint base, gint64 min, gint64 max, gint64 fallback);
 
 char **nm_config_data_get_plugins (const NMConfigData *config_data, gboolean allow_default);
@@ -195,8 +195,8 @@ char *nm_config_data_get_device_config_by_pllink (const NMConfigData *self,
 gboolean nm_config_data_get_device_config_boolean (const NMConfigData *self,
                                                    const char *property,
                                                    NMDevice *device,
-                                                   gint val_no_match,
-                                                   gint val_invalid);
+                                                   int val_no_match,
+                                                   int val_invalid);
 
 char **nm_config_data_get_groups (const NMConfigData *self);
 char **nm_config_data_get_keys (const NMConfigData *self, const char *group);

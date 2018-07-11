@@ -120,8 +120,8 @@ inotify_event_handler (GIOChannel *channel, GIOCondition cond, gpointer user_dat
 	struct inotify_event evt;
 
 	/* read the notifications from the watch descriptor */
-	while (g_io_channel_read_chars (channel, (gchar *) &evt, sizeof (struct inotify_event), NULL, NULL) == G_IO_STATUS_NORMAL) {
-		gchar filename[PATH_MAX + 1];
+	while (g_io_channel_read_chars (channel, (char *) &evt, sizeof (struct inotify_event), NULL, NULL) == G_IO_STATUS_NORMAL) {
+		char filename[PATH_MAX + 1];
 
 		filename[0] = '\0';
 		if (evt.len > 0) {

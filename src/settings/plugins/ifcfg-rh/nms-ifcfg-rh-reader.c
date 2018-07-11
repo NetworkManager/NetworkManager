@@ -232,12 +232,12 @@ make_connection_setting (const char *file,
 	              NM_SETTING_CONNECTION_AUTOCONNECT,
 	              svGetValueBoolean (ifcfg, "ONBOOT", TRUE),
 	              NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY,
-	              (gint) svGetValueInt64 (ifcfg, "AUTOCONNECT_PRIORITY", 10,
+	              (int) svGetValueInt64 (ifcfg, "AUTOCONNECT_PRIORITY", 10,
 	                                      NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MIN,
 	                                      NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MAX,
 	                                      NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_DEFAULT),
 	              NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES,
-	              (gint) svGetValueInt64 (ifcfg, "AUTOCONNECT_RETRIES", 10,
+	              (int) svGetValueInt64 (ifcfg, "AUTOCONNECT_RETRIES", 10,
 	                                      -1, G_MAXINT32, -1),
 	              NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES,
 	              svGetValueBoolean (ifcfg, "AUTOCONNECT_SLAVES", NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT),
@@ -335,7 +335,7 @@ make_connection_setting (const char *file,
 	}
 
 	vint64 = svGetValueInt64 (ifcfg, "AUTH_RETRIES", 10, -1, G_MAXINT32, -1);
-	g_object_set (s_con, NM_SETTING_CONNECTION_AUTH_RETRIES, (gint) vint64, NULL);
+	g_object_set (s_con, NM_SETTING_CONNECTION_AUTH_RETRIES, (int) vint64, NULL);
 
 	i_val = NM_SETTING_CONNECTION_MDNS_DEFAULT;
 	if (!svGetValueEnum (ifcfg, "MDNS",
@@ -1286,7 +1286,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	shvarFile *route_ifcfg;
 	gboolean never_default;
 	gint64 timeout;
-	gint priority;
+	int priority;
 	char inet_buf[NM_UTILS_INET_ADDRSTRLEN];
 	const char *const *item;
 	guint32 route_table;
@@ -1561,7 +1561,7 @@ make_ip4_setting (shvarFile *ifcfg,
 		if (timeout > 0)
 			timeout *= 1000;
 	}
-	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_DAD_TIMEOUT, (gint) timeout, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_DAD_TIMEOUT, (int) timeout, NULL);
 
 	return g_steal_pointer (&s_ip4);
 }
@@ -1697,7 +1697,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	guint32 i;
 	int i_val;
 	GError *local = NULL;
-	gint priority;
+	int priority;
 	gboolean never_default = FALSE;
 	gboolean ip6_privacy = FALSE, ip6_privacy_prefer_public_ip;
 	NMSettingIP6ConfigPrivacy ip6_privacy_val;
@@ -3444,7 +3444,7 @@ next:
 	g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_DOMAIN_SUFFIX_MATCH, v, NULL);
 
 	timeout = svGetValueInt64 (ifcfg, "IEEE_8021X_AUTH_TIMEOUT", 10, 0, G_MAXINT32, 0);
-	g_object_set (s_8021x, NM_SETTING_802_1X_AUTH_TIMEOUT, (gint) timeout, NULL);
+	g_object_set (s_8021x, NM_SETTING_802_1X_AUTH_TIMEOUT, (int) timeout, NULL);
 
 	return g_steal_pointer (&s_8021x);
 }
@@ -5077,7 +5077,7 @@ make_vlan_setting (shvarFile *ifcfg,
 	const char *v = NULL;
 	int vlan_id = -1;
 	guint32 vlan_flags = 0;
-	gint gvrp, reorder_hdr;
+	int gvrp, reorder_hdr;
 
 	v = svGetValueStr (ifcfg, "VLAN_ID", &value);
 	if (v) {

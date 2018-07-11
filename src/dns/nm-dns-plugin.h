@@ -70,7 +70,7 @@ typedef struct {
 	 * by NMDnsManager.  If the subclass decides the exit status (as returned
 	 * by waitpid(2)) is fatal it should then emit the 'failed' signal.
 	 */
-	void (*child_quit) (NMDnsPlugin *self, gint status);
+	void (*child_quit) (NMDnsPlugin *self, int status);
 } NMDnsPluginClass;
 
 GType nm_dns_plugin_get_type (void);

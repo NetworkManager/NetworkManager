@@ -731,7 +731,7 @@ ip6_addr_gen_mode_parser (KeyfileReaderInfo *info, NMSetting *setting, const cha
 	} else
 		addr_gen_mode = NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64;
 
-	g_object_set (G_OBJECT (setting), key, (gint) addr_gen_mode, NULL);
+	g_object_set (G_OBJECT (setting), key, (int) addr_gen_mode, NULL);
 }
 
 static void
@@ -1393,7 +1393,7 @@ qdisc_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
 	const char *setting_name = nm_setting_get_name (setting);
 	GPtrArray *qdiscs;
-	gs_strfreev gchar **keys = NULL;
+	gs_strfreev char **keys = NULL;
 	gsize n_keys = 0;
 	int i;
 
@@ -1441,7 +1441,7 @@ tfilter_parser (KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
 	const char *setting_name = nm_setting_get_name (setting);
 	GPtrArray *tfilters;
-	gs_strfreev gchar **keys = NULL;
+	gs_strfreev char **keys = NULL;
 	gsize n_keys = 0;
 	int i;
 
@@ -1525,7 +1525,7 @@ write_array_of_uint (GKeyFile *file,
 
 	g_return_if_fail (g_array_get_element_size (array) == sizeof (guint));
 
-	tmp_array = g_new (gint, array->len);
+	tmp_array = g_new (int, array->len);
 	for (i = 0; i < array->len; i++) {
 		guint v = g_array_index (array, guint, i);
 
@@ -2522,7 +2522,7 @@ read_one_setting_value (NMSetting *setting,
 		} else
 			g_object_set (setting, key, int_val, NULL);
 	} else if (type == G_TYPE_BYTES) {
-		gint *tmp;
+		int *tmp;
 		GByteArray *array;
 		GBytes *bytes;
 		gsize length;
@@ -2555,7 +2555,7 @@ read_one_setting_value (NMSetting *setting,
 		g_bytes_unref (bytes);
 		g_free (tmp);
 	} else if (type == G_TYPE_STRV) {
-		gchar **sa;
+		char **sa;
 		gsize length;
 
 		sa = nm_keyfile_plugin_kf_get_string_list (keyfile, setting_name, key, &length, NULL);
@@ -2581,11 +2581,11 @@ read_one_setting_value (NMSetting *setting,
 			}
 		}
 	} else if (G_VALUE_HOLDS_ENUM (value)) {
-		gint int_val;
+		int int_val;
 
 		int_val = nm_keyfile_plugin_kf_get_integer (keyfile, setting_name, key, &err);
 		if (!err)
-			g_object_set (setting, key, (gint) int_val, NULL);
+			g_object_set (setting, key, (int) int_val, NULL);
 	} else {
 		if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
 		                 _("unhandled setting property type '%s'"),
@@ -2675,7 +2675,7 @@ nm_keyfile_read (GKeyFile *keyfile,
 	gs_unref_object NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSetting *setting;
-	gchar **groups;
+	char **groups;
 	gsize length;
 	int i;
 	gboolean vpn_secrets = FALSE;
@@ -2880,7 +2880,7 @@ write_setting_value (NMSetting *setting,
 		char **array;
 
 		array = (char **) g_value_get_boxed (value);
-		nm_keyfile_plugin_kf_set_string_list (info->keyfile, setting_name, key, (const gchar **const) array, g_strv_length (array));
+		nm_keyfile_plugin_kf_set_string_list (info->keyfile, setting_name, key, (const char **const) array, g_strv_length (array));
 	} else if (type == G_TYPE_HASH_TABLE) {
 		write_hash_of_string (info->keyfile, setting, key, value);
 	} else if (type == G_TYPE_ARRAY) {
@@ -2889,7 +2889,7 @@ write_setting_value (NMSetting *setting,
 		/* Flags are guint but GKeyFile has no uint reader, just uint64 */
 		nm_keyfile_plugin_kf_set_uint64 (info->keyfile, setting_name, key, (guint64) g_value_get_flags (value));
 	} else if (G_VALUE_HOLDS_ENUM (value))
-		nm_keyfile_plugin_kf_set_integer (info->keyfile, setting_name, key, (gint) g_value_get_enum (value));
+		nm_keyfile_plugin_kf_set_integer (info->keyfile, setting_name, key, (int) g_value_get_enum (value));
 	else
 		g_warn_if_reached ();
 }

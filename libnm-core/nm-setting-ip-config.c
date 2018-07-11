@@ -1391,7 +1391,7 @@ typedef struct {
 	GPtrArray *dns;        /* array of IP address strings */
 	GPtrArray *dns_search; /* array of domain name strings */
 	GPtrArray *dns_options;/* array of DNS options */
-	gint dns_priority;
+	int dns_priority;
 	GPtrArray *addresses;  /* array of NMIPAddress */
 	GPtrArray *routes;     /* array of NMIPRoute */
 	gint64 route_metric;
@@ -1403,8 +1403,8 @@ typedef struct {
 	gboolean dhcp_send_hostname;
 	gboolean never_default;
 	gboolean may_fail;
-	gint dad_timeout;
-	gint dhcp_timeout;
+	int dad_timeout;
+	int dhcp_timeout;
 } NMSettingIPConfigPrivate;
 
 enum {
@@ -1804,7 +1804,7 @@ nm_setting_ip_config_get_dns_option (NMSettingIPConfig *setting, guint idx)
  *
  * Since: 1.2
  **/
-gint
+int
 nm_setting_ip_config_next_valid_dns_option (NMSettingIPConfig *setting, guint idx)
 {
 	NMSettingIPConfigPrivate *priv;
@@ -1966,7 +1966,7 @@ nm_setting_ip_config_clear_dns_options (NMSettingIPConfig *setting, gboolean is_
  *
  * Since: 1.4
  **/
-gint
+int
 nm_setting_ip_config_get_dns_priority (NMSettingIPConfig *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), 0);
@@ -2421,7 +2421,7 @@ nm_setting_ip_config_get_may_fail (NMSettingIPConfig *setting)
  *
  * Since: 1.2
  **/
-gint
+int
 nm_setting_ip_config_get_dad_timeout (NMSettingIPConfig *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), 0);
@@ -2441,7 +2441,7 @@ nm_setting_ip_config_get_dad_timeout (NMSettingIPConfig *setting)
  *
  * Since: 1.2
  **/
-gint
+int
 nm_setting_ip_config_get_dhcp_timeout (NMSettingIPConfig *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), 0);

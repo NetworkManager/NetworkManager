@@ -1205,7 +1205,7 @@ test_match_spec_device (void)
 /*****************************************************************************/
 
 static void
-_do_test_match_spec_config (const char *file, gint line, const char *spec_str, guint version, guint v_maj, guint v_min, guint v_mic, NMMatchSpecMatchType expected)
+_do_test_match_spec_config (const char *file, int line, const char *spec_str, guint version, guint v_maj, guint v_min, guint v_mic, NMMatchSpecMatchType expected)
 {
 	GSList *specs;
 	NMMatchSpecMatchType match_result;

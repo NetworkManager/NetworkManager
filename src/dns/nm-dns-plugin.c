@@ -124,7 +124,7 @@ _clear_pidfile (NMDnsPlugin *self)
 static void
 kill_existing (const char *progname, const char *pidfile, const char *kill_match)
 {
-	glong pid;
+	long pid;
 	gs_free char *contents = NULL;
 	gs_free char *cmdline_contents = NULL;
 	guint64 start_time;
@@ -167,7 +167,7 @@ out:
 }
 
 static void
-watch_cb (GPid pid, gint status, gpointer user_data)
+watch_cb (GPid pid, int status, gpointer user_data)
 {
 	NMDnsPlugin *self = NM_DNS_PLUGIN (user_data);
 	NMDnsPluginPrivate *priv = NM_DNS_PLUGIN_GET_PRIVATE (self);

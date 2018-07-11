@@ -175,7 +175,7 @@ on_cancelled (GCancellable *cancellable, gpointer user_data)
 	polkit_agent_session_cancel (priv->active_session);
 }
 
-static gint
+static int
 compare_users (gconstpointer a, gconstpointer b)
 {
 	char *user;

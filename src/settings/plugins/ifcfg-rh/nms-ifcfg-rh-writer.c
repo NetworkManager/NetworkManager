@@ -1555,7 +1555,7 @@ static void
 write_dcb_app (shvarFile *ifcfg,
                const char *tag,
                NMSettingDcbFlags flags,
-               gint priority)
+               int priority)
 {
 	char prop[NM_STRLEN ("DCB_xxxxxxxxxxxxxxxxxxxxxxx_yyyyyyyyyyyyyyyyyyyy")];
 
@@ -1725,7 +1725,7 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	guint32 n, i;
 	GString *str;
 	const char *master, *master_iface = NULL, *type;
-	gint vint;
+	int vint;
 	NMSettingConnectionMdns mdns;
 	guint32 vuint32;
 	const char *tmp;
@@ -2212,11 +2212,11 @@ write_ip4_setting (NMConnection *connection,
 	const char *value;
 	char *tmp;
 	char tag[64];
-	gint j;
+	int j;
 	guint i, num, n;
 	gint64 route_metric;
 	NMIPRouteTableSyncMode route_table;
-	gint priority;
+	int priority;
 	int timeout;
 	GString *searches;
 	const char *method = NULL;
@@ -2548,7 +2548,7 @@ write_ip6_setting (NMConnection *connection,
 	NMSettingIPConfig *s_ip4;
 	const char *value;
 	guint i, num, num4;
-	gint priority;
+	int priority;
 	NMIPAddress *addr;
 	const char *dns;
 	gint64 route_metric;
