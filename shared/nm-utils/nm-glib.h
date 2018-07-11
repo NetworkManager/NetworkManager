@@ -175,7 +175,7 @@ nm_glib_check_version (guint major, guint minor, guint micro)
 
 /* g_test_skip() is only available since glib 2.38. Add a compatibility wrapper. */
 static inline void
-__nmtst_g_test_skip (const gchar *msg)
+__nmtst_g_test_skip (const char *msg)
 {
 #if GLIB_CHECK_VERSION (2, 38, 0)
 	G_GNUC_BEGIN_IGNORE_DEPRECATIONS
@@ -280,16 +280,16 @@ nm_g_hash_table_add (GHashTable *hash, gpointer key)
 #if !GLIB_CHECK_VERSION(2, 40, 0) || defined (NM_GLIB_COMPAT_H_TEST)
 static inline void
 _nm_g_ptr_array_insert (GPtrArray *array,
-                        gint       index_,
+                        int        index_,
                         gpointer   data)
 {
 	g_return_if_fail (array);
 	g_return_if_fail (index_ >= -1);
-	g_return_if_fail (index_ <= (gint) array->len);
+	g_return_if_fail (index_ <= (int) array->len);
 
 	g_ptr_array_add (array, data);
 
-	if (index_ != -1 && index_ != (gint) (array->len - 1)) {
+	if (index_ != -1 && index_ != (int) (array->len - 1)) {
 		memmove (&(array->pdata[index_ + 1]),
 		         &(array->pdata[index_]),
 		         (array->len - index_ - 1) * sizeof (gpointer));
@@ -314,10 +314,10 @@ _nm_g_ptr_array_insert (GPtrArray *array,
 #if !GLIB_CHECK_VERSION (2, 40, 0)
 static inline gboolean
 _g_key_file_save_to_file (GKeyFile     *key_file,
-                          const gchar  *filename,
+                          const char   *filename,
                           GError      **error)
 {
-	gchar *contents;
+	char *contents;
 	gboolean success;
 	gsize length;
 
@@ -440,8 +440,8 @@ g_steal_pointer (gpointer pp)
 /*****************************************************************************/
 
 static inline gboolean
-_nm_g_strv_contains (const gchar * const *strv,
-                     const gchar         *str)
+_nm_g_strv_contains (const char * const *strv,
+                     const char          *str)
 {
 #if !GLIB_CHECK_VERSION(2, 44, 0)
 	g_return_val_if_fail (strv != NULL, FALSE);
@@ -464,7 +464,7 @@ _nm_g_strv_contains (const gchar * const *strv,
 /*****************************************************************************/
 
 static inline GVariant *
-_nm_g_variant_new_take_string (gchar *string)
+_nm_g_variant_new_take_string (char *string)
 {
 #if !GLIB_CHECK_VERSION(2, 36, 0)
 	GVariant *value;

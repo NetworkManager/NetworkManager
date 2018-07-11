@@ -153,7 +153,7 @@ ip4_start (NMDhcpClient *client, const char *dhcp_anycast_addr, const char *last
 	g_ptr_array_add (argv, (gpointer) iface);
 	g_ptr_array_add (argv, NULL);
 
-	cmd_str = g_strjoinv (" ", (gchar **) argv->pdata);
+	cmd_str = g_strjoinv (" ", (char **) argv->pdata);
 	_LOGD ("running: %s", cmd_str);
 	g_free (cmd_str);
 

@@ -37,7 +37,7 @@ gboolean nm_wifi_utils_complete_connection (const GByteArray *ssid,
                                             gboolean lock_bssid,
                                             GError **error);
 
-guint32 nm_wifi_utils_level_to_quality (gint val);
+guint32 nm_wifi_utils_level_to_quality (int val);
 
 gboolean nm_wifi_utils_is_manf_default_ssid (const GByteArray *ssid);
 

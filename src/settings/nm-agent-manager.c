@@ -642,7 +642,7 @@ req_complete_error (Request *req, GError *error)
 	req_complete (req, NULL, NULL, NULL, error);
 }
 
-static gint
+static int
 agent_compare_func (gconstpointer aa, gconstpointer bb, gpointer user_data)
 {
 	NMSecretAgent *a = (NMSecretAgent *)aa;

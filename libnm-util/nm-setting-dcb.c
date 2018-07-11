@@ -75,14 +75,14 @@ NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_DCB)
 
 typedef struct {
 	NMSettingDcbFlags app_fcoe_flags;
-	gint              app_fcoe_priority;
+	int               app_fcoe_priority;
 	char *            app_fcoe_mode;
 
 	NMSettingDcbFlags app_iscsi_flags;
-	gint              app_iscsi_priority;
+	int               app_iscsi_priority;
 
 	NMSettingDcbFlags app_fip_flags;
-	gint              app_fip_priority;
+	int               app_fip_priority;
 
 	/* Priority Flow Control */
 	NMSettingDcbFlags pfc_flags;
@@ -161,7 +161,7 @@ nm_setting_dcb_get_app_fcoe_flags (NMSettingDcb *setting)
  *
  * Since: 0.9.10
  **/
-gint
+int
 nm_setting_dcb_get_app_fcoe_priority (NMSettingDcb *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_DCB (setting), 0);
@@ -209,7 +209,7 @@ nm_setting_dcb_get_app_iscsi_flags (NMSettingDcb *setting)
  *
  * Since: 0.9.10
  **/
-gint
+int
 nm_setting_dcb_get_app_iscsi_priority (NMSettingDcb *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_DCB (setting), 0);
@@ -241,7 +241,7 @@ nm_setting_dcb_get_app_fip_flags (NMSettingDcb *setting)
  *
  * Since: 0.9.10
  **/
-gint
+int
 nm_setting_dcb_get_app_fip_priority (NMSettingDcb *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_DCB (setting), 0);
@@ -665,7 +665,7 @@ check_uint_array (const guint *array,
 }
 
 static gboolean
-check_priority (gint val,
+check_priority (int val,
                 NMSettingDcbFlags flags,
                 const char *prop_name,
                 GError **error)

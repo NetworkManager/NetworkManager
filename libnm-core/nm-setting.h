@@ -172,7 +172,7 @@ typedef struct {
 	GObjectClass parent;
 
 	/* Virtual functions */
-	gint        (*verify)            (NMSetting     *setting,
+	int         (*verify)            (NMSetting     *setting,
 	                                  NMConnection  *connection,
 	                                  GError       **error);
 

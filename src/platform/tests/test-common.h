@@ -80,7 +80,7 @@ typedef struct {
 	gulong handler_id;
 	const char *name;
 	NMPlatformSignalChangeType change_type;
-	gint received_count;
+	int received_count;
 	GMainLoop *loop;
 	int ifindex;
 	const char *ifname;

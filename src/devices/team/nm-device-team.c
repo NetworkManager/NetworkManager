@@ -368,8 +368,8 @@ teamd_timeout_cb (gpointer user_data)
 
 static void
 teamd_dbus_appeared (GDBusConnection *connection,
-                     const gchar *name,
-                     const gchar *name_owner,
+                     const char *name,
+                     const char *name_owner,
                      gpointer user_data)
 {
 	NMDeviceTeam *self = NM_DEVICE_TEAM (user_data);
@@ -431,7 +431,7 @@ teamd_dbus_appeared (GDBusConnection *connection,
 
 static void
 teamd_dbus_vanished (GDBusConnection *dbus_connection,
-                     const gchar *name,
+                     const char *name,
                      gpointer user_data)
 {
 	NMDeviceTeam *self = NM_DEVICE_TEAM (user_data);
@@ -464,7 +464,7 @@ teamd_dbus_vanished (GDBusConnection *dbus_connection,
 }
 
 static void
-teamd_process_watch_cb (GPid pid, gint status, gpointer user_data)
+teamd_process_watch_cb (GPid pid, int status, gpointer user_data)
 {
 	NMDeviceTeam *self = NM_DEVICE_TEAM (user_data);
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (self);
@@ -517,7 +517,7 @@ teamd_kill (NMDeviceTeam *self, const char *teamd_binary, GError **error)
 	g_ptr_array_add (argv, (gpointer) nm_device_get_iface (NM_DEVICE (self)));
 	g_ptr_array_add (argv, NULL);
 
-	_LOGD (LOGD_TEAM, "running: %s", (tmp_str = g_strjoinv (" ", (gchar **) argv->pdata)));
+	_LOGD (LOGD_TEAM, "running: %s", (tmp_str = g_strjoinv (" ", (char **) argv->pdata)));
 	return g_spawn_sync ("/", (char **) argv->pdata, NULL, 0, teamd_child_setup, NULL, NULL, NULL, NULL, error);
 }
 
@@ -605,7 +605,7 @@ teamd_start (NMDevice *device, NMConnection *connection)
 		g_ptr_array_add (argv, (gpointer) "-gg");
 	g_ptr_array_add (argv, NULL);
 
-	_LOGD (LOGD_TEAM, "running: %s", (tmp_str = g_strjoinv (" ", (gchar **) argv->pdata)));
+	_LOGD (LOGD_TEAM, "running: %s", (tmp_str = g_strjoinv (" ", (char **) argv->pdata)));
 	if (!g_spawn_async ("/", (char **) argv->pdata, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
 	                    teamd_child_setup, NULL, &priv->teamd_pid, &error)) {
 		_LOGW (LOGD_TEAM, "Activation: (team) failed to start teamd: %s", error->message);

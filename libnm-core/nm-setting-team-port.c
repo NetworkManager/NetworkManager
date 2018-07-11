@@ -114,7 +114,7 @@ nm_setting_team_port_get_config (NMSettingTeamPort *setting)
  *
  * Since: 1.12
  **/
-gint
+int
 nm_setting_team_port_get_queue_id (NMSettingTeamPort *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_TEAM_PORT (setting), -1);
@@ -130,7 +130,7 @@ nm_setting_team_port_get_queue_id (NMSettingTeamPort *setting)
  *
  * Since: 1.12
  **/
-gint
+int
 nm_setting_team_port_get_prio (NMSettingTeamPort *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_TEAM_PORT (setting), 0);
@@ -162,7 +162,7 @@ nm_setting_team_port_get_sticky (NMSettingTeamPort *setting)
  *
  * Since: 1.12
  **/
-gint
+int
 nm_setting_team_port_get_lacp_prio (NMSettingTeamPort *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_TEAM_PORT (setting), 0);
@@ -178,7 +178,7 @@ nm_setting_team_port_get_lacp_prio (NMSettingTeamPort *setting)
  *
  * Since: 1.12
  **/
-gint
+int
 nm_setting_team_port_get_lacp_key (NMSettingTeamPort *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_TEAM_PORT (setting), 0);

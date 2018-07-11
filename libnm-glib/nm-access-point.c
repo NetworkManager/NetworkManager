@@ -51,7 +51,7 @@ typedef struct {
 	NM80211Mode mode;
 	guint32 max_bitrate;
 	guint8 strength;
-	gint last_seen;
+	int last_seen;
 } NMAccessPointPrivate;
 
 enum {
@@ -277,7 +277,7 @@ nm_access_point_get_strength (NMAccessPoint *ap)
  *
  * Since: 1.2
  **/
-gint
+int
 nm_access_point_get_last_seen (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), -1);

@@ -1324,7 +1324,7 @@ fail:
 
 		if (!has_minmax && is_flags) {
 			min = 0;
-			max = (gint) G_MAXUINT;
+			max = (int) G_MAXUINT;
 		}
 
 		valid_all = nm_utils_enum_get_values (gtype, min, max);
@@ -1381,7 +1381,7 @@ _values_fcn_gobject_enum (ARGS_VALUES_FCN)
 		class = g_type_class_ref (gtype);
 		if (G_IS_FLAGS_CLASS (class)) {
 			min = 0;
-			max = (gint) G_MAXUINT;
+			max = (int) G_MAXUINT;
 		}
 	}
 

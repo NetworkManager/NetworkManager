@@ -1146,7 +1146,7 @@ get_property (GObject *object, guint prop_id,
 	case PROP_LAST_SEEN:
 		g_value_set_int (value,
 		                 priv->last_seen > 0
-		                     ? (gint) nm_utils_monotonic_timestamp_as_boottime (priv->last_seen, NM_UTILS_NS_PER_SECOND)
+		                     ? (int) nm_utils_monotonic_timestamp_as_boottime (priv->last_seen, NM_UTILS_NS_PER_SECOND)
 		                     : -1);
 		break;
 	default:

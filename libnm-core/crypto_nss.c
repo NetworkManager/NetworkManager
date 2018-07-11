@@ -399,7 +399,7 @@ crypto_verify_pkcs12 (const guint8 *data,
 	PK11SlotInfo *slot = NULL;
 	SECStatus s;
 	gunichar2 *ucs2_password;
-	glong ucs2_chars = 0;
+	long ucs2_chars = 0;
 #ifndef WORDS_BIGENDIAN
 	guint16 *p;
 #endif /* WORDS_BIGENDIAN */

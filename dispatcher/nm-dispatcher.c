@@ -54,7 +54,7 @@ typedef struct {
 
 	Request *current_request;
 	GQueue *requests_waiting;
-	gint num_requests_pending;
+	int num_requests_pending;
 } Handler;
 
 typedef struct {
@@ -131,8 +131,8 @@ struct Request {
 
 	GPtrArray *scripts;  /* list of ScriptInfo */
 	guint idx;
-	gint num_scripts_done;
-	gint num_scripts_nowait;
+	int num_scripts_done;
+	int num_scripts_nowait;
 };
 
 /*****************************************************************************/
@@ -387,7 +387,7 @@ complete_script (ScriptInfo *script)
 }
 
 static void
-script_watch_cb (GPid pid, gint status, gpointer user_data)
+script_watch_cb (GPid pid, int status, gpointer user_data)
 {
 	ScriptInfo *script = user_data;
 	guint err;
@@ -528,7 +528,7 @@ static gboolean
 script_dispatch (ScriptInfo *script)
 {
 	GError *error = NULL;
-	gchar *argv[4];
+	char *argv[4];
 	Request *request = script->request;
 
 	if (script->dispatched)
@@ -828,9 +828,9 @@ on_name_lost (GDBusConnection *connection,
 }
 
 static void
-log_handler (const gchar *log_domain,
+log_handler (const char *log_domain,
              GLogLevelFlags log_level,
-             const gchar *message,
+             const char *message,
              gpointer ignored)
 {
 	int syslog_priority;

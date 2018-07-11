@@ -130,14 +130,14 @@ NM_AVAILABLE_IN_0_9_10
 NMSetting *       nm_setting_dcb_new                      (void);
 
 NMSettingDcbFlags nm_setting_dcb_get_app_fcoe_flags     (NMSettingDcb *setting);
-gint              nm_setting_dcb_get_app_fcoe_priority  (NMSettingDcb *setting);
+int               nm_setting_dcb_get_app_fcoe_priority  (NMSettingDcb *setting);
 const char *      nm_setting_dcb_get_app_fcoe_mode      (NMSettingDcb *setting);
 
 NMSettingDcbFlags nm_setting_dcb_get_app_iscsi_flags    (NMSettingDcb *setting);
-gint              nm_setting_dcb_get_app_iscsi_priority (NMSettingDcb *setting);
+int               nm_setting_dcb_get_app_iscsi_priority (NMSettingDcb *setting);
 
 NMSettingDcbFlags nm_setting_dcb_get_app_fip_flags      (NMSettingDcb *setting);
-gint              nm_setting_dcb_get_app_fip_priority   (NMSettingDcb *setting);
+int               nm_setting_dcb_get_app_fip_priority   (NMSettingDcb *setting);
 
 /* Priority Flow Control */
 NMSettingDcbFlags nm_setting_dcb_get_priority_flow_control_flags    (NMSettingDcb *setting);

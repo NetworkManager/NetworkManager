@@ -204,11 +204,11 @@ remove_all_aps (NMDeviceIwd *self)
 }
 
 static GVariant *
-vardict_from_network_type (const gchar *type)
+vardict_from_network_type (const char *type)
 {
 	GVariantBuilder builder;
-	const gchar *key_mgmt = "";
-	const gchar *pairwise = "ccmp";
+	const char *key_mgmt = "";
+	const char *pairwise = "ccmp";
 
 	if (!strcmp (type, "psk"))
 		key_mgmt = "wpa-psk";
@@ -235,7 +235,7 @@ get_ordered_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	gs_free_error GError *error = NULL;
 	gs_unref_variant GVariant *variant = NULL;
 	GVariantIter *networks;
-	const gchar *path, *name, *type;
+	const char *path, *name, *type;
 	int16_t signal;
 	NMWifiAP *ap, *ap_safe, *new_ap;
 	gboolean changed = FALSE;
@@ -473,7 +473,7 @@ is_connection_known_network (NMConnection *connection)
 {
 	NMSettingWireless *s_wireless;
 	GBytes *ssid;
-	gs_free gchar *str_ssid = NULL;
+	gs_free char *str_ssid = NULL;
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
 	if (!s_wireless)
@@ -1005,11 +1005,11 @@ static gboolean
 try_reply_agent_request (NMDeviceIwd *self,
                          NMConnection *connection,
                          GDBusMethodInvocation *invocation,
-                         const gchar **setting_name,
-                         const gchar **setting_key,
+                         const char **setting_name,
+                         const char **setting_key,
                          gboolean *replied)
 {
-	const gchar *method_name = g_dbus_method_invocation_get_method_name (invocation);
+	const char *method_name = g_dbus_method_invocation_get_method_name (invocation);
 	NMSettingWirelessSecurity *s_wireless_sec;
 	NMSetting8021x *s_8021x;
 
@@ -1019,7 +1019,7 @@ try_reply_agent_request (NMDeviceIwd *self,
 	*replied = FALSE;
 
 	if (!strcmp (method_name, "RequestPassphrase")) {
-		const gchar *psk;
+		const char *psk;
 
 		if (!s_wireless_sec)
 			return FALSE;
@@ -1039,7 +1039,7 @@ try_reply_agent_request (NMDeviceIwd *self,
 		*setting_key = NM_SETTING_WIRELESS_SECURITY_PSK;
 		return TRUE;
 	} else if (!strcmp (method_name, "RequestPrivateKeyPassphrase")) {
-		const gchar *password;
+		const char *password;
 
 		if (!s_8021x)
 			return FALSE;
@@ -1059,7 +1059,7 @@ try_reply_agent_request (NMDeviceIwd *self,
 		*setting_key = NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD;
 		return TRUE;
 	} else if (!strcmp (method_name, "RequestUserNameAndPassword")) {
-		const gchar *identity, *password;
+		const char *identity, *password;
 
 		if (!s_8021x)
 			return FALSE;
@@ -1083,7 +1083,7 @@ try_reply_agent_request (NMDeviceIwd *self,
 			*setting_key = NM_SETTING_802_1X_PASSWORD;
 		return TRUE;
 	} else if (!strcmp (method_name, "RequestUserPassword")) {
-		const gchar *password;
+		const char *password;
 
 		if (!s_8021x)
 			return FALSE;
@@ -1124,8 +1124,8 @@ wifi_secrets_cb (NMActRequest *req,
 	NMDeviceIwdPrivate *priv;
 	NMDevice *device;
 	GDBusMethodInvocation *invocation;
-	const gchar *setting_name;
-	const gchar *setting_key;
+	const char *setting_name;
+	const char *setting_key;
 	gboolean replied;
 	NMSecretAgentGetSecretsFlags get_secret_flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
@@ -1223,12 +1223,12 @@ network_connect_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	NMConnection *connection;
 	NMSettingWireless *s_wifi;
 	GBytes *ssid;
-	gs_free gchar *str_ssid = NULL;
+	gs_free char *str_ssid = NULL;
 
 	if (!_nm_dbus_proxy_call_finish (G_DBUS_PROXY (source), res,
 	                                 G_VARIANT_TYPE ("()"),
 	                                 &error)) {
-		gs_free gchar *dbus_error = NULL;
+		gs_free char *dbus_error = NULL;
 
 		/* Connection failed; radio problems or if the network wasn't
 		 * open, the passwords or certificates may be wrong.
@@ -1667,7 +1667,7 @@ set_property (GObject *object, guint prop_id,
 /*****************************************************************************/
 
 static void
-state_changed (NMDeviceIwd *self, const gchar *new_state)
+state_changed (NMDeviceIwd *self, const char *new_state)
 {
 	NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE (self);
 	NMDevice *device = NM_DEVICE (self);
@@ -1774,7 +1774,7 @@ properties_changed (GDBusProxy *proxy, GVariant *changed_properties,
 {
 	NMDeviceIwd *self = user_data;
 	GVariantIter *iter;
-	const gchar *key;
+	const char *key;
 	GVariant *value;
 
 	g_variant_get (changed_properties, "a{sv}", &iter);
@@ -1852,8 +1852,8 @@ nm_device_iwd_agent_query (NMDeviceIwd *self,
                            GDBusMethodInvocation *invocation)
 {
 	NMActRequest *req;
-	const gchar *setting_name;
-	const gchar *setting_key;
+	const char *setting_name;
+	const char *setting_key;
 	gboolean replied;
 	NMSecretAgentGetSecretsFlags get_secret_flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 

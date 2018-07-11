@@ -27,7 +27,7 @@
 
 #include "nm-property-compare.h"
 
-static gint
+static int
 _nm_property_compare_collection (GVariant *value1, GVariant *value2)
 {
 	GVariant *child1, *child2;
@@ -55,7 +55,7 @@ _nm_property_compare_collection (GVariant *value1, GVariant *value2)
 	return 0;
 }
 
-static gint
+static int
 _nm_property_compare_vardict (GVariant *value1, GVariant *value2)
 {
 	GVariantIter iter;
@@ -87,7 +87,7 @@ _nm_property_compare_vardict (GVariant *value1, GVariant *value2)
 	return 0;
 }
 
-static gint
+static int
 _nm_property_compare_strdict (GVariant *value1, GVariant *value2)
 {
 	GVariantIter iter;
@@ -119,7 +119,7 @@ nm_property_compare (GVariant *value1, GVariant *value2)
 {
 	const GVariantType *type1;
 	const GVariantType *type2;
-	gint ret;
+	int ret;
 
 	if (value1 == value2)
 		return 0;

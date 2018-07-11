@@ -104,7 +104,7 @@ nm_cmd_line_to_str (NMCmdLine *cmd)
 	char *str;
 
 	g_ptr_array_add (cmd->array, NULL);
-	str = g_strjoinv (" ", (gchar **) cmd->array->pdata);
+	str = g_strjoinv (" ", (char **) cmd->array->pdata);
 	g_ptr_array_remove_index (cmd->array, cmd->array->len - 1);
 
 	return str;
@@ -119,7 +119,7 @@ nm_cmd_line_add_string (NMCmdLine *cmd, const char *str)
 /*****************************************************************************/
 
 static void
-dm_watch_cb (GPid pid, gint status, gpointer user_data)
+dm_watch_cb (GPid pid, int status, gpointer user_data)
 {
 	NMDnsMasqManager *manager = NM_DNSMASQ_MANAGER (user_data);
 	NMDnsMasqManagerPrivate *priv = NM_DNSMASQ_MANAGER_GET_PRIVATE (manager);

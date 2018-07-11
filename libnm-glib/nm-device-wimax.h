@@ -96,11 +96,11 @@ const GPtrArray *nm_device_wimax_get_nsps        (NMDeviceWimax *wimax);
 NM_DEPRECATED_IN_1_2
 guint            nm_device_wimax_get_center_frequency (NMDeviceWimax *self);
 NM_DEPRECATED_IN_1_2
-gint             nm_device_wimax_get_rssi        (NMDeviceWimax *self);
+int              nm_device_wimax_get_rssi        (NMDeviceWimax *self);
 NM_DEPRECATED_IN_1_2
-gint             nm_device_wimax_get_cinr        (NMDeviceWimax *self);
+int              nm_device_wimax_get_cinr        (NMDeviceWimax *self);
 NM_DEPRECATED_IN_1_2
-gint             nm_device_wimax_get_tx_power    (NMDeviceWimax *self);
+int              nm_device_wimax_get_tx_power    (NMDeviceWimax *self);
 NM_DEPRECATED_IN_1_2
 const char *     nm_device_wimax_get_bsid        (NMDeviceWimax *self);
 

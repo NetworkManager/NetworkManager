@@ -764,7 +764,7 @@ nm_wifi_utils_complete_connection (const GByteArray *ap_ssid,
 }
 
 guint32
-nm_wifi_utils_level_to_quality (gint val)
+nm_wifi_utils_level_to_quality (int val)
 {
 	if (val < 0) {
 		/* Assume dBm already; rough conversion: best = -40, worst = -100 */

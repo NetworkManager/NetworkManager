@@ -2465,8 +2465,8 @@ nm_client_checkpoint_adjust_rollback_timeout_finish (NMClient *client,
 
 static GType
 proxy_type (GDBusObjectManagerClient *manager,
-            const gchar *object_path,
-            const gchar *interface_name,
+            const char *object_path,
+            const char *interface_name,
             gpointer user_data)
 {
 	/* ObjectManager asks us for an object proxy. Unfortunatelly, we can't
@@ -3798,4 +3798,4 @@ NM_BACKPORT_SYMBOL (libnm_1_0_6, gboolean, nm_utils_enum_from_str,
                     (GType type, const char *str, int *out_value, char **err_token),
                     (type, str, out_value, err_token));
 
-NM_BACKPORT_SYMBOL (libnm_1_2_4, gint, nm_setting_ip_config_get_dns_priority, (NMSettingIPConfig *setting), (setting));
+NM_BACKPORT_SYMBOL (libnm_1_2_4, int, nm_setting_ip_config_get_dns_priority, (NMSettingIPConfig *setting), (setting));

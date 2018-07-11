@@ -109,8 +109,8 @@ nm_keyfile_plugin_kf_set_##stype##_list (GKeyFile *kf, \
 	g_key_file_set_##stype##_list (kf, alias ?: group, key, list, length); \
 }
 
-DEFINE_KF_LIST_WRAPPER(integer, gint*, gint);
-DEFINE_KF_LIST_WRAPPER(string, gchar **, const gchar* const);
+DEFINE_KF_LIST_WRAPPER(integer, int*, int);
+DEFINE_KF_LIST_WRAPPER(string, char **, const char* const);
 
 void
 nm_keyfile_plugin_kf_set_integer_list_uint8 (GKeyFile *kf,
@@ -173,19 +173,19 @@ nm_keyfile_plugin_kf_set_##stype (GKeyFile *kf, \
 	g_key_file_set_##stype (kf, alias ?: group, key, value); \
 }
 
-DEFINE_KF_WRAPPER(string, gchar*, const gchar*);
-DEFINE_KF_WRAPPER(integer, gint, gint);
+DEFINE_KF_WRAPPER(string, char*, const char*);
+DEFINE_KF_WRAPPER(integer, int, int);
 DEFINE_KF_WRAPPER(uint64, guint64, guint64);
 DEFINE_KF_WRAPPER(boolean, gboolean, gboolean);
-DEFINE_KF_WRAPPER(value, gchar*, const gchar*);
+DEFINE_KF_WRAPPER(value, char*, const char*);
 
-gchar **
+char **
 nm_keyfile_plugin_kf_get_keys (GKeyFile *kf,
                                const char *group,
                                gsize *out_length,
                                GError **error)
 {
-	gchar **keys;
+	char **keys;
 	const char *alias;
 	GError *local = NULL;
 

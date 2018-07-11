@@ -144,7 +144,7 @@ dhcpcanon_start (NMDhcpClient *client,
 	g_ptr_array_add (argv, (gpointer) iface);
 	g_ptr_array_add (argv, NULL);
 
-	cmd_str = g_strjoinv (" ", (gchar **) argv->pdata);
+	cmd_str = g_strjoinv (" ", (char **) argv->pdata);
 	g_free (cmd_str);
 
 	if (g_spawn_async (NULL, (char **) argv->pdata, NULL,

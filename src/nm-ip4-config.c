@@ -291,7 +291,7 @@ typedef struct {
 	guint32 mtu;
 	int ifindex;
 	NMIPConfigSource mtu_source;
-	gint dns_priority;
+	int dns_priority;
 	NMSettingConnectionMdns mdns;
 	GArray *nameservers;
 	GPtrArray *domains;
@@ -527,7 +527,7 @@ _notify_routes (NMIP4Config *self)
 
 /*****************************************************************************/
 
-static gint
+static int
 _addresses_sort_cmp_get_prio (in_addr_t addr)
 {
 	if (nm_utils_ip4_address_is_link_local (addr))
@@ -538,7 +538,7 @@ _addresses_sort_cmp_get_prio (in_addr_t addr)
 static int
 _addresses_sort_cmp (gconstpointer a, gconstpointer b, gpointer user_data)
 {
-	gint p1, p2;
+	int p1, p2;
 	const NMPlatformIP4Address *a1 = NMP_OBJECT_CAST_IP4_ADDRESS (*((const NMPObject **) a));
 	const NMPlatformIP4Address *a2 = NMP_OBJECT_CAST_IP4_ADDRESS (*((const NMPObject **) b));
 	guint32 n1, n2;
@@ -1336,7 +1336,7 @@ nm_ip4_config_subtract (NMIP4Config *dst,
 {
 	NMIP4ConfigPrivate *dst_priv;
 	guint i;
-	gint idx;
+	int idx;
 	const NMPlatformIP4Address *a;
 	const NMPlatformIP4Route *r;
 	NMDedupMultiIter ipconf_iter;
@@ -2529,7 +2529,7 @@ nm_ip4_config_mdns_set (NMIP4Config *self,
 /*****************************************************************************/
 
 void
-nm_ip4_config_set_dns_priority (NMIP4Config *self, gint priority)
+nm_ip4_config_set_dns_priority (NMIP4Config *self, int priority)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
 
@@ -2539,7 +2539,7 @@ nm_ip4_config_set_dns_priority (NMIP4Config *self, gint priority)
 	}
 }
 
-gint
+int
 nm_ip4_config_get_dns_priority (const NMIP4Config *self)
 {
 	const NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);

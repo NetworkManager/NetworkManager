@@ -90,8 +90,8 @@ struct _shvarFile {
  *
  * Returns: the parsed boolean value or @fallback.
  */
-gint
-svParseBoolean (const char *value, gint fallback)
+int
+svParseBoolean (const char *value, int fallback)
 {
 	if (!value)
 		return fallback;
@@ -148,8 +148,8 @@ static char *
 _escape_ansic (const char *source)
 {
 	const char *p;
-	gchar *dest;
-	gchar *q;
+	char *dest;
+	char *q;
 
 	nm_assert (source);
 
@@ -1044,8 +1044,8 @@ svGetValueStr_cp (shvarFile *s, const char *key)
  *
  * Returns: the parsed boolean value or @fallback.
  */
-gint
-svGetValueBoolean (shvarFile *s, const char *key, gint fallback)
+int
+svGetValueBoolean (shvarFile *s, const char *key, int fallback)
 {
 	gs_free char *to_free = NULL;
 	const char *value;

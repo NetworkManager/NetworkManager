@@ -1835,7 +1835,7 @@ test_create_many_links_do (guint n_devices)
 	char name[64];
 	const NMPlatformLink *pllink;
 	gs_unref_array GArray *ifindexes = g_array_sized_new (FALSE, FALSE, sizeof (int), n_devices);
-	const gint EX = ((int) (nmtst_get_rand_int () % 4)) - 1;
+	const int EX = ((int) (nmtst_get_rand_int () % 4)) - 1;
 
 	g_assert (EX >= -1 && EX <= 2);
 

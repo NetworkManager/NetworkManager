@@ -256,8 +256,8 @@ void nm_ip4_config_del_dns_option (NMIP4Config *self, guint i);
 guint nm_ip4_config_get_num_dns_options (const NMIP4Config *self);
 const char * nm_ip4_config_get_dns_option (const NMIP4Config *self, guint i);
 
-void nm_ip4_config_set_dns_priority (NMIP4Config *self, gint priority);
-gint nm_ip4_config_get_dns_priority (const NMIP4Config *self);
+void nm_ip4_config_set_dns_priority (NMIP4Config *self, int priority);
+int nm_ip4_config_get_dns_priority (const NMIP4Config *self);
 
 void nm_ip4_config_reset_nis_servers (NMIP4Config *self);
 void nm_ip4_config_add_nis_server (NMIP4Config *self, guint32 nis);
@@ -430,7 +430,7 @@ nm_ip_config_get_dns_priority (const NMIPConfig *self)
 }
 
 static inline void
-nm_ip_config_set_dns_priority (NMIPConfig *self, gint priority)
+nm_ip_config_set_dns_priority (NMIPConfig *self, int priority)
 {
 	_NM_IP_CONFIG_DISPATCH_VOID (self, nm_ip4_config_set_dns_priority, nm_ip6_config_set_dns_priority, priority);
 }

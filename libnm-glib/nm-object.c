@@ -551,7 +551,7 @@ deferred_notify_cb (gpointer data)
 	for (iter = props; iter; iter = g_slist_next (iter)) {
 		NotifyItem *item = iter->data;
 		char buf[50];
-		gint ret = 0;
+		int ret = 0;
 
 		switch (item->pending) {
 		case NOTIFY_SIGNAL_PENDING_ADDED:

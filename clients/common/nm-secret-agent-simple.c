@@ -53,9 +53,9 @@ static guint signals[LAST_SIGNAL] = { 0 };
 typedef struct {
 	NMSecretAgentSimple           *self;
 
-	gchar                         *request_id;
+	char                          *request_id;
 	NMConnection                  *connection;
-	gchar                        **hints;
+	char                         **hints;
 	NMSecretAgentOldGetSecretsFunc callback;
 	gpointer                       callback_data;
 } NMSecretAgentSimpleRequest;
@@ -121,10 +121,10 @@ nm_secret_agent_simple_finalize (GObject *object)
 }
 
 static gboolean
-strv_has (gchar **haystack,
-          gchar  *needle)
+strv_has (char **haystack,
+          char   *needle)
 {
-	gchar **iter;
+	char **iter;
 
 	for (iter = haystack; iter && *iter; iter++) {
 		if (g_strcmp0 (*iter, needle) == 0)
@@ -609,9 +609,9 @@ request_secrets_from_ui (NMSecretAgentSimpleRequest *request)
 static void
 nm_secret_agent_simple_get_secrets (NMSecretAgentOld                 *agent,
                                     NMConnection                     *connection,
-                                    const gchar                      *connection_path,
-                                    const gchar                      *setting_name,
-                                    const gchar                     **hints,
+                                    const char                       *connection_path,
+                                    const char                       *setting_name,
+                                    const char                      **hints,
                                     NMSecretAgentGetSecretsFlags      flags,
                                     NMSecretAgentOldGetSecretsFunc    callback,
                                     gpointer                          callback_data)
@@ -644,7 +644,7 @@ nm_secret_agent_simple_get_secrets (NMSecretAgentOld                 *agent,
 	request = g_slice_new (NMSecretAgentSimpleRequest);
 	request->self = g_object_ref (self);
 	request->connection = g_object_ref (connection);
-	request->hints = g_strdupv ((gchar **)hints);
+	request->hints = g_strdupv ((char **)hints);
 	request->callback = callback;
 	request->callback_data = callback_data;
 	request->request_id = request_id;
@@ -747,8 +747,8 @@ nm_secret_agent_simple_response (NMSecretAgentSimple *self,
 
 static void
 nm_secret_agent_simple_cancel_get_secrets (NMSecretAgentOld *agent,
-                                           const gchar      *connection_path,
-                                           const gchar      *setting_name)
+                                           const char       *connection_path,
+                                           const char       *setting_name)
 {
 	NMSecretAgentSimple *self = NM_SECRET_AGENT_SIMPLE (agent);
 	NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE (self);
@@ -761,7 +761,7 @@ nm_secret_agent_simple_cancel_get_secrets (NMSecretAgentOld *agent,
 static void
 nm_secret_agent_simple_save_secrets (NMSecretAgentOld                *agent,
                                      NMConnection                    *connection,
-                                     const gchar                     *connection_path,
+                                     const char                      *connection_path,
                                      NMSecretAgentOldSaveSecretsFunc  callback,
                                      gpointer                         callback_data)
 {
@@ -772,7 +772,7 @@ nm_secret_agent_simple_save_secrets (NMSecretAgentOld                *agent,
 static void
 nm_secret_agent_simple_delete_secrets (NMSecretAgentOld                  *agent,
                                        NMConnection                      *connection,
-                                       const gchar                       *connection_path,
+                                       const char                        *connection_path,
                                        NMSecretAgentOldDeleteSecretsFunc  callback,
                                        gpointer                           callback_data)
 {

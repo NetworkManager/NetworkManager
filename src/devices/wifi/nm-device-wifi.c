@@ -1880,7 +1880,7 @@ need_new_8021x_secrets (NMDeviceWifi *self,
 static gboolean
 need_new_wpa_psk (NMDeviceWifi *self,
                   NMSupplicantInterfaceState old_state,
-                  gint disconnect_reason,
+                  int disconnect_reason,
                   const char **setting_name)
 {
 	NMSettingWirelessSecurity *s_wsec;

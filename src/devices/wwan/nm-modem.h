@@ -273,7 +273,7 @@ void nm_modem_emit_ip6_config_result (NMModem *self,
                                       NMIP6Config *config,
                                       GError *error);
 
-const gchar *nm_modem_ip_type_to_string (NMModemIPType ip_type);
+const char *nm_modem_ip_type_to_string (NMModemIPType ip_type);
 
 guint32 nm_modem_get_configured_mtu (NMDevice *self, NMDeviceMtuSource *out_source);
 

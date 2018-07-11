@@ -359,7 +359,7 @@ NMSetting8021xCKFormat nm_setting_802_1x_get_phase2_private_key_format   (NMSett
 NM_AVAILABLE_IN_1_8
 NMSetting8021xAuthFlags nm_setting_802_1x_get_phase1_auth_flags          (NMSetting8021x *setting);
 NM_AVAILABLE_IN_1_8
-gint                   nm_setting_802_1x_get_auth_timeout                (NMSetting8021x *setting);
+int                    nm_setting_802_1x_get_auth_timeout                (NMSetting8021x *setting);
 
 G_END_DECLS
 

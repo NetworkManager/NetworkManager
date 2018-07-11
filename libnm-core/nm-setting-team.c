@@ -118,8 +118,8 @@ struct NMTeamLinkWatcher {
  * Since: 1.12
  **/
 NMTeamLinkWatcher *
-nm_team_link_watcher_new_ethtool (gint delay_up,
-                                  gint delay_down,
+nm_team_link_watcher_new_ethtool (int delay_up,
+                                  int delay_down,
                                   GError **error)
 {
 	NMTeamLinkWatcher *watcher;
@@ -161,9 +161,9 @@ nm_team_link_watcher_new_ethtool (gint delay_up,
  * Since: 1.12
  **/
 NMTeamLinkWatcher *
-nm_team_link_watcher_new_nsna_ping (gint init_wait,
-                                    gint interval,
-                                    gint missed_max,
+nm_team_link_watcher_new_nsna_ping (int init_wait,
+                                    int interval,
+                                    int missed_max,
                                     const char *target_host,
                                     GError **error)
 {
@@ -225,9 +225,9 @@ nm_team_link_watcher_new_nsna_ping (gint init_wait,
  * Since: 1.12
  **/
 NMTeamLinkWatcher *
-nm_team_link_watcher_new_arp_ping (gint init_wait,
-                                   gint interval,
-                                   gint missed_max,
+nm_team_link_watcher_new_arp_ping (int init_wait,
+                                   int interval,
+                                   int missed_max,
                                    const char *target_host,
                                    const char *source_host,
                                    NMTeamLinkWatcherArpPingFlags flags,
@@ -564,19 +564,19 @@ G_DEFINE_TYPE_WITH_CODE (NMSettingTeam, nm_setting_team, NM_TYPE_SETTING,
 
 typedef struct {
 	char *config;
-	gint notify_peers_count;
-	gint notify_peers_interval;
-	gint mcast_rejoin_count;
-	gint mcast_rejoin_interval;
+	int notify_peers_count;
+	int notify_peers_interval;
+	int mcast_rejoin_count;
+	int mcast_rejoin_interval;
 	char *runner;
 	char *runner_hwaddr_policy;
 	GPtrArray *runner_tx_hash;
 	char *runner_tx_balancer;
-	gint runner_tx_balancer_interval;
+	int runner_tx_balancer_interval;
 	gboolean runner_active;
 	gboolean runner_fast_rate;
-	gint runner_sys_prio;
-	gint runner_min_ports;
+	int runner_sys_prio;
+	int runner_min_ports;
 	char *runner_agg_select_policy;
 	GPtrArray *link_watchers; /* Array of NMTeamLinkWatcher */
 } NMSettingTeamPrivate;
@@ -660,7 +660,7 @@ nm_setting_team_get_config (NMSettingTeam *setting)
  *
  * Since: 1.12
  **/
-gint
+int
 nm_setting_team_get_notify_peers_count (NMSettingTeam *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_TEAM (setting), 0);
@@ -676,7 +676,7 @@ nm_setting_team_get_notify_peers_count (NMSettingTeam *setting)
  *
  * Since: 1.12
  **/
-gint
+int
 nm_setting_team_get_notify_peers_interval (NMSettingTeam *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_TEAM (setting), 0);
@@ -692,7 +692,7 @@ nm_setting_team_get_notify_peers_interval (NMSettingTeam *setting)
  *
  * Since: 1.12
  **/
-gint
+int
 nm_setting_team_get_mcast_rejoin_count (NMSettingTeam *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_TEAM (setting), 0);
@@ -708,7 +708,7 @@ nm_setting_team_get_mcast_rejoin_count (NMSettingTeam *setting)
  *
  * Since: 1.12
  **/
-gint
+int
 nm_setting_team_get_mcast_rejoin_interval (NMSettingTeam *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_TEAM (setting), 0);
@@ -772,7 +772,7 @@ nm_setting_team_get_runner_tx_balancer (NMSettingTeam *setting)
  *
  * Since: 1.12
  **/
-gint
+int
 nm_setting_team_get_runner_tx_balancer_interval (NMSettingTeam *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_TEAM (setting), 0);
@@ -820,7 +820,7 @@ nm_setting_team_get_runner_fast_rate (NMSettingTeam *setting)
  *
  * Since: 1.12
  **/
-gint
+int
 nm_setting_team_get_runner_sys_prio (NMSettingTeam *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_TEAM (setting), 0);
@@ -836,7 +836,7 @@ nm_setting_team_get_runner_sys_prio (NMSettingTeam *setting)
  *
  * Since: 1.12
  **/
-gint
+int
 nm_setting_team_get_runner_min_ports (NMSettingTeam *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_TEAM (setting), 0);

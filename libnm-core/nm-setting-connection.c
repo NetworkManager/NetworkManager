@@ -70,8 +70,8 @@ typedef struct {
 	NMSettingConnectionAutoconnectSlaves autoconnect_slaves;
 	GSList *permissions; /* list of Permission structs */
 	gboolean autoconnect;
-	gint autoconnect_priority;
-	gint autoconnect_retries;
+	int autoconnect_priority;
+	int autoconnect_retries;
 	guint64 timestamp;
 	gboolean read_only;
 	char *zone;
@@ -79,7 +79,7 @@ typedef struct {
 	guint gateway_ping_timeout;
 	NMMetered metered;
 	NMSettingConnectionLldp lldp;
-	gint auth_retries;
+	int auth_retries;
 	int mdns;
 } NMSettingConnectionPrivate;
 
@@ -527,7 +527,7 @@ nm_setting_connection_get_autoconnect (NMSettingConnection *setting)
  *
  * Returns: the connection's autoconnect priority
  **/
-gint
+int
 nm_setting_connection_get_autoconnect_priority (NMSettingConnection *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), 0);
@@ -546,7 +546,7 @@ nm_setting_connection_get_autoconnect_priority (NMSettingConnection *setting)
  *
  * Since: 1.6
  **/
-gint
+int
 nm_setting_connection_get_autoconnect_retries (NMSettingConnection *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), -1);
@@ -565,7 +565,7 @@ nm_setting_connection_get_autoconnect_retries (NMSettingConnection *setting)
  *
  * Since: 1.10
  **/
-gint
+int
 nm_setting_connection_get_auth_retries (NMSettingConnection *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), -1);

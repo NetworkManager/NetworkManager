@@ -310,7 +310,7 @@ _config_data_free (NMDnsConfigData *data)
 	g_slice_free (NMDnsConfigData, data);
 }
 
-static gint
+static int
 _ip_config_data_cmp (const NMDnsIPConfigData *a, const NMDnsIPConfigData *b)
 {
 	int a_prio, b_prio;
@@ -333,7 +333,7 @@ _ip_config_data_cmp (const NMDnsIPConfigData *a, const NMDnsIPConfigData *b)
 	return 0;
 }
 
-static gint
+static int
 _ip_config_lst_cmp (const CList *a,
                     const CList *b,
                     const void *user_data)
@@ -482,7 +482,7 @@ merge_one_ip_config (NMResolvConfData *rc,
 }
 
 static GPid
-run_netconfig (NMDnsManager *self, GError **error, gint *stdin_fd)
+run_netconfig (NMDnsManager *self, GError **error, int *stdin_fd)
 {
 	char *argv[5];
 	gs_free char *tmp = NULL;
@@ -533,7 +533,7 @@ dispatch_netconfig (NMDnsManager *self,
                     GError **error)
 {
 	GPid pid;
-	gint fd;
+	int fd;
 	int status;
 	gssize l;
 	nm_auto_free_gstring GString *str = NULL;
