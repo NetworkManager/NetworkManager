@@ -116,6 +116,7 @@ if ($is_file and $filename ne $ARGV) {
 }
 
 next unless $filename =~ /\.[ch]$/;
+next if $filename =~ /\/nm-[^\/]+-enum-types\.[ch]$/;
 
 complain ('Tabs are only allowed at the beginning of a line') if $line =~ /[^\t]\t/;
 complain ('Trailing whitespace') if $line =~ /[ \t]$/;
