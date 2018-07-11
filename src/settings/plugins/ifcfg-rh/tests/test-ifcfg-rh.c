@@ -9632,6 +9632,153 @@ test_utils_ignore (void)
 	do_test_utils_ignored ("ignored-augtmp", "ifcfg-FooBar" AUGTMP_TAG, TRUE);
 }
 
+/*****************************************************************************/
+
+static void
+test_sriov_read (void)
+{
+	gs_unref_object NMConnection *connection = NULL;
+	NMSettingSriov *s_sriov;
+	NMSriovVF *vf;
+	GVariant *variant;
+	GError *error = NULL;
+	char *str;
+
+	connection = _connection_from_file (TEST_IFCFG_DIR "/ifcfg-test-sriov",
+	                                    NULL, TYPE_ETHERNET,NULL);
+
+	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "eth0");
+
+	s_sriov = nm_connection_get_setting_sriov (connection);
+	g_assert (s_sriov);
+
+	g_assert_cmpint (nm_setting_sriov_get_total_vfs (s_sriov), ==, 16);
+	g_assert_cmpint (nm_setting_sriov_get_num_vfs (s_sriov), ==, 3);
+	g_assert_cmpint (nm_setting_sriov_get_autoprobe_drivers (s_sriov), ==, NM_TERNARY_FALSE);
+
+	/* VF 3 */
+	vf = nm_setting_sriov_get_vf (s_sriov, 0);
+	g_assert (vf);
+	g_assert_cmpint (nm_sriov_vf_get_index (vf), ==, 3);
+
+	variant = nm_sriov_vf_get_attribute (vf, NM_SRIOV_VF_ATTRIBUTE_MAC);
+	g_assert (variant);
+	g_assert (g_variant_is_of_type (variant, G_VARIANT_TYPE_STRING));
+	g_assert_cmpstr (g_variant_get_string (variant, NULL), ==, "55:44:33:22:11:00");
+
+	variant = nm_sriov_vf_get_attribute (vf, NM_SRIOV_VF_ATTRIBUTE_SPOOF_CHECK);
+	g_assert (variant);
+	g_assert (g_variant_is_of_type (variant, G_VARIANT_TYPE_BOOLEAN));
+	g_assert_cmpint (g_variant_get_boolean (variant), ==, TRUE);
+
+	/* VF 12 */
+	vf = nm_setting_sriov_get_vf (s_sriov, 1);
+	str = nm_utils_sriov_vf_to_str (vf, FALSE, &error);
+	g_assert_no_error (error);
+	g_assert_cmpstr (str, ==, "12 min-tx-rate=100 trust=false vlans=1.200.ad");
+	g_free (str);
+
+	/* VF 15 */
+	vf = nm_setting_sriov_get_vf (s_sriov, 2);
+	str = nm_utils_sriov_vf_to_str (vf, FALSE, &error);
+	g_assert_no_error (error);
+	g_assert_cmpstr (str, ==, "15 mac=01:23:45:67:89:ab max-tx-rate=200 vlans=2");
+	g_free (str);
+}
+
+static void
+test_sriov_write (void)
+{
+	nmtst_auto_unlinkfile char *testfile = NULL;
+	gs_unref_object NMConnection *connection = NULL;
+	gs_unref_object NMConnection *reread = NULL;
+	NMSettingConnection *s_con;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
+	NMSettingWired *s_wired;
+	NMSettingSriov *s_sriov;
+	NMSriovVF *vf;
+	gs_unref_ptrarray GPtrArray *vfs = NULL;
+	NMIPAddress *addr;
+	GError *error = NULL;
+
+	connection = nm_simple_connection_new ();
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write SR-IOV config",
+	              NM_SETTING_CONNECTION_UUID, nm_utils_uuid_generate_a (),
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, "eth0",
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NULL);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_GATEWAY, "1.1.1.1",
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
+	              NULL);
+
+	addr = nm_ip_address_new (AF_INET, "1.1.1.3", 24, &error);
+	g_assert_no_error (error);
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	nm_ip_address_unref (addr);
+
+	/* IP6 setting */
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NULL);
+
+	/* SRIOV setting */
+	s_sriov = (NMSettingSriov *) nm_setting_sriov_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_sriov));
+
+	vfs = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_sriov_vf_unref);
+
+	vf = nm_utils_sriov_vf_from_str ("2 mac=55:55:55:55:55:55 vlans=3.10.ad;10", &error);
+	nmtst_assert_success (vf, error);
+	g_ptr_array_add (vfs, vf);
+
+	vf = nm_utils_sriov_vf_from_str ("19 spoof-check=true", &error);
+	nmtst_assert_success (vf, error);
+	g_ptr_array_add (vfs, vf);
+
+	g_object_set (s_sriov,
+	              NM_SETTING_SRIOV_TOTAL_VFS, 64,
+	              NM_SETTING_SRIOV_VFS, vfs,
+	              NM_SETTING_SRIOV_AUTOPROBE_DRIVERS, NM_TERNARY_TRUE,
+	              NULL);
+
+	nm_connection_add_setting (connection, nm_setting_proxy_new ());
+
+	nmtst_assert_connection_verifies_without_normalization (connection);
+
+	_writer_new_connec_exp (connection,
+	                        TEST_SCRATCH_DIR,
+	                        TEST_IFCFG_DIR "/ifcfg-test-sriov-write.cexpected",
+	                        &testfile);
+
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
+
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
+}
+
+/*****************************************************************************/
+
 static void
 test_tc_read (void)
 {
@@ -10032,6 +10179,9 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "utils/name", test_utils_name);
 	g_test_add_func (TPATH "utils/path", test_utils_path);
 	g_test_add_func (TPATH "utils/ignore", test_utils_ignore);
+
+	g_test_add_func (TPATH "sriov/read", test_sriov_read);
+	g_test_add_func (TPATH "sriov/write", test_sriov_write);
 
 	g_test_add_func (TPATH "tc/read", test_tc_read);
 	g_test_add_func (TPATH "tc/write", test_tc_write);

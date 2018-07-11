@@ -161,6 +161,23 @@ _nm_auto_unref_gsource (GSource **ptr)
 }
 #define nm_auto_unref_gsource nm_auto(_nm_auto_unref_gsource)
 
+static inline void
+_nm_auto_freev (gpointer ptr)
+{
+	gpointer **p = ptr;
+	gpointer *_ptr;
+
+	if (*p) {
+		for (_ptr = *p; *_ptr; _ptr++)
+			g_free (*_ptr);
+		g_free (*p);
+	}
+}
+/* g_free a NULL terminated array of pointers, with also freeing each
+ * pointer with g_free(). It essentially does the same as
+ * gs_strfreev / g_strfreev(), but not restricted to strv arrays. */
+#define nm_auto_freev nm_auto(_nm_auto_freev)
+
 /*****************************************************************************/
 
 /* http://stackoverflow.com/a/11172679 */

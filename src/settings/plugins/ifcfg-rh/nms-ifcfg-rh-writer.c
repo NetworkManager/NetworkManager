@@ -2135,6 +2135,45 @@ write_user_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	return TRUE;
 }
 
+static void
+write_sriov_setting (NMConnection *connection, shvarFile *ifcfg)
+{
+	NMSettingSriov *s_sriov;
+	guint i, num = 0;
+	NMTernary b;
+	NMSriovVF *vf;
+	char key[32];
+	char *str;
+
+	svUnsetAll (ifcfg, SV_KEY_TYPE_SRIOV_VF);
+
+	s_sriov = nm_connection_get_setting_sriov (connection);
+	if (s_sriov)
+		num = nm_setting_sriov_get_total_vfs (s_sriov);
+	if (num == 0) {
+		svUnsetValue (ifcfg, "SRIOV_TOTAL_VFS");
+		svUnsetValue (ifcfg, "SRIOV_AUTOPROBE_DRIVERS");
+		return;
+	}
+
+	svSetValueInt64 (ifcfg, "SRIOV_TOTAL_VFS", num);
+
+	b = nm_setting_sriov_get_autoprobe_drivers (s_sriov);
+	if (b != NM_TERNARY_DEFAULT)
+		svSetValueInt64 (ifcfg, "SRIOV_AUTOPROBE_DRIVERS", b);
+	else
+		svUnsetValue (ifcfg, "SRIOV_AUTOPROBE_DRIVERS");
+
+	num = nm_setting_sriov_get_num_vfs (s_sriov);
+	for (i = 0; i < num; i++) {
+		vf = nm_setting_sriov_get_vf (s_sriov, i);
+		nm_sprintf_buf (key, "SRIOV_VF%u", nm_sriov_vf_get_index (vf));
+		str = nm_utils_sriov_vf_to_str (vf, TRUE, NULL);
+		svSetValueStr (ifcfg, key, str);
+		g_free (str);
+	}
+}
+
 static gboolean
 write_tc_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 {
@@ -2920,6 +2959,8 @@ do_write_construct (NMConnection *connection,
 
 	if (!write_user_setting (connection, ifcfg, error))
 		return FALSE;
+
+	write_sriov_setting (connection, ifcfg);
 
 	if (!write_tc_setting (connection, ifcfg, error))
 		return FALSE;

@@ -602,12 +602,6 @@ link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 	return NM_PLATFORM_ERROR_SUCCESS;
 }
 
-static gboolean
-link_set_sriov_num_vfs (NMPlatform *platform, int ifindex, guint num_vfs)
-{
-	return TRUE;
-}
-
 static const char *
 link_get_udi (NMPlatform *platform, int ifindex)
 {
@@ -1422,7 +1416,6 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 
 	platform_class->link_set_address = link_set_address;
 	platform_class->link_set_mtu = link_set_mtu;
-	platform_class->link_set_sriov_num_vfs = link_set_sriov_num_vfs;
 
 	platform_class->link_get_driver_info = link_get_driver_info;
 

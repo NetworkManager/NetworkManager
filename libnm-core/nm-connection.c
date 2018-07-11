@@ -1178,6 +1178,18 @@ _normalize_ip_tunnel_wired_setting (NMConnection *self, GHashTable *parameters)
 }
 
 static gboolean
+_normalize_sriov_vf_order (NMConnection *self, GHashTable *parameters)
+{
+	NMSettingSriov *s_sriov;
+
+	s_sriov = nm_connection_get_setting_sriov (self);
+	if (!s_sriov)
+		return FALSE;
+
+	return _nm_setting_sriov_sort_vfs (s_sriov);
+}
+
+static gboolean
 _normalize_required_settings (NMConnection *self, GHashTable *parameters)
 {
 	NMSettingBluetooth *s_bt = nm_connection_get_setting_bluetooth (self);
@@ -1523,6 +1535,7 @@ nm_connection_normalize (NMConnection *connection,
 	was_modified |= _normalize_bluetooth_type (connection, parameters);
 	was_modified |= _normalize_ovs_interface_type (connection, parameters);
 	was_modified |= _normalize_ip_tunnel_wired_setting (connection, parameters);
+	was_modified |= _normalize_sriov_vf_order (connection, parameters);
 
 	/* Verify anew. */
 	success = _nm_connection_verify (connection, error);
@@ -2624,6 +2637,22 @@ NMSettingSerial *
 nm_connection_get_setting_serial (NMConnection *connection)
 {
 	return _connection_get_setting_check (connection, NM_TYPE_SETTING_SERIAL);
+}
+
+/**
+ * nm_connection_get_setting_sriov:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return any #NMSettingSriov the connection might contain.
+ *
+ * Returns: (transfer none): an #NMSettingSriov if the connection contains one, otherwise %NULL
+ *
+ * Since: 1.14
+ **/
+NMSettingSriov *
+nm_connection_get_setting_sriov (NMConnection *connection)
+{
+	return _connection_get_setting_check (connection, NM_TYPE_SETTING_SRIOV);
 }
 
 /**

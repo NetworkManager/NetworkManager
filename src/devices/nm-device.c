@@ -724,6 +724,7 @@ NM_UTILS_LOOKUP_STR_DEFINE (nm_device_state_reason_to_str, NMDeviceStateReason,
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_REASON_OVSDB_FAILED,                   "ovsdb-failed"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_REASON_IP_ADDRESS_DUPLICATE,           "ip-address-duplicate"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_REASON_IP_METHOD_UNSUPPORTED,          "ip-method-unsupported"),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_STATE_REASON_SRIOV_CONFIGURATION_FAILED,     "sriov-configuration-failed"),
 );
 
 #define reason_to_string(reason) \
@@ -3937,7 +3938,7 @@ nm_device_update_from_platform_link (NMDevice *self, const NMPlatformLink *plink
 }
 
 static void
-device_init_sriov_num_vfs (NMDevice *self)
+device_init_static_sriov_num_vfs (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	gs_free char *value = NULL;
@@ -3951,8 +3952,8 @@ device_init_sriov_num_vfs (NMDevice *self)
 		                                          NULL);
 		num_vfs = _nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXINT32, -1);
 		if (num_vfs >= 0) {
-			nm_platform_link_set_sriov_num_vfs (nm_device_get_platform (self),
-			                                    priv->ifindex, num_vfs);
+			nm_platform_link_set_sriov_params (nm_device_get_platform (self),
+			                                   priv->ifindex, num_vfs, -1);
 		}
 	}
 }
@@ -3971,7 +3972,7 @@ config_changed (NMConfig *config,
 		priv->ignore_carrier = nm_config_data_get_ignore_carrier (config_data, self);
 
 	if (NM_FLAGS_HAS (changes, NM_CONFIG_CHANGE_VALUES))
-		device_init_sriov_num_vfs (self);
+		device_init_static_sriov_num_vfs (self);
 }
 
 static void
@@ -4115,7 +4116,7 @@ realize_start_setup (NMDevice *self,
 
 	nm_device_set_carrier_from_platform (self);
 
-	device_init_sriov_num_vfs (self);
+	device_init_static_sriov_num_vfs (self);
 
 	nm_assert (!priv->stats.timeout_id);
 	real_rate = _stats_refresh_rate_real (priv->stats.refresh_rate_ms);
@@ -5859,9 +5860,140 @@ lldp_rx_enabled (NMDevice *self)
 	return lldp == NM_SETTING_CONNECTION_LLDP_ENABLE_RX;
 }
 
+static NMPlatformVF *
+sriov_vf_config_to_platform (NMDevice *self,
+                             NMSriovVF *vf,
+                             GError **error)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gs_free NMPlatformVF *plat_vf = NULL;
+	const guint *vlan_ids;
+	GVariant *variant;
+	guint i, num_vlans;
+	gsize length;
+
+	g_return_val_if_fail (!error || !*error, FALSE);
+
+	vlan_ids = nm_sriov_vf_get_vlan_ids (vf, &num_vlans);
+	plat_vf = g_malloc0 (  sizeof (NMPlatformVF)
+	                     + sizeof (NMPlatformVFVlan) * num_vlans);
+
+	plat_vf->index = nm_sriov_vf_get_index (vf);
+
+	variant = nm_sriov_vf_get_attribute (vf, NM_SRIOV_VF_ATTRIBUTE_SPOOF_CHECK);
+	if (variant)
+		plat_vf->spoofchk = g_variant_get_boolean (variant);
+	else
+		plat_vf->spoofchk = -1;
+
+	variant = nm_sriov_vf_get_attribute (vf, NM_SRIOV_VF_ATTRIBUTE_TRUST);
+	if (variant)
+		plat_vf->trust = g_variant_get_boolean (variant);
+	else
+		plat_vf->trust = -1;
+
+	variant = nm_sriov_vf_get_attribute (vf, NM_SRIOV_VF_ATTRIBUTE_MAC);
+	if (variant) {
+		if (!_nm_utils_hwaddr_aton (g_variant_get_string (variant, NULL),
+		                            plat_vf->mac.data,
+		                            sizeof (plat_vf->mac.data),
+		                            &length)) {
+			g_set_error (error,
+			             NM_DEVICE_ERROR,
+			             NM_DEVICE_ERROR_FAILED,
+			             "invalid MAC %s",
+			             g_variant_get_string (variant, NULL));
+			return NULL;
+		}
+		if (length != priv->hw_addr_len) {
+			g_set_error (error,
+			             NM_DEVICE_ERROR,
+			             NM_DEVICE_ERROR_FAILED,
+			             "wrong MAC length %" G_GSIZE_FORMAT ", should be %u",
+			             length, priv->hw_addr_len);
+			return NULL;
+		}
+		plat_vf->mac.len = length;
+	}
+
+	variant = nm_sriov_vf_get_attribute (vf, NM_SRIOV_VF_ATTRIBUTE_MIN_TX_RATE);
+	if (variant)
+		plat_vf->min_tx_rate = g_variant_get_uint32 (variant);
+
+	variant = nm_sriov_vf_get_attribute (vf, NM_SRIOV_VF_ATTRIBUTE_MAX_TX_RATE);
+	if (variant)
+		plat_vf->max_tx_rate = g_variant_get_uint32 (variant);
+
+	plat_vf->num_vlans = num_vlans;
+	plat_vf->vlans = (NMPlatformVFVlan *) (&plat_vf[1]);
+	for (i = 0; i < num_vlans; i++) {
+		plat_vf->vlans[i].id = vlan_ids[i];
+		plat_vf->vlans[i].qos = nm_sriov_vf_get_vlan_qos (vf, vlan_ids[i]);
+		plat_vf->vlans[i].proto_ad = nm_sriov_vf_get_vlan_protocol (vf, vlan_ids[i]) == NM_SRIOV_VF_VLAN_PROTOCOL_802_1AD;
+	}
+
+	return g_steal_pointer (&plat_vf);
+}
+
 static NMActStageReturn
 act_stage1_prepare (NMDevice *self, NMDeviceStateReason *out_failure_reason)
 {
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMSettingSriov *s_sriov;
+	guint i, num;
+
+	if (   priv->ifindex > 0
+	    && nm_device_has_capability (self, NM_DEVICE_CAP_SRIOV)
+	    && (s_sriov = (NMSettingSriov *) nm_device_get_applied_setting (self, NM_TYPE_SETTING_SRIOV))) {
+		nm_auto_freev NMPlatformVF **plat_vfs = NULL;
+		gs_free_error GError *error = NULL;
+		gs_free const char *str = NULL;
+		NMSriovVF *vf;
+		int autoprobe;
+
+		autoprobe = nm_setting_sriov_get_autoprobe_drivers (s_sriov);
+		if (autoprobe == NM_TERNARY_DEFAULT) {
+			str = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+			                                             "sriov.autoprobe-drivers", self);
+			autoprobe = _nm_utils_ascii_str_to_int64 (str, 10,
+			                                          NM_TERNARY_FALSE,
+			                                          NM_TERNARY_TRUE,
+			                                          NM_TERNARY_TRUE);
+		}
+
+		num = nm_setting_sriov_get_num_vfs (s_sriov);
+		plat_vfs = g_new0 (NMPlatformVF *, num + 1);
+		for (i = 0; i < num; i++) {
+			vf = nm_setting_sriov_get_vf (s_sriov, i);
+			plat_vfs[i] = sriov_vf_config_to_platform (self, vf, &error);
+			if (!plat_vfs[i]) {
+				_LOGE (LOGD_DEVICE,
+				       "failed to apply SR-IOV VF '%s': %s",
+				       nm_utils_sriov_vf_to_str (vf, FALSE, NULL),
+				       error->message);
+				NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SRIOV_CONFIGURATION_FAILED);
+				return NM_ACT_STAGE_RETURN_FAILURE;
+			}
+		}
+
+		if (!nm_platform_link_set_sriov_params (nm_device_get_platform (self),
+		                                        priv->ifindex,
+		                                        nm_setting_sriov_get_total_vfs (s_sriov),
+		                                        autoprobe)) {
+			_LOGE (LOGD_DEVICE, "failed to apply SR-IOV parameters");
+			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SRIOV_CONFIGURATION_FAILED);
+			return NM_ACT_STAGE_RETURN_FAILURE;
+		}
+
+		if (!nm_platform_link_set_sriov_vfs (nm_device_get_platform (self),
+		                                     priv->ifindex,
+		                                     (const NMPlatformVF *const *) plat_vfs)) {
+			_LOGE (LOGD_DEVICE, "failed to apply SR-IOV VFs");
+			NM_SET_OUT (out_failure_reason, NM_DEVICE_STATE_REASON_SRIOV_CONFIGURATION_FAILED);
+			return NM_ACT_STAGE_RETURN_FAILURE;
+		}
+	}
+
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 

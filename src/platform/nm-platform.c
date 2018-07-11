@@ -1463,18 +1463,52 @@ nm_platform_link_supports_sriov (NMPlatform *self, int ifindex)
 	return klass->link_supports_sriov (self, ifindex);
 }
 
+/**
+ * nm_platform_link_set_sriov_params:
+ * @self: platform instance
+ * @ifindex: the index of the interface to change
+ * @num_vfs: the number of VFs to create
+ * @autoprobe: -1 to keep the current autoprobe-drivers value,
+ *   or {0,1} to set a new value
+ */
 gboolean
-nm_platform_link_set_sriov_num_vfs (NMPlatform *self, int ifindex, guint num_vfs)
+nm_platform_link_set_sriov_params (NMPlatform *self,
+                                   int ifindex,
+                                   guint num_vfs,
+                                   int autoprobe)
 {
 	_CHECK_SELF (self, klass, FALSE);
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (NM_IN_SET (autoprobe, -1, 0, 1), FALSE);
 
-	_LOGD ("link: setting %u VFs for %s (%d)",
+	_LOGD ("link: setting %u total VFs and autoprobe %d for %s (%d)",
 	       num_vfs,
+	       autoprobe,
 	       nm_strquote_a (25, nm_platform_link_get_name (self, ifindex)),
 	       ifindex);
-	return klass->link_set_sriov_num_vfs (self, ifindex, num_vfs);
+	return klass->link_set_sriov_params (self, ifindex, num_vfs, autoprobe);
+}
+
+gboolean
+nm_platform_link_set_sriov_vfs (NMPlatform *self, int ifindex, const NMPlatformVF *const *vfs)
+{
+	guint i;
+	_CHECK_SELF (self, klass, FALSE);
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+
+	_LOGD ("link: setting VFs for \"%s\" (%d):",
+	       nm_platform_link_get_name (self, ifindex),
+	       ifindex);
+
+	for (i = 0; vfs[i]; i++) {
+		const NMPlatformVF *vf = vfs[i];
+
+		_LOGD ("link:   VF %s", nm_platform_vf_to_string (vf, NULL, 0));
+	}
+
+	return klass->link_set_sriov_vfs (self, ifindex, vfs);
 }
 
 /**
@@ -6040,6 +6074,56 @@ nm_platform_tfilter_cmp (const NMPlatformTfilter *a, const NMPlatformTfilter *b)
 	}
 
 	return 0;
+}
+
+const char *
+nm_platform_vf_to_string (const NMPlatformVF *vf, char *buf, gsize len)
+{
+	char str_mac[128], mac[128];
+	char str_spoof_check[64];
+	char str_trust[64];
+	char str_min_tx_rate[64];
+	char str_max_tx_rate[64];
+	nm_auto_free_gstring GString *gstr_vlans = NULL;
+	guint i;
+
+	if (!nm_utils_to_string_buffer_init_null (vf, &buf, &len))
+		return buf;
+
+	if (vf->mac.len) {
+		nm_utils_hwaddr_ntoa_buf (vf->mac.data, vf->mac.len, TRUE, mac, sizeof (mac));
+		nm_sprintf_buf (str_mac, " mac %s", mac);
+	} else
+		str_mac[0] = '\0';
+
+	if (vf->num_vlans) {
+		gstr_vlans = g_string_new ("");
+		for (i = 0; i < vf->num_vlans; i++) {
+			g_string_append_printf (gstr_vlans, " vlan %u", (unsigned) vf->vlans[i].id);
+			if (vf->vlans[i].qos)
+				g_string_append_printf (gstr_vlans, " qos %u", (unsigned) vf->vlans[i].qos);
+			if (vf->vlans[i].proto_ad)
+				g_string_append (gstr_vlans, " proto 802.1ad");
+		}
+	}
+
+	g_snprintf (buf, len,
+	            "%u"    /* index */
+	            "%s"    /* MAC */
+	            "%s"    /* spoof check */
+	            "%s"    /* trust */
+	            "%s"    /* min tx rate */
+	            "%s"    /* max tx rate */
+	            "%s",   /* VLANs */
+	            vf->index,
+	            str_mac,
+	            vf->spoofchk >= 0 ? nm_sprintf_buf (str_spoof_check, " spoofchk %d", vf->spoofchk) : "",
+	            vf->trust >= 0 ? nm_sprintf_buf (str_trust, " trust %d", vf->trust) : "",
+	            vf->min_tx_rate ? nm_sprintf_buf (str_min_tx_rate, " min_tx_rate %u", (unsigned) vf->min_tx_rate) : "",
+	            vf->max_tx_rate ? nm_sprintf_buf (str_max_tx_rate, " max_tx_rate %u", (unsigned) vf->max_tx_rate) : "",
+	            gstr_vlans ? gstr_vlans->str : "");
+
+	return buf;
 }
 
 void

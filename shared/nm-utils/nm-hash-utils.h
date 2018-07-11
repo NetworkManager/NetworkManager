@@ -209,6 +209,15 @@ guint nm_direct_hash (gconstpointer str);
 guint nm_hash_str (const char *str);
 guint nm_str_hash (gconstpointer str);
 
+#define nm_hash_val(static_seed, val) \
+	({ \
+		NMHashState _h; \
+		\
+		nm_hash_init (&_h, static_seed); \
+		nm_hash_update_val (&_h, val); \
+		nm_hash_complete (&_h); \
+	})
+
 /*****************************************************************************/
 
 /* nm_pstr_*() are for hashing keys that are pointers to strings,

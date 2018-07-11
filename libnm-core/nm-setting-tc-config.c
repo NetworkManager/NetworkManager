@@ -820,18 +820,18 @@ enum {
 /**
  * NMSettingTCConfig:
  *
- * Linux Traffic Contril Settings.
+ * Linux Traffic Control Settings.
  *
  * Since: 1.12
  */
 struct _NMSettingTCConfig {
-        NMSetting parent;
+	NMSetting parent;
 	GPtrArray *qdiscs;
 	GPtrArray *tfilters;
 };
 
 struct _NMSettingTCConfigClass {
-        NMSettingClass parent;
+	NMSettingClass parent;
 };
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingTCConfig, nm_setting_tc_config, NM_TYPE_SETTING,
@@ -982,8 +982,10 @@ nm_setting_tc_config_clear_qdiscs (NMSettingTCConfig *self)
 {
 	g_return_if_fail (NM_IS_SETTING_TC_CONFIG (self));
 
-	g_ptr_array_set_size (self->qdiscs, 0);
-	g_object_notify (G_OBJECT (self), NM_SETTING_TC_CONFIG_QDISCS);
+	if (self->qdiscs->len != 0) {
+		g_ptr_array_set_size (self->qdiscs, 0);
+		g_object_notify (G_OBJECT (self), NM_SETTING_TC_CONFIG_QDISCS);
+	}
 }
 
 /*****************************************************************************/
@@ -1116,8 +1118,10 @@ nm_setting_tc_config_clear_tfilters (NMSettingTCConfig *self)
 {
 	g_return_if_fail (NM_IS_SETTING_TC_CONFIG (self));
 
-	g_ptr_array_set_size (self->tfilters, 0);
-	g_object_notify (G_OBJECT (self), NM_SETTING_TC_CONFIG_TFILTERS);
+	if (self->tfilters->len != 0) {
+		g_ptr_array_set_size (self->tfilters, 0);
+		g_object_notify (G_OBJECT (self), NM_SETTING_TC_CONFIG_TFILTERS);
+	}
 }
 
 /*****************************************************************************/
@@ -1602,11 +1606,11 @@ nm_setting_tc_config_class_init (NMSettingTCConfigClass *setting_class)
 	/**
 	 * NMSettingTCConfig:qdiscs: (type GPtrArray(NMTCQdisc))
 	 *
-	 * Array of TC queuening disciplines.
+	 * Array of TC queueing disciplines.
 	 **/
 	/* ---ifcfg-rh---
 	 * property: qdiscs
-	 * variable: QDISC1, QDISC2, ...
+	 * variable: QDISC1(+), QDISC2(+), ...
 	 * description: Queueing disciplines
 	 * example: QDISC1=ingress, QDISC2="root handle 1234: fq_codel"
 	 * ---end---
@@ -1633,7 +1637,7 @@ nm_setting_tc_config_class_init (NMSettingTCConfigClass *setting_class)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: qdiscs
-	 * variable: FILTER1, FILTER2, ...
+	 * variable: FILTER1(+), FILTER2(+), ...
 	 * description: Traffic filters
 	 * example: FILTER1="parent ffff: matchall action simple sdata Input", ...
 	 * ---end---
