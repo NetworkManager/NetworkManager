@@ -256,7 +256,7 @@ create_cdma_connect_properties (NMConnection *connection)
 {
 	NMSettingCdma *setting;
 	MMSimpleConnectProperties *properties;
-	const gchar *str;
+	const char *str;
 
 	setting = nm_connection_get_setting_cdma (connection);
 	properties = mm_simple_connect_properties_new ();
@@ -274,7 +274,7 @@ create_gsm_connect_properties (NMConnection *connection)
 	NMSettingGsm *setting;
 	NMSettingPpp *s_ppp;
 	MMSimpleConnectProperties *properties;
-	const gchar *str;
+	const char *str;
 
 	setting = nm_connection_get_setting_gsm (connection);
 	properties = mm_simple_connect_properties_new ();
@@ -868,12 +868,12 @@ static_stage3_ip4_done (NMModemBroadband *self)
 	GError *error = NULL;
 	gs_unref_object NMIP4Config *config = NULL;
 	const char *data_port;
-	const gchar *address_string;
-	const gchar *gw_string;
+	const char *address_string;
+	const char *gw_string;
 	guint32 address_network;
 	guint32 gw = 0;
 	NMPlatformIP4Address address;
-	const gchar **dns;
+	const char **dns;
 	guint i;
 	guint32 ip4_route_table, ip4_route_metric;
 	NMPlatformIP4Route *r;
@@ -979,10 +979,10 @@ stage3_ip6_done (NMModemBroadband *self)
 	GError *error = NULL;
 	NMIP6Config *config = NULL;
 	const char *data_port;
-	const gchar *address_string;
+	const char *address_string;
 	NMPlatformIP6Address address;
 	NMModemIPMethod ip_method;
-	const gchar **dns;
+	const char **dns;
 	guint i;
 
 	g_assert (self->_priv.ipv6_config);

@@ -3787,7 +3787,7 @@ ip6_address_scope_priority (const struct in6_addr *addr)
 	return 3;
 }
 
-static gint
+static int
 ip6_address_scope_cmp (gconstpointer a, gconstpointer b)
 {
 	const NMPlatformIP6Address *x = NMP_OBJECT_CAST_IP6_ADDRESS (*(const void **) a);

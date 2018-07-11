@@ -65,7 +65,7 @@ typedef struct {
 	char *path;
 	char *driver;
 	RfKillType rtype;
-	gint state;
+	int state;
 	gboolean platform;
 } Killswitch;
 
@@ -158,7 +158,7 @@ killswitch_destroy (Killswitch *ks)
 }
 
 static RfKillState
-sysfs_state_to_nm_state (gint sysfs_state)
+sysfs_state_to_nm_state (int sysfs_state)
 {
 	switch (sysfs_state) {
 	case 0:

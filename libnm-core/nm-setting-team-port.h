@@ -72,15 +72,15 @@ NMSetting *  nm_setting_team_port_new (void);
 
 const char * nm_setting_team_port_get_config (NMSettingTeamPort *setting);
 NM_AVAILABLE_IN_1_12
-gint nm_setting_team_port_get_queue_id (NMSettingTeamPort *setting);
+int nm_setting_team_port_get_queue_id (NMSettingTeamPort *setting);
 NM_AVAILABLE_IN_1_12
-gint nm_setting_team_port_get_prio (NMSettingTeamPort *setting);
+int nm_setting_team_port_get_prio (NMSettingTeamPort *setting);
 NM_AVAILABLE_IN_1_12
 gboolean nm_setting_team_port_get_sticky (NMSettingTeamPort *setting);
 NM_AVAILABLE_IN_1_12
-gint nm_setting_team_port_get_lacp_prio (NMSettingTeamPort *setting);
+int nm_setting_team_port_get_lacp_prio (NMSettingTeamPort *setting);
 NM_AVAILABLE_IN_1_12
-gint nm_setting_team_port_get_lacp_key (NMSettingTeamPort *setting);
+int nm_setting_team_port_get_lacp_key (NMSettingTeamPort *setting);
 NM_AVAILABLE_IN_1_12
 guint nm_setting_team_port_get_num_link_watchers (NMSettingTeamPort *setting);
 NM_AVAILABLE_IN_1_12

@@ -183,11 +183,11 @@ nm_config_data_has_value (const NMConfigData *self, const char *group, const cha
 	return !!value;
 }
 
-gint
-nm_config_data_get_value_boolean (const NMConfigData *self, const char *group, const char *key, gint default_value)
+int
+nm_config_data_get_value_boolean (const NMConfigData *self, const char *group, const char *key, int default_value)
 {
 	char *str;
-	gint value = default_value;
+	int value = default_value;
 
 	g_return_val_if_fail (NM_IS_CONFIG_DATA (self), default_value);
 	g_return_val_if_fail (group && *group, default_value);
@@ -1335,8 +1335,8 @@ gboolean
 nm_config_data_get_device_config_boolean (const NMConfigData *self,
                                           const char *property,
                                           NMDevice *device,
-                                          gint val_no_match,
-                                          gint val_invalid)
+                                          int val_no_match,
+                                          int val_invalid)
 {
 	gs_free char *value = NULL;
 	gboolean has_match;

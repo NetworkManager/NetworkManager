@@ -34,7 +34,7 @@
 /*****************************************************************************/
 
 typedef struct {
-	gchar *name;
+	char *name;
 	NMIwdNetworkSecurity security;
 } KnownNetworkData;
 
@@ -44,7 +44,7 @@ typedef struct {
 	gboolean running;
 	GDBusObjectManager *object_manager;
 	guint agent_id;
-	gchar *agent_path;
+	char *agent_path;
 	GSList *known_networks;
 } NMIwdManagerPrivate;
 
@@ -85,18 +85,18 @@ G_DEFINE_TYPE (NMIwdManager, nm_iwd_manager, G_TYPE_OBJECT)
 
 static void
 agent_dbus_method_cb (GDBusConnection *connection,
-                      const gchar *sender, const gchar *object_path,
-                      const gchar *interface_name, const gchar *method_name,
+                      const char *sender, const char *object_path,
+                      const char *interface_name, const char *method_name,
                       GVariant *parameters,
                       GDBusMethodInvocation *invocation,
                       gpointer user_data)
 {
 	NMIwdManager *self = user_data;
 	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
-	const gchar *network_path, *device_path, *ifname;
+	const char *network_path, *device_path, *ifname;
 	gs_unref_object GDBusInterface *network = NULL, *device_obj = NULL;
 	gs_unref_variant GVariant *value = NULL;
-	gint ifindex;
+	int ifindex;
 	NMDevice *device;
 	gs_free char *name_owner = NULL;
 
@@ -207,12 +207,12 @@ static const GDBusInterfaceInfo iwd_agent_iface_info = NM_DEFINE_GDBUS_INTERFACE
 
 static guint
 iwd_agent_export (GDBusConnection *connection, gpointer user_data,
-                  gchar **agent_path, GError **error)
+                  char **agent_path, GError **error)
 {
 	static const GDBusInterfaceVTable vtable = {
 		.method_call = agent_dbus_method_cb,
 	};
-	gchar path[50];
+	char path[50];
 	unsigned int rnd;
 	guint id;
 
@@ -259,7 +259,7 @@ set_device_dbus_object (NMIwdManager *self, GDBusInterface *interface,
 	GDBusProxy *proxy;
 	GVariant *value;
 	const char *ifname;
-	gint ifindex;
+	int ifindex;
 	NMDevice *device;
 
 	if (!priv->running)
@@ -380,9 +380,9 @@ list_known_networks_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 	g_variant_get (variant, "(aa{sv})", &networks);
 
 	while (g_variant_iter_next (networks, "a{sv}", &props)) {
-		const gchar *key;
-		const gchar *name = NULL;
-		const gchar *type = NULL;
+		const char *key;
+		const char *name = NULL;
+		const char *type = NULL;
 		GVariant *val;
 		KnownNetworkData *network_data;
 
@@ -594,7 +594,7 @@ prepare_object_manager (NMIwdManager *self)
 }
 
 gboolean
-nm_iwd_manager_is_known_network (NMIwdManager *self, const gchar *name,
+nm_iwd_manager_is_known_network (NMIwdManager *self, const char *name,
                                  NMIwdNetworkSecurity security)
 {
 	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
@@ -611,7 +611,7 @@ nm_iwd_manager_is_known_network (NMIwdManager *self, const gchar *name,
 }
 
 void
-nm_iwd_manager_network_connected (NMIwdManager *self, const gchar *name,
+nm_iwd_manager_network_connected (NMIwdManager *self, const char *name,
                                   NMIwdNetworkSecurity security)
 {
 	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);

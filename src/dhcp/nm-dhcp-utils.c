@@ -594,7 +594,7 @@ ip6_add_domain_search (gpointer data, gpointer user_data)
 NMPlatformIP6Address
 nm_dhcp_utils_ip6_prefix_from_options (GHashTable *options)
 {
-	gs_strfreev gchar **split_addr = NULL;
+	gs_strfreev char **split_addr = NULL;
 	NMPlatformIP6Address address = { 0, };
 	struct in6_addr tmp_addr;
 	char *str = NULL;

@@ -309,19 +309,19 @@ nm_utils_ssid_to_utf8 (const guint8 *ssid, gsize len)
 
 	g_return_val_if_fail (ssid != NULL, NULL);
 
-	if (g_utf8_validate ((const gchar *) ssid, len, NULL))
-		return g_strndup ((const gchar *) ssid, len);
+	if (g_utf8_validate ((const char *) ssid, len, NULL))
+		return g_strndup ((const char *) ssid, len);
 
 	encodings = get_system_encodings ();
 
 	for (e = encodings; *e; e++) {
-		converted = g_convert ((const gchar *) ssid, len, "UTF-8", *e, NULL, NULL, NULL);
+		converted = g_convert ((const char *) ssid, len, "UTF-8", *e, NULL, NULL, NULL);
 		if (converted)
 			break;
 	}
 
 	if (!converted) {
-		converted = g_convert_with_fallback ((const gchar *) ssid, len,
+		converted = g_convert_with_fallback ((const char *) ssid, len,
 		                                     "UTF-8", encodings[0], "?", NULL, NULL, NULL);
 	}
 
@@ -332,7 +332,7 @@ nm_utils_ssid_to_utf8 (const guint8 *ssid, gsize len)
 		 */
 
 		/* Use the printable range of 0x20-0x7E */
-		gchar *valid_chars = " !\"#$%&'()*+,-./0123456789:;<=>?@"
+		char *valid_chars = " !\"#$%&'()*+,-./0123456789:;<=>?@"
 		                     "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
 		                     "abcdefghijklmnopqrstuvwxyz{|}~";
 
@@ -4895,7 +4895,7 @@ nm_utils_enum_from_str (GType type, const char *str,
  *
  * Since: 1.2
  */
-const char **nm_utils_enum_get_values (GType type, gint from, gint to)
+const char **nm_utils_enum_get_values (GType type, int from, int to)
 {
 	return _nm_utils_enum_get_values (type, from, to);
 }

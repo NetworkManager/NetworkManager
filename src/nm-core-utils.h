@@ -274,8 +274,8 @@ int nm_utils_file_get_contents (int dirfd,
                                 gsize *length,
                                 GError **error);
 
-gboolean nm_utils_file_set_contents (const gchar *filename,
-                                     const gchar *contents,
+gboolean nm_utils_file_set_contents (const char *filename,
+                                     const char *contents,
                                      gssize length,
                                      mode_t mode,
                                      GError **error);

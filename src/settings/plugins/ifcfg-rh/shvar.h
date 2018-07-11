@@ -56,7 +56,7 @@ char *svGetValue_cp (shvarFile *s, const char *key);
 const char *svGetValueStr (shvarFile *s, const char *key, char **to_free);
 char *svGetValueStr_cp (shvarFile *s, const char *key);
 
-gint svParseBoolean (const char *value, gint def);
+int svParseBoolean (const char *value, int def);
 
 GHashTable *svGetKeys (shvarFile *s);
 
@@ -64,7 +64,7 @@ GHashTable *svGetKeys (shvarFile *s);
  * return FALSE if <key> resolves to any non-truth value (e.g. "no", "n", "false")
  * return <def> otherwise
  */
-gint svGetValueBoolean (shvarFile *s, const char *key, gint def);
+int svGetValueBoolean (shvarFile *s, const char *key, int def);
 
 gint64 svGetValueInt64 (shvarFile *s, const char *key, guint base, gint64 min, gint64 max, gint64 fallback);
 

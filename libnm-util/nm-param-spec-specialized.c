@@ -38,7 +38,7 @@ struct _NMParamSpecSpecialized {
 /*****************************************************************************/
 /* _gvalues_compare */
 
-static gint _gvalues_compare (const GValue *value1, const GValue *value2);
+static int _gvalues_compare (const GValue *value1, const GValue *value2);
 
 static gboolean
 type_is_fixed_size (GType type, gsize *tsize)
@@ -54,13 +54,13 @@ type_is_fixed_size (GType type, gsize *tsize)
 		if (tsize) *tsize = sizeof (gboolean);
 		return TRUE;
 	case G_TYPE_LONG:
-		if (tsize) *tsize = sizeof (glong);
+		if (tsize) *tsize = sizeof (long);
 		return TRUE;
 	case G_TYPE_ULONG:
 		if (tsize) *tsize = sizeof (gulong);
 		return TRUE;
 	case G_TYPE_INT:
-		if (tsize) *tsize = sizeof (gint);
+		if (tsize) *tsize = sizeof (int);
 		return TRUE;
 	case G_TYPE_UINT:
 		if (tsize) *tsize = sizeof (guint);
@@ -72,10 +72,10 @@ type_is_fixed_size (GType type, gsize *tsize)
 		if (tsize) *tsize = sizeof (guint64);
 		return TRUE;
 	case G_TYPE_FLOAT:
-		if (tsize) *tsize = sizeof (gfloat);
+		if (tsize) *tsize = sizeof (float);
 		return TRUE;
 	case G_TYPE_DOUBLE:
-		if (tsize) *tsize = sizeof (gdouble);
+		if (tsize) *tsize = sizeof (double);
 		return TRUE;
 	default:
 		return FALSE;
@@ -84,15 +84,15 @@ type_is_fixed_size (GType type, gsize *tsize)
 
 #define FLOAT_FACTOR 0.00000001
 
-static gint
+static int
 _gvalues_compare_fixed (const GValue *value1, const GValue *value2)
 {
 	int ret = 0;
 
 	switch (G_VALUE_TYPE (value1)) {
 	case G_TYPE_CHAR: {
-		gchar val1 = g_value_get_schar (value1);
-		gchar val2 = g_value_get_schar (value2);
+		char val1 = g_value_get_schar (value1);
+		char val2 = g_value_get_schar (value2);
 		if (val1 != val2)
 			ret = val1 < val2 ? -1 : val1 > val2;
 		break;
@@ -112,8 +112,8 @@ _gvalues_compare_fixed (const GValue *value1, const GValue *value2)
 		break;
 	}
 	case G_TYPE_LONG: {
-		glong val1 = g_value_get_long (value1);
-		glong val2 = g_value_get_long (value2);
+		long val1 = g_value_get_long (value1);
+		long val2 = g_value_get_long (value2);
 		if (val1 != val2)
 			ret = val1 < val2 ? -1 : val1 > val2;
 		break;
@@ -126,8 +126,8 @@ _gvalues_compare_fixed (const GValue *value1, const GValue *value2)
 		break;
 	}
 	case G_TYPE_INT: {
-		gint val1 = g_value_get_int (value1);
-		gint val2 = g_value_get_int (value2);
+		int val1 = g_value_get_int (value1);
+		int val2 = g_value_get_int (value2);
 		if (val1 != val2)
 			ret = val1 < val2 ? -1 : val1 > val2;
 		break;
@@ -154,8 +154,8 @@ _gvalues_compare_fixed (const GValue *value1, const GValue *value2)
 		break;
 	}
 	case G_TYPE_FLOAT: {
-		gfloat val1 = g_value_get_float (value1);
-		gfloat val2 = g_value_get_float (value2);
+		float val1 = g_value_get_float (value1);
+		float val2 = g_value_get_float (value2);
 		float diff = val1 - val2;
 
 		/* Can't use == or != here due to inexactness of FP */
@@ -164,8 +164,8 @@ _gvalues_compare_fixed (const GValue *value1, const GValue *value2)
 		break;
 	}
 	case G_TYPE_DOUBLE: {
-		gdouble val1 = g_value_get_double (value1);
-		gdouble val2 = g_value_get_double (value2);
+		double val1 = g_value_get_double (value1);
+		double val2 = g_value_get_double (value2);
 		double diff = val1 - val2;
 
 		if (diff > FLOAT_FACTOR || diff < -FLOAT_FACTOR)
@@ -179,7 +179,7 @@ _gvalues_compare_fixed (const GValue *value1, const GValue *value2)
 	return ret;
 }
 
-static gint
+static int
 _gvalues_compare_string (const GValue *value1, const GValue *value2)
 {
 	const char *str1 = g_value_get_string (value1);
@@ -196,12 +196,12 @@ _gvalues_compare_string (const GValue *value1, const GValue *value2)
 	return strcmp (str1, str2);
 }
 
-static gint
+static int
 _gvalues_compare_strv (const GValue *value1, const GValue *value2)
 {
 	char **strv1;
 	char **strv2;
-	gint ret;
+	int ret;
 	guint i = 0;
 
 	strv1 = (char **) g_value_get_boxed (value1);
@@ -252,10 +252,10 @@ iterate_collection (const GValue *value, gpointer user_data)
 	*list = g_slist_prepend (*list, _gvalue_dup (value));
 }
 
-static gint
+static int
 _gvalues_compare_collection (const GValue *value1, const GValue *value2)
 {
-	gint ret;
+	int ret;
 	guint len1;
 	guint len2;
 	GType value_type = dbus_g_type_get_collection_specialization (G_VALUE_TYPE (value1));
@@ -312,7 +312,7 @@ iterate_map (const GValue *key_val,
 
 typedef struct {
 	GHashTable *hash2;
-	gint ret;
+	int ret;
 } CompareMapInfo;
 
 static void
@@ -331,14 +331,14 @@ compare_one_map_item (gpointer key, gpointer val, gpointer user_data)
 		info->ret = 1;
 }
 
-static gint
+static int
 _gvalues_compare_map (const GValue *value1, const GValue *value2)
 {
 	GHashTable *hash1 = NULL;
 	GHashTable *hash2 = NULL;
 	guint len1;
 	guint len2;
-	gint ret = 0;
+	int ret = 0;
 
 	if (dbus_g_type_get_map_key_specialization (G_VALUE_TYPE (value1)) != G_TYPE_STRING) {
 		g_warning ("Can not compare maps with '%s' for keys",
@@ -371,7 +371,7 @@ _gvalues_compare_map (const GValue *value1, const GValue *value2)
 	return ret;
 }
 
-static gint
+static int
 _gvalue_ip6_address_compare (const GValue *value1, const GValue *value2)
 {
 	GValueArray *values1, *values2;
@@ -379,7 +379,7 @@ _gvalue_ip6_address_compare (const GValue *value1, const GValue *value2)
 	GByteArray *addr1, *addr2;
 	guint32 prefix1, prefix2;
 	GByteArray *gw1, *gw2;
-	gint ret = 0;
+	int ret = 0;
 	int i;
 
 	/* IP6 addresses are GValueArrays (see nm-dbus-glib-types.h) */
@@ -429,7 +429,7 @@ _gvalue_ip6_address_compare (const GValue *value1, const GValue *value2)
 	return ret;
 }
 
-static gint
+static int
 _gvalue_ip6_route_compare (const GValue *value1, const GValue *value2)
 {
 	GValueArray *values1, *values2;
@@ -438,7 +438,7 @@ _gvalue_ip6_route_compare (const GValue *value1, const GValue *value2)
 	GByteArray *next_hop1, *next_hop2;
 	guint32 prefix1, prefix2;
 	guint32 metric1, metric2;
-	gint ret = 0;
+	int ret = 0;
 	int i;
 
 	/* IP6 routes are GValueArrays (see nm-dbus-glib-types.h) */
@@ -491,7 +491,7 @@ _gvalue_ip6_route_compare (const GValue *value1, const GValue *value2)
 	return ret;
 }
 
-static gint
+static int
 _gvalues_compare_struct (const GValue *value1, const GValue *value2)
 {
 	/* value1 and value2 must contain the same type since
@@ -508,12 +508,12 @@ _gvalues_compare_struct (const GValue *value1, const GValue *value2)
 	}
 }
 
-gint
+int
 _gvalues_compare (const GValue *value1, const GValue *value2)
 {
 	GType type1;
 	GType type2;
-	gint ret;
+	int ret;
 
 	if (value1 == value2)
 		return 0;
@@ -592,7 +592,7 @@ param_specialized_validate (GParamSpec *pspec, GValue *value)
 	return changed;
 }
 
-static gint
+static int
 param_specialized_values_cmp (GParamSpec *pspec,
                               const GValue *value1,
                               const GValue *value2)

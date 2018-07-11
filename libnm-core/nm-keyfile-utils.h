@@ -46,8 +46,8 @@ void nm_keyfile_plugin_kf_set_##stype##_list  (GKeyFile *kf, \
                                                const char *key, \
                                                set_ctype list[], \
                                                gsize length);
-DEFINE_KF_LIST_WRAPPER_PROTO(integer, gint*, gint)
-DEFINE_KF_LIST_WRAPPER_PROTO(string, gchar**, const gchar* const)
+DEFINE_KF_LIST_WRAPPER_PROTO(integer, int*, int)
+DEFINE_KF_LIST_WRAPPER_PROTO(string, char**, const char* const)
 
 void nm_keyfile_plugin_kf_set_integer_list_uint8 (GKeyFile *kf,
                                                   const char *group,
@@ -66,14 +66,14 @@ void nm_keyfile_plugin_kf_set_##stype (GKeyFile *kf, \
                                        const char *group, \
                                        const char *key, \
                                        set_ctype value);
-DEFINE_KF_WRAPPER_PROTO(string, gchar*, const gchar*)
-DEFINE_KF_WRAPPER_PROTO(integer, gint, gint)
+DEFINE_KF_WRAPPER_PROTO(string, char*, const char*)
+DEFINE_KF_WRAPPER_PROTO(integer, int, int)
 DEFINE_KF_WRAPPER_PROTO(uint64, guint64, guint64)
 DEFINE_KF_WRAPPER_PROTO(boolean, gboolean, gboolean)
-DEFINE_KF_WRAPPER_PROTO(value, gchar*, const gchar*)
+DEFINE_KF_WRAPPER_PROTO(value, char*, const char*)
 
 /* Misc */
-gchar ** nm_keyfile_plugin_kf_get_keys    (GKeyFile *kf,
+char ** nm_keyfile_plugin_kf_get_keys    (GKeyFile *kf,
                                            const char *group,
                                            gsize *out_length,
                                            GError **error);

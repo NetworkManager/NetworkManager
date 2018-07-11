@@ -960,7 +960,7 @@ test_write_intlist_ssid (void)
 	unsigned char tmpssid[] = { 65, 49, 50, 51, 0, 50, 50 };
 	gs_free_error GError *error = NULL;
 	gs_unref_keyfile GKeyFile *keyfile = NULL;
-	gint *intlist;
+	int *intlist;
 	gsize len = 0, i;
 
 	connection = nm_simple_connection_new ();
@@ -2186,7 +2186,7 @@ test_write_new_wired_group_name (void)
 	gs_free char *testfile = NULL;
 	gs_free_error GError *error = NULL;
 	char *s;
-	gint mtu;
+	int mtu;
 
 	connection = nm_simple_connection_new ();
 	g_assert (connection);

@@ -222,7 +222,7 @@ nm_setting_bond_get_option (NMSettingBond *setting,
 static gboolean
 validate_int (const char *name, const char *value, const BondDefault *def)
 {
-	glong num;
+	long num;
 	guint i;
 
 	for (i = 0; i < strlen (value); i++) {

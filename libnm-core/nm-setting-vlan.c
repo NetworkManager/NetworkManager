@@ -133,7 +133,7 @@ static NMVlanQosMapping *
 priority_map_new_from_str (NMVlanPriorityMap map, const char *str)
 {
 	NMVlanQosMapping *p = NULL;
-	gchar **t = NULL;
+	char **t = NULL;
 	guint32 len;
 	guint64 from, to;
 
@@ -175,7 +175,7 @@ get_map (NMSettingVlan *self, NMVlanPriorityMap map)
 	return NULL;
 }
 
-static gint
+static int
 prio_map_compare (gconstpointer p_a, gconstpointer p_b)
 {
 	const NMVlanQosMapping *a = p_a;

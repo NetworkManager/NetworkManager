@@ -226,7 +226,7 @@ _notify_routes (NMIP6Config *self)
 
 /*****************************************************************************/
 
-static gint
+static int
 _addresses_sort_cmp_get_prio (const struct in6_addr *addr)
 {
 	if (IN6_IS_ADDR_V4MAPPED (addr))
@@ -249,7 +249,7 @@ _addresses_sort_cmp (const NMPlatformIP6Address *a1,
                      const NMPlatformIP6Address *a2,
                      gboolean prefer_temp)
 {
-	gint p1, p2, c;
+	int p1, p2, c;
 	gboolean perm1, perm2, tent1, tent2;
 	gboolean ipv6_privacy1, ipv6_privacy2;
 
@@ -948,7 +948,7 @@ nm_ip6_config_subtract (NMIP6Config *dst,
 {
 	NMIP6ConfigPrivate *dst_priv;
 	guint i;
-	gint idx;
+	int idx;
 	const NMPlatformIP6Address *a;
 	const NMPlatformIP6Route *r;
 	NMDedupMultiIter ipconf_iter;
@@ -2258,7 +2258,7 @@ nm_ip6_config_get_dns_option (const NMIP6Config *self, guint i)
 /*****************************************************************************/
 
 void
-nm_ip6_config_set_dns_priority (NMIP6Config *self, gint priority)
+nm_ip6_config_set_dns_priority (NMIP6Config *self, int priority)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
 
@@ -2268,7 +2268,7 @@ nm_ip6_config_set_dns_priority (NMIP6Config *self, gint priority)
 	}
 }
 
-gint
+int
 nm_ip6_config_get_dns_priority (const NMIP6Config *self)
 {
 	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);

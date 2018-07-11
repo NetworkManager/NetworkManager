@@ -94,7 +94,7 @@ add_offset (GBinding     *binding,
             gpointer      user_data)
 {
 	guint v;
-	gint offset = GPOINTER_TO_INT (user_data);
+	int offset = GPOINTER_TO_INT (user_data);
 
 	g_return_val_if_fail (G_VALUE_HOLDS (from_value, G_TYPE_UINT), FALSE);
 	g_return_val_if_fail (G_VALUE_HOLDS (to_value, G_TYPE_UINT), FALSE);

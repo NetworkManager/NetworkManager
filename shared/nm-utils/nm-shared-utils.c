@@ -97,7 +97,7 @@ nm_utils_strbuf_append (char **buf, gsize *len, const char *format, ...)
 {
 	char *p = *buf;
 	va_list args;
-	gint retval;
+	int retval;
 
 	if (*len == 0)
 		return;
@@ -840,9 +840,9 @@ _nm_utils_strv_cleanup (char **strv,
 
 /*****************************************************************************/
 
-gint
+int
 _nm_utils_ascii_str_to_bool (const char *str,
-                             gint default_value)
+                             int default_value)
 {
 	gsize len;
 	char *s = NULL;
@@ -924,7 +924,7 @@ nm_utils_error_is_cancelled (GError *error,
  */
 gboolean
 nm_g_object_set_property (GObject *object,
-                          const gchar  *property_name,
+                          const char   *property_name,
                           const GValue *value,
                           GError **error)
 {
@@ -999,7 +999,7 @@ nm_g_object_set_property (GObject *object,
 
 gboolean
 nm_g_object_set_property_boolean (GObject *object,
-                                  const gchar  *property_name,
+                                  const char   *property_name,
                                   gboolean value,
                                   GError **error)
 {
@@ -1012,7 +1012,7 @@ nm_g_object_set_property_boolean (GObject *object,
 
 gboolean
 nm_g_object_set_property_uint (GObject *object,
-                               const gchar  *property_name,
+                               const char   *property_name,
                                guint value,
                                GError **error)
 {
@@ -1369,10 +1369,10 @@ nm_utils_get_start_time_for_pid (pid_t pid, char *out_state, pid_t *out_ppid)
 {
 	guint64 start_time;
 	char filename[256];
-	gs_free gchar *contents = NULL;
+	gs_free char *contents = NULL;
 	size_t length;
 	gs_free const char **tokens = NULL;
-	gchar *p;
+	char *p;
 	char state = ' ';
 	gint64 ppid = 0;
 

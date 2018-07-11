@@ -695,7 +695,7 @@ nm_cmd_line_to_str (NMCmdLine *cmd)
 	char *str;
 
 	g_ptr_array_add (cmd->array, NULL);
-	str = g_strjoinv (" ", (gchar **) cmd->array->pdata);
+	str = g_strjoinv (" ", (char **) cmd->array->pdata);
 	g_ptr_array_remove_index (cmd->array, cmd->array->len - 1);
 
 	return str;
@@ -874,13 +874,13 @@ create_pppd_cmd_line (NMPPPManager *self,
 			nm_cmd_line_add_string (cmd, pppoe_service);
 		}
 	} else if (adsl) {
-		const gchar *protocol = nm_setting_adsl_get_protocol (adsl);
+		const char *protocol = nm_setting_adsl_get_protocol (adsl);
 
 		if (!strcmp (protocol, NM_SETTING_ADSL_PROTOCOL_PPPOA)) {
 			guint32 vpi = nm_setting_adsl_get_vpi (adsl);
 			guint32 vci = nm_setting_adsl_get_vci (adsl);
 			const char *encaps = nm_setting_adsl_get_encapsulation (adsl);
-			gchar *vpivci;
+			char *vpivci;
 
 			nm_cmd_line_add_string (cmd, "plugin");
 			nm_cmd_line_add_string (cmd, "pppoatm.so");

@@ -23,33 +23,33 @@ void nm_editor_bindings_init (void);
 
 void nm_editor_bind_ip_addresses_with_prefix_to_strv  (int            family,
                                                        gpointer       source,
-                                                       const gchar   *source_property,
+                                                       const char    *source_property,
                                                        gpointer       target,
-                                                       const gchar   *target_property,
+                                                       const char    *target_property,
                                                        GBindingFlags  flags);
 void nm_editor_bind_ip_addresses_to_strv              (int            family,
                                                        gpointer       source,
-                                                       const gchar   *source_property,
+                                                       const char    *source_property,
                                                        gpointer       target,
-                                                       const gchar   *target_property,
+                                                       const char    *target_property,
                                                        GBindingFlags  flags);
 
 void nm_editor_bind_ip_gateway_to_string              (int            family,
                                                        NMSettingIPConfig *source,
                                                        gpointer       target,
-                                                       const gchar   *target_property,
-                                                       const gchar   *target_sensitive_property,
+                                                       const char    *target_property,
+                                                       const char    *target_sensitive_property,
                                                        GBindingFlags  flags);
 
 void nm_editor_bind_ip_route_to_strings               (int            family,
                                                        gpointer       source,
-                                                       const gchar   *source_property,
+                                                       const char    *source_property,
                                                        gpointer       dest_target,
-                                                       const gchar   *dest_target_property,
+                                                       const char    *dest_target_property,
                                                        gpointer       next_hop_target,
-                                                       const gchar   *next_hop_target_property,
+                                                       const char    *next_hop_target_property,
                                                        gpointer       metric_target,
-                                                       const gchar   *metric_target_property,
+                                                       const char    *metric_target_property,
                                                        GBindingFlags  flags);
 
 void nm_editor_bind_wireless_security_method          (NMConnection  *connection,

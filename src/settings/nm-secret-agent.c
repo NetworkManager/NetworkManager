@@ -648,10 +648,10 @@ _on_disconnected_private_connection (NMDBusManager *mgr,
 
 static void
 _on_disconnected_name_owner_changed (GDBusConnection *connection,
-                                     const gchar      *sender_name,
-                                     const gchar      *object_path,
-                                     const gchar      *interface_name,
-                                     const gchar      *signal_name,
+                                     const char       *sender_name,
+                                     const char       *object_path,
+                                     const char       *interface_name,
+                                     const char       *signal_name,
                                      GVariant         *parameters,
                                      gpointer          user_data)
 {

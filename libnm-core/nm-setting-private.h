@@ -42,7 +42,7 @@ void _nm_register_setting_impl (const char *name,
 
 NMSettingPriority _nm_setting_get_base_type_priority (NMSetting *setting);
 NMSettingPriority _nm_setting_type_get_base_type_priority (GType type);
-gint _nm_setting_compare_priority (gconstpointer a, gconstpointer b);
+int _nm_setting_compare_priority (gconstpointer a, gconstpointer b);
 
 typedef enum NMSettingUpdateSecretResult {
 	NM_SETTING_UPDATE_SECRET_ERROR              = FALSE,

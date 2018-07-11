@@ -949,7 +949,7 @@ add_pkcs11_uri_with_pin (NMSupplicantConfig *self,
                          const NMSettingSecretFlags pin_flags,
                          GError **error)
 {
-	gs_strfreev gchar **split = NULL;
+	gs_strfreev char **split = NULL;
 	gs_free char *tmp = NULL;
 	gs_free char *tmp_log = NULL;
 	gs_free char *pin_qattr = NULL;

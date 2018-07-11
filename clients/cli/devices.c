@@ -3539,7 +3539,7 @@ generate_wpa_key (char *key, size_t len)
 		while (!g_ascii_isalnum (c))
 			c = g_random_int_range (33, 126);
 
-		key[i] = (gchar) c;
+		key[i] = (char) c;
 	}
 	key[WPA_PASSKEY_SIZE] = '\0';
 }

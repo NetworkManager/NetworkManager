@@ -830,8 +830,8 @@ context_property_changed (GDBusProxy *proxy,
 	gboolean ret = FALSE;
 	gs_unref_variant GVariant *v_dict = NULL;
 	const char *interface;
-	const gchar *s;
-	const gchar **array, **iter;
+	const char *s;
+	const char **array, **iter;
 	guint32 address_network, gateway_network;
 	guint32 ip4_route_table, ip4_route_metric;
 	int ifindex;

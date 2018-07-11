@@ -32,8 +32,8 @@
 
 static void
 on_name_appeared (GDBusConnection *connection,
-                  const gchar     *name,
-                  const gchar     *name_owner,
+                  const char      *name,
+                  const char      *name_owner,
                   gpointer         user_data)
 {
 	g_print ("Name '%s' on the system bus is owned by %s => NM is running\n",
@@ -42,7 +42,7 @@ on_name_appeared (GDBusConnection *connection,
 
 static void
 on_name_vanished (GDBusConnection *connection,
-                  const gchar     *name,
+                  const char      *name,
                   gpointer         user_data)
 {
 	g_print ("Name '%s' does not exist on the system bus => NM is not running\n", name);

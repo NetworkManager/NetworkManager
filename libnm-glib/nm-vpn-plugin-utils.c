@@ -66,7 +66,7 @@ nm_vpn_plugin_utils_read_vpn_details (int fd,
 	gboolean success = FALSE;
 	char *key = NULL, *val = NULL;
 	GString *line;
-	gchar c;
+	char c;
 
 	if (out_data)
 		g_return_val_if_fail (*out_data == NULL, FALSE);

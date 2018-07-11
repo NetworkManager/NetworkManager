@@ -249,7 +249,7 @@ enum VpnDataItem {
 	VPN_DATA_ITEM_USERNAME
 };
 
-static const gchar *
+static const char *
 get_vpn_data_item (NMConnection *connection, enum VpnDataItem vpn_data_item)
 {
 	const char *type;
@@ -3218,7 +3218,7 @@ get_valid_properties_string (const NMMetaSettingValidPartItem *const*array,
 
 			/* Search the array with the arguments of the current property */
 			for (j = 0; j < setting_info->properties_num; j++) {
-				gchar *new;
+				char *new;
 				const char *arg_name;
 
 				arg_name = setting_info->properties[j]->property_name;
@@ -3702,7 +3702,7 @@ static const OptionInfo *_meta_abstract_get_option_info (const NMMetaAbstractInf
  * The questionnaire (for --ask) will ask for them.
  */
 static void
-enable_options (const gchar *setting_name, const gchar *property, const gchar * const *opts)
+enable_options (const char *setting_name, const char *property, const char * const *opts)
 {
 	const NMMetaPropertyInfo *property_info;
 
@@ -3740,7 +3740,7 @@ enable_options (const gchar *setting_name, const gchar *property, const gchar * 
  * The questionnaire (for --ask) will not ask for them.
  */
 static void
-disable_options (const gchar *setting_name, const gchar *property)
+disable_options (const char *setting_name, const char *property)
 {
 	const NMMetaPropertyInfo *property_infos_local[2];
 	const NMMetaPropertyInfo *const*property_infos;
@@ -3898,7 +3898,7 @@ set_property (NMConnection *connection,
 }
 
 static gboolean
-set_option (NmCli *nmc, NMConnection *connection, const NMMetaAbstractInfo *abstract_info, const gchar *value, GError **error)
+set_option (NmCli *nmc, NMConnection *connection, const NMMetaAbstractInfo *abstract_info, const char *value, GError **error)
 {
 	const char *setting_name, *property_name, *option_name;
 	NMMetaPropertyInfFlags inf_flags;
@@ -4022,7 +4022,7 @@ set_connection_type (NmCli *nmc, NMConnection *con, const OptionInfo *option, co
 	const NMMetaSettingValidPartItem *const*type_settings;
 	const NMMetaSettingValidPartItem *const*slv_settings;
 	GError *local = NULL;
-	const gchar *master[] = { "master", NULL };
+	const char *master[] = { "master", NULL };
 	const char *slave_type = NULL;
 
 	value = check_valid_name_toplevel (value, &slave_type, &local);
@@ -4130,7 +4130,7 @@ set_bond_option (NmCli *nmc, NMConnection *con, const OptionInfo *option, const 
 			return FALSE;
 
 		if (g_strcmp0 (value, "active-backup") == 0) {
-			const gchar *primary[] = { "primary", NULL };
+			const char *primary[] = { "primary", NULL };
 			enable_options (NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS, primary);
 		}
 
@@ -4165,9 +4165,9 @@ static gboolean
 set_bond_monitoring_mode (NmCli *nmc, NMConnection *con, const OptionInfo *option, const char *value, GError **error)
 {
 	NMSettingBond *s_bond;
-	gs_free gchar *monitor_mode = NULL;
-	const gchar *miimon_opts[] = { "miimon", "downdelay", "updelay", NULL };
-	const gchar *arp_opts[] = { "arp-interval", "arp-ip-target", NULL };
+	gs_free char *monitor_mode = NULL;
+	const char *miimon_opts[] = { "miimon", "downdelay", "updelay", NULL };
+	const char *arp_opts[] = { "arp-interval", "arp-ip-target", NULL };
 
 	s_bond = nm_connection_get_setting_bond (con);
 	g_return_val_if_fail (s_bond, FALSE);
@@ -4336,8 +4336,8 @@ option_relevant (NMConnection *connection, const NMMetaAbstractInfo *abstract_in
 static void
 complete_property_name (NmCli *nmc, NMConnection *connection,
                         char modifier,
-                        const gchar *prefix,
-                        const gchar *postfix)
+                        const char *prefix,
+                        const char *postfix)
 {
 	NMSettingConnection *s_con;
 	const NMMetaSettingValidPartItem *const*valid_settings_main;
@@ -4412,7 +4412,7 @@ run_rl_generator (rl_compentry_func_t *generator_func, const char *prefix)
 }
 
 static gboolean
-complete_option (const NMMetaAbstractInfo *abstract_info, const gchar *prefix, NMConnection *context_connection)
+complete_option (const NMMetaAbstractInfo *abstract_info, const char *prefix, NMConnection *context_connection)
 {
 	const OptionInfo *candidate;
 	const char *const*values;
@@ -4443,7 +4443,7 @@ complete_option (const NMMetaAbstractInfo *abstract_info, const gchar *prefix, N
 }
 
 static void
-complete_property (const gchar *setting_name, const gchar *property, const gchar *prefix, NMConnection *connection)
+complete_property (const char *setting_name, const char *property, const char *prefix, NMConnection *connection)
 {
 	const NMMetaPropertyInfo *property_info;
 
@@ -4497,7 +4497,7 @@ nmc_read_connection_properties (NmCli *nmc,
 	/* Go through arguments and set properties */
 	do {
 		const NMMetaAbstractInfo *chosen = NULL;
-		gs_strfreev gchar **strv = NULL;
+		gs_strfreev char **strv = NULL;
 		const NMMetaSettingValidPartItem *const*type_settings;
 		const NMMetaSettingValidPartItem *const*slv_settings;
 		char modifier = '\0';
@@ -4805,9 +4805,9 @@ next:
 static void
 ask_option (NmCli *nmc, NMConnection *connection, const NMMetaAbstractInfo *abstract_info)
 {
-	gchar *value;
+	char *value;
 	GError *error = NULL;
-	gs_free gchar *prompt = NULL;
+	gs_free char *prompt = NULL;
 	gboolean multi;
 	const char *opt_prompt, *opt_def_hint;
 	NMMetaPropertyInfFlags inf_flags;

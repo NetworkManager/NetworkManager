@@ -224,7 +224,7 @@ network_server_unregister_bridge (const NMBtVTableNetworkServer *vtable,
 }
 
 static void
-network_server_removed (GDBusProxy *proxy, const gchar *path, NMBluez5Manager *self)
+network_server_removed (GDBusProxy *proxy, const char *path, NMBluez5Manager *self)
 {
 	NetworkServer *network_server;
 
@@ -241,7 +241,7 @@ network_server_removed (GDBusProxy *proxy, const gchar *path, NMBluez5Manager *s
 }
 
 static void
-network_server_added (GDBusProxy *proxy, const gchar *path, const char *addr, NMBluez5Manager *self)
+network_server_added (GDBusProxy *proxy, const char *path, const char *addr, NMBluez5Manager *self)
 {
 	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
 	NetworkServer *network_server;
@@ -342,7 +342,7 @@ device_initialized (NMBluezDevice *device, gboolean success, NMBluez5Manager *se
 }
 
 static void
-device_added (GDBusProxy *proxy, const gchar *path, NMBluez5Manager *self)
+device_added (GDBusProxy *proxy, const char *path, NMBluez5Manager *self)
 {
 	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
 	NMBluezDevice *device;
@@ -356,7 +356,7 @@ device_added (GDBusProxy *proxy, const gchar *path, NMBluez5Manager *self)
 }
 
 static void
-device_removed (GDBusProxy *proxy, const gchar *path, NMBluez5Manager *self)
+device_removed (GDBusProxy *proxy, const char *path, NMBluez5Manager *self)
 {
 	NMBluez5ManagerPrivate *priv = NM_BLUEZ5_MANAGER_GET_PRIVATE (self);
 	NMBluezDevice *device;

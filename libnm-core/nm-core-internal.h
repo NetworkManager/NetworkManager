@@ -320,11 +320,11 @@ GVariant *_nm_dbus_proxy_call_finish (GDBusProxy           *proxy,
                                       GError              **error);
 
 GVariant *_nm_dbus_proxy_call_sync   (GDBusProxy           *proxy,
-                                      const gchar          *method_name,
+                                      const char           *method_name,
                                       GVariant             *parameters,
                                       const GVariantType   *reply_type,
                                       GDBusCallFlags        flags,
-                                      gint                  timeout_msec,
+                                      int                   timeout_msec,
                                       GCancellable         *cancellable,
                                       GError              **error);
 

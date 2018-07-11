@@ -614,7 +614,7 @@ static void _set_state_full (NMDevice *self,
 static void queued_state_clear (NMDevice *device);
 static gboolean queued_ip4_config_change (gpointer user_data);
 static gboolean queued_ip6_config_change (gpointer user_data);
-static void ip_check_ping_watch_cb (GPid pid, gint status, gpointer user_data);
+static void ip_check_ping_watch_cb (GPid pid, int status, gpointer user_data);
 static gboolean ip_config_valid (NMDeviceState state);
 static NMActStageReturn dhcp4_start (NMDevice *self);
 static gboolean dhcp6_start (NMDevice *self, gboolean wait_for_ll);
@@ -1018,7 +1018,7 @@ static void
 init_ip_config_dns_priority (NMDevice *self, NMIPConfig *config)
 {
 	gs_free char *value = NULL;
-	gint priority;
+	int priority;
 
 	value = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
 	                                               (nm_ip_config_get_addr_family (config) == AF_INET)
@@ -6180,7 +6180,7 @@ get_ipv4_dad_timeout (NMDevice *self)
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip4 = NULL;
 	gs_free char *value = NULL;
-	gint ret = 0;
+	int ret = 0;
 
 	connection = nm_device_get_applied_connection (self);
 	if (connection)
@@ -11711,11 +11711,11 @@ spawn_ping (NMDevice *self)
 	gboolean ret;
 
 	args[6] = str_timeout = g_strdup_printf ("%u", priv->gw_ping.deadline);
-	tmp_str = g_strjoinv (" ", (gchar **) args);
+	tmp_str = g_strjoinv (" ", (char **) args);
 	_LOGD (priv->gw_ping.log_domain, "ping: running '%s'", tmp_str);
 
 	ret = g_spawn_async ("/",
-	                     (gchar **) args,
+	                     (char **) args,
 	                      NULL,
 	                      G_SPAWN_DO_NOT_REAP_CHILD,
 	                      NULL,
@@ -11751,7 +11751,7 @@ respawn_ping_cb (gpointer user_data)
 }
 
 static void
-ip_check_ping_watch_cb (GPid pid, gint status, gpointer user_data)
+ip_check_ping_watch_cb (GPid pid, int status, gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -15182,7 +15182,7 @@ nm_device_get_supplicant_timeout (NMDevice *self)
 	NMConnection *connection;
 	NMSetting8021x *s_8021x;
 	gs_free char *value = NULL;
-	gint timeout;
+	int timeout;
 #define SUPPLICANT_DEFAULT_TIMEOUT 25
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), SUPPLICANT_DEFAULT_TIMEOUT);

@@ -200,7 +200,7 @@ _new_unix_process (GDBusMethodInvocation *context,
 		return NULL;
 
 	g_return_val_if_fail (dbus_sender && *dbus_sender, NULL);
-	/* polkit glib library stores uid and pid as gint. There might be some
+	/* polkit glib library stores uid and pid as int. There might be some
 	 * pitfalls if the id ever happens to be larger then that. Just assert against
 	 * it here. */
 	g_return_val_if_fail (uid <= MIN (G_MAXINT, G_MAXINT32), NULL);
@@ -356,7 +356,7 @@ constructed (GObject *object)
 		return;
 	case NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS:
 		/* Ensure pid and uid to be representable as int32.
-		 * DBUS treats them as uint32, polkit library as gint. */
+		 * DBUS treats them as uint32, polkit library as int. */
 		if (priv->unix_process.pid > MIN (G_MAXINT, G_MAXINT32))
 			break;
 		if (priv->unix_process.uid > MIN (G_MAXINT, G_MAXINT32)) {

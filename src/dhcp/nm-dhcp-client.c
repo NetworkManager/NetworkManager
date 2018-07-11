@@ -423,7 +423,7 @@ transaction_timeout (gpointer user_data)
 }
 
 static void
-daemon_watch_cb (GPid pid, gint status, gpointer user_data)
+daemon_watch_cb (GPid pid, int status, gpointer user_data)
 {
 	NMDhcpClient *self = NM_DHCP_CLIENT (user_data);
 	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
@@ -712,7 +712,7 @@ maybe_add_option (NMDhcpClient *self,
 gboolean
 nm_dhcp_client_handle_event (gpointer unused,
                              const char *iface,
-                             gint pid,
+                             int pid,
                              GVariant *options,
                              const char *reason,
                              NMDhcpClient *self)

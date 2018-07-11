@@ -33,7 +33,7 @@
 
 static GSList *vpn_plugins;
 
-static gint
+static int
 sort_vpn_plugins (gconstpointer a, gconstpointer b)
 {
 	NMVpnEditorPlugin *aa = NM_VPN_EDITOR_PLUGIN (a);
@@ -93,7 +93,7 @@ typedef struct {
 	gboolean no_autoconnect;
 } NMEditorConnectionTypeDataReal;
 
-static gint
+static int
 sort_types (gconstpointer a, gconstpointer b)
 {
 	NMEditorConnectionTypeData *typea = *(NMEditorConnectionTypeData **)a;

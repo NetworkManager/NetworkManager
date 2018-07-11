@@ -223,8 +223,8 @@ test_nm_g_slice_free_fcn (void)
 	p = g_slice_new (gint32);
 	(nm_g_slice_free_fcn (gint32)) (p);
 
-	p = g_slice_new (gint);
-	(nm_g_slice_free_fcn (gint)) (p);
+	p = g_slice_new (int);
+	(nm_g_slice_free_fcn (int)) (p);
 
 	p = g_slice_new (gint64);
 	nm_g_slice_free_fcn_gint64 (p);
@@ -6034,7 +6034,7 @@ static void
 test_nm_utils_is_power_of_two (void)
 {
 	guint64 xyes, xno;
-	gint i, j;
+	int i, j;
 	GRand *rand = nmtst_get_rand ();
 	int numbits;
 
@@ -6952,7 +6952,7 @@ test_route_attributes_format (void)
 /*****************************************************************************/
 
 static gboolean
-do_test_nm_set_out_called (gint *call_count)
+do_test_nm_set_out_called (int *call_count)
 {
 	(*call_count)++;
 	return TRUE;

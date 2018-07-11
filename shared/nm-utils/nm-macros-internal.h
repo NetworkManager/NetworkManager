@@ -1261,7 +1261,7 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro)
  * Using _Bool has advantages over gboolean:
  *
  * - commonly _Bool is one byte large, instead of gboolean's 4 bytes (because gboolean
- *   is a typedef for gint). Especially when having boolean fields in a struct, we can
+ *   is a typedef for int). Especially when having boolean fields in a struct, we can
  *   thereby easily save some space.
  *
  * - _Bool type guarantees that two "true" expressions compare equal. E.g. the follwing

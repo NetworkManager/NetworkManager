@@ -103,7 +103,7 @@ NM_DEFINE_SINGLETON_GETTER (NMHostnameManager, nm_hostname_manager_get, NM_TYPE_
 /*****************************************************************************/
 
 #if defined(HOSTNAME_PERSIST_GENTOO)
-static gchar *
+static char *
 read_hostname_gentoo (const char *path)
 {
 	gs_free char *contents = NULL;
@@ -129,7 +129,7 @@ read_hostname_gentoo (const char *path)
 #endif
 
 #if defined(HOSTNAME_PERSIST_SLACKWARE)
-static gchar *
+static char *
 read_hostname_slackware (const char *path)
 {
 	gs_free char *contents = NULL;

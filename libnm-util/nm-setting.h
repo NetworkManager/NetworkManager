@@ -182,7 +182,7 @@ typedef struct {
 	GObjectClass parent;
 
 	/* Virtual functions */
-	gint        (*verify)            (NMSetting  *setting,
+	int         (*verify)            (NMSetting  *setting,
 	                                  GSList     *all_settings,
 	                                  GError     **error);
 
