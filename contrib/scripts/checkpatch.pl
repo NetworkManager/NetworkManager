@@ -119,6 +119,7 @@ next unless $filename =~ /\.[ch]$/;
 
 complain ('Tab following a space') if $line =~ / \t/;
 complain ('Trailing whitespace') if $line =~ /[ \t]$/;
+complain ('Don\'t use glib typedefs for char/short/int/long/float/double') if $line =~ /\bg(char|short|int|long|float|double)\b/;
 
 # Further on we process stuff without comments.
 $_ = $line;
