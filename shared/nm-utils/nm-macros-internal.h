@@ -73,7 +73,7 @@ static inline int nm_close (int fd);
  * Call free() on a variable location when it goes out of scope.
  */
 #define nm_auto_free nm_auto(_nm_auto_free_impl)
-GS_DEFINE_CLEANUP_FUNCTION(void*, _nm_auto_free_impl, free)
+GS_DEFINE_CLEANUP_FUNCTION_VOID (void *, _nm_auto_free_impl, free)
 
 static inline void
 nm_free_secret (char *secret)
