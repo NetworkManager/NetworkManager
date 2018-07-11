@@ -121,6 +121,8 @@ next if $filename =~ /\/nm-[^\/]+-enum-types\.[ch]$/;
 complain ('Tabs are only allowed at the beginning of a line') if $line =~ /[^\t]\t/;
 complain ('Trailing whitespace') if $line =~ /[ \t]$/;
 complain ('Don\'t use glib typedefs for char/short/int/long/float/double') if $line =~ /\bg(char|short|int|long|float|double)\b/;
+complain ("Don't use \"$1 $2\" instead of \"$2 $1\"") if $line =~ /\b(char|short|int|long) +(unsigned|signed)\b/;
+complain ("Don't use \"unsigned int\" but just use \"unsigned\"") if $line =~ /\b(unsigned) +(int)\b/;
 
 # Further on we process stuff without comments.
 $_ = $line;
