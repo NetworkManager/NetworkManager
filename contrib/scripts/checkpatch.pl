@@ -97,6 +97,7 @@ if ($is_patch) {
 	$line = $2;
 } elsif ($is_file) {
 	$line_no = $.;
+	$. = 0 if eof;
 	# This is a line from full C file
 	$check_line = 1;
 	$line = $_;
