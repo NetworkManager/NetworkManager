@@ -247,7 +247,7 @@ curl_check_connectivity (CURLM *mhandle, int sockfd, int ev_bitmask)
 
 	ret = curl_multi_socket_action (mhandle, sockfd, ev_bitmask, &running_handles);
 	if (ret != CURLM_OK)
-		_LOGE ("connectivity check failed: %d", ret);
+		_LOGD ("connectivity check failed: %d", ret);
 
 	while ((msg = curl_multi_info_read (mhandle, &m_left))) {
 
@@ -257,7 +257,7 @@ curl_check_connectivity (CURLM *mhandle, int sockfd, int ev_bitmask)
 		/* Here we have completed a session. Check easy session result. */
 		eret = curl_easy_getinfo (msg->easy_handle, CURLINFO_PRIVATE, (char **) &cb_data);
 		if (eret != CURLE_OK) {
-			_LOGE ("curl cannot extract cb_data for easy handle, skipping msg");
+			_LOGD ("curl cannot extract cb_data for easy handle, skipping msg");
 			continue;
 		}
 
@@ -576,7 +576,7 @@ update_config (NMConnectivity *self, NMConfigData *config_data)
 		} else if (strcasecmp (scheme, "https") == 0) {
 			_LOGW ("use of HTTPS for connectivity checking is not reliable and is discouraged (URI: %s)", uri);
 		} else if (strcasecmp (scheme, "http") != 0) {
-			_LOGE ("scheme of '%s' uri does't use a scheme that is allowed for connectivity check.", uri);
+			_LOGE ("scheme of '%s' uri doesn't use a scheme that is allowed for connectivity check.", uri);
 			uri = NULL;
 		}
 
