@@ -586,7 +586,7 @@ prepare_object_manager (NMIwdManager *self)
 	NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE (self);
 
 	g_dbus_object_manager_client_new_for_bus (NM_IWD_BUS_TYPE,
-	                                          G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_DO_NOT_AUTO_START,
+	                                          G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_NONE,
 	                                          NM_IWD_SERVICE, "/",
 	                                          NULL, NULL, NULL,
 	                                          priv->cancellable,
