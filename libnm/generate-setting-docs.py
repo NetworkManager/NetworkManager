@@ -159,8 +159,6 @@ def get_default_value(setting, pspec, propxml):
     value_type = get_prop_type(setting, pspec)
     if value_type == 'string' and default_value != '' and pspec.name != 'name':
         default_value = '"%s"' % default_value
-    elif value_type == 'gchar' and default_value != '':
-        default_value = "'%s'" % default_value
     elif value_type == 'boolean':
         default_value = str(default_value).upper()
     elif value_type == 'byte array':
