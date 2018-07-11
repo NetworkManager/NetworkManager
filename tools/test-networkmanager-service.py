@@ -108,7 +108,9 @@ class Util:
         return (Util.ip_addr_ntop(a, family), family)
 
     @staticmethod
-    def ip4_addr_ne32(addr):
+    def ip4_addr_be32(addr):
+        # return the IPv4 address as 32 bit integer in network byte order
+        # (big endian).
         a, family = Util.ip_addr_pton(addr, socket.AF_INET)
         n = 0
         for i in range(4):
@@ -1852,9 +1854,9 @@ class IP4Config(ExportedObj):
 
         return {
             PRP_IP4_CONFIG_ADDRESSES:   dbus.Array([
-                                                [ Util.ip4_addr_ne32(a['addr']),
+                                                [ Util.ip4_addr_be32(a['addr']),
                                                   a['prefix'],
-                                                  Util.ip4_addr_ne32(a['gateway']) if a['gateway'] else 0
+                                                  Util.ip4_addr_be32(a['gateway']) if a['gateway'] else 0
                                                 ] for a in addrs
                                             ],
                                             'au'),
@@ -1868,9 +1870,9 @@ class IP4Config(ExportedObj):
                                             'a{sv}'),
             PRP_IP4_CONFIG_GATEWAY:     dbus.String(gateway) if gateway else "",
             PRP_IP4_CONFIG_ROUTES:      dbus.Array([
-                                                [ Util.ip4_addr_ne32(a['dest']),
+                                                [ Util.ip4_addr_be32(a['dest']),
                                                   a['prefix'],
-                                                  Util.ip4_addr_ne32(a['next-hop'] or '0.0.0.0'),
+                                                  Util.ip4_addr_be32(a['next-hop'] or '0.0.0.0'),
                                                   max(a['metric'], 0)
                                                 ] for a in routes
                                             ],
@@ -1884,12 +1886,12 @@ class IP4Config(ExportedObj):
                                                 for a in routes
                                             ],
                                             'a{sv}'),
-            PRP_IP4_CONFIG_NAMESERVERS: dbus.Array([dbus.UInt32(Util.ip4_addr_ne32(n)) for n in nameservers], 'u'),
+            PRP_IP4_CONFIG_NAMESERVERS: dbus.Array([dbus.UInt32(Util.ip4_addr_be32(n)) for n in nameservers], 'u'),
             PRP_IP4_CONFIG_DOMAINS:     dbus.Array(domains, 's'),
             PRP_IP4_CONFIG_SEARCHES:    dbus.Array(searches, 's'),
             PRP_IP4_CONFIG_DNSOPTIONS:  dbus.Array(dnsoptions, 's'),
             PRP_IP4_CONFIG_DNSPRIORITY: dbus.Int32(dnspriority),
-            PRP_IP4_CONFIG_WINSSERVERS: dbus.Array([dbus.UInt32(Util.ip4_addr_ne32(n)) for n in winsservers], 'u'),
+            PRP_IP4_CONFIG_WINSSERVERS: dbus.Array([dbus.UInt32(Util.ip4_addr_be32(n)) for n in winsservers], 'u'),
         }
 
     def props_regenerate(self, generate_seed):
