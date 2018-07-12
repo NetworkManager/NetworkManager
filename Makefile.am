@@ -599,7 +599,8 @@ dflt_cppflags_libnm_core = \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(LIBUDEV_CFLAGS) \
-	$(SANITIZER_LIB_CFLAGS)
+	$(SANITIZER_LIB_CFLAGS) \
+	$(NULL)
 
 if WITH_GNUTLS
 dflt_cppflags_libnm_core += $(GNUTLS_CFLAGS)
@@ -718,11 +719,12 @@ libnm-core/tests/nm-core-tests-enum-types.c.stamp: libnm-core/tests/.dirstamp
 $(libnm_core_tests_test_general_OBJECTS): libnm-core/tests/nm-core-tests-enum-types.h
 
 libnm_core_tests_cppflags = \
-	$(dflt_cppflags_libnm_core) \
 	-I$(srcdir)/libnm-core/tests \
 	-I$(builddir)/libnm-core/tests \
+	$(dflt_cppflags_libnm_core) \
 	-DNETWORKMANAGER_COMPILATION_TEST \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE \
+	$(SANITIZER_EXEC_CFLAGS) \
 	$(NULL)
 
 libnm_core_tests_test_compare_CPPFLAGS = $(libnm_core_tests_cppflags)
@@ -918,9 +920,9 @@ libnm_lib_c_mkenums = \
 	libnm/nm-enum-types.c
 
 libnm_lib_cppflags = \
-	$(dflt_cppflags_libnm_core) \
 	-I$(srcdir)/libnm \
 	-I$(builddir)/libnm \
+	$(dflt_cppflags_libnm_core) \
 	-DG_LOG_DOMAIN=\""libnm"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM \
 	$(NULL)
@@ -1141,11 +1143,12 @@ check_programs_norun += $(libnm_tests_programs_req_introspection)
 endif
 
 libnm_tests_cppflags = \
-	$(dflt_cppflags_libnm_core) \
 	-I$(srcdir)/libnm \
 	-I$(builddir)/libnm \
+	$(dflt_cppflags_libnm_core) \
 	-DNETWORKMANAGER_COMPILATION_TEST \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM \
+	$(SANITIZER_EXEC_CFLAGS) \
 	$(NULL)
 
 libnm_tests_ldadd = \
@@ -1234,14 +1237,24 @@ EXTRA_DIST += \
 # src/
 ###############################################################################
 
-src_cppflags = \
-	$(dflt_cppflags_libnm_core) \
+src_cppflags_base = \
 	-I$(srcdir)/src \
-	-I$(builddir)/src \
-	\
+	$(dflt_cppflags_libnm_core) \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON \
+	$(SANITIZER_EXEC_CFLAGS) \
+	$(NULL)
+
+src_cppflags_base_test = \
+	$(src_cppflags_base) \
+	-DNETWORKMANAGER_COMPILATION_TEST \
+	$(NULL)
+
+src_cppflags_device_plugin = \
+	$(src_cppflags_base)
+
+src_cppflags = \
+	$(src_cppflags_base) \
 	\
-	$(LIBUDEV_CFLAGS) \
 	$(LIBNDP_CFLAGS) \
 	$(LIBPSL_CFLAGS) \
 	$(LIBCURL_CFLAGS) \
@@ -1249,9 +1262,17 @@ src_cppflags = \
 	$(LIBAUDIT_CFLAGS) \
 	$(SYSTEMD_LOGIN_CFLAGS) \
 	$(SYSTEMD_JOURNAL_CFLAGS) \
-	$(SANITIZER_EXEC_CFLAGS) \
 	\
 	$(NULL)
+
+src_cppflags_test = \
+	$(src_cppflags) \
+	-DNETWORKMANAGER_COMPILATION_TEST \
+	$(NULL)
+
+if REQUIRE_ROOT_TESTS
+src_cppflags_test += -DREQUIRE_ROOT_TESTS=1
+endif
 
 src_ldflags = $(CODE_COVERAGE_LDFLAGS)
 
@@ -1301,6 +1322,7 @@ EXTRA_DIST += shared/c-list/src/c-list.h
 ###############################################################################
 
 src_libsystemd_nm_la_cppflags = \
+	$(dflt_cppflags_std) \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
 	-I$(srcdir)/libnm-core \
@@ -1756,19 +1778,10 @@ $(src_libNetworkManager_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 check_ltlibraries += src/libNetworkManagerTest.la
 
-src_tests_cppflags = \
-	$(src_cppflags) \
-	$(SANITIZER_EXEC_CFLAGS) \
-	-DNETWORKMANAGER_COMPILATION_TEST
+src_tests_cppflags_fake = $(src_cppflags_test) -DSETUP=nm_fake_platform_setup
+src_tests_cppflags_linux = $(src_cppflags_test) -DSETUP=nm_linux_platform_setup
 
-if REQUIRE_ROOT_TESTS
-src_tests_cppflags += -DREQUIRE_ROOT_TESTS=1
-endif
-
-src_tests_cppflags_fake = $(src_tests_cppflags) -DSETUP=nm_fake_platform_setup
-src_tests_cppflags_linux = $(src_tests_cppflags) -DSETUP=nm_linux_platform_setup
-
-src_libNetworkManagerTest_la_CPPFLAGS = $(src_tests_cppflags)
+src_libNetworkManagerTest_la_CPPFLAGS = $(src_cppflags_test)
 
 src_libNetworkManagerTest_la_SOURCES = \
 	src/ndisc/nm-fake-ndisc.c \
@@ -1846,11 +1859,11 @@ EXTRA_DIST += \
 libexec_PROGRAMS += src/dhcp/nm-dhcp-helper
 
 src_dhcp_nm_dhcp_helper_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
 	-DG_LOG_DOMAIN=\""nm-dhcp-helper"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_GLIB \
+	$(GLIB_CFLAGS) \
 	$(NULL)
 
 src_dhcp_nm_dhcp_helper_SOURCES = \
@@ -1870,9 +1883,7 @@ EXTRA_DIST += \
 # src/dhcp/tests
 ###############################################################################
 
-src_dhcp_tests_cppflags = \
-	$(src_tests_cppflags) \
-	$(NULL)
+src_dhcp_tests_cppflags = $(src_cppflags_test)
 
 src_dhcp_tests_ldadd = \
 	src/libNetworkManagerTest.la
@@ -1940,15 +1951,7 @@ src_ppp_libnm_ppp_plugin_la_SOURCES = \
 EXTRA_src_ppp_libnm_ppp_plugin_la_DEPENDENCIES = \
 	src/ppp/nm-ppp-plugin.ver
 
-src_ppp_libnm_ppp_plugin_la_CPPFLAGS = \
-	-I$(srcdir)/src \
-	-I$(builddir)/src \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
-	-I$(builddir)/libnm-core \
-	-I$(srcdir)/libnm-core \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON \
-	$(GLIB_CFLAGS)
+src_ppp_libnm_ppp_plugin_la_CPPFLAGS = $(src_cppflags_base)
 
 src_ppp_libnm_ppp_plugin_la_LDFLAGS = \
 	-module -avoid-version \
@@ -1970,9 +1973,7 @@ EXTRA_DIST += \
 
 check_programs += src/settings/plugins/keyfile/tests/test-keyfile
 
-src_settings_plugins_keyfile_tests_test_keyfile_CPPFLAGS = \
-	$(src_tests_cppflags) \
-	$(NULL)
+src_settings_plugins_keyfile_tests_test_keyfile_CPPFLAGS = $(src_cppflags_test)
 
 src_settings_plugins_keyfile_tests_test_keyfile_LDFLAGS = \
 	$(GLIB_LIBS) \
@@ -2036,17 +2037,7 @@ core_plugins += src/settings/plugins/ibft/libnm-settings-plugin-ibft.la
 
 noinst_LTLIBRARIES += src/settings/plugins/ibft/libnms-ibft-core.la
 
-src_settings_plugins_ibft_cppflags = \
-	-I$(srcdir)/src \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
-	-I$(srcdir)/libnm-core \
-	-I$(builddir)/libnm-core \
-	$(GLIB_CFLAGS) \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON \
-	$(NULL)
-
-src_settings_plugins_ibft_libnms_ibft_core_la_CPPFLAGS = $(src_settings_plugins_ibft_cppflags)
+src_settings_plugins_ibft_libnms_ibft_core_la_CPPFLAGS = $(src_cppflags_base)
 
 src_settings_plugins_ibft_libnms_ibft_core_la_SOURCES = \
 	src/settings/plugins/ibft/nms-ibft-reader.c \
@@ -2060,7 +2051,7 @@ src_settings_plugins_ibft_libnm_settings_plugin_ibft_la_SOURCES = \
 	src/settings/plugins/ibft/nms-ibft-connection.c \
 	src/settings/plugins/ibft/nms-ibft-connection.h
 
-src_settings_plugins_ibft_libnm_settings_plugin_ibft_la_CPPFLAGS = $(src_settings_plugins_ibft_cppflags)
+src_settings_plugins_ibft_libnm_settings_plugin_ibft_la_CPPFLAGS = $(src_cppflags_base)
 
 src_settings_plugins_ibft_libnm_settings_plugin_ibft_la_LDFLAGS = \
 	-module -avoid-version \
@@ -2073,17 +2064,7 @@ $(src_settings_plugins_ibft_libnm_settings_plugin_ibft_la_OBJECTS): $(libnm_core
 
 check_programs += src/settings/plugins/ibft/tests/test-ibft
 
-src_settings_plugins_ibft_tests_test_ibft_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	$(CODE_COVERAGE_CFLAGS) \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
-	-I$(srcdir)/libnm-core \
-	-I$(builddir)/libnm-core \
-	-I$(srcdir)/src \
-	-DNETWORKMANAGER_COMPILATION_TEST \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON \
-	$(NULL)
+src_settings_plugins_ibft_tests_test_ibft_CPPFLAGS = $(src_cppflags_base_test)
 
 src_settings_plugins_ibft_tests_test_ibft_LDFLAGS = \
 	$(GLIB_LIBS) \
@@ -2130,26 +2111,13 @@ noinst_LTLIBRARIES += \
 	src/settings/plugins/ifcfg-rh/libnmdbus-ifcfg-rh.la \
 	src/settings/plugins/ifcfg-rh/libnms-ifcfg-rh-core.la
 
-src_settings_plugins_ifcfg_rh_cppflags = \
-	-I$(srcdir)/src \
-	-I$(builddir)/src \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
-	-I$(srcdir)/libnm-core \
-	-I$(builddir)/libnm-core \
-	$(GLIB_CFLAGS) \
-	$(NSS_CFLAGS) \
-	$(SANITIZER_EXEC_CFLAGS) \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON \
-	$(NULL)
-
 ###############################################################################
 
 nodist_src_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_SOURCES = \
 	src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.c \
 	src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h
 
-src_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_CPPFLAGS = $(filter-out -DGLIB_VERSION_MAX_ALLOWED%,$(src_settings_plugins_ifcfg_rh_cppflags))
+src_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_CPPFLAGS = $(filter-out -DGLIB_VERSION_MAX_ALLOWED%,$(src_cppflags_base))
 
 CLEANFILES += $(nodist_src_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_SOURCES)
 
@@ -2179,9 +2147,9 @@ src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_SOURCES = \
 	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-writer.c \
 	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-writer.h
 
-src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_CPPFLAGS = $(src_settings_plugins_ifcfg_rh_cppflags)
+src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_CPPFLAGS = $(src_cppflags_base)
 
-$(src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_OBJECTS):           $(libnm_core_lib_h_pub_mkenums)
+$(src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
 
@@ -2191,7 +2159,7 @@ src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_SOURCES = \
 	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-plugin.c \
 	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-plugin.h
 
-src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_CPPFLAGS = $(src_settings_plugins_ifcfg_rh_cppflags)
+src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_CPPFLAGS = $(src_cppflags_base)
 
 src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_LDFLAGS = \
 	-module -avoid-version \
@@ -2218,9 +2186,7 @@ check_programs += src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh
 src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_SOURCES = \
 	src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh.c
 
-src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_CPPFLAGS = \
-	$(src_tests_cppflags) \
-	$(NULL)
+src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_CPPFLAGS = $(src_cppflags_base_test)
 
 src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_LDFLAGS = \
 	$(GLIB_LIBS) \
@@ -2477,25 +2443,13 @@ core_plugins += src/settings/plugins/ifupdown/libnm-settings-plugin-ifupdown.la
 
 noinst_LTLIBRARIES += src/settings/plugins/ifupdown/libnms-ifupdown-core.la
 
-src_settings_plugins_ifupdown_cppflags = \
-	-I$(srcdir)/src \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
-	-I$(srcdir)/libnm-core \
-	-I$(builddir)/libnm-core \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON \
-	$(GLIB_CFLAGS) \
-	$(LIBUDEV_CFLAGS) \
-	$(NULL)
-
-
 src_settings_plugins_ifupdown_libnms_ifupdown_core_la_SOURCES = \
 	src/settings/plugins/ifupdown/nms-ifupdown-interface-parser.c \
 	src/settings/plugins/ifupdown/nms-ifupdown-interface-parser.h \
 	src/settings/plugins/ifupdown/nms-ifupdown-parser.c \
 	src/settings/plugins/ifupdown/nms-ifupdown-parser.h
 
-src_settings_plugins_ifupdown_libnms_ifupdown_core_la_CPPFLAGS = $(src_settings_plugins_ifupdown_cppflags)
+src_settings_plugins_ifupdown_libnms_ifupdown_core_la_CPPFLAGS = $(src_cppflags_base)
 
 src_settings_plugins_ifupdown_libnms_ifupdown_core_la_LIBADD = \
 	$(LIBUDEV_LIBS)
@@ -2506,7 +2460,7 @@ src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_SOURCES = \
 	src/settings/plugins/ifupdown/nms-ifupdown-plugin.c \
 	src/settings/plugins/ifupdown/nms-ifupdown-plugin.h
 
-src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_CPPFLAGS = $(src_settings_plugins_ifupdown_cppflags)
+src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_CPPFLAGS = $(src_cppflags_base)
 
 src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_LDFLAGS = \
 	-module -avoid-version \
@@ -2527,16 +2481,7 @@ check_local += check-local-symbols-settings-ifupdown
 
 check_programs += src/settings/plugins/ifupdown/tests/test-ifupdown
 
-src_settings_plugins_ifupdown_tests_test_ifupdown_CPPFLAGS = \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
-	-I$(srcdir)/libnm-core \
-	-I$(builddir)/libnm-core \
-	-I$(srcdir)/src \
-	$(GLIB_CFLAGS) \
-	-DNETWORKMANAGER_COMPILATION_TEST \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON \
-	$(NULL)
+src_settings_plugins_ifupdown_tests_test_ifupdown_CPPFLAGS = $(src_cppflags_base_test)
 
 src_settings_plugins_ifupdown_tests_test_ifupdown_LDFLAGS = \
 	$(GLIB_LDFLAGS) \
@@ -2596,16 +2541,7 @@ src_devices_adsl_libnm_device_plugin_adsl_la_SOURCES = \
 	src/devices/adsl/nm-device-adsl.c \
 	src/devices/adsl/nm-device-adsl.h
 
-src_devices_adsl_libnm_device_plugin_adsl_la_CPPFLAGS = \
-	-I$(srcdir)/src \
-	-I$(builddir)/src \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
-	-I$(builddir)/libnm-core \
-	-I$(srcdir)/libnm-core \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON \
-	$(GLIB_CFLAGS) \
-	$(LIBUDEV_CFLAGS)
+src_devices_adsl_libnm_device_plugin_adsl_la_CPPFLAGS = $(src_cppflags_device_plugin)
 
 src_devices_adsl_libnm_device_plugin_adsl_la_LDFLAGS = \
 	-module -avoid-version \
@@ -2630,16 +2566,9 @@ EXTRA_DIST += \
 if WITH_MODEM_MANAGER_1
 
 src_devices_wwan_cppflags = \
-	-I$(srcdir)/src \
-	-I$(builddir)/src \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
-	-I$(srcdir)/libnm-core \
-	-I$(builddir)/libnm-core \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON \
-	$(GLIB_CFLAGS) \
-	$(LIBSYSTEMD_CFLAGS) \
-	$(MM_GLIB_CFLAGS)
+	$(src_cppflags_device_plugin) \
+	$(MM_GLIB_CFLAGS) \
+	$(NULL)
 
 core_plugins += src/devices/wwan/libnm-wwan.la
 
@@ -2729,15 +2658,7 @@ src_devices_bluetooth_libnm_device_plugin_bluetooth_la_SOURCES = \
 	src/devices/bluetooth/nm-device-bt.c \
 	src/devices/bluetooth/nm-device-bt.h
 
-src_devices_bluetooth_libnm_device_plugin_bluetooth_la_CPPFLAGS = \
-	-I$(srcdir)/src \
-	-I$(builddir)/src \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
-	-I$(builddir)/libnm-core \
-	-I$(srcdir)/libnm-core \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON \
-	$(GLIB_CFLAGS)
+src_devices_bluetooth_libnm_device_plugin_bluetooth_la_CPPFLAGS = $(src_cppflags_device_plugin)
 
 src_devices_bluetooth_libnm_device_plugin_bluetooth_la_LDFLAGS = \
 	-module -avoid-version \
@@ -2797,15 +2718,7 @@ src_devices_wifi_libnm_device_plugin_wifi_la_SOURCES += \
 	src/devices/wifi/nm-iwd-manager.h
 endif
 
-src_devices_wifi_libnm_device_plugin_wifi_la_CPPFLAGS = \
-	-I$(srcdir)/src \
-	-I$(builddir)/src \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
-	-I$(builddir)/libnm-core \
-	-I$(srcdir)/libnm-core \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON \
-	$(GLIB_CFLAGS)
+src_devices_wifi_libnm_device_plugin_wifi_la_CPPFLAGS = $(src_cppflags_device_plugin)
 
 src_devices_wifi_libnm_device_plugin_wifi_la_LDFLAGS = \
 	-module -avoid-version \
@@ -2829,16 +2742,7 @@ src_devices_wifi_tests_test_general_SOURCES = \
 	src/devices/wifi/nm-wifi-utils.c \
 	src/devices/wifi/nm-wifi-utils.h
 
-src_devices_wifi_tests_test_general_CPPFLAGS = \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
-	-I$(srcdir)/libnm-core \
-	-I$(builddir)/libnm-core \
-	-I$(srcdir)/src \
-	-I$(builddir)/src \
-	-DNETWORKMANAGER_COMPILATION_TEST \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON \
-	$(GLIB_CFLAGS)
+src_devices_wifi_tests_test_general_CPPFLAGS = $(src_cppflags_base_test)
 
 src_devices_wifi_tests_test_general_LDADD = src/libNetworkManagerTest.la
 src_devices_wifi_tests_test_general_LDFLAGS = $(SANITIZER_EXEC_LDFLAGS)
@@ -2865,16 +2769,10 @@ src_devices_team_libnm_device_plugin_team_la_SOURCES = \
 	src/devices/team/nm-device-team.h
 
 src_devices_team_libnm_device_plugin_team_la_CPPFLAGS = \
-	-I$(srcdir)/src \
-	-I$(builddir)/src \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
-	-I$(builddir)/libnm-core \
-	-I$(srcdir)/libnm-core \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON \
+	$(src_cppflags_device_plugin) \
 	$(LIBTEAMDCTL_CFLAGS) \
 	$(JANSSON_CFLAGS) \
-	$(GLIB_CFLAGS)
+	$(NULL)
 
 src_devices_team_libnm_device_plugin_team_la_LDFLAGS = \
 	-module -avoid-version \
@@ -2924,17 +2822,9 @@ src_devices_ovs_libnm_device_plugin_ovs_la_SOURCES = \
 	src/devices/ovs/nm-device-ovs-bridge.h
 
 src_devices_ovs_libnm_device_plugin_ovs_la_CPPFLAGS = \
-	-I$(srcdir)/src \
-	-I$(builddir)/src \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
-	-I$(builddir)/libnm-core \
-	-I$(srcdir)/libnm-core \
-	\
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON \
-	\
+	$(src_cppflags_device_plugin) \
 	$(JANSSON_CFLAGS) \
-	$(GLIB_CFLAGS)
+	$(NULL)
 
 src_devices_ovs_libnm_device_plugin_ovs_la_LDFLAGS = \
 	-module -avoid-version \
@@ -2960,9 +2850,7 @@ EXTRA_DIST += \
 
 check_programs += src/dnsmasq/tests/test-dnsmasq-utils
 
-src_dnsmasq_tests_test_dnsmasq_utils_CPPFLAGS = \
-	$(src_tests_cppflags) \
-	$(NULL)
+src_dnsmasq_tests_test_dnsmasq_utils_CPPFLAGS = $(src_cppflags_test)
 
 src_dnsmasq_tests_test_dnsmasq_utils_LDADD = \
 	src/libNetworkManagerTest.la
@@ -3003,7 +2891,7 @@ check_programs += \
 	src/platform/tests/test-cleanup-fake \
 	src/platform/tests/test-cleanup-linux
 
-src_platform_tests_monitor_CPPFLAGS = $(src_tests_cppflags)
+src_platform_tests_monitor_CPPFLAGS = $(src_cppflags_test)
 src_platform_tests_monitor_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_monitor_LDADD = $(src_platform_tests_libadd)
 
@@ -3047,11 +2935,11 @@ src_platform_tests_test_cleanup_linux_CPPFLAGS = $(src_tests_cppflags_linux)
 src_platform_tests_test_cleanup_linux_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_cleanup_linux_LDADD = $(src_platform_tests_libadd)
 
-src_platform_tests_test_nmp_object_CPPFLAGS = $(src_tests_cppflags)
+src_platform_tests_test_nmp_object_CPPFLAGS = $(src_cppflags_test)
 src_platform_tests_test_nmp_object_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_nmp_object_LDADD = src/libNetworkManagerTest.la
 
-src_platform_tests_test_general_CPPFLAGS = $(src_tests_cppflags)
+src_platform_tests_test_general_CPPFLAGS = $(src_cppflags_test)
 src_platform_tests_test_general_LDFLAGS = $(src_platform_tests_ldflags)
 src_platform_tests_test_general_LDADD = src/libNetworkManagerTest.la
 
@@ -3082,12 +2970,12 @@ check_programs += \
 	src/devices/tests/test-lldp \
 	src/devices/tests/test-acd
 
-src_devices_tests_test_lldp_CPPFLAGS = $(src_tests_cppflags)
+src_devices_tests_test_lldp_CPPFLAGS = $(src_cppflags_test)
 src_devices_tests_test_lldp_LDFLAGS = $(src_devices_tests_ldflags)
 src_devices_tests_test_lldp_LDADD = \
 	src/libNetworkManagerTest.la
 
-src_devices_tests_test_acd_CPPFLAGS = $(src_tests_cppflags)
+src_devices_tests_test_acd_CPPFLAGS = $(src_cppflags_test)
 src_devices_tests_test_acd_LDFLAGS = $(src_devices_tests_ldflags)
 src_devices_tests_test_acd_LDADD = \
 	src/libNetworkManagerTest.la
@@ -3113,11 +3001,11 @@ src_ndisc_tests_ldadd = \
 check_programs += src/ndisc/tests/test-ndisc-fake
 check_programs_norun += src/ndisc/tests/test-ndisc-linux
 
-src_ndisc_tests_test_ndisc_linux_CPPFLAGS = $(src_tests_cppflags)
+src_ndisc_tests_test_ndisc_linux_CPPFLAGS = $(src_cppflags_test)
 src_ndisc_tests_test_ndisc_linux_LDFLAGS = $(src_ndisc_tests_ldflags)
 src_ndisc_tests_test_ndisc_linux_LDADD = $(src_ndisc_tests_ldadd)
 
-src_ndisc_tests_test_ndisc_fake_CPPFLAGS = $(src_tests_cppflags)
+src_ndisc_tests_test_ndisc_fake_CPPFLAGS = $(src_cppflags_test)
 src_ndisc_tests_test_ndisc_fake_LDFLAGS = $(src_ndisc_tests_ldflags)
 src_ndisc_tests_test_ndisc_fake_LDADD = $(src_ndisc_tests_ldadd)
 
@@ -3133,9 +3021,7 @@ EXTRA_DIST += \
 
 check_programs += src/supplicant/tests/test-supplicant-config
 
-src_supplicant_tests_test_supplicant_config_CPPFLAGS = \
-	$(src_tests_cppflags) \
-	$(NULL)
+src_supplicant_tests_test_supplicant_config_CPPFLAGS = $(src_cppflags_test)
 
 src_supplicant_tests_test_supplicant_config_LDADD = \
 	src/libNetworkManagerTest.la
@@ -3161,9 +3047,7 @@ src_tests_config_test_config_SOURCES = \
 	src/tests/config/nm-test-device.h \
 	src/tests/config/test-config.c
 
-src_tests_config_test_config_CPPFLAGS = \
-	$(src_tests_cppflags) \
-	$(NULL)
+src_tests_config_test_config_CPPFLAGS = $(src_cppflags_test)
 
 src_tests_config_test_config_LDADD = \
 	src/libNetworkManagerTest.la
@@ -3205,31 +3089,31 @@ check_programs += \
 	src/tests/test-wired-defname \
 	src/tests/test-utils
 
-src_tests_test_ip4_config_CPPFLAGS = $(src_tests_cppflags)
+src_tests_test_ip4_config_CPPFLAGS = $(src_cppflags_test)
 src_tests_test_ip4_config_LDFLAGS = $(src_tests_ldflags)
 src_tests_test_ip4_config_LDADD = $(src_tests_ldadd)
 
-src_tests_test_ip6_config_CPPFLAGS = $(src_tests_cppflags)
+src_tests_test_ip6_config_CPPFLAGS = $(src_cppflags_test)
 src_tests_test_ip6_config_LDFLAGS = $(src_tests_ldflags)
 src_tests_test_ip6_config_LDADD = $(src_tests_ldadd)
 
-src_tests_test_dcb_CPPFLAGS = $(src_tests_cppflags)
+src_tests_test_dcb_CPPFLAGS = $(src_cppflags_test)
 src_tests_test_dcb_LDFLAGS = $(src_tests_ldflags)
 src_tests_test_dcb_LDADD = $(src_tests_ldadd)
 
-src_tests_test_general_CPPFLAGS = $(src_tests_cppflags)
+src_tests_test_general_CPPFLAGS = $(src_cppflags_test)
 src_tests_test_general_LDFLAGS = $(src_tests_ldflags)
 src_tests_test_general_LDADD = $(src_tests_ldadd)
 
-src_tests_test_general_with_expect_CPPFLAGS = $(src_tests_cppflags)
+src_tests_test_general_with_expect_CPPFLAGS = $(src_cppflags_test)
 src_tests_test_general_with_expect_LDFLAGS = $(src_tests_ldflags)
 src_tests_test_general_with_expect_LDADD = $(src_tests_ldadd)
 
-src_tests_test_wired_defname_CPPFLAGS = $(src_tests_cppflags)
+src_tests_test_wired_defname_CPPFLAGS = $(src_cppflags_test)
 src_tests_test_wired_defname_LDFLAGS = $(src_tests_ldflags)
 src_tests_test_wired_defname_LDADD = $(src_tests_ldadd)
 
-src_tests_test_utils_CPPFLAGS = $(src_tests_cppflags)
+src_tests_test_utils_CPPFLAGS = $(src_cppflags_test)
 src_tests_test_utils_LDFLAGS = $(src_tests_ldflags)
 src_tests_test_utils_LDADD = $(src_tests_ldadd)
 
@@ -3372,7 +3256,6 @@ dispatcher_tests_test_dispatcher_envp_CPPFLAGS = \
 	-I$(srcdir)/libnm \
 	-I$(builddir)/libnm \
 	-I$(srcdir)/dispatcher \
-	-I$(builddir)/dispatcher \
 	-DNETWORKMANAGER_COMPILATION_TEST \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
 	$(GLIB_CFLAGS) \
@@ -3442,7 +3325,9 @@ clients_cppflags = \
 	-I$(builddir)/libnm \
 	-I$(srcdir)/clients/common \
 	-I$(builddir)/clients/common \
+	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
 	$(GLIB_CFLAGS) \
+	$(SANITIZER_EXEC_CFLAGS) \
 	$(NULL)
 
 check_ltlibraries += clients/common/libnmc-base.la
@@ -3467,7 +3352,7 @@ clients_common_libnmc_base_la_SOURCES = \
 clients_common_libnmc_base_la_CPPFLAGS = \
 	$(clients_cppflags) \
 	-DG_LOG_DOMAIN=\""libnmc"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT
+	$(NULL)
 
 clients_common_libnmc_base_la_LIBADD = \
 	libnm/libnm.la \
@@ -3524,7 +3409,7 @@ clients_common_libnmc_la_SOURCES = \
 clients_common_libnmc_la_CPPFLAGS = \
 	$(clients_cppflags) \
 	-DG_LOG_DOMAIN=\""libnmc"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT
+	$(NULL)
 
 clients_common_libnmc_la_LIBADD = \
 	libnm/libnm.la \
@@ -3547,8 +3432,7 @@ clients_common_tests_test_general_CPPFLAGS = \
 	-I$(srcdir)/clients/common/tests \
 	$(clients_cppflags) \
 	-DNETWORKMANAGER_COMPILATION_TEST \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
-	$(SANITIZER_EXEC_CFLAGS)
+	$(NULL)
 
 clients_common_tests_test_general_LDFLAGS = \
 	$(SANITIZER_EXEC_LDFLAGS)
@@ -3593,9 +3477,7 @@ clients_cli_nmcli_SOURCES = \
 clients_cli_nmcli_CPPFLAGS = \
 	-I$(srcdir)/clients/cli \
 	$(clients_cppflags) \
-	$(SANITIZER_EXEC_CFLAGS) \
 	-DG_LOG_DOMAIN=\""nmcli"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
 	$(NULL)
 
 clients_cli_nmcli_LDADD = \
@@ -3694,17 +3576,9 @@ clients_tui_newt_libnmt_newt_a_SOURCES = \
 	$(NULL)
 
 clients_tui_newt_libnmt_newt_a_CPPFLAGS = \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
-	-I$(srcdir)/libnm-core \
-	-I$(builddir)/libnm-core \
-	-I$(srcdir)/libnm \
-	-I$(builddir)/libnm \
+	$(clients_cppflags) \
 	-DG_LOG_DOMAIN=\""nmtui"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
-	$(GLIB_CFLAGS) \
 	$(NEWT_CFLAGS) \
-	$(SANITIZER_EXEC_CFLAGS) \
 	$(NULL)
 
 $(clients_tui_newt_libnmt_newt_a_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
@@ -3799,9 +3673,8 @@ clients_tui_nmtui_SOURCES = \
 clients_tui_nmtui_CPPFLAGS = \
 	-I$(srcdir)/clients/tui/newt \
 	$(clients_cppflags) \
-	$(NEWT_CFLAGS) \
 	-DG_LOG_DOMAIN=\""nmtui"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
+	$(NEWT_CFLAGS) \
 	$(NULL)
 
 clients_tui_nmtui_LDFLAGS = \
