@@ -92,7 +92,7 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 		      -Wno-unused-parameter \
 		      ; do
 		dnl GCC 4.4 does not warn when checking for -Wno-* flags (https://gcc.gnu.org/wiki/FAQ#wnowarning)
-                _NM_COMPILER_FLAG([$(printf '%s' "$option" | sed 's/^-Wno-/-W/')], [],
+		_NM_COMPILER_FLAG([$(printf '%s' "$option" | sed 's/^-Wno-/-W/')], [],
 		                  [CFLAGS_MORE_WARNINGS="$CFLAGS_MORE_WARNINGS $option"], [])
 	done
 	unset option
