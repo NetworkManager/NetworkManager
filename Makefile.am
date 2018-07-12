@@ -105,6 +105,8 @@ endif
 
 endif
 
+dflt_cppflags = -std=gnu99
+
 ###############################################################################
 
 # with autotools, it is not easily possible to generate these defines
@@ -592,6 +594,7 @@ nodist_libnminclude_HEADERS += \
 ###############################################################################
 
 dflt_cppflags_libnm_core = \
+	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
 	-I$(srcdir)/libnm-core \
@@ -1216,6 +1219,7 @@ libnm_tests_libnm_vpn_plugin_utils_test_la_SOURCES = \
 	shared/nm-utils/nm-vpn-plugin-utils.h
 
 libnm_tests_libnm_vpn_plugin_utils_test_la_CFLAGS = \
+	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
 	-I$(srcdir)/libnm-core \
@@ -1322,7 +1326,7 @@ EXTRA_DIST += shared/c-list/src/c-list.h
 ###############################################################################
 
 src_libsystemd_nm_la_cppflags = \
-	$(dflt_cppflags_std) \
+	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
 	-I$(srcdir)/libnm-core \
@@ -1859,6 +1863,7 @@ EXTRA_DIST += \
 libexec_PROGRAMS += src/dhcp/nm-dhcp-helper
 
 src_dhcp_nm_dhcp_helper_CPPFLAGS = \
+	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
 	-DG_LOG_DOMAIN=\""nm-dhcp-helper"\" \
@@ -1920,6 +1925,7 @@ core_plugins += src/ppp/libnm-ppp-plugin.la
 pppd_plugin_LTLIBRARIES += src/ppp/nm-pppd-plugin.la
 
 src_ppp_nm_pppd_plugin_la_CPPFLAGS = \
+	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
 	-I$(srcdir)/libnm-core \
@@ -3152,6 +3158,7 @@ noinst_LTLIBRARIES += \
 	dispatcher/libnm-dispatcher-core.la
 
 dispatcher_cppflags = \
+	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
 	-I$(srcdir)/libnm-core \
@@ -3249,6 +3256,7 @@ EXTRA_DIST += \
 check_programs += dispatcher/tests/test-dispatcher-envp
 
 dispatcher_tests_test_dispatcher_envp_CPPFLAGS = \
+	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
 	-I$(srcdir)/libnm-core \
@@ -3289,6 +3297,7 @@ EXTRA_DIST += \
 bin_PROGRAMS += clients/nm-online
 
 clients_nm_online_CPPFLAGS = \
+	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
 	-I$(srcdir)/libnm-core \
@@ -3317,6 +3326,7 @@ EXTRA_DIST += \
 ###############################################################################
 
 clients_cppflags = \
+	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
 	-I$(srcdir)/libnm-core \
@@ -3830,6 +3840,7 @@ lib_LTLIBRARIES += libnm-util/libnm-util.la
 libnm_util_libnm_util_includedir=$(includedir)/NetworkManager
 
 libnm_util_cppflags = \
+	$(dflt_cppflags) \
 	-I$(srcdir)/libnm-util \
 	-I$(builddir)/libnm-util \
 	-I$(srcdir)/shared \
@@ -4041,6 +4052,7 @@ dist_dependencies += libnm-util/libnm-util.la
 ###############################################################################
 
 libnm_util_tests_cppflags = \
+	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
 	-I$(srcdir)/libnm-util \
@@ -4120,6 +4132,7 @@ EXTRA_DIST += \
 ###############################################################################
 
 libnm_glib_cppflags = \
+	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
 	-I$(srcdir)/libnm-util \
@@ -4398,6 +4411,7 @@ dist_dependencies += \
 ###############################################################################
 
 libnm_glib_tests_cppflags = \
+	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
 	-I$(srcdir)/libnm-util \
