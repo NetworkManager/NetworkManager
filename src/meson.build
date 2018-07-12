@@ -17,35 +17,7 @@ nm_dep = declare_dependency(
   compile_args: nm_cflags
 )
 
-cflags = nm_cflags + [
-  '-DPREFIX="@0@"'.format(nm_prefix),
-  '-DBINDIR="@0@"'.format(nm_bindir),
-  '-DDATADIR="@0@"'.format(nm_datadir),
-  '-DLIBEXECDIR="@0@"'.format(nm_libexecdir),
-  '-DLOCALSTATEDIR="@0@"'.format(nm_localstatedir),
-  '-DRUNSTATEDIR="@0@"'.format(nm_runstatedir),
-  '-DSBINDIR="@0@"'.format(nm_sbindir),
-  '-DSYSCONFDIR="@0@"'.format(nm_sysconfdir),
-  '-DRUNDIR="@0@"'.format(nm_pkgrundir),
-  '-DNMCONFDIR="@0@"'.format(nm_pkgconfdir),
-  '-DNMLOCALEDIR="@0@"'.format(nm_localedir),
-  '-DNMPLUGINDIR="@0@"'.format(nm_plugindir),
-  '-DNMRUNDIR="@0@"'.format(nm_pkgrundir),
-  '-DNMSTATEDIR="@0@"'.format(nm_pkgstatedir),
-  '-DNMLIBDIR="@0@"'.format(nm_pkglibdir)
-]
-
-if enable_dhcpcanon
-  cflags += '-DDHCPCANON_PATH="@0@"'.format(dhcpcanon.path())
-endif
-
-if enable_dhclient
-  cflags += '-DDHCLIENT_PATH="@0@"'.format(dhclient.path())
-endif
-
-if enable_dhcpcd
-  cflags += '-DDHCPCD_PATH="@0@"'.format(dhcpcd.path())
-endif
+cflags = nm_cflags
 
 sources = files(
   'dhcp/nm-dhcp-client.c',

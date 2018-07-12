@@ -3,11 +3,6 @@ install_data(
   install_dir: dbus_conf_dir
 )
 
-cflags = [
-  '-DSBINDIR="@0@"'.format(nm_sbindir),
-  '-DSYSCONFDIR="@0@"'.format(nm_sysconfdir)
-]
-
 name = 'nmdbus-ifcfg-rh'
 
 dbus_sources = gnome.gdbus_codegen(
@@ -21,7 +16,6 @@ libnmdbus_ifcfg_rh = static_library(
   name,
   sources: dbus_sources,
   dependencies: glib_dep,
-  c_args: cflags
 )
 
 sources = files(
@@ -41,7 +35,6 @@ libnms_ifcfg_rh_core = static_library(
   'nms-ifcfg-rh-core',
   sources: sources,
   dependencies: deps,
-  c_args: cflags
 )
 
 sources = [dbus_sources] + files('nms-ifcfg-rh-connection.c')
@@ -50,7 +43,6 @@ libnm_settings_plugin_ifcfg_rh = shared_module(
   'nm-settings-plugin-ifcfg-rh',
   sources: sources,
   dependencies: deps,
-  c_args: cflags,
   link_with: [libnms_ifcfg_rh_core],
   link_args: ldflags_linker_script_settings,
   link_depends: linker_script_settings,

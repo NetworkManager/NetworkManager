@@ -27,9 +27,7 @@ deps = [
 ]
 
 cflags = clients_cflags + [
-  '-DSYSCONFDIR="@0@"'.format(nm_sysconfdir),
   '-DG_LOG_DOMAIN="@0@"'.format(name),
-  '-DNMLOCALEDIR="@0@"'.format(nm_localedir)
 ]
 
 if enable_polkit_agent

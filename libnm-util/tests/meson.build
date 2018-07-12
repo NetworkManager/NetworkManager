@@ -7,7 +7,7 @@ deps = [
 
 cflags = common_cflags + [
   '-DNETWORKMANAGER_COMPILATION_TEST',
-] + nm_build_cflags
+]
 
 test = 'test-libnm-linking'
 

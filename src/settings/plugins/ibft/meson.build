@@ -1,15 +1,9 @@
 name = 'nm-settings-plugin-ibft'
 
-cflags = [
-  '-DSBINDIR="@0@"'.format(nm_sbindir),
-  '-DSYSCONFDIR="@0@"'.format(nm_sysconfdir)
-]
-
 libnms_ibft_core = static_library(
   'nms-ibft-core',
   'nms-ibft-reader.c',
   dependencies: nm_dep,
-  c_args: cflags
 )
 
 sources = files(
@@ -21,7 +15,6 @@ libnm_settings_plugin_ibft = shared_module(
   name,
   sources: sources,
   dependencies: nm_dep,
-  c_args: cflags,
   link_with: libnms_ibft_core,
   link_args: ldflags_linker_script_settings,
   link_depends: linker_script_settings,
