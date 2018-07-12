@@ -7,7 +7,6 @@ deps = [
 
 clients_cflags = [
   '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
-  '-DNMLOCALEDIR="@0@"'.format(nm_localedir),
 ]
 
 cflags = clients_cflags + [

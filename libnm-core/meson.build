@@ -144,12 +144,6 @@ deps = [
 cflags = [
   '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
   '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE',
-  '-DLIBEXECDIR="@0@"'.format(nm_libexecdir),
-  '-DNMLOCALEDIR="@0@"'.format(nm_localedir),
-  '-DNMCONFDIR="@0@"'.format(nm_pkgconfdir),
-  '-DNMLIBDIR="@0@"'.format(nm_pkglibdir),
-  '-DNMPLUGINDIR="@0@"'.format(nm_plugindir),
-  '-DNMVPNDIR="@0@"'.format(nm_vpndir)
 ]
 
 if enable_json_validation

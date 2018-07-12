@@ -7,7 +7,6 @@ deps = [
 
 cflags = clients_cflags + [
   '-DG_LOG_DOMAIN="@0@"'.format(name),
-  '-DNMLOCALEDIR="@0@"'.format(nm_localedir)
 ]
 
 subdir('newt')
