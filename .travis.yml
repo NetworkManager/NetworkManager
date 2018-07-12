@@ -104,15 +104,19 @@ script:
     - |
       if test "$BUILD_TYPE" == 'autotools'; then
           git clean -fdx &&
-          ./autogen.sh --prefix="$PWD/INST" --with-systemd-logind=no --enable-more-warnings=no --enable-ifcfg-rh --enable-config-plugin-ibft --enable-ifupdown --enable-tests &&
+          NOCONFIGURE=1 ./autogen.sh &&
+          mkdir ./build &&
+          pushd ./build &&
+          ../configure --prefix="$PWD/INST" --with-systemd-logind=no --enable-more-warnings=no --enable-ifcfg-rh --enable-config-plugin-ibft --enable-ifupdown --enable-tests &&
           make -j4 &&
           if [ "$CC" == gcc ]; then
               sudo locale-gen pl_PL.UTF-8 &&
               sudo make install &&
-              NM_TEST_CLIENT_CHECK_L10N=1 ./contrib/travis/travis-check.sh
+              NM_TEST_CLIENT_CHECK_L10N=1 ../contrib/travis/travis-check.sh
           else
-              ./contrib/travis/travis-check.sh
-          fi
+              ../contrib/travis/travis-check.sh
+          fi &&
+          popd
       fi
 
 env:
