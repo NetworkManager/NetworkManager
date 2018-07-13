@@ -236,8 +236,6 @@ static void __attribute__((constructor))
 _nm_utils_init (void)
 {
 	static int initialized = 0;
-	GModule *self;
-	gpointer func;
 
 	if (g_atomic_int_get (&initialized) != 0)
 		return;
@@ -248,11 +246,6 @@ _nm_utils_init (void)
 	 * run the initialization code below, all code below itself is thread-safe,
 	 * Hence, a poor-man guard "initialized" above is more than sufficient,
 	 * although it does not guarantee that the code is not run concurrently. */
-
-	self = g_module_open (NULL, 0);
-	if (g_module_symbol (self, "nm_util_get_private", &func))
-		g_error ("libnm-util symbols detected; Mixing libnm with libnm-util/libnm-glib is not supported");
-	g_module_close (self);
 
 	bindtextdomain (GETTEXT_PACKAGE, NMLOCALEDIR);
 	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
