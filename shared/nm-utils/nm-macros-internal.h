@@ -84,6 +84,18 @@ static inline int nm_close (int fd);
 GS_DEFINE_CLEANUP_FUNCTION_VOID (void *, _nm_auto_free_impl, free)
 #define nm_auto_free nm_auto(_nm_auto_free_impl)
 
+GS_DEFINE_CLEANUP_FUNCTION0 (GVariantIter *, _nm_auto_free_variant_iter, g_variant_iter_free)
+#define nm_auto_free_variant_iter __attribute__ ((cleanup(_nm_auto_free_variant_iter)))
+
+GS_DEFINE_CLEANUP_FUNCTION0 (GVariantBuilder *, _nm_auto_unref_variant_builder, g_variant_builder_unref)
+#define nm_auto_unref_variant_builder __attribute__ ((cleanup(_nm_auto_unref_variant_builder)))
+
+GS_DEFINE_CLEANUP_FUNCTION (GList *, _nm_auto_free_list, g_list_free)
+#define nm_auto_free_list __attribute__ ((cleanup(_nm_auto_free_list)))
+
+GS_DEFINE_CLEANUP_FUNCTION0 (GChecksum *, _nm_auto_checksum_free, g_checksum_free)
+#define nm_auto_free_checksum __attribute__ ((cleanup(_nm_auto_checksum_free)))
+
 static inline void
 nm_free_secret (char *secret)
 {

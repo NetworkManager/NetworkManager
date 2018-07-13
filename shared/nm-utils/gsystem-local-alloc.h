@@ -88,24 +88,6 @@ GS_DEFINE_CLEANUP_FUNCTION_VOID0 (GObject *, gs_local_obj_unref, g_object_unref)
 GS_DEFINE_CLEANUP_FUNCTION0 (GVariant *, gs_local_variant_unref, g_variant_unref)
 
 /**
- * gs_free_variant_iter:
- *
- * Call g_variant_iter_free() on a variable location when it goes out of
- * scope.
- */
-#define gs_free_variant_iter __attribute__ ((cleanup(gs_local_variant_iter_free)))
-GS_DEFINE_CLEANUP_FUNCTION0 (GVariantIter *, gs_local_variant_iter_free, g_variant_iter_free)
-
-/**
- * gs_free_variant_builder:
- *
- * Call g_variant_builder_unref() on a variable location when it goes out of
- * scope.
- */
-#define gs_unref_variant_builder __attribute__ ((cleanup(gs_local_variant_builder_unref)))
-GS_DEFINE_CLEANUP_FUNCTION0 (GVariantBuilder *, gs_local_variant_builder_unref, g_variant_builder_unref)
-
-/**
  * gs_unref_array:
  *
  * Call g_array_unref() on a variable location when it goes out of
@@ -138,15 +120,6 @@ GS_DEFINE_CLEANUP_FUNCTION0 (GPtrArray *, gs_local_ptrarray_unref, g_ptr_array_u
 GS_DEFINE_CLEANUP_FUNCTION0 (GHashTable *, gs_local_hashtable_unref, g_hash_table_unref)
 
 /**
- * gs_free_list:
- *
- * Call g_list_free() on a variable location when it goes out
- * of scope.
- */
-#define gs_free_list __attribute__ ((cleanup(gs_local_free_list)))
-GS_DEFINE_CLEANUP_FUNCTION (GList *, gs_local_free_list, g_list_free)
-
-/**
  * gs_free_slist:
  *
  * Call g_slist_free() on a variable location when it goes out
@@ -154,16 +127,6 @@ GS_DEFINE_CLEANUP_FUNCTION (GList *, gs_local_free_list, g_list_free)
  */
 #define gs_free_slist __attribute__ ((cleanup(gs_local_free_slist)))
 GS_DEFINE_CLEANUP_FUNCTION (GSList *, gs_local_free_slist, g_slist_free)
-
-/**
- * gs_free_checksum:
- *
- * Call g_checksum_free() on a variable location when it goes out
- * of scope.  Note that unlike g_checksum_free(), the variable may
- * be %NULL.
- */
-#define gs_free_checksum __attribute__ ((cleanup(gs_local_checksum_free)))
-GS_DEFINE_CLEANUP_FUNCTION0 (GChecksum *, gs_local_checksum_free, g_checksum_free)
 
 /**
  * gs_unref_bytes:
