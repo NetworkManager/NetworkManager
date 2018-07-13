@@ -13910,18 +13910,18 @@ wlan1:wifi:unavailable:
 wlan0:wifi:unavailable:con-vpn-1
 
 <<<
-size: 284
+size: 279
 location: clients/tests/test-client.py:1031:test_004()/218
 cmd: $NMCLI --terse dev s
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 140 bytes
+stdout: 135 bytes
 >>>
-eth0:ethernet:niedostępne:
-eth1:ethernet:niedostępne:
-wlan1:wifi:niedostępne:
-wlan1:wifi:niedostępne:
-wlan0:wifi:niedostępne:con-vpn-1
+eth0:ethernet:unavailable:
+eth1:ethernet:unavailable:
+wlan1:wifi:unavailable:
+wlan1:wifi:unavailable:
+wlan0:wifi:unavailable:con-vpn-1
 
 <<<
 size: 587
@@ -13938,18 +13938,18 @@ wlan1:wifi:unavailable:/org/freedesktop/NetworkManager/Devices/5:::
 wlan0:wifi:unavailable:/org/freedesktop/NetworkManager/Devices/3:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2
 
 <<<
-size: 602
+size: 597
 location: clients/tests/test-client.py:1034:test_004()/220
 cmd: $NMCLI --terse -f all dev status
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 446 bytes
+stdout: 441 bytes
 >>>
-eth0:ethernet:niedostępne:/org/freedesktop/NetworkManager/Devices/1:::
-eth1:ethernet:niedostępne:/org/freedesktop/NetworkManager/Devices/2:::
-wlan1:wifi:niedostępne:/org/freedesktop/NetworkManager/Devices/4:::
-wlan1:wifi:niedostępne:/org/freedesktop/NetworkManager/Devices/5:::
-wlan0:wifi:niedostępne:/org/freedesktop/NetworkManager/Devices/3:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2
+eth0:ethernet:unavailable:/org/freedesktop/NetworkManager/Devices/1:::
+eth1:ethernet:unavailable:/org/freedesktop/NetworkManager/Devices/2:::
+wlan1:wifi:unavailable:/org/freedesktop/NetworkManager/Devices/4:::
+wlan1:wifi:unavailable:/org/freedesktop/NetworkManager/Devices/5:::
+wlan0:wifi:unavailable:/org/freedesktop/NetworkManager/Devices/3:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2
 
 <<<
 size: 4540
@@ -16718,18 +16718,18 @@ stdout: 295 bytes
 [2mwlan0[0m:[2mwifi[0m:[2munavailable[0m:[2mcon-vpn-1[0m
 
 <<<
-size: 456
+size: 451
 location: clients/tests/test-client.py:1031:test_004()/264
 cmd: $NMCLI --terse --color yes dev s
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 300 bytes
+stdout: 295 bytes
 >>>
-[2meth0[0m:[2methernet[0m:[2mniedostępne[0m:[2m[0m
-[2meth1[0m:[2methernet[0m:[2mniedostępne[0m:[2m[0m
-[2mwlan1[0m:[2mwifi[0m:[2mniedostępne[0m:[2m[0m
-[2mwlan1[0m:[2mwifi[0m:[2mniedostępne[0m:[2m[0m
-[2mwlan0[0m:[2mwifi[0m:[2mniedostępne[0m:[2mcon-vpn-1[0m
+[2meth0[0m:[2methernet[0m:[2munavailable[0m:[2m[0m
+[2meth1[0m:[2methernet[0m:[2munavailable[0m:[2m[0m
+[2mwlan1[0m:[2mwifi[0m:[2munavailable[0m:[2m[0m
+[2mwlan1[0m:[2mwifi[0m:[2munavailable[0m:[2m[0m
+[2mwlan0[0m:[2mwifi[0m:[2munavailable[0m:[2mcon-vpn-1[0m
 
 <<<
 size: 879
@@ -16746,18 +16746,18 @@ stdout: 721 bytes
 [2mwlan0[0m:[2mwifi[0m:[2munavailable[0m:[2m/org/freedesktop/NetworkManager/Devices/3[0m:[2mcon-vpn-1[0m:[2mUUID-con-vpn-1-REPLACED-REPLACED-REP[0m:[2m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
 
 <<<
-size: 894
+size: 889
 location: clients/tests/test-client.py:1034:test_004()/266
 cmd: $NMCLI --terse --color yes -f all dev status
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 726 bytes
+stdout: 721 bytes
 >>>
-[2meth0[0m:[2methernet[0m:[2mniedostępne[0m:[2m/org/freedesktop/NetworkManager/Devices/1[0m:[2m[0m:[2m[0m:[2m[0m
-[2meth1[0m:[2methernet[0m:[2mniedostępne[0m:[2m/org/freedesktop/NetworkManager/Devices/2[0m:[2m[0m:[2m[0m:[2m[0m
-[2mwlan1[0m:[2mwifi[0m:[2mniedostępne[0m:[2m/org/freedesktop/NetworkManager/Devices/4[0m:[2m[0m:[2m[0m:[2m[0m
-[2mwlan1[0m:[2mwifi[0m:[2mniedostępne[0m:[2m/org/freedesktop/NetworkManager/Devices/5[0m:[2m[0m:[2m[0m:[2m[0m
-[2mwlan0[0m:[2mwifi[0m:[2mniedostępne[0m:[2m/org/freedesktop/NetworkManager/Devices/3[0m:[2mcon-vpn-1[0m:[2mUUID-con-vpn-1-REPLACED-REPLACED-REP[0m:[2m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
+[2meth0[0m:[2methernet[0m:[2munavailable[0m:[2m/org/freedesktop/NetworkManager/Devices/1[0m:[2m[0m:[2m[0m:[2m[0m
+[2meth1[0m:[2methernet[0m:[2munavailable[0m:[2m/org/freedesktop/NetworkManager/Devices/2[0m:[2m[0m:[2m[0m:[2m[0m
+[2mwlan1[0m:[2mwifi[0m:[2munavailable[0m:[2m/org/freedesktop/NetworkManager/Devices/4[0m:[2m[0m:[2m[0m:[2m[0m
+[2mwlan1[0m:[2mwifi[0m:[2munavailable[0m:[2m/org/freedesktop/NetworkManager/Devices/5[0m:[2m[0m:[2m[0m:[2m[0m
+[2mwlan0[0m:[2mwifi[0m:[2munavailable[0m:[2m/org/freedesktop/NetworkManager/Devices/3[0m:[2mcon-vpn-1[0m:[2mUUID-con-vpn-1-REPLACED-REPLACED-REP[0m:[2m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
 
 <<<
 size: 4552
@@ -26106,18 +26106,18 @@ wlan1:wifi:unavailable:
 wlan0:wifi:unavailable:con-vpn-1
 
 <<<
-size: 299
+size: 294
 location: clients/tests/test-client.py:1031:test_004()/494
 cmd: $NMCLI --mode tabular --terse dev s
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 140 bytes
+stdout: 135 bytes
 >>>
-eth0:ethernet:niedostępne:
-eth1:ethernet:niedostępne:
-wlan1:wifi:niedostępne:
-wlan1:wifi:niedostępne:
-wlan0:wifi:niedostępne:con-vpn-1
+eth0:ethernet:unavailable:
+eth1:ethernet:unavailable:
+wlan1:wifi:unavailable:
+wlan1:wifi:unavailable:
+wlan0:wifi:unavailable:con-vpn-1
 
 <<<
 size: 602
@@ -26134,18 +26134,18 @@ wlan1:wifi:unavailable:/org/freedesktop/NetworkManager/Devices/5:::
 wlan0:wifi:unavailable:/org/freedesktop/NetworkManager/Devices/3:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2
 
 <<<
-size: 617
+size: 612
 location: clients/tests/test-client.py:1034:test_004()/496
 cmd: $NMCLI --mode tabular --terse -f all dev status
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 446 bytes
+stdout: 441 bytes
 >>>
-eth0:ethernet:niedostępne:/org/freedesktop/NetworkManager/Devices/1:::
-eth1:ethernet:niedostępne:/org/freedesktop/NetworkManager/Devices/2:::
-wlan1:wifi:niedostępne:/org/freedesktop/NetworkManager/Devices/4:::
-wlan1:wifi:niedostępne:/org/freedesktop/NetworkManager/Devices/5:::
-wlan0:wifi:niedostępne:/org/freedesktop/NetworkManager/Devices/3:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2
+eth0:ethernet:unavailable:/org/freedesktop/NetworkManager/Devices/1:::
+eth1:ethernet:unavailable:/org/freedesktop/NetworkManager/Devices/2:::
+wlan1:wifi:unavailable:/org/freedesktop/NetworkManager/Devices/4:::
+wlan1:wifi:unavailable:/org/freedesktop/NetworkManager/Devices/5:::
+wlan0:wifi:unavailable:/org/freedesktop/NetworkManager/Devices/3:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2
 
 <<<
 size: 3096
@@ -26946,18 +26946,18 @@ stdout: 295 bytes
 [2mwlan0[0m:[2mwifi[0m:[2munavailable[0m:[2mcon-vpn-1[0m
 
 <<<
-size: 471
+size: 466
 location: clients/tests/test-client.py:1031:test_004()/540
 cmd: $NMCLI --mode tabular --terse --color yes dev s
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 300 bytes
+stdout: 295 bytes
 >>>
-[2meth0[0m:[2methernet[0m:[2mniedostępne[0m:[2m[0m
-[2meth1[0m:[2methernet[0m:[2mniedostępne[0m:[2m[0m
-[2mwlan1[0m:[2mwifi[0m:[2mniedostępne[0m:[2m[0m
-[2mwlan1[0m:[2mwifi[0m:[2mniedostępne[0m:[2m[0m
-[2mwlan0[0m:[2mwifi[0m:[2mniedostępne[0m:[2mcon-vpn-1[0m
+[2meth0[0m:[2methernet[0m:[2munavailable[0m:[2m[0m
+[2meth1[0m:[2methernet[0m:[2munavailable[0m:[2m[0m
+[2mwlan1[0m:[2mwifi[0m:[2munavailable[0m:[2m[0m
+[2mwlan1[0m:[2mwifi[0m:[2munavailable[0m:[2m[0m
+[2mwlan0[0m:[2mwifi[0m:[2munavailable[0m:[2mcon-vpn-1[0m
 
 <<<
 size: 894
@@ -26974,18 +26974,18 @@ stdout: 721 bytes
 [2mwlan0[0m:[2mwifi[0m:[2munavailable[0m:[2m/org/freedesktop/NetworkManager/Devices/3[0m:[2mcon-vpn-1[0m:[2mUUID-con-vpn-1-REPLACED-REPLACED-REP[0m:[2m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
 
 <<<
-size: 909
+size: 904
 location: clients/tests/test-client.py:1034:test_004()/542
 cmd: $NMCLI --mode tabular --terse --color yes -f all dev status
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 726 bytes
+stdout: 721 bytes
 >>>
-[2meth0[0m:[2methernet[0m:[2mniedostępne[0m:[2m/org/freedesktop/NetworkManager/Devices/1[0m:[2m[0m:[2m[0m:[2m[0m
-[2meth1[0m:[2methernet[0m:[2mniedostępne[0m:[2m/org/freedesktop/NetworkManager/Devices/2[0m:[2m[0m:[2m[0m:[2m[0m
-[2mwlan1[0m:[2mwifi[0m:[2mniedostępne[0m:[2m/org/freedesktop/NetworkManager/Devices/4[0m:[2m[0m:[2m[0m:[2m[0m
-[2mwlan1[0m:[2mwifi[0m:[2mniedostępne[0m:[2m/org/freedesktop/NetworkManager/Devices/5[0m:[2m[0m:[2m[0m:[2m[0m
-[2mwlan0[0m:[2mwifi[0m:[2mniedostępne[0m:[2m/org/freedesktop/NetworkManager/Devices/3[0m:[2mcon-vpn-1[0m:[2mUUID-con-vpn-1-REPLACED-REPLACED-REP[0m:[2m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
+[2meth0[0m:[2methernet[0m:[2munavailable[0m:[2m/org/freedesktop/NetworkManager/Devices/1[0m:[2m[0m:[2m[0m:[2m[0m
+[2meth1[0m:[2methernet[0m:[2munavailable[0m:[2m/org/freedesktop/NetworkManager/Devices/2[0m:[2m[0m:[2m[0m:[2m[0m
+[2mwlan1[0m:[2mwifi[0m:[2munavailable[0m:[2m/org/freedesktop/NetworkManager/Devices/4[0m:[2m[0m:[2m[0m:[2m[0m
+[2mwlan1[0m:[2mwifi[0m:[2munavailable[0m:[2m/org/freedesktop/NetworkManager/Devices/5[0m:[2m[0m:[2m[0m:[2m[0m
+[2mwlan0[0m:[2mwifi[0m:[2munavailable[0m:[2m/org/freedesktop/NetworkManager/Devices/3[0m:[2mcon-vpn-1[0m:[2mUUID-con-vpn-1-REPLACED-REPLACED-REP[0m:[2m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
 
 <<<
 size: 3108
@@ -42797,32 +42797,32 @@ STATE:unavailable
 CONNECTION:con-vpn-1
 
 <<<
-size: 446
+size: 441
 location: clients/tests/test-client.py:1031:test_004()/770
 cmd: $NMCLI --mode multiline --terse dev s
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 285 bytes
+stdout: 280 bytes
 >>>
 DEVICE:eth0
 TYPE:ethernet
-STATE:niedostępne
+STATE:unavailable
 CONNECTION:
 DEVICE:eth1
 TYPE:ethernet
-STATE:niedostępne
+STATE:unavailable
 CONNECTION:
 DEVICE:wlan1
 TYPE:wifi
-STATE:niedostępne
+STATE:unavailable
 CONNECTION:
 DEVICE:wlan1
 TYPE:wifi
-STATE:niedostępne
+STATE:unavailable
 CONNECTION:
 DEVICE:wlan0
 TYPE:wifi
-STATE:niedostępne
+STATE:unavailable
 CONNECTION:con-vpn-1
 
 <<<
@@ -42870,44 +42870,44 @@ CON-UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
 CON-PATH:/org/freedesktop/NetworkManager/ActiveConnection/2
 
 <<<
-size: 904
+size: 899
 location: clients/tests/test-client.py:1034:test_004()/772
 cmd: $NMCLI --mode multiline --terse -f all dev status
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 731 bytes
+stdout: 726 bytes
 >>>
 DEVICE:eth0
 TYPE:ethernet
-STATE:niedostępne
+STATE:unavailable
 DBUS-PATH:/org/freedesktop/NetworkManager/Devices/1
 CONNECTION:
 CON-UUID:
 CON-PATH:
 DEVICE:eth1
 TYPE:ethernet
-STATE:niedostępne
+STATE:unavailable
 DBUS-PATH:/org/freedesktop/NetworkManager/Devices/2
 CONNECTION:
 CON-UUID:
 CON-PATH:
 DEVICE:wlan1
 TYPE:wifi
-STATE:niedostępne
+STATE:unavailable
 DBUS-PATH:/org/freedesktop/NetworkManager/Devices/4
 CONNECTION:
 CON-UUID:
 CON-PATH:
 DEVICE:wlan1
 TYPE:wifi
-STATE:niedostępne
+STATE:unavailable
 DBUS-PATH:/org/freedesktop/NetworkManager/Devices/5
 CONNECTION:
 CON-UUID:
 CON-PATH:
 DEVICE:wlan0
 TYPE:wifi
-STATE:niedostępne
+STATE:unavailable
 DBUS-PATH:/org/freedesktop/NetworkManager/Devices/3
 CONNECTION:con-vpn-1
 CON-UUID:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -46105,32 +46105,32 @@ STATE:[2munavailable[0m
 CONNECTION:[2mcon-vpn-1[0m
 
 <<<
-size: 618
+size: 613
 location: clients/tests/test-client.py:1031:test_004()/816
 cmd: $NMCLI --mode multiline --terse --color yes dev s
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 445 bytes
+stdout: 440 bytes
 >>>
 DEVICE:[2meth0[0m
 TYPE:[2methernet[0m
-STATE:[2mniedostępne[0m
+STATE:[2munavailable[0m
 CONNECTION:[2m[0m
 DEVICE:[2meth1[0m
 TYPE:[2methernet[0m
-STATE:[2mniedostępne[0m
+STATE:[2munavailable[0m
 CONNECTION:[2m[0m
 DEVICE:[2mwlan1[0m
 TYPE:[2mwifi[0m
-STATE:[2mniedostępne[0m
+STATE:[2munavailable[0m
 CONNECTION:[2m[0m
 DEVICE:[2mwlan1[0m
 TYPE:[2mwifi[0m
-STATE:[2mniedostępne[0m
+STATE:[2munavailable[0m
 CONNECTION:[2m[0m
 DEVICE:[2mwlan0[0m
 TYPE:[2mwifi[0m
-STATE:[2mniedostępne[0m
+STATE:[2munavailable[0m
 CONNECTION:[2mcon-vpn-1[0m
 
 <<<
@@ -46178,44 +46178,44 @@ CON-UUID:[2mUUID-con-vpn-1-REPLACED-REPLACED-REP[0m
 CON-PATH:[2m/org/freedesktop/NetworkManager/ActiveConnection/2[0m
 
 <<<
-size: 1197
+size: 1192
 location: clients/tests/test-client.py:1034:test_004()/818
 cmd: $NMCLI --mode multiline --terse --color yes -f all dev status
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1011 bytes
+stdout: 1006 bytes
 >>>
 DEVICE:[2meth0[0m
 TYPE:[2methernet[0m
-STATE:[2mniedostępne[0m
+STATE:[2munavailable[0m
 DBUS-PATH:[2m/org/freedesktop/NetworkManager/Devices/1[0m
 CONNECTION:[2m[0m
 CON-UUID:[2m[0m
 CON-PATH:[2m[0m
 DEVICE:[2meth1[0m
 TYPE:[2methernet[0m
-STATE:[2mniedostępne[0m
+STATE:[2munavailable[0m
 DBUS-PATH:[2m/org/freedesktop/NetworkManager/Devices/2[0m
 CONNECTION:[2m[0m
 CON-UUID:[2m[0m
 CON-PATH:[2m[0m
 DEVICE:[2mwlan1[0m
 TYPE:[2mwifi[0m
-STATE:[2mniedostępne[0m
+STATE:[2munavailable[0m
 DBUS-PATH:[2m/org/freedesktop/NetworkManager/Devices/4[0m
 CONNECTION:[2m[0m
 CON-UUID:[2m[0m
 CON-PATH:[2m[0m
 DEVICE:[2mwlan1[0m
 TYPE:[2mwifi[0m
-STATE:[2mniedostępne[0m
+STATE:[2munavailable[0m
 DBUS-PATH:[2m/org/freedesktop/NetworkManager/Devices/5[0m
 CONNECTION:[2m[0m
 CON-UUID:[2m[0m
 CON-PATH:[2m[0m
 DEVICE:[2mwlan0[0m
 TYPE:[2mwifi[0m
-STATE:[2mniedostępne[0m
+STATE:[2munavailable[0m
 DBUS-PATH:[2m/org/freedesktop/NetworkManager/Devices/3[0m
 CONNECTION:[2mcon-vpn-1[0m
 CON-UUID:[2mUUID-con-vpn-1-REPLACED-REPLACED-REP[0m
