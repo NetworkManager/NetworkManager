@@ -21,10 +21,6 @@
 #ifndef __GSYSTEM_LOCAL_ALLOC_H__
 #define __GSYSTEM_LOCAL_ALLOC_H__
 
-#include <gio/gio.h>
-
-G_BEGIN_DECLS
-
 #define GS_DEFINE_CLEANUP_FUNCTION_VOID(CastType, name, func) \
   static inline void name (void *v) \
   { \
@@ -202,26 +198,5 @@ GS_DEFINE_CLEANUP_FUNCTION0 (GError *, gs_local_free_error, g_error_free)
  */
 #define gs_unref_keyfile __attribute__ ((cleanup(gs_local_keyfile_unref)))
 GS_DEFINE_CLEANUP_FUNCTION0 (GKeyFile *, gs_local_keyfile_unref, g_key_file_unref)
-
-static inline void
-gs_cleanup_close_fdp (int *fdp)
-{
-  int fd;
-
-  g_assert (fdp);
-  
-  fd = *fdp;
-  if (fd != -1)
-    (void) close (fd);
-}
-
-/**
- * gs_fd_close:
- *
- * Call close() on a variable location when it goes out of scope.
- */
-#define gs_fd_close __attribute__((cleanup(gs_cleanup_close_fdp)))
-
-G_END_DECLS
 
 #endif
