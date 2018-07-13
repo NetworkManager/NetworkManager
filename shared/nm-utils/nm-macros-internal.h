@@ -71,9 +71,18 @@ static inline int nm_close (int fd);
  * nm_auto_free:
  *
  * Call free() on a variable location when it goes out of scope.
+ * This is for pointers that are allocated with malloc() instead of
+ * g_malloc().
+ *
+ * In practice, since glib 2.45, g_malloc()/g_free() always wraps malloc()/free().
+ * See bgo#751592. In that case, it would be safe to free pointers allocated with
+ * malloc() with gs_free or g_free().
+ *
+ * However, let's never mix them. To free malloc'ed memory, always use
+ * free() or nm_auto_free.
  */
-#define nm_auto_free nm_auto(_nm_auto_free_impl)
 GS_DEFINE_CLEANUP_FUNCTION_VOID (void *, _nm_auto_free_impl, free)
+#define nm_auto_free nm_auto(_nm_auto_free_impl)
 
 static inline void
 nm_free_secret (char *secret)
