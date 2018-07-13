@@ -21,33 +21,33 @@
 #ifndef __GSYSTEM_LOCAL_ALLOC_H__
 #define __GSYSTEM_LOCAL_ALLOC_H__
 
-#define GS_DEFINE_CLEANUP_FUNCTION_VOID(CastType, name, func) \
+#define NM_AUTO_DEFINE_FCN_VOID(CastType, name, func) \
   static inline void name (void *v) \
   { \
     func (*((CastType *) v)); \
   }
 
-#define GS_DEFINE_CLEANUP_FUNCTION_VOID0(CastType, name, func) \
+#define NM_AUTO_DEFINE_FCN_VOID0(CastType, name, func) \
   static inline void name (void *v) \
   { \
     if (*((CastType *) v)) \
       func (*((CastType *) v)); \
   }
 
-#define GS_DEFINE_CLEANUP_FUNCTION(Type, name, func) \
+#define NM_AUTO_DEFINE_FCN(Type, name, func) \
   static inline void name (Type *v) \
   { \
     func (*v); \
   }
 
-#define GS_DEFINE_CLEANUP_FUNCTION0(Type, name, func) \
+#define NM_AUTO_DEFINE_FCN0(Type, name, func) \
   static inline void name (Type *v) \
   { \
     if (*v) \
       func (*v); \
   }
 
-#define GS_DEFINE_CLEANUP_FUNCTION_STRUCT(Type, name, func) \
+#define NM_AUTO_DEFINE_FCN_STRUCT(Type, name, func) \
   static inline void name (Type *v) \
   { \
     func (v); \
@@ -65,7 +65,7 @@
  * Call g_free() on a variable location when it goes out of scope.
  */
 #define gs_free __attribute__ ((cleanup(gs_local_free)))
-GS_DEFINE_CLEANUP_FUNCTION_VOID (void *, gs_local_free, g_free)
+NM_AUTO_DEFINE_FCN_VOID (void *, gs_local_free, g_free)
 
 /**
  * gs_unref_object:
@@ -75,7 +75,7 @@ GS_DEFINE_CLEANUP_FUNCTION_VOID (void *, gs_local_free, g_free)
  * %NULL.
  */
 #define gs_unref_object __attribute__ ((cleanup(gs_local_obj_unref)))
-GS_DEFINE_CLEANUP_FUNCTION_VOID0 (GObject *, gs_local_obj_unref, g_object_unref)
+NM_AUTO_DEFINE_FCN_VOID0 (GObject *, gs_local_obj_unref, g_object_unref)
 
 /**
  * gs_unref_variant:
@@ -85,7 +85,7 @@ GS_DEFINE_CLEANUP_FUNCTION_VOID0 (GObject *, gs_local_obj_unref, g_object_unref)
  * %NULL.
  */
 #define gs_unref_variant __attribute__ ((cleanup(gs_local_variant_unref)))
-GS_DEFINE_CLEANUP_FUNCTION0 (GVariant *, gs_local_variant_unref, g_variant_unref)
+NM_AUTO_DEFINE_FCN0 (GVariant *, gs_local_variant_unref, g_variant_unref)
 
 /**
  * gs_unref_array:
@@ -96,7 +96,7 @@ GS_DEFINE_CLEANUP_FUNCTION0 (GVariant *, gs_local_variant_unref, g_variant_unref
 
  */
 #define gs_unref_array __attribute__ ((cleanup(gs_local_array_unref)))
-GS_DEFINE_CLEANUP_FUNCTION0 (GArray *, gs_local_array_unref, g_array_unref)
+NM_AUTO_DEFINE_FCN0 (GArray *, gs_local_array_unref, g_array_unref)
 
 /**
  * gs_unref_ptrarray:
@@ -107,7 +107,7 @@ GS_DEFINE_CLEANUP_FUNCTION0 (GArray *, gs_local_array_unref, g_array_unref)
 
  */
 #define gs_unref_ptrarray __attribute__ ((cleanup(gs_local_ptrarray_unref)))
-GS_DEFINE_CLEANUP_FUNCTION0 (GPtrArray *, gs_local_ptrarray_unref, g_ptr_array_unref)
+NM_AUTO_DEFINE_FCN0 (GPtrArray *, gs_local_ptrarray_unref, g_ptr_array_unref)
 
 /**
  * gs_unref_hashtable:
@@ -117,7 +117,7 @@ GS_DEFINE_CLEANUP_FUNCTION0 (GPtrArray *, gs_local_ptrarray_unref, g_ptr_array_u
  * be %NULL.
  */
 #define gs_unref_hashtable __attribute__ ((cleanup(gs_local_hashtable_unref)))
-GS_DEFINE_CLEANUP_FUNCTION0 (GHashTable *, gs_local_hashtable_unref, g_hash_table_unref)
+NM_AUTO_DEFINE_FCN0 (GHashTable *, gs_local_hashtable_unref, g_hash_table_unref)
 
 /**
  * gs_free_slist:
@@ -126,7 +126,7 @@ GS_DEFINE_CLEANUP_FUNCTION0 (GHashTable *, gs_local_hashtable_unref, g_hash_tabl
  * of scope.
  */
 #define gs_free_slist __attribute__ ((cleanup(gs_local_free_slist)))
-GS_DEFINE_CLEANUP_FUNCTION (GSList *, gs_local_free_slist, g_slist_free)
+NM_AUTO_DEFINE_FCN (GSList *, gs_local_free_slist, g_slist_free)
 
 /**
  * gs_unref_bytes:
@@ -136,7 +136,7 @@ GS_DEFINE_CLEANUP_FUNCTION (GSList *, gs_local_free_slist, g_slist_free)
  * be %NULL.
  */
 #define gs_unref_bytes __attribute__ ((cleanup(gs_local_bytes_unref)))
-GS_DEFINE_CLEANUP_FUNCTION0 (GBytes *, gs_local_bytes_unref, g_bytes_unref)
+NM_AUTO_DEFINE_FCN0 (GBytes *, gs_local_bytes_unref, g_bytes_unref)
 
 /**
  * gs_strfreev:
@@ -144,7 +144,7 @@ GS_DEFINE_CLEANUP_FUNCTION0 (GBytes *, gs_local_bytes_unref, g_bytes_unref)
  * Call g_strfreev() on a variable location when it goes out of scope.
  */
 #define gs_strfreev __attribute__ ((cleanup(gs_local_strfreev)))
-GS_DEFINE_CLEANUP_FUNCTION (char **, gs_local_strfreev, g_strfreev)
+NM_AUTO_DEFINE_FCN (char **, gs_local_strfreev, g_strfreev)
 
 /**
  * gs_free_error:
@@ -152,7 +152,7 @@ GS_DEFINE_CLEANUP_FUNCTION (char **, gs_local_strfreev, g_strfreev)
  * Call g_error_free() on a variable location when it goes out of scope.
  */
 #define gs_free_error __attribute__ ((cleanup(gs_local_free_error)))
-GS_DEFINE_CLEANUP_FUNCTION0 (GError *, gs_local_free_error, g_error_free)
+NM_AUTO_DEFINE_FCN0 (GError *, gs_local_free_error, g_error_free)
 
 /**
  * gs_unref_keyfile:
@@ -160,6 +160,6 @@ GS_DEFINE_CLEANUP_FUNCTION0 (GError *, gs_local_free_error, g_error_free)
  * Call g_key_file_unref() on a variable location when it goes out of scope.
  */
 #define gs_unref_keyfile __attribute__ ((cleanup(gs_local_keyfile_unref)))
-GS_DEFINE_CLEANUP_FUNCTION0 (GKeyFile *, gs_local_keyfile_unref, g_key_file_unref)
+NM_AUTO_DEFINE_FCN0 (GKeyFile *, gs_local_keyfile_unref, g_key_file_unref)
 
 #endif

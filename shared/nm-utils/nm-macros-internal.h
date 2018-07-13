@@ -81,19 +81,19 @@ static inline int nm_close (int fd);
  * However, let's never mix them. To free malloc'ed memory, always use
  * free() or nm_auto_free.
  */
-GS_DEFINE_CLEANUP_FUNCTION_VOID (void *, _nm_auto_free_impl, free)
+NM_AUTO_DEFINE_FCN_VOID (void *, _nm_auto_free_impl, free)
 #define nm_auto_free nm_auto(_nm_auto_free_impl)
 
-GS_DEFINE_CLEANUP_FUNCTION0 (GVariantIter *, _nm_auto_free_variant_iter, g_variant_iter_free)
+NM_AUTO_DEFINE_FCN0 (GVariantIter *, _nm_auto_free_variant_iter, g_variant_iter_free)
 #define nm_auto_free_variant_iter __attribute__ ((cleanup(_nm_auto_free_variant_iter)))
 
-GS_DEFINE_CLEANUP_FUNCTION0 (GVariantBuilder *, _nm_auto_unref_variant_builder, g_variant_builder_unref)
+NM_AUTO_DEFINE_FCN0 (GVariantBuilder *, _nm_auto_unref_variant_builder, g_variant_builder_unref)
 #define nm_auto_unref_variant_builder __attribute__ ((cleanup(_nm_auto_unref_variant_builder)))
 
-GS_DEFINE_CLEANUP_FUNCTION (GList *, _nm_auto_free_list, g_list_free)
+NM_AUTO_DEFINE_FCN (GList *, _nm_auto_free_list, g_list_free)
 #define nm_auto_free_list __attribute__ ((cleanup(_nm_auto_free_list)))
 
-GS_DEFINE_CLEANUP_FUNCTION0 (GChecksum *, _nm_auto_checksum_free, g_checksum_free)
+NM_AUTO_DEFINE_FCN0 (GChecksum *, _nm_auto_checksum_free, g_checksum_free)
 #define nm_auto_free_checksum __attribute__ ((cleanup(_nm_auto_checksum_free)))
 
 static inline void
