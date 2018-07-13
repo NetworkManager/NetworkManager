@@ -98,7 +98,7 @@ GS_DEFINE_CLEANUP_FUNCTION0 (GVariant *, gs_local_variant_unref, g_variant_unref
  * scope.
  */
 #define gs_free_variant_iter __attribute__ ((cleanup(gs_local_variant_iter_free)))
-GS_DEFINE_CLEANUP_FUNCTION_STRUCT(GVariantIter, gs_local_variant_iter_free, g_variant_iter_free)
+GS_DEFINE_CLEANUP_FUNCTION0 (GVariantIter *, gs_local_variant_iter_free, g_variant_iter_free)
 
 /**
  * gs_free_variant_builder:
@@ -107,7 +107,7 @@ GS_DEFINE_CLEANUP_FUNCTION_STRUCT(GVariantIter, gs_local_variant_iter_free, g_va
  * scope.
  */
 #define gs_unref_variant_builder __attribute__ ((cleanup(gs_local_variant_builder_unref)))
-GS_DEFINE_CLEANUP_FUNCTION_STRUCT(GVariantBuilder, gs_local_variant_builder_unref, g_variant_builder_unref)
+GS_DEFINE_CLEANUP_FUNCTION0 (GVariantBuilder *, gs_local_variant_builder_unref, g_variant_builder_unref)
 
 /**
  * gs_unref_array:
