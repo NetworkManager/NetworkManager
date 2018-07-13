@@ -22,42 +22,36 @@
 #define __GSYSTEM_LOCAL_ALLOC_H__
 
 #define NM_AUTO_DEFINE_FCN_VOID(CastType, name, func) \
-  static inline void name (void *v) \
-  { \
-    func (*((CastType *) v)); \
-  }
+static inline void name (void *v) \
+{ \
+	func (*((CastType *) v)); \
+}
 
 #define NM_AUTO_DEFINE_FCN_VOID0(CastType, name, func) \
-  static inline void name (void *v) \
-  { \
-    if (*((CastType *) v)) \
-      func (*((CastType *) v)); \
-  }
+static inline void name (void *v) \
+{ \
+	if (*((CastType *) v)) \
+		func (*((CastType *) v)); \
+}
 
 #define NM_AUTO_DEFINE_FCN(Type, name, func) \
-  static inline void name (Type *v) \
-  { \
-    func (*v); \
-  }
+static inline void name (Type *v) \
+{ \
+	func (*v); \
+}
 
 #define NM_AUTO_DEFINE_FCN0(Type, name, func) \
-  static inline void name (Type *v) \
-  { \
-    if (*v) \
-      func (*v); \
-  }
+static inline void name (Type *v) \
+{ \
+	if (*v) \
+		func (*v); \
+}
 
 #define NM_AUTO_DEFINE_FCN_STRUCT(Type, name, func) \
-  static inline void name (Type *v) \
-  { \
-    func (v); \
-  }
-
-/* These functions shouldn't be invoked directly;
- * they are stubs that:
- * 1) Take a pointer to the location (typically itself a pointer).
- * 2) Provide %NULL-safety where it doesn't exist already (e.g. g_object_unref)
- */
+static inline void name (Type *v) \
+{ \
+	func (v); \
+}
 
 /**
  * gs_free:
