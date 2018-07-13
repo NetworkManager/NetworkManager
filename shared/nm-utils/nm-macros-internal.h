@@ -208,9 +208,12 @@ NM_AUTO_DEFINE_FCN0 (GKeyFile *, gs_local_keyfile_unref, g_key_file_unref)
 
 #define nm_offsetofend(t,m) (G_STRUCT_OFFSET (t,m) + sizeof (((t *) NULL)->m))
 
-#define nm_auto(fcn) __attribute__ ((cleanup(fcn)))
+/*****************************************************************************/
 
 static inline int nm_close (int fd);
+static inline void nm_free_secret (char *secret);
+
+#define nm_auto(fcn) __attribute__ ((cleanup(fcn)))
 
 /**
  * nm_auto_free:
@@ -241,21 +244,7 @@ NM_AUTO_DEFINE_FCN (GList *, _nm_auto_free_list, g_list_free)
 NM_AUTO_DEFINE_FCN0 (GChecksum *, _nm_auto_checksum_free, g_checksum_free)
 #define nm_auto_free_checksum __attribute__ ((cleanup(_nm_auto_checksum_free)))
 
-static inline void
-nm_free_secret (char *secret)
-{
-	if (secret) {
-		memset (secret, 0, strlen (secret));
-		g_free (secret);
-	}
-}
-
-static inline void
-_nm_auto_free_secret_impl (char **v)
-{
-	nm_free_secret (*v);
-}
-
+NM_AUTO_DEFINE_FCN (char *, _nm_auto_free_secret, nm_free_secret)
 /**
  * nm_auto_free_secret:
  *
@@ -263,33 +252,24 @@ _nm_auto_free_secret_impl (char **v)
  * Also, previously, calls memset(loc, 0, strlen(loc)) to clear out
  * the secret.
  */
-#define nm_auto_free_secret nm_auto(_nm_auto_free_secret_impl)
+#define nm_auto_free_secret nm_auto(_nm_auto_free_secret)
 
-static inline void
-_nm_auto_unset_gvalue_impl (GValue *v)
-{
-	g_value_unset (v);
-}
-#define nm_auto_unset_gvalue nm_auto(_nm_auto_unset_gvalue_impl)
+NM_AUTO_DEFINE_FCN_STRUCT (GValue, _nm_auto_unset_gvalue, g_value_unset)
+#define nm_auto_unset_gvalue nm_auto(_nm_auto_unset_gvalue)
 
-static inline void
-_nm_auto_unref_gtypeclass (gpointer v)
-{
-	if (v && *((gpointer *) v))
-		g_type_class_unref (*((gpointer *) v));
-}
+NM_AUTO_DEFINE_FCN_VOID0 (void *, _nm_auto_unref_gtypeclass, g_type_class_unref)
 #define nm_auto_unref_gtypeclass nm_auto(_nm_auto_unref_gtypeclass)
 
 static inline void
-_nm_auto_free_gstring_impl (GString **str)
+_nm_auto_free_gstring (GString **str)
 {
 	if (*str)
 		g_string_free (*str, TRUE);
 }
-#define nm_auto_free_gstring nm_auto(_nm_auto_free_gstring_impl)
+#define nm_auto_free_gstring nm_auto(_nm_auto_free_gstring)
 
 static inline void
-_nm_auto_close_impl (int *pfd)
+_nm_auto_close (int *pfd)
 {
 	if (*pfd >= 0) {
 		int errsv = errno;
@@ -298,10 +278,10 @@ _nm_auto_close_impl (int *pfd)
 		errno = errsv;
 	}
 }
-#define nm_auto_close nm_auto(_nm_auto_close_impl)
+#define nm_auto_close nm_auto(_nm_auto_close)
 
 static inline void
-_nm_auto_fclose_impl (FILE **pfd)
+_nm_auto_fclose (FILE **pfd)
 {
 	if (*pfd) {
 		int errsv = errno;
@@ -310,7 +290,7 @@ _nm_auto_fclose_impl (FILE **pfd)
 		errno = errsv;
 	}
 }
-#define nm_auto_fclose nm_auto(_nm_auto_fclose_impl)
+#define nm_auto_fclose nm_auto(_nm_auto_fclose)
 
 static inline void
 _nm_auto_protect_errno (int *p_saved_errno)
@@ -319,12 +299,7 @@ _nm_auto_protect_errno (int *p_saved_errno)
 }
 #define NM_AUTO_PROTECT_ERRNO(errsv_saved) nm_auto(_nm_auto_protect_errno) _nm_unused const int errsv_saved = (errno)
 
-static inline void
-_nm_auto_unref_gsource (GSource **ptr)
-{
-	if (*ptr)
-		g_source_unref (g_steal_pointer (ptr));
-}
+NM_AUTO_DEFINE_FCN0 (GSource *, _nm_auto_unref_gsource, g_source_unref);
 #define nm_auto_unref_gsource nm_auto(_nm_auto_unref_gsource)
 
 static inline void
@@ -855,6 +830,15 @@ fcn (void) \
 #define nm_streq0(s1, s2) (g_strcmp0 (s1, s2) == 0)
 
 /*****************************************************************************/
+
+static inline void
+nm_free_secret (char *secret)
+{
+	if (secret) {
+		memset (secret, 0, strlen (secret));
+		g_free (secret);
+	}
+}
 
 static inline GString *
 nm_gstring_prepare (GString **l)
