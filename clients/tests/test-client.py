@@ -999,59 +999,72 @@ class TestNmcli(NmTestBase):
                              'VpnState',
                              dbus.UInt32(NM.VpnConnectionState.ACTIVATED))
 
-        self.call_nmcli_l(['con', 's', 'con-vpn-1'],
-                          replace_stdout = replace_stdout)
-        self.call_nmcli_l(['-t', 'con', 's', 'con-vpn-1'],
-                          replace_stdout = replace_stdout)
-
-        self.call_nmcli_l(['-f', 'ALL', 'con', 's', 'con-vpn-1'],
-                          replace_stdout = replace_stdout)
-
-        # This only filters 'vpn' settings from the connection profile.
-        # Contrary to '-f GENERAL' below, it does not show the properties of
-        # the activated VPN connection. This is a nmcli bug.
-        self.call_nmcli_l(['-f', 'VPN', 'con', 's', 'con-vpn-1'],
-                          replace_stdout = replace_stdout)
-
-        self.call_nmcli_l(['-f', 'GENERAL', 'con', 's', 'con-vpn-1'],
-                          replace_stdout = replace_stdout)
-
-        self.call_nmcli_l(['dev', 'show', 'wlan0'],
-                          replace_stdout = replace_stdout)
-
-        self.call_nmcli_l(['-f', 'all', 'dev', 'show', 'wlan0'],
-                          replace_stdout = replace_stdout)
-
-        self.call_nmcli_l(['-f', 'GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES', 'dev', 'show', 'wlan0'],
-                          replace_stdout = replace_stdout)
-
-        self.call_nmcli_l(['-f', 'GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES', '-t', 'dev', 'show', 'wlan0'],
-                          replace_stdout = replace_stdout)
-
-        self.call_nmcli_l(['-f', 'DEVICE,TYPE,DBUS-PATH', 'dev'],
-                          replace_stdout = replace_stdout)
-
         for mode in Util.iter_nmcli_output_modes():
-             self.call_nmcli_l(mode + ['-f', 'ALL', 'device', 'wifi', 'list' ],
-                               replace_stdout = replace_stdout)
-             self.call_nmcli_l(mode + ['-f', 'COMMON', 'device', 'wifi', 'list' ],
-                               replace_stdout = replace_stdout)
-             self.call_nmcli_l(mode + ['-f', 'NAME,SSID,SSID-HEX,BSSID,MODE,CHAN,FREQ,RATE,SIGNAL,BARS,SECURITY,WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,IN-USE,DBUS-PATH',
-                               'device', 'wifi', 'list'],
-                               replace_stdout = replace_stdout)
-             self.call_nmcli_l(mode + ['-f', 'ALL', 'device', 'wifi', 'list', 'bssid', 'C0:E2:BE:E8:EF:B6'],
-                               replace_stdout = replace_stdout)
-             self.call_nmcli_l(mode + ['-f', 'COMMON', 'device', 'wifi', 'list', 'bssid', 'C0:E2:BE:E8:EF:B6'],
-                               replace_stdout = replace_stdout)
-             self.call_nmcli_l(mode + ['-f', 'NAME,SSID,SSID-HEX,BSSID,MODE,CHAN,FREQ,RATE,SIGNAL,BARS,SECURITY,WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,IN-USE,DBUS-PATH',
-                               'device', 'wifi', 'list', 'bssid', 'C0:E2:BE:E8:EF:B6'],
-                               replace_stdout = replace_stdout)
-             self.call_nmcli_l(mode + ['-f', 'ALL', 'device', 'show', 'wlan0' ],
-                               replace_stdout = replace_stdout)
-             self.call_nmcli_l(mode + ['-f', 'COMMON', 'device', 'show', 'wlan0' ],
-                               replace_stdout = replace_stdout)
-             self.call_nmcli_l(mode + ['-f', 'GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6,BOND,TEAM,BRIDGE,VLAN,BLUETOOTH,CONNECTIONS', 'device', 'show', 'wlan0' ],
-                               replace_stdout = replace_stdout)
+
+            self.call_nmcli_l(mode + ['con', 's', 'con-vpn-1'],
+                              replace_stdout = replace_stdout)
+            self.call_nmcli_l(mode + ['-t', 'con', 's', 'con-vpn-1'],
+                              replace_stdout = replace_stdout)
+
+            self.call_nmcli_l(mode + ['-f', 'ALL', 'con', 's', 'con-vpn-1'],
+                              replace_stdout = replace_stdout)
+
+            # This only filters 'vpn' settings from the connection profile.
+            # Contrary to '-f GENERAL' below, it does not show the properties of
+            # the activated VPN connection. This is a nmcli bug.
+            self.call_nmcli_l(mode + ['-f', 'VPN', 'con', 's', 'con-vpn-1'],
+                              replace_stdout = replace_stdout)
+
+            self.call_nmcli_l(mode + ['-f', 'GENERAL', 'con', 's', 'con-vpn-1'],
+                              replace_stdout = replace_stdout)
+
+            self.call_nmcli_l(mode + ['dev', 's'],
+                              replace_stdout = replace_stdout)
+
+            self.call_nmcli_l(mode + ['-f', 'all', 'dev', 'status'],
+                              replace_stdout = replace_stdout)
+
+            self.call_nmcli_l(mode + ['dev', 'show'],
+                              replace_stdout = replace_stdout)
+
+            self.call_nmcli_l(mode + ['-f', 'all', 'dev', 'show'],
+                              replace_stdout = replace_stdout)
+
+            self.call_nmcli_l(mode + ['dev', 'show', 'wlan0'],
+                              replace_stdout = replace_stdout)
+
+            self.call_nmcli_l(mode + ['-f', 'all', 'dev', 'show', 'wlan0'],
+                              replace_stdout = replace_stdout)
+
+            self.call_nmcli_l(mode + ['-f', 'GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES', 'dev', 'show', 'wlan0'],
+                              replace_stdout = replace_stdout)
+
+            self.call_nmcli_l(mode + ['-f', 'GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES', '-t', 'dev', 'show', 'wlan0'],
+                              replace_stdout = replace_stdout)
+
+            self.call_nmcli_l(mode + ['-f', 'DEVICE,TYPE,DBUS-PATH', 'dev'],
+                              replace_stdout = replace_stdout)
+
+            self.call_nmcli_l(mode + ['-f', 'ALL', 'device', 'wifi', 'list' ],
+                              replace_stdout = replace_stdout)
+            self.call_nmcli_l(mode + ['-f', 'COMMON', 'device', 'wifi', 'list' ],
+                              replace_stdout = replace_stdout)
+            self.call_nmcli_l(mode + ['-f', 'NAME,SSID,SSID-HEX,BSSID,MODE,CHAN,FREQ,RATE,SIGNAL,BARS,SECURITY,WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,IN-USE,DBUS-PATH',
+                              'device', 'wifi', 'list'],
+                              replace_stdout = replace_stdout)
+            self.call_nmcli_l(mode + ['-f', 'ALL', 'device', 'wifi', 'list', 'bssid', 'C0:E2:BE:E8:EF:B6'],
+                              replace_stdout = replace_stdout)
+            self.call_nmcli_l(mode + ['-f', 'COMMON', 'device', 'wifi', 'list', 'bssid', 'C0:E2:BE:E8:EF:B6'],
+                              replace_stdout = replace_stdout)
+            self.call_nmcli_l(mode + ['-f', 'NAME,SSID,SSID-HEX,BSSID,MODE,CHAN,FREQ,RATE,SIGNAL,BARS,SECURITY,WPA-FLAGS,RSN-FLAGS,DEVICE,ACTIVE,IN-USE,DBUS-PATH',
+                              'device', 'wifi', 'list', 'bssid', 'C0:E2:BE:E8:EF:B6'],
+                              replace_stdout = replace_stdout)
+            self.call_nmcli_l(mode + ['-f', 'ALL', 'device', 'show', 'wlan0' ],
+                              replace_stdout = replace_stdout)
+            self.call_nmcli_l(mode + ['-f', 'COMMON', 'device', 'show', 'wlan0' ],
+                              replace_stdout = replace_stdout)
+            self.call_nmcli_l(mode + ['-f', 'GENERAL,CAPABILITIES,WIFI-PROPERTIES,AP,WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6,BOND,TEAM,BRIDGE,VLAN,BLUETOOTH,CONNECTIONS', 'device', 'show', 'wlan0' ],
+                              replace_stdout = replace_stdout)
 
 ###############################################################################
 
