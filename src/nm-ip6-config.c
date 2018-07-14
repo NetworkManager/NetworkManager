@@ -208,8 +208,8 @@ _notify_addresses (NMIP6Config *self)
 
 	nm_clear_g_variant (&priv->address_data_variant);
 	nm_clear_g_variant (&priv->addresses_variant);
-	_notify (self, PROP_ADDRESS_DATA);
-	_notify (self, PROP_ADDRESSES);
+	nm_gobject_notify_together (self, PROP_ADDRESS_DATA,
+	                                  PROP_ADDRESSES);
 }
 
 static void
@@ -220,8 +220,8 @@ _notify_routes (NMIP6Config *self)
 	nm_assert (priv->best_default_route == _nm_ip6_config_best_default_route_find (self));
 	nm_clear_g_variant (&priv->route_data_variant);
 	nm_clear_g_variant (&priv->routes_variant);
-	_notify (self, PROP_ROUTE_DATA);
-	_notify (self, PROP_ROUTES);
+	nm_gobject_notify_together (self, PROP_ROUTE_DATA,
+	                                  PROP_ROUTES);
 }
 
 /*****************************************************************************/
