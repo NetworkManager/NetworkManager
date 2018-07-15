@@ -97,21 +97,15 @@
 #define NM_DBUS_PATH_DNS_MANAGER          "/org/freedesktop/NetworkManager/DnsManager"
 
 /**
- * NM_ENDIAN_MAGIC_U32:
- *
- * Value of "EndianMagicU32" property. The value is exposed by NetworkManager
- * in network order. When remoting D-Bus and receiving the magic value scrambled
- * it means you must correct for endianness. This is important, because some
- * properties in NetworkManager's D-Bus API are in network order (IPv4 addresses)
- * and these addresses will need the same correct.
- *
- * Since: 1.14
- */
-#define NM_ENDIAN_MAGIC_U32 0x12345678u
-
-/**
  * NMCapability:
  * @NM_CAPABILITY_TEAM: Teams can be managed
+ * @NM_CAPABILITY_SERVER_BYTE_ORDER_BIG_ENDIAN: the server natively has big endian
+ *   byte order. Since: 1.14.
+ * @NM_CAPABILITY_SERVER_BYTE_ORDER_LITTLE_ENDIAN: the server natively has little endian
+ *   byte order. Obviously, @NM_CAPABILITY_SERVER_BYTE_ORDER_BIG_ENDIAN and
+ *   @NM_CAPABILITY_SERVER_BYTE_ORDER_LITTLE_ENDIAN are never set at the same time.
+ *   These flags can be used to correct for endianness, as NetworkManager's
+ *   D-Bus API exposes some IPv4 addresses in network byte order. Since: 1.14.
  *
  * #NMCapability names the numbers in the Capabilities property.
  * Capabilities are positive numbers. They are part of stable API
@@ -122,7 +116,9 @@
  * extensions.
  */
 typedef enum {
-	NM_CAPABILITY_TEAM = 1,
+	NM_CAPABILITY_TEAM                            = 1,
+	NM_CAPABILITY_SERVER_BYTE_ORDER_BIG_ENDIAN    = 2,
+	NM_CAPABILITY_SERVER_BYTE_ORDER_LITTLE_ENDIAN = 3,
 } NMCapability;
 
 /**

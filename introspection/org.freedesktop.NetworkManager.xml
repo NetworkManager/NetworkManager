@@ -273,19 +273,6 @@
     </method>
 
     <!--
-        EndianMagicU32:
-
-        Some properties in NetworkManager's D-Bus API are in network byte
-        order (big endian). When remoting D-Bus, it might be necessary to
-        correct for endianness. This property will give the number 0x12345678
-        (%NM_ENDIAN_MAGIC_U32) in network order. It can be used to detect whether
-        correction is necessary.
-
-        Since: 1.14
-    -->
-    <property name="EndianMagicU32" type="u" access="read"/>
-
-    <!--
         Devices:
 
         The list of realized network devices. Realized devices are those which
