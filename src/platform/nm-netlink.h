@@ -314,8 +314,6 @@ struct nl_msg *nlmsg_alloc (void);
 
 struct nl_msg *nlmsg_alloc_size (size_t max);
 
-struct nl_msg *nlmsg_alloc_inherit (struct nlmsghdr *hdr);
-
 struct nl_msg *nlmsg_alloc_convert (struct nlmsghdr *hdr);
 
 struct nl_msg *nlmsg_alloc_simple (int nlmsgtype, int flags);
