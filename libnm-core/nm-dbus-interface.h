@@ -97,6 +97,19 @@
 #define NM_DBUS_PATH_DNS_MANAGER          "/org/freedesktop/NetworkManager/DnsManager"
 
 /**
+ * NM_ENDIAN_MAGIC_U32:
+ *
+ * Value of "EndianMagicU32" property. The value is exposed by NetworkManager
+ * in network order. When remoting D-Bus and receiving the magic value scrambled
+ * it means you must correct for endianness. This is important, because some
+ * properties in NetworkManager's D-Bus API are in network order (IPv4 addresses)
+ * and these addresses will need the same correct.
+ *
+ * Since: 1.14
+ */
+#define NM_ENDIAN_MAGIC_U32 0x12345678u
+
+/**
  * NMCapability:
  * @NM_CAPABILITY_TEAM: Teams can be managed
  *

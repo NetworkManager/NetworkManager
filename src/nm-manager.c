@@ -116,6 +116,7 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMManager,
+	PROP_ENDIAN_MAGIC_U32,
 	PROP_VERSION,
 	PROP_CAPABILITIES,
 	PROP_STATE,
@@ -171,6 +172,8 @@ typedef struct {
 	NMRfkillManager *rfkill_mgr;
 
 	CList link_cb_lst;
+
+	GVariant *endian_magic_u32;
 
 	NMCheckpointManager *checkpoint_mgr;
 
@@ -6868,6 +6871,8 @@ nm_manager_init (NMManager *self)
 	guint i;
 	GFile *file;
 
+	priv->endian_magic_u32 = g_variant_ref_sink (g_variant_new_uint32 (htonl (NM_ENDIAN_MAGIC_U32)));
+
 	c_list_init (&priv->link_cb_lst);
 	c_list_init (&priv->devices_lst_head);
 	c_list_init (&priv->active_connections_lst_head);
@@ -6953,6 +6958,9 @@ get_property (GObject *object, guint prop_id,
 	GPtrArray *ptrarr;
 
 	switch (prop_id) {
+	case PROP_ENDIAN_MAGIC_U32:
+		g_value_set_variant (value, priv->endian_magic_u32);
+		break;
 	case PROP_VERSION:
 		g_value_set_string (value, VERSION);
 		break;
@@ -7236,6 +7244,8 @@ finalize (GObject *object)
 	G_OBJECT_CLASS (nm_manager_parent_class)->finalize (object);
 
 	g_object_unref (priv->platform);
+
+	g_variant_unref (priv->endian_magic_u32);
 }
 
 static const GDBusSignalInfo signal_info_check_permissions = NM_DEFINE_GDBUS_SIGNAL_INFO_INIT (
@@ -7463,6 +7473,7 @@ static const NMDBusInterfaceInfoExtended interface_info_manager = {
 			&signal_info_device_removed,
 		),
 		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE       ("EndianMagicU32",             "u",     NM_MANAGER_ENDIAN_MAGIC_U32),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Devices",                    "ao",    NM_MANAGER_DEVICES),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("AllDevices",                 "ao",    NM_MANAGER_ALL_DEVICES),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Checkpoints",                "ao",    NM_MANAGER_CHECKPOINTS),
@@ -7505,6 +7516,13 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
+
+	obj_properties[PROP_ENDIAN_MAGIC_U32] =
+	    g_param_spec_variant (NM_MANAGER_ENDIAN_MAGIC_U32, "", "",
+	                          G_VARIANT_TYPE ("u"),
+	                          NULL,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_VERSION] =
 	    g_param_spec_string (NM_MANAGER_VERSION, "", "",

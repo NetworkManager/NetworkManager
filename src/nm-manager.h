@@ -33,6 +33,7 @@
 #define NM_IS_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_MANAGER))
 #define NM_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_MANAGER, NMManagerClass))
 
+#define NM_MANAGER_ENDIAN_MAGIC_U32 "endian-magic-u32"
 #define NM_MANAGER_VERSION "version"
 #define NM_MANAGER_CAPABILITIES "capabilities"
 #define NM_MANAGER_STATE "state"
