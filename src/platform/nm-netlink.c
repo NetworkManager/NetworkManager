@@ -52,7 +52,6 @@ struct nl_msg {
 	struct ucred            nm_creds;
 	struct nlmsghdr *       nm_nlh;
 	size_t                  nm_size;
-	int                     nm_refcnt;
 };
 
 struct nl_sock {
@@ -310,7 +309,6 @@ nlmsg_alloc_size (size_t len)
 
 	nm = g_slice_new0 (struct nl_msg);
 
-	nm->nm_refcnt = 1;
 	nm->nm_protocol = -1;
 	nm->nm_size = len;
 	nm->nm_nlh = g_malloc0 (len);
@@ -361,15 +359,8 @@ void nlmsg_free (struct nl_msg *msg)
 	if (!msg)
 		return;
 
-	if (msg->nm_refcnt < 1)
-		g_return_if_reached ();
-
-	msg->nm_refcnt--;
-
-	if (msg->nm_refcnt <= 0) {
-		g_free (msg->nm_nlh);
-		g_slice_free (struct nl_msg, msg);
-	}
+	g_free (msg->nm_nlh);
+	g_slice_free (struct nl_msg, msg);
 }
 
 /*****************************************************************************/
