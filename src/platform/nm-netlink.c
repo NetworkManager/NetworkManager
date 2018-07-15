@@ -331,27 +331,6 @@ nlmsg_alloc (void)
 	return nlmsg_alloc_size (get_default_page_size ());
 }
 
-/**
- * Allocate a new netlink message with maximum payload size specified.
- */
-struct nl_msg *
-nlmsg_alloc_inherit (struct nlmsghdr *hdr)
-{
-	struct nl_msg *nm;
-
-	nm = nlmsg_alloc ();
-	if (hdr) {
-		struct nlmsghdr *new = nm->nm_nlh;
-
-		new->nlmsg_type = hdr->nlmsg_type;
-		new->nlmsg_flags = hdr->nlmsg_flags;
-		new->nlmsg_seq = hdr->nlmsg_seq;
-		new->nlmsg_pid = hdr->nlmsg_pid;
-	}
-
-	return nm;
-}
-
 struct nl_msg *
 nlmsg_alloc_convert (struct nlmsghdr *hdr)
 {
@@ -365,12 +344,14 @@ nlmsg_alloc_convert (struct nlmsghdr *hdr)
 struct nl_msg *
 nlmsg_alloc_simple (int nlmsgtype, int flags)
 {
-	struct nlmsghdr nlh = {
-		.nlmsg_type = nlmsgtype,
-		.nlmsg_flags = flags,
-	};
+	struct nl_msg *nm;
+	struct nlmsghdr *new;
 
-	return nlmsg_alloc_inherit (&nlh);
+	nm = nlmsg_alloc ();
+	new = nm->nm_nlh;
+	new->nlmsg_type = nlmsgtype;
+	new->nlmsg_flags = flags;
+	return nm;
 }
 
 int
