@@ -259,20 +259,6 @@ nlmsg_reserve (struct nl_msg *n, size_t len, int pad)
 
 /*****************************************************************************/
 
-static int
- get_default_page_size (void)
-{
-	static int val = 0;
-	int v;
-
-	if (G_UNLIKELY (val == 0)) {
-		v = getpagesize ();
-		g_assert (v > 0);
-		val = v;
-	}
-	return val;
-}
-
 struct nlattr *
 nla_reserve (struct nl_msg *msg, int attrtype, int attrlen)
 {
@@ -296,6 +282,22 @@ nla_reserve (struct nl_msg *msg, int attrtype, int attrlen)
 	msg->nm_nlh->nlmsg_len = tlen;
 
 	return nla;
+}
+
+/*****************************************************************************/
+
+static int
+get_default_page_size (void)
+{
+	static int val = 0;
+	int v;
+
+	if (G_UNLIKELY (val == 0)) {
+		v = getpagesize ();
+		g_assert (v > 0);
+		val = v;
+	}
+	return val;
 }
 
 struct nl_msg *
@@ -354,6 +356,24 @@ nlmsg_alloc_simple (int nlmsgtype, int flags)
 	return nm;
 }
 
+void nlmsg_free (struct nl_msg *msg)
+{
+	if (!msg)
+		return;
+
+	if (msg->nm_refcnt < 1)
+		g_return_if_reached ();
+
+	msg->nm_refcnt--;
+
+	if (msg->nm_refcnt <= 0) {
+		g_free (msg->nm_nlh);
+		g_slice_free (struct nl_msg, msg);
+	}
+}
+
+/*****************************************************************************/
+
 int
 nlmsg_append (struct nl_msg *n, void *data, size_t len, int pad)
 {
@@ -366,6 +386,8 @@ nlmsg_append (struct nl_msg *n, void *data, size_t len, int pad)
 	memcpy(tmp, data, len);
 	return 0;
 }
+
+/*****************************************************************************/
 
 int
 nlmsg_parse (struct nlmsghdr *nlh, int hdrlen, struct nlattr *tb[],
@@ -619,22 +641,6 @@ errout:
 }
 
 /*****************************************************************************/
-
-void nlmsg_free (struct nl_msg *msg)
-{
-	if (!msg)
-		return;
-
-	if (msg->nm_refcnt < 1)
-		g_return_if_reached ();
-
-	msg->nm_refcnt--;
-
-	if (msg->nm_refcnt <= 0) {
-		g_free (msg->nm_nlh);
-		g_slice_free (struct nl_msg, msg);
-	}
-}
 
 int
 nlmsg_get_proto (struct nl_msg *msg)
