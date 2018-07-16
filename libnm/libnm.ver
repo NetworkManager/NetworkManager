@@ -1394,6 +1394,11 @@ global:
 	nm_device_wpan_get_type;
 	nm_setting_6lowpan_get_type;
 	nm_setting_connection_get_multi_connect;
+	nm_setting_ethtool_clear_features;
+	nm_setting_ethtool_get_feature;
+	nm_setting_ethtool_get_type;
+	nm_setting_ethtool_new;
+	nm_setting_ethtool_set_feature;
 	nm_setting_sriov_add_vf;
 	nm_setting_sriov_clear_vfs;
 	nm_setting_sriov_get_autoprobe_drivers;

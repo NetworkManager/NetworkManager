@@ -4823,6 +4823,84 @@ _validate_fcn_wireless_security_psk (const char *value, char **out_to_free, GErr
 
 /*****************************************************************************/
 
+static gconstpointer
+_get_fcn_ethtool (ARGS_GET_FCN)
+{
+	const char *s;
+	NMTernary val;
+	NMEthtoolID ethtool_id = property_info->property_typ_data->subtype.ethtool.ethtool_id;
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
+
+	val = nm_setting_ethtool_get_feature (NM_SETTING_ETHTOOL (setting),
+	                                      nm_ethtool_data[ethtool_id]->optname);
+
+	if (val == NM_TERNARY_TRUE)
+		s = N_("on");
+	else if (val == NM_TERNARY_FALSE)
+		s = N_("off");
+	else {
+		s = NULL;
+		NM_SET_OUT (out_is_default, TRUE);
+	}
+
+	if (s && get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
+		s = gettext (s);
+	return s;
+}
+
+static gboolean
+_set_fcn_ethtool (ARGS_SET_FCN)
+{
+	gs_free char *value_clone = NULL;
+	NMTernary val;
+	NMEthtoolID ethtool_id = property_info->property_typ_data->subtype.ethtool.ethtool_id;
+
+	value = nm_strstrip_avoid_copy (value, &value_clone);
+
+	if (NM_IN_STRSET (value, "1", "yes", "true", "on"))
+		val = NM_TERNARY_TRUE;
+	else if (NM_IN_STRSET (value, "0", "no", "false", "off"))
+		val = NM_TERNARY_FALSE;
+	else if (NM_IN_STRSET (value, "", "ignore", "default"))
+		val = NM_TERNARY_DEFAULT;
+	else {
+		g_set_error (error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT,
+		             _("'%s' is not valid; use 'on', 'off', or 'ignore'"),
+		             value);
+		return FALSE;
+	}
+
+	nm_setting_ethtool_set_feature (NM_SETTING_ETHTOOL (setting),
+	                                nm_ethtool_data[ethtool_id]->optname,
+	                                val);
+	return TRUE;
+}
+
+static const char *const*
+_complete_fcn_ethtool (ARGS_COMPLETE_FCN)
+{
+	static const char *const v[] = {
+		"true",
+		"false",
+		"1",
+		"0",
+		"yes",
+		"no",
+		"default",
+		"on",
+		"off",
+		"ignore",
+		NULL,
+	};
+
+	if (!text || !text[0])
+		return &v[7];
+	return v;
+}
+
+/*****************************************************************************/
+
 static const NMMetaPropertyInfo property_info_BOND_OPTIONS;
 
 #define NESTED_PROPERTY_INFO_BOND(...) \
@@ -4977,6 +5055,12 @@ static const NMMetaPropertyType _pt_gobject_devices = {
 	.get_fcn =                      _get_fcn_gobject,
 	.set_fcn =                      _set_fcn_gobject_string,
 	.complete_fcn =                 _complete_fcn_gobject_devices,
+};
+
+static const NMMetaPropertyType _pt_ethtool = {
+	.get_fcn =                      _get_fcn_ethtool,
+	.set_fcn =                      _set_fcn_ethtool,
+	.complete_fcn =                 _complete_fcn_ethtool,
 };
 
 /*****************************************************************************/
@@ -5773,6 +5857,31 @@ static const NMMetaPropertyInfo *const property_infos_DCB[] = {
 		),
 	),
 	NULL
+};
+
+#define PROPERTY_INFO_ETHTOOL(xname) \
+	PROPERTY_INFO (NM_ETHTOOL_OPTNAME_##xname, NULL, \
+		.property_type = &_pt_ethtool, \
+		.property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (ethtool, \
+			.ethtool_id = NM_ETHTOOL_ID_##xname, \
+		), \
+	)
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_ETHTOOL
+static const NMMetaPropertyInfo *const property_infos_ETHTOOL[] = {
+	PROPERTY_INFO_ETHTOOL (FEATURE_GRO),
+	PROPERTY_INFO_ETHTOOL (FEATURE_GSO),
+	PROPERTY_INFO_ETHTOOL (FEATURE_LRO),
+	PROPERTY_INFO_ETHTOOL (FEATURE_NTUPLE),
+	PROPERTY_INFO_ETHTOOL (FEATURE_RX),
+	PROPERTY_INFO_ETHTOOL (FEATURE_RXHASH),
+	PROPERTY_INFO_ETHTOOL (FEATURE_RXVLAN),
+	PROPERTY_INFO_ETHTOOL (FEATURE_SG),
+	PROPERTY_INFO_ETHTOOL (FEATURE_TSO),
+	PROPERTY_INFO_ETHTOOL (FEATURE_TX),
+	PROPERTY_INFO_ETHTOOL (FEATURE_TXVLAN),
+	NULL,
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
@@ -7740,6 +7849,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_CONNECTION          N_("General settings")
 #define SETTING_PRETTY_NAME_DCB                 N_("DCB settings")
 #define SETTING_PRETTY_NAME_DUMMY               N_("Dummy settings")
+#define SETTING_PRETTY_NAME_ETHTOOL             N_("Ethtool settings")
 #define SETTING_PRETTY_NAME_GENERIC             N_("Generic settings")
 #define SETTING_PRETTY_NAME_GSM                 N_("GSM mobile broadband connection")
 #define SETTING_PRETTY_NAME_INFINIBAND          N_("InfiniBand connection")
@@ -7827,6 +7937,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (BOND,                  TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
 		),
 	),
 	SETTING_INFO (BRIDGE,
@@ -7834,6 +7945,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (BRIDGE,                TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
 		),
 	),
 	SETTING_INFO (BRIDGE_PORT),
@@ -7848,11 +7960,13 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 	),
 	SETTING_INFO (CONNECTION),
 	SETTING_INFO (DCB),
+	SETTING_INFO (ETHTOOL),
 	SETTING_INFO_EMPTY (DUMMY,
 		.valid_parts = NM_META_SETTING_VALID_PARTS (
 			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (DUMMY,                 TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
 		),
 	),
 	SETTING_INFO_EMPTY (GENERIC,
@@ -7875,6 +7989,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (INFINIBAND,            TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (SRIOV,                 FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
 		),
 		.setting_init_fcn =             _setting_init_fcn_infiniband,
 	),
@@ -7889,6 +8004,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (IP_TUNNEL,             TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
 		),
 	),
 	SETTING_INFO (MACSEC,
@@ -7897,6 +8013,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (MACSEC,                TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
 			NM_META_SETTING_VALID_PART_ITEM (802_1X,                FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
 		),
 	),
 	SETTING_INFO (MACVLAN,
@@ -7904,6 +8021,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (MACVLAN,               TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
 		),
 	),
 	SETTING_INFO (OLPC_MESH,
@@ -7928,6 +8046,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (IP4_CONFIG,            FALSE),
 			NM_META_SETTING_VALID_PART_ITEM (IP6_CONFIG,            FALSE),
 			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
 		),
 	),
 	SETTING_INFO (OVS_PATCH),
@@ -7947,6 +8066,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (PPP,                   FALSE),
 			NM_META_SETTING_VALID_PART_ITEM (802_1X,                FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
 		),
 	),
 	SETTING_INFO (PPP),
@@ -7961,6 +8081,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (TEAM,                  TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
 		),
 	),
 	SETTING_INFO (TEAM_PORT),
@@ -7969,6 +8090,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (TUN,                   TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
 		),
 		.setting_init_fcn =             _setting_init_fcn_tun,
 	),
@@ -7978,6 +8100,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (VLAN,                  TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
 		),
 		.setting_init_fcn =             _setting_init_fcn_vlan,
 	),
@@ -7992,6 +8115,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (VXLAN,                 TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
 		),
 	),
 	SETTING_INFO (WIMAX,
@@ -8008,6 +8132,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (802_1X,                FALSE),
 			NM_META_SETTING_VALID_PART_ITEM (DCB,                   FALSE),
 			NM_META_SETTING_VALID_PART_ITEM (SRIOV,                 FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
 		),
 	),
 	SETTING_INFO (WIRELESS,
@@ -8017,6 +8142,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (WIRELESS,              TRUE),
 			NM_META_SETTING_VALID_PART_ITEM (WIRELESS_SECURITY,     FALSE),
 			NM_META_SETTING_VALID_PART_ITEM (802_1X,                FALSE),
+			NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
 		),
 		.setting_init_fcn =             _setting_init_fcn_wireless,
 	),

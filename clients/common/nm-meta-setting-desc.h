@@ -22,6 +22,7 @@
 
 #include "nm-utils/nm-obj.h"
 #include "nm-meta-setting.h"
+#include "nm-ethtool-utils.h"
 
 struct _NMDevice;
 
@@ -263,6 +264,9 @@ struct _NMMetaPropertyTypData {
 		struct {
 			NMMetaPropertyTypeMacMode mode;
 		} mac;
+		struct {
+			NMEthtoolID ethtool_id;
+		} ethtool;
 	} subtype;
 	const char *const*values_static;
 	const NMMetaPropertyTypDataNested *nested;

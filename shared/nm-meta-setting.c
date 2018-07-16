@@ -34,6 +34,7 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-dcb.h"
 #include "nm-setting-dummy.h"
+#include "nm-setting-ethtool.h"
 #include "nm-setting-generic.h"
 #include "nm-setting-gsm.h"
 #include "nm-setting-infiniband.h"
@@ -212,6 +213,12 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
 		.setting_priority =         NM_SETTING_PRIORITY_HW_BASE,
 		.setting_name =             NM_SETTING_DUMMY_SETTING_NAME,
 		.get_setting_gtype =        nm_setting_dummy_get_type,
+	},
+	[NM_META_SETTING_TYPE_ETHTOOL] = {
+		.meta_type =                NM_META_SETTING_TYPE_ETHTOOL,
+		.setting_priority =         NM_SETTING_PRIORITY_AUX,
+		.setting_name =             NM_SETTING_ETHTOOL_SETTING_NAME,
+		.get_setting_gtype =        nm_setting_ethtool_get_type,
 	},
 	[NM_META_SETTING_TYPE_GENERIC] = {
 		.meta_type =                NM_META_SETTING_TYPE_GENERIC,

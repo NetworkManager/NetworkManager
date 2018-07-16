@@ -37,6 +37,7 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"
+#include "nm-setting-ethtool.h"
 #include "nm-setting-8021x.h"
 #include "nm-setting-proxy.h"
 #include "nm-setting-ip4-config.h"
@@ -50,6 +51,7 @@
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 #include "nm-meta-setting.h"
+#include "nm-ethtool-utils.h"
 
 #include "nms-ifcfg-rh-common.h"
 #include "nms-ifcfg-rh-reader.h"
@@ -1135,6 +1137,7 @@ static gboolean
 write_ethtool_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 {
 	NMSettingWired *s_wired;
+	NMSettingEthtool *s_ethtool;
 	const char *duplex;
 	guint32 speed;
 	GString *str = NULL;
@@ -1143,65 +1146,112 @@ write_ethtool_setting (NMConnection *connection, shvarFile *ifcfg, GError **erro
 	const char *wol_password;
 
 	s_wired = nm_connection_get_setting_wired (connection);
+	s_ethtool = NM_SETTING_ETHTOOL (nm_connection_get_setting (connection, NM_TYPE_SETTING_ETHTOOL));
 
-	if (!s_wired)
+	if (!s_wired && !s_ethtool) {
+		svUnsetValue (ifcfg, "ETHTOOL_WAKE_ON_LAN");
+		svUnsetValue (ifcfg, "ETHTOOL_OPTS");
 		return TRUE;
-
-	auto_negotiate = nm_setting_wired_get_auto_negotiate (s_wired);
-	speed = nm_setting_wired_get_speed (s_wired);
-	duplex = nm_setting_wired_get_duplex (s_wired);
-
-	/* autoneg off + speed 0 + duplex NULL, means we want NM
-	 * to skip link configuration which is default. So write
-	 * down link config only if we have auto-negotiate true or
-	 * a valid value for one among speed and duplex.
-	 */
-	if (auto_negotiate) {
-		str = g_string_sized_new (64);
-		g_string_printf (str, "autoneg on");
-	} else if (speed || duplex) {
-		str = g_string_sized_new (64);
-		g_string_printf (str, "autoneg off");
 	}
-	if (speed)
-		g_string_append_printf (str, " speed %u", speed);
-	if (duplex)
-		g_string_append_printf (str, " duplex %s", duplex);
 
-	wol = nm_setting_wired_get_wake_on_lan (s_wired);
-	wol_password = nm_setting_wired_get_wake_on_lan_password (s_wired);
+	if (s_wired) {
+		auto_negotiate = nm_setting_wired_get_auto_negotiate (s_wired);
+		speed = nm_setting_wired_get_speed (s_wired);
+		duplex = nm_setting_wired_get_duplex (s_wired);
 
-	svSetValue (ifcfg, "ETHTOOL_WAKE_ON_LAN",
-	              wol == NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE
-	            ? "ignore"
-	            : NULL);
-	if (!NM_IN_SET (wol, NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE,
-	                     NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT)) {
+		/* autoneg off + speed 0 + duplex NULL, means we want NM
+		 * to skip link configuration which is default. So write
+		 * down link config only if we have auto-negotiate true or
+		 * a valid value for one among speed and duplex.
+		 */
+		if (auto_negotiate) {
+			str = g_string_sized_new (64);
+			g_string_printf (str, "autoneg on");
+		} else if (speed || duplex) {
+			str = g_string_sized_new (64);
+			g_string_printf (str, "autoneg off");
+		}
+		if (speed)
+			g_string_append_printf (str, " speed %u", speed);
+		if (duplex)
+			g_string_append_printf (str, " duplex %s", duplex);
+
+		wol = nm_setting_wired_get_wake_on_lan (s_wired);
+		wol_password = nm_setting_wired_get_wake_on_lan_password (s_wired);
+
+		svSetValue (ifcfg, "ETHTOOL_WAKE_ON_LAN",
+		              wol == NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE
+		            ? "ignore"
+		            : NULL);
+		if (!NM_IN_SET (wol, NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE,
+		                     NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT)) {
+			if (!str)
+				str = g_string_sized_new (30);
+			else
+				g_string_append (str, " ");
+
+			g_string_append (str, "wol ");
+
+			if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_PHY))
+				g_string_append (str, "p");
+			if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST))
+				g_string_append (str, "u");
+			if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST))
+				g_string_append (str, "m");
+			if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST))
+				g_string_append (str, "b");
+			if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_ARP))
+				g_string_append (str, "a");
+			if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC))
+				g_string_append (str, "g");
+
+			if (!NM_FLAGS_ANY (wol, NM_SETTING_WIRED_WAKE_ON_LAN_ALL))
+				g_string_append (str, "d");
+
+			if (wol_password && NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC))
+				g_string_append_printf (str, "s sopass %s", wol_password);
+		}
+	} else
+		svUnsetValue (ifcfg, "ETHTOOL_WAKE_ON_LAN");
+
+	if (s_ethtool) {
+		NMEthtoolID ethtool_id;
+		NMSettingConnection *s_con;
+		const char *iface = NULL;
+
+		s_con = nm_connection_get_setting_connection (connection);
+		if (s_con) {
+			iface = nm_setting_connection_get_interface_name (s_con);
+			if (   iface
+			    && (   !iface[0]
+			        || !NM_STRCHAR_ALL (iface, ch,    (ch >= 'a' && ch <= 'z')
+			                                       || (ch >= 'A' && ch <= 'Z')
+			                                       || (ch >= '0' && ch <= '9')
+			                                       || NM_IN_SET (ch, '_'))))
+				iface = NULL;
+		}
+
 		if (!str)
 			str = g_string_sized_new (30);
 		else
-			g_string_append (str, " ");
+			g_string_append (str, " ; ");
+		g_string_append (str, "-K ");
+		g_string_append (str, iface ?: "net0");
 
-		g_string_append (str, "wol ");
+		for (ethtool_id = _NM_ETHTOOL_ID_FEATURE_FIRST; ethtool_id <= _NM_ETHTOOL_ID_FEATURE_LAST; ethtool_id++) {
+			const NMEthtoolData *ed = nm_ethtool_data[ethtool_id];
+			NMTernary val;
 
-		if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_PHY))
-			g_string_append (str, "p");
-		if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST))
-			g_string_append (str, "u");
-		if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST))
-			g_string_append (str, "m");
-		if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST))
-			g_string_append (str, "b");
-		if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_ARP))
-			g_string_append (str, "a");
-		if (NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC))
-			g_string_append (str, "g");
+			nm_assert (nms_ifcfg_rh_utils_get_ethtool_name (ethtool_id));
 
-		if (!NM_FLAGS_ANY (wol, NM_SETTING_WIRED_WAKE_ON_LAN_ALL))
-			g_string_append (str, "d");
+			val = nm_setting_ethtool_get_feature (s_ethtool, ed->optname);
+			if (val == NM_TERNARY_DEFAULT)
+				continue;
 
-		if (wol_password && NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC))
-			g_string_append_printf (str, "s sopass %s", wol_password);
+			g_string_append_c (str, ' ');
+			g_string_append (str, nms_ifcfg_rh_utils_get_ethtool_name (ethtool_id));
+			g_string_append (str, val == NM_TERNARY_TRUE ? " on" : " off");
+		}
 	}
 
 	if (str) {

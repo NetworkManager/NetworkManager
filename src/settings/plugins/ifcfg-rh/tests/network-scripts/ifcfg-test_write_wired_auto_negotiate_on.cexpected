@@ -1,0 +1,15 @@
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+ETHTOOL_OPTS="autoneg on ; -K net0 rxvlan off tx on"
+BOOTPROTO=dhcp
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME="Test Write Wired Auto-Negotiate"
+UUID=${UUID}
+ONBOOT=yes

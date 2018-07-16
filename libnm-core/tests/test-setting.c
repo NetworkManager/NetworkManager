@@ -28,6 +28,7 @@
 #include "nm-setting-8021x.h"
 #include "nm-setting-bond.h"
 #include "nm-setting-dcb.h"
+#include "nm-setting-ethtool.h"
 #include "nm-setting-team.h"
 #include "nm-setting-team-port.h"
 #include "nm-setting-tc-config.h"
@@ -36,6 +37,7 @@
 #include "nm-simple-connection.h"
 #include "nm-setting-connection.h"
 #include "nm-errors.h"
+#include "nm-keyfile-internal.h"
 
 #include "nm-utils/nm-test-utils.h"
 
@@ -1265,6 +1267,79 @@ test_team_port_full_config (void)
 /*****************************************************************************/
 
 static void
+test_ethtool_1 (void)
+{
+	gs_unref_object NMConnection *con = NULL;
+	gs_unref_object NMConnection *con2 = NULL;
+	gs_unref_object NMConnection *con3 = NULL;
+	gs_unref_variant GVariant *variant = NULL;
+	gs_free_error GError *error = NULL;
+	gs_unref_keyfile GKeyFile *keyfile = NULL;
+	NMSettingConnection *s_con;
+	NMSettingEthtool *s_ethtool;
+	NMSettingEthtool *s_ethtool2;
+	NMSettingEthtool *s_ethtool3;
+
+	con = nmtst_create_minimal_connection ("ethtool-1",
+	                                        NULL,
+	                                        NM_SETTING_WIRED_SETTING_NAME,
+	                                        &s_con);
+	s_ethtool = NM_SETTING_ETHTOOL (nm_setting_ethtool_new ());
+	nm_connection_add_setting (con, NM_SETTING (s_ethtool));
+
+	nm_setting_ethtool_set_feature (s_ethtool,
+	                                NM_ETHTOOL_OPTNAME_FEATURE_RX,
+	                                NM_TERNARY_TRUE);
+	nm_setting_ethtool_set_feature (s_ethtool,
+	                                NM_ETHTOOL_OPTNAME_FEATURE_LRO,
+	                                NM_TERNARY_FALSE);
+
+	g_assert_cmpint (nm_setting_ethtool_get_feature (s_ethtool, NM_ETHTOOL_OPTNAME_FEATURE_RX), ==, NM_TERNARY_TRUE);
+	g_assert_cmpint (nm_setting_ethtool_get_feature (s_ethtool, NM_ETHTOOL_OPTNAME_FEATURE_LRO), ==, NM_TERNARY_FALSE);
+	g_assert_cmpint (nm_setting_ethtool_get_feature (s_ethtool, NM_ETHTOOL_OPTNAME_FEATURE_SG),  ==, NM_TERNARY_DEFAULT);
+
+	nmtst_connection_normalize (con);
+
+	variant = nm_connection_to_dbus (con, NM_CONNECTION_SERIALIZE_ALL);
+
+	con2 = nm_simple_connection_new_from_dbus (variant, &error);
+	nmtst_assert_success (con2, error);
+
+	s_ethtool2 = NM_SETTING_ETHTOOL (nm_connection_get_setting (con2, NM_TYPE_SETTING_ETHTOOL));
+
+	g_assert_cmpint (nm_setting_ethtool_get_feature (s_ethtool2, NM_ETHTOOL_OPTNAME_FEATURE_RX),  ==, NM_TERNARY_TRUE);
+	g_assert_cmpint (nm_setting_ethtool_get_feature (s_ethtool2, NM_ETHTOOL_OPTNAME_FEATURE_LRO), ==, NM_TERNARY_FALSE);
+	g_assert_cmpint (nm_setting_ethtool_get_feature (s_ethtool2, NM_ETHTOOL_OPTNAME_FEATURE_SG),  ==, NM_TERNARY_DEFAULT);
+
+	nmtst_assert_connection_verifies_without_normalization (con2);
+
+	nmtst_assert_connection_equals (con, FALSE, con2, FALSE);
+
+	keyfile = nm_keyfile_write (con, NULL, NULL, &error);
+	nmtst_assert_success (keyfile, error);
+
+	con3 = nm_keyfile_read (keyfile,
+	                        "ethtool-keyfile-name",
+	                        NULL,
+	                        NULL,
+	                        NULL,
+	                        &error);
+	nmtst_assert_success (con3, error);
+
+	nmtst_connection_normalize (con3);
+
+	nmtst_assert_connection_equals (con, FALSE, con3, FALSE);
+
+	s_ethtool3 = NM_SETTING_ETHTOOL (nm_connection_get_setting (con3, NM_TYPE_SETTING_ETHTOOL));
+
+	g_assert_cmpint (nm_setting_ethtool_get_feature (s_ethtool3, NM_ETHTOOL_OPTNAME_FEATURE_RX),  ==, NM_TERNARY_TRUE);
+	g_assert_cmpint (nm_setting_ethtool_get_feature (s_ethtool3, NM_ETHTOOL_OPTNAME_FEATURE_LRO), ==, NM_TERNARY_FALSE);
+	g_assert_cmpint (nm_setting_ethtool_get_feature (s_ethtool3, NM_ETHTOOL_OPTNAME_FEATURE_SG),  ==, NM_TERNARY_DEFAULT);
+}
+
+/*****************************************************************************/
+
+static void
 test_sriov_vf (void)
 {
 	NMSriovVF *vf1, *vf2;
@@ -1898,6 +1973,8 @@ main (int argc, char **argv)
 	g_test_add_func ("/libnm/settings/dcb/app-priorities", test_dcb_app_priorities);
 	g_test_add_func ("/libnm/settings/dcb/priorities", test_dcb_priorities_valid);
 	g_test_add_func ("/libnm/settings/dcb/bandwidth-sums", test_dcb_bandwidth_sums);
+
+	g_test_add_func ("/libnm/settings/ethtool/1", test_ethtool_1);
 
 	g_test_add_func ("/libnm/settings/sriov/vf", test_sriov_vf);
 	g_test_add_func ("/libnm/settings/sriov/vf-dup", test_sriov_vf_dup);

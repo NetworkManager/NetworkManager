@@ -69,6 +69,7 @@ libnm_core_settings_sources = files(
   'nm-setting-connection.c',
   'nm-setting-dcb.c',
   'nm-setting-dummy.c',
+  'nm-setting-ethtool.c',
   'nm-setting-generic.c',
   'nm-setting-gsm.c',
   'nm-setting-infiniband.c',
@@ -154,6 +155,7 @@ endif
 libnm_core_sources_all =  libnm_core_sources
 libnm_core_sources_all += libnm_core_enum
 libnm_core_sources_all += shared_nm_meta_setting_c
+libnm_core_sources_all += shared_nm_ethtool_utils_c
 libnm_core_sources_all += shared_files_libnm_core
 libnm_core_sources_all += [version_header]
 

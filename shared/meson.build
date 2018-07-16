@@ -36,6 +36,8 @@ version_header = configure_file(
     configuration: version_conf,
 )
 
+shared_nm_ethtool_utils_c = files('nm-ethtool-utils.c')
+
 shared_nm_meta_setting_c = files('nm-meta-setting.c')
 
 shared_nm_test_utils_impl_c = files('nm-test-utils-impl.c')
