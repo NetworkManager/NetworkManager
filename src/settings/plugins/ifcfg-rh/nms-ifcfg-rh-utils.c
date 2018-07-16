@@ -477,17 +477,19 @@ const char *const _nm_ethtool_ifcfg_names[] = {
 #define ETHT_NAME(eid, ename) \
 [eid - _NM_ETHTOOL_ID_FEATURE_FIRST] = ""ename""
 	/* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */
-	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_GRO,    "gro"),
-	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_GSO,    "gso"),
-	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_LRO,    "lro"),
-	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_NTUPLE, "ntuple"),
-	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_RX,     "rx"),
-	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_RXHASH, "rxhash"),
-	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_RXVLAN, "rxvlan"),
-	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_SG,     "sg"),
-	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TSO,    "tso"),
-	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX,     "tx"),
-	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TXVLAN, "txvlan"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_GRO,                   "gro"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_GSO,                   "gso"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_LRO,                   "lro"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_NTUPLE,                "ntuple"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_RX,                    "rx"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_RXHASH,                "rxhash"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_RXVLAN,                "rxvlan"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_SG,                    "sg"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TSO,                   "tso"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX,                    "tx"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TXVLAN,                "txvlan"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_TCP6_SEGMENTATION,  "tx-tcp6-segmentation"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX_TCP_SEGMENTATION,   "tx-tcp-segmentation"),
 };
 
 const NMEthtoolData *

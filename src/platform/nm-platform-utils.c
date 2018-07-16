@@ -36,8 +36,11 @@
 
 #include "nm-utils.h"
 #include "nm-setting-wired.h"
+#include "nm-ethtool-utils.h"
 
 #include "nm-core-utils.h"
+
+#define ONOFF(bool_val) ((bool_val) ? "on" : "off")
 
 /******************************************************************************
  * utils
@@ -113,6 +116,7 @@ NM_UTILS_ENUM2STR_DEFINE_STATIC (_ethtool_cmd_to_string, guint32,
 	NM_UTILS_ENUM2STR (ETHTOOL_GSTATS,     "ETHTOOL_GSTATS"),
 	NM_UTILS_ENUM2STR (ETHTOOL_GSTRINGS,   "ETHTOOL_GSTRINGS"),
 	NM_UTILS_ENUM2STR (ETHTOOL_GWOL,       "ETHTOOL_GWOL"),
+	NM_UTILS_ENUM2STR (ETHTOOL_SFEATURES,  "ETHTOOL_SFEATURES"),
 	NM_UTILS_ENUM2STR (ETHTOOL_SSET,       "ETHTOOL_SSET"),
 	NM_UTILS_ENUM2STR (ETHTOOL_SWOL,       "ETHTOOL_SWOL"),
 );
@@ -254,6 +258,378 @@ ethtool_get_stringset_index (SocketHandle *shandle, int stringset_id, const char
 		return ethtool_gstrings_find (gstrings, needle);
 	return -1;
 }
+
+/*****************************************************************************/
+
+static const NMEthtoolFeatureInfo _ethtool_feature_infos[_NM_ETHTOOL_ID_FEATURE_NUM] = {
+#define ETHT_FEAT(eid, ...) \
+	{ \
+		.ethtool_id = eid, \
+		.n_kernel_names = NM_NARG (__VA_ARGS__), \
+		.kernel_names = ((const char *const[]) { __VA_ARGS__ }), \
+	}
+
+	/* the order does only matter for one thing: if it happens that more than one NMEthtoolID
+	 * reference the same kernel-name, then the one that is mentioned *later* will win in
+	 * case these NMEthtoolIDs are set. That mostly only makes sense for ethtool-ids which
+	 * refer to multiple features ("feature-tso"), while also having more specific ids
+	 * ("feature-tx-tcp-segmentation"). */
+
+	/* names from ethtool utility, which are aliases for multiple features. */
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_SG,                    "tx-scatter-gather",
+	                                                        "tx-scatter-gather-fraglist"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TSO,                   "tx-tcp-segmentation",
+	                                                        "tx-tcp-ecn-segmentation",
+	                                                        "tx-tcp-mangleid-segmentation",
+	                                                        "tx-tcp6-segmentation"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX,                    "tx-checksum-ipv4",
+	                                                        "tx-checksum-ip-generic",
+	                                                        "tx-checksum-ipv6",
+	                                                        "tx-checksum-fcoe-crc",
+	                                                        "tx-checksum-sctp"),
+
+	/* names from ethtool utility, which are aliases for one feature. */
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_GRO,                   "rx-gro"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_GSO,                   "tx-generic-segmentation"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_LRO,                   "rx-lro"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_NTUPLE,                "rx-ntuple-filter"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_RX,                    "rx-checksum"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_RXHASH,                "rx-hashing"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_RXVLAN,                "rx-vlan-hw-parse"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TXVLAN,                "tx-vlan-hw-insert"),
+
+	/* names of features, as known by kernel. */
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_TCP6_SEGMENTATION,  "tx-tcp6-segmentation"),
+	ETHT_FEAT (NM_ETHTOOL_ID_FEATURE_TX_TCP_SEGMENTATION,   "tx-tcp-segmentation"),
+};
+
+/* the number of kernel features that we handle. It essentially is the sum of all
+ * kernel_names. So, all ethtool-ids that reference exactly one kernel-name
+ * (_NM_ETHTOOL_ID_FEATURE_NUM) + some extra, for ethtool-ids that are aliases
+ * for multiple kernel-names. */
+#define N_ETHTOOL_KERNEL_FEATURES (((guint) _NM_ETHTOOL_ID_FEATURE_NUM) + 8u)
+
+static void
+_ASSERT_ethtool_feature_infos (void)
+{
+#if NM_MORE_ASSERTS > 10
+	guint i, k, n;
+	bool found[_NM_ETHTOOL_ID_FEATURE_NUM] = { };
+
+	G_STATIC_ASSERT_EXPR (G_N_ELEMENTS (_ethtool_feature_infos) == _NM_ETHTOOL_ID_FEATURE_NUM);
+
+	n = 0;
+	for (i = 0; i < G_N_ELEMENTS (_ethtool_feature_infos); i++) {
+		NMEthtoolFeatureState kstate;
+		const NMEthtoolFeatureInfo *inf = &_ethtool_feature_infos[i];
+
+		g_assert (inf->ethtool_id >= _NM_ETHTOOL_ID_FEATURE_FIRST);
+		g_assert (inf->ethtool_id <= _NM_ETHTOOL_ID_FEATURE_LAST);
+		g_assert (inf->n_kernel_names > 0);
+
+		for (k = 0; k < i; k++)
+			g_assert (inf->ethtool_id != _ethtool_feature_infos[k].ethtool_id);
+
+		g_assert (!found[inf->ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST]);
+		found[inf->ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST] = TRUE;
+
+		kstate.idx_kernel_name = inf->n_kernel_names - 1;
+		g_assert ((guint) kstate.idx_kernel_name == (guint) (inf->n_kernel_names - 1));
+
+		n += inf->n_kernel_names;
+		for (k = 0; k < inf->n_kernel_names; k++) {
+			g_assert (nm_utils_strv_find_first ((char **) inf->kernel_names,
+			                                    k,
+			                                    inf->kernel_names[k]) < 0);
+		}
+	}
+
+	for (i = 0; i < _NM_ETHTOOL_ID_FEATURE_NUM; i++)
+		g_assert (found[i]);
+
+	g_assert (n == N_ETHTOOL_KERNEL_FEATURES);
+#endif
+}
+
+static NMEthtoolFeatureStates *
+ethtool_get_features (SocketHandle *shandle)
+{
+	gs_free NMEthtoolFeatureStates *states = NULL;
+	gs_free struct ethtool_gstrings *ss_features = NULL;
+
+	_ASSERT_ethtool_feature_infos ();
+
+	ss_features = ethtool_get_stringset (shandle, ETH_SS_FEATURES);
+	if (!ss_features)
+		return NULL;
+
+	if (ss_features->len > 0) {
+		gs_free struct ethtool_gfeatures *gfeatures = NULL;
+		guint idx;
+		const NMEthtoolFeatureState *states_list0 = NULL;
+		const NMEthtoolFeatureState *const*states_plist0 = NULL;
+		guint states_plist_n = 0;
+
+		gfeatures = g_malloc0 (  sizeof (struct ethtool_gfeatures)
+		                       + (NM_DIV_ROUND_UP (ss_features->len, 32u) * sizeof(gfeatures->features[0])));
+
+		gfeatures->cmd = ETHTOOL_GFEATURES;
+		gfeatures->size = NM_DIV_ROUND_UP (ss_features->len, 32u);
+		if (ethtool_call_handle (shandle, gfeatures) < 0)
+			return NULL;
+
+		for (idx = 0; idx < G_N_ELEMENTS (_ethtool_feature_infos); idx++) {
+			const NMEthtoolFeatureInfo *info = &_ethtool_feature_infos[idx];
+			guint idx_kernel_name;
+
+			for (idx_kernel_name = 0; idx_kernel_name < info->n_kernel_names; idx_kernel_name++) {
+				NMEthtoolFeatureState *kstate;
+				const char *kernel_name = info->kernel_names[idx_kernel_name];
+				int i_feature;
+				guint i_block;
+				guint32 i_flag;
+
+				i_feature = ethtool_gstrings_find (ss_features, kernel_name);
+				if (i_feature < 0)
+					continue;
+
+				i_block = ((guint) i_feature) / 32u;
+				i_flag = (guint32) (1u << (((guint) i_feature) % 32u));
+
+				if (!states) {
+					states = g_malloc0 (sizeof (NMEthtoolFeatureStates)
+					                    + (N_ETHTOOL_KERNEL_FEATURES * sizeof (NMEthtoolFeatureState))
+					                    + ((N_ETHTOOL_KERNEL_FEATURES + G_N_ELEMENTS (_ethtool_feature_infos)) * sizeof (NMEthtoolFeatureState *)));
+					states_list0 = &states->states_list[0];
+					states_plist0 = (gpointer) &states_list0[N_ETHTOOL_KERNEL_FEATURES];
+					states->n_ss_features = ss_features->len;
+				}
+
+				nm_assert (states->n_states < N_ETHTOOL_KERNEL_FEATURES);
+				kstate = (NMEthtoolFeatureState *) &states_list0[states->n_states];
+				states->n_states++;
+
+				kstate->info = info;
+				kstate->idx_ss_features = i_feature;
+				kstate->idx_kernel_name = idx_kernel_name;
+				kstate->available     = !!(gfeatures->features[i_block].available     & i_flag);
+				kstate->requested     = !!(gfeatures->features[i_block].requested     & i_flag);
+				kstate->active        = !!(gfeatures->features[i_block].active        & i_flag);
+				kstate->never_changed = !!(gfeatures->features[i_block].never_changed & i_flag);
+
+				nm_assert (states_plist_n < N_ETHTOOL_KERNEL_FEATURES + G_N_ELEMENTS (_ethtool_feature_infos));
+
+				if (!states->states_indexed[info->ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST])
+					states->states_indexed[info->ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST] = &states_plist0[states_plist_n];
+				((const NMEthtoolFeatureState **) states_plist0)[states_plist_n] = kstate;
+				states_plist_n++;
+			}
+
+			if (states && states->states_indexed[info->ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST]) {
+				nm_assert (states_plist_n < N_ETHTOOL_KERNEL_FEATURES + G_N_ELEMENTS (_ethtool_feature_infos));
+				nm_assert (!states_plist0[states_plist_n]);
+				states_plist_n++;
+			}
+		}
+	}
+
+	return g_steal_pointer (&states);
+}
+
+NMEthtoolFeatureStates *
+nmp_utils_ethtool_get_features (int ifindex)
+{
+	nm_auto_socket_handle SocketHandle shandle = { };
+	NMEthtoolFeatureStates *features;
+	int r;
+
+	g_return_val_if_fail (ifindex > 0, 0);
+
+	if ((r = socket_handle_init (&shandle, ifindex)) < 0) {
+		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: failed creating ethtool socket: %s",
+		              ifindex,
+		              "get-features",
+		              g_strerror (-r));
+		return FALSE;
+	}
+
+	features = ethtool_get_features (&shandle);
+
+	if (!features) {
+		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: failure getting features",
+		              ifindex,
+		              "get-features");
+		return NULL;
+	}
+
+	nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: retrieved kernel features",
+	              ifindex,
+	              "get-features");
+	return features;
+}
+
+static const char *
+_ethtool_feature_state_to_string (char *buf, gsize buf_size, const NMEthtoolFeatureState *s, const char *prefix)
+{
+	int l;
+
+	l = g_snprintf (buf, buf_size,
+	                "%s %s%s",
+	                prefix ?: "",
+	                ONOFF (s->active),
+	                (!s->available || s->never_changed)
+	                  ? ", [fixed]"
+	                  : ((s->requested != s->active)
+	                       ? (s->requested ? ", [requested on]" : ", [requested off]")
+	                       : ""));
+	nm_assert (l < buf_size);
+	return buf;
+}
+
+gboolean
+nmp_utils_ethtool_set_features (int ifindex,
+                                const NMEthtoolFeatureStates *features,
+                                const NMTernary *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */,
+                                gboolean do_set /* or reset */)
+{
+	nm_auto_socket_handle SocketHandle shandle = { };
+	gs_free struct ethtool_sfeatures *sfeatures = NULL;
+	int r;
+	guint i, j;
+	struct {
+		const NMEthtoolFeatureState *f_state;
+		NMTernary requested;
+	} set_states[N_ETHTOOL_KERNEL_FEATURES];
+	guint set_states_n = 0;
+	gboolean success = TRUE;
+
+	g_return_val_if_fail (ifindex > 0, 0);
+	g_return_val_if_fail (features, 0);
+	g_return_val_if_fail (requested, 0);
+
+	nm_assert (features->n_states <= N_ETHTOOL_KERNEL_FEATURES);
+
+	for (i = 0; i < _NM_ETHTOOL_ID_FEATURE_NUM; i++) {
+		const NMEthtoolFeatureState *const*states_indexed;
+
+		if (requested[i] == NM_TERNARY_DEFAULT)
+			continue;
+
+		if (!(states_indexed = features->states_indexed[i])) {
+			if (do_set) {
+				nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: set feature %s: skip (not found)",
+				              ifindex,
+				              "set-features",
+				              nm_ethtool_data[i + _NM_ETHTOOL_ID_FEATURE_FIRST]->optname);
+				success = FALSE;
+			}
+			continue;
+		}
+
+		for (j = 0; states_indexed[j]; j++) {
+			const NMEthtoolFeatureState *s = states_indexed[j];
+			char sbuf[255];
+
+			if (set_states_n >= G_N_ELEMENTS (set_states))
+				g_return_val_if_reached (FALSE);
+
+			if (s->never_changed) {
+				nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: %s feature %s (%s): %s, %s (skip feature marked as never changed)",
+				              ifindex,
+				              "set-features",
+				              do_set ? "set" : "reset",
+				              nm_ethtool_data[i + _NM_ETHTOOL_ID_FEATURE_FIRST]->optname,
+				              s->info->kernel_names[s->idx_kernel_name],
+				              ONOFF (do_set ? requested[i] == NM_TERNARY_TRUE : s->active),
+				              _ethtool_feature_state_to_string (sbuf, sizeof (sbuf), s, do_set ? " currently:" : " before:"));
+				continue;
+			}
+
+			nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: %s feature %s (%s): %s, %s",
+			              ifindex,
+			              "set-features",
+			              do_set ? "set" : "reset",
+			              nm_ethtool_data[i + _NM_ETHTOOL_ID_FEATURE_FIRST]->optname,
+			              s->info->kernel_names[s->idx_kernel_name],
+			              ONOFF (do_set ? requested[i] == NM_TERNARY_TRUE : s->active),
+			              _ethtool_feature_state_to_string (sbuf, sizeof (sbuf), s, do_set ? " currently:" : " before:"));
+
+			if (   do_set
+			    && (!s->available || s->never_changed)
+			    && (s->active != (requested[i] == NM_TERNARY_TRUE))) {
+				/* we request to change a flag which kernel reported as fixed.
+				 * While the ethtool operation will silently succeed, mark the request
+				 * as failure. */
+				success = FALSE;
+			}
+
+			set_states[set_states_n].f_state = s;
+			set_states[set_states_n].requested = requested[i];
+			set_states_n++;
+		}
+	}
+
+	if (set_states_n == 0) {
+		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: no feature requested",
+		              ifindex,
+		              "set-features");
+		return TRUE;
+	}
+
+	if ((r = socket_handle_init (&shandle, ifindex)) < 0) {
+		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: failed creating ethtool socket: %s",
+		              ifindex,
+		              "set-features",
+		              g_strerror (-r));
+		return FALSE;
+	}
+
+	sfeatures = g_malloc0 (sizeof (struct ethtool_sfeatures)
+	                       + (NM_DIV_ROUND_UP (features->n_ss_features, 32U) * sizeof(sfeatures->features[0])));
+	sfeatures->cmd = ETHTOOL_SFEATURES;
+	sfeatures->size = NM_DIV_ROUND_UP (features->n_ss_features, 32U);
+
+	for (i = 0; i < set_states_n; i++) {
+		const NMEthtoolFeatureState *s = set_states[i].f_state;
+		guint i_block;
+		guint32 i_flag;
+		gboolean is_requested;
+
+		i_block = s->idx_ss_features / 32u;
+		i_flag = (guint32) (1u << (s->idx_ss_features % 32u));
+
+		sfeatures->features[i_block].valid |= i_flag;
+
+		if (do_set)
+			is_requested = (set_states[i].requested == NM_TERNARY_TRUE);
+		else
+			is_requested = s->active;
+
+		if (is_requested)
+			sfeatures->features[i_block].requested |= i_flag;
+		else
+			sfeatures->features[i_block].requested &= ~i_flag;
+	}
+
+	if ((r = ethtool_call_handle (&shandle, sfeatures)) < 0) {
+		success = FALSE;
+		nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: failure setting features (%s)",
+		              ifindex,
+		              "set-features",
+		              g_strerror (-r));
+		return FALSE;
+	}
+
+	nm_log_trace (LOGD_PLATFORM, "ethtool[%d]: %s: %s",
+	              ifindex,
+	              "set-features",
+	              success
+	                ? "successfully setting features"
+	                : "at least some of the features were not successfuly set");
+	return success;
+}
+
+/*****************************************************************************/
 
 gboolean
 nmp_utils_ethtool_get_driver_info (int ifindex,

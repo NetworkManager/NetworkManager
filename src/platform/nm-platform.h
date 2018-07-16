@@ -1534,6 +1534,17 @@ int nm_platform_ip_address_cmp_expiry (const NMPlatformIPAddress *a, const NMPla
 gboolean nm_platform_ethtool_set_wake_on_lan (NMPlatform *self, int ifindex, NMSettingWiredWakeOnLan wol, const char *wol_password);
 gboolean nm_platform_ethtool_set_link_settings (NMPlatform *self, int ifindex, gboolean autoneg, guint32 speed, NMPlatformLinkDuplexType duplex);
 gboolean nm_platform_ethtool_get_link_settings (NMPlatform *self, int ifindex, gboolean *out_autoneg, guint32 *out_speed, NMPlatformLinkDuplexType *out_duplex);
+
+typedef struct _NMEthtoolFeatureStates NMEthtoolFeatureStates;
+
+NMEthtoolFeatureStates *nm_platform_ethtool_get_link_features (NMPlatform *self,
+                                                               int ifindex);
+gboolean nm_platform_ethtool_set_features (NMPlatform *self,
+                                           int ifindex,
+                                           const NMEthtoolFeatureStates *features,
+                                           const NMTernary *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */,
+                                           gboolean do_set /* or reset */);
+
 const char * nm_platform_link_duplex_type_to_string (NMPlatformLinkDuplexType duplex);
 
 void nm_platform_ip4_dev_route_blacklist_set (NMPlatform *self,
