@@ -621,29 +621,25 @@ nmp_utils_ethtool_set_wake_on_lan (int ifindex,
 gboolean
 nmp_utils_mii_supports_carrier_detect (int ifindex)
 {
-	char ifname[IFNAMSIZ];
-	nm_auto_close int fd = -1;
+	nm_auto_socket_handle SocketHandle shandle = { };
+	int r;
 	struct ifreq ifr;
 	struct mii_ioctl_data *mii;
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 
-	if (!nmp_utils_if_indextoname (ifindex, ifname)) {
-		nm_log_trace (LOGD_PLATFORM, "mii[%d]: carrier-detect no: request fails resolving ifindex: %s", ifindex, g_strerror (errno));
-		return FALSE;
-	}
-
-	fd = socket (PF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
-	if (fd < 0) {
-		nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect no: couldn't open control socket: %s", ifindex, ifname, g_strerror (errno));
+	if ((r = socket_handle_init (&shandle, ifindex)) < 0) {
+		nm_log_trace (LOGD_PLATFORM, "mii[%d]: carrier-detect no: failed creating ethtool socket: %s",
+		              ifindex,
+		              g_strerror (-r));
 		return FALSE;
 	}
 
 	memset (&ifr, 0, sizeof (struct ifreq));
-	memcpy (ifr.ifr_name, ifname, IFNAMSIZ);
+	memcpy (ifr.ifr_name, shandle.ifname, IFNAMSIZ);
 
-	if (ioctl (fd, SIOCGMIIPHY, &ifr) < 0) {
-		nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect no: SIOCGMIIPHY failed: %s", ifindex, ifname, strerror (errno));
+	if (ioctl (shandle.fd, SIOCGMIIPHY, &ifr) < 0) {
+		nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect no: SIOCGMIIPHY failed: %s", ifindex, shandle.ifname, strerror (errno));
 		return FALSE;
 	}
 
@@ -651,12 +647,12 @@ nmp_utils_mii_supports_carrier_detect (int ifindex)
 	mii = (struct mii_ioctl_data *) &ifr.ifr_ifru;
 	mii->reg_num = MII_BMSR;
 
-	if (ioctl (fd, SIOCGMIIREG, &ifr) != 0) {
-		nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect no: SIOCGMIIREG failed: %s", ifindex, ifname, strerror (errno));
+	if (ioctl (shandle.fd, SIOCGMIIREG, &ifr) != 0) {
+		nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect no: SIOCGMIIREG failed: %s", ifindex, shandle.ifname, strerror (errno));
 		return FALSE;
 	}
 
-	nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect yes: SIOCGMIIREG result 0x%X", ifindex, ifname, mii->val_out);
+	nm_log_trace (LOGD_PLATFORM, "mii[%d,%s]: carrier-detect yes: SIOCGMIIREG result 0x%X", ifindex, shandle.ifname, mii->val_out);
 	return TRUE;
 }
 
