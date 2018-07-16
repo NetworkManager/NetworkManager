@@ -23,6 +23,9 @@
 
 #include "nm-platform.h"
 #include "nm-setting-wired.h"
+#include "nm-ethtool-utils.h"
+
+/*****************************************************************************/
 
 const char *nmp_utils_ethtool_get_driver (int ifindex);
 gboolean nmp_utils_ethtool_supports_carrier_detect (int ifindex);
@@ -34,6 +37,10 @@ gboolean nmp_utils_ethtool_set_wake_on_lan (int ifindex, NMSettingWiredWakeOnLan
 
 gboolean nmp_utils_ethtool_get_link_settings (int ifindex, gboolean *out_autoneg, guint32 *out_speed, NMPlatformLinkDuplexType *out_duplex);
 gboolean nmp_utils_ethtool_set_link_settings (int ifindex, gboolean autoneg, guint32 speed, NMPlatformLinkDuplexType duplex);
+
+gboolean  nmp_utils_ethtool_get_permanent_address (int ifindex,
+                                                   guint8 *buf,
+                                                   size_t *length);
 
 typedef struct {
 	/* We don't want to include <linux/ethtool.h> in header files,
@@ -55,9 +62,52 @@ typedef struct {
 gboolean nmp_utils_ethtool_get_driver_info (int ifindex,
                                             NMPUtilsEthtoolDriverInfo *data);
 
-gboolean  nmp_utils_ethtool_get_permanent_address (int ifindex,
-                                                   guint8 *buf,
-                                                   size_t *length);
+typedef struct {
+	NMEthtoolID ethtool_id;
+
+	guint8 n_kernel_names;
+
+	/* one NMEthtoolID refers to one or more kernel_names. The reason for supporting this complexity
+	 * (where one NMSettingEthtool option refers to multiple kernel features)  is to follow what
+	 * ethtool does, where "tx" is an alias for multiple features. */
+	const char *const*kernel_names;
+} NMEthtoolFeatureInfo;
+
+typedef struct {
+	const NMEthtoolFeatureInfo *info;
+
+	guint idx_ss_features;
+
+	/* one NMEthtoolFeatureInfo references one or more kernel_names. This is the index
+	 * of the matching info->kernel_names */
+	guint8 idx_kernel_name;
+
+	bool available:1;
+	bool requested:1;
+	bool active:1;
+	bool never_changed:1;
+} NMEthtoolFeatureState;
+
+struct _NMEthtoolFeatureStates {
+	guint n_states;
+
+	guint n_ss_features;
+
+	/* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */
+	const NMEthtoolFeatureState *const*states_indexed[_NM_ETHTOOL_ID_FEATURE_NUM];
+
+	/* the same content, here as a list of n_states entries. */
+	const NMEthtoolFeatureState states_list[];
+};
+
+NMEthtoolFeatureStates *nmp_utils_ethtool_get_features (int ifindex);
+
+gboolean nmp_utils_ethtool_set_features (int ifindex,
+                                         const NMEthtoolFeatureStates *features,
+                                         const NMTernary *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */,
+                                         gboolean do_set /* or reset */);
+
+/*****************************************************************************/
 
 gboolean nmp_utils_mii_supports_carrier_detect (int ifindex);
 

@@ -31,17 +31,19 @@ G_BEGIN_DECLS
 
 /*****************************************************************************/
 
-#define NM_ETHTOOL_OPTNAME_FEATURE_GRO                "feature-gro"
-#define NM_ETHTOOL_OPTNAME_FEATURE_GSO                "feature-gso"
-#define NM_ETHTOOL_OPTNAME_FEATURE_LRO                "feature-lro"
-#define NM_ETHTOOL_OPTNAME_FEATURE_NTUPLE             "feature-ntuple"
-#define NM_ETHTOOL_OPTNAME_FEATURE_RX                 "feature-rx"
-#define NM_ETHTOOL_OPTNAME_FEATURE_RXHASH             "feature-rxhash"
-#define NM_ETHTOOL_OPTNAME_FEATURE_RXVLAN             "feature-rxvlan"
-#define NM_ETHTOOL_OPTNAME_FEATURE_SG                 "feature-sg"
-#define NM_ETHTOOL_OPTNAME_FEATURE_TSO                "feature-tso"
-#define NM_ETHTOOL_OPTNAME_FEATURE_TX                 "feature-tx"
-#define NM_ETHTOOL_OPTNAME_FEATURE_TXVLAN             "feature-txvlan"
+#define NM_ETHTOOL_OPTNAME_FEATURE_GRO                     "feature-gro"
+#define NM_ETHTOOL_OPTNAME_FEATURE_GSO                     "feature-gso"
+#define NM_ETHTOOL_OPTNAME_FEATURE_LRO                     "feature-lro"
+#define NM_ETHTOOL_OPTNAME_FEATURE_NTUPLE                  "feature-ntuple"
+#define NM_ETHTOOL_OPTNAME_FEATURE_RX                      "feature-rx"
+#define NM_ETHTOOL_OPTNAME_FEATURE_RXHASH                  "feature-rxhash"
+#define NM_ETHTOOL_OPTNAME_FEATURE_RXVLAN                  "feature-rxvlan"
+#define NM_ETHTOOL_OPTNAME_FEATURE_SG                      "feature-sg"
+#define NM_ETHTOOL_OPTNAME_FEATURE_TSO                     "feature-tso"
+#define NM_ETHTOOL_OPTNAME_FEATURE_TX                      "feature-tx"
+#define NM_ETHTOOL_OPTNAME_FEATURE_TXVLAN                  "feature-txvlan"
+#define NM_ETHTOOL_OPTNAME_FEATURE_TX_TCP6_SEGMENTATION    "feature-tx-tcp6-segmentation"
+#define NM_ETHTOOL_OPTNAME_FEATURE_TX_TCP_SEGMENTATION     "feature-tx-tcp-segmentation"
 
 gboolean nm_ethtool_optname_is_feature (const char *optname);
 
