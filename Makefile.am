@@ -453,6 +453,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-setting-connection.h \
 	libnm-core/nm-setting-dcb.h \
 	libnm-core/nm-setting-dummy.h \
+	libnm-core/nm-setting-ethtool.h \
 	libnm-core/nm-setting-generic.h \
 	libnm-core/nm-setting-gsm.h \
 	libnm-core/nm-setting-infiniband.h \
@@ -502,6 +503,7 @@ libnm_core_lib_h_priv = \
 	shared/nm-utils/nm-shared-utils.h \
 	shared/nm-utils/nm-random-utils.h \
 	shared/nm-utils/nm-udev-utils.h \
+	shared/nm-ethtool-utils.h \
 	shared/nm-meta-setting.h \
 	libnm-core/crypto.h \
 	libnm-core/nm-connection-private.h \
@@ -524,6 +526,7 @@ libnm_core_lib_c_settings_real = \
 	libnm-core/nm-setting-connection.c \
 	libnm-core/nm-setting-dcb.c \
 	libnm-core/nm-setting-dummy.c \
+	libnm-core/nm-setting-ethtool.c \
 	libnm-core/nm-setting-generic.c \
 	libnm-core/nm-setting-gsm.c \
 	libnm-core/nm-setting-infiniband.c \
@@ -565,6 +568,7 @@ libnm_core_lib_c_real = \
 	shared/nm-utils/nm-shared-utils.c \
 	shared/nm-utils/nm-random-utils.c \
 	shared/nm-utils/nm-udev-utils.c \
+	shared/nm-ethtool-utils.c \
 	shared/nm-meta-setting.c \
 	libnm-core/crypto.c \
 	libnm-core/nm-connection.c \
@@ -2390,6 +2394,7 @@ EXTRA_DIST += \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-write-unknown-3.expected \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-write-unknown-4 \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-write-unknown-4.expected \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test_write_wired_auto_negotiate_on.cexpected \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-dynamic-wep-leap \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-leap \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wep \
@@ -3424,6 +3429,9 @@ endif
 clients_common_libnmc_la_SOURCES = \
 	shared/nm-meta-setting.c \
 	shared/nm-meta-setting.h \
+	\
+	shared/nm-ethtool-utils.c \
+	shared/nm-ethtool-utils.h \
 	\
 	clients/common/nm-meta-setting-desc.c \
 	clients/common/nm-meta-setting-desc.h \

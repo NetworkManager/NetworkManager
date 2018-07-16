@@ -201,6 +201,11 @@ GVariant *const*nm_setting_gendata_get_all_values (NMSetting *setting);
 
 /*****************************************************************************/
 
+guint nm_setting_ethtool_init_features (NMSettingEthtool *setting,
+                                        NMTernary *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */);
+
+/*****************************************************************************/
+
 #define NM_UTILS_HWADDR_LEN_MAX_STR (NM_UTILS_HWADDR_LEN_MAX * 3)
 
 guint8 *_nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize buffer_length, gsize *out_length);

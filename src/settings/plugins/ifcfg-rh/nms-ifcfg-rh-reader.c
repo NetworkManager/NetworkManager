@@ -41,6 +41,7 @@
 #include "nm-setting-ip6-config.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"
+#include "nm-setting-ethtool.h"
 #include "nm-setting-8021x.h"
 #include "nm-setting-bond.h"
 #include "nm-setting-team.h"
@@ -53,6 +54,7 @@
 #include "nm-setting-generic.h"
 #include "nm-core-internal.h"
 #include "nm-utils.h"
+#include "nm-ethtool-utils.h"
 
 #include "platform/nm-platform.h"
 #include "NetworkManagerUtils.h"
@@ -4051,15 +4053,66 @@ parse_ethtool_option (const char *value,
                       char **out_password,
                       gboolean *out_autoneg,
                       guint32 *out_speed,
-                      const char **out_duplex)
+                      const char **out_duplex,
+                      NMSettingEthtool **out_s_ethtool)
 {
 	gs_free const char **words = NULL;
 	guint i;
 
-	words = nm_utils_strsplit_set (value, "\t \n");
+	words = nm_utils_strsplit_set (value, NULL);
 	if (!words)
 		return;
 
+	if (words[0] && words[0][0] == '-') {
+		/* /sbin/ethtool $opts */
+		if (NM_IN_STRSET (words[0], "-K", "--features", "--offload")) {
+			if (!words[1]) {
+				/* first argument must be the interface name. This is invalid. */
+				return;
+			}
+
+			if (!*out_s_ethtool)
+				*out_s_ethtool = NM_SETTING_ETHTOOL (nm_setting_ethtool_new ());
+
+			for (i = 2; words[i]; ) {
+				const char *opt = words[i];
+				const char *opt_val = words[++i];
+				const NMEthtoolData *d = NULL;
+				NMTernary onoff = NM_TERNARY_DEFAULT;
+
+				if (nm_streq0 (opt_val, "on"))
+					onoff = NM_TERNARY_TRUE;
+				else if (nm_streq0 (opt_val, "off"))
+					onoff = NM_TERNARY_FALSE;
+
+				d = nms_ifcfg_rh_utils_get_ethtool_by_name (opt);
+
+				if (!d) {
+					if (onoff != NM_TERNARY_DEFAULT) {
+						/* the next value is just the on/off argument. Skip it too. */
+						i++;
+					}
+
+					/* silently ignore unsupported offloading features. */
+					continue;
+				}
+
+				i++;
+
+				if (onoff == NM_TERNARY_DEFAULT) {
+					PARSE_WARNING ("Expects on/off argument for feature '%s'", opt);
+					continue;
+				}
+
+				nm_setting_ethtool_set_feature (*out_s_ethtool,
+				                                d->optname,
+				                                onoff);
+			}
+		}
+		return;
+	}
+
+	/* /sbin/ethtool -s ${REALDEVICE} $opts */
 	for (i = 0; words[i]; ) {
 		const char *opt = words[i];
 		const char *opt_val = words[++i];
@@ -4176,54 +4229,72 @@ parse_ethtool_option (const char *value,
 }
 
 static void
-parse_ethtool_options (shvarFile *ifcfg, NMSettingWired *s_wired, const char *value)
+parse_ethtool_options (shvarFile *ifcfg, NMConnection *connection)
 {
+	NMSettingWired *s_wired;
+	gs_unref_object NMSettingEthtool *s_ethtool = NULL;
 	NMSettingWiredWakeOnLan wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT;
+	gs_free char *ethtool_opts_free = NULL;
+	const char *ethtool_opts;
 	gs_free char *wol_password = NULL;
-	gs_free char *wol_value = NULL;
-	gboolean ignore_wol_password = FALSE;
+	gs_free char *wol_value_free = NULL;
+	const char *tmp;
 	gboolean autoneg = FALSE;
 	guint32 speed = 0;
 	const char *duplex = NULL;
 
-	if (value) {
-		gs_free const char **opts = NULL;
-		const char *const *iter;
-
+	ethtool_opts = svGetValue (ifcfg, "ETHTOOL_OPTS", &ethtool_opts_free);
+	if (ethtool_opts) {
 		/* WAKE_ON_LAN_IGNORE is inferred from a specified but empty ETHTOOL_OPTS */
-		if (!value[0])
+		if (!ethtool_opts[0])
 			wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE;
+		else {
+			gs_free const char **opts = NULL;
+			const char *const *iter;
 
-		opts = nm_utils_strsplit_set (value, ";");
-		for (iter = opts; iter && iter[0]; iter++) {
-			/* in case of repeated wol_passwords, parse_ethtool_option()
-			 * will do the right thing and clear wol_password before resetting. */
-			parse_ethtool_option (iter[0], &wol_flags, &wol_password, &autoneg, &speed, &duplex);
+			opts = nm_utils_strsplit_set (ethtool_opts, ";");
+			for (iter = opts; iter && iter[0]; iter++) {
+				/* in case of repeated wol_passwords, parse_ethtool_option()
+				 * will do the right thing and clear wol_password before resetting. */
+				parse_ethtool_option (iter[0],
+				                      &wol_flags,
+				                      &wol_password,
+				                      &autoneg,
+				                      &speed,
+				                      &duplex,
+				                      &s_ethtool);
+			}
 		}
 	}
 
 	/* ETHTOOL_WAKE_ON_LAN = ignore overrides WoL settings in ETHTOOL_OPTS */
-	wol_value = svGetValueStr_cp (ifcfg, "ETHTOOL_WAKE_ON_LAN");
-	if (wol_value) {
-		if (strcmp (wol_value, "ignore") == 0)
-			wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE;
-		else
-			PARSE_WARNING ("invalid ETHTOOL_WAKE_ON_LAN value '%s'", wol_value);
-	}
+	tmp = svGetValueStr (ifcfg, "ETHTOOL_WAKE_ON_LAN", &wol_value_free);
+	if (nm_streq0 (tmp, "ignore"))
+		wol_flags = NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE;
+	else if (tmp)
+		PARSE_WARNING ("invalid ETHTOOL_WAKE_ON_LAN value '%s'", tmp);
 
 	if (   wol_password
 	    && !NM_FLAGS_HAS (wol_flags, NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC)) {
 		PARSE_WARNING ("Wake-on-LAN password not expected");
-		ignore_wol_password = TRUE;
+		nm_clear_g_free (&wol_password);
 	}
 
-	g_object_set (s_wired,
-	              NM_SETTING_WIRED_WAKE_ON_LAN, wol_flags,
-	              NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD, ignore_wol_password ? NULL : wol_password,
-	              NM_SETTING_WIRED_AUTO_NEGOTIATE, autoneg,
-	              NM_SETTING_WIRED_SPEED, speed,
-	              NM_SETTING_WIRED_DUPLEX, duplex,
-	              NULL);
+	s_wired = nm_connection_get_setting_wired (connection);
+	if (s_wired) {
+		g_object_set (s_wired,
+		              NM_SETTING_WIRED_WAKE_ON_LAN, wol_flags,
+		              NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD, wol_password,
+		              NM_SETTING_WIRED_AUTO_NEGOTIATE, autoneg,
+		              NM_SETTING_WIRED_SPEED, speed,
+		              NM_SETTING_WIRED_DUPLEX, duplex,
+		              NULL);
+	}
+
+	if (s_ethtool) {
+		nm_connection_add_setting (connection,
+		                           NM_SETTING (g_steal_pointer (&s_ethtool)));
+	}
 }
 
 static NMSetting *
@@ -4364,10 +4435,6 @@ make_wired_setting (shvarFile *ifcfg,
 		}
 		nm_clear_g_free (&value);
 	}
-
-	parse_ethtool_options (ifcfg, s_wired,
-	                       svGetValue (ifcfg, "ETHTOOL_OPTS", &value));
-	nm_clear_g_free (&value);
 
 	return (NMSetting *) g_steal_pointer (&s_wired);
 }
@@ -5594,6 +5661,8 @@ connection_from_file_full (const char *filename,
 
 	if (!connection)
 		return NULL;
+
+	parse_ethtool_options (parsed, connection);
 
 	has_complex_routes_v4 = utils_has_complex_routes (filename, AF_INET);
 	has_complex_routes_v6 = utils_has_complex_routes (filename, AF_INET6);

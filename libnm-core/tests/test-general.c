@@ -43,6 +43,7 @@
 #include "nm-setting-bridge-port.h"
 #include "nm-setting-cdma.h"
 #include "nm-setting-connection.h"
+#include "nm-setting-ethtool.h"
 #include "nm-setting-generic.h"
 #include "nm-setting-gsm.h"
 #include "nm-setting-infiniband.h"
@@ -65,6 +66,7 @@
 #include "nm-simple-connection.h"
 #include "nm-keyfile-internal.h"
 #include "nm-utils/nm-dedup-multi.h"
+#include "nm-ethtool-utils.h"
 
 #include "test-general-enums.h"
 
@@ -7058,6 +7060,22 @@ test_nm_va_args_macros (void)
 
 /*****************************************************************************/
 
+static void
+test_ethtool_offload (void)
+{
+	const NMEthtoolData *d;
+
+	g_assert_cmpint (nm_ethtool_id_get_by_name ("invalid"),    ==, NM_ETHTOOL_ID_UNKNOWN);
+	g_assert_cmpint (nm_ethtool_id_get_by_name ("feature-rx"), ==, NM_ETHTOOL_ID_FEATURE_RX);
+
+	d = nm_ethtool_data_get_by_optname (NM_ETHTOOL_OPTNAME_FEATURE_RXHASH);
+	g_assert (d);
+	g_assert_cmpint (d->id, ==, NM_ETHTOOL_ID_FEATURE_RXHASH);
+	g_assert_cmpstr (d->optname, ==, NM_ETHTOOL_OPTNAME_FEATURE_RXHASH);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -7212,8 +7230,8 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/route_attributes/format", test_route_attributes_format);
 
 	g_test_add_func ("/core/general/get_start_time_for_pid", test_get_start_time_for_pid);
-
 	g_test_add_func ("/core/general/test_nm_va_args_macros", test_nm_va_args_macros);
+	g_test_add_func ("/core/general/test_ethtool_offload", test_ethtool_offload);
 
 	return g_test_run ();
 }

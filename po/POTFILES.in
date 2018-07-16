@@ -67,6 +67,7 @@ libnm-core/nm-setting-bridge.c
 libnm-core/nm-setting-cdma.c
 libnm-core/nm-setting-connection.c
 libnm-core/nm-setting-dcb.c
+libnm-core/nm-setting-ethtool.c
 libnm-core/nm-setting-gsm.c
 libnm-core/nm-setting-infiniband.c
 libnm-core/nm-setting-ip-config.c

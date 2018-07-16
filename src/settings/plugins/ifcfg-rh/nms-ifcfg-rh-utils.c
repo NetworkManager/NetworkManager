@@ -470,3 +470,63 @@ nms_ifcfg_rh_utils_user_key_decode (const char *name, GString *str_buffer)
 
 	return TRUE;
 }
+
+/*****************************************************************************/
+
+const char *const _nm_ethtool_ifcfg_names[] = {
+#define ETHT_NAME(eid, ename) \
+[eid - _NM_ETHTOOL_ID_FEATURE_FIRST] = ""ename""
+	/* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_GRO,    "gro"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_GSO,    "gso"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_LRO,    "lro"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_NTUPLE, "ntuple"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_RX,     "rx"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_RXHASH, "rxhash"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_RXVLAN, "rxvlan"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_SG,     "sg"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TSO,    "tso"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TX,     "tx"),
+	ETHT_NAME (NM_ETHTOOL_ID_FEATURE_TXVLAN, "txvlan"),
+};
+
+const NMEthtoolData *
+nms_ifcfg_rh_utils_get_ethtool_by_name (const char *name)
+{
+	static const struct {
+		NMEthtoolID ethtool_id;
+		const char *kernel_name;
+	} kernel_names[] = {
+		{ NM_ETHTOOL_ID_FEATURE_GRO,    "rx-gro" },
+		{ NM_ETHTOOL_ID_FEATURE_GSO,    "tx-generic-segmentation" },
+		{ NM_ETHTOOL_ID_FEATURE_LRO,    "rx-lro" },
+		{ NM_ETHTOOL_ID_FEATURE_NTUPLE, "rx-ntuple-filter" },
+		{ NM_ETHTOOL_ID_FEATURE_RX,     "rx-checksum" },
+		{ NM_ETHTOOL_ID_FEATURE_RXHASH, "rx-hashing" },
+		{ NM_ETHTOOL_ID_FEATURE_RXVLAN, "rx-vlan-hw-parse" },
+		{ NM_ETHTOOL_ID_FEATURE_TXVLAN, "tx-vlan-hw-insert" },
+	};
+	guint i;
+
+	for (i = 0; i < G_N_ELEMENTS (_nm_ethtool_ifcfg_names); i++) {
+		if (nm_streq (name, _nm_ethtool_ifcfg_names[i]))
+			return nm_ethtool_data[i];
+	}
+
+	/* Option not found. Note that ethtool utility has built-in features and
+	 * NetworkManager's API follows the naming of these built-in features, whenever
+	 * they exist.
+	 * For example, NM's "ethtool.feature-ntuple" corresponds to ethtool utility's "ntuple"
+	 * feature. However the underlying kernel feature is called "rx-ntuple-filter" (as reported
+	 * for ETH_SS_FEATURES).
+	 *
+	 * With ethtool utility, whose command line we attempt to parse here, the user can also
+	 * specify the name of the underlying kernel feature directly. So, check whether that is
+	 * the case and if yes, map them to the corresponding NetworkManager's features. */
+	for (i = 0; i < G_N_ELEMENTS (kernel_names); i++) {
+		if (nm_streq (name, kernel_names[i].kernel_name))
+			return nm_ethtool_data[kernel_names[i].ethtool_id];
+	}
+
+	return NULL;
+}
