@@ -843,25 +843,37 @@ nm_vpn_service_plugin_read_vpn_details (int fd,
 			 /* finish marker */
 			break;
 		} else if (strncmp (line->str, DATA_KEY_TAG, strlen (DATA_KEY_TAG)) == 0) {
-			if (key != NULL)
+			if (key != NULL) {
+				g_warning ("a value expected");
 				g_string_free (key, TRUE);
+			}
 			key = g_string_new (line->str + strlen (DATA_KEY_TAG));
 			str = key;
 			hash = data;
 		} else if (strncmp (line->str, DATA_VAL_TAG, strlen (DATA_VAL_TAG)) == 0) {
 			if (val != NULL)
 				g_string_free (val, TRUE);
+			if (val || !key || hash != data) {
+				g_warning ("%s not preceded by %s", DATA_VAL_TAG, DATA_KEY_TAG);
+				break;
+			}
 			val = g_string_new (line->str + strlen (DATA_VAL_TAG));
 			str = val;
 		} else if (strncmp (line->str, SECRET_KEY_TAG, strlen (SECRET_KEY_TAG)) == 0) {
-			if (key != NULL)
+			if (key != NULL) {
+				g_warning ("a value expected");
 				g_string_free (key, TRUE);
+			}
 			key = g_string_new (line->str + strlen (SECRET_KEY_TAG));
 			str = key;
 			hash = secrets;
 		} else if (strncmp (line->str, SECRET_VAL_TAG, strlen (SECRET_VAL_TAG)) == 0) {
 			if (val != NULL)
 				g_string_free (val, TRUE);
+			if (val || !key || hash != secrets) {
+				g_warning ("%s not preceded by %s", SECRET_VAL_TAG, SECRET_KEY_TAG);
+				break;
+			}
 			val = g_string_new (line->str + strlen (SECRET_VAL_TAG));
 			str = val;
 		}
