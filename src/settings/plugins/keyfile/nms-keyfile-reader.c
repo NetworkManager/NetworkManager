@@ -115,7 +115,7 @@ nms_keyfile_reader_from_keyfile (GKeyFile *key_file,
 NMConnection *
 nms_keyfile_reader_from_file (const char *filename, GError **error)
 {
-	GKeyFile *key_file;
+	gs_unref_keyfile GKeyFile *key_file = NULL;
 	struct stat statbuf;
 	NMConnection *connection = NULL;
 	GError *verify_error = NULL;
@@ -144,11 +144,11 @@ nms_keyfile_reader_from_file (const char *filename, GError **error)
 
 	key_file = g_key_file_new ();
 	if (!g_key_file_load_from_file (key_file, filename, G_KEY_FILE_NONE, error))
-		goto out;
+		return NULL;
 
 	connection = nms_keyfile_reader_from_keyfile (key_file, filename, TRUE, error);
 	if (!connection)
-		goto out;
+		return NULL;
 
 	/* Normalize and verify the connection */
 	if (!nm_connection_normalize (connection, NULL, NULL, &verify_error)) {
@@ -160,8 +160,6 @@ nms_keyfile_reader_from_file (const char *filename, GError **error)
 		connection = NULL;
 	}
 
-out:
-	g_key_file_free (key_file);
 	return connection;
 }
 
