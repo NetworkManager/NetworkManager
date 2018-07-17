@@ -123,11 +123,7 @@ pseudo-ethernet device to obtain addressing information.  This is not currently
 possible, but NM already has all the code for DHCP.  Thus, a new "method"
 key should be defined in include/NetworkManagerVPN.h to allow for DHCP to
 be performed if the VPN service daemon requests it in the IP4Config or IP6Config
-signals.  A patch here:
-
-http://cgit.freedesktop.org/NetworkManager/NetworkManager/commit/?h=vpn-ip-method
-
-shows that.  In nm-vpn-connection.c, upon receipt of the D-Bus Ip4Config signal
+signals. In nm-vpn-connection.c, upon receipt of the D-Bus Ip4Config signal
 from the VPN plugin, NetworkManager would inspect the "method" property of the
 ip4 config dictionary.  If that property was present and set to "auto" then
 DHCP would be started using the network interface returned in the dict.  The

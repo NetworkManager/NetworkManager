@@ -4,7 +4,7 @@
 #
 # preparation:
 #
-git clone git://anongit.freedesktop.org/NetworkManager/NetworkManager
+git clone https://gitlab.freedesktop.org/NetworkManager/NetworkManager.git
 cd NetworkManager
 git checkout $WHATEVER
 sudo sh ./contrib/fedora/REQUIRED_PACKAGES

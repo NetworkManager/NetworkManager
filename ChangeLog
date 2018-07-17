@@ -7,7 +7,6 @@ For the detailed project history see git [2].
 
 For notable changes between releases see the NEWS file [3].
 
-
-[1] https://cgit.freedesktop.org/NetworkManager/NetworkManager/plain/ChangeLog?id=b25c227e078bc9e3a2e06b3f62bd2b727f50beee
-[2] https://cgit.freedesktop.org/NetworkManager/NetworkManager/log/
-[3] https://cgit.freedesktop.org/NetworkManager/NetworkManager/plain/NEWS
+[1] https://gitlab.freedesktop.org/NetworkManager/NetworkManager/blob/b25c227e078bc9e3a2e06b3f62bd2b727f50beee/ChangeLog
+[2] https://gitlab.freedesktop.org/NetworkManager/NetworkManager/commits/master
+[3] https://gitlab.freedesktop.org/NetworkManager/NetworkManager/blob/master/NEWS

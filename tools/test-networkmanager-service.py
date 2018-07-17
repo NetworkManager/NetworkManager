@@ -647,7 +647,7 @@ class ExportedObj(dbus.service.Object):
         # compatibility reasons. Note that this stub server implementation gets this wrong,
         # for example, it emits PropertiesChanged signal on org.freedesktop.NetworkManager.Device,
         # which NetworkManager never did.
-        # See https://cgit.freedesktop.org/NetworkManager/NetworkManager/tree/src/nm-dbus-manager.c?id=db80d5f62a1edf39c5970887ef7b9ec62dd4163f#n1274
+        # See https://gitlab.freedesktop.org/NetworkManager/NetworkManager/blob/db80d5f62a1edf39c5970887ef7b9ec62dd4163f/src/nm-dbus-manager.c#L1274
         if dbus_interface.legacy_prop_changed_func is not None:
             dbus_interface.legacy_prop_changed_func(self, prop)
 

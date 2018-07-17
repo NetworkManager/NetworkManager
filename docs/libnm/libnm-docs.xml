@@ -169,7 +169,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
           In general, the C API documentation applies to the use GObject introspection
           from other languages, with the calling convention respecting the language's
           customs. Consult the source tree for
-          <ulink url="https://cgit.freedesktop.org/NetworkManager/NetworkManager/tree/examples">some examples</ulink>.
+          <ulink url="https://gitlab.freedesktop.org/NetworkManager/NetworkManager/tree/master/examples">some examples</ulink>.
         </para>
       </simplesect>
     </section>
