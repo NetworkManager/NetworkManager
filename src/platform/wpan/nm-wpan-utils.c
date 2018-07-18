@@ -23,13 +23,18 @@
 
 #include "platform/linux/nl802154.h"
 #include "platform/nm-netlink.h"
+#include "platform/nm-platform-utils.h"
 
 #define _NMLOG_PREFIX_NAME "wpan-nl802154"
 #define _NMLOG(level, domain, ...) \
 	G_STMT_START { \
-		nm_log ((level), (domain), NULL, NULL, \
-		        "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-		        _NMLOG_PREFIX_NAME \
+		char _ifname_buf[IFNAMSIZ]; \
+		const char *_ifname = self ? nmp_utils_if_indextoname (self->ifindex, _ifname_buf) : NULL; \
+		\
+		nm_log ((level), (domain), _ifname ?: NULL, NULL, \
+		        "%s%s%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+		        _NMLOG_PREFIX_NAME, \
+		        NM_PRINT_FMT_QUOTED (_ifname, " (", _ifname, ")", "") \
 		        _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
 	} G_STMT_END
 
@@ -95,10 +100,10 @@ nl802154_alloc_msg (NMWpanUtils *self, guint32 cmd, guint32 flags)
 }
 
 static int
-_nl802154_send_and_recv (struct nl_sock *nl_sock,
-                         struct nl_msg *msg,
-                         int (*valid_handler) (struct nl_msg *, void *),
-                         void *valid_data)
+nl802154_send_and_recv (NMWpanUtils *self,
+                        struct nl_msg *msg,
+                        int (*valid_handler) (struct nl_msg *, void *),
+                        void *valid_data)
 {
 	int err;
 	int done = 0;
@@ -115,7 +120,7 @@ _nl802154_send_and_recv (struct nl_sock *nl_sock,
 
 	g_return_val_if_fail (msg != NULL, -ENOMEM);
 
-	err = nl_send_auto (nl_sock, msg);
+	err = nl_send_auto (self->nl_sock, msg);
 	if (err < 0)
 		return err;
 
@@ -123,7 +128,7 @@ _nl802154_send_and_recv (struct nl_sock *nl_sock,
 	 * done will be 1, on error it will be < 0.
 	 */
 	while (!done) {
-		err = nl_recvmsgs (nl_sock, &cb);
+		err = nl_recvmsgs (self->nl_sock, &cb);
 		if (err < 0 && err != -EAGAIN) {
 			_LOGW (LOGD_PLATFORM, "nl_recvmsgs() error: (%d) %s",
 			       err, nl_geterror (err));
@@ -134,16 +139,6 @@ _nl802154_send_and_recv (struct nl_sock *nl_sock,
 	if (err >= 0 && done < 0)
 		err = done;
 	return err;
-}
-
-static int
-nl802154_send_and_recv (NMWpanUtils *self,
-                        struct nl_msg *msg,
-                        int (*valid_handler) (struct nl_msg *, void *),
-                        void *valid_data)
-{
-	return _nl802154_send_and_recv (self->nl_sock, msg,
-	                                valid_handler, valid_data);
 }
 
 struct nl802154_interface {
@@ -264,23 +259,22 @@ NMWpanUtils *
 nm_wpan_utils_new (int ifindex, struct nl_sock *genl, gboolean check_scan)
 {
 	NMWpanUtils *self;
-	int id;
 
 	g_return_val_if_fail (ifindex > 0, NULL);
 
 	if (!genl)
 		return NULL;
 
-	id = genl_ctrl_resolve (genl, "nl802154");
-	if (id < 0) {
-		_LOGD (LOGD_PLATFORM, "genl_ctrl_resolve: failed to resolve \"nl802154\"");
-		return NULL;
-	}
-
 	self = g_object_new (NM_TYPE_WPAN_UTILS, NULL);
 	self->ifindex = ifindex;
 	self->nl_sock = genl;
-	self->id = id;
+	self->id = genl_ctrl_resolve (genl, "nl802154");
+
+	if (self->id < 0) {
+		_LOGD (LOGD_PLATFORM, "genl_ctrl_resolve: failed to resolve \"nl802154\"");
+		g_object_unref (self);
+		return NULL;
+	}
 
 	return self;
 }
