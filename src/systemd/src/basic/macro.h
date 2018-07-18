@@ -419,7 +419,7 @@ static inline unsigned long ALIGN_POWER2(unsigned long u) {
  * Don't break on glibc < 2.16 that doesn't define __STDC_NO_THREADS__
  * see http://gcc.gnu.org/bugzilla/show_bug.cgi?id=53769
  */
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !(defined(__STDC_NO_THREADS__) || (defined(__GNU_LIBRARY__) && __GLIBC__ == 2 && __GLIBC_MINOR__ < 16))
+#if __STDC_VERSION__ >= 201112L && !(defined(__STDC_NO_THREADS__) || (defined(__GNU_LIBRARY__) && __GLIBC__ == 2 && __GLIBC_MINOR__ < 16))
 #define thread_local _Thread_local
 #else
 #define thread_local __thread

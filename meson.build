@@ -54,11 +54,6 @@ nm_pkgstatedir = join_paths(nm_localstatedir, nm_name)
 nm_vpndir = join_paths(nm_libdir, nm_name)
 nm_plugindir = join_paths(nm_libdir, nm_name, dist_version)
 
-nm_build_cflags = [
-  '-DNM_BUILD_SRCDIR="@0@"'.format(meson.source_root()),
-  '-DNM_BUILD_BUILDDIR="@0@"'.format(meson.build_root()),
-]
-
 libnm_name = 'libnm'
 
 current = 1
@@ -872,6 +867,44 @@ configure_file(
   input: config + '.meson',
   output: config,
   configuration: config_h
+)
+
+config_extra_h = configuration_data()
+
+config_extra_h.set_quoted('BINDIR',            nm_bindir)
+config_extra_h.set_quoted('DATADIR',           nm_datadir)
+if enable_dhclient
+    config_extra_h.set_quoted('DHCLIENT_PATH',     dhclient.path())
+endif
+if enable_dhcpcanon
+    config_extra_h.set_quoted('DHCPCANON_PATH',    dhcpcanon.path())
+endif
+if enable_dhcpcd
+    config_extra_h.set_quoted('DHCPCD_PATH',       dhcpcd.path())
+endif
+config_extra_h.set_quoted('LIBEXECDIR',        nm_libexecdir)
+config_extra_h.set_quoted('LOCALSTATEDIR',     nm_localstatedir)
+config_extra_h.set_quoted('NMCONFDIR',         nm_pkgconfdir)
+config_extra_h.set_quoted('NMLIBDIR',          nm_pkglibdir)
+config_extra_h.set_quoted('NMLIBDIR',          nm_pkglibdir)
+config_extra_h.set_quoted('NMLOCALEDIR',       nm_localedir)
+config_extra_h.set_quoted('NMPLUGINDIR',       nm_plugindir)
+config_extra_h.set_quoted('NMRUNDIR',          nm_pkgrundir)
+config_extra_h.set_quoted('NMSTATEDIR',        nm_pkgstatedir)
+config_extra_h.set_quoted('NMVPNDIR',          nm_vpndir)
+config_extra_h.set_quoted('NM_BUILD_BUILDDIR', meson.build_root())
+config_extra_h.set_quoted('NM_BUILD_SRCDIR',   meson.source_root())
+config_extra_h.set_quoted('PPPD_PLUGIN_DIR',   pppd_plugin_dir)
+config_extra_h.set_quoted('PREFIX',            nm_prefix)
+config_extra_h.set_quoted('RUNDIR',            nm_pkgrundir)
+config_extra_h.set_quoted('RUNSTATEDIR',       nm_runstatedir)
+config_extra_h.set_quoted('SBINDIR',           nm_sbindir)
+config_extra_h.set_quoted('SYSCONFDIR',        nm_sysconfdir)
+
+configure_file(
+  input: 'config-extra.h.meson',
+  output: 'config-extra.h',
+  configuration: config_extra_h
 )
 
 meson.add_install_script(

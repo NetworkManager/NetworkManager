@@ -19,8 +19,7 @@ foreach test_unit: test_units
     c_args:
       common_cflags + [
         '-DNETWORKMANAGER_COMPILATION_TEST',
-      ] +
-      nm_build_cflags,
+      ],
   )
 
   test(

@@ -48,8 +48,7 @@
 #define HOSTNAME_FILE_UCASE_HOSTNAME "/etc/HOSTNAME"
 #define HOSTNAME_FILE_GENTOO         "/etc/conf.d/hostname"
 
-#define IFCFG_DIR                    SYSCONFDIR "/sysconfig/network"
-#define CONF_DHCP                    IFCFG_DIR "/dhcp"
+#define CONF_DHCP                    SYSCONFDIR "/sysconfig/network/dhcp"
 
 #if (defined(HOSTNAME_PERSIST_SUSE) + defined(HOSTNAME_PERSIST_SLACKWARE) + defined(HOSTNAME_PERSIST_GENTOO)) > 1
 #error "Can only define one of HOSTNAME_PERSIST_*"

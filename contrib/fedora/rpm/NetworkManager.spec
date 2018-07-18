@@ -135,6 +135,14 @@ Conflicts: NetworkManager-pptp < 1:0.7.0.99-1
 Conflicts: NetworkManager-openconnect < 0:0.7.0.99-1
 Conflicts: kde-plasma-networkmanagement < 1:0.9-0.49.20110527git.nm09
 
+BuildRequires: gcc
+BuildRequires: libtool
+BuildRequires: pkgconfig
+BuildRequires: automake
+BuildRequires: autoconf
+BuildRequires: intltool
+BuildRequires: gettext-devel
+
 BuildRequires: dbus-devel >= %{dbus_version}
 BuildRequires: dbus-glib-devel >= %{dbus_glib_version}
 %if 0%{?fedora}
@@ -142,9 +150,6 @@ BuildRequires: wireless-tools-devel >= %{wireless_tools_version}
 %endif
 BuildRequires: glib2-devel >= 2.40.0
 BuildRequires: gobject-introspection-devel >= 0.10.3
-BuildRequires: gettext-devel
-BuildRequires: pkgconfig
-BuildRequires: automake autoconf intltool libtool
 %if %{with ppp}
 BuildRequires: ppp-devel >= 2.4.5
 %endif

@@ -8,13 +8,10 @@ deps = [
   nm_dep
 ]
 
-cflags = '-DSYSCONFDIR="@0@"'.format(nm_sysconfdir)
-
 libnms_ifupdown_core = static_library(
   'nms-ifupdown-core',
   sources: sources,
   dependencies: deps,
-  c_args: cflags
 )
 
 sources = files(
@@ -26,7 +23,6 @@ libnm_settings_plugin_ifupdown = shared_module(
   'nm-settings-plugin-ifupdown',
   sources: sources,
   dependencies: deps,
-  c_args: cflags,
   link_with: libnms_ifupdown_core,
   link_args: ldflags_linker_script_settings,
   link_depends: linker_script_settings,

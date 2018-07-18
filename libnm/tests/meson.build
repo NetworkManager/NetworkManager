@@ -8,7 +8,7 @@ test_units = [
 cflags = [
   '-DNETWORKMANAGER_COMPILATION_TEST',
   '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM',
-] + nm_build_cflags
+]
 
 foreach test_unit: test_units
   exe = executable(
