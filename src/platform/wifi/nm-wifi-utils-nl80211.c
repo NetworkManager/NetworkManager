@@ -40,9 +40,13 @@
 #define _NMLOG_PREFIX_NAME      "wifi-nl80211"
 #define _NMLOG(level, domain, ...) \
 	G_STMT_START { \
-		nm_log ((level), (domain), NULL, NULL, \
-		        "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-		        _NMLOG_PREFIX_NAME \
+		char _ifname_buf[IFNAMSIZ]; \
+		const char *_ifname = nl80211 ? nmp_utils_if_indextoname (nl80211->parent.ifindex, _ifname_buf) : NULL; \
+		\
+		nm_log ((level), (domain), _ifname ?: NULL, NULL, \
+		        "%s%s%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+		        _NMLOG_PREFIX_NAME, \
+                        NM_PRINT_FMT_QUOTED (_ifname, " (", _ifname, ")", "") \
 		        _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
 	} G_STMT_END
 
@@ -109,10 +113,10 @@ nl80211_alloc_msg (NMWifiUtilsNl80211 *nl80211, guint32 cmd, guint32 flags)
 }
 
 static int
-_nl80211_send_and_recv (struct nl_sock *nl_sock,
-                        struct nl_msg *msg,
-                        int (*valid_handler) (struct nl_msg *, void *),
-                        void *valid_data)
+nl80211_send_and_recv (NMWifiUtilsNl80211 *nl80211,
+                       struct nl_msg *msg,
+                       int (*valid_handler) (struct nl_msg *, void *),
+                       void *valid_data)
 {
 	int err;
 	int done = 0;
@@ -129,7 +133,7 @@ _nl80211_send_and_recv (struct nl_sock *nl_sock,
 
 	g_return_val_if_fail (msg != NULL, -ENOMEM);
 
-	err = nl_send_auto (nl_sock, msg);
+	err = nl_send_auto (nl80211->nl_sock, msg);
 	if (err < 0)
 		return err;
 
@@ -137,7 +141,7 @@ _nl80211_send_and_recv (struct nl_sock *nl_sock,
 	 * done will be 1, on error it will be < 0.
 	 */
 	while (!done) {
-		err = nl_recvmsgs (nl_sock, &cb);
+		err = nl_recvmsgs (nl80211->nl_sock, &cb);
 		if (err < 0 && err != -EAGAIN) {
 			/* Kernel scan list can change while we are dumping it, as new scan
 			 * results from H/W can arrive. BSS info is assured to be consistent
@@ -157,16 +161,6 @@ _nl80211_send_and_recv (struct nl_sock *nl_sock,
 	if (err >= 0 && done < 0)
 		err = done;
 	return err;
-}
-
-static int
-nl80211_send_and_recv (NMWifiUtilsNl80211 *nl80211,
-                       struct nl_msg *msg,
-                       int (*valid_handler) (struct nl_msg *, void *),
-                       void *valid_data)
-{
-	return _nl80211_send_and_recv (nl80211->nl_sock, msg,
-	                               valid_handler, valid_data);
 }
 
 static void
@@ -698,6 +692,7 @@ nla_put_failure:
 }
 
 struct nl80211_device_info {
+	NMWifiUtilsNl80211 *nl80211;
 	int phy;
 	guint32 *freqs;
 	int num_freqs;
@@ -723,6 +718,7 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
 	struct genlmsghdr *gnlh = nlmsg_data (nlmsg_hdr (msg));
 	struct nl80211_device_info *info = arg;
+	NMWifiUtilsNl80211 *nl80211 = info->nl80211;
 	struct nlattr *tb_band[NL80211_BAND_ATTR_MAX + 1];
 	struct nlattr *tb_freq[NL80211_FREQUENCY_ATTR_MAX + 1];
 	struct nlattr *nl_band;
@@ -931,17 +927,10 @@ nm_wifi_utils_nl80211_new (int ifindex, struct nl_sock *genl)
 {
 	gs_unref_object NMWifiUtilsNl80211 *nl80211 = NULL;
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
-	struct nl80211_device_info device_info = {};
-	char ifname[IFNAMSIZ];
+	struct nl80211_device_info device_info = { };
 
 	if (!genl)
 		return NULL;
-
-	if (!nmp_utils_if_indextoname (ifindex, ifname)) {
-		_LOGW (LOGD_PLATFORM | LOGD_WIFI,
-		       "can't determine interface name for ifindex %d", ifindex);
-		nm_sprintf_buf (ifname, "if %d", ifindex);
-	}
 
 	nl80211 = g_object_new (NM_TYPE_WIFI_UTILS_NL80211, NULL);
 
@@ -958,46 +947,35 @@ nm_wifi_utils_nl80211_new (int ifindex, struct nl_sock *genl)
 
 	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_GET_WIPHY, 0);
 
+	device_info.nl80211 = nl80211;
 	if (nl80211_send_and_recv (nl80211, msg, nl80211_wiphy_info_handler,
 	                           &device_info) < 0) {
-		_LOGD (LOGD_PLATFORM | LOGD_WIFI,
-		       "(%s): NL80211_CMD_GET_WIPHY request failed",
-		       ifname);
+		_LOGD (LOGD_PLATFORM | LOGD_WIFI, "NL80211_CMD_GET_WIPHY request failed");
 		return NULL;
 	}
 
 	if (!device_info.success) {
-		_LOGD (LOGD_PLATFORM | LOGD_WIFI,
-		       "(%s): NL80211_CMD_GET_WIPHY request indicated failure",
-		       ifname);
+		_LOGD (LOGD_PLATFORM | LOGD_WIFI, "NL80211_CMD_GET_WIPHY request indicated failure");
 		return NULL;
 	}
 
 	if (!device_info.supported) {
-		_LOGD (LOGD_PLATFORM | LOGD_WIFI,
-		       "(%s): driver does not fully support nl80211, falling back to WEXT",
-		       ifname);
+		_LOGD (LOGD_PLATFORM | LOGD_WIFI, "driver does not fully support nl80211, falling back to WEXT");
 		return NULL;
 	}
 
 	if (!device_info.can_scan_ssid) {
-		_LOGE (LOGD_PLATFORM | LOGD_WIFI,
-		       "(%s): driver does not support SSID scans",
-		       ifname);
+		_LOGE (LOGD_PLATFORM | LOGD_WIFI, "driver does not support SSID scans");
 		return NULL;
 	}
 
 	if (device_info.num_freqs == 0 || device_info.freqs == NULL) {
-		nm_log_err (LOGD_PLATFORM | LOGD_WIFI,
-		            "(%s): driver reports no supported frequencies",
-		            ifname);
+		nm_log_err (LOGD_PLATFORM | LOGD_WIFI, "driver reports no supported frequencies");
 		return NULL;
 	}
 
 	if (device_info.caps == 0) {
-		_LOGE (LOGD_PLATFORM | LOGD_WIFI,
-		       "(%s): driver doesn't report support of any encryption",
-		       ifname);
+		_LOGE (LOGD_PLATFORM | LOGD_WIFI, "driver doesn't report support of any encryption");
 		return NULL;
 	}
 
@@ -1007,8 +985,6 @@ nm_wifi_utils_nl80211_new (int ifindex, struct nl_sock *genl)
 	nl80211->parent.caps = device_info.caps;
 	nl80211->can_wowlan = device_info.can_wowlan;
 
-	_LOGI (LOGD_PLATFORM | LOGD_WIFI,
-	       "(%s): using nl80211 for WiFi device control",
-	       ifname);
+	_LOGI (LOGD_PLATFORM | LOGD_WIFI, "using nl80211 for WiFi device control");
 	return (NMWifiUtils *) g_steal_pointer (&nl80211);
 }
