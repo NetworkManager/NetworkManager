@@ -419,12 +419,38 @@ class AsyncProcess():
 
 ###############################################################################
 
-file_list = []
-
 class NmTestBase(unittest.TestCase):
     pass
 
 class TestNmcli(NmTestBase):
+
+    @staticmethod
+    def _read_expected(filename):
+        results_expect = []
+        content_expect = Util.file_read(filename)
+        try:
+            base_idx = 0
+            size_prefix = 'size: '.encode('utf8')
+            while True:
+                if not content_expect[base_idx:base_idx + 10].startswith(size_prefix):
+                    raise Exception("Unexpected token")
+                j = base_idx + len(size_prefix)
+                i = j
+                if Util.python_has_version(3, 0):
+                    eol = ord('\n')
+                else:
+                    eol = '\n'
+                while content_expect[i] != eol:
+                    i += 1
+                i = i + 1 + int(content_expect[j:i])
+                results_expect.append(content_expect[base_idx:i])
+                if len(content_expect) == i:
+                    break
+                base_idx = i
+        except Exception as e:
+            results_expect = None
+
+        return content_expect, results_expect
 
     def call_nmcli_l(self,
                      args,
@@ -619,56 +645,29 @@ class TestNmcli(NmTestBase):
                 if expected_returncode is None:
                    self.assertEqual(returncode, -5)
 
-            dirname = PathConfiguration.srcdir() + '/test-client.check-on-disk'
-            basename = test_name + '.expected'
-            filename = os.path.abspath(dirname + '/' + basename)
+            if check_on_disk:
+                cmd = '$NMCLI %s' % (' '.join([Util.quote(a) for a in args[1:]])),
 
-            if not check_on_disk:
-                if os.path.exists(filename):
-                    self.fail("The file '%s' exists, although we expect it not to." % (filename))
-                return
-
-            file_list.append(basename)
-
-            content_old = Util.file_read(filename)
-
-            content_new = ('location: %s\n' % (calling_location)).encode('utf8') + \
-                          ('cmd: $NMCLI %s\n' % (' '.join([Util.quote(a) for a in args[1:]]))).encode('utf8') + \
+                content = ('location: %s\n' % (calling_location)).encode('utf8') + \
+                          ('cmd: %s\n' % (cmd)).encode('utf8') + \
                           ('lang: %s\n' % (lang)).encode('utf8') + \
-                          ('returncode: %d\n' % (returncode)).encode('utf8') + \
-                          ('stdout: %d bytes\n>>>\n' % (len(stdout))).encode('utf8') + \
-                          stdout + \
-                          ('\n<<<\nstderr: %d bytes\n>>>\n' % (len(stderr))).encode('utf8') + \
-                          stderr + \
-                          '\n<<<\n'.encode('utf8')
+                          ('returncode: %d\n' % (returncode)).encode('utf8')
+                if len(stdout) > 0:
+                    content += ('stdout: %d bytes\n>>>\n' % (len(stdout))).encode('utf8') + \
+                               stdout + \
+                               '\n<<<\n'.encode('utf8')
+                if len(stderr) > 0:
+                    content += ('stderr: %d bytes\n>>>\n' % (len(stderr))).encode('utf8') + \
+                               stderr + \
+                               '\n<<<\n'.encode('utf8')
+                content = ('size: %s\n' % (len(content))).encode('utf8') + \
+                          content
 
-            w = conf.get(ENV_NM_TEST_REGENERATE)
-
-            if content_old is not None:
-                if content_old == content_new:
-                    return
-
-                if not w:
-                    if ignore_l10n_diff:
-                        self._skip_test_for_l10n_diff.append(test_name)
-                        return
-                    print("\n\n\nThe file '%s' does not have the expected content:" % (filename))
-                    print("ACTUAL OUTPUT:\n[[%s]]\n" % (content_new))
-                    print("EXPECT OUTPUT:\n[[%s]]\n" % (content_old))
-                    print("Let the test write the file by rerunning with NM_TEST_REGENERATE=1")
-                    print("See howto in %s for details.\n" % (PathConfiguration.canonical_script_filename()))
-                    raise AssertionError("Unexpected output of command, expected %s. Rerun test with NM_TEST_REGENERATE=1 to regenerate files" % (filename))
-            else:
-                if not w:
-                    self.fail("The file '%s' does not exist. Let the test write the file by rerunning with NM_TEST_REGENERATE=1" % (filename))
-
-            try:
-                if not os.path.exists(dirname):
-                    os.makedirs(dirname)
-                with open(filename, 'wb') as content_file:
-                    content_file.write(content_new)
-            except Exception as e:
-                self.fail("Failure to write '%s': %s" % (filename, e))
+                self._results.append({
+                    'test_name'        : test_name,
+                    'ignore_l10n_diff' : ignore_l10n_diff,
+                    'content'          : content,
+                })
 
         async_job = AsyncProcess(args = args,
                                  env = env,
@@ -691,31 +690,97 @@ class TestNmcli(NmTestBase):
             self.async_start()
             self._async_jobs.pop(0).wait()
 
+    def _nm_test_pre(self):
+        self._calling_num = {}
+        self._skip_test_for_l10n_diff = []
+        self._async_jobs = []
+        self._results = []
+
+        self.srv = NMStubServer(self._testMethodName)
+
+    def _nm_test_post(self):
+
+        self.async_wait()
+
+        self.srv.shutdown()
+        self.srv = None
+
+        self._calling_num = None
+
+        results = self._results
+        self._results = None
+
+        skip_test_for_l10n_diff = self._skip_test_for_l10n_diff
+        self._skip_test_for_l10n_diff = None
+
+        test_name = self._testMethodName
+        dirname = PathConfiguration.srcdir() + '/test-client.check-on-disk'
+        basename = test_name + '.expected'
+        filename = os.path.abspath(dirname + '/' + basename)
+
+        regenerate = conf.get(ENV_NM_TEST_REGENERATE)
+
+        content_expect, results_expect = self._read_expected(filename)
+
+        if results_expect is None:
+            if not regenerate:
+                self.fail("Failed to parse expected file '%s'. Let the test write the file by rerunning with NM_TEST_REGENERATE=1" % (filename))
+        else:
+            for i in range(0, min(len(results_expect), len(results))):
+                n = results[i]
+                if results_expect[i] == n['content']:
+                    continue
+                if regenerate:
+                    continue
+                if n['ignore_l10n_diff']:
+                    skip_test_for_l10n_diff.append(n['test_name'])
+                    continue
+                print("\n\n\nThe file '%s' does not have the expected content:" % (filename))
+                print("ACTUAL OUTPUT:\n[[%s]]\n" % (results_expect[i]))
+                print("EXPECT OUTPUT:\n[[%s]]\n" % (n['content']))
+                print("Let the test write the file by rerunning with NM_TEST_REGENERATE=1")
+                print("See howto in %s for details.\n" % (PathConfiguration.canonical_script_filename()))
+                raise AssertionError("Unexpected output of command, expected %s. Rerun test with NM_TEST_REGENERATE=1 to regenerate files" % (filename))
+            if len(results_expect) != len(results):
+                if not regenerate:
+                    print("\n\n\nThe number of tests in %s does not match the expected content (%s vs %s):" % (filename,  len(results_expect), len(results)))
+                    if len(results_expect) < len(results):
+                        print("ACTUAL OUTPUT:\n[[%s]]\n" % (results[len(results_expect)]['content']))
+                    else:
+                        print("EXPECT OUTPUT:\n[[%s]]\n" % (results_expect[len(results)]))
+                    print("Let the test write the file by rerunning with NM_TEST_REGENERATE=1")
+                    print("See howto in %s for details.\n" % (PathConfiguration.canonical_script_filename()))
+                    raise AssertionError("Unexpected output of command, expected %s. Rerun test with NM_TEST_REGENERATE=1 to regenerate files" % (filename))
+
+        if regenerate:
+            content_new = ''.join([r['content'] for r in results])
+            if content_new != content_expect:
+                try:
+                    if not os.path.exists(dirname):
+                        os.makedirs(dirname)
+                    with open(filename, 'wb') as content_file:
+                        content_file.write(content_new)
+                except Exception as e:
+                    self.fail("Failure to write '%s': %s" % (filename, e))
+
+        if skip_test_for_l10n_diff:
+            # nmcli loads translations from the installation path. This failure commonly
+            # happens because you did not install the binary in the --prefix, before
+            # running the test. Hence, translations are not available or differ.
+            self.skipTest("Skipped asserting for localized tests %s. Set NM_TEST_CLIENT_CHECK_L10N=1 to force fail." % (','.join(skip_test_for_l10n_diff)))
+
+    def nm_test(func):
+        def f(self):
+            self._nm_test_pre()
+            func(self)
+            self._nm_test_post()
+        return f
+
     def setUp(self):
         if not dbus_session_inited:
             self.skipTest("Own D-Bus session for testing is not initialized. Do you have dbus-run-session available?")
         if NM is None:
             self.skipTest("gi.NM is not available. Did you build with introspection?")
-        self.srv = NMStubServer(self._testMethodName)
-        self._calling_num = {}
-        self._skip_test_for_l10n_diff = []
-        self._async_jobs = []
-
-    def tearDown(self):
-        self.async_wait()
-        self.srv.shutdown()
-        self.srv = None
-        self._calling_num = None
-        if self._skip_test_for_l10n_diff:
-            # nmcli loads translations from the installation path. This failure commonly
-            # happens because you did not install the binary in the --prefix, before
-            # running the test. Hence, translations are not available or differ.
-            msg = "Skipped asserting for localized tests %s. Set NM_TEST_CLIENT_CHECK_L10N=1 to force fail." % (','.join(self._skip_test_for_l10n_diff))
-            if Util.python_has_version(3):
-                # python2 does not suppot skipping the test during tearDown()
-                self.skipTest(msg)
-            print(msg + "\n")
-        self._skip_test_for_l10n_diff = None
 
     def init_001(self):
         self.srv.op_AddObj('WiredDevice',
@@ -750,6 +815,7 @@ class TestNmcli(NmTestBase):
                                     },
                                 })
 
+    @nm_test
     def test_001(self):
 
         self.call_nmcli_l([])
@@ -763,6 +829,7 @@ class TestNmcli(NmTestBase):
         for mode in Util.iter_nmcli_output_modes():
             self.call_nmcli_l(mode + ['general', 'permissions'])
 
+    @nm_test
     def test_002(self):
         self.init_001()
 
@@ -785,6 +852,7 @@ class TestNmcli(NmTestBase):
 
         self.call_nmcli_l(['c', 's', 'con-1'])
 
+    @nm_test
     def test_003(self):
         self.init_001()
 
@@ -886,6 +954,7 @@ class TestNmcli(NmTestBase):
                 self.call_nmcli_l(mode + ['-f', 'all', 'dev', 'show', 'eth0'],
                                   replace_stdout = replace_stdout)
 
+    @nm_test
     def test_004(self):
         self.init_001()
 
@@ -1030,19 +1099,6 @@ def main():
             assert False, ('Failure to re-exec to start script with dbus-launch: %s' % (m))
 
     r = unittest.main(exit = False)
-
-    if conf.get(ENV_NM_TEST_REGENERATE):
-        make_filename = PathConfiguration.srcdir() + '/test-client.check-on-disk/Makefile.am'
-        s_new = '# generated with `NM_TEST_REGENERATE=1 make check`\n' + \
-                '# See howto in "' + PathConfiguration.canonical_script_filename() + '"\n' + \
-                '\n' + \
-                'clients_tests_expected_files = \\\n' + \
-                ''.join([('\tclients/tests/test-client.check-on-disk/%s \\\n' % f) for f in sorted(file_list)]) + \
-                '\t$(NULL)\n'
-        s_new = s_new.encode('utf-8')
-        if s_new != Util.file_read(make_filename):
-            with open(make_filename, 'wb') as f:
-                f.write(s_new)
 
     sys.exit(not r.result.wasSuccessful())
 
