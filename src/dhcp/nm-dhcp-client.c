@@ -51,7 +51,7 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
+NM_GOBJECT_PROPERTIES_DEFINE (NMDhcpClient,
 	PROP_ADDR_FAMILY,
 	PROP_FLAGS,
 	PROP_HWADDR,
@@ -163,12 +163,34 @@ nm_dhcp_client_get_route_table (NMDhcpClient *self)
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->route_table;
 }
 
+void
+nm_dhcp_client_set_route_table (NMDhcpClient *self, guint32 route_table)
+{
+	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
+
+	if (route_table != priv->route_table) {
+		priv->route_table = route_table;
+		_notify (self, PROP_ROUTE_TABLE);
+	}
+}
+
 guint32
 nm_dhcp_client_get_route_metric (NMDhcpClient *self)
 {
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), G_MAXUINT32);
 
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->route_metric;
+}
+
+void
+nm_dhcp_client_set_route_metric (NMDhcpClient *self, guint32 route_metric)
+{
+	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
+
+	if (route_metric != priv->route_metric) {
+		priv->route_metric = route_metric;
+		_notify (self, PROP_ROUTE_METRIC);
+	}
 }
 
 guint32
@@ -834,6 +856,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_ROUTE_METRIC:
 		g_value_set_uint (value, priv->route_metric);
 		break;
+	case PROP_ROUTE_TABLE:
+		g_value_set_uint (value, priv->route_table);
+		break;
 	case PROP_TIMEOUT:
 		g_value_set_uint (value, priv->timeout);
 		break;
@@ -889,11 +914,9 @@ set_property (GObject *object, guint prop_id,
 		priv->uuid = g_value_dup_string (value);
 		break;
 	case PROP_ROUTE_TABLE:
-		/* construct-only */
 		priv->route_table = g_value_get_uint (value);
 		break;
 	case PROP_ROUTE_METRIC:
-		/* construct-only */
 		priv->route_metric = g_value_get_uint (value);
 		break;
 	case PROP_TIMEOUT:
@@ -1002,13 +1025,13 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 	obj_properties[PROP_ROUTE_TABLE] =
 	    g_param_spec_uint (NM_DHCP_CLIENT_ROUTE_TABLE, "", "",
 	                       0, G_MAXUINT32, RT_TABLE_MAIN,
-	                       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
+	                       G_PARAM_READWRITE |
 	                       G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_ROUTE_METRIC] =
 	    g_param_spec_uint (NM_DHCP_CLIENT_ROUTE_METRIC, "", "",
 	                       0, G_MAXUINT32, 0,
-	                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                       G_PARAM_READWRITE |
 	                       G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_TIMEOUT] =
