@@ -223,6 +223,7 @@ const NMPlatformIP4Route *_nmtst_ip4_config_get_route (const NMIP4Config *self, 
 const NMPlatformIP4Route *nm_ip4_config_get_direct_route_for_host (const NMIP4Config *self,
                                                                    in_addr_t host,
                                                                    guint32 route_table);
+void nm_ip4_config_update_routes_metric (NMIP4Config *self, gint64 metric);
 
 void nm_ip4_config_reset_nameservers (NMIP4Config *self);
 void nm_ip4_config_add_nameserver (NMIP4Config *self, guint32 nameserver);
