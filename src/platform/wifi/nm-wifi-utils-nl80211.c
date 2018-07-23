@@ -985,6 +985,6 @@ nm_wifi_utils_nl80211_new (int ifindex, struct nl_sock *genl)
 	nl80211->parent.caps = device_info.caps;
 	nl80211->can_wowlan = device_info.can_wowlan;
 
-	_LOGI (LOGD_PLATFORM | LOGD_WIFI, "using nl80211 for WiFi device control");
+	_LOGD (LOGD_PLATFORM | LOGD_WIFI, "using nl80211 for WiFi device control");
 	return (NMWifiUtils *) g_steal_pointer (&nl80211);
 }
