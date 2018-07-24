@@ -85,23 +85,6 @@ get_generic_capabilities (NMDevice *device)
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device, NMConnection *connection)
-{
-	NMSettingTeam *s_team;
-
-	if (!NM_DEVICE_CLASS (nm_device_team_parent_class)->check_connection_compatible (device, connection))
-		return FALSE;
-
-	s_team = nm_connection_get_setting_team (connection);
-	if (!s_team || !nm_connection_is_type (connection, NM_SETTING_TEAM_SETTING_NAME))
-		return FALSE;
-
-	/* FIXME: match team properties like mode, etc? */
-
-	return TRUE;
-}
-
-static gboolean
 complete_connection (NMDevice *device,
                      NMConnection *connection,
                      const char *specific_object,
@@ -911,9 +894,7 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
-	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
-
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_TEAM_SETTING_NAME, NM_LINK_TYPE_TEAM)
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
@@ -921,19 +902,22 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_team);
 
-	parent_class->is_master = TRUE;
-	parent_class->create_and_realize = create_and_realize;
-	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->check_connection_compatible = check_connection_compatible;
-	parent_class->complete_connection = complete_connection;
-	parent_class->update_connection = update_connection;
-	parent_class->master_update_slave_connection = master_update_slave_connection;
+	device_class->connection_type_supported = NM_SETTING_TEAM_SETTING_NAME;
+	device_class->connection_type_check_compatible = NM_SETTING_TEAM_SETTING_NAME;
+	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_TEAM);
 
-	parent_class->act_stage1_prepare = act_stage1_prepare;
-	parent_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
-	parent_class->deactivate = deactivate;
-	parent_class->enslave_slave = enslave_slave;
-	parent_class->release_slave = release_slave;
+	device_class->is_master = TRUE;
+	device_class->create_and_realize = create_and_realize;
+	device_class->get_generic_capabilities = get_generic_capabilities;
+	device_class->complete_connection = complete_connection;
+	device_class->update_connection = update_connection;
+	device_class->master_update_slave_connection = master_update_slave_connection;
+
+	device_class->act_stage1_prepare = act_stage1_prepare;
+	device_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
+	device_class->deactivate = deactivate;
+	device_class->enslave_slave = enslave_slave;
+	device_class->release_slave = release_slave;
 
 	obj_properties[PROP_CONFIG] =
 	    g_param_spec_string (NM_DEVICE_TEAM_CONFIG, "", "",

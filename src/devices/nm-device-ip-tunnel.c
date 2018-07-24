@@ -458,7 +458,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 			/* Don't change a parent specified by UUID if it's still valid */
 			parent_connection = (NMConnection *) nm_settings_get_connection_by_uuid (nm_device_get_settings (device),
 			                                                                         setting_parent);
-			if (parent_connection && nm_device_check_connection_compatible (parent, parent_connection))
+			if (parent_connection && nm_device_check_connection_compatible (parent, parent_connection, NULL))
 				new_parent = NULL;
 		}
 		if (new_parent)
@@ -524,54 +524,79 @@ update_connection (NMDevice *device, NMConnection *connection)
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device, NMConnection *connection)
+check_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	NMDeviceIPTunnel *self = NM_DEVICE_IP_TUNNEL (device);
 	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE (self);
 	NMSettingIPTunnel *s_ip_tunnel;
 	const char *parent;
 
-	if (!NM_DEVICE_CLASS (nm_device_ip_tunnel_parent_class)->check_connection_compatible (device, connection))
+	if (!NM_DEVICE_CLASS (nm_device_ip_tunnel_parent_class)->check_connection_compatible (device, connection, error))
 		return FALSE;
 
 	s_ip_tunnel = nm_connection_get_setting_ip_tunnel (connection);
-	if (!s_ip_tunnel)
-		return FALSE;
 
-	if (nm_setting_ip_tunnel_get_mode (s_ip_tunnel) != priv->mode)
+	if (nm_setting_ip_tunnel_get_mode (s_ip_tunnel) != priv->mode) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "incompatible IP tunnel mode");
 		return FALSE;
+	}
 
 	if (nm_device_is_real (device)) {
 		/* Check parent interface; could be an interface name or a UUID */
 		parent = nm_setting_ip_tunnel_get_parent (s_ip_tunnel);
-		if (parent && !nm_device_match_parent (device, parent))
+		if (parent && !nm_device_match_parent (device, parent)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "IP tunnel parent mismatches");
 			return FALSE;
+		}
 
 		if (!address_equal_pp (priv->addr_family,
 		                       nm_setting_ip_tunnel_get_local (s_ip_tunnel),
-		                       priv->local))
+		                       priv->local)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "local IP tunnel address mismatches");
 			return FALSE;
+		}
 
 		if (!address_equal_pp (priv->addr_family,
 		                       nm_setting_ip_tunnel_get_remote (s_ip_tunnel),
-		                       priv->remote))
+		                       priv->remote)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "remote IP tunnel address mismatches");
 			return FALSE;
+		}
 
-		if (nm_setting_ip_tunnel_get_ttl (s_ip_tunnel) != priv->ttl)
+		if (nm_setting_ip_tunnel_get_ttl (s_ip_tunnel) != priv->ttl) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "TTL of IP tunnel mismatches");
 			return FALSE;
+		}
 
-		if (nm_setting_ip_tunnel_get_tos (s_ip_tunnel) != priv->tos)
+		if (nm_setting_ip_tunnel_get_tos (s_ip_tunnel) != priv->tos) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "TOS of IP tunnel mismatches");
 			return FALSE;
+		}
 
 		if (priv->addr_family == AF_INET) {
-			if (nm_setting_ip_tunnel_get_path_mtu_discovery (s_ip_tunnel) != priv->path_mtu_discovery)
+			if (nm_setting_ip_tunnel_get_path_mtu_discovery (s_ip_tunnel) != priv->path_mtu_discovery) {
+				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+				                            "MTU discovery setting of IP tunnel mismatches");
 				return FALSE;
+			}
 		} else {
-			if (nm_setting_ip_tunnel_get_encapsulation_limit (s_ip_tunnel) != priv->encap_limit)
+			if (nm_setting_ip_tunnel_get_encapsulation_limit (s_ip_tunnel) != priv->encap_limit) {
+				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+				                            "encapsulation limit of IP tunnel mismatches");
 				return FALSE;
+			}
 
-			if (nm_setting_ip_tunnel_get_flow_label (s_ip_tunnel) != priv->flow_label)
+			if (nm_setting_ip_tunnel_get_flow_label (s_ip_tunnel) != priv->flow_label) {
+				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+				                            "flow-label of IP tunnel mismatches");
 				return FALSE;
+			}
 		}
 	}
 
@@ -1043,6 +1068,16 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_ip_tunnel);
 
+	device_class->connection_type_supported = NM_SETTING_IP_TUNNEL_SETTING_NAME;
+	device_class->connection_type_check_compatible = NM_SETTING_IP_TUNNEL_SETTING_NAME;
+	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_GRE,
+	                                                        NM_LINK_TYPE_GRETAP,
+	                                                        NM_LINK_TYPE_IP6TNL,
+	                                                        NM_LINK_TYPE_IP6GRE,
+	                                                        NM_LINK_TYPE_IP6GRETAP,
+	                                                        NM_LINK_TYPE_IPIP,
+	                                                        NM_LINK_TYPE_SIT);
+
 	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->link_changed = link_changed;
 	device_class->can_reapply_change = can_reapply_change;
@@ -1053,16 +1088,6 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 	device_class->get_generic_capabilities = get_generic_capabilities;
 	device_class->get_configured_mtu = get_configured_mtu;
 	device_class->unrealize_notify = unrealize_notify;
-
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass,
-	                               NM_SETTING_IP_TUNNEL_SETTING_NAME,
-	                               NM_LINK_TYPE_GRE,
-	                               NM_LINK_TYPE_GRETAP,
-	                               NM_LINK_TYPE_IP6TNL,
-	                               NM_LINK_TYPE_IP6GRE,
-	                               NM_LINK_TYPE_IP6GRETAP,
-	                               NM_LINK_TYPE_IPIP,
-	                               NM_LINK_TYPE_SIT);
 
 	obj_properties[PROP_MODE] =
 	     g_param_spec_uint (NM_DEVICE_IP_TUNNEL_MODE, "", "",

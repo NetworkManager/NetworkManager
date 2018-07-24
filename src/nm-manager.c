@@ -1290,7 +1290,7 @@ find_device_by_iface (NMManager *self,
 
 		if (strcmp (nm_device_get_iface (candidate), iface))
 			continue;
-		if (connection && !nm_device_check_connection_compatible (candidate, connection))
+		if (connection && !nm_device_check_connection_compatible (candidate, connection, NULL))
 			continue;
 		if (slave) {
 			if (!nm_device_is_master (candidate))
@@ -1707,7 +1707,7 @@ find_parent_device_for_connection (NMManager *self, NMConnection *connection, NM
 			return candidate;
 
 		if (   !first_compatible
-		    && nm_device_check_connection_compatible (candidate, NM_CONNECTION (parent_connection)))
+		    && nm_device_check_connection_compatible (candidate, NM_CONNECTION (parent_connection), NULL))
 			first_compatible = candidate;
 	}
 
@@ -1877,7 +1877,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 
 	/* See if there's a device that is already compatible with this connection */
 	c_list_for_each_entry (dev_candidate, &priv->devices_lst_head, devices_lst) {
-		if (nm_device_check_connection_compatible (dev_candidate, connection)) {
+		if (nm_device_check_connection_compatible (dev_candidate, connection, NULL)) {
 			if (nm_device_is_real (dev_candidate)) {
 				_LOG3D (LOGD_DEVICE, connection, "already created virtual interface name %s",
 				       iface);
@@ -1933,7 +1933,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		NMConnection *candidate = NM_CONNECTION (connections[i]);
 		NMSettingConnection *s_con;
 
-		if (!nm_device_check_connection_compatible (device, candidate))
+		if (!nm_device_check_connection_compatible (device, candidate, NULL))
 			continue;
 
 		s_con = nm_connection_get_setting_connection (candidate);
@@ -2460,7 +2460,7 @@ get_existing_connection (NMManager *self,
 	    && !active_connection_find (self, connection_checked, NULL,
 	                                NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
 	                                NULL)
-	    && nm_device_check_connection_compatible (device, NM_CONNECTION (connection_checked))) {
+	    && nm_device_check_connection_compatible (device, NM_CONNECTION (connection_checked), NULL)) {
 
 		if (connection) {
 			NMConnection *const connections[] = {
@@ -2498,7 +2498,7 @@ get_existing_connection (NMManager *self,
 				NMConnection *con = NM_CONNECTION (connections[i]);
 
 				if (   con != NM_CONNECTION (connection_checked)
-				    && nm_device_check_connection_compatible (device, con))
+				    && nm_device_check_connection_compatible (device, con, NULL))
 					connections[j++] = connections[i];
 			}
 			connections[j] = NULL;
@@ -3236,7 +3236,8 @@ static NMDevice *
 nm_manager_get_best_device_for_connection (NMManager *self,
                                            NMConnection *connection,
                                            gboolean for_user_request,
-                                           GHashTable *unavailable_devices)
+                                           GHashTable *unavailable_devices,
+                                           GError **error)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMActiveConnectionState ac_state;
@@ -3245,6 +3246,7 @@ nm_manager_get_best_device_for_connection (NMManager *self,
 	NMDevice *device;
 	NMDeviceCheckConAvailableFlags flags;
 	gs_unref_ptrarray GPtrArray *all_ac_arr = NULL;
+	gs_free_error GError *local_best = NULL;
 
 	flags = for_user_request ? NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST : NM_DEVICE_CHECK_CON_AVAILABLE_NONE;
 
@@ -3254,7 +3256,7 @@ nm_manager_get_best_device_for_connection (NMManager *self,
 		ac_device = nm_active_connection_get_device (ac);
 		if (   ac_device
 		    && (   (unavailable_devices && g_hash_table_contains (unavailable_devices, ac_device))
-		        || !nm_device_check_connection_available (ac_device, connection, flags, NULL)))
+		        || !nm_device_check_connection_available (ac_device, connection, flags, NULL, NULL)))
 			ac_device = NULL;
 
 		if (all_ac_arr) {
@@ -3271,7 +3273,7 @@ nm_manager_get_best_device_for_connection (NMManager *self,
 
 				if (   !ac_device2
 				    || (unavailable_devices && g_hash_table_contains (unavailable_devices, ac_device2))
-				    || !nm_device_check_connection_available (ac_device2, connection, flags, NULL))
+				    || !nm_device_check_connection_available (ac_device2, connection, flags, NULL, NULL))
 					continue;
 
 				ac_state2 = nm_active_connection_get_state (ac2);
@@ -3319,15 +3321,53 @@ found_better:
 
 	/* Pick the first device that's compatible with the connection. */
 	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
+		GError *local = NULL;
 
-		if (unavailable_devices && g_hash_table_contains (unavailable_devices, device))
+		if (   unavailable_devices
+		    && g_hash_table_contains (unavailable_devices, device))
 			continue;
 
-		if (nm_device_check_connection_available (device, connection, flags, NULL))
+		if (nm_device_check_connection_available (device,
+		                                          connection,
+		                                          flags,
+		                                          NULL,
+		                                          error ? &local : NULL))
 			return device;
+
+		if (error) {
+			gboolean reset_error;
+
+			if (!local_best)
+				reset_error = TRUE;
+			else if (local_best->domain != NM_UTILS_ERROR)
+				reset_error = (local->domain == NM_UTILS_ERROR);
+			else {
+				reset_error = (   local->domain == NM_UTILS_ERROR
+			                   && local_best->code < local->code);
+			}
+
+			if (reset_error) {
+				g_clear_error (&local_best);
+				g_set_error (&local_best,
+				             local->domain,
+				             local->code,
+				             "device %s not available because %s",
+				             nm_device_get_iface (device),
+				             local->message);
+			}
+			g_error_free (local);
+		}
 	}
 
-	/* No luck. :( */
+	if (error) {
+		if (local_best)
+			g_propagate_error (error, g_steal_pointer (&local_best));
+		else {
+			nm_utils_error_set_literal (error,
+			                            NM_UTILS_ERROR_UNKNOWN,
+			                            "no suitable device found");
+		}
+	}
 	return NULL;
 }
 
@@ -3650,7 +3690,11 @@ ensure_master_active_connection (NMManager *self,
 				if (!is_compatible_with_slave (NM_CONNECTION (candidate), connection))
 					continue;
 
-				if (nm_device_check_connection_available (master_device, NM_CONNECTION (candidate), NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST, NULL)) {
+				if (nm_device_check_connection_available (master_device,
+				                                          NM_CONNECTION (candidate),
+				                                          NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST,
+				                                          NULL,
+				                                          NULL)) {
 					master_ac = nm_manager_activate_connection (self,
 					                                            candidate,
 					                                            NULL,
@@ -3686,7 +3730,11 @@ ensure_master_active_connection (NMManager *self,
 				continue;
 			}
 
-			if (!nm_device_check_connection_available (candidate, NM_CONNECTION (master_connection), NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST, NULL))
+			if (!nm_device_check_connection_available (candidate,
+			                                           NM_CONNECTION (master_connection),
+			                                           NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST,
+			                                           NULL,
+			                                           NULL))
 				continue;
 
 			if (!nm_device_is_software (candidate)) {
@@ -3774,7 +3822,8 @@ find_slaves (NMManager *manager,
 			slave_device = nm_manager_get_best_device_for_connection (manager,
 			                                                          candidate,
 			                                                          FALSE,
-			                                                          devices);
+			                                                          devices,
+			                                                          NULL);
 
 			if (!slaves) {
 				/* what we allocate is quite likely much too large. Don't bother, it is only
@@ -4038,6 +4087,7 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	NMConnection *existing_connection = NULL;
 	NMActiveConnection *master_ac = NULL;
 	NMAuthSubject *subject;
+	GError *local = NULL;
 
 	g_return_val_if_fail (NM_IS_MANAGER (self), FALSE);
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (active), FALSE);
@@ -4071,10 +4121,13 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	}
 
 	/* Final connection must be available on device */
-	if (!nm_device_check_connection_available (device, applied, NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST, NULL)) {
+	if (!nm_device_check_connection_available (device, applied, NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST, NULL, &local)) {
 		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
-		             "Connection '%s' is not available on the device %s at this time.",
-		             nm_settings_connection_get_id (connection), nm_device_get_iface (device));
+		             "Connection '%s' is not available on device %s because %s",
+		             nm_settings_connection_get_id (connection),
+		             nm_device_get_iface (device),
+		             local->message);
+		g_error_free (local);
 		return FALSE;
 	}
 
@@ -4581,17 +4634,20 @@ validate_activation_request (NMManager *self,
 			return NULL;
 		}
 	} else if (!is_vpn) {
-		device = nm_manager_get_best_device_for_connection (self, connection, TRUE, NULL);
+		gs_free_error GError *local = NULL;
+
+		device = nm_manager_get_best_device_for_connection (self, connection, TRUE, NULL, &local);
 		if (!device) {
 			gs_free char *iface = NULL;
 
 			/* VPN and software-device connections don't need a device yet,
 			 * but non-virtual connections do ... */
 			if (!nm_connection_is_virtual (connection)) {
-				g_set_error_literal (error,
-				                     NM_MANAGER_ERROR,
-				                     NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-				                     "No suitable device found for this connection.");
+				g_set_error (error,
+				             NM_MANAGER_ERROR,
+				             NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+				             "No suitable device found for this connection (%s).",
+				             local->message);
 				return NULL;
 			}
 

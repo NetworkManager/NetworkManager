@@ -61,41 +61,63 @@ static gboolean
 check_connection_available (NMDevice *device,
                             NMConnection *connection,
                             NMDeviceCheckConAvailableFlags flags,
-                            const char *specific_object)
+                            const char *specific_object,
+                            GError **error)
 {
 	NMSettingBluetooth *s_bt;
 
-	if (!NM_DEVICE_CLASS (nm_device_bridge_parent_class)->check_connection_available (device, connection, flags, specific_object))
+	if (!NM_DEVICE_CLASS (nm_device_bridge_parent_class)->check_connection_available (device, connection, flags, specific_object, error))
 		return FALSE;
 
 	s_bt = _nm_connection_get_setting_bluetooth_for_nap (connection);
 	if (s_bt) {
-		return    nm_bt_vtable_network_server
-		       && nm_bt_vtable_network_server->is_available (nm_bt_vtable_network_server,
-		                                                     nm_setting_bluetooth_get_bdaddr (s_bt));
+		const char *bdaddr;
+
+		if (!nm_bt_vtable_network_server) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "bluetooth plugin not available to activate NAP profile");
+			return FALSE;
+		}
+
+		bdaddr = nm_setting_bluetooth_get_bdaddr (s_bt);
+		if (!nm_bt_vtable_network_server->is_available (nm_bt_vtable_network_server, bdaddr)) {
+			if (bdaddr)
+				nm_utils_error_set (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+				                    "not suitable NAP device \"%s\" available", bdaddr);
+			else
+				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+				                            "not suitable NAP device available");
+			return FALSE;
+		}
 	}
 
 	return TRUE;
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device, NMConnection *connection)
+check_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	NMSettingBridge *s_bridge;
 	const char *mac_address;
 
-	if (!NM_DEVICE_CLASS (nm_device_bridge_parent_class)->check_connection_compatible (device, connection))
+	if (!NM_DEVICE_CLASS (nm_device_bridge_parent_class)->check_connection_compatible (device, connection, error))
 		return FALSE;
 
-	s_bridge = nm_connection_get_setting_bridge (connection);
-	if (!s_bridge)
-		return FALSE;
+	if (   nm_connection_is_type (connection, NM_SETTING_BLUETOOTH_SETTING_NAME)
+	    && _nm_connection_get_setting_bluetooth_for_nap (connection)) {
+		s_bridge = nm_connection_get_setting_bridge (connection);
+		if (!s_bridge) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "missing bridge setting for bluetooth NAP profile");
+			return FALSE;
+		}
 
-	if (!nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME)) {
-		if (   nm_connection_is_type (connection, NM_SETTING_BLUETOOTH_SETTING_NAME)
-		    && _nm_connection_get_setting_bluetooth_for_nap (connection)) {
-			/* a bluetooth NAP connection is handled by the bridge */
-		} else
+		/* a bluetooth NAP connection is handled by the bridge.
+		 *
+		 * Proceed... */
+	} else {
+		s_bridge = _nm_connection_check_main_setting (connection, NM_SETTING_BRIDGE_SETTING_NAME, error);
+		if (!s_bridge)
 			return FALSE;
 	}
 
@@ -104,8 +126,11 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		const char *hw_addr;
 
 		hw_addr = nm_device_get_hw_address (device);
-		if (!hw_addr || !nm_utils_hwaddr_matches (hw_addr, -1, mac_address, -1))
+		if (!hw_addr || !nm_utils_hwaddr_matches (hw_addr, -1, mac_address, -1)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "mac address mismatches");
 			return FALSE;
+		}
 	}
 
 	return TRUE;
@@ -505,28 +530,29 @@ static void
 nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 {
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
-	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
-
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_BRIDGE_SETTING_NAME, NM_LINK_TYPE_BRIDGE)
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_bridge);
 
-	parent_class->is_master = TRUE;
-	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->check_connection_compatible = check_connection_compatible;
-	parent_class->check_connection_available = check_connection_available;
-	parent_class->complete_connection = complete_connection;
+	device_class->connection_type_supported = NM_SETTING_BRIDGE_SETTING_NAME;
+	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_BRIDGE);
 
-	parent_class->update_connection = update_connection;
-	parent_class->master_update_slave_connection = master_update_slave_connection;
+	device_class->is_master = TRUE;
+	device_class->get_generic_capabilities = get_generic_capabilities;
+	device_class->check_connection_compatible = check_connection_compatible;
+	device_class->check_connection_available = check_connection_available;
+	device_class->complete_connection = complete_connection;
 
-	parent_class->create_and_realize = create_and_realize;
-	parent_class->act_stage1_prepare = act_stage1_prepare;
-	parent_class->act_stage2_config = act_stage2_config;
-	parent_class->deactivate = deactivate;
-	parent_class->enslave_slave = enslave_slave;
-	parent_class->release_slave = release_slave;
-	parent_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
+	device_class->update_connection = update_connection;
+	device_class->master_update_slave_connection = master_update_slave_connection;
+
+	device_class->create_and_realize = create_and_realize;
+	device_class->act_stage1_prepare = act_stage1_prepare;
+	device_class->act_stage2_config = act_stage2_config;
+	device_class->deactivate = deactivate;
+	device_class->enslave_slave = enslave_slave;
+	device_class->release_slave = release_slave;
+	device_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
 }
 
 /*****************************************************************************/

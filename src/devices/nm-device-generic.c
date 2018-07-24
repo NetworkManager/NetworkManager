@@ -86,19 +86,19 @@ realize_start_notify (NMDevice *device, const NMPlatformLink *plink)
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device, NMConnection *connection)
+check_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	NMSettingConnection *s_con;
 
-	if (!NM_DEVICE_CLASS (nm_device_generic_parent_class)->check_connection_compatible (device, connection))
-		return FALSE;
-
-	if (!nm_connection_is_type (connection, NM_SETTING_GENERIC_SETTING_NAME))
+	if (!NM_DEVICE_CLASS (nm_device_generic_parent_class)->check_connection_compatible (device, connection, error))
 		return FALSE;
 
 	s_con = nm_connection_get_setting_connection (connection);
-	if (!nm_setting_connection_get_interface_name (s_con))
+	if (!nm_setting_connection_get_interface_name (s_con)) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "generic profiles need an interface name");
 		return FALSE;
+	}
 
 	return TRUE;
 }
@@ -220,9 +220,7 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
-	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
-
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_GENERIC_SETTING_NAME, NM_LINK_TYPE_ANY)
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->constructor = constructor;
 	object_class->dispose = dispose;
@@ -231,11 +229,15 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_generic);
 
-	parent_class->realize_start_notify = realize_start_notify;
-	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->get_type_description = get_type_description;
-	parent_class->check_connection_compatible = check_connection_compatible;
-	parent_class->update_connection = update_connection;
+	device_class->connection_type_supported = NM_SETTING_GENERIC_SETTING_NAME;
+	device_class->connection_type_check_compatible = NM_SETTING_GENERIC_SETTING_NAME;
+	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_ANY);
+
+	device_class->realize_start_notify = realize_start_notify;
+	device_class->get_generic_capabilities = get_generic_capabilities;
+	device_class->get_type_description = get_type_description;
+	device_class->check_connection_compatible = check_connection_compatible;
+	device_class->update_connection = update_connection;
 
 	obj_properties[PROP_TYPE_DESCRIPTION] =
 	     g_param_spec_string (NM_DEVICE_GENERIC_TYPE_DESCRIPTION, "", "",

@@ -5115,7 +5115,7 @@ nm_device_can_auto_connect (NMDevice *self,
 	 * over and over again. The caller is supposed to do that. */
 	nm_assert (nm_device_autoconnect_allowed (self));
 
-	if (!nm_device_check_connection_available (self, connection, NM_DEVICE_CHECK_CON_AVAILABLE_NONE, NULL))
+	if (!nm_device_check_connection_available (self, connection, NM_DEVICE_CHECK_CON_AVAILABLE_NONE, NULL, NULL))
 		return FALSE;
 
 	if (!NM_DEVICE_GET_CLASS (self)->can_auto_connect (self, connection, specific_object))
@@ -5239,8 +5239,10 @@ nm_device_generate_connection (NMDevice *self,
 	              NM_SETTING_CONNECTION_INTERFACE_NAME, ifname,
 	              NM_SETTING_CONNECTION_TIMESTAMP, (guint64) time (NULL),
 	              NULL);
-	if (klass->connection_type)
-		g_object_set (s_con, NM_SETTING_CONNECTION_TYPE, klass->connection_type, NULL);
+
+	if (klass->connection_type_supported)
+		g_object_set (s_con, NM_SETTING_CONNECTION_TYPE, klass->connection_type_supported, NULL);
+
 	nm_connection_add_setting (connection, s_con);
 
 	/* If the device is a slave, update various slave settings */
@@ -5392,9 +5394,9 @@ nm_device_match_parent (NMDevice *self, const char *parent)
 }
 
 gboolean
-nm_device_match_hwaddr (NMDevice *device,
-                        NMConnection *connection,
-                        gboolean fail_if_no_hwaddr)
+nm_device_match_parent_hwaddr (NMDevice *device,
+                               NMConnection *connection,
+                               gboolean fail_if_no_hwaddr)
 {
 	NMSettingWired *s_wired;
 	NMDevice *parent_device;
@@ -5418,21 +5420,43 @@ nm_device_match_hwaddr (NMDevice *device,
 }
 
 static gboolean
-check_connection_compatible (NMDevice *self, NMConnection *connection)
+check_connection_compatible (NMDevice *self, NMConnection *connection, GError **error)
 {
 	const char *device_iface = nm_device_get_iface (self);
-	gs_free char *conn_iface = nm_manager_get_connection_iface (nm_manager_get (),
-	                                                            connection,
-	                                                            NULL, NULL);
+	gs_free_error GError *local = NULL;
+	gs_free char *conn_iface = NULL;
+	NMDeviceClass *klass;
+
+	klass = NM_DEVICE_GET_CLASS (self);
+	if (klass->connection_type_check_compatible) {
+		if (!_nm_connection_check_main_setting (connection,
+		                                        klass->connection_type_check_compatible,
+		                                        error))
+			return FALSE;
+	}
+
+	conn_iface = nm_manager_get_connection_iface (nm_manager_get (),
+	                                              connection,
+	                                              NULL,
+	                                              &local);
 
 	/* We always need a interface name for virtual devices, but for
 	 * physical ones a connection without interface name is fine for
 	 * any device. */
-	if (!conn_iface)
-		return !nm_connection_is_virtual (connection);
+	if (!conn_iface) {
+		if (nm_connection_is_virtual (connection)) {
+			nm_utils_error_set (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                    "cannot get interface name due to %s", local->message);
+			return FALSE;
+		}
+		return TRUE;
+	}
 
-	if (strcmp (conn_iface, device_iface) != 0)
+	if (!nm_streq0 (conn_iface, device_iface)) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "mismatching interface name");
 		return FALSE;
+	}
 
 	return TRUE;
 }
@@ -5441,6 +5465,11 @@ check_connection_compatible (NMDevice *self, NMConnection *connection)
  * nm_device_check_connection_compatible:
  * @self: an #NMDevice
  * @connection: an #NMConnection
+ * @error: optional reason why it is incompatible. Note that the
+ *   error code is set to %NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+ *   if the profile is fundamentally incompatible with the device
+ *   (most commonly, because the device-type does not support the
+ *   connection-type).
  *
  * Checks if @connection could potentially be activated on @self.
  * This means only that @self has the proper capabilities, and that
@@ -5453,12 +5482,12 @@ check_connection_compatible (NMDevice *self, NMConnection *connection)
  *   @self.
  */
 gboolean
-nm_device_check_connection_compatible (NMDevice *self, NMConnection *connection)
+nm_device_check_connection_compatible (NMDevice *self, NMConnection *connection, GError **error)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
-	return NM_DEVICE_GET_CLASS (self)->check_connection_compatible (self, connection);
+	return NM_DEVICE_GET_CLASS (self)->check_connection_compatible (self, connection, error);
 }
 
 gboolean
@@ -5474,7 +5503,7 @@ nm_device_check_slave_connection_compatible (NMDevice *self, NMConnection *slave
 		return FALSE;
 
 	/* All masters should have connection type set */
-	connection_type = NM_DEVICE_GET_CLASS (self)->connection_type;
+	connection_type = NM_DEVICE_GET_CLASS (self)->connection_type_supported;
 	g_return_val_if_fail (connection_type, FALSE);
 
 	s_con = nm_connection_get_setting_connection (slave);
@@ -11337,7 +11366,7 @@ _carrier_wait_check_act_request_must_queue (NMDevice *self, NMActRequest *req)
 	if (!connection_requires_carrier (connection))
 		return FALSE;
 
-	if (!nm_device_check_connection_available (self, connection, NM_DEVICE_CHECK_CON_AVAILABLE_ALL, NULL)) {
+	if (!nm_device_check_connection_available (self, connection, NM_DEVICE_CHECK_CON_AVAILABLE_ALL, NULL, NULL)) {
 		/* We passed all @flags we have, and no @specific_object.
 		 * This equals maximal availability, if a connection is not available
 		 * in this case, it is not waiting for carrier.
@@ -11348,7 +11377,9 @@ _carrier_wait_check_act_request_must_queue (NMDevice *self, NMActRequest *req)
 		return FALSE;
 	}
 
-	if (nm_device_check_connection_available (self, connection, NM_DEVICE_CHECK_CON_AVAILABLE_ALL & ~_NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER, NULL)) {
+	if (nm_device_check_connection_available (self, connection,
+	                                          NM_DEVICE_CHECK_CON_AVAILABLE_ALL & ~_NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER,
+	                                          NULL, NULL)) {
 		/* The connection was available with flags ALL, and it is still available
 		 * if we pretend not to wait for carrier. That means that the
 		 * connection is available now, and does not wait for carrier.
@@ -13209,38 +13240,88 @@ static gboolean
 _nm_device_check_connection_available (NMDevice *self,
                                        NMConnection *connection,
                                        NMDeviceCheckConAvailableFlags flags,
-                                       const char *specific_object)
+                                       const char *specific_object,
+                                       GError **error)
 {
 	NMDeviceState state;
+	GError *local = NULL;
 
 	/* an unrealized software device is always available, hardware devices never. */
 	if (!nm_device_is_real (self)) {
-		if (nm_device_is_software (self))
-			return nm_device_check_connection_compatible (self, connection);
+		if (nm_device_is_software (self)) {
+			if (!nm_device_check_connection_compatible (self, connection,
+			                                            error ? &local : NULL)) {
+				if (error) {
+					nm_utils_error_set (error,
+					                    local->domain == NM_UTILS_ERROR
+					                      ? local->code
+					                      : NM_UTILS_ERROR_UNKNOWN,
+					                    "profile is not compatible with software device (%s)",
+					                    local->message);
+					g_error_free (local);
+				}
+				return FALSE;
+			}
+			return TRUE;
+		}
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_UNMANAGED_DEVICE,
+		                            "hardware device is not realized");
 		return FALSE;
 	}
 
 	state = nm_device_get_state (self);
-	if (state < NM_DEVICE_STATE_UNMANAGED)
+	if (state < NM_DEVICE_STATE_UNMANAGED) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_UNMANAGED_DEVICE,
+		                            "device is in unknown state");
 		return FALSE;
-	if (   state < NM_DEVICE_STATE_UNAVAILABLE
-	    && (   (   !NM_FLAGS_ANY (flags, NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST)
-	            && !nm_device_get_managed (self, FALSE))
-	        || (    NM_FLAGS_ANY (flags, NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST)
-	            && !nm_device_get_managed (self, TRUE))))
-		return FALSE;
+	}
+	if (state < NM_DEVICE_STATE_UNAVAILABLE) {
+		if (NM_FLAGS_ANY (flags, NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST)) {
+			if (!nm_device_get_managed (self, TRUE)) {
+				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_UNMANAGED_DEVICE,
+				                            "device is unmanaged");
+				return FALSE;
+			}
+		} else {
+			if (!nm_device_get_managed (self, FALSE)) {
+				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_UNMANAGED_DEVICE,
+				                            "device is unmanaged for interal request");
+				return FALSE;
+			}
+		}
+	}
 	if (   state < NM_DEVICE_STATE_DISCONNECTED
-	    && !nm_device_is_software (self)
-	    && (   (   !NM_FLAGS_ANY (flags, NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST)
-	            && !nm_device_is_available (self, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE))
-	        || (    NM_FLAGS_ANY (flags, NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST)
-	            && !nm_device_is_available (self, NM_DEVICE_CHECK_DEV_AVAILABLE_FOR_USER_REQUEST))))
-		return FALSE;
+	    && !nm_device_is_software (self)) {
+		if (NM_FLAGS_ANY (flags, NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST)) {
+			if (!nm_device_is_available (self, NM_DEVICE_CHECK_DEV_AVAILABLE_FOR_USER_REQUEST)) {
+				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+				                            "device is not available");
+				return FALSE;
+			}
+		} else {
+			if (!nm_device_is_available (self, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE)) {
+				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+				                            "device is not available for internal request");
+				return FALSE;
+			}
+		}
+	}
 
-	if (!nm_device_check_connection_compatible (self, connection))
+	if (!nm_device_check_connection_compatible (self, connection,
+	                                            error ? &local : NULL)) {
+		if (error) {
+			nm_utils_error_set (error,
+			                    local->domain == NM_UTILS_ERROR
+			                      ? local->code
+			                      : NM_UTILS_ERROR_UNKNOWN,
+			                    "profile is not compatible with device (%s)",
+			                    local->message);
+			g_error_free (local);
+		}
 		return FALSE;
+	}
 
-	return NM_DEVICE_GET_CLASS (self)->check_connection_available (self, connection, flags, specific_object);
+	return NM_DEVICE_GET_CLASS (self)->check_connection_available (self, connection, flags, specific_object, error);
 }
 
 /**
@@ -13253,6 +13334,7 @@ _nm_device_check_connection_available (NMDevice *self,
  * @specific_object: a device type dependent argument to further
  *   filter the result. Passing a non %NULL specific object can only reduce
  *   the availability of a connection.
+ * @error: optionally give reason why not available.
  *
  * Check if @connection is available to be activated on @self.
  *
@@ -13262,11 +13344,12 @@ gboolean
 nm_device_check_connection_available (NMDevice *self,
                                       NMConnection *connection,
                                       NMDeviceCheckConAvailableFlags flags,
-                                      const char *specific_object)
+                                      const char *specific_object,
+                                      GError **error)
 {
 	gboolean available;
 
-	available = _nm_device_check_connection_available (self, connection, flags, specific_object);
+	available = _nm_device_check_connection_available (self, connection, flags, specific_object, error);
 
 #if NM_MORE_ASSERTS >= 2
 	{
@@ -13276,7 +13359,7 @@ nm_device_check_connection_available (NMDevice *self,
 		gboolean available_all[NM_DEVICE_CHECK_CON_AVAILABLE_ALL + 1] = { FALSE };
 
 		for (i = 0; i <= NM_DEVICE_CHECK_CON_AVAILABLE_ALL; i++)
-			available_all[i] = _nm_device_check_connection_available (self, connection, i, specific_object);
+			available_all[i] = _nm_device_check_connection_available (self, connection, i, specific_object, NULL);
 
 		for (i = 0; i <= NM_DEVICE_CHECK_CON_AVAILABLE_ALL; i++) {
 			for (j = 1; j <= NM_DEVICE_CHECK_CON_AVAILABLE_ALL; j <<= 1) {
@@ -13318,7 +13401,8 @@ static gboolean
 check_connection_available (NMDevice *self,
                             NMConnection *connection,
                             NMDeviceCheckConAvailableFlags flags,
-                            const char *specific_object)
+                            const char *specific_object,
+                            GError **error)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
@@ -13344,6 +13428,8 @@ check_connection_available (NMDevice *self,
 	if (nm_device_is_master (self))
 		return TRUE;
 
+	nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+	                            "device has no carrier");
 	return FALSE;
 }
 
@@ -13376,6 +13462,7 @@ nm_device_recheck_available_connections (NMDevice *self)
 		if (nm_device_check_connection_available (self,
 		                                          connection,
 		                                          NM_DEVICE_CHECK_CON_AVAILABLE_NONE,
+		                                          NULL,
 		                                          NULL)) {
 			if (available_connections_add (self, connection))
 				changed = TRUE;
@@ -13430,7 +13517,8 @@ nm_device_get_best_connection (NMDevice *self,
 		    && !nm_device_check_connection_available (self,
 		                                              NM_CONNECTION (candidate),
 		                                              _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST,
-		                                              specific_object))
+		                                              specific_object,
+		                                              NULL))
 			continue;
 
 		nm_settings_connection_get_timestamp (candidate, &candidate_timestamp);
@@ -13460,6 +13548,7 @@ cp_connection_added_or_updated (NMDevice *self, NMConnection *connection)
 	if (nm_device_check_connection_available (self,
 	                                          connection,
 	                                          _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST,
+	                                          NULL,
 	                                          NULL))
 		changed = available_connections_add (self, connection);
 	else

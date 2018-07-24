@@ -342,13 +342,16 @@ _nm_auto_freev (gpointer ptr)
 
 /*****************************************************************************/
 
-/* http://stackoverflow.com/a/2124385/354393 */
+/* http://stackoverflow.com/a/2124385/354393
+ * https://stackoverflow.com/questions/11317474/macro-to-count-number-of-arguments
+ */
 
 #define NM_NARG(...) \
-         _NM_NARG(__VA_ARGS__,_NM_NARG_RSEQ_N())
+         _NM_NARG(, ##__VA_ARGS__, _NM_NARG_RSEQ_N())
 #define _NM_NARG(...) \
          _NM_NARG_ARG_N(__VA_ARGS__)
 #define _NM_NARG_ARG_N( \
+          _0, \
           _1, _2, _3, _4, _5, _6, _7, _8, _9,_10, \
          _11,_12,_13,_14,_15,_16,_17,_18,_19,_20, \
          _21,_22,_23,_24,_25,_26,_27,_28,_29,_30, \

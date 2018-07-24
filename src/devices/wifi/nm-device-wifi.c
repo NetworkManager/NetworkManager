@@ -604,11 +604,10 @@ is_adhoc_wpa (NMConnection *connection)
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device, NMConnection *connection)
+check_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	const char *mac;
 	const char * const *mac_blacklist;
@@ -616,18 +615,10 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	const char *mode;
 	const char *perm_hw_addr;
 
-	if (!NM_DEVICE_CLASS (nm_device_wifi_parent_class)->check_connection_compatible (device, connection))
-		return FALSE;
-
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
-
-	if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_WIRELESS_SETTING_NAME))
+	if (!NM_DEVICE_CLASS (nm_device_wifi_parent_class)->check_connection_compatible (device, connection, error))
 		return FALSE;
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
-	if (!s_wireless)
-		return FALSE;
 
 	perm_hw_addr = nm_device_get_permanent_hw_address (device);
 	mac = nm_setting_wireless_get_mac_address (s_wireless);
@@ -678,7 +669,8 @@ static gboolean
 check_connection_available (NMDevice *device,
                             NMConnection *connection,
                             NMDeviceCheckConAvailableFlags flags,
-                            const char *specific_object)
+                            const char *specific_object,
+                            GError **error)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -695,7 +687,17 @@ check_connection_available (NMDevice *device,
 		NMWifiAP *ap;
 
 		ap = nm_wifi_ap_lookup_for_device (NM_DEVICE (self), specific_object);
-		return ap ? nm_wifi_ap_check_compatible (ap, connection) : FALSE;
+		if (!ap) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "requested access point not found");
+			return FALSE;
+		}
+		if (!nm_wifi_ap_check_compatible (ap, connection)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "requested access point is not compatible with profile");
+			return FALSE;
+		}
+		return TRUE;
 	}
 
 	/* Ad-Hoc and AP connections are always available because they may be
@@ -714,11 +716,17 @@ check_connection_available (NMDevice *device,
 	 * activating but the network isn't available let the device recheck
 	 * availability.
 	 */
-	if (nm_setting_wireless_get_hidden (s_wifi) || NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP))
+	if (   nm_setting_wireless_get_hidden (s_wifi)
+	    || NM_FLAGS_HAS (flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP))
 		return TRUE;
 
-	/* check at least one AP is compatible with this connection */
-	return !!nm_wifi_aps_find_first_compatible (&priv->aps_lst_head, connection);
+	if (!nm_wifi_aps_find_first_compatible (&priv->aps_lst_head, connection)) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "no compatible access point found");
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 static gboolean
@@ -3311,9 +3319,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
-	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
-
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_WIRELESS_SETTING_NAME, NM_LINK_TYPE_WIFI)
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->constructed = constructed;
 	object_class->get_property = get_property;
@@ -3323,29 +3329,33 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&nm_interface_info_device_wireless);
 
-	parent_class->can_auto_connect = can_auto_connect;
-	parent_class->get_autoconnect_allowed = get_autoconnect_allowed;
-	parent_class->is_available = is_available;
-	parent_class->check_connection_compatible = check_connection_compatible;
-	parent_class->check_connection_available = check_connection_available;
-	parent_class->complete_connection = complete_connection;
-	parent_class->get_enabled = get_enabled;
-	parent_class->set_enabled = set_enabled;
+	device_class->connection_type_supported = NM_SETTING_WIRELESS_SETTING_NAME;
+	device_class->connection_type_check_compatible = NM_SETTING_WIRELESS_SETTING_NAME;
+	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_WIFI);
 
-	parent_class->act_stage1_prepare = act_stage1_prepare;
-	parent_class->act_stage2_config = act_stage2_config;
-	parent_class->get_configured_mtu = get_configured_mtu;
-	parent_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
-	parent_class->act_stage3_ip6_config_start = act_stage3_ip6_config_start;
-	parent_class->act_stage4_ip4_config_timeout = act_stage4_ip4_config_timeout;
-	parent_class->act_stage4_ip6_config_timeout = act_stage4_ip6_config_timeout;
-	parent_class->deactivate = deactivate;
-	parent_class->deactivate_reset_hw_addr = deactivate_reset_hw_addr;
-	parent_class->unmanaged_on_quit = unmanaged_on_quit;
-	parent_class->can_reapply_change = can_reapply_change;
-	parent_class->reapply_connection = reapply_connection;
+	device_class->can_auto_connect = can_auto_connect;
+	device_class->get_autoconnect_allowed = get_autoconnect_allowed;
+	device_class->is_available = is_available;
+	device_class->check_connection_compatible = check_connection_compatible;
+	device_class->check_connection_available = check_connection_available;
+	device_class->complete_connection = complete_connection;
+	device_class->get_enabled = get_enabled;
+	device_class->set_enabled = set_enabled;
 
-	parent_class->state_changed = device_state_changed;
+	device_class->act_stage1_prepare = act_stage1_prepare;
+	device_class->act_stage2_config = act_stage2_config;
+	device_class->get_configured_mtu = get_configured_mtu;
+	device_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
+	device_class->act_stage3_ip6_config_start = act_stage3_ip6_config_start;
+	device_class->act_stage4_ip4_config_timeout = act_stage4_ip4_config_timeout;
+	device_class->act_stage4_ip6_config_timeout = act_stage4_ip6_config_timeout;
+	device_class->deactivate = deactivate;
+	device_class->deactivate_reset_hw_addr = deactivate_reset_hw_addr;
+	device_class->unmanaged_on_quit = unmanaged_on_quit;
+	device_class->can_reapply_change = can_reapply_change;
+	device_class->reapply_connection = reapply_connection;
+
+	device_class->state_changed = device_state_changed;
 
 	klass->scanning_prohibited = scanning_prohibited;
 

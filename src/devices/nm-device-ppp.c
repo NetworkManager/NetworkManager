@@ -49,24 +49,6 @@ G_DEFINE_TYPE (NMDevicePpp, nm_device_ppp, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_PPP_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMDevicePpp, NM_IS_DEVICE_PPP)
 
-static gboolean
-check_connection_compatible (NMDevice *device, NMConnection *connection)
-{
-	NMSettingPppoe *s_pppoe;
-
-	if (!NM_DEVICE_CLASS (nm_device_ppp_parent_class)->check_connection_compatible (device, connection))
-		return FALSE;
-
-	if (!nm_streq0 (nm_connection_get_connection_type (connection),
-	                NM_SETTING_PPPOE_SETTING_NAME))
-		return FALSE;
-
-	s_pppoe = nm_connection_get_setting_pppoe (connection);
-	nm_assert (s_pppoe);
-
-	return !!nm_setting_pppoe_get_parent (s_pppoe);
-}
-
 static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *device)
 {
@@ -275,20 +257,21 @@ nm_device_ppp_class_init (NMDevicePppClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
-	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
-
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_PPPOE_SETTING_NAME, NM_LINK_TYPE_PPP)
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->dispose = dispose;
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_ppp);
 
-	parent_class->act_stage2_config = act_stage2_config;
-	parent_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
-	parent_class->check_connection_compatible = check_connection_compatible;
-	parent_class->create_and_realize = create_and_realize;
-	parent_class->deactivate = deactivate;
-	parent_class->get_generic_capabilities = get_generic_capabilities;
+	device_class->connection_type_supported = NM_SETTING_PPPOE_SETTING_NAME;
+	device_class->connection_type_check_compatible = NM_SETTING_PPPOE_SETTING_NAME;
+	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_PPP);
+
+	device_class->act_stage2_config = act_stage2_config;
+	device_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
+	device_class->create_and_realize = create_and_realize;
+	device_class->deactivate = deactivate;
+	device_class->get_generic_capabilities = get_generic_capabilities;
 }
 
 /*****************************************************************************/

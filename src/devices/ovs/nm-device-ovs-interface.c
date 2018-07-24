@@ -85,25 +85,20 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device, NMConnection *connection)
+check_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
-	NMSettingConnection *s_con;
 	NMSettingOvsInterface *s_ovs_iface;
 
-	if (!NM_DEVICE_CLASS (nm_device_ovs_interface_parent_class)->check_connection_compatible (device, connection))
+	if (!NM_DEVICE_CLASS (nm_device_ovs_interface_parent_class)->check_connection_compatible (device, connection, error))
 		return FALSE;
 
 	s_ovs_iface = nm_connection_get_setting_ovs_interface (connection);
-	if (!s_ovs_iface)
-		return FALSE;
-	if (!NM_IN_STRSET (nm_setting_ovs_interface_get_interface_type (s_ovs_iface),
-	                   "internal", "patch")) {
-		return FALSE;
-	}
 
-	s_con = nm_connection_get_setting_connection (connection);
-	if (g_strcmp0 (nm_setting_connection_get_connection_type (s_con),
-	               NM_SETTING_OVS_INTERFACE_SETTING_NAME) != 0) {
+	if (!NM_IN_STRSET (nm_setting_ovs_interface_get_interface_type (s_ovs_iface),
+	                   "internal",
+	                   "patch")) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "unsupported OVS interface type in profile");
 		return FALSE;
 	}
 
@@ -199,11 +194,12 @@ nm_device_ovs_interface_class_init (NMDeviceOvsInterfaceClass *klass)
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NULL, NM_LINK_TYPE_OPENVSWITCH);
-
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_ovs_interface);
 
-	device_class->connection_type = NM_SETTING_OVS_INTERFACE_SETTING_NAME;
+	device_class->connection_type_supported = NM_SETTING_OVS_INTERFACE_SETTING_NAME;
+	device_class->connection_type_check_compatible = NM_SETTING_OVS_INTERFACE_SETTING_NAME;
+	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_OPENVSWITCH);
+
 	device_class->get_type_description = get_type_description;
 	device_class->create_and_realize = create_and_realize;
 	device_class->get_generic_capabilities = get_generic_capabilities;

@@ -289,18 +289,14 @@ _same_og (const char *str, gboolean og_valid, guint32 og_num)
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device, NMConnection *connection)
+check_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	NMDeviceTun *self = NM_DEVICE_TUN (device);
 	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (self);
 	NMSettingTunMode mode;
 	NMSettingTun *s_tun;
 
-	if (!NM_DEVICE_CLASS (nm_device_tun_parent_class)->check_connection_compatible (device, connection))
-		return FALSE;
-
-	s_tun = nm_connection_get_setting_tun (connection);
-	if (!s_tun)
+	if (!NM_DEVICE_CLASS (nm_device_tun_parent_class)->check_connection_compatible (device, connection, error))
 		return FALSE;
 
 	if (nm_device_is_real (device)) {
@@ -308,22 +304,43 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		case IFF_TUN: mode = NM_SETTING_TUN_MODE_TUN; break;
 		case IFF_TAP: mode = NM_SETTING_TUN_MODE_TAP; break;
 		default:
-			/* Huh? */
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "invalid tun type on device");
 			return FALSE;
 		}
 
-		if (mode != nm_setting_tun_get_mode (s_tun))
+		s_tun = nm_connection_get_setting_tun (connection);
+
+		if (mode != nm_setting_tun_get_mode (s_tun)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "tun mode setting mismatches");
 			return FALSE;
-		if (!_same_og (nm_setting_tun_get_owner (s_tun), priv->props.owner_valid, priv->props.owner))
+		}
+		if (!_same_og (nm_setting_tun_get_owner (s_tun), priv->props.owner_valid, priv->props.owner)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "tun owner setting mismatches");
 			return FALSE;
-		if (!_same_og (nm_setting_tun_get_group (s_tun), priv->props.group_valid, priv->props.group))
+		}
+		if (!_same_og (nm_setting_tun_get_group (s_tun), priv->props.group_valid, priv->props.group)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "tun group setting mismatches");
 			return FALSE;
-		if (nm_setting_tun_get_pi (s_tun) != priv->props.pi)
+		}
+		if (nm_setting_tun_get_pi (s_tun) != priv->props.pi) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "tun pi setting mismatches");
 			return FALSE;
-		if (nm_setting_tun_get_vnet_hdr (s_tun) != priv->props.vnet_hdr)
+		}
+		if (nm_setting_tun_get_vnet_hdr (s_tun) != priv->props.vnet_hdr) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "tun vnet-hdr setting mismatches");
 			return FALSE;
-		if (nm_setting_tun_get_multi_queue (s_tun) != priv->props.multi_queue)
+		}
+		if (nm_setting_tun_get_multi_queue (s_tun) != priv->props.multi_queue) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "tun multi-queue setting mismatches");
 			return FALSE;
+		}
 	}
 
 	return TRUE;
@@ -430,13 +447,14 @@ nm_device_tun_class_init (NMDeviceTunClass *klass)
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NULL, NM_LINK_TYPE_TUN)
-
 	object_class->get_property = get_property;
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_tun);
 
-	device_class->connection_type = NM_SETTING_TUN_SETTING_NAME;
+	device_class->connection_type_supported = NM_SETTING_TUN_SETTING_NAME;
+	device_class->connection_type_check_compatible = NM_SETTING_TUN_SETTING_NAME;
+	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_TUN);
+
 	device_class->link_changed = link_changed;
 	device_class->complete_connection = complete_connection;
 	device_class->check_connection_compatible = check_connection_compatible;

@@ -87,25 +87,23 @@ get_generic_capabilities (NMDevice *dev)
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device, NMConnection *connection)
+check_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	NMSettingAdsl *s_adsl;
 	const char *protocol;
 
-	if (!NM_DEVICE_CLASS (nm_device_adsl_parent_class)->check_connection_compatible (device, connection))
-		return FALSE;
-
-	if (!nm_connection_is_type (connection, NM_SETTING_ADSL_SETTING_NAME))
+	if (!NM_DEVICE_CLASS (nm_device_adsl_parent_class)->check_connection_compatible (device, connection, error))
 		return FALSE;
 
 	s_adsl = nm_connection_get_setting_adsl (connection);
-	if (!s_adsl)
-		return FALSE;
 
-	/* FIXME: we don't yet support IPoATM */
 	protocol = nm_setting_adsl_get_protocol (s_adsl);
-	if (g_strcmp0 (protocol, NM_SETTING_ADSL_PROTOCOL_IPOATM) == 0)
+	if (nm_streq0 (protocol, NM_SETTING_ADSL_PROTOCOL_IPOATM)) {
+		/* FIXME: we don't yet support IPoATM */
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "IPoATM protocol is not yet supported");
 		return FALSE;
+	}
 
 	return TRUE;
 }
@@ -669,7 +667,7 @@ nm_device_adsl_class_init (NMDeviceAdslClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
-	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->constructed  = constructed;
 	object_class->dispose      = dispose;
@@ -678,14 +676,16 @@ nm_device_adsl_class_init (NMDeviceAdslClass *klass)
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_adsl);
 
-	parent_class->get_generic_capabilities = get_generic_capabilities;
+	device_class->connection_type_check_compatible = NM_SETTING_ADSL_SETTING_NAME;
 
-	parent_class->check_connection_compatible = check_connection_compatible;
-	parent_class->complete_connection = complete_connection;
+	device_class->get_generic_capabilities = get_generic_capabilities;
 
-	parent_class->act_stage2_config = act_stage2_config;
-	parent_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
-	parent_class->deactivate = deactivate;
+	device_class->check_connection_compatible = check_connection_compatible;
+	device_class->complete_connection = complete_connection;
+
+	device_class->act_stage2_config = act_stage2_config;
+	device_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
+	device_class->deactivate = deactivate;
 
 	obj_properties[PROP_ATM_INDEX] =
 	     g_param_spec_int (NM_DEVICE_ADSL_ATM_INDEX, "", "",

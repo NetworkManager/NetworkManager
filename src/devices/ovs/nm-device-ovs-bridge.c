@@ -76,21 +76,6 @@ get_generic_capabilities (NMDevice *device)
 	return NM_DEVICE_CAP_IS_SOFTWARE;
 }
 
-static gboolean
-check_connection_compatible (NMDevice *device, NMConnection *connection)
-{
-	const char *connection_type;
-
-	if (!NM_DEVICE_CLASS (nm_device_ovs_bridge_parent_class)->check_connection_compatible (device, connection))
-		return FALSE;
-
-	connection_type = nm_connection_get_connection_type (connection);
-	if (!nm_streq0 (connection_type, NM_SETTING_OVS_BRIDGE_SETTING_NAME))
-		return FALSE;
-
-	return TRUE;
-}
-
 static NMActStageReturn
 act_stage3_ip4_config_start (NMDevice *device,
                              NMIP4Config **out_config,
@@ -152,13 +137,15 @@ nm_device_ovs_bridge_class_init (NMDeviceOvsBridgeClass *klass)
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_ovs_bridge);
 
-	device_class->connection_type = NM_SETTING_OVS_BRIDGE_SETTING_NAME;
+	device_class->connection_type_supported = NM_SETTING_OVS_BRIDGE_SETTING_NAME;
+	device_class->connection_type_check_compatible = NM_SETTING_OVS_BRIDGE_SETTING_NAME;
+	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES ();
+
 	device_class->is_master = TRUE;
 	device_class->get_type_description = get_type_description;
 	device_class->create_and_realize = create_and_realize;
 	device_class->unrealize = unrealize;
 	device_class->get_generic_capabilities = get_generic_capabilities;
-	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
 	device_class->act_stage3_ip6_config_start = act_stage3_ip6_config_start;
 	device_class->enslave_slave = enslave_slave;

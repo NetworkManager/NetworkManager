@@ -130,12 +130,21 @@ void nm_device_commit_mtu (NMDevice *self);
 
 /*****************************************************************************/
 
-#define NM_DEVICE_CLASS_DECLARE_TYPES(klass, conn_type, ...) \
-	NM_DEVICE_CLASS (klass)->connection_type = conn_type; \
-	{ \
-		static const NMLinkType link_types[] = { __VA_ARGS__, NM_LINK_TYPE_NONE }; \
-		NM_DEVICE_CLASS (klass)->link_types = link_types; \
-	}
+#define NM_DEVICE_DEFINE_LINK_TYPES(...) \
+	((NM_NARG (__VA_ARGS__) == 0) \
+	  ? NULL \
+	  : ({ \
+	      static const struct { \
+	          const NMLinkType types[NM_NARG (__VA_ARGS__)]; \
+	          const NMLinkType sentinel; \
+	      } _link_types = { \
+	          .types = { __VA_ARGS__ }, \
+	          .sentinel = NM_LINK_TYPE_NONE, \
+	      }; \
+	      \
+	      _link_types.types; \
+	    })\
+	)
 
 gboolean _nm_device_hash_check_invalid_keys (GHashTable *hash, const char *setting_name,
                                              GError **error, const char **whitelist);
@@ -143,8 +152,8 @@ gboolean _nm_device_hash_check_invalid_keys (GHashTable *hash, const char *setti
 	_nm_device_hash_check_invalid_keys (hash, setting_name, error, ((const char *[]) { __VA_ARGS__, NULL }))
 
 gboolean nm_device_match_parent (NMDevice *device, const char *parent);
-gboolean nm_device_match_hwaddr (NMDevice *device,
-                                 NMConnection *connection,
-                                 gboolean fail_if_no_hwaddr);
+gboolean nm_device_match_parent_hwaddr (NMDevice *device,
+                                        NMConnection *connection,
+                                        gboolean fail_if_no_hwaddr);
 
 #endif /* NM_DEVICE_PRIVATE_H */

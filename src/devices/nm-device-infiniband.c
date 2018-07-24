@@ -123,30 +123,28 @@ get_configured_mtu (NMDevice *device, NMDeviceMtuSource *out_source)
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device, NMConnection *connection)
+check_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	NMSettingInfiniband *s_infiniband;
 
-	if (!NM_DEVICE_CLASS (nm_device_infiniband_parent_class)->check_connection_compatible (device, connection))
-		return FALSE;
-
-	if (!nm_connection_is_type (connection, NM_SETTING_INFINIBAND_SETTING_NAME))
-		return FALSE;
-
-	s_infiniband = nm_connection_get_setting_infiniband (connection);
-	if (!s_infiniband)
+	if (!NM_DEVICE_CLASS (nm_device_infiniband_parent_class)->check_connection_compatible (device, connection, error))
 		return FALSE;
 
 	if (nm_device_is_real (device)) {
 		const char *mac;
 		const char *hw_addr;
 
+		s_infiniband = nm_connection_get_setting_infiniband (connection);
+
 		mac = nm_setting_infiniband_get_mac_address (s_infiniband);
 		if (mac) {
 			hw_addr = nm_device_get_permanent_hw_address (device);
 			if (   !hw_addr
-			    || !nm_utils_hwaddr_matches (mac, -1, hw_addr, -1))
+			    || !nm_utils_hwaddr_matches (mac, -1, hw_addr, -1)) {
+				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+				                            "MAC address mismatches");
 				return FALSE;
+			}
 		}
 	}
 
@@ -367,24 +365,26 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
-	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
-
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_INFINIBAND_SETTING_NAME, NM_LINK_TYPE_INFINIBAND)
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_infiniband);
 
-	parent_class->create_and_realize = create_and_realize;
-	parent_class->unrealize = unrealize;
-	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->check_connection_compatible = check_connection_compatible;
-	parent_class->complete_connection = complete_connection;
-	parent_class->update_connection = update_connection;
+	device_class->connection_type_supported = NM_SETTING_INFINIBAND_SETTING_NAME;
+	device_class->connection_type_check_compatible = NM_SETTING_INFINIBAND_SETTING_NAME;
+	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_INFINIBAND);
 
-	parent_class->act_stage1_prepare = act_stage1_prepare;
-	parent_class->get_configured_mtu = get_configured_mtu;
+	device_class->create_and_realize = create_and_realize;
+	device_class->unrealize = unrealize;
+	device_class->get_generic_capabilities = get_generic_capabilities;
+	device_class->check_connection_compatible = check_connection_compatible;
+	device_class->complete_connection = complete_connection;
+	device_class->update_connection = update_connection;
+
+	device_class->act_stage1_prepare = act_stage1_prepare;
+	device_class->get_configured_mtu = get_configured_mtu;
 
 	obj_properties[PROP_IS_PARTITION] =
 	     g_param_spec_boolean (NM_DEVICE_INFINIBAND_IS_PARTITION, "", "",

@@ -343,23 +343,21 @@ match_subchans (NMDeviceEthernet *self, NMSettingWired *s_wired, gboolean *try_m
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device, NMConnection *connection)
+check_connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
 	NMSettingWired *s_wired;
 
-	if (!NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->check_connection_compatible (device, connection))
+	if (!NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->check_connection_compatible (device, connection, error))
 		return FALSE;
-
-	s_wired = nm_connection_get_setting_wired (connection);
 
 	if (nm_connection_is_type (connection, NM_SETTING_PPPOE_SETTING_NAME)) {
-		/* NOP */
-	} else if (nm_connection_is_type (connection, NM_SETTING_WIRED_SETTING_NAME)) {
+		s_wired = nm_connection_get_setting_wired (connection);
+	} else {
+		s_wired = _nm_connection_check_main_setting (connection, NM_SETTING_WIRED_SETTING_NAME, error);
 		if (!s_wired)
 			return FALSE;
-	} else
-		return FALSE;
+	}
 
 	if (s_wired) {
 		const char *mac, *perm_hw_addr;
@@ -367,28 +365,43 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		const char * const *mac_blacklist;
 		int i;
 
-		if (!match_subchans (self, s_wired, &try_mac))
+		if (!match_subchans (self, s_wired, &try_mac)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "s390 subchannels don't match");
 			return FALSE;
+		}
 
 		perm_hw_addr = nm_device_get_permanent_hw_address (device);
 		mac = nm_setting_wired_get_mac_address (s_wired);
 		if (perm_hw_addr) {
-			if (try_mac && mac && !nm_utils_hwaddr_matches (mac, -1, perm_hw_addr, -1))
+			if (   try_mac
+			    && mac
+			    && !nm_utils_hwaddr_matches (mac, -1, perm_hw_addr, -1)) {
+				nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+				                            "permanent MAC address doesn't match");
 				return FALSE;
+			}
 
 			/* Check for MAC address blacklist */
 			mac_blacklist = nm_setting_wired_get_mac_address_blacklist (s_wired);
 			for (i = 0; mac_blacklist[i]; i++) {
 				if (!nm_utils_hwaddr_valid (mac_blacklist[i], ETH_ALEN)) {
-					g_warn_if_reached ();
+					nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+					                            "invalid MAC in blacklist");
 					return FALSE;
 				}
 
-				if (nm_utils_hwaddr_matches (mac_blacklist[i], -1, perm_hw_addr, -1))
+				if (nm_utils_hwaddr_matches (mac_blacklist[i], -1, perm_hw_addr, -1)) {
+					nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+					                            "permanent MAC address of device blacklisted");
 					return FALSE;
+				}
 			}
-		} else if (mac)
+		} else if (mac) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "device has no permanent MAC address to match");
 			return FALSE;
+		}
 	}
 
 	return TRUE;
@@ -1750,11 +1763,9 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
-	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceEthernetPrivate));
-
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_WIRED_SETTING_NAME, NM_LINK_TYPE_ETHERNET)
 
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
@@ -1763,25 +1774,28 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_wired);
 
-	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->check_connection_compatible = check_connection_compatible;
-	parent_class->complete_connection = complete_connection;
-	parent_class->new_default_connection = new_default_connection;
+	device_class->connection_type_supported = NM_SETTING_WIRED_SETTING_NAME;
+	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_ETHERNET);
 
-	parent_class->act_stage1_prepare = act_stage1_prepare;
-	parent_class->act_stage2_config = act_stage2_config;
-	parent_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
-	parent_class->get_configured_mtu = get_configured_mtu;
-	parent_class->deactivate = deactivate;
-	parent_class->get_s390_subchannels = get_s390_subchannels;
-	parent_class->update_connection = update_connection;
-	parent_class->carrier_changed_notify = carrier_changed_notify;
-	parent_class->link_changed = link_changed;
-	parent_class->is_available = is_available;
-	parent_class->can_reapply_change = can_reapply_change;
-	parent_class->reapply_connection = reapply_connection;
+	device_class->get_generic_capabilities = get_generic_capabilities;
+	device_class->check_connection_compatible = check_connection_compatible;
+	device_class->complete_connection = complete_connection;
+	device_class->new_default_connection = new_default_connection;
 
-	parent_class->state_changed = device_state_changed;
+	device_class->act_stage1_prepare = act_stage1_prepare;
+	device_class->act_stage2_config = act_stage2_config;
+	device_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
+	device_class->get_configured_mtu = get_configured_mtu;
+	device_class->deactivate = deactivate;
+	device_class->get_s390_subchannels = get_s390_subchannels;
+	device_class->update_connection = update_connection;
+	device_class->carrier_changed_notify = carrier_changed_notify;
+	device_class->link_changed = link_changed;
+	device_class->is_available = is_available;
+	device_class->can_reapply_change = can_reapply_change;
+	device_class->reapply_connection = reapply_connection;
+
+	device_class->state_changed = device_state_changed;
 
 	obj_properties[PROP_SPEED] =
 	    g_param_spec_uint (NM_DEVICE_ETHERNET_SPEED, "", "",

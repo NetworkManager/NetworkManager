@@ -627,21 +627,6 @@ deactivate (NMDevice *device)
 	supplicant_interface_release (self);
 }
 
-static gboolean
-check_connection_compatible (NMDevice *device, NMConnection *connection)
-{
-	NMSettingMacsec *s_macsec;
-
-	if (!NM_DEVICE_CLASS (nm_device_macsec_parent_class)->check_connection_compatible (device, connection))
-		return FALSE;
-
-	s_macsec = nm_connection_get_setting_macsec (connection);
-	if (!s_macsec)
-		return FALSE;
-
-	return TRUE;
-}
-
 /******************************************************************/
 
 static NMDeviceCapabilities
@@ -841,27 +826,26 @@ nm_device_macsec_class_init (NMDeviceMacsecClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
-	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
-
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NULL, NM_LINK_TYPE_MACSEC)
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_macsec);
 
-	parent_class->act_stage2_config = act_stage2_config;
-	parent_class->check_connection_compatible = check_connection_compatible;
-	parent_class->create_and_realize = create_and_realize;
-	parent_class->deactivate = deactivate;
-	parent_class->get_generic_capabilities = get_generic_capabilities;
-	parent_class->link_changed = link_changed;
-	parent_class->is_available = is_available;
-	parent_class->parent_changed_notify = parent_changed_notify;
-	parent_class->state_changed = device_state_changed;
-	parent_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
+	device_class->connection_type_supported = NM_SETTING_MACSEC_SETTING_NAME;
+	device_class->connection_type_check_compatible = NM_SETTING_MACSEC_SETTING_NAME;
+	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_MACSEC);
 
-	parent_class->connection_type = NM_SETTING_MACSEC_SETTING_NAME;
+	device_class->act_stage2_config = act_stage2_config;
+	device_class->create_and_realize = create_and_realize;
+	device_class->deactivate = deactivate;
+	device_class->get_generic_capabilities = get_generic_capabilities;
+	device_class->link_changed = link_changed;
+	device_class->is_available = is_available;
+	device_class->parent_changed_notify = parent_changed_notify;
+	device_class->state_changed = device_state_changed;
+	device_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
 
 	obj_properties[PROP_SCI] =
 	    g_param_spec_uint64 (NM_DEVICE_MACSEC_SCI, "", "",

@@ -279,47 +279,42 @@ deactivate_cleanup (NMModem *modem, NMDevice *device)
 }
 
 static gboolean
-check_connection_compatible (NMModem *modem,
-                             NMConnection *connection)
+check_connection_compatible_with_modem (NMModem *modem,
+                                        NMConnection *connection,
+                                        GError **error)
 {
 	NMModemOfono *self = NM_MODEM_OFONO (modem);
 	NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE (self);
-	NMSettingConnection *s_con;
-	NMSettingGsm *s_gsm;
-	const char *uuid;
 	const char *id;
 
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
-
-	uuid = nm_connection_get_uuid (connection);
-	id = nm_connection_get_id (connection);
-
-	s_gsm = nm_connection_get_setting_gsm (connection);
-	if (!s_gsm)
+	if (!_nm_connection_check_main_setting (connection, NM_SETTING_GSM_SETTING_NAME, NULL)) {
+		nm_utils_error_set (error,
+		                    NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+		                    "connection type %s is not supported by ofono modem",
+		                    nm_connection_get_connection_type (connection));
 		return FALSE;
+	}
 
 	if (!priv->imsi) {
-		_LOGW ("skipping %s/%s: no IMSI", uuid, id);
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "modem has no IMSI");
 		return FALSE;
 	}
 
-	if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_GSM_SETTING_NAME)) {
-		_LOGD ("skipping %s/%s: not GSM", uuid, id);
+	id = nm_connection_get_id (connection);
+
+	if (!strstr (id, "/context")) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "the connection ID has no context");
 		return FALSE;
 	}
 
-	if (!g_strrstr (id, "/context")) {
-		_LOGD ("skipping %s/%s: unexpected ID", uuid, id);
+	if (!strstr (id, priv->imsi)) {
+		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                            "the connection ID does not contain the IMSI");
 		return FALSE;
 	}
 
-	if (!g_strrstr (id, priv->imsi)) {
-		_LOGD ("skipping %s/%s: ID doesn't contain IMSI", uuid, id);
-		return FALSE;
-	}
-
-	_LOGD ("%s/%s compatible with IMSI %s", uuid, id, priv->imsi);
 	return TRUE;
 }
 
@@ -1326,7 +1321,7 @@ nm_modem_ofono_class_init (NMModemOfonoClass *klass)
 	modem_class->disconnect = disconnect;
 	modem_class->disconnect_finish = disconnect_finish;
 	modem_class->deactivate_cleanup = deactivate_cleanup;
-	modem_class->check_connection_compatible = check_connection_compatible;
+	modem_class->check_connection_compatible_with_modem = check_connection_compatible_with_modem;
 
 	modem_class->act_stage1_prepare = act_stage1_prepare;
 	modem_class->static_stage3_ip4_config_start = static_stage3_ip4_config_start;

@@ -175,21 +175,6 @@ is_available (NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device, NMConnection *connection)
-{
-	NMSetting6Lowpan *s_6lowpan;
-
-	if (!NM_DEVICE_CLASS (nm_device_6lowpan_parent_class)->check_connection_compatible (device, connection))
-		return FALSE;
-
-	s_6lowpan = nm_connection_get_setting_6lowpan (connection);
-	if (!s_6lowpan)
-		return FALSE;
-
-	return TRUE;
-}
-
-static gboolean
 complete_connection (NMDevice *device,
                      NMConnection *connection,
                      const char *specific_object,
@@ -218,7 +203,7 @@ complete_connection (NMDevice *device,
 	 * settings, then there's not enough information to complete the setting.
 	 */
 	if (   !nm_setting_6lowpan_get_parent (s_6lowpan)
-	    && !nm_device_match_hwaddr (device, connection, TRUE)) {
+	    && !nm_device_match_parent_hwaddr (device, connection, TRUE)) {
 		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INVALID_CONNECTION,
 		                     "The '6lowpan' setting had no interface name, parent, or hardware address.");
 		return FALSE;
@@ -249,7 +234,8 @@ update_connection (NMDevice *device, NMConnection *connection)
 
 			/* Don't change a parent specified by UUID if it's still valid */
 			parent_connection = (NMConnection *) nm_settings_get_connection_by_uuid (nm_device_get_settings (device), setting_parent);
-			if (parent_connection && nm_device_check_connection_compatible (parent_device, parent_connection))
+			if (   parent_connection
+			    && nm_device_check_connection_compatible (parent_device, parent_connection, NULL))
 				new_parent = NULL;
 		}
 		if (new_parent)
@@ -296,14 +282,14 @@ nm_device_6lowpan_class_init (NMDevice6LowpanClass *klass)
 	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
-	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NULL, NM_LINK_TYPE_6LOWPAN)
-
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_device_6lowpan);
 
+	device_class->connection_type_supported = NM_SETTING_6LOWPAN_SETTING_NAME;
+	device_class->connection_type_check_compatible = NM_SETTING_6LOWPAN_SETTING_NAME;
+	device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES (NM_LINK_TYPE_6LOWPAN);
+
 	device_class->act_stage1_prepare = act_stage1_prepare;
-	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->complete_connection = complete_connection;
-	device_class->connection_type = NM_SETTING_6LOWPAN_SETTING_NAME;
 	device_class->create_and_realize = create_and_realize;
 	device_class->get_generic_capabilities = get_generic_capabilities;
 	device_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
