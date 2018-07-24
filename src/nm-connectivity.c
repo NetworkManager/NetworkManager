@@ -336,7 +336,7 @@ typedef struct {
 } ConCurlSockData;
 
 static int
-multi_socket_cb (CURL *e_handle, curl_socket_t s, int what, void *userdata, void *socketp)
+multi_socket_cb (CURL *e_handle, curl_socket_t fd, int what, void *userdata, void *socketp)
 {
 	NMConnectivity *self = NM_CONNECTIVITY (userdata);
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
@@ -345,7 +345,7 @@ multi_socket_cb (CURL *e_handle, curl_socket_t s, int what, void *userdata, void
 
 	if (what == CURL_POLL_REMOVE) {
 		if (fdp) {
-			curl_multi_assign (priv->concheck.curl_mhandle, s, NULL);
+			curl_multi_assign (priv->concheck.curl_mhandle, fd, NULL);
 			nm_clear_g_source (&fdp->ev);
 			g_io_channel_unref (fdp->ch);
 			g_slice_free (ConCurlSockData, fdp);
@@ -353,8 +353,8 @@ multi_socket_cb (CURL *e_handle, curl_socket_t s, int what, void *userdata, void
 	} else {
 		if (!fdp) {
 			fdp = g_slice_new0 (ConCurlSockData);
-			fdp->ch = g_io_channel_unix_new (s);
-			curl_multi_assign (priv->concheck.curl_mhandle, s, fdp);
+			fdp->ch = g_io_channel_unix_new (fd);
+			curl_multi_assign (priv->concheck.curl_mhandle, fd, fdp);
 		} else
 			nm_clear_g_source (&fdp->ev);
 
