@@ -43,9 +43,10 @@
  *   and g_test_assert_expected_messages() will not fail.
  *
  * NMTST_SEED_RAND environment variable:
- *   Tests that use random numbers from nmtst_get_rand() get seeded randomly at each start.
- *   You can specify the seed by setting NMTST_SEED_RAND. Also, tests will print the seed
- *   to stdout, so that you know the chosen seed.
+ *   Tests that use random numbers from nmtst_get_rand() get seeded at each start.
+ *   You can specify the seed by setting NMTST_SEED_RAND to a particular number or empty ("")
+ *   for a random one. If NMTST_SEED_RAND is not set (default) a stable seed gets chosen.
+ *   Tests will print the seed to stdout, so that you know which one was chosen or generated.
  *
  *
  * NMTST_DEBUG environment variable:
@@ -808,9 +809,20 @@ nmtst_get_rand (void)
 
 	if (G_UNLIKELY (!__nmtst_internal.rand)) {
 		guint32 seed;
-		const char *str;
+		const char *str = g_getenv ("NMTST_SEED_RAND");
 
-		if ((str = g_getenv ("NMTST_SEED_RAND"))) {
+		if (!str) {
+			/* No NMTST_SEED_RAND. Pick a stable one. */
+			seed = 0;
+			__nmtst_internal.rand = g_rand_new_with_seed (seed);
+		} else if (str[0] == '\0') {
+			/* NMTST_SEED_RAND is set but empty. Pick a random one. */
+			__nmtst_internal.rand = g_rand_new ();
+
+			seed = g_rand_int (__nmtst_internal.rand);
+			g_rand_set_seed (__nmtst_internal.rand, seed);
+		} else {
+			/* NMTST_SEED_RAND is set. Use it as a seed. */
 			char *s;
 			gint64 i;
 
@@ -819,11 +831,6 @@ nmtst_get_rand (void)
 
 			seed = i;
 			__nmtst_internal.rand = g_rand_new_with_seed (seed);
-		} else {
-			__nmtst_internal.rand = g_rand_new ();
-
-			seed = g_rand_int (__nmtst_internal.rand);
-			g_rand_set_seed (__nmtst_internal.rand, seed);
 		}
 		__nmtst_internal.rand_seed = seed;
 
