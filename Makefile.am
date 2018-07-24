@@ -2213,6 +2213,11 @@ dist_libexec_SCRIPTS += \
 	src/settings/plugins/ifcfg-rh/nm-ifup \
 	src/settings/plugins/ifcfg-rh/nm-ifdown
 
+install-data-hook-ifcfg-rh:
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(sysconfdir)/sysconfig/network-scripts
+
+install_data_hook += install-data-hook-ifcfg-rh
+
 endif
 
 EXTRA_DIST += \
