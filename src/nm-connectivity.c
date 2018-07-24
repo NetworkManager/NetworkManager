@@ -234,7 +234,7 @@ _check_handle_get_response (NMConnectivityCheckHandle *cb_data)
 	return cb_data->concheck.response ?: NM_CONFIG_DEFAULT_CONNECTIVITY_RESPONSE;
 }
 
-static void
+static gboolean
 _con_curl_check_connectivity (CURLM *mhandle, int sockfd, int ev_bitmask)
 {
 	NMConnectivityCheckHandle *cb_data;
@@ -244,10 +244,13 @@ _con_curl_check_connectivity (CURLM *mhandle, int sockfd, int ev_bitmask)
 	long response_code;
 	CURLMcode ret;
 	int running_handles;
+	gboolean success = TRUE;
 
 	ret = curl_multi_socket_action (mhandle, sockfd, ev_bitmask, &running_handles);
-	if (ret != CURLM_OK)
+	if (ret != CURLM_OK) {
 		_LOGD ("connectivity check failed: %d", ret);
+		success = FALSE;
+	}
 
 	while ((msg = curl_multi_info_read (mhandle, &m_left))) {
 
@@ -258,6 +261,7 @@ _con_curl_check_connectivity (CURLM *mhandle, int sockfd, int ev_bitmask)
 		eret = curl_easy_getinfo (msg->easy_handle, CURLINFO_PRIVATE, (char **) &cb_data);
 		if (eret != CURLE_OK) {
 			_LOGD ("curl cannot extract cb_data for easy handle, skipping msg");
+			success = FALSE;
 			continue;
 		}
 
@@ -286,6 +290,12 @@ _con_curl_check_connectivity (CURLM *mhandle, int sockfd, int ev_bitmask)
 			              "unexpected short response");
 		}
 	}
+
+	/* if we return a failure, we don't know what went wrong. It's likely serious, because
+	 * a failure here is not expected. Return FALSE, so that we stop polling the file descriptor.
+	 * Worst case, this leaves the pending connectivity check unhandled, until our regular
+	 * time-out kicks in. */
+	return success;
 }
 
 static gboolean
@@ -311,13 +321,30 @@ multi_timer_cb (CURLM *multi, long timeout_ms, void *userdata)
 	return 0;
 }
 
+typedef struct {
+	NMConnectivity *self;
+	GIOChannel *ch;
+
+	/* this is a very simplistic weak-pointer. If ConCurlSockData gets
+	 * destroyed, it will set *destroy_notify to TRUE.
+	 *
+	 * _con_curl_socketevent_cb() uses this to detect whether it can
+	 * safely access @fdp after _con_curl_check_connectivity(). */
+	gboolean *destroy_notify;
+
+	guint ev;
+} ConCurlSockData;
+
 static gboolean
 _con_curl_socketevent_cb (GIOChannel *ch, GIOCondition condition, gpointer user_data)
 {
-	gs_unref_object NMConnectivity *self = g_object_ref (NM_CONNECTIVITY (user_data));
+	ConCurlSockData *fdp = user_data;
+	gs_unref_object NMConnectivity *self = g_object_ref (fdp->self);
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 	int fd = g_io_channel_unix_get_fd (ch);
 	int action = 0;
+	gboolean fdp_destroyed = FALSE;
+	gboolean success;
 
 	if (condition & G_IO_IN)
 		action |= CURL_CSELECT_IN;
@@ -326,14 +353,23 @@ _con_curl_socketevent_cb (GIOChannel *ch, GIOCondition condition, gpointer user_
 	if (condition & G_IO_ERR)
 		action |= CURL_CSELECT_ERR;
 
-	_con_curl_check_connectivity (priv->concheck.curl_mhandle, fd, action);
-	return G_SOURCE_CONTINUE;
-}
+	nm_assert (!fdp->destroy_notify);
+	fdp->destroy_notify = &fdp_destroyed;
 
-typedef struct {
-	GIOChannel *ch;
-	guint ev;
-} ConCurlSockData;
+	success = _con_curl_check_connectivity (priv->concheck.curl_mhandle, fd, action);
+
+	if (fdp_destroyed) {
+		/* hups. fdp got invalidated during _con_curl_check_connectivity(). That's fine,
+		 * just don't touch it. */
+	} else {
+		nm_assert (fdp->destroy_notify == &fdp_destroyed);
+		fdp->destroy_notify = NULL;
+		if (!success)
+			fdp->ev = 0;
+	}
+
+	return success ? G_SOURCE_CONTINUE : G_SOURCE_REMOVE;
+}
 
 static int
 multi_socket_cb (CURL *e_handle, curl_socket_t fd, int what, void *userdata, void *socketp)
@@ -347,6 +383,8 @@ multi_socket_cb (CURL *e_handle, curl_socket_t fd, int what, void *userdata, voi
 
 	if (what == CURL_POLL_REMOVE) {
 		if (fdp) {
+			if (fdp->destroy_notify)
+				*fdp->destroy_notify = TRUE;
 			curl_multi_assign (priv->concheck.curl_mhandle, fd, NULL);
 			nm_clear_g_source (&fdp->ev);
 			g_io_channel_unref (fdp->ch);
@@ -355,6 +393,7 @@ multi_socket_cb (CURL *e_handle, curl_socket_t fd, int what, void *userdata, voi
 	} else {
 		if (!fdp) {
 			fdp = g_slice_new0 (ConCurlSockData);
+			fdp->self = self;
 			fdp->ch = g_io_channel_unix_new (fd);
 			curl_multi_assign (priv->concheck.curl_mhandle, fd, fdp);
 		} else
@@ -368,7 +407,7 @@ multi_socket_cb (CURL *e_handle, curl_socket_t fd, int what, void *userdata, voi
 			condition = G_IO_IN | G_IO_OUT;
 
 		if (condition)
-			fdp->ev = g_io_add_watch (fdp->ch, condition, _con_curl_socketevent_cb, self);
+			fdp->ev = g_io_add_watch (fdp->ch, condition, _con_curl_socketevent_cb, fdp);
 	}
 
 	return CURLM_OK;
