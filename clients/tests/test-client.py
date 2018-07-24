@@ -141,6 +141,15 @@ class Util:
             t = basestring
         return isinstance(s, t)
 
+    @staticmethod
+    def memoize_nullary(nullary_func):
+        result = []
+        def closure():
+            if not result:
+                result.append(nullary_func())
+            return result[0]
+        return closure
+
     _find_unsafe = re.compile(r'[^\w@%+=:,./-]',
                               re.ASCII if sys.version_info[0] >= 3 else 0).search
 
@@ -858,7 +867,7 @@ class TestNmcli(NmTestBase):
 
         replace_stdout = []
 
-        replace_stdout.append((lambda: self.srv.findConnectionUuid('con-xx1'), 'UUID-con-xx1-REPLACED-REPLACED-REPLA'))
+        replace_stdout.append((Util.memoize_nullary(lambda: self.srv.findConnectionUuid('con-xx1')), 'UUID-con-xx1-REPLACED-REPLACED-REPLA'))
 
         self.call_nmcli(['c', 'add', 'type', 'ethernet', 'ifname', '*', 'con-name', 'con-xx1'],
                         replace_stdout = replace_stdout)
@@ -866,7 +875,7 @@ class TestNmcli(NmTestBase):
         self.call_nmcli_l(['c', 's'],
                           replace_stdout = replace_stdout)
 
-        replace_stdout.append((lambda: self.srv.findConnectionUuid('ethernet'), 'UUID-ethernet-REPLACED-REPLACED-REPL'))
+        replace_stdout.append((Util.memoize_nullary(lambda: self.srv.findConnectionUuid('ethernet')), 'UUID-ethernet-REPLACED-REPLACED-REPL'))
 
         self.call_nmcli(['c', 'add', 'type', 'ethernet', 'ifname', '*'],
                         replace_stdout = replace_stdout)
@@ -960,7 +969,7 @@ class TestNmcli(NmTestBase):
 
         replace_stdout = []
 
-        replace_stdout.append((lambda: self.srv.findConnectionUuid('con-xx1'), 'UUID-con-xx1-REPLACED-REPLACED-REPLA'))
+        replace_stdout.append((Util.memoize_nullary(lambda: self.srv.findConnectionUuid('con-xx1')), 'UUID-con-xx1-REPLACED-REPLACED-REPLA'))
 
         self.call_nmcli(['c', 'add', 'type', 'wifi', 'ifname', '*', 'ssid', 'foobar', 'con-name', 'con-xx1'],
                         replace_stdout = replace_stdout)
@@ -976,7 +985,7 @@ class TestNmcli(NmTestBase):
 
         self.async_wait()
 
-        replace_stdout.append((lambda: self.srv.findConnectionUuid('con-vpn-1'), 'UUID-con-vpn-1-REPLACED-REPLACED-REP'))
+        replace_stdout.append((Util.memoize_nullary(lambda: self.srv.findConnectionUuid('con-vpn-1')), 'UUID-con-vpn-1-REPLACED-REPLACED-REP'))
 
         self.call_nmcli(['connection', 'add', 'type', 'vpn', 'con-name', 'con-vpn-1', 'ifname', '*', 'vpn-type', 'openvpn', 'vpn.data', 'key1 = val1,   key2  = val2, key3=val3'],
                         replace_stdout = replace_stdout)
