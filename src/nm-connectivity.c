@@ -343,6 +343,8 @@ multi_socket_cb (CURL *e_handle, curl_socket_t fd, int what, void *userdata, voi
 	ConCurlSockData *fdp = socketp;
 	GIOCondition condition = 0;
 
+	(void) _NM_ENSURE_TYPE (int, fd);
+
 	if (what == CURL_POLL_REMOVE) {
 		if (fdp) {
 			curl_multi_assign (priv->concheck.curl_mhandle, fd, NULL);
