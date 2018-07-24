@@ -195,7 +195,7 @@ cb_data_free (NMConnectivityCheckHandle *cb_data,
 		 * the easy handle "at any moment"; specifically not from the
 		 * write function. Thus here we just dissociate the cb_data from
 		 * the easy handle and the easy handle will be cleaned up when the
-		 * message goes to CURLMSG_DONE in curl_check_connectivity(). */
+		 * message goes to CURLMSG_DONE in _con_curl_check_connectivity(). */
 		curl_easy_setopt (cb_data->concheck.curl_ehandle, CURLOPT_WRITEFUNCTION, NULL);
 		curl_easy_setopt (cb_data->concheck.curl_ehandle, CURLOPT_WRITEDATA, NULL);
 		curl_easy_setopt (cb_data->concheck.curl_ehandle, CURLOPT_HEADERFUNCTION, NULL);
@@ -235,7 +235,7 @@ _check_handle_get_response (NMConnectivityCheckHandle *cb_data)
 }
 
 static void
-curl_check_connectivity (CURLM *mhandle, int sockfd, int ev_bitmask)
+_con_curl_check_connectivity (CURLM *mhandle, int sockfd, int ev_bitmask)
 {
 	NMConnectivityCheckHandle *cb_data;
 	CURLMsg *msg;
@@ -289,13 +289,13 @@ curl_check_connectivity (CURLM *mhandle, int sockfd, int ev_bitmask)
 }
 
 static gboolean
-curl_timeout_cb (gpointer user_data)
+_con_curl_timeout_cb (gpointer user_data)
 {
 	gs_unref_object NMConnectivity *self = g_object_ref (NM_CONNECTIVITY (user_data));
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
 	priv->concheck.curl_timer = 0;
-	curl_check_connectivity (priv->concheck.curl_mhandle, CURL_SOCKET_TIMEOUT, 0);
+	_con_curl_check_connectivity (priv->concheck.curl_mhandle, CURL_SOCKET_TIMEOUT, 0);
 	return G_SOURCE_REMOVE;
 }
 
@@ -307,12 +307,12 @@ multi_timer_cb (CURLM *multi, long timeout_ms, void *userdata)
 
 	nm_clear_g_source (&priv->concheck.curl_timer);
 	if (timeout_ms != -1)
-		priv->concheck.curl_timer = g_timeout_add (timeout_ms, curl_timeout_cb, self);
+		priv->concheck.curl_timer = g_timeout_add (timeout_ms, _con_curl_timeout_cb, self);
 	return 0;
 }
 
 static gboolean
-curl_socketevent_cb (GIOChannel *ch, GIOCondition condition, gpointer user_data)
+_con_curl_socketevent_cb (GIOChannel *ch, GIOCondition condition, gpointer user_data)
 {
 	gs_unref_object NMConnectivity *self = g_object_ref (NM_CONNECTIVITY (user_data));
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
@@ -326,21 +326,21 @@ curl_socketevent_cb (GIOChannel *ch, GIOCondition condition, gpointer user_data)
 	if (condition & G_IO_ERR)
 		action |= CURL_CSELECT_ERR;
 
-	curl_check_connectivity (priv->concheck.curl_mhandle, fd, action);
+	_con_curl_check_connectivity (priv->concheck.curl_mhandle, fd, action);
 	return G_SOURCE_CONTINUE;
 }
 
 typedef struct {
 	GIOChannel *ch;
 	guint ev;
-} CurlSockData;
+} ConCurlSockData;
 
 static int
 multi_socket_cb (CURL *e_handle, curl_socket_t s, int what, void *userdata, void *socketp)
 {
 	NMConnectivity *self = NM_CONNECTIVITY (userdata);
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
-	CurlSockData *fdp = socketp;
+	ConCurlSockData *fdp = socketp;
 	GIOCondition condition = 0;
 
 	if (what == CURL_POLL_REMOVE) {
@@ -348,11 +348,11 @@ multi_socket_cb (CURL *e_handle, curl_socket_t s, int what, void *userdata, void
 			curl_multi_assign (priv->concheck.curl_mhandle, s, NULL);
 			nm_clear_g_source (&fdp->ev);
 			g_io_channel_unref (fdp->ch);
-			g_slice_free (CurlSockData, fdp);
+			g_slice_free (ConCurlSockData, fdp);
 		}
 	} else {
 		if (!fdp) {
-			fdp = g_slice_new0 (CurlSockData);
+			fdp = g_slice_new0 (ConCurlSockData);
 			fdp->ch = g_io_channel_unix_new (s);
 			curl_multi_assign (priv->concheck.curl_mhandle, s, fdp);
 		} else
@@ -366,7 +366,7 @@ multi_socket_cb (CURL *e_handle, curl_socket_t s, int what, void *userdata, void
 			condition = G_IO_IN | G_IO_OUT;
 
 		if (condition)
-			fdp->ev = g_io_add_watch (fdp->ch, condition, curl_socketevent_cb, self);
+			fdp->ev = g_io_add_watch (fdp->ch, condition, _con_curl_socketevent_cb, self);
 	}
 
 	return CURLM_OK;
