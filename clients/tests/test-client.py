@@ -1006,7 +1006,7 @@ class TestNmcli(NmTestBase):
 
             self.call_nmcli_l(mode + ['con', 's', 'con-vpn-1'],
                               replace_stdout = replace_stdout)
-            self.call_nmcli_l(mode + ['-t', 'con', 's', 'con-vpn-1'],
+            self.call_nmcli_l(mode + ['con', 's', 'con-vpn-1'],
                               replace_stdout = replace_stdout)
 
             self.call_nmcli_l(mode + ['-f', 'ALL', 'con', 's', 'con-vpn-1'],
@@ -1042,7 +1042,7 @@ class TestNmcli(NmTestBase):
             self.call_nmcli_l(mode + ['-f', 'GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES', 'dev', 'show', 'wlan0'],
                               replace_stdout = replace_stdout)
 
-            self.call_nmcli_l(mode + ['-f', 'GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES', '-t', 'dev', 'show', 'wlan0'],
+            self.call_nmcli_l(mode + ['-f', 'GENERAL,GENERAL.HWADDR,WIFI-PROPERTIES', 'dev', 'show', 'wlan0'],
                               replace_stdout = replace_stdout)
 
             self.call_nmcli_l(mode + ['-f', 'DEVICE,TYPE,DBUS-PATH', 'dev'],
