@@ -277,15 +277,16 @@ test-*.trs
 
 /vapi/*.vapi
 
-# The following names are no longer present on this branch,
-# but they were on older versions. Thus keep ignoring them
-# otherwise when switching branches these untracked files show
-# up.
+# The following names are not present on this branch,
+# but they are/were on other branches. Thus ignore them
+# so that they don't show up as untracked files when switching
+# branches.
 /callouts/nm-avahi-autoipd.action
 /callouts/nm-dispatcher
 /callouts/nmdbus-dispatcher.*
 /callouts/org.freedesktop.nm_dispatcher.service
 /callouts/tests/test-dispatcher-envp
+/config-extra.h
 /include/
 /policy/org.freedesktop.NetworkManager.policy
 /policy/org.freedesktop.NetworkManager.policy.in
