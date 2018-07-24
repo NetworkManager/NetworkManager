@@ -1376,6 +1376,8 @@ libnm_1_12_2 {
 	nm_connection_get_setting_ovs_patch;
 	nm_connection_get_setting_ovs_port;
 	nm_connection_get_setting_tun;
+	nm_device_ovs_bridge_get_slaves;
+	nm_device_ovs_port_get_slaves;
 } libnm_1_12_0;
 
 libnm_1_14_0 {
