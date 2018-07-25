@@ -78,7 +78,10 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC (NMSettingWired, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (NMSettingWireless, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (NMSettingWirelessSecurity, g_object_unref)
 
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (NMVpnEditor, g_object_unref)
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (NMVpnEditorPlugin, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (NMVpnPluginInfo, g_object_unref)
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (NMVpnServicePlugin, g_object_unref)
 
 #endif
 
