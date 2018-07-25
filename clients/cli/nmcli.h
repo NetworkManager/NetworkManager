@@ -75,7 +75,7 @@ typedef enum {
 static inline NMMetaAccessorGetType
 nmc_print_output_to_accessor_get_type (NMCPrintOutput print_output)
 {
-	return   (print_output != NMC_PRINT_TERSE)
+	return   NM_IN_SET (print_output, NMC_PRINT_NORMAL, NMC_PRINT_PRETTY)
 	       ? NM_META_ACCESSOR_GET_TYPE_PRETTY
 	       : NM_META_ACCESSOR_GET_TYPE_PARSABLE;
 }

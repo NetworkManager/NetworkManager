@@ -3747,12 +3747,13 @@ check_local += check-local-clients-tests-test-client
 
 CLEANFILES += clients/tests/test-client.log
 
-include clients/tests/test-client.check-on-disk/Makefile.am
-
 EXTRA_DIST += \
 	clients/tests/test-client.py \
-	clients/tests/test-client.check-on-disk/Makefile.am \
-	$(clients_tests_expected_files)
+	clients/tests/test-client.check-on-disk/test_001.expected \
+	clients/tests/test-client.check-on-disk/test_002.expected \
+	clients/tests/test-client.check-on-disk/test_003.expected \
+	clients/tests/test-client.check-on-disk/test_004.expected \
+	$(NULL)
 
 ###############################################################################
 # data
