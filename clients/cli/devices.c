@@ -114,7 +114,8 @@ _metagen_device_status_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 	case NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_TYPE:
 		return nm_device_get_type_description (d);
 	case NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_STATE:
-		return gettext (nmc_device_state_to_string (nm_device_get_state (d)));
+		return nmc_meta_generic_get_str_i18n (nmc_device_state_to_string (nm_device_get_state (d)),
+		                                      get_type);
 	case NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_DBUS_PATH:
 		return nm_object_get_path (NM_OBJECT (d));
 	case NMC_GENERIC_INFO_TYPE_DEVICE_STATUS_CONNECTION:
@@ -1464,7 +1465,9 @@ show_device_info (NMDevice *device, NmCli *nmc)
 		int section_idx = g_array_index (sections_array, int, k);
 		char *section_fld = (char *) g_ptr_array_index (fields_in_section, k);
 
-		if (nmc->nmc_config.print_output != NMC_PRINT_TERSE && !nmc->nmc_config.multiline_output && was_output)
+		if (   NM_IN_SET (nmc->nmc_config.print_output, NMC_PRINT_NORMAL, NMC_PRINT_PRETTY)
+		    && !nmc->nmc_config.multiline_output
+		    && was_output)
 			g_print ("\n"); /* Print empty line between groups in tabular mode */
 
 		was_output = FALSE;
