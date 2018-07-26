@@ -397,29 +397,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static gboolean
-hash_table_equal (GHashTable *a, GHashTable *b)
-{
-	guint n;
-	GHashTableIter iter;
-	const char *key, *value, *valu2;
-
-	n = a ? g_hash_table_size (a) : 0;
-	if (n != (b ? g_hash_table_size (b) : 0))
-		return FALSE;
-	if (n > 0) {
-		g_hash_table_iter_init (&iter, a);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
-			if (!g_hash_table_lookup_extended (b, key, NULL, (gpointer *) &valu2))
-				return FALSE;
-			if (!nm_streq (value, valu2))
-				return FALSE;
-		}
-	}
-	return TRUE;
-
-}
-
-static gboolean
 compare_property (NMSetting *setting,
                   NMSetting *other,
                   const GParamSpec *prop_spec,
@@ -436,10 +413,10 @@ compare_property (NMSetting *setting,
 	priv = NM_SETTING_USER_GET_PRIVATE (NM_SETTING_USER (setting));
 	pri2 = NM_SETTING_USER_GET_PRIVATE (NM_SETTING_USER (other));
 
-	if (!hash_table_equal (priv->data, pri2->data))
+	if (!nm_utils_hash_table_equal (priv->data, pri2->data, TRUE, g_str_equal))
 		return FALSE;
 
-	if (!hash_table_equal (priv->data_invalid, pri2->data_invalid))
+	if (!nm_utils_hash_table_equal (priv->data_invalid, pri2->data_invalid, TRUE, g_str_equal))
 		return FALSE;
 
 	return TRUE;
