@@ -636,6 +636,7 @@ $(src_devices_bluetooth_libnm_device_plugin_bluetooth_la_OBJECTS):          $(li
 $(src_devices_team_libnm_device_plugin_team_la_OBJECTS):                    $(libnm_core_lib_h_pub_mkenums)
 $(src_devices_wifi_libnm_device_plugin_wifi_la_OBJECTS):                    $(libnm_core_lib_h_pub_mkenums)
 $(src_devices_wwan_libnm_device_plugin_wwan_la_OBJECTS):                    $(libnm_core_lib_h_pub_mkenums)
+$(src_devices_ovs_libnm_device_plugin_ovs_la_OBJECTS):                      $(libnm_core_lib_h_pub_mkenums)
 
 libnm_core_libnm_core_la_CPPFLAGS = \
 	$(dflt_cppflags_libnm_core) \
@@ -2482,6 +2483,7 @@ src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_LIBADD = \
 	$(LIBUDEV_LIBS)
 
 $(src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_settings_plugins_ifupdown_libnms_ifupdown_core_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 check-local-symbols-settings-ifupdown: src/settings/plugins/ifupdown/libnm-settings-plugin-ifupdown.la
 	$(call check_so_symbols,$(builddir)/src/settings/plugins/ifupdown/.libs/libnm-settings-plugin-ifupdown.so)
