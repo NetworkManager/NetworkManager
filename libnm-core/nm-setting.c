@@ -1969,58 +1969,39 @@ nm_setting_set_secret_flags (NMSetting *setting,
  * nm_setting_to_string:
  * @setting: the #NMSetting
  *
- * Convert the setting into a string.  For debugging purposes ONLY, should NOT
- * be used for serialization of the setting, or machine-parsed in any way. The
- * output format is not guaranteed to be stable and may change at any time.
+ * Convert the setting (including secrets!) into a string. For debugging
+ * purposes ONLY, should NOT be used for serialization of the setting,
+ * or machine-parsed in any way. The output format is not guaranteed to
+ * be stable and may change at any time.
  *
  * Returns: an allocated string containing a textual representation of the
- * setting's properties and values (including secrets!), which the caller should
+ * setting's properties and values, which the caller should
  * free with g_free()
  **/
 char *
 nm_setting_to_string (NMSetting *setting)
 {
 	GString *string;
-	GParamSpec **property_specs;
-	guint n_property_specs;
-	guint i;
-
-	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
-
-	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (setting), &n_property_specs);
+	gs_unref_variant GVariant *variant;
+	GVariant *child;
+	GVariantIter iter;
 
 	string = g_string_new (nm_setting_get_name (setting));
 	g_string_append_c (string, '\n');
 
-	for (i = 0; i < n_property_specs; i++) {
-		GParamSpec *prop_spec = property_specs[i];
-		GValue value = G_VALUE_INIT;
-		char *value_str;
-		gboolean is_default;
+	variant = _nm_setting_to_dbus (setting, NULL, NM_CONNECTION_SERIALIZE_ALL);
 
-		if (strcmp (prop_spec->name, NM_SETTING_NAME) == 0)
-			continue;
+	g_variant_iter_init (&iter, variant);
+	while ((child = g_variant_iter_next_value (&iter))) {
+		gs_free char *name;
+		gs_free char *value_str;
+		gs_unref_variant GVariant *value;
 
-		g_value_init (&value, prop_spec->value_type);
-		g_object_get_property (G_OBJECT (setting), prop_spec->name, &value);
+		g_variant_get (child, "{sv}", &name, &value);
+		value_str = g_variant_print (value, FALSE);
 
-		value_str = g_strdup_value_contents (&value);
-		g_string_append_printf (string, "\t%s : %s", prop_spec->name, value_str);
-		g_free (value_str);
-
-		is_default = g_param_value_defaults (prop_spec, &value);
-		g_value_unset (&value);
-
-		g_string_append (string, " (");
-		g_string_append_c (string, 's');
-		if (is_default)
-			g_string_append_c (string, 'd');
-		g_string_append_c (string, ')');
-		g_string_append_c (string, '\n');
+		g_string_append_printf (string, "\t%s : %s\n", name, value_str);
 	}
-
-	g_free (property_specs);
-	g_string_append_c (string, '\n');
 
 	return g_string_free (string, FALSE);
 }

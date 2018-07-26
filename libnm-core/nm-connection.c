@@ -1995,9 +1995,10 @@ nm_connection_for_each_setting_value (NMConnection *connection,
  * nm_connection_dump:
  * @connection: the #NMConnection
  *
- * Print the connection to stdout.  For debugging purposes ONLY, should NOT
- * be used for serialization of the connection or machine-parsed in any way. The
- * output format is not guaranteed to be stable and may change at any time.
+ * Print the connection (including secrets!) to stdout. For debugging
+ * purposes ONLY, should NOT be used for serialization of the setting,
+ * or machine-parsed in any way. The output format is not guaranteed to
+ * be stable and may change at any time.
  **/
 void
 nm_connection_dump (NMConnection *connection)
