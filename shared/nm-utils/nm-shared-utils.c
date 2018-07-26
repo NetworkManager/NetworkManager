@@ -1351,6 +1351,63 @@ nm_utils_strv_make_deep_copied (const char **strv)
 /*****************************************************************************/
 
 /**
+ * nm_utils_hash_table_equal:
+ * @a: one #GHashTable
+ * @b: other #GHashTable
+ * @treat_null_as_empty: if %TRUE, when either @a or @b is %NULL, it is
+ *   treated like an empty hash. It means, a %NULL hash will compare equal
+ *   to an empty hash.
+ * @equal_func: the equality function, for comparing the values.
+ *   If %NULL, the values are not compared. In that case, the function
+ *   only checks, if both dictionaries have the same keys -- according
+ *   to @b's key equality function.
+ *   Note that the values of @a will be passed as first argument
+ *   to @equal_func.
+ *
+ * Compares two hash tables, whether they have equal content.
+ * This only makes sense, if @a and @b have the same key types and
+ * the same key compare-function.
+ *
+ * Returns: %TRUE, if both dictionaries have the same content.
+ */
+gboolean
+nm_utils_hash_table_equal (const GHashTable *a,
+                           const GHashTable *b,
+                           gboolean treat_null_as_empty,
+                           NMUtilsHashTableEqualFunc equal_func)
+{
+	guint n;
+	GHashTableIter iter;
+	gconstpointer key, v_a, v_b;
+
+	if (a == b)
+		return TRUE;
+	if (!treat_null_as_empty) {
+		if (!a || !b)
+			return FALSE;
+	}
+
+	n = a ? g_hash_table_size ((GHashTable *) a) : 0;
+	if (n != (b ? g_hash_table_size ((GHashTable *) b) : 0))
+		return FALSE;
+
+	if (n > 0) {
+		g_hash_table_iter_init (&iter, (GHashTable *) a);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &v_a)) {
+			if (!g_hash_table_lookup_extended ((GHashTable *) b, key, NULL, (gpointer *) &v_b))
+				return FALSE;
+			if (   equal_func
+			    && !equal_func (v_a, v_b))
+				return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
+/*****************************************************************************/
+
+/**
  * nm_utils_get_start_time_for_pid:
  * @pid: the process identifier
  * @out_state: return the state character, like R, S, Z. See `man 5 proc`.
