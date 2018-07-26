@@ -1982,7 +1982,7 @@ char *
 nm_setting_to_string (NMSetting *setting)
 {
 	GString *string;
-	gs_unref_variant GVariant *variant;
+	gs_unref_variant GVariant *variant = NULL;
 	GVariant *child;
 	GVariantIter iter;
 
@@ -1993,9 +1993,9 @@ nm_setting_to_string (NMSetting *setting)
 
 	g_variant_iter_init (&iter, variant);
 	while ((child = g_variant_iter_next_value (&iter))) {
-		gs_free char *name;
-		gs_free char *value_str;
-		gs_unref_variant GVariant *value;
+		gs_free char *name = NULL;
+		gs_free char *value_str = NULL;
+		gs_unref_variant GVariant *value = NULL;
 
 		g_variant_get (child, "{sv}", &name, &value);
 		value_str = g_variant_print (value, FALSE);
