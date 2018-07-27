@@ -2684,6 +2684,8 @@ read_one_setting_value (NMSetting *setting,
 static NMSetting *
 read_setting (KeyfileReaderInfo *info)
 {
+	const NMSettInfoSetting *sett_info;
+	gs_unref_object NMSetting *setting = NULL;
 	const char *alias;
 	GType type;
 
@@ -2692,22 +2694,92 @@ read_setting (KeyfileReaderInfo *info)
 		alias = info->group;
 
 	type = nm_setting_lookup_type (alias);
-	if (type) {
-		NMSetting *setting = g_object_new (type, NULL);
-
-		info->setting = setting;
-		nm_setting_enumerate_values (setting, read_one_setting_value, info);
-		info->setting = NULL;
-		if (!info->error)
-			return setting;
-
-		g_object_unref (setting);
-	} else {
+	if (!type) {
 		handle_warn (info, NULL, NM_KEYFILE_WARN_SEVERITY_WARN,
 		             _("invalid setting name '%s'"), info->group);
+		return NULL;
 	}
 
-	return NULL;
+	setting = g_object_new (type, NULL);
+
+	info->setting = setting;
+
+	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (setting));
+
+	if (sett_info->detail.gendata_info) {
+		gs_free char **keys = NULL;
+		gsize i, n_keys;
+
+		keys = g_key_file_get_keys (info->keyfile, info->group, &n_keys, NULL);
+		if (n_keys > 0) {
+			GHashTable *h = _nm_setting_gendata_hash (setting, TRUE);
+
+			nm_utils_strv_sort (keys, n_keys);
+			for (i = 0; i < n_keys; i++) {
+				gs_free char *key = keys[i];
+				gs_free_error GError *local = NULL;
+				const GVariantType *variant_type;
+				GVariant *variant;
+
+				/* a GKeyfile can return duplicate keys, there is just no API to make sense
+				 * of them. Skip them. */
+				if (   i + 1 < n_keys
+				    && nm_streq (key, keys[i + 1]))
+					continue;
+
+				/* currently, the API is very simple. The setting class just returns
+				 * the desired variant type, and keyfile reader will try to parse
+				 * it accordingly. Note, that this does currently not allow, that
+				 * a particular key can contain different variant types, nor is it
+				 * very flexible in general.
+				 *
+				 * We add flexibility when we need it. Keep it simple for now. */
+				variant_type = sett_info->detail.gendata_info->get_variant_type (sett_info,
+				                                                                 key,
+				                                                                 &local);
+				if (!variant_type) {
+					if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
+					                  _("invalid key '%s.%s'"),
+					                  info->group, key))
+						break;
+					continue;
+				}
+
+				if (g_variant_type_equal (variant_type, G_VARIANT_TYPE_BOOLEAN)) {
+					gboolean v;
+
+					v = g_key_file_get_boolean (info->keyfile,
+					                            info->group,
+					                            key,
+					                            &local);
+					if (local) {
+						if (!handle_warn (info, key, NM_KEYFILE_WARN_SEVERITY_WARN,
+						                  _("key '%s.%s' is not boolean"),
+						                  info->group, key))
+							break;
+						continue;
+					}
+					variant = g_variant_new_boolean (v);
+				} else {
+					nm_assert_not_reached ();
+					continue;
+				}
+
+				g_hash_table_insert (h,
+				                     g_steal_pointer (&key),
+				                     g_variant_take_ref (variant));
+			}
+			for (; i < n_keys; i++)
+				g_free (keys[i]);
+		}
+	} else
+		nm_setting_enumerate_values (setting, read_one_setting_value, info);
+
+	info->setting = NULL;
+
+	if (info->error)
+		return NULL;
+	return g_steal_pointer (&setting);
 }
 
 static void
@@ -2998,6 +3070,8 @@ nm_keyfile_write (NMConnection *connection,
                   GError **error)
 {
 	KeyfileWriterInfo info = { 0 };
+	gs_free NMSetting **settings = NULL;
+	guint i, length = 0;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (!error || !*error, NULL);
@@ -3010,12 +3084,59 @@ nm_keyfile_write (NMConnection *connection,
 	info.error = NULL;
 	info.handler = handler;
 	info.user_data = user_data;
-	nm_connection_for_each_setting_value (connection, write_setting_value, &info);
+
+	settings = nm_connection_get_settings (connection, &length);
+	for (i = 0; i < length; i++) {
+		const NMSettInfoSetting *sett_info;
+		NMSetting *setting = settings[i];
+
+		sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (setting));
+
+		if (sett_info->detail.gendata_info) {
+			guint k, n_keys;
+			const char *const*keys;
+
+			nm_assert (!nm_keyfile_plugin_get_alias_for_setting_name (sett_info->setting_class->setting_info->setting_name));
+
+			n_keys = _nm_setting_gendata_get_all (setting, &keys, NULL);
+
+			if (n_keys > 0) {
+				const char *setting_name = sett_info->setting_class->setting_info->setting_name;
+				GHashTable *h = _nm_setting_gendata_hash (setting, FALSE);
+
+				for (k = 0; k < n_keys; k++) {
+					const char *key = keys[k];
+					GVariant *v;
+
+					v = g_hash_table_lookup (h, key);
+
+					if (g_variant_is_of_type (v, G_VARIANT_TYPE_BOOLEAN)) {
+						g_key_file_set_boolean (info.keyfile,
+						                        setting_name,
+						                        key,
+						                        g_variant_get_boolean (v));
+					} else {
+						/* BUG: The variant type is not implemented. Since the connection
+						 * verifies, this can only mean we either wrongly didn't reject
+						 * the connection as invalid, or we didn't properly implement the
+						 * variant type. */
+						nm_assert_not_reached ();
+						continue;
+					}
+				}
+			}
+		} else
+			nm_setting_enumerate_values (setting, write_setting_value, &info);
+
+		if (info.error)
+			break;
+	}
 
 	if (info.error) {
 		g_propagate_error (error, info.error);
 		g_key_file_unref (info.keyfile);
 		return NULL;
 	}
+
 	return info.keyfile;
 }

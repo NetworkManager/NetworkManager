@@ -80,6 +80,8 @@ gboolean _nm_setting_clear_secrets_with_flags (NMSetting *setting,
  */
 #define NM_SETTING_PARAM_REAPPLY_IMMEDIATELY (1 << (6 + G_PARAM_USER_SHIFT))
 
+#define NM_SETTING_PARAM_GENDATA_BACKED (1 << (7 + G_PARAM_USER_SHIFT))
+
 GVariant *_nm_setting_get_deprecated_virtual_interface_name (NMSetting *setting,
                                                              NMConnection *connection,
                                                              const char *property);
@@ -126,6 +128,15 @@ _nm_setting_class_commit (NMSettingClass *setting_class,
 {
 	_nm_setting_class_commit_full (setting_class, meta_type, NULL, NULL);
 }
+
+#define NM_SETT_INFO_SETT_GENDATA(...) \
+	({ \
+		static const NMSettInfoSettGendata _g = { \
+			__VA_ARGS__ \
+		}; \
+		\
+		&_g; \
+	})
 
 #define NM_SETT_INFO_SETT_DETAIL(...) \
 	(&((const NMSettInfoSettDetail) { \
