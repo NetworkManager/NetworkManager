@@ -651,12 +651,14 @@ agent_compare_func (gconstpointer aa, gconstpointer bb, gpointer user_data)
 	NMSessionMonitor *sm;
 	gboolean a_active, b_active;
 	gulong a_pid, b_pid, requester;
+	guint64 a_start, b_start;
+
+	a_pid = nm_secret_agent_get_pid (a);
+	b_pid = nm_secret_agent_get_pid (b);
 
 	/* Prefer agents in the process the request came from */
 	if (nm_auth_subject_is_unix_process (req->subject)) {
 		requester = nm_auth_subject_get_unix_process_pid (req->subject);
-		a_pid = nm_secret_agent_get_pid (a);
-		b_pid = nm_secret_agent_get_pid (b);
 
 		if (a_pid != b_pid) {
 			if (a_pid == requester)
@@ -672,9 +674,15 @@ agent_compare_func (gconstpointer aa, gconstpointer bb, gpointer user_data)
 	b_active = nm_session_monitor_session_exists (sm, nm_secret_agent_get_owner_uid (b), TRUE);
 	if (a_active && !b_active)
 		return -1;
-	else if (a_active == b_active)
-		return 0;
 	else if (!a_active && b_active)
+		return 1;
+
+	/* Prefer agents launched later (this is essentially to ease agent debugging) */
+	a_start = nm_utils_get_start_time_for_pid (a_pid, NULL, NULL);
+	b_start = nm_utils_get_start_time_for_pid (b_pid, NULL, NULL);
+	if (a_start > b_start)
+		return -1;
+	else if (a_start < b_start)
 		return 1;
 
 	return 0;
