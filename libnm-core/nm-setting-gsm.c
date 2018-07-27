@@ -38,8 +38,7 @@
  * networks, including those using GPRS/EDGE and UMTS/HSPA technology.
  */
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingGsm, nm_setting_gsm, NM_TYPE_SETTING,
-                         _nm_register_setting (GSM, NM_SETTING_PRIORITY_HW_BASE))
+G_DEFINE_TYPE (NMSettingGsm, nm_setting_gsm, NM_TYPE_SETTING)
 
 #define NM_SETTING_GSM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_GSM, NMSettingGsmPrivate))
 
@@ -614,6 +613,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
+	setting_class->setting_info   = &nm_meta_setting_infos[NM_META_SETTING_TYPE_GSM];
 	setting_class->verify         = verify;
 	setting_class->verify_secrets = verify_secrets;
 	setting_class->need_secrets   = need_secrets;

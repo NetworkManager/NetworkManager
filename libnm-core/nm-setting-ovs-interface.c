@@ -54,8 +54,7 @@ struct _NMSettingOvsInterfaceClass {
 	NMSettingClass parent;
 };
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingOvsInterface, nm_setting_ovs_interface, NM_TYPE_SETTING,
-                         _nm_register_setting (OVS_INTERFACE, NM_SETTING_PRIORITY_HW_BASE))
+G_DEFINE_TYPE (NMSettingOvsInterface, nm_setting_ovs_interface, NM_TYPE_SETTING)
 
 /*****************************************************************************/
 
@@ -371,7 +370,8 @@ nm_setting_ovs_interface_class_init (NMSettingOvsInterfaceClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->verify = verify;
+	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_OVS_INTERFACE];
+	setting_class->verify       = verify;
 
 	/**
 	 * NMSettingOvsInterface:type:

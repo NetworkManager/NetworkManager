@@ -834,8 +834,7 @@ struct _NMSettingTCConfigClass {
 	NMSettingClass parent;
 };
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingTCConfig, nm_setting_tc_config, NM_TYPE_SETTING,
-                         _nm_register_setting (TC_CONFIG, NM_SETTING_PRIORITY_IP))
+G_DEFINE_TYPE (NMSettingTCConfig, nm_setting_tc_config, NM_TYPE_SETTING)
 
 /**
  * nm_setting_tc_config_new:
@@ -1597,6 +1596,7 @@ nm_setting_tc_config_class_init (NMSettingTCConfigClass *klass)
 	object_class->get_property     = get_property;
 	object_class->finalize         = finalize;
 
+	setting_class->setting_info     = &nm_meta_setting_infos[NM_META_SETTING_TYPE_TC_CONFIG];
 	setting_class->compare_property = compare_property;
 	setting_class->verify           = verify;
 

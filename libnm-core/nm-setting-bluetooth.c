@@ -43,8 +43,7 @@
  * Point (NAP) profiles.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingBluetooth, nm_setting_bluetooth, NM_TYPE_SETTING,
-                         _nm_register_setting (BLUETOOTH, NM_SETTING_PRIORITY_HW_NON_BASE))
+G_DEFINE_TYPE (NMSettingBluetooth, nm_setting_bluetooth, NM_TYPE_SETTING)
 
 #define NM_SETTING_BLUETOOTH_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BLUETOOTH, NMSettingBluetoothPrivate))
 
@@ -293,7 +292,8 @@ nm_setting_bluetooth_class_init (NMSettingBluetoothClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->verify = verify;
+	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_BLUETOOTH];
+	setting_class->verify       = verify;
 
 	/**
 	 * NMSettingBluetooth:bdaddr:

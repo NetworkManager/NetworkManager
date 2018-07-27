@@ -53,8 +53,7 @@
  *       ISBN: 978-1587051548
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingWirelessSecurity, nm_setting_wireless_security, NM_TYPE_SETTING,
-                         _nm_register_setting (WIRELESS_SECURITY, NM_SETTING_PRIORITY_HW_AUX))
+G_DEFINE_TYPE (NMSettingWirelessSecurity, nm_setting_wireless_security, NM_TYPE_SETTING)
 
 #define NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_WIRELESS_SECURITY, NMSettingWirelessSecurityPrivate))
 
@@ -1441,6 +1440,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
+	setting_class->setting_info     = &nm_meta_setting_infos[NM_META_SETTING_TYPE_WIRELESS_SECURITY];
 	setting_class->verify           = verify;
 	setting_class->verify_secrets   = verify_secrets;
 	setting_class->need_secrets     = need_secrets;

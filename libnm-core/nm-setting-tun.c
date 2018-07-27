@@ -38,8 +38,7 @@
  * necessary for connection to TUN/TAP interfaces.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingTun, nm_setting_tun, NM_TYPE_SETTING,
-                         _nm_register_setting (TUN, NM_SETTING_PRIORITY_HW_BASE))
+G_DEFINE_TYPE (NMSettingTun, nm_setting_tun, NM_TYPE_SETTING)
 
 #define NM_SETTING_TUN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_TUN, NMSettingTunPrivate))
 
@@ -302,7 +301,8 @@ nm_setting_tun_class_init (NMSettingTunClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->verify = verify;
+	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_TUN];
+	setting_class->verify       = verify;
 
 	/**
 	 * NMSettingTun:mode:

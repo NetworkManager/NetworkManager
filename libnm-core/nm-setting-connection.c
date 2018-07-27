@@ -45,8 +45,7 @@
  * a #NMSettingConnection setting.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingConnection, nm_setting_connection, NM_TYPE_SETTING,
-                         _nm_register_setting (CONNECTION, NM_SETTING_PRIORITY_CONNECTION))
+G_DEFINE_TYPE (NMSettingConnection, nm_setting_connection, NM_TYPE_SETTING)
 
 #define NM_SETTING_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_CONNECTION, NMSettingConnectionPrivate))
 
@@ -1513,6 +1512,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
+	setting_class->setting_info     = &nm_meta_setting_infos[NM_META_SETTING_TYPE_CONNECTION];
 	setting_class->verify           = verify;
 	setting_class->compare_property = compare_property;
 

@@ -39,8 +39,7 @@
  * optional properties that apply to team ports.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingTeamPort, nm_setting_team_port, NM_TYPE_SETTING,
-                         _nm_register_setting (TEAM_PORT, NM_SETTING_PRIORITY_AUX))
+G_DEFINE_TYPE (NMSettingTeamPort, nm_setting_team_port, NM_TYPE_SETTING)
 
 #define NM_SETTING_TEAM_PORT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_TEAM_PORT, NMSettingTeamPortPrivate))
 
@@ -597,6 +596,7 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 	object_class->get_property     = get_property;
 	object_class->finalize         = finalize;
 
+	setting_class->setting_info     = &nm_meta_setting_infos[NM_META_SETTING_TYPE_TEAM_PORT];
 	setting_class->compare_property = compare_property;
 	setting_class->verify           = verify;
 

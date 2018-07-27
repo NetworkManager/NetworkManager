@@ -37,8 +37,7 @@
  * properties of ADSL connections.
  */
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingAdsl, nm_setting_adsl, NM_TYPE_SETTING,
-                         _nm_register_setting (ADSL, NM_SETTING_PRIORITY_HW_BASE))
+G_DEFINE_TYPE (NMSettingAdsl, nm_setting_adsl, NM_TYPE_SETTING)
 
 #define NM_SETTING_ADSL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_ADSL, NMSettingAdslPrivate))
 
@@ -356,6 +355,7 @@ nm_setting_adsl_class_init (NMSettingAdslClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
+	setting_class->setting_info   = &nm_meta_setting_infos[NM_META_SETTING_TYPE_ADSL];
 	setting_class->verify         = verify;
 	setting_class->verify_secrets = verify_secrets;
 	setting_class->need_secrets   = need_secrets;

@@ -52,8 +52,7 @@
  * supported.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingIP6Config, nm_setting_ip6_config, NM_TYPE_SETTING_IP_CONFIG,
-                         _nm_register_setting (IP6_CONFIG, NM_SETTING_PRIORITY_IP))
+G_DEFINE_TYPE (NMSettingIP6Config, nm_setting_ip6_config, NM_TYPE_SETTING_IP_CONFIG)
 
 #define NM_SETTING_IP6_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_IP6_CONFIG, NMSettingIP6ConfigPrivate))
 
@@ -559,7 +558,8 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->verify = verify;
+	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_IP6_CONFIG];
+	setting_class->verify       = verify;
 
 	/* ---ifcfg-rh---
 	 * property: method

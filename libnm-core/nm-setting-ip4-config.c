@@ -50,8 +50,7 @@
  * connection.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingIP4Config, nm_setting_ip4_config, NM_TYPE_SETTING_IP_CONFIG,
-                         _nm_register_setting (IP4_CONFIG, NM_SETTING_PRIORITY_IP))
+G_DEFINE_TYPE (NMSettingIP4Config, nm_setting_ip4_config, NM_TYPE_SETTING_IP_CONFIG)
 
 #define NM_SETTING_IP4_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_IP4_CONFIG, NMSettingIP4ConfigPrivate))
 
@@ -535,7 +534,8 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->verify = verify;
+	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_IP4_CONFIG];
+	setting_class->verify       = verify;
 
 	/* ---ifcfg-rh---
 	 * property: method

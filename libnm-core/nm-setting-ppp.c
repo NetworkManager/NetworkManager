@@ -35,8 +35,7 @@
  * cable and DSL modems and some mobile broadband devices.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingPpp, nm_setting_ppp, NM_TYPE_SETTING,
-                         _nm_register_setting (PPP, NM_SETTING_PRIORITY_AUX))
+G_DEFINE_TYPE (NMSettingPpp, nm_setting_ppp, NM_TYPE_SETTING)
 
 #define NM_SETTING_PPP_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_PPP, NMSettingPppPrivate))
 
@@ -534,6 +533,7 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 
+	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_PPP];
 	setting_class->verify       = verify;
 
 	/**

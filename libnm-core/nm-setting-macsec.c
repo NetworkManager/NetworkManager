@@ -40,8 +40,7 @@
  * necessary for connection to MACsec (IEEE 802.1AE) interfaces.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingMacsec, nm_setting_macsec, NM_TYPE_SETTING,
-                         _nm_register_setting (MACSEC, NM_SETTING_PRIORITY_HW_BASE))
+G_DEFINE_TYPE (NMSettingMacsec, nm_setting_macsec, NM_TYPE_SETTING)
 
 #define NM_SETTING_MACSEC_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_MACSEC, NMSettingMacsecPrivate))
 
@@ -484,6 +483,7 @@ nm_setting_macsec_class_init (NMSettingMacsecClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
+	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_MACSEC];
 	setting_class->verify       = verify;
 	setting_class->need_secrets = need_secrets;
 

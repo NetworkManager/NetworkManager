@@ -55,8 +55,7 @@ struct _NMSettingOvsPatchClass {
 	NMSettingClass parent;
 };
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingOvsPatch, nm_setting_ovs_patch, NM_TYPE_SETTING,
-                         _nm_register_setting (OVS_PATCH, NM_SETTING_PRIORITY_HW_BASE))
+G_DEFINE_TYPE (NMSettingOvsPatch, nm_setting_ovs_patch, NM_TYPE_SETTING)
 
 /*****************************************************************************/
 
@@ -190,7 +189,8 @@ nm_setting_ovs_patch_class_init (NMSettingOvsPatchClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->verify = verify;
+	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_OVS_PATCH];
+	setting_class->verify       = verify;
 
 	/**
 	 * NMSettingOvsPatch:peer:

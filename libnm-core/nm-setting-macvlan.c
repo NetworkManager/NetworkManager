@@ -39,8 +39,7 @@
  * necessary for connection to macvlan interfaces.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingMacvlan, nm_setting_macvlan, NM_TYPE_SETTING,
-                         _nm_register_setting (MACVLAN, NM_SETTING_PRIORITY_HW_BASE))
+G_DEFINE_TYPE (NMSettingMacvlan, nm_setting_macvlan, NM_TYPE_SETTING)
 
 #define NM_SETTING_MACVLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_MACVLAN, NMSettingMacvlanPrivate))
 
@@ -270,7 +269,8 @@ nm_setting_macvlan_class_init (NMSettingMacvlanClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->verify = verify;
+	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_MACVLAN];
+	setting_class->verify       = verify;
 
 	/**
 	 * NMSettingMacvlan:parent:

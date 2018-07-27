@@ -42,8 +42,7 @@
  * connections cannot be activated.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingWimax, nm_setting_wimax, NM_TYPE_SETTING,
-                         _nm_register_setting (WIMAX, NM_SETTING_PRIORITY_HW_BASE))
+G_DEFINE_TYPE (NMSettingWimax, nm_setting_wimax, NM_TYPE_SETTING)
 
 #define NM_SETTING_WIMAX_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_WIMAX, NMSettingWimaxPrivate))
 
@@ -217,7 +216,8 @@ nm_setting_wimax_class_init (NMSettingWimaxClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->verify = verify;
+	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_WIMAX];
+	setting_class->verify       = verify;
 
 	/**
 	 * NMSettingWimax:network-name:
