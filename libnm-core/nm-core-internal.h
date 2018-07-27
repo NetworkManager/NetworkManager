@@ -173,6 +173,34 @@ NMSettingPriority _nm_setting_get_setting_priority (NMSetting *setting);
 
 gboolean _nm_setting_get_property (NMSetting *setting, const char *name, GValue *value);
 
+/*****************************************************************************/
+
+GHashTable *_nm_setting_gendata_hash (NMSetting *setting,
+                                      gboolean create_if_necessary);
+
+void _nm_setting_gendata_notify (NMSetting *setting,
+                                 gboolean keys_changed);
+
+guint _nm_setting_gendata_get_all (NMSetting *setting,
+                                   const char *const**out_names,
+                                   GVariant *const**out_values);
+
+gboolean _nm_setting_gendata_reset_from_hash (NMSetting *setting,
+                                              GHashTable *new);
+
+void _nm_setting_gendata_to_gvalue (NMSetting *setting,
+                                    GValue *value);
+
+GVariant *nm_setting_gendata_get (NMSetting *setting,
+                                  const char *name);
+
+const char *const*nm_setting_gendata_get_all_names (NMSetting *setting,
+                                                    guint *out_len);
+
+GVariant *const*nm_setting_gendata_get_all_values (NMSetting *setting);
+
+/*****************************************************************************/
+
 #define NM_UTILS_HWADDR_LEN_MAX_STR (NM_UTILS_HWADDR_LEN_MAX * 3)
 
 guint8 *_nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize buffer_length, gsize *out_length);
@@ -481,6 +509,8 @@ gboolean _nm_setting_sriov_sort_vfs (NMSettingSriov *setting);
 
 /*****************************************************************************/
 
+typedef struct _NMSettInfoSetting NMSettInfoSetting;
+
 typedef GVariant *(*NMSettingPropertyGetFunc)           (NMSetting     *setting,
                                                          const char    *property);
 typedef GVariant *(*NMSettingPropertySynthFunc)         (NMSetting     *setting,
@@ -516,14 +546,32 @@ typedef struct {
 } NMSettInfoProperty;
 
 typedef struct {
-} NMSettInfoSettDetail;
+	const GVariantType *(*get_variant_type) (const struct _NMSettInfoSetting *sett_info,
+	                                         const char *name,
+	                                         GError **error);
+} NMSettInfoSettGendata;
 
 typedef struct {
+	/* if set, then this setting class has no own fields. Instead, its
+	 * data is entirely based on gendata. Meaning: it tracks all data
+	 * as native GVariants.
+	 * It might have some GObject properties, but these are merely accessors
+	 * to the underlying gendata.
+	 *
+	 * Note, that at the moment there are few hooks, to customize the behavior
+	 * of the setting further. They are currently unneeded. This is desired,
+	 * but could be added when there is a good reason.
+	 *
+	 * However, a few hooks there are... see NMSettInfoSettGendata. */
+	const NMSettInfoSettGendata *gendata_info;
+} NMSettInfoSettDetail;
+
+struct _NMSettInfoSetting {
 	NMSettingClass *setting_class;
 	const NMSettInfoProperty *property_infos;
 	guint property_infos_len;
 	NMSettInfoSettDetail detail;
-} NMSettInfoSetting;
+};
 
 const NMSettInfoSetting *_nm_sett_info_setting_get (NMSettingClass *setting_class);
 

@@ -56,6 +56,12 @@
 /*****************************************************************************/
 
 typedef struct {
+	GHashTable *hash;
+	const char **names;
+	GVariant **values;
+} GenData;
+
+typedef struct {
 	const char *name;
 	GType type;
 	NMSettingPriority priority;
@@ -69,12 +75,16 @@ enum {
 };
 
 typedef struct {
-	int dummy;
+	GenData *gendata;
 } NMSettingPrivate;
 
 G_DEFINE_ABSTRACT_TYPE (NMSetting, nm_setting, G_TYPE_OBJECT)
 
 #define NM_SETTING_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING, NMSettingPrivate))
+
+/*****************************************************************************/
+
+static GenData *_gendata_hash (NMSetting *setting, gboolean create_if_necessary);
 
 /*****************************************************************************/
 
@@ -623,14 +633,26 @@ set_property_from_dbus (const NMSettInfoProperty *property,
 GVariant *
 _nm_setting_to_dbus (NMSetting *setting, NMConnection *connection, NMConnectionSerializationFlags flags)
 {
+	NMSettingPrivate *priv;
 	GVariantBuilder builder;
 	GVariant *dbus_value;
 	const NMSettInfoSetting *sett_info;
-	guint i;
+	guint n_properties, i;
+	const char *const*gendata_keys;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
 
+	priv = NM_SETTING_GET_PRIVATE (setting);
+
 	g_variant_builder_init (&builder, NM_VARIANT_TYPE_SETTING);
+
+	n_properties = _nm_setting_gendata_get_all (setting, &gendata_keys, NULL);
+	for (i = 0; i < n_properties; i++) {
+		g_variant_builder_add (&builder,
+		                       "{sv}",
+		                       gendata_keys[i],
+		                       g_hash_table_lookup (priv->gendata->hash, gendata_keys[i]));
+	}
 
 	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (setting));
 	for (i = 0; i < sett_info->property_infos_len; i++) {
@@ -645,6 +667,9 @@ _nm_setting_to_dbus (NMSetting *setting, NMConnection *connection, NMConnectionS
 				continue;
 		} else {
 			if (!(prop_spec->flags & G_PARAM_WRITABLE))
+				continue;
+
+			if (NM_FLAGS_ANY (prop_spec->flags, NM_SETTING_PARAM_GENDATA_BACKED))
 				continue;
 
 			if (   (prop_spec->flags & NM_SETTING_PARAM_LEGACY)
@@ -751,6 +776,26 @@ _nm_setting_new_from_dbus (GType setting_type,
 	}
 
 	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (setting));
+
+	if (sett_info->detail.gendata_info) {
+		GHashTable *hash;
+		GVariantIter iter;
+		char *key;
+		GVariant *val;
+
+		hash = _gendata_hash (setting, TRUE)->hash;
+
+		g_variant_iter_init (&iter, setting_dict);
+		while (g_variant_iter_next (&iter, "{sv}", &key, &val)) {
+			g_hash_table_insert (hash,
+			                     key,
+			                     val);
+		}
+
+		_nm_setting_gendata_notify (setting, TRUE);
+		return g_steal_pointer (&setting);
+	}
+
 	for (i = 0; i < sett_info->property_infos_len; i++) {
 		const NMSettInfoProperty *property = &sett_info->property_infos[i];
 		gs_unref_variant GVariant *value = NULL;
@@ -888,14 +933,32 @@ nm_setting_get_dbus_property_type (NMSetting *setting,
 gboolean
 _nm_setting_get_property (NMSetting *setting, const char *property_name, GValue *value)
 {
+	const NMSettInfoSetting *sett_info;
 	GParamSpec *prop_spec;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 	g_return_val_if_fail (property_name, FALSE);
 	g_return_val_if_fail (value, FALSE);
 
-	prop_spec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), property_name);
+	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (setting));
 
+	if (sett_info->detail.gendata_info) {
+		GVariant *variant;
+		GenData *gendata = _gendata_hash (setting, FALSE);
+
+		variant = gendata ? g_hash_table_lookup (gendata->hash, property_name) : NULL;
+
+		if (!variant) {
+			g_value_unset (value);
+			return FALSE;
+		}
+
+		g_value_init (value, G_TYPE_VARIANT);
+		g_value_set_variant (value, variant);
+		return TRUE;
+	}
+
+	prop_spec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), property_name);
 	if (!prop_spec) {
 		g_value_unset (value);
 		return FALSE;
@@ -929,16 +992,37 @@ duplicate_setting (NMSetting *setting,
 NMSetting *
 nm_setting_duplicate (NMSetting *setting)
 {
+	const NMSettInfoSetting *sett_info;
 	GObject *dup;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
 
 	dup = g_object_new (G_OBJECT_TYPE (setting), NULL);
 
-	g_object_freeze_notify (dup);
-	nm_setting_enumerate_values (setting, duplicate_setting, dup);
-	g_object_thaw_notify (dup);
+	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (setting));
 
+	if (sett_info->detail.gendata_info) {
+		GenData *gendata = _gendata_hash (setting, FALSE);
+
+		if (   gendata
+		    && g_hash_table_size (gendata->hash) > 0) {
+			GHashTableIter iter;
+			GHashTable *h = _gendata_hash (NM_SETTING (dup), TRUE)->hash;
+			const char *key;
+			GVariant *val;
+
+			g_hash_table_iter_init (&iter, gendata->hash);
+			while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &val)) {
+				g_hash_table_insert (h,
+				                     g_strdup (key),
+				                     g_variant_ref (val));
+			}
+		}
+	} else {
+		g_object_freeze_notify (dup);
+		nm_setting_enumerate_values (setting, duplicate_setting, dup);
+		g_object_thaw_notify (dup);
+	}
 	return NM_SETTING (dup);
 }
 
@@ -1118,6 +1202,7 @@ nm_setting_compare (NMSetting *a,
                     NMSetting *b,
                     NMSettingCompareFlags flags)
 {
+	const NMSettInfoSetting *sett_info;
 	GParamSpec **property_specs;
 	guint n_property_specs;
 	int same = TRUE;
@@ -1129,6 +1214,18 @@ nm_setting_compare (NMSetting *a,
 	/* First check that both have the same type */
 	if (G_OBJECT_TYPE (a) != G_OBJECT_TYPE (b))
 		return FALSE;
+
+	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (a));
+
+	if (sett_info->detail.gendata_info) {
+		GenData *a_gendata = _gendata_hash (a, FALSE);
+		GenData *b_gendata = _gendata_hash (b, FALSE);
+
+		return nm_utils_hash_table_equal (a_gendata ? a_gendata->hash : NULL,
+		                                  b_gendata ? b_gendata->hash : NULL,
+		                                  TRUE,
+		                                  g_variant_equal);
+	}
 
 	/* And now all properties */
 	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (a), &n_property_specs);
@@ -1215,6 +1312,21 @@ should_compare_prop (NMSetting *setting,
 	return TRUE;
 }
 
+static void
+_setting_diff_add_result (GHashTable *results, const char *prop_name, NMSettingDiffResult r)
+{
+	void *p;
+
+	if (r == NM_SETTING_DIFF_RESULT_UNKNOWN)
+		return;
+
+	if (g_hash_table_lookup_extended (results, prop_name, NULL, &p)) {
+		if (!NM_FLAGS_ALL ((guint) r, GPOINTER_TO_UINT (p)))
+			g_hash_table_insert (results, g_strdup (prop_name), GUINT_TO_POINTER (((guint) r) | GPOINTER_TO_UINT (p)));
+	} else
+		g_hash_table_insert (results, g_strdup (prop_name), GUINT_TO_POINTER (r));
+}
+
 /**
  * nm_setting_diff:
  * @a: a #NMSetting
@@ -1243,8 +1355,7 @@ nm_setting_diff (NMSetting *a,
                  gboolean invert_results,
                  GHashTable **results)
 {
-	GParamSpec **property_specs;
-	guint n_property_specs;
+	const NMSettInfoSetting *sett_info;
 	guint i;
 	NMSettingDiffResult a_result = NM_SETTING_DIFF_RESULT_IN_A;
 	NMSettingDiffResult b_result = NM_SETTING_DIFF_RESULT_IN_B;
@@ -1288,78 +1399,117 @@ nm_setting_diff (NMSetting *a,
 		results_created = TRUE;
 	}
 
-	/* And now all properties */
-	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (a), &n_property_specs);
+	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (a));
 
-	for (i = 0; i < n_property_specs; i++) {
-		GParamSpec *prop_spec = property_specs[i];
-		NMSettingDiffResult r = NM_SETTING_DIFF_RESULT_UNKNOWN;
+	if (sett_info->detail.gendata_info) {
+		const char *key;
+		GVariant *val, *val2;
+		GHashTableIter iter;
+		GenData *a_gendata = _gendata_hash (a, FALSE);
+		GenData *b_gendata = b ? _gendata_hash (b, FALSE) : NULL;
 
-		/* Handle compare flags */
-		if (!should_compare_prop (a, prop_spec->name, flags, prop_spec->flags))
-			continue;
-		if (strcmp (prop_spec->name, NM_SETTING_NAME) == 0)
-			continue;
+		if (!a_gendata || !b_gendata) {
+			if (a_gendata || b_gendata) {
+				NMSettingDiffResult one_sided_result;
 
-		compared_any = TRUE;
+				one_sided_result = a_gendata ? a_result : b_result;
+				g_hash_table_iter_init (&iter, a_gendata ? a_gendata->hash : b_gendata->hash);
+				while (g_hash_table_iter_next (&iter, (gpointer *) &key, NULL)) {
+					diff_found = TRUE;
+					_setting_diff_add_result (*results, key, one_sided_result);
+				}
+			}
+		} else {
+			g_hash_table_iter_init (&iter, a_gendata->hash);
+			while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &val)) {
+				val2 = b_gendata ? g_hash_table_lookup (b_gendata->hash, key) : NULL;
+				compared_any = TRUE;
+				if (   !val2
+				    || !g_variant_equal (val, val2)) {
+					diff_found = TRUE;
+					_setting_diff_add_result (*results, key, a_result);
+				}
+			}
+			g_hash_table_iter_init (&iter, b_gendata->hash);
+			while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &val)) {
+				val2 = a_gendata ? g_hash_table_lookup (a_gendata->hash, key) : NULL;
+				compared_any = TRUE;
+				if (   !val2
+				    || !g_variant_equal (val, val2)) {
+					diff_found = TRUE;
+					_setting_diff_add_result (*results, key, b_result);
+				}
+			}
+		}
+	} else {
+		gs_free GParamSpec **property_specs = NULL;
+		guint n_property_specs;
 
-		if (b) {
-			gboolean different;
+		property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (a), &n_property_specs);
 
-			different = !NM_SETTING_GET_CLASS (a)->compare_property (a, b, prop_spec, flags);
-			if (different) {
-				gboolean a_is_default, b_is_default;
+		for (i = 0; i < n_property_specs; i++) {
+			GParamSpec *prop_spec = property_specs[i];
+			NMSettingDiffResult r = NM_SETTING_DIFF_RESULT_UNKNOWN;
+
+			/* Handle compare flags */
+			if (!should_compare_prop (a, prop_spec->name, flags, prop_spec->flags))
+				continue;
+			if (strcmp (prop_spec->name, NM_SETTING_NAME) == 0)
+				continue;
+
+			compared_any = TRUE;
+
+			if (b) {
+				gboolean different;
+
+				different = !NM_SETTING_GET_CLASS (a)->compare_property (a, b, prop_spec, flags);
+				if (different) {
+					gboolean a_is_default, b_is_default;
+					GValue value = G_VALUE_INIT;
+
+					g_value_init (&value, prop_spec->value_type);
+					g_object_get_property (G_OBJECT (a), prop_spec->name, &value);
+					a_is_default = g_param_value_defaults (prop_spec, &value);
+
+					g_value_reset (&value);
+					g_object_get_property (G_OBJECT (b), prop_spec->name, &value);
+					b_is_default = g_param_value_defaults (prop_spec, &value);
+
+					g_value_unset (&value);
+					if ((flags & NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT) == 0) {
+						if (!a_is_default)
+							r |= a_result;
+						if (!b_is_default)
+							r |= b_result;
+					} else {
+						r |= a_result | b_result;
+						if (a_is_default)
+							r |= a_result_default;
+						if (b_is_default)
+							r |= b_result_default;
+					}
+				}
+			} else if ((flags & (NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT | NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT)) == 0)
+				r = a_result;  /* only in A */
+			else {
 				GValue value = G_VALUE_INIT;
 
 				g_value_init (&value, prop_spec->value_type);
 				g_object_get_property (G_OBJECT (a), prop_spec->name, &value);
-				a_is_default = g_param_value_defaults (prop_spec, &value);
-
-				g_value_reset (&value);
-				g_object_get_property (G_OBJECT (b), prop_spec->name, &value);
-				b_is_default = g_param_value_defaults (prop_spec, &value);
+				if (!g_param_value_defaults (prop_spec, &value))
+					r |= a_result;
+				else if (flags & NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT)
+					r |= a_result | a_result_default;
 
 				g_value_unset (&value);
-				if ((flags & NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT) == 0) {
-					if (!a_is_default)
-						r |= a_result;
-					if (!b_is_default)
-						r |= b_result;
-				} else {
-					r |= a_result | b_result;
-					if (a_is_default)
-						r |= a_result_default;
-					if (b_is_default)
-						r |= b_result_default;
-				}
 			}
-		} else if ((flags & (NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT | NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT)) == 0)
-			r = a_result;  /* only in A */
-		else {
-			GValue value = G_VALUE_INIT;
 
-			g_value_init (&value, prop_spec->value_type);
-			g_object_get_property (G_OBJECT (a), prop_spec->name, &value);
-			if (!g_param_value_defaults (prop_spec, &value))
-				r |= a_result;
-			else if (flags & NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT)
-				r |= a_result | a_result_default;
-
-			g_value_unset (&value);
-		}
-
-		if (r != NM_SETTING_DIFF_RESULT_UNKNOWN) {
-			void *p;
-
-			diff_found = TRUE;
-			if (g_hash_table_lookup_extended (*results, prop_spec->name, NULL, &p)) {
-				if ((r & GPOINTER_TO_UINT (p)) != r)
-					g_hash_table_insert (*results, g_strdup (prop_spec->name), GUINT_TO_POINTER (r | GPOINTER_TO_UINT (p)));
-			} else
-				g_hash_table_insert (*results, g_strdup (prop_spec->name), GUINT_TO_POINTER (r));
+			if (r != NM_SETTING_DIFF_RESULT_UNKNOWN) {
+				diff_found = TRUE;
+				_setting_diff_add_result (*results, prop_spec->name, r);
+			}
 		}
 	}
-	g_free (property_specs);
 
 	if (!compared_any && !b) {
 		/* special case: the setting has no properties, and the opposite
@@ -1370,7 +1520,7 @@ nm_setting_diff (NMSetting *a,
 
 	if (diff_found) {
 		/* if there is a difference, we always return FALSE. It also means, we might
-		 * have allocated a new @results hash, and return if to the caller. */
+		 * have allocated a new @results hash, and return it to the caller. */
 		return FALSE;
 	} else {
 		if (results_created) {
@@ -1426,23 +1576,57 @@ nm_setting_enumerate_values (NMSetting *setting,
                              NMSettingValueIterFn func,
                              gpointer user_data)
 {
+	const NMSettInfoSetting *sett_info;
 	GParamSpec **property_specs;
-	guint n_property_specs;
-	int i;
+	guint n_properties;
+	guint i;
 	GType type;
 
 	g_return_if_fail (NM_IS_SETTING (setting));
 	g_return_if_fail (func != NULL);
 
-	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (setting), &n_property_specs);
+	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (setting));
+
+	if (sett_info->detail.gendata_info) {
+		const char *const*names;
+
+		/* the properties of this setting are not real GObject properties.
+		 * Hence, this API makes little sense (or does it?). Still, call
+		 * @func with each value. */
+		n_properties = _nm_setting_gendata_get_all (setting, &names, NULL);
+		if (n_properties > 0) {
+			gs_strfreev char **keys = g_strdupv ((char **) names);
+			GHashTable *h = _gendata_hash (setting, FALSE)->hash;
+
+			for (i = 0; i < n_properties; i++) {
+				GValue value = G_VALUE_INIT;
+				GVariant *val = g_hash_table_lookup (h, keys[i]);
+
+				if (!val) {
+					/* was deleted in the meantime? Skip */
+					continue;
+				}
+
+				g_value_init (&value, G_TYPE_VARIANT);
+				g_value_set_variant (&value, val);
+				/* call it will GParamFlags 0. It shall indicate that this
+				 * is not a "real" GObject property. */
+				func (setting, keys[i], &value, 0, user_data);
+				g_value_unset (&value);
+			}
+		}
+		return;
+	}
+
+	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (setting), &n_properties);
 
 	/* sort the properties. This has an effect on the order in which keyfile
 	 * prints them. */
 	type = G_OBJECT_TYPE (setting);
-	g_qsort_with_data (property_specs, n_property_specs, sizeof (gpointer),
+	g_qsort_with_data (property_specs, n_properties, sizeof (gpointer),
 	                   (GCompareDataFunc) _enumerate_values_sort, &type);
 
-	for (i = 0; i < n_property_specs; i++) {
+	for (i = 0; i < n_properties; i++) {
 		GParamSpec *prop_spec = property_specs[i];
 		GValue value = G_VALUE_INIT;
 
@@ -1468,7 +1652,7 @@ nm_setting_enumerate_values (NMSetting *setting,
 gboolean
 _nm_setting_clear_secrets (NMSetting *setting)
 {
-	GParamSpec **property_specs;
+	gs_free GParamSpec **property_specs = NULL;
 	guint n_property_specs;
 	guint i;
 	gboolean changed = FALSE;
@@ -1476,7 +1660,6 @@ _nm_setting_clear_secrets (NMSetting *setting)
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 
 	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (setting), &n_property_specs);
-
 	for (i = 0; i < n_property_specs; i++) {
 		GParamSpec *prop_spec = property_specs[i];
 
@@ -1493,9 +1676,6 @@ _nm_setting_clear_secrets (NMSetting *setting)
 			g_value_unset (&value);
 		}
 	}
-
-	g_free (property_specs);
-
 	return changed;
 }
 
@@ -1546,7 +1726,7 @@ _nm_setting_clear_secrets_with_flags (NMSetting *setting,
                                       NMSettingClearSecretsWithFlagsFn func,
                                       gpointer user_data)
 {
-	GParamSpec **property_specs;
+	gs_free GParamSpec **property_specs = NULL;
 	guint n_property_specs;
 	guint i;
 	gboolean changed = FALSE;
@@ -1564,8 +1744,6 @@ _nm_setting_clear_secrets_with_flags (NMSetting *setting,
 			                                                                     user_data);
 		}
 	}
-
-	g_free (property_specs);
 	return changed;
 }
 
@@ -1870,6 +2048,240 @@ _nm_setting_get_deprecated_virtual_interface_name (NMSetting *setting,
 
 /*****************************************************************************/
 
+static GenData *
+_gendata_hash (NMSetting *setting, gboolean create_if_necessary)
+{
+	NMSettingPrivate *priv;
+
+	nm_assert (NM_IS_SETTING (setting));
+
+	priv = NM_SETTING_GET_PRIVATE (setting);
+
+	if (G_UNLIKELY (!priv->gendata)) {
+		if (!create_if_necessary)
+			return NULL;
+		priv->gendata = g_slice_new (GenData);
+		priv->gendata->hash = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, (GDestroyNotify) g_variant_unref);
+		priv->gendata->names = NULL;
+		priv->gendata->values = NULL;
+	}
+
+	return priv->gendata;
+}
+
+GHashTable *
+_nm_setting_gendata_hash (NMSetting *setting, gboolean create_if_necessary)
+{
+	GenData *gendata;
+
+	gendata = _gendata_hash (setting, create_if_necessary);
+	return gendata ? gendata->hash : NULL;
+}
+
+void
+_nm_setting_gendata_notify (NMSetting *setting,
+                            gboolean names_changed)
+{
+	GenData *gendata;
+
+	gendata = _gendata_hash (setting, FALSE);
+	if (!gendata)
+		return;
+
+	nm_clear_g_free (&gendata->values);
+
+	if (names_changed) {
+		/* if only the values changed, it's sufficient to invalidate the
+		 * values cache. Otherwise, the names cache must be invalidated too. */
+		nm_clear_g_free (&gendata->names);
+	}
+}
+
+GVariant *
+nm_setting_gendata_get (NMSetting *setting,
+                        const char *name)
+{
+	GenData *gendata;
+
+	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
+	g_return_val_if_fail (name, NULL);
+
+	gendata = _gendata_hash (setting, FALSE);
+	return gendata ? g_hash_table_lookup (gendata->hash, name) : NULL;
+}
+
+guint
+_nm_setting_gendata_get_all (NMSetting *setting,
+                             const char *const**out_names,
+                             GVariant *const**out_values)
+{
+	GenData *gendata;
+	GHashTable *hash;
+	guint i, len;
+
+	nm_assert (NM_IS_SETTING (setting));
+
+	gendata = _gendata_hash (setting, FALSE);
+	if (!gendata)
+		goto out_zero;
+
+	hash = gendata->hash;
+	len = g_hash_table_size (hash);
+	if (len == 0)
+		goto out_zero;
+
+	if (!out_names && !out_values)
+		return len;
+
+	if (G_UNLIKELY (!gendata->names)) {
+		gendata->names = nm_utils_strdict_get_keys (hash,
+		                                            TRUE,
+		                                            NULL);
+	}
+
+	if (out_values) {
+		if (G_UNLIKELY (!gendata->values)) {
+			gendata->values = g_new (GVariant *, len + 1);
+			for (i = 0; i < len; i++)
+				gendata->values[i] = g_hash_table_lookup (hash, gendata->names[i]);
+			gendata->values[i] = NULL;
+		}
+		*out_values = gendata->values;
+	}
+
+	NM_SET_OUT (out_names, (const char *const*) gendata->names);
+	return len;
+
+out_zero:
+	NM_SET_OUT (out_names, NULL);
+	NM_SET_OUT (out_values, NULL);
+	return 0;
+}
+
+/**
+ * nm_setting_gendata_get_all_names:
+ * @setting: the #NMSetting
+ * @out_len: (allow-none): (out):
+ *
+ * Gives the number of generic data elements and optionally returns all their
+ * key names and values. This API is low level access and unless you know what you
+ * are doing, it might not be what you want.
+ *
+ * Returns: (array length=out_len zero-terminated=1) (transfer none):
+ *   A %NULL terminated array of key names. If no names are present, this returns
+ *   %NULL. The returned array and the names are owned by %NMSetting and might be invalidated
+ *   soon.
+ *
+ * Since: 1.14
+ **/
+const char *const*
+nm_setting_gendata_get_all_names (NMSetting *setting,
+                                  guint *out_len)
+{
+	const char *const*names;
+	guint len;
+
+	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
+
+	len = _nm_setting_gendata_get_all (setting, &names, NULL);
+	NM_SET_OUT (out_len, len);
+	return names;
+}
+
+/**
+ * nm_setting_gendata_get_all_values:
+ * @setting: the #NMSetting
+ *
+ * Gives the number of generic data elements and optionally returns all their
+ * key names and values. This API is low level access and unless you know what you
+ * are doing, it might not be what you want.
+ *
+ * Returns: (array zero-terminated=1) (transfer none):
+ *   A %NULL terminated array of #GVariant. If no data is present, this returns
+ *   %NULL. The returned array and the variants are owned by %NMSetting and might be invalidated
+ *   soon. The sort order of nm_setting_gendata_get_all_names() and nm_setting_gendata_get_all_values()
+ *   is consistent. That means, the nth value has the nth name returned by nm_setting_gendata_get_all_names().
+ *
+ * Since: 1.14
+ **/
+GVariant *const*
+nm_setting_gendata_get_all_values (NMSetting *setting)
+{
+	GVariant *const*values;
+
+	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
+
+	_nm_setting_gendata_get_all (setting, NULL, &values);
+	return values;
+}
+
+void
+_nm_setting_gendata_to_gvalue (NMSetting *setting,
+                                GValue *value)
+{
+	GenData *gendata;
+	GHashTable *new;
+	const char *key;
+	GVariant *val;
+	GHashTableIter iter;
+
+	nm_assert (NM_IS_SETTING (setting));
+	nm_assert (value);
+	nm_assert (G_TYPE_CHECK_VALUE_TYPE ((value), G_TYPE_HASH_TABLE));
+
+	new = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, (GDestroyNotify) g_variant_unref);
+
+	gendata = _gendata_hash (setting, FALSE);
+	if (gendata) {
+		g_hash_table_iter_init (&iter, gendata->hash);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &val))
+			g_hash_table_insert (new, g_strdup (key), g_variant_ref (val));
+	}
+
+	g_value_take_boxed (value, new);
+}
+
+gboolean
+_nm_setting_gendata_reset_from_hash (NMSetting *setting,
+                                     GHashTable *new)
+{
+	GenData *gendata;
+	GHashTableIter iter;
+	const char *key;
+	GVariant *val;
+	guint num;
+
+	nm_assert (NM_IS_SETTING (setting));
+	nm_assert (new);
+
+	num = new ? g_hash_table_size (new) : 0;
+
+	gendata = _gendata_hash (setting, num > 0);
+
+	if (num == 0) {
+		if (   !gendata
+		    || g_hash_table_size (gendata->hash) == 0)
+			return FALSE;
+
+		g_hash_table_remove_all (gendata->hash);
+		_nm_setting_gendata_notify (setting, TRUE);
+		return TRUE;
+	}
+
+	/* let's not bother to find out whether the new hash has any different
+	 * content the the current gendata. Just replace it. */
+	g_hash_table_remove_all (gendata->hash);
+	if (num > 0) {
+		g_hash_table_iter_init (&iter, new);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &val))
+			g_hash_table_insert (gendata->hash, g_strdup (key), g_variant_ref (val));
+	}
+	_nm_setting_gendata_notify (setting, TRUE);
+	return TRUE;
+}
+
+/*****************************************************************************/
+
 static void
 nm_setting_init (NMSetting *setting)
 {
@@ -1889,6 +2301,21 @@ get_property (GObject *object, guint prop_id,
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
 	}
+}
+
+static void
+finalize (GObject *object)
+{
+	NMSettingPrivate *priv = NM_SETTING_GET_PRIVATE (object);
+
+	if (priv->gendata) {
+		g_free (priv->gendata->names);
+		g_free (priv->gendata->values);
+		g_hash_table_unref (priv->gendata->hash);
+		g_slice_free (GenData, priv->gendata);
+	}
+
+	G_OBJECT_CLASS (nm_setting_parent_class)->finalize (object);
 }
 
 static void
@@ -1914,6 +2341,7 @@ nm_setting_class_init (NMSettingClass *setting_class)
 	g_type_class_add_private (setting_class, sizeof (NMSettingPrivate));
 
 	object_class->get_property = get_property;
+	object_class->finalize     = finalize;
 
 	setting_class->update_one_secret = update_one_secret;
 	setting_class->get_secret_flags = get_secret_flags;
