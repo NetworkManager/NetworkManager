@@ -38,8 +38,7 @@
  * to provide IP transport, for example cable or DSL modems.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingPppoe, nm_setting_pppoe, NM_TYPE_SETTING,
-                         _nm_register_setting (PPPOE, NM_SETTING_PRIORITY_AUX))
+G_DEFINE_TYPE (NMSettingPppoe, nm_setting_pppoe, NM_TYPE_SETTING)
 
 #define NM_SETTING_PPPOE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_PPPOE, NMSettingPppoePrivate))
 
@@ -298,6 +297,7 @@ nm_setting_pppoe_class_init (NMSettingPppoeClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
+	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_PPPOE];
 	setting_class->verify       = verify;
 	setting_class->need_secrets = need_secrets;
 

@@ -39,8 +39,7 @@
  * to fulfill client queries.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingProxy, nm_setting_proxy, NM_TYPE_SETTING,
-                         _nm_register_setting (PROXY, NM_SETTING_PRIORITY_IP))
+G_DEFINE_TYPE (NMSettingProxy, nm_setting_proxy, NM_TYPE_SETTING)
 
 #define NM_SETTING_PROXY_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_PROXY, NMSettingProxyPrivate))
 
@@ -295,7 +294,8 @@ nm_setting_proxy_class_init (NMSettingProxyClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->verify = verify;
+	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_PROXY];
+	setting_class->verify       = verify;
 
 	/**
 	 * NMSettingProxy:method:

@@ -40,8 +40,7 @@
  * necessary for connection to 802.11 Wi-Fi networks.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingWireless, nm_setting_wireless, NM_TYPE_SETTING,
-                         _nm_register_setting (WIRELESS, NM_SETTING_PRIORITY_HW_BASE))
+G_DEFINE_TYPE (NMSettingWireless, nm_setting_wireless, NM_TYPE_SETTING)
 
 #define NM_SETTING_WIRELESS_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_WIRELESS, NMSettingWirelessPrivate))
 
@@ -1186,6 +1185,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
+	setting_class->setting_info     = &nm_meta_setting_infos[NM_META_SETTING_TYPE_WIRELESS];
 	setting_class->verify           = verify;
 	setting_class->compare_property = compare_property;
 

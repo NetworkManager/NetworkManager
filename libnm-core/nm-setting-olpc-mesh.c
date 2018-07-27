@@ -39,8 +39,7 @@
 
 static void nm_setting_olpc_mesh_init (NMSettingOlpcMesh *setting);
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingOlpcMesh, nm_setting_olpc_mesh, NM_TYPE_SETTING,
-                         _nm_register_setting (OLPC_MESH, NM_SETTING_PRIORITY_HW_BASE))
+G_DEFINE_TYPE (NMSettingOlpcMesh, nm_setting_olpc_mesh, NM_TYPE_SETTING)
 
 #define NM_SETTING_OLPC_MESH_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_OLPC_MESH, NMSettingOlpcMeshPrivate))
 
@@ -224,7 +223,8 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->verify = verify;
+	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_OLPC_MESH];
+	setting_class->verify       = verify;
 
 	/**
 	 * NMSettingOlpcMesh:ssid:

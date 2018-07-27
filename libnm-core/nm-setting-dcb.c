@@ -40,8 +40,7 @@
  * of storage technologies like Fibre Channel over Ethernet (FCoE) and iSCSI.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingDcb, nm_setting_dcb, NM_TYPE_SETTING,
-                         _nm_register_setting (DCB, NM_SETTING_PRIORITY_HW_AUX))
+G_DEFINE_TYPE (NMSettingDcb, nm_setting_dcb, NM_TYPE_SETTING)
 
 #define NM_SETTING_DCB_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_DCB, NMSettingDcbPrivate))
 
@@ -917,7 +916,8 @@ nm_setting_dcb_class_init (NMSettingDcbClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize = finalize;
 
-	setting_class->verify = verify;
+	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_DCB];
+	setting_class->verify       = verify;
 
 	/**
 	 * NMSettingDcb:app-fcoe-flags:

@@ -40,8 +40,7 @@
  * necessary for connection to Ethernet networks.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingWired, nm_setting_wired, NM_TYPE_SETTING,
-                         _nm_register_setting (WIRED, NM_SETTING_PRIORITY_HW_BASE))
+G_DEFINE_TYPE (NMSettingWired, nm_setting_wired, NM_TYPE_SETTING)
 
 #define NM_SETTING_WIRED_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_WIRED, NMSettingWiredPrivate))
 
@@ -988,6 +987,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
+	setting_class->setting_info     = &nm_meta_setting_infos[NM_META_SETTING_TYPE_WIRED];
 	setting_class->verify           = verify;
 	setting_class->compare_property = compare_property;
 

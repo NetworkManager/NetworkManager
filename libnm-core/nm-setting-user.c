@@ -63,8 +63,7 @@ struct _NMSettingUserClass {
 	NMSettingClass parent;
 };
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingUser, nm_setting_user, NM_TYPE_SETTING,
-                         _nm_register_setting (USER, NM_SETTING_PRIORITY_USER))
+G_DEFINE_TYPE (NMSettingUser, nm_setting_user, NM_TYPE_SETTING)
 
 #define NM_SETTING_USER_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMSettingUser, NM_IS_SETTING_USER)
 
@@ -553,6 +552,7 @@ nm_setting_user_class_init (NMSettingUserClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
+	setting_class->setting_info     = &nm_meta_setting_infos[NM_META_SETTING_TYPE_USER];
 	setting_class->compare_property = compare_property;
 	setting_class->verify           = verify;
 

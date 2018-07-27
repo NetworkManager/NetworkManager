@@ -61,8 +61,7 @@ struct _NMSettingOvsBridgeClass {
 	NMSettingClass parent;
 };
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingOvsBridge, nm_setting_ovs_bridge, NM_TYPE_SETTING,
-                         _nm_register_setting (OVS_BRIDGE, NM_SETTING_PRIORITY_HW_BASE))
+G_DEFINE_TYPE (NMSettingOvsBridge, nm_setting_ovs_bridge, NM_TYPE_SETTING)
 
 /*****************************************************************************/
 
@@ -272,7 +271,8 @@ nm_setting_ovs_bridge_class_init (NMSettingOvsBridgeClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->verify = verify;
+	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_OVS_BRIDGE];
+	setting_class->verify       = verify;
 
 	/**
 	 * NMSettingOvsBridge:fail-mode:

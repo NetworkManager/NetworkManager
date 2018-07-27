@@ -168,6 +168,8 @@ typedef gboolean (*NMSettingClearSecretsWithFlagsFn) (NMSetting *setting,
                                                       NMSettingSecretFlags flags,
                                                       gpointer user_data);
 
+struct _NMMetaSettingInfo;
+
 typedef struct {
 	GObjectClass parent;
 
@@ -211,7 +213,10 @@ typedef struct {
 	                                  NMSettingCompareFlags flags);
 
 	/*< private >*/
-	gpointer padding[7];
+	const struct _NMMetaSettingInfo *setting_info;
+
+	/*< private >*/
+	gpointer padding[6];
 } NMSettingClass;
 
 /**

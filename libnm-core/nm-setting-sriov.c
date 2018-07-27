@@ -42,8 +42,7 @@ struct _NMSettingSriovClass {
 	NMSettingClass parent;
 };
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingSriov, nm_setting_sriov, NM_TYPE_SETTING,
-                         _nm_register_setting (SRIOV, NM_SETTING_PRIORITY_HW_AUX))
+G_DEFINE_TYPE (NMSettingSriov, nm_setting_sriov, NM_TYPE_SETTING)
 
 enum {
 	PROP_0,
@@ -1240,6 +1239,7 @@ nm_setting_sriov_class_init (NMSettingSriovClass *klass)
 	object_class->set_property     = set_property;
 	object_class->finalize         = finalize;
 
+	setting_class->setting_info     = &nm_meta_setting_infos[NM_META_SETTING_TYPE_SRIOV];
 	setting_class->compare_property = compare_property;
 	setting_class->verify           = verify;
 

@@ -37,8 +37,7 @@
  * necessary for connection to IP-over-InfiniBand networks.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingInfiniband, nm_setting_infiniband, NM_TYPE_SETTING,
-                         _nm_register_setting (INFINIBAND, NM_SETTING_PRIORITY_HW_BASE))
+G_DEFINE_TYPE (NMSettingInfiniband, nm_setting_infiniband, NM_TYPE_SETTING)
 
 #define NM_SETTING_INFINIBAND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_INFINIBAND, NMSettingInfinibandPrivate))
 
@@ -388,7 +387,8 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->verify = verify;
+	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_INFINIBAND];
+	setting_class->verify       = verify;
 
 	/**
 	 * NMSettingInfiniband:mac-address:

@@ -40,8 +40,7 @@
  * optional properties that apply to bridge ports.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingBridgePort, nm_setting_bridge_port, NM_TYPE_SETTING,
-                         _nm_register_setting (BRIDGE_PORT, NM_SETTING_PRIORITY_AUX))
+G_DEFINE_TYPE (NMSettingBridgePort, nm_setting_bridge_port, NM_TYPE_SETTING)
 
 #define NM_SETTING_BRIDGE_PORT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BRIDGE_PORT, NMSettingBridgePortPrivate))
 
@@ -221,7 +220,8 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *klass)
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 
-	setting_class->verify = verify;
+	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_BRIDGE_PORT];
+	setting_class->verify       = verify;
 
 	/**
 	 * NMSettingBridgePort:priority:

@@ -36,8 +36,7 @@
  * necessary for connection to VXLAN interfaces.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingVxlan, nm_setting_vxlan, NM_TYPE_SETTING,
-                         _nm_register_setting (VXLAN, NM_SETTING_PRIORITY_HW_BASE))
+G_DEFINE_TYPE (NMSettingVxlan, nm_setting_vxlan, NM_TYPE_SETTING)
 
 #define NM_SETTING_VXLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_VXLAN, NMSettingVxlanPrivate))
 
@@ -575,7 +574,8 @@ nm_setting_vxlan_class_init (NMSettingVxlanClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->verify = verify;
+	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_VXLAN];
+	setting_class->verify       = verify;
 
 	/**
 	 * NMSettingVxlan:parent:

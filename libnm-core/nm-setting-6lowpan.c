@@ -51,8 +51,7 @@ struct _NMSetting6LowpanClass {
  * necessary for connection to 6LoWPAN interfaces.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSetting6Lowpan, nm_setting_6lowpan, NM_TYPE_SETTING,
-                         _nm_register_setting (6LOWPAN, NM_SETTING_PRIORITY_HW_BASE))
+G_DEFINE_TYPE (NMSetting6Lowpan, nm_setting_6lowpan, NM_TYPE_SETTING)
 
 #define NM_SETTING_6LOWPAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_6LOWPAN, NMSetting6LowpanPrivate))
 
@@ -207,7 +206,8 @@ nm_setting_6lowpan_class_init (NMSetting6LowpanClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->verify = verify;
+	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_6LOWPAN];
+	setting_class->verify       = verify;
 
 	/**
 	 * NMSetting6Lowpan:parent:

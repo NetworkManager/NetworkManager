@@ -43,8 +43,7 @@
  * properties.
  **/
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingVpn, nm_setting_vpn, NM_TYPE_SETTING,
-                         _nm_register_setting (VPN, NM_SETTING_PRIORITY_HW_BASE))
+G_DEFINE_TYPE (NMSettingVpn, nm_setting_vpn, NM_TYPE_SETTING)
 
 #define NM_SETTING_VPN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_VPN, NMSettingVpnPrivate))
 
@@ -899,6 +898,7 @@ nm_setting_vpn_class_init (NMSettingVpnClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
+	setting_class->setting_info             = &nm_meta_setting_infos[NM_META_SETTING_TYPE_VPN];
 	setting_class->verify                   = verify;
 	setting_class->update_one_secret        = update_one_secret;
 	setting_class->get_secret_flags         = get_secret_flags;
