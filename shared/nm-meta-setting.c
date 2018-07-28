@@ -408,15 +408,44 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
 const NMMetaSettingInfo *
 nm_meta_setting_infos_by_name (const char *name)
 {
-	int i;
+	gssize idx;
 
-	if (name) {
+#if NM_MORE_ASSERTS > 10
+	{
+		guint i, j;
+
 		for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
-			if (nm_streq (nm_meta_setting_infos[i].setting_name, name))
-				return &nm_meta_setting_infos[i];
+			const NMMetaSettingInfo *setting_info = &nm_meta_setting_infos[i];
+
+			nm_assert (setting_info->meta_type == (NMMetaSettingType) i);
+			nm_assert (setting_info->setting_name);
+			nm_assert (setting_info->setting_name[0]);
+			nm_assert (setting_info->get_setting_gtype);
+			nm_assert (setting_info->setting_priority != NM_SETTING_PRIORITY_INVALID);
+			if (   i > 0
+			    && strcmp (nm_meta_setting_infos[i - 1].setting_name, setting_info->setting_name) >= 0) {
+				g_error ("nm_meta_setting_infos[%u, \"%s\"] is wrongly sorted before nm_meta_setting_infos[%u, \"%s\"]. Rearange NMMetaSettingType enum",
+				         i - 1, nm_meta_setting_infos[i - 1].setting_name,
+				         i, setting_info->setting_name);
+			}
+			for (j = 0; j < i; j++) {
+				const NMMetaSettingInfo *s = &nm_meta_setting_infos[j];
+
+				nm_assert (setting_info->get_setting_gtype != s->get_setting_gtype);
+			}
 		}
 	}
-	return NULL;
+#endif
+
+	G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (NMMetaSettingInfo, setting_name) == 0);
+	idx = nm_utils_array_find_binary_search (nm_meta_setting_infos,
+	                                         sizeof (NMMetaSettingInfo),
+	                                         _NM_META_SETTING_TYPE_NUM,
+	                                         &name,
+	                                         nm_strcmp_p_with_data,
+	                                         NULL);
+
+	return idx >= 0 ? &nm_meta_setting_infos[idx] : NULL;
 }
 
 const NMMetaSettingInfo *
