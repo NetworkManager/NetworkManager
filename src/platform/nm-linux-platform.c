@@ -1847,7 +1847,7 @@ _parse_lnk_vxlan (const char *kind, struct nlattr *info_data)
 
 /*****************************************************************************/
 
-/* Context to build a NMPObjectLnkWireguard instance.
+/* Context to build a NMPObjectLnkWireGuard instance.
  * GArray wrappers are discarded after processing all netlink messages. */
 struct _wireguard_device_buf {
 	NMPObject *obj;
@@ -1865,9 +1865,9 @@ _wireguard_update_from_allowedips_nla (struct _wireguard_device_buf *buf,
 		[WGALLOWEDIP_A_CIDR_MASK] = { .type = NLA_U8 },
 	};
 	struct nlattr *tba[WGALLOWEDIP_A_MAX + 1];
-	NMWireguardPeer *peer = &g_array_index (buf->peers, NMWireguardPeer, buf->peers->len - 1);
-	NMWireguardAllowedIP *allowedip;
-	NMWireguardAllowedIP new_allowedip = {0};
+	NMWireGuardPeer *peer = &g_array_index (buf->peers, NMWireGuardPeer, buf->peers->len - 1);
+	NMWireGuardAllowedIP *allowedip;
+	NMWireGuardAllowedIP new_allowedip = {0};
 	int addr_len;
 	int ret;
 
@@ -1876,7 +1876,7 @@ _wireguard_update_from_allowedips_nla (struct _wireguard_device_buf *buf,
 		goto errout;
 
 	g_array_append_val (buf->allowedips, new_allowedip);
-	allowedip = &g_array_index (buf->allowedips, NMWireguardAllowedIP, buf->allowedips->len - 1);
+	allowedip = &g_array_index (buf->allowedips, NMWireGuardAllowedIP, buf->allowedips->len - 1);
 	peer->allowedips_len++;
 
 	if (tba[WGALLOWEDIP_A_FAMILY])
@@ -1920,9 +1920,9 @@ _wireguard_update_from_peers_nla (struct _wireguard_device_buf *buf,
 		[WGPEER_A_ALLOWEDIPS]                    = { .type = NLA_NESTED },
 	};
 	struct nlattr *tbp[WGPEER_A_MAX + 1];
-	NMWireguardPeer * const last = buf->peers->len ? &g_array_index (buf->peers, NMWireguardPeer, buf->peers->len - 1) : NULL;
-	NMWireguardPeer *peer;
-	NMWireguardPeer new_peer = {0};
+	NMWireGuardPeer * const last = buf->peers->len ? &g_array_index (buf->peers, NMWireGuardPeer, buf->peers->len - 1) : NULL;
+	NMWireGuardPeer *peer;
+	NMWireGuardPeer new_peer = {0};
 	int ret;
 
 	if (nla_parse_nested (tbp, WGPEER_A_MAX, peer_attr, peer_policy)) {
@@ -1943,7 +1943,7 @@ _wireguard_update_from_peers_nla (struct _wireguard_device_buf *buf,
 
 	/* otherwise, start a new peer */
 	g_array_append_val (buf->peers, new_peer);
-	peer = &g_array_index (buf->peers, NMWireguardPeer, buf->peers->len - 1);
+	peer = &g_array_index (buf->peers, NMWireGuardPeer, buf->peers->len - 1);
 
 	nla_memcpy (&peer->public_key, tbp[WGPEER_A_PUBLIC_KEY], sizeof (peer->public_key));
 
@@ -2000,7 +2000,7 @@ _wireguard_get_device_cb (struct nl_msg *msg, void *arg)
 	};
 	struct _wireguard_device_buf *buf = arg;
 	struct nlattr *tbd[WGDEVICE_A_MAX + 1];
-	NMPlatformLnkWireguard *props = &buf->obj->lnk_wireguard;
+	NMPlatformLnkWireGuard *props = &buf->obj->lnk_wireguard;
 	struct nlmsghdr *nlh = nlmsg_hdr (msg);
 	int ret;
 
@@ -6513,8 +6513,8 @@ _wireguard_get_link_properties (NMPlatform *platform, const NMPlatformLink *link
 	nm_auto_nlmsg struct nl_msg *msg = NULL;
 	struct _wireguard_device_buf buf = {
 		.obj = obj,
-		.peers = g_array_new (FALSE, FALSE, sizeof (NMWireguardPeer)),
-		.allowedips = g_array_new (FALSE, FALSE, sizeof (NMWireguardAllowedIP)),
+		.peers = g_array_new (FALSE, FALSE, sizeof (NMWireGuardPeer)),
+		.allowedips = g_array_new (FALSE, FALSE, sizeof (NMWireGuardAllowedIP)),
 	};
 	struct nl_cb cb = {
 		.valid_cb = _wireguard_get_device_cb,
@@ -6548,15 +6548,15 @@ _wireguard_get_link_properties (NMPlatform *platform, const NMPlatformLink *link
 
 	/* have each peer point to its own chunk of the allowedips buffer */
 	for (i = 0, j = 0; i < buf.peers->len; i++) {
-		NMWireguardPeer *p = &g_array_index (buf.peers, NMWireguardPeer, i);
-		p->allowedips = &g_array_index (buf.allowedips, NMWireguardAllowedIP, j);
+		NMWireGuardPeer *p = &g_array_index (buf.peers, NMWireGuardPeer, i);
+		p->allowedips = &g_array_index (buf.allowedips, NMWireGuardAllowedIP, j);
 		j += p->allowedips_len;
 	}
 	/* drop the wrapper (but also the buffer if no peer points to it) */
 	g_array_free (buf.allowedips, buf.peers->len ? FALSE : TRUE);
 
 	obj->_lnk_wireguard.peers_len = buf.peers->len;
-	obj->_lnk_wireguard.peers = (NMWireguardPeer *) g_array_free (buf.peers, FALSE);
+	obj->_lnk_wireguard.peers = (NMWireGuardPeer *) g_array_free (buf.peers, FALSE);
 
 	return TRUE;
 
