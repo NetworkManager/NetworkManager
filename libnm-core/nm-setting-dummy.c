@@ -67,9 +67,9 @@ nm_setting_dummy_init (NMSettingDummy *setting)
 }
 
 static void
-nm_setting_dummy_class_init (NMSettingDummyClass *setting_class)
+nm_setting_dummy_class_init (NMSettingDummyClass *klass)
 {
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
-	parent_class->verify           = verify;
+	setting_class->verify = verify;
 }

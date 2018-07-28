@@ -524,20 +524,18 @@ ip4_route_data_set (NMSetting  *setting,
 }
 
 static void
-nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *ip4_class)
+nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *klass)
 {
-	NMSettingClass *setting_class = NM_SETTING_CLASS (ip4_class);
-	GObjectClass *object_class = G_OBJECT_CLASS (ip4_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
 	g_type_class_add_private (setting_class, sizeof (NMSettingIP4ConfigPrivate));
 
-	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-	setting_class->verify = verify;
 
-	/* properties */
+	setting_class->verify = verify;
 
 	/* ---ifcfg-rh---
 	 * property: method

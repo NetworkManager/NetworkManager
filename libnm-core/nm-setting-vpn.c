@@ -888,27 +888,25 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
-nm_setting_vpn_class_init (NMSettingVpnClass *setting_class)
+nm_setting_vpn_class_init (NMSettingVpnClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingVpnPrivate));
+	g_type_class_add_private (klass, sizeof (NMSettingVpnPrivate));
 
-	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	parent_class->verify            = verify;
-	parent_class->update_one_secret = update_one_secret;
-	parent_class->get_secret_flags  = get_secret_flags;
-	parent_class->set_secret_flags  = set_secret_flags;
-	parent_class->need_secrets      = need_secrets;
-	parent_class->compare_property  = compare_property;
-	parent_class->clear_secrets_with_flags = clear_secrets_with_flags;
+	setting_class->verify                   = verify;
+	setting_class->update_one_secret        = update_one_secret;
+	setting_class->get_secret_flags         = get_secret_flags;
+	setting_class->set_secret_flags         = set_secret_flags;
+	setting_class->need_secrets             = need_secrets;
+	setting_class->compare_property         = compare_property;
+	setting_class->clear_secrets_with_flags = clear_secrets_with_flags;
 
-	/* Properties */
 	/**
 	 * NMSettingVpn:service-type:
 	 *
@@ -974,7 +972,7 @@ nm_setting_vpn_class_init (NMSettingVpnClass *setting_class)
 		                     G_TYPE_HASH_TABLE,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_VPN_DATA,
+	_nm_setting_class_transform_property (setting_class, NM_SETTING_VPN_DATA,
 	                                      G_VARIANT_TYPE ("a{ss}"),
 	                                      _nm_utils_strdict_to_dbus,
 	                                      _nm_utils_strdict_from_dbus);
@@ -1000,7 +998,7 @@ nm_setting_vpn_class_init (NMSettingVpnClass *setting_class)
 		                     G_PARAM_READWRITE |
 		                     NM_SETTING_PARAM_SECRET |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_VPN_SECRETS,
+	_nm_setting_class_transform_property (setting_class, NM_SETTING_VPN_SECRETS,
 	                                      G_VARIANT_TYPE ("a{ss}"),
 	                                      _nm_utils_strdict_to_dbus,
 	                                      _nm_utils_strdict_from_dbus);

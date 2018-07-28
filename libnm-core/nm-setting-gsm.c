@@ -603,22 +603,20 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
-nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
+nm_setting_gsm_class_init (NMSettingGsmClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingGsmPrivate));
+	g_type_class_add_private (klass, sizeof (NMSettingGsmPrivate));
 
-	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-	parent_class->verify       = verify;
-	parent_class->verify_secrets = verify_secrets;
-	parent_class->need_secrets = need_secrets;
 
-	/* Properties */
+	setting_class->verify         = verify;
+	setting_class->verify_secrets = verify_secrets;
+	setting_class->need_secrets   = need_secrets;
 
 	/**
 	 * NMSettingGsm:number:
@@ -821,10 +819,10 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 		                    G_PARAM_STATIC_STRINGS));
 
 	/* Ignore incoming deprecated properties */
-	_nm_setting_class_add_dbus_only_property (parent_class, "allowed-bands",
+	_nm_setting_class_add_dbus_only_property (setting_class, "allowed-bands",
 	                                          G_VARIANT_TYPE_UINT32,
 	                                          NULL, NULL);
-	_nm_setting_class_add_dbus_only_property (parent_class, "network-type",
+	_nm_setting_class_add_dbus_only_property (setting_class, "network-type",
 	                                          G_VARIANT_TYPE_INT32,
 	                                          NULL, NULL);
 }

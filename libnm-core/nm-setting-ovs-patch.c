@@ -181,15 +181,16 @@ finalize (GObject *object)
 }
 
 static void
-nm_setting_ovs_patch_class_init (NMSettingOvsPatchClass *setting_class)
+nm_setting_ovs_patch_class_init (NMSettingOvsPatchClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
-	object_class->finalize = finalize;
-	parent_class->verify = verify;
+	object_class->finalize     = finalize;
+
+	setting_class->verify = verify;
 
 	/**
 	 * NMSettingOvsPatch:peer:

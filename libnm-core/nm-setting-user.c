@@ -552,8 +552,9 @@ nm_setting_user_class_init (NMSettingUserClass *klass)
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
+
 	setting_class->compare_property = compare_property;
-	setting_class->verify = verify;
+	setting_class->verify           = verify;
 
 	/**
 	 * NMSettingUser:data: (type GHashTable(utf8,utf8))

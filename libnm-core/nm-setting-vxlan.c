@@ -564,20 +564,18 @@ finalize (GObject *object)
 }
 
 static void
-nm_setting_vxlan_class_init (NMSettingVxlanClass *setting_class)
+nm_setting_vxlan_class_init (NMSettingVxlanClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingVxlanPrivate));
+	g_type_class_add_private (klass, sizeof (NMSettingVxlanPrivate));
 
-	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-	parent_class->verify       = verify;
 
-	/* Properties */
+	setting_class->verify = verify;
 
 	/**
 	 * NMSettingVxlan:parent:

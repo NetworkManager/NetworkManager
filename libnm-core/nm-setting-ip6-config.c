@@ -548,20 +548,18 @@ finalize (GObject *object)
 }
 
 static void
-nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *ip6_class)
+nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (ip6_class);
-	NMSettingClass *setting_class = NM_SETTING_CLASS (ip6_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
-	g_type_class_add_private (ip6_class, sizeof (NMSettingIP6ConfigPrivate));
+	g_type_class_add_private (klass, sizeof (NMSettingIP6ConfigPrivate));
 
-	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
-	object_class->finalize = finalize;
-	setting_class->verify = verify;
+	object_class->finalize     = finalize;
 
-	/* Properties */
+	setting_class->verify = verify;
 
 	/* ---ifcfg-rh---
 	 * property: method

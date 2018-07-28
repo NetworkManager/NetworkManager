@@ -936,15 +936,15 @@ compare_property (NMSetting *setting,
                   const GParamSpec *prop_spec,
                   NMSettingCompareFlags flags)
 {
-	NMSettingClass *parent_class;
+	NMSettingClass *setting_class;
 
 	if (nm_streq (prop_spec->name, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS)) {
 		return nm_streq0 (NM_SETTING_WIRELESS_GET_PRIVATE (setting)->cloned_mac_address,
 		                  NM_SETTING_WIRELESS_GET_PRIVATE (other)->cloned_mac_address);
 	}
 
-	parent_class = NM_SETTING_CLASS (nm_setting_wireless_parent_class);
-	return parent_class->compare_property (setting, other, prop_spec, flags);
+	setting_class = NM_SETTING_CLASS (nm_setting_wireless_parent_class);
+	return setting_class->compare_property (setting, other, prop_spec, flags);
 }
 
 /*****************************************************************************/
@@ -1175,21 +1175,20 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
-nm_setting_wireless_class_init (NMSettingWirelessClass *setting_wireless_class)
+nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_wireless_class);
-	NMSettingClass *setting_class = NM_SETTING_CLASS (setting_wireless_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
-	g_type_class_add_private (setting_wireless_class, sizeof (NMSettingWirelessPrivate));
+	g_type_class_add_private (klass, sizeof (NMSettingWirelessPrivate));
 
-	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-	setting_class->verify      = verify;
+
+	setting_class->verify           = verify;
 	setting_class->compare_property = compare_property;
 
-	/* Properties */
 	/**
 	 * NMSettingWireless:ssid:
 	 *

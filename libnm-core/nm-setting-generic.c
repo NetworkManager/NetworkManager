@@ -66,7 +66,7 @@ nm_setting_generic_init (NMSettingGeneric *setting)
 }
 
 static void
-nm_setting_generic_class_init (NMSettingGenericClass *setting_class)
+nm_setting_generic_class_init (NMSettingGenericClass *klass)
 {
-	g_type_class_add_private (setting_class, sizeof (NMSettingGenericPrivate));
+	g_type_class_add_private (klass, sizeof (NMSettingGenericPrivate));
 }
