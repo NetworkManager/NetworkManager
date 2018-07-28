@@ -97,8 +97,18 @@ extern const NMSetting8021xSchemeVtable nm_setting_8021x_scheme_vtable[_NM_SETTI
 /*****************************************************************************/
 
 typedef enum {
+	/* the enum (and their numeric values) are internal API. Do not assign
+	 * any meaning the numeric values, because they already have one:
+	 *
+	 * they are sorted in a way, that corresponds to the asciibetical sort
+	 * order of the corresponding setting-name. */
+
 	NM_META_SETTING_TYPE_6LOWPAN,
+	NM_META_SETTING_TYPE_OLPC_MESH,
+	NM_META_SETTING_TYPE_WIRELESS,
+	NM_META_SETTING_TYPE_WIRELESS_SECURITY,
 	NM_META_SETTING_TYPE_802_1X,
+	NM_META_SETTING_TYPE_WIRED,
 	NM_META_SETTING_TYPE_ADSL,
 	NM_META_SETTING_TYPE_BLUETOOTH,
 	NM_META_SETTING_TYPE_BOND,
@@ -111,12 +121,11 @@ typedef enum {
 	NM_META_SETTING_TYPE_GENERIC,
 	NM_META_SETTING_TYPE_GSM,
 	NM_META_SETTING_TYPE_INFINIBAND,
+	NM_META_SETTING_TYPE_IP_TUNNEL,
 	NM_META_SETTING_TYPE_IP4_CONFIG,
 	NM_META_SETTING_TYPE_IP6_CONFIG,
-	NM_META_SETTING_TYPE_IP_TUNNEL,
 	NM_META_SETTING_TYPE_MACSEC,
 	NM_META_SETTING_TYPE_MACVLAN,
-	NM_META_SETTING_TYPE_OLPC_MESH,
 	NM_META_SETTING_TYPE_OVS_BRIDGE,
 	NM_META_SETTING_TYPE_OVS_INTERFACE,
 	NM_META_SETTING_TYPE_OVS_PATCH,
@@ -135,9 +144,6 @@ typedef enum {
 	NM_META_SETTING_TYPE_VPN,
 	NM_META_SETTING_TYPE_VXLAN,
 	NM_META_SETTING_TYPE_WIMAX,
-	NM_META_SETTING_TYPE_WIRED,
-	NM_META_SETTING_TYPE_WIRELESS,
-	NM_META_SETTING_TYPE_WIRELESS_SECURITY,
 	NM_META_SETTING_TYPE_WPAN,
 
 	NM_META_SETTING_TYPE_UNKNOWN,
@@ -163,10 +169,10 @@ typedef enum {
 #define _NMMetaSettingInfoXX _NMMetaSettingInfoCli
 #endif
 struct _NMMetaSettingInfoXX {
-	NMMetaSettingType meta_type;
-	NMSettingPriority setting_priority;
 	const char *setting_name;
 	GType (*get_setting_gtype) (void);
+	NMMetaSettingType meta_type;
+	NMSettingPriority setting_priority;
 };
 
 typedef struct _NMMetaSettingInfoXX NMMetaSettingInfo;
