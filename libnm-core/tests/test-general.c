@@ -6188,12 +6188,12 @@ _test_find_binary_search_do_uint32 (const int *int_array, gsize len)
 			expected_result = idx;
 	}
 
-	idx = _nm_utils_array_find_binary_search (array,
-	                                          sizeof (guint32),
-	                                          len,
-	                                          &NEEDLE,
-	                                          nm_cmp_uint32_p_with_data,
-	                                          NULL);
+	idx = nm_utils_array_find_binary_search (array,
+	                                         sizeof (guint32),
+	                                         len,
+	                                         &NEEDLE,
+	                                         nm_cmp_uint32_p_with_data,
+	                                         NULL);
 	if (expected_result >= 0)
 		g_assert_cmpint (expected_result, ==, idx);
 	else {
@@ -6297,7 +6297,7 @@ test_nm_utils_ptrarray_find_binary_search_with_duplicates (void)
 
 				idx_first2 = _nm_utils_ptrarray_find_first (arr, i_len, p);
 
-				idx2 = _nm_utils_array_find_binary_search (arr, sizeof (gpointer), i_len, &p, _test_bin_search2_cmp_p, NULL);
+				idx2 = nm_utils_array_find_binary_search (arr, sizeof (gpointer), i_len, &p, _test_bin_search2_cmp_p, NULL);
 				g_assert_cmpint (idx, ==, idx2);
 
 				if (idx_first2 < 0) {
