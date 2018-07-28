@@ -35,7 +35,7 @@ typedef struct {
 	NMIPAddr ip;
 	guint8 family;
 	guint8 mask;
-} NMWireguardAllowedIP;
+} NMWireGuardAllowedIP;
 
 #define NM_WG_PUBLIC_KEY_LEN 32
 #define NM_WG_SYMMETRIC_KEY_LEN 32
@@ -53,8 +53,8 @@ typedef struct {
 	guint64 rx_bytes, tx_bytes;
 
 	gsize allowedips_len;
-	NMWireguardAllowedIP *allowedips;
-} NMWireguardPeer;
+	NMWireGuardAllowedIP *allowedips;
+} NMWireGuardPeer;
 
 #define _NM_IP_TUNNEL_FLAG_ALL_IP6TNL \
 	( NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT \

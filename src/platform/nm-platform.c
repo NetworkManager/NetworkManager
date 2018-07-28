@@ -1968,7 +1968,7 @@ nm_platform_link_get_lnk_vxlan (NMPlatform *self, int ifindex, const NMPlatformL
 	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_VXLAN, out_link);
 }
 
-const NMPlatformLnkWireguard *
+const NMPlatformLnkWireGuard *
 nm_platform_link_get_lnk_wireguard (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
 	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_WIREGUARD, out_link);
@@ -5506,7 +5506,7 @@ nm_platform_lnk_vxlan_to_string (const NMPlatformLnkVxlan *lnk, char *buf, gsize
 }
 
 const char *
-nm_platform_wireguard_peer_to_string (const NMWireguardPeer *peer, char *buf, gsize len)
+nm_platform_wireguard_peer_to_string (const NMWireGuardPeer *peer, char *buf, gsize len)
 {
 	gs_free char *public_b64 = NULL;
 	char s_address[INET6_ADDRSTRLEN] = {0};
@@ -5555,7 +5555,7 @@ nm_platform_wireguard_peer_to_string (const NMWireguardPeer *peer, char *buf, gs
 
 
 	for (i = 0; i < peer->allowedips_len; i++) {
-		NMWireguardAllowedIP *allowedip = &peer->allowedips[i];
+		NMWireGuardAllowedIP *allowedip = &peer->allowedips[i];
 		const char *ret;
 
 		ret = inet_ntop (allowedip->family, &allowedip->ip, s_address, sizeof(s_address));
@@ -5571,7 +5571,7 @@ nm_platform_wireguard_peer_to_string (const NMWireguardPeer *peer, char *buf, gs
 }
 
 const char *
-nm_platform_lnk_wireguard_to_string (const NMPlatformLnkWireguard *lnk, char *buf, gsize len)
+nm_platform_lnk_wireguard_to_string (const NMPlatformLnkWireGuard *lnk, char *buf, gsize len)
 {
 	gs_free char *public_b64 = NULL;
 	guint8 nonzero_key = 0;
@@ -6489,7 +6489,7 @@ nm_platform_lnk_vxlan_cmp (const NMPlatformLnkVxlan *a, const NMPlatformLnkVxlan
 }
 
 void
-nm_platform_lnk_wireguard_hash_update (const NMPlatformLnkWireguard *obj, NMHashState *h)
+nm_platform_lnk_wireguard_hash_update (const NMPlatformLnkWireGuard *obj, NMHashState *h)
 {
 	nm_hash_update_vals (h,
 	                     obj->listen_port,
@@ -6499,7 +6499,7 @@ nm_platform_lnk_wireguard_hash_update (const NMPlatformLnkWireguard *obj, NMHash
 }
 
 int
-nm_platform_lnk_wireguard_cmp (const NMPlatformLnkWireguard *a, const NMPlatformLnkWireguard *b)
+nm_platform_lnk_wireguard_cmp (const NMPlatformLnkWireGuard *a, const NMPlatformLnkWireGuard *b)
 {
 	NM_CMP_SELF (a, b);
 	NM_CMP_FIELD (a, b, listen_port);
