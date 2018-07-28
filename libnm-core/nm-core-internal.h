@@ -479,4 +479,57 @@ gboolean _nm_utils_dhcp_duid_valid (const char *duid, GBytes **out_duid_bin);
 
 gboolean _nm_setting_sriov_sort_vfs (NMSettingSriov *setting);
 
+/*****************************************************************************/
+
+typedef GVariant *(*NMSettingPropertyGetFunc)           (NMSetting     *setting,
+                                                         const char    *property);
+typedef GVariant *(*NMSettingPropertySynthFunc)         (NMSetting     *setting,
+                                                         NMConnection  *connection,
+                                                         const char    *property);
+typedef gboolean  (*NMSettingPropertySetFunc)           (NMSetting     *setting,
+                                                         GVariant      *connection_dict,
+                                                         const char    *property,
+                                                         GVariant      *value,
+                                                         NMSettingParseFlags parse_flags,
+                                                         GError       **error);
+typedef gboolean  (*NMSettingPropertyNotSetFunc)        (NMSetting     *setting,
+                                                         GVariant      *connection_dict,
+                                                         const char    *property,
+                                                         NMSettingParseFlags parse_flags,
+                                                         GError       **error);
+typedef GVariant *(*NMSettingPropertyTransformToFunc)   (const GValue *from);
+typedef void      (*NMSettingPropertyTransformFromFunc) (GVariant *from,
+                                                          GValue *to);
+
+typedef struct {
+	const char *name;
+	GParamSpec *param_spec;
+	const GVariantType *dbus_type;
+
+	NMSettingPropertyGetFunc           get_func;
+	NMSettingPropertySynthFunc         synth_func;
+	NMSettingPropertySetFunc           set_func;
+	NMSettingPropertyNotSetFunc        not_set_func;
+
+	NMSettingPropertyTransformToFunc   to_dbus;
+	NMSettingPropertyTransformFromFunc from_dbus;
+} NMSettInfoProperty;
+
+typedef struct {
+} NMSettInfoSettDetail;
+
+typedef struct {
+	NMSettingClass *setting_class;
+	const NMSettInfoProperty *property_infos;
+	guint property_infos_len;
+	NMSettInfoSettDetail detail;
+} NMSettInfoSetting;
+
+const NMSettInfoSetting *_nm_sett_info_setting_get (NMSettingClass *setting_class);
+
+const NMSettInfoProperty *_nm_sett_info_property_get (NMSettingClass *setting_class,
+                                                      const char *property_name);
+
+/*****************************************************************************/
+
 #endif

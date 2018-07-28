@@ -285,6 +285,7 @@ nm_setting_bluetooth_class_init (NMSettingBluetoothClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+	GArray *properties_override = _nm_sett_info_property_override_create_array ();
 
 	g_type_class_add_private (klass, sizeof (NMSettingBluetoothPrivate));
 
@@ -292,7 +293,6 @@ nm_setting_bluetooth_class_init (NMSettingBluetoothClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_BLUETOOTH];
 	setting_class->verify       = verify;
 
 	/**
@@ -307,10 +307,13 @@ nm_setting_bluetooth_class_init (NMSettingBluetoothClass *klass)
 		                      G_PARAM_READWRITE |
 		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (setting_class, NM_SETTING_BLUETOOTH_BDADDR,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_hwaddr_to_dbus,
-	                                      _nm_utils_hwaddr_from_dbus);
+
+	_properties_override_add_transform (properties_override,
+	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                                  NM_SETTING_BLUETOOTH_BDADDR),
+	                                    G_VARIANT_TYPE_BYTESTRING,
+	                                    _nm_utils_hwaddr_to_dbus,
+	                                    _nm_utils_hwaddr_from_dbus);
 
 	/**
 	 * NMSettingBluetooth:type:
@@ -325,4 +328,7 @@ nm_setting_bluetooth_class_init (NMSettingBluetoothClass *klass)
 		                      G_PARAM_READWRITE |
 		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
+
+	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_BLUETOOTH,
+	                               NULL, properties_override);
 }

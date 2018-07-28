@@ -1505,6 +1505,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+	GArray *properties_override = _nm_sett_info_property_override_create_array ();
 
 	g_type_class_add_private (klass, sizeof (NMSettingConnectionPrivate));
 
@@ -1512,7 +1513,6 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->setting_info     = &nm_meta_setting_infos[NM_META_SETTING_TYPE_CONNECTION];
 	setting_class->verify           = verify;
 	setting_class->compare_property = compare_property;
 
@@ -1651,11 +1651,14 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 		                      G_PARAM_READWRITE |
 		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_override_property (setting_class, NM_SETTING_CONNECTION_INTERFACE_NAME,
-	                                     G_VARIANT_TYPE_STRING,
-	                                     NULL,
-	                                     nm_setting_connection_set_interface_name,
-	                                     nm_setting_connection_no_interface_name);
+
+	_properties_override_add_override (properties_override,
+	                                   g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                                 NM_SETTING_CONNECTION_INTERFACE_NAME),
+	                                   G_VARIANT_TYPE_STRING,
+	                                   NULL,
+	                                   nm_setting_connection_set_interface_name,
+	                                   nm_setting_connection_no_interface_name);
 
 	/**
 	 * NMSettingConnection:type:
@@ -2125,4 +2128,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 		                   NM_SETTING_CONNECTION_MDNS_DEFAULT,
 		                   G_PARAM_READWRITE |
 		                   G_PARAM_STATIC_STRINGS));
+
+	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_CONNECTION,
+	                               NULL, properties_override);
 }

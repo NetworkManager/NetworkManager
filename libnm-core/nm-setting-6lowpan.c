@@ -206,8 +206,7 @@ nm_setting_6lowpan_class_init (NMSetting6LowpanClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_6LOWPAN];
-	setting_class->verify       = verify;
+	setting_class->verify = verify;
 
 	/**
 	 * NMSetting6Lowpan:parent:
@@ -226,4 +225,6 @@ nm_setting_6lowpan_class_init (NMSetting6LowpanClass *klass)
 	                         G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+
+	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_6LOWPAN);
 }

@@ -220,8 +220,7 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *klass)
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 
-	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_BRIDGE_PORT];
-	setting_class->verify       = verify;
+	setting_class->verify = verify;
 
 	/**
 	 * NMSettingBridgePort:priority:
@@ -288,4 +287,6 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *klass)
 		                       G_PARAM_READWRITE |
 		                       NM_SETTING_PARAM_INFERRABLE |
 		                       G_PARAM_STATIC_STRINGS));
+
+	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_BRIDGE_PORT);
 }

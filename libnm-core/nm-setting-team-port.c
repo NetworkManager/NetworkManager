@@ -589,6 +589,7 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+	GArray *properties_override = _nm_sett_info_property_override_create_array ();
 
 	g_type_class_add_private (klass, sizeof (NMSettingTeamPortPrivate));
 
@@ -596,7 +597,6 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 	object_class->get_property     = get_property;
 	object_class->finalize         = finalize;
 
-	setting_class->setting_info     = &nm_meta_setting_infos[NM_META_SETTING_TYPE_TEAM_PORT];
 	setting_class->compare_property = compare_property;
 	setting_class->verify           = verify;
 
@@ -713,10 +713,14 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 		                     G_TYPE_PTR_ARRAY,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (setting_class,
-	                                      NM_SETTING_TEAM_PORT_LINK_WATCHERS,
-	                                      G_VARIANT_TYPE ("aa{sv}"),
-	                                      team_link_watchers_to_dbus,
-	                                      team_link_watchers_from_dbus);
 
+	_properties_override_add_transform (properties_override,
+	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                                  NM_SETTING_TEAM_PORT_LINK_WATCHERS),
+	                                    G_VARIANT_TYPE ("aa{sv}"),
+	                                    team_link_watchers_to_dbus,
+	                                    team_link_watchers_from_dbus);
+
+	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_TEAM_PORT,
+	                               NULL, properties_override);
 }

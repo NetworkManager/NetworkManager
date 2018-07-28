@@ -191,90 +191,53 @@ _nm_setting_slave_type_is_valid (const char *slave_type, const char **out_port_t
 
 /*****************************************************************************/
 
-typedef struct {
-	const char *name;
-	GParamSpec *param_spec;
-	const GVariantType *dbus_type;
-
-	NMSettingPropertyGetFunc get_func;
-	NMSettingPropertySynthFunc synth_func;
-	NMSettingPropertySetFunc set_func;
-	NMSettingPropertyNotSetFunc not_set_func;
-
-	NMSettingPropertyTransformToFunc to_dbus;
-	NMSettingPropertyTransformFromFunc from_dbus;
-} NMSettingProperty;
-
-static NM_CACHED_QUARK_FCN ("nm-setting-property-overrides", setting_property_overrides_quark)
-static NM_CACHED_QUARK_FCN ("nm-setting-properties", setting_properties_quark)
-
-static NMSettingProperty *
-find_property (GArray *properties, const char *name)
+static const NMSettInfoProperty *
+_nm_sett_info_property_find_in_array (const NMSettInfoProperty *properties, guint len, const char *name)
 {
-	NMSettingProperty *property;
-	int i;
+	guint i;
 
-	if (!properties)
-		return NULL;
-
-	for (i = 0; i < properties->len; i++) {
-		property = &g_array_index (properties, NMSettingProperty, i);
-		if (strcmp (name, property->name) == 0)
-			return property;
+	for (i = 0; i < len; i++) {
+		if (nm_streq (name, properties[i].name))
+			return &properties[i];
 	}
-
 	return NULL;
 }
 
-static void
-add_property_override (NMSettingClass *setting_class,
-                       const char *property_name,
-                       GParamSpec *param_spec,
-                       const GVariantType *dbus_type,
-                       NMSettingPropertyGetFunc get_func,
-                       NMSettingPropertySynthFunc synth_func,
-                       NMSettingPropertySetFunc set_func,
-                       NMSettingPropertyNotSetFunc not_set_func,
-                       NMSettingPropertyTransformToFunc to_dbus,
-                       NMSettingPropertyTransformFromFunc from_dbus)
+void
+_properties_override_add_struct (GArray *properties_override,
+                                 const NMSettInfoProperty *prop_info)
 {
-	GType setting_type = G_TYPE_FROM_CLASS (setting_class);
-	GArray *overrides;
-	NMSettingProperty override;
+	nm_assert (properties_override);
+	nm_assert (prop_info);
+	nm_assert (prop_info->name || prop_info->param_spec);
+	nm_assert (!prop_info->param_spec || !prop_info->name || nm_streq0 (prop_info->name, prop_info->param_spec->name));
+	nm_assert (!_nm_sett_info_property_find_in_array ((NMSettInfoProperty *) properties_override->data,
+	                                                  properties_override->len,
+	                                                  prop_info->name ?: prop_info->param_spec->name));
 
-	g_return_if_fail (g_type_get_qdata (setting_type, setting_properties_quark ()) == NULL);
+	nm_assert (!prop_info->from_dbus || prop_info->dbus_type);
+	nm_assert (!prop_info->set_func || prop_info->dbus_type);
 
-	memset (&override, 0, sizeof (override));
-	override.name = property_name;
-	override.param_spec = param_spec;
-	override.dbus_type = dbus_type;
-	override.get_func = get_func;
-	override.synth_func = synth_func;
-	override.set_func = set_func;
-	override.not_set_func = not_set_func;
-	override.to_dbus = to_dbus;
-	override.from_dbus = from_dbus;
+	g_array_append_vals (properties_override, prop_info, 1);
 
-	overrides = g_type_get_qdata (setting_type, setting_property_overrides_quark ());
-	if (!overrides) {
-		overrides = g_array_new (FALSE, FALSE, sizeof (NMSettingProperty));
-		g_type_set_qdata (setting_type, setting_property_overrides_quark (), overrides);
+	if (!prop_info->name) {
+		/* for convenience, allow omitting "name" if "param_spec" is given. */
+		g_array_index (properties_override,
+		               NMSettInfoProperty,
+		               properties_override->len - 1).name = prop_info->param_spec->name;
 	}
-	g_return_if_fail (find_property (overrides, property_name) == NULL);
-
-	g_array_append_val (overrides, override);
 }
 
 /**
- * _nm_setting_class_add_dbus_only_property:
- * @setting_class: the setting class
+ * _properties_override_add_dbus_only:
+ * @properties_override: an array collecting the overrides
  * @property_name: the name of the property to override
  * @dbus_type: the type of the property (in its D-Bus representation)
  * @synth_func: (allow-none): function to call to synthesize a value for the property
  * @set_func: (allow-none): function to call to set the value of the property
  *
  * Registers a property named @property_name, which will be used in the D-Bus
- * serialization of objects of @setting_class, but which does not correspond to
+ * serialization of objects of this setting type, but which does not correspond to
  * a #GObject property.
  *
  * When serializing a setting to D-Bus, @synth_func will be called to synthesize
@@ -287,35 +250,30 @@ add_property_override (NMSettingClass *setting_class,
  * then the property will be ignored when deserializing.)
  */
 void
-_nm_setting_class_add_dbus_only_property (NMSettingClass *setting_class,
-                                          const char *property_name,
-                                          const GVariantType *dbus_type,
-                                          NMSettingPropertySynthFunc synth_func,
-                                          NMSettingPropertySetFunc set_func)
+_properties_override_add_dbus_only (GArray *properties_override,
+                                    const char *property_name,
+                                    const GVariantType *dbus_type,
+                                    NMSettingPropertySynthFunc synth_func,
+                                    NMSettingPropertySetFunc set_func)
 {
-	g_return_if_fail (NM_IS_SETTING_CLASS (setting_class));
-	g_return_if_fail (property_name != NULL);
-
-	/* Must not match any GObject property. */
-	g_return_if_fail (!g_object_class_find_property (G_OBJECT_CLASS (setting_class), property_name));
-
-	add_property_override (setting_class,
-	                       property_name, NULL, dbus_type,
-	                       NULL, synth_func, set_func, NULL,
-	                       NULL, NULL);
+	_properties_override_add (properties_override,
+	                          .name = property_name,
+	                          .dbus_type = dbus_type,
+	                          .synth_func = synth_func,
+	                          .set_func = set_func);
 }
 
 /**
- * _nm_setting_class_override_property:
- * @setting_class: the setting class
- * @property_name: the name of the property to override
+ * _properties_override_add_override:
+ * @properties_override: an array collecting the overrides
+ * @param_spec: the name of the property to override
  * @dbus_type: the type of the property (in its D-Bus representation)
  * @get_func: (allow-none): function to call to get the value of the property
  * @set_func: (allow-none): function to call to set the value of the property
  * @not_set_func: (allow-none): function to call to indicate the property was not set
  *
- * Overrides the D-Bus representation of the #GObject property named
- * @property_name on @setting_class.
+ * Overrides the D-Bus representation of the #GObject property that shares the
+ * same name as @param_spec.
  *
  * When serializing a setting to D-Bus, if @get_func is non-%NULL, then it will
  * be called to get the property's value. If it returns a #GVariant, the
@@ -324,38 +282,38 @@ _nm_setting_class_add_dbus_only_property (NMSettingClass *setting_class,
  * with g_object_get_property(), and added to the hash if it is not the default
  * value.)
  *
- * When deserializing a D-Bus representation into a setting, if @property_name
- * is present, then @set_func will be called to set it. (If @set_func is %NULL
- * then the property will be set normally with g_object_set_property().)
+ * When deserializing a D-Bus representation into a setting, if a value with
+ * the name of @param_spec is present, then @set_func will be called to set it.
+ * (If @set_func is %NULL then the property will be set normally with
+ * g_object_set_property().)
  *
  * If @not_set_func is non-%NULL, then it will be called when deserializing a
- * representation that does NOT contain @property_name. This can be used, eg, if
- * a new property needs to be initialized from some older deprecated property
+ * representation that does NOT contain a value for the property. This can be used,
+ * eg, if a new property needs to be initialized from some older deprecated property
  * when it is not present.
  */
 void
-_nm_setting_class_override_property (NMSettingClass *setting_class,
-                                     const char *property_name,
-                                     const GVariantType *dbus_type,
-                                     NMSettingPropertyGetFunc get_func,
-                                     NMSettingPropertySetFunc set_func,
-                                     NMSettingPropertyNotSetFunc not_set_func)
+_properties_override_add_override (GArray *properties_override,
+                                   GParamSpec *param_spec,
+                                   const GVariantType *dbus_type,
+                                   NMSettingPropertyGetFunc get_func,
+                                   NMSettingPropertySetFunc set_func,
+                                   NMSettingPropertyNotSetFunc not_set_func)
 {
-	GParamSpec *param_spec;
+	nm_assert (param_spec);
 
-	param_spec = g_object_class_find_property (G_OBJECT_CLASS (setting_class), property_name);
-	g_return_if_fail (param_spec != NULL);
-
-	add_property_override (setting_class,
-	                       property_name, param_spec, dbus_type,
-	                       get_func, NULL, set_func, not_set_func,
-	                       NULL, NULL);
+	_properties_override_add (properties_override,
+	                          .param_spec = param_spec,
+	                          .dbus_type = dbus_type,
+	                          .get_func = get_func,
+	                          .set_func = set_func,
+	                          .not_set_func = not_set_func);
 }
 
 /**
- * _nm_setting_class_transform_property:
- * @setting_class: the setting class
- * @property: the name of the property to transform
+ * _properties_override_add_transform:
+ * @properties_override: an array collecting the overrides
+ * @param_spec: the param spec of the property to transform.
  * @dbus_type: the type of the property (in its D-Bus representation)
  * @to_dbus: function to convert from object to D-Bus format
  * @from_dbus: function to convert from D-Bus to object format
@@ -369,92 +327,139 @@ _nm_setting_class_override_property (NMSettingClass *setting_class,
  * nm_property_compare() recognizes, as long as it recognizes @dbus_type.
  */
 void
-_nm_setting_class_transform_property (NMSettingClass *setting_class,
-                                      const char *property,
-                                      const GVariantType *dbus_type,
-                                      NMSettingPropertyTransformToFunc to_dbus,
-                                      NMSettingPropertyTransformFromFunc from_dbus)
+_properties_override_add_transform (GArray *properties_override,
+                                    GParamSpec *param_spec,
+                                    const GVariantType *dbus_type,
+                                    NMSettingPropertyTransformToFunc to_dbus,
+                                    NMSettingPropertyTransformFromFunc from_dbus)
 {
-	GParamSpec *param_spec;
+	nm_assert (param_spec);
 
-	param_spec = g_object_class_find_property (G_OBJECT_CLASS (setting_class), property);
-	g_return_if_fail (param_spec != NULL);
-
-	add_property_override (setting_class,
-	                       property, param_spec, dbus_type,
-	                       NULL, NULL, NULL, NULL,
-	                       to_dbus, from_dbus);
+	_properties_override_add (properties_override,
+	                          .param_spec = param_spec,
+	                          .dbus_type = dbus_type,
+	                          .to_dbus = to_dbus,
+	                          .from_dbus = from_dbus);
 }
 
-static GArray *
-nm_setting_class_ensure_properties (NMSettingClass *setting_class)
+static NMSettInfoSetting _sett_info_settings[_NM_META_SETTING_TYPE_NUM];
+
+void
+_nm_setting_class_commit_full (NMSettingClass *setting_class,
+                               NMMetaSettingType meta_type,
+                               const NMSettInfoSettDetail *detail,
+                               GArray *properties_override)
 {
-	GType type = G_TYPE_FROM_CLASS (setting_class), otype;
-	NMSettingProperty property, *override;
-	GArray *overrides, *type_overrides, *properties;
-	GParamSpec **property_specs;
-	guint n_property_specs, i;
+	NMSettInfoSetting *sett_info;
+	gs_free GParamSpec **property_specs = NULL;
+	guint i, n_property_specs, override_len;
 
-	properties = g_type_get_qdata (type, setting_properties_quark ());
-	if (properties)
-		return properties;
+	nm_assert (NM_IS_SETTING_CLASS (setting_class));
+	nm_assert (!setting_class->setting_info);
 
-	/* Build overrides array from @setting_class and its superclasses */
-	overrides = g_array_new (FALSE, FALSE, sizeof (NMSettingProperty));
-	for (otype = type; otype != G_TYPE_OBJECT; otype = g_type_parent (otype)) {
-		type_overrides = g_type_get_qdata (otype, setting_property_overrides_quark ());
-		if (type_overrides)
-			g_array_append_vals (overrides, (NMSettingProperty *)type_overrides->data, type_overrides->len);
-	}
+	nm_assert (meta_type < G_N_ELEMENTS (_sett_info_settings));
 
-	/* Build the properties array from the GParamSpecs, obeying overrides */
-	properties = g_array_new (FALSE, FALSE, sizeof (NMSettingProperty));
+	sett_info = &_sett_info_settings[meta_type];
+
+	nm_assert (!sett_info->setting_class);
+	nm_assert (!sett_info->property_infos_len);
+	nm_assert (!sett_info->property_infos);
+
+	if (!properties_override) {
+		override_len = 0;
+		properties_override = _nm_sett_info_property_override_create_array ();
+	} else
+		override_len = properties_override->len;
 
 	property_specs = g_object_class_list_properties (G_OBJECT_CLASS (setting_class),
 	                                                 &n_property_specs);
-	for (i = 0; i < n_property_specs; i++) {
-		override = find_property (overrides, property_specs[i]->name);
-		if (override)
-			property = *override;
-		else {
-			memset (&property, 0, sizeof (property));
-			property.name = property_specs[i]->name;
-			property.param_spec = property_specs[i];
+
+#if NM_MORE_ASSERTS > 10
+	/* assert that properties_override is constructed consistently. */
+	for (i = 0; i < override_len; i++) {
+		guint j;
+		const NMSettInfoProperty *p = &g_array_index (properties_override, NMSettInfoProperty, i);
+
+		nm_assert (!_nm_sett_info_property_find_in_array ((NMSettInfoProperty *) properties_override->data,
+		                                                  i,
+		                                                  p->name));
+		for (j = 0; j < n_property_specs; j++) {
+			if (nm_streq (property_specs[j]->name, p->name)) {
+				nm_assert (p->param_spec == property_specs[j]);
+				break;
+			}
 		}
-		g_array_append_val (properties, property);
+		nm_assert ((j == n_property_specs) == (p->param_spec == NULL));
 	}
-	g_free (property_specs);
+#endif
 
-	/* Add any remaining overrides not corresponding to GObject properties */
-	for (i = 0; i < overrides->len; i++) {
-		override = &g_array_index (overrides, NMSettingProperty, i);
-		if (!g_object_class_find_property (G_OBJECT_CLASS (setting_class), override->name))
-			g_array_append_val (properties, *override);
+	for (i = 0; i < n_property_specs; i++) {
+		const char *name = property_specs[i]->name;
+		NMSettInfoProperty *p;
+
+		if (_nm_sett_info_property_find_in_array ((NMSettInfoProperty *) properties_override->data,
+		                                           override_len,
+		                                           name))
+			continue;
+
+		g_array_set_size (properties_override, properties_override->len + 1);
+		p = &g_array_index (properties_override, NMSettInfoProperty, properties_override->len - 1);
+		memset (p, 0, sizeof (*p));
+		p->name = name;
+		p->param_spec = property_specs[i];
 	}
-	g_array_unref (overrides);
 
-	g_type_set_qdata (type, setting_properties_quark (), properties);
-	return properties;
+	G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (NMSettInfoProperty, name) == 0);
+	g_array_sort (properties_override, nm_strcmp_p);
+
+	setting_class->setting_info = &nm_meta_setting_infos[meta_type];
+	sett_info->setting_class = setting_class;
+	if (detail)
+		sett_info->detail = *detail;
+	sett_info->property_infos_len = properties_override->len;
+	sett_info->property_infos = (const NMSettInfoProperty *) g_array_free (properties_override,
+	                                                                       properties_override->len == 0);
 }
 
-static const NMSettingProperty *
-nm_setting_class_get_properties (NMSettingClass *setting_class, guint *n_properties)
+const NMSettInfoSetting *
+_nm_sett_info_setting_get (NMSettingClass *setting_class)
 {
-	GArray *properties;
-
-	properties = nm_setting_class_ensure_properties (setting_class);
-
-	*n_properties = properties->len;
-	return (NMSettingProperty *) properties->data;
+	if (   NM_IS_SETTING_CLASS (setting_class)
+	    && setting_class->setting_info) {
+		nm_assert (setting_class->setting_info->meta_type < G_N_ELEMENTS (_sett_info_settings));
+		return &_sett_info_settings[setting_class->setting_info->meta_type];
+	}
+	return NULL;
 }
 
-static const NMSettingProperty *
-nm_setting_class_find_property (NMSettingClass *setting_class, const char *property_name)
+const NMSettInfoProperty *
+_nm_sett_info_property_get (NMSettingClass *setting_class,
+                            const char *property_name)
 {
-	GArray *properties;
+	const NMSettInfoSetting *sett_info = _nm_sett_info_setting_get (setting_class);
+	const NMSettInfoProperty *property;
+	gssize idx;
 
-	properties = nm_setting_class_ensure_properties (setting_class);
-	return find_property (properties, property_name);
+	if (!sett_info)
+		return NULL;
+
+	G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (NMSettInfoProperty, name) == 0);
+	idx = nm_utils_array_find_binary_search (sett_info->property_infos,
+	                                         sizeof (NMSettInfoProperty),
+	                                         sett_info->property_infos_len,
+	                                         &property_name,
+	                                         nm_strcmp_p_with_data,
+	                                         NULL);
+
+	if (idx < 0)
+		return NULL;
+
+	property = &sett_info->property_infos[idx];
+
+	nm_assert (idx == 0 || strcmp (property[-1].name, property[0].name) < 0);
+	nm_assert (idx == sett_info->property_infos_len - 1 || strcmp (property[0].name, property[1].name) < 0);
+
+	return property;
 }
 
 /*****************************************************************************/
@@ -530,7 +535,7 @@ variant_type_for_gtype (GType type)
 
 static GVariant *
 get_property_for_dbus (NMSetting *setting,
-                       const NMSettingProperty *property,
+                       const NMSettInfoProperty *property,
                        gboolean ignore_default)
 {
 	GValue prop_value = { 0, };
@@ -567,7 +572,7 @@ get_property_for_dbus (NMSetting *setting,
 }
 
 static gboolean
-set_property_from_dbus (const NMSettingProperty *property,
+set_property_from_dbus (const NMSettInfoProperty *property,
                         GVariant *src_value,
                         GValue *dst_value)
 {
@@ -620,17 +625,16 @@ _nm_setting_to_dbus (NMSetting *setting, NMConnection *connection, NMConnectionS
 {
 	GVariantBuilder builder;
 	GVariant *dbus_value;
-	const NMSettingProperty *properties;
-	guint n_properties, i;
+	const NMSettInfoSetting *sett_info;
+	guint i;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
 
-	properties = nm_setting_class_get_properties (NM_SETTING_GET_CLASS (setting), &n_properties);
-
 	g_variant_builder_init (&builder, NM_VARIANT_TYPE_SETTING);
 
-	for (i = 0; i < n_properties; i++) {
-		const NMSettingProperty *property = &properties[i];
+	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (setting));
+	for (i = 0; i < sett_info->property_infos_len; i++) {
+		const NMSettInfoProperty *property = &sett_info->property_infos[i];
 		GParamSpec *prop_spec = property->param_spec;
 
 		if (!prop_spec) {
@@ -701,8 +705,8 @@ _nm_setting_new_from_dbus (GType setting_type,
 {
 	gs_unref_object NMSetting *setting = NULL;
 	gs_unref_hashtable GHashTable *keys = NULL;
-	const NMSettingProperty *properties;
-	guint i, n_properties;
+	const NMSettInfoSetting *sett_info;
+	guint i;
 
 	g_return_val_if_fail (G_TYPE_IS_INSTANTIATABLE (setting_type), NULL);
 	g_return_val_if_fail (g_variant_is_of_type (setting_dict, NM_VARIANT_TYPE_SETTING), NULL);
@@ -746,9 +750,9 @@ _nm_setting_new_from_dbus (GType setting_type,
 		}
 	}
 
-	properties = nm_setting_class_get_properties (NM_SETTING_GET_CLASS (setting), &n_properties);
-	for (i = 0; i < n_properties; i++) {
-		const NMSettingProperty *property = &properties[i];
+	sett_info = _nm_sett_info_setting_get (NM_SETTING_GET_CLASS (setting));
+	for (i = 0; i < sett_info->property_infos_len; i++) {
+		const NMSettInfoProperty *property = &sett_info->property_infos[i];
 		gs_unref_variant GVariant *value = NULL;
 		gs_free_error GError *local = NULL;
 
@@ -867,12 +871,12 @@ const GVariantType *
 nm_setting_get_dbus_property_type (NMSetting *setting,
                                    const char *property_name)
 {
-	const NMSettingProperty *property;
+	const NMSettInfoProperty *property;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
 	g_return_val_if_fail (property_name != NULL, NULL);
 
-	property = nm_setting_class_find_property (NM_SETTING_GET_CLASS (setting), property_name);
+	property = _nm_sett_info_property_get (NM_SETTING_GET_CLASS (setting), property_name);
 	g_return_val_if_fail (property != NULL, NULL);
 
 	if (property->dbus_type)
@@ -1049,7 +1053,7 @@ compare_property (NMSetting *setting,
                   const GParamSpec *prop_spec,
                   NMSettingCompareFlags flags)
 {
-	const NMSettingProperty *property;
+	const NMSettInfoProperty *property;
 	GVariant *value1, *value2;
 	int cmp;
 
@@ -1081,7 +1085,7 @@ compare_property (NMSetting *setting,
 			return TRUE;
 	}
 
-	property = nm_setting_class_find_property (NM_SETTING_GET_CLASS (setting), prop_spec->name);
+	property = _nm_sett_info_property_get (NM_SETTING_GET_CLASS (setting), prop_spec->name);
 	g_return_val_if_fail (property != NULL, FALSE);
 
 	value1 = get_property_for_dbus (setting, property, TRUE);
@@ -1595,11 +1599,11 @@ _nm_setting_need_secrets (NMSetting *setting)
 static int
 update_one_secret (NMSetting *setting, const char *key, GVariant *value, GError **error)
 {
-	const NMSettingProperty *property;
+	const NMSettInfoProperty *property;
 	GParamSpec *prop_spec;
 	GValue prop_value = { 0, };
 
-	property = nm_setting_class_find_property (NM_SETTING_GET_CLASS (setting), key);
+	property = _nm_sett_info_property_get (NM_SETTING_GET_CLASS (setting), key);
 	if (!property) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
@@ -1688,10 +1692,10 @@ _nm_setting_update_secrets (NMSetting *setting, GVariant *secrets, GError **erro
 static gboolean
 is_secret_prop (NMSetting *setting, const char *secret_name, GError **error)
 {
-	const NMSettingProperty *property;
+	const NMSettInfoProperty *property;
 	GParamSpec *pspec;
 
-	property = nm_setting_class_find_property (NM_SETTING_GET_CLASS (setting), secret_name);
+	property = _nm_sett_info_property_get (NM_SETTING_GET_CLASS (setting), secret_name);
 	if (!property) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,

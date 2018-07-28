@@ -395,6 +395,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+	GArray *properties_override = _nm_sett_info_property_override_create_array ();
 
 	g_type_class_add_private (klass, sizeof (NMSettingBridgePrivate));
 
@@ -402,8 +403,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_BRIDGE];
-	setting_class->verify       = verify;
+	setting_class->verify = verify;
 
 	/**
 	 * NMSettingBridge:mac-address:
@@ -442,10 +442,13 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 		                      G_PARAM_READWRITE |
 		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (setting_class, NM_SETTING_BRIDGE_MAC_ADDRESS,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_hwaddr_to_dbus,
-	                                      _nm_utils_hwaddr_from_dbus);
+
+	_properties_override_add_transform (properties_override,
+	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                                  NM_SETTING_BRIDGE_MAC_ADDRESS),
+	                                    G_VARIANT_TYPE_BYTESTRING,
+	                                    _nm_utils_hwaddr_to_dbus,
+	                                    _nm_utils_hwaddr_from_dbus);
 
 	/**
 	 * NMSettingBridge:stp:
@@ -636,8 +639,12 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 *   bridge's interface name.
 	 * ---end---
 	 */
-	_nm_setting_class_add_dbus_only_property (setting_class, "interface-name",
-	                                          G_VARIANT_TYPE_STRING,
-	                                          _nm_setting_get_deprecated_virtual_interface_name,
-	                                          NULL);
+	_properties_override_add_dbus_only (properties_override,
+	                                    "interface-name",
+	                                    G_VARIANT_TYPE_STRING,
+	                                    _nm_setting_get_deprecated_virtual_interface_name,
+	                                    NULL);
+
+	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_BRIDGE,
+	                               NULL, properties_override);
 }

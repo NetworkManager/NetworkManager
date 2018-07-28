@@ -833,6 +833,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+	GArray *properties_override = _nm_sett_info_property_override_create_array ();
 
 	g_type_class_add_private (klass, sizeof (NMSettingVlanPrivate));
 
@@ -840,8 +841,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_VLAN];
-	setting_class->verify       = verify;
+	setting_class->verify = verify;
 
 	/**
 	 * NMSettingVlan:parent:
@@ -918,11 +918,14 @@ nm_setting_vlan_class_init (NMSettingVlanClass *klass)
 		                     G_PARAM_CONSTRUCT |
 		                     NM_SETTING_PARAM_INFERRABLE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_override_property (setting_class, NM_SETTING_VLAN_FLAGS,
-	                                     NULL,
-	                                     _override_flags_get,
-	                                     NULL,
-	                                     _override_flags_not_set);
+
+	_properties_override_add_override (properties_override,
+	                                   g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                                 NM_SETTING_VLAN_FLAGS),
+	                                   NULL,
+	                                   _override_flags_get,
+	                                   NULL,
+	                                   _override_flags_not_set);
 
 	/**
 	 * NMSettingVlan:ingress-priority-map:
@@ -984,8 +987,12 @@ nm_setting_vlan_class_init (NMSettingVlanClass *klass)
 	 *   vlan's interface name.
 	 * ---end---
 	 */
-	_nm_setting_class_add_dbus_only_property (setting_class, "interface-name",
-	                                          G_VARIANT_TYPE_STRING,
-	                                          _nm_setting_get_deprecated_virtual_interface_name,
-	                                          NULL);
+	_properties_override_add_dbus_only (properties_override,
+	                                    "interface-name",
+	                                    G_VARIANT_TYPE_STRING,
+	                                    _nm_setting_get_deprecated_virtual_interface_name,
+	                                    NULL);
+
+	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_VLAN,
+	                               NULL, properties_override);
 }

@@ -1433,6 +1433,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+	GArray *properties_override = _nm_sett_info_property_override_create_array ();
 
 	g_type_class_add_private (klass, sizeof (NMSettingWirelessSecurityPrivate));
 
@@ -1440,7 +1441,6 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->setting_info     = &nm_meta_setting_infos[NM_META_SETTING_TYPE_WIRELESS_SECURITY];
 	setting_class->verify           = verify;
 	setting_class->verify_secrets   = verify_secrets;
 	setting_class->need_secrets     = need_secrets;
@@ -1853,11 +1853,13 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_CONSTRUCT |
 		                    G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (setting_class,
-	                                      NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE,
-	                                      G_VARIANT_TYPE_UINT32,
-	                                      wep_key_type_to_dbus,
-	                                      NULL);
+
+	_properties_override_add_transform (properties_override,
+	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                                  NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE),
+	                                    G_VARIANT_TYPE_UINT32,
+	                                    wep_key_type_to_dbus,
+	                                    NULL);
 	/**
 	 * NMSettingWirelessSecurity:wps-method:
 	 *
@@ -1919,4 +1921,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 		                   G_PARAM_CONSTRUCT |
 		                   NM_SETTING_PARAM_FUZZY_IGNORE |
 		                   G_PARAM_STATIC_STRINGS));
+
+	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_WIRELESS_SECURITY,
+	                               NULL, properties_override);
 }

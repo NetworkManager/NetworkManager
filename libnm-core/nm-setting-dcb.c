@@ -909,6 +909,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+	GArray *properties_override = _nm_sett_info_property_override_create_array ();
 
 	g_type_class_add_private (klass, sizeof (NMSettingDcbPrivate));
 
@@ -916,8 +917,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize = finalize;
 
-	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_DCB];
-	setting_class->verify       = verify;
+	setting_class->verify = verify;
 
 	/**
 	 * NMSettingDcb:app-fcoe-flags:
@@ -1117,10 +1117,13 @@ nm_setting_dcb_class_init (NMSettingDcbClass *klass)
 		                     G_TYPE_ARRAY,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (setting_class, NM_SETTING_DCB_PRIORITY_FLOW_CONTROL,
-	                                      G_VARIANT_TYPE ("au"),
-	                                      _nm_setting_dcb_uint_array_to_dbus,
-	                                      _nm_setting_dcb_uint_array_from_dbus);
+
+	_properties_override_add_transform (properties_override,
+	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                                  NM_SETTING_DCB_PRIORITY_FLOW_CONTROL),
+	                                    G_VARIANT_TYPE ("au"),
+	                                    _nm_setting_dcb_uint_array_to_dbus,
+	                                    _nm_setting_dcb_uint_array_from_dbus);
 
 	/**
 	 * NMSettingDcb:priority-group-flags:
@@ -1165,10 +1168,13 @@ nm_setting_dcb_class_init (NMSettingDcbClass *klass)
 		                     G_TYPE_ARRAY,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (setting_class, NM_SETTING_DCB_PRIORITY_GROUP_ID,
-	                                      G_VARIANT_TYPE ("au"),
-	                                      _nm_setting_dcb_uint_array_to_dbus,
-	                                      _nm_setting_dcb_uint_array_from_dbus);
+
+	_properties_override_add_transform (properties_override,
+	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                                  NM_SETTING_DCB_PRIORITY_GROUP_ID),
+	                                    G_VARIANT_TYPE ("au"),
+	                                    _nm_setting_dcb_uint_array_to_dbus,
+	                                    _nm_setting_dcb_uint_array_from_dbus);
 
 	/**
 	 * NMSettingDcb:priority-group-bandwidth: (type GArray(guint))
@@ -1191,10 +1197,13 @@ nm_setting_dcb_class_init (NMSettingDcbClass *klass)
 		                     G_TYPE_ARRAY,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (setting_class, NM_SETTING_DCB_PRIORITY_GROUP_BANDWIDTH,
-	                                      G_VARIANT_TYPE ("au"),
-	                                      _nm_setting_dcb_uint_array_to_dbus,
-	                                      _nm_setting_dcb_uint_array_from_dbus);
+
+	_properties_override_add_transform (properties_override,
+	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                                  NM_SETTING_DCB_PRIORITY_GROUP_BANDWIDTH),
+	                                    G_VARIANT_TYPE ("au"),
+	                                    _nm_setting_dcb_uint_array_to_dbus,
+	                                    _nm_setting_dcb_uint_array_from_dbus);
 
 	/**
 	 * NMSettingDcb:priority-bandwidth: (type GArray(guint))
@@ -1219,10 +1228,13 @@ nm_setting_dcb_class_init (NMSettingDcbClass *klass)
 		                     G_TYPE_ARRAY,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (setting_class, NM_SETTING_DCB_PRIORITY_BANDWIDTH,
-	                                      G_VARIANT_TYPE ("au"),
-	                                      _nm_setting_dcb_uint_array_to_dbus,
-	                                      _nm_setting_dcb_uint_array_from_dbus);
+
+	_properties_override_add_transform (properties_override,
+	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                                  NM_SETTING_DCB_PRIORITY_BANDWIDTH),
+	                                    G_VARIANT_TYPE ("au"),
+	                                    _nm_setting_dcb_uint_array_to_dbus,
+	                                    _nm_setting_dcb_uint_array_from_dbus);
 
 	/**
 	 * NMSettingDcb:priority-strict-bandwidth: (type GArray(gboolean))
@@ -1245,10 +1257,13 @@ nm_setting_dcb_class_init (NMSettingDcbClass *klass)
 		                     G_TYPE_ARRAY,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (setting_class, NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH,
-	                                      G_VARIANT_TYPE ("au"),
-	                                      _nm_setting_dcb_uint_array_to_dbus,
-	                                      _nm_setting_dcb_uint_array_from_dbus);
+
+	_properties_override_add_transform (properties_override,
+	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                                  NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH),
+	                                    G_VARIANT_TYPE ("au"),
+	                                    _nm_setting_dcb_uint_array_to_dbus,
+	                                    _nm_setting_dcb_uint_array_from_dbus);
 
 	/**
 	 * NMSettingDcb:priority-traffic-class: (type GArray(guint))
@@ -1270,8 +1285,14 @@ nm_setting_dcb_class_init (NMSettingDcbClass *klass)
 		                     G_TYPE_ARRAY,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (setting_class, NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS,
-	                                      G_VARIANT_TYPE ("au"),
-	                                      _nm_setting_dcb_uint_array_to_dbus,
-	                                      _nm_setting_dcb_uint_array_from_dbus);
+
+	_properties_override_add_transform (properties_override,
+	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                                  NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS),
+	                                    G_VARIANT_TYPE ("au"),
+	                                    _nm_setting_dcb_uint_array_to_dbus,
+	                                    _nm_setting_dcb_uint_array_from_dbus);
+
+	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_DCB,
+	                               NULL, properties_override);
 }

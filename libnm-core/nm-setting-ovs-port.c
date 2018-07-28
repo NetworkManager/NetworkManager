@@ -368,8 +368,7 @@ nm_setting_ovs_port_class_init (NMSettingOvsPortClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_OVS_PORT];
-	setting_class->verify       = verify;
+	setting_class->verify = verify;
 
 	/**
 	 * NMSettingOvsPort:vlan-mode:
@@ -467,4 +466,6 @@ nm_setting_ovs_port_class_init (NMSettingOvsPortClass *klass)
 	                            G_PARAM_CONSTRUCT |
 	                            NM_SETTING_PARAM_INFERRABLE |
 	                            G_PARAM_STATIC_STRINGS));
+
+	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_OVS_PORT);
 }

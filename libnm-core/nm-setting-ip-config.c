@@ -2878,6 +2878,23 @@ ip_gateway_set (NMSetting  *setting,
 	return TRUE;
 }
 
+GArray *
+_nm_sett_info_property_override_create_array_ip_config (void)
+{
+	nm_auto_unref_gtypeclass NMSettingClass *setting_class = g_type_class_ref (NM_TYPE_SETTING_IP_CONFIG);
+	GArray *properties_override = _nm_sett_info_property_override_create_array ();
+
+	_properties_override_add_override (properties_override,
+	                                   g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                                 NM_SETTING_IP_CONFIG_GATEWAY),
+	                                   G_VARIANT_TYPE_STRING,
+	                                   NULL,
+	                                   ip_gateway_set,
+	                                   NULL);
+
+	return properties_override;
+}
+
 static void
 nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 {
@@ -3040,13 +3057,6 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 		                      G_PARAM_READWRITE |
 		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
-
-	_nm_setting_class_override_property (setting_class,
-	                                     NM_SETTING_IP_CONFIG_GATEWAY,
-	                                     G_VARIANT_TYPE_STRING,
-	                                     NULL,
-	                                     ip_gateway_set,
-	                                     NULL);
 
 	/**
 	 * NMSettingIPConfig:routes: (type GPtrArray(NMIPRoute))

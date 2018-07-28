@@ -606,6 +606,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+	GArray *properties_override = _nm_sett_info_property_override_create_array ();
 
 	g_type_class_add_private (klass, sizeof (NMSettingGsmPrivate));
 
@@ -613,7 +614,6 @@ nm_setting_gsm_class_init (NMSettingGsmClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->setting_info   = &nm_meta_setting_infos[NM_META_SETTING_TYPE_GSM];
 	setting_class->verify         = verify;
 	setting_class->verify_secrets = verify_secrets;
 	setting_class->need_secrets   = need_secrets;
@@ -819,10 +819,18 @@ nm_setting_gsm_class_init (NMSettingGsmClass *klass)
 		                    G_PARAM_STATIC_STRINGS));
 
 	/* Ignore incoming deprecated properties */
-	_nm_setting_class_add_dbus_only_property (setting_class, "allowed-bands",
-	                                          G_VARIANT_TYPE_UINT32,
-	                                          NULL, NULL);
-	_nm_setting_class_add_dbus_only_property (setting_class, "network-type",
-	                                          G_VARIANT_TYPE_INT32,
-	                                          NULL, NULL);
+	_properties_override_add_dbus_only (properties_override,
+	                                    "allowed-bands",
+	                                    G_VARIANT_TYPE_UINT32,
+	                                    NULL,
+	                                    NULL);
+
+	_properties_override_add_dbus_only (properties_override,
+	                                    "network-type",
+	                                    G_VARIANT_TYPE_INT32,
+	                                    NULL,
+	                                    NULL);
+
+	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_GSM,
+	                               NULL, properties_override);
 }

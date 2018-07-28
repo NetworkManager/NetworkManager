@@ -533,8 +533,7 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 
-	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_PPP];
-	setting_class->verify       = verify;
+	setting_class->verify = verify;
 
 	/**
 	 * NMSettingPpp:noauth:
@@ -796,4 +795,6 @@ nm_setting_ppp_class_init (NMSettingPppClass *klass)
 		                    G_PARAM_CONSTRUCT |
 		                    NM_SETTING_PARAM_FUZZY_IGNORE |
 		                    G_PARAM_STATIC_STRINGS));
+
+	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_PPP);
 }

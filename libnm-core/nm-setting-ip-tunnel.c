@@ -632,8 +632,7 @@ nm_setting_ip_tunnel_class_init (NMSettingIPTunnelClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_IP_TUNNEL];
-	setting_class->verify       = verify;
+	setting_class->verify = verify;
 
 	/**
 	 * NMSettingIPTunnel:parent:
@@ -851,4 +850,6 @@ nm_setting_ip_tunnel_class_init (NMSettingIPTunnelClass *klass)
 		                    G_PARAM_READWRITE |
 		                    NM_SETTING_PARAM_FUZZY_IGNORE |
 		                    G_PARAM_STATIC_STRINGS));
+
+	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_IP_TUNNEL);
 }
