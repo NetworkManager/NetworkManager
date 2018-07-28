@@ -213,20 +213,19 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
-nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *setting_class)
+nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingOlpcMeshPrivate));
+	g_type_class_add_private (klass, sizeof (NMSettingOlpcMeshPrivate));
 
-	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-	parent_class->verify       = verify;
 
-	/* Properties */
+	setting_class->verify = verify;
+
 	/**
 	 * NMSettingOlpcMesh:ssid:
 	 *
@@ -267,7 +266,7 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *setting_class)
 		                      NULL,
 		                      G_PARAM_READWRITE |
 		                      G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS,
+	_nm_setting_class_transform_property (setting_class, NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS,
 	                                      G_VARIANT_TYPE_BYTESTRING,
 	                                      _nm_utils_hwaddr_to_dbus,
 	                                      _nm_utils_hwaddr_from_dbus);

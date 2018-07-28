@@ -3761,22 +3761,19 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
-nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
+nm_setting_802_1x_class_init (NMSetting8021xClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
-	g_type_class_add_private (setting_class, sizeof (NMSetting8021xPrivate));
+	g_type_class_add_private (klass, sizeof (NMSetting8021xPrivate));
 
-	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	parent_class->verify         = verify;
-	parent_class->need_secrets   = need_secrets;
-
-	/* Properties */
+	setting_class->verify       = verify;
+	setting_class->need_secrets = need_secrets;
 
 	/**
 	 * NMSetting8021x:eap:

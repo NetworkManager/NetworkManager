@@ -408,7 +408,7 @@ compare_property (NMSetting *setting,
                   const GParamSpec *prop_spec,
                   NMSettingCompareFlags flags)
 {
-	NMSettingClass *parent_class;
+	NMSettingClass *setting_class;
 	NMSettingTeamPortPrivate *a_priv, *b_priv;
 	guint i, j;
 
@@ -442,9 +442,8 @@ compare_property (NMSetting *setting,
 		return TRUE;
 	}
 
-	/* Otherwise chain up to parent to handle generic compare */
-	parent_class = NM_SETTING_CLASS (nm_setting_team_port_parent_class);
-	return parent_class->compare_property (setting, other, prop_spec, flags);
+	setting_class = NM_SETTING_CLASS (nm_setting_team_port_parent_class);
+	return setting_class->compare_property (setting, other, prop_spec, flags);
 }
 
 static void
@@ -587,21 +586,20 @@ finalize (GObject *object)
 }
 
 static void
-nm_setting_team_port_class_init (NMSettingTeamPortClass *setting_class)
+nm_setting_team_port_class_init (NMSettingTeamPortClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingTeamPortPrivate));
+	g_type_class_add_private (klass, sizeof (NMSettingTeamPortPrivate));
 
-	/* virtual methods */
 	object_class->set_property     = set_property;
 	object_class->get_property     = get_property;
 	object_class->finalize         = finalize;
-	parent_class->compare_property = compare_property;
-	parent_class->verify           = verify;
 
-	/* Properties */
+	setting_class->compare_property = compare_property;
+	setting_class->verify           = verify;
+
 	/**
 	 * NMSettingTeamPort:config:
 	 *
@@ -715,7 +713,7 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *setting_class)
 		                     G_TYPE_PTR_ARRAY,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class,
+	_nm_setting_class_transform_property (setting_class,
 	                                      NM_SETTING_TEAM_PORT_LINK_WATCHERS,
 	                                      G_VARIANT_TYPE ("aa{sv}"),
 	                                      team_link_watchers_to_dbus,

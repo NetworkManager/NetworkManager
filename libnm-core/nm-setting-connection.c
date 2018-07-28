@@ -1268,7 +1268,6 @@ compare_property (NMSetting *setting,
 	    && g_strcmp0 (prop_spec->name, NM_SETTING_CONNECTION_TIMESTAMP) == 0)
 		return TRUE;
 
-	/* Otherwise chain up to parent to handle generic compare */
 	return NM_SETTING_CLASS (nm_setting_connection_parent_class)->compare_property (setting, other, prop_spec, flags);
 }
 
@@ -1503,21 +1502,19 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
-nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
+nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingConnectionPrivate));
+	g_type_class_add_private (klass, sizeof (NMSettingConnectionPrivate));
 
-	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-	parent_class->verify       = verify;
-	parent_class->compare_property = compare_property;
 
-	/* Properties */
+	setting_class->verify           = verify;
+	setting_class->compare_property = compare_property;
 
 	/**
 	 * NMSettingConnection:id:
@@ -1654,7 +1651,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                      G_PARAM_READWRITE |
 		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_override_property (parent_class, NM_SETTING_CONNECTION_INTERFACE_NAME,
+	_nm_setting_class_override_property (setting_class, NM_SETTING_CONNECTION_INTERFACE_NAME,
 	                                     G_VARIANT_TYPE_STRING,
 	                                     NULL,
 	                                     nm_setting_connection_set_interface_name,

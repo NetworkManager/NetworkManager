@@ -237,18 +237,15 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
-nm_setting_serial_class_init (NMSettingSerialClass *setting_class)
+nm_setting_serial_class_init (NMSettingSerialClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingSerialPrivate));
+	g_type_class_add_private (klass, sizeof (NMSettingSerialPrivate));
 
-	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
-
-	/* Properties */
 
 	/**
 	 * NMSettingSerial:baud:
@@ -306,7 +303,7 @@ nm_setting_serial_class_init (NMSettingSerialClass *setting_class)
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_CONSTRUCT |
 		                    G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class,
+	_nm_setting_class_transform_property (setting_class,
 	                                      NM_SETTING_SERIAL_PARITY,
 	                                      G_VARIANT_TYPE_BYTE,
 	                                      parity_to_dbus,

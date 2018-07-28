@@ -906,20 +906,19 @@ finalize (GObject *object)
 }
 
 static void
-nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
+nm_setting_dcb_class_init (NMSettingDcbClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingDcbPrivate));
+	g_type_class_add_private (klass, sizeof (NMSettingDcbPrivate));
 
-	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize = finalize;
-	parent_class->verify       = verify;
 
-	/* Properties */
+	setting_class->verify = verify;
+
 	/**
 	 * NMSettingDcb:app-fcoe-flags:
 	 *
@@ -1118,7 +1117,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                     G_TYPE_ARRAY,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_DCB_PRIORITY_FLOW_CONTROL,
+	_nm_setting_class_transform_property (setting_class, NM_SETTING_DCB_PRIORITY_FLOW_CONTROL,
 	                                      G_VARIANT_TYPE ("au"),
 	                                      _nm_setting_dcb_uint_array_to_dbus,
 	                                      _nm_setting_dcb_uint_array_from_dbus);
@@ -1166,7 +1165,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                     G_TYPE_ARRAY,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_DCB_PRIORITY_GROUP_ID,
+	_nm_setting_class_transform_property (setting_class, NM_SETTING_DCB_PRIORITY_GROUP_ID,
 	                                      G_VARIANT_TYPE ("au"),
 	                                      _nm_setting_dcb_uint_array_to_dbus,
 	                                      _nm_setting_dcb_uint_array_from_dbus);
@@ -1192,7 +1191,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                     G_TYPE_ARRAY,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_DCB_PRIORITY_GROUP_BANDWIDTH,
+	_nm_setting_class_transform_property (setting_class, NM_SETTING_DCB_PRIORITY_GROUP_BANDWIDTH,
 	                                      G_VARIANT_TYPE ("au"),
 	                                      _nm_setting_dcb_uint_array_to_dbus,
 	                                      _nm_setting_dcb_uint_array_from_dbus);
@@ -1220,7 +1219,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                     G_TYPE_ARRAY,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_DCB_PRIORITY_BANDWIDTH,
+	_nm_setting_class_transform_property (setting_class, NM_SETTING_DCB_PRIORITY_BANDWIDTH,
 	                                      G_VARIANT_TYPE ("au"),
 	                                      _nm_setting_dcb_uint_array_to_dbus,
 	                                      _nm_setting_dcb_uint_array_from_dbus);
@@ -1246,7 +1245,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                     G_TYPE_ARRAY,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH,
+	_nm_setting_class_transform_property (setting_class, NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH,
 	                                      G_VARIANT_TYPE ("au"),
 	                                      _nm_setting_dcb_uint_array_to_dbus,
 	                                      _nm_setting_dcb_uint_array_from_dbus);
@@ -1271,7 +1270,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                     G_TYPE_ARRAY,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class, NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS,
+	_nm_setting_class_transform_property (setting_class, NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS,
 	                                      G_VARIANT_TYPE ("au"),
 	                                      _nm_setting_dcb_uint_array_to_dbus,
 	                                      _nm_setting_dcb_uint_array_from_dbus);

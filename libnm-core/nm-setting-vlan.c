@@ -830,20 +830,18 @@ finalize (GObject *object)
 }
 
 static void
-nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
+nm_setting_vlan_class_init (NMSettingVlanClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingVlanPrivate));
+	g_type_class_add_private (klass, sizeof (NMSettingVlanPrivate));
 
-	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-	parent_class->verify       = verify;
 
-	/* Properties */
+	setting_class->verify = verify;
 
 	/**
 	 * NMSettingVlan:parent:
@@ -920,7 +918,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 		                     G_PARAM_CONSTRUCT |
 		                     NM_SETTING_PARAM_INFERRABLE |
 		                     G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_override_property (parent_class, NM_SETTING_VLAN_FLAGS,
+	_nm_setting_class_override_property (setting_class, NM_SETTING_VLAN_FLAGS,
 	                                     NULL,
 	                                     _override_flags_get,
 	                                     NULL,
@@ -986,7 +984,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 *   vlan's interface name.
 	 * ---end---
 	 */
-	_nm_setting_class_add_dbus_only_property (parent_class, "interface-name",
+	_nm_setting_class_add_dbus_only_property (setting_class, "interface-name",
 	                                          G_VARIANT_TYPE_STRING,
 	                                          _nm_setting_get_deprecated_virtual_interface_name,
 	                                          NULL);

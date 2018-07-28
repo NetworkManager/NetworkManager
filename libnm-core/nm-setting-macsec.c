@@ -473,18 +473,19 @@ finalize (GObject *object)
 }
 
 static void
-nm_setting_macsec_class_init (NMSettingMacsecClass *setting_class)
+nm_setting_macsec_class_init (NMSettingMacsecClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingMacsecPrivate));
+	g_type_class_add_private (klass, sizeof (NMSettingMacsecPrivate));
 
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-	parent_class->verify       = verify;
-	parent_class->need_secrets = need_secrets;
+
+	setting_class->verify       = verify;
+	setting_class->need_secrets = need_secrets;
 
 	/**
 	 * NMSettingMacsec:parent:

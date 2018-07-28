@@ -1242,7 +1242,7 @@ compare_property (NMSetting *setting,
 {
 	NMSettingTCConfig *a_tc_config = NM_SETTING_TC_CONFIG (setting);
 	NMSettingTCConfig *b_tc_config = NM_SETTING_TC_CONFIG (other);
-	NMSettingClass *parent_class;
+	NMSettingClass *setting_class;
 	guint i;
 
 	if (nm_streq (prop_spec->name, NM_SETTING_TC_CONFIG_QDISCS)) {
@@ -1265,9 +1265,8 @@ compare_property (NMSetting *setting,
 		return TRUE;
 	}
 
-	/* Otherwise chain up to parent to handle generic compare */
-	parent_class = NM_SETTING_CLASS (nm_setting_tc_config_parent_class);
-	return parent_class->compare_property (setting, other, prop_spec, flags);
+	setting_class = NM_SETTING_CLASS (nm_setting_tc_config_parent_class);
+	return setting_class->compare_property (setting, other, prop_spec, flags);
 }
 
 static void
@@ -1589,19 +1588,17 @@ tc_tfilters_set (NMSetting *setting,
 }
 
 static void
-nm_setting_tc_config_class_init (NMSettingTCConfigClass *setting_class)
+nm_setting_tc_config_class_init (NMSettingTCConfigClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
-	/* virtual methods */
 	object_class->set_property     = set_property;
 	object_class->get_property     = get_property;
 	object_class->finalize         = finalize;
-	parent_class->compare_property = compare_property;
-	parent_class->verify           = verify;
 
-	/* Properties */
+	setting_class->compare_property = compare_property;
+	setting_class->verify           = verify;
 
 	/**
 	 * NMSettingTCConfig:qdiscs: (type GPtrArray(NMTCQdisc))
@@ -1623,7 +1620,7 @@ nm_setting_tc_config_class_init (NMSettingTCConfigClass *setting_class)
 		                     NM_SETTING_PARAM_INFERRABLE |
 		                     G_PARAM_STATIC_STRINGS));
 
-	_nm_setting_class_override_property (parent_class,
+	_nm_setting_class_override_property (setting_class,
 	                                     NM_SETTING_TC_CONFIG_QDISCS,
 	                                     G_VARIANT_TYPE ("aa{sv}"),
 	                                     tc_qdiscs_get,
@@ -1650,7 +1647,7 @@ nm_setting_tc_config_class_init (NMSettingTCConfigClass *setting_class)
 		                     NM_SETTING_PARAM_INFERRABLE |
 		                     G_PARAM_STATIC_STRINGS));
 
-	_nm_setting_class_override_property (parent_class,
+	_nm_setting_class_override_property (setting_class,
 	                                     NM_SETTING_TC_CONFIG_TFILTERS,
 	                                     G_VARIANT_TYPE ("aa{sv}"),
 	                                     tc_tfilters_get,

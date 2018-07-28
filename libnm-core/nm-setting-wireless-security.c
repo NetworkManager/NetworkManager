@@ -1430,25 +1430,23 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
-nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting_class)
+nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
-	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingWirelessSecurityPrivate));
+	g_type_class_add_private (klass, sizeof (NMSettingWirelessSecurityPrivate));
 
-	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	parent_class->verify           = verify;
-	parent_class->verify_secrets   = verify_secrets;
-	parent_class->need_secrets     = need_secrets;
-	parent_class->get_secret_flags = get_secret_flags;
-	parent_class->set_secret_flags = set_secret_flags;
+	setting_class->verify           = verify;
+	setting_class->verify_secrets   = verify_secrets;
+	setting_class->need_secrets     = need_secrets;
+	setting_class->get_secret_flags = get_secret_flags;
+	setting_class->set_secret_flags = set_secret_flags;
 
-	/* Properties */
 	/**
 	 * NMSettingWirelessSecurity:key-mgmt:
 	 *
@@ -1855,7 +1853,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_CONSTRUCT |
 		                    G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (parent_class,
+	_nm_setting_class_transform_property (setting_class,
 	                                      NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE,
 	                                      G_VARIANT_TYPE_UINT32,
 	                                      wep_key_type_to_dbus,

@@ -214,17 +214,18 @@ finalize (GObject *object)
 }
 
 static void
-nm_setting_wpan_class_init (NMSettingWpanClass *setting_wpan_class)
+nm_setting_wpan_class_init (NMSettingWpanClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (setting_wpan_class);
-	NMSettingClass *setting_class = NM_SETTING_CLASS (setting_wpan_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
 
 	g_type_class_add_private (setting_class, sizeof (NMSettingWpanPrivate));
 
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
-	object_class->finalize	   = finalize;
-	setting_class->verify      = verify;
+	object_class->finalize     = finalize;
+
+	setting_class->verify = verify;
 
 	/**
 	 * NMSettingWpan:mac-address:
