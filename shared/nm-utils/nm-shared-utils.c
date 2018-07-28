@@ -1351,6 +1351,71 @@ nm_utils_strv_make_deep_copied (const char **strv)
 /*****************************************************************************/
 
 /**
+ * nm_utils_array_find_binary_search:
+ * @list: the list to search. It must be sorted according to @cmpfcn ordering.
+ * @elem_size: the size in bytes of each element in the list
+ * @len: the number of elements in @list
+ * @needle: the value that is searched
+ * @cmpfcn: the compare function. The elements @list are passed as first
+ *   argument to @cmpfcn, while @needle is passed as second. Usually, the
+ *   needle is the same data type as inside the list, however, that is
+ *   not necessary, as long as @cmpfcn takes care to cast the two arguments
+ *   accordingly.
+ * @user_data: optional argument passed to @cmpfcn
+ *
+ * Performs binary search for @needle in @list. On success, returns the
+ * (non-negative) index where the compare function found the searched element.
+ * On success, it returns a negative value. Note that the return negative value
+ * is the bitwise inverse of the position where the element should be inserted.
+ *
+ * If the list contains multiple matching elements, an arbitrary index is
+ * returned.
+ *
+ * Returns: the index to the element in the list, or the (negative, bitwise inverted)
+ *   position where it should be.
+ */
+gssize
+nm_utils_array_find_binary_search (gconstpointer list,
+                                   gsize elem_size,
+                                   gsize len,
+                                   gconstpointer needle,
+                                   GCompareDataFunc cmpfcn,
+                                   gpointer user_data)
+{
+	gssize imin, imax, imid;
+	int cmp;
+
+	g_return_val_if_fail (list || !len, ~((gssize) 0));
+	g_return_val_if_fail (cmpfcn, ~((gssize) 0));
+	g_return_val_if_fail (elem_size > 0, ~((gssize) 0));
+
+	imin = 0;
+	if (len == 0)
+		return ~imin;
+
+	imax = len - 1;
+
+	while (imin <= imax) {
+		imid = imin + (imax - imin) / 2;
+
+		cmp = cmpfcn (&((const char *) list)[elem_size * imid], needle, user_data);
+		if (cmp == 0)
+			return imid;
+
+		if (cmp < 0)
+			imin = imid + 1;
+		else
+			imax = imid - 1;
+	}
+
+	/* return the inverse of @imin. This is a negative number, but
+	 * also is ~imin the position where the value should be inserted. */
+	return ~imin;
+}
+
+/*****************************************************************************/
+
+/**
  * nm_utils_hash_table_equal:
  * @a: one #GHashTable
  * @b: other #GHashTable

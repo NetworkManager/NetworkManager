@@ -2462,12 +2462,12 @@ _parse_info_find (const char *setting_name, const char *property_name)
 #endif
 
 	G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (ParseInfoSetting, setting_name) == 0);
-	idx = _nm_utils_array_find_binary_search (parse_infos,
-	                                          sizeof (ParseInfoSetting),
-	                                          G_N_ELEMENTS (parse_infos),
-	                                          &setting_name,
-	                                          nm_strcmp_p_with_data,
-	                                          NULL);
+	idx = nm_utils_array_find_binary_search (parse_infos,
+	                                         sizeof (ParseInfoSetting),
+	                                         G_N_ELEMENTS (parse_infos),
+	                                         &setting_name,
+	                                         nm_strcmp_p_with_data,
+	                                         NULL);
 	if (idx >= 0) {
 		const ParseInfoSetting *pis = &parse_infos[idx];
 

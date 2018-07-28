@@ -262,7 +262,6 @@ gssize _nm_utils_ptrarray_find_binary_search (gconstpointer *list,
                                               gpointer user_data,
                                               gssize *out_idx_first,
                                               gssize *out_idx_last);
-gssize _nm_utils_array_find_binary_search (gconstpointer list, gsize elem_size, gsize len, gconstpointer needle, GCompareDataFunc cmpfcn, gpointer user_data);
 
 GSList *    _nm_utils_strv_to_slist (char **strv, gboolean deep_copy);
 char **     _nm_utils_slist_to_strv (GSList *slist, gboolean deep_copy);

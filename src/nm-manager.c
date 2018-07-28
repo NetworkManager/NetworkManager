@@ -6796,12 +6796,12 @@ nm_manager_set_capability (NMManager *self,
 
 	priv = NM_MANAGER_GET_PRIVATE (self);
 
-	idx = _nm_utils_array_find_binary_search (&g_array_index (priv->capabilities, guint32, 0),
-	                                          sizeof (guint32),
-	                                          priv->capabilities->len,
-	                                          &cap_i,
-	                                          nm_cmp_uint32_p_with_data,
-	                                          NULL);
+	idx = nm_utils_array_find_binary_search (&g_array_index (priv->capabilities, guint32, 0),
+	                                         sizeof (guint32),
+	                                         priv->capabilities->len,
+	                                         &cap_i,
+	                                         nm_cmp_uint32_p_with_data,
+	                                         NULL);
 	if (idx >= 0)
 		return;
 
