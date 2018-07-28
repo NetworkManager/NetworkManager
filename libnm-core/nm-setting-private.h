@@ -105,44 +105,69 @@ NMSetting  *_nm_setting_new_from_dbus (GType setting_type,
                                        NMSettingParseFlags parse_flags,
                                        GError **error);
 
-typedef GVariant * (*NMSettingPropertyGetFunc)    (NMSetting     *setting,
-                                                   const char    *property);
-typedef GVariant * (*NMSettingPropertySynthFunc)  (NMSetting     *setting,
-                                                   NMConnection  *connection,
-                                                   const char    *property);
-typedef gboolean   (*NMSettingPropertySetFunc)    (NMSetting     *setting,
-                                                   GVariant      *connection_dict,
-                                                   const char    *property,
-                                                   GVariant      *value,
-                                                   NMSettingParseFlags parse_flags,
-                                                   GError       **error);
-typedef gboolean   (*NMSettingPropertyNotSetFunc) (NMSetting     *setting,
-                                                   GVariant      *connection_dict,
-                                                   const char    *property,
-                                                   NMSettingParseFlags parse_flags,
-                                                   GError       **error);
+/*****************************************************************************/
 
-void _nm_setting_class_add_dbus_only_property (NMSettingClass *setting_class,
-                                               const char *property_name,
-                                               const GVariantType *dbus_type,
-                                               NMSettingPropertySynthFunc synth_func,
-                                               NMSettingPropertySetFunc set_func);
+static inline GArray *
+_nm_sett_info_property_override_create_array (void)
+{
+	return g_array_new (FALSE, FALSE, sizeof (NMSettInfoProperty));
+}
 
-void _nm_setting_class_override_property (NMSettingClass *setting_class,
-                                          const char *property_name,
-                                          const GVariantType *dbus_type,
-                                          NMSettingPropertyGetFunc get_func,
-                                          NMSettingPropertySetFunc set_func,
-                                          NMSettingPropertyNotSetFunc not_set_func);
+GArray *_nm_sett_info_property_override_create_array_ip_config (void);
 
-typedef GVariant * (*NMSettingPropertyTransformToFunc) (const GValue *from);
-typedef void (*NMSettingPropertyTransformFromFunc) (GVariant *from, GValue *to);
+void _nm_setting_class_commit_full (NMSettingClass *setting_class,
+                                    NMMetaSettingType meta_type,
+                                    const NMSettInfoSettDetail *detail,
+                                    GArray *properties_override);
 
-void _nm_setting_class_transform_property (NMSettingClass *setting_class,
-                                           const char *property_name,
-                                           const GVariantType *dbus_type,
-                                           NMSettingPropertyTransformToFunc to_dbus,
-                                           NMSettingPropertyTransformFromFunc from_dbus);
+static inline void
+_nm_setting_class_commit (NMSettingClass *setting_class,
+                          NMMetaSettingType meta_type)
+{
+	_nm_setting_class_commit_full (setting_class, meta_type, NULL, NULL);
+}
+
+#define NM_SETT_INFO_SETT_DETAIL(...) \
+	(&((const NMSettInfoSettDetail) { \
+		__VA_ARGS__ \
+	}))
+
+#define NM_SETT_INFO_PROPERTY(...) \
+	(&((const NMSettInfoProperty) { \
+		__VA_ARGS__ \
+	}))
+
+void _properties_override_add_struct (GArray *properties_override,
+                                      const NMSettInfoProperty *prop_info);
+
+void _properties_override_add__helper (GArray *properties_override,
+                                       NMSettInfoProperty *prop_info);
+
+#define _properties_override_add(properties_override, \
+                                 ...) \
+	(_properties_override_add_struct (properties_override, \
+	                                  NM_SETT_INFO_PROPERTY (__VA_ARGS__)))
+
+void _properties_override_add_dbus_only (GArray *properties_override,
+                                         const char *property_name,
+                                         const GVariantType *dbus_type,
+                                         NMSettingPropertySynthFunc synth_func,
+                                         NMSettingPropertySetFunc set_func);
+
+void _properties_override_add_override (GArray *properties_override,
+                                        GParamSpec *param_spec,
+                                        const GVariantType *dbus_type,
+                                        NMSettingPropertyGetFunc get_func,
+                                        NMSettingPropertySetFunc set_func,
+                                        NMSettingPropertyNotSetFunc not_set_func);
+
+void _properties_override_add_transform (GArray *properties_override,
+                                         GParamSpec *param_spec,
+                                         const GVariantType *dbus_type,
+                                         NMSettingPropertyTransformToFunc to_dbus,
+                                         NMSettingPropertyTransformFromFunc from_dbus);
+
+/*****************************************************************************/
 
 gboolean _nm_setting_use_legacy_property (NMSetting *setting,
                                           GVariant *connection_dict,
@@ -150,5 +175,7 @@ gboolean _nm_setting_use_legacy_property (NMSetting *setting,
                                           const char *new_property);
 
 GPtrArray  *_nm_setting_need_secrets (NMSetting *setting);
+
+/*****************************************************************************/
 
 #endif  /* NM_SETTING_PRIVATE_H */

@@ -301,8 +301,7 @@ nm_setting_tun_class_init (NMSettingTunClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_TUN];
-	setting_class->verify       = verify;
+	setting_class->verify = verify;
 
 	/**
 	 * NMSettingTun:mode:
@@ -404,4 +403,6 @@ nm_setting_tun_class_init (NMSettingTunClass *klass)
 		                       G_PARAM_READWRITE |
 		                       NM_SETTING_PARAM_INFERRABLE |
 		                       G_PARAM_STATIC_STRINGS));
+
+	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_TUN);
 }

@@ -483,7 +483,6 @@ nm_setting_macsec_class_init (NMSettingMacsecClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_MACSEC];
 	setting_class->verify       = verify;
 	setting_class->need_secrets = need_secrets;
 
@@ -627,4 +626,6 @@ nm_setting_macsec_class_init (NMSettingMacsecClass *klass)
 	                          G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+
+	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_MACSEC);
 }

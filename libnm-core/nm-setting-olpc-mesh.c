@@ -216,6 +216,7 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+	GArray *properties_override = _nm_sett_info_property_override_create_array ();
 
 	g_type_class_add_private (klass, sizeof (NMSettingOlpcMeshPrivate));
 
@@ -223,8 +224,7 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_OLPC_MESH];
-	setting_class->verify       = verify;
+	setting_class->verify = verify;
 
 	/**
 	 * NMSettingOlpcMesh:ssid:
@@ -266,8 +266,14 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *klass)
 		                      NULL,
 		                      G_PARAM_READWRITE |
 		                      G_PARAM_STATIC_STRINGS));
-	_nm_setting_class_transform_property (setting_class, NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS,
-	                                      G_VARIANT_TYPE_BYTESTRING,
-	                                      _nm_utils_hwaddr_to_dbus,
-	                                      _nm_utils_hwaddr_from_dbus);
+
+	_properties_override_add_transform (properties_override,
+	                                    g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                                  NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS),
+	                                    G_VARIANT_TYPE_BYTESTRING,
+	                                    _nm_utils_hwaddr_to_dbus,
+	                                    _nm_utils_hwaddr_from_dbus);
+
+	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_OLPC_MESH,
+	                               NULL, properties_override);
 }

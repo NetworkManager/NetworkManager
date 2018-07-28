@@ -71,5 +71,5 @@ nm_setting_generic_class_init (NMSettingGenericClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMSettingGenericPrivate));
 
-	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_GENERIC];
+	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_GENERIC);
 }

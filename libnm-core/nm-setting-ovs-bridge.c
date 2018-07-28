@@ -271,8 +271,7 @@ nm_setting_ovs_bridge_class_init (NMSettingOvsBridgeClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_OVS_BRIDGE];
-	setting_class->verify       = verify;
+	setting_class->verify = verify;
 
 	/**
 	 * NMSettingOvsBridge:fail-mode:
@@ -334,4 +333,6 @@ nm_setting_ovs_bridge_class_init (NMSettingOvsBridgeClass *klass)
 	                               G_PARAM_READWRITE |
 	                               G_PARAM_CONSTRUCT |
 	                               G_PARAM_STATIC_STRINGS));
+
+	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_OVS_BRIDGE);
 }

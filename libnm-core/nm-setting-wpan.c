@@ -224,8 +224,7 @@ nm_setting_wpan_class_init (NMSettingWpanClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->setting_info = &nm_meta_setting_infos[NM_META_SETTING_TYPE_WPAN];
-	setting_class->verify       = verify;
+	setting_class->verify = verify;
 
 	/**
 	 * NMSettingWpan:mac-address:
@@ -270,4 +269,6 @@ nm_setting_wpan_class_init (NMSettingWpanClass *klass)
 	                            0, G_MAXUINT16, G_MAXUINT16,
 	                            G_PARAM_READWRITE |
 	                            G_PARAM_STATIC_STRINGS));
+
+	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_WPAN);
 }

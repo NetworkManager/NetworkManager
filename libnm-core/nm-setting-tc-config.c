@@ -1591,12 +1591,12 @@ nm_setting_tc_config_class_init (NMSettingTCConfigClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+	GArray *properties_override = _nm_sett_info_property_override_create_array ();
 
 	object_class->set_property     = set_property;
 	object_class->get_property     = get_property;
 	object_class->finalize         = finalize;
 
-	setting_class->setting_info     = &nm_meta_setting_infos[NM_META_SETTING_TYPE_TC_CONFIG];
 	setting_class->compare_property = compare_property;
 	setting_class->verify           = verify;
 
@@ -1620,12 +1620,13 @@ nm_setting_tc_config_class_init (NMSettingTCConfigClass *klass)
 		                     NM_SETTING_PARAM_INFERRABLE |
 		                     G_PARAM_STATIC_STRINGS));
 
-	_nm_setting_class_override_property (setting_class,
-	                                     NM_SETTING_TC_CONFIG_QDISCS,
-	                                     G_VARIANT_TYPE ("aa{sv}"),
-	                                     tc_qdiscs_get,
-	                                     tc_qdiscs_set,
-	                                     NULL);
+	_properties_override_add_override (properties_override,
+	                                   g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                                 NM_SETTING_TC_CONFIG_QDISCS),
+	                                   G_VARIANT_TYPE ("aa{sv}"),
+	                                   tc_qdiscs_get,
+	                                   tc_qdiscs_set,
+	                                   NULL);
 
 	/**
 	 * NMSettingTCConfig:tfilters: (type GPtrArray(NMTCTfilter))
@@ -1647,10 +1648,14 @@ nm_setting_tc_config_class_init (NMSettingTCConfigClass *klass)
 		                     NM_SETTING_PARAM_INFERRABLE |
 		                     G_PARAM_STATIC_STRINGS));
 
-	_nm_setting_class_override_property (setting_class,
-	                                     NM_SETTING_TC_CONFIG_TFILTERS,
-	                                     G_VARIANT_TYPE ("aa{sv}"),
-	                                     tc_tfilters_get,
-	                                     tc_tfilters_set,
-	                                     NULL);
+	_properties_override_add_override (properties_override,
+	                                   g_object_class_find_property (G_OBJECT_CLASS (setting_class),
+	                                                                 NM_SETTING_TC_CONFIG_TFILTERS),
+	                                   G_VARIANT_TYPE ("aa{sv}"),
+	                                   tc_tfilters_get,
+	                                   tc_tfilters_set,
+	                                   NULL);
+
+	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_TC_CONFIG,
+	                               NULL, properties_override);
 }

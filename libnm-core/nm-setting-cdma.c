@@ -294,7 +294,6 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->setting_info   = &nm_meta_setting_infos[NM_META_SETTING_TYPE_CDMA];
 	setting_class->verify         = verify;
 	setting_class->verify_secrets = verify_secrets;
 	setting_class->need_secrets   = need_secrets;
@@ -372,4 +371,5 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *klass)
 		                    NM_SETTING_PARAM_FUZZY_IGNORE |
 		                    G_PARAM_STATIC_STRINGS));
 
+	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_CDMA);
 }

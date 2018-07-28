@@ -355,7 +355,6 @@ nm_setting_adsl_class_init (NMSettingAdslClass *klass)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	setting_class->setting_info   = &nm_meta_setting_infos[NM_META_SETTING_TYPE_ADSL];
 	setting_class->verify         = verify;
 	setting_class->verify_secrets = verify_secrets;
 	setting_class->need_secrets   = need_secrets;
@@ -445,4 +444,6 @@ nm_setting_adsl_class_init (NMSettingAdslClass *klass)
 		                    0, 65536, 0,
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_STATIC_STRINGS));
+
+	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_ADSL);
 }
