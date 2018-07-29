@@ -794,25 +794,28 @@ _nm_setting_to_dbus (NMSetting *setting, NMConnection *connection, NMConnectionS
 		const NMSettingProperty *property = &properties[i];
 		GParamSpec *prop_spec = property->param_spec;
 
-		if (!prop_spec && !property->synth_func) {
-			/* D-Bus-only property with no synth_func, so we skip it. */
-			continue;
+		if (!prop_spec) {
+			if (!property->synth_func)
+				continue;
+
+			if (flags & NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
+				continue;
+		} else {
+			if (!(prop_spec->flags & G_PARAM_WRITABLE))
+				continue;
+
+			if (   (prop_spec->flags & NM_SETTING_PARAM_LEGACY)
+			    && !_nm_utils_is_manager_process)
+				continue;
+
+			if (   (flags & NM_CONNECTION_SERIALIZE_NO_SECRETS)
+			    && (prop_spec->flags & NM_SETTING_PARAM_SECRET))
+				continue;
+
+			if (   (flags & NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
+			    && !(prop_spec->flags & NM_SETTING_PARAM_SECRET))
+				continue;
 		}
-
-		if (prop_spec && !(prop_spec->flags & G_PARAM_WRITABLE))
-			continue;
-
-		if (   prop_spec && (prop_spec->flags & NM_SETTING_PARAM_LEGACY)
-		    && !_nm_utils_is_manager_process)
-			continue;
-
-		if (   (flags & NM_CONNECTION_SERIALIZE_NO_SECRETS)
-		    && (prop_spec && (prop_spec->flags & NM_SETTING_PARAM_SECRET)))
-			continue;
-
-		if (   (flags & NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
-		    && !(prop_spec && (prop_spec->flags & NM_SETTING_PARAM_SECRET)))
-			continue;
 
 		if (property->synth_func)
 			dbus_value = property->synth_func (setting, connection, property->name);
