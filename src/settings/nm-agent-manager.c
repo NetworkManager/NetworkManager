@@ -349,7 +349,7 @@ agent_register_permissions_done (NMAuthChain *chain,
 		priv->agent_version_id += 1;
 		sender = nm_secret_agent_get_dbus_owner (agent);
 		g_hash_table_insert (priv->agents, g_strdup (sender), agent);
-		_LOGD (agent, "agent registered");
+		_LOGI (agent, "agent registered");
 		g_dbus_method_invocation_return_value (context, NULL);
 
 		/* Signal an agent was registered */
