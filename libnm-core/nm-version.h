@@ -161,7 +161,7 @@
 #endif
 
 #if NM_VERSION_MAX_ALLOWED < NM_VERSION_1_12_2
-# define NM_AVAILABLE_IN_1_12_2          G_UNAVAILABLE(1,12,2)
+# define NM_AVAILABLE_IN_1_12_2          G_UNAVAILABLE(1,12.2)
 #else
 # define NM_AVAILABLE_IN_1_12_2
 #endif
