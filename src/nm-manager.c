@@ -6731,7 +6731,7 @@ nm_manager_set_capability (NMManager *self,
 	gssize idx;
 
 	g_return_if_fail (NM_IS_MANAGER (self));
-	if (cap < 1 || cap > NM_CAPABILITY_TEAM)
+	if (cap < 1 || cap > NM_CAPABILITY_SERVER_BYTE_ORDER_LITTLE_ENDIAN)
 		g_return_if_reached ();
 
 	cap_i = (guint32) cap;
@@ -6877,6 +6877,14 @@ nm_manager_init (NMManager *self)
 	priv->platform = g_object_ref (NM_PLATFORM_GET);
 
 	priv->capabilities = g_array_new (FALSE, FALSE, sizeof (guint32));
+
+#if __BYTE_ORDER == __BIG_ENDIAN
+	nm_manager_set_capability (self, NM_CAPABILITY_SERVER_BYTE_ORDER_BIG_ENDIAN);
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+	nm_manager_set_capability (self, NM_CAPABILITY_SERVER_BYTE_ORDER_LITTLE_ENDIAN);
+#else
+#error Undefined __BYTE_ORDER
+#endif
 
 	/* Initialize rfkill structures and states */
 	memset (priv->radio_states, 0, sizeof (priv->radio_states));

@@ -138,16 +138,18 @@ typedef struct _NMIP4ConfigClass NMIP4ConfigClass;
 #define NM_IP4_CONFIG_ADDRESS_DATA "address-data"
 #define NM_IP4_CONFIG_ROUTE_DATA "route-data"
 #define NM_IP4_CONFIG_GATEWAY "gateway"
-#define NM_IP4_CONFIG_NAMESERVERS "nameservers"
+#define NM_IP4_CONFIG_NAMESERVER_DATA "nameserver-data"
 #define NM_IP4_CONFIG_DOMAINS "domains"
 #define NM_IP4_CONFIG_SEARCHES "searches"
 #define NM_IP4_CONFIG_DNS_OPTIONS "dns-options"
 #define NM_IP4_CONFIG_DNS_PRIORITY "dns-priority"
-#define NM_IP4_CONFIG_WINS_SERVERS "wins-servers"
+#define NM_IP4_CONFIG_WINS_SERVER_DATA "wins-server-data"
 
 /* deprecated */
 #define NM_IP4_CONFIG_ADDRESSES "addresses"
 #define NM_IP4_CONFIG_ROUTES "routes"
+#define NM_IP4_CONFIG_NAMESERVERS "nameservers"
+#define NM_IP4_CONFIG_WINS_SERVERS "wins-servers"
 
 GType nm_ip4_config_get_type (void);
 

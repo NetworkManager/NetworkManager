@@ -933,12 +933,36 @@ static GParamSpec *obj_properties[_PROPERTY_ENUMS_LAST] = { NULL, }
 #define NM_GOBJECT_PROPERTIES_DEFINE(obj_type, ...) \
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (__VA_ARGS__); \
 static inline void \
+_nm_gobject_notify_together_impl (obj_type *obj, guint n, const _PropertyEnums *props) \
+{ \
+	const gboolean freeze_thaw = (n > 1); \
+	\
+	nm_assert (G_IS_OBJECT (obj)); \
+	nm_assert (n > 0); \
+	\
+	if (freeze_thaw) \
+		g_object_freeze_notify ((GObject *) obj); \
+	while (n-- > 0) { \
+		const _PropertyEnums prop = *props++; \
+		\
+		nm_assert ((gsize) prop < G_N_ELEMENTS (obj_properties)); \
+		g_object_notify_by_pspec ((GObject *) obj, obj_properties[prop]); \
+	} \
+	if (freeze_thaw) \
+		g_object_thaw_notify ((GObject *) obj); \
+} \
+\
+static inline void \
 _notify (obj_type *obj, _PropertyEnums prop) \
 { \
-	nm_assert (G_IS_OBJECT (obj)); \
-	nm_assert ((gsize) prop < G_N_ELEMENTS (obj_properties)); \
-	g_object_notify_by_pspec ((GObject *) obj, obj_properties[prop]); \
-}
+	_nm_gobject_notify_together_impl (obj, 1, &prop); \
+} \
+
+/* invokes _notify() for all arguments (of type _PropertyEnums). Note, that if
+ * there are more than one prop arguments, this will involve a freeze/thaw
+ * of GObject property notifications. */
+#define nm_gobject_notify_together(obj, ...) \
+	_nm_gobject_notify_together_impl (obj, NM_NARG (__VA_ARGS__), (const _PropertyEnums[]) { __VA_ARGS__ })
 
 /*****************************************************************************/
 
