@@ -2778,7 +2778,7 @@ nm_keyfile_read (GKeyFile *keyfile,
 			base_dir = base_dir_free = g_get_current_dir ();
 		}
 	} else
-		g_return_val_if_fail ("/", NULL);
+		g_return_val_if_fail (base_dir[0] == '/', NULL);
 
 	connection = nm_simple_connection_new ();
 
