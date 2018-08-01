@@ -367,6 +367,25 @@ static inline CList *c_list_last(CList *list) {
              _safe = c_list_entry((_safe)->_m.next, __typeof__(*_iter), _m))    \
 
 /**
+ * c_list_flush() - flush all entries from a list
+ * @list:               list to flush
+ *
+ * This unlinks all entries from the given list @list and reinitializes their
+ * link-nodes via C_LIST_INIT().
+ *
+ * Note that the entries are not modified in any other way, nor is their memory
+ * released. This function just unlinks them and resets all the list nodes. It
+ * is particularly useful with temporary lists on the stack in combination with
+ * the GCC-extension __attribute__((__cleanup__(arg))).
+ */
+static inline void c_list_flush(CList *list) {
+        CList *iter, *safe;
+
+        c_list_for_each_safe_unlink(iter, safe, list)
+                /* empty */ ;
+}
+
+/**
  * c_list_length() - return number of linked entries, excluding the head
  * @list:               list to operate on
  *
