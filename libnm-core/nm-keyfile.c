@@ -2473,13 +2473,13 @@ _parse_info_find (const char *setting_name, const char *property_name)
 
 		G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (ParseInfoProperty, property_name) == 0);
 		nm_assert (nm_streq (pis->setting_name, setting_name));
-		idx = _nm_utils_ptrarray_find_binary_search ((gconstpointer *) pis->properties,
-		                                             NM_PTRARRAY_LEN (pis->properties),
-		                                             &property_name,
-		                                             nm_strcmp_p_with_data,
-		                                             NULL,
-		                                             NULL,
-		                                             NULL);
+		idx = nm_utils_ptrarray_find_binary_search ((gconstpointer *) pis->properties,
+		                                            NM_PTRARRAY_LEN (pis->properties),
+		                                            &property_name,
+		                                            nm_strcmp_p_with_data,
+		                                            NULL,
+		                                            NULL,
+		                                            NULL);
 		if (idx >= 0)
 			return pis->properties[idx];
 	}
