@@ -157,9 +157,28 @@ static void test_splice(void) {
         assert(c_list_last(&target) == &e2);
 }
 
+static void test_flush(void) {
+        CList e1 = C_LIST_INIT(e1), e2 = C_LIST_INIT(e2);
+
+        {
+                __attribute__((__cleanup__(c_list_flush))) CList list1 = C_LIST_INIT(list1);
+                __attribute__((__cleanup__(c_list_flush))) CList list2 = C_LIST_INIT(list2);
+
+                c_list_link_tail(&list2, &e1);
+                c_list_link_tail(&list2, &e2);
+
+                assert(c_list_is_linked(&e1));
+                assert(c_list_is_linked(&e2));
+        }
+
+        assert(!c_list_is_linked(&e1));
+        assert(!c_list_is_linked(&e2));
+}
+
 int main(int argc, char **argv) {
         test_iterators();
         test_swap();
         test_splice();
+        test_flush();
         return 0;
 }

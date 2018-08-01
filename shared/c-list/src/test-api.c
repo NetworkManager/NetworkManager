@@ -26,6 +26,7 @@ static void test_api(void) {
         assert(c_list_length(&list) == 0);
         assert(c_list_contains(&list, &list));
         assert(!c_list_contains(&list, &node.link));
+        c_list_flush(&list);
 
         /* basic link / unlink calls */
 
