@@ -653,6 +653,30 @@ typedef enum {
 } NMMetered;
 
 /**
+ * NMConnectionCardinality:
+ * @NM_CONNECTION_CARDINALITY_DEFAULT: indicates that the per-connection
+ *   setting is unspecified. In this case, it will fallback to the default
+ *   value, which is @NM_CONNECTION_CARDINALITY_SINGLE.
+ * @NM_CONNECTION_CARDINALITY_SINGLE: the connection profile can only
+ *   be active once at each moment. Activating a profile that is already active,
+ *   will first deactivate it.
+ * @NM_CONNECTION_CARDINALITY_MANUAL_MULTIPLE: the profile can
+ *   be manually activated multiple times on different devices. However,
+ *   reggarding autoconnect, the profile will autoconnect only if it is
+ *   currently not connected otherwise.
+ * @NM_CONNECTION_CARDINALITY_MULTIPLE: the profile can autoactivate
+ *   and be manually activated multiple times together.
+ *
+ * Since: 1.14
+ */
+typedef enum {
+	NM_CONNECTION_CARDINALITY_DEFAULT           = 0,
+	NM_CONNECTION_CARDINALITY_SINGLE            = 1,
+	NM_CONNECTION_CARDINALITY_MANUAL_MULTIPLE   = 2,
+	NM_CONNECTION_CARDINALITY_MULTIPLE          = 3,
+} NMConnectionCardinality;
+
+/**
  * NMActiveConnectionState:
  * @NM_ACTIVE_CONNECTION_STATE_UNKNOWN: the state of the connection is unknown
  * @NM_ACTIVE_CONNECTION_STATE_ACTIVATING: a network connection is being prepared

@@ -72,6 +72,7 @@ typedef struct {
 	gboolean autoconnect;
 	int autoconnect_priority;
 	int autoconnect_retries;
+	int cardinality;
 	guint64 timestamp;
 	gboolean read_only;
 	char *zone;
@@ -93,6 +94,7 @@ enum {
 	PROP_AUTOCONNECT,
 	PROP_AUTOCONNECT_PRIORITY,
 	PROP_AUTOCONNECT_RETRIES,
+	PROP_CARDINALITY,
 	PROP_TIMESTAMP,
 	PROP_READ_ONLY,
 	PROP_ZONE,
@@ -552,6 +554,22 @@ nm_setting_connection_get_autoconnect_retries (NMSettingConnection *setting)
 	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), -1);
 
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->autoconnect_retries;
+}
+
+/**
+ * nm_setting_connection_get_cardinality:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns: the #NMSettingConnection:cardinality property of the connection.
+ *
+ * Since: 1.14
+ **/
+NMConnectionCardinality
+nm_setting_connection_get_cardinality (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), -1);
+
+	return (NMConnectionCardinality) NM_SETTING_CONNECTION_GET_PRIVATE (setting)->cardinality;
 }
 
 /**
@@ -1087,6 +1105,19 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
+	if (!NM_IN_SET (priv->cardinality, (int) NM_CONNECTION_CARDINALITY_DEFAULT,
+	                                   (int) NM_CONNECTION_CARDINALITY_SINGLE,
+	                                   (int) NM_CONNECTION_CARDINALITY_MANUAL_MULTIPLE,
+	                                   (int) NM_CONNECTION_CARDINALITY_MULTIPLE)) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("cardinality value %d is not valid"), priv->cardinality);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME,
+		                NM_SETTING_CONNECTION_MDNS);
+		return FALSE;
+	}
+
 	/* *** errors above here should be always fatal, below NORMALIZABLE_ERROR *** */
 
 	if (!priv->uuid) {
@@ -1328,6 +1359,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_AUTOCONNECT_RETRIES:
 		priv->autoconnect_retries = g_value_get_int (value);
 		break;
+	case PROP_CARDINALITY:
+		priv->cardinality = g_value_get_int (value);
+		break;
 	case PROP_TIMESTAMP:
 		priv->timestamp = g_value_get_uint64 (value);
 		break;
@@ -1422,6 +1456,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_AUTOCONNECT_RETRIES:
 		g_value_set_int (value, nm_setting_connection_get_autoconnect_retries (setting));
+		break;
+	case PROP_CARDINALITY:
+		g_value_set_int (value, priv->cardinality);
 		break;
 	case PROP_TIMESTAMP:
 		g_value_set_uint64 (value, nm_setting_connection_get_timestamp (setting));
@@ -1761,6 +1798,24 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	                       -1, G_MAXINT32, -1,
 	                       G_PARAM_READWRITE |
 	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_FUZZY_IGNORE |
+	                       G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingConnection:cardinality:
+	 *
+	 * Specifies whether the profile can be active multiple times at a particulare
+	 * moment. The values are of type #NMConnectionCardinality.
+	 *
+	 * This setting is currently ignored for VPN profiles.
+	 *
+	 * Since: 1.14
+	 */
+	g_object_class_install_property
+	    (object_class, PROP_CARDINALITY,
+	     g_param_spec_int (NM_SETTING_CONNECTION_CARDINALITY, "", "",
+	                       G_MININT32, G_MAXINT32, NM_CONNECTION_CARDINALITY_DEFAULT,
+	                       G_PARAM_READWRITE |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
 	                       G_PARAM_STATIC_STRINGS));
 

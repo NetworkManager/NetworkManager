@@ -1382,12 +1382,14 @@ libnm_1_12_2 {
 
 libnm_1_14_0 {
 global:
+	nm_connection_cardinality_get_type;
 	nm_connection_get_setting_6lowpan;
 	nm_connection_get_setting_sriov;
 	nm_connection_get_setting_wpan;
 	nm_device_6lowpan_get_type;
 	nm_device_wpan_get_type;
 	nm_setting_6lowpan_get_type;
+	nm_setting_connection_get_cardinality;
 	nm_setting_sriov_add_vf;
 	nm_setting_sriov_clear_vfs;
 	nm_setting_sriov_get_autoprobe_drivers;
