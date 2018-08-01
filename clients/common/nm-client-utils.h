@@ -24,12 +24,6 @@
 #include "nm-active-connection.h"
 #include "nm-device.h"
 
-typedef enum {
-	NMC_TRI_STATE_NO,
-	NMC_TRI_STATE_YES,
-	NMC_TRI_STATE_UNKNOWN,
-} NMCTriStateValue;
-
 const NMObject **nmc_objects_sort_by_path (const NMObject *const*objs, gssize len);
 
 const char *nmc_string_is_valid (const char *input, const char **allowed, GError **error);
@@ -40,7 +34,7 @@ gboolean nmc_string_to_uint (const char *str,
                              unsigned long int max,
                              unsigned long int *value);
 gboolean nmc_string_to_bool (const char *str, gboolean *val_bool, GError **error);
-gboolean nmc_string_to_tristate (const char *str, NMCTriStateValue *val, GError **error);
+gboolean nmc_string_to_ternary (const char *str, NMTernary *val, GError **error);
 
 gboolean matches (const char *cmd, const char *pattern);
 

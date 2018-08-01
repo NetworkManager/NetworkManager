@@ -132,7 +132,7 @@ nmc_string_to_bool (const char *str, gboolean *val_bool, GError **error)
 }
 
 gboolean
-nmc_string_to_tristate (const char *str, NMCTriStateValue *val, GError **error)
+nmc_string_to_ternary (const char *str, NMTernary *val, GError **error)
 {
 	const char *s_true[] = { "true", "yes", "on", NULL };
 	const char *s_false[] = { "false", "no", "off", NULL };
@@ -150,11 +150,11 @@ nmc_string_to_tristate (const char *str, NMCTriStateValue *val, GError **error)
 	}
 
 	if (nmc_string_is_valid (str, s_true, NULL))
-		*val = NMC_TRI_STATE_YES;
+		*val = NM_TERNARY_TRUE;
 	else if (nmc_string_is_valid (str, s_false, NULL))
-		*val = NMC_TRI_STATE_NO;
+		*val = NM_TERNARY_FALSE;
 	else if (nmc_string_is_valid (str, s_unknown, NULL))
-		*val = NMC_TRI_STATE_UNKNOWN;
+		*val = NM_TERNARY_DEFAULT;
 	else {
 		g_set_error (error, 1, 0,
 		             _("'%s' is not valid; use [%s], [%s] or [%s]"),

@@ -2719,19 +2719,19 @@ static gboolean
 _set_fcn_connection_metered (ARGS_SET_FCN)
 {
 	NMMetered metered;
-	NMCTriStateValue ts_val;
+	NMTernary ts_val;
 
-	if (!nmc_string_to_tristate (value, &ts_val, error))
+	if (!nmc_string_to_ternary (value, &ts_val, error))
 		return FALSE;
 
 	switch (ts_val) {
-	case NMC_TRI_STATE_YES:
+	case NM_TERNARY_TRUE:
 		metered = NM_METERED_YES;
 		break;
-	case NMC_TRI_STATE_NO:
+	case NM_TERNARY_FALSE:
 		metered = NM_METERED_NO;
 		break;
-	case NMC_TRI_STATE_UNKNOWN:
+	case NM_TERNARY_DEFAULT:
 		metered = NM_METERED_UNKNOWN;
 		break;
 	default:
