@@ -557,6 +557,14 @@ nm_utils_strv_make_deep_copied_nonnull (const char **strv)
 
 /*****************************************************************************/
 
+gssize nm_utils_ptrarray_find_binary_search (gconstpointer *list,
+                                             gsize len,
+                                             gconstpointer needle,
+                                             GCompareDataFunc cmpfcn,
+                                             gpointer user_data,
+                                             gssize *out_idx_first,
+                                             gssize *out_idx_last);
+
 gssize nm_utils_array_find_binary_search (gconstpointer list,
                                           gsize elem_size,
                                           gsize len,
