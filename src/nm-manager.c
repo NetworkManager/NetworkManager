@@ -1459,20 +1459,23 @@ manager_device_state_changed (NMDevice *device,
 	    && new_state > NM_DEVICE_STATE_UNMANAGED)
 		retry_connections_for_parent_device (self, device);
 
-	switch (new_state) {
-	case NM_DEVICE_STATE_UNMANAGED:
-	case NM_DEVICE_STATE_UNAVAILABLE:
-	case NM_DEVICE_STATE_DISCONNECTED:
-	case NM_DEVICE_STATE_PREPARE:
-	case NM_DEVICE_STATE_FAILED:
+	if (NM_IN_SET (new_state,
+	               NM_DEVICE_STATE_UNMANAGED,
+	               NM_DEVICE_STATE_UNAVAILABLE,
+	               NM_DEVICE_STATE_DISCONNECTED,
+	               NM_DEVICE_STATE_PREPARE,
+	               NM_DEVICE_STATE_FAILED))
 		_notify (self, PROP_ACTIVE_CONNECTIONS);
-		break;
-	default:
-		break;
-	}
 
-	if (   new_state == NM_DEVICE_STATE_UNAVAILABLE
-	    || new_state == NM_DEVICE_STATE_DISCONNECTED)
+	if (NM_IN_SET (new_state,
+	               NM_DEVICE_STATE_UNMANAGED,
+	               NM_DEVICE_STATE_DISCONNECTED,
+	               NM_DEVICE_STATE_ACTIVATED))
+		nm_manager_write_device_state (self, device);
+
+	if (NM_IN_SET (new_state,
+	               NM_DEVICE_STATE_UNAVAILABLE,
+	               NM_DEVICE_STATE_DISCONNECTED))
 		nm_settings_device_added (priv->settings, device);
 }
 
@@ -5934,66 +5937,75 @@ start_factory (NMDeviceFactory *factory, gpointer user_data)
 	nm_device_factory_start (factory);
 }
 
-void
-nm_manager_write_device_state (NMManager *self)
+gboolean
+nm_manager_write_device_state (NMManager *self, NMDevice *device)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMDevice *device;
-	gs_unref_hashtable GHashTable *seen_ifindexes = NULL;
+	int ifindex;
+	gboolean managed;
+	NMConfigDeviceStateManagedType managed_type;
+	NMConnection *settings_connection;
+	const char *uuid = NULL;
+	const char *perm_hw_addr_fake = NULL;
+	gboolean perm_hw_addr_is_fake;
+	guint32 route_metric_default_aspired;
+	guint32 route_metric_default_effective;
 	int nm_owned;
+
+	ifindex = nm_device_get_ip_ifindex (device);
+	if (ifindex <= 0)
+		return FALSE;
+	if (ifindex == 1) {
+		/* ignore loopback */
+		return FALSE;
+	}
+
+	if (!nm_platform_link_get (priv->platform, ifindex))
+		return FALSE;
+
+	managed = nm_device_get_managed (device, FALSE);
+	if (managed) {
+		settings_connection = NM_CONNECTION (nm_device_get_settings_connection (device));
+		if (settings_connection)
+			uuid = nm_connection_get_uuid (settings_connection);
+		managed_type = NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_MANAGED;
+	} else if (nm_device_get_unmanaged_flags (device, NM_UNMANAGED_USER_EXPLICIT))
+		managed_type = NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_UNMANAGED;
+	else
+		managed_type = NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_UNKNOWN;
+
+	perm_hw_addr_fake = nm_device_get_permanent_hw_address_full (device, FALSE, &perm_hw_addr_is_fake);
+	if (perm_hw_addr_fake && !perm_hw_addr_is_fake)
+		perm_hw_addr_fake = NULL;
+
+	nm_owned = nm_device_is_software (device) ? nm_device_is_nm_owned (device) : -1;
+
+	route_metric_default_effective = _device_route_metric_get (self, ifindex, NM_DEVICE_TYPE_UNKNOWN,
+	                                                           TRUE, &route_metric_default_aspired);
+
+	return nm_config_device_state_write (ifindex,
+	                                     managed_type,
+	                                     perm_hw_addr_fake,
+	                                     uuid,
+	                                     nm_owned,
+	                                     route_metric_default_aspired,
+	                                     route_metric_default_effective);
+}
+
+void
+nm_manager_write_device_state_all (NMManager *self)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	gs_unref_hashtable GHashTable *seen_ifindexes = NULL;
+	NMDevice *device;
 
 	seen_ifindexes = g_hash_table_new (nm_direct_hash, NULL);
 
 	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
-		int ifindex;
-		gboolean managed;
-		NMConfigDeviceStateManagedType managed_type;
-		NMConnection *settings_connection;
-		const char *uuid = NULL;
-		const char *perm_hw_addr_fake = NULL;
-		gboolean perm_hw_addr_is_fake;
-		guint32 route_metric_default_aspired;
-		guint32 route_metric_default_effective;
-
-		ifindex = nm_device_get_ip_ifindex (device);
-		if (ifindex <= 0)
-			continue;
-		if (ifindex == 1) {
-			/* ignore loopback */
-			continue;
+		if (nm_manager_write_device_state (self, device)) {
+			g_hash_table_add (seen_ifindexes,
+			                  GINT_TO_POINTER (nm_device_get_ip_ifindex (device)));
 		}
-
-		if (!nm_platform_link_get (priv->platform, ifindex))
-			continue;
-
-		managed = nm_device_get_managed (device, FALSE);
-		if (managed) {
-			settings_connection = NM_CONNECTION (nm_device_get_settings_connection (device));
-			if (settings_connection)
-				uuid = nm_connection_get_uuid (settings_connection);
-			managed_type = NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_MANAGED;
-		} else if (nm_device_get_unmanaged_flags (device, NM_UNMANAGED_USER_EXPLICIT))
-			managed_type = NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_UNMANAGED;
-		else
-			managed_type = NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_UNKNOWN;
-
-		perm_hw_addr_fake = nm_device_get_permanent_hw_address_full (device, FALSE, &perm_hw_addr_is_fake);
-		if (perm_hw_addr_fake && !perm_hw_addr_is_fake)
-			perm_hw_addr_fake = NULL;
-
-		nm_owned = nm_device_is_software (device) ? nm_device_is_nm_owned (device) : -1;
-
-		route_metric_default_effective = _device_route_metric_get (self, ifindex, NM_DEVICE_TYPE_UNKNOWN,
-		                                                           TRUE, &route_metric_default_aspired);
-
-		if (nm_config_device_state_write (ifindex,
-		                                  managed_type,
-		                                  perm_hw_addr_fake,
-		                                  uuid,
-		                                  nm_owned,
-		                                  route_metric_default_aspired,
-		                                  route_metric_default_effective))
-			g_hash_table_add (seen_ifindexes, GINT_TO_POINTER (ifindex));
 	}
 
 	nm_config_device_state_prune_unseen (seen_ifindexes);

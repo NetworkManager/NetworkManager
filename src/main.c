@@ -59,7 +59,6 @@
 #endif
 
 #define NM_DEFAULT_PID_FILE          NMRUNDIR "/NetworkManager.pid"
-#define NM_DEFAULT_SYSTEM_STATE_FILE NMSTATEDIR "/NetworkManager.state"
 
 #define CONFIG_ATOMIC_SECTION_PREFIXES ((char **) NULL)
 
@@ -444,7 +443,7 @@ done:
 	 * state here. We don't bother updating the state as devices
 	 * change during regular operation. If NM is killed with SIGKILL,
 	 * it misses to update the state. */
-	nm_manager_write_device_state (manager);
+	nm_manager_write_device_state_all (manager);
 
 	nm_manager_stop (manager);
 
