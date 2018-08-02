@@ -185,7 +185,8 @@ _assert_expected_content (NMConnection *connection, const char *filename, const 
 
 	if (   len_expectd != len_written
 	    || memcmp (content_expectd, content_written, len_expectd) != 0) {
-		if (g_getenv ("NMTST_IFCFG_RH_UPDATE_EXPECTED")) {
+		if (   g_getenv ("NMTST_IFCFG_RH_UPDATE_EXPECTED")
+		    || nm_streq0 (g_getenv ("NM_TEST_REGENERATE"), "1")) {
 			if (uuid) {
 				gs_free char *search = g_strdup_printf ("UUID=%s\n", uuid);
 				const char *s;
