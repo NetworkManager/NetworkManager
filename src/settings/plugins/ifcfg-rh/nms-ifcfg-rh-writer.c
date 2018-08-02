@@ -1042,13 +1042,8 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 {
 	NMSettingWired *s_wired;
 	const char *const*s390_subchannels;
-	const char *duplex;
-	guint32 mtu, num_opts, speed, i;
-	GString *str = NULL;
+	guint32 mtu, num_opts, i;
 	const char *const*macaddr_blacklist;
-	gboolean auto_negotiate;
-	NMSettingWiredWakeOnLan wol;
-	const char *wol_password;
 
 	s_wired = nm_connection_get_setting_wired (connection);
 	if (!s_wired) {
@@ -1131,8 +1126,27 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 			svSetValueStr (ifcfg, "OPTIONS", tmp->str);
 	}
 
-	/* Stuff ETHTOOL_OPT with required options */
-	str = NULL;
+	svSetValueStr (ifcfg, "TYPE", TYPE_ETHERNET);
+
+	return TRUE;
+}
+
+static gboolean
+write_ethtool_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
+{
+	NMSettingWired *s_wired;
+	const char *duplex;
+	guint32 speed;
+	GString *str = NULL;
+	gboolean auto_negotiate;
+	NMSettingWiredWakeOnLan wol;
+	const char *wol_password;
+
+	s_wired = nm_connection_get_setting_wired (connection);
+
+	if (!s_wired)
+		return TRUE;
+
 	auto_negotiate = nm_setting_wired_get_auto_negotiate (s_wired);
 	speed = nm_setting_wired_get_speed (s_wired);
 	duplex = nm_setting_wired_get_duplex (s_wired);
@@ -1193,8 +1207,6 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		g_string_free (str, TRUE);
 	} else
 		svUnsetValue (ifcfg, "ETHTOOL_OPTS");
-
-	svSetValueStr (ifcfg, "TYPE", TYPE_ETHERNET);
 
 	return TRUE;
 }
@@ -2958,6 +2970,9 @@ do_write_construct (NMConnection *connection,
 		return FALSE;
 
 	if (!write_proxy_setting (connection, ifcfg, error))
+		return FALSE;
+
+	if (!write_ethtool_setting (connection, ifcfg, error))
 		return FALSE;
 
 	if (!write_user_setting (connection, ifcfg, error))
