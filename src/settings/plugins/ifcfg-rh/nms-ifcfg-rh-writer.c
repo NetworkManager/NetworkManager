@@ -1171,11 +1171,12 @@ write_ethtool_setting (NMConnection *connection, shvarFile *ifcfg, GError **erro
 	wol = nm_setting_wired_get_wake_on_lan (s_wired);
 	wol_password = nm_setting_wired_get_wake_on_lan_password (s_wired);
 
-	if (wol == NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE)
-		svSetValue (ifcfg, "ETHTOOL_WAKE_ON_LAN", "ignore");
-	else if (wol == NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT) {
-		/* pass */
-	} else {
+	svSetValue (ifcfg, "ETHTOOL_WAKE_ON_LAN",
+	              wol == NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE
+	            ? "ignore"
+	            : NULL);
+	if (!NM_IN_SET (wol, NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE,
+	                     NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT)) {
 		if (!str)
 			str = g_string_sized_new (30);
 		else
@@ -1202,6 +1203,7 @@ write_ethtool_setting (NMConnection *connection, shvarFile *ifcfg, GError **erro
 		if (wol_password && NM_FLAGS_HAS (wol, NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC))
 			g_string_append_printf (str, "s sopass %s", wol_password);
 	}
+
 	if (str) {
 		svSetValueStr (ifcfg, "ETHTOOL_OPTS", str->str);
 		g_string_free (str, TRUE);
