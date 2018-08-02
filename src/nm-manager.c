@@ -3008,10 +3008,21 @@ platform_link_added (NMManager *self,
 			continue;
 
 		if (nm_device_is_real (candidate)) {
-			/* Ignore the link added event since there's already a realized
-			 * device with the link's name.
+			/* There's already a realized device with the link's name
+			 * and a different ifindex.
 			 */
-			nm_device_update_from_platform_link (candidate, plink);
+			if (nm_device_get_ifindex (candidate) <= 0)
+				nm_device_update_from_platform_link (candidate, plink);
+			else {
+				/* The ifindex of a device can't be changed after
+				 * initialization because it is used as a key by
+				 * the dns-manager.
+				 */
+				_LOGD (LOGD_DEVICE, "(%s): removing old device %p after ifindex change from %d to %d",
+				       plink->name, candidate, nm_device_get_ifindex (candidate), ifindex);
+				remove_device (self, candidate, FALSE, TRUE);
+				goto add;
+			}
 			return;
 		} else if (nm_device_realize_start (candidate,
 		                                    plink,
@@ -3031,6 +3042,7 @@ platform_link_added (NMManager *self,
 		/* Try next unrealized device */
 	}
 
+add:
 	/* Try registered device factories */
 	factory = nm_device_factory_manager_find_factory_for_link_type (plink->type);
 	if (factory) {
