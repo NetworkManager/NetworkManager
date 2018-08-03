@@ -2092,7 +2092,7 @@ nm_setting_class_init (NMSettingClass *setting_class)
 	 *
 	 * The setting's name, which uniquely identifies the setting within the
 	 * connection.  Each setting type has a name unique to that type, for
-	 * example "ppp" or "wireless" or "wired".
+	 * example "ppp" or "802-11-wireless" or "802-3-ethernet".
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NAME,
