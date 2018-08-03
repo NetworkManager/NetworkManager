@@ -449,9 +449,7 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 
 
 %prep
-%setup -q -n NetworkManager-%{real_version}
-
-#%patch1 -p1
+%autosetup -p1 -n NetworkManager-%{real_version}
 
 
 %build
