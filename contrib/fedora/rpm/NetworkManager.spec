@@ -74,7 +74,7 @@
 %else
 %bcond_with connectivity_fedora
 %endif
-%if 0%{?rhel}
+%if 0%{?rhel} && 0%{?rhel} > 7
 %bcond_without connectivity_redhat
 %else
 %bcond_with connectivity_redhat
