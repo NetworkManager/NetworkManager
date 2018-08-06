@@ -348,14 +348,14 @@ _vlan_xgress_qos_mappings_cpy (guint *dst_n_map,
 
 static void
 _wireguard_peers_hash_update (gsize n_peers,
-                              const NMWireguardPeer *peers,
+                              const NMWireGuardPeer *peers,
                               NMHashState *h)
 {
 	gsize i, j;
 
 	nm_hash_update_val (h, n_peers);
 	for (i = 0; i < n_peers; i++) {
-		const NMWireguardPeer *p = &peers[i];
+		const NMWireGuardPeer *p = &peers[i];
 
 		nm_hash_update (h, p->public_key, sizeof (p->public_key));
 		nm_hash_update (h, p->preshared_key, sizeof (p->preshared_key));
@@ -376,7 +376,7 @@ _wireguard_peers_hash_update (gsize n_peers,
 			g_assert_not_reached ();
 
 		for (j = 0; j < p->allowedips_len; j++) {
-			const NMWireguardAllowedIP *ip = &p->allowedips[j];
+			const NMWireGuardAllowedIP *ip = &p->allowedips[j];
 
 			nm_hash_update_vals (h, ip->family, ip->mask);
 
@@ -392,14 +392,14 @@ _wireguard_peers_hash_update (gsize n_peers,
 
 static int
 _wireguard_peers_cmp (gsize n_peers,
-                      const NMWireguardPeer *p1,
-                      const NMWireguardPeer *p2)
+                      const NMWireGuardPeer *p1,
+                      const NMWireGuardPeer *p2)
 {
 	gsize i, j;
 
 	for (i = 0; i < n_peers; i++) {
-		const NMWireguardPeer *a = &p1[i];
-		const NMWireguardPeer *b = &p2[i];
+		const NMWireGuardPeer *a = &p1[i];
+		const NMWireGuardPeer *b = &p2[i];
 
 		NM_CMP_FIELD (a, b, last_handshake_time.tv_sec);
 		NM_CMP_FIELD (a, b, last_handshake_time.tv_nsec);
@@ -419,8 +419,8 @@ _wireguard_peers_cmp (gsize n_peers,
 			g_assert_not_reached ();
 
 		for (j = 0; j < a->allowedips_len; j++) {
-			const NMWireguardAllowedIP *aip = &a->allowedips[j];
-			const NMWireguardAllowedIP *bip = &b->allowedips[j];
+			const NMWireGuardAllowedIP *aip = &a->allowedips[j];
+			const NMWireGuardAllowedIP *bip = &b->allowedips[j];
 
 			NM_CMP_FIELD (aip, bip, family);
 			NM_CMP_FIELD (aip, bip, mask);
@@ -439,9 +439,9 @@ _wireguard_peers_cmp (gsize n_peers,
 
 static void
 _wireguard_peers_cpy (gsize *dst_n_peers,
-                      NMWireguardPeer **dst_peers,
+                      NMWireGuardPeer **dst_peers,
                       gsize src_n_peers,
-                      const NMWireguardPeer *src_peers)
+                      const NMWireGuardPeer *src_peers)
 {
 	if (src_n_peers == 0) {
 		g_clear_pointer (dst_peers, g_free);
@@ -876,7 +876,7 @@ _vt_cmd_obj_to_string_lnk_wireguard (const NMPObject *obj, NMPObjectToStringMode
 		                        obj->_lnk_wireguard.peers_len);
 
 		for (i = 0; i < obj->_lnk_wireguard.peers_len; i++) {
-			const NMWireguardPeer *peer = &obj->_lnk_wireguard.peers[i];
+			const NMWireGuardPeer *peer = &obj->_lnk_wireguard.peers[i];
 			nm_platform_wireguard_peer_to_string (peer, b, buf_size);
 			l = strlen (b);
 			b += l;
@@ -3066,8 +3066,8 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 	[NMP_OBJECT_TYPE_LNK_WIREGUARD - 1] = {
 		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_WIREGUARD,
-		.sizeof_data                        = sizeof (NMPObjectLnkWireguard),
-		.sizeof_public                      = sizeof (NMPlatformLnkWireguard),
+		.sizeof_data                        = sizeof (NMPObjectLnkWireGuard),
+		.sizeof_public                      = sizeof (NMPlatformLnkWireGuard),
 		.obj_type_name                      = "wireguard",
 		.lnk_link_type                      = NM_LINK_TYPE_WIREGUARD,
 		.cmd_obj_hash_update                = _vt_cmd_obj_hash_update_lnk_wireguard,

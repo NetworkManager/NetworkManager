@@ -73,6 +73,7 @@
 #define NM_DBUS_INTERFACE_DEVICE_MACVLAN       NM_DBUS_INTERFACE_DEVICE ".Macvlan"
 #define NM_DBUS_INTERFACE_DEVICE_PPP           NM_DBUS_INTERFACE_DEVICE ".Ppp"
 #define NM_DBUS_INTERFACE_DEVICE_VXLAN         NM_DBUS_INTERFACE_DEVICE ".Vxlan"
+#define NM_DBUS_INTERFACE_DEVICE_WIREGUARD     NM_DBUS_INTERFACE_DEVICE ".WireGuard"
 #define NM_DBUS_INTERFACE_DEVICE_GRE           NM_DBUS_INTERFACE_DEVICE ".Gre"
 #define NM_DBUS_INTERFACE_DEVICE_IP_TUNNEL     NM_DBUS_INTERFACE_DEVICE ".IPTunnel"
 #define NM_DBUS_INTERFACE_DEVICE_WPAN          NM_DBUS_INTERFACE_DEVICE ".Wpan"
@@ -216,6 +217,7 @@ typedef enum {
  * @NM_DEVICE_TYPE_OVS_BRIDGE: a Open vSwitch bridge
  * @NM_DEVICE_TYPE_WPAN: a IEEE 802.15.4 (WPAN) MAC Layer Device
  * @NM_DEVICE_TYPE_6LOWPAN: 6LoWPAN interface
+ * @NM_DEVICE_TYPE_WIREGUARD: a WireGuard interface
  *
  * #NMDeviceType values indicate the type of hardware represented by a
  * device object.
@@ -250,6 +252,7 @@ typedef enum {
 	NM_DEVICE_TYPE_OVS_BRIDGE    = 26,
 	NM_DEVICE_TYPE_WPAN          = 27,
 	NM_DEVICE_TYPE_6LOWPAN       = 28,
+	NM_DEVICE_TYPE_WIREGUARD     = 29,
 } NMDeviceType;
 
 /**

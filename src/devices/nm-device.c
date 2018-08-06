@@ -1896,7 +1896,9 @@ nm_device_get_route_metric_default (NMDeviceType device_type)
 	 */
 
 	switch (device_type) {
-	/* 50 is reserved for VPN (NM_VPN_ROUTE_METRIC_DEFAULT) */
+	/* 50 is also used for VPN plugins (NM_VPN_ROUTE_METRIC_DEFAULT) */
+	case NM_DEVICE_TYPE_WIREGUARD:
+		return 50;
 	case NM_DEVICE_TYPE_ETHERNET:
 	case NM_DEVICE_TYPE_VETH:
 		return 100;
