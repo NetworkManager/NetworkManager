@@ -286,6 +286,7 @@ coerce_type (NMDeviceType type)
 	case NM_DEVICE_TYPE_PPP:
 	case NM_DEVICE_TYPE_WPAN:
 	case NM_DEVICE_TYPE_6LOWPAN:
+	case NM_DEVICE_TYPE_WIREGUARD:
 		return type;
 	}
 	return NM_DEVICE_TYPE_UNKNOWN;
@@ -1351,6 +1352,8 @@ get_type_name (NMDevice *device)
 		return _("IEEE 802.15.4");
 	case NM_DEVICE_TYPE_6LOWPAN:
 		return _("6LoWPAN");
+	case NM_DEVICE_TYPE_WIREGUARD:
+		return _("WireGuard");
 	case NM_DEVICE_TYPE_GENERIC:
 	case NM_DEVICE_TYPE_UNUSED1:
 	case NM_DEVICE_TYPE_UNUSED2:
