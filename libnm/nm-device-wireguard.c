@@ -155,6 +155,16 @@ init_dbus (NMObject *object)
 }
 
 static void
+finalize (GObject *object)
+{
+	NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE (object);
+
+	g_bytes_unref (priv->public_key);
+
+	G_OBJECT_CLASS (nm_device_wireguard_parent_class)->finalize (object);
+}
+
+static void
 nm_device_wireguard_class_init (NMDeviceWireGuardClass *wireguard_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (wireguard_class);
@@ -163,6 +173,7 @@ nm_device_wireguard_class_init (NMDeviceWireGuardClass *wireguard_class)
 	g_type_class_add_private (wireguard_class, sizeof (NMDeviceWireGuardPrivate));
 
 	object_class->get_property = get_property;
+	object_class->finalize = finalize;
 
 	nm_object_class->init_dbus = init_dbus;
 
