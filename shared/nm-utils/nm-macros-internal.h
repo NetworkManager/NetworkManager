@@ -1137,6 +1137,14 @@ nm_clear_g_cancellable (GCancellable **cancellable)
 		 && ((__x & (__x - (((typeof(__x)) 1)))) == ((typeof(__x)) 0))); \
 	})
 
+#define NM_DIV_ROUND_UP(x, y) \
+	({ \
+		const typeof(x) _x = (x); \
+		const typeof(y) _y = (y); \
+		\
+		(_x / _y + !!(_x % _y)); \
+	})
+
 /*****************************************************************************/
 
 #define NM_UTILS_LOOKUP_DEFAULT(v)            return (v)
