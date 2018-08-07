@@ -734,6 +734,7 @@ const NmcMetaGenericInfo *const metagen_con_active_vpn[_NMC_GENERIC_INFO_TYPE_CO
 /*****************************************************************************/
 
 #define NMC_FIELDS_SETTINGS_NAMES_ALL    NM_SETTING_CONNECTION_SETTING_NAME","\
+                                         NM_SETTING_MATCH_SETTING_NAME","\
                                          NM_SETTING_WIRED_SETTING_NAME","\
                                          NM_SETTING_802_1X_SETTING_NAME","\
                                          NM_SETTING_WIRELESS_SETTING_NAME","\

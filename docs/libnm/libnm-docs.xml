@@ -212,6 +212,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-setting-ip-tunnel.xml"/>
     <xi:include href="xml/nm-setting-macsec.xml"/>
     <xi:include href="xml/nm-setting-macvlan.xml"/>
+    <xi:include href="xml/nm-setting-match.xml"/>
     <xi:include href="xml/nm-setting-olpc-mesh.xml"/>
     <xi:include href="xml/nm-setting-ovs-bridge.xml"/>
     <xi:include href="xml/nm-setting-ovs-interface.xml"/>

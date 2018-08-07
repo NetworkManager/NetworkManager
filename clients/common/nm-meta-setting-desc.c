@@ -3731,6 +3731,68 @@ DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_ipv6_config_routes,
                                _validate_and_remove_ipv6_route)
 
 static gconstpointer
+_get_fcn_match_interface_name (ARGS_GET_FCN)
+{
+	NMSettingMatch *s_match = NM_SETTING_MATCH (setting);
+	GString *str = NULL;
+	guint i, num;
+
+	RETURN_UNSUPPORTED_GET_TYPE ();
+
+	num = nm_setting_match_get_num_interface_names (s_match);
+	for (i = 0; i < num; i++) {
+		const char *name;
+		gs_free char *to_free = NULL;
+
+		if (i == 0)
+			str = g_string_new ("");
+		else
+			g_string_append_c (str, ' ');
+		name = nm_setting_match_get_interface_name (s_match, i);
+		g_string_append (str, _nm_utils_escape_spaces (name, &to_free));
+	}
+	RETURN_STR_TO_FREE (g_string_free (str, FALSE));
+}
+
+static gboolean
+_set_fcn_match_interface_name (ARGS_SET_FCN)
+{
+	gs_free const char **strv = NULL;
+	gsize i;
+
+	nm_assert (!error || !*error);
+
+	strv = nm_utils_strsplit_set (value, " \t", TRUE);
+	if (strv) {
+		for (i = 0; strv[i]; i++) {
+			nm_setting_match_add_interface_name (NM_SETTING_MATCH (setting),
+			                                     _nm_utils_unescape_spaces ((char *) strv[i]));
+		}
+	}
+	return TRUE;
+}
+
+static gboolean
+_validate_and_remove_match_interface_name (NMSettingMatch *setting,
+                                           const char *interface_name,
+                                           GError **error)
+{
+	gboolean ret;
+
+	ret = nm_setting_match_remove_interface_name_by_value (setting, interface_name);
+	if (!ret)
+		g_set_error (error, 1, 0,
+		             _("the property doesn't contain interface name '%s'"),
+		             interface_name);
+	return ret;
+}
+DEFINE_REMOVER_INDEX_OR_VALUE (_remove_fcn_match_interface_name,
+                               NM_SETTING_MATCH,
+                               nm_setting_match_get_num_interface_names,
+                               nm_setting_match_remove_interface_name,
+                               _validate_and_remove_match_interface_name)
+
+static gconstpointer
 _get_fcn_olpc_mesh_ssid (ARGS_GET_FCN)
 {
 	NMSettingOlpcMesh *s_olpc_mesh = NM_SETTING_OLPC_MESH (setting);
@@ -6533,6 +6595,19 @@ static const NMMetaPropertyInfo *const property_infos_MACVLAN[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_MATCH
+static const NMMetaPropertyInfo *const property_infos_MATCH[] = {
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_MATCH_INTERFACE_NAME,
+		.property_type = DEFINE_PROPERTY_TYPE (
+			.get_fcn =                  _get_fcn_match_interface_name,
+			.set_fcn =                  _set_fcn_match_interface_name,
+			.remove_fcn =               _remove_fcn_match_interface_name,
+		),
+	),
+	NULL
+};
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_OLPC_MESH
 static const NMMetaPropertyInfo *const property_infos_OLPC_MESH[] = {
 	PROPERTY_INFO_WITH_DESC (NM_SETTING_OLPC_MESH_SSID,
@@ -7900,6 +7975,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_IP_TUNNEL           N_("IP-tunnel settings")
 #define SETTING_PRETTY_NAME_MACSEC              N_("MACsec connection")
 #define SETTING_PRETTY_NAME_MACVLAN             N_("macvlan connection")
+#define SETTING_PRETTY_NAME_MATCH               N_("Match")
 #define SETTING_PRETTY_NAME_OLPC_MESH           N_("OLPC Mesh connection")
 #define SETTING_PRETTY_NAME_OVS_BRIDGE          N_("OpenVSwitch bridge settings")
 #define SETTING_PRETTY_NAME_OVS_INTERFACE       N_("OpenVSwitch interface settings")
@@ -8066,6 +8142,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
 			NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
 		),
 	),
+	SETTING_INFO (MATCH),
 	SETTING_INFO (OLPC_MESH,
 		.alias =                            "olpc-mesh",
 		.valid_parts = NM_META_SETTING_VALID_PARTS (
@@ -8209,6 +8286,7 @@ const NMMetaSettingValidPartItem *const nm_meta_setting_info_valid_parts_default
 /*****************************************************************************/
 
 static const NMMetaSettingValidPartItem *const valid_settings_noslave[] = {
+	NM_META_SETTING_VALID_PART_ITEM (MATCH,      FALSE),
 	NM_META_SETTING_VALID_PART_ITEM (IP4_CONFIG, FALSE),
 	NM_META_SETTING_VALID_PART_ITEM (IP6_CONFIG, FALSE),
 	NM_META_SETTING_VALID_PART_ITEM (TC_CONFIG,  FALSE),

@@ -1399,6 +1399,14 @@ global:
 	nm_setting_ethtool_get_type;
 	nm_setting_ethtool_new;
 	nm_setting_ethtool_set_feature;
+	nm_setting_match_add_interface_name;
+	nm_setting_match_clear_interface_names;
+	nm_setting_match_get_interface_name;
+	nm_setting_match_get_interface_names;
+	nm_setting_match_get_num_interface_names;
+	nm_setting_match_get_type;
+	nm_setting_match_remove_interface_name;
+	nm_setting_match_remove_interface_name_by_value;
 	nm_setting_sriov_add_vf;
 	nm_setting_sriov_clear_vfs;
 	nm_setting_sriov_get_autoprobe_drivers;
