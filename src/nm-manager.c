@@ -2398,6 +2398,20 @@ done:
 	g_clear_error (&error);
 }
 
+static gboolean
+new_activation_allowed_for_connection (NMManager *self,
+                                       NMSettingsConnection *connection)
+{
+	if (NM_IN_SET (_nm_connection_get_multi_connect (NM_CONNECTION (connection)),
+	               NM_CONNECTION_MULTI_CONNECT_MANUAL_MULTIPLE,
+	               NM_CONNECTION_MULTI_CONNECT_MULTIPLE))
+		return TRUE;
+
+	return !active_connection_find (self, connection, NULL,
+	                                NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
+	                                NULL);
+}
+
 /**
  * get_existing_connection:
  * @manager: #NMManager instance
@@ -2485,10 +2499,7 @@ get_existing_connection (NMManager *self,
 	 */
 	if (   assume_state_connection_uuid
 	    && (connection_checked = nm_settings_get_connection_by_uuid (priv->settings, assume_state_connection_uuid))
-	    /*XXX: consider connection multi_connect. */
-	    && !active_connection_find (self, connection_checked, NULL,
-	                                NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
-	                                NULL)
+	    && new_activation_allowed_for_connection (self, connection_checked)
 	    && nm_device_check_connection_compatible (device, NM_CONNECTION (connection_checked), NULL)) {
 
 		if (connection) {
