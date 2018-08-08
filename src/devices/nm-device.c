@@ -43,6 +43,7 @@
 #include "nm-utils/nm-random-utils.h"
 #include "nm-utils/unaligned.h"
 
+#include "nm-ethtool-utils.h"
 #include "nm-common-macros.h"
 #include "nm-device-private.h"
 #include "NetworkManagerUtils.h"
@@ -65,6 +66,7 @@
 #include "nm-firewall-manager.h"
 #include "settings/nm-settings-connection.h"
 #include "settings/nm-settings.h"
+#include "nm-setting-ethtool.h"
 #include "nm-auth-utils.h"
 #include "nm-netns.h"
 #include "nm-dispatcher.h"
@@ -171,6 +173,12 @@ struct _NMDeviceConnectivityHandle {
 	bool is_periodic_bump:1;
 	bool is_periodic_bump_on_complete:1;
 };
+
+typedef struct {
+	int ifindex;
+	NMEthtoolFeatureStates *features;
+	NMTernary requested[_NM_ETHTOOL_ID_FEATURE_NUM];
+} EthtoolState;
 
 /*****************************************************************************/
 
@@ -508,6 +516,8 @@ typedef struct _NMDevicePrivate {
 
 	GHashTable *   ip6_saved_properties;
 
+	EthtoolState  *ethtool_state;
+
 	struct {
 		NMDhcpClient *   client;
 		NMNDiscDHCPLevel mode;
@@ -737,6 +747,79 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (mtu_source_to_str, NMDeviceMtuSource,
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_MTU_SOURCE_IP_CONFIG,  "ip-config"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DEVICE_MTU_SOURCE_CONNECTION, "connection"),
 );
+
+/*****************************************************************************/
+
+static void
+_ethtool_state_reset (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->ethtool_state) {
+		gs_free NMEthtoolFeatureStates *features = priv->ethtool_state->features;
+		gs_free EthtoolState *ethtool_state = g_steal_pointer (&priv->ethtool_state);
+
+		if (!nm_platform_ethtool_set_features (nm_device_get_platform (self),
+		                                       ethtool_state->ifindex,
+		                                       features,
+		                                       ethtool_state->requested,
+		                                       FALSE))
+			_LOGW (LOGD_DEVICE, "ethtool: failure resetting one or more offload features");
+		else
+			_LOGD (LOGD_DEVICE, "ethtool: offload features successfully reset");
+	}
+}
+
+static void
+_ethtool_state_set (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	int ifindex;
+	NMConnection *connection;
+	NMSettingEthtool *s_ethtool;
+	NMPlatform *platform;
+	gs_free EthtoolState *ethtool_state = NULL;
+	gs_free NMEthtoolFeatureStates *features = NULL;
+
+	_ethtool_state_reset (self);
+
+	connection = nm_device_get_applied_connection (self);
+	if (!connection)
+		return;
+
+	ifindex = nm_device_get_ip_ifindex (self);
+	if (ifindex <= 0)
+		return;
+
+	s_ethtool = NM_SETTING_ETHTOOL (nm_connection_get_setting (connection, NM_TYPE_SETTING_ETHTOOL));
+	if (!s_ethtool)
+		return;
+
+	ethtool_state = g_new (EthtoolState, 1);
+	if (nm_setting_ethtool_init_features (s_ethtool, ethtool_state->requested) == 0)
+		return;
+
+	platform = nm_device_get_platform (self);
+
+	features = nm_platform_ethtool_get_link_features (platform, ifindex);
+	if (!features) {
+		_LOGW (LOGD_DEVICE, "ethtool: failure setting offload features (cannot read features)");
+		return;
+	}
+
+	if (!nm_platform_ethtool_set_features (platform,
+	                                       ifindex,
+	                                       features,
+	                                       ethtool_state->requested,
+	                                       TRUE))
+		_LOGW (LOGD_DEVICE, "ethtool: failure setting one or more offload features");
+	else
+		_LOGD (LOGD_DEVICE, "ethtool: offload features successfully set");
+
+	ethtool_state->ifindex = ifindex;
+	ethtool_state->features = g_steal_pointer (&features);
+	priv->ethtool_state = g_steal_pointer (&ethtool_state);
+}
 
 /*****************************************************************************/
 
@@ -6227,6 +6310,8 @@ activate_stage2_device_config (NMDevice *self)
 	/* Assumed connections were already set up outside NetworkManager */
 	if (!nm_device_sys_iface_state_is_external_or_assume (self)) {
 		NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
+
+		_ethtool_state_set (self);
 
 		if (!tc_commit (self)) {
 			_LOGW (LOGD_IP6, "failed applying traffic control rules");
@@ -14021,6 +14106,8 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 		priv->mtu_initial = 0;
 		priv->ip6_mtu_initial = 0;
 	}
+
+	_ethtool_state_reset (self);
 
 	_cleanup_generic_post (self, cleanup_type);
 }
