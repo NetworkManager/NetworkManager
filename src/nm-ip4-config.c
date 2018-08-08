@@ -646,6 +646,37 @@ nm_ip4_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 }
 
 void
+nm_ip4_config_update_routes_metric (NMIP4Config *self, gint64 metric)
+{
+	gs_free NMPlatformIP4Route *routes = NULL;
+	gboolean need_update = FALSE;
+	const NMPlatformIP4Route *r;
+	NMDedupMultiIter iter;
+	guint num = 0, i = 0;
+
+	nm_ip_config_iter_ip4_route_for_each (&iter, self, &r) {
+		if (r->metric != metric)
+			need_update = TRUE;
+		num++;
+	}
+	if (!need_update)
+		return;
+
+	routes = g_new (NMPlatformIP4Route, num);
+	nm_ip_config_iter_ip4_route_for_each (&iter, self, &r) {
+		routes[i] = *r;
+		routes[i].metric = metric;
+		i++;
+	}
+
+	g_object_freeze_notify (G_OBJECT (self));
+	nm_ip4_config_reset_routes (self);
+	for (i = 0; i < num; i++)
+		nm_ip4_config_add_route (self, &routes[i], NULL);
+	g_object_thaw_notify (G_OBJECT (self));
+}
+
+void
 nm_ip4_config_add_dependent_routes (NMIP4Config *self,
                                     guint32 route_table,
                                     guint32 route_metric,

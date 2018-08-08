@@ -10340,10 +10340,37 @@ nm_device_reactivate_ip4_config (NMDevice *self,
 			_set_ip_state (self, AF_INET, IP_WAIT);
 			if (!nm_device_activate_stage3_ip4_start (self))
 				_LOGW (LOGD_IP4, "Failed to apply IPv4 configuration");
-		} else {
-			if (!ip_config_merge_and_apply (self, AF_INET, TRUE))
-				_LOGW (LOGD_IP4, "Failed to reapply IPv4 configuration");
+			return;
 		}
+
+		if (s_ip4_old && s_ip4_new) {
+			gint64 metric_old, metric_new;
+
+			/* For dynamic IP methods (DHCP, IPv4LL, WWAN) the route metric is
+			 * set at activation/renewal time using the value from static
+			 * configuration. To support runtime change we need to update the
+			 * dynamic configuration in place and tell the DHCP client the new
+			 * value to use for future renewals.
+			 */
+			metric_old = nm_setting_ip_config_get_route_metric (s_ip4_old);
+			metric_new = nm_setting_ip_config_get_route_metric (s_ip4_new);
+
+			if (metric_old != metric_new) {
+				if (priv->dev_ip4_config.orig) {
+					nm_ip4_config_update_routes_metric ((NMIP4Config *) priv->dev_ip4_config.orig,
+					                                    nm_device_get_route_metric (self, AF_INET));
+				}
+				if (priv->wwan_ip_config_4.orig) {
+					nm_ip4_config_update_routes_metric ((NMIP4Config *) priv->wwan_ip_config_4.orig,
+					                                    nm_device_get_route_metric (self, AF_INET));
+				}
+				if (priv->dhcp4.client)
+					nm_dhcp_client_set_route_metric (priv->dhcp4.client, metric_new);
+			}
+		}
+
+		if (!ip_config_merge_and_apply (self, AF_INET, TRUE))
+			_LOGW (LOGD_IP4, "Failed to reapply IPv4 configuration");
 	}
 }
 
@@ -10385,10 +10412,36 @@ nm_device_reactivate_ip6_config (NMDevice *self,
 			_set_ip_state (self, AF_INET6, IP_WAIT);
 			if (!nm_device_activate_stage3_ip6_start (self))
 				_LOGW (LOGD_IP6, "Failed to apply IPv6 configuration");
-		} else {
-			if (!ip_config_merge_and_apply (self, AF_INET6, TRUE))
-				_LOGW (LOGD_IP4, "Failed to reapply IPv6 configuration");
+			return;
 		}
+
+		if (s_ip6_old && s_ip6_new) {
+			gint64 metric_old, metric_new;
+
+			/* See comment in nm_device_reactivate_ip6_config() */
+			metric_old = nm_setting_ip_config_get_route_metric (s_ip6_old);
+			metric_new = nm_setting_ip_config_get_route_metric (s_ip6_new);
+
+			if (metric_old != metric_new) {
+				if (priv->ac_ip6_config.orig) {
+					nm_ip6_config_update_routes_metric ((NMIP6Config *) priv->ac_ip6_config.orig,
+					                                    nm_device_get_route_metric (self, AF_INET6));
+				}
+				if (priv->dhcp6.ip6_config.orig) {
+					nm_ip6_config_update_routes_metric ((NMIP6Config *) priv->dhcp6.ip6_config.orig,
+					                                    nm_device_get_route_metric (self, AF_INET6));
+				}
+				if (priv->wwan_ip_config_6.orig) {
+					nm_ip6_config_update_routes_metric ((NMIP6Config *) priv->wwan_ip_config_6.orig,
+					                                    nm_device_get_route_metric (self, AF_INET6));
+				}
+				if (priv->dhcp6.client)
+					nm_dhcp_client_set_route_metric (priv->dhcp6.client, metric_new);
+			}
+		}
+
+		if (!ip_config_merge_and_apply (self, AF_INET6, TRUE))
+			_LOGW (LOGD_IP4, "Failed to reapply IPv6 configuration");
 	}
 }
 
