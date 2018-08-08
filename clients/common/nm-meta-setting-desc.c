@@ -4842,6 +4842,7 @@ _get_fcn_ethtool (ARGS_GET_FCN)
 	else {
 		s = NULL;
 		NM_SET_OUT (out_is_default, TRUE);
+		*out_flags |= NM_META_ACCESSOR_GET_OUT_FLAGS_HIDE;
 	}
 
 	if (s && get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
