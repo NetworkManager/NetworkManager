@@ -656,6 +656,30 @@ typedef enum {
 } NMMetered;
 
 /**
+ * NMConnectionMultiConnect:
+ * @NM_CONNECTION_MULTI_CONNECT_DEFAULT: indicates that the per-connection
+ *   setting is unspecified. In this case, it will fallback to the default
+ *   value, which is @NM_CONNECTION_MULTI_CONNECT_SINGLE.
+ * @NM_CONNECTION_MULTI_CONNECT_SINGLE: the connection profile can only
+ *   be active once at each moment. Activating a profile that is already active,
+ *   will first deactivate it.
+ * @NM_CONNECTION_MULTI_CONNECT_MANUAL_MULTIPLE: the profile can
+ *   be manually activated multiple times on different devices. However,
+ *   regarding autoconnect, the profile will autoconnect only if it is
+ *   currently not connected otherwise.
+ * @NM_CONNECTION_MULTI_CONNECT_MULTIPLE: the profile can autoactivate
+ *   and be manually activated multiple times together.
+ *
+ * Since: 1.14
+ */
+typedef enum {
+	NM_CONNECTION_MULTI_CONNECT_DEFAULT           = 0,
+	NM_CONNECTION_MULTI_CONNECT_SINGLE            = 1,
+	NM_CONNECTION_MULTI_CONNECT_MANUAL_MULTIPLE   = 2,
+	NM_CONNECTION_MULTI_CONNECT_MULTIPLE          = 3,
+} NMConnectionMultiConnect;
+
+/**
  * NMActiveConnectionState:
  * @NM_ACTIVE_CONNECTION_STATE_UNKNOWN: the state of the connection is unknown
  * @NM_ACTIVE_CONNECTION_STATE_ACTIVATING: a network connection is being prepared

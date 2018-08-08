@@ -72,6 +72,7 @@ typedef struct {
 	gboolean autoconnect;
 	int autoconnect_priority;
 	int autoconnect_retries;
+	int multi_connect;
 	guint64 timestamp;
 	gboolean read_only;
 	char *zone;
@@ -93,6 +94,7 @@ enum {
 	PROP_AUTOCONNECT,
 	PROP_AUTOCONNECT_PRIORITY,
 	PROP_AUTOCONNECT_RETRIES,
+	PROP_MULTI_CONNECT,
 	PROP_TIMESTAMP,
 	PROP_READ_ONLY,
 	PROP_ZONE,
@@ -552,6 +554,22 @@ nm_setting_connection_get_autoconnect_retries (NMSettingConnection *setting)
 	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), -1);
 
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->autoconnect_retries;
+}
+
+/**
+ * nm_setting_connection_get_multi_connect:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns: the #NMSettingConnection:multi-connect property of the connection.
+ *
+ * Since: 1.14
+ **/
+NMConnectionMultiConnect
+nm_setting_connection_get_multi_connect (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), -1);
+
+	return (NMConnectionMultiConnect) NM_SETTING_CONNECTION_GET_PRIVATE (setting)->multi_connect;
 }
 
 /**
@@ -1087,6 +1105,19 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
+	if (!NM_IN_SET (priv->multi_connect, (int) NM_CONNECTION_MULTI_CONNECT_DEFAULT,
+	                                     (int) NM_CONNECTION_MULTI_CONNECT_SINGLE,
+	                                     (int) NM_CONNECTION_MULTI_CONNECT_MANUAL_MULTIPLE,
+	                                     (int) NM_CONNECTION_MULTI_CONNECT_MULTIPLE)) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("value %d is not valid"), priv->multi_connect);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME,
+		                NM_SETTING_CONNECTION_MULTI_CONNECT);
+		return FALSE;
+	}
+
 	/* *** errors above here should be always fatal, below NORMALIZABLE_ERROR *** */
 
 	if (!priv->uuid) {
@@ -1328,6 +1359,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_AUTOCONNECT_RETRIES:
 		priv->autoconnect_retries = g_value_get_int (value);
 		break;
+	case PROP_MULTI_CONNECT:
+		priv->multi_connect = g_value_get_int (value);
+		break;
 	case PROP_TIMESTAMP:
 		priv->timestamp = g_value_get_uint64 (value);
 		break;
@@ -1422,6 +1456,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_AUTOCONNECT_RETRIES:
 		g_value_set_int (value, nm_setting_connection_get_autoconnect_retries (setting));
+		break;
+	case PROP_MULTI_CONNECT:
+		g_value_set_int (value, priv->multi_connect);
 		break;
 	case PROP_TIMESTAMP:
 		g_value_set_uint64 (value, nm_setting_connection_get_timestamp (setting));
@@ -1761,6 +1798,30 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	                       -1, G_MAXINT32, -1,
 	                       G_PARAM_READWRITE |
 	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_FUZZY_IGNORE |
+	                       G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingConnection:multi-connect:
+	 *
+	 * Specifies whether the profile can be active multiple times at a particular
+	 * moment. The value is of type #NMConnectionMultiConnect.
+	 *
+	 * Since: 1.14
+	 */
+	/* ---ifcfg-rh---
+	 * property: multi-connect
+	 * variable: MULTI_CONNECT(+)
+	 * description: whether the profile can be active on multiple devices at a given
+	 *   moment. The values are numbers corresponding to #NMConnectionMultiConnect enum.
+	 * example: ZONE=3
+	 * ---end---
+	 */
+	g_object_class_install_property
+	    (object_class, PROP_MULTI_CONNECT,
+	     g_param_spec_int (NM_SETTING_CONNECTION_MULTI_CONNECT, "", "",
+	                       G_MININT32, G_MAXINT32, NM_CONNECTION_MULTI_CONNECT_DEFAULT,
+	                       G_PARAM_READWRITE |
 	                       NM_SETTING_PARAM_FUZZY_IGNORE |
 	                       G_PARAM_STATIC_STRINGS));
 

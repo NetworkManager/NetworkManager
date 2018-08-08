@@ -1024,28 +1024,53 @@ active_connection_find_by_connection (NMManager *self,
 	                               out_all_matching);
 }
 
+typedef struct {
+	NMManager *self;
+	gboolean for_auto_activation;
+} GetActivatableConnectionsFilterData;
+
 static gboolean
 _get_activatable_connections_filter (NMSettings *settings,
                                      NMSettingsConnection *connection,
                                      gpointer user_data)
 {
+	const GetActivatableConnectionsFilterData *d = user_data;
+	NMConnectionMultiConnect multi_connect;
+
 	if (NM_FLAGS_HAS (nm_settings_connection_get_flags (connection),
 	                  NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE))
 		return FALSE;
 
+	multi_connect = _nm_connection_get_multi_connect (NM_CONNECTION (connection));
+	if (   multi_connect == NM_CONNECTION_MULTI_CONNECT_MULTIPLE
+	    || (   multi_connect == NM_CONNECTION_MULTI_CONNECT_MANUAL_MULTIPLE
+	        && !d->for_auto_activation))
+		return TRUE;
+
 	/* the connection is activatable, if it has no active-connections that are in state
 	 * activated, activating, or waiting to be activated. */
-	return !active_connection_find (user_data, connection, NULL, NM_ACTIVE_CONNECTION_STATE_ACTIVATED, NULL);
+	return !active_connection_find (d->self,
+	                                connection,
+	                                NULL,
+	                                NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
+	                                NULL);
 }
 
 NMSettingsConnection **
-nm_manager_get_activatable_connections (NMManager *manager, guint *out_len, gboolean sort)
+nm_manager_get_activatable_connections (NMManager *manager,
+                                        gboolean for_auto_activation,
+                                        gboolean sort,
+                                        guint *out_len)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	const GetActivatableConnectionsFilterData d = {
+		.self = manager,
+		.for_auto_activation = for_auto_activation,
+	};
 
 	return nm_settings_get_connections_clone (priv->settings, out_len,
 	                                          _get_activatable_connections_filter,
-	                                          manager,
+	                                          (gpointer) &d,
 	                                          sort ? nm_settings_connection_cmp_autoconnect_priority_p_with_data : NULL,
 	                                          NULL);
 }
@@ -2373,6 +2398,20 @@ done:
 	g_clear_error (&error);
 }
 
+static gboolean
+new_activation_allowed_for_connection (NMManager *self,
+                                       NMSettingsConnection *connection)
+{
+	if (NM_IN_SET (_nm_connection_get_multi_connect (NM_CONNECTION (connection)),
+	               NM_CONNECTION_MULTI_CONNECT_MANUAL_MULTIPLE,
+	               NM_CONNECTION_MULTI_CONNECT_MULTIPLE))
+		return TRUE;
+
+	return !active_connection_find (self, connection, NULL,
+	                                NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
+	                                NULL);
+}
+
 /**
  * get_existing_connection:
  * @manager: #NMManager instance
@@ -2460,9 +2499,7 @@ get_existing_connection (NMManager *self,
 	 */
 	if (   assume_state_connection_uuid
 	    && (connection_checked = nm_settings_get_connection_by_uuid (priv->settings, assume_state_connection_uuid))
-	    && !active_connection_find (self, connection_checked, NULL,
-	                                NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
-	                                NULL)
+	    && new_activation_allowed_for_connection (self, connection_checked)
 	    && nm_device_check_connection_compatible (device, NM_CONNECTION (connection_checked), NULL)) {
 
 		if (connection) {
@@ -2495,7 +2532,7 @@ get_existing_connection (NMManager *self,
 
 		/* the state file doesn't indicate a connection UUID to assume. Search the
 		 * persistent connections for a matching candidate. */
-		connections = nm_manager_get_activatable_connections (self, &len, FALSE);
+		connections = nm_manager_get_activatable_connections (self, FALSE, FALSE, &len);
 		if (len > 0) {
 			for (i = 0, j = 0; i < len; i++) {
 				NMConnection *con = NM_CONNECTION (connections[i]);
@@ -3683,7 +3720,7 @@ ensure_master_active_connection (NMManager *self,
 			g_assert (master_connection == NULL);
 
 			/* Find a compatible connection and activate this device using it */
-			connections = nm_manager_get_activatable_connections (self, NULL, TRUE);
+			connections = nm_manager_get_activatable_connections (self, FALSE, TRUE, NULL);
 			for (i = 0; connections[i]; i++) {
 				NMSettingsConnection *candidate = connections[i];
 
@@ -4091,6 +4128,7 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	NMActiveConnection *master_ac = NULL;
 	NMAuthSubject *subject;
 	GError *local = NULL;
+	NMConnectionMultiConnect multi_connect;
 
 	g_return_val_if_fail (NM_IS_MANAGER (self), FALSE);
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (active), FALSE);
@@ -4251,7 +4289,15 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	/* Check slaves for master connection and possibly activate them */
 	autoconnect_slaves (self, connection, device, nm_active_connection_get_subject (active));
 
-	{
+	multi_connect = _nm_connection_get_multi_connect (NM_CONNECTION (connection));
+	if (   multi_connect == NM_CONNECTION_MULTI_CONNECT_MULTIPLE
+	    || (   multi_connect == NM_CONNECTION_MULTI_CONNECT_MANUAL_MULTIPLE
+	        && NM_IN_SET (nm_active_connection_get_activation_reason (active),
+	                      NM_ACTIVATION_REASON_ASSUME,
+	                      NM_ACTIVATION_REASON_AUTOCONNECT_SLAVES,
+	                      NM_ACTIVATION_REASON_USER_REQUEST))) {
+		/* the profile can be activated multiple times. Proceed. */
+	} else {
 		gs_unref_ptrarray GPtrArray *all_ac_arr = NULL;
 		NMActiveConnection *ac;
 		guint i, n_all;

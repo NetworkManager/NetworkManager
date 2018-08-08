@@ -480,6 +480,7 @@ static gboolean
 verify (NMSetting *setting, NMConnection *connection, GError **error)
 {
 	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
+	NMSettingConnection *s_con;
 
 	if (!priv->service_type) {
 		g_set_error_literal (error,
@@ -506,6 +507,16 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_VPN_SETTING_NAME, NM_SETTING_VPN_USER_NAME);
+		return FALSE;
+	}
+
+	if (   connection
+	    && (s_con = nm_connection_get_setting_connection (connection))
+	    && nm_setting_connection_get_multi_connect (s_con) != NM_CONNECTION_MULTI_CONNECT_DEFAULT) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("cannot set connection.multi-connect for VPN setting"));
 		return FALSE;
 	}
 
