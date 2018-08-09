@@ -1470,7 +1470,7 @@ nmc_device_state_to_color (NMDeviceState state)
 	else if (state == NM_DEVICE_STATE_ACTIVATED)
 		return NM_META_COLOR_DEVICE_ACTIVATED;
 
-	g_return_val_if_reached (NM_META_COLOR_DEVICE_UNKNOWN);
+	return NM_META_COLOR_DEVICE_UNKNOWN;
 }
 
 static void
