@@ -1691,8 +1691,6 @@ nm_setting_ip_config_remove_dns_search (NMSettingIPConfig *setting, int idx)
  * Removes the DNS search domain @dns_search.
  *
  * Returns: %TRUE if the DNS search domain was found and removed; %FALSE if it was not.
- *
- * Since 0.9.10
  **/
 gboolean
 nm_setting_ip_config_remove_dns_search_by_value (NMSettingIPConfig *setting,
