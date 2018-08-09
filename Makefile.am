@@ -1902,6 +1902,7 @@ src_initrd_libnmi_core_la_CPPFLAGS = \
 
 src_initrd_libnmi_core_la_SOURCES = \
 	src/initrd/nm-initrd-generator.h \
+	src/initrd/nmi-cmdline-reader.c \
 	src/initrd/nmi-ibft-reader.c \
 	$(NULL)
 
@@ -2135,6 +2136,7 @@ src_initrd_tests_test_cmdline_reader_LDADD = \
 	$(GLIB_LIBS)
 
 $(src_initrd_libnmi_core_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_initrd_tests_test_cmdline_reader_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_initrd_tests_test_ibft_reader_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
