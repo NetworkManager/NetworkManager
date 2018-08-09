@@ -894,7 +894,9 @@ config_extra_h.set_quoted('NMSTATEDIR',        nm_pkgstatedir)
 config_extra_h.set_quoted('NMVPNDIR',          nm_vpndir)
 config_extra_h.set_quoted('NM_BUILD_BUILDDIR', meson.build_root())
 config_extra_h.set_quoted('NM_BUILD_SRCDIR',   meson.source_root())
-config_extra_h.set_quoted('PPPD_PLUGIN_DIR',   pppd_plugin_dir)
+if enable_ppp
+    config_extra_h.set_quoted('PPPD_PLUGIN_DIR',   pppd_plugin_dir)
+endif
 config_extra_h.set_quoted('PREFIX',            nm_prefix)
 config_extra_h.set_quoted('RUNDIR',            nm_pkgrundir)
 config_extra_h.set_quoted('RUNSTATEDIR',       nm_runstatedir)
