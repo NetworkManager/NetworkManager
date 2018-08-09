@@ -7074,6 +7074,53 @@ test_ethtool_offload (void)
 	g_assert_cmpstr (d->optname, ==, NM_ETHTOOL_OPTNAME_FEATURE_RXHASH);
 }
 
+static void
+test_nm_utils_escape_spaces (void)
+{
+	char *to_free;
+
+	g_assert_cmpstr (_nm_utils_escape_spaces (NULL, &to_free), ==, NULL);
+	g_free (to_free);
+
+	g_assert_cmpstr (_nm_utils_escape_spaces ("", &to_free), ==, "");
+	g_free (to_free);
+
+	g_assert_cmpstr (_nm_utils_escape_spaces (" ", &to_free), ==, "\\ ");
+	g_free (to_free);
+
+	g_assert_cmpstr (_nm_utils_escape_spaces ("\t ", &to_free), ==, "\\\t\\ ");
+	g_free (to_free);
+
+	g_assert_cmpstr (_nm_utils_escape_spaces ("abc", &to_free), ==, "abc");
+	g_free (to_free);
+
+	g_assert_cmpstr (_nm_utils_escape_spaces ("abc def", &to_free), ==, "abc\\ def");
+	g_free (to_free);
+
+	g_assert_cmpstr (_nm_utils_escape_spaces ("abc\tdef", &to_free), ==, "abc\\\tdef");
+	g_free (to_free);
+}
+
+static void
+test_nm_utils_unescape_spaces (void)
+{
+#define CHECK_STR(in, out) \
+	G_STMT_START { \
+		gs_free char *str = g_strdup (in); \
+		\
+		g_assert_cmpstr (_nm_utils_unescape_spaces (str), ==, out); \
+	} G_STMT_END
+
+	CHECK_STR ("\\a", "\\a");
+	CHECK_STR ("foobar", "foobar");
+	CHECK_STR ("foo bar", "foo bar");
+	CHECK_STR ("foo\\ bar", "foo bar");
+	CHECK_STR ("foo\\", "foo\\");
+	CHECK_STR ("\\\\\t", "\\\t");
+
+#undef CHECK_STR
+}
+
 /*****************************************************************************/
 
 NMTST_DEFINE ();
@@ -7224,6 +7271,8 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/_nm_utils_dns_option_find_idx", test_nm_utils_dns_option_find_idx);
 	g_test_add_func ("/core/general/_nm_utils_validate_json", test_nm_utils_check_valid_json);
 	g_test_add_func ("/core/general/_nm_utils_team_config_equal", test_nm_utils_team_config_equal);
+	g_test_add_func ("/core/general/_nm_utils_escape_spaces", test_nm_utils_escape_spaces);
+	g_test_add_func ("/core/general/_nm_utils_unescape_spaces", test_nm_utils_unescape_spaces);
 	g_test_add_func ("/core/general/test_nm_utils_enum", test_nm_utils_enum);
 	g_test_add_func ("/core/general/nm-set-out", test_nm_set_out);
 	g_test_add_func ("/core/general/route_attributes/parse", test_route_attributes_parse);

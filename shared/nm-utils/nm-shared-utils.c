@@ -1702,3 +1702,60 @@ _nm_utils_user_data_unpack (gpointer user_data, int nargs, ...)
 
 	g_slice_free1 (((gsize) nargs) * sizeof (gconstpointer), user_data);
 }
+
+/*****************************************************************************/
+
+#define IS_SPACE(c) NM_IN_SET ((c), ' ', '\t')
+
+const char *
+_nm_utils_escape_spaces (const char *str, char **to_free)
+{
+	const char *ptr = str;
+	char *ret, *r;
+
+	*to_free = NULL;
+
+	if (!str)
+		return NULL;
+
+	while (TRUE) {
+		if (!*ptr)
+			return str;
+		if (IS_SPACE (*ptr))
+			break;
+		ptr++;
+	}
+
+	ptr = str;
+	ret = g_new (char, strlen (str) * 2 + 1);
+	r = ret;
+	*to_free = ret;
+	while (*ptr) {
+		if (IS_SPACE (*ptr))
+			*r++ = '\\';
+		*r++ = *ptr++;
+	}
+	*r = '\0';
+
+	return ret;
+}
+
+char *
+_nm_utils_unescape_spaces (char *str)
+{
+	guint i, j = 0;
+
+	if (!str)
+		return NULL;
+
+	for (i = 0; str[i]; i++) {
+		if (str[i] == '\\' && IS_SPACE (str[i+1]))
+			i++;
+		str[j++] = str[i];
+	}
+	str[j] = '\0';
+
+	return str;
+}
+
+#undef IS_SPACE
