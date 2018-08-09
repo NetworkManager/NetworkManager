@@ -5511,6 +5511,9 @@ check_connection_compatible (NMDevice *self, NMConnection *connection, GError **
 	gs_free_error GError *local = NULL;
 	gs_free char *conn_iface = NULL;
 	NMDeviceClass *klass;
+	const char *const *patterns;
+	NMSettingMatch *s_match;
+	guint num_patterns;
 
 	klass = NM_DEVICE_GET_CLASS (self);
 	if (klass->connection_type_check_compatible) {
@@ -5534,13 +5537,21 @@ check_connection_compatible (NMDevice *self, NMConnection *connection, GError **
 			                    "cannot get interface name due to %s", local->message);
 			return FALSE;
 		}
-		return TRUE;
-	}
-
-	if (!nm_streq0 (conn_iface, device_iface)) {
+	} else if (!nm_streq0 (conn_iface, device_iface)) {
 		nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
 		                            "mismatching interface name");
 		return FALSE;
+	}
+
+	s_match = (NMSettingMatch *) nm_connection_get_setting (connection,
+	                                                        NM_TYPE_SETTING_MATCH);
+	if (s_match) {
+		patterns = nm_setting_match_get_interface_names (s_match, &num_patterns);
+		if (!nm_wildcard_match_check (device_iface, patterns, num_patterns)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                            "device does not satisfy match.interface-name property");
+			return FALSE;
+		}
 	}
 
 	return TRUE;

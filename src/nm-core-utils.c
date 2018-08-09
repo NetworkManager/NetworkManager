@@ -25,6 +25,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <fnmatch.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -1728,6 +1729,33 @@ nm_match_spec_join (GSList *specs)
 	}
 
 	return g_string_free (str, FALSE);
+}
+
+gboolean
+nm_wildcard_match_check (const char *str,
+                         const char *const *patterns,
+                         guint num_patterns)
+{
+	guint i, neg = 0;
+
+	for (i = 0; i < num_patterns; i++) {
+		if (patterns[i][0] == '!') {
+			neg++;
+			if (!fnmatch (patterns[i] + 1, str, 0))
+				return FALSE;
+		}
+	}
+
+	if (neg == num_patterns)
+		return TRUE;
+
+	for (i = 0; i < num_patterns; i++) {
+		if (   patterns[i][0] != '!'
+		    && !fnmatch (patterns[i], str, 0))
+			return TRUE;
+	}
+
+	return FALSE;
 }
 
 /*****************************************************************************/
