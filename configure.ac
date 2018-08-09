@@ -134,8 +134,8 @@ AS_IF([test -z "$enable_ifupdown" -a -f /etc/debian_version],            enable_
 # Otherwise plugins default to "no"
 AS_IF([test -z "$enable_ifcfg_rh"], enable_ifcfg_rh=no)
 AS_IF([test -z "$enable_ifupdown"], enable_ifupdown=no)
-# Enable ibft by default
-AS_IF([test -z "$enable_config_plugin_ibft"], enable_config_plugin_ibft="yes")
+# Disable obsolete ibft plugin by default
+AS_IF([test -z "$enable_config_plugin_ibft"], enable_config_plugin_ibft="no")
 # Create automake conditionals
 AM_CONDITIONAL(CONFIG_PLUGIN_IBFT, test "$enable_config_plugin_ibft" = "yes")
 AM_CONDITIONAL(CONFIG_PLUGIN_IFCFG_RH, test "$enable_ifcfg_rh" = "yes")
