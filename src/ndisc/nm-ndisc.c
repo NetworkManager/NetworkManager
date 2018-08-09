@@ -1192,7 +1192,7 @@ set_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_PLATFORM:
 		/* construct-only */
-		priv->platform = g_value_get_object (value) ? : NM_PLATFORM_GET;
+		priv->platform = g_value_get_object (value) ?: NM_PLATFORM_GET;
 		if (!priv->platform)
 			g_return_if_reached ();
 

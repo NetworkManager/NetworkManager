@@ -422,7 +422,7 @@ _nm_auto_freev (gpointer ptr)
 static inline const char *
 NM_G_ERROR_MSG (GError *error)
 {
-	return error ? (error->message ? : "(null)") : "(no-error)"; \
+	return error ? (error->message ?: "(null)") : "(no-error)"; \
 }
 
 /*****************************************************************************/

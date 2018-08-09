@@ -1854,7 +1854,7 @@ _set_fcn_vpn_service_type (ARGS_SET_FCN)
 	gs_free char *service_name = NULL;
 
 	service_name = nm_vpn_plugin_info_list_find_service_type (nm_vpn_get_plugin_infos (), value);
-	g_object_set (setting, property_info->property_name, service_name ? : value, NULL);
+	g_object_set (setting, property_info->property_name, service_name ?: value, NULL);
 	return TRUE;
 }
 

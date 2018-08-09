@@ -10963,7 +10963,7 @@ reapply_cb (NMDevice *self,
 		nm_device_sys_iface_state_set (self, NM_DEVICE_SYS_IFACE_STATE_MANAGED);
 
 	if (!check_and_reapply_connection (self,
-	                                   connection ? : (NMConnection *) nm_device_get_settings_connection (self),
+	                                   connection ?: (NMConnection *) nm_device_get_settings_connection (self),
 	                                   version_id,
 	                                   &audit_args,
 	                                   &local)) {
