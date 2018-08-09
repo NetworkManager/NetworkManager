@@ -1807,7 +1807,7 @@ parse_preferred_connection_order (const char *order, GError **error)
 	gboolean inverse, unique;
 	int i;
 
-	strv = nm_utils_strsplit_set (order, ":");
+	strv = nm_utils_strsplit_set (order, ":", FALSE);
 	if (!strv) {
 		g_set_error (error, NMCLI_ERROR, 0,
 		             _("incorrect string '%s' of '--order' option"), order);
@@ -2573,7 +2573,7 @@ parse_passwords (const char *passwd_file, GError **error)
 		return NULL;
 	}
 
-	strv = nm_utils_strsplit_set (contents, "\r\n");
+	strv = nm_utils_strsplit_set (contents, "\r\n", FALSE);
 	for (iter = strv; *iter; iter++) {
 		gs_free char *iter_s = g_strdup (*iter);
 

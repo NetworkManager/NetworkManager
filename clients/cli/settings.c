@@ -318,7 +318,7 @@ _set_fcn_precheck_connection_secondaries (const char *value,
 	char **iter;
 	gboolean modified = FALSE;
 
-	strv0 = nm_utils_strsplit_set (value, " \t,");
+	strv0 = nm_utils_strsplit_set (value, " \t,", FALSE);
 	if (!strv0)
 		return TRUE;
 

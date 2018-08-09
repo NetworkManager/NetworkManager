@@ -208,7 +208,7 @@ int nm_utils_dbus_path_cmp (const char *dbus_path_a, const char *dbus_path_b);
 
 /*****************************************************************************/
 
-const char **nm_utils_strsplit_set (const char *str, const char *delimiters);
+const char **nm_utils_strsplit_set (const char *str, const char *delimiters, gboolean allow_escaping);
 
 gssize nm_utils_strv_find_first (char **list, gssize len, const char *needle);
 

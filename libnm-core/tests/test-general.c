@@ -238,7 +238,7 @@ test_nm_g_slice_free_fcn (void)
 /*****************************************************************************/
 
 static void
-_do_test_nm_utils_strsplit_set (const char *str, ...)
+_do_test_nm_utils_strsplit_set (gboolean escape, const char *str, ...)
 {
 	gs_unref_ptrarray GPtrArray *args_array = g_ptr_array_new ();
 	const char *const*args;
@@ -255,7 +255,7 @@ _do_test_nm_utils_strsplit_set (const char *str, ...)
 
 	args = (const char *const*) args_array->pdata;
 
-	words = nm_utils_strsplit_set (str, " \t\n");
+	words = nm_utils_strsplit_set (str, " \t\n", escape);
 
 	if (!args[0]) {
 		g_assert (!words);
@@ -268,7 +268,7 @@ _do_test_nm_utils_strsplit_set (const char *str, ...)
 		g_assert (args[i]);
 		g_assert (words[i]);
 		g_assert (args[i][0]);
-		g_assert (NM_STRCHAR_ALL (args[i], ch, !NM_IN_SET (ch, ' ', '\t', '\n')));
+		g_assert (escape || NM_STRCHAR_ALL (args[i], ch, !NM_IN_SET (ch, ' ', '\t', '\n')));
 		g_assert_cmpstr (args[i], ==, words[i]);
 	}
 }
@@ -279,21 +279,29 @@ _do_test_nm_utils_strsplit_set (const char *str, ...)
 static void
 test_nm_utils_strsplit_set (void)
 {
-	do_test_nm_utils_strsplit_set (NULL);
-	do_test_nm_utils_strsplit_set ("");
-	do_test_nm_utils_strsplit_set ("\t");
-	do_test_nm_utils_strsplit_set (" \t\n");
-	do_test_nm_utils_strsplit_set ("a", "a");
-	do_test_nm_utils_strsplit_set ("a b", "a", "b");
-	do_test_nm_utils_strsplit_set ("a\rb", "a\rb");
-	do_test_nm_utils_strsplit_set ("  a\rb  ", "a\rb");
-	do_test_nm_utils_strsplit_set ("  a bbbd afds ere", "a", "bbbd", "afds", "ere");
-	do_test_nm_utils_strsplit_set ("1 2 3 4 5 6 7 8 9 0 "
+	do_test_nm_utils_strsplit_set (FALSE, NULL);
+	do_test_nm_utils_strsplit_set (FALSE, "");
+	do_test_nm_utils_strsplit_set (FALSE, "\t");
+	do_test_nm_utils_strsplit_set (FALSE, " \t\n");
+	do_test_nm_utils_strsplit_set (FALSE, "a", "a");
+	do_test_nm_utils_strsplit_set (FALSE, "a b", "a", "b");
+	do_test_nm_utils_strsplit_set (FALSE, "a\rb", "a\rb");
+	do_test_nm_utils_strsplit_set (FALSE, "  a\rb  ", "a\rb");
+	do_test_nm_utils_strsplit_set (FALSE, "  a bbbd afds ere", "a", "bbbd", "afds", "ere");
+	do_test_nm_utils_strsplit_set (FALSE,
+	                               "1 2 3 4 5 6 7 8 9 0 "
 	                               "1 2 3 4 5 6 7 8 9 0 "
 	                               "1 2 3 4 5 6 7 8 9 0",
 	                               "1", "2", "3", "4", "5", "6", "7", "8", "9", "0",
 	                               "1", "2", "3", "4", "5", "6", "7", "8", "9", "0",
 	                               "1", "2", "3", "4", "5", "6", "7", "8", "9", "0");
+	do_test_nm_utils_strsplit_set (TRUE, "\\", "\\");
+	do_test_nm_utils_strsplit_set (TRUE, "\\ ", "\\ ");
+	do_test_nm_utils_strsplit_set (TRUE, "\\\\", "\\\\");
+	do_test_nm_utils_strsplit_set (TRUE, "\\\t", "\\\t");
+	do_test_nm_utils_strsplit_set (TRUE, "foo\\", "foo\\");
+	do_test_nm_utils_strsplit_set (TRUE, "bar foo\\", "bar", "foo\\");
+	do_test_nm_utils_strsplit_set (TRUE, "\\ a b\\ \\  c", "\\ a", "b\\ \\ ", "c");
 }
 
 /*****************************************************************************/
