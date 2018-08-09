@@ -129,6 +129,7 @@ complain ('Don\'t use glib typedefs for char/short/int/long/float/double') if $l
 complain ("Don't use \"$1 $2\" instead of \"$2 $1\"") if $line =~ /\b(char|short|int|long) +(unsigned|signed)\b/;
 complain ("Don't use \"unsigned int\" but just use \"unsigned\"") if $line =~ /\b(unsigned) +(int)\b/;
 complain ("Please use LGPL2+ for new files") if $is_patch and $line =~ /under the terms of the GNU General Public License/;
+complain ("Don't use space inside elvis operator ?:") if $line =~ /\?[\t ]+:/;
 
 # Further on we process stuff without comments.
 $_ = $line;
