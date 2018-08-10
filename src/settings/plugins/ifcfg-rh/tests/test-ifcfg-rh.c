@@ -4435,6 +4435,67 @@ test_write_wired_dhcp (void)
 }
 
 static void
+test_write_wired_match (void)
+{
+	nmtst_auto_unlinkfile char *testfile = NULL;
+	gs_unref_object NMConnection *connection = NULL;
+	gs_unref_object NMConnection *reread = NULL;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingMatch *s_match;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
+
+	connection = nm_simple_connection_new ();
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wired with Match setting",
+	              NM_SETTING_CONNECTION_UUID, nm_utils_uuid_generate_a (),
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NULL);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NULL);
+
+	/* IP6 setting */
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NULL);
+
+	/* Match setting */
+	s_match = (NMSettingMatch *) nm_setting_match_new ();
+	nm_setting_match_add_interface_name (s_match, "ens*");
+	nm_setting_match_add_interface_name (s_match, "eth 1?");
+	nm_setting_match_add_interface_name (s_match, "!veth*");
+	nm_connection_add_setting (connection, NM_SETTING (s_match));
+
+	nmtst_assert_connection_verifies (connection);
+	_writer_new_connec_exp (connection,
+	                        TEST_SCRATCH_DIR,
+	                        TEST_IFCFG_DIR"/ifcfg-Test_Write_Wired_match.cexpected",
+	                        &testfile);
+	reread = _connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
+}
+
+static void
 test_write_wired_dhcp_plus_ip (void)
 {
 	nmtst_auto_unlinkfile char *testfile = NULL;
@@ -10072,6 +10133,7 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "wired/write/dhcp", test_write_wired_dhcp);
 	g_test_add_func (TPATH "wired/write-dhcp-plus-ip", test_write_wired_dhcp_plus_ip);
 	g_test_add_func (TPATH "wired/write/dhcp-8021x-peap-mschapv2", test_write_wired_dhcp_8021x_peap_mschapv2);
+	g_test_add_func (TPATH "wired/write/match", test_write_wired_match);
 
 #define _add_test_write_wired_8021x_tls(testpath, scheme, flags) \
 	nmtst_add_test_func (testpath, test_write_wired_8021x_tls, GINT_TO_POINTER (scheme), GINT_TO_POINTER (flags))

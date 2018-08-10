@@ -1219,6 +1219,32 @@ make_user_setting (shvarFile *ifcfg)
 }
 
 static NMSetting *
+make_match_setting (shvarFile *ifcfg)
+{
+	NMSettingMatch *s_match = NULL;
+	gs_free const char **strv = NULL;
+	gs_free char *value = NULL;
+	const char *v;
+	gsize i;
+
+	v = svGetValueStr (ifcfg, "MATCH_INTERFACE_NAME", &value);
+	if (!v)
+		return NULL;
+
+	strv = nm_utils_strsplit_set (v, " \t", TRUE);
+	if (strv) {
+		for (i = 0; strv[i]; i++) {
+			if (!s_match)
+				s_match = (NMSettingMatch *) nm_setting_match_new ();
+			nm_setting_match_add_interface_name (s_match,
+			                                     _nm_utils_unescape_spaces ((char *) strv[i]));
+		}
+	}
+
+	return (NMSetting *) s_match;
+}
+
+static NMSetting *
 make_proxy_setting (shvarFile *ifcfg)
 {
 	NMSettingProxy *s_proxy = NULL;
@@ -5441,7 +5467,7 @@ connection_from_file_full (const char *filename,
 	gs_free char *type = NULL;
 	char *devtype, *bootproto;
 	NMSetting *s_ip4, *s_ip6, *s_tc, *s_proxy, *s_port, *s_dcb = NULL, *s_user;
-	NMSetting *s_sriov;
+	NMSetting *s_sriov, *s_match;
 	const char *ifcfg_name = NULL;
 	gboolean has_ip4_defroute = FALSE;
 	gboolean has_complex_routes_v4;
@@ -5720,6 +5746,10 @@ connection_from_file_full (const char *filename,
 	s_user = make_user_setting (parsed);
 	if (s_user)
 		nm_connection_add_setting (connection, s_user);
+
+	s_match = make_match_setting (parsed);
+	if (s_match)
+		nm_connection_add_setting (connection, s_match);
 
 	/* Bridge port? */
 	s_port = make_bridge_port_setting (parsed);

@@ -1,0 +1,11 @@
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+MATCH_INTERFACE_NAME="ens* eth\\ 1? !veth*"
+BOOTPROTO=dhcp
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME="Test Write Wired with Match setting"
+UUID=${UUID}
+ONBOOT=yes

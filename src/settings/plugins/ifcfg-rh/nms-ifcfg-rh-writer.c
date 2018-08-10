@@ -2285,6 +2285,38 @@ write_tc_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	return TRUE;
 }
 
+static gboolean
+write_match_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
+{
+	NMSettingMatch *s_match;
+	nm_auto_free_gstring GString *str = NULL;
+	guint i, num;
+
+	svUnsetValue (ifcfg, "MATCH_INTERFACE_NAME");
+
+	s_match = (NMSettingMatch *) nm_connection_get_setting (connection, NM_TYPE_SETTING_MATCH);
+	if (!s_match)
+		return TRUE;
+
+	num = nm_setting_match_get_num_interface_names (s_match);
+	for (i = 0; i < num; i++) {
+		gs_free char *to_free = NULL;
+		const char *name;
+
+		if (i == 0)
+			str = g_string_new ("");
+		else
+			g_string_append_c (str, ' ');
+		name = nm_setting_match_get_interface_name (s_match, i);
+		g_string_append (str, _nm_utils_escape_spaces (name, &to_free));
+	}
+
+	if (str)
+		svSetValueStr (ifcfg, "MATCH_INTERFACE_NAME", str->str);
+
+	return TRUE;
+}
+
 static void
 write_res_options (shvarFile *ifcfg, NMSettingIPConfig *s_ip, const char *var)
 {
@@ -3028,6 +3060,9 @@ do_write_construct (NMConnection *connection,
 		return FALSE;
 
 	if (!write_user_setting (connection, ifcfg, error))
+		return FALSE;
+
+	if (!write_match_setting (connection, ifcfg, error))
 		return FALSE;
 
 	write_sriov_setting (connection, ifcfg);
